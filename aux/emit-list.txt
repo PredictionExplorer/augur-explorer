@@ -1,0 +1,107 @@
+./Cash.sol
+        emit Transfer(_from, _to, _amount);
+        emit Approval(_owner, _spender, _allowance);
+        emit Mint(_target, _amount);
+        emit Transfer(address(0), _target, _amount);
+        emit Burn(_target, _amount);
+./legacy_reputation/OldLegacyRepToken.sol
+        emit Transfer(_from, _to, _value);
+./Augur.sol
+        emit RegisterContract(_address, _key);
+        emit FinishDeployment();
+        emit UniverseCreated(address(_parentUniverse), address(_newUniverse), _parentPayoutNumerators, getTimestamp());
+        emit DisputeCrowdsourcerCreated(address(_universe), _market, _disputeCrowdsourcer, _payoutNumerators, _size, _disputeRound);
+        emit MarketCreated(_universe, _endTime, _extraInfo, _market, _marketCreator, _designatedReporter, _feePerCashInAttoCash, _prices, IMarket.M$
+        emit MarketCreated(_universe, _endTime, _extraInfo, _market, _marketCreator, _designatedReporter, _feePerCashInAttoCash, _prices, IMarket.M$
+        emit MarketCreated(_universe, _endTime, _extraInfo, _market, _marketCreator, _designatedReporter, _feePerCashInAttoCash, _prices, IMarket.M$
+        emit InitialReportSubmitted(address(_universe), _reporter, _market, _initialReporter, _amountStaked, _isDesignatedReporter, _payoutNumerato$
+        emit DisputeCrowdsourcerContribution(address(_universe), _reporter, _market, _disputeCrowdsourcer, _amountStaked, _description, _payoutNume$
+        emit DisputeCrowdsourcerCompleted(address(_universe), _market, _disputeCrowdsourcer, _payoutNumerators, _nextWindowStartTime, _nextWindowEn$
+        emit InitialReporterRedeemed(address(_universe), _reporter, _market, msg.sender, _amountRedeemed, _repReceived, _payoutNumerators, getTimes$
+        emit DisputeCrowdsourcerRedeemed(address(_universe), _reporter, _market, address(_disputeCrowdsourcer), _amountRedeemed, _repReceived, _pay$
+        emit ReportingParticipantDisavowed(address(_universe), address(_market), msg.sender);
+        emit MarketParticipantsDisavowed(address(_universe), address(_market));
+        emit MarketFinalized(address(_universe), address(_market), getTimestamp(), _winningPayoutNumerators);
+        emit MarketMigrated(address(_market), address(_originalUniverse), address(_newUniverse));
+        emit CompleteSetsPurchased(address(_universe), address(_market), _account, _numCompleteSets, getTimestamp());
+        emit CompleteSetsSold(address(_universe), address(_market), _account, _numCompleteSets, _fees, getTimestamp());
+        emit MarketOIChanged(address(_universe), address(_market), _market.getOpenInterest());
+        emit TradingProceedsClaimed(address(_universe), _sender, _market, _outcome, _numShares, _numPayoutTokens, _fees, getTimestamp());
+        emit UniverseForked(msg.sender, _forkingMarket);
+        emit ShareTokenBalanceChanged(address(_market.getUniverse()), _account, address(_market), _outcome, _balance);
+        emit DisputeWindowCreated(msg.sender, address(_disputeWindow), _disputeWindow.getStartTime(), _disputeWindow.getEndTime(), _id, _initial);
+        emit ParticipationTokensRedeemed(address(_universe), msg.sender, _account, _attoParticipationTokens, _feePayoutShare, getTimestamp());
+        emit TimestampSet(_newTimestamp);
+        emit InitialReporterTransferred(address(_universe), address(_market), _from, _to);
+        emit MarketTransferred(address(_universe), address(_market), _from, _to);
+        emit TokensTransferred(_universe, _token, _from, _to, _amount, _tokenType, _market);
+        emit TokenBalanceChanged(_universe, _from, _token, _tokenType, _market, _fromBalance, _outcome);
+        emit TokenBalanceChanged(_universe, _to, _token, _tokenType, _market, _toBalance, _outcome);
+        emit TokensBurned(_universe, _token, _target, _amount, _tokenType, _market, _totalSupply);
+        emit TokenBalanceChanged(_universe, _target, _token, _tokenType, _market, _balance, _outcome);
+        emit TokensMinted(_universe, _token, _target, _amount, _tokenType, _market, _totalSupply);
+        emit TokenBalanceChanged(_universe, _target, _token, _tokenType, _market, _balance, _outcome);
+        emit ValidityBondChanged(address(_universe), _validityBond);
+        emit DesignatedReportStakeChanged(address(_universe), _designatedReportStake);
+        emit NoShowBondChanged(address(_universe), _noShowBond);
+        emit ReportingFeeChanged(address(_universe), _reportingFee);
+        emit MarketRepBondTransferred(_universe, msg.sender, _from, _to);
+        emit WarpSyncDataUpdated(_universe, _warpSyncHash, _marketEndTime);
+./AugurWalletRegistry.sol
+        emit ExecuteTransactionStatus(_success, _fundingSuccess);
+./trading/AugurTrading.sol
+        emit ProfitLossChanged(address(_market.getUniverse()), address(_market), _account, _outcome, _netPosition, _avgPrice, _realizedProfit, _fro$
+        emit OrderEvent(address(_universe), address(_market), OrderEventType.Cancel, uint8(_orderType), _orderId, 0, _addressData, _uint256Data);
+        emit OrderEvent(address(_universe), address(_orders.getMarket(_orderId)), OrderEventType.Create, uint8(_orderType), _orderId, _tradeGroupId$
+        emit OrderEvent(address(_universe), address(_orders.getMarket(_orderId)), OrderEventType.Fill, uint8(_orderType), _orderId, _tradeGroupId, $
+        emit MarketVolumeChanged(address(_universe), _market, _volume, _outcomeVolumes, augur.getTimestamp());
+        emit OrderEvent(address(_universe), address(_market), OrderEventType.Fill, _orderType, _orderHash, _tradeGroupId, _addressData, _uint256Dat$
+        emit CancelZeroXOrder(_universe, _market, _account, _outcome, _price, _amount, _type, _orderHash);
+./trading/ZeroXTrade.sol
+    /// @dev MUST emit TransferSingle event on success.
+        emit TransferSingle(msg.sender, from, to, id, value);
+    /// @dev MUST emit TransferBatch event on success.
+        emit TransferBatch(msg.sender, from, to, ids, values);
+./uniswap/UniswapV2Factory.sol
+        emit ExchangeCreated(token0, token1, exchange, allExchanges.length);
+./uniswap/UniswapV2Exchange.sol
+        emit Sync(reserve0, reserve1);
+        emit Mint(msg.sender, amount0, amount1);
+        emit Burn(msg.sender, amount0, amount1, to);
+        emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, to);
+./uniswap/UniswapV2ERC20.sol
+        emit Transfer(address(0), to, value);
+        emit Transfer(from, address(0), value);
+        emit Approval(owner, spender, value);
+        emit Transfer(from, to, value);
+./gsn/GSNRecipient.sol
+        emit RelayHubChanged(currentRelayHub, newRelayHub);
+./gsn/RelayHub.sol
+        emit Staked(relay, relays[relay].stake, relays[relay].unstakeDelay);
+        emit RelayAdded(relay, relays[relay].owner, transactionFee, relays[relay].stake, relays[relay].unstakeDelay, url);
+        emit RelayRemoved(relay, relays[relay].unstakeTime);
+        emit Unstaked(relay, amount);
+        emit Deposited(target, msg.sender, amount);
+        emit Withdrawn(account, dest, amount);
+                emit CanRelayFailed(msg.sender, from, recipient, functionSelector, preconditionCheck);
+        emit TransactionRelayed(msg.sender, from, recipient, functionSelector, status, charge);
+            emit RelayRemoved(relay, now);
+        emit Penalized(relay, reporter, reward);
+./libraries/token/ERC20.sol
+ * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
+ * by listening to said events. Other implementations of the EIP may not emit
+        emit Transfer(_sender, _recipient, _amount);
+        emit Transfer(address(0), _account, _amount);
+        emit Transfer(_account, address(0), _amount);
+        emit Approval(_owner, _spender, _amount);
+./libraries/token/ERC1155.sol
+        emit ApprovalForAll(msg.sender, operator, approved);
+        emit TransferSingle(msg.sender, from, to, id, value);
+        emit TransferBatch(msg.sender, from, to, ids, values);
+        emit TransferSingle(msg.sender, address(0), to, id, value);
+        emit TransferBatch(msg.sender, address(0), to, ids, values);
+        emit TransferSingle(msg.sender, account, address(0), id, value);
+        emit TransferBatch(msg.sender, account, address(0), ids, values);
+./LegacyReputationToken.sol
+        emit FundedAccount(address(this), msg.sender, _amount, block.timestamp);
+
