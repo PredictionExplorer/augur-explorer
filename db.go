@@ -42,7 +42,6 @@ func connect_to_storage() *SQLStorage {
 				"' port='" +
 				port +
 				"'";
-	fmt.Println("connstr = %v",conn_str)
 	db,err := sql.Open("postgres",conn_str);
 	if (err!=nil) {
 		show_connect_error()
@@ -187,8 +186,8 @@ func (ss *SQLStorage) insert_market_created_evt(evt *MarketCreatedEvt) {
 	}
 }
 func (ss *SQLStorage) insert_market_oi_changed_evt(evt *MarketOIChangedEvt,market_addr string) {
-	// Note: this event arrives with evt.Market set to 0x0000000000000000000000000 ,
-	//			so we pass the market address as parameter 'market_addr'
+	// Note: this event arrives with evt.Market set to 0x0000000000000000000000000 (a contract bug?) ,
+	//			so we pass the market address as parameter ('market_addr') to the function
 	var query string
 	market_aid := ss.lookup_address(market_addr)
 	universe_id := ss.lookup_universe_id(evt.Universe.String())
@@ -199,4 +198,63 @@ func (ss *SQLStorage) insert_market_oi_changed_evt(evt *MarketOIChangedEvt,marke
 		Fatalf("DB error: can't update open interest of market %v : %v",market_aid,err)
 	}
 	fmt.Printf("Set market %v open interst to %v",market_aid,evt.MarketOI.String())
+}
+func (ss *SQLStorage) insert_market_order_evt(evt *MktOrderEvt) {
+/*
+	var query string
+	var creator_aid int64;
+	creator_aid = ss.lookup_or_create_address(evt.AddressData[0].String())
+	var filler_aid int64 = 0;
+	if len(evt.AddressData) > 1 {
+		filler_aid = ss.lookup_or_create_address(evt.AddressData[1].String())
+	}
+	universe_id := ss.lookup_universe_id(evt.Universe.String())
+	creator_aid := ss.lookup_or_create_address(evt.MarketCreator.String())
+	reporter_aid := ss.lookup_or_create_address(evt.DesignatedReporter.String())
+
+	prices := bigint_ptr_slice_to_str(&evt.Prices,",")
+	outcomes := outcomes_to_str(&evt.Outcomes,",")
+	query = `
+		INSERT INTO market(
+			universe_id,
+			market_aid,
+			creator_aid,
+			reporter_aid,
+			end_time,
+			max_ticks,
+			time_stamp,
+			fee,
+			prices,
+			market_type,
+			extra_info,
+			outcomes,
+			no_show_bond
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`
+	result,err := ss.db.Exec(query,
+			universe_id,
+			market_aid,
+			creator_aid,
+			reporter_aid,
+			evt.EndTime.Int64(),
+			evt.NumTicks.Int64(),
+			evt.Timestamp.Int64(),
+			evt.FeePerCashInAttoCash.String(),
+			prices,
+			evt.MarketType,
+			evt.ExtraInfo,
+			outcomes,
+			evt.NoShowBond.String())
+	if err != nil {
+		Fatalf("DB error: can't insert into market table: %v",err)
+	}
+	rows_affected,err:=result.RowsAffected()
+	if err != nil {
+		Fatalf("DB error: %v",err)
+	}
+	if rows_affected > 0 {
+		return
+	} else {
+		Fatalf("DB error: couldn't insert into Market table. Rows affeced = 0")
+	}
+*/
 }

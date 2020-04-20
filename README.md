@@ -1,4 +1,4 @@
-## Augur data Extractor
+## Augur Data Extractor
 
 Extracts data from Augur Prediction Marketplace (http://augur.net) and stores it in an SQL database.
 
@@ -8,9 +8,12 @@ Extracts data from Augur Prediction Marketplace (http://augur.net) and stores it
  * Latest Ethereum `go-ethereum` package with Tuple ABI Unpack function (v1.9.13)
  * PostgreSQL libpq package
 
-### Compile
+### Compile & Run
 
-	go build main.go types.go db.go utils.go
+	go ./
+	#set Ethereum Node RPC port (TODO)
+	sh aux/dev-db.env ;#set datasource here
+	./augur-extractor
 
 ### Specifying database location
 
@@ -19,3 +22,7 @@ Extracts data from Augur Prediction Marketplace (http://augur.net) and stores it
 ### Database initialization
 
 	psql [dbname] < sql/tables.sql
+
+### Database Schema and documentation
+
+	cat sql/tables.sql

@@ -7,7 +7,11 @@ import (
 	"io"
 
 )
-
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
 func Fatalf(format string, args ...interface{}) {
 	w := io.MultiWriter(os.Stdout, os.Stderr)
 	if runtime.GOOS == "windows" {
@@ -24,4 +28,44 @@ func Fatalf(format string, args ...interface{}) {
 	fmt.Fprintf(w, "Fatal: "+format+"\n", args...)
 	os.Exit(1)
 }
+func (evt *MarketCreatedEvt) Dump() {	// dumps struct to stdout for debugging
+	fmt.Printf("MarketCreated {\n")
+	fmt.Printf("\tUniverse: %v\n",evt.Universe.String())
+	fmt.Printf("\tEndTime: %v\n",evt.EndTime)
+	fmt.Printf("\tExtraInfo: %v\n",evt.ExtraInfo)
+	fmt.Printf("\tMarket: %v\n",evt.Market.String())
+	fmt.Printf("\tMarketCreator: %v\n",evt.MarketCreator.String())
+	fmt.Printf("\tDesignatedReporter: %v\n",evt.DesignatedReporter.String())
+	fmt.Printf("\tFeePerCashInAttoCash: %v\n",evt.FeePerCashInAttoCash);
+	prices := bigint_ptr_slice_to_str(&evt.Prices,",")
+	fmt.Printf("\tPrices: %v\n",prices)
+	fmt.Printf("\tMarketType: %v\n",evt.MarketType)
+	fmt.Printf("\tNumTicks: %v\n",evt.NumTicks)
+	outcomes := outcomes_to_str(&evt.Outcomes,",")
+	fmt.Printf("\tOutcomes: %v\n",outcomes)
+	fmt.Printf("\tNoShowBond: %v\n",evt.NoShowBond)
+	fmt.Printf("\tTimestamp: %v\n",evt.Timestamp)
+	fmt.Printf("}\n")
+}
+func (evt *MarketOIChangedEvt) Dump() {	// dumps struct to stdout for debugging
 
+	fmt.Printf("MarketOIChanged {\n")
+	fmt.Printf("\tUniverse: %v\n",evt.Universe.String())
+	fmt.Printf("\tMarket: %v\n",evt.Market.String())
+	fmt.Printf("\tMarket Open Interest: %v\n",evt.MarketOI.String())
+	fmt.Printf("}\n")
+}
+func (evt *MktOrderEvt) Dump() { // dumps struct to stdout for debugging
+
+	fmt.Printf("OrderEvent {\n")
+	fmt.Printf("\tUniverse: %v\n",evt.Universe.String())
+	fmt.Printf("\tMarket: %v\n",evt.Market.String())
+	fmt.Printf("\tEventType: %v\n",evt.EventType)
+	fmt.Printf("\tOrderType: %v\n",evt.OrderType)
+	fmt.Printf("\tOrderId: %v\n",evt.OrderId)
+	fmt.Printf("\tTradeGroupId: %v\n",evt.TradeGroupId)
+	fmt.Printf("\tAddressData: %v\n",addresses_to_str(&evt.AddressData,","))
+	uintdata := bigint_ptr_slice_to_str(&evt.Uint256Data,",")
+	fmt.Printf("\tUint256data: %v\n",uintdata)
+	fmt.Printf("}\n")
+}

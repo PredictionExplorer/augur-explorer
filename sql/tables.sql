@@ -40,5 +40,19 @@ CREATE TABLE mktord (
 	evt_type			SMALLINT NOT NULL,			-- enum:  0 => Create, 1 => Cancel, 2 => Fill
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
 	trade_group			BIGINT DEFAULT 0,			-- User defined group label to identify multiple trades
-	addres_ids			bigint[] NOT NULL
+	creator_aid			BIGINT NOT NULL,			-- address of the creator
+	filler_aid			BIGINT NOT NULL,			-- address of the filler; source: AugurTrading.sol:24
+	-- uint256data legend
+	-- 0:  price
+	-- 1:  amount
+	-- 2:  outcome
+	-- 3:  tokenRefund (Cancel)
+	-- 4:  sharesRefund (Cancel)
+	-- 5:  fees (Fill)
+	-- 6:  amountFilled (Fill)
+	-- 7:  timestamp
+	-- 8:  sharesEscrowed
+	-- 9:  tokensEscrowed
+	-- (will always contain 10 fields, comma separated) ; source: AugurTrading.sol:37
+	uint256data			TEXT NOT NULL
 )

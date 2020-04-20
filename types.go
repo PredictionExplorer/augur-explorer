@@ -32,7 +32,7 @@ type AugurShareTokenBalanceChanged struct {
 	Balance  *big.Int
 	Raw      types.Log // Blockchain specific contextual infos
 }
-type OrderEvt struct {
+type MktOrderEvt struct {
 	Universe     common.Address
 	Market       common.Address
 	EventType    uint8
