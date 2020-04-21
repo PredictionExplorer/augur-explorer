@@ -44,15 +44,19 @@ func process_event(log *types.Log) {
 		fmt.Printf("\t\t\t\tLog Topic %v , %v \n",j,log.Topics[j].String())
 		if 0 == bytes.Compare(log.Topics[j].Bytes(),evt_market_order) {
 			var mevt MktOrderEvt
+			fmt.Printf("log.Data= %+v\n",log.Data)
 			err := trading_abi.Unpack(&mevt,"OrderEvent",log.Data)
 			if err != nil {
 				Fatalf("Event decode error: %v",err)
 			} else {
 				fmt.Printf("Block %v: OrderEvent event found\n",log.BlockNumber)
 				mevt.Dump()
-				storage.insert_market_order_evt(&mevt)
+				bytes := common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
+				a_universe := bytes.String()
+				bytes = common.BytesToAddress(log.Topics[2][12:])	// extract market addr
+				a_market := bytes.String()
+				storage.insert_market_order_evt(a_universe,a_market,&mevt)
 			}
-			return
 		}
 		if 0 == bytes.Compare(log.Topics[j].Bytes(),evt_market_created) {
 			var mevt MarketCreatedEvt
@@ -64,7 +68,6 @@ func process_event(log *types.Log) {
 				mevt.Dump()
 				storage.insert_market_created_evt(&mevt)
 			}
-			return
 		}
 		if 0 == bytes.Compare(log.Topics[j].Bytes(),evt_market_oi_changed) {
 			var mevt MarketOIChangedEvt
@@ -75,12 +78,10 @@ func process_event(log *types.Log) {
 				fmt.Printf("Block %v: MarketOIChanged found\n",log.BlockNumber)
 				mevt.Dump()
 				// Topics[2] contains market address, we extract it from 32 byte array (20 bytes addr)
-				// 									(because the event doesn't contain it)
 				mbytes := common.BytesToAddress(log.Topics[2][12:])	// extract addr from 32byte array
 				market_addr := mbytes.String()
 				storage.insert_market_oi_changed_evt(&mevt,market_addr)
 			}
-			return
 		}
 	}
 }

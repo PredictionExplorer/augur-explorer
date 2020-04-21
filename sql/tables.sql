@@ -36,23 +36,21 @@ CREATE TABLE sbalances (
 -- Market Order (BUY/SELL request made by the User via GUI)
 CREATE TABLE mktord (
 	mktord_id			BIGSERIAL PRIMARY KEY,
-	market_id			BIGSERIAL NOT NULL,
+	market_aid			BIGSERIAL NOT NULL,
 	evt_type			SMALLINT NOT NULL,			-- enum:  0 => Create, 1 => Cancel, 2 => Fill
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
-	trade_group			BIGINT DEFAULT 0,			-- User defined group label to identify multiple trades
 	creator_aid			BIGINT NOT NULL,			-- address of the creator
 	filler_aid			BIGINT NOT NULL,			-- address of the filler; source: AugurTrading.sol:24
-	-- uint256data legend
-	-- 0:  price
-	-- 1:  amount
-	-- 2:  outcome
-	-- 3:  tokenRefund (Cancel)
-	-- 4:  sharesRefund (Cancel)
-	-- 5:  fees (Fill)
-	-- 6:  amountFilled (Fill)
-	-- 7:  timestamp
-	-- 8:  sharesEscrowed
-	-- 9:  tokensEscrowed
-	-- (will always contain 10 fields, comma separated) ; source: AugurTrading.sol:37
-	uint256data			TEXT NOT NULL
+	price				BIGINT NOT NULL,
+	amount				BIGINT NOT NULL,
+	outcome				BIGINT NOT NULL,
+	token_refund		TEXT NOT NULL,
+	shares_refund		TEXT NOT NULL,
+	fees				TEXT NOT NULL,
+	amount_filled		TEXT NOT NULL,
+	time_stamp			BIGINT NOT NULL,
+	shares_escrowed		TEXT NOT NULL,
+	tokens_escrowed		TEXT NOT NULL,
+	trade_group			TEXT NOT NULL,			-- User defined group label to identify multiple trades
+	order_id			TEXT NOT NULL
 )

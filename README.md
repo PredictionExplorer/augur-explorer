@@ -12,7 +12,7 @@ Extracts data from Augur Prediction Marketplace (http://augur.net) and stores it
 
 	go ./
 	#set Ethereum Node RPC port (TODO)
-	sh aux/dev-db.env ;#set datasource here
+	. aux/dev-db.env ;#set datasource here
 	./augur-extractor
 
 ### Specifying database location
