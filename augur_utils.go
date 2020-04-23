@@ -1,18 +1,11 @@
 package main
 
 import (
-//	"fmt"
-//	"context"
-//	"log"
 	"math/big"
 	"bytes"
-//	"io/ioutil"
 	"encoding/hex"
 
-//	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/common"
-//	"github.com/ethereum/go-ethereum/core/types"
-//	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 func bigint_ptr_slice_to_str(data *[]*big.Int,separator string) string {
 	var output bytes.Buffer

@@ -143,7 +143,7 @@ func (ss *SQLStorage) insert_market_created_evt(evt *MarketCreatedEvt) {
 			reporter_aid,
 			end_time,
 			max_ticks,
-			time_stamp,
+			create_timestamp,
 			fee,
 			prices,
 			market_type,
@@ -178,11 +178,11 @@ func (ss *SQLStorage) insert_market_created_evt(evt *MarketCreatedEvt) {
 		Fatalf("DB error: couldn't insert into Market table. Rows affeced = 0")
 	}
 }
-func (ss *SQLStorage) insert_market_oi_changed_evt(evt *MarketOIChangedEvt,market_addr string) {
+func (ss *SQLStorage) insert_market_oi_changed_evt(evt *MarketOIChangedEvt) {
 	// Note: this event arrives with evt.Market set to 0x0000000000000000000000000 (a contract bug?) ,
 	//			so we pass the market address as parameter ('market_addr') to the function
 	var query string
-	market_aid := ss.lookup_address(market_addr)
+	market_aid := ss.lookup_address(evt.Market.String())
 	universe_id := ss.lookup_universe_id(evt.Universe.String())
 
 	query = "UPDATE market SET open_interest = $3 WHERE universe_id = $1 AND market_aid = $2"
@@ -190,12 +190,12 @@ func (ss *SQLStorage) insert_market_oi_changed_evt(evt *MarketOIChangedEvt,marke
 	if err != nil {
 		Fatalf("DB error: can't update open interest of market %v : %v",market_aid,err)
 	}
-	fmt.Printf("Set market %v open interst to %v",market_aid,evt.MarketOI.String())
+	fmt.Printf("Set market (id=%v) open interest to %v",market_aid,evt.MarketOI.String())
 }
 func (ss *SQLStorage) insert_market_order_evt(a_univ string,a_mkt string,evt *MktOrderEvt) {
 
 	var creator_aid int64;
-
+	fmt.Println("insert_market_order: a_universe=%v, a_market=%v",a_univ,a_mkt)
 	creator_aid = ss.lookup_or_create_address(evt.AddressData[0].String())
 	var filler_aid int64 = 0;
 	if len(evt.AddressData) > 1 {
@@ -203,7 +203,7 @@ func (ss *SQLStorage) insert_market_order_evt(a_univ string,a_mkt string,evt *Mk
 	}
 	universe_id := ss.lookup_universe_id(a_univ)
 	_ = universe_id	// ToDo: add universe_id match condition (for market)
-	market_aid := ss.lookup_address(a_mkt)
+	market_aid := ss.lookup_or_create_address(a_mkt)
 	// uint256data legend
 	// 0:  price
 	// 1:  amount
@@ -276,5 +276,132 @@ func (ss *SQLStorage) insert_market_order_evt(a_univ string,a_mkt string,evt *Mk
 		return
 	} else {
 		Fatalf("DB error: couldn't insert into Market table. Rows affeced = 0")
+	}
+}
+func (ss *SQLStorage) insert_market_finalized_evt(evt *MktFinalizedEvt) {
+
+	universe_id := ss.lookup_universe_id(evt.Universe.String())
+	_ = universe_id	// ToDo: add universe_id match condition (for market)
+	market_aid := ss.lookup_address(evt.Market.String())
+	fin_timestamp := evt.Timestamp.Int64()
+	winning_payouts := bigint_ptr_slice_to_str(&evt.WinningPayoutNumerators,",")
+
+	var query string
+	query = "UPDATE market SET fin_timestamp=$3,winning_payouts=$4 WHERE universe_id = $1 AND market_aid = $2"
+	result,err := ss.db.Exec(query,universe_id,market_aid,fin_timestamp,winning_payouts)
+	if err != nil {
+		Fatalf("DB error: can't update open interest of market %v : %v",market_aid,err)
+	}
+	rows_affected,err:=result.RowsAffected()
+	if err != nil {
+		Fatalf("DB error: %v",err)
+	}
+	if rows_affected > 0 {
+		fmt.Printf("Set market %v fin_timestamp to %v, winning_payouts to %v",market_aid,fin_timestamp,winning_payouts)
+		return
+	} else {
+		Fatalf("DB error: couldn't update 'market' table. Rows affeced = 0")
+	}
+}
+func (ss *SQLStorage) insert_initial_report_evt(evt *InitialReportSubmittedEvt) {
+
+	_= ss.lookup_universe_id(evt.Universe.String())
+	market_aid := ss.lookup_address(evt.Market.String())
+	reporter_aid := ss.lookup_or_create_address(evt.Reporter.String())
+	ini_reporter_aid := ss.lookup_or_create_address(evt.InitialReporter.String())
+
+	amount_staked := evt.AmountStaked.Int64()
+	payout_numerators := bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	next_win_start := evt.NextWindowStartTime.Int64()
+	next_win_end := evt.NextWindowEndTime.Int64()
+	rpt_timestamp := evt.Timestamp.Int64()
+
+	var query string
+	query = `
+		INSERT INTO ireport (
+			market_aid,
+			reporter_aid,
+			ini_reporter_aid,
+			is_designated,
+			amount_staked,
+			pnumerators,
+			description,
+			next_win_start,
+			next_win_end,
+			rpt_timestamp
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`
+	result,err := ss.db.Exec(query,
+			market_aid,
+			reporter_aid,
+			ini_reporter_aid,
+			evt.IsDesignatedReporter,
+			amount_staked,
+			payout_numerators,
+			evt.Description,
+			next_win_start,
+			next_win_end,
+			rpt_timestamp)
+	if err != nil {
+		Fatalf("DB error: can't insert into market table: %v",err)
+	}
+	rows_affected,err:=result.RowsAffected()
+	if err != nil {
+		Fatalf("DB error: %v",err)
+	}
+	if rows_affected > 0 {
+		return
+	} else {
+		Fatalf("DB error: couldn't insert into InitialReport table. Rows affeced = 0")
+	}
+}
+func (ss *SQLStorage) insert_market_volume_changed_evt(evt *MktVolumeChangedEvt) {
+
+	universe_id := ss.lookup_universe_id(evt.Universe.String())
+	market_aid := ss.lookup_address(evt.Market.String())
+
+	volume := evt.Volume.String()
+	outcome_vols := bigint_ptr_slice_to_str(&evt.OutcomeVolumes,",")
+	timestamp := evt.Timestamp.Int64()
+
+	var query string
+	query = `
+		INSERT INTO volume (
+			market_aid,
+			volume,
+			outcome_vols,
+			ins_timestamp
+		) VALUES ($1,$2,$3,$4)`
+	result,err := ss.db.Exec(query,
+			market_aid,
+			volume,
+			outcome_vols,
+			timestamp)
+	if err != nil {
+		Fatalf("DB error: can't insert into volume table: %v",err)
+	}
+	rows_affected,err:=result.RowsAffected()
+	if err != nil {
+		Fatalf("DB error: %v",err)
+	}
+	if rows_affected > 0 {
+		return
+	} else {
+		Fatalf("DB error: couldn't insert into InitialReport table. Rows affeced = 0")
+	}
+	// update volume in 'market' table
+	query = "UPDATE market SET cur_volume=$3 WHERE universe_id = $1 AND market_aid = $2"
+	result,err = ss.db.Exec(query,universe_id,market_aid,volume)
+	if err != nil {
+		Fatalf("DB error: can't update volume of market %v : %v",market_aid,err)
+	}
+	rows_affected,err = result.RowsAffected()
+	if err != nil {
+		Fatalf("DB error: %v",err)
+	}
+	if rows_affected > 0 {
+		fmt.Printf("Set market %v volume to %v",market_aid,volume)
+		return
+	} else {
+		Fatalf("DB error: couldn't update 'market' table. Rows affeced = 0")
 	}
 }

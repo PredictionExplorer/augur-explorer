@@ -8,6 +8,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 //	"github.com/ethereum/go-ethereum/accounts/abi"
 )
+type EventSequencer struct {	// determines the order for contained events
+	unordered_list		[]*types.Log
+}
 type MarketCreatedEvt struct {
 	Universe             common.Address
 	EndTime              *big.Int
@@ -49,3 +52,33 @@ type MarketOIChangedEvt struct {
 	MarketOI *big.Int
 	Raw      types.Log // Blockchain specific contextual infos
 }
+type MktFinalizedEvt struct {
+	Universe                common.Address
+	Market                  common.Address
+	Timestamp               *big.Int
+	WinningPayoutNumerators []*big.Int
+	Raw                     types.Log // Blockchain specific contextual infos
+}
+type InitialReportSubmittedEvt struct {
+	Universe             common.Address
+	Reporter             common.Address
+	Market               common.Address
+	InitialReporter      common.Address
+	AmountStaked         *big.Int
+	IsDesignatedReporter bool
+	PayoutNumerators     []*big.Int
+	Description          string
+	NextWindowStartTime  *big.Int
+	NextWindowEndTime    *big.Int
+	Timestamp            *big.Int
+	Raw                  types.Log // Blockchain specific contextual infos
+}
+type MktVolumeChangedEvt struct {
+	Universe       common.Address
+	Market         common.Address
+	Volume         *big.Int
+	OutcomeVolumes []*big.Int
+	Timestamp      *big.Int
+	Raw            types.Log // Blockchain specific contextual infos
+}
+

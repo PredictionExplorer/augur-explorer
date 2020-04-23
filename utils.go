@@ -69,3 +69,41 @@ func (evt *MktOrderEvt) Dump() { // dumps struct to stdout for debugging
 	fmt.Printf("\tUint256data: %v\n",uintdata)
 	fmt.Printf("}\n")
 }
+func (evt *MktFinalizedEvt) Dump() { // dumps struct to stdout for debugging
+
+	fmt.Printf("MarketFinalizedEvent {\n")
+	fmt.Printf("\tUniverse: %v\n",evt.Universe.String())
+	fmt.Printf("\tMarket: %v\n",evt.Market.String())
+	fmt.Printf("\tTimestamp: %v\n",evt.Timestamp)
+	payouts := bigint_ptr_slice_to_str(&evt.WinningPayoutNumerators,",")
+	fmt.Printf("\tWinningPayouts: %v\n",payouts)
+	fmt.Printf("}\n")
+}
+func (evt *InitialReportSubmittedEvt) Dump() {
+
+	fmt.Printf("InitialReportSubmittedEvt {\n")
+	fmt.Printf("\tUniverse: %v",evt.Universe.String())
+	fmt.Printf("\tReporter: %v",evt.Reporter.String())
+	fmt.Printf("\tMarket: %v",evt.Market.String())
+	fmt.Printf("\tInitialReporter: %v",evt.InitialReporter.String())
+	fmt.Printf("\tAmountStaked: %v",evt.AmountStaked)
+	fmt.Printf("\tIsDesignatedReporter: %v",evt.IsDesignatedReporter,evt.IsDesignatedReporter)
+	payout_numerators := bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	fmt.Printf("\tPayoutNumerators: %v",payout_numerators)
+	fmt.Printf("\tDescription: %v",evt.Description)
+	fmt.Printf("\tNextWindowStartTime: %v",evt.NextWindowStartTime)
+	fmt.Printf("\tNextWindowEndTime: %v",evt.NextWindowEndTime)
+	fmt.Printf("\tTimestamp: %v",evt.Timestamp)
+	fmt.Printf("}\n")
+}
+func (evt *MktVolumeChangedEvt) Dump() { // dumps struct to stdout for debugging
+
+	fmt.Printf("MarketVolumeChanged {\n")
+	fmt.Printf("\tUniverse: %v\n",evt.Universe.String())
+	fmt.Printf("\tMarket: %v\n",evt.Market.String())
+	fmt.Printf("\tVolume: %v\n",evt.Volume.String())
+	outcome_volumes := bigint_ptr_slice_to_str(&evt.OutcomeVolumes,",")
+	fmt.Printf("\tOutcomeVolumes: %v\n",outcome_volumes)
+	fmt.Printf("\tTimestamp: %v\n",evt.Timestamp)
+	fmt.Printf("}\n")
+}
