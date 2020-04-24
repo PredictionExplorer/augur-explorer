@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"bytes"
 	"io/ioutil"
+	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -45,6 +46,7 @@ func augur_init() {
 	// Load AugurTrading contract
 	trading_abi = load_abi("./abis/trading-abis/AugurTrading.abi")
 }
+/* Discontinued
 func get_universe_and_market(log *types.Log) (string,string) {
 
 	bytes := common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
@@ -53,6 +55,7 @@ func get_universe_and_market(log *types.Log) (string,string) {
 	a_market := bytes.String()
 	return a_universe,a_market
 }
+*/
 func process_event(log *types.Log) {
 
 	if log == nil {
@@ -101,14 +104,17 @@ func process_event(log *types.Log) {
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_order) {
 			var mevt MktOrderEvt
+			mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
+			mevt.Market = common.BytesToAddress(log.Topics[2][12:])
+			mevt.EventType = log.Topics[3][31];	// EventType (uint8) which we label as OrderAction
+			fmt.Printf("ORDEREVENT: Topic3=%v\n",hex.EncodeToString(log.Topics[3][:]))
 			err := trading_abi.Unpack(&mevt,"OrderEvent",log.Data)
 			if err != nil {
 				Fatalf("Event OrderEvent decode error: %v",err)
 			} else {
 				fmt.Printf("OrderEvent event found (block=%v) : \n",log.BlockNumber)
 				mevt.Dump()
-				a_universe,a_market := get_universe_and_market(log)
-				storage.insert_market_order_evt(a_universe,a_market,&mevt)
+				storage.insert_market_order_evt(&mevt)
 			}
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_oi_changed) {

@@ -8,6 +8,17 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 //	"github.com/ethereum/go-ethereum/accounts/abi"
 )
+type OrderType uint8
+const (
+	OrderTypeBid		OrderType = 0
+	OrderTypeAsk		OrderType = 1
+)
+type OrderAction uint8
+const(
+	OrderActionCreate	OrderAction = 0
+	OrderActionCancel	OrderAction = 1
+	OrderActionFill		OrderAction = 2
+)
 type TokenType uint8
 const(
 	ReputationToken		TokenType = 0

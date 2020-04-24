@@ -24,7 +24,7 @@ CREATE TABLE market (
 	extra_info			TEXT NOT NULL,				-- specific market metadata (JSON format)
 	outcomes			TEXT NOT NULL,				-- possible outcomes of the market
 	winning_payouts		TEXT DEFAULT '',
-	fin_timestmap		BIGINT DEFAULT 0,
+	fin_timestamp		BIGINT DEFAULT 0,
 	no_show_bond		TEXT NOT NULL,				-- $ penalty to the Creator for failing to emit report
 	cur_volume			TEXT DEFAULT ''
 );
@@ -37,10 +37,13 @@ CREATE TABLE sbalances (
 	balance				TEXT NOT NULL				-- balance of shares (bigint as string)
 );
 -- Market Order (BUY/SELL request made by the User via GUI)
-CREATE TABLE mktord (
+CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create/Cancel are temporary)
 	id					BIGSERIAL PRIMARY KEY,
 	market_aid			BIGSERIAL NOT NULL,
-	evt_type			SMALLINT NOT NULL,			-- enum:  0 => Create, 1 => Cancel, 2 => Fill
+	oaction				SMALLINT NOT NULL,			-- order action:  0=>Create, 1=>Cancel, 2=>Fill
+													-- Create: User posts a BID or ASK execpting to be filed
+													-- Fill: User buys or sells existing (Created) order
+													-- Cancel: User removes active order (BID/ASK)
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
 	creator_aid			BIGINT NOT NULL,			-- address of the creator
 	filler_aid			BIGINT NOT NULL,			-- address of the filler; source: AugurTrading.sol:24
@@ -55,6 +58,17 @@ CREATE TABLE mktord (
 	shares_escrowed		TEXT NOT NULL,
 	tokens_escrowed		TEXT NOT NULL,
 	trade_group			TEXT NOT NULL,			-- User defined group label to identify multiple trades
+	order_id			TEXT NOT NULL
+);
+CREATE TABLE oorders (	-- open orders table mirrors `mktord` table, it's used only for active orders
+	id					BIGSERIAL PRIMARY KEY,
+	market_aid			BIGSERIAL NOT NULL,
+	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
+	creator_aid			BIGINT NOT NULL,			-- address of the creator
+	price				BIGINT NOT NULL,
+	amount				BIGINT NOT NULL,
+	outcome				BIGINT NOT NULL,
+	time_stamp			BIGINT NOT NULL,
 	order_id			TEXT NOT NULL
 );
 -- Report, submitted by Market Creator

@@ -235,18 +235,26 @@ func (ss *SQLStorage) insert_market_oi_changed_evt(evt *MarketOIChangedEvt) {
 	}
 	fmt.Printf("Set market (id=%v) open interest to %v",market_aid,evt.MarketOI.String())
 }
-func (ss *SQLStorage) insert_market_order_evt(a_univ string,a_mkt string,evt *MktOrderEvt) {
+func (ss *SQLStorage) insert_market_order_evt(evt *MktOrderEvt) {
 
+	// depending on the order action (Create/Cancel/Fill) different table is used for storage
+	//		Create/Cancel order actions go to 'oorders' (Open Orders) table because these orders
+	//		do not alter market's open interest.
+	//		Fill order goes to 'mktord' table because the share has been created and now
+	//		open interest increased
 	var creator_aid int64;
-	fmt.Println("insert_market_order: a_universe=%v, a_market=%v",a_univ,a_mkt)
 	creator_aid = ss.lookup_or_create_address(evt.AddressData[0].String())
 	var filler_aid int64 = 0;
 	if len(evt.AddressData) > 1 {
 		filler_aid = ss.lookup_or_create_address(evt.AddressData[1].String())
 	}
-	universe_id := ss.lookup_universe_id(a_univ)
+	universe_id := ss.lookup_universe_id(evt.Universe.String())
 	_ = universe_id	// ToDo: add universe_id match condition (for market)
-	market_aid := ss.lookup_or_create_address(a_mkt)
+	market_aid := ss.lookup_address(evt.Market.String())
+
+	var oaction OrderAction = OrderAction(evt.EventType)
+	var otype OrderType = OrderType(evt.OrderType)
+	var order_id = hex.EncodeToString(evt.OrderId[:])
 	// uint256data legend
 	// 0:  price
 	// 1:  amount
@@ -270,56 +278,120 @@ func (ss *SQLStorage) insert_market_order_evt(a_univ string,a_mkt string,evt *Mk
 	tokens_escrowed := evt.Uint256Data[9].String()
 
 	var query string
-	query = `
-		INSERT INTO mktord(
-			market_aid,
-			evt_type,
-			otype,
-			creator_aid,
-			filler_aid,
-			price,
-			amount,
-			outcome,
-			token_refund,
-			shares_refund,
-			fees,
-			amount_filled,
-			time_stamp,
-			shares_escrowed,
-			tokens_escrowed,
-			trade_group,
-			order_id
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`
-	result,err := ss.db.Exec(query,
-			market_aid,
-			evt.EventType,
-			evt.OrderType,
-			creator_aid,
-			filler_aid,
-			price,
-			amount,
-			outcome,
-			token_refund,
-			shares_refund,
-			fees,
-			amount_filled,
-			time_stamp,
-			shares_escrowed,
-			tokens_escrowed,
-			hex.EncodeToString(evt.TradeGroupId[:]),
-			hex.EncodeToString(evt.OrderId[:]))
-	if err != nil {
-		Fatalf("DB error: can't insert into market table: %v",err)
-	}
-	rows_affected,err:=result.RowsAffected()
-	if err != nil {
-		Fatalf("DB error: %v",err)
-	}
-	if rows_affected > 0 {
-		return
-	} else {
-		Fatalf("DB error: couldn't insert into Market table. Rows affeced = 0")
-	}
+	fmt.Printf("OrderAction = %v, otype=%v, order_id=%v\n",oaction,otype,order_id)
+	switch oaction {
+		case OrderActionFill:
+			fmt.Println("Filling existing order %v",order_id)
+/*
+			// before we insert a settled order, we must remove it from OpenOrders
+			query = "DELETE FROM oorders WHERE" +
+						"market_aid = $1 AND " +
+						"oaction = $2 AND " +
+						"creator_aid = $3 " +
+						"outcome = $3 AND " +
+						"price = $4 AND " +
+						"amount = $4"
+			result,err := ss.db.Exec(query,market_aid
+			var null_id sql.NullInt64
+
+			err=row.Scan(&null_block_num);
+*/
+			query = `
+				INSERT INTO mktord(
+					market_aid,
+					oaction,
+					otype,
+					creator_aid,
+					filler_aid,
+					price,
+					amount,
+					outcome,
+					token_refund,
+					shares_refund,
+					fees,
+					amount_filled,
+					time_stamp,
+					shares_escrowed,
+					tokens_escrowed,
+					trade_group,
+					order_id
+				) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`
+			result,err := ss.db.Exec(query,
+					market_aid,
+					oaction,
+					otype,
+					creator_aid,
+					filler_aid,
+					price,
+					amount,
+					outcome,
+					token_refund,
+					shares_refund,
+					fees,
+					amount_filled,
+					time_stamp,
+					shares_escrowed,
+					tokens_escrowed,
+					hex.EncodeToString(evt.TradeGroupId[:]),
+					order_id)
+			if err != nil {
+				Fatalf("DB error: can't insert into market table: %v",err)
+			}
+			rows_affected,err:=result.RowsAffected()
+			if err != nil {
+				Fatalf("DB error: %v",err)
+			}
+			if rows_affected > 0 {
+				return
+			} else {
+				Fatalf("DB error: couldn't insert into Market table. Rows affeced = 0")
+			}
+		// end of case OrderActionFill
+		case OrderActionCreate:
+			fmt.Printf("creating open order: %v\n",order_id)
+			query = "INSERT INTO oorders(" +
+						"market_aid,otype,creator_aid,price,amount,outcome,time_stamp,order_id" +
+					") VALUES($1,$2,$3,$4,$5,$6,$7,$8)"
+			result,err := ss.db.Exec(query,
+					market_aid,
+					otype,
+					creator_aid,
+					price,
+					amount,
+					outcome,
+					time_stamp,
+					order_id)
+			if err != nil {
+				Fatalf("DB error: can't insert into open orders table: %v",err)
+			}
+			rows_affected,err:=result.RowsAffected()
+			if err != nil {
+				Fatalf("DB error: %v",err)
+			}
+			if rows_affected > 0 {
+				return
+			} else {
+				Fatalf("DB error: couldn't insert into Open Orders table. Rows affeced = 0")
+			}
+		// end of case OrderActionCreate
+		case OrderActionCancel:
+			fmt.Printf("deleting open order %v\n",order_id)
+			query = "DELETE FROM oorders WHERE order_id = $1"
+			result,err := ss.db.Exec(query,order_id)
+			if err != nil {
+				Fatalf("DB error: can't delete open order %v : %v",order_id,err)
+			}
+			rows_affected,err:=result.RowsAffected()
+			if err != nil {
+				Fatalf("DB error: %v",err)
+			}
+			if rows_affected > 0 {
+				return
+			} else {
+				Fatalf("DB error: delete of open order %v failed, rows affected = 0",order_id)
+			}
+		// end of case OrderActionCancel
+	} // end of switch order action
 }
 func (ss *SQLStorage) insert_market_finalized_evt(evt *MktFinalizedEvt) {
 

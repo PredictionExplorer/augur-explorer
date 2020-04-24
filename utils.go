@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"io"
-
+	"encoding/hex"
 )
 func check(e error) {
 	if e != nil {
@@ -62,7 +62,7 @@ func (evt *MktOrderEvt) Dump() { // dumps struct to stdout for debugging
 	fmt.Printf("\tMarket: %v\n",evt.Market.String())
 	fmt.Printf("\tEventType: %v\n",evt.EventType)
 	fmt.Printf("\tOrderType: %v\n",evt.OrderType)
-	fmt.Printf("\tOrderId: %v\n",evt.OrderId)
+	fmt.Printf("\tOrderId: %v\n",hex.EncodeToString(evt.OrderId[:]))
 	fmt.Printf("\tTradeGroupId: %v\n",evt.TradeGroupId)
 	fmt.Printf("\tAddressData: %v\n",addresses_to_str(&evt.AddressData,","))
 	uintdata := bigint_ptr_slice_to_str(&evt.Uint256Data,",")

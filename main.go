@@ -85,7 +85,7 @@ func main() {
 				fmt.Printf("block error: %v \n",err)
 			} else {
 				if num_transactions > 0 {
-					fmt.Printf("block: %v %v %v transactions\n",block.Hash().String(),block.Number(),num_transactions)
+					fmt.Printf("block: %v %v transactions\n",block.Number(),num_transactions)
 					for tnum:=0 ; tnum < int(num_transactions) ; tnum++ {
 						tx , err := client.TransactionInBlock(ctx,block.Hash(),uint(tnum))
 						if err != nil {
