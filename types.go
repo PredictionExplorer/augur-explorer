@@ -8,6 +8,15 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 //	"github.com/ethereum/go-ethereum/accounts/abi"
 )
+type TokenType uint8
+const(
+	ReputationToken		TokenType = 0
+	DisputeCrowdsourcer TokenType = 1
+	ParticipationToken	TokenType = 2
+)
+
+type BlockNumber int64	// -1 is used to mark 'block not set' for the database
+
 type EventSequencer struct {	// determines the order for contained events
 	unordered_list		[]*types.Log
 }
@@ -81,4 +90,45 @@ type MktVolumeChangedEvt struct {
 	Timestamp      *big.Int
 	Raw            types.Log // Blockchain specific contextual infos
 }
-
+type DisputeCrowdsourcerContributionEvt struct {
+	Universe            common.Address
+	Reporter            common.Address
+	Market              common.Address
+	DisputeCrowdsourcer common.Address
+	AmountStaked        *big.Int
+	Description         string
+	PayoutNumerators    []*big.Int
+	CurrentStake        *big.Int
+	StakeRemaining      *big.Int
+	DisputeRound        *big.Int
+	Timestamp           *big.Int
+	Raw                 types.Log // Blockchain specific contextual infos
+}
+type TokensTransferred struct {
+	Universe  common.Address
+	Token     common.Address
+	From      common.Address
+	To        common.Address
+	Value     *big.Int
+	TokenType uint8
+	Market    common.Address
+	Raw       types.Log // Blockchain specific contextual infos
+}
+type TokenBalanceChanged struct {
+	Universe  common.Address
+	Owner     common.Address
+	Token     common.Address
+	TokenType uint8
+	Market    common.Address
+	Balance   *big.Int
+	Outcome   *big.Int
+	Raw       types.Log // Blockchain specific contextual infos
+}
+type ShareTokenBalanceChanged struct {
+	Universe common.Address
+	Account  common.Address
+	Market   common.Address
+	Outcome  *big.Int
+	Balance  *big.Int
+	Raw      types.Log // Blockchain specific contextual infos
+}

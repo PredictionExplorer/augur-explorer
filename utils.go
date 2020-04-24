@@ -81,7 +81,7 @@ func (evt *MktFinalizedEvt) Dump() { // dumps struct to stdout for debugging
 }
 func (evt *InitialReportSubmittedEvt) Dump() {
 
-	fmt.Printf("InitialReportSubmittedEvt {\n")
+	fmt.Printf("InitialReportSubmitted {\n")
 	fmt.Printf("\tUniverse: %v",evt.Universe.String())
 	fmt.Printf("\tReporter: %v",evt.Reporter.String())
 	fmt.Printf("\tMarket: %v",evt.Market.String())
@@ -96,6 +96,23 @@ func (evt *InitialReportSubmittedEvt) Dump() {
 	fmt.Printf("\tTimestamp: %v",evt.Timestamp)
 	fmt.Printf("}\n")
 }
+func (evt *DisputeCrowdsourcerContributionEvt) Dump() {
+
+	fmt.Printf("DisputeCrowdsourcerContribution {\n")
+	fmt.Printf("\tUniverse: %v",evt.Universe.String())
+	fmt.Printf("\tReporter: %v",evt.Reporter.String())
+	fmt.Printf("\tMarket: %v",evt.Market.String())
+	fmt.Printf("\tDisputedCrowdsourcer: %v",evt.DisputeCrowdsourcer.String())
+	fmt.Printf("\tAmountStaked: %v",evt.AmountStaked)
+	fmt.Printf("\tDescription: %v",evt.Description)
+	payout_numerators := bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	fmt.Printf("\tPayoutNumerators: %v",payout_numerators)
+	fmt.Printf("\tCurrentStake: %v",evt.CurrentStake)
+	fmt.Printf("\tStakeRemaining: %v",evt.StakeRemaining)
+	fmt.Printf("\tDisputeRound %v",evt.DisputeRound)
+	fmt.Printf("\tTimestamp: %v",evt.Timestamp)
+	fmt.Printf("}\n")
+}
 func (evt *MktVolumeChangedEvt) Dump() { // dumps struct to stdout for debugging
 
 	fmt.Printf("MarketVolumeChanged {\n")
@@ -105,5 +122,38 @@ func (evt *MktVolumeChangedEvt) Dump() { // dumps struct to stdout for debugging
 	outcome_volumes := bigint_ptr_slice_to_str(&evt.OutcomeVolumes,",")
 	fmt.Printf("\tOutcomeVolumes: %v\n",outcome_volumes)
 	fmt.Printf("\tTimestamp: %v\n",evt.Timestamp)
+	fmt.Printf("}\n")
+}
+func (evt *TokensTransferred) Dump() {
+
+	fmt.Printf("TokensTransferred {\n")
+	fmt.Printf("\tUniverse: %v\n",evt.Universe.String())
+	fmt.Printf("\tToken: %v\n",evt.Token.String())
+	fmt.Printf("\tFrom: %v\n",evt.From.String())
+	fmt.Printf("\tTo: %v\n",evt.To.String())
+	fmt.Printf("\tValue: %v\n",evt.Value.String())
+	fmt.Printf("\tTT:TokenType: %v\n",evt.TokenType)
+	fmt.Printf("\tMarket: %v\n",evt.Market.String())
+	fmt.Printf("}\n")
+}
+func (evt *TokenBalanceChanged) Dump() {
+
+	fmt.Printf("TokensBalanceChanged {\n")
+	fmt.Printf("\tUniverse: %v\n",evt.Universe.String())
+	fmt.Printf("\tOwner: %v\n",evt.Owner.String())
+	fmt.Printf("\tToken: %v\n",evt.Token.String())
+	fmt.Printf("\tTBC:TokenType: %v\n",evt.TokenType)
+	fmt.Printf("\tMarket: %v\n",evt.Market.String())
+	fmt.Printf("\tBalance: %v\n",evt.Balance.String())
+	fmt.Printf("\tOutcome: %v\n",evt.Outcome.String())
+	fmt.Printf("}\n")
+}
+func (evt *ShareTokenBalanceChanged) Dump() {
+	fmt.Printf("ShareTokensBalanceChanged {\n")
+	fmt.Printf("\tUniverse: %v\n",evt.Universe.String())
+	fmt.Printf("\tAccount: %v\n",evt.Account.String())
+	fmt.Printf("\tMarket: %v\n",evt.Market.String())
+	fmt.Printf("\tOutcome: %v\n",evt.Outcome.String())
+	fmt.Printf("\tBalance: %v\n",evt.Balance.String())
 	fmt.Printf("}\n")
 }

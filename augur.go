@@ -15,13 +15,15 @@ func (sequencer *EventSequencer) append_event(new_log *types.Log) {
 }
 func (sequencer *EventSequencer) get_ordered_event_list() []*types.Log {
 	// determines the correct event sequence for different event combinations
-
+	return sequencer.unordered_list
+/* temporarily disabled
 	// at this moment we just reverse the events. more logic will follow later if needed
 	output := make([]*types.Log,0,8)
 	for i := len(sequencer.unordered_list) - 1; i >= 0; i-- {
 		output = append(output,sequencer.unordered_list[i])
 	}
 	return output
+*/
 }
 func load_abi(fname string) *abi.ABI {
 
@@ -58,13 +60,52 @@ func process_event(log *types.Log) {
 	}
 	num_topics := len(log.Topics)
 	if num_topics > 0 {
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_tokens_transferred) {
+			var mevt TokensTransferred
+			mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
+			mevt.From= common.BytesToAddress(log.Topics[2][12:])	// extract From
+			mevt.To= common.BytesToAddress(log.Topics[3][12:])	// extract To
+			err := augur_abi.Unpack(&mevt,"TokensTransferred",log.Data)
+			if err != nil {
+				Fatalf("Event TokensTransferred decode error: %v",err)
+			} else {
+				fmt.Printf("TokensTransferred event found (block=%v) :",log.BlockNumber)
+				mevt.Dump()
+			}
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_token_balance_changed) {
+			var mevt TokenBalanceChanged
+			mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
+			mevt.Owner= common.BytesToAddress(log.Topics[2][12:])
+			err := augur_abi.Unpack(&mevt,"TokenBalanceChanged",log.Data)
+			if err != nil {
+				Fatalf("Event TokenBalanceChanged decode error: %v",err)
+			} else {
+				fmt.Printf("TokenBalanceChanged event found (block=%v) :",log.BlockNumber)
+				mevt.Dump()
+			}
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_share_token_balance_changed) {
+			var mevt ShareTokenBalanceChanged
+			mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
+			mevt.Account= common.BytesToAddress(log.Topics[2][12:])
+			mevt.Market = common.BytesToAddress(log.Topics[3][12:])
+			err := augur_abi.Unpack(&mevt,"ShareTokenBalanceChanged",log.Data)
+			if err != nil {
+				Fatalf("Event ShareTokenBalanceChanged decode error: %v",err)
+			} else {
+				fmt.Printf("ShareTokenBalanceChanged event found (block=%v) :",log.BlockNumber)
+				mevt.Dump()
+				storage.insert_share_balance_changed_evt(&mevt)
+			}
+		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_order) {
 			var mevt MktOrderEvt
 			err := trading_abi.Unpack(&mevt,"OrderEvent",log.Data)
 			if err != nil {
 				Fatalf("Event OrderEvent decode error: %v",err)
 			} else {
-				fmt.Printf("Block %v: OrderEvent event found\n",log.BlockNumber)
+				fmt.Printf("OrderEvent event found (block=%v) : \n",log.BlockNumber)
 				mevt.Dump()
 				a_universe,a_market := get_universe_and_market(log)
 				storage.insert_market_order_evt(a_universe,a_market,&mevt)
@@ -76,7 +117,7 @@ func process_event(log *types.Log) {
 			if err != nil {
 				Fatalf("Event decode error: %v",err)
 			} else {
-				fmt.Printf("Block %v: MarketOIChanged event found\n",log.BlockNumber)
+				fmt.Printf("MarketOIChanged event found (block=%v) : \n",log.BlockNumber)
 				mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
 				mevt.Market =common.BytesToAddress(log.Topics[2][12:])
 				mevt.Dump()
@@ -89,7 +130,7 @@ func process_event(log *types.Log) {
 			if err != nil {
 				Fatalf("Event MktFinalizedEvt decode error: %v\n",err)
 			} else {
-				fmt.Printf("Block %v: MarketFinalized event found\n",log.BlockNumber)
+				fmt.Printf("MarketFinalized event found (block=%v) : \n",log.BlockNumber)
 				mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 				mevt.Market = common.BytesToAddress(log.Topics[2][12:])	// extract universe addr
 				mevt.Dump()
@@ -102,12 +143,26 @@ func process_event(log *types.Log) {
 			if err != nil {
 				Fatalf("Event InitialReportSubmittedEvt decode error: %v\n",err)
 			} else {
-				fmt.Printf("Block %v: InitialReportSubmitted event found\n",log.BlockNumber)
+				fmt.Printf("InitialReportSubmitted event found (block=%v) : \n",log.BlockNumber)
 				mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
-				mevt.InitialReporter= common.BytesToAddress(log.Topics[2][12:])
+				mevt.Reporter= common.BytesToAddress(log.Topics[2][12:])
 				mevt.Market = common.BytesToAddress(log.Topics[3][12:])
 				mevt.Dump()
 				storage.insert_initial_report_evt(&mevt)
+			}
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_crowd_contrib) {
+			var mevt DisputeCrowdsourcerContributionEvt
+			err := augur_abi.Unpack(&mevt,"DisputeCrowdsourcerContribution",log.Data)
+			if err != nil {
+				Fatalf("Event DisputeCrowdsourcerContribution decode error: %v\n",err)
+			} else {
+				fmt.Printf("DisputeCrowdsourcerContribution event found (block %v) : \n",log.BlockNumber)
+				mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
+				mevt.Reporter= common.BytesToAddress(log.Topics[2][12:])
+				mevt.Market = common.BytesToAddress(log.Topics[3][12:])
+				mevt.Dump()
+				storage.insert_dispute_crowd_contrib(&mevt)
 			}
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_volume_changed) {
@@ -116,7 +171,7 @@ func process_event(log *types.Log) {
 			if err != nil {
 				Fatalf("Event MarketVolumeChanged decode error: %v\n",err)
 			} else {
-				fmt.Printf("Block %v: MarketVolumeChanged event found\n",log.BlockNumber)
+				fmt.Printf("MarketVolumeChanged event found (block=%v): \n",log.BlockNumber)
 				mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
 				mevt.Market = common.BytesToAddress(log.Topics[2][12:])
 				mevt.Dump()
@@ -131,7 +186,7 @@ func process_event(log *types.Log) {
 			if err != nil {
 				Fatalf("Event MarketCreated decode error: %v",err)
 			} else {
-				fmt.Printf("Block %v: MarketCreated event found\n",log.BlockNumber)
+				fmt.Printf("MarketCreated event found (block=%v)\n",log.BlockNumber)
 				mevt.Dump()
 				storage.insert_market_created_evt(&mevt)
 			}

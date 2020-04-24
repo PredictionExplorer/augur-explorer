@@ -30,15 +30,15 @@ CREATE TABLE market (
 );
 -- Balances of Share tokens per Market (accumulated data, one record per account)
 CREATE TABLE sbalances (
-	sb_id				BIGSERIAL PRIMARY KEY,
-	address_id			BIGINT NOT NULL,			-- address id of the User(holder of the shares)
+	id					BIGSERIAL PRIMARY KEY,
+	account_aid			BIGINT NOT NULL,			-- address id of the User(holder of the shares)
 	market_aid			BIGINT NOT NULL,			-- market id of the Market these shares blong
 	outcome				TEXT NOT NULL,				-- market outcome
 	balance				TEXT NOT NULL				-- balance of shares (bigint as string)
 );
 -- Market Order (BUY/SELL request made by the User via GUI)
 CREATE TABLE mktord (
-	mktord_id			BIGSERIAL PRIMARY KEY,
+	id					BIGSERIAL PRIMARY KEY,
 	market_aid			BIGSERIAL NOT NULL,
 	evt_type			SMALLINT NOT NULL,			-- enum:  0 => Create, 1 => Cancel, 2 => Fill
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
@@ -57,25 +57,34 @@ CREATE TABLE mktord (
 	trade_group			TEXT NOT NULL,			-- User defined group label to identify multiple trades
 	order_id			TEXT NOT NULL
 );
--- Initial Report, submitted by Market Creator
-CREATE TABLE ireport (
-	ir_id				BIGSERIAL PRIMARY KEY,
+-- Report, submitted by Market Creator
+CREATE TABLE report (
+	id					BIGSERIAL PRIMARY KEY,
 	market_aid			BIGINT NOT NULL,
 	reporter_aid		BIGINT NOT NULL,
-	ini_reporter_aid	BIGINT NOT NULL,
-	is_designated		BOOLEAN NOT NULL,
+	ini_reporter_aid	BIGINT DEFAULT 0,
+	disputed_aid		BIGINT DEFAULT 0,
+	dispute_round		BIGINT DEFAULT 1,
+	is_initial			BOOLEAN DEFAULT false,
+	is_designated		BOOLEAN DEFAULT false,
 	amount_staked		TEXT NOT NULL,
 	pnumerators			TEXT NOT NULL,		-- payout numerators
 	description			TEXT DEFAULT '',
+	current_stake		TEXT DEFAULT '',
+	stake_remaining		TEXT DEFAULT '',
 	next_win_start		BIGINT,
 	next_win_end		BIGINT,
 	rpt_timestamp		BIGINT
 );
 -- Volume
 CREATE TABLE volume (
-	vol_id				BIGSERIAL PRIMARY KEY,
+	id					BIGSERIAL PRIMARY KEY,
 	market_aid			BIGINT NOT NULL,
 	volume				TEXT NOT NULL,
 	outcome_vols		TEXT NOT NULL,
 	ins_timestamp		BIGINT NOT NULL
-)
+);
+CREATE TABLE last_block (
+	block_num			BIGINT	NOT NULL	-- last block processed by the ETL
+);
+

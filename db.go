@@ -54,6 +54,49 @@ func connect_to_storage() *SQLStorage {
 	ss.db = db
 	return ss
 }
+func (ss *SQLStorage) get_last_block_num() (BlockNumber,bool) {
+
+	var query string
+	query="SELECT block_num FROM last_block LIMIT 1";
+	row := ss.db.QueryRow(query)
+	var null_block_num sql.NullInt64
+	var err error
+	err=row.Scan(&null_block_num);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return -1,false
+		} else {
+			Fatalf("Error in get_last_block_num(): %v",err)
+		}
+	}
+	if (null_block_num.Valid) {
+		return BlockNumber(null_block_num.Int64),true
+	} else {
+		return -1,false
+	}
+}
+func (ss *SQLStorage) set_last_block_num(block_num BlockNumber) {
+
+	bnum := int64(block_num)
+	var query string = "UPDATE last_block SET block_num=$1 WHERE block_num < $1"
+	res,err:=ss.db.Exec(query,bnum)
+	if (err!=nil) {
+		Fatalf("set_last_block_num() failed: %v",err);
+	}
+	affected_rows,err:=res.RowsAffected()
+	if err!=nil {
+		Fatalf("Error getting RowsAffected in set_last_block(): %v",err)
+	}
+	if affected_rows>0 {
+		// break
+	} else {
+		query = "INSERT INTO last_block VALUES($1)"
+		_,err := ss.db.Exec(query,bnum)
+		if (err!=nil) {
+			Fatalf("set_last_block_num() failed on INSERT: %v",err);
+		}
+	}
+}
 func (ss *SQLStorage) lookup_universe_id(addr string) int64 {
 
 	var query string
@@ -318,10 +361,11 @@ func (ss *SQLStorage) insert_initial_report_evt(evt *InitialReportSubmittedEvt) 
 
 	var query string
 	query = `
-		INSERT INTO ireport (
+		INSERT INTO report (
 			market_aid,
 			reporter_aid,
 			ini_reporter_aid,
+			is_initial,
 			is_designated,
 			amount_staked,
 			pnumerators,
@@ -329,11 +373,12 @@ func (ss *SQLStorage) insert_initial_report_evt(evt *InitialReportSubmittedEvt) 
 			next_win_start,
 			next_win_end,
 			rpt_timestamp
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`
 	result,err := ss.db.Exec(query,
 			market_aid,
 			reporter_aid,
 			ini_reporter_aid,
+			true,
 			evt.IsDesignatedReporter,
 			amount_staked,
 			payout_numerators,
@@ -403,5 +448,103 @@ func (ss *SQLStorage) insert_market_volume_changed_evt(evt *MktVolumeChangedEvt)
 		return
 	} else {
 		Fatalf("DB error: couldn't update 'market' table. Rows affeced = 0")
+	}
+}
+func (ss *SQLStorage) insert_dispute_crowd_contrib(evt *DisputeCrowdsourcerContributionEvt) {
+
+	_= ss.lookup_universe_id(evt.Universe.String())
+	market_aid := ss.lookup_address(evt.Market.String())
+	reporter_aid := ss.lookup_or_create_address(evt.Reporter.String())
+	disputed_aid := ss.lookup_or_create_address(evt.DisputeCrowdsourcer.String())
+
+	amount_staked := evt.AmountStaked.Int64()
+	payout_numerators := bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	cur_stake := evt.CurrentStake.Int64()
+	stake_remaining := evt.StakeRemaining.Int64()
+	dispute_round := evt.DisputeRound.Int64()
+	rpt_timestamp := evt.Timestamp.Int64()
+
+	var query string
+	query = `
+		INSERT INTO report (
+			market_aid,
+			reporter_aid,
+			disputed_aid,
+			dispute_round,
+			amount_staked,
+			description,
+			pnumerators,
+			current_stake,
+			stake_remaining,
+			rpt_timestamp
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`
+	result,err := ss.db.Exec(query,
+			market_aid,
+			reporter_aid,
+			disputed_aid,
+			dispute_round,
+			amount_staked,
+			evt.Description,
+			payout_numerators,
+			cur_stake,
+			stake_remaining,
+			rpt_timestamp)
+	if err != nil {
+		Fatalf("DB error: can't insert into market table: %v",err)
+	}
+	rows_affected,err:=result.RowsAffected()
+	if err != nil {
+		Fatalf("DB error: %v",err)
+	}
+	if rows_affected > 0 {
+		return
+	} else {
+		Fatalf("DB error: couldn't insert into InitialReport table. Rows affeced = 0")
+	}
+}
+func (ss *SQLStorage) insert_share_balance_changed_evt(evt *ShareTokenBalanceChanged) {
+
+	_= ss.lookup_universe_id(evt.Universe.String())
+	market_aid := ss.lookup_address(evt.Market.String())
+	account_aid := ss.lookup_or_create_address(evt.Account.String())
+
+	outcome := evt.Outcome.String()
+	balance := evt.Balance.String()
+
+	var query string
+
+	query = "UPDATE sbalances SET outcome = $3, balance = $4" +
+				"WHERE " +
+					"market_aid = $1 AND " +
+					"account_aid = $2"
+	result,err := ss.db.Exec(query,	market_aid,account_aid,outcome,balance)
+	if err != nil {
+		Fatalf("DB error: can't update 'sbalances' for account %v, market %v : %v",
+					evt.Account.String(),evt.Market.String(),err)
+	}
+	rows_affected,err:=result.RowsAffected()
+	if err != nil {
+		Fatalf("DB error: %v",err)
+	}
+	fmt.Println("No error, rows affected = %v",rows_affected)
+	if rows_affected > 0 {
+		//break
+	} else {
+		fmt.Println("Insert to sbalances");
+		query = "INSERT INTO sbalances (account_aid,market_aid,outcome,balance)" +
+				"VALUES($1,$2,$3,$4)"
+		result,err := ss.db.Exec(query,account_aid,market_aid,outcome,balance)
+		if err != nil {
+			Fatalf("DB error: can't insert into market table: %v",err)
+		}
+		rows_affected,err:=result.RowsAffected()
+		if err != nil {
+			Fatalf("DB error: %v",err)
+		}
+		if rows_affected > 0 {
+			return
+		} else {
+			Fatalf("DB error: couldn't insert into 'sbalances' table. Rows affeced = 0")
+		}
 	}
 }
