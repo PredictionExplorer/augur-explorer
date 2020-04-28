@@ -143,3 +143,49 @@ type ShareTokenBalanceChanged struct {
 	Balance  *big.Int
 	Raw      types.Log // Blockchain specific contextual infos
 }
+type CancelZeroXOrder struct {
+	Universe  common.Address
+	Market    common.Address
+	Account   common.Address
+	Outcome   *big.Int
+	Price     *big.Int
+	Amount    *big.Int
+	OrderType uint8
+	OrderHash [32]byte
+	Raw       types.Log // Blockchain specific contextual infos
+}
+type TransferBatch struct {
+	Operator common.Address
+	From     common.Address
+	To       common.Address
+	Ids      []*big.Int
+	Values   []*big.Int
+	Raw      types.Log // Blockchain specific contextual infos
+}
+type TransferSingle struct {
+	Operator common.Address
+	From     common.Address
+	To       common.Address
+	Id       *big.Int
+	Value    *big.Int
+	Raw      types.Log // Blockchain specific contextual infos
+}
+type ProfitLossChanged struct {
+	Universe       common.Address
+	Market         common.Address
+	Account        common.Address
+	Outcome        *big.Int
+	NetPosition    *big.Int
+	AvgPrice       *big.Int
+	RealizedProfit *big.Int
+	FrozenFunds    *big.Int
+	RealizedCost   *big.Int
+	Timestamp      *big.Int
+	Raw            types.Log // Blockchain specific contextual infos
+}
+type Transfer struct {
+	From  common.Address
+	To    common.Address
+	Value *big.Int
+	Raw   types.Log // Blockchain specific contextual infos
+}

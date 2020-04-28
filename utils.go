@@ -157,3 +157,56 @@ func (evt *ShareTokenBalanceChanged) Dump() {
 	fmt.Printf("\tBalance: %v\n",evt.Balance.String())
 	fmt.Printf("}\n")
 }
+func (evt *CancelZeroXOrder) Dump() {
+	fmt.Printf("CancelZeroXOrder {\n")
+	fmt.Printf("\tUniverse: %v\n",evt.Universe.String())
+	fmt.Printf("\tMarket: %v\n",evt.Market.String())
+	fmt.Printf("\tAccount: %v\n",evt.Account.String())
+	fmt.Printf("\tOutcome: %v\n",evt.Outcome.String())
+	fmt.Printf("\tPrice: %v\n",evt.Price.String())
+	fmt.Printf("\tAmount: %v\n",evt.Amount.String())
+	fmt.Printf("\tOrderType: %v\n",evt.OrderType)
+	fmt.Printf("\tOrderHash: %v\n",hex.EncodeToString(evt.OrderHash[:]))
+	fmt.Printf("\t\n")
+}
+func (evt *TransferBatch) Dump() {
+	fmt.Printf("TransferBatch {\n")
+	fmt.Printf("\tOperator: %v\n",evt.Operator.String())
+	fmt.Printf("\tFrom: %v\n",evt.From.String())
+	fmt.Printf("\tTo: %v\n",evt.To.String())
+	ids := bigint_ptr_slice_to_str(&evt.Ids,",")
+	fmt.Printf("\tIds: %v\n",ids)
+	values := bigint_ptr_slice_to_str(&evt.Values,",")
+	fmt.Printf("\tValues: %v\n",values)
+	fmt.Printf("}\n")
+}
+func (evt *TransferSingle) Dump() {
+	fmt.Printf("TransferSingle {\n")
+	fmt.Printf("\tOperator: %v\n",evt.Operator.String())
+	fmt.Printf("\tFrom: %v\n",evt.From.String())
+	fmt.Printf("\tTo: %v\n",evt.To.String())
+	fmt.Printf("\tId: %v\n",evt.Id.String())
+	fmt.Printf("\tValue: %v\n",evt.Value.String())
+	fmt.Printf("}\n")
+}
+func (evt *ProfitLossChanged) Dump() {
+	fmt.Printf("ProfitLossChanged {\n")
+	fmt.Printf("\tUniverse: %v\n",evt.Universe.String())
+	fmt.Printf("\tMarket: %v\n",evt.Market.String())
+	fmt.Printf("\tAccount: %v\n",evt.Account.String())
+	fmt.Printf("\tOutcome: %v\n",evt.Outcome.String())
+	fmt.Printf("\tNetPosition: %v\n",evt.NetPosition.String())
+	fmt.Printf("\tAvgPrice: %v\n",evt.AvgPrice.String())
+	fmt.Printf("\tRealizedProfit: %v\n",evt.RealizedProfit.String())
+	fmt.Printf("\tFrozenFunds: %v\n",evt.FrozenFunds.String())
+	fmt.Printf("\tRealizedCost: %v\n",evt.RealizedCost.String())
+	fmt.Printf("\tTimestamp: %v\n",evt.Timestamp.String())
+	fmt.Printf("}\n")
+}
+func (evt *Transfer) Dump() {
+	fmt.Printf("Transfer {\n")
+	fmt.Printf("\tFrom: %v\n",evt.From.String())
+	fmt.Printf("\tTo: %v\n",evt.To.String())
+	fmt.Printf("\tValue: %v\n",evt.Value.String())
+	fmt.Printf("}")
+}

@@ -235,7 +235,7 @@ func (ss *SQLStorage) insert_market_oi_changed_evt(evt *MarketOIChangedEvt) {
 	}
 	fmt.Printf("Set market (id=%v) open interest to %v",market_aid,evt.MarketOI.String())
 }
-func (ss *SQLStorage) insert_market_order_evt(evt *MktOrderEvt) {
+func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber, evt *MktOrderEvt) {
 
 	// depending on the order action (Create/Cancel/Fill) different table is used for storage
 	//		Create/Cancel order actions go to 'oorders' (Open Orders) table because these orders
@@ -281,7 +281,7 @@ func (ss *SQLStorage) insert_market_order_evt(evt *MktOrderEvt) {
 	fmt.Printf("OrderAction = %v, otype=%v, order_id=%v\n",oaction,otype,order_id)
 	switch oaction {
 		case OrderActionFill:
-			fmt.Println("Filling existing order %v",order_id)
+			fmt.Printf("Filling existing order %v\n",order_id)
 /*
 			// before we insert a settled order, we must remove it from OpenOrders
 			query = "DELETE FROM oorders WHERE" +
@@ -299,6 +299,7 @@ func (ss *SQLStorage) insert_market_order_evt(evt *MktOrderEvt) {
 			query = `
 				INSERT INTO mktord(
 					market_aid,
+					block_num,
 					oaction,
 					otype,
 					creator_aid,
@@ -315,9 +316,10 @@ func (ss *SQLStorage) insert_market_order_evt(evt *MktOrderEvt) {
 					tokens_escrowed,
 					trade_group,
 					order_id
-				) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`
+				) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`
 			result,err := ss.db.Exec(query,
 					market_aid,
+					block_num,
 					oaction,
 					otype,
 					creator_aid,
@@ -393,6 +395,35 @@ func (ss *SQLStorage) insert_market_order_evt(evt *MktOrderEvt) {
 		// end of case OrderActionCancel
 	} // end of switch order action
 }
+func (ss *SQLStorage) insert_cancel_0x_order_evt(evt *CancelZeroXOrder) {
+
+/*
+	Note:This code is currently disabled because we don't have data feed from
+		0x exchange for 'Create' type orders
+
+	universe_id := ss.lookup_universe_id(evt.Universe.String())
+	_ = universe_id	// ToDo: add universe_id match condition (for market)
+	market_aid := ss.lookup_address(evt.Market.String())
+	var order_id = hex.EncodeToString(evt.OrderHash[:])
+
+//	var oaction OrderAction = OrderActionCancel
+//	var otype OrderType = OrderType(evt.OrderType)
+//	price := evt.Price.Int64()
+//	amount := evt.Amount.Int64()
+//	outcome := evt.Outcome.Int64()
+	var query string
+	query = "DELETE FROM oorders WHERE order_id = $1"
+	result,err := ss.db.Exec(query,market_aid)
+	if err!=nil {
+		Fatalf("DB error: couldn't delete open order with order_id = %v",order_id)
+	}
+	rows_affected,err:=result.RowsAffected()
+	if rows_affected == 0  {
+		Fatalf("DB error: couldn't delete open order with order_id = %v (not found)",order_id)
+	}
+*/
+}
+
 func (ss *SQLStorage) insert_market_finalized_evt(evt *MktFinalizedEvt) {
 
 	universe_id := ss.lookup_universe_id(evt.Universe.String())
@@ -585,10 +616,11 @@ func (ss *SQLStorage) insert_share_balance_changed_evt(evt *ShareTokenBalanceCha
 
 	var query string
 
-	query = "UPDATE sbalances SET outcome = $3, balance = $4" +
+	query = "UPDATE sbalances SET balance = $4" +
 				"WHERE " +
 					"market_aid = $1 AND " +
-					"account_aid = $2"
+					"account_aid = $2 AND " +
+					"outcome = $3"
 	result,err := ss.db.Exec(query,	market_aid,account_aid,outcome,balance)
 	if err != nil {
 		Fatalf("DB error: can't update 'sbalances' for account %v, market %v : %v",
@@ -598,11 +630,12 @@ func (ss *SQLStorage) insert_share_balance_changed_evt(evt *ShareTokenBalanceCha
 	if err != nil {
 		Fatalf("DB error: %v",err)
 	}
-	fmt.Println("No error, rows affected = %v",rows_affected)
+	fmt.Printf("No error, rows affected = %v\n",rows_affected)
 	if rows_affected > 0 {
+		fmt.Printf("Update to sbalances %v , outcome %v holds %v \n",evt.Account.String(),outcome,balance);
 		//break
 	} else {
-		fmt.Println("Insert to sbalances");
+		fmt.Printf("Insert to sbalances\n");
 		query = "INSERT INTO sbalances (account_aid,market_aid,outcome,balance)" +
 				"VALUES($1,$2,$3,$4)"
 		result,err := ss.db.Exec(query,account_aid,market_aid,outcome,balance)

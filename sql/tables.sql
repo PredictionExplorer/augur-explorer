@@ -40,6 +40,7 @@ CREATE TABLE sbalances (
 CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create/Cancel are temporary)
 	id					BIGSERIAL PRIMARY KEY,
 	market_aid			BIGSERIAL NOT NULL,
+	block_num			BIGINT NOT NULL,
 	oaction				SMALLINT NOT NULL,			-- order action:  0=>Create, 1=>Cancel, 2=>Fill
 													-- Create: User posts a BID or ASK execpting to be filed
 													-- Fill: User buys or sells existing (Created) order

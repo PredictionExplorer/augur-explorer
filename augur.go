@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"bytes"
 	"io/ioutil"
-	"encoding/hex"
+	_ "encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -45,6 +45,9 @@ func augur_init() {
 
 	// Load AugurTrading contract
 	trading_abi = load_abi("./abis/trading-abis/AugurTrading.abi")
+
+	zerox_abi = load_abi("./abis/trading-abis/ZeroXTrade.abi")
+	cash_abi = load_abi("./abis/trading-abis/Cash.abi")
 }
 /* Discontinued
 func get_universe_and_market(log *types.Log) (string,string) {
@@ -63,6 +66,57 @@ func process_event(log *types.Log) {
 	}
 	num_topics := len(log.Topics)
 	if num_topics > 0 {
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_transfer) {
+			var mevt Transfer
+			mevt.From= common.BytesToAddress(log.Topics[1][12:])
+			mevt.To= common.BytesToAddress(log.Topics[2][12:])
+			err := cash_abi.Unpack(&mevt,"Transfer",log.Data)
+			if err != nil {
+				Fatalf("Event ERC20_Transfer for Cash decode error: %v",err)
+			} else {
+				fmt.Printf("ERC20_Transfer event found (block=%v) :\n",log.BlockNumber)
+				mevt.Dump()
+			}
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_profit_loss_changed) {
+			var mevt ProfitLossChanged
+			mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
+			mevt.Market = common.BytesToAddress(log.Topics[2][12:])
+			mevt.Account= common.BytesToAddress(log.Topics[3][12:])
+			err := trading_abi.Unpack(&mevt,"ProfitLossChanged",log.Data)
+			if err != nil {
+				Fatalf("Event ProfitLossChanged decode error: %v",err)
+			} else {
+				fmt.Printf("ProfitLossChanged event found (block=%v) :\n",log.BlockNumber)
+				mevt.Dump()
+			}
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_transfer_single) {
+			var mevt TransferSingle 
+			mevt.Operator= common.BytesToAddress(log.Topics[1][12:])
+			mevt.From= common.BytesToAddress(log.Topics[2][12:])
+			mevt.To= common.BytesToAddress(log.Topics[3][12:])
+			err := zerox_abi.Unpack(&mevt,"TransferSingle",log.Data)
+			if err != nil {
+				Fatalf("Event TransferSingle decode error: %v",err)
+			} else {
+				fmt.Printf("TransferSingle event found (block=%v) :\n",log.BlockNumber)
+				mevt.Dump()
+			}
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_transfer_batch) {
+			var mevt TransferBatch
+			mevt.Operator= common.BytesToAddress(log.Topics[1][12:])
+			mevt.From= common.BytesToAddress(log.Topics[2][12:])
+			mevt.To= common.BytesToAddress(log.Topics[3][12:])
+			err := zerox_abi.Unpack(&mevt,"TransferBatch",log.Data)
+			if err != nil {
+				Fatalf("Event TransferBatch decode error: %v",err)
+			} else {
+				fmt.Printf("TransferBatch event found (block=%v) :\n",log.BlockNumber)
+				mevt.Dump()
+			}
+		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_tokens_transferred) {
 			var mevt TokensTransferred
 			mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
@@ -72,7 +126,7 @@ func process_event(log *types.Log) {
 			if err != nil {
 				Fatalf("Event TokensTransferred decode error: %v",err)
 			} else {
-				fmt.Printf("TokensTransferred event found (block=%v) :",log.BlockNumber)
+				fmt.Printf("TokensTransferred event found (block=%v) :\n",log.BlockNumber)
 				mevt.Dump()
 			}
 		}
@@ -84,7 +138,7 @@ func process_event(log *types.Log) {
 			if err != nil {
 				Fatalf("Event TokenBalanceChanged decode error: %v",err)
 			} else {
-				fmt.Printf("TokenBalanceChanged event found (block=%v) :",log.BlockNumber)
+				fmt.Printf("TokenBalanceChanged event found (block=%v) :\n",log.BlockNumber)
 				mevt.Dump()
 			}
 		}
@@ -95,9 +149,9 @@ func process_event(log *types.Log) {
 			mevt.Market = common.BytesToAddress(log.Topics[3][12:])
 			err := augur_abi.Unpack(&mevt,"ShareTokenBalanceChanged",log.Data)
 			if err != nil {
-				Fatalf("Event ShareTokenBalanceChanged decode error: %v",err)
+				Fatalf("Event ShareTokenBalanceChanged decode error: %v\n",err)
 			} else {
-				fmt.Printf("ShareTokenBalanceChanged event found (block=%v) :",log.BlockNumber)
+				fmt.Printf("ShareTokenBalanceChanged event found (block=%v) :\n",log.BlockNumber)
 				mevt.Dump()
 				storage.insert_share_balance_changed_evt(&mevt)
 			}
@@ -107,14 +161,27 @@ func process_event(log *types.Log) {
 			mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 			mevt.Market = common.BytesToAddress(log.Topics[2][12:])
 			mevt.EventType = log.Topics[3][31];	// EventType (uint8) which we label as OrderAction
-			fmt.Printf("ORDEREVENT: Topic3=%v\n",hex.EncodeToString(log.Topics[3][:]))
 			err := trading_abi.Unpack(&mevt,"OrderEvent",log.Data)
 			if err != nil {
 				Fatalf("Event OrderEvent decode error: %v",err)
 			} else {
 				fmt.Printf("OrderEvent event found (block=%v) : \n",log.BlockNumber)
 				mevt.Dump()
-				storage.insert_market_order_evt(&mevt)
+				storage.insert_market_order_evt(BlockNumber(log.BlockNumber),&mevt)
+			}
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cancel_0x_order) {
+			var mevt CancelZeroXOrder 
+			mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
+			mevt.Market = common.BytesToAddress(log.Topics[2][12:])
+			mevt.Account = common.BytesToAddress(log.Topics[3][12:]);
+			err := trading_abi.Unpack(&mevt,"CancelZeroXOrder",log.Data)
+			if err != nil {
+				Fatalf("Event CancelZeroXOrder decode error: %v",err)
+			} else {
+				fmt.Printf("CancelZeroXOrder event found (block=%v) : \n",log.BlockNumber)
+				mevt.Dump()
+				storage.insert_cancel_0x_order_evt(&mevt)
 			}
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_oi_changed) {

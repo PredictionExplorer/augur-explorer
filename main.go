@@ -24,6 +24,11 @@ const (
 	TOKENS_TRANSFERRED = "3c67396e9c55d2fc8ad68875fc5beca1d96ad2a2f23b210ccc1d986551ab6fdf"
 	TOKEN_BALANCE_CHANGED = "63fd58f559b73fc4da5511c341ec8a7b31c5c48538ef83c6077712b6edf5f7cb"
 	SHARE_TOKEN_BALANCE_CHANGED = "350ea32dc29530b9557420816d743c436f8397086f98c96292138edd69e01cb3"
+	CANCEL_0X_ORDER = "be80e5687d7095071b7c4e7a56e0e67bfb9e8a39352f1690fdf74c1ee935c75e"
+	TRANSFER_BATCH = "4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb"
+	TRANSFER_SINGLE = "c3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62"
+	PROFIT_LOSS_CHANGED = "59543b7f82735782aa5bdb97dff40ff288d4548a5865da513b40e4088e2ee77e"
+	ERC20_TRANSFER = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 )
 var (
 	// these evt_ variables are here for speed to avoid calculation of Keccak256
@@ -38,10 +43,17 @@ var (
 	evt_tokens_transferred,_ = hex.DecodeString(TOKENS_TRANSFERRED)
 	evt_token_balance_changed,_ = hex.DecodeString(TOKEN_BALANCE_CHANGED)
 	evt_share_token_balance_changed,_ = hex.DecodeString(SHARE_TOKEN_BALANCE_CHANGED)
+	evt_cancel_0x_order,_ = hex.DecodeString(CANCEL_0X_ORDER)
+	evt_transfer_batch,_ = hex.DecodeString(TRANSFER_BATCH)
+	evt_transfer_single,_ = hex.DecodeString(TRANSFER_SINGLE)
+	evt_profit_loss_changed,_ = hex.DecodeString(PROFIT_LOSS_CHANGED)
+	evt_erc20_transfer,_ = hex.DecodeString(ERC20_TRANSFER)
 
 	storage *SQLStorage
 	augur_abi *abi.ABI
 	trading_abi *abi.ABI
+	zerox_abi *abi.ABI
+	cash_abi *abi.ABI
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 )
 func main() {
@@ -66,7 +78,7 @@ func main() {
 	if err != nil {
 		log.Fatal("oops:", err)
 	}
-	log.Println("latest block:", latestBlock.Number())
+	log.Printf("latest block: %v\n", latestBlock.Number())
 
 	bnum,exists := storage.get_last_block_num()
 	if !exists {
@@ -74,7 +86,7 @@ func main() {
 	} else {
 		bnum = bnum + 1
 	}
-	fmt.Println("Starting data load from block %v",bnum)
+	fmt.Printf("Starting data load from block %v\n",bnum)
 	var bnum_high BlockNumber = BlockNumber(latestBlock.Number().Uint64())
 	for ; bnum<bnum_high; bnum++ {
 		big_bnum:=big.NewInt(int64(bnum))
@@ -91,7 +103,13 @@ func main() {
 						if err != nil {
 							fmt.Printf("Error: %v",err)
 						} else {
+							to:=""
+							if tx.To() != nil {
+								to = tx.To().String()
+							}
 							fmt.Printf("\ttx: %v\n",tx.Hash().String())
+							fmt.Printf("\t to=%v for $%v (%v bytes data)\n",
+											to,tx.Value().String(),len(tx.Data()))
 							rcpt,err := client.TransactionReceipt(ctx,tx.Hash())
 							if err != nil {
 								fmt.Printf("Error: %v",err)
@@ -108,7 +126,7 @@ func main() {
 								num_logs = len(ordered_list)
 								for i:=0 ; i < num_logs ; i++ {
 									fmt.Printf(
-										"\t\t\tprocessing log with sig %v\n\t\t\t\t\t\t for contract %v\n",
+										"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",
 										ordered_list[i].Topics[0].String(),
 										ordered_list[i].Address.String())
 									process_event(ordered_list[i])
@@ -116,6 +134,8 @@ func main() {
 							}
 						}
 					}
+				} else {
+					fmt.Printf("block: %v EMPTY\n",block.Number())
 				}
 			}
 		}
