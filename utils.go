@@ -208,5 +208,29 @@ func (evt *Transfer) Dump() {
 	fmt.Printf("\tFrom: %v\n",evt.From.String())
 	fmt.Printf("\tTo: %v\n",evt.To.String())
 	fmt.Printf("\tValue: %v\n",evt.Value.String())
-	fmt.Printf("}")
+	fmt.Printf("}\n")
+}
+func (evt *FillEvt) Dump() {
+	fmt.Printf("FillEvt {\n")
+	fmt.Printf("\tMakerAddress: %v\n",evt.MakerAddress.String())
+	fmt.Printf("\tFeeRecipientAddress: %v\n",evt.FeeRecipientAddress)
+	fmt.Printf("\tMarketAssetData: %v\n",hex.EncodeToString(evt.MakerAssetData[:]))
+	fmt.Printf("\tTakerAssetData: %v\n",hex.EncodeToString(evt.TakerAssetData[:]))
+	fmt.Printf("\tMakerFeeAssetData: %v\n",hex.EncodeToString(evt.MakerFeeAssetData[:]))
+	fmt.Printf("\tTakerFeeAssetData: %v\n",hex.EncodeToString(evt.TakerFeeAssetData[:]))
+	fmt.Printf("\tOrderHash: %v\n",hex.EncodeToString(evt.OrderHash[:]))
+	fmt.Printf("\tTakerAddress: %v\n",evt.TakerAddress.String())
+	fmt.Printf("\tSenderAddress: %v\n",evt.SenderAddress.String())
+	fmt.Printf("\tMakerAssetFilledAmount: %v\n",evt.MakerAssetFilledAmount.String())
+	fmt.Printf("\tTakerAssetFilledAmount: %v\n",evt.TakerAssetFilledAmount.String())
+	fmt.Printf("\tMakerFeePaid: %v\n",evt.MakerFeePaid.String())
+	fmt.Printf("\tTakerFeePaid: %v\n",evt.TakerFeePaid.String())
+	fmt.Printf("\tProtocolFeePaid: %v\n",evt.ProtocolFeePaid.String())
+	fmt.Printf("}\n")
+}
+func (evt *OwnershipTransferred) Dump() {
+	fmt.Printf("OwnershipTransferred {\n")
+	fmt.Printf("\tPreviousOwner: %v\n",evt.PreviousOwner.String())
+	fmt.Printf("\tNewOwner: %v\n",evt.NewOwner.String())
+	fmt.Printf("}\n")
 }

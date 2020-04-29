@@ -4,12 +4,25 @@ import (
 	"fmt"
 	"bytes"
 	"io/ioutil"
-	_ "encoding/hex"
+	"encoding/hex"
+	"math/big"
 
+//	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )
+		type InputStruct struct {
+			To common.Address `abi:"_to"`
+			Data []byte `abi:"_data"`
+			Value *big.Int `abi:"_value"`
+			Payment *big.Int `abi:"_payment"`
+			ReferralAddress common.Address `abi:"_referralAddress"`
+			Fingerprint [32]byte `abi:"_fingerprint"`
+			DesiredSignerBalance *big.Int `abi:"_desiredSignerBalance"`
+			MaxExchangeRateInDai *big.Int `abi:"_maxExchangeRateInDai"`
+			RevertOnFailure bool `abi:"_revertOnFailure"`
+		}
 func (sequencer *EventSequencer) append_event(new_log *types.Log) {
 
 	sequencer.unordered_list = append(sequencer.unordered_list,new_log)
@@ -48,6 +61,9 @@ func augur_init() {
 
 	zerox_abi = load_abi("./abis/trading-abis/ZeroXTrade.abi")
 	cash_abi = load_abi("./abis/trading-abis/Cash.abi")
+	exchange_abi = load_abi("./abis/exchange/Exchange.abi")
+
+	wallet_abi = load_abi("./abis/main-abis/AugurWalletRegistry.abi")
 }
 /* Discontinued
 func get_universe_and_market(log *types.Log) (string,string) {
@@ -66,6 +82,19 @@ func process_event(log *types.Log) {
 	}
 	num_topics := len(log.Topics)
 	if num_topics > 0 {
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_exchange_fill) {
+			var mevt FillEvt
+			mevt.MakerAddress= common.BytesToAddress(log.Topics[1][12:])
+			mevt.FeeRecipientAddress= common.BytesToAddress(log.Topics[2][12:])
+			mevt.OrderHash= log.Topics[3]
+			err := exchange_abi.Unpack(&mevt,"Fill",log.Data)
+			if err != nil {
+				Fatalf("Event Fill for 0x decode error: %v",err)
+			} else {
+				fmt.Printf("Fill event found (block=%v) :\n",log.BlockNumber)
+				mevt.Dump()
+			}
+		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_transfer) {
 			var mevt Transfer
 			mevt.From= common.BytesToAddress(log.Topics[1][12:])
@@ -267,5 +296,41 @@ func process_event(log *types.Log) {
 	}
 	for j:=1; j < num_topics ; j++ {
 		fmt.Printf("\t\t\t\tLog Topic %v , %v \n",j,log.Topics[j].String())
+	}
+}
+func dump_tx_input_if_known(tx *types.Transaction) {
+
+	tx_data:=tx.Data()
+	if len(tx_data) < 32 {
+		fmt.Printf("dump_tx_input: tx_data < 32 len")
+		return
+	}
+	input_sig := tx_data[:4]
+	decoded_sig ,_ := hex.DecodeString("78dc0eed")
+	if 0 == bytes.Compare(input_sig,decoded_sig) {
+		input_data_raw:= tx_data[4:]
+		var input_data InputStruct
+		method, err := wallet_abi.MethodById(decoded_sig)
+		if err != nil {
+			Fatalf("Method not found")
+		}
+		err = method.Inputs.Unpack(&input_data, input_data_raw)
+		if err != nil {
+			Fatalf("Couldn't decode input of tx %v",err)
+		}
+		fmt.Printf("ExecuteWalletTransaction {\n")
+		fmt.Printf("\tto: %v",input_data.To.String())
+		fmt.Printf("\tdata: %v",hex.EncodeToString(input_data.Data[:]))
+		fmt.Printf("\tvalue: %v",input_data.Value.String())
+		fmt.Printf("\tpayment: %v",input_data.Payment.String())
+		fmt.Printf("\treferralAddress:  %v",input_data.ReferralAddress.String())
+		fmt.Printf("\tfingerprint: %v",hex.EncodeToString(input_data.Fingerprint[:]))
+		fmt.Printf("\tdesiredSignerBalance: %v",input_data.DesiredSignerBalance.String())
+		fmt.Printf("\tmaxExchangeRateInDai: %v",input_data.MaxExchangeRateInDai.String())
+		fmt.Printf("\trevertOnFaliure: %v",input_data.RevertOnFailure)
+		fmt.Printf("\t}")
+	} else {
+		fmt.Printf("dump_tx_input: input sig (%v) != (%v) registered sig ",
+			hex.EncodeToString(input_sig[:]),hex.EncodeToString(decoded_sig))
 	}
 }

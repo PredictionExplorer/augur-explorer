@@ -29,6 +29,7 @@ const (
 	TRANSFER_SINGLE = "c3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62"
 	PROFIT_LOSS_CHANGED = "59543b7f82735782aa5bdb97dff40ff288d4548a5865da513b40e4088e2ee77e"
 	ERC20_TRANSFER = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+	EXCHANGE_FILL = "6869791f0a34781b29882982cc39e882768cf2c96995c2a110c577c53bc932d5"
 )
 var (
 	// these evt_ variables are here for speed to avoid calculation of Keccak256
@@ -48,12 +49,16 @@ var (
 	evt_transfer_single,_ = hex.DecodeString(TRANSFER_SINGLE)
 	evt_profit_loss_changed,_ = hex.DecodeString(PROFIT_LOSS_CHANGED)
 	evt_erc20_transfer,_ = hex.DecodeString(ERC20_TRANSFER)
+	evt_exchange_fill,_ = hex.DecodeString(EXCHANGE_FILL)
 
 	storage *SQLStorage
 	augur_abi *abi.ABI
 	trading_abi *abi.ABI
 	zerox_abi *abi.ABI
 	cash_abi *abi.ABI
+	exchange_abi *abi.ABI
+	wallet_abi *abi.ABI
+
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 )
 func main() {
@@ -103,6 +108,7 @@ func main() {
 						if err != nil {
 							fmt.Printf("Error: %v",err)
 						} else {
+							dump_tx_input_if_known(tx)
 							to:=""
 							if tx.To() != nil {
 								to = tx.To().String()
@@ -110,6 +116,7 @@ func main() {
 							fmt.Printf("\ttx: %v\n",tx.Hash().String())
 							fmt.Printf("\t to=%v for $%v (%v bytes data)\n",
 											to,tx.Value().String(),len(tx.Data()))
+							fmt.Printf("\t input: \n%v\n",hex.EncodeToString(tx.Data()[:]))
 							rcpt,err := client.TransactionReceipt(ctx,tx.Hash())
 							if err != nil {
 								fmt.Printf("Error: %v",err)

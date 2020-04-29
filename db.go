@@ -635,7 +635,7 @@ func (ss *SQLStorage) insert_share_balance_changed_evt(evt *ShareTokenBalanceCha
 		fmt.Printf("Update to sbalances %v , outcome %v holds %v \n",evt.Account.String(),outcome,balance);
 		//break
 	} else {
-		fmt.Printf("Insert to sbalances\n");
+		fmt.Printf("Insert to sbalances (%v outcome %v bal=%v\n",evt.Account.String(),outcome,balance);
 		query = "INSERT INTO sbalances (account_aid,market_aid,outcome,balance)" +
 				"VALUES($1,$2,$3,$4)"
 		result,err := ss.db.Exec(query,account_aid,market_aid,outcome,balance)

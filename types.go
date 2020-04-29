@@ -47,6 +47,7 @@ type MarketCreatedEvt struct {
 	Timestamp            *big.Int
 	Raw                  types.Log // Blockchain specific contextual infos
 }
+/*duplicated, removal pending
 type AugurShareTokenBalanceChanged struct {
 	Universe common.Address
 	Account  common.Address
@@ -55,6 +56,7 @@ type AugurShareTokenBalanceChanged struct {
 	Balance  *big.Int
 	Raw      types.Log // Blockchain specific contextual infos
 }
+*/
 type MktOrderEvt struct {
 	Universe     common.Address
 	Market       common.Address
@@ -189,3 +191,27 @@ type Transfer struct {
 	Value *big.Int
 	Raw   types.Log // Blockchain specific contextual infos
 }
+// 0x Exchange Events begin
+type FillEvt struct {
+	MakerAddress           common.Address
+	FeeRecipientAddress    common.Address
+	MakerAssetData         []byte
+	TakerAssetData         []byte
+	MakerFeeAssetData      []byte
+	TakerFeeAssetData      []byte
+	OrderHash              [32]byte
+	TakerAddress           common.Address
+	SenderAddress          common.Address
+	MakerAssetFilledAmount *big.Int
+	TakerAssetFilledAmount *big.Int
+	MakerFeePaid           *big.Int
+	TakerFeePaid           *big.Int
+	ProtocolFeePaid        *big.Int
+	Raw                    types.Log // Blockchain specific contextual infos
+}
+type OwnershipTransferred struct {
+	PreviousOwner common.Address
+	NewOwner      common.Address
+	Raw           types.Log // Blockchain specific contextual infos
+}
+// 0x Exchange Events end
