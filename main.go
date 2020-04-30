@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"encoding/hex"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )
@@ -30,6 +31,7 @@ const (
 	PROFIT_LOSS_CHANGED = "59543b7f82735782aa5bdb97dff40ff288d4548a5865da513b40e4088e2ee77e"
 	ERC20_TRANSFER = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 	EXCHANGE_FILL = "6869791f0a34781b29882982cc39e882768cf2c96995c2a110c577c53bc932d5"
+	TRADING_PROCEEDS_CLAIMED = "95366b7f64c6bb45149f9f7c522403fceebe5170ff76b8ffde2b0ab943ac11ce"
 )
 var (
 	// these evt_ variables are here for speed to avoid calculation of Keccak256
@@ -50,6 +52,7 @@ var (
 	evt_profit_loss_changed,_ = hex.DecodeString(PROFIT_LOSS_CHANGED)
 	evt_erc20_transfer,_ = hex.DecodeString(ERC20_TRANSFER)
 	evt_exchange_fill,_ = hex.DecodeString(EXCHANGE_FILL)
+	evt_trading_proceeds_claimed,_ = hex.DecodeString(TRADING_PROCEEDS_CLAIMED)
 
 	storage *SQLStorage
 	augur_abi *abi.ABI
@@ -108,12 +111,17 @@ func main() {
 						if err != nil {
 							fmt.Printf("Error: %v",err)
 						} else {
+							tx_msg, err := tx.AsMessage(types.NewEIP155Signer(tx.ChainId()))
+							if err != nil {
+								Fatalf("Error in tx signature validation (shoudln't happen): %v",err)
+							}
 							dump_tx_input_if_known(tx)
 							to:=""
 							if tx.To() != nil {
 								to = tx.To().String()
 							}
 							fmt.Printf("\ttx: %v\n",tx.Hash().String())
+							fmt.Printf("\t from=%v\n",tx_msg.From().String())
 							fmt.Printf("\t to=%v for $%v (%v bytes data)\n",
 											to,tx.Value().String(),len(tx.Data()))
 							fmt.Printf("\t input: \n%v\n",hex.EncodeToString(tx.Data()[:]))
@@ -136,7 +144,7 @@ func main() {
 										"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",
 										ordered_list[i].Topics[0].String(),
 										ordered_list[i].Address.String())
-									process_event(ordered_list[i])
+									process_event(tx_msg.From(),ordered_list[i])
 								}
 							}
 						}

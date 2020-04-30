@@ -215,3 +215,14 @@ type OwnershipTransferred struct {
 	Raw           types.Log // Blockchain specific contextual infos
 }
 // 0x Exchange Events end
+type TradingProceedsClaimed struct {
+	Universe        common.Address
+	Sender          common.Address
+	Market          common.Address
+	Outcome         *big.Int
+	NumShares       *big.Int
+	NumPayoutTokens *big.Int
+	Fees            *big.Int
+	Timestamp       *big.Int
+	Raw             types.Log // Blockchain specific contextual infos
+}

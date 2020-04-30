@@ -12,17 +12,17 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )
-		type InputStruct struct {
-			To common.Address `abi:"_to"`
-			Data []byte `abi:"_data"`
-			Value *big.Int `abi:"_value"`
-			Payment *big.Int `abi:"_payment"`
-			ReferralAddress common.Address `abi:"_referralAddress"`
-			Fingerprint [32]byte `abi:"_fingerprint"`
-			DesiredSignerBalance *big.Int `abi:"_desiredSignerBalance"`
-			MaxExchangeRateInDai *big.Int `abi:"_maxExchangeRateInDai"`
-			RevertOnFailure bool `abi:"_revertOnFailure"`
-		}
+type InputStruct struct {
+	To common.Address `abi:"_to"`
+	Data []byte `abi:"_data"`
+	Value *big.Int `abi:"_value"`
+	Payment *big.Int `abi:"_payment"`
+	ReferralAddress common.Address `abi:"_referralAddress"`
+	Fingerprint [32]byte `abi:"_fingerprint"`
+	DesiredSignerBalance *big.Int `abi:"_desiredSignerBalance"`
+	MaxExchangeRateInDai *big.Int `abi:"_maxExchangeRateInDai"`
+	RevertOnFailure bool `abi:"_revertOnFailure"`
+}
 func (sequencer *EventSequencer) append_event(new_log *types.Log) {
 
 	sequencer.unordered_list = append(sequencer.unordered_list,new_log)
@@ -75,13 +75,25 @@ func get_universe_and_market(log *types.Log) (string,string) {
 	return a_universe,a_market
 }
 */
-func process_event(log *types.Log) {
+func process_event(sender common.Address, log *types.Log) {
 
 	if log == nil {
 		Fatalf("process_event() received null pointer")
 	}
 	num_topics := len(log.Topics)
 	if num_topics > 0 {
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_trading_proceeds_claimed) {
+			var mevt TradingProceedsClaimed
+			mevt.Universe= common.BytesToAddress(log.Topics[1][12:])
+			mevt.Sender= common.BytesToAddress(log.Topics[2][12:])
+			err := augur_abi.Unpack(&mevt,"TradingProceedsClaimed",log.Data)
+			if err != nil {
+				Fatalf("EventTradingProceedsClaimed error: %v",err)
+			} else {
+				fmt.Printf("TradingProceedsClaimed event found (block=%v) :\n",log.BlockNumber)
+				mevt.Dump()
+			}
+		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_exchange_fill) {
 			var mevt FillEvt
 			mevt.MakerAddress= common.BytesToAddress(log.Topics[1][12:])
@@ -319,16 +331,16 @@ func dump_tx_input_if_known(tx *types.Transaction) {
 			Fatalf("Couldn't decode input of tx %v",err)
 		}
 		fmt.Printf("ExecuteWalletTransaction {\n")
-		fmt.Printf("\tto: %v",input_data.To.String())
-		fmt.Printf("\tdata: %v",hex.EncodeToString(input_data.Data[:]))
-		fmt.Printf("\tvalue: %v",input_data.Value.String())
-		fmt.Printf("\tpayment: %v",input_data.Payment.String())
-		fmt.Printf("\treferralAddress:  %v",input_data.ReferralAddress.String())
-		fmt.Printf("\tfingerprint: %v",hex.EncodeToString(input_data.Fingerprint[:]))
-		fmt.Printf("\tdesiredSignerBalance: %v",input_data.DesiredSignerBalance.String())
-		fmt.Printf("\tmaxExchangeRateInDai: %v",input_data.MaxExchangeRateInDai.String())
-		fmt.Printf("\trevertOnFaliure: %v",input_data.RevertOnFailure)
-		fmt.Printf("\t}")
+		fmt.Printf("\tto: %v\n",input_data.To.String())
+		fmt.Printf("\tdata: %v\n",hex.EncodeToString(input_data.Data[:]))
+		fmt.Printf("\tvalue: %v\n",input_data.Value.String())
+		fmt.Printf("\tpayment: %v\n",input_data.Payment.String())
+		fmt.Printf("\treferralAddress:  %v\n",input_data.ReferralAddress.String())
+		fmt.Printf("\tfingerprint: %v\n",hex.EncodeToString(input_data.Fingerprint[:]))
+		fmt.Printf("\tdesiredSignerBalance: %v\n",input_data.DesiredSignerBalance.String())
+		fmt.Printf("\tmaxExchangeRateInDai: %v\n",input_data.MaxExchangeRateInDai.String())
+		fmt.Printf("\trevertOnFaliure: %v\n",input_data.RevertOnFailure)
+		fmt.Printf("}\n")
 	} else {
 		fmt.Printf("dump_tx_input: input sig (%v) != (%v) registered sig ",
 			hex.EncodeToString(input_sig[:]),hex.EncodeToString(decoded_sig))

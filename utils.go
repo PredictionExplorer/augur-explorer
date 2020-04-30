@@ -234,3 +234,15 @@ func (evt *OwnershipTransferred) Dump() {
 	fmt.Printf("\tNewOwner: %v\n",evt.NewOwner.String())
 	fmt.Printf("}\n")
 }
+func (evt *TradingProceedsClaimed) Dump() {
+	fmt.Printf("TradingProceedsClaimed {\n")
+	fmt.Printf("\tUniverse: %v\n",evt.Universe.String())
+	fmt.Printf("\tSender: %v\n",evt.Sender.String())
+	fmt.Printf("\tMarket: %v\n",evt.Market.String())
+	fmt.Printf("\tOutcome: %v\n",evt.Outcome.String())
+	fmt.Printf("\tNumShares: %v\n",evt.NumShares.String())
+	fmt.Printf("\tNumPayoutTokens: %v\n",evt.NumPayoutTokens.String())
+	fmt.Printf("\tFees: %v\n",evt.Fees.String())
+	fmt.Printf("\tTimestamp: %v\n",evt.Timestamp.String())
+	fmt.Printf("}\n")
+}

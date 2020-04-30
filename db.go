@@ -175,6 +175,8 @@ func (ss *SQLStorage) insert_market_created_evt(evt *MarketCreatedEvt) {
 	universe_id := ss.lookup_universe_id(evt.Universe.String())
 	creator_aid := ss.lookup_or_create_address(evt.MarketCreator.String())
 	reporter_aid := ss.lookup_or_create_address(evt.DesignatedReporter.String())
+	fmt.Printf("create_market: creator_aid=%v (%v), reporter_id=%v (%v)\n",
+				creator_aid,evt.MarketCreator.String(),reporter_aid,evt.DesignatedReporter.String())
 
 	prices := bigint_ptr_slice_to_str(&evt.Prices,",")
 	outcomes := outcomes_to_str(&evt.Outcomes,",")
