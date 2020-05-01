@@ -1,7 +1,19 @@
+-- Blockchain tables
+CREATE TABLE block (
+	block_num			BIGINT NOT NULL UNIQUE,
+	num_tx				BIGINT DEFAULT 0,
+	block_hash			TEXT NOT NULL PRIMARY KEY,
+	parent_hash			TEXT NOT NULL
+);
+CREATE TABLE transaction (	-- we're only storing transactions related to Augur platform
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
+	tx_hash				TEXT NOT NULL UNIQUE
+);
 -- Universe: The container contract for Augur Service
 CREATE TABLE universe (
 	universe_id			BIGSERIAL PRIMARY KEY,
-	universe_addr		TEXT NOT NULL				-- Ethereum address of the Universe contract
+	universe_addr		TEXT NOT NULL UNIQUE		-- Ethereum address of the Universe contract
 );
 CREATE TABLE address (
 	address_id			BIGSERIAL	PRIMARY KEY,
@@ -9,10 +21,12 @@ CREATE TABLE address (
 );
 -- Market
 CREATE TABLE market (
-	id					BIGSERIAL	PRIMARY KEY,	-- unique id (postgres internal)
+	market_aid			BIGINT NOT NULL PRIMARY KEY,-- address ID of the Market
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	universe_id			BIGSERIAL NOT NULL,			-- reference to universe table
-	market_aid			BIGINT NOT NULL UNIQUE,		-- address ID of the Market
-	creator_aid			BIGINT NOT NULL,			-- address ID of the User who created the Market
+	creator_aid			BIGINT NOT NULL,			-- address ID of market creator (not real User)
+	signer_aid			BIGINT NOT NULL,			-- address ID of the User who signed transaction (real  creator)
 	reporter_aid		BIGINT NOT NULL,			-- address ID of the User who will report on the outcome
 	end_time			BIGINT NOT NULL,			-- when the Market expires
 	max_ticks			BIGINT NOT NULL,			-- maximum price range (number of intervals)
@@ -31,6 +45,8 @@ CREATE TABLE market (
 -- Balances of Share tokens per Market (accumulated data, one record per account)
 CREATE TABLE sbalances (
 	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			 -- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	account_aid			BIGINT NOT NULL,			-- address id of the User(holder of the shares)
 	market_aid			BIGINT NOT NULL,			-- market id of the Market these shares blong
 	outcome				TEXT NOT NULL,				-- market outcome
@@ -39,8 +55,10 @@ CREATE TABLE sbalances (
 -- Market Order (BUY/SELL request made by the User via GUI)
 CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create/Cancel are temporary)
 	id					BIGSERIAL PRIMARY KEY,
-	market_aid			BIGSERIAL NOT NULL,
-	block_num			BIGINT NOT NULL,
+	market_aid			BIGINT NOT NULL,
+	signer_aid			BIGINT NOT NULL,			-- Address of the user who signes the transaction
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	oaction				SMALLINT NOT NULL,			-- order action:  0=>Create, 1=>Cancel, 2=>Fill
 													-- Create: User posts a BID or ASK execpting to be filed
 													-- Fill: User buys or sells existing (Created) order
@@ -62,7 +80,9 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 	order_id			TEXT NOT NULL
 );
 CREATE TABLE oorders (	-- open orders table mirrors `mktord` table, it's used only for active orders
+	-- this table is currently disabled until 0x Mesh trading is integrated
 	id					BIGSERIAL PRIMARY KEY,
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGSERIAL NOT NULL,
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
 	creator_aid			BIGINT NOT NULL,			-- address of the creator
@@ -75,8 +95,11 @@ CREATE TABLE oorders (	-- open orders table mirrors `mktord` table, it's used on
 -- Report, submitted by Market Creator
 CREATE TABLE report (
 	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
 	reporter_aid		BIGINT NOT NULL,
+	signer_aid			BIGINT NOT NULL,			-- transaction signer (the User who is submitting the report)
 	ini_reporter_aid	BIGINT DEFAULT 0,
 	disputed_aid		BIGINT DEFAULT 0,
 	dispute_round		BIGINT DEFAULT 1,
@@ -94,10 +117,24 @@ CREATE TABLE report (
 -- Volume
 CREATE TABLE volume (
 	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
 	volume				TEXT NOT NULL,
 	outcome_vols		TEXT NOT NULL,
 	ins_timestamp		BIGINT NOT NULL
+);
+CREATE table oi_chg ( -- open interest changed event
+	id					BIGSERIAL PRIMARY KEY,
+	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
+	ts_inserted			BIGINT NOT NULL, -- timestamp
+	oi					TEXT NOT NULL
+);
+CREATE TABLE mkt_fin (
+	id					BIGSERIAL PRIMARY KEY,
+	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
+	fin_timestamp		BIGINT NOT NULL,
+	winning_payouts		TEXT NOT NULL
 );
 CREATE TABLE last_block (
 	block_num			BIGINT	NOT NULL	-- last block processed by the ETL

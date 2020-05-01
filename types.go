@@ -226,3 +226,15 @@ type TradingProceedsClaimed struct {
 	Timestamp       *big.Int
 	Raw             types.Log // Blockchain specific contextual infos
 }
+type ApprovalForAll struct {
+	Owner    common.Address
+	Operator common.Address
+	Approved bool
+	Raw      types.Log // Blockchain specific contextual infos
+}
+type Approval struct {
+	Owner   common.Address
+	Spender common.Address
+	Value   *big.Int
+	Raw     types.Log // Blockchain specific contextual infos
+}

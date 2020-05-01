@@ -32,6 +32,10 @@ const (
 	ERC20_TRANSFER = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 	EXCHANGE_FILL = "6869791f0a34781b29882982cc39e882768cf2c96995c2a110c577c53bc932d5"
 	TRADING_PROCEEDS_CLAIMED = "95366b7f64c6bb45149f9f7c522403fceebe5170ff76b8ffde2b0ab943ac11ce"
+	ZEROX_APPROVAL_FOR_ALL = "17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31"
+	ERC20_APPROVAL = "8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
+
+	MAX_BLOCKS_CHAIN_SPLIT = 128
 )
 var (
 	// these evt_ variables are here for speed to avoid calculation of Keccak256
@@ -53,6 +57,8 @@ var (
 	evt_erc20_transfer,_ = hex.DecodeString(ERC20_TRANSFER)
 	evt_exchange_fill,_ = hex.DecodeString(EXCHANGE_FILL)
 	evt_trading_proceeds_claimed,_ = hex.DecodeString(TRADING_PROCEEDS_CLAIMED)
+	evt_zerox_approval_for_all,_ = hex.DecodeString(ZEROX_APPROVAL_FOR_ALL)
+	evt_erc20_approval,_ = hex.DecodeString(ERC20_APPROVAL)
 
 	storage *SQLStorage
 	augur_abi *abi.ABI
@@ -104,6 +110,14 @@ func main() {
 			if err != nil {
 				fmt.Printf("block error: %v \n",err)
 			} else {
+				header := block.Header()
+				if !storage.insert_block(header,int64(num_transactions)) {
+					// chainsplit detected
+					set_back_block_num := storage.fix_chainsplit(header)
+					fmt.Printf("Chain rewind to block %v. Restarting.",set_back_block_num)
+					bnum = set_back_block_num
+					continue
+				}
 				if num_transactions > 0 {
 					fmt.Printf("block: %v %v transactions\n",block.Number(),num_transactions)
 					for tnum:=0 ; tnum < int(num_transactions) ; tnum++ {
@@ -111,10 +125,12 @@ func main() {
 						if err != nil {
 							fmt.Printf("Error: %v",err)
 						} else {
+							tx_id := storage.insert_transaction(BlockNumber(block.Number().Uint64()),tx)
 							tx_msg, err := tx.AsMessage(types.NewEIP155Signer(tx.ChainId()))
 							if err != nil {
 								Fatalf("Error in tx signature validation (shoudln't happen): %v",err)
 							}
+							from := tx_msg.From()
 							dump_tx_input_if_known(tx)
 							to:=""
 							if tx.To() != nil {
@@ -144,7 +160,7 @@ func main() {
 										"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",
 										ordered_list[i].Topics[0].String(),
 										ordered_list[i].Address.String())
-									process_event(tx_msg.From(),ordered_list[i])
+									process_event(block.Header(),tx_id,from,ordered_list[i])
 								}
 							}
 						}

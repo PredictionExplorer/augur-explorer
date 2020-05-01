@@ -7,6 +7,9 @@ import (
 	"database/sql"
 	"encoding/hex"
 	_  "github.com/lib/pq"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
 type SQLStorage struct {
@@ -154,7 +157,12 @@ func (ss *SQLStorage) lookup_or_create_address(addr string) int64 {
 
 	return addr_id
 }
-func (ss *SQLStorage) insert_market_created_evt(evt *MarketCreatedEvt) {
+func (ss *SQLStorage) insert_market_created_evt(
+		block_num BlockNumber,
+		tx_id int64,
+		signer common.Address,
+		evt *MarketCreatedEvt,
+) {
 
 	var query string
 	var market_aid int64;
@@ -175,6 +183,7 @@ func (ss *SQLStorage) insert_market_created_evt(evt *MarketCreatedEvt) {
 	universe_id := ss.lookup_universe_id(evt.Universe.String())
 	creator_aid := ss.lookup_or_create_address(evt.MarketCreator.String())
 	reporter_aid := ss.lookup_or_create_address(evt.DesignatedReporter.String())
+	signer_aid := ss.lookup_or_create_address(signer.String())
 	fmt.Printf("create_market: creator_aid=%v (%v), reporter_id=%v (%v)\n",
 				creator_aid,evt.MarketCreator.String(),reporter_aid,evt.DesignatedReporter.String())
 
@@ -182,9 +191,12 @@ func (ss *SQLStorage) insert_market_created_evt(evt *MarketCreatedEvt) {
 	outcomes := outcomes_to_str(&evt.Outcomes,",")
 	query = `
 		INSERT INTO market(
+			block_num,
+			tx_id,
 			universe_id,
 			market_aid,
 			creator_aid,
+			signer_aid,
 			reporter_aid,
 			end_time,
 			max_ticks,
@@ -195,11 +207,14 @@ func (ss *SQLStorage) insert_market_created_evt(evt *MarketCreatedEvt) {
 			extra_info,
 			outcomes,
 			no_show_bond
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`
 	result,err := ss.db.Exec(query,
+			block_num,
+			tx_id,
 			universe_id,
 			market_aid,
 			creator_aid,
+			signer_aid,
 			reporter_aid,
 			evt.EndTime.Int64(),
 			evt.NumTicks.Int64(),
@@ -223,21 +238,43 @@ func (ss *SQLStorage) insert_market_created_evt(evt *MarketCreatedEvt) {
 		Fatalf("DB error: couldn't insert into Market table. Rows affeced = 0")
 	}
 }
-func (ss *SQLStorage) insert_market_oi_changed_evt(evt *MarketOIChangedEvt) {
+func (ss *SQLStorage) insert_market_oi_changed_evt(block *types.Header,evt *MarketOIChangedEvt) {
 	// Note: this event arrives with evt.Market set to 0x0000000000000000000000000 (a contract bug?) ,
 	//			so we pass the market address as parameter ('market_addr') to the function
 	var query string
 	market_aid := ss.lookup_address(evt.Market.String())
+	ts_inserted := int64(block.Time)
+/* discontinued
 	universe_id := ss.lookup_universe_id(evt.Universe.String())
-
 	query = "UPDATE market SET open_interest = $3 WHERE universe_id = $1 AND market_aid = $2"
 	_,err := ss.db.Exec(query,universe_id,market_aid,evt.MarketOI.String())
 	if err != nil {
 		Fatalf("DB error: can't update open interest of market %v : %v",market_aid,err)
 	}
+*/
+	query = "INSERT INTO oi_chg(market_aid,ts_inserted,oi) VALUES($1,$2,$3)"
+	result,err := ss.db.Exec(query,market_aid,ts_inserted,evt.MarketOI.String())
+	if err != nil {
+		Fatalf("DB error: can't insert into oi_chg table: %v",err)
+	}
+	rows_affected,err:=result.RowsAffected()
+	if err != nil {
+		Fatalf("DB error: %v",err)
+	}
+	if rows_affected > 0 {
+		return
+	} else {
+		Fatalf("DB error: couldn't insert into oi_chg table. Rows affeced = 0")
+	}
+
 	fmt.Printf("Set market (id=%v) open interest to %v",market_aid,evt.MarketOI.String())
 }
-func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber, evt *MktOrderEvt) {
+func (ss *SQLStorage) insert_market_order_evt(
+	block_num BlockNumber,
+	tx_id int64,
+	signer common.Address,
+	evt *MktOrderEvt,
+) {
 
 	// depending on the order action (Create/Cancel/Fill) different table is used for storage
 	//		Create/Cancel order actions go to 'oorders' (Open Orders) table because these orders
@@ -253,6 +290,7 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber, evt *MktOrd
 	universe_id := ss.lookup_universe_id(evt.Universe.String())
 	_ = universe_id	// ToDo: add universe_id match condition (for market)
 	market_aid := ss.lookup_address(evt.Market.String())
+	signer_aid := ss.lookup_or_create_address(signer.String())
 
 	var oaction OrderAction = OrderAction(evt.EventType)
 	var otype OrderType = OrderType(evt.OrderType)
@@ -284,24 +322,12 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber, evt *MktOrd
 	switch oaction {
 		case OrderActionFill:
 			fmt.Printf("Filling existing order %v\n",order_id)
-/*
-			// before we insert a settled order, we must remove it from OpenOrders
-			query = "DELETE FROM oorders WHERE" +
-						"market_aid = $1 AND " +
-						"oaction = $2 AND " +
-						"creator_aid = $3 " +
-						"outcome = $3 AND " +
-						"price = $4 AND " +
-						"amount = $4"
-			result,err := ss.db.Exec(query,market_aid
-			var null_id sql.NullInt64
-
-			err=row.Scan(&null_block_num);
-*/
 			query = `
 				INSERT INTO mktord(
 					market_aid,
+					signer_aid,
 					block_num,
+					tx_id,
 					oaction,
 					otype,
 					creator_aid,
@@ -318,10 +344,12 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber, evt *MktOrd
 					tokens_escrowed,
 					trade_group,
 					order_id
-				) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`
+				) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`
 			result,err := ss.db.Exec(query,
 					market_aid,
+					signer_aid,
 					block_num,
+					tx_id,
 					oaction,
 					otype,
 					creator_aid,
@@ -355,8 +383,9 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber, evt *MktOrd
 			fmt.Printf("creating open order: %v\n",order_id)
 			query = "INSERT INTO oorders(" +
 						"market_aid,otype,creator_aid,price,amount,outcome,time_stamp,order_id" +
-					") VALUES($1,$2,$3,$4,$5,$6,$7,$8)"
+					") VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)"
 			result,err := ss.db.Exec(query,
+					tx_id,
 					market_aid,
 					otype,
 					creator_aid,
@@ -435,27 +464,26 @@ func (ss *SQLStorage) insert_market_finalized_evt(evt *MktFinalizedEvt) {
 	winning_payouts := bigint_ptr_slice_to_str(&evt.WinningPayoutNumerators,",")
 
 	var query string
+/* discontinued
 	query = "UPDATE market SET fin_timestamp=$3,winning_payouts=$4 WHERE universe_id = $1 AND market_aid = $2"
-	result,err := ss.db.Exec(query,universe_id,market_aid,fin_timestamp,winning_payouts)
+*/
+	query = "INSERT INTO mkt_fin(market_aid,fin_timestamp,winning_payouts) VALUES($1,$2,$3)"
+	_,err := ss.db.Exec(query,market_aid,fin_timestamp,winning_payouts)
 	if err != nil {
-		Fatalf("DB error: can't update open interest of market %v : %v",market_aid,err)
-	}
-	rows_affected,err:=result.RowsAffected()
-	if err != nil {
-		Fatalf("DB error: %v",err)
-	}
-	if rows_affected > 0 {
-		fmt.Printf("Set market %v fin_timestamp to %v, winning_payouts to %v",market_aid,fin_timestamp,winning_payouts)
-		return
-	} else {
-		Fatalf("DB error: couldn't update 'market' table. Rows affeced = 0")
+		Fatalf("DB error: can't update market finalization of market %v : %v",market_aid,err)
 	}
 }
-func (ss *SQLStorage) insert_initial_report_evt(evt *InitialReportSubmittedEvt) {
+func (ss *SQLStorage) insert_initial_report_evt(
+	block_num BlockNumber,
+	tx_id int64,
+	signer common.Address,
+	evt *InitialReportSubmittedEvt,
+) {
 
 	_= ss.lookup_universe_id(evt.Universe.String())
 	market_aid := ss.lookup_address(evt.Market.String())
 	reporter_aid := ss.lookup_or_create_address(evt.Reporter.String())
+	signer_aid := ss.lookup_or_create_address(signer.String())
 	ini_reporter_aid := ss.lookup_or_create_address(evt.InitialReporter.String())
 
 	amount_staked := evt.AmountStaked.Int64()
@@ -464,11 +492,16 @@ func (ss *SQLStorage) insert_initial_report_evt(evt *InitialReportSubmittedEvt) 
 	next_win_end := evt.NextWindowEndTime.Int64()
 	rpt_timestamp := evt.Timestamp.Int64()
 
+	fmt.Printf("insert_initial_report_evt(): market_aid=%v, reporter_id=%v, signer_aid=%v",
+					market_aid,reporter_aid,signer_aid)
 	var query string
 	query = `
 		INSERT INTO report (
+			block_num,
+			tx_id,
 			market_aid,
 			reporter_aid,
+			signer_aid,
 			ini_reporter_aid,
 			is_initial,
 			is_designated,
@@ -478,10 +511,13 @@ func (ss *SQLStorage) insert_initial_report_evt(evt *InitialReportSubmittedEvt) 
 			next_win_start,
 			next_win_end,
 			rpt_timestamp
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`
 	result,err := ss.db.Exec(query,
+			block_num,
+			tx_id,
 			market_aid,
 			reporter_aid,
+			signer_aid,
 			ini_reporter_aid,
 			true,
 			evt.IsDesignatedReporter,
@@ -504,9 +540,13 @@ func (ss *SQLStorage) insert_initial_report_evt(evt *InitialReportSubmittedEvt) 
 		Fatalf("DB error: couldn't insert into InitialReport table. Rows affeced = 0")
 	}
 }
-func (ss *SQLStorage) insert_market_volume_changed_evt(evt *MktVolumeChangedEvt) {
+func (ss *SQLStorage) insert_market_volume_changed_evt(
+	block_num BlockNumber,
+	tx_id int64,
+	evt *MktVolumeChangedEvt,
+) {
 
-	universe_id := ss.lookup_universe_id(evt.Universe.String())
+	//discontinued universe_id := ss.lookup_universe_id(evt.Universe.String())
 	market_aid := ss.lookup_address(evt.Market.String())
 
 	volume := evt.Volume.String()
@@ -516,12 +556,16 @@ func (ss *SQLStorage) insert_market_volume_changed_evt(evt *MktVolumeChangedEvt)
 	var query string
 	query = `
 		INSERT INTO volume (
+			block_num,
+			tx_id,
 			market_aid,
 			volume,
 			outcome_vols,
 			ins_timestamp
-		) VALUES ($1,$2,$3,$4)`
+		) VALUES ($1,$2,$3,$4,$5,$6)`
 	result,err := ss.db.Exec(query,
+			block_num,
+			tx_id,
 			market_aid,
 			volume,
 			outcome_vols,
@@ -538,6 +582,7 @@ func (ss *SQLStorage) insert_market_volume_changed_evt(evt *MktVolumeChangedEvt)
 	} else {
 		Fatalf("DB error: couldn't insert into InitialReport table. Rows affeced = 0")
 	}
+/* discontinued 
 	// update volume in 'market' table
 	query = "UPDATE market SET cur_volume=$3 WHERE universe_id = $1 AND market_aid = $2"
 	result,err = ss.db.Exec(query,universe_id,market_aid,volume)
@@ -554,12 +599,19 @@ func (ss *SQLStorage) insert_market_volume_changed_evt(evt *MktVolumeChangedEvt)
 	} else {
 		Fatalf("DB error: couldn't update 'market' table. Rows affeced = 0")
 	}
+*/
 }
-func (ss *SQLStorage) insert_dispute_crowd_contrib(evt *DisputeCrowdsourcerContributionEvt) {
+func (ss *SQLStorage) insert_dispute_crowd_contrib(
+	block_num BlockNumber,
+	tx_id int64,
+	signer common.Address,
+	evt *DisputeCrowdsourcerContributionEvt,
+) {
 
 	_= ss.lookup_universe_id(evt.Universe.String())
 	market_aid := ss.lookup_address(evt.Market.String())
 	reporter_aid := ss.lookup_or_create_address(evt.Reporter.String())
+	signer_aid := ss.lookup_or_create_address(signer.String())
 	disputed_aid := ss.lookup_or_create_address(evt.DisputeCrowdsourcer.String())
 
 	amount_staked := evt.AmountStaked.Int64()
@@ -569,11 +621,16 @@ func (ss *SQLStorage) insert_dispute_crowd_contrib(evt *DisputeCrowdsourcerContr
 	dispute_round := evt.DisputeRound.Int64()
 	rpt_timestamp := evt.Timestamp.Int64()
 
+	fmt.Printf("insert_dispute_crows_contrib(): market_aid=%v, reporter_id=%v, signer_aid=%v",
+					market_aid,reporter_aid,signer_aid)
 	var query string
 	query = `
 		INSERT INTO report (
+			block_num,
+			tx_id,
 			market_aid,
 			reporter_aid,
+			signer_aid,
 			disputed_aid,
 			dispute_round,
 			amount_staked,
@@ -582,10 +639,13 @@ func (ss *SQLStorage) insert_dispute_crowd_contrib(evt *DisputeCrowdsourcerContr
 			current_stake,
 			stake_remaining,
 			rpt_timestamp
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`
 	result,err := ss.db.Exec(query,
+			block_num,
+			tx_id,
 			market_aid,
 			reporter_aid,
+			signer_aid,
 			disputed_aid,
 			dispute_round,
 			amount_staked,
@@ -607,7 +667,11 @@ func (ss *SQLStorage) insert_dispute_crowd_contrib(evt *DisputeCrowdsourcerContr
 		Fatalf("DB error: couldn't insert into InitialReport table. Rows affeced = 0")
 	}
 }
-func (ss *SQLStorage) insert_share_balance_changed_evt(evt *ShareTokenBalanceChanged) {
+func (ss *SQLStorage) insert_share_balance_changed_evt(
+	block_num BlockNumber,
+	tx_id int64,
+	evt *ShareTokenBalanceChanged,
+) {
 
 	_= ss.lookup_universe_id(evt.Universe.String())
 	market_aid := ss.lookup_address(evt.Market.String())
@@ -638,9 +702,9 @@ func (ss *SQLStorage) insert_share_balance_changed_evt(evt *ShareTokenBalanceCha
 		//break
 	} else {
 		fmt.Printf("Insert to sbalances (%v outcome %v bal=%v\n",evt.Account.String(),outcome,balance);
-		query = "INSERT INTO sbalances (account_aid,market_aid,outcome,balance)" +
-				"VALUES($1,$2,$3,$4)"
-		result,err := ss.db.Exec(query,account_aid,market_aid,outcome,balance)
+		query = "INSERT INTO sbalances (block_num,tx_id,account_aid,market_aid,outcome,balance)" +
+				"VALUES($1,$2,$3,$4,$5,$6)"
+		result,err := ss.db.Exec(query,block_num,tx_id,account_aid,market_aid,outcome,balance)
 		if err != nil {
 			Fatalf("DB error: can't insert into market table: %v",err)
 		}
@@ -654,4 +718,100 @@ func (ss *SQLStorage) insert_share_balance_changed_evt(evt *ShareTokenBalanceCha
 			Fatalf("DB error: couldn't insert into 'sbalances' table. Rows affeced = 0")
 		}
 	}
+}
+func (ss *SQLStorage) insert_block(block *types.Header,num_tx int64)  bool {
+
+	var query string
+	var parent_block_num int64
+	parent_hash := block.ParentHash.String()
+
+	query="SELECT block_num,parent_hash FROM block WHERE hash=$1"
+	err:=ss.db.QueryRow(query,parent_hash).Scan(&parent_block_num);
+	if (err!=nil) {
+		if (err==sql.ErrNoRows) {
+			if block.Number.Uint64() == 0 {
+				// Genesis. Allow.
+			} else {
+				if (parent_block_num + 1) != int64(block.Number.Uint64()) {
+					fmt.Printf("Block sequence broken after block %v\n",parent_block_num)
+					return false
+				}
+			}
+		}
+	}
+
+	block_num := int64(block.Number.Uint64())
+	block_hash := block.Hash().String()
+	query = `
+		INSERT INTO block(
+			block_num,
+			num_tx,
+			block_hash,
+			parent_hash
+		) VALUES ($1,$2,$3,$4)`
+
+	result,err := ss.db.Exec(query,
+			block_num,
+			num_tx,
+			block_hash,
+			parent_hash)
+	if err != nil {
+		Fatalf("DB error: can't insert into block  table: %v",err)
+	}
+	rows_affected,err:=result.RowsAffected()
+	if err != nil {
+		Fatalf("DB error: %v",err)
+	}
+	if rows_affected > 0 {
+		return true
+	}
+	Fatalf("DB error: couldn't insert into block table. Rows affeced = 0")
+	return false
+}
+func (ss *SQLStorage) insert_transaction(block_num BlockNumber,tx *types.Transaction) int64 {
+
+	var query string
+	var tx_id int64
+
+	tx_hash := tx.Hash().String()
+	query = `
+		INSERT INTO transaction (
+			block_num,
+			tx_hash
+		) VALUES ($1,$2) RETURNING id`
+
+	row := ss.db.QueryRow(query,
+			block_num,
+			tx_hash)
+	err := row.Scan(&tx_id)
+	if err != nil {
+		Fatalf("DB error: can't insert into transactions table: %v",err)
+	}
+	return tx_id
+}
+func (ss *SQLStorage) fix_chainsplit(block *types.Header) BlockNumber {
+
+	var query string
+	var my_block_num int64
+	parent_hash := block.ParentHash.String()
+	query = "SELECT block_num FROM block WHERE block_hash = $1"
+	row := ss.db.QueryRow(query,parent_hash)
+	err := row.Scan(&my_block_num);
+	if (err!=nil) {
+		if err==sql.ErrNoRows {
+			Fatalf("Chainsplit detected, I don't have the parent hash %v, exiting. ",parent_hash)
+		} else {
+			Fatalf("DB error: %v",err)
+		}
+	}
+	cur_block_num := int64(block.Number.Uint64())
+	if cur_block_num > (my_block_num + MAX_BLOCKS_CHAIN_SPLIT) {
+		Fatalf("Chainsplit detected, and it is more than %v blocks, aborting.",MAX_BLOCKS_CHAIN_SPLIT)
+	}
+	query = "DELETE FROM block WHERE block_num > $1 CASCADE"
+	_,err = ss.db.Exec(query,my_block_num)
+	if (err!=nil) {
+		Fatalf("DB error: %v",err);
+	}
+	return BlockNumber(my_block_num + 1)	// parent + 1 = current
 }

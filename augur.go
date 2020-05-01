@@ -75,13 +75,43 @@ func get_universe_and_market(log *types.Log) (string,string) {
 	return a_universe,a_market
 }
 */
-func process_event(sender common.Address, log *types.Log) {
+func process_event(block *types.Header, tx_id int64, signer common.Address, log *types.Log) {
 
+	block_num := BlockNumber(block.Number.Uint64())
 	if log == nil {
 		Fatalf("process_event() received null pointer")
 	}
 	num_topics := len(log.Topics)
 	if num_topics > 0 {
+
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_approval) {
+			var mevt Approval
+			mevt.Owner= common.BytesToAddress(log.Topics[1][12:])
+			mevt.Spender = common.BytesToAddress(log.Topics[2][12:])
+			err := cash_abi.Unpack(&mevt,"Approval",log.Data)
+			if err != nil {
+				Fatalf("Event ERC20_Approval Cash decode error: %v",err)
+			} else {
+				fmt.Printf("ERC20_Approval event for contract %v (block=%v) :\n",
+											log.Address.String(),log.BlockNumber)
+				mevt.Dump()
+			}
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_zerox_approval_for_all) {
+			var mevt ApprovalForAll
+			mevt.Owner= common.BytesToAddress(log.Topics[1][12:])
+			mevt.Operator= common.BytesToAddress(log.Topics[2][12:])
+			err := zerox_abi.Unpack(&mevt,"ApprovalForAll",log.Data)
+			if err != nil {
+				Fatalf("Event ApprovalForAll decode error: %v",err)
+			} else {
+				fmt.Printf("ApprovalForAll event for contract %v (block=%v) :\n",
+											log.Address.String(),log.BlockNumber)
+				mevt.Dump()
+			}
+		}
+
+
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_trading_proceeds_claimed) {
 			var mevt TradingProceedsClaimed
 			mevt.Universe= common.BytesToAddress(log.Topics[1][12:])
@@ -115,7 +145,8 @@ func process_event(sender common.Address, log *types.Log) {
 			if err != nil {
 				Fatalf("Event ERC20_Transfer for Cash decode error: %v",err)
 			} else {
-				fmt.Printf("ERC20_Transfer event found (block=%v) :\n",log.BlockNumber)
+				fmt.Printf("ERC20_Transfer event for contract %v (block=%v) :\n",
+											log.Address.String(),log.BlockNumber)
 				mevt.Dump()
 			}
 		}
@@ -167,7 +198,8 @@ func process_event(sender common.Address, log *types.Log) {
 			if err != nil {
 				Fatalf("Event TokensTransferred decode error: %v",err)
 			} else {
-				fmt.Printf("TokensTransferred event found (block=%v) :\n",log.BlockNumber)
+				fmt.Printf("TokensTransferred event for contract %v (block=%v) :\n",
+											log.Address.String(),log.BlockNumber)
 				mevt.Dump()
 			}
 		}
@@ -179,7 +211,8 @@ func process_event(sender common.Address, log *types.Log) {
 			if err != nil {
 				Fatalf("Event TokenBalanceChanged decode error: %v",err)
 			} else {
-				fmt.Printf("TokenBalanceChanged event found (block=%v) :\n",log.BlockNumber)
+				fmt.Printf("TokenBalanceChanged event for contract %v (block=%v) :\n",
+											log.Address.String(),log.BlockNumber)
 				mevt.Dump()
 			}
 		}
@@ -192,9 +225,10 @@ func process_event(sender common.Address, log *types.Log) {
 			if err != nil {
 				Fatalf("Event ShareTokenBalanceChanged decode error: %v\n",err)
 			} else {
-				fmt.Printf("ShareTokenBalanceChanged event found (block=%v) :\n",log.BlockNumber)
+				fmt.Printf("ShareTokenBalanceChanged event for contract %v (block=%v) :\n",
+											log.Address.String(),log.BlockNumber)
 				mevt.Dump()
-				storage.insert_share_balance_changed_evt(&mevt)
+				storage.insert_share_balance_changed_evt(block_num,tx_id,&mevt)
 			}
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_order) {
@@ -206,9 +240,10 @@ func process_event(sender common.Address, log *types.Log) {
 			if err != nil {
 				Fatalf("Event OrderEvent decode error: %v",err)
 			} else {
-				fmt.Printf("OrderEvent event found (block=%v) : \n",log.BlockNumber)
+				fmt.Printf("OrderEvent event for contract %v (block=%v) : \n",
+											log.Address.String(),log.BlockNumber)
 				mevt.Dump()
-				storage.insert_market_order_evt(BlockNumber(log.BlockNumber),&mevt)
+				storage.insert_market_order_evt(BlockNumber(log.BlockNumber),tx_id,signer,&mevt)
 			}
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cancel_0x_order) {
@@ -220,7 +255,8 @@ func process_event(sender common.Address, log *types.Log) {
 			if err != nil {
 				Fatalf("Event CancelZeroXOrder decode error: %v",err)
 			} else {
-				fmt.Printf("CancelZeroXOrder event found (block=%v) : \n",log.BlockNumber)
+				fmt.Printf("CancelZeroXOrder event for contract %v (block=%v) : \n",
+											log.Address.String(),log.BlockNumber)
 				mevt.Dump()
 				storage.insert_cancel_0x_order_evt(&mevt)
 			}
@@ -235,7 +271,7 @@ func process_event(sender common.Address, log *types.Log) {
 				mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
 				mevt.Market =common.BytesToAddress(log.Topics[2][12:])
 				mevt.Dump()
-				storage.insert_market_oi_changed_evt(&mevt)
+				storage.insert_market_oi_changed_evt(block,&mevt)
 			}
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_finalized) {
@@ -262,7 +298,7 @@ func process_event(sender common.Address, log *types.Log) {
 				mevt.Reporter= common.BytesToAddress(log.Topics[2][12:])
 				mevt.Market = common.BytesToAddress(log.Topics[3][12:])
 				mevt.Dump()
-				storage.insert_initial_report_evt(&mevt)
+				storage.insert_initial_report_evt(block_num,tx_id,signer,&mevt)
 			}
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_crowd_contrib) {
@@ -276,7 +312,7 @@ func process_event(sender common.Address, log *types.Log) {
 				mevt.Reporter= common.BytesToAddress(log.Topics[2][12:])
 				mevt.Market = common.BytesToAddress(log.Topics[3][12:])
 				mevt.Dump()
-				storage.insert_dispute_crowd_contrib(&mevt)
+				storage.insert_dispute_crowd_contrib(block_num,tx_id,signer,&mevt)
 			}
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_volume_changed) {
@@ -289,7 +325,7 @@ func process_event(sender common.Address, log *types.Log) {
 				mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
 				mevt.Market = common.BytesToAddress(log.Topics[2][12:])
 				mevt.Dump()
-				storage.insert_market_volume_changed_evt(&mevt)
+				storage.insert_market_volume_changed_evt(block_num,tx_id,&mevt)
 			}
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_created) {
@@ -302,7 +338,7 @@ func process_event(sender common.Address, log *types.Log) {
 			} else {
 				fmt.Printf("MarketCreated event found (block=%v)\n",log.BlockNumber)
 				mevt.Dump()
-				storage.insert_market_created_evt(&mevt)
+				storage.insert_market_created_evt(block_num,tx_id,signer,&mevt)
 			}
 		}
 	}
