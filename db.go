@@ -244,14 +244,6 @@ func (ss *SQLStorage) insert_market_oi_changed_evt(block *types.Header,evt *Mark
 	var query string
 	market_aid := ss.lookup_address(evt.Market.String())
 	ts_inserted := int64(block.Time)
-/* discontinued
-	universe_id := ss.lookup_universe_id(evt.Universe.String())
-	query = "UPDATE market SET open_interest = $3 WHERE universe_id = $1 AND market_aid = $2"
-	_,err := ss.db.Exec(query,universe_id,market_aid,evt.MarketOI.String())
-	if err != nil {
-		Fatalf("DB error: can't update open interest of market %v : %v",market_aid,err)
-	}
-*/
 	query = "INSERT INTO oi_chg(market_aid,ts_inserted,oi) VALUES($1,$2,$3)"
 	result,err := ss.db.Exec(query,market_aid,ts_inserted,evt.MarketOI.String())
 	if err != nil {
@@ -464,9 +456,6 @@ func (ss *SQLStorage) insert_market_finalized_evt(evt *MktFinalizedEvt) {
 	winning_payouts := bigint_ptr_slice_to_str(&evt.WinningPayoutNumerators,",")
 
 	var query string
-/* discontinued
-	query = "UPDATE market SET fin_timestamp=$3,winning_payouts=$4 WHERE universe_id = $1 AND market_aid = $2"
-*/
 	query = "INSERT INTO mkt_fin(market_aid,fin_timestamp,winning_payouts) VALUES($1,$2,$3)"
 	_,err := ss.db.Exec(query,market_aid,fin_timestamp,winning_payouts)
 	if err != nil {
@@ -546,7 +535,6 @@ func (ss *SQLStorage) insert_market_volume_changed_evt(
 	evt *MktVolumeChangedEvt,
 ) {
 
-	//discontinued universe_id := ss.lookup_universe_id(evt.Universe.String())
 	market_aid := ss.lookup_address(evt.Market.String())
 
 	volume := evt.Volume.String()
@@ -582,24 +570,6 @@ func (ss *SQLStorage) insert_market_volume_changed_evt(
 	} else {
 		Fatalf("DB error: couldn't insert into InitialReport table. Rows affeced = 0")
 	}
-/* discontinued 
-	// update volume in 'market' table
-	query = "UPDATE market SET cur_volume=$3 WHERE universe_id = $1 AND market_aid = $2"
-	result,err = ss.db.Exec(query,universe_id,market_aid,volume)
-	if err != nil {
-		Fatalf("DB error: can't update volume of market %v : %v",market_aid,err)
-	}
-	rows_affected,err = result.RowsAffected()
-	if err != nil {
-		Fatalf("DB error: %v",err)
-	}
-	if rows_affected > 0 {
-		fmt.Printf("Set market %v volume to %v",market_aid,volume)
-		return
-	} else {
-		Fatalf("DB error: couldn't update 'market' table. Rows affeced = 0")
-	}
-*/
 }
 func (ss *SQLStorage) insert_dispute_crowd_contrib(
 	block_num BlockNumber,
@@ -814,4 +784,14 @@ func (ss *SQLStorage) fix_chainsplit(block *types.Header) BlockNumber {
 		Fatalf("DB error: %v",err);
 	}
 	return BlockNumber(my_block_num + 1)	// parent + 1 = current
+}
+func (ss *SQLStorage) block_delete_with_everything(block_num BlockNumber) {
+
+	// deletes block table and all the other tables receieve cascaded DELETEs also
+	var query string
+	query = "DELETE FROM block WHERE block_num = $1"
+	_,err := ss.db.Exec(query,block_num)
+	if (err!=nil) {
+		Fatalf("DB error: %v (block_num=%v)",err,block_num);
+	}
 }

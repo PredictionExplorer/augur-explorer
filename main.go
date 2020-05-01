@@ -14,7 +14,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 const (
-	// ToDo: get these signatures from the abi files
+	// ToDo: get these signatures from the abi files (after our code stabilizes, currently we will
+	//	leave these constants visible to aid debugging processes)
 	MARKET_CREATED = "ea17ae24b0d40ea7962a6d832db46d1f81eaec1562946d0830d1c21d4c000ec1"
 	MARKET_OI_CHANGED = "213a05b9ad8567c2f8fa868e7375e5bf30e69add0dbb5913ca8a3e58c815c268"
 	MARKET_ORDER = "9bab1368a1ed530afaad9c630ba75e6a5c1efa9f6af0139d6cda2b6af6aa801e"
@@ -61,6 +62,10 @@ var (
 	evt_erc20_approval,_ = hex.DecodeString(ERC20_APPROVAL)
 
 	storage *SQLStorage
+
+	all_contracts map[string]interface{}
+	inspected_events [][]byte
+
 	augur_abi *abi.ABI
 	trading_abi *abi.ABI
 	zerox_abi *abi.ABI
@@ -78,6 +83,7 @@ func main() {
 				" Please set AUGUR_ETH_NODE_RPC environment variable")
 	}
 
+	augur_init()
 	//client, err := ethclient.Dial("http://192.168.1.102:18545")
 	client, err := ethclient.Dial(RPC_URL)
 	if err != nil {
@@ -86,7 +92,8 @@ func main() {
 
 	storage = connect_to_storage()
 
-	augur_init()
+
+
 	ctx := context.Background()
 	latestBlock, err := client.BlockByNumber(ctx, nil)
 	if err != nil {
@@ -100,17 +107,30 @@ func main() {
 	} else {
 		bnum = bnum + 1
 	}
+	split_simulated := false
 	fmt.Printf("Starting data load from block %v\n",bnum)
 	var bnum_high BlockNumber = BlockNumber(latestBlock.Number().Uint64())
 	for ; bnum<bnum_high; bnum++ {
 		big_bnum:=big.NewInt(int64(bnum))
 		block, _ := client.BlockByNumber(ctx,big_bnum)
 		if block != nil {
+			storage.block_delete_with_everything(BlockNumber(big_bnum.Int64()))
 			num_transactions, err := client.TransactionCount(ctx,block.Hash())
 			if err != nil {
 				fmt.Printf("block error: %v \n",err)
 			} else {
 				header := block.Header()
+				back_block_num := new(big.Int).SetUint64(header.Number.Uint64() - 20)
+				if (back_block_num.Uint64() == 99999999999999) && !split_simulated {//simulation disabled
+					// code to simulate chain split (naive) , this block should be removed when stable
+					block,_ = client.BlockByNumber(ctx,back_block_num)
+					header = block.Header()
+					big_bnum = big.NewInt(int64(header.Number.Int64()))
+					bnum = BlockNumber(big_bnum.Uint64())
+					storage.block_delete_with_everything(BlockNumber(header.Number.Int64()))
+					split_simulated = true
+					fmt.Println("Chain split simulation in action");
+				}
 				if !storage.insert_block(header,int64(num_transactions)) {
 					// chainsplit detected
 					set_back_block_num := storage.fix_chainsplit(header)

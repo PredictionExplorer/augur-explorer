@@ -3,10 +3,8 @@ package main
 import (
 	"math/big"
 
-//	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-//	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 type OrderType uint8
 const (
@@ -47,16 +45,6 @@ type MarketCreatedEvt struct {
 	Timestamp            *big.Int
 	Raw                  types.Log // Blockchain specific contextual infos
 }
-/*duplicated, removal pending
-type AugurShareTokenBalanceChanged struct {
-	Universe common.Address
-	Account  common.Address
-	Market   common.Address
-	Outcome  *big.Int
-	Balance  *big.Int
-	Raw      types.Log // Blockchain specific contextual infos
-}
-*/
 type MktOrderEvt struct {
 	Universe     common.Address
 	Market       common.Address

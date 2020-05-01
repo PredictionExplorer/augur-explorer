@@ -9,7 +9,7 @@ import (
 )
 func check(e error) {
 	if e != nil {
-		panic(e)
+		panic(fmt.Sprintf("Exiting Augur extractor with error: %v",e))
 	}
 }
 func Fatalf(format string, args ...interface{}) {
