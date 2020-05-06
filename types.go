@@ -6,6 +6,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
+const (
+	MAX_BLOCKS_CHAIN_SPLIT = 128
+)
 type OrderType uint8
 const (
 	OrderTypeBid		OrderType = 0
@@ -28,6 +31,12 @@ type BlockNumber int64	// -1 is used to mark 'block not set' for the database
 
 type EventSequencer struct {	// determines the order for contained events
 	unordered_list		[]*types.Log
+}
+type ExtraInfo struct {
+	Categories			[]string	`json:"categories"`
+	Description			string		`json:"description"`
+	Tags				[]string	`json:"tags"`
+	LongDescription		string		`json:"longDescription"`
 }
 type MarketCreatedEvt struct {
 	Universe             common.Address
@@ -225,4 +234,12 @@ type Approval struct {
 	Spender common.Address
 	Value   *big.Int
 	Raw     types.Log // Blockchain specific contextual infos
+}
+// Backend Types
+type InfoMarkets struct {
+	MktAddr			string
+	Signer			string
+	MktCreator		string
+	Description		string
+	OpenInterest	float64
 }

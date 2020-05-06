@@ -36,7 +36,6 @@ const (
 	ZEROX_APPROVAL_FOR_ALL = "17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31"
 	ERC20_APPROVAL = "8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
 
-	MAX_BLOCKS_CHAIN_SPLIT = 128
 )
 var (
 	// these evt_ variables are here for speed to avoid calculation of Keccak256

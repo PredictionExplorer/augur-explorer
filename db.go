@@ -4,8 +4,10 @@ import (
 	"os"
 	"fmt"
 	"net"
+	"strings"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	_  "github.com/lib/pq"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -157,6 +159,33 @@ func (ss *SQLStorage) lookup_or_create_address(addr string) int64 {
 
 	return addr_id
 }
+func (ss *SQLStorage) lookup_or_create_category(categories string) int64 {
+
+	var cat_id int64
+	var query string
+
+	query="SELECT cat_id FROM category WHERE category=$1"
+	err:=ss.db.QueryRow(query,categories).Scan(&cat_id);
+	if (err!=nil) {
+		if (err==sql.ErrNoRows) {
+			query = "INSERT INTO category(category) VALUES($1) RETURNING cat_id"
+			row:=ss.db.QueryRow(query,categories);
+			err:=row.Scan(&cat_id)
+			if err!=nil {
+				Fatalf(fmt.Sprintf("DB error in category insertion: %v : %v",query,err))
+			}
+			if cat_id==0 {
+				Fatalf(fmt.Sprintf("DB error, cat_id after INSERT is 0"))
+			}
+			return cat_id
+		}
+	}
+	if (err!=nil) {
+		Fatalf(fmt.Sprintf("DB error in getting category id : %v",err))
+	}
+
+	return cat_id
+}
 func (ss *SQLStorage) insert_market_created_evt(
 		block_num BlockNumber,
 		tx_id int64,
@@ -189,10 +218,19 @@ func (ss *SQLStorage) insert_market_created_evt(
 
 	prices := bigint_ptr_slice_to_str(&evt.Prices,",")
 	outcomes := outcomes_to_str(&evt.Outcomes,",")
+
+	var extra_info ExtraInfo
+	json.Unmarshal([]byte(evt.ExtraInfo), &extra_info)
+	fmt.Printf("extra_info unmarshalled: %+v\n",extra_info)
+	categories := strings.Join(extra_info.Categories,",")
+	fmt.Printf("market_categories: %v\n",categories)
+	cat_id := ss.lookup_or_create_category(categories)
+
 	query = `
 		INSERT INTO market(
 			block_num,
 			tx_id,
+			cat_id,
 			universe_id,
 			market_aid,
 			creator_aid,
@@ -207,10 +245,11 @@ func (ss *SQLStorage) insert_market_created_evt(
 			extra_info,
 			outcomes,
 			no_show_bond
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`
 	result,err := ss.db.Exec(query,
 			block_num,
 			tx_id,
+			cat_id,
 			universe_id,
 			market_aid,
 			creator_aid,
@@ -794,4 +833,54 @@ func (ss *SQLStorage) block_delete_with_everything(block_num BlockNumber) {
 	if (err!=nil) {
 		Fatalf("DB error: %v (block_num=%v)",err,block_num);
 	}
+}
+func (ss *SQLStorage) get_active_market_list() []InfoMarkets {
+
+	var query string
+	query = "SELECT " +
+//				"market.market_aid," +
+				"CONCAT(LEFT(mc.addr,6),'…',RIGHT(mc.addr,6)) AS mkt_addr," +
+				"CONCAT(LEFT(sa.addr,6),'…',RIGHT(sa.addr,6)) AS signer," +
+				"CONCAT(LEFT(ca.addr,6),'…',RIGHT(ca.addr,6)) AS mcreator, " +
+//				"extra_info::json->>'categories' AS cat," +
+				"extra_info::json->>'description' AS descr," +
+				"CAST(NULLIF(open_interest,'') as double precision)/1e+18 AS OI " + 
+			"FROM market " +
+				"LEFT JOIN " +
+					"address AS sa ON market.signer_aid=sa.address_id " +
+				"LEFT JOIN " +
+					"address AS mc ON market.creator_aid=mc.address_id " +
+				"LEFT JOIN " +
+					"address AS ca ON market.creator_aid=ca.address_id " +
+			"ORDER BY " +
+				"market.market_aid";
+
+	_,err := ss.db.Exec(query)
+	if (err!=nil) {
+		Fatalf("DB error: %v ",err);
+	}
+	rows,err:=ss.db.Query(query)
+	if err!=nil {
+		if err!=sql.ErrNoRows {
+			Fatalf(fmt.Sprintf("Error for query %v: %v",query,err))
+		}
+	}
+	var rec InfoMarkets
+	var records []InfoMarkets = make([]InfoMarkets,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var oi sql.NullFloat64
+		err=rows.Scan(&rec.MktAddr,&rec.Signer,&rec.MktCreator,&rec.Description,&oi)
+		if err!=nil {
+			Fatalf(fmt.Sprintf("DB error: %v",err))
+		}
+		if oi.Valid {
+			rec.OpenInterest = oi.Float64
+		} else {
+			rec.OpenInterest = 0
+		}
+		records = append(records,rec)
+	}
+	return records
 }

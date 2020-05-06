@@ -215,7 +215,7 @@ func proc_profit_loss_changed(log *types.Log) {
 	}
 }
 func proc_transfer_single(log *types.Log) {
-	var mevt TransferSingle 
+	var mevt TransferSingle
 	mevt.Operator= common.BytesToAddress(log.Topics[1][12:])
 	mevt.From= common.BytesToAddress(log.Topics[2][12:])
 	mevt.To= common.BytesToAddress(log.Topics[3][12:])

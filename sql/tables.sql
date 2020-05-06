@@ -19,11 +19,17 @@ CREATE TABLE address (
 	address_id			BIGSERIAL	PRIMARY KEY,
 	addr				TEXT NOT NULL UNIQUE		-- 20 byte Ethereum address , stored as 42 hex string (0x+addr)
 );
+-- Market category
+CREATE TABLE category (
+	cat_id				BIGSERIAL	PRIMARY KEY,
+	category			TEXT NOT NULL UNIQUE		-- includes parent category too (comma separated list)
+);
 -- Market
 CREATE TABLE market (
 	market_aid			BIGINT NOT NULL PRIMARY KEY,-- address ID of the Market
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	cat_id				BIGINT NOT NULL,			-- category id
 	universe_id			BIGSERIAL NOT NULL,			-- reference to universe table
 	creator_aid			BIGINT NOT NULL,			-- address ID of market creator (not real User)
 	signer_aid			BIGINT NOT NULL,			-- address ID of the User who signed transaction (real  creator)
