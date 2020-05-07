@@ -236,10 +236,31 @@ type Approval struct {
 	Raw     types.Log // Blockchain specific contextual infos
 }
 // Backend Types
-type InfoMarkets struct {
+type InfoMarket struct {
 	MktAddr			string
+	MktAddrSh		string	// short address (with .. in the middle)
 	Signer			string
 	MktCreator		string
+	MktCreatorSh	string	// short address (with .. in the middle)
+	EndDate			string
 	Description		string
 	OpenInterest	float64
+	CurVolume		float64
+}
+type InfoCategories struct {
+	CatId			int64
+	Category		string
+	Subcategories	[]string
+}
+type MarketTrade struct {
+	MktAddr			string
+	MktAddrSh		string	// short address (with .. in the middle)
+	FillerAddr		string
+	FillerAddrSh	string	// short address (with .. in the middle)
+	Type			string
+	Direction		string
+	Date			string
+	Price			int64
+	Amount			float64
+	Outcome			int64
 }

@@ -1,19 +1,20 @@
--- indices for cascading
+-- indices for cascading DELETEs
 CREATE INDEX tx_block_num_idx       ON  transaction     USING   btree   (block_num);
-CREATE INDEX mkt_tx_id				ON	market			USING	btree	(tx_id);
-CREATE INDEX sbal_tx_id				ON	sbalances		USING	btree	(tx_id);
-CREATE INDEX mord_tx_id				ON	mktord			USING	btree	(tx_id);
-CREATE INDEX rep_tx_id				ON	report			USING	btree	(tx_id);
-CREATE INDEX vol_tx_id				ON	volume			USING	btree	(tx_id);
-CREATE INDEX oichg_mtk_id			ON	oi_chg			USING	btree	(market_aid);
-CREATE INDEX mktfin_id				ON	mkt_fin			USING	btree	(market_aid);
+CREATE INDEX mkt_tx_idx				ON	market			USING	btree	(tx_id);
+CREATE INDEX sbal_tx_idx			ON	sbalances		USING	btree	(tx_id);
+CREATE INDEX mord_tx_idx			ON	mktord			USING	btree	(tx_id);
+CREATE INDEX rep_tx_idx				ON	report			USING	btree	(tx_id);
+CREATE INDEX vol_tx_idx				ON	volume			USING	btree	(tx_id);
+CREATE INDEX oichg_mtk_idx			ON	oi_chg			USING	btree	(market_aid);
+CREATE INDEX mktfin_idx				ON	mkt_fin			USING	btree	(market_aid);
 -- market_aid indices
-CREATE INDEX sbal_mkt_id			ON	sbalances		USING	btree	(market_aid);
-CREATE INDEX mo_mkt_id				ON	mktord			USING	btree	(market_aid);
-CREATE INDEX oord_mkt_id			ON	oorders			USING	btree	(market_aid);
-CREATE INDEX rep_mkt_id				ON	report			USING	btree	(market_aid);
-CREATE INDEX vol_mkt_id				ON	volume			USING	btree	(market_aid);
-CREATE INDEX oich_mkt_id			ON	oi_chg			USING	btree	(market_aid);
-CREATE INDEX mfin_mkt_id			ON	mkt_fin			USING	btree	(market_aid);
+CREATE INDEX sbal_mkt_idx			ON	sbalances		USING	btree	(market_aid);
+CREATE INDEX mo_mkt_idx				ON	mktord			USING	btree	(market_aid);
+CREATE INDEX oord_mkt_idx			ON	oorders			USING	btree	(market_aid);
+CREATE INDEX rep_mkt_idx			ON	report			USING	btree	(market_aid);
+CREATE INDEX vol_mkt_idx			ON	volume			USING	btree	(market_aid);
+CREATE INDEX oich_mkt_idx			ON	oi_chg			USING	btree	(market_aid);
+CREATE INDEX mfin_mkt_idx			ON	mkt_fin			USING	btree	(market_aid);
 -- other indices
-CREATE INDEX blk_ph_id				ON block			USING	btree	(parent_hash);
+CREATE INDEX blk_ph_idx				ON block			USING	btree	(parent_hash);
+CREATE INDEX mord_ts_idx			ON mktord			USINg	btree	(time_stamp);

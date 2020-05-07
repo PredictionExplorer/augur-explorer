@@ -145,4 +145,15 @@ CREATE TABLE mkt_fin (
 CREATE TABLE last_block (
 	block_num			BIGINT	NOT NULL	-- last block processed by the ETL
 );
-
+-- Statistics, automatically accumulated for the main page
+CREATE TABLE main_stats {
+	id					BIGSERIAL PRIMARY KEY,
+	universe_id			BIGINT NOT NULL UNIQUE,
+	markets_count		BIGINT DEFAULT 0,	-- counter of all the markets for this Universe
+	yesno_count			BIGINT DEFAULT 0,	-- counter for Yes/No markets
+	categ_count			BIGINT DEFAULT 0,	-- counter for Categorical markets
+	scalar_count		BIGINT DEFAULT 0,	-- counter for Scalar markets
+	active_count		BIGINT DEFAULT 0,	-- counter for not-finalized markets
+	money_at_stake		DECIMAL(6,18),		-- amount in ETH
+	trades_count		BIGINT DEFAULT 0,	-- total amount of trades
+};

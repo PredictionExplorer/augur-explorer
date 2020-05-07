@@ -834,26 +834,83 @@ func (ss *SQLStorage) block_delete_with_everything(block_num BlockNumber) {
 		Fatalf("DB error: %v (block_num=%v)",err,block_num);
 	}
 }
-func (ss *SQLStorage) get_active_market_list() []InfoMarkets {
+func (ss *SQLStorage) get_active_market_list() []InfoMarket {
 
 	var query string
 	query = "SELECT " +
-//				"market.market_aid," +
-				"CONCAT(LEFT(mc.addr,6),'…',RIGHT(mc.addr,6)) AS mkt_addr," +
+				"ma.addr as mkt_addr," +
+				"CONCAT(LEFT(ma.addr,6),'…',RIGHT(ma.addr,6)) AS mkt_addr_sh," +
 				"CONCAT(LEFT(sa.addr,6),'…',RIGHT(sa.addr,6)) AS signer," +
-				"CONCAT(LEFT(ca.addr,6),'…',RIGHT(ca.addr,6)) AS mcreator, " +
-//				"extra_info::json->>'categories' AS cat," +
+				"ca.addr as mcreator," +
+				"CONCAT(LEFT(ca.addr,6),'…',RIGHT(ca.addr,6)) AS mcreator_sh, " +
+				"to_timestamp(end_time)::date as end_date," + 
 				"extra_info::json->>'description' AS descr," +
-				"CAST(NULLIF(open_interest,'') as double precision)/1e+18 AS OI " + 
-			"FROM market " +
+				"CAST(NULLIF(open_interest,'') as double precision)/1e+18 AS OI," + 
+				"CAST(NULLIF(cur_volume,'') as double precision)/1e+18 AS volume " + 
+			"FROM market as m " +
 				"LEFT JOIN " +
-					"address AS sa ON market.signer_aid=sa.address_id " +
+					"address AS ma ON m.market_aid = ma.address_id " +
 				"LEFT JOIN " +
-					"address AS mc ON market.creator_aid=mc.address_id " +
+					"address AS sa ON m.signer_aid = sa.address_id " +
 				"LEFT JOIN " +
-					"address AS ca ON market.creator_aid=ca.address_id " +
+					"address AS ca ON m.creator_aid = ca.address_id " +
 			"ORDER BY " +
-				"market.market_aid";
+				"m.market_aid";
+
+	_,err := ss.db.Exec(query)
+	if (err!=nil) {
+		Fatalf("DB error: %v (query=%v)",err,query);
+	}
+	rows,err:=ss.db.Query(query)
+	if err!=nil {
+		if err!=sql.ErrNoRows {
+			Fatalf(fmt.Sprintf("Error for query %v: %v",query,err))
+		}
+	}
+	var rec InfoMarket
+	records := make([]InfoMarket,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var oi sql.NullFloat64
+		var vol sql.NullFloat64
+		err=rows.Scan(
+					&rec.MktAddr,
+					&rec.MktAddrSh,
+					&rec.Signer,
+					&rec.MktCreator,
+					&rec.MktCreatorSh,
+					&rec.EndDate,
+					&rec.Description,
+					&oi,
+					&vol,
+		)
+		if err!=nil {
+			Fatalf(fmt.Sprintf("DB error: %v",err))
+		}
+		if oi.Valid {
+			rec.OpenInterest = oi.Float64
+		} else {
+			rec.OpenInterest = 0
+		}
+		if vol.Valid {
+			rec.CurVolume = vol.Float64
+		} else {
+			rec.CurVolume = 0
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) get_categories() []InfoCategories {
+
+	var query string
+	query = "SELECT " +
+				"cat_id," +
+				"category " +
+			"FROM category " +
+			"ORDER BY " +
+				"category";
 
 	_,err := ss.db.Exec(query)
 	if (err!=nil) {
@@ -865,22 +922,109 @@ func (ss *SQLStorage) get_active_market_list() []InfoMarkets {
 			Fatalf(fmt.Sprintf("Error for query %v: %v",query,err))
 		}
 	}
-	var rec InfoMarkets
-	var records []InfoMarkets = make([]InfoMarkets,0,8)
+	var rec InfoCategories
+	records := make([]InfoCategories,0,8)
 
 	defer rows.Close()
 	for rows.Next() {
-		var oi sql.NullFloat64
-		err=rows.Scan(&rec.MktAddr,&rec.Signer,&rec.MktCreator,&rec.Description,&oi)
+		err=rows.Scan(&rec.CatId,&rec.Category)
 		if err!=nil {
 			Fatalf(fmt.Sprintf("DB error: %v",err))
 		}
-		if oi.Valid {
-			rec.OpenInterest = oi.Float64
+		fmt.Printf("going to do split of: %+v\n",rec.Category)
+		subcategories := strings.Split(rec.Category,",")
+		for i := 0 ; i< len(subcategories); i++ {
+			subcategories[i] = strings.Title(subcategories[i])
+			fmt.Printf("added subcategory i=%v, subcat = %v\n",i,subcategories[i])
+		}
+		if len(subcategories) > 0 {	// sometimes last category is empty, delete it
+			if len(subcategories[len(subcategories)-1]) == 0 {
+				subcategories = subcategories[:len(subcategories)-1]
+			}
+		}
+		rec.Subcategories = subcategories
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) get_mkt_trades(mkt_addr string) []MarketTrade {
+
+	fmt.Printf("get_mkt_trades() mkt_addr=%v\n",mkt_addr)
+	var where string = ""
+	var market_aid int64 = 0;
+	if len(mkt_addr) > 0 {
+		market_aid = ss.lookup_address(mkt_addr)
+		where = " WHERE o.market_aid = $1 "
+	}
+	var query string
+	query = "SELECT " +
+				"a.addr as mkt_addr," +
+				"CONCAT(LEFT(a.addr,6),'…',RIGHT(a.addr,6)) AS mkt_addr_sh, " +
+				"fa.addr as filler_addr," +
+				"CONCAT(LEFT(fa.addr,6),'…',RIGHT(fa.addr,6)) AS filler_addr_sh," +
+				"CASE oaction " +
+					"WHEN 0 THEN 'CREATE' " +
+					"WHEN 1 THEN 'CANCEL' " +
+					"WHEN 2 THEN 'FILL' " +
+				"END AS type, " +
+				"CASE o.otype " +
+					"WHEN 0 THEN 'BID' " +
+					"ELSE 'ASK' " +
+				"END AS dir, " +
+				"TO_TIMESTAMP(o.time_stamp)::date AS date," +
+				"o.price, " +
+				"CAST(o.amount_filled AS double precision)/1e+18 AS amount, " +
+				"o.outcome " +
+			"FROM mktord AS o " +
+				"LEFT JOIN " +
+					"address AS a ON o.market_aid=a.address_id " +
+				"LEFT JOIN " +
+					"address AS fa ON o.filler_aid=fa.address_id " +
+			where +
+			"ORDER BY " +
+				"o.time_stamp";
+
+	var rows *sql.Rows
+	var err error
+	if market_aid > 0 {
+		rows,err = ss.db.Query(query,market_aid)
+	} else {
+		rows,err = ss.db.Query(query)
+	}
+	if (err!=nil) {
+		Fatalf("DB error: %v (query=%v)",err,query);
+	}
+	var rec MarketTrade
+	records := make([]MarketTrade,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var amount sql.NullFloat64
+		err=rows.Scan(
+			&rec.MktAddr,
+			&rec.MktAddrSh,
+			&rec.FillerAddr,
+			&rec.FillerAddrSh,
+			&rec.Type,
+			&rec.Direction,
+			&rec.Date,
+			&rec.Price,
+			&rec.Amount,
+			&rec.Outcome,
+		)
+		if err!=nil {
+			Fatalf(fmt.Sprintf("DB error: %v",err))
+		}
+		if amount.Valid {
+			rec.Amount= amount.Float64
 		} else {
-			rec.OpenInterest = 0
+			rec.Amount= 0
 		}
 		records = append(records,rec)
+	}
+	fmt.Printf("get_mkt_trades(): returning %v rows\n",len(records))
+	if len(records) == 0 {
+		fmt.Printf("null records, q: %v",query)
 	}
 	return records
 }
