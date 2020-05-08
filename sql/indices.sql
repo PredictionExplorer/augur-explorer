@@ -17,4 +17,5 @@ CREATE INDEX oich_mkt_idx			ON	oi_chg			USING	btree	(market_aid);
 CREATE INDEX mfin_mkt_idx			ON	mkt_fin			USING	btree	(market_aid);
 -- other indices
 CREATE INDEX blk_ph_idx				ON block			USING	btree	(parent_hash);
-CREATE INDEX mord_ts_idx			ON mktord			USINg	btree	(time_stamp);
+CREATE INDEX mord_ts_idx			ON mktord			USING	btree	(time_stamp);
+CREATE UNIQUE INDEX ovol_idx		ON outcome_vol		USING	btree	(market_aid,outcome_idx);

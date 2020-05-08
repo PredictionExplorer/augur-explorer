@@ -240,10 +240,16 @@ type InfoMarket struct {
 	MktAddr			string
 	MktAddrSh		string	// short address (with .. in the middle)
 	Signer			string
+	SignerSh		string
 	MktCreator		string
 	MktCreatorSh	string	// short address (with .. in the middle)
 	EndDate			string
 	Description		string
+	LongDesc		string
+	Categories		string
+	Outcomes		string
+	MktType			string
+	Fee				float64
 	OpenInterest	float64
 	CurVolume		float64
 }
@@ -260,7 +266,15 @@ type MarketTrade struct {
 	Type			string
 	Direction		string
 	Date			string
-	Price			int64
+	Price			float64
 	Amount			float64
-	Outcome			int64
+	Outcome			int
+	OutcomeStr		string
+}
+type OutcomeVol struct {
+	Outcome			int
+	OutcomeStr		string
+	Volume			float64
+	LastPrice		float64
+	MktType			int
 }

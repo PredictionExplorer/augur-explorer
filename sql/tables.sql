@@ -36,17 +36,17 @@ CREATE TABLE market (
 	reporter_aid		BIGINT NOT NULL,			-- address ID of the User who will report on the outcome
 	end_time			BIGINT NOT NULL,			-- when the Market expires
 	max_ticks			BIGINT NOT NULL,			-- maximum price range (number of intervals)
-	create_timestamp	BIGINT NOT NULL,
+	create_timestamp	TIMESTAMPTZ NOT NULL,
 	market_type			SMALLINT NOT NULL,			-- Market type enum: 0:YES_NO | 1:CATEGORICAL | 2:SCALAR
-	open_interest		TEXT DEFAULT '',			-- amount of shares created
-	fee					TEXT NOT NULL,				-- fee to be paid to Market creator as percentage of transaction
-	prices				TEXT NOT NULL,			-- range of prices the Market can take
+	open_interest		DECIMAL(24,18) DEFAULT 0.0,		-- amount of shares created
+	fee					DECIMAL(24,18) NOT NULL,		-- fee to be paid to Market creator as percentage of transaction
+	prices				TEXT NOT NULL,				-- range of prices the Market can take
 	extra_info			TEXT NOT NULL,				-- specific market metadata (JSON format)
 	outcomes			TEXT NOT NULL,				-- possible outcomes of the market
 	winning_payouts		TEXT DEFAULT '',
 	fin_timestamp		BIGINT DEFAULT 0,
 	no_show_bond		TEXT NOT NULL,				-- $ penalty to the Creator for failing to emit report
-	cur_volume			TEXT DEFAULT ''
+	cur_volume			DECIMAL(24,18) DEFAULT 0.0	-- this is the total volume (for all outcomes althogether)
 );
 -- Balances of Share tokens per Market (accumulated data, one record per account)
 CREATE TABLE sbalances (
@@ -55,8 +55,8 @@ CREATE TABLE sbalances (
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	account_aid			BIGINT NOT NULL,			-- address id of the User(holder of the shares)
 	market_aid			BIGINT NOT NULL,			-- market id of the Market these shares blong
-	outcome				TEXT NOT NULL,				-- market outcome
-	balance				TEXT NOT NULL				-- balance of shares (bigint as string)
+	outcome_idx			SMALLINT NOT NULL,				-- market outcome (index)
+	balance				DECIMAL(24,18) NOT NULL		-- balance of shares (bigint as string)
 );
 -- Market Order (BUY/SELL request made by the User via GUI)
 CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create/Cancel are temporary)
@@ -72,14 +72,14 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
 	creator_aid			BIGINT NOT NULL,			-- address of the creator
 	filler_aid			BIGINT NOT NULL,			-- address of the filler; source: AugurTrading.sol:24
-	price				BIGINT NOT NULL,
-	amount				BIGINT NOT NULL,
-	outcome				BIGINT NOT NULL,
-	token_refund		TEXT NOT NULL,
-	shares_refund		TEXT NOT NULL,
-	fees				TEXT NOT NULL,
-	amount_filled		TEXT NOT NULL,
-	time_stamp			BIGINT NOT NULL,
+	price				DECIMAL(24,18) NOT NULL,
+	amount				DECIMAL(24,18) NOT NULL,
+	outcome				SMALLINT NOT NULL,
+	token_refund		DECIMAL(24,18) NOT NULL,
+	shares_refund		DECIMAL(24,18) NOT NULL,
+	fees				DECIMAL(24,18) NOT NULL,
+	amount_filled		DECIMAL(24,18) NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
 	shares_escrowed		TEXT NOT NULL,
 	tokens_escrowed		TEXT NOT NULL,
 	trade_group			TEXT NOT NULL,			-- User defined group label to identify multiple trades
@@ -95,7 +95,7 @@ CREATE TABLE oorders (	-- open orders table mirrors `mktord` table, it's used on
 	price				BIGINT NOT NULL,
 	amount				BIGINT NOT NULL,
 	outcome				BIGINT NOT NULL,
-	time_stamp			BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
 	order_id			TEXT NOT NULL
 );
 -- Report, submitted by Market Creator
@@ -111,42 +111,49 @@ CREATE TABLE report (
 	dispute_round		BIGINT DEFAULT 1,
 	is_initial			BOOLEAN DEFAULT false,
 	is_designated		BOOLEAN DEFAULT false,
-	amount_staked		TEXT NOT NULL,
+	amount_staked		DECIMAL(24,18) NOT NULL,
 	pnumerators			TEXT NOT NULL,		-- payout numerators
 	description			TEXT DEFAULT '',
-	current_stake		TEXT DEFAULT '',
-	stake_remaining		TEXT DEFAULT '',
-	next_win_start		BIGINT,
-	next_win_end		BIGINT,
-	rpt_timestamp		BIGINT
+	current_stake		DECIMAL(24,18) DEFAULT 0.0,
+	stake_remaining		DECIMAL(24,18) DEFAULT 0.0,
+	next_win_start		TIMESTAMPTZ NOT NULL,
+	next_win_end		TIMESTAMPTZ NOT NULL,
+	rpt_timestamp		TIMESTAMPTZ NOT NULL
 );
 -- Volume
-CREATE TABLE volume (
+CREATE TABLE volume (	-- this is the VolumeChanged event
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
-	volume				TEXT NOT NULL,
-	outcome_vols		TEXT NOT NULL,
-	ins_timestamp		BIGINT NOT NULL
+	volume				DECIMAL(24,18) NOT NULL,
+	outcome_vols		TEXT NOT NULL,		-- this his not numeric because it is not queried (archive only)
+	ins_timestamp		TIMESTAMPTZ NOT NULL
+);
+CREATE TABLE outcome_vol (	-- this is the (accumulated) volume per outcome (indexed) upd. on VolumeChanged
+	id					BIGSERIAL PRIMARY KEY,
+	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
+	outcome_idx			SMALLINT NOT NULL,
+	volume				DECIMAL(24,18) NOT NULL,
+	last_price			DECIMAL(24,18) DEFAULT 0.0
 );
 CREATE table oi_chg ( -- open interest changed event
 	id					BIGSERIAL PRIMARY KEY,
 	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
-	ts_inserted			BIGINT NOT NULL, -- timestamp
-	oi					TEXT NOT NULL
+	ts_inserted			TIMESTAMPTZ NOT NULL, -- timestamp
+	oi					DECIMAL(24,18) NOT NULL
 );
 CREATE TABLE mkt_fin (
 	id					BIGSERIAL PRIMARY KEY,
 	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
-	fin_timestamp		BIGINT NOT NULL,
+	fin_timestamp		TIMESTAMPTZ NOT NULL,
 	winning_payouts		TEXT NOT NULL
 );
 CREATE TABLE last_block (
 	block_num			BIGINT	NOT NULL	-- last block processed by the ETL
 );
 -- Statistics, automatically accumulated for the main page
-CREATE TABLE main_stats {
+CREATE TABLE main_stats (
 	id					BIGSERIAL PRIMARY KEY,
 	universe_id			BIGINT NOT NULL UNIQUE,
 	markets_count		BIGINT DEFAULT 0,	-- counter of all the markets for this Universe
@@ -154,6 +161,6 @@ CREATE TABLE main_stats {
 	categ_count			BIGINT DEFAULT 0,	-- counter for Categorical markets
 	scalar_count		BIGINT DEFAULT 0,	-- counter for Scalar markets
 	active_count		BIGINT DEFAULT 0,	-- counter for not-finalized markets
-	money_at_stake		DECIMAL(6,18),		-- amount in ETH
-	trades_count		BIGINT DEFAULT 0,	-- total amount of trades
-};
+	money_at_stake		DECIMAL(24,18) DEFAULT 0.0,		-- amount in ETH
+	trades_count		BIGINT DEFAULT 0	-- total amount of trades
+);
