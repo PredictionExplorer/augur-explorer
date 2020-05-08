@@ -3,6 +3,9 @@ package main
 
 import (
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 	"fmt"
 	"context"
 	"log"
@@ -36,6 +39,7 @@ const (
 	ZEROX_APPROVAL_FOR_ALL = "17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31"
 	ERC20_APPROVAL = "8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
 
+	DEFAULT_WAIT_TIME = 5000	// 5 seconds
 )
 var (
 	// these evt_ variables are here for speed to avoid calculation of Keccak256
@@ -91,14 +95,23 @@ func main() {
 
 	storage = connect_to_storage()
 
+	c := make(chan os.Signal)
+	exit_chan := make(chan bool)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		fmt.Printf("Got SIGINT signal, will exit after block processing is over." +
+					" To interrupt abruptly send SIGKILL (9) to the kernel.\n")
+		exit_chan <- true
+	}()
 
-
+  main_loop:
 	ctx := context.Background()
 	latestBlock, err := client.BlockByNumber(ctx, nil)
 	if err != nil {
 		log.Fatal("oops:", err)
 	}
-	log.Printf("latest block: %v\n", latestBlock.Number())
+//	fmt.Printf("Latest block at the blockchain: %v\n", latestBlock.Number())
 
 	bnum,exists := storage.get_last_block_num()
 	if !exists {
@@ -107,8 +120,12 @@ func main() {
 		bnum = bnum + 1
 	}
 	split_simulated := false
-	fmt.Printf("Starting data load from block %v\n",bnum)
+//	fmt.Printf("Starting data load from block %v\n",bnum)
 	var bnum_high BlockNumber = BlockNumber(latestBlock.Number().Uint64())
+	if bnum_high < bnum {
+		fmt.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
+		os.Exit(1)
+	}
 	for ; bnum<bnum_high; bnum++ {
 		big_bnum:=big.NewInt(int64(bnum))
 		block, _ := client.BlockByNumber(ctx,big_bnum)
@@ -190,6 +207,22 @@ func main() {
 			}
 		}
 		storage.set_last_block_num(bnum)
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					fmt.Println("Exiting by user request.")
+					os.Exit(0)
+				}
+			default:
+		}
 	}// for block_num
-	fmt.Printf("new latest block = %v\n",bnum_high)
+	latestBlock, err = client.BlockByNumber(ctx, nil)
+	if err != nil {
+		log.Fatal("oops:", err)
+	} else {
+		if BlockNumber(latestBlock.Number().Uint64()) >= bnum {
+			time.Sleep(DEFAULT_WAIT_TIME * time.Millisecond)
+		}
+	}
+	goto main_loop
 }

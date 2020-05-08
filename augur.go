@@ -467,7 +467,6 @@ func dump_tx_input_if_known(tx *types.Transaction) {
 
 	tx_data:=tx.Data()
 	if len(tx_data) < 32 {
-		fmt.Printf("dump_tx_input: tx_data < 32 len")
 		return
 	}
 	input_sig := tx_data[:4]

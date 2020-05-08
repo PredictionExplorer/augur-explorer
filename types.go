@@ -26,7 +26,15 @@ const(
 	DisputeCrowdsourcer TokenType = 1
 	ParticipationToken	TokenType = 2
 )
-
+type MarketStatus uint8
+const (
+	MktStatusTraded		MarketStatus = 0
+	MktStatusReporting	MarketStatus = 1
+	MktStatusReported	MarketStatus = 2
+	MktStatusDisputing	MarketStatus = 3
+	MktStatusFinalized	MarketStatus = 4
+	MktStatusFinInvalid	MarketStatus = 5
+)
 type BlockNumber int64	// -1 is used to mark 'block not set' for the database
 
 type EventSequencer struct {	// determines the order for contained events
@@ -249,6 +257,7 @@ type InfoMarket struct {
 	Categories		string
 	Outcomes		string
 	MktType			string
+	Status			string
 	Fee				float64
 	OpenInterest	float64
 	CurVolume		float64

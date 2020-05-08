@@ -253,7 +253,7 @@ func (ss *SQLStorage) insert_market_created_evt(
 			extra_info,
 			outcomes,
 			no_show_bond
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,TO_TIMESTAMP($11),` +
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TO_TIMESTAMP($9),$10,TO_TIMESTAMP($11),` +
 						evt.FeePerCashInAttoCash.String() +
 						"/1e+18,$12,$13,$14,$15,$16)";
 
@@ -529,10 +529,34 @@ func (ss *SQLStorage) insert_market_finalized_evt(evt *MktFinalizedEvt) {
 	winning_payouts := bigint_ptr_slice_to_str(&evt.WinningPayoutNumerators,",")
 
 	var query string
-	query = "INSERT INTO mkt_fin(market_aid,fin_timestamp,winning_payouts) VALUES($1,$2,TO_TIMESTAMP($3))"
+	query = "INSERT INTO mkt_fin(market_aid,fin_timestamp,winning_payouts) VALUES($1,TO_TIMESTAMP($2),$3)"
 	_,err := ss.db.Exec(query,market_aid,fin_timestamp,winning_payouts)
 	if err != nil {
 		Fatalf("DB error: can't update market finalization of market %v : %v",market_aid,err)
+	}
+	ss.update_market_status(market_aid,MktStatusFinalized)
+}
+func (ss *SQLStorage) update_market_status(market_aid int64,status MarketStatus) {
+	var query string
+	query = "UPDATE " +
+				"market " +
+			"SET " +
+				"status=$2" +
+			"WHERE " +
+				"market_aid = $1"
+
+	res,err:=ss.db.Exec(query,market_aid,status)
+	if (err!=nil) {
+		Fatalf("DB error: %v ; q=%v",err,query);
+	}
+	affected_rows,err:=res.RowsAffected()
+	if err!=nil {
+		Fatalf("DB error: %v ; q=%v",err,query);
+	}
+	if affected_rows == 0 {
+		fmt.Printf("Couldn't update market status = %v for market %v",status,market_aid)
+	} else {
+		fmt.Printf("MKTSTATUS: market_aid = %v, status = %v\n",market_aid,status)
 	}
 }
 func (ss *SQLStorage) insert_initial_report_evt(
@@ -548,13 +572,13 @@ func (ss *SQLStorage) insert_initial_report_evt(
 	signer_aid := ss.lookup_or_create_address(signer.String())
 	ini_reporter_aid := ss.lookup_or_create_address(evt.InitialReporter.String())
 
-	amount_staked := evt.AmountStaked.Int64()
+	amount_staked := evt.AmountStaked.String()
 	payout_numerators := bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
 	next_win_start := evt.NextWindowStartTime.Int64()
 	next_win_end := evt.NextWindowEndTime.Int64()
 	rpt_timestamp := evt.Timestamp.Int64()
 
-	fmt.Printf("insert_initial_report_evt(): market_aid=%v, reporter_id=%v, signer_aid=%v",
+	fmt.Printf("insert_initial_report_evt(): market_aid=%v, reporter_id=%v, signer_aid=%v\n",
 					market_aid,reporter_aid,signer_aid)
 	var query string
 	query = `
@@ -574,10 +598,10 @@ func (ss *SQLStorage) insert_initial_report_evt(
 			next_win_end,
 			rpt_timestamp
 		) VALUES (
-			$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,
+			$1,$2,$3,$4,$5,$6,$7,$8,(` + amount_staked + `/1e+18),$9,$10,
+			TO_TIMESTAMP($11),
 			TO_TIMESTAMP($12),
-			TO_TIMESTAMP($13),
-			TO_TIMESTAMP($14)
+			TO_TIMESTAMP($13)
 		)`
 	result,err := ss.db.Exec(query,
 			block_num,
@@ -588,7 +612,6 @@ func (ss *SQLStorage) insert_initial_report_evt(
 			ini_reporter_aid,
 			true,
 			evt.IsDesignatedReporter,
-			amount_staked,
 			payout_numerators,
 			evt.Description,
 			next_win_start,
@@ -602,10 +625,13 @@ func (ss *SQLStorage) insert_initial_report_evt(
 		Fatalf("DB error: %v",err)
 	}
 	if rows_affected > 0 {
-		return
+		//break
 	} else {
 		Fatalf("DB error: couldn't insert into InitialReport table. Rows affeced = 0")
 	}
+	// set 'Reporting' status
+	// ToDo: possibly migrate to triggers (or maybe not)
+	ss.update_market_status(market_aid,MktStatusReported)
 }
 func (ss *SQLStorage) insert_market_volume_changed_evt(
 	block_num BlockNumber,
@@ -696,10 +722,10 @@ func (ss *SQLStorage) insert_dispute_crowd_contrib(
 	signer_aid := ss.lookup_or_create_address(signer.String())
 	disputed_aid := ss.lookup_or_create_address(evt.DisputeCrowdsourcer.String())
 
-	amount_staked := evt.AmountStaked.Int64()
+	amount_staked := evt.AmountStaked.String()
 	payout_numerators := bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
-	cur_stake := evt.CurrentStake.Int64()
-	stake_remaining := evt.StakeRemaining.Int64()
+	cur_stake := evt.CurrentStake.String()
+	stake_remaining := evt.StakeRemaining.String()
 	dispute_round := evt.DisputeRound.Int64()
 	rpt_timestamp := evt.Timestamp.Int64()
 
@@ -721,7 +747,8 @@ func (ss *SQLStorage) insert_dispute_crowd_contrib(
 			current_stake,
 			stake_remaining,
 			rpt_timestamp
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,`+amount_staked+`/1e+18,$8,$9,
+				`+cur_stake+`/1e+18,`+stake_remaining+`/1e+18,TO_TIMESTAMP($10))`
 	result,err := ss.db.Exec(query,
 			block_num,
 			tx_id,
@@ -730,24 +757,20 @@ func (ss *SQLStorage) insert_dispute_crowd_contrib(
 			signer_aid,
 			disputed_aid,
 			dispute_round,
-			amount_staked,
 			evt.Description,
 			payout_numerators,
-			cur_stake,
-			stake_remaining,
 			rpt_timestamp)
 	if err != nil {
-		Fatalf("DB error: can't insert into report table: %v",err)
+		Fatalf("DB error: can't insert dispute into report table: %v; q=%v",err,query)
 	}
 	rows_affected,err:=result.RowsAffected()
 	if err != nil {
 		Fatalf("DB error: %v",err)
 	}
-	if rows_affected > 0 {
-		return
-	} else {
-		Fatalf("DB error: couldn't insert into InitialReport table. Rows affeced = 0")
+	if rows_affected == 0 {
+		Fatalf("DB error: couldn't insert dispute into Report table. Rows affeced = 0")
 	}
+	ss.update_market_status(market_aid,MktStatusDisputing)
 }
 func (ss *SQLStorage) insert_share_balance_changed_evt(
 	block_num BlockNumber,
@@ -929,7 +952,7 @@ func (ss *SQLStorage) get_active_market_list(off int, lim int) []InfoMarket {
 				"CONCAT(LEFT(sa.addr,6),'…',RIGHT(sa.addr,6)) AS signer," +
 				"ca.addr as mcreator," +
 				"CONCAT(LEFT(ca.addr,6),'…',RIGHT(ca.addr,6)) AS mcreator_sh, " +
-				"TO_CHAR(TO_TIMESTAMP(end_time),'dd/mm/yyyy HH24:SS UTC') as end_date," + 
+				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') as end_date," + 
 				"extra_info::json->>'description' AS descr," +
 				"extra_info::json->>'longDescription' AS long_desc," +
 				"extra_info::json->>'categories' AS categories," +
@@ -938,7 +961,10 @@ func (ss *SQLStorage) get_active_market_list(off int, lim int) []InfoMarket {
 					"WHEN 0 THEN 'YES/NO' " +
 					"WHEN 1 THEN 'CATEGORICAL' " +
 					"WHEN 2 THEN 'SCALAR' " +
-				"END AS mtype, " +
+				"END AS mtype," +
+				"status,"+
+				"CASE WHEN EXTRACT(epoch from (fin_timestamp-now())) < 0 " +
+					"THEN 'Trading' ELSE 'Reporting' END AS status_desc," +
 				"fee," +
 				"open_interest AS OI," +
 				"cur_volume AS volume " +
@@ -962,6 +988,8 @@ func (ss *SQLStorage) get_active_market_list(off int, lim int) []InfoMarket {
 
 	defer rows.Close()
 	for rows.Next() {
+		var longdesc sql.NullString
+		var status_code int
 		err=rows.Scan(
 					&rec.MktAddr,
 					&rec.MktAddrSh,
@@ -970,16 +998,36 @@ func (ss *SQLStorage) get_active_market_list(off int, lim int) []InfoMarket {
 					&rec.MktCreatorSh,
 					&rec.EndDate,
 					&rec.Description,
-					&rec.LongDesc,
+					&longdesc,
 					&rec.Categories,
 					&rec.Outcomes,
 					&rec.MktType,
+					&status_code,
+					&rec.Status,
 					&rec.Fee,
 					&rec.OpenInterest,
 					&rec.CurVolume,
 		)
 		if err!=nil {
 			Fatalf(fmt.Sprintf("DB error: %v",err))
+		}
+		if longdesc.Valid {
+			rec.LongDesc = longdesc.String
+		}
+		if status_code == 0 {
+			// nothing
+		} else {
+			switch MarketStatus(status_code) {
+				case MktStatusReported:
+					rec.Status = "Reported"
+				case MktStatusDisputing:
+					rec.Status = "Disputing"
+				case MktStatusFinalized:
+					rec.Status = "Finalized"
+				case MktStatusFinInvalid:
+					rec.Status = "Finalized Invalid"
+				default:
+			}
 		}
 		records = append(records,rec)
 	}
@@ -1081,11 +1129,11 @@ func (ss *SQLStorage) get_mkt_trades(mkt_addr string) []MarketTrade {
 	if (err!=nil) {
 		Fatalf("DB error: %v (query=%v)",err,query);
 	}
-	var rec MarketTrade
 	records := make([]MarketTrade,0,8)
 
 	defer rows.Close()
 	for rows.Next() {
+		var rec MarketTrade
 		var mkt_type int
 		var outcomes string
 		err=rows.Scan(
@@ -1122,7 +1170,15 @@ func (ss *SQLStorage) get_mkt_trades(mkt_addr string) []MarketTrade {
 			}
 		}
 		if mkt_type == 2 {
-			rec.OutcomeStr = " ??? "
+			if rec.Outcome == 0 {
+				rec.OutcomeStr = "Invalid"
+			} 
+			if rec.Outcome == 2 {
+				rec.OutcomeStr="Scalar"
+			}
+			if rec.Outcome == 1 {
+				rec.OutcomeStr="-"
+			}
 		}
 		records = append(records,rec)
 	}
@@ -1221,7 +1277,6 @@ func (ss *SQLStorage) get_outcome_volumes(mkt_addr string) ([]OutcomeVol,error) 
 
 	defer rows.Close()
 	for rows.Next() {
-		var mkt_type int
 		var outcomes string
 		err=rows.Scan(
 			&rec.Outcome,
@@ -1230,10 +1285,11 @@ func (ss *SQLStorage) get_outcome_volumes(mkt_addr string) ([]OutcomeVol,error) 
 			&rec.MktType,
 			&rec.OutcomeStr,
 		)
+		fmt.Printf("mkt_type= %v\n",rec.MktType)
 		if err!=nil {
 			Fatalf(fmt.Sprintf("DB error: %v",err))
 		}
-		if mkt_type == 0 { // Yes/No
+		if rec.MktType == 0 { // Yes/No
 			switch rec.Outcome {
 				case 0:
 					rec.OutcomeStr = "Invalid"
@@ -1243,15 +1299,24 @@ func (ss *SQLStorage) get_outcome_volumes(mkt_addr string) ([]OutcomeVol,error) 
 					rec.OutcomeStr = "Yes"
 			}
 		}
-		if mkt_type == 1 { // Categorical
+		if rec.MktType == 1 { // Categorical
 			outcomes_list := strings.Split(outcomes,",")
 			if len(outcomes) > rec.Outcome {
 				rec.OutcomeStr = outcomes_list[rec.Outcome]	// ToDo: possibly move to INSERT stage
 			}
 		}
-		if mkt_type == 2 {
-			rec.OutcomeStr = " ??? "
+		if rec.MktType == 2 {
+			if rec.Outcome == 0 {
+				rec.OutcomeStr = "Invalid"
+			} 
+			if rec.Outcome == 2 {
+				rec.OutcomeStr="Scalar"
+			}
+			if rec.Outcome == 1 {
+				rec.OutcomeStr="-"
+			}
 		}
+		fmt.Printf("rec.OutcomeStr=%v\n",rec.OutcomeStr)
 		records = append(records,rec)
 	}
 	return records,nil

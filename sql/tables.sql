@@ -34,9 +34,11 @@ CREATE TABLE market (
 	creator_aid			BIGINT NOT NULL,			-- address ID of market creator (not real User)
 	signer_aid			BIGINT NOT NULL,			-- address ID of the User who signed transaction (real  creator)
 	reporter_aid		BIGINT NOT NULL,			-- address ID of the User who will report on the outcome
-	end_time			BIGINT NOT NULL,			-- when the Market expires
+	end_time			TIMESTAMPTZ NOT NULL,			-- when the Market expires
 	max_ticks			BIGINT NOT NULL,			-- maximum price range (number of intervals)
 	create_timestamp	TIMESTAMPTZ NOT NULL,
+	-- Status lookup codes  0=>Traded,1=>Reporting,3=>Reported,4=>Disputing,5=>Finalized,6=>Finalized as invalid
+	status				SMALLINT DEFAULT 0,
 	market_type			SMALLINT NOT NULL,			-- Market type enum: 0:YES_NO | 1:CATEGORICAL | 2:SCALAR
 	open_interest		DECIMAL(24,18) DEFAULT 0.0,		-- amount of shares created
 	fee					DECIMAL(24,18) NOT NULL,		-- fee to be paid to Market creator as percentage of transaction
@@ -44,7 +46,7 @@ CREATE TABLE market (
 	extra_info			TEXT NOT NULL,				-- specific market metadata (JSON format)
 	outcomes			TEXT NOT NULL,				-- possible outcomes of the market
 	winning_payouts		TEXT DEFAULT '',
-	fin_timestamp		BIGINT DEFAULT 0,
+	fin_timestamp		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
 	no_show_bond		TEXT NOT NULL,				-- $ penalty to the Creator for failing to emit report
 	cur_volume			DECIMAL(24,18) DEFAULT 0.0	-- this is the total volume (for all outcomes althogether)
 );
@@ -116,8 +118,8 @@ CREATE TABLE report (
 	description			TEXT DEFAULT '',
 	current_stake		DECIMAL(24,18) DEFAULT 0.0,
 	stake_remaining		DECIMAL(24,18) DEFAULT 0.0,
-	next_win_start		TIMESTAMPTZ NOT NULL,
-	next_win_end		TIMESTAMPTZ NOT NULL,
+	next_win_start		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
+	next_win_end		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
 	rpt_timestamp		TIMESTAMPTZ NOT NULL
 );
 -- Volume
