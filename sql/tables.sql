@@ -31,8 +31,8 @@ CREATE TABLE market (
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	cat_id				BIGINT NOT NULL,			-- category id
 	universe_id			BIGSERIAL NOT NULL,			-- reference to universe table
-	creator_aid			BIGINT NOT NULL,			-- address ID of market creator (not real User)
-	signer_aid			BIGINT NOT NULL,			-- address ID of the User who signed transaction (real  creator)
+	creator_aid			BIGINT NOT NULL,			-- address ID of the contract wallet of the User
+	signer_aid			BIGINT NOT NULL,			-- address ID of the User (EOA) who created the market
 	reporter_aid		BIGINT NOT NULL,			-- address ID of the User who will report on the outcome
 	end_time			TIMESTAMPTZ NOT NULL,			-- when the Market expires
 	max_ticks			BIGINT NOT NULL,			-- maximum price range (number of intervals)
@@ -90,15 +90,25 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 CREATE TABLE oorders (	-- open orders table mirrors `mktord` table, it's used only for active orders
 	-- this table is currently disabled until 0x Mesh trading is integrated
 	id					BIGSERIAL PRIMARY KEY,
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGSERIAL NOT NULL,
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
-	creator_aid			BIGINT NOT NULL,			-- address of the creator
+	outcome_idx			SMALLINT NOT NULL,
+	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
+	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
 	price				BIGINT NOT NULL,
 	amount				BIGINT NOT NULL,
-	outcome				BIGINT NOT NULL,
-	time_stamp			TIMESTAMPTZ NOT NULL,
-	order_id			TEXT NOT NULL
+	srv_timestamp		TIMESTAMPTZ NOT NULL,		-- Postgres Server timestamp (not blockchain timestamp)
+	expiration			TIMESTAMPTZ NOT NULL,
+	order_id			TEXT NOT NULL UNIQUE
+);
+CREATE TABLE oostats (	-- open order statistics per User
+	id					BIGSERIAL PRIMARY KEY,
+	market_aid			BIGINT NOT NULL,
+	eoa_aid				BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	num_bids			INT DEFAULT 0,				-- number of total BID orders for this EOA
+	num_asks			INT DEFAULT 0,				-- number of total ASK orders for this EOA
+	num_cancel			INT DEFAULT 0				-- number of cancelled orders
 );
 -- Report, submitted by Market Creator
 CREATE TABLE report (

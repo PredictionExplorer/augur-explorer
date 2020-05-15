@@ -286,4 +286,29 @@ type OutcomeVol struct {
 	Volume			float64
 	LastPrice		float64
 	MktType			int
+	MktAddr			string
+}
+type ZxMeshOrderSpec struct {
+	Market			common.Address
+	Price			*big.Int
+	Outcome			uint8
+	Type			uint8
+}
+type DepthEntry struct {
+	Price			float64
+	Volume			float64
+	ExpiresTs		int64
+	TotalBids		int32
+	TotalAsks		int32
+	TotalCancel		int32
+	WalletAddr		string
+	WalletAddrSh	string	// short version of the addr
+	EOAAddr			string
+	EOAAddrSh		string	// short version of the addr
+	DateCreated		string
+	Expires			string
+}
+type MarketDepth struct {
+	Bids			[]DepthEntry
+	Asks			[]DepthEntry
 }

@@ -5,7 +5,7 @@ package main
 
 import (
 	"context"
-//	"math/big"
+	"math/big"
 	"os"
 	"io"
 	"runtime"
@@ -67,8 +67,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to instantiate a AugurWalletRegistry contract: %v", err)
 	}
-	//storage := connect_to_storage()
-
+	storage := connect_to_storage()
 	log.SetFormatter(&log.JSONFormatter{})
 
 	env := clientEnvVars{}
@@ -95,32 +94,43 @@ func main() {
 		select {
 		case orderEvents := <-orderEventsChan:
 			for _, orderEvent := range orderEvents {
+				/*
 				log.WithFields(log.Fields{
 					"event": orderEvent,
 				}).Printf("received order event")
+				*/
 				adata,err := zerox_contract.DecodeAssetData(copts,orderEvent.SignedOrder.Order.MakerAssetData)
 				if err!=nil {
 					fmt.Printf("couldn't decode asset data: %v\n",err)
 				} else {
-					fmt.Printf("asset data = %+v\n",adata)
-					fmt.Printf("Token Address = %v\n",adata.TokenAddress.String())
-					token_ids := bigint_ptr_slice_to_str(&adata.TokenIds,",")
-					fmt.Printf("Token IDs: %v\n",token_ids)
-					token_values := bigint_ptr_slice_to_str(&adata.TokenValues,",")
-					fmt.Printf("Token values: %v\n",token_values)
+					//fmt.Printf("asset data = %+v\n",adata)
+					//fmt.Printf("Token Address = %v\n",adata.TokenAddress.String())
+					//token_ids := bigint_ptr_slice_to_str(&adata.TokenIds,",")
+					//fmt.Printf("Token IDs: %v\n",token_ids)
+					//token_values := bigint_ptr_slice_to_str(&adata.TokenValues,",")
+					//fmt.Printf("Token values: %v\n",token_values)
 					unpacked_id,err := zerox_contract.UnpackTokenId(copts,adata.TokenIds[0])
 					if err!=nil {
 						fmt.Printf("Unpack token id failed: %v\n",err)
 					} else {
-						fmt.Printf("Token ID data = %+v\n",unpacked_id)
-						fmt.Printf("\tMarket = %v\n",unpacked_id.Market.String())
+						//fmt.Printf("Token ID data = %+v\n",unpacked_id)
+						//fmt.Printf("\tMarket = %v\n",unpacked_id.Market.String())
+						num:=big.NewInt(int64(1))	// 1 is the offset at Storage where EOA is stored
+						key:=common.BigToHash(num)
+						eoa,err := ethclient.StorageAt(ctx,orderEvent.SignedOrder.Order.MakerAddress,key,nil)
+						var eoa_addr_str string
+						if err == nil {
+							eoa_addr_str = common.BytesToAddress(eoa[12:]).String()
+						}
+						storage.insert_open_order(&orderEvent.SignedOrder.Order,eoa_addr_str,&unpacked_id)
 					}
 				}
+
 				ohash, err := orderEvent.SignedOrder.Order.ComputeOrderHash()
 				if err !=nil {
 					fmt.Printf("can't compute order's hash: %v\n",err)
 				}
-				fmt.Printf("computed order hash: %v\n",ohash.String())
+				//fmt.Printf("computed order hash: %v\n",ohash.String())
 				xchg_ordr := new(IExchangeOrder)
 				xchg_ordr.MakerAddress			= orderEvent.SignedOrder.Order.MakerAddress
 				xchg_ordr.TakerAddress			= orderEvent.SignedOrder.Order.TakerAddress
@@ -141,24 +151,20 @@ func main() {
 				if err != nil {
 					fmt.Printf("EncodeEIP1271 produced error: %v\n",err)
 				}
-				fmt.Printf("Encoded order len = %v\n",len(ordr_blob))
-				fmt.Printf("Encoded order: %v\n",hex.EncodeToString(ordr_blob))
+				//fmt.Printf("Encoded order len = %v\n",len(ordr_blob))
+				//fmt.Printf("Encoded order: %v\n",hex.EncodeToString(ordr_blob))
 				msg_hash,err := awallet_contract.GetMessageHash(copts,ordr_blob[:])
 				if err != nil {
 					fmt.Printf("getMessageHash() produced error: %v\n",err)
 				}
-				fmt.Printf("msg hash = %v\n",hex.EncodeToString(msg_hash[:]))
-				fmt.Printf("signature = %v\n",hex.EncodeToString(orderEvent.SignedOrder.Signature))
-				fmt.Printf("sig type = %d\n",orderEvent.SignedOrder.Signature[65])
+				//fmt.Printf("msg hash = %v\n",hex.EncodeToString(msg_hash[:]))
+				//fmt.Printf("signature = %v\n",hex.EncodeToString(orderEvent.SignedOrder.Signature))
+				//fmt.Printf("sig type = %d\n",orderEvent.SignedOrder.Signature[65])
 				public_key, err := crypto.Ecrecover(msg_hash[:], orderEvent.SignedOrder.Signature[0:65])
 				if err != nil {
 					fmt.Printf("couldn't extract public key: %v\n",err)
 				} else {
 					fmt.Printf("public key : %v\n",hex.EncodeToString(public_key))
-				}
-				owner, err := awallet_contract.Owner(nil)
-				if err != nil {
-					fmt.Printf("owner = %+v\n",owner)
 				}
 			}
 		case err := <-clientSubscription.Err():
@@ -166,3 +172,17 @@ func main() {
 		}
 	}
 }
+/*
+Pending for deletion
+				fmt.Printf("getting storage of ctrct %v\n",orderEvent.SignedOrder.Order.MakerAddress.String())
+				for i:=0 ; i< 6 ; i++  {
+					num:=big.NewInt(int64(i))
+					key:=common.BigToHash(num)
+					var1,err := ethclient.StorageAt(ctx,orderEvent.SignedOrder.Order.MakerAddress,key,nil)
+					if err != nil {
+						fmt.Printf("getting storage %v: %v\n",i,err)
+					} else {
+						fmt.Printf("storage value key=%v is: %v\n",i,hex.EncodeToString(var1))
+					}
+				}
+*/

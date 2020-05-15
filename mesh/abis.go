@@ -292,7 +292,7 @@ func (_ZeroX *ZeroXCallerSession) DecodeTradeAssetData(_assetData []byte) (struc
 // UnpackTokenId is a free data retrieval call binding the contract method 0x26afd2e8.
 //
 // Solidity: function unpackTokenId(uint256 _tokenId) pure returns(address _market, uint256 _price, uint8 _outcome, uint8 _type)
-func (_ZeroX *ZeroXCaller) UnpackTokenId(opts *bind.CallOpts, _tokenId *big.Int) (struct {
+/*func (_ZeroX *ZeroXCaller) UnpackTokenId(opts *bind.CallOpts, _tokenId *big.Int) (struct {
 	Market  common.Address
 	Price   *big.Int
 	Outcome uint8
@@ -304,6 +304,12 @@ func (_ZeroX *ZeroXCaller) UnpackTokenId(opts *bind.CallOpts, _tokenId *big.Int)
 		Outcome uint8
 		Type    uint8
 	})
+	out := ret
+	err := _ZeroX.contract.Call(opts, out, "unpackTokenId", _tokenId)
+	return *ret, err
+}*/
+func (_ZeroX *ZeroXCaller) UnpackTokenId(opts *bind.CallOpts, _tokenId *big.Int) (ZxMeshOrderSpec, error) {
+	ret := new(ZxMeshOrderSpec)
 	out := ret
 	err := _ZeroX.contract.Call(opts, out, "unpackTokenId", _tokenId)
 	return *ret, err
