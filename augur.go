@@ -306,10 +306,12 @@ func proc_cancel_zerox_order(log *types.Log) {
 	if err != nil {
 		Fatalf("Event CancelZeroXOrder decode error: %v",err)
 	} else {
+		ohash := common.BytesToHash(mevt.OrderHash[:])
+		ohash_str := ohash.String()
 		fmt.Printf("CancelZeroXOrder event for contract %v (block=%v) : \n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
-		storage.insert_cancel_0x_order_evt(&mevt)
+		storage.delete_open_0x_order(ohash_str)
 	}
 }
 func proc_market_oi_changed(block *types.Header, log *types.Log) {

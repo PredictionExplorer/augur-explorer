@@ -295,12 +295,14 @@ type ZxMeshOrderSpec struct {
 	Type			uint8
 }
 type DepthEntry struct {
+	MktAid			int64
+	ExpiresTs		int64
 	Price			float64
 	Volume			float64
-	ExpiresTs		int64
 	TotalBids		int32
 	TotalAsks		int32
 	TotalCancel		int32
+	OutcomeIdx		int32
 	WalletAddr		string
 	WalletAddrSh	string	// short version of the addr
 	EOAAddr			string

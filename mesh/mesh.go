@@ -10,7 +10,7 @@ import (
 	"io"
 	"runtime"
 	"fmt"
-	"encoding/hex"
+//	"encoding/hex"
 //	"strings"
 
 	"github.com/0xProject/0x-mesh/rpc"
@@ -18,7 +18,7 @@ import (
 	"github.com/plaid/go-envvar/envvar"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/ethereum/go-ethereum/crypto"
+//	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -67,6 +67,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to instantiate a AugurWalletRegistry contract: %v", err)
 	}
+	_ = awallet_contract
 	storage := connect_to_storage()
 	log.SetFormatter(&log.JSONFormatter{})
 
@@ -94,27 +95,21 @@ func main() {
 		select {
 		case orderEvents := <-orderEventsChan:
 			for _, orderEvent := range orderEvents {
-				/*
-				log.WithFields(log.Fields{
+				fmt.Printf("Order event arrived in state=%+v:\n",orderEvent.EndState)
+				fmt.Printf("%+v\n",orderEvent)
+				fmt.Println()
+	/*			log.WithFields(log.Fields{
 					"event": orderEvent,
 				}).Printf("received order event")
-				*/
+	*/
 				adata,err := zerox_contract.DecodeAssetData(copts,orderEvent.SignedOrder.Order.MakerAssetData)
 				if err!=nil {
 					fmt.Printf("couldn't decode asset data: %v\n",err)
 				} else {
-					//fmt.Printf("asset data = %+v\n",adata)
-					//fmt.Printf("Token Address = %v\n",adata.TokenAddress.String())
-					//token_ids := bigint_ptr_slice_to_str(&adata.TokenIds,",")
-					//fmt.Printf("Token IDs: %v\n",token_ids)
-					//token_values := bigint_ptr_slice_to_str(&adata.TokenValues,",")
-					//fmt.Printf("Token values: %v\n",token_values)
 					unpacked_id,err := zerox_contract.UnpackTokenId(copts,adata.TokenIds[0])
 					if err!=nil {
 						fmt.Printf("Unpack token id failed: %v\n",err)
 					} else {
-						//fmt.Printf("Token ID data = %+v\n",unpacked_id)
-						//fmt.Printf("\tMarket = %v\n",unpacked_id.Market.String())
 						num:=big.NewInt(int64(1))	// 1 is the offset at Storage where EOA is stored
 						key:=common.BigToHash(num)
 						eoa,err := ethclient.StorageAt(ctx,orderEvent.SignedOrder.Order.MakerAddress,key,nil)
@@ -122,10 +117,15 @@ func main() {
 						if err == nil {
 							eoa_addr_str = common.BytesToAddress(eoa[12:]).String()
 						}
-						storage.insert_open_order(&orderEvent.SignedOrder.Order,eoa_addr_str,&unpacked_id)
+						if orderEvent.EndState == zeroex.ESOrderAdded {
+							storage.insert_open_order(orderEvent,eoa_addr_str,&unpacked_id)
+						}
+						if orderEvent.EndState == zeroex.ESOrderExpired {
+							storage.delete_open_0x_order(orderEvent.OrderHash.String())
+						}
 					}
 				}
-
+/* This code should be used to extract public key from the signature, but it is not working. Todo: fix it
 				ohash, err := orderEvent.SignedOrder.Order.ComputeOrderHash()
 				if err !=nil {
 					fmt.Printf("can't compute order's hash: %v\n",err)
@@ -151,21 +151,17 @@ func main() {
 				if err != nil {
 					fmt.Printf("EncodeEIP1271 produced error: %v\n",err)
 				}
-				//fmt.Printf("Encoded order len = %v\n",len(ordr_blob))
-				//fmt.Printf("Encoded order: %v\n",hex.EncodeToString(ordr_blob))
 				msg_hash,err := awallet_contract.GetMessageHash(copts,ordr_blob[:])
 				if err != nil {
 					fmt.Printf("getMessageHash() produced error: %v\n",err)
 				}
-				//fmt.Printf("msg hash = %v\n",hex.EncodeToString(msg_hash[:]))
-				//fmt.Printf("signature = %v\n",hex.EncodeToString(orderEvent.SignedOrder.Signature))
-				//fmt.Printf("sig type = %d\n",orderEvent.SignedOrder.Signature[65])
 				public_key, err := crypto.Ecrecover(msg_hash[:], orderEvent.SignedOrder.Signature[0:65])
 				if err != nil {
 					fmt.Printf("couldn't extract public key: %v\n",err)
 				} else {
 					fmt.Printf("public key : %v\n",hex.EncodeToString(public_key))
 				}
+*/
 			}
 		case err := <-clientSubscription.Err():
 			log.Fatal(err)

@@ -87,16 +87,16 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 	trade_group			TEXT NOT NULL,			-- User defined group label to identify multiple trades
 	order_id			TEXT NOT NULL
 );
-CREATE TABLE oorders (	-- open orders table mirrors `mktord` table, it's used only for active orders
-	-- this table is currently disabled until 0x Mesh trading is integrated
+CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later they are converted into 'mktord` records
 	id					BIGSERIAL PRIMARY KEY,
 	market_aid			BIGSERIAL NOT NULL,
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
 	outcome_idx			SMALLINT NOT NULL,
 	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
 	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
-	price				BIGINT NOT NULL,
-	amount				BIGINT NOT NULL,
+	price				DECIMAL(3,2) NOT NULL,
+	amount				DECIMAL(24,18) NOT NULL,
+	evt_timestamp		TIMESTAMPTZ NOT NULL,		-- 0x Mesh event timestamp
 	srv_timestamp		TIMESTAMPTZ NOT NULL,		-- Postgres Server timestamp (not blockchain timestamp)
 	expiration			TIMESTAMPTZ NOT NULL,
 	order_id			TEXT NOT NULL UNIQUE
@@ -146,7 +146,7 @@ CREATE TABLE outcome_vol (	-- this is the (accumulated) volume per outcome (inde
 	id					BIGSERIAL PRIMARY KEY,
 	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
 	outcome_idx			SMALLINT NOT NULL,
-	volume				DECIMAL(24,18) NOT NULL,
+	volume				DECIMAL(24,18) DEFAULT 0.0,
 	last_price			DECIMAL(24,18) DEFAULT 0.0
 );
 CREATE table oi_chg ( -- open interest changed event

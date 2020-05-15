@@ -277,9 +277,32 @@ func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int6
 		Fatalf("DB error: %v",err)
 	}
 	if rows_affected > 0 {
-		return
 	} else {
 		Fatalf("DB error: couldn't insert into Market table. Rows affeced = 0")
+	}
+	if len(outcomes) == 0 {
+		if evt.MarketType == 0 {	// Yes / No
+			outcomes = "Invalid,No,Yes"
+		}
+	}
+	ss.init_market_outcome_volumes(market_aid,outcomes)
+}
+func (ss *SQLStorage) init_market_outcome_volumes(market_aid int64,outcomes string) {
+
+	var query string
+	outcomes_list := strings.Split(outcomes,",")
+	for outcome_idx:=0 ; outcome_idx < len(outcomes_list) ; outcome_idx ++ {
+		query = "INSERT INTO outcome_vol(" +
+					"market_aid," +
+					"outcome_idx" +
+				") VALUES(" +
+					"$1," +
+					"$2" +
+				")"
+		_,err := ss.db.Exec(query,market_aid,outcome_idx)
+		if (err!=nil) {
+			Fatalf("DB error: %v; q=%v",err,query);
+		}
 	}
 }
 func (ss *SQLStorage) insert_market_oi_changed_evt(block *types.Header,evt *MarketOIChangedEvt) {
@@ -355,7 +378,7 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber,tx_id int64,
 	query = "DELETE FROM oorders WHERE order_id = $1"
 	result,err := ss.db.Exec(query,market_aid)
 	if err!=nil {
-		Fatalf("DB error: couldn't delete open order with order_id = %v",order_id)
+		fmt.Printf("DB error: couldn't delete open order with order_id = %v\n",order_id)
 	}
 
 	fmt.Printf("OrderAction = %v, otype=%v, order_id=%v\n",oaction,otype,order_id)
@@ -393,7 +416,7 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber,tx_id int64,
 				"(" + amount_filled + "/1e18)," +
 				"TO_TIMESTAMP($10)," +
 				"$11,$12,$13,$14)"
-	result,err := ss.db.Exec(query,
+	result,err = ss.db.Exec(query,
 			market_aid,
 			signer_aid,
 			block_num,
@@ -439,20 +462,22 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber,tx_id int64,
 					market_aid,outcome_idx)
 	}
 }
-func (ss *SQLStorage) insert_open_order(order *zeroex.Order,eoa_addr string,ospec *ZxMeshOrderSpec) {
+func (ss *SQLStorage) insert_open_order(evt *zeroex.OrderEvent,eoa_addr string,ospec *ZxMeshOrderSpec) {
 	// Insert an open order, this order needs to be Filled by another market participant
 	// It also can be canceled by its creator (with another transaction)
+	order := evt.SignedOrder.Order
 	ohash,err := order.ComputeOrderHash()
 	if err != nil {
 		fmt.Printf("Error at computing 0x Mesh order: %v",err)
 	}
 	order_id := ohash.String()
+	evt_timestamp := evt.Timestamp.Unix()
 	expiration := order.ExpirationTimeSeconds.Int64()
 	wallet_aid := ss.lookup_or_create_address(order.MakerAddress.String())
 	eoa_aid := ss.lookup_or_create_address(eoa_addr)
 	fmt.Printf("creating open order made by %v : %+v\n",eoa_addr,ospec)
 	market_aid := ss.lookup_address(ospec.Market.String())
-	price := ospec.Price.Int64()
+	price := float64(ospec.Price.Int64())/100
 	otype := ospec.Type	// Bid/Ask
 	amount := order.MakerAssetAmount.String()
 
@@ -464,8 +489,8 @@ func (ss *SQLStorage) insert_open_order(order *zeroex.Order,eoa_addr string,ospe
 	}
 	query = "INSERT INTO oorders(" +
 				"market_aid,otype,wallet_aid,eoa_aid,price,amount,outcome_idx," +
-				"srv_timestamp,expiration,order_id" +
-			") VALUES($1,$2,$3,$4,$5,"+amount+"/1e+18,$6,TO_TIMESTAMP($7),NOW(),$8)"
+				"evt_timestamp,srv_timestamp,expiration,order_id" +
+			") VALUES($1,$2,$3,$4,$5,"+amount+"/1e+18,$6,TO_TIMESTAMP($7),TO_TIMESTAMP($8),NOW(),$9)"
 	result,err := ss.db.Exec(query,
 			market_aid,
 			otype,
@@ -473,10 +498,12 @@ func (ss *SQLStorage) insert_open_order(order *zeroex.Order,eoa_addr string,ospe
 			eoa_aid,
 			price,
 			ospec.Outcome,
+			evt_timestamp,
 			expiration,
 			order_id)
 	if err != nil {
-		Fatalf("DB error: can't insert into open orders table: %v",err)
+		fmt.Printf("DB error: can't insert into open orders table: %v",err)
+		return
 	}
 	rows_affected,err:=result.RowsAffected()
 	if err != nil {
@@ -488,27 +515,18 @@ func (ss *SQLStorage) insert_open_order(order *zeroex.Order,eoa_addr string,ospe
 		Fatalf("DB error: couldn't insert into Open Orders table. Rows affeced = 0")
 	}
 }
-func (ss *SQLStorage) insert_cancel_0x_order_evt(evt *CancelZeroXOrder) {
+//func (ss *SQLStorage) insert_cancel_0x_order_evt(evt *CancelZeroXOrder) {
+func (ss *SQLStorage) delete_open_0x_order(order_hash string) {
 
-	universe_id := ss.lookup_universe_id(evt.Universe.String())
-	_ = universe_id	// ToDo: add universe_id match condition (for market)
-	market_aid := ss.lookup_address(evt.Market.String())
-	var order_id = hex.EncodeToString(evt.OrderHash[:])
-
-//	var oaction OrderAction = OrderActionCancel
-//	var otype OrderType = OrderType(evt.OrderType)
-//	price := evt.Price.Int64()
-//	amount := evt.Amount.Int64()
-//	outcome := evt.Outcome.Int64()
 	var query string
 	query = "DELETE FROM oorders WHERE order_id = $1"
-	result,err := ss.db.Exec(query,market_aid)
+	result,err := ss.db.Exec(query,order_hash)
 	if err!=nil {
-		Fatalf("DB error: couldn't delete open order with order_id = %v",order_id)
+		fmt.Printf("DB error: couldn't delete open order with order_id = %v\n",order_hash)
 	}
 	rows_affected,err:=result.RowsAffected()
 	if rows_affected == 0  {
-		Fatalf("DB error: couldn't delete open order with order_id = %v (not found)",order_id)
+		fmt.Printf("DB error: couldn't delete open order with order_id = %v (not found)\n",order_hash)
 	}
 }
 func (ss *SQLStorage) insert_market_finalized_evt(evt *MktFinalizedEvt) {
@@ -1313,6 +1331,8 @@ func (ss *SQLStorage) build_depth_by_otype(q *string,market_aid int64,outc uint8
 		var num_asks sql.NullInt64
 		var num_cancels sql.NullInt64
 		err=rows.Scan(
+			&rec.MktAid,
+			&rec.OutcomeIdx,
 			&rec.WalletAddr,
 			&rec.WalletAddrSh,
 			&rec.EOAAddr,
@@ -1344,10 +1364,12 @@ func (ss *SQLStorage) build_depth_by_otype(q *string,market_aid int64,outc uint8
 }
 func (ss *SQLStorage) get_mkt_depth(mkt_addr string,outcome_idx uint8 ) *MarketDepth {
 
-	fmt.Printf("get_mkt_open_orders(mkt=%v,outcome_idx=%v)\n",mkt_addr,outcome_idx)
+	fmt.Printf("get_mkt_depth(mkt=%v,outcome_idx=%v)\n",mkt_addr,outcome_idx)
 	market_aid := ss.lookup_address(mkt_addr)
 	var query string
 	query = "SELECT " +
+				"o.market_aid," +
+				"o.outcome_idx," +
 //				"a.addr as mkt_addr," +
 //				"CONCAT(LEFT(a.addr,6),'…',RIGHT(a.addr,6)) AS mkt_addr_sh, " +
 				"wa.addr AS wallet_addr," +
@@ -1361,7 +1383,7 @@ func (ss *SQLStorage) get_mkt_depth(mkt_addr string,outcome_idx uint8 ) *MarketD
 				"o.srv_timestamp::date AS date_created," +
 				"o.expiration::date AS expires," +
 				"FLOOR(EXTRACT(EPOCH FROM o.expiration))::BIGINT as expires_ts," +
-				"o.price/100 AS price, " +
+				"o.price AS price, " +
 				"o.amount AS volume," +
 				"s.num_bids," +
 				"s.num_asks," +
@@ -1381,8 +1403,8 @@ func (ss *SQLStorage) get_mkt_depth(mkt_addr string,outcome_idx uint8 ) *MarketD
 					"oostats AS s ON (o.market_aid=s.market_aid AND o.outcome_idx=$2) " +
 			"WHERE o.market_aid = $1 AND o.outcome_idx=$2 AND o.otype = $3 " +
 			"ORDER BY " +
-				"o.price DESC";
-
+				"o.price DESC,o.evt_timestamp DESC";
+	fmt.Printf("q=%v\n",query)
 	market_depth := new(MarketDepth)
 	market_depth.Bids = ss.build_depth_by_otype(&query,market_aid,outcome_idx,OrderTypeBid)
 	market_depth.Asks = ss.build_depth_by_otype(&query,market_aid,outcome_idx,OrderTypeAsk)
