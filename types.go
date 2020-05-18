@@ -299,6 +299,7 @@ type DepthEntry struct {
 	ExpiresTs		int64
 	Price			float64
 	Volume			float64
+	AccumVol		float64
 	TotalBids		int32
 	TotalAsks		int32
 	TotalCancel		int32
@@ -313,4 +314,25 @@ type DepthEntry struct {
 type MarketDepth struct {
 	Bids			[]DepthEntry
 	Asks			[]DepthEntry
+}
+// Note: to avoid padding the biggest primitive type must go first, 64bit, then 32bit, then strings
+type UserInfo struct {
+	ProfitLoss		float64 // profit/loss for the (account) lifetime
+	TradeFreq		float64	// trade frequency as percentil of all users (ex: top 15% of all users)
+	ReportProfits	float64	// amount of money user has made in profits in outcome reporting
+	AffProfits		float64	// profits made in affiliate commissions
+	MoneyAtStake	float64	// how much money User has invested
+	TotalWithdrawn	float64	// amount of money User has deposited
+	TotalDeposited	float64	// amount of money User has withdrawn
+	TotalTrades		uint32	// how many trades were made by this User
+	MarketsCreated	uint32	// how many markets this User has created
+	MarketsTraded	uint32	// how many markets this User has traded
+	WithdrawReqs	uint32	// number of withdrawal requests
+	DepositReqs		uint32	// number of Deposit requests
+	TotalReports	uint32	// amount of reports User has made
+	TotalDesignated	uint32	// total reports submitted as designated reporter
+	EOAAddr			string	// User's Ethereum address (Externally Owned Account)
+	EOAAddrSh		string	// short version of the above addr
+	WalletAddr		string	// User's Wallet Contract Address
+	WalletAddrSh	string	// short version of the above addr
 }

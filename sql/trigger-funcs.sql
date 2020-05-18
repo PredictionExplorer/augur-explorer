@@ -69,4 +69,43 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+-- update all the statistics on insertion into 'market' table
+CREATE OR REPLACE FUNCTION update_market_stats_on_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt numeric;
+BEGIN
 
+	UPDATE ustats AS s
+			SET markets_created = markets_created + 1
+			WHERE s.eoa_aid = NEW.eoa_aid;
+
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT	INTO ustats(eoa_aid,wallet_aid,markets_created)
+				VALUES(NEW.eoa_aid,NEW.wallet_aid,1);
+	END IF;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION update_market_stats_on_delete() RETURNS trigger AS  $$
+DECLARE
+	v_cnt numeric;
+	val bigint;
+BEGIN
+
+	UPDATE ustats AS s
+			SET markets_created = markets_created - 1
+			WHERE s.eoa_aid = OLD.eoa_aid
+			RETURNING markets_created
+			INTO val;
+
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN	-- this condition won't be true during normal operation
+		INSERT	INTO ustats(eoa_aid,wallet_aid,markets_created)
+				VALUES(OLD.eoa_aid,OLD.wallet_aid,0);
+	END IF;
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;

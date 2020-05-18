@@ -31,8 +31,8 @@ CREATE TABLE market (
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	cat_id				BIGINT NOT NULL,			-- category id
 	universe_id			BIGSERIAL NOT NULL,			-- reference to universe table
-	creator_aid			BIGINT NOT NULL,			-- address ID of the contract wallet of the User
-	signer_aid			BIGINT NOT NULL,			-- address ID of the User (EOA) who created the market
+	wallet_aid			BIGINT NOT NULL,			-- address ID of the contract wallet of the User
+	eoa_aid				BIGINT NOT NULL,			-- address ID of the User (EOA) who created the market
 	reporter_aid		BIGINT NOT NULL,			-- address ID of the User who will report on the outcome
 	end_time			TIMESTAMPTZ NOT NULL,			-- when the Market expires
 	max_ticks			BIGINT NOT NULL,			-- maximum price range (number of intervals)
@@ -101,15 +101,6 @@ CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later th
 	expiration			TIMESTAMPTZ NOT NULL,
 	order_id			TEXT NOT NULL UNIQUE
 );
-CREATE TABLE oostats (	-- open order statistics per User
-	id					BIGSERIAL PRIMARY KEY,
-	market_aid			BIGINT NOT NULL,
-	eoa_aid				BIGINT NOT NULL,
-	outcome_idx			SMALLINT NOT NULL,
-	num_bids			INT DEFAULT 0,				-- number of total BID orders for this EOA
-	num_asks			INT DEFAULT 0,				-- number of total ASK orders for this EOA
-	num_cancel			INT DEFAULT 0				-- number of cancelled orders
-);
 -- Report, submitted by Market Creator
 CREATE TABLE report (
 	id					BIGSERIAL PRIMARY KEY,
@@ -164,6 +155,10 @@ CREATE TABLE mkt_fin (
 CREATE TABLE last_block (
 	block_num			BIGINT	NOT NULL	-- last block processed by the ETL
 );
+CREATE TABLE user_wallet ( -- link between User and his/her Wallet Contract
+	eoa_aid				BIGINT PRIMARY KEY,
+	wallet_aid			BIGINT NOT NULL		-- Wallet Contract address
+);
 -- Statistics, automatically accumulated for the main page
 CREATE TABLE main_stats (
 	id					BIGSERIAL PRIMARY KEY,
@@ -175,4 +170,30 @@ CREATE TABLE main_stats (
 	active_count		BIGINT DEFAULT 0,	-- counter for not-finalized markets
 	money_at_stake		DECIMAL(24,18) DEFAULT 0.0,		-- amount in ETH
 	trades_count		BIGINT DEFAULT 0	-- total amount of trades
+);
+CREATE TABLE oostats (	-- open order statistics per User
+	id					BIGSERIAL PRIMARY KEY,
+	market_aid			BIGINT NOT NULL,
+	eoa_aid				BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	num_bids			INT DEFAULT 0,				-- number of total BID orders for this EOA
+	num_asks			INT DEFAULT 0,				-- number of total ASK orders for this EOA
+	num_cancel			INT DEFAULT 0				-- number of cancelled orders
+);
+CREATE TABLE ustats (	-- statistics per User account
+	eoa_aid				BIGINT PRIMARY KEY,		-- Externally Owned ACcount (EOA) address for this user
+	wallet_aid			BIGINT NOT NULL,		-- Wallet Contract address id
+	total_trades		BIGINT DEFAULT 0,
+	markets_created		BIGINT DEFAULT 0,
+	markets_traded		BIGINT DEFAULT 0,
+	withdraw_reqs		BIGINT DEFAULT 0,
+	deposit_reqs		BIGINT DEFAULT 0,
+	total_reports		BIGINT DEFAULT 0,
+	total_designated	BIGINT DEFAULT 0,			-- total reports submitted as designated reporter
+	profit_loss			DECIMAL(24,18) DEFAULT 0.0,
+	report_profits		DECIMAL(24,18) DEFAULT 0.0,
+	aff_profits			DECIMAL(24,18) DEFAULT 0.0,	-- affiliate commissions earned
+	money_at_stake		DECIMAL(24,18) DEFAULT 0.0, -- how much has this User invested in Augur mkts
+	total_withdrawn		DECIMAL(24,18) DEFAULT 0.0,
+	total_deposited		DECIMAL(24,18) DEFAULT 0.0
 );

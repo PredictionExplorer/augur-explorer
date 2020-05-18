@@ -515,7 +515,6 @@ func (ss *SQLStorage) insert_open_order(evt *zeroex.OrderEvent,eoa_addr string,o
 		Fatalf("DB error: couldn't insert into Open Orders table. Rows affeced = 0")
 	}
 }
-//func (ss *SQLStorage) insert_cancel_0x_order_evt(evt *CancelZeroXOrder) {
 func (ss *SQLStorage) delete_open_0x_order(order_hash string) {
 
 	var query string
@@ -1316,11 +1315,58 @@ func (ss *SQLStorage) get_outcome_volumes(mkt_addr string) ([]OutcomeVol,error) 
 	}
 	return records,nil
 }
-func (ss *SQLStorage) build_depth_by_otype(q *string,market_aid int64,outc uint8,otype OrderType) []DepthEntry {
+func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc uint8,otype OrderType) []DepthEntry {
 
-	rows,err := ss.db.Query(*q,market_aid,outc,otype)
+	var query string
+	query = "SELECT " +
+				"o.market_aid," +
+				"o.outcome_idx," +
+//				"a.addr as mkt_addr," +
+//				"CONCAT(LEFT(a.addr,6),'…',RIGHT(a.addr,6)) AS mkt_addr_sh, " +
+				"wa.addr AS wallet_addr," +
+				"CONCAT(LEFT(wa.addr,6),'…',RIGHT(wa.addr,6)) AS wallet_addr_sh," +
+				"ua.addr AS user_addr," +
+				"CONCAT(LEFT(ua.addr,6),'…',RIGHT(ua.addr,6)) AS user_addr_sh," +
+//				"CASE o.otype " +
+//					"WHEN 0 THEN 'BID' " +
+//					"ELSE 'ASK' " +
+//				"END AS dir, " +
+				"o.srv_timestamp::date AS date_created," +
+				"o.expiration::date AS expires," +
+				"FLOOR(EXTRACT(EPOCH FROM o.expiration))::BIGINT as expires_ts," +
+				"o.price AS price, " +
+				"o.amount AS volume," +
+				"s.num_bids," +
+				"s.num_asks," +
+				"s.num_cancel " +
+//				"m.market_type AS mtype," +
+//				"m.outcomes AS outcomes_str " +
+			"FROM oorders AS o " +
+				"LEFT JOIN " +
+					"address AS a ON o.market_aid=a.address_id " +
+				"LEFT JOIN " +
+					"address AS wa ON o.wallet_aid=wa.address_id " +
+				"LEFT JOIN " +
+					"address AS ua ON o.eoa_aid=ua.address_id " +
+//				"LEFT JOIN " +
+//					"market AS m ON o.market_aid = m.market_aid " +
+				"LEFT JOIN " +
+					"oostats AS s ON (" +
+						"o.market_aid=s.market_aid AND " +
+						"o.eoa_aid=s.eoa_aid AND " +
+						"o.outcome_idx=$2) " +
+			"WHERE o.market_aid = $1 AND o.outcome_idx=$2 AND o.otype = $3 " +
+			"ORDER BY "
+	if otype == OrderTypeBid {
+				query = query + "o.price DESC,o.evt_timestamp DESC";
+	} else {
+				query = query + "o.price ASC,o.evt_timestamp DESC";
+	}
+	fmt.Printf("q=%v\n",query)
+	var accumulated_volume = 0.0
+	rows,err := ss.db.Query(query,market_aid,outc,otype)
 	if (err!=nil) {
-		Fatalf("DB error: %v (query=%v)",err,*q);
+		Fatalf("DB error: %v (query=%v)",err,query);
 	}
 	records := make([]DepthEntry,0,8)
 
@@ -1358,55 +1404,93 @@ func (ss *SQLStorage) build_depth_by_otype(q *string,market_aid int64,outc uint8
 		if num_cancels.Valid {
 			rec.TotalCancel = int32(num_cancels.Int64)
 		}
+		accumulated_volume = accumulated_volume + rec.Volume
+		rec.AccumVol = accumulated_volume
 		records = append(records,rec)
 	}
 	return records
 }
-func (ss *SQLStorage) get_mkt_depth(mkt_addr string,outcome_idx uint8 ) *MarketDepth {
+func (ss *SQLStorage) get_mkt_depth(mkt_addr string,outcome_idx uint8) *MarketDepth {
 
 	fmt.Printf("get_mkt_depth(mkt=%v,outcome_idx=%v)\n",mkt_addr,outcome_idx)
 	market_aid := ss.lookup_address(mkt_addr)
+	market_depth := new(MarketDepth)
+	market_depth.Bids = ss.build_depth_by_otype(market_aid,outcome_idx,OrderTypeBid)
+	market_depth.Asks = ss.build_depth_by_otype(market_aid,outcome_idx,OrderTypeAsk)
+	return market_depth
+}
+func (ss *SQLStorage) get_user_info(user_aid int64) UserInfo {
+
 	var query string
 	query = "SELECT " +
-				"o.market_aid," +
-				"o.outcome_idx," +
-//				"a.addr as mkt_addr," +
-//				"CONCAT(LEFT(a.addr,6),'…',RIGHT(a.addr,6)) AS mkt_addr_sh, " +
-				"wa.addr AS wallet_addr," +
-				"CONCAT(LEFT(wa.addr,6),'…',RIGHT(wa.addr,6)) AS wallet_addr_sh," +
-				"ua.addr AS user_addr," +
-				"CONCAT(LEFT(ua.addr,6),'…',RIGHT(ua.addr,6)) AS user_addr_sh," +
-//				"CASE o.otype " +
-//					"WHEN 0 THEN 'BID' " +
-//					"ELSE 'ASK' " +
-//				"END AS dir, " +
-				"o.srv_timestamp::date AS date_created," +
-				"o.expiration::date AS expires," +
-				"FLOOR(EXTRACT(EPOCH FROM o.expiration))::BIGINT as expires_ts," +
-				"o.price AS price, " +
-				"o.amount AS volume," +
-				"s.num_bids," +
-				"s.num_asks," +
-				"s.num_cancel " +
-//				"m.market_type AS mtype," +
-//				"m.outcomes AS outcomes_str " +
-			"FROM oorders AS o " +
-				"LEFT JOIN " +
-					"address AS a ON o.market_aid=a.address_id " +
-				"LEFT JOIN " +
-					"address AS wa ON o.wallet_aid=wa.address_id " +
-				"LEFT JOIN " +
-					"address AS ua ON o.eoa_aid=ua.address_id " +
-//				"LEFT JOIN " +
-//					"market AS m ON o.market_aid = m.market_aid " +
-				"LEFT JOIN " +
-					"oostats AS s ON (o.market_aid=s.market_aid AND o.outcome_idx=$2) " +
-			"WHERE o.market_aid = $1 AND o.outcome_idx=$2 AND o.otype = $3 " +
-			"ORDER BY " +
-				"o.price DESC,o.evt_timestamp DESC";
-	fmt.Printf("q=%v\n",query)
-	market_depth := new(MarketDepth)
-	market_depth.Bids = ss.build_depth_by_otype(&query,market_aid,outcome_idx,OrderTypeBid)
-	market_depth.Asks = ss.build_depth_by_otype(&query,market_aid,outcome_idx,OrderTypeAsk)
-	return market_depth
+				"a.addr as eoa_addr," +
+				"CONCAT(LEFT(a.addr,6),'…',RIGHT(a.addr,6)) AS eoa_addr_sh," +
+				"w.addr as wallet_addr," +
+				"CONCAT(LEFT(w.addr,6),'…',RIGHT(w.addr,6)) AS wallet_addr_sh," +
+				"s.total_trades," +
+				"s.markets_created," +
+				"s.markets_traded," +
+				"s.withdraw_reqs," +
+				"s.deposit_reqs," +
+				"s.total_reports," +
+				"s.total_designated," +
+				"s.profit_loss," +
+				"s.report_profits," +
+				"s.aff_profits," +
+				"s.money_at_stake," +
+				"s.total_withdrawn," +
+				"s.total_deposited " +
+			"FROM ustats as s " +
+			"LEFT JOIN address AS a ON s.eoa_aid = a.address_id " +
+			"LEFT JOIN address AS w ON s.wallet_aid = w.address_id " +
+			"WHERE s.eoa_aid = $1"
+
+	row := ss.db.QueryRow(query,user_aid)
+	var err error
+	var ui UserInfo
+	var (
+		eoa_addr		sql.NullString
+		eoa_addr_sh		sql.NullString
+		wallet_addr		sql.NullString
+		wallet_addr_sh	sql.NullString
+	)
+	err=row.Scan(
+				&eoa_addr,
+				&eoa_addr_sh,
+				&wallet_addr,
+				&wallet_addr_sh,
+				&ui.TotalTrades,
+				&ui.MarketsCreated,
+				&ui.MarketsTraded,
+				&ui.WithdrawReqs,
+				&ui.DepositReqs,
+				&ui.TotalReports,
+				&ui.TotalDesignated,
+				&ui.ProfitLoss,
+				&ui.ReportProfits,
+				&ui.AffProfits,
+				&ui.MoneyAtStake,
+				&ui.TotalWithdrawn,
+				&ui.TotalDeposited,
+	);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			fmt.Printf("No rows for User Info on eoa_aid = %v\n",user_aid)
+		} else {
+			Fatalf("DB error: %v, q=%v\n",err,query)
+		}
+	}
+	if eoa_addr.Valid {
+		ui.EOAAddr = eoa_addr.String
+	}
+	if eoa_addr_sh.Valid {
+		ui.EOAAddrSh = eoa_addr_sh.String
+	}
+	if wallet_addr.Valid {
+		ui.WalletAddr = wallet_addr.String
+	}
+	if wallet_addr_sh.Valid {
+		ui.WalletAddrSh = wallet_addr_sh.String
+	}
+	return ui
 }
