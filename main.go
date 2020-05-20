@@ -77,6 +77,8 @@ var (
 	wallet_abi *abi.ABI
 
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
+
+	rpcclient *ethclient.Client
 )
 func main() {
 	//client, err := ethclient.Dial("http://:::8545")
@@ -88,7 +90,8 @@ func main() {
 
 	augur_init()
 	//client, err := ethclient.Dial("http://192.168.1.102:18545")
-	client, err := ethclient.Dial(RPC_URL)
+	var err error
+	rpcclient, err = ethclient.Dial(RPC_URL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -107,7 +110,7 @@ func main() {
 
   main_loop:
 	ctx := context.Background()
-	latestBlock, err := client.BlockByNumber(ctx, nil)
+	latestBlock, err := rpcclient.BlockByNumber(ctx, nil)
 	if err != nil {
 		log.Fatal("oops:", err)
 	}
@@ -128,10 +131,10 @@ func main() {
 	}
 	for ; bnum<bnum_high; bnum++ {
 		big_bnum:=big.NewInt(int64(bnum))
-		block, _ := client.BlockByNumber(ctx,big_bnum)
+		block, _ := rpcclient.BlockByNumber(ctx,big_bnum)
 		if block != nil {
 			storage.block_delete_with_everything(BlockNumber(big_bnum.Int64()))
-			num_transactions, err := client.TransactionCount(ctx,block.Hash())
+			num_transactions, err := rpcclient.TransactionCount(ctx,block.Hash())
 			if err != nil {
 				fmt.Printf("block error: %v \n",err)
 			} else {
@@ -139,7 +142,7 @@ func main() {
 				back_block_num := new(big.Int).SetUint64(header.Number.Uint64() - 20)
 				if (back_block_num.Uint64() == 99999999999999) && !split_simulated {//simulation disabled
 					// code to simulate chain split (naive) , this block should be removed when stable
-					block,_ = client.BlockByNumber(ctx,back_block_num)
+					block,_ = rpcclient.BlockByNumber(ctx,back_block_num)
 					header = block.Header()
 					big_bnum = big.NewInt(int64(header.Number.Int64()))
 					bnum = BlockNumber(big_bnum.Uint64())
@@ -157,7 +160,7 @@ func main() {
 				if num_transactions > 0 {
 					fmt.Printf("block: %v %v transactions\n",block.Number(),num_transactions)
 					for tnum:=0 ; tnum < int(num_transactions) ; tnum++ {
-						tx , err := client.TransactionInBlock(ctx,block.Hash(),uint(tnum))
+						tx , err := rpcclient.TransactionInBlock(ctx,block.Hash(),uint(tnum))
 						if err != nil {
 							fmt.Printf("Error: %v",err)
 						} else {
@@ -177,7 +180,7 @@ func main() {
 							fmt.Printf("\t to=%v for $%v (%v bytes data)\n",
 											to,tx.Value().String(),len(tx.Data()))
 							fmt.Printf("\t input: \n%v\n",hex.EncodeToString(tx.Data()[:]))
-							rcpt,err := client.TransactionReceipt(ctx,tx.Hash())
+							rcpt,err := rpcclient.TransactionReceipt(ctx,tx.Hash())
 							if err != nil {
 								fmt.Printf("Error: %v",err)
 							} else {
@@ -216,7 +219,7 @@ func main() {
 			default:
 		}
 	}// for block_num
-	latestBlock, err = client.BlockByNumber(ctx, nil)
+	latestBlock, err = rpcclient.BlockByNumber(ctx, nil)
 	if err != nil {
 		log.Fatal("oops:", err)
 	} else {

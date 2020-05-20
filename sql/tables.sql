@@ -63,25 +63,26 @@ CREATE TABLE sbalances (
 -- Market Order (BUY/SELL request made by the User via GUI)
 CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create/Cancel are temporary)
 	id					BIGSERIAL PRIMARY KEY,
-	market_aid			BIGINT NOT NULL,
-	signer_aid			BIGINT NOT NULL,			-- Address of the user who signes the transaction
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	eoa_aid				BIGINT NOT NULL,			-- Address of the user who created the order (Creator)
+	wallet_aid			BIGINT NOT NULL,			-- address of the creator
+	eoa_fill_aid		BIGINT NOT NULL,			-- address of the filler; source: AugurTrading.sol:24
+	wallet_fill_aid		BIGINT NOT NULL,			-- address of the Wallet address of the filler
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	time_stamp			TIMESTAMPTZ NOT NULL,
 	oaction				SMALLINT NOT NULL,			-- order action:  0=>Create, 1=>Cancel, 2=>Fill
 													-- Create: User posts a BID or ASK execpting to be filed
 													-- Fill: User buys or sells existing (Created) order
 													-- Cancel: User removes active order (BID/ASK)
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
-	creator_aid			BIGINT NOT NULL,			-- address of the creator
-	filler_aid			BIGINT NOT NULL,			-- address of the filler; source: AugurTrading.sol:24
+	outcome				SMALLINT NOT NULL,
 	price				DECIMAL(24,18) NOT NULL,
 	amount				DECIMAL(24,18) NOT NULL,
-	outcome				SMALLINT NOT NULL,
 	token_refund		DECIMAL(24,18) NOT NULL,
 	shares_refund		DECIMAL(24,18) NOT NULL,
 	fees				DECIMAL(24,18) NOT NULL,
 	amount_filled		DECIMAL(24,18) NOT NULL,
-	time_stamp			TIMESTAMPTZ NOT NULL,
 	shares_escrowed		TEXT NOT NULL,
 	tokens_escrowed		TEXT NOT NULL,
 	trade_group			TEXT NOT NULL,			-- User defined group label to identify multiple trades
@@ -107,8 +108,9 @@ CREATE TABLE report (
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
-	reporter_aid		BIGINT NOT NULL,
-	signer_aid			BIGINT NOT NULL,			-- transaction signer (the User who is submitting the report)
+	eoa_aid				BIGINT NOT NULL,			-- User's address (EOA) of the Reporter
+	wallet_aid			BIGINT NOT NULL,			-- Wallet's contract address of the Reporter
+	--signer_aid			BIGINT NOT NULL,			-- transaction signer (the User who is submitting the report)
 	ini_reporter_aid	BIGINT DEFAULT 0,
 	disputed_aid		BIGINT DEFAULT 0,
 	dispute_round		BIGINT DEFAULT 1,
@@ -159,6 +161,15 @@ CREATE TABLE user_wallet ( -- link between User and his/her Wallet Contract
 	eoa_aid				BIGINT PRIMARY KEY,
 	wallet_aid			BIGINT NOT NULL		-- Wallet Contract address
 );
+CREATE table dai_transf (	-- transfers of DAI tokens (deposits/withdrawals of funds)
+	id					BIGSERIAL PRIMARY KEY,
+	from_eoa_aid		BIGINT DEFAULT 0,
+	from_wallet_aid		BIGINT DEFAULT 0,
+	to_eoa_aid			BIGINT DEFAULT 0,
+	to_wallet_aid		BIGINT DEFAULT 0,
+	transf_type			SMALLINT NOT NULL,		-- Transfer type 0 - Deposit, 1 - Withdrawal, 2-Share Buying
+	amount				DECIMAL(32,18) DEFAULT 0.0
+);
 -- Statistics, automatically accumulated for the main page
 CREATE TABLE main_stats (
 	id					BIGSERIAL PRIMARY KEY,
@@ -180,9 +191,21 @@ CREATE TABLE oostats (	-- open order statistics per User
 	num_asks			INT DEFAULT 0,				-- number of total ASK orders for this EOA
 	num_cancel			INT DEFAULT 0				-- number of cancelled orders
 );
+CREATE TABLE trd_mkt_stats (	-- trade statistics per User and per Market
+	id					BIGSERIAL PRIMARY KEY,
+	eoa_aid				BIGINT NOT NULL,
+	wallet_aid			BIGINT NOT NULL,
+	market_aid			BIGINT NOT NULL,
+	total_trades		BIGINT DEFAULT 0,
+	total_reports		BIGINT DEFAULT 0,
+	total_designated	BIGINT DEFAULT 0,
+	profit_loss			DECIMAL(24,18) DEFAULT 0.0,
+	report_profits		DECIMAL(24,18) DEFAULT 0.0,
+	aff_profits			DECIMAL(24,18) DEFAULT 0.0
+);
 CREATE TABLE ustats (	-- statistics per User account
 	eoa_aid				BIGINT PRIMARY KEY,		-- Externally Owned ACcount (EOA) address for this user
-	wallet_aid			BIGINT NOT NULL,		-- Wallet Contract address id
+	wallet_aid			BIGINT NOT NULL,	-- Wallet Contract address id
 	total_trades		BIGINT DEFAULT 0,
 	markets_created		BIGINT DEFAULT 0,
 	markets_traded		BIGINT DEFAULT 0,

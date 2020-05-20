@@ -7,8 +7,8 @@ import (
 	"context"
 	"math/big"
 	"os"
-	"io"
-	"runtime"
+//	"io"
+//	"runtime"
 	"fmt"
 //	"encoding/hex"
 //	"strings"
@@ -32,6 +32,7 @@ type clientEnvVars struct {
 	// RPCAddress is the address of the 0x Mesh node to communicate with.
 	WSRPCAddress string `envvar:"WS_RPC_ADDR"`
 }
+/*
 func Fatalf(format string, args ...interface{}) {
 	w := io.MultiWriter(os.Stdout, os.Stderr)
 	if runtime.GOOS == "windows" {
@@ -48,6 +49,7 @@ func Fatalf(format string, args ...interface{}) {
 	fmt.Fprintf(w, "Fatal: "+format+"\n", args...)
 	os.Exit(1)
 }
+*/
 
 func main() {
 

@@ -4,7 +4,9 @@ import (
 	"os"
 	"fmt"
 	"net"
+//	"math/big"
 	"strings"
+//	"context"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
@@ -113,6 +115,18 @@ func (ss *SQLStorage) lookup_universe_id(addr string) int64 {
 	}
 	return universe_id
 }
+func (ss *SQLStorage) lookup_eoa_aid(wallet_aid int64) (int64,error) {
+
+	var addr_id int64;
+	var query string
+	query="SELECT eoa_id FROM ustats WHERE wallet_aid=$1"
+	err:=ss.db.QueryRow(query,wallet_aid).Scan(&addr_id);
+	if (err!=nil) {
+		return 0,err
+	}
+
+	return addr_id,nil
+}
 func (ss *SQLStorage) nonfatal_lookup_address(addr string) (int64,error) {
 
 	var addr_id int64;
@@ -213,11 +227,11 @@ func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int6
 		return
 	}
 	universe_id := ss.lookup_universe_id(evt.Universe.String())
-	creator_aid := ss.lookup_or_create_address(evt.MarketCreator.String())
+	wallet_aid := ss.lookup_or_create_address(evt.MarketCreator.String())
 	reporter_aid := ss.lookup_or_create_address(evt.DesignatedReporter.String())
-	signer_aid := ss.lookup_or_create_address(signer.String())
+	eoa_aid := ss.lookup_or_create_address(signer.String())
 	fmt.Printf("create_market: creator_aid=%v (%v), reporter_id=%v (%v)\n",
-				creator_aid,evt.MarketCreator.String(),reporter_aid,evt.DesignatedReporter.String())
+				wallet_aid,evt.MarketCreator.String(),reporter_aid,evt.DesignatedReporter.String())
 
 	prices := bigint_ptr_slice_to_str(&evt.Prices,",")
 	outcomes := outcomes_to_str(&evt.Outcomes,",")
@@ -236,8 +250,8 @@ func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int6
 			cat_id,
 			universe_id,
 			market_aid,
-			creator_aid,
-			signer_aid,
+			wallet_aid,
+			eoa_aid,
 			reporter_aid,
 			end_time,
 			max_ticks,
@@ -258,8 +272,8 @@ func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int6
 			cat_id,
 			universe_id,
 			market_aid,
-			creator_aid,
-			signer_aid,
+			wallet_aid,
+			eoa_aid,
 			reporter_aid,
 			evt.EndTime.Int64(),
 			evt.NumTicks.Int64(),
@@ -330,23 +344,23 @@ func (ss *SQLStorage) insert_market_oi_changed_evt(block *types.Header,evt *Mark
 
 	fmt.Printf("Set market (id=%v) open interest to %v",market_aid,evt.MarketOI.String())
 }
-func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber,tx_id int64,signer common.Address,evt *MktOrderEvt) {
+func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber,tx_id int64,signer common.Address,eoa_aid int64,evt *MktOrderEvt) {
 
 	// depending on the order action (Create/Cancel/Fill) different table is used for storage
 	//		Create/Cancel order actions go to 'oorders' (Open Orders) table because these orders
 	//		do not alter market's open interest.
 	//		Fill order goes to 'mktord' table because the share has been created and now
 	//		open interest increased
-	var creator_aid int64;
-	creator_aid = ss.lookup_or_create_address(evt.AddressData[0].String())
-	var filler_aid int64 = 0;
+	var wallet_aid int64;
+	wallet_aid = ss.lookup_or_create_address(evt.AddressData[0].String())
+	var wallet_fill_aid int64 = 0;
 	if len(evt.AddressData) > 1 {
-		filler_aid = ss.lookup_or_create_address(evt.AddressData[1].String())
+		wallet_fill_aid = ss.lookup_or_create_address(evt.AddressData[1].String())
 	}
 	universe_id := ss.lookup_universe_id(evt.Universe.String())
 	_ = universe_id	// ToDo: add universe_id match condition (for market)
 	market_aid := ss.lookup_address(evt.Market.String())
-	signer_aid := ss.lookup_or_create_address(signer.String())
+	eoa_fill_aid := ss.lookup_or_create_address(signer.String())
 
 	var oaction OrderAction = OrderAction(evt.EventType)
 	var otype OrderType = OrderType(evt.OrderType)
@@ -385,14 +399,15 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber,tx_id int64,
 	fmt.Printf("Filling existing order %v\n",order_id)
 	query = `
 		INSERT INTO mktord(
-			market_aid,
-			signer_aid,
-			block_num,
 			tx_id,
+			market_aid,
+			eoa_aid,
+			wallet_aid,
+			eoa_fill_aid,
+			wallt_fill_aid,
+			block_num,
 			oaction,
 			otype,
-			creator_aid,
-			filler_aid,
 			price,
 			amount,
 			outcome,
@@ -417,14 +432,15 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber,tx_id int64,
 				"TO_TIMESTAMP($10)," +
 				"$11,$12,$13,$14)"
 	result,err = ss.db.Exec(query,
-			market_aid,
-			signer_aid,
-			block_num,
 			tx_id,
+			market_aid,
+			eoa_aid,
+			wallet_aid,
+			eoa_fill_aid,
+			wallet_fill_aid,
+			block_num,
 			oaction,
 			otype,
-			creator_aid,
-			filler_aid,
 			outcome_idx,
 			time_stamp,
 			shares_escrowed,
@@ -1493,4 +1509,93 @@ func (ss *SQLStorage) get_user_info(user_aid int64) UserInfo {
 		ui.WalletAddrSh = wallet_addr_sh.String
 	}
 	return ui
+}
+func (ss *SQLStorage) get_main_stats() MainStats {
+
+	var query string
+	query = "SELECT " +
+				"markets_count," +
+				"yesno_count," +
+				"categ_count," +
+				"scalar_count," +
+				"active_count," +
+				"money_at_stake," +
+				"trades_count " +
+			"FROM main_stats "
+
+	row := ss.db.QueryRow(query)
+	var err error
+	var s MainStats
+	err=row.Scan(
+				&s.MarketsCount,
+				&s.YesNoCount,
+				&s.CategCount,
+				&s.ScalarCount,
+				&s.ActiveCount,
+				&s.MoneyAtStake,
+				&s.TradesCount,
+	);
+	fmt.Printf("main stats = %+v\n",s)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			fmt.Printf("No rows for market statistics query\n")
+		} else {
+			Fatalf("DB error: %v, q=%v\n",err,query)
+		}
+	}
+	return s
+}
+func (ss *SQLStorage) process_DAI_token_transfer(from_eoa_aid int64,to_eoa_aid int64, evt *Transfer) {
+
+	from_wallet_aid := ss.lookup_or_create_address(evt.From.String())
+	to_wallet_aid := ss.lookup_or_create_address(evt.To.String())
+	amount := evt.Value.String()
+
+	var transf_type int16 = 0
+
+	var query string
+	query = "SELECT count(*) AS num_recs FROM market WHERE market_aid = $1"
+	row := ss.db.QueryRow(query,to_wallet_aid)
+	var null_num sql.NullInt64
+	var err error
+	err=row.Scan(&null_num);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			row := ss.db.QueryRow(query,from_wallet_aid)
+			var null_num sql.NullInt64
+			var err error
+			err=row.Scan(&null_num);
+			if (err!=nil) {
+				if err == sql.ErrNoRows {
+
+				} else {
+					Fatalf("DB error: %v",err)
+				}
+			} else {
+				transf_type = 2		// From market
+			}
+		} else {
+			Fatalf("DB error: %v",err)
+		}
+	} else {
+		transf_type = 2		// To market
+	}
+
+	query = "INSERT INTO dai_transf(" +
+				"from_eoa_aid,from_wallet_aid,to_eoa_aid,to_wallet_aid,transf_type,amount" +
+			") VALUES($1,$2,$3,$4,$5,$6/1e+18)"
+
+	_,err = ss.db.Exec(query,
+			from_eoa_aid,
+			from_wallet_aid,
+			to_eoa_aid,
+			to_wallet_aid,
+			transf_type,
+			amount,
+	)
+
+	if (err!=nil) {
+		Fatalf("DB error: %v q=%v",err,query);
+	}
+
 }

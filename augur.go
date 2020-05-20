@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"math/big"
+	"context"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -199,6 +200,9 @@ func proc_erc20_transfer(log *types.Log) {
 		fmt.Printf("ERC20_Transfer event for contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
+		from_eoa_aid := get_eoa_aid(&mevt.From)
+		to_eoa_aid := get_eoa_aid(&mevt.To)
+		storage.process_DAI_token_transfer(from_eoa_aid,to_eoa_aid,&mevt)
 	}
 }
 func proc_profit_loss_changed(log *types.Log) {
@@ -282,7 +286,40 @@ func proc_share_token_balance_changed(block_num BlockNumber,tx_id int64,log *typ
 		storage.insert_share_balance_changed_evt(block_num,tx_id,&mevt)
 	}
 }
+func get_eoa_aid(addr *common.Address) int64 {
+
+	var eoa_aid int64 = 0
+	wallet_aid,err := storage.nonfatal_lookup_address(addr.String())
+	if err == nil {
+		eoa_aid,err = storage.lookup_eoa_aid(wallet_aid)
+		if err != nil {
+			fmt.Printf("Looking up eoa addr via RPC\n")
+			num:=big.NewInt(int64(1))   // 1 is the offset at Storage where EOA is stored
+			key:=common.BigToHash(num)
+			eoa,err := rpcclient.StorageAt(context.Background(),*addr,key,nil)
+			var eoa_addr_str string
+			if err == nil {
+				eoa_addr_str = common.BytesToAddress(eoa[12:]).String()
+			}
+			eoa_aid = storage.lookup_or_create_address(eoa_addr_str)
+		}
+	} else {
+			fmt.Printf("Looking up eoa addr via RPC\n")
+			// copied from above, ToDo: generalize
+			num:=big.NewInt(int64(1))   // 1 is the offset at Storage where EOA is stored
+			key:=common.BigToHash(num)
+			eoa,err := rpcclient.StorageAt(context.Background(),*addr,key,nil)
+			var eoa_addr_str string
+			if err == nil {
+				eoa_addr_str = common.BytesToAddress(eoa[12:]).String()
+			}
+			eoa_aid = storage.lookup_or_create_address(eoa_addr_str)
+	}
+	fmt.Printf("Getting eoa_aid for address %v, eoa_aid = %v\n",addr.String(),eoa_aid)
+	return eoa_aid
+}
 func proc_market_order_event(block_num BlockNumber,tx_id int64,log *types.Log,signer common.Address) {
+
 	var mevt MktOrderEvt
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Market = common.BytesToAddress(log.Topics[2][12:])
@@ -294,7 +331,8 @@ func proc_market_order_event(block_num BlockNumber,tx_id int64,log *types.Log,si
 		fmt.Printf("OrderEvent event for contract %v (block=%v) : \n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
-		storage.insert_market_order_evt(BlockNumber(log.BlockNumber),tx_id,signer,&mevt)
+		eoa_aid := get_eoa_aid(&mevt.AddressData[0])
+		storage.insert_market_order_evt(BlockNumber(log.BlockNumber),tx_id,signer,eoa_aid,&mevt)
 	}
 }
 func proc_cancel_zerox_order(log *types.Log) {

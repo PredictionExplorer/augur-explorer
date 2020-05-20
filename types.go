@@ -336,3 +336,12 @@ type UserInfo struct {
 	WalletAddr		string	// User's Wallet Contract Address
 	WalletAddrSh	string	// short version of the above addr
 }
+type MainStats struct {
+	MarketsCount	int64
+	YesNoCount		int64
+	CategCount		int64
+	ScalarCount		int64
+	ActiveCount		int64
+	MoneyAtStake	float64
+	TradesCount		int64
+}

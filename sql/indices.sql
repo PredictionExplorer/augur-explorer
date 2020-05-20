@@ -19,5 +19,7 @@ CREATE INDEX mfin_mkt_idx			ON	mkt_fin			USING	btree	(market_aid);
 CREATE INDEX blk_ph_idx				ON block			USING	btree	(parent_hash);
 CREATE INDEX mord_ts_idx			ON mktord			USING	btree	(time_stamp);
 CREATE UNIQUE INDEX ovol_idx		ON outcome_vol		USING	btree	(market_aid,outcome_idx);
-CREATE INDEX oo_depth_idx			ON oorders			USING	btree	(market_aid,outcome,otype);
+CREATE INDEX oo_depth_idx			ON oorders			USING	btree	(market_aid,outcome_idx,otype);
 CREATE UNIQUE INDEX oostats_uniq	ON oostats			USING	btree	(market_aid,eoa_aid,outcome_idx);
+CREATE UNIQUE INDEX tmstats_uniq	ON trd_mkt_stats	USING	btree	(market_aid,eoa_aid);
+CREATE INDEX ustats_idx				ON ustats			USING	btree	(eoa_aid,wallet_aid);
