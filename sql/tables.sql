@@ -163,11 +163,11 @@ CREATE TABLE user_wallet ( -- link between User and his/her Wallet Contract
 );
 CREATE table dai_transf (	-- transfers of DAI tokens (deposits/withdrawals of funds)
 	id					BIGSERIAL PRIMARY KEY,
-	from_eoa_aid		BIGINT DEFAULT 0,
-	from_wallet_aid		BIGINT DEFAULT 0,
-	to_eoa_aid			BIGINT DEFAULT 0,
-	to_wallet_aid		BIGINT DEFAULT 0,
-	transf_type			SMALLINT NOT NULL,		-- Transfer type 0 - Deposit, 1 - Withdrawal, 2-Share Buying
+--	from_eoa_aid		BIGINT DEFAULT 0,
+	from_aid			BIGINT DEFAULT 0,
+--	to_eoa_aid			BIGINT DEFAULT 0,
+	to_aid				BIGINT DEFAULT 0,
+--	transf_type			SMALLINT NOT NULL,		-- Transfer type 0 - Deposit, 1 - Withdrawal, 2-Share Buying
 	amount				DECIMAL(32,18) DEFAULT 0.0
 );
 -- Statistics, automatically accumulated for the main page

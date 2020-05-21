@@ -1,4 +1,5 @@
 // Augur ETL: Converts Augur Data to SQL database
+
 package main
 
 import (
@@ -12,6 +13,7 @@ import (
 	"math/big"
 	"encoding/hex"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -76,9 +78,13 @@ var (
 	exchange_abi *abi.ABI
 	wallet_abi *abi.ABI
 
+	ctrct_wallet_registry *AugurWalletRegistry
+
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 
 	rpcclient *ethclient.Client
+
+	dai_addr common.Address
 )
 func main() {
 	//client, err := ethclient.Dial("http://:::8545")
@@ -97,6 +103,11 @@ func main() {
 	}
 
 	storage = connect_to_storage()
+
+	ctrct_wallet_registry, err = NewAugurWalletRegistry(common.HexToAddress("0x1FD9274a2FE0E86f5A7b5Bde57b93C8C9b62e21d"), rpcclient)
+	if err != nil {
+		log.Fatalf("Failed to instantiate a AugurWalletRegistry contract: %v", err)
+	}
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)

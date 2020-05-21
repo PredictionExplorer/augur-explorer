@@ -208,11 +208,12 @@ func (ss *SQLStorage) lookup_or_create_category(categories string) int64 {
 
 	return cat_id
 }
-func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int64,signer common.Address,evt *MarketCreatedEvt) {
+func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int64,signer common.Address,wallet_aid int64,evt *MarketCreatedEvt) {
 
 	var query string
 	var market_aid int64;
 	market_aid = ss.lookup_or_create_address(evt.Market.String())
+	signer_aid := ss.lookup_or_create_address(signer.String())
 	// check if Market is already registered
 	query = "SELECT market_aid FROM market WHERE market_aid=$1"
 	err:=ss.db.QueryRow(query,market_aid).Scan(&market_aid);
@@ -226,13 +227,28 @@ func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int6
 		// market already registered, sliently exit
 		return
 	}
+	creator_aid := ss.lookup_or_create_address(evt.MarketCreator.String())
 	universe_id := ss.lookup_universe_id(evt.Universe.String())
-	wallet_aid := ss.lookup_or_create_address(evt.MarketCreator.String())
+	eoa_aid := ss.lookup_or_create_address(evt.MarketCreator.String())
 	reporter_aid := ss.lookup_or_create_address(evt.DesignatedReporter.String())
-	eoa_aid := ss.lookup_or_create_address(signer.String())
-	fmt.Printf("create_market: creator_aid=%v (%v), reporter_id=%v (%v)\n",
-				wallet_aid,evt.MarketCreator.String(),reporter_aid,evt.DesignatedReporter.String())
-
+	fmt.Printf("create_market: signer_aid = %v (%v), creator_aid=%v (%v), reporter_id=%v (%v) , wallet_aid =%v\n",
+				signer_aid,signer.String(),
+				creator_aid,evt.MarketCreator.String(),
+				reporter_aid,evt.DesignatedReporter.String(),
+				wallet_aid,
+			)
+	if signer_aid == creator_aid { // a case only seen in Test environment, production check pending
+		// Normally signer != creator, but this happens only in Dev (local testnet), so we have to fix it
+		creator_aid = wallet_aid
+		fmt.Printf("create_market: fixed creator id to contract address %v (wallet_aid)\n",wallet_aid)
+	} else {
+		eoa_aid = signer_aid
+		wallet_aid = creator_aid
+	}
+	if wallet_aid == 0 {
+		Fatalf("insert_market_created_evt(): creator addr = %v, wallet_aid = 0, can't continue, exiting\n",
+					evt.MarketCreator.String())
+	}
 	prices := bigint_ptr_slice_to_str(&evt.Prices,",")
 	outcomes := outcomes_to_str(&evt.Outcomes,",")
 
@@ -1545,15 +1561,16 @@ func (ss *SQLStorage) get_main_stats() MainStats {
 	}
 	return s
 }
-func (ss *SQLStorage) process_DAI_token_transfer(from_eoa_aid int64,to_eoa_aid int64, evt *Transfer) {
+func (ss *SQLStorage) process_DAI_token_transfer(evt *Transfer) {
 
-	from_wallet_aid := ss.lookup_or_create_address(evt.From.String())
-	to_wallet_aid := ss.lookup_or_create_address(evt.To.String())
+	from_aid := ss.lookup_or_create_address(evt.From.String())
+	to_aid := ss.lookup_or_create_address(evt.To.String())
 	amount := evt.Value.String()
 
-	var transf_type int16 = 0
 
 	var query string
+/*
+	// pending for removal
 	query = "SELECT count(*) AS num_recs FROM market WHERE market_aid = $1"
 	row := ss.db.QueryRow(query,to_wallet_aid)
 	var null_num sql.NullInt64
@@ -1580,17 +1597,14 @@ func (ss *SQLStorage) process_DAI_token_transfer(from_eoa_aid int64,to_eoa_aid i
 	} else {
 		transf_type = 2		// To market
 	}
-
+*/
 	query = "INSERT INTO dai_transf(" +
-				"from_eoa_aid,from_wallet_aid,to_eoa_aid,to_wallet_aid,transf_type,amount" +
-			") VALUES($1,$2,$3,$4,$5,$6/1e+18)"
+				"from_aid,to_aid,amount" +
+			") VALUES($1,$2,$3/1e+18)"
 
-	_,err = ss.db.Exec(query,
-			from_eoa_aid,
-			from_wallet_aid,
-			to_eoa_aid,
-			to_wallet_aid,
-			transf_type,
+	_,err := ss.db.Exec(query,
+			from_aid,
+			to_aid,
 			amount,
 	)
 

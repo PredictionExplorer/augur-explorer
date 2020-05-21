@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"bytes"
 	"io/ioutil"
 	"encoding/hex"
@@ -12,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 )
 type InputStruct struct {
 	To common.Address `abi:"_to"`
@@ -120,7 +122,22 @@ func build_list_of_inspected_events() {
 							evt_erc20_approval,
 	)
 }
+func dev_init() {
+	dai_addr = common.HexToAddress("5f3341EA5989aD3129E325027b8d908b63709A00")
+}
+func prod_init() {
+	dai_addr = common.HexToAddress("6B175474E89094C44Da98b954EedeAC495271d0F")
+}
 func augur_init() {
+
+	augur_prod := os.Getenv("AUGUR_PROD")
+	if len(augur_prod) > 0 {
+		prod_init()
+	} else {
+		dev_init()
+	}
+	fmt.Printf("Initialization...\n")
+	fmt.Printf("DAI (Cash) contract address: %v\n",dai_addr.String())
 
 	all_contracts = load_all_artifacts("./abis/augur-artifacts-abi.json")
 	//dump_all_artifacts()
@@ -189,6 +206,8 @@ func proc_fill_evt(log *types.Log) {
 		mevt.Dump()
 	}
 }
+/*
+pending for removal
 func proc_erc20_transfer(log *types.Log) {
 	var mevt Transfer
 	mevt.From= common.BytesToAddress(log.Topics[1][12:])
@@ -203,6 +222,23 @@ func proc_erc20_transfer(log *types.Log) {
 		from_eoa_aid := get_eoa_aid(&mevt.From)
 		to_eoa_aid := get_eoa_aid(&mevt.To)
 		storage.process_DAI_token_transfer(from_eoa_aid,to_eoa_aid,&mevt)
+	}
+}
+*/
+func proc_erc20_transfer(log *types.Log) {
+	var mevt Transfer
+	mevt.From= common.BytesToAddress(log.Topics[1][12:])
+	mevt.To= common.BytesToAddress(log.Topics[2][12:])
+	err := cash_abi.Unpack(&mevt,"Transfer",log.Data)
+	if err != nil {
+		Fatalf("Event ERC20_Transfer, decode error: %v",err)
+	} else {
+		fmt.Printf("ERC20_Transfer event, contract %v (block=%v) :\n",
+									log.Address.String(),log.BlockNumber)
+		mevt.Dump()
+		if bytes.Equal(dai_addr.Bytes(), log.Address.Bytes()) {	// this is DAI contract
+			storage.process_DAI_token_transfer(&mevt)
+		}
 	}
 }
 func proc_profit_loss_changed(log *types.Log) {
@@ -293,29 +329,35 @@ func get_eoa_aid(addr *common.Address) int64 {
 	if err == nil {
 		eoa_aid,err = storage.lookup_eoa_aid(wallet_aid)
 		if err != nil {
-			fmt.Printf("Looking up eoa addr via RPC\n")
 			num:=big.NewInt(int64(1))   // 1 is the offset at Storage where EOA is stored
 			key:=common.BigToHash(num)
+			fmt.Printf("daitok: Looking up eoa addr via RPC: %v\n",addr.String())
 			eoa,err := rpcclient.StorageAt(context.Background(),*addr,key,nil)
+			fmt.Printf("daitok: output of rpc: %v\n",hex.EncodeToString(eoa))
 			var eoa_addr_str string
 			if err == nil {
 				eoa_addr_str = common.BytesToAddress(eoa[12:]).String()
+			} else {
+				fmt.Printf("daitok: error at rpc call: %v\n",err)
 			}
 			eoa_aid = storage.lookup_or_create_address(eoa_addr_str)
 		}
 	} else {
-			fmt.Printf("Looking up eoa addr via RPC\n")
 			// copied from above, ToDo: generalize
 			num:=big.NewInt(int64(1))   // 1 is the offset at Storage where EOA is stored
 			key:=common.BigToHash(num)
+			fmt.Printf("daitok: Looking up eoa addr via RPC: %v\n",addr.String())
 			eoa,err := rpcclient.StorageAt(context.Background(),*addr,key,nil)
+			fmt.Printf("daitok: output of rpc: %v\n",hex.EncodeToString(eoa))
 			var eoa_addr_str string
 			if err == nil {
 				eoa_addr_str = common.BytesToAddress(eoa[12:]).String()
+			} else {
+				fmt.Printf("daitok: error at rpc call: %v\n",err)
 			}
 			eoa_aid = storage.lookup_or_create_address(eoa_addr_str)
 	}
-	fmt.Printf("Getting eoa_aid for address %v, eoa_aid = %v\n",addr.String(),eoa_aid)
+	fmt.Printf("daitok: Getting eoa_aid for address %v, eoa_aid = %v\n",addr.String(),eoa_aid)
 	return eoa_aid
 }
 func proc_market_order_event(block_num BlockNumber,tx_id int64,log *types.Log,signer common.Address) {
@@ -429,7 +471,23 @@ func proc_market_created(block_num BlockNumber,tx_id int64,log *types.Log,signer
 	} else {
 		fmt.Printf("MarketCreated event found (block=%v)\n",log.BlockNumber)
 		mevt.Dump()
-		storage.insert_market_created_evt(block_num,tx_id,signer,&mevt)
+		fmt.Printf("getwallet: Looking wallet addr via RPC for: %v\n",mevt.MarketCreator.String())
+		var copts = new(bind.CallOpts)
+		copts.Pending = true
+		wallet,err := ctrct_wallet_registry.GetWallet(copts,mevt.MarketCreator)
+		fmt.Printf("getwallet: addr is : %v\n",wallet.String())
+		var wallet_addr_str string
+		var wallet_aid int64 = 0
+		if err == nil {
+			wallet_addr_str = wallet.String()
+		} else {
+			fmt.Printf("getwallet: error at rpc call: %v\n",err)
+		}
+		if !eth_addr_is_zero(&wallet) {
+			wallet_aid = storage.lookup_or_create_address(wallet_addr_str)
+		}
+		fmt.Printf("getwallet: got wallet_aid = %v for wallet addr %v\n",wallet_aid,wallet_addr_str)
+		storage.insert_market_created_evt(block_num,tx_id,signer,wallet_aid,&mevt)
 	}
 }
 func process_event(block *types.Header, tx_id int64, signer common.Address, log *types.Log) {

@@ -8,6 +8,12 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 )
+func eth_addr_is_zero(addr_ptr *common.Address) bool {
+	if bytes.Equal(addr_ptr.Bytes(), common.Address{}.Bytes()) {
+		return true
+	}
+	return false
+}
 func bigint_ptr_slice_to_str(data *[]*big.Int,separator string) string {
 	var output bytes.Buffer
 	length := len(*data)
