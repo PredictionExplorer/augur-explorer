@@ -220,3 +220,18 @@ CREATE TABLE ustats (	-- statistics per User account
 	total_withdrawn		DECIMAL(24,18) DEFAULT 0.0,
 	total_deposited		DECIMAL(24,18) DEFAULT 0.0
 );
+CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	eoa_aid				BIGINT NOT NULL,
+	wallet_aid			BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	net_position		DECIMAL(24,18) DEFAULT 0.0,
+	avg_price			DECIMAL(24,18) DEFAULT 0.0,
+	frozen_funds		DECIMAL(48,18) DEFAULT 0.0,
+	realized_profit		DECIMAL(24,18) DEFAULT 0.0,
+	realized_cost		DECIMAL(24,18) DEFAULT 0.0,
+	time_stamp			TIMESTAMPTZ NOT NULL
+);

@@ -196,7 +196,6 @@ type Transfer struct {
 	Value *big.Int
 	Raw   types.Log // Blockchain specific contextual infos
 }
-// 0x Exchange Events begin
 type FillEvt struct {
 	MakerAddress           common.Address
 	FeeRecipientAddress    common.Address
@@ -219,7 +218,6 @@ type OwnershipTransferred struct {
 	NewOwner      common.Address
 	Raw           types.Log // Blockchain specific contextual infos
 }
-// 0x Exchange Events end
 type TradingProceedsClaimed struct {
 	Universe        common.Address
 	Sender          common.Address
@@ -243,8 +241,11 @@ type Approval struct {
 	Value   *big.Int
 	Raw     types.Log // Blockchain specific contextual infos
 }
-// Backend Types
 type InfoMarket struct {
+	MktAid			int64
+	Fee				float64
+	OpenInterest	float64
+	CurVolume		float64
 	MktAddr			string
 	MktAddrSh		string	// short address (with .. in the middle)
 	Signer			string
@@ -258,9 +259,7 @@ type InfoMarket struct {
 	Outcomes		string
 	MktType			string
 	Status			string
-	Fee				float64
-	OpenInterest	float64
-	CurVolume		float64
+	CurOutcome		string	// calculated only if the query is made on specific outcome
 }
 type InfoCategories struct {
 	CatId			int64
@@ -315,7 +314,6 @@ type MarketDepth struct {
 	Bids			[]DepthEntry
 	Asks			[]DepthEntry
 }
-// Note: to avoid padding the biggest primitive type must go first, 64bit, then 32bit, then strings
 type UserInfo struct {
 	ProfitLoss		float64 // profit/loss for the (account) lifetime
 	TradeFreq		float64	// trade frequency as percentil of all users (ex: top 15% of all users)
@@ -344,4 +342,41 @@ type MainStats struct {
 	ActiveCount		int64
 	MoneyAtStake	float64
 	TradesCount		int64
+}
+type MarketOrder struct {
+	MktAid				int64
+	TradeTs				int64
+	Price				float64
+	Volume				float64
+	AccumVol			float64
+	OutcomeIdx			int32
+	OType				int32
+	CreatedTs			int64
+	SellerWalletAddr	string
+	SellerWalletAddrSh	string	// short version of the addr
+	SellerEOAAddr		string
+	SellerEOAAddrSh		string	// short version of the addr
+	BuyerWalletAddr		string
+	BuyerWalletAddrSh	string
+	BuyerEOAAddr		string
+	BuyerEOAAddrSh		string
+	Direction			string
+	Date				string
+}
+type PLEntry struct {	// profit loss entry
+	MktAid				int64
+	Timestamp			int64
+	NetPosition			float64
+	AvgPrice			float64
+	FrozenFunds			float64
+	RealizedProfit		float64
+	RealizedCost		float64
+	OutcomeIdx			int32
+	Date				string
+	EOAAddr				string
+	EOAAddrSh			string
+	WalletAddr			string
+	WalletAddrSh		string
+	MktAddr				string
+	MktAddrSh			string
 }

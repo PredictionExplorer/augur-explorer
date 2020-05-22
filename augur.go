@@ -241,7 +241,7 @@ func proc_erc20_transfer(log *types.Log) {
 		}
 	}
 }
-func proc_profit_loss_changed(log *types.Log) {
+func proc_profit_loss_changed(block_num BlockNumber,tx_id int64,log *types.Log) {
 	var mevt ProfitLossChanged
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Market = common.BytesToAddress(log.Topics[2][12:])
@@ -252,6 +252,8 @@ func proc_profit_loss_changed(log *types.Log) {
 	} else {
 		fmt.Printf("ProfitLossChanged event found (block=%v) :\n",log.BlockNumber)
 		mevt.Dump()
+		eoa_aid := get_eoa_aid(&mevt.Account)
+		storage.insert_profit_loss_evt(block_num,tx_id,eoa_aid,&mevt)
 	}
 }
 func proc_transfer_single(log *types.Log) {
@@ -515,7 +517,7 @@ func process_event(block *types.Header, tx_id int64, signer common.Address, log 
 			proc_erc20_transfer(log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_profit_loss_changed) {
-			proc_profit_loss_changed(log)
+			proc_profit_loss_changed(block_num,tx_id,log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_transfer_single) {
 			proc_transfer_single(log)
@@ -569,6 +571,11 @@ func dump_tx_input_if_known(tx *types.Transaction) {
 	}
 	input_sig := tx_data[:4]
 	decoded_sig ,_ := hex.DecodeString("78dc0eed")
+	set_timestamp_sig ,_ := hex.DecodeString("a0a2b573")
+	if 0 == bytes.Compare(input_sig,set_timestamp_sig) {
+		fmt.Printf("Skipping setTimestamp() transaction\n")
+		return
+	}
 	if 0 == bytes.Compare(input_sig,decoded_sig) {
 		input_data_raw:= tx_data[4:]
 		var input_data InputStruct
@@ -592,7 +599,6 @@ func dump_tx_input_if_known(tx *types.Transaction) {
 		fmt.Printf("\trevertOnFaliure: %v\n",input_data.RevertOnFailure)
 		fmt.Printf("}\n")
 	} else {
-		fmt.Printf("dump_tx_input: input sig (%v) != (%v) registered sig ",
-			hex.EncodeToString(input_sig[:]),hex.EncodeToString(decoded_sig))
+		fmt.Printf("dump_tx_input: input sig: %v\n",hex.EncodeToString(input_sig[:]))
 	}
 }

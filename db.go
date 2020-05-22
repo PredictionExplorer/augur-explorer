@@ -239,7 +239,8 @@ func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int6
 			)
 	if signer_aid == creator_aid { // a case only seen in Test environment, production check pending
 		// Normally signer != creator, but this happens only in Dev (local testnet), so we have to fix it
-		creator_aid = wallet_aid
+		//creator_aid = wallet_aid // this doesn't work, if starting blockchain from block 0, wallt isn't created yet
+		wallet_aid = creator_aid
 		fmt.Printf("create_market: fixed creator id to contract address %v (wallet_aid)\n",wallet_aid)
 	} else {
 		eoa_aid = signer_aid
@@ -420,7 +421,7 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber,tx_id int64,
 			eoa_aid,
 			wallet_aid,
 			eoa_fill_aid,
-			wallt_fill_aid,
+			wallet_fill_aid,
 			block_num,
 			oaction,
 			otype,
@@ -437,16 +438,16 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber,tx_id int64,
 			trade_group,
 			order_id
 		) VALUES (
-				$1,$2,$3,$4,$5,$6,$7,$8,
-				(` + price + ")," +
+				$1,$2,$3,$4,$5,$6,$7,$8,$9,
+				(` + price + "/1e+2)," +
 				"(" + amount + "/1e+18)," +
-				"$9," +
+				"$10," +
 				"(" + token_refund + "/1e+18)," +
 				"(" + shares_refund + "/1e18)," +
 				"(" + fees + "/1e18)," +
-				"(" + amount_filled + "/1e18)," +
-				"TO_TIMESTAMP($10)," +
-				"$11,$12,$13,$14)"
+				"(" + amount_filled + "/1e16)," +
+				"TO_TIMESTAMP($11)," +
+				"$12,$13,$14,$15)"
 	result,err = ss.db.Exec(query,
 			tx_id,
 			market_aid,
@@ -464,7 +465,7 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber,tx_id int64,
 			hex.EncodeToString(evt.TradeGroupId[:]),
 			order_id)
 	if err != nil {
-		Fatalf("DB error: can't insert into mktord table: %v",err)
+		Fatalf("DB error: can't insert into mktord table: %v, q=%v",err,query)
 	}
 	rows_affected,err:=result.RowsAffected()
 	if err != nil {
@@ -621,8 +622,8 @@ func (ss *SQLStorage) insert_initial_report_evt(block_num BlockNumber,tx_id int6
 			block_num,
 			tx_id,
 			market_aid,
-			reporter_aid,
-			signer_aid,
+			wallet_aid,
+			eoa_aid,
 			ini_reporter_aid,
 			is_initial,
 			is_designated,
@@ -763,8 +764,8 @@ func (ss *SQLStorage) insert_dispute_crowd_contrib(block_num BlockNumber,tx_id i
 			block_num,
 			tx_id,
 			market_aid,
-			reporter_aid,
-			signer_aid,
+			wallet_aid,
+			eoa_aid,
 			disputed_aid,
 			dispute_round,
 			amount_staked,
@@ -994,9 +995,9 @@ func (ss *SQLStorage) get_active_market_list(off int, lim int) []InfoMarket {
 				"LEFT JOIN " +
 					"address AS ma ON m.market_aid = ma.address_id " +
 				"LEFT JOIN " +
-					"address AS sa ON m.signer_aid = sa.address_id " +
+					"address AS sa ON m.eoa_aid= sa.address_id " +
 				"LEFT JOIN " +
-					"address AS ca ON m.creator_aid = ca.address_id " +
+					"address AS ca ON m.wallet_aid = ca.address_id " +
 			"ORDER BY " +
 				"m.market_aid " +
 			"OFFSET $1 LIMIT $2";
@@ -1100,8 +1101,42 @@ func (ss *SQLStorage) get_categories() []InfoCategories {
 	}
 	return records
 }
-func (ss *SQLStorage) get_mkt_trades(mkt_addr string) []MarketTrade {
+func get_outcome_str(mkt_type uint8,outcome_idx int,outcomes_str *string) string {
 
+		var output string
+		if mkt_type == 0 { // Yes/No
+			switch outcome_idx {
+				case 0:
+					output = "Invalid"
+				case 1:
+					output = "No"
+				case 2:
+					output = "Yes"
+			}
+		}
+		if mkt_type == 1 { // Categorical
+			outcomes_list := strings.Split(*outcomes_str,",")
+			if len(outcomes_list) > outcome_idx {
+				output = outcomes_list[outcome_idx]
+			} else {
+				output = "??????"
+			}
+		}
+		if mkt_type == 2 {
+			if outcome_idx == 0 {
+				output = "Invalid"
+			}
+			if outcome_idx == 2 {
+				output = "Scalar"
+			}
+			if outcome_idx == 1 {
+				output = "-"
+			}
+		}
+		return output
+}
+func (ss *SQLStorage) get_mkt_trades(mkt_addr string) []MarketTrade {
+	// get market trades with mixed outcomes
 	fmt.Printf("get_mkt_trades() mkt_addr=%v\n",mkt_addr)
 	var where string = ""
 	var market_aid int64 = 0;
@@ -1134,7 +1169,7 @@ func (ss *SQLStorage) get_mkt_trades(mkt_addr string) []MarketTrade {
 				"LEFT JOIN " +
 					"address AS a ON o.market_aid=a.address_id " +
 				"LEFT JOIN " +
-					"address AS fa ON o.signer_aid=fa.address_id " +
+					"address AS fa ON o.eoa_aid=fa.address_id " +
 				"LEFT JOIN " +
 					"market AS m ON o.market_aid = m.market_aid " +
 			where +
@@ -1175,33 +1210,7 @@ func (ss *SQLStorage) get_mkt_trades(mkt_addr string) []MarketTrade {
 		if err!=nil {
 			Fatalf(fmt.Sprintf("DB error: %v",err))
 		}
-		if mkt_type == 0 { // Yes/No
-			switch rec.Outcome {
-				case 0:
-					rec.OutcomeStr = "Invalid"
-				case 1:
-					rec.OutcomeStr = "No"
-				case 2:
-					rec.OutcomeStr = "Yes"
-			}
-		}
-		if mkt_type == 1 { // Categorical
-			outcomes_list := strings.Split(outcomes,",")
-			if len(outcomes) > rec.Outcome {
-				rec.OutcomeStr = outcomes_list[rec.Outcome]	// ToDo: possibly move to INSERT stage
-			}
-		}
-		if mkt_type == 2 {
-			if rec.Outcome == 0 {
-				rec.OutcomeStr = "Invalid"
-			} 
-			if rec.Outcome == 2 {
-				rec.OutcomeStr="Scalar"
-			}
-			if rec.Outcome == 1 {
-				rec.OutcomeStr="-"
-			}
-		}
+		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.Outcome,&outcomes)
 		records = append(records,rec)
 	}
 	fmt.Printf("get_mkt_trades(): returning %v rows\n",len(records))
@@ -1210,7 +1219,7 @@ func (ss *SQLStorage) get_mkt_trades(mkt_addr string) []MarketTrade {
 	}
 	return records
 }
-func (ss *SQLStorage) get_market_info(mkt_addr string) (InfoMarket,error) {
+func (ss *SQLStorage) get_market_info(mkt_addr string,outcome_idx int,oc bool) (InfoMarket,error) {
 
 	var rec InfoMarket
 	market_aid,err := ss.nonfatal_lookup_address(mkt_addr)
@@ -1218,9 +1227,11 @@ func (ss *SQLStorage) get_market_info(mkt_addr string) (InfoMarket,error) {
 		fmt.Printf("market %v not found, returning empty data\n",mkt_addr)
 		return rec,err
 	}
+	rec.MktAid=market_aid
 	fmt.Printf("querying info for market aid = %v\n",market_aid)
 	var query string
 	query = "SELECT " +
+				"m.market_type," +
 				"ma.addr as mkt_addr," +
 				"CONCAT(LEFT(ma.addr,6),'…',RIGHT(ma.addr,6)) AS mkt_addr_sh," +
 				"sa.addr AS signer," +
@@ -1244,13 +1255,15 @@ func (ss *SQLStorage) get_market_info(mkt_addr string) (InfoMarket,error) {
 				"LEFT JOIN " +
 					"address AS ma ON m.market_aid = ma.address_id " +
 				"LEFT JOIN " +
-					"address AS sa ON m.signer_aid = sa.address_id " +
+					"address AS sa ON m.eoa_aid = sa.address_id " +
 				"LEFT JOIN " +
-					"address AS ca ON m.creator_aid = ca.address_id " +
+					"address AS ca ON m.wallet_aid = ca.address_id " +
 			"WHERE market_aid = $1"
 
 	row := ss.db.QueryRow(query,market_aid)
+	var mkt_type int
 	err=row.Scan(
+				&mkt_type,
 				&rec.MktAddr,
 				&rec.MktAddrSh,
 				&rec.Signer,
@@ -1267,6 +1280,9 @@ func (ss *SQLStorage) get_market_info(mkt_addr string) (InfoMarket,error) {
 				&rec.OpenInterest,
 				&rec.CurVolume,
 	)
+	if oc { // get outcome string
+		rec.CurOutcome = get_outcome_str(uint8(mkt_type),outcome_idx,&rec.Outcomes)
+	}
 	if err!=nil {
 		fmt.Printf("DB error: %v, q=%v\n",err,query)
 		return rec,err
@@ -1309,12 +1325,13 @@ func (ss *SQLStorage) get_outcome_volumes(mkt_addr string) ([]OutcomeVol,error) 
 			&rec.Volume,
 			&rec.LastPrice,
 			&rec.MktType,
-			&rec.OutcomeStr,
+			&outcomes,
 		)
 		fmt.Printf("mkt_type= %v\n",rec.MktType)
 		if err!=nil {
 			Fatalf(fmt.Sprintf("DB error: %v",err))
 		}
+		/* to be deleted
 		if rec.MktType == 0 { // Yes/No
 			switch rec.Outcome {
 				case 0:
@@ -1342,12 +1359,14 @@ func (ss *SQLStorage) get_outcome_volumes(mkt_addr string) ([]OutcomeVol,error) 
 				rec.OutcomeStr="-"
 			}
 		}
-		fmt.Printf("rec.OutcomeStr=%v\n",rec.OutcomeStr)
+		*/
+		rec.OutcomeStr = get_outcome_str(uint8(rec.MktType),rec.Outcome,&outcomes)
+		fmt.Printf("get_outcome_volumes(): rec.OutcomeStr=%v (extracted from %v)\n",rec.OutcomeStr,outcomes)
 		records = append(records,rec)
 	}
 	return records,nil
 }
-func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc uint8,otype OrderType) []DepthEntry {
+func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype OrderType) []DepthEntry {
 
 	var query string
 	query = "SELECT " +
@@ -1442,7 +1461,82 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc uint8,otype Ord
 	}
 	return records
 }
-func (ss *SQLStorage) get_mkt_depth(mkt_addr string,outcome_idx uint8) *MarketDepth {
+func (ss *SQLStorage) get_price_history_for_outcome(market_aid int64,outc int) []MarketOrder{
+
+	var query string
+	query = "SELECT " +
+				"o.market_aid," +
+				"s_w_a.addr AS s_w_a_addr," +
+				"CONCAT(LEFT(s_w_a.addr,6),'…',RIGHT(s_w_a.addr,6)) AS seller_wallet_addr_sh," +
+				"s_e_a.addr AS seller_eoa_addr," +
+				"CONCAT(LEFT(s_e_a.addr,6),'…',RIGHT(s_e_a.addr,6)) AS seller_eoa_addr_sh," +
+				"b_w_a.addr AS b_w_a_addr," +
+				"CONCAT(LEFT(b_w_a.addr,6),'…',RIGHT(b_w_a.addr,6)) AS buyer_wallet_addr_sh," +
+				"b_e_a.addr AS byer_eoa_addr," +
+				"CONCAT(LEFT(b_e_a.addr,6),'…',RIGHT(b_e_a.addr,6)) AS buyer_eoa_addr_sh," +
+				"o.otype, " +
+				"CASE o.otype " +
+					"WHEN 0 THEN 'BID' " +
+					"ELSE 'ASK' " +
+				"END AS dir, " +
+				"o.time_stamp::date AS date," +
+				"FLOOR(EXTRACT(EPOCH FROM o.time_stamp))::BIGINT as created_ts," +
+				"o.outcome," +
+				"o.price AS price, " +
+				"o.amount_filled AS volume " +
+//				"m.market_type AS mtype," +
+//				"m.outcomes AS outcomes_str " +
+			"FROM mktord AS o " +
+				"LEFT JOIN " +
+					"address AS a ON o.market_aid=a.address_id " +
+				"LEFT JOIN address AS s_w_a ON o.wallet_aid=s_w_a.address_id " +
+				"LEFT JOIN address AS s_e_a ON o.eoa_aid=s_e_a.address_id " +
+				"LEFT JOIN address AS b_w_a ON o.wallet_aid=b_w_a.address_id " +
+				"LEFT JOIN address AS b_e_a ON o.eoa_aid=b_e_a.address_id " +
+//				"LEFT JOIN " +
+//					"market AS m ON o.market_aid = m.market_aid " +
+			"WHERE o.market_aid = $1 AND o.outcome=$2 " +
+			"ORDER BY o.time_stamp"
+//	fmt.Printf("q=%v\n",query)
+	var accumulated_volume = 0.0
+	rows,err := ss.db.Query(query,market_aid,outc)
+	if (err!=nil) {
+		Fatalf("DB error: %v (query=%v)",err,query);
+	}
+	records := make([]MarketOrder,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec MarketOrder
+		err=rows.Scan(
+			&rec.MktAid,
+			&rec.SellerWalletAddr,
+			&rec.SellerWalletAddrSh,
+			&rec.SellerEOAAddr,
+			&rec.SellerEOAAddrSh,
+			&rec.BuyerWalletAddr,
+			&rec.BuyerWalletAddrSh,
+			&rec.BuyerEOAAddr,
+			&rec.BuyerEOAAddrSh,
+			&rec.OType,
+			&rec.Direction,
+			&rec.Date,
+			&rec.CreatedTs,
+			&rec.OutcomeIdx,
+			&rec.Price,
+			&rec.Volume,
+		)
+		fmt.Printf("record: price = %v, volume = %v\n",rec.Price,rec.Volume)
+		if err!=nil {
+			Fatalf(fmt.Sprintf("DB error: %v",err))
+		}
+		accumulated_volume = accumulated_volume + rec.Volume
+		rec.AccumVol = accumulated_volume
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) get_mkt_depth(mkt_addr string,outcome_idx int) *MarketDepth {
 
 	fmt.Printf("get_mkt_depth(mkt=%v,outcome_idx=%v)\n",mkt_addr,outcome_idx)
 	market_aid := ss.lookup_address(mkt_addr)
@@ -1612,4 +1706,121 @@ func (ss *SQLStorage) process_DAI_token_transfer(evt *Transfer) {
 		Fatalf("DB error: %v q=%v",err,query);
 	}
 
+}
+func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,eoa_aid int64,evt *ProfitLossChanged) {
+
+	_= ss.lookup_universe_id(evt.Universe.String())
+	market_aid := ss.lookup_address(evt.Market.String())
+	wallet_aid := ss.lookup_or_create_address(evt.Account.String())
+
+	outcome_idx := evt.Outcome.Int64()
+	net_position := evt.NetPosition.String()
+	avg_price := evt.AvgPrice.String()
+	realized_profit := evt.RealizedProfit.String()
+	frozen_funds := evt.FrozenFunds.String()
+	realized_cost := evt.RealizedCost.String()
+	time_stamp := evt.Timestamp.Int64()
+
+	var query string
+
+	fmt.Printf("Insert to profitloss (wallet %v outcome %v)\n",evt.Account.String(),outcome_idx);
+	query = "INSERT INTO profit_loss (" +
+				"block_num," + 
+				"tx_id," +
+				"market_aid," +
+				"eoa_aid," +
+				"wallet_aid," +
+				"outcome_idx," +
+				"net_position," +
+				"avg_price," +
+				"frozen_funds," +
+				"realized_profit," +
+				"realized_cost," +
+				"time_stamp" +
+			") VALUES($1,$2,$3,$4,$5,$6," +
+				"(" +net_position+ "/1e+18)," +
+				"(" +avg_price+ "/1e+18)," +
+				"(" +frozen_funds+ "/1e+18)," +
+				"(" +realized_profit+ "/1e+18)," +
+				"(" +realized_cost+ "/1e+18)," +
+				"TO_TIMESTAMP($7)" +
+			")"
+	result,err := ss.db.Exec(query,
+								block_num,
+								tx_id,
+								market_aid,
+								eoa_aid,
+								wallet_aid,
+								outcome_idx,
+								time_stamp,
+	)
+	if err != nil {
+		Fatalf("DB error: can't insert into profit_loss table: %v; q=%v",err,query)
+	}
+	rows_affected,err:=result.RowsAffected()
+	if err != nil {
+		Fatalf("DB error: %v",err)
+	}
+	if rows_affected > 0 {
+		return
+	} else {
+		Fatalf("DB error: couldn't insert into 'profit_loss' table. Rows affeced = 0")
+	}
+}
+func (ss *SQLStorage) get_profit_loss(eoa_aid int64) []PLEntry {
+
+	var query string
+	query = "SELECT " +
+				"o.market_aid," +
+				"o.outcome," +
+				"a.addr as mkt_addr," +
+				"CONCAT(LEFT(a.addr,6),'…',RIGHT(a.addr,6)) AS mkt_addr_sh" +
+				"w_a.addr AS w_a_addr," +
+				"CONCAT(LEFT(w_a.addr,6),'…',RIGHT(w_a.addr,6)) AS wallet_addr_sh," +
+				"e_a.addr AS eoa_addr," +
+				"CONCAT(LEFT(e_a.addr,6),'…',RIGHT(e_a.addr,6)) AS eoa_addr_sh," +
+				"o.time_stamp::date AS date," +
+				"FLOOR(EXTRACT(EPOCH FROM o.time_stamp))::BIGINT as created_ts," +
+				"o.net_position,o.avg_price,o.frozen_funds,o.realized_profit,o.realized_cost " +
+			"FROM profit_loss AS o " +
+				"LEFT JOIN address AS a ON o.market_aid=a.address_id " +
+				"LEFT JOIN address AS w_a ON o.wallet_aid=w_a.address_id " +
+				"LEFT JOIN address AS e_a ON o.eoa_aid=e_a.address_id " +
+//				"LEFT JOIN " +
+//					"market AS m ON o.market_aid = m.market_aid " +
+			"WHERE o.eoa_aid = $1 " +
+			"ORDER BY o.time_stamp"
+//	fmt.Printf("q=%v\n",query)
+	rows,err := ss.db.Query(query,eoa_aid)
+	if (err!=nil) {
+		Fatalf("DB error: %v (query=%v)",err,query);
+	}
+	records := make([]PLEntry,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec PLEntry
+		err=rows.Scan(
+			&rec.MktAid,
+			&rec.OutcomeIdx,
+			&rec.MktAddr,
+			&rec.MktAddrSh,
+			&rec.WalletAddr,
+			&rec.WalletAddrSh,
+			&rec.EOAAddr,
+			&rec.EOAAddrSh,
+			&rec.Date,
+			&rec.Timestamp,
+			&rec.NetPosition,
+			&rec.AvgPrice,
+			&rec.FrozenFunds,
+			&rec.RealizedProfit,
+			&rec.RealizedCost,
+		)
+		if err!=nil {
+			Fatalf(fmt.Sprintf("DB error: %v",err))
+		}
+		records = append(records,rec)
+	}
+	return records
 }

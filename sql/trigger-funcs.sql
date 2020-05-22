@@ -18,6 +18,7 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_oorders_insert() RETURNS trigger AS  $$ --updates open order statistics
 DECLARE
+	v_cnt numeric;
 BEGIN
 
 	IF NEW.otype = 0 THEN
@@ -26,6 +27,11 @@ BEGIN
 			WHERE	(s.market_aid = NEW.market_aid) AND
 					(s.eoa_aid = NEW.eoa_aid) AND
 					(s.outcome_idx = NEW.outcome_idx);
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		IF v_cnt = 0 THEN
+			INSERT	INTO oostats(market_aid,eoa_aid,outcome_idx,num_bids)
+					VALUES(NEW.market_aid,NEW.eoa_aid,NEW.outcome_idx,1);
+		END IF;
 	END IF;
 	IF NEW.otype = 1 THEN
 		UPDATE oostats AS s
@@ -33,6 +39,11 @@ BEGIN
 			WHERE	(s.market_aid = NEW.market_aid) AND
 					(s.eoa_aid = NEW.eoa_aid) AND
 					(s.outcome_idx = NEW.outcome_idx);
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		IF v_cnt = 0 THEN
+			INSERT	INTO oostats(market_aid,eoa_aid,outcome_idx,num_asks)
+					VALUES(NEW.market_aid,NEW.eoa_aid,NEW.outcome_idx,1);
+		END IF;
 	END IF;
 
 	RETURN NEW;
