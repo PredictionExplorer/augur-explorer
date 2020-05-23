@@ -124,9 +124,12 @@ func build_list_of_inspected_events() {
 }
 func dev_init() {
 	dai_addr = common.HexToAddress("5f3341EA5989aD3129E325027b8d908b63709A00")
+	zerox_addr = common.HexToAddress("6749E370e7B1955FFa924F4f75f5F12653C7512C")
+
 }
 func prod_init() {
 	dai_addr = common.HexToAddress("6B175474E89094C44Da98b954EedeAC495271d0F")
+	zerox_addr = common.HexToAddress("6749E370e7B1955FFa924F4f75f5F12653C7512C")
 }
 func augur_init() {
 
@@ -151,6 +154,17 @@ func augur_init() {
 	wallet_abi = abi_from_artifacts("AugurWalletRegistry")
 
 	build_list_of_inspected_events()
+
+	var err error
+	ctrct_wallet_registry,err = NewAugurWalletRegistry(common.HexToAddress("0x1FD9274a2FE0E86f5A7b5Bde57b93C8C9b62e21d"), rpcclient)
+	if err != nil {
+		Fatalf("Failed to instantiate a AugurWalletRegistry contract: %v", err)
+	}
+	ctrct_zerox, err = NewZeroX(zerox_addr,rpcclient)
+	if err != nil {
+		Fatalf("Failed to instantiate a ZeroX contract: %v", err)
+	}
+
 }
 func proc_approval(log *types.Log) {
 

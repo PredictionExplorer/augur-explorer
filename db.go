@@ -1549,6 +1549,7 @@ func (ss *SQLStorage) get_user_info(user_aid int64) UserInfo {
 
 	var query string
 	query = "SELECT " +
+				"s.wallet_aid," +
 				"a.addr as eoa_addr," +
 				"CONCAT(LEFT(a.addr,6),'…',RIGHT(a.addr,6)) AS eoa_addr_sh," +
 				"w.addr as wallet_addr," +
@@ -1580,7 +1581,9 @@ func (ss *SQLStorage) get_user_info(user_aid int64) UserInfo {
 		wallet_addr		sql.NullString
 		wallet_addr_sh	sql.NullString
 	)
+	ui.EOAAid = user_aid
 	err=row.Scan(
+				&ui.WalletAid,
 				&eoa_addr,
 				&eoa_addr_sh,
 				&wallet_addr,
@@ -1772,22 +1775,27 @@ func (ss *SQLStorage) get_profit_loss(eoa_aid int64) []PLEntry {
 	var query string
 	query = "SELECT " +
 				"o.market_aid," +
-				"o.outcome," +
+				"m.market_type, " +
+				"o.outcome_idx," +
+				"m.outcomes," +
+				"substring(extra_info::json->>'description',1,100) as descr," +
 				"a.addr as mkt_addr," +
-				"CONCAT(LEFT(a.addr,6),'…',RIGHT(a.addr,6)) AS mkt_addr_sh" +
+				"CONCAT(LEFT(a.addr,6),'…',RIGHT(a.addr,6)) AS mkt_addr_sh," +
 				"w_a.addr AS w_a_addr," +
 				"CONCAT(LEFT(w_a.addr,6),'…',RIGHT(w_a.addr,6)) AS wallet_addr_sh," +
 				"e_a.addr AS eoa_addr," +
 				"CONCAT(LEFT(e_a.addr,6),'…',RIGHT(e_a.addr,6)) AS eoa_addr_sh," +
 				"o.time_stamp::date AS date," +
 				"FLOOR(EXTRACT(EPOCH FROM o.time_stamp))::BIGINT as created_ts," +
-				"o.net_position,o.avg_price,o.frozen_funds,o.realized_profit,o.realized_cost " +
+				"o.net_position,o.avg_price," +
+				"o.frozen_funds/1e+18 as frozen_funds," +
+				"o.realized_profit,o.realized_cost " +
 			"FROM profit_loss AS o " +
 				"LEFT JOIN address AS a ON o.market_aid=a.address_id " +
 				"LEFT JOIN address AS w_a ON o.wallet_aid=w_a.address_id " +
 				"LEFT JOIN address AS e_a ON o.eoa_aid=e_a.address_id " +
-//				"LEFT JOIN " +
-//					"market AS m ON o.market_aid = m.market_aid " +
+				"LEFT JOIN " +
+					"market AS m ON o.market_aid = m.market_aid " +
 			"WHERE o.eoa_aid = $1 " +
 			"ORDER BY o.time_stamp"
 //	fmt.Printf("q=%v\n",query)
@@ -1796,13 +1804,19 @@ func (ss *SQLStorage) get_profit_loss(eoa_aid int64) []PLEntry {
 		Fatalf("DB error: %v (query=%v)",err,query);
 	}
 	records := make([]PLEntry,0,8)
-
+	var starting_point PLEntry
+	records = append(records,starting_point)
+	var accum_pl float64 = 0.0
 	defer rows.Close()
 	for rows.Next() {
 		var rec PLEntry
+		var outcomes string
 		err=rows.Scan(
 			&rec.MktAid,
+			&rec.MktType,
 			&rec.OutcomeIdx,
+			&outcomes,
+			&rec.MktDescr,
 			&rec.MktAddr,
 			&rec.MktAddrSh,
 			&rec.WalletAddr,
@@ -1820,6 +1834,9 @@ func (ss *SQLStorage) get_profit_loss(eoa_aid int64) []PLEntry {
 		if err!=nil {
 			Fatalf(fmt.Sprintf("DB error: %v",err))
 		}
+		rec.OutcomeStr = get_outcome_str(uint8(rec.MktType),rec.OutcomeIdx,&outcomes)
+		accum_pl = accum_pl + rec.NetPosition
+		rec.AccumPl = accum_pl
 		records = append(records,rec)
 	}
 	return records

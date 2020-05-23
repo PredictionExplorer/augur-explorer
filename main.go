@@ -79,12 +79,15 @@ var (
 	wallet_abi *abi.ABI
 
 	ctrct_wallet_registry *AugurWalletRegistry
+	ctrct_zerox *ZeroX
 
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 
 	rpcclient *ethclient.Client
 
+	// addresses of the contracts used in our code (for making eth.Call()s if needed)
 	dai_addr common.Address
+	zerox_addr common.Address
 )
 func main() {
 	//client, err := ethclient.Dial("http://:::8545")
@@ -94,7 +97,6 @@ func main() {
 				" Please set AUGUR_ETH_NODE_RPC environment variable")
 	}
 
-	augur_init()
 	//client, err := ethclient.Dial("http://192.168.1.102:18545")
 	var err error
 	rpcclient, err = ethclient.Dial(RPC_URL)
@@ -104,10 +106,7 @@ func main() {
 
 	storage = connect_to_storage()
 
-	ctrct_wallet_registry, err = NewAugurWalletRegistry(common.HexToAddress("0x1FD9274a2FE0E86f5A7b5Bde57b93C8C9b62e21d"), rpcclient)
-	if err != nil {
-		log.Fatalf("Failed to instantiate a AugurWalletRegistry contract: %v", err)
-	}
+	augur_init()
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)

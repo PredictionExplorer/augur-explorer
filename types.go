@@ -315,6 +315,8 @@ type MarketDepth struct {
 	Asks			[]DepthEntry
 }
 type UserInfo struct {
+	EOAAid			int64
+	WalletAid		int64
 	ProfitLoss		float64 // profit/loss for the (account) lifetime
 	TradeFreq		float64	// trade frequency as percentil of all users (ex: top 15% of all users)
 	ReportProfits	float64	// amount of money user has made in profits in outcome reporting
@@ -367,11 +369,13 @@ type PLEntry struct {	// profit loss entry
 	MktAid				int64
 	Timestamp			int64
 	NetPosition			float64
+	AccumPl				float64
 	AvgPrice			float64
 	FrozenFunds			float64
 	RealizedProfit		float64
 	RealizedCost		float64
-	OutcomeIdx			int32
+	MktType				int
+	OutcomeIdx			int
 	Date				string
 	EOAAddr				string
 	EOAAddrSh			string
@@ -379,4 +383,6 @@ type PLEntry struct {	// profit loss entry
 	WalletAddrSh		string
 	MktAddr				string
 	MktAddrSh			string
+	OutcomeStr			string
+	MktDescr			string
 }

@@ -228,10 +228,10 @@ CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 	eoa_aid				BIGINT NOT NULL,
 	wallet_aid			BIGINT NOT NULL,
 	outcome_idx			SMALLINT NOT NULL,
-	net_position		DECIMAL(24,18) DEFAULT 0.0,
-	avg_price			DECIMAL(24,18) DEFAULT 0.0,
-	frozen_funds		DECIMAL(48,18) DEFAULT 0.0,
-	realized_profit		DECIMAL(24,18) DEFAULT 0.0,
-	realized_cost		DECIMAL(24,18) DEFAULT 0.0,
+	net_position		DECIMAL(64,18) DEFAULT 0.0,
+	avg_price			DECIMAL(64,18) DEFAULT 0.0,
+	frozen_funds		DECIMAL(64,18) DEFAULT 0.0,
+	realized_profit		DECIMAL(64,18) DEFAULT 0.0,
+	realized_cost		DECIMAL(64,18) DEFAULT 0.0,
 	time_stamp			TIMESTAMPTZ NOT NULL
 );

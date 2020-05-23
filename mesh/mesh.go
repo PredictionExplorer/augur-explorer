@@ -27,6 +27,7 @@ import (
 
 var (
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
+	ctrct_zerox *ZeroX
 )
 type clientEnvVars struct {
 	// RPCAddress is the address of the 0x Mesh node to communicate with.

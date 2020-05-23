@@ -1,33 +1,20 @@
 package main
 
 import (
-	"runtime"
+//	"runtime"
 	"fmt"
-	"os"
-	"io"
+//	"os"
+//	"io"
 	"encoding/hex"
+
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 )
 func check(e error) {
 	if e != nil {
 		panic(fmt.Sprintf("Exiting Augur extractor with error: %v",e))
 	}
 }
-func Fatalf(format string, args ...interface{}) {
-	w := io.MultiWriter(os.Stdout, os.Stderr)
-	if runtime.GOOS == "windows" {
-		// The SameFile check below doesn't work on Windows.
-		// stdout is unlikely to get redirected though, so just print there.
-		w = os.Stdout
-	} else {
-		outf, _ := os.Stdout.Stat()
-		errf, _ := os.Stderr.Stat()
-		if outf != nil && errf != nil && os.SameFile(outf, errf) {
-			w = os.Stderr
-		}
-	}
-	fmt.Fprintf(w, "Fatal: "+format+"\n", args...)
-	os.Exit(1)
-}
+
 func (evt *MarketCreatedEvt) Dump() {	// dumps struct to stdout for debugging
 	fmt.Printf("MarketCreated {\n")
 	fmt.Printf("\tUniverse: %v\n",evt.Universe.String())
@@ -176,6 +163,26 @@ func (evt *TransferBatch) Dump() {
 	fmt.Printf("\tTo: %v\n",evt.To.String())
 	ids := bigint_ptr_slice_to_str(&evt.Ids,",")
 	fmt.Printf("\tIds: %v\n",ids)
+	fmt.Printf("\tDecoded token IDs:\n")
+	var copts = new(bind.CallOpts)
+	copts.Pending = true
+	for i:=0 ; i<len(evt.Ids); i++ {
+		//tok_data,err := hex.DecodeString(evt.Ids[i])
+		if false {
+			fmt.Printf("\t\tcan't decode token info hex string: \n")
+		} else {
+			tok_info,err := ctrct_zerox.UnpackTokenId(copts,evt.Ids[i])
+			//tok_info,err := ctrct_zerox.DecodeAssetData(copts,tok_data)
+			if err == nil {
+				fmt.Printf("\t\tMarket: %v\n",tok_info.Market.String())
+				fmt.Printf("\t\tPrice: %v\n",tok_info.Price)
+				fmt.Printf("\t\tOutcome: %v\n",tok_info.Outcome)
+				fmt.Printf("\t\tType: %v\n",tok_info.Type)
+			} else {
+				fmt.Printf("\t\ttoken decode error: %v\n",err)
+			}
+		}
+	}
 	values := bigint_ptr_slice_to_str(&evt.Values,",")
 	fmt.Printf("\tValues: %v\n",values)
 	fmt.Printf("}\n")
