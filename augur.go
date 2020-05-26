@@ -255,7 +255,8 @@ func proc_erc20_transfer(log *types.Log) {
 		}
 	}
 }
-func proc_profit_loss_changed(block_num BlockNumber,tx_id int64,log *types.Log) {
+func proc_profit_loss_changed(block_num BlockNumber,tx_id int64,log *types.Log) int64  {
+	var id int64 = 0
 	var mevt ProfitLossChanged
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Market = common.BytesToAddress(log.Topics[2][12:])
@@ -267,8 +268,9 @@ func proc_profit_loss_changed(block_num BlockNumber,tx_id int64,log *types.Log) 
 		fmt.Printf("ProfitLossChanged event found (block=%v) :\n",log.BlockNumber)
 		mevt.Dump()
 		eoa_aid := get_eoa_aid(&mevt.Account)
-		storage.insert_profit_loss_evt(block_num,tx_id,eoa_aid,&mevt)
+		id = storage.insert_profit_loss_evt(block_num,tx_id,eoa_aid,&mevt)
 	}
+	return id
 }
 func proc_transfer_single(log *types.Log) {
 	var mevt TransferSingle
@@ -506,8 +508,9 @@ func proc_market_created(block_num BlockNumber,tx_id int64,log *types.Log,signer
 		storage.insert_market_created_evt(block_num,tx_id,signer,wallet_aid,&mevt)
 	}
 }
-func process_event(block *types.Header, tx_id int64, signer common.Address, log *types.Log) {
-
+func process_event(block *types.Header, tx_id int64, signer common.Address, log *types.Log) int64 {
+	// Return Value: id of the record inserted (if aplicable, or 0)
+	var id int64 = 0
 	block_num := BlockNumber(block.Number.Uint64())
 	if log == nil {
 		Fatalf("process_event() received null pointer")
@@ -531,7 +534,7 @@ func process_event(block *types.Header, tx_id int64, signer common.Address, log 
 			proc_erc20_transfer(log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_profit_loss_changed) {
-			proc_profit_loss_changed(block_num,tx_id,log)
+			id = proc_profit_loss_changed(block_num,tx_id,log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_transfer_single) {
 			proc_transfer_single(log)
@@ -576,6 +579,7 @@ func process_event(block *types.Header, tx_id int64, signer common.Address, log 
 	for j:=1; j < num_topics ; j++ {
 		fmt.Printf("\t\t\t\tLog Topic %v , %v \n",j,log.Topics[j].String())
 	}
+	return id
 }
 func dump_tx_input_if_known(tx *types.Transaction) {
 

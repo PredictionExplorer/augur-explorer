@@ -342,6 +342,7 @@ type MainStats struct {
 	CategCount		int64
 	ScalarCount		int64
 	ActiveCount		int64
+	FinalizedCount	int64
 	MoneyAtStake	float64
 	TradesCount		int64
 }
@@ -368,6 +369,7 @@ type MarketOrder struct {
 type PLEntry struct {	// profit loss entry
 	MktAid				int64
 	Timestamp			int64
+	BlockNum			int64
 	NetPosition			float64
 	AccumPl				float64
 	AvgPrice			float64
@@ -385,4 +387,5 @@ type PLEntry struct {	// profit loss entry
 	MktAddrSh			string
 	OutcomeStr			string
 	MktDescr			string
+	OrderHash			string
 }

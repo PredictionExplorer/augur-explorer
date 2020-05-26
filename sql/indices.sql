@@ -25,5 +25,7 @@ CREATE UNIQUE INDEX oostats_uniq	ON oostats			USING	btree	(market_aid,eoa_aid,ou
 CREATE UNIQUE INDEX tmstats_uniq	ON trd_mkt_stats	USING	btree	(market_aid,eoa_aid);
 CREATE INDEX ustats_idx				ON ustats			USING	btree	(eoa_aid,wallet_aid);
 CREATE INDEX pl_eoa_idx				ON profit_loss		USING	btree	(eoa_aid);
-CREATE INDEX pl_wallet_idx			ON profit_loss		USINg	btree	(wallet_aid);
-CREATE INDEX pl_profit_srch_idx		ON profit_loss		USING	bree	(market_aid,eoa_aid,outcome_idx);
+CREATE INDEX pl_wallet_idx			ON profit_loss		USING	btree	(wallet_aid);
+CREATE INDEX pl_profit_srch_idx		ON profit_loss		USING	btree	(market_aid,eoa_aid,outcome_idx);
+CREATE INDEX open_positions_idx		ON profit_loss		USING	btree	(eoa_aid,realized_profit) WHERE realized_profit = 0.0;
+CREATE INDEX closed_positions_idx	ON profit_loss		USING	btree	(eoa_aid,realized_profit) WHERE realized_profit <> 0.0;

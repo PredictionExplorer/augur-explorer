@@ -179,7 +179,7 @@ CREATE TABLE main_stats (
 	categ_count			BIGINT DEFAULT 0,	-- counter for Categorical markets
 	scalar_count		BIGINT DEFAULT 0,	-- counter for Scalar markets
 	active_count		BIGINT DEFAULT 0,	-- counter for not-finalized markets
-	money_at_stake		DECIMAL(24,18) DEFAULT 0.0,		-- amount in ETH
+	money_at_stake		DECIMAL(64,18) DEFAULT 0.0,		-- amount in ETH
 	trades_count		BIGINT DEFAULT 0	-- total amount of trades
 );
 CREATE TABLE oostats (	-- open order statistics per User
@@ -227,6 +227,7 @@ CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 	market_aid			BIGINT NOT NULL,
 	eoa_aid				BIGINT NOT NULL,
 	wallet_aid			BIGINT NOT NULL,
+	mktord_id			BIGINT DEFAULT 0,			-- this is the id of the market order generated this PL
 	outcome_idx			SMALLINT NOT NULL,
 	net_position		DECIMAL(64,18) DEFAULT 0.0,
 	avg_price			DECIMAL(64,18) DEFAULT 0.0,

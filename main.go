@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"bytes"
 	"time"
 	"fmt"
 	"context"
@@ -88,6 +89,9 @@ var (
 	// addresses of the contracts used in our code (for making eth.Call()s if needed)
 	dai_addr common.Address
 	zerox_addr common.Address
+
+
+	market_order_id int64 = 0
 )
 func main() {
 	//client, err := ethclient.Dial("http://:::8545")
@@ -204,12 +208,22 @@ func main() {
 								}
 								ordered_list := sequencer.get_ordered_event_list()
 								num_logs = len(ordered_list)
+								pl_entries := make([]int64,0,2);// profit loss entries
+								market_order_id = 0
 								for i:=0 ; i < num_logs ; i++ {
 									fmt.Printf(
 										"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",
 										ordered_list[i].Topics[0].String(),
 										ordered_list[i].Address.String())
-									process_event(block.Header(),tx_id,from,ordered_list[i])
+									id := process_event(block.Header(),tx_id,from,ordered_list[i])
+									if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),
+												evt_profit_loss_changed) {
+										pl_entries = append(pl_entries,id)
+									}
+								}
+								if (market_order_id > 0) && (len(pl_entries)>0) {
+									// link profit loss records to market order record
+									storage.link_pl_to_order(market_order_id,&pl_entries)
 								}
 							}
 						}
