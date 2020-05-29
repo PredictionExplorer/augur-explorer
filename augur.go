@@ -218,6 +218,8 @@ func proc_fill_evt(log *types.Log) {
 	} else {
 		fmt.Printf("Fill event found (block=%v) :\n",log.BlockNumber)
 		mevt.Dump()
+		// we need to locate order id because Profit Loss events are linked to this Order 
+		fill_order_id = storage.locate_fill_event_order(&mevt)
 	}
 }
 /*
@@ -347,7 +349,7 @@ func get_eoa_aid(addr *common.Address) int64 {
 	if err == nil {
 		eoa_aid,err = storage.lookup_eoa_aid(wallet_aid)
 		if err != nil {
-			num:=big.NewInt(int64(1))   // 1 is the offset at Storage where EOA is stored
+			num:=big.NewInt(int64(owner_fld_offset))   // 1 is the offset at Storage where EOA is stored
 			key:=common.BigToHash(num)
 			fmt.Printf("daitok: Looking up eoa addr via RPC: %v\n",addr.String())
 			eoa,err := rpcclient.StorageAt(context.Background(),*addr,key,nil)
@@ -362,7 +364,7 @@ func get_eoa_aid(addr *common.Address) int64 {
 		}
 	} else {
 			// copied from above, ToDo: generalize
-			num:=big.NewInt(int64(1))   // 1 is the offset at Storage where EOA is stored
+			num:=big.NewInt(int64(owner_fld_offset))   // 1 is the offset at Storage where EOA is stored
 			key:=common.BigToHash(num)
 			fmt.Printf("daitok: Looking up eoa addr via RPC: %v\n",addr.String())
 			eoa,err := rpcclient.StorageAt(context.Background(),*addr,key,nil)

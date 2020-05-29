@@ -1,4 +1,4 @@
-/// Global types, used anywhere in the package
+// Global types, used anywhere in the package
 package main
 import (
 	"math/big"
@@ -372,10 +372,12 @@ type PLEntry struct {	// profit loss entry
 	BlockNum			int64
 	NetPosition			float64
 	AccumPl				float64
+	AccumFrozen			float64
 	AvgPrice			float64
 	FrozenFunds			float64
 	RealizedProfit		float64
 	RealizedCost		float64
+	FinalProfit			float64
 	MktType				int
 	OutcomeIdx			int
 	Date				string
@@ -388,4 +390,6 @@ type PLEntry struct {	// profit loss entry
 	OutcomeStr			string
 	MktDescr			string
 	OrderHash			string
+	CounterPAddr		string
+	CounterPAddrSh		string
 }

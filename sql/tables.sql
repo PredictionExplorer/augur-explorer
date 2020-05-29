@@ -229,10 +229,12 @@ CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 	wallet_aid			BIGINT NOT NULL,
 	mktord_id			BIGINT DEFAULT 0,			-- this is the id of the market order generated this PL
 	outcome_idx			SMALLINT NOT NULL,
+	closed_position		SMALLINT DEFAULT 0,			-- 0 - open position, 1 - closed position
 	net_position		DECIMAL(64,18) DEFAULT 0.0,
 	avg_price			DECIMAL(64,18) DEFAULT 0.0,
 	frozen_funds		DECIMAL(64,18) DEFAULT 0.0,
-	realized_profit		DECIMAL(64,18) DEFAULT 0.0,
+	realized_profit		DECIMAL(64,18) DEFAULT 0.0,	-- this is the field copied directly from Augur' Event Log
 	realized_cost		DECIMAL(64,18) DEFAULT 0.0,
+	final_profit		DECIMAL(64,18) DEFAULT 0.0,	-- this profit is updated (by our code) when position is closed
 	time_stamp			TIMESTAMPTZ NOT NULL
 );

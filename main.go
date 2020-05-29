@@ -90,8 +90,9 @@ var (
 	dai_addr common.Address
 	zerox_addr common.Address
 
-
+	fill_order_id int64 = 0			// during event processing, holds id of record in mktord from Fill evt
 	market_order_id int64 = 0
+	owner_fld_offset int64 = 2		// offset to AugurContract::owner field obtained with eth_getStorage()
 )
 func main() {
 	//client, err := ethclient.Dial("http://:::8545")
@@ -109,7 +110,7 @@ func main() {
 	}
 
 	storage = connect_to_storage()
-
+	storage.check_main_stats()
 	augur_init()
 
 	c := make(chan os.Signal)
@@ -210,6 +211,7 @@ func main() {
 								num_logs = len(ordered_list)
 								pl_entries := make([]int64,0,2);// profit loss entries
 								market_order_id = 0
+								fill_order_id = 0
 								for i:=0 ; i < num_logs ; i++ {
 									fmt.Printf(
 										"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",

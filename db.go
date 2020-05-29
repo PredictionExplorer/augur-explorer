@@ -4,7 +4,7 @@ import (
 	"os"
 	"fmt"
 	"net"
-//	"math/big"
+	"math/big"
 	"strings"
 //	"context"
 	"database/sql"
@@ -56,6 +56,23 @@ func connect_to_storage() *SQLStorage {
 	ss := new(SQLStorage)
 	ss.db = db
 	return ss
+}
+func (ss *SQLStorage) check_main_stats() {
+
+	var query string
+	query="SELECT id FROM main_stats LIMIT 1";
+	row := ss.db.QueryRow(query)
+	var null_id sql.NullInt64
+	var err error
+	err=row.Scan(&null_id);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			query="INSERT INTO main_stats(universe_id) VALUES(1)";
+			_,_ =ss.db.Exec(query)
+		} else {
+			Fatalf("Error in check_main_stats(): %v, q=%v",err,query)
+		}
+	}
 }
 func (ss *SQLStorage) get_last_block_num() (BlockNumber,bool) {
 
@@ -575,6 +592,7 @@ func (ss *SQLStorage) insert_market_finalized_evt(evt *MktFinalizedEvt) {
 		Fatalf("DB error: can't update market finalization of market %v : %v, q=%v",market_aid,err,query)
 	}
 	ss.update_market_status(market_aid,MktStatusFinalized)
+	ss.update_losing_positions(market_aid,evt)
 }
 func (ss *SQLStorage) update_market_status(market_aid int64,status MarketStatus) {
 	var query string
@@ -598,6 +616,55 @@ func (ss *SQLStorage) update_market_status(market_aid int64,status MarketStatus)
 	} else {
 		fmt.Printf("MKTSTATUS: market_aid = %v, status = %v\n",market_aid,status)
 	}
+}
+func (ss *SQLStorage) update_losing_positions(market_aid int64,evt *MktFinalizedEvt) {
+
+	// this function marks losing positions as closed (because we don't have ProfitLoss event
+	//			on a losing position (position with wrong outcome)
+	var query string
+	query = "SELECT market_type FROM market WHERE market_aid=$1"
+
+	var market_type int
+	err:=ss.db.QueryRow(query,market_aid).Scan(&market_type);
+	if (err!=nil) {
+		if (err==sql.ErrNoRows) {
+			return
+		}
+		Fatalf("DB Error: %v, q=%v\n",err,query)
+	}
+
+	var where_condition string
+	switch market_type {
+		case 0:		// Yes/No
+			hundred := big.NewInt(100)
+			if hundred.Cmp(evt.WinningPayoutNumerators[0]) == 0 { // Invalid
+				where_condition = "implmenentation pending"
+			}
+			if hundred.Cmp(evt.WinningPayoutNumerators[1]) ==0 { // No wins
+				where_condition = " (((outcome_idx = 2) AND (net_position > 0)) OR " +
+								  "  ((outcome_idx = 1) AND (net_position < 0))) "
+			}
+			if hundred.Cmp(evt.WinningPayoutNumerators[2]) ==0 { // Yes wins
+				where_condition = " (((outcome_idx = 2) AND (net_position < 0)) OR " +
+								  "  ((outcome_idx = 1) AND (net_position > 0))) "
+			}
+			query = "UPDATE profit_loss " +
+						"SET closed_position = 1, " +
+							"final_profit = frozen_funds " +
+						"WHERE (market_aid = $1) AND "+
+						where_condition
+
+		default:
+	}
+	res,err:=ss.db.Exec(query,market_aid)
+	if (err!=nil) {
+		Fatalf("DB error: %v ; q=%v",err,query);
+	}
+	affected_rows,err:=res.RowsAffected()
+	if err!=nil {
+		Fatalf("DB error in rows affected: %v",err)
+	}
+	fmt.Printf("Market finalized. amount of closed losing positions: %v\n",affected_rows)
 }
 func (ss *SQLStorage) insert_initial_report_evt(block_num BlockNumber,tx_id int64,signer common.Address,evt *InitialReportSubmittedEvt) {
 
@@ -1725,6 +1792,30 @@ func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,e
 
 	var query string
 
+	// Update previous position status on this outcome
+	query = "UPDATE profit_loss " +
+				"SET closed_position = 1, " +
+					"final_profit = ($4/1e+36) " +
+				"WHERE " +
+						"(market_aid = $1) AND" +
+						"(eoa_aid = $2) AND " +
+						"(outcome_idx = $3) AND " +
+						"(closed_position = 0)"
+	res,err:=ss.db.Exec(query,market_aid,eoa_aid,outcome_idx,realized_profit)
+	if (err!=nil) {
+		Fatalf("DB error: %v ; q=%v",err,query);
+	}
+	affected_rows,err:=res.RowsAffected()
+	if affected_rows == 0 {
+		fmt.Printf("pl_calc: notice: no previous trades were closed for this market & outcome\n")
+	} else {
+		fmt.Printf("pl_calc: notice: %v trades were closed for this market & outcome\n",affected_rows)
+		if affected_rows != 1 {
+			fmt.Printf("pl_calc: WARNING! 'closed_position' was set for more than 1 trade\n")
+			Fatalf("pl_calc: undefined behaviour. please implement this use case\n")
+		}
+	}
+
 	fmt.Printf("Insert to profitloss (wallet %v outcome %v)\n",evt.Account.String(),outcome_idx);
 	query = "INSERT INTO profit_loss (" +
 				"block_num," + 
@@ -1733,24 +1824,25 @@ func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,e
 				"eoa_aid," +
 				"wallet_aid," +
 				"outcome_idx," +
+				"mktord_id," +
 				"net_position," +
 				"avg_price," +
 				"frozen_funds," +
 				"realized_profit," +
 				"realized_cost," +
 				"time_stamp" +
-			") VALUES($1,$2,$3,$4,$5,$6," +
+			") VALUES($1,$2,$3,$4,$5,$6,$7," +
 				"(" +net_position+ "/1e+16)," +
 				"(" +avg_price+ "/1e+20)," +
 				"(" +frozen_funds+ "/1e+36)," +
 				"(" +realized_profit+ "/1e+36)," +
 				"(" +realized_cost+ "/1e+36)," +
-				"TO_TIMESTAMP($7)" +
-			") RETURNING id,realized_profit"
+				"TO_TIMESTAMP($8)" +
+			") RETURNING id,realized_profit,realized_cost"
 
-	var err error
 	var null_pl_id sql.NullInt64
 	var null_profit sql.NullFloat64
+	var null_rcost sql.NullFloat64
 	var pl_id int64 = 0
 	row := ss.db.QueryRow(query,
 								block_num,
@@ -1759,9 +1851,10 @@ func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,e
 								eoa_aid,
 								wallet_aid,
 								outcome_idx,
+								fill_order_id,
 								time_stamp,
 	)
-	err=row.Scan(&null_pl_id,null_profit);
+	err=row.Scan(&null_pl_id,&null_profit,&null_rcost);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			//
@@ -1772,13 +1865,65 @@ func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,e
 		pl_id = null_pl_id.Int64
 	}
 	if null_profit.Valid {
-		query = "UPDATE profit_loss SET mktord_id = $4 " +
-				"WHERE (market_aid=$1) AND (outcome=$2) AND (eoa_aid=$3) AND ("
-		_,err:=ss.db.Exec(query,mkt_aid,outcome_idx,eoa_aid)
-		if (err!=nil) {
-			Fatalf("DB error: %v ; q=%v",err,query);
+		if null_profit.Float64 > 0 {
+			/*
+			query = "UPDATE profit_loss SET mktord_id = $4 " +
+					"WHERE (market_aid=$1) AND (outcome=$2) AND (eoa_aid=$3) AND ("
+			_,err:=ss.db.Exec(query,market_aid,outcome_idx,eoa_aid)
+			if (err!=nil) {
+				Fatalf("DB error: %v ; q=%v",err,query);
+			}
+			*/
 		}
 	}
+	/*
+	if null_rcost.Valid {
+		if null_rcost.Float64 > 0 {
+			query = "SELECT id FROM profit_loss " +
+						"WHERE  (market_aid=$1) AND " +
+								"(eoa_aid=$2) AND " +
+								"(outcome_idx=$3) AND" +
+								"(frozen_funds=$4) AND " +
+								"(closed_position=0) " +
+						"ORDER by id DESC LIMIT 1"
+
+			d_query := fmt.Sprintf("SELECT id FROM profit_loss " +
+						"WHERE  (market_aid=%v) AND " +
+								"(eoa_aid=%v) AND " +
+								"(outcome_idx=%v) AND" +
+								"(frozen_funds=%v) AND " +
+								"(closed_position=0) " +
+						"ORDER by id DESC LIMIT 1",
+								market_aid,eoa_aid,outcome_idx,null_rcost.Float64)
+			fmt.Printf("pl_calc: query = %v\n",d_query)
+			row := ss.db.QueryRow(query,market_aid,eoa_aid,outcome_idx,null_rcost.Float64)
+			var opened_pos_pl_id sql.NullInt64
+			var err error
+			err=row.Scan(&opened_pos_pl_id);
+			if (err!=nil) {
+				if err == sql.ErrNoRows {
+					fmt.Printf("Error: realized cost > 0 but setting position flag " +
+									"to Closed was not possible, order id not found: %+v\n",evt);
+				} else {
+					Fatalf("DB error: %v ; q=%v",err,query);
+				}
+			} else {
+				fmt.Printf("pl_calc: profit loss record id =%v, setting 'closed' to 1\n",opened_pos_pl_id.Int64)
+				query = "UPDATE profit_loss SET closed_position = 1 WHERE id=$1"
+				res,err:=ss.db.Exec(query,opened_pos_pl_id.Int64)
+				if (err!=nil) {
+					Fatalf("DB error: %v ; q=%v",err,query);
+				}
+				affected_rows,err:=res.RowsAffected()
+				if affected_rows == 0 {
+					fmt.Printf("Error: realized cost > 0 but setting position flag " +
+									"to Closed was not possible" +
+									"affected rows=0, pl_id =%v evt: %+v\n",evt);
+				}
+			}
+		}
+	}
+	*/
 
 	return pl_id
 }
@@ -1801,8 +1946,9 @@ func (ss *SQLStorage) get_profit_loss(eoa_aid int64) []PLEntry {
 				"FLOOR(EXTRACT(EPOCH FROM pl.time_stamp))::BIGINT as created_ts," +
 				"pl.net_position," +
 				"pl.avg_price," +
-				"pl.frozen_funds/1e+18 as frozen_funds," +
-				"pl.realized_profit," +
+				"pl.frozen_funds," +
+				"pl.realized_profit," +	
+				"pl.final_profit," +
 				"pl.realized_cost," +
 				"o.order_id," +
 				"o.block_num " +
@@ -1812,7 +1958,7 @@ func (ss *SQLStorage) get_profit_loss(eoa_aid int64) []PLEntry {
 				"LEFT JOIN address AS e_a ON pl.eoa_aid=e_a.address_id " +
 				"LEFT JOIN market AS m ON pl.market_aid = m.market_aid " +
 				"LEFT JOIN mktord AS o ON pl.mktord_id = o.id "+
-			"WHERE (pl.eoa_aid = $1) AND (pl.realized_profit <> 0) " +
+			"WHERE (pl.eoa_aid = $1) AND (pl.closed_position = 1) " +
 			"ORDER BY pl.time_stamp"
 //	fmt.Printf("q=%v\n",query)
 	rows,err := ss.db.Query(query,eoa_aid)
@@ -1847,6 +1993,7 @@ func (ss *SQLStorage) get_profit_loss(eoa_aid int64) []PLEntry {
 			&rec.AvgPrice,
 			&rec.FrozenFunds,
 			&rec.RealizedProfit,
+			&rec.FinalProfit,
 			&rec.RealizedCost,
 			&order_hash,
 			&block_num,
@@ -1855,7 +2002,8 @@ func (ss *SQLStorage) get_profit_loss(eoa_aid int64) []PLEntry {
 			Fatalf(fmt.Sprintf("DB error: %v q=%v",err,query))
 		}
 		rec.OutcomeStr = get_outcome_str(uint8(rec.MktType),rec.OutcomeIdx,&outcomes)
-		accum_pl = accum_pl + rec.NetPosition
+		rec.FinalProfit = rec.FinalProfit - rec.RealizedProfit
+		accum_pl = accum_pl + rec.FinalProfit
 		rec.AccumPl = accum_pl
 		if order_hash.Valid { rec.OrderHash = order_hash.String }
 		if block_num.Valid { rec.BlockNum = block_num.Int64 }
@@ -1900,18 +2048,24 @@ func (ss *SQLStorage) get_open_positions(eoa_aid int64) []PLEntry {
 				"FLOOR(EXTRACT(EPOCH FROM pl.time_stamp))::BIGINT as created_ts," +
 				"pl.net_position," +
 				"pl.avg_price," +
-				"abs(pl.frozen_funds) as frozen_funds," +
+				"pl.frozen_funds," +
 				"pl.realized_profit," +
 				"pl.realized_cost," +
 				"o.order_id," +
-				"o.block_num " +
-			"FROM profit_loss AS pl " +
+				"o.block_num," +
+				"o.eoa_aid," +
+				"o.eoa_fill_aid ," +
+				"pl.eoa_aid " +
+				"e_a.addr AS eoa_addr," +
+				"CONCAT(LEFT(e_a.addr,6),'…',RIGHT(e_a.addr,6)) AS eoa_addr_sh," +
+			"FROM (rofit_loss AS pl,mktord as o) " +
 				"LEFT JOIN address AS a ON pl.market_aid=a.address_id " +
 				"LEFT JOIN address AS w_a ON pl.wallet_aid=w_a.address_id " +
 				"LEFT JOIN address AS e_a ON pl.eoa_aid=e_a.address_id " +
 				"LEFT JOIN market AS m ON pl.market_aid = m.market_aid " +
-				"LEFT JOIN mktord AS o ON pl.mktord_id = o.id "+
-			"WHERE (pl.eoa_aid = $1) AND (pl.realized_profit = 0.0)" +
+				"LEFT JOIN address AS cr_a ON o.eoa_aid = a.address_id " +
+				"LEFT JOIN address AS fil_a ON o.eoa_fill_aid = a.address_id " +
+			"WHERE (pl.mktord_id=o.id) AND (pl.eoa_aid = $1) AND (pl.closed_position=0)" +
 			"ORDER BY pl.time_stamp"
 //	fmt.Printf("q=%v\n",query)
 	rows,err := ss.db.Query(query,eoa_aid)
@@ -1922,6 +2076,7 @@ func (ss *SQLStorage) get_open_positions(eoa_aid int64) []PLEntry {
 	var starting_point PLEntry
 	records = append(records,starting_point)
 	var accum_pl float64 = 0.0
+	var accum_frozen float64 = 0.0
 	defer rows.Close()
 	for rows.Next() {
 		var rec PLEntry
@@ -1957,9 +2112,39 @@ func (ss *SQLStorage) get_open_positions(eoa_aid int64) []PLEntry {
 		accum_pl = accum_pl + rec.FrozenFunds
 		rec.AccumPl = accum_pl
 		rec.NetPosition = rec.FrozenFunds
+
+		accum_frozen = accum_frozen + rec.FrozenFunds
+		rec.AccumFrozen = accum_frozen
 		if order_hash.Valid { rec.OrderHash = order_hash.String }
 		if block_num.Valid { rec.BlockNum = block_num.Int64 }
+		fmt.Printf("rec = %+v\n",rec)
 		records = append(records,rec)
 	}
 	return records
+}
+func (ss *SQLStorage) locate_fill_event_order(evt *FillEvt) int64 {
+
+	var id int64 = 0
+	var query string
+	query = "SELECT id FROM mktord WHERE order_id = $1"
+
+	h:=hex.EncodeToString(evt.OrderHash[:])
+	row := ss.db.QueryRow(query,h)
+	var null_id sql.NullInt64
+	var err error
+	err=row.Scan(&null_id);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			fmt.Printf("pl_calc: order with hash %v wasn't found\n",h)
+			// break
+		} else {
+
+			Fatalf("DB Error: %v, q=%v\n",err,query);
+		}
+	} else {
+		if null_id.Valid {
+			id = null_id.Int64
+		}
+	}
+	return id
 }

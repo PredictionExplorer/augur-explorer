@@ -1,361 +1,44 @@
-Contract: ERC721Proxy
+Contract: AugurWalletRegistryV2
 Events:
-	0x1f32c1b084e2de0713b8fb16bd46bb9df710a3dbeae2f3ca93af46e016dcc6b0	AuthorizedAddressRemoved
-	0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0	OwnershipTransferred
-	0x3147867c59d17e8fa9d522465651d44aae0a9e38f902f3475b97e58072f0ed4c	AuthorizedAddressAdded
+	0xee9c28a7fe7177d351e891cb4ca5b7a4e4aba4974be67fb7665ba1ad0e703439	ExecuteTransactionStatus
 Methods:
-	42f1181e	addAuthorizedAddress
-	b9181611	authorized
-	ae25532e	getProxyId
-	8da5cb5b	owner
-	70712939	removeAuthorizedAddress
-	9ad26744	removeAuthorizedAddressAtIndex
-	f2fde38b	transferOwnership
-	494503d4	authorities
-	d39de6e9	getAuthorizedAddresses
-Contract: TestNetDaiJoin
-Events:
-Methods:
-	69245009	cage
-	f4b9fa75	dai
-	ef693bed	exit
-	3b4da69f	join
-	957aa58c	live
-	36569e77	vat
-Contract: AugurTrading
-Events:
-	0xe9f0af820300e73bae76c8e76943abe7fbb4224b49cb133e2dadc6f71acf6370	MarketVolumeChanged
-	0x9bab1368a1ed530afaad9c630ba75e6a5c1efa9f6af0139d6cda2b6af6aa801e	OrderEvent
-	0x59543b7f82735782aa5bdb97dff40ff288d4548a5865da513b40e4088e2ee77e	ProfitLossChanged
-	0xbe80e5687d7095071b7c4e7a56e0e67bfb9e8a39352f1690fdf74c1ee935c75e	CancelZeroXOrder
-Methods:
-	74cf9765	logMarketVolumeChanged
-	98c7cc36	logOrderCreated
-	577bb86e	logZeroXOrderCanceled
-	f39ec1f7	lookup
-	db754422	claimMarketsProceeds
-	99b537a0	logZeroXOrderFilled
-	0848a90c	logProfitLossChanged
-	efd342c1	claimTradingProceeds
-	5d4f7742	doApprovals
-	c9e34878	logOrderCanceled
-	645c6fae	registerContract
+	2afe31c1	getRelayHubDeposit
+	80274db7	preRelayedCall
+	cb49a0e4	otherRegistry
 	6c9fa59e	shareToken
-	3f6ba415	trustedSender
-	7a0d8f8a	augur
-	5ae5c8e7	logOrderFilled
-	65fe2a0b	uploader
-	e997fffd	finishDeployment
-Contract: UniswapV2Factory
-Events:
-	0xae72fcb3a03816c7f6d7d3eeee19497e5df191daed620ae5d7c1431dfa019488	ExchangeCreated
-Methods:
-	f8e26217	createExchange
-	017e7e58	feeTo
-	094b7415	feeToSetter
-	3ef8505b	getExchange
-	f46901ed	setFeeTo
-	a2e74af6	setFeeToSetter
-	cd7aa75d	allExchanges
-	fe9ef18c	allExchangesLength
-Contract: BuyParticipationTokens
-Events:
-Methods:
-	50dd94ba	buyParticipationTokens
-Contract: UniswapV2Router01
-Events:
-Methods:
-	b9e03e05	exchangeFor
-	baa2abde	removeLiquidity
-	38ed1739	swapExactTokensForTokens
-	8803dbee	swapTokensForExactTokens
-	f305d719	addLiquidityETH
-	ded9382a	removeLiquidityETHWithPermit
-	18cbafe5	swapExactTokensForETH
-	4a25d94a	swapTokensForExactETH
+	8e1653c9	verify
 	ad5c4648	WETH
-	e8e33700	addLiquidity
-	c45a0155	factory
-	85f8c259	getAmountIn
-	ad615dec	quote
-	2195995c	removeLiquidityWithPermit
-	7ff36ab5	swapExactETHForTokens
+	3f03842a	affiliates
 	054d50d4	getAmountOut
-	1f00ca74	getAmountsIn
-	d06ca61f	getAmountsOut
-	96ed28f9	pairFor
-	02751cec	removeLiquidityETH
-	fb3bdb41	swapETHForExactTokens
-Contract: Coordinator
-Events:
-Methods:
-	fb6961cc	EIP712_COORDINATOR_DOMAIN_HASH
-	ee55b968	decodeOrdersFromFillData
-	c26cfecd	EIP712_EXCHANGE_DOMAIN_HASH
-	52813679	assertValidCoordinatorApprovals
-	da4fe074	executeTransaction
-	fdd059a5	getCoordinatorApprovalHash
-	0f7d8e39	getSignerAddress
-	e1c71578	EIP712_COORDINATOR_APPROVAL_SCHEMA_HASH
-	89fab5b7	EIP712_COORDINATOR_DOMAIN_NAME
-	b2562b7a	EIP712_COORDINATOR_DOMAIN_VERSION
-Contract: DevUtils
-Events:
-Methods:
-	750bdb30	decodeERC20BridgeAssetData
-	ee4f5a94	decodeExchangeInvalidContextError
-	c26cfecd	EIP712_EXCHANGE_DOMAIN_HASH
-	d4695028	decodeAssetProxyId
-	02d0aec3	decodeOrderStatusError
-	9a7e7526	decodeSignatureError
-	7b66ad34	decodeSignatureValidatorNotApprovedError
-	a070cac8	getOrderHash
-	165979e1	decodeIncompleteFillError
-	b43cffe1	encodeERC1155AssetData
-	7d727512	getBalance
-	7982653e	getSimulatedOrderMakerTransferResults
-	a5cd62ba	getSimulatedOrdersTransferResults
-	32aae3ad	decodeAssetProxyDispatchError
-	314853ff	decodeAssetProxyTransferError
-	459be5e2	decodeFillError
-	d186037f	getAssetProxyAllowance
-	acaedc74	decodeEIP1271SignatureError
-	3db6dc61	decodeSignatureWalletError
-	d3637905	getSimulatedOrderTransferResults
-	46eb65cb	revertIfInvalidAssetData
-	d001c5dc	getBatchBalances
-	9eadc835	decodeERC1155AssetData
-	04a5618a	decodeERC721AssetData
-	bbb2dcf6	decodeMultiAssetData
-	327d3054	decodeNegativeSpreadError
-	cafd3a07	decodeTransactionError
-	590aa875	encodeERC20AssetData
-	a6627e9f	encodeERC721AssetData
-	e4e6e7da	getBatchBalancesAndAssetProxyAllowances
-	e25cabf7	getOrderRelevantStates
-	a0901e51	getEthBalances
-	7914b2ec	decodeAssetProxyExistsError
-	8f4ce479	decodeERC20AssetData
-	65129042	decodeOrderEpochError
-	ca49f47c	decodeStaticCallAssetData
-	63eb3992	encodeStaticCallAssetData
-	0d7b7d76	getBalanceAndAssetProxyAllowance
-	4dfdac20	getBatchAssetProxyAllowances
-	2322cf76	getTransferableAssetAmount
-	bc03f964	decodeTransactionExecutionError
-	d3d862d1	encodeMultiAssetData
-	e77286eb	getOrderRelevantState
-	79c9c426	getTransactionHash
-Contract: UniverseFactory
-Events:
-Methods:
-	a7ac9137	createUniverse
-Contract: ZRXToken
-Events:
-	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
-	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
-Methods:
-	dd62ed3e	allowance
-	095ea7b3	approve
-	a9059cbb	transfer
-	95d89b41	symbol
-	18160ddd	totalSupply
-	23b872dd	transferFrom
-	70a08231	balanceOf
-	313ce567	decimals
-	06fdde03	name
-Contract: SimulateTrade
-Events:
-Methods:
-	ee89dab4	getInitialized
-	485cc955	initialize
-	7a0d8f8a	augur
-	8e1bfa73	augurTrading
-	36ec64c0	getNumberOfAvaialableShares
-	4fb764c9	orders
-	6c9fa59e	shareToken
-	546a2a47	simulateTrade
-	4b8a7dd2	simulateZeroXTrade
-	1a505b76	zeroXTrade
-Contract: ZeroXTrade
-Events:
-	0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31	ApprovalForAll
-	0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb	TransferBatch
-	0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62	TransferSingle
-	0x6bb7ff708619ba0610cba295a58592e0451dee2622938c8755667688daf3529b	URI
-Methods:
-	3fc6f627	estimateProtocolFeeCostInCash
-	ee89dab4	getInitialized
-	2f562016	trade
-	ad5c4648	WETH
-	4e1273f4	balanceOfBatch
-	4ea96c30	cancelOrders
-	961be391	cash
-	f94515f0	createZeroXOrder
-	6c9fa59e	shareToken
-	b3ca8e25	decodeTradeAssetData
-	235f9e08	encodeAssetData
-	53e569a1	ethExchange
-	00ee3542	getZeroXTradeTokenData
-	a22cb465	setApprovalForAll
-	afc6d8ba	getTokenIdFromOrder
-	7b66c82a	token0IsCash
-	e306f779	EIP712_DOMAIN_HASH
-	8e1bfa73	augurTrading
-	00fdd58e	balanceOf
-	e264cff1	creatorHasFundsForTrade
-	85f8c259	getAmountIn
-	ad5c22c8	EIP1271_ORDER_WITH_HASH_SELECTOR
-	1d4b44bb	cashAvailableForTransferFrom
-	9c6fbce5	isOrderAmountValid
-	61a4760b	parseOrderData
-	2c52071c	bidBalance
-	7cb11125	decodeAssetData
-	f242432a	safeTransferFrom
-	e985e9c5	isApprovedForAll
-	2eb2c2d6	safeBatchTransferFrom
-	bd85b039	totalSupply
-	e186955b	createZeroXOrderFor
-	4bf1ee87	encodeEIP1271OrderWithHash
-	d2f7265a	exchange
-	5c1ad844	fillOrder
-	485cc955	initialize
-	26afd2e8	unpackTokenId
-	09c1df9f	getTransferFromAllowed
-	5e03e6e4	askBalance
-	7a0d8f8a	augur
-	1f981bde	getTokenId
-Contract: RedeemStake
-Events:
-Methods:
-	8d8cc634	redeemStake
-Contract: AugurWallet
-Events:
-Methods:
-	e9582479	initialize
-	c067e263	transferCash
-	1db61b54	DOMAIN_SEPARATOR_TYPEHASH
-	961be391	cash
-	f698da25	domainSeparator
-	6b8d7a12	executeTransaction
-	054d50d4	getAmountOut
-	ee89dab4	getInitialized
-	04f86da1	MSG_TYPEHASH
-	0a1028c4	getMessageHash
-	20c13b0b	isValidSignature
-	7b103999	registry
-	4dd78b76	withdrawAllFundsAsDai
-Contract: RelayHub
-Events:
-	0xafb5afd6d1c2e8ffbfb480e674a169f493ece0b22658d4f4484e7334f0241e22	CanRelayFailed
-	0x8752a472e571a816aea92eec8dae9baf628e840f4929fbcc2d155e6233ff68a7	Deposited
-	0xb0595266ccec357806b2691f348b128209f1060a0bda4f5c95f7090730351ff8	Penalized
-	0x85b3ae3aae9d3fcb31142fbd8c3b4722d57825b8edd6e1366e69204afa5a0dfa	RelayAdded
-	0x1449c6dd7851abc30abf37f57715f492010519147cc2652fbc38202c18a6ee90	Staked
-	0x5490afc1d818789c8b3d5d63bce3d2a3327d0bba4efb5a7751f783dc977d7d11	RelayRemoved
-	0xab74390d395916d9e0006298d47938a5def5d367054dcca78fa6ec84381f3f22	TransactionRelayed
-	0x0f5bb82176feb1b5e747e28471aa92156a04d9f3ab9f45f28e2d704232b93f75	Unstaked
-	0xd1c19fbcd4551a5edfb66d43d2e337c04837afda3482b42bdf569a8fccdae5fb	Withdrawn
-Methods:
-	39002432	penalizeIllegalTransaction
-	a8cd9572	penalizeRepeatedNonce
-	c3e712f2	removeRelayByOwner
-	f2888dbb	unstake
-	70a08231	balanceOf
-	2b601747	canRelay
-	aa67c919	depositFor
-	8d851460	getRelay
-	00f714ce	withdraw
 	2d0335ab	getNonce
-	a863f8f9	maxPossibleCharge
-	2ca70eba	recipientCallsAtomic
-	adc9772e	stake
-	54fd4d50	version
-	85f4498b	canUnstake
-	1166073a	registerRelay
-	405cec67	relayCall
-	6a7d84a4	requiredGas
-Contract: AffiliateValidator
-Events:
-Methods:
-	893d20e8	getOwner
-	1575d1d0	isValidSignature
-	ac8a584a	removeOperator
-	c775a2e4	usedSalts
-	9870d7fe	addOperator
-	6769e5c8	getKeyHash
-	13e7c9d8	operators
-	f2fde38b	transferOwnership
-	d8844c91	validateReference
-	72a0d728	addKey
-	670d14b2	keys
-Contract: InitialReporter
-Events:
-Methods:
-	7a0d8f8a	augur
-	1d7b6d58	forkAndRedeem
-	6f84676e	getPayoutNumerators
-	94a771d7	getReportTimestamp
-	b80907f2	getReputationToken
-	c0c53b8b	initialize
-	f2fde38b	transferOwnership
-	3bf8f34a	designatedReporterShowed
-	f1be1679	getMarket
-	893d20e8	getOwner
-	fc0e3d90	getStake
-	c3d9c075	initialReporterWasCorrect
-	4591c060	fork
-	64020842	isDisavowed
-	ef0ce37a	migrateToNewUniverse
-	95a2251f	redeem
-	e21659a6	report
-	5b6e2492	getDesignatedReporter
-	ee89dab4	getInitialized
-	dd62f6f3	getPayoutDistributionHash
-	da834ac4	getPayoutNumerator
-	de8fa431	getSize
-	22b152a3	liquidateLosing
-	87882cb8	returnRepFromDisavow
-Contract: RepOracle
-Events:
-Methods:
-	ce053ddf	genesisInitialRepPriceinAttoCash
-	1a351d62	getLastUpdateTimestamp
-	41976e09	getPrice
-	c4d66de8	initialize
-	b1a997ac	poke
-	b4d1d795	PERIOD
-	7a0d8f8a	augur
-	961be391	cash
-	8bdb2afa	uniswapFactory
-	06f2bf62	getExchange
-	ee89dab4	getInitialized
-	b5bab44b	getPriceCumulativeLast
-Contract: ProfitLoss
-Events:
-Methods:
-	7a0d8f8a	augur
-	c908ffa7	getNetPosition
 	485cc955	initialize
-	45a684bb	recordClaim
-	5310dd31	adjustTraderProfitForFees
-	6512e6ec	createOrder
-	7b459892	getFrozenFunds
+	b21051f8	verifyAndCall
+	1a505b76	zeroXTrade
+	3fb37abf	CALLDATA_TYPEHASH
+	961be391	cash
 	ee89dab4	getInitialized
-	4fb764c9	orders
-	12922c94	recordTrade
-	6c9fa59e	shareToken
-	994ad2e1	getRealizedProfit
-	2e57cab7	recordFrozenFundChange
+	7a0d8f8a	augur
 	8e1bfa73	augurTrading
-	6a816548	cancelOrder
+	74e861d6	getHubAddr
+	fbfbd0f2	postRelayedCall
+	7b66c82a	token0IsCash
+	abf0d3f4	RELAY_REQUEST_TYPEHASH
+	80a35930	getCreate2WalletAddress
+	cd58b7a1	trustedCreateAugurWallet
+	53e569a1	ethExchange
+	78dc0eed	executeWalletTransaction
+	5ea54eee	getGasLimits
+	ce1b815f	getTrustedForwarder
+	04d0a647	getWallet
+	6512e6ec	createOrder
 	5c1ad844	fillOrder
-	60f6e77e	getAvgPrice
-	714e9eb4	getRealizedCost
+	0cd68f1c	getRelayMessageHash
+	cc0c62b2	RELAYDATA_TYPEHASH
+	b1ed031f	acceptRelayedCall
+	85f8c259	getAmountIn
 Contract: CashFaucet
 Events:
 Methods:
-	dde836f2	colIlk
 	81b58152	colJoin
 	f4b9fa75	dai
 	c11645bc	daiJoin
@@ -363,416 +46,1174 @@ Methods:
 	771cc0d1	mcdFaucet
 	36569e77	vat
 	a78695b0	col
+	dde836f2	colIlk
+Contract: UniswapV2Factory
+Events:
+	0xae72fcb3a03816c7f6d7d3eeee19497e5df191daed620ae5d7c1431dfa019488	ExchangeCreated
+Methods:
+	017e7e58	feeTo
+	094b7415	feeToSetter
+	3ef8505b	getExchange
+	f46901ed	setFeeTo
+	a2e74af6	setFeeToSetter
+	cd7aa75d	allExchanges
+	fe9ef18c	allExchangesLength
+	f8e26217	createExchange
+Contract: ERC721Proxy
+Events:
+	0x3147867c59d17e8fa9d522465651d44aae0a9e38f902f3475b97e58072f0ed4c	AuthorizedAddressAdded
+	0x1f32c1b084e2de0713b8fb16bd46bb9df710a3dbeae2f3ca93af46e016dcc6b0	AuthorizedAddressRemoved
+	0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0	OwnershipTransferred
+Methods:
+	70712939	removeAuthorizedAddress
+	42f1181e	addAuthorizedAddress
+	ae25532e	getProxyId
+	d39de6e9	getAuthorizedAddresses
+	8da5cb5b	owner
+	9ad26744	removeAuthorizedAddressAtIndex
+	f2fde38b	transferOwnership
+	494503d4	authorities
+	b9181611	authorized
 Contract: Exchange
 Events:
 	0x02c310a9a43963ff31a754a4099cc435ed498049687539d72d7818d9b093415c	Cancel
 	0x82af639571738f4ebd4268fb0363d8957ebe1bbb9e78dba5ebd69eed39b154f0	CancelUpTo
-	0x6869791f0a34781b29882982cc39e882768cf2c96995c2a110c577c53bc932d5	Fill
-	0xe1a5430ebec577336427f40f15822f1f36c5e3509ff209d6db9e6c9e6941cb0b	ProtocolFeeCollectorAddress
 	0xa8656e308026eeabce8f0bc18048433252318ab80ac79da0b3d3d8697dfba891	SignatureValidatorApproval
-	0xd2c6b762299c609bdb96520b58a49bfb80186934d4f71a86a367571a15c03194	AssetProxyRegistered
-	0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0	OwnershipTransferred
-	0x3a3e76d7a75e198aef1f53137e4f2a8a2ec74e2e9526db8404d08ccc9f1e621d	ProtocolFeeMultiplier
 	0xa4a7329f1dd821363067e07d359e347b4af9b1efe4b6cccf13240228af3c800d	TransactionExecution
+	0xd2c6b762299c609bdb96520b58a49bfb80186934d4f71a86a367571a15c03194	AssetProxyRegistered
+	0x6869791f0a34781b29882982cc39e882768cf2c96995c2a110c577c53bc932d5	Fill
+	0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0	OwnershipTransferred
+	0xe1a5430ebec577336427f40f15822f1f36c5e3509ff209d6db9e6c9e6941cb0b	ProtocolFeeCollectorAddress
+	0x3a3e76d7a75e198aef1f53137e4f2a8a2ec74e2e9526db8404d08ccc9f1e621d	ProtocolFeeMultiplier
 Methods:
-	850a1501	protocolFeeCollector
-	2280c910	executeTransaction
-	a6c3bf33	marketSellOrdersFillOrKill
-	82c174d0	preSigned
-	4f9559b1	cancelOrdersUpTo
-	9b44d556	fillOrder
-	8bc8efb3	marketBuyOrdersFillOrKill
-	77fcce68	setSignatureValidatorApproval
+	1ce4c78b	protocolFeeMultiplier
 	b04fbddd	simulateDispatchTransferFromCalls
-	dd885e2d	EIP1271_MAGIC_VALUE
-	6fcf3e9e	batchMatchOrders
-	2da62987	cancelOrder
-	eea086ba	currentContextAddress
-	d9bfa73e	orderEpoch
-	9d3fa4b9	getOrderInfo
-	8171c407	isValidHashSignature
+	f2fde38b	transferOwnership
+	fc74896d	batchExecuteTransactions
+	a12dcc6f	isValidOrderSignature
+	81d09ba1	isValidSignature
+	78d29ac1	marketBuyOrdersNoThrow
+	b718e292	matchOrdersWithMaximalFill
+	8d45cd23	isValidTransactionSignature
+	8bc8efb3	marketBuyOrdersFillOrKill
+	88ec79fb	matchOrders
+	77fcce68	setSignatureValidatorApproval
+	dedfc1f1	batchCancelOrders
+	8ea8dfe4	batchFillOrdersNoThrow
+	9b44d556	fillOrder
+	288cdc91	filled
 	369da099	marketSellOrdersNoThrow
-	c585bb93	registerAssetProxy
-	c0fa16cc	setProtocolFeeCollectorAddress
-	c26cfecd	EIP712_EXCHANGE_DOMAIN_HASH
 	7b8e3514	allowedValidators
 	9694a402	batchFillOrders
-	60704108	getAssetProxy
-	81d09ba1	isValidSignature
-	46c02d7a	preSign
-	9331c742	setProtocolFeeMultiplier
-	f2fde38b	transferOwnership
-	8ea8dfe4	batchFillOrdersNoThrow
-	0efca185	detachProtocolFeeCollector
-	288cdc91	filled
-	88ec79fb	matchOrders
-	dedfc1f1	batchCancelOrders
-	6a1a80fd	batchMatchOrdersWithMaximalFill
-	2ac12622	cancelled
-	b718e292	matchOrdersWithMaximalFill
-	8da5cb5b	owner
-	beee2e14	batchFillOrKillOrders
-	a12dcc6f	isValidOrderSignature
-	8d45cd23	isValidTransactionSignature
-	1ce4c78b	protocolFeeMultiplier
-	0228e168	transactionsExecuted
-	fc74896d	batchExecuteTransactions
+	2280c910	executeTransaction
 	e14b58c4	fillOrKillOrder
-	78d29ac1	marketBuyOrdersNoThrow
-Contract: AugurWalletRegistry
+	2ac12622	cancelled
+	8171c407	isValidHashSignature
+	850a1501	protocolFeeCollector
+	9331c742	setProtocolFeeMultiplier
+	0228e168	transactionsExecuted
+	6fcf3e9e	batchMatchOrders
+	6a1a80fd	batchMatchOrdersWithMaximalFill
+	eea086ba	currentContextAddress
+	46c02d7a	preSign
+	82c174d0	preSigned
+	c26cfecd	EIP712_EXCHANGE_DOMAIN_HASH
+	2da62987	cancelOrder
+	0efca185	detachProtocolFeeCollector
+	d9bfa73e	orderEpoch
+	c0fa16cc	setProtocolFeeCollectorAddress
+	a6c3bf33	marketSellOrdersFillOrKill
+	8da5cb5b	owner
+	c585bb93	registerAssetProxy
+	dd885e2d	EIP1271_MAGIC_VALUE
+	beee2e14	batchFillOrKillOrders
+	4f9559b1	cancelOrdersUpTo
+	60704108	getAssetProxy
+	9d3fa4b9	getOrderInfo
+Contract: OICashFactory
 Events:
-	0xee9c28a7fe7177d351e891cb4ca5b7a4e4aba4974be67fb7665ba1ad0e703439	ExecuteTransactionStatus
-	0xb9f84b8e65164b14439ae3620df0a4d8786d896996c0282b683f9d8c08f046e8	RelayHubChanged
 Methods:
-	04d0a647	getWallet
-	485cc955	initialize
-	80274db7	preRelayedCall
-	89b08f11	wallets
-	1a505b76	zeroXTrade
-	6512e6ec	createOrder
-	ee89dab4	getInitialized
-	78dc0eed	executeWalletTransaction
-	5c1ad844	fillOrder
-	85f8c259	getAmountIn
-	74e861d6	getHubAddr
-	e06e0e22	postRelayedCall
-	ad61ccd5	relayHubVersion
+	1eaa9a88	createOICash
+Contract: ReputationToken
+Events:
+	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
+	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
+Methods:
 	7a0d8f8a	augur
-	53e569a1	ethExchange
-	7b66c82a	token0IsCash
-	054d50d4	getAmountOut
-	ad5c4648	WETH
-	961be391	cash
-	8e1bfa73	augurTrading
-	80a35930	getCreate2WalletAddress
-	d5b9562b	getRelayMessageHash
-	6c9fa59e	shareToken
-	83947ea0	acceptRelayedCall
-	3f03842a	affiliates
-Contract: TestNetDaiVat
+	ae3816ee	burnForMarket
+	238d3590	getTotalTheoreticalSupply
+	18160ddd	totalSupply
+	313ce567	decimals
+	a457c2d7	decreaseAllowance
+	75d9aa1a	migrateFromLegacyReputationToken
+	06fdde03	name
+	5bd5ea71	warpSync
+	095ea7b3	approve
+	a0c1ca34	migrateIn
+	a9059cbb	transfer
+	fe98184d	trustedUniverseTransfer
+	dd62ed3e	allowance
+	27e235e3	balances
+	d5466777	legacyRepToken
+	55b6ed5c	allowances
+	70a08231	balanceOf
+	183636c5	parentUniverse
+	95d89b41	symbol
+	721bb170	trustedDisputeWindowTransfer
+	f22b258a	trustedMarketTransfer
+	77469275	getLegacyRepToken
+	870c426d	getUniverse
+	5b66876a	migrateOutByPayout
+	b873e9a7	trustedReportingParticipantTransfer
+	db054134	mintForReportingParticipant
+	e1897b59	mintForWarpSync
+	23b872dd	transferFrom
+	91d76bbb	getTotalMigrated
+	39509351	increaseAllowance
+Contract: BuyParticipationTokens
 Events:
 Methods:
-	76088703	frob
-	d9638d36	ilks
-	957aa58c	live
-	bb35783b	move
-	7b56c2b2	faucet
-	4538c4eb	can
-	6c25b346	dai
-	a3b22fc4	hope
-	dc4d20fa	nope
-	f24e23eb	suck
-	69245009	cage
+	50dd94ba	buyParticipationTokens
 Contract: ChaiBridge
 Events:
 Methods:
 	c2df82e6	bridgeTransferFrom
-Contract: WarpSync
+Contract: Coordinator
 Events:
 Methods:
-	44dafa1f	doInitialReport
-	2f91029a	getFinalizationReward
-	c4d66de8	initialize
-	12481ad6	lastSweepTime
-	8e8f294b	markets
-	7a0d8f8a	augur
-	b90d3d0c	data
-	0fc40aa7	getCreationReward
-	ee89dab4	getInitialized
-	44085513	initializeUniverse
-	e8a2a7a6	notifyMarketFinalized
-Contract: ShareToken
+	0f7d8e39	getSignerAddress
+	fb6961cc	EIP712_COORDINATOR_DOMAIN_HASH
+	89fab5b7	EIP712_COORDINATOR_DOMAIN_NAME
+	52813679	assertValidCoordinatorApprovals
+	ee55b968	decodeOrdersFromFillData
+	da4fe074	executeTransaction
+	fdd059a5	getCoordinatorApprovalHash
+	e1c71578	EIP712_COORDINATOR_APPROVAL_SCHEMA_HASH
+	b2562b7a	EIP712_COORDINATOR_DOMAIN_VERSION
+	c26cfecd	EIP712_EXCHANGE_DOMAIN_HASH
+Contract: TestNetReputationTokenFactory
 Events:
+Methods:
+	812f82d9	createReputationToken
+Contract: AugurWallet
+Events:
+Methods:
+	04f86da1	MSG_TYPEHASH
+	4dd78b76	withdrawAllFundsAsDai
+	0a1028c4	getMessageHash
+	ae8c9d13	legacyRegistry
+	7b103999	registry
+	1db61b54	DOMAIN_SEPARATOR_TYPEHASH
+	961be391	cash
+	f698da25	domainSeparator
+	054d50d4	getAmountOut
+	c067e263	transferCash
+	6b8d7a12	executeTransaction
+	ee89dab4	getInitialized
+	51880b67	initialize
+	20c13b0b	isValidSignature
+Contract: TestNetReputationToken
+Events:
+	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
+	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
+Methods:
+	77469275	getLegacyRepToken
+	39509351	increaseAllowance
+	5bd5ea71	warpSync
+	91d76bbb	getTotalMigrated
+	a0c1ca34	migrateIn
+	183636c5	parentUniverse
+	23b872dd	transferFrom
+	dd62ed3e	allowance
+	57915897	faucet
+	06fdde03	name
+	721bb170	trustedDisputeWindowTransfer
+	fe98184d	trustedUniverseTransfer
+	095ea7b3	approve
+	ae3816ee	burnForMarket
+	70a08231	balanceOf
+	5b66876a	migrateOutByPayout
+	238d3590	getTotalTheoreticalSupply
+	870c426d	getUniverse
+	e1897b59	mintForWarpSync
+	95d89b41	symbol
+	a9059cbb	transfer
+	f22b258a	trustedMarketTransfer
+	313ce567	decimals
+	a457c2d7	decreaseAllowance
+	d5466777	legacyRepToken
+	db054134	mintForReportingParticipant
+	18160ddd	totalSupply
+	55b6ed5c	allowances
+	27e235e3	balances
+	b873e9a7	trustedReportingParticipantTransfer
+	7a0d8f8a	augur
+	75d9aa1a	migrateFromLegacyReputationToken
+Contract: RepSymbol
+Events:
+Methods:
+	84ecd8e4	getRepSymbol
+Contract: UniverseFactory
+Events:
+Methods:
+	a7ac9137	createUniverse
+Contract: Penalizer
+Events:
+Methods:
+	39ee150a	penalizeIllegalTransaction
+	f913fe3e	penalizeRepeatedNonce
+Contract: RepOracle
+Events:
+Methods:
+	41976e09	getPrice
+	c4d66de8	initialize
+	b4d1d795	PERIOD
+	ce053ddf	genesisInitialRepPriceinAttoCash
+	ee89dab4	getInitialized
+	1a351d62	getLastUpdateTimestamp
+	b1a997ac	poke
+	8bdb2afa	uniswapFactory
+	7a0d8f8a	augur
+	961be391	cash
+	06f2bf62	getExchange
+	b5bab44b	getPriceCumulativeLast
+Contract: UniswapV2Router01
+Events:
+Methods:
+	85f8c259	getAmountIn
+	96ed28f9	pairFor
+	2195995c	removeLiquidityWithPermit
+	7ff36ab5	swapExactETHForTokens
+	ad5c4648	WETH
+	f305d719	addLiquidityETH
+	b9e03e05	exchangeFor
+	c45a0155	factory
+	4a25d94a	swapTokensForExactETH
+	054d50d4	getAmountOut
+	d06ca61f	getAmountsOut
+	ad615dec	quote
+	8803dbee	swapTokensForExactTokens
+	1f00ca74	getAmountsIn
+	ded9382a	removeLiquidityETHWithPermit
+	18cbafe5	swapExactTokensForETH
+	38ed1739	swapExactTokensForTokens
+	e8e33700	addLiquidity
+	baa2abde	removeLiquidity
+	02751cec	removeLiquidityETH
+	fb3bdb41	swapETHForExactTokens
+Contract: HotLoading
+Events:
+Methods:
+	ca4bae9a	getCurrentDisputeWindowData
+	cf9f3a8a	getLastTradedPrices
+	fa8d7a61	getMarketData
+	e07d521a	getReportingState
+	c684959f	getTotalValidityBonds
+Contract: ERC20Proxy
+Events:
+	0x3147867c59d17e8fa9d522465651d44aae0a9e38f902f3475b97e58072f0ed4c	AuthorizedAddressAdded
+	0x1f32c1b084e2de0713b8fb16bd46bb9df710a3dbeae2f3ca93af46e016dcc6b0	AuthorizedAddressRemoved
+	0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0	OwnershipTransferred
+Methods:
+	70712939	removeAuthorizedAddress
+	9ad26744	removeAuthorizedAddressAtIndex
+	494503d4	authorities
+	d39de6e9	getAuthorizedAddresses
+	8da5cb5b	owner
+	f2fde38b	transferOwnership
+	42f1181e	addAuthorizedAddress
+	b9181611	authorized
+	ae25532e	getProxyId
+Contract: DevUtils
+Events:
+Methods:
+	a5cd62ba	getSimulatedOrdersTransferResults
+	32aae3ad	decodeAssetProxyDispatchError
+	7914b2ec	decodeAssetProxyExistsError
+	02d0aec3	decodeOrderStatusError
+	cafd3a07	decodeTransactionError
+	63eb3992	encodeStaticCallAssetData
+	4dfdac20	getBatchAssetProxyAllowances
+	d001c5dc	getBatchBalances
+	e77286eb	getOrderRelevantState
+	7b66ad34	decodeSignatureValidatorNotApprovedError
+	ca49f47c	decodeStaticCallAssetData
+	bc03f964	decodeTransactionExecutionError
+	a6627e9f	encodeERC721AssetData
+	7d727512	getBalance
+	acaedc74	decodeEIP1271SignatureError
+	b43cffe1	encodeERC1155AssetData
+	d4695028	decodeAssetProxyId
+	750bdb30	decodeERC20BridgeAssetData
+	04a5618a	decodeERC721AssetData
+	d3637905	getSimulatedOrderTransferResults
+	314853ff	decodeAssetProxyTransferError
+	ee4f5a94	decodeExchangeInvalidContextError
+	79c9c426	getTransactionHash
+	2322cf76	getTransferableAssetAmount
+	46eb65cb	revertIfInvalidAssetData
+	bbb2dcf6	decodeMultiAssetData
+	590aa875	encodeERC20AssetData
+	d3d862d1	encodeMultiAssetData
+	e25cabf7	getOrderRelevantStates
+	7982653e	getSimulatedOrderMakerTransferResults
+	d186037f	getAssetProxyAllowance
+	c26cfecd	EIP712_EXCHANGE_DOMAIN_HASH
+	8f4ce479	decodeERC20AssetData
+	459be5e2	decodeFillError
+	65129042	decodeOrderEpochError
+	9a7e7526	decodeSignatureError
+	e4e6e7da	getBatchBalancesAndAssetProxyAllowances
+	a0901e51	getEthBalances
+	a070cac8	getOrderHash
+	9eadc835	decodeERC1155AssetData
+	165979e1	decodeIncompleteFillError
+	327d3054	decodeNegativeSpreadError
+	3db6dc61	decodeSignatureWalletError
+	0d7b7d76	getBalanceAndAssetProxyAllowance
+Contract: ProfitLoss
+Events:
+Methods:
+	7a0d8f8a	augur
+	8e1bfa73	augurTrading
+	7b459892	getFrozenFunds
+	ee89dab4	getInitialized
+	c908ffa7	getNetPosition
+	2e57cab7	recordFrozenFundChange
+	5c1ad844	fillOrder
+	60f6e77e	getAvgPrice
+	714e9eb4	getRealizedCost
+	485cc955	initialize
+	4fb764c9	orders
+	5310dd31	adjustTraderProfitForFees
+	6512e6ec	createOrder
+	6a816548	cancelOrder
+	994ad2e1	getRealizedProfit
+	45a684bb	recordClaim
+	12922c94	recordTrade
+	6c9fa59e	shareToken
+Contract: ZeroXTrade
+Events:
+	0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31	ApprovalForAll
 	0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb	TransferBatch
 	0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62	TransferSingle
 	0x6bb7ff708619ba0610cba295a58592e0451dee2622938c8755667688daf3529b	URI
-	0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31	ApprovalForAll
 Methods:
-	ad16158e	publicSellCompleteSets
-	f242432a	safeTransferFrom
-	a22cb465	setApprovalForAll
-	8c5e2f87	totalSupplyForMarketOutcome
-	26afd2e8	unpackTokenId
-	06065ced	calculateCreatorFee
-	abb60c80	publicBuyCompleteSets
-	7a0d8f8a	augur
-	d64c62f3	balanceOfMarketOutcome
-	9f66cddf	divideUpWinnings
-	06fdde03	name
-	eb44fdd3	getMarket
-	db0a087c	getTypeName
-	f8a2167b	lowestBalanceOfMarketOutcomes
-	5990fea6	sellCompleteSets
-	53b7a712	sellCompleteSetsForTrade
-	95d89b41	symbol
-	4db3b9e3	assertBalances
-	4e1273f4	balanceOfBatch
-	2eb2c2d6	safeBatchTransferFrom
-	bd85b039	totalSupply
-	4028e8ea	unsafeBatchTransferFrom
-	fbc37ca9	unsafeTransferFrom
-	f32ef051	_supplys
-	29f99b9f	getTokenId
-	cd579335	getOutcome
-	c4d66de8	initialize
-	3b48090e	initializeMarket
-	01ffc9a7	supportsInterface
-	fc25a4da	_balances
-	edc3bc3f	_operatorApprovals
-	431e8878	buyCompleteSetsForTrade
-	961be391	cash
-	efd342c1	claimTradingProceeds
-	ca3a1e69	getTokenIds
-	e985e9c5	isApprovedForAll
+	ad5c22c8	EIP1271_ORDER_WITH_HASH_SELECTOR
 	00fdd58e	balanceOf
-	aa48db20	buyCompleteSets
+	e985e9c5	isApprovedForAll
+	e264cff1	creatorHasFundsForTrade
+	09c1df9f	getTransferFromAllowed
+	6c9fa59e	shareToken
+	2f562016	trade
+	7a0d8f8a	augur
+	b3ca8e25	decodeTradeAssetData
+	235f9e08	encodeAssetData
+	afc6d8ba	getTokenIdFromOrder
+	2eb2c2d6	safeBatchTransferFrom
+	26afd2e8	unpackTokenId
+	485cc955	initialize
+	a22cb465	setApprovalForAll
+	4e1273f4	balanceOfBatch
+	2c52071c	bidBalance
+	f94515f0	createZeroXOrder
+	7cb11125	decodeAssetData
+	3fc6f627	estimateProtocolFeeCostInCash
+	d2f7265a	exchange
+	4bf1ee87	encodeEIP1271OrderWithHash
+	1f981bde	getTokenId
+	bd85b039	totalSupply
+	5e03e6e4	askBalance
+	4ea96c30	cancelOrders
+	53e569a1	ethExchange
+	9c6fbce5	isOrderAmountValid
+	f242432a	safeTransferFrom
 	ee89dab4	getInitialized
-	f2dc8266	calculateProceeds
-	81894407	calculateReportingFee
+	61a4760b	parseOrderData
+	e306f779	EIP712_DOMAIN_HASH
+	ad5c4648	WETH
+	8e1bfa73	augurTrading
+	1d4b44bb	cashAvailableForTransferFrom
+	5c1ad844	fillOrder
+	85f8c259	getAmountIn
+	961be391	cash
+	e186955b	createZeroXOrderFor
+	00ee3542	getZeroXTradeTokenData
+	7b66c82a	token0IsCash
+Contract: WETH9
+Events:
+	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
+	0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c	Deposit
+	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
+	0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65	Withdrawal
+Methods:
+	313ce567	decimals
+	06fdde03	name
+	23b872dd	transferFrom
+	dd62ed3e	allowance
+	70a08231	balanceOf
+	d0e30db0	deposit
+	95d89b41	symbol
+	18160ddd	totalSupply
+	a9059cbb	transfer
+	2e1a7d4d	withdraw
+	095ea7b3	approve
+Contract: CancelOrder
+Events:
+Methods:
+	485cc955	initialize
+	89ab6447	profitLoss
+	7a0d8f8a	augur
+	8e1bfa73	augurTrading
+	21c77c96	cancelOrders
+	4fb764c9	orders
+	6c9fa59e	shareToken
+	7489ec23	cancelOrder
+	961be391	cash
+	ee89dab4	getInitialized
+Contract: Universe
+Events:
+Methods:
+	3ec6b034	designatedReportStakeInAttoRep
+	7f7c390a	formulas
+	77e71ee5	getForkEndTime
+	a63f1350	getParentUniverse
+	da834ac4	getPayoutNumerator
+	f45346dc	deposit
+	f7095d9d	updateTentativeWinningChildUniverse
+	45a62887	createCategoricalMarket
+	a7e8d762	getOrCacheMarketRepBond
+	e5b4f771	lastSweep
+	9672e3ba	marketBalance
+	0bcde26d	previousDesignatedReportNoShowBondInAttoRep
+	961be391	cash
+	becb1f35	isForking
+	9517317c	isParentOf
+	9ab448d9	updateForkValues
+	e2d8edaf	getOrCreatePreviousDisputeWindow
+	57d7a3c4	disputeWindows
+	6c23f723	getDisputeWindow
+	2c7faa4d	getDisputeWindowId
+	6f70b9cb	getWinningChildUniverse
+	f76514c7	isContainerForReportingParticipant
+	48bc4eba	repOracle
+	e4372c3c	DEFAULT_NUM_OUTCOMES
+	622ae175	getDisputeWindowByTimestamp
+	e3fa4b04	getOrCreateCurrentDisputeWindow
+	6f84676e	getPayoutNumerators
+	11be56d7	migrateMarketOut
+	a9f4185d	disputeWindowFactory
+	b53b321e	designatedReportNoShowBondInAttoRep
+	8699d434	getCurrentDisputeWindow
+	af4cd457	getOrCacheValidityBond
+	7262f993	getWinningChildPayoutNumerator
+	60d9b489	payoutNumerators
+	3bd831f4	daiVat
+	c675f222	getOpenInterestInAttoCash
+	8f93bffe	getOrCacheReportingFeeDivisor
+	a95b973c	createYesNoMarket
+	3a537176	createChildUniverse
+	047825c7	getDisputeThresholdForDisputePacing
+	ef7cd234	previousValidityBondInAttoCash
+	0d5a9e4d	shareSettlementFeeDivisor
+	f2cf48f6	INITIAL_WINDOW_ID_BUFFER
+	2cb1fd20	daiPot
+	fd1e5e7a	getOrCacheDesignatedReportNoShowBond
+	92394f32	getOrCreateNextDisputeWindow
+	b80907f2	getReputationToken
+	df9fde7e	getTargetRepMarketCapInAttoCash
+	01ba1fa3	isContainerForDisputeWindow
+	efb106ba	validityBondInAttoCash
+	11a80ffc	createScalarMarket
+	69328dec	withdraw
+	eceba876	getChildUniverse
+	0dcde5f5	getReportingFeeDivisor
+	47d20e3b	isOpenInterestCash
+	b4eeb2d7	previousDesignatedReportStakeInAttoRep
+	705123dc	DEFAULT_NUM_TICKS
+	e79609e2	getOrCacheDesignatedReportStake
+	9f7e1bf6	isContainerForMarket
+	13bf24c1	pokeRepMarketCapInAttoCash
+	4591c060	fork
+	5449aed5	getDisputeWindowStartTimeAndDuration
+	8689526b	getOrCreateDisputeWindowByTimestamp
+	6c9fa59e	shareToken
+	ad7a672f	totalBalance
+	552033c4	RAY
+	d8270dce	creationTime
+	180ef158	decrementOpenInterestFromMarket
+	7c377d74	getForkReputationGoal
+	cb1d8418	getForkingMarket
+	06ae7095	marketFactory
+	6f33ebb7	previousReportingFeeDivisor
+	98fedb09	runPeriodicals
+	7a0d8f8a	augur
+	3342f689	sweepInterest
+	5f723b50	getInitialReportMinValue
+	d372fbcd	isForkingMarket
+	8d2ecfba	migrateMarketIn
+	3940b675	openInterestCash
+	b62418a1	decrementOpenInterest
+	879eefa5	getDisputeRoundDurationInSeconds
+	fb03eaea	getDisputeThresholdForFork
+	f28b0956	getOrCreatePreviousPreviousDisputeWindow
+	c38c0fa7	getParentPayoutDistributionHash
+	ce483e88	incrementOpenInterest
+	c11645bc	daiJoin
+Contract: SimulateTrade
+Events:
+Methods:
+	4fb764c9	orders
+	6c9fa59e	shareToken
+	4b8a7dd2	simulateZeroXTrade
+	1a505b76	zeroXTrade
+	7a0d8f8a	augur
+	485cc955	initialize
+	36ec64c0	getNumberOfAvaialableShares
+	546a2a47	simulateTrade
+	8e1bfa73	augurTrading
+	ee89dab4	getInitialized
+Contract: Trade
+Events:
+Methods:
+	0f848dad	publicFillBestOrder
+	7a0d8f8a	augur
+	6512e6ec	createOrder
+	5c1ad844	fillOrder
+	ee89dab4	getInitialized
+	485cc955	initialize
+	4fb764c9	orders
+	001fbc0b	publicTrade
+	8e1bfa73	augurTrading
+	961be391	cash
+Contract: RedeemStake
+Events:
+Methods:
+	8d8cc634	redeemStake
+Contract: Augur
+Events:
+	0xb20adf682c8f82b94a135452f54ac4483c9ee8c9b2324e946120696ab1d034b4	ReportingParticipantDisavowed
+	0x6afb0328cf957750be87a6f34b1cd21457ddf1382af65f9592ff2d333945633f	DisputeCrowdsourcerRedeemed
+	0x3ffffb51f92f91faf4ba8c906f5a0180d1033be93b1e227cd92c872dc234fdf0	InitialReporterRedeemed
+	0xea17ae24b0d40ea7962a6d832db46d1f81eaec1562946d0830d1c21d4c000ec1	MarketCreated
+	0x55f2a7bfa32e835c3f3c3cff653a3d11c077ce1b00c5a41c6aaf09eedc1ac3b2	MarketTransferred
+	0xd1fc3f2cb1387e602db0e6f8f22649df65df5246eeff281cf6d1ef62feda4ece	NoShowBondChanged
+	0x18052b5e29020458e154999fa71891a5db3404a5b0b9c5ec60c90adca7d38d63	ParticipationTokensRedeemed
+	0xa037dd0e01f0488a530cb17065a6d2f284fae016004fc744ee2a41d5cacf85d5	RegisterContract
+	0x11dda748f0bd3af85a073da0088a0acb827d9584a4fdb825c81f1232a5309538	TimestampSet
+	0x63fd58f559b73fc4da5511c341ec8a7b31c5c48538ef83c6077712b6edf5f7cb	TokenBalanceChanged
+	0x07f766729171db8cc73d96b25cc56784077e26c7ff48b0187877ace391c181a6	TokensMinted
+	0xe36b09d83f9cfa88c37f071fc2cfb5ff30b764cbd98088e70d965573c9ce5bbd	UniverseCreated
+	0x7589653fe5a2ab3ccc12538316852339868efdd9d3bd0b84d055cf224cf96873	WarpSyncDataUpdated
+	0xc3ebb227c22e7644e9bef8822009f746a72c86f239760124d67fdc2c302b3115	InitialReportSubmitted
+	0x9c75a088fcb0527d67a80a7d0a5006bbabe02f4b23984234ae68b2b146f001bc	DesignatedReportStakeChanged
+	0xc3cf07f8fa0fafc25a9dd0bad2cd6b961c55dad41b42c8ef8f931bc40e41e08c	MarketMigrated
+	0x0519ee50d0e6120223e58d0b52824ca4985c524f045a3d6a529936e511d2ba8d	MarketRepBondTransferred
+	0xf06c142f93fdd00fbcd1e8f3d82e6f22667d52df764b39570061a7dbeea09be0	FinishDeployment
+	0xee62c58e2603b92f96a002e012f4f3bd5748102cfa3b711f6d778c6237fcaa96	InitialReporterTransferred
+	0x213a05b9ad8567c2f8fa868e7375e5bf30e69add0dbb5913ca8a3e58c815c268	MarketOIChanged
+	0x3b4f3db017516414df2695e5b0052661779d7163a6cd4368fd74313be73fa0b8	MarketParticipantsDisavowed
+	0xadddfaec4505d90a6a211907536944e6e1af7ff5cf6d1873de43e36020f36009	ReportingFeeChanged
+	0x3c67396e9c55d2fc8ad68875fc5beca1d96ad2a2f23b210ccc1d986551ab6fdf	TokensTransferred
+	0xce5b6de2a0053ebc6c04e68bcbb9f0a1f2deeb7049c72881e198f95b5752db82	UniverseForked
+	0xe7f47639cdf56ec6c5451df334b73c9ca5cccd20da2c0f4e390e9bb71a6f672a	DisputeCrowdsourcerContribution
+	0x6d39632c2dc10305bf5771cfff4af1851f07c03ea27b821cad382466bdf7a21f	MarketFinalized
+	0x95366b7f64c6bb45149f9f7c522403fceebe5170ff76b8ffde2b0ab943ac11ce	TradingProceedsClaimed
+	0x69af68e366a0570364e3a086f3b5ac79f08ecc3f93eaccbfcf3864809b12b5d8	ValidityBondChanged
+	0xfe06587917de7df83a446bcbb889cee699d7fc35b7b53e263282c2acb5a16499	CompleteSetsPurchased
+	0xf9a0b30bcf861874bf36630742f0d56b22648898d7cdd0cd785d74acd17e0d44	DisputeCrowdsourcerCreated
+	0xdd7dcfa6708112395eb94e9b1889295fb19af21ef290e918256838c979b2dfbd	CompleteSetsSold
+	0x81afc41f9f2f0d22a52a2ddb3a0b6db83baf39c05544fd25f2751b72b1943bb5	DisputeCrowdsourcerCompleted
+	0x97f8b399e255f30d56b759b645c86652624ee258937579ff4a747abaeae857c4	DisputeWindowCreated
+	0x350ea32dc29530b9557420816d743c436f8397086f98c96292138edd69e01cb3	ShareTokenBalanceChanged
+	0x145a4839b3d82d1e28f6ed93f52622b351892e835530386bb1fe4effba99aeea	TokensBurned
+Methods:
+	22415f60	isTrustedSender
+	b1c094fa	logInitialReporterRedeemed
+	c67af5cc	logMarketParticipantsDisavowed
+	b394ce2c	logReportingFeeChanged
+	645c6fae	registerContract
+	921bd6f0	upgradeTimestamp
+	4f67af24	createChildUniverse
+	8cfb8f21	isKnownUniverse
+	961be391	cash
+	65fe2a0b	uploader
+	79d60f04	getTradeInterval
+	188ec356	getTimestamp
+	e62b8889	isKnownMarket
+	606755be	logDisputeWindowCreated
+	27d8e850	logMarketFinalized
+	17674e4d	logMarketMigrated
+	2280068d	onYesNoMarketCreated
+	887cc5e4	getMarketOutcomes
+	9eba4b7b	getMarketType
+	8f669d87	logDisputeCrowdsourcerTokensMinted
+	da9d7a48	logInitialReportSubmitted
+	ecdaa595	logParticipationTokensMinted
+	cec4ede1	logTradingProceedsClaimed
+	752f57c0	derivePayoutDistributionHash
+	b70da7dc	isKnownCrowdsourcer
+	5fe4fccd	disputeCrowdsourcerCreated
+	a3aac84d	logParticipationTokensRedeemed
+	17570e80	logReportingParticipantDisavowed
+	6743dcaf	trustedCashTransfer
+	8f401bf3	MIN_TRADE_INTERVAL
+	ff51f367	TRADE_INTERVAL_VALUE
+	3f6d798a	onCategoricalMarketCreated
+	36569e77	vat
+	c509d0b2	logCompleteSetsPurchased
+	26990346	logParticipationTokensTransferred
+	9684da1a	createGenesisUniverse
+	1902540c	logDisputeCrowdsourcerTokensTransferred
+	80675fdc	logDisputeCrowdsourcerRedeemed
+	1142e31e	logDisputeCrowdsourcerTokensBurned
+	e3142e90	logInitialReporterTransferred
+	59967d1f	logParticipationTokensBurned
+	e1c678fe	logReputationTokensTransferred
+	c8e6b2a8	logTimestampSet
+	e997fffd	finishDeployment
+	6a95e6a7	logDisputeCrowdsourcerCompleted
+	f39ec1f7	lookup
+	70b78eba	logDisputeCrowdsourcerContribution
+	3dfdce82	logReputationTokensBurned
+	58c4092c	logNoShowBondChanged
+	f9c45f71	getMarketRecommendedTradeInterval
+	aaf6da20	getUniverseForkIndex
+	16ada547	time
+	722e3320	logMarketOIChanged
+	d015ddbd	logShareTokensBalanceChanged
+	484f6e3e	getMaximumMarketEndDate
+	5897e663	isKnownFeeSender
+	b5a28c4e	logValidityBondChanged
+	bd33b942	DEFAULT_RECOMMENDED_TRADE_INTERVAL
+	4891c9ab	getMarketCreationData
+	ed4d5244	onScalarMarketCreated
+	7920757e	logCompleteSetsSold
+	23290737	logMarketTransferred
+	08bb7309	logMarketRepBondTransferred
+	cf53f72f	logWarpSyncDataUpdated
+	973df5b9	logDesignatedReportStakeChanged
+	d673ad96	logReputationTokensMinted
+	8ec6a771	logUniverseForked
+	ce07324e	forkCounter
+	00b946f0	genesisUniverse
+Contract: TimeControlled
+Events:
+Methods:
+	7a0d8f8a	augur
+	188ec356	getTimestamp
+	db0a087c	getTypeName
+	b610c75e	incrementTimestamp
+	c4d66de8	initialize
+	a0a2b573	setTimestamp
+	b80777ea	timestamp
+Contract: Market
+Events:
+Methods:
+	54fc53dd	preemptiveDisputeCrowdsourcer
+	2ce5a91e	getHighestNonTentativeParticipantStake
+	1a3739ec	getInitialReporter
+	3c264820	getWinningPayoutNumerator
+	5bd5ea71	warpSync
+	4bb278f3	finalize
+	439f5ac2	getEndTime
+	6e106628	getWinningReportingParticipant
+	53e9e7e8	initialize
+	b7b42200	repBondOwner
+	2c3b4096	validityBondAttoCash
+	f89d5066	contribute
+	fd478ca9	getNumParticipants
+	d261ae73	marketCreatorFeesAttoCash
+	d3be9d34	crowdsourcerGeneration
+	412979b5	getDisputePacingOn
+	cb1d8418	getForkingMarket
+	ee89dab4	getInitialized
+	f2fde38b	transferOwnership
+	837fa2b0	affiliateFeeDivisor
+	5b8ef481	crowdsourcers
+	27ce5b8c	getNumberOfOutcomes
+	b80907f2	getReputationToken
+	070c5c24	getValidityBondAttoCash
+	df703a95	migrateThroughOneFork
+	7a0d8f8a	augur
+	1c7f3a96	getMarketCreatorSettlementFeeDivisor
+	1b1f05c2	recordMarketCreatorFees
+	9c8c02ef	transferRepBondOwnership
+	1e19082a	getDisputeWindow
+	66d12fad	getStakeInOutcome
+	9941b2fc	isFinalizedAsInvalid
+	6c9fa59e	shareToken
+	bad84c9e	getNumTicks
+	bb24882e	getOpenInterest
+	449d0f29	disavowCrowdsourcers
+	d372fbcd	isForkingMarket
+	cc34293c	repBond
+	2c154345	getParticipantStake
+	eb1f8bbd	getWinningChildPayout
+	173029d7	derivePayoutDistributionHash
+	9f941f69	getDesignatedReportingEndTime
+	82100be6	getWinningPayoutDistributionHash
+	012565ae	contributeToTentative
+	8d4e4083	isFinalized
+	870c426d	getUniverse
+	f76514c7	isContainerForReportingParticipant
+	8849973f	doInitialReport
+	c35c08bd	getCrowdsourcer
+	a0e16fed	getFinalizationTime
+	893d20e8	getOwner
+	961be391	cash
+	f8c52125	deriveMarketCreatorFeeAmount
+	35c1d349	participants
+Contract: DisputeCrowdsourcerFactory
+Events:
+Methods:
+	5f70ea3b	createDisputeCrowdsourcer
+Contract: DisputeWindowFactory
+Events:
+Methods:
+	c9c2e4b3	createDisputeWindow
+Contract: AugurTrading
+Events:
+	0x59543b7f82735782aa5bdb97dff40ff288d4548a5865da513b40e4088e2ee77e	ProfitLossChanged
+	0xbe80e5687d7095071b7c4e7a56e0e67bfb9e8a39352f1690fdf74c1ee935c75e	CancelZeroXOrder
+	0xe9f0af820300e73bae76c8e76943abe7fbb4224b49cb133e2dadc6f71acf6370	MarketVolumeChanged
+	0x9bab1368a1ed530afaad9c630ba75e6a5c1efa9f6af0139d6cda2b6af6aa801e	OrderEvent
+Methods:
+	db754422	claimMarketsProceeds
+	5d4f7742	doApprovals
+	74cf9765	logMarketVolumeChanged
+	98c7cc36	logOrderCreated
+	0848a90c	logProfitLossChanged
+	99b537a0	logZeroXOrderFilled
+	f39ec1f7	lookup
+	c9e34878	logOrderCanceled
+	5ae5c8e7	logOrderFilled
+	6c9fa59e	shareToken
+	65fe2a0b	uploader
+	7a0d8f8a	augur
+	efd342c1	claimTradingProceeds
+	e997fffd	finishDeployment
+	577bb86e	logZeroXOrderCanceled
+	645c6fae	registerContract
+	3f6ba415	trustedSender
+Contract: AuditFunds
+Events:
+Methods:
+	7973aaef	disputeCrowdsourcerFactory
+	5825926e	getAvailableReports
+	beea7167	getAvailableShareData
+	8bca1093	initialReporterFactory
+	06ae7095	marketFactory
+	6c9fa59e	shareToken
+	fbf551ad	addressFrom
+	fe3a4788	getAvailableDisputes
+	ee89dab4	getInitialized
+	c4d66de8	initialize
 Contract: TestNetDaiPot
 Events:
 Methods:
-	049878f3	join
 	20aba08b	rho
+	16ada547	time
 	36569e77	vat
+	2c69ed58	Pie
 	c92aecc4	chi
 	9f678cca	drip
-	7f8661a1	exit
-	65c0ac4b	setDSR
-	16ada547	time
-	2c69ed58	Pie
 	487bf082	dsr
+	7f8661a1	exit
+	049878f3	join
 	0bebac86	pie
+	65c0ac4b	setDSR
+Contract: RelayHubV2
+Events:
+	0x18d1605753700a9b48e43123a6aef09c0abd2126f7d36fdb0c5ee174ac867923	CanRelayFailed
+	0x8752a472e571a816aea92eec8dae9baf628e840f4929fbcc2d155e6233ff68a7	Deposited
+	0xb0595266ccec357806b2691f348b128209f1060a0bda4f5c95f7090730351ff8	Penalized
+	0x77f2d8afec4b9d82ffa0dea525320620292bd1067f575964994d5c4501479aed	RelayServerRegistered
+	0xebf4a9bffb39f7c5dbf3f65540183b9381ae226ac3d0a45b4cad484713bd4a28	RelayWorkersAdded
+	0xc9aa709786a3d5fe2cc947abc1ba8cbb0f6decb57aa74b84eb7f558125fee454	TransactionRelayed
+	0xd1c19fbcd4551a5edfb66d43d2e337c04837afda3482b42bdf569a8fccdae5fb	Withdrawn
+Methods:
+	83b71871	registerRelayServer
+	7542ff95	stakeManager
+	633ed2c3	MAX_WORKER_COUNT
+	11d77486	calculateCharge
+	ca64f9e7	getStakeManager
+	0d8e6e2c	getVersion
+	c4775a68	penalizer
+	e1decef3	getHubOverhead
+	09b8983c	relayCall
+	54fd4d50	version
+	32838662	COMMIT_ID
+	663c8186	GTRANSACTION
+	c2da0786	addRelayWorkers
+	aa67c919	depositFor
+	33452985	eip712sig
+	70a08231	balanceOf
+	5c177b12	gtxdatanonzero
+	06886525	recipientCallsAtomic
+	00f714ce	withdraw
+	c0f6a447	canRelay
+	ebcd31ac	penalize
+Contract: TestNetDaiJoin
+Events:
+Methods:
+	ef693bed	exit
+	3b4da69f	join
+	957aa58c	live
+	36569e77	vat
+	69245009	cage
+	f4b9fa75	dai
 Contract: Time
 Events:
 Methods:
 	188ec356	getTimestamp
 	db0a087c	getTypeName
-Contract: OICash
+Contract: DisputeCrowdsourcer
 Events:
-	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
 	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
+	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
 Methods:
-	18160ddd	totalSupply
-	313ce567	decimals
-	a2879e72	feesPaid
-	39509351	increaseAllowance
-	485cc955	initialize
-	3084d735	payFees
-	b6b55f25	deposit
-	ee89dab4	getInitialized
-	6c9fa59e	shareToken
-	dd62ed3e	allowance
 	27e235e3	balances
-	385babaf	buyCompleteSets
-	961be391	cash
-	a457c2d7	decreaseAllowance
-	554c1b1f	universe
-	2e1a7d4d	withdraw
-	55b6ed5c	allowances
-	095ea7b3	approve
-	7a0d8f8a	augur
-	a9059cbb	transfer
-	23b872dd	transferFrom
-	70a08231	balanceOf
-Contract: Universe
-Events:
-Methods:
-	3a537176	createChildUniverse
 	4591c060	fork
-	622ae175	getDisputeWindowByTimestamp
+	ee89dab4	getInitialized
 	6f84676e	getPayoutNumerators
-	01ba1fa3	isContainerForDisputeWindow
-	60d9b489	payoutNumerators
-	a95b973c	createYesNoMarket
-	c38c0fa7	getParentPayoutDistributionHash
-	a63f1350	getParentUniverse
-	c11645bc	daiJoin
-	5449aed5	getDisputeWindowStartTimeAndDuration
-	77e71ee5	getForkEndTime
-	9ab448d9	updateForkValues
-	047825c7	getDisputeThresholdForDisputePacing
-	c675f222	getOpenInterestInAttoCash
-	8689526b	getOrCreateDisputeWindowByTimestamp
-	92394f32	getOrCreateNextDisputeWindow
-	ce483e88	incrementOpenInterest
-	98fedb09	runPeriodicals
-	e4372c3c	DEFAULT_NUM_OUTCOMES
-	705123dc	DEFAULT_NUM_TICKS
-	b62418a1	decrementOpenInterest
-	8699d434	getCurrentDisputeWindow
-	f76514c7	isContainerForReportingParticipant
-	d372fbcd	isForkingMarket
-	ad7a672f	totalBalance
-	a7e8d762	getOrCacheMarketRepBond
-	af4cd457	getOrCacheValidityBond
-	b80907f2	getReputationToken
-	f2cf48f6	INITIAL_WINDOW_ID_BUFFER
-	45a62887	createCategoricalMarket
-	eceba876	getChildUniverse
-	cb1d8418	getForkingMarket
-	5f723b50	getInitialReportMinValue
-	fd1e5e7a	getOrCacheDesignatedReportNoShowBond
-	e5b4f771	lastSweep
-	06ae7095	marketFactory
-	0bcde26d	previousDesignatedReportNoShowBondInAttoRep
-	3342f689	sweepInterest
-	69328dec	withdraw
-	180ef158	decrementOpenInterestFromMarket
-	3ec6b034	designatedReportStakeInAttoRep
-	57d7a3c4	disputeWindows
-	7f7c390a	formulas
-	8f93bffe	getOrCacheReportingFeeDivisor
-	3940b675	openInterestCash
-	b4eeb2d7	previousDesignatedReportStakeInAttoRep
-	f7095d9d	updateTentativeWinningChildUniverse
-	3bd831f4	daiVat
-	7262f993	getWinningChildPayoutNumerator
-	48bc4eba	repOracle
-	e79609e2	getOrCacheDesignatedReportStake
-	f28b0956	getOrCreatePreviousPreviousDisputeWindow
-	7a0d8f8a	augur
-	879eefa5	getDisputeRoundDurationInSeconds
-	fb03eaea	getDisputeThresholdForFork
-	7c377d74	getForkReputationGoal
-	e2d8edaf	getOrCreatePreviousDisputeWindow
-	6f70b9cb	getWinningChildUniverse
-	9f7e1bf6	isContainerForMarket
-	8d2ecfba	migrateMarketIn
-	d8270dce	creationTime
-	e3fa4b04	getOrCreateCurrentDisputeWindow
-	becb1f35	isForking
-	0d5a9e4d	shareSettlementFeeDivisor
-	2cb1fd20	daiPot
-	f45346dc	deposit
-	b53b321e	designatedReportNoShowBondInAttoRep
-	da834ac4	getPayoutNumerator
-	0dcde5f5	getReportingFeeDivisor
-	11be56d7	migrateMarketOut
-	6f33ebb7	previousReportingFeeDivisor
-	ef7cd234	previousValidityBondInAttoCash
-	552033c4	RAY
-	a9f4185d	disputeWindowFactory
-	6c23f723	getDisputeWindow
-	2c7faa4d	getDisputeWindowId
-	13bf24c1	pokeRepMarketCapInAttoCash
-	961be391	cash
-	11a80ffc	createScalarMarket
-	df9fde7e	getTargetRepMarketCapInAttoCash
-	47d20e3b	isOpenInterestCash
-	9517317c	isParentOf
-	9672e3ba	marketBalance
-	6c9fa59e	shareToken
-	efb106ba	validityBondInAttoCash
-Contract: FillOrder
-Events:
-Methods:
-	8e1bfa73	augurTrading
-	f5df1f24	fillZeroXOrder
-	ee89dab4	getInitialized
-	a3ef2c13	getMarketOutcomeValues
-	e09bb556	getMarketVolume
-	7a0d8f8a	augur
-	63a50c2a	fillOrder
-	485cc955	initialize
-	ca46d4eb	marketOutcomeVolumes
-	62c9c6a6	publicFillOrder
-	1f0ba6c9	trade
-	1a505b76	zeroXTrade
-Contract: AuditFunds
-Events:
-Methods:
-	7973aaef	disputeCrowdsourcerFactory
-	fe3a4788	getAvailableDisputes
-	beea7167	getAvailableShareData
-	ee89dab4	getInitialized
-	06ae7095	marketFactory
-	6c9fa59e	shareToken
-	fbf551ad	addressFrom
-	5825926e	getAvailableReports
-	8bca1093	initialReporterFactory
-	c4d66de8	initialize
-Contract: ERC20Proxy
-Events:
-	0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0	OwnershipTransferred
-	0x3147867c59d17e8fa9d522465651d44aae0a9e38f902f3475b97e58072f0ed4c	AuthorizedAddressAdded
-	0x1f32c1b084e2de0713b8fb16bd46bb9df710a3dbeae2f3ca93af46e016dcc6b0	AuthorizedAddressRemoved
-Methods:
-	494503d4	authorities
-	b9181611	authorized
-	d39de6e9	getAuthorizedAddresses
-	ae25532e	getProxyId
-	70712939	removeAuthorizedAddress
-	f2fde38b	transferOwnership
-	42f1181e	addAuthorizedAddress
-	8da5cb5b	owner
-	9ad26744	removeAuthorizedAddressAtIndex
-Contract: LegacyReputationToken
-Events:
-	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
-	0xbf88b5a3158512dc8ad44dadf221f46eb1df762a2e7fd1de86aab34b0af455cf	FundedAccount
-	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
-Methods:
-	870c426d	getUniverse
-	f22b258a	trustedMarketTransfer
-	70a08231	balanceOf
-	188ec356	getTimestamp
-	db0a087c	getTypeName
-	c4d66de8	initialize
-	db054134	mintForReportingParticipant
-	a9059cbb	transfer
-	fe98184d	trustedUniverseTransfer
-	313ce567	decimals
-	77469275	getLegacyRepToken
-	dea6aec7	getTargetSupply
-	de4c0574	migrateAllowancesFromLegacyRep
-	721bb170	trustedDisputeWindowTransfer
-	d9d3e07d	updateSiblingMigrationTotal
-	dd62ed3e	allowance
-	39509351	increaseAllowance
-	a0c1ca34	migrateIn
-	a457c2d7	decreaseAllowance
-	7cf99c33	getIsMigratingFromLegacy
-	238d3590	getTotalTheoreticalSupply
-	06fdde03	name
-	18160ddd	totalSupply
-	23b872dd	transferFrom
-	a819515d	updateParentTotalTheoreticalSupply
-	095ea7b3	approve
-	91d76bbb	getTotalMigrated
-	6e7ce591	migrateOut
-	b873e9a7	trustedReportingParticipantTransfer
-	ee89dab4	getInitialized
 	55b6ed5c	allowances
-	bef72fa2	controllerLookupName
-	57915897	faucet
-	7f686259	migrateBalancesFromLegacyRep
-	5b66876a	migrateOutByPayout
-	95d89b41	symbol
-	27e235e3	balances
-Contract: TestNetReputationTokenFactory
-Events:
-Methods:
-	812f82d9	createReputationToken
-Contract: Trade
-Events:
-Methods:
-	485cc955	initialize
-	001fbc0b	publicTrade
+	095ea7b3	approve
+	9fb436cd	correctSize
+	de8fa431	getSize
+	22b152a3	liquidateLosing
+	d3be9d34	crowdsourcerGeneration
+	a457c2d7	decreaseAllowance
+	1d7b6d58	forkAndRedeem
+	170ab405	setSize
+	18d34d5e	getCrowdsourcerGeneration
+	39509351	increaseAllowance
+	aa969a47	initialize
+	18160ddd	totalSupply
+	dd62f6f3	getPayoutDistributionHash
+	b80907f2	getReputationToken
+	fc0e3d90	getStake
+	06fdde03	name
+	23b872dd	transferFrom
+	dd62ed3e	allowance
+	70a08231	balanceOf
+	94a91de8	contribute
+	313ce567	decimals
+	da834ac4	getPayoutNumerator
+	554c1b1f	universe
 	7a0d8f8a	augur
-	8e1bfa73	augurTrading
-	5c1ad844	fillOrder
+	8d625c2c	getRemainingToFill
+	a9059cbb	transfer
+	f1be1679	getMarket
+	64020842	isDisavowed
+	95a2251f	redeem
+	95d89b41	symbol
+Contract: ShareToken
+Events:
+	0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31	ApprovalForAll
+	0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb	TransferBatch
+	0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62	TransferSingle
+	0x6bb7ff708619ba0610cba295a58592e0451dee2622938c8755667688daf3529b	URI
+Methods:
+	edc3bc3f	_operatorApprovals
+	7a0d8f8a	augur
+	d64c62f3	balanceOfMarketOutcome
+	431e8878	buyCompleteSetsForTrade
 	ee89dab4	getInitialized
-	4fb764c9	orders
-	0f848dad	publicFillBestOrder
+	f8a2167b	lowestBalanceOfMarketOutcomes
+	abb60c80	publicBuyCompleteSets
+	ad16158e	publicSellCompleteSets
+	5990fea6	sellCompleteSets
+	8c5e2f87	totalSupplyForMarketOutcome
+	4db3b9e3	assertBalances
+	4e1273f4	balanceOfBatch
+	f2dc8266	calculateProceeds
+	cd579335	getOutcome
+	c4d66de8	initialize
+	a22cb465	setApprovalForAll
+	01ffc9a7	supportsInterface
+	95d89b41	symbol
+	bd85b039	totalSupply
+	00fdd58e	balanceOf
+	9f66cddf	divideUpWinnings
+	db0a087c	getTypeName
+	f32ef051	_supplys
 	961be391	cash
-	6512e6ec	createOrder
+	29f99b9f	getTokenId
+	e985e9c5	isApprovedForAll
+	aa48db20	buyCompleteSets
+	06065ced	calculateCreatorFee
+	3b48090e	initializeMarket
+	26afd2e8	unpackTokenId
+	81894407	calculateReportingFee
+	eb44fdd3	getMarket
+	53b7a712	sellCompleteSetsForTrade
+	fbc37ca9	unsafeTransferFrom
+	ca3a1e69	getTokenIds
+	f242432a	safeTransferFrom
+	fc25a4da	_balances
+	efd342c1	claimTradingProceeds
+	06fdde03	name
+	2eb2c2d6	safeBatchTransferFrom
+	4028e8ea	unsafeBatchTransferFrom
 Contract: CoordinatorRegistry
 Events:
 	0xd060052768902f3eecb84b8eae9d3a2608a1a9e60811a33968b46b8d552f266e	CoordinatorEndpointSet
 Methods:
 	6c90fedb	getCoordinatorEndpoint
 	5b2388be	setCoordinatorEndpoint
+Contract: LegacyReputationToken
+Events:
+	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
+	0xbf88b5a3158512dc8ad44dadf221f46eb1df762a2e7fd1de86aab34b0af455cf	FundedAccount
+	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
+Methods:
+	91d76bbb	getTotalMigrated
+	de4c0574	migrateAllowancesFromLegacyRep
+	a9059cbb	transfer
+	721bb170	trustedDisputeWindowTransfer
+	313ce567	decimals
+	ee89dab4	getInitialized
+	06fdde03	name
+	188ec356	getTimestamp
+	870c426d	getUniverse
+	bef72fa2	controllerLookupName
+	7cf99c33	getIsMigratingFromLegacy
+	dea6aec7	getTargetSupply
+	238d3590	getTotalTheoreticalSupply
+	a0c1ca34	migrateIn
+	18160ddd	totalSupply
+	55b6ed5c	allowances
+	70a08231	balanceOf
+	23b872dd	transferFrom
+	f22b258a	trustedMarketTransfer
+	5b66876a	migrateOutByPayout
+	db054134	mintForReportingParticipant
+	c4d66de8	initialize
+	d9d3e07d	updateSiblingMigrationTotal
+	77469275	getLegacyRepToken
+	db0a087c	getTypeName
+	b873e9a7	trustedReportingParticipantTransfer
+	fe98184d	trustedUniverseTransfer
+	095ea7b3	approve
+	27e235e3	balances
+	39509351	increaseAllowance
+	7f686259	migrateBalancesFromLegacyRep
+	6e7ce591	migrateOut
+	a819515d	updateParentTotalTheoreticalSupply
+	dd62ed3e	allowance
+	a457c2d7	decreaseAllowance
+	57915897	faucet
+	95d89b41	symbol
+Contract: ReputationTokenFactory
+Events:
+Methods:
+	812f82d9	createReputationToken
+Contract: DisputeWindow
+Events:
+	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
+	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
+Methods:
+	4b77946e	buyParticipationTokens
+	0fb5a6b4	duration
+	7a0d8f8a	augur
+	439f5ac2	getEndTime
+	c828371e	getStartTime
+	7bf362ed	invalidMarketsTotal
+	3b612e8c	validityBondTotal
+	313ce567	decimals
+	22f3e2d4	isActive
+	18160ddd	totalSupply
+	9af1d03e	windowId
+	dd62ed3e	allowance
+	d96a094a	buy
+	870c426d	getUniverse
+	23b872dd	transferFrom
+	70a08231	balanceOf
+	a457c2d7	decreaseAllowance
+	f9070243	designatedReportNoShowsTotal
+	2e4f4024	designatedReporterNoShowBondTotal
+	b80907f2	getReputationToken
+	db0a087c	getTypeName
+	6353ed68	incorrectDesignatedReportTotal
+	39509351	increaseAllowance
+	db1c00ba	initialize
+	95a2251f	redeem
+	a9059cbb	transfer
+	8dc6e2f1	onMarketFinalized
+	30a7c978	participationTokensEnabled
+	55b6ed5c	allowances
+	27e235e3	balances
+	616db798	getWindowId
+	96ec0205	trustedBuy
+	095ea7b3	approve
+	961be391	cash
+	ee89dab4	getInitialized
+	8be6cb8f	initialReportBondTotal
+	b4bd9e27	isOver
+	554c1b1f	universe
+Contract: MultiAssetProxy
+Events:
+	0xd2c6b762299c609bdb96520b58a49bfb80186934d4f71a86a367571a15c03194	AssetProxyRegistered
+	0x3147867c59d17e8fa9d522465651d44aae0a9e38f902f3475b97e58072f0ed4c	AuthorizedAddressAdded
+	0x1f32c1b084e2de0713b8fb16bd46bb9df710a3dbeae2f3ca93af46e016dcc6b0	AuthorizedAddressRemoved
+	0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0	OwnershipTransferred
+Methods:
+	8da5cb5b	owner
+	c585bb93	registerAssetProxy
+	9ad26744	removeAuthorizedAddressAtIndex
+	d39de6e9	getAuthorizedAddresses
+	ae25532e	getProxyId
+	70712939	removeAuthorizedAddress
+	42f1181e	addAuthorizedAddress
+	3fd3c997	assetProxies
+	494503d4	authorities
+	b9181611	authorized
+	60704108	getAssetProxy
+	f2fde38b	transferOwnership
+Contract: WarpSync
+Events:
+Methods:
+	2f91029a	getFinalizationReward
+	c4d66de8	initialize
+	12481ad6	lastSweepTime
+	e8a2a7a6	notifyMarketFinalized
+	b90d3d0c	data
+	44dafa1f	doInitialReport
+	ee89dab4	getInitialized
+	44085513	initializeUniverse
+	8e8f294b	markets
+	7a0d8f8a	augur
+	0fc40aa7	getCreationReward
+Contract: MarketFactory
+Events:
+Methods:
+	80288c5c	createMarket
+Contract: StakeManager
+Events:
+	0x9ffc6168de1eb7f1d16200f614753cd7edce5a2186aab1c612199dd7316cd7c4	StakeUnlocked
+	0xb7c918e0e249f999e965cafeb6c664271b3f4317d296461500e71da39f0cbda3	StakeWithdrawn
+	0xe292c4f6e9f34c975f4958cd5650a8111352feae914a67b06407957105421021	HubAuthorized
+	0x8d941c9b73ba7e59671a59eed85054004624684182b0e4bdb56c35937bac65a6	HubUnauthorized
+	0xef7c8dfef14cbefdf829b8f066b068b677992411137321d64b3ed4538c2b3637	StakeAdded
+	0x2f2ba0bf4c9bedc2210a4da5b5811c2a4fd28e62c51bb90c3ea6fdce00808eb0	StakePenalized
+Methods:
+	dd687862	isRelayManagerStaked
+	5d2fb768	stakeForAddress
+	16934fc4	stakes
+	500aaa38	unauthorizeHub
+	4a1ce599	unlockStake
+	19c18932	authorizeHub
+	7aeb642a	authorizedHubs
+	c3453153	getStakeInfo
+	09a08af4	penalizeRelayManager
+	c23a5cea	withdrawStake
+Contract: Affiliates
+Events:
+Methods:
+	9ca423b3	referrals
+	255b963c	affiliateValidators
+	0617c4a6	getAccountFingerprint
+	b3086358	getAndValidateReferrer
+	58b0b954	setFingerprint
+	a18a7bfc	setReferrer
+	5632c1ba	createAffiliateValidator
+	5f5961f5	fingerprints
+	4a9fefc7	getReferrer
+Contract: InitialReporter
+Events:
+Methods:
+	5b6e2492	getDesignatedReporter
+	ee89dab4	getInitialized
+	dd62f6f3	getPayoutDistributionHash
+	94a771d7	getReportTimestamp
+	e21659a6	report
+	4591c060	fork
+	f1be1679	getMarket
+	893d20e8	getOwner
+	b80907f2	getReputationToken
+	c0c53b8b	initialize
+	64020842	isDisavowed
+	22b152a3	liquidateLosing
+	ef0ce37a	migrateToNewUniverse
+	87882cb8	returnRepFromDisavow
+	3bf8f34a	designatedReporterShowed
+	1d7b6d58	forkAndRedeem
+	de8fa431	getSize
+	95a2251f	redeem
+	7a0d8f8a	augur
+	da834ac4	getPayoutNumerator
+	6f84676e	getPayoutNumerators
+	fc0e3d90	getStake
+	c3d9c075	initialReporterWasCorrect
+	f2fde38b	transferOwnership
+Contract: ZRXToken
+Events:
+	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
+	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
+Methods:
+	313ce567	decimals
+	06fdde03	name
+	18160ddd	totalSupply
+	a9059cbb	transfer
+	095ea7b3	approve
+	70a08231	balanceOf
+	95d89b41	symbol
+	23b872dd	transferFrom
+	dd62ed3e	allowance
+Contract: AugurWalletRegistry
+Events:
+	0xee9c28a7fe7177d351e891cb4ca5b7a4e4aba4974be67fb7665ba1ad0e703439	ExecuteTransactionStatus
+	0xb9f84b8e65164b14439ae3620df0a4d8786d896996c0282b683f9d8c08f046e8	RelayHubChanged
+Methods:
+	80a35930	getCreate2WalletAddress
+	74e861d6	getHubAddr
+	04d0a647	getWallet
+	6c9fa59e	shareToken
+	5c1ad844	fillOrder
+	ee89dab4	getInitialized
+	e06e0e22	postRelayedCall
+	ad5c4648	WETH
+	3f03842a	affiliates
+	7a0d8f8a	augur
+	8e1bfa73	augurTrading
+	961be391	cash
+	6512e6ec	createOrder
+	d5b9562b	getRelayMessageHash
+	485cc955	initialize
+	7b66c82a	token0IsCash
+	1a505b76	zeroXTrade
+	054d50d4	getAmountOut
+	80274db7	preRelayedCall
+	ad61ccd5	relayHubVersion
+	83947ea0	acceptRelayedCall
+	519e62d9	augurWalletRegistryV2
+	53e569a1	ethExchange
+	78dc0eed	executeWalletTransaction
+	85f8c259	getAmountIn
+Contract: Formulas
+Events:
+Methods:
+	ffe44772	calculateDesignatedReportNoShowBond
+	c29faa90	calculateDesignatedReportStake
+	0061419f	calculateFloatingValue
+	c19b477d	calculateValidityBond
+Contract: ERC1155Proxy
+Events:
+	0x3147867c59d17e8fa9d522465651d44aae0a9e38f902f3475b97e58072f0ed4c	AuthorizedAddressAdded
+	0x1f32c1b084e2de0713b8fb16bd46bb9df710a3dbeae2f3ca93af46e016dcc6b0	AuthorizedAddressRemoved
+	0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0	OwnershipTransferred
+Methods:
+	b9181611	authorized
+	d39de6e9	getAuthorizedAddresses
+	ae25532e	getProxyId
+	70712939	removeAuthorizedAddress
+	9ad26744	removeAuthorizedAddressAtIndex
+	42f1181e	addAuthorizedAddress
+	494503d4	authorities
+	8da5cb5b	owner
+	a85e59e4	transferFrom
+	f2fde38b	transferOwnership
 Contract: Cash
 Events:
 	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
@@ -780,27 +1221,130 @@ Events:
 	0x0f6798a560793a54c3bcfe86a93cde1e73087d944c0ea20544137d4121396885	Mint
 	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
 Methods:
-	552033c4	RAY
-	3bd831f4	daiVat
-	f11f299e	joinBurn
+	57915897	faucet
 	ddc5972e	joinMint
+	18160ddd	totalSupply
+	552033c4	RAY
+	dd62ed3e	allowance
+	66188463	decreaseApproval
 	06fdde03	name
+	95d89b41	symbol
 	a9059cbb	transfer
 	bf353dbb	wards
 	313ce567	decimals
-	57915897	faucet
-	c4d66de8	initialize
-	95d89b41	symbol
-	18160ddd	totalSupply
-	23b872dd	transferFrom
+	db0a087c	getTypeName
+	f11f299e	joinBurn
 	095ea7b3	approve
+	3bd831f4	daiVat
+	d73dd623	increaseApproval
+	c4d66de8	initialize
+	23b872dd	transferFrom
+	634eaff1	ETERNAL_APPROVAL_VALUE
 	70a08231	balanceOf
 	c11645bc	daiJoin
-	66188463	decreaseApproval
-	d73dd623	increaseApproval
-	634eaff1	ETERNAL_APPROVAL_VALUE
+Contract: RelayHub
+Events:
+	0x8752a472e571a816aea92eec8dae9baf628e840f4929fbcc2d155e6233ff68a7	Deposited
+	0x85b3ae3aae9d3fcb31142fbd8c3b4722d57825b8edd6e1366e69204afa5a0dfa	RelayAdded
+	0x1449c6dd7851abc30abf37f57715f492010519147cc2652fbc38202c18a6ee90	Staked
+	0x0f5bb82176feb1b5e747e28471aa92156a04d9f3ab9f45f28e2d704232b93f75	Unstaked
+	0xd1c19fbcd4551a5edfb66d43d2e337c04837afda3482b42bdf569a8fccdae5fb	Withdrawn
+	0xafb5afd6d1c2e8ffbfb480e674a169f493ece0b22658d4f4484e7334f0241e22	CanRelayFailed
+	0xb0595266ccec357806b2691f348b128209f1060a0bda4f5c95f7090730351ff8	Penalized
+	0x5490afc1d818789c8b3d5d63bce3d2a3327d0bba4efb5a7751f783dc977d7d11	RelayRemoved
+	0xab74390d395916d9e0006298d47938a5def5d367054dcca78fa6ec84381f3f22	TransactionRelayed
+Methods:
+	c3e712f2	removeRelayByOwner
+	54fd4d50	version
+	00f714ce	withdraw
+	85f4498b	canUnstake
+	2d0335ab	getNonce
+	1166073a	registerRelay
+	405cec67	relayCall
+	70a08231	balanceOf
+	39002432	penalizeIllegalTransaction
+	2ca70eba	recipientCallsAtomic
+	8d851460	getRelay
+	6a7d84a4	requiredGas
+	f2888dbb	unstake
+	adc9772e	stake
+	2b601747	canRelay
+	aa67c919	depositFor
+	a863f8f9	maxPossibleCharge
+	a8cd9572	penalizeRepeatedNonce
+Contract: AffiliateValidator
+Events:
+Methods:
+	ac8a584a	removeOperator
+	f2fde38b	transferOwnership
+	9870d7fe	addOperator
+	893d20e8	getOwner
+	13e7c9d8	operators
+	670d14b2	keys
+	c775a2e4	usedSalts
+	d8844c91	validateReference
+	72a0d728	addKey
+	6769e5c8	getKeyHash
+	1575d1d0	isValidSignature
+Contract: OICash
+Events:
+	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
+	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
+Methods:
+	6c9fa59e	shareToken
+	23b872dd	transferFrom
+	313ce567	decimals
+	a457c2d7	decreaseAllowance
+	3084d735	payFees
+	18160ddd	totalSupply
+	2e1a7d4d	withdraw
+	70a08231	balanceOf
+	385babaf	buyCompleteSets
+	095ea7b3	approve
+	b6b55f25	deposit
+	a2879e72	feesPaid
+	39509351	increaseAllowance
+	485cc955	initialize
+	a9059cbb	transfer
 	dd62ed3e	allowance
-	db0a087c	getTypeName
+	55b6ed5c	allowances
+	554c1b1f	universe
+	961be391	cash
+	ee89dab4	getInitialized
+	7a0d8f8a	augur
+	27e235e3	balances
+Contract: CreateOrder
+Events:
+Methods:
+	8e1bfa73	augurTrading
+	961be391	cash
+	4fb764c9	orders
+	1f0ba6c9	trade
+	a3b1e7a9	publicCreateOrders
+	7a0d8f8a	augur
+	f7938328	createOrder
+	ee89dab4	getInitialized
+	485cc955	initialize
+	89ab6447	profitLoss
+	3ae4ce0a	publicCreateOrder
+Contract: TestNetDaiVat
+Events:
+Methods:
+	6c25b346	dai
+	dc4d20fa	nope
+	4538c4eb	can
+	7b56c2b2	faucet
+	76088703	frob
+	a3b22fc4	hope
+	d9638d36	ilks
+	957aa58c	live
+	bb35783b	move
+	f24e23eb	suck
+	69245009	cage
+Contract: InitialReporterFactory
+Events:
+Methods:
+	53343e42	createInitialReporter
 Contract: UniswapV2Exchange
 Events:
 	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
@@ -811,535 +1355,85 @@ Events:
 	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
 Methods:
 	70a08231	balanceOf
-	c45a0155	factory
-	022c0d9f	swap
-	bc25cf77	skim
-	095ea7b3	approve
-	fff6cae9	sync
-	0dfe1681	token0
 	a9059cbb	transfer
-	30adf81f	PERMIT_TYPEHASH
-	7464fc3d	kLast
-	5909c0d5	price0CumulativeLast
-	23b872dd	transferFrom
-	95d89b41	symbol
-	6a627842	mint
-	313ce567	decimals
-	7ecebe00	nonces
-	18160ddd	totalSupply
-	3644e515	DOMAIN_SEPARATOR
 	ba9a7a56	MINIMUM_LIQUIDITY
-	89afcb44	burn
-	06fdde03	name
-	5a3d5493	price1CumulativeLast
-	d21220a7	token1
-	dd62ed3e	allowance
-	0902f1ac	getReserves
-	485cc955	initialize
+	313ce567	decimals
+	5909c0d5	price0CumulativeLast
+	95d89b41	symbol
+	3644e515	DOMAIN_SEPARATOR
+	6a627842	mint
 	d505accf	permit
-Contract: Augur
-Events:
-	0xb20adf682c8f82b94a135452f54ac4483c9ee8c9b2324e946120696ab1d034b4	ReportingParticipantDisavowed
-	0xe36b09d83f9cfa88c37f071fc2cfb5ff30b764cbd98088e70d965573c9ce5bbd	UniverseCreated
-	0x97f8b399e255f30d56b759b645c86652624ee258937579ff4a747abaeae857c4	DisputeWindowCreated
-	0xea17ae24b0d40ea7962a6d832db46d1f81eaec1562946d0830d1c21d4c000ec1	MarketCreated
-	0x213a05b9ad8567c2f8fa868e7375e5bf30e69add0dbb5913ca8a3e58c815c268	MarketOIChanged
-	0x18052b5e29020458e154999fa71891a5db3404a5b0b9c5ec60c90adca7d38d63	ParticipationTokensRedeemed
-	0x95366b7f64c6bb45149f9f7c522403fceebe5170ff76b8ffde2b0ab943ac11ce	TradingProceedsClaimed
-	0x6afb0328cf957750be87a6f34b1cd21457ddf1382af65f9592ff2d333945633f	DisputeCrowdsourcerRedeemed
-	0x55f2a7bfa32e835c3f3c3cff653a3d11c077ce1b00c5a41c6aaf09eedc1ac3b2	MarketTransferred
-	0xd1fc3f2cb1387e602db0e6f8f22649df65df5246eeff281cf6d1ef62feda4ece	NoShowBondChanged
-	0x6d39632c2dc10305bf5771cfff4af1851f07c03ea27b821cad382466bdf7a21f	MarketFinalized
-	0xc3cf07f8fa0fafc25a9dd0bad2cd6b961c55dad41b42c8ef8f931bc40e41e08c	MarketMigrated
-	0xf06c142f93fdd00fbcd1e8f3d82e6f22667d52df764b39570061a7dbeea09be0	FinishDeployment
-	0xc3ebb227c22e7644e9bef8822009f746a72c86f239760124d67fdc2c302b3115	InitialReportSubmitted
-	0xee62c58e2603b92f96a002e012f4f3bd5748102cfa3b711f6d778c6237fcaa96	InitialReporterTransferred
-	0x7589653fe5a2ab3ccc12538316852339868efdd9d3bd0b84d055cf224cf96873	WarpSyncDataUpdated
-	0xa037dd0e01f0488a530cb17065a6d2f284fae016004fc744ee2a41d5cacf85d5	RegisterContract
-	0x63fd58f559b73fc4da5511c341ec8a7b31c5c48538ef83c6077712b6edf5f7cb	TokenBalanceChanged
-	0x69af68e366a0570364e3a086f3b5ac79f08ecc3f93eaccbfcf3864809b12b5d8	ValidityBondChanged
-	0xce5b6de2a0053ebc6c04e68bcbb9f0a1f2deeb7049c72881e198f95b5752db82	UniverseForked
-	0x9c75a088fcb0527d67a80a7d0a5006bbabe02f4b23984234ae68b2b146f001bc	DesignatedReportStakeChanged
-	0x81afc41f9f2f0d22a52a2ddb3a0b6db83baf39c05544fd25f2751b72b1943bb5	DisputeCrowdsourcerCompleted
-	0xf9a0b30bcf861874bf36630742f0d56b22648898d7cdd0cd785d74acd17e0d44	DisputeCrowdsourcerCreated
-	0x350ea32dc29530b9557420816d743c436f8397086f98c96292138edd69e01cb3	ShareTokenBalanceChanged
-	0x11dda748f0bd3af85a073da0088a0acb827d9584a4fdb825c81f1232a5309538	TimestampSet
-	0x07f766729171db8cc73d96b25cc56784077e26c7ff48b0187877ace391c181a6	TokensMinted
-	0xdd7dcfa6708112395eb94e9b1889295fb19af21ef290e918256838c979b2dfbd	CompleteSetsSold
-	0xe7f47639cdf56ec6c5451df334b73c9ca5cccd20da2c0f4e390e9bb71a6f672a	DisputeCrowdsourcerContribution
-	0xadddfaec4505d90a6a211907536944e6e1af7ff5cf6d1873de43e36020f36009	ReportingFeeChanged
-	0x3c67396e9c55d2fc8ad68875fc5beca1d96ad2a2f23b210ccc1d986551ab6fdf	TokensTransferred
-	0xfe06587917de7df83a446bcbb889cee699d7fc35b7b53e263282c2acb5a16499	CompleteSetsPurchased
-	0x3ffffb51f92f91faf4ba8c906f5a0180d1033be93b1e227cd92c872dc234fdf0	InitialReporterRedeemed
-	0x0519ee50d0e6120223e58d0b52824ca4985c524f045a3d6a529936e511d2ba8d	MarketRepBondTransferred
-	0x3b4f3db017516414df2695e5b0052661779d7163a6cd4368fd74313be73fa0b8	MarketParticipantsDisavowed
-	0x145a4839b3d82d1e28f6ed93f52622b351892e835530386bb1fe4effba99aeea	TokensBurned
-Methods:
-	ff51f367	TRADE_INTERVAL_VALUE
-	22415f60	isTrustedSender
-	d015ddbd	logShareTokensBalanceChanged
-	27d8e850	logMarketFinalized
-	a3aac84d	logParticipationTokensRedeemed
-	b394ce2c	logReportingFeeChanged
-	3dfdce82	logReputationTokensBurned
-	d673ad96	logReputationTokensMinted
-	8ec6a771	logUniverseForked
-	8f401bf3	MIN_TRADE_INTERVAL
-	70b78eba	logDisputeCrowdsourcerContribution
-	b1c094fa	logInitialReporterRedeemed
-	3f6d798a	onCategoricalMarketCreated
-	484f6e3e	getMaximumMarketEndDate
-	aaf6da20	getUniverseForkIndex
-	59967d1f	logParticipationTokensBurned
-	606755be	logDisputeWindowCreated
-	26990346	logParticipationTokensTransferred
-	887cc5e4	getMarketOutcomes
-	5897e663	isKnownFeeSender
-	7920757e	logCompleteSetsSold
-	921bd6f0	upgradeTimestamp
-	722e3320	logMarketOIChanged
-	f39ec1f7	lookup
-	6743dcaf	trustedCashTransfer
-	188ec356	getTimestamp
-	b70da7dc	isKnownCrowdsourcer
-	9eba4b7b	getMarketType
-	58c4092c	logNoShowBondChanged
-	e1c678fe	logReputationTokensTransferred
-	2280068d	onYesNoMarketCreated
-	65fe2a0b	uploader
-	e997fffd	finishDeployment
-	4891c9ab	getMarketCreationData
-	f9c45f71	getMarketRecommendedTradeInterval
-	1142e31e	logDisputeCrowdsourcerTokensBurned
-	da9d7a48	logInitialReportSubmitted
-	ed4d5244	onScalarMarketCreated
-	80675fdc	logDisputeCrowdsourcerRedeemed
-	9684da1a	createGenesisUniverse
-	5fe4fccd	disputeCrowdsourcerCreated
-	c509d0b2	logCompleteSetsPurchased
-	c67af5cc	logMarketParticipantsDisavowed
-	ecdaa595	logParticipationTokensMinted
-	c8e6b2a8	logTimestampSet
-	cec4ede1	logTradingProceedsClaimed
-	00b946f0	genesisUniverse
-	79d60f04	getTradeInterval
-	973df5b9	logDesignatedReportStakeChanged
-	08bb7309	logMarketRepBondTransferred
-	23290737	logMarketTransferred
-	cf53f72f	logWarpSyncDataUpdated
-	36569e77	vat
-	e62b8889	isKnownMarket
-	1902540c	logDisputeCrowdsourcerTokensTransferred
-	b5a28c4e	logValidityBondChanged
-	645c6fae	registerContract
-	16ada547	time
-	bd33b942	DEFAULT_RECOMMENDED_TRADE_INTERVAL
-	e3142e90	logInitialReporterTransferred
-	17570e80	logReportingParticipantDisavowed
-	4f67af24	createChildUniverse
-	752f57c0	derivePayoutDistributionHash
-	6a95e6a7	logDisputeCrowdsourcerCompleted
-	8f669d87	logDisputeCrowdsourcerTokensMinted
-	17674e4d	logMarketMigrated
-	961be391	cash
-	ce07324e	forkCounter
-	8cfb8f21	isKnownUniverse
-Contract: DisputeCrowdsourcerFactory
-Events:
-Methods:
-	5f70ea3b	createDisputeCrowdsourcer
-Contract: InitialReporterFactory
-Events:
-Methods:
-	53343e42	createInitialReporter
-Contract: OICashFactory
-Events:
-Methods:
-	1eaa9a88	createOICash
-Contract: DisputeCrowdsourcer
-Events:
-	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
-	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
-Methods:
-	ee89dab4	getInitialized
-	a9059cbb	transfer
-	d3be9d34	crowdsourcerGeneration
-	18d34d5e	getCrowdsourcerGeneration
-	dd62f6f3	getPayoutDistributionHash
-	de8fa431	getSize
-	170ab405	setSize
-	95d89b41	symbol
-	554c1b1f	universe
-	55b6ed5c	allowances
-	4591c060	fork
-	8d625c2c	getRemainingToFill
-	95a2251f	redeem
-	095ea7b3	approve
-	64020842	isDisavowed
+	5a3d5493	price1CumulativeLast
+	89afcb44	burn
+	18160ddd	totalSupply
 	23b872dd	transferFrom
-	fc0e3d90	getStake
-	b80907f2	getReputationToken
-	7a0d8f8a	augur
-	a457c2d7	decreaseAllowance
-	1d7b6d58	forkAndRedeem
-	f1be1679	getMarket
-	39509351	increaseAllowance
+	095ea7b3	approve
 	06fdde03	name
-	9fb436cd	correctSize
-	94a91de8	contribute
-	da834ac4	getPayoutNumerator
-	aa969a47	initialize
-	70a08231	balanceOf
-	27e235e3	balances
-	313ce567	decimals
-	6f84676e	getPayoutNumerators
-	22b152a3	liquidateLosing
-	18160ddd	totalSupply
-	dd62ed3e	allowance
-Contract: WETH9
-Events:
-	0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65	Withdrawal
-	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
-	0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c	Deposit
-	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
-Methods:
-	23b872dd	transferFrom
-	d0e30db0	deposit
-	06fdde03	name
-	95d89b41	symbol
-	18160ddd	totalSupply
-	dd62ed3e	allowance
-	095ea7b3	approve
-	70a08231	balanceOf
-	313ce567	decimals
-	a9059cbb	transfer
-	2e1a7d4d	withdraw
-Contract: DisputeWindowFactory
-Events:
-Methods:
-	c9c2e4b3	createDisputeWindow
-Contract: ReputationToken
-Events:
-	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
-	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
-Methods:
-	a0c1ca34	migrateIn
-	23b872dd	transferFrom
-	7a0d8f8a	augur
-	95d89b41	symbol
-	f22b258a	trustedMarketTransfer
-	5b66876a	migrateOutByPayout
-	27e235e3	balances
-	183636c5	parentUniverse
-	b873e9a7	trustedReportingParticipantTransfer
-	55b6ed5c	allowances
-	870c426d	getUniverse
-	db054134	mintForReportingParticipant
-	e1897b59	mintForWarpSync
-	721bb170	trustedDisputeWindowTransfer
-	313ce567	decimals
-	91d76bbb	getTotalMigrated
-	d5466777	legacyRepToken
-	18160ddd	totalSupply
-	5bd5ea71	warpSync
-	70a08231	balanceOf
-	a457c2d7	decreaseAllowance
-	77469275	getLegacyRepToken
-	75d9aa1a	migrateFromLegacyReputationToken
-	06fdde03	name
-	a9059cbb	transfer
-	095ea7b3	approve
-	ae3816ee	burnForMarket
-	238d3590	getTotalTheoreticalSupply
-	39509351	increaseAllowance
-	fe98184d	trustedUniverseTransfer
-	dd62ed3e	allowance
-Contract: HotLoading
-Events:
-Methods:
-	ca4bae9a	getCurrentDisputeWindowData
-	cf9f3a8a	getLastTradedPrices
-	fa8d7a61	getMarketData
-	e07d521a	getReportingState
-	c684959f	getTotalValidityBonds
-Contract: ERC1155Proxy
-Events:
-	0x1f32c1b084e2de0713b8fb16bd46bb9df710a3dbeae2f3ca93af46e016dcc6b0	AuthorizedAddressRemoved
-	0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0	OwnershipTransferred
-	0x3147867c59d17e8fa9d522465651d44aae0a9e38f902f3475b97e58072f0ed4c	AuthorizedAddressAdded
-Methods:
-	d39de6e9	getAuthorizedAddresses
-	8da5cb5b	owner
-	70712939	removeAuthorizedAddress
-	9ad26744	removeAuthorizedAddressAtIndex
-	f2fde38b	transferOwnership
-	42f1181e	addAuthorizedAddress
-	494503d4	authorities
-	b9181611	authorized
-	ae25532e	getProxyId
-	a85e59e4	transferFrom
-Contract: MultiAssetProxy
-Events:
-	0xd2c6b762299c609bdb96520b58a49bfb80186934d4f71a86a367571a15c03194	AssetProxyRegistered
-	0x3147867c59d17e8fa9d522465651d44aae0a9e38f902f3475b97e58072f0ed4c	AuthorizedAddressAdded
-	0x1f32c1b084e2de0713b8fb16bd46bb9df710a3dbeae2f3ca93af46e016dcc6b0	AuthorizedAddressRemoved
-	0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0	OwnershipTransferred
-Methods:
-	494503d4	authorities
-	b9181611	authorized
-	ae25532e	getProxyId
-	8da5cb5b	owner
-	c585bb93	registerAssetProxy
-	70712939	removeAuthorizedAddress
-	9ad26744	removeAuthorizedAddressAtIndex
-	f2fde38b	transferOwnership
-	42f1181e	addAuthorizedAddress
-	3fd3c997	assetProxies
-	60704108	getAssetProxy
-	d39de6e9	getAuthorizedAddresses
-Contract: MarketFactory
-Events:
-Methods:
-	80288c5c	createMarket
-Contract: ReputationTokenFactory
-Events:
-Methods:
-	812f82d9	createReputationToken
-Contract: DisputeWindow
-Events:
-	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
-	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
-Methods:
-	095ea7b3	approve
-	c828371e	getStartTime
-	554c1b1f	universe
-	55b6ed5c	allowances
-	313ce567	decimals
-	439f5ac2	getEndTime
-	8dc6e2f1	onMarketFinalized
-	3b612e8c	validityBondTotal
-	dd62ed3e	allowance
-	b80907f2	getReputationToken
-	7bf362ed	invalidMarketsTotal
-	96ec0205	trustedBuy
-	70a08231	balanceOf
-	f9070243	designatedReportNoShowsTotal
-	2e4f4024	designatedReporterNoShowBondTotal
-	6353ed68	incorrectDesignatedReportTotal
-	23b872dd	transferFrom
-	ee89dab4	getInitialized
-	9af1d03e	windowId
-	39509351	increaseAllowance
-	8be6cb8f	initialReportBondTotal
-	db1c00ba	initialize
-	7a0d8f8a	augur
-	27e235e3	balances
-	961be391	cash
-	db0a087c	getTypeName
-	870c426d	getUniverse
-	22f3e2d4	isActive
-	b4bd9e27	isOver
-	a9059cbb	transfer
-	616db798	getWindowId
-	30a7c978	participationTokensEnabled
-	18160ddd	totalSupply
-	d96a094a	buy
-	4b77946e	buyParticipationTokens
-	a457c2d7	decreaseAllowance
-	0fb5a6b4	duration
-	95a2251f	redeem
-Contract: TestNetReputationToken
-Events:
-	0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925	Approval
-	0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef	Transfer
-Methods:
-	a9059cbb	transfer
-	39509351	increaseAllowance
-	db054134	mintForReportingParticipant
-	5b66876a	migrateOutByPayout
-	95d89b41	symbol
-	18160ddd	totalSupply
-	721bb170	trustedDisputeWindowTransfer
-	ae3816ee	burnForMarket
-	77469275	getLegacyRepToken
-	870c426d	getUniverse
-	095ea7b3	approve
-	238d3590	getTotalTheoreticalSupply
-	55b6ed5c	allowances
-	fe98184d	trustedUniverseTransfer
-	91d76bbb	getTotalMigrated
-	d5466777	legacyRepToken
-	e1897b59	mintForWarpSync
-	dd62ed3e	allowance
-	a457c2d7	decreaseAllowance
-	183636c5	parentUniverse
-	b873e9a7	trustedReportingParticipantTransfer
-	70a08231	balanceOf
-	57915897	faucet
-	06fdde03	name
-	75d9aa1a	migrateFromLegacyReputationToken
-	a0c1ca34	migrateIn
-	313ce567	decimals
-	23b872dd	transferFrom
-	f22b258a	trustedMarketTransfer
-	5bd5ea71	warpSync
-	7a0d8f8a	augur
-	27e235e3	balances
-Contract: CreateOrder
-Events:
-Methods:
-	8e1bfa73	augurTrading
-	f7938328	createOrder
+	7ecebe00	nonces
+	0dfe1681	token0
+	30adf81f	PERMIT_TYPEHASH
+	0902f1ac	getReserves
+	bc25cf77	skim
 	485cc955	initialize
-	4fb764c9	orders
-	3ae4ce0a	publicCreateOrder
-	a3b1e7a9	publicCreateOrders
+	7464fc3d	kLast
+	022c0d9f	swap
+	fff6cae9	sync
+	dd62ed3e	allowance
+	c45a0155	factory
+	d21220a7	token1
+Contract: FillOrder
+Events:
+Methods:
 	7a0d8f8a	augur
-	961be391	cash
-	ee89dab4	getInitialized
-	89ab6447	profitLoss
+	8e1bfa73	augurTrading
+	485cc955	initialize
 	1f0ba6c9	trade
+	e09bb556	getMarketVolume
+	ca46d4eb	marketOutcomeVolumes
+	62c9c6a6	publicFillOrder
+	1a505b76	zeroXTrade
+	63a50c2a	fillOrder
+	f5df1f24	fillZeroXOrder
+	ee89dab4	getInitialized
+	a3ef2c13	getMarketOutcomeValues
 Contract: Orders
 Events:
 Methods:
+	961be391	cash
+	e7d80c70	getOrderCreator
+	8925f9e9	getWorseOrderId
+	89ab6447	profitLoss
+	6a816548	cancelOrder
+	3b01cf3c	findBoundingOrders
+	ebead05f	getOrderSharesEscrowed
+	fde99668	removeOrder
+	4a1a2d5a	recordFillOrder
+	45c92c38	assertIsNotWorsePrice
 	804fb410	getLastOutcomePrice
+	1727583c	getOrderId
+	4a1a342b	getOrderMoneyEscrowed
+	37ec114d	getTotalEscrowed
+	d9b3d9fe	isWorsePrice
+	485cc955	initialize
+	19e54fb3	assertIsNotBetterPrice
+	5c1ad844	fillOrder
+	0e0a0d74	getAmount
 	31d98b3f	getPrice
 	5cf17bbb	isBetterPrice
-	961be391	cash
-	ae23669a	getOrderDataForCancel
+	7a0d8f8a	augur
 	0e1424b5	descendOrderList
-	da298077	saveOrder
-	1f0ba6c9	trade
-	5d1a3b82	getOutcome
-	8e1bfa73	augurTrading
-	e7d80c70	getOrderCreator
-	60c127b2	getOrderDataForLogs
-	ebead05f	getOrderSharesEscrowed
-	cf357364	getOrderType
-	3011e16a	setPrice
-	19e54fb3	assertIsNotBetterPrice
-	6a816548	cancelOrder
-	0e0a0d74	getAmount
-	c3c95c7b	getMarket
-	1727583c	getOrderId
-	8925f9e9	getWorseOrderId
-	7a0d8f8a	augur
-	7b6eaa65	getBestOrderId
-	d9b3d9fe	isWorsePrice
-	fde99668	removeOrder
-	5c1ad844	fillOrder
-	3b01cf3c	findBoundingOrders
-	ee89dab4	getInitialized
-	37ec114d	getTotalEscrowed
-	89ab6447	profitLoss
-	4a1a2d5a	recordFillOrder
-	f8266a7a	ascendOrderList
-	6512e6ec	createOrder
-	94d26cb5	getBetterOrderId
-	4a1a342b	getOrderMoneyEscrowed
 	8e12ebad	getWorstOrderId
-	485cc955	initialize
-	45c92c38	assertIsNotWorsePrice
-Contract: Formulas
-Events:
-Methods:
-	ffe44772	calculateDesignatedReportNoShowBond
-	c29faa90	calculateDesignatedReportStake
-	0061419f	calculateFloatingValue
-	c19b477d	calculateValidityBond
-Contract: RepSymbol
-Events:
-Methods:
-	84ecd8e4	getRepSymbol
-Contract: TimeControlled
-Events:
-Methods:
-	db0a087c	getTypeName
-	b610c75e	incrementTimestamp
-	c4d66de8	initialize
-	a0a2b573	setTimestamp
-	b80777ea	timestamp
-	7a0d8f8a	augur
-	188ec356	getTimestamp
-Contract: Affiliates
-Events:
-Methods:
-	4a9fefc7	getReferrer
-	9ca423b3	referrals
-	0617c4a6	getAccountFingerprint
-	b3086358	getAndValidateReferrer
-	58b0b954	setFingerprint
-	a18a7bfc	setReferrer
-	255b963c	affiliateValidators
-	5632c1ba	createAffiliateValidator
-	5f5961f5	fingerprints
-Contract: Market
-Events:
-Methods:
-	439f5ac2	getEndTime
-	66d12fad	getStakeInOutcome
-	3c264820	getWinningPayoutNumerator
-	5bd5ea71	warpSync
-	449d0f29	disavowCrowdsourcers
-	cb1d8418	getForkingMarket
-	bb24882e	getOpenInterest
-	b80907f2	getReputationToken
-	070c5c24	getValidityBondAttoCash
-	82100be6	getWinningPayoutDistributionHash
-	54fc53dd	preemptiveDisputeCrowdsourcer
-	2ce5a91e	getHighestNonTentativeParticipantStake
-	9941b2fc	isFinalizedAsInvalid
-	1b1f05c2	recordMarketCreatorFees
-	7a0d8f8a	augur
-	893d20e8	getOwner
-	2c154345	getParticipantStake
-	fd478ca9	getNumParticipants
-	b7b42200	repBondOwner
-	9c8c02ef	transferRepBondOwnership
-	ee89dab4	getInitialized
-	d372fbcd	isForkingMarket
-	5b8ef481	crowdsourcers
-	4bb278f3	finalize
-	53e9e7e8	initialize
-	961be391	cash
-	d261ae73	marketCreatorFeesAttoCash
-	df703a95	migrateThroughOneFork
-	eb1f8bbd	getWinningChildPayout
-	8849973f	doInitialReport
-	cc34293c	repBond
-	9f941f69	getDesignatedReportingEndTime
-	8d4e4083	isFinalized
-	6c9fa59e	shareToken
-	f2fde38b	transferOwnership
-	2c3b4096	validityBondAttoCash
-	d3be9d34	crowdsourcerGeneration
-	1c7f3a96	getMarketCreatorSettlementFeeDivisor
-	27ce5b8c	getNumberOfOutcomes
-	870c426d	getUniverse
-	f89d5066	contribute
-	012565ae	contributeToTentative
-	412979b5	getDisputePacingOn
-	837fa2b0	affiliateFeeDivisor
-	173029d7	derivePayoutDistributionHash
-	c35c08bd	getCrowdsourcer
-	1a3739ec	getInitialReporter
-	bad84c9e	getNumTicks
-	f8c52125	deriveMarketCreatorFeeAmount
-	a0e16fed	getFinalizationTime
-	6e106628	getWinningReportingParticipant
-	35c1d349	participants
-	f76514c7	isContainerForReportingParticipant
-	1e19082a	getDisputeWindow
-Contract: CancelOrder
-Events:
-Methods:
-	4fb764c9	orders
-	6c9fa59e	shareToken
-	7a0d8f8a	augur
+	1f0ba6c9	trade
 	8e1bfa73	augurTrading
-	7489ec23	cancelOrder
-	21c77c96	cancelOrders
-	961be391	cash
+	6512e6ec	createOrder
+	60c127b2	getOrderDataForLogs
+	cf357364	getOrderType
+	da298077	saveOrder
+	3011e16a	setPrice
+	5d1a3b82	getOutcome
+	f8266a7a	ascendOrderList
+	7b6eaa65	getBestOrderId
+	94d26cb5	getBetterOrderId
 	ee89dab4	getInitialized
-	485cc955	initialize
-	89ab6447	profitLoss
+	c3c95c7b	getMarket
+	ae23669a	getOrderDataForCancel
