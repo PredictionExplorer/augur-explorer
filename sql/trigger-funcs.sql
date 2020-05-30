@@ -253,6 +253,32 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_trd_mkt_stats_update() RETURNS trigger AS  $$
+DECLARE
+	v_cnt numeric;
+BEGIN
+
+	-- This function consoldates statistics from different per-User market records 
+	-- into a single User statistics record
+
+	-- Begin of update profit loss
+	UPDATE ustats AS s
+			SET profit_loss = (profit_loss + (OLD.profit_loss - NEW.profit_loss)),
+				total_trades = (total_trades + (OLD.total_trades - NEW.total_trades)),
+				total_reports = (total_reports + (OLD.total_reports - NEW.total_reports)),
+				total_designated = (total_designated + (OLD.total_designated - NEW.total_designated)),
+				frozen_funds = (frozen_funds + (OLD.frozen_funds - NEW.frozen_funds))
+			WHERE	s.eoa_aid = NEW.eoa_aid;
+
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		RAISE EXCEPTION 'Corresponding row in ustats table doesnt exist';
+	END IF;
+	-- End of update profit loss
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 -- reporting triggers
 CREATE OR REPLACE FUNCTION on_report_insert() RETURNS trigger AS  $$ --updates volume of the market
 DECLARE
@@ -338,11 +364,14 @@ CREATE OR REPLACE FUNCTION on_profit_loss_insert() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	UPDATE main_stats
-		SET money_at_stake = (money_at_stake + NEW.frozen_funds);
-	UPDATE main_stats
-		SET money_at_stake = (money_at_stake - NEW.realized_profit);
-
+	IF NEW.closed_position = 0 THEN
+		UPDATE trd_mkt_stats
+			SET frozen_funds = (frozen_funds + NEW.frozen_funds)
+			WHERE market_aid = NEW.market_aid AND eoa_aid = NEW.eoa_aid;
+	END IF;
+	IF NEW.closed_position = 1 THEN
+		RAISE EXCEPTION 'You cant insert a record with closed_position = 1, undefined behavior';
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -350,11 +379,44 @@ CREATE OR REPLACE FUNCTION on_profit_loss_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	UPDATE main_stats
-		SET money_at_stake = (money_at_stake - OLD.frozen_funds);
-	UPDATE main_stats
-		SET money_at_stake = (money_at_stake + OLD.realized_profit);
+	IF OLD.closed_position = 1 THEN
+		UPDATE trd_mkt_stats AS s
+			SET profit_loss = (profit_loss - OLD.final_profit)
+			WHERE	s.market_aid = OLD.market_aid AND
+					s.eoa_aid = OLD.eoa_aid;
+	END IF;
+	IF OLD.closed_position = 0 THEN
+		UPDATE trd_mkt_stats AS s
+			SET frozen_funds = (frozen_funds + OLD.frozen_funds)
+			WHERE market_aid = OLD.market_aid AND eoa_aid = OLD.eoa_aid;
+	END IF;
 
 	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_profit_loss_update() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	IF NEW.closed_position != OLD.closed_position THEN
+		IF NEW.closed_position = 1 THEN
+			-- profit loss is realized, either by selling part of position or Market finalization
+			-- Update statistics on profits
+			-- Note: here frozen funds are substrated in total becase Augur updates this value in
+			--		ProfitLoss event and this value is added during INSERT operation in profit_loss table
+			--		(if we don't subtract it we are going to get duplicated amount of frozen funds)
+			UPDATE trd_mkt_stats AS s
+					SET profit_loss = (profit_loss + NEW.final_profit),
+						frozen_funds = (frozen_funds - OLD.frozen_funds)
+					WHERE	s.eoa_aid = NEW.eoa_aid AND
+							s.market_aid = NEW.market_aid;
+		END IF;
+		IF NEW.closed_position = 0 THEN
+			-- nobody should update closed_position from 1 to 0 , once it is closed it is forever
+			RAISE EXCEPTION 'You cant change closed_position field by hand, undefined behaviur';
+		END IF;
+	END IF;
+
+	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

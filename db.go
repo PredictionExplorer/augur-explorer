@@ -1622,7 +1622,6 @@ func (ss *SQLStorage) get_user_info(user_aid int64) UserInfo {
 				"s.total_trades," +
 				"s.markets_created," +
 				"s.markets_traded," +
-				"s.withdraw_reqs," +
 				"s.deposit_reqs," +
 				"s.total_reports," +
 				"s.total_designated," +
@@ -1928,7 +1927,247 @@ func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,e
 	return pl_id
 }
 func (ss *SQLStorage) get_profit_loss(eoa_aid int64) []PLEntry {
+	return ss.get_trade_data(eoa_aid,false)
+}
+func (ss *SQLStorage) get_open_positions(eoa_aid int64) []PLEntry {
+	return ss.get_trade_data(eoa_aid,true)
+}
+func (ss *SQLStorage) get_trade_data(eoa_aid int64,open_positions bool) []PLEntry {
 
+	var extra_condition string
+	if open_positions {
+		extra_condition = "(pl.closed_position=0)"
+	} else {
+		extra_condition = "(pl.closed_position=1)"
+	}
+	var query string
+	query = "SELECT " +
+				"pl.market_aid," +
+				"m.market_type, " +
+				"pl.outcome_idx," +
+				"m.outcomes," +
+				"substring(extra_info::json->>'description',1,100) as descr," +
+				"a.addr as mkt_addr," +
+				"CONCAT(LEFT(a.addr,6),'…',RIGHT(a.addr,6)) AS mkt_addr_sh," +
+				"w_a.addr AS w_a_addr," +
+				"CONCAT(LEFT(w_a.addr,6),'…',RIGHT(w_a.addr,6)) AS wallet_addr_sh," +
+				"e_a.addr AS eoa_addr," +
+				"CONCAT(LEFT(e_a.addr,6),'…',RIGHT(e_a.addr,6)) AS eoa_addr_sh," +
+				"pl.time_stamp::date AS date," +
+				"FLOOR(EXTRACT(EPOCH FROM pl.time_stamp))::BIGINT as created_ts," +
+				"pl.net_position," +
+				"pl.avg_price," +
+				"pl.frozen_funds," +
+				"pl.realized_profit," +
+				"pl.realized_cost," +
+				"pl.final_profit," +
+				"o.order_id," +
+				"o.block_num," +
+				"o.eoa_aid," +
+				"o.eoa_fill_aid ," +
+				"cr_a.addr AS creator_eoa_addr," +
+				"CONCAT(LEFT(cr_a,6),'…',RIGHT(cr_a.addr,6)) AS creator_eoa_addr_sh," +
+				"fil_a.addr AS filler_eoa_addr," +
+				"CONCAT(LEFT(fil_a,6),'…',RIGHT(fil_a.addr,6)) AS filler_eoa_addr_sh," +
+			"FROM (profit_loss AS pl,mktord as o) " +
+				"LEFT JOIN address AS a ON pl.market_aid=a.address_id " +
+				"LEFT JOIN address AS w_a ON pl.wallet_aid=w_a.address_id " +
+				"LEFT JOIN address AS e_a ON pl.eoa_aid=e_a.address_id " +
+				"LEFT JOIN market AS m ON pl.market_aid = m.market_aid " +
+				"LEFT JOIN address AS cr_a ON o.eoa_aid = a.address_id " +
+				"LEFT JOIN address AS fil_a ON o.eoa_fill_aid = a.address_id " +
+			"WHERE (pl.mktord_id=o.id) AND (pl.eoa_aid = $1) AND " +
+			extra_condition +
+			" ORDER BY pl.time_stamp"
+//	fmt.Printf("q=%v\n",query)
+	rows,err := ss.db.Query(query,eoa_aid)
+	if (err!=nil) {
+		Fatalf("DB error: %v (query=%v)",err,query);
+	}
+	records := make([]PLEntry,0,8)
+	var starting_point PLEntry
+	records = append(records,starting_point)
+	var accumulator float64 = 0.0
+	defer rows.Close()
+	for rows.Next() {
+		var  (
+			rec PLEntry
+			outcomes string
+			order_hash sql.NullString
+			block_num sql.NullInt64
+			creator_eoa_aid int64
+			filler_eoa_aid int64
+			creator_addr string
+			creator_addr_sh string
+			filler_addr string
+			filler_addr_sh string
+		)
+		err=rows.Scan(
+			&rec.MktAid,
+			&rec.MktType,
+			&rec.OutcomeIdx,
+			&outcomes,
+			&rec.MktDescr,
+			&rec.MktAddr,
+			&rec.MktAddrSh,
+			&rec.WalletAddr,
+			&rec.WalletAddrSh,
+			&rec.EOAAddr,
+			&rec.EOAAddrSh,
+			&rec.Date,
+			&rec.Timestamp,
+			&rec.NetPosition,
+			&rec.AvgPrice,
+			&rec.FrozenFunds,
+			&rec.RealizedProfit,
+			&rec.RealizedCost,
+			&order_hash,
+			&block_num,
+			&creator_eoa_aid,
+			&filler_eoa_aid,
+			creator_addr,
+			creator_addr_sh,
+			filler_addr,
+			filler_addr_sh,
+		)
+		if err!=nil {
+			Fatalf(fmt.Sprintf("DB error: %v q=%v",err,query))
+		}
+		rec.OutcomeStr = get_outcome_str(uint8(rec.MktType),rec.OutcomeIdx,&outcomes)
+		if open_positions {
+			rec.FinalProfit = rec.FinalProfit - rec.RealizedProfit
+			accumulator = accumulator + rec.FrozenFunds
+			rec.AccumFrozen = accumulator
+		} else {
+			accumulator = accumulator + rec.FinalProfit
+			rec.AccumPl = accumulator
+		}
+
+		if order_hash.Valid { rec.OrderHash = order_hash.String }
+		if block_num.Valid { rec.BlockNum = block_num.Int64 }
+
+		if eoa_aid == creator_eoa_aid {
+			rec.CounterPAddr = filler_addr
+			rec.CounterPAddrSh = filler_addr_sh
+		}
+		if eoa_aid == filler_eoa_aid {
+			rec.CounterPAddr = creator_addr
+			rec.CounterPAddrSh = creator_addr_sh
+		}
+		fmt.Printf("rec = %+v\n",rec)
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) locate_fill_event_order(evt *FillEvt) int64 {
+
+	var id int64 = 0
+	var query string
+	query = "SELECT id FROM mktord WHERE order_id = $1"
+
+	h:=hex.EncodeToString(evt.OrderHash[:])
+	row := ss.db.QueryRow(query,h)
+	var null_id sql.NullInt64
+	var err error
+	err=row.Scan(&null_id);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			fmt.Printf("pl_calc: order with hash %v wasn't found\n",h)
+			// break
+		} else {
+
+			Fatalf("DB Error: %v, q=%v\n",err,query);
+		}
+	} else {
+		if null_id.Valid {
+			id = null_id.Int64
+		}
+	}
+	return id
+}
+func (ss *SQLStorage) get_ranking_data_for_all_users() []RankStats {
+
+	var query string
+	query = "SELECT eoa_aid,total_trades,profit_loss FROM ustats"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		Fatalf("DB error: %v (query=%v)",err,query);
+	}
+	records := make([]RankStats,0,8)
+	defer rows.Close()
+	for rows.Next() {
+		var rec RankStats
+		err=rows.Scan(&rec.EoaAid,&rec.TotalTrades,&rec.ProfitLoss)
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) update_top_profit_rank(eoa_aid int64,value float64) int64 {
+
+	var query string
+	query = "UPDATE uranks SET top_profit = $2 WHERE eoa_aid = $1"
+	res,err:=ss.db.Exec(query,eoa_aid,value)
+	if (err!=nil) {
+		Fatalf("update_top_profit_rank() failed: %v, q=%v",err,query);
+	}
+	affected_rows,err:=res.RowsAffected()
+	if err!=nil {
+		Fatalf("Error getting RowsAffected in update_top_profit(): %v",err)
+	}
+	if affected_rows == 0 {
+		query = "INSERT INTO uranks(eoa_aid,top_profit) VALUES($1,$2)"
+		_,err:=ss.db.Exec(query,eoa_aid,value)
+		if (err!=nil) {
+			Fatalf("update_top_profit_rank() failed: %v, q=%v",err,query);
+		}
+
+	}
+	return affected_rows
+}
+func (ss *SQLStorage) update_top_total_trades_rank(eoa_aid int64,value float64) int64 {
+
+	var query string
+	query = "UPDATE uranks SET top_trades = $2 WHERE eoa_aid = $1"
+	res,err:=ss.db.Exec(query,eoa_aid,value)
+	if (err!=nil) {
+		Fatalf("update_top_total_trades_rank() failed: %v, q=%v",err,query);
+	}
+	affected_rows,err:=res.RowsAffected()
+	if err!=nil {
+		Fatalf("Error getting RowsAffected in update_top_tra(): %v",err)
+	}
+	if affected_rows == 0 {
+		query = "INSERT INTO uranks(eoa_aid,top_total_trades) VALUES($1,$2)"
+		_,err:=ss.db.Exec(query,eoa_aid,value)
+		if (err!=nil) {
+			Fatalf("update_top_total_trades_rank() failed: %v, q=%v",err,query);
+		}
+
+	}
+	return affected_rows
+}
+/* DISCONTINUED function. ToDo: remove in 2 weeks (29 May)
+func (ss *SQLStorage) link_pl_to_order(mktord_id int64, profit_loss_ids *[]int64) {
+
+	var query string
+	var pl_ids_str string
+	for i:=0 ; i<len(*profit_loss_ids); i++  {
+		if len(pl_ids_str) > 0 {
+			pl_ids_str = pl_ids_str + ","
+		}
+		pl_ids_str = pl_ids_str + fmt.Sprintf("%v",(*profit_loss_ids)[i])
+	}
+
+	fmt.Printf("q=UPDATE profit_loss SET mktord_id = %v WHERE id IN(%v)\n",mktord_id,pl_ids_str)
+	query = "UPDATE profit_loss SET mktord_id = $1 WHERE id IN("+pl_ids_str+")"
+	_,err:=ss.db.Exec(query,mktord_id)
+	if (err!=nil) {
+		Fatalf("DB error: %v ; q=%v",err,query);
+	}
+}
+*/
+/* PENDING FOR REMOVAL
 	var query string
 	query = "SELECT " +
 				"pl.market_aid," +
@@ -2011,140 +2250,4 @@ func (ss *SQLStorage) get_profit_loss(eoa_aid int64) []PLEntry {
 	}
 	return records
 }
-func (ss *SQLStorage) link_pl_to_order(mktord_id int64, profit_loss_ids *[]int64) {
-
-	var query string
-	var pl_ids_str string
-	for i:=0 ; i<len(*profit_loss_ids); i++  {
-		if len(pl_ids_str) > 0 {
-			pl_ids_str = pl_ids_str + ","
-		}
-		pl_ids_str = pl_ids_str + fmt.Sprintf("%v",(*profit_loss_ids)[i])
-	}
-
-	fmt.Printf("q=UPDATE profit_loss SET mktord_id = %v WHERE id IN(%v)\n",mktord_id,pl_ids_str)
-	query = "UPDATE profit_loss SET mktord_id = $1 WHERE id IN("+pl_ids_str+")"
-	_,err:=ss.db.Exec(query,mktord_id)
-	if (err!=nil) {
-		Fatalf("DB error: %v ; q=%v",err,query);
-	}
-}
-func (ss *SQLStorage) get_open_positions(eoa_aid int64) []PLEntry {
-
-	var query string
-	query = "SELECT " +
-				"pl.market_aid," +
-				"m.market_type, " +
-				"pl.outcome_idx," +
-				"m.outcomes," +
-				"substring(extra_info::json->>'description',1,100) as descr," +
-				"a.addr as mkt_addr," +
-				"CONCAT(LEFT(a.addr,6),'…',RIGHT(a.addr,6)) AS mkt_addr_sh," +
-				"w_a.addr AS w_a_addr," +
-				"CONCAT(LEFT(w_a.addr,6),'…',RIGHT(w_a.addr,6)) AS wallet_addr_sh," +
-				"e_a.addr AS eoa_addr," +
-				"CONCAT(LEFT(e_a.addr,6),'…',RIGHT(e_a.addr,6)) AS eoa_addr_sh," +
-				"pl.time_stamp::date AS date," +
-				"FLOOR(EXTRACT(EPOCH FROM pl.time_stamp))::BIGINT as created_ts," +
-				"pl.net_position," +
-				"pl.avg_price," +
-				"pl.frozen_funds," +
-				"pl.realized_profit," +
-				"pl.realized_cost," +
-				"o.order_id," +
-				"o.block_num," +
-				"o.eoa_aid," +
-				"o.eoa_fill_aid ," +
-				"pl.eoa_aid " +
-				"e_a.addr AS eoa_addr," +
-				"CONCAT(LEFT(e_a.addr,6),'…',RIGHT(e_a.addr,6)) AS eoa_addr_sh," +
-			"FROM (rofit_loss AS pl,mktord as o) " +
-				"LEFT JOIN address AS a ON pl.market_aid=a.address_id " +
-				"LEFT JOIN address AS w_a ON pl.wallet_aid=w_a.address_id " +
-				"LEFT JOIN address AS e_a ON pl.eoa_aid=e_a.address_id " +
-				"LEFT JOIN market AS m ON pl.market_aid = m.market_aid " +
-				"LEFT JOIN address AS cr_a ON o.eoa_aid = a.address_id " +
-				"LEFT JOIN address AS fil_a ON o.eoa_fill_aid = a.address_id " +
-			"WHERE (pl.mktord_id=o.id) AND (pl.eoa_aid = $1) AND (pl.closed_position=0)" +
-			"ORDER BY pl.time_stamp"
-//	fmt.Printf("q=%v\n",query)
-	rows,err := ss.db.Query(query,eoa_aid)
-	if (err!=nil) {
-		Fatalf("DB error: %v (query=%v)",err,query);
-	}
-	records := make([]PLEntry,0,8)
-	var starting_point PLEntry
-	records = append(records,starting_point)
-	var accum_pl float64 = 0.0
-	var accum_frozen float64 = 0.0
-	defer rows.Close()
-	for rows.Next() {
-		var rec PLEntry
-		var outcomes string
-		var order_hash sql.NullString
-		var block_num sql.NullInt64
-		err=rows.Scan(
-			&rec.MktAid,
-			&rec.MktType,
-			&rec.OutcomeIdx,
-			&outcomes,
-			&rec.MktDescr,
-			&rec.MktAddr,
-			&rec.MktAddrSh,
-			&rec.WalletAddr,
-			&rec.WalletAddrSh,
-			&rec.EOAAddr,
-			&rec.EOAAddrSh,
-			&rec.Date,
-			&rec.Timestamp,
-			&rec.NetPosition,
-			&rec.AvgPrice,
-			&rec.FrozenFunds,
-			&rec.RealizedProfit,
-			&rec.RealizedCost,
-			&order_hash,
-			&block_num,
-		)
-		if err!=nil {
-			Fatalf(fmt.Sprintf("DB error: %v q=%v",err,query))
-		}
-		rec.OutcomeStr = get_outcome_str(uint8(rec.MktType),rec.OutcomeIdx,&outcomes)
-		accum_pl = accum_pl + rec.FrozenFunds
-		rec.AccumPl = accum_pl
-		rec.NetPosition = rec.FrozenFunds
-
-		accum_frozen = accum_frozen + rec.FrozenFunds
-		rec.AccumFrozen = accum_frozen
-		if order_hash.Valid { rec.OrderHash = order_hash.String }
-		if block_num.Valid { rec.BlockNum = block_num.Int64 }
-		fmt.Printf("rec = %+v\n",rec)
-		records = append(records,rec)
-	}
-	return records
-}
-func (ss *SQLStorage) locate_fill_event_order(evt *FillEvt) int64 {
-
-	var id int64 = 0
-	var query string
-	query = "SELECT id FROM mktord WHERE order_id = $1"
-
-	h:=hex.EncodeToString(evt.OrderHash[:])
-	row := ss.db.QueryRow(query,h)
-	var null_id sql.NullInt64
-	var err error
-	err=row.Scan(&null_id);
-	if (err!=nil) {
-		if err == sql.ErrNoRows {
-			fmt.Printf("pl_calc: order with hash %v wasn't found\n",h)
-			// break
-		} else {
-
-			Fatalf("DB Error: %v, q=%v\n",err,query);
-		}
-	} else {
-		if null_id.Valid {
-			id = null_id.Int64
-		}
-	}
-	return id
-}
+*/

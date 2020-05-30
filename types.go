@@ -393,3 +393,8 @@ type PLEntry struct {	// profit loss entry
 	CounterPAddr		string
 	CounterPAddrSh		string
 }
+type RankStats struct {
+	EoaAid				int64
+	TotalTrades			int64
+	ProfitLoss			float64
+}

@@ -223,10 +223,6 @@ func main() {
 										pl_entries = append(pl_entries,id)
 									}
 								}
-								if (market_order_id > 0) && (len(pl_entries)>0) {
-									// link profit loss records to market order record
-									storage.link_pl_to_order(market_order_id,&pl_entries)
-								}
 							}
 						}
 					}

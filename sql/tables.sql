@@ -201,7 +201,8 @@ CREATE TABLE trd_mkt_stats (	-- trade statistics per User and per Market
 	total_designated	BIGINT DEFAULT 0,
 	profit_loss			DECIMAL(24,18) DEFAULT 0.0,
 	report_profits		DECIMAL(24,18) DEFAULT 0.0,
-	aff_profits			DECIMAL(24,18) DEFAULT 0.0
+	aff_profits			DECIMAL(24,18) DEFAULT 0.0,
+	frozen_funds		DECIMAL(24,18) DEFAULT 0.0
 );
 CREATE TABLE ustats (	-- statistics per User account
 	eoa_aid				BIGINT PRIMARY KEY,		-- Externally Owned ACcount (EOA) address for this user
@@ -216,7 +217,7 @@ CREATE TABLE ustats (	-- statistics per User account
 	profit_loss			DECIMAL(24,18) DEFAULT 0.0,
 	report_profits		DECIMAL(24,18) DEFAULT 0.0,
 	aff_profits			DECIMAL(24,18) DEFAULT 0.0,	-- affiliate commissions earned
-	money_at_stake		DECIMAL(24,18) DEFAULT 0.0, -- how much has this User invested in Augur mkts
+	money_at_stake		DECIMAL(24,18) DEFAULT 0.0, -- how much has this User bet on Augur mkts
 	total_withdrawn		DECIMAL(24,18) DEFAULT 0.0,
 	total_deposited		DECIMAL(24,18) DEFAULT 0.0
 );
@@ -238,3 +239,9 @@ CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 	final_profit		DECIMAL(64,18) DEFAULT 0.0,	-- this profit is updated (by our code) when position is closed
 	time_stamp			TIMESTAMPTZ NOT NULL
 );
+CREATE table uranks (   -- User Rankings (how this user ranks against each other, ex: Top 13% in profit made
+	eoa_aid             BIGINT PRIMARY KEY,
+	top_profit          DECIMAL(4,2) DEFAULT 100.0,    -- position of the user in profits accumulated over lifetime
+	top_trades          DECIMAL(4,2) DEFAULT 100.0    -- position of the user in number of accumulated trades
+);
+
