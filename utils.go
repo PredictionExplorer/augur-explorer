@@ -9,12 +9,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 )
-func check(e error) {
-	if e != nil {
-		panic(fmt.Sprintf("Exiting Augur extractor with error: %v",e))
-	}
-}
-
 func (evt *MarketCreatedEvt) Dump() {	// dumps struct to stdout for debugging
 	fmt.Printf("MarketCreated {\n")
 	fmt.Printf("\tUniverse: %v\n",evt.Universe.String())

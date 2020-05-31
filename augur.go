@@ -2,17 +2,17 @@ package main
 
 import (
 	"fmt"
-	"os"
+	//"os"
 	"bytes"
-	"io/ioutil"
+//	"io/ioutil"
 	"encoding/hex"
-	"encoding/json"
+//	"encoding/json"
 	"math/big"
 	"context"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/accounts/abi"
+//	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 )
 type InputStruct struct {
@@ -32,69 +32,41 @@ func (sequencer *EventSequencer) append_event(new_log *types.Log) {
 }
 func (sequencer *EventSequencer) get_ordered_event_list() []*types.Log {
 	// determines the correct event sequence for different event combinations
-	return sequencer.unordered_list
-/* temporarily disabled
+//	return sequencer.unordered_list
 	// at this moment we just reverse the events. more logic will follow later if needed
 	output := make([]*types.Log,0,8)
 	for i := len(sequencer.unordered_list) - 1; i >= 0; i-- {
 		output = append(output,sequencer.unordered_list[i])
 	}
 	return output
-*/
 }
-func dump_abi_events(a *abi.ABI) {
+func augur_init(addresses *ContractAddresses) {
 
-	fmt.Printf("Events:\n")
-	for evt:=range a.Events {
-		fmt.Printf("\t%v\t%v\n",a.Events[evt].ID().String(),evt)
+	init_contract_addresses(addresses)
+
+	all_contracts = load_all_artifacts("./abis/augur-artifacts-abi.json")
+	//dump_all_artifacts()
+
+	// Augur service involves 39 contracts in total. We only use a few of them
+	augur_abi = abi_from_artifacts("Augur")
+	trading_abi = abi_from_artifacts("AugurTrading")
+	zerox_abi = abi_from_artifacts("ZeroXTrade")
+	cash_abi = abi_from_artifacts("Cash")
+	exchange_abi = abi_from_artifacts("Exchange")
+	wallet_abi = abi_from_artifacts("AugurWalletRegistry")
+
+	build_list_of_inspected_events()
+
+	var err error
+	ctrct_wallet_registry,err = NewAugurWalletRegistry(common.HexToAddress("0x1FD9274a2FE0E86f5A7b5Bde57b93C8C9b62e21d"), rpcclient)
+	if err != nil {
+		Fatalf("Failed to instantiate a AugurWalletRegistry contract: %v", err)
+	}
+	ctrct_zerox, err = NewZeroX(zerox_addr,rpcclient)
+	if err != nil {
+		Fatalf("Failed to instantiate a ZeroX contract: %v", err)
 	}
 
-}
-func dump_abi_methods(a *abi.ABI) {
-	fmt.Printf("Methods:\n")
-	for meth := range a.Methods {
-		fmt.Printf("\t%v\t%v\n",hex.EncodeToString(a.Methods[meth].ID()),meth)
-	}
-}
-func dump_all_artifacts() {
-
-	for contract_name , _ := range all_contracts {
-		fmt.Printf("Contract: %v\n",contract_name)
-		abi:=abi_from_artifacts(contract_name)
-		dump_abi_events(abi)
-		dump_abi_methods(abi)
-	}
-}
-func load_all_artifacts(filename string) map[string]interface{} {
-
-	abi_data, err := ioutil.ReadFile("./abis/augur-artifacts-abi.json")
-	check(err)
-	all_abis_rdr := bytes.NewReader(abi_data)
-	check(err)
-	byte_data, err := ioutil.ReadAll(all_abis_rdr)
-	check(err)
-	var all_contracts map[string]interface{}
-	json.Unmarshal([]byte(byte_data), &all_contracts)
-	return all_contracts
-}
-func abi_from_artifacts(contract string) *abi.ABI {
-
-	contract_abi:=all_contracts[contract]
-	contract_bytes, _ := json.Marshal(contract_abi) // convert back to JSON so Ethereum package can work
-	rdr := bytes.NewReader(contract_bytes)
-	ctrct_abi,err := abi.JSON(rdr)
-	check(err)
-	return &ctrct_abi
-}
-func load_abi(fname string) *abi.ABI {
-
-	abi_data, err := ioutil.ReadFile(fname)
-	check(err)
-	abi_rdr := bytes.NewReader(abi_data)
-	check(err)
-	abi,err := abi.JSON(abi_rdr)
-	check(err)
-	return &abi
 }
 func build_list_of_inspected_events() {
 
@@ -121,50 +93,6 @@ func build_list_of_inspected_events() {
 							evt_zerox_approval_for_all,
 							evt_erc20_approval,
 	)
-}
-func dev_init() {
-	dai_addr = common.HexToAddress("5f3341EA5989aD3129E325027b8d908b63709A00")
-	zerox_addr = common.HexToAddress("6749E370e7B1955FFa924F4f75f5F12653C7512C")
-
-}
-func prod_init() {
-	dai_addr = common.HexToAddress("6B175474E89094C44Da98b954EedeAC495271d0F")
-	zerox_addr = common.HexToAddress("6749E370e7B1955FFa924F4f75f5F12653C7512C")
-}
-func augur_init() {
-
-	augur_prod := os.Getenv("AUGUR_PROD")
-	if len(augur_prod) > 0 {
-		prod_init()
-	} else {
-		dev_init()
-	}
-	fmt.Printf("Initialization...\n")
-	fmt.Printf("DAI (Cash) contract address: %v\n",dai_addr.String())
-
-	all_contracts = load_all_artifacts("./abis/augur-artifacts-abi.json")
-	//dump_all_artifacts()
-
-	// Augur service involves 39 contracts in total. We only use a few of them
-	augur_abi = abi_from_artifacts("Augur")
-	trading_abi = abi_from_artifacts("AugurTrading")
-	zerox_abi = abi_from_artifacts("ZeroXTrade")
-	cash_abi = abi_from_artifacts("Cash")
-	exchange_abi = abi_from_artifacts("Exchange")
-	wallet_abi = abi_from_artifacts("AugurWalletRegistry")
-
-	build_list_of_inspected_events()
-
-	var err error
-	ctrct_wallet_registry,err = NewAugurWalletRegistry(common.HexToAddress("0x1FD9274a2FE0E86f5A7b5Bde57b93C8C9b62e21d"), rpcclient)
-	if err != nil {
-		Fatalf("Failed to instantiate a AugurWalletRegistry contract: %v", err)
-	}
-	ctrct_zerox, err = NewZeroX(zerox_addr,rpcclient)
-	if err != nil {
-		Fatalf("Failed to instantiate a ZeroX contract: %v", err)
-	}
-
 }
 func proc_approval(log *types.Log) {
 
@@ -345,7 +273,7 @@ func proc_share_token_balance_changed(block_num BlockNumber,tx_id int64,log *typ
 func get_eoa_aid(addr *common.Address) int64 {
 
 	var eoa_aid int64 = 0
-	wallet_aid,err := storage.nonfatal_lookup_address(addr.String())
+	wallet_aid,err := storage.nonfatal_lookup_address_id(addr.String())
 	if err == nil {
 		eoa_aid,err = storage.lookup_eoa_aid(wallet_aid)
 		if err != nil {
@@ -493,7 +421,6 @@ func proc_market_created(block_num BlockNumber,tx_id int64,log *types.Log,signer
 		mevt.Dump()
 		fmt.Printf("getwallet: Looking wallet addr via RPC for: %v\n",mevt.MarketCreator.String())
 		var copts = new(bind.CallOpts)
-		copts.Pending = true
 		wallet,err := ctrct_wallet_registry.GetWallet(copts,mevt.MarketCreator)
 		fmt.Printf("getwallet: addr is : %v\n",wallet.String())
 		var wallet_addr_str string

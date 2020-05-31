@@ -267,6 +267,7 @@ type InfoCategories struct {
 	Subcategories	[]string
 }
 type MarketTrade struct {
+	OrderHash		string
 	MktAddr			string
 	MktAddrSh		string	// short address (with .. in the middle)
 	FillerAddr		string
@@ -324,6 +325,8 @@ type UserInfo struct {
 	MoneyAtStake	float64	// how much money User has invested
 	TotalWithdrawn	float64	// amount of money User has deposited
 	TotalDeposited	float64	// amount of money User has withdrawn
+	TopTrades		float64
+	TopProfit		float64
 	TotalTrades		uint32	// how many trades were made by this User
 	MarketsCreated	uint32	// how many markets this User has created
 	MarketsTraded	uint32	// how many markets this User has traded
@@ -346,7 +349,7 @@ type MainStats struct {
 	MoneyAtStake	float64
 	TradesCount		int64
 }
-type MarketOrder struct {
+type MarketOrder struct {	// this is a short order info, to show in tables
 	MktAid				int64
 	TradeTs				int64
 	Price				float64
@@ -355,6 +358,7 @@ type MarketOrder struct {
 	OutcomeIdx			int32
 	OType				int32
 	CreatedTs			int64
+	OrderHash			string
 	SellerWalletAddr	string
 	SellerWalletAddrSh	string	// short version of the addr
 	SellerEOAAddr		string
@@ -397,4 +401,26 @@ type RankStats struct {
 	EoaAid				int64
 	TotalTrades			int64
 	ProfitLoss			float64
+}
+type OrderInfo struct {		// this is a full order information, to show in dedicated webpage
+	MktAid				int64
+	TradeTs				int64
+	Price				float64
+	Volume				float64
+	OutcomeIdx			int32
+	CreatedTs			int64
+	OrderHashSh			string
+	OrderHash			string
+	OType				string
+	CreatorrWalletAddr	string
+	CreatorWalletAddrSh	string	// short version of the addr
+	CreatorEOAAddr		string
+	CreatorEOAAddrSh	string	// short version of the addr
+	FillerWalletAddr	string
+	FillerWalletAddrSh	string
+	FillerEOAAddr		string
+	FillerEOAAddrSh		string
+	Date				string
+	MarketAddr			string
+	MarketAddrSh		string
 }

@@ -111,7 +111,11 @@ func main() {
 
 	storage = connect_to_storage()
 	storage.check_main_stats()
-	augur_init()
+
+	addresses := new(ContractAddresses)
+	addresses.zerox_addr = &zerox_addr
+	addresses.dai_addr= &dai_addr
+	augur_init(addresses)
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)

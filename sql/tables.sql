@@ -241,7 +241,7 @@ CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 );
 CREATE table uranks (   -- User Rankings (how this user ranks against each other, ex: Top 13% in profit made
 	eoa_aid             BIGINT PRIMARY KEY,
-	top_profit          DECIMAL(4,2) DEFAULT 100.0,    -- position of the user in profits accumulated over lifetime
-	top_trades          DECIMAL(4,2) DEFAULT 100.0    -- position of the user in number of accumulated trades
+	top_profit          DECIMAL(5,2) DEFAULT 100.0,    -- position of the user in profits accumulated over lifetime
+	top_trades          DECIMAL(5,2) DEFAULT 100.0    -- position of the user in number of accumulated trades
 );
 

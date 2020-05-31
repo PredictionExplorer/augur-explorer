@@ -152,9 +152,10 @@ BEGIN
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid)
-				VALUES(NEW.eoa_aid,NEW.wallet_aid,NEW.market_aid);
+		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid,total_trades)
+				VALUES(NEW.eoa_aid,NEW.wallet_aid,NEW.market_aid,1);
 	END IF;
+	UPDATE ustats SET total_trades = (total_trades + 1) WHERE eoa_aid=NEW.eoa_aid;
 
 	-- Update statistics for the Filler of the Order (Buyer)
 	UPDATE trd_mkt_stats AS s
@@ -164,10 +165,14 @@ BEGIN
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid)
-				VALUES(NEW.eoa_fill_aid,NEW.wallet_fill_aid,NEW.market_aid);
+		RAISE NOTICE 'mkt_ord insert eoa_fill aid = % ',NEW.eoa_fill_aid;
+		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid,total_trades)
+				VALUES(NEW.eoa_fill_aid,NEW.wallet_fill_aid,NEW.market_aid,1);
 	END IF;
+	UPDATE ustats SET total_trades = (total_trades + 1) WHERE eoa_aid=NEW.eoa_fill_aid;
 
+	-- Note: for Main statistics a trade between 2 users is counted as single trade (i.e its a +1)_
+	-- 			but from the point of the User we have +1 for Creator and +1 for Filler (so, its 2 trades)
 	UPDATE main_stats SET trades_count = (trades_count + 1);
 
 	RETURN NEW;
@@ -219,6 +224,7 @@ DECLARE
 	v_cnt numeric;
 BEGIN
 
+	RAISE NOTICE 'insert into trd_mkt_stats for % ',NEW.eoa_aid;
 	-- Update statistics for the Creator of the Order (Seller)
 	UPDATE ustats AS s
 			SET markets_traded = (markets_traded + 1)
@@ -241,9 +247,8 @@ BEGIN
 	SELECT COUNT(*) AS num_rows
 		FROM trd_mkt_stats AS s
 		WHERE	s.eoa_aid = OLD.eoa_aid AND
-				s.market_aid = OLD.market_aid;
+				s.market_aid = OLD.market_aid INTO v_cnt;
 
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		UPDATE ustats AS s
 			SET markets_traded = (markets_traded - 1)
@@ -263,11 +268,10 @@ BEGIN
 
 	-- Begin of update profit loss
 	UPDATE ustats AS s
-			SET profit_loss = (profit_loss + (OLD.profit_loss - NEW.profit_loss)),
-				total_trades = (total_trades + (OLD.total_trades - NEW.total_trades)),
-				total_reports = (total_reports + (OLD.total_reports - NEW.total_reports)),
-				total_designated = (total_designated + (OLD.total_designated - NEW.total_designated)),
-				frozen_funds = (frozen_funds + (OLD.frozen_funds - NEW.frozen_funds))
+			SET profit_loss = (profit_loss + (NEW.profit_loss - OLD.profit_loss)),
+				total_reports = (total_reports + (NEW.total_reports - OLD.total_reports)),
+				total_designated = (total_designated + (NEW.total_designated - OLD.total_designated)),
+				money_at_stake = (money_at_stake + (NEW.frozen_funds - OLD.frozen_funds))
 			WHERE	s.eoa_aid = NEW.eoa_aid;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;

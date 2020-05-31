@@ -23,7 +23,8 @@ CREATE UNIQUE INDEX ovol_idx		ON outcome_vol		USING	btree	(market_aid,outcome_id
 CREATE INDEX oo_depth_idx			ON oorders			USING	btree	(market_aid,outcome_idx,otype);
 CREATE UNIQUE INDEX oostats_uniq	ON oostats			USING	btree	(market_aid,eoa_aid,outcome_idx);
 CREATE UNIQUE INDEX tmstats_uniq	ON trd_mkt_stats	USING	btree	(market_aid,eoa_aid);
-CREATE INDEX ustats_idx				ON ustats			USING	btree	(eoa_aid,wallet_aid);
+CREATE INDEX ustats1_idx			ON ustats			USING	btree	(eoa_aid);
+CREATE INDEX ustats2_idx			ON ustats			USING	btree	(wallet_aid);
 CREATE INDEX pl_eoa_idx				ON profit_loss		USING	btree	(eoa_aid);
 CREATE INDEX pl_wallet_idx			ON profit_loss		USING	btree	(wallet_aid);
 CREATE INDEX pl_profit_srch_idx		ON profit_loss		USING	btree	(market_aid,eoa_aid,outcome_idx);

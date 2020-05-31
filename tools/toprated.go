@@ -2,6 +2,7 @@ package main
 
 import (
 	"sort"
+	"fmt"
 )
 var (
 	storage *SQLStorage
@@ -14,7 +15,8 @@ func update_profit_ranks(records []RankStats) {
 	num_recs := len(records)
 	for i:=0 ; i < num_recs  ; i++ {
 		record := &records[i]
-		rank_value := float64(i/100) + 1
+		rank_value := (float64(i)/float64(num_recs))*100.0 + 1.0
+		fmt.Printf("rank for %v is %v\n",record.EoaAid,rank_value)
 		storage.update_top_profit_rank(record.EoaAid,rank_value)
 	}
 }
@@ -23,7 +25,8 @@ func update_trade_ranks(records []RankStats) {
 	num_recs := len(records)
 	for i:=0 ; i < num_recs  ; i++ {
 		record := &records[i]
-		rank_value := float64(i/100) + 1
+		rank_value := (float64(i)/float64(num_recs))*100.0 + 1.0
+		fmt.Printf("rank for %v is %v\n",record.EoaAid,rank_value)
 		storage.update_top_total_trades_rank(record.EoaAid,rank_value)
 	}
 }

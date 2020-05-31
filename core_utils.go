@@ -6,6 +6,11 @@ import (
 	"os"
 	"io"
 )
+func check(e error) {
+	if e != nil {
+		panic(fmt.Sprintf("Exiting Augur extractor with error: %v",e))
+	}
+}
 func Fatalf(format string, args ...interface{}) {
 	w := io.MultiWriter(os.Stdout, os.Stderr)
 	if runtime.GOOS == "windows" {
