@@ -37,9 +37,11 @@ CREATE TABLE market (
 	end_time			TIMESTAMPTZ NOT NULL,			-- when the Market expires
 	max_ticks			BIGINT NOT NULL,			-- maximum price range (number of intervals)
 	create_timestamp	TIMESTAMPTZ NOT NULL,
+	total_trades		BIGINT DEFAULT 0,			-- current number of trades that took place
 	-- Status lookup codes  0=>Traded,1=>Reporting,3=>Reported,4=>Disputing,5=>Finalized,6=>Finalized as invalid
 	status				SMALLINT DEFAULT 0,
-	market_type			SMALLINT NOT NULL,			-- Market type enum: 0:YES_NO | 1:CATEGORICAL | 2:SCALAR
+	market_type			SMALLINT NOT NULL,			-- enum: 0:YES_NO | 1:CATEGORICAL | 2:SCALAR
+	money_at_stake		DECIMAL(24,18) DEFAULT 0.0,	-- accumulated money bet on outcomes
 	open_interest		DECIMAL(24,18) DEFAULT 0.0,		-- amount of shares created
 	fee					DECIMAL(24,18) NOT NULL,		-- fee to be paid to Market creator as percentage of transaction
 	prices				TEXT NOT NULL,				-- range of prices the Market can take
@@ -231,12 +233,13 @@ CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 	mktord_id			BIGINT DEFAULT 0,			-- this is the id of the market order generated this PL
 	outcome_idx			SMALLINT NOT NULL,
 	closed_position		SMALLINT DEFAULT 0,			-- 0 - open position, 1 - closed position
-	net_position		DECIMAL(64,18) DEFAULT 0.0,
-	avg_price			DECIMAL(64,18) DEFAULT 0.0,
-	frozen_funds		DECIMAL(64,18) DEFAULT 0.0,
-	realized_profit		DECIMAL(64,18) DEFAULT 0.0,	-- this is the field copied directly from Augur' Event Log
-	realized_cost		DECIMAL(64,18) DEFAULT 0.0,
-	final_profit		DECIMAL(64,18) DEFAULT 0.0,	-- this profit is updated (by our code) when position is closed
+	-- note: the following decimal precisions depend on precision of Augur events , inserted in db.go
+	net_position		DECIMAL(32,18) DEFAULT 0.0,
+	avg_price			DECIMAL(32,20) DEFAULT 0.0,
+	frozen_funds		DECIMAL(64,36) DEFAULT 0.0,
+	realized_profit		DECIMAL(64,36) DEFAULT 0.0,	-- this is the field copied directly from Augur' Event Log
+	realized_cost		DECIMAL(64,36) DEFAULT 0.0,
+	final_profit		DECIMAL(64,36) DEFAULT 0.0,	-- this profit is updated (by our code) when position is closed
 	time_stamp			TIMESTAMPTZ NOT NULL
 );
 CREATE table uranks (   -- User Rankings (how this user ranks against each other, ex: Top 13% in profit made

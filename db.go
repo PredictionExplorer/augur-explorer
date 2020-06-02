@@ -136,12 +136,14 @@ func (ss *SQLStorage) lookup_eoa_aid(wallet_aid int64) (int64,error) {
 
 	var addr_id int64;
 	var query string
-	query="SELECT eoa_id FROM ustats WHERE wallet_aid=$1"
+	query="SELECT eoa_aid FROM ustats WHERE wallet_aid=$1"
 	err:=ss.db.QueryRow(query,wallet_aid).Scan(&addr_id);
 	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			fmt.Printf("lookup_eoa_aid(wallet_aid=%v) sql error=%v\n",wallet_aid,err)
+		}
 		return 0,err
 	}
-
 	return addr_id,nil
 }
 func (ss *SQLStorage) lookup_wallet_aid(eoa_aid int64) (int64,error) {
@@ -323,7 +325,7 @@ func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int6
 			no_show_bond
 		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TO_TIMESTAMP($9),$10,TO_TIMESTAMP($11),` +
 						evt.FeePerCashInAttoCash.String() +
-						"/1e+18,$12,$13,$14,$15,$16)";
+						"/1e+16,$12,$13,$14,$15,$16)";
 
 	result,err := ss.db.Exec(query,
 			block_num,
@@ -1240,8 +1242,10 @@ func (ss *SQLStorage) get_mkt_trades(mkt_addr string) []MarketTrade {
 				"o.order_id," +
 				"a.addr as mkt_addr," +
 				"CONCAT(LEFT(a.addr,6),'…',RIGHT(a.addr,6)) AS mkt_addr_sh, " +
-				"fa.addr as signer_addr," +
-				"CONCAT(LEFT(fa.addr,6),'…',RIGHT(fa.addr,6)) AS signer_addr_sh," +
+				"ca.addr as creator_addr," +
+				"CONCAT(LEFT(ca.addr,6),'…',RIGHT(ca.addr,6)) AS creator_addr_sh," +
+				"fa.addr as filler_addr," +
+				"CONCAT(LEFT(fa.addr,6),'…',RIGHT(fa.addr,6)) AS filler_addr_sh," +
 				"CASE oaction " +
 					"WHEN 0 THEN 'CREATE' " +
 					"WHEN 1 THEN 'CANCEL' " +
@@ -1258,12 +1262,10 @@ func (ss *SQLStorage) get_mkt_trades(mkt_addr string) []MarketTrade {
 				"m.market_type AS mtype," +
 				"m.outcomes AS outcomes_str " +
 			"FROM mktord AS o " +
-				"LEFT JOIN " +
-					"address AS a ON o.market_aid=a.address_id " +
-				"LEFT JOIN " +
-					"address AS fa ON o.eoa_aid=fa.address_id " +
-				"LEFT JOIN " +
-					"market AS m ON o.market_aid = m.market_aid " +
+				"LEFT JOIN address AS a ON o.market_aid=a.address_id " +
+				"LEFT JOIN address AS fa ON o.eoa_fill_aid=fa.address_id " +
+				"LEFT JOIN address AS ca ON o.eoa_aid=ca.address_id " +
+				"LEFT JOIN market AS m ON o.market_aid = m.market_aid " +
 			where +
 			"ORDER BY " +
 				"o.time_stamp";
@@ -1289,6 +1291,8 @@ func (ss *SQLStorage) get_mkt_trades(mkt_addr string) []MarketTrade {
 			&rec.OrderHash,
 			&rec.MktAddr,
 			&rec.MktAddrSh,
+			&rec.CreatorAddr,
+			&rec.CreatorAddrSh,
 			&rec.FillerAddr,
 			&rec.FillerAddrSh,
 			&rec.Type,
@@ -1322,6 +1326,7 @@ func (ss *SQLStorage) get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 	}
 	rec.MktAid=market_aid
 	fmt.Printf("querying info for market aid = %v\n",market_aid)
+	var reporter_aid int64
 	var query string
 	query = "SELECT " +
 				"m.market_type," +
@@ -1331,7 +1336,10 @@ func (ss *SQLStorage) get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				"CONCAT(LEFT(sa.addr,6),'…',RIGHT(sa.addr,6)) AS signer_sh," +
 				"ca.addr as mcreator," +
 				"CONCAT(LEFT(ca.addr,6),'…',RIGHT(ca.addr,6)) AS mcreator_sh, " +
-				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') as end_date," + 
+				"ra.addr AS reporter,"+
+				"CONCAT(LEFT(ra.addr,6),'…',RIGHT(ra.addr,6)) AS reporter_sh," +
+				"reporter_aid," +
+				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') AS end_date," + 
 				"extra_info::json->>'description' AS descr," +
 				"extra_info::json->>'longDescription' AS long_desc," +
 				"extra_info::json->>'categories' AS categories," +
@@ -1341,16 +1349,24 @@ func (ss *SQLStorage) get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 					"WHEN 1 THEN 'CATEGORICAL' " +
 					"WHEN 2 THEN 'SCALAR' " +
 				"END AS mtype, " +
-				"fee," +
+				"CASE m.status " +
+					"WHEN 0 THEN 'TRADED' " +
+					"WHEN 1 THEN 'REPORTING' " +
+					"WHEN 2 THEN 'REPORTED' " +
+					"WHEN 3 THEN 'DISPUTING' " +
+					"WHEN 4 THEN 'FINALIZED SUCCESSULY' " +
+					"WHEN 5 THEN 'FINALIZED INVALID' " +
+				"END AS mstatus," +
+				"round(fee,2) as fee," +
 				"open_interest AS OI," +
-				"cur_volume AS volume " +
+				"cur_volume AS volume, " +
+				"total_trades," +
+				"money_at_stake " +
 			"FROM market as m " +
-				"LEFT JOIN " +
-					"address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN " +
-					"address AS sa ON m.eoa_aid = sa.address_id " +
-				"LEFT JOIN " +
-					"address AS ca ON m.wallet_aid = ca.address_id " +
+				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
+				"LEFT JOIN address AS sa ON m.eoa_aid = sa.address_id " +
+				"LEFT JOIN address AS ca ON m.wallet_aid = ca.address_id " +
+				"LEFT JOIN address AS ra ON m.reporter_aid = ra.address_id " +
 			"WHERE market_aid = $1"
 
 	row := ss.db.QueryRow(query,market_aid)
@@ -1363,15 +1379,21 @@ func (ss *SQLStorage) get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				&rec.SignerSh,
 				&rec.MktCreator,
 				&rec.MktCreatorSh,
+				&rec.Reporter,
+				&rec.ReporterSh,
+				&reporter_aid,
 				&rec.EndDate,
 				&rec.Description,
 				&rec.LongDesc,
 				&rec.Categories,
 				&rec.Outcomes,
 				&rec.MktType,
+				&rec.Status,
 				&rec.Fee,
 				&rec.OpenInterest,
 				&rec.CurVolume,
+				&rec.TotalTrades,
+				&rec.MoneyAtStake,
 	)
 	if oc { // get outcome string
 		rec.CurOutcome = get_outcome_str(uint8(mkt_type),outcome_idx,&rec.Outcomes)
@@ -1379,6 +1401,16 @@ func (ss *SQLStorage) get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 	if err!=nil {
 		fmt.Printf("DB error: %v, q=%v\n",err,query)
 		return rec,err
+	}
+	reporter_eoa_aid,err := ss.lookup_eoa_aid(reporter_aid)
+	fmt.Printf("reporter_aid = %v,       reporter_eoa_aid=%v\n",reporter_aid,reporter_eoa_aid)
+	if err == nil {
+		rep_addr,err := ss.lookup_address(reporter_eoa_aid)
+		if err == nil {
+			fmt.Printf("looked up reporter addr = %v\n",rep_addr)
+			rec.Reporter = rep_addr
+			rec.ReporterSh = string(rep_addr[0:6]+string('…')+rep_addr[26:32])
+		}
 	}
 	return rec,nil
 }
@@ -1818,7 +1850,48 @@ func (ss *SQLStorage) process_DAI_token_transfer(evt *Transfer) {
 	}
 
 }
+func (ss *SQLStorage) update_users_profit_loss(market_aid int64,eoa_aid int64,outcome_idx int,realized_profit string) string {
+
+	var err error
+	var query string
+
+	// Update previous position status on this outcome
+	query = "UPDATE profit_loss " +
+				"SET closed_position = 1 " +
+//					"final_profit = ($4/1e+36) " +
+				"WHERE " +
+						"(market_aid = $1) AND " +
+						"(eoa_aid = $2) AND " +
+						"(outcome_idx = $3) AND " +
+						"(closed_position = 0) " +
+				"RETURNING realized_profit::text"
+	d_query := fmt.Sprintf("UPDATE profit_loss " +
+				"SET closed_position = 1 " +
+//					"final_profit = (%v/1e+36) " +
+				"WHERE " +
+						"(market_aid = %v) AND " +
+						"(eoa_aid = %v) AND " +
+						"(outcome_idx = %v) AND " +
+						"(closed_position = 0)",
+						realized_profit,market_aid,eoa_aid,outcome_idx)
+	fmt.Printf("Position update query: %v\n",d_query)
+
+	var previous_profit string
+	row:=ss.db.QueryRow(query,market_aid,eoa_aid,outcome_idx)
+	err=row.Scan(&previous_profit);
+	if err != nil {
+		if err == sql.ErrNoRows {
+			fmt.Printf("pl_calc: notice: no previous trades were closed for this market & outcome\n")
+		} else {
+			Fatalf("DB error: %v, (on Scan of previous profit) q=%v",err,query)
+		}
+	}
+	return previous_profit
+}
 func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,eoa_aid int64,evt *ProfitLossChanged) int64  {
+
+	var query string
+	var err error
 
 	_= ss.lookup_universe_id(evt.Universe.String())
 	market_aid := ss.lookup_address_id(evt.Market.String())
@@ -1832,32 +1905,15 @@ func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,e
 	realized_cost := evt.RealizedCost.String()
 	time_stamp := evt.Timestamp.Int64()
 
-	var query string
+	prev_profit:=ss.update_users_profit_loss(market_aid,eoa_aid,int(outcome_idx),realized_profit)
 
-	// Update previous position status on this outcome
-	query = "UPDATE profit_loss " +
-				"SET closed_position = 1, " +
-					"final_profit = ($4/1e+36) " +
-				"WHERE " +
-						"(market_aid = $1) AND" +
-						"(eoa_aid = $2) AND " +
-						"(outcome_idx = $3) AND " +
-						"(closed_position = 0)"
-	res,err:=ss.db.Exec(query,market_aid,eoa_aid,outcome_idx,realized_profit)
-	if (err!=nil) {
-		Fatalf("DB error: %v ; q=%v",err,query);
-	}
-	affected_rows,err:=res.RowsAffected()
-	if affected_rows == 0 {
-		fmt.Printf("pl_calc: notice: no previous trades were closed for this market & outcome\n")
+	var final_profit string
+	if len(prev_profit) > 0 {
+		final_profit="((" + realized_profit + "/1e+36)-" + prev_profit + ")"
 	} else {
-		fmt.Printf("pl_calc: notice: %v trades were closed for this market & outcome\n",affected_rows)
-		if affected_rows != 1 {
-			fmt.Printf("pl_calc: WARNING! 'closed_position' was set for more than 1 trade\n")
-			Fatalf("pl_calc: undefined behaviour. please implement this use case\n")
-		}
+		//final_profit="(" + realized_profit + "/1e+36)"
+		final_profit="(0)"
 	}
-
 	fmt.Printf("Insert to profitloss (wallet %v outcome %v)\n",evt.Account.String(),outcome_idx);
 	query = "INSERT INTO profit_loss (" +
 				"block_num," + 
@@ -1872,6 +1928,7 @@ func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,e
 				"frozen_funds," +
 				"realized_profit," +
 				"realized_cost," +
+				"final_profit," +
 				"time_stamp" +
 			") VALUES($1,$2,$3,$4,$5,$6,$7," +
 				"(" +net_position+ "/1e+16)," +
@@ -1879,12 +1936,14 @@ func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,e
 				"(" +frozen_funds+ "/1e+36)," +
 				"(" +realized_profit+ "/1e+36)," +
 				"(" +realized_cost+ "/1e+36)," +
+				"(" +final_profit+ ")," +
 				"TO_TIMESTAMP($8)" +
-			") RETURNING id,realized_profit,realized_cost"
+			") RETURNING id,realized_profit,realized_cost,net_position"
 
 	var null_pl_id sql.NullInt64
 	var null_profit sql.NullFloat64
 	var null_rcost sql.NullFloat64
+	var null_volume sql.NullFloat64
 	var pl_id int64 = 0
 	row := ss.db.QueryRow(query,
 								block_num,
@@ -1896,7 +1955,7 @@ func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,e
 								market_order_id,// note, this contains meaningful value only because we reverse event processing order
 								time_stamp,
 	)
-	err=row.Scan(&null_pl_id,&null_profit,&null_rcost);
+	err=row.Scan(&null_pl_id,&null_profit,&null_rcost,&null_volume);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			//
@@ -1906,66 +1965,14 @@ func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,e
 	} else {
 		pl_id = null_pl_id.Int64
 	}
-	if null_profit.Valid {
-		if null_profit.Float64 > 0 {
-			/*
-			query = "UPDATE profit_loss SET mktord_id = $4 " +
-					"WHERE (market_aid=$1) AND (outcome=$2) AND (eoa_aid=$3) AND ("
-			_,err:=ss.db.Exec(query,market_aid,outcome_idx,eoa_aid)
-			if (err!=nil) {
-				Fatalf("DB error: %v ; q=%v",err,query);
-			}
-			*/
+	if null_volume.Valid {
+		if null_volume.Float64 == 0 {
+			// Volume = 0 means the User has closed all his positions,
+			// therefore we must mark position as closed in the DB too
+			fmt.Printf("Closing position due to 0 volume, realized profit = %v\n")
+			ss.update_users_profit_loss(market_aid,eoa_aid,int(outcome_idx),realized_profit)
 		}
 	}
-	/*
-	if null_rcost.Valid {
-		if null_rcost.Float64 > 0 {
-			query = "SELECT id FROM profit_loss " +
-						"WHERE  (market_aid=$1) AND " +
-								"(eoa_aid=$2) AND " +
-								"(outcome_idx=$3) AND" +
-								"(frozen_funds=$4) AND " +
-								"(closed_position=0) " +
-						"ORDER by id DESC LIMIT 1"
-
-			d_query := fmt.Sprintf("SELECT id FROM profit_loss " +
-						"WHERE  (market_aid=%v) AND " +
-								"(eoa_aid=%v) AND " +
-								"(outcome_idx=%v) AND" +
-								"(frozen_funds=%v) AND " +
-								"(closed_position=0) " +
-						"ORDER by id DESC LIMIT 1",
-								market_aid,eoa_aid,outcome_idx,null_rcost.Float64)
-			fmt.Printf("pl_calc: query = %v\n",d_query)
-			row := ss.db.QueryRow(query,market_aid,eoa_aid,outcome_idx,null_rcost.Float64)
-			var opened_pos_pl_id sql.NullInt64
-			var err error
-			err=row.Scan(&opened_pos_pl_id);
-			if (err!=nil) {
-				if err == sql.ErrNoRows {
-					fmt.Printf("Error: realized cost > 0 but setting position flag " +
-									"to Closed was not possible, order id not found: %+v\n",evt);
-				} else {
-					Fatalf("DB error: %v ; q=%v",err,query);
-				}
-			} else {
-				fmt.Printf("pl_calc: profit loss record id =%v, setting 'closed' to 1\n",opened_pos_pl_id.Int64)
-				query = "UPDATE profit_loss SET closed_position = 1 WHERE id=$1"
-				res,err:=ss.db.Exec(query,opened_pos_pl_id.Int64)
-				if (err!=nil) {
-					Fatalf("DB error: %v ; q=%v",err,query);
-				}
-				affected_rows,err:=res.RowsAffected()
-				if affected_rows == 0 {
-					fmt.Printf("Error: realized cost > 0 but setting position flag " +
-									"to Closed was not possible" +
-									"affected rows=0, pl_id =%v evt: %+v\n",evt);
-				}
-			}
-		}
-	}
-	*/
 
 	return pl_id
 }

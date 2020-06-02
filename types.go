@@ -246,12 +246,16 @@ type InfoMarket struct {
 	Fee				float64
 	OpenInterest	float64
 	CurVolume		float64
+	MoneyAtStake	float64
+	TotalTrades		int64
 	MktAddr			string
 	MktAddrSh		string	// short address (with .. in the middle)
 	Signer			string
 	SignerSh		string
 	MktCreator		string
 	MktCreatorSh	string	// short address (with .. in the middle)
+	Reporter		string
+	ReporterSh		string
 	EndDate			string
 	Description		string
 	LongDesc		string
@@ -270,6 +274,8 @@ type MarketTrade struct {
 	OrderHash		string
 	MktAddr			string
 	MktAddrSh		string	// short address (with .. in the middle)
+	CreatorAddr		string
+	CreatorAddrSh	string	// short address (with .. in the middle)
 	FillerAddr		string
 	FillerAddrSh	string	// short address (with .. in the middle)
 	Type			string

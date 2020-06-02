@@ -174,6 +174,7 @@ BEGIN
 	-- Note: for Main statistics a trade between 2 users is counted as single trade (i.e its a +1)_
 	-- 			but from the point of the User we have +1 for Creator and +1 for Filler (so, its 2 trades)
 	UPDATE main_stats SET trades_count = (trades_count + 1);
+	UPDATE market SET total_trades = (total_trades + 1) WHERE market_aid = NEW.market_aid;
 
 	RETURN NEW;
 END;
@@ -214,6 +215,7 @@ BEGIN
 	END IF;
 
 	UPDATE main_stats SET trades_count = (trades_count - 1);
+	UPDATE market SET total_trades = (total_trades - 1) WHERE market_aid = OLD.market_aid;
 
 	RETURN OLD;
 END;
@@ -372,6 +374,9 @@ BEGIN
 		UPDATE trd_mkt_stats
 			SET frozen_funds = (frozen_funds + NEW.frozen_funds)
 			WHERE market_aid = NEW.market_aid AND eoa_aid = NEW.eoa_aid;
+		UPDATE main_stats SET money_at_stake = money_at_stake + NEW.frozen_funds;
+		UPDATE market
+			SET money_at_stake = money_at_stake + NEW.frozen_funds WHERE market_aid = NEW.market_aid;
 	END IF;
 	IF NEW.closed_position = 1 THEN
 		RAISE EXCEPTION 'You cant insert a record with closed_position = 1, undefined behavior';
@@ -393,6 +398,9 @@ BEGIN
 		UPDATE trd_mkt_stats AS s
 			SET frozen_funds = (frozen_funds + OLD.frozen_funds)
 			WHERE market_aid = OLD.market_aid AND eoa_aid = OLD.eoa_aid;
+		UPDATE main_stats SET money_at_stake = money_at_stake + OLD.frozen_funds;
+		UPDATE market 
+			SET money_at_stake = money_at_stake + OLD.frozen_funds WHERE market_aid = OLD.market_aid;
 	END IF;
 
 	RETURN OLD;
@@ -414,6 +422,9 @@ BEGIN
 						frozen_funds = (frozen_funds - OLD.frozen_funds)
 					WHERE	s.eoa_aid = NEW.eoa_aid AND
 							s.market_aid = NEW.market_aid;
+			UPDATE main_stats SET money_at_stake = money_at_stake - OLD.frozen_funds;
+			UPDATE market
+				SET money_at_stake = money_at_stake - OLD.frozen_funds WHERE market_aid = OLD.market_aid;
 		END IF;
 		IF NEW.closed_position = 0 THEN
 			-- nobody should update closed_position from 1 to 0 , once it is closed it is forever
