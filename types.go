@@ -248,6 +248,7 @@ type InfoMarket struct {
 	CurVolume		float64
 	MoneyAtStake	float64
 	TotalTrades		int64
+	MktType			int
 	MktAddr			string
 	MktAddrSh		string	// short address (with .. in the middle)
 	Signer			string
@@ -259,11 +260,12 @@ type InfoMarket struct {
 	EndDate			string
 	Description		string
 	LongDesc		string
-	Categories		string
+	CategoryStr		string
 	Outcomes		string
-	MktType			string
+	MktTypeStr		string
 	Status			string
 	CurOutcome		string	// calculated only if the query is made on specific outcome
+	Subcategories	[]string	// splitted string of subcategories
 }
 type InfoCategories struct {
 	CatId			int64

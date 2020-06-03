@@ -6,6 +6,7 @@ import (
 	"net"
 	"math/big"
 	"strings"
+	"strconv"
 //	"context"
 	"database/sql"
 	"encoding/hex"
@@ -56,6 +57,18 @@ func connect_to_storage() *SQLStorage {
 	ss := new(SQLStorage)
 	ss.db = db
 	return ss
+}
+func make_subcategories(cat_str *string) []string {
+	subcategories := strings.Split(*cat_str,",")
+	for i := 0 ; i< len(subcategories); i++ {
+		subcategories[i] = strings.Title(subcategories[i])
+	}
+	if len(subcategories) > 0 {	// sometimes last category is empty, delete it
+		if len(subcategories[len(subcategories)-1]) == 0 {
+			subcategories = subcategories[:len(subcategories)-1]
+		}
+	}
+	return subcategories
 }
 func (ss *SQLStorage) check_main_stats() {
 
@@ -356,10 +369,15 @@ func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int6
 		Fatalf("DB error: couldn't insert into Market table. Rows affeced = 0")
 	}
 	if len(outcomes) == 0 {
+		fmt.Printf("len(outcomes)=0\n")
 		if evt.MarketType == 0 {	// Yes / No
 			outcomes = "Invalid,No,Yes"
 		}
+		if evt.MarketType == 2 {	// Scalar
+			outcomes = "Invalid,,Scalar"
+		}
 	}
+	fmt.Printf("init_market_outcome_volumes() outcomes=%v, mkt type = %v\n",outcomes,evt.MarketType)
 	ss.init_market_outcome_volumes(market_aid,outcomes)
 }
 func (ss *SQLStorage) init_market_outcome_volumes(market_aid int64,outcomes string) {
@@ -367,16 +385,26 @@ func (ss *SQLStorage) init_market_outcome_volumes(market_aid int64,outcomes stri
 	var query string
 	outcomes_list := strings.Split(outcomes,",")
 	for outcome_idx:=0 ; outcome_idx < len(outcomes_list) ; outcome_idx ++ {
-		query = "INSERT INTO outcome_vol(" +
-					"market_aid," +
-					"outcome_idx" +
-				") VALUES(" +
-					"$1," +
-					"$2" +
-				")"
-		_,err := ss.db.Exec(query,market_aid,outcome_idx)
-		if (err!=nil) {
-			Fatalf("DB error: %v; q=%v",err,query);
+		if len(outcomes_list[outcome_idx])>0 {
+			query = "INSERT INTO outcome_vol(" +
+						"market_aid," +
+						"outcome_idx" +
+					") VALUES(" +
+						"$1," +
+						"$2" +
+					")"
+			d_query := fmt.Sprintf("INSERT INTO outcome_vol(" +
+						"market_aid," +
+						"outcome_idx" +
+					") VALUES(" +
+						"%v," +
+						"%v" +
+					")",market_aid,outcome_idx)
+			fmt.Printf("insert into outcome volumes query: %v\n",d_query)
+			_,err := ss.db.Exec(query,market_aid,outcome_idx)
+			if (err!=nil) {
+				Fatalf("DB error: %v; q=%v",err,query);
+			}
 		}
 	}
 }
@@ -818,6 +846,7 @@ func (ss *SQLStorage) insert_market_volume_changed_evt(block_num BlockNumber,tx_
 		if affected_rows>0 {
 			// break
 		} else {
+/* no longer required. to be deleted later
 			query = "INSERT INTO outcome_vol(" +
 						"market_aid," +
 						"outcome_idx," +
@@ -827,10 +856,21 @@ func (ss *SQLStorage) insert_market_volume_changed_evt(block_num BlockNumber,tx_
 						"$2," +
 						evt.OutcomeVolumes[outcome_idx].String() + "/1e+18" +
 					")"
+			d_query := fmt.Sprintf("INSERT INTO outcome_vol(" +
+						"market_aid," +
+						"outcome_idx," +
+						"volume" +
+					") VALUES(" +
+						"%v," +
+						"%v,",market_aid,outcome_idx) +
+						evt.OutcomeVolumes[outcome_idx].String() + "/1e+18" +
+					")"
+					fmt.Printf("insert_market_volume_changed_evt(): query = %v\n",d_query)
 			_,err := ss.db.Exec(query,market_aid,outcome_idx)
 			if (err!=nil) {
 				Fatalf("DB error: %v; q=%v",err,query);
 			}
+*/
 		}
 	}
 }
@@ -1073,6 +1113,7 @@ func (ss *SQLStorage) get_active_market_list(off int, lim int) []InfoMarket {
 				"extra_info::json->>'longDescription' AS long_desc," +
 				"extra_info::json->>'categories' AS categories," +
 				"outcomes," +
+				"m.market_type, " +
 				"CASE m.market_type " +
 					"WHEN 0 THEN 'YES/NO' " +
 					"WHEN 1 THEN 'CATEGORICAL' " +
@@ -1115,9 +1156,10 @@ func (ss *SQLStorage) get_active_market_list(off int, lim int) []InfoMarket {
 					&rec.EndDate,
 					&rec.Description,
 					&longdesc,
-					&rec.Categories,
+					&rec.CategoryStr,
 					&rec.Outcomes,
 					&rec.MktType,
+					&rec.MktTypeStr,
 					&status_code,
 					&rec.Status,
 					&rec.Fee,
@@ -1178,11 +1220,12 @@ func (ss *SQLStorage) get_categories() []InfoCategories {
 		if err!=nil {
 			Fatalf(fmt.Sprintf("DB error: %v",err))
 		}
-		fmt.Printf("going to do split of: %+v\n",rec.Category)
+//		fmt.Printf("going to do split of: %+v\n",rec.Category)
+/* disabled, DELETION pending
 		subcategories := strings.Split(rec.Category,",")
 		for i := 0 ; i< len(subcategories); i++ {
 			subcategories[i] = strings.Title(subcategories[i])
-			fmt.Printf("added subcategory i=%v, subcat = %v\n",i,subcategories[i])
+//			fmt.Printf("added subcategory i=%v, subcat = %v\n",i,subcategories[i])
 		}
 		if len(subcategories) > 0 {	// sometimes last category is empty, delete it
 			if len(subcategories[len(subcategories)-1]) == 0 {
@@ -1190,6 +1233,8 @@ func (ss *SQLStorage) get_categories() []InfoCategories {
 			}
 		}
 		rec.Subcategories = subcategories
+*/
+		rec.Subcategories = make_subcategories(&rec.Category)
 		records = append(records,rec)
 	}
 	return records
@@ -1228,7 +1273,7 @@ func get_outcome_str(mkt_type uint8,outcome_idx int,outcomes_str *string) string
 		}
 		return output
 }
-func (ss *SQLStorage) get_mkt_trades(mkt_addr string) []MarketTrade {
+func (ss *SQLStorage) get_mkt_trades(mkt_addr string,limit int) []MarketTrade {
 	// get market trades with mixed outcomes
 	fmt.Printf("get_mkt_trades() mkt_addr=%v\n",mkt_addr)
 	var where string = ""
@@ -1267,8 +1312,10 @@ func (ss *SQLStorage) get_mkt_trades(mkt_addr string) []MarketTrade {
 				"LEFT JOIN address AS ca ON o.eoa_aid=ca.address_id " +
 				"LEFT JOIN market AS m ON o.market_aid = m.market_aid " +
 			where +
-			"ORDER BY " +
-				"o.time_stamp";
+			"ORDER BY o.time_stamp"
+	if limit > 0 {
+		query = query +	" LIMIT " + strconv.Itoa(limit)
+	}
 
 	var rows *sql.Rows
 	var err error
@@ -1317,7 +1364,10 @@ func (ss *SQLStorage) get_mkt_trades(mkt_addr string) []MarketTrade {
 	return records
 }
 func (ss *SQLStorage) get_market_info(mkt_addr string,outcome_idx int,oc bool) (InfoMarket,error) {
-
+	// Inputs: 
+	//		mkt_addr			address of the market to get the data from
+	//		outcome_idx			narrow search by specific outcome
+	//		oc					format outcome as string (from the integer parameter in the args)
 	var rec InfoMarket
 	market_aid,err := ss.nonfatal_lookup_address_id(mkt_addr)
 	if err != nil {
@@ -1342,8 +1392,10 @@ func (ss *SQLStorage) get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') AS end_date," + 
 				"extra_info::json->>'description' AS descr," +
 				"extra_info::json->>'longDescription' AS long_desc," +
-				"extra_info::json->>'categories' AS categories," +
+// old version	"extra_info::json->>'categories' AS categories," +
+				"cat.category," +
 				"outcomes," +
+				"m.market_type, " +
 				"CASE m.market_type " +
 					"WHEN 0 THEN 'YES/NO' " +
 					"WHEN 1 THEN 'CATEGORICAL' " +
@@ -1367,6 +1419,7 @@ func (ss *SQLStorage) get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				"LEFT JOIN address AS sa ON m.eoa_aid = sa.address_id " +
 				"LEFT JOIN address AS ca ON m.wallet_aid = ca.address_id " +
 				"LEFT JOIN address AS ra ON m.reporter_aid = ra.address_id " +
+				"LEFT JOIN category AS cat On m.cat_id = cat.cat_id " +
 			"WHERE market_aid = $1"
 
 	row := ss.db.QueryRow(query,market_aid)
@@ -1385,9 +1438,10 @@ func (ss *SQLStorage) get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				&rec.EndDate,
 				&rec.Description,
 				&rec.LongDesc,
-				&rec.Categories,
+				&rec.CategoryStr,
 				&rec.Outcomes,
 				&rec.MktType,
+				&rec.MktTypeStr,
 				&rec.Status,
 				&rec.Fee,
 				&rec.OpenInterest,
@@ -1412,6 +1466,9 @@ func (ss *SQLStorage) get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 			rec.ReporterSh = string(rep_addr[0:6]+string('…')+rep_addr[26:32])
 		}
 	}
+	subcategories := make_subcategories(&rec.CategoryStr)
+	rec.Subcategories = subcategories
+
 	return rec,nil
 }
 func (ss *SQLStorage) get_outcome_volumes(mkt_addr string) ([]OutcomeVol,error) {
@@ -1434,6 +1491,17 @@ func (ss *SQLStorage) get_outcome_volumes(mkt_addr string) ([]OutcomeVol,error) 
 				"LEFT JOIN " +
 					"market AS m ON o.market_aid = m.market_aid " +
 			"WHERE o.market_aid = $1"
+	d_query := fmt.Sprintf("SELECT " +
+				"o.outcome_idx, " +
+				"o.volume," +
+				"o.last_price, " +
+				"m.market_type, " +
+				"m.outcomes " +
+			"FROM outcome_vol AS o " +
+				"LEFT JOIN " +
+					"market AS m ON o.market_aid = m.market_aid " +
+			"WHERE o.market_aid = %v",market_aid)
+	fmt.Printf("outcome volumes query: %v\n",d_query)
 
 	var rows *sql.Rows
 	rows,err = ss.db.Query(query,market_aid)
@@ -1455,35 +1523,6 @@ func (ss *SQLStorage) get_outcome_volumes(mkt_addr string) ([]OutcomeVol,error) 
 		if err!=nil {
 			Fatalf(fmt.Sprintf("DB error: %v, q=%v",err,query))
 		}
-		/* to be deleted
-		if rec.MktType == 0 { // Yes/No
-			switch rec.Outcome {
-				case 0:
-					rec.OutcomeStr = "Invalid"
-				case 1:
-					rec.OutcomeStr = "No"
-				case 2:
-					rec.OutcomeStr = "Yes"
-			}
-		}
-		if rec.MktType == 1 { // Categorical
-			outcomes_list := strings.Split(outcomes,",")
-			if len(outcomes) > rec.Outcome {
-				rec.OutcomeStr = outcomes_list[rec.Outcome]	// ToDo: possibly move to INSERT stage
-			}
-		}
-		if rec.MktType == 2 {
-			if rec.Outcome == 0 {
-				rec.OutcomeStr = "Invalid"
-			} 
-			if rec.Outcome == 2 {
-				rec.OutcomeStr="Scalar"
-			}
-			if rec.Outcome == 1 {
-				rec.OutcomeStr="-"
-			}
-		}
-		*/
 		rec.OutcomeStr = get_outcome_str(uint8(rec.MktType),rec.Outcome,&outcomes)
 		fmt.Printf("get_outcome_volumes(): rec.OutcomeStr=%v (extracted from %v)\n",rec.OutcomeStr,outcomes)
 		records = append(records,rec)
