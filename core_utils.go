@@ -1,10 +1,10 @@
 package main
 
 import (
-	"runtime"
+	//"runtime"
 	"fmt"
 	"os"
-	"io"
+	//"io"
 )
 func check(e error) {
 	if e != nil {
@@ -12,6 +12,7 @@ func check(e error) {
 	}
 }
 func Fatalf(format string, args ...interface{}) {
+	/*
 	w := io.MultiWriter(os.Stdout, os.Stderr)
 	if runtime.GOOS == "windows" {
 		// The SameFile check below doesn't work on Windows.
@@ -24,6 +25,7 @@ func Fatalf(format string, args ...interface{}) {
 			w = os.Stderr
 		}
 	}
-	fmt.Fprintf(w, "Fatal: "+format+"\n", args...)
+	*/
+	Error.Printf(fmt.Sprintf("Fatal: "+format+"\n", args...))
 	os.Exit(1)
 }

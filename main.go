@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"bytes"
 	"time"
-	"fmt"
+//	"fmt"
 	"context"
 	"log"
 	"math/big"
@@ -43,6 +43,7 @@ const (
 	ERC20_APPROVAL = "8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
 
 	DEFAULT_WAIT_TIME = 5000	// 5 seconds
+	DEFAULT_DB_LOG_FILE_NAME	= "/var/tmp/db.log"
 )
 var (
 	// these evt_ variables are here for speed to avoid calculation of Keccak256
@@ -93,6 +94,9 @@ var (
 	fill_order_id int64 = 0			// during event processing, holds id of record in mktord from Fill evt
 	market_order_id int64 = 0
 	owner_fld_offset int64 = 2		// offset to AugurContract::owner field obtained with eth_getStorage()
+
+	Error   *log.Logger
+	Info	*log.Logger
 )
 func main() {
 	//client, err := ethclient.Dial("http://:::8545")
@@ -102,6 +106,8 @@ func main() {
 				" Please set AUGUR_ETH_NODE_RPC environment variable")
 	}
 
+	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
+	Error = log.New(os.Stderr,"ERROR: ",log.Ldate|log.Ltime|log.Lshortfile)
 	//client, err := ethclient.Dial("http://192.168.1.102:18545")
 	var err error
 	rpcclient, err = ethclient.Dial(RPC_URL)
@@ -110,6 +116,8 @@ func main() {
 	}
 
 	storage = connect_to_storage()
+	storage.init_log(DEFAULT_DB_LOG_FILE_NAME)
+	storage.log_msg("Log initialized\n")
 	storage.check_main_stats()
 
 	addresses := new(ContractAddresses)
@@ -117,12 +125,13 @@ func main() {
 	addresses.dai_addr= &dai_addr
 	augur_init(addresses)
 
+
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		fmt.Printf("Got SIGINT signal, will exit after block processing is over." +
+		Info.Printf("Got SIGINT signal, will exit after block processing is over." +
 					" To interrupt abruptly send SIGKILL (9) to the kernel.\n")
 		exit_chan <- true
 	}()
@@ -133,7 +142,6 @@ func main() {
 	if err != nil {
 		log.Fatal("oops:", err)
 	}
-//	fmt.Printf("Latest block at the blockchain: %v\n", latestBlock.Number())
 
 	bnum,exists := storage.get_last_block_num()
 	if !exists {
@@ -142,10 +150,9 @@ func main() {
 		bnum = bnum + 1
 	}
 	split_simulated := false
-//	fmt.Printf("Starting data load from block %v\n",bnum)
 	var bnum_high BlockNumber = BlockNumber(latestBlock.Number().Uint64())
 	if bnum_high < bnum {
-		fmt.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
+		Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
 		os.Exit(1)
 	}
 	for ; bnum<bnum_high; bnum++ {
@@ -155,7 +162,7 @@ func main() {
 			storage.block_delete_with_everything(BlockNumber(big_bnum.Int64()))
 			num_transactions, err := rpcclient.TransactionCount(ctx,block.Hash())
 			if err != nil {
-				fmt.Printf("block error: %v \n",err)
+				Error.Printf("block error: %v \n",err)
 			} else {
 				header := block.Header()
 				back_block_num := new(big.Int).SetUint64(header.Number.Uint64() - 20)
@@ -167,21 +174,21 @@ func main() {
 					bnum = BlockNumber(big_bnum.Uint64())
 					storage.block_delete_with_everything(BlockNumber(header.Number.Int64()))
 					split_simulated = true
-					fmt.Println("Chain split simulation in action");
+					Info.Println("Chain split simulation in action");
 				}
 				if !storage.insert_block(header,int64(num_transactions)) {
 					// chainsplit detected
 					set_back_block_num := storage.fix_chainsplit(header)
-					fmt.Printf("Chain rewind to block %v. Restarting.",set_back_block_num)
+					Info.Printf("Chain rewind to block %v. Restarting.",set_back_block_num)
 					bnum = set_back_block_num
 					continue
 				}
 				if num_transactions > 0 {
-					fmt.Printf("block: %v %v transactions\n",block.Number(),num_transactions)
+					Info.Printf("block: %v %v transactions\n",block.Number(),num_transactions)
 					for tnum:=0 ; tnum < int(num_transactions) ; tnum++ {
 						tx , err := rpcclient.TransactionInBlock(ctx,block.Hash(),uint(tnum))
 						if err != nil {
-							fmt.Printf("Error: %v",err)
+							Error.Printf("Error: %v",err)
 						} else {
 							tx_id := storage.insert_transaction(BlockNumber(block.Number().Uint64()),tx)
 							tx_msg, err := tx.AsMessage(types.NewEIP155Signer(tx.ChainId()))
@@ -194,19 +201,19 @@ func main() {
 							if tx.To() != nil {
 								to = tx.To().String()
 							}
-							fmt.Printf("\ttx: %v\n",tx.Hash().String())
-							fmt.Printf("\t from=%v\n",tx_msg.From().String())
-							fmt.Printf("\t to=%v for $%v (%v bytes data)\n",
+							Info.Printf("\ttx: %v\n",tx.Hash().String())
+							Info.Printf("\t from=%v\n",tx_msg.From().String())
+							Info.Printf("\t to=%v for $%v (%v bytes data)\n",
 											to,tx.Value().String(),len(tx.Data()))
-							fmt.Printf("\t input: \n%v\n",hex.EncodeToString(tx.Data()[:]))
+							Info.Printf("\t input: \n%v\n",hex.EncodeToString(tx.Data()[:]))
 							rcpt,err := rpcclient.TransactionReceipt(ctx,tx.Hash())
 							if err != nil {
-								fmt.Printf("Error: %v",err)
+								Error.Printf("Error: %v",err)
 							} else {
 								sequencer := new(EventSequencer)
 								num_logs := len(rcpt.Logs)
 								for i:=0 ; i<num_logs ; i++ {
-									fmt.Printf(
+									Info.Printf(
 										"\t\t\tlog %v\n\t\t\t\t\t\t for contract %v (%v of %v items)\n",
 										rcpt.Logs[i].Topics[0].String(),rcpt.Logs[i].Address.String(),(i+1),len(rcpt.Logs))
 									sequencer.append_event(rcpt.Logs[i])
@@ -217,7 +224,7 @@ func main() {
 								market_order_id = 0
 								fill_order_id = 0
 								for i:=0 ; i < num_logs ; i++ {
-									fmt.Printf(
+									Info.Printf(
 										"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",
 										ordered_list[i].Topics[0].String(),
 										ordered_list[i].Address.String())
@@ -231,7 +238,7 @@ func main() {
 						}
 					}
 				} else {
-					fmt.Printf("block: %v EMPTY\n",block.Number())
+					Info.Printf("block: %v EMPTY\n",block.Number())
 				}
 			}
 		}
@@ -239,7 +246,7 @@ func main() {
 		select {
 			case exit_flag := <-exit_chan:
 				if exit_flag {
-					fmt.Println("Exiting by user request.")
+					Info.Println("Exiting by user request.")
 					os.Exit(0)
 				}
 			default:

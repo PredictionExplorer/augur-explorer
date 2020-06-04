@@ -7,6 +7,7 @@ import (
 	"context"
 	"math/big"
 	"os"
+	"log"
 //	"io"
 //	"runtime"
 	"fmt"
@@ -16,7 +17,7 @@ import (
 	"github.com/0xProject/0x-mesh/rpc"
 	"github.com/0xProject/0x-mesh/zeroex"
 	"github.com/plaid/go-envvar/envvar"
-	log "github.com/sirupsen/logrus"
+//	log "github.com/sirupsen/logrus"
 
 //	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -30,6 +31,9 @@ var (
 	ctrct_zerox *ZeroX
 	market_order_id int64 = 0
 	fill_order_id int64 = 0
+
+	Error   *log.Logger
+	Info    *log.Logger
 )
 type clientEnvVars struct {
 	// RPCAddress is the address of the 0x Mesh node to communicate with.
@@ -56,10 +60,14 @@ func Fatalf(format string, args ...interface{}) {
 
 func main() {
 
+	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
+	Error = log.New(os.Stderr,"ERROR: ",log.Ldate|log.Ltime|log.Lshortfile)
+
 	if len(RPC_URL) == 0 {
 		Fatalf("Configuration error: RPC URL of Ethereum node is not set."+
 				" Please set AUGUR_ETH_NODE_RPC environment variable")
 	}
+
 	ethclient, err := ethclient.Dial(RPC_URL)
 	if err != nil {
 		log.Fatal(err)
@@ -74,7 +82,7 @@ func main() {
 	}
 	_ = awallet_contract
 	storage := connect_to_storage()
-	log.SetFormatter(&log.JSONFormatter{})
+	//log.SetFormatter(&log.JSONFormatter{})
 
 	env := clientEnvVars{}
 	if err := envvar.Parse(&env); err != nil {
@@ -83,14 +91,14 @@ func main() {
 
 	client, err := rpc.NewClient(env.WSRPCAddress)
 	if err != nil {
-		log.WithError(err).Fatal("could not create client")
+		log.Fatal("could not create client")
 	}
 
 	ctx := context.Background()
 	orderEventsChan := make(chan []*zeroex.OrderEvent, 8000)
 	clientSubscription, err := client.SubscribeToOrders(ctx, orderEventsChan)
 	if err != nil {
-		log.WithError(err).Fatal("Couldn't set up OrderStream subscription")
+		log.Fatal("Couldn't set up OrderStream subscription")
 	}
 	defer clientSubscription.Unsubscribe()
 

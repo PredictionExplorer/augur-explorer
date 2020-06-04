@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 	//"os"
 	"bytes"
 //	"io/ioutil"
@@ -103,7 +103,7 @@ func proc_approval(log *types.Log) {
 	if err != nil {
 		Fatalf("Event ERC20_Approval Cash decode error: %v",err)
 	} else {
-		fmt.Printf("ERC20_Approval event for contract %v (block=%v) :\n",
+		Info.Printf("ERC20_Approval event for contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
 	}
@@ -117,7 +117,7 @@ func proc_approval_for_all(log *types.Log) {
 	if err != nil {
 		Fatalf("Event ApprovalForAll decode error: %v",err)
 	} else {
-		fmt.Printf("ApprovalForAll event for contract %v (block=%v) :\n",
+		Info.Printf("ApprovalForAll event for contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
 	}
@@ -131,7 +131,7 @@ func proc_trading_proceeds_claimed(log *types.Log) {
 	if err != nil {
 		Fatalf("EventTradingProceedsClaimed error: %v",err)
 	} else {
-		fmt.Printf("TradingProceedsClaimed event found (block=%v) :\n",log.BlockNumber)
+		Info.Printf("TradingProceedsClaimed event found (block=%v) :\n",log.BlockNumber)
 		mevt.Dump()
 	}
 }
@@ -144,7 +144,7 @@ func proc_fill_evt(log *types.Log) {
 	if err != nil {
 		Fatalf("Event Fill for 0x decode error: %v",err)
 	} else {
-		fmt.Printf("Fill event found (block=%v) :\n",log.BlockNumber)
+		Info.Printf("Fill event found (block=%v) :\n",log.BlockNumber)
 		mevt.Dump()
 		// we need to locate order id because Profit Loss events are linked to this Order 
 		fill_order_id = storage.locate_fill_event_order(&mevt)
@@ -177,7 +177,7 @@ func proc_erc20_transfer(log *types.Log) {
 	if err != nil {
 		Fatalf("Event ERC20_Transfer, decode error: %v",err)
 	} else {
-		fmt.Printf("ERC20_Transfer event, contract %v (block=%v) :\n",
+		Info.Printf("ERC20_Transfer event, contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
 		if bytes.Equal(dai_addr.Bytes(), log.Address.Bytes()) {	// this is DAI contract
@@ -195,7 +195,7 @@ func proc_profit_loss_changed(block_num BlockNumber,tx_id int64,log *types.Log) 
 	if err != nil {
 		Fatalf("Event ProfitLossChanged decode error: %v",err)
 	} else {
-		fmt.Printf("ProfitLossChanged event found (block=%v) :\n",log.BlockNumber)
+		Info.Printf("ProfitLossChanged event found (block=%v) :\n",log.BlockNumber)
 		mevt.Dump()
 		eoa_aid := get_eoa_aid(&mevt.Account)
 		id = storage.insert_profit_loss_evt(block_num,tx_id,eoa_aid,&mevt)
@@ -211,7 +211,7 @@ func proc_transfer_single(log *types.Log) {
 	if err != nil {
 		Fatalf("Event TransferSingle decode error: %v",err)
 	} else {
-		fmt.Printf("TransferSingle event found (block=%v) :\n",log.BlockNumber)
+		Info.Printf("TransferSingle event found (block=%v) :\n",log.BlockNumber)
 		mevt.Dump()
 	}
 }
@@ -224,7 +224,7 @@ func proc_transfer_batch(log *types.Log) {
 	if err != nil {
 		Fatalf("Event TransferBatch decode error: %v",err)
 	} else {
-		fmt.Printf("TransferBatch event found (block=%v) :\n",log.BlockNumber)
+		Info.Printf("TransferBatch event found (block=%v) :\n",log.BlockNumber)
 		mevt.Dump()
 	}
 }
@@ -237,7 +237,7 @@ func proc_tokens_transferred(log *types.Log) {
 	if err != nil {
 		Fatalf("Event TokensTransferred decode error: %v",err)
 	} else {
-		fmt.Printf("TokensTransferred event for contract %v (block=%v) :\n",
+		Info.Printf("TokensTransferred event for contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
 	}
@@ -250,7 +250,7 @@ func proc_token_balance_changed(log *types.Log) {
 	if err != nil {
 		Fatalf("Event TokenBalanceChanged decode error: %v",err)
 	} else {
-		fmt.Printf("TokenBalanceChanged event for contract %v (block=%v) :\n",
+		Info.Printf("TokenBalanceChanged event for contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
 	}
@@ -264,7 +264,7 @@ func proc_share_token_balance_changed(block_num BlockNumber,tx_id int64,log *typ
 	if err != nil {
 		Fatalf("Event ShareTokenBalanceChanged decode error: %v\n",err)
 	} else {
-		fmt.Printf("ShareTokenBalanceChanged event for contract %v (block=%v) :\n",
+		Info.Printf("ShareTokenBalanceChanged event for contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
 		storage.insert_share_balance_changed_evt(block_num,tx_id,&mevt)
@@ -279,14 +279,14 @@ func get_eoa_aid(addr *common.Address) int64 {
 		if err != nil {
 			num:=big.NewInt(int64(owner_fld_offset))   // 1 is the offset at Storage where EOA is stored
 			key:=common.BigToHash(num)
-			fmt.Printf("daitok: Looking up eoa addr via RPC: %v\n",addr.String())
+			Info.Printf("daitok: Looking up eoa addr via RPC: %v\n",addr.String())
 			eoa,err := rpcclient.StorageAt(context.Background(),*addr,key,nil)
-			fmt.Printf("daitok: output of rpc: %v\n",hex.EncodeToString(eoa))
+			Info.Printf("daitok: output of rpc: %v\n",hex.EncodeToString(eoa))
 			var eoa_addr_str string
 			if err == nil {
 				eoa_addr_str = common.BytesToAddress(eoa[12:]).String()
 			} else {
-				fmt.Printf("daitok: error at rpc call: %v\n",err)
+				Info.Printf("daitok: error at rpc call: %v\n",err)
 			}
 			eoa_aid = storage.lookup_or_create_address(eoa_addr_str)
 		}
@@ -294,18 +294,18 @@ func get_eoa_aid(addr *common.Address) int64 {
 			// copied from above, ToDo: generalize
 			num:=big.NewInt(int64(owner_fld_offset))   // 1 is the offset at Storage where EOA is stored
 			key:=common.BigToHash(num)
-			fmt.Printf("daitok: Looking up eoa addr via RPC: %v\n",addr.String())
+			Info.Printf("daitok: Looking up eoa addr via RPC: %v\n",addr.String())
 			eoa,err := rpcclient.StorageAt(context.Background(),*addr,key,nil)
-			fmt.Printf("daitok: output of rpc: %v\n",hex.EncodeToString(eoa))
+			Info.Printf("daitok: output of rpc: %v\n",hex.EncodeToString(eoa))
 			var eoa_addr_str string
 			if err == nil {
 				eoa_addr_str = common.BytesToAddress(eoa[12:]).String()
 			} else {
-				fmt.Printf("daitok: error at rpc call: %v\n",err)
+				Info.Printf("daitok: error at rpc call: %v\n",err)
 			}
 			eoa_aid = storage.lookup_or_create_address(eoa_addr_str)
 	}
-	fmt.Printf("daitok: Getting eoa_aid for address %v, eoa_aid = %v\n",addr.String(),eoa_aid)
+	Info.Printf("daitok: Getting eoa_aid for address %v, eoa_aid = %v\n",addr.String(),eoa_aid)
 	return eoa_aid
 }
 func proc_market_order_event(block_num BlockNumber,tx_id int64,log *types.Log,signer common.Address) {
@@ -318,7 +318,7 @@ func proc_market_order_event(block_num BlockNumber,tx_id int64,log *types.Log,si
 	if err != nil {
 		Fatalf("Event OrderEvent decode error: %v",err)
 	} else {
-		fmt.Printf("OrderEvent event for contract %v (block=%v) : \n",
+		Info.Printf("OrderEvent event for contract %v (block=%v) : \n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
 		eoa_aid := get_eoa_aid(&mevt.AddressData[0])
@@ -336,7 +336,7 @@ func proc_cancel_zerox_order(log *types.Log) {
 	} else {
 		ohash := common.BytesToHash(mevt.OrderHash[:])
 		ohash_str := ohash.String()
-		fmt.Printf("CancelZeroXOrder event for contract %v (block=%v) : \n",
+		Info.Printf("CancelZeroXOrder event for contract %v (block=%v) : \n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
 		storage.delete_open_0x_order(ohash_str)
@@ -348,7 +348,7 @@ func proc_market_oi_changed(block *types.Header, log *types.Log) {
 	if err != nil {
 		Fatalf("Event decode error: %v",err)
 	} else {
-		fmt.Printf("MarketOIChanged event found (block=%v) : \n",log.BlockNumber)
+		Info.Printf("MarketOIChanged event found (block=%v) : \n",log.BlockNumber)
 		mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
 		mevt.Market =common.BytesToAddress(log.Topics[2][12:])
 		mevt.Dump()
@@ -361,7 +361,7 @@ func proc_market_finalized_evt(log *types.Log) {
 	if err != nil {
 		Fatalf("Event MktFinalizedEvt decode error: %v\n",err)
 	} else {
-		fmt.Printf("MarketFinalized event found (block=%v) : \n",log.BlockNumber)
+		Info.Printf("MarketFinalized event found (block=%v) : \n",log.BlockNumber)
 		mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 		mevt.Market = common.BytesToAddress(log.Topics[2][12:])	// extract universe addr
 		mevt.Dump()
@@ -374,7 +374,7 @@ func proc_initial_report_submitted(block_num BlockNumber,tx_id int64, log *types
 	if err != nil {
 		Fatalf("Event InitialReportSubmittedEvt decode error: %v\n",err)
 	} else {
-		fmt.Printf("InitialReportSubmitted event found (block=%v) : \n",log.BlockNumber)
+		Info.Printf("InitialReportSubmitted event found (block=%v) : \n",log.BlockNumber)
 		mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
 		mevt.Reporter= common.BytesToAddress(log.Topics[2][12:])
 		mevt.Market = common.BytesToAddress(log.Topics[3][12:])
@@ -388,7 +388,7 @@ func proc_dispute_crowdsourcerer_contribution(block_num BlockNumber,tx_id int64,
 	if err != nil {
 		Fatalf("Event DisputeCrowdsourcerContribution decode error: %v\n",err)
 	} else {
-		fmt.Printf("DisputeCrowdsourcerContribution event found (block %v) : \n",log.BlockNumber)
+		Info.Printf("DisputeCrowdsourcerContribution event found (block %v) : \n",log.BlockNumber)
 		mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
 		mevt.Reporter= common.BytesToAddress(log.Topics[2][12:])
 		mevt.Market = common.BytesToAddress(log.Topics[3][12:])
@@ -402,7 +402,7 @@ func proc_market_volume_changed(block_num BlockNumber, tx_id int64, log *types.L
 	if err != nil {
 		Fatalf("Event MarketVolumeChanged decode error: %v\n",err)
 	} else {
-		fmt.Printf("MarketVolumeChanged event found (block=%v): \n",log.BlockNumber)
+		Info.Printf("MarketVolumeChanged event found (block=%v): \n",log.BlockNumber)
 		mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
 		mevt.Market = common.BytesToAddress(log.Topics[2][12:])
 		mevt.Dump()
@@ -417,23 +417,23 @@ func proc_market_created(block_num BlockNumber,tx_id int64,log *types.Log,signer
 	if err != nil {
 		Fatalf("Event MarketCreated decode error: %v",err)
 	} else {
-		fmt.Printf("MarketCreated event found (block=%v)\n",log.BlockNumber)
+		Info.Printf("MarketCreated event found (block=%v)\n",log.BlockNumber)
 		mevt.Dump()
-		fmt.Printf("getwallet: Looking wallet addr via RPC for: %v\n",mevt.MarketCreator.String())
+		Info.Printf("getwallet: Looking wallet addr via RPC for: %v\n",mevt.MarketCreator.String())
 		var copts = new(bind.CallOpts)
 		wallet,err := ctrct_wallet_registry.GetWallet(copts,mevt.MarketCreator)
-		fmt.Printf("getwallet: addr is : %v\n",wallet.String())
+		Info.Printf("getwallet: addr is : %v\n",wallet.String())
 		var wallet_addr_str string
 		var wallet_aid int64 = 0
 		if err == nil {
 			wallet_addr_str = wallet.String()
 		} else {
-			fmt.Printf("getwallet: error at rpc call: %v\n",err)
+			Info.Printf("getwallet: error at rpc call: %v\n",err)
 		}
 		if !eth_addr_is_zero(&wallet) {
 			wallet_aid = storage.lookup_or_create_address(wallet_addr_str)
 		}
-		fmt.Printf("getwallet: got wallet_aid = %v for wallet addr %v\n",wallet_aid,wallet_addr_str)
+		Info.Printf("getwallet: got wallet_aid = %v for wallet addr %v\n",wallet_aid,wallet_addr_str)
 		storage.insert_market_created_evt(block_num,tx_id,signer,wallet_aid,&mevt)
 	}
 }
@@ -506,7 +506,7 @@ func process_event(block *types.Header, tx_id int64, signer common.Address, log 
 		}
 	}
 	for j:=1; j < num_topics ; j++ {
-		fmt.Printf("\t\t\t\tLog Topic %v , %v \n",j,log.Topics[j].String())
+		Info.Printf("\t\t\t\tLog Topic %v , %v \n",j,log.Topics[j].String())
 	}
 	return id
 }
@@ -520,7 +520,7 @@ func dump_tx_input_if_known(tx *types.Transaction) {
 	decoded_sig ,_ := hex.DecodeString("78dc0eed")
 	set_timestamp_sig ,_ := hex.DecodeString("a0a2b573")
 	if 0 == bytes.Compare(input_sig,set_timestamp_sig) {
-		fmt.Printf("Skipping setTimestamp() transaction\n")
+		Info.Printf("Skipping setTimestamp() transaction\n")
 		return
 	}
 	if 0 == bytes.Compare(input_sig,decoded_sig) {
@@ -534,18 +534,18 @@ func dump_tx_input_if_known(tx *types.Transaction) {
 		if err != nil {
 			Fatalf("Couldn't decode input of tx %v",err)
 		}
-		fmt.Printf("ExecuteWalletTransaction {\n")
-		fmt.Printf("\tto: %v\n",input_data.To.String())
-		fmt.Printf("\tdata: %v\n",hex.EncodeToString(input_data.Data[:]))
-		fmt.Printf("\tvalue: %v\n",input_data.Value.String())
-		fmt.Printf("\tpayment: %v\n",input_data.Payment.String())
-		fmt.Printf("\treferralAddress:  %v\n",input_data.ReferralAddress.String())
-		fmt.Printf("\tfingerprint: %v\n",hex.EncodeToString(input_data.Fingerprint[:]))
-		fmt.Printf("\tdesiredSignerBalance: %v\n",input_data.DesiredSignerBalance.String())
-		fmt.Printf("\tmaxExchangeRateInDai: %v\n",input_data.MaxExchangeRateInDai.String())
-		fmt.Printf("\trevertOnFaliure: %v\n",input_data.RevertOnFailure)
-		fmt.Printf("}\n")
+		Info.Printf("ExecuteWalletTransaction {\n")
+		Info.Printf("\tto: %v\n",input_data.To.String())
+		Info.Printf("\tdata: %v\n",hex.EncodeToString(input_data.Data[:]))
+		Info.Printf("\tvalue: %v\n",input_data.Value.String())
+		Info.Printf("\tpayment: %v\n",input_data.Payment.String())
+		Info.Printf("\treferralAddress:  %v\n",input_data.ReferralAddress.String())
+		Info.Printf("\tfingerprint: %v\n",hex.EncodeToString(input_data.Fingerprint[:]))
+		Info.Printf("\tdesiredSignerBalance: %v\n",input_data.DesiredSignerBalance.String())
+		Info.Printf("\tmaxExchangeRateInDai: %v\n",input_data.MaxExchangeRateInDai.String())
+		Info.Printf("\trevertOnFaliure: %v\n",input_data.RevertOnFailure)
+		Info.Printf("}\n")
 	} else {
-		fmt.Printf("dump_tx_input: input sig: %v\n",hex.EncodeToString(input_sig[:]))
+		Info.Printf("dump_tx_input: input sig: %v\n",hex.EncodeToString(input_sig[:]))
 	}
 }

@@ -269,6 +269,7 @@ type InfoMarket struct {
 }
 type InfoCategories struct {
 	CatId			int64
+	TotalMarkets	int64
 	Category		string
 	Subcategories	[]string
 }

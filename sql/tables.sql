@@ -22,6 +22,7 @@ CREATE TABLE address (
 -- Market category
 CREATE TABLE category (
 	cat_id				BIGSERIAL	PRIMARY KEY,
+	total_markets		BIGINT DEFAULT 0,
 	category			TEXT NOT NULL UNIQUE		-- includes parent category too (comma separated list)
 );
 -- Market

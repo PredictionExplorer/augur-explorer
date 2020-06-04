@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"strings"
 	"strconv"
+	"log"
 //	"context"
 	"database/sql"
 	"encoding/hex"
@@ -18,7 +19,8 @@ import (
 	"github.com/0xProject/0x-mesh/zeroex"
 )
 type SQLStorage struct {
-	db		*sql.DB
+	db			*sql.DB
+	db_logger	*log.Logger
 }
 func show_connect_error() {
 	fmt.Printf(`AugurExtractor: can't connect to PostgreSQL database.
@@ -51,12 +53,25 @@ func connect_to_storage() *SQLStorage {
 	}
 	_,err = db.Exec("SET timezone TO 0")		// Setting timezone to UTC (which Augur uses)
 	if (err!=nil) {
-		Fatalf("DB Error: %v",err);
+		Fatalf(fmt.Sprintf("DB Error: %v",err));
 	}
 
 	ss := new(SQLStorage)
 	ss.db = db
 	return ss
+}
+func (ss *SQLStorage) init_log(fname string) {
+
+	f, err := os.OpenFile(fname,os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	check(err)
+	ss.db_logger = log.New(f,"DB: ",log.LstdFlags)
+}
+func (ss *SQLStorage) log_msg(msg string) {
+	if ss.db_logger !=nil {
+		ss.db_logger.Printf(msg)
+	} else {
+		fmt.Printf(msg)
+	}
 }
 func make_subcategories(cat_str *string) []string {
 	subcategories := strings.Split(*cat_str,",")
@@ -83,7 +98,7 @@ func (ss *SQLStorage) check_main_stats() {
 			query="INSERT INTO main_stats(universe_id) VALUES(1)";
 			_,_ =ss.db.Exec(query)
 		} else {
-			Fatalf("Error in check_main_stats(): %v, q=%v",err,query)
+			ss.log_msg(fmt.Sprintf("Error in check_main_stats(): %v, q=%v",err,query))
 		}
 	}
 }
@@ -99,7 +114,7 @@ func (ss *SQLStorage) get_last_block_num() (BlockNumber,bool) {
 		if err == sql.ErrNoRows {
 			return -1,false
 		} else {
-			Fatalf("Error in get_last_block_num(): %v",err)
+			ss.log_msg(fmt.Sprintf("Error in get_last_block_num(): %v",err))
 		}
 	}
 	if (null_block_num.Valid) {
@@ -114,11 +129,11 @@ func (ss *SQLStorage) set_last_block_num(block_num BlockNumber) {
 	var query string = "UPDATE last_block SET block_num=$1 WHERE block_num < $1"
 	res,err:=ss.db.Exec(query,bnum)
 	if (err!=nil) {
-		Fatalf("set_last_block_num() failed: %v",err);
+		ss.log_msg(fmt.Sprintf("set_last_block_num() failed: %v",err))
 	}
 	affected_rows,err:=res.RowsAffected()
 	if err!=nil {
-		Fatalf("Error getting RowsAffected in set_last_block(): %v",err)
+		ss.log_msg(fmt.Sprintf("Error getting RowsAffected in set_last_block(): %v",err))
 	}
 	if affected_rows>0 {
 		// break
@@ -126,7 +141,7 @@ func (ss *SQLStorage) set_last_block_num(block_num BlockNumber) {
 		query = "INSERT INTO last_block VALUES($1)"
 		_,err := ss.db.Exec(query,bnum)
 		if (err!=nil) {
-			Fatalf("set_last_block_num() failed on INSERT: %v",err);
+			ss.log_msg(fmt.Sprintf("set_last_block_num() failed on INSERT: %v",err));
 		}
 	}
 }
@@ -138,9 +153,9 @@ func (ss *SQLStorage) lookup_universe_id(addr string) int64 {
 	err:=ss.db.QueryRow(query,addr).Scan(&universe_id);
 	if (err!=nil) {
 		if (err==sql.ErrNoRows) {
-			Fatalf("DB error: Universe doesn't exist (addr=%v). Database wasn't initialized correctly",addr)
+			ss.log_msg(fmt.Sprintf("DB error: Universe doesn't exist (addr=%v). Database wasn't initialized correctly",addr))
 		} else {
-			Fatalf("DB error looking up for Universe record: %v",err);
+			ss.log_msg(fmt.Sprintf("DB error looking up for Universe record: %v",err))
 		}
 	}
 	return universe_id
@@ -153,7 +168,7 @@ func (ss *SQLStorage) lookup_eoa_aid(wallet_aid int64) (int64,error) {
 	err:=ss.db.QueryRow(query,wallet_aid).Scan(&addr_id);
 	if (err!=nil) {
 		if err != sql.ErrNoRows {
-			fmt.Printf("lookup_eoa_aid(wallet_aid=%v) sql error=%v\n",wallet_aid,err)
+			Info.Printf("lookup_eoa_aid(wallet_aid=%v) sql error=%v\n",wallet_aid,err)
 		}
 		return 0,err
 	}
@@ -167,9 +182,9 @@ func (ss *SQLStorage) lookup_wallet_aid(eoa_aid int64) (int64,error) {
 	err:=ss.db.QueryRow(query,eoa_aid).Scan(&addr_id);
 	if (err!=nil) {
 		if err!=sql.ErrNoRows {
-			Fatalf("DB error: %v, q=%v",err,query)
+			ss.log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 		} else {
-			fmt.Printf("lookup_wallet_aid(%v) error: %v\n",eoa_aid,err)
+			Info.Printf("lookup_wallet_aid(%v) error: %v\n",eoa_aid,err)
 		}
 		return 0,err
 	}
@@ -204,9 +219,9 @@ func (ss *SQLStorage) lookup_address_id(addr string) int64 {
 	err:=ss.db.QueryRow(query,addr).Scan(&addr_id);
 	if (err!=nil) {
 		if (err==sql.ErrNoRows) {
-			Fatalf("DB error: address %v does not exist",addr)
+			ss.log_msg(fmt.Sprintf("DB error: address %v does not exist",addr))
 		} else {
-			Fatalf("DB error upon address lookup: %v",err)
+			ss.log_msg(fmt.Sprintf("DB error upon address lookup: %v",err))
 		}
 	}
 
@@ -224,16 +239,16 @@ func (ss *SQLStorage) lookup_or_create_address(addr string) int64 {
 			row:=ss.db.QueryRow(query,addr);
 			err:=row.Scan(&addr_id)
 			if err!=nil {
-				Fatalf(fmt.Sprintf("DB error in address insertion: %v : %v",query,err))
+				ss.log_msg(fmt.Sprintf("DB error in address insertion: %v : %v",query,err))
 			}
 			if addr_id==0 {
-				Fatalf(fmt.Sprintf("DB error, addr_id after INSERT is 0"))
+				ss.log_msg(fmt.Sprintf("DB error, addr_id after INSERT is 0"))
 			}
 			return addr_id
 		}
 	}
 	if (err!=nil) {
-		Fatalf(fmt.Sprintf("DB error in getting address id : %v",err))
+		ss.log_msg(fmt.Sprintf("DB error in getting address id : %v",err))
 	}
 
 	return addr_id
@@ -251,16 +266,16 @@ func (ss *SQLStorage) lookup_or_create_category(categories string) int64 {
 			row:=ss.db.QueryRow(query,categories);
 			err:=row.Scan(&cat_id)
 			if err!=nil {
-				Fatalf(fmt.Sprintf("DB error in category insertion: %v : %v",query,err))
+				ss.log_msg(fmt.Sprintf("DB error in category insertion: %v : %v",query,err))
 			}
 			if cat_id==0 {
-				Fatalf(fmt.Sprintf("DB error, cat_id after INSERT is 0"))
+				ss.log_msg(fmt.Sprintf("DB error, cat_id after INSERT is 0"))
 			}
 			return cat_id
 		}
 	}
 	if (err!=nil) {
-		Fatalf(fmt.Sprintf("DB error in getting category id : %v",err))
+		ss.log_msg(fmt.Sprintf("DB error in getting category id : %v",err))
 	}
 
 	return cat_id
@@ -278,7 +293,7 @@ func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int6
 		if (err==sql.ErrNoRows) {
 			// break
 		} else {
-			Fatalf("DB error: %v, q=%v",err,query)
+			ss.log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 		}
 	} else {
 		// market already registered, sliently exit
@@ -288,7 +303,7 @@ func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int6
 	universe_id := ss.lookup_universe_id(evt.Universe.String())
 	eoa_aid := ss.lookup_or_create_address(evt.MarketCreator.String())
 	reporter_aid := ss.lookup_or_create_address(evt.DesignatedReporter.String())
-	fmt.Printf("create_market: signer_aid = %v (%v), creator_aid=%v (%v), reporter_id=%v (%v) , wallet_aid =%v\n",
+	Info.Printf("create_market: signer_aid = %v (%v), creator_aid=%v (%v), reporter_id=%v (%v) , wallet_aid =%v\n",
 				signer_aid,signer.String(),
 				creator_aid,evt.MarketCreator.String(),
 				reporter_aid,evt.DesignatedReporter.String(),
@@ -298,23 +313,23 @@ func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int6
 		// Normally signer != creator, but this happens only in Dev (local testnet), so we have to fix it
 		//creator_aid = wallet_aid // this doesn't work, if starting blockchain from block 0, wallt isn't created yet
 		wallet_aid = creator_aid
-		fmt.Printf("create_market: fixed creator id to contract address %v (wallet_aid)\n",wallet_aid)
+		Info.Printf("create_market: fixed creator id to contract address %v (wallet_aid)\n",wallet_aid)
 	} else {
 		eoa_aid = signer_aid
 		wallet_aid = creator_aid
 	}
 	if wallet_aid == 0 {
-		Fatalf("insert_market_created_evt(): creator addr = %v, wallet_aid = 0, can't continue, exiting\n",
-					evt.MarketCreator.String())
+		ss.log_msg(fmt.Sprintf("insert_market_created_evt(): creator addr = %v, wallet_aid = 0, can't continue, exiting\n",
+					evt.MarketCreator.String()))
 	}
 	prices := bigint_ptr_slice_to_str(&evt.Prices,",")
 	outcomes := outcomes_to_str(&evt.Outcomes,",")
 
 	var extra_info ExtraInfo
 	json.Unmarshal([]byte(evt.ExtraInfo), &extra_info)
-	fmt.Printf("extra_info unmarshalled: %+v\n",extra_info)
+	Info.Printf("extra_info unmarshalled: %+v\n",extra_info)
 	categories := strings.Join(extra_info.Categories,",")
-	fmt.Printf("market_categories: %v\n",categories)
+	Info.Printf("market_categories: %v\n",categories)
 	cat_id := ss.lookup_or_create_category(categories)
 
 	query = `
@@ -358,18 +373,18 @@ func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int6
 			outcomes,
 			evt.NoShowBond.String())
 	if err != nil {
-		Fatalf("DB error: can't insert into market table: %v: q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: can't insert into market table: %v: q=%v",err,query))
 	}
 	rows_affected,err:=result.RowsAffected()
 	if err != nil {
-		Fatalf("DB error: %v, %q",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: %v, %q",err,query))
 	}
 	if rows_affected > 0 {
 	} else {
-		Fatalf("DB error: couldn't insert into Market table. Rows affeced = 0")
+		ss.log_msg(fmt.Sprintf("DB error: couldn't insert into Market table. Rows affeced = 0"))
 	}
 	if len(outcomes) == 0 {
-		fmt.Printf("len(outcomes)=0\n")
+		Info.Printf("len(outcomes)=0\n")
 		if evt.MarketType == 0 {	// Yes / No
 			outcomes = "Invalid,No,Yes"
 		}
@@ -377,7 +392,7 @@ func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int6
 			outcomes = "Invalid,,Scalar"
 		}
 	}
-	fmt.Printf("init_market_outcome_volumes() outcomes=%v, mkt type = %v\n",outcomes,evt.MarketType)
+	Info.Printf("init_market_outcome_volumes() outcomes=%v, mkt type = %v\n",outcomes,evt.MarketType)
 	ss.init_market_outcome_volumes(market_aid,outcomes)
 }
 func (ss *SQLStorage) init_market_outcome_volumes(market_aid int64,outcomes string) {
@@ -400,10 +415,10 @@ func (ss *SQLStorage) init_market_outcome_volumes(market_aid int64,outcomes stri
 						"%v," +
 						"%v" +
 					")",market_aid,outcome_idx)
-			fmt.Printf("insert into outcome volumes query: %v\n",d_query)
+			Info.Printf("insert into outcome volumes query: %v\n",d_query)
 			_,err := ss.db.Exec(query,market_aid,outcome_idx)
 			if (err!=nil) {
-				Fatalf("DB error: %v; q=%v",err,query);
+				ss.log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
 			}
 		}
 	}
@@ -419,19 +434,19 @@ func (ss *SQLStorage) insert_market_oi_changed_evt(block *types.Header,evt *Mark
 			"/1e+18))"
 	result,err := ss.db.Exec(query,market_aid,ts_inserted)
 	if err != nil {
-		Fatalf("DB error: can't insert into oi_chg table: %v; q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: can't insert into oi_chg table: %v; q=%v",err,query))
 	}
 	rows_affected,err:=result.RowsAffected()
 	if err != nil {
-		Fatalf("DB error: %v, q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 	}
 	if rows_affected > 0 {
 		return
 	} else {
-		Fatalf("DB error: couldn't insert into oi_chg table. Rows affeced = 0")
+		ss.log_msg(fmt.Sprintf("DB error: couldn't insert into oi_chg table. Rows affeced = 0"))
 	}
 
-	fmt.Printf("Set market (id=%v) open interest to %v",market_aid,evt.MarketOI.String())
+	Info.Printf("Set market (id=%v) open interest to %v",market_aid,evt.MarketOI.String())
 }
 func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber,tx_id int64,signer common.Address,eoa_aid int64,evt *MktOrderEvt) {
 
@@ -481,11 +496,11 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber,tx_id int64,
 	query = "DELETE FROM oorders WHERE order_id = $1"
 	_,err := ss.db.Exec(query,market_aid)
 	if err!=nil {
-		fmt.Printf("DB error: couldn't delete open order with order_id = %v\n",order_id)
+		Info.Printf("DB error: couldn't delete open order with order_id = %v\n",order_id)
 	}
 
-	fmt.Printf("OrderAction = %v, otype=%v, order_id=%v\n",oaction,otype,order_id)
-	fmt.Printf("Filling existing order %v\n",order_id)
+	Info.Printf("OrderAction = %v, otype=%v, order_id=%v\n",oaction,otype,order_id)
+	Info.Printf("Filling existing order %v\n",order_id)
 	query = `
 		INSERT INTO mktord(
 			tx_id,
@@ -540,7 +555,7 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber,tx_id int64,
 			order_id,
 	).Scan(&null_id);
 	if (err!=nil) {
-		Fatalf("DB error: can't insert into mktord table: %v, q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: can't insert into mktord table: %v, q=%v",err,query))
 	}
 	if null_id.Valid {
 		market_order_id = null_id.Int64
@@ -555,14 +570,14 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber,tx_id int64,
 				"market_aid = $1 AND outcome_idx = $2"
 	res,err:=ss.db.Exec(query,market_aid,outcome_idx)
 	if (err!=nil) {
-		Fatalf("DB error: %v ; q=%v",err,query);
+		ss.log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
 	}
 	affected_rows,err:=res.RowsAffected()
 	if err!=nil {
-		Fatalf("DB error in rows affected: %v, q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error in rows affected: %v, q=%v",err,query))
 	}
 	if affected_rows == 0 {
-		fmt.Printf("Last price for market_aid = %v and outcome_idx = %v wasn't updated",
+		Error.Printf("Last price for market_aid = %v and outcome_idx = %v wasn't updated",
 					market_aid,outcome_idx)
 	}
 }
@@ -572,14 +587,14 @@ func (ss *SQLStorage) insert_open_order(evt *zeroex.OrderEvent,eoa_addr string,o
 	order := evt.SignedOrder.Order
 	ohash,err := order.ComputeOrderHash()
 	if err != nil {
-		fmt.Printf("Error at computing 0x Mesh order: %v",err)
+		Error.Printf("Error at computing 0x Mesh order: %v",err)
 	}
 	order_id := ohash.String()
 	evt_timestamp := evt.Timestamp.Unix()
 	expiration := order.ExpirationTimeSeconds.Int64()
 	wallet_aid := ss.lookup_or_create_address(order.MakerAddress.String())
 	eoa_aid := ss.lookup_or_create_address(eoa_addr)
-	fmt.Printf("creating open order made by %v : %+v\n",eoa_addr,ospec)
+	Info.Printf("creating open order made by %v : %+v\n",eoa_addr,ospec)
 	market_aid := ss.lookup_address_id(ospec.Market.String())
 	price := float64(ospec.Price.Int64())/100
 	otype := ospec.Type	// Bid/Ask
@@ -589,12 +604,12 @@ func (ss *SQLStorage) insert_open_order(evt *zeroex.OrderEvent,eoa_addr string,o
 	query = "INSERT INTO oostats(market_aid,eoa_aid,outcome_idx) VALUES($1,$2,$3)"
 	_,err = ss.db.Exec(query,market_aid,eoa_aid,ospec.Outcome)
 	if err != nil {
-		fmt.Printf("DB error: %v, q=%v\n",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
 	}
 	query = "INSERT INTO oorders(" +
 				"market_aid,otype,wallet_aid,eoa_aid,price,amount,outcome_idx," +
 				"evt_timestamp,srv_timestamp,expiration,order_id" +
-			") VALUES($1,$2,$3,$4,$5,"+amount+"/1e+18,$6,TO_TIMESTAMP($7),TO_TIMESTAMP($8),NOW(),$9)"
+			") VALUES($1,$2,$3,$4,$5,"+amount+"/1e+16,$6,TO_TIMESTAMP($7),TO_TIMESTAMP($8),NOW(),$9)"
 	result,err := ss.db.Exec(query,
 			market_aid,
 			otype,
@@ -606,17 +621,17 @@ func (ss *SQLStorage) insert_open_order(evt *zeroex.OrderEvent,eoa_addr string,o
 			expiration,
 			order_id)
 	if err != nil {
-		fmt.Printf("DB error: can't insert into open orders table: %v, q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: can't insert into open orders table: %v, q=%v",err,query))
 		return
 	}
 	rows_affected,err:=result.RowsAffected()
 	if err != nil {
-		Fatalf("DB error: %v, q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 	}
 	if rows_affected > 0 {
 		return
 	} else {
-		Fatalf("DB error: couldn't insert into Open Orders table. Rows affeced = 0")
+		ss.log_msg(fmt.Sprintf("DB error: couldn't insert into Open Orders table. Rows affeced = 0"))
 	}
 }
 func (ss *SQLStorage) delete_open_0x_order(order_hash string) {
@@ -625,11 +640,11 @@ func (ss *SQLStorage) delete_open_0x_order(order_hash string) {
 	query = "DELETE FROM oorders WHERE order_id = $1"
 	result,err := ss.db.Exec(query,order_hash)
 	if err!=nil {
-		fmt.Printf("DB error: couldn't delete open order with order_id = %v, q=%v\n",order_hash,query)
+		ss.log_msg(fmt.Sprintf("DB error: couldn't delete open order with order_id = %v, q=%v\n",order_hash,query))
 	}
 	rows_affected,err:=result.RowsAffected()
 	if rows_affected == 0  {
-		fmt.Printf("DB error: couldn't delete open order with order_id = %v (not found)\n",order_hash)
+		ss.log_msg(fmt.Sprintf("DB error: couldn't delete open order with order_id = %v (not found)\n",order_hash))
 	}
 }
 func (ss *SQLStorage) insert_market_finalized_evt(evt *MktFinalizedEvt) {
@@ -644,7 +659,7 @@ func (ss *SQLStorage) insert_market_finalized_evt(evt *MktFinalizedEvt) {
 	query = "INSERT INTO mkt_fin(market_aid,fin_timestamp,winning_payouts) VALUES($1,TO_TIMESTAMP($2),$3)"
 	_,err := ss.db.Exec(query,market_aid,fin_timestamp,winning_payouts)
 	if err != nil {
-		Fatalf("DB error: can't update market finalization of market %v : %v, q=%v",market_aid,err,query)
+		ss.log_msg(fmt.Sprintf("DB error: can't update market finalization of market %v : %v, q=%v",market_aid,err,query))
 	}
 	ss.update_market_status(market_aid,MktStatusFinalized)
 	ss.update_losing_positions(market_aid,evt)
@@ -660,16 +675,16 @@ func (ss *SQLStorage) update_market_status(market_aid int64,status MarketStatus)
 
 	res,err:=ss.db.Exec(query,market_aid,status)
 	if (err!=nil) {
-		Fatalf("DB error: %v ; q=%v",err,query);
+		ss.log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
 	}
 	affected_rows,err:=res.RowsAffected()
 	if err!=nil {
-		Fatalf("DB error: %v ; q=%v",err,query);
+		ss.log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
 	}
 	if affected_rows == 0 {
-		fmt.Printf("Couldn't update market status = %v for market %v",status,market_aid)
+		Error.Printf("Couldn't update market status = %v for market %v",status,market_aid)
 	} else {
-		fmt.Printf("MKTSTATUS: market_aid = %v, status = %v\n",market_aid,status)
+		Info.Printf("MKTSTATUS: market_aid = %v, status = %v\n",market_aid,status)
 	}
 }
 func (ss *SQLStorage) update_losing_positions(market_aid int64,evt *MktFinalizedEvt) {
@@ -685,7 +700,7 @@ func (ss *SQLStorage) update_losing_positions(market_aid int64,evt *MktFinalized
 		if (err==sql.ErrNoRows) {
 			return
 		}
-		Fatalf("DB Error: %v, q=%v\n",err,query)
+		ss.log_msg(fmt.Sprintf("DB Error: %v, q=%v\n",err,query))
 	}
 
 	var where_condition string
@@ -713,13 +728,13 @@ func (ss *SQLStorage) update_losing_positions(market_aid int64,evt *MktFinalized
 	}
 	res,err:=ss.db.Exec(query,market_aid)
 	if (err!=nil) {
-		Fatalf("DB error: %v ; q=%v",err,query);
+		ss.log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
 	}
 	affected_rows,err:=res.RowsAffected()
 	if err!=nil {
-		Fatalf("DB error in rows affected: %v",err)
+		ss.log_msg(fmt.Sprintf("DB error in rows affected: %v",err))
 	}
-	fmt.Printf("Market finalized. amount of closed losing positions: %v\n",affected_rows)
+	Info.Printf("Market finalized. amount of closed losing positions: %v\n",affected_rows)
 }
 func (ss *SQLStorage) insert_initial_report_evt(block_num BlockNumber,tx_id int64,signer common.Address,evt *InitialReportSubmittedEvt) {
 
@@ -735,7 +750,7 @@ func (ss *SQLStorage) insert_initial_report_evt(block_num BlockNumber,tx_id int6
 	next_win_end := evt.NextWindowEndTime.Int64()
 	rpt_timestamp := evt.Timestamp.Int64()
 
-	fmt.Printf("insert_initial_report_evt(): market_aid=%v, reporter_id=%v, signer_aid=%v\n",
+	Info.Printf("insert_initial_report_evt(): market_aid=%v, reporter_id=%v, signer_aid=%v\n",
 					market_aid,reporter_aid,signer_aid)
 	var query string
 	query = `
@@ -775,16 +790,16 @@ func (ss *SQLStorage) insert_initial_report_evt(block_num BlockNumber,tx_id int6
 			next_win_end,
 			rpt_timestamp)
 	if err != nil {
-		Fatalf("DB error: can't insert into report table: %v,q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: can't insert into report table: %v,q=%v",err,query))
 	}
 	rows_affected,err:=result.RowsAffected()
 	if err != nil {
-		Fatalf("DB error: %v, q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 	}
 	if rows_affected > 0 {
 		//break
 	} else {
-		Fatalf("DB error: couldn't insert into InitialReport table. Rows affeced = 0")
+		ss.log_msg(fmt.Sprintf("DB error: couldn't insert into InitialReport table. Rows affeced = 0"))
 	}
 	// set 'Reporting' status
 	// ToDo: possibly migrate to triggers (or maybe not)
@@ -815,16 +830,16 @@ func (ss *SQLStorage) insert_market_volume_changed_evt(block_num BlockNumber,tx_
 			outcome_vols,
 			timestamp)
 	if err != nil {
-		Fatalf("DB error: can't insert into volume table: %v, q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: can't insert into volume table: %v, q=%v",err,query))
 	}
 	rows_affected,err:=result.RowsAffected()
 	if err != nil {
-		Fatalf("DB error: %v, q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 	}
 	if rows_affected > 0 {
 		//break
 	} else {
-		Fatalf("DB error: couldn't insert into InitialReport table. Rows affeced = 0")
+		ss.log_msg(fmt.Sprintf("DB error: couldn't insert into InitialReport table. Rows affeced = 0"))
 	}
 
 	// Updates volume per outcome in an indexed table for querying market info
@@ -837,11 +852,11 @@ func (ss *SQLStorage) insert_market_volume_changed_evt(block_num BlockNumber,tx_
 					"market_aid = $1 AND outcome_idx = $2"
 		res,err:=ss.db.Exec(query,market_aid,outcome_idx)
 		if (err!=nil) {
-			Fatalf("DB error: %v ; q=%v",err,query);
+			ss.log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
 		}
 		affected_rows,err:=res.RowsAffected()
 		if err!=nil {
-			Fatalf("DB error in rows affected: %v",err)
+			ss.log_msg(fmt.Sprintf("DB error in rows affected: %v",err))
 		}
 		if affected_rows>0 {
 			// break
@@ -889,7 +904,7 @@ func (ss *SQLStorage) insert_dispute_crowd_contrib(block_num BlockNumber,tx_id i
 	dispute_round := evt.DisputeRound.Int64()
 	rpt_timestamp := evt.Timestamp.Int64()
 
-	fmt.Printf("insert_dispute_crows_contrib(): market_aid=%v, reporter_id=%v, signer_aid=%v",
+	Info.Printf("insert_dispute_crows_contrib(): market_aid=%v, reporter_id=%v, signer_aid=%v",
 					market_aid,reporter_aid,signer_aid)
 	var query string
 	query = `
@@ -921,14 +936,14 @@ func (ss *SQLStorage) insert_dispute_crowd_contrib(block_num BlockNumber,tx_id i
 			payout_numerators,
 			rpt_timestamp)
 	if err != nil {
-		Fatalf("DB error: can't insert dispute into report table: %v; q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: can't insert dispute into report table: %v; q=%v",err,query))
 	}
 	rows_affected,err:=result.RowsAffected()
 	if err != nil {
-		Fatalf("DB error: %v, q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 	}
 	if rows_affected == 0 {
-		Fatalf("DB error: couldn't insert dispute into Report table. Rows affeced = 0")
+		ss.log_msg(fmt.Sprintf("DB error: couldn't insert dispute into Report table. Rows affeced = 0"))
 	}
 	ss.update_market_status(market_aid,MktStatusDisputing)
 }
@@ -950,19 +965,19 @@ func (ss *SQLStorage) insert_share_balance_changed_evt(block_num BlockNumber,tx_
 					"outcome_idx = $3"
 	result,err := ss.db.Exec(query,	market_aid,account_aid,outcome)
 	if err != nil {
-		Fatalf("DB error: can't update 'sbalances' for account %v, market %v : %v; q=%v",
-					evt.Account.String(),evt.Market.String(),err,query)
+		ss.log_msg(fmt.Sprintf("DB error: can't update 'sbalances' for account %v, market %v : %v; q=%v",
+					evt.Account.String(),evt.Market.String(),err,query))
 	}
 	rows_affected,err:=result.RowsAffected()
 	if err != nil {
-		Fatalf("DB error: %v",err)
+		ss.log_msg(fmt.Sprintf("DB error: %v",err))
 	}
-	fmt.Printf("No error, rows affected = %v\n",rows_affected)
+	Error.Printf("No error, rows affected = %v\n",rows_affected)
 	if rows_affected > 0 {
-		fmt.Printf("Update to sbalances %v , outcome %v holds %v \n",evt.Account.String(),outcome,balance);
+		Info.Printf("Update to sbalances %v , outcome %v holds %v \n",evt.Account.String(),outcome,balance);
 		//break
 	} else {
-		fmt.Printf("Insert to sbalances (%v outcome %v bal=%v\n",evt.Account.String(),outcome,balance);
+		Info.Printf("Insert to sbalances (%v outcome %v bal=%v\n",evt.Account.String(),outcome,balance);
 		query = "INSERT INTO sbalances (" +
 					"block_num," + 
 					"tx_id," +
@@ -980,16 +995,16 @@ func (ss *SQLStorage) insert_share_balance_changed_evt(block_num BlockNumber,tx_
 				")"
 		result,err := ss.db.Exec(query,block_num,tx_id,account_aid,market_aid,outcome)
 		if err != nil {
-			Fatalf("DB error: can't insert into sbalances table: %v, q=%v",err,query)
+			ss.log_msg(fmt.Sprintf("DB error: can't insert into sbalances table: %v, q=%v",err,query))
 		}
 		rows_affected,err:=result.RowsAffected()
 		if err != nil {
-			Fatalf("DB error: %v, query=%v",err,query)
+			ss.log_msg(fmt.Sprintf("DB error: %v, query=%v",err,query))
 		}
 		if rows_affected > 0 {
 			return
 		} else {
-			Fatalf("DB error: couldn't insert into 'sbalances' table. Rows affeced = 0")
+			ss.log_msg(fmt.Sprintf("DB error: couldn't insert into 'sbalances' table. Rows affeced = 0"))
 		}
 	}
 }
@@ -1007,7 +1022,7 @@ func (ss *SQLStorage) insert_block(block *types.Header,num_tx int64)  bool {
 				// Genesis. Allow.
 			} else {
 				if (parent_block_num + 1) != int64(block.Number.Uint64()) {
-					fmt.Printf("Block sequence broken after block %v\n",parent_block_num)
+					Error.Printf("Block sequence broken after block %v\n",parent_block_num)
 					return false
 				}
 			}
@@ -1030,16 +1045,16 @@ func (ss *SQLStorage) insert_block(block *types.Header,num_tx int64)  bool {
 			block_hash,
 			parent_hash)
 	if err != nil {
-		Fatalf("DB error: can't insert into block  table: %v, q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: can't insert into block  table: %v, q=%v",err,query))
 	}
 	rows_affected,err:=result.RowsAffected()
 	if err != nil {
-		Fatalf("DB error: %v, q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 	}
 	if rows_affected > 0 {
 		return true
 	}
-	Fatalf("DB error: couldn't insert into block table. Rows affeced = 0")
+	ss.log_msg(fmt.Sprintf("DB error: couldn't insert into block table. Rows affeced = 0"))
 	return false
 }
 func (ss *SQLStorage) insert_transaction(block_num BlockNumber,tx *types.Transaction) int64 {
@@ -1059,7 +1074,7 @@ func (ss *SQLStorage) insert_transaction(block_num BlockNumber,tx *types.Transac
 			tx_hash)
 	err := row.Scan(&tx_id)
 	if err != nil {
-		Fatalf("DB error: can't insert into transactions table: %v, q=%v",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: can't insert into transactions table: %v, q=%v",err,query))
 	}
 	return tx_id
 }
@@ -1073,19 +1088,19 @@ func (ss *SQLStorage) fix_chainsplit(block *types.Header) BlockNumber {
 	err := row.Scan(&my_block_num);
 	if (err!=nil) {
 		if err==sql.ErrNoRows {
-			Fatalf("Chainsplit detected, I don't have the parent hash %v, exiting. ",parent_hash)
+			ss.log_msg(fmt.Sprintf("Chainsplit detected, I don't have the parent hash %v, exiting. ",parent_hash))
 		} else {
-			Fatalf("DB error: %v, q=%v",err,query)
+			ss.log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 		}
 	}
 	cur_block_num := int64(block.Number.Uint64())
 	if cur_block_num > (my_block_num + MAX_BLOCKS_CHAIN_SPLIT) {
-		Fatalf("Chainsplit detected, and it is more than %v blocks, aborting.",MAX_BLOCKS_CHAIN_SPLIT)
+		ss.log_msg(fmt.Sprintf("Chainsplit detected, and it is more than %v blocks, aborting.",MAX_BLOCKS_CHAIN_SPLIT))
 	}
 	query = "DELETE FROM block WHERE block_num > $1 CASCADE"
 	_,err = ss.db.Exec(query,my_block_num)
 	if (err!=nil) {
-		Fatalf("DB error: %v, q=%v, block_num=%v",err,query,my_block_num);
+		ss.log_msg(fmt.Sprintf("DB error: %v, q=%v, block_num=%v",err,query,my_block_num))
 	}
 	return BlockNumber(my_block_num + 1)	// parent + 1 = current
 }
@@ -1096,7 +1111,7 @@ func (ss *SQLStorage) block_delete_with_everything(block_num BlockNumber) {
 	query = "DELETE FROM block WHERE block_num = $1"
 	_,err := ss.db.Exec(query,block_num)
 	if (err!=nil) {
-		Fatalf("DB error: %v (block_num=%v, %v)",err,block_num,query);
+		ss.log_msg(fmt.Sprintf("DB error: %v (block_num=%v, %v)",err,block_num,query))
 	}
 }
 func (ss *SQLStorage) get_active_market_list(off int, lim int) []InfoMarket {
@@ -1138,7 +1153,7 @@ func (ss *SQLStorage) get_active_market_list(off int, lim int) []InfoMarket {
 
 	rows,err := ss.db.Query(query,off,lim)
 	if (err!=nil) {
-		Fatalf("DB error: %v (query=%v)",err,query);
+		ss.log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 	}
 	var rec InfoMarket
 	records := make([]InfoMarket,0,8)
@@ -1167,7 +1182,7 @@ func (ss *SQLStorage) get_active_market_list(off int, lim int) []InfoMarket {
 					&rec.CurVolume,
 		)
 		if err!=nil {
-			Fatalf(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			ss.log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 		}
 		if longdesc.Valid {
 			rec.LongDesc = longdesc.String
@@ -1196,6 +1211,7 @@ func (ss *SQLStorage) get_categories() []InfoCategories {
 	var query string
 	query = "SELECT " +
 				"cat_id," +
+				"total_markets," +
 				"category " +
 			"FROM category " +
 			"ORDER BY " +
@@ -1203,12 +1219,12 @@ func (ss *SQLStorage) get_categories() []InfoCategories {
 
 	_,err := ss.db.Exec(query)
 	if (err!=nil) {
-		Fatalf("DB error: %v ,q=%v",err,query);
+		ss.log_msg(fmt.Sprintf("DB error: %v ,q=%v",err,query))
 	}
 	rows,err:=ss.db.Query(query)
 	if err!=nil {
 		if err!=sql.ErrNoRows {
-			Fatalf(fmt.Sprintf("Error for query %v: %v",query,err))
+			ss.log_msg(fmt.Sprintf("Error for query %v: %v",query,err))
 		}
 	}
 	var rec InfoCategories
@@ -1216,9 +1232,9 @@ func (ss *SQLStorage) get_categories() []InfoCategories {
 
 	defer rows.Close()
 	for rows.Next() {
-		err=rows.Scan(&rec.CatId,&rec.Category)
+		err=rows.Scan(&rec.CatId,&rec.TotalMarkets,&rec.Category)
 		if err!=nil {
-			Fatalf(fmt.Sprintf("DB error: %v",err))
+			ss.log_msg(fmt.Sprintf("DB error: %v",err))
 		}
 //		fmt.Printf("going to do split of: %+v\n",rec.Category)
 /* disabled, DELETION pending
@@ -1275,7 +1291,7 @@ func get_outcome_str(mkt_type uint8,outcome_idx int,outcomes_str *string) string
 }
 func (ss *SQLStorage) get_mkt_trades(mkt_addr string,limit int) []MarketTrade {
 	// get market trades with mixed outcomes
-	fmt.Printf("get_mkt_trades() mkt_addr=%v\n",mkt_addr)
+	Info.Printf("get_mkt_trades() mkt_addr=%v\n",mkt_addr)
 	var where string = ""
 	var market_aid int64 = 0;
 	if len(mkt_addr) > 0 {
@@ -1325,7 +1341,7 @@ func (ss *SQLStorage) get_mkt_trades(mkt_addr string,limit int) []MarketTrade {
 		rows,err = ss.db.Query(query)
 	}
 	if (err!=nil) {
-		Fatalf("DB error: %v (query=%v)",err,query);
+		ss.log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 	}
 	records := make([]MarketTrade,0,8)
 
@@ -1352,14 +1368,14 @@ func (ss *SQLStorage) get_mkt_trades(mkt_addr string,limit int) []MarketTrade {
 			&outcomes,
 		)
 		if err!=nil {
-			Fatalf(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			ss.log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 		}
 		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.Outcome,&outcomes)
 		records = append(records,rec)
 	}
-	fmt.Printf("get_mkt_trades(): returning %v rows\n",len(records))
+	Info.Printf("get_mkt_trades(): returning %v rows\n",len(records))
 	if len(records) == 0 {
-		fmt.Printf("null records, q: %v",query)
+		Info.Printf("null records, q: %v",query)
 	}
 	return records
 }
@@ -1371,11 +1387,11 @@ func (ss *SQLStorage) get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 	var rec InfoMarket
 	market_aid,err := ss.nonfatal_lookup_address_id(mkt_addr)
 	if err != nil {
-		fmt.Printf("market %v not found, returning empty data\n",mkt_addr)
+		Info.Printf("market %v not found, returning empty data\n",mkt_addr)
 		return rec,err
 	}
 	rec.MktAid=market_aid
-	fmt.Printf("querying info for market aid = %v\n",market_aid)
+	Info.Printf("querying info for market aid = %v\n",market_aid)
 	var reporter_aid int64
 	var query string
 	query = "SELECT " +
@@ -1453,15 +1469,15 @@ func (ss *SQLStorage) get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 		rec.CurOutcome = get_outcome_str(uint8(mkt_type),outcome_idx,&rec.Outcomes)
 	}
 	if err!=nil {
-		fmt.Printf("DB error: %v, q=%v\n",err,query)
+		ss.log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
 		return rec,err
 	}
 	reporter_eoa_aid,err := ss.lookup_eoa_aid(reporter_aid)
-	fmt.Printf("reporter_aid = %v,       reporter_eoa_aid=%v\n",reporter_aid,reporter_eoa_aid)
+	Info.Printf("reporter_aid = %v,       reporter_eoa_aid=%v\n",reporter_aid,reporter_eoa_aid)
 	if err == nil {
 		rep_addr,err := ss.lookup_address(reporter_eoa_aid)
 		if err == nil {
-			fmt.Printf("looked up reporter addr = %v\n",rep_addr)
+			Info.Printf("looked up reporter addr = %v\n",rep_addr)
 			rec.Reporter = rep_addr
 			rec.ReporterSh = string(rep_addr[0:6]+string('…')+rep_addr[26:32])
 		}
@@ -1501,12 +1517,12 @@ func (ss *SQLStorage) get_outcome_volumes(mkt_addr string) ([]OutcomeVol,error) 
 				"LEFT JOIN " +
 					"market AS m ON o.market_aid = m.market_aid " +
 			"WHERE o.market_aid = %v",market_aid)
-	fmt.Printf("outcome volumes query: %v\n",d_query)
+	Info.Printf("outcome volumes query: %v\n",d_query)
 
 	var rows *sql.Rows
 	rows,err = ss.db.Query(query,market_aid)
 	if (err!=nil) {
-		Fatalf("DB error: %v (query=%v)",err,query);
+		ss.log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 	}
 
 	defer rows.Close()
@@ -1521,10 +1537,10 @@ func (ss *SQLStorage) get_outcome_volumes(mkt_addr string) ([]OutcomeVol,error) 
 			&outcomes,
 		)
 		if err!=nil {
-			Fatalf(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			ss.log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 		}
 		rec.OutcomeStr = get_outcome_str(uint8(rec.MktType),rec.Outcome,&outcomes)
-		fmt.Printf("get_outcome_volumes(): rec.OutcomeStr=%v (extracted from %v)\n",rec.OutcomeStr,outcomes)
+		Info.Printf("get_outcome_volumes(): rec.OutcomeStr=%v (extracted from %v)\n",rec.OutcomeStr,outcomes)
 		records = append(records,rec)
 	}
 	return records,nil
@@ -1576,11 +1592,11 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype Order
 	} else {
 				query = query + "o.price ASC,o.evt_timestamp DESC";
 	}
-	fmt.Printf("q=%v\n",query)
+	Info.Printf("q=%v\n",query)
 	var accumulated_volume = 0.0
 	rows,err := ss.db.Query(query,market_aid,outc,otype)
 	if (err!=nil) {
-		Fatalf("DB error: %v (query=%v)",err,query);
+		ss.log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 	}
 	records := make([]DepthEntry,0,8)
 
@@ -1607,7 +1623,7 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype Order
 			&num_cancels,
 		)
 		if err!=nil {
-			Fatalf(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			ss.log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 		}
 		if num_bids.Valid {
 			rec.TotalBids = int32(num_bids.Int64)
@@ -1665,7 +1681,7 @@ func (ss *SQLStorage) get_price_history_for_outcome(market_aid int64,outc int) [
 	var accumulated_volume = 0.0
 	rows,err := ss.db.Query(query,market_aid,outc)
 	if (err!=nil) {
-		Fatalf("DB error: %v (query=%v)",err,query);
+		ss.log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 	}
 	records := make([]MarketOrder,0,8)
 
@@ -1691,9 +1707,9 @@ func (ss *SQLStorage) get_price_history_for_outcome(market_aid int64,outc int) [
 			&rec.Price,
 			&rec.Volume,
 		)
-		fmt.Printf("record: price = %v, volume = %v\n",rec.Price,rec.Volume)
+		Info.Printf("record: price = %v, volume = %v\n",rec.Price,rec.Volume)
 		if err!=nil {
-			Fatalf(fmt.Sprintf("DB error: %v",err))
+			ss.log_msg(fmt.Sprintf("DB error: %v",err))
 		}
 		accumulated_volume = accumulated_volume + rec.Volume
 		rec.AccumVol = accumulated_volume
@@ -1703,7 +1719,7 @@ func (ss *SQLStorage) get_price_history_for_outcome(market_aid int64,outc int) [
 }
 func (ss *SQLStorage) get_mkt_depth(mkt_addr string,outcome_idx int) *MarketDepth {
 
-	fmt.Printf("get_mkt_depth(mkt=%v,outcome_idx=%v)\n",mkt_addr,outcome_idx)
+	Info.Printf("get_mkt_depth(mkt=%v,outcome_idx=%v)\n",mkt_addr,outcome_idx)
 	market_aid := ss.lookup_address_id(mkt_addr)
 	market_depth := new(MarketDepth)
 	market_depth.Bids = ss.build_depth_by_otype(market_aid,outcome_idx,OrderTypeBid)
@@ -1776,9 +1792,9 @@ func (ss *SQLStorage) get_user_info(user_aid int64) UserInfo {
 	);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			fmt.Printf("No rows for User Info on eoa_aid = %v\n",user_aid)
+			Info.Printf("No rows for User Info on eoa_aid = %v\n",user_aid)
 		} else {
-			Fatalf("DB error: %v, q=%v\n",err,query)
+			ss.log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
 		}
 	}
 	if eoa_addr.Valid {
@@ -1826,12 +1842,12 @@ func (ss *SQLStorage) get_main_stats() MainStats {
 				&s.MoneyAtStake,
 				&s.TradesCount,
 	);
-	fmt.Printf("main stats = %+v\n",s)
+//	Info.Printf(fmt.Sprintf("main stats = %+v\n",s))
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			fmt.Printf("No rows for market statistics query\n")
+			Info.Printf("No rows for market statistics query\n")
 		} else {
-			Fatalf("DB error: %v, q=%v\n",err,query)
+			ss.log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
 		}
 	}
 	s.FinalizedCount = (s.YesNoCount + s.CategCount + s.ScalarCount) - s.ActiveCount
@@ -1885,7 +1901,7 @@ func (ss *SQLStorage) process_DAI_token_transfer(evt *Transfer) {
 	)
 
 	if (err!=nil) {
-		Fatalf("DB error: %v q=%v",err,query);
+		ss.log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 	}
 
 }
@@ -1913,16 +1929,16 @@ func (ss *SQLStorage) update_users_profit_loss(market_aid int64,eoa_aid int64,ou
 						"(outcome_idx = %v) AND " +
 						"(closed_position = 0)",
 						realized_profit,market_aid,eoa_aid,outcome_idx)
-	fmt.Printf("Position update query: %v\n",d_query)
+	Info.Printf("Position update query: %v\n",d_query)
 
 	var previous_profit string
 	row:=ss.db.QueryRow(query,market_aid,eoa_aid,outcome_idx)
 	err=row.Scan(&previous_profit);
 	if err != nil {
 		if err == sql.ErrNoRows {
-			fmt.Printf("pl_calc: notice: no previous trades were closed for this market & outcome\n")
+			Info.Printf("pl_calc: notice: no previous trades were closed for this market & outcome\n")
 		} else {
-			Fatalf("DB error: %v, (on Scan of previous profit) q=%v",err,query)
+			ss.log_msg(fmt.Sprintf("DB error: %v, (on Scan of previous profit) q=%v",err,query))
 		}
 	}
 	return previous_profit
@@ -1953,7 +1969,7 @@ func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,e
 		//final_profit="(" + realized_profit + "/1e+36)"
 		final_profit="(0)"
 	}
-	fmt.Printf("Insert to profitloss (wallet %v outcome %v)\n",evt.Account.String(),outcome_idx);
+	Info.Printf("Insert to profitloss (wallet %v outcome %v)\n",evt.Account.String(),outcome_idx);
 	query = "INSERT INTO profit_loss (" +
 				"block_num," + 
 				"tx_id," +
@@ -1999,7 +2015,7 @@ func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,e
 		if err == sql.ErrNoRows {
 			//
 		} else {
-			Fatalf("DB error: %v; q=%v",err,query)
+			ss.log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
 		}
 	} else {
 		pl_id = null_pl_id.Int64
@@ -2008,7 +2024,7 @@ func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,e
 		if null_volume.Float64 == 0 {
 			// Volume = 0 means the User has closed all his positions,
 			// therefore we must mark position as closed in the DB too
-			fmt.Printf("Closing position due to 0 volume, realized profit = %v\n")
+			Info.Printf("Closing position due to 0 volume, realized profit = %v\n")
 			ss.update_users_profit_loss(market_aid,eoa_aid,int(outcome_idx),realized_profit)
 		}
 	}
@@ -2070,10 +2086,10 @@ func (ss *SQLStorage) get_trade_data(eoa_aid int64,open_positions bool) []PLEntr
 			"WHERE (pl.mktord_id=o.id) AND (pl.eoa_aid = $1) AND " +
 			extra_condition +
 			" ORDER BY pl.time_stamp"
-	fmt.Printf("pl.eoa_aid=%v; q=%v\n",eoa_aid,query)
+	Info.Printf("pl.eoa_aid=%v; q=%v\n",eoa_aid,query)
 	rows,err := ss.db.Query(query,eoa_aid)
 	if (err!=nil) {
-		Fatalf("DB error: %v (query=%v)",err,query);
+		ss.log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 	}
 	records := make([]PLEntry,0,8)
 	var starting_point PLEntry
@@ -2123,7 +2139,7 @@ func (ss *SQLStorage) get_trade_data(eoa_aid int64,open_positions bool) []PLEntr
 			&filler_addr_sh,
 		)
 		if err!=nil {
-			Fatalf(fmt.Sprintf("DB error: %v eoa_aid=%v q=%v",err,eoa_aid,query))
+			ss.log_msg(fmt.Sprintf("DB error: %v eoa_aid=%v q=%v",err,eoa_aid,query))
 		}
 		rec.OutcomeStr = get_outcome_str(uint8(rec.MktType),rec.OutcomeIdx,&outcomes)
 		if open_positions {
@@ -2146,7 +2162,7 @@ func (ss *SQLStorage) get_trade_data(eoa_aid int64,open_positions bool) []PLEntr
 			rec.CounterPAddr = creator_addr
 			rec.CounterPAddrSh = creator_addr_sh
 		}
-		fmt.Printf("rec = %+v\n",rec)
+		Info.Printf("rec = %+v\n",rec)
 		records = append(records,rec)
 	}
 	return records
@@ -2164,11 +2180,11 @@ func (ss *SQLStorage) locate_fill_event_order(evt *FillEvt) int64 {
 	err=row.Scan(&null_id);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			fmt.Printf("pl_calc: order with hash %v wasn't found\n",h)
+			Info.Printf("pl_calc: order with hash %v wasn't found\n",h)
 			// break
 		} else {
 
-			Fatalf("DB Error: %v, q=%v\n",err,query);
+			ss.log_msg(fmt.Sprintf("DB Error: %v, q=%v\n",err,query))
 		}
 	} else {
 		if null_id.Valid {
@@ -2184,7 +2200,7 @@ func (ss *SQLStorage) get_ranking_data_for_all_users() []RankStats {
 
 	rows,err := ss.db.Query(query)
 	if (err!=nil) {
-		Fatalf("DB error: %v (query=%v)",err,query);
+		ss.log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 	}
 	records := make([]RankStats,0,8)
 	defer rows.Close()
@@ -2201,17 +2217,17 @@ func (ss *SQLStorage) update_top_profit_rank(eoa_aid int64,value float64) int64 
 	query = "UPDATE uranks SET top_profit = $2 WHERE eoa_aid = $1"
 	res,err:=ss.db.Exec(query,eoa_aid,value)
 	if (err!=nil) {
-		Fatalf("update_top_profit_rank() failed: %v, q=%v",err,query);
+		ss.log_msg(fmt.Sprintf("update_top_profit_rank() failed: %v, q=%v",err,query))
 	}
 	affected_rows,err:=res.RowsAffected()
 	if err!=nil {
-		Fatalf("Error getting RowsAffected in update_top_profit(): %v",err)
+		ss.log_msg(fmt.Sprintf("Error getting RowsAffected in update_top_profit(): %v",err))
 	}
 	if affected_rows == 0 {
 		query = "INSERT INTO uranks(eoa_aid,top_profit) VALUES($1,$2)"
 		_,err:=ss.db.Exec(query,eoa_aid,value)
 		if (err!=nil) {
-			Fatalf("update_top_profit_rank() failed: %v, q=%v",err,query);
+			ss.log_msg(fmt.Sprintf("update_top_profit_rank() failed: %v, q=%v",err,query))
 		}
 
 	}
@@ -2223,17 +2239,17 @@ func (ss *SQLStorage) update_top_total_trades_rank(eoa_aid int64,value float64) 
 	query = "UPDATE uranks SET top_trades = $2 WHERE eoa_aid = $1"
 	res,err:=ss.db.Exec(query,eoa_aid,value)
 	if (err!=nil) {
-		Fatalf("update_top_total_trades_rank() failed: %v, q=%v",err,query);
+		ss.log_msg(fmt.Sprintf("update_top_total_trades_rank() failed: %v, q=%v",err,query))
 	}
 	affected_rows,err:=res.RowsAffected()
 	if err!=nil {
-		Fatalf("Error getting RowsAffected in update_top_tra(): %v",err)
+		ss.log_msg(fmt.Sprintf("Error getting RowsAffected in update_top_tra(): %v",err))
 	}
 	if affected_rows == 0 {
 		query = "INSERT INTO uranks(eoa_aid,top_trades) VALUES($1,$2)"
 		_,err:=ss.db.Exec(query,eoa_aid,value)
 		if (err!=nil) {
-			Fatalf("update_top_total_trades_rank() failed: value=%v, err: %v, q=%v",value,err,query);
+			ss.log_msg(fmt.Sprintf("update_top_total_trades_rank() failed: value=%v, err: %v, q=%v",value,err,query))
 		}
 
 	}
@@ -2303,112 +2319,99 @@ func (ss *SQLStorage) get_order_info(order_hash string) (OrderInfo,error) {
 		if (err==sql.ErrNoRows) {
 			return order,err
 		} else {
-			Fatalf("DB error looking up for Order record: %v",err);
+			ss.log_msg(fmt.Sprintf("DB error looking up for Order record: %v",err))
 		}
 	}
 	return order,nil
 }
-/* DISCONTINUED function. ToDo: remove in 2 weeks (29 May)
-func (ss *SQLStorage) link_pl_to_order(mktord_id int64, profit_loss_ids *[]int64) {
+func (ss *SQLStorage) get_category_markets(cat_id int64) []InfoMarket {
 
-	var query string
-	var pl_ids_str string
-	for i:=0 ; i<len(*profit_loss_ids); i++  {
-		if len(pl_ids_str) > 0 {
-			pl_ids_str = pl_ids_str + ","
-		}
-		pl_ids_str = pl_ids_str + fmt.Sprintf("%v",(*profit_loss_ids)[i])
-	}
-
-	fmt.Printf("q=UPDATE profit_loss SET mktord_id = %v WHERE id IN(%v)\n",mktord_id,pl_ids_str)
-	query = "UPDATE profit_loss SET mktord_id = $1 WHERE id IN("+pl_ids_str+")"
-	_,err:=ss.db.Exec(query,mktord_id)
-	if (err!=nil) {
-		Fatalf("DB error: %v ; q=%v",err,query);
-	}
-}
-*/
-/* PENDING FOR REMOVAL
 	var query string
 	query = "SELECT " +
-				"pl.market_aid," +
+				"ma.addr as mkt_addr," +
+				"CONCAT(LEFT(ma.addr,6),'…',RIGHT(ma.addr,6)) AS mkt_addr_sh," +
+				"CONCAT(LEFT(sa.addr,6),'…',RIGHT(sa.addr,6)) AS signer," +
+				"ca.addr as mcreator," +
+				"CONCAT(LEFT(ca.addr,6),'…',RIGHT(ca.addr,6)) AS mcreator_sh, " +
+				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') as end_date," + 
+				"extra_info::json->>'description' AS descr," +
+				"extra_info::json->>'longDescription' AS long_desc," +
+				"extra_info::json->>'categories' AS categories," +
+				"outcomes," +
 				"m.market_type, " +
-				"pl.outcome_idx," +
-				"m.outcomes," +
-				"substring(extra_info::json->>'description',1,100) as descr," +
-				"a.addr as mkt_addr," +
-				"CONCAT(LEFT(a.addr,6),'…',RIGHT(a.addr,6)) AS mkt_addr_sh," +
-				"w_a.addr AS w_a_addr," +
-				"CONCAT(LEFT(w_a.addr,6),'…',RIGHT(w_a.addr,6)) AS wallet_addr_sh," +
-				"e_a.addr AS eoa_addr," +
-				"CONCAT(LEFT(e_a.addr,6),'…',RIGHT(e_a.addr,6)) AS eoa_addr_sh," +
-				"pl.time_stamp::date AS date," +
-				"FLOOR(EXTRACT(EPOCH FROM pl.time_stamp))::BIGINT as created_ts," +
-				"pl.net_position," +
-				"pl.avg_price," +
-				"pl.frozen_funds," +
-				"pl.realized_profit," +	
-				"pl.final_profit," +
-				"pl.realized_cost," +
-				"o.order_id," +
-				"o.block_num " +
-			"FROM profit_loss AS pl " +
-				"LEFT JOIN address AS a ON pl.market_aid=a.address_id " +
-				"LEFT JOIN address AS w_a ON pl.wallet_aid=w_a.address_id " +
-				"LEFT JOIN address AS e_a ON pl.eoa_aid=e_a.address_id " +
-				"LEFT JOIN market AS m ON pl.market_aid = m.market_aid " +
-				"LEFT JOIN mktord AS o ON pl.mktord_id = o.id "+
-			"WHERE (pl.eoa_aid = $1) AND (pl.closed_position = 1) " +
-			"ORDER BY pl.time_stamp"
-//	fmt.Printf("q=%v\n",query)
-	rows,err := ss.db.Query(query,eoa_aid)
+				"CASE m.market_type " +
+					"WHEN 0 THEN 'YES/NO' " +
+					"WHEN 1 THEN 'CATEGORICAL' " +
+					"WHEN 2 THEN 'SCALAR' " +
+				"END AS mtype," +
+				"status,"+
+				"CASE WHEN EXTRACT(epoch from (fin_timestamp-now())) < 0 " +
+					"THEN 'Trading' ELSE 'Reporting' END AS status_desc," +
+				"fee," +
+				"open_interest AS OI," +
+				"cur_volume AS volume " +
+			"FROM market as m " +
+				"LEFT JOIN " +
+					"address AS ma ON m.market_aid = ma.address_id " +
+				"LEFT JOIN " +
+					"address AS sa ON m.eoa_aid= sa.address_id " +
+				"LEFT JOIN " +
+					"address AS ca ON m.wallet_aid = ca.address_id " +
+			"WHERE cat_id = $1 " +
+			"ORDER BY m.market_aid "
+
+	rows,err := ss.db.Query(query,cat_id)
 	if (err!=nil) {
-		Fatalf("DB error: %v (query=%v)",err,query);
+		ss.log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 	}
-	records := make([]PLEntry,0,8)
-	var starting_point PLEntry
-	records = append(records,starting_point)
-	var accum_pl float64 = 0.0
+	var rec InfoMarket
+	records := make([]InfoMarket,0,8)
+
 	defer rows.Close()
 	for rows.Next() {
-		var rec PLEntry
-		var outcomes string
-		var order_hash sql.NullString
-		var block_num sql.NullInt64
+		var longdesc sql.NullString
+		var status_code int
 		err=rows.Scan(
-			&rec.MktAid,
-			&rec.MktType,
-			&rec.OutcomeIdx,
-			&outcomes,
-			&rec.MktDescr,
-			&rec.MktAddr,
-			&rec.MktAddrSh,
-			&rec.WalletAddr,
-			&rec.WalletAddrSh,
-			&rec.EOAAddr,
-			&rec.EOAAddrSh,
-			&rec.Date,
-			&rec.Timestamp,
-			&rec.NetPosition,
-			&rec.AvgPrice,
-			&rec.FrozenFunds,
-			&rec.RealizedProfit,
-			&rec.FinalProfit,
-			&rec.RealizedCost,
-			&order_hash,
-			&block_num,
+					&rec.MktAddr,
+					&rec.MktAddrSh,
+					&rec.Signer,
+					&rec.MktCreator,
+					&rec.MktCreatorSh,
+					&rec.EndDate,
+					&rec.Description,
+					&longdesc,
+					&rec.CategoryStr,
+					&rec.Outcomes,
+					&rec.MktType,
+					&rec.MktTypeStr,
+					&status_code,
+					&rec.Status,
+					&rec.Fee,
+					&rec.OpenInterest,
+					&rec.CurVolume,
 		)
 		if err!=nil {
-			Fatalf(fmt.Sprintf("DB error: %v q=%v",err,query))
+			ss.log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 		}
-		rec.OutcomeStr = get_outcome_str(uint8(rec.MktType),rec.OutcomeIdx,&outcomes)
-		rec.FinalProfit = rec.FinalProfit - rec.RealizedProfit
-		accum_pl = accum_pl + rec.FinalProfit
-		rec.AccumPl = accum_pl
-		if order_hash.Valid { rec.OrderHash = order_hash.String }
-		if block_num.Valid { rec.BlockNum = block_num.Int64 }
+		if longdesc.Valid {
+			rec.LongDesc = longdesc.String
+		}
+		if status_code == 0 {
+			// nothing
+		} else {
+			switch MarketStatus(status_code) {
+				case MktStatusReported:
+					rec.Status = "Reported"
+				case MktStatusDisputing:
+					rec.Status = "Disputing"
+				case MktStatusFinalized:
+					rec.Status = "Finalized"
+				case MktStatusFinInvalid:
+					rec.Status = "Finalized Invalid"
+				default:
+			}
+		}
 		records = append(records,rec)
 	}
 	return records
 }
-*/

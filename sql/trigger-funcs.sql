@@ -30,7 +30,9 @@ BEGIN
 		GET DIAGNOSTICS v_cnt = ROW_COUNT;
 		IF v_cnt = 0 THEN
 			INSERT	INTO oostats(market_aid,eoa_aid,outcome_idx,num_bids)
-					VALUES(NEW.market_aid,NEW.eoa_aid,NEW.outcome_idx,1);
+					VALUES(NEW.market_aid,NEW.eoa_aid,NEW.outcome_idx,1)
+					ON CONFLICT(eoa_aid) DO NOTHING;
+
 		END IF;
 	END IF;
 	IF NEW.otype = 1 THEN
@@ -42,7 +44,8 @@ BEGIN
 		GET DIAGNOSTICS v_cnt = ROW_COUNT;
 		IF v_cnt = 0 THEN
 			INSERT	INTO oostats(market_aid,eoa_aid,outcome_idx,num_asks)
-					VALUES(NEW.market_aid,NEW.eoa_aid,NEW.outcome_idx,1);
+					VALUES(NEW.market_aid,NEW.eoa_aid,NEW.outcome_idx,1)
+					ON CONFLICT(eoa_aid) DO NOTHING;
 		END IF;
 	END IF;
 
@@ -99,6 +102,8 @@ BEGIN
 		UPDATE main_stats SET scalar_count = (scalar_count + 1);
 	END IF;
 
+	UPDATE category set total_markets = (total_markets + 1) WHERE cat_id=NEW.cat_id;
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -128,6 +133,8 @@ BEGIN
 	IF OLD.market_type = 2 THEN
 		UPDATE main_stats SET scalar_count = (scalar_count - 1);
 	END IF;
+
+	UPDATE category set total_markets = (total_markets - 1) WHERE cat_id=OLD.cat_id;
 
 	RETURN OLD;
 END;
