@@ -433,3 +433,19 @@ type OrderInfo struct {		// this is a full order information, to show in dedicat
 	MarketAddr			string
 	MarketAddrSh		string
 }
+type UserReport struct {
+	MktAid				int64
+	RepStake			float64
+	Round				int
+	OutcomeIdx			int
+	MktType				int
+	IsInitial			bool
+	IsDesignated		bool
+	MktAddr				string
+	MktAddrSh			string
+	OutcomeStr			string
+	Date				string
+	ReportType			string
+	WinStart			string
+	WinEnd				string
+}

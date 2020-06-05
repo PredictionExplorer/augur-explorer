@@ -647,7 +647,22 @@ func (ss *SQLStorage) delete_open_0x_order(order_hash string) {
 		ss.log_msg(fmt.Sprintf("DB error: couldn't delete open order with order_id = %v (not found)\n",order_hash))
 	}
 }
+func get_outcome_idx_from_numerators(mkt_type int,numerators []*big.Int) int {
+
+	if mkt_type == 2 {
+		return 2
+	}
+	hundred := big.NewInt(100)
+	for i:=0 ; i < len(numerators) ; i++ {
+		if hundred.Cmp(numerators[i]) == 0 {
+			return i
+		}
+	}
+	return -1
+}
 func (ss *SQLStorage) insert_market_finalized_evt(evt *MktFinalizedEvt) {
+
+	var query string
 
 	universe_id := ss.lookup_universe_id(evt.Universe.String())
 	_ = universe_id	// ToDo: add universe_id match condition (for market)
@@ -655,14 +670,30 @@ func (ss *SQLStorage) insert_market_finalized_evt(evt *MktFinalizedEvt) {
 	fin_timestamp := evt.Timestamp.Int64()
 	winning_payouts := bigint_ptr_slice_to_str(&evt.WinningPayoutNumerators,",")
 
-	var query string
-	query = "INSERT INTO mkt_fin(market_aid,fin_timestamp,winning_payouts) VALUES($1,TO_TIMESTAMP($2),$3)"
-	_,err := ss.db.Exec(query,market_aid,fin_timestamp,winning_payouts)
+	market_type := ss.get_market_type(market_aid)
+	winning_outcome := get_outcome_idx_from_numerators(market_type,evt.WinningPayoutNumerators)
+
+	query = "INSERT INTO mkt_fin(market_aid,fin_timestamp,winning_payouts,winning_outcome)" +
+			"VALUES($1,TO_TIMESTAMP($2),$3,$4)"
+	_,err := ss.db.Exec(query,market_aid,fin_timestamp,winning_payouts,winning_outcome)
 	if err != nil {
 		ss.log_msg(fmt.Sprintf("DB error: can't update market finalization of market %v : %v, q=%v",market_aid,err,query))
 	}
 	ss.update_market_status(market_aid,MktStatusFinalized)
 	ss.update_losing_positions(market_aid,evt)
+}
+func (ss *SQLStorage) get_market_type(market_aid int64) int {
+
+	var query string
+	query = "SELECT market_type FROM market WHERE market_aid=$1"
+
+	var market_type int
+	err:=ss.db.QueryRow(query,market_aid).Scan(&market_type);
+	if (err!=nil) {
+		ss.log_msg(fmt.Sprintf("DB Error: %v, q=%v\n",err,query))
+		Fatalf("get_market_type() failed, market not found")
+	}
+	return market_type
 }
 func (ss *SQLStorage) update_market_status(market_aid int64,status MarketStatus) {
 	var query string
@@ -694,6 +725,8 @@ func (ss *SQLStorage) update_losing_positions(market_aid int64,evt *MktFinalized
 	var query string
 	query = "SELECT market_type FROM market WHERE market_aid=$1"
 
+	/*
+	discontinued, to be delted
 	var market_type int
 	err:=ss.db.QueryRow(query,market_aid).Scan(&market_type);
 	if (err!=nil) {
@@ -702,6 +735,8 @@ func (ss *SQLStorage) update_losing_positions(market_aid int64,evt *MktFinalized
 		}
 		ss.log_msg(fmt.Sprintf("DB Error: %v, q=%v\n",err,query))
 	}
+	*/
+	market_type:=ss.get_market_type(market_aid)
 
 	var where_condition string
 	switch market_type {
@@ -752,6 +787,10 @@ func (ss *SQLStorage) insert_initial_report_evt(block_num BlockNumber,tx_id int6
 
 	Info.Printf("insert_initial_report_evt(): market_aid=%v, reporter_id=%v, signer_aid=%v\n",
 					market_aid,reporter_aid,signer_aid)
+
+	market_type := ss.get_market_type(market_aid)
+	reported_outcome := get_outcome_idx_from_numerators(market_type,evt.PayoutNumerators)
+
 	var query string
 	query = `
 		INSERT INTO report (
@@ -761,6 +800,7 @@ func (ss *SQLStorage) insert_initial_report_evt(block_num BlockNumber,tx_id int6
 			wallet_aid,
 			eoa_aid,
 			ini_reporter_aid,
+			outcome_idx,
 			is_initial,
 			is_designated,
 			amount_staked,
@@ -770,10 +810,10 @@ func (ss *SQLStorage) insert_initial_report_evt(block_num BlockNumber,tx_id int6
 			next_win_end,
 			rpt_timestamp
 		) VALUES (
-			$1,$2,$3,$4,$5,$6,$7,$8,(` + amount_staked + `/1e+18),$9,$10,
-			TO_TIMESTAMP($11),
+			$1,$2,$3,$4,$5,$6,$7,$8,$9,(` + amount_staked + `/1e+18),$10,$11,
 			TO_TIMESTAMP($12),
-			TO_TIMESTAMP($13)
+			TO_TIMESTAMP($13),
+			TO_TIMESTAMP($14)
 		)`
 	result,err := ss.db.Exec(query,
 			block_num,
@@ -782,6 +822,7 @@ func (ss *SQLStorage) insert_initial_report_evt(block_num BlockNumber,tx_id int6
 			reporter_aid,
 			signer_aid,
 			ini_reporter_aid,
+			reported_outcome,
 			true,
 			evt.IsDesignatedReporter,
 			payout_numerators,
@@ -906,6 +947,10 @@ func (ss *SQLStorage) insert_dispute_crowd_contrib(block_num BlockNumber,tx_id i
 
 	Info.Printf("insert_dispute_crows_contrib(): market_aid=%v, reporter_id=%v, signer_aid=%v",
 					market_aid,reporter_aid,signer_aid)
+
+	market_type := ss.get_market_type(market_aid)
+	reported_outcome := get_outcome_idx_from_numerators(market_type,evt.PayoutNumerators)
+
 	var query string
 	query = `
 		INSERT INTO report (
@@ -916,14 +961,15 @@ func (ss *SQLStorage) insert_dispute_crowd_contrib(block_num BlockNumber,tx_id i
 			eoa_aid,
 			disputed_aid,
 			dispute_round,
+			outcome_idx,
 			amount_staked,
 			description,
 			pnumerators,
 			current_stake,
 			stake_remaining,
 			rpt_timestamp
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,`+amount_staked+`/1e+18,$8,$9,
-				`+cur_stake+`/1e+18,`+stake_remaining+`/1e+18,TO_TIMESTAMP($10))`
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,`+amount_staked+`/1e+18,$9,$10,
+				`+cur_stake+`/1e+18,`+stake_remaining+`/1e+18,TO_TIMESTAMP($11))`
 	result,err := ss.db.Exec(query,
 			block_num,
 			tx_id,
@@ -932,6 +978,7 @@ func (ss *SQLStorage) insert_dispute_crowd_contrib(block_num BlockNumber,tx_id i
 			signer_aid,
 			disputed_aid,
 			dispute_round,
+			reported_outcome,
 			evt.Description,
 			payout_numerators,
 			rpt_timestamp)
@@ -1373,10 +1420,6 @@ func (ss *SQLStorage) get_mkt_trades(mkt_addr string,limit int) []MarketTrade {
 		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.Outcome,&outcomes)
 		records = append(records,rec)
 	}
-	Info.Printf("get_mkt_trades(): returning %v rows\n",len(records))
-	if len(records) == 0 {
-		Info.Printf("null records, q: %v",query)
-	}
 	return records
 }
 func (ss *SQLStorage) get_market_info(mkt_addr string,outcome_idx int,oc bool) (InfoMarket,error) {
@@ -1469,8 +1512,11 @@ func (ss *SQLStorage) get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 		rec.CurOutcome = get_outcome_str(uint8(mkt_type),outcome_idx,&rec.Outcomes)
 	}
 	if err!=nil {
+		if err == sql.ErrNoRows {
+			return rec,err
+		}
 		ss.log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
-		return rec,err
+		os.Exit(1)
 	}
 	reporter_eoa_aid,err := ss.lookup_eoa_aid(reporter_aid)
 	Info.Printf("reporter_aid = %v,       reporter_eoa_aid=%v\n",reporter_aid,reporter_eoa_aid)
@@ -1726,7 +1772,7 @@ func (ss *SQLStorage) get_mkt_depth(mkt_addr string,outcome_idx int) *MarketDept
 	market_depth.Asks = ss.build_depth_by_otype(market_aid,outcome_idx,OrderTypeAsk)
 	return market_depth
 }
-func (ss *SQLStorage) get_user_info(user_aid int64) UserInfo {
+func (ss *SQLStorage) get_user_info(user_aid int64) (UserInfo,error) {
 
 	var query string
 	query = "SELECT " +
@@ -1793,9 +1839,11 @@ func (ss *SQLStorage) get_user_info(user_aid int64) UserInfo {
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			Info.Printf("No rows for User Info on eoa_aid = %v\n",user_aid)
+			return ui,err
 		} else {
 			ss.log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
 		}
+		os.Exit(1)
 	}
 	if eoa_addr.Valid {
 		ui.EOAAddr = eoa_addr.String
@@ -1815,7 +1863,7 @@ func (ss *SQLStorage) get_user_info(user_aid int64) UserInfo {
 	if top_trades.Valid {
 		ui.TopTrades = top_trades.Float64
 	}
-	return ui
+	return ui,nil
 }
 func (ss *SQLStorage) get_main_stats() MainStats {
 
@@ -2411,6 +2459,104 @@ func (ss *SQLStorage) get_category_markets(cat_id int64) []InfoMarket {
 				default:
 			}
 		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) get_user_reports(eoa_aid int64,limit int) []UserReport {
+
+	var query string
+	query = "SELECT " +
+				"r.rpt_timestamp::date," +
+				"ma.addr as mkt_addr," +
+				"CONCAT(LEFT(ma.addr,6),'…',RIGHT(ma.addr,6)) AS mkt_addr_sh, " +
+				"r.is_initial," +
+				"r.is_designated," +
+				"round(r.amount_staked,2),"+
+				"r.outcome_idx," +
+				"r.next_win_start," +
+				"r.next_win_end," +
+				"m.initial_outcome," +
+				"m.designated_outcome," +
+				"m.winning_outcome," +
+				"m.market_type AS mtype," +
+				"m.outcomes AS outcomes_str " +
+			"FROM " +
+					"report AS r, " +
+					"market AS m " +
+						"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
+			"WHERE (r.market_aid = m.market_aid) and (r.eoa_aid=$1) " +
+			"ORDER BY r.rpt_timestamp"
+	if limit > 0 {
+		query = query +	" LIMIT " + strconv.Itoa(limit)
+	}
+
+	records := make([]UserReport,0,8)
+	var rows *sql.Rows
+	var err error
+	rows,err = ss.db.Query(query,eoa_aid)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return records
+		}
+		ss.log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec UserReport
+		var mkt_type int
+		var designated_outcome int
+		var winning_outcome int
+		var initial_outcome int
+		var outcomes string
+		err=rows.Scan(
+			&rec.Date,
+			&rec.MktAddr,
+			&rec.MktAddrSh,
+			&rec.IsInitial,
+			&rec.IsDesignated,
+			&rec.RepStake,
+			&rec.OutcomeIdx,
+			&rec.WinStart,
+			&rec.WinEnd,
+			&initial_outcome,
+			&designated_outcome,
+			&winning_outcome,
+			&rec.MktType,
+			&outcomes,
+		)
+		if err!=nil {
+			ss.log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+		}
+		if winning_outcome == -1 {	// market wasn't finalized yet
+			if designated_outcome == -1 {
+				rec.ReportType="CROWDSOURCED"
+			} else {
+				if designated_outcome == rec.OutcomeIdx {
+					rec.ReportType = "SUPPORTING"
+				} else {
+					rec.ReportType = "DISPUTING"
+				}
+			}
+		} else {					// market was finalized
+			if designated_outcome == -1 {	// designated reporter never showed up
+				if initial_outcome == rec.OutcomeIdx {
+					rec.ReportType = "SUPPORTING"
+				} else {
+					rec.ReportType = "DISPUTING"
+				}
+			} else {
+				if designated_outcome == rec.OutcomeIdx {
+					rec.ReportType = "SUPPORTING"
+				} else {
+					rec.ReportType = "DISPUTING"
+				}
+			}
+		}
+		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
+		fmt.Printf("adding record %+v\n",rec)
 		records = append(records,rec)
 	}
 	return records

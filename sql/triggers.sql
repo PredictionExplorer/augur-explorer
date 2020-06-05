@@ -14,3 +14,5 @@ CREATE TRIGGER mktfin_delete AFTER DELETE on mkt_fin FOR EACH ROW EXECUTE PROCED
 CREATE TRIGGER pl_insert AFTER INSERT on profit_loss FOR EACH ROW EXECUTE PROCEDURE on_profit_loss_insert();
 CREATE TRIGGER pl_delete AFTER DELETE on profit_loss FOR EACH ROW EXECUTE PROCEDURE on_profit_loss_delete();
 CREATE TRIGGER pl_update AFTER UPDATE on profit_loss FOR EACH ROW EXECUTE PROCEDURE on_profit_loss_update();
+CREATE TRIGGER report_insert AFTER INSERT on report FOR EACH ROW EXECUTE PROCEDURE on_report_insert();
+CREATE TRIGGER report_delete AFTER DELETE on report FOR EACH ROW EXECUTE PROCEDURE on_report_delete();

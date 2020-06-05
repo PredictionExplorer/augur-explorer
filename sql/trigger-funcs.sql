@@ -358,7 +358,8 @@ BEGIN
 
 	UPDATE market
 		SET fin_timestamp = NEW.fin_timestamp,
-			winning_payouts=NEW.winning_payouts
+			winning_payouts=NEW.winning_payouts,
+			winning_outcome=NEW.winning_outcome
 		WHERE market.market_aid=NEW.market_aid;
 	UPDATE main_stats SET active_count = (active_count - 1);
 
@@ -440,5 +441,40 @@ BEGIN
 	END IF;
 
 	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_report_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	IF NEW.is_designated THEN
+		UPDATE market
+			SET designated_outcome = NEW.outcome_idx
+			WHERE market_aid = NEW.market_aid;
+	END IF;
+	IF NEW.is_initial THEN
+		UPDATE market
+			SET initial_outcome = NEW.outcome_idx
+			WHERE market_aid = NEW.market_aid;
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_report_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	IF OLD.is_designated THEN
+		UPDATE market
+			SET designated_outcome = -1
+			WHERE market_aid = OLD.market_aid;
+	END IF;
+	IF OLD.is_initial THEN
+		UPDATE market
+			SET initial_outcome = -1
+			WHERE market_aid = OLD.market_aid;
+	END IF;
+
+	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

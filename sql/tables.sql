@@ -40,6 +40,9 @@ CREATE TABLE market (
 	create_timestamp	TIMESTAMPTZ NOT NULL,
 	total_trades		BIGINT DEFAULT 0,			-- current number of trades that took place
 	-- Status lookup codes  0=>Traded,1=>Reporting,3=>Reported,4=>Disputing,5=>Finalized,6=>Finalized as invalid
+	winning_outcome		SMALLINT DEFAULT -1,		-- outcome decided by MarketFinalized event
+	designated_outcome	SMALLINT DEFAULT -1,		-- outcome submitted by Designated Reported
+	initial_outcome		SMALLINT DEFAULT -1,		-- first report that was submitted
 	status				SMALLINT DEFAULT 0,
 	market_type			SMALLINT NOT NULL,			-- enum: 0:YES_NO | 1:CATEGORICAL | 2:SCALAR
 	money_at_stake		DECIMAL(24,18) DEFAULT 0.0,	-- accumulated money bet on outcomes
@@ -113,10 +116,10 @@ CREATE TABLE report (
 	market_aid			BIGINT NOT NULL,
 	eoa_aid				BIGINT NOT NULL,			-- User's address (EOA) of the Reporter
 	wallet_aid			BIGINT NOT NULL,			-- Wallet's contract address of the Reporter
-	--signer_aid			BIGINT NOT NULL,			-- transaction signer (the User who is submitting the report)
 	ini_reporter_aid	BIGINT DEFAULT 0,
 	disputed_aid		BIGINT DEFAULT 0,
 	dispute_round		BIGINT DEFAULT 1,
+	outcome_idx			SMALLINT NOT NULL,
 	is_initial			BOOLEAN DEFAULT false,
 	is_designated		BOOLEAN DEFAULT false,
 	amount_staked		DECIMAL(24,18) NOT NULL,
@@ -154,6 +157,7 @@ CREATE table oi_chg ( -- open interest changed event
 CREATE TABLE mkt_fin (
 	id					BIGSERIAL PRIMARY KEY,
 	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
+	winning_outcome		SMALLINT DEFAULT 0,
 	fin_timestamp		TIMESTAMPTZ NOT NULL,
 	winning_payouts		TEXT NOT NULL
 );
