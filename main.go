@@ -89,6 +89,7 @@ var (
 
 	// addresses of the contracts used in our code (for making eth.Call()s if needed)
 	dai_addr common.Address
+	rep_addr common.Address
 	zerox_addr common.Address
 
 	fill_order_id int64 = 0			// during event processing, holds id of record in mktord from Fill evt
@@ -106,8 +107,8 @@ func main() {
 				" Please set AUGUR_ETH_NODE_RPC environment variable")
 	}
 
-	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
-	Error = log.New(os.Stderr,"ERROR: ",log.Ldate|log.Ltime|log.Lshortfile)
+	Info = log.New(os.Stdout,"INFO: ",log.Ltime)		//|log.Lshortfile)
+	Error = log.New(os.Stderr,"ERROR: ",log.Ltime)		//|log.Lshortfile)
 	//client, err := ethclient.Dial("http://192.168.1.102:18545")
 	var err error
 	rpcclient, err = ethclient.Dial(RPC_URL)
@@ -123,6 +124,7 @@ func main() {
 	addresses := new(ContractAddresses)
 	addresses.zerox_addr = &zerox_addr
 	addresses.dai_addr= &dai_addr
+	addresses.reputation_addr= &rep_addr
 	augur_init(addresses)
 
 

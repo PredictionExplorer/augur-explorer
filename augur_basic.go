@@ -29,7 +29,7 @@ func prod_init_daicash(addr *common.Address) {
 func dev_init_reputation_token(addr *common.Address) {
 	if addr != nil {
 		*addr = common.HexToAddress("0fF6ee01f88145298761a29A0372Ed24E16E73B1")
-		//*addr = common.HexToAddress("B4D7f6747CEFbDcA11bDDd92a16134dc95B0DD9B")
+		//*addr = common.HexToAddress("B4D7f6747CEFbDcA11bDDd92a16134dc95B0DD9B") LegacyReputationToken
 		//*addr = common.HexToAddress("B78B2B637d3861E601E54C00c054972c18A5e991")
 	}
 }

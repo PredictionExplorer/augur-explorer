@@ -227,7 +227,7 @@ func (ss *SQLStorage) lookup_address_id(addr string) int64 {
 
 	return addr_id
 }
-func (ss *SQLStorage) lookup_or_create_address(addr string) int64 {
+func (ss *SQLStorage) lookup_or_create_address(addr string,block_num BlockNumber,tx_id int64) int64 {
 
 	var addr_id int64;
 	var query string
@@ -235,20 +235,31 @@ func (ss *SQLStorage) lookup_or_create_address(addr string) int64 {
 	err:=ss.db.QueryRow(query,addr).Scan(&addr_id);
 	if (err!=nil) {
 		if (err==sql.ErrNoRows) {
-			query = "INSERT INTO address(addr) VALUES($1) RETURNING address_id"
-			row:=ss.db.QueryRow(query,addr);
-			err:=row.Scan(&addr_id)
-			if err!=nil {
-				ss.log_msg(fmt.Sprintf("DB error in address insertion: %v : %v",query,err))
-			}
-			if addr_id==0 {
-				ss.log_msg(fmt.Sprintf("DB error, addr_id after INSERT is 0"))
-			}
+			addr_id = ss.create_address(addr,block_num,tx_id)
 			return addr_id
 		}
 	}
 	if (err!=nil) {
 		ss.log_msg(fmt.Sprintf("DB error in getting address id : %v",err))
+	}
+
+	return addr_id
+}
+func (ss *SQLStorage) create_address(addr string,block_num BlockNumber,tx_id int64) int64 {
+
+	var addr_id int64;
+	var query string
+
+	query = "INSERT INTO address(addr,block_num,tx_id) VALUES($1,$2,$3) RETURNING address_id"
+	row:=ss.db.QueryRow(query,addr,block_num,tx_id);
+	err:=row.Scan(&addr_id)
+	if err!=nil {
+		ss.log_msg(fmt.Sprintf("DB error in address insertion: %v : %v",query,err))
+		os.Exit(1)
+	}
+	if addr_id==0 {
+		ss.log_msg(fmt.Sprintf("DB error, addr_id after INSERT is 0"))
+		os.Exit(1)
 	}
 
 	return addr_id
@@ -284,8 +295,8 @@ func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int6
 
 	var query string
 	var market_aid int64;
-	market_aid = ss.lookup_or_create_address(evt.Market.String())
-	signer_aid := ss.lookup_or_create_address(signer.String())
+	market_aid = ss.lookup_or_create_address(evt.Market.String(),block_num,tx_id)
+	signer_aid := ss.lookup_or_create_address(signer.String(),block_num,tx_id)
 	// check if Market is already registered
 	query = "SELECT market_aid FROM market WHERE market_aid=$1"
 	err:=ss.db.QueryRow(query,market_aid).Scan(&market_aid);
@@ -299,10 +310,10 @@ func (ss *SQLStorage) insert_market_created_evt(block_num BlockNumber,tx_id int6
 		// market already registered, sliently exit
 		return
 	}
-	creator_aid := ss.lookup_or_create_address(evt.MarketCreator.String())
+	creator_aid := ss.lookup_or_create_address(evt.MarketCreator.String(),block_num,tx_id)
 	universe_id := ss.lookup_universe_id(evt.Universe.String())
-	eoa_aid := ss.lookup_or_create_address(evt.MarketCreator.String())
-	reporter_aid := ss.lookup_or_create_address(evt.DesignatedReporter.String())
+	eoa_aid := ss.lookup_or_create_address(evt.MarketCreator.String(),block_num,tx_id)
+	reporter_aid := ss.lookup_or_create_address(evt.DesignatedReporter.String(),block_num,tx_id)
 	Info.Printf("create_market: signer_aid = %v (%v), creator_aid=%v (%v), reporter_id=%v (%v) , wallet_aid =%v\n",
 				signer_aid,signer.String(),
 				creator_aid,evt.MarketCreator.String(),
@@ -456,15 +467,15 @@ func (ss *SQLStorage) insert_market_order_evt(block_num BlockNumber,tx_id int64,
 	//		Fill order goes to 'mktord' table because the share has been created and now
 	//		open interest increased
 	var wallet_aid int64;
-	wallet_aid = ss.lookup_or_create_address(evt.AddressData[0].String())
+	wallet_aid = ss.lookup_or_create_address(evt.AddressData[0].String(),block_num,tx_id)
 	var wallet_fill_aid int64 = 0;
 	if len(evt.AddressData) > 1 {
-		wallet_fill_aid = ss.lookup_or_create_address(evt.AddressData[1].String())
+		wallet_fill_aid = ss.lookup_or_create_address(evt.AddressData[1].String(),block_num,tx_id)
 	}
 	universe_id := ss.lookup_universe_id(evt.Universe.String())
 	_ = universe_id	// ToDo: add universe_id match condition (for market)
 	market_aid := ss.lookup_address_id(evt.Market.String())
-	eoa_fill_aid := ss.lookup_or_create_address(signer.String())
+	eoa_fill_aid := ss.lookup_or_create_address(signer.String(),block_num,tx_id)
 
 	var oaction OrderAction = OrderAction(evt.EventType)
 	var otype OrderType = OrderType(evt.OrderType)
@@ -592,8 +603,9 @@ func (ss *SQLStorage) insert_open_order(evt *zeroex.OrderEvent,eoa_addr string,o
 	order_id := ohash.String()
 	evt_timestamp := evt.Timestamp.Unix()
 	expiration := order.ExpirationTimeSeconds.Int64()
-	wallet_aid := ss.lookup_or_create_address(order.MakerAddress.String())
-	eoa_aid := ss.lookup_or_create_address(eoa_addr)
+	// note: we don't have block number/tx hash for activity from 0x Mesh, so we insert with 0s
+	wallet_aid := ss.lookup_or_create_address(order.MakerAddress.String(),0,0)
+	eoa_aid := ss.lookup_or_create_address(eoa_addr,0,0)
 	Info.Printf("creating open order made by %v : %+v\n",eoa_addr,ospec)
 	market_aid := ss.lookup_address_id(ospec.Market.String())
 	price := float64(ospec.Price.Int64())/100
@@ -775,9 +787,9 @@ func (ss *SQLStorage) insert_initial_report_evt(block_num BlockNumber,tx_id int6
 
 	_= ss.lookup_universe_id(evt.Universe.String())
 	market_aid := ss.lookup_address_id(evt.Market.String())
-	reporter_aid := ss.lookup_or_create_address(evt.Reporter.String())
-	signer_aid := ss.lookup_or_create_address(signer.String())
-	ini_reporter_aid := ss.lookup_or_create_address(evt.InitialReporter.String())
+	reporter_aid := ss.lookup_or_create_address(evt.Reporter.String(),block_num,tx_id)
+	signer_aid := ss.lookup_or_create_address(signer.String(),block_num,tx_id)
+	ini_reporter_aid := ss.lookup_or_create_address(evt.InitialReporter.String(),block_num,tx_id)
 
 	amount_staked := evt.AmountStaked.String()
 	payout_numerators := bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
@@ -934,9 +946,9 @@ func (ss *SQLStorage) insert_dispute_crowd_contrib(block_num BlockNumber,tx_id i
 
 	_= ss.lookup_universe_id(evt.Universe.String())
 	market_aid := ss.lookup_address_id(evt.Market.String())
-	reporter_aid := ss.lookup_or_create_address(evt.Reporter.String())
-	signer_aid := ss.lookup_or_create_address(signer.String())
-	disputed_aid := ss.lookup_or_create_address(evt.DisputeCrowdsourcer.String())
+	reporter_aid := ss.lookup_or_create_address(evt.Reporter.String(),block_num,tx_id)
+	signer_aid := ss.lookup_or_create_address(signer.String(),block_num,tx_id)
+	disputed_aid := ss.lookup_or_create_address(evt.DisputeCrowdsourcer.String(),block_num,tx_id)
 
 	amount_staked := evt.AmountStaked.String()
 	payout_numerators := bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
@@ -998,7 +1010,7 @@ func (ss *SQLStorage) insert_share_balance_changed_evt(block_num BlockNumber,tx_
 
 	_= ss.lookup_universe_id(evt.Universe.String())
 	market_aid := ss.lookup_address_id(evt.Market.String())
-	account_aid := ss.lookup_or_create_address(evt.Account.String())
+	account_aid := ss.lookup_or_create_address(evt.Account.String(),block_num,tx_id)
 
 	outcome := evt.Outcome.Int64()
 	balance := evt.Balance.String()
@@ -1901,57 +1913,84 @@ func (ss *SQLStorage) get_main_stats() MainStats {
 	s.FinalizedCount = (s.YesNoCount + s.CategCount + s.ScalarCount) - s.ActiveCount
 	return s
 }
-func (ss *SQLStorage) process_DAI_token_transfer(evt *Transfer) {
+func (ss *SQLStorage) process_DAI_token_transfer(evt *Transfer,block_num BlockNumber,tx_id int64) {
 
-	from_aid := ss.lookup_or_create_address(evt.From.String())
-	to_aid := ss.lookup_or_create_address(evt.To.String())
+	from_aid := ss.lookup_or_create_address(evt.From.String(),block_num,tx_id)
+	to_aid := ss.lookup_or_create_address(evt.To.String(),block_num,tx_id)
 	amount := evt.Value.String()
 
-
 	var query string
-/*
-	// pending for removal
-	query = "SELECT count(*) AS num_recs FROM market WHERE market_aid = $1"
-	row := ss.db.QueryRow(query,to_wallet_aid)
-	var null_num sql.NullInt64
-	var err error
-	err=row.Scan(&null_num);
-	if (err!=nil) {
-		if err == sql.ErrNoRows {
-			row := ss.db.QueryRow(query,from_wallet_aid)
-			var null_num sql.NullInt64
-			var err error
-			err=row.Scan(&null_num);
-			if (err!=nil) {
-				if err == sql.ErrNoRows {
-
-				} else {
-					Fatalf("DB error: %v",err)
-				}
-			} else {
-				transf_type = 2		// From market
-			}
-		} else {
-			Fatalf("DB error: %v",err)
-		}
-	} else {
-		transf_type = 2		// To market
-	}
-*/
-	query = "INSERT INTO dai_transf(" +
-				"from_aid,to_aid,amount" +
-			") VALUES($1,$2,$3/1e+18)"
-
-	_,err := ss.db.Exec(query,
-			from_aid,
-			to_aid,
-			amount,
-	)
-
+	query = "INSERT INTO dai_transf(block_num,tx_id,from_aid,to_aid,amount) " +
+			"VALUES($1,$2,$3,$4,(" + amount +"/1e+18))"
+	_,err := ss.db.Exec(query,block_num,tx_id,from_aid,to_aid)
 	if (err!=nil) {
 		ss.log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
 	}
+}
+func (ss *SQLStorage) process_REP_token_transfer(evt *Transfer,block_num BlockNumber,tx_id int64) {
 
+	from_aid := ss.lookup_or_create_address(evt.From.String(),block_num,tx_id)
+	to_aid := ss.lookup_or_create_address(evt.To.String(),block_num,tx_id)
+	amount := evt.Value.String()
+
+	var query string
+	query = "INSERT INTO rep_transf(block_num,tx_id,from_aid,to_aid,amount) VALUES($1,$2,$3,$4,$5/1e+18)"
+	_,err := ss.db.Exec(query,block_num,tx_id,from_aid,to_aid,amount)
+	if (err!=nil) {
+		ss.log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) insert_token_balance_changed_evt(evt *TokenBalanceChanged,block_num BlockNumber,tx_id int64) {
+
+	market_aid := ss.lookup_or_create_address(evt.Market.String(),block_num,tx_id)
+	owner_aid := ss.lookup_or_create_address(evt.Owner.String(),block_num,tx_id)
+	token_aid := ss.lookup_or_create_address(evt.Token.String(),block_num,tx_id)
+	outcome_idx := evt.Outcome.Int64()
+	balance := evt.Balance.String()
+
+	var query string
+	query = "INSERT INTO tbc(block_num,tx_id,market_aid,owner_aid,token_aid,token_type,outcome,balance) " +
+				"VALUES($1,$2,$3,$4,$5,$6,$7,("+balance+"/1e+18))"
+	_,err := ss.db.Exec(query,
+							block_num,
+							tx_id,
+							market_aid,
+							owner_aid,
+							token_aid,
+							evt.TokenType,
+							outcome_idx,
+	)
+	if (err!=nil) {
+		ss.log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) insert_token_transf_evt(evt *TokensTransferred,block_num BlockNumber,tx_id int64) {
+
+	market_aid := ss.lookup_or_create_address(evt.Market.String(),block_num,tx_id)
+	token_aid := ss.lookup_or_create_address(evt.Token.String(),block_num,tx_id)
+	from_aid := ss.lookup_or_create_address(evt.From.String(),block_num,tx_id)
+	to_aid := ss.lookup_or_create_address(evt.To.String(),block_num,tx_id)
+	value := evt.Value.String()
+
+	var query string
+	query = "INSERT INTO tok_transf(block_num,tx_id,market_aid,token_aid,from_aid,to_aid,token_type,value) " +
+				"VALUES($1,$2,$3,$4,$5,$6,$7,("+value+"/1e+18))"
+	_,err := ss.db.Exec(query,
+							block_num,
+							tx_id,
+							market_aid,
+							token_aid,
+							from_aid,
+							to_aid,
+							evt.TokenType,
+	)
+	if (err!=nil) {
+		ss.log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
 }
 func (ss *SQLStorage) update_users_profit_loss(market_aid int64,eoa_aid int64,outcome_idx int,realized_profit string) string {
 
@@ -1998,7 +2037,7 @@ func (ss *SQLStorage) insert_profit_loss_evt(block_num BlockNumber,tx_id int64,e
 
 	_= ss.lookup_universe_id(evt.Universe.String())
 	market_aid := ss.lookup_address_id(evt.Market.String())
-	wallet_aid := ss.lookup_or_create_address(evt.Account.String())
+	wallet_aid := ss.lookup_or_create_address(evt.Account.String(),block_num,tx_id)
 
 	outcome_idx := evt.Outcome.Int64()
 	net_position := evt.NetPosition.String()

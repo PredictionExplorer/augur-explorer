@@ -17,6 +17,8 @@ CREATE TABLE universe (
 );
 CREATE TABLE address (
 	address_id			BIGSERIAL	PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- block number at which this address was created
+	tx_id				BIGINT NOT NULL,			-- transaction at which this address was created
 	addr				TEXT NOT NULL UNIQUE		-- 20 byte Ethereum address , stored as 42 hex string (0x+addr)
 );
 -- Market category
@@ -170,12 +172,41 @@ CREATE TABLE user_wallet ( -- link between User and his/her Wallet Contract
 );
 CREATE table dai_transf (	-- transfers of DAI tokens (deposits/withdrawals of funds)
 	id					BIGSERIAL PRIMARY KEY,
---	from_eoa_aid		BIGINT DEFAULT 0,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	from_aid			BIGINT DEFAULT 0,
---	to_eoa_aid			BIGINT DEFAULT 0,
 	to_aid				BIGINT DEFAULT 0,
---	transf_type			SMALLINT NOT NULL,		-- Transfer type 0 - Deposit, 1 - Withdrawal, 2-Share Buying
 	amount				DECIMAL(32,18) DEFAULT 0.0
+);
+CREATE table rep_transf (
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	from_aid			BIGINT DEFAULT 0,
+	to_aid				BIGINT DEFAULT 0,
+	amount				DECIMAL(32,18) DEFAULT 0.0
+);
+CREATE table tbc (			-- Token Balance Changed event
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	owner_aid			BIGINT NOT NULL,
+	token_aid			BIGINT NOT NULL,
+	token_type			SMALLINT DEFAULT 0,
+	outcome				SMALLINT NOT NULL,
+	balance				DECIMAL(64,32) DEFAULT 0.0
+);
+CREATE table tok_transf (	-- Tokens Transferred event
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	token_aid			BIGINT NOT NULL,
+	from_aid			BIGINT NOT NULL,
+	to_aid				BIGINT NOT NULL,
+	token_type			SMALLINT DEFAULT 0,
+	value				DECIMAL(64,32) DEFAULT 0.0
 );
 -- Statistics, automatically accumulated for the main page
 CREATE TABLE main_stats (
@@ -205,7 +236,6 @@ CREATE TABLE trd_mkt_stats (	-- trade statistics per User and per Market
 	market_aid			BIGINT NOT NULL,
 	total_trades		BIGINT DEFAULT 0,
 	total_reports		BIGINT DEFAULT 0,
-	total_designated	BIGINT DEFAULT 0,
 	profit_loss			DECIMAL(24,18) DEFAULT 0.0,
 	report_profits		DECIMAL(24,18) DEFAULT 0.0,
 	aff_profits			DECIMAL(24,18) DEFAULT 0.0,

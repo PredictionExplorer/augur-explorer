@@ -278,8 +278,6 @@ BEGIN
 	-- Begin of update profit loss
 	UPDATE ustats AS s
 			SET profit_loss = (profit_loss + (NEW.profit_loss - OLD.profit_loss)),
-				total_reports = (total_reports + (NEW.total_reports - OLD.total_reports)),
-				total_designated = (total_designated + (NEW.total_designated - OLD.total_designated)),
 				money_at_stake = (money_at_stake + (NEW.frozen_funds - OLD.frozen_funds))
 			WHERE	s.eoa_aid = NEW.eoa_aid;
 
@@ -290,66 +288,6 @@ BEGIN
 	-- End of update profit loss
 
 	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
--- reporting triggers
-CREATE OR REPLACE FUNCTION on_report_insert() RETURNS trigger AS  $$ --updates volume of the market
-DECLARE
-	v_cnt numeric;
-BEGIN
-
-	-- Make sure user stats record exists
-	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(NEW.eoa_aid,NEW.wallet_aid)
-		ON CONFLICT(eoa_aid) DO NOTHING;
-
-	-- Update statistics for the Reporter
-	UPDATE trd_mkt_stats AS s
-			SET total_reports = (total_reports + 1)
-			WHERE	s.eoa_aid = NEW.eoa_aid AND
-					s.market_aid = NEW.market_aid;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid)
-				VALUES(NEW.eoa_aid,NEW.wallet_aid,NEW.market_aid);
-	END IF;
-
-	IF NEW.is_designated IS TRUE THEN
-		UPDATE trd_mkt_stats AS s
-			SET total_designated = (total_designated + 1)
-			WHERE	s.eoa_aid = NEW.eoa_aid AND
-					s.market_aid = NEW.market_aid;
-	END IF;
-
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_report_delete() RETURNS trigger AS  $$ -- reverts order statistics on delete
-DECLARE
-	v_cnt numeric;
-BEGIN
-
-	-- Make sure user stats record exists
-	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(OLD.eoa_aid,OLD.wallet_aid)
-		ON CONFLICT(eoa_aid) DO NOTHING;
-
-	-- Update statistics for the Reporter
-	UPDATE trd_mkt_stats AS s
-			SET total_reports = (total_reports - 1)
-			WHERE	s.eoa_aid = OLD.eoa_aid AND
-					s.market_aid = OLD.market_aid;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid)
-				VALUES(OLD.eoa_aid,OLD.wallet_aid,OLD.market_aid);
-	END IF;
-
-	IF OLD.is_designated IS TRUE THEN
-		UPDATE trd_mkt_stats AS s
-			SET total_designated = (total_designated - 1)
-			WHERE	s.eoa_aid = OLD.eoa_aid AND
-					s.market_aid = OLD.market_aid;
-	END IF;
-	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_mktfin_insert() RETURNS trigger AS  $$
@@ -443,14 +381,37 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_report_insert() RETURNS trigger AS  $$
+
+
+-- reporting triggers
+CREATE OR REPLACE FUNCTION on_report_insert() RETURNS trigger AS  $$ --updates volume of the market
 DECLARE
+	v_cnt numeric;
 BEGIN
 
-	IF NEW.is_designated THEN
+	-- Make sure user stats record exists
+	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(NEW.eoa_aid,NEW.wallet_aid)
+		ON CONFLICT(eoa_aid) DO NOTHING;
+	-- Update statistics for the Reporter
+	UPDATE trd_mkt_stats AS s
+			SET total_reports = (total_reports + 1)
+			WHERE	s.eoa_aid = NEW.eoa_aid AND
+					s.market_aid = NEW.market_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid)
+				VALUES(NEW.eoa_aid,NEW.wallet_aid,NEW.market_aid);
+	END IF;
+	UPDATE ustats
+		SET total_reports = (total_reports + 1)
+		WHERE	eoa_aid = NEW.eoa_aid;
+	IF NEW.is_designated IS TRUE THEN
 		UPDATE market
 			SET designated_outcome = NEW.outcome_idx
 			WHERE market_aid = NEW.market_aid;
+		UPDATE ustats
+			SET total_designated = (total_designated + 1)
+			WHERE eoa_aid = NEW.eoa_aid;
 	END IF;
 	IF NEW.is_initial THEN
 		UPDATE market
@@ -462,19 +423,38 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_report_delete() RETURNS trigger AS  $$
 DECLARE
+	v_cnt numeric;
 BEGIN
 
+	-- Make sure user stats record exists
+	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(OLD.eoa_aid,OLD.wallet_aid)
+		ON CONFLICT(eoa_aid) DO NOTHING;
+	-- Update statistics for the Reporter
+	UPDATE trd_mkt_stats AS s
+			SET total_reports = (total_reports - 1)
+			WHERE	s.eoa_aid = OLD.eoa_aid AND
+					s.market_aid = OLD.market_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid)
+				VALUES(OLD.eoa_aid,OLD.wallet_aid,OLD.market_aid);
+	END IF;
+	UPDATE ustats
+		SET total_reports = (total_reports - 1)
+		WHERE	eoa_aid = OLD.eoa_aid;
 	IF OLD.is_designated THEN
 		UPDATE market
 			SET designated_outcome = -1
 			WHERE market_aid = OLD.market_aid;
+		UPDATE ustats
+			SET total_designated = (total_designated - 1)
+			WHERE	eoa_aid = OLD.eoa_aid;
 	END IF;
 	IF OLD.is_initial THEN
 		UPDATE market
 			SET initial_outcome = -1
 			WHERE market_aid = OLD.market_aid;
 	END IF;
-
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

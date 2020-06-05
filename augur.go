@@ -169,7 +169,7 @@ func proc_erc20_transfer(log *types.Log) {
 	}
 }
 */
-func proc_erc20_transfer(log *types.Log) {
+func proc_erc20_transfer(log *types.Log,block_num BlockNumber,tx_id int64) {
 	var mevt Transfer
 	mevt.From= common.BytesToAddress(log.Topics[1][12:])
 	mevt.To= common.BytesToAddress(log.Topics[2][12:])
@@ -181,7 +181,10 @@ func proc_erc20_transfer(log *types.Log) {
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
 		if bytes.Equal(dai_addr.Bytes(), log.Address.Bytes()) {	// this is DAI contract
-			storage.process_DAI_token_transfer(&mevt)
+			storage.process_DAI_token_transfer(&mevt,block_num,tx_id)
+		}
+		if bytes.Equal(rep_addr.Bytes(), log.Address.Bytes()) {	// this is DAI contract
+			storage.process_REP_token_transfer(&mevt,block_num,tx_id)
 		}
 	}
 }
@@ -197,7 +200,7 @@ func proc_profit_loss_changed(block_num BlockNumber,tx_id int64,log *types.Log) 
 	} else {
 		Info.Printf("ProfitLossChanged event found (block=%v) :\n",log.BlockNumber)
 		mevt.Dump()
-		eoa_aid := get_eoa_aid(&mevt.Account)
+		eoa_aid := get_eoa_aid(&mevt.Account,block_num,tx_id)
 		id = storage.insert_profit_loss_evt(block_num,tx_id,eoa_aid,&mevt)
 	}
 	return id
@@ -228,7 +231,7 @@ func proc_transfer_batch(log *types.Log) {
 		mevt.Dump()
 	}
 }
-func proc_tokens_transferred(log *types.Log) {
+func proc_tokens_transferred(block_num BlockNumber,tx_id int64, log *types.Log) {
 	var mevt TokensTransferred
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.From= common.BytesToAddress(log.Topics[2][12:])	// extract From
@@ -240,9 +243,10 @@ func proc_tokens_transferred(log *types.Log) {
 		Info.Printf("TokensTransferred event for contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
+		storage.insert_token_transf_evt(&mevt,block_num,tx_id)
 	}
 }
-func proc_token_balance_changed(log *types.Log) {
+func proc_token_balance_changed(block_num BlockNumber,tx_id int64,log *types.Log) {
 	var mevt TokenBalanceChanged
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Owner= common.BytesToAddress(log.Topics[2][12:])
@@ -253,6 +257,7 @@ func proc_token_balance_changed(log *types.Log) {
 		Info.Printf("TokenBalanceChanged event for contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
+		storage.insert_token_balance_changed_evt(&mevt,block_num,tx_id)
 	}
 }
 func proc_share_token_balance_changed(block_num BlockNumber,tx_id int64,log *types.Log) {
@@ -270,7 +275,7 @@ func proc_share_token_balance_changed(block_num BlockNumber,tx_id int64,log *typ
 		storage.insert_share_balance_changed_evt(block_num,tx_id,&mevt)
 	}
 }
-func get_eoa_aid(addr *common.Address) int64 {
+func get_eoa_aid(addr *common.Address,block_num BlockNumber,tx_id int64) int64 {
 
 	var eoa_aid int64 = 0
 	wallet_aid,err := storage.nonfatal_lookup_address_id(addr.String())
@@ -288,7 +293,7 @@ func get_eoa_aid(addr *common.Address) int64 {
 			} else {
 				Info.Printf("daitok: error at rpc call: %v\n",err)
 			}
-			eoa_aid = storage.lookup_or_create_address(eoa_addr_str)
+			eoa_aid = storage.lookup_or_create_address(eoa_addr_str,block_num,tx_id)
 		}
 	} else {
 			// copied from above, ToDo: generalize
@@ -303,7 +308,7 @@ func get_eoa_aid(addr *common.Address) int64 {
 			} else {
 				Info.Printf("daitok: error at rpc call: %v\n",err)
 			}
-			eoa_aid = storage.lookup_or_create_address(eoa_addr_str)
+			eoa_aid = storage.lookup_or_create_address(eoa_addr_str,block_num,tx_id)
 	}
 	Info.Printf("daitok: Getting eoa_aid for address %v, eoa_aid = %v\n",addr.String(),eoa_aid)
 	return eoa_aid
@@ -321,7 +326,7 @@ func proc_market_order_event(block_num BlockNumber,tx_id int64,log *types.Log,si
 		Info.Printf("OrderEvent event for contract %v (block=%v) : \n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
-		eoa_aid := get_eoa_aid(&mevt.AddressData[0])
+		eoa_aid := get_eoa_aid(&mevt.AddressData[0],block_num,tx_id)
 		storage.insert_market_order_evt(BlockNumber(log.BlockNumber),tx_id,signer,eoa_aid,&mevt)
 	}
 }
@@ -431,7 +436,7 @@ func proc_market_created(block_num BlockNumber,tx_id int64,log *types.Log,signer
 			Info.Printf("getwallet: error at rpc call: %v\n",err)
 		}
 		if !eth_addr_is_zero(&wallet) {
-			wallet_aid = storage.lookup_or_create_address(wallet_addr_str)
+			wallet_aid = storage.lookup_or_create_address(wallet_addr_str,block_num,tx_id)
 		}
 		Info.Printf("getwallet: got wallet_aid = %v for wallet addr %v\n",wallet_aid,wallet_addr_str)
 		storage.insert_market_created_evt(block_num,tx_id,signer,wallet_aid,&mevt)
@@ -460,7 +465,7 @@ func process_event(block *types.Header, tx_id int64, signer common.Address, log 
 			proc_fill_evt(log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_transfer) {
-			proc_erc20_transfer(log)
+			proc_erc20_transfer(log,block_num,tx_id)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_profit_loss_changed) {
 			id = proc_profit_loss_changed(block_num,tx_id,log)
@@ -472,10 +477,10 @@ func process_event(block *types.Header, tx_id int64, signer common.Address, log 
 			proc_transfer_batch(log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_tokens_transferred) {
-			proc_tokens_transferred(log)
+			proc_tokens_transferred(block_num,tx_id,log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_token_balance_changed) {
-			proc_token_balance_changed(log)
+			proc_token_balance_changed(block_num,tx_id,log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_share_token_balance_changed) {
 			proc_share_token_balance_changed(block_num,tx_id,log)
