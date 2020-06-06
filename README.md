@@ -8,21 +8,44 @@ Extracts data from Augur Prediction Marketplace (http://augur.net) and stores it
  * Latest Ethereum `go-ethereum` package with Tuple ABI Unpack function (v1.9.13)
  * PostgreSQL libpq package
 
-### Compile & Run
+### Build
 
-	go ./
-	#set Ethereum Node RPC port (TODO)
-	. aux/dev-config.env ;#set datasource here
-	./augur-extractor
+	./auto-build.sh
 
-### Specifying data sources (in/out)
+This will download all the dependencies and try to build everything
 
-	[user@host]$ source aux/dev-config.env
+### Running
+
+There are 3 executables to run:
+
+ * etl
+ * server
+ * mesh
+
+ 1.
+
+	cd etl/mesh
+	. config/dev-config.env
+	./mesh
+
+ 2.
+
+	cd etl
+	. config/dev-config.env
+	./run.sh
+
+3.
+
+	cd server
+	. config/dev-config.env
+	./run.sh
+
+Once all the 3 programs run, the error logs will be in /var/tmp
 
 ### Database initialization
 
-	psql [dbname] < sql/tables.sql
+	psql [dbname] < etl/sql/tables.sql
 
 ### Database Schema and documentation
 
-	cat sql/tables.sql
+	cat etl/sql/tables.sql
