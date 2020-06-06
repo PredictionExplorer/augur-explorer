@@ -1,0 +1,472 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="res/main.css" rel="stylesheet">
+</head>
+<body>
+<script src="/res/darktheme.js"></script>
+<script src="/res/ajax.js"></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/data.js"></script>
+<script>
+	var eoa_addr = '{{.UserInfo.EOAAddr}}'
+	function load_pl_data(profit_loss,accum_pl,mkt_addr,mkt_addr_sh,outcome,mkt_descr,date_str,
+				counterparty,counterparty_sh,order_hash,block_num) {
+		var elt
+		elt = document.getElementById("order_info")
+		elt.style.display="block"
+		elt = document.getElementById("f2_fld_profit_loss")
+		elt.innerHTML =profit_loss
+		elt = document.getElementById("f2_fld_accum_pl")
+		elt.innerHTML = accum_pl
+		elt = document.getElementById("f2_fld_mkt_addr")
+		elt.innerHTML = mkt_addr
+		elt = document.getElementById("f2_fld_outcome")
+		elt.innerHTML = outcome
+		elt = document.getElementById("f2_fld_mkt_descr")
+		elt.innerHTML = mkt_descr
+		elt = document.getElementById("f2_fld_date")
+		elt.innerHTML = date_str
+		elt = document.getElementById("f2_fld_counterparty")
+		elt.innerHTML = counterparty
+		elt = document.getElementById("f2_fld_order_hash")
+		elt.innerHTML = order_hash
+		elt = document.getElementById("f2_fld_block_num")
+		elt.innerHTML = block_num
+		// setup links
+		elt = document.getElementById("f2_market_href")
+		elt.href="/market/" + mkt_addr
+		elt = document.getElementById("f2_counterparty_href")
+		elt.href="/search?q=" + counterparty
+		elt = document.getElementById("f2_order_hash_href")
+		elt.href="/order/" + order_hash
+	}
+	function load_open_pos_data(frozen,mkt_addr,mkt_addr_sh,outcome,
+				mkt_descr,date_str,counterparty,counterparty_sh,order_hash,block_num) {
+		var elt
+		elt = document.getElementById("open_pos_info")
+		elt.style.display="block"
+		elt = document.getElementById("f1_fld_funds_frozen")
+		elt.innerHTML = frozen
+		elt = document.getElementById("f1_fld_mkt_addr")
+		elt.innerHTML = mkt_addr
+		elt = document.getElementById("f1_fld_outcome")
+		elt.innerHTML = outcome
+		elt = document.getElementById("f1_fld_mkt_descr")
+		elt.innerHTML = mkt_descr
+		elt = document.getElementById("f1_fld_date")
+		elt.innerHTML = date_str
+		elt = document.getElementById("f1_fld_counterparty")
+		elt.innerHTML = counterparty
+		elt = document.getElementById("f1_fld_order_hash")
+		elt.innerHTML = order_hash
+		elt = document.getElementById("f1_fld_block_num")
+		elt.innerHTML = block_num
+		// setup links
+		elt = document.getElementById("f1_market_href")
+		elt.href="/market/" + mkt_addr
+		elt = document.getElementById("f1_counterparty_href")
+		elt.href="/search?q=" + counterparty
+		elt = document.getElementById("f1_order_hash_href")
+		elt.href="/order/" + order_hash
+	}
+	var open_positions_data = {{.JSOpenPosData}}
+	var profit_loss_data = {{.JSPLData}}
+	Ajax_GET('/money/'+eoa_addr,function(data) {
+		var response=JSON.parse(data)
+		var elt
+		elt = document.getElementById("fld_eoa_dai")
+		elt.innerHTML=response.eoa_dai
+		elt = document.getElementById("fld_wallet_dai")
+		elt.innerHTML=response.wallet_dai
+		elt = document.getElementById("fld_eoa_rep")
+		elt.innerHTML=response.eoa_rep
+		elt = document.getElementById("fld_wallet_rep")
+		elt.innerHTML=response.wallet_rep
+		elt = document.getElementById("fld_eoa_eth")
+		elt.innerHTML=response.eoa_eth
+		elt = document.getElementById("fld_wallet_eth")
+		elt.innerHTML=response.wallet_eth
+	});
+
+</script>
+	<h3 class="page_title">User Info for {{.UserInfo.EOAAddrSh}}</h3>
+<div class="user_info">
+	<table class="user_info">
+		<tr>
+			<td>User's Real Address (EOA)</td>
+			<td title="{{.UserInfo.EOAAddr}}">{{.UserInfo.EOAAddrSh}}</td>
+		</tr>
+		<tr>
+			<td>Wallet Contract Address</td>
+			<td title="{{.UserInfo.WalletAddr}}">{{.UserInfo.WalletAddrSh}}</td>
+		</tr>
+		<tr>
+			<td>Lifetime Profit/Loss</td>
+			<td title="">{{.UserInfo.ProfitLoss}}<td>
+		</tr>
+		<tr>
+			<td>Total Trades</td>
+			<td>{{.UserInfo.TotalTrades}}</td>
+		</tr>
+		<tr>
+			<td>Markets Created</td>
+			<td>{{.UserInfo.MarketsCreated}}</td>
+		</tr>
+		<tr>
+			<td>Markets Traded</td>
+			<td>{{.UserInfo.MarketsTraded}}</td>
+		</tr>
+		<tr>
+			<td>Withdrawal Requests</td>
+			<td>{{.UserInfo.WithdrawReqs}}</td>
+		</tr>
+		<tr>
+			<td>Deposit Requests</td>
+			<td>{{.UserInfo.DepositReqs}}</td>
+		</tr>
+		<tr>
+			<td>Total Reports</td>
+			<td><a href="/fullreports/{{.UserInfo.EOAAddr}}">{{.UserInfo.TotalReports}}</a></td>
+		</tr>
+		<tr>
+			<td>Reports as Designated Reporter</td>
+			<td>{{.UserInfo.TotalDesignated}}</td>
+		</tr>
+		<tr>
+			<td>Profit in Affiliate Commissions</td>
+			<td>{{.UserInfo.AffProfits}}</td>
+		</tr>
+		<tr>
+			<td>Money At Stake</td>
+			<td>{{.UserInfo.MoneyAtStake}}</td>
+		</tr>
+		<tr>
+			<td>Total Deposited</td>
+			<td>{{.UserInfo.TotalDeposited}}</td>
+		</tr>
+		<tr>
+			<td>Total Withdrawn</td>
+			<td>{{.UserInfo.TotalWithdrawn}}</td>
+		</tr>
+		<tr>
+			<td>Trade Frequencey Rank</td>
+			<td>Top {{.UserInfo.TopTrades}}% of all users</td>
+		</tr>
+		<tr>
+			<td>Profitability Rank</td>
+			<td>Top {{.UserInfo.TopProfit}}% of all users</td>
+		</tr>
+		<tr>
+			<td>User funds</td>
+			<td>
+				<table border=1>
+					<tr>
+						<td></td>
+						<td>Real User (EOA)</td>
+						<td>User's Augur Wallet</td>
+					</tr>
+					<tr>
+						<td>DAI</td>
+						<td><span id="fld_eoa_dai"></span></td>
+						<td><span id="fld_wallet_dai"></span></td>
+					</tr>
+					<tr>
+						<td>REP</td>
+						<td><span id="fld_eoa_rep"></span></td>
+						<td><span id="fld_wallet_rep"></span></td>
+					</tr>
+					<tr>
+						<td>ETH</td>
+						<td><span id="fld_eoa_eth"></span></td>
+						<td><span id="fld_wallet_eth"></span></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+	<br/>
+</div>
+<span class="user_info_generic">Account's Open Positions:</span><br/><br/>
+<div id="open_positions_chart"></div>
+<div id="open_pos_info" class="user_info_generic" style="display: none;">
+	Open Position Info:
+	<table>
+		<tr>
+			<td>Funds Frozen</td>
+			<td><span id="f1_fld_funds_frozen"></span></td>
+		</tr>
+		<tr>
+			<td>Market Address</td>
+			<td>
+				<a href="" id="f1_market_href">
+					<span id="f1_fld_mkt_addr"></span>
+				</a>
+			</td>
+		</tr>
+		<tr>
+			<td>Outcome</td>
+			<td><span id="f1_fld_outcome"></span></td>
+		</tr>
+		<tr>
+			<td>Market Description</td>
+			<td><span id="f1_fld_mkt_descr"></span></td>
+		</tr>
+		<tr>
+			<td>Date:</td>
+			<td><span id="f1_fld_date"></span></td>
+		</tr>
+		<tr>
+			<td>Counterparty</td>
+			<td>
+				<a href="" id="f1_counterparty_href">
+					<span id="f1_fld_counterparty"></span>
+				</a>
+			</td>
+		</tr>
+		<tr>
+			<td>Order Hash</td>
+			<td>
+				<a href="" id="f1_order_hash_href">
+					<span id="f1_fld_order_hash"></span>
+				</a>
+			</td>
+		</tr>
+		<tr>
+			<td>Block number</td>
+			<td><span id="f1_fld_block_num"></span></td>
+		</tr>
+	</table>
+</div>
+<br/><br/>
+<div class="user_info_generic">User Profit/Loss history:</span><br/><br/>
+<div id="profit_loss_chart"></div>
+<div id="order_info" style="display: none;">
+	Order details:
+	<table>
+		<tr>
+			<td>Profit/Loss in this trade</td>
+			<td><span id="f2_fld_profit_loss"></span></td>
+		</tr>
+		<tr>
+			<td>Accumulated Profit/Loss</td>
+			<td><span id="f2_fld_accum_pl"></span></td>
+		</tr>
+		<tr>
+			<td>Market Address</td>
+			<td>
+				<a href="" id="f2_market_href">
+					<span id="f2_fld_mkt_addr"></span>
+				</a>
+			</td>
+		</tr>
+		<tr>
+			<td>Outcome</td>
+			<td><span id="f2_fld_outcome"></span></td>
+		</tr>
+		<tr>
+			<td>Market Description</td>
+			<td><span id="f2_fld_mkt_descr"></span></td>
+		</tr>
+		<tr>
+			<td>Date:</td>
+			<td><span id="f2_fld_date"></span></td>
+		</tr>
+		<tr>
+			<td>Counterparty</td>
+			<td>
+				<a href="" id="f2_counterparty_href">
+					<span id="f2_fld_counterparty"></span>
+				</a>
+			</td>
+		</tr>
+		<tr>
+			<td>Order hash</td>
+			<td>
+				<a href="" id="f2_order_hash_href">
+					<span id="f2_fld_order_hash"></span>
+				</a>
+			</td>
+		</tr>
+		<tr>
+			<td>Block number</td>
+			<td><span id="f2_fld_block_num"></span></td>
+		</tr>
+	</table>
+</div>
+<h3>User's participation in Reporting</h3>
+<div id="user_reporting">
+	{{template "user_reports" .UserReports}}
+</div>
+	<nav id="market_trades_nav">
+		<ul>
+			<li style="float: right">
+				<a class="btn_link" href="/fullreports/{{.UserInfo.EOAAddr}}">All Reports</a>
+				<span></span><span></span><span></span><span></span>
+			</li>
+		</ul>
+	</nav>
+
+<script>
+// font loading begins
+	Highcharts.createElement('link', {
+  href: 'https://fonts.googleapis.com/css?family=Unica+One',
+  rel: 'stylesheet',
+  type: 'text/css'
+}, null, document.getElementsByTagName('head')[0]);
+// font loading ends
+// Apply the theme
+set_dark_theme()
+
+// begin of chart container setup
+Highcharts.chart('profit_loss_chart', {
+
+	title: {
+		text: 'Profit/Loss History'
+	},
+
+	subtitle: {
+		text: 'Profit/Loss History Detail'
+	},
+
+	yAxis: {
+		title: {
+			text: 'Profit/Loss'
+		}
+	},
+
+	xAxis: {
+//		max: 1.0,
+//		min: 0,
+		accessibility: {
+			rangeDescription: 'Profit/Loss for the period'
+		}
+	},
+
+	legend: {
+		layout: 'vertical',
+		align: 'right',
+		verticalAlign: 'middle'
+	},
+
+	plotOptions: {
+		series: {
+			label: {
+				connectorAllowed: false
+			},
+			pointStart: 0
+		}
+	},
+
+	series: [{
+		name: 'Profit/Loss',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: profit_loss_data
+	}],
+
+	responsive: {
+		rules: [{
+			condition: {
+				maxWidth: 500
+			},
+			chartOptions: {
+				legend: {
+				layout: 'horizontal',
+					align: 'center',
+					verticalAlign: 'bottom'
+				}
+			}
+		}]
+	},
+	tooltip: {
+		formatter: function() {
+			tooltip ="<div>Order's Profit/Loss: "+this.point.pl+ "<br/>Accumulated Profit/Loss: "+this.data.pl_accum+"<br/>Date: "+this.point.date+"</div>"
+			 return tooltip;
+		}
+	},
+});
+Highcharts.chart('open_positions_chart', {
+
+	title: {
+		text: 'Open Positions'
+	},
+
+	subtitle: {
+		text: 'Open Positions Detail'
+	},
+
+	yAxis: {
+		title: {
+			text: 'Frozen Funds'
+		}
+	},
+
+	xAxis: {
+//		max: 1.0,
+//		min: 0,
+		accessibility: {
+			rangeDescription: 'Frozen funds for the period'
+		}
+	},
+
+	legend: {
+		layout: 'vertical',
+		align: 'right',
+		verticalAlign: 'middle'
+	},
+
+	plotOptions: {
+		series: {
+			label: {
+				connectorAllowed: false
+			},
+			pointStart: 0
+		}
+	},
+
+	series: [{
+		name: 'Frozen Funds',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: open_positions_data
+	}],
+
+	responsive: {
+		rules: [{
+			condition: {
+				maxWidth: 500
+			},
+			chartOptions: {
+				legend: {
+				layout: 'horizontal',
+					align: 'center',
+					verticalAlign: 'bottom'
+				}
+			}
+		}]
+	},
+	tooltip: {
+		formatter: function() {
+			tooltip ="<div>Frozen in Order: "+this.point.frozen+ "<br/>Accumulated: "+this.point.frozen_accum+"<br/>Date: "+this.point.date+"</div>"
+			 return tooltip;
+		}
+	},
+});
+</script>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="/index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{{define "user_reports"}}
+<table>
+	<tr>
+		<td>Date</td>
+		<td>Market</td>
+		<td>Reported Outcome</td>
+		<td>Report Type</td>
+		<td>Participation Stake</td>
+		<td>Round</td>
+	</tr>
+	{{- range $i, $rep:= .}}
+		{{template "user_reporting" $rep}}
+	{{- end}}
+
+</table>
+{{end}}

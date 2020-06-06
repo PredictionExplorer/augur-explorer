@@ -1,0 +1,100 @@
+<html>
+<head>
+	<link href="/res/main.css" rel="stylesheet">
+	<title>Augur Market {{.Market.MktAddr}}</title>
+	<meta name="description" content="{{.Market.Description}}">
+</head>
+<body>
+<h3 class="page_title">Market Details</h3>
+<table class="market_detail">
+<tr>
+	<td>Address:</td>
+	<td>{{.Market.MktAddr}}</td>
+</tr>
+<tr>
+	<td>Creator:</td>
+	<td><a href="/search?q={{.Market.Signer}}">{{.Market.Signer}}</a></td>
+</tr>
+<tr>
+	<td>Reporter</td>
+	<td><a href="/search?q={{.Market.Reporter}}">{{.Market.Reporter}}</a></td>
+</tr>
+<tr>
+	<td>End Date</td>
+	<td>{{.Market.EndDate}}</td>
+</tr>
+<tr>
+	<td>Description</td>
+	<td>{{.Market.Description}}</td>
+</tr>
+<tr>
+	<td>Long description</td>
+	<td>{{.Market.LongDesc}}</td>
+</tr>
+<tr>
+	<td>Category</td>
+	<td>	{{template "category_record_small" .Market}}</td>
+</tr>
+<tr>
+	<td>Market Type</td>
+	<td>{{.Market.MktTypeStr}}</td>
+</td>
+{{if ne 2 .Market.MktType }}
+<tr>
+	<td>Outcomes</td>
+	<td>{{.Market.Outcomes}}</td>
+</tr>
+{{end}}
+<tr>
+	<td>Status</td>
+	<td>{{.Market.Status}}</td>
+</tr>
+<tr>
+	<td>Fee</td>
+	<td>{{.Market.Fee}}</td>
+</tr>
+<tr>
+	<td>OpenInterest</td>
+	<td>{{.Market.OpenInterest}}</td>
+</tr>
+<tr>
+	<td>Current Volume</td>
+	<td>{{.Market.CurVolume}}</td>
+</tr>
+<tr>
+	<td>Money at Statke</td>
+	<td>{{.Market.MoneyAtStake}}</td>
+</tr>
+<tr>
+	<td>Total Trades</td>
+	<td>{{.Market.TotalTrades}}</td>
+</tr>
+</table>
+<br/><br/>
+{{$maddr := .Market.MktAddr}}
+<div class="market_outcome_vols">
+	Current Volume & Last Price data:<br/>
+	{{template "market_outcome_vols" .OutcomeVols}}
+</div>
+<br/><br/>
+<div class="market_info">
+	{{template "market_trades" .Trades}}
+	<nav id="market_trades_nav">
+		<ul>
+			<li style="float: right">
+				<a class="btn_link" href="/fulltradelist/{{.Market.MktAddr}}">Full List</a>
+				<span></span><span></span><span></span><span></span>
+			</li>
+		</ul>
+	</nav>
+</div>
+<nav>
+	<ul>
+		<li>
+			<a class="btn_link" href="/index.html">Back</a>
+			<span></span><span></span><span></span><span></span>
+		</li>
+	</ul>
+</nav>
+</body>
+</html>

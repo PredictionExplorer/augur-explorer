@@ -1,0 +1,393 @@
+<html>
+<head>
+	<link href="/res/main.css" rel="stylesheet">
+	<title>Augur Market Price History {{.Market.MktAddr}}</title>
+	<meta name="description" content="{{.Market.Description}}">
+</head>
+<body>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/data.js"></script>
+<script>
+	function load_order_data(
+				seller_eoa_addr,seller_wallet_addr,
+				buyer_eoa_addr,buyer_wallet_addr,
+				mkt_aid,price,volume,order_date) {
+		var elt
+		elt = document.getElementById("usermktinfo")
+		elt.style.display="block"
+		elt = document.getElementById("fld_seller_wallet_addr")
+		elt.innerHTML = seller_wallet_addr
+		elt = document.getElementById("fld_seller_eoa_addr")
+		elt.innerHTML = seller_eoa_addr
+		elt = document.getElementById("fld_buyer_wallet_addr")
+		elt.innerHTML = buyer_wallet_addr
+		elt = document.getElementById("fld_buyer_eoa_addr")
+		elt.innerHTML = buyer_eoa_addr
+		elt = document.getElementById("fld_order_date")
+		elt.innerHTML = order_date
+		elt = document.getElementById("fld_price")
+		elt.innerHTML = price
+		elt = document.getElementById("fld_volume")
+		elt.innerHTML = volume
+	}
+
+	var price_history_data = {{.JSPriceData}}
+</script>
+<h3 class="page_title">Market Details</h3>
+<table class="market_detail">
+<tr>
+	<td>Address:</td>
+	<td>{{.Market.MktAddr}}</td>
+</tr>
+<tr>
+	<td>Description</td>
+	<td>{{.Market.Description}}</td>
+</tr>
+</table>
+<br/><br/>
+<div id="price_history_graph"></div>
+<div id="usermktinfo" style="display: none;">
+	<br/><font color="yellow"><b>Order Info:</b></font><br/>
+	<table>
+		<tr>
+			<td>Order Date</td>
+			<td><span id="fld_order_date"></span></td>
+		</tr>
+		<tr>
+			<td>Seller's Real Address</td>
+			<td><span id="fld_seller_eoa_addr"></span></td>
+		</tr>
+		<tr>
+			<td>Seller's Wallet Address</td>
+			<td><span id="fld_seller_wallet_addr"></span></td>
+		</tr>
+		<tr>
+			<td>Buyer's Real Address</td>
+			<td><span id="fld_buyer_eoa_addr"></span></td>
+		</tr>
+		<tr>
+			<td>Buyer's Wallet Address</td>
+			<td><span id="fld_buyer_wallet_addr"></span></td>
+		</tr>
+		<tr>
+			<td>Price</td>
+			<td><span id="fld_price"></span></td>
+		</tr>
+		<tr>
+			<td>Volume</td>
+			<td><span id="fld_volume"></span></td>
+		</tr>
+	</table>
+	<nav>
+		<ul>
+			<li>
+				<a class="btn_link" href="/index.html">Seller Statistics</a>
+				<span></span><span></span><span></span><span></span>
+			</li>
+			<li>
+				<a class="btn_link" href="/index.html">Buyer Statistics</a>
+				<span></span><span></span><span></span><span></span>
+			</li>
+		</ul>
+	</nav>
+</div>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="/index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+<script>
+// font loading begins
+	Highcharts.createElement('link', {
+  href: 'https://fonts.googleapis.com/css?family=Unica+One',
+  rel: 'stylesheet',
+  type: 'text/css'
+}, null, document.getElementsByTagName('head')[0]);
+// font loading ends
+// Dark theme setup begins
+Highcharts.theme = {
+  colors: ['#2b908f', '#90ee7e', '#f45b5b', '#7798BF', '#aaeeee', '#ff0066',
+    '#eeaaee', '#55BF3B', '#DF5353', '#7798BF', '#aaeeee'
+  ],
+  chart: {
+    backgroundColor: {
+      linearGradient: {
+        x1: 0,
+        y1: 0,
+        x2: 1,
+        y2: 1
+      },
+      stops: [
+        [0, '#2a2a2b'],
+        [1, '#3e3e40']
+      ]
+    },
+    style: {
+      fontFamily: '\'Unica One\', sans-serif'
+    },
+    plotBorderColor: '#606063'
+  },
+  title: {
+    style: {
+      color: '#E0E0E3',
+      textTransform: 'uppercase',
+      fontSize: '20px'
+    }
+  },
+  subtitle: {
+    style: {
+      color: '#E0E0E3',
+      textTransform: 'uppercase'
+    }
+  },
+  xAxis: {
+    gridLineColor: '#707073',
+    labels: {
+      style: {
+        color: '#E0E0E3'
+      }
+    },
+    lineColor: '#707073',
+    minorGridLineColor: '#505053',
+    tickColor: '#707073',
+    title: {
+      style: {
+        color: '#A0A0A3'
+
+      }
+    }
+  },
+  yAxis: {
+    gridLineColor: '#707073',
+    labels: {
+      style: {
+        color: '#E0E0E3'
+      }
+    },
+    lineColor: '#707073',
+    minorGridLineColor: '#505053',
+    tickColor: '#707073',
+    tickWidth: 1,
+    title: {
+      style: {
+        color: '#A0A0A3'
+      }
+    }
+  },
+  tooltip: {
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    style: {
+      color: '#F0F0F0'
+    }
+  },
+  plotOptions: {
+    series: {
+      dataLabels: {
+        color: '#F0F0F3',
+        style: {
+          fontSize: '13px'
+        }
+      },
+      marker: {
+        lineColor: '#333'
+      }
+    },
+    boxplot: {
+      fillColor: '#505053'
+    },
+    candlestick: {
+      lineColor: 'white'
+    },
+    errorbar: {
+      color: 'white'
+    }
+  },
+  legend: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    itemStyle: {
+      color: '#E0E0E3'
+    },
+    itemHoverStyle: {
+      color: '#FFF'
+    },
+    itemHiddenStyle: {
+      color: '#606063'
+    },
+    title: {
+      style: {
+        color: '#C0C0C0'
+      }
+    }
+  },
+  credits: {
+    style: {
+      color: '#666'
+    }
+  },
+  labels: {
+    style: {
+      color: '#707073'
+    }
+  },
+
+  drilldown: {
+    activeAxisLabelStyle: {
+      color: '#F0F0F3'
+    },
+    activeDataLabelStyle: {
+      color: '#F0F0F3'
+    }
+  },
+
+  navigation: {
+    buttonOptions: {
+      symbolStroke: '#DDDDDD',
+      theme: {
+        fill: '#505053'
+      }
+    }
+  },
+
+  // scroll charts
+  rangeSelector: {
+    buttonTheme: {
+      fill: '#505053',
+      stroke: '#000000',
+      style: {
+        color: '#CCC'
+      },
+      states: {
+        hover: {
+          fill: '#707073',
+          stroke: '#000000',
+          style: {
+            color: 'white'
+          }
+        },
+        select: {
+          fill: '#000003',
+          stroke: '#000000',
+          style: {
+            color: 'white'
+          }
+        }
+      }
+    },
+    inputBoxBorderColor: '#505053',
+    inputStyle: {
+      backgroundColor: '#333',
+      color: 'silver'
+    },
+    labelStyle: {
+      color: 'silver'
+    }
+  },
+
+  navigator: {
+    handles: {
+      backgroundColor: '#666',
+      borderColor: '#AAA'
+    },
+    outlineColor: '#CCC',
+    maskFill: 'rgba(255,255,255,0.1)',
+    series: {
+      color: '#7798BF',
+      lineColor: '#A6C7ED'
+    },
+    xAxis: {
+      gridLineColor: '#505053'
+    }
+  },
+
+  scrollbar: {
+    barBackgroundColor: '#808083',
+    barBorderColor: '#808083',
+    buttonArrowColor: '#CCC',
+    buttonBackgroundColor: '#606063',
+    buttonBorderColor: '#606063',
+    rifleColor: '#FFF',
+    trackBackgroundColor: '#404043',
+    trackBorderColor: '#404043'
+  }
+};
+// Apply the theme
+Highcharts.setOptions(Highcharts.theme);
+// Dark theme setup ends
+
+// begin of chart container setup
+Highcharts.chart('price_history_graph', {
+
+    title: {
+		text: 'Market Price History. Outcome: {{.Market.CurOutcome}}'
+    },
+
+    subtitle: {
+		text: '{{.Market.Description}}'
+    },
+
+    yAxis: {
+        title: {
+            text: 'Market Price'
+        }
+    },
+
+    xAxis: {
+//		max: 1.0,
+//		min: 0,
+        accessibility: {
+            rangeDescription: 'Price history for Market'
+        }
+    },
+
+    legend: {
+        layout: 'vertical',
+        align: 'right',
+        verticalAlign: 'middle'
+    },
+
+    plotOptions: {
+        series: {
+            label: {
+                connectorAllowed: false
+            },
+            pointStart: 0
+        }
+    },
+
+    series: [{
+        name: 'Orders',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: price_history_data
+	}],
+
+    responsive: {
+        rules: [{
+            condition: {
+                maxWidth: 500
+            },
+            chartOptions: {
+                legend: {
+                    layout: 'horizontal',
+                    align: 'center',
+                    verticalAlign: 'bottom'
+                }
+            }
+        }]
+    },
+    tooltip: {
+      formatter: function() {
+		tooltip ="<div>User: "+this.point.addr + "<br/>Price:" + this.point.price +"<br/>Volume: "+this.point.volume+"</div>"
+        return tooltip;
+      }
+    },
+});
+</script>
+</body>
+</html>

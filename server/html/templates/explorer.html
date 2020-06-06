@@ -1,0 +1,31 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="res/main.css" rel="stylesheet">
+</head>
+<body>
+<h3 class="page_title">Augur Explorer</h3>
+Type one of the following and press 'Search' button:
+<br/>
+<ul>
+	<li>Ethereum User Address
+	<li>Transaction Hash
+	<li>Block Number
+</ul>
+<div class="explorer">
+	<form type=GET action="/search/">
+		<input type="text" name="q">
+		<input type="submit" value=" Search ">
+	</form>
+</div>
+<br/><br/><br/>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

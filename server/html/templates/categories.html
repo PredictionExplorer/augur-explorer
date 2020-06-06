@@ -1,0 +1,29 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="res/main.css" rel="stylesheet">
+</head>
+
+
+
+<body>
+<h3 class="page_title">Market Categories</h3>
+<table>
+	<tr>
+		<td>CATEGORY</td>
+		<td>MARKETS</td>
+	</tr>
+{{- range .Categories}}
+	{{template "category_record" .}}
+{{- end}}
+</table>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

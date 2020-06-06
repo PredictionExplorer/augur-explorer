@@ -1,0 +1,12 @@
+{{define "user_reporting"}}
+<tr class="user_reporting">
+	<td class="user_reporting_field">{{.Date}}</td>
+	<td class="user_reporting_field" title="{{.MktAddr}}">
+		<a href="/search?q={{.MktAddr}}">{{.MktAddrSh}}</a>
+	</td>
+	<td class="mkt_trade_field" style="text-align: center">{{.OutcomeStr}}</td>
+	<td class="mkt_trade_field" style="text-align: center">{{.ReportType}}</td>
+	<td class="mkt_trade_field" style="text-align: center">{{.RepStake}}</td>
+	<td class="mkt_trade_field" style="text-align: center">{{.Round}}</td>
+</tr>
+{{end}}

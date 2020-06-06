@@ -1,0 +1,13 @@
+{{define "market_record"}}
+<a href="market/{{.MktAddr}}" class="market_record">
+	<div class="market_record">
+		<div class="market_field" title="{{.MktAddr}}">{{.MktAddrSh}}</div>
+		<div class="market_field">{{.MktType}}</div>
+		<div class="market_field">{{.Status}}</div>
+		<div class="market_field">{{.Description}}</div>
+		<div class="market_field">{{.EndDate}}</div>
+		<div class="market_field">{{.CurVolume}}</div>
+		<div class="market_field">{{.OpenInterest}}</div>
+	</div>
+</a>
+{{end}}

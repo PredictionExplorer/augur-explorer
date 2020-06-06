@@ -1,0 +1,17 @@
+{{define "mkt_trade"}}
+<tr class="mkt_trade">
+	<td class="mkt_trade_field">{{.Date}}</td>
+	<td class="mkt_trade_field" title="{{.CreatorAddr}}">
+		<a href="/search?q={{.CreatorAddr}}">{{.CreatorAddrSh}}</a>
+	</td>
+	<td class="mkt_trade_field" title="{{.FillerAddr}}">
+		<a href="/search?q={{.FillerAddr}}">{{.FillerAddrSh}}</a>
+	</td>
+	<td class="mkt_trade_field" style="text-align: right">{{.Price}}</td>
+	<td class="mkt_trade_field" style="text-align: right">{{.Amount}}</td>
+	<td class="mkt_trade_field" style="text-align: center">{{.OutcomeStr}}</td>
+	<td class="mkt_trade_field" style="text-align: center">
+		<a href="/order/{{.OrderHash}}">View Order</a>
+	</td>
+</tr>
+{{end}}

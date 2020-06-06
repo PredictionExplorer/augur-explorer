@@ -1,0 +1,8 @@
+{{define "mkt_outvol"}}
+<tr class="mkt_outvol">
+	<td class="mkt_outvol_field">{{.OutcomeStr}}</td>
+	<td class="mkt_outvol_field" style="text-align: right">{{.Volume}}</td>
+	<td class="mkt_outvol_field" style="text-align: right">{{.LastPrice}}</td>
+	<td class="mkt_outvol_field"><a class="depth_link" href="/mdepth/{{.MktAddr}}/{{.Outcome}}">[DEPTH]</a>&nbsp;&nbsp;<a class="depth_link" href="/mphist/{{.MktAddr}}/{{.Outcome}}">[PRICE HISTORY]</a></td>
+</tr>
+{{end}}

@@ -1,0 +1,264 @@
+/*body {
+	font-family:                    SANS-SERIF;
+	text-align:                     center;
+}*/
+
+body {
+	margin: 0;
+	height: 100vh;
+	/*display: flex;*/
+	color: white;
+	align-items: center;
+	justify-content: center;
+	background-color: black;
+}
+a {
+	color: white;
+	text-decoration-color: blue;
+}
+nav ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+
+nav ul li {
+	--c: goldenrod;
+	color: var(--c);
+	font-size: 16px;
+	border: 0.3em solid var(--c);
+	border-radius: 0.5em;
+	width: 12em;
+	height: 3em;
+	text-transform: uppercase;
+	font-weight: bold;
+	font-family: sans-serif;
+	letter-spacing: 0.1em;
+	text-align: center;
+	line-height: 3em;
+	position: relative;
+	overflow: hidden;
+	z-index: 1;
+	transition: 0.5s;
+	margin: 1em;
+}
+
+nav ul li span {
+	position: absolute;
+	width: 25%;
+	height: 100%;
+	background-color: var(--c);
+	transform: translateY(150%);
+	border-radius: 50%;
+	left: calc((var(--n) - 1) * 25%);
+	transition: 0.5s;
+	transition-delay: calc((var(--n) - 1) * 0.1s);
+	z-index: -1;
+}
+
+nav ul li:hover {
+	color: black;
+}
+
+nav ul li:hover span {
+	transform: translateY(0) scale(2);
+}
+
+nav ul li span:nth-child(1) {
+	--n: 1;
+}
+
+nav ul li span:nth-child(2) {
+	--n: 2;
+}
+
+nav ul li span:nth-child(3) {
+	--n: 3;
+}
+
+nav ul li span:nth-child(4) {
+	--n: 4;
+}
+
+a.btn_link{
+	--c: goldenrod;
+	color: var(--c);
+	text-decoration:				none;
+}
+a.btn_link:hover {
+	color:							white;
+	text-decoration:				none;
+}
+
+a.market_record {
+	color:							white;
+	text-decoration:					none;
+}
+div.market_record {
+	display:                        block;
+	border:							solid 1px black;
+	padding-top:						1.0em;
+	font-weight:                    bold;
+	font-size:                      0.8em;
+}
+div.market_field {
+	display:                        inline-block;
+	border:							solid 1px black;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+div.category_record {
+	display:                        block;
+	border:							solid 1px black;
+	font-weight:                    bold;
+	margin-left:					1.0em;
+	font-size:                      1.5em;
+}
+div.category_record_subcategory {
+	display:                        inline;
+	font-weight:                    bold;
+	font-size:                      1em;
+}
+div.category_separator {
+	display:                        inline;
+}
+div.mkt_trade {
+	display:                        inline-block;
+	border:							solid 1px blue;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+table.market_trades {
+	border:							1px solid white;
+	border-collapse:				collapse;
+	width:							100%;
+}
+div.mkt_trade_hdr {
+	display:                        inline-block;
+	border:							solid 1px black;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+div.mkt_trade_field {
+	display:                        inline-block;
+	border:							solid 1px black;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+h3.page_title {
+	font-weight:					bold;
+	font-size:						2.0em;
+	padding:						1em;
+}
+div.statistics {
+	margin-left:					1.0em;
+}
+div.explorer {
+	margin-left:					1.0em;
+}
+div.market_info {
+	margin-left:					1.0em;
+}
+div.markets {
+	margin-left:					1.0em;
+}
+div.main_info {
+	top:							-15em;
+	text-align:						right;
+	position:						relative;
+	margin-right:					1.0em;
+
+}
+.market_detail {
+	margin-left:					1.0em;
+	border:							1px solid white;
+	border-collapse:				collapse;
+}
+div.market_outcome_vols {
+	margin-left:					1.0em;
+}
+table.market_outcome_vols {
+	border:							1px solid white;
+	border-collapse:				collapse;
+}
+div.mkt_outvol_hdr {
+	display:                        inline-block;
+	border:							solid 1px black;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+div.mkt_outvol_field {
+	display:                        inline-block;
+	border:							solid 1px black;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+div.mkt_outvol {
+	display:                        inline-block;
+	border:							solid 1px blue;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+table.market_depth_pane {
+	border:							1px solid white;
+	border-collapse:				collapse;
+}
+div.mkt_depth_field {
+	display:                        inline-block;
+	border:							solid 1px black;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+}
+a.depth_link {
+	text-decoration:			none;
+	color:						white;
+}
+.market_depth {
+	margin-left:					1.0em;
+}
+.market_bids {
+	margin-left:					1.0em;
+}
+.market_asks {
+	margin-left:					1.0em;
+}
+td.mkt_depth_hdr {
+	border:							solid 1px black;
+	font-weight:                    bold;
+	font-size:                      1.2em;
+	color:							yellow;
+}
+#depth_graph {
+	padding:						1em;
+	max-width:						30em;
+}
+div.user_info {
+	text-align:						center;
+	padding-left:					2em;
+}
+#open_positions_chart {
+	max-width:						40em;
+	padding-left:					2em;
+}
+#profit_loss_chart {
+	max-width:						40em;
+}
+.user_info_generic {
+	padding-left:					2em;
+}
+div.order_info {
+	text-align:						center;
+	padding-left:					2em;
+}
+#market_trades_nav {
+	height:				10em;
+}
+div.category_record_small {
+	display:                        block;
+	border:							solid 1px black;
+	font-size:                      1em;
+}
+div.category_record_subcategory_small {
+	display:                        inline;
+	font-size:                      1em;
+}

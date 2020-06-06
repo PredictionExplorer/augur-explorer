@@ -1,0 +1,50 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="res/main.css" rel="stylesheet">
+</head>
+<body>
+<h3 class="page_title">Statistics</h3>
+<div class="statistics">
+	<h4 style="font-color: red">Up-to date Augur Platform statistics</h4>
+	<table>
+	<tr>
+		<td>Markets to date:</td>
+		<td>{{.MainStats.MarketsCount}}</td>
+	</tr>
+	<tr>
+		<td>Currently active:</td>
+		<td>{{.MainStats.ActiveCount}}</td>
+	</tr>
+	<tr>
+		<td>Finalized markets:</td>
+		<td>{{.MainStats.FinalizedCount}}</td>
+	</tr>
+	<tr>
+		<td>Money currently at stake:</td>
+		<td>{{.MainStats.MoneyAtStake}}</td>
+	</tr>
+	<tr>
+		<td>Yes/No markets</td>
+		<td>{{.MainStats.YesNoCount}}</td>
+	</tr>
+	<tr>
+		<td>Categorical markets:</td>
+		<td>{{.MainStats.CategCount}}</td>
+	</tr>
+	<tr>
+		<td>Scalar markets:</td>
+		<td>{{.MainStats.ScalarCount}}</td>
+	</tr>
+	</table>
+</div>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

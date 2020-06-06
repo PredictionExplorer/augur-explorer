@@ -1,0 +1,63 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="/res/main.css" rel="stylesheet">
+</head>
+<body>
+<h3 class="page_title">Order {{.OrderInfo.OrderHashSh}}</h3>
+<div class="order_info">
+	<table class="order_info">
+		<tr>
+			<td>Order Hash</td>
+			<td title="{{.OrderInfo.OrderHash}}">{{.OrderInfo.OrderHash}}</td>
+		</tr>
+		<tr>
+			<td>Market</td>
+			<td>
+				<a href="/market/{{.OrderInfo.MarketAddr}}">{{.OrderInfo.MarketAddrSh}}</a>
+			</td>
+		<tr>
+			<td>Creator</td>
+			<td title="{{.OrderInfo.CreatorEOAAddr}}">
+				<a href="/search?q={{.OrderInfo.CreatorEOAAddr}}">
+					{{.OrderInfo.CreatorEOAAddrSh}}
+				</a>
+			</td>
+		</tr>
+		<tr>
+			<td>Filler</td>
+			<td title="{{.OrderInfo.FillerEOAAddr}}">
+				<a href="/search?q={{.OrderInfo.FillerEOAAddr}}">
+					{{.OrderInfo.FillerEOAAddrSh}}
+				</a>
+			<td>
+		</tr>
+		<tr>
+			<td>Order Type</td>
+			<td>{{.OrderInfo.OType}}</td>
+		</tr>
+		<tr>
+			<td>Date</td>
+			<td>{{.OrderInfo.Date}}</td>
+		</tr>
+		<tr>
+			<td>Volume</td>
+			<td>{{.OrderInfo.Volume}}</td>
+		</tr>
+		<tr>
+			<td>Price</td>
+			<td>{{.OrderInfo.Price}}</td>
+		</tr>
+	</table>
+	<br/>
+</div>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="/index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

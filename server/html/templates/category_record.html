@@ -1,0 +1,14 @@
+{{define "category_record"}}
+<tr class="category_record">
+	<td>
+	{{- range $i, $cat := .Subcategories}}
+		{{- if ne $i 0}}
+			{{template "category_separator"}}
+		{{- end}}
+		<div class="category_record_subcategory">{{$cat}}</div>
+	{{- end}}
+	</td>
+	<td style="text-align: right;"><a href="/category/{{.CatId}}">{{.TotalMarkets}}</a></td>
+
+</tr>
+{{end}}

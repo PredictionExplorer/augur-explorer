@@ -1,0 +1,15 @@
+{{define "market_trades"}}
+<table class="market_trades">
+	<tr>
+		<td class="mkt_trade_hdr">Date</td>
+		<td class="mkt_trade_hdr">Creator</td>
+		<td class="mkt_trade_hdr">Filler</td>
+		<td class="mkt_trade_hdr">Price</td>
+		<td class="mkt_trade_hdr">Amount</td>
+		<td class="mkt_trade_hdr">Outcome</td>
+	</tr>
+		{{- range $i, $trade := .}}
+			{{template "mkt_trade" $trade}}
+		{{- end}}
+</table>
+{{end}}

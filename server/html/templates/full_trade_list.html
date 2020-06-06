@@ -1,0 +1,19 @@
+<html>
+<head>
+	<link href="/res/main.css" rel="stylesheet">
+	<title>Augur Market {{.Market.MktAddr}}</title>
+	<meta name="description" content="{{.Market.Description}}">
+</head>
+<body>
+<h3 class="page_title">Full list of Market Trades</h3>
+<table class="market_detail">
+<tr>
+	<td>Address:</td>
+	<td>{{.Market.MktAddr}}</td>
+</tr>
+</table>
+<br/><br/>
+<div class="market_info">
+	{{template "market_trades" .Trades}}
+</div>
+</body>

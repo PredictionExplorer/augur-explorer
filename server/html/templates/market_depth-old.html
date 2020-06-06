@@ -1,0 +1,208 @@
+<html>
+<head>
+	<link href="/res/main.css" rel="stylesheet">
+	<title>Augur Market Depth {{.Market.MktAddr}}</title>
+	<meta name="description" content="{{.Market.Description}}">
+	<script>
+	</script>
+</head>
+<body>
+<script>
+	function load_order_data(eoa_addr,wallet_addr,mkt_aid,outcome_idx,total_bids,total_asks,total_cancel,order_date,expires) {
+		console.log(eoa_addr)
+		console.log(mkt_aid)
+		console.log(outcome_idx)
+		var elt
+		elt = document.getElementById("usermktinfo")
+		elt.style.display="block"
+		elt = document.getElementById("fld_wallet_addr")
+		elt.innerHTML = wallet_addr
+		elt = document.getElementById("fld_eoa_addr")
+		elt.innerHTML = eoa_addr
+		elt = document.getElementById("fld_num_bids")
+		elt.innerHTML = total_bids
+		elt = document.getElementById("fld_num_asks")
+		elt.innerHTML = total_asks
+		elt = document.getElementById("fld_num_cancel")
+		elt.innerHTML = total_cancel
+		elt = document.getElementById("fld_order_date")
+		elt.innerHTML = order_date
+		elt = document.getElementById("fld_expires")
+		elt.innerHTML = expires
+	}
+
+	var ask_data = {{.JSAskData}}
+	var bid_data = {{.JSBidData}}
+</script>
+<script>
+window.onload = function () {
+var chart = new CanvasJS.Chart("chartContainer", {
+	zoomEnabled: true,
+	zoomType: "xy",
+	exportEnabled: true,
+	title: {
+		text: "Market Depth"
+	},
+	subtitles:[{
+		text: "{{.Market.Description}}",
+		fontSize: 14
+	}],
+	axisX: {
+		title: "Prices",
+		suffix: " DAI",
+	},
+	axisY: {
+		title: "Market Depth",
+		titleFontColor: "#4F81BC",
+		labelFontColor: "#4F81BC"
+	},
+	toolTip: {
+		shared: true,
+		toolTipContent: "<div><a href=file.html>LINK</a></div>"
+	},
+	legend:{
+		cursor:"pointer",
+		itemclick: toogleDataSeries
+	},
+	data: [{
+		type: "line",
+		name: "BID",
+		showInLegend: true,
+		yValueFormatString: "#,##0.00 ETH",
+		xValueFormatString: "#,##0.00#",
+		dataPoints: bid_data
+	},
+	{
+		type: "line",
+		name: "ASK",
+		color: "#C0504E",
+		showInLegend: true,
+		axisYType: "secondary",
+		yValueFormatString: "#,##0.00 db",
+		xValueFormatString: "#,##0.00#",
+		dataPoints: ask_data
+	}]
+});
+
+chart.render();
+
+function type1DataPoints(){
+	var dataPoints = [];
+	/*
+	var h;
+	dataPoints.push({x:10,y:0.50})
+	dataPoints.push({x:20,y:0.40})
+//	dataPoints.push({x:30,y:0.30})
+	dataPoints.push({x:30,y:0.30,addr: "0xa384b6d3..20ff7a",expires: "18 May 2020 19:43",volume: "20",click: function(e) { alert('hola') },toolTipContent: "<div>User: {addr}<br/>Expires: {expires}<br>BID: {x}<br/>Volume: {volume}</div>"})
+	*/
+	return dataPoints
+}
+
+function type2DataPoints(e ){
+	var dataPoints = [];
+	var h;
+	dataPoints.push({x:31,y:0.35})
+	dataPoints.push({x:50,y:0.45})
+	dataPoints.push({x:60,y:0.55})
+	/*
+	for(var w = .01; w < 100 ; w *= step){
+		h =  -5 * Math.log(Math.pow((1 - w*w), 2) + 4 *e*e*w*w);
+		dataPoints.push({x: w, y: h});
+	}
+*/
+	return dataPoints;
+}
+
+function toogleDataSeries(e){
+	if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+		e.dataSeries.visible = false;
+	} else{
+		e.dataSeries.visible = true;
+	}
+	chart.render();
+}
+
+}
+</script>
+
+
+<h3 class="page_title">Market Details</h3>
+<table class="market_detail">
+<tr>
+	<td>Address:</td>
+	<td>{{.Market.MktAddr}}</td>
+</tr>
+<tr>
+	<td>Description</td>
+	<td>{{.Market.Description}}</td>
+</tr>
+</table>
+<br/><br/>
+<div id="chartContainer" style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
+<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+<div id="usermktinfo" style="display: none;">
+	User statistics on this market for this outcome in particular:
+	<table>
+		<tr>
+			<td>Order Date</td>
+			<td><span id="fld_order_date"></span></td>
+		</tr>
+		<tr>
+			<td>Expires</td>
+			<td><span id="fld_expires"></span></td>
+		</tr>
+		<tr>
+			<td>Trading Wallet Address</td>
+			<td><span id="fld_wallet_addr"></span></td>
+		</tr>
+		<tr>
+			<td>Real User Account (EOA):</td>
+			<td><span id="fld_eoa_addr"></span></td>
+		</tr>
+		<tr>
+			<td>Number of BIDs:</td>
+			<td><span id="fld_num_bids"></span></td>
+		</tr>
+		<tr>
+			<td>Number of ASKs:</td>
+			<td><span id="fld_num_asks"></span></td>
+		</tr>
+		<tr>
+			<td>Number of Cancelled orders:</td>
+			<td><span id="fld_num_cancel"></span></td>
+		</tr>
+	</table>
+	<nav>
+		<ul>
+		<li>
+			<a class="btn_link" href="/index.html">Full Statistics</a>
+			<span></span><span></span><span></span><span></span>
+		</li>
+	</ul>
+	</nav>
+</div>
+<table>
+	<tr>
+		<td>
+			<div class="market_bids">
+			<h3 style="width: 100%; text-align: center;">Bids</h3>
+			{{template "market_depth_pane" .Bids}}
+			</div>
+		<td>
+			<div class="market_asks">
+				<h3 style="width: 100%; text-align: center;">Asks</h3>
+				{{template "market_depth_pane" .Asks}}
+			</div>
+		</td>
+	</tr>
+</table>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="/index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>
