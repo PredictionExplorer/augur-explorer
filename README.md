@@ -2,47 +2,63 @@
 
 Extracts data from Augur Prediction Marketplace (http://augur.net) and stores it in an SQL database.
 
-### Dependencies
+### Requirements
 
- * Latest golang `crypto` package containing `NewLegacyKeccak256` function
- * Latest Ethereum `go-ethereum` package with Tuple ABI Unpack function (v1.9.13)
- * PostgreSQL libpq package
+ * Golang v 1.14
+ * Augur platform with local test net setup
+ * PostgreSQL
 
 ### Build
 
+This script will build everything, the only thing you need to have os `go` command
+	
 	./auto-build.sh
 
-This will download all the dependencies and try to build everything
+### Starting Augur
+
+First, start Augur. Instructions are located here: https://github.com/AugurProject/augur
+
+But just in case, here is the command list to run:
+
+	docker kill $(docker ps -a -q);
+	docker system prune -af
+	yarn clean
+	yarn
+	yarn build
+	yarn docker:all
+
+on another terminal:
+
+	yarn workspace @augurproject/ui dev
+
 
 ### Running
 
-There are 3 executables to run:
+There are 3 executables to run. This script will run all of them:
 
- * etl
- * server
- * mesh
-
- 1.
-
-	cd etl/mesh
-	. config/dev-config.env
-	./mesh
-
- 2.
-
-	cd etl
-	. config/dev-config.env
-	./run.sh
-
-3.
-
-	cd server
-	. config/dev-config.env
-	./run.sh
-
-Once all the 3 programs run, the error logs will be in /var/tmp
+	./auto-run.sh
 
 ### Database initialization
+
+Create user on Ubuntu
+
+	useradd -m aedev
+	passwd aedev	# we are giong to set password to 123
+
+Enter Postgres as superuser
+
+	su - postgres
+	psql
+
+	postgres-#  CREATE ROLE aedev WITH LOGIN CREATEDB ENCRYPTED PASSWORD '123';
+	\q
+
+Enter Postgres as development user
+
+	su - aedev
+	createdb dev
+
+Init DB
 
 	cd etl/sql
 	./reset-db.sh
