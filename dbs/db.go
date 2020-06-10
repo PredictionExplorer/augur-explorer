@@ -19,7 +19,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/0xProject/0x-mesh/zeroex"
 
-	p "github.com/afterether/augur-extractor/primitives"
+//	p "github.com/afterether/augur-extractor/primitives"
+	p "augur-extractor/primitives"
 )
 type SQLStorage struct {
 	db					*sql.DB

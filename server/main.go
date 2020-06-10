@@ -11,7 +11,10 @@ import (
 	//"github.com/ethereum/go-ethereum/accounts/abi"
 	//"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
+/*
 	. "github.com/afterether/augur-extractor/primitives"
+*/
+	. "augur-extractor/primitives"
 )
 var (
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")

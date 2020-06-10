@@ -19,8 +19,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 
-	. "github.com/afterether/augur-extractor/primitives"
-	. "github.com/afterether/augur-extractor/dbs"
+	. "augur-extractor/primitives"
+	. "augur-extractor/dbs"
 )
 const (
 	// ToDo: get these signatures from the abi files (after our code stabilizes, currently we will

@@ -11,9 +11,12 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-
+/*
 	. "github.com/afterether/augur-extractor/primitives"
 	. "github.com/afterether/augur-extractor/dbs"
+	*/
+	. "augur-extractor/primitives"
+	. "augur-extractor/dbs"
 )
 const (
 	DEFAULT_DB_LOG_FILE_NAME = "/var/tmp/backend-db.log"

@@ -1,12 +1,8 @@
 package main
 
 import (
-//	"fmt"
-	//"os"
 	"bytes"
-//	"io/ioutil"
 	"encoding/hex"
-//	"encoding/json"
 	"math/big"
 	"context"
 
@@ -15,8 +11,7 @@ import (
 //	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
-	. "github.com/afterether/augur-extractor/primitives"
-//	. "github.com/afterether/augur-extractor/dbs"
+	. "augur-extractor/primitives"
 )
 type EventSequencer struct {	// determines the order for contained events
 	unordered_list		[]*types.Log
