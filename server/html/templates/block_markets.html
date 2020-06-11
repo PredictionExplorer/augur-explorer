@@ -1,0 +1,8 @@
+{{define "block_markets"}}
+<table class="block_markets">
+	</tr>
+		{{- range $i, $address  := .}}
+			{{template "block_mkt_row" $address}}
+		{{- end}}
+</table>
+{{end}}

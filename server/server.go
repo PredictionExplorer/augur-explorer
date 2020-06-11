@@ -11,10 +11,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-/*
-	. "github.com/afterether/augur-extractor/primitives"
-	. "github.com/afterether/augur-extractor/dbs"
-	*/
+
 	. "augur-extractor/primitives"
 	. "augur-extractor/dbs"
 )
@@ -420,10 +417,18 @@ func serve_user_info_page(c *gin.Context,addr string) {
 }
 func serve_tx_info_page(c *gin.Context,tx_hash string) {
 
-	c.HTML(http.StatusOK, "tx_info.html", gin.H{
+	tx_info,err := augur_srv.storage.Get_transaction(tx_hash)
+	if err == nil {
+		c.HTML(http.StatusOK, "tx_info.html", gin.H{
 			"title": "Transaction " + tx_hash,
-			"tx_hash" : tx_hash,
-	})
+			"TxInfo" : tx_info,
+		})
+	} else {
+		c.HTML(http.StatusOK, "tx_not_found.html", gin.H{
+			"title": "Transaction "+tx_hash,
+			"tx_hash": tx_hash,
+		})
+	}
 }
 func get_token_balance(token_type int,addr *common.Address) float64 {
 	// input: token_type = 0 => DAI token; token_type = 1 => Rep token
@@ -577,18 +582,23 @@ func search(c *gin.Context) {
 			keyword = keyword[2:]
 		}
 		hash_bytes,err := hex.DecodeString(keyword)
-		if err != nil {
+		if err == nil {
 			hash := common.BytesToHash(hash_bytes)
 			hash_str := hash.String()
 			serve_tx_info_page(c,hash_str)
 		} else {
+			fmt.Printf("hash = %v, err on decoding: %v",keyword,err)
 			c.HTML(http.StatusBadRequest, "error.html", gin.H{
 				"title": "Augur Markets: Error",
 				"ErrDescr": "Invalid HEX string in hash parameter",
 			})
 			return
 		}
+	} else {
+
+		serve_block_info(keyword,c)
 	}
+	
 }
 func read_money(c *gin.Context) {
 	// this function gets amount of currencies the User holds: ETH, DAI and REP (all in one call)
@@ -685,6 +695,36 @@ func full_reports(c *gin.Context) {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
 			"ErrDescr": "Invalid HEX string in address parameter",
+		})
+	}
+}
+func block_info(c *gin.Context) {
+
+	p_block_num := c.Param("block_num")
+	serve_block_info(p_block_num,c)
+}
+func serve_block_info(p_block_num string,c *gin.Context) {
+
+	var block_num int
+	if len(p_block_num ) > 0 {
+		var success bool
+		block_num,success = parse_int_from_remote_or_error(c,&p_block_num)
+		if !success {
+			return
+		}
+	}
+	block_info,err := augur_srv.storage.Get_block_info(BlockNumber(block_num))
+	fmt.Printf("num tx = %v, num markets = %v num_addresses=%v\n",
+			len(block_info.Transactions),len(block_info.Markets),len(block_info.Addresses))
+	if err == nil {
+		c.HTML(http.StatusOK, "block_info.html", gin.H{
+			"title": fmt.Sprintf("Block Number %v",block_num),
+			"BlockInfo" : block_info,
+		})
+	} else {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("DB error: %v",err),
 		})
 	}
 }

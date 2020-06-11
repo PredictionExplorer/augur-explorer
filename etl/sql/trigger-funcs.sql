@@ -458,3 +458,25 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_tx_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE block
+		SET  num_tx = num_tx + 1
+		WHERE block_num=NEW.block_num;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_tx_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE block
+		SET  num_tx = num_tx - 1
+		WHERE block_num=OLD.block_num;
+	RETURN OLD;
+
+END;
+$$ LANGUAGE plpgsql;

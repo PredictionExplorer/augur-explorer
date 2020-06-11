@@ -1,0 +1,52 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="/res/main.css" rel="stylesheet">
+</head>
+<body>
+	<h3 class="page_title">Block Info for {{.BlockInfo.BlockNum}}</h3>
+<div class="block_info">
+	<table class="block_info">
+		<tr>
+			<td>Block Number</td>
+			<td>{{.BlockInfo.BlockNum}}</td>
+		</tr>
+		<tr>
+			<td>Augur Platform Transactions</td>
+			<td title="{{.BlockInfo.NumTx}}">{{.BlockInfo.NumTx}}</td>
+		</tr>
+		<tr>
+			<td>Active Addresses</td>
+			<td>{{.BlockInfo.NumAddresses}}</td>
+		</tr>
+		<tr>
+			<td>New Markets</td>
+			<td>{{.BlockInfo.NumMarkets}}</td>
+		</tr>
+	</table>
+	<br/>
+</div>
+<span class="block_transactions">Augur Platform related Transactions</span><br/><br/>
+{{template "block_transactions" .BlockInfo.Transactions}}
+<br/><br/>
+<br/>
+<span class="block_markets">New Markets created</span>
+{{- if ne .BlockInfo.NumMarkets 0}}
+{{template "block_markets" .BlockInfo.Markets}}
+{{- else }}
+	: None
+{{- end}}
+<br/><br/><br/>
+<span class="block_active_addresses">Active Addresses</span><br/><br/>
+{{template "block_active_addresses" .BlockInfo.Addresses}}
+
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="/index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

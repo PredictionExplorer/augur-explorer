@@ -11,9 +11,6 @@ import (
 	//"github.com/ethereum/go-ethereum/accounts/abi"
 	//"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
-/*
-	. "github.com/afterether/augur-extractor/primitives"
-*/
 	. "augur-extractor/primitives"
 )
 var (
@@ -113,6 +110,7 @@ func main() {
 	r.GET("/order/:order",  order)
 	r.GET("/category/:catid",  category)
 	r.GET("/fullreports/:addr",  full_reports)
+	r.GET("/block/:block_num",  block_info)
 
 	r.Static("/imgs", "./html/imgs")
 	r.Static("/res", "./html/res")			// resources (static)

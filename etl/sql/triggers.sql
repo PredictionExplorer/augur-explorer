@@ -16,3 +16,5 @@ CREATE TRIGGER pl_delete AFTER DELETE on profit_loss FOR EACH ROW EXECUTE PROCED
 CREATE TRIGGER pl_update AFTER UPDATE on profit_loss FOR EACH ROW EXECUTE PROCEDURE on_profit_loss_update();
 CREATE TRIGGER report_insert AFTER INSERT on report FOR EACH ROW EXECUTE PROCEDURE on_report_insert();
 CREATE TRIGGER report_delete AFTER DELETE on report FOR EACH ROW EXECUTE PROCEDURE on_report_delete();
+CREATE TRIGGER tx_insert AFTER INSERT on transaction FOR EACH ROW EXECUTE PROCEDURE on_tx_insert();
+CREATE TRIGGER tx_delete AFTER DELETE on transaction FOR EACH ROW EXECUTE PROCEDURE on_tx_delete();

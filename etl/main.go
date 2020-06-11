@@ -162,88 +162,96 @@ func main() {
 	}
 	for ; bnum<bnum_high; bnum++ {
 		big_bnum:=big.NewInt(int64(bnum))
-		block, _ := rpcclient.BlockByNumber(ctx,big_bnum)
-		if block != nil {
-			storage.Block_delete_with_everything(BlockNumber(big_bnum.Int64()))
-			num_transactions, err := rpcclient.TransactionCount(ctx,block.Hash())
-			if err != nil {
-				Error.Printf("block error: %v \n",err)
-			} else {
-				header := block.Header()
-				back_block_num := new(big.Int).SetUint64(header.Number.Uint64() - 20)
-				if (back_block_num.Uint64() == 99999999999999) && !split_simulated {//simulation disabled
-					// code to simulate chain split (naive) , this block should be removed when stable
-					block,_ = rpcclient.BlockByNumber(ctx,back_block_num)
-					header = block.Header()
-					big_bnum = big.NewInt(int64(header.Number.Int64()))
-					bnum = BlockNumber(big_bnum.Uint64())
-					storage.Block_delete_with_everything(BlockNumber(header.Number.Int64()))
-					split_simulated = true
-					Info.Println("Chain split simulation in action");
-				}
-				if !storage.Insert_block(header,int64(num_transactions)) {
-					// chainsplit detected
-					set_back_block_num := storage.Fix_chainsplit(header)
-					Info.Printf("Chain rewind to block %v. Restarting.",set_back_block_num)
-					bnum = set_back_block_num
-					continue
-				}
-				if num_transactions > 0 {
-					Info.Printf("block: %v %v transactions\n",block.Number(),num_transactions)
-					for tnum:=0 ; tnum < int(num_transactions) ; tnum++ {
-						tx , err := rpcclient.TransactionInBlock(ctx,block.Hash(),uint(tnum))
-						if err != nil {
-							Error.Printf("Error: %v",err)
-						} else {
-							tx_id := storage.Insert_transaction(BlockNumber(block.Number().Uint64()),tx)
-							tx_msg, err := tx.AsMessage(types.NewEIP155Signer(tx.ChainId()))
-							if err != nil {
-								Fatalf("Error in tx signature validation (shoudln't happen): %v",err)
-							}
-							from := tx_msg.From()
-							dump_tx_input_if_known(tx)
-							to:=""
-							if tx.To() != nil {
-								to = tx.To().String()
-							}
-							Info.Printf("\ttx: %v\n",tx.Hash().String())
-							Info.Printf("\t from=%v\n",tx_msg.From().String())
-							Info.Printf("\t to=%v for $%v (%v bytes data)\n",
-											to,tx.Value().String(),len(tx.Data()))
-							Info.Printf("\t input: \n%v\n",hex.EncodeToString(tx.Data()[:]))
-							rcpt,err := rpcclient.TransactionReceipt(ctx,tx.Hash())
+		block, err := rpcclient.BlockByNumber(ctx,big_bnum)
+		if err != nil {
+			Error.Printf("Error in BlockByNumber call: %v\n",err)
+		} else {
+			if block != nil {
+				storage.Block_delete_with_everything(BlockNumber(big_bnum.Int64()))
+				num_transactions, err := rpcclient.TransactionCount(ctx,block.Hash())
+				if err != nil {
+					Error.Printf("block error: %v \n",err)
+				} else {
+					header := block.Header()
+					back_block_num := new(big.Int).SetUint64(header.Number.Uint64() - 20)
+					if (back_block_num.Uint64() == 99999999999999) && !split_simulated {//simulation disabled
+						// code to simulate chain split (naive) , this block should be removed when stable
+						block,_ = rpcclient.BlockByNumber(ctx,back_block_num)
+						header = block.Header()
+						big_bnum = big.NewInt(int64(header.Number.Int64()))
+						bnum = BlockNumber(big_bnum.Uint64())
+						storage.Block_delete_with_everything(BlockNumber(header.Number.Int64()))
+						split_simulated = true
+						Info.Println("Chain split simulation in action");
+					}
+					if !storage.Insert_block(header,int64(num_transactions)) {
+						// chainsplit detected
+						set_back_block_num := storage.Fix_chainsplit(header)
+						Info.Printf("Chain rewind to block %v. Restarting.",set_back_block_num)
+						bnum = set_back_block_num
+						continue
+					}
+					if num_transactions > 0 {
+						Info.Printf("block: %v %v transactions\n",block.Number(),num_transactions)
+						for tnum:=0 ; tnum < int(num_transactions) ; tnum++ {
+							tx , err := rpcclient.TransactionInBlock(ctx,block.Hash(),uint(tnum))
 							if err != nil {
 								Error.Printf("Error: %v",err)
 							} else {
-								sequencer := new(EventSequencer)
-								num_logs := len(rcpt.Logs)
-								for i:=0 ; i<num_logs ; i++ {
-									Info.Printf(
-										"\t\t\tlog %v\n\t\t\t\t\t\t for contract %v (%v of %v items)\n",
-										rcpt.Logs[i].Topics[0].String(),rcpt.Logs[i].Address.String(),(i+1),len(rcpt.Logs))
-									sequencer.append_event(rcpt.Logs[i])
+								tx_msg, err := tx.AsMessage(types.NewEIP155Signer(tx.ChainId()))
+								if err != nil {
+									Fatalf("Error in tx signature validation (shoudln't happen): %v",err)
 								}
-								ordered_list := sequencer.get_ordered_event_list()
-								num_logs = len(ordered_list)
-								pl_entries := make([]int64,0,2);// profit loss entries
-								market_order_id = 0
-								fill_order_id = 0
-								for i:=0 ; i < num_logs ; i++ {
-									Info.Printf(
-										"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",
-										ordered_list[i].Topics[0].String(),
-										ordered_list[i].Address.String())
-									id := process_event(block.Header(),tx_id,from,ordered_list[i])
-									if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),
-												evt_profit_loss_changed) {
-										pl_entries = append(pl_entries,id)
+								tx_id := storage.Insert_transaction(
+											BlockNumber(block.Number().Uint64()),
+											tx.Hash().String(),
+											&tx_msg,
+								)
+								from := tx_msg.From()
+								dump_tx_input_if_known(tx)
+								to:=""
+								if tx.To() != nil {
+									to = tx.To().String()
+								}
+								Info.Printf("\ttx: %v\n",tx.Hash().String())
+								Info.Printf("\t from=%v\n",tx_msg.From().String())
+								Info.Printf("\t to=%v for $%v (%v bytes data)\n",
+												to,tx.Value().String(),len(tx.Data()))
+								Info.Printf("\t input: \n%v\n",hex.EncodeToString(tx.Data()[:]))
+								rcpt,err := rpcclient.TransactionReceipt(ctx,tx.Hash())
+								if err != nil {
+									Error.Printf("Error: %v",err)
+								} else {
+									sequencer := new(EventSequencer)
+									num_logs := len(rcpt.Logs)
+									for i:=0 ; i<num_logs ; i++ {
+										Info.Printf(
+											"\t\t\tlog %v\n\t\t\t\t\t\t for contract %v (%v of %v items)\n",
+											rcpt.Logs[i].Topics[0].String(),rcpt.Logs[i].Address.String(),(i+1),len(rcpt.Logs))
+										sequencer.append_event(rcpt.Logs[i])
+									}
+									ordered_list := sequencer.get_ordered_event_list()
+									num_logs = len(ordered_list)
+									pl_entries := make([]int64,0,2);// profit loss entries
+									market_order_id = 0
+									fill_order_id = 0
+									for i:=0 ; i < num_logs ; i++ {
+										Info.Printf(
+											"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",
+											ordered_list[i].Topics[0].String(),
+											ordered_list[i].Address.String())
+										id := process_event(block.Header(),tx_id,from,ordered_list[i])
+										if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),
+													evt_profit_loss_changed) {
+											pl_entries = append(pl_entries,id)
+										}
 									}
 								}
 							}
 						}
+					} else {
+						Info.Printf("block: %v EMPTY\n",block.Number())
 					}
-				} else {
-					Info.Printf("block: %v EMPTY\n",block.Number())
 				}
 			}
 		}

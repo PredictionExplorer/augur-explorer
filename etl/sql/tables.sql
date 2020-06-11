@@ -8,6 +8,9 @@ CREATE TABLE block (
 CREATE TABLE transaction (	-- we're only storing transactions related to Augur platform
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
+	from_aid			BIGINT DEFAULT 0,
+	to_aid				BIGINT DEFAULT 0,
+	value				DECIMAL(64,18) DEFAULT 0.0,
 	tx_hash				TEXT NOT NULL UNIQUE
 );
 -- Universe: The container contract for Augur Service

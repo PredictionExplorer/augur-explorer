@@ -4,8 +4,26 @@
 	<link href="res/main.css" rel="stylesheet">
 </head>
 <body>
-<h3 class="page_title">Transaction {{.tx_hash}}</h3>
+<h3 class="page_title">Transaction {{.TxInfo.Hash}}</h3>
 <br/>
+<Table>
+	<tr>
+		<td>Block Number</td>
+		<td><a href="/block/{{.TxInfo.BlockNum}}">{{.TxInfo.BlockNum}}</a></td>
+	</tr>
+	<tr>
+		<td>From</td>
+		<td><a href="/search?q={{.TxInfo.From}}">{{.TxInfo.From}}</a></td>
+	</tr>
+	<tr>
+		<td>To</td>
+		<td><a href="/search?q={{.TxInfo.To}}">{{.TxInfo.To}}</a></td>
+	</tr>
+	<tr>
+		<td>Value</td>
+		<td>{{.TxInfo.Value}}</td>
+	</tr>
+</table>
 <nav>
 	<ul>
 	<li>

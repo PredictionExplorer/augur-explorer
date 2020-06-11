@@ -446,3 +446,19 @@ type UserReport struct {
 	WinStart			string
 	WinEnd				string
 }
+type BlockInfo struct {
+	BlockNum			BlockNumber
+	NumTx				int64
+	NumAddresses		int64
+	NumMarkets			int64
+	Addresses			[]string	//list of addresses participated in this block
+	Transactions		[]string
+	Markets				[]string	// list of market addresses created at this block
+}
+type TxInfo struct {
+	BlockNum			BlockNumber
+	Value				float64
+	Hash				string
+	From				string
+	To					string
+}
