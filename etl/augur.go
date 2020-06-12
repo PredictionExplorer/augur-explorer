@@ -69,6 +69,31 @@ func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) 
 	}
 
 }
+func balance_updater() {
+	// go-routine that updates balances of DAI tokens
+	// when the record is inserted into dai_transf table it is inserted with balance = 0 because
+	// we don't have the previous balance (and we can't get it during the processing because we are
+	// processing finalized  blocks and at this stage of the process the order of transfers was lost)
+	// Therefore the only way to calculate valid balances for all the accounts involved is to get the
+	// balance on the previous block, and run the sequence of balance changes
+	// The order of insertion into dai_transf table is valid and we can use it to reproduce the history
+
+	// in order to avoid being a bottleneck this process must run as an independent thread
+
+	transfers := storage.Get_unprocessed_dai_transfers()
+	for i := 0 ; i<len(transfers) ; i++ {
+		dai_transfer := &transfers[i]
+		prev_balance_db,err := storage.Get_previous_balance_from_DB(dai_transfer.Id,dai_transfer.FromAid)
+		if err != nil {
+			// no balance locally, get it from RPC
+			_ = prev_balance_db
+		}
+		prev_balance_db,err = storage.Get_previous_balance_from_DB(dai_transfer.Id,dai_transfer.ToAid)
+		if err != nil {
+			// no balance locally, get it from RPC
+		}
+	}
+}
 func build_list_of_inspected_events() {
 
 	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)
@@ -415,7 +440,7 @@ func proc_market_volume_changed(block_num BlockNumber, tx_id int64, log *types.L
 		storage.Insert_market_volume_changed_evt(block_num,tx_id,&mevt)
 	}
 }
-func proc_market_created(block_num BlockNumber,tx_id int64,log *types.Log,signer common.Address) {
+func proc_market_created(block_num BlockNumber,tx_id int64,log *types.Log,signer common.Address,validity_bond string) {
 	var mevt MarketCreatedEvt
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.MarketCreator = common.BytesToAddress(log.Topics[2][12:])	// extract crator addr
@@ -440,11 +465,15 @@ func proc_market_created(block_num BlockNumber,tx_id int64,log *types.Log,signer
 			wallet_aid = storage.Lookup_or_create_address(wallet_addr_str,block_num,tx_id)
 		}
 		Info.Printf("getwallet: got wallet_aid = %v for wallet addr %v\n",wallet_aid,wallet_addr_str)
-		storage.Insert_market_created_evt(block_num,tx_id,signer,wallet_aid,&mevt)
+		storage.Insert_market_created_evt(block_num,tx_id,signer,wallet_aid,validity_bond,&mevt)
 	}
 }
-func process_event(block *types.Header, tx_id int64, signer common.Address, log *types.Log) int64 {
+// DISCONTINUED func process_event(block *types.Header, tx_id int64, signer common.Address, log *types.Log) int64 {
+func process_event(block *types.Header, tx_id int64, signer common.Address, logs *[]*types.Log,lidx int) int64 {
 	// Return Value: id of the record inserted (if aplicable, or 0)
+
+	log := &(*(*logs)[lidx])	// we are getting full array of logs (some events need adjacent event data)
+
 	var id int64 = 0
 	block_num := BlockNumber(block.Number.Uint64())
 	if log == nil {
@@ -508,7 +537,17 @@ func process_event(block *types.Header, tx_id int64, signer common.Address, log 
 			proc_market_volume_changed(block_num,tx_id,log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_created) {
-			proc_market_created(block_num,tx_id,log,signer)
+			// we have inverted the events, so the validity bond amount is stored in
+			// ERC20 transfer event (it is transfered to the Universe)
+			var validity_bond string
+			var transf_evt Transfer
+			tr_idx := lidx + 1	// the offset to ERC20 event (as they fired by contracts)
+			err := cash_abi.Unpack(&transf_evt,"Transfer",(*logs)[tr_idx].Data)
+			if err == nil {
+				validity_bond = transf_evt.Value.String()
+				Info.Printf("extracted validity bond = %v\n",validity_bond)
+			}
+			proc_market_created(block_num,tx_id,log,signer,validity_bond)
 		}
 	}
 	for j:=1; j < num_topics ; j++ {

@@ -329,6 +329,7 @@ type UserInfo struct {
 	ReportProfits	float64	// amount of money user has made in profits in outcome reporting
 	AffProfits		float64	// profits made in affiliate commissions
 	MoneyAtStake	float64	// how much money User has invested
+	ValidityBonds	float64	// amount of validity bonds for all the markets user created
 	TotalWithdrawn	float64	// amount of money User has deposited
 	TotalDeposited	float64	// amount of money User has withdrawn
 	TopTrades		float64
@@ -461,4 +462,18 @@ type TxInfo struct {
 	Hash				string
 	From				string
 	To					string
+}
+type FrontPageStats struct {
+	MoneyAtStake		float64
+	MarketsCreated		float64
+	TradesCount			int64
+}
+type DaiT struct {
+	Id					int64
+	FromAid				int64
+	ToAid				int64
+	From				string
+	To					string
+	Amount				string
+	Balance				string
 }

@@ -240,7 +240,7 @@ func main() {
 											"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",
 											ordered_list[i].Topics[0].String(),
 											ordered_list[i].Address.String())
-										id := process_event(block.Header(),tx_id,from,ordered_list[i])
+										id := process_event(block.Header(),tx_id,from,&ordered_list,i)
 										if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),
 													evt_profit_loss_changed) {
 											pl_entries = append(pl_entries,id)

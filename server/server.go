@@ -201,9 +201,11 @@ func build_javascript_open_positions(entries *[]PLEntry) template.JS {
 }
 func main_page(c *gin.Context) {
 	blknum,_:= augur_srv.storage.Get_last_block_num()
+	stats := augur_srv.storage.Get_front_page_stats()
 	c.HTML(http.StatusOK, "index.html", gin.H{
 			"title": "Augur Prediction Markets",
 			"block_num" : blknum,
+			"Stats" : stats,
 	})
 }
 func markets(c *gin.Context) {
@@ -384,9 +386,12 @@ func market_price_history(c *gin.Context) {
 }
 func serve_user_info_page(c *gin.Context,addr string) {
 
+	fmt.Printf("serving user info for addr %v\n",addr)
 	eoa_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(addr)
+	fmt.Printf("eoa=%v, err=%+v\n",eoa_aid,err)
 	if err == nil {
 		user_info,err := augur_srv.storage.Get_user_info(eoa_aid)
+		fmt.Printf("iuser info =%+v, err=%+v\n",user_info,err)
 		if err == nil {
 			pl_entries := augur_srv.storage.Get_profit_loss(eoa_aid)
 			open_pos_entries := augur_srv.storage.Get_open_positions(eoa_aid)
@@ -562,6 +567,7 @@ func search(c *gin.Context) {
 				} else {
 					serve_user_info_page(c,addr_str)
 				}
+				return
 			} else {
 				c.HTML(http.StatusBadRequest, "error.html", gin.H{
 					"title": "Augur Markets: Error",
@@ -595,10 +601,17 @@ func search(c *gin.Context) {
 			return
 		}
 	} else {
-
-		serve_block_info(keyword,c)
+		_, err := strconv.Atoi(keyword)
+		if err == nil {
+			serve_block_info(keyword,c)
+		} else {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": "Search object not found",
+			})
+			return
+		}
 	}
-	
 }
 func read_money(c *gin.Context) {
 	// this function gets amount of currencies the User holds: ETH, DAI and REP (all in one call)

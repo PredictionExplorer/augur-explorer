@@ -138,8 +138,12 @@
 			<td>{{.UserInfo.AffProfits}}</td>
 		</tr>
 		<tr>
-			<td>Money At Stake</td>
+			<td title="Sum of all funds this user has bet at this moment on the markets" >Money At Stake</td>
 			<td>{{.UserInfo.MoneyAtStake}}</td>
+		</tr>
+		<tr>
+			<td>Money in Validity Bonds</td>
+			<td title="Sum of all funds frozen in Validity Bonds for all Markets created by the User">{{.UserInfo.ValidityBonds}}</td>
 		</tr>
 		<tr>
 			<td>Total Deposited</td>

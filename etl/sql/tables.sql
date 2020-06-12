@@ -40,7 +40,7 @@ CREATE TABLE market (
 	wallet_aid			BIGINT NOT NULL,			-- address ID of the contract wallet of the User
 	eoa_aid				BIGINT NOT NULL,			-- address ID of the User (EOA) who created the market
 	reporter_aid		BIGINT NOT NULL,			-- address ID of the User who will report on the outcome
-	end_time			TIMESTAMPTZ NOT NULL,			-- when the Market expires
+	end_time			TIMESTAMPTZ NOT NULL,		-- when the Market expires
 	max_ticks			BIGINT NOT NULL,			-- maximum price range (number of intervals)
 	create_timestamp	TIMESTAMPTZ NOT NULL,
 	total_trades		BIGINT DEFAULT 0,			-- current number of trades that took place
@@ -50,16 +50,17 @@ CREATE TABLE market (
 	initial_outcome		SMALLINT DEFAULT -1,		-- first report that was submitted
 	status				SMALLINT DEFAULT 0,
 	market_type			SMALLINT NOT NULL,			-- enum: 0:YES_NO | 1:CATEGORICAL | 2:SCALAR
-	money_at_stake		DECIMAL(24,18) DEFAULT 0.0,	-- accumulated money bet on outcomes
-	open_interest		DECIMAL(24,18) DEFAULT 0.0,		-- amount of shares created
-	fee					DECIMAL(24,18) NOT NULL,		-- fee to be paid to Market creator as percentage of transaction
+	money_at_stake		DECIMAL(32,18) DEFAULT 0.0,	-- accumulated money bet on outcomes
+	open_interest		DECIMAL(32,18) DEFAULT 0.0,	-- amount of shares created
+	fee					DECIMAL(32,18) NOT NULL,	-- fee to be paid to Market creator as percentage of transaction
 	prices				TEXT NOT NULL,				-- range of prices the Market can take
 	extra_info			TEXT NOT NULL,				-- specific market metadata (JSON format)
 	outcomes			TEXT NOT NULL,				-- possible outcomes of the market
 	winning_payouts		TEXT DEFAULT '',
 	fin_timestamp		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
-	no_show_bond		TEXT NOT NULL,				-- $ penalty to the Creator for failing to emit report
-	cur_volume			DECIMAL(24,18) DEFAULT 0.0	-- this is the total volume (for all outcomes althogether)
+	no_show_bond		DECIMAL(32,18),				-- $ penalty to the Creator for failing to emit report
+	validity_bond		DECIMAL(32,18),				-- fee returned to creator if market isnt invalid
+	cur_volume			DECIMAL(32,18) DEFAULT 0.0	-- this is the total volume (for all outcomes althogether)
 );
 -- Balances of Share tokens per Market (accumulated data, one record per account)
 CREATE TABLE sbalances (
@@ -179,7 +180,9 @@ CREATE table dai_transf (	-- transfers of DAI tokens (deposits/withdrawals of fu
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	from_aid			BIGINT DEFAULT 0,
 	to_aid				BIGINT DEFAULT 0,
-	amount				DECIMAL(32,18) DEFAULT 0.0
+	processed			BOOLEAN DEFAULT false,
+	amount				DECIMAL(64,18) DEFAULT 0.0,
+	balance				DECIMAL(64,18) DEFAULT 0.0	-- final balance , with amount included
 );
 CREATE table rep_transf (
 	id					BIGSERIAL PRIMARY KEY,
@@ -254,12 +257,14 @@ CREATE TABLE ustats (	-- statistics per User account
 	deposit_reqs		BIGINT DEFAULT 0,
 	total_reports		BIGINT DEFAULT 0,
 	total_designated	BIGINT DEFAULT 0,			-- total reports submitted as designated reporter
-	profit_loss			DECIMAL(24,18) DEFAULT 0.0,
-	report_profits		DECIMAL(24,18) DEFAULT 0.0,
-	aff_profits			DECIMAL(24,18) DEFAULT 0.0,	-- affiliate commissions earned
-	money_at_stake		DECIMAL(24,18) DEFAULT 0.0, -- how much has this User bet on Augur mkts
-	total_withdrawn		DECIMAL(24,18) DEFAULT 0.0,
-	total_deposited		DECIMAL(24,18) DEFAULT 0.0
+	profit_loss			DECIMAL(32,18) DEFAULT 0.0,
+	report_profits		DECIMAL(32,18) DEFAULT 0.0,
+	aff_profits			DECIMAL(32,18) DEFAULT 0.0,	-- affiliate commissions earned
+	money_at_stake		DECIMAL(32,18) DEFAULT 0.0, -- how much has this User bet on Augur mkts
+	total_withdrawn		DECIMAL(32,18) DEFAULT 0.0,
+	total_deposited		DECIMAL(32,18) DEFAULT 0.0,
+	validity_bonds		DECIMAL(32,18) DEFAULT 0.0,	-- sum of all validity bonds (market creation bond)
+	rep_frozen			DECIMAL(32,18) DEFAULT 0.0	-- amount of REP tokens frozen for all (participated) markets
 );
 CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 	id					BIGSERIAL PRIMARY KEY,

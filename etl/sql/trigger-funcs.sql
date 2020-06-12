@@ -81,13 +81,14 @@ DECLARE
 BEGIN
 
 	UPDATE ustats AS s
-			SET markets_created = (markets_created + 1)
+			SET markets_created = (markets_created + 1),
+				validity_bonds = (validity_bonds + NEW.validity_bond)
 			WHERE s.eoa_aid = NEW.eoa_aid;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT	INTO ustats(eoa_aid,wallet_aid,markets_created)
-				VALUES(NEW.eoa_aid,NEW.wallet_aid,1);
+		INSERT	INTO ustats(eoa_aid,wallet_aid,markets_created,validity_bonds)
+				VALUES(NEW.eoa_aid,NEW.wallet_aid,1,NEW.validity_bond);
 	END IF;
 
 	UPDATE main_stats
@@ -113,7 +114,8 @@ DECLARE
 BEGIN
 
 	UPDATE ustats AS s
-			SET markets_created = markets_created - 1
+			SET markets_created = markets_created - 1,
+				validity_bonds = validity_bonds - OLD.validity_bond
 			WHERE s.eoa_aid = OLD.eoa_aid;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
@@ -292,6 +294,8 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_mktfin_insert() RETURNS trigger AS  $$
 DECLARE
+	v_validity_bond decimal;
+	v_eoa_aid bigint;
 BEGIN
 
 	UPDATE market
@@ -300,15 +304,24 @@ BEGIN
 			winning_outcome=NEW.winning_outcome
 		WHERE market.market_aid=NEW.market_aid;
 	UPDATE main_stats SET active_count = (active_count - 1);
+	SELECT eoa_aid,validity_bond FROM market WHERE market_aid = NEW.market_aid INTO v_eoa_aid,v_validity_bond;
+	UPDATE ustats SET validity_bonds = validity_bonds - v_validity_bond
+		WHERE eoa_aid = v_eoa_aid;
 
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_mktfin_delete() RETURNS trigger AS  $$
 DECLARE
+	v_validity_bond decimal;
+	v_eoa_aid bigint;
 BEGIN
 
 	UPDATE main_stats SET active_count = (active_count + 1);
+	SELECT eoa_aid,validity_bond FROM market WHERE market_aid = OLD.market_aid INTO v_eoa_aid,v_validity_bond;
+	UPDATE ustats SET validity_bonds = validity_bonds + v_validity_bond
+		WHERE eoa_aid = v_eoa_aid;
+
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

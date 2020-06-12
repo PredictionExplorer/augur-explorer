@@ -66,6 +66,7 @@ func Connect_to_storage(mkt_order_ptr *int64) *SQLStorage {
 
 	ss := new(SQLStorage)
 	ss.db = db
+	ss.mkt_order_id_ptr = mkt_order_ptr
 	return ss
 }
 func (ss *SQLStorage) Init_log(fname string) {
@@ -299,7 +300,7 @@ func (ss *SQLStorage) lookup_or_create_category(categories string) int64 {
 
 	return cat_id
 }
-func (ss *SQLStorage) Insert_market_created_evt(block_num p.BlockNumber,tx_id int64,signer common.Address,wallet_aid int64,evt *p.MarketCreatedEvt) {
+func (ss *SQLStorage) Insert_market_created_evt(block_num p.BlockNumber,tx_id int64,signer common.Address,wallet_aid int64,validity_bond string,evt *p.MarketCreatedEvt) {
 
 	var query string
 	var market_aid int64;
@@ -367,10 +368,12 @@ func (ss *SQLStorage) Insert_market_created_evt(block_num p.BlockNumber,tx_id in
 			market_type,
 			extra_info,
 			outcomes,
-			no_show_bond
+			no_show_bond,
+			validity_bond
 		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TO_TIMESTAMP($9),$10,TO_TIMESTAMP($11),` +
 						evt.FeePerCashInAttoCash.String() +
-						"/1e+16,$12,$13,$14,$15,$16)";
+						"/1e+16,$12,$13,$14,$15,(" + evt.NoShowBond.String() + "/1e+18)," +
+						"("+ validity_bond + "/1e+18))";
 
 	result,err := ss.db.Exec(query,
 			block_num,
@@ -388,7 +391,7 @@ func (ss *SQLStorage) Insert_market_created_evt(block_num p.BlockNumber,tx_id in
 			evt.MarketType,
 			evt.ExtraInfo,
 			outcomes,
-			evt.NoShowBond.String())
+	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into market table: %v: q=%v",err,query))
 	}
@@ -1101,7 +1104,6 @@ func (ss *SQLStorage) Insert_block(block *types.Header,num_tx int64)  bool {
 	ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into block table. Rows affeced = 0"))
 	return false
 }
-//func (ss *SQLStorage) Insert_transaction(block_num p.BlockNumber,tx *types.Transaction) int64 {
 func (ss *SQLStorage) Insert_transaction(block_num p.BlockNumber,tx_hash string,tx *types.Message) int64 {
 
 	var query string
@@ -1800,6 +1802,7 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 				"s.report_profits," +
 				"s.aff_profits," +
 				"s.money_at_stake," +
+				"s.validity_bonds," +
 				"s.total_withdrawn," +
 				"s.total_deposited, " +
 				"r.top_trades, " +
@@ -1839,6 +1842,7 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 				&ui.ReportProfits,
 				&ui.AffProfits,
 				&ui.MoneyAtStake,
+				&ui.ValidityBonds,
 				&ui.TotalWithdrawn,
 				&ui.TotalDeposited,
 				&top_trades,
@@ -2741,4 +2745,86 @@ func (ss *SQLStorage) Get_transaction(tx_hash string) (p.TxInfo,error) {
 		}
 	}
 	return ti,err
+}
+func (ss *SQLStorage) Get_front_page_stats() p.FrontPageStats {
+
+	var stats p.FrontPageStats
+	var query string
+	query = "SELECT markets_count,money_at_stake,trades_count " +
+			"FROM main_stats WHERE universe_id=1"
+	row := ss.db.QueryRow(query)
+	err := row.Scan(
+				&stats.MarketsCreated,
+				&stats.MoneyAtStake,
+				&stats.TradesCount,
+	)
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return stats
+}
+func (ss *SQLStorage) Get_unprocessed_dai_transfers() []p.DaiT {
+
+	records := make([]p.DaiT,0,8)
+	var query string
+	query = "SELECT id,dt.from_aid,dt.to_aid,fa.addr,ta.addr,ROUND(amount*1e+18) as amount,ROUND(balance*1e+18) as balance " +
+			"FROM dai_transf dt " +
+				"LEFT JOIN address fa ON dt.from_aid=fa.address_id " +
+				"LEFT JOIN address fa ON dt.to_aid=ta.address_id " +
+			"WHERE processed = false " +
+			"ORDER by dt.id " +
+			"LIMIT 100"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	var rec p.DaiT
+
+	defer rows.Close()
+	for rows.Next() {
+		err=rows.Scan(
+			&rec.Id,
+			&rec.FromAid,
+			&rec.ToAid,
+			&rec.From,
+			&rec.To,
+			&rec.Amount,
+			&rec.Balance,
+		)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_previous_balance_from_DB(id int64,aid int64) (string,error) {
+
+	var query string
+	query = "SELECT ROUND(balance*1e+18)::text FROM (" +
+				"(" +
+					"SELECT id,balance FROM dai_transf " +
+					"WHERE " +
+						"(from_aid = $1) AND "+
+						"(processed = true) AND " +
+						"(id < $2) " +
+				")"+
+				" UNION ALL " +
+				"(" +
+					"SELECT id,balance FROM dai_transf " +
+					"WHERE " +
+						"((to_aid = $1) AND " +
+						"(processed = true)" +
+						"(id < $2) " +
+				")" +
+			") " +
+			"ORDER BY id LIMIT 1"
+
+	res := ss.db.QueryRow(query,aid,id)
+	var balance string
+	err := res.Scan(&balance)
+	if err != sql.ErrNoRows {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	return balance,err
 }
