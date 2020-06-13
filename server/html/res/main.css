@@ -262,3 +262,7 @@ div.category_record_subcategory_small {
 	display:                        inline;
 	font-size:                      1em;
 }
+#cash_flow_chart {
+	padding:						1em;
+	max-width:						30em;
+}

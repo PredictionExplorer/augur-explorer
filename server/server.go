@@ -199,6 +199,28 @@ func build_javascript_open_positions(entries *[]PLEntry) template.JS {
 	fmt.Printf("JS profit loss hist string: %v\n",data_str)
 	return template.JS(data_str)
 }
+func build_javascript_cash_flow_data(entries *[]BlockCash) template.JS {
+	var data_str string = "["
+
+	for i:=0 ; i < len(*entries) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		var e = &(*entries)[i];
+		var entry string
+		entry = "{" +
+				"x:" + fmt.Sprintf("%v",i)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.CashFlow) + "," +
+				"block_num: " + fmt.Sprintf("%v",e.BlockNum) + "," +
+				"cash: " + fmt.Sprintf("%v",e.CashFlow) + "" +
+				"}"
+		fmt.Printf("\nentry = %v\n",entry)
+		data_str= data_str + entry
+	}
+	data_str = data_str + "]"
+	fmt.Printf("JS cash_flow string: %v\n",data_str)
+	return template.JS(data_str)
+}
 func main_page(c *gin.Context) {
 	blknum,_:= augur_srv.storage.Get_last_block_num()
 	stats := augur_srv.storage.Get_front_page_stats()
@@ -241,9 +263,12 @@ func categories(c *gin.Context) {
 }
 func statistics(c *gin.Context) {
 	stats := augur_srv.storage.Get_main_stats()
+	cash_flow_entries := augur_srv.storage.Get_cash_flow()
+	cash_flow_data := build_javascript_cash_flow_data(&cash_flow_entries)
 	c.HTML(http.StatusOK, "statistics.html", gin.H{
 			"title": "Augur Market Statistics",
 			"MainStats" : stats,
+			"CashFlowData" : cash_flow_data,
 	})
 }
 func explorer(c *gin.Context) {

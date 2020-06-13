@@ -468,12 +468,28 @@ type FrontPageStats struct {
 	MarketsCreated		float64
 	TradesCount			int64
 }
+/* Discontinued
 type DaiT struct {
 	Id					int64
 	FromAid				int64
 	ToAid				int64
+	BlockNum			BlockNumber
 	From				string
 	To					string
 	Amount				string
 	Balance				string
+}
+*/
+type DaiB struct {
+	Id					int64
+	Aid					int64
+	DaiTransfId			int64
+	BlockNum			BlockNumber
+	Address				string
+	Amount				string
+	Balance				string
+}
+type BlockCash struct {
+	BlockNum			int64
+	CashFlow			float64
 }

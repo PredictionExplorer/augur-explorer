@@ -18,3 +18,7 @@ CREATE TRIGGER report_insert AFTER INSERT on report FOR EACH ROW EXECUTE PROCEDU
 CREATE TRIGGER report_delete AFTER DELETE on report FOR EACH ROW EXECUTE PROCEDURE on_report_delete();
 CREATE TRIGGER tx_insert AFTER INSERT on transaction FOR EACH ROW EXECUTE PROCEDURE on_tx_insert();
 CREATE TRIGGER tx_delete AFTER DELETE on transaction FOR EACH ROW EXECUTE PROCEDURE on_tx_delete();
+CREATE TRIGGER dai_transf_insert AFTER INSERT on dai_transf FOR EACH ROW EXECUTE PROCEDURE on_dai_transf_insert();
+CREATE TRIGGER dai_transf_delete AFTER DELETE on dai_transf FOR EACH ROW EXECUTE PROCEDURE on_dai_transf_delete();
+CREATE TRIGGER ustats_insert AFTER INSERT on ustats FOR EACH ROW EXECUTE PROCEDURE on_ustats_insert();
+CREATE TRIGGER dai_bal_update AFTER UPDATE ON dai_bal FOR EACH ROW EXECUTE PROCEDURE on_dai_bal_update();

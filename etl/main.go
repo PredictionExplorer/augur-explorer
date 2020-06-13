@@ -85,6 +85,7 @@ var (
 
 	ctrct_wallet_registry *AugurWalletRegistry
 	ctrct_zerox *ZeroX
+	ctrct_dai_token *DAICash
 
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 
@@ -98,6 +99,7 @@ var (
 	fill_order_id int64 = 0			// during event processing, holds id of record in mktord from Fill evt
 	market_order_id int64 = 0
 	owner_fld_offset int64 = 2		// offset to AugurContract::owner field obtained with eth_getStorage()
+
 
 	Error   *log.Logger
 	Info	*log.Logger
@@ -129,6 +131,10 @@ func main() {
 	addresses.Dai_addr= &dai_addr
 	addresses.Reputation_addr= &rep_addr
 	augur_init(addresses,&all_contracts)
+	ctrct_dai_token,err = NewDAICash(dai_addr,rpcclient)
+	if err != nil {
+		Fatalf("Couldn't initialize DAI Cash contract: %v\n",err)
+	}
 
 
 	c := make(chan os.Signal)
@@ -140,6 +146,8 @@ func main() {
 					" To interrupt abruptly send SIGKILL (9) to the kernel.\n")
 		exit_chan <- true
 	}()
+
+	go balance_updater()	// updates DAI token balances very 10 seconds
 
   main_loop:
 	ctx := context.Background()

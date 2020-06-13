@@ -5,6 +5,7 @@ import (
 	"os"
 	"fmt"
 	"net"
+	"errors"
 	"math/big"
 	"strings"
 	"strconv"
@@ -2764,42 +2765,51 @@ func (ss *SQLStorage) Get_front_page_stats() p.FrontPageStats {
 	}
 	return stats
 }
-func (ss *SQLStorage) Get_unprocessed_dai_transfers() []p.DaiT {
+func (ss *SQLStorage) Get_unprocessed_dai_balances() []p.DaiB {
 
-	records := make([]p.DaiT,0,8)
+	records := make([]p.DaiB,0,8)
 	var query string
-	query = "SELECT id,dt.from_aid,dt.to_aid,fa.addr,ta.addr,ROUND(amount*1e+18) as amount,ROUND(balance*1e+18) as balance " +
-			"FROM dai_transf dt " +
-				"LEFT JOIN address fa ON dt.from_aid=fa.address_id " +
-				"LEFT JOIN address fa ON dt.to_aid=ta.address_id " +
+	query = "SELECT " +
+				"db.id," +
+				"db.aid," +
+				"db.dai_transf_id," +
+				"a.addr," +
+				"ROUND(amount*1e+18) as amount," +
+				"ROUND(balance*1e+18) as balance," +
+				"db.block_num " +
+			"FROM dai_bal db " +
+				"LEFT JOIN address a ON db.aid=a.address_id " +
 			"WHERE processed = false " +
-			"ORDER by dt.id " +
+			"ORDER by db.id " +
 			"LIMIT 100"
 
+//	fmt.Printf("unprocessed query = %v\n",query)
 	rows,err := ss.db.Query(query)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	var rec p.DaiT
 
 	defer rows.Close()
 	for rows.Next() {
+		var rec p.DaiB
 		err=rows.Scan(
 			&rec.Id,
-			&rec.FromAid,
-			&rec.ToAid,
-			&rec.From,
-			&rec.To,
+			&rec.Aid,
+			&rec.DaiTransfId,
+			&rec.Address,
 			&rec.Amount,
 			&rec.Balance,
+			&rec.BlockNum,
 		)
+		records = append(records,rec)
 	}
 	return records
 }
 func (ss *SQLStorage) Get_previous_balance_from_DB(id int64,aid int64) (string,error) {
 
 	var query string
+	/*discontinued
 	query = "SELECT ROUND(balance*1e+18)::text FROM (" +
 				"(" +
 					"SELECT id,balance FROM dai_transf " +
@@ -2818,13 +2828,137 @@ func (ss *SQLStorage) Get_previous_balance_from_DB(id int64,aid int64) (string,e
 				")" +
 			") " +
 			"ORDER BY id LIMIT 1"
+	*/
+	query = "SELECT ROUND(balance*1e+18)::text,processed FROM dai_bal " +
+			"WHERE (aid=$1) and (id<$2) ORDER BY id DESC LIMIT 1"
 
 	res := ss.db.QueryRow(query,aid,id)
 	var balance string
-	err := res.Scan(&balance)
-	if err != sql.ErrNoRows {
+	var processed bool
+	err := res.Scan(&balance,&processed)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		return balance,err
+	}
+	if !processed {
+		return "",errors.New("Unprocessed balance on past blocks")
+	}
+	return balance,err
+}
+func (ss *SQLStorage) Update_dai_token_balances_backwards(last_block_num p.BlockNumber,aid int64,eth_balance *big.Int) int {
+
+	var updated_rows  int =0
+	var query string
+	query = "SELECT id,ROUND(balance*1e+18)::text as balance,ROUND(amount*1e+18)::text as amount,processed FROM dai_bal " +
+			"WHERE " +
+				"(aid = $1) AND " +
+				"(block_num <= $2) " +
+			"ORDER BY id DESC"
+	rows,err := ss.db.Query(query,aid,last_block_num)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+	}
+	correct_balance := new(big.Int)
+	correct_balance.Set(eth_balance)
+	fmt.Printf("Entering update_dai_token_balances() with eth_balance=%v correct_balace=%v\n",eth_balance.String(),correct_balance.String())
+	var row_count = 0;
+	defer rows.Close()
+	for rows.Next() {
+		row_count++
+		var id int64
+		var balance_str string
+		var amount_str string
+		var processed bool
+		err = rows.Scan(&id,&balance_str,&amount_str,&processed)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		db_balance := new(big.Int)
+		db_balance.SetString(balance_str,10)
+		amount := new(big.Int)
+		amount.SetString(amount_str,10)
+		tmp_int := new(big.Int)
+		tmp_int.Set(correct_balance)
+		correct_balance.Sub(tmp_int,amount)	// inverse operation to Add()
+		cmp_res := correct_balance.Cmp(db_balance)
+		fmt.Printf("aid=%v,id=%v,correct=%v,db=%v,amount=%v,cmp_res=%v\n",
+					aid,id,correct_balance.String(),db_balance.String(),amount.String(),cmp_res)
+		if cmp_res != 0 {	// incorrect balance, update it
+			fmt.Printf("incorrect balance, setting correct balance to %v for id=%v\n",
+				correct_balance.String(),id)
+			query = "UPDATE dai_bal " +
+					"SET balance=("+correct_balance.String()+"/1e+18)," +
+						"processed = true " +
+					" WHERE id=$1"
+			fmt.Printf("query = %v\n",query)
+			_,err = ss.db.Exec(query,id)
+			if (err!=nil) {
+				p.Fatalf(fmt.Sprintf("DB Error: %v",err));
+				os.Exit(1)
+			}
+			updated_rows++
+		} else {
+			if !processed {
+				query = "UPDATE dai_bal " +
+						"SET processed = true " +
+						" WHERE id=$1"
+				_,err = ss.db.Exec(query,id)
+				if (err!=nil) {
+					p.Fatalf(fmt.Sprintf("DB Error: %v",err));
+					os.Exit(1)
+				}
+				updated_rows++
+			} else {
+				fmt.Printf("Update balances backwards returns on erroneous balance: correct_balance =  %v, db_balance=%v,aid=%v\n",correct_balance.String(),db_balance.String(),aid)
+			}
+			return updated_rows	// we abort when we find first valid balance
+		}
+	}
+	if row_count == 0 {
+		d_query := fmt.Sprintf("SELECT id,balance,amount,processed FROM dai_bal " +
+			"WHERE " +
+				"(aid = %v) AND " +
+				"(block_num <= %v) " +
+			"ORDER BY id DESC",aid,last_block_num)
+		fmt.Printf("query returns no rows: %v\n",d_query)
+	}
+	return updated_rows
+}
+func (ss *SQLStorage) Set_dai_balance(id int64,balance string) {
+
+	var query string
+	query = "UPDATE dai_bal SET balance = ("+balance+"/1e+18),processed=true WHERE id=$1"
+	d_query := fmt.Sprintf("UPDATE dai_bal SET balance = (%v/1e+18),processed=true WHERE id=%v",balance,id)
+	fmt.Printf("Set_dai_balance: %v\n",d_query)
+	_,err := ss.db.Exec(query,id)
+	if (err!=nil) {
+		p.Fatalf(fmt.Sprintf("DB Error: %v",err));
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Get_cash_flow() []p.BlockCash {
+
+	records := make([]p.BlockCash,0,256)
+	var query string
+	query = "SELECT block_num,cash_flow FROM block WHERE cash_flow != 0 ORDER BY block_num"
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	return balance,err
+	defer rows.Close()
+	for rows.Next() {
+		var bc p.BlockCash
+		err = rows.Scan(&bc.BlockNum,&bc.CashFlow)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,bc)
+	}
+	return records
 }

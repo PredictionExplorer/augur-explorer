@@ -2,6 +2,7 @@
 CREATE TABLE block (
 	block_num			BIGINT NOT NULL UNIQUE,
 	num_tx				BIGINT DEFAULT 0,
+	cash_flow			DECIMAL(64,18) DEFAULT 0.0,
 	block_hash			TEXT NOT NULL PRIMARY KEY,
 	parent_hash			TEXT NOT NULL
 );
@@ -167,7 +168,7 @@ CREATE TABLE mkt_fin (
 	fin_timestamp		TIMESTAMPTZ NOT NULL,
 	winning_payouts		TEXT NOT NULL
 );
-CREATE TABLE last_block (
+CREATE TABLE last_block (	-- the value in this table is guaranteeing integrity in the data up to last block
 	block_num			BIGINT	NOT NULL	-- last block processed by the ETL
 );
 CREATE TABLE user_wallet ( -- link between User and his/her Wallet Contract
@@ -180,9 +181,18 @@ CREATE table dai_transf (	-- transfers of DAI tokens (deposits/withdrawals of fu
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	from_aid			BIGINT DEFAULT 0,
 	to_aid				BIGINT DEFAULT 0,
-	processed			BOOLEAN DEFAULT false,
-	amount				DECIMAL(64,18) DEFAULT 0.0,
-	balance				DECIMAL(64,18) DEFAULT 0.0	-- final balance , with amount included
+	amount				DECIMAL(64,18) DEFAULT 0.0
+);
+CREATE table dai_bal (	-- DAI token balance
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	dai_transf_id		BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
+	processed			BOOLEAN DEFAULT false,	-- true if balances have been calculated
+	augur				BOOLEAN DEFAULT false,	-- true if the user has account on Augur Platform
+	balance				DECIMAL(64,18) DEFAULT 0.0,
+	amount				DECIMAL(64,18) DEFAULT 0.0
 );
 CREATE table rep_transf (
 	id					BIGSERIAL PRIMARY KEY,

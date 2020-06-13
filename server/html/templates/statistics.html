@@ -4,6 +4,13 @@
 	<link href="res/main.css" rel="stylesheet">
 </head>
 <body>
+<script src="/res/darktheme.js"></script>
+<script src="/res/ajax.js"></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/data.js"></script>
+<script>
+	var cash_flow_data = {{.CashFlowData}}
+</script>
 <h3 class="page_title">Statistics</h3>
 <div class="statistics">
 	<h4 style="font-color: red">Up-to date Augur Platform statistics</h4>
@@ -38,6 +45,91 @@
 	</tr>
 	</table>
 </div>
+<span class="cash_flow">Augur's Platform Cash Flow</span><br/><br/>
+<div id="cash_flow_chart"></div>
+<script>
+// font loading begins
+	Highcharts.createElement('link', {
+  href: 'https://fonts.googleapis.com/css?family=Unica+One',
+  rel: 'stylesheet',
+  type: 'text/css'
+}, null, document.getElementsByTagName('head')[0]);
+// font loading ends
+// Apply the theme
+set_dark_theme()
+
+// begin of chart container setup
+Highcharts.chart('cash_flow_chart', {
+
+	title: {
+		text: 'Cash Flow In/Out of Markets'
+	},
+
+	subtitle: {
+		text: 'Cash Flow Detail'
+	},
+
+	yAxis: {
+		title: {
+			text: 'Profit/Loss'
+		}
+	},
+
+	xAxis: {
+//		max: 1.0,
+//		min: 0,
+		accessibility: {
+			rangeDescription: 'Cash Flow'
+		}
+	},
+
+	legend: {
+		layout: 'vertical',
+		align: 'right',
+		verticalAlign: 'middle'
+	},
+
+	plotOptions: {
+		series: {
+			label: {
+				connectorAllowed: false
+			},
+			pointStart: 0
+		}
+	},
+
+	series: [{
+		name: 'Cash Flow',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: cash_flow_data
+	}],
+
+	responsive: {
+		rules: [{
+			condition: {
+				maxWidth: 500
+			},
+			chartOptions: {
+				legend: {
+				layout: 'horizontal',
+					align: 'center',
+					verticalAlign: 'bottom'
+				}
+			}
+		}]
+	},
+	tooltip: {
+		formatter: function() {
+			tooltip ="<div>Cash Inflow: "+this.point.cash+"<br/>Block Number "+this.point.block_num+"<br/></div>"
+			 return tooltip;
+		}
+	},
+});
+</script>
 <nav>
 	<ul>
 	<li>
