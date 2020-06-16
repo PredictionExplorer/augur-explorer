@@ -13,11 +13,14 @@ import (
 	"log"
 	"math/big"
 	"encoding/hex"
+	"encoding/json"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	. "augur-extractor/primitives"
 	. "augur-extractor/dbs"
@@ -89,7 +92,8 @@ var (
 
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 
-	rpcclient *ethclient.Client
+	eclient *ethclient.Client
+	rpcclient *rpc.Client
 
 	// addresses of the contracts used in our code (for making eth.Call()s if needed)
 	dai_addr common.Address
@@ -104,6 +108,24 @@ var (
 	Error   *log.Logger
 	Info	*log.Logger
 )
+type rpcBlockHash struct {
+	Hash		string
+}
+func get_block_hash(block_num BlockNumber) (string,error) {
+
+	ctx := context.Background()
+	var raw json.RawMessage
+	err := rpcclient.CallContext(ctx, &raw,"eth_getBlockByNumber", hexutil.EncodeBig(big.NewInt(int64(block_num))),false)
+	var blockHash rpcBlockHash
+	err = json.Unmarshal(raw,&blockHash)
+	if err!= nil {
+		Error.Printf("Error unmarshalling hash of the block: %v\n",err)
+		return "",err
+	} else {
+		return blockHash.Hash,nil
+	}
+	//clt.c.CallContext(ctx, &result, "eth_chainId")
+}
 func main() {
 	//client, err := ethclient.Dial("http://:::8545")
 
@@ -116,10 +138,14 @@ func main() {
 	Error = log.New(os.Stderr,"ERROR: ",log.Ltime)		//|log.Lshortfile)
 	//client, err := ethclient.Dial("http://192.168.1.102:18545")
 	var err error
-	rpcclient, err = ethclient.Dial(RPC_URL)
+	rpcclient, err=rpc.DialContext(context.Background(), RPC_URL)
+
 	if err != nil {
 		log.Fatal(err)
 	}
+	Info.Printf("Connected to ETH node: %v\n",RPC_URL)
+	eclient = ethclient.NewClient(rpcclient)
+//	eclient, err = ethclient.Dial(RPC_URL)
 
 	storage = Connect_to_storage(&market_order_id)
 	storage.Init_log(DEFAULT_DB_LOG_FILE_NAME)
@@ -131,7 +157,7 @@ func main() {
 	addresses.Dai_addr= &dai_addr
 	addresses.Reputation_addr= &rep_addr
 	augur_init(addresses,&all_contracts)
-	ctrct_dai_token,err = NewDAICash(dai_addr,rpcclient)
+	ctrct_dai_token,err = NewDAICash(dai_addr,eclient)
 	if err != nil {
 		Fatalf("Couldn't initialize DAI Cash contract: %v\n",err)
 	}
@@ -151,7 +177,7 @@ func main() {
 
   main_loop:
 	ctx := context.Background()
-	latestBlock, err := rpcclient.BlockByNumber(ctx, nil)
+	latestBlock, err := eclient.BlockByNumber(ctx, nil)
 	if err != nil {
 		log.Fatal("oops:", err)
 	}
@@ -164,19 +190,29 @@ func main() {
 	}
 	split_simulated := false
 	var bnum_high BlockNumber = BlockNumber(latestBlock.Number().Uint64())
+	Info.Printf("Latest block is %v\n",bnum_high)
 	if bnum_high < bnum {
 		Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
 		os.Exit(1)
 	}
 	for ; bnum<bnum_high; bnum++ {
+		block_hash_str,err:=get_block_hash(bnum)
+		if err!=nil {
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		block_hash:=common.HexToHash(block_hash_str)
+		Info.Printf("block_hash = %v\n",block_hash_str)
 		big_bnum:=big.NewInt(int64(bnum))
-		block, err := rpcclient.BlockByNumber(ctx,big_bnum)
+		block, err := eclient.BlockByNumber(ctx,big_bnum)
 		if err != nil {
 			Error.Printf("Error in BlockByNumber call: %v\n",err)
 		} else {
 			if block != nil {
+//				header := block.Header()
 				storage.Block_delete_with_everything(BlockNumber(big_bnum.Int64()))
-				num_transactions, err := rpcclient.TransactionCount(ctx,block.Hash())
+				num_transactions, err := eclient.TransactionCount(ctx,block_hash)
+				Info.Printf("num_transacictions=%v, err=%v\n",num_transactions,err)
 				if err != nil {
 					Error.Printf("block error: %v \n",err)
 				} else {
@@ -184,7 +220,7 @@ func main() {
 					back_block_num := new(big.Int).SetUint64(header.Number.Uint64() - 20)
 					if (back_block_num.Uint64() == 99999999999999) && !split_simulated {//simulation disabled
 						// code to simulate chain split (naive) , this block should be removed when stable
-						block,_ = rpcclient.BlockByNumber(ctx,back_block_num)
+						block,_ = eclient.BlockByNumber(ctx,back_block_num)
 						header = block.Header()
 						big_bnum = big.NewInt(int64(header.Number.Int64()))
 						bnum = BlockNumber(big_bnum.Uint64())
@@ -192,7 +228,7 @@ func main() {
 						split_simulated = true
 						Info.Println("Chain split simulation in action");
 					}
-					if !storage.Insert_block(header,int64(num_transactions)) {
+					if !storage.Insert_block(block_hash_str,header,int64(num_transactions)) {
 						// chainsplit detected
 						set_back_block_num := storage.Fix_chainsplit(header)
 						Info.Printf("Chain rewind to block %v. Restarting.",set_back_block_num)
@@ -202,7 +238,7 @@ func main() {
 					if num_transactions > 0 {
 						Info.Printf("block: %v %v transactions\n",block.Number(),num_transactions)
 						for tnum:=0 ; tnum < int(num_transactions) ; tnum++ {
-							tx , err := rpcclient.TransactionInBlock(ctx,block.Hash(),uint(tnum))
+							tx , err := eclient.TransactionInBlock(ctx,block_hash,uint(tnum))
 							if err != nil {
 								Error.Printf("Error: %v",err)
 							} else {
@@ -226,7 +262,7 @@ func main() {
 								Info.Printf("\t to=%v for $%v (%v bytes data)\n",
 												to,tx.Value().String(),len(tx.Data()))
 								Info.Printf("\t input: \n%v\n",hex.EncodeToString(tx.Data()[:]))
-								rcpt,err := rpcclient.TransactionReceipt(ctx,tx.Hash())
+								rcpt,err := eclient.TransactionReceipt(ctx,tx.Hash())
 								if err != nil {
 									Error.Printf("Error: %v",err)
 								} else {
@@ -273,7 +309,7 @@ func main() {
 			default:
 		}
 	}// for block_num
-	latestBlock, err = rpcclient.BlockByNumber(ctx, nil)
+	latestBlock, err = eclient.BlockByNumber(ctx, nil)
 	if err != nil {
 		log.Fatal("oops:", err)
 	} else {

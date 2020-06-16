@@ -1057,7 +1057,7 @@ func (ss *SQLStorage) Insert_share_balance_changed_evt(block_num p.BlockNumber,t
 		}
 	}
 }
-func (ss *SQLStorage) Insert_block(block *types.Header,num_tx int64)  bool {
+func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header,num_tx int64)  bool {
 
 	var query string
 	var parent_block_num int64
@@ -1078,7 +1078,6 @@ func (ss *SQLStorage) Insert_block(block *types.Header,num_tx int64)  bool {
 	}
 
 	block_num := int64(block.Number.Uint64())
-	block_hash := block.Hash().String()
 	query = `
 		INSERT INTO block(
 			block_num,
@@ -1090,7 +1089,7 @@ func (ss *SQLStorage) Insert_block(block *types.Header,num_tx int64)  bool {
 	result,err := ss.db.Exec(query,
 			block_num,
 			num_tx,
-			block_hash,
+			hash_str,
 			parent_hash)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into block  table: %v, q=%v",err,query))

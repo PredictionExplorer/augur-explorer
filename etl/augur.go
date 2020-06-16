@@ -60,11 +60,11 @@ func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) 
 	build_list_of_inspected_events()
 
 	var err error
-	ctrct_wallet_registry,err = NewAugurWalletRegistry(common.HexToAddress("0x1FD9274a2FE0E86f5A7b5Bde57b93C8C9b62e21d"), rpcclient)
+	ctrct_wallet_registry,err = NewAugurWalletRegistry(common.HexToAddress("0x1FD9274a2FE0E86f5A7b5Bde57b93C8C9b62e21d"), eclient)
 	if err != nil {
 		Fatalf("Failed to instantiate a AugurWalletRegistry contract: %v", err)
 	}
-	ctrct_zerox, err = NewZeroX(zerox_addr,rpcclient)
+	ctrct_zerox, err = NewZeroX(zerox_addr,eclient)
 	if err != nil {
 		Fatalf("Failed to instantiate a ZeroX contract: %v", err)
 	}
@@ -369,7 +369,7 @@ func get_eoa_aid(addr *common.Address,block_num BlockNumber,tx_id int64) int64 {
 			num:=big.NewInt(int64(owner_fld_offset))   // 1 is the offset at Storage where EOA is stored
 			key:=common.BigToHash(num)
 			Info.Printf("daitok: Looking up eoa addr via RPC: %v\n",addr.String())
-			eoa,err := rpcclient.StorageAt(context.Background(),*addr,key,nil)
+			eoa,err := eclient.StorageAt(context.Background(),*addr,key,nil)
 			Info.Printf("daitok: output of rpc: %v\n",hex.EncodeToString(eoa))
 			var eoa_addr_str string
 			if err == nil {
@@ -384,7 +384,7 @@ func get_eoa_aid(addr *common.Address,block_num BlockNumber,tx_id int64) int64 {
 			num:=big.NewInt(int64(owner_fld_offset))   // 1 is the offset at Storage where EOA is stored
 			key:=common.BigToHash(num)
 			Info.Printf("daitok: Looking up eoa addr via RPC: %v\n",addr.String())
-			eoa,err := rpcclient.StorageAt(context.Background(),*addr,key,nil)
+			eoa,err := eclient.StorageAt(context.Background(),*addr,key,nil)
 			Info.Printf("daitok: output of rpc: %v\n",hex.EncodeToString(eoa))
 			var eoa_addr_str string
 			if err == nil {
