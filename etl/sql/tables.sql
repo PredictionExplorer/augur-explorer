@@ -2,6 +2,7 @@
 CREATE TABLE block (
 	block_num			BIGINT NOT NULL UNIQUE,
 	num_tx				BIGINT DEFAULT 0,
+	ts					BIGINT DEFAULT 0,
 	cash_flow			DECIMAL(64,18) DEFAULT 0.0,
 	block_hash			TEXT NOT NULL PRIMARY KEY,
 	parent_hash			TEXT NOT NULL
@@ -51,17 +52,17 @@ CREATE TABLE market (
 	initial_outcome		SMALLINT DEFAULT -1,		-- first report that was submitted
 	status				SMALLINT DEFAULT 0,
 	market_type			SMALLINT NOT NULL,			-- enum: 0:YES_NO | 1:CATEGORICAL | 2:SCALAR
-	money_at_stake		DECIMAL(32,18) DEFAULT 0.0,	-- accumulated money bet on outcomes
-	open_interest		DECIMAL(32,18) DEFAULT 0.0,	-- amount of shares created
-	fee					DECIMAL(32,18) NOT NULL,	-- fee to be paid to Market creator as percentage of transaction
+	money_at_stake		DECIMAL(64,18) DEFAULT 0.0,	-- accumulated money bet on outcomes
+	open_interest		DECIMAL(64,18) DEFAULT 0.0,	-- amount of shares created
+	fee					DECIMAL(64,18) NOT NULL,	-- fee to be paid to Market creator as percentage of transaction
 	prices				TEXT NOT NULL,				-- range of prices the Market can take
 	extra_info			TEXT NOT NULL,				-- specific market metadata (JSON format)
 	outcomes			TEXT NOT NULL,				-- possible outcomes of the market
 	winning_payouts		TEXT DEFAULT '',
 	fin_timestamp		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
-	no_show_bond		DECIMAL(32,18),				-- $ penalty to the Creator for failing to emit report
-	validity_bond		DECIMAL(32,18),				-- fee returned to creator if market isnt invalid
-	cur_volume			DECIMAL(32,18) DEFAULT 0.0	-- this is the total volume (for all outcomes althogether)
+	no_show_bond		DECIMAL(64,18),				-- $ penalty to the Creator for failing to emit report
+	validity_bond		DECIMAL DEFAULT 0.0,		-- fee returned to creator if market isnt invalid
+	cur_volume			DECIMAL(64,18) DEFAULT 0.0	-- this is the total volume (for all outcomes althogether)
 );
 -- Balances of Share tokens per Market (accumulated data, one record per account)
 CREATE TABLE sbalances (
@@ -273,7 +274,7 @@ CREATE TABLE ustats (	-- statistics per User account
 	money_at_stake		DECIMAL(32,18) DEFAULT 0.0, -- how much has this User bet on Augur mkts
 	total_withdrawn		DECIMAL(32,18) DEFAULT 0.0,
 	total_deposited		DECIMAL(32,18) DEFAULT 0.0,
-	validity_bonds		DECIMAL(32,18) DEFAULT 0.0,	-- sum of all validity bonds (market creation bond)
+	validity_bonds		DECIMAL DEFAULT 0.0,	-- sum of all validity bonds (market creation bond)
 	rep_frozen			DECIMAL(32,18) DEFAULT 0.0	-- amount of REP tokens frozen for all (participated) markets
 );
 CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
@@ -300,4 +301,9 @@ CREATE table uranks (   -- User Rankings (how this user ranks against each other
 	top_profit          DECIMAL(5,2) DEFAULT 100.0,    -- position of the user in profits accumulated over lifetime
 	top_trades          DECIMAL(5,2) DEFAULT 100.0    -- position of the user in number of accumulated trades
 );
-
+CREATE table contract_addresses ( -- Addresses of contracts that compose Augur Platform
+	dai_cash			TEXT DEFAULT '',
+	zerox				TEXT DEFAULT '',
+	rep_token			TEXT DEFAULT '',
+	wallet_reg			TEXT DEFAULT ''
+);

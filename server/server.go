@@ -689,6 +689,30 @@ func category(c *gin.Context) {
 			"Markets": cat_markets,
 	})
 }
+func user_info(c *gin.Context) {
+	p_addr := c.Param("addr")
+	if (len(p_addr) == 40) || (len(p_addr) == 42) { // address
+		if len(p_addr) == 42 {	// strip 0x prefix
+			p_addr = p_addr[2:]
+		}
+	} else {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": "Invalid length of address parameter",
+		})
+	}
+	addr_bytes,err := hex.DecodeString(p_addr)
+	if err == nil {
+		addr := common.BytesToAddress(addr_bytes)
+		addr_str := addr.String()
+		serve_user_info_page(c,addr_str)
+	} else {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Invalid HEX string in address parameter: %v",err),
+		})
+	}
+}
 func full_reports(c *gin.Context) {
 
 	p_addr := c.Param("addr")
@@ -721,6 +745,53 @@ func full_reports(c *gin.Context) {
 					"title": fmt.Sprintf("User Reports %v",addr),
 					"UserInfo" : user_info,
 					"UserReports" : user_reports,
+				})
+			}
+		} else {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": fmt.Sprintf("DB error: %v",err),
+			})
+		}
+	} else {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": "Invalid HEX string in address parameter",
+		})
+	}
+}
+func user_markets(c *gin.Context) {
+
+	p_addr := c.Param("addr")
+	if (len(p_addr) == 40) || (len(p_addr) == 42) { // address
+		if len(p_addr) == 42 {	// strip 0x prefix
+			p_addr = p_addr[2:]
+		}
+	} else {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": "Invalid length of address parameter",
+		})
+	}
+	addr_bytes,err := hex.DecodeString(p_addr)
+	if err == nil {
+		addr := common.BytesToAddress(addr_bytes)
+		addr_str := addr.String()
+		aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(addr_str)
+		fmt.Printf("addr=%v, aid=%v\n",addr_str,aid)
+		if err==nil {
+			user_info,err := augur_srv.storage.Get_user_info(aid)
+			if err!= nil {
+				c.HTML(http.StatusBadRequest, "error.html", gin.H{
+					"title": "Augur Markets: Error",
+					"ErrDescr": fmt.Sprintf("No records found for address: %v",addr_str),
+				})
+			} else {
+				user_reports := augur_srv.storage.Get_user_markets(aid)
+				c.HTML(http.StatusOK, "user_markets.html", gin.H{
+					"title": fmt.Sprintf("User Markets %v",addr),
+					"UserInfo" : user_info,
+					"Markets" : user_reports,
 				})
 			}
 		} else {

@@ -324,6 +324,8 @@ type MarketDepth struct {
 type UserInfo struct {
 	EOAAid			int64
 	WalletAid		int64
+	BlockNum		int64
+	TimeStamp		int64	// user registration timestamp (from block table)
 	ProfitLoss		float64 // profit/loss for the (account) lifetime
 	TradeFreq		float64	// trade frequency as percentil of all users (ex: top 15% of all users)
 	ReportProfits	float64	// amount of money user has made in profits in outcome reporting
@@ -492,4 +494,10 @@ type DaiB struct {
 type BlockCash struct {
 	BlockNum			int64
 	CashFlow			float64
+}
+type ContractAddresses struct {
+	Zerox_addr		common.Address
+	Dai_addr		common.Address
+	Reputation_addr	common.Address
+	WalletReg_addr	common.Address
 }

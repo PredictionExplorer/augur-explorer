@@ -133,6 +133,31 @@ func (ss *SQLStorage) Get_last_block_num() (p.BlockNumber,bool) {
 		return -1,false
 	}
 }
+func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
+
+	var query string
+	query="SELECT dai_cash,zerox,rep_token,wallet_reg FROM contract_addresses";
+	row := ss.db.QueryRow(query)
+	var c_addresses p.ContractAddresses
+	var err error
+	var dai_addr_str string
+	var rep_addr_str string
+	var zerox_addr_str string
+	var walletreg_addr_str string
+	err=row.Scan(&dai_addr_str,&rep_addr_str,&zerox_addr_str,&walletreg_addr_str);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error in Get_contract_addresses(): %v",err))
+		}
+		return c_addresses,err
+	}
+	c_addresses.Dai_addr=common.HexToAddress(dai_addr_str)
+	c_addresses.Reputation_addr=common.HexToAddress(rep_addr_str)
+	c_addresses.Zerox_addr=common.HexToAddress(zerox_addr_str)
+	c_addresses.WalletReg_addr=common.HexToAddress(walletreg_addr_str)
+	return c_addresses,nil
+}
 func (ss *SQLStorage) Set_last_block_num(block_num p.BlockNumber) {
 
 	bnum := int64(block_num)
@@ -236,6 +261,21 @@ func (ss *SQLStorage) lookup_address_id(addr string) int64 {
 	}
 
 	return addr_id
+}
+func get_market_status_str(status_code p.MarketStatus) string {
+
+	switch p.MarketStatus(status_code) {
+		case p.MktStatusReported:
+			return "Reported"
+		case p.MktStatusDisputing:
+			return "Disputing"
+		case p.MktStatusFinalized:
+			return "Finalized"
+		case p.MktStatusFinInvalid:
+			return "Finalized Invalid"
+		default:
+			return "Traded"
+	}
 }
 func (ss *SQLStorage) Lookup_or_create_address(addr string,block_num p.BlockNumber,tx_id int64) int64 {
 
@@ -393,6 +433,47 @@ func (ss *SQLStorage) Insert_market_created_evt(block_num p.BlockNumber,tx_id in
 			evt.ExtraInfo,
 			outcomes,
 	)
+	d_query := fmt.Sprintf( `
+		INSERT INTO market(
+			block_num,
+			tx_id,
+			cat_id,
+			universe_id,
+			market_aid,
+			wallet_aid,
+			eoa_aid,
+			reporter_aid,
+			end_time,
+			max_ticks,
+			create_timestamp,
+			fee,
+			prices,
+			market_type,
+			extra_info,
+			outcomes,
+			no_show_bond,
+			validity_bond
+		) VALUES (%v,%v,%v,%v,%v,%v,%v,%v,TO_TIMESTAMP(%v),%v,TO_TIMESTAMP(%v),` +
+						evt.FeePerCashInAttoCash.String() +
+						"/1e+16,'%v',%v,'%v','%v',(" + evt.NoShowBond.String() + "/1e+18)," +
+						"("+ validity_bond + "/1e+18))",
+			block_num,
+			tx_id,
+			cat_id,
+			universe_id,
+			market_aid,
+			wallet_aid,
+			eoa_aid,
+			reporter_aid,
+			evt.EndTime.Int64(),
+			evt.NumTicks.Int64(),
+			evt.Timestamp.Int64(),
+			prices,
+			evt.MarketType,
+			evt.ExtraInfo,
+			outcomes,
+	)
+	fmt.Printf("insert market q: %v\n",d_query)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into market table: %v: q=%v",err,query))
 	}
@@ -1057,7 +1138,7 @@ func (ss *SQLStorage) Insert_share_balance_changed_evt(block_num p.BlockNumber,t
 		}
 	}
 }
-func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header,num_tx int64)  bool {
+func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header)  bool {
 
 	var query string
 	var parent_block_num int64
@@ -1081,15 +1162,15 @@ func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header,num_tx in
 	query = `
 		INSERT INTO block(
 			block_num,
-			num_tx,
 			block_hash,
+			ts,
 			parent_hash
 		) VALUES ($1,$2,$3,$4)`
 
 	result,err := ss.db.Exec(query,
 			block_num,
-			num_tx,
 			hash_str,
+			block.Time,
 			parent_hash)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into block  table: %v, q=%v",err,query))
@@ -1247,21 +1328,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 		if longdesc.Valid {
 			rec.LongDesc = longdesc.String
 		}
-		if status_code == 0 {
-			// nothing
-		} else {
-			switch p.MarketStatus(status_code) {
-				case p.MktStatusReported:
-					rec.Status = "Reported"
-				case p.MktStatusDisputing:
-					rec.Status = "Disputing"
-				case p.MktStatusFinalized:
-					rec.Status = "Finalized"
-				case p.MktStatusFinInvalid:
-					rec.Status = "Finalized Invalid"
-				default:
-			}
-		}
+		rec.Status = get_market_status_str(p.MarketStatus(status_code))
 		records = append(records,rec)
 	}
 	return records
@@ -1782,7 +1849,25 @@ func (ss *SQLStorage) Get_mkt_depth(mkt_addr string,outcome_idx int) *p.MarketDe
 	market_depth.Asks = ss.build_depth_by_otype(market_aid,outcome_idx,p.OrderTypeAsk)
 	return market_depth
 }
+func (ss *SQLStorage) fill_block_info(ui *p.UserInfo,user_aid int64) {
+
+	var query string
+	query = "SELECT address_id,addr,b.block_num,b.ts FROM address a,block b " +
+			"WHERE (a.address_id=$1) AND (a.block_num=b.block_num) "
+	row := ss.db.QueryRow(query,user_aid)
+	err := row.Scan(&ui.EOAAid,&ui.EOAAddr,&ui.BlockNum,&ui.TimeStamp)
+	if err != nil {
+		if err!=sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
+			os.Exit(1)
+		}
+	}
+}
 func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
+
+
+	var ui p.UserInfo
+	ss.fill_block_info(&ui,user_aid)
 
 	var query string
 	query = "SELECT " +
@@ -1815,7 +1900,6 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 
 	row := ss.db.QueryRow(query,user_aid)
 	var err error
-	var ui p.UserInfo
 	var (
 		eoa_addr		sql.NullString
 		eoa_addr_sh		sql.NullString
@@ -1850,7 +1934,11 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 	);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			return ui,err
+			if ui.BlockNum > 0 {
+				return ui,nil
+			} else {
+				return ui,err
+			}
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
 		}
@@ -2588,6 +2676,88 @@ func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.UserReport {
 		}
 		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
 		fmt.Printf("adding record %+v\n",rec)
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_user_markets(eoa_aid int64) []p.InfoMarket {
+
+	var query string
+	query = "SELECT " +
+				"ma.addr as mkt_addr," +
+				"CONCAT(LEFT(ma.addr,6),'…',RIGHT(ma.addr,6)) AS mkt_addr_sh," +
+				"CONCAT(LEFT(sa.addr,6),'…',RIGHT(sa.addr,6)) AS signer," +
+				"ca.addr as mcreator," +
+				"CONCAT(LEFT(ca.addr,6),'…',RIGHT(ca.addr,6)) AS mcreator_sh, " +
+				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') as end_date," + 
+				"extra_info::json->>'description' AS descr," +
+				"extra_info::json->>'longDescription' AS long_desc," +
+				"extra_info::json->>'categories' AS categories," +
+				"outcomes," +
+				"m.market_type, " +
+				"CASE m.market_type " +
+					"WHEN 0 THEN 'YES/NO' " +
+					"WHEN 1 THEN 'CATEGORICAL' " +
+					"WHEN 2 THEN 'SCALAR' " +
+				"END AS mtype," +
+				"status,"+
+				"CASE WHEN EXTRACT(epoch from (fin_timestamp-now())) < 0 " +
+					"THEN 'Trading' ELSE 'Reporting' END AS status_desc," +
+				"fee," +
+				"open_interest AS OI," +
+				"cur_volume AS volume " +
+			"FROM market as m " +
+				"LEFT JOIN " +
+					"address AS ma ON m.market_aid = ma.address_id " +
+				"LEFT JOIN " +
+					"address AS sa ON m.eoa_aid= sa.address_id " +
+				"LEFT JOIN " +
+					"address AS ca ON m.wallet_aid = ca.address_id " +
+			"WHERE eoa_aid = $1 " +
+			"ORDER BY " +
+				"m.market_aid "
+
+	rows,err := ss.db.Query(query,eoa_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+	}
+	var rec p.InfoMarket
+	records := make([]p.InfoMarket,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var longdesc sql.NullString
+		var status_code int
+		err=rows.Scan(
+					&rec.MktAddr,
+					&rec.MktAddrSh,
+					&rec.Signer,
+					&rec.MktCreator,
+					&rec.MktCreatorSh,
+					&rec.EndDate,
+					&rec.Description,
+					&longdesc,
+					&rec.CategoryStr,
+					&rec.Outcomes,
+					&rec.MktType,
+					&rec.MktTypeStr,
+					&status_code,
+					&rec.Status,
+					&rec.Fee,
+					&rec.OpenInterest,
+					&rec.CurVolume,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+		}
+		if longdesc.Valid {
+			rec.LongDesc = longdesc.String
+		}
+		if status_code == 0 {
+			// nothing
+		} else {
+			rec.Status=get_market_status_str(p.MarketStatus(status_code))
+		}
 		records = append(records,rec)
 	}
 	return records

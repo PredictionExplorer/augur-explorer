@@ -44,7 +44,7 @@ func (sequencer *EventSequencer) get_ordered_event_list() []*types.Log {
 }
 func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) {
 
-	Init_contract_addresses(addresses)
+	//Init_contract_addresses(addresses)
 
 	all_contracts = Load_all_artifacts("./abis/augur-artifacts-abi.json")
 	//dump_all_artifacts()
@@ -60,15 +60,18 @@ func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) 
 	build_list_of_inspected_events()
 
 	var err error
-	ctrct_wallet_registry,err = NewAugurWalletRegistry(common.HexToAddress("0x1FD9274a2FE0E86f5A7b5Bde57b93C8C9b62e21d"), eclient)
+	ctrct_wallet_registry,err = NewAugurWalletRegistry(addresses.WalletReg_addr, eclient)
 	if err != nil {
 		Fatalf("Failed to instantiate a AugurWalletRegistry contract: %v", err)
 	}
-	ctrct_zerox, err = NewZeroX(zerox_addr,eclient)
+	ctrct_zerox, err = NewZeroX(addresses.Zerox_addr,eclient)
 	if err != nil {
 		Fatalf("Failed to instantiate a ZeroX contract: %v", err)
 	}
-
+	ctrct_dai_token,err = NewDAICash(addresses.Dai_addr,eclient)
+	if err != nil {
+		Fatalf("Couldn't initialize DAI Cash contract: %v\n",err)
+	}
 }
 func update_dai_balances_backwards(last_block_num BlockNumber,aid int64,addr *common.Address) int {
 
@@ -180,6 +183,10 @@ func build_list_of_inspected_events() {
 }
 func proc_approval(log *types.Log) {
 
+	if len(log.Topics)!=3 {
+		Info.Printf("ERC20_Approval event is not compliant log.Topics!=3. Tx hash=%v\n",log.TxHash.String())
+		return
+	}
 	var mevt Approval
 	mevt.Owner= common.BytesToAddress(log.Topics[1][12:])
 	mevt.Spender = common.BytesToAddress(log.Topics[2][12:])
@@ -194,6 +201,10 @@ func proc_approval(log *types.Log) {
 }
 func proc_approval_for_all(log *types.Log) {
 
+	if len(log.Topics)!=3 {
+		Info.Printf("ERC20_ApprovalForAll event is not compliant log.Topics!=3. Tx hash=%v\n",log.TxHash.String())
+		return
+	}
 	var mevt ApprovalForAll
 	mevt.Owner= common.BytesToAddress(log.Topics[1][12:])
 	mevt.Operator= common.BytesToAddress(log.Topics[2][12:])
@@ -255,19 +266,30 @@ func proc_erc20_transfer(log *types.Log) {
 */
 func proc_erc20_transfer(log *types.Log,block_num BlockNumber,tx_id int64) {
 	var mevt Transfer
+	/*
+	*/
+	if len(log.Topics)!=3 {
+		Info.Printf("ERC20 transfer event is not compliant log.Topics!=3. Tx hash=%v\n",log.TxHash.String())
+		return
+	}
 	mevt.From= common.BytesToAddress(log.Topics[1][12:])
 	mevt.To= common.BytesToAddress(log.Topics[2][12:])
 	err := cash_abi.Unpack(&mevt,"Transfer",log.Data)
 	if err != nil {
-		Fatalf("Event ERC20_Transfer, decode error: %v",err)
+		Error.Printf("signature=%v\n",log.Topics[0].String())
+		Error.Printf("address=%v\n",log.Address.String())
+		Error.Printf("tx hash = %v\n",log.TxHash.String())
+		Error.Printf("log.Data=%v, data len=%v\n",hex.EncodeToString(log.Data[:]),len(log.Data[:]))
+		Error.Printf("Event ERC20_Transfer, decode error: %v",err)
 	} else {
 		Info.Printf("ERC20_Transfer event, contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
-		if bytes.Equal(dai_addr.Bytes(), log.Address.Bytes()) {	// this is DAI contract
+		Info.Printf("caddrs=%+v\n",caddrs)
+		if bytes.Equal(caddrs.Dai_addr.Bytes(), log.Address.Bytes()) {	// this is DAI contract
 			storage.Process_DAI_token_transfer(&mevt,block_num,tx_id)
 		}
-		if bytes.Equal(rep_addr.Bytes(), log.Address.Bytes()) {	// this is DAI contract
+		if bytes.Equal(caddrs.Reputation_addr.Bytes(), log.Address.Bytes()) {	// this is DAI contract
 			storage.Process_REP_token_transfer(&mevt,block_num,tx_id)
 		}
 	}

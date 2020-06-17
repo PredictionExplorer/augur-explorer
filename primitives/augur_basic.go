@@ -1,21 +1,17 @@
 package primitives
 
 import (
-	"os"
+	//"os"
 	"fmt"
 	"bytes"
 	"io/ioutil"
 	"encoding/hex"
 	"encoding/json"
 
-	"github.com/ethereum/go-ethereum/common"
+	//"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )
-type ContractAddresses struct {
-	Zerox_addr		*common.Address
-	Dai_addr		*common.Address
-	Reputation_addr	*common.Address
-}
+/* DISCONTINUED , to be delted
 func dev_init_daicash(addr *common.Address) {
 	if addr != nil {
 		*addr = common.HexToAddress("5f3341EA5989aD3129E325027b8d908b63709A00")
@@ -40,7 +36,7 @@ func prod_init_reputation_token(addr *common.Address) {
 }
 func dev_init_zerox(addr *common.Address) {
 	if addr != nil {
-		*addr = common.HexToAddress("6749E370e7B1955FFa924F4f75f5F12653C7512C")
+		*addr = common.HexToAddress("6749E370e7B1955FFa924F4f75f5F12653C7512C")	// ZeroXTrade
 	}
 }
 func prod_init_zerox(addr *common.Address) {
@@ -67,6 +63,7 @@ func Init_contract_addresses(addresses *ContractAddresses) {
 		dev_init_addresses(addresses)
 	}
 }
+*/
 func dump_abi_events(a *abi.ABI) {
 
 	fmt.Printf("Events:\n")

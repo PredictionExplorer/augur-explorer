@@ -96,9 +96,12 @@ var (
 	rpcclient *rpc.Client
 
 	// addresses of the contracts used in our code (for making eth.Call()s if needed)
+	/*discontinued
 	dai_addr common.Address
 	rep_addr common.Address
 	zerox_addr common.Address
+	*/
+	caddrs *ContractAddresses
 
 	fill_order_id int64 = 0			// during event processing, holds id of record in mktord from Fill evt
 	market_order_id int64 = 0
@@ -152,15 +155,18 @@ func main() {
 	storage.Log_msg("Log initialized\n")
 	storage.Check_main_stats()
 
+	/*
 	addresses := new(ContractAddresses)
 	addresses.Zerox_addr = &zerox_addr
 	addresses.Dai_addr= &dai_addr
 	addresses.Reputation_addr= &rep_addr
-	augur_init(addresses,&all_contracts)
-	ctrct_dai_token,err = NewDAICash(dai_addr,eclient)
-	if err != nil {
-		Fatalf("Couldn't initialize DAI Cash contract: %v\n",err)
+	*/
+	caddrs_obj,err := storage.Get_contract_addresses()
+	if err!=nil {
+		Fatalf("Can't find contract addresses in 'contract_addresses' table")
 	}
+	caddrs=&caddrs_obj
+	augur_init(caddrs,&all_contracts)
 
 
 	c := make(chan os.Signal)
@@ -228,7 +234,7 @@ func main() {
 						split_simulated = true
 						Info.Println("Chain split simulation in action");
 					}
-					if !storage.Insert_block(block_hash_str,header,int64(num_transactions)) {
+					if !storage.Insert_block(block_hash_str,header) {
 						// chainsplit detected
 						set_back_block_num := storage.Fix_chainsplit(header)
 						Info.Printf("Chain rewind to block %v. Restarting.",set_back_block_num)

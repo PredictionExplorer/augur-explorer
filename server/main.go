@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/common"
+	//"github.com/ethereum/go-ethereum/common"
 	//"github.com/ethereum/go-ethereum/accounts/abi"
 	//"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
@@ -22,8 +22,11 @@ var (
 	// contracts
 	all_contracts map[string]interface{}
 
+/*discontinued
 	dai_addr common.Address
 	rep_addr common.Address
+*/
+	caddrs *ContractAddresses
 
 	ctrct_dai_token *DAICash
 	ctrct_rep_token *RepTok
@@ -37,15 +40,25 @@ var (
 )
 func initialize() {
 
+	/*discontinued
 	contract_addresses := new(ContractAddresses)
 	contract_addresses.Dai_addr = &dai_addr
 	contract_addresses.Reputation_addr = &rep_addr
 	Init_contract_addresses(contract_addresses)
+	*/
+	caddrs_obj,err := augur_srv.storage.Get_contract_addresses()
+	if err!=nil {
+		Fatalf("Can't find contract addresses in 'contract_addresses' table")
+	}
+	caddrs=&caddrs_obj
+
 }
 func main() {
 
 	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 	Error = log.New(os.Stderr,"ERROR: ",log.Ldate|log.Ltime|log.Lshortfile)
+
+	augur_srv = create_augur_server(&market_order_id)
 
 	initialize()
 
@@ -60,14 +73,14 @@ func main() {
 			log.Fatal(err)
 		}
 		// init contracts
-		fmt.Println("init DAI contract with addr %v\n",dai_addr.String())
-		ctrct_dai_token,err = NewDAICash(dai_addr,rpcclient)
+		fmt.Println("init DAI contract with addr %v\n",caddrs.Dai_addr.String())
+		ctrct_dai_token,err = NewDAICash(caddrs.Dai_addr,rpcclient)
 		if err != nil {
 			Fatalf("Couldn't initialize DAI Cash contract: %v\n",err)
 		}
 
-		fmt.Println("init REP contract with addr %v\n",rep_addr.String())
-		ctrct_rep_token,err = NewRepTok(rep_addr,rpcclient)
+		fmt.Println("init REP contract with addr %v\n",caddrs.Reputation_addr.String())
+		ctrct_rep_token,err = NewRepTok(caddrs.Reputation_addr,rpcclient)
 		if err != nil {
 			Fatalf("Couldn't initialize Rep Token contract: %v\n",err)
 		}
@@ -85,7 +98,6 @@ func main() {
 		log.Printf("Defaulting secure protocol to port %s", port_secure)
 	}
 
-	augur_srv = create_augur_server(&market_order_id)
 
 	r := gin.New()
 	r.LoadHTMLGlob("html/templates/*")
@@ -109,7 +121,9 @@ func main() {
 	r.GET("/money/:addr",  read_money)
 	r.GET("/order/:order",  order)
 	r.GET("/category/:catid",  category)
+	r.GET("/user/:addr",  user_info)
 	r.GET("/fullreports/:addr",  full_reports)
+	r.GET("/umarkets/:addr",  user_markets)
 	r.GET("/block/:block_num",  block_info)
 
 	r.Static("/imgs", "./html/imgs")

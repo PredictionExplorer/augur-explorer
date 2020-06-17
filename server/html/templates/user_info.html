@@ -1,7 +1,7 @@
 <html>
 <head>
 	<title>{{.title}}</title>
-	<link href="res/main.css" rel="stylesheet">
+	<link href="/res/main.css" rel="stylesheet">
 </head>
 <body>
 <script src="/res/darktheme.js"></script>
@@ -88,7 +88,6 @@
 		elt = document.getElementById("fld_wallet_eth")
 		elt.innerHTML=response.wallet_eth
 	});
-
 </script>
 	<h3 class="page_title">User Info for {{.UserInfo.EOAAddrSh}}</h3>
 <div class="user_info">
@@ -187,6 +186,14 @@
 					</tr>
 				</table>
 			</td>
+		</tr>
+		<tr>
+			<td>User registered</td>
+			<td><span id="reg_date"></span></td>
+		</tr>
+		<tr>
+			<td>Registration Block Number</td>
+			<td><a href="/block/{{.UserInfo.BlockNum}}">{{.UserInfo.BlockNum}}</a></td>
 		</tr>
 	</table>
 	<br/>
@@ -463,6 +470,14 @@ Highcharts.chart('open_positions_chart', {
 		}
 	},
 });
+	var milliseconds = {{.UserInfo.TimeStamp}} * 1000
+	console.log(milliseconds)
+	var dateObject = new Date(milliseconds)
+	console.log(dateObject)
+	var registration_date = dateObject.toLocaleString()
+	console.log(registration_date)
+	var elt=document.getElementById("reg_date")
+	elt.innerHTML=registration_date
 </script>
 <nav>
 	<ul>
