@@ -28,7 +28,7 @@ type AugurServer struct {
 func create_augur_server(mkt_order_id_ptr *int64) *AugurServer {
 
 	srv := new(AugurServer)
-	srv.storage = Connect_to_storage(mkt_order_id_ptr)
+	srv.storage = Connect_to_storage(mkt_order_id_ptr,Info)
 	srv.storage.Init_log(DEFAULT_DB_LOG_FILE_NAME)
 	return srv
 }
@@ -187,8 +187,8 @@ func build_javascript_open_positions(entries *[]PLEntry) template.JS {
 				"frozen_accum: " + fmt.Sprintf("%v",e.AccumFrozen) + "," +
 				"date: \"" + fmt.Sprintf("%v",e.Date) + "\"," +
 				"click: function() {load_open_pos_data(" +
-					fmt.Sprintf("%v,\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",%v",
-							e.FrozenFunds,e.MktAddr,e.MktAddrSh,e.OutcomeStr,e.MktDescr,e.Date,
+					fmt.Sprintf("%v,%v,\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",%v",
+							e.FrozenFunds,e.NetPosition,e.MktAddr,e.MktAddrSh,e.OutcomeStr,e.MktDescr,e.Date,
 							e.CounterPAddr,e.CounterPAddrSh,e.OrderHash,e.BlockNum) +
 				")}" +
 				"}"

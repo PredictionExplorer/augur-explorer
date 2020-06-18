@@ -1,13 +1,16 @@
 {{define "market_record"}}
-<a href="/market/{{.MktAddr}}" class="market_record">
-	<div class="market_record">
-		<div class="market_field" title="{{.MktAddr}}">{{.MktAddrSh}}</div>
-		<div class="market_field">{{.MktType}}</div>
-		<div class="market_field">{{.Status}}</div>
-		<div class="market_field">{{.Description}}</div>
-		<div class="market_field">{{.EndDate}}</div>
-		<div class="market_field">{{.CurVolume}}</div>
-		<div class="market_field">{{.OpenInterest}}</div>
-	</div>
+<tr class="market_record">
+	<td class="market_field" title="{{.MktAddr}}">
+			<a href="/market/{{.MktAddr}}" class="market_record">{{.MktAddrSh}}</a>
+	</td>
+	<td class="market_field">{{.MktTypeStr}}</td>
+	<td class="market_field">{{.Status}}</td>
+	<td class="market_field">
+		<a href="/market/{{.MktAddr}}" class="market_record">{{.Description}}</a>
+	</td>
+	<td class="market_field">{{.EndDate}}</td>
+	<td class="market_field" style="text-align: right;">{{.CurVolume}}</td>
+	<td class="market_field" style="text-align: right;">{{.MoneyAtStake}}</td>
+</tr>
 </a>
 {{end}}

@@ -41,13 +41,19 @@
 		elt = document.getElementById("f2_order_hash_href")
 		elt.href="/order/" + order_hash
 	}
-	function load_open_pos_data(frozen,mkt_addr,mkt_addr_sh,outcome,
+	function load_open_pos_data(frozen,net_position,mkt_addr,mkt_addr_sh,outcome,
 				mkt_descr,date_str,counterparty,counterparty_sh,order_hash,block_num) {
 		var elt
 		elt = document.getElementById("open_pos_info")
 		elt.style.display="block"
 		elt = document.getElementById("f1_fld_funds_frozen")
 		elt.innerHTML = frozen
+		elt = document.getElementById("f1_fld_net_position")
+		if (net_position < 0 ) {
+			elt.innerHTML = 'Short ' + Math.abs(net_position) + ' shares'
+		} else {
+			elt.innerHTML = 'Long ' + net_position + ' shares'
+		}
 		elt = document.getElementById("f1_fld_mkt_addr")
 		elt.innerHTML = mkt_addr
 		elt = document.getElementById("f1_fld_outcome")
@@ -94,11 +100,11 @@
 	<table class="user_info">
 		<tr>
 			<td>User's Real Address (EOA)</td>
-			<td title="{{.UserInfo.EOAAddr}}">{{.UserInfo.EOAAddrSh}}</td>
+			<td title="{{.UserInfo.EOAAddr}}">{{.UserInfo.EOAAddr}}</td>
 		</tr>
 		<tr>
 			<td>Wallet Contract Address</td>
-			<td title="{{.UserInfo.WalletAddr}}">{{.UserInfo.WalletAddrSh}}</td>
+			<td title="{{.UserInfo.WalletAddr}}">{{.UserInfo.WalletAddr}}</td>
 		</tr>
 		<tr>
 			<td>Lifetime Profit/Loss</td>
@@ -110,7 +116,7 @@
 		</tr>
 		<tr>
 			<td>Markets Created</td>
-			<td>{{.UserInfo.MarketsCreated}}</td>
+			<td><a href="/umarkets/{{.UserInfo.EOAAddr}}">{{.UserInfo.MarketsCreated}}</a></td>
 		</tr>
 		<tr>
 			<td>Markets Traded</td>
@@ -206,6 +212,10 @@
 		<tr>
 			<td>Funds Frozen</td>
 			<td><span id="f1_fld_funds_frozen"></span></td>
+		</tr>
+		<tr>
+			<td>Volume </td>
+			<td><span id="f1_fld_net_position"></span></td>
 		</tr>
 		<tr>
 			<td>Market Address</td>

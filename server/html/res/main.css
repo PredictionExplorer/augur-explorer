@@ -131,7 +131,6 @@ div.mkt_trade {
 table.market_trades {
 	border:							1px solid white;
 	border-collapse:				collapse;
-	width:							100%;
 }
 div.mkt_trade_hdr {
 	display:                        inline-block;

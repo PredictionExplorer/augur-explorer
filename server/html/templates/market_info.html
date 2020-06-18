@@ -58,7 +58,7 @@
 	<td>{{.Market.OpenInterest}}</td>
 </tr>
 <tr>
-	<td>Current Volume</td>
+	<td>Total Volume</td>
 	<td>{{.Market.CurVolume}}</td>
 </tr>
 <tr>
@@ -73,7 +73,7 @@
 <br/><br/>
 {{$maddr := .Market.MktAddr}}
 <div class="market_outcome_vols">
-	Current Volume & Last Price data:<br/>
+	Volume & Last Price data:<br/>
 	{{template "market_outcome_vols" .OutcomeVols}}
 </div>
 <br/><br/>

@@ -150,11 +150,11 @@ func main() {
 	eclient = ethclient.NewClient(rpcclient)
 //	eclient, err = ethclient.Dial(RPC_URL)
 
-	storage = Connect_to_storage(&market_order_id)
+	storage = Connect_to_storage(&market_order_id,Info)
 	storage.Init_log(DEFAULT_DB_LOG_FILE_NAME)
 	storage.Log_msg("Log initialized\n")
 	storage.Check_main_stats()
-
+	
 	/*
 	addresses := new(ContractAddresses)
 	addresses.Zerox_addr = &zerox_addr
@@ -179,7 +179,7 @@ func main() {
 		exit_chan <- true
 	}()
 
-	go balance_updater()	// updates DAI token balances very 10 seconds
+	//go balance_updater()	// updates DAI token balances very 10 seconds
 
   main_loop:
 	ctx := context.Background()

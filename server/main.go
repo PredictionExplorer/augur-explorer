@@ -100,7 +100,7 @@ func main() {
 
 
 	r := gin.New()
-	r.LoadHTMLGlob("html/templates/*")
+	r.LoadHTMLGlob("html/templates/*html")
 	r.Use(gin.Logger())
 
 	// Main HTML

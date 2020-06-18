@@ -61,7 +61,7 @@ func main() {
 		log.Fatalf("Failed to instantiate a AugurWalletRegistry contract: %v", err)
 	}
 	_ = awallet_contract
-	storage := Connect_to_storage(&market_order_id)
+	storage := Connect_to_storage(&market_order_id,Info)
 	//log.SetFormatter(&log.JSONFormatter{})
 
 	env := clientEnvVars{}

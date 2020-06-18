@@ -75,16 +75,18 @@ func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) 
 }
 func update_dai_balances_backwards(last_block_num BlockNumber,aid int64,addr *common.Address) int {
 
-	Info.Printf("balance_updater(): updating balances backwards from block %v , addr %v (aid=%v)\n",
-			last_block_num,addr.String(),aid)
 	var copts = new(bind.CallOpts)
 	copts.BlockNumber = big.NewInt(int64(last_block_num))
 	balance,err := ctrct_dai_token.BalanceOf(copts,*addr)
 	if err != nil {
+		Info.Printf("Failure to update DAI token balances backwards for eoa_aid=%v,last_block_num=%v",
+							aid,last_block_num)
 		Error.Printf("Failure to update DAI token balances backwards for eoa_aid=%v,last_block_num=%v",
 							aid,last_block_num)
 		return 0
 	}
+	Info.Printf("balance_updater(): updating balances backwards from block %v , addr %v (aid=%v)\n",
+			last_block_num,addr.String(),aid)
 	Info.Printf("balance_updater(): got last balance = %v for block = %v\n",balance.String(),last_block_num)
 	return storage.Update_dai_token_balances_backwards(last_block_num,aid,balance)
 }
@@ -124,6 +126,7 @@ func balance_updater() {
 						affected_rows:=update_dai_balances_backwards(last_block_num,dai_bal.Aid,&addr)
 						if affected_rows>0 {
 							num_changes++
+							Info.Printf("balance_updater(): restarting loop() affected rows=%v on addr %v\n",addr.String())
 							break		// update backards invalidates the 'operations' array
 						}
 					}
