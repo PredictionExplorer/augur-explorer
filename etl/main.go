@@ -196,7 +196,6 @@ func main() {
 	}
 	split_simulated := false
 	var bnum_high BlockNumber = BlockNumber(latestBlock.Number().Uint64())
-	Info.Printf("Latest block is %v\n",bnum_high)
 	if bnum_high < bnum {
 		Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
 		os.Exit(1)
@@ -208,7 +207,6 @@ func main() {
 			continue
 		}
 		block_hash:=common.HexToHash(block_hash_str)
-		Info.Printf("block_hash = %v\n",block_hash_str)
 		big_bnum:=big.NewInt(int64(bnum))
 		block, err := eclient.BlockByNumber(ctx,big_bnum)
 		if err != nil {
@@ -218,7 +216,6 @@ func main() {
 //				header := block.Header()
 				storage.Block_delete_with_everything(BlockNumber(big_bnum.Int64()))
 				num_transactions, err := eclient.TransactionCount(ctx,block_hash)
-				Info.Printf("num_transacictions=%v, err=%v\n",num_transactions,err)
 				if err != nil {
 					Error.Printf("block error: %v \n",err)
 				} else {

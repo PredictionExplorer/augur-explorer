@@ -1,7 +1,7 @@
 package primitives
 
 import (
-	"fmt"
+	//"fmt"
 	"math/big"
 	"bytes"
 	//"encoding/hex"
@@ -39,8 +39,6 @@ func Outcomes_to_str(outcomes *[][32]byte,separator string) string {
 			}
 		}
 		s := string((*outcomes)[i][:zero_pos])
-		fmt.Printf("outcome_idx %v : zero_pos = %v str=%v\n",i,zero_pos,s)
-		//s := hex.EncodeToString((*outcomes)[i][:])
 		output.WriteString(s)
 	}
 	return output.String()
