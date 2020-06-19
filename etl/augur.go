@@ -290,7 +290,7 @@ func proc_erc20_transfer(log *types.Log,block_num BlockNumber,tx_id int64) {
 		mevt.Dump()
 		Info.Printf("caddrs=%+v\n",caddrs)
 		if bytes.Equal(caddrs.Dai_addr.Bytes(), log.Address.Bytes()) {	// this is DAI contract
-			storage.Process_DAI_token_transfer(&mevt,block_num,tx_id)
+			storage.Process_DAI_token_transfer(&mevt,caddrs,block_num,tx_id)
 		}
 		if bytes.Equal(caddrs.Reputation_addr.Bytes(), log.Address.Bytes()) {	// this is DAI contract
 			storage.Process_REP_token_transfer(&mevt,block_num,tx_id)

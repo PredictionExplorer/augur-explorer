@@ -272,9 +272,11 @@ func main() {
 									sequencer := new(EventSequencer)
 									num_logs := len(rcpt.Logs)
 									for i:=0 ; i<num_logs ; i++ {
-										Info.Printf(
-											"\t\t\tlog %v\n\t\t\t\t\t\t for contract %v (%v of %v items)\n",
-											rcpt.Logs[i].Topics[0].String(),rcpt.Logs[i].Address.String(),(i+1),len(rcpt.Logs))
+										if len(rcpt.Logs[i].Topics) > 0 {
+											Info.Printf(
+												"\t\t\tlog %v\n\t\t\t\t\t\t for contract %v (%v of %v items)\n",
+												rcpt.Logs[i].Topics[0].String(),rcpt.Logs[i].Address.String(),(i+1),len(rcpt.Logs))
+										}
 										sequencer.append_event(rcpt.Logs[i])
 									}
 									ordered_list := sequencer.get_ordered_event_list()
@@ -283,14 +285,16 @@ func main() {
 									market_order_id = 0
 									fill_order_id = 0
 									for i:=0 ; i < num_logs ; i++ {
-										Info.Printf(
-											"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",
-											ordered_list[i].Topics[0].String(),
-											ordered_list[i].Address.String())
-										id := process_event(block.Header(),tx_id,from,&ordered_list,i)
-										if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),
-													evt_profit_loss_changed) {
-											pl_entries = append(pl_entries,id)
+										if len(ordered_list[i].Topics) > 0 {
+											Info.Printf(
+												"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",
+												ordered_list[i].Topics[0].String(),
+												ordered_list[i].Address.String())
+											id := process_event(block.Header(),tx_id,from,&ordered_list,i)
+											if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),
+														evt_profit_loss_changed) {
+												pl_entries = append(pl_entries,id)
+											}
 										}
 									}
 								}

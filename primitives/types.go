@@ -491,6 +491,11 @@ type DaiB struct {
 	Amount				string
 	Balance				string
 }
+type DaiOp struct {
+	BlockNum			int64
+	Deposit				float64
+	Withdrawal			float64
+}
 type BlockCash struct {
 	BlockNum			int64
 	CashFlow			float64
@@ -500,4 +505,5 @@ type ContractAddresses struct {
 	Dai_addr		common.Address
 	Reputation_addr	common.Address
 	WalletReg_addr	common.Address
+	FillOrder_addr	common.Address
 }

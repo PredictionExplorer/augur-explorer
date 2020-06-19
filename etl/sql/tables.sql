@@ -182,6 +182,7 @@ CREATE table dai_transf (	-- transfers of DAI tokens (deposits/withdrawals of fu
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	from_aid			BIGINT DEFAULT 0,
 	to_aid				BIGINT DEFAULT 0,
+	internal			BOOLEAN DEFAULT false,
 	amount				DECIMAL(64,18) DEFAULT 0.0
 );
 CREATE table dai_bal (	-- DAI token balance
@@ -192,6 +193,7 @@ CREATE table dai_bal (	-- DAI token balance
 	aid					BIGINT NOT NULL,
 	processed			BOOLEAN DEFAULT false,	-- true if balances have been calculated
 	augur				BOOLEAN DEFAULT false,	-- true if the user has account on Augur Platform
+	internal			BOOLEAN DEFAULT false,	-- true if it is an exchange between Agur's contracts
 	balance				DECIMAL(64,18) DEFAULT 0.0,
 	amount				DECIMAL(64,18) DEFAULT 0.0
 );
@@ -305,5 +307,6 @@ CREATE table contract_addresses ( -- Addresses of contracts that compose Augur P
 	dai_cash			TEXT DEFAULT '',
 	zerox				TEXT DEFAULT '',
 	rep_token			TEXT DEFAULT '',
-	wallet_reg			TEXT DEFAULT ''
+	wallet_reg			TEXT DEFAULT '',
+	fill_order			TEXT DEFAULT ''
 );

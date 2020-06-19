@@ -1,0 +1,25 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="/res/main.css" rel="stylesheet">
+</head>
+<body>
+	<h3 class="page_title">Deposits/Withdrawals for {{.UserInfo.EOAAddr}}</h3>
+<table>
+	<tr>
+		<td>Wallet Contract:</td>
+		<td>{{.UserInfo.WalletAddr}}</td>
+	</tr>
+</table>
+{{template "deposits_withdrawals_list" .Operations}}
+<br/><br/><br/>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="/index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

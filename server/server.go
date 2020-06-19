@@ -807,6 +807,60 @@ func user_markets(c *gin.Context) {
 		})
 	}
 }
+func user_deposits_withdrawals(c *gin.Context) {
+
+	p_addr := c.Param("addr")
+	if (len(p_addr) == 40) || (len(p_addr) == 42) { // address
+		if len(p_addr) == 42 {	// strip 0x prefix
+			p_addr = p_addr[2:]
+		}
+	} else {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": "Invalid length of address parameter",
+		})
+	}
+	addr_bytes,err := hex.DecodeString(p_addr)
+	if err == nil {
+		addr := common.BytesToAddress(addr_bytes)
+		addr_str := addr.String()
+		aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(addr_str)
+		if err==nil {
+			user_info,err := augur_srv.storage.Get_user_info(aid)
+			if err!= nil {
+				c.HTML(http.StatusBadRequest, "error.html", gin.H{
+					"title": "Augur Markets: Error",
+					"ErrDescr": fmt.Sprintf("No records found for address: %v",addr_str),
+				})
+			} else {
+				wallet_aid,err := augur_srv.storage.Lookup_wallet_aid(aid)
+				if err == nil {
+					user_deposits_withdrawals := augur_srv.storage.Get_deposits_withdrawals(wallet_aid)
+					c.HTML(http.StatusOK, "user_deposits_withdrawals.html", gin.H{
+						"title": fmt.Sprintf("User %v Deposits/Withdrawals",addr),
+						"UserInfo" : user_info,
+						"Operations" : user_deposits_withdrawals,
+					})
+				} else {
+					c.HTML(http.StatusBadRequest, "error.html", gin.H{
+						"title": "Augur Markets: Error",
+						"ErrDescr": fmt.Sprintf("User %v doesn't have a Wallet in Augur",addr.String()),
+					})
+				}
+			}
+		} else {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": fmt.Sprintf("DB error: %v",err),
+			})
+		}
+	} else {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": "Invalid HEX string in address parameter",
+		})
+	}
+}
 func block_info(c *gin.Context) {
 
 	p_block_num := c.Param("block_num")

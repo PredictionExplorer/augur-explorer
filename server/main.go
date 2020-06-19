@@ -124,6 +124,7 @@ func main() {
 	r.GET("/user/:addr",  user_info)
 	r.GET("/fullreports/:addr",  full_reports)
 	r.GET("/umarkets/:addr",  user_markets)
+	r.GET("/udw/:addr",  user_deposits_withdrawals)
 	r.GET("/block/:block_num",  block_info)
 
 	r.Static("/imgs", "./html/imgs")

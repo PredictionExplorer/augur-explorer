@@ -8,6 +8,7 @@ import (
 	"errors"
 	"math/big"
 	"strings"
+	"bytes"
 	"strconv"
 	"log"
 	"database/sql"
@@ -137,7 +138,7 @@ func (ss *SQLStorage) Get_last_block_num() (p.BlockNumber,bool) {
 func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 
 	var query string
-	query="SELECT dai_cash,zerox,rep_token,wallet_reg FROM contract_addresses";
+	query="SELECT dai_cash,zerox,rep_token,wallet_reg,fill_order FROM contract_addresses";
 	row := ss.db.QueryRow(query)
 	var c_addresses p.ContractAddresses
 	var err error
@@ -145,7 +146,8 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 	var rep_addr_str string
 	var zerox_addr_str string
 	var walletreg_addr_str string
-	err=row.Scan(&dai_addr_str,&rep_addr_str,&zerox_addr_str,&walletreg_addr_str);
+	var fill_order_addr_str string
+	err=row.Scan(&dai_addr_str,&rep_addr_str,&zerox_addr_str,&walletreg_addr_str,&fill_order_addr_str);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 		} else {
@@ -157,6 +159,7 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 	c_addresses.Reputation_addr=common.HexToAddress(rep_addr_str)
 	c_addresses.Zerox_addr=common.HexToAddress(zerox_addr_str)
 	c_addresses.WalletReg_addr=common.HexToAddress(walletreg_addr_str)
+	c_addresses.FillOrder_addr=common.HexToAddress(fill_order_addr_str)
 	return c_addresses,nil
 }
 func (ss *SQLStorage) Set_last_block_num(block_num p.BlockNumber) {
@@ -234,6 +237,26 @@ func (ss *SQLStorage) Nonfatal_lookup_address_id(addr string) (int64,error) {
 	query="SELECT address_id FROM address WHERE addr=$1"
 	err:=ss.db.QueryRow(query,addr).Scan(&addr_id);
 	if (err!=nil) {
+		if err!=sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v ,q=%v",query))
+			os.Exit(1)
+		}
+		return 0,err
+	}
+
+	return addr_id,nil
+}
+func (ss *SQLStorage) lookup_market(addr string) (int64,error) {
+
+	var addr_id int64;
+	var query string
+	query="SELECT address_id FROM address AS a,market AS m WHERE m.market_aid=a.address_id AND a.addr=$1"
+	err:=ss.db.QueryRow(query,addr).Scan(&addr_id);
+	if (err!=nil) {
+		if err!=sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v ,q=%v",query))
+			os.Exit(1)
+		}
 		return 0,err
 	}
 
@@ -1974,16 +1997,37 @@ func (ss *SQLStorage) Get_main_stats() p.MainStats {
 	s.FinalizedCount = (s.YesNoCount + s.CategCount + s.ScalarCount) - s.ActiveCount
 	return s
 }
-func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.Transfer,block_num p.BlockNumber,tx_id int64) {
+func (ss *SQLStorage) is_dai_transfer_internal(evt *p.Transfer,ca *p.ContractAddresses) bool {
+
+	_,err:=ss.lookup_market(evt.From.String())
+	if err == nil {
+		return true	// its a Market in From
+	}
+	_,err=ss.lookup_market(evt.To.String())
+	if err == nil {
+		return true	// its a Market in To
+	}
+
+	if 0 == bytes.Compare(evt.From.Bytes(),ca.Zerox_addr.Bytes()) {
+		return true;
+	}
+	if 0 == bytes.Compare(evt.To.Bytes(),ca.Zerox_addr.Bytes()) {
+		return true;
+	}
+	return false
+}
+func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.Transfer,ca *p.ContractAddresses,block_num p.BlockNumber,tx_id int64) {
 
 	from_aid := ss.Lookup_or_create_address(evt.From.String(),block_num,tx_id)
 	to_aid := ss.Lookup_or_create_address(evt.To.String(),block_num,tx_id)
 	amount := evt.Value.String()
 
+	internal := ss.is_dai_transfer_internal(evt,ca)
+
 	var query string
-	query = "INSERT INTO dai_transf(block_num,tx_id,from_aid,to_aid,amount) " +
-			"VALUES($1,$2,$3,$4,(" + amount +"/1e+18))"
-	_,err := ss.db.Exec(query,block_num,tx_id,from_aid,to_aid)
+	query = "INSERT INTO dai_transf(block_num,tx_id,from_aid,to_aid,amount,internal) " +
+			"VALUES($1,$2,$3,$4,(" + amount +"/1e+18),$5)"
+	_,err := ss.db.Exec(query,block_num,tx_id,from_aid,to_aid,internal)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
@@ -2087,9 +2131,6 @@ func (ss *SQLStorage) update_users_profit_loss(market_aid int64,eoa_aid int64,ou
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, (on Scan of previous profit) q=%v",err,query))
 		}
-	}
-	if err!=nil {
-		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in update_top_profit(): %v",err))
 	}
 	ss.Info.Printf("Position update query returned profit=%v\n",previous_profit)
 	return previous_profit
@@ -3144,6 +3185,47 @@ func (ss *SQLStorage) Get_cash_flow() []p.BlockCash {
 			os.Exit(1)
 		}
 		records = append(records,bc)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_deposits_withdrawals(wallet_aid int64) []p.DaiOp{
+
+	var query string
+	query = "SELECT " +
+				"block_num," +
+				"amount " +
+			"FROM " +
+				"dai_bal AS b " +
+			"WHERE " +
+				"aid = $1 AND " +
+				"amount != 0 " +
+			"ORDER BY block_num,id"
+
+	rows,err := ss.db.Query(query,wallet_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	ss.Info.Printf("Get_deposits_withdrawals: query=%v\n",query)
+	records := make([]p.DaiOp,0,32)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.DaiOp
+		var amount float64
+		err=rows.Scan(&rec.BlockNum,&amount)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		if amount < 0 {
+			rec.Withdrawal = amount
+		} else {
+			rec.Deposit = amount
+		}
+		ss.Info.Printf("adding deposit block_num=%v, amount=%v\n",
+							rec.BlockNum,amount)
+		records = append(records,rec)
 	}
 	return records
 }

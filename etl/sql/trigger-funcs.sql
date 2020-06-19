@@ -506,8 +506,8 @@ BEGIN
 	IF v_cnt > 0 THEN
 		v_augur := true;
 	END IF;
-	INSERT INTO dai_bal(block_num,tx_id,dai_transf_id,aid,amount,augur)
-			VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.from_aid,-NEW.amount,v_augur);
+	INSERT INTO dai_bal(block_num,tx_id,dai_transf_id,aid,amount,augur,internal)
+			VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.from_aid,-NEW.amount,v_augur,NEW.internal);
 
 
 	v_augur := false;
@@ -516,8 +516,8 @@ BEGIN
 	IF v_cnt > 0 THEN
 		v_augur := true;
 	END IF;
-	INSERT INTO dai_bal(block_num,tx_id,dai_transf_id,aid,amount,augur)
-			VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.to_aid,NEW.amount,v_augur);
+	INSERT INTO dai_bal(block_num,tx_id,dai_transf_id,aid,amount,augur,internal)
+			VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.to_aid,NEW.amount,v_augur,NEW.internal);
 
 	RETURN NEW;
 END;
