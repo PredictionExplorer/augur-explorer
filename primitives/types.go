@@ -506,4 +506,5 @@ type ContractAddresses struct {
 	Reputation_addr	common.Address
 	WalletReg_addr	common.Address
 	FillOrder_addr	common.Address
+	EthXchg_addr	common.Address
 }

@@ -138,7 +138,7 @@ func (ss *SQLStorage) Get_last_block_num() (p.BlockNumber,bool) {
 func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 
 	var query string
-	query="SELECT dai_cash,zerox,rep_token,wallet_reg,fill_order FROM contract_addresses";
+	query="SELECT dai_cash,zerox,rep_token,wallet_reg,fill_order,eth_xchg FROM contract_addresses";
 	row := ss.db.QueryRow(query)
 	var c_addresses p.ContractAddresses
 	var err error
@@ -147,7 +147,9 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 	var zerox_addr_str string
 	var walletreg_addr_str string
 	var fill_order_addr_str string
-	err=row.Scan(&dai_addr_str,&rep_addr_str,&zerox_addr_str,&walletreg_addr_str,&fill_order_addr_str);
+	var eth_xchg_addr_str string
+	err=row.Scan(&dai_addr_str,&rep_addr_str,&zerox_addr_str,&walletreg_addr_str,&fill_order_addr_str,
+					&eth_xchg_addr_str);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 		} else {
@@ -160,6 +162,7 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 	c_addresses.Zerox_addr=common.HexToAddress(zerox_addr_str)
 	c_addresses.WalletReg_addr=common.HexToAddress(walletreg_addr_str)
 	c_addresses.FillOrder_addr=common.HexToAddress(fill_order_addr_str)
+	c_addresses.EthXchg_addr=common.HexToAddress(eth_xchg_addr_str)
 	return c_addresses,nil
 }
 func (ss *SQLStorage) Set_last_block_num(block_num p.BlockNumber) {
@@ -2008,10 +2011,38 @@ func (ss *SQLStorage) is_dai_transfer_internal(evt *p.Transfer,ca *p.ContractAdd
 		return true	// its a Market in To
 	}
 
+	//fmt.Printf("is_internal(): Zerox compare = %v (evt.From=%v, zerox_addr=%v\n",
+	//		bytes.Compare(evt.From.Bytes(),ca.Zerox_addr.Bytes()),
+	//		evt.From.String(),ca.Zerox_addr.String(),
+	//)
 	if 0 == bytes.Compare(evt.From.Bytes(),ca.Zerox_addr.Bytes()) {
 		return true;
 	}
+	//fmt.Printf("is_internal():Zerox compare = %v (evt.To=%v, zerox_addr=%v\n",
+	//		bytes.Compare(evt.To.Bytes(),ca.Zerox_addr.Bytes()),
+	//		evt.To.String(),ca.Zerox_addr.String(),
+	//)
 	if 0 == bytes.Compare(evt.To.Bytes(),ca.Zerox_addr.Bytes()) {
+		return true;
+	}
+	//fmt.Printf("is_internal():FillOrder compare = %v (evt.From=%v, fillorder_addr=%v\n",
+	//		bytes.Compare(evt.From.Bytes(),ca.FillOrder_addr.Bytes()),
+	//		evt.From.String(),ca.FillOrder_addr.String(),
+	//)
+	if 0 == bytes.Compare(evt.From.Bytes(),ca.FillOrder_addr.Bytes()) {
+		return true;
+	}
+	//fmt.Printf("is_internal():FillOrder compare = %v (evt.To=%v, fillorder_addr=%v\n",
+	//		bytes.Compare(evt.To.Bytes(),ca.FillOrder_addr.Bytes()),
+	//		evt.To.String(),ca.FillOrder_addr.String(),
+	//)
+	if 0 == bytes.Compare(evt.To.Bytes(),ca.FillOrder_addr.Bytes()) {
+		return true;
+	}
+	if 0 == bytes.Compare(evt.From.Bytes(),ca.FillOrder_addr.Bytes()) {
+		return true;
+	}
+	if 0 == bytes.Compare(evt.To.Bytes(),ca.FillOrder_addr.Bytes()) {
 		return true;
 	}
 	return false
@@ -3198,7 +3229,8 @@ func (ss *SQLStorage) Get_deposits_withdrawals(wallet_aid int64) []p.DaiOp{
 				"dai_bal AS b " +
 			"WHERE " +
 				"aid = $1 AND " +
-				"amount != 0 " +
+				"amount != 0 AND " +
+				"internal = false " +
 			"ORDER BY block_num,id"
 
 	rows,err := ss.db.Query(query,wallet_aid)

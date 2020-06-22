@@ -11,59 +11,6 @@ import (
 	//"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )
-/* DISCONTINUED , to be delted
-func dev_init_daicash(addr *common.Address) {
-	if addr != nil {
-		*addr = common.HexToAddress("5f3341EA5989aD3129E325027b8d908b63709A00")
-	}
-}
-func prod_init_daicash(addr *common.Address) {
-	if addr != nil {
-		*addr = common.HexToAddress("6B175474E89094C44Da98b954EedeAC495271d0F")
-	}
-}
-func dev_init_reputation_token(addr *common.Address) {
-	if addr != nil {
-		*addr = common.HexToAddress("0fF6ee01f88145298761a29A0372Ed24E16E73B1")
-		//*addr = common.HexToAddress("B4D7f6747CEFbDcA11bDDd92a16134dc95B0DD9B") LegacyReputationToken
-		//*addr = common.HexToAddress("B78B2B637d3861E601E54C00c054972c18A5e991")
-	}
-}
-func prod_init_reputation_token(addr *common.Address) {
-	if addr != nil {
-		*addr = common.HexToAddress("B4D7f6747CEFbDcA11bDDd92a16134dc95B0DD9B")
-	}
-}
-func dev_init_zerox(addr *common.Address) {
-	if addr != nil {
-		*addr = common.HexToAddress("6749E370e7B1955FFa924F4f75f5F12653C7512C")	// ZeroXTrade
-	}
-}
-func prod_init_zerox(addr *common.Address) {
-	if addr != nil {
-		*addr = common.HexToAddress("6749E370e7B1955FFa924F4f75f5F12653C7512C")
-	}
-}
-func dev_init_addresses(config_addr *ContractAddresses) {
-	dev_init_zerox(config_addr.Zerox_addr)
-	dev_init_daicash(config_addr.Dai_addr)
-	dev_init_reputation_token(config_addr.Reputation_addr)
-}
-func prod_init_addresses(config_addr *ContractAddresses) {
-	prod_init_zerox(config_addr.Zerox_addr)
-	prod_init_daicash(config_addr.Dai_addr)
-	prod_init_reputation_token(config_addr.Reputation_addr)
-}
-func Init_contract_addresses(addresses *ContractAddresses) {
-
-	augur_prod := os.Getenv("AUGUR_PROD")
-	if len(augur_prod) > 0 {
-		prod_init_addresses(addresses)
-	} else {
-		dev_init_addresses(addresses)
-	}
-}
-*/
 func dump_abi_events(a *abi.ABI) {
 
 	fmt.Printf("Events:\n")
