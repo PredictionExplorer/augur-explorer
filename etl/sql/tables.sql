@@ -309,5 +309,6 @@ CREATE table contract_addresses ( -- Addresses of contracts that compose Augur P
 	rep_token			TEXT DEFAULT '',
 	wallet_reg			TEXT DEFAULT '',
 	fill_order			TEXT DEFAULT '',
-	eth_xchg			TEXT DEFAULT ''
+	eth_xchg			TEXT DEFAULT '',
+	share_token			TEXT DEFAULT ''
 );
