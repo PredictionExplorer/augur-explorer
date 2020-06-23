@@ -129,10 +129,8 @@ func build_javascript_price_history(orders *[]MarketOrder) template.JS {
 				"price: " + fmt.Sprintf("%v",e.Price) + "," +
 				"volume: " + fmt.Sprintf("%v",e.Volume) + "," +
 				"click: function() {load_order_data(\"" +
-					e.SellerEOAAddrSh +"\",\"" +
-					e.SellerWalletAddrSh + "\",\"" +
-					e.BuyerEOAAddrSh + "\",\"" +
-					e.BuyerWalletAddrSh + "\"," +
+					e.CreatorEOAAddr +"\",\"" +
+					e.FillerEOAAddr+ "\"," +
 					fmt.Sprintf("%v,%v,%v,\"%v\"",e.MktAid,e.Price,e.Volume,e.Date) +
 				")}" +
 				"}"

@@ -9,26 +9,25 @@
 <script src="https://code.highcharts.com/modules/data.js"></script>
 <script>
 	function load_order_data(
-				seller_eoa_addr,seller_wallet_addr,
-				buyer_eoa_addr,buyer_wallet_addr,
+				creator_eoa_addr,filler_eoa_addr,
 				mkt_aid,price,volume,order_date) {
 		var elt
 		elt = document.getElementById("usermktinfo")
 		elt.style.display="block"
-		elt = document.getElementById("fld_seller_wallet_addr")
-		elt.innerHTML = seller_wallet_addr
-		elt = document.getElementById("fld_seller_eoa_addr")
-		elt.innerHTML = seller_eoa_addr
-		elt = document.getElementById("fld_buyer_wallet_addr")
-		elt.innerHTML = buyer_wallet_addr
-		elt = document.getElementById("fld_buyer_eoa_addr")
-		elt.innerHTML = buyer_eoa_addr
+		elt = document.getElementById("fld_creator_eoa_addr")
+		elt.innerHTML = creator_eoa_addr
+		elt = document.getElementById("fld_filler_eoa_addr")
+		elt.innerHTML = filler_eoa_addr
 		elt = document.getElementById("fld_order_date")
 		elt.innerHTML = order_date
 		elt = document.getElementById("fld_price")
 		elt.innerHTML = price
 		elt = document.getElementById("fld_volume")
 		elt.innerHTML = volume
+		elt = document.getElementById("fld_creator_href")
+		elt.href="/user/" + creator_eoa_addr
+		elt = document.getElementById("fld_filler_href")
+		elt.href="/user/" + filler_eoa_addr
 	}
 
 	var price_history_data = {{.JSPriceData}}
@@ -54,20 +53,12 @@
 			<td><span id="fld_order_date"></span></td>
 		</tr>
 		<tr>
-			<td>Seller's Real Address</td>
-			<td><span id="fld_seller_eoa_addr"></span></td>
+			<td>Creator's Address</td>
+			<td><a id="fld_creator_href" href=""><span id="fld_creator_eoa_addr"></span></a></td>
 		</tr>
 		<tr>
-			<td>Seller's Wallet Address</td>
-			<td><span id="fld_seller_wallet_addr"></span></td>
-		</tr>
-		<tr>
-			<td>Buyer's Real Address</td>
-			<td><span id="fld_buyer_eoa_addr"></span></td>
-		</tr>
-		<tr>
-			<td>Buyer's Wallet Address</td>
-			<td><span id="fld_buyer_wallet_addr"></span></td>
+			<td>Filler's Address</td>
+			<td><a id="fld_filler_href"><span id="fld_filler_eoa_addr"></span></a></td>
 		</tr>
 		<tr>
 			<td>Price</td>
@@ -78,18 +69,6 @@
 			<td><span id="fld_volume"></span></td>
 		</tr>
 	</table>
-	<nav>
-		<ul>
-			<li>
-				<a class="btn_link" href="/index.html">Seller Statistics</a>
-				<span></span><span></span><span></span><span></span>
-			</li>
-			<li>
-				<a class="btn_link" href="/index.html">Buyer Statistics</a>
-				<span></span><span></span><span></span><span></span>
-			</li>
-		</ul>
-	</nav>
 </div>
 <nav>
 	<ul>

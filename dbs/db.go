@@ -1776,14 +1776,14 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 	query = "SELECT " +
 				"o.order_id," +
 				"o.market_aid," +
-				"s_w_a.addr AS s_w_a_addr," +
-				"CONCAT(LEFT(s_w_a.addr,6),'…',RIGHT(s_w_a.addr,6)) AS seller_wallet_addr_sh," +
-				"s_e_a.addr AS seller_eoa_addr," +
-				"CONCAT(LEFT(s_e_a.addr,6),'…',RIGHT(s_e_a.addr,6)) AS seller_eoa_addr_sh," +
-				"b_w_a.addr AS b_w_a_addr," +
-				"CONCAT(LEFT(b_w_a.addr,6),'…',RIGHT(b_w_a.addr,6)) AS buyer_wallet_addr_sh," +
-				"b_e_a.addr AS byer_eoa_addr," +
-				"CONCAT(LEFT(b_e_a.addr,6),'…',RIGHT(b_e_a.addr,6)) AS buyer_eoa_addr_sh," +
+				"c_w_a.addr AS c_w_a_addr," +
+//				"CONCAT(LEFT(c_w_a.addr,6),'…',RIGHT(c_w_a.addr,6)) AS creator_wallet_addr_sh," +
+				"c_e_a.addr AS filler_eoa_addr," +
+//				"CONCAT(LEFT(c_e_a.addr,6),'…',RIGHT(c_e_a.addr,6)) AS creator_eoa_addr_sh," +
+				"f_w_a.addr AS f_w_a_addr," +
+//				"CONCAT(LEFT(f_w_a.addr,6),'…',RIGHT(f_w_a.addr,6)) AS filler_wallet_addr_sh," +
+				"f_e_a.addr AS filler_eoa_addr," +
+//				"CONCAT(LEFT(f_e_a.addr,6),'…',RIGHT(f_e_a.addr,6)) AS filler_eoa_addr_sh," +
 				"o.otype, " +
 				"CASE o.otype " +
 					"WHEN 0 THEN 'BID' " +
@@ -1794,17 +1794,13 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 				"o.outcome," +
 				"o.price AS price, " +
 				"o.amount_filled AS volume " +
-//				"m.market_type AS mtype," +
-//				"m.outcomes AS outcomes_str " +
 			"FROM mktord AS o " +
 				"LEFT JOIN " +
 					"address AS a ON o.market_aid=a.address_id " +
-				"LEFT JOIN address AS s_w_a ON o.wallet_aid=s_w_a.address_id " +
-				"LEFT JOIN address AS s_e_a ON o.eoa_aid=s_e_a.address_id " +
-				"LEFT JOIN address AS b_w_a ON o.wallet_fill_aid=b_w_a.address_id " +
-				"LEFT JOIN address AS b_e_a ON o.eoa_fill_aid=b_e_a.address_id " +
-//				"LEFT JOIN " +
-//					"market AS m ON o.market_aid = m.market_aid " +
+				"LEFT JOIN address AS c_w_a ON o.wallet_aid=c_w_a.address_id " +
+				"LEFT JOIN address AS c_e_a ON o.eoa_aid=c_e_a.address_id " +
+				"LEFT JOIN address AS f_w_a ON o.wallet_fill_aid=f_w_a.address_id " +
+				"LEFT JOIN address AS f_e_a ON o.eoa_fill_aid=f_e_a.address_id " +
 			"WHERE o.market_aid = $1 AND o.outcome=$2 " +
 			"ORDER BY o.time_stamp"
 	var accumulated_volume = 0.0
@@ -1820,14 +1816,10 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 		err=rows.Scan(
 			&rec.OrderHash,
 			&rec.MktAid,
-			&rec.SellerWalletAddr,
-			&rec.SellerWalletAddrSh,
-			&rec.SellerEOAAddr,
-			&rec.SellerEOAAddrSh,
-			&rec.BuyerWalletAddr,
-			&rec.BuyerWalletAddrSh,
-			&rec.BuyerEOAAddr,
-			&rec.BuyerEOAAddrSh,
+			&rec.CreatorWalletAddr,
+			&rec.CreatorEOAAddr,
+			&rec.FillerWalletAddr,
+			&rec.FillerEOAAddr,
 			&rec.OType,
 			&rec.Direction,
 			&rec.Date,
@@ -1838,7 +1830,12 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
+			os.Exit(1)
 		}
+		rec.CreatorWalletAddrSh=p.Short_address(rec.CreatorWalletAddr)
+		rec.CreatorEOAAddrSh=p.Short_address(rec.CreatorEOAAddr)
+		rec.FillerWalletAddrSh=p.Short_address(rec.FillerWalletAddr)
+		rec.FillerEOAAddrSh=p.Short_address(rec.FillerEOAAddr)
 		accumulated_volume = accumulated_volume + rec.Volume
 		rec.AccumVol = accumulated_volume
 		records = append(records,rec)

@@ -368,14 +368,14 @@ type MarketOrder struct {	// this is a short order info, to show in tables
 	OType				int32
 	CreatedTs			int64
 	OrderHash			string
-	SellerWalletAddr	string
-	SellerWalletAddrSh	string	// short version of the addr
-	SellerEOAAddr		string
-	SellerEOAAddrSh		string	// short version of the addr
-	BuyerWalletAddr		string
-	BuyerWalletAddrSh	string
-	BuyerEOAAddr		string
-	BuyerEOAAddrSh		string
+	CreatorWalletAddr	string
+	CreatorWalletAddrSh	string	// short version of the addr
+	CreatorEOAAddr		string
+	CreatorEOAAddrSh	string	// short version of the addr
+	FillerWalletAddr	string
+	FillerWalletAddrSh	string
+	FillerEOAAddr		string
+	FillerEOAAddrSh		string
 	Direction			string
 	Date				string
 }

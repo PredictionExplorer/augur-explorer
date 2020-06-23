@@ -29,3 +29,10 @@ func Fatalf(format string, args ...interface{}) {
 	fmt.Printf(fmt.Sprintf("Fatal: "+format+"\n", args...))
 	os.Exit(1)
 }
+func Short_address(long_addr string) string {
+
+	var output string = long_addr[3:9] 
+	output = output + "…"
+	output = output + long_addr[25:31]
+	return output
+}
