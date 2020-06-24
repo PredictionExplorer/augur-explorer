@@ -248,25 +248,6 @@ func proc_fill_evt(log *types.Log) {
 		fill_order_id = storage.Locate_fill_event_order(&mevt)
 	}
 }
-/*
-pending for removal
-func proc_erc20_transfer(log *types.Log) {
-	var mevt Transfer
-	mevt.From= common.BytesToAddress(log.Topics[1][12:])
-	mevt.To= common.BytesToAddress(log.Topics[2][12:])
-	err := cash_abi.Unpack(&mevt,"Transfer",log.Data)
-	if err != nil {
-		Fatalf("Event ERC20_Transfer for Cash decode error: %v",err)
-	} else {
-		fmt.Printf("ERC20_Transfer event for contract %v (block=%v) :\n",
-									log.Address.String(),log.BlockNumber)
-		mevt.Dump()
-		from_eoa_aid := get_eoa_aid(&mevt.From)
-		to_eoa_aid := get_eoa_aid(&mevt.To)
-		storage.process_DAI_token_transfer(from_eoa_aid,to_eoa_aid,&mevt)
-	}
-}
-*/
 func proc_erc20_transfer(log *types.Log,block_num BlockNumber,tx_id int64) {
 	var mevt Transfer
 	/*
@@ -288,7 +269,6 @@ func proc_erc20_transfer(log *types.Log,block_num BlockNumber,tx_id int64) {
 		Info.Printf("ERC20_Transfer event, contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump()
-		Info.Printf("caddrs=%+v\n",caddrs)
 		if bytes.Equal(caddrs.Dai_addr.Bytes(), log.Address.Bytes()) {	// this is DAI contract
 			storage.Process_DAI_token_transfer(&mevt,caddrs,block_num,tx_id)
 		}
@@ -551,7 +531,6 @@ func proc_market_created(block_num BlockNumber,tx_id int64,log *types.Log,signer
 		storage.Insert_market_created_evt(block_num,tx_id,signer,wallet_aid,validity_bond,&mevt)
 	}
 }
-// DISCONTINUED func process_event(block *types.Header, tx_id int64, signer common.Address, log *types.Log) int64 {
 func process_event(block *types.Header, tx_id int64, signer common.Address, logs *[]*types.Log,lidx int) int64 {
 	// Return Value: id of the record inserted (if aplicable, or 0)
 

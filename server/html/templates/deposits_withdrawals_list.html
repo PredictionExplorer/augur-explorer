@@ -1,9 +1,11 @@
 {{define "deposits_withdrawals_list"}}
 <table class="deposits_withdrawals">
-<tr>
-	<td>Block Num</td>
-	<td>Deposit</td>
-	<td>Withdrawal</td>
+<tr class="deposits_withdrwals">
+	<th>Block Num</th>
+	<th>From</th>
+	<th>Deposit</th>
+	<th>Withdrawal</th>
+	<th>To</th>
 </tr>
 {{- range .}}
 	{{template "deposits_withdrawals_record" .}}

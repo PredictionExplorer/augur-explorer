@@ -1,10 +1,10 @@
 {{define "market_outcome_vols"}}
 <table class="market_outcome_vols">
-<tr>
-	<td class="mkt_outvol_hdr">Outcome</td>
-	<td class="mkt_outvol_hdr">Current Volume</td>
-	<td class="mkt_outvol_hdr">Last Price</td>
-	<td></td>
+<tr class="market_outcome_vols">
+	<th class="mkt_outvol_hdr">Outcome</th>
+	<th class="mkt_outvol_hdr">Current Volume</th>
+	<th class="mkt_outvol_hdr">Last Price</th>
+	<th></th>
 </tr>
 	{{- range $i, $outvol := .}}
 		{{template "mkt_outvol" $outvol}}

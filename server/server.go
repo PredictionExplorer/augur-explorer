@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"math/big"
 	"context"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -149,6 +150,8 @@ func build_javascript_profit_loss_history(entries *[]PLEntry) template.JS {
 			data_str = data_str + ","
 		}
 		var e = &(*entries)[i];
+		outcome_escaped := strings.ReplaceAll(e.OutcomeStr,"\"","\\\"")
+		descr_escaped := strings.ReplaceAll(e.MktDescr,"\"","\\\"")
 		var entry string
 		entry = "{" +
 				"x:" + fmt.Sprintf("%v",i)  + "," +
@@ -158,7 +161,7 @@ func build_javascript_profit_loss_history(entries *[]PLEntry) template.JS {
 				"date: \"" + fmt.Sprintf("%v",e.Date) + "\"," +
 				"click: function() {load_pl_data(" +
 					fmt.Sprintf("%v,%v,\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",%v",
-								e.FinalProfit,e.AccumPl,e.MktAddr,e.MktAddrSh,e.OutcomeStr,e.MktDescr,
+								e.FinalProfit,e.AccumPl,e.MktAddr,e.MktAddrSh,outcome_escaped,descr_escaped,
 								e.Date,e.CounterPAddr,e.CounterPAddrSh,e.OrderHash,e.BlockNum) +
 				")}" +
 				"}"
@@ -177,6 +180,8 @@ func build_javascript_open_positions(entries *[]PLEntry) template.JS {
 			data_str = data_str + ","
 		}
 		var e = &(*entries)[i];
+		outcome_escaped := strings.ReplaceAll(e.OutcomeStr,"\"","\\\"")
+		descr_escaped := strings.ReplaceAll(e.MktDescr,"\"","\\\"")
 		var entry string
 		entry = "{" +
 				"x:" + fmt.Sprintf("%v",i)  + "," +
@@ -186,8 +191,8 @@ func build_javascript_open_positions(entries *[]PLEntry) template.JS {
 				"date: \"" + fmt.Sprintf("%v",e.Date) + "\"," +
 				"click: function() {load_open_pos_data(" +
 					fmt.Sprintf("%v,%v,\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",%v",
-							e.FrozenFunds,e.NetPosition,e.MktAddr,e.MktAddrSh,e.OutcomeStr,e.MktDescr,e.Date,
-							e.CounterPAddr,e.CounterPAddrSh,e.OrderHash,e.BlockNum) +
+							e.FrozenFunds,e.NetPosition,e.MktAddr,e.MktAddrSh,outcome_escaped,
+							descr_escaped,e.Date,e.CounterPAddr,e.CounterPAddrSh,e.OrderHash,e.BlockNum) +
 				")}" +
 				"}"
 		fmt.Printf("\nentry = %v\n",entry)

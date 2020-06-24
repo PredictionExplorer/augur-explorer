@@ -31,8 +31,21 @@ func Fatalf(format string, args ...interface{}) {
 }
 func Short_address(long_addr string) string {
 
-	var output string = long_addr[3:9] 
+	if len(long_addr)!=42 {
+		return "inval_addr"
+	}
+	var output string = long_addr[2:8] 
 	output = output + "…"
-	output = output + long_addr[25:31]
+	output = output + long_addr[35:41]
+	return output
+}
+func Short_hash(long_hash string) string {
+
+	if len(long_hash)!=66 {
+		return "inval_hash"
+	}
+	var output string = long_hash[2:8]
+	output = output + "…"
+	output = output + long_hash[59:65]
 	return output
 }

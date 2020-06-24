@@ -98,75 +98,75 @@
 	<h3 class="page_title">User Info for {{.UserInfo.EOAAddrSh}}</h3>
 <div class="user_info">
 	<table class="user_info">
-		<tr>
+		<tr class="user_info">
 			<td>User's Real Address (EOA)</td>
-			<td title="{{.UserInfo.EOAAddr}}">{{.UserInfo.EOAAddr}}</td>
+			<td class="right addr" title="{{.UserInfo.EOAAddr}}">{{.UserInfo.EOAAddr}}</td>
 		</tr>
-		<tr>
+		<tr class="user_info">
 			<td>Wallet Contract Address</td>
-			<td title="{{.UserInfo.WalletAddr}}">{{.UserInfo.WalletAddr}}</td>
+			<td class="right addr" title="{{.UserInfo.WalletAddr}}">{{.UserInfo.WalletAddr}}</td>
 		</tr>
-		<tr>
-			<td>Lifetime Profit/Loss</td>
-			<td title="">{{.UserInfo.ProfitLoss}}<td>
+		<tr class="user_info">
+			<td>Lifetime Profit/Loss (DAI)</td>
+			<td title="" class="right">{{.UserInfo.ProfitLoss}}<td>
 		</tr>
-		<tr>
+		<tr class="user_info">
 			<td>Total Trades</td>
-			<td>{{.UserInfo.TotalTrades}}</td>
+			<td class="right">{{.UserInfo.TotalTrades}}</td>
 		</tr>
-		<tr>
+		<tr class="user_info">
 			<td>Markets Created</td>
-			<td><a href="/umarkets/{{.UserInfo.EOAAddr}}">{{.UserInfo.MarketsCreated}}</a></td>
+			<td class="right"><a href="/umarkets/{{.UserInfo.EOAAddr}}">{{.UserInfo.MarketsCreated}}</a></td>
 		</tr>
-		<tr>
+		<tr class="user_info">
 			<td>Markets Traded</td>
-			<td>{{.UserInfo.MarketsTraded}}</td>
+			<td class="right">{{.UserInfo.MarketsTraded}}</td>
 		</tr>
-		<tr>
+		<tr class="user_info">
 			<td>Withdrawal Requests</td>
-			<td>{{.UserInfo.WithdrawReqs}}</td>
+			<td class="right">{{.UserInfo.WithdrawReqs}}</td>
 		</tr>
-		<tr>
+		<tr class="user_info">
 			<td>Deposit Requests</td>
-			<td>{{.UserInfo.DepositReqs}}</td>
+			<td class="right">{{.UserInfo.DepositReqs}}</td>
 		</tr>
-		<tr>
+		<tr class="user_info">
 			<td>Total Reports</td>
-			<td><a href="/fullreports/{{.UserInfo.EOAAddr}}">{{.UserInfo.TotalReports}}</a></td>
+			<td class="right"><a href="/fullreports/{{.UserInfo.EOAAddr}}">{{.UserInfo.TotalReports}}</a></td>
 		</tr>
-		<tr>
+		<tr class="user_info">
 			<td>Reports as Designated Reporter</td>
-			<td>{{.UserInfo.TotalDesignated}}</td>
+			<td class="right">{{.UserInfo.TotalDesignated}}</td>
 		</tr>
-		<tr>
+		<tr class="user_info">
 			<td>Profit in Affiliate Commissions</td>
-			<td>{{.UserInfo.AffProfits}}</td>
+			<td class="right">{{.UserInfo.AffProfits}}</td>
 		</tr>
-		<tr>
-			<td title="Sum of all funds this user has bet at this moment on the markets" >Money At Stake</td>
-			<td>{{.UserInfo.MoneyAtStake}}</td>
+		<tr class="user_info">
+			<td title="Sum of all funds this user has bet at this moment on the markets" >Money At Stake (DAI)</td>
+			<td class="right">{{.UserInfo.MoneyAtStake}}</td>
 		</tr>
-		<tr>
-			<td>Money in Validity Bonds</td>
-			<td title="Sum of all funds frozen in Validity Bonds for all Markets created by the User">{{.UserInfo.ValidityBonds}}</td>
+		<tr class="user_info">
+			<td>Money in Validity Bonds (DAI)</td>
+			<td class="right" title="Sum of all funds frozen in Validity Bonds for all Markets created by the User">{{.UserInfo.ValidityBonds}}</td>
 		</tr>
-		<tr>
-			<td>Total Deposited</td>
-			<td>{{.UserInfo.TotalDeposited}}</td>
+		<tr class="user_info">
+			<td>Total Deposited (DAI)</td>
+			<td class="right">{{.UserInfo.TotalDeposited}}</td>
 		</tr>
-		<tr>
-			<td>Total Withdrawn</td>
-			<td>{{.UserInfo.TotalWithdrawn}}</td>
+		<tr class="user_info">
+			<td>Total Withdrawn (DAI)</td>
+			<td class="right">{{.UserInfo.TotalWithdrawn}}</td>
 		</tr>
-		<tr>
+		<tr class="user_info">
 			<td>Trade Frequencey Rank</td>
-			<td>Top {{.UserInfo.TopTrades}}% of all users</td>
+			<td class="right">Top {{.UserInfo.TopTrades}}% of all users</td>
 		</tr>
-		<tr>
+		<tr class="user_info">
 			<td>Profitability Rank</td>
-			<td>Top {{.UserInfo.TopProfit}}% of all users</td>
+			<td class="right">Top {{.UserInfo.TopProfit}}% of all users</td>
 		</tr>
-		<tr>
+		<tr class="user_info">
 			<td>User funds</td>
 			<td>
 				<table border=1>
@@ -193,11 +193,11 @@
 				</table>
 			</td>
 		</tr>
-		<tr>
+		<tr class="user_info">
 			<td>User registered</td>
 			<td><span id="reg_date"></span></td>
 		</tr>
-		<tr>
+		<tr class="user_info">
 			<td>Registration Block Number</td>
 			<td><a href="/block/{{.UserInfo.BlockNum}}">{{.UserInfo.BlockNum}}</a></td>
 		</tr>
@@ -214,17 +214,17 @@
 <span class="user_info_generic">Account's Open Positions:</span><br/><br/>
 <div id="open_positions_chart"></div>
 <div id="open_pos_info" class="user_info_generic" style="display: none;">
-	Open Position Info:
-	<table>
-		<tr>
+	<h3>Open Position Info:</h3>
+	<table class="open_pos_info">
+		<tr class="open_pos_info">
 			<td>Funds Frozen</td>
 			<td><span id="f1_fld_funds_frozen"></span></td>
 		</tr>
-		<tr>
+		<tr class="open_pos_info">
 			<td>Volume </td>
 			<td><span id="f1_fld_net_position"></span></td>
 		</tr>
-		<tr>
+		<tr class="open_pos_info">
 			<td>Market Address</td>
 			<td>
 				<a href="" id="f1_market_href">
@@ -232,19 +232,19 @@
 				</a>
 			</td>
 		</tr>
-		<tr>
+		<tr class="open_pos_info">
 			<td>Outcome</td>
 			<td><span id="f1_fld_outcome"></span></td>
 		</tr>
-		<tr>
+		<tr class="open_pos_info">
 			<td>Market Description</td>
 			<td><span id="f1_fld_mkt_descr"></span></td>
 		</tr>
-		<tr>
+		<tr class="open_pos_info">
 			<td>Date:</td>
 			<td><span id="f1_fld_date"></span></td>
 		</tr>
-		<tr>
+		<tr class="open_pos_info">
 			<td>Counterparty</td>
 			<td>
 				<a href="" id="f1_counterparty_href">
@@ -252,7 +252,7 @@
 				</a>
 			</td>
 		</tr>
-		<tr>
+		<tr class="open_pos_info">
 			<td>Order Hash</td>
 			<td>
 				<a href="" id="f1_order_hash_href">
@@ -260,7 +260,7 @@
 				</a>
 			</td>
 		</tr>
-		<tr>
+		<tr class="open_pos_info">
 			<td>Block number</td>
 			<td><span id="f1_fld_block_num"></span></td>
 		</tr>
@@ -270,17 +270,17 @@
 <div class="user_info_generic">User Profit/Loss history:</span><br/><br/>
 <div id="profit_loss_chart"></div>
 <div id="order_info" style="display: none;">
-	Order details:
-	<table>
-		<tr>
+	<h3>Order details:</h3>
+	<table class="profit_loss_order_detail">
+		<tr class="profit_loss_order_detail">
 			<td>Profit/Loss in this trade</td>
 			<td><span id="f2_fld_profit_loss"></span></td>
 		</tr>
-		<tr>
+		<tr class="profit_loss_order_detail">
 			<td>Accumulated Profit/Loss</td>
 			<td><span id="f2_fld_accum_pl"></span></td>
 		</tr>
-		<tr>
+		<tr class="profit_loss_order_detail">
 			<td>Market Address</td>
 			<td>
 				<a href="" id="f2_market_href">
@@ -288,19 +288,19 @@
 				</a>
 			</td>
 		</tr>
-		<tr>
+		<tr class="profit_loss_order_detail">
 			<td>Outcome</td>
 			<td><span id="f2_fld_outcome"></span></td>
 		</tr>
-		<tr>
+		<tr class="profit_loss_order_detail">
 			<td>Market Description</td>
 			<td><span id="f2_fld_mkt_descr"></span></td>
 		</tr>
-		<tr>
+		<tr class="profit_loss_order_detail">
 			<td>Date:</td>
 			<td><span id="f2_fld_date"></span></td>
 		</tr>
-		<tr>
+		<tr class="profit_loss_order_detail">
 			<td>Counterparty</td>
 			<td>
 				<a href="" id="f2_counterparty_href">
@@ -308,7 +308,7 @@
 				</a>
 			</td>
 		</tr>
-		<tr>
+		<tr class="profit_loss_order_detail">
 			<td>Order hash</td>
 			<td>
 				<a href="" id="f2_order_hash_href">
@@ -316,19 +316,20 @@
 				</a>
 			</td>
 		</tr>
-		<tr>
+		<tr class="profit_loss_order_detail">
 			<td>Block number</td>
 			<td><span id="f2_fld_block_num"></span></td>
 		</tr>
 	</table>
 </div>
+<br/><br/>
 <h3>User's participation in Reporting</h3>
 <div id="user_reporting">
 	{{template "user_reports" .UserReports}}
 </div>
 	<nav id="market_trades_nav">
 		<ul>
-			<li style="float: right">
+			<li style="float: left">
 				<a class="btn_link" href="/fullreports/{{.UserInfo.EOAAddr}}">All Reports</a>
 				<span></span><span></span><span></span><span></span>
 			</li>

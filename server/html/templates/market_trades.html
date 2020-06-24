@@ -1,12 +1,12 @@
 {{define "market_trades"}}
 <table class="market_trades">
-	<tr>
-		<td class="mkt_trade_hdr" style="text-align: center">Date</td>
-		<td class="mkt_trade_hdr" style="text-align: center">Creator</td>
-		<td class="mkt_trade_hdr" style="text-align: center">Filler</td>
-		<td class="mkt_trade_hdr" style="text-align: center">Price</td>
-		<td class="mkt_trade_hdr" style="text-align: center">Amount</td>
-		<td class="mkt_trade_hdr" style="text-align: center">Outcome</td>
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Date</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Creator</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Filler</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Price</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Amount</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Outcome</th>
 	</tr>
 		{{- range $i, $trade := .}}
 			{{template "mkt_trade" $trade}}

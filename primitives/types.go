@@ -421,7 +421,7 @@ type OrderInfo struct {		// this is a full order information, to show in dedicat
 	OrderHashSh			string
 	OrderHash			string
 	OType				string
-	CreatorrWalletAddr	string
+	CreatorWalletAddr	string
 	CreatorWalletAddrSh	string	// short version of the addr
 	CreatorEOAAddr		string
 	CreatorEOAAddrSh	string	// short version of the addr
@@ -493,8 +493,10 @@ type DaiB struct {
 }
 type DaiOp struct {
 	BlockNum			int64
-	Deposit				float64
-	Withdrawal			float64
+	Deposit				string
+	Withdrawal			string
+	FromAddr			string
+	ToAddr				string
 }
 type BlockCash struct {
 	BlockNum			int64

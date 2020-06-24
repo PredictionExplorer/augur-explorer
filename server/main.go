@@ -109,6 +109,7 @@ func main() {
 	r.GET("/index.htm", main_page)
 	r.GET("/INDEX.HTM", main_page)
 
+	// All the other dynamic HTML pages
 	r.GET("/markets.html",markets)
 	r.GET("/statistics.html",statistics)
 	r.GET("/categories.html",categories)

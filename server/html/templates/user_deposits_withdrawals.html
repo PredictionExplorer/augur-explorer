@@ -7,10 +7,15 @@
 	<h3 class="page_title">Deposits/Withdrawals for {{.UserInfo.EOAAddr}}</h3>
 <table>
 	<tr>
+		<td>User's Real Address (EOA)</td>
+		<td>{{.UserInfo.EOAAddr}}</td>
+	</tr>
+	<tr>
 		<td>Wallet Contract:</td>
 		<td>{{.UserInfo.WalletAddr}}</td>
 	</tr>
 </table>
+<br/><br/>
 {{template "deposits_withdrawals_list" .Operations}}
 <br/><br/><br/>
 <nav>

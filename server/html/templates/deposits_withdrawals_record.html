@@ -1,11 +1,17 @@
 {{define "deposits_withdrawals_record"}}
 <tr class="deposits_withdrawals_record">
 	<td class="deposits_withdrawal_field">{{.BlockNum}}</td>
+	<td class="deposits_withdrawal_field">
+		<a class="addr "href="/search?q={{.FromAddr}}">{{.FromAddr}}</a>
+	</td>
 	<td class="deposits_withdrawal_field" style="text-align: right">
 			{{.Deposit}}
 	</td>
 	<td class="deposits_withdrawal_field" style="text-align: right">
 			{{.Withdrawal}}
+	</td>
+	<td class="deposits_withdrawal_field">
+		<a class="addr" href="/search?q={{.ToAddr}}">{{.ToAddr}}</a>
 	</td>
 </tr>
 {{end}}
