@@ -12,39 +12,48 @@
 	var cash_flow_data = {{.CashFlowData}}
 </script>
 <h3 class="page_title">Statistics</h3>
+<h3 style="font-color: red">Up-to date Augur Platform statistics</h3>
 <div class="statistics">
-	<h4 style="font-color: red">Up-to date Augur Platform statistics</h4>
-	<table>
-	<tr>
+	<table class="statistics">
+	<tr class="statistics">
 		<td>Markets to date:</td>
 		<td>{{.MainStats.MarketsCount}}</td>
 	</tr>
-	<tr>
+	<tr class="statistics">
 		<td>Currently active:</td>
 		<td>{{.MainStats.ActiveCount}}</td>
 	</tr>
-	<tr>
+	<tr class="statistics">
 		<td>Finalized markets:</td>
 		<td>{{.MainStats.FinalizedCount}}</td>
 	</tr>
-	<tr>
+	<tr class="statistics">
 		<td>Money currently at stake:</td>
 		<td>{{.MainStats.MoneyAtStake}}</td>
 	</tr>
-	<tr>
+	<tr class="statistics">
 		<td>Yes/No markets</td>
 		<td>{{.MainStats.YesNoCount}}</td>
 	</tr>
-	<tr>
+	<tr class="statistics">
 		<td>Categorical markets:</td>
 		<td>{{.MainStats.CategCount}}</td>
 	</tr>
-	<tr>
+	<tr class="statistics">
 		<td>Scalar markets:</td>
 		<td>{{.MainStats.ScalarCount}}</td>
 	</tr>
 	</table>
 </div>
+<br/>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="topusers.html">Top 100 Users</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
 <span class="cash_flow">Augur's Platform Cash Flow</span><br/><br/>
 <div id="cash_flow_chart"></div>
 <script>

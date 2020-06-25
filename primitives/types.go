@@ -410,6 +410,22 @@ type RankStats struct {
 	EoaAid				int64
 	TotalTrades			int64
 	ProfitLoss			float64
+	VolumeTraded		float64
+}
+type ProfitMaker struct {
+	Percentage			float64
+	ProfitLoss			float64
+	EOAAddr				string
+}
+type TradeMaker struct {
+	Percentage			float64
+	TotalTrades			int64
+	EOAAddr				string
+}
+type VolumeMaker struct {
+	Percentage			float64
+	Volume				float64
+	EOAAddr				string
 }
 type OrderInfo struct {		// this is a full order information, to show in dedicated webpage
 	MktAid				int64
@@ -493,6 +509,7 @@ type DaiB struct {
 }
 type DaiOp struct {
 	BlockNum			int64
+	Date				string
 	Deposit				string
 	Withdrawal			string
 	FromAddr			string

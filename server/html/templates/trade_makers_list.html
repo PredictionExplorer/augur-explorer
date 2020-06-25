@@ -1,0 +1,12 @@
+{{define "trade_makers_list"}}
+<table class="trade_makers">
+<tr class="trade_makers">
+	<th>Percentage</th>
+	<th>Address</th>
+	<th>Total Trades</th>
+</tr>
+{{- range .}}
+	{{template "trade_maker_record" .}}
+{{- end}}
+</table>
+{{end}}

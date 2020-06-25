@@ -26,7 +26,7 @@ type SQLStorage struct {
 	db					*sql.DB
 	db_logger			*log.Logger
 	Info				*log.Logger
-	mkt_order_id_ptr	*int64
+	mkt_order_id_ptr	*int64		// global var indicating we have an OrderEvent going on in event chain
 }
 func show_connect_error() {
 	fmt.Printf(`AugurExtractor: can't connect to PostgreSQL database.
@@ -531,16 +531,18 @@ func (ss *SQLStorage) Insert_market_created_evt(block_num p.BlockNumber,tx_id in
 		ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into Market table. Rows affeced = 0"))
 		os.Exit(1)
 	}
-	if len(outcomes) == 0 {
-		ss.Info.Printf("len(outcomes)=0\n")
-		if evt.MarketType == 0 {	// Yes / No
+	switch evt.MarketType {
+		case 0:
 			outcomes = "Invalid,No,Yes"
-		}
-		if evt.MarketType == 2 {	// Scalar
+		case 1:
+			outcomes = "Invalid," + outcomes	// Categorical
+		case 2:
 			outcomes = "Invalid,,Scalar"
-		}
+		default:
+			ss.Log_msg(
+				fmt.Sprintf("Invalid market type = % for market %v",evt.MarketType,evt.Market.String()),
+			)
 	}
-	ss.Info.Printf("init_market_outcome_volumes() outcomes=%v, mkt type = %v\n",outcomes,evt.MarketType)
 	ss.init_market_outcome_volumes(market_aid,outcomes)
 }
 func (ss *SQLStorage) init_market_outcome_volumes(market_aid int64,outcomes string) {
@@ -731,11 +733,19 @@ func (ss *SQLStorage) Insert_open_order(evt *zeroex.OrderEvent,eoa_addr string,o
 	// Insert an open order, this order needs to be Filled by another market participant
 	// It also can be canceled by its creator (with another transaction)
 	order := evt.SignedOrder.Order
+	/*
+	DISABLED because we are using an Old version of 0x Mesh
 	ohash,err := order.ComputeOrderHash()
 	if err != nil {
+		ss.Log_msg(fmt.Sprintf("Chainid = %v\n",evt.SignedOrder.Order.ChainID))
 		ss.Log_msg(fmt.Sprintf("Error at computing 0x Mesh order: %v",err))
+		os.Exit(1)
 	}
 	order_id := ohash.String()
+	*/
+	var err error
+	ohash := evt.OrderHash.String()
+	order_id := ohash
 	evt_timestamp := evt.Timestamp.Unix()
 	expiration := order.ExpirationTimeSeconds.Int64()
 	// note: we don't have block number/tx hash for activity from 0x Mesh, so we insert with 0s
@@ -752,7 +762,6 @@ func (ss *SQLStorage) Insert_open_order(evt *zeroex.OrderEvent,eoa_addr string,o
 	_,err = ss.db.Exec(query,market_aid,eoa_aid,ospec.Outcome)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
-		os.Exit(1)
 	}
 	query = "INSERT INTO oorders(" +
 				"market_aid,otype,wallet_aid,eoa_aid,price,amount,outcome_idx," +
@@ -1215,7 +1224,7 @@ func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header)  bool {
 			block_hash,
 			ts,
 			parent_hash
-		) VALUES ($1,$2,$3,$4)`
+		) VALUES ($1,$2,TO_TIMESTAMP($3),$4)`
 
 	result,err := ss.db.Exec(query,
 			block_num,
@@ -1356,6 +1365,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 	defer rows.Close()
 	for rows.Next() {
 		var longdesc sql.NullString
+		var category sql.NullString
 		var status_code int
 		err=rows.Scan(
 					&rec.MktAddr,
@@ -1364,7 +1374,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 					&rec.EndDate,
 					&rec.Description,
 					&longdesc,
-					&rec.CategoryStr,
+					&category,
 					&rec.Outcomes,
 					&rec.MktType,
 					&rec.MktTypeStr,
@@ -1383,6 +1393,9 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 		rec.MktCreatorSh=p.Short_address(rec.MktCreator)
 		if longdesc.Valid {
 			rec.LongDesc = longdesc.String
+		}
+		if category.Valid {
+			rec.CategoryStr=category.String
 		}
 		rec.Status = get_market_status_str(p.MarketStatus(status_code))
 		records = append(records,rec)
@@ -1866,7 +1879,9 @@ func (ss *SQLStorage) Get_mkt_depth(mkt_addr string,outcome_idx int) *p.MarketDe
 func (ss *SQLStorage) fill_block_info(ui *p.UserInfo,user_aid int64) {
 
 	var query string
-	query = "SELECT address_id,addr,b.block_num,b.ts FROM address a,block b " +
+	query = "SELECT address_id,addr,b.block_num, " +
+			"FLOOR(EXTRACT(EPOCH FROM b.ts))::BIGINT as ts " +
+			"FROM address a,block b " +
 			"WHERE (a.address_id=$1) AND (a.block_num=b.block_num) "
 	row := ss.db.QueryRow(query,user_aid)
 	err := row.Scan(&ui.EOAAid,&ui.EOAAddr,&ui.BlockNum,&ui.TimeStamp)
@@ -2005,6 +2020,11 @@ func (ss *SQLStorage) Get_main_stats() p.MainStats {
 }
 func (ss *SQLStorage) is_dai_transfer_internal(evt *p.Transfer,ca *p.ContractAddresses) bool {
 
+	if (*ss.mkt_order_id_ptr) > 0 {
+		// OrderEvent is being processed, and this ERC20 event is most likely related to OrderFill
+		// therefore it is not a deposit/withdrawal, but a profit/loss calculation
+		return true
+	}
 	_,err:=ss.lookup_market(evt.From.String())
 	if err == nil {
 		return true	// its a Market in From
@@ -2469,10 +2489,10 @@ func (ss *SQLStorage) Locate_fill_event_order(evt *p.FillEvt) int64 {
 	}
 	return id
 }
-func (ss *SQLStorage) get_ranking_data_for_all_users() []p.RankStats {
+func (ss *SQLStorage) Get_ranking_data_for_all_users() []p.RankStats {
 
 	var query string
-	query = "SELECT eoa_aid,total_trades,profit_loss FROM ustats"
+	query = "SELECT eoa_aid,total_trades,profit_loss,volume_traded FROM ustats"
 
 	rows,err := ss.db.Query(query)
 	if (err!=nil) {
@@ -2483,27 +2503,27 @@ func (ss *SQLStorage) get_ranking_data_for_all_users() []p.RankStats {
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.RankStats
-		err=rows.Scan(&rec.EoaAid,&rec.TotalTrades,&rec.ProfitLoss)
+		err=rows.Scan(&rec.EoaAid,&rec.TotalTrades,&rec.ProfitLoss,&rec.VolumeTraded)
 		records = append(records,rec)
 	}
 	return records
 }
-func (ss *SQLStorage) update_top_profit_rank(eoa_aid int64,value float64) int64 {
+func (ss *SQLStorage) Update_top_profit_rank(eoa_aid int64,value float64,profit float64) int64 {
 
 	var query string
-	query = "UPDATE uranks SET top_profit = $2 WHERE eoa_aid = $1"
-	res,err:=ss.db.Exec(query,eoa_aid,value)
+	query = "UPDATE uranks SET top_profit = $2,profit=$3 WHERE eoa_aid = $1"
+	res,err:=ss.db.Exec(query,eoa_aid,value,profit)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("update_top_profit_rank() failed: %v, q=%v",err,query))
 		os.Exit(1)
 	}
 	affected_rows,err:=res.RowsAffected()
 	if err!=nil {
-		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in update_top_profit(): %v",err))
+		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in update_top_profit_rank(): %v",err))
 	}
 	if affected_rows == 0 {
-		query = "INSERT INTO uranks(eoa_aid,top_profit) VALUES($1,$2)"
-		_,err:=ss.db.Exec(query,eoa_aid,value)
+		query = "INSERT INTO uranks(eoa_aid,top_profit,profit) VALUES($1,$2,$3)"
+		_,err:=ss.db.Exec(query,eoa_aid,value,profit)
 		if (err!=nil) {
 			ss.Log_msg(fmt.Sprintf("update_top_profit_rank() failed: %v, q=%v",err,query))
 		}
@@ -2511,22 +2531,22 @@ func (ss *SQLStorage) update_top_profit_rank(eoa_aid int64,value float64) int64 
 	}
 	return affected_rows
 }
-func (ss *SQLStorage) update_top_total_trades_rank(eoa_aid int64,value float64) int64 {
+func (ss *SQLStorage) Update_top_total_trades_rank(eoa_aid int64,value float64,total_trades int64) int64 {
 
 	var query string
-	query = "UPDATE uranks SET top_trades = $2 WHERE eoa_aid = $1"
-	res,err:=ss.db.Exec(query,eoa_aid,value)
+	query = "UPDATE uranks SET top_trades = $2,total_trades=$3 WHERE eoa_aid = $1"
+	res,err:=ss.db.Exec(query,eoa_aid,value,total_trades)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("update_top_total_trades_rank() failed: %v, q=%v",err,query))
 		os.Exit(1)
 	}
 	affected_rows,err:=res.RowsAffected()
 	if err!=nil {
-		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in update_top_tra(): %v",err))
+		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in update_top_total_trades_rank(): %v",err))
 	}
 	if affected_rows == 0 {
-		query = "INSERT INTO uranks(eoa_aid,top_trades) VALUES($1,$2)"
-		_,err:=ss.db.Exec(query,eoa_aid,value)
+		query = "INSERT INTO uranks(eoa_aid,top_trades,total_trades) VALUES($1,$2,$3)"
+		_,err:=ss.db.Exec(query,eoa_aid,value,total_trades)
 		if (err!=nil) {
 			ss.Log_msg(fmt.Sprintf("update_top_total_trades_rank() failed: value=%v, err: %v, q=%v",value,err,query))
 			os.Exit(1)
@@ -2534,6 +2554,93 @@ func (ss *SQLStorage) update_top_total_trades_rank(eoa_aid int64,value float64) 
 
 	}
 	return affected_rows
+}
+func (ss *SQLStorage) Update_top_volume_rank(eoa_aid int64,value float64,volume float64) int64 {
+
+	var query string
+	query = "UPDATE uranks SET top_volume = $2,volume=$3 WHERE eoa_aid = $1"
+	res,err:=ss.db.Exec(query,eoa_aid,value,volume)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("update_top_volume_rank() failed: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	affected_rows,err:=res.RowsAffected()
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in update_top_volume_rank(): %v",err))
+	}
+	if affected_rows == 0 {
+		query = "INSERT INTO uranks(eoa_aid,top_volume,volume) VALUES($1,$2,$3)"
+		_,err:=ss.db.Exec(query,eoa_aid,value,volume)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("update_top_volume_rank() failed: value=%v, err: %v, q=%v",value,err,query))
+			os.Exit(1)
+		}
+
+	}
+	return affected_rows
+}
+func (ss *SQLStorage) Get_top_profit_makers() []p.ProfitMaker {
+
+	var query string
+	query = "SELECT a.addr,r.top_profit,r.profit FROM uranks AS r " +
+			"LEFT JOIN address AS a ON r.eoa_aid = a.address_id " +
+			"ORDER BY r.top_profit ASC,r.profit DESC LIMIT 100"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.ProfitMaker,0,101)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.ProfitMaker
+		err=rows.Scan(&rec.EOAAddr,&rec.Percentage,&rec.ProfitLoss)
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_top_trade_makers() []p.TradeMaker {
+
+	var query string
+	query = "SELECT a.addr,r.top_trades,r.total_trades FROM uranks AS r " +
+			"LEFT JOIN address AS a ON r.eoa_aid = a.address_id " +
+			"ORDER BY r.top_trades ASC,r.total_trades DESC LIMIT 100"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.TradeMaker,0,101)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.TradeMaker
+		err=rows.Scan(&rec.EOAAddr,&rec.Percentage,&rec.TotalTrades)
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_top_volume_makers() []p.VolumeMaker {
+
+	var query string
+	query = "SELECT a.addr,r.top_volume,r.volume FROM uranks AS r " +
+			"LEFT JOIN address AS a ON r.eoa_aid = a.address_id " +
+			"ORDER BY r.top_volume ASC,r.volume DESC LIMIT 100"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.VolumeMaker,0,101)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.VolumeMaker
+		err=rows.Scan(&rec.EOAAddr,&rec.Percentage,&rec.Volume)
+		records = append(records,rec)
+	}
+	return records
 }
 func (ss *SQLStorage) Get_order_info(order_hash string) (p.OrderInfo,error) {
 
@@ -3204,18 +3311,20 @@ func (ss *SQLStorage) Get_deposits_withdrawals(wallet_aid int64) []p.DaiOp{
 	var query string
 	query = "SELECT " +
 				"db.block_num," +
+//				"FLOOR(EXTRACT(EPOCH FROM b.ts))::date," +
+				"b.ts::date, " +
 				"db.amount as amount_float," +
 				"round(db.amount,2)::text, " +
 				"fa.addr AS from_addr," +
 				"ta.addr AS to_addr, " +
 				"dt.from_aid, " +
 				"dt.to_aid " +
-			"FROM " +
-				"dai_bal AS db, dai_transf AS dt " +
+			"FROM dai_bal AS db " +
+				"JOIN dai_transf AS dt ON db.dai_transf_id=dt.id " +
+				"JOIN block AS b ON b.block_num = db.block_num " +
 				"LEFT JOIN address AS fa ON dt.from_aid=fa.address_id " +
 				"LEFT JOIN address AS ta ON dt.to_aid=ta.address_id " +
 			"WHERE " +
-				"db.dai_transf_id=dt.id AND " +
 				"db.aid = $1 AND " +
 				"db.amount != 0 AND " +
 				"db.internal = false " +
@@ -3236,7 +3345,8 @@ func (ss *SQLStorage) Get_deposits_withdrawals(wallet_aid int64) []p.DaiOp{
 		var amount_float float64
 		var from_aid int64
 		var to_aid int64
-		err=rows.Scan(&rec.BlockNum,&amount_float,&amount_str,&rec.FromAddr,&rec.ToAddr,&from_aid,&to_aid)
+		err=rows.Scan(&rec.BlockNum,&rec.Date,&amount_float,&amount_str,&rec.FromAddr,
+																&rec.ToAddr,&from_aid,&to_aid)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
@@ -3252,8 +3362,6 @@ func (ss *SQLStorage) Get_deposits_withdrawals(wallet_aid int64) []p.DaiOp{
 		if to_aid == wallet_aid {
 			rec.ToAddr = ""
 		}
-		ss.Info.Printf("adding deposit block_num=%v, amount=%v\n",
-							rec.BlockNum,amount_float)
 		records = append(records,rec)
 	}
 	return records

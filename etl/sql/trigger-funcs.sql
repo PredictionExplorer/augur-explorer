@@ -155,30 +155,37 @@ BEGIN
 
 	-- Update statistics for the Creator of the Order (Seller)
 	UPDATE trd_mkt_stats AS s
-			SET total_trades = (total_trades + 1)
+			SET total_trades = (total_trades + 1),
+				volume_traded = (volume_traded + NEW.amount_filled)
 			WHERE	s.eoa_aid = NEW.eoa_aid AND
 					s.market_aid = NEW.market_aid;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid,total_trades)
-				VALUES(NEW.eoa_aid,NEW.wallet_aid,NEW.market_aid,1);
+		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid,total_trades,volume_traded)
+				VALUES(NEW.eoa_aid,NEW.wallet_aid,NEW.market_aid,1,NEW.amount_filled);
 	END IF;
-	UPDATE ustats SET total_trades = (total_trades + 1) WHERE eoa_aid=NEW.eoa_aid;
+	UPDATE ustats
+		SET total_trades = (total_trades + 1),
+			volume_traded = (volume_traded + NEW.amount_filled)
+		WHERE eoa_aid=NEW.eoa_aid;
 
 	-- Update statistics for the Filler of the Order (Buyer)
 	UPDATE trd_mkt_stats AS s
-			SET total_trades = (total_trades + 1)
+			SET total_trades = (total_trades + 1),
+				volume_traded = (volume_traded + NEW.amount_filled)
 			WHERE	s.eoa_aid = NEW.eoa_fill_aid AND
 					s.market_aid = NEW.market_aid;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		RAISE NOTICE 'mkt_ord insert eoa_fill aid = % ',NEW.eoa_fill_aid;
-		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid,total_trades)
-				VALUES(NEW.eoa_fill_aid,NEW.wallet_fill_aid,NEW.market_aid,1);
+		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid,total_trades,volume_traded)
+				VALUES(NEW.eoa_fill_aid,NEW.wallet_fill_aid,NEW.market_aid,1,NEW.amount_filled);
 	END IF;
-	UPDATE ustats SET total_trades = (total_trades + 1) WHERE eoa_aid=NEW.eoa_fill_aid;
+	UPDATE ustats
+		SET total_trades = (total_trades + 1),
+			volume_traded = (volume_traded + 1)
+		WHERE eoa_aid=NEW.eoa_fill_aid;
 
 	-- Note: for Main statistics a trade between 2 users is counted as single trade (i.e its a +1)_
 	-- 			but from the point of the User we have +1 for Creator and +1 for Filler (so, its 2 trades)
@@ -201,7 +208,8 @@ BEGIN
 
 	-- Update statistics for the Creator of the Order (Seller)
 	UPDATE trd_mkt_stats AS s
-			SET total_trades = (total_trades - 1)
+			SET total_trades = (total_trades - 1),
+				volume_traded = (volume_traded - OLD.amount_filled)
 			WHERE	s.eoa_aid = OLD.eoa_aid AND
 					s.market_aid = OLD.market_aid;
 
@@ -213,7 +221,8 @@ BEGIN
 
 	-- Update statistics for the Filler of the Order (Buyer)
 	UPDATE trd_mkt_stats AS s
-			SET total_trades = (total_trades - 1)
+			SET total_trades = (total_trades - 1),
+				volume_traded = (volume_traded - OLD.amount_filled)
 			WHERE	s.eoa_aid = OLD.eoa_fill_aid AND
 					s.market_aid = OLD.market_aid;
 

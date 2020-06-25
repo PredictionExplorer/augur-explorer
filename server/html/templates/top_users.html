@@ -1,0 +1,34 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="res/main.css" rel="stylesheet">
+</head>
+<body>
+<h1 class="page_title" style="width: 100%; text-align: center">The Top 100 Users of Augur Platform</h1>
+<table>
+	<tr>
+		<td style="text-align: center">
+			<h3>Top 100 Profit Makers</h3>
+			{{template "profit_makers_list" .ProfitMakers}}
+		</td>
+		<td style="text-align: center">
+			<h3>Top 100 Volume Makers </h3>
+			{{template "volume_makers_list" .VolumeMakers}}
+		</td>
+		<td style="text-align: center">
+			<h3>Top 100 Frequent Traders</h3>
+			{{template "trade_makers_list" .TradeMakers}}
+		</td>
+	</tr>
+</table>
+<br/><br/><br/>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

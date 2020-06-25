@@ -127,6 +127,7 @@ func main() {
 	r.GET("/umarkets/:addr",  user_markets)
 	r.GET("/udw/:addr",  user_deposits_withdrawals)
 	r.GET("/block/:block_num",  block_info)
+	r.GET("/topusers.html",top_users)
 
 	r.Static("/imgs", "./html/imgs")
 	r.Static("/res", "./html/res")			// resources (static)

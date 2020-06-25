@@ -2,7 +2,7 @@
 CREATE TABLE block (
 	block_num			BIGINT NOT NULL UNIQUE,
 	num_tx				BIGINT DEFAULT 0,
-	ts					BIGINT DEFAULT 0,
+	ts					TIMESTAMPTZ NOT NULL,
 	cash_flow			DECIMAL(64,18) DEFAULT 0.0,
 	block_hash			TEXT NOT NULL PRIMARY KEY,
 	parent_hash			TEXT NOT NULL
@@ -255,10 +255,11 @@ CREATE TABLE trd_mkt_stats (	-- trade statistics per User and per Market
 	market_aid			BIGINT NOT NULL,
 	total_trades		BIGINT DEFAULT 0,
 	total_reports		BIGINT DEFAULT 0,
-	profit_loss			DECIMAL(24,18) DEFAULT 0.0,
-	report_profits		DECIMAL(24,18) DEFAULT 0.0,
-	aff_profits			DECIMAL(24,18) DEFAULT 0.0,
-	frozen_funds		DECIMAL(24,18) DEFAULT 0.0
+	volume_traded		DECIMAL(32,18) DEFAULT 0.0,
+	profit_loss			DECIMAL(32,18) DEFAULT 0.0,
+	report_profits		DECIMAL(32,18) DEFAULT 0.0,
+	aff_profits			DECIMAL(32,18) DEFAULT 0.0,
+	frozen_funds		DECIMAL(32,18) DEFAULT 0.0
 );
 CREATE TABLE ustats (	-- statistics per User account
 	eoa_aid				BIGINT PRIMARY KEY,		-- Externally Owned ACcount (EOA) address for this user
@@ -270,6 +271,7 @@ CREATE TABLE ustats (	-- statistics per User account
 	deposit_reqs		BIGINT DEFAULT 0,
 	total_reports		BIGINT DEFAULT 0,
 	total_designated	BIGINT DEFAULT 0,			-- total reports submitted as designated reporter
+	volume_traded		DECIMAL(32,18) DEFAULT 0.0,
 	profit_loss			DECIMAL(32,18) DEFAULT 0.0,
 	report_profits		DECIMAL(32,18) DEFAULT 0.0,
 	aff_profits			DECIMAL(32,18) DEFAULT 0.0,	-- affiliate commissions earned
@@ -300,8 +302,12 @@ CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 );
 CREATE table uranks (   -- User Rankings (how this user ranks against each other, ex: Top 13% in profit made
 	eoa_aid             BIGINT PRIMARY KEY,
+	total_trades		BIGINT DEFAULT 0,
 	top_profit          DECIMAL(5,2) DEFAULT 100.0,    -- position of the user in profits accumulated over lifetime
-	top_trades          DECIMAL(5,2) DEFAULT 100.0    -- position of the user in number of accumulated trades
+	top_trades          DECIMAL(5,2) DEFAULT 100.0,    -- position of the user in number of accumulated trades
+	top_volume			DECIMAL(5,2) DEFAULT 100.0,	   -- position of the user in accumulated trading volume
+	profit				DECIMAL(32,18) DEFAULT 0.0,
+	volume				DECIMAL(32,18) DEFAULT 0.0
 );
 CREATE table contract_addresses ( -- Addresses of contracts that compose Augur Platform
 	dai_cash			TEXT DEFAULT '',

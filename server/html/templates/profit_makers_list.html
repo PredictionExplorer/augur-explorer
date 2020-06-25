@@ -1,0 +1,12 @@
+{{define "profit_makers_list"}}
+<table class="profit_makers">
+<tr class="profit_makers">
+	<th>Percentage</th>
+	<th>Address</th>
+	<th>Profit</th>
+</tr>
+{{- range .}}
+	{{template "profit_maker_record" .}}
+{{- end}}
+</table>
+{{end}}

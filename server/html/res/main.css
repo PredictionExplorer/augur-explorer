@@ -320,3 +320,31 @@ table.user_reports {
 tr.user_reports {
 	background-color: #161616;
 }
+table.volume_makers {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.volume_makers {
+	background-color: #161616;
+}
+table.profit_makers {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.profit_makers {
+	background-color: #161616;
+}
+table.trade_makers {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.trade_makers {
+	background-color: #161616;
+}
+table.statistics {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.statistics {
+	background-color: #161616;
+}

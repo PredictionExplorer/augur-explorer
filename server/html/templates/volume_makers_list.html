@@ -1,0 +1,12 @@
+{{define "volume_makers_list"}}
+<table class="volume_makers">
+<tr class="volume_makers">
+	<th>Percentage</th>
+	<th>Address</th>
+	<th>Volume</th>
+</tr>
+{{- range .}}
+	{{template "volume_maker_record" .}}
+{{- end}}
+</table>
+{{end}}

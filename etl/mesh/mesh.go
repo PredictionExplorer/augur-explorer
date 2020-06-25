@@ -90,10 +90,6 @@ func main() {
 				fmt.Printf("Order event arrived in state=%+v:\n",orderEvent.EndState)
 				fmt.Printf("%+v\n",orderEvent)
 				fmt.Println()
-	/*			log.WithFields(log.Fields{
-					"event": orderEvent,
-				}).Printf("received order event")
-	*/
 				adata,err := zerox_contract.DecodeAssetData(copts,orderEvent.SignedOrder.Order.MakerAssetData)
 				if err!=nil {
 					fmt.Printf("couldn't decode asset data: %v\n",err)
@@ -160,17 +156,3 @@ func main() {
 		}
 	}
 }
-/*
-Pending for deletion
-				fmt.Printf("getting storage of ctrct %v\n",orderEvent.SignedOrder.Order.MakerAddress.String())
-				for i:=0 ; i< 6 ; i++  {
-					num:=big.NewInt(int64(i))
-					key:=common.BigToHash(num)
-					var1,err := ethclient.StorageAt(ctx,orderEvent.SignedOrder.Order.MakerAddress,key,nil)
-					if err != nil {
-						fmt.Printf("getting storage %v: %v\n",i,err)
-					} else {
-						fmt.Printf("storage value key=%v is: %v\n",i,hex.EncodeToString(var1))
-					}
-				}
-*/

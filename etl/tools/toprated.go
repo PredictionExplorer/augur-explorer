@@ -1,14 +1,21 @@
 package main
 
 import (
+	"os"
+	"log"
 	"sort"
-	"fmt"
+	//"fmt"
+
+	. "augur-extractor/dbs"
+	. "augur-extractor/primitives"
 )
 var (
 	storage *SQLStorage
 
 	fill_order_id int64 = 0			// during event processing, holds id of record in mktord from Fill evt
 	market_order_id int64 = 0
+
+	Info    *log.Logger
 )
 func update_profit_ranks(records []RankStats) {
 
@@ -16,8 +23,8 @@ func update_profit_ranks(records []RankStats) {
 	for i:=0 ; i < num_recs  ; i++ {
 		record := &records[i]
 		rank_value := (float64(i)/float64(num_recs))*100.0 + 1.0
-		fmt.Printf("rank for %v is %v\n",record.EoaAid,rank_value)
-		storage.update_top_profit_rank(record.EoaAid,rank_value)
+//		fmt.Printf("rank for Profit of %v is %v pl=%v\n",record.EoaAid,rank_value,record.ProfitLoss)
+		storage.Update_top_profit_rank(record.EoaAid,rank_value,record.ProfitLoss)
 	}
 }
 func update_trade_ranks(records []RankStats) {
@@ -26,8 +33,18 @@ func update_trade_ranks(records []RankStats) {
 	for i:=0 ; i < num_recs  ; i++ {
 		record := &records[i]
 		rank_value := (float64(i)/float64(num_recs))*100.0 + 1.0
-		fmt.Printf("rank for %v is %v\n",record.EoaAid,rank_value)
-		storage.update_top_total_trades_rank(record.EoaAid,rank_value)
+//		fmt.Printf("rank for TotalTrades of %v is %v trades=%v\n",record.EoaAid,rank_value,record.TotalTrades)
+		storage.Update_top_total_trades_rank(record.EoaAid,rank_value,record.TotalTrades)
+	}
+}
+func update_volume_ranks(records []RankStats) {
+
+	num_recs := len(records)
+	for i:=0 ; i < num_recs  ; i++ {
+		record := &records[i]
+		rank_value := (float64(i)/float64(num_recs))*100.0 + 1.0
+//		fmt.Printf("rank for Volume of %v is %v volume=%v\n",record.EoaAid,rank_value,record.VolumeTraded)
+		storage.Update_top_volume_rank(record.EoaAid,rank_value,record.VolumeTraded)
 	}
 }
 func main() {
@@ -40,14 +57,22 @@ func main() {
 	//		ToDo: possibly insert a sleep() with millisecond timeout between updates to avoid
 	//				server overload
 
-	storage = connect_to_storage()
-	records := storage.get_ranking_data_for_all_users()
+	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
+	storage = Connect_to_storage(&market_order_id,Info)
+	records := storage.Get_ranking_data_for_all_users()
+
 	sort.SliceStable(records,func(i,j int) bool {
-		return records[i].TotalTrades < records[i].TotalTrades
+		return records[j].TotalTrades < records[i].TotalTrades
 	})
 	update_trade_ranks(records)
+
 	sort.SliceStable(records,func(i,j int) bool {
-		return records[i].ProfitLoss < records[i].ProfitLoss
+		return records[j].ProfitLoss < records[i].ProfitLoss
 	})
 	update_profit_ranks(records)
+
+	sort.SliceStable(records,func(i,j int) bool {
+		return records[j].VolumeTraded < records[i].VolumeTraded
+	})
+	update_volume_ranks(records)
 }

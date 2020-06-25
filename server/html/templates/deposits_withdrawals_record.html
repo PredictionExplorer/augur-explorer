@@ -1,5 +1,6 @@
 {{define "deposits_withdrawals_record"}}
 <tr class="deposits_withdrawals_record">
+	<td class="deposits_withdrawal_field">{{.Date}}</td>
 	<td class="deposits_withdrawal_field">{{.BlockNum}}</td>
 	<td class="deposits_withdrawal_field">
 		<a class="addr "href="/search?q={{.FromAddr}}">{{.FromAddr}}</a>

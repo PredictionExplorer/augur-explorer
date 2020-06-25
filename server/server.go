@@ -110,8 +110,6 @@ func build_javascript_data_obj(mdepth *MarketDepth) (template.JS,template.JS) {
 	asks_str = asks_str + "]"
 	bids_str = bids_str + "]"
 	_ = last_price
-	fmt.Printf("asks JS string: %v\n",asks_str)
-	fmt.Printf("bids JS string: %v\n",bids_str)
 	return template.JS(bids_str),template.JS(asks_str)
 }
 func build_javascript_price_history(orders *[]MarketOrder) template.JS {
@@ -135,7 +133,6 @@ func build_javascript_price_history(orders *[]MarketOrder) template.JS {
 					fmt.Sprintf("%v,%v,%v,\"%v\"",e.MktAid,e.Price,e.Volume,e.Date) +
 				")}" +
 				"}"
-		fmt.Printf("\nentry = %v\n",entry)
 		data_str= data_str + entry
 	}
 	data_str = data_str + "]"
@@ -165,11 +162,9 @@ func build_javascript_profit_loss_history(entries *[]PLEntry) template.JS {
 								e.Date,e.CounterPAddr,e.CounterPAddrSh,e.OrderHash,e.BlockNum) +
 				")}" +
 				"}"
-		fmt.Printf("\nentry = %v\n",entry)
 		data_str= data_str + entry
 	}
 	data_str = data_str + "]"
-	fmt.Printf("JS profit loss hist string: %v\n",data_str)
 	return template.JS(data_str)
 }
 func build_javascript_open_positions(entries *[]PLEntry) template.JS {
@@ -195,11 +190,9 @@ func build_javascript_open_positions(entries *[]PLEntry) template.JS {
 							descr_escaped,e.Date,e.CounterPAddr,e.CounterPAddrSh,e.OrderHash,e.BlockNum) +
 				")}" +
 				"}"
-		fmt.Printf("\nentry = %v\n",entry)
 		data_str= data_str + entry
 	}
 	data_str = data_str + "]"
-	fmt.Printf("JS profit loss hist string: %v\n",data_str)
 	return template.JS(data_str)
 }
 func build_javascript_cash_flow_data(entries *[]BlockCash) template.JS {
@@ -217,11 +210,9 @@ func build_javascript_cash_flow_data(entries *[]BlockCash) template.JS {
 				"block_num: " + fmt.Sprintf("%v",e.BlockNum) + "," +
 				"cash: " + fmt.Sprintf("%v",e.CashFlow) + "" +
 				"}"
-		fmt.Printf("\nentry = %v\n",entry)
 		data_str= data_str + entry
 	}
 	data_str = data_str + "]"
-	fmt.Printf("JS cash_flow string: %v\n",data_str)
 	return template.JS(data_str)
 }
 func main_page(c *gin.Context) {
@@ -237,7 +228,6 @@ func markets(c *gin.Context) {
 	off_str := c.Query("off")
 	var off int = 0
 	var err error
-	fmt.Printf("off_str = %v\n",off_str)
 	if len(off_str) > 0 {
 		off, err = strconv.Atoi(off_str)
 		if err != nil {
@@ -248,7 +238,6 @@ func markets(c *gin.Context) {
 			return
 		}
 	}
-	fmt.Printf("off = %v\n",off)
 	markets := augur_srv.storage.Get_active_market_list(off,DEFAULT_MARKET_ROWS_LIMIT)
 	c.HTML(http.StatusOK, "markets.html", gin.H{
 			"title": "Augur Markets",
@@ -294,8 +283,6 @@ func complete_and_output_market_info(c *gin.Context,minfo InfoMarket) {
 			return
 		}
 	}
-	fmt.Printf("markte info addr=%v, full var = %+v\n",minfo.MktAddr,minfo)
-	Info.Printf("markte info addr=%v, full var = %+v\n",minfo.MktAddr,minfo)
 	trades := augur_srv.storage.Get_mkt_trades(minfo.MktAddr,limit)
 	outcome_vols,_ := augur_srv.storage.Get_outcome_volumes(minfo.MktAddr)
 	c.HTML(http.StatusOK, "market_info.html", gin.H{
@@ -310,14 +297,12 @@ func market_info(c *gin.Context) {
 	market := c.Param("market")
 
 	market_info,_ := augur_srv.storage.Get_market_info(market,0,false)
-	fmt.Printf("market info = %+v",market_info)
 	complete_and_output_market_info(c,market_info)
 }
 func full_trade_list(c *gin.Context) {
 
 	market := c.Param("market")
 
-	fmt.Printf("getting trades for market %vi for a full trade listing",market)
 	market_info,_ := augur_srv.storage.Get_market_info(market,0,false)
 	trades := augur_srv.storage.Get_mkt_trades(market,0)
 	c.HTML(http.StatusOK, "full_trade_list.html", gin.H{
@@ -360,8 +345,6 @@ func market_depth(c *gin.Context) {
 	}
 	mdepth := augur_srv.storage.Get_mkt_depth(market,outcome)
 	js_bid_data,js_ask_data := build_javascript_data_obj(mdepth)
-	fmt.Printf("js ask_data = %v\n",js_ask_data)
-	fmt.Printf("js bid_data = %v\n",js_bid_data)
 	c.HTML(http.StatusOK, "market_depth.html", gin.H{
 			"title": "Market Depth",
 			"Market": market_info,
@@ -414,12 +397,9 @@ func market_price_history(c *gin.Context) {
 }
 func serve_user_info_page(c *gin.Context,addr string) {
 
-	fmt.Printf("serving user info for addr %v\n",addr)
 	eoa_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(addr)
-	fmt.Printf("eoa=%v, err=%+v\n",eoa_aid,err)
 	if err == nil {
 		user_info,err := augur_srv.storage.Get_user_info(eoa_aid)
-		fmt.Printf("iuser info =%+v, err=%+v\n",user_info,err)
 		if err == nil {
 			pl_entries := augur_srv.storage.Get_profit_loss(eoa_aid)
 			open_pos_entries := augur_srv.storage.Get_open_positions(eoa_aid)
@@ -489,16 +469,13 @@ func get_token_balance(token_type int,addr *common.Address) float64 {
 		default:
 			Fatalf("get_token_balance(): undefined behavior")
 	}
-	fmt.Printf("token.BalanceOf() returns: %v\n",int_balance.String())
 	if err == nil {
 		f_balance :=big.NewFloat(0.0)
 		f_balance.SetInt(int_balance)
 		divisor:=big.NewFloat(0.0)
 		divisor.SetString("1000000000000000000.0")
 		div_result:=new(big.Float).Quo(f_balance,divisor)
-		fmt.Printf("div_result=%v\n",div_result.String())
 		big_float_balance.Set(div_result)
-		fmt.Printf("big_float_balance=%v\n",big_float_balance)
 	} else {
 		fmt.Printf("Error retrieving token (type=%v) balance for addr %v: %v\n",
 							token_type,addr.String(),err)
@@ -511,7 +488,6 @@ func get_eth_balance(addr *common.Address) float64 {
 	var float_eth_balance float64 = 0.0
 	big_eth_balance,err := rpcclient.BalanceAt(ctx,*addr,nil)
 	if err == nil {
-		fmt.Printf("eth_balance big int: %v\n",big_eth_balance.String())
 		big_float_eth_balance := big.NewFloat(0.0)
 		big_float_eth_balance.SetInt(big_eth_balance)
 		divisor:=big.NewFloat(0.0)
@@ -529,13 +505,11 @@ func serve_money(c *gin.Context,addr common.Address) {
 	if err == nil {
 		wallet_aid,_ = augur_srv.storage.Lookup_wallet_aid(eoa_aid)
 	} else {
-		fmt.Printf("wallet_aid lookup failed for eoa_aid=%v\n",eoa_aid)
 		c.JSON(200,gin.H{
 			"eoa_eth":0,"wallet_eth":0,"eoa_dai":0,"wallet_dai":0,"eoa_rep":0,"wallet_rep":0,
 		})
 		return
 	}
-	fmt.Printf("money for addr %v, eoa_aid=%v\n",addr.String(),eoa_aid)
 	eoa_dai_balance := get_token_balance(0,&addr)
 	eoa_rep_balance := get_token_balance(1,&addr)
 	eoa_eth_balance := get_eth_balance(&addr)
@@ -544,12 +518,10 @@ func serve_money(c *gin.Context,addr common.Address) {
 	var wallet_rep_balance float64 = 0.0
 	var wallet_eth_balance float64 = 0.0
 
-	fmt.Printf("wallet_aid=%v\n",wallet_aid)
 	if wallet_aid != 0 {
 		wallet_addr,err := augur_srv.storage.Lookup_address(wallet_aid)
 		if err == nil {
 			waddr := common.HexToAddress(wallet_addr)
-			fmt.Printf("wallet addr = %v\n",wallet_addr)
 			wallet_dai_balance = get_token_balance(0,&waddr)
 			wallet_rep_balance = get_token_balance(1,&waddr)
 			wallet_eth_balance = get_eth_balance(&waddr)
@@ -570,7 +542,6 @@ func serve_money(c *gin.Context,addr common.Address) {
 func search(c *gin.Context) {
 
 	keyword := c.Query("q")
-	fmt.Printf("Searching for %v\n",keyword)
 	if (len(keyword) == 40) || (len(keyword) == 42) { // address
 		if len(keyword) == 42 {	// strip 0x prefix
 			keyword = keyword[2:]
@@ -581,7 +552,6 @@ func search(c *gin.Context) {
 			addr_str := addr.String()
 			aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(addr_str)
 			if err==nil {
-				fmt.Printf("checking address in market info: %v\n",addr_str)
 				market_info,err := augur_srv.storage.Get_market_info(addr_str,0,false)
 				if err == nil {
 					complete_and_output_market_info(c,market_info)
@@ -621,7 +591,6 @@ func search(c *gin.Context) {
 			hash_str := hash.String()
 			serve_tx_info_page(c,hash_str)
 		} else {
-			fmt.Printf("hash = %v, err on decoding: %v",keyword,err)
 			c.HTML(http.StatusBadRequest, "error.html", gin.H{
 				"title": "Augur Markets: Error",
 				"ErrDescr": "Invalid HEX string in hash parameter",
@@ -734,7 +703,6 @@ func full_reports(c *gin.Context) {
 		addr := common.BytesToAddress(addr_bytes)
 		addr_str := addr.String()
 		aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(addr_str)
-		fmt.Printf("addr=%v, aid=%v\n",addr_str,aid)
 		if err==nil {
 			user_info,err := augur_srv.storage.Get_user_info(aid)
 			if err!= nil {
@@ -781,7 +749,6 @@ func user_markets(c *gin.Context) {
 		addr := common.BytesToAddress(addr_bytes)
 		addr_str := addr.String()
 		aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(addr_str)
-		fmt.Printf("addr=%v, aid=%v\n",addr_str,aid)
 		if err==nil {
 			user_info,err := augur_srv.storage.Get_user_info(aid)
 			if err!= nil {
@@ -880,8 +847,6 @@ func serve_block_info(p_block_num string,c *gin.Context) {
 		}
 	}
 	block_info,err := augur_srv.storage.Get_block_info(BlockNumber(block_num))
-	fmt.Printf("num tx = %v, num markets = %v num_addresses=%v\n",
-			len(block_info.Transactions),len(block_info.Markets),len(block_info.Addresses))
 	if err == nil {
 		c.HTML(http.StatusOK, "block_info.html", gin.H{
 			"title": fmt.Sprintf("Block Number %v",block_num),
@@ -893,4 +858,16 @@ func serve_block_info(p_block_num string,c *gin.Context) {
 			"ErrDescr": fmt.Sprintf("DB error: %v",err),
 		})
 	}
+}
+func top_users(c *gin.Context) {
+
+	top_profit_makers := augur_srv.storage.Get_top_profit_makers()
+	top_trade_makers := augur_srv.storage.Get_top_trade_makers()
+	top_volume_makers := augur_srv.storage.Get_top_volume_makers()
+	c.HTML(http.StatusOK, "top_users.html", gin.H{
+			"title": "Top 100 Users of Augur Markets",
+			"ProfitMakers" : top_profit_makers,
+			"TradeMakers" : top_trade_makers,
+			"VolumeMakers" : top_volume_makers,
+	})
 }
