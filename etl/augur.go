@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"math/big"
 	"context"
-	"time"
+//	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -73,6 +73,7 @@ func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) 
 		Fatalf("Couldn't initialize DAI Cash contract: %v\n",err)
 	}
 }
+/* DISCONTINUED, moved to another executable
 func update_dai_balances_backwards(last_block_num BlockNumber,aid int64,addr *common.Address) int {
 
 	var copts = new(bind.CallOpts)
@@ -158,6 +159,7 @@ func balance_updater() {
 		}
 	}
 }
+*/
 func build_list_of_inspected_events() {
 
 	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)

@@ -211,7 +211,8 @@ func build_javascript_cash_flow_data(entries *[]BlockCash) template.JS {
 		var e = &(*entries)[i];
 		var entry string
 		entry = "{" +
-				"x:" + fmt.Sprintf("%v",i)  + "," +
+				//"x:" + fmt.Sprintf("%v",i)  + "," +
+				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.Ts)  + "," +
 				"y:"  + fmt.Sprintf("%v",e.CashFlow) + "," +
 				"block_num: " + fmt.Sprintf("%v",e.BlockNum) + "," +
 				"cash: " + fmt.Sprintf("%v",e.CashFlow) + "" +
@@ -231,10 +232,12 @@ func build_javascript_uniq_addrs(entries *[]UniqueAddrEntry) template.JS {
 		var e = &(*entries)[i];
 		var entry string
 		entry = "{" +
-				"x:" + fmt.Sprintf("%v",e.Day)  + "," +
-				"y:"  + fmt.Sprintf("%v",e.NumAddrs) + "," +
+//				"x:" + fmt.Sprintf("\"%v\"",e.Day)  + "," +
+				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.Ts)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.NumAddrsAccum) + "," +
 				"num_addrs: " + fmt.Sprintf("%v",e.NumAddrs) + "," +
-				"date_str: " + fmt.Sprintf("%v",e.Day) + "" +
+				"num_addrs_accum: " + fmt.Sprintf("%v",e.NumAddrsAccum) + "," +
+				"date_str: " + fmt.Sprintf("\"%v\"",e.Day) + "" +
 				"}"
 		data_str= data_str + entry
 	}

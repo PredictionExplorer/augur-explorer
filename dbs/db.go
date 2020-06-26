@@ -140,7 +140,7 @@ func (ss *SQLStorage) Get_last_block_num() (p.BlockNumber,bool) {
 func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 
 	var query string
-	query="SELECT dai_cash,rep_token,zerox,wallet_reg,fill_order,eth_xchg,share_token FROM contract_addresses";
+	query="SELECT dai_cash,rep_token,zerox,wallet_reg,fill_order,eth_xchg,share_token,universe FROM contract_addresses";
 	row := ss.db.QueryRow(query)
 	var c_addresses p.ContractAddresses
 	var err error
@@ -151,8 +151,9 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 	var fill_order_addr_str string
 	var eth_xchg_addr_str string
 	var share_token_addr_str string
+	var universe_addr_str string
 	err=row.Scan(&dai_addr_str,&rep_addr_str,&zerox_addr_str,&walletreg_addr_str,&fill_order_addr_str,
-					&eth_xchg_addr_str,&share_token_addr_str);
+					&eth_xchg_addr_str,&share_token_addr_str,&universe_addr_str);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 		} else {
@@ -168,6 +169,7 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 	c_addresses.FillOrder_addr=common.HexToAddress(fill_order_addr_str)
 	c_addresses.EthXchg_addr=common.HexToAddress(eth_xchg_addr_str)
 	c_addresses.ShareToken_addr=common.HexToAddress(share_token_addr_str)
+	c_addresses.Universe_addr = common.HexToAddress(universe_addr_str)
 	return c_addresses,nil
 }
 func (ss *SQLStorage) Set_last_block_num(block_num p.BlockNumber) {
@@ -2086,6 +2088,12 @@ func (ss *SQLStorage) is_dai_transfer_internal(evt *p.Transfer,ca *p.ContractAdd
 	if 0 == bytes.Compare(evt.To.Bytes(),ca.ShareToken_addr.Bytes()) {
 		return true;
 	}
+	if 0 == bytes.Compare(evt.From.Bytes(),ca.Universe_addr.Bytes()) {
+		return true;
+	}
+	if 0 == bytes.Compare(evt.To.Bytes(),ca.Universe_addr.Bytes()) {
+		return true;
+	}
 	return false
 }
 func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.Transfer,ca *p.ContractAddresses,block_num p.BlockNumber,tx_id int64) {
@@ -3316,7 +3324,9 @@ func (ss *SQLStorage) Get_cash_flow() []p.BlockCash {
 
 	records := make([]p.BlockCash,0,256)
 	var query string
-	query = "SELECT block_num,cash_flow FROM block WHERE cash_flow != 0 ORDER BY block_num"
+	query = "SELECT block_num,cash_flow," +
+			"EXTRACT(EPOCH FROM block.ts::TIMESTAMP)::BIGINT AS ts " +
+			"FROM block WHERE cash_flow != 0 ORDER BY block_num"
 	rows,err := ss.db.Query(query)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -3325,7 +3335,7 @@ func (ss *SQLStorage) Get_cash_flow() []p.BlockCash {
 	defer rows.Close()
 	for rows.Next() {
 		var bc p.BlockCash
-		err = rows.Scan(&bc.BlockNum,&bc.CashFlow)
+		err = rows.Scan(&bc.BlockNum,&bc.CashFlow,&bc.Ts)
 		if err != nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
@@ -3437,8 +3447,24 @@ func (ss *SQLStorage) Get_mdepth_status(market_aid int64,outcome_idx int,last_oo
 func (ss *SQLStorage) Get_last_block_timestamp() int64 {
 
 	var query string
-	query = "SELECT EXTRACT(EPOCH FROM block.ts)::BIGINT AS ts "+
+	query = "SELECT FLOOR(EXTRACT(EPOCH FROM block.ts))::BIGINT AS ts " +
+//	EXTRACT(EPOCH FROM block.ts)::BIGINT AS ts "+
 			"FROM block,last_block WHERE last_block.block_num=block.block_num"
+	row := ss.db.QueryRow(query)
+	var ts int64
+	var err error
+	err=row.Scan(&ts);
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Error in Get_last_block_timestamp(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return ts
+}
+func (ss *SQLStorage) Get_first_block_timestamp() int64 {
+
+	var query string
+	query = "SELECT FLOOR(EXTRACT(EPOCH FROM block.ts))::BIGINT AS ts " +
+			"FROM block ORDER BY block_num LIMIT 1"
 	row := ss.db.QueryRow(query)
 	var ts int64
 	var err error
@@ -3452,7 +3478,7 @@ func (ss *SQLStorage) Get_last_block_timestamp() int64 {
 func (ss *SQLStorage) Get_last_unique_addr_day() int64 {
 
 	var query string
-	query = "SELECT (day::timestamp)::bigint AS ts FROM unique_addrs ORDER BY day DESC LIMIT 1"
+	query = "SELECT EXTRACT(EPOCH FROM day::TIMESTAMP)::BIGINT AS ts FROM unique_addrs ORDER BY day DESC LIMIT 1"
 	row := ss.db.QueryRow(query)
 	var ts int64
 	var err error
@@ -3472,21 +3498,22 @@ func (ss *SQLStorage) Calc_unique_addresses(ts_from int64,ts_to int64) int64 {
 	var query string
 	query = "SELECT count(*) FROM ( " +
 				"SELECT DISTINCT u.eoa_aid FROM address a " +
-				"JOIN ustats u ON u.eoa_aid=a.address_id" +
+				"JOIN ustats u ON u.eoa_aid=a.address_id " +
 				"JOIN block b ON a.block_num=b.block_num " +
-				"WHERE b.ts >= $1 AND b.ts < $2" +
-			")"
-	d_query:=fmt.Sprintf(
+				"WHERE b.ts >= to_timestamp($1) AND b.ts < to_timestamp($2)" +
+			") AS s"
+/*	d_query:=fmt.Sprintf(
 			"SELECT count(*) FROM ( " +
 				"SELECT DISTINCT u.eoa_aid FROM address a " +
-				"JOIN ustats u ON u.eoa_aid=a.address_id" +
+				"JOIN ustats u ON u.eoa_aid=a.address_id " +
 				"JOIN block b ON a.block_num=b.block_num " +
-				"WHERE b.ts >= %v AND b.ts < %v" +
-			")",
+				"WHERE b.ts >= to_timestamp(%v) AND b.ts < to_timestamp(%v)" +
+			") AS s",
 			ts_from,ts_to,
 	)
 	ss.Log_msg(fmt.Sprintf("%v\n",d_query))
-	row := ss.db.QueryRow(query)
+*/
+	row := ss.db.QueryRow(query,ts_from,ts_to)
 	var null_counter sql.NullInt64
 	var err error
 	err=row.Scan(&null_counter);
@@ -3502,10 +3529,10 @@ func (ss *SQLStorage) Calc_unique_addresses(ts_from int64,ts_to int64) int64 {
 }
 func (ss *SQLStorage) Insert_unique_addresses_entry(ts int64,num_addrs int64) {
 	var query string
-	query = "INSERT INTO unique_addrs(day,num_addrs) VALUES($1,$2)"
-	_,err := ss.db.Exec(query)
+	query = "INSERT INTO unique_addrs(day,num_addrs) VALUES(to_timestamp($1),$2)"
+	_,err := ss.db.Exec(query,ts,num_addrs)
 	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB Error: %v",err));
+		ss.Log_msg(fmt.Sprintf("DB Error on Insert_unique_addresses: %v",err));
 		os.Exit(1)
 	}
 }
@@ -3513,21 +3540,27 @@ func (ss *SQLStorage) Get_unique_addresses() []p.UniqueAddrEntry {
 
 	records := make([]p.UniqueAddrEntry,0,365)
 	var query string
-	query = "SELECT day,num_addrs FROM unique_addrs ORDER BY day"
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM day::TIMESTAMP)::BIGINT AS ts,"+
+				"day," +
+				"num_addrs "+
+			"FROM unique_addrs ORDER BY day"
 	rows,err := ss.db.Query(query)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-
+	var accumulator int64 = 0
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.UniqueAddrEntry
-		err=rows.Scan(&rec.Day,&rec.NumAddrs)
+		err=rows.Scan(&rec.Ts,&rec.Day,&rec.NumAddrs)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		accumulator = accumulator + rec.NumAddrs
+		rec.NumAddrsAccum = accumulator
 		records = append(records,rec)
 	}
 	return records

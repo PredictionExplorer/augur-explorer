@@ -84,8 +84,8 @@ func load_abi(fname string) *abi.ABI {
 }
 func main() {
 
-//	all_contracts = load_all_artifacts("./abis/augur-artifacts-abi.json")
-	all_contracts = load_all_artifacts("./abis/augur-artifacts-abi-5jun.json")
+	all_contracts = load_all_artifacts("./abis/augur-artifacts-abi.json")
+//	all_contracts = load_all_artifacts("./abis/augur-artifacts-abi-5jun.json")
 	dump_all_artifacts()
 
 }

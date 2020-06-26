@@ -96,11 +96,6 @@ var (
 	rpcclient *rpc.Client
 
 	// addresses of the contracts used in our code (for making eth.Call()s if needed)
-	/*discontinued
-	dai_addr common.Address
-	rep_addr common.Address
-	zerox_addr common.Address
-	*/
 	caddrs *ContractAddresses
 
 	fill_order_id int64 = 0			// during event processing, holds id of record in mktord from Fill evt

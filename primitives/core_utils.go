@@ -34,9 +34,9 @@ func Short_address(long_addr string) string {
 	if len(long_addr)!=42 {
 		return "inval_addr"
 	}
-	var output string = long_addr[2:8] 
+	var output string = long_addr[2:8]
 	output = output + "…"
-	output = output + long_addr[35:41]
+	output = output + long_addr[36:42]
 	return output
 }
 func Short_hash(long_hash string) string {

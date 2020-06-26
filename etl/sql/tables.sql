@@ -316,7 +316,8 @@ CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur P
 	wallet_reg			TEXT DEFAULT '',
 	fill_order			TEXT DEFAULT '',
 	eth_xchg			TEXT DEFAULT '',
-	share_token			TEXT DEFAULT ''
+	share_token			TEXT DEFAULT '',
+	universe			TEXT DEFAULT ''
 );
 CREATE TABLE unique_addrs (	-- Unique addresses per day, statistics
 	day					DATE PRIMARY KEY,

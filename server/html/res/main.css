@@ -294,6 +294,10 @@ div.category_record_subcategory_small {
 	padding:						1em;
 	max-width:						30em;
 }
+#uniq_addr_chart {
+	padding:						1em;
+	max-width:						30em;
+}
 table.deposits_withdrawals {
 	border-collapse:				separate;
 	border-spacing:					3px;

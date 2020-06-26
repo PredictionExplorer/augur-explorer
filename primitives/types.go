@@ -518,6 +518,7 @@ type DaiOp struct {
 }
 type BlockCash struct {
 	BlockNum			int64
+	Ts					int64
 	CashFlow			float64
 }
 type ContractAddresses struct {
@@ -528,10 +529,13 @@ type ContractAddresses struct {
 	FillOrder_addr	common.Address	// used to identify if DAI transfer is internal or not
 	EthXchg_addr	common.Address	// used to identify if DAI transfer is internal or not
 	ShareToken_addr	common.Address  // used to identify if DAI transfer is internal or not
+	Universe_addr	common.Address	// used to identify if DAI transfer is internal or not
 }
 type UniqueAddrEntry struct {
-	Day					string
+	Ts					int64
 	NumAddrs			int64
+	NumAddrsAccum		int64
+	Day					string
 }
 type MktDepthStatus struct {
 	NumOrders			int64	// used to catch deletes

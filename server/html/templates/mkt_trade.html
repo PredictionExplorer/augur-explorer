@@ -2,10 +2,10 @@
 <tr class="market_trades">
 	<td class="mkt_trade_field">{{.Date}}</td>
 	<td class="mkt_trade_field" title="{{.CreatorAddr}}">
-		<a href="/search?q={{.CreatorAddr}}">{{.CreatorAddrSh}}</a>
+		<a class="addr" href="/search?q={{.CreatorAddr}}">{{.CreatorAddrSh}}</a>
 	</td>
 	<td class="mkt_trade_field" title="{{.FillerAddr}}">
-		<a href="/search?q={{.FillerAddr}}">{{.FillerAddrSh}}</a>
+		<a class="addr" href="/search?q={{.FillerAddr}}">{{.FillerAddrSh}}</a>
 	</td>
 	<td class="mkt_trade_field" style="text-align: right">{{.Price}}</td>
 	<td class="mkt_trade_field" style="text-align: right">{{.Amount}}</td>

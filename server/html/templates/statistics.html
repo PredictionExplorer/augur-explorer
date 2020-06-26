@@ -57,7 +57,7 @@
 </nav>
 <h3 class="cash_flow">Augur's Platform Cash Flow</h3><br/><br/>
 <div id="cash_flow_chart"></div>
-<h3 class="cash_flow">Augur's Platform Cash Flow</h3><br/><br/>
+<h3 class="unique_addrs">Unique Accounts per Day</h3><br/><br/>
 <div id="uniq_addr_chart"></div>
 <script>
 // font loading begins
@@ -90,6 +90,11 @@ Highcharts.chart('cash_flow_chart', {
 	xAxis: {
 //		max: 1.0,
 //		min: 0,
+		type: 'datetime',
+//		dateTimeLabelFormats: {
+//			day: "%e-%b-%y",
+//			month: "%b-%y"
+//		}
 		accessibility: {
 			rangeDescription: 'Cash Flow'
 		}
@@ -117,7 +122,7 @@ Highcharts.chart('cash_flow_chart', {
 				click: function() {this.click.call()}
 			}
 		},
-		data: uniq_addrs_data
+		data: cash_flow_data
 	}],
 
 	responsive: {
@@ -160,9 +165,15 @@ Highcharts.chart('uniq_addr_chart', {
 	xAxis: {
 //		max: 1.0,
 //		min: 0,
+		type: 'datetime',
+//		dateTimeLabelFormats: {
+//			day: "%e-%b-%y",
+//			month: "%b-%y"
+//		}
 		accessibility: {
 			rangeDescription: 'Unique Accounts'
 		}
+
 	},
 
 	legend: {
@@ -187,7 +198,7 @@ Highcharts.chart('uniq_addr_chart', {
 				click: function() {this.click.call()}
 			}
 		},
-		data: cash_flow_data
+		data: uniq_addrs_data
 	}],
 
 	responsive: {
@@ -206,7 +217,7 @@ Highcharts.chart('uniq_addr_chart', {
 	},
 	tooltip: {
 		formatter: function() {
-			tooltip ="<div>Num Accounts: "+this.point.num_addrs+"<br/>Date: "+this.point.date_str+"<br/></div>"
+			tooltip ="<div>Num Accounts: "+this.point.num_addrs+"<br/>Accumulated: "+this.point.num_addrs_accum+"<br/>Date: "+this.point.date_str+"<br/></div>"
 			 return tooltip;
 		}
 	},

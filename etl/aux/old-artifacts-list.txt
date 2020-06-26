@@ -1,0 +1,1452 @@
+Contract: AffiliateValidator
+Events:
+Methods:
+	mmm::AffiliateValidator	1575d1d0::isValidSignature
+	mmm::AffiliateValidator	ac8a584a::removeOperator
+	mmm::AffiliateValidator	c775a2e4::usedSalts
+	mmm::AffiliateValidator	72a0d728::addKey
+	mmm::AffiliateValidator	9870d7fe::addOperator
+	mmm::AffiliateValidator	6769e5c8::getKeyHash
+	mmm::AffiliateValidator	893d20e8::getOwner
+	mmm::AffiliateValidator	670d14b2::keys
+	mmm::AffiliateValidator	13e7c9d8::operators
+	mmm::AffiliateValidator	f2fde38b::transferOwnership
+	mmm::AffiliateValidator	d8844c91::validateReference
+Contract: Affiliates
+Events:
+Methods:
+	mmm::Affiliates	a18a7bfc::setReferrer
+	mmm::Affiliates	0617c4a6::getAccountFingerprint
+	mmm::Affiliates	b3086358::getAndValidateReferrer
+	mmm::Affiliates	5f5961f5::fingerprints
+	mmm::Affiliates	4a9fefc7::getReferrer
+	mmm::Affiliates	9ca423b3::referrals
+	mmm::Affiliates	58b0b954::setFingerprint
+	mmm::Affiliates	255b963c::affiliateValidators
+	mmm::Affiliates	5632c1ba::createAffiliateValidator
+Contract: AuditFunds
+Events:
+Methods:
+	mmm::AuditFunds	c4d66de8::initialize
+	mmm::AuditFunds	6c9fa59e::shareToken
+	mmm::AuditFunds	fbf551ad::addressFrom
+	mmm::AuditFunds	7973aaef::disputeCrowdsourcerFactory
+	mmm::AuditFunds	5825926e::getAvailableReports
+	mmm::AuditFunds	ee89dab4::getInitialized
+	mmm::AuditFunds	fe3a4788::getAvailableDisputes
+	mmm::AuditFunds	beea7167::getAvailableShareData
+	mmm::AuditFunds	8bca1093::initialReporterFactory
+	mmm::AuditFunds	06ae7095::marketFactory
+Contract: Augur
+Events:
+	eee::Augur::0xadddfaec4505d90a6a211907536944e6e1af7ff5cf6d1873de43e36020f36009::ReportingFeeChanged
+	eee::Augur::0x97f8b399e255f30d56b759b645c86652624ee258937579ff4a747abaeae857c4::DisputeWindowCreated
+	eee::Augur::0xc3ebb227c22e7644e9bef8822009f746a72c86f239760124d67fdc2c302b3115::InitialReportSubmitted
+	eee::Augur::0x11dda748f0bd3af85a073da0088a0acb827d9584a4fdb825c81f1232a5309538::TimestampSet
+	eee::Augur::0x6d39632c2dc10305bf5771cfff4af1851f07c03ea27b821cad382466bdf7a21f::MarketFinalized
+	eee::Augur::0x55f2a7bfa32e835c3f3c3cff653a3d11c077ce1b00c5a41c6aaf09eedc1ac3b2::MarketTransferred
+	eee::Augur::0xf9a0b30bcf861874bf36630742f0d56b22648898d7cdd0cd785d74acd17e0d44::DisputeCrowdsourcerCreated
+	eee::Augur::0xf06c142f93fdd00fbcd1e8f3d82e6f22667d52df764b39570061a7dbeea09be0::FinishDeployment
+	eee::Augur::0x3ffffb51f92f91faf4ba8c906f5a0180d1033be93b1e227cd92c872dc234fdf0::InitialReporterRedeemed
+	eee::Augur::0xd1fc3f2cb1387e602db0e6f8f22649df65df5246eeff281cf6d1ef62feda4ece::NoShowBondChanged
+	eee::Augur::0x350ea32dc29530b9557420816d743c436f8397086f98c96292138edd69e01cb3::ShareTokenBalanceChanged
+	eee::Augur::0x145a4839b3d82d1e28f6ed93f52622b351892e835530386bb1fe4effba99aeea::TokensBurned
+	eee::Augur::0xdd7dcfa6708112395eb94e9b1889295fb19af21ef290e918256838c979b2dfbd::CompleteSetsSold
+	eee::Augur::0x81afc41f9f2f0d22a52a2ddb3a0b6db83baf39c05544fd25f2751b72b1943bb5::DisputeCrowdsourcerCompleted
+	eee::Augur::0x07f766729171db8cc73d96b25cc56784077e26c7ff48b0187877ace391c181a6::TokensMinted
+	eee::Augur::0xce5b6de2a0053ebc6c04e68bcbb9f0a1f2deeb7049c72881e198f95b5752db82::UniverseForked
+	eee::Augur::0xea17ae24b0d40ea7962a6d832db46d1f81eaec1562946d0830d1c21d4c000ec1::MarketCreated
+	eee::Augur::0x63fd58f559b73fc4da5511c341ec8a7b31c5c48538ef83c6077712b6edf5f7cb::TokenBalanceChanged
+	eee::Augur::0x213a05b9ad8567c2f8fa868e7375e5bf30e69add0dbb5913ca8a3e58c815c268::MarketOIChanged
+	eee::Augur::0x3b4f3db017516414df2695e5b0052661779d7163a6cd4368fd74313be73fa0b8::MarketParticipantsDisavowed
+	eee::Augur::0xe7f47639cdf56ec6c5451df334b73c9ca5cccd20da2c0f4e390e9bb71a6f672a::DisputeCrowdsourcerContribution
+	eee::Augur::0xee62c58e2603b92f96a002e012f4f3bd5748102cfa3b711f6d778c6237fcaa96::InitialReporterTransferred
+	eee::Augur::0xc3cf07f8fa0fafc25a9dd0bad2cd6b961c55dad41b42c8ef8f931bc40e41e08c::MarketMigrated
+	eee::Augur::0x0519ee50d0e6120223e58d0b52824ca4985c524f045a3d6a529936e511d2ba8d::MarketRepBondTransferred
+	eee::Augur::0x95366b7f64c6bb45149f9f7c522403fceebe5170ff76b8ffde2b0ab943ac11ce::TradingProceedsClaimed
+	eee::Augur::0xfe06587917de7df83a446bcbb889cee699d7fc35b7b53e263282c2acb5a16499::CompleteSetsPurchased
+	eee::Augur::0x9c75a088fcb0527d67a80a7d0a5006bbabe02f4b23984234ae68b2b146f001bc::DesignatedReportStakeChanged
+	eee::Augur::0xb20adf682c8f82b94a135452f54ac4483c9ee8c9b2324e946120696ab1d034b4::ReportingParticipantDisavowed
+	eee::Augur::0xe36b09d83f9cfa88c37f071fc2cfb5ff30b764cbd98088e70d965573c9ce5bbd::UniverseCreated
+	eee::Augur::0x7589653fe5a2ab3ccc12538316852339868efdd9d3bd0b84d055cf224cf96873::WarpSyncDataUpdated
+	eee::Augur::0x6afb0328cf957750be87a6f34b1cd21457ddf1382af65f9592ff2d333945633f::DisputeCrowdsourcerRedeemed
+	eee::Augur::0xa037dd0e01f0488a530cb17065a6d2f284fae016004fc744ee2a41d5cacf85d5::RegisterContract
+	eee::Augur::0x69af68e366a0570364e3a086f3b5ac79f08ecc3f93eaccbfcf3864809b12b5d8::ValidityBondChanged
+	eee::Augur::0x18052b5e29020458e154999fa71891a5db3404a5b0b9c5ec60c90adca7d38d63::ParticipationTokensRedeemed
+	eee::Augur::0x3c67396e9c55d2fc8ad68875fc5beca1d96ad2a2f23b210ccc1d986551ab6fdf::TokensTransferred
+Methods:
+	mmm::Augur	1142e31e::logDisputeCrowdsourcerTokensBurned
+	mmm::Augur	e3142e90::logInitialReporterTransferred
+	mmm::Augur	65fe2a0b::uploader
+	mmm::Augur	9684da1a::createGenesisUniverse
+	mmm::Augur	4891c9ab::getMarketCreationData
+	mmm::Augur	188ec356::getTimestamp
+	mmm::Augur	b70da7dc::isKnownCrowdsourcer
+	mmm::Augur	606755be::logDisputeWindowCreated
+	mmm::Augur	23290737::logMarketTransferred
+	mmm::Augur	16ada547::time
+	mmm::Augur	8f401bf3::MIN_TRADE_INTERVAL
+	mmm::Augur	5897e663::isKnownFeeSender
+	mmm::Augur	6a95e6a7::logDisputeCrowdsourcerCompleted
+	mmm::Augur	1902540c::logDisputeCrowdsourcerTokensTransferred
+	mmm::Augur	27d8e850::logMarketFinalized
+	mmm::Augur	c67af5cc::logMarketParticipantsDisavowed
+	mmm::Augur	645c6fae::registerContract
+	mmm::Augur	6743dcaf::trustedCashTransfer
+	mmm::Augur	752f57c0::derivePayoutDistributionHash
+	mmm::Augur	ce07324e::forkCounter
+	mmm::Augur	f9c45f71::getMarketRecommendedTradeInterval
+	mmm::Augur	22415f60::isTrustedSender
+	mmm::Augur	973df5b9::logDesignatedReportStakeChanged
+	mmm::Augur	da9d7a48::logInitialReportSubmitted
+	mmm::Augur	17674e4d::logMarketMigrated
+	mmm::Augur	bd33b942::DEFAULT_RECOMMENDED_TRADE_INTERVAL
+	mmm::Augur	8f669d87::logDisputeCrowdsourcerTokensMinted
+	mmm::Augur	58c4092c::logNoShowBondChanged
+	mmm::Augur	3f6d798a::onCategoricalMarketCreated
+	mmm::Augur	ed4d5244::onScalarMarketCreated
+	mmm::Augur	887cc5e4::getMarketOutcomes
+	mmm::Augur	8cfb8f21::isKnownUniverse
+	mmm::Augur	ecdaa595::logParticipationTokensMinted
+	mmm::Augur	a3aac84d::logParticipationTokensRedeemed
+	mmm::Augur	3dfdce82::logReputationTokensBurned
+	mmm::Augur	cec4ede1::logTradingProceedsClaimed
+	mmm::Augur	b5a28c4e::logValidityBondChanged
+	mmm::Augur	e997fffd::finishDeployment
+	mmm::Augur	d015ddbd::logShareTokensBalanceChanged
+	mmm::Augur	921bd6f0::upgradeTimestamp
+	mmm::Augur	ff51f367::TRADE_INTERVAL_VALUE
+	mmm::Augur	70b78eba::logDisputeCrowdsourcerContribution
+	mmm::Augur	08bb7309::logMarketRepBondTransferred
+	mmm::Augur	cf53f72f::logWarpSyncDataUpdated
+	mmm::Augur	2280068d::onYesNoMarketCreated
+	mmm::Augur	722e3320::logMarketOIChanged
+	mmm::Augur	b394ce2c::logReportingFeeChanged
+	mmm::Augur	17570e80::logReportingParticipantDisavowed
+	mmm::Augur	961be391::cash
+	mmm::Augur	5fe4fccd::disputeCrowdsourcerCreated
+	mmm::Augur	e62b8889::isKnownMarket
+	mmm::Augur	26990346::logParticipationTokensTransferred
+	mmm::Augur	00b946f0::genesisUniverse
+	mmm::Augur	aaf6da20::getUniverseForkIndex
+	mmm::Augur	d673ad96::logReputationTokensMinted
+	mmm::Augur	484f6e3e::getMaximumMarketEndDate
+	mmm::Augur	c8e6b2a8::logTimestampSet
+	mmm::Augur	8ec6a771::logUniverseForked
+	mmm::Augur	4f67af24::createChildUniverse
+	mmm::Augur	7920757e::logCompleteSetsSold
+	mmm::Augur	b1c094fa::logInitialReporterRedeemed
+	mmm::Augur	36569e77::vat
+	mmm::Augur	9eba4b7b::getMarketType
+	mmm::Augur	79d60f04::getTradeInterval
+	mmm::Augur	c509d0b2::logCompleteSetsPurchased
+	mmm::Augur	80675fdc::logDisputeCrowdsourcerRedeemed
+	mmm::Augur	59967d1f::logParticipationTokensBurned
+	mmm::Augur	e1c678fe::logReputationTokensTransferred
+	mmm::Augur	f39ec1f7::lookup
+Contract: AugurTrading
+Events:
+	eee::AugurTrading::0xbe80e5687d7095071b7c4e7a56e0e67bfb9e8a39352f1690fdf74c1ee935c75e::CancelZeroXOrder
+	eee::AugurTrading::0xcc7cd5af4aead9d3a4a968c74d9063653dccf7110c5ced93fa86b8b03ef5ca24::MarketVolumeChanged
+	eee::AugurTrading::0x9bab1368a1ed530afaad9c630ba75e6a5c1efa9f6af0139d6cda2b6af6aa801e::OrderEvent
+	eee::AugurTrading::0x59543b7f82735782aa5bdb97dff40ff288d4548a5865da513b40e4088e2ee77e::ProfitLossChanged
+Methods:
+	mmm::AugurTrading	9ae36ee5::logMarketVolumeChanged
+	mmm::AugurTrading	645c6fae::registerContract
+	mmm::AugurTrading	3f6ba415::trustedSender
+	mmm::AugurTrading	65fe2a0b::uploader
+	mmm::AugurTrading	e997fffd::finishDeployment
+	mmm::AugurTrading	98c7cc36::logOrderCreated
+	mmm::AugurTrading	6c9fa59e::shareToken
+	mmm::AugurTrading	f39ec1f7::lookup
+	mmm::AugurTrading	db754422::claimMarketsProceeds
+	mmm::AugurTrading	efd342c1::claimTradingProceeds
+	mmm::AugurTrading	0848a90c::logProfitLossChanged
+	mmm::AugurTrading	577bb86e::logZeroXOrderCanceled
+	mmm::AugurTrading	99b537a0::logZeroXOrderFilled
+	mmm::AugurTrading	7a0d8f8a::augur
+	mmm::AugurTrading	5d4f7742::doApprovals
+	mmm::AugurTrading	c9e34878::logOrderCanceled
+	mmm::AugurTrading	5ae5c8e7::logOrderFilled
+Contract: AugurWallet
+Events:
+Methods:
+	mmm::AugurWallet	0a1028c4::getMessageHash
+	mmm::AugurWallet	360d95b6::authorizedProxies
+	mmm::AugurWallet	054d50d4::getAmountOut
+	mmm::AugurWallet	6b8d7a12::executeTransaction
+	mmm::AugurWallet	4dd78b76::withdrawAllFundsAsDai
+	mmm::AugurWallet	961be391::cash
+	mmm::AugurWallet	20c13b0b::isValidSignature
+	mmm::AugurWallet	0283e758::addAuthorizedProxy
+	mmm::AugurWallet	f698da25::domainSeparator
+	mmm::AugurWallet	ee89dab4::getInitialized
+	mmm::AugurWallet	d688e8e5::initialize
+	mmm::AugurWallet	7b103999::registry
+	mmm::AugurWallet	cbdad2a1::removeAuthorizedProxy
+	mmm::AugurWallet	1db61b54::DOMAIN_SEPARATOR_TYPEHASH
+	mmm::AugurWallet	04f86da1::MSG_TYPEHASH
+	mmm::AugurWallet	c067e263::transferCash
+Contract: AugurWalletFactory
+Events:
+Methods:
+	mmm::AugurWalletFactory	519e62d9::augurWalletRegistryV2
+	mmm::AugurWalletFactory	961be391::cash
+	mmm::AugurWalletFactory	6512e6ec::createOrder
+	mmm::AugurWalletFactory	5c1ad844::fillOrder
+	mmm::AugurWalletFactory	8e1bfa73::augurTrading
+	mmm::AugurWalletFactory	80a35930::getCreate2WalletAddress
+	mmm::AugurWalletFactory	485cc955::initialize
+	mmm::AugurWalletFactory	7a0d8f8a::augur
+	mmm::AugurWalletFactory	28c1fed0::augurWalletRegistry
+	mmm::AugurWalletFactory	6c9fa59e::shareToken
+	mmm::AugurWalletFactory	1a505b76::zeroXTrade
+	mmm::AugurWalletFactory	3f03842a::affiliates
+	mmm::AugurWalletFactory	7c00e2ce::createAugurWallet
+	mmm::AugurWalletFactory	ee89dab4::getInitialized
+Contract: AugurWalletRegistry
+Events:
+	eee::AugurWalletRegistry::0xb9f84b8e65164b14439ae3620df0a4d8786d896996c0282b683f9d8c08f046e8::RelayHubChanged
+	eee::AugurWalletRegistry::0xee9c28a7fe7177d351e891cb4ca5b7a4e4aba4974be67fb7665ba1ad0e703439::ExecuteTransactionStatus
+Methods:
+	mmm::AugurWalletRegistry	7b66c82a::token0IsCash
+	mmm::AugurWalletRegistry	53e569a1::ethExchange
+	mmm::AugurWalletRegistry	85f8c259::getAmountIn
+	mmm::AugurWalletRegistry	80a35930::getCreate2WalletAddress
+	mmm::AugurWalletRegistry	04d0a647::getWallet
+	mmm::AugurWalletRegistry	80274db7::preRelayedCall
+	mmm::AugurWalletRegistry	ad61ccd5::relayHubVersion
+	mmm::AugurWalletRegistry	ad5c4648::WETH
+	mmm::AugurWalletRegistry	ee89dab4::getInitialized
+	mmm::AugurWalletRegistry	d5b9562b::getRelayMessageHash
+	mmm::AugurWalletRegistry	78dc0eed::executeWalletTransaction
+	mmm::AugurWalletRegistry	054d50d4::getAmountOut
+	mmm::AugurWalletRegistry	485cc955::initialize
+	mmm::AugurWalletRegistry	e06e0e22::postRelayedCall
+	mmm::AugurWalletRegistry	7a0d8f8a::augur
+	mmm::AugurWalletRegistry	9ac03fd0::augurWalletFactory
+	mmm::AugurWalletRegistry	961be391::cash
+	mmm::AugurWalletRegistry	83947ea0::acceptRelayedCall
+	mmm::AugurWalletRegistry	8e1bfa73::augurTrading
+	mmm::AugurWalletRegistry	74e861d6::getHubAddr
+Contract: AugurWalletRegistryV2
+Events:
+	eee::AugurWalletRegistryV2::0xee9c28a7fe7177d351e891cb4ca5b7a4e4aba4974be67fb7665ba1ad0e703439::ExecuteTransactionStatus
+Methods:
+	mmm::AugurWalletRegistryV2	50c74d3a::acceptRelayedCall
+	mmm::AugurWalletRegistryV2	7a0d8f8a::augur
+	mmm::AugurWalletRegistryV2	054d50d4::getAmountOut
+	mmm::AugurWalletRegistryV2	47116c6e::versionSM
+	mmm::AugurWalletRegistryV2	961be391::cash
+	mmm::AugurWalletRegistryV2	486ff0cd::versionRecipient
+	mmm::AugurWalletRegistryV2	ee89dab4::getInitialized
+	mmm::AugurWalletRegistryV2	572b6c05::isTrustedForwarder
+	mmm::AugurWalletRegistryV2	7b66c82a::token0IsCash
+	mmm::AugurWalletRegistryV2	9ac03fd0::augurWalletFactory
+	mmm::AugurWalletRegistryV2	53e569a1::ethExchange
+	mmm::AugurWalletRegistryV2	2d0335ab::getNonce
+	mmm::AugurWalletRegistryV2	485cc955::initialize
+	mmm::AugurWalletRegistryV2	2afe31c1::getRelayHubDeposit
+	mmm::AugurWalletRegistryV2	c0d8486e::getRelayMessageHash
+	mmm::AugurWalletRegistryV2	f2ec77da::verify
+	mmm::AugurWalletRegistryV2	6822ee77::versionForwarder
+	mmm::AugurWalletRegistryV2	cc0c62b2::RELAYDATA_TYPEHASH
+	mmm::AugurWalletRegistryV2	ad5c4648::WETH
+	mmm::AugurWalletRegistryV2	78dc0eed::executeWalletTransaction
+	mmm::AugurWalletRegistryV2	74e861d6::getHubAddr
+	mmm::AugurWalletRegistryV2	3fb37abf::CALLDATA_TYPEHASH
+	mmm::AugurWalletRegistryV2	5ea54eee::getGasLimits
+	mmm::AugurWalletRegistryV2	80274db7::preRelayedCall
+	mmm::AugurWalletRegistryV2	c36f3d8c::verifyAndCall
+	mmm::AugurWalletRegistryV2	abf0d3f4::RELAY_REQUEST_TYPEHASH
+	mmm::AugurWalletRegistryV2	8e1bfa73::augurTrading
+	mmm::AugurWalletRegistryV2	85f8c259::getAmountIn
+	mmm::AugurWalletRegistryV2	04d0a647::getWallet
+	mmm::AugurWalletRegistryV2	80a35930::getCreate2WalletAddress
+	mmm::AugurWalletRegistryV2	fbfbd0f2::postRelayedCall
+Contract: BuyParticipationTokens
+Events:
+Methods:
+	mmm::BuyParticipationTokens	50dd94ba::buyParticipationTokens
+Contract: CancelOrder
+Events:
+Methods:
+	mmm::CancelOrder	961be391::cash
+	mmm::CancelOrder	ee89dab4::getInitialized
+	mmm::CancelOrder	485cc955::initialize
+	mmm::CancelOrder	89ab6447::profitLoss
+	mmm::CancelOrder	7a0d8f8a::augur
+	mmm::CancelOrder	8e1bfa73::augurTrading
+	mmm::CancelOrder	7489ec23::cancelOrder
+	mmm::CancelOrder	21c77c96::cancelOrders
+	mmm::CancelOrder	4fb764c9::orders
+	mmm::CancelOrder	6c9fa59e::shareToken
+Contract: Cash
+Events:
+	eee::Cash::0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925::Approval
+	eee::Cash::0xcc16f5dbb4873280815c1ee09dbd06736cffcc184412cf7a71a0fdb75d397ca5::Burn
+	eee::Cash::0x0f6798a560793a54c3bcfe86a93cde1e73087d944c0ea20544137d4121396885::Mint
+	eee::Cash::0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef::Transfer
+Methods:
+	mmm::Cash	634eaff1::ETERNAL_APPROVAL_VALUE
+	mmm::Cash	552033c4::RAY
+	mmm::Cash	c11645bc::daiJoin
+	mmm::Cash	ddc5972e::joinMint
+	mmm::Cash	23b872dd::transferFrom
+	mmm::Cash	3bd831f4::daiVat
+	mmm::Cash	57915897::faucet
+	mmm::Cash	95d89b41::symbol
+	mmm::Cash	dd62ed3e::allowance
+	mmm::Cash	095ea7b3::approve
+	mmm::Cash	70a08231::balanceOf
+	mmm::Cash	db0a087c::getTypeName
+	mmm::Cash	f11f299e::joinBurn
+	mmm::Cash	06fdde03::name
+	mmm::Cash	18160ddd::totalSupply
+	mmm::Cash	a9059cbb::transfer
+	mmm::Cash	313ce567::decimals
+	mmm::Cash	66188463::decreaseApproval
+	mmm::Cash	d73dd623::increaseApproval
+	mmm::Cash	c4d66de8::initialize
+	mmm::Cash	bf353dbb::wards
+Contract: CashFaucet
+Events:
+Methods:
+	mmm::CashFaucet	f4b9fa75::dai
+	mmm::CashFaucet	c11645bc::daiJoin
+	mmm::CashFaucet	57915897::faucet
+	mmm::CashFaucet	771cc0d1::mcdFaucet
+	mmm::CashFaucet	36569e77::vat
+	mmm::CashFaucet	a78695b0::col
+	mmm::CashFaucet	dde836f2::colIlk
+	mmm::CashFaucet	81b58152::colJoin
+Contract: ChaiBridge
+Events:
+Methods:
+	mmm::ChaiBridge	c2df82e6::bridgeTransferFrom
+Contract: Coordinator
+Events:
+Methods:
+	mmm::Coordinator	da4fe074::executeTransaction
+	mmm::Coordinator	fdd059a5::getCoordinatorApprovalHash
+	mmm::Coordinator	0f7d8e39::getSignerAddress
+	mmm::Coordinator	52813679::assertValidCoordinatorApprovals
+	mmm::Coordinator	fb6961cc::EIP712_COORDINATOR_DOMAIN_HASH
+	mmm::Coordinator	89fab5b7::EIP712_COORDINATOR_DOMAIN_NAME
+	mmm::Coordinator	b2562b7a::EIP712_COORDINATOR_DOMAIN_VERSION
+	mmm::Coordinator	c26cfecd::EIP712_EXCHANGE_DOMAIN_HASH
+	mmm::Coordinator	ee55b968::decodeOrdersFromFillData
+	mmm::Coordinator	e1c71578::EIP712_COORDINATOR_APPROVAL_SCHEMA_HASH
+Contract: CoordinatorRegistry
+Events:
+	eee::CoordinatorRegistry::0xd060052768902f3eecb84b8eae9d3a2608a1a9e60811a33968b46b8d552f266e::CoordinatorEndpointSet
+Methods:
+	mmm::CoordinatorRegistry	6c90fedb::getCoordinatorEndpoint
+	mmm::CoordinatorRegistry	5b2388be::setCoordinatorEndpoint
+Contract: CreateOrder
+Events:
+Methods:
+	mmm::CreateOrder	f7938328::createOrder
+	mmm::CreateOrder	ee89dab4::getInitialized
+	mmm::CreateOrder	485cc955::initialize
+	mmm::CreateOrder	4fb764c9::orders
+	mmm::CreateOrder	89ab6447::profitLoss
+	mmm::CreateOrder	7a0d8f8a::augur
+	mmm::CreateOrder	8e1bfa73::augurTrading
+	mmm::CreateOrder	961be391::cash
+	mmm::CreateOrder	a3b1e7a9::publicCreateOrders
+	mmm::CreateOrder	3ae4ce0a::publicCreateOrder
+	mmm::CreateOrder	1f0ba6c9::trade
+Contract: DevUtils
+Events:
+Methods:
+	mmm::DevUtils	bbb2dcf6::decodeMultiAssetData
+	mmm::DevUtils	d001c5dc::getBatchBalances
+	mmm::DevUtils	a5cd62ba::getSimulatedOrdersTransferResults
+	mmm::DevUtils	46eb65cb::revertIfInvalidAssetData
+	mmm::DevUtils	acaedc74::decodeEIP1271SignatureError
+	mmm::DevUtils	7914b2ec::decodeAssetProxyExistsError
+	mmm::DevUtils	ee4f5a94::decodeExchangeInvalidContextError
+	mmm::DevUtils	ca49f47c::decodeStaticCallAssetData
+	mmm::DevUtils	590aa875::encodeERC20AssetData
+	mmm::DevUtils	d186037f::getAssetProxyAllowance
+	mmm::DevUtils	7d727512::getBalance
+	mmm::DevUtils	a0901e51::getEthBalances
+	mmm::DevUtils	c26cfecd::EIP712_EXCHANGE_DOMAIN_HASH
+	mmm::DevUtils	7982653e::getSimulatedOrderMakerTransferResults
+	mmm::DevUtils	d3637905::getSimulatedOrderTransferResults
+	mmm::DevUtils	a070cac8::getOrderHash
+	mmm::DevUtils	165979e1::decodeIncompleteFillError
+	mmm::DevUtils	9a7e7526::decodeSignatureError
+	mmm::DevUtils	a6627e9f::encodeERC721AssetData
+	mmm::DevUtils	0d7b7d76::getBalanceAndAssetProxyAllowance
+	mmm::DevUtils	2322cf76::getTransferableAssetAmount
+	mmm::DevUtils	32aae3ad::decodeAssetProxyDispatchError
+	mmm::DevUtils	3db6dc61::decodeSignatureWalletError
+	mmm::DevUtils	b43cffe1::encodeERC1155AssetData
+	mmm::DevUtils	7b66ad34::decodeSignatureValidatorNotApprovedError
+	mmm::DevUtils	9eadc835::decodeERC1155AssetData
+	mmm::DevUtils	04a5618a::decodeERC721AssetData
+	mmm::DevUtils	459be5e2::decodeFillError
+	mmm::DevUtils	65129042::decodeOrderEpochError
+	mmm::DevUtils	02d0aec3::decodeOrderStatusError
+	mmm::DevUtils	63eb3992::encodeStaticCallAssetData
+	mmm::DevUtils	d4695028::decodeAssetProxyId
+	mmm::DevUtils	750bdb30::decodeERC20BridgeAssetData
+	mmm::DevUtils	327d3054::decodeNegativeSpreadError
+	mmm::DevUtils	4dfdac20::getBatchAssetProxyAllowances
+	mmm::DevUtils	8f4ce479::decodeERC20AssetData
+	mmm::DevUtils	e77286eb::getOrderRelevantState
+	mmm::DevUtils	cafd3a07::decodeTransactionError
+	mmm::DevUtils	bc03f964::decodeTransactionExecutionError
+	mmm::DevUtils	d3d862d1::encodeMultiAssetData
+	mmm::DevUtils	e4e6e7da::getBatchBalancesAndAssetProxyAllowances
+	mmm::DevUtils	e25cabf7::getOrderRelevantStates
+	mmm::DevUtils	79c9c426::getTransactionHash
+	mmm::DevUtils	314853ff::decodeAssetProxyTransferError
+Contract: DisputeCrowdsourcer
+Events:
+	eee::DisputeCrowdsourcer::0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925::Approval
+	eee::DisputeCrowdsourcer::0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef::Transfer
+Methods:
+	mmm::DisputeCrowdsourcer	dd62f6f3::getPayoutDistributionHash
+	mmm::DisputeCrowdsourcer	18160ddd::totalSupply
+	mmm::DisputeCrowdsourcer	170ab405::setSize
+	mmm::DisputeCrowdsourcer	dd62ed3e::allowance
+	mmm::DisputeCrowdsourcer	ee89dab4::getInitialized
+	mmm::DisputeCrowdsourcer	b80907f2::getReputationToken
+	mmm::DisputeCrowdsourcer	64020842::isDisavowed
+	mmm::DisputeCrowdsourcer	6f84676e::getPayoutNumerators
+	mmm::DisputeCrowdsourcer	8d625c2c::getRemainingToFill
+	mmm::DisputeCrowdsourcer	94a91de8::contribute
+	mmm::DisputeCrowdsourcer	313ce567::decimals
+	mmm::DisputeCrowdsourcer	f1be1679::getMarket
+	mmm::DisputeCrowdsourcer	da834ac4::getPayoutNumerator
+	mmm::DisputeCrowdsourcer	9fb436cd::correctSize
+	mmm::DisputeCrowdsourcer	18d34d5e::getCrowdsourcerGeneration
+	mmm::DisputeCrowdsourcer	aa969a47::initialize
+	mmm::DisputeCrowdsourcer	095ea7b3::approve
+	mmm::DisputeCrowdsourcer	7a0d8f8a::augur
+	mmm::DisputeCrowdsourcer	95d89b41::symbol
+	mmm::DisputeCrowdsourcer	554c1b1f::universe
+	mmm::DisputeCrowdsourcer	55b6ed5c::allowances
+	mmm::DisputeCrowdsourcer	06fdde03::name
+	mmm::DisputeCrowdsourcer	95a2251f::redeem
+	mmm::DisputeCrowdsourcer	4591c060::fork
+	mmm::DisputeCrowdsourcer	de8fa431::getSize
+	mmm::DisputeCrowdsourcer	22b152a3::liquidateLosing
+	mmm::DisputeCrowdsourcer	23b872dd::transferFrom
+	mmm::DisputeCrowdsourcer	70a08231::balanceOf
+	mmm::DisputeCrowdsourcer	27e235e3::balances
+	mmm::DisputeCrowdsourcer	d3be9d34::crowdsourcerGeneration
+	mmm::DisputeCrowdsourcer	a457c2d7::decreaseAllowance
+	mmm::DisputeCrowdsourcer	1d7b6d58::forkAndRedeem
+	mmm::DisputeCrowdsourcer	fc0e3d90::getStake
+	mmm::DisputeCrowdsourcer	39509351::increaseAllowance
+	mmm::DisputeCrowdsourcer	a9059cbb::transfer
+Contract: DisputeCrowdsourcerFactory
+Events:
+Methods:
+	mmm::DisputeCrowdsourcerFactory	5f70ea3b::createDisputeCrowdsourcer
+Contract: DisputeWindow
+Events:
+	eee::DisputeWindow::0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925::Approval
+	eee::DisputeWindow::0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef::Transfer
+Methods:
+	mmm::DisputeWindow	961be391::cash
+	mmm::DisputeWindow	95a2251f::redeem
+	mmm::DisputeWindow	a9059cbb::transfer
+	mmm::DisputeWindow	9af1d03e::windowId
+	mmm::DisputeWindow	4b77946e::buyParticipationTokens
+	mmm::DisputeWindow	439f5ac2::getEndTime
+	mmm::DisputeWindow	39509351::increaseAllowance
+	mmm::DisputeWindow	30a7c978::participationTokensEnabled
+	mmm::DisputeWindow	554c1b1f::universe
+	mmm::DisputeWindow	55b6ed5c::allowances
+	mmm::DisputeWindow	db1c00ba::initialize
+	mmm::DisputeWindow	27e235e3::balances
+	mmm::DisputeWindow	a457c2d7::decreaseAllowance
+	mmm::DisputeWindow	f9070243::designatedReportNoShowsTotal
+	mmm::DisputeWindow	ee89dab4::getInitialized
+	mmm::DisputeWindow	616db798::getWindowId
+	mmm::DisputeWindow	6353ed68::incorrectDesignatedReportTotal
+	mmm::DisputeWindow	18160ddd::totalSupply
+	mmm::DisputeWindow	23b872dd::transferFrom
+	mmm::DisputeWindow	70a08231::balanceOf
+	mmm::DisputeWindow	3b612e8c::validityBondTotal
+	mmm::DisputeWindow	96ec0205::trustedBuy
+	mmm::DisputeWindow	2e4f4024::designatedReporterNoShowBondTotal
+	mmm::DisputeWindow	0fb5a6b4::duration
+	mmm::DisputeWindow	b80907f2::getReputationToken
+	mmm::DisputeWindow	870c426d::getUniverse
+	mmm::DisputeWindow	22f3e2d4::isActive
+	mmm::DisputeWindow	7a0d8f8a::augur
+	mmm::DisputeWindow	db0a087c::getTypeName
+	mmm::DisputeWindow	095ea7b3::approve
+	mmm::DisputeWindow	313ce567::decimals
+	mmm::DisputeWindow	8be6cb8f::initialReportBondTotal
+	mmm::DisputeWindow	8dc6e2f1::onMarketFinalized
+	mmm::DisputeWindow	dd62ed3e::allowance
+	mmm::DisputeWindow	c828371e::getStartTime
+	mmm::DisputeWindow	7bf362ed::invalidMarketsTotal
+	mmm::DisputeWindow	b4bd9e27::isOver
+	mmm::DisputeWindow	d96a094a::buy
+Contract: DisputeWindowFactory
+Events:
+Methods:
+	mmm::DisputeWindowFactory	c9c2e4b3::createDisputeWindow
+Contract: ERC1155Proxy
+Events:
+	eee::ERC1155Proxy::0x3147867c59d17e8fa9d522465651d44aae0a9e38f902f3475b97e58072f0ed4c::AuthorizedAddressAdded
+	eee::ERC1155Proxy::0x1f32c1b084e2de0713b8fb16bd46bb9df710a3dbeae2f3ca93af46e016dcc6b0::AuthorizedAddressRemoved
+	eee::ERC1155Proxy::0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0::OwnershipTransferred
+Methods:
+	mmm::ERC1155Proxy	a85e59e4::transferFrom
+	mmm::ERC1155Proxy	f2fde38b::transferOwnership
+	mmm::ERC1155Proxy	42f1181e::addAuthorizedAddress
+	mmm::ERC1155Proxy	494503d4::authorities
+	mmm::ERC1155Proxy	ae25532e::getProxyId
+	mmm::ERC1155Proxy	8da5cb5b::owner
+	mmm::ERC1155Proxy	70712939::removeAuthorizedAddress
+	mmm::ERC1155Proxy	b9181611::authorized
+	mmm::ERC1155Proxy	d39de6e9::getAuthorizedAddresses
+	mmm::ERC1155Proxy	9ad26744::removeAuthorizedAddressAtIndex
+Contract: ERC20Proxy
+Events:
+	eee::ERC20Proxy::0x3147867c59d17e8fa9d522465651d44aae0a9e38f902f3475b97e58072f0ed4c::AuthorizedAddressAdded
+	eee::ERC20Proxy::0x1f32c1b084e2de0713b8fb16bd46bb9df710a3dbeae2f3ca93af46e016dcc6b0::AuthorizedAddressRemoved
+	eee::ERC20Proxy::0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0::OwnershipTransferred
+Methods:
+	mmm::ERC20Proxy	70712939::removeAuthorizedAddress
+	mmm::ERC20Proxy	9ad26744::removeAuthorizedAddressAtIndex
+	mmm::ERC20Proxy	ae25532e::getProxyId
+	mmm::ERC20Proxy	8da5cb5b::owner
+	mmm::ERC20Proxy	f2fde38b::transferOwnership
+	mmm::ERC20Proxy	42f1181e::addAuthorizedAddress
+	mmm::ERC20Proxy	494503d4::authorities
+	mmm::ERC20Proxy	b9181611::authorized
+	mmm::ERC20Proxy	d39de6e9::getAuthorizedAddresses
+Contract: ERC721Proxy
+Events:
+	eee::ERC721Proxy::0x3147867c59d17e8fa9d522465651d44aae0a9e38f902f3475b97e58072f0ed4c::AuthorizedAddressAdded
+	eee::ERC721Proxy::0x1f32c1b084e2de0713b8fb16bd46bb9df710a3dbeae2f3ca93af46e016dcc6b0::AuthorizedAddressRemoved
+	eee::ERC721Proxy::0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0::OwnershipTransferred
+Methods:
+	mmm::ERC721Proxy	42f1181e::addAuthorizedAddress
+	mmm::ERC721Proxy	494503d4::authorities
+	mmm::ERC721Proxy	ae25532e::getProxyId
+	mmm::ERC721Proxy	70712939::removeAuthorizedAddress
+	mmm::ERC721Proxy	9ad26744::removeAuthorizedAddressAtIndex
+	mmm::ERC721Proxy	b9181611::authorized
+	mmm::ERC721Proxy	d39de6e9::getAuthorizedAddresses
+	mmm::ERC721Proxy	8da5cb5b::owner
+	mmm::ERC721Proxy	f2fde38b::transferOwnership
+Contract: Exchange
+Events:
+	eee::Exchange::0xa4a7329f1dd821363067e07d359e347b4af9b1efe4b6cccf13240228af3c800d::TransactionExecution
+	eee::Exchange::0x6869791f0a34781b29882982cc39e882768cf2c96995c2a110c577c53bc932d5::Fill
+	eee::Exchange::0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0::OwnershipTransferred
+	eee::Exchange::0xe1a5430ebec577336427f40f15822f1f36c5e3509ff209d6db9e6c9e6941cb0b::ProtocolFeeCollectorAddress
+	eee::Exchange::0x3a3e76d7a75e198aef1f53137e4f2a8a2ec74e2e9526db8404d08ccc9f1e621d::ProtocolFeeMultiplier
+	eee::Exchange::0xa8656e308026eeabce8f0bc18048433252318ab80ac79da0b3d3d8697dfba891::SignatureValidatorApproval
+	eee::Exchange::0xd2c6b762299c609bdb96520b58a49bfb80186934d4f71a86a367571a15c03194::AssetProxyRegistered
+	eee::Exchange::0x02c310a9a43963ff31a754a4099cc435ed498049687539d72d7818d9b093415c::Cancel
+	eee::Exchange::0x82af639571738f4ebd4268fb0363d8957ebe1bbb9e78dba5ebd69eed39b154f0::CancelUpTo
+Methods:
+	mmm::Exchange	81d09ba1::isValidSignature
+	mmm::Exchange	6a1a80fd::batchMatchOrdersWithMaximalFill
+	mmm::Exchange	e14b58c4::fillOrKillOrder
+	mmm::Exchange	850a1501::protocolFeeCollector
+	mmm::Exchange	77fcce68::setSignatureValidatorApproval
+	mmm::Exchange	9b44d556::fillOrder
+	mmm::Exchange	88ec79fb::matchOrders
+	mmm::Exchange	0efca185::detachProtocolFeeCollector
+	mmm::Exchange	2280c910::executeTransaction
+	mmm::Exchange	8d45cd23::isValidTransactionSignature
+	mmm::Exchange	7b8e3514::allowedValidators
+	mmm::Exchange	2ac12622::cancelled
+	mmm::Exchange	8da5cb5b::owner
+	mmm::Exchange	eea086ba::currentContextAddress
+	mmm::Exchange	b718e292::matchOrdersWithMaximalFill
+	mmm::Exchange	fc74896d::batchExecuteTransactions
+	mmm::Exchange	9694a402::batchFillOrders
+	mmm::Exchange	a6c3bf33::marketSellOrdersFillOrKill
+	mmm::Exchange	369da099::marketSellOrdersNoThrow
+	mmm::Exchange	b04fbddd::simulateDispatchTransferFromCalls
+	mmm::Exchange	dd885e2d::EIP1271_MAGIC_VALUE
+	mmm::Exchange	c26cfecd::EIP712_EXCHANGE_DOMAIN_HASH
+	mmm::Exchange	60704108::getAssetProxy
+	mmm::Exchange	78d29ac1::marketBuyOrdersNoThrow
+	mmm::Exchange	82c174d0::preSigned
+	mmm::Exchange	c0fa16cc::setProtocolFeeCollectorAddress
+	mmm::Exchange	f2fde38b::transferOwnership
+	mmm::Exchange	beee2e14::batchFillOrKillOrders
+	mmm::Exchange	2da62987::cancelOrder
+	mmm::Exchange	4f9559b1::cancelOrdersUpTo
+	mmm::Exchange	288cdc91::filled
+	mmm::Exchange	9d3fa4b9::getOrderInfo
+	mmm::Exchange	8bc8efb3::marketBuyOrdersFillOrKill
+	mmm::Exchange	d9bfa73e::orderEpoch
+	mmm::Exchange	46c02d7a::preSign
+	mmm::Exchange	dedfc1f1::batchCancelOrders
+	mmm::Exchange	8ea8dfe4::batchFillOrdersNoThrow
+	mmm::Exchange	0228e168::transactionsExecuted
+	mmm::Exchange	c585bb93::registerAssetProxy
+	mmm::Exchange	9331c742::setProtocolFeeMultiplier
+	mmm::Exchange	a12dcc6f::isValidOrderSignature
+	mmm::Exchange	1ce4c78b::protocolFeeMultiplier
+	mmm::Exchange	6fcf3e9e::batchMatchOrders
+	mmm::Exchange	8171c407::isValidHashSignature
+Contract: FillOrder
+Events:
+Methods:
+	mmm::FillOrder	8e1bfa73::augurTrading
+	mmm::FillOrder	f5df1f24::fillZeroXOrder
+	mmm::FillOrder	ee89dab4::getInitialized
+	mmm::FillOrder	e09bb556::getMarketVolume
+	mmm::FillOrder	485cc955::initialize
+	mmm::FillOrder	ca46d4eb::marketOutcomeVolumes
+	mmm::FillOrder	62c9c6a6::publicFillOrder
+	mmm::FillOrder	7a0d8f8a::augur
+	mmm::FillOrder	1a505b76::zeroXTrade
+	mmm::FillOrder	1f0ba6c9::trade
+	mmm::FillOrder	a3ef2c13::getMarketOutcomeValues
+	mmm::FillOrder	a0f515ea::marketTotalTrades
+	mmm::FillOrder	63a50c2a::fillOrder
+Contract: Formulas
+Events:
+Methods:
+	mmm::Formulas	ffe44772::calculateDesignatedReportNoShowBond
+	mmm::Formulas	c29faa90::calculateDesignatedReportStake
+	mmm::Formulas	0061419f::calculateFloatingValue
+	mmm::Formulas	c19b477d::calculateValidityBond
+Contract: HotLoading
+Events:
+Methods:
+	mmm::HotLoading	ca4bae9a::getCurrentDisputeWindowData
+	mmm::HotLoading	cf9f3a8a::getLastTradedPrices
+	mmm::HotLoading	fa8d7a61::getMarketData
+	mmm::HotLoading	77158404::getMarketsData
+	mmm::HotLoading	e07d521a::getReportingState
+	mmm::HotLoading	c684959f::getTotalValidityBonds
+Contract: InitialReporter
+Events:
+Methods:
+	mmm::InitialReporter	b80907f2::getReputationToken
+	mmm::InitialReporter	64020842::isDisavowed
+	mmm::InitialReporter	22b152a3::liquidateLosing
+	mmm::InitialReporter	e21659a6::report
+	mmm::InitialReporter	4591c060::fork
+	mmm::InitialReporter	1d7b6d58::forkAndRedeem
+	mmm::InitialReporter	5b6e2492::getDesignatedReporter
+	mmm::InitialReporter	ee89dab4::getInitialized
+	mmm::InitialReporter	da834ac4::getPayoutNumerator
+	mmm::InitialReporter	de8fa431::getSize
+	mmm::InitialReporter	c3d9c075::initialReporterWasCorrect
+	mmm::InitialReporter	c0c53b8b::initialize
+	mmm::InitialReporter	fc0e3d90::getStake
+	mmm::InitialReporter	f2fde38b::transferOwnership
+	mmm::InitialReporter	7a0d8f8a::augur
+	mmm::InitialReporter	3bf8f34a::designatedReporterShowed
+	mmm::InitialReporter	6f84676e::getPayoutNumerators
+	mmm::InitialReporter	94a771d7::getReportTimestamp
+	mmm::InitialReporter	95a2251f::redeem
+	mmm::InitialReporter	87882cb8::returnRepFromDisavow
+	mmm::InitialReporter	f1be1679::getMarket
+	mmm::InitialReporter	893d20e8::getOwner
+	mmm::InitialReporter	dd62f6f3::getPayoutDistributionHash
+	mmm::InitialReporter	ef0ce37a::migrateToNewUniverse
+Contract: InitialReporterFactory
+Events:
+Methods:
+	mmm::InitialReporterFactory	53343e42::createInitialReporter
+Contract: LegacyReputationToken
+Events:
+	eee::LegacyReputationToken::0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925::Approval
+	eee::LegacyReputationToken::0xbf88b5a3158512dc8ad44dadf221f46eb1df762a2e7fd1de86aab34b0af455cf::FundedAccount
+	eee::LegacyReputationToken::0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef::Transfer
+Methods:
+	mmm::LegacyReputationToken	313ce567::decimals
+	mmm::LegacyReputationToken	dea6aec7::getTargetSupply
+	mmm::LegacyReputationToken	c4d66de8::initialize
+	mmm::LegacyReputationToken	5b66876a::migrateOutByPayout
+	mmm::LegacyReputationToken	23b872dd::transferFrom
+	mmm::LegacyReputationToken	fe98184d::trustedUniverseTransfer
+	mmm::LegacyReputationToken	d9d3e07d::updateSiblingMigrationTotal
+	mmm::LegacyReputationToken	55b6ed5c::allowances
+	mmm::LegacyReputationToken	a457c2d7::decreaseAllowance
+	mmm::LegacyReputationToken	188ec356::getTimestamp
+	mmm::LegacyReputationToken	870c426d::getUniverse
+	mmm::LegacyReputationToken	7f686259::migrateBalancesFromLegacyRep
+	mmm::LegacyReputationToken	db054134::mintForReportingParticipant
+	mmm::LegacyReputationToken	27e235e3::balances
+	mmm::LegacyReputationToken	77469275::getLegacyRepToken
+	mmm::LegacyReputationToken	238d3590::getTotalTheoreticalSupply
+	mmm::LegacyReputationToken	95d89b41::symbol
+	mmm::LegacyReputationToken	a819515d::updateParentTotalTheoreticalSupply
+	mmm::LegacyReputationToken	70a08231::balanceOf
+	mmm::LegacyReputationToken	721bb170::trustedDisputeWindowTransfer
+	mmm::LegacyReputationToken	bef72fa2::controllerLookupName
+	mmm::LegacyReputationToken	57915897::faucet
+	mmm::LegacyReputationToken	db0a087c::getTypeName
+	mmm::LegacyReputationToken	095ea7b3::approve
+	mmm::LegacyReputationToken	ee89dab4::getInitialized
+	mmm::LegacyReputationToken	7cf99c33::getIsMigratingFromLegacy
+	mmm::LegacyReputationToken	39509351::increaseAllowance
+	mmm::LegacyReputationToken	06fdde03::name
+	mmm::LegacyReputationToken	b873e9a7::trustedReportingParticipantTransfer
+	mmm::LegacyReputationToken	dd62ed3e::allowance
+	mmm::LegacyReputationToken	de4c0574::migrateAllowancesFromLegacyRep
+	mmm::LegacyReputationToken	a0c1ca34::migrateIn
+	mmm::LegacyReputationToken	18160ddd::totalSupply
+	mmm::LegacyReputationToken	a9059cbb::transfer
+	mmm::LegacyReputationToken	f22b258a::trustedMarketTransfer
+	mmm::LegacyReputationToken	91d76bbb::getTotalMigrated
+	mmm::LegacyReputationToken	6e7ce591::migrateOut
+Contract: Market
+Events:
+Methods:
+	mmm::Market	d3be9d34::crowdsourcerGeneration
+	mmm::Market	2ce5a91e::getHighestNonTentativeParticipantStake
+	mmm::Market	bb24882e::getOpenInterest
+	mmm::Market	9c8c02ef::transferRepBondOwnership
+	mmm::Market	f89d5066::contribute
+	mmm::Market	8849973f::doInitialReport
+	mmm::Market	a0e16fed::getFinalizationTime
+	mmm::Market	66d12fad::getStakeInOutcome
+	mmm::Market	070c5c24::getValidityBondAttoCash
+	mmm::Market	53e9e7e8::initialize
+	mmm::Market	f2fde38b::transferOwnership
+	mmm::Market	961be391::cash
+	mmm::Market	b80907f2::getReputationToken
+	mmm::Market	870c426d::getUniverse
+	mmm::Market	2c3b4096::validityBondAttoCash
+	mmm::Market	012565ae::contributeToTentative
+	mmm::Market	f8c52125::deriveMarketCreatorFeeAmount
+	mmm::Market	449d0f29::disavowCrowdsourcers
+	mmm::Market	fd478ca9::getNumParticipants
+	mmm::Market	8d4e4083::isFinalized
+	mmm::Market	d261ae73::marketCreatorFeesAttoCash
+	mmm::Market	2c154345::getParticipantStake
+	mmm::Market	3c264820::getWinningPayoutNumerator
+	mmm::Market	1e19082a::getDisputeWindow
+	mmm::Market	ee89dab4::getInitialized
+	mmm::Market	893d20e8::getOwner
+	mmm::Market	6c9fa59e::shareToken
+	mmm::Market	6e106628::getWinningReportingParticipant
+	mmm::Market	4bb278f3::finalize
+	mmm::Market	439f5ac2::getEndTime
+	mmm::Market	bad84c9e::getNumTicks
+	mmm::Market	173029d7::derivePayoutDistributionHash
+	mmm::Market	27ce5b8c::getNumberOfOutcomes
+	mmm::Market	35c1d349::participants
+	mmm::Market	7a0d8f8a::augur
+	mmm::Market	82100be6::getWinningPayoutDistributionHash
+	mmm::Market	f76514c7::isContainerForReportingParticipant
+	mmm::Market	5bd5ea71::warpSync
+	mmm::Market	837fa2b0::affiliateFeeDivisor
+	mmm::Market	eb1f8bbd::getWinningChildPayout
+	mmm::Market	9941b2fc::isFinalizedAsInvalid
+	mmm::Market	d372fbcd::isForkingMarket
+	mmm::Market	c35c08bd::getCrowdsourcer
+	mmm::Market	412979b5::getDisputePacingOn
+	mmm::Market	cc34293c::repBond
+	mmm::Market	54fc53dd::preemptiveDisputeCrowdsourcer
+	mmm::Market	1b1f05c2::recordMarketCreatorFees
+	mmm::Market	b7b42200::repBondOwner
+	mmm::Market	9f941f69::getDesignatedReportingEndTime
+	mmm::Market	1a3739ec::getInitialReporter
+	mmm::Market	1c7f3a96::getMarketCreatorSettlementFeeDivisor
+	mmm::Market	df703a95::migrateThroughOneFork
+	mmm::Market	5b8ef481::crowdsourcers
+	mmm::Market	cb1d8418::getForkingMarket
+Contract: MarketFactory
+Events:
+Methods:
+	mmm::MarketFactory	80288c5c::createMarket
+Contract: MultiAssetProxy
+Events:
+	eee::MultiAssetProxy::0xd2c6b762299c609bdb96520b58a49bfb80186934d4f71a86a367571a15c03194::AssetProxyRegistered
+	eee::MultiAssetProxy::0x3147867c59d17e8fa9d522465651d44aae0a9e38f902f3475b97e58072f0ed4c::AuthorizedAddressAdded
+	eee::MultiAssetProxy::0x1f32c1b084e2de0713b8fb16bd46bb9df710a3dbeae2f3ca93af46e016dcc6b0::AuthorizedAddressRemoved
+	eee::MultiAssetProxy::0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0::OwnershipTransferred
+Methods:
+	mmm::MultiAssetProxy	70712939::removeAuthorizedAddress
+	mmm::MultiAssetProxy	9ad26744::removeAuthorizedAddressAtIndex
+	mmm::MultiAssetProxy	3fd3c997::assetProxies
+	mmm::MultiAssetProxy	b9181611::authorized
+	mmm::MultiAssetProxy	ae25532e::getProxyId
+	mmm::MultiAssetProxy	8da5cb5b::owner
+	mmm::MultiAssetProxy	c585bb93::registerAssetProxy
+	mmm::MultiAssetProxy	42f1181e::addAuthorizedAddress
+	mmm::MultiAssetProxy	494503d4::authorities
+	mmm::MultiAssetProxy	60704108::getAssetProxy
+	mmm::MultiAssetProxy	d39de6e9::getAuthorizedAddresses
+	mmm::MultiAssetProxy	f2fde38b::transferOwnership
+Contract: OICash
+Events:
+	eee::OICash::0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925::Approval
+	eee::OICash::0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef::Transfer
+Methods:
+	mmm::OICash	2e1a7d4d::withdraw
+	mmm::OICash	70a08231::balanceOf
+	mmm::OICash	27e235e3::balances
+	mmm::OICash	a457c2d7::decreaseAllowance
+	mmm::OICash	b6b55f25::deposit
+	mmm::OICash	a9059cbb::transfer
+	mmm::OICash	554c1b1f::universe
+	mmm::OICash	55b6ed5c::allowances
+	mmm::OICash	385babaf::buyCompleteSets
+	mmm::OICash	313ce567::decimals
+	mmm::OICash	ee89dab4::getInitialized
+	mmm::OICash	3084d735::payFees
+	mmm::OICash	23b872dd::transferFrom
+	mmm::OICash	485cc955::initialize
+	mmm::OICash	6c9fa59e::shareToken
+	mmm::OICash	dd62ed3e::allowance
+	mmm::OICash	095ea7b3::approve
+	mmm::OICash	7a0d8f8a::augur
+	mmm::OICash	961be391::cash
+	mmm::OICash	a2879e72::feesPaid
+	mmm::OICash	39509351::increaseAllowance
+	mmm::OICash	18160ddd::totalSupply
+Contract: OICashFactory
+Events:
+Methods:
+	mmm::OICashFactory	1eaa9a88::createOICash
+Contract: Orders
+Events:
+Methods:
+	mmm::Orders	0e1424b5::descendOrderList
+	mmm::Orders	7b6eaa65::getBestOrderId
+	mmm::Orders	ee89dab4::getInitialized
+	mmm::Orders	31d98b3f::getPrice
+	mmm::Orders	37ec114d::getTotalEscrowed
+	mmm::Orders	19e54fb3::assertIsNotBetterPrice
+	mmm::Orders	45c92c38::assertIsNotWorsePrice
+	mmm::Orders	6a816548::cancelOrder
+	mmm::Orders	8e12ebad::getWorstOrderId
+	mmm::Orders	5cf17bbb::isBetterPrice
+	mmm::Orders	60c127b2::getOrderDataForLogs
+	mmm::Orders	f8266a7a::ascendOrderList
+	mmm::Orders	3b01cf3c::findBoundingOrders
+	mmm::Orders	e7d80c70::getOrderCreator
+	mmm::Orders	804fb410::getLastOutcomePrice
+	mmm::Orders	4a1a2d5a::recordFillOrder
+	mmm::Orders	8925f9e9::getWorseOrderId
+	mmm::Orders	d9b3d9fe::isWorsePrice
+	mmm::Orders	da298077::saveOrder
+	mmm::Orders	3011e16a::setPrice
+	mmm::Orders	c3c95c7b::getMarket
+	mmm::Orders	1727583c::getOrderId
+	mmm::Orders	cf357364::getOrderType
+	mmm::Orders	89ab6447::profitLoss
+	mmm::Orders	4a1a342b::getOrderMoneyEscrowed
+	mmm::Orders	5d1a3b82::getOutcome
+	mmm::Orders	485cc955::initialize
+	mmm::Orders	7a0d8f8a::augur
+	mmm::Orders	961be391::cash
+	mmm::Orders	1f0ba6c9::trade
+	mmm::Orders	94d26cb5::getBetterOrderId
+	mmm::Orders	ae23669a::getOrderDataForCancel
+	mmm::Orders	ebead05f::getOrderSharesEscrowed
+	mmm::Orders	fde99668::removeOrder
+	mmm::Orders	8e1bfa73::augurTrading
+	mmm::Orders	6512e6ec::createOrder
+	mmm::Orders	5c1ad844::fillOrder
+	mmm::Orders	0e0a0d74::getAmount
+Contract: Penalizer
+Events:
+Methods:
+	mmm::Penalizer	f913fe3e::penalizeRepeatedNonce
+	mmm::Penalizer	a0313657::versionPenalizer
+	mmm::Penalizer	39ee150a::penalizeIllegalTransaction
+Contract: ProfitLoss
+Events:
+Methods:
+	mmm::ProfitLoss	45a684bb::recordClaim
+	mmm::ProfitLoss	5c1ad844::fillOrder
+	mmm::ProfitLoss	c908ffa7::getNetPosition
+	mmm::ProfitLoss	485cc955::initialize
+	mmm::ProfitLoss	4fb764c9::orders
+	mmm::ProfitLoss	12922c94::recordTrade
+	mmm::ProfitLoss	5310dd31::adjustTraderProfitForFees
+	mmm::ProfitLoss	6512e6ec::createOrder
+	mmm::ProfitLoss	60f6e77e::getAvgPrice
+	mmm::ProfitLoss	6c9fa59e::shareToken
+	mmm::ProfitLoss	8e1bfa73::augurTrading
+	mmm::ProfitLoss	6a816548::cancelOrder
+	mmm::ProfitLoss	2e57cab7::recordFrozenFundChange
+	mmm::ProfitLoss	714e9eb4::getRealizedCost
+	mmm::ProfitLoss	994ad2e1::getRealizedProfit
+	mmm::ProfitLoss	7a0d8f8a::augur
+	mmm::ProfitLoss	7b459892::getFrozenFunds
+	mmm::ProfitLoss	ee89dab4::getInitialized
+Contract: RedeemStake
+Events:
+Methods:
+	mmm::RedeemStake	8d8cc634::redeemStake
+Contract: RelayHub
+Events:
+	eee::RelayHub::0x85b3ae3aae9d3fcb31142fbd8c3b4722d57825b8edd6e1366e69204afa5a0dfa::RelayAdded
+	eee::RelayHub::0x1449c6dd7851abc30abf37f57715f492010519147cc2652fbc38202c18a6ee90::Staked
+	eee::RelayHub::0xab74390d395916d9e0006298d47938a5def5d367054dcca78fa6ec84381f3f22::TransactionRelayed
+	eee::RelayHub::0x8752a472e571a816aea92eec8dae9baf628e840f4929fbcc2d155e6233ff68a7::Deposited
+	eee::RelayHub::0xb0595266ccec357806b2691f348b128209f1060a0bda4f5c95f7090730351ff8::Penalized
+	eee::RelayHub::0x0f5bb82176feb1b5e747e28471aa92156a04d9f3ab9f45f28e2d704232b93f75::Unstaked
+	eee::RelayHub::0xd1c19fbcd4551a5edfb66d43d2e337c04837afda3482b42bdf569a8fccdae5fb::Withdrawn
+	eee::RelayHub::0xafb5afd6d1c2e8ffbfb480e674a169f493ece0b22658d4f4484e7334f0241e22::CanRelayFailed
+	eee::RelayHub::0x5490afc1d818789c8b3d5d63bce3d2a3327d0bba4efb5a7751f783dc977d7d11::RelayRemoved
+Methods:
+	mmm::RelayHub	2ca70eba::recipientCallsAtomic
+	mmm::RelayHub	2b601747::canRelay
+	mmm::RelayHub	aa67c919::depositFor
+	mmm::RelayHub	2d0335ab::getNonce
+	mmm::RelayHub	00f714ce::withdraw
+	mmm::RelayHub	70a08231::balanceOf
+	mmm::RelayHub	85f4498b::canUnstake
+	mmm::RelayHub	1166073a::registerRelay
+	mmm::RelayHub	405cec67::relayCall
+	mmm::RelayHub	c3e712f2::removeRelayByOwner
+	mmm::RelayHub	54fd4d50::version
+	mmm::RelayHub	a863f8f9::maxPossibleCharge
+	mmm::RelayHub	39002432::penalizeIllegalTransaction
+	mmm::RelayHub	6a7d84a4::requiredGas
+	mmm::RelayHub	adc9772e::stake
+	mmm::RelayHub	f2888dbb::unstake
+	mmm::RelayHub	8d851460::getRelay
+	mmm::RelayHub	a8cd9572::penalizeRepeatedNonce
+Contract: RelayHubV2
+Events:
+	eee::RelayHubV2::0xe9d1ac88a261e4e2083100c35586e8fd4999357ea18741846147b31defddd9ef::TransactionRejectedByPaymaster
+	eee::RelayHubV2::0xc9aa709786a3d5fe2cc947abc1ba8cbb0f6decb57aa74b84eb7f558125fee454::TransactionRelayed
+	eee::RelayHubV2::0xd1c19fbcd4551a5edfb66d43d2e337c04837afda3482b42bdf569a8fccdae5fb::Withdrawn
+	eee::RelayHubV2::0x8752a472e571a816aea92eec8dae9baf628e840f4929fbcc2d155e6233ff68a7::Deposited
+	eee::RelayHubV2::0xb0595266ccec357806b2691f348b128209f1060a0bda4f5c95f7090730351ff8::Penalized
+	eee::RelayHubV2::0x77f2d8afec4b9d82ffa0dea525320620292bd1067f575964994d5c4501479aed::RelayServerRegistered
+	eee::RelayHubV2::0xebf4a9bffb39f7c5dbf3f65540183b9381ae226ac3d0a45b4cad484713bd4a28::RelayWorkersAdded
+Methods:
+	mmm::RelayHubV2	633ed2c3::MAX_WORKER_COUNT
+	mmm::RelayHubV2	11d77486::calculateCharge
+	mmm::RelayHubV2	3df1a408::innerRelayCall
+	mmm::RelayHubV2	f636417f::relayCall
+	mmm::RelayHubV2	00f714ce::withdraw
+	mmm::RelayHubV2	ca998f56::workerToManager
+	mmm::RelayHubV2	c2da0786::addRelayWorkers
+	mmm::RelayHubV2	27e235e3::balances
+	mmm::RelayHubV2	514d5f54::canRelay
+	mmm::RelayHubV2	ca64f9e7::getStakeManager
+	mmm::RelayHubV2	7542ff95::stakeManager
+	mmm::RelayHubV2	d904c732::versionHub
+	mmm::RelayHubV2	194ac307::workerCount
+	mmm::RelayHubV2	ebcd31ac::penalize
+	mmm::RelayHubV2	83b71871::registerRelayServer
+	mmm::RelayHubV2	70a08231::balanceOf
+	mmm::RelayHubV2	aa67c919::depositFor
+	mmm::RelayHubV2	e1decef3::getHubOverhead
+	mmm::RelayHubV2	c4775a68::penalizer
+Contract: RepOracle
+Events:
+Methods:
+	mmm::RepOracle	06f2bf62::getExchange
+	mmm::RepOracle	41976e09::getPrice
+	mmm::RepOracle	c4d66de8::initialize
+	mmm::RepOracle	b1a997ac::poke
+	mmm::RepOracle	7a0d8f8a::augur
+	mmm::RepOracle	ce053ddf::genesisInitialRepPriceinAttoCash
+	mmm::RepOracle	ee89dab4::getInitialized
+	mmm::RepOracle	1a351d62::getLastUpdateTimestamp
+	mmm::RepOracle	b5bab44b::getPriceCumulativeLast
+	mmm::RepOracle	8bdb2afa::uniswapFactory
+	mmm::RepOracle	b4d1d795::PERIOD
+	mmm::RepOracle	961be391::cash
+Contract: RepSymbol
+Events:
+Methods:
+	mmm::RepSymbol	84ecd8e4::getRepSymbol
+Contract: ReputationToken
+Events:
+	eee::ReputationToken::0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925::Approval
+	eee::ReputationToken::0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef::Transfer
+Methods:
+	mmm::ReputationToken	721bb170::trustedDisputeWindowTransfer
+	mmm::ReputationToken	5bd5ea71::warpSync
+	mmm::ReputationToken	27e235e3::balances
+	mmm::ReputationToken	db054134::mintForReportingParticipant
+	mmm::ReputationToken	7a0d8f8a::augur
+	mmm::ReputationToken	77469275::getLegacyRepToken
+	mmm::ReputationToken	75d9aa1a::migrateFromLegacyReputationToken
+	mmm::ReputationToken	a0c1ca34::migrateIn
+	mmm::ReputationToken	313ce567::decimals
+	mmm::ReputationToken	18160ddd::totalSupply
+	mmm::ReputationToken	23b872dd::transferFrom
+	mmm::ReputationToken	fe98184d::trustedUniverseTransfer
+	mmm::ReputationToken	55b6ed5c::allowances
+	mmm::ReputationToken	ae3816ee::burnForMarket
+	mmm::ReputationToken	95d89b41::symbol
+	mmm::ReputationToken	a9059cbb::transfer
+	mmm::ReputationToken	f22b258a::trustedMarketTransfer
+	mmm::ReputationToken	dd62ed3e::allowance
+	mmm::ReputationToken	39509351::increaseAllowance
+	mmm::ReputationToken	06fdde03::name
+	mmm::ReputationToken	b873e9a7::trustedReportingParticipantTransfer
+	mmm::ReputationToken	91d76bbb::getTotalMigrated
+	mmm::ReputationToken	d5466777::legacyRepToken
+	mmm::ReputationToken	238d3590::getTotalTheoreticalSupply
+	mmm::ReputationToken	e1897b59::mintForWarpSync
+	mmm::ReputationToken	095ea7b3::approve
+	mmm::ReputationToken	a457c2d7::decreaseAllowance
+	mmm::ReputationToken	5b66876a::migrateOutByPayout
+	mmm::ReputationToken	183636c5::parentUniverse
+	mmm::ReputationToken	70a08231::balanceOf
+	mmm::ReputationToken	870c426d::getUniverse
+Contract: ReputationTokenFactory
+Events:
+Methods:
+	mmm::ReputationTokenFactory	812f82d9::createReputationToken
+Contract: ShareToken
+Events:
+	eee::ShareToken::0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb::TransferBatch
+	eee::ShareToken::0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62::TransferSingle
+	eee::ShareToken::0x6bb7ff708619ba0610cba295a58592e0451dee2622938c8755667688daf3529b::URI
+	eee::ShareToken::0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31::ApprovalForAll
+Methods:
+	mmm::ShareToken	eb44fdd3::getMarket
+	mmm::ShareToken	06fdde03::name
+	mmm::ShareToken	ad16158e::publicSellCompleteSets
+	mmm::ShareToken	8c5e2f87::totalSupplyForMarketOutcome
+	mmm::ShareToken	4db3b9e3::assertBalances
+	mmm::ShareToken	06065ced::calculateCreatorFee
+	mmm::ShareToken	9f66cddf::divideUpWinnings
+	mmm::ShareToken	95d89b41::symbol
+	mmm::ShareToken	abb60c80::publicBuyCompleteSets
+	mmm::ShareToken	5990fea6::sellCompleteSets
+	mmm::ShareToken	a22cb465::setApprovalForAll
+	mmm::ShareToken	26afd2e8::unpackTokenId
+	mmm::ShareToken	4028e8ea::unsafeBatchTransferFrom
+	mmm::ShareToken	ca3a1e69::getTokenIds
+	mmm::ShareToken	f242432a::safeTransferFrom
+	mmm::ShareToken	bd85b039::totalSupply
+	mmm::ShareToken	edc3bc3f::_operatorApprovals
+	mmm::ShareToken	aa48db20::buyCompleteSets
+	mmm::ShareToken	f2dc8266::calculateProceeds
+	mmm::ShareToken	961be391::cash
+	mmm::ShareToken	ee89dab4::getInitialized
+	mmm::ShareToken	53b7a712::sellCompleteSetsForTrade
+	mmm::ShareToken	f32ef051::_supplys
+	mmm::ShareToken	4e1273f4::balanceOfBatch
+	mmm::ShareToken	c4d66de8::initialize
+	mmm::ShareToken	3b48090e::initializeMarket
+	mmm::ShareToken	f8a2167b::lowestBalanceOfMarketOutcomes
+	mmm::ShareToken	fbc37ca9::unsafeTransferFrom
+	mmm::ShareToken	fc25a4da::_balances
+	mmm::ShareToken	d64c62f3::balanceOfMarketOutcome
+	mmm::ShareToken	efd342c1::claimTradingProceeds
+	mmm::ShareToken	cd579335::getOutcome
+	mmm::ShareToken	db0a087c::getTypeName
+	mmm::ShareToken	7a0d8f8a::augur
+	mmm::ShareToken	00fdd58e::balanceOf
+	mmm::ShareToken	e985e9c5::isApprovedForAll
+	mmm::ShareToken	2eb2c2d6::safeBatchTransferFrom
+	mmm::ShareToken	431e8878::buyCompleteSetsForTrade
+	mmm::ShareToken	81894407::calculateReportingFee
+	mmm::ShareToken	29f99b9f::getTokenId
+	mmm::ShareToken	01ffc9a7::supportsInterface
+Contract: SimulateTrade
+Events:
+Methods:
+	mmm::SimulateTrade	4fb764c9::orders
+	mmm::SimulateTrade	546a2a47::simulateTrade
+	mmm::SimulateTrade	4b8a7dd2::simulateZeroXTrade
+	mmm::SimulateTrade	7a0d8f8a::augur
+	mmm::SimulateTrade	8e1bfa73::augurTrading
+	mmm::SimulateTrade	ee89dab4::getInitialized
+	mmm::SimulateTrade	36ec64c0::getNumberOfAvaialableShares
+	mmm::SimulateTrade	485cc955::initialize
+	mmm::SimulateTrade	6c9fa59e::shareToken
+	mmm::SimulateTrade	1a505b76::zeroXTrade
+Contract: StakeManager
+Events:
+	eee::StakeManager::0xe292c4f6e9f34c975f4958cd5650a8111352feae914a67b06407957105421021::HubAuthorized
+	eee::StakeManager::0x8d941c9b73ba7e59671a59eed85054004624684182b0e4bdb56c35937bac65a6::HubUnauthorized
+	eee::StakeManager::0xef7c8dfef14cbefdf829b8f066b068b677992411137321d64b3ed4538c2b3637::StakeAdded
+	eee::StakeManager::0x2f2ba0bf4c9bedc2210a4da5b5811c2a4fd28e62c51bb90c3ea6fdce00808eb0::StakePenalized
+	eee::StakeManager::0x9ffc6168de1eb7f1d16200f614753cd7edce5a2186aab1c612199dd7316cd7c4::StakeUnlocked
+	eee::StakeManager::0xb7c918e0e249f999e965cafeb6c664271b3f4317d296461500e71da39f0cbda3::StakeWithdrawn
+Methods:
+	mmm::StakeManager	dd687862::isRelayManagerStaked
+	mmm::StakeManager	09a08af4::penalizeRelayManager
+	mmm::StakeManager	4a1ce599::unlockStake
+	mmm::StakeManager	47116c6e::versionSM
+	mmm::StakeManager	19c18932::authorizeHub
+	mmm::StakeManager	7aeb642a::authorizedHubs
+	mmm::StakeManager	16934fc4::stakes
+	mmm::StakeManager	500aaa38::unauthorizeHub
+	mmm::StakeManager	c23a5cea::withdrawStake
+	mmm::StakeManager	c3453153::getStakeInfo
+	mmm::StakeManager	5d2fb768::stakeForAddress
+Contract: TestNetDaiJoin
+Events:
+Methods:
+	mmm::TestNetDaiJoin	957aa58c::live
+	mmm::TestNetDaiJoin	36569e77::vat
+	mmm::TestNetDaiJoin	69245009::cage
+	mmm::TestNetDaiJoin	f4b9fa75::dai
+	mmm::TestNetDaiJoin	ef693bed::exit
+	mmm::TestNetDaiJoin	3b4da69f::join
+Contract: TestNetDaiPot
+Events:
+Methods:
+	mmm::TestNetDaiPot	2c69ed58::Pie
+	mmm::TestNetDaiPot	487bf082::dsr
+	mmm::TestNetDaiPot	7f8661a1::exit
+	mmm::TestNetDaiPot	049878f3::join
+	mmm::TestNetDaiPot	65c0ac4b::setDSR
+	mmm::TestNetDaiPot	16ada547::time
+	mmm::TestNetDaiPot	c92aecc4::chi
+	mmm::TestNetDaiPot	9f678cca::drip
+	mmm::TestNetDaiPot	0bebac86::pie
+	mmm::TestNetDaiPot	20aba08b::rho
+	mmm::TestNetDaiPot	36569e77::vat
+Contract: TestNetDaiVat
+Events:
+Methods:
+	mmm::TestNetDaiVat	dc4d20fa::nope
+	mmm::TestNetDaiVat	69245009::cage
+	mmm::TestNetDaiVat	7b56c2b2::faucet
+	mmm::TestNetDaiVat	76088703::frob
+	mmm::TestNetDaiVat	d9638d36::ilks
+	mmm::TestNetDaiVat	bb35783b::move
+	mmm::TestNetDaiVat	4538c4eb::can
+	mmm::TestNetDaiVat	6c25b346::dai
+	mmm::TestNetDaiVat	a3b22fc4::hope
+	mmm::TestNetDaiVat	957aa58c::live
+	mmm::TestNetDaiVat	f24e23eb::suck
+Contract: TestNetReputationToken
+Events:
+	eee::TestNetReputationToken::0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925::Approval
+	eee::TestNetReputationToken::0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef::Transfer
+Methods:
+	mmm::TestNetReputationToken	77469275::getLegacyRepToken
+	mmm::TestNetReputationToken	721bb170::trustedDisputeWindowTransfer
+	mmm::TestNetReputationToken	f22b258a::trustedMarketTransfer
+	mmm::TestNetReputationToken	a9059cbb::transfer
+	mmm::TestNetReputationToken	dd62ed3e::allowance
+	mmm::TestNetReputationToken	70a08231::balanceOf
+	mmm::TestNetReputationToken	27e235e3::balances
+	mmm::TestNetReputationToken	e1897b59::mintForWarpSync
+	mmm::TestNetReputationToken	183636c5::parentUniverse
+	mmm::TestNetReputationToken	18160ddd::totalSupply
+	mmm::TestNetReputationToken	57915897::faucet
+	mmm::TestNetReputationToken	5b66876a::migrateOutByPayout
+	mmm::TestNetReputationToken	5bd5ea71::warpSync
+	mmm::TestNetReputationToken	06fdde03::name
+	mmm::TestNetReputationToken	ae3816ee::burnForMarket
+	mmm::TestNetReputationToken	a457c2d7::decreaseAllowance
+	mmm::TestNetReputationToken	91d76bbb::getTotalMigrated
+	mmm::TestNetReputationToken	870c426d::getUniverse
+	mmm::TestNetReputationToken	75d9aa1a::migrateFromLegacyReputationToken
+	mmm::TestNetReputationToken	db054134::mintForReportingParticipant
+	mmm::TestNetReputationToken	095ea7b3::approve
+	mmm::TestNetReputationToken	313ce567::decimals
+	mmm::TestNetReputationToken	23b872dd::transferFrom
+	mmm::TestNetReputationToken	fe98184d::trustedUniverseTransfer
+	mmm::TestNetReputationToken	55b6ed5c::allowances
+	mmm::TestNetReputationToken	a0c1ca34::migrateIn
+	mmm::TestNetReputationToken	7a0d8f8a::augur
+	mmm::TestNetReputationToken	d5466777::legacyRepToken
+	mmm::TestNetReputationToken	95d89b41::symbol
+	mmm::TestNetReputationToken	b873e9a7::trustedReportingParticipantTransfer
+	mmm::TestNetReputationToken	238d3590::getTotalTheoreticalSupply
+	mmm::TestNetReputationToken	39509351::increaseAllowance
+Contract: TestNetReputationTokenFactory
+Events:
+Methods:
+	mmm::TestNetReputationTokenFactory	812f82d9::createReputationToken
+Contract: Time
+Events:
+Methods:
+	mmm::Time	188ec356::getTimestamp
+	mmm::Time	db0a087c::getTypeName
+Contract: TimeControlled
+Events:
+Methods:
+	mmm::TimeControlled	c4d66de8::initialize
+	mmm::TimeControlled	a0a2b573::setTimestamp
+	mmm::TimeControlled	b80777ea::timestamp
+	mmm::TimeControlled	7a0d8f8a::augur
+	mmm::TimeControlled	188ec356::getTimestamp
+	mmm::TimeControlled	db0a087c::getTypeName
+	mmm::TimeControlled	b610c75e::incrementTimestamp
+Contract: Trade
+Events:
+Methods:
+	mmm::Trade	8e1bfa73::augurTrading
+	mmm::Trade	6512e6ec::createOrder
+	mmm::Trade	485cc955::initialize
+	mmm::Trade	4fb764c9::orders
+	mmm::Trade	001fbc0b::publicTrade
+	mmm::Trade	7a0d8f8a::augur
+	mmm::Trade	961be391::cash
+	mmm::Trade	5c1ad844::fillOrder
+	mmm::Trade	ee89dab4::getInitialized
+	mmm::Trade	0f848dad::publicFillBestOrder
+Contract: UniswapV2Factory
+Events:
+	eee::UniswapV2Factory::0x0d3648bd0f6ba80134a33ba9275ac585d9d315f0ad8355cddefde31afa28d0e9::PairCreated
+Methods:
+	mmm::UniswapV2Factory	e6a43905::getPair
+	mmm::UniswapV2Factory	f46901ed::setFeeTo
+	mmm::UniswapV2Factory	a2e74af6::setFeeToSetter
+	mmm::UniswapV2Factory	1e3dd18b::allPairs
+	mmm::UniswapV2Factory	574f2ba3::allPairsLength
+	mmm::UniswapV2Factory	c9c65396::createPair
+	mmm::UniswapV2Factory	017e7e58::feeTo
+	mmm::UniswapV2Factory	094b7415::feeToSetter
+Contract: UniswapV2Pair
+Events:
+	eee::UniswapV2Pair::0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925::Approval
+	eee::UniswapV2Pair::0xdccd412f0b1252819cb1fd330b93224ca42612892bb3f4f789976e6d81936496::Burn
+	eee::UniswapV2Pair::0x4c209b5fc8ad50758f13e2e1088ba56a560dff690a1c6fef26394f4c03821c4f::Mint
+	eee::UniswapV2Pair::0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822::Swap
+	eee::UniswapV2Pair::0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1::Sync
+	eee::UniswapV2Pair::0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef::Transfer
+Methods:
+	mmm::UniswapV2Pair	485cc955::initialize
+	mmm::UniswapV2Pair	fff6cae9::sync
+	mmm::UniswapV2Pair	89afcb44::burn
+	mmm::UniswapV2Pair	0902f1ac::getReserves
+	mmm::UniswapV2Pair	d505accf::permit
+	mmm::UniswapV2Pair	3644e515::DOMAIN_SEPARATOR
+	mmm::UniswapV2Pair	095ea7b3::approve
+	mmm::UniswapV2Pair	d21220a7::token1
+	mmm::UniswapV2Pair	23b872dd::transferFrom
+	mmm::UniswapV2Pair	70a08231::balanceOf
+	mmm::UniswapV2Pair	313ce567::decimals
+	mmm::UniswapV2Pair	7464fc3d::kLast
+	mmm::UniswapV2Pair	6a627842::mint
+	mmm::UniswapV2Pair	5909c0d5::price0CumulativeLast
+	mmm::UniswapV2Pair	bc25cf77::skim
+	mmm::UniswapV2Pair	95d89b41::symbol
+	mmm::UniswapV2Pair	ba9a7a56::MINIMUM_LIQUIDITY
+	mmm::UniswapV2Pair	7ecebe00::nonces
+	mmm::UniswapV2Pair	0dfe1681::token0
+	mmm::UniswapV2Pair	18160ddd::totalSupply
+	mmm::UniswapV2Pair	a9059cbb::transfer
+	mmm::UniswapV2Pair	30adf81f::PERMIT_TYPEHASH
+	mmm::UniswapV2Pair	dd62ed3e::allowance
+	mmm::UniswapV2Pair	5a3d5493::price1CumulativeLast
+	mmm::UniswapV2Pair	022c0d9f::swap
+	mmm::UniswapV2Pair	c45a0155::factory
+	mmm::UniswapV2Pair	06fdde03::name
+Contract: UniswapV2Router01
+Events:
+Methods:
+	mmm::UniswapV2Router01	ad5c4648::WETH
+	mmm::UniswapV2Router01	f305d719::addLiquidityETH
+	mmm::UniswapV2Router01	1f00ca74::getAmountsIn
+	mmm::UniswapV2Router01	4a25d94a::swapTokensForExactETH
+	mmm::UniswapV2Router01	c45a0155::factory
+	mmm::UniswapV2Router01	ded9382a::removeLiquidityETHWithPermit
+	mmm::UniswapV2Router01	fb3bdb41::swapETHForExactTokens
+	mmm::UniswapV2Router01	7ff36ab5::swapExactETHForTokens
+	mmm::UniswapV2Router01	38ed1739::swapExactTokensForTokens
+	mmm::UniswapV2Router01	18cbafe5::swapExactTokensForETH
+	mmm::UniswapV2Router01	8803dbee::swapTokensForExactTokens
+	mmm::UniswapV2Router01	b9e03e05::exchangeFor
+	mmm::UniswapV2Router01	85f8c259::getAmountIn
+	mmm::UniswapV2Router01	054d50d4::getAmountOut
+	mmm::UniswapV2Router01	ad615dec::quote
+	mmm::UniswapV2Router01	baa2abde::removeLiquidity
+	mmm::UniswapV2Router01	02751cec::removeLiquidityETH
+	mmm::UniswapV2Router01	e8e33700::addLiquidity
+	mmm::UniswapV2Router01	d06ca61f::getAmountsOut
+	mmm::UniswapV2Router01	96ed28f9::pairFor
+	mmm::UniswapV2Router01	2195995c::removeLiquidityWithPermit
+Contract: Universe
+Events:
+Methods:
+	mmm::Universe	7262f993::getWinningChildPayoutNumerator
+	mmm::Universe	ce483e88::incrementOpenInterest
+	mmm::Universe	9f7e1bf6::isContainerForMarket
+	mmm::Universe	3ec6b034::designatedReportStakeInAttoRep
+	mmm::Universe	fb03eaea::getDisputeThresholdForFork
+	mmm::Universe	8f93bffe::getOrCacheReportingFeeDivisor
+	mmm::Universe	af4cd457::getOrCacheValidityBond
+	mmm::Universe	e2d8edaf::getOrCreatePreviousDisputeWindow
+	mmm::Universe	0d5a9e4d::shareSettlementFeeDivisor
+	mmm::Universe	69328dec::withdraw
+	mmm::Universe	3a537176::createChildUniverse
+	mmm::Universe	eceba876::getChildUniverse
+	mmm::Universe	c675f222::getOpenInterestInAttoCash
+	mmm::Universe	fd1e5e7a::getOrCacheDesignatedReportNoShowBond
+	mmm::Universe	3342f689::sweepInterest
+	mmm::Universe	5449aed5::getDisputeWindowStartTimeAndDuration
+	mmm::Universe	47d20e3b::isOpenInterestCash
+	mmm::Universe	d372fbcd::isForkingMarket
+	mmm::Universe	8d2ecfba::migrateMarketIn
+	mmm::Universe	7a0d8f8a::augur
+	mmm::Universe	b62418a1::decrementOpenInterest
+	mmm::Universe	047825c7::getDisputeThresholdForDisputePacing
+	mmm::Universe	da834ac4::getPayoutNumerator
+	mmm::Universe	0dcde5f5::getReportingFeeDivisor
+	mmm::Universe	e4372c3c::DEFAULT_NUM_OUTCOMES
+	mmm::Universe	6f70b9cb::getWinningChildUniverse
+	mmm::Universe	f7095d9d::updateTentativeWinningChildUniverse
+	mmm::Universe	df9fde7e::getTargetRepMarketCapInAttoCash
+	mmm::Universe	e5b4f771::lastSweep
+	mmm::Universe	3940b675::openInterestCash
+	mmm::Universe	a95b973c::createYesNoMarket
+	mmm::Universe	3bd831f4::daiVat
+	mmm::Universe	b53b321e::designatedReportNoShowBondInAttoRep
+	mmm::Universe	a9f4185d::disputeWindowFactory
+	mmm::Universe	5f723b50::getInitialReportMinValue
+	mmm::Universe	6f33ebb7::previousReportingFeeDivisor
+	mmm::Universe	48bc4eba::repOracle
+	mmm::Universe	efb106ba::validityBondInAttoCash
+	mmm::Universe	4591c060::fork
+	mmm::Universe	7f7c390a::formulas
+	mmm::Universe	77e71ee5::getForkEndTime
+	mmm::Universe	01ba1fa3::isContainerForDisputeWindow
+	mmm::Universe	0bcde26d::previousDesignatedReportNoShowBondInAttoRep
+	mmm::Universe	60d9b489::payoutNumerators
+	mmm::Universe	6c9fa59e::shareToken
+	mmm::Universe	f2cf48f6::INITIAL_WINDOW_ID_BUFFER
+	mmm::Universe	f28b0956::getOrCreatePreviousPreviousDisputeWindow
+	mmm::Universe	becb1f35::isForking
+	mmm::Universe	9517317c::isParentOf
+	mmm::Universe	06ae7095::marketFactory
+	mmm::Universe	e3fa4b04::getOrCreateCurrentDisputeWindow
+	mmm::Universe	13bf24c1::pokeRepMarketCapInAttoCash
+	mmm::Universe	705123dc::DEFAULT_NUM_TICKS
+	mmm::Universe	9ab448d9::updateForkValues
+	mmm::Universe	8689526b::getOrCreateDisputeWindowByTimestamp
+	mmm::Universe	c38c0fa7::getParentPayoutDistributionHash
+	mmm::Universe	552033c4::RAY
+	mmm::Universe	2cb1fd20::daiPot
+	mmm::Universe	180ef158::decrementOpenInterestFromMarket
+	mmm::Universe	6c23f723::getDisputeWindow
+	mmm::Universe	622ae175::getDisputeWindowByTimestamp
+	mmm::Universe	e79609e2::getOrCacheDesignatedReportStake
+	mmm::Universe	a63f1350::getParentUniverse
+	mmm::Universe	45a62887::createCategoricalMarket
+	mmm::Universe	d8270dce::creationTime
+	mmm::Universe	879eefa5::getDisputeRoundDurationInSeconds
+	mmm::Universe	2c7faa4d::getDisputeWindowId
+	mmm::Universe	7c377d74::getForkReputationGoal
+	mmm::Universe	ad7a672f::totalBalance
+	mmm::Universe	961be391::cash
+	mmm::Universe	11a80ffc::createScalarMarket
+	mmm::Universe	8699d434::getCurrentDisputeWindow
+	mmm::Universe	b80907f2::getReputationToken
+	mmm::Universe	9672e3ba::marketBalance
+	mmm::Universe	92394f32::getOrCreateNextDisputeWindow
+	mmm::Universe	cb1d8418::getForkingMarket
+	mmm::Universe	a7e8d762::getOrCacheMarketRepBond
+	mmm::Universe	f76514c7::isContainerForReportingParticipant
+	mmm::Universe	11be56d7::migrateMarketOut
+	mmm::Universe	98fedb09::runPeriodicals
+	mmm::Universe	ef7cd234::previousValidityBondInAttoCash
+	mmm::Universe	c11645bc::daiJoin
+	mmm::Universe	f45346dc::deposit
+	mmm::Universe	57d7a3c4::disputeWindows
+	mmm::Universe	6f84676e::getPayoutNumerators
+	mmm::Universe	b4eeb2d7::previousDesignatedReportStakeInAttoRep
+Contract: UniverseFactory
+Events:
+Methods:
+	mmm::UniverseFactory	a7ac9137::createUniverse
+Contract: WETH9
+Events:
+	eee::WETH9::0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef::Transfer
+	eee::WETH9::0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65::Withdrawal
+	eee::WETH9::0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925::Approval
+	eee::WETH9::0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c::Deposit
+Methods:
+	mmm::WETH9	dd62ed3e::allowance
+	mmm::WETH9	313ce567::decimals
+	mmm::WETH9	d0e30db0::deposit
+	mmm::WETH9	a9059cbb::transfer
+	mmm::WETH9	23b872dd::transferFrom
+	mmm::WETH9	2e1a7d4d::withdraw
+	mmm::WETH9	095ea7b3::approve
+	mmm::WETH9	70a08231::balanceOf
+	mmm::WETH9	06fdde03::name
+	mmm::WETH9	95d89b41::symbol
+	mmm::WETH9	18160ddd::totalSupply
+Contract: WarpSync
+Events:
+Methods:
+	mmm::WarpSync	7a0d8f8a::augur
+	mmm::WarpSync	0fc40aa7::getCreationReward
+	mmm::WarpSync	2f91029a::getFinalizationReward
+	mmm::WarpSync	ee89dab4::getInitialized
+	mmm::WarpSync	12481ad6::lastSweepTime
+	mmm::WarpSync	e8a2a7a6::notifyMarketFinalized
+	mmm::WarpSync	b90d3d0c::data
+	mmm::WarpSync	44dafa1f::doInitialReport
+	mmm::WarpSync	c4d66de8::initialize
+	mmm::WarpSync	44085513::initializeUniverse
+	mmm::WarpSync	8e8f294b::markets
+Contract: ZRXToken
+Events:
+	eee::ZRXToken::0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925::Approval
+	eee::ZRXToken::0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef::Transfer
+Methods:
+	mmm::ZRXToken	95d89b41::symbol
+	mmm::ZRXToken	18160ddd::totalSupply
+	mmm::ZRXToken	a9059cbb::transfer
+	mmm::ZRXToken	70a08231::balanceOf
+	mmm::ZRXToken	095ea7b3::approve
+	mmm::ZRXToken	313ce567::decimals
+	mmm::ZRXToken	06fdde03::name
+	mmm::ZRXToken	23b872dd::transferFrom
+	mmm::ZRXToken	dd62ed3e::allowance
+Contract: ZeroXTrade
+Events:
+	eee::ZeroXTrade::0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb::TransferBatch
+	eee::ZeroXTrade::0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62::TransferSingle
+	eee::ZeroXTrade::0x6bb7ff708619ba0610cba295a58592e0451dee2622938c8755667688daf3529b::URI
+	eee::ZeroXTrade::0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31::ApprovalForAll
+Methods:
+	mmm::ZeroXTrade	3fc6f627::estimateProtocolFeeCostInCash
+	mmm::ZeroXTrade	00ee3542::getZeroXTradeTokenData
+	mmm::ZeroXTrade	7b66c82a::token0IsCash
+	mmm::ZeroXTrade	4bf1ee87::encodeEIP1271OrderWithHash
+	mmm::ZeroXTrade	53e569a1::ethExchange
+	mmm::ZeroXTrade	4e1273f4::balanceOfBatch
+	mmm::ZeroXTrade	b3ca8e25::decodeTradeAssetData
+	mmm::ZeroXTrade	235f9e08::encodeAssetData
+	mmm::ZeroXTrade	7cb11125::decodeAssetData
+	mmm::ZeroXTrade	d2f7265a::exchange
+	mmm::ZeroXTrade	e306f779::EIP712_DOMAIN_HASH
+	mmm::ZeroXTrade	8e1bfa73::augurTrading
+	mmm::ZeroXTrade	1d4b44bb::cashAvailableForTransferFrom
+	mmm::ZeroXTrade	2f562016::trade
+	mmm::ZeroXTrade	e186955b::createZeroXOrderFor
+	mmm::ZeroXTrade	afc6d8ba::getTokenIdFromOrder
+	mmm::ZeroXTrade	6c9fa59e::shareToken
+	mmm::ZeroXTrade	9c6fbce5::isOrderAmountValid
+	mmm::ZeroXTrade	ad5c22c8::EIP1271_ORDER_WITH_HASH_SELECTOR
+	mmm::ZeroXTrade	09c1df9f::getTransferFromAllowed
+	mmm::ZeroXTrade	485cc955::initialize
+	mmm::ZeroXTrade	ee89dab4::getInitialized
+	mmm::ZeroXTrade	26afd2e8::unpackTokenId
+	mmm::ZeroXTrade	5e03e6e4::askBalance
+	mmm::ZeroXTrade	00fdd58e::balanceOf
+	mmm::ZeroXTrade	961be391::cash
+	mmm::ZeroXTrade	2eb2c2d6::safeBatchTransferFrom
+	mmm::ZeroXTrade	f242432a::safeTransferFrom
+	mmm::ZeroXTrade	a22cb465::setApprovalForAll
+	mmm::ZeroXTrade	bd85b039::totalSupply
+	mmm::ZeroXTrade	e264cff1::creatorHasFundsForTrade
+	mmm::ZeroXTrade	1f981bde::getTokenId
+	mmm::ZeroXTrade	61a4760b::parseOrderData
+	mmm::ZeroXTrade	4ea96c30::cancelOrders
+	mmm::ZeroXTrade	f94515f0::createZeroXOrder
+	mmm::ZeroXTrade	5c1ad844::fillOrder
+	mmm::ZeroXTrade	85f8c259::getAmountIn
+	mmm::ZeroXTrade	e985e9c5::isApprovedForAll
+	mmm::ZeroXTrade	ad5c4648::WETH
+	mmm::ZeroXTrade	7a0d8f8a::augur
+	mmm::ZeroXTrade	2c52071c::bidBalance
