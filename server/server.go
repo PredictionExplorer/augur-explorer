@@ -33,8 +33,15 @@ func create_augur_server(mkt_order_id_ptr *int64) *AugurServer {
 	srv.storage.Init_log(DEFAULT_DB_LOG_FILE_NAME)
 	return srv
 }
-func parse_int_from_remote_or_error(c *gin.Context,ascii_int *string) (int,bool) {
-	p, err := strconv.Atoi(*ascii_int)
+func respond_error(c *gin.Context,error_text string) {
+
+	c.HTML(http.StatusBadRequest, "error.html", gin.H{
+		"title": "Augur Markets: Error",
+		"ErrDescr": error_text,
+	})
+}
+func parse_int_from_remote_or_error(c *gin.Context,ascii_int *string) (int64,bool) {
+	p, err := strconv.ParseInt(*ascii_int,10,64)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -42,8 +49,7 @@ func parse_int_from_remote_or_error(c *gin.Context,ascii_int *string) (int,bool)
 		})
 		return 0,false
 	}
-	result := int(p)
-	return result,true
+	return p,true
 }
 func mkt_depth_entry_to_js_obj(de *DepthEntry) string {
 
@@ -215,6 +221,26 @@ func build_javascript_cash_flow_data(entries *[]BlockCash) template.JS {
 	data_str = data_str + "]"
 	return template.JS(data_str)
 }
+func build_javascript_uniq_addrs(entries *[]UniqueAddrEntry) template.JS {
+	var data_str string = "["
+
+	for i:=0 ; i < len(*entries) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		var e = &(*entries)[i];
+		var entry string
+		entry = "{" +
+				"x:" + fmt.Sprintf("%v",e.Day)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.NumAddrs) + "," +
+				"num_addrs: " + fmt.Sprintf("%v",e.NumAddrs) + "," +
+				"date_str: " + fmt.Sprintf("%v",e.Day) + "" +
+				"}"
+		data_str= data_str + entry
+	}
+	data_str = data_str + "]"
+	return template.JS(data_str)
+}
 func main_page(c *gin.Context) {
 	blknum,_:= augur_srv.storage.Get_last_block_num()
 	stats := augur_srv.storage.Get_front_page_stats()
@@ -257,10 +283,13 @@ func statistics(c *gin.Context) {
 	stats := augur_srv.storage.Get_main_stats()
 	cash_flow_entries := augur_srv.storage.Get_cash_flow()
 	cash_flow_data := build_javascript_cash_flow_data(&cash_flow_entries)
+	uniq_addr_entries := augur_srv.storage.Get_unique_addresses()
+	uniq_addrs_data := build_javascript_uniq_addrs(&uniq_addr_entries)
 	c.HTML(http.StatusOK, "statistics.html", gin.H{
 			"title": "Augur Market Statistics",
 			"MainStats" : stats,
 			"CashFlowData" : cash_flow_data,
+			"UniqAddrsData" : uniq_addrs_data,
 	})
 }
 func explorer(c *gin.Context) {
@@ -274,7 +303,7 @@ func explorer(c *gin.Context) {
 
 func complete_and_output_market_info(c *gin.Context,minfo InfoMarket) {
 
-	var limit int = DEFAILT_MARKET_TRADES_LIMIT;
+	var limit int64 = int64(DEFAILT_MARKET_TRADES_LIMIT);
 	p_limit := c.Query("limit")
 	if len(p_limit) > 0 {
 		var success bool
@@ -283,7 +312,7 @@ func complete_and_output_market_info(c *gin.Context,minfo InfoMarket) {
 			return
 		}
 	}
-	trades := augur_srv.storage.Get_mkt_trades(minfo.MktAddr,limit)
+	trades := augur_srv.storage.Get_mkt_trades(minfo.MktAddr,int(limit))
 	outcome_vols,_ := augur_srv.storage.Get_outcome_volumes(minfo.MktAddr)
 	c.HTML(http.StatusOK, "market_info.html", gin.H{
 			"title": "Trades for market",
@@ -343,15 +372,54 @@ func market_depth(c *gin.Context) {
 		})
 		return
 	}
-	mdepth := augur_srv.storage.Get_mkt_depth(market,outcome)
+	mdepth,last_oo_id := augur_srv.storage.Get_mkt_depth(market_info.MktAid,outcome)
+	num_orders:=len(mdepth.Bids) + len(mdepth.Asks)
 	js_bid_data,js_ask_data := build_javascript_data_obj(mdepth)
 	c.HTML(http.StatusOK, "market_depth.html", gin.H{
 			"title": "Market Depth",
 			"Market": market_info,
+			"LastOOID": last_oo_id,
+			"NumOrders" : num_orders,
 			"Bids": mdepth.Bids,
 			"Asks": mdepth.Asks,
 			"JSAskData": js_ask_data,
 			"JSBidData": js_bid_data,
+			"OutcomeIdx" : outcome,
+	})
+}
+func market_depth_ajax(c *gin.Context) {
+
+	p_outcome := c.Param("outcome")
+	var outcome int64
+	if len(p_outcome) > 0 {
+		var success bool
+		outcome,success = parse_int_from_remote_or_error(c,&p_outcome)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"No outcome provided")
+		return
+	}
+
+	p_market_aid := c.Param("market_aid")
+	var market_aid int64
+	if len(p_market_aid) > 0 {
+		var success bool
+		market_aid,success = parse_int_from_remote_or_error(c,&p_market_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"No outcome provided")
+		return
+	}
+	mdepth,last_oo_id := augur_srv.storage.Get_mkt_depth(market_aid,int(outcome))
+	js_bid_data,js_ask_data := build_javascript_data_obj(mdepth)
+	c.JSON(200,gin.H{
+		"bids":js_bid_data,
+		"asks":js_ask_data,
+		"LastOOID":last_oo_id,
 	})
 }
 func market_price_history(c *gin.Context) {
@@ -838,7 +906,7 @@ func block_info(c *gin.Context) {
 }
 func serve_block_info(p_block_num string,c *gin.Context) {
 
-	var block_num int
+	var block_num int64
 	if len(p_block_num ) > 0 {
 		var success bool
 		block_num,success = parse_int_from_remote_or_error(c,&p_block_num)
@@ -869,5 +937,56 @@ func top_users(c *gin.Context) {
 			"ProfitMakers" : top_profit_makers,
 			"TradeMakers" : top_trade_makers,
 			"VolumeMakers" : top_volume_makers,
+	})
+}
+func market_depth_status(c *gin.Context) {
+
+	p_market_aid := c.Param("market_aid")
+	var market_aid int64
+	if len(p_market_aid) > 0 {
+		var success bool
+		market_aid,success = parse_int_from_remote_or_error(c,&p_market_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"Market ID is not set")
+		return
+	}
+
+	p_outcome_idx := c.Param("outcome_idx")
+	var outcome_idx int64
+	if len(p_outcome_idx) > 0 {
+		var success bool
+		outcome_idx,success = parse_int_from_remote_or_error(c,&p_outcome_idx)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"Outcome not set")
+		return
+	}
+
+	p_last_oo_id := c.Param("last_oo_id")
+	var last_oo_id int64
+	if len(p_last_oo_id) > 0 {
+		var success bool
+		last_oo_id,success = parse_int_from_remote_or_error(c,&p_last_oo_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"Last open order ID is not set")
+		return
+	}
+
+	status,err := augur_srv.storage.Get_mdepth_status(market_aid,int(outcome_idx),last_oo_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Error: %v",err))
+		return
+	}
+	c.JSON(200,gin.H{
+		"num_orders":status.NumOrders,
+		"last_oo_id":status.LastOOID,
 	})
 }

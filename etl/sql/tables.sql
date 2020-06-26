@@ -300,7 +300,7 @@ CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 	final_profit		DECIMAL(64,36) DEFAULT 0.0,	-- this profit is updated (by our code) when position is closed
 	time_stamp			TIMESTAMPTZ NOT NULL
 );
-CREATE table uranks (   -- User Rankings (how this user ranks against each other, ex: Top 13% in profit made
+CREATE TABLE uranks (   -- User Rankings (how this user ranks against each other, ex: Top 13% in profit made
 	eoa_aid             BIGINT PRIMARY KEY,
 	total_trades		BIGINT DEFAULT 0,
 	top_profit          DECIMAL(5,2) DEFAULT 100.0,    -- position of the user in profits accumulated over lifetime
@@ -309,12 +309,16 @@ CREATE table uranks (   -- User Rankings (how this user ranks against each other
 	profit				DECIMAL(32,18) DEFAULT 0.0,
 	volume				DECIMAL(32,18) DEFAULT 0.0
 );
-CREATE table contract_addresses ( -- Addresses of contracts that compose Augur Platform
-	dai_cash			TEXT DEFAULT '',
-	zerox				TEXT DEFAULT '',
-	rep_token			TEXT DEFAULT '',
+CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur Platform
+	dai_cash			TEXT DEFAULT '',-- Cash/CashFaucet (local testnet)
+	zerox				TEXT DEFAULT '',-- ZeroXTrade
+	rep_token			TEXT DEFAULT '',--
 	wallet_reg			TEXT DEFAULT '',
 	fill_order			TEXT DEFAULT '',
 	eth_xchg			TEXT DEFAULT '',
 	share_token			TEXT DEFAULT ''
+);
+CREATE TABLE unique_addrs (	-- Unique addresses per day, statistics
+	day					DATE PRIMARY KEY,
+	num_addrs			BIGINT DEFAULT 0
 );

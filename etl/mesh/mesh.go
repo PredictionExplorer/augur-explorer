@@ -9,6 +9,7 @@ import (
 	"os"
 	"log"
 	"fmt"
+	"encoding/hex"
 
 	"github.com/0xProject/0x-mesh/rpc"
 	"github.com/0xProject/0x-mesh/zeroex"
@@ -48,21 +49,27 @@ func main() {
 				" Please set AUGUR_ETH_NODE_RPC environment variable")
 	}
 
+	storage := Connect_to_storage(&market_order_id,Info)
+	caddrs_obj,err := storage.Get_contract_addresses()
+	if err != nil {
+		log.Fatalf("Can't find contract addresses in 'contract_addresses' table")
+	}
+
 	ethclient, err := ethclient.Dial(RPC_URL)
 	if err != nil {
 		log.Fatal(err)
 	}
-	zerox_contract, err := NewZeroX(common.HexToAddress("0x6749E370e7B1955FFa924F4f75f5F12653C7512C"), ethclient)
+
+	Info.Printf("ZeroX contract = %v\n",caddrs_obj.Zerox_addr.String())
+	zerox_contract, err := NewZeroX(
+			common.HexToAddress(
+				caddrs_obj.Zerox_addr.String(),
+			),
+			ethclient,
+	)
 	if err != nil {
 		log.Fatalf("Failed to instantiate a ZeroX contract: %v", err)
 	}
-	awallet_contract, err := NewAugurWallet(common.HexToAddress("0xcc165aa8353BcCe882C14677aD78B20b55C0A5ED"), ethclient)
-	if err != nil {
-		log.Fatalf("Failed to instantiate a AugurWalletRegistry contract: %v", err)
-	}
-	_ = awallet_contract
-	storage := Connect_to_storage(&market_order_id,Info)
-	//log.SetFormatter(&log.JSONFormatter{})
 
 	env := clientEnvVars{}
 	if err := envvar.Parse(&env); err != nil {
@@ -90,6 +97,8 @@ func main() {
 				fmt.Printf("Order event arrived in state=%+v:\n",orderEvent.EndState)
 				fmt.Printf("%+v\n",orderEvent)
 				fmt.Println()
+				ad:=hex.EncodeToString(orderEvent.SignedOrder.Order.MakerAssetData)
+				fmt.Printf("decoding asset data: %v\n",ad)
 				adata,err := zerox_contract.DecodeAssetData(copts,orderEvent.SignedOrder.Order.MakerAssetData)
 				if err!=nil {
 					fmt.Printf("couldn't decode asset data: %v\n",err)

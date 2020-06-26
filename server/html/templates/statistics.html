@@ -10,6 +10,7 @@
 <script src="https://code.highcharts.com/modules/data.js"></script>
 <script>
 	var cash_flow_data = {{.CashFlowData}}
+	var uniq_addrs_data = {{.UniqAddrsData}}
 </script>
 <h3 class="page_title">Statistics</h3>
 <h3 style="font-color: red">Up-to date Augur Platform statistics</h3>
@@ -54,8 +55,10 @@
 	</li>
 </ul>
 </nav>
-<span class="cash_flow">Augur's Platform Cash Flow</span><br/><br/>
+<h3 class="cash_flow">Augur's Platform Cash Flow</h3><br/><br/>
 <div id="cash_flow_chart"></div>
+<h3 class="cash_flow">Augur's Platform Cash Flow</h3><br/><br/>
+<div id="uniq_addr_chart"></div>
 <script>
 // font loading begins
 	Highcharts.createElement('link', {
@@ -114,7 +117,7 @@ Highcharts.chart('cash_flow_chart', {
 				click: function() {this.click.call()}
 			}
 		},
-		data: cash_flow_data
+		data: uniq_addrs_data
 	}],
 
 	responsive: {
@@ -134,6 +137,76 @@ Highcharts.chart('cash_flow_chart', {
 	tooltip: {
 		formatter: function() {
 			tooltip ="<div>Cash Inflow: "+this.point.cash+"<br/>Block Number "+this.point.block_num+"<br/></div>"
+			 return tooltip;
+		}
+	},
+});
+Highcharts.chart('uniq_addr_chart', {
+
+	title: {
+		text: 'Unique Accounts'
+	},
+
+	subtitle: {
+		text: 'Unique Accounts per Day'
+	},
+
+	yAxis: {
+		title: {
+			text: 'Number of Accounts per Day'
+		}
+	},
+
+	xAxis: {
+//		max: 1.0,
+//		min: 0,
+		accessibility: {
+			rangeDescription: 'Unique Accounts'
+		}
+	},
+
+	legend: {
+		layout: 'vertical',
+		align: 'right',
+		verticalAlign: 'middle'
+	},
+
+	plotOptions: {
+		series: {
+			label: {
+				connectorAllowed: false
+			},
+			pointStart: 0
+		}
+	},
+
+	series: [{
+		name: 'Number of Accounts',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: cash_flow_data
+	}],
+
+	responsive: {
+		rules: [{
+			condition: {
+				maxWidth: 500
+			},
+			chartOptions: {
+				legend: {
+				layout: 'horizontal',
+					align: 'center',
+					verticalAlign: 'bottom'
+				}
+			}
+		}]
+	},
+	tooltip: {
+		formatter: function() {
+			tooltip ="<div>Num Accounts: "+this.point.num_addrs+"<br/>Date: "+this.point.date_str+"<br/></div>"
 			 return tooltip;
 		}
 	},

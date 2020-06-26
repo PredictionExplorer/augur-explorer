@@ -7,6 +7,7 @@
 <body>
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script src="https://code.highcharts.com/modules/data.js"></script>
+<script src="/res/ajax.js"></script>
 <script>
 	function load_order_data(eoa_addr,wallet_addr,mkt_aid,outcome_idx,total_bids,total_asks,total_cancel,order_date,expires) {
 		console.log(eoa_addr)
@@ -33,6 +34,42 @@
 
 	var ask_data = {{.JSAskData}}
 	var bid_data = {{.JSBidData}}
+	var market_aid = {{.Market.MktAid}}
+	var outcome_idx = {{.OutcomeIdx}}
+	var last_oo_id = {{.LastOOID}}
+	var num_orders = {{.NumOrders}}
+	console.log("market_aid="+market_aid+", last_oo_id="+last_oo_id+",num_orders="+num_orders)
+	function check_new_open_orders() {
+		if (market_aid == 0) {
+			return
+		}
+		var url = '/mdstat/'+market_aid+"/"+outcome_idx+"/"+last_oo_id
+		console.log("calling status. num_orders="+num_orders+", last_oo_id="+last_oo_id)
+		Ajax_GET(url,function(data) {
+			var response=JSON.parse(data)
+			console.log(response)
+			if ( (response.last_oo_id>last_oo_id) || (num_orders!=response.num_orders) ) {
+				console.log("New oopen orders available,reloading.")
+				/* POSTPONED for being too complex, maybe later
+				Ajax_GET('/deptha/'+market_aid+"/"+last_oo_id,function(data) {
+					var response=JSON.parse(data)
+					console.log("depth ajax:")
+					console.log(response)
+					ask_data = data.asks
+					bid_data = data.bids
+					last_oo_id = data.LastOOID
+				}
+				*/
+				// for now reload() will do
+				//alert("reloading")
+				location.reload()
+			} else {
+				setTimeout(check_new_open_orders, 10000);
+				console.log("watching for new orders from id>"+last_oo_id)
+			}
+		});
+	}
+	setTimeout(check_new_open_orders, 10000);
 </script>
 <h3 class="page_title">Market Details</h3>
 <table class="market_detail">
@@ -49,32 +86,32 @@
 <div id="depth_graph"></div>
 <div id="usermktinfo" style="display: none;">
 	User statistics on this market for this outcome in particular:
-	<table>
-		<tr>
+	<table class="order_info">
+		<tr class="order_info">
 			<td>Order Date</td>
 			<td><span id="fld_order_date"></span></td>
 		</tr>
-		<tr>
+		<tr class="order_info">
 			<td>Expires</td>
 			<td><span id="fld_expires"></span></td>
 		</tr>
-		<tr>
+		<tr class="order_info">
 			<td>Trading Wallet Address</td>
 			<td><span id="fld_wallet_addr"></span></td>
 		</tr>
-		<tr>
+		<tr class="order_info">
 			<td>Real User Account (EOA):</td>
 			<td><span id="fld_eoa_addr"></span></td>
 		</tr>
-		<tr>
+		<tr class="order_info">
 			<td>Number of BIDs:</td>
 			<td><span id="fld_num_bids"></span></td>
 		</tr>
-		<tr>
+		<tr class="order_info">
 			<td>Number of ASKs:</td>
 			<td><span id="fld_num_asks"></span></td>
 		</tr>
-		<tr>
+		<tr class="order_info">
 			<td>Number of Cancelled orders:</td>
 			<td><span id="fld_num_cancel"></span></td>
 		</tr>

@@ -1,13 +1,13 @@
 {{define "markets_list"}}
 <table class="markets">
-<tr>
-	<td>Address</td>
-	<td>Type</td>
-	<td>Status</td>
-	<td>Description</td>
-	<td>Expires</td>
-	<td>Total Volume</td>
-	<td>Money at Stake</td>
+<tr class="markets">
+	<th>Address</th>
+	<th>Type</th>
+	<th>Status</th>
+	<th>Description</th>
+	<th>Expires</th>
+	<th nowrap>Total Volume</th>
+	<th nowrap>Money at Stake</th>
 </tr>
 {{- range .}}
 	{{template "market_record" .}}

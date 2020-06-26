@@ -318,6 +318,7 @@ type DepthEntry struct {
 	Expires			string
 }
 type MarketDepth struct {
+	LastOOID		int64
 	Bids			[]DepthEntry
 	Asks			[]DepthEntry
 }
@@ -521,10 +522,18 @@ type BlockCash struct {
 }
 type ContractAddresses struct {
 	Zerox_addr		common.Address
-	Dai_addr		common.Address
-	Reputation_addr	common.Address
-	WalletReg_addr	common.Address
-	FillOrder_addr	common.Address
-	EthXchg_addr	common.Address
-	ShareToken_addr	common.Address
+	Dai_addr		common.Address	// Shows DAI balance and also to fill dai_transf table and Cash Flow report
+	Reputation_addr	common.Address	// used to query REP token balance when showing User info (among other stuff)
+	WalletReg_addr	common.Address	// this contract is used to get the link between EOA and Wallet contract
+	FillOrder_addr	common.Address	// used to identify if DAI transfer is internal or not
+	EthXchg_addr	common.Address	// used to identify if DAI transfer is internal or not
+	ShareToken_addr	common.Address  // used to identify if DAI transfer is internal or not
+}
+type UniqueAddrEntry struct {
+	Day					string
+	NumAddrs			int64
+}
+type MktDepthStatus struct {
+	NumOrders			int64	// used to catch deletes
+	LastOOID			int64	// used to catch new inserts
 }

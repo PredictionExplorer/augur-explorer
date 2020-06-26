@@ -10803,48 +10803,6 @@
 			"type": "function"
 		},
 		{
-			"constant": false,
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "_authorizedProxy",
-					"type": "address"
-				}
-			],
-			"name": "addAuthorizedProxy",
-			"outputs": [
-				{
-					"internalType": "bool",
-					"name": "",
-					"type": "bool"
-				}
-			],
-			"payable": false,
-			"stateMutability": "nonpayable",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"name": "authorizedProxies",
-			"outputs": [
-				{
-					"internalType": "bool",
-					"name": "",
-					"type": "bool"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
 			"constant": true,
 			"inputs": [],
 			"name": "cash",
@@ -10997,12 +10955,7 @@
 				},
 				{
 					"internalType": "address",
-					"name": "_registry",
-					"type": "address"
-				},
-				{
-					"internalType": "address",
-					"name": "_registryV2",
+					"name": "_legacyRegistry",
 					"type": "address"
 				},
 				{
@@ -11071,6 +11024,21 @@
 		{
 			"constant": true,
 			"inputs": [],
+			"name": "legacyRegistry",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
 			"name": "registry",
 			"outputs": [
 				{
@@ -11081,27 +11049,6 @@
 			],
 			"payable": false,
 			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": false,
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "_authorizedProxy",
-					"type": "address"
-				}
-			],
-			"name": "removeAuthorizedProxy",
-			"outputs": [
-				{
-					"internalType": "bool",
-					"name": "",
-					"type": "bool"
-				}
-			],
-			"payable": false,
-			"stateMutability": "nonpayable",
 			"type": "function"
 		},
 		{
@@ -11279,6 +11226,21 @@
 		{
 			"constant": true,
 			"inputs": [],
+			"name": "affiliates",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
 			"name": "augur",
 			"outputs": [
 				{
@@ -11309,10 +11271,10 @@
 		{
 			"constant": true,
 			"inputs": [],
-			"name": "augurWalletFactory",
+			"name": "augurWalletRegistryV2",
 			"outputs": [
 				{
-					"internalType": "contract IAugurWalletFactory",
+					"internalType": "address",
 					"name": "",
 					"type": "address"
 				}
@@ -11339,10 +11301,25 @@
 		{
 			"constant": true,
 			"inputs": [],
+			"name": "createOrder",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
 			"name": "ethExchange",
 			"outputs": [
 				{
-					"internalType": "contract IUniswapV2Pair",
+					"internalType": "contract IUniswapV2Exchange",
 					"name": "",
 					"type": "address"
 				}
@@ -11404,6 +11381,21 @@
 			"outputs": [],
 			"payable": false,
 			"stateMutability": "nonpayable",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "fillOrder",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
 			"type": "function"
 		},
 		{
@@ -11691,12 +11683,42 @@
 		{
 			"constant": true,
 			"inputs": [],
+			"name": "shareToken",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
 			"name": "token0IsCash",
 			"outputs": [
 				{
 					"internalType": "bool",
 					"name": "",
 					"type": "bool"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "zeroXTrade",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
 				}
 			],
 			"payable": false,
@@ -11827,7 +11849,7 @@
 									"type": "uint256"
 								}
 							],
-							"internalType": "struct ISignatureVerifier.GasData",
+							"internalType": "struct GSNTypes.GasData",
 							"name": "gasData",
 							"type": "tuple"
 						},
@@ -11852,26 +11874,16 @@
 									"internalType": "address",
 									"name": "paymaster",
 									"type": "address"
-								},
-								{
-									"internalType": "address",
-									"name": "forwarder",
-									"type": "address"
 								}
 							],
-							"internalType": "struct ISignatureVerifier.RelayData",
+							"internalType": "struct GSNTypes.RelayData",
 							"name": "relayData",
 							"type": "tuple"
 						}
 					],
-					"internalType": "struct ISignatureVerifier.RelayRequest",
+					"internalType": "struct GSNTypes.RelayRequest",
 					"name": "relayRequest",
 					"type": "tuple"
-				},
-				{
-					"internalType": "bytes",
-					"name": "signature",
-					"type": "bytes"
 				},
 				{
 					"internalType": "bytes",
@@ -11890,6 +11902,21 @@
 					"internalType": "bytes",
 					"name": "context",
 					"type": "bytes"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "affiliates",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
 				}
 			],
 			"payable": false,
@@ -11929,21 +11956,6 @@
 		{
 			"constant": true,
 			"inputs": [],
-			"name": "augurWalletFactory",
-			"outputs": [
-				{
-					"internalType": "contract IAugurWalletFactory",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
 			"name": "cash",
 			"outputs": [
 				{
@@ -11959,10 +11971,25 @@
 		{
 			"constant": true,
 			"inputs": [],
+			"name": "createOrder",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
 			"name": "ethExchange",
 			"outputs": [
 				{
-					"internalType": "contract IUniswapV2Pair",
+					"internalType": "contract IUniswapV2Exchange",
 					"name": "",
 					"type": "address"
 				}
@@ -12024,6 +12051,21 @@
 			"outputs": [],
 			"payable": false,
 			"stateMutability": "nonpayable",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "fillOrder",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
 			"type": "function"
 		},
 		{
@@ -12132,7 +12174,7 @@
 							"type": "uint256"
 						}
 					],
-					"internalType": "struct IPaymaster.GasLimits",
+					"internalType": "struct GSNTypes.GasLimits",
 					"name": "limits",
 					"type": "tuple"
 				}
@@ -12245,7 +12287,7 @@
 									"type": "uint256"
 								}
 							],
-							"internalType": "struct ISignatureVerifier.GasData",
+							"internalType": "struct GSNTypes.GasData",
 							"name": "gasData",
 							"type": "tuple"
 						},
@@ -12270,19 +12312,14 @@
 									"internalType": "address",
 									"name": "paymaster",
 									"type": "address"
-								},
-								{
-									"internalType": "address",
-									"name": "forwarder",
-									"type": "address"
 								}
 							],
-							"internalType": "struct ISignatureVerifier.RelayData",
+							"internalType": "struct GSNTypes.RelayData",
 							"name": "relayData",
 							"type": "tuple"
 						}
 					],
-					"internalType": "struct ISignatureVerifier.RelayRequest",
+					"internalType": "struct GSNTypes.RelayRequest",
 					"name": "relayRequest",
 					"type": "tuple"
 				}
@@ -12293,6 +12330,21 @@
 					"internalType": "bytes32",
 					"name": "",
 					"type": "bytes32"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "getTrustedForwarder",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
 				}
 			],
 			"payable": false,
@@ -12348,19 +12400,13 @@
 		},
 		{
 			"constant": true,
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "forwarder",
-					"type": "address"
-				}
-			],
-			"name": "isTrustedForwarder",
+			"inputs": [],
+			"name": "otherRegistry",
 			"outputs": [
 				{
-					"internalType": "bool",
+					"internalType": "address",
 					"name": "",
-					"type": "bool"
+					"type": "address"
 				}
 			],
 			"payable": false,
@@ -12413,7 +12459,7 @@
 							"type": "uint256"
 						}
 					],
-					"internalType": "struct ISignatureVerifier.GasData",
+					"internalType": "struct GSNTypes.GasData",
 					"name": "gasData",
 					"type": "tuple"
 				}
@@ -12454,6 +12500,21 @@
 		{
 			"constant": true,
 			"inputs": [],
+			"name": "shareToken",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
 			"name": "token0IsCash",
 			"outputs": [
 				{
@@ -12464,6 +12525,37 @@
 			],
 			"payable": false,
 			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": false,
+			"inputs": [
+				{
+					"internalType": "address",
+					"name": "_owner",
+					"type": "address"
+				},
+				{
+					"internalType": "address",
+					"name": "_referralAddress",
+					"type": "address"
+				},
+				{
+					"internalType": "bytes32",
+					"name": "_fingerprint",
+					"type": "bytes32"
+				}
+			],
+			"name": "trustedCreateAugurWallet",
+			"outputs": [
+				{
+					"internalType": "contract IAugurWallet",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "nonpayable",
 			"type": "function"
 		},
 		{
@@ -12504,7 +12596,7 @@
 									"type": "uint256"
 								}
 							],
-							"internalType": "struct ISignatureVerifier.GasData",
+							"internalType": "struct GSNTypes.GasData",
 							"name": "gasData",
 							"type": "tuple"
 						},
@@ -12529,19 +12621,14 @@
 									"internalType": "address",
 									"name": "paymaster",
 									"type": "address"
-								},
-								{
-									"internalType": "address",
-									"name": "forwarder",
-									"type": "address"
 								}
 							],
-							"internalType": "struct ISignatureVerifier.RelayData",
+							"internalType": "struct GSNTypes.RelayData",
 							"name": "relayData",
 							"type": "tuple"
 						}
 					],
-					"internalType": "struct ISignatureVerifier.RelayRequest",
+					"internalType": "struct GSNTypes.RelayRequest",
 					"name": "req",
 					"type": "tuple"
 				},
@@ -12595,7 +12682,7 @@
 									"type": "uint256"
 								}
 							],
-							"internalType": "struct ISignatureVerifier.GasData",
+							"internalType": "struct GSNTypes.GasData",
 							"name": "gasData",
 							"type": "tuple"
 						},
@@ -12620,19 +12707,14 @@
 									"internalType": "address",
 									"name": "paymaster",
 									"type": "address"
-								},
-								{
-									"internalType": "address",
-									"name": "forwarder",
-									"type": "address"
 								}
 							],
-							"internalType": "struct ISignatureVerifier.RelayData",
+							"internalType": "struct GSNTypes.RelayData",
 							"name": "relayData",
 							"type": "tuple"
 						}
 					],
-					"internalType": "struct ISignatureVerifier.RelayRequest",
+					"internalType": "struct GSNTypes.RelayRequest",
 					"name": "req",
 					"type": "tuple"
 				},
@@ -12643,7 +12725,18 @@
 				}
 			],
 			"name": "verifyAndCall",
-			"outputs": [],
+			"outputs": [
+				{
+					"internalType": "bool",
+					"name": "success",
+					"type": "bool"
+				},
+				{
+					"internalType": "bytes",
+					"name": "ret",
+					"type": "bytes"
+				}
+			],
 			"payable": false,
 			"stateMutability": "nonpayable",
 			"type": "function"
@@ -12651,42 +12744,12 @@
 		{
 			"constant": true,
 			"inputs": [],
-			"name": "versionForwarder",
+			"name": "zeroXTrade",
 			"outputs": [
 				{
-					"internalType": "string",
+					"internalType": "address",
 					"name": "",
-					"type": "string"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "versionRecipient",
-			"outputs": [
-				{
-					"internalType": "string",
-					"name": "",
-					"type": "string"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "versionSM",
-			"outputs": [
-				{
-					"internalType": "string",
-					"name": "",
-					"type": "string"
+					"type": "address"
 				}
 			],
 			"payable": false,
@@ -15921,251 +15984,6 @@
 			"type": "function"
 		}
 	],
-	"AugurWalletFactory": [
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "affiliates",
-			"outputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "augur",
-			"outputs": [
-				{
-					"internalType": "contract IAugur",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "augurTrading",
-			"outputs": [
-				{
-					"internalType": "contract IAugurTrading",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "augurWalletRegistry",
-			"outputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "augurWalletRegistryV2",
-			"outputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "cash",
-			"outputs": [
-				{
-					"internalType": "contract IERC20",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": false,
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "_owner",
-					"type": "address"
-				},
-				{
-					"internalType": "address",
-					"name": "_referralAddress",
-					"type": "address"
-				},
-				{
-					"internalType": "bytes32",
-					"name": "_fingerprint",
-					"type": "bytes32"
-				}
-			],
-			"name": "createAugurWallet",
-			"outputs": [
-				{
-					"internalType": "contract IAugurWallet",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "nonpayable",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "createOrder",
-			"outputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "fillOrder",
-			"outputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "_owner",
-					"type": "address"
-				}
-			],
-			"name": "getCreate2WalletAddress",
-			"outputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "getInitialized",
-			"outputs": [
-				{
-					"internalType": "bool",
-					"name": "",
-					"type": "bool"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": false,
-			"inputs": [
-				{
-					"internalType": "contract IAugur",
-					"name": "_augur",
-					"type": "address"
-				},
-				{
-					"internalType": "contract IAugurTrading",
-					"name": "_augurTrading",
-					"type": "address"
-				}
-			],
-			"name": "initialize",
-			"outputs": [
-				{
-					"internalType": "bool",
-					"name": "",
-					"type": "bool"
-				}
-			],
-			"payable": false,
-			"stateMutability": "nonpayable",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "shareToken",
-			"outputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "zeroXTrade",
-			"outputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		}
-	],
 	"DisputeCrowdsourcerFactory": [
 		{
 			"constant": false,
@@ -17281,26 +17099,16 @@
 			"payable": false,
 			"stateMutability": "nonpayable",
 			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "versionPenalizer",
-			"outputs": [
-				{
-					"internalType": "string",
-					"name": "",
-					"type": "string"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
 		}
 	],
 	"RelayHubV2": [
 		{
 			"inputs": [
+				{
+					"internalType": "uint256",
+					"name": "_gtxdatanonzero",
+					"type": "uint256"
+				},
 				{
 					"internalType": "contract StakeManager",
 					"name": "_stakeManager",
@@ -17315,6 +17123,55 @@
 			"payable": false,
 			"stateMutability": "nonpayable",
 			"type": "constructor"
+		},
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": true,
+					"internalType": "address",
+					"name": "relayManager",
+					"type": "address"
+				},
+				{
+					"indexed": true,
+					"internalType": "address",
+					"name": "relayWorker",
+					"type": "address"
+				},
+				{
+					"indexed": true,
+					"internalType": "address",
+					"name": "from",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "address",
+					"name": "to",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "address",
+					"name": "paymaster",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "bytes4",
+					"name": "selector",
+					"type": "bytes4"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "reason",
+					"type": "string"
+				}
+			],
+			"name": "CanRelayFailed",
+			"type": "event"
 		},
 		{
 			"anonymous": false,
@@ -17434,55 +17291,6 @@
 				{
 					"indexed": true,
 					"internalType": "address",
-					"name": "paymaster",
-					"type": "address"
-				},
-				{
-					"indexed": true,
-					"internalType": "address",
-					"name": "from",
-					"type": "address"
-				},
-				{
-					"indexed": false,
-					"internalType": "address",
-					"name": "to",
-					"type": "address"
-				},
-				{
-					"indexed": false,
-					"internalType": "address",
-					"name": "relayWorker",
-					"type": "address"
-				},
-				{
-					"indexed": false,
-					"internalType": "bytes4",
-					"name": "selector",
-					"type": "bytes4"
-				},
-				{
-					"indexed": false,
-					"internalType": "string",
-					"name": "reason",
-					"type": "string"
-				}
-			],
-			"name": "TransactionRejectedByPaymaster",
-			"type": "event"
-		},
-		{
-			"anonymous": false,
-			"inputs": [
-				{
-					"indexed": true,
-					"internalType": "address",
-					"name": "relayManager",
-					"type": "address"
-				},
-				{
-					"indexed": true,
-					"internalType": "address",
 					"name": "relayWorker",
 					"type": "address"
 				},
@@ -17554,6 +17362,36 @@
 		{
 			"constant": true,
 			"inputs": [],
+			"name": "COMMIT_ID",
+			"outputs": [
+				{
+					"internalType": "string",
+					"name": "",
+					"type": "string"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "GTRANSACTION",
+			"outputs": [
+				{
+					"internalType": "uint256",
+					"name": "",
+					"type": "uint256"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
 			"name": "MAX_WORKER_COUNT",
 			"outputs": [
 				{
@@ -17606,27 +17444,6 @@
 			"constant": true,
 			"inputs": [
 				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"name": "balances",
-			"outputs": [
-				{
-					"internalType": "uint256",
-					"name": "",
-					"type": "uint256"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [
-				{
 					"internalType": "uint256",
 					"name": "gasUsed",
 					"type": "uint256"
@@ -17654,7 +17471,7 @@
 							"type": "uint256"
 						}
 					],
-					"internalType": "struct ISignatureVerifier.GasData",
+					"internalType": "struct GSNTypes.GasData",
 					"name": "gasData",
 					"type": "tuple"
 				}
@@ -17709,7 +17526,7 @@
 									"type": "uint256"
 								}
 							],
-							"internalType": "struct ISignatureVerifier.GasData",
+							"internalType": "struct GSNTypes.GasData",
 							"name": "gasData",
 							"type": "tuple"
 						},
@@ -17734,25 +17551,25 @@
 									"internalType": "address",
 									"name": "paymaster",
 									"type": "address"
-								},
-								{
-									"internalType": "address",
-									"name": "forwarder",
-									"type": "address"
 								}
 							],
-							"internalType": "struct ISignatureVerifier.RelayData",
+							"internalType": "struct GSNTypes.RelayData",
 							"name": "relayData",
 							"type": "tuple"
 						}
 					],
-					"internalType": "struct ISignatureVerifier.RelayRequest",
+					"internalType": "struct GSNTypes.RelayRequest",
 					"name": "relayRequest",
 					"type": "tuple"
 				},
 				{
 					"internalType": "uint256",
-					"name": "initialGas",
+					"name": "maxPossibleGas",
+					"type": "uint256"
+				},
+				{
+					"internalType": "uint256",
+					"name": "acceptRelayedCallGasLimit",
 					"type": "uint256"
 				},
 				{
@@ -17774,31 +17591,9 @@
 					"type": "bool"
 				},
 				{
-					"internalType": "bytes",
+					"internalType": "string",
 					"name": "returnValue",
-					"type": "bytes"
-				},
-				{
-					"components": [
-						{
-							"internalType": "uint256",
-							"name": "acceptRelayedCallGasLimit",
-							"type": "uint256"
-						},
-						{
-							"internalType": "uint256",
-							"name": "preRelayedCallGasLimit",
-							"type": "uint256"
-						},
-						{
-							"internalType": "uint256",
-							"name": "postRelayedCallGasLimit",
-							"type": "uint256"
-						}
-					],
-					"internalType": "struct IPaymaster.GasLimits",
-					"name": "gasLimits",
-					"type": "tuple"
+					"type": "string"
 				}
 			],
 			"payable": false,
@@ -17823,6 +17618,21 @@
 		{
 			"constant": true,
 			"inputs": [],
+			"name": "eip712sig",
+			"outputs": [
+				{
+					"internalType": "contract EIP712Sig",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
 			"name": "getHubOverhead",
 			"outputs": [
 				{
@@ -17842,6 +17652,71 @@
 			"outputs": [
 				{
 					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "getVersion",
+			"outputs": [
+				{
+					"internalType": "string",
+					"name": "",
+					"type": "string"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "gtxdatanonzero",
+			"outputs": [
+				{
+					"internalType": "uint256",
+					"name": "",
+					"type": "uint256"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": false,
+			"inputs": [
+				{
+					"internalType": "address",
+					"name": "relayWorker",
+					"type": "address"
+				},
+				{
+					"internalType": "address payable",
+					"name": "beneficiary",
+					"type": "address"
+				}
+			],
+			"name": "penalize",
+			"outputs": [],
+			"payable": false,
+			"stateMutability": "nonpayable",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "penalizer",
+			"outputs": [
+				{
+					"internalType": "contract Penalizer",
 					"name": "",
 					"type": "address"
 				}
@@ -17888,7 +17763,7 @@
 									"type": "uint256"
 								}
 							],
-							"internalType": "struct ISignatureVerifier.GasData",
+							"internalType": "struct GSNTypes.GasData",
 							"name": "gasData",
 							"type": "tuple"
 						},
@@ -17913,19 +17788,14 @@
 									"internalType": "address",
 									"name": "paymaster",
 									"type": "address"
-								},
-								{
-									"internalType": "address",
-									"name": "forwarder",
-									"type": "address"
 								}
 							],
-							"internalType": "struct ISignatureVerifier.RelayData",
+							"internalType": "struct GSNTypes.RelayData",
 							"name": "relayData",
 							"type": "tuple"
 						}
 					],
-					"internalType": "struct ISignatureVerifier.RelayRequest",
+					"internalType": "struct GSNTypes.RelayRequest",
 					"name": "relayRequest",
 					"type": "tuple"
 				},
@@ -17952,7 +17822,7 @@
 							"type": "uint256"
 						}
 					],
-					"internalType": "struct IPaymaster.GasLimits",
+					"internalType": "struct GSNTypes.GasLimits",
 					"name": "gasLimits",
 					"type": "tuple"
 				},
@@ -17962,12 +17832,17 @@
 					"type": "uint256"
 				},
 				{
+					"internalType": "uint256",
+					"name": "calldataGas",
+					"type": "uint256"
+				},
+				{
 					"internalType": "bytes",
 					"name": "recipientContext",
 					"type": "bytes"
 				}
 			],
-			"name": "innerRelayCall",
+			"name": "recipientCallsAtomic",
 			"outputs": [
 				{
 					"internalType": "enum IRelayHub.RelayCallStatus",
@@ -17977,41 +17852,6 @@
 			],
 			"payable": false,
 			"stateMutability": "nonpayable",
-			"type": "function"
-		},
-		{
-			"constant": false,
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "relayWorker",
-					"type": "address"
-				},
-				{
-					"internalType": "address payable",
-					"name": "beneficiary",
-					"type": "address"
-				}
-			],
-			"name": "penalize",
-			"outputs": [],
-			"payable": false,
-			"stateMutability": "nonpayable",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "penalizer",
-			"outputs": [
-				{
-					"internalType": "contract Penalizer",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
 			"type": "function"
 		},
 		{
@@ -18077,7 +17917,7 @@
 									"type": "uint256"
 								}
 							],
-							"internalType": "struct ISignatureVerifier.GasData",
+							"internalType": "struct GSNTypes.GasData",
 							"name": "gasData",
 							"type": "tuple"
 						},
@@ -18102,19 +17942,14 @@
 									"internalType": "address",
 									"name": "paymaster",
 									"type": "address"
-								},
-								{
-									"internalType": "address",
-									"name": "forwarder",
-									"type": "address"
 								}
 							],
-							"internalType": "struct ISignatureVerifier.RelayData",
+							"internalType": "struct GSNTypes.RelayData",
 							"name": "relayData",
 							"type": "tuple"
 						}
 					],
-					"internalType": "struct ISignatureVerifier.RelayRequest",
+					"internalType": "struct GSNTypes.RelayRequest",
 					"name": "relayRequest",
 					"type": "tuple"
 				},
@@ -18127,26 +17962,10 @@
 					"internalType": "bytes",
 					"name": "approvalData",
 					"type": "bytes"
-				},
-				{
-					"internalType": "uint256",
-					"name": "externalGasLimit",
-					"type": "uint256"
 				}
 			],
 			"name": "relayCall",
-			"outputs": [
-				{
-					"internalType": "bool",
-					"name": "paymasterAccepted",
-					"type": "bool"
-				},
-				{
-					"internalType": "string",
-					"name": "revertReason",
-					"type": "string"
-				}
-			],
+			"outputs": [],
 			"payable": false,
 			"stateMutability": "nonpayable",
 			"type": "function"
@@ -18169,7 +17988,7 @@
 		{
 			"constant": true,
 			"inputs": [],
-			"name": "versionHub",
+			"name": "version",
 			"outputs": [
 				{
 					"internalType": "string",
@@ -18199,48 +18018,6 @@
 			"outputs": [],
 			"payable": false,
 			"stateMutability": "nonpayable",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"name": "workerCount",
-			"outputs": [
-				{
-					"internalType": "uint256",
-					"name": "",
-					"type": "uint256"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"name": "workerToManager",
-			"outputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
 			"type": "function"
 		}
 	],
@@ -18629,21 +18406,6 @@
 			"outputs": [],
 			"payable": false,
 			"stateMutability": "nonpayable",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "versionSM",
-			"outputs": [
-				{
-					"internalType": "string",
-					"name": "",
-					"type": "string"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
 			"type": "function"
 		},
 		{
@@ -22537,7 +22299,7 @@
 			"name": "getExchange",
 			"outputs": [
 				{
-					"internalType": "contract IUniswapV2Pair",
+					"internalType": "contract IUniswapV2Exchange",
 					"name": "",
 					"type": "address"
 				}
@@ -26430,12 +26192,6 @@
 				{
 					"indexed": false,
 					"internalType": "uint256",
-					"name": "totalTrades",
-					"type": "uint256"
-				},
-				{
-					"indexed": false,
-					"internalType": "uint256",
 					"name": "timestamp",
 					"type": "uint256"
 				}
@@ -26694,11 +26450,6 @@
 					"internalType": "uint256[]",
 					"name": "_outcomeVolumes",
 					"type": "uint256[]"
-				},
-				{
-					"internalType": "uint256",
-					"name": "_totalTrades",
-					"type": "uint256"
 				}
 			],
 			"name": "logMarketVolumeChanged",
@@ -27791,27 +27542,6 @@
 				}
 			],
 			"name": "marketOutcomeVolumes",
-			"outputs": [
-				{
-					"internalType": "uint256",
-					"name": "",
-					"type": "uint256"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"name": "marketTotalTrades",
 			"outputs": [
 				{
 					"internalType": "uint256",
@@ -31016,7 +30746,7 @@
 			"name": "ethExchange",
 			"outputs": [
 				{
-					"internalType": "contract IUniswapV2Pair",
+					"internalType": "contract IUniswapV2Exchange",
 					"name": "",
 					"type": "address"
 				}
@@ -31759,200 +31489,7 @@
 			"type": "function"
 		}
 	],
-	"UniswapV2Factory": [
-		{
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "_feeToSetter",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "nonpayable",
-			"type": "constructor"
-		},
-		{
-			"anonymous": false,
-			"inputs": [
-				{
-					"indexed": true,
-					"internalType": "address",
-					"name": "token0",
-					"type": "address"
-				},
-				{
-					"indexed": true,
-					"internalType": "address",
-					"name": "token1",
-					"type": "address"
-				},
-				{
-					"indexed": false,
-					"internalType": "address",
-					"name": "pair",
-					"type": "address"
-				},
-				{
-					"indexed": false,
-					"internalType": "uint256",
-					"name": "",
-					"type": "uint256"
-				}
-			],
-			"name": "PairCreated",
-			"type": "event"
-		},
-		{
-			"constant": true,
-			"inputs": [
-				{
-					"internalType": "uint256",
-					"name": "",
-					"type": "uint256"
-				}
-			],
-			"name": "allPairs",
-			"outputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "allPairsLength",
-			"outputs": [
-				{
-					"internalType": "uint256",
-					"name": "",
-					"type": "uint256"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": false,
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "tokenA",
-					"type": "address"
-				},
-				{
-					"internalType": "address",
-					"name": "tokenB",
-					"type": "address"
-				}
-			],
-			"name": "createPair",
-			"outputs": [
-				{
-					"internalType": "address",
-					"name": "pair",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "nonpayable",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "feeTo",
-			"outputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [],
-			"name": "feeToSetter",
-			"outputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				},
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"name": "getPair",
-			"outputs": [
-				{
-					"internalType": "address",
-					"name": "",
-					"type": "address"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": false,
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "_feeTo",
-					"type": "address"
-				}
-			],
-			"name": "setFeeTo",
-			"outputs": [],
-			"payable": false,
-			"stateMutability": "nonpayable",
-			"type": "function"
-		},
-		{
-			"constant": false,
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "_feeToSetter",
-					"type": "address"
-				}
-			],
-			"name": "setFeeToSetter",
-			"outputs": [],
-			"payable": false,
-			"stateMutability": "nonpayable",
-			"type": "function"
-		}
-	],
-	"UniswapV2Pair": [
+	"UniswapV2Exchange": [
 		{
 			"inputs": [],
 			"payable": false,
@@ -32660,6 +32197,199 @@
 					"type": "bool"
 				}
 			],
+			"payable": false,
+			"stateMutability": "nonpayable",
+			"type": "function"
+		}
+	],
+	"UniswapV2Factory": [
+		{
+			"inputs": [
+				{
+					"internalType": "address",
+					"name": "_feeToSetter",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "nonpayable",
+			"type": "constructor"
+		},
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": true,
+					"internalType": "address",
+					"name": "token0",
+					"type": "address"
+				},
+				{
+					"indexed": true,
+					"internalType": "address",
+					"name": "token1",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "address",
+					"name": "exchange",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "uint256",
+					"name": "",
+					"type": "uint256"
+				}
+			],
+			"name": "ExchangeCreated",
+			"type": "event"
+		},
+		{
+			"constant": true,
+			"inputs": [
+				{
+					"internalType": "uint256",
+					"name": "",
+					"type": "uint256"
+				}
+			],
+			"name": "allExchanges",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "allExchangesLength",
+			"outputs": [
+				{
+					"internalType": "uint256",
+					"name": "",
+					"type": "uint256"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": false,
+			"inputs": [
+				{
+					"internalType": "address",
+					"name": "tokenA",
+					"type": "address"
+				},
+				{
+					"internalType": "address",
+					"name": "tokenB",
+					"type": "address"
+				}
+			],
+			"name": "createExchange",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "exchange",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "nonpayable",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "feeTo",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "feeToSetter",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				},
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"name": "getExchange",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": false,
+			"inputs": [
+				{
+					"internalType": "address",
+					"name": "_feeTo",
+					"type": "address"
+				}
+			],
+			"name": "setFeeTo",
+			"outputs": [],
+			"payable": false,
+			"stateMutability": "nonpayable",
+			"type": "function"
+		},
+		{
+			"constant": false,
+			"inputs": [
+				{
+					"internalType": "address",
+					"name": "_feeToSetter",
+					"type": "address"
+				}
+			],
+			"name": "setFeeToSetter",
+			"outputs": [],
 			"payable": false,
 			"stateMutability": "nonpayable",
 			"type": "function"
@@ -34186,154 +33916,6 @@
 					"internalType": "struct HotLoading.MarketData",
 					"name": "_marketData",
 					"type": "tuple"
-				}
-			],
-			"payable": false,
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"constant": true,
-			"inputs": [
-				{
-					"internalType": "contract IAugur",
-					"name": "_augur",
-					"type": "address"
-				},
-				{
-					"internalType": "contract IMarket[]",
-					"name": "_markets",
-					"type": "address[]"
-				},
-				{
-					"internalType": "contract IFillOrder",
-					"name": "_fillOrder",
-					"type": "address"
-				},
-				{
-					"internalType": "contract IOrders",
-					"name": "_orders",
-					"type": "address"
-				}
-			],
-			"name": "getMarketsData",
-			"outputs": [
-				{
-					"components": [
-						{
-							"internalType": "string",
-							"name": "extraInfo",
-							"type": "string"
-						},
-						{
-							"internalType": "address",
-							"name": "marketCreator",
-							"type": "address"
-						},
-						{
-							"internalType": "address",
-							"name": "owner",
-							"type": "address"
-						},
-						{
-							"internalType": "bytes32[]",
-							"name": "outcomes",
-							"type": "bytes32[]"
-						},
-						{
-							"internalType": "enum IMarket.MarketType",
-							"name": "marketType",
-							"type": "uint8"
-						},
-						{
-							"internalType": "int256[]",
-							"name": "displayPrices",
-							"type": "int256[]"
-						},
-						{
-							"internalType": "address",
-							"name": "designatedReporter",
-							"type": "address"
-						},
-						{
-							"internalType": "enum HotLoading.ReportingState",
-							"name": "reportingState",
-							"type": "uint8"
-						},
-						{
-							"internalType": "uint256",
-							"name": "disputeRound",
-							"type": "uint256"
-						},
-						{
-							"internalType": "uint256[]",
-							"name": "winningPayout",
-							"type": "uint256[]"
-						},
-						{
-							"internalType": "uint256",
-							"name": "volume",
-							"type": "uint256"
-						},
-						{
-							"internalType": "uint256",
-							"name": "openInterest",
-							"type": "uint256"
-						},
-						{
-							"internalType": "uint256[]",
-							"name": "lastTradedPrices",
-							"type": "uint256[]"
-						},
-						{
-							"internalType": "address",
-							"name": "universe",
-							"type": "address"
-						},
-						{
-							"internalType": "uint256",
-							"name": "numTicks",
-							"type": "uint256"
-						},
-						{
-							"internalType": "uint256",
-							"name": "feeDivisor",
-							"type": "uint256"
-						},
-						{
-							"internalType": "uint256",
-							"name": "affiliateFeeDivisor",
-							"type": "uint256"
-						},
-						{
-							"internalType": "uint256",
-							"name": "endTime",
-							"type": "uint256"
-						},
-						{
-							"internalType": "uint256",
-							"name": "numOutcomes",
-							"type": "uint256"
-						},
-						{
-							"internalType": "uint256",
-							"name": "validityBond",
-							"type": "uint256"
-						},
-						{
-							"internalType": "uint256",
-							"name": "reportingFeeDivisor",
-							"type": "uint256"
-						},
-						{
-							"internalType": "uint256[]",
-							"name": "outcomeVolumes",
-							"type": "uint256[]"
-						}
-					],
-					"internalType": "struct HotLoading.MarketData[]",
-					"name": "_marketsData",
-					"type": "tuple[]"
 				}
 			],
 			"payable": false,

@@ -140,7 +140,7 @@ func (ss *SQLStorage) Get_last_block_num() (p.BlockNumber,bool) {
 func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 
 	var query string
-	query="SELECT dai_cash,zerox,rep_token,wallet_reg,fill_order,eth_xchg,share_token FROM contract_addresses";
+	query="SELECT dai_cash,rep_token,zerox,wallet_reg,fill_order,eth_xchg,share_token FROM contract_addresses";
 	row := ss.db.QueryRow(query)
 	var c_addresses p.ContractAddresses
 	var err error
@@ -1714,10 +1714,11 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string) ([]p.OutcomeVol,error
 	}
 	return records,nil
 }
-func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.OrderType) []p.DepthEntry {
+func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.OrderType) ([]p.DepthEntry,int64) {
 
 	var query string
 	query = "SELECT " +
+				"o.id," +
 				"o.market_aid," +
 				"o.outcome_idx," +
 				"wa.addr AS wallet_addr," +
@@ -1731,17 +1732,14 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 				"s.num_asks," +
 				"s.num_cancel " +
 			"FROM oorders AS o " +
-				"LEFT JOIN " +
-					"address AS a ON o.market_aid=a.address_id " +
-				"LEFT JOIN " +
-					"address AS wa ON o.wallet_aid=wa.address_id " +
-				"LEFT JOIN " +
-					"address AS ua ON o.eoa_aid=ua.address_id " +
-				"LEFT JOIN " +
-					"oostats AS s ON (" +
+				"LEFT JOIN oostats AS s ON (" +
 						"o.market_aid=s.market_aid AND " +
 						"o.eoa_aid=s.eoa_aid AND " +
-						"o.outcome_idx=$2) " +
+						"o.outcome_idx=s.outcome_idx" +
+				") " +
+				"LEFT JOIN address AS a ON o.market_aid=a.address_id " +
+				"LEFT JOIN address AS wa ON o.wallet_aid=wa.address_id " +
+				"LEFT JOIN address AS ua ON o.eoa_aid=ua.address_id " +
 			"WHERE o.market_aid = $1 AND o.outcome_idx=$2 AND o.otype = $3 " +
 			"ORDER BY "
 	if otype == p.OrderTypeBid {
@@ -1757,7 +1755,8 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 		os.Exit(1)
 	}
 	records := make([]p.DepthEntry,0,8)
-
+	var max_id int64 = 0
+	var oo_id int64 = 0
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.DepthEntry
@@ -1765,6 +1764,7 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 		var num_asks sql.NullInt64
 		var num_cancels sql.NullInt64
 		err=rows.Scan(
+			&oo_id,
 			&rec.MktAid,
 			&rec.OutcomeIdx,
 			&rec.WalletAddr,
@@ -1796,8 +1796,11 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 		rec.WalletAddrSh=p.Short_address(rec.WalletAddr)
 		rec.EOAAddrSh=p.Short_address(rec.EOAAddr)
 		records = append(records,rec)
+		if max_id < oo_id {
+			max_id = oo_id
+		}
 	}
-	return records
+	return records,max_id
 }
 func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) []p.MarketOrder{
 
@@ -1868,13 +1871,38 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 	}
 	return records
 }
-func (ss *SQLStorage) Get_mkt_depth(mkt_addr string,outcome_idx int) *p.MarketDepth {
+func (ss *SQLStorage) Get_last_open_order_id() int64 {
 
-	market_aid := ss.lookup_address_id(mkt_addr)
+	var query string
+	query = "SELECT id FROM oorders ORDER BY id DESC LIMIT 1"
+
+	var null_id sql.NullInt64
+	var err error
+	row := ss.db.QueryRow(query)
+	err=row.Scan(&null_id);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error in Get_last_open_order_id(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return null_id.Int64
+}
+func (ss *SQLStorage) Get_mkt_depth(market_aid int64,outcome_idx int) (*p.MarketDepth,int64) {
+
 	market_depth := new(p.MarketDepth)
-	market_depth.Bids = ss.build_depth_by_otype(market_aid,outcome_idx,p.OrderTypeBid)
-	market_depth.Asks = ss.build_depth_by_otype(market_aid,outcome_idx,p.OrderTypeAsk)
-	return market_depth
+	var max_buys,max_sells int64	// max_id is required for polling new open orders on the Client side
+	market_depth.Bids,max_buys = ss.build_depth_by_otype(market_aid,outcome_idx,p.OrderTypeBid)
+	market_depth.Asks,max_sells = ss.build_depth_by_otype(market_aid,outcome_idx,p.OrderTypeAsk)
+	var max_id int64
+	if max_buys > max_sells {
+		max_id = max_buys
+	} else {
+		max_id = max_sells
+	}
+	return market_depth,max_id
 }
 func (ss *SQLStorage) fill_block_info(ui *p.UserInfo,user_aid int64) {
 
@@ -3361,6 +3389,144 @@ func (ss *SQLStorage) Get_deposits_withdrawals(wallet_aid int64) []p.DaiOp{
 		}
 		if to_aid == wallet_aid {
 			rec.ToAddr = ""
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_mdepth_status(market_aid int64,outcome_idx int,last_oo_id int64) (p.MktDepthStatus,error) {
+
+	var status p.MktDepthStatus
+	var query string
+	query = "SELECT id FROM oorders WHERE market_aid=$1 AND outcome_idx=$2 AND id>$3"
+
+	row := ss.db.QueryRow(query,market_aid,outcome_idx,last_oo_id)
+	var null_id sql.NullInt64
+	var err error
+	err=row.Scan(&null_id);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error in Get_mdepth_status() q1: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	if null_id.Valid {
+		status.LastOOID=null_id.Int64
+	}
+
+	query = "SELECT count(*) AS num_rows FROM oorders WHERE market_aid=$1 AND outcome_idx=$2"
+	var null_counter sql.NullInt64
+	row = ss.db.QueryRow(query,market_aid,outcome_idx)
+	err=row.Scan(&null_counter);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			ss.Info.Printf("no rows for mdepth status for num_rows query\n")
+			return status,nil
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error in Get_mdepth_status() q2: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	if null_counter.Valid {
+		status.NumOrders = null_counter.Int64
+	}
+	ss.Info.Printf("num_orders=%v, last_oo_id=%v\n",status.NumOrders,status.LastOOID)
+	return status,nil
+}
+func (ss *SQLStorage) Get_last_block_timestamp() int64 {
+
+	var query string
+	query = "SELECT EXTRACT(EPOCH FROM block.ts)::BIGINT AS ts "+
+			"FROM block,last_block WHERE last_block.block_num=block.block_num"
+	row := ss.db.QueryRow(query)
+	var ts int64
+	var err error
+	err=row.Scan(&ts);
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Error in Get_last_block_timestamp(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return ts
+}
+func (ss *SQLStorage) Get_last_unique_addr_day() int64 {
+
+	var query string
+	query = "SELECT (day::timestamp)::bigint AS ts FROM unique_addrs ORDER BY day DESC LIMIT 1"
+	row := ss.db.QueryRow(query)
+	var ts int64
+	var err error
+	err=row.Scan(&ts);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error in Get_last_block_timestamp(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return ts
+}
+func (ss *SQLStorage) Calc_unique_addresses(ts_from int64,ts_to int64) int64 {
+
+	var query string
+	query = "SELECT count(*) FROM ( " +
+				"SELECT DISTINCT u.eoa_aid FROM address a " +
+				"JOIN ustats u ON u.eoa_aid=a.address_id" +
+				"JOIN block b ON a.block_num=b.block_num " +
+				"WHERE b.ts >= $1 AND b.ts < $2" +
+			")"
+	d_query:=fmt.Sprintf(
+			"SELECT count(*) FROM ( " +
+				"SELECT DISTINCT u.eoa_aid FROM address a " +
+				"JOIN ustats u ON u.eoa_aid=a.address_id" +
+				"JOIN block b ON a.block_num=b.block_num " +
+				"WHERE b.ts >= %v AND b.ts < %v" +
+			")",
+			ts_from,ts_to,
+	)
+	ss.Log_msg(fmt.Sprintf("%v\n",d_query))
+	row := ss.db.QueryRow(query)
+	var null_counter sql.NullInt64
+	var err error
+	err=row.Scan(&null_counter);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error in Calc_unique_addresses(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return null_counter.Int64
+}
+func (ss *SQLStorage) Insert_unique_addresses_entry(ts int64,num_addrs int64) {
+	var query string
+	query = "INSERT INTO unique_addrs(day,num_addrs) VALUES($1,$2)"
+	_,err := ss.db.Exec(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB Error: %v",err));
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Get_unique_addresses() []p.UniqueAddrEntry {
+
+	records := make([]p.UniqueAddrEntry,0,365)
+	var query string
+	query = "SELECT day,num_addrs FROM unique_addrs ORDER BY day"
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UniqueAddrEntry
+		err=rows.Scan(&rec.Day,&rec.NumAddrs)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
 		}
 		records = append(records,rec)
 	}

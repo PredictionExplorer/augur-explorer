@@ -34,11 +34,11 @@
 </script>
 <h3 class="page_title">Market Details</h3>
 <table class="market_detail">
-<tr>
-	<td>Address:</td>
-	<td>{{.Market.MktAddr}}</td>
+<tr class="market_detail">
+	<td>Address (ID):</td>
+	<td class="addr">{{.Market.MktAddr}}</td>
 </tr>
-<tr>
+<tr class="market_detail">
 	<td>Description</td>
 	<td>{{.Market.Description}}</td>
 </tr>
@@ -47,24 +47,24 @@
 <div id="price_history_graph"></div>
 <div id="usermktinfo" style="display: none;">
 	<br/><font color="yellow"><b>Order Info:</b></font><br/>
-	<table>
-		<tr>
+	<table class="order_info">
+		<tr class="order_info">
 			<td>Order Date</td>
 			<td><span id="fld_order_date"></span></td>
 		</tr>
-		<tr>
+		<tr class="order_info">
 			<td>Creator's Address</td>
 			<td><a id="fld_creator_href" href=""><span id="fld_creator_eoa_addr"></span></a></td>
 		</tr>
-		<tr>
+		<tr class="order_info">
 			<td>Filler's Address</td>
 			<td><a id="fld_filler_href"><span id="fld_filler_eoa_addr"></span></a></td>
 		</tr>
-		<tr>
+		<tr class="order_info">
 			<td>Price</td>
 			<td><span id="fld_price"></span></td>
 		</tr>
-		<tr>
+		<tr class="order_info">
 			<td>Volume</td>
 			<td><span id="fld_volume"></span></td>
 		</tr>

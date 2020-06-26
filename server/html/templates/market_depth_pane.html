@@ -1,9 +1,9 @@
 {{define "market_depth_pane"}}
 <table class="market_depth_pane">
-<tr>
-	<td class="mkt_depth_hdr">User</td>
-	<td class="mkt_depth_hdr">Volume</td>
-	<td class="mkt_depth_hdr">Price</td>
+<tr class="market_depth_pane">
+	<th class="mkt_depth_hdr">User</th>
+	<th class="mkt_depth_hdr">Volume</th>
+	<th class="mkt_depth_hdr">Price</th>
 </tr>
 	{{- range $i, $drow := .}}
 		{{template "mkt_depth_row" $drow}}

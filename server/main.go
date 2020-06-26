@@ -117,6 +117,7 @@ func main() {
 	r.GET("/market/:market",  market_info)
 	r.GET("/fulltradelist/:market",  full_trade_list)
 	r.GET("/mdepth/:market/:outcome", market_depth)
+	r.GET("/deptha/:market_aid/:outcome", market_depth_ajax)
 	r.GET("/mphist/:market/:outcome", market_price_history)
 	r.GET("/search", search)
 	r.GET("/money/:addr",  read_money)
@@ -128,6 +129,7 @@ func main() {
 	r.GET("/udw/:addr",  user_deposits_withdrawals)
 	r.GET("/block/:block_num",  block_info)
 	r.GET("/topusers.html",top_users)
+	r.GET("/mdstat/:market_aid/:outcome_idx/:last_oo_id",market_depth_status)
 
 	r.Static("/imgs", "./html/imgs")
 	r.Static("/res", "./html/res")			// resources (static)

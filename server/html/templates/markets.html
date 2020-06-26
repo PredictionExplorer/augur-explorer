@@ -5,6 +5,12 @@
 </head>
 <body>
 <h3 class="page_title">Markets</h3>
+<form type=GET action="/search/" style="margin-left:4em;">
+Search:
+		<input type="text" name="q">
+		<input type="submit" value=" Search ">
+	</form>
+</form>
 {{template "markets_list" .Markets}}
 <br/><br/><br/>
 <nav>

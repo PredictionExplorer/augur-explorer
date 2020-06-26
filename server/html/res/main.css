@@ -164,6 +164,15 @@ div.market_info {
 div.markets {
 	margin-left:					1.0em;
 }
+table.markets {
+	margin-left:					1.0em;
+	margin-right:					1.0em;
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.markets {
+	background-color: #161616;
+}
 div.main_info {
 	top:							-15em;
 	text-align:						right;
@@ -209,8 +218,11 @@ div.mkt_outvol {
 	font-size:                      1.2em;
 }
 table.market_depth_pane {
-	border:							1px solid white;
-	border-collapse:				collapse;
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.market_depth_pane {
+	background-color: #161616;
 }
 div.mkt_depth_field {
 	display:                        inline-block;
@@ -346,5 +358,19 @@ table.statistics {
 	border-spacing:					3px;
 }
 tr.statistics {
+	background-color: #161616;
+}
+table.index_stats {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.index_stats {
+	background-color: #161616;
+}
+table.order_info {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.order_info {
 	background-color: #161616;
 }
