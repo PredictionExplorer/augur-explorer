@@ -10,11 +10,22 @@
 <script src="https://code.highcharts.com/modules/data.js"></script>
 <script>
 	var eoa_addr = '{{.UserInfo.EOAAddr}}'
-	function load_pl_data(profit_loss,accum_pl,mkt_addr,mkt_addr_sh,outcome,mkt_descr,date_str,
+	function load_pl_data(net_pos,profit_loss,accum_pl,mkt_addr,mkt_addr_sh,outcome,mkt_descr,date_str,
 				counterparty,counterparty_sh,order_hash,block_num) {
 		var elt
 		elt = document.getElementById("order_info")
 		elt.style.display="block"
+		elt = document.getElementById("f2_fld_net_pos")
+		if (net_pos < 0 ) {
+			elt.innerHTML = 'Short ' + Math.abs(net_pos) + ' shares'
+		} else {
+			if (net_pos > 0 ) {
+				elt.innerHTML = 'Long ' + net_pos + ' shares'
+			} else {
+				elt.innerHTML = "0"
+			}
+		}
+		console.log("net_pos = " + net_pos + ", innerhtml="+elt.innerHTML)
 		elt = document.getElementById("f2_fld_profit_loss")
 		elt.innerHTML =profit_loss
 		elt = document.getElementById("f2_fld_accum_pl")
@@ -47,6 +58,9 @@
 		elt = document.getElementById("open_pos_info")
 		elt.style.display="block"
 		elt = document.getElementById("f1_fld_funds_frozen")
+		if (frozen < 0) {
+			frozen = frozen + "<font color=#ff9900> <b>&nbsp;&nbsp; (HEDGING POSITION)</b> </font>"
+		}
 		elt.innerHTML = frozen
 		elt = document.getElementById("f1_fld_net_position")
 		if (net_position < 0 ) {
@@ -144,7 +158,16 @@
 		</tr>
 		<tr class="user_info">
 			<td title="Sum of all funds this user has bet at this moment on the markets" >Money At Stake (DAI)</td>
-			<td class="right">{{.UserInfo.MoneyAtStake}}</td>
+			<td class="right">
+				{{ if .UserInfo.HedgingProfits }}
+					<font color=#ff9900> (PROFIT FROM HEDGING) &nbsp;&nbsp; </font>
+				{{ end }}
+				{{.UserInfo.MoneyAtStake}}
+			</td>
+		</tr>
+		<tr class="user_info">
+			<td>Unclaimed Profits</td>
+			<td class="right">{{.UserInfo.UnclaimedProfit}}</td>
 		</tr>
 		<tr class="user_info">
 			<td>Money in Validity Bonds (DAI)</td>
@@ -221,13 +244,13 @@
 			<td><span id="f1_fld_funds_frozen"></span></td>
 		</tr>
 		<tr class="open_pos_info">
-			<td>Volume </td>
+			<td>Position Size </td>
 			<td><span id="f1_fld_net_position"></span></td>
 		</tr>
 		<tr class="open_pos_info">
 			<td>Market Address</td>
 			<td>
-				<a href="" id="f1_market_href">
+				<a href="" class="addr" id="f1_market_href">
 					<span id="f1_fld_mkt_addr"></span>
 				</a>
 			</td>
@@ -247,7 +270,7 @@
 		<tr class="open_pos_info">
 			<td>Counterparty</td>
 			<td>
-				<a href="" id="f1_counterparty_href">
+				<a href="" class="addr" id="f1_counterparty_href">
 					<span id="f1_fld_counterparty"></span>
 				</a>
 			</td>
@@ -255,7 +278,7 @@
 		<tr class="open_pos_info">
 			<td>Order Hash</td>
 			<td>
-				<a href="" id="f1_order_hash_href">
+				<a href="" class="addr" id="f1_order_hash_href">
 					<span id="f1_fld_order_hash"></span>
 				</a>
 			</td>
@@ -273,6 +296,10 @@
 	<h3>Order details:</h3>
 	<table class="profit_loss_order_detail">
 		<tr class="profit_loss_order_detail">
+			<td>Total Position Size</td>
+			<td><span id="f2_fld_net_pos"></span></td>
+		</tr>
+		<tr class="profit_loss_order_detail">
 			<td>Profit/Loss in this trade</td>
 			<td><span id="f2_fld_profit_loss"></span></td>
 		</tr>
@@ -283,7 +310,7 @@
 		<tr class="profit_loss_order_detail">
 			<td>Market Address</td>
 			<td>
-				<a href="" id="f2_market_href">
+				<a href="" class="addr" id="f2_market_href">
 					<span id="f2_fld_mkt_addr"></span>
 				</a>
 			</td>
@@ -303,7 +330,7 @@
 		<tr class="profit_loss_order_detail">
 			<td>Counterparty</td>
 			<td>
-				<a href="" id="f2_counterparty_href">
+				<a href="" class="addr" id="f2_counterparty_href">
 					<span id="f2_fld_counterparty"></span>
 				</a>
 			</td>
@@ -311,7 +338,7 @@
 		<tr class="profit_loss_order_detail">
 			<td>Order hash</td>
 			<td>
-				<a href="" id="f2_order_hash_href">
+				<a href="" class="addr" id="f2_order_hash_href">
 					<span id="f2_fld_order_hash"></span>
 				</a>
 			</td>

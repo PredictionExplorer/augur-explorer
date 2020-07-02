@@ -42,6 +42,46 @@ func (sequencer *EventSequencer) get_ordered_event_list() []*types.Log {
 	}
 	return output
 }
+func (sequencer *EventSequencer) get_events_for_market_finalized_case() []*types.Log {
+	// we must move TradingProceedsClaimed events to the end, so they execut before ProfitLoss events
+
+	output := make([]*types.Log,0,8)
+	var market_finalized *types.Log
+	profit_loss_events := make([]*types.Log,0,8)
+	proceed_events := make([]*types.Log,0,8)
+	other_events := make([]*types.Log,0,8)
+
+	for i := 0 ; i < len(sequencer.unordered_list) ; i++ {
+		if len(sequencer.unordered_list[i].Topics) == 0 {
+			other_events = append(other_events,sequencer.unordered_list[i])
+			continue
+		}
+		if 0 == bytes.Compare(sequencer.unordered_list[i].Topics[0].Bytes(),evt_profit_loss_changed) {
+			profit_loss_events = append(profit_loss_events,sequencer.unordered_list[i])
+			continue
+		}
+		if 0 == bytes.Compare(sequencer.unordered_list[i].Topics[0].Bytes(),evt_trading_proceeds_claimed) {
+			proceed_events = append(proceed_events,sequencer.unordered_list[i])
+			continue
+		}
+		if 0 == bytes.Compare(sequencer.unordered_list[i].Topics[0].Bytes(),evt_market_finalized) {
+			market_finalized = sequencer.unordered_list[i]
+			continue
+		}
+		other_events = append(other_events,sequencer.unordered_list[i])
+	}
+	output = append(output,market_finalized)
+	for i := 0; i < len(profit_loss_events) ; i++ {
+		output = append(output,profit_loss_events[i])
+	}
+	for i := 0; i < len(proceed_events); i++ {
+		output = append(output,proceed_events[i])
+	}
+	for i := 0; i < len(other_events); i++ {
+		output = append(output,other_events[i])
+	}
+	return output
+}
 func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) {
 
 	//Init_contract_addresses(addresses)
@@ -222,17 +262,18 @@ func proc_approval_for_all(log *types.Log) {
 		mevt.Dump()
 	}
 }
-func proc_trading_proceeds_claimed(log *types.Log) {
+func proc_trading_proceeds_claimed(signer common.Address,log *types.Log) {
 
 	var mevt TradingProceedsClaimed
-	mevt.Universe= common.BytesToAddress(log.Topics[1][12:])
-	mevt.Sender= common.BytesToAddress(log.Topics[2][12:])
+	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
+	mevt.Sender = common.BytesToAddress(log.Topics[2][12:])
 	err := augur_abi.Unpack(&mevt,"TradingProceedsClaimed",log.Data)
 	if err != nil {
 		Fatalf("EventTradingProceedsClaimed error: %v",err)
 	} else {
 		Info.Printf("TradingProceedsClaimed event found (block=%v) :\n",log.BlockNumber)
 		mevt.Dump()
+		storage.Insert_claim(signer,&mevt)
 	}
 }
 func proc_fill_evt(log *types.Log) {
@@ -553,7 +594,7 @@ func process_event(block *types.Header, tx_id int64, signer common.Address, logs
 			proc_approval_for_all(log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_trading_proceeds_claimed) {
-			proc_trading_proceeds_claimed(log)
+			proc_trading_proceeds_claimed(signer,log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_exchange_fill) {
 			proc_fill_evt(log)
@@ -626,12 +667,12 @@ func dump_tx_input_if_known(tx *types.Transaction) {
 		return
 	}
 	input_sig := tx_data[:4]
-	decoded_sig ,_ := hex.DecodeString("78dc0eed")
 	set_timestamp_sig ,_ := hex.DecodeString("a0a2b573")
 	if 0 == bytes.Compare(input_sig,set_timestamp_sig) {
-		Info.Printf("Skipping setTimestamp() transaction\n")
+		Info.Printf("augur_wallet_call: Skipping setTimestamp() transaction\n")
 		return
 	}
+	decoded_sig ,_ := hex.DecodeString("78dc0eed")
 	if 0 == bytes.Compare(input_sig,decoded_sig) {
 		input_data_raw:= tx_data[4:]
 		var input_data InputStruct
@@ -654,6 +695,19 @@ func dump_tx_input_if_known(tx *types.Transaction) {
 		Info.Printf("\tmaxExchangeRateInDai: %v\n",input_data.MaxExchangeRateInDai.String())
 		Info.Printf("\trevertOnFaliure: %v\n",input_data.RevertOnFailure)
 		Info.Printf("}\n")
+
+		// check for internal transactions for the Wallet Registry contract
+		input_sig := input_data.Data[:4]
+		market_proceeds_sig ,_ := hex.DecodeString("db754422")
+		if 0 == bytes.Compare(input_sig,market_proceeds_sig) {
+			Info.Printf("augur_wallet_call: claimMarketProceeds()\n")
+			return
+		}
+		trading_proceeds_sig ,_ := hex.DecodeString("efd342c1")
+		if 0 == bytes.Compare(input_sig,trading_proceeds_sig) {
+			Info.Printf("augur_wallet_call: claimTradingProceeds()\n")
+			return
+		}
 	} else {
 		Info.Printf("dump_tx_input: input sig: %v\n",hex.EncodeToString(input_sig[:]))
 	}

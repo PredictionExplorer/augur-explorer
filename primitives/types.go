@@ -337,6 +337,8 @@ type UserInfo struct {
 	TotalDeposited	float64	// amount of money User has withdrawn
 	TopTrades		float64
 	TopProfit		float64
+	UnclaimedProfit	float64
+	HedgingProfits	bool	// Flag to indicate negative 'MoneyAtStake' field
 	TotalTrades		uint32	// how many trades were made by this User
 	MarketsCreated	uint32	// how many markets this User has created
 	MarketsTraded	uint32	// how many markets this User has traded

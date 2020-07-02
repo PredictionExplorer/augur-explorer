@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"bytes"
 	"time"
+	"strconv"
 //	"fmt"
 	"context"
 	"log"
@@ -127,6 +128,10 @@ func get_block_hash(block_num BlockNumber) (string,error) {
 func main() {
 	//client, err := ethclient.Dial("http://:::8545")
 
+	stop_block := int(0)
+	if len(os.Args) > 1 {
+		stop_block,_=strconv.Atoi(os.Args[1])
+	}
 	if len(RPC_URL) == 0 {
 		Fatalf("Configuration error: RPC URL of Ethereum node is not set."+
 				" Please set AUGUR_ETH_NODE_RPC environment variable")
@@ -194,6 +199,10 @@ func main() {
 	if bnum_high < bnum {
 		Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
 		os.Exit(1)
+	}
+	if stop_block > 0 {
+		Info.Printf("Will exit at block %v for debugging\n",stop_block)
+		bnum_high = BlockNumber(stop_block)
 	}
 	for ; bnum<bnum_high; bnum++ {
 		block_hash_str,err:=get_block_hash(bnum)
@@ -264,6 +273,7 @@ func main() {
 								if err != nil {
 									Error.Printf("Error: %v",err)
 								} else {
+									contains_market_finalized:=false
 									sequencer := new(EventSequencer)
 									num_logs := len(rcpt.Logs)
 									for i:=0 ; i<num_logs ; i++ {
@@ -271,10 +281,19 @@ func main() {
 											Info.Printf(
 												"\t\t\tlog %v\n\t\t\t\t\t\t for contract %v (%v of %v items)\n",
 												rcpt.Logs[i].Topics[0].String(),rcpt.Logs[i].Address.String(),(i+1),len(rcpt.Logs))
+											if 0 == bytes.Compare(rcpt.Logs[i].Topics[0].Bytes(),evt_market_finalized) {
+												contains_market_finalized = true
+											}
 										}
 										sequencer.append_event(rcpt.Logs[i])
 									}
-									ordered_list := sequencer.get_ordered_event_list()
+									var ordered_list []*types.Log
+									if contains_market_finalized {
+										// logs with Market finalized event need to have special order
+										ordered_list = sequencer.get_events_for_market_finalized_case()
+									} else {
+										ordered_list = sequencer.get_ordered_event_list()
+									}
 									num_logs = len(ordered_list)
 									pl_entries := make([]int64,0,2);// profit loss entries
 									market_order_id = 0
@@ -286,8 +305,7 @@ func main() {
 												ordered_list[i].Topics[0].String(),
 												ordered_list[i].Address.String())
 											id := process_event(block.Header(),tx_id,from,&ordered_list,i)
-											if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),
-														evt_profit_loss_changed) {
+											if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),evt_profit_loss_changed) {
 												pl_entries = append(pl_entries,id)
 											}
 										}
@@ -319,5 +337,7 @@ func main() {
 			time.Sleep(DEFAULT_WAIT_TIME * time.Millisecond)
 		}
 	}
-	goto main_loop
+	if stop_block == 0 {
+		goto main_loop
+	}
 }
