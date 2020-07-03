@@ -358,7 +358,7 @@ BEGIN
 
 	IF OLD.closed_position = 1 THEN
 		UPDATE trd_mkt_stats AS s
-			SET profit_loss = (profit_loss - OLD.final_profit)
+			SET profit_loss = (profit_loss - OLD.realized_profit)
 			WHERE	s.market_aid = OLD.market_aid AND
 					s.eoa_aid = OLD.eoa_aid;
 	END IF;
@@ -386,7 +386,7 @@ BEGIN
 			--		ProfitLoss event and this value is added during INSERT operation in profit_loss table
 			--		(if we don't subtract it we are going to get duplicated amount of frozen funds)
 			UPDATE trd_mkt_stats AS s
-					SET profit_loss = (profit_loss + NEW.final_profit),
+					SET profit_loss = (profit_loss + NEW.realized_profit),
 						frozen_funds = (frozen_funds - OLD.frozen_funds)
 					WHERE	s.eoa_aid = NEW.eoa_aid AND
 							s.market_aid = NEW.market_aid;

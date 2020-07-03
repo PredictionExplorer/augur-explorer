@@ -10,8 +10,8 @@
 <script src="https://code.highcharts.com/modules/data.js"></script>
 <script>
 	var eoa_addr = '{{.UserInfo.EOAAddr}}'
-	function load_pl_data(net_pos,profit_loss,accum_pl,mkt_addr,mkt_addr_sh,outcome,mkt_descr,date_str,
-				counterparty,counterparty_sh,order_hash,block_num) {
+	function load_pl_data(claim_status,net_pos,profit_loss,accum_pl,mkt_addr,mkt_addr_sh,outcome,
+							mkt_descr,date_str,counterparty,counterparty_sh,order_hash,block_num) {
 		var elt
 		elt = document.getElementById("order_info")
 		elt.style.display="block"
@@ -44,6 +44,16 @@
 		elt.innerHTML = order_hash
 		elt = document.getElementById("f2_fld_block_num")
 		elt.innerHTML = block_num
+		elt = document.getElementById("f2_fld_claim_status")
+		if (claim_status == 0) {
+			elt.innerHTML = "Loss. Claim not required"
+		}
+		if (claim_status == 1) {
+			elt.innerHTML = "<font color=\"yellow\"><b>Claim Pending</b></font>"
+		}
+		if (claim_status == 2) {
+			elt.innerHTML = "<font color=\"green\"><b>Claimed</b></font>"
+		}
 		// setup links
 		elt = document.getElementById("f2_market_href")
 		elt.href="/market/" + mkt_addr
@@ -306,6 +316,10 @@
 		<tr class="profit_loss_order_detail">
 			<td>Accumulated Profit/Loss</td>
 			<td><span id="f2_fld_accum_pl"></span></td>
+		</tr>
+		<tr class="profit_loss_order_detail">
+			<td>Claim Status</td>
+			<td><span id="f2_fld_claim_status"></span></td>
 		</tr>
 		<tr class="profit_loss_order_detail">
 			<td>Market Address</td>

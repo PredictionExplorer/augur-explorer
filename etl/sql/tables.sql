@@ -291,17 +291,28 @@ CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 	mktord_id			BIGINT DEFAULT 0,			-- this is the id of the market order generated this PL
 	outcome_idx			SMALLINT NOT NULL,
 	closed_position		SMALLINT DEFAULT 0,			-- 0 - open position, 1 - closed position
-	claim_status		SMALLINT DEFAULT 0,			-- 0:nothing to claim;1:unclaimed but existent;2:claimed
 	-- note: the following decimal precisions depend on precision of Augur events , inserted in db.go
 	net_position		DECIMAL(32,18) DEFAULT 0.0,
 	avg_price			DECIMAL(32,20) DEFAULT 0.0,
 	frozen_funds		DECIMAL(64,36) DEFAULT 0.0,
 	realized_profit		DECIMAL(64,36) DEFAULT 0.0,	-- this is the field copied directly from Augur' Event Log
 	realized_cost		DECIMAL(64,36) DEFAULT 0.0,
-	final_profit		DECIMAL(64,36) DEFAULT 0.0,	-- this profit is updated (by our code) when position is closed
+--	final_profit		DECIMAL(64,36) DEFAULT 0.0,	-- this profit is updated (by our code) when position is closed
 	time_stamp			TIMESTAMPTZ NOT NULL
 );
-CREATE TABLE final_pl ( -- final profit loss, synomym of Open Positions
+CREATE TABLE claim_funds (
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	eoa_aid				BIGINT NOT NULL,
+	market_aid			BIGINT NOT NULL,
+	outcome_idx			BIGINT NOT NULL,
+	last_pl_id			BIGINT NOT NULL,			-- last id of profit loss that updated this record
+	claim_ts			TIMESTAMPTZ DEFAULT to_timestamp(0),		-- timestamp of claim action
+	claim_status		SMALLINT DEFAULT 0,			-- 0:nothing to claim;1:unclaimed but existent;2:claimed
+	autocalculated		BOOLEAN DEFAULT FALSE,		-- true if PL was automatically calculated (not by PL event)
+	final_profit		DECIMAL(64,36) DEFAULT 0.0
+);
 CREATE TABLE uranks (   -- User Rankings (how this user ranks against each other, ex: Top 13% in profit made
 	eoa_aid             BIGINT PRIMARY KEY,
 	total_trades		BIGINT DEFAULT 0,
