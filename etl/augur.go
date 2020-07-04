@@ -492,7 +492,7 @@ func proc_market_oi_changed(block *types.Header, log *types.Log) {
 		storage.Insert_market_oi_changed_evt(block,&mevt)
 	}
 }
-func proc_market_finalized_evt(block_num BlockNumber,tx_id int64,log *types.Log) {
+func proc_market_finalized_evt(block_num BlockNumber,tx_id int64,timestamp int64,log *types.Log) {
 	var mevt MktFinalizedEvt
 	err := augur_abi.Unpack(&mevt,"MarketFinalized",log.Data)
 	if err != nil {
@@ -502,7 +502,7 @@ func proc_market_finalized_evt(block_num BlockNumber,tx_id int64,log *types.Log)
 		mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 		mevt.Market = common.BytesToAddress(log.Topics[2][12:])	// extract universe addr
 		mevt.Dump()
-		storage.Insert_market_finalized_evt(block_num,tx_id,&mevt)
+		storage.Insert_market_finalized_evt(block_num,tx_id,timestamp,&mevt)
 	}
 }
 func proc_initial_report_submitted(block_num BlockNumber,tx_id int64, log *types.Log,signer common.Address) {
@@ -584,6 +584,7 @@ func process_event(block *types.Header, tx_id int64, signer common.Address, logs
 	if log == nil {
 		Fatalf("process_event() received null pointer")
 	}
+	timestamp := int64(block.Time)
 	num_topics := len(log.Topics)
 	if num_topics > 0 {
 
@@ -594,7 +595,7 @@ func process_event(block *types.Header, tx_id int64, signer common.Address, logs
 			proc_approval_for_all(log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_trading_proceeds_claimed) {
-			proc_trading_proceeds_claimed(signer,int64(block.Time),log)
+			proc_trading_proceeds_claimed(signer,timestamp,log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_exchange_fill) {
 			proc_fill_evt(log)
@@ -630,7 +631,7 @@ func process_event(block *types.Header, tx_id int64, signer common.Address, logs
 			proc_market_oi_changed(block,log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_finalized) {
-			proc_market_finalized_evt(block_num,tx_id,log)
+			proc_market_finalized_evt(block_num,tx_id,timestamp,log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_initial_report_submitted) {
 			proc_initial_report_submitted(block_num,tx_id,log,signer)

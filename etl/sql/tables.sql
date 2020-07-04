@@ -43,7 +43,7 @@ CREATE TABLE market (
 	eoa_aid				BIGINT NOT NULL,			-- address ID of the User (EOA) who created the market
 	reporter_aid		BIGINT NOT NULL,			-- address ID of the User who will report on the outcome
 	end_time			TIMESTAMPTZ NOT NULL,		-- when the Market expires
-	max_ticks			BIGINT NOT NULL,			-- maximum price range (number of intervals)
+	num_ticks			BIGINT NOT NULL,			-- maximum price range (number of intervals)
 	create_timestamp	TIMESTAMPTZ NOT NULL,
 	total_trades		BIGINT DEFAULT 0,			-- current number of trades that took place
 	-- Status lookup codes  0=>Traded,1=>Reporting,3=>Reported,4=>Disputing,5=>Finalized,6=>Finalized as invalid
@@ -311,7 +311,8 @@ CREATE TABLE claim_funds (
 	claim_ts			TIMESTAMPTZ DEFAULT to_timestamp(0),		-- timestamp of claim action
 	claim_status		SMALLINT DEFAULT 0,			-- 0:nothing to claim;1:unclaimed but existent;2:claimed
 	autocalculated		BOOLEAN DEFAULT FALSE,		-- true if PL was automatically calculated (not by PL event)
-	final_profit		DECIMAL(64,36) DEFAULT 0.0
+	final_profit		DECIMAL(64,18) DEFAULT 0.0,
+	unfrozen_funds		DECIMAL(64,18) DEFAULT 0.0	-- amount of funds removed from frozen funds
 );
 CREATE TABLE uranks (   -- User Rankings (how this user ranks against each other, ex: Top 13% in profit made
 	eoa_aid             BIGINT PRIMARY KEY,

@@ -245,6 +245,7 @@ type InfoMarket struct {
 	CurVolume		float64
 	MoneyAtStake	float64
 	TotalTrades		int64
+	NumTicks		int64
 	MktType			int
 	MktAddr			string
 	MktAddrSh		string	// short address (with .. in the middle)

@@ -452,7 +452,7 @@ func (ss *SQLStorage) Insert_market_created_evt(block_num p.BlockNumber,tx_id in
 			eoa_aid,
 			reporter_aid,
 			end_time,
-			max_ticks,
+			num_ticks,
 			create_timestamp,
 			fee,
 			prices,
@@ -477,7 +477,7 @@ func (ss *SQLStorage) Insert_market_created_evt(block_num p.BlockNumber,tx_id in
 			eoa_aid,
 			reporter_aid,
 			end_time,
-			max_ticks,
+			num_ticks,
 			create_timestamp,
 			fee,
 			prices,
@@ -825,7 +825,7 @@ func get_outcome_idx_from_numerators(mkt_type int,numerators []*big.Int) int {
 	}
 	return -1
 }
-func (ss *SQLStorage) Insert_market_finalized_evt(block_num p.BlockNumber,tx_id int64,evt *p.MktFinalizedEvt) {
+func (ss *SQLStorage) Insert_market_finalized_evt(block_num p.BlockNumber,tx_id int64,timestamp int64,evt *p.MktFinalizedEvt) {
 
 	var query string
 
@@ -835,7 +835,7 @@ func (ss *SQLStorage) Insert_market_finalized_evt(block_num p.BlockNumber,tx_id 
 	fin_timestamp := evt.Timestamp.Int64()
 	winning_payouts := p.Bigint_ptr_slice_to_str(&evt.WinningPayoutNumerators,",")
 
-	market_type := ss.get_market_type(market_aid)
+	market_type,_ := ss.get_market_type_and_ticks(market_aid)
 	winning_outcome := get_outcome_idx_from_numerators(market_type,evt.WinningPayoutNumerators)
 
 	query = "INSERT INTO mkt_fin(market_aid,fin_timestamp,winning_payouts,winning_outcome)" +
@@ -850,22 +850,23 @@ func (ss *SQLStorage) Insert_market_finalized_evt(block_num p.BlockNumber,tx_id 
 		mkt_status = p.MktStatusFinInvalid
 	}
 	ss.update_market_status(market_aid,mkt_status)
-	ss.update_losing_positions(market_aid,block_num,tx_id,evt)
-	ss.update_profitable_positions(market_aid,block_num,tx_id,evt)
+	ss.update_losing_positions(market_aid,block_num,tx_id,timestamp,evt)
+	ss.update_profitable_positions(market_aid,block_num,tx_id,timestamp,evt)
 	ss.close_all_open_positions_for_market(market_aid)
 }
-func (ss *SQLStorage) get_market_type(market_aid int64) int {
+func (ss *SQLStorage) get_market_type_and_ticks(market_aid int64) (int,int64) {
 
 	var query string
-	query = "SELECT market_type FROM market WHERE market_aid=$1"
+	query = "SELECT market_type,num_ticks FROM market WHERE market_aid=$1"
 
 	var market_type int
-	err:=ss.db.QueryRow(query,market_aid).Scan(&market_type);
+	var num_ticks int64
+	err:=ss.db.QueryRow(query,market_aid).Scan(&market_type,&num_ticks);
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB Error: %v, q=%v\n",err,query))
 		os.Exit(1)
 	}
-	return market_type
+	return market_type,num_ticks
 }
 func (ss *SQLStorage) update_market_status(market_aid int64,status p.MarketStatus) {
 	var query string
@@ -894,6 +895,33 @@ func (ss *SQLStorage) close_all_open_positions_for_market(market_aid int64) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) calculate_profit(winning_tick int64,amount *big.Int,price *big.Int) *big.Int {
+	// Calculates the expected profit for a position
+	// Source:
+	//	https://github.com/AugurProject/augur/blob/master/packages/augur-core/src/contracts/trading/ProfitLoss.sol#L82a
+	// this function executes only when we know the User has a profit, losses are calculated as -frozen_funds
+	result := big.NewInt(0)
+	upper_price_limit := new(big.Int)
+	upper_price_limit.SetString("1000000000000000000",10)	// 10 ^ 18
+	if amount.Cmp(zero) < 0 {	// Short
+		ticks:=big.NewInt(winning_tick)
+		adjustment:=big.NewInt(0)
+		adjustment.SetString("10000000000000000",10)
+		adjusted_ticks:=big.NewInt(0)
+		adjusted_ticks.Mul(ticks,adjustment)
+		ss.Info.Printf("adjusted ticks = %v\n",adjusted_ticks.String())
+		result.Sub(adjusted_ticks,price)
+		ss.Info.Printf("price =%v, new price=%v\n",price.String(),result.String())
+		result.Mul(result,amount)
+		ss.Info.Printf("multiplication = %v\n",result.String())
+	}
+	if amount.Cmp(zero) > 0 {	// Long
+		result.Sub(upper_price_limit,price)
+		result.Mul(result,amount)
+	}
+	// Note: if amount == 0 , returns 0
+	return result
+}
 func where_for_losers(market_type int,evt *p.MktFinalizedEvt) string {
 
 	var where_condition string
@@ -914,14 +942,23 @@ func where_for_winners(market_type int,evt *p.MktFinalizedEvt) string {
 						") "
 	return where_condition
 }
-func (ss *SQLStorage) update_losing_positions(market_aid int64,block_num p.BlockNumber,tx_id int64,evt *p.MktFinalizedEvt) {
+func (ss *SQLStorage) set_all_unclaimed_to_claimed(market_aid int64,eoa_aid int64,timestamp int64) {
+	var query string
+	query = "UPDATE claim_funds SET claim_status=2,claim_ts=TO_TIMESTAMP($3) WHERE market_aid=$1 AND eoa_aid=$2"
+	ss.Info.Printf("update_claimed: market=%v, aid=%v, query=%v",market_aid,eoa_aid,query)
+	_,err := ss.db.Exec(query,market_aid,eoa_aid,timestamp)
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) update_losing_positions(market_aid int64,block_num p.BlockNumber,tx_id int64,timestamp int64,evt *p.MktFinalizedEvt) {
 
 	// this function marks losing positions as closed (because we don't have ProfitLoss event
 	//			on a losing position (position with wrong outcome)
 	var query string
-	query = "SELECT market_type FROM market WHERE market_aid=$1"
 
-	market_type:=ss.get_market_type(market_aid)
+	market_type,_:=ss.get_market_type_and_ticks(market_aid)
 
 	var where_condition string
 	switch market_type {
@@ -935,10 +972,14 @@ func (ss *SQLStorage) update_losing_positions(market_aid int64,block_num p.Block
 				"pl.id," +
 				"pl.eoa_aid," +
 				"pl.outcome_idx," +
-				"pl.frozen_funds::text " +
+				"round(pl.net_position*1e+18)::text," +
+				"round(pl.avg_price*1e+18)::text, " +
+				"pl.frozen_funds::text," +
+				"round(pl.frozen_funds*1e+18)::text AS frozen_funds_big " +
 			"FROM profit_loss AS pl " +
 			"WHERE (market_aid = $1) AND " +
-				where_condition
+				where_condition + 
+			" ORDER BY pl.id"
 
 	d_query:=strings.ReplaceAll(query,"$1",fmt.Sprintf("%v",market_aid))
 	ss.Info.Printf("update_losing_positions(): CLAIM FUNDS: query=%v\n",d_query)
@@ -947,28 +988,52 @@ func (ss *SQLStorage) update_losing_positions(market_aid int64,block_num p.Block
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	var claim_status int = 0
 
 	defer rows.Close()
 	for rows.Next() {
 		var (
+			claim_status int = 0
 			pl_id int64
 			eoa_aid int64
 			outcome_idx int
+			str_net_position string
+			str_price string
 			frozen_funds string
+			frozen_funds_big string
 		)
-		err=rows.Scan(&pl_id,&eoa_aid,&outcome_idx,&frozen_funds)
+		err=rows.Scan(&pl_id,&eoa_aid,&outcome_idx,&str_net_position,&str_price,&frozen_funds,&frozen_funds_big)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
 			os.Exit(1)
 		}
-		query = "INSERT INTO claim_funds(" +
+		ff_big:=big.NewInt(0)
+		ff_big.SetString(frozen_funds_big,10)
+		if ff_big.Cmp(zero) < 0 {
+			// frozen funds negative, calculate FF using Augur's business logic
+			net_position := big.NewInt(0)
+			net_position.SetString(str_net_position,10)
+			price := big.NewInt(0)
+			price.SetString(str_price,10)
+			winning_tick := evt.WinningPayoutNumerators[outcome_idx].Int64()
+			profit := ss.calculate_profit(winning_tick,net_position,price)
+			ss.Info.Printf("loss = %v\n",profit)
+			frozen_funds = profit.String()
+			query = "INSERT INTO claim_funds(" +
 							"block_num,tx_id,eoa_aid,market_aid,outcome_idx,last_pl_id,"+
-							"claim_status,autocalculated,final_profit" +
+							"claim_status,autocalculated,final_profit,unfrozen_funds" +
 						") VALUES (" +
-							"$1,$2,$3,$4,$5,$6,$7,$8,(-("+frozen_funds+"))" +
+							"$1,$2,$3,$4,$5,$6,$7,$8,(("+frozen_funds+"/1e+36)),0" +
 						")"
-		ss.Info.Printf("update_losing: pl_id=%v INSERT: %v\n",pl_id,query)
+			claim_status=2 // if we have negative frozen funds, then this position is considered claimed
+		} else {
+			query = "INSERT INTO claim_funds(" +
+							"block_num,tx_id,eoa_aid,market_aid,outcome_idx,last_pl_id,"+
+							"claim_status,autocalculated,final_profit,unfrozen_funds" +
+						") VALUES (" +
+							"$1,$2,$3,$4,$5,$6,$7,$8,(-("+frozen_funds+")),("+frozen_funds+")" +
+						")"
+		}
+		ss.Info.Printf("update_losing: pl_id=%v eoa_aid=%v frozen=%v INSERT: %v\n",pl_id,eoa_aid,frozen_funds,query)
 		_,err:=ss.db.Exec(query,
 			block_num,
 			tx_id,
@@ -980,8 +1045,11 @@ func (ss *SQLStorage) update_losing_positions(market_aid int64,block_num p.Block
 			true,
 		)
 		if (err!=nil) {
-			ss.Log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
+			ss.Log_msg(fmt.Sprintf("DB error in update_losing_positions(): %v ; q=%v",err,query))
 			os.Exit(1)
+		}
+		if claim_status == 2 { // if we touched negative territory, all previous positions were claimed too
+			ss.set_all_unclaimed_to_claimed(market_aid,eoa_aid,timestamp)
 		}
 	}
 /*
@@ -999,15 +1067,15 @@ func (ss *SQLStorage) update_losing_positions(market_aid int64,block_num p.Block
 	}
 */
 }
-func (ss *SQLStorage) update_profitable_positions(market_aid int64,block_num p.BlockNumber,tx_id int64,evt *p.MktFinalizedEvt) {
+func (ss *SQLStorage) update_profitable_positions(market_aid int64,block_num p.BlockNumber,tx_id int64,timestamp int64,evt *p.MktFinalizedEvt) {
 
 	// this function marks all existing profitable open positions as closed upon market finalization
 	// Currently implemented as inverse of update_losing_positions() with comparison operatos inverted,
 	//							abstraction of this code is pending
 	var query string
-	query = "SELECT market_type FROM market WHERE market_aid=$1"
 
-	market_type:=ss.get_market_type(market_aid)
+	market_type,num_ticks:=ss.get_market_type_and_ticks(market_aid)
+	_=num_ticks
 
 	var where_condition string
 	switch market_type {
@@ -1022,14 +1090,18 @@ func (ss *SQLStorage) update_profitable_positions(market_aid int64,block_num p.B
 				"o.eoa_aid AS creator_aid," +
 				"o.eoa_fill_aid AS filler_aid," +
 				"pl.eoa_aid AS pl_eoa_aid," +
-				"pl.outcome_idx " +
+				"pl.outcome_idx," +
+				"round(pl.net_position*1e+18)::text," +
+				"round(pl.avg_price*1e+18)::text, " +
+				"round(pl.frozen_funds*1e+18)::text " +
 //				"pl.frozen_funds::text," +
 //				"pl.profit_loss::text " +
 			"FROM profit_loss AS pl,mktord AS o " +
 			"WHERE " +
 					"pl.mktord_id=o.id AND " +
 					"pl.market_aid = $1 AND " +
-				where_condition
+				where_condition +
+			" ORDER BY pl.id"
 
 	d_query:=strings.ReplaceAll(query,"$1",fmt.Sprintf("%v",market_aid))
 	ss.Info.Printf("update_profitable_positions(): CLAIM FUNDS: query=%v\n",d_query)
@@ -1039,12 +1111,6 @@ func (ss *SQLStorage) update_profitable_positions(market_aid int64,block_num p.B
 		os.Exit(1)
 	}
 	var claim_status int = 1 
-	query = "INSERT INTO claim_funds(" +
-							"block_num,tx_id,eoa_aid,market_aid,outcome_idx,last_pl_id,"+
-							"claim_status,autocalculated,final_profit" +
-						") VALUES (" +
-							"$1,$2,$3,$4,$5,$6,$7,$8,$9" +
-						")"
 
 	defer rows.Close()
 	for rows.Next() {
@@ -1054,12 +1120,17 @@ func (ss *SQLStorage) update_profitable_positions(market_aid int64,block_num p.B
 			creator_aid int64 = 0
 			filler_aid int64 = 0
 			outcome_idx int = 0
+			str_net_position string
+			str_price string
+			str_frozen_funds string
 		)
-		err=rows.Scan(&pl_id,&creator_aid,&filler_aid,&pl_eoa_aid,&outcome_idx)
+		err=rows.Scan(&pl_id,&creator_aid,&filler_aid,&pl_eoa_aid,&outcome_idx,&str_net_position,&str_price,&str_frozen_funds)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
 			os.Exit(1)
 		}
+		/*
+		discontinued, not working
 		var counterparty_aid int64 = 0
 		if pl_eoa_aid == creator_aid {
 			counterparty_aid = filler_aid
@@ -1083,7 +1154,29 @@ func (ss *SQLStorage) update_profitable_positions(market_aid int64,block_num p.B
 				os.Exit(1)
 			}
 		}
+		*/
+		var negative_frozen_funds = false
+		unfrozen_funds := big.NewInt(0)
+		unfrozen_funds.SetString(str_frozen_funds,10)
+		if unfrozen_funds.Cmp(zero) < 0 {
+			unfrozen_funds.SetInt64(0)
+			negative_frozen_funds = true
+		}
+		net_position := big.NewInt(0)
+		net_position.SetString(str_net_position,10)
+		price := big.NewInt(0)
+		price.SetString(str_price,10)
+		winning_tick := evt.WinningPayoutNumerators[outcome_idx].Int64()
+		profit := ss.calculate_profit(winning_tick,net_position,price)
+		query = "INSERT INTO claim_funds(" +
+							"block_num,tx_id,eoa_aid,market_aid,outcome_idx,last_pl_id,"+
+							"claim_status,autocalculated,final_profit,unfrozen_funds" +
+						") VALUES (" +
+							"$1,$2,$3,$4,$5,$6,$7,$8,("+profit.String()+"/1e+36),("+unfrozen_funds.String()+"/1e+18)" +
+						")"
+		ss.Info.Printf("pl_eoa_aid=%v, str_net_position=%v,net_position=%v, str_price=%v,price=%v, profit=%v, unfrozen_funds=%v\n",pl_eoa_aid,str_net_position,net_position,str_price,price,profit,unfrozen_funds.String())
 		ss.Info.Printf("update profitable INSERT: %v\n",query)
+		ss.Info.Printf("unfrozen_funds=%v\n",unfrozen_funds.String())
 		_,err:=ss.db.Exec(query,
 			block_num,
 			tx_id,
@@ -1093,11 +1186,13 @@ func (ss *SQLStorage) update_profitable_positions(market_aid int64,block_num p.B
 			pl_id,
 			claim_status,
 			true,
-			ffunds,
 		)
 		if (err!=nil) {
-			ss.Log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
+			ss.Log_msg(fmt.Sprintf("DB error in update_profitable_positions(): %v ; q=%v",err,query))
 			os.Exit(1)
+		}
+		if negative_frozen_funds {
+			ss.set_all_unclaimed_to_claimed(market_aid,pl_eoa_aid,timestamp)
 		}
 	}
 /*
@@ -1132,7 +1227,7 @@ func (ss *SQLStorage) Insert_initial_report_evt(block_num p.BlockNumber,tx_id in
 	ss.Info.Printf("insert_initial_report_evt(): market_aid=%v, reporter_id=%v, signer_aid=%v\n",
 					market_aid,reporter_aid,signer_aid)
 
-	market_type := ss.get_market_type(market_aid)
+	market_type,_ := ss.get_market_type_and_ticks(market_aid)
 	reported_outcome := get_outcome_idx_from_numerators(market_type,evt.PayoutNumerators)
 
 	var query string
@@ -1202,7 +1297,8 @@ func (ss *SQLStorage) Insert_market_volume_changed_evt(block_num p.BlockNumber,t
 	var query string
 	query = `
 		INSERT INTO volume (
-			block_num,
+			b
+			ss.Info.Printf("unfrozen_funds=%v\n",unfrozen_funds.String())lock_num,
 			tx_id,
 			market_aid,
 			volume,
@@ -1262,7 +1358,7 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(block_num p.BlockNumber,tx_id
 	ss.Info.Printf("insert_dispute_crows_contrib(): market_aid=%v, reporter_id=%v, signer_aid=%v",
 					market_aid,reporter_aid,signer_aid)
 
-	market_type := ss.get_market_type(market_aid)
+	market_type,_ := ss.get_market_type_and_ticks(market_aid)
 	reported_outcome := get_outcome_idx_from_numerators(market_type,evt.PayoutNumerators)
 
 	var query string
@@ -1517,6 +1613,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 				"extra_info::json->>'longDescription' AS long_desc," +
 				"extra_info::json->>'categories' AS categories," +
 				"outcomes," +
+				"num_ticks," +
 				"m.market_type, " +
 				"CASE m.market_type " +
 					"WHEN 0 THEN 'YES/NO' " +
@@ -1563,6 +1660,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 					&longdesc,
 					&category,
 					&rec.Outcomes,
+					&rec.NumTicks,
 					&rec.MktType,
 					&rec.MktTypeStr,
 					&status_code,
@@ -2557,7 +2655,7 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 					"LEFT JOIN address AS w_a ON pl.wallet_aid=w_a.address_id " +
 					"LEFT JOIN address AS e_a ON pl.eoa_aid=e_a.address_id " +
 					"LEFT JOIN market AS m ON pl.market_aid = m.market_aid " +
-					"LEFT JOIN claim_funds AS cf ON pl.market_aid=cf.market_aid AND pl.outcome_idx=cf.outcome_idx AND pl.eoa_aid=cf.eoa_aid " +
+					"LEFT JOIN claim_funds AS cf ON (pl.market_aid=cf.market_aid AND pl.outcome_idx=cf.outcome_idx AND pl.eoa_aid=cf.eoa_aid) " +
 					"LEFT JOIN LATERAL ( " +
 						"SELECT mo.id,mo.order_id,mo.block_num,mo.eoa_aid,mo.eoa_fill_aid," +
 							"cr_a.addr AS creator_eoa_addr," +
@@ -3743,7 +3841,7 @@ func (ss *SQLStorage) Get_unique_addresses() []p.UniqueAddrEntry {
 func (ss *SQLStorage) Get_unclaimed_profit(eoa_aid int64) float64 {
 
 	var query string
-	query = "SELECT final_profit FROM claim_funds WHERE eoa_aid=$1 AND claim_status=1"
+	query = "SELECT sum(final_profit) AS pl FROM claim_funds WHERE eoa_aid=$1 AND claim_status=1"
 	row := ss.db.QueryRow(query,eoa_aid)
 
 	var profit sql.NullFloat64

@@ -163,8 +163,8 @@ func build_javascript_profit_loss_history(entries *[]PLEntry) template.JS {
 				"pl_accum: " + fmt.Sprintf("%v",e.AccumPl) + "," +
 				"date: \"" + fmt.Sprintf("%v",e.Date) + "\"," +
 				"click: function() {load_pl_data(" +
-					fmt.Sprintf("%v,%v,%v,%v,\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",%v",
-							e.ClaimStatus,e.NetPosition,e.FinalProfit,e.AccumPl,e.MktAddr,e.MktAddrSh,outcome_escaped,
+					fmt.Sprintf("%v,%v,%v,%v,%v,\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",%v",
+							e.ClaimStatus,e.NetPosition,e.AvgPrice,e.FinalProfit,e.AccumPl,e.MktAddr,e.MktAddrSh,outcome_escaped,
 							descr_escaped,e.Date,e.CounterPAddr,e.CounterPAddrSh,e.OrderHash,e.BlockNum) +
 				")}" +
 				"}"

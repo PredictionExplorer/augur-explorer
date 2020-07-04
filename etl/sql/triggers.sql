@@ -22,3 +22,5 @@ CREATE TRIGGER dai_transf_insert AFTER INSERT on dai_transf FOR EACH ROW EXECUTE
 CREATE TRIGGER dai_transf_delete AFTER DELETE on dai_transf FOR EACH ROW EXECUTE PROCEDURE on_dai_transf_delete();
 CREATE TRIGGER ustats_insert AFTER INSERT on ustats FOR EACH ROW EXECUTE PROCEDURE on_ustats_insert();
 CREATE TRIGGER dai_bal_update AFTER UPDATE ON dai_bal FOR EACH ROW EXECUTE PROCEDURE on_dai_bal_update();
+CREATE TRIGGER claim_funds_insert AFTER INSERT on claim_funds FOR EACH ROW EXECUTE PROCEDURE on_claim_funds_insert();
+CREATE TRIGGER claim_funds_delete AFTER DELETE on claim_funds FOR EACH ROW EXECUTE PROCEDURE on_claim_funds_delete();

@@ -10,7 +10,7 @@
 <script src="https://code.highcharts.com/modules/data.js"></script>
 <script>
 	var eoa_addr = '{{.UserInfo.EOAAddr}}'
-	function load_pl_data(claim_status,net_pos,profit_loss,accum_pl,mkt_addr,mkt_addr_sh,outcome,
+	function load_pl_data(claim_status,net_pos,price,profit_loss,accum_pl,mkt_addr,mkt_addr_sh,outcome,
 							mkt_descr,date_str,counterparty,counterparty_sh,order_hash,block_num) {
 		var elt
 		elt = document.getElementById("order_info")
@@ -26,6 +26,8 @@
 			}
 		}
 		console.log("net_pos = " + net_pos + ", innerhtml="+elt.innerHTML)
+		elt = document.getElementById("f2_fld_price")
+		elt.innerHTML = price
 		elt = document.getElementById("f2_fld_profit_loss")
 		elt.innerHTML =profit_loss
 		elt = document.getElementById("f2_fld_accum_pl")
@@ -308,6 +310,10 @@
 		<tr class="profit_loss_order_detail">
 			<td>Total Position Size</td>
 			<td><span id="f2_fld_net_pos"></span></td>
+		</tr>
+		<tr class="profit_loss_order_detail">
+			<td>Price</td>
+			<td><span id="f2_fld_price"></span></td>
 		</tr>
 		<tr class="profit_loss_order_detail">
 			<td>Profit/Loss in this trade</td>
