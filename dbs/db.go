@@ -977,7 +977,7 @@ func (ss *SQLStorage) update_losing_positions(market_aid int64,block_num p.Block
 				"pl.frozen_funds::text," +
 				"round(pl.frozen_funds*1e+18)::text AS frozen_funds_big " +
 			"FROM profit_loss AS pl " +
-			"WHERE (market_aid = $1) AND " +
+			"WHERE (market_aid = $1) AND (closed_position=0) AND " +
 				where_condition + 
 			" ORDER BY pl.id"
 
@@ -1100,6 +1100,7 @@ func (ss *SQLStorage) update_profitable_positions(market_aid int64,block_num p.B
 			"WHERE " +
 					"pl.mktord_id=o.id AND " +
 					"pl.market_aid = $1 AND " +
+					"(pl.closed_position = 0) AND " +
 				where_condition +
 			" ORDER BY pl.id"
 
@@ -2464,13 +2465,18 @@ func (ss *SQLStorage) Insert_token_transf_evt(evt *p.TokensTransferred,block_num
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) close_previous_positions(market_aid int64,eoa_aid int64,outcome_idx int) string {
+func (ss *SQLStorage) close_previous_positions(market_aid int64,eoa_aid int64,outcome_idx int,profit_loss string) string {
 
 	var err error
 	var query string
 
+	var pl_update string
+	if len(profit_loss) > 0  {
+		pl_update = ",immediate_profit=(" + profit_loss + "/1e+36) "
+	}
 	query = "UPDATE profit_loss " +
 				"SET closed_position = 1 " +
+				pl_update +
 				"WHERE " +
 						"(market_aid = $1) AND " +
 						"(eoa_aid = $2) AND " +
@@ -2522,7 +2528,11 @@ func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64
 	}
 	time_stamp := evt.Timestamp.Int64()
 
-	ss.close_previous_positions(market_aid,eoa_aid,int(outcome_idx))
+	var prev_profit string 
+	if evt.RealizedProfit.Cmp(zero) != 0 {
+		prev_profit = evt.RealizedProfit.String()
+	}
+	ss.close_previous_positions(market_aid,eoa_aid,int(outcome_idx),prev_profit)
 /* DISCONTINUED, to be deleted
 	if evt.FrozenFunds.Cmp(zero) < 0  {
 		// frozen funds are negative, this means User is making immediate (i.e. realized) profits
@@ -2537,16 +2547,15 @@ func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64
 	}
 */
 /*
-	var final_profit string
 	if len(prev_profit) > 0 {
-		//final_profit="((" + realized_profit + "/1e+36) - (" + prev_profit + "))"
+		immediate_profit="((" + realized_profit + "/1e+36) - (" + prev_profit + "))"
 		final_profit="(" + realized_profit + "/1e+36) "
 	} else {
 		//final_profit="(" + realized_profit + "/1e+36)"
 		//final_profit="(0)"
 		final_profit="(" + realized_profit + "/1e+36) "
 	}
-	*/
+*/
 	query = "INSERT INTO profit_loss (" +
 				"block_num," + 
 				"tx_id," +
@@ -2560,7 +2569,6 @@ func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64
 				"frozen_funds," +
 				"realized_profit," +
 				"realized_cost," +
-//				"final_profit," +
 				"time_stamp" +
 			") VALUES($1,$2,$3,$4,$5,$6,$7," +
 				"(" +net_position+ "/1e+16)," +
@@ -2568,7 +2576,6 @@ func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64
 				"(" +frozen_funds+ "/1e+36)," +
 				"(" +realized_profit+ "/1e+36)," +
 				"(" +realized_cost+ "/1e+36)," +
-//				"(" +final_profit+ ")," +
 				"TO_TIMESTAMP($8)" +
 			") RETURNING id,realized_profit,realized_cost,net_position"
 
@@ -2602,7 +2609,7 @@ func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64
 		if null_volume.Float64 == 0 {
 			// Volume = 0 means the User has closed all his positions,
 			// therefore we must mark position as closed in the DB too
-			ss.close_previous_positions(market_aid,eoa_aid,int(outcome_idx))
+			ss.close_previous_positions(market_aid,eoa_aid,int(outcome_idx),"")
 		}
 	}
 
@@ -2639,7 +2646,7 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 				"pl.frozen_funds," +
 				"pl.realized_profit," +
 				"pl.realized_cost," +
-//				"pl.final_profit," +
+				"pl.immediate_profit," +
 				"o.order_id," +
 				"o.block_num," +
 				"o.eoa_aid," +
@@ -2655,7 +2662,7 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 					"LEFT JOIN address AS w_a ON pl.wallet_aid=w_a.address_id " +
 					"LEFT JOIN address AS e_a ON pl.eoa_aid=e_a.address_id " +
 					"LEFT JOIN market AS m ON pl.market_aid = m.market_aid " +
-					"LEFT JOIN claim_funds AS cf ON (pl.market_aid=cf.market_aid AND pl.outcome_idx=cf.outcome_idx AND pl.eoa_aid=cf.eoa_aid) " +
+					"LEFT JOIN claim_funds AS cf ON (pl.market_aid=cf.market_aid AND pl.outcome_idx=cf.outcome_idx AND pl.eoa_aid=cf.eoa_aid AND pl.id=cf.last_pl_id) " +
 					"LEFT JOIN LATERAL ( " +
 						"SELECT mo.id,mo.order_id,mo.block_num,mo.eoa_aid,mo.eoa_fill_aid," +
 							"cr_a.addr AS creator_eoa_addr," +
@@ -2711,7 +2718,7 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 			&rec.FrozenFunds,
 			&rec.RealizedProfit,
 			&rec.RealizedCost,
-//			&rec.FinalProfit,
+			&rec.ImmediateProfit,
 			&order_hash,
 			&block_num,
 			&creator_eoa_aid,
@@ -2737,6 +2744,9 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 			accumulator = accumulator + rec.FrozenFunds
 			rec.AccumFrozen = accumulator
 		} else {
+			if rec.ImmediateProfit != 0 {
+				rec.RealizedProfit = rec.ImmediateProfit
+			}
 			if rec.RealizedProfit == 0 {
 				if cf_id.Valid {
 					rec.RealizedProfit = cf_final_profit.Float64

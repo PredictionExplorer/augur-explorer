@@ -395,6 +395,7 @@ type PLEntry struct {	// profit loss entry
 	RealizedProfit		float64
 	RealizedCost		float64
 	FinalProfit			float64
+	ImmediateProfit		float64
 	MktType				int
 	OutcomeIdx			int
 	ClaimStatus			int

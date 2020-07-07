@@ -191,8 +191,8 @@ func build_javascript_open_positions(entries *[]PLEntry) template.JS {
 				"frozen_accum: " + fmt.Sprintf("%v",e.AccumFrozen) + "," +
 				"date: \"" + fmt.Sprintf("%v",e.Date) + "\"," +
 				"click: function() {load_open_pos_data(" +
-					fmt.Sprintf("%v,%v,\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",%v",
-							e.FrozenFunds,e.NetPosition,e.MktAddr,e.MktAddrSh,outcome_escaped,
+					fmt.Sprintf("%v,%v,%v,\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",%v",
+							e.AvgPrice,e.FrozenFunds,e.NetPosition,e.MktAddr,e.MktAddrSh,outcome_escaped,
 							descr_escaped,e.Date,e.CounterPAddr,e.CounterPAddrSh,e.OrderHash,e.BlockNum) +
 				")}" +
 				"}"

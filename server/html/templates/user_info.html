@@ -47,14 +47,18 @@
 		elt = document.getElementById("f2_fld_block_num")
 		elt.innerHTML = block_num
 		elt = document.getElementById("f2_fld_claim_status")
-		if (claim_status == 0) {
-			elt.innerHTML = "Loss. Claim not required"
-		}
-		if (claim_status == 1) {
-			elt.innerHTML = "<font color=\"yellow\"><b>Claim Pending</b></font>"
-		}
-		if (claim_status == 2) {
-			elt.innerHTML = "<font color=\"green\"><b>Claimed</b></font>"
+		if (profit_loss != 0) {
+			if (claim_status == 0) {
+				elt.innerHTML = "Loss. Claim not required"
+			}
+			if (claim_status == 1) {
+				elt.innerHTML = "<font color=\"yellow\"><b>Claim Pending</b></font>"
+			}
+			if (claim_status == 2) {
+				elt.innerHTML = "<font color=\"green\"><b>Claimed</b></font>"
+			}
+		} else {
+			elt.innerHTML = "N/A"
 		}
 		// setup links
 		elt = document.getElementById("f2_market_href")
@@ -64,11 +68,13 @@
 		elt = document.getElementById("f2_order_hash_href")
 		elt.href="/order/" + order_hash
 	}
-	function load_open_pos_data(frozen,net_position,mkt_addr,mkt_addr_sh,outcome,
+	function load_open_pos_data(price,frozen,net_position,mkt_addr,mkt_addr_sh,outcome,
 				mkt_descr,date_str,counterparty,counterparty_sh,order_hash,block_num) {
 		var elt
 		elt = document.getElementById("open_pos_info")
 		elt.style.display="block"
+		elt = document.getElementById("f1_fld_price")
+		elt.innerHTML = price
 		elt = document.getElementById("f1_fld_funds_frozen")
 		if (frozen < 0) {
 			frozen = frozen + "<font color=#ff9900> <b>&nbsp;&nbsp; (HEDGING POSITION)</b> </font>"
@@ -258,6 +264,10 @@
 		<tr class="open_pos_info">
 			<td>Position Size </td>
 			<td><span id="f1_fld_net_position"></span></td>
+		</tr>
+		<tr class="open_pos_info">
+			<td>Price </td>
+			<td><span id="f1_fld_price"></span></td>
 		</tr>
 		<tr class="open_pos_info">
 			<td>Market Address</td>

@@ -297,7 +297,7 @@ CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 	frozen_funds		DECIMAL(64,36) DEFAULT 0.0,
 	realized_profit		DECIMAL(64,36) DEFAULT 0.0,	-- this is the field copied directly from Augur' Event Log
 	realized_cost		DECIMAL(64,36) DEFAULT 0.0,
---	final_profit		DECIMAL(64,36) DEFAULT 0.0,	-- this profit is updated (by our code) when position is closed
+	immediate_profit	DECIMAL(64,36) DEFAULT 0.0,	-- the profit on position direction change or size update
 	time_stamp			TIMESTAMPTZ NOT NULL
 );
 CREATE TABLE claim_funds (
