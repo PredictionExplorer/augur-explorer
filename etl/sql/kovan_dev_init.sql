@@ -3,6 +3,7 @@ INSERT INTO universe(universe_addr) VALUES('0x919274CE3Ba5a0D0f11071Bb9fb402AE5c
 INSERT INTO universe(universe_addr) VALUES('0x2C41A5516ED977577eeAEf423e80cd98BAbC204a');
 INSERT INTO main_stats(universe_id) VALUES(1);
 INSERT INTO contract_addresses(
+		profit_loss,
 		dai_cash,
 		rep_token,
 		zerox,
@@ -12,6 +13,7 @@ INSERT INTO contract_addresses(
 		share_token,
 		universe
 ) VALUES (
+		'0x446D9a3B94E97cE3CF45240e1d34858D3B8443F7',-- profit loss
 		'0x68e888AD28D8E41Aa07dcdEb666432Cd18b26aBa',-- dai cash
 		'0x4F0738B7396dD2A9C05E42a40cF34351317C517D',-- rep token
 		'0x75057695Fb8C3bB4A12eE0C6421f613640Afd0a1',-- zerox

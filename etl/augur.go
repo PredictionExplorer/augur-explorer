@@ -112,6 +112,10 @@ func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) 
 	if err != nil {
 		Fatalf("Couldn't initialize DAI Cash contract: %v\n",err)
 	}
+	ctrct_pl,err = NewProfitLoss(addresses.PL_addr,eclient)
+	if err != nil {
+		Fatalf("Couldn't initialize Profit Loss contract: %v\n",err)
+	}
 }
 /* DISCONTINUED, moved to another executable
 func update_dai_balances_backwards(last_block_num BlockNumber,aid int64,addr *common.Address) int {

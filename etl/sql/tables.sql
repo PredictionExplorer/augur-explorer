@@ -297,7 +297,8 @@ CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 	frozen_funds		DECIMAL(64,36) DEFAULT 0.0,
 	realized_profit		DECIMAL(64,36) DEFAULT 0.0,	-- this is the field copied directly from Augur' Event Log
 	realized_cost		DECIMAL(64,36) DEFAULT 0.0,
-	immediate_profit	DECIMAL(64,36) DEFAULT 0.0,	-- the profit on position direction change or size update
+	immediate_profit	DECIMAL(64,36) DEFAULT 0.0,	-- the profit on position direction change (or position size update)
+	immediate_ff		DECIMAL(64,36) DEFAULT 0.0,	-- frozen funds held for current position (not the accumulated)
 	time_stamp			TIMESTAMPTZ NOT NULL
 );
 CREATE TABLE claim_funds (
@@ -324,6 +325,7 @@ CREATE TABLE uranks (   -- User Rankings (how this user ranks against each other
 	volume				DECIMAL(32,18) DEFAULT 0.0
 );
 CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur Platform
+	profit_loss			TEXT DEFAULT '',-- Profit Loss contract
 	dai_cash			TEXT DEFAULT '',-- Cash/CashFaucet (local testnet)
 	zerox				TEXT DEFAULT '',-- ZeroXTrade
 	rep_token			TEXT DEFAULT '',--

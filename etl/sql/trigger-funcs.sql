@@ -341,12 +341,12 @@ BEGIN
 	IF NEW.mktord_id > 0 THEN 
 		IF NEW.closed_position = 0 THEN
 			UPDATE trd_mkt_stats
-				SET frozen_funds = (frozen_funds + NEW.frozen_funds),
+				SET frozen_funds = (frozen_funds + NEW.immediate_ff),
 					profit_loss = (profit_loss + NEW.immediate_profit)
 				WHERE market_aid = NEW.market_aid AND eoa_aid = NEW.eoa_aid;
-			UPDATE main_stats SET money_at_stake = money_at_stake + NEW.frozen_funds;
+			UPDATE main_stats SET money_at_stake = money_at_stake + NEW.immediate_ff;
 			UPDATE market
-				SET money_at_stake = money_at_stake + NEW.frozen_funds WHERE market_aid = NEW.market_aid;
+				SET money_at_stake = money_at_stake + NEW.immediate_ff WHERE market_aid = NEW.market_aid;
 		END IF;
 		IF NEW.closed_position = 1 THEN
 			RAISE EXCEPTION 'You cant insert a record with closed_position = 1, undefined behavior';
@@ -362,18 +362,18 @@ BEGIN
 	IF OLD.mktord_id > 0 THEN
 		IF OLD.closed_position = 1 THEN
 			UPDATE trd_mkt_stats AS s
-				SET profit_loss = (profit_loss - OLD.realized_profit)
+				SET profit_loss = (profit_loss - OLD.immediate_profit)
 				WHERE	s.market_aid = OLD.market_aid AND
 						s.eoa_aid = OLD.eoa_aid;
 		END IF;
 		IF OLD.closed_position = 0 THEN
 			UPDATE trd_mkt_stats AS s
-				SET frozen_funds = (frozen_funds + OLD.frozen_funds),
-					profit_loss = (profit_loss - OLD.immediate_profits)
+				SET frozen_funds = (frozen_funds + OLD.immediate_ff),
+					profit_loss = (profit_loss - OLD.immediate_profit)
 				WHERE market_aid = OLD.market_aid AND eoa_aid = OLD.eoa_aid;
-			UPDATE main_stats SET money_at_stake = money_at_stake + OLD.frozen_funds;
+			UPDATE main_stats SET money_at_stake = money_at_stake + OLD.immediate_ff;
 			UPDATE market 
-				SET money_at_stake = money_at_stake + OLD.frozen_funds WHERE market_aid = OLD.market_aid;
+				SET money_at_stake = money_at_stake + OLD.immediate_ff WHERE market_aid = OLD.market_aid;
 		END IF;
 	END IF;
 
@@ -393,13 +393,13 @@ BEGIN
 				--		ProfitLoss event and this value is added during INSERT operation in profit_loss table
 				--		(if we don't subtract it we are going to get duplicated amount of frozen funds)
 				UPDATE trd_mkt_stats AS s
-						SET profit_loss = (profit_loss + NEW.realized_profit + NEW.immediate_profit),
-							frozen_funds = (frozen_funds - OLD.frozen_funds)
+						SET profit_loss = (profit_loss + (NEW.immediate_profit - OLD.immediate_profit)),
+							frozen_funds = (frozen_funds - OLD.immediate_ff + NEW.immediate_ff)
 						WHERE	s.eoa_aid = NEW.eoa_aid AND
 								s.market_aid = NEW.market_aid;
-				UPDATE main_stats SET money_at_stake = money_at_stake - OLD.frozen_funds;
+				UPDATE main_stats SET money_at_stake = (money_at_stake - OLD.immediate_ff + NEW.immediate_ff);
 				UPDATE market
-					SET money_at_stake = money_at_stake - OLD.frozen_funds WHERE market_aid = OLD.market_aid;
+					SET money_at_stake = (money_at_stake - OLD.immediate_ff) WHERE market_aid = OLD.market_aid;
 			END IF;
 			IF NEW.closed_position = 0 THEN
 				-- nobody should update closed_position from 1 to 0 , once it is closed it is forever
@@ -582,12 +582,8 @@ DECLARE
 BEGIN
 
 	UPDATE trd_mkt_stats
---		SET frozen_funds = (frozen_funds - NEW.unfrozen_funds),
 		SET	profit_loss = (profit_loss + NEW.final_profit)
 		WHERE market_aid = NEW.market_aid AND eoa_aid = NEW.eoa_aid;
---	UPDATE main_stats SET money_at_stake = money_at_stake - NEW.unfrozen_funds;
---	UPDATE market
---		SET money_at_stake = money_at_stake - NEW.unfrozen_funds WHERE market_aid = NEW.market_aid;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -599,9 +595,6 @@ BEGIN
 		SET frozen_funds = (frozen_funds + OLD.unfrozen_funds),
 			profit_loss = (profit_loss - OLD.final_profit)
 		WHERE market_aid = OLd.market_aid AND eoa_aid = OLD.eoa_aid;
---	UPDATE main_stats SET money_at_stake = (money_at_stake + OLD.unfrozen_funds);
---	UPDATE market
---		SET money_at_stake = money_at_stake + OLD.unfrozen_funds WHERE market_aid = OLD.market_aid;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

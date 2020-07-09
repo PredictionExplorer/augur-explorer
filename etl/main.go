@@ -22,6 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	. "augur-extractor/primitives"
 	. "augur-extractor/dbs"
@@ -90,6 +91,7 @@ var (
 	ctrct_wallet_registry *AugurWalletRegistry
 	ctrct_zerox *ZeroX
 	ctrct_dai_token *DAICash
+	ctrct_pl *ProfitLoss
 
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 
@@ -320,6 +322,55 @@ func main() {
 			}
 		}
 		storage.Set_last_block_num(bnum)
+
+		var copts = new(bind.CallOpts)
+		market:=common.HexToAddress("0xfA193B12b4F764dF9FE95Ef380676Fb33c6A6c40")
+		addr:=common.HexToAddress("0x56C9256Adde09AeF891Ac7bD7AA8F69A6fa94Ba1")
+		outcome:=big.NewInt(1)
+		profit_loss,err := ctrct_pl.GetRealizedProfit(copts,market,addr,outcome)
+		if err != nil {
+			Info.Printf("Failure to GetRealizedProfit for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
+		} else {
+			Info.Printf("GetRealizedProfit : addr %v, outcome %v: %v",addr.String(),outcome.String(),profit_loss.String())
+		}
+		outcome=big.NewInt(2)
+		profit_loss,err = ctrct_pl.GetRealizedProfit(copts,market,addr,outcome)
+		if err != nil {
+			Info.Printf("Failure to GetRealizedProfit for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
+		} else {
+			Info.Printf("GetRealizedProfit : addr %v, outcome %v: %v",addr.String(),outcome.String(),profit_loss.String())
+		}
+		outcome=big.NewInt(3)
+		profit_loss,err = ctrct_pl.GetRealizedProfit(copts,market,addr,outcome)
+		if err != nil {
+			Info.Printf("Failure to GetRealizedProfit for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
+		} else {
+			Info.Printf("GetRealizedProfit : addr %v, outcome %v: %v",addr.String(),outcome.String(),profit_loss.String())
+		}
+
+		outcome=big.NewInt(1)
+		frozen_funds,err := ctrct_pl.GetFrozenFunds(copts,market,addr,outcome)
+		if err != nil {
+			Info.Printf("Failure to GetFrozenFunds for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
+		} else {
+			Info.Printf("GetFrozenFunds    : addr %v, outcome %v: %v",addr.String(),outcome.String(),frozen_funds.String())
+		}
+		outcome=big.NewInt(2)
+		frozen_funds,err = ctrct_pl.GetFrozenFunds(copts,market,addr,outcome)
+		if err != nil {
+			Info.Printf("Failure to GetFrozenFunds for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
+		} else {
+			Info.Printf("GetFrozenFunds    : addr %v, outcome %v: %v",addr.String(),outcome.String(),frozen_funds.String())
+		}
+		outcome=big.NewInt(3)
+		frozen_funds,err = ctrct_pl.GetFrozenFunds(copts,market,addr,outcome)
+		if err != nil {
+			Info.Printf("Failure to GetFrozenFunds for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
+		} else {
+			Info.Printf("GetFrozenFunds    : addr %v, outcome %v: %v",addr.String(),outcome.String(),frozen_funds.String())
+		}
+
+
 		select {
 			case exit_flag := <-exit_chan:
 				if exit_flag {

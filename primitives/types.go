@@ -384,6 +384,7 @@ type MarketOrder struct {	// this is a short order info, to show in tables
 	Date				string
 }
 type PLEntry struct {	// profit loss entry
+	Id					int64
 	MktAid				int64
 	Timestamp			int64
 	BlockNum			int64
@@ -394,7 +395,7 @@ type PLEntry struct {	// profit loss entry
 	FrozenFunds			float64
 	RealizedProfit		float64
 	RealizedCost		float64
-	FinalProfit			float64
+//	FinalProfit			float64	DISCONTINUED, to be deleted	DISCONTINUED, to be deleted
 	ImmediateProfit		float64
 	MktType				int
 	OutcomeIdx			int
@@ -527,6 +528,7 @@ type BlockCash struct {
 	CashFlow			float64
 }
 type ContractAddresses struct {
+	PL_addr			common.Address	// ProfitLoss contract
 	Zerox_addr		common.Address
 	Dai_addr		common.Address	// Shows DAI balance and also to fill dai_transf table and Cash Flow report
 	Reputation_addr	common.Address	// used to query REP token balance when showing User info (among other stuff)

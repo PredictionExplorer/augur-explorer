@@ -10,7 +10,7 @@
 <script src="https://code.highcharts.com/modules/data.js"></script>
 <script>
 	var eoa_addr = '{{.UserInfo.EOAAddr}}'
-	function load_pl_data(claim_status,net_pos,price,profit_loss,accum_pl,mkt_addr,mkt_addr_sh,outcome,
+	function load_pl_data(pl_id,claim_status,net_pos,price,profit_loss,accum_pl,mkt_addr,mkt_addr_sh,outcome,
 							mkt_descr,date_str,counterparty,counterparty_sh,order_hash,block_num) {
 		var elt
 		elt = document.getElementById("order_info")
@@ -44,6 +44,7 @@
 		elt.innerHTML = counterparty
 		elt = document.getElementById("f2_fld_order_hash")
 		elt.innerHTML = order_hash
+		elt.setAttribute('title',pl_id);
 		elt = document.getElementById("f2_fld_block_num")
 		elt.innerHTML = block_num
 		elt = document.getElementById("f2_fld_claim_status")
@@ -252,7 +253,7 @@
 		<span></span><span></span><span></span><span></span>
 	</li>
 </ul>
-<span class="user_info_generic">Account's Open Positions:</span><br/><br/>
+<span class="user_info_generic">Account's Frozen Funds:</span><br/><br/>
 <div id="open_positions_chart"></div>
 <div id="open_pos_info" class="user_info_generic" style="display: none;">
 	<h3>Open Position Info:</h3>
@@ -478,11 +479,11 @@ Highcharts.chart('profit_loss_chart', {
 Highcharts.chart('open_positions_chart', {
 
 	title: {
-		text: 'Open Positions'
+		text: 'Frozen Funds Chart'
 	},
 
 	subtitle: {
-		text: 'Open Positions Detail'
+		text: 'Frozen Funds of all the Open Positions'
 	},
 
 	yAxis: {

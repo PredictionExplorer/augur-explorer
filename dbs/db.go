@@ -144,10 +144,11 @@ func (ss *SQLStorage) Get_last_block_num() (p.BlockNumber,bool) {
 func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 
 	var query string
-	query="SELECT dai_cash,rep_token,zerox,wallet_reg,fill_order,eth_xchg,share_token,universe FROM contract_addresses";
+	query="SELECT profit_loss,dai_cash,rep_token,zerox,wallet_reg,fill_order,eth_xchg,share_token,universe FROM contract_addresses";
 	row := ss.db.QueryRow(query)
 	var c_addresses p.ContractAddresses
 	var err error
+	var pl_addr_str string
 	var dai_addr_str string
 	var rep_addr_str string
 	var zerox_addr_str string
@@ -156,7 +157,7 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 	var eth_xchg_addr_str string
 	var share_token_addr_str string
 	var universe_addr_str string
-	err=row.Scan(&dai_addr_str,&rep_addr_str,&zerox_addr_str,&walletreg_addr_str,&fill_order_addr_str,
+	err=row.Scan(&pl_addr_str,&dai_addr_str,&rep_addr_str,&zerox_addr_str,&walletreg_addr_str,&fill_order_addr_str,
 					&eth_xchg_addr_str,&share_token_addr_str,&universe_addr_str);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -166,6 +167,7 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 		}
 		return c_addresses,err
 	}
+	c_addresses.PL_addr=common.HexToAddress(pl_addr_str)
 	c_addresses.Dai_addr=common.HexToAddress(dai_addr_str)
 	c_addresses.Reputation_addr=common.HexToAddress(rep_addr_str)
 	c_addresses.Zerox_addr=common.HexToAddress(zerox_addr_str)
@@ -2465,6 +2467,31 @@ func (ss *SQLStorage) Insert_token_transf_evt(evt *p.TokensTransferred,block_num
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) get_previous_profit_and_ff(market_aid int64,eoa_aid int64,outcome_idx int) (string,string) {
+
+	var previous_realized_profit string
+	var previous_frozen_funds string
+	var query string
+	query = "SELECT  round(pl.realized_profit*1e+36) AS rpl," +
+					"round(pl.frozen_funds*1e+36) as ff " +
+			"FROM profit_loss AS pl " +
+			"WHERE  market_aid=$1 AND eoa_aid=$2 AND outcome_idx=$3 " +
+			"ORDER BY pl.id DESC LIMIT 1"
+
+	res := ss.db.QueryRow(query,market_aid,eoa_aid,outcome_idx)
+	var null_pl,null_ff sql.NullString
+	err := res.Scan(&null_pl,&null_ff)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	} else {
+		previous_realized_profit = null_pl.String
+		previous_frozen_funds = null_ff.String
+	}
+	return previous_realized_profit,previous_frozen_funds
+}
 func (ss *SQLStorage) close_previous_positions(market_aid int64,eoa_aid int64,outcome_idx int,profit_loss string) string {
 
 	var err error
@@ -2482,7 +2509,7 @@ func (ss *SQLStorage) close_previous_positions(market_aid int64,eoa_aid int64,ou
 						"(eoa_aid = $2) AND " +
 						"(outcome_idx = $3) AND " +
 						"(closed_position = 0) " +
-				"RETURNING realized_profit::text"
+				"RETURNING round(realized_profit*1e+36)::text"
 	var previous_profit string
 	row:=ss.db.QueryRow(query,market_aid,eoa_aid,outcome_idx)
 	err=row.Scan(&previous_profit);
@@ -2527,12 +2554,13 @@ func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64
 		realized_cost = "0"
 	}
 	time_stamp := evt.Timestamp.Int64()
-
-	var prev_profit string 
+/*
+	var recorded_profit string 
 	if evt.RealizedProfit.Cmp(zero) != 0 {
-		prev_profit = evt.RealizedProfit.String()
+		recorded_profit = evt.RealizedProfit.String()
 	}
-	ss.close_previous_positions(market_aid,eoa_aid,int(outcome_idx),prev_profit)
+	*/
+	ss.close_previous_positions(market_aid,eoa_aid,int(outcome_idx),"")
 /* DISCONTINUED, to be deleted
 	if evt.FrozenFunds.Cmp(zero) < 0  {
 		// frozen funds are negative, this means User is making immediate (i.e. realized) profits
@@ -2546,16 +2574,30 @@ func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64
 		frozen_funds = evt.FrozenFunds.String()
 	}
 */
-/*
-	if len(prev_profit) > 0 {
-		immediate_profit="((" + realized_profit + "/1e+36) - (" + prev_profit + "))"
-		final_profit="(" + realized_profit + "/1e+36) "
+	var immed_profit_str string
+	previous_rprofit_str,previous_ff_str:=ss.get_previous_profit_and_ff(market_aid,eoa_aid,int(outcome_idx))
+	if len(previous_rprofit_str) > 0 {
+		prev_profit:=new(big.Int)
+		prev_profit.SetString(previous_rprofit_str,10)
+		immed_pl:=new(big.Int)
+		immed_pl.Sub(evt.RealizedProfit,prev_profit)
+		immed_profit_str=immed_pl.String()
 	} else {
-		//final_profit="(" + realized_profit + "/1e+36)"
-		//final_profit="(0)"
-		final_profit="(" + realized_profit + "/1e+36) "
+		immed_profit_str = "0"
 	}
-*/
+	var immed_ff_str string = "0"
+	var prev_ff *big.Int
+	if len(previous_ff_str) == 0 {
+		prev_ff=big.NewInt(0)
+	} else {
+		prev_ff = new(big.Int)
+	}
+	prev_ff.SetString(previous_ff_str,10)
+	immed_ff:=new(big.Int)
+	immed_ff.Sub(evt.FrozenFunds,prev_ff)
+	immed_ff_str=immed_ff.String()
+	ss.Info.Printf("previous_realized_profit = %v, current realized_profit=%v, immediate=%v\n",previous_rprofit_str,evt.RealizedProfit.String(),immed_profit_str)
+	ss.Info.Printf("previous_frozen_funds = %v, current_frozen_funds=%v, immediate=%v\n",previous_ff_str,evt.FrozenFunds.String(),immed_ff_str)
 	query = "INSERT INTO profit_loss (" +
 				"block_num," + 
 				"tx_id," +
@@ -2569,13 +2611,17 @@ func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64
 				"frozen_funds," +
 				"realized_profit," +
 				"realized_cost," +
+				"immediate_profit," +
+				"immediate_ff," +
 				"time_stamp" +
 			") VALUES($1,$2,$3,$4,$5,$6,$7," +
 				"(" +net_position+ "/1e+16)," +
 				"(" +avg_price+ "/1e+20)," +
 				"(" +frozen_funds+ "/1e+36)," +
 				"(" +realized_profit+ "/1e+36)," +
-				"(" +realized_cost+ "/1e+36)," +
+				"(" +realized_cost + "/1e+36)," +
+				"(" +immed_profit_str + "/1e+36)," +
+				"(" +immed_ff_str + "/1e+36)," +
 				"TO_TIMESTAMP($8)" +
 			") RETURNING id,realized_profit,realized_cost,net_position"
 
@@ -2631,6 +2677,7 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 	}
 	var query string
 	query = "SELECT " +
+				"pl.id," +
 				"pl.market_aid," +
 				"m.market_type, " +
 				"pl.outcome_idx," +
@@ -2703,6 +2750,7 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 			filler_addr sql.NullString
 		)
 		err=rows.Scan(
+			&rec.Id,
 			&rec.MktAid,
 			&rec.MktType,
 			&rec.OutcomeIdx,
@@ -2740,20 +2788,19 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 			rec.ClaimStatus = -1	// claim funds record doesn't exist (market not finalized or simply not claimed)
 		}
 		if open_positions {
-			rec.FinalProfit = rec.FinalProfit - rec.RealizedProfit
 			accumulator = accumulator + rec.FrozenFunds
 			rec.AccumFrozen = accumulator
 		} else {
-			if rec.ImmediateProfit != 0 {
+			/*if rec.ImmediateProfit != 0 {
 				rec.RealizedProfit = rec.ImmediateProfit
-			}
-			if rec.RealizedProfit == 0 {
+			}*/
+			if rec.ImmediateProfit == 0 {
 				if cf_id.Valid {
-					rec.RealizedProfit = cf_final_profit.Float64
+					rec.ImmediateProfit = cf_final_profit.Float64
 				}
 			}
-			rec.FinalProfit = rec.RealizedProfit
-			accumulator = accumulator + rec.RealizedProfit
+//			rec.FinalProfit = rec.RealizedProfit
+			accumulator = accumulator + rec.ImmediateProfit
 			rec.AccumPl = accumulator
 		}
 
