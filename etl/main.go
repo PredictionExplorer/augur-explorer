@@ -22,7 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	//"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	. "augur-extractor/primitives"
 	. "augur-extractor/dbs"
@@ -105,6 +105,7 @@ var (
 	market_order_id int64 = 0
 	owner_fld_offset int64 = 2		// offset to AugurContract::owner field obtained with eth_getStorage()
 
+	position_changes	[]*PosChg	// used to track changes in positions for debugging/verification
 
 	Error   *log.Logger
 	Info	*log.Logger
@@ -138,6 +139,7 @@ func main() {
 		Fatalf("Configuration error: RPC URL of Ethereum node is not set."+
 				" Please set AUGUR_ETH_NODE_RPC environment variable")
 	}
+	position_changes = make([]*PosChg,0,8)
 
 	Info = log.New(os.Stdout,"INFO: ",log.Ltime)		//|log.Lshortfile)
 	Error = log.New(os.Stderr,"ERROR: ",log.Ltime)		//|log.Lshortfile)
@@ -322,55 +324,8 @@ func main() {
 			}
 		}
 		storage.Set_last_block_num(bnum)
-
-		var copts = new(bind.CallOpts)
-		market:=common.HexToAddress("0xfA193B12b4F764dF9FE95Ef380676Fb33c6A6c40")
-		addr:=common.HexToAddress("0x56C9256Adde09AeF891Ac7bD7AA8F69A6fa94Ba1")
-		outcome:=big.NewInt(1)
-		profit_loss,err := ctrct_pl.GetRealizedProfit(copts,market,addr,outcome)
-		if err != nil {
-			Info.Printf("Failure to GetRealizedProfit for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
-		} else {
-			Info.Printf("GetRealizedProfit : addr %v, outcome %v: %v",addr.String(),outcome.String(),profit_loss.String())
-		}
-		outcome=big.NewInt(2)
-		profit_loss,err = ctrct_pl.GetRealizedProfit(copts,market,addr,outcome)
-		if err != nil {
-			Info.Printf("Failure to GetRealizedProfit for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
-		} else {
-			Info.Printf("GetRealizedProfit : addr %v, outcome %v: %v",addr.String(),outcome.String(),profit_loss.String())
-		}
-		outcome=big.NewInt(3)
-		profit_loss,err = ctrct_pl.GetRealizedProfit(copts,market,addr,outcome)
-		if err != nil {
-			Info.Printf("Failure to GetRealizedProfit for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
-		} else {
-			Info.Printf("GetRealizedProfit : addr %v, outcome %v: %v",addr.String(),outcome.String(),profit_loss.String())
-		}
-
-		outcome=big.NewInt(1)
-		frozen_funds,err := ctrct_pl.GetFrozenFunds(copts,market,addr,outcome)
-		if err != nil {
-			Info.Printf("Failure to GetFrozenFunds for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
-		} else {
-			Info.Printf("GetFrozenFunds    : addr %v, outcome %v: %v",addr.String(),outcome.String(),frozen_funds.String())
-		}
-		outcome=big.NewInt(2)
-		frozen_funds,err = ctrct_pl.GetFrozenFunds(copts,market,addr,outcome)
-		if err != nil {
-			Info.Printf("Failure to GetFrozenFunds for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
-		} else {
-			Info.Printf("GetFrozenFunds    : addr %v, outcome %v: %v",addr.String(),outcome.String(),frozen_funds.String())
-		}
-		outcome=big.NewInt(3)
-		frozen_funds,err = ctrct_pl.GetFrozenFunds(copts,market,addr,outcome)
-		if err != nil {
-			Info.Printf("Failure to GetFrozenFunds for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
-		} else {
-			Info.Printf("GetFrozenFunds    : addr %v, outcome %v: %v",addr.String(),outcome.String(),frozen_funds.String())
-		}
-
-
+		scan_profit_loss_data_for_debugging(bnum,&position_changes)
+		position_changes=nil
 		select {
 			case exit_flag := <-exit_chan:
 				if exit_flag {

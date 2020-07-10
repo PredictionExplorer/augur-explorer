@@ -548,3 +548,13 @@ type MktDepthStatus struct {
 	NumOrders			int64	// used to catch deletes
 	LastOOID			int64	// used to catch new inserts
 }
+type PosChg struct {		// change in positon for logging/debugging purposes
+	Mkt_addr			common.Address
+	Wallet_addr			common.Address
+	BlockNum			int64
+	Outcome				*big.Int
+	ProfitLoss			*big.Int
+	FrozenFunds			*big.Int
+	NetPos				*big.Int
+	AvgPrice			*big.Int
+}

@@ -164,7 +164,9 @@ CREATE table oi_chg ( -- open interest changed event
 );
 CREATE TABLE mkt_fin (
 	id					BIGSERIAL PRIMARY KEY,
-	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
 	winning_outcome		SMALLINT DEFAULT 0,
 	fin_timestamp		TIMESTAMPTZ NOT NULL,
 	winning_payouts		TEXT NOT NULL
@@ -338,4 +340,15 @@ CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur P
 CREATE TABLE unique_addrs (	-- Unique addresses per day, statistics
 	day					DATE PRIMARY KEY,
 	num_addrs			BIGINT DEFAULT 0
+);
+CREATE TABLE pl_debug (-- Profit loss data for debugging, scanned after Block has been processed
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	wallet_aid			BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	profit_loss			DECIMAL(64,36) DEFAULT 0.0,
+	frozen_funds		DECIMAL(64,36) DEFAULT 0.0,
+	net_position		DECIMAL(32,18) DEFAULT 0.0,
+	avg_price			DECIMAL(32,20) DEFAULT 0.0
 );

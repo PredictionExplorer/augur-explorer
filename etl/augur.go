@@ -117,93 +117,6 @@ func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) 
 		Fatalf("Couldn't initialize Profit Loss contract: %v\n",err)
 	}
 }
-/* DISCONTINUED, moved to another executable
-func update_dai_balances_backwards(last_block_num BlockNumber,aid int64,addr *common.Address) int {
-
-	var copts = new(bind.CallOpts)
-	copts.BlockNumber = big.NewInt(int64(last_block_num))
-	balance,err := ctrct_dai_token.BalanceOf(copts,*addr)
-	if err != nil {
-		Info.Printf("Failure to update DAI token balances backwards for eoa_aid=%v,last_block_num=%v",
-							aid,last_block_num)
-		Error.Printf("Failure to update DAI token balances backwards for eoa_aid=%v,last_block_num=%v",
-							aid,last_block_num)
-		return 0
-	}
-	Info.Printf("balance_updater(): updating balances backwards from block %v , addr %v (aid=%v)\n",
-			last_block_num,addr.String(),aid)
-	Info.Printf("balance_updater(): got last balance = %v for block = %v\n",balance.String(),last_block_num)
-	return storage.Update_dai_token_balances_backwards(last_block_num,aid,balance)
-}
-func balance_updater() {
-	// go-routine that updates balances of DAI tokens
-	// when the record is inserted into dai_transf table it is inserted with balance = 0 because
-	// we don't have the previous balance (and we can't get it during the processing because we are
-	// processing finalized  blocks and at this stage of the process the order of transfers was lost)
-	// Therefore the only way to calculate valid balances for all the accounts involved is to get the
-	// balance on the previous block, and run the sequence of balance changes
-	// The order of insertion into dai_transf table is valid and we can use it to reproduce the history
-
-	// in order to avoid being a bottleneck this process must run as an independent thread
-
-	var num_changes int;
-	for {
-		num_changes = 0
-		Info.Printf("balance_updater() running\n")
-		operations := storage.Get_unprocessed_dai_balances()
-		Info.Printf("balance_updater(): got %v operations\n",len(operations))
-		for i := 0 ; i<len(operations) ; i++ {
-			dai_bal := &operations[i]
-			prev_balance_db,err := storage.Get_previous_balance_from_DB(dai_bal.Id,dai_bal.Aid)
-			Info.Printf("balance_updater(): acct %v: prev_balance=%v, err=%v\n",dai_bal.Address,prev_balance_db,err)
-			if err != nil {
-				// no balance locally (in the DB), get it from RPC
-				var copts = new(bind.CallOpts)
-				copts.BlockNumber = big.NewInt(int64(dai_bal.BlockNum)-1)	// previous block is used
-				addr := common.HexToAddress(dai_bal.Address)
-				prev_bal,err := ctrct_dai_token.BalanceOf(copts,addr)
-				if err != nil {
-					Error.Printf("Error on GetBalance call: %v\n",err)
-					// if error occurs, it probably means the Node has already deleted the State for this block
-					// therefore the only way to update balances of this account is calculate changes backwards,
-					last_block_num,success := storage.Get_last_block_num()
-					if success {
-						affected_rows:=update_dai_balances_backwards(last_block_num,dai_bal.Aid,&addr)
-						if affected_rows>0 {
-							num_changes++
-							Info.Printf("balance_updater(): restarting loop() affected rows=%v on addr %v\n",addr.String())
-							break		// update backards invalidates the 'operations' array
-						}
-					}
-				} else {
-					amount := new(big.Int)
-					amount.SetString(dai_bal.Amount,10)
-					new_bal := new(big.Int)
-					new_bal.Add(prev_bal,amount)
-					Info.Printf("balance_updater(): setting balance of acct %v (id=%v) to %v (prev_bal=%v, amount=%v\n",
-								addr.String(),dai_bal.Aid,new_bal,prev_bal.String(),amount.String())
-					storage.Set_dai_balance(dai_bal.Id,new_bal.String())
-					num_changes++
-				}
-			} else {
-				prev_bal := new(big.Int)
-				prev_bal.SetString(prev_balance_db,10)
-				amount := new(big.Int)
-				amount.SetString(dai_bal.Amount,10)
-				new_bal := new(big.Int)
-				new_bal.Add(prev_bal,amount)
-				Info.Printf("balance_updater(): got balance from db of acct %v (id=%v) to %v (prev_bal=%v, amount=%v\n",
-								dai_bal.Address,dai_bal.Aid,new_bal,prev_bal.String(),amount.String())
-				storage.Set_dai_balance(dai_bal.Id,new_bal.String())
-				num_changes++
-			}
-		}
-		if num_changes == 0 {
-			time.Sleep(10 * time.Second)
-		}
-	}
-}
-*/
 func build_list_of_inspected_events() {
 
 	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)
@@ -277,6 +190,12 @@ func proc_trading_proceeds_claimed(signer common.Address,timestamp int64,log *ty
 	} else {
 		Info.Printf("TradingProceedsClaimed event found (block=%v) :\n",log.BlockNumber)
 		mevt.Dump()
+		pchg := new(PosChg)
+		pchg.Mkt_addr = mevt.Market
+		pchg.Wallet_addr = mevt.Sender
+		pchg.Outcome = new(big.Int)
+		pchg.Outcome.Set(mevt.Outcome)
+		position_changes = append(position_changes,pchg)
 		storage.Insert_claim(signer,&mevt,timestamp)
 	}
 }
@@ -336,6 +255,13 @@ func proc_profit_loss_changed(block_num BlockNumber,tx_id int64,log *types.Log) 
 	} else {
 		Info.Printf("ProfitLossChanged event found (block=%v) :\n",log.BlockNumber)
 		mevt.Dump()
+		pchg:=new(PosChg)
+		pchg.Mkt_addr=mevt.Market
+		pchg.Wallet_addr=mevt.Account
+		pchg.Outcome = new(big.Int)
+		pchg.Outcome.Set(mevt.Outcome)
+		position_changes = append(position_changes,pchg)
+//		Info.Printf("position_changes len=%v\n",lken(position_changes)
 		eoa_aid := get_eoa_aid(&mevt.Account,block_num,tx_id)
 		id = storage.Insert_profit_loss_evt(block_num,tx_id,eoa_aid,&mevt)
 	}
@@ -507,6 +433,11 @@ func proc_market_finalized_evt(block_num BlockNumber,tx_id int64,timestamp int64
 		mevt.Market = common.BytesToAddress(log.Topics[2][12:])	// extract universe addr
 		mevt.Dump()
 		storage.Insert_market_finalized_evt(block_num,tx_id,timestamp,&mevt)
+		pchanges:=storage.Get_mkt_participant_outcomes(&mevt.Market)
+		Info.Printf("position_changes: Market finalized, added %v address entries for PL scan\n",len(pchanges))
+		for i:=0 ; i<len(pchanges) ; i++ {
+			position_changes = append(position_changes,pchanges[i])
+		}
 	}
 }
 func proc_initial_report_submitted(block_num BlockNumber,tx_id int64, log *types.Log,signer common.Address) {
@@ -716,4 +647,97 @@ func dump_tx_input_if_known(tx *types.Transaction) {
 	} else {
 		Info.Printf("dump_tx_input: input sig: %v\n",hex.EncodeToString(input_sig[:]))
 	}
+}
+func scan_profit_loss_data_for_debugging(block_num BlockNumber,position_changes *[]*PosChg) {
+	// this function makes direct calls to contracts to get changes in profit loss and record them
+	// right after each block is processed (developed for debugging purposes)
+
+	var copts = new(bind.CallOpts)
+	//Info.Printf("position_changes len=%v\n",len(*position_changes))
+	for i:=0 ; i<len(*position_changes) ; i++ {
+		pchg := (*position_changes)[i]
+		Info.Printf("profit_loss debug: processing pl for %v\n",pchg.Wallet_addr.String())
+		pl,err := ctrct_pl.GetRealizedProfit(copts,pchg.Mkt_addr,pchg.Wallet_addr,pchg.Outcome)
+		if err != nil {
+			Error.Printf("Failure to GetRealizedProfit for addr %v outcome %v: %v\n",
+							pchg.Wallet_addr.String(),pchg.Outcome.String(),err)
+			continue
+		} else {
+			pchg.ProfitLoss = pl
+		}
+		ff,err := ctrct_pl.GetFrozenFunds(copts,pchg.Mkt_addr,pchg.Wallet_addr,pchg.Outcome)
+		if err != nil {
+			Error.Printf("Failure to GetFrozenFunds for addr %v outcome %v: %v\n",
+							pchg.Wallet_addr.String(),pchg.Outcome.String(),err)
+			continue
+		} else {
+			pchg.FrozenFunds = ff
+		}
+		psize,err := ctrct_pl.GetNetPosition(copts,pchg.Mkt_addr,pchg.Wallet_addr,pchg.Outcome)
+		if err != nil {
+			Error.Printf("Failure to GetNetPosition for addr %v outcome %v: %v\n",
+							pchg.Wallet_addr.String(),pchg.Outcome.String(),err)
+			continue
+		} else {
+			pchg.NetPos = psize
+		}
+		price,err := ctrct_pl.GetAvgPrice(copts,pchg.Mkt_addr,pchg.Wallet_addr,pchg.Outcome)
+		if err != nil {
+			Error.Printf("Failure to GetAvgPricefor addr %v outcome %v: %v\n",
+							pchg.Wallet_addr.String(),pchg.Outcome.String(),err)
+			continue
+		} else {
+			pchg.AvgPrice = price
+		}
+		pchg.BlockNum=int64(block_num)
+		Info.Printf("inserting pchg %+v\n",*pchg)
+		storage.Insert_profit_loss_debug_rec(pchg)
+	}
+	/*
+	market:=common.HexToAddress("0xfA193B12b4F764dF9FE95Ef380676Fb33c6A6c40")
+	addr:=common.HexToAddress("0x56C9256Adde09AeF891Ac7bD7AA8F69A6fa94Ba1")
+	outcome:=big.NewInt(1)
+	profit_loss,err := ctrct_pl.GetRealizedProfit(copts,market,addr,outcome)
+	if err != nil {
+		Info.Printf("Failure to GetRealizedProfit for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
+	} else {
+		Info.Printf("GetRealizedProfit : addr %v, outcome %v: %v",addr.String(),outcome.String(),profit_loss.String())
+	}
+	outcome=big.NewInt(2)
+	profit_loss,err = ctrct_pl.GetRealizedProfit(copts,market,addr,outcome)
+	if err != nil {
+		Info.Printf("Failure to GetRealizedProfit for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
+	} else {
+		Info.Printf("GetRealizedProfit : addr %v, outcome %v: %v",addr.String(),outcome.String(),profit_loss.String())
+	}
+	outcome=big.NewInt(3)
+	profit_loss,err = ctrct_pl.GetRealizedProfit(copts,market,addr,outcome)
+	if err != nil {
+		Info.Printf("Failure to GetRealizedProfit for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
+	} else {
+		Info.Printf("GetRealizedProfit : addr %v, outcome %v: %v",addr.String(),outcome.String(),profit_loss.String())
+	}
+
+	outcome=big.NewInt(1)
+	frozen_funds,err := ctrct_pl.GetFrozenFunds(copts,market,addr,outcome)
+	if err != nil {
+		Info.Printf("Failure to GetFrozenFunds for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
+	} else {
+		Info.Printf("GetFrozenFunds    : addr %v, outcome %v: %v",addr.String(),outcome.String(),frozen_funds.String())
+	}
+	outcome=big.NewInt(2)
+	frozen_funds,err = ctrct_pl.GetFrozenFunds(copts,market,addr,outcome)
+	if err != nil {
+		Info.Printf("Failure to GetFrozenFunds for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
+	} else {
+		Info.Printf("GetFrozenFunds    : addr %v, outcome %v: %v",addr.String(),outcome.String(),frozen_funds.String())
+	}
+	outcome=big.NewInt(3)
+	frozen_funds,err = ctrct_pl.GetFrozenFunds(copts,market,addr,outcome)
+	if err != nil {
+		Info.Printf("Failure to GetFrozenFunds for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
+	} else {
+		Info.Printf("GetFrozenFunds    : addr %v, outcome %v: %v",addr.String(),outcome.String(),frozen_funds.String())
+	}
+*/
 }

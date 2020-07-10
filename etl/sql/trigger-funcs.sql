@@ -582,7 +582,8 @@ DECLARE
 BEGIN
 
 	UPDATE trd_mkt_stats
-		SET	profit_loss = (profit_loss + NEW.final_profit)
+		SET	profit_loss = (profit_loss + NEW.final_profit),
+			frozen_funds = (frozen_funds - NEW.unfrozen_funds)
 		WHERE market_aid = NEW.market_aid AND eoa_aid = NEW.eoa_aid;
 	RETURN NEW;
 END;

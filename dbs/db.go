@@ -840,9 +840,9 @@ func (ss *SQLStorage) Insert_market_finalized_evt(block_num p.BlockNumber,tx_id 
 	market_type,_ := ss.get_market_type_and_ticks(market_aid)
 	winning_outcome := get_outcome_idx_from_numerators(market_type,evt.WinningPayoutNumerators)
 
-	query = "INSERT INTO mkt_fin(market_aid,fin_timestamp,winning_payouts,winning_outcome)" +
-			"VALUES($1,TO_TIMESTAMP($2),$3,$4)"
-	_,err := ss.db.Exec(query,market_aid,fin_timestamp,winning_payouts,winning_outcome)
+	query = "INSERT INTO mkt_fin(block_num,tx_id,market_aid,fin_timestamp,winning_payouts,winning_outcome)" +
+			"VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6)"
+	_,err := ss.db.Exec(query,block_num,tx_id,market_aid,fin_timestamp,winning_payouts,winning_outcome)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't update market finalization of market %v : %v, q=%v",market_aid,err,query))
 		os.Exit(1)
@@ -1024,7 +1024,7 @@ func (ss *SQLStorage) update_losing_positions(market_aid int64,block_num p.Block
 							"block_num,tx_id,eoa_aid,market_aid,outcome_idx,last_pl_id,"+
 							"claim_status,autocalculated,final_profit,unfrozen_funds" +
 						") VALUES (" +
-							"$1,$2,$3,$4,$5,$6,$7,$8,(("+frozen_funds+"/1e+36)),0" +
+							"$1,$2,$3,$4,$5,$6,$7,$8,(("+frozen_funds+"/1e+36)),("+frozen_funds+"/1e+36)" +
 						")"
 			claim_status=2 // if we have negative frozen funds, then this position is considered claimed
 		} else {
@@ -1162,7 +1162,7 @@ func (ss *SQLStorage) update_profitable_positions(market_aid int64,block_num p.B
 		unfrozen_funds := big.NewInt(0)
 		unfrozen_funds.SetString(str_frozen_funds,10)
 		if unfrozen_funds.Cmp(zero) < 0 {
-			unfrozen_funds.SetInt64(0)
+		//	unfrozen_funds.SetInt64(0)
 			negative_frozen_funds = true
 		}
 		net_position := big.NewInt(0)
@@ -2576,15 +2576,14 @@ func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64
 */
 	var immed_profit_str string
 	previous_rprofit_str,previous_ff_str:=ss.get_previous_profit_and_ff(market_aid,eoa_aid,int(outcome_idx))
+	prev_profit:=new(big.Int)
 	if len(previous_rprofit_str) > 0 {
-		prev_profit:=new(big.Int)
 		prev_profit.SetString(previous_rprofit_str,10)
-		immed_pl:=new(big.Int)
-		immed_pl.Sub(evt.RealizedProfit,prev_profit)
-		immed_profit_str=immed_pl.String()
-	} else {
-		immed_profit_str = "0"
 	}
+	immed_pl:=new(big.Int)
+	immed_pl.Sub(evt.RealizedProfit,prev_profit)
+	immed_profit_str=immed_pl.String()
+
 	var immed_ff_str string = "0"
 	var prev_ff *big.Int
 	if len(previous_ff_str) == 0 {
@@ -3917,4 +3916,62 @@ func (ss *SQLStorage) Get_unclaimed_profit(eoa_aid int64) float64 {
 	} else {
 		return 0.0
 	}
+}
+func (ss *SQLStorage) Insert_profit_loss_debug_rec(pchg *p.PosChg) {
+
+	market_aid := ss.lookup_address_id(pchg.Mkt_addr.String())
+	wallet_aid := ss.lookup_address_id(pchg.Wallet_addr.String())
+
+	var query string
+
+	query = "INSERT INTO pl_debug(block_num,market_aid,wallet_aid,outcome_idx," +
+									"profit_loss,frozen_funds,net_position,avg_price) " +
+				" VALUES(" +
+					"$1,$2,$3,$4,"+
+					"(" + pchg.ProfitLoss.String() + "/1e+18)," +
+					"(" + pchg.FrozenFunds.String()+ "/1e+36)," +
+					"(" + pchg.NetPos.String() + "/1e+16), " +
+					"(" + pchg.AvgPrice.String() + "/1e+20) " +
+				") " +
+				"ON CONFLICT DO NOTHING"
+
+	_,err := ss.db.Exec(query,pchg.BlockNum,market_aid,wallet_aid,pchg.Outcome.Int64())
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB Error: %v q=%v",err,query));
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Get_mkt_participant_outcomes(mkt_addr *common.Address) []*p.PosChg {
+
+	output := make([]*p.PosChg,0,16)
+	market_aid := ss.lookup_address_id(mkt_addr.String())
+
+	var query string
+	query = "SELECT wa.addr,pl.outcome_idx FROM profit_loss AS pl " +
+				"LEFT JOIN address AS wa ON pl.wallet_aid=wa.address_id " +
+				"WHERE pl.market_aid=$1 "
+	rows,err := ss.db.Query(query,market_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var (
+			addr string
+			outcome_idx int
+		)
+		err=rows.Scan(&addr,&outcome_idx)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("Scan error at Get_mkt_participant_outcomes: %v \n",err))
+			os.Exit(1)
+		}
+		pchg := new(p.PosChg)
+		pchg.Mkt_addr = *mkt_addr
+		pchg.Wallet_addr = common.HexToAddress(addr)
+		pchg.Outcome = new(big.Int)
+		pchg.Outcome.SetInt64(int64(outcome_idx))
+		output = append(output,pchg)
+	}
+	return output
 }

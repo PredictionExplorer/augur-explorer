@@ -1033,3 +1033,54 @@ func (_ProfitLoss *ProfitLossRaw) Call(opts *bind.CallOpts, result interface{}, 
 	return _ProfitLoss.Contract.ProfitLossCaller.contract.Call(opts, result, method, params...)
 }
 
+// GetNetPosition is a free data retrieval call binding the contract method 0xc908ffa7.
+//
+// Solidity: function getNetPosition(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossCaller) GetNetPosition(opts *bind.CallOpts, _market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _ProfitLoss.contract.Call(opts, out, "getNetPosition", _market, _account, _outcome)
+	return *ret0, err
+}
+
+// GetNetPosition is a free data retrieval call binding the contract method 0xc908ffa7.
+//
+// Solidity: function getNetPosition(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossSession) GetNetPosition(_market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ProfitLoss.Contract.GetNetPosition(&_ProfitLoss.CallOpts, _market, _account, _outcome)
+}
+
+// GetNetPosition is a free data retrieval call binding the contract method 0xc908ffa7.
+//
+// Solidity: function getNetPosition(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossCallerSession) GetNetPosition(_market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ProfitLoss.Contract.GetNetPosition(&_ProfitLoss.CallOpts, _market, _account, _outcome)
+}
+// GetAvgPrice is a free data retrieval call binding the contract method 0x60f6e77e.
+//
+// Solidity: function getAvgPrice(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossCaller) GetAvgPrice(opts *bind.CallOpts, _market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _ProfitLoss.contract.Call(opts, out, "getAvgPrice", _market, _account, _outcome)
+	return *ret0, err
+}
+
+// GetAvgPrice is a free data retrieval call binding the contract method 0x60f6e77e.
+//
+// Solidity: function getAvgPrice(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossSession) GetAvgPrice(_market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ProfitLoss.Contract.GetAvgPrice(&_ProfitLoss.CallOpts, _market, _account, _outcome)
+}
+
+// GetAvgPrice is a free data retrieval call binding the contract method 0x60f6e77e.
+//
+// Solidity: function getAvgPrice(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossCallerSession) GetAvgPrice(_market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ProfitLoss.Contract.GetAvgPrice(&_ProfitLoss.CallOpts, _market, _account, _outcome)
+}
+

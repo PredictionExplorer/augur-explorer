@@ -15,6 +15,7 @@ CREATE INDEX dait_idx				ON	dai_transf		(tx_id);
 CREATE INDEX rep_idx				ON	rep_transf		(tx_id);
 CREATE INDEX tbc_idx				ON	tbc				(tx_id);
 CREATE INDEX toktr_idx				ON	tok_transf		(tx_id);
+CREATE INDEX pldbg_idx				ON	pl_debug		(block_num);
 -- market_aid indices
 CREATE INDEX sbal_mkt_idx			ON	sbalances		(market_aid);
 CREATE INDEX mo_mkt_idx				ON	mktord			(market_aid);
@@ -46,3 +47,4 @@ CREATE INDEX pl_profit_srch_idx		ON profit_loss		(market_aid,eoa_aid,outcome_idx
 CREATE INDEX open_positions_idx		ON profit_loss		(eoa_aid,realized_profit) WHERE realized_profit = 0.0;
 CREATE INDEX closed_positions_idx	ON profit_loss		(eoa_aid,realized_profit) WHERE realized_profit <> 0.0;
 CREATE UNIQUE INDEX cl_uniq			ON claim_funds		(eoa_aid,market_aid,outcome_idx);
+CREATE UNIQUE INDEX pldebug_uniq	ON pl_debug			(block_num,market_aid,wallet_aid,outcome_idx);
