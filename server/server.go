@@ -466,7 +466,7 @@ func market_price_history(c *gin.Context) {
 			"JSPriceData": js_price_history,
 	})
 }
-func serve_user_info_page(c *gin.Context,addr string) {
+func serve_user_info_page(c *gin.Context,addr string,from_wallet bool) {
 
 	eoa_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(addr)
 	if err == nil {
@@ -481,6 +481,7 @@ func serve_user_info_page(c *gin.Context,addr string) {
 				"title": "User "+addr,
 				"user_addr": addr,
 				"UserInfo" : user_info,
+				"QueriedWallet":from_wallet,
 				"PLEntries" : pl_entries,
 				"JSPLData" : js_pl_data,
 				"JSOpenPosData" : js_open_pos_data,
@@ -632,9 +633,9 @@ func search(c *gin.Context) {
 				if err==nil {
 					// the input was - user's wallet
 					eoa_addr,_:=augur_srv.storage.Lookup_address(eoa_aid)
-					serve_user_info_page(c,eoa_addr)
+					serve_user_info_page(c,eoa_addr,true)
 				} else {
-					serve_user_info_page(c,addr_str)
+					serve_user_info_page(c,addr_str,false)
 				}
 				return
 			} else {
@@ -748,7 +749,7 @@ func user_info(c *gin.Context) {
 	if err == nil {
 		addr := common.BytesToAddress(addr_bytes)
 		addr_str := addr.String()
-		serve_user_info_page(c,addr_str)
+		serve_user_info_page(c,addr_str,false)
 	} else {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",

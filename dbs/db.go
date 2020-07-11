@@ -268,7 +268,7 @@ func (ss *SQLStorage) Nonfatal_lookup_address_id(addr string) (int64,error) {
 
 	return addr_id,nil
 }
-func (ss *SQLStorage) lookup_market(addr string) (int64,error) {
+func (ss *SQLStorage) lookup_market_by_addr_str(addr string) (int64,error) {
 
 	var addr_id int64;
 	var query string
@@ -307,6 +307,24 @@ func (ss *SQLStorage) lookup_address_id(addr string) int64 {
 	}
 
 	return addr_id
+}
+func (ss *SQLStorage) lookup_market_id(addr string) (int64,int) {
+	//Return values: market_aid & market_type
+	var addr_id int64;
+	var mkt_type int;
+	var query string
+	query=	"SELECT m.market_type,a.address_id FROM address a,market m " +
+			"WHERE m.market_aid=a.address_id AND a.addr=$1"
+	err:=ss.db.QueryRow(query,addr).Scan(&mkt_type,&addr_id);
+	if (err!=nil) {
+		if (err==sql.ErrNoRows) {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error upon address lookup: %v",err))
+			os.Exit(1)
+		}
+	}
+
+	return addr_id,mkt_type
 }
 func get_market_status_str(status_code p.MarketStatus) string {
 
@@ -626,7 +644,7 @@ func (ss *SQLStorage) Insert_market_order_evt(block_num p.BlockNumber,tx_id int6
 	}
 	universe_id := ss.lookup_universe_id(evt.Universe.String())
 	_ = universe_id	// ToDo: add universe_id match condition (for market)
-	market_aid := ss.lookup_address_id(evt.Market.String())
+	market_aid,market_type := ss.lookup_market_id(evt.Market.String())
 	eoa_fill_aid := ss.Lookup_or_create_address(signer.String(),block_num,tx_id)
 
 	var oaction p.OrderAction = p.OrderAction(evt.EventType)
@@ -654,6 +672,12 @@ func (ss *SQLStorage) Insert_market_order_evt(block_num p.BlockNumber,tx_id int6
 	shares_escrowed := evt.Uint256Data[8].String()
 	tokens_escrowed := evt.Uint256Data[9].String()
 
+	var qty_divisor string = "16"
+	var price_divisor string = "2"
+	if market_type == p.MktTypeScalar {
+		qty_divisor = "18"
+		price_divisor = "0"
+	}
 	var query string
 
 	query = "DELETE FROM oorders WHERE order_id = $1"
@@ -689,13 +713,13 @@ func (ss *SQLStorage) Insert_market_order_evt(block_num p.BlockNumber,tx_id int6
 			order_id
 		) VALUES (
 				$1,$2,$3,$4,$5,$6,$7,$8,$9,
-				(` + price + "/1e+2)," +
-				"(" + amount + "/1e+18)," +
+				(` + price + "/1e+"+price_divisor+")," +
+				"(" + amount + "/1e+"+qty_divisor+")," +
 				"$10," +
 				"(" + token_refund + "/1e+18)," +
 				"(" + shares_refund + "/1e18)," +
 				"(" + fees + "/1e18)," +
-				"(" + amount_filled + "/1e16)," +
+				"(" + amount_filled + "/1e"+qty_divisor+")," +
 				"TO_TIMESTAMP($11)," +
 				"$12,$13,$14,$15) RETURNING id"
 
@@ -963,8 +987,8 @@ func (ss *SQLStorage) update_losing_positions(market_aid int64,block_num p.Block
 	market_type,_:=ss.get_market_type_and_ticks(market_aid)
 
 	var where_condition string
-	switch market_type {
-		case 0,1:		// Yes/No , Categorical
+	switch market_type {	// Todo: remove this switch
+		case 0,1,2:		// Yes/No , Categorical, And scalar
 			where_condition = where_for_losers(market_type,evt)
 		default:
 	}
@@ -1019,12 +1043,12 @@ func (ss *SQLStorage) update_losing_positions(market_aid int64,block_num p.Block
 			winning_tick := evt.WinningPayoutNumerators[outcome_idx].Int64()
 			profit := ss.calculate_profit(winning_tick,net_position,price)
 			ss.Info.Printf("loss = %v\n",profit)
-			frozen_funds = profit.String()
+			profit_str := profit.String()
 			query = "INSERT INTO claim_funds(" +
 							"block_num,tx_id,eoa_aid,market_aid,outcome_idx,last_pl_id,"+
 							"claim_status,autocalculated,final_profit,unfrozen_funds" +
 						") VALUES (" +
-							"$1,$2,$3,$4,$5,$6,$7,$8,(("+frozen_funds+"/1e+36)),("+frozen_funds+"/1e+36)" +
+							"$1,$2,$3,$4,$5,$6,$7,$8,(("+profit_str+"/1e+36)),("+frozen_funds+")" +
 						")"
 			claim_status=2 // if we have negative frozen funds, then this position is considered claimed
 		} else {
@@ -1080,8 +1104,8 @@ func (ss *SQLStorage) update_profitable_positions(market_aid int64,block_num p.B
 	_=num_ticks
 
 	var where_condition string
-	switch market_type {
-		case 0,1:		// Yes/No, Categorical
+	switch market_type {// ToDo: remove this switch
+		case 0,1,2:		// Yes/No, Categorical, and Scalar
 			where_condition = where_for_winners(market_type,evt)
 		default:
 	}
@@ -1468,17 +1492,19 @@ func (ss *SQLStorage) Insert_share_balance_changed_evt(block_num p.BlockNumber,t
 		}
 	}
 }
-func (ss *SQLStorage) Insert_claim(signer common.Address,evt *p.TradingProceedsClaimed,timestamp int64) {
-
+func (ss *SQLStorage) Update_claim_status(signer common.Address,evt *p.TradingProceedsClaimed,timestamp int64) {
+	// Note: we don't use outcome in WHERE clause because Proceeds aren't reported for all outcomes,
+	//		however just knowing that proceeds where claimed is enough to update all the outcomes
+	//		This function will be executed multiple times in a transaction, but that's ok
 	market_aid := ss.lookup_address_id(evt.Market.String())
 	signer_aid := ss.lookup_address_id(signer.String())
-	outcome_idx := evt.Outcome.Int64()
+	//outcome_idx := evt.Outcome.Int64()
 
 	var query string
 	//query = "UPDATE profit_loss SET claim_status=2 WHERE market_aid=$1 AND eoa_aid=$2 AND outcome_idx=$3"
-	query = "UPDATE claim_funds SET claim_status=2,autocalculated=FALSE,claim_ts=TO_TIMESTAMP($4) " +
-			"WHERE market_aid=$1 AND eoa_aid=$2 AND outcome_idx=$3"
-	_,err := ss.db.Exec(query,	market_aid,signer_aid,outcome_idx,timestamp)
+	query = "UPDATE claim_funds SET claim_status=2,autocalculated=FALSE,claim_ts=TO_TIMESTAMP($3) " +
+			"WHERE market_aid=$1 AND eoa_aid=$2 AND claim_status=1"
+	_,err := ss.db.Exec(query,	market_aid,signer_aid,timestamp)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: %v:q=%v",err,query))
 		os.Exit(1)
@@ -1792,7 +1818,7 @@ func (ss *SQLStorage) Get_mkt_trades(mkt_addr string,limit int) []p.MarketTrade 
 				"LEFT JOIN address AS ca ON o.eoa_aid=ca.address_id " +
 				"LEFT JOIN market AS m ON o.market_aid = m.market_aid " +
 			where +
-			"ORDER BY o.time_stamp"
+			"ORDER BY o.block_num DESC,o.time_stamp DESC"
 	if limit > 0 {
 		query = query +	" LIMIT " + strconv.Itoa(limit)
 	}
@@ -2345,11 +2371,11 @@ func (ss *SQLStorage) is_dai_transfer_internal(evt *p.Transfer,ca *p.ContractAdd
 		// therefore it is not a deposit/withdrawal, but a profit/loss calculation
 		return true
 	}
-	_,err:=ss.lookup_market(evt.From.String())
+	_,err:=ss.lookup_market_by_addr_str(evt.From.String())
 	if err == nil {
 		return true	// its a Market in From
 	}
-	_,err=ss.lookup_market(evt.To.String())
+	_,err=ss.lookup_market_by_addr_str(evt.To.String())
 	if err == nil {
 		return true	// its a Market in To
 	}
@@ -2529,8 +2555,15 @@ func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64
 	var err error
 
 	_= ss.lookup_universe_id(evt.Universe.String())
-	market_aid := ss.lookup_address_id(evt.Market.String())
+	market_aid,market_type := ss.lookup_market_id(evt.Market.String())
 	wallet_aid := ss.Lookup_or_create_address(evt.Account.String(),block_num,tx_id)
+
+	var qty_divisor string = "16"
+	var price_divisor string = "20"
+	if market_type == p.MktTypeScalar {
+		qty_divisor = "18"
+		price_divisor = "18"
+	}
 
 	outcome_idx := evt.Outcome.Int64()
 	net_position := evt.NetPosition.String()
@@ -2614,8 +2647,8 @@ func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64
 				"immediate_ff," +
 				"time_stamp" +
 			") VALUES($1,$2,$3,$4,$5,$6,$7," +
-				"(" +net_position+ "/1e+16)," +
-				"(" +avg_price+ "/1e+20)," +
+				"(" +net_position+ "/1e+"+qty_divisor+")," +
+				"(" +avg_price+ "/1e+"+price_divisor+")," +
 				"(" +frozen_funds+ "/1e+36)," +
 				"(" +realized_profit+ "/1e+36)," +
 				"(" +realized_cost + "/1e+36)," +
@@ -3928,7 +3961,7 @@ func (ss *SQLStorage) Insert_profit_loss_debug_rec(pchg *p.PosChg) {
 									"profit_loss,frozen_funds,net_position,avg_price) " +
 				" VALUES(" +
 					"$1,$2,$3,$4,"+
-					"(" + pchg.ProfitLoss.String() + "/1e+18)," +
+					"(" + pchg.ProfitLoss.String() + "/1e+36)," +
 					"(" + pchg.FrozenFunds.String()+ "/1e+36)," +
 					"(" + pchg.NetPos.String() + "/1e+16), " +
 					"(" + pchg.AvgPrice.String() + "/1e+20) " +

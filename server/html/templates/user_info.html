@@ -129,6 +129,13 @@
 	});
 </script>
 	<h3 class="page_title">User Info for {{.UserInfo.EOAAddrSh}}</h3>
+	{{ if .QueriedWallet }}
+		<h4>
+			<font color=yellow>
+				You queried a Wallet Address, we are showng the User this wallet belongs to
+			</font>
+		</h4>
+	{{ end }}
 <div class="user_info">
 	<table class="user_info">
 		<tr class="user_info">

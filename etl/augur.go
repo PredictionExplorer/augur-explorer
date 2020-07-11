@@ -196,7 +196,7 @@ func proc_trading_proceeds_claimed(signer common.Address,timestamp int64,log *ty
 		pchg.Outcome = new(big.Int)
 		pchg.Outcome.Set(mevt.Outcome)
 		position_changes = append(position_changes,pchg)
-		storage.Insert_claim(signer,&mevt,timestamp)
+		storage.Update_claim_status(signer,&mevt,timestamp)
 	}
 }
 func proc_fill_evt(log *types.Log) {

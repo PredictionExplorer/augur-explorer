@@ -9,6 +9,11 @@ import (
 const (
 	MAX_BLOCKS_CHAIN_SPLIT = 128
 )
+const (
+	MktTypeYesNo		= iota
+	MktTypeCategorical
+	MktTypeScalar
+)
 type OrderType uint8
 const (
 	OrderTypeBid		OrderType = 0
