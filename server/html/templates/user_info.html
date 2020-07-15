@@ -320,6 +320,19 @@
 	</table>
 </div>
 <br/><br/>
+{{ if .HasActiveMarkets }}
+	User is currently trading these markets:
+	<form action="/umtrades.html" type=GET>
+		<select name="market">
+			<option selected>------</option>
+				{{- range $i, $market := .UserActiveMarkets}}
+				<option value="{{$market.MktAddr}}">{{ $market.MktAddr }}</option>
+				{{- end }}
+		</select>
+		<input type="hidden" name="addr" value="{{.UserInfo.EOAAddr}}">
+		<input type="submit" value="Submit">
+	</form>
+{{ end }}
 <div class="user_info_generic">User Profit/Loss history:</span><br/><br/>
 <div id="profit_loss_chart"></div>
 <div id="order_info" style="display: none;">

@@ -477,6 +477,12 @@ func serve_user_info_page(c *gin.Context,addr string,from_wallet bool) {
 			js_pl_data := build_javascript_profit_loss_history(&pl_entries)
 			js_open_pos_data := build_javascript_open_positions(&open_pos_entries)
 			user_reports := augur_srv.storage.Get_user_reports(eoa_aid,DEFAULT_USER_REPORTS_LIMIT)
+			user_active_markets := augur_srv.storage.Get_active_markets_for_user(eoa_aid)
+			var has_active_markets bool = false
+			if len(user_active_markets) > 0 {
+				has_active_markets = true
+			}
+
 			c.HTML(http.StatusOK, "user_info.html", gin.H{
 				"title": "User "+addr,
 				"user_addr": addr,
@@ -486,6 +492,8 @@ func serve_user_info_page(c *gin.Context,addr string,from_wallet bool) {
 				"JSPLData" : js_pl_data,
 				"JSOpenPosData" : js_open_pos_data,
 				"UserReports" : user_reports,
+				"UserActiveMarkets" : user_active_markets,
+				"HasActiveMarkets" : has_active_markets,
 			})
 		} else {
 			c.HTML(http.StatusOK, "user_not_found.html", gin.H{
@@ -992,5 +1000,84 @@ func market_depth_status(c *gin.Context) {
 	c.JSON(200,gin.H{
 		"num_orders":status.NumOrders,
 		"last_oo_id":status.LastOOID,
+	})
+}
+func user_trades_for_market(c *gin.Context) {
+
+	p_addr := c.Query("addr")
+	if (len(p_addr) == 40) || (len(p_addr) == 42) { // address
+		if len(p_addr) == 42 {	// strip 0x prefix
+			p_addr = p_addr[2:]
+		}
+	} else {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": "Invalid length of address parameter",
+		})
+		return
+	}
+	addr_bytes,err := hex.DecodeString(p_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": "Invalid HEX string in address parameter for User Account",
+		})
+		return
+	}
+	user_addr:= common.BytesToAddress(addr_bytes)
+	user_addr_str := user_addr.String()
+
+	p_addr = c.Query("market")
+	if (len(p_addr) == 40) || (len(p_addr) == 42) { // address
+		if len(p_addr) == 42 {	// strip 0x prefix
+			p_addr = p_addr[2:]
+		}
+	} else {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": "Invalid length of address parameter for Market",
+		})
+		return
+	}
+	addr_bytes,err = hex.DecodeString(p_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": "Invalid HEX string in address parameter",
+		})
+		return
+	}
+	mkt_addr:= common.BytesToAddress(addr_bytes)
+	mkt_addr_str := mkt_addr.String()
+
+	aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(user_addr_str)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Such address wasn't found: %v",user_addr_str),
+		})
+		return
+	}
+	user_info,err := augur_srv.storage.Get_user_info(aid)
+	if err!= nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("No records found for address: %v",user_addr_str),
+		})
+	}
+
+	market_info,err := augur_srv.storage.Get_market_info(mkt_addr_str,0,false)
+	if err!= nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("No Market was found with address: %v",mkt_addr_str),
+		})
+	}
+	trades := augur_srv.storage.Get_user_trades_for_market(aid,market_info.MktAid)
+	c.HTML(http.StatusOK, "user_trades.html", gin.H{
+		"title": fmt.Sprintf("Trades for User %v",user_addr_str),
+		"UTrades" : trades,
+		"UserInfo" : user_info,
+		"Market" : market_info,
 	})
 }

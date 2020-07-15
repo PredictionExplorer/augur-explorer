@@ -130,6 +130,7 @@ func main() {
 	r.GET("/block/:block_num",  block_info)
 	r.GET("/topusers.html",top_users)
 	r.GET("/mdstat/:market_aid/:outcome_idx/:last_oo_id",market_depth_status)
+	r.GET("/umtrades.html",user_trades_for_market)
 
 	r.Static("/imgs", "./html/imgs")
 	r.Static("/res", "./html/res")			// resources (static)

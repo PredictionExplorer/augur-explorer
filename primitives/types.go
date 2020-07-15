@@ -249,6 +249,7 @@ type InfoMarket struct {
 	OpenInterest	float64
 	CurVolume		float64
 	MoneyAtStake	float64
+	VolTraded		float64
 	TotalTrades		int64
 	NumTicks		int64
 	MktType			int
@@ -400,7 +401,6 @@ type PLEntry struct {	// profit loss entry
 	FrozenFunds			float64
 	RealizedProfit		float64
 	RealizedCost		float64
-//	FinalProfit			float64	DISCONTINUED, to be deleted	DISCONTINUED, to be deleted
 	ImmediateProfit		float64
 	MktType				int
 	OutcomeIdx			int
@@ -498,18 +498,6 @@ type FrontPageStats struct {
 	MarketsCreated		float64
 	TradesCount			int64
 }
-/* Discontinued
-type DaiT struct {
-	Id					int64
-	FromAid				int64
-	ToAid				int64
-	BlockNum			BlockNumber
-	From				string
-	To					string
-	Amount				string
-	Balance				string
-}
-*/
 type DaiB struct {
 	Id					int64
 	Aid					int64
