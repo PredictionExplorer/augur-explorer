@@ -203,7 +203,7 @@ func (ss *SQLStorage) Set_last_block_num(block_num p.BlockNumber) {
 		}
 	}
 }
-func (ss *SQLStorage) lookup_universe_id(addr string) int64 {
+func (ss *SQLStorage) lookup_universe_id(addr string) (int64,error) {
 
 	var query string
 	query="SELECT universe_id FROM universe WHERE universe_addr=$1"
@@ -211,14 +211,13 @@ func (ss *SQLStorage) lookup_universe_id(addr string) int64 {
 	err:=ss.db.QueryRow(query,addr).Scan(&universe_id);
 	if (err!=nil) {
 		if (err==sql.ErrNoRows) {
-			ss.Log_msg(fmt.Sprintf("DB error: Universe doesn't exist (addr=%v). Database wasn't initialized correctly",addr))
-			os.Exit(1)
+			return 0,err
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error looking up for Universe record: %v",err))
 			os.Exit(1)
 		}
 	}
-	return universe_id
+	return universe_id,nil
 }
 func (ss *SQLStorage) Lookup_eoa_aid(wallet_aid int64) (int64,error) {
 
@@ -430,7 +429,11 @@ func (ss *SQLStorage) Insert_market_created_evt(block_num p.BlockNumber,tx_id in
 		return
 	}
 	creator_aid := ss.Lookup_or_create_address(evt.MarketCreator.String(),block_num,tx_id)
-	universe_id := ss.lookup_universe_id(evt.Universe.String())
+	universe_id,err := ss.lookup_universe_id(evt.Universe.String())
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("Universe %v not found when trying to insert MarketCreated evt\n",evt.Universe.String()))
+		os.Exit(1)
+	}
 	eoa_aid := ss.Lookup_or_create_address(evt.MarketCreator.String(),block_num,tx_id)
 	reporter_aid := ss.Lookup_or_create_address(evt.DesignatedReporter.String(),block_num,tx_id)
 	ss.Info.Printf("create_market: signer_aid = %v (%v), creator_aid=%v (%v), reporter_id=%v (%v) , wallet_aid =%v\n",
@@ -642,7 +645,11 @@ func (ss *SQLStorage) Insert_market_order_evt(block_num p.BlockNumber,tx_id int6
 	if len(evt.AddressData) > 1 {
 		wallet_fill_aid = ss.Lookup_or_create_address(evt.AddressData[1].String(),block_num,tx_id)
 	}
-	universe_id := ss.lookup_universe_id(evt.Universe.String())
+	universe_id,err := ss.lookup_universe_id(evt.Universe.String())
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("Universe %v wasn't found when trying toinsert MarketOrder event",evt.Universe.String()))
+		os.Exit(1)
+	}
 	_ = universe_id	// ToDo: add universe_id match condition (for market)
 	market_aid,market_type := ss.lookup_market_id(evt.Market.String())
 	eoa_fill_aid := ss.Lookup_or_create_address(signer.String(),block_num,tx_id)
@@ -681,7 +688,7 @@ func (ss *SQLStorage) Insert_market_order_evt(block_num p.BlockNumber,tx_id int6
 	var query string
 
 	query = "DELETE FROM oorders WHERE order_id = $1"
-	_,err := ss.db.Exec(query,market_aid)
+	_,err = ss.db.Exec(query,market_aid)
 	if err!=nil {
 		ss.Info.Printf("DB error: couldn't delete open order with order_id = %v\n",order_id)
 	}
@@ -855,7 +862,11 @@ func (ss *SQLStorage) Insert_market_finalized_evt(block_num p.BlockNumber,tx_id 
 
 	var query string
 
-	universe_id := ss.lookup_universe_id(evt.Universe.String())
+	universe_id,err := ss.lookup_universe_id(evt.Universe.String())
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("Universe %v not found on insert of MarketFinalized event",evt.Universe.String()))
+		os.Exit(1)
+	}
 	_ = universe_id	// ToDo: add universe_id match condition (for market)
 	market_aid := ss.lookup_address_id(evt.Market.String())
 	fin_timestamp := evt.Timestamp.Int64()
@@ -866,7 +877,7 @@ func (ss *SQLStorage) Insert_market_finalized_evt(block_num p.BlockNumber,tx_id 
 
 	query = "INSERT INTO mkt_fin(block_num,tx_id,market_aid,fin_timestamp,winning_payouts,winning_outcome)" +
 			"VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6)"
-	_,err := ss.db.Exec(query,block_num,tx_id,market_aid,fin_timestamp,winning_payouts,winning_outcome)
+	_,err = ss.db.Exec(query,block_num,tx_id,market_aid,fin_timestamp,winning_payouts,winning_outcome)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't update market finalization of market %v : %v, q=%v",market_aid,err,query))
 		os.Exit(1)
@@ -888,23 +899,20 @@ func (ss *SQLStorage) get_market_type_and_ticks(market_aid int64) (int,int64) {
 	var num_ticks int64
 	err:=ss.db.QueryRow(query,market_aid).Scan(&market_type,&num_ticks);
 	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB Error: %v, q=%v\n",err,query))
+		d_query:=strings.ReplaceAll(query,"$1",fmt.Sprintf("%v",market_aid))
+		ss.Log_msg(fmt.Sprintf("DB Error: %v, q=%v\n",err,d_query))
 		os.Exit(1)
 	}
 	return market_type,num_ticks
 }
 func (ss *SQLStorage) update_market_status(market_aid int64,status p.MarketStatus) {
 	var query string
-	query = "UPDATE " +
-				"market " +
-			"SET " +
-				"status=$2" +
-			"WHERE " +
-				"market_aid = $1"
+	query = "UPDATE market SET status=$2 WHERE market_aid = $1"
 
 	_,err:=ss.db.Exec(query,market_aid,status)
 	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
+		d_query:=strings.ReplaceAll(query,"$1",fmt.Sprintf("%v",market_aid))
+		ss.Log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,d_query))
 		os.Exit(1)
 	}
 }
@@ -1056,7 +1064,12 @@ func (ss *SQLStorage) calculate_profit_loss_for_all_users(market_aid int64,block
 }
 func (ss *SQLStorage) Insert_initial_report_evt(block_num p.BlockNumber,tx_id int64,signer common.Address,evt *p.InitialReportSubmittedEvt) {
 
-	_= ss.lookup_universe_id(evt.Universe.String())
+	universe_id,err := ss.lookup_universe_id(evt.Universe.String())
+	if err != nil {
+		ss.Info.Printf("universe_mismatch: Dropping InitialReportSubmitted event for mismatch in Universe: %v",evt.Universe.String())
+		return
+	}
+	_ = universe_id
 	market_aid := ss.lookup_address_id(evt.Market.String())
 	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),block_num,tx_id)
 	signer_aid := ss.Lookup_or_create_address(signer.String(),block_num,tx_id)
@@ -1141,8 +1154,7 @@ func (ss *SQLStorage) Insert_market_volume_changed_evt(block_num p.BlockNumber,t
 	var query string
 	query = `
 		INSERT INTO volume (
-			b
-			ss.Info.Printf("unfrozen_funds=%v\n",unfrozen_funds.String())lock_num,
+			block_num,
 			tx_id,
 			market_aid,
 			volume,
@@ -1186,7 +1198,11 @@ func (ss *SQLStorage) Insert_market_volume_changed_evt(block_num p.BlockNumber,t
 }
 func (ss *SQLStorage) Insert_dispute_crowd_contrib(block_num p.BlockNumber,tx_id int64,signer common.Address,evt *p.DisputeCrowdsourcerContributionEvt) {
 
-	_= ss.lookup_universe_id(evt.Universe.String())
+	_,err := ss.lookup_universe_id(evt.Universe.String())
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("Universe %v not found on DisputeCrowdsourcererContribution event\n",evt.Universe.String()))
+		os.Exit(1)
+	}
 	market_aid := ss.lookup_address_id(evt.Market.String())
 	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),block_num,tx_id)
 	signer_aid := ss.Lookup_or_create_address(signer.String(),block_num,tx_id)
@@ -1251,7 +1267,11 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(block_num p.BlockNumber,tx_id
 }
 func (ss *SQLStorage) Insert_share_balance_changed_evt(block_num p.BlockNumber,tx_id int64,evt *p.ShareTokenBalanceChanged) {
 
-	_= ss.lookup_universe_id(evt.Universe.String())
+	_,err := ss.lookup_universe_id(evt.Universe.String())
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("Universe %v not found on BalanceChanged event\n",evt.Universe.String()))
+		os.Exit(1)
+	}
 	market_aid := ss.lookup_address_id(evt.Market.String())
 	account_aid := ss.Lookup_or_create_address(evt.Account.String(),block_num,tx_id)
 
@@ -2370,7 +2390,11 @@ func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64
 	var query string
 	var err error
 
-	_= ss.lookup_universe_id(evt.Universe.String())
+	_,err = ss.lookup_universe_id(evt.Universe.String())
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("Universe %v not found on ProfitLossChanged event\n",evt.Universe.String()))
+		os.Exit(1)
+	}
 	market_aid,market_type := ss.lookup_market_id(evt.Market.String())
 	wallet_aid := ss.Lookup_or_create_address(evt.Account.String(),block_num,tx_id)
 

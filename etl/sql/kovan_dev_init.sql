@@ -1,6 +1,5 @@
 -- Do not use, for Development only!
-INSERT INTO universe(universe_addr) VALUES('0x919274CE3Ba5a0D0f11071Bb9fb402AE5c23381B');
-INSERT INTO universe(universe_addr) VALUES('0x2C41A5516ED977577eeAEf423e80cd98BAbC204a');
+INSERT INTO universe(universe_addr) VALUES('0x39558F07B0123bb9C73c046153B5bed0c8bbc8B5');
 INSERT INTO main_stats(universe_id) VALUES(1);
 INSERT INTO contract_addresses(
 		profit_loss,
@@ -13,15 +12,15 @@ INSERT INTO contract_addresses(
 		share_token,
 		universe
 ) VALUES (
-		'0x446D9a3B94E97cE3CF45240e1d34858D3B8443F7',-- profit loss
-		'0x68e888AD28D8E41Aa07dcdEb666432Cd18b26aBa',-- dai cash
-		'0x4F0738B7396dD2A9C05E42a40cF34351317C517D',-- rep token
-		'0x75057695Fb8C3bB4A12eE0C6421f613640Afd0a1',-- zerox
-		'0x7f4139C357602081D5d0B62Cb87292dD87E9d2C6',-- wallet registry
-		'0x586875DDf4041d3ada196e575A53eebd45291ed8',-- fill order
-		'0x493d6E70eD7a3DDf3650Ae0A3D93029b0d4348eE',-- eth exchange
-		'0x39E7A4318d4BD69499c424B571B2eC545c6740Bd',-- share token
-		'0x919274CE3Ba5a0D0f11071Bb9fb402AE5c23381B'-- universe
+		'0xd6aCE86ba608b012453a70C5d96B904d3cAE6aA3',-- profit loss
+		'0xaCA1207624B246952fc18f7BB5D8523aF81e7d05',-- dai cash
+		'0x14dF26Dcae09e954b85aA7f60D3b0FfCEDa69A37',-- rep token
+		'0x5360148F1e5FA2A96241FE2B0710fe73879aFfAF',-- zerox
+		'0x1aD2Fb709e8B22430bfBa302f3Fd8F993877879D',-- wallet registry
+		'0xc275B2FEab763d53e9B200bF35f5b88051e23DE9',-- fill order
+		'0xB03Cd91915F66c2ABacE5135112F3A4d891429AE',-- eth exchange
+		'0xA2821b3F0302927d0cEbeB0C85060672dF397F14',-- share token
+		'0x39558F07B0123bb9C73c046153B5bed0c8bbc8B5'-- universe
 );
-INSERT INTO last_block  VALUES(18855700);
+INSERT INTO last_block  VALUES(19520324);
 

@@ -633,16 +633,18 @@ func dump_tx_input_if_known(tx *types.Transaction) {
 		Info.Printf("}\n")
 
 		// check for internal transactions for the Wallet Registry contract
-		input_sig := input_data.Data[:4]
-		market_proceeds_sig ,_ := hex.DecodeString("db754422")
-		if 0 == bytes.Compare(input_sig,market_proceeds_sig) {
-			Info.Printf("augur_wallet_call: claimMarketProceeds()\n")
-			return
-		}
-		trading_proceeds_sig ,_ := hex.DecodeString("efd342c1")
-		if 0 == bytes.Compare(input_sig,trading_proceeds_sig) {
-			Info.Printf("augur_wallet_call: claimTradingProceeds()\n")
-			return
+		if len(input_data.Data) >= 4 {
+			input_sig := input_data.Data[:4]
+			market_proceeds_sig ,_ := hex.DecodeString("db754422")
+			if 0 == bytes.Compare(input_sig,market_proceeds_sig) {
+				Info.Printf("augur_wallet_call: claimMarketProceeds()\n")
+				return
+			}
+			trading_proceeds_sig ,_ := hex.DecodeString("efd342c1")
+			if 0 == bytes.Compare(input_sig,trading_proceeds_sig) {
+				Info.Printf("augur_wallet_call: claimTradingProceeds()\n")
+				return
+			}
 		}
 	} else {
 		Info.Printf("dump_tx_input: input sig: %v\n",hex.EncodeToString(input_sig[:]))
