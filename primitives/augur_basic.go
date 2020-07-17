@@ -11,6 +11,9 @@ import (
 	//"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )
+const (
+	DEFAULT_LOG_DIR	 = "ae_logs"
+)
 func dump_abi_events(a *abi.ABI) {
 
 	fmt.Printf("Events:\n")

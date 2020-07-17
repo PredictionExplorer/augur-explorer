@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"time"
 	"strconv"
-//	"fmt"
+	"fmt"
 	"context"
 	"log"
 	"math/big"
@@ -51,7 +51,8 @@ const (
 	ERC20_APPROVAL = "8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
 
 	DEFAULT_WAIT_TIME = 5000	// 5 seconds
-	DEFAULT_DB_LOG_FILE_NAME	= "/var/tmp/db.log"
+	DEFAULT_DB_LOG				= "db.log"
+	//DEFAULT_LOG_DIR				= "ae_logs"
 )
 var (
 	// these evt_ variables are here for speed to avoid calculation of Keccak256
@@ -139,32 +140,40 @@ func main() {
 		Fatalf("Configuration error: RPC URL of Ethereum node is not set."+
 				" Please set AUGUR_ETH_NODE_RPC environment variable")
 	}
+
+	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
+	os.MkdirAll(log_dir, os.ModePerm)
+	db_log_file:=fmt.Sprintf("%v/%v",log_dir,DEFAULT_DB_LOG)
+
 	position_changes = make([]*PosChg,0,8)
 
-	Info = log.New(os.Stdout,"INFO: ",log.Ltime)		//|log.Lshortfile)
-	Error = log.New(os.Stderr,"ERROR: ",log.Ltime)		//|log.Lshortfile)
-	//client, err := ethclient.Dial("http://192.168.1.102:18545")
-	var err error
-	rpcclient, err=rpc.DialContext(context.Background(), RPC_URL)
+	fname:=fmt.Sprintf("%v/etl_info.log",log_dir)
+	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err!=nil {
+		fmt.Printf("Can't start: %v\n",err)
+		os.Exit(1)
+	}
+	Info = log.New(logfile,"INFO: ",log.Ltime)		//|log.Lshortfile)
 
+	fname=fmt.Sprintf("%v/etl_error.log",log_dir)
+	if err!=nil {
+		fmt.Printf("Can't start: %v\n",err)
+		os.Exit(1)
+	}
+	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	Error = log.New(logfile,"ERROR: ",log.Ltime)		//|log.Lshortfile)
+	rpcclient, err=rpc.DialContext(context.Background(), RPC_URL)
 	if err != nil {
 		log.Fatal(err)
 	}
 	Info.Printf("Connected to ETH node: %v\n",RPC_URL)
 	eclient = ethclient.NewClient(rpcclient)
-//	eclient, err = ethclient.Dial(RPC_URL)
 
 	storage = Connect_to_storage(&market_order_id,Info)
-	storage.Init_log(DEFAULT_DB_LOG_FILE_NAME)
+	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
 	storage.Check_main_stats()
-	
-	/*
-	addresses := new(ContractAddresses)
-	addresses.Zerox_addr = &zerox_addr
-	addresses.Dai_addr= &dai_addr
-	addresses.Reputation_addr= &rep_addr
-	*/
+
 	caddrs_obj,err := storage.Get_contract_addresses()
 	if err!=nil {
 		Fatalf("Can't find contract addresses in 'contract_addresses' table")

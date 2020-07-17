@@ -144,21 +144,28 @@ func (ss *SQLStorage) Get_last_block_num() (p.BlockNumber,bool) {
 func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 
 	var query string
-	query="SELECT profit_loss,dai_cash,rep_token,zerox,wallet_reg,fill_order,eth_xchg,share_token,universe FROM contract_addresses";
+	query="SELECT	 augur,augur_trading,profit_loss,dai_cash,rep_token,zerox,wallet_reg,fill_order," +
+					"eth_xchg,share_token,universe FROM contract_addresses";
 	row := ss.db.QueryRow(query)
 	var c_addresses p.ContractAddresses
 	var err error
-	var pl_addr_str string
-	var dai_addr_str string
-	var rep_addr_str string
-	var zerox_addr_str string
-	var walletreg_addr_str string
-	var fill_order_addr_str string
-	var eth_xchg_addr_str string
-	var share_token_addr_str string
-	var universe_addr_str string
-	err=row.Scan(&pl_addr_str,&dai_addr_str,&rep_addr_str,&zerox_addr_str,&walletreg_addr_str,&fill_order_addr_str,
-					&eth_xchg_addr_str,&share_token_addr_str,&universe_addr_str);
+	var (
+		augur string
+		augur_trading string
+		pl string
+		dai string
+		rep string
+		zerox string
+		walletreg string
+		fill_order string
+		eth_xchg string
+		share_token string
+		universe string
+	)
+	err=row.Scan(
+		&augur,&augur_trading,&pl,&dai,&rep,&zerox,&walletreg,&fill_order,&eth_xchg,
+		&share_token,&universe,
+	);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 		} else {
@@ -167,15 +174,17 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 		}
 		return c_addresses,err
 	}
-	c_addresses.PL_addr=common.HexToAddress(pl_addr_str)
-	c_addresses.Dai_addr=common.HexToAddress(dai_addr_str)
-	c_addresses.Reputation_addr=common.HexToAddress(rep_addr_str)
-	c_addresses.Zerox_addr=common.HexToAddress(zerox_addr_str)
-	c_addresses.WalletReg_addr=common.HexToAddress(walletreg_addr_str)
-	c_addresses.FillOrder_addr=common.HexToAddress(fill_order_addr_str)
-	c_addresses.EthXchg_addr=common.HexToAddress(eth_xchg_addr_str)
-	c_addresses.ShareToken_addr=common.HexToAddress(share_token_addr_str)
-	c_addresses.Universe_addr = common.HexToAddress(universe_addr_str)
+	c_addresses.Augur=common.HexToAddress(augur)
+	c_addresses.AugurTrading=common.HexToAddress(augur_trading)
+	c_addresses.PL=common.HexToAddress(pl)
+	c_addresses.Dai=common.HexToAddress(dai)
+	c_addresses.Reputation=common.HexToAddress(rep)
+	c_addresses.Zerox=common.HexToAddress(zerox)
+	c_addresses.WalletReg=common.HexToAddress(walletreg)
+	c_addresses.FillOrder=common.HexToAddress(fill_order)
+	c_addresses.EthXchg=common.HexToAddress(eth_xchg)
+	c_addresses.ShareToken=common.HexToAddress(share_token)
+	c_addresses.Universe= common.HexToAddress(universe)
 	return c_addresses,nil
 }
 func (ss *SQLStorage) Set_last_block_num(block_num p.BlockNumber) {
@@ -790,7 +799,26 @@ func (ss *SQLStorage) Insert_open_order(evt *zeroex.OrderEvent,eoa_addr string,o
 	expiration := order.ExpirationTimeSeconds.Int64()
 	// note: we don't have block number/tx hash for activity from 0x Mesh, so we insert with 0s
 	wallet_aid := ss.Lookup_or_create_address(order.MakerAddress.String(),0,0)
-	eoa_aid := ss.Lookup_or_create_address(eoa_addr,0,0)
+	var eoa_aid int64 = 0
+	if len(eoa_addr) == 0 {
+		ss.Info.Printf(
+			"0x Mesh provided empty EOA address for maker addres %v (NULL_EOA_ADDR_FROM_MESH)",
+			order.MakerAddress.String(),
+		)
+		tmp_eoa_aid,err:=ss.Lookup_eoa_aid(wallet_aid)
+		if err == nil {
+			eoa_aid = tmp_eoa_aid
+		} else {
+			ss.Info.Printf(
+				"Inserted open order from 0x Mesh with empty EOA addr (NULL_EOA_ADDR_FROM_MESH) (maker: %v)",
+				order.MakerAddress.String(),
+			)
+		}
+	}
+	if eoa_aid == 0 {
+		eoa_aid = ss.Lookup_or_create_address(eoa_addr,0,0)
+	}
+
 	ss.Info.Printf("creating open order made by %v : %+v\n",eoa_addr,ospec)
 	market_aid := ss.lookup_address_id(ospec.Market.String())
 	price := float64(ospec.Price.Int64())/100
@@ -1067,7 +1095,7 @@ func (ss *SQLStorage) Insert_initial_report_evt(block_num p.BlockNumber,tx_id in
 	universe_id,err := ss.lookup_universe_id(evt.Universe.String())
 	if err != nil {
 		ss.Info.Printf("universe_mismatch: Dropping InitialReportSubmitted event for mismatch in Universe: %v",evt.Universe.String())
-		return
+		os.Exit(1)
 	}
 	_ = universe_id
 	market_aid := ss.lookup_address_id(evt.Market.String())
@@ -1513,6 +1541,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 
 	defer rows.Close()
 	for rows.Next() {
+		var description sql.NullString
 		var longdesc sql.NullString
 		var category sql.NullString
 		var status_code int
@@ -1521,7 +1550,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 					&rec.Signer,
 					&rec.MktCreator,
 					&rec.EndDate,
-					&rec.Description,
+					&description,
 					&longdesc,
 					&category,
 					&rec.Outcomes,
@@ -1541,6 +1570,9 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 		}
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)
 		rec.MktCreatorSh=p.Short_address(rec.MktCreator)
+		if description.Valid {
+			rec.Description = description.String
+		}
 		if longdesc.Valid {
 			rec.LongDesc = longdesc.String
 		}
@@ -1751,7 +1783,9 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 	row := ss.db.QueryRow(query,market_aid)
 	var mkt_type int
 	var status_code int
+	var description sql.NullString
 	var long_desc sql.NullString
+	var category sql.NullString
 	err=row.Scan(
 				&mkt_type,
 				&rec.MktAddr,
@@ -1760,9 +1794,9 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				&rec.Reporter,
 				&reporter_aid,
 				&rec.EndDate,
-				&rec.Description,
+				&description,
 				&long_desc,
-				&rec.CategoryStr,
+				&category,
 				&rec.Outcomes,
 				&rec.MktType,
 				&rec.MktTypeStr,
@@ -1777,8 +1811,14 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 	rec.SignerSh=p.Short_address(rec.Signer)
 	rec.MktCreatorSh=p.Short_address(rec.MktCreator)
 	rec.ReporterSh=p.Short_address(rec.Reporter)
+	if description.Valid {
+		rec.Description=description.String
+	}
 	if long_desc.Valid {
 		rec.LongDesc = long_desc.String
+	}
+	if category.Valid {
+		rec.CategoryStr = category.String
 	}
 	if oc { // get outcome string
 		rec.CurOutcome = get_outcome_str(uint8(mkt_type),outcome_idx,&rec.Outcomes)
@@ -1823,18 +1863,8 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string) ([]p.OutcomeVol,error
 			"FROM outcome_vol AS o " +
 				"LEFT JOIN " +
 					"market AS m ON o.market_aid = m.market_aid " +
-			"WHERE o.market_aid = $1"
-	d_query := fmt.Sprintf("SELECT " +
-				"o.outcome_idx, " +
-				"o.volume," +
-				"o.last_price, " +
-				"m.market_type, " +
-				"m.outcomes " +
-			"FROM outcome_vol AS o " +
-				"LEFT JOIN " +
-					"market AS m ON o.market_aid = m.market_aid " +
-			"WHERE o.market_aid = %v",market_aid)
-	ss.Info.Printf("outcome volumes query: %v\n",d_query)
+			"WHERE o.market_aid = $1 " +
+			"ORDER BY o.outcome_idx"
 
 	var rows *sql.Rows
 	rows,err = ss.db.Query(query,market_aid)
@@ -2216,34 +2246,34 @@ func (ss *SQLStorage) is_dai_transfer_internal(evt *p.Transfer,ca *p.ContractAdd
 		return true	// its a Market in To
 	}
 
-	if 0 == bytes.Compare(evt.From.Bytes(),ca.Zerox_addr.Bytes()) {
+	if 0 == bytes.Compare(evt.From.Bytes(),ca.Zerox.Bytes()) {
 		return true;
 	}
-	if 0 == bytes.Compare(evt.To.Bytes(),ca.Zerox_addr.Bytes()) {
+	if 0 == bytes.Compare(evt.To.Bytes(),ca.Zerox.Bytes()) {
 		return true;
 	}
-	if 0 == bytes.Compare(evt.From.Bytes(),ca.FillOrder_addr.Bytes()) {
+	if 0 == bytes.Compare(evt.From.Bytes(),ca.FillOrder.Bytes()) {
 		return true;
 	}
-	if 0 == bytes.Compare(evt.To.Bytes(),ca.FillOrder_addr.Bytes()) {
+	if 0 == bytes.Compare(evt.To.Bytes(),ca.FillOrder.Bytes()) {
 		return true;
 	}
-	if 0 == bytes.Compare(evt.From.Bytes(),ca.EthXchg_addr.Bytes()) {
+	if 0 == bytes.Compare(evt.From.Bytes(),ca.EthXchg.Bytes()) {
 		return true;
 	}
-	if 0 == bytes.Compare(evt.To.Bytes(),ca.EthXchg_addr.Bytes()) {
+	if 0 == bytes.Compare(evt.To.Bytes(),ca.EthXchg.Bytes()) {
 		return true;
 	}
-	if 0 == bytes.Compare(evt.From.Bytes(),ca.ShareToken_addr.Bytes()) {
+	if 0 == bytes.Compare(evt.From.Bytes(),ca.ShareToken.Bytes()) {
 		return true;
 	}
-	if 0 == bytes.Compare(evt.To.Bytes(),ca.ShareToken_addr.Bytes()) {
+	if 0 == bytes.Compare(evt.To.Bytes(),ca.ShareToken.Bytes()) {
 		return true;
 	}
-	if 0 == bytes.Compare(evt.From.Bytes(),ca.Universe_addr.Bytes()) {
+	if 0 == bytes.Compare(evt.From.Bytes(),ca.Universe.Bytes()) {
 		return true;
 	}
-	if 0 == bytes.Compare(evt.To.Bytes(),ca.Universe_addr.Bytes()) {
+	if 0 == bytes.Compare(evt.To.Bytes(),ca.Universe.Bytes()) {
 		return true;
 	}
 	return false
@@ -2965,16 +2995,18 @@ func (ss *SQLStorage) Get_category_markets(cat_id int64) []p.InfoMarket {
 
 	defer rows.Close()
 	for rows.Next() {
+		var description sql.NullString
 		var longdesc sql.NullString
+		var category_str sql.NullString
 		var status_code int
 		err=rows.Scan(
 					&rec.MktAddr,
 					&rec.Signer,
 					&rec.MktCreator,
 					&rec.EndDate,
-					&rec.Description,
+					&description,
 					&longdesc,
-					&rec.CategoryStr,
+					&category_str,
 					&rec.Outcomes,
 					&rec.MktType,
 					&rec.MktTypeStr,
@@ -2988,8 +3020,14 @@ func (ss *SQLStorage) Get_category_markets(cat_id int64) []p.InfoMarket {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		if description.Valid {
+			rec.Description = description.String
+		}
 		if longdesc.Valid {
 			rec.LongDesc = longdesc.String
+		}
+		if category_str.Valid {
+			rec.CategoryStr = category_str.String
 		}
 		rec.Status=get_market_status_str(p.MarketStatus(status_code))
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)
@@ -3138,6 +3176,7 @@ func (ss *SQLStorage) Get_user_markets(eoa_aid int64) []p.InfoMarket {
 
 	defer rows.Close()
 	for rows.Next() {
+		var description sql.NullString
 		var longdesc sql.NullString
 		var categories sql.NullString
 		var status_code int
@@ -3146,7 +3185,7 @@ func (ss *SQLStorage) Get_user_markets(eoa_aid int64) []p.InfoMarket {
 					&rec.Signer,
 					&rec.MktCreator,
 					&rec.EndDate,
-					&rec.Description,
+					&description,
 					&longdesc,
 					&categories,
 					&rec.Outcomes,
@@ -3162,6 +3201,9 @@ func (ss *SQLStorage) Get_user_markets(eoa_aid int64) []p.InfoMarket {
 			os.Exit(1)
 		}
 		fmt.Printf("type=%v, typestr=%v, addr=%v\n",rec.MktType,rec.MktTypeStr,rec.MktAddr)
+		if description.Valid {
+			rec.Description = description.String
+		}
 		if longdesc.Valid {
 			rec.LongDesc = longdesc.String
 		}
@@ -3856,7 +3898,7 @@ func (ss *SQLStorage) Get_active_markets_for_user(eoa_aid int64) []p.InfoMarket 
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
 				"LEFT JOIN address AS sa ON m.eoa_aid= sa.address_id " +
 				"LEFT JOIN address AS ca ON m.wallet_aid = ca.address_id " +
-			"WHERE s.eoa_aid = $1 " +
+			"WHERE s.eoa_aid = $1 AND m.status < 4" +
 			"ORDER BY s.volume_traded DESC"
 
 	rows,err := ss.db.Query(query,eoa_aid)
@@ -3869,16 +3911,18 @@ func (ss *SQLStorage) Get_active_markets_for_user(eoa_aid int64) []p.InfoMarket 
 
 	defer rows.Close()
 	for rows.Next() {
+		var description sql.NullString
 		var longdesc sql.NullString
+		var category sql.NullString
 		var status_code int
 		err=rows.Scan(
 					&rec.MktAddr,
 					&rec.Signer,
 					&rec.MktCreator,
 					&rec.EndDate,
-					&rec.Description,
+					&description,
 					&longdesc,
-					&rec.CategoryStr,
+					&category,
 					&rec.Outcomes,
 					&rec.MktType,
 					&rec.MktTypeStr,
@@ -3894,8 +3938,14 @@ func (ss *SQLStorage) Get_active_markets_for_user(eoa_aid int64) []p.InfoMarket 
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		if description.Valid {
+			rec.Description = description.String
+		}
 		if longdesc.Valid {
 			rec.LongDesc = longdesc.String
+		}
+		if category.Valid {
+			rec.CategoryStr = category.String
 		}
 		rec.Status=get_market_status_str(p.MarketStatus(status_code))
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)

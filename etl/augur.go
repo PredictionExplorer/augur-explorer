@@ -100,19 +100,19 @@ func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) 
 	build_list_of_inspected_events()
 
 	var err error
-	ctrct_wallet_registry,err = NewAugurWalletRegistry(addresses.WalletReg_addr, eclient)
+	ctrct_wallet_registry,err = NewAugurWalletRegistry(addresses.WalletReg, eclient)
 	if err != nil {
 		Fatalf("Failed to instantiate a AugurWalletRegistry contract: %v", err)
 	}
-	ctrct_zerox, err = NewZeroX(addresses.Zerox_addr,eclient)
+	ctrct_zerox, err = NewZeroX(addresses.Zerox,eclient)
 	if err != nil {
 		Fatalf("Failed to instantiate a ZeroX contract: %v", err)
 	}
-	ctrct_dai_token,err = NewDAICash(addresses.Dai_addr,eclient)
+	ctrct_dai_token,err = NewDAICash(addresses.Dai,eclient)
 	if err != nil {
 		Fatalf("Couldn't initialize DAI Cash contract: %v\n",err)
 	}
-	ctrct_pl,err = NewProfitLoss(addresses.PL_addr,eclient)
+	ctrct_pl,err = NewProfitLoss(addresses.PL,eclient)
 	if err != nil {
 		Fatalf("Couldn't initialize Profit Loss contract: %v\n",err)
 	}
@@ -158,7 +158,7 @@ func proc_approval(log *types.Log) {
 	} else {
 		Info.Printf("ERC20_Approval event for contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
-		mevt.Dump()
+		mevt.Dump(Info)
 	}
 }
 func proc_approval_for_all(log *types.Log) {
@@ -176,7 +176,7 @@ func proc_approval_for_all(log *types.Log) {
 	} else {
 		Info.Printf("ApprovalForAll event for contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
-		mevt.Dump()
+		mevt.Dump(Info)
 	}
 }
 func proc_trading_proceeds_claimed(signer common.Address,timestamp int64,log *types.Log) {
@@ -187,17 +187,21 @@ func proc_trading_proceeds_claimed(signer common.Address,timestamp int64,log *ty
 	err := augur_abi.Unpack(&mevt,"TradingProceedsClaimed",log.Data)
 	if err != nil {
 		Fatalf("EventTradingProceedsClaimed error: %v",err)
-	} else {
-		Info.Printf("TradingProceedsClaimed event found (block=%v) :\n",log.BlockNumber)
-		mevt.Dump()
-		pchg := new(PosChg)
-		pchg.Mkt_addr = mevt.Market
-		pchg.Wallet_addr = mevt.Sender
-		pchg.Outcome = new(big.Int)
-		pchg.Outcome.Set(mevt.Outcome)
-		position_changes = append(position_changes,pchg)
-		storage.Update_claim_status(signer,&mevt,timestamp)
+		return
 	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		return
+	}
+
+	Info.Printf("TradingProceedsClaimed event found (block=%v) :\n",log.BlockNumber)
+	mevt.Dump(Info)
+	pchg := new(PosChg)
+	pchg.Mkt_addr = mevt.Market
+	pchg.Wallet_addr = mevt.Sender
+	pchg.Outcome = new(big.Int)
+	pchg.Outcome.Set(mevt.Outcome)
+	position_changes = append(position_changes,pchg)
+	storage.Update_claim_status(signer,&mevt,timestamp)
 }
 func proc_fill_evt(log *types.Log) {
 	var mevt FillEvt
@@ -207,12 +211,15 @@ func proc_fill_evt(log *types.Log) {
 	err := exchange_abi.Unpack(&mevt,"Fill",log.Data)
 	if err != nil {
 		Fatalf("Event Fill for 0x decode error: %v",err)
-	} else {
-		Info.Printf("Fill event found (block=%v) :\n",log.BlockNumber)
-		mevt.Dump()
-		// we need to locate order id because Profit Loss events are linked to this Order 
-		fill_order_id = storage.Locate_fill_event_order(&mevt)
+		return
 	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.AugurTrading.Bytes()) {
+		return
+	}
+	Info.Printf("Fill event found (block=%v) :\n",log.BlockNumber)
+	mevt.Dump(Info)
+	// we need to locate order id because Profit Loss events are linked to this Order 
+	fill_order_id = storage.Locate_fill_event_order(&mevt)
 }
 func proc_erc20_transfer(log *types.Log,block_num BlockNumber,tx_id int64) {
 	var mevt Transfer
@@ -234,11 +241,11 @@ func proc_erc20_transfer(log *types.Log,block_num BlockNumber,tx_id int64) {
 	} else {
 		Info.Printf("ERC20_Transfer event, contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
-		mevt.Dump()
-		if bytes.Equal(caddrs.Dai_addr.Bytes(), log.Address.Bytes()) {	// this is DAI contract
+		mevt.Dump(Info)
+		if bytes.Equal(caddrs.Dai.Bytes(), log.Address.Bytes()) {	// this is DAI contract
 			storage.Process_DAI_token_transfer(&mevt,caddrs,block_num,tx_id)
 		}
-		if bytes.Equal(caddrs.Reputation_addr.Bytes(), log.Address.Bytes()) {	// this is DAI contract
+		if bytes.Equal(caddrs.Reputation.Bytes(), log.Address.Bytes()) {	// this is DAI contract
 			storage.Process_REP_token_transfer(&mevt,block_num,tx_id)
 		}
 	}
@@ -252,19 +259,22 @@ func proc_profit_loss_changed(block_num BlockNumber,tx_id int64,log *types.Log) 
 	err := trading_abi.Unpack(&mevt,"ProfitLossChanged",log.Data)
 	if err != nil {
 		Fatalf("Event ProfitLossChanged decode error: %v",err)
-	} else {
-		Info.Printf("ProfitLossChanged event found (block=%v) :\n",log.BlockNumber)
-		mevt.Dump()
-		pchg:=new(PosChg)
-		pchg.Mkt_addr=mevt.Market
-		pchg.Wallet_addr=mevt.Account
-		pchg.Outcome = new(big.Int)
-		pchg.Outcome.Set(mevt.Outcome)
-		position_changes = append(position_changes,pchg)
-//		Info.Printf("position_changes len=%v\n",lken(position_changes)
-		eoa_aid := get_eoa_aid(&mevt.Account,block_num,tx_id)
-		id = storage.Insert_profit_loss_evt(block_num,tx_id,eoa_aid,&mevt)
+		return 0
 	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.AugurTrading.Bytes()) {
+		return 0
+	}
+	Info.Printf("ProfitLossChanged event found (block=%v) :\n",log.BlockNumber)
+	mevt.Dump(Info)
+	pchg:=new(PosChg)
+	pchg.Mkt_addr=mevt.Market
+	pchg.Wallet_addr=mevt.Account
+	pchg.Outcome = new(big.Int)
+	pchg.Outcome.Set(mevt.Outcome)
+	position_changes = append(position_changes,pchg)
+//		Info.Printf("position_changes len=%v\n",lken(position_changes)
+	eoa_aid := get_eoa_aid(&mevt.Account,block_num,tx_id)
+	id = storage.Insert_profit_loss_evt(block_num,tx_id,eoa_aid,&mevt)
 	return id
 }
 func proc_transfer_single(log *types.Log) {
@@ -277,7 +287,7 @@ func proc_transfer_single(log *types.Log) {
 		Fatalf("Event TransferSingle decode error: %v",err)
 	} else {
 		Info.Printf("TransferSingle event found (block=%v) :\n",log.BlockNumber)
-		mevt.Dump()
+		mevt.Dump(Info)
 	}
 }
 func proc_transfer_batch(log *types.Log) {
@@ -290,7 +300,7 @@ func proc_transfer_batch(log *types.Log) {
 		Fatalf("Event TransferBatch decode error: %v",err)
 	} else {
 		Info.Printf("TransferBatch event found (block=%v) :\n",log.BlockNumber)
-		mevt.Dump(ctrct_zerox)
+		mevt.Dump(ctrct_zerox,Info)
 	}
 }
 func proc_tokens_transferred(block_num BlockNumber,tx_id int64, log *types.Log) {
@@ -301,12 +311,15 @@ func proc_tokens_transferred(block_num BlockNumber,tx_id int64, log *types.Log) 
 	err := augur_abi.Unpack(&mevt,"TokensTransferred",log.Data)
 	if err != nil {
 		Fatalf("Event TokensTransferred decode error: %v",err)
-	} else {
-		Info.Printf("TokensTransferred event for contract %v (block=%v) :\n",
-									log.Address.String(),log.BlockNumber)
-		mevt.Dump()
-		storage.Insert_token_transf_evt(&mevt,block_num,tx_id)
+		return
 	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		return
+	}
+	Info.Printf("TokensTransferred event for contract %v (block=%v) :\n",
+								log.Address.String(),log.BlockNumber)
+	mevt.Dump(Info)
+	storage.Insert_token_transf_evt(&mevt,block_num,tx_id)
 }
 func proc_token_balance_changed(block_num BlockNumber,tx_id int64,log *types.Log) {
 	var mevt TokenBalanceChanged
@@ -315,12 +328,15 @@ func proc_token_balance_changed(block_num BlockNumber,tx_id int64,log *types.Log
 	err := augur_abi.Unpack(&mevt,"TokenBalanceChanged",log.Data)
 	if err != nil {
 		Fatalf("Event TokenBalanceChanged decode error: %v",err)
-	} else {
-		Info.Printf("TokenBalanceChanged event for contract %v (block=%v) :\n",
-									log.Address.String(),log.BlockNumber)
-		mevt.Dump()
-		storage.Insert_token_balance_changed_evt(&mevt,block_num,tx_id)
+		return
 	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		return
+	}
+	Info.Printf("TokenBalanceChanged event for contract %v (block=%v) :\n",
+								log.Address.String(),log.BlockNumber)
+	mevt.Dump(Info)
+	storage.Insert_token_balance_changed_evt(&mevt,block_num,tx_id)
 }
 func proc_share_token_balance_changed(block_num BlockNumber,tx_id int64,log *types.Log) {
 	var mevt ShareTokenBalanceChanged
@@ -330,12 +346,15 @@ func proc_share_token_balance_changed(block_num BlockNumber,tx_id int64,log *typ
 	err := augur_abi.Unpack(&mevt,"ShareTokenBalanceChanged",log.Data)
 	if err != nil {
 		Fatalf("Event ShareTokenBalanceChanged decode error: %v\n",err)
-	} else {
-		Info.Printf("ShareTokenBalanceChanged event for contract %v (block=%v) :\n",
-									log.Address.String(),log.BlockNumber)
-		mevt.Dump()
-		storage.Insert_share_balance_changed_evt(block_num,tx_id,&mevt)
+		return
 	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		return
+	}
+	Info.Printf("ShareTokenBalanceChanged event for contract %v (block=%v) :\n",
+									log.Address.String(),log.BlockNumber)
+	mevt.Dump(Info)
+	storage.Insert_share_balance_changed_evt(block_num,tx_id,&mevt)
 }
 func get_eoa_aid(addr *common.Address,block_num BlockNumber,tx_id int64) int64 {
 
@@ -384,13 +403,20 @@ func proc_market_order_event(block_num BlockNumber,tx_id int64,log *types.Log,si
 	err := trading_abi.Unpack(&mevt,"OrderEvent",log.Data)
 	if err != nil {
 		Fatalf("Event OrderEvent decode error: %v",err)
-	} else {
-		Info.Printf("OrderEvent event for contract %v (block=%v) : \n",
-									log.Address.String(),log.BlockNumber)
-		mevt.Dump()
-		eoa_aid := get_eoa_aid(&mevt.AddressData[0],block_num,tx_id)
-		storage.Insert_market_order_evt(BlockNumber(log.BlockNumber),tx_id,signer,eoa_aid,&mevt)
+		return
 	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.AugurTrading.Bytes()) {
+		Info.Printf(
+			"OrderEvent received and ignored (belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),block_num,
+		)
+		return
+	}
+	Info.Printf("OrderEvent event for contract %v (block=%v) : \n",
+								log.Address.String(),log.BlockNumber)
+	mevt.Dump(Info)
+	eoa_aid := get_eoa_aid(&mevt.AddressData[0],block_num,tx_id)
+	storage.Insert_market_order_evt(BlockNumber(log.BlockNumber),tx_id,signer,eoa_aid,&mevt)
 }
 func proc_cancel_zerox_order(log *types.Log) {
 	var mevt CancelZeroXOrder
@@ -400,44 +426,53 @@ func proc_cancel_zerox_order(log *types.Log) {
 	err := trading_abi.Unpack(&mevt,"CancelZeroXOrder",log.Data)
 	if err != nil {
 		Fatalf("Event CancelZeroXOrder decode error: %v",err)
-	} else {
-		ohash := common.BytesToHash(mevt.OrderHash[:])
-		ohash_str := ohash.String()
-		Info.Printf("CancelZeroXOrder event for contract %v (block=%v) : \n",
-									log.Address.String(),log.BlockNumber)
-		mevt.Dump()
-		storage.Delete_open_0x_order(ohash_str)
+		return
 	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.AugurTrading.Bytes()) {
+		return
+	}
+	ohash := common.BytesToHash(mevt.OrderHash[:])
+	ohash_str := ohash.String()
+	Info.Printf("CancelZeroXOrder event for contract %v (block=%v) : \n",
+								log.Address.String(),log.BlockNumber)
+	mevt.Dump(Info)
+	storage.Delete_open_0x_order(ohash_str)
 }
 func proc_market_oi_changed(block *types.Header, log *types.Log) {
 	var mevt MarketOIChangedEvt
 	err := augur_abi.Unpack(&mevt,"MarketOIChanged",log.Data)
 	if err != nil {
 		Fatalf("Event decode error: %v",err)
-	} else {
-		Info.Printf("MarketOIChanged event found (block=%v) : \n",log.BlockNumber)
-		mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
-		mevt.Market =common.BytesToAddress(log.Topics[2][12:])
-		mevt.Dump()
-		storage.Insert_market_oi_changed_evt(block,&mevt)
+		return
 	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		return
+	}
+	Info.Printf("MarketOIChanged event found (block=%v) : \n",log.BlockNumber)
+	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
+	mevt.Market =common.BytesToAddress(log.Topics[2][12:])
+	mevt.Dump(Info)
+	storage.Insert_market_oi_changed_evt(block,&mevt)
 }
 func proc_market_finalized_evt(block_num BlockNumber,tx_id int64,timestamp int64,log *types.Log) {
 	var mevt MktFinalizedEvt
 	err := augur_abi.Unpack(&mevt,"MarketFinalized",log.Data)
 	if err != nil {
 		Fatalf("Event MktFinalizedEvt decode error: %v\n",err)
-	} else {
-		Info.Printf("MarketFinalized event found (block=%v) : \n",log.BlockNumber)
-		mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
-		mevt.Market = common.BytesToAddress(log.Topics[2][12:])	// extract universe addr
-		mevt.Dump()
-		storage.Insert_market_finalized_evt(block_num,tx_id,timestamp,&mevt)
-		pchanges:=storage.Get_mkt_participant_outcomes(&mevt.Market)
-		Info.Printf("position_changes: Market finalized, added %v address entries for PL scan\n",len(pchanges))
-		for i:=0 ; i<len(pchanges) ; i++ {
-			position_changes = append(position_changes,pchanges[i])
-		}
+		return
+	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		return
+	}
+	Info.Printf("MarketFinalized event found (block=%v) : \n",log.BlockNumber)
+	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
+	mevt.Market = common.BytesToAddress(log.Topics[2][12:])	// extract universe addr
+	mevt.Dump(Info)
+	storage.Insert_market_finalized_evt(block_num,tx_id,timestamp,&mevt)
+	pchanges:=storage.Get_mkt_participant_outcomes(&mevt.Market)
+	Info.Printf("position_changes: Market finalized, added %v address entries for PL scan\n",len(pchanges))
+	for i:=0 ; i<len(pchanges) ; i++ {
+		position_changes = append(position_changes,pchanges[i])
 	}
 }
 func proc_initial_report_submitted(block_num BlockNumber,tx_id int64, log *types.Log,signer common.Address) {
@@ -445,41 +480,50 @@ func proc_initial_report_submitted(block_num BlockNumber,tx_id int64, log *types
 	err := augur_abi.Unpack(&mevt,"InitialReportSubmitted",log.Data)
 	if err != nil {
 		Fatalf("Event InitialReportSubmittedEvt decode error: %v\n",err)
-	} else {
-		Info.Printf("InitialReportSubmitted event found (block=%v) : \n",log.BlockNumber)
-		mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
-		mevt.Reporter= common.BytesToAddress(log.Topics[2][12:])
-		mevt.Market = common.BytesToAddress(log.Topics[3][12:])
-		mevt.Dump()
-		storage.Insert_initial_report_evt(block_num,tx_id,signer,&mevt)
+		return
 	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		return
+	}
+	Info.Printf("InitialReportSubmitted event found (block=%v) : \n",log.BlockNumber)
+	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
+	mevt.Reporter= common.BytesToAddress(log.Topics[2][12:])
+	mevt.Market = common.BytesToAddress(log.Topics[3][12:])
+	mevt.Dump(Info)
+	storage.Insert_initial_report_evt(block_num,tx_id,signer,&mevt)
 }
 func proc_dispute_crowdsourcerer_contribution(block_num BlockNumber,tx_id int64,log *types.Log,signer common.Address) {
 	var mevt DisputeCrowdsourcerContributionEvt
 	err := augur_abi.Unpack(&mevt,"DisputeCrowdsourcerContribution",log.Data)
 	if err != nil {
 		Fatalf("Event DisputeCrowdsourcerContribution decode error: %v\n",err)
-	} else {
-		Info.Printf("DisputeCrowdsourcerContribution event found (block %v) : \n",log.BlockNumber)
-		mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
-		mevt.Reporter= common.BytesToAddress(log.Topics[2][12:])
-		mevt.Market = common.BytesToAddress(log.Topics[3][12:])
-		mevt.Dump()
-		storage.Insert_dispute_crowd_contrib(block_num,tx_id,signer,&mevt)
+		return
 	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		return
+	}
+	Info.Printf("DisputeCrowdsourcerContribution event found (block %v) : \n",log.BlockNumber)
+	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
+	mevt.Reporter= common.BytesToAddress(log.Topics[2][12:])
+	mevt.Market = common.BytesToAddress(log.Topics[3][12:])
+	mevt.Dump(Info)
+	storage.Insert_dispute_crowd_contrib(block_num,tx_id,signer,&mevt)
 }
 func proc_market_volume_changed(block_num BlockNumber, tx_id int64, log *types.Log) {
 	var mevt MktVolumeChangedEvt
 	err := trading_abi.Unpack(&mevt,"MarketVolumeChanged",log.Data)
 	if err != nil {
 		Fatalf("Event MarketVolumeChanged decode error: %v\n",err)
-	} else {
-		Info.Printf("MarketVolumeChanged event found (block=%v): \n",log.BlockNumber)
-		mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
-		mevt.Market = common.BytesToAddress(log.Topics[2][12:])
-		mevt.Dump()
-		storage.Insert_market_volume_changed_evt(block_num,tx_id,&mevt)
+		return
 	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.AugurTrading.Bytes()) {
+		return
+	}
+	Info.Printf("MarketVolumeChanged event found (block=%v): \n",log.BlockNumber)
+	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
+	mevt.Market = common.BytesToAddress(log.Topics[2][12:])
+	mevt.Dump(Info)
+	storage.Insert_market_volume_changed_evt(block_num,tx_id,&mevt)
 }
 func proc_market_created(block_num BlockNumber,tx_id int64,log *types.Log,signer common.Address,validity_bond string) {
 	var mevt MarketCreatedEvt
@@ -488,26 +532,33 @@ func proc_market_created(block_num BlockNumber,tx_id int64,log *types.Log,signer
 	err := augur_abi.Unpack(&mevt,"MarketCreated",log.Data)
 	if err != nil {
 		Fatalf("Event MarketCreated decode error: %v",err)
-	} else {
-		Info.Printf("MarketCreated event found (block=%v)\n",log.BlockNumber)
-		mevt.Dump()
-		Info.Printf("getwallet: Looking wallet addr via RPC for: %v\n",mevt.MarketCreator.String())
-		var copts = new(bind.CallOpts)
-		wallet,err := ctrct_wallet_registry.GetWallet(copts,mevt.MarketCreator)
-		Info.Printf("getwallet: addr is : %v\n",wallet.String())
-		var wallet_addr_str string
-		var wallet_aid int64 = 0
-		if err == nil {
-			wallet_addr_str = wallet.String()
-		} else {
-			Info.Printf("getwallet: error at rpc call: %v\n",err)
-		}
-		if !Eth_addr_is_zero(&wallet) {
-			wallet_aid = storage.Lookup_or_create_address(wallet_addr_str,block_num,tx_id)
-		}
-		Info.Printf("getwallet: got wallet_aid = %v for wallet addr %v\n",wallet_aid,wallet_addr_str)
-		storage.Insert_market_created_evt(block_num,tx_id,signer,wallet_aid,validity_bond,&mevt)
+		return
 	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		Info.Printf(
+			"MarketCreated event received and ignored (belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),block_num,
+		)
+		return
+	}
+	Info.Printf("MarketCreated event found (block=%v)\n",log.BlockNumber)
+	mevt.Dump(Info)
+	Info.Printf("getwallet: Looking wallet addr via RPC for: %v\n",mevt.MarketCreator.String())
+	var copts = new(bind.CallOpts)
+	wallet,err := ctrct_wallet_registry.GetWallet(copts,mevt.MarketCreator)
+	Info.Printf("getwallet: addr is : %v\n",wallet.String())
+	var wallet_addr_str string
+	var wallet_aid int64 = 0
+	if err == nil {
+		wallet_addr_str = wallet.String()
+	} else {
+		Info.Printf("getwallet: error at rpc call: %v\n",err)
+	}
+	if !Eth_addr_is_zero(&wallet) {
+		wallet_aid = storage.Lookup_or_create_address(wallet_addr_str,block_num,tx_id)
+	}
+	Info.Printf("getwallet: got wallet_aid = %v for wallet addr %v\n",wallet_aid,wallet_addr_str)
+	storage.Insert_market_created_evt(block_num,tx_id,signer,wallet_aid,validity_bond,&mevt)
 }
 func process_event(block *types.Header, tx_id int64, signer common.Address, logs *[]*types.Log,lidx int) int64 {
 	// Return Value: id of the record inserted (if aplicable, or 0)
@@ -695,51 +746,4 @@ func scan_profit_loss_data_for_debugging(block_num BlockNumber,position_changes 
 		Info.Printf("inserting pchg %+v\n",*pchg)
 		storage.Insert_profit_loss_debug_rec(pchg)
 	}
-	/*
-	market:=common.HexToAddress("0xfA193B12b4F764dF9FE95Ef380676Fb33c6A6c40")
-	addr:=common.HexToAddress("0x56C9256Adde09AeF891Ac7bD7AA8F69A6fa94Ba1")
-	outcome:=big.NewInt(1)
-	profit_loss,err := ctrct_pl.GetRealizedProfit(copts,market,addr,outcome)
-	if err != nil {
-		Info.Printf("Failure to GetRealizedProfit for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
-	} else {
-		Info.Printf("GetRealizedProfit : addr %v, outcome %v: %v",addr.String(),outcome.String(),profit_loss.String())
-	}
-	outcome=big.NewInt(2)
-	profit_loss,err = ctrct_pl.GetRealizedProfit(copts,market,addr,outcome)
-	if err != nil {
-		Info.Printf("Failure to GetRealizedProfit for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
-	} else {
-		Info.Printf("GetRealizedProfit : addr %v, outcome %v: %v",addr.String(),outcome.String(),profit_loss.String())
-	}
-	outcome=big.NewInt(3)
-	profit_loss,err = ctrct_pl.GetRealizedProfit(copts,market,addr,outcome)
-	if err != nil {
-		Info.Printf("Failure to GetRealizedProfit for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
-	} else {
-		Info.Printf("GetRealizedProfit : addr %v, outcome %v: %v",addr.String(),outcome.String(),profit_loss.String())
-	}
-
-	outcome=big.NewInt(1)
-	frozen_funds,err := ctrct_pl.GetFrozenFunds(copts,market,addr,outcome)
-	if err != nil {
-		Info.Printf("Failure to GetFrozenFunds for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
-	} else {
-		Info.Printf("GetFrozenFunds    : addr %v, outcome %v: %v",addr.String(),outcome.String(),frozen_funds.String())
-	}
-	outcome=big.NewInt(2)
-	frozen_funds,err = ctrct_pl.GetFrozenFunds(copts,market,addr,outcome)
-	if err != nil {
-		Info.Printf("Failure to GetFrozenFunds for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
-	} else {
-		Info.Printf("GetFrozenFunds    : addr %v, outcome %v: %v",addr.String(),outcome.String(),frozen_funds.String())
-	}
-	outcome=big.NewInt(3)
-	frozen_funds,err = ctrct_pl.GetFrozenFunds(copts,market,addr,outcome)
-	if err != nil {
-		Info.Printf("Failure to GetFrozenFunds for addr %v outcome %v: %v\n",addr.String(),outcome.String(),err)
-	} else {
-		Info.Printf("GetFrozenFunds    : addr %v, outcome %v: %v",addr.String(),outcome.String(),frozen_funds.String())
-	}
-*/
 }

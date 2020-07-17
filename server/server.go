@@ -1,6 +1,7 @@
 package main
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"net/http"
 	"encoding/hex"
@@ -26,11 +27,11 @@ type AugurServer struct {
 	storage		*SQLStorage
 }
 
-func create_augur_server(mkt_order_id_ptr *int64) *AugurServer {
+func create_augur_server(mkt_order_id_ptr *int64,dblog_fname string,info_log *log.Logger) *AugurServer {
 
 	srv := new(AugurServer)
-	srv.storage = Connect_to_storage(mkt_order_id_ptr,Info)
-	srv.storage.Init_log(DEFAULT_DB_LOG_FILE_NAME)
+	srv.storage = Connect_to_storage(mkt_order_id_ptr,info_log)
+	srv.storage.Init_log(dblog_fname)
 	return srv
 }
 func respond_error(c *gin.Context,error_text string) {

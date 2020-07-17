@@ -2,6 +2,8 @@
 INSERT INTO universe(universe_addr) VALUES('0x1b8dae4F281A437E797f6213C6564926a04D9959');
 INSERT INTO main_stats(universe_id) VALUES(1);
 INSERT INTO contract_addresses(
+		augur,
+		augur_trading,
 		profit_loss,
 		dai_cash,
 		rep_token,
@@ -12,6 +14,8 @@ INSERT INTO contract_addresses(
 		share_token,
 		universe
 ) VALUES (
+		'0xFCaf25bF38E7C86612a25ff18CB8e09aB07c9885',-- augur (main contract)
+		'0x25Ff5dc79A7c4e34254ff0f4a19d69E491201DD3',-- augur trading
 		'0x658655115E55fa3433B9686865f011874BD71083',--profit loss
 		'0x3a043108953aACf3505503867F8Db7C1585577c7',--dai cash
 		'0x82a37C54267b1e9D94C37895Fe26EC232aA55030',--rep token

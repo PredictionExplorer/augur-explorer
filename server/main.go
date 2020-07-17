@@ -7,9 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ethereum/go-ethereum/ethclient"
-	//"github.com/ethereum/go-ethereum/common"
-	//"github.com/ethereum/go-ethereum/accounts/abi"
-	//"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	. "augur-extractor/primitives"
 )
@@ -22,10 +19,6 @@ var (
 	// contracts
 	all_contracts map[string]interface{}
 
-/*discontinued
-	dai_addr common.Address
-	rep_addr common.Address
-*/
 	caddrs *ContractAddresses
 
 	ctrct_dai_token *DAICash
@@ -40,12 +33,6 @@ var (
 )
 func initialize() {
 
-	/*discontinued
-	contract_addresses := new(ContractAddresses)
-	contract_addresses.Dai_addr = &dai_addr
-	contract_addresses.Reputation_addr = &rep_addr
-	Init_contract_addresses(contract_addresses)
-	*/
 	caddrs_obj,err := augur_srv.storage.Get_contract_addresses()
 	if err!=nil {
 		Fatalf("Can't find contract addresses in 'contract_addresses' table")
@@ -55,10 +42,27 @@ func initialize() {
 }
 func main() {
 
-	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
-	Error = log.New(os.Stderr,"ERROR: ",log.Ldate|log.Ltime|log.Lshortfile)
+	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
+	os.MkdirAll(log_dir, os.ModePerm)
+	db_log_file:=fmt.Sprintf("%v/%v",log_dir,"webserver-db.log")
 
-	augur_srv = create_augur_server(&market_order_id)
+	fname:=fmt.Sprintf("%v/webserver_info.log",log_dir)
+	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err!=nil {
+		fmt.Printf("Can't start: %v\n",err)
+		os.Exit(1)
+	}
+	Info = log.New(logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
+
+	fname=fmt.Sprintf("%v/webserver_error.log",log_dir)
+	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err!=nil {
+		fmt.Printf("Can't start: %v\n",err)
+		os.Exit(1)
+	}
+	Error = log.New(logfile,"ERROR: ",log.Ldate|log.Ltime|log.Lshortfile)
+
+	augur_srv = create_augur_server(&market_order_id,db_log_file,Info)
 
 	initialize()
 
@@ -73,14 +77,14 @@ func main() {
 			log.Fatal(err)
 		}
 		// init contracts
-		fmt.Println("init DAI contract with addr %v\n",caddrs.Dai_addr.String())
-		ctrct_dai_token,err = NewDAICash(caddrs.Dai_addr,rpcclient)
+		fmt.Println("init DAI contract with addr %v\n",caddrs.Dai.String())
+		ctrct_dai_token,err = NewDAICash(caddrs.Dai,rpcclient)
 		if err != nil {
 			Fatalf("Couldn't initialize DAI Cash contract: %v\n",err)
 		}
 
-		fmt.Println("init REP contract with addr %v\n",caddrs.Reputation_addr.String())
-		ctrct_rep_token,err = NewRepTok(caddrs.Reputation_addr,rpcclient)
+		fmt.Println("init REP contract with addr %v\n",caddrs.Reputation.String())
+		ctrct_rep_token,err = NewRepTok(caddrs.Reputation,rpcclient)
 		if err != nil {
 			Fatalf("Couldn't initialize Rep Token contract: %v\n",err)
 		}

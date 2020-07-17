@@ -41,8 +41,24 @@ type clientEnvVars struct {
 
 func main() {
 
-	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
-	Error = log.New(os.Stderr,"ERROR: ",log.Ldate|log.Ltime|log.Lshortfile)
+	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
+	os.MkdirAll(log_dir, os.ModePerm)
+
+	fname:=fmt.Sprintf("%v/balances_info.log",log_dir)
+	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err!=nil {
+		fmt.Printf("Can't start: %v\n",err)
+		os.Exit(1)
+	}
+	Info = log.New(logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
+
+	fname:=fmt.Sprintf("%v/balances_error.log",log_dir)
+	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err!=nil {
+		fmt.Printf("Can't start: %v\n",err)
+		os.Exit(1)
+	}
+	Error = log.New(logfile,"ERROR: ",log.Ldate|log.Ltime|log.Lshortfile)
 
 	if len(RPC_URL) == 0 {
 		Fatalf("Configuration error: RPC URL of Ethereum node is not set."+
@@ -60,10 +76,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	Info.Printf("ZeroX contract = %v\n",caddrs_obj.Zerox_addr.String())
+	Info.Printf("ZeroX contract = %v\n",caddrs_obj.Zerox.String())
 	zerox_contract, err := NewZeroX(
 			common.HexToAddress(
-				caddrs_obj.Zerox_addr.String(),
+				caddrs_obj.Zerox.String(),
 			),
 			ethclient,
 	)
@@ -107,7 +123,7 @@ func main() {
 					if err!=nil {
 						fmt.Printf("Unpack token id failed: %v\n",err)
 					} else {
-						num:=big.NewInt(int64(1))	// 1 is the offset at Storage where EOA is stored
+						num:=big.NewInt(int64(2))	// 1 is the offset at Storage where EOA is stored
 						key:=common.BigToHash(num)
 						eoa,err := ethclient.StorageAt(ctx,orderEvent.SignedOrder.Order.MakerAddress,key,nil)
 						var eoa_addr_str string
@@ -118,6 +134,9 @@ func main() {
 							storage.Insert_open_order(orderEvent,eoa_addr_str,&unpacked_id)
 						}
 						if orderEvent.EndState == zeroex.ESOrderExpired {
+							storage.Delete_open_0x_order(orderEvent.OrderHash.String())
+						}
+						if orderEvent.EndState == zeroex.ESOrderFullyFilled {
 							storage.Delete_open_0x_order(orderEvent.OrderHash.String())
 						}
 					}

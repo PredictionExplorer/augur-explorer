@@ -521,15 +521,17 @@ type BlockCash struct {
 	CashFlow			float64
 }
 type ContractAddresses struct {
-	PL_addr			common.Address	// ProfitLoss contract
-	Zerox_addr		common.Address
-	Dai_addr		common.Address	// Shows DAI balance and also to fill dai_transf table and Cash Flow report
-	Reputation_addr	common.Address	// used to query REP token balance when showing User info (among other stuff)
-	WalletReg_addr	common.Address	// this contract is used to get the link between EOA and Wallet contract
-	FillOrder_addr	common.Address	// used to identify if DAI transfer is internal or not
-	EthXchg_addr	common.Address	// used to identify if DAI transfer is internal or not
-	ShareToken_addr	common.Address  // used to identify if DAI transfer is internal or not
-	Universe_addr	common.Address	// used to identify if DAI transfer is internal or not
+	Augur			common.Address	// Main Augur contract
+	AugurTrading	common.Address	// Augur trading contract
+	PL				common.Address	// ProfitLoss contract
+	Zerox			common.Address
+	Dai				common.Address	// Shows DAI balance and also to fill dai_transf table and Cash Flow report
+	Reputation		common.Address	// used to query REP token balance when showing User info (among other stuff)
+	WalletReg		common.Address	// this contract is used to get the link between EOA and Wallet contract
+	FillOrder		common.Address	// used to identify if DAI transfer is internal or not
+	EthXchg			common.Address	// used to identify if DAI transfer is internal or not
+	ShareToken		common.Address  // used to identify if DAI transfer is internal or not
+	Universe		common.Address	// used to identify if DAI transfer is internal or not
 }
 type UniqueAddrEntry struct {
 	Ts					int64

@@ -17,7 +17,6 @@ import (
 	. "augur-extractor/primitives"
 )
 var (
-	DEFAULT_DB_LOG_FILE_NAME	= "/var/tmp/daibal-db.log"
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 
 	storage *SQLStorage
@@ -124,14 +123,13 @@ func main() {
 
 	if len(RPC_URL) == 0 {
 		Fatalf("Configuration error: RPC URL of Ethereum node is not set."+
-				" Please set AUGUR_ETH_NODE_RPC environment variable")
+				" Please set AUGUR_ETH_NODE_RPC_URL environment variable")
 	}
 
 	Info = log.New(os.Stdout,"INFO: ",log.Ltime)		//|log.Lshortfile)
 	Error = log.New(os.Stderr,"ERROR: ",log.Ltime)		//|log.Lshortfile)
 
 	storage = Connect_to_storage(&market_order_id,Info)
-	storage.Init_log(DEFAULT_DB_LOG_FILE_NAME)
 	storage.Log_msg("Log initialized\n")
 
 	//client, err := ethclient.Dial("http://192.168.1.102:18545")
@@ -150,7 +148,7 @@ func main() {
 		Fatalf("Can't find contract addresses in 'contract_addresses' table")
 	}
 	caddrs=&caddrs_obj
-	ctrct_dai_token,err = NewDAICash(caddrs.Dai_addr,eclient)
+	ctrct_dai_token,err = NewDAICash(caddrs.Dai,eclient)
 	if err != nil {
 		Fatalf("Couldn't initialize DAI Cash contract: %v\n",err)
 	}
