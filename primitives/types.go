@@ -102,11 +102,20 @@ type InitialReportSubmittedEvt struct {
 	Timestamp            *big.Int
 	Raw                  types.Log // Blockchain specific contextual infos
 }
-type MktVolumeChangedEvt struct {
+type MktVolumeChangedEvt_v1 struct {	// previous version of the event (to be deleted on Augur Release)
 	Universe       common.Address
 	Market         common.Address
 	Volume         *big.Int
 	OutcomeVolumes []*big.Int
+	Timestamp      *big.Int
+	Raw            types.Log // Blockchain specific contextual infos
+}
+type MktVolumeChangedEvt_v2 struct {
+	Universe       common.Address
+	Market         common.Address
+	Volume         *big.Int
+	OutcomeVolumes []*big.Int
+	TotalTrades    *big.Int
 	Timestamp      *big.Int
 	Raw            types.Log // Blockchain specific contextual infos
 }
@@ -377,6 +386,8 @@ type MarketOrder struct {	// this is a short order info, to show in tables
 	OutcomeIdx			int32
 	OType				int32
 	CreatedTs			int64
+	CreatorBuyer		bool
+	FillerBuyer			bool
 	OrderHash			string
 	CreatorWalletAddr	string
 	CreatorWalletAddrSh	string	// short version of the addr
@@ -405,6 +416,8 @@ type PLEntry struct {	// profit loss entry
 	MktType				int
 	OutcomeIdx			int
 	ClaimStatus			int
+	CreatorBuyer		bool
+	FillerBuyer			bool
 	Date				string
 	EOAAddr				string
 	EOAAddrSh			string
@@ -446,6 +459,8 @@ type OrderInfo struct {		// this is a full order information, to show in dedicat
 	Volume				float64
 	OutcomeIdx			int32
 	CreatedTs			int64
+	CreatorBuyer		bool	// true if the Creator is the buyer
+	FillerBuyer			bool	// true if the Filler is the buyer
 	OrderHashSh			string
 	OrderHash			string
 	OType				string

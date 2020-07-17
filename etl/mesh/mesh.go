@@ -52,8 +52,8 @@ func main() {
 	}
 	Info = log.New(logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 
-	fname:=fmt.Sprintf("%v/balances_error.log",log_dir)
-	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	fname = fmt.Sprintf("%v/balances_error.log",log_dir)
+	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err!=nil {
 		fmt.Printf("Can't start: %v\n",err)
 		os.Exit(1)

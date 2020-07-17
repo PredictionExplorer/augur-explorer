@@ -83,7 +83,7 @@ Highcharts.chart('cash_flow_chart', {
 
 	yAxis: {
 		title: {
-			text: 'Profit/Loss'
+			text: 'Money at Stake (DAI)'
 		}
 	},
 
@@ -141,7 +141,7 @@ Highcharts.chart('cash_flow_chart', {
 	},
 	tooltip: {
 		formatter: function() {
-			tooltip ="<div>Cash Inflow: "+this.point.cash+"<br/>Block Number "+this.point.block_num+"<br/></div>"
+			tooltip ="<div>Money on the Sidelines: "+this.point.cash+"<br/>Block Number "+this.point.block_num+"<br/></div>"
 			 return tooltip;
 		}
 	},

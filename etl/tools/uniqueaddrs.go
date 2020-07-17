@@ -4,8 +4,8 @@ import (
 	"os"
 	"log"
 	"time"
-	//"sort"
-	//"fmt"
+	"strconv"
+	"fmt"
 
 	. "augur-extractor/dbs"
 	//. "augur-extractor/primitives"
@@ -21,25 +21,31 @@ var (
 )
 func main() {	// returns 0 - no changes, 2 - day was added
 
+	if len(os.Args) < 2 {
+		fmt.Printf("usage: %v [days_back]\n",os.Args[0])
+		os.Exit(1)
+	}
+	days_back,err := strconv.ParseInt(os.Args[1],10,64)
+	if err!=nil {
+		fmt.Printf("Bad number for days_back parameter: %v\n",err)
+		os.Exit(1)
+	}
+
 	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 	storage = Connect_to_storage(&market_order_id,Info)
 	last_block_ts:=storage.Get_last_block_timestamp()
-	last_block_ts = last_block_ts - 1 * (60*60)	// discard possibly non-finalized blocks
-	day_ts := storage.Get_last_unique_addr_day()
-	if day_ts == 0 {
-		day_ts = storage.Get_first_block_timestamp()
-		modulus := day_ts % ONE_DAY_SECS
-		day_ts = day_ts - modulus
-	} else {
-		day_ts = day_ts + ONE_DAY_SECS
-		if day_ts > last_block_ts {
-			os.Exit(2)	// the day is not yet ready (didn't accumulate all the blocks)
-		}
-	}
+	modulus := last_block_ts % ONE_DAY_SECS
+	day_ts := last_block_ts - modulus
 	next_day_ts := day_ts + ONE_DAY_SECS
-	num_addrs := storage.Calc_unique_addresses(day_ts,next_day_ts)
-	storage.Insert_unique_addresses_entry(day_ts,num_addrs)
-	tm := time.Unix(day_ts, 0)
-	Info.Printf("Day %v processed: from %v to %v\n",tm,day_ts,next_day_ts)
-	os.Exit(0)
+	for days_back > 0 {
+		num_addrs,no_rows := storage.Calc_unique_addresses(day_ts,next_day_ts)
+		if !no_rows {
+			storage.Update_unique_addresses_entry(day_ts,num_addrs)
+		}
+		tm := time.Unix(day_ts, 0)
+		Info.Printf("Day %v processed: from %v to %v\n",tm,day_ts,next_day_ts)
+		day_ts = day_ts - ONE_DAY_SECS
+		next_day_ts = next_day_ts - ONE_DAY_SECS
+		days_back--
+	}
 }

@@ -665,7 +665,8 @@ func (ss *SQLStorage) Insert_market_order_evt(block_num p.BlockNumber,tx_id int6
 
 	var oaction p.OrderAction = p.OrderAction(evt.EventType)
 	var otype p.OrderType = p.OrderType(evt.OrderType)
-	var order_id = hex.EncodeToString(evt.OrderId[:])
+	var order_hash = common.BytesToHash(evt.OrderId[:])
+	var order_id = order_hash.String()
 	// uint256data legend
 	// 0:  price
 	// 1:  amount
@@ -865,12 +866,11 @@ func (ss *SQLStorage) Delete_open_0x_order(order_hash string) {
 	query = "DELETE FROM oorders WHERE order_id = $1"
 	result,err := ss.db.Exec(query,order_hash)
 	if err!=nil {
-		ss.Log_msg(fmt.Sprintf("DB error: couldn't delete open order with order_id = %v, q=%v\n",order_hash,query))
-		os.Exit(1)
+		ss.Info.Printf(fmt.Sprintf("DB error: couldn't delete open order with order_id = %v, q=%v\n",order_hash,query))
 	}
 	rows_affected,err:=result.RowsAffected()
 	if rows_affected == 0  {
-		ss.Log_msg(fmt.Sprintf("DB error: couldn't delete open order with order_id = %v (not found)\n",order_hash))
+		ss.Info.Printf(fmt.Sprintf("DB error: couldn't delete open order with order_id = %v (not found)\n",order_hash))
 	}
 }
 func get_outcome_idx_from_numerators(mkt_type int,numerators []*big.Int) int {
@@ -1171,8 +1171,8 @@ func (ss *SQLStorage) Insert_initial_report_evt(block_num p.BlockNumber,tx_id in
 	// ToDo: possibly migrate to triggers (or maybe not)
 	ss.update_market_status(market_aid,p.MktStatusReported)
 }
-func (ss *SQLStorage) Insert_market_volume_changed_evt(block_num p.BlockNumber,tx_id int64,evt *p.MktVolumeChangedEvt) {
-
+func (ss *SQLStorage) Insert_market_volume_changed_evt_v1(block_num p.BlockNumber,tx_id int64,evt *p.MktVolumeChangedEvt_v1) {
+	// Note: this function will be discontinued after Augur is released on 28 Jul
 	market_aid := ss.lookup_address_id(evt.Market.String())
 
 	volume := evt.Volume.String()
@@ -1193,6 +1193,65 @@ func (ss *SQLStorage) Insert_market_volume_changed_evt(block_num p.BlockNumber,t
 			block_num,
 			tx_id,
 			market_aid,
+			outcome_vols,
+			timestamp)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into volume table: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	rows_affected,err:=result.RowsAffected()
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+	}
+	if rows_affected > 0 {
+		//break
+	} else {
+		ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into InitialReport table. Rows affeced = 0"))
+	}
+
+	// Updates volume per outcome in an indexed table for querying market info
+	for outcome_idx := 0; outcome_idx < len(evt.OutcomeVolumes) ; outcome_idx++ {
+		query = "UPDATE " +
+					"outcome_vol " +
+				"SET " +
+					"volume = "+evt.OutcomeVolumes[outcome_idx].String()+"/1e+18 " +
+				"WHERE " +
+					"market_aid = $1 AND outcome_idx = $2"
+		_,err=ss.db.Exec(query,market_aid,outcome_idx)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+}
+func (ss *SQLStorage) Insert_market_volume_changed_evt_v2(block_num p.BlockNumber,tx_id int64,evt *p.MktVolumeChangedEvt_v2) {
+
+	market_aid := ss.lookup_address_id(evt.Market.String())
+
+	volume := evt.Volume.String()
+	outcome_vols := p.Bigint_ptr_slice_to_str(&evt.OutcomeVolumes,",")
+	var total_trades int64 = 0
+	if evt.TotalTrades != nil {
+		total_trades = evt.TotalTrades.Int64()
+	}
+	timestamp := evt.Timestamp.Int64()
+
+	var query string
+	query = `
+		INSERT INTO volume (
+			block_num,
+			tx_id,
+			market_aid,
+			total_trades,
+			volume,
+			outcome_vols,
+			ins_timestamp
+		) VALUES ($1,$2,$3,$4,`+volume+`/1e+18,$5,TO_TIMESTAMP($6))`
+	result,err := ss.db.Exec(query,
+			block_num,
+			tx_id,
+			market_aid,
+			total_trades,
 			outcome_vols,
 			timestamp)
 	if err != nil {
@@ -2041,6 +2100,12 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
 			os.Exit(1)
 		}
+		rec.CreatorBuyer = true
+		rec.FillerBuyer = false
+		if rec.OType == 1 {
+			rec.CreatorBuyer = false
+			rec.FillerBuyer = true
+		}
 		rec.CreatorWalletAddrSh=p.Short_address(rec.CreatorWalletAddr)
 		rec.CreatorEOAAddrSh=p.Short_address(rec.CreatorEOAAddr)
 		rec.FillerWalletAddrSh=p.Short_address(rec.FillerWalletAddr)
@@ -2578,6 +2643,7 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 				"pl.realized_cost," +
 				"pl.immediate_profit," +
 				"o.order_id," +
+				"o.otype,"+
 				"o.block_num," +
 				"o.eoa_aid," +
 				"o.eoa_fill_aid ," +
@@ -2594,7 +2660,7 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 					"LEFT JOIN market AS m ON pl.market_aid = m.market_aid " +
 					"LEFT JOIN claim_funds AS cf ON (pl.market_aid=cf.market_aid AND pl.outcome_idx=cf.outcome_idx AND pl.eoa_aid=cf.eoa_aid AND pl.id=cf.last_pl_id) " +
 					"LEFT JOIN LATERAL ( " +
-						"SELECT mo.id,mo.order_id,mo.block_num,mo.eoa_aid,mo.eoa_fill_aid," +
+						"SELECT mo.id,mo.order_id,mo.otype,mo.block_num,mo.eoa_aid,mo.eoa_fill_aid," +
 							"cr_a.addr AS creator_eoa_addr," +
 							"fil_a.addr AS filler_eoa_addr " +
 						"FROM mktord AS mo " +
@@ -2617,6 +2683,7 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 	var starting_point p.PLEntry
 	records = append(records,starting_point)
 	var accumulator float64 = 0.0
+	var otype int
 	defer rows.Close()
 	for rows.Next() {
 		var  (
@@ -2651,6 +2718,7 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 			&rec.RealizedCost,
 			&rec.ImmediateProfit,
 			&order_hash,
+			&otype,
 			&block_num,
 			&creator_eoa_aid,
 			&filler_eoa_aid,
@@ -2663,6 +2731,12 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v eoa_aid=%v q=%v",err,eoa_aid,query))
 			os.Exit(1)
+		}
+		rec.CreatorBuyer = true
+		rec.FillerBuyer = false
+		if otype == 1 {
+			rec.CreatorBuyer = false
+			rec.FillerBuyer = true
 		}
 		rec.OutcomeStr = get_outcome_str(uint8(rec.MktType),rec.OutcomeIdx,&outcomes)
 		if claim_status.Valid {
@@ -2715,7 +2789,8 @@ func (ss *SQLStorage) Locate_fill_event_order(evt *p.FillEvt) int64 {
 	var query string
 	query = "SELECT id FROM mktord WHERE order_id = $1"
 
-	h:=hex.EncodeToString(evt.OrderHash[:])
+	order_hash := common.BytesToHash(evt.OrderHash[:])
+	h:= order_hash.String()
 	row := ss.db.QueryRow(query,h)
 	var null_id sql.NullInt64
 	var err error
@@ -2893,6 +2968,7 @@ func (ss *SQLStorage) Get_order_info(order_hash string) (p.OrderInfo,error) {
 	var query string
 	query = "SELECT " +
 				"o.order_id," +
+				"o.otype," +
 				"s_w_a.addr AS s_w_a_addr," +
 				"s_e_a.addr AS seller_eoa_addr," +
 				"b_w_a.addr AS b_w_a_addr," +
@@ -2920,8 +2996,10 @@ func (ss *SQLStorage) Get_order_info(order_hash string) (p.OrderInfo,error) {
 			"WHERE (m.market_aid=o.market_aid) AND (o.order_id = $1)"
 
 	var outcomes string
+	var otype int
 	err:=ss.db.QueryRow(query,order_hash).Scan(
 		&order.OrderHash,
+		&otype,
 		&order.CreatorWalletAddr,
 		&order.CreatorEOAAddr,
 		&order.FillerWalletAddr,
@@ -2942,6 +3020,12 @@ func (ss *SQLStorage) Get_order_info(order_hash string) (p.OrderInfo,error) {
 			ss.Log_msg(fmt.Sprintf("DB error looking up for Order record: %v",err))
 			os.Exit(1)
 		}
+	}
+	order.CreatorBuyer = true
+	order.FillerBuyer = false
+	if otype == 1 {
+		order.CreatorBuyer = false
+		order.FillerBuyer = true
 	}
 	order.OrderHashSh=p.Short_hash(order.OrderHash)
 	order.CreatorWalletAddrSh=p.Short_address(order.CreatorWalletAddr)
@@ -3452,6 +3536,19 @@ func (ss *SQLStorage) Update_dai_token_balances_backwards(last_block_num p.Block
 
 	var updated_rows  int =0
 	var query string
+
+	query = "SELECT id FROM dai_bal WHERE aid=$1 AND processed=FALSE ORDER BY id DESC LIMIT 1"
+	row:=ss.db.QueryRow(query,aid)
+	var null_id sql.NullInt64
+	var stopping_id int64 = 0
+	err := row.Scan(&null_id)
+	if err == nil {
+		if null_id.Valid {
+			stopping_id = null_id.Int64
+		}
+	}
+	ss.Info.Printf("balance_updater(): update backwards: stopping ID=%v\n",stopping_id)
+
 	query = "SELECT id,ROUND(balance*1e+18)::text as balance,ROUND(amount*1e+18)::text as amount,processed FROM dai_bal " +
 			"WHERE " +
 				"(aid = $1) AND " +
@@ -3513,10 +3610,10 @@ func (ss *SQLStorage) Update_dai_token_balances_backwards(last_block_num p.Block
 					os.Exit(1)
 				}
 				updated_rows++
-			} else {
-				ss.Info.Printf("balance_updater(): Update balances backwards returns on erroneous balance: correct_balance =  %v, db_balance=%v,aid=%v\n",correct_balance.String(),db_balance.String(),aid)
 			}
-			return updated_rows	// we abort when we find first valid balance
+			if id <= stopping_id {
+				return updated_rows
+			}
 		}
 	}
 	if row_count == 0 {
@@ -3554,6 +3651,7 @@ func (ss *SQLStorage) Get_cash_flow() []p.BlockCash {
 		os.Exit(1)
 	}
 	defer rows.Close()
+	var accumulator float64 = 0.0
 	for rows.Next() {
 		var bc p.BlockCash
 		err = rows.Scan(&bc.BlockNum,&bc.CashFlow,&bc.Ts)
@@ -3561,6 +3659,8 @@ func (ss *SQLStorage) Get_cash_flow() []p.BlockCash {
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
+		accumulator = accumulator + bc.CashFlow
+		bc.CashFlow = accumulator
 		records = append(records,bc)
 	}
 	return records
@@ -3714,7 +3814,7 @@ func (ss *SQLStorage) Get_last_unique_addr_day() int64 {
 	}
 	return ts
 }
-func (ss *SQLStorage) Calc_unique_addresses(ts_from int64,ts_to int64) int64 {
+func (ss *SQLStorage) Calc_unique_addresses(ts_from int64,ts_to int64) (int64,bool) {
 
 	var query string
 	query = "SELECT count(*) FROM ( " +
@@ -3723,38 +3823,61 @@ func (ss *SQLStorage) Calc_unique_addresses(ts_from int64,ts_to int64) int64 {
 				"JOIN block b ON a.block_num=b.block_num " +
 				"WHERE b.ts >= to_timestamp($1) AND b.ts < to_timestamp($2)" +
 			") AS s"
-/*	d_query:=fmt.Sprintf(
-			"SELECT count(*) FROM ( " +
-				"SELECT DISTINCT u.eoa_aid FROM address a " +
-				"JOIN ustats u ON u.eoa_aid=a.address_id " +
-				"JOIN block b ON a.block_num=b.block_num " +
-				"WHERE b.ts >= to_timestamp(%v) AND b.ts < to_timestamp(%v)" +
-			") AS s",
-			ts_from,ts_to,
-	)
-	ss.Log_msg(fmt.Sprintf("%v\n",d_query))
-*/
 	row := ss.db.QueryRow(query,ts_from,ts_to)
 	var null_counter sql.NullInt64
 	var err error
 	err=row.Scan(&null_counter);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			return 0
+			return 0,true	// this will never happen
 		} else {
 			ss.Log_msg(fmt.Sprintf("Error in Calc_unique_addresses(): %v, q=%v",err,query))
 			os.Exit(1)
 		}
 	}
-	return null_counter.Int64
+	query = "SELECT b.block_num FROM block b " +
+			"WHERE b.ts >= to_timestamp($1) AND b.ts < to_timestamp($2)" +
+			"LIMIT 1"
+	row = ss.db.QueryRow(query,ts_from,ts_to)
+	var no_rows bool = false
+	var null_block_num sql.NullInt64
+	err = row.Scan(&null_block_num)
+	if err!=nil {
+		if err == sql.ErrNoRows {
+			no_rows=true
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error in Calc_unique_addresses(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+
+	return null_counter.Int64,no_rows
 }
-func (ss *SQLStorage) Insert_unique_addresses_entry(ts int64,num_addrs int64) {
+func (ss *SQLStorage) Update_unique_addresses_entry(ts int64,num_addrs int64) {
 	var query string
-	query = "INSERT INTO unique_addrs(day,num_addrs) VALUES(to_timestamp($1),$2)"
-	_,err := ss.db.Exec(query,ts,num_addrs)
+	query = "UPDATE unique_addrs SET num_addrs = $2 WHERE day=to_timestamp($1)"
+	res,err:=ss.db.Exec(query,ts,num_addrs)
 	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB Error on Insert_unique_addresses: %v",err));
+		ss.Log_msg(fmt.Sprintf("Update_unique_addresses_entry() failed: %v, q=%v",err,query))
 		os.Exit(1)
+	}
+	affected_rows,err:=res.RowsAffected()
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in Update_unique_addresses_entry(): %v",err))
+		os.Exit(1)
+	}
+	if affected_rows == 0 {
+		query = "INSERT INTO unique_addrs(day,num_addrs) VALUES(to_timestamp($1),$2)"
+		_,err := ss.db.Exec(query,ts,num_addrs)
+		if (err!=nil) {
+			ss.Log_msg(
+				fmt.Sprintf(
+					"DB Error on INSERT in Update_unique_addresses_entry(): %v q=%v",
+					err,query,
+				),
+			);
+			os.Exit(1)
+		}
 	}
 }
 func (ss *SQLStorage) Get_unique_addresses() []p.UniqueAddrEntry {

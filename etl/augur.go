@@ -127,7 +127,8 @@ func build_list_of_inspected_events() {
 							evt_market_order,
 							evt_market_finalized,
 							evt_initial_report_submitted,
-							evt_market_volume_changed,
+							evt_market_volume_changed_v1,
+							evt_market_volume_changed_v2,
 							evt_dispute_crowd_contrib,
 							evt_tokens_transferred,
 							evt_token_balance_changed,
@@ -314,6 +315,12 @@ func proc_tokens_transferred(block_num BlockNumber,tx_id int64, log *types.Log) 
 		return
 	}
 	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		mevt.Dump(Info)
+		Info.Printf(
+			"TokensTransferred event received and ignored "+
+			"(belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),block_num,
+		)
 		return
 	}
 	Info.Printf("TokensTransferred event for contract %v (block=%v) :\n",
@@ -331,6 +338,12 @@ func proc_token_balance_changed(block_num BlockNumber,tx_id int64,log *types.Log
 		return
 	}
 	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		mevt.Dump(Info)
+		Info.Printf(
+			"TokenBalanceChanged event received and ignored "+
+			"(belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),block_num,
+		)
 		return
 	}
 	Info.Printf("TokenBalanceChanged event for contract %v (block=%v) :\n",
@@ -349,6 +362,12 @@ func proc_share_token_balance_changed(block_num BlockNumber,tx_id int64,log *typ
 		return
 	}
 	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		mevt.Dump(Info)
+		Info.Printf(
+			"ShareTokenBalance Changed event received and ignored "+
+			"(belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),block_num,
+		)
 		return
 	}
 	Info.Printf("ShareTokenBalanceChanged event for contract %v (block=%v) :\n",
@@ -509,21 +528,38 @@ func proc_dispute_crowdsourcerer_contribution(block_num BlockNumber,tx_id int64,
 	mevt.Dump(Info)
 	storage.Insert_dispute_crowd_contrib(block_num,tx_id,signer,&mevt)
 }
-func proc_market_volume_changed(block_num BlockNumber, tx_id int64, log *types.Log) {
-	var mevt MktVolumeChangedEvt
-	err := trading_abi.Unpack(&mevt,"MarketVolumeChanged",log.Data)
+func proc_market_volume_changed_v1(block_num BlockNumber, tx_id int64, log *types.Log) {
+	var mevt MktVolumeChangedEvt_v1
+	// Note: the ./abis/augur-artifacts-abi-26jun.json file was altered to add this (old version of) event
+	err := trading_abi.Unpack(&mevt,"MarketVolumeChanged_v1",log.Data)
 	if err != nil {
-		Fatalf("Event MarketVolumeChanged decode error: %v\n",err)
+		Fatalf("Event MarketVolumeChanged_v1 decode error: %v\n",err)
 		return
 	}
 	if !bytes.Equal(log.Address.Bytes(),caddrs.AugurTrading.Bytes()) {
 		return
 	}
-	Info.Printf("MarketVolumeChanged event found (block=%v): \n",log.BlockNumber)
+	Info.Printf("MarketVolumeChanged_v1 event found (block=%v): \n",log.BlockNumber)
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
 	mevt.Market = common.BytesToAddress(log.Topics[2][12:])
 	mevt.Dump(Info)
-	storage.Insert_market_volume_changed_evt(block_num,tx_id,&mevt)
+	storage.Insert_market_volume_changed_evt_v1(block_num,tx_id,&mevt)
+}
+func proc_market_volume_changed_v2(block_num BlockNumber, tx_id int64, log *types.Log) {
+	var mevt MktVolumeChangedEvt_v2
+	err := trading_abi.Unpack(&mevt,"MarketVolumeChanged",log.Data)
+	if err != nil {
+		Fatalf("Event MarketVolumeChanged_v2 decode error: %v\n",err)
+		return
+	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.AugurTrading.Bytes()) {
+		return
+	}
+	Info.Printf("MarketVolumeChanged_v2 event found (block=%v): \n",log.BlockNumber)
+	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
+	mevt.Market = common.BytesToAddress(log.Topics[2][12:])
+	mevt.Dump(Info)
+	storage.Insert_market_volume_changed_evt_v2(block_num,tx_id,&mevt)
 }
 func proc_market_created(block_num BlockNumber,tx_id int64,log *types.Log,signer common.Address,validity_bond string) {
 	var mevt MarketCreatedEvt
@@ -625,8 +661,11 @@ func process_event(block *types.Header, tx_id int64, signer common.Address, logs
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_crowd_contrib) {
 			proc_dispute_crowdsourcerer_contribution(block_num,tx_id,log,signer)
 		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_volume_changed) {
-			proc_market_volume_changed(block_num,tx_id,log)
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_volume_changed_v1) {
+			proc_market_volume_changed_v2(block_num,tx_id,log)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_volume_changed_v2) {
+			proc_market_volume_changed_v2(block_num,tx_id,log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_created) {
 			// we have inverted the events, so the validity bond amount is stored in

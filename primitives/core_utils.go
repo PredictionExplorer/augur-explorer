@@ -42,7 +42,7 @@ func Short_address(long_addr string) string {
 func Short_hash(long_hash string) string {
 
 	if len(long_hash)!=66 {
-		return "inval_hash"
+		return fmt.Sprintf("inval_hash: %v",len(long_hash))
 	}
 	var output string = long_hash[2:8]
 	output = output + "…"

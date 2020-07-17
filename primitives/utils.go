@@ -91,14 +91,26 @@ func (evt *DisputeCrowdsourcerContributionEvt) Dump(l *log.Logger) {
 	l.Printf("\tTimestamp: %v\n",evt.Timestamp)
 	l.Printf("}\n")
 }
-func (evt *MktVolumeChangedEvt) Dump(l *log.Logger) { // dumps struct to stdout for debugging
+func (evt *MktVolumeChangedEvt_v1) Dump(l *log.Logger) { // dumps struct to stdout for debugging
 
-	l.Printf("MarketVolumeChanged {\n")
+	l.Printf("MarketVolumeChanged_v1 {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
 	l.Printf("\tMarket: %v\n",evt.Market.String())
 	l.Printf("\tVolume: %v\n",evt.Volume.String())
 	outcome_volumes := Bigint_ptr_slice_to_str(&evt.OutcomeVolumes,",")
 	l.Printf("\tOutcomeVolumes: %v\n",outcome_volumes)
+	l.Printf("\tTimestamp: %v\n",evt.Timestamp)
+	l.Printf("}\n")
+}
+func (evt *MktVolumeChangedEvt_v2) Dump(l *log.Logger) { // dumps struct to stdout for debugging
+
+	l.Printf("MarketVolumeChanged_v2 {\n")
+	l.Printf("\tUniverse: %v\n",evt.Universe.String())
+	l.Printf("\tMarket: %v\n",evt.Market.String())
+	l.Printf("\tVolume: %v\n",evt.Volume.String())
+	outcome_volumes := Bigint_ptr_slice_to_str(&evt.OutcomeVolumes,",")
+	l.Printf("\tOutcomeVolumes: %v\n",outcome_volumes)
+	l.Printf("\tTotalTrades: %v\n",evt.TotalTrades.String())
 	l.Printf("\tTimestamp: %v\n",evt.Timestamp)
 	l.Printf("}\n")
 }

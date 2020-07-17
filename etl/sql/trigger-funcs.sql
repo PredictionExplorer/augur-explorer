@@ -547,6 +547,84 @@ BEGIN
 
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_dai_bal_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+--	v_augur := false;
+--	SELECT eoa_aid FROM ustats WHERE wallet_aid = NEW.aid INTO v_eoa_aid;
+--	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+--	IF v_cnt > 0 THEN
+--		v_augur := true;
+--	END IF;
+
+--	IF v_augur THEN
+--		if NEW.internal IS FALSE THEN
+--			UPDATE block AS b
+--				SET cash_flow = (cash_flow + NEW.amount)
+--				WHERE	b.block_num = NEW.block_num;
+--		END IF;
+--	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_dai_bal_delete() RETURNS trigger AS  $$
+DECLARE
+	v_augur bool;	-- true if this transfer is made to Augur Wallet account
+BEGIN
+
+--	v_augur := false;
+--	SELECT eoa_aid FROM ustats WHERE wallet_aid = NEW.aid INTO v_eoa_aid;
+--	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+--	IF v_cnt > 0 THEN
+--		v_augur := true;
+--	END IF;
+--	IF v_augur THEN
+--		IF NEW.internal IS FALSE THEN
+--			UPDATE block AS b
+--				SET cash_flow = (cash_flow - OLD.amount)
+--				WHERE	b.block_num = OLD.block_num;
+--		END IF;
+--	END IF;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_dai_bal_update() RETURNS trigger AS  $$
+DECLARE
+	v_augur bool;	-- true if this transfer is made to Augur Wallet account
+BEGIN
+
+	IF OLD.amount != NEW.amount THEN
+		RAISE EXCEPTION 'Changing dai_bal.amount field is not possible. Delete the whole block';
+	END IF;
+	IF NEW.internal != OLD.internal THEN
+		RAISE EXCEPTION 'Changing dai_bal.internal field not possible. Delete the whole block';
+	END IF;
+	IF OLD.augur != NEW.augur THEN
+		IF NEW.augur THEN
+
+			v_augur := false;
+			SELECT eoa_aid FROM ustats WHERE wallet_aid = NEW.aid INTO v_eoa_aid;
+			GET DIAGNOSTICS v_cnt = ROW_COUNT;
+			IF v_cnt > 0 THEN
+				v_augur := true;
+			END IF;
+			UPDATE block AS b
+					SET cash_flow = (cash_flow + NEW.amount)
+					WHERE	b.block_num = NEW.block_num;
+		END IF;
+	ELSE
+		IF NEW.augur THEN
+			IF NEW.internal IS FALSE THEN
+				UPDATE block AS b
+					SET cash_flow = (cash_flow + NEW.amount)
+					WHERE	b.block_num = NEW.block_num;
+			END IF;
+		END IF;
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_ustats_insert() RETURNS trigger AS  $$
 DECLARE
 BEGIN
@@ -554,26 +632,6 @@ BEGIN
 	-- The transfers of DAI can happen before wallet is created, so we fix it
 	UPDATE dai_bal SET augur = true WHERE aid = NEW.wallet_aid;
 
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_dai_bal_update() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-
-	IF OLD.augur != NEW.augur THEN
-		IF NEW.augur THEN
-			UPDATE block AS b
-				SET cash_flow = (cash_flow + (NEW.balance - OLD.balance))
-				WHERE	b.block_num = NEW.block_num;
-		END IF;
-	ELSE
-		IF NEW.augur THEN
-			UPDATE block AS b
-				SET cash_flow = (cash_flow + (NEW.balance - OLD.balance))
-				WHERE	b.block_num = NEW.block_num;
-		END IF;
-	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

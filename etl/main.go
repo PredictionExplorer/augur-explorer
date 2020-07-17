@@ -35,7 +35,8 @@ const (
 	MARKET_ORDER = "9bab1368a1ed530afaad9c630ba75e6a5c1efa9f6af0139d6cda2b6af6aa801e"
 	MARKET_FINALIZED = "6d39632c2dc10305bf5771cfff4af1851f07c03ea27b821cad382466bdf7a21f"
 	INITIAL_REPORT_SUBMITTED = "c3ebb227c22e7644e9bef8822009f746a72c86f239760124d67fdc2c302b3115"
-	MARKET_VOLUME_CHANGED = "e9f0af820300e73bae76c8e76943abe7fbb4224b49cb133e2dadc6f71acf6370"
+	MARKET_VOLUME_CHANGED_V1 = "e9f0af820300e73bae76c8e76943abe7fbb4224b49cb133e2dadc6f71acf6370"
+	MARKET_VOLUME_CHANGED_V2 = "cc7cd5af4aead9d3a4a968c74d9063653dccf7110c5ced93fa86b8b03ef5ca24"
 	DISPUTE_CROWDSOURCER_CONTRIBUTION = "e7f47639cdf56ec6c5451df334b73c9ca5cccd20da2c0f4e390e9bb71a6f672a"
 	TOKENS_TRANSFERRED = "3c67396e9c55d2fc8ad68875fc5beca1d96ad2a2f23b210ccc1d986551ab6fdf"
 	TOKEN_BALANCE_CHANGED = "63fd58f559b73fc4da5511c341ec8a7b31c5c48538ef83c6077712b6edf5f7cb"
@@ -62,7 +63,8 @@ var (
 	evt_market_order,_ = hex.DecodeString(MARKET_ORDER)
 	evt_market_finalized,_ = hex.DecodeString(MARKET_FINALIZED)
 	evt_initial_report_submitted,_ = hex.DecodeString(INITIAL_REPORT_SUBMITTED)
-	evt_market_volume_changed,_ = hex.DecodeString(MARKET_VOLUME_CHANGED)
+	evt_market_volume_changed_v1,_ = hex.DecodeString(MARKET_VOLUME_CHANGED_V1)
+	evt_market_volume_changed_v2,_ = hex.DecodeString(MARKET_VOLUME_CHANGED_V2)
 	evt_dispute_crowd_contrib,_ = hex.DecodeString(DISPUTE_CROWDSOURCER_CONTRIBUTION)
 	evt_tokens_transferred,_ = hex.DecodeString(TOKENS_TRANSFERRED)
 	evt_token_balance_changed,_ = hex.DecodeString(TOKEN_BALANCE_CHANGED)

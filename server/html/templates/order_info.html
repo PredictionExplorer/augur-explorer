@@ -14,22 +14,32 @@
 		<tr>
 			<td>Market</td>
 			<td>
-				<a href="/market/{{.OrderInfo.MarketAddr}}">{{.OrderInfo.MarketAddrSh}}</a>
+				<a class="addr" href="/market/{{.OrderInfo.MarketAddr}}">{{.OrderInfo.MarketAddrSh}}</a>
 			</td>
 		<tr>
 			<td>Creator</td>
 			<td title="{{.OrderInfo.CreatorEOAAddr}}">
-				<a href="/search?q={{.OrderInfo.CreatorEOAAddr}}">
+				<a class="addr" href="/search?q={{.OrderInfo.CreatorEOAAddr}}">
 					{{.OrderInfo.CreatorEOAAddrSh}}
 				</a>
+				{{- if .OrderInfo.CreatorBuyer }}
+					<font color=green><b>BUYER</b></font> 
+				{{- else }}
+					<font color=red><b>SELLER</b></font> 
+				{{- end }}
 			</td>
 		</tr>
 		<tr>
 			<td>Filler</td>
 			<td title="{{.OrderInfo.FillerEOAAddr}}">
-				<a href="/search?q={{.OrderInfo.FillerEOAAddr}}">
+				<a class="addr" href="/search?q={{.OrderInfo.FillerEOAAddr}}">
 					{{.OrderInfo.FillerEOAAddrSh}}
 				</a>
+				{{- if .OrderInfo.FillerBuyer }}
+					<font color=green><b>BUYER</b></font> 
+				{{- else }}
+					<font color=red><b>SELLER</b></font> 
+				{{- end }}
 			<td>
 		</tr>
 		<tr>

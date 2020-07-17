@@ -214,7 +214,7 @@ func build_javascript_cash_flow_data(entries *[]BlockCash) template.JS {
 		entry = "{" +
 				//"x:" + fmt.Sprintf("%v",i)  + "," +
 				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.Ts)  + "," +
-				"y:"  + fmt.Sprintf("%v",e.CashFlow) + "," +
+				"y:"  + fmt.Sprintf("%.2f",e.CashFlow) + "," +
 				"block_num: " + fmt.Sprintf("%v",e.BlockNum) + "," +
 				"cash: " + fmt.Sprintf("%v",e.CashFlow) + "" +
 				"}"
