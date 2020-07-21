@@ -94,7 +94,7 @@ func main() {
 
 	client, err := rpc.NewClient(env.WSRPCAddress)
 	if err != nil {
-		log.Fatal("could not create client")
+		log.Fatal("could not create client %v",err)
 	}
 
 	ctx := context.Background()
