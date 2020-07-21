@@ -185,7 +185,8 @@ CREATE table dai_transf (	-- transfers of DAI tokens (deposits/withdrawals of fu
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	from_aid			BIGINT DEFAULT 0,
 	to_aid				BIGINT DEFAULT 0,
-	internal			BOOLEAN DEFAULT false,
+	from_internal		BOOLEAN DEFAULT false,
+	to_internal			BOOLEAN DEFAULT false,
 	amount				DECIMAL(64,18) DEFAULT 0.0
 );
 CREATE table dai_bal (	-- DAI token balance

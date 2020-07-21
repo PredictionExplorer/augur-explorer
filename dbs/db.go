@@ -2295,53 +2295,50 @@ func (ss *SQLStorage) Get_main_stats() p.MainStats {
 	s.FinalizedCount = (s.YesNoCount + s.CategCount + s.ScalarCount) - s.ActiveCount
 	return s
 }
-func (ss *SQLStorage) is_dai_transfer_internal(evt *p.Transfer,ca *p.ContractAddresses) bool {
+func (ss *SQLStorage) is_dai_transfer_internal(evt *p.Transfer,ca *p.ContractAddresses) (bool,bool) {
 
-	if (*ss.mkt_order_id_ptr) > 0 {
-		// OrderEvent is being processed, and this ERC20 event is most likely related to OrderFill
-		// therefore it is not a deposit/withdrawal, but a profit/loss calculation
-		return true
-	}
+	var from_internal bool = false
+	var to_internal bool = false
 	_,err:=ss.lookup_market_by_addr_str(evt.From.String())
 	if err == nil {
-		return true	// its a Market in From
+		from_internal = true
 	}
 	_,err=ss.lookup_market_by_addr_str(evt.To.String())
 	if err == nil {
-		return true	// its a Market in To
+		to_internal = true
 	}
 
 	if 0 == bytes.Compare(evt.From.Bytes(),ca.Zerox.Bytes()) {
-		return true;
+		from_internal = true
 	}
 	if 0 == bytes.Compare(evt.To.Bytes(),ca.Zerox.Bytes()) {
-		return true;
+		to_internal = true
 	}
 	if 0 == bytes.Compare(evt.From.Bytes(),ca.FillOrder.Bytes()) {
-		return true;
+		from_internal = true
 	}
 	if 0 == bytes.Compare(evt.To.Bytes(),ca.FillOrder.Bytes()) {
-		return true;
+		to_internal = true
 	}
 	if 0 == bytes.Compare(evt.From.Bytes(),ca.EthXchg.Bytes()) {
-		return true;
+		from_internal = true
 	}
 	if 0 == bytes.Compare(evt.To.Bytes(),ca.EthXchg.Bytes()) {
-		return true;
+		to_internal = true
 	}
 	if 0 == bytes.Compare(evt.From.Bytes(),ca.ShareToken.Bytes()) {
-		return true;
+		from_internal = true
 	}
 	if 0 == bytes.Compare(evt.To.Bytes(),ca.ShareToken.Bytes()) {
-		return true;
+		to_internal = true
 	}
 	if 0 == bytes.Compare(evt.From.Bytes(),ca.Universe.Bytes()) {
-		return true;
+		from_internal = true
 	}
 	if 0 == bytes.Compare(evt.To.Bytes(),ca.Universe.Bytes()) {
-		return true;
+		to_internal = true
 	}
-	return false
+	return from_internal,to_internal // its a Market in To
 }
 func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.Transfer,ca *p.ContractAddresses,block_num p.BlockNumber,tx_id int64) {
 
@@ -2349,12 +2346,12 @@ func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.Transfer,ca *p.ContractA
 	to_aid := ss.Lookup_or_create_address(evt.To.String(),block_num,tx_id)
 	amount := evt.Value.String()
 
-	internal := ss.is_dai_transfer_internal(evt,ca)
+	from_internal,to_internal := ss.is_dai_transfer_internal(evt,ca)
 
 	var query string
-	query = "INSERT INTO dai_transf(block_num,tx_id,from_aid,to_aid,amount,internal) " +
-			"VALUES($1,$2,$3,$4,(" + amount +"/1e+18),$5)"
-	_,err := ss.db.Exec(query,block_num,tx_id,from_aid,to_aid,internal)
+	query = "INSERT INTO dai_transf(block_num,tx_id,from_aid,to_aid,amount,from_internal,to_internal) " +
+			"VALUES($1,$2,$3,$4,(" + amount +"/1e+18),$5,$6)"
+	_,err := ss.db.Exec(query,block_num,tx_id,from_aid,to_aid,from_internal,to_internal)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)

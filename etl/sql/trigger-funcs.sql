@@ -514,6 +514,7 @@ DECLARE
 	v_eoa_aid bigint;
 	v_cnt numeric;
 	v_augur bool;	-- true if this transfer is made to Augur Wallet account
+	v_internal bool;
 BEGIN
 
 	v_augur := false;
@@ -523,7 +524,7 @@ BEGIN
 		v_augur := true;
 	END IF;
 	INSERT INTO dai_bal(block_num,tx_id,dai_transf_id,aid,amount,augur,internal)
-			VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.from_aid,-NEW.amount,v_augur,NEW.internal);
+			VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.from_aid,-NEW.amount,v_augur,NEW.from_internal);
 
 
 	v_augur := false;
@@ -533,7 +534,7 @@ BEGIN
 		v_augur := true;
 	END IF;
 	INSERT INTO dai_bal(block_num,tx_id,dai_transf_id,aid,amount,augur,internal)
-			VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.to_aid,NEW.amount,v_augur,NEW.internal);
+			VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.to_aid,NEW.amount,v_augur,NEW.to_internal);
 
 	RETURN NEW;
 END;
@@ -549,71 +550,64 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_dai_bal_insert() RETURNS trigger AS  $$
 DECLARE
+	v_eoa_aid bigint;
+	v_cnt numeric;
+	v_augur bool;
 BEGIN
 
---	v_augur := false;
---	SELECT eoa_aid FROM ustats WHERE wallet_aid = NEW.aid INTO v_eoa_aid;
---	GET DIAGNOSTICS v_cnt = ROW_COUNT;
---	IF v_cnt > 0 THEN
---		v_augur := true;
---	END IF;
+	v_augur := false;
+	SELECT eoa_aid FROM ustats WHERE wallet_aid = NEW.aid INTO v_eoa_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt > 0 THEN
+		v_augur := true;
+	END IF;
 
---	IF v_augur THEN
---		if NEW.internal IS FALSE THEN
---			UPDATE block AS b
---				SET cash_flow = (cash_flow + NEW.amount)
---				WHERE	b.block_num = NEW.block_num;
---		END IF;
---	END IF;
+	IF v_augur THEN
+		if NEW.internal IS FALSE THEN
+			UPDATE block AS b
+				SET cash_flow = (cash_flow + NEW.amount)
+				WHERE	b.block_num = NEW.block_num;
+		END IF;
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_dai_bal_delete() RETURNS trigger AS  $$
 DECLARE
 	v_augur bool;	-- true if this transfer is made to Augur Wallet account
+	v_eoa_aid bigint;
+	v_cnt numeric;
 BEGIN
 
---	v_augur := false;
---	SELECT eoa_aid FROM ustats WHERE wallet_aid = NEW.aid INTO v_eoa_aid;
---	GET DIAGNOSTICS v_cnt = ROW_COUNT;
---	IF v_cnt > 0 THEN
---		v_augur := true;
---	END IF;
---	IF v_augur THEN
---		IF NEW.internal IS FALSE THEN
---			UPDATE block AS b
---				SET cash_flow = (cash_flow - OLD.amount)
---				WHERE	b.block_num = OLD.block_num;
---		END IF;
---	END IF;
+	v_augur := false;
+	SELECT eoa_aid FROM ustats WHERE wallet_aid = NEW.aid INTO v_eoa_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt > 0 THEN
+		v_augur := true;
+	END IF;
+	IF v_augur THEN
+		IF NEW.internal IS FALSE THEN
+			UPDATE block AS b
+				SET cash_flow = (cash_flow - OLD.amount)
+				WHERE	b.block_num = OLD.block_num;
+		END IF;
+	END IF;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_dai_bal_update() RETURNS trigger AS  $$
 DECLARE
 	v_augur bool;	-- true if this transfer is made to Augur Wallet account
+	v_eoa_aid bigint;
+	v_cnt numeric;
 BEGIN
-
-	IF OLD.amount != NEW.amount THEN
-		RAISE EXCEPTION 'Changing dai_bal.amount field is not possible. Delete the whole block';
-	END IF;
+	-- Noute: this trigger only calculates block.cash_flow. For another process
+	--			use another trigger function
+	-- cash_flow calculation starts
 	IF NEW.internal != OLD.internal THEN
 		RAISE EXCEPTION 'Changing dai_bal.internal field not possible. Delete the whole block';
 	END IF;
-	IF OLD.augur != NEW.augur THEN
-		IF NEW.augur THEN
-
-			v_augur := false;
-			SELECT eoa_aid FROM ustats WHERE wallet_aid = NEW.aid INTO v_eoa_aid;
-			GET DIAGNOSTICS v_cnt = ROW_COUNT;
-			IF v_cnt > 0 THEN
-				v_augur := true;
-			END IF;
-			UPDATE block AS b
-					SET cash_flow = (cash_flow + NEW.amount)
-					WHERE	b.block_num = NEW.block_num;
-		END IF;
-	ELSE
+	IF OLD.augur != NEW.augur THEN -- this update is coming from ustats table
 		IF NEW.augur THEN
 			IF NEW.internal IS FALSE THEN
 				UPDATE block AS b
@@ -622,6 +616,7 @@ BEGIN
 			END IF;
 		END IF;
 	END IF;
+	-- cash flow calculation ends
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
