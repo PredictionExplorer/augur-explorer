@@ -317,7 +317,7 @@ func complete_and_output_market_info(c *gin.Context,minfo InfoMarket) {
 		}
 	}
 	trades := augur_srv.storage.Get_mkt_trades(minfo.MktAddr,int(limit))
-	outcome_vols,_ := augur_srv.storage.Get_outcome_volumes(minfo.MktAid,0)
+	outcome_vols,_ := augur_srv.storage.Get_outcome_volumes(minfo.MktAddr,minfo.MktAid,0)
 	c.HTML(http.StatusOK, "market_info.html", gin.H{
 			"title": "Trades for market",
 			"Trades" : trades,

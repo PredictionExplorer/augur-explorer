@@ -309,6 +309,7 @@ type OutcomeVol struct {
 	Volume			float64
 	LastPrice		float64
 	MktType			int
+	MktAddr			string
 }
 type ZxMeshOrderSpec struct {
 	Market			common.Address

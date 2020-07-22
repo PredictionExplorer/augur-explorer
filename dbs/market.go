@@ -716,7 +716,7 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 	rec.Status = get_market_status_str(p.MarketStatus(status_code))
 
 
-	volumes,err := ss.Get_outcome_volumes(id,1)
+	volumes,err := ss.Get_outcome_volumes(rec.MktAddr,id,1)
 	if err!=nil {
 		ss.Log_msg(fmt.Sprintf("DB error querying card for id=%v : %v (query=%v)",id,err,query))
 		return rec,err
@@ -902,7 +902,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 	return rec,nil
 }
 //func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string) ([]p.OutcomeVol,error) {
-func (ss *SQLStorage) Get_outcome_volumes(market_aid int64,orderby int) ([]p.OutcomeVol,error) {
+func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,orderby int) ([]p.OutcomeVol,error) {
 
 
 	var rec p.OutcomeVol
@@ -946,6 +946,7 @@ func (ss *SQLStorage) Get_outcome_volumes(market_aid int64,orderby int) ([]p.Out
 			&rec.MktType,
 			&outcomes,
 		)
+		rec.MktAddr = mkt_addr
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
