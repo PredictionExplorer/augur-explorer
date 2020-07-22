@@ -279,6 +279,7 @@ type InfoMarket struct {
 	Status			string
 	CurOutcome		string	// calculated only if the query is made on specific outcome
 	Subcategories	[]string	// splitted string of subcategories
+	OutcomeVolumes	[]OutcomeVol
 }
 type InfoCategories struct {
 	CatId			int64
@@ -308,7 +309,6 @@ type OutcomeVol struct {
 	Volume			float64
 	LastPrice		float64
 	MktType			int
-	MktAddr			string
 }
 type ZxMeshOrderSpec struct {
 	Market			common.Address

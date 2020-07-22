@@ -607,6 +607,124 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 	}
 	return records
 }
+func (ss *SQLStorage) Get_active_market_ids(off int, lim int) []int64 {
+
+	var query string
+	query = "SELECT market_aid FROM market as m " +
+			"WHERE m.status < 4 " +
+			"ORDER BY m.fin_timestamp DESC OFFSET $1 LIMIT $2";
+
+	rows,err := ss.db.Query(query,off,lim)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]int64,0,32)
+
+	defer rows.Close()
+	for rows.Next() {
+		var market_aid int64
+		err=rows.Scan(&market_aid)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,market_aid)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
+	var rec p.InfoMarket
+
+	var query string
+	query = "SELECT " +
+				"ma.addr as mkt_addr," +
+				"sa.addr AS signer," +
+				"ca.addr as mcreator," +
+				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') as end_date," + 
+				"extra_info::json->>'description' AS descr," +
+				"extra_info::json->>'longDescription' AS long_desc," +
+				"extra_info::json->>'categories' AS categories," +
+				"outcomes," +
+				"num_ticks," +
+				"m.market_type, " +
+				"CASE m.market_type " +
+					"WHEN 0 THEN 'YES/NO' " +
+					"WHEN 1 THEN 'CATEGORICAL' " +
+					"WHEN 2 THEN 'SCALAR' " +
+				"END AS mtype," +
+				"status,"+
+				"CASE WHEN EXTRACT(epoch from (fin_timestamp-now())) < 0 " +
+					"THEN 'Trading' ELSE 'Reporting' END AS status_desc," +
+				"fee," +
+				"money_at_stake, " +
+				"open_interest AS OI," +
+				"cur_volume AS volume " +
+			"FROM market as m " +
+				"LEFT JOIN " +
+					"address AS ma ON m.market_aid = ma.address_id " +
+				"LEFT JOIN " +
+					"address AS sa ON m.eoa_aid= sa.address_id " +
+				"LEFT JOIN " +
+					"address AS ca ON m.wallet_aid = ca.address_id " +
+			"WHERE m.market_aid=$1 " +
+			"ORDER BY " +
+				"m.fin_timestamp DESC "
+
+
+	var description sql.NullString
+	var longdesc sql.NullString
+	var category sql.NullString
+	var status_code int
+	res := ss.db.QueryRow(query,id)
+	err := res.Scan(
+			&rec.MktAddr,
+			&rec.Signer,
+			&rec.MktCreator,
+			&rec.EndDate,
+			&description,
+			&longdesc,
+			&category,
+			&rec.Outcomes,
+			&rec.NumTicks,
+			&rec.MktType,
+			&rec.MktTypeStr,
+			&status_code,
+			&rec.Status,
+			&rec.Fee,
+			&rec.MoneyAtStake,
+			&rec.OpenInterest,
+			&rec.CurVolume,
+	)
+	if (err!=nil) {
+		if err!=sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error querying card for id=%v : %v (query=%v)",id,err,query))
+		}
+		return rec,err
+	}
+	rec.MktAddrSh=p.Short_address(rec.MktAddr)
+	rec.MktCreatorSh=p.Short_address(rec.MktCreator)
+	if description.Valid {
+		rec.Description = description.String
+	}
+	if longdesc.Valid {
+		rec.LongDesc = longdesc.String
+	}
+	if category.Valid {
+		rec.CategoryStr=category.String
+	}
+	rec.Status = get_market_status_str(p.MarketStatus(status_code))
+
+
+	volumes,err := ss.Get_outcome_volumes(id,1)
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("DB error querying card for id=%v : %v (query=%v)",id,err,query))
+		return rec,err
+	}
+	rec.OutcomeVolumes = volumes
+
+	return rec,nil
+}
 func (ss *SQLStorage) Get_categories() []p.InfoCategories {
 
 	var query string
@@ -783,15 +901,21 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 
 	return rec,nil
 }
-func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string) ([]p.OutcomeVol,error) {
+//func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string) ([]p.OutcomeVol,error) {
+func (ss *SQLStorage) Get_outcome_volumes(market_aid int64,orderby int) ([]p.OutcomeVol,error) {
+
 
 	var rec p.OutcomeVol
 	records := make([]p.OutcomeVol,0,8)
-	market_aid,err := ss.Nonfatal_lookup_address_id(mkt_addr)
+/*	market_aid,err := ss.Nonfatal_lookup_address_id(mkt_addr)
 	if err != nil {
 		return records,err
-	}
+	}*/
 
+	var orderby_str = "ORDER BY o.outcome_idx"
+	if orderby == 1 {
+		orderby_str = "ORDER BY o.last_price DESC"
+	}
 	var query string
 	query = "SELECT " +
 				"o.outcome_idx, " +
@@ -803,10 +927,10 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string) ([]p.OutcomeVol,error
 				"LEFT JOIN " +
 					"market AS m ON o.market_aid = m.market_aid " +
 			"WHERE o.market_aid = $1 " +
-			"ORDER BY o.outcome_idx"
+			orderby_str
 
 	var rows *sql.Rows
-	rows,err = ss.db.Query(query,market_aid)
+	rows,err := ss.db.Query(query,market_aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -815,7 +939,6 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string) ([]p.OutcomeVol,error
 	defer rows.Close()
 	for rows.Next() {
 		var outcomes string
-		rec.MktAddr = mkt_addr
 		err=rows.Scan(
 			&rec.Outcome,
 			&rec.Volume,
@@ -828,7 +951,7 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string) ([]p.OutcomeVol,error
 			os.Exit(1)
 		}
 		rec.OutcomeStr = get_outcome_str(uint8(rec.MktType),rec.Outcome,&outcomes)
-		ss.Info.Printf("get_outcome_volumes(): rec.OutcomeStr=%v (extracted from %v)\n",rec.OutcomeStr,outcomes)
+		//ss.Info.Printf("get_outcome_volumes(): rec.OutcomeStr=%v (extracted from %v)\n",rec.OutcomeStr,outcomes)
 		records = append(records,rec)
 	}
 	return records,nil

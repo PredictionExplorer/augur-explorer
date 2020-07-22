@@ -675,3 +675,10 @@ func (ss *SQLStorage) Get_user_trades_for_market(eoa_aid int64,mkt_aid int64) []
 	}
 	return records
 }
+func (ss *SQLStorage) Get_user_open_orders(user_aid int64) (p.UserInfo,error) {
+	// open orders on 0x Mesh network
+	var rec p.UserInfo
+	var query string
+	_=query
+	return rec,nil
+}

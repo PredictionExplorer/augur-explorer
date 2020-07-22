@@ -136,6 +136,11 @@ func main() {
 	r.GET("/mdstat/:market_aid/:outcome_idx/:last_oo_id",market_depth_status)
 	r.GET("/umtrades.html",user_trades_for_market)
 
+	// API calls for the new FrontEnd
+	r.GET("/api/active_markets",a1_active_markets)
+	r.GET("/api/mkt_card/:market_aid",a1_market_card)
+
+
 	r.Static("/imgs", "./html/imgs")
 	r.Static("/res", "./html/res")			// resources (static)
 	r.StaticFile("/favicon.ico", "./html/res/favicon.ico")
