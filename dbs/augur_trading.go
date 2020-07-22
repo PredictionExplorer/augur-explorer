@@ -209,7 +209,7 @@ func (ss *SQLStorage) Insert_open_order(evt *zeroex.OrderEvent,eoa_addr string,o
 	query = "INSERT INTO oorders(" +
 				"market_aid,otype,wallet_aid,eoa_aid,price,amount,outcome_idx," +
 				"evt_timestamp,srv_timestamp,expiration,order_id" +
-			") VALUES($1,$2,$3,$4,$5,"+amount+"/1e+16,$6,TO_TIMESTAMP($7),TO_TIMESTAMP($8),NOW(),$9)"
+			") VALUES($1,$2,$3,$4,$5,"+amount+"/1e+18,$6,TO_TIMESTAMP($7),TO_TIMESTAMP($8),NOW(),$9)"
 	result,err := ss.db.Exec(query,
 			market_aid,
 			otype,
@@ -238,6 +238,27 @@ func (ss *SQLStorage) Delete_open_0x_order(order_hash string) {
 
 	var query string
 	query = "DELETE FROM oorders WHERE order_id = $1"
+	result,err := ss.db.Exec(query,order_hash)
+	if err!=nil {
+		ss.Info.Printf(fmt.Sprintf("DB error: couldn't delete open order with order_id = %v, q=%v\n",order_hash,query))
+	}
+	rows_affected,err:=result.RowsAffected()
+	if rows_affected == 0  {
+		ss.Info.Printf(fmt.Sprintf("DB error: couldn't delete open order with order_id = %v (not found)\n",order_hash))
+	}
+}
+func (ss *SQLStorage) Update_0x_order_on_partial_fill(evt *zeroex.OrderEvent) {
+
+	//order := evt.SignedOrder.Order
+	order_hash := evt.OrderHash.String()
+	amount := evt.FillableTakerAssetAmount.String()
+
+	var query string
+	query = "UPDATE oorders "+
+			"SET id=DEFAULT,amount=("+amount+"/1e+18) "+
+			"WHERE order_id = $1"
+			// Note: we update the 'id' field to the next sequential number too because
+			//		the UI needs to receive a notification to refresh the Market Depth chart
 	result,err := ss.db.Exec(query,order_hash)
 	if err!=nil {
 		ss.Info.Printf(fmt.Sprintf("DB error: couldn't delete open order with order_id = %v, q=%v\n",order_hash,query))

@@ -44,7 +44,7 @@ func main() {
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 	os.MkdirAll(log_dir, os.ModePerm)
 
-	fname:=fmt.Sprintf("%v/balances_info.log",log_dir)
+	fname:=fmt.Sprintf("%v/mesh_info.log",log_dir)
 	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err!=nil {
 		fmt.Printf("Can't start: %v\n",err)
@@ -52,7 +52,7 @@ func main() {
 	}
 	Info = log.New(logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 
-	fname = fmt.Sprintf("%v/balances_error.log",log_dir)
+	fname = fmt.Sprintf("%v/mesh_error.log",log_dir)
 	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err!=nil {
 		fmt.Printf("Can't start: %v\n",err)
@@ -111,6 +111,7 @@ func main() {
 		case orderEvents := <-orderEventsChan:
 			for _, orderEvent := range orderEvents {
 				fmt.Printf("Order event arrived in state=%+v:\n",orderEvent.EndState)
+				fmt.Printf("Order Hash: %v\n",orderEvent.OrderHash.String())
 				fmt.Printf("%+v\n",orderEvent)
 				fmt.Println()
 				ad:=hex.EncodeToString(orderEvent.SignedOrder.Order.MakerAssetData)
@@ -137,7 +138,12 @@ func main() {
 							storage.Delete_open_0x_order(orderEvent.OrderHash.String())
 						}
 						if orderEvent.EndState == zeroex.ESOrderFullyFilled {
+							// FULLY FILLED event: quantity of the order matches filling quantity
 							storage.Delete_open_0x_order(orderEvent.OrderHash.String())
+						}
+						if orderEvent.EndState == zeroex.ESOrderFilled {
+							// FILLED event: partial order fill
+							storage.Update_0x_order_on_partial_fill(orderEvent)
 						}
 					}
 				}
