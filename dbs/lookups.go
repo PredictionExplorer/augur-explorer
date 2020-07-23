@@ -7,7 +7,7 @@ import (
 	"database/sql"
 	_  "github.com/lib/pq"
 
-	p "augur-extractor/primitives"
+	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 func (ss *SQLStorage) lookup_universe_id(addr string) (int64,error) {
 

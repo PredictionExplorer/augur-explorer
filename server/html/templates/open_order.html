@@ -1,0 +1,16 @@
+{{define "open_order"}}
+<tr class="user_open_orders">
+	<td class="user_open_orders">
+		{{.OrderDate}}
+	</td>
+	<td class="user_open_orders" title="{{.MktDescr}}">
+		<a href="/search?q={{.MktAddr}}">{{.MktAddrSh}}</a>
+	</td>
+	<td class="user_open_orders" style="text-align: center">{{.MktTypeStr}}</td>
+	<td class="user_open_orders" style="text-align: center">{{.MktStatusStr}}</td>
+	<td class="user_open_orders" style="text-align: center">{{.OutcomeStr}}</td>
+	<td class="user_open_orders" style="text-align: center">{{.Direction}}</td>
+	<td class="user_open_orders" style="text-align: right">{{.Amount}}</td>
+	<td class="user_open_orders" style="text-align: right">{{.Price}}</td>
+</tr>
+{{end}}

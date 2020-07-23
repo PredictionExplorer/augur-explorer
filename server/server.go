@@ -14,8 +14,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
-	. "augur-extractor/primitives"
-	. "augur-extractor/dbs"
+	. "github.com/PredictionExplorer/augur-explorer/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/dbs"
 )
 const (
 	DEFAULT_DB_LOG_FILE_NAME = "/var/tmp/backend-db.log"
@@ -483,6 +483,7 @@ func serve_user_info_page(c *gin.Context,addr string,from_wallet bool) {
 			if len(user_active_markets) > 0 {
 				has_active_markets = true
 			}
+			open_orders := augur_srv.storage.Get_user_open_orders(user_info.EOAAid)
 
 			c.HTML(http.StatusOK, "user_info.html", gin.H{
 				"title": "User "+addr,
@@ -492,6 +493,7 @@ func serve_user_info_page(c *gin.Context,addr string,from_wallet bool) {
 				"PLEntries" : pl_entries,
 				"JSPLData" : js_pl_data,
 				"JSOpenPosData" : js_open_pos_data,
+				"OpenOrders": open_orders,
 				"UserReports" : user_reports,
 				"UserActiveMarkets" : user_active_markets,
 				"HasActiveMarkets" : has_active_markets,

@@ -10,7 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	p "augur-extractor/primitives"
+	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 func (ss *SQLStorage) calculate_profit(num_ticks int64,win_tick int64,amount *big.Int,price *big.Int) *big.Int {
 	// Calculates the profit for a position

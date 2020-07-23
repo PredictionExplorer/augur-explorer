@@ -7,8 +7,7 @@ import (
 	"strconv"
 	"fmt"
 
-	. "augur-extractor/dbs"
-	//. "augur-extractor/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/dbs"
 )
 const ONE_DAY_SECS int64 = 24 * 60 * 60	// add 1 day of seconds
 var (

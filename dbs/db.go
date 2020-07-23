@@ -10,7 +10,7 @@ import (
 	"database/sql"
 	_  "github.com/lib/pq"
 
-	p "augur-extractor/primitives"
+	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 var (
 	zero *big.Int = big.NewInt(0)

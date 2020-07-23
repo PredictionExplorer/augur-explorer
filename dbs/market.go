@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	p "augur-extractor/primitives"
+	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 
 func make_subcategories(cat_str *string) []string {
@@ -901,7 +901,6 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 
 	return rec,nil
 }
-//func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string) ([]p.OutcomeVol,error) {
 func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,orderby int) ([]p.OutcomeVol,error) {
 
 

@@ -8,7 +8,7 @@ import (
 	"database/sql"
 	_  "github.com/lib/pq"
 
-	p "augur-extractor/primitives"
+	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 func (ss *SQLStorage) Check_main_stats() {
 

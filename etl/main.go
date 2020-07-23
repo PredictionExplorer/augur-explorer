@@ -24,8 +24,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	//"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
-	. "augur-extractor/primitives"
-	. "augur-extractor/dbs"
+	. "github.com/PredictionExplorer/augur-explorer/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/dbs"
 )
 const (
 	// ToDo: get these signatures from the abi files (after our code stabilizes, currently we will

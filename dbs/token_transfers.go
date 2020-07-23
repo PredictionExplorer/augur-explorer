@@ -10,7 +10,7 @@ import (
 	"database/sql"
 	_  "github.com/lib/pq"
 
-	p "augur-extractor/primitives"
+	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 func (ss *SQLStorage) Process_REP_token_transfer(evt *p.Transfer,block_num p.BlockNumber,tx_id int64) {
 

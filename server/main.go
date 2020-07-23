@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	. "augur-extractor/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 var (
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")

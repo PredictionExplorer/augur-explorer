@@ -6,8 +6,8 @@ import (
 	"sort"
 	//"fmt"
 
-	. "augur-extractor/dbs"
-	. "augur-extractor/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/dbs"
+	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 var (
 	storage *SQLStorage

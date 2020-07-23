@@ -4,6 +4,7 @@ package dbs
 import (
 	"fmt"
 	"os"
+	"math/big"
 	"strings"
 	"strconv"
 	"database/sql"
@@ -13,7 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/0xProject/0x-mesh/zeroex"
 
-	p "augur-extractor/primitives"
+	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 func (ss *SQLStorage) Insert_market_order_evt(block_num p.BlockNumber,tx_id int64,signer common.Address,eoa_aid int64,evt *p.MktOrderEvt) {
 
@@ -153,10 +154,16 @@ func (ss *SQLStorage) Insert_market_order_evt(block_num p.BlockNumber,tx_id int6
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_open_order(evt *zeroex.OrderEvent,eoa_addr string,ospec *p.ZxMeshOrderSpec) {
+func (ss *SQLStorage) Insert_open_order(
+	ohash *string,
+	order *zeroex.SignedOrder,
+	eoa_addr string,
+	ospec *p.ZxMeshOrderSpec,
+	evt_timestamp int64,
+) {
 	// Insert an open order, this order needs to be Filled by another market participant
 	// It also can be canceled by its creator (with another transaction)
-	order := evt.SignedOrder.Order
+//	order := evt.SignedOrder.Order
 	/*
 	DISABLED because we are using an Old version of 0x Mesh
 	ohash,err := order.ComputeOrderHash()
@@ -168,9 +175,9 @@ func (ss *SQLStorage) Insert_open_order(evt *zeroex.OrderEvent,eoa_addr string,o
 	order_id := ohash.String()
 	*/
 	var err error
-	ohash := evt.OrderHash.String()
+//	ohash := evt.OrderHash.String()
 	order_id := ohash
-	evt_timestamp := evt.Timestamp.Unix()
+//	evt_timestamp := evt.Timestamp.Unix()
 	expiration := order.ExpirationTimeSeconds.Int64()
 	// note: we don't have block number/tx hash for activity from 0x Mesh, so we insert with 0s
 	wallet_aid := ss.Lookup_or_create_address(order.MakerAddress.String(),0,0)
@@ -927,4 +934,54 @@ func (ss *SQLStorage) Get_mdepth_status(market_aid int64,outcome_idx int,last_oo
 	}
 	ss.Info.Printf("num_orders=%v, last_oo_id=%v\n",status.NumOrders,status.LastOOID)
 	return status,nil
+}
+func (ss *SQLStorage) Update_open_order(order_hash string,cur_amount *big.Int,order *zeroex.SignedOrder) (int,string) {
+	// Return value: 0 - no need to update, 1 - updated incorrect amount, 2 - order doesn't exist
+	var id int64 = 0
+	var order_amount string
+	var query string
+	query = "SELECT id,ROUND(amount*1e+18)::text AS amount FROM oorders WHERE order_id=$1"
+	row := ss.db.QueryRow(query,order_hash)
+	err := row.Scan(&id,&order_amount)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Error in Scan(): %v: q=%v\n",err,query))
+			os.Exit(1)
+		}
+		return 2,""
+	}
+	if order_amount != cur_amount.String() {
+		query = "UPDATE oorders SET amount = ("+cur_amount.String()+"/1e+18) WHERE id=$1"
+		_,err:=ss.db.Exec(query,id)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
+			os.Exit(1)
+		}
+		return 1,order_amount
+	}
+	return 0,""
+}
+func (ss *SQLStorage) Get_all_open_order_hashes() []string {
+	// Used in 0x Mesh listener to delete orders that no longer present in 0x Mesh Network
+
+	records := make([]string,0,512)
+	// open orders on 0x Mesh network
+	var query string
+	query = "SELECT order_id FROM oorders"
+	rows,err := ss.db.Query(query)
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var order_hash string
+		err=rows.Scan(&order_hash)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,order_hash)
+	}
+	return records
 }

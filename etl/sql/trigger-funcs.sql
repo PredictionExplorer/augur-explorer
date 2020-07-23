@@ -31,7 +31,7 @@ BEGIN
 		IF v_cnt = 0 THEN
 			INSERT	INTO oostats(market_aid,eoa_aid,outcome_idx,num_bids)
 					VALUES(NEW.market_aid,NEW.eoa_aid,NEW.outcome_idx,1)
-					ON CONFLICT(eoa_aid) DO NOTHING;
+					ON CONFLICT DO NOTHING;
 
 		END IF;
 	END IF;
@@ -45,7 +45,7 @@ BEGIN
 		IF v_cnt = 0 THEN
 			INSERT	INTO oostats(market_aid,eoa_aid,outcome_idx,num_asks)
 					VALUES(NEW.market_aid,NEW.eoa_aid,NEW.outcome_idx,1)
-					ON CONFLICT(eoa_aid) DO NOTHING;
+					ON CONFLICT DO NOTHING;
 		END IF;
 	END IF;
 
@@ -149,9 +149,9 @@ BEGIN
 
 	-- Make sure user stats record exists
 	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(NEW.eoa_aid,NEW.wallet_aid)
-		ON CONFLICT(eoa_aid) DO NOTHING;
+		ON CONFLICT DO NOTHING;
 	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(NEW.eoa_fill_aid,NEW.wallet_fill_aid)
-		ON CONFLICT(eoa_aid) DO NOTHING;
+		ON CONFLICT DO NOTHING;
 
 	-- Update statistics for the Creator of the Order (Seller)
 	UPDATE trd_mkt_stats AS s
@@ -202,9 +202,9 @@ BEGIN
 
 	-- Make sure user stats record exists
 	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(OLD.eoa_aid,OLD.wallet_aid)
-		ON CONFLICT(eoa_aid) DO NOTHING;
+		ON CONFLICT DO NOTHING;
 	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(OLD.eoa_fill_aid,OLD.wallet_fill_aid)
-		ON CONFLICT(eoa_aid) DO NOTHING;
+		ON CONFLICT DO NOTHING;
 
 	-- Update statistics for the Creator of the Order (Seller)
 	UPDATE trd_mkt_stats AS s
@@ -420,7 +420,7 @@ BEGIN
 
 	-- Make sure user stats record exists
 	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(NEW.eoa_aid,NEW.wallet_aid)
-		ON CONFLICT(eoa_aid) DO NOTHING;
+		ON CONFLICT DO NOTHING;
 	-- Update statistics for the Reporter
 	UPDATE trd_mkt_stats AS s
 			SET total_reports = (total_reports + 1)
@@ -457,7 +457,7 @@ BEGIN
 
 	-- Make sure user stats record exists
 	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(OLD.eoa_aid,OLD.wallet_aid)
-		ON CONFLICT(eoa_aid) DO NOTHING;
+		ON CONFLICT DO NOTHING;
 	-- Update statistics for the Reporter
 	UPDATE trd_mkt_stats AS s
 			SET total_reports = (total_reports - 1)

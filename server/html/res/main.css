@@ -378,3 +378,10 @@ table.order_info {
 tr.order_info {
 	background-color: #161616;
 }
+table.user_open_orders {
+	border-collapse:				separate;
+	border-spacing:					3px;
+}
+tr.user_open_orders {
+	background-color: #161616;
+}

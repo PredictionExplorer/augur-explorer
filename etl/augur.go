@@ -12,7 +12,7 @@ import (
 //	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
-	. "augur-extractor/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 type EventSequencer struct {	// determines the order for contained events
 	unordered_list		[]*types.Log

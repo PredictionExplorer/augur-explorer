@@ -432,6 +432,29 @@ type PLEntry struct {	// profit loss entry
 	CounterPAddr		string
 	CounterPAddrSh		string
 }
+type OpenOrder struct {		// the Order on 0x Mesh network, that is yet to be filled
+	Id					int64
+	Amount				float64
+	Price				float64
+	Timestamp			int64
+	MktExpirationTs		int64
+	MktStatus			int
+	MktType				int
+	MarketStatus		int
+	Outcome				int
+	OrderType			int
+	OrderDate			string
+	Direction			string
+	MktDescr			string
+	OutcomeStr			string
+	MktStatusStr		string
+	MktTypeStr			string
+	OrderHash			string
+	CreatorAddr			string
+	CreatorAddrSh		string	// shortened address
+	MktAddr				string
+	MktAddrSh			string
+}
 type RankStats struct {
 	EoaAid				int64
 	TotalTrades			int64

@@ -11,7 +11,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	p "augur-extractor/primitives"
+	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 func (ss *SQLStorage) fill_block_info(ui *p.UserInfo,user_aid int64) {
 
@@ -675,10 +675,81 @@ func (ss *SQLStorage) Get_user_trades_for_market(eoa_aid int64,mkt_aid int64) []
 	}
 	return records
 }
-func (ss *SQLStorage) Get_user_open_orders(user_aid int64) (p.UserInfo,error) {
+func (ss *SQLStorage) Get_user_open_orders(user_aid int64) []p.OpenOrder {
+
+	records := make([]p.OpenOrder,0,8)
 	// open orders on 0x Mesh network
-	var rec p.UserInfo
 	var query string
-	_=query
-	return rec,nil
+	query = "SELECT " +
+				"ca.addr AS creator_addr," +
+				"ma.addr AS mkt_addr," +
+				"m.market_type," +
+				"CASE m.market_type " +
+					"WHEN 0 THEN 'YES/NO' " +
+					"WHEN 1 THEN 'CATEGORICAL' " +
+					"WHEN 2 THEN 'SCALAR' " +
+				"END AS market_type_str," +
+				"m.status,"+
+				"FLOOR(EXTRACT(EPOCH FROM m.end_time))::BIGINT AS ts," +
+				"TO_CHAR(m.end_time,'dd/mm/yyyy HH24:SS UTC') as order_date," + 
+				"m.extra_info::json->>'description' AS descr," +
+				"m.outcomes," +
+				"o.id," +
+				"o.otype," +
+				"CASE o.otype " +
+					"WHEN 0 THEN 'BID' " +
+					"ELSE 'ASK' " +
+				"END AS dir, " +
+				"o.outcome_idx," +
+				"ROUND(o.price,3), "+
+				"o.amount," +
+				"FLOOR(EXTRACT(EPOCH FROM o.evt_timestamp))::BIGINT AS ts," +
+				"o.order_id " +
+			"FROM oorders AS o " +
+				"LEFT JOIN market AS m ON o.market_aid = m.market_aid " +
+				"LEFT JOIN address AS ma ON o.market_aid = ma.address_id " +
+				"LEFT JOIN address AS ca ON o.eoa_aid = ca.address_id " +
+			"WHERE o.eoa_aid = $1 " +
+			"ORDER BY o.id DESC"
+
+	rows,err := ss.db.Query(query,user_aid)
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.OpenOrder
+		var outcomes string
+		var descr sql.NullString
+		err=rows.Scan(
+			&rec.CreatorAddr,
+			&rec.MktAddr,
+			&rec.MktType,
+			&rec.MktTypeStr,
+			&rec.MktStatus,
+			&rec.MktExpirationTs,
+			&rec.OrderDate,
+			&descr,
+			&outcomes,
+			&rec.Id,
+			&rec.OrderType,
+			&rec.Direction,
+			&rec.Outcome,
+			&rec.Price,
+			&rec.Amount,
+			&rec.Timestamp,
+			&rec.OrderHash,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.MktStatusStr = get_market_status_str(p.MarketStatus(rec.MktStatus))
+		rec.MktAddrSh=p.Short_address(rec.MktAddr)
+		rec.CreatorAddrSh=p.Short_address(rec.CreatorAddr)
+		rec.OutcomeStr = get_outcome_str(uint8(rec.MktType),rec.Outcome,&outcomes)
+		records = append(records,rec)
+	}
+	return records
 }
