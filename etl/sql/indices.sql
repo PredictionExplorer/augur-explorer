@@ -31,10 +31,10 @@ CREATE INDEX tbc_mkt_idx			ON	tbc				(market_aid);
 CREATE INDEX tokt_mtk_idx			ON	tok_transf		(market_aid);
 -- eoa_aid indices	(pure EOA, not composite)
 CREATE INDEX uranks_eoa_idx			ON	uranks			(eoa_aid);
-CREATE INDEX ustats1_idx			ON ustats			(eoa_aid);
+CREATE UNIQUE INDEX ustats1_idx		ON ustats			(eoa_aid);
 CREATE INDEX pl_eoa_idx				ON profit_loss		(eoa_aid);
 -- wallet aid indices (pure Wallet contract, not composite indices)
-CREATE INDEX ustats2_idx			ON ustats			(wallet_aid);
+CREATE UNIQUE INDEX ustats2_idx		ON ustats			(wallet_aid);
 CREATE INDEX pl_wallet_idx			ON profit_loss		(wallet_aid);
 -- other indices
 CREATE INDEX blk_ph_idx				ON block			(parent_hash);

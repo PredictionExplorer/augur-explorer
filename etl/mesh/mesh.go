@@ -77,12 +77,12 @@ func oo_insert(order_hash *string,order *zeroex.SignedOrder,timestamp int64) {
 	var copts = new(bind.CallOpts)
 	adata,err := zerox_contract.DecodeAssetData(copts,order.MakerAssetData)
 	if err!=nil {
-		Error.Printf("couldn't decode asset data for order %v : %v\n",order_hash,err)
+		Error.Printf("couldn't decode asset data for order %v : %v\n",*order_hash,err)
 		return
 	}
 	unpacked_id,err := zerox_contract.UnpackTokenId(copts,adata.TokenIds[0])
 	if err!=nil {
-		Error.Printf("Unpack token id failed for order %v: %v\n",order_hash,err)
+		Error.Printf("Unpack token id failed for order %v: %v\n",*order_hash,err)
 		return
 	}
 	num:=big.NewInt(int64(owner_fld_offset))

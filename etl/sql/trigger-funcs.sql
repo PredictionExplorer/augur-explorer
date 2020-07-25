@@ -1,3 +1,6 @@
+-- Notes: After some updates to Golang ETL, INSERTs into 'ustats' table are no longer needed,
+--					removal of these statements is pending however validation must be done (24 Jul 2020)
+
 CREATE OR REPLACE FUNCTION on_oi_chg_insert() RETURNS trigger AS  $$ --updates open interest of the market
 DECLARE
 BEGIN
@@ -201,10 +204,8 @@ DECLARE
 BEGIN
 
 	-- Make sure user stats record exists
-	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(OLD.eoa_aid,OLD.wallet_aid)
-		ON CONFLICT DO NOTHING;
-	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(OLD.eoa_fill_aid,OLD.wallet_fill_aid)
-		ON CONFLICT DO NOTHING;
+	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(OLD.eoa_aid,OLD.wallet_aid) ON CONFLICT DO NOTHING;
+	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(OLD.eoa_fill_aid,OLD.wallet_fill_aid) ON CONFLICT DO NOTHING;
 
 	-- Update statistics for the Creator of the Order (Seller)
 	UPDATE trd_mkt_stats AS s
@@ -419,8 +420,7 @@ DECLARE
 BEGIN
 
 	-- Make sure user stats record exists
-	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(NEW.eoa_aid,NEW.wallet_aid)
-		ON CONFLICT DO NOTHING;
+	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(NEW.eoa_aid,NEW.wallet_aid) ON CONFLICT DO NOTHING;
 	-- Update statistics for the Reporter
 	UPDATE trd_mkt_stats AS s
 			SET total_reports = (total_reports + 1)
@@ -456,8 +456,7 @@ DECLARE
 BEGIN
 
 	-- Make sure user stats record exists
-	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(OLD.eoa_aid,OLD.wallet_aid)
-		ON CONFLICT DO NOTHING;
+	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(OLD.eoa_aid,OLD.wallet_aid) ON CONFLICT DO NOTHING;
 	-- Update statistics for the Reporter
 	UPDATE trd_mkt_stats AS s
 			SET total_reports = (total_reports - 1)
@@ -580,13 +579,13 @@ DECLARE
 BEGIN
 
 	v_augur := false;
-	SELECT eoa_aid FROM ustats WHERE wallet_aid = NEW.aid INTO v_eoa_aid;
+	SELECT eoa_aid FROM ustats WHERE wallet_aid = OLD.aid INTO v_eoa_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt > 0 THEN
 		v_augur := true;
 	END IF;
 	IF v_augur THEN
-		IF NEW.internal IS FALSE THEN
+		IF OLD.internal IS FALSE THEN
 			UPDATE block AS b
 				SET cash_flow = (cash_flow - OLD.amount)
 				WHERE	b.block_num = OLD.block_num;
@@ -623,6 +622,15 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_ustats_insert() RETURNS trigger AS  $$
 DECLARE
 BEGIN
+
+	-- this exception is for debugging purposes, to_do: remove later
+	IF NEW.eoa_aid = 0 THEN
+		RAISE EXCEPTION 'INSERT into ustats: eoa_aid cant be 0';
+	END IF;
+	IF NEW.wallet_aid = 0 THEN
+		RAISE EXCEPTION 'INSERT into ustats: wallet_aid cant be 0';
+	END IF;
+
 
 	-- The transfers of DAI can happen before wallet is created, so we fix it
 	UPDATE dai_bal SET augur = true WHERE aid = NEW.wallet_aid;

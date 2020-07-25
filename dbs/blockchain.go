@@ -7,7 +7,7 @@ import (
 	"database/sql"
 	_  "github.com/lib/pq"
 
-	"github.com/ethereum/go-ethereum/common"
+	//"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
@@ -107,16 +107,23 @@ func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header)  bool {
 	ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into block table. Rows affeced = 0"))
 	return false
 }
-func (ss *SQLStorage) Insert_transaction(block_num p.BlockNumber,tx_hash string,tx *types.Message) int64 {
+func (ss *SQLStorage) Insert_transaction(
+	block_num p.BlockNumber,
+	tx_hash string,
+	to string,
+	tx *types.Message,
+	ctrct_create bool,
+) int64 {
 
+	// Note: contract addresses have To as their created address + ctrct_create flag set to 'true'
 	var query string
 	var tx_id int64
 
 
-	query = "INSERT INTO transaction (block_num,value,tx_hash) " +
-			"VALUES ($1,("+tx.Value().String()+"/1e+18),$2) RETURNING id"
+	query = "INSERT INTO transaction (block_num,value,tx_hash,ctrct_create) " +
+			"VALUES ($1,("+tx.Value().String()+"/1e+18),$2,$3) RETURNING id"
 
-	row := ss.db.QueryRow(query,block_num,tx_hash)
+	row := ss.db.QueryRow(query,block_num,tx_hash,ctrct_create)
 	err := row.Scan(&tx_id)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into transactions table: %v, q=%v",err,query))
@@ -124,13 +131,7 @@ func (ss *SQLStorage) Insert_transaction(block_num p.BlockNumber,tx_hash string,
 	}
 
 	from_aid := ss.Lookup_or_create_address(tx.From().String(),block_num,tx_id)
-	var to_aid int64 = 0
-	if tx.To() == nil {	// case for calling contract creation
-		zero_addr := common.BigToAddress(zero)
-		to_aid = ss.Lookup_or_create_address(zero_addr.String(),block_num,tx_id)
-	} else {
-		to_aid = ss.Lookup_or_create_address(tx.To().String(),block_num,tx_id)
-	}
+	to_aid := ss.Lookup_or_create_address(to,block_num,tx_id)
 	query = "UPDATE transaction set from_aid=$2 , to_aid=$3 where id = $1"
 	_,err = ss.db.Exec(query,tx_id,from_aid,to_aid)
 	if (err!=nil) {

@@ -268,11 +268,8 @@ func main() {
 								if err != nil {
 									Fatalf("Error in tx signature validation (shoudln't happen): %v",err)
 								}
-								tx_id := storage.Insert_transaction(
-											BlockNumber(block.Number().Uint64()),
-											tx.Hash().String(),
-											&tx_msg,
-								)
+								var tx_id int64 = 0
+								var ctrct_create bool = false
 								from := tx_msg.From()
 								dump_tx_input_if_known(tx)
 								to:=""
@@ -288,6 +285,17 @@ func main() {
 								if err != nil {
 									Error.Printf("Error: %v",err)
 								} else {
+									if tx.To() == nil {
+										to = rcpt.ContractAddress.String()
+										ctrct_create = true
+									}
+									tx_id = storage.Insert_transaction(
+												BlockNumber(block.Number().Uint64()),
+												tx.Hash().String(),
+												to,
+												&tx_msg,
+												ctrct_create,
+									)
 									contains_market_finalized:=false
 									sequencer := new(EventSequencer)
 									num_logs := len(rcpt.Logs)

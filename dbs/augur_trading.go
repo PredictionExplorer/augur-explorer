@@ -16,7 +16,14 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Insert_market_order_evt(block_num p.BlockNumber,tx_id int64,signer common.Address,eoa_aid int64,evt *p.MktOrderEvt) {
+func (ss *SQLStorage) Insert_market_order_evt(
+	block_num p.BlockNumber,
+	tx_id int64,
+//	signer common.Address,
+	p_eoa_aid int64,
+	p_eoa_fill_aid int64,
+	evt *p.MktOrderEvt,
+) {
 
 	// depending on the order action (Create/Cancel/Fill) different table is used for storage
 	//		Create/Cancel order actions go to 'oorders' (Open Orders) table because these orders
@@ -36,7 +43,35 @@ func (ss *SQLStorage) Insert_market_order_evt(block_num p.BlockNumber,tx_id int6
 	}
 	_ = universe_id	// ToDo: add universe_id match condition (for market)
 	market_aid,market_type := ss.lookup_market_id(evt.Market.String())
-	eoa_fill_aid := ss.Lookup_or_create_address(signer.String(),block_num,tx_id)
+	eoa_aid,err := ss.Lookup_eoa_aid(wallet_aid);
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("Couldn't find EOA from wallet_id=%v (addr=%v)\n",wallet_aid,evt.AddressData[0].String()))
+		os.Exit(1)
+	}
+	if p_eoa_aid !=  eoa_aid {
+		ss.Log_msg(
+			fmt.Sprintf(
+				"Validation didn't pass Signers eoa_aid(%v) != event's eoa_aid(%v) (CREATOR)",
+				p_eoa_aid,eoa_aid,
+			),
+		)
+	}
+
+	eoa_fill_aid,err := ss.Lookup_eoa_aid(wallet_fill_aid)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("Couldn't find EOA FILL from wallet_id=%v\n",wallet_fill_aid))
+		os.Exit(1)
+	}
+	if p_eoa_aid !=  eoa_fill_aid {
+		ss.Log_msg(
+			fmt.Sprintf(
+				"Validation didn't pass Signers eoa_aid(%v) != event's eoa_aid(%v)",
+				p_eoa_aid,eoa_aid,
+			),
+		)
+	}
+
+//	eoa_fill_aid := ss.Lookup_or_create_address(signer.String(),block_num,tx_id)
 
 	var oaction p.OrderAction = p.OrderAction(evt.EventType)
 	var otype p.OrderType = p.OrderType(evt.OrderType)
@@ -180,9 +215,12 @@ func (ss *SQLStorage) Insert_open_order(
 //	evt_timestamp := evt.Timestamp.Unix()
 	expiration := order.ExpirationTimeSeconds.Int64()
 	// note: we don't have block number/tx hash for activity from 0x Mesh, so we insert with 0s
+	ss.Info.Printf("received eoa addr=%v\n",eoa_addr)
 	wallet_aid := ss.Lookup_or_create_address(order.MakerAddress.String(),0,0)
+	zero_addr := common.BigToAddress(zero)
 	var eoa_aid int64 = 0
-	if len(eoa_addr) == 0 {
+	if zero_addr.String()==eoa_addr {
+	//if len(eoa_addr) == 0 {
 		ss.Info.Printf(
 			"0x Mesh provided empty EOA address for maker addres %v (NULL_EOA_ADDR_FROM_MESH)",
 			order.MakerAddress.String(),
@@ -192,7 +230,7 @@ func (ss *SQLStorage) Insert_open_order(
 			eoa_aid = tmp_eoa_aid
 		} else {
 			ss.Info.Printf(
-				"Inserted open order from 0x Mesh with empty EOA addr (NULL_EOA_ADDR_FROM_MESH) (maker: %v)",
+				"Will insert open order from 0x Mesh with empty EOA addr (NULL_EOA_ADDR_FROM_MESH) (maker: %v)",
 				order.MakerAddress.String(),
 			)
 		}
@@ -202,7 +240,7 @@ func (ss *SQLStorage) Insert_open_order(
 	}
 
 	ss.Info.Printf("creating open order made by %v : %+v\n",eoa_addr,ospec)
-	market_aid := ss.lookup_address_id(ospec.Market.String())
+	market_aid := ss.Lookup_address_id(ospec.Market.String())
 	price := float64(ospec.Price.Int64())/100
 	otype := ospec.Type	// Bid/Ask
 	amount := order.MakerAssetAmount.String()
@@ -211,7 +249,9 @@ func (ss *SQLStorage) Insert_open_order(
 	query = "INSERT INTO oostats(market_aid,eoa_aid,outcome_idx) VALUES($1,$2,$3)"
 	_,err = ss.db.Exec(query,market_aid,eoa_aid,ospec.Outcome)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
+		if !strings.Contains(err.Error(),"duplicate key value") {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
+		}
 	}
 	query = "INSERT INTO oorders(" +
 				"market_aid,otype,wallet_aid,eoa_aid,price,amount,outcome_idx," +
@@ -292,7 +332,7 @@ func (ss *SQLStorage) Get_mkt_trades(mkt_addr string,limit int) []p.MarketTrade 
 	var where string = ""
 	var market_aid int64 = 0;
 	if len(mkt_addr) > 0 {
-		market_aid = ss.lookup_address_id(mkt_addr)
+		market_aid = ss.Lookup_address_id(mkt_addr)
 		where = " WHERE o.market_aid = $1 "
 	}
 	var query string

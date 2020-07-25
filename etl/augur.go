@@ -144,6 +144,41 @@ func build_list_of_inspected_events() {
 							evt_erc20_approval,
 	)
 }
+func get_eoa_aid(wallet_addr *common.Address,block_num BlockNumber,tx_id int64) int64 {
+
+	var eoa_aid int64 = 0
+	wallet_aid,err := storage.Nonfatal_lookup_address_id(wallet_addr.String())
+	if err == nil {
+		eoa_aid,err = storage.Lookup_eoa_aid(wallet_aid)
+		if err == nil {
+			storage.Link_eoa_and_wallet_contract(eoa_aid,wallet_aid)
+			return eoa_aid
+		}
+	}
+	num:=big.NewInt(int64(owner_fld_offset)) 
+	key:=common.BigToHash(num)
+	Info.Printf("get_eoa_aid: Looking up eoa addr via RPC: wallet addr = %v\n",wallet_addr.String())
+	eoa,err := eclient.StorageAt(context.Background(),*wallet_addr,key,nil)
+	Info.Printf("get_eoa_aid: output of rpc: %v\n",hex.EncodeToString(eoa))
+	var eoa_addr_str string
+	if err == nil {
+		Info.Printf("get_eoa_aid: got address from RPC successfully")
+		eth_addr := common.BytesToAddress(eoa[12:])
+		if !Eth_addr_is_zero(&eth_addr) {
+			eoa_addr_str = eth_addr.String()
+			eoa_aid = storage.Lookup_or_create_address(eoa_addr_str,block_num,tx_id)
+			storage.Link_eoa_and_wallet_contract(eoa_aid,wallet_aid)
+		}
+		Info.Printf("get_eoa_aid: eoa_addr_str=%v\n",eoa_addr_str)
+	} else {
+		Info.Printf("get_eoa_aid: error at rpc call: %v\n",err)
+	}
+	Info.Printf(
+		"get_eoa_aid: Success. Getting eoa_aid for address %v, eoa_aid = %v, wallet_aid=%v\n",
+		wallet_addr.String(),eoa_aid,wallet_aid,
+	)
+	return eoa_aid
+}
 func proc_approval(log *types.Log) {
 
 	if len(log.Topics)!=3 {
@@ -375,44 +410,6 @@ func proc_share_token_balance_changed(block_num BlockNumber,tx_id int64,log *typ
 	mevt.Dump(Info)
 	storage.Insert_share_balance_changed_evt(block_num,tx_id,&mevt)
 }
-func get_eoa_aid(addr *common.Address,block_num BlockNumber,tx_id int64) int64 {
-
-	var eoa_aid int64 = 0
-	wallet_aid,err := storage.Nonfatal_lookup_address_id(addr.String())
-	if err == nil {
-		eoa_aid,err = storage.Lookup_eoa_aid(wallet_aid)
-		if err != nil {
-			num:=big.NewInt(int64(owner_fld_offset))   // 1 is the offset at Storage where EOA is stored
-			key:=common.BigToHash(num)
-			Info.Printf("daitok: Looking up eoa addr via RPC: %v\n",addr.String())
-			eoa,err := eclient.StorageAt(context.Background(),*addr,key,nil)
-			Info.Printf("daitok: output of rpc: %v\n",hex.EncodeToString(eoa))
-			var eoa_addr_str string
-			if err == nil {
-				eoa_addr_str = common.BytesToAddress(eoa[12:]).String()
-			} else {
-				Info.Printf("daitok: error at rpc call: %v\n",err)
-			}
-			eoa_aid = storage.Lookup_or_create_address(eoa_addr_str,block_num,tx_id)
-		}
-	} else {
-			// copied from above, ToDo: generalize
-			num:=big.NewInt(int64(owner_fld_offset))   // 1 is the offset at Storage where EOA is stored
-			key:=common.BigToHash(num)
-			Info.Printf("daitok: Looking up eoa addr via RPC: %v\n",addr.String())
-			eoa,err := eclient.StorageAt(context.Background(),*addr,key,nil)
-			Info.Printf("daitok: output of rpc: %v\n",hex.EncodeToString(eoa))
-			var eoa_addr_str string
-			if err == nil {
-				eoa_addr_str = common.BytesToAddress(eoa[12:]).String()
-			} else {
-				Info.Printf("daitok: error at rpc call: %v\n",err)
-			}
-			eoa_aid = storage.Lookup_or_create_address(eoa_addr_str,block_num,tx_id)
-	}
-	Info.Printf("daitok: Getting eoa_aid for address %v, eoa_aid = %v\n",addr.String(),eoa_aid)
-	return eoa_aid
-}
 func proc_market_order_event(block_num BlockNumber,tx_id int64,log *types.Log,signer common.Address) {
 
 	var mevt MktOrderEvt
@@ -435,7 +432,9 @@ func proc_market_order_event(block_num BlockNumber,tx_id int64,log *types.Log,si
 								log.Address.String(),log.BlockNumber)
 	mevt.Dump(Info)
 	eoa_aid := get_eoa_aid(&mevt.AddressData[0],block_num,tx_id)
-	storage.Insert_market_order_evt(BlockNumber(log.BlockNumber),tx_id,signer,eoa_aid,&mevt)
+	eoa_fill_aid := get_eoa_aid(&mevt.AddressData[1],block_num,tx_id)
+	//storage.Insert_market_order_evt(BlockNumber(log.BlockNumber),tx_id,signer,eoa_aid,&mevt)
+	storage.Insert_market_order_evt(BlockNumber(log.BlockNumber),tx_id,eoa_aid,eoa_fill_aid,&mevt)
 }
 func proc_cancel_zerox_order(log *types.Log) {
 	var mevt CancelZeroXOrder
@@ -579,22 +578,48 @@ func proc_market_created(block_num BlockNumber,tx_id int64,log *types.Log,signer
 	}
 	Info.Printf("MarketCreated event found (block=%v)\n",log.BlockNumber)
 	mevt.Dump(Info)
-	Info.Printf("getwallet: Looking wallet addr via RPC for: %v\n",mevt.MarketCreator.String())
-	var copts = new(bind.CallOpts)
-	wallet,err := ctrct_wallet_registry.GetWallet(copts,mevt.MarketCreator)
-	Info.Printf("getwallet: addr is : %v\n",wallet.String())
-	var wallet_addr_str string
+/*
 	var wallet_aid int64 = 0
-	if err == nil {
-		wallet_addr_str = wallet.String()
-	} else {
-		Info.Printf("getwallet: error at rpc call: %v\n",err)
+	tmp_aid := storage.Lookup_address_id(mevt.MarketCreator.String())
+	if tmp_aid > 0 {
+		eoa_aid,_ := storage.Lookup_eoa_aid(tmp_aid)
+		if eoa_aid > 0 {
+			Info.Printf(
+				"Lookup of wallet address successfull. wallet_aid=%v for addr %v\n",
+				tmp_aid,mevt.MarketCreator.String(),
+			)
+			wallet_aid = tmp_aid
+			eoa_addr,err := storage.Lookup_address(eoa_aid)
+			if err == nil {
+				// Signer of the transaction is not the same as User EOA when Relay is used
+				signer = common.HexToAddress(eoa_addr)
+			} else {
+				Info.Printf("Could find wallet_aid, but failed at EOA address lookup: %v\n",err)
+			}
+		}
 	}
-	if !Eth_addr_is_zero(&wallet) {
-		wallet_aid = storage.Lookup_or_create_address(wallet_addr_str,block_num,tx_id)
+	if wallet_aid == 0 {
+		//WRONG. Info.Printf("getwallet: Looking wallet addr via RPC for: %v\n",mevt.MarketCreator.String())
+		Info.Printf("getwallet: Looking wallet addr via RPC for: %v\n",signer.String())
+		var copts = new(bind.CallOpts)
+		//WRONG. wallet,err := ctrct_wallet_registry.GetWallet(copts,mevt.MarketCreator)
+		wallet,err := ctrct_wallet_registry.GetWallet(copts,signer)
+		Info.Printf("getwallet: addr is : %v\n",wallet.String())
+		var wallet_addr_str string
+		if err == nil {
+			wallet_addr_str = wallet.String()
+		} else {
+			Info.Printf("getwallet: error at rpc call: %v\n",err)
+		}
+		if !Eth_addr_is_zero(&wallet) {
+			wallet_aid = storage.Lookup_or_create_address(wallet_addr_str,block_num,tx_id)
+		}
+		Info.Printf("getwallet: got wallet_aid = %v for wallet addr %v\n",wallet_aid,wallet_addr_str)
 	}
-	Info.Printf("getwallet: got wallet_aid = %v for wallet addr %v\n",wallet_aid,wallet_addr_str)
-	storage.Insert_market_created_evt(block_num,tx_id,signer,wallet_aid,validity_bond,&mevt)
+	*/
+	eoa_aid := get_eoa_aid(&mevt.MarketCreator,block_num,tx_id)
+//	storage.Insert_market_created_evt(block_num,tx_id,signer,wallet_aid,validity_bond,&mevt)
+	storage.Insert_market_created_evt(block_num,tx_id,eoa_aid,validity_bond,&mevt)
 }
 func process_event(block *types.Header, tx_id int64, signer common.Address, logs *[]*types.Log,lidx int) int64 {
 	// Return Value: id of the record inserted (if aplicable, or 0)

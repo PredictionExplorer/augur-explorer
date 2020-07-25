@@ -12,6 +12,7 @@ CREATE TABLE transaction (	-- we're only storing transactions related to Augur p
 	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
 	from_aid			BIGINT DEFAULT 0,
 	to_aid				BIGINT DEFAULT 0,
+	ctrct_create		BOOLEAN DEFAULT FALSE,	-- true if To = nil
 	value				DECIMAL(64,18) DEFAULT 0.0,
 	tx_hash				TEXT NOT NULL UNIQUE
 );
@@ -109,8 +110,8 @@ CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later th
 	outcome_idx			SMALLINT NOT NULL,
 	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
 	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
-	price				DECIMAL(3,2) NOT NULL,
-	amount				DECIMAL(24,18) NOT NULL,
+	price				DECIMAL(32,18) NOT NULL,
+	amount				DECIMAL(32,18) NOT NULL,
 	evt_timestamp		TIMESTAMPTZ NOT NULL,		-- 0x Mesh event timestamp
 	srv_timestamp		TIMESTAMPTZ NOT NULL,		-- Postgres Server timestamp (not blockchain timestamp)
 	expiration			TIMESTAMPTZ NOT NULL,
@@ -266,6 +267,7 @@ CREATE TABLE trd_mkt_stats (	-- trade statistics per User and per Market
 	frozen_funds		DECIMAL(32,18) DEFAULT 0.0
 );
 CREATE TABLE ustats (	-- statistics per User account
+	-- Notte: not only this table is for statistics, but it keeps important link between EOA and Wallet contract
 	eoa_aid				BIGINT PRIMARY KEY,		-- Externally Owned ACcount (EOA) address for this user
 	wallet_aid			BIGINT NOT NULL,	-- Wallet Contract address id
 	total_trades		BIGINT DEFAULT 0,

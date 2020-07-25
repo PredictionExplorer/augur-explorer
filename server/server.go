@@ -247,10 +247,11 @@ func build_javascript_uniq_addrs(entries *[]UniqueAddrEntry) template.JS {
 }
 func main_page(c *gin.Context) {
 	blknum,_:= augur_srv.storage.Get_last_block_num()
+	blknum_thousand_separated := ThousandsFormat(int64(blknum))
 	stats := augur_srv.storage.Get_front_page_stats()
 	c.HTML(http.StatusOK, "index.html", gin.H{
 			"title": "Augur Prediction Markets",
-			"block_num" : blknum,
+			"block_num" : blknum_thousand_separated,
 			"Stats" : stats,
 	})
 }

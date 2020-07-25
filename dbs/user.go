@@ -484,7 +484,7 @@ func (ss *SQLStorage) Get_unclaimed_profit(eoa_aid int64) float64 {
 func (ss *SQLStorage) Get_mkt_participant_outcomes(mkt_addr *common.Address) []*p.PosChg {
 
 	output := make([]*p.PosChg,0,16)
-	market_aid := ss.lookup_address_id(mkt_addr.String())
+	market_aid := ss.Lookup_address_id(mkt_addr.String())
 
 	var query string
 	query = "SELECT wa.addr,pl.outcome_idx FROM profit_loss AS pl " +

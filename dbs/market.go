@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	_  "github.com/lib/pq"
 
-	"github.com/ethereum/go-ethereum/common"
+	//"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
@@ -46,12 +46,20 @@ func get_market_status_str(status_code p.MarketStatus) string {
 	}
 	return "undefined"
 }
-func (ss *SQLStorage) Insert_market_created_evt(block_num p.BlockNumber,tx_id int64,signer common.Address,wallet_aid int64,validity_bond string,evt *p.MarketCreatedEvt) {
+func (ss *SQLStorage) Insert_market_created_evt(
+	block_num p.BlockNumber,
+	tx_id int64,
+	eoa_aid int64,
+	//signer common.Address,
+	//wallet_aid int64,
+	validity_bond string,
+	evt *p.MarketCreatedEvt,
+) {
 
 	var query string
 	var market_aid int64;
 	market_aid = ss.Lookup_or_create_address(evt.Market.String(),block_num,tx_id)
-	signer_aid := ss.Lookup_or_create_address(signer.String(),block_num,tx_id)
+//	signer_aid := ss.Lookup_or_create_address(signer.String(),block_num,tx_id)
 	// check if Market is already registered
 	query = "SELECT market_aid FROM market WHERE market_aid=$1"
 	err:=ss.db.QueryRow(query,market_aid).Scan(&market_aid);
@@ -66,32 +74,31 @@ func (ss *SQLStorage) Insert_market_created_evt(block_num p.BlockNumber,tx_id in
 		// market already registered, sliently exit
 		return
 	}
-	creator_aid := ss.Lookup_or_create_address(evt.MarketCreator.String(),block_num,tx_id)
+	wallet_aid := ss.Lookup_or_create_address(evt.MarketCreator.String(),block_num,tx_id)
 	universe_id,err := ss.lookup_universe_id(evt.Universe.String())
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("Universe %v not found when trying to insert MarketCreated evt\n",evt.Universe.String()))
 		os.Exit(1)
 	}
-	eoa_aid := ss.Lookup_or_create_address(evt.MarketCreator.String(),block_num,tx_id)
+	//eoa_aid := ss.Lookup_or_create_address(evt.MarketCreator.String(),block_num,tx_id)
 	reporter_aid := ss.Lookup_or_create_address(evt.DesignatedReporter.String(),block_num,tx_id)
-	ss.Info.Printf("create_market: signer_aid = %v (%v), creator_aid=%v (%v), reporter_id=%v (%v) , wallet_aid =%v\n",
-				signer_aid,signer.String(),
-				creator_aid,evt.MarketCreator.String(),
-				reporter_aid,evt.DesignatedReporter.String(),
-				wallet_aid,
-			)
-	if signer_aid == creator_aid { // a case only seen in Test environment, production check pending
+	ss.Info.Printf(
+		"create_market: eoa_aid = %v, wallet_aid=%v (%v), reporter_id=%v (%v)\n",
+		eoa_aid,wallet_aid,evt.MarketCreator.String(),reporter_aid,evt.DesignatedReporter.String(),
+	)
+	if eoa_aid == wallet_aid { // a case only seen in Test environment, production check pending
 		// Normally signer != creator, but this happens only in Dev (local testnet), so we have to fix it
 		//creator_aid = wallet_aid // this doesn't work, if starting blockchain from block 0, wallt isn't created yet
-		wallet_aid = creator_aid
 		ss.Info.Printf("create_market: fixed creator id to contract address %v (wallet_aid)\n",wallet_aid)
 	} else {
-		eoa_aid = signer_aid
-		wallet_aid = creator_aid
 	}
 	if wallet_aid == 0 {
-		ss.Log_msg(fmt.Sprintf("insert_market_created_evt(): creator addr = %v, wallet_aid = 0, can't continue, exiting\n",
-					evt.MarketCreator.String()))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"insert_market_created_evt(): creator addr = %v, wallet_aid = 0, can't continue, exiting\n",
+				evt.MarketCreator.String(),
+			),
+		)
 		os.Exit(1)
 	}
 	prices := p.Bigint_ptr_slice_to_str(&evt.Prices,",")
@@ -246,7 +253,7 @@ func (ss *SQLStorage) Insert_market_oi_changed_evt(block *types.Header,evt *p.Ma
 	// Note: this event arrives with evt.Market set to 0x0000000000000000000000000 (a contract bug?) ,
 	//			so we pass the market address as parameter ('market_addr') to the function
 	var query string
-	market_aid := ss.lookup_address_id(evt.Market.String())
+	market_aid := ss.Lookup_address_id(evt.Market.String())
 	ts_inserted := int64(block.Time)
 	query = "INSERT INTO oi_chg(market_aid,ts_inserted,oi) VALUES($1,TO_TIMESTAMP($2),(" +
 			evt.MarketOI.String() +
@@ -293,7 +300,7 @@ func (ss *SQLStorage) Insert_market_finalized_evt(block_num p.BlockNumber,tx_id 
 		os.Exit(1)
 	}
 	_ = universe_id	// ToDo: add universe_id match condition (for market)
-	market_aid := ss.lookup_address_id(evt.Market.String())
+	market_aid := ss.Lookup_address_id(evt.Market.String())
 	fin_timestamp := evt.Timestamp.Int64()
 	winning_payouts := p.Bigint_ptr_slice_to_str(&evt.WinningPayoutNumerators,",")
 
@@ -343,7 +350,7 @@ func (ss *SQLStorage) update_market_status(market_aid int64,status p.MarketStatu
 }
 func (ss *SQLStorage) Insert_market_volume_changed_evt_v1(block_num p.BlockNumber,tx_id int64,evt *p.MktVolumeChangedEvt_v1) {
 	// Note: this function will be discontinued after Augur is released on 28 Jul
-	market_aid := ss.lookup_address_id(evt.Market.String())
+	market_aid := ss.Lookup_address_id(evt.Market.String())
 
 	volume := evt.Volume.String()
 	outcome_vols := p.Bigint_ptr_slice_to_str(&evt.OutcomeVolumes,",")
@@ -396,7 +403,7 @@ func (ss *SQLStorage) Insert_market_volume_changed_evt_v1(block_num p.BlockNumbe
 }
 func (ss *SQLStorage) Insert_market_volume_changed_evt_v2(block_num p.BlockNumber,tx_id int64,evt *p.MktVolumeChangedEvt_v2) {
 
-	market_aid := ss.lookup_address_id(evt.Market.String())
+	market_aid := ss.Lookup_address_id(evt.Market.String())
 
 	volume := evt.Volume.String()
 	outcome_vols := p.Bigint_ptr_slice_to_str(&evt.OutcomeVolumes,",")
@@ -460,7 +467,7 @@ func (ss *SQLStorage) Insert_share_balance_changed_evt(block_num p.BlockNumber,t
 		ss.Log_msg(fmt.Sprintf("Universe %v not found on BalanceChanged event\n",evt.Universe.String()))
 		os.Exit(1)
 	}
-	market_aid := ss.lookup_address_id(evt.Market.String())
+	market_aid := ss.Lookup_address_id(evt.Market.String())
 	account_aid := ss.Lookup_or_create_address(evt.Account.String(),block_num,tx_id)
 
 	outcome := evt.Outcome.Int64()

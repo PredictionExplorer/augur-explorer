@@ -19,7 +19,7 @@ func (ss *SQLStorage) Insert_initial_report_evt(block_num p.BlockNumber,tx_id in
 		os.Exit(1)
 	}
 	_ = universe_id
-	market_aid := ss.lookup_address_id(evt.Market.String())
+	market_aid := ss.Lookup_address_id(evt.Market.String())
 	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),block_num,tx_id)
 	signer_aid := ss.Lookup_or_create_address(signer.String(),block_num,tx_id)
 	ini_reporter_aid := ss.Lookup_or_create_address(evt.InitialReporter.String(),block_num,tx_id)
@@ -99,7 +99,7 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(block_num p.BlockNumber,tx_id
 		ss.Log_msg(fmt.Sprintf("Universe %v not found on DisputeCrowdsourcererContribution event\n",evt.Universe.String()))
 		os.Exit(1)
 	}
-	market_aid := ss.lookup_address_id(evt.Market.String())
+	market_aid := ss.Lookup_address_id(evt.Market.String())
 	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),block_num,tx_id)
 	signer_aid := ss.Lookup_or_create_address(signer.String(),block_num,tx_id)
 	disputed_aid := ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),block_num,tx_id)

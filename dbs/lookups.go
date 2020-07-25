@@ -89,17 +89,17 @@ func (ss *SQLStorage) lookup_market_by_addr_str(addr string) (int64,error) {
 
 	return addr_id,nil
 }
-func (ss *SQLStorage) Lookup_address(eoa_aid int64) (string,error) {
+func (ss *SQLStorage) Lookup_address(aid int64) (string,error) {
 
 	var addr string;
 	var query string
 	query="SELECT addr FROM address WHERE address_id=$1"
-	err:=ss.db.QueryRow(query,eoa_aid).Scan(&addr);
+	err:=ss.db.QueryRow(query,aid).Scan(&addr);
 	return addr,err
 }
-func (ss *SQLStorage) lookup_address_id(addr string) int64 {
+func (ss *SQLStorage) Lookup_address_id(addr string) int64 {
 
-	var addr_id int64;
+	var addr_id int64 = 0;
 	var query string
 	query="SELECT address_id FROM address WHERE addr=$1"
 	err:=ss.db.QueryRow(query,addr).Scan(&addr_id);
@@ -164,6 +164,7 @@ func (ss *SQLStorage) create_address(addr string,block_num p.BlockNumber,tx_id i
 		ss.Log_msg(fmt.Sprintf("DB error, addr_id after INSERT is 0"))
 		os.Exit(1)
 	}
+	ss.Info.Printf("create_address: %v    aid=%v\n",addr,addr_id)
 
 	return addr_id
 }

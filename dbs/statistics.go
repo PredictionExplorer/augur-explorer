@@ -5,6 +5,7 @@ package dbs
 import (
 	"fmt"
 	"os"
+	"strings"
 	"database/sql"
 	_  "github.com/lib/pq"
 
@@ -193,4 +194,25 @@ func (ss *SQLStorage) Calc_unique_addresses(ts_from int64,ts_to int64) (int64,bo
 	}
 
 	return null_counter.Int64,no_rows
+}
+func (ss *SQLStorage) Link_eoa_and_wallet_contract(eoa_aid, wallet_aid int64) {
+
+	var query string
+	query = "INSERT INTO ustats(eoa_aid,wallet_aid) " +
+			"VALUES($1,$2) ON CONFLICT DO NOTHING"
+
+	_,err:=ss.db.Exec(query,eoa_aid,wallet_aid)
+	if (err!=nil) {
+		if !strings.Contains(err.Error(),"duplicate key value") {
+			ss.Log_msg(
+				fmt.Sprintf(
+					"Link_eoa_and_wallet_contract(%v,%v) failed: %v, q=%v",
+					eoa_aid,wallet_aid,err,query,
+				),
+			)
+			os.Exit(1)
+		}
+	} else {
+		ss.Info.Printf("eoa2wallet link success: eoa=%v wallet=%v\n",eoa_aid,wallet_aid)
+	}
 }

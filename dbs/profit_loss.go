@@ -150,8 +150,8 @@ func (ss *SQLStorage) Update_claim_status(signer common.Address,evt *p.TradingPr
 	// Note: we don't use outcome in WHERE clause because Proceeds aren't reported for all outcomes,
 	//		however just knowing that proceeds where claimed is enough to update all the outcomes
 	//		This function will be executed multiple times in a transaction, but that's ok
-	market_aid := ss.lookup_address_id(evt.Market.String())
-	signer_aid := ss.lookup_address_id(signer.String())
+	market_aid := ss.Lookup_address_id(evt.Market.String())
+	signer_aid := ss.Lookup_address_id(signer.String())
 	//outcome_idx := evt.Outcome.Int64()
 
 	var query string
@@ -297,8 +297,8 @@ func (ss *SQLStorage) Get_profit_loss(eoa_aid int64) []p.PLEntry {
 }
 func (ss *SQLStorage) Insert_profit_loss_debug_rec(pchg *p.PosChg) {
 
-	market_aid := ss.lookup_address_id(pchg.Mkt_addr.String())
-	wallet_aid := ss.lookup_address_id(pchg.Wallet_addr.String())
+	market_aid := ss.Lookup_address_id(pchg.Mkt_addr.String())
+	wallet_aid := ss.Lookup_address_id(pchg.Wallet_addr.String())
 
 	var query string
 
