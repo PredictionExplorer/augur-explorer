@@ -459,39 +459,19 @@ nav ul {
 .market__details-explanation p {
 	margin-bottom: 0;
 }
-
-.market__info-box  .hide {
-	display: none;
-}
-.market__info-box  .hide + label ~ div{
-	display: none;
-}
-/* оформляем текст label */
-.market__info-box  .hide + label {
-	border-bottom: 1px dotted green;
-	padding: 0;
-	color: green;
+.market__info-detail {
+	color: #1da1f2;
+	font-family: Roboto;
+	font-size: 14px;
+	font-weight: 400;
 	cursor: pointer;
-	display: inline-block;
+	transition: 0.3s;
 }
-/* вид текста label при активном переключателе */
-.market__info-box  .hide:checked + label {
-	color: red;
-	border-bottom: 0;
+.market__info-detail:hover{
+	color: #1da1f2;
+	transition: 0.3s;
 }
-/* когда чекбокс активен показываем блоки с содержанием  */
-.market__info-box  .hide:checked + label + div {
-	display: block;
-	background: #efefef;
-	-moz-box-shadow: inset 3px 3px 10px #7d8e8f;
-	-webkit-box-shadow: inset 3px 3px 10px #7d8e8f;
-	box-shadow: inset 3px 3px 10px #7d8e8f;
-	padding: 10px;
-}
-.market__info-box-title {
-	display: flex;
-	width: 50%;
-}
+
 /*nav ul li {*/
 /*	--c: goldenrod;*/
 /*	color: var(--c);*/
