@@ -56,9 +56,13 @@ Exposes all extracted data via WEB. Demo: [URL pending]
  * 0x Mesh
  * PostgreSQL
 
+### Supported OSes
+
+ * Any Unix OS with Golang
+
 ### Build
 
-This script will build everything, the only thing you need the OS to have `go` command
+This script will build everything, the only thing you need is the `go` command in your OS
 	
 	./auto-build.sh
 
@@ -80,18 +84,53 @@ on another terminal:
 	yarn workspace @augurproject/ui dev
 
 
-### Running
-
-There are 3 executables to run. This script will run all of them:
+### Running a quick setup for development:
 
 	./auto-run.sh
+
+(only for testing purposes)
+
+### Configuration for production
+
+The following executables need to be run:
+
+In deamon mode (permanently)
+ 1. ./etl/etl (The ETL daemon)
+ 2. ./server/server (The Web server daemon)
+ 3. ./etl/mes/mesh (The 0x Mesh listener)a
+ 4. ./etl/tools/dai_balances (DAI token balance calculator)
+ 
+Periodically (crontab)
+ 1. ./etl/tools/uniqueaddrs (Calculates unique addresses. Suggested period 1 hour)
+ 2. ./etl/tools/toprated (Calculates user ratings. Suggested period 10 minutes)
+
+Configuration files
+
+Default configuration files are located in `./config` directory of each daemon
+For production the configuration files are expected to be in $HOME/configs.
+To load production config for ETL deamon, run these commands:
+
+    cd ./augur-explorer/etl
+    . $HOME/configs/etl-config.env
+    nohup ./etl &
+
+##### Log files:
+
+The logs will be created in $HOME/ae_logs automatically
+
+##### Start/Stop processes
+
+ * To start a daemon just invoke the executable without parameters: `nohup ./[daemon_name] &`
+ * To stop a daemon use `kill` command
+
+The `etl` daemon won't exit until it finishes the processing of current blocks completely , this usually takes 20-30 seconds on the Main Net.
 
 ### Database initialization
 
 Create user on Ubuntu
 
 	useradd -m aedev
-	passwd aedev	# we are giong to set password to 123
+	passwd aedev	# for example we will use '123' as password
 
 Enter Postgres as superuser
 
@@ -109,7 +148,10 @@ Enter Postgres as development user
 Init DB
 
 	cd etl/sql
-	./reset-db.sh
+	./reset-db.sh [database_name] [init_script.sql]
+
+	(init script will depend on the network , for local setup use `dev_init.sql`)
+	Note: this script will drop tables if database already exist, all data will be deleted
 
 ### Database Schema and documentation
 

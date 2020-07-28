@@ -624,9 +624,6 @@ DECLARE
 BEGIN
 
 	-- this exception is for debugging purposes, to_do: remove later
-	IF NEW.eoa_aid = 0 THEN
-		RAISE EXCEPTION 'INSERT into ustats: eoa_aid cant be 0';
-	END IF;
 	IF NEW.wallet_aid = 0 THEN
 		RAISE EXCEPTION 'INSERT into ustats: wallet_aid cant be 0';
 	END IF;

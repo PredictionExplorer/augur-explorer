@@ -45,30 +45,14 @@ func (ss *SQLStorage) Insert_market_order_evt(
 	market_aid,market_type := ss.lookup_market_id(evt.Market.String())
 	eoa_aid,err := ss.Lookup_eoa_aid(wallet_aid);
 	if err!=nil {
-		ss.Log_msg(fmt.Sprintf("Couldn't find EOA from wallet_id=%v (addr=%v)\n",wallet_aid,evt.AddressData[0].String()))
-		os.Exit(1)
-	}
-	if p_eoa_aid !=  eoa_aid {
-		ss.Log_msg(
-			fmt.Sprintf(
-				"Validation didn't pass Signers eoa_aid(%v) != event's eoa_aid(%v) (CREATOR)",
-				p_eoa_aid,eoa_aid,
-			),
-		)
+		// sometimes creator can be an EOA, so we set eoa_aid to wallet_aid
+		eoa_aid = wallet_aid
 	}
 
 	eoa_fill_aid,err := ss.Lookup_eoa_aid(wallet_fill_aid)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("Couldn't find EOA FILL from wallet_id=%v\n",wallet_fill_aid))
-		os.Exit(1)
-	}
-	if p_eoa_aid !=  eoa_fill_aid {
-		ss.Log_msg(
-			fmt.Sprintf(
-				"Validation didn't pass Signers eoa_aid(%v) != event's eoa_aid(%v)",
-				p_eoa_aid,eoa_aid,
-			),
-		)
+		// sometimes creator can be an EOA, so we set eoa_aid to wallet_aid
+		eoa_fill_aid = wallet_fill_aid
 	}
 
 //	eoa_fill_aid := ss.Lookup_or_create_address(signer.String(),block_num,tx_id)
