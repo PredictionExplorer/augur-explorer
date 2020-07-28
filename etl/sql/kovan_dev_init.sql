@@ -1,5 +1,5 @@
 -- Do not use, for Development only!
-INSERT INTO universe(universe_addr) VALUES('0x50F0b9e78dc52A834EEd7378DC98a57a5a3C9900');
+INSERT INTO universe(universe_addr) VALUES('0x48CB0042B1c0AE139Fd6b83481613a10Af4a32A8');
 INSERT INTO main_stats(universe_id) VALUES(1);
 INSERT INTO contract_addresses(
 		augur,
@@ -14,16 +14,16 @@ INSERT INTO contract_addresses(
 		share_token,
 		universe
 ) VALUES (
-		'0xbc362B362dF54f77e6786d63652bc82245cF1af4',-- augur (main contract)
-		'0x9a9bd63f57c264893E6a01e1Ca737e2265f0266B',-- augur trading
-		'0xc7830Ac6DE781352F7CaE877025AC7368d0Eff94',-- profit loss
-		'0xb6085Abd65E21d205AEaD0b1b9981B8B221fA14E',-- dai cash
-		'0x08f7904Ab81CFA0615C9D73f69F0c17521B36Fb0',-- rep token
-		'0x5Fe53EB2C230C5dbCd0Aa14C727B1797536Df5c9',-- zerox
-		'0x17069733eD2aC451BE4f7A559E4C7d960b061C41',-- wallet registry
-		'0x4f2E91D2A29D77c040AAA4527378C3FCb7aDc000',-- fill order
-		'0xFacdc564F29C751d4d6315B8d2706087AF1BED3d',-- eth exchange
-		'0xFFaFFda91CF0a333DA64a046B1506213A053B142',-- share token
-		'0x50F0b9e78dc52A834EEd7378DC98a57a5a3C9900'-- universe
+		'0xd50475cC7Ae9dd46a09D8415A57F0DF59E89b0f9',-- augur (main contract)
+		'0x9307C37077fd428f18f2a4E94BaeeeA7Cc5681dd',-- augur trading
+		'0x5B659733415f9919D5d4FA8e7723D7b0e6434E4F',-- profit loss
+		'0x5bc0ceB4d813282C4468288C8AB42Af5e7a43B27',-- dai cash
+		'0x7859eF3B6D0Be006675990192Eea09cba46d9C35',-- rep token
+		'0x5673627689E6435D3Bea15A7B94cf6E5D2d450E3',-- zerox
+		'0x29fD93b1Ebb775306b018BdDd107e2F5c889e70c',-- wallet registry
+		'0x58f1a6a327dC8A4c73F72B37B75802EB24670A94',-- fill order
+		'0xA867A0291D23AC82bB9eA83DD52ee8B71922Fb42',-- eth exchange
+		'0xfB4B6fc159E2eB3Ab7e2E08f0056238488c6D5AB',-- share token
+		'0x48CB0042B1c0AE139Fd6b83481613a10Af4a32A8'-- universe
 );
-INSERT INTO last_block  VALUES(19712444);
+INSERT INTO last_block  VALUES(19830391);

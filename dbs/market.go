@@ -86,11 +86,8 @@ func (ss *SQLStorage) Insert_market_created_evt(
 		"create_market: eoa_aid = %v, wallet_aid=%v (%v), reporter_id=%v (%v)\n",
 		eoa_aid,wallet_aid,evt.MarketCreator.String(),reporter_aid,evt.DesignatedReporter.String(),
 	)
-	if eoa_aid == wallet_aid { // a case only seen in Test environment, production check pending
-		// Normally signer != creator, but this happens only in Dev (local testnet), so we have to fix it
-		//creator_aid = wallet_aid // this doesn't work, if starting blockchain from block 0, wallt isn't created yet
-		ss.Info.Printf("create_market: fixed creator id to contract address %v (wallet_aid)\n",wallet_aid)
-	} else {
+	if eoa_aid==0 {
+		eoa_aid = wallet_aid	// WarpSync contract creates markets with eoa_aid=0
 	}
 	if wallet_aid == 0 {
 		ss.Log_msg(
