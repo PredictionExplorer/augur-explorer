@@ -1,100 +1,164 @@
 <html>
 <head>
-	<link href="/res/main.css" rel="stylesheet">
-	<title>Augur Market {{.Market.MktAddr}}</title>
-	<meta name="description" content="{{.Market.Description}}">
+    <link href="/res/main.css" rel="stylesheet">
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          rel="stylesheet">
+    <title>Augur Market {{.Market.MktAddr}}</title>
+    <meta name="description" content="{{.Market.Description}}">
 </head>
 <body>
+{{template "header"}}
+<div class="container">
+    <ul class="breadcrumb">
+        <li><a href="#"><img src="../imgs/arrow-left.svg" alt="arrow-left"> Back</a></li>
+    </ul>
+</div>
+<section class="market__details">
+    <div class="container">
+        <h3 class="market_details__title">Twitter: Will @rihanna have 98 Million or more twitter followers on June 30, 2020, according to
+            www.trackalytics.com?</h3>
+        <div class="market__details-explanation">
+            <p>Use ticker symbol search for token pair (ie BTCUSD), find exchange that corresponds to market question.
+                Navigate to Full-featured daily chart, Opening price is determined on the date in the market question on
+                tradingview.com. Opening price can also be found on tradingview using the hourly chart for the date in
+                the market question at UTC …</p>
+            <a href="#">Show more</a>
+        </div>
+    </div>
+</section>
+<section class="market__info">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="market__info-box">
+                    <div class="market__info-box-title">
+                        <p>Outcome</p><p>Last Price</p>
+                    </div>
+                    <input type="checkbox" id="hd-1" class="hide"/>
+                    <label for="hd-1" >Нажмите здесь, чтобы увидеть скрытый текст №1</label>
+                    <div>
+                        HTML — стандартный язык разметки документов во Всемирной паутине. Большинство веб-страниц содержат описание разметки на языке HTML (или XHTML). Язык HTML интерпретируется браузерами и отображается в виде документа в удобной для человека форме..
+                    </div>
+                    <br/>
+                    <br/>
+                    <input type="checkbox" id="hd-2" class="hide"/>
+                    <label for="hd-2">Нажмите здесь, чтобы увидеть скрытый текст №2</label>
+                    <div>
+                        CSS - CSS Cascading Style Sheets — каскадные таблицы стилей — формальный язык описания внешнего вида документа, написанного с использованием языка разметки. Преимущественно используется как средство описания, оформления внешнего вида веб-страниц, написанных с помощью языков разметки HTML и XHTML, но может также применяться к любым XML-документам, например, к SVG или XUL.
+                    </div>
+                    <br/>
+                    <br/>
+                    <input type="checkbox" id="hd-3" class="hide"/>
+                    <label for="hd-3" >Нажмите здесь, чтобы увидеть скрытый текст №3</label>
+                    <div>
+                        JavaScript — прототипно-ориентированный сценарный язык программирования. Является реализацией языка ECMAScript (стандарт ECMA-262). JavaScript обычно используется как встраиваемый язык для программного доступа к объектам приложений. Наиболее широкое применение находит в браузерах как язык сценариев для придания интерактивности веб-страницам...
+                    </div>
+                    <br/>
+                    <br/>
+                    <input type="checkbox" id="hd-4" class="hide"/>
+                    <label for="hd-4">Нажмите здесь, чтобы увидеть скрытый текст №4</label>
+                    <div>
+                        jQuery — библиотека JavaScript, фокусирующаяся на взаимодействии JavaScript и HTML. Библиотека jQuery помогает легко получать доступ к любому элементу DOM, обращаться к атрибутам и содержимому элементов DOM, манипулировать ими. Также библиотека jQuery предоставляет удобный API для работы с AJAX.
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6"></div>
+        </div>
+    </div>
+</section>
 <h3 class="page_title">Market Details</h3>
 <table class="market_detail">
-<tr class="market_detail">
-	<td nowrap>Address (ID):</td>
-	<td class="addr" >{{.Market.MktAddr}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Creator:</td>
-	<td><a class="addr" href="/search?q={{.Market.Signer}}">{{.Market.Signer}}</a></td>
-</tr>
-<tr class="market_detail">
-	<td>Reporter</td>
-	<td><a class="addr" href="/search?q={{.Market.Reporter}}">{{.Market.Reporter}}</a></td>
-</tr>
-<tr class="market_detail">
-	<td>End Date</td>
-	<td>{{.Market.EndDate}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Description</td>
-	<td>{{.Market.Description}}</td>
-</tr>
-<tr class="market_detail">
-	<td nowrap>Long description</td>
-	<td>{{.Market.LongDesc}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Category</td>
-	<td>	{{template "category_record_small" .Market}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Market Type</td>
-	<td>{{.Market.MktTypeStr}}</td>
-</td>
-{{if ne 2 .Market.MktType }}
-<tr class="market_detail">
-	<td>Outcomes</td>
-	<td>{{.Market.Outcomes}}</td>
-</tr>
-{{end}}
-<tr class="market_detail">
-	<td>Status</td>
-	<td>{{.Market.Status}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Fee</td>
-	<td>{{.Market.Fee}}</td>
-</tr>
-<tr class="market_detail">
-	<td>OpenInterest</td>
-	<td>{{.Market.OpenInterest}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Total Volume</td>
-	<td>{{.Market.CurVolume}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Money at Statke</td>
-	<td>{{.Market.MoneyAtStake}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Total Trades</td>
-	<td>{{.Market.TotalTrades}}</td>
-</tr>
+    <tr class="market_detail">
+        <td nowrap>Address (ID):</td>
+        <td class="addr">{{.Market.MktAddr}}</td>
+    </tr>
+    <tr class="market_detail">
+        <td>Creator:</td>
+        <td><a class="addr" href="/search?q={{.Market.Signer}}">{{.Market.Signer}}</a></td>
+    </tr>
+    <tr class="market_detail">
+        <td>Reporter</td>
+        <td><a class="addr" href="/search?q={{.Market.Reporter}}">{{.Market.Reporter}}</a></td>
+    </tr>
+    <tr class="market_detail">
+        <td>End Date</td>
+        <td>{{.Market.EndDate}}</td>
+    </tr>
+    <tr class="market_detail">
+        <td>Description</td>
+        <td>{{.Market.Description}}</td>
+    </tr>
+    <tr class="market_detail">
+        <td nowrap>Long description</td>
+        <td>{{.Market.LongDesc}}</td>
+    </tr>
+    <tr class="market_detail">
+        <td>Category</td>
+        <td> {{template "category_record_small" .Market}}</td>
+    </tr>
+    <tr class="market_detail">
+        <td>Market Type</td>
+        <td>{{.Market.MktTypeStr}}</td>
+        </td>
+        {{if ne 2 .Market.MktType }}
+    <tr class="market_detail">
+        <td>Outcomes</td>
+        <td>{{.Market.Outcomes}}</td>
+    </tr>
+    {{end}}
+    <tr class="market_detail">
+        <td>Status</td>
+        <td>{{.Market.Status}}</td>
+    </tr>
+    <tr class="market_detail">
+        <td>Fee</td>
+        <td>{{.Market.Fee}}</td>
+    </tr>
+    <tr class="market_detail">
+        <td>OpenInterest</td>
+        <td>{{.Market.OpenInterest}}</td>
+    </tr>
+    <tr class="market_detail">
+        <td>Total Volume</td>
+        <td>{{.Market.CurVolume}}</td>
+    </tr>
+    <tr class="market_detail">
+        <td>Money at Statke</td>
+        <td>{{.Market.MoneyAtStake}}</td>
+    </tr>
+    <tr class="market_detail">
+        <td>Total Trades</td>
+        <td>{{.Market.TotalTrades}}</td>
+    </tr>
 </table>
 <br/><br/>
 {{$maddr := .Market.MktAddr}}
 <div class="market_outcome_vols">
-	<h3>Volume & Last Price data:</h3>
-	{{template "market_outcome_vols" .OutcomeVols}}
+    <h3>Volume & Last Price data:</h3>
+    {{template "market_outcome_vols" .OutcomeVols}}
 </div>
 <br/><br/>
 <div class="market_info">
-	{{template "market_trades" .Trades}}
-	<nav id="market_trades_nav">
-		<ul>
-			<li style="float: right">
-				<a class="btn_link" href="/fulltradelist/{{.Market.MktAddr}}">Full List</a>
-				<span></span><span></span><span></span><span></span>
-			</li>
-		</ul>
-	</nav>
+    {{template "market_trades" .Trades}}
+    <nav id="market_trades_nav">
+        <ul>
+            <li style="float: right">
+                <a class="btn_link" href="/fulltradelist/{{.Market.MktAddr}}">Full List</a>
+                <span></span><span></span><span></span><span></span>
+            </li>
+        </ul>
+    </nav>
 </div>
 <nav>
-	<ul>
-		<li>
-			<a class="btn_link" href="/index.html">Back</a>
-			<span></span><span></span><span></span><span></span>
-		</li>
-	</ul>
+    <ul>
+        <li>
+            <a class="btn_link" href="/index.html">Back</a>
+            <span></span><span></span><span></span><span></span>
+        </li>
+    </ul>
 </nav>
+{{template "footer"}}
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js">
+</script>
 </body>
 </html>
