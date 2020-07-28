@@ -9,13 +9,13 @@
 <body>
 {{template "header"}}
 <div class="container">
-    <ul class="breadcrumb">
+    <ul class="breadcrumb" style="background-color: white; padding-left: 0">
         <li><a href="#"><img src="../imgs/arrow-left.svg" alt="arrow-left"> Back</a></li>
     </ul>
 </div>
 <section class="market__details">
     <div class="container">
-        <h3 class="market_details__title">Twitter: Will @rihanna have 98 Million or more twitter followers on June 30, 2020, according to
+        <h3 class="market__details-title">Twitter: Will @rihanna have 98 Million or more twitter followers on June 30, 2020, according to
             www.trackalytics.com?</h3>
         <div class="market__details-explanation">
             <p>Use ticker symbol search for token pair (ie BTCUSD), find exchange that corresponds to market question.
@@ -32,14 +32,22 @@
             <div class="col-md-6">
                 <div class="market__info-box">
                     <div class="row">
-                        <div class="col-sm-6">Outcome</div>
-                        <div class="col-sm-6">Last Price</div>
+                        <div class="col-sm-6"><p>Outcome</p></div>
+                        <div class="col-sm-6"><p>Last Price</p></div>
                     </div>
                     <section id="multiple" data-accordion-group="">
-                        <section data-accordion="">
+                        <section data-accordion="" class="accordion-box">
                             <div data-control="">
                                 <div class="row">
-                                    <div class="col-sm-6">Yes</div>
+                                    <div class="col-sm-6">
+                                        <div class="progress-title">
+                                            <p>Yes</p>
+                                            <p class= "progress-title-yes">90%</p>
+                                        </div>
+                                        <div class="w3-light-grey">
+                                            <div class="w3-color-yes" style="width:90%"></div>
+                                        </div>
+                                    </div>
                                     <div class="col-sm-3">
                                         <p>$31</p>
                                     </div>
@@ -48,7 +56,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div data-content="" style="max-height: 0px; overflow: hidden;">
+                            <div data-content="" style="max-height: 60px; overflow: hidden;">
                                 <div class="row">
                                     <div class="col-sm-3">
                                         <p>Bid price</p>
@@ -69,10 +77,18 @@
                             </div>
                         </section>
 
-                        <section data-accordion="">
+                        <section data-accordion="" class="accordion-box">
                             <div data-control="">
                                 <div class="row">
-                                    <div class="col-sm-6">No</div>
+                                    <div class="col-sm-6">
+                                        <div class="progress-title">
+                                            <p>No</p>
+                                            <p class= "progress-title-no">10%</p>
+                                        </div>
+                                        <div class="w3-light-grey">
+                                            <div class="w3-color-no" style="width:10%"></div>
+                                        </div>
+                                    </div>
                                     <div class="col-sm-3">
                                         <p>$68</p>
                                     </div>
@@ -81,7 +97,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div data-content="" style="max-height: 0px; overflow: hidden;">
+                            <div data-content="" style="max-height: 60px; overflow: hidden;">
                                 <div class="row">
                                     <div class="col-sm-3">
                                         <p>Bid price</p>
@@ -103,10 +119,10 @@
                             </div>
                         </section>
 
-                        <section data-accordion="">
+                        <section data-accordion="" class="accordion-box">
                             <div data-control="">
                                 <div class="row">
-                                    <div class="col-sm-6">Invalid</div>
+                                    <div class="col-sm-6"><p>Invalid</p></div>
                                     <div class="col-sm-3">
                                         <p>$68</p>
                                     </div>
@@ -115,7 +131,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div data-content="" style="max-height: 0px; overflow: hidden;">
+                            <div data-content="" style="max-height: 60px; overflow: hidden;">
                                 <div class="row">
                                     <div class="col-sm-3">
                                         <p>Bid price</p>

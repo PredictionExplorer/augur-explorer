@@ -441,6 +441,16 @@ nav ul {
 		margin-left: 10px;
 	}
 }
+.breadcrumb {
+	font-family: Roboto;
+	font-size: 19px;
+}
+.market__details {
+	margin-bottom: 32px;
+}
+.market__details-title {
+	margin-bottom: 16px;
+}
 .market__details-explanation {
 	display: flex;
 }
@@ -471,7 +481,49 @@ nav ul {
 	color: #1da1f2;
 	transition: 0.3s;
 }
+.market__info-box {
+	padding: 28px 22px 0;
+	box-shadow: 0 0 6px rgba(0, 0, 0, 0.16);
+	border-radius: 4px;
+	background-color: #ffffff;
+}
+.progress-title-yes {
+	color: var(--main-pc-y-color);
+}
+.progress-title-no {
+	color: #ffba81;
+}
+.accordion-box {
+	border-top: 1px solid #e6e6e6;
+	padding-top: 11px;
+	padding-bottom: 11px;
+}
+.accordion-box div[data-control]  {
+	margin-bottom: 7px;
+}
+.accordion-box div[data-content]  {
+	padding-top: 5px;
+}
 
+.accordion-box .progress-title {
+	display: flex;
+	justify-content: space-between;
+}
+.w3-light-grey {
+	background-color: #ededf0;
+	height: 4px;
+	border-radius: 3px;
+}
+.w3-color-yes {
+	background-color: #9a82f0;
+	height: 4px;
+	border-radius: 3px;
+}
+.w3-color-no {
+	background-color: #ffba81;
+	height: 4px;
+	border-radius: 3px;
+}
 /*nav ul li {*/
 /*	--c: goldenrod;*/
 /*	color: var(--c);*/
