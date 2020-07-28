@@ -488,7 +488,8 @@ nav ul {
 	box-shadow: inset 3px 3px 10px #7d8e8f;
 	padding: 10px;
 }
-.market__info-box-title p {
+.market__info-box-title {
+	display: flex;
 	width: 50%;
 }
 /*nav ul li {*/
