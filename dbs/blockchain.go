@@ -108,11 +108,12 @@ func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header)  bool {
 	return false
 }
 func (ss *SQLStorage) Insert_transaction(
-	block_num p.BlockNumber,
+	agtx *p.AugurTx,
+/*	block_num p.BlockNumber,
 	tx_hash string,
 	to string,
 	tx *types.Message,
-	ctrct_create bool,
+	ctrct_create bool,*/
 ) int64 {
 
 	// Note: contract addresses have To as their created address + ctrct_create flag set to 'true'
@@ -121,17 +122,18 @@ func (ss *SQLStorage) Insert_transaction(
 
 
 	query = "INSERT INTO transaction (block_num,value,tx_hash,ctrct_create) " +
-			"VALUES ($1,("+tx.Value().String()+"/1e+18),$2,$3) RETURNING id"
+			"VALUES ($1,("+agtx.TxMsg.Value().String()+"/1e+18),$2,$3) RETURNING id"
 
-	row := ss.db.QueryRow(query,block_num,tx_hash,ctrct_create)
+	row := ss.db.QueryRow(query,agtx.BlockNum,agtx.TxHash,agtx.CtrctCreate)
 	err := row.Scan(&tx_id)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into transactions table: %v, q=%v",err,query))
 		os.Exit(1)
 	}
 
-	from_aid := ss.Lookup_or_create_address(tx.From().String(),block_num,tx_id)
-	to_aid := ss.Lookup_or_create_address(to,block_num,tx_id)
+	from_aid := ss.Lookup_or_create_address(agtx.TxMsg.From().String(),agtx.BlockNum,tx_id)
+	to_aid := ss.Lookup_or_create_address(agtx.To,agtx.BlockNum,tx_id)
+	// this update is needed because 'address' table holds tx_id of account creation
 	query = "UPDATE transaction set from_aid=$2 , to_aid=$3 where id = $1"
 	_,err = ss.db.Exec(query,tx_id,from_aid,to_aid)
 	if (err!=nil) {

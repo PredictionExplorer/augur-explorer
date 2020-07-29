@@ -160,7 +160,10 @@ CREATE TABLE outcome_vol (	-- this is the (accumulated) volume per outcome (inde
 );
 CREATE table oi_chg ( -- open interest changed event
 	id					BIGSERIAL PRIMARY KEY,
-	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+--	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
 	ts_inserted			TIMESTAMPTZ NOT NULL, -- timestamp
 	oi					DECIMAL(24,18) NOT NULL
 );
@@ -175,10 +178,6 @@ CREATE TABLE mkt_fin (
 );
 CREATE TABLE last_block (	-- the value in this table is guaranteeing integrity in the data up to last block
 	block_num			BIGINT	NOT NULL	-- last block processed by the ETL
-);
-CREATE TABLE user_wallet ( -- link between User and his/her Wallet Contract
-	eoa_aid				BIGINT PRIMARY KEY,
-	wallet_aid			BIGINT NOT NULL		-- Wallet Contract address
 );
 CREATE table dai_transf (	-- transfers of DAI tokens (deposits/withdrawals of funds)
 	id					BIGSERIAL PRIMARY KEY,

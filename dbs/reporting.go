@@ -7,11 +7,11 @@ import (
 	"os"
 	_  "github.com/lib/pq"
 
-	"github.com/ethereum/go-ethereum/common"
+	//"github.com/ethereum/go-ethereum/common"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Insert_initial_report_evt(block_num p.BlockNumber,tx_id int64,signer common.Address,evt *p.InitialReportSubmittedEvt) {
+func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.InitialReportSubmittedEvt) {
 
 	universe_id,err := ss.lookup_universe_id(evt.Universe.String())
 	if err != nil {
@@ -20,9 +20,9 @@ func (ss *SQLStorage) Insert_initial_report_evt(block_num p.BlockNumber,tx_id in
 	}
 	_ = universe_id
 	market_aid := ss.Lookup_address_id(evt.Market.String())
-	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),block_num,tx_id)
-	signer_aid := ss.Lookup_or_create_address(signer.String(),block_num,tx_id)
-	ini_reporter_aid := ss.Lookup_or_create_address(evt.InitialReporter.String(),block_num,tx_id)
+	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),agtx.BlockNum,agtx.TxId)
+	signer_aid := ss.Lookup_or_create_address(agtx.TxMsg.From().String(),agtx.BlockNum,agtx.TxId)
+	ini_reporter_aid := ss.Lookup_or_create_address(evt.InitialReporter.String(),agtx.BlockNum,agtx.TxId)
 
 	amount_staked := evt.AmountStaked.String()
 	payout_numerators := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
@@ -61,8 +61,8 @@ func (ss *SQLStorage) Insert_initial_report_evt(block_num p.BlockNumber,tx_id in
 			TO_TIMESTAMP($14)
 		)`
 	result,err := ss.db.Exec(query,
-			block_num,
-			tx_id,
+			agtx.BlockNum,
+			agtx.TxId,
 			market_aid,
 			reporter_aid,
 			signer_aid,
@@ -92,7 +92,7 @@ func (ss *SQLStorage) Insert_initial_report_evt(block_num p.BlockNumber,tx_id in
 	// ToDo: possibly migrate to triggers (or maybe not)
 	ss.update_market_status(market_aid,p.MktStatusReported)
 }
-func (ss *SQLStorage) Insert_dispute_crowd_contrib(block_num p.BlockNumber,tx_id int64,signer common.Address,evt *p.DisputeCrowdsourcerContributionEvt) {
+func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.DisputeCrowdsourcerContributionEvt) {
 
 	_,err := ss.lookup_universe_id(evt.Universe.String())
 	if err != nil {
@@ -100,9 +100,9 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(block_num p.BlockNumber,tx_id
 		os.Exit(1)
 	}
 	market_aid := ss.Lookup_address_id(evt.Market.String())
-	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),block_num,tx_id)
-	signer_aid := ss.Lookup_or_create_address(signer.String(),block_num,tx_id)
-	disputed_aid := ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),block_num,tx_id)
+	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),agtx.BlockNum,agtx.TxId)
+	signer_aid := ss.Lookup_or_create_address(agtx.TxMsg.From().String(),agtx.BlockNum,agtx.TxId)
+	disputed_aid := ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
 
 	amount_staked := evt.AmountStaked.String()
 	payout_numerators := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
@@ -137,8 +137,8 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(block_num p.BlockNumber,tx_id
 		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,`+amount_staked+`/1e+18,$9,$10,
 				`+cur_stake+`/1e+18,`+stake_remaining+`/1e+18,TO_TIMESTAMP($11))`
 	result,err := ss.db.Exec(query,
-			block_num,
-			tx_id,
+			agtx.BlockNum,
+			agtx.TxId,
 			market_aid,
 			reporter_aid,
 			signer_aid,

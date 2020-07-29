@@ -268,9 +268,9 @@ func main() {
 								if err != nil {
 									Fatalf("Error in tx signature validation (shoudln't happen): %v",err)
 								}
-								var tx_id int64 = 0
-								var ctrct_create bool = false
-								from := tx_msg.From()
+								//var tx_id int64 = 0
+								//var ctrct_create bool = false
+//								from := tx_msg.From()
 								dump_tx_input_if_known(tx)
 								to:=""
 								if tx.To() != nil {
@@ -285,10 +285,13 @@ func main() {
 								if err != nil {
 									Error.Printf("Error: %v",err)
 								} else {
+									agtx := new(AugurTx)
+									agtx.CtrctCreate = false
 									if tx.To() == nil {
 										to = rcpt.ContractAddress.String()
-										ctrct_create = true
+										agtx.CtrctCreate = true
 									}
+									/*
 									tx_id = storage.Insert_transaction(
 												BlockNumber(block.Number().Uint64()),
 												tx.Hash().String(),
@@ -296,6 +299,11 @@ func main() {
 												&tx_msg,
 												ctrct_create,
 									)
+									*/
+									agtx.TxId = 0
+									agtx.BlockNum = BlockNumber(block.Number().Uint64())
+									agtx.TxHash = tx.Hash().String()
+									agtx.TxMsg = &tx_msg
 									contains_market_finalized:=false
 									sequencer := new(EventSequencer)
 									num_logs := len(rcpt.Logs)
@@ -327,7 +335,7 @@ func main() {
 												"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",
 												ordered_list[i].Topics[0].String(),
 												ordered_list[i].Address.String())
-											id := process_event(block.Header(),tx_id,from,&ordered_list,i)
+											id := process_event(block.Header(),agtx,&ordered_list,i)
 											if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),evt_profit_loss_changed) {
 												pl_entries = append(pl_entries,id)
 											}

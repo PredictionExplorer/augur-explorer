@@ -12,15 +12,15 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Process_REP_token_transfer(evt *p.Transfer,block_num p.BlockNumber,tx_id int64) {
+func (ss *SQLStorage) Process_REP_token_transfer(evt *p.Transfer,agtx *p.AugurTx) {
 
-	from_aid := ss.Lookup_or_create_address(evt.From.String(),block_num,tx_id)
-	to_aid := ss.Lookup_or_create_address(evt.To.String(),block_num,tx_id)
+	from_aid := ss.Lookup_or_create_address(evt.From.String(),agtx.BlockNum,agtx.TxId)
+	to_aid := ss.Lookup_or_create_address(evt.To.String(),agtx.BlockNum,agtx.TxId)
 	amount := evt.Value.String()
 
 	var query string
 	query = "INSERT INTO rep_transf(block_num,tx_id,from_aid,to_aid,amount) VALUES($1,$2,$3,$4,$5/1e+18)"
-	_,err := ss.db.Exec(query,block_num,tx_id,from_aid,to_aid,amount)
+	_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,from_aid,to_aid,amount)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
@@ -51,20 +51,20 @@ func (ss *SQLStorage) Insert_token_balance_changed_evt(evt *p.TokenBalanceChange
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_token_transf_evt(evt *p.TokensTransferred,block_num p.BlockNumber,tx_id int64) {
+func (ss *SQLStorage) Insert_token_transf_evt(evt *p.TokensTransferred,agtx *p.AugurTx) {
 
-	market_aid := ss.Lookup_or_create_address(evt.Market.String(),block_num,tx_id)
-	token_aid := ss.Lookup_or_create_address(evt.Token.String(),block_num,tx_id)
-	from_aid := ss.Lookup_or_create_address(evt.From.String(),block_num,tx_id)
-	to_aid := ss.Lookup_or_create_address(evt.To.String(),block_num,tx_id)
+	market_aid := ss.Lookup_or_create_address(evt.Market.String(),agtx.BlockNum,agtx.TxId)
+	token_aid := ss.Lookup_or_create_address(evt.Token.String(),agtx.BlockNum,agtx.TxId)
+	from_aid := ss.Lookup_or_create_address(evt.From.String(),agtx.BlockNum,agtx.TxId)
+	to_aid := ss.Lookup_or_create_address(evt.To.String(),agtx.BlockNum,agtx.TxId)
 	value := evt.Value.String()
 
 	var query string
 	query = "INSERT INTO tok_transf(block_num,tx_id,market_aid,token_aid,from_aid,to_aid,token_type,value) " +
 				"VALUES($1,$2,$3,$4,$5,$6,$7,("+value+"/1e+18))"
 	_,err := ss.db.Exec(query,
-							block_num,
-							tx_id,
+							agtx.BlockNum,
+							agtx.TxId,
 							market_aid,
 							token_aid,
 							from_aid,
@@ -374,10 +374,10 @@ func (ss *SQLStorage) is_dai_transfer_internal(evt *p.Transfer,ca *p.ContractAdd
 	}
 	return from_internal,to_internal // its a Market in To
 }
-func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.Transfer,ca *p.ContractAddresses,block_num p.BlockNumber,tx_id int64) {
+func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.Transfer,ca *p.ContractAddresses,agtx *p.AugurTx) {
 
-	from_aid := ss.Lookup_or_create_address(evt.From.String(),block_num,tx_id)
-	to_aid := ss.Lookup_or_create_address(evt.To.String(),block_num,tx_id)
+	from_aid := ss.Lookup_or_create_address(evt.From.String(),agtx.BlockNum,agtx.TxId)
+	to_aid := ss.Lookup_or_create_address(evt.To.String(),agtx.BlockNum,agtx.TxId)
 	amount := evt.Value.String()
 
 	from_internal,to_internal := ss.is_dai_transfer_internal(evt,ca)
@@ -385,7 +385,7 @@ func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.Transfer,ca *p.ContractA
 	var query string
 	query = "INSERT INTO dai_transf(block_num,tx_id,from_aid,to_aid,amount,from_internal,to_internal) " +
 			"VALUES($1,$2,$3,$4,(" + amount +"/1e+18),$5,$6)"
-	_,err := ss.db.Exec(query,block_num,tx_id,from_aid,to_aid,from_internal,to_internal)
+	_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,from_aid,to_aid,from_internal,to_internal)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)

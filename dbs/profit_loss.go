@@ -8,7 +8,7 @@ import (
 	"database/sql"
 	_  "github.com/lib/pq"
 
-	"github.com/ethereum/go-ethereum/common"
+//	"github.com/ethereum/go-ethereum/common"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
@@ -146,12 +146,12 @@ func (ss *SQLStorage) calculate_profit_loss_for_all_users(market_aid int64,block
 		}
 	}
 }
-func (ss *SQLStorage) Update_claim_status(signer common.Address,evt *p.TradingProceedsClaimed,timestamp int64) {
+func (ss *SQLStorage) Update_claim_status(agtx *p.AugurTx,evt *p.TradingProceedsClaimed,timestamp int64) {
 	// Note: we don't use outcome in WHERE clause because Proceeds aren't reported for all outcomes,
 	//		however just knowing that proceeds where claimed is enough to update all the outcomes
 	//		This function will be executed multiple times in a transaction, but that's ok
 	market_aid := ss.Lookup_address_id(evt.Market.String())
-	signer_aid := ss.Lookup_address_id(signer.String())
+	signer_aid := ss.Lookup_address_id(agtx.TxMsg.From().String())
 	//outcome_idx := evt.Outcome.Int64()
 
 	var query string
@@ -163,7 +163,7 @@ func (ss *SQLStorage) Update_claim_status(signer common.Address,evt *p.TradingPr
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64,eoa_aid int64,evt *p.ProfitLossChanged) int64  {
+func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,eoa_aid int64,evt *p.ProfitLossChanged) int64  {
 
 	var query string
 	var err error
@@ -174,7 +174,7 @@ func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64
 		os.Exit(1)
 	}
 	market_aid,market_type := ss.lookup_market_id(evt.Market.String())
-	wallet_aid := ss.Lookup_or_create_address(evt.Account.String(),block_num,tx_id)
+	wallet_aid := ss.Lookup_or_create_address(evt.Account.String(),agtx.BlockNum,agtx.TxId)
 
 	var qty_divisor string = "18" //16
 	var price_divisor string = "18" //20
@@ -262,8 +262,8 @@ func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64
 	var null_volume sql.NullFloat64
 	var pl_id int64 = 0
 	row := ss.db.QueryRow(query,
-								block_num,
-								tx_id,
+								agtx.BlockNum,
+								agtx.TxId,
 								market_aid,
 								eoa_aid,
 								wallet_aid,
@@ -276,7 +276,7 @@ func (ss *SQLStorage) Insert_profit_loss_evt(block_num p.BlockNumber,tx_id int64
 		if err == sql.ErrNoRows {
 			//
 		} else {
-			ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v VALUES: block_num=%v,tx_id=%v,market_aid=%v, eoa_aid=%v, wallet_aid=%v, outcome_idx=%v, order_id=%v, time_stamp=%v",err,query,block_num,tx_id,market_aid,eoa_aid,wallet_aid,outcome_idx,*ss.mkt_order_id_ptr,time_stamp))
+			ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v VALUES: block_num=%v,tx_id=%v,market_aid=%v, eoa_aid=%v, wallet_aid=%v, outcome_idx=%v, order_id=%v, time_stamp=%v",err,query,agtx.BlockNum,agtx.TxId,market_aid,eoa_aid,wallet_aid,outcome_idx,*ss.mkt_order_id_ptr,time_stamp))
 			os.Exit(1)
 		}
 	} else {
