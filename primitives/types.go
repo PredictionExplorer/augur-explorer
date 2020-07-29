@@ -41,7 +41,14 @@ const (
 	MktStatusFinInvalid	MarketStatus = 5
 )
 type BlockNumber int64	// -1 is used to mark 'block not set' for the database
-
+type AugurTx struct {	// just a wrapper for Ethereum Transaction object, but in our own format
+	TxId				int64		// once inserted tx_id is stored here
+	BlockNum			BlockNumber
+	TxMsg				*types.Message
+	TxHash				string
+	To					string
+	CtrctCreate			bool
+}
 type ExtraInfo struct {
 	Categories			[]string	`json:"categories"`
 	Description			string		`json:"description"`

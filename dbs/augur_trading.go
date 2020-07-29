@@ -16,13 +16,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Insert_market_order_evt(
-	block_num p.BlockNumber,
-	tx_id int64,
-//	signer common.Address,
-	p_eoa_aid int64,
-	p_eoa_fill_aid int64,
-	evt *p.MktOrderEvt,
+func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_eoa_fill_aid int64,	evt *p.MktOrderEvt,
 ) {
 
 	// depending on the order action (Create/Cancel/Fill) different table is used for storage
@@ -31,10 +25,10 @@ func (ss *SQLStorage) Insert_market_order_evt(
 	//		Fill order goes to 'mktord' table because the share has been created and now
 	//		open interest increased
 	var wallet_aid int64;
-	wallet_aid = ss.Lookup_or_create_address(evt.AddressData[0].String(),block_num,tx_id)
+	wallet_aid = ss.Lookup_or_create_address(evt.AddressData[0].String(),agtx.BlockNum,agtx.TxId)
 	var wallet_fill_aid int64 = 0;
 	if len(evt.AddressData) > 1 {
-		wallet_fill_aid = ss.Lookup_or_create_address(evt.AddressData[1].String(),block_num,tx_id)
+		wallet_fill_aid = ss.Lookup_or_create_address(evt.AddressData[1].String(),agtx.BlockNum,agtx.TxId)
 	}
 	universe_id,err := ss.lookup_universe_id(evt.Universe.String())
 	if err!=nil {
@@ -136,13 +130,13 @@ func (ss *SQLStorage) Insert_market_order_evt(
 
 	var null_id sql.NullInt64
 	err=ss.db.QueryRow(query,
-			tx_id,
+			agtx.TxId,
 			market_aid,
 			eoa_aid,
 			wallet_aid,
 			eoa_fill_aid,
 			wallet_fill_aid,
-			block_num,
+			agtx.BlockNum,
 			oaction,
 			otype,
 			outcome_idx,

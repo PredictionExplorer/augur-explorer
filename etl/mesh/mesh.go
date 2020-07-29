@@ -67,9 +67,45 @@ func Dump_stats(s *types.Stats,output *log.Logger) {
 	output.Printf("EthRPCRequestsSentInCurrentUTCDay: %v\n",s.EthRPCRequestsSentInCurrentUTCDay)
 	output.Printf("EthRPCRateLimitExpiredRequests: %v\n",s.EthRPCRateLimitExpiredRequests)
 }
-func fetch_orders() (*types.GetOrdersResponse, error) {
-	orders2sync,err := rpcclient.GetOrders(0,256*1024,"")
-	return orders2sync,err
+func fetch_and_sync_orders() {
+
+	ohash_map := make(map[string]struct{})
+	var anomalies_count int = 0
+	var page_size int = 256
+	var page_num int = 0
+	var done bool = false
+	for !done {
+		orders2sync,err := rpcclient.GetOrders(page_num,page_size,"")
+		if err == nil {
+			sync_orders(orders2sync,&ohash_map)
+			if len(orders2sync.OrdersInfos) == 0 {
+				done = true
+			}
+		} else {
+			done = true
+		}
+		Info.Printf("Order sync: page %v processed\n",page_num)
+		page_num++
+	}
+	db_orders := storage.Get_all_open_order_hashes()
+	for i:=0 ; i<len(db_orders) ; i++ {
+		_, exists := ohash_map[db_orders[i]];
+		if exists {
+			// ok
+		} else {
+			storage.Delete_open_0x_order(db_orders[i])
+			Info.Printf(
+				"Order %v doesn't exist in Mesh Node, but does exist in the DB. Deleting. (DB_DIRTY_OORDERS)",
+				db_orders[i],
+			)
+			anomalies_count++
+		}
+	}
+	var anomalies_str string = ""
+	if anomalies_count > 0 {
+		anomalies_str = fmt.Sprintf(" Anomalies: %v (ANOMALIES_FOUND)",anomalies_count)
+	}
+	Info.Printf("Order sync process complete.%v",anomalies_str)
 }
 func oo_insert(order_hash *string,order *zeroex.SignedOrder,timestamp int64) {
 
@@ -100,56 +136,33 @@ func oo_insert(order_hash *string,order *zeroex.SignedOrder,timestamp int64) {
 	}
 	storage.Insert_open_order(order_hash,order,eoa_addr_str,&unpacked_id,timestamp)
 }
-func sync_orders(response *types.GetOrdersResponse) {
+func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{}) {
 	// routine to synchronize orders on 0x Mesh Network with the table `oorders` in postgres
 	//	Executed on startup and every 10 minutes
 
 	Info.Printf("Syncing orders with Postgres DB: num_orders=%v\n",len(response.OrdersInfos))
-	var anomalies_count int = 0
 
-	ohash_map := make(map[string]struct{})
 
 	for i:=0 ; i<len(response.OrdersInfos); i++ {
 		order_info := response.OrdersInfos[i]
 		if order_info != nil {
 			order_hash := order_info.OrderHash.String()
 			var empty struct{}
-			ohash_map[order_hash]=empty
+			(*ohash_map)[order_hash]=empty
 			amount := order_info.FillableTakerAssetAmount
 			retval,bad_amount := storage.Update_open_order(order_hash,amount,order_info.SignedOrder)
 			if retval == 2 { // order doesn't exist
 				oo_insert(&order_hash,order_info.SignedOrder,0)
 				Info.Printf("Inserted open order %v\n",order_hash)
-				anomalies_count++
 			}
 			if retval == 1 {
 				Info.Printf(
 					"Order %v had incorrect amount, fixed. (bad amount=%v, good amount=%v) (BAD_AMOUNT)",
 					bad_amount,amount.String(),
 				)
-				anomalies_count++
 			}
 		}
 	}
-	db_orders := storage.Get_all_open_order_hashes()
-	for i:=0 ; i<len(db_orders) ; i++ {
-		_, exists := ohash_map[db_orders[i]];
-		if exists {
-			// ok
-		} else {
-			storage.Delete_open_0x_order(db_orders[i])
-			Info.Printf(
-				"Order %v doesn't exist in Mesh Node, but does exist in the DB. Deleting. (DB_DIRTY_OORDERS)",
-				db_orders[i],
-			)
-			anomalies_count++
-		}
-	}
-	var anomalies_str string = ""
-	if anomalies_count > 0 {
-		anomalies_str = fmt.Sprintf(" Anomalies: %v (ANOMALIES_FOUND)",anomalies_count)
-	}
-	Info.Printf("Order sync process complete.%v",anomalies_str)
 }
 func main() {
 
@@ -228,12 +241,7 @@ func main() {
 	}
 	defer clientSubscription.Unsubscribe()
 	Info.Printf("Subscribed to events successfully..., 0x Mesh Listener started.\n")
-	orders2sync,err := fetch_orders()
-	if err == nil {
-		sync_orders(orders2sync)
-	} else {
-		Error.Printf("Order sync at startup failed with error: %v\n",err)
-	}
+	fetch_and_sync_orders()
 	last_sync_time=time.Now().Unix()
 	var copts = new(bind.CallOpts)
 	for {
@@ -279,21 +287,13 @@ func main() {
 						zeroex.ESStoppedWatching,
 						zeroex.ESOrderUnexpired:
 						// do a re-sync
-						orders2sync,err := fetch_orders()
-						if err == nil {
-							sync_orders(orders2sync)
-						}
+						fetch_and_sync_orders()
 				}
 			}
 			cur_time := time.Now().Unix()
 			time_diff := cur_time - last_sync_time
 			if time_diff >= DEFAULT_SYNC_INTERVAL_SECS {
-				orders2sync,err := fetch_orders()
-				if err == nil {
-					sync_orders(orders2sync)
-				} else {
-					Error.Printf("Order sync at startup failed with error: %v\n",err)
-				}
+				fetch_and_sync_orders()
 				last_sync_time=time.Now().Unix()
 			}
 
