@@ -1,0 +1,235 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="res/main.css" rel="stylesheet">
+</head>
+<body>
+<script src="/res/darktheme.js"></script>
+<script src="/res/ajax.js"></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/data.js"></script>
+<script>
+	var cash_flow_data = {{.CashFlowData}}
+	var uniq_addrs_data = {{.UniqAddrsData}}
+</script>
+<h3 class="page_title">Statistics</h3>
+<h3 style="font-color: red">Up-to date Augur Platform statistics</h3>
+<div class="statistics">
+	<table class="statistics">
+	<tr class="statistics">
+		<td>Markets to date:</td>
+		<td>{{.MainStats.MarketsCount}}</td>
+	</tr>
+	<tr class="statistics">
+		<td>Currently active:</td>
+		<td>{{.MainStats.ActiveCount}}</td>
+	</tr>
+	<tr class="statistics">
+		<td>Finalized markets:</td>
+		<td>{{.MainStats.FinalizedCount}}</td>
+	</tr>
+	<tr class="statistics">
+		<td>Money currently at stake:</td>
+		<td>{{.MainStats.MoneyAtStake}}</td>
+	</tr>
+	<tr class="statistics">
+		<td>Yes/No markets</td>
+		<td>{{.MainStats.YesNoCount}}</td>
+	</tr>
+	<tr class="statistics">
+		<td>Categorical markets:</td>
+		<td>{{.MainStats.CategCount}}</td>
+	</tr>
+	<tr class="statistics">
+		<td>Scalar markets:</td>
+		<td>{{.MainStats.ScalarCount}}</td>
+	</tr>
+	</table>
+</div>
+<br/>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="topusers.html">Top 100 Users</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+<h3 class="cash_flow">Augur's Platform Cash Flow</h3><br/><br/>
+<div id="cash_flow_chart"></div>
+<h3 class="unique_addrs">Unique Accounts per Day</h3><br/><br/>
+<div id="uniq_addr_chart"></div>
+<script>
+// font loading begins
+	Highcharts.createElement('link', {
+  href: 'https://fonts.googleapis.com/css?family=Unica+One',
+  rel: 'stylesheet',
+  type: 'text/css'
+}, null, document.getElementsByTagName('head')[0]);
+// font loading ends
+// Apply the theme
+set_dark_theme()
+
+// begin of chart container setup
+Highcharts.chart('cash_flow_chart', {
+
+	title: {
+		text: 'Cash Flow In/Out of Markets'
+	},
+
+	subtitle: {
+		text: 'Cash Flow Detail'
+	},
+
+	yAxis: {
+		title: {
+			text: 'Cash on the Sidelines (DAI)'
+		}
+	},
+
+	xAxis: {
+//		max: 1.0,
+//		min: 0,
+		type: 'datetime',
+//		dateTimeLabelFormats: {
+//			day: "%e-%b-%y",
+//			month: "%b-%y"
+//		}
+		accessibility: {
+			rangeDescription: 'Cash Flow'
+		}
+	},
+
+	legend: {
+		layout: 'vertical',
+		align: 'right',
+		verticalAlign: 'middle'
+	},
+
+	plotOptions: {
+		series: {
+			label: {
+				connectorAllowed: false
+			},
+			pointStart: 0
+		}
+	},
+
+	series: [{
+		name: 'Cash Flow',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: cash_flow_data
+	}],
+
+	responsive: {
+		rules: [{
+			condition: {
+				maxWidth: 500
+			},
+			chartOptions: {
+				legend: {
+				layout: 'horizontal',
+					align: 'center',
+					verticalAlign: 'bottom'
+				}
+			}
+		}]
+	},
+	tooltip: {
+		formatter: function() {
+			tooltip ="<div>Money on the Sidelines: "+this.point.cash+"<br/>Block Number "+this.point.block_num+"<br/></div>"
+			 return tooltip;
+		}
+	},
+});
+Highcharts.chart('uniq_addr_chart', {
+
+	title: {
+		text: 'Unique Accounts'
+	},
+
+	subtitle: {
+		text: 'Unique Accounts per Day'
+	},
+
+	yAxis: {
+		title: {
+			text: 'Number of Accounts per Day'
+		}
+	},
+
+	xAxis: {
+//		max: 1.0,
+//		min: 0,
+		type: 'datetime',
+//		dateTimeLabelFormats: {
+//			day: "%e-%b-%y",
+//			month: "%b-%y"
+//		}
+		accessibility: {
+			rangeDescription: 'Unique Accounts'
+		}
+
+	},
+
+	legend: {
+		layout: 'vertical',
+		align: 'right',
+		verticalAlign: 'middle'
+	},
+
+	plotOptions: {
+		series: {
+			label: {
+				connectorAllowed: false
+			},
+			pointStart: 0
+		}
+	},
+
+	series: [{
+		name: 'Number of Accounts',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: uniq_addrs_data
+	}],
+
+	responsive: {
+		rules: [{
+			condition: {
+				maxWidth: 500
+			},
+			chartOptions: {
+				legend: {
+				layout: 'horizontal',
+					align: 'center',
+					verticalAlign: 'bottom'
+				}
+			}
+		}]
+	},
+	tooltip: {
+		formatter: function() {
+			tooltip ="<div>Num Accounts: "+this.point.num_addrs+"<br/>Accumulated: "+this.point.num_addrs_accum+"<br/>Date: "+this.point.date_str+"<br/></div>"
+			 return tooltip;
+		}
+	},
+});
+</script>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>
