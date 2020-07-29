@@ -7,6 +7,16 @@
     <meta name="description" content="{{.Market.Description}}">
 </head>
 <body>
+<script src="/res/ajax.js"></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/data.js"></script>
+<script>
+    var uniq_addrs_data = {{.UniqAddrsData}}
+</script>
+<script>
+    var collectedData;
+    Ajax_GET_Markets('/api/active_markets', renderCard);
+</script>
 {{template "header"}}
 <div class="container">
     <ul class="breadcrumb" style="background-color: white; padding-left: 0">
@@ -28,7 +38,7 @@
 </section>
 <section class="market__info">
     <div class="container">
-        <div class="row">
+        <div class="row" id="ajax-content">
             <div class="col-md-6">
                 <div class="market__info-box">
                     <div class="row">
@@ -104,16 +114,15 @@
                                         <span>0.55</span>
                                     </div>
                                     <div class="col-sm-3">
-                                        <p>Bid price</p>
-                                        <span>0.55</span>
+                                        <p>Ask price</p>
+                                        <span>1</span>
                                     </div>
                                     <div class="col-sm-3">
-                                        <p>Bid price</p>
-                                        <span>0.55</span>
+                                        <p>Volume</p>
+                                        <span>401</span>
                                     </div>
                                     <div class="col-sm-3">
-                                        <p>Bid price</p>
-                                        <span>0.55</span>
+                                        <a href="#">Depth chart</a>
                                     </div>
                                 </div>
                             </div>
@@ -138,16 +147,15 @@
                                         <span>0.55</span>
                                     </div>
                                     <div class="col-sm-3">
-                                        <p>Bid price</p>
-                                        <span>0.55</span>
+                                        <p>Ask price</p>
+                                        <span>1</span>
                                     </div>
                                     <div class="col-sm-3">
-                                        <p>Bid price</p>
-                                        <span>0.55</span>
+                                        <p>Volume</p>
+                                        <span>401</span>
                                     </div>
                                     <div class="col-sm-3">
-                                        <p>Bid price</p>
-                                        <span>0.55</span>
+                                        <a href="#">Depth chart</a>
                                     </div>
                                 </div>
                             </div>
@@ -155,7 +163,23 @@
                     </section>
                 </div>
             </div>
-            <div class="col-md-6"></div>
+            <div class="col-md-6">
+                <div id="uniq_addr_chart"></div>
+                <div class="market__info-tags">
+                    <div>
+                        <input type="checkbox" class="custom-checkbox" id="answer-yes" name="answer-yes" value="yes"
+                               checked>
+                        <label for="answer-yes">Yes</label>
+                        <input type="checkbox" class="custom-checkbox" id="answer-no" name="answer-no" checked value="yes">
+                        <label for="answer-no">No</label>
+                    </div>
+                    <div>
+                        <a href="#">24hr</a>
+                        <a href="#" class="active-tag">7 day</a>
+                        <a href="#">30 day</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -192,7 +216,7 @@
     <tr class="market_detail">
         <td>Market Type</td>
         <td>{{.Market.MktTypeStr}}</td>
-        </td>
+        </tr>
         {{if ne 2 .Market.MktType }}
     <tr class="market_detail">
         <td>Outcomes</td>
@@ -260,6 +284,91 @@
         $('#multiple [data-accordion]').accordion({
             singleOpen: false
         });
+    });
+</script>
+<script>
+    // font loading begins
+    Highcharts.createElement('link', {
+        href: 'https://fonts.googleapis.com/css?family=Unica+One',
+        rel: 'stylesheet',
+        type: 'text/css'
+    }, null, document.getElementsByTagName('head')[0]);
+
+    Highcharts.chart('uniq_addr_chart', {
+
+        title: {
+            text: 'Unique Accounts'
+        },
+
+        subtitle: {
+            text: 'Unique Accounts per Day'
+        },
+
+        yAxis: {
+            title: {
+                text: 'Number of Accounts per Day'
+            }
+        },
+
+        xAxis: {
+//		max: 1.0,
+//		min: 0,
+            type: 'datetime',
+//		dateTimeLabelFormats: {
+//			day: "%e-%b-%y",
+//			month: "%b-%y"
+//		}
+            accessibility: {
+                rangeDescription: 'Unique Accounts'
+            }
+
+        },
+
+        legend: {
+            layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'middle'
+        },
+
+        plotOptions: {
+            series: {
+                label: {
+                    connectorAllowed: false
+                },
+                pointStart: 0
+            }
+        },
+
+        series: [{
+            name: 'Number of Accounts',
+            point: {
+                events: {
+                    click: function() {this.click.call()}
+                }
+            },
+            data: uniq_addrs_data
+        }],
+
+        responsive: {
+            rules: [{
+                condition: {
+                    maxWidth: 500
+                },
+                chartOptions: {
+                    legend: {
+                        layout: 'horizontal',
+                        align: 'center',
+                        verticalAlign: 'bottom'
+                    }
+                }
+            }]
+        },
+        tooltip: {
+            formatter: function() {
+                tooltip ="<div>Num Accounts: "+this.point.num_addrs+"<br/>Accumulated: "+this.point.num_addrs_accum+"<br/>Date: "+this.point.date_str+"<br/></div>"
+                return tooltip;
+            }
+        },
     });
 </script>
 </body>
