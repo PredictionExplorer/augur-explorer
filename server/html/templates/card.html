@@ -1,10 +1,9 @@
 {{define "card"}}
     <div class="card">
         <div class="card__title">
-            <a href="#">Will Titanic on domestic opening weekend of June 26, 2020 in the US gross more than Titanic2 on its opening
-                weekend in US?</a>
+            <a href="#">${data.MarketInfo.Description}</a>
             <div class="card__title-down">
-                <span>Ends in 2 days</span><span class="tag">Scalar</span>
+                <span>Ends in 2 days</span><span class="tag">${data.MarketInfo.MktTypeStr}</span>
             </div>
         </div>
         <div class="card__info">
@@ -24,7 +23,7 @@
                     <span>Money at stake</span>
                 </div>
                 <div class="card__money">
-                    <span>30</span>
+                    <span>${data.MarketInfo.CurVolume}</span>
                     <span>224.5</span>
                 </div>
             </div>

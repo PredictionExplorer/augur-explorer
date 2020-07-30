@@ -6,8 +6,8 @@
 		  rel="stylesheet">
 </head>
 <body>
-{{template "header"}}
-<script src="/res/darktheme.js"></script>
+
+<!--<script src="/res/darktheme.js"></script>-->
 <script src="/res/ajax.js"></script>
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script src="https://code.highcharts.com/modules/data.js"></script>
@@ -16,6 +16,7 @@
 	var uniq_addrs_data = {{.UniqAddrsData}}
 </script>
 
+{{template "header"}}
 <section class="statistics">
 	<div class="container">
 		<h3 class="page_title">Statistics</h3>
@@ -135,170 +136,7 @@
 				<div id="uniq_addr_chart"></div>
 			</div>
 		</div>
-		<script>
-			// font loading begins
-			Highcharts.createElement('link', {
-				href: 'https://fonts.googleapis.com/css?family=Unica+One',
-				rel: 'stylesheet',
-				type: 'text/css'
-			}, null, document.getElementsByTagName('head')[0]);
-			// font loading ends
-			// Apply the theme
-			// set_dark_theme()
 
-			// begin of chart container setup
-			Highcharts.chart('cash_flow_chart', {
-
-				title: {
-					text: 'Cash Flow In/Out of Markets'
-				},
-
-				subtitle: {
-					text: 'Cash Flow Detail'
-				},
-
-				yAxis: {
-					title: {
-						text: 'Cash on the Sidelines (DAI)'
-					}
-				},
-
-				xAxis: {
-//		max: 1.0,
-//		min: 0,
-					type: 'datetime',
-//		dateTimeLabelFormats: {
-//			day: "%e-%b-%y",
-//			month: "%b-%y"
-//		}
-					accessibility: {
-						rangeDescription: 'Cash Flow'
-					}
-				},
-
-				legend: {
-					layout: 'vertical',
-					align: 'right',
-					verticalAlign: 'middle'
-				},
-
-				plotOptions: {
-					series: {
-						label: {
-							connectorAllowed: false
-						},
-						pointStart: 0
-					}
-				},
-
-				series: [{
-					name: 'Cash Flow',
-					point: {
-						events: {
-							click: function() {this.click.call()}
-						}
-					},
-					data: cash_flow_data
-				}],
-
-				responsive: {
-					rules: [{
-						condition: {
-							maxWidth: 500
-						},
-						chartOptions: {
-							legend: {
-								layout: 'horizontal',
-								align: 'center',
-								verticalAlign: 'bottom'
-							}
-						}
-					}]
-				},
-				tooltip: {
-					formatter: function() {
-						tooltip ="<div>Money on the Sidelines: "+this.point.cash+"<br/>Block Number "+this.point.block_num+"<br/></div>"
-						return tooltip;
-					}
-				},
-			});
-			Highcharts.chart('uniq_addr_chart', {
-
-				title: {
-					text: 'Unique Accounts'
-				},
-
-				subtitle: {
-					text: 'Unique Accounts per Day'
-				},
-
-				yAxis: {
-					title: {
-						text: 'Number of Accounts per Day'
-					}
-				},
-
-				xAxis: {
-//		max: 1.0,
-//		min: 0,
-					type: 'datetime',
-//		dateTimeLabelFormats: {
-//			day: "%e-%b-%y",
-//			month: "%b-%y"
-//		}
-					accessibility: {
-						rangeDescription: 'Unique Accounts'
-					}
-
-				},
-
-				legend: {
-					layout: 'vertical',
-					align: 'right',
-					verticalAlign: 'middle'
-				},
-
-				plotOptions: {
-					series: {
-						label: {
-							connectorAllowed: false
-						},
-						pointStart: 0
-					}
-				},
-
-				series: [{
-					name: 'Number of Accounts',
-					point: {
-						events: {
-							click: function() {this.click.call()}
-						}
-					},
-					data: uniq_addrs_data
-				}],
-
-				responsive: {
-					rules: [{
-						condition: {
-							maxWidth: 500
-						},
-						chartOptions: {
-							legend: {
-								layout: 'horizontal',
-								align: 'center',
-								verticalAlign: 'bottom'
-							}
-						}
-					}]
-				},
-				tooltip: {
-					formatter: function() {
-						tooltip ="<div>Num Accounts: "+this.point.num_addrs+"<br/>Accumulated: "+this.point.num_addrs_accum+"<br/>Date: "+this.point.date_str+"<br/></div>"
-						return tooltip;
-					}
-				},
-			});
-		</script>
 		<!--	<nav>-->
 		<!--		<ul>-->
 		<!--			<li>-->
@@ -310,6 +148,170 @@
 	</div>
 </section>
 {{template "footer"}}
+<script>
+	// font loading begins
+	Highcharts.createElement('link', {
+		href: 'https://fonts.googleapis.com/css?family=Unica+One',
+		rel: 'stylesheet',
+		type: 'text/css'
+	}, null, document.getElementsByTagName('head')[0]);
+	// font loading ends
+	// Apply the theme
+	// set_dark_theme()
+
+	// begin of chart container setup
+	Highcharts.chart('cash_flow_chart', {
+
+		title: {
+			text: 'Cash Flow In/Out of Markets'
+		},
+
+		subtitle: {
+			text: 'Cash Flow Detail'
+		},
+
+		yAxis: {
+			title: {
+				text: 'Cash on the Sidelines (DAI)'
+			}
+		},
+
+		xAxis: {
+//		max: 1.0,
+//		min: 0,
+			type: 'datetime',
+//		dateTimeLabelFormats: {
+//			day: "%e-%b-%y",
+//			month: "%b-%y"
+//		}
+			accessibility: {
+				rangeDescription: 'Cash Flow'
+			}
+		},
+
+		legend: {
+			layout: 'vertical',
+			align: 'right',
+			verticalAlign: 'middle'
+		},
+
+		plotOptions: {
+			series: {
+				label: {
+					connectorAllowed: false
+				},
+				pointStart: 0
+			}
+		},
+
+		series: [{
+			name: 'Cash Flow',
+			point: {
+				events: {
+					click: function() {this.click.call()}
+				}
+			},
+			data: cash_flow_data
+		}],
+
+		responsive: {
+			rules: [{
+				condition: {
+					maxWidth: 500
+				},
+				chartOptions: {
+					legend: {
+						layout: 'horizontal',
+						align: 'center',
+						verticalAlign: 'bottom'
+					}
+				}
+			}]
+		},
+		tooltip: {
+			formatter: function() {
+				tooltip ="<div>Money on the Sidelines: "+this.point.cash+"<br/>Block Number "+this.point.block_num+"<br/></div>"
+				return tooltip;
+			}
+		},
+	});
+	Highcharts.chart('uniq_addr_chart', {
+
+		title: {
+			text: 'Unique Accounts'
+		},
+
+		subtitle: {
+			text: 'Unique Accounts per Day'
+		},
+
+		yAxis: {
+			title: {
+				text: 'Number of Accounts per Day'
+			}
+		},
+
+		xAxis: {
+//		max: 1.0,
+//		min: 0,
+			type: 'datetime',
+//		dateTimeLabelFormats: {
+//			day: "%e-%b-%y",
+//			month: "%b-%y"
+//		}
+			accessibility: {
+				rangeDescription: 'Unique Accounts'
+			}
+
+		},
+
+		legend: {
+			layout: 'vertical',
+			align: 'right',
+			verticalAlign: 'middle'
+		},
+
+		plotOptions: {
+			series: {
+				label: {
+					connectorAllowed: false
+				},
+				pointStart: 0
+			}
+		},
+
+		series: [{
+			name: 'Number of Accounts',
+			point: {
+				events: {
+					click: function() {this.click.call()}
+				}
+			},
+			data: uniq_addrs_data
+		}],
+
+		responsive: {
+			rules: [{
+				condition: {
+					maxWidth: 500
+				},
+				chartOptions: {
+					legend: {
+						layout: 'horizontal',
+						align: 'center',
+						verticalAlign: 'bottom'
+					}
+				}
+			}]
+		},
+		tooltip: {
+			formatter: function() {
+				tooltip ="<div>Num Accounts: "+this.point.num_addrs+"<br/>Accumulated: "+this.point.num_addrs_accum+"<br/>Date: "+this.point.date_str+"<br/></div>"
+				return tooltip;
+			}
+		},
+	});
+</script>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js">
 </script>
 <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js">

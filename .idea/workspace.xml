@@ -2,11 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="39dfc583-fc36-46a9-a70b-e13e14046d10" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/augur-explorer.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/augur-explorer.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/html/res/ajax.js" beforeDir="false" afterPath="$PROJECT_DIR$/server/html/res/ajax.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server/html/res/main.css" beforeDir="false" afterPath="$PROJECT_DIR$/server/html/res/main.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/html/templates/card.html" beforeDir="false" afterPath="$PROJECT_DIR$/server/html/templates/card.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/html/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/server/html/templates/index.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server/html/templates/market_info.html" beforeDir="false" afterPath="$PROJECT_DIR$/server/html/templates/market_info.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/html/templates/statistics.html" beforeDir="false" afterPath="$PROJECT_DIR$/server/html/templates/statistics.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,11 +43,25 @@
       <option name="presentableId" value="Default" />
       <updated>1595930859663</updated>
       <workItem from="1595930861999" duration="4190000" />
-      <workItem from="1595937981592" duration="3113000" />
+      <workItem from="1595937981592" duration="7336000" />
+      <workItem from="1596007244636" duration="5069000" />
+      <workItem from="1596013417789" duration="2133000" />
+      <workItem from="1596015846328" duration="2763000" />
+      <workItem from="1596023456022" duration="2986000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state width="498" height="446" key="SwitcherDM" timestamp="1596016389261">
+      <screen x="51" y="27" width="1349" height="1023" />
+    </state>
+    <state width="498" height="446" key="SwitcherDM/51.27.1349.1023@51.27.1349.1023" timestamp="1596016389261" />
+    <state x="415" y="276" width="620" height="522" key="find.popup" timestamp="1596003190887">
+      <screen x="51" y="27" width="1349" height="1023" />
+    </state>
+    <state x="415" y="276" width="620" height="522" key="find.popup/51.27.1349.1023@51.27.1349.1023" timestamp="1596003190887" />
   </component>
 </project>
