@@ -170,12 +170,10 @@ func (evt *TransferBatch) Dump(zc *ZeroX,l *log.Logger) {
 	var copts = new(bind.CallOpts)
 	copts.Pending = true
 	for i:=0 ; i<len(evt.Ids); i++ {
-		//tok_data,err := hex.DecodeString(evt.Ids[i])
 		if false {
 			l.Printf("\t\tcan't decode token info hex string: \n")
 		} else {
 			tok_info,err := zc.UnpackTokenId(copts,evt.Ids[i])
-			//tok_info,err := ctrct_zerox.DecodeAssetData(copts,tok_data)
 			if err == nil {
 				l.Printf("\t\tMarket: %v\n",tok_info.Market.String())
 				l.Printf("\t\tPrice: %v\n",tok_info.Price)

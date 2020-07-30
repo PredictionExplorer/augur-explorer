@@ -62,7 +62,7 @@ func (ss *SQLStorage) set_all_unclaimed_to_claimed(market_aid int64,eoa_aid int6
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) calculate_profit_loss_for_all_users(market_aid int64,block_num p.BlockNumber,tx_id int64,timestamp int64,evt *p.MktFinalizedEvt) {
+func (ss *SQLStorage) calculate_profit_loss_for_all_users(market_aid int64,block_num int64,tx_id int64,timestamp int64,evt *p.MktFinalizedEvt) {
 
 	var query string
 
@@ -152,7 +152,6 @@ func (ss *SQLStorage) Update_claim_status(agtx *p.AugurTx,evt *p.TradingProceeds
 	//		This function will be executed multiple times in a transaction, but that's ok
 	market_aid := ss.Lookup_address_id(evt.Market.String())
 	signer_aid := ss.Lookup_address_id(agtx.TxMsg.From().String())
-	//outcome_idx := evt.Outcome.Int64()
 
 	var query string
 	query = "UPDATE claim_funds SET claim_status=2,autocalculated=FALSE,claim_ts=TO_TIMESTAMP($3) " +

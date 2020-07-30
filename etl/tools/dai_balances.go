@@ -32,7 +32,7 @@ var (
 	Info	*log.Logger
 )
 
-func update_dai_balances_backwards(last_block_num BlockNumber,aid int64,addr *common.Address) int {
+func update_dai_balances_backwards(last_block_num int64,aid int64,addr *common.Address) int {
 
 	var copts = new(bind.CallOpts)
 	copts.BlockNumber = big.NewInt(int64(last_block_num))

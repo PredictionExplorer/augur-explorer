@@ -1,4 +1,3 @@
-// Data Base Storage
 package dbs
 
 import (
@@ -56,4 +55,41 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 	c_addresses.ShareToken=common.HexToAddress(share_token)
 	c_addresses.Universe= common.HexToAddress(universe)
 	return c_addresses,nil
+}
+func (ss *SQLStorage) Get_augur_blocks(market_aid int64) []int64 {
+
+	var where_cond string = ""
+	if market_aid > 0 {
+		where_cond = fmt.Sprintf(" WHERE market_aid = %v ",market_aid)
+	}
+	var query string = ""
+	query = "SELECT DISTINCT block_num FROM (" +
+				"(SELECT DISTINCT block_num FROM mktord " + where_cond + ") " +
+					"UNION ALL" +
+				"(SELECT DISTINCT block_num FROM market " + where_cond + ") " +
+					"UNION ALL" +
+				"(SELECT DISTINCT block_num FROM mkt_fin " + where_cond + ") " +
+					"UNION ALL" +
+				"(SELECT DISTINCT block_num FROM claim_funds " + where_cond + ") " +
+					"UNION ALL" +
+				"(SELECT DISTINCT block_num FROM report " + where_cond + ") " +
+			") as block_numbers"
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]int64,0,4096)
+
+	defer rows.Close()
+	for rows.Next() {
+		var block_num int64
+		err=rows.Scan(&block_num)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,block_num)
+	}
+	return records
 }

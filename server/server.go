@@ -930,7 +930,7 @@ func serve_block_info(p_block_num string,c *gin.Context) {
 			return
 		}
 	}
-	block_info,err := augur_srv.storage.Get_block_info(BlockNumber(block_num))
+	block_info,err := augur_srv.storage.Get_block_info(block_num)
 	if err == nil {
 		c.HTML(http.StatusOK, "block_info.html", gin.H{
 			"title": fmt.Sprintf("Block Number %v",block_num),

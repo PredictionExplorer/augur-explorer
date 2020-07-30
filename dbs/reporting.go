@@ -1,5 +1,3 @@
-
-// Data Base Storage
 package dbs
 
 import (

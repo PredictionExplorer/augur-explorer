@@ -1,4 +1,3 @@
-// Data Base Storage
 package dbs
 
 import (
@@ -7,7 +6,6 @@ import (
 	"database/sql"
 	_  "github.com/lib/pq"
 
-	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 func (ss *SQLStorage) lookup_universe_id(addr string) (int64,error) {
 
@@ -131,7 +129,7 @@ func (ss *SQLStorage) lookup_market_id(addr string) (int64,int) {
 
 	return addr_id,mkt_type
 }
-func (ss *SQLStorage) Lookup_or_create_address(addr string,block_num p.BlockNumber,tx_id int64) int64 {
+func (ss *SQLStorage) Lookup_or_create_address(addr string,block_num int64,tx_id int64) int64 {
 
 	var addr_id int64;
 	var query string
@@ -148,11 +146,14 @@ func (ss *SQLStorage) Lookup_or_create_address(addr string,block_num p.BlockNumb
 
 	return addr_id
 }
-func (ss *SQLStorage) create_address(addr string,block_num p.BlockNumber,tx_id int64) int64 {
+func (ss *SQLStorage) create_address(addr string,block_num int64,tx_id int64) int64 {
 
 	var addr_id int64;
 	var query string
-
+	if len(addr) == 0 {
+		ss.Log_msg(fmt.Sprintf("Attempt to insert address with len=0, block %v, tx_id=%v",block_num,tx_id))
+		os.Exit(1)
+	}
 	query = "INSERT INTO address(addr,block_num,tx_id) VALUES($1,$2,$3) RETURNING address_id"
 	row:=ss.db.QueryRow(query,addr,block_num,tx_id);
 	err:=row.Scan(&addr_id)

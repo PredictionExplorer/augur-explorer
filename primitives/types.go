@@ -40,10 +40,10 @@ const (
 	MktStatusFinalized	MarketStatus = 4
 	MktStatusFinInvalid	MarketStatus = 5
 )
-type BlockNumber int64	// -1 is used to mark 'block not set' for the database
+//type BlockNumber int64	// -1 is used to mark 'block not set' for the database DISCONTINUED: 
 type AugurTx struct {	// just a wrapper for Ethereum Transaction object, but in our own format
 	TxId				int64		// once inserted tx_id is stored here
-	BlockNum			BlockNumber
+	BlockNum			int64
 	TxMsg				*types.Message
 	TxHash				string
 	To					string
@@ -524,7 +524,7 @@ type UserReport struct {
 	WinEnd				string
 }
 type BlockInfo struct {
-	BlockNum			BlockNumber
+	BlockNum			int64
 	NumTx				int64
 	NumAddresses		int64
 	NumMarkets			int64
@@ -533,7 +533,7 @@ type BlockInfo struct {
 	Markets				[]string	// list of market addresses created at this block
 }
 type TxInfo struct {
-	BlockNum			BlockNumber
+	BlockNum			int64
 	Value				float64
 	Hash				string
 	From				string
@@ -548,7 +548,7 @@ type DaiB struct {
 	Id					int64
 	Aid					int64
 	DaiTransfId			int64
-	BlockNum			BlockNumber
+	BlockNum			int64
 	Address				string
 	Amount				string
 	Balance				string

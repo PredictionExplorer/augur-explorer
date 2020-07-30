@@ -1,4 +1,4 @@
-// Data Base Storage
+// Database Storage package
 package dbs
 
 import (

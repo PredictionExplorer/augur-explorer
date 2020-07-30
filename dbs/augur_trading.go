@@ -1,4 +1,3 @@
-// Data Base Storage
 package dbs
 
 import (
@@ -155,8 +154,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 	} else {
 		*(ss.mkt_order_id_ptr) = 0
 	}
-	query = "UPDATE " +
-				"outcome_vol " +
+	query = "UPDATE outcome_vol " +
 			"SET " +
 				"last_price = "+price+ " " +
 			"WHERE " +
@@ -176,21 +174,8 @@ func (ss *SQLStorage) Insert_open_order(
 ) {
 	// Insert an open order, this order needs to be Filled by another market participant
 	// It also can be canceled by its creator (with another transaction)
-//	order := evt.SignedOrder.Order
-	/*
-	DISABLED because we are using an Old version of 0x Mesh
-	ohash,err := order.ComputeOrderHash()
-	if err != nil {
-		ss.Log_msg(fmt.Sprintf("Chainid = %v\n",evt.SignedOrder.Order.ChainID))
-		ss.Log_msg(fmt.Sprintf("Error at computing 0x Mesh order: %v",err))
-		os.Exit(1)
-	}
-	order_id := ohash.String()
-	*/
 	var err error
-//	ohash := evt.OrderHash.String()
 	order_id := ohash
-//	evt_timestamp := evt.Timestamp.Unix()
 	expiration := order.ExpirationTimeSeconds.Int64()
 	// note: we don't have block number/tx hash for activity from 0x Mesh, so we insert with 0s
 	ss.Info.Printf("received eoa addr=%v\n",eoa_addr)
@@ -198,7 +183,6 @@ func (ss *SQLStorage) Insert_open_order(
 	zero_addr := common.BigToAddress(zero)
 	var eoa_aid int64 = 0
 	if zero_addr.String()==eoa_addr {
-	//if len(eoa_addr) == 0 {
 		ss.Info.Printf(
 			"0x Mesh provided empty EOA address for maker addres %v (NULL_EOA_ADDR_FROM_MESH)",
 			order.MakerAddress.String(),
@@ -274,7 +258,6 @@ func (ss *SQLStorage) Delete_open_0x_order(order_hash string) {
 }
 func (ss *SQLStorage) Update_0x_order_on_partial_fill(evt *zeroex.OrderEvent) {
 
-	//order := evt.SignedOrder.Order
 	order_hash := evt.OrderHash.String()
 	amount := evt.FillableTakerAssetAmount.String()
 

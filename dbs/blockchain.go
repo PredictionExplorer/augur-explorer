@@ -1,4 +1,3 @@
-// Data Base Storage
 package dbs
 
 import (
@@ -12,7 +11,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Get_last_block_num() (p.BlockNumber,bool) {
+func (ss *SQLStorage) Get_last_block_num() (int64,bool) {
 
 	var query string
 	query="SELECT block_num FROM last_block LIMIT 1";
@@ -29,12 +28,12 @@ func (ss *SQLStorage) Get_last_block_num() (p.BlockNumber,bool) {
 		}
 	}
 	if (null_block_num.Valid) {
-		return p.BlockNumber(null_block_num.Int64),true
+		return null_block_num.Int64,true
 	} else {
 		return -1,false
 	}
 }
-func (ss *SQLStorage) Set_last_block_num(block_num p.BlockNumber) {
+func (ss *SQLStorage) Set_last_block_num(block_num int64) {
 
 	bnum := int64(block_num)
 	var query string = "UPDATE last_block SET block_num=$1 WHERE block_num < $1"
@@ -109,17 +108,13 @@ func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header)  bool {
 }
 func (ss *SQLStorage) Insert_transaction(
 	agtx *p.AugurTx,
-/*	block_num p.BlockNumber,
-	tx_hash string,
-	to string,
-	tx *types.Message,
-	ctrct_create bool,*/
 ) int64 {
 
 	// Note: contract addresses have To as their created address + ctrct_create flag set to 'true'
 	var query string
 	var tx_id int64
-
+	
+	ss.Info.Printf("Insert_transaction: from: %v, to: %v\n",agtx.TxMsg.From().String(),agtx.To)
 
 	query = "INSERT INTO transaction (block_num,value,tx_hash,ctrct_create) " +
 			"VALUES ($1,("+agtx.TxMsg.Value().String()+"/1e+18),$2,$3) RETURNING id"
@@ -143,7 +138,7 @@ func (ss *SQLStorage) Insert_transaction(
 
 	return tx_id
 }
-func (ss *SQLStorage) Fix_chainsplit(block *types.Header) p.BlockNumber {
+func (ss *SQLStorage) Fix_chainsplit(block *types.Header) int64 {
 
 	var query string
 	var my_block_num int64
@@ -169,9 +164,9 @@ func (ss *SQLStorage) Fix_chainsplit(block *types.Header) p.BlockNumber {
 		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v, block_num=%v",err,query,my_block_num))
 		os.Exit(1)
 	}
-	return p.BlockNumber(my_block_num + 1)	// parent + 1 = current
+	return my_block_num + 1	// parent + 1 = current
 }
-func (ss *SQLStorage) Block_delete_with_everything(block_num p.BlockNumber) {
+func (ss *SQLStorage) Block_delete_with_everything(block_num int64) {
 
 	// deletes block table and all the other tables receieve cascaded DELETEs also
 	var query string
@@ -182,7 +177,7 @@ func (ss *SQLStorage) Block_delete_with_everything(block_num p.BlockNumber) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Get_block_info(block_num p.BlockNumber) (p.BlockInfo,error) {
+func (ss *SQLStorage) Get_block_info(block_num int64) (p.BlockInfo,error) {
 
 	var binfo p.BlockInfo
 	records_market := make([]string,0,8)
@@ -337,7 +332,6 @@ func (ss *SQLStorage) Get_last_block_timestamp() int64 {
 
 	var query string
 	query = "SELECT FLOOR(EXTRACT(EPOCH FROM block.ts))::BIGINT AS ts " +
-//	EXTRACT(EPOCH FROM block.ts)::BIGINT AS ts "+
 			"FROM block,last_block WHERE last_block.block_num=block.block_num"
 	row := ss.db.QueryRow(query)
 	var ts int64

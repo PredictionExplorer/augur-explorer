@@ -1,6 +1,3 @@
--- Notes: After some updates to Golang ETL, INSERTs into 'ustats' table are no longer needed,
---					removal of these statements is pending however validation must be done (24 Jul 2020)
-
 CREATE OR REPLACE FUNCTION on_oi_chg_insert() RETURNS trigger AS  $$ --updates open interest of the market
 DECLARE
 BEGIN
@@ -151,46 +148,46 @@ DECLARE
 BEGIN
 
 	-- Make sure user stats record exists
-	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(NEW.eoa_aid,NEW.wallet_aid)
+	INSERT INTO mkts_traded(eoa_aid,market_aid) VALUES(NEW.eoa_aid,NEW.market_aid)
 		ON CONFLICT DO NOTHING;
-	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(NEW.eoa_fill_aid,NEW.wallet_fill_aid)
+	INSERT INTO mkts_traded(eoa_aid,market_aid) VALUES(NEW.eoa_fill_aid,NEW.market_aid)
 		ON CONFLICT DO NOTHING;
 
 	-- Update statistics for the Creator of the Order (Seller)
 	UPDATE trd_mkt_stats AS s
 			SET total_trades = (total_trades + 1),
-				volume_traded = (volume_traded + NEW.amount_filled)
+				volume_traded = (volume_traded + (NEW.price * NEW.amount_filled))
 			WHERE	s.eoa_aid = NEW.eoa_aid AND
 					s.market_aid = NEW.market_aid;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid,total_trades,volume_traded)
-				VALUES(NEW.eoa_aid,NEW.wallet_aid,NEW.market_aid,1,NEW.amount_filled);
+				VALUES(NEW.eoa_aid,NEW.wallet_aid,NEW.market_aid,1,(NEW.price * NEW.amount_filled));
 	END IF;
 	UPDATE ustats
 		SET total_trades = (total_trades + 1),
-			volume_traded = (volume_traded + NEW.amount_filled)
+			volume_traded = (volume_traded + (NEW.price * NEW.amount_filled))
 		WHERE eoa_aid=NEW.eoa_aid;
 
 	-- Update statistics for the Filler of the Order (Buyer)
 	UPDATE trd_mkt_stats AS s
 			SET total_trades = (total_trades + 1),
-				volume_traded = (volume_traded + NEW.amount_filled)
+				volume_traded = (volume_traded + (NEW.price * NEW.amount_filled))
 			WHERE	s.eoa_aid = NEW.eoa_fill_aid AND
 					s.market_aid = NEW.market_aid;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid,total_trades,volume_traded)
-				VALUES(NEW.eoa_fill_aid,NEW.wallet_fill_aid,NEW.market_aid,1,NEW.amount_filled);
+			VALUES(NEW.eoa_fill_aid,NEW.wallet_fill_aid,NEW.market_aid,1,(NEW.price * NEW.amount_filled));
 	END IF;
 	UPDATE ustats
 		SET total_trades = (total_trades + 1),
-			volume_traded = (volume_traded + 1)
+			volume_traded = (volume_traded + (NEW.price * NEW.amount_filled))
 		WHERE eoa_aid=NEW.eoa_fill_aid;
 
-	-- Note: for Main statistics a trade between 2 users is counted as single trade (i.e its a +1)_
+	-- Noote: for Main statistics a trade between 2 users is counted as single trade (i.e its a +1)_
 	-- 			but from the point of the User we have +1 for Creator and +1 for Filler (so, its 2 trades)
 	UPDATE main_stats SET trades_count = (trades_count + 1);
 	UPDATE market SET total_trades = (total_trades + 1) WHERE market_aid = NEW.market_aid;
@@ -201,18 +198,17 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_mktord_delete() RETURNS trigger AS  $$
 DECLARE
 	v_cnt numeric;
+	v_total_trades bigint;
 BEGIN
 
-	-- Make sure user stats record exists
-	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(OLD.eoa_aid,OLD.wallet_aid) ON CONFLICT DO NOTHING;
-	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(OLD.eoa_fill_aid,OLD.wallet_fill_aid) ON CONFLICT DO NOTHING;
 
 	-- Update statistics for the Creator of the Order (Seller)
 	UPDATE trd_mkt_stats AS s
 			SET total_trades = (total_trades - 1),
-				volume_traded = (volume_traded - OLD.amount_filled)
+				volume_traded = (volume_traded - (OLD.price * OLD.amount_filled))
 			WHERE	s.eoa_aid = OLD.eoa_aid AND
-					s.market_aid = OLD.market_aid;
+					s.market_aid = OLD.market_aid
+			RETURNING total_trades INTO v_total_trades;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN	-- this condition won't be true during normal operation
@@ -220,12 +216,23 @@ BEGIN
 				VALUES(OLD.eoa_aid,OLD.wallet_aid,OLD.market_aid);
 	END IF;
 
+	IF v_total_trades = 0 THEN
+		DELETE FROM mkts_traded WHERE eoa_aid = OLD.eoa_aid AND market_aid = OLD.market_aid;
+	END IF;
+
+	UPDATE ustats
+		SET total_trades = (total_trades - 1),
+			volume_traded = (volume_traded - (OLD.price * OLD.amount_filled))
+		WHERE eoa_aid=OLD.eoa_aid;
+
+
 	-- Update statistics for the Filler of the Order (Buyer)
 	UPDATE trd_mkt_stats AS s
 			SET total_trades = (total_trades - 1),
-				volume_traded = (volume_traded - OLD.amount_filled)
+				volume_traded = (volume_traded - (OLD.price * OLD.amount_filled))
 			WHERE	s.eoa_aid = OLD.eoa_fill_aid AND
-					s.market_aid = OLD.market_aid;
+					s.market_aid = OLD.market_aid
+			RETURNING total_trades INTO v_total_trades;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
@@ -233,6 +240,16 @@ BEGIN
 				VALUES(OLD.eoa_fill_aid,OLD.wallet_fill_aid,OLD.market_aid);
 	END IF;
 
+	IF v_total_trades = 0 THEN
+		DELETE FROM mkts_traded WHERE eoa_aid = OLD.eoa_fill_aid AND market_aid = OLD.market_aid;
+	END IF;
+
+	UPDATE ustats
+		SET total_trades = (total_trades - 1),
+			volume_traded = (volume_traded - (OLD.price * OLD.amount_filled))
+		WHERE eoa_aid=OLD.eoa_fill_aid;
+
+	--- Update global statistics
 	UPDATE main_stats SET trades_count = (trades_count - 1);
 	UPDATE market SET total_trades = (total_trades - 1) WHERE market_aid = OLD.market_aid;
 
@@ -245,17 +262,6 @@ DECLARE
 	v_cnt numeric;
 BEGIN
 
-	RAISE NOTICE 'insert into trd_mkt_stats for % ',NEW.eoa_aid;
-	-- Update statistics for the Creator of the Order (Seller)
-	UPDATE ustats AS s
-			SET markets_traded = (markets_traded + 1)
-			WHERE	s.eoa_aid = NEW.eoa_aid;
-
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		RAISE EXCEPTION 'Corresponding row in ustats table doesnt exist';
-	END IF;
-
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -263,18 +269,6 @@ CREATE OR REPLACE FUNCTION on_trd_mkt_stats_delete() RETURNS trigger AS  $$
 DECLARE
 	v_cnt numeric;
 BEGIN
-
-	-- Update statistics for the Creator of the Order (Seller)
-	SELECT COUNT(*) AS num_rows
-		FROM trd_mkt_stats AS s
-		WHERE	s.eoa_aid = OLD.eoa_aid AND
-				s.market_aid = OLD.market_aid INTO v_cnt;
-
-	IF v_cnt = 0 THEN
-		UPDATE ustats AS s
-			SET markets_traded = (markets_traded - 1)
-			WHERE	s.eoa_aid = OLD.eoa_aid;
-	END IF;
 
 	RETURN OLD;
 END;
@@ -345,9 +339,10 @@ BEGIN
 				SET frozen_funds = (frozen_funds + NEW.immediate_ff),
 					profit_loss = (profit_loss + NEW.immediate_profit)
 				WHERE market_aid = NEW.market_aid AND eoa_aid = NEW.eoa_aid;
-			UPDATE main_stats SET money_at_stake = money_at_stake + NEW.immediate_ff;
+			UPDATE main_stats SET money_at_stake = (money_at_stake + NEW.immediate_ff);
 			UPDATE market
-				SET money_at_stake = money_at_stake + NEW.immediate_ff WHERE market_aid = NEW.market_aid;
+				SET money_at_stake = (money_at_stake + NEW.immediate_ff)
+				WHERE market_aid = NEW.market_aid;
 		END IF;
 		IF NEW.closed_position = 1 THEN
 			RAISE EXCEPTION 'You cant insert a record with closed_position = 1, undefined behavior';
@@ -369,12 +364,13 @@ BEGIN
 		END IF;
 		IF OLD.closed_position = 0 THEN
 			UPDATE trd_mkt_stats AS s
-				SET frozen_funds = (frozen_funds + OLD.immediate_ff),
+				SET frozen_funds = (frozen_funds - OLD.immediate_ff),
 					profit_loss = (profit_loss - OLD.immediate_profit)
 				WHERE market_aid = OLD.market_aid AND eoa_aid = OLD.eoa_aid;
-			UPDATE main_stats SET money_at_stake = money_at_stake + OLD.immediate_ff;
-			UPDATE market 
-				SET money_at_stake = money_at_stake + OLD.immediate_ff WHERE market_aid = OLD.market_aid;
+			UPDATE main_stats SET money_at_stake = (money_at_stake - OLD.immediate_ff);
+			UPDATE market
+				SET money_at_stake = (money_at_stake - OLD.immediate_ff)
+				WHERE market_aid = OLD.market_aid;
 		END IF;
 	END IF;
 
@@ -390,17 +386,18 @@ BEGIN
 			IF NEW.closed_position = 1 THEN
 				-- profit loss is realized, either by selling part of position or Market finalization
 				-- Update statistics on profits
-				-- Note: here frozen funds are substrated in total becase Augur updates this value in
+				-- Noote: here frozen funds are substrated in total becase Augur updates this value in
 				--		ProfitLoss event and this value is added during INSERT operation in profit_loss table
 				--		(if we don't subtract it we are going to get duplicated amount of frozen funds)
-				UPDATE trd_mkt_stats AS s
-						SET profit_loss = (profit_loss + (NEW.immediate_profit - OLD.immediate_profit)),
-							frozen_funds = (frozen_funds - OLD.immediate_ff + NEW.immediate_ff)
-						WHERE	s.eoa_aid = NEW.eoa_aid AND
-								s.market_aid = NEW.market_aid;
-				UPDATE main_stats SET money_at_stake = (money_at_stake - OLD.immediate_ff + NEW.immediate_ff);
-				UPDATE market
-					SET money_at_stake = (money_at_stake - OLD.immediate_ff) WHERE market_aid = OLD.market_aid;
+--				UPDATE trd_mkt_stats AS s
+--						SET profit_loss = (profit_loss - OLD.immediate_profit + NEW.immediate_profit),
+--							frozen_funds = (frozen_funds - OLD.immediate_ff + NEW.immediate_ff)
+--						WHERE	s.eoa_aid = NEW.eoa_aid AND
+--								s.market_aid = NEW.market_aid;
+--				UPDATE main_stats SET money_at_stake = (money_at_stake - OLD.immediate_ff + NEW.immediate_ff);
+--				UPDATE market
+--					SET money_at_stake = (money_at_stake - OLD.immediate_ff + NEW.immediate_ff)
+--					WHERE market_aid = OLD.market_aid;
 			END IF;
 			IF NEW.closed_position = 0 THEN
 				-- nobody should update closed_position from 1 to 0 , once it is closed it is forever
@@ -419,8 +416,6 @@ DECLARE
 	v_cnt numeric;
 BEGIN
 
-	-- Make sure user stats record exists
-	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(NEW.eoa_aid,NEW.wallet_aid) ON CONFLICT DO NOTHING;
 	-- Update statistics for the Reporter
 	UPDATE trd_mkt_stats AS s
 			SET total_reports = (total_reports + 1)
@@ -455,8 +450,6 @@ DECLARE
 	v_cnt numeric;
 BEGIN
 
-	-- Make sure user stats record exists
-	INSERT INTO ustats(eoa_aid,wallet_aid) VALUES(OLD.eoa_aid,OLD.wallet_aid) ON CONFLICT DO NOTHING;
 	-- Update statistics for the Reporter
 	UPDATE trd_mkt_stats AS s
 			SET total_reports = (total_reports - 1)
@@ -654,6 +647,22 @@ BEGIN
 		SET frozen_funds = (frozen_funds + OLD.unfrozen_funds),
 			profit_loss = (profit_loss - OLD.final_profit)
 		WHERE market_aid = OLd.market_aid AND eoa_aid = OLD.eoa_aid;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_mkts_traded_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE ustats SET markets_traded = (markets_traded + 1) WHERE eoa_aid = NEW.eoa_aid;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_mkts_traded_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE ustats SET markets_traded = (markets_traded - 1) WHERE eoa_aid = OLD.eoa_aid;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

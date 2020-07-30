@@ -1,4 +1,3 @@
-// Data Base Storage
 package dbs
 
 import (
@@ -72,7 +71,6 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,va
 		ss.Log_msg(fmt.Sprintf("Universe %v not found when trying to insert MarketCreated evt\n",evt.Universe.String()))
 		os.Exit(1)
 	}
-	//eoa_aid := ss.Lookup_or_create_address(evt.MarketCreator.String(),block_num,tx_id)
 	reporter_aid := ss.Lookup_or_create_address(evt.DesignatedReporter.String(),agtx.BlockNum,agtx.TxId)
 	ss.Info.Printf(
 		"create_market: eoa_aid = %v, wallet_aid=%v (%v), reporter_id=%v (%v)\n",
@@ -378,8 +376,7 @@ func (ss *SQLStorage) Insert_market_volume_changed_evt_v1(agtx *p.AugurTx,evt *p
 
 	// Updates volume per outcome in an indexed table for querying market info
 	for outcome_idx := 0; outcome_idx < len(evt.OutcomeVolumes) ; outcome_idx++ {
-		query = "UPDATE " +
-					"outcome_vol " +
+		query = "UPDATE outcome_vol " +
 				"SET " +
 					"volume = "+evt.OutcomeVolumes[outcome_idx].String()+"/1e+18 " +
 				"WHERE " +
@@ -437,8 +434,7 @@ func (ss *SQLStorage) Insert_market_volume_changed_evt_v2(agtx *p.AugurTx,evt *p
 
 	// Updates volume per outcome in an indexed table for querying market info
 	for outcome_idx := 0; outcome_idx < len(evt.OutcomeVolumes) ; outcome_idx++ {
-		query = "UPDATE " +
-					"outcome_vol " +
+		query = "UPDATE outcome_vol " +
 				"SET " +
 					"volume = "+evt.OutcomeVolumes[outcome_idx].String()+"/1e+18 " +
 				"WHERE " +
@@ -903,10 +899,6 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 
 	var rec p.OutcomeVol
 	records := make([]p.OutcomeVol,0,8)
-/*	market_aid,err := ss.Nonfatal_lookup_address_id(mkt_addr)
-	if err != nil {
-		return records,err
-	}*/
 
 	var orderby_str = "ORDER BY o.outcome_idx"
 	if orderby == 1 {
@@ -948,7 +940,6 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 			os.Exit(1)
 		}
 		rec.OutcomeStr = get_outcome_str(uint8(rec.MktType),rec.Outcome,&outcomes)
-		//ss.Info.Printf("get_outcome_volumes(): rec.OutcomeStr=%v (extracted from %v)\n",rec.OutcomeStr,outcomes)
 		records = append(records,rec)
 	}
 	return records,nil

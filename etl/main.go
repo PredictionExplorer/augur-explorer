@@ -6,22 +6,25 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"bytes"
+	//"bytes"
+	"io/ioutil"
+	"strings"
 	"time"
 	"strconv"
 	"fmt"
 	"context"
 	"log"
-	"math/big"
+	"errors"
+	//"math/big"
 	"encoding/hex"
-	"encoding/json"
+	//"encoding/json"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	//"github.com/ethereum/go-ethereum/common"
+	//"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	//"github.com/ethereum/go-ethereum/common/hexutil"
 	//"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
@@ -107,36 +110,50 @@ var (
 	fill_order_id int64 = 0			// during event processing, holds id of record in mktord from Fill evt
 	market_order_id int64 = 0
 	owner_fld_offset int64 = 2		// offset to AugurContract::owner field obtained with eth_getStorage()
+	
+	set_back_block_num int64 = 0
 
 	position_changes	[]*PosChg	// used to track changes in positions for debugging/verification
 
 	Error   *log.Logger
 	Info	*log.Logger
+
+	errChainSplit error = errors.New("Chainsplit detected")
+	split_simulated bool = false
 )
 type rpcBlockHash struct {
 	Hash		string
 }
-func get_block_hash(block_num BlockNumber) (string,error) {
-
-	ctx := context.Background()
-	var raw json.RawMessage
-	err := rpcclient.CallContext(ctx, &raw,"eth_getBlockByNumber", hexutil.EncodeBig(big.NewInt(int64(block_num))),false)
-	var blockHash rpcBlockHash
-	err = json.Unmarshal(raw,&blockHash)
-	if err!= nil {
-		Error.Printf("Error unmarshalling hash of the block: %v\n",err)
-		return "",err
-	} else {
-		return blockHash.Hash,nil
+func read_block_numbers(fname string)  []int64 {
+	data,err := ioutil.ReadFile(fname)
+	if err != nil {
+		fmt.Printf("Can't open file %v containing comma-separated block numbers to be processed\n")
+		os.Exit(1)
 	}
-	//clt.c.CallContext(ctx, &result, "eth_chainId")
+	blocks_str := string(data)
+	numbers := strings.Split(blocks_str,",")
+	output := make([]int64,0,512)
+	for i:=0 ; i<len(numbers); i++ {
+		bnum,err:=strconv.Atoi(numbers[i])
+		if err!=nil {
+			fmt.Printf("Can't convert block %v to number: %v . Aborting\n",numbers[i],err)
+		}
+		output = append(output,int64(bnum))
+	}
+	return output
 }
 func main() {
 	//client, err := ethclient.Dial("http://:::8545")
 
+	var block_numbers []int64
 	stop_block := int(0)
 	if len(os.Args) > 1 {
-		stop_block,_=strconv.Atoi(os.Args[1])
+		var err error
+		stop_block,err=strconv.Atoi(os.Args[1])
+		if err != nil {
+			// must be file number specifying block numbers to process
+			block_numbers = read_block_numbers(os.Args[1])
+		}
 	}
 	if len(RPC_URL) == 0 {
 		Fatalf("Configuration error: RPC URL of Ethereum node is not set."+
@@ -196,6 +213,18 @@ func main() {
 
 	//go balance_updater()	// updates DAI token balances very 10 seconds
 
+	if len(block_numbers) > 0 {
+		for i:=0 ; i<len(block_numbers); i++ {
+			bnum := block_numbers[i]
+			err := process_block(bnum)
+			if err!=nil {
+				fmt.Printf("Process failed: %v. Repeat again.\n",err)
+				os.Exit(1)
+			}
+		}
+		os.Exit(0)
+	}
+
   main_loop:
 	ctx := context.Background()
 	latestBlock, err := eclient.BlockByNumber(ctx, nil)
@@ -209,149 +238,33 @@ func main() {
 	} else {
 		bnum = bnum + 1
 	}
-	split_simulated := false
-	var bnum_high BlockNumber = BlockNumber(latestBlock.Number().Uint64())
+	var bnum_high int64 = latestBlock.Number().Int64()
 	if bnum_high < bnum {
 		Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
 		os.Exit(1)
 	}
 	if stop_block > 0 {
 		Info.Printf("Will exit at block %v for debugging\n",stop_block)
-		bnum_high = BlockNumber(stop_block)
+		bnum_high = int64(stop_block)
 	}
 	for ; bnum<bnum_high; bnum++ {
-		block_hash_str,err:=get_block_hash(bnum)
-		if err!=nil {
-			time.Sleep(1 * time.Second)
-			continue
-		}
-		block_hash:=common.HexToHash(block_hash_str)
-		big_bnum:=big.NewInt(int64(bnum))
-		block, err := eclient.BlockByNumber(ctx,big_bnum)
-		if err != nil {
-			Error.Printf("Error in BlockByNumber call: %v\n",err)
-		} else {
-			if block != nil {
-//				header := block.Header()
-				storage.Block_delete_with_everything(BlockNumber(big_bnum.Int64()))
-				num_transactions, err := eclient.TransactionCount(ctx,block_hash)
-				if err != nil {
-					Error.Printf("block error: %v \n",err)
-				} else {
-					header := block.Header()
-					back_block_num := new(big.Int).SetUint64(header.Number.Uint64() - 20)
-					if (back_block_num.Uint64() == 99999999999999) && !split_simulated {//simulation disabled
-						// code to simulate chain split (naive) , this block should be removed when stable
-						block,_ = eclient.BlockByNumber(ctx,back_block_num)
-						header = block.Header()
-						big_bnum = big.NewInt(int64(header.Number.Int64()))
-						bnum = BlockNumber(big_bnum.Uint64())
-						storage.Block_delete_with_everything(BlockNumber(header.Number.Int64()))
-						split_simulated = true
-						Info.Println("Chain split simulation in action");
-					}
-					if !storage.Insert_block(block_hash_str,header) {
-						// chainsplit detected
-						set_back_block_num := storage.Fix_chainsplit(header)
-						Info.Printf("Chain rewind to block %v. Restarting.",set_back_block_num)
-						bnum = set_back_block_num
-						continue
-					}
-					if num_transactions > 0 {
-						Info.Printf("block: %v %v transactions\n",block.Number(),num_transactions)
-						for tnum:=0 ; tnum < int(num_transactions) ; tnum++ {
-							tx , err := eclient.TransactionInBlock(ctx,block_hash,uint(tnum))
-							if err != nil {
-								Error.Printf("Error: %v",err)
-							} else {
-								tx_msg, err := tx.AsMessage(types.NewEIP155Signer(tx.ChainId()))
-								if err != nil {
-									Fatalf("Error in tx signature validation (shoudln't happen): %v",err)
-								}
-								//var tx_id int64 = 0
-								//var ctrct_create bool = false
-//								from := tx_msg.From()
-								dump_tx_input_if_known(tx)
-								to:=""
-								if tx.To() != nil {
-									to = tx.To().String()
-								}
-								Info.Printf("\ttx: %v\n",tx.Hash().String())
-								Info.Printf("\t from=%v\n",tx_msg.From().String())
-								Info.Printf("\t to=%v for $%v (%v bytes data)\n",
-												to,tx.Value().String(),len(tx.Data()))
-								Info.Printf("\t input: \n%v\n",hex.EncodeToString(tx.Data()[:]))
-								rcpt,err := eclient.TransactionReceipt(ctx,tx.Hash())
-								if err != nil {
-									Error.Printf("Error: %v",err)
-								} else {
-									agtx := new(AugurTx)
-									agtx.CtrctCreate = false
-									if tx.To() == nil {
-										to = rcpt.ContractAddress.String()
-										agtx.CtrctCreate = true
-									}
-									/*
-									tx_id = storage.Insert_transaction(
-												BlockNumber(block.Number().Uint64()),
-												tx.Hash().String(),
-												to,
-												&tx_msg,
-												ctrct_create,
-									)
-									*/
-									agtx.TxId = 0
-									agtx.BlockNum = BlockNumber(block.Number().Uint64())
-									agtx.TxHash = tx.Hash().String()
-									agtx.TxMsg = &tx_msg
-									contains_market_finalized:=false
-									sequencer := new(EventSequencer)
-									num_logs := len(rcpt.Logs)
-									for i:=0 ; i<num_logs ; i++ {
-										if len(rcpt.Logs[i].Topics) > 0 {
-											Info.Printf(
-												"\t\t\tlog %v\n\t\t\t\t\t\t for contract %v (%v of %v items)\n",
-												rcpt.Logs[i].Topics[0].String(),rcpt.Logs[i].Address.String(),(i+1),len(rcpt.Logs))
-											if 0 == bytes.Compare(rcpt.Logs[i].Topics[0].Bytes(),evt_market_finalized) {
-												contains_market_finalized = true
-											}
-										}
-										sequencer.append_event(rcpt.Logs[i])
-									}
-									var ordered_list []*types.Log
-									if contains_market_finalized {
-										// logs with Market finalized event need to have special order
-										ordered_list = sequencer.get_events_for_market_finalized_case()
-									} else {
-										ordered_list = sequencer.get_ordered_event_list()
-									}
-									num_logs = len(ordered_list)
-									pl_entries := make([]int64,0,2);// profit loss entries
-									market_order_id = 0
-									fill_order_id = 0
-									for i:=0 ; i < num_logs ; i++ {
-										if len(ordered_list[i].Topics) > 0 {
-											Info.Printf(
-												"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",
-												ordered_list[i].Topics[0].String(),
-												ordered_list[i].Address.String())
-											id := process_event(block.Header(),agtx,&ordered_list,i)
-											if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),evt_profit_loss_changed) {
-												pl_entries = append(pl_entries,id)
-											}
-										}
-									}
-								}
-							}
-						}
-					} else {
-						Info.Printf("block: %v EMPTY\n",block.Number())
-					}
+		//block_hash:=common.HexToHash(block_hash_str)
+		for {
+			err := process_block(bnum)
+			if err==nil {
+				break
+			} else {
+				// this is probably happening due to RPC unavailability
+				time.Sleep(1 * time.Second)
+				if err == errChainSplit {
+					bnum = set_back_block_num
+					continue
 				}
+				Error.Printf("Block processing error: %v\n",err)
 			}
 		}
 		storage.Set_last_block_num(bnum)
-		scan_profit_loss_data_for_debugging(bnum,&position_changes)
+		//scan_profit_loss_data_for_debugging(bnum,&position_changes)
 		position_changes=nil
 		select {
 			case exit_flag := <-exit_chan:
@@ -366,7 +279,7 @@ func main() {
 	if err != nil {
 		log.Fatal("oops:", err)
 	} else {
-		if BlockNumber(latestBlock.Number().Uint64()) >= bnum {
+		if latestBlock.Number().Int64() >= bnum {
 			time.Sleep(DEFAULT_WAIT_TIME * time.Millisecond)
 		}
 	}

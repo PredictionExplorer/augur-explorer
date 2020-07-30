@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"math/big"
 	"context"
 //	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 //	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
@@ -144,7 +146,7 @@ func build_list_of_inspected_events() {
 							evt_erc20_approval,
 	)
 }
-func get_eoa_aid(wallet_addr *common.Address,block_num BlockNumber,tx_id int64) int64 {
+func get_eoa_aid(wallet_addr *common.Address,block_num int64,tx_id int64) int64 {
 
 	var eoa_aid int64 = 0
 	wallet_aid,err := storage.Nonfatal_lookup_address_id(wallet_addr.String())
@@ -154,6 +156,8 @@ func get_eoa_aid(wallet_addr *common.Address,block_num BlockNumber,tx_id int64) 
 			storage.Link_eoa_and_wallet_contract(eoa_aid,wallet_aid)
 			return eoa_aid
 		}
+	} else {
+		wallet_aid = storage.Lookup_or_create_address(wallet_addr.String(),block_num,tx_id)
 	}
 	num:=big.NewInt(int64(owner_fld_offset)) 
 	key:=common.BigToHash(num)
@@ -166,7 +170,10 @@ func get_eoa_aid(wallet_addr *common.Address,block_num BlockNumber,tx_id int64) 
 		eth_addr := common.BytesToAddress(eoa[12:])
 		if !Eth_addr_is_zero(&eth_addr) {
 			eoa_addr_str = eth_addr.String()
+			Info.Printf("get_eoa_aid: Eth addr = %v\n",eoa_addr_str)
 			eoa_aid = storage.Lookup_or_create_address(eoa_addr_str,block_num,tx_id)
+			Info.Printf("eoa_aid for %v = %v\n",eoa_addr_str,eoa_aid)
+			Info.Printf("wallet_aid=%v\n",wallet_aid)
 			storage.Link_eoa_and_wallet_contract(eoa_aid,wallet_aid)
 		}
 		Info.Printf("get_eoa_aid: eoa_addr_str=%v\n",eoa_addr_str)
@@ -592,10 +599,6 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 	log := &(*(*logs)[lidx])	// we are getting full array of logs (some events need adjacent event data)
 
 	var id int64 = 0
-/*	block_num := BlockNumber(block.Number.Uint64())
-	if log == nil {
-		Fatalf("process_event() received null pointer")
-	}*/
 	timestamp := int64(block.Time)
 	num_topics := len(log.Topics)
 	if num_topics > 0 {
@@ -690,6 +693,145 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 	}
 	return id
 }
+func get_block_hash(block_num int64) (string,error) {
+	// this function is needed because Parity doesn't return the correct block hash over RPC, the hash
+	// it returns is re-calculated while some fileds of the types.Header object are unset, giving wrong hash
+	ctx := context.Background()
+	var raw json.RawMessage
+	err := rpcclient.CallContext(ctx, &raw,"eth_getBlockByNumber", hexutil.EncodeBig(big.NewInt(int64(block_num))),false)
+	var blockHash rpcBlockHash
+	err = json.Unmarshal(raw,&blockHash)
+	if err!= nil {
+		Error.Printf("Error unmarshalling hash of the block: %v\n",err)
+		return "",err
+	} else {
+		return blockHash.Hash,nil
+	}
+}
+func process_block(bnum int64) error {
+
+	ctx := context.Background()
+	block_hash_str,err:=get_block_hash(bnum)
+	if err!=nil {
+		return err
+	}
+	big_bnum:=big.NewInt(int64(bnum))
+	block, err := eclient.BlockByNumber(ctx,big_bnum)
+	Info.Printf("processing block %v, err=%v\n",bnum,err)
+	if err != nil {
+		Error.Printf("Error in BlockByNumber call: %v\n",err)
+	} else {
+		if block != nil {
+			block_hash:=common.HexToHash(block_hash_str)
+			storage.Block_delete_with_everything(big_bnum.Int64())
+			num_transactions, err := eclient.TransactionCount(ctx,block_hash)
+			if err != nil {
+				Error.Printf("block error: %v \n",err)
+				return err
+			} else {
+				header := block.Header()
+				back_block_num := new(big.Int).SetUint64(header.Number.Uint64() - 20)
+				if (back_block_num.Uint64() == 99999999999999) && !split_simulated {//simulation disabled
+					// code to simulate chain split (naive) , this block should be removed when stable
+					block,_ = eclient.BlockByNumber(ctx,back_block_num)
+					header = block.Header()
+					big_bnum = big.NewInt(int64(header.Number.Int64()))
+					storage.Block_delete_with_everything(header.Number.Int64())
+					split_simulated = true
+					Info.Println("Chain split simulation in action");
+				}
+				if !storage.Insert_block(block_hash_str,header) {
+					// chainsplit detected
+					set_back_block_num = storage.Fix_chainsplit(header)
+					Info.Printf("Chain rewind to block %v. Restarting.",set_back_block_num)
+					return errChainSplit
+				}
+				if num_transactions > 0 {
+					Info.Printf("block: %v %v transactions\n",block.Number(),num_transactions)
+					for tnum:=0 ; tnum < int(num_transactions) ; tnum++ {
+						tx , err := eclient.TransactionInBlock(ctx,block_hash,uint(tnum))
+						if err != nil {
+							Error.Printf("Error: %v",err)
+							return err
+						} else {
+							tx_msg, err := tx.AsMessage(types.NewEIP155Signer(tx.ChainId()))
+							if err != nil {
+								Fatalf("Error in tx signature validation (shoudln't happen): %v",err)
+							}
+							dump_tx_input_if_known(tx)
+							to:="0x0000000000000000000000000000000000000000"
+							if tx.To() != nil {
+								to = tx.To().String()
+							}
+							Info.Printf("\ttx: %v\n",tx.Hash().String())
+							Info.Printf("\t from=%v\n",tx_msg.From().String())
+							Info.Printf("\t to=%v for $%v (%v bytes data)\n",
+											to,tx.Value().String(),len(tx.Data()))
+							Info.Printf("\t input: \n%v\n",hex.EncodeToString(tx.Data()[:]))
+							rcpt,err := eclient.TransactionReceipt(ctx,tx.Hash())
+							if err != nil {
+								Error.Printf("Error: %v",err)
+								return err
+							} else {
+								agtx := new(AugurTx)
+								agtx.CtrctCreate = false
+								if tx.To() == nil {
+									to = rcpt.ContractAddress.String()
+									agtx.CtrctCreate = true
+								}
+								agtx.TxId = 0
+								agtx.BlockNum = block.Number().Int64()
+								agtx.TxHash = tx.Hash().String()
+								agtx.TxMsg = &tx_msg
+								agtx.To = to
+								contains_market_finalized:=false
+								sequencer := new(EventSequencer)
+								num_logs := len(rcpt.Logs)
+								for i:=0 ; i<num_logs ; i++ {
+									if len(rcpt.Logs[i].Topics) > 0 {
+										Info.Printf(
+											"\t\t\tlog %v\n\t\t\t\t\t\t for contract %v (%v of %v items)\n",
+											rcpt.Logs[i].Topics[0].String(),rcpt.Logs[i].Address.String(),(i+1),len(rcpt.Logs))
+										if 0 == bytes.Compare(rcpt.Logs[i].Topics[0].Bytes(),evt_market_finalized) {
+											contains_market_finalized = true
+										}
+									}
+									sequencer.append_event(rcpt.Logs[i])
+								}
+								var ordered_list []*types.Log
+								if contains_market_finalized {
+									// logs with Market finalized event need to have special order
+									ordered_list = sequencer.get_events_for_market_finalized_case()
+								} else {
+									ordered_list = sequencer.get_ordered_event_list()
+								}
+								num_logs = len(ordered_list)
+								pl_entries := make([]int64,0,2);// profit loss entries
+								market_order_id = 0
+								fill_order_id = 0
+								for i:=0 ; i < num_logs ; i++ {
+									if len(ordered_list[i].Topics) > 0 {
+										Info.Printf(
+											"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",
+											ordered_list[i].Topics[0].String(),
+											ordered_list[i].Address.String())
+										id := process_event(block.Header(),agtx,&ordered_list,i)
+										if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),evt_profit_loss_changed) {
+											pl_entries = append(pl_entries,id)
+										}
+									}
+								}
+							}
+						}
+					}
+				} else {
+					Info.Printf("block: %v EMPTY\n",block.Number())
+				}
+			}
+		}
+	}
+	return nil
+}
 func dump_tx_input_if_known(tx *types.Transaction) {
 
 	tx_data:=tx.Data()
@@ -744,7 +886,7 @@ func dump_tx_input_if_known(tx *types.Transaction) {
 		Info.Printf("dump_tx_input: input sig: %v\n",hex.EncodeToString(input_sig[:]))
 	}
 }
-func scan_profit_loss_data_for_debugging(block_num BlockNumber,position_changes *[]*PosChg) {
+func scan_profit_loss_data_for_debugging(block_num int64,position_changes *[]*PosChg) {
 	// this function makes direct calls to contracts to get changes in profit loss and record them
 	// right after each block is processed (developed for debugging purposes)
 

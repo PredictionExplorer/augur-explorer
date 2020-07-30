@@ -26,3 +26,5 @@ CREATE TRIGGER dai_bal_delete AFTER DELETE on dai_bal FOR EACH ROW EXECUTE PROCE
 CREATE TRIGGER dai_bal_update AFTER UPDATE ON dai_bal FOR EACH ROW EXECUTE PROCEDURE on_dai_bal_update();
 CREATE TRIGGER claim_funds_insert AFTER INSERT on claim_funds FOR EACH ROW EXECUTE PROCEDURE on_claim_funds_insert();
 CREATE TRIGGER claim_funds_delete AFTER DELETE on claim_funds FOR EACH ROW EXECUTE PROCEDURE on_claim_funds_delete();
+CREATE TRIGGER mkts_traded_insert AFTER INSERT on mkts_traded FOR EACH ROW EXECUTE PROCEDURE on_mkts_traded_insert();
+CREATE TRIGGER mkts_traded_delete AFTER DELETE on mkts_traded FOR EACH ROW EXECUTE PROCEDURE on_mkts_traded_delete();

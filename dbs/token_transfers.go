@@ -1,4 +1,3 @@
-// Data Base Storage
 package dbs
 
 import (
@@ -26,7 +25,7 @@ func (ss *SQLStorage) Process_REP_token_transfer(evt *p.Transfer,agtx *p.AugurTx
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_token_balance_changed_evt(evt *p.TokenBalanceChanged,block_num p.BlockNumber,tx_id int64) {
+func (ss *SQLStorage) Insert_token_balance_changed_evt(evt *p.TokenBalanceChanged,block_num int64,tx_id int64) {
 
 	market_aid := ss.Lookup_or_create_address(evt.Market.String(),block_num,tx_id)
 	owner_aid := ss.Lookup_or_create_address(evt.Owner.String(),block_num,tx_id)
@@ -163,7 +162,7 @@ func (ss *SQLStorage) Get_previous_balance_from_DB(id int64,aid int64) (string,e
 	}
 	return balance,err
 }
-func (ss *SQLStorage) Update_dai_token_balances_backwards(last_block_num p.BlockNumber,aid int64,eth_balance *big.Int) int {
+func (ss *SQLStorage) Update_dai_token_balances_backwards(last_block_num int64,aid int64,eth_balance *big.Int) int {
 
 	var updated_rows  int =0
 	var query string
