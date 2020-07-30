@@ -134,9 +134,11 @@ func read_block_numbers(fname string)  []int64 {
 	numbers := strings.Split(blocks_str,",")
 	output := make([]int64,0,512)
 	for i:=0 ; i<len(numbers); i++ {
-		bnum,err:=strconv.Atoi(numbers[i])
+		trimmed:=strings.ReplaceAll(numbers[i],"\n","")
+		bnum,err:=strconv.Atoi(trimmed)
 		if err!=nil {
 			fmt.Printf("Can't convert block %v to number: %v . Aborting\n",numbers[i],err)
+			os.Exit(1)
 		}
 		output = append(output,int64(bnum))
 	}

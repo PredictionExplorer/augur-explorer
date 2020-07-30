@@ -1,3 +1,5 @@
+-- Noote: some triggers are empty because they were discontinued over time. 
+-- (will be deactivated completely in the future)
 CREATE OR REPLACE FUNCTION on_oi_chg_insert() RETURNS trigger AS  $$ --updates open interest of the market
 DECLARE
 BEGIN
@@ -356,22 +358,14 @@ DECLARE
 BEGIN
 
 	IF OLD.mktord_id > 0 THEN
-		IF OLD.closed_position = 1 THEN
-			UPDATE trd_mkt_stats AS s
-				SET profit_loss = (profit_loss - OLD.immediate_profit)
-				WHERE	s.market_aid = OLD.market_aid AND
-						s.eoa_aid = OLD.eoa_aid;
-		END IF;
-		IF OLD.closed_position = 0 THEN
-			UPDATE trd_mkt_stats AS s
-				SET frozen_funds = (frozen_funds - OLD.immediate_ff),
-					profit_loss = (profit_loss - OLD.immediate_profit)
-				WHERE market_aid = OLD.market_aid AND eoa_aid = OLD.eoa_aid;
-			UPDATE main_stats SET money_at_stake = (money_at_stake - OLD.immediate_ff);
-			UPDATE market
-				SET money_at_stake = (money_at_stake - OLD.immediate_ff)
-				WHERE market_aid = OLD.market_aid;
-		END IF;
+		UPDATE trd_mkt_stats AS s
+			SET frozen_funds = (frozen_funds - OLD.immediate_ff),
+				profit_loss = (profit_loss - OLD.immediate_profit)
+			WHERE market_aid = OLD.market_aid AND eoa_aid = OLD.eoa_aid;
+		UPDATE main_stats SET money_at_stake = (money_at_stake - OLD.immediate_ff);
+		UPDATE market
+			SET money_at_stake = (money_at_stake - OLD.immediate_ff)
+			WHERE market_aid = OLD.market_aid;
 	END IF;
 
 	RETURN OLD;
@@ -380,30 +374,11 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_profit_loss_update() RETURNS trigger AS  $$
 DECLARE
 BEGIN
-
-	if NEW.mktord_id > 0 THEN
-		IF NEW.closed_position != OLD.closed_position THEN
-			IF NEW.closed_position = 1 THEN
-				-- profit loss is realized, either by selling part of position or Market finalization
-				-- Update statistics on profits
-				-- Noote: here frozen funds are substrated in total becase Augur updates this value in
-				--		ProfitLoss event and this value is added during INSERT operation in profit_loss table
-				--		(if we don't subtract it we are going to get duplicated amount of frozen funds)
---				UPDATE trd_mkt_stats AS s
---						SET profit_loss = (profit_loss - OLD.immediate_profit + NEW.immediate_profit),
---							frozen_funds = (frozen_funds - OLD.immediate_ff + NEW.immediate_ff)
---						WHERE	s.eoa_aid = NEW.eoa_aid AND
---								s.market_aid = NEW.market_aid;
---				UPDATE main_stats SET money_at_stake = (money_at_stake - OLD.immediate_ff + NEW.immediate_ff);
---				UPDATE market
---					SET money_at_stake = (money_at_stake - OLD.immediate_ff + NEW.immediate_ff)
---					WHERE market_aid = OLD.market_aid;
-			END IF;
-			IF NEW.closed_position = 0 THEN
-				-- nobody should update closed_position from 1 to 0 , once it is closed it is forever
-				RAISE EXCEPTION 'You cant change closed_position field by hand, undefined behaviur';
-			END IF;
-		END IF;
+	IF OLD.immediate_ff != NEW.immediate_ff THEN
+		RAISE EXCEPTION 'You cant change immediate frozen funds on update, instead delete the whole block';
+	END IF;
+	IF OLD.immediate_profit != NEW.immediate_profit THEN
+		RAISE EXCEPTION 'You cant change immediate profit on update, instead delete the whole block';
 	END IF;
 	RETURN NEW;
 END;

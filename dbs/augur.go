@@ -73,7 +73,7 @@ func (ss *SQLStorage) Get_augur_blocks(market_aid int64) []int64 {
 				"(SELECT DISTINCT block_num FROM claim_funds " + where_cond + ") " +
 					"UNION ALL" +
 				"(SELECT DISTINCT block_num FROM report " + where_cond + ") " +
-			") as block_numbers"
+			") as block_numbers ORDER BY block_num"
 	rows,err := ss.db.Query(query)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

@@ -97,7 +97,7 @@ The following executables need to be run:
 In deamon mode (permanently)
  1. ./etl/etl (The ETL daemon)
  2. ./server/server (The Web server daemon)
- 3. ./etl/mes/mesh (The 0x Mesh listener)a
+ 3. ./etl/mesh/mesh (The 0x Mesh listener)
  4. ./etl/tools/dai_balances (DAI token balance calculator)
  
 Periodically (crontab)
