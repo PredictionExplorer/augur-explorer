@@ -15,8 +15,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_eoa_fill_aid int64,	evt *p.MktOrderEvt,
-) {
+func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_eoa_fill_aid int64,	evt *p.MktOrderEvt) {
 
 	// depending on the order action (Create/Cancel/Fill) different table is used for storage
 	//		Create/Cancel order actions go to 'oorders' (Open Orders) table because these orders
@@ -201,7 +200,10 @@ func (ss *SQLStorage) Insert_open_order(
 		eoa_aid = ss.Lookup_or_create_address(eoa_addr,0,0)
 	}
 
-	ss.Info.Printf("creating open order made by %v : %+v\n",eoa_addr,ospec)
+	ss.Info.Printf(
+		"creating open order made by %v : market=%v, price=%v, Outcome=%v, Type=%v\n",
+		eoa_addr,ospec.Market.String(),ospec.Price.String(),ospec.Outcome,ospec.Type,
+	)
 	market_aid := ss.Lookup_address_id(ospec.Market.String())
 	price := float64(ospec.Price.Int64())/100
 	otype := ospec.Type	// Bid/Ask

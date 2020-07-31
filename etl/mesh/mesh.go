@@ -10,6 +10,7 @@ import (
 	"log"
 	"fmt"
 	"time"
+	"bytes"
 	//"encoding/hex"
 
 	"github.com/0xProject/0x-mesh/rpc"
@@ -27,7 +28,7 @@ import (
 
 )
 const (
-	DEFAULT_SYNC_INTERVAL_SECS int64 = 60*1
+	DEFAULT_SYNC_INTERVAL_SECS int64 = 60*10
 )
 var (
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -41,7 +42,9 @@ var (
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
 
+	caddrs *ContractAddresses
 	last_sync_time int64
+	adecoder *zeroex.AssetDataDecoder
 
 	Error   *log.Logger
 	Info    *log.Logger
@@ -70,6 +73,10 @@ func Dump_stats(s *types.Stats,output *log.Logger) {
 func fetch_and_sync_orders() {
 
 	ohash_map := make(map[string]struct{})
+	var insert_count int = 0
+	var update_count int = 0
+	var deleted_count int = 0
+	var orders_total int = 0
 	var anomalies_count int = 0
 	var page_size int = 256
 	var page_num int = 0
@@ -77,14 +84,17 @@ func fetch_and_sync_orders() {
 	for !done {
 		orders2sync,err := rpcclient.GetOrders(page_num,page_size,"")
 		if err == nil {
-			sync_orders(orders2sync,&ohash_map)
+			icnt,ucnt:=sync_orders(orders2sync,&ohash_map)
+			insert_count = insert_count + icnt
+			update_count = update_count + ucnt
 			if len(orders2sync.OrdersInfos) == 0 {
 				done = true
 			}
+			orders_total = orders_total + len(orders2sync.OrdersInfos)
 		} else {
 			done = true
 		}
-		Info.Printf("Order sync: page %v processed\n",page_num)
+//		Info.Printf("Order sync: page %v processed\n",page_num)
 		page_num++
 	}
 	db_orders := storage.Get_all_open_order_hashes()
@@ -99,27 +109,27 @@ func fetch_and_sync_orders() {
 				db_orders[i],
 			)
 			anomalies_count++
+			deleted_count++
 		}
 	}
-	var anomalies_str string = ""
-	if anomalies_count > 0 {
-		anomalies_str = fmt.Sprintf(" Anomalies: %v (ANOMALIES_FOUND)",anomalies_count)
-	}
-	Info.Printf("Order sync process complete.%v",anomalies_str)
+	Info.Printf(
+		"Order sync process complete. scanned: %v orders. Inserted %v. Updated %v. Deleted %v.\n",
+		orders_total,insert_count,update_count,deleted_count,
+	)
 }
-func oo_insert(order_hash *string,order *zeroex.SignedOrder,timestamp int64) {
+func oo_insert(order_hash *string,order *zeroex.SignedOrder,timestamp int64) error {
 
 	ctx := context.Background()
 	var copts = new(bind.CallOpts)
 	adata,err := zerox_contract.DecodeAssetData(copts,order.MakerAssetData)
 	if err!=nil {
 		Error.Printf("couldn't decode asset data for order %v : %v\n",*order_hash,err)
-		return
+		return err
 	}
 	unpacked_id,err := zerox_contract.UnpackTokenId(copts,adata.TokenIds[0])
 	if err!=nil {
 		Error.Printf("Unpack token id failed for order %v: %v\n",*order_hash,err)
-		return
+		return err
 	}
 	num:=big.NewInt(int64(owner_fld_offset))
 	key:=common.BigToHash(num)
@@ -133,36 +143,70 @@ func oo_insert(order_hash *string,order *zeroex.SignedOrder,timestamp int64) {
 			"Order will be inserted without EOA link. (ETH_STORAGE_FAIL)",
 			order.MakerAddress.String(),*order_hash,err,
 		)
+		return err
 	}
 	storage.Insert_open_order(order_hash,order,eoa_addr_str,&unpacked_id,timestamp)
+	return nil
 }
-func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{}) {
+func order_blongs_to_augur(order *zeroex.SignedOrder) bool {
+
+	// detecting if the order belongs to Augur Platform and it does if MakerAssetData
+	// contains ZeroXTrade contract address
+	var zeroex_addr_offset int = 4+32*11+4	// offset found after looking into hex data
+	if len(order.MakerAssetData) < (zeroex_addr_offset + 32) {
+		return false // MakerAssetData is too small, this is not Augur's order
+	}
+	from_offset := zeroex_addr_offset + 12	// real start of the address within big.Int
+	to_offset := from_offset + 20
+	possible_zeroex_addr_bytes:=order.MakerAssetData[from_offset:to_offset]
+	if !bytes.Equal(possible_zeroex_addr_bytes,caddrs.Zerox.Bytes()) {
+		return false
+	}
+	var order_adata zeroex.MultiAssetData
+	err := adecoder.Decode(order.MakerAssetData, &order_adata)
+	if err!=nil {
+		Info.Printf("Assed data decode error: %v\n",err)
+		return false
+	}
+	return true
+}
+func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{}) (int,int) {
 	// routine to synchronize orders on 0x Mesh Network with the table `oorders` in postgres
 	//	Executed on startup and every 10 minutes
 
-	Info.Printf("Syncing orders with Postgres DB: num_orders=%v\n",len(response.OrdersInfos))
-
+	var insert_count int = 0
+	var update_count int = 0
 
 	for i:=0 ; i<len(response.OrdersInfos); i++ {
 		order_info := response.OrdersInfos[i]
 		if order_info != nil {
+			if !order_blongs_to_augur(order_info.SignedOrder) {
+				continue
+			}
 			order_hash := order_info.OrderHash.String()
 			var empty struct{}
 			(*ohash_map)[order_hash]=empty
 			amount := order_info.FillableTakerAssetAmount
 			retval,bad_amount := storage.Update_open_order(order_hash,amount,order_info.SignedOrder)
 			if retval == 2 { // order doesn't exist
-				oo_insert(&order_hash,order_info.SignedOrder,0)
-				Info.Printf("Inserted open order %v\n",order_hash)
+				err := oo_insert(&order_hash,order_info.SignedOrder,0)
+				if err!=nil {
+					// nothing
+				} else {
+					insert_count++
+					Info.Printf("Inserted open order %v\n",order_hash)
+				}
 			}
 			if retval == 1 {
 				Info.Printf(
 					"Order %v had incorrect amount, fixed. (bad amount=%v, good amount=%v) (BAD_AMOUNT)",
-					bad_amount,amount.String(),
+					order_hash,bad_amount,amount.String(),
 				)
+				update_count++
 			}
 		}
 	}
+	return insert_count,update_count
 }
 func main() {
 
@@ -195,16 +239,19 @@ func main() {
 	if err != nil {
 		log.Fatalf("Can't find contract addresses in 'contract_addresses' table")
 	}
+	caddrs = &caddrs_obj
+
+	adecoder = zeroex.NewAssetDataDecoder()
 
 	eclient, err = ethclient.Dial(RPC_URL)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	Info.Printf("ZeroX contract = %v\n",caddrs_obj.Zerox.String())
+	Info.Printf("ZeroX contract = %v\n",caddrs.Zerox.String())
 	zerox_contract, err = NewZeroX(
 			common.HexToAddress(
-				caddrs_obj.Zerox.String(),
+				caddrs.Zerox.String(),
 			),
 			eclient,
 	)
@@ -244,10 +291,16 @@ func main() {
 	fetch_and_sync_orders()
 	last_sync_time=time.Now().Unix()
 	var copts = new(bind.CallOpts)
+//	fmt.Printf("Aborting execution.\n")
+//	os.Exit(1)
 	for {
 		select {
 		case orderEvents := <-orderEventsChan:
 			for _, orderEvent := range orderEvents {
+				if !order_blongs_to_augur(orderEvent.SignedOrder) {
+					//Info.Printf("Event listener, skipped non-augur: %v\n",orderEvent.OrderHash.String())
+					continue
+				}
 				order_hash:=orderEvent.OrderHash.String()
 				Info.Printf("--------------------------------------------------\n")
 				Info.Printf("Order event arrived in state=%+v:\n",orderEvent.EndState)
