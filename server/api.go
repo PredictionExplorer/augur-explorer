@@ -9,6 +9,8 @@ import (
 )
 
 func a1_active_markets(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	off_str := c.Query("off")
 	var off int = 0
 	var err error
@@ -33,6 +35,7 @@ func a1_active_markets(c *gin.Context) {
 }
 func a1_market_card(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	var err error
 	var market_aid int64 = 0
 	p_market_aid := c.Param("market_aid")
