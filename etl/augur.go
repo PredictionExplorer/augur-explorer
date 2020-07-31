@@ -175,11 +175,16 @@ func get_eoa_aid(wallet_addr *common.Address,block_num int64,tx_id int64) int64 
 			eoa_aid = storage.Lookup_or_create_address(eoa_addr_str,block_num,tx_id)
 			Info.Printf("eoa_aid for %v = %v\n",eoa_addr_str,eoa_aid)
 			Info.Printf("wallet_aid=%v\n",wallet_aid)
-			storage.Link_eoa_and_wallet_contract(eoa_aid,wallet_aid)
+		} else {
+			// EOA addr is zero, this means (probably) Wallet Addr is EOA account addr
+			Info.Printf("The wallet addr is not contract but EOA account, setting eoa_aid=wallet_aid\n")
+			eoa_aid = wallet_aid
 		}
+		storage.Link_eoa_and_wallet_contract(eoa_aid,wallet_aid)
 		Info.Printf("get_eoa_aid: eoa_addr_str=%v\n",eoa_addr_str)
 	} else {
-		Info.Printf("get_eoa_aid: error at rpc call: %v\n",err)
+		Info.Printf("get_eoa_aid: error at rpc call: %v. Aborting & exiting. No recovery planned\n",err)
+		os.Exit(1)// it is easier to relaunch ETL process than designing RPC failure recovery process
 	}
 	Info.Printf(
 		"get_eoa_aid: Success. Getting eoa_aid for address %v, eoa_aid = %v, wallet_aid=%v\n",

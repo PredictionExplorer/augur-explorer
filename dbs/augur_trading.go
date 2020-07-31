@@ -30,7 +30,12 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 	}
 	universe_id,err := ss.lookup_universe_id(evt.Universe.String())
 	if err!=nil {
-		ss.Log_msg(fmt.Sprintf("Universe %v wasn't found when trying toinsert MarketOrder event",evt.Universe.String()))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"Universe %v wasn't found when trying toinsert MarketOrder event at block %v: %v",
+				evt.Universe.String(),agtx.BlockNum,err,
+			),
+		)
 		os.Exit(1)
 	}
 	_ = universe_id	// ToDo: add universe_id match condition (for market)
@@ -145,7 +150,12 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 			order_id,
 	).Scan(&null_id);
 	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into mktord table: %v, q=%v",err,query))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"DB error: can't insert into mktord table at block: %v : %v, q=%v",
+				agtx.BlockNum,err,query,
+			),
+		)
 		os.Exit(1)
 	}
 	if null_id.Valid {
@@ -160,7 +170,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 				"market_aid = $1 AND outcome_idx = $2"
 	_,err = ss.db.Exec(query,market_aid,outcome_idx)
 	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error at block %v : %v ; q=%v",agtx.BlockNum,err,query))
 		os.Exit(1)
 	}
 }
@@ -286,7 +296,7 @@ func (ss *SQLStorage) close_all_open_positions_for_market(market_aid int64) {
 					"SET closed_position = 1 WHERE market_aid = $1 and closed_position = 0"
 	_,err:=ss.db.Exec(query,market_aid)
 	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error for market_aid=%v: %v ; q=%v",market_aid,err,query))
 		os.Exit(1)
 	}
 }

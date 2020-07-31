@@ -58,7 +58,7 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,va
 		if (err==sql.ErrNoRows) {
 			// break
 		} else {
-			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			ss.Log_msg(fmt.Sprintf("DB error for market_aid=%v: %v, q=%v",market_aid,err,query))
 			os.Exit(1)
 		}
 	} else {
@@ -68,7 +68,12 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,va
 	wallet_aid := ss.Lookup_or_create_address(evt.MarketCreator.String(),agtx.BlockNum,agtx.TxId)
 	universe_id,err := ss.lookup_universe_id(evt.Universe.String())
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("Universe %v not found when trying to insert MarketCreated evt\n",evt.Universe.String()))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"Universe %v not found when trying to insert MarketCreated evt at block %v: %v\n",
+				evt.Universe.String(),agtx.BlockNum,err,
+			),
+		)
 		os.Exit(1)
 	}
 	reporter_aid := ss.Lookup_or_create_address(evt.DesignatedReporter.String(),agtx.BlockNum,agtx.TxId)
@@ -180,7 +185,12 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,va
 			outcomes,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into market table: %v: q=%v",err,query))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"DB error: can't insert into market table at block %v : %v: q=%v",
+				agtx.BlockNum,err,query,
+			),
+		)
 		os.Exit(1)
 	}
 	rows_affected,err:=result.RowsAffected()
@@ -284,7 +294,12 @@ func (ss *SQLStorage) Insert_market_finalized_evt(agtx *p.AugurTx,timestamp int6
 
 	universe_id,err := ss.lookup_universe_id(evt.Universe.String())
 	if err!=nil {
-		ss.Log_msg(fmt.Sprintf("Universe %v not found on insert of MarketFinalized event",evt.Universe.String()))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"Universe %v not found on insert of MarketFinalized event at block %v: %v",
+				evt.Universe.String(),agtx.BlockNum,err,
+			),
+		)
 		os.Exit(1)
 	}
 	_ = universe_id	// ToDo: add universe_id match condition (for market)
@@ -299,7 +314,12 @@ func (ss *SQLStorage) Insert_market_finalized_evt(agtx *p.AugurTx,timestamp int6
 			"VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6)"
 	_,err = ss.db.Exec(query,agtx.BlockNum,agtx.TxId,market_aid,fin_timestamp,winning_payouts,winning_outcome)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't update market finalization of market %v : %v, q=%v",market_aid,err,query))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"DB error: can't update market finalization of market %v at block %v : %v, q=%v",
+				agtx.BlockNum,market_aid,err,query,
+			),
+		)
 		os.Exit(1)
 	}
 	mkt_status:=p.MktStatusFinalized
@@ -361,7 +381,12 @@ func (ss *SQLStorage) Insert_market_volume_changed_evt_v1(agtx *p.AugurTx,evt *p
 			outcome_vols,
 			timestamp)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into volume table: %v, q=%v",err,query))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"DB error: can't insert into volume table at block %v : %v, q=%v",
+				agtx.BlockNum,err,query,
+			),
+		)
 		os.Exit(1)
 	}
 	rows_affected,err:=result.RowsAffected()
@@ -419,7 +444,12 @@ func (ss *SQLStorage) Insert_market_volume_changed_evt_v2(agtx *p.AugurTx,evt *p
 			outcome_vols,
 			timestamp)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into volume table: %v, q=%v",err,query))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"DB error: can't insert into volume table at block %v : %v, q=%v",
+				agtx.BlockNum,err,query,
+				),
+			)
 		os.Exit(1)
 	}
 	rows_affected,err:=result.RowsAffected()
@@ -450,7 +480,12 @@ func (ss *SQLStorage) Insert_share_balance_changed_evt(agtx *p.AugurTx,evt *p.Sh
 
 	_,err := ss.lookup_universe_id(evt.Universe.String())
 	if err!=nil {
-		ss.Log_msg(fmt.Sprintf("Universe %v not found on BalanceChanged event\n",evt.Universe.String()))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"Universe %v not found on BalanceChanged event at block %v: %v\n",
+				evt.Universe.String(),agtx.BlockNum,err,
+			),
+		)
 		os.Exit(1)
 	}
 	market_aid := ss.Lookup_address_id(evt.Market.String())
@@ -468,8 +503,12 @@ func (ss *SQLStorage) Insert_share_balance_changed_evt(agtx *p.AugurTx,evt *p.Sh
 					"outcome_idx = $3"
 	result,err := ss.db.Exec(query,	market_aid,account_aid,outcome)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't update 'sbalances' for account %v, market %v : %v; q=%v",
-					evt.Account.String(),evt.Market.String(),err,query))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"DB error: can't update 'sbalances' at block %v for account %v, market %v : %v; q=%v",
+					agtx.BlockNum,evt.Account.String(),evt.Market.String(),err,query,
+			),
+		)
 		os.Exit(1)
 	}
 	rows_affected,err:=result.RowsAffected()

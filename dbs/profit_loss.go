@@ -141,7 +141,12 @@ func (ss *SQLStorage) calculate_profit_loss_for_all_users(market_aid int64,block
 			true,
 		)
 		if (err!=nil) {
-			ss.Log_msg(fmt.Sprintf("DB error in update_losing_positions(): %v ; q=%v",err,query))
+			ss.Log_msg(
+				fmt.Sprintf(
+					"DB error in update_losing_positions(): block=%v : %v ; q=%v",
+					block_num,err,query,
+				),
+			)
 			os.Exit(1)
 		}
 	}
@@ -169,7 +174,12 @@ func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,eoa_aid int64,evt *
 
 	_,err = ss.lookup_universe_id(evt.Universe.String())
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("Universe %v not found on ProfitLossChanged event\n",evt.Universe.String()))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"Universe %v not found on ProfitLossChanged event at block %v: %v\n",
+				agtx.BlockNum,evt.Universe.String(),
+			),
+		)
 		os.Exit(1)
 	}
 	market_aid,market_type := ss.lookup_market_id(evt.Market.String())
@@ -261,21 +271,28 @@ func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,eoa_aid int64,evt *
 	var null_volume sql.NullFloat64
 	var pl_id int64 = 0
 	row := ss.db.QueryRow(query,
-								agtx.BlockNum,
-								agtx.TxId,
-								market_aid,
-								eoa_aid,
-								wallet_aid,
-								outcome_idx,
-								*ss.mkt_order_id_ptr,// note, this contains meaningful value only because we reverse event processing order
-								time_stamp,
+			agtx.BlockNum,
+			agtx.TxId,
+			market_aid,
+			eoa_aid,
+			wallet_aid,
+			outcome_idx,
+			*ss.mkt_order_id_ptr,// note, this contains meaningful value only because we reverse event processing order
+			time_stamp,
 	)
 	err=row.Scan(&null_pl_id,&null_profit,&null_rcost,&null_volume);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			//
 		} else {
-			ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v VALUES: block_num=%v,tx_id=%v,market_aid=%v, eoa_aid=%v, wallet_aid=%v, outcome_idx=%v, order_id=%v, time_stamp=%v",err,query,agtx.BlockNum,agtx.TxId,market_aid,eoa_aid,wallet_aid,outcome_idx,*ss.mkt_order_id_ptr,time_stamp))
+			ss.Log_msg(
+				fmt.Sprintf(
+					"DB error @block %v : %v; q=%v VALUES: block_num=%v,tx_id=%v,mkt_aid=%v, eoa_aid=%v, "+
+					"wallet_aid=%v, outcome_idx=%v, order_id=%v, time_stamp=%v",
+					agtx.BlockNum,err,query,agtx.BlockNum,agtx.TxId,market_aid,eoa_aid,wallet_aid,
+					outcome_idx,*ss.mkt_order_id_ptr,time_stamp,
+				),
+			)
 			os.Exit(1)
 		}
 	} else {
