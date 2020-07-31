@@ -289,7 +289,8 @@ func (ss *SQLStorage) Get_deposits_withdrawals(wallet_aid int64) []p.DaiOp{
 			"WHERE " +
 				"db.aid = $1 AND " +
 				"db.amount != 0 AND " +
-				"db.internal = false " +
+				"dt.to_internal = false AND " +
+				"dt.from_internal = false " +
 			"ORDER BY db.block_num,db.id"
 
 	rows,err := ss.db.Query(query,wallet_aid)
