@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"math/big"
 	"context"
+	"os"
 //	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -747,7 +748,7 @@ func process_block(bnum int64) error {
 					return errChainSplit
 				}
 				if num_transactions > 0 {
-					Info.Printf("block: %v %v transactions\n",block.Number(),num_transactions)
+					Info.Printf("block_proc: %v %v transactions\n",block.Number(),num_transactions)
 					for tnum:=0 ; tnum < int(num_transactions) ; tnum++ {
 						tx , err := eclient.TransactionInBlock(ctx,block_hash,uint(tnum))
 						if err != nil {
@@ -773,6 +774,14 @@ func process_block(bnum int64) error {
 								Error.Printf("Error: %v",err)
 								return err
 							} else {
+								if rcpt.BlockNumber.Int64() != bnum {
+									Error.Printf(
+										"Transaction's receipt doesn't match current block number." +
+										" cur_block_num=%v, receipt.block_num=%v\n",
+										bnum,rcpt.BlockNumber.Int64(),
+									)
+									os.Exit(1)
+								}
 								agtx := new(AugurTx)
 								agtx.CtrctCreate = false
 								if tx.To() == nil {
