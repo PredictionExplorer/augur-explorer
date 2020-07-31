@@ -14,6 +14,7 @@ require (
 	//	github.com/0xProject/0x-mesh v7.1.0-beta+incompatible
 	github.com/0xProject/0x-mesh v0.0.0-20200528184850-ee19434329a3
 	github.com/ethereum/go-ethereum v1.9.13
+	github.com/gin-gonic/autotls v0.0.0-20200518075542-45033372a9ad
 	github.com/gin-gonic/gin v1.6.3
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/lib/pq v1.7.1
@@ -23,4 +24,5 @@ require (
 	github.com/multiformats/go-multiaddr-dns v0.2.0 // indirect
 	github.com/plaid/go-envvar v1.1.0
 	github.com/sirupsen/logrus v1.6.0 // indirect
+	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4
 )

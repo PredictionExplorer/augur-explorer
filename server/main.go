@@ -4,9 +4,13 @@ import (
 	"log"
 	"os"
 	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/autotls"
 	"github.com/ethereum/go-ethereum/ethclient"
+
+	"golang.org/x/crypto/acme/autocert"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
@@ -40,6 +44,9 @@ func initialize() {
 	caddrs=&caddrs_obj
 
 }
+func secure_https(r http.Handler) {
+	autotls.Run(r, "localhost")
+}
 func main() {
 
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
@@ -66,6 +73,7 @@ func main() {
 
 	initialize()
 
+
 	if len(RPC_URL) == 0 {
 		fmt.Printf("Configuration error: RPC URL of Ethereum node is not set."+
 			"Calls to contracts are disabled. " +
@@ -77,13 +85,13 @@ func main() {
 			log.Fatal(err)
 		}
 		// init contracts
-		fmt.Println("init DAI contract with addr %v\n",caddrs.Dai.String())
+		fmt.Printf("init DAI contract with addr %v\n",caddrs.Dai.String())
 		ctrct_dai_token,err = NewDAICash(caddrs.Dai,rpcclient)
 		if err != nil {
 			Fatalf("Couldn't initialize DAI Cash contract: %v\n",err)
 		}
 
-		fmt.Println("init REP contract with addr %v\n",caddrs.Reputation.String())
+		fmt.Printf("init REP contract with addr %v\n",caddrs.Reputation.String())
 		ctrct_rep_token,err = NewRepTok(caddrs.Reputation,rpcclient)
 		if err != nil {
 			Fatalf("Couldn't initialize Rep Token contract: %v\n",err)
@@ -145,7 +153,15 @@ func main() {
 	r.Static("/res", "./html/res")			// resources (static)
 	r.StaticFile("/favicon.ico", "./html/res/favicon.ico")
 
+	m := autocert.Manager{
+		Prompt:     autocert.AcceptTOS,
+		HostPolicy: autocert.HostWhitelist("predictionexplorer.com","www.predictionexplorer.com"),
+		Cache:      autocert.DirCache(os.Getenv("HOME")+".tls-autocert-cache"),
+	}
+	_ = m
 	// Listen and serve on defined port
 	log.Printf("Listening on port %s", port_plain)
+	go log.Printf("%v",autotls.Run(r, "predictionexplorer.com"))
 	r.Run(":" + port_plain)
+
 }

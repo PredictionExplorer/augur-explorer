@@ -132,7 +132,7 @@ func (ss *SQLStorage) Insert_transaction(
 	query = "UPDATE transaction set from_aid=$2 , to_aid=$3 where id = $1"
 	_,err = ss.db.Exec(query,tx_id,from_aid,to_aid)
 	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error on tx_hash=%v; %v, q=%v\n",agtx.TxHash,err,query))
 		os.Exit(1)
 	}
 

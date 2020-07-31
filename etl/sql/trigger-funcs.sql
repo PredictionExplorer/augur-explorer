@@ -291,7 +291,7 @@ BEGIN
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		RAISE EXCEPTION 'Corresponding row in ustats table doesnt exist';
+		RAISE EXCEPTION 'Corresponding row in ustats ( % - % ) table doesnt exist',NEW.eoa_aid,NEW.wallet_aid;
 	END IF;
 	-- End of update profit loss
 

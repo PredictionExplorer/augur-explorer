@@ -763,11 +763,11 @@ func process_block(bnum int64) error {
 							if tx.To() != nil {
 								to = tx.To().String()
 							}
-							Info.Printf("\ttx: %v\n",tx.Hash().String())
+							Info.Printf("\ttx: %v of %v : %v at blockNum=%v\n",tnum,num_transactions,tx.Hash().String(),bnum)
 							Info.Printf("\t from=%v\n",tx_msg.From().String())
 							Info.Printf("\t to=%v for $%v (%v bytes data)\n",
 											to,tx.Value().String(),len(tx.Data()))
-							Info.Printf("\t input: \n%v\n",hex.EncodeToString(tx.Data()[:]))
+							//Info.Printf("\t input: \n%v\n",hex.EncodeToString(tx.Data()[:]))
 							rcpt,err := eclient.TransactionReceipt(ctx,tx.Hash())
 							if err != nil {
 								Error.Printf("Error: %v",err)
