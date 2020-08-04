@@ -2,6 +2,7 @@
 package primitives
 import (
 	"math/big"
+	"errors"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -14,6 +15,12 @@ const (
 	MktTypeCategorical
 	MktTypeScalar
 )
+
+var (
+	ErrChainSplit error = errors.New("Chainsplit detected")
+)
+
+
 type OrderType uint8
 const (
 	OrderTypeBid		OrderType = 0

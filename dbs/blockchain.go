@@ -58,23 +58,43 @@ func (ss *SQLStorage) Set_last_block_num(block_num int64) {
 		}
 	}
 }
-func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header)  bool {
+func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header) error {
 
 	var query string
 	var parent_block_num int64
 	parent_hash := block.ParentHash.String()
 
-	query="SELECT block_num,parent_hash FROM block WHERE hash=$1"
+	query="SELECT block_num FROM block WHERE block_hash=$1"
 	err:=ss.db.QueryRow(query,parent_hash).Scan(&parent_block_num);
 	if (err!=nil) {
 		if (err==sql.ErrNoRows) {
 			if block.Number.Uint64() == 0 {
 				// Genesis. Allow.
 			} else {
-				if (parent_block_num + 1) != int64(block.Number.Uint64()) {
-					return false
-				}
+				ss.Info.Printf(
+					fmt.Sprintf(
+						"Insert_block() Can't insert block (block_num=%v, block_hash=%v, parent_hash=%v"+
+						"), parent not found. Chain split, need recovery procedure. (CHAIN_SPLIT)",
+						block.Number.Int64(),hash_str,parent_hash,
+					),
+				);
+				return p.ErrChainSplit // chain split occured (parent block wasn't found)
 			}
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB Error: %v; query=%v",err,query));
+			os.Exit(1)
+		}
+	} else {
+		if (parent_block_num + 1) != int64(block.Number.Uint64()) {
+			ss.Info.Printf(
+				fmt.Sprintf(
+					"Insert_block() Can't insert block (block_num=%v, block_hash=%v, parent_hash=%v"+
+					"), block found as parent has non-consecutive number (parent_block_num=%v). " +
+					"Chain split, need recovery procedure. (CHAIN_SPLIT)",
+					parent_block_num,block.Number.Int64(),hash_str,parent_hash,
+				),
+			);
+			return p.ErrChainSplit // chain split occurred (parent's block num isn't consecutive)
 		}
 	}
 
@@ -93,7 +113,12 @@ func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header)  bool {
 			block.Time,
 			parent_hash)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into block  table: %v, q=%v",err,query))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"DB error: can't insert into block table block_num=%v: %v, q=%v",
+				block.Number.Int64(),err,query,
+			),
+		)
 		os.Exit(1)
 	}
 	rows_affected,err:=result.RowsAffected()
@@ -101,10 +126,11 @@ func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header)  bool {
 		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 	}
 	if rows_affected > 0 {
-		return true
+		return nil
 	}
 	ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into block table. Rows affeced = 0"))
-	return false
+	os.Exit(1)
+	return nil
 }
 func (ss *SQLStorage) Insert_transaction(
 	agtx *p.AugurTx,
@@ -122,7 +148,12 @@ func (ss *SQLStorage) Insert_transaction(
 	row := ss.db.QueryRow(query,agtx.BlockNum,agtx.TxHash,agtx.CtrctCreate)
 	err := row.Scan(&tx_id)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into transactions table: %v, q=%v",err,query))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"DB error: tx_hash=%v; can't insert into transactions table: %v, q=%v",
+				agtx.TxHash,err,query,
+			),
+		)
 		os.Exit(1)
 	}
 

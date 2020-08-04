@@ -38,6 +38,7 @@ CREATE UNIQUE INDEX ustats2_idx		ON ustats			(wallet_aid);
 CREATE INDEX pl_wallet_idx			ON profit_loss		(wallet_aid);
 -- other indices
 CREATE INDEX blk_ph_idx				ON block			(parent_hash);
+CREATE UNIQUE INDEX blk_hash_uniq	ON block			(block_hash);
 CREATE INDEX mord_ts_idx			ON mktord			(time_stamp);
 CREATE UNIQUE INDEX ovol_idx		ON outcome_vol		(market_aid,outcome_idx);
 CREATE INDEX oo_depth_idx			ON oorders			(market_aid,outcome_idx,otype);

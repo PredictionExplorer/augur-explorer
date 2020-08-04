@@ -746,11 +746,12 @@ func process_block(bnum int64) error {
 					split_simulated = true
 					Info.Println("Chain split simulation in action");
 				}
-				if !storage.Insert_block(block_hash_str,header) {
+				err = storage.Insert_block(block_hash_str,header)
+				if err != nil {
 					// chainsplit detected
 					set_back_block_num = storage.Fix_chainsplit(header)
-					Info.Printf("Chain rewind to block %v. Restarting.",set_back_block_num)
-					return errChainSplit
+					Info.Printf("Chain rewind to block %v. Restarting. (CHAIN_SPLIT)",set_back_block_num)
+					return ErrChainSplit
 				}
 				if num_transactions > 0 {
 					Info.Printf("block_proc: %v %v transactions\n",block.Number(),num_transactions)

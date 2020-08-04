@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"context"
 	"log"
-	"errors"
+	//"errors"
 	//"math/big"
 	"encoding/hex"
 	//"encoding/json"
@@ -118,7 +118,7 @@ var (
 	Error   *log.Logger
 	Info	*log.Logger
 
-	errChainSplit error = errors.New("Chainsplit detected")
+	//DISCONTINUED ErrChainSplit error = errors.New("Chainsplit detected")
 	split_simulated bool = false
 )
 type rpcBlockHash struct {
@@ -258,7 +258,7 @@ func main() {
 			} else {
 				// this is probably happening due to RPC unavailability
 				time.Sleep(1 * time.Second)
-				if err == errChainSplit {
+				if err == ErrChainSplit {
 					bnum = set_back_block_num
 					continue
 				}
