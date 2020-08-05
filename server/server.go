@@ -22,6 +22,7 @@ const (
 	DEFAULT_MARKET_ROWS_LIMIT int	= 500
 	DEFAILT_MARKET_TRADES_LIMIT int = 20
 	DEFAULT_USER_REPORTS_LIMIT int = 10
+	DEFAULT_MARKET_REPORTS_LIMIT int = 20
 )
 type AugurServer struct {
 	storage		*SQLStorage
@@ -319,9 +320,12 @@ func complete_and_output_market_info(c *gin.Context,minfo InfoMarket) {
 	}
 	trades := augur_srv.storage.Get_mkt_trades(minfo.MktAddr,int(limit))
 	outcome_vols,_ := augur_srv.storage.Get_outcome_volumes(minfo.MktAddr,minfo.MktAid,0)
+	reports := augur_srv.storage.Get_market_reports(minfo.MktAid,DEFAULT_MARKET_REPORTS_LIMIT)
+
 	c.HTML(http.StatusOK, "market_info.html", gin.H{
 			"title": "Trades for market",
 			"Trades" : trades,
+			"Reports" : reports,
 			"Market": minfo ,
 			"OutcomeVols" : outcome_vols,
 	})

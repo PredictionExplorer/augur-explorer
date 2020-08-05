@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strings"
 	"strconv"
+	"errors"
 	"database/sql"
 	"encoding/hex"
 	_  "github.com/lib/pq"
@@ -180,15 +181,26 @@ func (ss *SQLStorage) Insert_open_order(
 	eoa_addr string,
 	ospec *p.ZxMeshOrderSpec,
 	evt_timestamp int64,
-) {
+) error {
 	// Insert an open order, this order needs to be Filled by another market participant
 	// It also can be canceled by its creator (with another transaction)
 	var err error
 	order_id := ohash
 	expiration := order.ExpirationTimeSeconds.Int64()
 	// note: we don't have block number/tx hash for activity from 0x Mesh, so we insert with 0s
+	ss.Info.Printf(
+		"Open Order: Market %v, Price %v, Otcome %v\n",
+		ospec.Market.String(),ospec.Price.String(),ospec.Outcome,
+	)
 	ss.Info.Printf("received eoa addr=%v\n",eoa_addr)
-	wallet_aid := ss.Lookup_or_create_address(order.MakerAddress.String(),0,0)
+	wallet_aid,err := ss.Nonfatal_lookup_address_id(order.MakerAddress.String())
+	if err != nil {
+		ss.Info.Printf(
+			"Cant insert open order for %v, Wallet address not yet registered, skipping order.",
+			order.MakerAddress.String(),
+		)
+		return errors.New("Wallet contract address not yet registered")
+	}
 	zero_addr := common.BigToAddress(zero)
 	var eoa_aid int64 = 0
 	if zero_addr.String()==eoa_addr {
@@ -200,21 +212,38 @@ func (ss *SQLStorage) Insert_open_order(
 		if err == nil {
 			eoa_aid = tmp_eoa_aid
 		} else {
-			ss.Info.Printf(
-				"Will insert open order from 0x Mesh with empty EOA addr (NULL_EOA_ADDR_FROM_MESH) (maker: %v)",
-				order.MakerAddress.String(),
-			)
 		}
+	} else {
+		eoa_aid,err = ss.Nonfatal_lookup_address_id(eoa_addr)
+		if err != nil {
+			ss.Info.Printf(
+				"EOA address %v isn't registered in address table",
+				eoa_addr,
+			)
+			return errors.New("EOA address not yet registered")
+		}
+		ss.Link_eoa_and_wallet_contract(eoa_aid,wallet_aid)
 	}
 	if eoa_aid == 0 {
-		eoa_aid = ss.Lookup_or_create_address(eoa_addr,0,0)
+		ss.Info.Printf(
+			"Cant insert open order %v, EOA address ID = 0,  wallet = %v, skipping order.",
+			*ohash,order.MakerAddress.String(),
+		)
+		return errors.New("eoa_id not found for Wallet Contract")
 	}
 
 	ss.Info.Printf(
 		"creating open order made by %v : market=%v, price=%v, Outcome=%v, Type=%v\n",
 		eoa_addr,ospec.Market.String(),ospec.Price.String(),ospec.Outcome,ospec.Type,
 	)
-	market_aid := ss.Lookup_address_id(ospec.Market.String())
+	market_aid,err := ss.Nonfatal_lookup_address_id(ospec.Market.String())
+	if err != nil {
+		ss.Info.Printf(
+			"Cant find market %v, probably 0x Mesh is ahead of the main chain",
+			ospec.Market.String(),
+		)
+		return errors.New("Market not yet registered")
+	}
 	price := float64(ospec.Price.Int64())/100
 	otype := ospec.Type	// Bid/Ask
 	amount := order.MakerAssetAmount.String()
@@ -243,17 +272,18 @@ func (ss *SQLStorage) Insert_open_order(
 			order_id)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into open orders table: %v, q=%v",err,query))
-		return
+		return err
 	}
 	rows_affected,err:=result.RowsAffected()
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 	}
 	if rows_affected > 0 {
-		return
+		return nil
 	} else {
 		ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into Open Orders table. Rows affeced = 0"))
 	}
+	return errors.New("Affected rows=0")
 }
 func (ss *SQLStorage) Delete_open_0x_order(order_hash string) {
 

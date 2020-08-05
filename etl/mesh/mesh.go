@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"time"
 	"bytes"
-	//"encoding/hex"
+	"encoding/hex"
 
 	"github.com/0xProject/0x-mesh/rpc"
 	"github.com/0xProject/0x-mesh/zeroex"
@@ -134,6 +134,7 @@ func oo_insert(order_hash *string,order *zeroex.SignedOrder,timestamp int64) err
 	num:=big.NewInt(int64(owner_fld_offset))
 	key:=common.BigToHash(num)
 	eoa,err := eclient.StorageAt(ctx,order.MakerAddress,key,nil)
+	Info.Printf("maker=%v eoa=%v; err=%v\n",order.MakerAddress.String(),hex.EncodeToString(eoa[:]),err)
 	var eoa_addr_str string
 	if err == nil {
 		eoa_addr_str = common.BytesToAddress(eoa[12:]).String()
@@ -145,8 +146,8 @@ func oo_insert(order_hash *string,order *zeroex.SignedOrder,timestamp int64) err
 		)
 		return err
 	}
-	storage.Insert_open_order(order_hash,order,eoa_addr_str,&unpacked_id,timestamp)
-	return nil
+	err = storage.Insert_open_order(order_hash,order,eoa_addr_str,&unpacked_id,timestamp)
+	return err
 }
 func order_blongs_to_augur(order *zeroex.SignedOrder) bool {
 
@@ -192,6 +193,7 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 				err := oo_insert(&order_hash,order_info.SignedOrder,0)
 				if err!=nil {
 					// nothing
+					Info.Printf("Error inserting open order %v: %v\n",order_hash,err)
 				} else {
 					insert_count++
 					Info.Printf("Inserted open order %v\n",order_hash)
@@ -323,7 +325,10 @@ func main() {
 				}
 				switch orderEvent.EndState {
 					case zeroex.ESOrderAdded:
-						oo_insert(&order_hash,orderEvent.SignedOrder,orderEvent.Timestamp.Unix())
+						err:=oo_insert(&order_hash,orderEvent.SignedOrder,orderEvent.Timestamp.Unix())
+						if err!=nil {
+							Info.Printf("Error inserting order %v: %v\n",order_hash,err)
+						}
 					case zeroex.ESOrderExpired,
 						zeroex.ESOrderCancelled:
 						storage.Delete_open_0x_order(orderEvent.OrderHash.String())

@@ -199,7 +199,7 @@ func (ss *SQLStorage) Link_eoa_and_wallet_contract(eoa_aid, wallet_aid int64) {
 	query = "INSERT INTO ustats(eoa_aid,wallet_aid) " +
 			"VALUES($1,$2) ON CONFLICT DO NOTHING"
 
-	_,err:=ss.db.Exec(query,eoa_aid,wallet_aid)
+	res,err:=ss.db.Exec(query,eoa_aid,wallet_aid)
 	if (err!=nil) {
 		if !strings.Contains(err.Error(),"duplicate key value") {
 			ss.Log_msg(
@@ -211,6 +211,11 @@ func (ss *SQLStorage) Link_eoa_and_wallet_contract(eoa_aid, wallet_aid int64) {
 			os.Exit(1)
 		}
 	} else {
-		ss.Info.Printf("eoa2wallet link success: eoa=%v wallet=%v\n",eoa_aid,wallet_aid)
+		affected_rows,err:=res.RowsAffected()
+		if err == nil {
+			if affected_rows > 0 {
+				ss.Info.Printf("eoa2wallet link success: eoa=%v wallet=%v\n",eoa_aid,wallet_aid)
+			}
+		}
 	}
 }

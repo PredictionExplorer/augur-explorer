@@ -276,6 +276,7 @@ type InfoMarket struct {
 	TotalTrades		int64
 	NumTicks		int64
 	MktType			int
+	MktStatus		int
 	MktAddr			string
 	MktAddrSh		string	// short address (with .. in the middle)
 	Signer			string
@@ -514,7 +515,7 @@ type OrderInfo struct {		// this is a full order information, to show in dedicat
 	MarketAddr			string
 	MarketAddrSh		string
 }
-type UserReport struct {
+type Report struct {
 	MktAid				int64
 	RepStake			float64
 	Round				int

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"database/sql"
 	"encoding/json"
+	"strconv"
 	_  "github.com/lib/pq"
 
 	//"github.com/ethereum/go-ethereum/common"
@@ -45,8 +46,7 @@ func get_market_status_str(status_code p.MarketStatus) string {
 	}
 	return "undefined"
 }
-func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,validity_bond string,evt *p.MarketCreatedEvt,
-) {
+func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,validity_bond string,evt *p.MarketCreatedEvt) {
 
 	var query string
 	var market_aid int64;
@@ -275,14 +275,14 @@ func (ss *SQLStorage) Insert_market_oi_changed_evt(block *types.Header,agtx *p.A
 
 	ss.Info.Printf("Set market (id=%v) open interest to %v",market_aid,evt.MarketOI.String())
 }
-func get_outcome_idx_from_numerators(mkt_type int,numerators []*big.Int) int {
+func get_outcome_idx_from_numerators(mkt_type int,num_ticks int64,numerators []*big.Int) int {
 
 	if mkt_type == 2 {
 		return 2
 	}
-	hundred := big.NewInt(100)
+	big_num_ticks := big.NewInt(num_ticks)
 	for i:=0 ; i < len(numerators) ; i++ {
-		if hundred.Cmp(numerators[i]) == 0 {
+		if big_num_ticks.Cmp(numerators[i]) == 0 {
 			return i
 		}
 	}
@@ -307,8 +307,8 @@ func (ss *SQLStorage) Insert_market_finalized_evt(agtx *p.AugurTx,timestamp int6
 	fin_timestamp := evt.Timestamp.Int64()
 	winning_payouts := p.Bigint_ptr_slice_to_str(&evt.WinningPayoutNumerators,",")
 
-	market_type,_ := ss.get_market_type_and_ticks(market_aid)
-	winning_outcome := get_outcome_idx_from_numerators(market_type,evt.WinningPayoutNumerators)
+	market_type,mticks := ss.get_market_type_and_ticks(market_aid)
+	winning_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.WinningPayoutNumerators)
 
 	query = "INSERT INTO mkt_fin(block_num,tx_id,market_aid,fin_timestamp,winning_payouts,winning_outcome)" +
 			"VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6)"
@@ -599,7 +599,6 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 		var description sql.NullString
 		var longdesc sql.NullString
 		var category sql.NullString
-		var status_code int
 		err=rows.Scan(
 					&rec.MktAddr,
 					&rec.Signer,
@@ -612,7 +611,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 					&rec.NumTicks,
 					&rec.MktType,
 					&rec.MktTypeStr,
-					&status_code,
+					&rec.MktStatus,
 					&rec.Status,
 					&rec.Fee,
 					&rec.MoneyAtStake,
@@ -634,7 +633,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 		if category.Valid {
 			rec.CategoryStr=category.String
 		}
-		rec.Status = get_market_status_str(p.MarketStatus(status_code))
+		rec.Status = get_market_status_str(p.MarketStatus(rec.MktStatus))
 		records = append(records,rec)
 	}
 	return records
@@ -707,7 +706,6 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 	var description sql.NullString
 	var longdesc sql.NullString
 	var category sql.NullString
-	var status_code int
 	res := ss.db.QueryRow(query,id)
 	err := res.Scan(
 			&rec.MktAddr,
@@ -721,7 +719,7 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 			&rec.NumTicks,
 			&rec.MktType,
 			&rec.MktTypeStr,
-			&status_code,
+			&rec.MktStatus,
 			&rec.Status,
 			&rec.Fee,
 			&rec.MoneyAtStake,
@@ -745,7 +743,7 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 	if category.Valid {
 		rec.CategoryStr=category.String
 	}
-	rec.Status = get_market_status_str(p.MarketStatus(status_code))
+	rec.Status = get_market_status_str(p.MarketStatus(rec.MktStatus))
 
 
 	volumes,err := ss.Get_outcome_volumes(rec.MktAddr,id,1)
@@ -871,7 +869,6 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 
 	row := ss.db.QueryRow(query,market_aid)
 	var mkt_type int
-	var status_code int
 	var description sql.NullString
 	var long_desc sql.NullString
 	var category sql.NullString
@@ -889,7 +886,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				&rec.Outcomes,
 				&rec.MktType,
 				&rec.MktTypeStr,
-				&status_code,
+				&rec.MktStatus,
 				&rec.Fee,
 				&rec.OpenInterest,
 				&rec.CurVolume,
@@ -919,7 +916,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
 		os.Exit(1)
 	}
-	rec.Status=get_market_status_str(p.MarketStatus(status_code))
+	rec.Status=get_market_status_str(p.MarketStatus(rec.MktStatus))
 	reporter_eoa_aid,err := ss.Lookup_eoa_aid(reporter_aid)
 	if err == nil {
 		rep_addr,err := ss.Lookup_address(reporter_eoa_aid)
@@ -1030,7 +1027,6 @@ func (ss *SQLStorage) Get_category_markets(cat_id int64) []p.InfoMarket {
 		var description sql.NullString
 		var longdesc sql.NullString
 		var category_str sql.NullString
-		var status_code int
 		err=rows.Scan(
 					&rec.MktAddr,
 					&rec.Signer,
@@ -1042,7 +1038,7 @@ func (ss *SQLStorage) Get_category_markets(cat_id int64) []p.InfoMarket {
 					&rec.Outcomes,
 					&rec.MktType,
 					&rec.MktTypeStr,
-					&status_code,
+					&rec.MktStatus,
 					&rec.Status,
 					&rec.Fee,
 					&rec.OpenInterest,
@@ -1061,9 +1057,106 @@ func (ss *SQLStorage) Get_category_markets(cat_id int64) []p.InfoMarket {
 		if category_str.Valid {
 			rec.CategoryStr = category_str.String
 		}
-		rec.Status=get_market_status_str(p.MarketStatus(status_code))
+		rec.Status=get_market_status_str(p.MarketStatus(rec.MktStatus))
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)
 		rec.MktCreatorSh=p.Short_address(rec.MktCreator)
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_market_reports(market_aid int64,limit int) []p.Report {
+
+	var query string
+	query = "SELECT " +
+				"r.rpt_timestamp::date," +
+				"ma.addr as mkt_addr," +
+				"r.is_initial," +
+				"r.is_designated," +
+				"round(r.amount_staked,2),"+
+				"r.outcome_idx," +
+				"r.next_win_start," +
+				"r.next_win_end," +
+				"m.initial_outcome," +
+				"m.designated_outcome," +
+				"m.winning_outcome," +
+				"m.market_type AS mtype," +
+				"m.outcomes AS outcomes_str " +
+			"FROM " +
+					"report AS r, " +
+					"market AS m " +
+						"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
+			"WHERE (r.market_aid = m.market_aid) and (r.market_aid=$1) " +
+			"ORDER BY r.rpt_timestamp"
+	if limit > 0 {
+		query = query +	" LIMIT " + strconv.Itoa(limit)
+	}
+
+	records := make([]p.Report,0,8)
+	var rows *sql.Rows
+	var err error
+	rows,err = ss.db.Query(query,market_aid)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return records
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v) market_aid=%v",err,query,market_aid))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.Report
+		var mkt_type int
+		var designated_outcome int
+		var winning_outcome int
+		var initial_outcome int
+		var outcomes string
+		err=rows.Scan(
+			&rec.Date,
+			&rec.MktAddr,
+			&rec.IsInitial,
+			&rec.IsDesignated,
+			&rec.RepStake,
+			&rec.OutcomeIdx,
+			&rec.WinStart,
+			&rec.WinEnd,
+			&initial_outcome,
+			&designated_outcome,
+			&winning_outcome,
+			&rec.MktType,
+			&outcomes,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.MktAddrSh=p.Short_address(rec.MktAddr)
+		if winning_outcome == -1 {	// market wasn't finalized yet
+			if designated_outcome == -1 {
+				rec.ReportType="CROWDSOURCED"
+			} else {
+				if designated_outcome == rec.OutcomeIdx {
+					rec.ReportType = "SUPPORTING"
+				} else {
+					rec.ReportType = "DISPUTING"
+				}
+			}
+		} else {					// market was finalized
+			if designated_outcome == -1 {	// designated reporter never showed up
+				if initial_outcome == rec.OutcomeIdx {
+					rec.ReportType = "SUPPORTING"
+				} else {
+					rec.ReportType = "DISPUTING"
+				}
+			} else {
+				if designated_outcome == rec.OutcomeIdx {
+					rec.ReportType = "SUPPORTING"
+				} else {
+					rec.ReportType = "DISPUTING"
+				}
+			}
+		}
+		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
 		records = append(records,rec)
 	}
 	return records

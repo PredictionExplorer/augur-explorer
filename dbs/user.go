@@ -276,7 +276,7 @@ func (ss *SQLStorage) Get_top_volume_makers() []p.VolumeMaker {
 	}
 	return records
 }
-func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.UserReport {
+func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.Report {
 
 	var query string
 	query = "SELECT " +
@@ -303,7 +303,7 @@ func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.UserReport {
 		query = query +	" LIMIT " + strconv.Itoa(limit)
 	}
 
-	records := make([]p.UserReport,0,8)
+	records := make([]p.Report,0,8)
 	var rows *sql.Rows
 	var err error
 	rows,err = ss.db.Query(query,eoa_aid)
@@ -317,7 +317,7 @@ func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.UserReport {
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.UserReport
+		var rec p.Report
 		var mkt_type int
 		var designated_outcome int
 		var winning_outcome int
