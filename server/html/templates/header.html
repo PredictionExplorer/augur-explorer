@@ -1,24 +1,44 @@
 {{define "header"}}
-<header>
+<header class="header">
     <div class="container">
-        <div class="header__nav">
-            <img src="../imgs/logo.svg">
-            <div class="header__nav-box">
-                <a href="#">Top Users</a>
-                <a href="statistics.html">Statistics</a>
-                <p><input type="search" name="q" placeholder="Search"></p>
-            </div>
-        </div>
-        <div class="header__nav-mobile">
-            <div class="header__nav-box">
-                <img src="../imgs/logo-small.svg">
-                <div class="header__nav-box-in">
-                    <a href="#">Top Users</a>
-                    <a href="statistics.html">Statistics</a>
+
+        <div class="header__wrapper">
+
+            <div class="header__wrapper-left">
+
+                <div>
+
+                    <div class="logo logo--header">
+                        <a href="#" class="logo__btn">
+                            <img src="../imgs/logo.svg" alt="" class="logo__img logo__img--desktop">
+                        </a>
+                    </div>
+
                 </div>
+                <div>
+
+                    <nav class="header__nav">
+                        <a href="#" class="header__nav-link">Top Users</a>
+                        <a href="#" class="header__nav-link">Statistics</a>
+                    </nav>
+
+                </div>
+
             </div>
-            <p><input type="search" name="q" placeholder="Search"></p>
+
+            <div class="header__wrapper-right">
+
+                <form action="" class="header__form" method="" autocomplete="off">
+                    <label>
+                        <input type="text" name="" placeholder="Search">
+                        <img src="../imgs/zoom.svg" alt="">
+                    </label>
+                </form>
+                
+            </div>
+
         </div>
+
     </div>
 </header>
 {{end}}

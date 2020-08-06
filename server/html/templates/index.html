@@ -1,9 +1,8 @@
 <html>
 <head>
 	<title>{{.title}}</title>
+	<link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
 	<link href="res/main.css" rel="stylesheet">
-	<link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-		  rel="stylesheet">
 </head>
 
 <body>
@@ -12,23 +11,26 @@
 	var collectedData;
 	Ajax_GET_Markets('/api/active_markets', renderCardIndex);
 </script>
+
 {{template "header"}}
+
 <div class="section">
 	<div class="container">
+
 		<select class="FormControlSelect" id="FormControlSelect">
 			<option value="0" disabled selected="selected">Sort by</option>
 			<option value="1">Volume</option>
 			<option value="2">Money at stake</option>
 		</select>
-		<div class="row" id="ajax-content">
 
-		</div>
+		<div class="card__wrapper" id="ajax-content"></div>
 	</div>
 </div>
+
 {{template "footer"}}
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js">
-</script>
-<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js">
-</script>
+
+<!--<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 </body>
 </html>
