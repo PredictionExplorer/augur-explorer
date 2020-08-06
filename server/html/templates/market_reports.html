@@ -1,0 +1,15 @@
+{{define "market_reports"}}
+<table class="market_reports">
+	<tr class="market_reports">
+		<th class="market_reports">Date</th>
+		<th class="market_reports">Market</th>
+		<th class="market_reports">Reported Outcome</th>
+		<th class="market_reports">Report Type</th>
+		<th class="market_reports">Participation Stake</th>
+	</tr>
+	{{- range $i, $rep:= .}}
+		{{template "market_report_entry" $rep}}
+	{{- end}}
+
+</table>
+{{end}}

@@ -1,0 +1,11 @@
+{{define "market_report_entry"}}
+<tr class="market_reports">
+	<td class="market_reports_field">{{.Date}}</td>
+	<td class="market_reports_field" title="{{.MktAddr}}">
+		<a href="/search?q={{.MktAddr}}">{{.MktAddrSh}}</a>
+	</td>
+	<td class="market_reports_field" style="text-align: center">{{.OutcomeStr}}</td>
+	<td class="market_reports_field" style="text-align: center">{{.ReportType}}</td>
+	<td class="market_reports_field" style="text-align: center">{{.RepStake}}</td>
+</tr>
+{{end}}

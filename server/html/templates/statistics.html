@@ -2,12 +2,9 @@
 <head>
 	<title>{{.title}}</title>
 	<link href="res/main.css" rel="stylesheet">
-	<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-		  rel="stylesheet">
 </head>
 <body>
-
-<!--<script src="/res/darktheme.js"></script>-->
+<script src="/res/darktheme.js"></script>
 <script src="/res/ajax.js"></script>
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script src="https://code.highcharts.com/modules/data.js"></script>
@@ -15,306 +12,224 @@
 	var cash_flow_data = {{.CashFlowData}}
 	var uniq_addrs_data = {{.UniqAddrsData}}
 </script>
-
-{{template "header"}}
-<section class="statistics">
-	<div class="container">
-		<h3 class="page_title">Statistics</h3>
-		<div class="row statistics-box">
-			<div class="col-sm-6 col-md-3 ind1">
-				<div class="statistics-row">
-					<img src="../imgs/info.svg" alt="info">
-					<p>Total trades</p>
-					<span>778</span>
-				</div>
-			</div>
-			<div class="col-sm-6 col-md-3 ind2">
-				<div class="statistics-row">
-					<img src="../imgs/info.svg" alt="info">
-					<p>Money at stake</p>
-					<span>${{.MainStats.MoneyAtStake}}</span>
-				</div>
-			</div>
-			<div class="col-sm-6 col-md-3 ind3">
-				<div class="statistics-row">
-					<img src="../imgs/info.svg" alt="info">
-					<p>Finalized markets</p>
-					<span>{{.MainStats.FinalizedCount}}</span>
-				</div>
-			</div>
-			<div class="col-sm-6 col-md-3 ind4">
-				<div class="statistics-row">
-					<img src="../imgs/info.svg" alt="info">
-					<p>Categorical markets</p>
-					<span>{{.MainStats.CategCount}}</span>
-				</div>
-			</div>
-			<div class="col-sm-6 col-md-3 ind5">
-				<div class="statistics-row">
-					<img src="../imgs/info.svg" alt="info">
-					<p>Markets</p>
-					<span>{{.MainStats.MarketsCount}}</span>
-				</div>
-			</div>
-			<div class="col-sm-6 col-md-3 ind6">
-				<div class="statistics-row">
-					<img src="../imgs/info.svg" alt="info">
-					<p>Currently active</p>
-					<span>{{.MainStats.ActiveCount}}</span>
-				</div>
-			</div>
-			<div class="col-sm-6 col-md-3 ind7">
-				<div class="statistics-row">
-					<img src="../imgs/info.svg" alt="info">
-					<p>Yes/No markets</p>
-					<span>{{.MainStats.YesNoCount}}</span>
-				</div>
-			</div>
-			<div class="col-sm-6 col-md-3 ind8">
-				<div class="statistics-row">
-					<img src="../imgs/info.svg" alt="info">
-					<p>Scalar markets</p>
-					<span>{{.MainStats.ScalarCount}}</span>
-				</div>
-			</div>
-			<div class="col-sm-6 col-md-3 ind9">
-				<div class="statistics-row">
-					<img src="../imgs/info.svg" alt="info">
-					<p>Block number</p>
-					<span>19520457</span>
-				</div>
-			</div>
-		</div>
-		<!--			<div class="statistics-box">-->
-		<!--				<table class="statistics-box">-->
-		<!--					<tr class="statistics-box">-->
-		<!--						<td>Markets to date:</td>-->
-		<!--						<td>{{.MainStats.MarketsCount}}</td>-->
-		<!--					</tr>-->
-		<!--					<tr class="statistics-box">-->
-		<!--						<td>Currently active:</td>-->
-		<!--						<td>{{.MainStats.ActiveCount}}</td>-->
-		<!--					</tr>-->
-		<!--					<tr class="statistics-box">-->
-		<!--						<td>Finalized markets:</td>-->
-		<!--						<td>{{.MainStats.FinalizedCount}}</td>-->
-		<!--					</tr>-->
-		<!--					<tr class="statistics-box">-->
-		<!--						<td>Money currently at stake:</td>-->
-		<!--						<td>{{.MainStats.MoneyAtStake}}</td>-->
-		<!--					</tr>-->
-		<!--					<tr class="statistics-box">-->
-		<!--						<td>Yes/No markets</td>-->
-		<!--						<td>{{.MainStats.YesNoCount}}</td>-->
-		<!--					</tr>-->
-		<!--					<tr class="statistics-box">-->
-		<!--						<td>Categorical markets:</td>-->
-		<!--						<td>{{.MainStats.CategCount}}</td>-->
-		<!--					</tr>-->
-		<!--					<tr class="statistics-box">-->
-		<!--						<td>Scalar markets:</td>-->
-		<!--						<td>{{.MainStats.ScalarCount}}</td>-->
-		<!--					</tr>-->
-		<!--				</table>-->
-		<!--			</div>-->
-		<!--			<br/>-->
-		<!--			<nav>-->
-		<!--				<ul>-->
-		<!--					<li>-->
-		<!--						<a class="btn_link" href="topusers.html">Top 100 Users</a>-->
-		<!--						<span></span><span></span><span></span><span></span>-->
-		<!--					</li>-->
-		<!--				</ul>-->
-		<!--			</nav>-->
-		<div class="row">
-			<div class="col-md-6">
-				<!--				<h3 class="cash_flow">Augur's Platform Cash Flow</h3><br/><br/>-->
-				<div id="cash_flow_chart"></div>
-			</div>
-			<div class="col-md-6">
-				<!--				<h3 class="unique_addrs">Unique Accounts per Day</h3><br/><br/>-->
-				<div id="uniq_addr_chart"></div>
-			</div>
-		</div>
-
-		<!--	<nav>-->
-		<!--		<ul>-->
-		<!--			<li>-->
-		<!--				<a class="btn_link" href="index.html">Back</a>-->
-		<!--				<span></span><span></span><span></span><span></span>-->
-		<!--			</li>-->
-		<!--		</ul>-->
-		<!--	</nav>-->
-	</div>
-</section>
-{{template "footer"}}
+<h3 class="page_title">Statistics</h3>
+<h3 style="font-color: red">Up-to date Augur Platform statistics</h3>
+<div class="statistics">
+	<table class="statistics">
+	<tr class="statistics">
+		<td>Markets to date:</td>
+		<td>{{.MainStats.MarketsCount}}</td>
+	</tr>
+	<tr class="statistics">
+		<td>Currently active:</td>
+		<td>{{.MainStats.ActiveCount}}</td>
+	</tr>
+	<tr class="statistics">
+		<td>Finalized markets:</td>
+		<td>{{.MainStats.FinalizedCount}}</td>
+	</tr>
+	<tr class="statistics">
+		<td>Money currently at stake:</td>
+		<td>{{.MainStats.MoneyAtStake}}</td>
+	</tr>
+	<tr class="statistics">
+		<td>Yes/No markets</td>
+		<td>{{.MainStats.YesNoCount}}</td>
+	</tr>
+	<tr class="statistics">
+		<td>Categorical markets:</td>
+		<td>{{.MainStats.CategCount}}</td>
+	</tr>
+	<tr class="statistics">
+		<td>Scalar markets:</td>
+		<td>{{.MainStats.ScalarCount}}</td>
+	</tr>
+	</table>
+</div>
+<br/>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="topusers.html">Top 100 Users</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+<h3 class="cash_flow">Augur's Platform Cash Flow</h3><br/><br/>
+<div id="cash_flow_chart"></div>
+<h3 class="unique_addrs">Unique Accounts per Day</h3><br/><br/>
+<div id="uniq_addr_chart"></div>
 <script>
-	// font loading begins
+// font loading begins
 	Highcharts.createElement('link', {
-		href: 'https://fonts.googleapis.com/css?family=Unica+One',
-		rel: 'stylesheet',
-		type: 'text/css'
-	}, null, document.getElementsByTagName('head')[0]);
-	// font loading ends
-	// Apply the theme
-	// set_dark_theme()
+  href: 'https://fonts.googleapis.com/css?family=Unica+One',
+  rel: 'stylesheet',
+  type: 'text/css'
+}, null, document.getElementsByTagName('head')[0]);
+// font loading ends
+// Apply the theme
+set_dark_theme()
 
-	// begin of chart container setup
-	Highcharts.chart('cash_flow_chart', {
+// begin of chart container setup
+Highcharts.chart('cash_flow_chart', {
 
+	title: {
+		text: 'Cash Flow In/Out of Markets'
+	},
+
+	subtitle: {
+		text: 'Cash Flow Detail'
+	},
+
+	yAxis: {
 		title: {
-			text: 'Cash Flow In/Out of Markets'
-		},
+			text: 'Cash on the Sidelines (DAI)'
+		}
+	},
 
-		subtitle: {
-			text: 'Cash Flow Detail'
-		},
-
-		yAxis: {
-			title: {
-				text: 'Cash on the Sidelines (DAI)'
-			}
-		},
-
-		xAxis: {
+	xAxis: {
 //		max: 1.0,
 //		min: 0,
-			type: 'datetime',
+		type: 'datetime',
 //		dateTimeLabelFormats: {
 //			day: "%e-%b-%y",
 //			month: "%b-%y"
 //		}
-			accessibility: {
-				rangeDescription: 'Cash Flow'
-			}
-		},
+		accessibility: {
+			rangeDescription: 'Cash Flow'
+		}
+	},
 
-		legend: {
-			layout: 'vertical',
-			align: 'right',
-			verticalAlign: 'middle'
-		},
+	legend: {
+		layout: 'vertical',
+		align: 'right',
+		verticalAlign: 'middle'
+	},
 
-		plotOptions: {
-			series: {
-				label: {
-					connectorAllowed: false
-				},
-				pointStart: 0
-			}
-		},
-
-		series: [{
-			name: 'Cash Flow',
-			point: {
-				events: {
-					click: function() {this.click.call()}
-				}
+	plotOptions: {
+		series: {
+			label: {
+				connectorAllowed: false
 			},
-			data: cash_flow_data
-		}],
+			pointStart: 0
+		}
+	},
 
-		responsive: {
-			rules: [{
-				condition: {
-					maxWidth: 500
-				},
-				chartOptions: {
-					legend: {
-						layout: 'horizontal',
-						align: 'center',
-						verticalAlign: 'bottom'
-					}
+	series: [{
+		name: 'Cash Flow',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: cash_flow_data
+	}],
+
+	responsive: {
+		rules: [{
+			condition: {
+				maxWidth: 500
+			},
+			chartOptions: {
+				legend: {
+				layout: 'horizontal',
+					align: 'center',
+					verticalAlign: 'bottom'
 				}
-			}]
-		},
-		tooltip: {
-			formatter: function() {
-				tooltip ="<div>Money on the Sidelines: "+this.point.cash+"<br/>Block Number "+this.point.block_num+"<br/></div>"
-				return tooltip;
 			}
-		},
-	});
-	Highcharts.chart('uniq_addr_chart', {
+		}]
+	},
+	tooltip: {
+		formatter: function() {
+			tooltip ="<div>Money on the Sidelines: "+this.point.cash+"<br/>Block Number "+this.point.block_num+"<br/></div>"
+			 return tooltip;
+		}
+	},
+});
+Highcharts.chart('uniq_addr_chart', {
 
+	title: {
+		text: 'Unique Accounts'
+	},
+
+	subtitle: {
+		text: 'Unique Accounts per Day'
+	},
+
+	yAxis: {
 		title: {
-			text: 'Unique Accounts'
-		},
+			text: 'Number of Accounts per Day'
+		}
+	},
 
-		subtitle: {
-			text: 'Unique Accounts per Day'
-		},
-
-		yAxis: {
-			title: {
-				text: 'Number of Accounts per Day'
-			}
-		},
-
-		xAxis: {
+	xAxis: {
 //		max: 1.0,
 //		min: 0,
-			type: 'datetime',
+		type: 'datetime',
 //		dateTimeLabelFormats: {
 //			day: "%e-%b-%y",
 //			month: "%b-%y"
 //		}
-			accessibility: {
-				rangeDescription: 'Unique Accounts'
-			}
+		accessibility: {
+			rangeDescription: 'Unique Accounts'
+		}
 
-		},
+	},
 
-		legend: {
-			layout: 'vertical',
-			align: 'right',
-			verticalAlign: 'middle'
-		},
+	legend: {
+		layout: 'vertical',
+		align: 'right',
+		verticalAlign: 'middle'
+	},
 
-		plotOptions: {
-			series: {
-				label: {
-					connectorAllowed: false
-				},
-				pointStart: 0
-			}
-		},
-
-		series: [{
-			name: 'Number of Accounts',
-			point: {
-				events: {
-					click: function() {this.click.call()}
-				}
+	plotOptions: {
+		series: {
+			label: {
+				connectorAllowed: false
 			},
-			data: uniq_addrs_data
-		}],
+			pointStart: 0
+		}
+	},
 
-		responsive: {
-			rules: [{
-				condition: {
-					maxWidth: 500
-				},
-				chartOptions: {
-					legend: {
-						layout: 'horizontal',
-						align: 'center',
-						verticalAlign: 'bottom'
-					}
-				}
-			}]
-		},
-		tooltip: {
-			formatter: function() {
-				tooltip ="<div>Num Accounts: "+this.point.num_addrs+"<br/>Accumulated: "+this.point.num_addrs_accum+"<br/>Date: "+this.point.date_str+"<br/></div>"
-				return tooltip;
+	series: [{
+		name: 'Number of Accounts',
+		point: {
+			events: {
+				click: function() {this.click.call()}
 			}
 		},
-	});
+		data: uniq_addrs_data
+	}],
+
+	responsive: {
+		rules: [{
+			condition: {
+				maxWidth: 500
+			},
+			chartOptions: {
+				legend: {
+				layout: 'horizontal',
+					align: 'center',
+					verticalAlign: 'bottom'
+				}
+			}
+		}]
+	},
+	tooltip: {
+		formatter: function() {
+			tooltip ="<div>Num Accounts: "+this.point.num_addrs+"<br/>Accumulated: "+this.point.num_addrs_accum+"<br/>Date: "+this.point.date_str+"<br/></div>"
+			 return tooltip;
+		}
+	},
+});
 </script>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js">
-</script>
-<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js">
-</script>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
 </body>
 </html>

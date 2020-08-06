@@ -2,33 +2,48 @@
 <head>
 	<title>{{.title}}</title>
 	<link href="res/main.css" rel="stylesheet">
-	<link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-		  rel="stylesheet">
 </head>
 
 <body>
-<script src="/res/ajax.js"></script>
-<script>
-	var collectedData;
-	Ajax_GET_Markets('/api/active_markets', renderCardIndex);
-</script>
-{{template "header"}}
-<div class="section">
-	<div class="container">
-		<select class="FormControlSelect" id="FormControlSelect">
-			<option value="0" disabled selected="selected">Sort by</option>
-			<option value="1">Volume</option>
-			<option value="2">Money at stake</option>
-		</select>
-		<div class="row" id="ajax-content">
-
-		</div>
-	</div>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="markets.html">Markets</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="categories.html">Categories</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="statistics.html">Statistics</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="explorer.html">Explorer</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+<div class="main_info">
+<table style="float: right" class="index_stats">
+<tr class="index_stats">
+	<td>Block number: </td>
+	<td> {{.block_num}}</td>
+</tr>
+<tr class="index_stats">
+	<td>Money at stake: </td>
+	<td>{{.Stats.MoneyAtStake}} DAI</td>
+</tr>
+<tr class="index_stats">
+	<td>Markets: </td>
+	<td>{{.Stats.MarketsCreated}}</td>
+</tr>
+<tr class="index_stats">
+	<td>Total trades: </td>
+	<td>{{.Stats.TradesCount}}</td>
+</tr>
+</table>
 </div>
-{{template "footer"}}
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js">
-</script>
-<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js">
-</script>
 </body>
 </html>

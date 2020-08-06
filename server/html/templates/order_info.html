@@ -8,6 +8,10 @@
 <div class="order_info">
 	<table class="order_info">
 		<tr>
+			<td>Explorer ID</td>
+			<td>{{.OrderInfo.OrderId}}</td>
+		</tr>
+		<tr>
 			<td>Order Hash</td>
 			<td title="{{.OrderInfo.OrderHash}}">{{.OrderInfo.OrderHash}}</td>
 		</tr>
@@ -44,15 +48,15 @@
 		</tr>
 		<tr>
 			<td>Order Type</td>
-			<td>{{.OrderInfo.OType}}</td>
+			<td>{{.OrderInfo.OTypeStr}}</td>
 		</tr>
 		<tr>
 			<td>Date</td>
 			<td>{{.OrderInfo.Date}}</td>
 		</tr>
 		<tr>
-			<td>Volume</td>
-			<td>{{.OrderInfo.Volume}}</td>
+			<td>Amount</td>
+			<td>{{.OrderInfo.Amount}}</td>
 		</tr>
 		<tr>
 			<td>Price</td>
