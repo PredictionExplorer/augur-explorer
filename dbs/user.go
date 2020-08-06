@@ -34,6 +34,14 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 	var ui p.UserInfo
 	ss.fill_block_info(&ui,user_aid)
 
+	var eoa_aid int64
+	var wallet_aid int64
+	eoa_aid,_=ss.Lookup_eoa_aid(user_aid)
+	wallet_aid,_=ss.Lookup_wallet_aid(user_aid)
+	if (eoa_aid==0) && (wallet_aid==0) {
+		ui.NotAugur = true
+	}
+
 	var query string
 	query = "SELECT " +
 				"s.wallet_aid," +
@@ -605,6 +613,7 @@ func (ss *SQLStorage) Get_user_trades_for_market(eoa_aid int64,mkt_aid int64) []
 	// get market trades with mixed outcomes
 	var query string
 	query = "SELECT " +
+				"o.id," +
 				"o.order_id," +
 				"a.addr as mkt_addr," +
 				"ca.addr as creator_addr," +
@@ -648,6 +657,7 @@ func (ss *SQLStorage) Get_user_trades_for_market(eoa_aid int64,mkt_aid int64) []
 		var mkt_type int
 		var outcomes string
 		err=rows.Scan(
+			&rec.OrderId,
 			&rec.OrderHash,
 			&rec.MktAddr,
 			&rec.CreatorAddr,

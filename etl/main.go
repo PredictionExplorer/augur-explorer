@@ -164,7 +164,7 @@ func main() {
 
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 	os.MkdirAll(log_dir, os.ModePerm)
-	db_log_file:=fmt.Sprintf("%v/%v",log_dir,DEFAULT_DB_LOG)
+	db_log_file:=fmt.Sprintf("%v/etl_%v",log_dir,DEFAULT_DB_LOG)
 
 	position_changes = make([]*PosChg,0,8)
 
@@ -174,7 +174,7 @@ func main() {
 		fmt.Printf("Can't start: %v\n",err)
 		os.Exit(1)
 	}
-	Info = log.New(logfile,"INFO: ",log.Ltime)		//|log.Lshortfile)
+	Info = log.New(logfile,"INFO: ",log.Ltime|log.Lshortfile)
 
 	fname=fmt.Sprintf("%v/etl_error.log",log_dir)
 	if err!=nil {
@@ -182,7 +182,7 @@ func main() {
 		os.Exit(1)
 	}
 	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	Error = log.New(logfile,"ERROR: ",log.Ltime)		//|log.Lshortfile)
+	Error = log.New(logfile,"ERROR: ",log.Ltime|log.Lshortfile)
 	rpcclient, err=rpc.DialContext(context.Background(), RPC_URL)
 	if err != nil {
 		log.Fatal(err)

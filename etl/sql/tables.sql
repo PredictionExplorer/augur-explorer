@@ -334,6 +334,7 @@ CREATE TABLE uranks (   -- User Rankings (how this user ranks against each other
 	volume				DECIMAL(32,18) DEFAULT 0.0
 );
 CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur Platform
+	upload_block		BIGINT DEFAULT 0,
 	augur				TEXT DEFAULT '',-- Augur Main contract
 	augur_trading		TEXT DEFAULT '',-- Augur Trading contract
 	profit_loss			TEXT DEFAULT '',-- Profit Loss contract

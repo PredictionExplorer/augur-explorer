@@ -120,7 +120,7 @@ func build_javascript_data_obj(mdepth *MarketDepth) (template.JS,template.JS) {
 	_ = last_price
 	return template.JS(bids_str),template.JS(asks_str)
 }
-func build_javascript_price_history(orders *[]MarketOrder) template.JS {
+func build_javascript_price_history(orders *[]OrderInfo) template.JS {
 	var data_str string = "["
 
 	for i:=0 ; i < len(*orders) ; i++ {
@@ -134,11 +134,11 @@ func build_javascript_price_history(orders *[]MarketOrder) template.JS {
 				"x:" + fmt.Sprintf("%v",i)  + "," +
 				"y:"  + fmt.Sprintf("%v",e.Price) + "," +
 				"price: " + fmt.Sprintf("%v",e.Price) + "," +
-				"volume: " + fmt.Sprintf("%v",e.Volume) + "," +
+				"volume: " + fmt.Sprintf("%v",e.Amount) + "," +
 				"click: function() {load_order_data(\"" +
 					e.CreatorEOAAddr +"\",\"" +
 					e.FillerEOAAddr+ "\"," +
-					fmt.Sprintf("%v,%v,%v,\"%v\"",e.MktAid,e.Price,e.Volume,e.Date) +
+					fmt.Sprintf("%v,%v,%v,\"%v\"",e.MktAid,e.Price,e.Amount,e.Date) +
 				")}" +
 				"}"
 		data_str= data_str + entry
@@ -330,19 +330,59 @@ func complete_and_output_market_info(c *gin.Context,minfo InfoMarket) {
 			"OutcomeVols" : outcome_vols,
 	})
 }
+func is_address_valid(c *gin.Context,addr string) (string,bool) {
+
+	if (addr[0]=='0') && (addr[1] == 'x') {
+		addr = addr[2:]
+	}
+	var formatted_addr string
+	addr_bytes,err := hex.DecodeString(addr)
+	if err == nil {
+		addr := common.BytesToAddress(addr_bytes)
+		formatted_addr = addr.String()
+	} else {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Provided address parameter is invalid : %v",err),
+		})
+		return "",false
+	}
+	return formatted_addr,true
+}
+func show_market_not_found_error(c *gin.Context,addr *string) {
+
+	c.HTML(http.StatusBadRequest, "error.html", gin.H{
+		"title": "Augur Markets: Error",
+		"ErrDescr": fmt.Sprintf("Market with address %v wasn't found",*addr),
+	})
+}
 func market_info(c *gin.Context) {
 
 	market := c.Param("market")
-
-	market_info,_ := augur_srv.storage.Get_market_info(market,0,false)
+	market_addr,valid:=is_address_valid(c,market)
+	if !valid {
+		return
+	}
+	market_info,err := augur_srv.storage.Get_market_info(market_addr,0,false)
+	if err != nil {
+		show_market_not_found_error(c,&market_addr)
+		return
+	}
 	complete_and_output_market_info(c,market_info)
 }
 func full_trade_list(c *gin.Context) {
 
 	market := c.Param("market")
-
-	market_info,_ := augur_srv.storage.Get_market_info(market,0,false)
-	trades := augur_srv.storage.Get_mkt_trades(market,0)
+	market_addr,valid := is_address_valid(c,market)
+	if !valid {
+		return
+	}
+	market_info,err := augur_srv.storage.Get_market_info(market_addr,0,false)
+	if err != nil {
+		show_market_not_found_error(c,&market_addr)
+		return
+	}
+	trades := augur_srv.storage.Get_mkt_trades(market_addr,0)
 	c.HTML(http.StatusOK, "full_trade_list.html", gin.H{
 			"title": "Trades for market",
 			"Trades" : trades,
@@ -353,6 +393,10 @@ func market_depth(c *gin.Context) {
 
 	// Market Depth Info: https://en.wikipedia.org/wiki/Order_book_(trading)
 	market := c.Param("market")
+	market_addr,valid := is_address_valid(c,market)
+	if !valid {
+		return
+	}
 	p_outcome := c.Param("outcome")
 	var outcome int
 	if len(p_outcome) > 0 {
@@ -373,12 +417,9 @@ func market_depth(c *gin.Context) {
 		return
 	}
 
-	market_info,err := augur_srv.storage.Get_market_info(market,outcome,true)
+	market_info,err := augur_srv.storage.Get_market_info(market_addr,outcome,true)
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Augur Markets: Error",
-			"ErrDescr": "Can't find this market, address not registered",
-		})
+		show_market_not_found_error(c,&market_addr)
 		return
 	}
 	mdepth,last_oo_id := augur_srv.storage.Get_mkt_depth(market_info.MktAid,outcome)
@@ -434,6 +475,10 @@ func market_depth_ajax(c *gin.Context) {
 func market_price_history(c *gin.Context) {
 
 	market := c.Param("market")
+	market_addr,valid := is_address_valid(c,market)
+	if !valid {
+		return
+	}
 	p_outcome := c.Param("outcome")
 	var outcome int
 	if len(p_outcome) > 0 {
@@ -454,12 +499,9 @@ func market_price_history(c *gin.Context) {
 		return
 	}
 
-	market_info,err := augur_srv.storage.Get_market_info(market,outcome,true)
+	market_info,err := augur_srv.storage.Get_market_info(market_addr,outcome,true)
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Augur Markets: Error",
-			"ErrDescr": "Can't find this market, address not registered",
-		})
+		show_market_not_found_error(c,&market_addr)
 		return
 	}
 	mkt_price_hist := augur_srv.storage.Get_price_history_for_outcome(market_info.MktAid,outcome)
@@ -673,11 +715,11 @@ func search(c *gin.Context) {
 		if len(keyword) == 66 {	// strip 0x prefix
 			keyword = keyword[2:]
 		}
+		var hash string
 		hash_bytes,err := hex.DecodeString(keyword)
 		if err == nil {
-			hash := common.BytesToHash(hash_bytes)
-			hash_str := hash.String()
-			serve_tx_info_page(c,hash_str)
+			tmp_hash := common.BytesToHash(hash_bytes)
+			hash = tmp_hash.String()
 		} else {
 			c.HTML(http.StatusBadRequest, "error.html", gin.H{
 				"title": "Augur Markets: Error",
@@ -685,6 +727,20 @@ func search(c *gin.Context) {
 			})
 			return
 		}
+		if augur_srv.storage.Tx_exists(hash) {
+			serve_tx_info_page(c,hash)
+			return
+		}
+		orders := augur_srv.storage.Get_filling_orders_by_hash(hash)
+		if len(orders) > 0 {
+			output_filling_orders(c,hash,orders)
+			return
+		}
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Obhect with hash %v wasn't found",hash),
+		})
+		return
 	} else {
 		_, err := strconv.Atoi(keyword)
 		if err == nil {
@@ -718,22 +774,40 @@ func read_money(c *gin.Context) {
 		}
 	}
 }
+func output_filling_orders(c *gin.Context,order_hash string,orders []OrderInfo) {
+	c.HTML(http.StatusOK, "filling_orders.html", gin.H{
+		"title": "Order "+order_hash,
+		"OrderHash" : order_hash,
+		"FillingOrders" : orders,
+	})
+}
 func order(c *gin.Context) {
+	// Order can be queried by OrderId or OrderHash
+	// In case of OrderID we return single record
+	// In case of OrderHash we return many rows (all orders filling the order for this OrderHash)
+	p_order := c.Param("order")
 
-	order_hash:= c.Param("order")
-	order,err := augur_srv.storage.Get_order_info(order_hash)
-	if err!=nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Augur Markets: Error",
-			"ErrDescr": "Can't find the order",
+	// Case 1 : query by orderId
+	order_id, err := strconv.ParseInt(p_order,10,64)
+	if err == nil {
+		order,err := augur_srv.storage.Get_order_info_by_id(order_id)
+		if err != nil {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": fmt.Sprintf("Can't find the order with id=%v",order_id),
+			})
+			return
+		}
+		c.HTML(http.StatusOK, "order_info.html", gin.H{
+			"title": fmt.Sprintf("Order "+order.OrderHash),
+			"OrderInfo" : order,
 		})
 		return
 	}
-
-	c.HTML(http.StatusOK, "order_info.html", gin.H{
-			"title": "Order "+order_hash,
-			"OrderInfo" : order,
-	})
+	// Case 2 : query by OrderHash
+	order_hash := p_order
+	orders := augur_srv.storage.Get_filling_orders_by_hash(order_hash)
+	output_filling_orders(c,order_hash,orders)
 }
 func category(c *gin.Context) {
 
@@ -1013,50 +1087,16 @@ func market_depth_status(c *gin.Context) {
 func user_trades_for_market(c *gin.Context) {
 
 	p_addr := c.Query("addr")
-	if (len(p_addr) == 40) || (len(p_addr) == 42) { // address
-		if len(p_addr) == 42 {	// strip 0x prefix
-			p_addr = p_addr[2:]
-		}
-	} else {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Augur Markets: Error",
-			"ErrDescr": "Invalid length of address parameter",
-		})
+	user_addr_str,valid := is_address_valid(c,p_addr)
+	if !valid {
 		return
 	}
-	addr_bytes,err := hex.DecodeString(p_addr)
-	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Augur Markets: Error",
-			"ErrDescr": "Invalid HEX string in address parameter for User Account",
-		})
-		return
-	}
-	user_addr:= common.BytesToAddress(addr_bytes)
-	user_addr_str := user_addr.String()
 
 	p_addr = c.Query("market")
-	if (len(p_addr) == 40) || (len(p_addr) == 42) { // address
-		if len(p_addr) == 42 {	// strip 0x prefix
-			p_addr = p_addr[2:]
-		}
-	} else {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Augur Markets: Error",
-			"ErrDescr": "Invalid length of address parameter for Market",
-		})
+	mkt_addr_str,valid := is_address_valid(c,p_addr)
+	if !valid {
 		return
 	}
-	addr_bytes,err = hex.DecodeString(p_addr)
-	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Augur Markets: Error",
-			"ErrDescr": "Invalid HEX string in address parameter",
-		})
-		return
-	}
-	mkt_addr:= common.BytesToAddress(addr_bytes)
-	mkt_addr_str := mkt_addr.String()
 
 	aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(user_addr_str)
 	if err!=nil {
@@ -1072,14 +1112,13 @@ func user_trades_for_market(c *gin.Context) {
 			"title": "Augur Markets: Error",
 			"ErrDescr": fmt.Sprintf("No records found for address: %v",user_addr_str),
 		})
+		return
 	}
 
 	market_info,err := augur_srv.storage.Get_market_info(mkt_addr_str,0,false)
 	if err!= nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Augur Markets: Error",
-			"ErrDescr": fmt.Sprintf("No Market was found with address: %v",mkt_addr_str),
-		})
+		show_market_not_found_error(c,&mkt_addr_str)
+		return
 	}
 	trades := augur_srv.storage.Get_user_trades_for_market(aid,market_info.MktAid)
 	c.HTML(http.StatusOK, "user_trades.html", gin.H{

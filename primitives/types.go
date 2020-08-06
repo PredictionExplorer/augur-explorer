@@ -303,7 +303,12 @@ type InfoCategories struct {
 	Subcategories	[]string
 }
 type MarketTrade struct {
+	OrderId			int64
+	Price			float64
+	Amount			float64
+	Outcome			int
 	OrderHash		string
+	OrderHashSh		string
 	MktAddr			string
 	MktAddrSh		string	// short address (with .. in the middle)
 	CreatorAddr		string
@@ -313,9 +318,6 @@ type MarketTrade struct {
 	Type			string
 	Direction		string
 	Date			string
-	Price			float64
-	Amount			float64
-	Outcome			int
 	OutcomeStr		string
 }
 type OutcomeVol struct {
@@ -371,6 +373,7 @@ type UserInfo struct {
 	TopProfit		float64
 	UnclaimedProfit	float64
 	HedgingProfits	bool	// Flag to indicate negative 'MoneyAtStake' field
+	NotAugur		bool	// True if doesn't have entry in 'ustats' table
 	TotalTrades		uint32	// how many trades were made by this User
 	MarketsCreated	uint32	// how many markets this User has created
 	MarketsTraded	uint32	// how many markets this User has traded
@@ -393,15 +396,17 @@ type MainStats struct {
 	MoneyAtStake	float64
 	TradesCount		int64
 }
+/* DISCONTINUED, new object used instead is 'OrderInfo'. Removal pending
 type MarketOrder struct {	// this is a short order info, to show in tables
+	OrderId				int64
 	MktAid				int64
 	TradeTs				int64
 	Price				float64
 	Volume				float64
 	AccumVol			float64
+	CreatedTs			int64
 	OutcomeIdx			int32
 	OType				int32
-	CreatedTs			int64
 	CreatorBuyer		bool
 	FillerBuyer			bool
 	OrderHash			string
@@ -415,7 +420,7 @@ type MarketOrder struct {	// this is a short order info, to show in tables
 	FillerEOAAddrSh		string
 	Direction			string
 	Date				string
-}
+}*/
 type PLEntry struct {	// profit loss entry
 	Id					int64
 	MktAid				int64
@@ -492,17 +497,22 @@ type VolumeMaker struct {
 	EOAAddr				string
 }
 type OrderInfo struct {		// this is a full order information, to show in dedicated webpage
+	OrderId				int64
 	MktAid				int64
 	TradeTs				int64
 	Price				float64
-	Volume				float64
-	OutcomeIdx			int32
+	Amount				float64
+	AccumVol            float64
 	CreatedTs			int64
+	MktType				int32
+	OType				int32
+	OutcomeIdx			int32
 	CreatorBuyer		bool	// true if the Creator is the buyer
 	FillerBuyer			bool	// true if the Filler is the buyer
 	OrderHashSh			string
 	OrderHash			string
-	OType				string
+	OTypeStr			string
+	OutcomeStr			string
 	CreatorWalletAddr	string
 	CreatorWalletAddrSh	string	// short version of the addr
 	CreatorEOAAddr		string
@@ -514,6 +524,7 @@ type OrderInfo struct {		// this is a full order information, to show in dedicat
 	Date				string
 	MarketAddr			string
 	MarketAddrSh		string
+	Direction			string
 }
 type Report struct {
 	MktAid				int64

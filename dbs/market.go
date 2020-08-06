@@ -340,7 +340,7 @@ func (ss *SQLStorage) get_market_type_and_ticks(market_aid int64) (int,int64) {
 	err:=ss.db.QueryRow(query,market_aid).Scan(&market_type,&num_ticks);
 	if (err!=nil) {
 		d_query:=strings.ReplaceAll(query,"$1",fmt.Sprintf("%v",market_aid))
-		ss.Log_msg(fmt.Sprintf("DB Error: %v, q=%v\n",err,d_query))
+		ss.Log_msg(fmt.Sprintf("DB Error: %v, q=%v market_aid=%v\n",err,d_query,market_aid))
 		os.Exit(1)
 	}
 	return market_type,num_ticks

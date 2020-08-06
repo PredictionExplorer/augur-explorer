@@ -68,8 +68,10 @@ func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header) error {
 	err:=ss.db.QueryRow(query,parent_hash).Scan(&parent_block_num);
 	if (err!=nil) {
 		if (err==sql.ErrNoRows) {
-			if block.Number.Uint64() == 0 {
-				// Genesis. Allow.
+			starting_block:=ss.Get_upload_block()
+			if block.Number.Int64() == starting_block {
+				// this is the first block that will be processed (we aren't starting from block 0)
+				// allow
 			} else {
 				ss.Info.Printf(
 					fmt.Sprintf(
@@ -132,9 +134,7 @@ func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header) error {
 	os.Exit(1)
 	return nil
 }
-func (ss *SQLStorage) Insert_transaction(
-	agtx *p.AugurTx,
-) int64 {
+func (ss *SQLStorage) Insert_transaction(agtx *p.AugurTx) int64 {
 
 	// Note: contract addresses have To as their created address + ctrct_create flag set to 'true'
 	var query string
@@ -170,7 +170,7 @@ func (ss *SQLStorage) Insert_transaction(
 	return tx_id
 }
 func (ss *SQLStorage) Fix_chainsplit(block *types.Header) int64 {
-
+	// DISCONTINUED: removal pending
 	var query string
 	var my_block_num int64
 	parent_hash := block.ParentHash.String()
@@ -179,7 +179,12 @@ func (ss *SQLStorage) Fix_chainsplit(block *types.Header) int64 {
 	err := row.Scan(&my_block_num);
 	if (err!=nil) {
 		if err==sql.ErrNoRows {
-			ss.Log_msg(fmt.Sprintf("Chainsplit detected, I don't have the parent hash %v, exiting. ",parent_hash))
+			ss.Log_msg(
+				fmt.Sprintf(
+					"Chainsplit detected, I don't have the parent hash %v, exiting. ",
+					parent_hash,
+				),
+			)
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
@@ -187,9 +192,15 @@ func (ss *SQLStorage) Fix_chainsplit(block *types.Header) int64 {
 	}
 	cur_block_num := int64(block.Number.Uint64())
 	if cur_block_num > (my_block_num + p.MAX_BLOCKS_CHAIN_SPLIT) {
-		ss.Log_msg(fmt.Sprintf("Chainsplit detected, and it is more than %v blocks, aborting.",p.MAX_BLOCKS_CHAIN_SPLIT))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"Chainsplit detected, and it is more than %v blocks, aborting. " +
+				"(my_block_num=%v, cur_block_num=%v)",
+				p.MAX_BLOCKS_CHAIN_SPLIT,my_block_num,cur_block_num,
+			),
+		)
 	}
-	query = "DELETE FROM block WHERE block_num > $1 CASCADE"
+	query = "DELETE FROM block WHERE block_num > $1"
 	_,err = ss.db.Exec(query,my_block_num)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v, block_num=%v",err,query,my_block_num))
@@ -197,9 +208,20 @@ func (ss *SQLStorage) Fix_chainsplit(block *types.Header) int64 {
 	}
 	return my_block_num + 1	// parent + 1 = current
 }
+func (ss *SQLStorage) Chainsplit_delete_blocks(starting_block_num int64) {
+
+	var err error
+	var query string
+	query = "DELETE FROM block WHERE block_num > $1"
+	_,err = ss.db.Exec(query,starting_block_num)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v, block_num=%v",err,query,starting_block_num))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Block_delete_with_everything(block_num int64) {
 
-	// deletes block table and all the other tables receieve cascaded DELETEs also
+	// deletes block table and all the dependent tables receieve cascaded DELETEs also
 	var query string
 	query = "DELETE FROM block WHERE block_num = $1"
 	_,err := ss.db.Exec(query,block_num)
@@ -359,6 +381,25 @@ func (ss *SQLStorage) Get_transaction(tx_hash string) (p.TxInfo,error) {
 	}
 	return ti,err
 }
+func (ss *SQLStorage) Tx_exists(tx_hash string) bool {
+
+	var query string
+	query = "SELECT id FROM transaction WHERE tx_hash=$1"
+
+	row := ss.db.QueryRow(query,tx_hash)
+	var unused int64
+	err := row.Scan(&unused)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return false
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return true
+}
+
 func (ss *SQLStorage) Get_last_block_timestamp() int64 {
 
 	var query string
@@ -388,4 +429,22 @@ func (ss *SQLStorage) Get_first_block_timestamp() int64 {
 		os.Exit(1)
 	}
 	return ts
+}
+func (ss *SQLStorage) Get_block_num_by_hash(block_hash string) (int64,error) {
+
+	var query string
+	query = "SELECT block_num FROM block WHERE block_hash=$1"
+
+	row := ss.db.QueryRow(query,block_hash)
+	var block_num int64
+	var err error
+	err=row.Scan(&block_num);
+	if (err!=nil) {
+		if err!=sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Error in Get_block_num_by_hash(): %v, q=%v,h=%v",err,query,block_hash))
+			os.Exit(1)
+		}
+		return 0,err
+	}
+	return block_num,nil
 }
