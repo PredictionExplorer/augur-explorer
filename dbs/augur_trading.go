@@ -192,45 +192,56 @@ func (ss *SQLStorage) Insert_open_order(
 		"Open Order: Market %v, Price %v, Otcome %v\n",
 		ospec.Market.String(),ospec.Price.String(),ospec.Outcome,
 	)
-	ss.Info.Printf("received eoa addr=%v\n",eoa_addr)
-	wallet_aid,err := ss.Nonfatal_lookup_address_id(order.MakerAddress.String())
-	if err != nil {
-		ss.Info.Printf(
-			"Cant insert open order for %v, Wallet address not yet registered, skipping order.",
-			order.MakerAddress.String(),
-		)
-		return errors.New("Wallet contract address not yet registered")
-	}
-	zero_addr := common.BigToAddress(zero)
+	// Note: the MakerAddress can be either EOA of the User or Wallet contract of the User
+	//			we need to figure out which one we have been given
+	var wallet_aid int64 = 0
 	var eoa_aid int64 = 0
-	if zero_addr.String()==eoa_addr {
-		ss.Info.Printf(
-			"0x Mesh provided empty EOA address for maker addres %v (NULL_EOA_ADDR_FROM_MESH)",
-			order.MakerAddress.String(),
-		)
-		tmp_eoa_aid,err:=ss.Lookup_eoa_aid(wallet_aid)
-		if err == nil {
-			eoa_aid = tmp_eoa_aid
-		} else {
+	zero_addr := common.BigToAddress(zero)
+	if zero_addr.String()==eoa_addr {	// MakerAddress must be an EOA address
+		eoa_aid,err = ss.Nonfatal_lookup_address_id(order.MakerAddress.String())
+		if err != nil {
+			// Note: we can't INSERT an address from here because we need Transaction Hash (for reference)
+			ss.Info.Printf(
+				"MakerAddress %v is unregistered in the DB",
+				order.MakerAddress.String(),
+			)
+			return errors.New(
+				fmt.Sprintf("MakerAddress %v is unregistered in the DB.",order.MakerAddress.String()),
+			)
 		}
-	} else {
-		eoa_aid,err = ss.Nonfatal_lookup_address_id(eoa_addr)
+		// Now we need to validate this this address is indeed an EOA
+		wallet_aid,err = ss.Lookup_wallet_aid(eoa_aid)
 		if err != nil {
 			ss.Info.Printf(
-				"EOA address %v isn't registered in address table",
-				eoa_addr,
+				"MakerAddress %v doesn't have an associated Wallet contract",
+				order.MakerAddress.String(),
 			)
-			return errors.New("EOA address not yet registered")
+			return errors.New("EOA address provided from Mesh listener is zero address and un-registered.")
 		}
-		ss.Link_eoa_and_wallet_contract(eoa_aid,wallet_aid)
+	} else { // MakerAddress has an EOA address, means MakerAddress is a Wallet contract
+		wallet_aid,err = ss.Nonfatal_lookup_address_id(order.MakerAddress.String())
+		if err != nil {
+			// Maker is not Wallet Contract, then it must be EOA
+			ss.Info.Printf(
+				"MakerAddress %v is unregistered in the DB : %v",
+				order.MakerAddress.String(),err,
+			)
+			return errors.New(
+				fmt.Sprintf("MakerAddress %v is unregistered in the DB.",order.MakerAddress.String()),
+			)
+		}
+		eoa_aid,err = ss.Lookup_eoa_aid(wallet_aid)
+		if err != nil {
+			ss.Info.Printf(
+				"MakerAddress %v is a Wallet contract that doesn't have an associated EOA address: %v",
+				order.MakerAddress.String,err,
+			)
+			return errors.New(
+				fmt.Sprintf("MakerAddress %v doesn't have associated EOA",order.MakerAddress.String()),
+			)
+		}
 	}
-	if eoa_aid == 0 {
-		ss.Info.Printf(
-			"Cant insert open order %v, EOA address ID = 0,  wallet = %v, skipping order.",
-			*ohash,order.MakerAddress.String(),
-		)
-		return errors.New("eoa_id not found for Wallet Contract")
-	}
+	ss.Link_eoa_and_wallet_contract(eoa_aid,wallet_aid) // enforce EOA-Wallet link (though it may exist)
 
 	ss.Info.Printf(
 		"creating open order made by %v : market=%v, price=%v, Outcome=%v, Type=%v\n",

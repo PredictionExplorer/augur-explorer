@@ -218,7 +218,7 @@ func main() {
 	if len(block_numbers) > 0 {
 		for i:=0 ; i<len(block_numbers); i++ {
 			bnum := block_numbers[i]
-			err := process_block(bnum)
+			err := process_block(bnum,false)
 			if err!=nil {
 				fmt.Printf("Process failed: %v. Repeat again.\n",err)
 				os.Exit(1)
@@ -252,11 +252,19 @@ func main() {
 	for ; bnum<bnum_high; bnum++ {
 		//block_hash:=common.HexToHash(block_hash_str)
 		for {
-			err := process_block(bnum)
+			select {
+				case exit_flag := <-exit_chan:
+					if exit_flag {
+						Info.Println("Exiting by user request.")
+						os.Exit(0)
+					}
+				default:
+			}
+			err := process_block(bnum,true)
 			if err==nil {
 				break
 			} else {
-				// this is probably happening due to RPC unavailability
+				// this is probably happening due to RPC unavailability, so we use a delay
 				time.Sleep(1 * time.Second)
 				if err == ErrChainSplit {
 					bnum = set_back_block_num
@@ -265,17 +273,8 @@ func main() {
 				Error.Printf("Block processing error: %v\n",err)
 			}
 		}
-		storage.Set_last_block_num(bnum)
 		//scan_profit_loss_data_for_debugging(bnum,&position_changes)
 		position_changes=nil
-		select {
-			case exit_flag := <-exit_chan:
-				if exit_flag {
-					Info.Println("Exiting by user request.")
-					os.Exit(0)
-				}
-			default:
-		}
 	}// for block_num
 	latestBlock, err = eclient.BlockByNumber(ctx, nil)
 	if err != nil {

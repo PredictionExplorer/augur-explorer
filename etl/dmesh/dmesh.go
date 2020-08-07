@@ -73,6 +73,7 @@ func Dump_stats(s *types.Stats,output *log.Logger) {
 func fetch_and_sync_orders() {
 
 	ohash_map := make(map[string]struct{})
+	var augur_count int = 0
 	var insert_count int = 0
 	var update_count int = 0
 	var deleted_count int = 0
@@ -84,9 +85,10 @@ func fetch_and_sync_orders() {
 	for !done {
 		orders2sync,err := rpcclient.GetOrders(page_num,page_size,"")
 		if err == nil {
-			icnt,ucnt:=sync_orders(orders2sync,&ohash_map)
+			acnt,icnt,ucnt:=sync_orders(orders2sync,&ohash_map)
 			insert_count = insert_count + icnt
 			update_count = update_count + ucnt
+			augur_count = augur_count + acnt
 			if len(orders2sync.OrdersInfos) == 0 {
 				done = true
 			}
@@ -113,8 +115,9 @@ func fetch_and_sync_orders() {
 		}
 	}
 	Info.Printf(
-		"Order sync process complete. scanned: %v orders. Inserted %v. Updated %v. Deleted %v.\n",
-		orders_total,insert_count,update_count,deleted_count,
+		"Order sync process complete. scanned: %v orders. " +
+		"Augur-related %v. Inserted %v. Updated %v. Deleted %v.\n",
+		orders_total,augur_count,insert_count,update_count,deleted_count,
 	)
 }
 func oo_insert(order_hash *string,order *zeroex.SignedOrder,timestamp int64) error {
@@ -134,7 +137,8 @@ func oo_insert(order_hash *string,order *zeroex.SignedOrder,timestamp int64) err
 	num:=big.NewInt(int64(owner_fld_offset))
 	key:=common.BigToHash(num)
 	eoa,err := eclient.StorageAt(ctx,order.MakerAddress,key,nil)
-	Info.Printf("maker=%v eoa=%v; err=%v\n",order.MakerAddress.String(),hex.EncodeToString(eoa[:]),err)
+	Info.Printf("oo_insert: order_hash=%v\n",*order_hash)
+	Info.Printf("oo insert: maker=%v eoa=%v; err=%v\n",order.MakerAddress.String(),hex.EncodeToString(eoa[:]),err)
 	var eoa_addr_str string
 	if err == nil {
 		eoa_addr_str = common.BytesToAddress(eoa[12:]).String()
@@ -171,12 +175,13 @@ func order_blongs_to_augur(order *zeroex.SignedOrder) bool {
 	}
 	return true
 }
-func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{}) (int,int) {
+func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{}) (int,int,int) {
 	// routine to synchronize orders on 0x Mesh Network with the table `oorders` in postgres
 	//	Executed on startup and every 10 minutes
 
 	var insert_count int = 0
 	var update_count int = 0
+	var augur_count int = 0
 
 	for i:=0 ; i<len(response.OrdersInfos); i++ {
 		order_info := response.OrdersInfos[i]
@@ -184,6 +189,7 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 			if !order_blongs_to_augur(order_info.SignedOrder) {
 				continue
 			}
+			augur_count++
 			order_hash := order_info.OrderHash.String()
 			var empty struct{}
 			(*ohash_map)[order_hash]=empty
@@ -194,6 +200,7 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 				if err!=nil {
 					// nothing
 					Info.Printf("Error inserting open order %v: %v\n",order_hash,err)
+					Error.Printf("Error inserting open order %v: %v\n",order_hash,err)
 				} else {
 					insert_count++
 					Info.Printf("Inserted open order %v\n",order_hash)
@@ -208,7 +215,7 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 			}
 		}
 	}
-	return insert_count,update_count
+	return augur_count,insert_count,update_count
 }
 func main() {
 

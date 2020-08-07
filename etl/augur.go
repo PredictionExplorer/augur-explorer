@@ -778,10 +778,11 @@ func roll_back_blocks(diverging_block *types.Header) error {
 		if err == nil {
 			if my_block_num == block.Number().Int64() {
 				Info.Printf(
-					"Chainsplit fix: deleting blocks from %v and higher good block hash = %v\n",
+					"Chainsplit fix: deleting blocks higher than %v ; good block hash = %v\n",
 					my_block_num,block_hash,
 				)
 				storage.Chainsplit_delete_blocks(my_block_num)
+				storage.Set_last_block_num(my_block_num)
 				return nil
 			}
 		} else {
@@ -802,7 +803,7 @@ func roll_back_blocks(diverging_block *types.Header) error {
 	}
 	return errors.New("Chainsplit fix: Undefined behaviour")
 }
-func process_block(bnum int64) error {
+func process_block(bnum int64,update_last_block bool) error {
 
 	ctx := context.Background()
 	block_hash_str,err:=get_block_hash(bnum)
@@ -846,18 +847,15 @@ func process_block(bnum int64) error {
 		}
 		Error.Printf("Unable to recover from chainsplit: %v. Aborting",err)
 		os.Exit(1)
-		// DISCONTINUED
-		// chainsplit detected
-		/*set_back_block_num = storage.Fix_chainsplit(header)
-		Info.Printf("Chain rewind to block %v. Restarting. (CHAIN_SPLIT)",set_back_block_num)
-		return ErrChainSplit
-		*/
+	}
+	if update_last_block {
+		storage.Set_last_block_num(bnum)
 	}
 	if num_transactions == 0 {
 		Info.Printf("block_proc: block: %v EMPTY\n",block.Number())
 		return nil
 	}
-	Info.Printf("block_proc: %v %v transactions\n",block.Number(),num_transactions)
+	Info.Printf("block_proc: %v %v ; %v transactions\n",block.Number(),block_hash.String(),num_transactions)
 	for tnum:=0 ; tnum < int(num_transactions) ; tnum++ {
 		tx , err := eclient.TransactionInBlock(ctx,block_hash,uint(tnum))
 		if err != nil {

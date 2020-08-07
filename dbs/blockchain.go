@@ -36,7 +36,7 @@ func (ss *SQLStorage) Get_last_block_num() (int64,bool) {
 func (ss *SQLStorage) Set_last_block_num(block_num int64) {
 
 	bnum := int64(block_num)
-	var query string = "UPDATE last_block SET block_num=$1 WHERE block_num < $1"
+	var query string = "UPDATE last_block SET block_num=$1"
 	res,err:=ss.db.Exec(query,bnum)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("set_last_block_num() failed: %v",err))

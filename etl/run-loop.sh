@@ -4,6 +4,6 @@ LOG_DIR=$HOME/ae_logs
 while true
 do
 	nohup ./etl >> $LOG_DIR/etl_nohup.log
-	sleep 1
+	sleep 10
 done
 

@@ -19,4 +19,18 @@ BEGIN
 	RETURN 'Chain has correct parent block for all blocks';
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION dai_balances_from_ustats()
+RETURNS TABLE(f_aid bigint,f_balance DECIMAL) AS $$
+DECLARE
+	v_stat_rec record;
+BEGIN
 
+	FOR v_stat_rec IN 
+		SELECT * FROM ustats
+	LOOP
+		SELECT aid,balance FROM dai_bal AS db WHERE db.aid = v_stat_rec.wallet_aid
+				ORDER BY db.block_num DESC,db.id DESC LIMIT 1 INTO f_aid,f_balance;
+		RETURN NEXT;
+	END LOOP;
+END;
+$$ LANGUAGE plpgsql;

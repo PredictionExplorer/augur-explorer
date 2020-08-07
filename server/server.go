@@ -699,14 +699,14 @@ func search(c *gin.Context) {
 			} else {
 				c.HTML(http.StatusBadRequest, "error.html", gin.H{
 					"title": "Augur Markets: Error",
-					"ErrDescr": "Invalid HEX string in address parameter",
+					"ErrDescr": fmt.Sprintf("Address %v not found",addr_str),
 				})
 				return
 			}
 		} else {
 			c.HTML(http.StatusBadRequest, "error.html", gin.H{
 				"title": "Augur Markets: Error",
-				"ErrDescr": "Invalid HEX string in address parameter",
+				"ErrDescr": fmt.Sprintf("Invalid HEX string in address parameter: %v",keyword),
 			})
 			return
 		}
@@ -889,7 +889,7 @@ func full_reports(c *gin.Context) {
 	} else {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
-			"ErrDescr": "Invalid HEX string in address parameter",
+			"ErrDescr": fmt.Sprintf("Invalid HEX string in address parameter: %v",err),
 		})
 	}
 }
@@ -935,7 +935,7 @@ func user_markets(c *gin.Context) {
 	} else {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
-			"ErrDescr": "Invalid HEX string in address parameter",
+			"ErrDescr": fmt.Sprintf("Invalid HEX string in address parameter: %v",err),
 		})
 	}
 }
@@ -989,7 +989,7 @@ func user_deposits_withdrawals(c *gin.Context) {
 	} else {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
-			"ErrDescr": "Invalid HEX string in address parameter",
+			"ErrDescr": fmt.Sprintf("Invalid HEX string in address parameter: %v",err),
 		})
 	}
 }
