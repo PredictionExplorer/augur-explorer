@@ -117,3 +117,17 @@ func (ss *SQLStorage) Get_upload_block() int64 {
 	}
 	return block_num
 }
+func (ss *SQLStorage) Insert_augur_transaction_status(agtx *p.AugurTx,evt *p.ExecuteTransactionStatus) {
+
+	//eoa_aid,err := ss.Lookup_eoa_aid(wallet_aid)
+	eoa_aid:=0
+	wallet_aid:=0
+	var query string
+	query = "INSERT INTO agtx_status(block_num,tx_id,eoa_aid,wallet_aid,success,funding_success) " +
+			"VALUES($1,$2,$3,$4,$5,$6)"
+	_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,eoa_aid,wallet_aid,evt.Success,evt.FundingSuccess)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into agtx_status table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}

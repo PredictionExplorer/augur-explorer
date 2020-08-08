@@ -12,6 +12,8 @@ CREATE TABLE transaction (	-- we're only storing transactions related to Augur p
 	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
 	from_aid			BIGINT DEFAULT 0,
 	to_aid				BIGINT DEFAULT 0,
+	gas_used			BIGINT DEFAULT 0,
+	tx_index			INT DEFAULT 0,
 	ctrct_create		BOOLEAN DEFAULT FALSE,	-- true if To = nil
 	value				DECIMAL(64,18) DEFAULT 0.0,
 	tx_hash				TEXT NOT NULL UNIQUE
@@ -350,6 +352,26 @@ CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur P
 CREATE TABLE unique_addrs (	-- Unique addresses per day, statistics
 	day					DATE PRIMARY KEY,
 	num_addrs			BIGINT DEFAULT 0
+);
+CREATE TABLE ether_spent (
+	day					DATE PRIMARY KEY,
+	num_trading			INT DEFAULT 0,		--nuber of trading transactions for that day
+	num_reporting		INT DEFAULT 0,
+	num_markets			INT DEFAULT 0,
+	num_total			INT DEFAULT 0,
+	trading				DECIMAL(32,18) DEFAULT 0.0,
+	reporting			DECIMAL(32,18) DEFAULT 0.0,
+	markets				DECIMAL(32,18) DEFAULT 0.0,
+	total				DECIMAL(32,18) DEFAULT 0.0
+);
+CREATE TABLE agtx_status (-- Augur transaction status (used to track Gas fees for all interactions with Augur
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	eoa_aid				BIGINT NOT NULL,
+	wallet_aid			BIGINT NOT NULL,
+	success				BOOLEAN NOT NULL,
+	funding_success		BOOLEAN NOT NULL
 );
 CREATE TABLE pl_debug (-- Profit loss data for debugging, scanned after Block has been processed
 	id					BIGSERIAL PRIMARY KEY,

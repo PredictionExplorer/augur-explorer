@@ -268,3 +268,10 @@ func (evt* Approval) Dump(l *log.Logger) {
 	l.Printf("\tValue: %v\n",evt.Value.String())
 	l.Printf("}\n")
 }
+func (evt *ExecuteTransactionStatus) Dump(l *log.Logger) {	// dumps struct to stdout for debugging
+
+	l.Printf("ExecuteTransactionStatus {\n")
+	l.Printf("\tSuccess: %v\n",evt.Success)
+	l.Printf("\tFundingSuccess: %v\n",evt.FundingSuccess)
+	l.Printf("}\n")
+}

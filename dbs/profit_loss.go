@@ -156,7 +156,7 @@ func (ss *SQLStorage) Update_claim_status(agtx *p.AugurTx,evt *p.TradingProceeds
 	//		however just knowing that proceeds where claimed is enough to update all the outcomes
 	//		This function will be executed multiple times in a transaction, but that's ok
 	market_aid := ss.Lookup_address_id(evt.Market.String())
-	signer_aid := ss.Lookup_address_id(agtx.TxMsg.From().String())
+	signer_aid := ss.Lookup_address_id(agtx.From)
 
 	var query string
 	query = "UPDATE claim_funds SET claim_status=2,autocalculated=FALSE,claim_ts=TO_TIMESTAMP($3) " +

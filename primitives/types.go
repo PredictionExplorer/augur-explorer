@@ -51,10 +51,15 @@ const (
 type AugurTx struct {	// just a wrapper for Ethereum Transaction object, but in our own format
 	TxId				int64		// once inserted tx_id is stored here
 	BlockNum			int64
-	TxMsg				*types.Message
-	TxHash				string
-	To					string
+	GasUsed				int64
+	TxIndex				int32
 	CtrctCreate			bool
+//	TxMsg				*types.Message	Discontinued , to be deleted
+	TxHash				string
+	From				string
+	To					string
+	Value				string
+	Input				[]byte
 }
 type ExtraInfo struct {
 	Categories			[]string	`json:"categories"`
@@ -618,3 +623,9 @@ type PosChg struct {		// change in positon for logging/debugging purposes
 	NetPos				*big.Int
 	AvgPrice			*big.Int
 }
+type ExecuteTransactionStatus struct {// Augur's transaction status
+	Success        bool
+	FundingSuccess bool
+	Raw            types.Log // Blockchain specific contextual infos
+}
+

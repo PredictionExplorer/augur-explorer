@@ -19,7 +19,7 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.InitialRe
 	_ = universe_id
 	market_aid := ss.Lookup_address_id(evt.Market.String())
 	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),agtx.BlockNum,agtx.TxId)
-	signer_aid := ss.Lookup_or_create_address(agtx.TxMsg.From().String(),agtx.BlockNum,agtx.TxId)
+	signer_aid := ss.Lookup_or_create_address(agtx.From,agtx.BlockNum,agtx.TxId)
 	ini_reporter_aid := ss.Lookup_or_create_address(evt.InitialReporter.String(),agtx.BlockNum,agtx.TxId)
 
 	amount_staked := evt.AmountStaked.String()
@@ -99,7 +99,7 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.Disput
 	}
 	market_aid := ss.Lookup_address_id(evt.Market.String())
 	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),agtx.BlockNum,agtx.TxId)
-	signer_aid := ss.Lookup_or_create_address(agtx.TxMsg.From().String(),agtx.BlockNum,agtx.TxId)
+	signer_aid := ss.Lookup_or_create_address(agtx.From,agtx.BlockNum,agtx.TxId)
 	disputed_aid := ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
 
 	amount_staked := evt.AmountStaked.String()
