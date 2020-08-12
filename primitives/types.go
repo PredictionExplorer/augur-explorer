@@ -55,6 +55,7 @@ type AugurTx struct {	// just a wrapper for Ethereum Transaction object, but in 
 	TxIndex				int32
 	CtrctCreate			bool
 //	TxMsg				*types.Message	Discontinued , to be deleted
+	GasPrice			string
 	TxHash				string
 	From				string
 	To					string
@@ -628,4 +629,25 @@ type ExecuteTransactionStatus struct {// Augur's transaction status
 	FundingSuccess bool
 	Raw            types.Log // Blockchain specific contextual infos
 }
-
+type GasSpent struct {	// used to pass values of Statistics of Gas Usage
+	Day					int64
+	Ts					int64
+	Num_trading			int64
+	Num_reporting		int64
+	Num_markets			int64
+	Num_total			int64
+	Trading				string
+	Reporting			string
+	Markets				string
+	Total				string
+	EthTrading			string
+	EthReporting		string
+	EthMarkets			string
+	EthTotal			string
+}
+func (obj *GasSpent) Has_rows() bool {
+	if (obj.Num_trading==0) && (obj.Num_reporting==0) && (obj.Num_markets==0) && (obj.Num_total==0) {
+		return false
+	}
+	return true
+}

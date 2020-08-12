@@ -298,6 +298,14 @@ div.category_record_subcategory_small {
 	padding:						1em;
 	max-width:						30em;
 }
+#gas_usage_chart {
+	padding:						1em;
+	max-width:						30em;
+}
+#tx_fees_chart {
+	padding:						1em;
+	max-width:						30em;
+}
 table.deposits_withdrawals {
 	border-collapse:				separate;
 	border-spacing:					3px;

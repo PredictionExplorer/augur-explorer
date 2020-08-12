@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"encoding/hex"
 	"github.com/gin-gonic/gin"
-	"html/template"
+	//"html/template"
 	"math/big"
 	"context"
-	"strings"
+	//"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -80,172 +80,6 @@ func mkt_depth_entry_to_js_obj(de *DepthEntry) string {
 				"}"
 	return output
 }
-func build_javascript_data_obj(mdepth *MarketDepth) (template.JS,template.JS) {
-	var asks_str string = "["
-	var bids_str string = "["
-
-	var last_price float64 = 0.0
-	for i:=0 ; i < len(mdepth.Asks) ; i++ {
-		if len(asks_str) > 1 {
-			asks_str = asks_str + ","
-		}
-		var entry string
-		entry = mkt_depth_entry_to_js_obj(&mdepth.Asks[i])
-		asks_str= asks_str + entry
-		last_price = mdepth.Asks[i].Price
-	}
-/*	// Possibly replace this with a line indicating the spread, as another Serie
-	if len(mdepth.Asks) > 0 {
-		if len(mdepth.Bids) > 0 {
-			// add fake BID entry to fill the hole for the spread
-			last_elt:=len(mdepth.Asks)-1
-			fake_entry := mdepth.Asks[last_elt]
-			fake_entry.Price = mdepth.Bids[0].Price*10
-			bids_str = "[" + mkt_depth_entry_to_js_obj(&fake_entry)
-		}
-	}
-*/
-	for i:=0 ; i < len(mdepth.Bids) ; i++ {
-		if len(bids_str) > 1 {
-			bids_str = bids_str + ","
-		}
-		var entry string
-		entry = mkt_depth_entry_to_js_obj(&mdepth.Bids[i])
-		bids_str= bids_str + entry
-		last_price = mdepth.Bids[i].Price
-	}
-
-	asks_str = asks_str + "]"
-	bids_str = bids_str + "]"
-	_ = last_price
-	return template.JS(bids_str),template.JS(asks_str)
-}
-func build_javascript_price_history(orders *[]OrderInfo) template.JS {
-	var data_str string = "["
-
-	for i:=0 ; i < len(*orders) ; i++ {
-		if len(data_str) > 1 {
-			data_str = data_str + ","
-		}
-		var e = &(*orders)[i];
-		var entry string
-		entry = "{" +
-//				"x:" + fmt.Sprintf("\"%v\"",e.Date)  + "," +
-				"x:" + fmt.Sprintf("%v",i)  + "," +
-				"y:"  + fmt.Sprintf("%v",e.Price) + "," +
-				"price: " + fmt.Sprintf("%v",e.Price) + "," +
-				"volume: " + fmt.Sprintf("%v",e.Amount) + "," +
-				"click: function() {load_order_data(\"" +
-					e.CreatorEOAAddr +"\",\"" +
-					e.FillerEOAAddr+ "\"," +
-					fmt.Sprintf("%v,%v,%v,\"%v\"",e.MktAid,e.Price,e.Amount,e.Date) +
-				")}" +
-				"}"
-		data_str= data_str + entry
-	}
-	data_str = data_str + "]"
-	fmt.Printf("JS price history string: %v\n",data_str)
-	return template.JS(data_str)
-}
-func build_javascript_profit_loss_history(entries *[]PLEntry) template.JS {
-	var data_str string = "["
-
-	for i:=0 ; i < len(*entries) ; i++ {
-		if len(data_str) > 1 {
-			data_str = data_str + ","
-		}
-		var e = &(*entries)[i];
-		outcome_escaped := strings.ReplaceAll(e.OutcomeStr,"\"","\\\"")
-		descr_escaped := strings.ReplaceAll(e.MktDescr,"\"","\\\"")
-		var entry string
-		entry = "{" +
-				"x:" + fmt.Sprintf("%v",i)  + "," +
-				"y:"  + fmt.Sprintf("%v",e.AccumPl) + "," +
-				"pl: " + fmt.Sprintf("%v",e.ImmediateProfit) + "," +
-				"pl_accum: " + fmt.Sprintf("%v",e.AccumPl) + "," +
-				"date: \"" + fmt.Sprintf("%v",e.Date) + "\"," +
-				"click: function() {load_pl_data(" +
-					fmt.Sprintf("%v,%v,%v,%v,%v,%v,\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",%v",
-							e.Id,e.ClaimStatus,e.NetPosition,e.AvgPrice,e.ImmediateProfit,e.AccumPl,e.MktAddr,e.MktAddrSh,outcome_escaped,
-							descr_escaped,e.Date,e.CounterPAddr,e.CounterPAddrSh,e.OrderHash,e.BlockNum) +
-				")}" +
-				"}"
-		data_str= data_str + entry
-	}
-	data_str = data_str + "]"
-	return template.JS(data_str)
-}
-func build_javascript_open_positions(entries *[]PLEntry) template.JS {
-	var data_str string = "["
-
-	for i:=0 ; i < len(*entries) ; i++ {
-		if len(data_str) > 1 {
-			data_str = data_str + ","
-		}
-		var e = &(*entries)[i];
-		outcome_escaped := strings.ReplaceAll(e.OutcomeStr,"\"","\\\"")
-		descr_escaped := strings.ReplaceAll(e.MktDescr,"\"","\\\"")
-		var entry string
-		entry = "{" +
-				"x:" + fmt.Sprintf("%v",i)  + "," +
-				"y:"  + fmt.Sprintf("%v",e.AccumFrozen) + "," +
-				"frozen: " + fmt.Sprintf("%v",e.FrozenFunds) + "," +
-				"frozen_accum: " + fmt.Sprintf("%v",e.AccumFrozen) + "," +
-				"date: \"" + fmt.Sprintf("%v",e.Date) + "\"," +
-				"click: function() {load_open_pos_data(" +
-					fmt.Sprintf("%v,%v,%v,\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",\"%v\",%v",
-							e.AvgPrice,e.FrozenFunds,e.NetPosition,e.MktAddr,e.MktAddrSh,outcome_escaped,
-							descr_escaped,e.Date,e.CounterPAddr,e.CounterPAddrSh,e.OrderHash,e.BlockNum) +
-				")}" +
-				"}"
-		data_str= data_str + entry
-	}
-	data_str = data_str + "]"
-	return template.JS(data_str)
-}
-func build_javascript_cash_flow_data(entries *[]BlockCash) template.JS {
-	var data_str string = "["
-
-	for i:=0 ; i < len(*entries) ; i++ {
-		if len(data_str) > 1 {
-			data_str = data_str + ","
-		}
-		var e = &(*entries)[i];
-		var entry string
-		entry = "{" +
-				//"x:" + fmt.Sprintf("%v",i)  + "," +
-				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.Ts)  + "," +
-				"y:"  + fmt.Sprintf("%.2f",e.CashFlow) + "," +
-				"block_num: " + fmt.Sprintf("%v",e.BlockNum) + "," +
-				"cash: " + fmt.Sprintf("%v",e.CashFlow) + "" +
-				"}"
-		data_str= data_str + entry
-	}
-	data_str = data_str + "]"
-	return template.JS(data_str)
-}
-func build_javascript_uniq_addrs(entries *[]UniqueAddrEntry) template.JS {
-	var data_str string = "["
-
-	for i:=0 ; i < len(*entries) ; i++ {
-		if len(data_str) > 1 {
-			data_str = data_str + ","
-		}
-		var e = &(*entries)[i];
-		var entry string
-		entry = "{" +
-//				"x:" + fmt.Sprintf("\"%v\"",e.Day)  + "," +
-				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.Ts)  + "," +
-				"y:"  + fmt.Sprintf("%v",e.NumAddrsAccum) + "," +
-				"num_addrs: " + fmt.Sprintf("%v",e.NumAddrs) + "," +
-				"num_addrs_accum: " + fmt.Sprintf("%v",e.NumAddrsAccum) + "," +
-				"date_str: " + fmt.Sprintf("\"%v\"",e.Day) + "" +
-				"}"
-		data_str= data_str + entry
-	}
-	data_str = data_str + "]"
-	return template.JS(data_str)
-}
 func main_page(c *gin.Context) {
 	blknum,_:= augur_srv.storage.Get_last_block_num()
 	blknum_thousand_separated := ThousandsFormat(int64(blknum))
@@ -286,16 +120,37 @@ func categories(c *gin.Context) {
 	})
 }
 func statistics(c *gin.Context) {
+
 	stats := augur_srv.storage.Get_main_stats()
 	cash_flow_entries := augur_srv.storage.Get_cash_flow()
-	cash_flow_data := build_javascript_cash_flow_data(&cash_flow_entries)
+	gas_usage := augur_srv.storage.Get_gas_usage_global()
 	uniq_addr_entries := augur_srv.storage.Get_unique_addresses()
-	uniq_addrs_data := build_javascript_uniq_addrs(&uniq_addr_entries)
+	cash_flow_data := build_js_cash_flow_data(&cash_flow_entries)
+	uniq_addrs_data := build_js_uniq_addrs(&uniq_addr_entries)
+	// Gas Used
+	gas_usage_trading := build_js_global_gas_usage_data(&gas_usage,0)
+	gas_usage_reporting := build_js_global_gas_usage_data(&gas_usage,1)
+	gas_usage_markets := build_js_global_gas_usage_data(&gas_usage,2)
+	gas_usage_total := build_js_global_gas_usage_data(&gas_usage,3)
+	// Transaction Cost
+	tx_fees_trading := build_js_global_gas_usage_data(&gas_usage,4)
+	tx_fees_reporting := build_js_global_gas_usage_data(&gas_usage,5)
+	tx_fees_markets := build_js_global_gas_usage_data(&gas_usage,6)
+	tx_fees_total := build_js_global_gas_usage_data(&gas_usage,7)
+
 	c.HTML(http.StatusOK, "statistics.html", gin.H{
 			"title": "Augur Market Statistics",
 			"MainStats" : stats,
 			"CashFlowData" : cash_flow_data,
 			"UniqAddrsData" : uniq_addrs_data,
+			"GasUsageTrading" : gas_usage_trading,
+			"GasUsageReporting" : gas_usage_reporting,
+			"GasUsageMarkets" : gas_usage_markets,
+			"GasUsageTotal" : gas_usage_total,
+			"TxFeesTrading" : tx_fees_trading,
+			"TxFeesReporting" : tx_fees_reporting,
+			"TxFeesMarkets" : tx_fees_markets,
+			"TxFeesTotal" : tx_fees_total,
 	})
 }
 func explorer(c *gin.Context) {
@@ -424,7 +279,7 @@ func market_depth(c *gin.Context) {
 	}
 	mdepth,last_oo_id := augur_srv.storage.Get_mkt_depth(market_info.MktAid,outcome)
 	num_orders:=len(mdepth.Bids) + len(mdepth.Asks)
-	js_bid_data,js_ask_data := build_javascript_data_obj(mdepth)
+	js_bid_data,js_ask_data := build_js_data_obj(mdepth)
 	c.HTML(http.StatusOK, "market_depth.html", gin.H{
 			"title": "Market Depth",
 			"Market": market_info,
@@ -465,7 +320,7 @@ func market_depth_ajax(c *gin.Context) {
 		return
 	}
 	mdepth,last_oo_id := augur_srv.storage.Get_mkt_depth(market_aid,int(outcome))
-	js_bid_data,js_ask_data := build_javascript_data_obj(mdepth)
+	js_bid_data,js_ask_data := build_js_data_obj(mdepth)
 	c.JSON(200,gin.H{
 		"bids":js_bid_data,
 		"asks":js_ask_data,
@@ -505,7 +360,7 @@ func market_price_history(c *gin.Context) {
 		return
 	}
 	mkt_price_hist := augur_srv.storage.Get_price_history_for_outcome(market_info.MktAid,outcome)
-	js_price_history := build_javascript_price_history(&mkt_price_hist)
+	js_price_history := build_js_price_history(&mkt_price_hist)
 	fmt.Printf("js price history = %v\n",js_price_history)
 	c.HTML(http.StatusOK, "price_history.html", gin.H{
 			"title": "Market Price History",
@@ -522,8 +377,8 @@ func serve_user_info_page(c *gin.Context,addr string,from_wallet bool) {
 		if err == nil {
 			pl_entries := augur_srv.storage.Get_profit_loss(eoa_aid)
 			open_pos_entries := augur_srv.storage.Get_open_positions(eoa_aid)
-			js_pl_data := build_javascript_profit_loss_history(&pl_entries)
-			js_open_pos_data := build_javascript_open_positions(&open_pos_entries)
+			js_pl_data := build_js_profit_loss_history(&pl_entries)
+			js_open_pos_data := build_js_open_positions(&open_pos_entries)
 			user_reports := augur_srv.storage.Get_user_reports(eoa_aid,DEFAULT_USER_REPORTS_LIMIT)
 			user_active_markets := augur_srv.storage.Get_active_markets_for_user(eoa_aid)
 			var has_active_markets bool = false
@@ -531,6 +386,7 @@ func serve_user_info_page(c *gin.Context,addr string,from_wallet bool) {
 				has_active_markets = true
 			}
 			open_orders := augur_srv.storage.Get_user_open_orders(user_info.EOAAid)
+			gas_spent,_ := augur_srv.storage.Get_gas_spent_for_user(eoa_aid)
 
 			c.HTML(http.StatusOK, "user_info.html", gin.H{
 				"title": "User "+addr,
@@ -544,6 +400,7 @@ func serve_user_info_page(c *gin.Context,addr string,from_wallet bool) {
 				"UserReports" : user_reports,
 				"UserActiveMarkets" : user_active_markets,
 				"HasActiveMarkets" : has_active_markets,
+				"GasSpent" : gas_spent,
 			})
 		} else {
 			c.HTML(http.StatusOK, "user_not_found.html", gin.H{

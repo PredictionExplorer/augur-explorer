@@ -762,3 +762,31 @@ func (ss *SQLStorage) Get_user_open_orders(user_aid int64) []p.OpenOrder {
 	}
 	return records
 }
+func  (ss *SQLStorage) Get_gas_spent_for_user(eoa_aid int64) (p.GasSpent,error) {
+
+	var output p.GasSpent
+	var query string
+	query =
+		"SELECT " +
+			"gtrading,greporting,gmarkets," +
+			"geth_trading,geth_reporting,geth_markets "+
+		"FROM ustats "+
+		"WHERE eoa_aid=$1"
+
+	row := ss.db.QueryRow(query,eoa_aid)
+	err := row.Scan(
+		&output.Trading,
+		&output.Reporting,
+		&output.Markets,
+		&output.EthTrading,
+		&output.EthReporting,
+		&output.EthMarkets,
+	)
+	if err != nil {
+		if err!=sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
+			os.Exit(1)
+		}
+	}
+	return output,nil
+}

@@ -88,6 +88,7 @@ func get_full_block(bnum int64) (common.Hash,*types.Header,[]*AugurTx,error) {
 		}
 		agtx.Value = tx.tx.Value().String()
 		agtx.Input = tx.tx.Data()
+		agtx.GasPrice = tx.tx.GasPrice().String()
 		txs[i]=agtx
 		//txs[i] = tx.tx
 	}

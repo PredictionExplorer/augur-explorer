@@ -219,3 +219,224 @@ func (ss *SQLStorage) Link_eoa_and_wallet_contract(eoa_aid, wallet_aid int64) {
 		}
 	}
 }
+func gas_usage_query(table_name string) string {
+
+	var query string
+	date_cond := "((b.ts >= to_timestamp($1)) AND (b.ts < to_timestamp($2)))"
+
+	query =
+		"SELECT " +
+			"SUM(gas_used::decimal)::text AS sum," +
+			"SUM(gas_used::decimal * gas_price)::text AS eth_sum,"+
+			"count(*) AS num_rows " +
+		"FROM (" +
+			"SELECT DISTINCT tx_id FROM (" +
+				"(SELECT t.tx_id FROM "+table_name+" AS t,block AS b WHERE (b.block_num=t.block_num) AND " + date_cond + " )" +
+			") AS d " +
+		") AS i " +
+		"JOIN transaction AS t ON i.tx_id = t.id " +
+		"JOIN block AS b ON t.block_num=b.block_num "
+
+	return query
+}
+func (ss *SQLStorage) gas_usage_get_results(query *string,ts_from int64,ts_to int64,value *string,eth_value *string,counter *int64) {
+
+	row := ss.db.QueryRow(*query,ts_from,ts_to)
+	var null_val sql.NullString
+	var null_eth_val sql.NullString
+	var null_counter sql.NullInt64
+	var err error
+	err=row.Scan(&null_val,&null_eth_val,&null_counter);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error in Calc_gas_global(): %v, q=%v",err,*query))
+			os.Exit(1)
+		}
+	}
+	if null_val.Valid {
+		*value = null_val.String
+	} else {
+		*value = "0"
+	}
+	if null_eth_val.Valid {
+		*eth_value = null_eth_val.String
+	} else {
+		*eth_value = "0"
+	}
+	if null_counter.Valid {
+		*counter= null_counter.Int64
+	}
+}
+func (ss *SQLStorage) Calc_gas_usage_global(from int64,to int64) p.GasSpent {
+
+	var output p.GasSpent
+
+	// TRADING
+	var query string
+	date_cond := "((b.ts >= to_timestamp($1)) AND (b.ts < to_timestamp($2)))"
+	// in this query we are picking only Augur transactions
+	query =
+		"SELECT " +
+				"SUM(gas_used::decimal)::text AS sum," +
+				"SUM(gas_used::decimal * gas_price)::text AS eth_sum,"+
+				"count(*) AS num_rows " +
+		"FROM (" +
+			"SELECT DISTINCT tx_id FROM (" +
+				"(SELECT t.tx_id FROM mktord AS t,block AS b WHERE (b.block_num=t.block_num) AND " + date_cond + " )" +
+					"UNION ALL" +
+				"(SELECT t.tx_id FROM profit_loss AS t,block AS b WHERE (b.block_num=t.block_num) AND " + date_cond + " )" +
+			") AS d " +
+		") AS i " +
+		"JOIN transaction AS t ON i.tx_id = t.id " +
+		"JOIN block AS b ON t.block_num=b.block_num "
+
+	ss.gas_usage_get_results(&query,from,to,&output.Trading,&output.EthTrading,&output.Num_trading)
+
+	// REPORTING 
+	query = gas_usage_query("report")
+	ss.gas_usage_get_results(&query,from,to,&output.Reporting,&output.EthReporting,&output.Num_reporting)
+
+	// MARKETS CREATED
+	query = gas_usage_query("market")
+	ss.gas_usage_get_results(&query,from,to,&output.Markets,&output.EthMarkets,&output.Num_markets)
+
+	// EVERYTHING
+	query =
+		"SELECT "+
+				"SUM(gas_used::decimal)::text AS sum,"+
+				"SUM(gas_used::decimal * gas_price)::text AS eth_sum,"+
+				"count(*) AS num_rows "+
+			"FROM (" +
+			"SELECT DISTINCT tx_id FROM (" +
+				"(SELECT t.tx_id FROM mktord AS t,block AS b WHERE (b.block_num=t.block_num) AND " + date_cond + " )" +
+					"UNION ALL" +
+				"(SELECT t.tx_id FROM market AS t,block AS b WHERE (b.block_num=t.block_num) AND " + date_cond + " )" +
+					"UNION ALL" +
+				"(SELECT t.tx_id FROM mkt_fin AS t,block AS b WHERE (b.block_num=t.block_num) AND " + date_cond + " )" +
+					"UNION ALL" +
+				"(SELECT t.tx_id FROM claim_funds AS t,block AS b WHERE (b.block_num=t.block_num) AND " + date_cond + " )" +
+					"UNION ALL" +
+				"(SELECT t.tx_id FROM sbalances AS t,block AS b WHERE (b.block_num=t.block_num) AND " + date_cond + " )" +
+					"UNION ALL" +
+				"(SELECT t.tx_id FROM volume AS t,block AS b WHERE (b.block_num=t.block_num) AND " + date_cond + " )" +
+					"UNION ALL" +
+				"(SELECT t.tx_id FROM oi_chg AS t,block AS b WHERE (b.block_num=t.block_num) AND " + date_cond + " )" +
+					"UNION ALL" +
+				"(SELECT t.tx_id FROM profit_loss AS t,block AS b WHERE (b.block_num=t.block_num) AND " + date_cond + " )" +
+					"UNION ALL" +
+				"(SELECT t.tx_id FROM report AS t,block AS b WHERE (b.block_num=t.block_num) AND " + date_cond + " )" +
+			") AS d " +
+		") AS i " +
+		"JOIN transaction AS t ON i.tx_id = t.id " +
+		"JOIN block AS b ON t.block_num=b.block_num "
+	ss.gas_usage_get_results(&query,from,to,&output.Total,&output.EthTotal,&output.Num_total)
+
+	return output
+}
+func (ss *SQLStorage) Update_global_gas_stats(day int64,stats *p.GasSpent) {
+	var query string
+	query = "UPDATE gas_spent " +
+		"SET trading="+stats.Trading+",num_trading=$2,"+
+			"reporting="+stats.Reporting+",num_reporting=$3,"+
+			"markets="+stats.Markets+",num_markets=$4,"+
+			"total="+stats.Total+",num_total=$5, " +
+			"eth_trading="+stats.EthTrading+","+
+			"eth_reporting="+stats.EthReporting+","+
+			"eth_markets="+stats.EthMarkets+"," +
+			"eth_total="+stats.EthTotal+" "+
+		"WHERE day=to_timestamp($1)"
+	res,err:=ss.db.Exec(query,
+		day,
+		stats.Num_trading,
+		stats.Num_reporting,
+		stats.Num_markets,
+		stats.Num_total,
+	)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Update_global_gas_stats() failed: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	affected_rows,err:=res.RowsAffected()
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in Update_global_gas_stats(): %v",err))
+		os.Exit(1)
+	}
+	if affected_rows == 0 {
+		query = "INSERT INTO gas_spent(" +
+					"day,"+
+					"trading,num_trading,"+
+					"reporting,num_reporting,"+
+					"markets,num_markets,"+
+					"total,num_total," +
+					"eth_trading,"+
+					"eth_reporting,"+
+					"eth_markets,"+
+					"eth_total"+
+				") "+
+				"VALUES(" +
+					"to_timestamp($1)," +
+					stats.Trading + ",$2,"+
+					stats.Reporting + ",$3,"+
+					stats.Markets + ",$4,"+
+					stats.Total + ",$5,"+
+					stats.EthTrading + ","+
+					stats.EthReporting + "," +
+					stats.EthMarkets + "," +
+					stats.EthTotal + 
+				")"
+		_,err := ss.db.Exec(query,
+				day,
+				stats.Num_trading,
+				stats.Num_reporting,
+				stats.Num_markets,
+				stats.Num_total,
+		)
+		if err!=nil {
+			ss.Log_msg(
+				fmt.Sprintf(
+					"DB Error on INSERT in Update_global_gas_stats() for day %v: %v q=%v",
+					day,err,query,
+				),
+			);
+			os.Exit(1)
+		}
+	}
+}
+func (ss *SQLStorage) Get_gas_usage_global() []p.GasSpent {
+
+	var query string
+	query =
+		"SELECT " +
+			"EXTRACT(EPOCH FROM day::TIMESTAMP)::BIGINT AS ts,"+
+			"trading,reporting,markets,total," +
+			"eth_trading,eth_reporting,eth_markets,eth_total,"+
+			"num_trading,num_reporting,num_markets,num_total "+
+		"FROM gas_spent "+
+		"ORDER BY day"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.GasSpent,0,256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.GasSpent
+		err=rows.Scan(
+			&rec.Ts,
+			&rec.Trading,&rec.Reporting,&rec.Markets,&rec.Total,
+			&rec.EthTrading,&rec.EthReporting,&rec.EthMarkets,&rec.EthTotal,
+			&rec.Num_trading,&rec.Num_reporting,&rec.Num_markets,&rec.Num_total,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+
+}

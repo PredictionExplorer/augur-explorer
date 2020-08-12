@@ -805,7 +805,7 @@ func roll_back_blocks(diverging_block *types.Header) error {
 	}
 	return errors.New("Chainsplit fix: Undefined behaviour")
 }
-func process_block(bnum int64,update_last_block bool) error {
+func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) error {
 
 	block_hash_str,err:=get_block_hash(bnum)
 	if err!=nil {
@@ -830,7 +830,7 @@ func process_block(bnum int64,update_last_block bool) error {
 		hash := common.HexToHash(tx.TxHash)
 		go get_receipt_async(i,hash,&receipt_calls)
 	}
-	err = storage.Insert_block(block_hash_str,header)
+	err = storage.Insert_block(block_hash_str,header,no_chainsplit_check)
 	if err != nil {
 		err = roll_back_blocks(header)
 		if err == nil {

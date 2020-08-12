@@ -275,3 +275,23 @@ func (evt *ExecuteTransactionStatus) Dump(l *log.Logger) {	// dumps struct to st
 	l.Printf("\tFundingSuccess: %v\n",evt.FundingSuccess)
 	l.Printf("}\n")
 }
+func (obj *GasSpent) Dump(l *log.Logger) {
+	l.Printf("GasSpent {\n")
+	l.Printf(
+		"\tTrading Gas: %v\tTrading Tx cost: %v\tTrading Txs: %v\n",
+		obj.Trading,obj.EthTrading,obj.Num_trading,
+	)
+	l.Printf(
+		"\tReporting Gas: %v\tReporting Tx cost: %v\tReporting Txs: %v\n",
+		obj.Reporting,obj.EthReporting,obj.Num_reporting,
+	)
+	l.Printf(
+		"\tMarkets created Gas: %v\tMarkets created TX cost: %v\nMarkets Txs: %v\n",
+		obj.Markets,obj.EthMarkets,obj.Num_markets,
+	)
+	l.Printf(
+		"\tTotal Gas spent: %v\tNum Txs: %v\n",
+		obj.Total,obj.EthTotal,obj.Num_total,
+	)
+	l.Printf("}")
+}

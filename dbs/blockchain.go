@@ -58,7 +58,7 @@ func (ss *SQLStorage) Set_last_block_num(block_num int64) {
 		}
 	}
 }
-func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header) error {
+func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header,no_chainsplit_check bool) error {
 
 	var query string
 	var parent_block_num int64
@@ -66,6 +66,10 @@ func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header) error {
 
 	query="SELECT block_num FROM block WHERE block_hash=$1"
 	err:=ss.db.QueryRow(query,parent_hash).Scan(&parent_block_num);
+	if no_chainsplit_check {
+		err = nil // clear error as we don't need to validate the chain
+		parent_block_num = block.Number.Int64()-1
+	}
 	if (err!=nil) {
 		if (err==sql.ErrNoRows) {
 			starting_block:=ss.Get_upload_block()
@@ -87,7 +91,7 @@ func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header) error {
 			os.Exit(1)
 		}
 	} else {
-		if (parent_block_num + 1) != int64(block.Number.Uint64()) {
+		if (parent_block_num + 1) != block.Number.Int64() {
 			ss.Info.Printf(
 				fmt.Sprintf(
 					"Insert_block() Can't insert block (block_num=%v, block_hash=%v, parent_hash=%v"+
@@ -142,8 +146,8 @@ func (ss *SQLStorage) Insert_transaction(agtx *p.AugurTx) int64 {
 
 	ss.Info.Printf("Insert_transaction: from: %v, to: %v\n",agtx.From,agtx.To)
 
-	query = "INSERT INTO transaction (block_num,value,tx_hash,ctrct_create,gas_used,tx_index) " +
-			"VALUES ($1,("+agtx.Value+"/1e+18),$2,$3,$4,$5) RETURNING id"
+	query = "INSERT INTO transaction (block_num,value,tx_hash,ctrct_create,gas_used,gas_price,tx_index) " +
+			"VALUES ($1,("+agtx.Value+"/1e+18),$2,$3,$4,"+agtx.GasPrice+"/1e+18,$5) RETURNING id"
 
 	row := ss.db.QueryRow(query,agtx.BlockNum,agtx.TxHash,agtx.CtrctCreate,agtx.GasUsed,agtx.TxIndex)
 	err := row.Scan(&tx_id)

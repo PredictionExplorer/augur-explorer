@@ -16,6 +16,7 @@ CREATE TABLE transaction (	-- we're only storing transactions related to Augur p
 	tx_index			INT DEFAULT 0,
 	ctrct_create		BOOLEAN DEFAULT FALSE,	-- true if To = nil
 	value				DECIMAL(64,18) DEFAULT 0.0,
+	gas_price			DECIMAL(64,18) DEFAULT 0.0,
 	tx_hash				TEXT NOT NULL UNIQUE
 );
 -- Universe: The container contract for Augur Service
@@ -290,7 +291,16 @@ CREATE TABLE ustats (	-- statistics per User account
 	total_withdrawn		DECIMAL(32,18) DEFAULT 0.0,
 	total_deposited		DECIMAL(32,18) DEFAULT 0.0,
 	validity_bonds		DECIMAL DEFAULT 0.0,	-- sum of all validity bonds (market creation bond)
-	rep_frozen			DECIMAL(32,18) DEFAULT 0.0	-- amount of REP tokens frozen for all (participated) markets
+	rep_frozen			DECIMAL(32,18) DEFAULT 0.0,	-- amount of REP tokens frozen for all (participated) markets
+	-- Gas usage statistics per user:
+	-- values contain Gas Used , accumulated
+	gtrading			DECIMAL DEFAULT 0,
+	greporting			DECIMAL DEFAULT 0,
+	gmarkets			DECIMAL DEFAULT 0,
+	-- values contain Gas Price , accumulated
+	geth_trading		DECIMAL(64,18) DEFAULT 0.0,
+	geth_reporting		DECIMAL(64,18) DEFAULT 0.0,
+	geth_markets		DECIMAL(64,18) DEFAULT 0.0
 );
 CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 	id					BIGSERIAL PRIMARY KEY,
@@ -353,16 +363,22 @@ CREATE TABLE unique_addrs (	-- Unique addresses per day, statistics
 	day					DATE PRIMARY KEY,
 	num_addrs			BIGINT DEFAULT 0
 );
-CREATE TABLE ether_spent (
+CREATE TABLE gas_spent (-- global gas spent
 	day					DATE PRIMARY KEY,
-	num_trading			INT DEFAULT 0,		--nuber of trading transactions for that day
-	num_reporting		INT DEFAULT 0,
-	num_markets			INT DEFAULT 0,
-	num_total			INT DEFAULT 0,
-	trading				DECIMAL(32,18) DEFAULT 0.0,
-	reporting			DECIMAL(32,18) DEFAULT 0.0,
-	markets				DECIMAL(32,18) DEFAULT 0.0,
-	total				DECIMAL(32,18) DEFAULT 0.0
+	num_trading			BIGINT DEFAULT 0,		--number of trading transactions for that day
+	num_reporting		BIGINT DEFAULT 0,
+	num_markets			BIGINT DEFAULT 0,
+	num_total			BIGINT DEFAULT 0,
+	-- values contain raw Gas used
+	trading				DECIMAL DEFAULT 0,
+	reporting			DECIMAL DEFAULT 0,
+	markets				DECIMAL DEFAULT 0,
+	total				DECIMAL DEFAULT 0,
+	-- values contain Gas Price , accumulated
+	eth_trading			DECIMAL(64,18) DEFAULT 0.0,
+	eth_reporting		DECIMAL(64,18) DEFAULT 0.0,
+	eth_markets			DECIMAL(64,18) DEFAULT 0.0,
+	eth_total			DECIMAL(64,18) DEFAULT 0.0
 );
 CREATE TABLE agtx_status (-- Augur transaction status (used to track Gas fees for all interactions with Augur
 	id					BIGSERIAL PRIMARY KEY,

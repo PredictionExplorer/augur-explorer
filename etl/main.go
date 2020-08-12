@@ -220,7 +220,7 @@ func main() {
 	if len(block_numbers) > 0 {
 		for i:=0 ; i<len(block_numbers); i++ {
 			bnum := block_numbers[i]
-			err := process_block(bnum,false)
+			err := process_block(bnum,false,true)
 			if err!=nil {
 				fmt.Printf("Process failed: %v. Repeat again.\n",err)
 				os.Exit(1)
@@ -262,7 +262,7 @@ func main() {
 					}
 				default:
 			}
-			err := process_block(bnum,true)
+			err := process_block(bnum,true,false)
 			if err==nil {
 				break
 			} else {

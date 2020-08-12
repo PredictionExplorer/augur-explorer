@@ -11,6 +11,14 @@
 <script>
 	var cash_flow_data = {{.CashFlowData}}
 	var uniq_addrs_data = {{.UniqAddrsData}}
+	var gas_usage_trading = {{.GasUsageTrading}}
+	var gas_usage_reporting = {{.GasUsageReporting}}
+	var gas_usage_markets = {{.GasUsageMarkets}}
+	var gas_usage_total = {{.GasUsageTotal}}
+	var tx_fees_trading = {{.TxFeesTrading}}
+	var tx_fees_reporting = {{.TxFeesReporting}}
+	var tx_fees_markets = {{.TxFeesMarkets}}
+	var tx_fees_total = {{.TxFeesTotal}}
 </script>
 <h3 class="page_title">Statistics</h3>
 <h3 style="font-color: red">Up-to date Augur Platform statistics</h3>
@@ -59,6 +67,10 @@
 <div id="cash_flow_chart"></div>
 <h3 class="unique_addrs">Unique Accounts per Day</h3><br/><br/>
 <div id="uniq_addr_chart"></div>
+<h3 class="gas_usage">Gas Usage</h3><br/><br/>
+<div id="gas_usage_chart"></div>
+<h3 class="tx_fees">Transaction Fees</h3><br/><br/>
+<div id="tx_fees_chart"></div>
 <script>
 // font loading begins
 	Highcharts.createElement('link', {
@@ -218,6 +230,206 @@ Highcharts.chart('uniq_addr_chart', {
 	tooltip: {
 		formatter: function() {
 			tooltip ="<div>Num Accounts: "+this.point.num_addrs+"<br/>Accumulated: "+this.point.num_addrs_accum+"<br/>Date: "+this.point.date_str+"<br/></div>"
+			 return tooltip;
+		}
+	},
+});
+Highcharts.chart('gas_usage_chart', {
+
+	title: {
+		text: 'Gas Usage'
+	},
+
+	subtitle: {
+		text: 'Amount of Gas Used Daily on Augur Platform'
+	},
+
+	yAxis: {
+		title: {
+			text: 'Amount of Gas'
+		}
+	},
+
+	xAxis: {
+//		max: 1.0,
+//		min: 0,
+		type: 'datetime',
+//		dateTimeLabelFormats: {
+//			day: "%e-%b-%y",
+//			month: "%b-%y"
+//		}
+		accessibility: {
+			rangeDescription: 'Gas Usage'
+		}
+	},
+
+	legend: {
+		layout: 'vertical',
+		align: 'right',
+		verticalAlign: 'middle'
+	},
+
+	plotOptions: {
+		series: {
+			label: {
+				connectorAllowed: false
+			},
+			pointStart: 0
+		}
+	},
+
+	series: [{
+		name: 'Gas for Trading',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: gas_usage_trading
+	},{
+		name: 'Gas for Reporting',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: gas_usage_reporting
+	},{
+		name: 'Gas for creating Markets',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: gas_usage_markets
+
+	},{
+		name: 'Total Gas Usage on Augur Platform',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: gas_usage_total
+	}],
+
+	responsive: {
+		rules: [{
+			condition: {
+				maxWidth: 500
+			},
+			chartOptions: {
+				legend: {
+				layout: 'horizontal',
+					align: 'center',
+					verticalAlign: 'bottom'
+				}
+			}
+		}]
+	},
+	tooltip: {
+		formatter: function() {
+			tooltip ="<div>Gas Used: "+this.point.y+"<br/>Day"+this.point.day+"<br/></div>"
+			 return tooltip;
+		}
+	},
+});
+Highcharts.chart('tx_fees_chart', {
+
+	title: {
+		text: 'Transaction Fees (ETH)'
+	},
+
+	subtitle: {
+		text: 'Transaction Fees by Type'
+	},
+
+	yAxis: {
+		title: {
+			text: 'Fee in ETH'
+		}
+	},
+
+	xAxis: {
+//		max: 1.0,
+//		min: 0,
+		type: 'datetime',
+//		dateTimeLabelFormats: {
+//			day: "%e-%b-%y",
+//			month: "%b-%y"
+//		}
+		accessibility: {
+			rangeDescription: 'Date'
+		}
+	},
+
+	legend: {
+		layout: 'vertical',
+		align: 'right',
+		verticalAlign: 'middle'
+	},
+
+	plotOptions: {
+		series: {
+			label: {
+				connectorAllowed: false
+			},
+			pointStart: 0
+		}
+	},
+
+	series: [{
+		name: 'Fees for Trading',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: tx_fees_trading
+	},{
+		name: 'Fees for Reporting',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: tx_fees_reporting
+	},{
+		name: 'Fees for creating Markets',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: tx_fees_markets
+
+	},{
+		name: 'Total daily fee on Augur Platform',
+		point: {
+			events: {
+				click: function() {this.click.call()}
+			}
+		},
+		data: tx_fees_total
+	}],
+
+	responsive: {
+		rules: [{
+			condition: {
+				maxWidth: 500
+			},
+			chartOptions: {
+				legend: {
+				layout: 'horizontal',
+					align: 'center',
+					verticalAlign: 'bottom'
+				}
+			}
+		}]
+	},
+	tooltip: {
+		formatter: function() {
+			tooltip ="<div>Tx Fee(ETH): "+this.point.y+"<br/>Day"+this.point.day+"<br/></div>"
 			 return tooltip;
 		}
 	},
