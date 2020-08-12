@@ -312,7 +312,7 @@ CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 	mktord_id			BIGINT DEFAULT 0,			-- this is the id of the market order generated this PL
 	outcome_idx			SMALLINT NOT NULL,
 	closed_position		SMALLINT DEFAULT 0,			-- 0 - open position, 1 - closed position
-	-- note: the following decimal precisions depend on precision of Augur events , inserted in db.go
+	-- noote: the following decimal precisions depend on precision of Augur events , inserted in db.go
 	net_position		DECIMAL(32,18) DEFAULT 0.0,
 	avg_price			DECIMAL(32,20) DEFAULT 0.0,
 	frozen_funds		DECIMAL(64,36) DEFAULT 0.0,

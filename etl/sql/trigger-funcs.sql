@@ -123,18 +123,12 @@ BEGIN
 	UPDATE ustats
 			SET markets_created = markets_created - 1,
 				validity_bonds = validity_bonds - OLD.validity_bond
-			WHERE s.eoa_aid = OLD.eoa_aid;
+			WHERE eoa_aid = OLD.eoa_aid;
 	UPDATE ustats
 			SET gmarkets = (gmarkets - t.gas_used),
 				geth_markets = (geth_markets - (t.gas_used * t.gas_price))
 			FROM transaction AS t
 			WHERE t.id = OLD.tx_id AND eoa_aid=OLD.eoa_aid;
-
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN	-- this condition won't be true during normal operation
-		INSERT	INTO ustats(eoa_aid,wallet_aid,markets_created)
-				VALUES(OLD.eoa_aid,OLD.wallet_aid,0);
-	END IF;
 
 	UPDATE main_stats
 		SET markets_count = (markets_count - 1), active_count = (active_count - 1);
@@ -267,7 +261,7 @@ BEGIN
 			volume_traded = (volume_traded - (OLD.price * OLD.amount_filled))
 		WHERE eoa_aid=OLD.eoa_fill_aid;
 	UPDATE ustats	-- only Filler pays Gas price so we only update on Filler's EOA.
-		SET gtrading = (s.gtrading - t.gas_used),
+		SET gtrading = (gtrading - t.gas_used),
 			geth_trading = (geth_trading - (t.gas_used * t.gas_price))
 		FROM transaction AS t
 		WHERE eoa_aid = OLD.eoa_fill_aid AND t.id=OLD.tx_id;
