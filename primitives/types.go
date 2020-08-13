@@ -651,3 +651,11 @@ func (obj *GasSpent) Has_rows() bool {
 	}
 	return true
 }
+type PriceHistory struct {
+	OutcomeIdx			int
+	OutcomeStr			string
+	Trades				[]OrderInfo
+}
+type FullPriceHistory struct {
+	Outcomes			[]PriceHistory
+}

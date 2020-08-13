@@ -176,6 +176,7 @@ func complete_and_output_market_info(c *gin.Context,minfo InfoMarket) {
 	trades := augur_srv.storage.Get_mkt_trades(minfo.MktAddr,int(limit))
 	outcome_vols,_ := augur_srv.storage.Get_outcome_volumes(minfo.MktAddr,minfo.MktAid,0)
 	reports := augur_srv.storage.Get_market_reports(minfo.MktAid,DEFAULT_MARKET_REPORTS_LIMIT)
+	price_history := augur_srv.storage.Get_full_price_history(minfo.MktAddr,minfo.MktAid)
 
 	c.HTML(http.StatusOK, "market_info.html", gin.H{
 			"title": "Trades for market",
@@ -183,6 +184,7 @@ func complete_and_output_market_info(c *gin.Context,minfo InfoMarket) {
 			"Reports" : reports,
 			"Market": minfo ,
 			"OutcomeVols" : outcome_vols,
+			"PriceHistory" : price_history,
 	})
 }
 func is_address_valid(c *gin.Context,addr string) (string,bool) {

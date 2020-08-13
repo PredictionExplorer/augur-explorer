@@ -593,6 +593,19 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 	}
 	return records
 }
+func (ss *SQLStorage) Get_full_price_history(mkt_addr string,market_aid int64) p.FullPriceHistory {
+
+	var output p.FullPriceHistory
+	outcomes,_ := ss.Get_outcome_volumes(mkt_addr,market_aid,0);
+	for _,outc := range outcomes {
+		var ph p.PriceHistory
+		ph.OutcomeIdx = outc.Outcome
+		ph.OutcomeStr = outc.OutcomeStr
+		ph.Trades = ss.Get_price_history_for_outcome(market_aid,outc.Outcome)
+		output.Outcomes = append(output.Outcomes,ph)
+	}
+	return output
+}
 func (ss *SQLStorage) Get_last_open_order_id() int64 {
 
 	var query string
