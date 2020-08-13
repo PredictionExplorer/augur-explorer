@@ -20,9 +20,6 @@ import (
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-type EventSequencer struct {	// determines the order for contained events
-	unordered_list		[]*types.Log
-}
 type InputStruct struct {
 	To common.Address `abi:"_to"`
 	Data []byte `abi:"_data"`
@@ -33,60 +30,6 @@ type InputStruct struct {
 	DesiredSignerBalance *big.Int `abi:"_desiredSignerBalance"`
 	MaxExchangeRateInDai *big.Int `abi:"_maxExchangeRateInDai"`
 	RevertOnFailure bool `abi:"_revertOnFailure"`
-}
-func (sequencer *EventSequencer) append_event(new_log *types.Log) {
-
-	sequencer.unordered_list = append(sequencer.unordered_list,new_log)
-}
-func (sequencer *EventSequencer) get_ordered_event_list() []*types.Log {
-	// determines the correct event sequence for different event combinations
-//	return sequencer.unordered_list
-	// at this moment we just reverse the events. more logic will follow later if needed
-	output := make([]*types.Log,0,8)
-	for i := len(sequencer.unordered_list) - 1; i >= 0; i-- {
-		output = append(output,sequencer.unordered_list[i])
-	}
-	return output
-}
-func (sequencer *EventSequencer) get_events_for_market_finalized_case() []*types.Log {
-	// we must move TradingProceedsClaimed events to the end, so they execut before ProfitLoss events
-
-	output := make([]*types.Log,0,8)
-	var market_finalized *types.Log
-	profit_loss_events := make([]*types.Log,0,8)
-	proceed_events := make([]*types.Log,0,8)
-	other_events := make([]*types.Log,0,8)
-
-	for i := 0 ; i < len(sequencer.unordered_list) ; i++ {
-		if len(sequencer.unordered_list[i].Topics) == 0 {
-			other_events = append(other_events,sequencer.unordered_list[i])
-			continue
-		}
-		if 0 == bytes.Compare(sequencer.unordered_list[i].Topics[0].Bytes(),evt_profit_loss_changed) {
-			profit_loss_events = append(profit_loss_events,sequencer.unordered_list[i])
-			continue
-		}
-		if 0 == bytes.Compare(sequencer.unordered_list[i].Topics[0].Bytes(),evt_trading_proceeds_claimed) {
-			proceed_events = append(proceed_events,sequencer.unordered_list[i])
-			continue
-		}
-		if 0 == bytes.Compare(sequencer.unordered_list[i].Topics[0].Bytes(),evt_market_finalized) {
-			market_finalized = sequencer.unordered_list[i]
-			continue
-		}
-		other_events = append(other_events,sequencer.unordered_list[i])
-	}
-	output = append(output,market_finalized)
-	for i := 0; i < len(profit_loss_events) ; i++ {
-		output = append(output,profit_loss_events[i])
-	}
-	for i := 0; i < len(proceed_events); i++ {
-		output = append(output,proceed_events[i])
-	}
-	for i := 0; i < len(other_events); i++ {
-		output = append(output,other_events[i])
-	}
-	return output
 }
 func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) {
 
@@ -644,13 +587,18 @@ func proc_transaction_status(agtx *AugurTx, log *types.Log) {
 		Fatalf("Event decode error: %v",err)
 		return
 	}
-	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),caddrs.WalletReg.Bytes()) {
+		Info.Printf(
+			"ExecuteTransactionStatus event received and ignored (belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),agtx.BlockNum,
+		)
 		return
 	}
 	Info.Printf("ExecuteTransactionStatus event found (block=%v) : \n",log.BlockNumber)
 	evt.Dump(Info)
-	eoa_aid := get_eoa_aid(&common.Address{},agtx.BlockNum,agtx.TxId)
-	_ = eoa_aid
+// finding EOA-Wallet link is pending and not clear how it is going to be done
+//	eoa_aid := get_eoa_aid(&common.Address{},agtx.BlockNum,agtx.TxId)
+//	_ = eoa_aid
 	storage.Insert_augur_transaction_status(agtx,&evt)
 }
 func tx_insert_if_needed(agtx *AugurTx) {
@@ -752,6 +700,10 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 			}
 			tx_insert_if_needed(agtx)
 			proc_market_created(agtx,log,validity_bond)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_execute_tx_status) {
+			tx_insert_if_needed(agtx)
+			proc_transaction_status(agtx,log)
 		}
 	}
 	for j:=1; j < num_topics ; j++ {
@@ -866,11 +818,11 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 			return receipt_calls[tnum].err
 		}
 		rcpt := receipt_calls[tnum].receipt
-		dump_tx_input_if_known(agtx.Input)
 		Info.Printf("\ttx: %v of %v : %v at blockNum=%v\n",tnum,num_transactions,agtx.TxHash,bnum)
 		Info.Printf("\t from=%v\n",agtx.From)
 		Info.Printf("\t to=%v for $%v (%v bytes data)\n",
 						agtx.To,agtx.Value,len(agtx.Input))
+		dump_tx_input_if_known(agtx.Input)
 		if rcpt.BlockNumber.Int64() != bnum {
 			Error.Printf(
 				"Transaction's receipt doesn't match current block number. (block possibly changed)" +
@@ -885,42 +837,57 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		}
 		agtx.GasUsed = int64(rcpt.GasUsed)
 		agtx.TxIndex = int32(tnum)
-		contains_market_finalized:=false
 		sequencer := new(EventSequencer)
 		num_logs := len(rcpt.Logs)
+		var agtx_type int = AgTxType_Unclassified
+		// Step 1: First detect what kind of Augur Transaction we are dealing with
 		for i:=0 ; i<num_logs ; i++ {
 			if len(rcpt.Logs[i].Topics) > 0 {
 				Info.Printf(
-					"\t\t\tlog %v\n\t\t\t\t\t\t for contract %v (%v of %v items)\n",
-					rcpt.Logs[i].Topics[0].String(),rcpt.Logs[i].Address.String(),(i+1),len(rcpt.Logs))
+					"\t\tlog %v\t for contract %v (%v of %v items)\n",
+					hex.EncodeToString(rcpt.Logs[i].Topics[0][0:4]),
+					rcpt.Logs[i].Address.String(),(i+1),len(rcpt.Logs))
 				if 0 == bytes.Compare(rcpt.Logs[i].Topics[0].Bytes(),evt_market_finalized) {
 					if is_warp_sync_event(rcpt.Logs[i]) {
 						// WarpSync market emits 2 events MarketFFinalized and MarketCreated
 						// MarketFinalized doesn't have ProfitLoss events, so we can process it
 						// just using inverse order (i.e. considering it as non-MarketFinalized)
 					} else {
-						contains_market_finalized = true
+						agtx_type = AgTxType_MarketFinalized
 					}
+				}
+				if 0 == bytes.Compare(rcpt.Logs[i].Topics[0].Bytes(),evt_market_order) {
+					agtx_type = AgTxType_MarketOrder
 				}
 			}
 			sequencer.append_event(rcpt.Logs[i])
 		}
+		// Step 2: Knowing what kind of Augur Transaction, we are sorting events in an order
+		//			that is convinient for us to process the event series
 		var ordered_list []*types.Log
-		if contains_market_finalized {
-			// logs with Market finalized event need to have special order
-			ordered_list = sequencer.get_events_for_market_finalized_case()
-		} else {
-			ordered_list = sequencer.get_ordered_event_list()
+		switch agtx_type {
+			case AgTxType_Unclassified:
+				ordered_list = sequencer.get_ordered_event_list()
+			case AgTxType_MarketFinalized:
+				// logs with Market finalized event need to have special order
+				ordered_list = sequencer.get_events_for_market_finalized_case()
+			case AgTxType_MarketOrder:
+				ordered_list = sequencer.get_events_for_market_order_case()
+			default:
+				Info.Printf("Undefined behaviour in detecting Augur Transaction type")
+				os.Exit(1)
 		}
 		num_logs = len(ordered_list)
 		pl_entries := make([]int64,0,2);// profit loss entries
 		market_order_id = 0
 		fill_order_id = 0
+		//
+		// Step 3: Execute events using ordered list prepared in previous step
 		for i:=0 ; i < num_logs ; i++ {
 			if len(ordered_list[i].Topics) > 0 {
 				Info.Printf(
-					"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",
-					ordered_list[i].Topics[0].String(),
+					"\t\tchecking log with sig %v\t for contract %v\n",
+					hex.EncodeToString(ordered_list[i].Topics[0][0:4]),
 					ordered_list[i].Address.String())
 				id := process_event(header,agtx,&ordered_list,i)
 				//var id int64 =0

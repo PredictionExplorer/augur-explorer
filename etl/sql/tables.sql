@@ -165,7 +165,6 @@ CREATE table oi_chg ( -- open interest changed event
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
---	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
 	ts_inserted			TIMESTAMPTZ NOT NULL, -- timestamp
 	oi					DECIMAL(24,18) NOT NULL
