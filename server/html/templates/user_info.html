@@ -136,6 +136,10 @@
 			</font>
 		</h4>
 	{{ end }}
+	{{ if .UserInfo.NotAugur }}
+		<h4><font color="red">Not an Augur account</font></h4>
+		<h5><font color="red">(This account doesn't have an associated Augur Wallet contract)</font></h5>
+	{{ end }}
 <div class="user_info">
 	<table class="user_info">
 		<tr class="user_info">

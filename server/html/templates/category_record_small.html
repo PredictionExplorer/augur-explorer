@@ -1,10 +1,14 @@
 {{define "category_record_small"}}
-<div class="category_record_small">
-	{{- range $i, $cat := .Subcategories}}
-		{{- if ne $i 0}}
-			{{template "category_separator"}}
+
+	<div class="category_record_small">
+		{{- range $i, $cat := .Subcategories}}
+
+			{{- if ne $i 0}}
+				<div class="category_separator">--></div>
+			{{- end}}
+
+			<div class="category_record_subcategory_small">{{$cat}}</div>
 		{{- end}}
-		<div class="category_record_subcategory_small">{{$cat}}</div>
-	{{- end}}
-</div>
+	</div>
+
 {{end}}

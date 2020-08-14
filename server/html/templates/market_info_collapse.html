@@ -1,0 +1,58 @@
+{{define "market_info_collapse"}}
+
+	{{- range $i, $rep := .}}
+		<div class="details__info-collapse">
+			<div class="details__info-collapse-head" details-collapse-js>
+				<div>
+					<div class="details__info-collapse-stat">
+						<div>
+							<p>{{.OutcomeStr}}</p>
+							<span>{{.Volume}}%</span>
+						</div>
+						<div>
+							<div class="details__info-collapse-stat-line">
+								<i></i>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div>
+					<div>
+						<p>${{.LastPrice}}</p>
+					</div>
+					<div>
+						<a href="#">
+							<span>View Details</span>
+							<i></i>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<div class="details__info-collapse-body" details-collapse-body-js>
+				<div class="details__info-collapse-content">
+					<div class="details__info-collapse-details">
+						<div>
+							<p>Bid price</p>
+							<span>0.55</span>
+						</div>
+						<div>
+							<p>Ask price</p>
+							<span>1</span>
+						</div>
+					</div>
+					<div>
+						<div>
+							<p>Volume</p>
+							<span>401</span>
+						</div>
+						<div>
+							<a href="#">Depth chart</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	{{- end}}
+
+{{end}}

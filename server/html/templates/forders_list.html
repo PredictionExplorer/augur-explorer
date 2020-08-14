@@ -1,0 +1,16 @@
+{{define "forders_list"}}
+<table class="forders_list">
+	<tr class="froders_list">
+		<th class="forders_hdr" style="text-align: center">Hash</th>
+		<th class="forders_hdr" style="text-align: center">Date</th>
+		<th class="forders_hdr" style="text-align: center">Creator</th>
+		<th class="forders_hdr" style="text-align: center">Filler</th>
+		<th class="forders_hdr" style="text-align: center">Outcome</th>
+		<th class="forders_hdr" style="text-align: center">Price</th>
+		<th class="forders_hdr" style="text-align: center">Amount</th>
+	</tr>
+		{{- range $i, $ford := .}}
+			{{template "filling_order" $ford}}
+		{{- end}}
+</table>
+{{end}}

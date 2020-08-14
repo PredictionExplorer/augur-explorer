@@ -1,5 +1,6 @@
 {{define "mkt_trade"}}
 <tr class="market_trades">
+	<td class="mkt_trade_field"><a class="addr" href="/order/{{.OrderId}}">{{.OrderHashSh}}</a></td>
 	<td class="mkt_trade_field">{{.Date}}</td>
 	<td class="mkt_trade_field" title="{{.CreatorAddr}}">
 		<a class="addr" href="/search?q={{.CreatorAddr}}">{{.CreatorAddrSh}}</a>

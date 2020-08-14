@@ -1,52 +1,98 @@
 function getSingleCardData(data, renderFunction) {
-    console.log('Start Rendering')
-    for(let i = 0; i <= data.MarketIDs.length; i++  ) {
+    // data.MarketIDs.length
+    for (let i = 0; i <= data.MarketIDs.length; i++) {
         Ajax_GET(`/api/mkt_card/${data.MarketIDs[i]}`, renderFunction);
     }
 }
+
 function renderCardIndex(data) {
-    console.log('Draw')
     data = JSON.parse(data);
-    console.log(data)
-    document.querySelector('#ajax-content').innerHTML += `
-    <div class="col-sm-6 col-md-4">
-        <div class="card">
-            <div class="card__title">
-                <a href="#">${data.MarketInfo.Description}</a>
-                <div class="card__title-down">
-                    <span>Ends in 2 days</span><span class="tag">${data.MarketInfo.MktTypeStr}</span>
+
+    console.log(data.MarketInfo);
+
+    let infoTMPL = '';
+
+    for (let el of data.MarketInfo.OutcomeVolumes) {
+        infoTMPL += `           
+            <tr>
+                <td>
+                    <p>${el.OutcomeStr}</p>
+                </td>
+                <td>
+                    <span><strong>${el.Volume}%</strong></span>
+                </td>
+            </tr>    
+            <tr>
+                <td>
+                    <u></u>
+                </td>
+            </tr>       
+        `;
+    }
+
+    const tmpl = `
+        <div>
+            <div class="card">
+                <div class="card__title">
+                    <a href="/market/${data.MarketInfo.MktAddr}">${data.MarketInfo.Description}</a>
+                    <div class="card__title-down">
+                        <span>Ends in 2 days</span><span class="tag">${data.MarketInfo.MktTypeStr.toLowerCase()}</span>
+                    </div>
                 </div>
+                <div class="card__info">
+                    <div class="card__info-left">
+                        <table>
+                            ${infoTMPL}
+                        </table>
+                    </div>
+                    <div class="card__info-right">
+                        <table>
+                        <tr>
+                            <td>
+                                <p>Total Volume</p>
+                            </td>
+                            <td>
+                                <span><strong>${data.MarketInfo.CurVolume}</strong></span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <u></u>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <p>Money at Stake</p>
+                            </td>
+                            <td>
+                                <span><strong>${data.MarketInfo.MoneyAtStake}</strong></span>
+                            </td>
+                        </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <p class="card__footer">And 
+                    <a href="#" class="c-popper">1 more
+                        <span class="c-poppertext">
+                            <u>
+                                Unofficial game/Cancelled&nbsp;&nbsp;0%
+                            </u>
+                        </span>
+                    </a> 
+                possible outcome
+                </p>
             </div>
-            <div class="card__info">
-                <div class="card__all-left">
-                    <div class="card__percents">
-                        <span class="answer">Yes</span>
-                        <span class="answer">No</span>
-                    </div>
-                    <div class="card__number">
-                        <span class="percent-yes">100%</span>
-                        <span class="percent-no">0%</span>
-                    </div>
-                </div>
-                <div class="card__all-right">
-                    <div class="card__volume">
-                        <span>Total volume</span>
-                        <span>Money at stake</span>
-                    </div>
-                    <div class="card__money">
-                        <span>${data.MarketInfo.CurVolume}</span>
-                        <span>224.5</span>
-                    </div>
-                </div>
-            </div>
-            <p class="card__footer">And <a href="#">1 more</a> possible outcome</p>
         </div>
-    </div>`
+    `;
+
+    $('#ajax-content').append(tmpl);
 }
+
 function renderCard(data) {
-    console.log('Draw')
+    // console.log('Draw')
     data = JSON.parse(data);
-    console.log(data)
+    // console.log(data)
     document.querySelector('#ajax-content').innerHTML += `
 
    <div class="col-md-6">
@@ -175,28 +221,32 @@ function renderCard(data) {
             </div>
    `
 }
+
 function Ajax_GET(url, success) {
     var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
     xhr.open('GET', url);
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState>3 && xhr.status==200) success(xhr.responseText);
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState > 3 && xhr.status === 200) success(xhr.responseText);
     };
     xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     xhr.send();
     return xhr;
 }
+
 function Ajax_GET_Markets(url, renderFunction) {
     var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+
     xhr.open('GET', url);
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState>3 && xhr.status==200) {
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState > 3 && xhr.status === 200) {
             collectedData = JSON.parse(xhr.responseText);
-            console.log('Data Collectd')
+
             getSingleCardData(collectedData, renderFunction)
         }
     };
     xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     xhr.send();
+
     return xhr;
 }
 

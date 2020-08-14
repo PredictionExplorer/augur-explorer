@@ -1,375 +1,293 @@
-<html>
+<html lang="en">
 <head>
-    <link href="/res/main.css" rel="stylesheet">
-    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-          rel="stylesheet">
-    <title>Augur Market {{.Market.MktAddr}}</title>
-    <meta name="description" content="{{.Market.Description}}">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="description" content="{{.Market.Description}}">
+
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+
+	<link href="../res/main.css" rel="stylesheet">
+
+	<title>Augur Market {{.Market.MktAddr}}</title>
 </head>
 <body>
-<script src="/res/ajax.js"></script>
-<script src="https://code.highcharts.com/highcharts.js"></script>
-<script src="https://code.highcharts.com/modules/data.js"></script>
-<script>
-    var uniq_addrs_data = {{.UniqAddrsData}}
-</script>
-<script>
-    var collectedData;
-    Ajax_GET_Markets('/api/active_markets', renderCard);
-</script>
+
 {{template "header"}}
-<div class="container">
-    <ul class="breadcrumb" style="background-color: white; padding-left: 0">
-        <li><a href="#"><img src="../imgs/arrow-left.svg" alt="arrow-left"> Back</a></li>
-    </ul>
-</div>
-<section class="market__details">
-    <div class="container">
-        <h3 class="market__details-title">Twitter: Will @rihanna have 98 Million or more twitter followers on June 30, 2020, according to
-            www.trackalytics.com?</h3>
-        <div class="market__details-explanation">
-            <p>Use ticker symbol search for token pair (ie BTCUSD), find exchange that corresponds to market question.
-                Navigate to Full-featured daily chart, Opening price is determined on the date in the market question on
-                tradingview.com. Opening price can also be found on tradingview using the hourly chart for the date in
-                the market question at UTC …</p>
-            <a href="#">Show more</a>
-        </div>
-    </div>
-</section>
-<section class="market__info">
-    <div class="container">
-        <div class="row" id="ajax-content">
-            <div class="col-md-6">
-                <div class="market__info-box">
-                    <div class="row">
-                        <div class="col-sm-6"><p>Outcome</p></div>
-                        <div class="col-sm-6"><p>Last Price</p></div>
-                    </div>
-                    <section id="multiple" data-accordion-group="">
-                        <section data-accordion="" class="accordion-box">
-                            <div data-control="">
-                                <div class="row">
-                                    <div class="col-sm-6">
-                                        <div class="progress-title">
-                                            <p>Yes</p>
-                                            <p class= "progress-title-yes">90%</p>
-                                        </div>
-                                        <div class="w3-light-grey">
-                                            <div class="w3-color-yes" style="width:90%"></div>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <p>$31</p>
-                                    </div>
-                                    <div class="col-sm-3">
-                                       <span class="market__info-detail">View Details</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div data-content="" style="max-height: 60px; overflow: hidden;">
-                                <div class="row">
-                                    <div class="col-sm-3">
-                                        <p>Bid price</p>
-                                        <span>0.55</span>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <p>Ask price</p>
-                                        <span>1</span>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <p>Volume</p>
-                                        <span>401</span>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <a href="#">Depth chart</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
 
-                        <section data-accordion="" class="accordion-box">
-                            <div data-control="">
-                                <div class="row">
-                                    <div class="col-sm-6">
-                                        <div class="progress-title">
-                                            <p>No</p>
-                                            <p class= "progress-title-no">10%</p>
-                                        </div>
-                                        <div class="w3-light-grey">
-                                            <div class="w3-color-no" style="width:10%"></div>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <p>$68</p>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <span class="market__info-detail">View Details</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div data-content="" style="max-height: 60px; overflow: hidden;">
-                                <div class="row">
-                                    <div class="col-sm-3">
-                                        <p>Bid price</p>
-                                        <span>0.55</span>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <p>Ask price</p>
-                                        <span>1</span>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <p>Volume</p>
-                                        <span>401</span>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <a href="#">Depth chart</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
+<div class="c-body">
 
-                        <section data-accordion="" class="accordion-box">
-                            <div data-control="">
-                                <div class="row">
-                                    <div class="col-sm-6"><p>Invalid</p></div>
-                                    <div class="col-sm-3">
-                                        <p>$68</p>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <span class="market__info-detail">View Details</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div data-content="" style="max-height: 60px; overflow: hidden;">
-                                <div class="row">
-                                    <div class="col-sm-3">
-                                        <p>Bid price</p>
-                                        <span>0.55</span>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <p>Ask price</p>
-                                        <span>1</span>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <p>Volume</p>
-                                        <span>401</span>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <a href="#">Depth chart</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-                    </section>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div id="uniq_addr_chart"></div>
-                <div class="market__info-tags">
-                    <div>
-                        <input type="checkbox" class="custom-checkbox" id="answer-yes" name="answer-yes" value="yes"
-                               checked>
-                        <label for="answer-yes">Yes</label>
-                        <input type="checkbox" class="custom-checkbox" id="answer-no" name="answer-no" checked value="yes">
-                        <label for="answer-no">No</label>
-                    </div>
-                    <div>
-                        <a href="#">24hr</a>
-                        <a href="#" class="active-tag">7 day</a>
-                        <a href="#">30 day</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-<h3 class="page_title">Market Details</h3>
-<table class="market_detail">
-    <tr class="market_detail">
-        <td nowrap>Address (ID):</td>
-        <td class="addr">{{.Market.MktAddr}}</td>
-    </tr>
-    <tr class="market_detail">
-        <td>Creator:</td>
-        <td><a class="addr" href="/search?q={{.Market.Signer}}">{{.Market.Signer}}</a></td>
-    </tr>
-    <tr class="market_detail">
-        <td>Reporter</td>
-        <td><a class="addr" href="/search?q={{.Market.Reporter}}">{{.Market.Reporter}}</a></td>
-    </tr>
-    <tr class="market_detail">
-        <td>End Date</td>
-        <td>{{.Market.EndDate}}</td>
-    </tr>
-    <tr class="market_detail">
-        <td>Description</td>
-        <td>{{.Market.Description}}</td>
-    </tr>
-    <tr class="market_detail">
-        <td nowrap>Long description</td>
-        <td>{{.Market.LongDesc}}</td>
-    </tr>
-    <tr class="market_detail">
-        <td>Category</td>
-        <td> {{template "category_record_small" .Market}}</td>
-    </tr>
-    <tr class="market_detail">
-        <td>Market Type</td>
-        <td>{{.Market.MktTypeStr}}</td>
-        </tr>
-        {{if ne 2 .Market.MktType }}
-    <tr class="market_detail">
-        <td>Outcomes</td>
-        <td>{{.Market.Outcomes}}</td>
-    </tr>
-    {{end}}
-    <tr class="market_detail">
-        <td>Status</td>
-        <td>{{.Market.Status}}</td>
-    </tr>
-    <tr class="market_detail">
-        <td>Fee</td>
-        <td>{{.Market.Fee}}</td>
-    </tr>
-    <tr class="market_detail">
-        <td>OpenInterest</td>
-        <td>{{.Market.OpenInterest}}</td>
-    </tr>
-    <tr class="market_detail">
-        <td>Total Volume</td>
-        <td>{{.Market.CurVolume}}</td>
-    </tr>
-    <tr class="market_detail">
-        <td>Money at Statke</td>
-        <td>{{.Market.MoneyAtStake}}</td>
-    </tr>
-    <tr class="market_detail">
-        <td>Total Trades</td>
-        <td>{{.Market.TotalTrades}}</td>
-    </tr>
-</table>
-<br/><br/>
-{{$maddr := .Market.MktAddr}}
-<div class="market_outcome_vols">
-    <h3>Volume & Last Price data:</h3>
-    {{template "market_outcome_vols" .OutcomeVols}}
+	<div id="details" class="details">
+
+		<div class="container">
+
+			<div class="details__wrapper">
+
+				<div class="c-back__wrapper">
+					<a class="c-back" href="/index.html">
+						<img src="../imgs/arrow-left.svg" alt="">
+						<span>Back</span>
+					</a>
+				</div>
+
+				<h1 class="details__title">{{.Market.Description}}</h1>
+
+				<div {{if ge (len .Market.LongDesc) 355}}
+					 	class="details__description-wrapper details__description-wrapper--more"
+					 {{else}}
+					 	class="details__description-wrapper"
+					 {{end}}>
+					<div deatils-desc-js>
+						<p class="details__description">
+							{{.Market.LongDesc}}
+						</p>
+					</div>
+					{{if ge (len .Market.LongDesc) 355}}
+						<div>
+							<a href="#" class="details__description-link" deatils-more-js>
+								Show <span data-more="more" data-less="less"></span>
+							</a>
+						</div>
+					{{end}}
+				</div>
+
+			</div>
+
+			<div class="details__row details__row-1">
+				<div class="details__col details__col-1">
+
+					<div class="details__info details__section">
+						<div class="details__info-head">
+							<div>
+								<p>Outcome</p>
+							</div>
+							<div>
+								<p>Last Price</p>
+							</div>
+						</div>
+						<div class="details__info-body">
+
+							{{ template "market_info_collapse" .OutcomeVols}}
+
+						</div>
+					</div>
+
+				</div>
+				<div class="details__col details__col-2">
+
+					<div class="details__graph details__section"></div>
+
+				</div>
+			</div>
+
+			<div class="details__row details__row-2">
+
+				<div class="details__statistic details__section">
+
+					<div class="details__statistic-head">
+						<table>
+							<thead>
+							<tr>
+								<th>
+									<i>&#9432;</i>
+									<span>Total volume</span>
+								</th>
+								<th>
+									<i>&#9432;</i>
+									<span>Money at stake</span>
+								</th>
+								<th>
+									<i>&#9432;</i>
+									<span>Open Interest</span>
+								</th>
+								<th>
+									<i>&#9432;</i>
+									<span>Fee</span>
+								</th>
+								<th>
+									<i>&#9432;</i>
+									<span>Total Trades</span>
+								</th>
+								<th>
+									<i>&#9432;</i>
+									<span>End Date</span>
+								</th>
+								<th>
+									<i>&#9432;</i>
+									<span>Status</span>
+								</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td>
+									<span>{{.Market.CurVolume}}</span>
+								</td>
+								<td>
+									<span>{{.Market.MoneyAtStake}}</span>
+								</td>
+								<td>
+									<span>{{.Market.OpenInterest}}</span>
+								</td>
+								<td>
+									<span>{{.Market.Fee}}</span>
+								</td>
+								<td>
+									<span>{{.Market.TotalTrades}}</span>
+								</td>
+								<td>
+									<span>{{.Market.EndDate}}</span>
+								</td>
+								<td>
+									<span>{{.Market.Status}}</span>
+								</td>
+							</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<div class="details__statistic-body">
+
+						<div class="details__statistic-collapse">
+							<div stat-head-js>
+								<p>
+									<span>Advanced</span>
+									<i></i>
+								</p>
+							</div>
+							<div stat-body-js style="display: none;">
+								<div class="details__statistic-content">
+									<div>
+										<div class="details__statistic-head">
+											<table>
+												<thead>
+												<tr>
+													<th>
+														<i>&#9432;</i>
+														<span>Address</span>
+													</th>
+													<th>
+														<i>&#9432;</i>
+														<span>Creator</span>
+													</th>
+													<th>
+														<i>&#9432;</i>
+														<span>Reporter</span>
+													</th>
+												</tr>
+												</thead>
+												<tbody>
+												<tr>
+													<td>
+														<a href="#">{{.Market.MktAddr}}</a>
+													</td>
+													<td>
+														<a href="/search?q={{.Market.Signer}}">{{.Market.Signer}}</a>
+													</td>
+													<td>
+														<a href="/search?q={{.Market.Reporter}}">{{.Market.Reporter}}</a>
+													</td>
+												</tr>
+												</tbody>
+											</table>
+										</div>
+									</div>
+									<div>
+										<div class="details__statistic-head">
+											<table>
+												<thead>
+												<tr>
+													<th>
+														<i>&#9432;</i>
+														<span>Category</span>
+													</th>
+													<th>
+														<i>&#9432;</i>
+														<span>Market type</span>
+													</th>
+												</tr>
+												</thead>
+												<tbody>
+												<tr>
+													<td>
+														{{template "category_record_small" .Market}}
+													</td>
+													<td>
+														<span>{{.Market.MktTypeStr}}</span>
+													</td>
+												</tr>
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+					</div>
+
+				</div>
+
+			</div>
+
+			{{ if ne (len .Trades) 0 }}
+				<div class="details__row details__row-3">
+
+					<p class="details__section-title">Filled orders</p>
+
+					<div class="details__orders details__section">
+						<table>
+							<thead>
+							<tr>
+								<th>
+									<p>Date</p>
+								</th>
+								<th>
+									<p>Created by</p>
+								</th>
+								<th>
+									<p>Filler by</p>
+								</th>
+								<th>
+									<p>Price</p>
+								</th>
+								<th>
+									<p>Amount</p>
+								</th>
+								<th>
+									<p>Outcome</p>
+								</th>
+								<th></th>
+								<th></th>
+							</tr>
+							</thead>
+							<tbody>
+
+								{{template "market_info_order" .Trades}}
+
+							</tbody>
+						</table>
+
+					</div>
+
+				</div>
+			{{ end }}
+
+			{{ if gt (len .Trades) 3 }}
+				<div class="details__more">
+					<a href="#" load-more-js>Load More</a>
+				</div>
+			{{ end }}
+		</div>
+	</div>
 </div>
-<br/><br/>
-<div class="market_info">
-    {{template "market_trades" .Trades}}
-    <nav id="market_trades_nav">
-        <ul>
-            <li style="float: right">
-                <a class="btn_link" href="/fulltradelist/{{.Market.MktAddr}}">Full List</a>
-                <span></span><span></span><span></span><span></span>
-            </li>
-        </ul>
-    </nav>
-</div>
-<nav>
-    <ul>
-        <li>
-            <a class="btn_link" href="/index.html">Back</a>
-            <span></span><span></span><span></span><span></span>
-        </li>
-    </ul>
-</nav>
+
 {{template "footer"}}
-<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js">
-</script>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-<script type="text/javascript" src="//rawgit.com/vctrfrnndz/jquery-accordion/master/js/jquery.accordion.js"></script>
-<script type="text/javascript">
-    $(document).ready(function() {
-        $('#multiple [data-accordion]').accordion({
-            singleOpen: false
-        });
-    });
-</script>
-<script>
-    // font loading begins
-    Highcharts.createElement('link', {
-        href: 'https://fonts.googleapis.com/css?family=Unica+One',
-        rel: 'stylesheet',
-        type: 'text/css'
-    }, null, document.getElementsByTagName('head')[0]);
 
-    Highcharts.chart('uniq_addr_chart', {
-
-        title: {
-            text: 'Unique Accounts'
-        },
-
-        subtitle: {
-            text: 'Unique Accounts per Day'
-        },
-
-        yAxis: {
-            title: {
-                text: 'Number of Accounts per Day'
-            }
-        },
-
-        xAxis: {
-//		max: 1.0,
-//		min: 0,
-            type: 'datetime',
-//		dateTimeLabelFormats: {
-//			day: "%e-%b-%y",
-//			month: "%b-%y"
-//		}
-            accessibility: {
-                rangeDescription: 'Unique Accounts'
-            }
-
-        },
-
-        legend: {
-            layout: 'vertical',
-            align: 'right',
-            verticalAlign: 'middle'
-        },
-
-        plotOptions: {
-            series: {
-                label: {
-                    connectorAllowed: false
-                },
-                pointStart: 0
-            }
-        },
-
-        series: [{
-            name: 'Number of Accounts',
-            point: {
-                events: {
-                    click: function() {this.click.call()}
-                }
-            },
-            data: uniq_addrs_data
-        }],
-
-        responsive: {
-            rules: [{
-                condition: {
-                    maxWidth: 500
-                },
-                chartOptions: {
-                    legend: {
-                        layout: 'horizontal',
-                        align: 'center',
-                        verticalAlign: 'bottom'
-                    }
-                }
-            }]
-        },
-        tooltip: {
-            formatter: function() {
-                tooltip ="<div>Num Accounts: "+this.point.num_addrs+"<br/>Accumulated: "+this.point.num_addrs_accum+"<br/>Date: "+this.point.date_str+"<br/></div>"
-                return tooltip;
-            }
-        },
-    });
-</script>
 </body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+<script src="../res/script.js"></script>
 </html>
