@@ -1,118 +1,293 @@
-<html>
+<html lang="en">
 <head>
-	<link href="/res/main.css" rel="stylesheet">
-	<title>Augur Market {{.Market.MktAddr}}</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<meta name="description" content="{{.Market.Description}}">
+
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+
+	<link href="../res/main.css" rel="stylesheet">
+
+	<title>Augur Market {{.Market.MktAddr}}</title>
 </head>
 <body>
-<h3 class="page_title">Market Details</h3>
-<table class="market_detail">
-<tr class="market_detail">
-	<td nowrap>Address (ID):</td>
-	<td class="addr" >{{.Market.MktAddr}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Creator:</td>
-	<td><a class="addr" href="/search?q={{.Market.Signer}}">{{.Market.Signer}}</a></td>
-</tr>
-<tr class="market_detail">
-	<td>Reporter</td>
-	<td><a class="addr" href="/search?q={{.Market.Reporter}}">{{.Market.Reporter}}</a></td>
-</tr>
-<tr class="market_detail">
-	<td>End Date</td>
-	<td>{{.Market.EndDate}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Description</td>
-	<td>{{.Market.Description}}</td>
-</tr>
-<tr class="market_detail">
-	<td nowrap>Long description</td>
-	<td>{{.Market.LongDesc}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Category</td>
-	<td>	{{template "category_record_small" .Market}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Market Type</td>
-	<td>{{.Market.MktTypeStr}}</td>
-</td>
-{{if ne 2 .Market.MktType }}
-<tr class="market_detail">
-	<td>Outcomes</td>
-	<td>{{.Market.Outcomes}}</td>
-</tr>
-{{end}}
-<tr class="market_detail">
-	<td>Status</td>
-	<td>{{.Market.Status}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Fee</td>
-	<td>{{.Market.Fee}}</td>
-</tr>
-<tr class="market_detail">
-	<td>OpenInterest</td>
-	<td>{{.Market.OpenInterest}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Total Volume</td>
-	<td>{{.Market.CurVolume}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Money at Statke</td>
-	<td>{{.Market.MoneyAtStake}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Total Trades</td>
-	<td>{{.Market.TotalTrades}}</td>
-</tr>
-</table>
-<br/><br/>
-{{$maddr := .Market.MktAddr}}
-<div class="market_outcome_vols">
-	<h3>Volume & Last Price data:</h3>
-	{{template "market_outcome_vols" .OutcomeVols}}
+
+{{template "header"}}
+
+<div class="c-body">
+
+	<div id="details" class="details">
+
+		<div class="container">
+
+			<div class="details__wrapper">
+
+				<div class="c-back__wrapper">
+					<a class="c-back" href="/index.html">
+						<img src="../imgs/arrow-left.svg" alt="">
+						<span>Back</span>
+					</a>
+				</div>
+
+				<h1 class="details__title">{{.Market.Description}}</h1>
+
+				<div {{if ge (len .Market.LongDesc) 355}}
+					 	class="details__description-wrapper details__description-wrapper--more"
+					 {{else}}
+					 	class="details__description-wrapper"
+					 {{end}}>
+					<div deatils-desc-js>
+						<p class="details__description">
+							{{.Market.LongDesc}}
+						</p>
+					</div>
+					{{if ge (len .Market.LongDesc) 355}}
+						<div>
+							<a href="#" class="details__description-link" deatils-more-js>
+								Show <span data-more="more" data-less="less"></span>
+							</a>
+						</div>
+					{{end}}
+				</div>
+
+			</div>
+
+			<div class="details__row details__row-1">
+				<div class="details__col details__col-1">
+
+					<div class="details__info details__section">
+						<div class="details__info-head">
+							<div>
+								<p>Outcome</p>
+							</div>
+							<div>
+								<p>Last Price</p>
+							</div>
+						</div>
+						<div class="details__info-body">
+
+							{{ template "market_info_collapse" .OutcomeVols}}
+
+						</div>
+					</div>
+
+				</div>
+				<div class="details__col details__col-2">
+
+					<div class="details__graph details__section"></div>
+
+				</div>
+			</div>
+
+			<div class="details__row details__row-2">
+
+				<div class="details__statistic details__section">
+
+					<div class="details__statistic-head">
+						<table>
+							<thead>
+							<tr>
+								<th>
+									<i>&#9432;</i>
+									<span>Total volume</span>
+								</th>
+								<th>
+									<i>&#9432;</i>
+									<span>Money at stake</span>
+								</th>
+								<th>
+									<i>&#9432;</i>
+									<span>Open Interest</span>
+								</th>
+								<th>
+									<i>&#9432;</i>
+									<span>Fee</span>
+								</th>
+								<th>
+									<i>&#9432;</i>
+									<span>Total Trades</span>
+								</th>
+								<th>
+									<i>&#9432;</i>
+									<span>End Date</span>
+								</th>
+								<th>
+									<i>&#9432;</i>
+									<span>Status</span>
+								</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td>
+									<span>{{.Market.CurVolume}}</span>
+								</td>
+								<td>
+									<span>{{.Market.MoneyAtStake}}</span>
+								</td>
+								<td>
+									<span>{{.Market.OpenInterest}}</span>
+								</td>
+								<td>
+									<span>{{.Market.Fee}}</span>
+								</td>
+								<td>
+									<span>{{.Market.TotalTrades}}</span>
+								</td>
+								<td>
+									<span>{{.Market.EndDate}}</span>
+								</td>
+								<td>
+									<span>{{.Market.Status}}</span>
+								</td>
+							</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<div class="details__statistic-body">
+
+						<div class="details__statistic-collapse">
+							<div stat-head-js>
+								<p>
+									<span>Advanced</span>
+									<i></i>
+								</p>
+							</div>
+							<div stat-body-js style="display: none;">
+								<div class="details__statistic-content">
+									<div>
+										<div class="details__statistic-head">
+											<table>
+												<thead>
+												<tr>
+													<th>
+														<i>&#9432;</i>
+														<span>Address</span>
+													</th>
+													<th>
+														<i>&#9432;</i>
+														<span>Creator</span>
+													</th>
+													<th>
+														<i>&#9432;</i>
+														<span>Reporter</span>
+													</th>
+												</tr>
+												</thead>
+												<tbody>
+												<tr>
+													<td>
+														<a href="#">{{.Market.MktAddr}}</a>
+													</td>
+													<td>
+														<a href="/search?q={{.Market.Signer}}">{{.Market.Signer}}</a>
+													</td>
+													<td>
+														<a href="/search?q={{.Market.Reporter}}">{{.Market.Reporter}}</a>
+													</td>
+												</tr>
+												</tbody>
+											</table>
+										</div>
+									</div>
+									<div>
+										<div class="details__statistic-head">
+											<table>
+												<thead>
+												<tr>
+													<th>
+														<i>&#9432;</i>
+														<span>Category</span>
+													</th>
+													<th>
+														<i>&#9432;</i>
+														<span>Market type</span>
+													</th>
+												</tr>
+												</thead>
+												<tbody>
+												<tr>
+													<td>
+														{{template "category_record_small" .Market}}
+													</td>
+													<td>
+														<span>{{.Market.MktTypeStr}}</span>
+													</td>
+												</tr>
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+					</div>
+
+				</div>
+
+			</div>
+
+			{{ if ne (len .Trades) 0 }}
+				<div class="details__row details__row-3">
+
+					<p class="details__section-title">Filled orders</p>
+
+					<div class="details__orders details__section">
+						<table>
+							<thead>
+							<tr>
+								<th>
+									<p>Date</p>
+								</th>
+								<th>
+									<p>Created by</p>
+								</th>
+								<th>
+									<p>Filler by</p>
+								</th>
+								<th>
+									<p>Price</p>
+								</th>
+								<th>
+									<p>Amount</p>
+								</th>
+								<th>
+									<p>Outcome</p>
+								</th>
+								<th></th>
+								<th></th>
+							</tr>
+							</thead>
+							<tbody>
+
+								{{template "market_info_order" .Trades}}
+
+							</tbody>
+						</table>
+
+					</div>
+
+				</div>
+			{{ end }}
+
+			{{ if gt (len .Trades) 3 }}
+				<div class="details__more">
+					<a href="#" load-more-js>Load More</a>
+				</div>
+			{{ end }}
+		</div>
+	</div>
 </div>
-<br/><br/>
-<div class="market_info">
-	{{template "market_trades" .Trades}}
-	<nav id="market_trades_nav">
-		<ul>
-			<li style="float: right">
-				<a class="btn_link" href="/fulltradelist/{{.Market.MktAddr}}">Full List</a>
-				<span></span><span></span><span></span><span></span>
-			</li>
-		</ul>
-	</nav>
-</div>
-{{ if ne .Market.MktStatus 0 }}
-<h3>Reports for this Market</h3>
-<div id="market_reports">
-	{{template "market_reports" .Reports}}
-	<nav id="market_reports_nav">
-		<ul>
-			<li style="float: left">
-				<a class="btn_link" href="/fullreports/{{.UserInfo.EOAAddr}}">All Reports</a>
-				<span></span><span></span><span></span><span></span>
-			</li>
-		</ul>
-	</nav>
-{{ end }}
-<br/><br/>
-<br/><br/>
-<br/><br/>
-<br/><br/>
-</div>
-<nav>
-	<ul>
-		<li>
-			<a class="btn_link" href="/index.html">Back</a>
-			<span></span><span></span><span></span><span></span>
-		</li>
-	</ul>
-</nav>
+
+{{template "footer"}}
+
 </body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+<script src="../res/script.js"></script>
 </html>

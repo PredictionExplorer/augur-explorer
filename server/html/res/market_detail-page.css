@@ -1,0 +1,13 @@
+.market_detail-page{
+    color: #484C5F;
+}
+.market_detail-page__title{
+    font-size: 24px;
+    font-weight: 500;
+    margin-bottom: 15px;
+}
+.market_detail-page__desc{
+    font-size: 14px;
+    color: #595E75;
+    margin-bottom: 30px;
+}

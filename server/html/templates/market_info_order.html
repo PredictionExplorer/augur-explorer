@@ -1,0 +1,51 @@
+{{define "market_info_order"}}
+
+	{{- range $i, $trade := .}}
+
+		<tr
+			{{ if gt $i 2 }}
+				style="display: none;"
+			{{ end }}
+		>
+			<td>
+				<span class="date">{{.Date}}</span>
+			</td>
+			<td class="link__wrapper">
+				<a href="#" class="link">{{.CreatorAddr}}</a>
+			</td>
+			<td class="link__wrapper">
+				<a href="#" class="link">{{.FillerAddr}}</a>
+			</td>
+			<td>
+				<span>{{.Price}}</span>
+			</td>
+			<td>
+				<span>{{.Amount}}</span>
+			</td>
+			<td>
+				<span>{{.OutcomeStr}}</span>
+			</td>
+			<td></td>
+			<td></td>
+		</tr>
+
+	{{- end}}
+
+{{end}}
+
+<!--<tr class="market_trades">-->
+<!--	<td class="mkt_trade_field"><a class="addr" href="/order/{{.OrderId}}">{{.OrderHashSh}}</a></td>-->
+<!--	<td class="mkt_trade_field">{{.Date}}</td>-->
+<!--	<td class="mkt_trade_field" title="{{.CreatorAddr}}">-->
+<!--		<a class="addr" href="/search?q={{.CreatorAddr}}">{{.CreatorAddrSh}}</a>-->
+<!--	</td>-->
+<!--	<td class="mkt_trade_field" title="{{.FillerAddr}}">-->
+<!--		<a class="addr" href="/search?q={{.FillerAddr}}">{{.FillerAddrSh}}</a>-->
+<!--	</td>-->
+<!--	<td class="mkt_trade_field" style="text-align: right">{{.Price}}</td>-->
+<!--	<td class="mkt_trade_field" style="text-align: right">{{.Amount}}</td>-->
+<!--	<td class="mkt_trade_field" style="text-align: center">{{.OutcomeStr}}</td>-->
+<!--	<td class="mkt_trade_field" style="text-align: center">-->
+<!--		<a href="/order/{{.OrderHash}}">View Order</a>-->
+<!--	</td>-->
+<!--</tr>-->
