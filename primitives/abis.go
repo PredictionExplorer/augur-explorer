@@ -11,6 +11,7 @@ import (
 //	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
@@ -32,6 +33,10 @@ const (
 	//"
 
 	ProfitLossABI = "[{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_trader\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_fees\",\"type\":\"uint256\"}],\"name\":\"adjustTraderProfitForFees\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"augur\",\"outputs\":[{\"internalType\":\"contractIAugur\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"augurTrading\",\"outputs\":[{\"internalType\":\"contractIAugurTrading\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"cancelOrder\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"createOrder\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"fillOrder\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"}],\"name\":\"getAvgPrice\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"}],\"name\":\"getFrozenFunds\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"getInitialized\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"}],\"name\":\"getNetPosition\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"}],\"name\":\"getRealizedCost\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"}],\"name\":\"getRealizedProfit\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIAugur\",\"name\":\"_augur\",\"type\":\"address\"},{\"internalType\":\"contractIAugurTrading\",\"name\":\"_augurTrading\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"orders\",\"outputs\":[{\"internalType\":\"contractIOrders\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256[]\",\"name\":\"_outcomeFees\",\"type\":\"uint256[]\"}],\"name\":\"recordClaim\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIUniverse\",\"name\":\"_universe\",\"type\":\"address\"},{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"int256\",\"name\":\"_frozenFundDelta\",\"type\":\"int256\"}],\"name\":\"recordFrozenFundChange\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIUniverse\",\"name\":\"_universe\",\"type\":\"address\"},{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_longAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_shortAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"int256\",\"name\":\"_amount\",\"type\":\"int256\"},{\"internalType\":\"int256\",\"name\":\"_price\",\"type\":\"int256\"},{\"internalType\":\"uint256\",\"name\":\"_numLongTokens\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_numShortTokens\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_numLongShares\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_numShortShares\",\"type\":\"uint256\"}],\"name\":\"recordTrade\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"shareToken\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}]"
+	//"
+
+	// ShareTokenABI is the input ABI used to generate the binding from.
+	ShareTokenABI = "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"approved\",\"type\":\"bool\"}],\"name\":\"ApprovalForAll\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256[]\",\"name\":\"ids\",\"type\":\"uint256[]\"},{\"indexed\":false,\"internalType\":\"uint256[]\",\"name\":\"values\",\"type\":\"uint256[]\"}],\"name\":\"TransferBatch\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"TransferSingle\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"value\",\"type\":\"string\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"URI\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"_balances\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"_operatorApprovals\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"_supplys\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"}],\"name\":\"assertBalances\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"augur\",\"outputs\":[{\"internalType\":\"contractIAugur\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"accounts\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"ids\",\"type\":\"uint256[]\"}],\"name\":\"balanceOfBatch\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"}],\"name\":\"balanceOfMarketOutcome\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"buyCompleteSets\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_longOutcome\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_longRecipient\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_shortRecipient\",\"type\":\"address\"}],\"name\":\"buyCompleteSetsForTrade\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"calculateCreatorFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_numberOfShares\",\"type\":\"uint256\"}],\"name\":\"calculateProceeds\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"calculateReportingFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"cash\",\"outputs\":[{\"internalType\":\"contractICash\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_shareHolder\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"_fingerprint\",\"type\":\"bytes32\"}],\"name\":\"claimTradingProceeds\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"_outcomeFees\",\"type\":\"uint256[]\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_numberOfShares\",\"type\":\"uint256\"}],\"name\":\"divideUpWinnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"_proceeds\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_shareHolderShare\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_creatorShare\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_reporterShare\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"getInitialized\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"}],\"name\":\"getMarket\",\"outputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"}],\"name\":\"getOutcome\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"}],\"name\":\"getTokenId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"uint256[]\",\"name\":\"_outcomes\",\"type\":\"uint256[]\"}],\"name\":\"getTokenIds\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"_tokenIds\",\"type\":\"uint256[]\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"getTypeName\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIAugur\",\"name\":\"_augur\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_numOutcomes\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_numTicks\",\"type\":\"uint256\"}],\"name\":\"initializeMarket\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"}],\"name\":\"isApprovedForAll\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"uint256[]\",\"name\":\"_outcomes\",\"type\":\"uint256[]\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"}],\"name\":\"lowestBalanceOfMarketOutcomes\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"publicBuyCompleteSets\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"publicSellCompleteSets\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"_creatorFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_reportingFee\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256[]\",\"name\":\"ids\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256[]\",\"name\":\"values\",\"type\":\"uint256[]\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"safeBatchTransferFrom\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"safeTransferFrom\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_holder\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"_fingerprint\",\"type\":\"bytes32\"}],\"name\":\"sellCompleteSets\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"_creatorFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_reportingFee\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_shortParticipant\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_longParticipant\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_shortRecipient\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_longRecipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_sourceAccount\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"_fingerprint\",\"type\":\"bytes32\"}],\"name\":\"sellCompleteSetsForTrade\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"_creatorFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_reportingFee\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"approved\",\"type\":\"bool\"}],\"name\":\"setApprovalForAll\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"}],\"name\":\"totalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"}],\"name\":\"totalSupplyForMarketOutcome\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"}],\"name\":\"unpackTokenId\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_to\",\"type\":\"address\"},{\"internalType\":\"uint256[]\",\"name\":\"_ids\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256[]\",\"name\":\"_values\",\"type\":\"uint256[]\"}],\"name\":\"unsafeBatchTransferFrom\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"unsafeTransferFrom\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 	//"
 )
 
@@ -1084,3 +1089,287 @@ func (_ProfitLoss *ProfitLossCallerSession) GetAvgPrice(_market common.Address, 
 	return _ProfitLoss.Contract.GetAvgPrice(&_ProfitLoss.CallOpts, _market, _account, _outcome)
 }
 
+/////////////////// ShareToken contract
+
+// ShareToken is an auto generated Go binding around an Ethereum contract.
+type ShareToken struct {
+	ShareTokenCaller     // Read-only binding to the contract
+	ShareTokenTransactor // Write-only binding to the contract
+	ShareTokenFilterer   // Log filterer for contract events
+}
+
+// ShareTokenCaller is an auto generated read-only Go binding around an Ethereum contract.
+type ShareTokenCaller struct {
+	contract *bind.BoundContract // Generic contract wrapper for the low level calls
+}
+
+// ShareTokenTransactor is an auto generated write-only Go binding around an Ethereum contract.
+type ShareTokenTransactor struct {
+	contract *bind.BoundContract // Generic contract wrapper for the low level calls
+}
+
+// ShareTokenFilterer is an auto generated log filtering Go binding around an Ethereum contract events.
+type ShareTokenFilterer struct {
+	contract *bind.BoundContract // Generic contract wrapper for the low level calls
+}
+
+// ShareTokenSession is an auto generated Go binding around an Ethereum contract,
+// with pre-set call and transact options.
+type ShareTokenSession struct {
+	Contract     *ShareToken       // Generic contract binding to set the session for
+	CallOpts     bind.CallOpts     // Call options to use throughout this session
+	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
+}
+
+// ShareTokenCallerSession is an auto generated read-only Go binding around an Ethereum contract,
+// with pre-set call options.
+type ShareTokenCallerSession struct {
+	Contract *ShareTokenCaller // Generic contract caller binding to set the session for
+	CallOpts bind.CallOpts     // Call options to use throughout this session
+}
+
+// ShareTokenTransactorSession is an auto generated write-only Go binding around an Ethereum contract,
+// with pre-set transact options.
+type ShareTokenTransactorSession struct {
+	Contract     *ShareTokenTransactor // Generic contract transactor binding to set the session for
+	TransactOpts bind.TransactOpts     // Transaction auth options to use throughout this session
+}
+
+// ShareTokenRaw is an auto generated low-level Go binding around an Ethereum contract.
+type ShareTokenRaw struct {
+	Contract *ShareToken // Generic contract binding to access the raw methods on
+}
+
+// ShareTokenCallerRaw is an auto generated low-level read-only Go binding around an Ethereum contract.
+type ShareTokenCallerRaw struct {
+	Contract *ShareTokenCaller // Generic read-only contract binding to access the raw methods on
+}
+
+// ShareTokenTransactorRaw is an auto generated low-level write-only Go binding around an Ethereum contract.
+type ShareTokenTransactorRaw struct {
+	Contract *ShareTokenTransactor // Generic write-only contract binding to access the raw methods on
+}
+
+// NewShareToken creates a new instance of ShareToken, bound to a specific deployed contract.
+func NewShareToken(address common.Address, backend bind.ContractBackend) (*ShareToken, error) {
+	contract, err := bindShareToken(address, backend, backend, backend)
+	if err != nil {
+		return nil, err
+	}
+	return &ShareToken{ShareTokenCaller: ShareTokenCaller{contract: contract}, ShareTokenTransactor: ShareTokenTransactor{contract: contract}, ShareTokenFilterer: ShareTokenFilterer{contract: contract}}, nil
+}
+
+// NewShareTokenCaller creates a new read-only instance of ShareToken, bound to a specific deployed contract.
+func NewShareTokenCaller(address common.Address, caller bind.ContractCaller) (*ShareTokenCaller, error) {
+	contract, err := bindShareToken(address, caller, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &ShareTokenCaller{contract: contract}, nil
+}
+
+// NewShareTokenTransactor creates a new write-only instance of ShareToken, bound to a specific deployed contract.
+func NewShareTokenTransactor(address common.Address, transactor bind.ContractTransactor) (*ShareTokenTransactor, error) {
+	contract, err := bindShareToken(address, nil, transactor, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &ShareTokenTransactor{contract: contract}, nil
+}
+
+// NewShareTokenFilterer creates a new log filterer instance of ShareToken, bound to a specific deployed contract.
+func NewShareTokenFilterer(address common.Address, filterer bind.ContractFilterer) (*ShareTokenFilterer, error) {
+	contract, err := bindShareToken(address, nil, nil, filterer)
+	if err != nil {
+		return nil, err
+	}
+	return &ShareTokenFilterer{contract: contract}, nil
+}
+
+// bindShareToken binds a generic wrapper to an already deployed contract.
+func bindShareToken(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor, filterer bind.ContractFilterer) (*bind.BoundContract, error) {
+	parsed, err := abi.JSON(strings.NewReader(ShareTokenABI))
+	if err != nil {
+		return nil, err
+	}
+	return bind.NewBoundContract(address, parsed, caller, transactor, filterer), nil
+}
+
+// Call invokes the (constant) contract method with params as input values and
+// sets the output to result. The result type might be a single field for simple
+// returns, a slice of interfaces for anonymous returns and a struct for named
+// returns.
+func (_ShareToken *ShareTokenRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+	return _ShareToken.Contract.ShareTokenCaller.contract.Call(opts, result, method, params...)
+}
+
+// Transfer initiates a plain transaction to move funds to the contract, calling
+// its default method if one is available.
+func (_ShareToken *ShareTokenRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _ShareToken.Contract.ShareTokenTransactor.contract.Transfer(opts)
+}
+// Balances is a free data retrieval call binding the contract method 0xfc25a4da.
+//
+// Solidity: function _balances(uint256 , address ) view returns(uint256)
+func (_ShareToken *ShareTokenCaller) Balances(opts *bind.CallOpts, arg0 *big.Int, arg1 common.Address) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _ShareToken.contract.Call(opts, out, "_balances", arg0, arg1)
+	return *ret0, err
+}
+
+// Balances is a free data retrieval call binding the contract method 0xfc25a4da.
+//
+// Solidity: function _balances(uint256 , address ) view returns(uint256)
+func (_ShareToken *ShareTokenSession) Balances(arg0 *big.Int, arg1 common.Address) (*big.Int, error) {
+	return _ShareToken.Contract.Balances(&_ShareToken.CallOpts, arg0, arg1)
+}
+
+// Balances is a free data retrieval call binding the contract method 0xfc25a4da.
+//
+// Solidity: function _balances(uint256 , address ) view returns(uint256)
+func (_ShareToken *ShareTokenCallerSession) Balances(arg0 *big.Int, arg1 common.Address) (*big.Int, error) {
+	return _ShareToken.Contract.Balances(&_ShareToken.CallOpts, arg0, arg1)
+}
+
+// BalanceOf is a free data retrieval call binding the contract method 0x00fdd58e.
+//
+// Solidity: function balanceOf(address account, uint256 id) view returns(uint256)
+func (_ShareToken *ShareTokenCaller) BalanceOf(opts *bind.CallOpts, account common.Address, id *big.Int) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _ShareToken.contract.Call(opts, out, "balanceOf", account, id)
+	return *ret0, err
+}
+
+// BalanceOf is a free data retrieval call binding the contract method 0x00fdd58e.
+//
+// Solidity: function balanceOf(address account, uint256 id) view returns(uint256)
+func (_ShareToken *ShareTokenSession) BalanceOf(account common.Address, id *big.Int) (*big.Int, error) {
+	return _ShareToken.Contract.BalanceOf(&_ShareToken.CallOpts, account, id)
+}
+
+// BalanceOf is a free data retrieval call binding the contract method 0x00fdd58e.
+//
+// Solidity: function balanceOf(address account, uint256 id) view returns(uint256)
+func (_ShareToken *ShareTokenCallerSession) BalanceOf(account common.Address, id *big.Int) (*big.Int, error) {
+	return _ShareToken.Contract.BalanceOf(&_ShareToken.CallOpts, account, id)
+}
+
+// BalanceOfBatch is a free data retrieval call binding the contract method 0x4e1273f4.
+//
+// Solidity: function balanceOfBatch(address[] accounts, uint256[] ids) view returns(uint256[])
+func (_ShareToken *ShareTokenCaller) BalanceOfBatch(opts *bind.CallOpts, accounts []common.Address, ids []*big.Int) ([]*big.Int, error) {
+	var (
+		ret0 = new([]*big.Int)
+	)
+	out := ret0
+	err := _ShareToken.contract.Call(opts, out, "balanceOfBatch", accounts, ids)
+	return *ret0, err
+}
+
+// BalanceOfBatch is a free data retrieval call binding the contract method 0x4e1273f4.
+//
+// Solidity: function balanceOfBatch(address[] accounts, uint256[] ids) view returns(uint256[])
+func (_ShareToken *ShareTokenSession) BalanceOfBatch(accounts []common.Address, ids []*big.Int) ([]*big.Int, error) {
+	return _ShareToken.Contract.BalanceOfBatch(&_ShareToken.CallOpts, accounts, ids)
+}
+
+// BalanceOfBatch is a free data retrieval call binding the contract method 0x4e1273f4.
+//
+// Solidity: function balanceOfBatch(address[] accounts, uint256[] ids) view returns(uint256[])
+func (_ShareToken *ShareTokenCallerSession) BalanceOfBatch(accounts []common.Address, ids []*big.Int) ([]*big.Int, error) {
+	return _ShareToken.Contract.BalanceOfBatch(&_ShareToken.CallOpts, accounts, ids)
+}
+
+// BalanceOfMarketOutcome is a free data retrieval call binding the contract method 0xd64c62f3.
+//
+// Solidity: function balanceOfMarketOutcome(address _market, uint256 _outcome, address _account) view returns(uint256)
+func (_ShareToken *ShareTokenCaller) BalanceOfMarketOutcome(opts *bind.CallOpts, _market common.Address, _outcome *big.Int, _account common.Address) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _ShareToken.contract.Call(opts, out, "balanceOfMarketOutcome", _market, _outcome, _account)
+	return *ret0, err
+}
+
+// BalanceOfMarketOutcome is a free data retrieval call binding the contract method 0xd64c62f3.
+//
+// Solidity: function balanceOfMarketOutcome(address _market, uint256 _outcome, address _account) view returns(uint256)
+func (_ShareToken *ShareTokenSession) BalanceOfMarketOutcome(_market common.Address, _outcome *big.Int, _account common.Address) (*big.Int, error) {
+	return _ShareToken.Contract.BalanceOfMarketOutcome(&_ShareToken.CallOpts, _market, _outcome, _account)
+}
+
+// BalanceOfMarketOutcome is a free data retrieval call binding the contract method 0xd64c62f3.
+//
+// Solidity: function balanceOfMarketOutcome(address _market, uint256 _outcome, address _account) view returns(uint256)
+func (_ShareToken *ShareTokenCallerSession) BalanceOfMarketOutcome(_market common.Address, _outcome *big.Int, _account common.Address) (*big.Int, error) {
+	return _ShareToken.Contract.BalanceOfMarketOutcome(&_ShareToken.CallOpts, _market, _outcome, _account)
+}
+
+// GetTokenIds is a free data retrieval call binding the contract method 0xca3a1e69.
+//
+// Solidity: function getTokenIds(address _market, uint256[] _outcomes) pure returns(uint256[] _tokenIds)
+func (_ShareToken *ShareTokenCaller) GetTokenIds(opts *bind.CallOpts, _market common.Address, _outcomes []*big.Int) ([]*big.Int, error) {
+	var (
+		ret0 = new([]*big.Int)
+	)
+	out := ret0
+	err := _ShareToken.contract.Call(opts, out, "getTokenIds", _market, _outcomes)
+	return *ret0, err
+}
+
+// GetTokenIds is a free data retrieval call binding the contract method 0xca3a1e69.
+//
+// Solidity: function getTokenIds(address _market, uint256[] _outcomes) pure returns(uint256[] _tokenIds)
+func (_ShareToken *ShareTokenSession) GetTokenIds(_market common.Address, _outcomes []*big.Int) ([]*big.Int, error) {
+	return _ShareToken.Contract.GetTokenIds(&_ShareToken.CallOpts, _market, _outcomes)
+}
+
+// GetTokenIds is a free data retrieval call binding the contract method 0xca3a1e69.
+//
+// Solidity: function getTokenIds(address _market, uint256[] _outcomes) pure returns(uint256[] _tokenIds)
+func (_ShareToken *ShareTokenCallerSession) GetTokenIds(_market common.Address, _outcomes []*big.Int) ([]*big.Int, error) {
+	return _ShareToken.Contract.GetTokenIds(&_ShareToken.CallOpts, _market, _outcomes)
+}
+
+// UnpackTokenId is a free data retrieval call binding the contract method 0x26afd2e8.
+//
+// Solidity: function unpackTokenId(uint256 _tokenId) pure returns(address _market, uint256 _outcome)
+func (_ShareToken *ShareTokenCaller) UnpackTokenId(opts *bind.CallOpts, _tokenId *big.Int) (struct {
+	Market  common.Address
+	Outcome *big.Int
+}, error) {
+	ret := new(struct {
+		Market  common.Address
+		Outcome *big.Int
+	})
+	out := ret
+	err := _ShareToken.contract.Call(opts, out, "unpackTokenId", _tokenId)
+	return *ret, err
+}
+
+// UnpackTokenId is a free data retrieval call binding the contract method 0x26afd2e8.
+//
+// Solidity: function unpackTokenId(uint256 _tokenId) pure returns(address _market, uint256 _outcome)
+func (_ShareToken *ShareTokenSession) UnpackTokenId(_tokenId *big.Int) (struct {
+	Market  common.Address
+	Outcome *big.Int
+}, error) {
+	return _ShareToken.Contract.UnpackTokenId(&_ShareToken.CallOpts, _tokenId)
+}
+
+// UnpackTokenId is a free data retrieval call binding the contract method 0x26afd2e8.
+//
+// Solidity: function unpackTokenId(uint256 _tokenId) pure returns(address _market, uint256 _outcome)
+func (_ShareToken *ShareTokenCallerSession) UnpackTokenId(_tokenId *big.Int) (struct {
+	Market  common.Address
+	Outcome *big.Int
+}, error) {
+	return _ShareToken.Contract.UnpackTokenId(&_ShareToken.CallOpts, _tokenId)
+}
