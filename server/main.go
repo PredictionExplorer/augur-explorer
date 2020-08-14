@@ -161,7 +161,10 @@ func main() {
 	_ = m
 	// Listen and serve on defined port
 	log.Printf("Listening on port %s", port_plain)
-	go log.Printf("%v",autotls.Run(r, "predictionexplorer.com"))
+
+	go func() {
+		log.Printf("%v",autotls.Run(r, "predictionexplorer.com"))
+	}()
 	r.Run(":" + port_plain)
 
 }

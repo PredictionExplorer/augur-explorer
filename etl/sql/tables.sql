@@ -12,8 +12,11 @@ CREATE TABLE transaction (	-- we're only storing transactions related to Augur p
 	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
 	from_aid			BIGINT DEFAULT 0,
 	to_aid				BIGINT DEFAULT 0,
+	gas_used			BIGINT DEFAULT 0,
+	tx_index			INT DEFAULT 0,
 	ctrct_create		BOOLEAN DEFAULT FALSE,	-- true if To = nil
 	value				DECIMAL(64,18) DEFAULT 0.0,
+	gas_price			DECIMAL(64,18) DEFAULT 0.0,
 	tx_hash				TEXT NOT NULL UNIQUE
 );
 -- Universe: The container contract for Augur Service
@@ -162,7 +165,6 @@ CREATE table oi_chg ( -- open interest changed event
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
---	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
 	ts_inserted			TIMESTAMPTZ NOT NULL, -- timestamp
 	oi					DECIMAL(24,18) NOT NULL
@@ -288,7 +290,16 @@ CREATE TABLE ustats (	-- statistics per User account
 	total_withdrawn		DECIMAL(32,18) DEFAULT 0.0,
 	total_deposited		DECIMAL(32,18) DEFAULT 0.0,
 	validity_bonds		DECIMAL DEFAULT 0.0,	-- sum of all validity bonds (market creation bond)
-	rep_frozen			DECIMAL(32,18) DEFAULT 0.0	-- amount of REP tokens frozen for all (participated) markets
+	rep_frozen			DECIMAL(32,18) DEFAULT 0.0,	-- amount of REP tokens frozen for all (participated) markets
+	-- Gas usage statistics per user:
+	-- values contain Gas Used , accumulated
+	gtrading			DECIMAL DEFAULT 0,
+	greporting			DECIMAL DEFAULT 0,
+	gmarkets			DECIMAL DEFAULT 0,
+	-- values contain Gas Price , accumulated
+	geth_trading		DECIMAL(64,18) DEFAULT 0.0,
+	geth_reporting		DECIMAL(64,18) DEFAULT 0.0,
+	geth_markets		DECIMAL(64,18) DEFAULT 0.0
 );
 CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 	id					BIGSERIAL PRIMARY KEY,
@@ -300,7 +311,7 @@ CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 	mktord_id			BIGINT DEFAULT 0,			-- this is the id of the market order generated this PL
 	outcome_idx			SMALLINT NOT NULL,
 	closed_position		SMALLINT DEFAULT 0,			-- 0 - open position, 1 - closed position
-	-- note: the following decimal precisions depend on precision of Augur events , inserted in db.go
+	-- noote: the following decimal precisions depend on precision of Augur events , inserted in db.go
 	net_position		DECIMAL(32,18) DEFAULT 0.0,
 	avg_price			DECIMAL(32,20) DEFAULT 0.0,
 	frozen_funds		DECIMAL(64,36) DEFAULT 0.0,
@@ -334,6 +345,7 @@ CREATE TABLE uranks (   -- User Rankings (how this user ranks against each other
 	volume				DECIMAL(32,18) DEFAULT 0.0
 );
 CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur Platform
+	upload_block		BIGINT DEFAULT 0,
 	augur				TEXT DEFAULT '',-- Augur Main contract
 	augur_trading		TEXT DEFAULT '',-- Augur Trading contract
 	profit_loss			TEXT DEFAULT '',-- Profit Loss contract
@@ -349,6 +361,32 @@ CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur P
 CREATE TABLE unique_addrs (	-- Unique addresses per day, statistics
 	day					DATE PRIMARY KEY,
 	num_addrs			BIGINT DEFAULT 0
+);
+CREATE TABLE gas_spent (-- global gas spent
+	day					DATE PRIMARY KEY,
+	num_trading			BIGINT DEFAULT 0,		--number of trading transactions for that day
+	num_reporting		BIGINT DEFAULT 0,
+	num_markets			BIGINT DEFAULT 0,
+	num_total			BIGINT DEFAULT 0,
+	-- values contain raw Gas used
+	trading				DECIMAL DEFAULT 0,
+	reporting			DECIMAL DEFAULT 0,
+	markets				DECIMAL DEFAULT 0,
+	total				DECIMAL DEFAULT 0,
+	-- values contain Gas Price , accumulated
+	eth_trading			DECIMAL(64,18) DEFAULT 0.0,
+	eth_reporting		DECIMAL(64,18) DEFAULT 0.0,
+	eth_markets			DECIMAL(64,18) DEFAULT 0.0,
+	eth_total			DECIMAL(64,18) DEFAULT 0.0
+);
+CREATE TABLE agtx_status (-- Augur transaction status (used to track Gas fees for all interactions with Augur
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	eoa_aid				BIGINT NOT NULL,
+	wallet_aid			BIGINT NOT NULL,
+	success				BOOLEAN NOT NULL,
+	funding_success		BOOLEAN NOT NULL
 );
 CREATE TABLE pl_debug (-- Profit loss data for debugging, scanned after Block has been processed
 	id					BIGSERIAL PRIMARY KEY,

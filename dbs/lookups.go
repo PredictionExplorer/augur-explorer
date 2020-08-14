@@ -103,8 +103,10 @@ func (ss *SQLStorage) Lookup_address_id(addr string) int64 {
 	err:=ss.db.QueryRow(query,addr).Scan(&addr_id);
 	if (err!=nil) {
 		if (err==sql.ErrNoRows) {
+			ss.Log_msg(fmt.Sprintf("Forced address lookup failed for %v : addr not found",addr))
+			os.Exit(1)
 		} else {
-			ss.Log_msg(fmt.Sprintf("DB error upon address lookup: %v",err))
+			ss.Log_msg(fmt.Sprintf("DB error upon address lookup: %v ; q=%v",err,query))
 			os.Exit(1)
 		}
 	}

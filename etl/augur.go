@@ -1,25 +1,25 @@
 package main
 
 import (
+	"time"
 	"bytes"
 	"encoding/hex"
-	"encoding/json"
+	//"encoding/json"
 	"math/big"
 	"context"
 	"os"
+	"errors"
+	"fmt"
 //	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 //	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	//"github.com/ethereum/go-ethereum/common/hexutil"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-type EventSequencer struct {	// determines the order for contained events
-	unordered_list		[]*types.Log
-}
 type InputStruct struct {
 	To common.Address `abi:"_to"`
 	Data []byte `abi:"_data"`
@@ -30,60 +30,6 @@ type InputStruct struct {
 	DesiredSignerBalance *big.Int `abi:"_desiredSignerBalance"`
 	MaxExchangeRateInDai *big.Int `abi:"_maxExchangeRateInDai"`
 	RevertOnFailure bool `abi:"_revertOnFailure"`
-}
-func (sequencer *EventSequencer) append_event(new_log *types.Log) {
-
-	sequencer.unordered_list = append(sequencer.unordered_list,new_log)
-}
-func (sequencer *EventSequencer) get_ordered_event_list() []*types.Log {
-	// determines the correct event sequence for different event combinations
-//	return sequencer.unordered_list
-	// at this moment we just reverse the events. more logic will follow later if needed
-	output := make([]*types.Log,0,8)
-	for i := len(sequencer.unordered_list) - 1; i >= 0; i-- {
-		output = append(output,sequencer.unordered_list[i])
-	}
-	return output
-}
-func (sequencer *EventSequencer) get_events_for_market_finalized_case() []*types.Log {
-	// we must move TradingProceedsClaimed events to the end, so they execut before ProfitLoss events
-
-	output := make([]*types.Log,0,8)
-	var market_finalized *types.Log
-	profit_loss_events := make([]*types.Log,0,8)
-	proceed_events := make([]*types.Log,0,8)
-	other_events := make([]*types.Log,0,8)
-
-	for i := 0 ; i < len(sequencer.unordered_list) ; i++ {
-		if len(sequencer.unordered_list[i].Topics) == 0 {
-			other_events = append(other_events,sequencer.unordered_list[i])
-			continue
-		}
-		if 0 == bytes.Compare(sequencer.unordered_list[i].Topics[0].Bytes(),evt_profit_loss_changed) {
-			profit_loss_events = append(profit_loss_events,sequencer.unordered_list[i])
-			continue
-		}
-		if 0 == bytes.Compare(sequencer.unordered_list[i].Topics[0].Bytes(),evt_trading_proceeds_claimed) {
-			proceed_events = append(proceed_events,sequencer.unordered_list[i])
-			continue
-		}
-		if 0 == bytes.Compare(sequencer.unordered_list[i].Topics[0].Bytes(),evt_market_finalized) {
-			market_finalized = sequencer.unordered_list[i]
-			continue
-		}
-		other_events = append(other_events,sequencer.unordered_list[i])
-	}
-	output = append(output,market_finalized)
-	for i := 0; i < len(profit_loss_events) ; i++ {
-		output = append(output,profit_loss_events[i])
-	}
-	for i := 0; i < len(proceed_events); i++ {
-		output = append(output,proceed_events[i])
-	}
-	for i := 0; i < len(other_events); i++ {
-		output = append(output,other_events[i])
-	}
-	return output
 }
 func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) {
 
@@ -485,6 +431,24 @@ func proc_market_oi_changed(block *types.Header, agtx *AugurTx, log *types.Log) 
 	mevt.Dump(Info)
 	storage.Insert_market_oi_changed_evt(block,agtx,&mevt)
 }
+func is_warp_sync_event(log *types.Log) bool {
+
+	var mevt MktFinalizedEvt
+	err := augur_abi.Unpack(&mevt,"MarketFinalized",log.Data)
+	if err != nil {
+		Fatalf("Event MktFinalizedEvt decode error: %v\n",err)
+		return false
+	}
+	if len(mevt.WinningPayoutNumerators) != 3 {
+		return false
+	}
+	big_num := big.NewInt(0)
+	big_num.SetString("25908241534181278443886245536264200757048797036780741184539099179687432804533",10)
+	if big_num.Cmp(mevt.WinningPayoutNumerators[1]) ==  0 {
+		return true
+	}
+	return false
+}
 func proc_market_finalized_evt(agtx *AugurTx,timestamp int64,log *types.Log) {
 	var mevt MktFinalizedEvt
 	err := augur_abi.Unpack(&mevt,"MarketFinalized",log.Data)
@@ -573,6 +537,28 @@ func proc_market_volume_changed_v2(agtx *AugurTx, log *types.Log) {
 	mevt.Dump(Info)
 	storage.Insert_market_volume_changed_evt_v2(agtx,&mevt)
 }
+func show_market_created_evt(agtx *AugurTx,log *types.Log) {
+	// function used for debugging
+	var mevt MarketCreatedEvt
+	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])   // extract universe addr
+	mevt.MarketCreator = common.BytesToAddress(log.Topics[2][12:])  // extract crator addr
+	err := augur_abi.Unpack(&mevt,"MarketCreated",log.Data)
+	if err != nil {
+		Fatalf("Event MarketCreated decode error: %v",err)
+		return
+	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		Info.Printf(
+			"MarketCreated event received and ignored (belongs to different contract: %v) " +
+			"at block %v (EVENT_IGNORE)",
+			log.Address.String(),agtx.BlockNum,
+		)
+		return
+	}
+	Info.Printf("MarketCreated event found (block=%v)\n",log.BlockNumber)
+	mevt.Dump(Info)
+}
+
 func proc_market_created(agtx *AugurTx,log *types.Log,validity_bond string) {
 	var mevt MarketCreatedEvt
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
@@ -593,6 +579,27 @@ func proc_market_created(agtx *AugurTx,log *types.Log,validity_bond string) {
 	mevt.Dump(Info)
 	eoa_aid := get_eoa_aid(&mevt.MarketCreator,agtx.BlockNum,agtx.TxId)
 	storage.Insert_market_created_evt(agtx,eoa_aid,validity_bond,&mevt)
+}
+func proc_transaction_status(agtx *AugurTx, log *types.Log) {
+	var evt ExecuteTransactionStatus
+	err := wallet_abi.Unpack(&evt,"ExecuteTransactionStatus",log.Data)
+	if err != nil {
+		Fatalf("Event decode error: %v",err)
+		return
+	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.WalletReg.Bytes()) {
+		Info.Printf(
+			"ExecuteTransactionStatus event received and ignored (belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),agtx.BlockNum,
+		)
+		return
+	}
+	Info.Printf("ExecuteTransactionStatus event found (block=%v) : \n",log.BlockNumber)
+	evt.Dump(Info)
+// finding EOA-Wallet link is pending and not clear how it is going to be done
+//	eoa_aid := get_eoa_aid(&common.Address{},agtx.BlockNum,agtx.TxId)
+//	_ = eoa_aid
+	storage.Insert_augur_transaction_status(agtx,&evt)
 }
 func tx_insert_if_needed(agtx *AugurTx) {
 	if agtx.TxId == 0 {
@@ -682,6 +689,7 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_created) {
 			// we have inverted the events, so the validity bond amount is stored in
 			// ERC20 transfer event (it is transfered to the Universe)
+			show_market_created_evt(agtx,log)
 			var validity_bond string
 			var transf_evt Transfer
 			tr_idx := lidx + 1	// the offset to ERC20 event (as they fired by contracts)
@@ -693,163 +701,212 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 			tx_insert_if_needed(agtx)
 			proc_market_created(agtx,log,validity_bond)
 		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_execute_tx_status) {
+			tx_insert_if_needed(agtx)
+			proc_transaction_status(agtx,log)
+		}
 	}
 	for j:=1; j < num_topics ; j++ {
 		Info.Printf("\t\t\t\tLog Topic %v , %v \n",j,log.Topics[j].String())
 	}
 	return id
 }
-func get_block_hash(block_num int64) (string,error) {
-	// this function is needed because Parity doesn't return the correct block hash over RPC, the hash
-	// it returns is re-calculated while some fileds of the types.Header object are unset, giving wrong hash
+func roll_back_blocks(diverging_block *types.Header) error {
+	// Finds the block from which the fork started
 	ctx := context.Background()
-	var raw json.RawMessage
-	err := rpcclient.CallContext(ctx, &raw,"eth_getBlockByNumber", hexutil.EncodeBig(big.NewInt(int64(block_num))),false)
-	var blockHash rpcBlockHash
-	err = json.Unmarshal(raw,&blockHash)
-	if err!= nil {
-		Error.Printf("Error unmarshalling hash of the block: %v\n",err)
-		return "",err
-	} else {
-		return blockHash.Hash,nil
+	block_num:=diverging_block.Number.Int64()
+	starting_block_num:=block_num
+	for {
+		big_block_num := big.NewInt(block_num)
+		block, err := eclient.BlockByNumber(ctx,big_block_num)
+		if err != nil {
+			return err
+		}
+		if block == nil {
+			e:=errors.New(fmt.Sprintf("ETH client api returned NULL block object (bnum=%v)",block_num))
+			return e
+		}
+		block_hash:=block.Hash().String()
+		my_block_num,err := storage.Get_block_num_by_hash(block_hash)
+		Info.Printf("Chainsplit fix: hash %v, my_block_num=%v err=%v\n",block_hash,my_block_num,err)
+		if err == nil {
+			if my_block_num == block.Number().Int64() {
+				Info.Printf(
+					"Chainsplit fix: deleting blocks higher than %v ; good block hash = %v\n",
+					my_block_num,block_hash,
+				)
+				storage.Chainsplit_delete_blocks(my_block_num)
+				storage.Set_last_block_num(my_block_num)
+				return nil
+			}
+		} else {
+			Info.Printf(
+				"Chainsplit fix: block %v donesn't fit, block_hash=%v not found in my DB.\n",
+				block_num,block_hash,
+			)
+		}
+		block_num--
+		if (starting_block_num - block_num) > MAX_BLOCKS_CHAIN_SPLIT {
+			Info.Printf(
+				"Chainsplit fix: Chain split is longer than reasonal length, aborting. " +
+				"(starting_block_num=%v, cur_block_num=%v",
+				starting_block_num,block_num,
+			)
+			return errors.New("Chain split max size overflow")
+		}
 	}
+	return errors.New("Chainsplit fix: Undefined behaviour")
 }
-func process_block(bnum int64) error {
+func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) error {
 
-	ctx := context.Background()
 	block_hash_str,err:=get_block_hash(bnum)
 	if err!=nil {
 		return err
 	}
 	big_bnum:=big.NewInt(int64(bnum))
-	block, err := eclient.BlockByNumber(ctx,big_bnum)
-	Info.Printf("processing block %v, err=%v\n",bnum,err)
+	block_hash,header,transactions,err := get_full_block(bnum)
+	if err!=nil {
+		Info.Printf("Can't decode Block object received on RPC: %v. Aborting.\n",err)
+		return err
+	}
+	num_transactions := len(transactions)
+	Info.Printf("block hash = %v, num_tx=%v\n",block_hash_str,num_transactions)
+	if bnum!=header.Number.Int64() {
+		Info.Printf("Retrieved block number %v but Block object contains another number (%v)",bnum,header.Number.Int64())
+		Error.Printf("Retrieved block number %v but Block object contains another number (%v)",bnum,header.Number.Int64())
+		return errors.New("Block object inconsistency")
+	}
+	storage.Block_delete_with_everything(big_bnum.Int64())
+	receipt_calls := make([]*receiptCallResult,num_transactions,num_transactions)
+	for i,tx := range transactions {
+		hash := common.HexToHash(tx.TxHash)
+		go get_receipt_async(i,hash,&receipt_calls)
+	}
+	err = storage.Insert_block(block_hash_str,header,no_chainsplit_check)
 	if err != nil {
-		Error.Printf("Error in BlockByNumber call: %v\n",err)
-	} else {
-		if block != nil {
-			block_hash:=common.HexToHash(block_hash_str)
-			storage.Block_delete_with_everything(big_bnum.Int64())
-			num_transactions, err := eclient.TransactionCount(ctx,block_hash)
-			if err != nil {
-				Error.Printf("block error: %v \n",err)
-				return err
-			} else {
-				header := block.Header()
-				back_block_num := new(big.Int).SetUint64(header.Number.Uint64() - 20)
-				if (back_block_num.Uint64() == 99999999999999) && !split_simulated {//simulation disabled
-					// code to simulate chain split (naive) , this block should be removed when stable
-					block,_ = eclient.BlockByNumber(ctx,back_block_num)
-					header = block.Header()
-					big_bnum = big.NewInt(int64(header.Number.Int64()))
-					storage.Block_delete_with_everything(header.Number.Int64())
-					split_simulated = true
-					Info.Println("Chain split simulation in action");
-				}
-				if !storage.Insert_block(block_hash_str,header) {
-					// chainsplit detected
-					set_back_block_num = storage.Fix_chainsplit(header)
-					Info.Printf("Chain rewind to block %v. Restarting.",set_back_block_num)
-					return errChainSplit
-				}
-				if num_transactions > 0 {
-					Info.Printf("block_proc: %v %v transactions\n",block.Number(),num_transactions)
-					for tnum:=0 ; tnum < int(num_transactions) ; tnum++ {
-						tx , err := eclient.TransactionInBlock(ctx,block_hash,uint(tnum))
-						if err != nil {
-							Error.Printf("Error: %v",err)
-							return err
-						} else {
-							tx_msg, err := tx.AsMessage(types.NewEIP155Signer(tx.ChainId()))
-							if err != nil {
-								Fatalf("Error in tx signature validation (shoudln't happen): %v",err)
-							}
-							dump_tx_input_if_known(tx)
-							to:="0x0000000000000000000000000000000000000000"
-							if tx.To() != nil {
-								to = tx.To().String()
-							}
-							Info.Printf("\ttx: %v of %v : %v at blockNum=%v\n",tnum,num_transactions,tx.Hash().String(),bnum)
-							Info.Printf("\t from=%v\n",tx_msg.From().String())
-							Info.Printf("\t to=%v for $%v (%v bytes data)\n",
-											to,tx.Value().String(),len(tx.Data()))
-							//Info.Printf("\t input: \n%v\n",hex.EncodeToString(tx.Data()[:]))
-							rcpt,err := eclient.TransactionReceipt(ctx,tx.Hash())
-							if err != nil {
-								Error.Printf("Error: %v",err)
-								return err
-							} else {
-								if rcpt.BlockNumber.Int64() != bnum {
-									Error.Printf(
-										"Transaction's receipt doesn't match current block number." +
-										" cur_block_num=%v, receipt.block_num=%v\n",
-										bnum,rcpt.BlockNumber.Int64(),
-									)
-									os.Exit(1)
-								}
-								agtx := new(AugurTx)
-								agtx.CtrctCreate = false
-								if tx.To() == nil {
-									to = rcpt.ContractAddress.String()
-									agtx.CtrctCreate = true
-								}
-								agtx.TxId = 0
-								agtx.BlockNum = block.Number().Int64()
-								agtx.TxHash = tx.Hash().String()
-								agtx.TxMsg = &tx_msg
-								agtx.To = to
-								contains_market_finalized:=false
-								sequencer := new(EventSequencer)
-								num_logs := len(rcpt.Logs)
-								for i:=0 ; i<num_logs ; i++ {
-									if len(rcpt.Logs[i].Topics) > 0 {
-										Info.Printf(
-											"\t\t\tlog %v\n\t\t\t\t\t\t for contract %v (%v of %v items)\n",
-											rcpt.Logs[i].Topics[0].String(),rcpt.Logs[i].Address.String(),(i+1),len(rcpt.Logs))
-										if 0 == bytes.Compare(rcpt.Logs[i].Topics[0].Bytes(),evt_market_finalized) {
-											contains_market_finalized = true
-										}
-									}
-									sequencer.append_event(rcpt.Logs[i])
-								}
-								var ordered_list []*types.Log
-								if contains_market_finalized {
-									// logs with Market finalized event need to have special order
-									ordered_list = sequencer.get_events_for_market_finalized_case()
-								} else {
-									ordered_list = sequencer.get_ordered_event_list()
-								}
-								num_logs = len(ordered_list)
-								pl_entries := make([]int64,0,2);// profit loss entries
-								market_order_id = 0
-								fill_order_id = 0
-								for i:=0 ; i < num_logs ; i++ {
-									if len(ordered_list[i].Topics) > 0 {
-										Info.Printf(
-											"\t\t\tchecking log with sig %v\n\t\t\t\t\t\t for contract %v\n",
-											ordered_list[i].Topics[0].String(),
-											ordered_list[i].Address.String())
-										id := process_event(block.Header(),agtx,&ordered_list,i)
-										if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),evt_profit_loss_changed) {
-											pl_entries = append(pl_entries,id)
-										}
-									}
-								}
-							}
-						}
+		err = roll_back_blocks(header)
+		if err == nil {
+			return nil
+		}
+		Error.Printf("Unable to recover from chainsplit: %v. Aborting",err)
+		os.Exit(1)
+	}
+	if num_transactions == 0 {
+		Info.Printf("block_proc: block: %v EMPTY\n",bnum)
+		if update_last_block {
+			storage.Set_last_block_num(bnum)
+		}
+		return nil
+	}
+	for tnum,agtx := range transactions {
+		// wait for receipt to arrive
+		for {
+			if receipt_calls[tnum] != nil {
+				break	// receipt arrived from the net, stop waiting
+			}
+			time.Sleep(1 * time.Millisecond)
+		}
+		if receipt_calls[tnum].err != nil {
+			Info.Printf(
+				"Failed to get Tx Receipt for %v, block num=%v. Aborting block processing: %v\n",
+				agtx.TxHash,bnum,err,
+			)
+			Error.Printf(
+				"Failed to get Tx Receipt for %v, block num=%v. Aborting block processing: %v\n",
+				agtx.TxHash,bnum,err,
+			)
+			return receipt_calls[tnum].err
+		}
+		rcpt := receipt_calls[tnum].receipt
+		Info.Printf("\ttx: %v of %v : %v at blockNum=%v\n",tnum,num_transactions,agtx.TxHash,bnum)
+		Info.Printf("\t from=%v\n",agtx.From)
+		Info.Printf("\t to=%v for $%v (%v bytes data)\n",
+						agtx.To,agtx.Value,len(agtx.Input))
+		dump_tx_input_if_known(agtx.Input)
+		if rcpt.BlockNumber.Int64() != bnum {
+			Error.Printf(
+				"Transaction's receipt doesn't match current block number. (block possibly changed)" +
+				" cur_block_num=%v, receipt.block_num=%v\n",
+				bnum,rcpt.BlockNumber.Int64(),
+			)
+			return errors.New("Block changed during processing")
+		}
+		agtx.TxId = 0
+		if agtx.CtrctCreate == true {
+			agtx.To = rcpt.ContractAddress.String()
+		}
+		agtx.GasUsed = int64(rcpt.GasUsed)
+		agtx.TxIndex = int32(tnum)
+		sequencer := new(EventSequencer)
+		num_logs := len(rcpt.Logs)
+		var agtx_type int = AgTxType_Unclassified
+		// Step 1: First detect what kind of Augur Transaction we are dealing with
+		for i:=0 ; i<num_logs ; i++ {
+			if len(rcpt.Logs[i].Topics) > 0 {
+				Info.Printf(
+					"\t\tlog %v\t for contract %v (%v of %v items)\n",
+					hex.EncodeToString(rcpt.Logs[i].Topics[0][0:4]),
+					rcpt.Logs[i].Address.String(),(i+1),len(rcpt.Logs))
+				if 0 == bytes.Compare(rcpt.Logs[i].Topics[0].Bytes(),evt_market_finalized) {
+					if is_warp_sync_event(rcpt.Logs[i]) {
+						// WarpSync market emits 2 events MarketFFinalized and MarketCreated
+						// MarketFinalized doesn't have ProfitLoss events, so we can process it
+						// just using inverse order (i.e. considering it as non-MarketFinalized)
+					} else {
+						agtx_type = AgTxType_MarketFinalized
 					}
-				} else {
-					Info.Printf("block: %v EMPTY\n",block.Number())
+				}
+				if 0 == bytes.Compare(rcpt.Logs[i].Topics[0].Bytes(),evt_market_order) {
+					agtx_type = AgTxType_MarketOrder
+				}
+			}
+			sequencer.append_event(rcpt.Logs[i])
+		}
+		// Step 2: Knowing what kind of Augur Transaction, we are sorting events in an order
+		//			that is convinient for us to process the event series
+		var ordered_list []*types.Log
+		switch agtx_type {
+			case AgTxType_Unclassified:
+				ordered_list = sequencer.get_ordered_event_list()
+			case AgTxType_MarketFinalized:
+				// logs with Market finalized event need to have special order
+				ordered_list = sequencer.get_events_for_market_finalized_case()
+			case AgTxType_MarketOrder:
+				ordered_list = sequencer.get_events_for_market_order_case()
+			default:
+				Info.Printf("Undefined behaviour in detecting Augur Transaction type")
+				os.Exit(1)
+		}
+		num_logs = len(ordered_list)
+		pl_entries := make([]int64,0,2);// profit loss entries
+		market_order_id = 0
+		fill_order_id = 0
+		//
+		// Step 3: Execute events using ordered list prepared in previous step
+		for i:=0 ; i < num_logs ; i++ {
+			if len(ordered_list[i].Topics) > 0 {
+				Info.Printf(
+					"\t\tchecking log with sig %v\t for contract %v\n",
+					hex.EncodeToString(ordered_list[i].Topics[0][0:4]),
+					ordered_list[i].Address.String())
+				id := process_event(header,agtx,&ordered_list,i)
+				//var id int64 =0
+				if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),evt_profit_loss_changed) {
+					pl_entries = append(pl_entries,id)
 				}
 			}
 		}
 	}
+	Info.Printf("block_proc: %v %v ; %v transactions\n",bnum,block_hash.String(),num_transactions)
+	if update_last_block {
+		storage.Set_last_block_num(bnum)
+	}
 	return nil
 }
-func dump_tx_input_if_known(tx *types.Transaction) {
+func dump_tx_input_if_known(tx_data []byte) {
 
-	tx_data:=tx.Data()
 	if len(tx_data) < 32 {
+		Info.Printf("dump_tx_input: input sig: %v\n",hex.EncodeToString(tx_data[:]))
 		return
 	}
 	input_sig := tx_data[:4]

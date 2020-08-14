@@ -112,7 +112,7 @@ To load production config for ETL deamon, run these commands:
 
     cd ./augur-explorer/etl
     . $HOME/configs/etl-config.env
-    nohup ./etl &
+    ./etl &
 
 ##### Log files:
 
@@ -120,7 +120,7 @@ The logs will be created in $HOME/ae_logs automatically
 
 ##### Start/Stop processes
 
- * To start a daemon just invoke the executable without parameters: `nohup ./[daemon_name] &`
+ * To start a daemon just invoke the executable without parameters: `./[daemon_name] &`
  * To stop a daemon use `kill` command
 
 The `etl` daemon won't exit until it finishes the processing of current blocks completely , this usually takes 20-30 seconds on the Main Net.

@@ -34,6 +34,14 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 	var ui p.UserInfo
 	ss.fill_block_info(&ui,user_aid)
 
+	var eoa_aid int64
+	var wallet_aid int64
+	eoa_aid,_=ss.Lookup_eoa_aid(user_aid)
+	wallet_aid,_=ss.Lookup_wallet_aid(user_aid)
+	if (eoa_aid==0) && (wallet_aid==0) {
+		ui.NotAugur = true
+	}
+
 	var query string
 	query = "SELECT " +
 				"s.wallet_aid," +
@@ -276,7 +284,7 @@ func (ss *SQLStorage) Get_top_volume_makers() []p.VolumeMaker {
 	}
 	return records
 }
-func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.UserReport {
+func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.Report {
 
 	var query string
 	query = "SELECT " +
@@ -303,7 +311,7 @@ func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.UserReport {
 		query = query +	" LIMIT " + strconv.Itoa(limit)
 	}
 
-	records := make([]p.UserReport,0,8)
+	records := make([]p.Report,0,8)
 	var rows *sql.Rows
 	var err error
 	rows,err = ss.db.Query(query,eoa_aid)
@@ -317,7 +325,7 @@ func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.UserReport {
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.UserReport
+		var rec p.Report
 		var mkt_type int
 		var designated_outcome int
 		var winning_outcome int
@@ -605,6 +613,7 @@ func (ss *SQLStorage) Get_user_trades_for_market(eoa_aid int64,mkt_aid int64) []
 	// get market trades with mixed outcomes
 	var query string
 	query = "SELECT " +
+				"o.id," +
 				"o.order_id," +
 				"a.addr as mkt_addr," +
 				"ca.addr as creator_addr," +
@@ -648,6 +657,7 @@ func (ss *SQLStorage) Get_user_trades_for_market(eoa_aid int64,mkt_aid int64) []
 		var mkt_type int
 		var outcomes string
 		err=rows.Scan(
+			&rec.OrderId,
 			&rec.OrderHash,
 			&rec.MktAddr,
 			&rec.CreatorAddr,
@@ -751,4 +761,32 @@ func (ss *SQLStorage) Get_user_open_orders(user_aid int64) []p.OpenOrder {
 		records = append(records,rec)
 	}
 	return records
+}
+func  (ss *SQLStorage) Get_gas_spent_for_user(eoa_aid int64) (p.GasSpent,error) {
+
+	var output p.GasSpent
+	var query string
+	query =
+		"SELECT " +
+			"gtrading,greporting,gmarkets," +
+			"geth_trading,geth_reporting,geth_markets "+
+		"FROM ustats "+
+		"WHERE eoa_aid=$1"
+
+	row := ss.db.QueryRow(query,eoa_aid)
+	err := row.Scan(
+		&output.Trading,
+		&output.Reporting,
+		&output.Markets,
+		&output.EthTrading,
+		&output.EthReporting,
+		&output.EthMarkets,
+	)
+	if err != nil {
+		if err!=sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
+			os.Exit(1)
+		}
+	}
+	return output,nil
 }

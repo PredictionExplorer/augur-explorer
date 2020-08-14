@@ -247,6 +247,33 @@
 			</td>
 		</tr>
 		<tr class="user_info">
+			<td>Gas Spent</td>
+			<td>
+				<table border=1>
+					<tr>
+						<td></td>
+						<td>Gas Used</td>
+						<td>Tx Fee (ETH)</td>
+					</tr>
+					<tr>
+						<td>Market Creation</td>
+						<td>{{.GasSpent.Markets}}</td>
+						<td>{{.GasSpent.EthMarkets}}</td>
+					</tr>
+					<tr>
+						<td>Trading Markets</td>
+						<td>{{.GasSpent.Trading}}</td>
+						<td>{{.GasSpent.EthTrading}}</td>
+					</tr>
+					<tr>
+						<td>Reporting</td>
+						<td>{{.GasSpent.Reporting}}</td>
+						<td>{{.GasSpent.EthReporting}}</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr class="user_info">
 			<td>User registered</td>
 			<td><span id="reg_date"></span></td>
 		</tr>

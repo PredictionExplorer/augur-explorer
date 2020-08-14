@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"context"
 	"log"
-	"errors"
+	//"errors"
 	//"math/big"
 	"encoding/hex"
 	//"encoding/json"
@@ -53,6 +53,7 @@ const (
 	TRADING_PROCEEDS_CLAIMED = "95366b7f64c6bb45149f9f7c522403fceebe5170ff76b8ffde2b0ab943ac11ce"
 	ZEROX_APPROVAL_FOR_ALL = "17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31"
 	ERC20_APPROVAL = "8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
+	EXEC_TX_STATUS = "ee9c28a7fe7177d351e891cb4ca5b7a4e4aba4974be67fb7665ba1ad0e703439"
 
 	DEFAULT_WAIT_TIME = 5000	// 5 seconds
 	DEFAULT_DB_LOG				= "db.log"
@@ -81,6 +82,7 @@ var (
 	evt_trading_proceeds_claimed,_ = hex.DecodeString(TRADING_PROCEEDS_CLAIMED)
 	evt_zerox_approval_for_all,_ = hex.DecodeString(ZEROX_APPROVAL_FOR_ALL)
 	evt_erc20_approval,_ = hex.DecodeString(ERC20_APPROVAL)
+	evt_execute_tx_status,_ = hex.DecodeString(EXEC_TX_STATUS)
 
 	storage *SQLStorage
 
@@ -118,7 +120,7 @@ var (
 	Error   *log.Logger
 	Info	*log.Logger
 
-	errChainSplit error = errors.New("Chainsplit detected")
+	//DISCONTINUED ErrChainSplit error = errors.New("Chainsplit detected")
 	split_simulated bool = false
 )
 type rpcBlockHash struct {
@@ -164,7 +166,7 @@ func main() {
 
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 	os.MkdirAll(log_dir, os.ModePerm)
-	db_log_file:=fmt.Sprintf("%v/%v",log_dir,DEFAULT_DB_LOG)
+	db_log_file:=fmt.Sprintf("%v/etl_%v",log_dir,DEFAULT_DB_LOG)
 
 	position_changes = make([]*PosChg,0,8)
 
@@ -174,7 +176,7 @@ func main() {
 		fmt.Printf("Can't start: %v\n",err)
 		os.Exit(1)
 	}
-	Info = log.New(logfile,"INFO: ",log.Ltime)		//|log.Lshortfile)
+	Info = log.New(logfile,"INFO: ",log.Ltime|log.Lshortfile)
 
 	fname=fmt.Sprintf("%v/etl_error.log",log_dir)
 	if err!=nil {
@@ -182,7 +184,7 @@ func main() {
 		os.Exit(1)
 	}
 	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	Error = log.New(logfile,"ERROR: ",log.Ltime)		//|log.Lshortfile)
+	Error = log.New(logfile,"ERROR: ",log.Ltime|log.Lshortfile)
 	rpcclient, err=rpc.DialContext(context.Background(), RPC_URL)
 	if err != nil {
 		log.Fatal(err)
@@ -218,7 +220,7 @@ func main() {
 	if len(block_numbers) > 0 {
 		for i:=0 ; i<len(block_numbers); i++ {
 			bnum := block_numbers[i]
-			err := process_block(bnum)
+			err := process_block(bnum,false,true)
 			if err!=nil {
 				fmt.Printf("Process failed: %v. Repeat again.\n",err)
 				os.Exit(1)
@@ -252,30 +254,29 @@ func main() {
 	for ; bnum<bnum_high; bnum++ {
 		//block_hash:=common.HexToHash(block_hash_str)
 		for {
-			err := process_block(bnum)
+			select {
+				case exit_flag := <-exit_chan:
+					if exit_flag {
+						Info.Println("Exiting by user request.")
+						os.Exit(0)
+					}
+				default:
+			}
+			err := process_block(bnum,true,false)
 			if err==nil {
 				break
 			} else {
-				// this is probably happening due to RPC unavailability
+				// this is probably happening due to RPC unavailability, so we use a delay
 				time.Sleep(1 * time.Second)
-				if err == errChainSplit {
+				if err == ErrChainSplit {
 					bnum = set_back_block_num
 					continue
 				}
 				Error.Printf("Block processing error: %v\n",err)
 			}
 		}
-		storage.Set_last_block_num(bnum)
 		//scan_profit_loss_data_for_debugging(bnum,&position_changes)
 		position_changes=nil
-		select {
-			case exit_flag := <-exit_chan:
-				if exit_flag {
-					Info.Println("Exiting by user request.")
-					os.Exit(0)
-				}
-			default:
-		}
 	}// for block_num
 	latestBlock, err = eclient.BlockByNumber(ctx, nil)
 	if err != nil {

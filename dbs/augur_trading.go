@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strings"
 	"strconv"
+	"errors"
 	"database/sql"
 	"encoding/hex"
 	_  "github.com/lib/pq"
@@ -180,41 +181,80 @@ func (ss *SQLStorage) Insert_open_order(
 	eoa_addr string,
 	ospec *p.ZxMeshOrderSpec,
 	evt_timestamp int64,
-) {
+) error {
 	// Insert an open order, this order needs to be Filled by another market participant
 	// It also can be canceled by its creator (with another transaction)
 	var err error
 	order_id := ohash
 	expiration := order.ExpirationTimeSeconds.Int64()
 	// note: we don't have block number/tx hash for activity from 0x Mesh, so we insert with 0s
-	ss.Info.Printf("received eoa addr=%v\n",eoa_addr)
-	wallet_aid := ss.Lookup_or_create_address(order.MakerAddress.String(),0,0)
-	zero_addr := common.BigToAddress(zero)
+	ss.Info.Printf(
+		"Open Order: Market %v, Price %v, Otcome %v\n",
+		ospec.Market.String(),ospec.Price.String(),ospec.Outcome,
+	)
+	// Note: the MakerAddress can be either EOA of the User or Wallet contract of the User
+	//			we need to figure out which one we have been given
+	var wallet_aid int64 = 0
 	var eoa_aid int64 = 0
-	if zero_addr.String()==eoa_addr {
-		ss.Info.Printf(
-			"0x Mesh provided empty EOA address for maker addres %v (NULL_EOA_ADDR_FROM_MESH)",
-			order.MakerAddress.String(),
-		)
-		tmp_eoa_aid,err:=ss.Lookup_eoa_aid(wallet_aid)
-		if err == nil {
-			eoa_aid = tmp_eoa_aid
-		} else {
+	zero_addr := common.BigToAddress(zero)
+	if zero_addr.String()==eoa_addr {	// MakerAddress must be an EOA address
+		eoa_aid,err = ss.Nonfatal_lookup_address_id(order.MakerAddress.String())
+		if err != nil {
+			// Note: we can't INSERT an address from here because we need Transaction Hash (for reference)
 			ss.Info.Printf(
-				"Will insert open order from 0x Mesh with empty EOA addr (NULL_EOA_ADDR_FROM_MESH) (maker: %v)",
+				"MakerAddress %v is unregistered in the DB",
 				order.MakerAddress.String(),
+			)
+			return errors.New(
+				fmt.Sprintf("MakerAddress %v is unregistered in the DB.",order.MakerAddress.String()),
+			)
+		}
+		// Now we need to validate this this address is indeed an EOA
+		wallet_aid,err = ss.Lookup_wallet_aid(eoa_aid)
+		if err != nil {
+			ss.Info.Printf(
+				"MakerAddress %v doesn't have an associated Wallet contract",
+				order.MakerAddress.String(),
+			)
+			return errors.New("EOA address provided from Mesh listener is zero address and un-registered.")
+		}
+	} else { // MakerAddress has an EOA address, means MakerAddress is a Wallet contract
+		wallet_aid,err = ss.Nonfatal_lookup_address_id(order.MakerAddress.String())
+		if err != nil {
+			// Maker is not Wallet Contract, then it must be EOA
+			ss.Info.Printf(
+				"MakerAddress %v is unregistered in the DB : %v",
+				order.MakerAddress.String(),err,
+			)
+			return errors.New(
+				fmt.Sprintf("MakerAddress %v is unregistered in the DB.",order.MakerAddress.String()),
+			)
+		}
+		eoa_aid,err = ss.Lookup_eoa_aid(wallet_aid)
+		if err != nil {
+			ss.Info.Printf(
+				"MakerAddress %v is a Wallet contract that doesn't have an associated EOA address: %v",
+				order.MakerAddress.String,err,
+			)
+			return errors.New(
+				fmt.Sprintf("MakerAddress %v doesn't have associated EOA",order.MakerAddress.String()),
 			)
 		}
 	}
-	if eoa_aid == 0 {
-		eoa_aid = ss.Lookup_or_create_address(eoa_addr,0,0)
-	}
+	ss.Link_eoa_and_wallet_contract(eoa_aid,wallet_aid) // enforce EOA-Wallet link (though it may exist)
 
 	ss.Info.Printf(
 		"creating open order made by %v : market=%v, price=%v, Outcome=%v, Type=%v\n",
 		eoa_addr,ospec.Market.String(),ospec.Price.String(),ospec.Outcome,ospec.Type,
 	)
-	market_aid := ss.Lookup_address_id(ospec.Market.String())
+	market_aid,err := ss.Nonfatal_lookup_address_id(ospec.Market.String())
+	if err != nil {
+		ss.Info.Printf(
+			"Cant find market %v, probably 0x Mesh is ahead of the main chain",
+			ospec.Market.String(),
+		)
+		return errors.New("Market not yet registered")
+	}
 	price := float64(ospec.Price.Int64())/100
 	otype := ospec.Type	// Bid/Ask
 	amount := order.MakerAssetAmount.String()
@@ -243,17 +283,18 @@ func (ss *SQLStorage) Insert_open_order(
 			order_id)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into open orders table: %v, q=%v",err,query))
-		return
+		return err
 	}
 	rows_affected,err:=result.RowsAffected()
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 	}
 	if rows_affected > 0 {
-		return
+		return nil
 	} else {
 		ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into Open Orders table. Rows affeced = 0"))
 	}
+	return errors.New("Affected rows=0")
 }
 func (ss *SQLStorage) Delete_open_0x_order(order_hash string) {
 
@@ -310,6 +351,7 @@ func (ss *SQLStorage) Get_mkt_trades(mkt_addr string,limit int) []p.MarketTrade 
 	}
 	var query string
 	query = "SELECT " +
+				"o.id," +
 				"o.order_id," +
 				"a.addr as mkt_addr," +
 				"ca.addr as creator_addr," +
@@ -359,6 +401,7 @@ func (ss *SQLStorage) Get_mkt_trades(mkt_addr string,limit int) []p.MarketTrade 
 		var mkt_type int
 		var outcomes string
 		err=rows.Scan(
+			&rec.OrderId,
 			&rec.OrderHash,
 			&rec.MktAddr,
 			&rec.CreatorAddr,
@@ -376,6 +419,7 @@ func (ss *SQLStorage) Get_mkt_trades(mkt_addr string,limit int) []p.MarketTrade 
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		rec.OrderHashSh=p.Short_hash(rec.OrderHash)
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)
 		rec.CreatorAddrSh=p.Short_address(rec.CreatorAddr)
 		rec.FillerAddrSh=p.Short_address(rec.FillerAddr)
@@ -397,7 +441,7 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 				"o.expiration::date AS expires," +
 				"FLOOR(EXTRACT(EPOCH FROM o.expiration))::BIGINT as expires_ts," +
 				"o.price AS price, " +
-				"o.amount AS volume," +
+				"o.amount AS amount," +
 				"s.num_bids," +
 				"s.num_asks," +
 				"s.num_cancel " +
@@ -472,10 +516,11 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 	}
 	return records,max_id
 }
-func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) []p.MarketOrder{
+func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) []p.OrderInfo {
 
 	var query string
 	query = "SELECT " +
+				"o.id,"+
 				"o.order_id," +
 				"o.market_aid," +
 				"c_w_a.addr AS c_w_a_addr," +
@@ -507,12 +552,13 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.MarketOrder,0,8)
+	records := make([]p.OrderInfo,0,8)
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.MarketOrder
+		var rec p.OrderInfo
 		err=rows.Scan(
+			&rec.OrderId,
 			&rec.OrderHash,
 			&rec.MktAid,
 			&rec.CreatorWalletAddr,
@@ -525,7 +571,7 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 			&rec.CreatedTs,
 			&rec.OutcomeIdx,
 			&rec.Price,
-			&rec.Volume,
+			&rec.Amount,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
@@ -541,11 +587,24 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 		rec.CreatorEOAAddrSh=p.Short_address(rec.CreatorEOAAddr)
 		rec.FillerWalletAddrSh=p.Short_address(rec.FillerWalletAddr)
 		rec.FillerEOAAddrSh=p.Short_address(rec.FillerEOAAddr)
-		accumulated_volume = accumulated_volume + rec.Volume
+		accumulated_volume = accumulated_volume + rec.Amount
 		rec.AccumVol = accumulated_volume
 		records = append(records,rec)
 	}
 	return records
+}
+func (ss *SQLStorage) Get_full_price_history(mkt_addr string,market_aid int64) p.FullPriceHistory {
+
+	var output p.FullPriceHistory
+	outcomes,_ := ss.Get_outcome_volumes(mkt_addr,market_aid,0);
+	for _,outc := range outcomes {
+		var ph p.PriceHistory
+		ph.OutcomeIdx = outc.Outcome
+		ph.OutcomeStr = outc.OutcomeStr
+		ph.Trades = ss.Get_price_history_for_outcome(market_aid,outc.Outcome)
+		output.Outcomes = append(output.Outcomes,ph)
+	}
+	return output
 }
 func (ss *SQLStorage) Get_last_open_order_id() int64 {
 
@@ -808,11 +867,11 @@ func (ss *SQLStorage) Locate_fill_event_order(evt *p.FillEvt) int64 {
 	}
 	return id
 }
-func (ss *SQLStorage) Get_order_info(order_hash string) (p.OrderInfo,error) {
+func order_info_query() string {
 
-	var order p.OrderInfo
 	var query string
 	query = "SELECT " +
+				"o.id," +
 				"o.order_id," +
 				"o.otype," +
 				"s_w_a.addr AS s_w_a_addr," +
@@ -828,6 +887,7 @@ func (ss *SQLStorage) Get_order_info(order_hash string) (p.OrderInfo,error) {
 				"o.outcome," +
 				"o.price AS price, " +
 				"o.amount_filled AS volume, " +
+				"m.market_type," +
 				"m.outcomes AS outcomes_str, " +
 				"ma.addr " +
 			"FROM " +
@@ -839,23 +899,31 @@ func (ss *SQLStorage) Get_order_info(order_hash string) (p.OrderInfo,error) {
 					"LEFT JOIN address AS b_e_a ON o.eoa_fill_aid=b_e_a.address_id, " +
 				"market AS m " +
 					"LEFT JOIN address AS ma ON m.market_aid  = ma.address_id " +
-			"WHERE (m.market_aid=o.market_aid) AND (o.order_id = $1)"
+			"WHERE (m.market_aid=o.market_aid)"
+	return query
+}
+func (ss *SQLStorage) Get_order_info_by_id(order_id int64) (p.OrderInfo,error) {
 
+	var order p.OrderInfo
+	order.OrderId=order_id
+	var query string
+	query =  order_info_query() + " AND (o.id=$1)"
 	var outcomes string
-	var otype int
-	err:=ss.db.QueryRow(query,order_hash).Scan(
+	err:=ss.db.QueryRow(query,order_id).Scan(
+		&order.OrderId,
 		&order.OrderHash,
-		&otype,
+		&order.OType,
 		&order.CreatorWalletAddr,
 		&order.CreatorEOAAddr,
 		&order.FillerWalletAddr,
 		&order.FillerEOAAddr,
-		&order.OType,
+		&order.OTypeStr,
 		&order.Date,
 		&order.CreatedTs,
 		&order.OutcomeIdx,
 		&order.Price,
-		&order.Volume,
+		&order.Amount,
+		&order.MktType,
 		&outcomes,
 		&order.MarketAddr,
 	);
@@ -863,16 +931,17 @@ func (ss *SQLStorage) Get_order_info(order_hash string) (p.OrderInfo,error) {
 		if (err==sql.ErrNoRows) {
 			return order,err
 		} else {
-			ss.Log_msg(fmt.Sprintf("DB error looking up for Order record: %v",err))
+			ss.Log_msg(fmt.Sprintf("DB error looking up for Order record: %v (order_id=%v)",err,order_id))
 			os.Exit(1)
 		}
 	}
 	order.CreatorBuyer = true
 	order.FillerBuyer = false
-	if otype == 1 {
+	if order.OType == 1 {
 		order.CreatorBuyer = false
 		order.FillerBuyer = true
 	}
+	order.OutcomeStr = get_outcome_str(uint8(order.MktType),int(order.OutcomeIdx),&outcomes)
 	order.OrderHashSh=p.Short_hash(order.OrderHash)
 	order.CreatorWalletAddrSh=p.Short_address(order.CreatorWalletAddr)
 	order.CreatorEOAAddrSh=p.Short_address(order.CreatorEOAAddr)
@@ -880,6 +949,62 @@ func (ss *SQLStorage) Get_order_info(order_hash string) (p.OrderInfo,error) {
 	order.FillerEOAAddrSh=p.Short_address(order.FillerEOAAddr)
 	order.MarketAddrSh=p.Short_address(order.MarketAddr)
 	return order,nil
+}
+func (ss *SQLStorage) Get_filling_orders_by_hash(order_hash string) []p.OrderInfo {
+
+	// Since 'mktord' table can contain many records with the same order hash
+	//		we are sending them in an array
+	var query string
+	query =  order_info_query() + " AND (o.order_id = $1) ORDER BY o.id"
+	var outcomes string
+
+	rows,err := ss.db.Query(query,order_hash)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v) order_hash=%v",err,query,order_hash))
+		os.Exit(1)
+	}
+	records := make([]p.OrderInfo,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.OrderInfo
+		err=rows.Scan(
+			&rec.OrderId,
+			&rec.OrderHash,
+			&rec.OType,
+			&rec.CreatorWalletAddr,
+			&rec.CreatorEOAAddr,
+			&rec.FillerWalletAddr,
+			&rec.FillerEOAAddr,
+			&rec.OTypeStr,
+			&rec.Date,
+			&rec.CreatedTs,
+			&rec.OutcomeIdx,
+			&rec.Price,
+			&rec.Amount,
+			&rec.MktType,
+			&outcomes,
+			&rec.MarketAddr,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
+			os.Exit(1)
+		}
+		rec.CreatorBuyer = true
+		rec.FillerBuyer = false
+		if rec.OType == 1 {
+			rec.CreatorBuyer = false
+			rec.FillerBuyer = true
+		}
+		rec.OutcomeStr = get_outcome_str(uint8(rec.MktType),int(rec.OutcomeIdx),&outcomes)
+		rec.OrderHashSh=p.Short_hash(rec.OrderHash)
+		rec.CreatorWalletAddrSh=p.Short_address(rec.CreatorWalletAddr)
+		rec.CreatorEOAAddrSh=p.Short_address(rec.CreatorEOAAddr)
+		rec.FillerWalletAddrSh=p.Short_address(rec.FillerWalletAddr)
+		rec.FillerEOAAddrSh=p.Short_address(rec.FillerEOAAddr)
+		records = append(records,rec)
+	}
+	return records
 }
 func (ss *SQLStorage) Get_cash_flow() []p.BlockCash {
 

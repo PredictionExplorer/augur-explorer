@@ -2,6 +2,7 @@
 package primitives
 import (
 	"math/big"
+	"errors"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -14,6 +15,12 @@ const (
 	MktTypeCategorical
 	MktTypeScalar
 )
+
+var (
+	ErrChainSplit error = errors.New("Chainsplit detected")
+)
+
+
 type OrderType uint8
 const (
 	OrderTypeBid		OrderType = 0
@@ -44,10 +51,16 @@ const (
 type AugurTx struct {	// just a wrapper for Ethereum Transaction object, but in our own format
 	TxId				int64		// once inserted tx_id is stored here
 	BlockNum			int64
-	TxMsg				*types.Message
-	TxHash				string
-	To					string
+	GasUsed				int64
+	TxIndex				int32
 	CtrctCreate			bool
+//	TxMsg				*types.Message	Discontinued , to be deleted
+	GasPrice			string
+	TxHash				string
+	From				string
+	To					string
+	Value				string
+	Input				[]byte
 }
 type ExtraInfo struct {
 	Categories			[]string	`json:"categories"`
@@ -269,6 +282,7 @@ type InfoMarket struct {
 	TotalTrades		int64
 	NumTicks		int64
 	MktType			int
+	MktStatus		int
 	MktAddr			string
 	MktAddrSh		string	// short address (with .. in the middle)
 	Signer			string
@@ -295,7 +309,12 @@ type InfoCategories struct {
 	Subcategories	[]string
 }
 type MarketTrade struct {
+	OrderId			int64
+	Price			float64
+	Amount			float64
+	Outcome			int
 	OrderHash		string
+	OrderHashSh		string
 	MktAddr			string
 	MktAddrSh		string	// short address (with .. in the middle)
 	CreatorAddr		string
@@ -305,9 +324,6 @@ type MarketTrade struct {
 	Type			string
 	Direction		string
 	Date			string
-	Price			float64
-	Amount			float64
-	Outcome			int
 	OutcomeStr		string
 }
 type OutcomeVol struct {
@@ -363,6 +379,7 @@ type UserInfo struct {
 	TopProfit		float64
 	UnclaimedProfit	float64
 	HedgingProfits	bool	// Flag to indicate negative 'MoneyAtStake' field
+	NotAugur		bool	// True if doesn't have entry in 'ustats' table
 	TotalTrades		uint32	// how many trades were made by this User
 	MarketsCreated	uint32	// how many markets this User has created
 	MarketsTraded	uint32	// how many markets this User has traded
@@ -385,15 +402,17 @@ type MainStats struct {
 	MoneyAtStake	float64
 	TradesCount		int64
 }
+/* DISCONTINUED, new object used instead is 'OrderInfo'. Removal pending
 type MarketOrder struct {	// this is a short order info, to show in tables
+	OrderId				int64
 	MktAid				int64
 	TradeTs				int64
 	Price				float64
 	Volume				float64
 	AccumVol			float64
+	CreatedTs			int64
 	OutcomeIdx			int32
 	OType				int32
-	CreatedTs			int64
 	CreatorBuyer		bool
 	FillerBuyer			bool
 	OrderHash			string
@@ -407,7 +426,7 @@ type MarketOrder struct {	// this is a short order info, to show in tables
 	FillerEOAAddrSh		string
 	Direction			string
 	Date				string
-}
+}*/
 type PLEntry struct {	// profit loss entry
 	Id					int64
 	MktAid				int64
@@ -484,17 +503,22 @@ type VolumeMaker struct {
 	EOAAddr				string
 }
 type OrderInfo struct {		// this is a full order information, to show in dedicated webpage
+	OrderId				int64
 	MktAid				int64
 	TradeTs				int64
 	Price				float64
-	Volume				float64
-	OutcomeIdx			int32
+	Amount				float64
+	AccumVol            float64
 	CreatedTs			int64
+	MktType				int32
+	OType				int32
+	OutcomeIdx			int32
 	CreatorBuyer		bool	// true if the Creator is the buyer
 	FillerBuyer			bool	// true if the Filler is the buyer
 	OrderHashSh			string
 	OrderHash			string
-	OType				string
+	OTypeStr			string
+	OutcomeStr			string
 	CreatorWalletAddr	string
 	CreatorWalletAddrSh	string	// short version of the addr
 	CreatorEOAAddr		string
@@ -506,8 +530,9 @@ type OrderInfo struct {		// this is a full order information, to show in dedicat
 	Date				string
 	MarketAddr			string
 	MarketAddrSh		string
+	Direction			string
 }
-type UserReport struct {
+type Report struct {
 	MktAid				int64
 	RepStake			float64
 	Round				int
@@ -598,4 +623,39 @@ type PosChg struct {		// change in positon for logging/debugging purposes
 	FrozenFunds			*big.Int
 	NetPos				*big.Int
 	AvgPrice			*big.Int
+}
+type ExecuteTransactionStatus struct {// Augur's transaction status
+	Success        bool
+	FundingSuccess bool
+	Raw            types.Log // Blockchain specific contextual infos
+}
+type GasSpent struct {	// used to pass values of Statistics of Gas Usage
+	Day					int64
+	Ts					int64
+	Num_trading			int64
+	Num_reporting		int64
+	Num_markets			int64
+	Num_total			int64
+	Trading				string
+	Reporting			string
+	Markets				string
+	Total				string
+	EthTrading			string
+	EthReporting		string
+	EthMarkets			string
+	EthTotal			string
+}
+func (obj *GasSpent) Has_rows() bool {
+	if (obj.Num_trading==0) && (obj.Num_reporting==0) && (obj.Num_markets==0) && (obj.Num_total==0) {
+		return false
+	}
+	return true
+}
+type PriceHistory struct {
+	OutcomeIdx			int
+	OutcomeStr			string
+	Trades				[]OrderInfo
+}
+type FullPriceHistory struct {
+	Outcomes			[]PriceHistory
 }

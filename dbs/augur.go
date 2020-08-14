@@ -72,8 +72,18 @@ func (ss *SQLStorage) Get_augur_blocks(market_aid int64) []int64 {
 					"UNION ALL" +
 				"(SELECT DISTINCT block_num FROM claim_funds " + where_cond + ") " +
 					"UNION ALL" +
+				"(SELECT DISTINCT block_num FROM sbalances " + where_cond + ") " +
+					"UNION ALL" +
+				"(SELECT DISTINCT block_num FROM volume " + where_cond + ") " +
+					"UNION ALL" +
+				"(SELECT DISTINCT block_num FROM oi_chg " + where_cond + ") " +
+					"UNION ALL" +
+				"(SELECT DISTINCT block_num FROM tbc " + where_cond + ") " +
+					"UNION ALL" +
+				"(SELECT DISTINCT block_num FROM profit_loss " + where_cond + ") " +
+					"UNION ALL" +
 				"(SELECT DISTINCT block_num FROM report " + where_cond + ") " +
-			") as block_numbers ORDER BY block_num"
+			") AS block_numbers ORDER BY block_num"
 	rows,err := ss.db.Query(query)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -92,4 +102,32 @@ func (ss *SQLStorage) Get_augur_blocks(market_aid int64) []int64 {
 		records = append(records,block_num)
 	}
 	return records
+}
+func (ss *SQLStorage) Get_upload_block() int64 {
+
+	var err error
+	var block_num int64
+	var query string
+	query="SELECT upload_block FROM contract_addresses";
+	row := ss.db.QueryRow(query)
+	err=row.Scan(&block_num)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Error in Get_upload_block(): %v",err))
+		os.Exit(1)
+	}
+	return block_num
+}
+func (ss *SQLStorage) Insert_augur_transaction_status(agtx *p.AugurTx,evt *p.ExecuteTransactionStatus) {
+
+	//eoa_aid,err := ss.Lookup_eoa_aid(wallet_aid)
+	eoa_aid:=0
+	wallet_aid:=0
+	var query string
+	query = "INSERT INTO agtx_status(block_num,tx_id,eoa_aid,wallet_aid,success,funding_success) " +
+			"VALUES($1,$2,$3,$4,$5,$6)"
+	_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,eoa_aid,wallet_aid,evt.Success,evt.FundingSuccess)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into agtx_status table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
 }

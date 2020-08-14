@@ -233,6 +233,7 @@ function Ajax_GET(url, success) {
     return xhr;
 }
 
+
 function Ajax_GET_Markets(url, renderFunction) {
     var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
 

@@ -82,10 +82,15 @@ DECLARE
 	v_cnt numeric;
 BEGIN
 
-	UPDATE ustats AS s
+	UPDATE ustats
 			SET markets_created = (markets_created + 1),
 				validity_bonds = (validity_bonds + NEW.validity_bond)
-			WHERE s.eoa_aid = NEW.eoa_aid;
+			WHERE eoa_aid = NEW.eoa_aid;
+	UPDATE ustats
+			SET gmarkets = (gmarkets + t.gas_used),
+				geth_markets = (geth_markets + (t.gas_used * t.gas_price))
+			FROM transaction AS t
+			WHERE t.id = NEW.tx_id AND eoa_aid=NEW.eoa_aid;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
@@ -115,16 +120,15 @@ DECLARE
 	v_cnt numeric;
 BEGIN
 
-	UPDATE ustats AS s
+	UPDATE ustats
 			SET markets_created = markets_created - 1,
 				validity_bonds = validity_bonds - OLD.validity_bond
-			WHERE s.eoa_aid = OLD.eoa_aid;
-
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN	-- this condition won't be true during normal operation
-		INSERT	INTO ustats(eoa_aid,wallet_aid,markets_created)
-				VALUES(OLD.eoa_aid,OLD.wallet_aid,0);
-	END IF;
+			WHERE eoa_aid = OLD.eoa_aid;
+	UPDATE ustats
+			SET gmarkets = (gmarkets - t.gas_used),
+				geth_markets = (geth_markets - (t.gas_used * t.gas_price))
+			FROM transaction AS t
+			WHERE t.id = OLD.tx_id AND eoa_aid=OLD.eoa_aid;
 
 	UPDATE main_stats
 		SET markets_count = (markets_count - 1), active_count = (active_count - 1);
@@ -188,6 +192,12 @@ BEGIN
 		SET total_trades = (total_trades + 1),
 			volume_traded = (volume_traded + (NEW.price * NEW.amount_filled))
 		WHERE eoa_aid=NEW.eoa_fill_aid;
+	UPDATE ustats	-- only Filler pays Gas price so we only update on Filler's EOA
+		SET gtrading = (gtrading + t.gas_used),
+			geth_trading = (geth_trading + (t.gas_used * t.gas_price))
+		FROM transaction AS t
+		WHERE eoa_aid = NEW.eoa_fill_aid AND t.id=NEW.tx_id;
+		
 
 	-- Noote: for Main statistics a trade between 2 users is counted as single trade (i.e its a +1)_
 	-- 			but from the point of the User we have +1 for Creator and +1 for Filler (so, its 2 trades)
@@ -250,6 +260,11 @@ BEGIN
 		SET total_trades = (total_trades - 1),
 			volume_traded = (volume_traded - (OLD.price * OLD.amount_filled))
 		WHERE eoa_aid=OLD.eoa_fill_aid;
+	UPDATE ustats	-- only Filler pays Gas price so we only update on Filler's EOA.
+		SET gtrading = (gtrading - t.gas_used),
+			geth_trading = (geth_trading - (t.gas_used * t.gas_price))
+		FROM transaction AS t
+		WHERE eoa_aid = OLD.eoa_fill_aid AND t.id=OLD.tx_id;
 
 	--- Update global statistics
 	UPDATE main_stats SET trades_count = (trades_count - 1);
@@ -291,7 +306,7 @@ BEGIN
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		RAISE EXCEPTION 'Corresponding row in ustats ( % - % ) table doesnt exist',NEW.eoa_aid,NEW.wallet_aid;
+		--RAISE EXCEPTION 'Corresponding row in ustats ( % - % ) table doesnt exist',NEW.eoa_aid,NEW.wallet_aid;
 	END IF;
 	-- End of update profit loss
 
@@ -404,6 +419,12 @@ BEGIN
 	UPDATE ustats
 		SET total_reports = (total_reports + 1)
 		WHERE	eoa_aid = NEW.eoa_aid;
+	UPDATE ustats
+		SET greporting = (greporting + t.gas_used),
+			geth_reporting = (geth_reporting + (t.gas_used::DECIMAL * t.gas_price))
+		FROM transaction AS t
+		WHERE eoa_aid=NEW.eoa_aid AND t.id=NEW.tx_id;
+
 	IF NEW.is_designated IS TRUE THEN
 		UPDATE market
 			SET designated_outcome = NEW.outcome_idx
@@ -438,6 +459,11 @@ BEGIN
 	UPDATE ustats
 		SET total_reports = (total_reports - 1)
 		WHERE	eoa_aid = OLD.eoa_aid;
+	UPDATE ustats 
+		SET greporting = (greporting - t.gas_used),
+			geth_reporting = (geth_reporting - (t.gas_used::DECIMAL * t.gas_price))
+		FROM transaction AS t
+		WHERE eoa_aid=OLD.eoa_aid AND t.id=OLD.tx_id;
 	IF OLD.is_designated THEN
 		UPDATE market
 			SET designated_outcome = -1
