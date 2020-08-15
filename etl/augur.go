@@ -144,7 +144,7 @@ func proc_approval(log *types.Log) {
 		Info.Printf("ERC20_Approval event is not compliant log.Topics!=3. Tx hash=%v\n",log.TxHash.String())
 		return
 	}
-	var mevt Approval
+	var mevt EApproval
 	mevt.Owner= common.BytesToAddress(log.Topics[1][12:])
 	mevt.Spender = common.BytesToAddress(log.Topics[2][12:])
 	err := cash_abi.Unpack(&mevt,"Approval",log.Data)
@@ -162,7 +162,7 @@ func proc_approval_for_all(log *types.Log) {
 		Info.Printf("ERC20_ApprovalForAll event is not compliant log.Topics!=3. Tx hash=%v\n",log.TxHash.String())
 		return
 	}
-	var mevt ApprovalForAll
+	var mevt EApprovalForAll
 	mevt.Owner= common.BytesToAddress(log.Topics[1][12:])
 	mevt.Operator= common.BytesToAddress(log.Topics[2][12:])
 	err := zerox_abi.Unpack(&mevt,"ApprovalForAll",log.Data)
@@ -176,7 +176,7 @@ func proc_approval_for_all(log *types.Log) {
 }
 func proc_trading_proceeds_claimed(agtx *AugurTx,timestamp int64,log *types.Log) {
 
-	var mevt TradingProceedsClaimed
+	var mevt ETradingProceedsClaimed
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
 	mevt.Sender = common.BytesToAddress(log.Topics[2][12:])
 	err := augur_abi.Unpack(&mevt,"TradingProceedsClaimed",log.Data)
@@ -199,7 +199,7 @@ func proc_trading_proceeds_claimed(agtx *AugurTx,timestamp int64,log *types.Log)
 	storage.Update_claim_status(agtx,&mevt,timestamp)
 }
 func proc_fill_evt(log *types.Log) {
-	var mevt FillEvt
+	var mevt EFill
 	mevt.MakerAddress= common.BytesToAddress(log.Topics[1][12:])
 	mevt.FeeRecipientAddress= common.BytesToAddress(log.Topics[2][12:])
 	mevt.OrderHash= log.Topics[3]
@@ -217,7 +217,7 @@ func proc_fill_evt(log *types.Log) {
 	fill_order_id = storage.Locate_fill_event_order(&mevt)
 }
 func proc_erc20_transfer(log *types.Log,agtx *AugurTx) {
-	var mevt Transfer
+	var mevt ETransfer
 	/*
 	*/
 	if len(log.Topics)!=3 {
@@ -247,7 +247,7 @@ func proc_erc20_transfer(log *types.Log,agtx *AugurTx) {
 }
 func proc_profit_loss_changed(agtx *AugurTx,log *types.Log) int64  {
 	var id int64 = 0
-	var mevt ProfitLossChanged
+	var mevt EProfitLossChanged
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Market = common.BytesToAddress(log.Topics[2][12:])
 	mevt.Account= common.BytesToAddress(log.Topics[3][12:])
@@ -273,7 +273,7 @@ func proc_profit_loss_changed(agtx *AugurTx,log *types.Log) int64  {
 	return id
 }
 func proc_transfer_single(log *types.Log) {
-	var mevt TransferSingle
+	var mevt ETransferSingle
 	mevt.Operator= common.BytesToAddress(log.Topics[1][12:])
 	mevt.From= common.BytesToAddress(log.Topics[2][12:])
 	mevt.To= common.BytesToAddress(log.Topics[3][12:])
@@ -286,7 +286,7 @@ func proc_transfer_single(log *types.Log) {
 	}
 }
 func proc_transfer_batch(log *types.Log) {
-	var mevt TransferBatch
+	var mevt ETransferBatch
 	mevt.Operator= common.BytesToAddress(log.Topics[1][12:])
 	mevt.From= common.BytesToAddress(log.Topics[2][12:])
 	mevt.To= common.BytesToAddress(log.Topics[3][12:])
@@ -299,7 +299,7 @@ func proc_transfer_batch(log *types.Log) {
 	}
 }
 func proc_tokens_transferred(agtx *AugurTx, log *types.Log) {
-	var mevt TokensTransferred
+	var mevt ETokensTransferred
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.From= common.BytesToAddress(log.Topics[2][12:])	// extract From
 	mevt.To= common.BytesToAddress(log.Topics[3][12:])	// extract To
@@ -323,7 +323,7 @@ func proc_tokens_transferred(agtx *AugurTx, log *types.Log) {
 	storage.Insert_token_transf_evt(&mevt,agtx)
 }
 func proc_token_balance_changed(agtx *AugurTx,log *types.Log) {
-	var mevt TokenBalanceChanged
+	var mevt ETokenBalanceChanged
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Owner= common.BytesToAddress(log.Topics[2][12:])
 	err := augur_abi.Unpack(&mevt,"TokenBalanceChanged",log.Data)
@@ -346,7 +346,7 @@ func proc_token_balance_changed(agtx *AugurTx,log *types.Log) {
 	storage.Insert_token_balance_changed_evt(&mevt,agtx.BlockNum,agtx.TxId)
 }
 func proc_share_token_balance_changed(agtx *AugurTx,log *types.Log) {
-	var mevt ShareTokenBalanceChanged
+	var mevt EShareTokenBalanceChanged
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Account= common.BytesToAddress(log.Topics[2][12:])
 	mevt.Market = common.BytesToAddress(log.Topics[3][12:])
@@ -371,7 +371,7 @@ func proc_share_token_balance_changed(agtx *AugurTx,log *types.Log) {
 }
 func proc_market_order_event(agtx *AugurTx,log *types.Log) {
 
-	var mevt MktOrderEvt
+	var mevt EOrderEvent
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Market = common.BytesToAddress(log.Topics[2][12:])
 	mevt.EventType = log.Topics[3][31];	// EventType (uint8) which we label as OrderAction
@@ -396,7 +396,7 @@ func proc_market_order_event(agtx *AugurTx,log *types.Log) {
 	storage.Insert_market_order_evt(agtx,eoa_aid,eoa_fill_aid,&mevt)
 }
 func proc_cancel_zerox_order(log *types.Log) {
-	var mevt CancelZeroXOrder
+	var mevt ECancelZeroXOrder
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Market = common.BytesToAddress(log.Topics[2][12:])
 	mevt.Account = common.BytesToAddress(log.Topics[3][12:]);
@@ -416,7 +416,7 @@ func proc_cancel_zerox_order(log *types.Log) {
 	storage.Delete_open_0x_order(ohash_str)
 }
 func proc_market_oi_changed(block *types.Header, agtx *AugurTx, log *types.Log) {
-	var mevt MarketOIChangedEvt
+	var mevt EMarketOIChanged
 	err := augur_abi.Unpack(&mevt,"MarketOIChanged",log.Data)
 	if err != nil {
 		Fatalf("Event decode error: %v",err)
@@ -433,7 +433,7 @@ func proc_market_oi_changed(block *types.Header, agtx *AugurTx, log *types.Log) 
 }
 func is_warp_sync_event(log *types.Log) bool {
 
-	var mevt MktFinalizedEvt
+	var mevt EMarketFinalized
 	err := augur_abi.Unpack(&mevt,"MarketFinalized",log.Data)
 	if err != nil {
 		Fatalf("Event MktFinalizedEvt decode error: %v\n",err)
@@ -450,7 +450,7 @@ func is_warp_sync_event(log *types.Log) bool {
 	return false
 }
 func proc_market_finalized_evt(agtx *AugurTx,timestamp int64,log *types.Log) {
-	var mevt MktFinalizedEvt
+	var mevt EMarketFinalized
 	err := augur_abi.Unpack(&mevt,"MarketFinalized",log.Data)
 	if err != nil {
 		Fatalf("Event MktFinalizedEvt decode error: %v\n",err)
@@ -471,7 +471,7 @@ func proc_market_finalized_evt(agtx *AugurTx,timestamp int64,log *types.Log) {
 	}
 }
 func proc_initial_report_submitted(agtx *AugurTx, log *types.Log) {
-	var mevt InitialReportSubmittedEvt
+	var mevt EInitialReportSubmitted
 	err := augur_abi.Unpack(&mevt,"InitialReportSubmitted",log.Data)
 	if err != nil {
 		Fatalf("Event InitialReportSubmittedEvt decode error: %v\n",err)
@@ -488,7 +488,7 @@ func proc_initial_report_submitted(agtx *AugurTx, log *types.Log) {
 	storage.Insert_initial_report_evt(agtx,&mevt)
 }
 func proc_dispute_crowdsourcerer_contribution(agtx *AugurTx,log *types.Log) {
-	var mevt DisputeCrowdsourcerContributionEvt
+	var mevt EDisputeCrowdsourcerContribution
 	err := augur_abi.Unpack(&mevt,"DisputeCrowdsourcerContribution",log.Data)
 	if err != nil {
 		Fatalf("Event DisputeCrowdsourcerContribution decode error: %v\n",err)
@@ -505,7 +505,7 @@ func proc_dispute_crowdsourcerer_contribution(agtx *AugurTx,log *types.Log) {
 	storage.Insert_dispute_crowd_contrib(agtx,&mevt)
 }
 func proc_market_volume_changed_v1(agtx *AugurTx, log *types.Log) {
-	var mevt MktVolumeChangedEvt_v1
+	var mevt EMarketVolumeChanged_v1
 	// Note: the ./abis/augur-artifacts-abi-26jun.json file was altered to add this (old version of) event
 	err := trading_abi.Unpack(&mevt,"MarketVolumeChanged_v1",log.Data)
 	if err != nil {
@@ -522,7 +522,7 @@ func proc_market_volume_changed_v1(agtx *AugurTx, log *types.Log) {
 	storage.Insert_market_volume_changed_evt_v1(agtx,&mevt)
 }
 func proc_market_volume_changed_v2(agtx *AugurTx, log *types.Log) {
-	var mevt MktVolumeChangedEvt_v2
+	var mevt EMarketVolumeChanged_v2
 	err := trading_abi.Unpack(&mevt,"MarketVolumeChanged",log.Data)
 	if err != nil {
 		Fatalf("Event MarketVolumeChanged_v2 decode error: %v\n",err)
@@ -539,7 +539,7 @@ func proc_market_volume_changed_v2(agtx *AugurTx, log *types.Log) {
 }
 func show_market_created_evt(agtx *AugurTx,log *types.Log) {
 	// function used for debugging
-	var mevt MarketCreatedEvt
+	var mevt EMarketCreated
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])   // extract universe addr
 	mevt.MarketCreator = common.BytesToAddress(log.Topics[2][12:])  // extract crator addr
 	err := augur_abi.Unpack(&mevt,"MarketCreated",log.Data)
@@ -560,7 +560,7 @@ func show_market_created_evt(agtx *AugurTx,log *types.Log) {
 }
 
 func proc_market_created(agtx *AugurTx,log *types.Log,validity_bond string) {
-	var mevt MarketCreatedEvt
+	var mevt EMarketCreated
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.MarketCreator = common.BytesToAddress(log.Topics[2][12:])	// extract crator addr
 	err := augur_abi.Unpack(&mevt,"MarketCreated",log.Data)
@@ -581,7 +581,7 @@ func proc_market_created(agtx *AugurTx,log *types.Log,validity_bond string) {
 	storage.Insert_market_created_evt(agtx,eoa_aid,validity_bond,&mevt)
 }
 func proc_transaction_status(agtx *AugurTx, log *types.Log) {
-	var evt ExecuteTransactionStatus
+	var evt EExecuteTransactionStatus
 	err := wallet_abi.Unpack(&evt,"ExecuteTransactionStatus",log.Data)
 	if err != nil {
 		Fatalf("Event decode error: %v",err)
@@ -691,7 +691,7 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 			// ERC20 transfer event (it is transfered to the Universe)
 			show_market_created_evt(agtx,log)
 			var validity_bond string
-			var transf_evt Transfer
+			var transf_evt ETransfer
 			tr_idx := lidx + 1	// the offset to ERC20 event (as they fired by contracts)
 			err := cash_abi.Unpack(&transf_evt,"Transfer",(*logs)[tr_idx].Data)
 			if err == nil {

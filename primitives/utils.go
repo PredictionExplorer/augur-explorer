@@ -6,7 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 )
-func (evt *MarketCreatedEvt) Dump(l *log.Logger) {	// dumps struct to stdout for debugging
+func (evt *EMarketCreated) Dump(l *log.Logger) {	// dumps struct to stdout for debugging
 	l.Printf("MarketCreated {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
 	l.Printf("\tEndTime: %v\n",evt.EndTime)
@@ -25,7 +25,7 @@ func (evt *MarketCreatedEvt) Dump(l *log.Logger) {	// dumps struct to stdout for
 	l.Printf("\tTimestamp: %v\n",evt.Timestamp)
 	l.Printf("}\n")
 }
-func (evt *MarketOIChangedEvt) Dump(l *log.Logger) {	// dumps struct to stdout for debugging
+func (evt *EMarketOIChanged) Dump(l *log.Logger) {	// dumps struct to stdout for debugging
 
 	l.Printf("MarketOIChanged {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
@@ -33,7 +33,7 @@ func (evt *MarketOIChangedEvt) Dump(l *log.Logger) {	// dumps struct to stdout f
 	l.Printf("\tMarket Open Interest: %v\n",evt.MarketOI.String())
 	l.Printf("}\n")
 }
-func (evt *MktOrderEvt) Dump(l *log.Logger) { // dumps struct to stdout for debugging
+func (evt *EOrderEvent) Dump(l *log.Logger) { // dumps struct to stdout for debugging
 
 	l.Printf("OrderEvent {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
@@ -47,7 +47,7 @@ func (evt *MktOrderEvt) Dump(l *log.Logger) { // dumps struct to stdout for debu
 	l.Printf("\tUint256data: %v\n",uintdata)
 	l.Printf("}\n")
 }
-func (evt *MktFinalizedEvt) Dump(l *log.Logger) { // dumps struct to stdout for debugging
+func (evt *EMarketFinalized) Dump(l *log.Logger) { // dumps struct to stdout for debugging
 
 	l.Printf("MarketFinalizedEvent {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
@@ -57,7 +57,7 @@ func (evt *MktFinalizedEvt) Dump(l *log.Logger) { // dumps struct to stdout for 
 	l.Printf("\tWinningPayouts: %v\n",payouts)
 	l.Printf("}\n")
 }
-func (evt *InitialReportSubmittedEvt) Dump(l *log.Logger) {
+func (evt *EInitialReportSubmitted) Dump(l *log.Logger) {
 
 	l.Printf("InitialReportSubmitted {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
@@ -74,7 +74,7 @@ func (evt *InitialReportSubmittedEvt) Dump(l *log.Logger) {
 	l.Printf("\tTimestamp: %v\n",evt.Timestamp)
 	l.Printf("}\n")
 }
-func (evt *DisputeCrowdsourcerContributionEvt) Dump(l *log.Logger) {
+func (evt *EDisputeCrowdsourcerContribution) Dump(l *log.Logger) {
 
 	l.Printf("DisputeCrowdsourcerContribution {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
@@ -91,7 +91,7 @@ func (evt *DisputeCrowdsourcerContributionEvt) Dump(l *log.Logger) {
 	l.Printf("\tTimestamp: %v\n",evt.Timestamp)
 	l.Printf("}\n")
 }
-func (evt *MktVolumeChangedEvt_v1) Dump(l *log.Logger) { // dumps struct to stdout for debugging
+func (evt *EMarketVolumeChanged_v1) Dump(l *log.Logger) { // dumps struct to stdout for debugging
 
 	l.Printf("MarketVolumeChanged_v1 {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
@@ -102,7 +102,7 @@ func (evt *MktVolumeChangedEvt_v1) Dump(l *log.Logger) { // dumps struct to stdo
 	l.Printf("\tTimestamp: %v\n",evt.Timestamp)
 	l.Printf("}\n")
 }
-func (evt *MktVolumeChangedEvt_v2) Dump(l *log.Logger) { // dumps struct to stdout for debugging
+func (evt *EMarketVolumeChanged_v2) Dump(l *log.Logger) { // dumps struct to stdout for debugging
 
 	l.Printf("MarketVolumeChanged_v2 {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
@@ -114,7 +114,7 @@ func (evt *MktVolumeChangedEvt_v2) Dump(l *log.Logger) { // dumps struct to stdo
 	l.Printf("\tTimestamp: %v\n",evt.Timestamp)
 	l.Printf("}\n")
 }
-func (evt *TokensTransferred) Dump(l *log.Logger) {
+func (evt *ETokensTransferred) Dump(l *log.Logger) {
 
 	l.Printf("TokensTransferred {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
@@ -126,7 +126,7 @@ func (evt *TokensTransferred) Dump(l *log.Logger) {
 	l.Printf("\tMarket: %v\n",evt.Market.String())
 	l.Printf("}\n")
 }
-func (evt *TokenBalanceChanged) Dump(l *log.Logger) {
+func (evt *ETokenBalanceChanged) Dump(l *log.Logger) {
 
 	l.Printf("TokensBalanceChanged {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
@@ -138,7 +138,7 @@ func (evt *TokenBalanceChanged) Dump(l *log.Logger) {
 	l.Printf("\tOutcome: %v\n",evt.Outcome.String())
 	l.Printf("}\n")
 }
-func (evt *ShareTokenBalanceChanged) Dump(l *log.Logger) {
+func (evt *EShareTokenBalanceChanged) Dump(l *log.Logger) {
 	l.Printf("ShareTokensBalanceChanged {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
 	l.Printf("\tAccount: %v\n",evt.Account.String())
@@ -147,7 +147,7 @@ func (evt *ShareTokenBalanceChanged) Dump(l *log.Logger) {
 	l.Printf("\tBalance: %v\n",evt.Balance.String())
 	l.Printf("}\n")
 }
-func (evt *CancelZeroXOrder) Dump(l *log.Logger) {
+func (evt *ECancelZeroXOrder) Dump(l *log.Logger) {
 	l.Printf("CancelZeroXOrder {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
 	l.Printf("\tMarket: %v\n",evt.Market.String())
@@ -159,7 +159,7 @@ func (evt *CancelZeroXOrder) Dump(l *log.Logger) {
 	l.Printf("\tOrderHash: %v\n",hex.EncodeToString(evt.OrderHash[:]))
 	l.Printf("\t\n")
 }
-func (evt *TransferBatch) Dump(zc *ZeroX,l *log.Logger) {
+func (evt *ETransferBatch) Dump(zc *ZeroX,l *log.Logger) {
 	l.Printf("TransferBatch {\n")
 	l.Printf("\tOperator: %v\n",evt.Operator.String())
 	l.Printf("\tFrom: %v\n",evt.From.String())
@@ -188,7 +188,7 @@ func (evt *TransferBatch) Dump(zc *ZeroX,l *log.Logger) {
 	l.Printf("\tValues: %v\n",values)
 	l.Printf("}\n")
 }
-func (evt *TransferSingle) Dump(l *log.Logger) {
+func (evt *ETransferSingle) Dump(l *log.Logger) {
 	l.Printf("TransferSingle {\n")
 	l.Printf("\tOperator: %v\n",evt.Operator.String())
 	l.Printf("\tFrom: %v\n",evt.From.String())
@@ -197,7 +197,7 @@ func (evt *TransferSingle) Dump(l *log.Logger) {
 	l.Printf("\tValue: %v\n",evt.Value.String())
 	l.Printf("}\n")
 }
-func (evt *ProfitLossChanged) Dump(l *log.Logger) {
+func (evt *EProfitLossChanged) Dump(l *log.Logger) {
 	l.Printf("ProfitLossChanged {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
 	l.Printf("\tMarket: %v\n",evt.Market.String())
@@ -211,14 +211,14 @@ func (evt *ProfitLossChanged) Dump(l *log.Logger) {
 	l.Printf("\tTimestamp: %v\n",evt.Timestamp.String())
 	l.Printf("}\n")
 }
-func (evt *Transfer) Dump(l *log.Logger) {
+func (evt *ETransfer) Dump(l *log.Logger) {
 	l.Printf("Transfer {\n")
 	l.Printf("\tFrom: %v\n",evt.From.String())
 	l.Printf("\tTo: %v\n",evt.To.String())
 	l.Printf("\tValue: %v\n",evt.Value.String())
 	l.Printf("}\n")
 }
-func (evt *FillEvt) Dump(l *log.Logger) {
+func (evt *EFill) Dump(l *log.Logger) {
 	l.Printf("FillEvt {\n")
 	l.Printf("\tMakerAddress: %v\n",evt.MakerAddress.String())
 	l.Printf("\tFeeRecipientAddress: %v\n",evt.FeeRecipientAddress)
@@ -236,13 +236,13 @@ func (evt *FillEvt) Dump(l *log.Logger) {
 	l.Printf("\tProtocolFeePaid: %v\n",evt.ProtocolFeePaid.String())
 	l.Printf("}\n")
 }
-func (evt *OwnershipTransferred) Dump(l *log.Logger) {
+func (evt *EOwnershipTransferred) Dump(l *log.Logger) {
 	l.Printf("OwnershipTransferred {\n")
 	l.Printf("\tPreviousOwner: %v\n",evt.PreviousOwner.String())
 	l.Printf("\tNewOwner: %v\n",evt.NewOwner.String())
 	l.Printf("}\n")
 }
-func (evt *TradingProceedsClaimed) Dump(l *log.Logger) {
+func (evt *ETradingProceedsClaimed) Dump(l *log.Logger) {
 	l.Printf("TradingProceedsClaimed {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
 	l.Printf("\tSender: %v\n",evt.Sender.String())
@@ -254,21 +254,21 @@ func (evt *TradingProceedsClaimed) Dump(l *log.Logger) {
 	l.Printf("\tTimestamp: %v\n",evt.Timestamp.String())
 	l.Printf("}\n")
 }
-func (evt *ApprovalForAll) Dump(l *log.Logger) {
+func (evt *EApprovalForAll) Dump(l *log.Logger) {
 	l.Printf("ApprovalForAll {\n")
 	l.Printf("\tOwner: %v\n",evt.Owner.String())
 	l.Printf("\tOperator: %v\n",evt.Operator.String())
 	l.Printf("\tApproved: %v\n",evt.Approved)
 	l.Printf("}\n")
 }
-func (evt* Approval) Dump(l *log.Logger) {
+func (evt* EApproval) Dump(l *log.Logger) {
 	l.Printf("Approval {\n")
 	l.Printf("\tOwner: %v\n",evt.Owner.String())
 	l.Printf("\tSpender: %v\n",evt.Spender.String())
 	l.Printf("\tValue: %v\n",evt.Value.String())
 	l.Printf("}\n")
 }
-func (evt *ExecuteTransactionStatus) Dump(l *log.Logger) {	// dumps struct to stdout for debugging
+func (evt *EExecuteTransactionStatus) Dump(l *log.Logger) {	// dumps struct to stdout for debugging
 
 	l.Printf("ExecuteTransactionStatus {\n")
 	l.Printf("\tSuccess: %v\n",evt.Success)

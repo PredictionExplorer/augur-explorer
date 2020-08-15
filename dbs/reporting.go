@@ -9,7 +9,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.InitialReportSubmittedEvt) {
+func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialReportSubmitted) {
 
 	universe_id,err := ss.lookup_universe_id(evt.Universe.String())
 	if err != nil {
@@ -90,7 +90,7 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.InitialRe
 	// ToDo: possibly migrate to triggers (or maybe not)
 	ss.update_market_status(market_aid,p.MktStatusReported)
 }
-func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.DisputeCrowdsourcerContributionEvt) {
+func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDisputeCrowdsourcerContribution) {
 
 	_,err := ss.lookup_universe_id(evt.Universe.String())
 	if err != nil {

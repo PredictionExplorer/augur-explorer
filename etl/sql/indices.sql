@@ -50,3 +50,4 @@ CREATE INDEX closed_positions_idx	ON profit_loss		(eoa_aid,realized_profit) WHER
 CREATE UNIQUE INDEX cl_uniq			ON claim_funds		(eoa_aid,market_aid,outcome_idx);
 CREATE UNIQUE INDEX pldebug_uniq	ON pl_debug			(block_num,market_aid,wallet_aid,outcome_idx);
 CREATE UNIQUE INDEX mkts_traded_unq	ON mkts_traded		(eoa_aid,market_aid);
+CREATE UNIQUE INDEX sbal_uniq		ON sbalances		(market_aid,account_aid,outcome_idx);

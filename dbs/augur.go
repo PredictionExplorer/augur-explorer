@@ -117,7 +117,7 @@ func (ss *SQLStorage) Get_upload_block() int64 {
 	}
 	return block_num
 }
-func (ss *SQLStorage) Insert_augur_transaction_status(agtx *p.AugurTx,evt *p.ExecuteTransactionStatus) {
+func (ss *SQLStorage) Insert_augur_transaction_status(agtx *p.AugurTx,evt *p.EExecuteTransactionStatus) {
 
 	//eoa_aid,err := ss.Lookup_eoa_aid(wallet_aid)
 	eoa_aid:=0

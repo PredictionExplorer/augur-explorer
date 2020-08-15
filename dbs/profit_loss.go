@@ -62,7 +62,7 @@ func (ss *SQLStorage) set_all_unclaimed_to_claimed(market_aid int64,eoa_aid int6
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) calculate_profit_loss_for_all_users(market_aid int64,block_num int64,tx_id int64,timestamp int64,evt *p.MktFinalizedEvt) {
+func (ss *SQLStorage) calculate_profit_loss_for_all_users(market_aid int64,block_num int64,tx_id int64,timestamp int64,evt *p.EMarketFinalized) {
 
 	var query string
 
@@ -151,7 +151,7 @@ func (ss *SQLStorage) calculate_profit_loss_for_all_users(market_aid int64,block
 		}
 	}
 }
-func (ss *SQLStorage) Update_claim_status(agtx *p.AugurTx,evt *p.TradingProceedsClaimed,timestamp int64) {
+func (ss *SQLStorage) Update_claim_status(agtx *p.AugurTx,evt *p.ETradingProceedsClaimed,timestamp int64) {
 	// Note: we don't use outcome in WHERE clause because Proceeds aren't reported for all outcomes,
 	//		however just knowing that proceeds where claimed is enough to update all the outcomes
 	//		This function will be executed multiple times in a transaction, but that's ok
@@ -167,7 +167,7 @@ func (ss *SQLStorage) Update_claim_status(agtx *p.AugurTx,evt *p.TradingProceeds
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,eoa_aid int64,evt *p.ProfitLossChanged) int64  {
+func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,eoa_aid int64,evt *p.EProfitLossChanged) int64  {
 
 	var query string
 	var err error

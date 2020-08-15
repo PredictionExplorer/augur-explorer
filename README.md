@@ -1,7 +1,7 @@
 ## Augur Data Explorer
 
 Extracts data from Augur Prediction Marketplace (http://augur.net) and stores it in an SQL database.
-Exposes all extracted data via WEB. Demo: [URL pending]
+Exposes all extracted data via WEB. Demo: http://predictionexplorer.com
 
 ### System components
 
@@ -94,7 +94,7 @@ on another terminal:
 
 The following executables need to be run:
 
-In deamon mode (permanently)
+In daemon mode (permanently)
  1. ./etl/etl (The ETL daemon)
  2. ./server/server (The Web server daemon)
  3. ./etl/mesh/mesh (The 0x Mesh listener)
@@ -102,7 +102,8 @@ In deamon mode (permanently)
  
 Periodically (crontab)
  1. ./etl/tools/uniqueaddrs (Calculates unique addresses. Suggested period 1 hour)
- 2. ./etl/tools/toprated (Calculates user ratings. Suggested period 10 minutes)
+ 2. ./etl/tools/toprated (Calculates user ratings. Suggested period 30 minutes)
+ 3. ./etl/tools/gas_usage (Calculates Gas Usage statistics. Suggested period 30 minutes)
 
 Configuration files
 
@@ -114,6 +115,18 @@ To load production config for ETL deamon, run these commands:
     . $HOME/configs/etl-config.env
     ./etl &
 
+To load production config for server , run:
+
+    cd ./augur-explorer/server
+    . $HOME/configs/web-config.env
+    ./server &
+
+To run the server on port 80 (privileged port), you will need to execute this command as ROOT, in your Linux OS to give the executable file permissions to bind to port 80 and 443:
+
+	setcap cap_net_bind_service=+ep ./server
+
+Note: SSL certificate is currently hardcoded for predictionexplorer.com, you will need to change that to your own domain.
+
 ##### Log files:
 
 The logs will be created in $HOME/ae_logs automatically
@@ -123,7 +136,7 @@ The logs will be created in $HOME/ae_logs automatically
  * To start a daemon just invoke the executable without parameters: `./[daemon_name] &`
  * To stop a daemon use `kill` command
 
-The `etl` daemon won't exit until it finishes the processing of current blocks completely , this usually takes 20-30 seconds on the Main Net.
+The `etl` daemon won't exit until it finishes the processing of current blocks completely , this usually takes a few seconds on the Main Net.
 
 ### Database initialization
 
@@ -156,3 +169,42 @@ Init DB
 ### Database Schema and documentation
 
 	cat etl/sql/tables.sql
+
+
+### List of (debug) tools
+
+ 1. `dump_artifacts.go`  Dumps list of signatures of Events and Methods of Augur's ABI to the screen
+ 2. `check_wallet.go` Makes a call to AugurWalletRegistry contract and returns Wallet Contract address for an EOA provided as input on the command line
+ 3. `check_owner.go` Makes a call to an Ethereum address and if it is a Wallet contract, returns the EOA of the owner. Prints zeros otherwise.
+ 4. `stbalance.go` Makes a call to ShareToken contract and returns the amount of shares that a particular address for a particular market (and outcome) is owning
+
+### Useful SQL Queries
+
+Basic Market Info query:
+
+    SELECT 
+		market_aid AS mkt_id,
+		CONCAT(LEFT(a.addr,6),'..',RIGHT(a.addr,6)) AS mkt_addr,
+		extra_info::json->>'categories' AS cat,
+		SUBSTRING(extra_info::json->>'description',1,70) AS descr
+	 FROM market
+		LEFT JOIN address AS a ON market_aid=a.address_id
+	ORDER BY market_aid;
+
+Market Orders
+
+	SELECT
+		o.market_aid AS mkt_id,
+		a.addr AS mkt_addr,
+		CONCAT(LEFT(fa.addr,6),'..',RIGHT(fa.addr,6)) AS filler_addr,
+		CONCAT(LEFT(ca.addr,6),'..',RIGHT(ca.addr,6)) AS creator_addr,
+		CASE oaction WHEN 0 THEN 'CREATE' WHEN 1 THEN 'CANCEL' WHEN 2 then 'FILL' END AS type,
+		CASE o.otype WHEN 0 THEN 'BID' ELSE 'ASK' END AS dir,
+		o.price,
+		o.amount_filled AS amount,
+		o.outcome
+	FROM mktord AS o
+		LEFT JOIN address AS a ON o.market_aid=a.address_id
+		LEFT JOIN address AS fa ON o.eoa_fill_aid=fa.address_id
+		LEFT JOIN address AS ca ON o.eoa_aid=ca.address_id;
+

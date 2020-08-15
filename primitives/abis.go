@@ -254,9 +254,6 @@ func bindAugurWalletRegistry(address common.Address, caller bind.ContractCaller,
 	}
 	return bind.NewBoundContract(address, parsed, caller, transactor, filterer), nil
 }
-
-
-
 // GetWallet is a free data retrieval call binding the contract method 0x04d0a647.
 //
 // Solidity: function getWallet(address _account) view returns(address)
@@ -281,6 +278,31 @@ func (_AugurWalletRegistry *AugurWalletRegistrySession) GetWallet(_account commo
 // Solidity: function getWallet(address _account) view returns(address)
 func (_AugurWalletRegistry *AugurWalletRegistryCallerSession) GetWallet(_account common.Address) (common.Address, error) {
 	return _AugurWalletRegistry.Contract.GetWallet(&_AugurWalletRegistry.CallOpts, _account)
+}
+// GetCreate2WalletAddress is a free data retrieval call binding the contract method 0x80a35930.
+//
+// Solidity: function getCreate2WalletAddress(address _owner) view returns(address)
+func (_AugurWalletRegistry *AugurWalletRegistryCaller) GetCreate2WalletAddress(opts *bind.CallOpts, _owner common.Address) (common.Address, error) {
+	var (
+		ret0 = new(common.Address)
+	)
+	out := ret0
+	err := _AugurWalletRegistry.contract.Call(opts, out, "getCreate2WalletAddress", _owner)
+	return *ret0, err
+}
+
+// GetCreate2WalletAddress is a free data retrieval call binding the contract method 0x80a35930.
+//
+// Solidity: function getCreate2WalletAddress(address _owner) view returns(address)
+func (_AugurWalletRegistry *AugurWalletRegistrySession) GetCreate2WalletAddress(_owner common.Address) (common.Address, error) {
+	return _AugurWalletRegistry.Contract.GetCreate2WalletAddress(&_AugurWalletRegistry.CallOpts, _owner)
+}
+
+// GetCreate2WalletAddress is a free data retrieval call binding the contract method 0x80a35930.
+//
+// Solidity: function getCreate2WalletAddress(address _owner) view returns(address)
+func (_AugurWalletRegistry *AugurWalletRegistryCallerSession) GetCreate2WalletAddress(_owner common.Address) (common.Address, error) {
+	return _AugurWalletRegistry.Contract.GetCreate2WalletAddress(&_AugurWalletRegistry.CallOpts, _owner)
 }
 
 
@@ -1373,3 +1395,50 @@ func (_ShareToken *ShareTokenCallerSession) UnpackTokenId(_tokenId *big.Int) (st
 }, error) {
 	return _ShareToken.Contract.UnpackTokenId(&_ShareToken.CallOpts, _tokenId)
 }
+// UnsafeTransferFrom is a paid mutator transaction binding the contract method 0xfbc37ca9.
+//
+// Solidity: function unsafeTransferFrom(address _from, address _to, uint256 _id, uint256 _value) returns()
+func (_ShareToken *ShareTokenTransactor) UnsafeTransferFrom(opts *bind.TransactOpts, _from common.Address, _to common.Address, _id *big.Int, _value *big.Int) (*types.Transaction, error) {
+	return _ShareToken.contract.Transact(opts, "unsafeTransferFrom", _from, _to, _id, _value)
+}
+
+// UnsafeTransferFrom is a paid mutator transaction binding the contract method 0xfbc37ca9.
+//
+// Solidity: function unsafeTransferFrom(address _from, address _to, uint256 _id, uint256 _value) returns()
+func (_ShareToken *ShareTokenSession) UnsafeTransferFrom(_from common.Address, _to common.Address, _id *big.Int, _value *big.Int) (*types.Transaction, error) {
+	return _ShareToken.Contract.UnsafeTransferFrom(&_ShareToken.TransactOpts, _from, _to, _id, _value)
+}
+
+// UnsafeTransferFrom is a paid mutator transaction binding the contract method 0xfbc37ca9.
+//
+// Solidity: function unsafeTransferFrom(address _from, address _to, uint256 _id, uint256 _value) returns()
+func (_ShareToken *ShareTokenTransactorSession) UnsafeTransferFrom(_from common.Address, _to common.Address, _id *big.Int, _value *big.Int) (*types.Transaction, error) {
+	return _ShareToken.Contract.UnsafeTransferFrom(&_ShareToken.TransactOpts, _from, _to, _id, _value)
+}
+
+// GetTokenId is a free data retrieval call binding the contract method 0x29f99b9f.
+//
+// Solidity: function getTokenId(address _market, uint256 _outcome) pure returns(uint256 _tokenId)
+func (_ShareToken *ShareTokenCaller) GetTokenId(opts *bind.CallOpts, _market common.Address, _outcome *big.Int) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _ShareToken.contract.Call(opts, out, "getTokenId", _market, _outcome)
+	return *ret0, err
+}
+
+// GetTokenId is a free data retrieval call binding the contract method 0x29f99b9f.
+//
+// Solidity: function getTokenId(address _market, uint256 _outcome) pure returns(uint256 _tokenId)
+func (_ShareToken *ShareTokenSession) GetTokenId(_market common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ShareToken.Contract.GetTokenId(&_ShareToken.CallOpts, _market, _outcome)
+}
+
+// GetTokenId is a free data retrieval call binding the contract method 0x29f99b9f.
+//
+// Solidity: function getTokenId(address _market, uint256 _outcome) pure returns(uint256 _tokenId)
+func (_ShareToken *ShareTokenCallerSession) GetTokenId(_market common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ShareToken.Contract.GetTokenId(&_ShareToken.CallOpts, _market, _outcome)
+}
+

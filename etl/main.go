@@ -111,7 +111,7 @@ var (
 
 	fill_order_id int64 = 0			// during event processing, holds id of record in mktord from Fill evt
 	market_order_id int64 = 0
-	owner_fld_offset int64 = 2		// offset to AugurContract::owner field obtained with eth_getStorage()
+	owner_fld_offset int64 = int64(OWNER_FIELD_OFFSET)	// offset to AugurContract::owner field obtained with eth_getStorage()
 	
 	set_back_block_num int64 = 0
 

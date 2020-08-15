@@ -68,16 +68,6 @@ CREATE TABLE market (
 	validity_bond		DECIMAL DEFAULT 0.0,		-- fee returned to creator if market isnt invalid
 	cur_volume			DECIMAL(64,18) DEFAULT 0.0	-- this is the total volume (for all outcomes althogether)
 );
--- Balances of Share tokens per Market (accumulated data, one record per account)
-CREATE TABLE sbalances (
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			 -- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	account_aid			BIGINT NOT NULL,			-- address id of the User(holder of the shares)
-	market_aid			BIGINT NOT NULL,			-- market id of the Market these shares blong
-	outcome_idx			SMALLINT NOT NULL,				-- market outcome (index)
-	balance				DECIMAL(24,18) NOT NULL		-- balance of shares (bigint as string)
-);
 -- Market Order (BUY/SELL request made by the User via GUI)
 CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create/Cancel are temporary)
 	id					BIGSERIAL PRIMARY KEY,
@@ -211,6 +201,17 @@ CREATE table rep_transf (
 	to_aid				BIGINT DEFAULT 0,
 	amount				DECIMAL(32,18) DEFAULT 0.0
 );
+CREATE table tok_transf (	-- Tokens Transferred event
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	token_aid			BIGINT NOT NULL,
+	from_aid			BIGINT NOT NULL,
+	to_aid				BIGINT NOT NULL,
+	token_type			SMALLINT DEFAULT 0,
+	value				DECIMAL(64,32) DEFAULT 0.0
+);
 CREATE table tbc (			-- Token Balance Changed event
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
@@ -222,16 +223,25 @@ CREATE table tbc (			-- Token Balance Changed event
 	outcome				SMALLINT NOT NULL,
 	balance				DECIMAL(64,32) DEFAULT 0.0
 );
-CREATE table tok_transf (	-- Tokens Transferred event
+CREATE table stbc (			-- Share Token Balance Changed event
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
-	token_aid			BIGINT NOT NULL,
-	from_aid			BIGINT NOT NULL,
-	to_aid				BIGINT NOT NULL,
-	token_type			SMALLINT DEFAULT 0,
-	value				DECIMAL(64,32) DEFAULT 0.0
+	account_aid			BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	balance				DECIMAL(64,32) DEFAULT 0.0
+);
+-- Balances of Share tokens per Market (accumulated data, one record per account)
+CREATE TABLE sbalances (
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			 -- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	account_aid			BIGINT NOT NULL,			-- address id of the User(holder of the shares)
+	market_aid			BIGINT NOT NULL,			-- market id of the Market these shares blong
+	num_transfers		BIGINT DEFAULT 0,			-- counter for tracking now many transfers we had
+	outcome_idx			SMALLINT NOT NULL,				-- market outcome (index)
+	balance				DECIMAL(24,18) NOT NULL		-- balance of shares (bigint as string)
 );
 -- Statistics, automatically accumulated for the main page
 CREATE TABLE main_stats (

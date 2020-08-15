@@ -16,7 +16,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_eoa_fill_aid int64,	evt *p.MktOrderEvt) {
+func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_eoa_fill_aid int64,	evt *p.EOrderEvent) {
 
 	// depending on the order action (Create/Cancel/Fill) different table is used for storage
 	//		Create/Cancel order actions go to 'oorders' (Open Orders) table because these orders
@@ -841,7 +841,7 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 	}
 	return records
 }
-func (ss *SQLStorage) Locate_fill_event_order(evt *p.FillEvt) int64 {
+func (ss *SQLStorage) Locate_fill_event_order(evt *p.EFill) int64 {
 
 	var id int64 = 0
 	var query string

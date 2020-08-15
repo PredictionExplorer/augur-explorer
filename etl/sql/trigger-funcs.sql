@@ -667,3 +667,32 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_stbc_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt numeric;
+BEGIN
+
+	UPDATE sbalances 
+		SET balance = NEW.balance,
+			num_transfers = (num_transfers + 1)
+		WHERE market_aid = NEW.market_aid AND account_aid = NEW.account_aid AND outcome_idx=NEW.outcome_idx;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT
+			INTO sbalances(block_num,tx_id,market_aid,account_aid,outcome_idx,balance)
+			VALUES(NEW.block_num,NEW.tx_id,NEW.market_aid,NEW.account_aid,NEW.outcome_idx,NEW.balance);
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_stbc_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE sbalances
+		SET balance = OLD.balance,
+			num_transfers = (num_transfers - 1)
+		WHERE market_aid = OLD.market_aid AND account_aid = OLD.account_aid AND outcome_idx=OLD.outcome_idx;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;

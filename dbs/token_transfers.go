@@ -11,7 +11,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Process_REP_token_transfer(evt *p.Transfer,agtx *p.AugurTx) {
+func (ss *SQLStorage) Process_REP_token_transfer(evt *p.ETransfer,agtx *p.AugurTx) {
 
 	from_aid := ss.Lookup_or_create_address(evt.From.String(),agtx.BlockNum,agtx.TxId)
 	to_aid := ss.Lookup_or_create_address(evt.To.String(),agtx.BlockNum,agtx.TxId)
@@ -25,7 +25,7 @@ func (ss *SQLStorage) Process_REP_token_transfer(evt *p.Transfer,agtx *p.AugurTx
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_token_balance_changed_evt(evt *p.TokenBalanceChanged,block_num int64,tx_id int64) {
+func (ss *SQLStorage) Insert_token_balance_changed_evt(evt *p.ETokenBalanceChanged,block_num int64,tx_id int64) {
 
 	market_aid := ss.Lookup_or_create_address(evt.Market.String(),block_num,tx_id)
 	owner_aid := ss.Lookup_or_create_address(evt.Owner.String(),block_num,tx_id)
@@ -50,7 +50,7 @@ func (ss *SQLStorage) Insert_token_balance_changed_evt(evt *p.TokenBalanceChange
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_token_transf_evt(evt *p.TokensTransferred,agtx *p.AugurTx) {
+func (ss *SQLStorage) Insert_token_transf_evt(evt *p.ETokensTransferred,agtx *p.AugurTx) {
 
 	market_aid := ss.Lookup_or_create_address(evt.Market.String(),agtx.BlockNum,agtx.TxId)
 	token_aid := ss.Lookup_or_create_address(evt.Token.String(),agtx.BlockNum,agtx.TxId)
@@ -329,7 +329,7 @@ func (ss *SQLStorage) Get_deposits_withdrawals(wallet_aid int64) []p.DaiOp{
 	}
 	return records
 }
-func (ss *SQLStorage) is_dai_transfer_internal(evt *p.Transfer,ca *p.ContractAddresses) (bool,bool) {
+func (ss *SQLStorage) is_dai_transfer_internal(evt *p.ETransfer,ca *p.ContractAddresses) (bool,bool) {
 
 	var from_internal bool = false
 	var to_internal bool = false
@@ -374,7 +374,7 @@ func (ss *SQLStorage) is_dai_transfer_internal(evt *p.Transfer,ca *p.ContractAdd
 	}
 	return from_internal,to_internal // its a Market in To
 }
-func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.Transfer,ca *p.ContractAddresses,agtx *p.AugurTx) {
+func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.ETransfer,ca *p.ContractAddresses,agtx *p.AugurTx) {
 
 	from_aid := ss.Lookup_or_create_address(evt.From.String(),agtx.BlockNum,agtx.TxId)
 	to_aid := ss.Lookup_or_create_address(evt.To.String(),agtx.BlockNum,agtx.TxId)

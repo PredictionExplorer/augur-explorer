@@ -46,7 +46,7 @@ func get_market_status_str(status_code p.MarketStatus) string {
 	}
 	return "undefined"
 }
-func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,validity_bond string,evt *p.MarketCreatedEvt) {
+func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,validity_bond string,evt *p.EMarketCreated) {
 
 	var query string
 	var market_aid int64;
@@ -246,7 +246,7 @@ func (ss *SQLStorage) init_market_outcome_volumes(market_aid int64,outcomes stri
 		}
 	}
 }
-func (ss *SQLStorage) Insert_market_oi_changed_evt(block *types.Header,agtx *p.AugurTx,evt *p.MarketOIChangedEvt) {
+func (ss *SQLStorage) Insert_market_oi_changed_evt(block *types.Header,agtx *p.AugurTx,evt *p.EMarketOIChanged) {
 	// Note: this event arrives with evt.Market set to 0x0000000000000000000000000 (a contract bug?) ,
 	//			so we pass the market address as parameter ('market_addr') to the function
 	var query string
@@ -288,7 +288,7 @@ func get_outcome_idx_from_numerators(mkt_type int,num_ticks int64,numerators []*
 	}
 	return -1
 }
-func (ss *SQLStorage) Insert_market_finalized_evt(agtx *p.AugurTx,timestamp int64,evt *p.MktFinalizedEvt) {
+func (ss *SQLStorage) Insert_market_finalized_evt(agtx *p.AugurTx,timestamp int64,evt *p.EMarketFinalized) {
 
 	var query string
 
@@ -356,7 +356,7 @@ func (ss *SQLStorage) update_market_status(market_aid int64,status p.MarketStatu
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_market_volume_changed_evt_v1(agtx *p.AugurTx,evt *p.MktVolumeChangedEvt_v1) {
+func (ss *SQLStorage) Insert_market_volume_changed_evt_v1(agtx *p.AugurTx,evt *p.EMarketVolumeChanged_v1) {
 	// Note: this function will be discontinued after Augur is released on 28 Jul
 	market_aid := ss.Lookup_address_id(evt.Market.String())
 
@@ -413,7 +413,7 @@ func (ss *SQLStorage) Insert_market_volume_changed_evt_v1(agtx *p.AugurTx,evt *p
 		}
 	}
 }
-func (ss *SQLStorage) Insert_market_volume_changed_evt_v2(agtx *p.AugurTx,evt *p.MktVolumeChangedEvt_v2) {
+func (ss *SQLStorage) Insert_market_volume_changed_evt_v2(agtx *p.AugurTx,evt *p.EMarketVolumeChanged_v2) {
 
 	market_aid := ss.Lookup_address_id(evt.Market.String())
 
@@ -476,18 +476,8 @@ func (ss *SQLStorage) Insert_market_volume_changed_evt_v2(agtx *p.AugurTx,evt *p
 		}
 	}
 }
-func (ss *SQLStorage) Insert_share_balance_changed_evt(agtx *p.AugurTx,evt *p.ShareTokenBalanceChanged) {
+func (ss *SQLStorage) Insert_share_balance_changed_evt(agtx *p.AugurTx,evt *p.EShareTokenBalanceChanged) {
 
-	_,err := ss.lookup_universe_id(evt.Universe.String())
-	if err!=nil {
-		ss.Log_msg(
-			fmt.Sprintf(
-				"Universe %v not found on BalanceChanged event at block %v: %v\n",
-				evt.Universe.String(),agtx.BlockNum,err,
-			),
-		)
-		os.Exit(1)
-	}
 	market_aid := ss.Lookup_address_id(evt.Market.String())
 	account_aid := ss.Lookup_or_create_address(evt.Account.String(),agtx.BlockNum,agtx.TxId)
 
@@ -495,7 +485,7 @@ func (ss *SQLStorage) Insert_share_balance_changed_evt(agtx *p.AugurTx,evt *p.Sh
 	balance := evt.Balance.String()
 
 	var query string
-
+/* DISCONTINUED , in favor of triggers
 	query = "UPDATE sbalances SET balance = (" + balance + "/1e+18) " +
 				"WHERE " +
 					"market_aid = $1 AND " +
@@ -511,6 +501,8 @@ func (ss *SQLStorage) Insert_share_balance_changed_evt(agtx *p.AugurTx,evt *p.Sh
 		)
 		os.Exit(1)
 	}
+*/
+/* DISCONTINUED, now inserts go into 'stbc' table
 	rows_affected,err:=result.RowsAffected()
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: %v",err))
@@ -547,6 +539,27 @@ func (ss *SQLStorage) Insert_share_balance_changed_evt(agtx *p.AugurTx,evt *p.Sh
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into 'sbalances' table. Rows affeced = 0"))
 		}
+	}
+	*/
+	query = "INSERT INTO stbc (" +
+				"block_num," + 
+				"tx_id," +
+				"account_aid," +
+				"market_aid," +
+				"outcome_idx," +
+				"balance" +
+			") VALUES(" +
+				"$1," +
+				"$2," +
+				"$3," +
+				"$4," +
+				"$5," +
+				balance + "/1e+18" +
+			")"
+	_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,account_aid,market_aid,outcome)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into sbalances table at block %v: %v, q=%v",agtx.BlockNum,err,query))
+		os.Exit(1)
 	}
 }
 func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
