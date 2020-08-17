@@ -85,7 +85,7 @@ func balance_updater() {
 						affected_rows:=update_dai_balances_backwards(last_block_num,dai_bal.Aid,&addr)
 						if affected_rows>0 {
 							num_changes++
-							Info.Printf("balance_updater(): restarting loop() affected rows=%v on addr %v\n",addr.String())
+							Info.Printf("balance_updater(): restarting loop() affected rows=%v on addr %v\n",num_changes,addr.String())
 							break		// update backards invalidates the 'operations' array
 						}
 					}
