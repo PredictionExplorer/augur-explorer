@@ -145,7 +145,8 @@ func main() {
 	r.GET("/umtrades.html",user_trades_for_market)
 
 	// API calls for the new FrontEnd
-	r.GET("/api/active_markets",a1_active_markets)
+	r.GET("/api/active_market_ids",a1_active_market_ids)
+	r.GET("/api/active_markets/:start/:num_rows",a1_active_markets)
 	r.GET("/api/mkt_card/:market_aid",a1_market_card)
 
 

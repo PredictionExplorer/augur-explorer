@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func a1_active_markets(c *gin.Context) {
+func a1_active_market_ids(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	off_str := c.Query("off")
@@ -70,5 +70,60 @@ func a1_market_card(c *gin.Context) {
 		"MarketInfo": mkt_info,
 		"status":status,
 		"error":err_str,
+	})
+}
+func a1_active_markets(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_start := c.Param("start")
+	p_num_rows := c.Param("num_rows")
+
+	var start,num_rows int
+	var err error
+	if len(p_start) > 0 {
+		start, err = strconv.Atoi(p_start)
+		if err != nil {
+			c.JSON(422,gin.H{
+				"Markets": make([]int64,0,0),
+				"status":0,
+				"error":fmt.Sprintf("Bad number for 'start' parameter: %v",err),
+			})
+			return
+		}
+	} else {
+		c.JSON(422,gin.H{
+			"Markets": make([]int64,0,0),
+			"status":0,
+			"error":fmt.Sprintf("Empty 'start' parameter for page offset"),
+		})
+	}
+	if len(p_num_rows) > 0 {
+		num_rows, err = strconv.Atoi(p_num_rows)
+		if err != nil {
+			c.JSON(422,gin.H{
+				"Markets": make([]int64,0,0),
+				"status":0,
+				"error":fmt.Sprintf("Bad number for 'num_rows' parameter: %v",err),
+			})
+			return
+		}
+		if num_rows < 1 {
+			num_rows = DEFAULT_MARKET_ROWS_LIMIT
+		}
+	} else {
+		c.JSON(422,gin.H{
+			"Markets": make([]int64,0,0),
+			"status":0,
+			"error":fmt.Sprintf("Empty 'num_rows' parameter for number of records to return"),
+		})
+	}
+
+	markets := augur_srv.storage.Get_active_market_list(start,num_rows)
+	var status int = 1
+	c.JSON(200,gin.H{
+		"Markets": markets,
+		"status":status,
+		"error":"",
 	})
 }

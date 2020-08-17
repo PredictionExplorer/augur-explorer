@@ -566,6 +566,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 
 	var query string
 	query = "SELECT " +
+				"m.market_aid,"+
 				"ma.addr as mkt_addr," +
 				"sa.addr AS signer," +
 				"ca.addr as mcreator," +
@@ -595,6 +596,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 					"address AS sa ON m.eoa_aid= sa.address_id " +
 				"LEFT JOIN " +
 					"address AS ca ON m.wallet_aid = ca.address_id " +
+			"WHERE m.status < 4 " +
 			"ORDER BY " +
 				"m.fin_timestamp DESC " +
 			"OFFSET $1 LIMIT $2";
@@ -613,6 +615,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 		var longdesc sql.NullString
 		var category sql.NullString
 		err=rows.Scan(
+					&rec.MktAid,
 					&rec.MktAddr,
 					&rec.Signer,
 					&rec.MktCreator,
