@@ -148,6 +148,8 @@ func main() {
 	r.GET("/api/active_market_ids",a1_active_market_ids)
 	r.GET("/api/active_markets/:start/:num_rows",a1_active_markets)
 	r.GET("/api/mkt_card/:market_aid",a1_market_card)
+	r.GET("/api/mkt_cards/:market_aid_list",a1_multiple_market_cards)
+	r.GET("/api/market/:market",  a1_market_info)
 
 
 	r.Static("/imgs", "./html/imgs")
