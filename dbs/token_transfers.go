@@ -11,6 +11,9 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
+var (
+	ErrUnprocessedBalances error = errors.New("Unprocessed balance on past blocks")
+)
 func (ss *SQLStorage) Process_REP_token_transfer(evt *p.ETransfer,agtx *p.AugurTx) {
 
 	from_aid := ss.Lookup_or_create_address(evt.From.String(),agtx.BlockNum,agtx.TxId)
@@ -100,8 +103,12 @@ func (ss *SQLStorage) get_previous_profit_and_ff(market_aid int64,eoa_aid int64,
 	}
 	return previous_realized_profit,previous_frozen_funds
 }
-func (ss *SQLStorage) Get_unprocessed_dai_balances() []p.DaiB {
+func (ss *SQLStorage) Get_unprocessed_dai_balances(below_id int64) []p.DaiB {
 
+	var id_condition string
+	if below_id > 0 {
+		id_condition = fmt.Sprintf(" AND (db.id > %v) ",below_id)
+	}
 	records := make([]p.DaiB,0,8)
 	var query string
 	query = "SELECT " +
@@ -114,7 +121,7 @@ func (ss *SQLStorage) Get_unprocessed_dai_balances() []p.DaiB {
 				"db.block_num " +
 			"FROM dai_bal db " +
 				"LEFT JOIN address a ON db.aid=a.address_id " +
-			"WHERE processed = false " +
+			"WHERE (processed = false) " + id_condition +
 			"ORDER by db.id " +
 			"LIMIT 10"
 
@@ -158,7 +165,7 @@ func (ss *SQLStorage) Get_previous_balance_from_DB(id int64,aid int64) (string,e
 		return balance,err
 	}
 	if !processed {
-		return "",errors.New("Unprocessed balance on past blocks")
+		return "",ErrUnprocessedBalances
 	}
 	return balance,err
 }
