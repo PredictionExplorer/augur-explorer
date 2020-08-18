@@ -654,12 +654,21 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 	}
 	return records
 }
-func (ss *SQLStorage) Get_active_market_ids(off int, lim int) []int64 {
+func (ss *SQLStorage) Get_active_market_ids(sort int,off int, lim int) []int64 {
 
+	var order_condition string
+	switch sort {
+		case 0: order_condition = "m.fin_timestamp DESC";
+		case 1: order_condition = "m.money_at_stake DESC";
+		case 2: order_condition = "m.cur_volume DESC";
+		default:
+			order_condition = "m.market_aid DESC";
+	}
 	var query string
 	query = "SELECT market_aid FROM market as m " +
 			"WHERE m.status < 4 " +
-			"ORDER BY m.fin_timestamp DESC OFFSET $1 LIMIT $2";
+			"ORDER BY " + order_condition + " " +
+			"OFFSET $1 LIMIT $2";
 
 	rows,err := ss.db.Query(query,off,lim)
 	if (err!=nil) {
