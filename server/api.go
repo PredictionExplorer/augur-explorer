@@ -23,12 +23,25 @@ func a1_active_market_ids(c *gin.Context) {
 			c.JSON(422,gin.H{
 				"MarketIDs": make([]int64,0,0),
 				"status":0,
-				"error":fmt.Sprintf("Bad offset parameter: ",err),
+				"error":fmt.Sprintf("Bad offset parameter: %v",err),
 			})
 			return
 		}
 	}
-	ids := augur_srv.storage.Get_active_market_ids(off,1000000)
+	p_sort := c.Query("sort")
+	var sort int = 0
+	if len(p_sort) > 0 {
+		sort, err = strconv.Atoi(p_sort)
+		if err != nil {
+			c.JSON(422,gin.H{
+				"MarketIDs": make([]int64,0,0),
+				"status":0,
+				"error":fmt.Sprintf("Bad sort parameter: %v",err),
+			})
+			return
+		}
+	}
+	ids := augur_srv.storage.Get_active_market_ids(sort,off,1000000)
 	var status int = 1
 	c.JSON(200,gin.H{
 		"MarketIDs": ids,
@@ -48,7 +61,7 @@ func a1_market_card(c *gin.Context) {
 			c.JSON(422,gin.H{
 				"MarketInfo": make([]int64,0,0),
 				"status":0,
-				"error":fmt.Sprintf("Bad integer for market_aid parameter: ",err),
+				"error":fmt.Sprintf("Bad integer for market_aid parameter: %v",err),
 			})
 			return
 		}
