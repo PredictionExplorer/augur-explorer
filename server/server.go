@@ -42,13 +42,20 @@ func respond_error(c *gin.Context,error_text string) {
 		"ErrDescr": error_text,
 	})
 }
-func parse_int_from_remote_or_error(c *gin.Context,ascii_int *string) (int64,bool) {
+func parse_int_from_remote_or_error(c *gin.Context,json_output bool,ascii_int *string) (int64,bool) {
 	p, err := strconv.ParseInt(*ascii_int,10,64)
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Augur Markets: Error",
-			"ErrDescr": "Can't parse integer parameter (non-numeric characters detected)",
-		})
+		if json_output {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status" : 0,
+				"error": fmt.Sprintf("Can't parse integer parameter : ",err),
+			})
+		} else {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": fmt.Sprintf("Can't parse integer parameter : ",err),
+			})
+		}
 		return 0,false
 	}
 	return p,true
@@ -162,13 +169,13 @@ func explorer(c *gin.Context) {
 	})
 }
 
-func complete_and_output_market_info(c *gin.Context,minfo InfoMarket) {
+func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoMarket) {
 
 	var limit int64 = int64(DEFAILT_MARKET_TRADES_LIMIT);
 	p_limit := c.Query("limit")
 	if len(p_limit) > 0 {
 		var success bool
-		limit,success = parse_int_from_remote_or_error(c,&p_limit)
+		limit,success = parse_int_from_remote_or_error(c,json_output,&p_limit)
 		if !success {
 			return
 		}
@@ -178,16 +185,26 @@ func complete_and_output_market_info(c *gin.Context,minfo InfoMarket) {
 	reports := augur_srv.storage.Get_market_reports(minfo.MktAid,DEFAULT_MARKET_REPORTS_LIMIT)
 	price_history := augur_srv.storage.Get_full_price_history(minfo.MktAddr,minfo.MktAid)
 
-	c.HTML(http.StatusOK, "market_info.html", gin.H{
-			"title": "Trades for market",
+	if json_output {
+		c.JSON(200,gin.H{
 			"Trades" : trades,
 			"Reports" : reports,
 			"Market": minfo ,
 			"OutcomeVols" : outcome_vols,
 			"PriceHistory" : price_history,
-	})
+		})
+	} else {
+		c.HTML(http.StatusOK, "market_info.html", gin.H{
+			"title": "DISCONTINUED",
+			"Trades" : trades,
+			"Reports" : reports,
+			"Market": minfo ,
+			"OutcomeVols" : outcome_vols,
+			"PriceHistory" : price_history,
+		})
+	}
 }
-func is_address_valid(c *gin.Context,addr string) (string,bool) {
+func is_address_valid(c *gin.Context,json_output bool,addr string) (string,bool) {
 
 	if (addr[0]=='0') && (addr[1] == 'x') {
 		addr = addr[2:]
@@ -198,45 +215,59 @@ func is_address_valid(c *gin.Context,addr string) (string,bool) {
 		addr := common.BytesToAddress(addr_bytes)
 		formatted_addr = addr.String()
 	} else {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Augur Markets: Error",
-			"ErrDescr": fmt.Sprintf("Provided address parameter is invalid : %v",err),
-		})
+		if json_output {
+			c.JSON(200,gin.H{
+				"status": 0,
+				"error": fmt.Sprintf("Provided address parameter is invalid : %v",err),
+			})
+		} else {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": fmt.Sprintf("Provided address parameter is invalid : %v",err),
+			})
+		}
 		return "",false
 	}
 	return formatted_addr,true
 }
-func show_market_not_found_error(c *gin.Context,addr *string) {
+func show_market_not_found_error(c *gin.Context,json_output bool,addr *string) {
 
-	c.HTML(http.StatusBadRequest, "error.html", gin.H{
-		"title": "Augur Markets: Error",
-		"ErrDescr": fmt.Sprintf("Market with address %v wasn't found",*addr),
-	})
+	if json_output {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": 0,
+			"error": fmt.Sprintf("Market with address %v wasn't found",*addr),
+		})
+	} else {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Market with address %v wasn't found",*addr),
+		})
+	}
 }
 func market_info(c *gin.Context) {
 
 	market := c.Param("market")
-	market_addr,valid:=is_address_valid(c,market)
+	market_addr,valid:=is_address_valid(c,false,market)
 	if !valid {
 		return
 	}
 	market_info,err := augur_srv.storage.Get_market_info(market_addr,0,false)
 	if err != nil {
-		show_market_not_found_error(c,&market_addr)
+		show_market_not_found_error(c,false,&market_addr)
 		return
 	}
-	complete_and_output_market_info(c,market_info)
+	complete_and_output_market_info(c,false,market_info)
 }
 func full_trade_list(c *gin.Context) {
 
 	market := c.Param("market")
-	market_addr,valid := is_address_valid(c,market)
+	market_addr,valid := is_address_valid(c,false,market)
 	if !valid {
 		return
 	}
 	market_info,err := augur_srv.storage.Get_market_info(market_addr,0,false)
 	if err != nil {
-		show_market_not_found_error(c,&market_addr)
+		show_market_not_found_error(c,false,&market_addr)
 		return
 	}
 	trades := augur_srv.storage.Get_mkt_trades(market_addr,0)
@@ -250,7 +281,7 @@ func market_depth(c *gin.Context) {
 
 	// Market Depth Info: https://en.wikipedia.org/wiki/Order_book_(trading)
 	market := c.Param("market")
-	market_addr,valid := is_address_valid(c,market)
+	market_addr,valid := is_address_valid(c,false,market)
 	if !valid {
 		return
 	}
@@ -276,7 +307,7 @@ func market_depth(c *gin.Context) {
 
 	market_info,err := augur_srv.storage.Get_market_info(market_addr,outcome,true)
 	if err != nil {
-		show_market_not_found_error(c,&market_addr)
+		show_market_not_found_error(c,false,&market_addr)
 		return
 	}
 	mdepth,last_oo_id := augur_srv.storage.Get_mkt_depth(market_info.MktAid,outcome)
@@ -300,7 +331,7 @@ func market_depth_ajax(c *gin.Context) {
 	var outcome int64
 	if len(p_outcome) > 0 {
 		var success bool
-		outcome,success = parse_int_from_remote_or_error(c,&p_outcome)
+		outcome,success = parse_int_from_remote_or_error(c,true,&p_outcome)
 		if !success {
 			return
 		}
@@ -313,7 +344,7 @@ func market_depth_ajax(c *gin.Context) {
 	var market_aid int64
 	if len(p_market_aid) > 0 {
 		var success bool
-		market_aid,success = parse_int_from_remote_or_error(c,&p_market_aid)
+		market_aid,success = parse_int_from_remote_or_error(c,true,&p_market_aid)
 		if !success {
 			return
 		}
@@ -332,7 +363,7 @@ func market_depth_ajax(c *gin.Context) {
 func market_price_history(c *gin.Context) {
 
 	market := c.Param("market")
-	market_addr,valid := is_address_valid(c,market)
+	market_addr,valid := is_address_valid(c,false,market)
 	if !valid {
 		return
 	}
@@ -358,7 +389,7 @@ func market_price_history(c *gin.Context) {
 
 	market_info,err := augur_srv.storage.Get_market_info(market_addr,outcome,true)
 	if err != nil {
-		show_market_not_found_error(c,&market_addr)
+		show_market_not_found_error(c,false,&market_addr)
 		return
 	}
 	mkt_price_hist := augur_srv.storage.Get_price_history_for_outcome(market_info.MktAid,outcome)
@@ -543,7 +574,7 @@ func search(c *gin.Context) {
 			if err==nil {
 				market_info,err := augur_srv.storage.Get_market_info(addr_str,0,false)
 				if err == nil {
-					complete_and_output_market_info(c,market_info)
+					complete_and_output_market_info(c,false,market_info)
 					return
 				}
 				eoa_aid,err:=augur_srv.storage.Lookup_eoa_aid(aid)
@@ -672,7 +703,7 @@ func category(c *gin.Context) {
 
 	p_catid:= c.Param("catid")
 
-	cat_id,success := parse_int_from_remote_or_error(c,&p_catid)
+	cat_id,success := parse_int_from_remote_or_error(c,false,&p_catid)
 	if !success {
 		return
 	}
@@ -862,7 +893,7 @@ func serve_block_info(p_block_num string,c *gin.Context) {
 	var block_num int64
 	if len(p_block_num ) > 0 {
 		var success bool
-		block_num,success = parse_int_from_remote_or_error(c,&p_block_num)
+		block_num,success = parse_int_from_remote_or_error(c,false,&p_block_num)
 		if !success {
 			return
 		}
@@ -898,7 +929,7 @@ func market_depth_status(c *gin.Context) {
 	var market_aid int64
 	if len(p_market_aid) > 0 {
 		var success bool
-		market_aid,success = parse_int_from_remote_or_error(c,&p_market_aid)
+		market_aid,success = parse_int_from_remote_or_error(c,false,&p_market_aid)
 		if !success {
 			return
 		}
@@ -911,7 +942,7 @@ func market_depth_status(c *gin.Context) {
 	var outcome_idx int64
 	if len(p_outcome_idx) > 0 {
 		var success bool
-		outcome_idx,success = parse_int_from_remote_or_error(c,&p_outcome_idx)
+		outcome_idx,success = parse_int_from_remote_or_error(c,false,&p_outcome_idx)
 		if !success {
 			return
 		}
@@ -924,7 +955,7 @@ func market_depth_status(c *gin.Context) {
 	var last_oo_id int64
 	if len(p_last_oo_id) > 0 {
 		var success bool
-		last_oo_id,success = parse_int_from_remote_or_error(c,&p_last_oo_id)
+		last_oo_id,success = parse_int_from_remote_or_error(c,false,&p_last_oo_id)
 		if !success {
 			return
 		}
@@ -946,13 +977,13 @@ func market_depth_status(c *gin.Context) {
 func user_trades_for_market(c *gin.Context) {
 
 	p_addr := c.Query("addr")
-	user_addr_str,valid := is_address_valid(c,p_addr)
+	user_addr_str,valid := is_address_valid(c,false,p_addr)
 	if !valid {
 		return
 	}
 
 	p_addr = c.Query("market")
-	mkt_addr_str,valid := is_address_valid(c,p_addr)
+	mkt_addr_str,valid := is_address_valid(c,false,p_addr)
 	if !valid {
 		return
 	}
@@ -976,7 +1007,7 @@ func user_trades_for_market(c *gin.Context) {
 
 	market_info,err := augur_srv.storage.Get_market_info(mkt_addr_str,0,false)
 	if err!= nil {
-		show_market_not_found_error(c,&mkt_addr_str)
+		show_market_not_found_error(c,false,&mkt_addr_str)
 		return
 	}
 	trades := augur_srv.storage.Get_user_trades_for_market(aid,market_info.MktAid)

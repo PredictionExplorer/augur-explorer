@@ -685,6 +685,7 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 
 	var query string
 	query = "SELECT " +
+				"m.market_aid," +
 				"ma.addr as mkt_addr," +
 				"sa.addr AS signer," +
 				"ca.addr as mcreator," +
@@ -724,6 +725,7 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 	var category sql.NullString
 	res := ss.db.QueryRow(query,id)
 	err := res.Scan(
+			&rec.MktAid,
 			&rec.MktAddr,
 			&rec.Signer,
 			&rec.MktCreator,
