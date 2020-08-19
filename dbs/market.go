@@ -654,7 +654,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 	}
 	return records
 }
-func (ss *SQLStorage) Get_active_market_ids(sort int,off int, lim int) []int64 {
+func (ss *SQLStorage) Get_active_market_ids(sort int,all int,off int, lim int) []int64 {
 
 	var order_condition string
 	switch sort {
@@ -664,9 +664,13 @@ func (ss *SQLStorage) Get_active_market_ids(sort int,off int, lim int) []int64 {
 		default:
 			order_condition = "m.market_aid DESC";
 	}
+	var where_condition string
+	if all == 0 {
+		where_condition = " AND (m.cur_volume > 0) AND (m.money_at_stake > 0) "
+	}
 	var query string
 	query = "SELECT market_aid FROM market as m " +
-			"WHERE m.status < 4 " +
+			"WHERE (m.status < 4) " + where_condition +
 			"ORDER BY " + order_condition + " " +
 			"OFFSET $1 LIMIT $2";
 

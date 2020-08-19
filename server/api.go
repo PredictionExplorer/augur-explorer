@@ -41,7 +41,20 @@ func a1_active_market_ids(c *gin.Context) {
 			return
 		}
 	}
-	ids := augur_srv.storage.Get_active_market_ids(sort,off,1000000)
+	p_all := c.Query("all")
+	var all int = 1
+	if len(p_all) > 0 {
+		all , err = strconv.Atoi(p_all)
+		if err != nil {
+			c.JSON(422,gin.H{
+				"MarketIDs": make([]int64,0,0),
+				"status":0,
+				"error":fmt.Sprintf("Bad 'all' parameter: %v",err),
+			})
+			return
+		}
+	}
+	ids := augur_srv.storage.Get_active_market_ids(sort,all,off,1000000)
 	var status int = 1
 	c.JSON(200,gin.H{
 		"MarketIDs": ids,
