@@ -50,7 +50,7 @@ func update_dai_balances_backwards(last_block_num int64,aid int64,addr *common.A
 	return storage.Update_dai_token_balances_backwards(last_block_num,aid,balance),nil
 }
 func dai_bal_sleep() {
-	time.Sleep(100 * time.Second)
+	time.Sleep(14 * time.Second)	// Ethereum block time
 }
 func balance_updater() {
 	// go-routine that updates balances of DAI tokens
@@ -125,7 +125,7 @@ func balance_updater() {
 						new_bal.Add(prev_bal,amount)
 						Info.Printf("balance_updater(): setting balance of acct %v (id=%v) to %v (prev_bal=%v, amount=%v\n",
 									addr.String(),dai_bal.Aid,new_bal,prev_bal.String(),amount.String())
-						storage.Set_dai_balance(dai_bal.Id,new_bal.String())
+						storage.Set_dai_balance(dai_bal.Id,dai_bal.BlockHash,new_bal.String())
 						num_changes++
 					}
 				} else {
@@ -137,7 +137,7 @@ func balance_updater() {
 					new_bal.Add(prev_bal,amount)
 					Info.Printf("balance_updater(): got balance from db of acct %v (id=%v) to %v (prev_bal=%v, amount=%v\n",
 									dai_bal.Address,dai_bal.Aid,new_bal,prev_bal.String(),amount.String())
-					storage.Set_dai_balance(dai_bal.Id,new_bal.String())
+					storage.Set_dai_balance(dai_bal.Id,dai_bal.BlockHash,new_bal.String())
 					num_changes++
 				}
 			}

@@ -368,6 +368,7 @@ type DaiB struct {
 	Address				string
 	Amount				string
 	Balance				string
+	BlockHash			string
 }
 type DaiOp struct {
 	BlockNum			int64
