@@ -32,7 +32,7 @@ var (
 	Info	*log.Logger
 )
 
-func update_dai_balances_backwards(last_block_num int64,aid int64,addr *common.Address) int {
+func update_dai_balances_backwards(last_block_num int64,aid int64,addr *common.Address) (int,error) {
 
 	var copts = new(bind.CallOpts)
 	copts.BlockNumber = big.NewInt(int64(last_block_num))
@@ -42,12 +42,15 @@ func update_dai_balances_backwards(last_block_num int64,aid int64,addr *common.A
 							aid,last_block_num)
 		Error.Printf("Failure to update DAI token balances backwards for eoa_aid=%v,last_block_num=%v",
 							aid,last_block_num)
-		return 0
+		return 0,err
 	}
 	Info.Printf("balance_updater(): updating balances backwards from block %v , addr %v (aid=%v)\n",
 			last_block_num,addr.String(),aid)
 	Info.Printf("balance_updater(): got last balance = %v for block = %v\n",balance.String(),last_block_num)
-	return storage.Update_dai_token_balances_backwards(last_block_num,aid,balance)
+	return storage.Update_dai_token_balances_backwards(last_block_num,aid,balance),nil
+}
+func dai_bal_sleep() {
+	time.Sleep(14 * time.Second)	// Ethereum block time
 }
 func balance_updater() {
 	// go-routine that updates balances of DAI tokens
@@ -62,58 +65,91 @@ func balance_updater() {
 
 	var num_changes int;
 	for {
+		var last_id int64 = 0
 		num_changes = 0
-		Info.Printf("balance_updater() running\n")
-		operations := storage.Get_unprocessed_dai_balances()
-		Info.Printf("balance_updater(): got %v operations\n",len(operations))
-		for i := 0 ; i<len(operations) ; i++ {
-			dai_bal := &operations[i]
-			prev_balance_db,err := storage.Get_previous_balance_from_DB(dai_bal.Id,dai_bal.Aid)
-			Info.Printf("balance_updater(): acct %v: prev_balance=%v, err=%v\n",dai_bal.Address,prev_balance_db,err)
-			if err != nil {
-				// no balance locally (in the DB), get it from RPC
-				var copts = new(bind.CallOpts)
-				copts.BlockNumber = big.NewInt(int64(dai_bal.BlockNum)-1)	// previous block is used
-				addr := common.HexToAddress(dai_bal.Address)
-				prev_bal,err := ctrct_dai_token.BalanceOf(copts,addr)
+		for {	// while we do have dai_balances available
+			Info.Printf("balance_updater() running. last_id=%v\n",last_id)
+			operations := storage.Get_unprocessed_dai_balances(last_id)
+			if len(operations) > 0 {
+				last_id = operations[len(operations)-1].Id
+			}
+			Info.Printf("balance_updater(): got %v operations\n",len(operations))
+			for i := 0 ; i<len(operations) ; i++ {
+				dai_bal := &operations[i]
+				prev_balance_db,err := storage.Get_previous_balance_from_DB(dai_bal.Id,dai_bal.Aid)
+				Info.Printf("balance_updater(): acct %v: prev_balance=%v, err=%v\n",dai_bal.Address,prev_balance_db,err)
 				if err != nil {
-					Error.Printf("Error on GetBalance call: %v\n",err)
-					// if error occurs, it probably means the Node has already deleted the State for this block
-					// therefore the only way to update balances of this account is calculate changes backwards,
-					last_block_num,success := storage.Get_last_block_num()
-					if success {
-						affected_rows:=update_dai_balances_backwards(last_block_num,dai_bal.Aid,&addr)
-						if affected_rows>0 {
-							num_changes++
-							Info.Printf("balance_updater(): restarting loop() affected rows=%v on addr %v\n",num_changes,addr.String())
-							break		// update backards invalidates the 'operations' array
+					if err == ErrUnprocessedBalances {
+						last_block_num,success := storage.Get_last_block_num()
+						if success {
+							addr := common.HexToAddress(dai_bal.Address)
+							affected_rows,err:=update_dai_balances_backwards(last_block_num,dai_bal.Aid,&addr)
+							if err!=nil {
+							//	dai_bal_sleep() // RPC service error, go to sleep
+							//	break;
+							}
+							if affected_rows>0 {
+								num_changes++
+								Info.Printf("balance_updater(): restarting loop() affected rows=%v on addr %v\n",num_changes,addr.String())
+								break		// update backards invalidates the 'operations' array
+							}
 						}
+						continue
+					}
+					// no balance locally (in the DB), get it from RPC
+					var copts = new(bind.CallOpts)
+					copts.BlockNumber = big.NewInt(int64(dai_bal.BlockNum)-1)	// previous block is used
+					addr := common.HexToAddress(dai_bal.Address)
+					prev_bal,err := ctrct_dai_token.BalanceOf(copts,addr)
+					if err != nil {
+						Error.Printf("Error on GetBalance call: %v\n",err)
+						// if error occurs, it probably means the Node has already deleted the State for this block
+						// therefore the only way to update balances of this account is calculate changes backwards,
+						last_block_num,success := storage.Get_last_block_num()
+						if success {
+							affected_rows,err:=update_dai_balances_backwards(last_block_num,dai_bal.Aid,&addr)
+							if err!=nil {
+								//dai_bal_sleep() // RPC service error, go to sleep
+								//break;
+							}
+							if affected_rows>0 {
+								num_changes++
+								Info.Printf("balance_updater(): restarting loop() affected rows=%v on addr %v\n",num_changes,addr.String())
+								break		// update backards invalidates the 'operations' array
+							}
+						}
+					} else {
+						amount := new(big.Int)
+						amount.SetString(dai_bal.Amount,10)
+						new_bal := new(big.Int)
+						new_bal.Add(prev_bal,amount)
+						Info.Printf("balance_updater(): setting balance of acct %v (id=%v) to %v (prev_bal=%v, amount=%v\n",
+									addr.String(),dai_bal.Aid,new_bal,prev_bal.String(),amount.String())
+						storage.Set_dai_balance(dai_bal.Id,dai_bal.BlockHash,new_bal.String())
+						num_changes++
 					}
 				} else {
+					prev_bal := new(big.Int)
+					prev_bal.SetString(prev_balance_db,10)
 					amount := new(big.Int)
 					amount.SetString(dai_bal.Amount,10)
 					new_bal := new(big.Int)
 					new_bal.Add(prev_bal,amount)
-					Info.Printf("balance_updater(): setting balance of acct %v (id=%v) to %v (prev_bal=%v, amount=%v\n",
-								addr.String(),dai_bal.Aid,new_bal,prev_bal.String(),amount.String())
-					storage.Set_dai_balance(dai_bal.Id,new_bal.String())
+					Info.Printf("balance_updater(): got balance from db of acct %v (id=%v) to %v (prev_bal=%v, amount=%v\n",
+									dai_bal.Address,dai_bal.Aid,new_bal,prev_bal.String(),amount.String())
+					storage.Set_dai_balance(dai_bal.Id,dai_bal.BlockHash,new_bal.String())
 					num_changes++
 				}
-			} else {
-				prev_bal := new(big.Int)
-				prev_bal.SetString(prev_balance_db,10)
-				amount := new(big.Int)
-				amount.SetString(dai_bal.Amount,10)
-				new_bal := new(big.Int)
-				new_bal.Add(prev_bal,amount)
-				Info.Printf("balance_updater(): got balance from db of acct %v (id=%v) to %v (prev_bal=%v, amount=%v\n",
-								dai_bal.Address,dai_bal.Aid,new_bal,prev_bal.String(),amount.String())
-				storage.Set_dai_balance(dai_bal.Id,new_bal.String())
-				num_changes++
+			}
+			if len(operations) == 0 {
+				break;	// we have processed all dai_bal records
+			}
+			if num_changes > 0 {
+				break;	// any change in dai_bal invalidates the query
 			}
 		}
 		if num_changes == 0 {
-			time.Sleep(100 * time.Second)
+			dai_bal_sleep()
 		}
 	}
 }

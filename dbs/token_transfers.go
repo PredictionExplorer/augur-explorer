@@ -11,6 +11,9 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
+var (
+	ErrUnprocessedBalances error = errors.New("Unprocessed balance on past blocks")
+)
 func (ss *SQLStorage) Process_REP_token_transfer(evt *p.ETransfer,agtx *p.AugurTx) {
 
 	from_aid := ss.Lookup_or_create_address(evt.From.String(),agtx.BlockNum,agtx.TxId)
@@ -100,8 +103,12 @@ func (ss *SQLStorage) get_previous_profit_and_ff(market_aid int64,eoa_aid int64,
 	}
 	return previous_realized_profit,previous_frozen_funds
 }
-func (ss *SQLStorage) Get_unprocessed_dai_balances() []p.DaiB {
+func (ss *SQLStorage) Get_unprocessed_dai_balances(below_id int64) []p.DaiB {
 
+	var id_condition string
+	if below_id > 0 {
+		id_condition = fmt.Sprintf(" AND (db.id > %v) ",below_id)
+	}
 	records := make([]p.DaiB,0,8)
 	var query string
 	query = "SELECT " +
@@ -111,10 +118,12 @@ func (ss *SQLStorage) Get_unprocessed_dai_balances() []p.DaiB {
 				"a.addr," +
 				"ROUND(amount*1e+18) as amount," +
 				"ROUND(balance*1e+18) as balance," +
-				"db.block_num " +
+				"db.block_num, " +
+				"b.block_hash " +
 			"FROM dai_bal db " +
+				"JOIN block AS b ON db.block_num = b.block_num " +
 				"LEFT JOIN address a ON db.aid=a.address_id " +
-			"WHERE processed = false " +
+			"WHERE (processed = false) " + id_condition +
 			"ORDER by db.id " +
 			"LIMIT 10"
 
@@ -135,6 +144,7 @@ func (ss *SQLStorage) Get_unprocessed_dai_balances() []p.DaiB {
 			&rec.Amount,
 			&rec.Balance,
 			&rec.BlockNum,
+			&rec.BlockHash,
 		)
 		records = append(records,rec)
 	}
@@ -158,12 +168,12 @@ func (ss *SQLStorage) Get_previous_balance_from_DB(id int64,aid int64) (string,e
 		return balance,err
 	}
 	if !processed {
-		return "",errors.New("Unprocessed balance on past blocks")
+		return "",ErrUnprocessedBalances
 	}
 	return balance,err
 }
 func (ss *SQLStorage) Update_dai_token_balances_backwards(last_block_num int64,aid int64,eth_balance *big.Int) int {
-
+	// Note: we are using block_hash in WHERE conditions to prevent balance corruption during chain split
 	var updated_rows  int =0
 	var query string
 
@@ -171,6 +181,7 @@ func (ss *SQLStorage) Update_dai_token_balances_backwards(last_block_num int64,a
 	row:=ss.db.QueryRow(query,aid)
 	var null_id sql.NullInt64
 	var stopping_id int64 = 0
+	var block_hash string
 	err := row.Scan(&null_id)
 	if err == nil {
 		if null_id.Valid {
@@ -179,11 +190,18 @@ func (ss *SQLStorage) Update_dai_token_balances_backwards(last_block_num int64,a
 	}
 	ss.Info.Printf("balance_updater(): update backwards: stopping ID=%v\n",stopping_id)
 
-	query = "SELECT id,ROUND(balance*1e+18)::text as balance,ROUND(amount*1e+18)::text as amount,processed FROM dai_bal " +
+	query = "SELECT " +
+				"id," +
+				"ROUND(balance*1e+18)::text as balance," +
+				"ROUND(amount*1e+18)::text as amount," +
+				"processed, " +
+				"b.block_hash " +
+			"FROM dai_bal AS db " +
+				"JOIN block AS b on db.block_num = b.block_num " +
 			"WHERE " +
-				"(aid = $1) AND " +
-				"(block_num <= $2) " +
-			"ORDER BY id DESC"
+				"(db.aid = $1) AND " +
+				"(db.block_num <= $2) " +
+			"ORDER BY db.id DESC"
 	rows,err := ss.db.Query(query,aid,last_block_num)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -200,7 +218,7 @@ func (ss *SQLStorage) Update_dai_token_balances_backwards(last_block_num int64,a
 		var balance_str string
 		var amount_str string
 		var processed bool
-		err = rows.Scan(&id,&balance_str,&amount_str,&processed)
+		err = rows.Scan(&id,&balance_str,&amount_str,&processed,&block_hash)
 		if err != nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
@@ -218,12 +236,13 @@ func (ss *SQLStorage) Update_dai_token_balances_backwards(last_block_num int64,a
 		if cmp_res != 0 {	// incorrect balance, update it
 			ss.Info.Printf("balance_updater(): incorrect balance, setting correct balance to %v for id=%v\n",
 				correct_balance.String(),id)
-			query = "UPDATE dai_bal " +
+			query = "UPDATE dai_bal AS db " +
 					"SET balance=("+correct_balance.String()+"/1e+18)," +
 						"processed = true " +
-					" WHERE id=$1"
+					"FROM block AS b " +
+					" WHERE db.block_num=b.block_num AND b.block_hash=$2 AND db.id=$1"
 			ss.Info.Printf("query = %v\n",query)
-			_,err = ss.db.Exec(query,id)
+			_,err = ss.db.Exec(query,id,block_hash)
 			if (err!=nil) {
 				p.Fatalf(fmt.Sprintf("DB Error: %v",err));
 				os.Exit(1)
@@ -231,10 +250,11 @@ func (ss *SQLStorage) Update_dai_token_balances_backwards(last_block_num int64,a
 			updated_rows++
 		} else {
 			if !processed {
-				query = "UPDATE dai_bal " +
+				query = "UPDATE dai_bal AS db " +
 						"SET processed = true " +
-						" WHERE id=$1"
-				_,err = ss.db.Exec(query,id)
+						"FROM block AS b " +
+						"WHERE db.block_num=b.block_num AND b.block_hash=$2 AND db.id=$1"
+				_,err = ss.db.Exec(query,id,block_hash)
 				if (err!=nil) {
 					p.Fatalf(fmt.Sprintf("DB Error: %v",err));
 					os.Exit(1)
@@ -246,23 +266,19 @@ func (ss *SQLStorage) Update_dai_token_balances_backwards(last_block_num int64,a
 			}
 		}
 	}
-	if row_count == 0 {
-		d_query := fmt.Sprintf("SELECT id,balance,amount,processed FROM dai_bal " +
-			"WHERE " +
-				"(aid = %v) AND " +
-				"(block_num <= %v) " +
-			"ORDER BY id DESC",aid,last_block_num)
-		ss.Info.Printf("balance_updater(): query returns no rows: %v\n",d_query)
-	}
 	return updated_rows
 }
-func (ss *SQLStorage) Set_dai_balance(id int64,balance string) {
-
+func (ss *SQLStorage) Set_dai_balance(id int64,block_hash string,balance string) {
+	//Note: we are using block hash in WHERE condition because during balance update process
+	//		chain split could occur and the block hash can change
 	var query string
-	query = "UPDATE dai_bal SET balance = ("+balance+"/1e+18),processed=true WHERE id=$1"
-	d_query := fmt.Sprintf("UPDATE dai_bal SET balance = (%v/1e+18),processed=true WHERE id=%v",balance,id)
-	ss.Info.Printf("balance_updater(): Set_dai_balance: %v\n",d_query)
-	_,err := ss.db.Exec(query,id)
+	query = "UPDATE dai_bal AS db " +
+				"SET balance = ("+balance+"/1e+18)," +
+				"processed=true " +
+			"FROM block AS b " +
+			"WHERE db.block_num=b.block_num AND b.block_hash=$2 AND db.id=$1"
+
+	_,err := ss.db.Exec(query,id,block_hash)
 	if (err!=nil) {
 		p.Fatalf(fmt.Sprintf("DB Error: %v",err));
 		os.Exit(1)
