@@ -365,6 +365,7 @@ type DaiB struct {
 	Aid					int64
 	DaiTransfId			int64
 	BlockNum			int64
+	Processed			bool
 	Address				string
 	Amount				string
 	Balance				string
@@ -382,6 +383,7 @@ type BlockCash struct {
 	BlockNum			int64
 	Ts					int64
 	CashFlow			float64
+	AccumCashFlow		float64
 }
 type ContractAddresses struct {
 	Augur			common.Address	// Main Augur contract

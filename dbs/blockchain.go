@@ -452,3 +452,49 @@ func (ss *SQLStorage) Get_block_num_by_hash(block_hash string) (int64,error) {
 	}
 	return block_num,nil
 }
+func (ss *SQLStorage) Set_cash_flow_value(block_num int64,new_cash_flow float64) {
+
+	var query string
+	query = "UPDATE block SET cash_flow=$2 WHERE block_num=$1"
+	res,err:=ss.db.Exec(query,block_num,new_cash_flow)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Set_cash_flow_value() failed: %v, q=%v, b=%v",err,query,block_num))
+		os.Exit(1)
+	}
+	affected_rows,err:=res.RowsAffected()
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in Set_cash_flow_value(): %v",err))
+		os.Exit(1)
+	}
+	if affected_rows>0 {
+		// break
+	} else {
+		ss.Log_msg(fmt.Sprintf("Set_cash_flow_Value() failed on UPDATe: 0 affected rows"));
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Get_all_address_ids() []int64 {
+	// Used by dai_bal verification process
+
+	var query string
+	query = "SELECT address_id FROM address ORDER by address_id DESC"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	records := make([]int64,0,512)	// allocating one page for the whole array (4096 bytes)
+	defer rows.Close()
+	for rows.Next() {
+		var aid int64
+		err=rows.Scan(&aid)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,aid)
+	}
+	return records
+}

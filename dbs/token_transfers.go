@@ -407,3 +407,62 @@ func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.ETransfer,ca *p.Contract
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Get_dai_bal_total_amount(block_num int64) float64 {
+
+	var query string
+	query = "SELECT sum(amount) AS total_amount FROM dai_bal " +
+			"WHERE augur=true AND internal=false AND block_num=$1"
+	row := ss.db.QueryRow(query,block_num)
+	var err error
+	var total_amount float64
+	err=row.Scan(&total_amount)
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+	return total_amount
+}
+func (ss *SQLStorage) Get_dai_balances_by_aid(aid int64) []p.DaiB {
+
+	records := make([]p.DaiB,0,256)
+	var query string
+	query = "SELECT " +
+				"db.id," +
+				"db.aid," +
+				"db.dai_transf_id," +
+				"a.addr," +
+				"ROUND(amount*1e+18) as amount," +
+				"ROUND(balance*1e+18) as balance," +
+				"db.block_num, " +
+				"db.processed, " +
+				"b.block_hash " +
+			"FROM dai_bal db " +
+				"JOIN block AS b ON db.block_num = b.block_num " +
+				"LEFT JOIN address a ON db.aid=a.address_id " +
+			"WHERE db.aid = $1 " +
+			"ORDER by db.id "
+
+	rows,err := ss.db.Query(query,aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.DaiB
+		err=rows.Scan(
+			&rec.Id,
+			&rec.Aid,
+			&rec.DaiTransfId,
+			&rec.Address,
+			&rec.Amount,
+			&rec.Balance,
+			&rec.BlockNum,
+			&rec.Processed,
+			&rec.BlockHash,
+		)
+		records = append(records,rec)
+	}
+	return records
+}
