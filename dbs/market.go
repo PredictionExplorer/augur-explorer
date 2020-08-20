@@ -654,7 +654,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 	}
 	return records
 }
-func (ss *SQLStorage) Get_active_market_ids(sort int,all int,off int, lim int) []int64 {
+func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,off int, lim int) []int64 {
 
 	var order_condition string
 	switch sort {
@@ -665,12 +665,19 @@ func (ss *SQLStorage) Get_active_market_ids(sort int,all int,off int, lim int) [
 			order_condition = "m.market_aid DESC";
 	}
 	var where_condition string
+	if fin == 0 {
+		where_condition = "(m.status < 4) "
+	} else {
+		where_condition = "(m.status > 3) "
+	}
 	if all == 0 {
-		where_condition = " AND (m.cur_volume > 0) AND (m.money_at_stake > 0) "
+		where_condition = where_condition + " AND (m.cur_volume > 0) AND (m.money_at_stake > 0) "
 	}
 	var query string
-	query = "SELECT market_aid FROM market as m " +
-			"WHERE (m.status < 4) " + where_condition +
+	query = "SELECT " +
+				"market_aid,substring(extra_info::json->>'description',1,43) as descr " +
+			"FROM market as m " +
+			"WHERE " + where_condition +
 			"ORDER BY " + order_condition + " " +
 			"OFFSET $1 LIMIT $2";
 
@@ -684,10 +691,16 @@ func (ss *SQLStorage) Get_active_market_ids(sort int,all int,off int, lim int) [
 	defer rows.Close()
 	for rows.Next() {
 		var market_aid int64
-		err=rows.Scan(&market_aid)
+		var null_descr sql.NullString
+		err=rows.Scan(&market_aid,&null_descr)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
+		}
+		if null_descr.Valid {
+			if null_descr.String == "What will the next Augur Warp Sync hash be?"  {
+//				continue			// skipping internal Augur Markets
+			}
 		}
 		records = append(records,market_aid)
 	}

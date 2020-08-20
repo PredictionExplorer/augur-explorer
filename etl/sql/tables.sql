@@ -50,10 +50,10 @@ CREATE TABLE market (
 	num_ticks			BIGINT NOT NULL,			-- maximum price range (number of intervals)
 	create_timestamp	TIMESTAMPTZ NOT NULL,
 	total_trades		BIGINT DEFAULT 0,			-- current number of trades that took place
-	-- Status lookup codes  0=>Traded,1=>Reporting,3=>Reported,4=>Disputing,5=>Finalized,6=>Finalized as invalid
 	winning_outcome		SMALLINT DEFAULT -1,		-- outcome decided by MarketFinalized event
 	designated_outcome	SMALLINT DEFAULT -1,		-- outcome submitted by Designated Reported
 	initial_outcome		SMALLINT DEFAULT -1,		-- first report that was submitted
+	-- Status lookup codes  0=>Traded,1=>Reporting,3=>Reported,4=>Disputing,5=>Finalized,6=>Finalized as invalid
 	status				SMALLINT DEFAULT 0,
 	market_type			SMALLINT NOT NULL,			-- enum: 0:YES_NO | 1:CATEGORICAL | 2:SCALAR
 	money_at_stake		DECIMAL(64,18) DEFAULT 0.0,	-- accumulated money bet on outcomes
