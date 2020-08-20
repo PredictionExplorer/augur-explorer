@@ -1,0 +1,16 @@
+{{define "statement"}}
+<table class="market_trades">
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Block Num</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Date</th>
+		<th class="mkt_trade_hdr" style="text-align: center">From</th>
+		<th class="mkt_trade_hdr" style="text-align: center">To</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Amount</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Balance</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Info</th>
+	</tr>
+		{{- range $i, $entry:= .}}
+			{{template "statement_entry" $entry}}
+		{{- end}}
+</table>
+{{end}}

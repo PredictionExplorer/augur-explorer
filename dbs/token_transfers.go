@@ -9,6 +9,9 @@ import (
 	"database/sql"
 	_  "github.com/lib/pq"
 
+	"github.com/ethereum/go-ethereum/common"
+
+
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 var (
@@ -462,6 +465,157 @@ func (ss *SQLStorage) Get_dai_balances_by_aid(aid int64) []p.DaiB {
 			&rec.Processed,
 			&rec.BlockHash,
 		)
+		records = append(records,rec)
+	}
+	return records
+}
+func internal_addr_info_note(addr *common.Address,info *string,caddrs *p.ContractAddresses) {
+
+	if bytes.Equal(addr.Bytes(),caddrs.Augur.Bytes()) {
+		*info = "Augur contract"
+		return
+	}
+	if bytes.Equal(addr.Bytes(),caddrs.AugurTrading.Bytes()) {
+		*info = "AugurTrading contract"
+		return
+	}
+	if bytes.Equal(addr.Bytes(),caddrs.PL.Bytes()) {
+		*info = "ProfitLoss contract"
+		return
+	}
+	if bytes.Equal(addr.Bytes(),caddrs.Zerox.Bytes()) {
+		*info = "ZeroX contract"
+		return
+	}
+	if bytes.Equal(addr.Bytes(),caddrs.Dai.Bytes()) {
+		*info = "DAI contract"
+		return
+	}
+	if bytes.Equal(addr.Bytes(),caddrs.Reputation.Bytes()) {
+		*info = "Reputation token contract"
+		return
+	}
+	if bytes.Equal(addr.Bytes(),caddrs.WalletReg.Bytes()) {
+		*info = "AugurWalletRegistry contract"
+		return
+	}
+	if bytes.Equal(addr.Bytes(),caddrs.FillOrder.Bytes()) {
+		*info = "FillOrder contract"
+		return
+	}
+	if bytes.Equal(addr.Bytes(),caddrs.EthXchg.Bytes()) {
+		*info = "Eth Exchange contract"
+		return
+	}
+	if bytes.Equal(addr.Bytes(),caddrs.ShareToken.Bytes()) {
+		*info = "ShareToken contract"
+		return
+	}
+	if bytes.Equal(addr.Bytes(),caddrs.Universe.Bytes()) {
+		*info = "Universe contract"
+		return
+	}
+
+}
+func (ss *SQLStorage) check_internal_user(aid int64,is_to bool,info *string) {
+
+	eoa_aid,err := ss.Lookup_eoa_aid(aid)
+	if err==nil {
+		if eoa_aid > 0 {
+			if is_to {
+				*info = "Transfer to Another Augur Trading account"
+			} else {
+				*info = "Transfer from Another Augur Trading account"
+			}
+		}
+	}
+}
+func (ss *SQLStorage) Get_account_statement(aid int64) []p.StatementEntry {
+
+	records := make([]p.StatementEntry,0,256)
+	caddrs,err := ss.Get_contract_addresses()
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("Cant get contract addresses: %v",err))
+		return records
+	}
+	var query string
+	query = "SELECT " +
+				"db.id," +
+				"db.block_num, " +
+				"db.amount," +
+				"db.balance," +
+//				"FLOOR(EXTRACT(EPOCH FROM b.ts))::BIGINT as ts, " +
+				"b.ts::DATE," +
+				"fa.addr," +
+				"ta.addr," +
+				"dt.from_aid," +
+				"dt.to_aid, " +
+				"mf.market_aid," +
+				"mt.market_aid " +
+			"FROM dai_bal AS db, dai_transf AS dt " +
+				"LEFT JOIN address AS fa ON dt.from_aid=fa.address_id " +
+				"LEFT JOIN address AS ta ON dt.to_aid=ta.address_id " +
+				"LEFT JOIN market AS mf ON dt.from_aid=mf.market_aid " +
+				"LEFT JOIN market AS mt ON dt.to_aid=mt.market_aid " +
+				"LEFT JOIN block AS b ON dt.block_num=b.block_num " +
+			"WHERE db.dai_transf_id=dt.id AND db.block_num=b.block_num AND db.aid = $1 AND db.amount!=0" +
+			"ORDER by db.block_num,db.id "
+	
+	ss.Info.Printf("aid=%v, q=%v\n",aid,query)
+	rows,err := ss.db.Query(query,aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.StatementEntry
+		var mkt_from sql.NullInt64
+		var mkt_to sql.NullInt64
+		var from_aid,to_aid int64
+		err=rows.Scan(
+			&rec.Id,
+			&rec.BlockNum,
+			&rec.Amount,
+			&rec.Balance,
+			&rec.Date,
+			&rec.From,
+			&rec.To,
+			&from_aid,
+			&to_aid,
+			&mkt_from,
+			&mkt_to,
+		)
+		if mkt_from.Valid  {
+			rec.MktAddr,err = ss.Lookup_address(mkt_from.Int64)
+			rec.Info = "Transfer from Market "+rec.MktAddr
+		}
+		if mkt_to.Valid {
+			rec.MktAddr,err = ss.Lookup_address(mkt_to.Int64)
+			rec.Info = "Transfer to Market "+rec.MktAddr
+		}
+		if len(rec.Info) == 0 {
+			eth_addr := common.HexToAddress(rec.From)
+			internal_addr_info_note(&eth_addr,&rec.Info,&caddrs)
+		}
+		if len(rec.Info) == 0 {
+			eth_addr := common.HexToAddress(rec.To)
+			internal_addr_info_note(&eth_addr,&rec.Info,&caddrs)
+		}
+		if len(rec.Info) == 0 {
+			if from_aid != aid {
+				ss.check_internal_user(from_aid,false,&rec.Info)
+			}
+		}
+		if len(rec.Info) == 0 {
+			if to_aid != aid {
+				ss.check_internal_user(to_aid,true,&rec.Info)
+			}
+		}
+		rec.Balance = rec.Balance + rec.Amount
+		rec.FromSh = p.Short_address(rec.From)
+		rec.ToSh = p.Short_address(rec.To)
 		records = append(records,rec)
 	}
 	return records

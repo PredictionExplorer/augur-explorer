@@ -1,0 +1,17 @@
+{{define "statement_entry"}}
+<tr class="market_trades">
+	<td class="mkt_trade_field">{{.BlockNum}}</td>
+	<td class="mkt_trade_field">{{.Date}}</td>
+	<td class="mkt_trade_field" title="{{.From}}">
+		<a class="addr" href="/search?q={{.From}}">{{.FromSh}}</a>
+	</td>
+	<td class="mkt_trade_field" title="{{.To}}">
+		<a class="addr" href="/search?q={{.To}}">{{.ToSh}}</a>
+	</td>
+	<td class="mkt_trade_field" style="text-align: right">{{.Amount}}</td>
+	<td class="mkt_trade_field" style="text-align: right">{{.Balance}}</td>
+	<td class="mkt_trade_field" style="text-align: center">
+		{{.Info}}
+	</td>
+</tr>
+{{end}}

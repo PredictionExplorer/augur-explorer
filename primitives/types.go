@@ -448,3 +448,17 @@ type PriceHistory struct {
 type FullPriceHistory struct {
 	Outcomes			[]PriceHistory
 }
+type StatementEntry struct {
+	Id					int64
+	BlockNum			int64
+	MktAid				int64
+	Amount				float64
+	Balance				float64
+	Date				string
+	From				string
+	FromSh				string
+	To					string
+	ToSh				string
+	Info				string
+	MktAddr				string
+}

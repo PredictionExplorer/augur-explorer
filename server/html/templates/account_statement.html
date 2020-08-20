@@ -1,0 +1,13 @@
+<html>
+<head>
+	<link href="/res/main.css" rel="stylesheet">
+	<title>Account Statement for {{.Address}}</title>
+</head>
+<body>
+<h3 class="page_title">Account Statement</h3>
+<h3 class="page_title">{{.Address}}</h3>
+<br/><br/>
+<div class="market_info">
+	{{template "statement" .Transfers}}
+</div>
+</body>
