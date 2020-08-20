@@ -1028,7 +1028,7 @@ func (ss *SQLStorage) Get_cash_flow() []p.BlockCash {
 			os.Exit(1)
 		}
 		accumulator = accumulator + bc.CashFlow
-		bc.CashFlow = accumulator
+		bc.AccumCashFlow = accumulator
 		records = append(records,bc)
 	}
 	return records

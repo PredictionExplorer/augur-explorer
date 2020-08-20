@@ -143,6 +143,7 @@ func main() {
 	r.GET("/topusers.html",top_users)
 	r.GET("/mdstat/:market_aid/:outcome_idx/:last_oo_id",market_depth_status)
 	r.GET("/umtrades.html",user_trades_for_market)
+	r.GET("/statement/:addr",account_statement)
 
 	// API calls for the new FrontEnd
 	r.GET("/api/active_market_ids",a1_active_market_ids)
