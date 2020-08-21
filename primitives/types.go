@@ -128,6 +128,10 @@ type OutcomeVol struct {
 	OutcomeStr		string
 	Volume			float64
 	LastPrice		float64
+	HighestBid		float64
+	LowestAsk		float64
+	CurSpread		float64
+	PriceEstimate	float64
 	MktType			int
 	MktAddr			string
 }

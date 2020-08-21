@@ -99,16 +99,44 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later they are converted into 'mktord` records
 	id					BIGSERIAL PRIMARY KEY,
 	market_aid			BIGSERIAL NOT NULL,
-	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
-	outcome_idx			SMALLINT NOT NULL,
 	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
 	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
+	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
+	outcome_idx			SMALLINT NOT NULL,
 	price				DECIMAL(32,18) NOT NULL,
 	amount				DECIMAL(32,18) NOT NULL,
 	evt_timestamp		TIMESTAMPTZ NOT NULL,		-- 0x Mesh event timestamp
 	srv_timestamp		TIMESTAMPTZ NOT NULL,		-- Postgres Server timestamp (not blockchain timestamp)
 	expiration			TIMESTAMPTZ NOT NULL,
-	order_id			TEXT NOT NULL UNIQUE
+	order_hash			CHAR(66) NULL UNIQUE
+);
+CREATE TABLE oostats (	-- open order statistics per User
+	id					BIGSERIAL PRIMARY KEY,
+	market_aid			BIGINT NOT NULL,
+	eoa_aid				BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	num_bids			INT DEFAULT 0,				-- number of total BID orders for this EOA
+	num_asks			INT DEFAULT 0,				-- number of total ASK orders for this EOA
+	num_cancel			INT DEFAULT 0				-- number of cancelled orders
+);
+CREATE TABLE oohist ( -- open order history
+	id					BIGSERIAL PRIMARY KEY,
+	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
+	outcome_idx			SMALLINT NOT NULL,
+	opcode				SMALLINT NOT NULL,			-- operation; 0: CREATED, 1: AUTOEXPIRED, 2: USER-CANCELLED
+	market_aid			BIGSERIAL NOT NULL,
+	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
+	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
+	price				DECIMAL(32,18) NOT NULL,
+	amount				DECIMAL(32,18) NOT NULL,
+	evt_timestamp		TIMESTAMPTZ NOT NULL,		-- 0x Mesh event timestamp
+	srv_timestamp		TIMESTAMPTZ NOT NULL,		-- Postgres Server timestamp (not blockchain timestamp)
+	expiration			TIMESTAMPTZ NOT NULL,
+	order_hash			CHAR(66)					-- Order Hash (github.com/0x-mesh/zeroex/order.go:Order.hash)
+);
+CREATE TABLE ooconfig ( -- configuration for spread calculation
+	spread_threshold	DECIMAL(64,18) DEFAULT 110.0,	-- Reasonable spread to calculate Price Estimate
+	osize_threshold		DECIMAL(64,18) DEFAULT 0.0		-- Order size to calculate Price Estimate
 );
 -- Report, submitted by Market Creator
 CREATE TABLE report (
@@ -149,7 +177,11 @@ CREATE TABLE outcome_vol (	-- this is the (accumulated) volume per outcome (inde
 	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
 	outcome_idx			SMALLINT NOT NULL,
 	volume				DECIMAL(24,18) DEFAULT 0.0,
-	last_price			DECIMAL(24,18) DEFAULT 0.0
+	last_price			DECIMAL(24,18) DEFAULT 0.0,
+	highest_bid			DECIMAL(64,18) DEFAULT 0.0,	-- highest BID price , updated from open orders
+	lowest_ask			DECIMAL(64,18) DEFAULT 0.0,	-- lowest ASK price, updated from open orders
+	cur_spread			DECIMAL(64,18) DEFAULT 0.0,	-- spread from open orders (lowest_ask - highest bid)
+	price_estimate		DECIMAL(64,18) DEFAULT 0.0  -- calculated using trigger update_price_estimate()
 );
 CREATE table oi_chg ( -- open interest changed event
 	id					BIGSERIAL PRIMARY KEY,
@@ -254,15 +286,6 @@ CREATE TABLE main_stats (
 	active_count		BIGINT DEFAULT 0,	-- counter for not-finalized markets
 	money_at_stake		DECIMAL(64,18) DEFAULT 0.0,		-- amount in ETH
 	trades_count		BIGINT DEFAULT 0	-- total amount of trades
-);
-CREATE TABLE oostats (	-- open order statistics per User
-	id					BIGSERIAL PRIMARY KEY,
-	market_aid			BIGINT NOT NULL,
-	eoa_aid				BIGINT NOT NULL,
-	outcome_idx			SMALLINT NOT NULL,
-	num_bids			INT DEFAULT 0,				-- number of total BID orders for this EOA
-	num_asks			INT DEFAULT 0,				-- number of total ASK orders for this EOA
-	num_cancel			INT DEFAULT 0				-- number of cancelled orders
 );
 CREATE TABLE trd_mkt_stats (	-- trade statistics per User and per Market
 	id					BIGSERIAL PRIMARY KEY,

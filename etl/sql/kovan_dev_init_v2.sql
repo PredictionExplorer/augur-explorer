@@ -29,4 +29,4 @@ INSERT INTO contract_addresses(
 		'0x39558F07B0123bb9C73c046153B5bed0c8bbc8B5'-- universe
 );
 INSERT INTO last_block  VALUES(19520324);
-
+INSERT INTO ooconfig(osize_threshold) VALUES(0.0);

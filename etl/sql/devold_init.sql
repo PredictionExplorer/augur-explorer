@@ -26,3 +26,4 @@ INSERT INTO contract_addresses(
 		'0xE60c9fe85aEE7B4848a97271dA8c86323CdFb897',-- share token
 		'0x1b8dae4F281A437E797f6213C6564926a04D9959'-- Universe
 );
+INSERT INTO ooconfig(osize_threshold) VALUES(0.0);

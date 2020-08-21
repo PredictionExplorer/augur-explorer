@@ -989,6 +989,10 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 				"o.outcome_idx, " +
 				"o.volume," +
 				"o.last_price, " +
+				"o.highest_bid," +
+				"o.lowest_ask," +
+				"o.cur_spread," +
+				"o.price_estimate,"+
 				"m.market_type, " +
 				"m.outcomes " +
 			"FROM outcome_vol AS o " +
@@ -1011,6 +1015,10 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 			&rec.Outcome,
 			&rec.Volume,
 			&rec.LastPrice,
+			&rec.HighestBid,
+			&rec.LowestAsk,
+			&rec.CurSpread,
+			&rec.PriceEstimate,
 			&rec.MktType,
 			&outcomes,
 		)

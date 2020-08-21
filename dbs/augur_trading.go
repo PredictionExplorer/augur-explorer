@@ -255,7 +255,7 @@ func (ss *SQLStorage) Insert_open_order(
 		)
 		return errors.New("Market not yet registered")
 	}
-	price := float64(ospec.Price.Int64())/100
+	price := float64(ospec.Price.Int64())
 	otype := ospec.Type	// Bid/Ask
 	amount := order.MakerAssetAmount.String()
 
@@ -270,7 +270,8 @@ func (ss *SQLStorage) Insert_open_order(
 	query = "INSERT INTO oorders(" +
 				"market_aid,otype,wallet_aid,eoa_aid,price,amount,outcome_idx," +
 				"evt_timestamp,srv_timestamp,expiration,order_id" +
-			") VALUES($1,$2,$3,$4,$5,"+amount+"/1e+18,$6,TO_TIMESTAMP($7),TO_TIMESTAMP($8),NOW(),$9)"
+			") VALUES($1,$2,$3,$4,$5,"+amount+"/1e+18,$6,TO_TIMESTAMP($7),NOW(),TO_TIMESTAMP($8),$9)" +
+			"ON CONFLICT DO NOTHING"
 	result,err := ss.db.Exec(query,
 			market_aid,
 			otype,
