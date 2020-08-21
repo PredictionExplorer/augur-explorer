@@ -658,9 +658,11 @@ func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,off int, li
 
 	var order_condition string
 	switch sort {
-		case 0: order_condition = "m.fin_timestamp DESC";
-		case 1: order_condition = "m.money_at_stake DESC";
-		case 2: order_condition = "m.cur_volume DESC";
+		case 1: order_condition = "m.money_at_stake DESC,m.market_aid DESC";
+		case 2: order_condition = "m.cur_volume DESC, m.market_aid DESC";
+		case 3: order_condition = "m.create_timestamp DESC,m.market_aid DESC";
+		case 4: order_condition = "m.end_time DESC,m.market_aid DESC";
+		case 5: order_condition = "m.fin_timestamp DESC,m.market_aid DESC";
 		default:
 			order_condition = "m.market_aid DESC";
 	}
