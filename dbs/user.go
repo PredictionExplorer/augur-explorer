@@ -614,7 +614,7 @@ func (ss *SQLStorage) Get_user_trades_for_market(eoa_aid int64,mkt_aid int64) []
 	var query string
 	query = "SELECT " +
 				"o.id," +
-				"o.order_id," +
+				"o.order_hash," +
 				"a.addr as mkt_addr," +
 				"ca.addr as creator_addr," +
 				"fa.addr as filler_addr," +
@@ -713,7 +713,7 @@ func (ss *SQLStorage) Get_user_open_orders(user_aid int64) []p.OpenOrder {
 				"ROUND(o.price,3), "+
 				"o.amount," +
 				"FLOOR(EXTRACT(EPOCH FROM o.evt_timestamp))::BIGINT AS ts," +
-				"o.order_id " +
+				"o.order_hash " +
 			"FROM oorders AS o " +
 				"LEFT JOIN market AS m ON o.market_aid = m.market_aid " +
 				"LEFT JOIN address AS ma ON o.market_aid = ma.address_id " +

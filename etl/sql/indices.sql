@@ -51,4 +51,5 @@ CREATE UNIQUE INDEX cl_uniq			ON claim_funds		(eoa_aid,market_aid,outcome_idx);
 CREATE UNIQUE INDEX pldebug_uniq	ON pl_debug			(block_num,market_aid,wallet_aid,outcome_idx);
 CREATE UNIQUE INDEX mkts_traded_unq	ON mkts_traded		(eoa_aid,market_aid);
 CREATE UNIQUE INDEX sbal_uniq		ON sbalances		(market_aid,account_aid,outcome_idx);
-CREATE INDEX daib_processed_idx		ON	dai_bal			(processed);
+CREATE INDEX daib_processed_idx		ON dai_bal			(processed);
+CREATE UNIQUE INDEX oohist_uniq		ON oohist			(order_hash,opcode);

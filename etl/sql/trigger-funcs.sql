@@ -111,6 +111,15 @@ BEGIN
 
 	PERFORM update_price_estimate(NEW.market_aid,NEW.outcome_idx,NEW.amount);
 
+	-- Update Open Order history
+	INSERT INTO oohist(
+			otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
+			price,amount,evt_timestmap,srv_timestamp,expiration,order_hash
+		) VALUES (
+			NEW.ootype,NEW.outcome_idx,NEW.opcode,NEW.market_aid,NEW.wallet_aid,NEW.eoa_aid,
+			NEW.price,NEW.amount,NEW.evt_timestamp,NEW.srv_timestamp,NEW.expiration,NEW.order_hash
+		) ON CONFLICT DO NOTHING;
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -134,6 +143,10 @@ BEGIN
 	END IF;
 
 	PERFORM update_price_estimate(OLD.market_aid,OLD.outcome_idx,OLD.amount);
+
+	-- Update Open Order history
+	-- we do not DELETE anything here because oohist table should stay forverver
+
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

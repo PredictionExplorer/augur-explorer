@@ -413,7 +413,7 @@ func proc_cancel_zerox_order(log *types.Log) {
 	Info.Printf("CancelZeroXOrder event for contract %v (block=%v) : \n",
 								log.Address.String(),log.BlockNumber)
 	mevt.Dump(Info)
-	storage.Delete_open_0x_order(ohash_str)
+	storage.Delete_open_0x_order(ohash_str,2)
 }
 func proc_market_oi_changed(block *types.Header, agtx *AugurTx, log *types.Log) {
 	var mevt EMarketOIChanged

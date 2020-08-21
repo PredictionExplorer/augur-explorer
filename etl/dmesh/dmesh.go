@@ -105,7 +105,7 @@ func fetch_and_sync_orders() {
 		if exists {
 			// ok
 		} else {
-			storage.Delete_open_0x_order(db_orders[i])
+			storage.Delete_open_0x_order(db_orders[i],3)
 			Info.Printf(
 				"Order %v doesn't exist in Mesh Node, but does exist in the DB. Deleting. (DB_DIRTY_OORDERS)",
 				db_orders[i],
@@ -150,7 +150,7 @@ func oo_insert(order_hash *string,order *zeroex.SignedOrder,timestamp int64) err
 		)
 		return err
 	}
-	err = storage.Insert_open_order(order_hash,order,eoa_addr_str,&unpacked_id,timestamp)
+	err = storage.Insert_open_order(order_hash,order,eoa_addr_str,&unpacked_id,0,timestamp)
 	return err
 }
 func order_blongs_to_augur(order *zeroex.SignedOrder) bool {
@@ -338,10 +338,10 @@ func main() {
 						}
 					case zeroex.ESOrderExpired,
 						zeroex.ESOrderCancelled:
-						storage.Delete_open_0x_order(orderEvent.OrderHash.String())
+						storage.Delete_open_0x_order(orderEvent.OrderHash.String(),2)
 					case zeroex.ESOrderFullyFilled:
 						// FULLY FILLED event: quantity of the order matches filling quantity
-						storage.Delete_open_0x_order(orderEvent.OrderHash.String())
+						storage.Delete_open_0x_order(orderEvent.OrderHash.String(),3)
 					case zeroex.ESOrderFilled:
 						// FILLED event: partial order fill
 						storage.Update_0x_order_on_partial_fill(orderEvent)

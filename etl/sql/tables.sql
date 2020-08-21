@@ -98,17 +98,33 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 );
 CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later they are converted into 'mktord` records
 	id					BIGSERIAL PRIMARY KEY,
-	market_aid			BIGSERIAL NOT NULL,
-	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
-	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
 	outcome_idx			SMALLINT NOT NULL,
+	opcode				SMALLINT NOT NULL,			-- operation; 0: CREATED, 1: AUTOEXPIRED, 2: USER-CANCELLED, 3: FILLED DB SYNC
+	market_aid			BIGINT NOT NULL,
+	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
+	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
 	price				DECIMAL(32,18) NOT NULL,
 	amount				DECIMAL(32,18) NOT NULL,
 	evt_timestamp		TIMESTAMPTZ NOT NULL,		-- 0x Mesh event timestamp
 	srv_timestamp		TIMESTAMPTZ NOT NULL,		-- Postgres Server timestamp (not blockchain timestamp)
 	expiration			TIMESTAMPTZ NOT NULL,
 	order_hash			CHAR(66) NULL UNIQUE
+);
+CREATE TABLE oohist ( -- open order history
+	id					BIGSERIAL PRIMARY KEY,
+	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
+	outcome_idx			SMALLINT NOT NULL,
+	opcode				SMALLINT NOT NULL,			-- operation; 0: CREATED, 1: AUTOEXPIRED, 2: USER-CANCELLED
+	market_aid			BIGINT NOT NULL,
+	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
+	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
+	price				DECIMAL(32,18) NOT NULL,
+	amount				DECIMAL(32,18) NOT NULL,
+	evt_timestamp		TIMESTAMPTZ NOT NULL,		-- 0x Mesh event timestamp
+	srv_timestamp		TIMESTAMPTZ NOT NULL,		-- Postgres Server timestamp (not blockchain timestamp)
+	expiration			TIMESTAMPTZ NOT NULL,
+	order_hash			CHAR(66)					-- Order Hash (github.com/0x-mesh/zeroex/order.go:Order.hash)
 );
 CREATE TABLE oostats (	-- open order statistics per User
 	id					BIGSERIAL PRIMARY KEY,
@@ -118,21 +134,6 @@ CREATE TABLE oostats (	-- open order statistics per User
 	num_bids			INT DEFAULT 0,				-- number of total BID orders for this EOA
 	num_asks			INT DEFAULT 0,				-- number of total ASK orders for this EOA
 	num_cancel			INT DEFAULT 0				-- number of cancelled orders
-);
-CREATE TABLE oohist ( -- open order history
-	id					BIGSERIAL PRIMARY KEY,
-	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
-	outcome_idx			SMALLINT NOT NULL,
-	opcode				SMALLINT NOT NULL,			-- operation; 0: CREATED, 1: AUTOEXPIRED, 2: USER-CANCELLED
-	market_aid			BIGSERIAL NOT NULL,
-	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
-	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
-	price				DECIMAL(32,18) NOT NULL,
-	amount				DECIMAL(32,18) NOT NULL,
-	evt_timestamp		TIMESTAMPTZ NOT NULL,		-- 0x Mesh event timestamp
-	srv_timestamp		TIMESTAMPTZ NOT NULL,		-- Postgres Server timestamp (not blockchain timestamp)
-	expiration			TIMESTAMPTZ NOT NULL,
-	order_hash			CHAR(66)					-- Order Hash (github.com/0x-mesh/zeroex/order.go:Order.hash)
 );
 CREATE TABLE ooconfig ( -- configuration for spread calculation
 	spread_threshold	DECIMAL(64,18) DEFAULT 110.0,	-- Reasonable spread to calculate Price Estimate
