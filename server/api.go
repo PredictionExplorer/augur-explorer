@@ -247,3 +247,52 @@ func a1_multiple_market_cards(c *gin.Context) {
 		"error":err_str,
 	})
 }
+func a1_user_info(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	if len(p_user) > 0 {
+		user_aid, err := strconv.ParseInt(p_user,10,64)
+		if err == nil {
+			p_user,err = augur_srv.storage.Lookup_address(user_aid)
+			if err!=nil {
+				c.JSON(http.StatusBadRequest,gin.H{
+					"status":0,
+					"error":fmt.Sprintf("User with ID=%v not found",user_aid),
+				})
+				return
+			}
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("Empty 'user' parameter for user lookup"),
+		})
+		return
+	}
+	user_addr,valid:=is_address_valid(c,true,p_user)
+	if !valid {
+		return
+	}
+
+	eoa_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(user_addr)
+	if err == nil {
+		user_info,err := augur_srv.storage.Get_user_info(eoa_aid)
+		if err == nil {
+			c.JSON(http.StatusOK, gin.H{
+				"UserInfo" : user_info,
+			})
+		} else {
+			c.JSON(http.StatusOK,gin.H{
+				"status":0,
+				"error":fmt.Sprintf("User not found"),
+			})
+		}
+	} else {
+		c.JSON(http.StatusOK,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("User not found"),
+		})
+	}
+}
