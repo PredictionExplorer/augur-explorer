@@ -171,6 +171,7 @@ func a1_active_markets(c *gin.Context) {
 }
 func a1_market_info(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	p_market := c.Param("market")
 	if len(p_market) > 0 {
 		market_aid, err := strconv.ParseInt(p_market,10,64)
