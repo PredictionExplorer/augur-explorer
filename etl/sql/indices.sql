@@ -42,6 +42,7 @@ CREATE UNIQUE INDEX blk_hash_uniq	ON block			(block_hash);
 CREATE INDEX mord_ts_idx			ON mktord			(time_stamp);
 CREATE UNIQUE INDEX ovol_idx		ON outcome_vol		(market_aid,outcome_idx);
 CREATE INDEX oo_depth_idx			ON oorders			(market_aid,outcome_idx,otype);
+CREATE INDEX oo_uniq				ON oorders			(order_hash);
 CREATE UNIQUE INDEX oostats_uniq	ON oostats			(market_aid,eoa_aid,outcome_idx);
 CREATE UNIQUE INDEX tmstats_uniq	ON trd_mkt_stats	(market_aid,eoa_aid);
 CREATE INDEX pl_profit_srch_idx		ON profit_loss		(market_aid,eoa_aid,outcome_idx);

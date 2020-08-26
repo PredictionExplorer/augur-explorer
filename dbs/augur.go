@@ -13,8 +13,8 @@ import (
 func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 
 	var query string
-	query="SELECT	 augur,augur_trading,profit_loss,dai_cash,rep_token,zerox,wallet_reg,fill_order," +
-					"eth_xchg,share_token,universe FROM contract_addresses";
+	query="SELECT	 augur,augur_trading,profit_loss,dai_cash,rep_token,zerox_trade,zerox_xchg,wallet_reg,"+
+					"fill_order,eth_xchg,share_token,universe FROM contract_addresses";
 	row := ss.db.QueryRow(query)
 	var c_addresses p.ContractAddresses
 	var err error
@@ -24,7 +24,8 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 		pl string
 		dai string
 		rep string
-		zerox string
+		zerox_trade string
+		zerox_xchg string
 		walletreg string
 		fill_order string
 		eth_xchg string
@@ -32,7 +33,7 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 		universe string
 	)
 	err=row.Scan(
-		&augur,&augur_trading,&pl,&dai,&rep,&zerox,&walletreg,&fill_order,&eth_xchg,
+		&augur,&augur_trading,&pl,&dai,&rep,&zerox_trade,&zerox_xchg,&walletreg,&fill_order,&eth_xchg,
 		&share_token,&universe,
 	);
 	if (err!=nil) {
@@ -48,7 +49,8 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 	c_addresses.PL=common.HexToAddress(pl)
 	c_addresses.Dai=common.HexToAddress(dai)
 	c_addresses.Reputation=common.HexToAddress(rep)
-	c_addresses.Zerox=common.HexToAddress(zerox)
+	c_addresses.ZeroxTrade=common.HexToAddress(zerox_trade)
+	c_addresses.ZeroxXchg=common.HexToAddress(zerox_xchg)
 	c_addresses.WalletReg=common.HexToAddress(walletreg)
 	c_addresses.FillOrder=common.HexToAddress(fill_order)
 	c_addresses.EthXchg=common.HexToAddress(eth_xchg)

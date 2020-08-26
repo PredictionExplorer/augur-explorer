@@ -105,7 +105,7 @@ func fetch_and_sync_orders() {
 		if exists {
 			// ok
 		} else {
-			storage.Delete_open_0x_order(db_orders[i],3)
+			storage.Delete_open_0x_order(db_orders[i],OOOpCodeSyncProcess)
 			Info.Printf(
 				"Order %v doesn't exist in Mesh Node, but does exist in the DB. Deleting. (DB_DIRTY_OORDERS)",
 				db_orders[i],
@@ -150,7 +150,7 @@ func oo_insert(order_hash *string,order *zeroex.SignedOrder,timestamp int64) err
 		)
 		return err
 	}
-	err = storage.Insert_open_order(order_hash,order,eoa_addr_str,&unpacked_id,0,timestamp)
+	err = storage.Insert_open_order(order_hash,order,eoa_addr_str,&unpacked_id,OOOpCodeCreated,timestamp)
 	return err
 }
 func order_blongs_to_augur(order *zeroex.SignedOrder) bool {
@@ -164,7 +164,7 @@ func order_blongs_to_augur(order *zeroex.SignedOrder) bool {
 	from_offset := zeroex_addr_offset + 12	// real start of the address within big.Int
 	to_offset := from_offset + 20
 	possible_zeroex_addr_bytes:=order.MakerAssetData[from_offset:to_offset]
-	if !bytes.Equal(possible_zeroex_addr_bytes,caddrs.Zerox.Bytes()) {
+	if !bytes.Equal(possible_zeroex_addr_bytes,caddrs.ZeroxTrade.Bytes()) {
 		return false
 	}
 	var order_adata zeroex.MultiAssetData
@@ -194,7 +194,7 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 			var empty struct{}
 			(*ohash_map)[order_hash]=empty
 			amount := order_info.FillableTakerAssetAmount
-			retval,bad_amount := storage.Update_open_order(order_hash,amount,order_info.SignedOrder)
+			retval,bad_amount := storage.Update_oo_fillable_amount(order_hash,amount,order_info.SignedOrder)
 			if retval == 2 { // order doesn't exist
 				err := oo_insert(&order_hash,order_info.SignedOrder,0)
 				if err!=nil {
@@ -257,10 +257,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	Info.Printf("ZeroX contract = %v\n",caddrs.Zerox.String())
+	Info.Printf("ZeroX contract = %v\n",caddrs.ZeroxTrade.String())
 	zerox_contract, err = NewZeroX(
 			common.HexToAddress(
-				caddrs.Zerox.String(),
+				caddrs.ZeroxTrade.String(),
 			),
 			eclient,
 	)
@@ -336,16 +336,16 @@ func main() {
 						if err!=nil {
 							Info.Printf("Error inserting order %v: %v\n",order_hash,err)
 						}
-					case zeroex.ESOrderExpired,
-						zeroex.ESOrderCancelled:
-						storage.Delete_open_0x_order(orderEvent.OrderHash.String(),2)
+					case zeroex.ESOrderExpired:
+						storage.Delete_open_0x_order(orderEvent.OrderHash.String(),OOOpCodeExpired)
+					case zeroex.ESOrderCancelled:
+						storage.Delete_open_0x_order(orderEvent.OrderHash.String(),OOOpCodeCancelledByUser)
 					case zeroex.ESOrderFullyFilled:
 						// FULLY FILLED event: quantity of the order matches filling quantity
-						storage.Delete_open_0x_order(orderEvent.OrderHash.String(),3)
+						storage.Delete_open_0x_order(orderEvent.OrderHash.String(),OOOpCodeCompleteFill)
 					case zeroex.ESOrderFilled:
 						// FILLED event: partial order fill
 						storage.Update_0x_order_on_partial_fill(orderEvent)
-
 					// the following are rare events, so we don't implement them, just do a resync
 					case zeroex.ESOrderFillabilityIncreased,
 						zeroex.ESOrderBecameUnfunded,

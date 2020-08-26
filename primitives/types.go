@@ -16,6 +16,14 @@ const (
 	MktTypeCategorical
 	MktTypeScalar
 )
+const (
+	OOOpCodeCreated		= iota
+	OOOpCodePartialFill
+	OOOpCodeCompleteFill
+	OOOpCodeCancelledByUser
+	OOOpCodeExpired
+	OOOpCodeSyncProcess		// when no other reason exist, this one is used (this is a kind of a bugfix)
+)
 
 var (
 	ErrChainSplit error = errors.New("Chainsplit detected")
@@ -264,6 +272,7 @@ type OpenOrder struct {		// the Order on 0x Mesh network, that is yet to be fill
 	MarketStatus		int
 	Outcome				int
 	OrderType			int
+	OpCode				int
 	OrderDate			string
 	Direction			string
 	MktDescr			string
@@ -393,7 +402,8 @@ type ContractAddresses struct {
 	Augur			common.Address	// Main Augur contract
 	AugurTrading	common.Address	// Augur trading contract
 	PL				common.Address	// ProfitLoss contract
-	Zerox			common.Address
+	ZeroxTrade		common.Address	// ZeroX Trade contract
+	ZeroxXchg		common.Address	// ZeroX Exchange contract
 	Dai				common.Address	// Shows DAI balance and also to fill dai_transf table and Cash Flow report
 	Reputation		common.Address	// used to query REP token balance when showing User info (among other stuff)
 	WalletReg		common.Address	// this contract is used to get the link between EOA and Wallet contract

@@ -1039,3 +1039,32 @@ func account_statement(c *gin.Context) {
 			"Transfers": transfers,
 	})
 }
+func open_order_history(c *gin.Context) {
+
+	p_addr := c.Query("addr")
+	user_addr_str,valid := is_address_valid(c,false,p_addr)
+	if !valid {
+		return
+	}
+	aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(user_addr_str)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Such address wasn't found: %v",user_addr_str),
+		})
+		return
+	}
+	user_info,err := augur_srv.storage.Get_user_info(aid)
+	if err!= nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("No records found for address: %v",user_addr_str),
+		})
+		return
+	}
+	oo_history := augur_srv.storage.Get_user_oo_history(aid)
+	c.HTML(http.StatusOK, "user_oo_history.html", gin.H{
+		"UserInfo" : user_info,
+		"OOHistory" : oo_history,
+	})
+}

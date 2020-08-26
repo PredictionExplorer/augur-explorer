@@ -361,10 +361,10 @@ func (ss *SQLStorage) is_dai_transfer_internal(evt *p.ETransfer,ca *p.ContractAd
 		to_internal = true
 	}
 
-	if 0 == bytes.Compare(evt.From.Bytes(),ca.Zerox.Bytes()) {
+	if 0 == bytes.Compare(evt.From.Bytes(),ca.ZeroxTrade.Bytes()) {
 		from_internal = true
 	}
-	if 0 == bytes.Compare(evt.To.Bytes(),ca.Zerox.Bytes()) {
+	if 0 == bytes.Compare(evt.To.Bytes(),ca.ZeroxTrade.Bytes()) {
 		to_internal = true
 	}
 	if 0 == bytes.Compare(evt.From.Bytes(),ca.FillOrder.Bytes()) {
@@ -483,7 +483,7 @@ func internal_addr_info_note(addr *common.Address,info *string,caddrs *p.Contrac
 		*info = "ProfitLoss contract"
 		return
 	}
-	if bytes.Equal(addr.Bytes(),caddrs.Zerox.Bytes()) {
+	if bytes.Equal(addr.Bytes(),caddrs.ZeroxTrade.Bytes()) {
 		*info = "ZeroX contract"
 		return
 	}

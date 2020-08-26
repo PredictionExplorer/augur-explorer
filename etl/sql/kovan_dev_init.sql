@@ -8,7 +8,8 @@ INSERT INTO contract_addresses(
 		profit_loss,
 		dai_cash,
 		rep_token,
-		zerox,
+		zerox_trade,
+		zerox_xchg,
 		wallet_reg,
 		fill_order,
 		eth_xchg,
@@ -21,7 +22,8 @@ INSERT INTO contract_addresses(
 		'0x5B659733415f9919D5d4FA8e7723D7b0e6434E4F',-- profit loss
 		'0x5bc0ceB4d813282C4468288C8AB42Af5e7a43B27',-- dai cash
 		'0x7859eF3B6D0Be006675990192Eea09cba46d9C35',-- rep token
-		'0x5673627689E6435D3Bea15A7B94cf6E5D2d450E3',-- zerox
+		'0x5673627689E6435D3Bea15A7B94cf6E5D2d450E3',-- zerox trade
+		'0x4eacd0aF335451709e1e7B570B8Ea68EdEC8bc97',-- zerox exchange
 		'0x29fD93b1Ebb775306b018BdDd107e2F5c889e70c',-- wallet registry
 		'0x58f1a6a327dC8A4c73F72B37B75802EB24670A94',-- fill order
 		'0xA867A0291D23AC82bB9eA83DD52ee8B71922Fb42',-- eth exchange

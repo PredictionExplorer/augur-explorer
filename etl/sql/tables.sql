@@ -105,6 +105,7 @@ CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later th
 	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
 	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
 	price				DECIMAL(32,18) NOT NULL,
+	initial_amount		DECIMAL(32,18) NOT NULL,	-- when partially filled, this keeps the original amount
 	amount				DECIMAL(32,18) NOT NULL,
 	evt_timestamp		TIMESTAMPTZ NOT NULL,		-- 0x Mesh event timestamp
 	srv_timestamp		TIMESTAMPTZ NOT NULL,		-- Postgres Server timestamp (not blockchain timestamp)
@@ -384,7 +385,8 @@ CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur P
 	augur_trading		TEXT DEFAULT '',-- Augur Trading contract
 	profit_loss			TEXT DEFAULT '',-- Profit Loss contract
 	dai_cash			TEXT DEFAULT '',-- Cash/CashFaucet (local testnet)
-	zerox				TEXT DEFAULT '',-- ZeroXTrade
+	zerox_trade			TEXT DEFAULT '',-- ZeroX Trade
+	zerox_xchg			TEXT DEFAULT '',-- ZeroX Exchange
 	rep_token			TEXT DEFAULT '',--
 	wallet_reg			TEXT DEFAULT '',
 	fill_order			TEXT DEFAULT '',

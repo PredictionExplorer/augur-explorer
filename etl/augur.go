@@ -41,7 +41,7 @@ func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) 
 	// Augur service involves 39 contracts in total. We only use a few of them
 	augur_abi = Abi_from_artifacts(contracts,"Augur")
 	trading_abi = Abi_from_artifacts(contracts,"AugurTrading")
-	zerox_abi = Abi_from_artifacts(contracts,"ZeroXTrade")
+	zerox_trade_abi = Abi_from_artifacts(contracts,"ZeroXTrade")
 	cash_abi = Abi_from_artifacts(contracts,"Cash")
 	exchange_abi = Abi_from_artifacts(contracts,"Exchange")
 	wallet_abi = Abi_from_artifacts(contracts,"AugurWalletRegistry")
@@ -53,7 +53,7 @@ func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) 
 	if err != nil {
 		Fatalf("Failed to instantiate a AugurWalletRegistry contract: %v", err)
 	}
-	ctrct_zerox, err = NewZeroX(addresses.Zerox,eclient)
+	ctrct_zerox_trade, err = NewZeroX(addresses.ZeroxTrade,eclient)
 	if err != nil {
 		Fatalf("Failed to instantiate a ZeroX contract: %v", err)
 	}
@@ -165,7 +165,7 @@ func proc_approval_for_all(log *types.Log) {
 	var mevt EApprovalForAll
 	mevt.Owner= common.BytesToAddress(log.Topics[1][12:])
 	mevt.Operator= common.BytesToAddress(log.Topics[2][12:])
-	err := zerox_abi.Unpack(&mevt,"ApprovalForAll",log.Data)
+	err := zerox_trade_abi.Unpack(&mevt,"ApprovalForAll",log.Data)
 	if err != nil {
 		Fatalf("Event ApprovalForAll decode error: %v",err)
 	} else {
@@ -208,18 +208,16 @@ func proc_fill_evt(log *types.Log) {
 		Fatalf("Event Fill for 0x decode error: %v",err)
 		return
 	}
-	if !bytes.Equal(log.Address.Bytes(),caddrs.AugurTrading.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),caddrs.ZeroxXchg.Bytes()) {
 		return
 	}
 	Info.Printf("Fill event found (block=%v) :\n",log.BlockNumber)
 	mevt.Dump(Info)
-	// we need to locate order id because Profit Loss events are linked to this Order 
-	fill_order_id = storage.Locate_fill_event_order(&mevt)
+	initial_amount = big.NewInt(0)
+	initial_amount.Set(mevt.MakerAssetFilledAmount)
 }
 func proc_erc20_transfer(log *types.Log,agtx *AugurTx) {
 	var mevt ETransfer
-	/*
-	*/
 	if len(log.Topics)!=3 {
 		Info.Printf("ERC20 transfer event is not compliant log.Topics!=3. Tx hash=%v\n",log.TxHash.String())
 		return
@@ -267,7 +265,6 @@ func proc_profit_loss_changed(agtx *AugurTx,log *types.Log) int64  {
 	pchg.Outcome = new(big.Int)
 	pchg.Outcome.Set(mevt.Outcome)
 	position_changes = append(position_changes,pchg)
-//		Info.Printf("position_changes len=%v\n",lken(position_changes)
 	eoa_aid := get_eoa_aid(&mevt.Account,agtx.BlockNum,agtx.TxId)
 	id = storage.Insert_profit_loss_evt(agtx,eoa_aid,&mevt)
 	return id
@@ -277,7 +274,7 @@ func proc_transfer_single(log *types.Log) {
 	mevt.Operator= common.BytesToAddress(log.Topics[1][12:])
 	mevt.From= common.BytesToAddress(log.Topics[2][12:])
 	mevt.To= common.BytesToAddress(log.Topics[3][12:])
-	err := zerox_abi.Unpack(&mevt,"TransferSingle",log.Data)
+	err := zerox_trade_abi.Unpack(&mevt,"TransferSingle",log.Data)
 	if err != nil {
 		Fatalf("Event TransferSingle decode error: %v",err)
 	} else {
@@ -290,12 +287,12 @@ func proc_transfer_batch(log *types.Log) {
 	mevt.Operator= common.BytesToAddress(log.Topics[1][12:])
 	mevt.From= common.BytesToAddress(log.Topics[2][12:])
 	mevt.To= common.BytesToAddress(log.Topics[3][12:])
-	err := zerox_abi.Unpack(&mevt,"TransferBatch",log.Data)
+	err := zerox_trade_abi.Unpack(&mevt,"TransferBatch",log.Data)
 	if err != nil {
 		Fatalf("Event TransferBatch decode error: %v",err)
 	} else {
 		Info.Printf("TransferBatch event found (block=%v) :\n",log.BlockNumber)
-		mevt.Dump(ctrct_zerox,Info)
+		mevt.Dump(ctrct_zerox_trade,Info)
 	}
 }
 func proc_tokens_transferred(agtx *AugurTx, log *types.Log) {
@@ -393,7 +390,7 @@ func proc_market_order_event(agtx *AugurTx,log *types.Log) {
 	eoa_aid := get_eoa_aid(&mevt.AddressData[0],agtx.BlockNum,agtx.TxId)
 	eoa_fill_aid := get_eoa_aid(&mevt.AddressData[1],agtx.BlockNum,agtx.TxId)
 	//storage.Insert_market_order_evt(BlockNumber(log.BlockNumber),tx_id,signer,eoa_aid,&mevt)
-	storage.Insert_market_order_evt(agtx,eoa_aid,eoa_fill_aid,&mevt)
+	storage.Insert_market_order_evt(agtx,eoa_aid,eoa_fill_aid,&mevt,initial_amount)
 }
 func proc_cancel_zerox_order(log *types.Log) {
 	var mevt ECancelZeroXOrder
@@ -879,8 +876,9 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		}
 		num_logs = len(ordered_list)
 		pl_entries := make([]int64,0,2);// profit loss entries
+		// before processing events we need to reset these global vars as they accumulate some data
 		market_order_id = 0
-		fill_order_id = 0
+		initial_amount = nil
 		//
 		// Step 3: Execute events using ordered list prepared in previous step
 		for i:=0 ; i < num_logs ; i++ {
@@ -890,7 +888,6 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 					hex.EncodeToString(ordered_list[i].Topics[0][0:4]),
 					ordered_list[i].Address.String())
 				id := process_event(header,agtx,&ordered_list,i)
-				//var id int64 =0
 				if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),evt_profit_loss_changed) {
 					pl_entries = append(pl_entries,id)
 				}

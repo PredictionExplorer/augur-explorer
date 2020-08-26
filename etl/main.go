@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	//"bytes"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -14,18 +13,12 @@ import (
 	"fmt"
 	"context"
 	"log"
-	//"errors"
-	//"math/big"
+	"math/big"
 	"encoding/hex"
-	//"encoding/json"
 
-	//"github.com/ethereum/go-ethereum/common"
-	//"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/rpc"
-	//"github.com/ethereum/go-ethereum/common/hexutil"
-	//"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
@@ -91,13 +84,13 @@ var (
 
 	augur_abi *abi.ABI
 	trading_abi *abi.ABI
-	zerox_abi *abi.ABI
+	zerox_trade_abi *abi.ABI
 	cash_abi *abi.ABI
 	exchange_abi *abi.ABI
 	wallet_abi *abi.ABI
 
 	ctrct_wallet_registry *AugurWalletRegistry
-	ctrct_zerox *ZeroX
+	ctrct_zerox_trade *ZeroX
 	ctrct_dai_token *DAICash
 	ctrct_pl *ProfitLoss
 
@@ -109,9 +102,9 @@ var (
 	// addresses of the contracts used in our code (for making eth.Call()s if needed)
 	caddrs *ContractAddresses
 
-	fill_order_id int64 = 0			// during event processing, holds id of record in mktord from Fill evt
 	market_order_id int64 = 0
 	owner_fld_offset int64 = int64(OWNER_FIELD_OFFSET)	// offset to AugurContract::owner field obtained with eth_getStorage()
+	initial_amount *big.Int = nil	// Initial order amount extracted from MakerAssetData of Fill event
 	
 	set_back_block_num int64 = 0
 

@@ -114,13 +114,33 @@ BEGIN
 	-- Update Open Order history
 	INSERT INTO oohist(
 			otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
-			price,amount,evt_timestmap,srv_timestamp,expiration,order_hash
+			price,amount,evt_timestamp,srv_timestamp,expiration,order_hash
 		) VALUES (
-			NEW.ootype,NEW.outcome_idx,NEW.opcode,NEW.market_aid,NEW.wallet_aid,NEW.eoa_aid,
+			NEW.otype,NEW.outcome_idx,NEW.opcode,NEW.market_aid,NEW.wallet_aid,NEW.eoa_aid,
 			NEW.price,NEW.amount,NEW.evt_timestamp,NEW.srv_timestamp,NEW.expiration,NEW.order_hash
 		) ON CONFLICT DO NOTHING;
 
 	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION update_oo_hist(p_order_hash text,p_opcode numeric) RETURNS void AS  $$ -- reverts order statistics on delete
+DECLARE
+	oo record;
+	v_cnt numeric;
+BEGIN
+
+	SELECT * FROM oorders WHERE order_hash = p_order_hash LIMIT 1 INTO oo;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt > 0 THEN
+		INSERT INTO oohist(
+				otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
+				price,amount,evt_timestmap,srv_timestamp,expiration,order_hash
+			) VALUES (
+				oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
+				oo.price,oo.amount,oo.evt_timestamp,oo.srv_timestamp,oo.expiration,oo.order_hash
+			) ON CONFLICT DO NOTHING;
+	END IF;
+
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_oorders_delete() RETURNS trigger AS  $$ -- reverts order statistics on delete
