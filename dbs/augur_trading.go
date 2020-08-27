@@ -218,6 +218,7 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 		"Open Order: Market %v, Price %v, Otcome %v\n",
 		ospec.Market.String(),ospec.Price.String(),ospec.Outcome,
 	)
+	initial_amount := order.MakerAssetAmount.String()
 	// Note: the MakerAddress can be either EOA of the User or Wallet contract of the User
 	//			we need to figure out which one we have been given
 	var wallet_aid int64 = 0
@@ -294,9 +295,14 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 		}
 	}
 	query = "INSERT INTO oorders(" +
-				"market_aid,otype,wallet_aid,eoa_aid,price,amount,outcome_idx,opcode," +
+				"market_aid,otype,wallet_aid,eoa_aid,price,initial_amount,amount,outcome_idx,opcode," +
 				"evt_timestamp,srv_timestamp,expiration,order_hash" +
-			") VALUES($1,$2,$3,$4,$5,"+amount+"/1e+18,$6,$7,TO_TIMESTAMP($8),NOW(),TO_TIMESTAMP($9),$10)" +
+			") VALUES("+
+				"$1,$2,$3,$4,$5,"+
+				initial_amount+"/1e+18," + amount+"/1e+18,"+
+				"$6,$7," +
+				"TO_TIMESTAMP($8),NOW(),TO_TIMESTAMP($9),$10"+
+			")" +
 			"ON CONFLICT DO NOTHING"
 	result,err := ss.db.Exec(query,
 			market_aid,

@@ -13,8 +13,10 @@ import (
 func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 
 	var query string
-	query="SELECT	 augur,augur_trading,profit_loss,dai_cash,rep_token,zerox_trade,zerox_xchg,wallet_reg,"+
-					"fill_order,eth_xchg,share_token,universe FROM contract_addresses";
+	query="SELECT " +
+				"augur,augur_trading,profit_loss,dai_cash,rep_token,zerox_trade,zerox_xchg,wallet_reg,"+
+				"wallet_reg2,fill_order,eth_xchg,share_token,universe,create_order "+
+			"FROM contract_addresses";
 	row := ss.db.QueryRow(query)
 	var c_addresses p.ContractAddresses
 	var err error
@@ -26,15 +28,17 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 		rep string
 		zerox_trade string
 		zerox_xchg string
-		walletreg string
+		wallet_reg string
+		wallet_reg2 string
 		fill_order string
 		eth_xchg string
 		share_token string
 		universe string
+		create_order string
 	)
 	err=row.Scan(
-		&augur,&augur_trading,&pl,&dai,&rep,&zerox_trade,&zerox_xchg,&walletreg,&fill_order,&eth_xchg,
-		&share_token,&universe,
+		&augur,&augur_trading,&pl,&dai,&rep,&zerox_trade,&zerox_xchg,&wallet_reg,&wallet_reg2,&fill_order,
+		&eth_xchg,&share_token,&universe,&create_order,
 	);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -51,11 +55,13 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 	c_addresses.Reputation=common.HexToAddress(rep)
 	c_addresses.ZeroxTrade=common.HexToAddress(zerox_trade)
 	c_addresses.ZeroxXchg=common.HexToAddress(zerox_xchg)
-	c_addresses.WalletReg=common.HexToAddress(walletreg)
+	c_addresses.WalletReg=common.HexToAddress(wallet_reg)
+	c_addresses.WalletReg2=common.HexToAddress(wallet_reg2)
 	c_addresses.FillOrder=common.HexToAddress(fill_order)
 	c_addresses.EthXchg=common.HexToAddress(eth_xchg)
 	c_addresses.ShareToken=common.HexToAddress(share_token)
 	c_addresses.Universe= common.HexToAddress(universe)
+	c_addresses.CreateOrder=common.HexToAddress(create_order)
 	return c_addresses,nil
 }
 func (ss *SQLStorage) Get_augur_blocks(market_aid int64) []int64 {
@@ -132,4 +138,45 @@ func (ss *SQLStorage) Insert_augur_transaction_status(agtx *p.AugurTx,evt *p.EEx
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into agtx_status table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
+}
+func (ss *SQLStorage) Register_eoa_and_wallet(eoa,wallet string,block_num int64,tx_id int64) {
+
+	eoa_aid := ss.Lookup_or_create_address(eoa,block_num,tx_id)
+	wallet_aid := ss.Lookup_or_create_address(wallet,block_num,tx_id)
+	ss.Link_eoa_and_wallet_contract(eoa_aid,wallet_aid)
+}
+func (ss *SQLStorage) Insert_execute_wallet_tx(eoa_aid int64,wallet_aid int64,agtx *p.AugurTx,wtx *p.ExecuteWalletTx) {
+
+	to_aid := ss.Lookup_or_create_address(agtx.To,agtx.BlockNum,agtx.TxId)
+	referral_aid := ss.Lookup_or_create_address(wtx.ReferralAddress,agtx.BlockNum,agtx.TxId)
+
+	var query string
+	query = "INSERT INTO exec_wtx(" +
+				"block_num,tx_id,"+
+				"eoa_aid,wallet_aid,to_aid,referral_aid,"+
+				"value,payment,desired_signer_bal,"+
+				"input_sig,"+
+				"fingerprint,"+
+				"call_data,"+
+				"revert_on_failure" +
+			") VALUES (" +
+				"$1,$2,"+
+				"$3,$4,$5,$6," +
+				wtx.Value+"/1e+18,"+wtx.Payment+"/1e+18,"+wtx.DesiredSignerBalance+"/1e+18,"+
+				"$7,$8,$9,$10"+
+			")"
+
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,agtx.TxId,
+		eoa_aid,wallet_aid,to_aid,referral_aid,
+		wtx.InputSig,
+		wtx.Fingerprint,
+		wtx.CallData,
+		wtx.RevertOnFailure,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into agtx_status table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+
 }

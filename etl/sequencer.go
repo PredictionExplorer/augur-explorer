@@ -20,6 +20,11 @@ func (sequencer *EventSequencer) append_event(new_log *types.Log) {
 func (sequencer *EventSequencer) get_ordered_event_list() []*types.Log {
 	// determines the correct event sequence for different event combinations
 	// this variation returns events in inverted order
+	return sequencer.unordered_list
+}
+func (sequencer *EventSequencer) get_inverse_ordered_event_list() []*types.Log {
+	// determines the correct event sequence for different event combinations
+	// this variation returns events in inverted order
 	output := make([]*types.Log,0,8)
 	for i := len(sequencer.unordered_list) - 1; i >= 0; i-- {
 		output = append(output,sequencer.unordered_list[i])

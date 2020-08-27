@@ -389,10 +389,12 @@ CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur P
 	zerox_xchg			TEXT DEFAULT '',-- ZeroX Exchange
 	rep_token			TEXT DEFAULT '',--
 	wallet_reg			TEXT DEFAULT '',
+	wallet_reg2			TEXT DEFAULT '',
 	fill_order			TEXT DEFAULT '',
 	eth_xchg			TEXT DEFAULT '',
 	share_token			TEXT DEFAULT '',
-	universe			TEXT DEFAULT ''
+	universe			TEXT DEFAULT '',
+	create_order		TEXT DEFAULT ''-- CreateOrder
 );
 CREATE TABLE unique_addrs (	-- Unique addresses per day, statistics
 	day					DATE PRIMARY KEY,
@@ -415,7 +417,26 @@ CREATE TABLE gas_spent (-- global gas spent
 	eth_markets			DECIMAL(64,18) DEFAULT 0.0,
 	eth_total			DECIMAL(64,18) DEFAULT 0.0
 );
+CREATE TABLE exec_wtx (	-- stores contract calls of input with sig=78dc0eed (executeTransactionStatus)
+-- source: AugurWalletRegistry.sol:executeWalletTransaction()
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	eoa_aid				BIGINT NOT NULL,
+	wallet_aid			BIGINT NOT NULL,
+	to_aid				BIGINT NOT NULL,
+	referral_aid		BIGINT DEFAULT 0,	-- address of referral account (referral_aid will get commissions on TXs of eoa_aid)
+	value				DECIMAL(64,18) DEFAULT 0.0,
+	payment				DECIMAL(64,18) DEFAULT 0.0,
+	desired_signer_bal	DECIMAL(64,18) DEFAULT 0.0,	-- desiredSignerBalance
+	max_xchg_rate_dai	DECIMAL(64,18) DEFAULT 0.0,	-- maxExchangeRateInDai
+	input_sig			CHAR(8),			-- hex encoded first 4 bytes of call_data (indexed field)
+	fingerprint			TEXT NOT NULL,		-- hex-encoded 32 byte (64char) value of Browser fingerprint
+	call_data			TEXT DEFAULT '',	-- hex-encoded input to contract in 'to' field
+	revert_on_failure	BOOLEAN DEFAULT FALSE
+);
 CREATE TABLE agtx_status (-- Augur transaction status (used to track Gas fees for all interactions with Augur
+-- this table stores the result of the call registered in `exec_wtx` table
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,

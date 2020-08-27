@@ -89,7 +89,7 @@ func build_list_of_inspected_events() {
 							evt_erc20_transfer,
 							evt_exchange_fill,
 							evt_trading_proceeds_claimed,
-							evt_zerox_approval_for_all,
+							evt_erc1155_approval_for_all,
 							evt_erc20_approval,
 	)
 }
@@ -616,7 +616,7 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_approval) {
 			proc_approval(log)
 		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_zerox_approval_for_all) {
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc1155_approval_for_all) {
 			proc_approval_for_all(log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_trading_proceeds_claimed) {
@@ -689,7 +689,7 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 			show_market_created_evt(agtx,log)
 			var validity_bond string
 			var transf_evt ETransfer
-			tr_idx := lidx + 1	// the offset to ERC20 event (as they fired by contracts)
+			tr_idx := lidx - 1	// the offset to ERC20 event (as they fired by contracts)
 			err := cash_abi.Unpack(&transf_evt,"Transfer",(*logs)[tr_idx].Data)
 			if err == nil {
 				validity_bond = transf_evt.Value.String()
@@ -859,6 +859,45 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 			}
 			sequencer.append_event(rcpt.Logs[i])
 		}
+		// Step 1.1 If a Wallet contract has been created, register EOA-Wallet link
+		wallet_created,wallet_addr := was_wallet_created(caddrs,rcpt.Logs)
+		if wallet_created {
+			tx_insert_if_needed(agtx)
+			storage.Register_eoa_and_wallet(agtx.From,wallet_addr.String(),agtx.BlockNum,agtx.TxId)
+		}
+		// Step 1.2 If transaction contains executeWalletTransaction, store it in the DB
+		exec_wtx := contains_execute_wallet_transaction_call(agtx.Input)
+		if exec_wtx != nil {
+			// Note: Tests are pending for transactions going through GSN (EOA address must be extracted
+			//			from the tx.Data(), in the first 20 bytes
+			eoa_aid,err := storage.Nonfatal_lookup_address_id(agtx.From)
+			if err != nil {
+				Info.Printf(
+					"Couldn't lookup EOA for executeWalletTransaction(). Aborting for debugging. addr %v",
+					agtx.From,
+				)
+				Error.Printf(
+					"Couldn't lookup EOA for executeWalletTransaction(). Aborting for debugging. addr %v",
+					agtx.From,
+				)
+				os.Exit(1)
+			}
+			wallet_aid,err := storage.Lookup_wallet_aid(eoa_aid)
+			if err != nil {
+				Info.Printf(
+					"Couldn't lookup Wallet for executeWalletTransaction(). Aborting for debugging. addr %v",
+					agtx.From,
+				)
+				Error.Printf(
+					"Couldn't lookup Wallet for executeWalletTransaction(). Aborting for debugging. addr %v",
+					agtx.From,
+				)
+				os.Exit(1)
+			}
+			exec_wtx.Dump(Info)
+			tx_insert_if_needed(agtx)
+			storage.Insert_execute_wallet_tx(eoa_aid,wallet_aid,agtx,exec_wtx)
+		}
 		// Step 2: Knowing what kind of Augur Transaction, we are sorting events in an order
 		//			that is convinient for us to process the event series
 		var ordered_list []*types.Log
@@ -999,4 +1038,154 @@ func scan_profit_loss_data_for_debugging(block_num int64,position_changes *[]*Po
 		Info.Printf("inserting pchg %+v\n",*pchg)
 		storage.Insert_profit_loss_debug_rec(pchg)
 	}
+}
+func was_wallet_created(caddrs *ContractAddresses,event_list []*types.Log) (bool,common.Address){
+
+	var wallet_addr common.Address
+	// detects pattern of Wallet creation, function AugurWalletFactory::createAugurWallet()
+	// scans events and determines if the set of events has correct properties to consider
+	// that this is indeed a pattern of Wallet creation.
+
+	var augur_approval bool = false // Pattern 1: Approval event for AugurContract for MAX_APPROVAL_AMOUNT
+	var cash_create_approval bool = false // Pattern 2: Approval event for CreateOrder for MAX_APPROVAL_AMOUNT
+	var sharetoken_create_approval bool = false // Pattern 3: ApprovalForAll for ShareToken
+	var cash_fill_approval bool = false // Pattern 4: Approval event for FillOrder contract
+	var sharetoken_fill_approval bool = false // Pattern 3: ApprovalForAll for FillOrder
+	var cash_zerox_trade_approval bool = false // Pattern 5: Approval event for ZeroexTrade contract
+	var wtx_status bool = false
+
+	// First we compare contract addresses, and after that for event signature because event signatures
+	//		appear more frequently than an event coming for a specific address owner
+	for _,log := range event_list {
+		if len(log.Topics) < 1 {
+			continue
+		}
+//		Info.Printf("contract: %v\n",log.Address.String())
+//		Info.Printf("walletreg1=%v,walletreg2=%v\n",caddrs.WalletReg.String(),caddrs.WalletReg2.String())
+		if bytes.Equal(log.Address.Bytes(),caddrs.WalletReg.Bytes()) {
+			if bytes.Equal(log.Topics[0].Bytes(),evt_execute_tx_status) {
+				wtx_status = true
+				continue
+			}
+		}
+		if bytes.Equal(log.Address.Bytes(),caddrs.WalletReg2.Bytes()) {
+			if bytes.Equal(log.Topics[0].Bytes(),evt_execute_tx_status) {
+				wtx_status = true
+				continue
+			}
+		}
+//		Info.Printf("topic len >2\n")
+		if len(log.Topics) < 3 {
+//			Info.Printf("topics.len < 3, skip\n")
+			continue		// an event with no topics, not our use case
+		}
+
+		addr := common.BytesToAddress(log.Topics[2][12:])
+		Info.Printf("checking addr %v, contract=%v\n",addr.String(),log.Address.String())
+		if bytes.Equal(addr.Bytes(),caddrs.Augur.Bytes()) {
+			if bytes.Equal(log.Address.Bytes(),caddrs.Dai.Bytes()) {
+				if bytes.Equal(log.Topics[0].Bytes(),evt_erc20_approval) {
+					augur_approval = true
+					continue
+				}
+			}
+		}
+		if bytes.Equal(addr.Bytes(),caddrs.CreateOrder.Bytes()) {
+			if bytes.Equal(log.Address.Bytes(),caddrs.Dai.Bytes()) {
+				if bytes.Equal(log.Topics[0].Bytes(),evt_erc20_approval) {
+					cash_create_approval = true
+					continue
+				}
+			}
+			if bytes.Equal(log.Address.Bytes(),caddrs.ShareToken.Bytes()) {
+				if bytes.Equal(log.Topics[0].Bytes(),evt_erc1155_approval_for_all) {
+					if len(log.Topics)!=3 {
+						Info.Printf("ERC20_ApprovalForAll not compliant log.Topics!=3. Aborting for debugging\n")
+						Error.Printf("ERC20_ApprovalForAll not compliant log.Topics!=3. Aborting for debugging\n")
+						os.Exit(1)
+					}
+					wallet_addr = common.BytesToAddress(log.Topics[1][12:])
+					sharetoken_create_approval = true
+					continue
+				}
+			}
+		}
+		if bytes.Equal(addr.Bytes(),caddrs.FillOrder.Bytes()) {
+			if bytes.Equal(log.Address.Bytes(),caddrs.Dai.Bytes()) {
+				if bytes.Equal(log.Topics[0].Bytes(),evt_erc20_approval) {
+					cash_fill_approval = true
+					continue
+				}
+			}
+			if bytes.Equal(log.Address.Bytes(),caddrs.ShareToken.Bytes()) {
+				if bytes.Equal(log.Topics[0].Bytes(),evt_erc1155_approval_for_all) {
+					if len(log.Topics)!=3 {
+						Info.Printf("ERC20_ApprovalForAll not compliant log.Topics!=3. Aborting for debugging\n")
+						Error.Printf("ERC20_ApprovalForAll not compliant log.Topics!=3. Aborting for debugging\n")
+						os.Exit(1)
+					}
+					sharetoken_fill_approval = true
+					continue
+				}
+			}
+		}
+		if bytes.Equal(addr.Bytes(),caddrs.ZeroxTrade.Bytes()) {
+			if bytes.Equal(log.Address.Bytes(),caddrs.Dai.Bytes()) {
+				if bytes.Equal(log.Topics[0].Bytes(),evt_erc20_approval) {
+					cash_zerox_trade_approval = true
+					continue
+				}
+			}
+		}
+	}
+	var output bool = false
+	if	augur_approval &&
+		cash_create_approval && sharetoken_create_approval &&
+		cash_fill_approval && sharetoken_fill_approval &&
+		cash_zerox_trade_approval &&
+		wtx_status {
+			output = true
+	}
+	Info.Printf("augur_approval=%v\n",augur_approval)
+	Info.Printf("cash_create_approval=%v\n",cash_create_approval)
+	Info.Printf("sharetoken_create_approval=%v\n",sharetoken_create_approval)
+	Info.Printf("cash_fill_approval=%v\n",cash_fill_approval)
+	Info.Printf("sharetoken_fill_approval=%v\n",sharetoken_fill_approval)
+	Info.Printf("cash_zerox_trade_approval=%v\n",cash_zerox_trade_approval)
+	Info.Printf("wtx_status=%v\n",wtx_status)
+	Info.Printf("wallet_addr=%v\n",wallet_addr.String())
+	Info.Printf("output=%v\n",output)
+	return output,wallet_addr
+}
+func contains_execute_wallet_transaction_call(tx_data []byte) *ExecuteWalletTx {
+
+	if len(tx_data) < 32 {
+		return nil
+	}
+	input_sig := tx_data[:4]
+	if 0 == bytes.Compare(input_sig,exec_wtx_sig) {
+		input_data_raw:= tx_data[4:]
+		var input_data InputStruct
+		method, err := wallet_abi.MethodById(exec_wtx_sig)
+		if err != nil {
+			Fatalf("Method not found")
+		}
+		err = method.Inputs.Unpack(&input_data, input_data_raw)
+		if err != nil {
+			Fatalf("Couldn't decode input of tx %v",err)
+		}
+		exec_wtx:=new(ExecuteWalletTx)
+		exec_wtx.To=input_data.To.String()
+		exec_wtx.CallData=hex.EncodeToString(input_data.Data[:])
+		exec_wtx.InputSig=hex.EncodeToString(input_sig)
+		exec_wtx.Value=input_data.Value.String()
+		exec_wtx.Payment=input_data.Payment.String()
+		exec_wtx.ReferralAddress=input_data.ReferralAddress.String()
+		exec_wtx.Fingerprint=hex.EncodeToString(input_data.Fingerprint[:])
+		exec_wtx.DesiredSignerBalance=input_data.DesiredSignerBalance.String()
+		exec_wtx.MaxExchangeRateInDAI=input_data.MaxExchangeRateInDai.String()
+		exec_wtx.RevertOnFailure=input_data.RevertOnFailure
+		return exec_wtx
+	}
+	return nil
 }

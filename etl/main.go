@@ -44,13 +44,14 @@ const (
 	ERC20_TRANSFER = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 	EXCHANGE_FILL = "6869791f0a34781b29882982cc39e882768cf2c96995c2a110c577c53bc932d5"
 	TRADING_PROCEEDS_CLAIMED = "95366b7f64c6bb45149f9f7c522403fceebe5170ff76b8ffde2b0ab943ac11ce"
-	ZEROX_APPROVAL_FOR_ALL = "17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31"
+	ERC1155_APPROVAL_FOR_ALL = "17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31"
 	ERC20_APPROVAL = "8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
 	EXEC_TX_STATUS = "ee9c28a7fe7177d351e891cb4ca5b7a4e4aba4974be67fb7665ba1ad0e703439"
 
 	DEFAULT_WAIT_TIME = 5000	// 5 seconds
 	DEFAULT_DB_LOG				= "db.log"
 	//DEFAULT_LOG_DIR				= "ae_logs"
+	MAX_APPROVAL_BASE10 string = "115792089237316195423570985008687907853269984665640564039457584007913129639935"
 )
 var (
 	// these evt_ variables are here for speed to avoid calculation of Keccak256
@@ -73,9 +74,11 @@ var (
 	evt_erc20_transfer,_ = hex.DecodeString(ERC20_TRANSFER)
 	evt_exchange_fill,_ = hex.DecodeString(EXCHANGE_FILL)
 	evt_trading_proceeds_claimed,_ = hex.DecodeString(TRADING_PROCEEDS_CLAIMED)
-	evt_zerox_approval_for_all,_ = hex.DecodeString(ZEROX_APPROVAL_FOR_ALL)
+	evt_erc1155_approval_for_all,_ = hex.DecodeString(ERC1155_APPROVAL_FOR_ALL)
 	evt_erc20_approval,_ = hex.DecodeString(ERC20_APPROVAL)
 	evt_execute_tx_status,_ = hex.DecodeString(EXEC_TX_STATUS)
+
+	exec_wtx_sig ,_ = hex.DecodeString("78dc0eed")
 
 	storage *SQLStorage
 
@@ -115,6 +118,9 @@ var (
 
 	//DISCONTINUED ErrChainSplit error = errors.New("Chainsplit detected")
 	split_simulated bool = false
+
+	max_approval *big.Int = big.NewInt(0)
+
 )
 type rpcBlockHash struct {
 	Hash		string
@@ -178,6 +184,9 @@ func main() {
 	}
 	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	Error = log.New(logfile,"ERROR: ",log.Ltime|log.Lshortfile)
+
+	max_approval.SetString(MAX_APPROVAL_BASE10,10)
+
 	rpcclient, err=rpc.DialContext(context.Background(), RPC_URL)
 	if err != nil {
 		log.Fatal(err)

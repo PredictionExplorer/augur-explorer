@@ -407,10 +407,12 @@ type ContractAddresses struct {
 	Dai				common.Address	// Shows DAI balance and also to fill dai_transf table and Cash Flow report
 	Reputation		common.Address	// used to query REP token balance when showing User info (among other stuff)
 	WalletReg		common.Address	// this contract is used to get the link between EOA and Wallet contract
+	WalletReg2		common.Address	// same as WalletReg but with GSN (transaction relaying), used for EOA-Wallet link
 	FillOrder		common.Address	// used to identify if DAI transfer is internal or not
 	EthXchg			common.Address	// used to identify if DAI transfer is internal or not
 	ShareToken		common.Address  // used to identify if DAI transfer is internal or not
 	Universe		common.Address	// used to identify if DAI transfer is internal or not
+	CreateOrder		common.Address	// CreateOrder contract, used to detect wallet creation pattern
 }
 type UniqueAddrEntry struct {
 	Ts					int64
@@ -475,4 +477,16 @@ type StatementEntry struct {
 	ToSh				string
 	Info				string
 	MktAddr				string
+}
+type ExecuteWalletTx struct {
+	RevertOnFailure			bool
+	To						string
+	CallData				string	// hex-encoded bytecode of the Input to the contract in 'to'
+	Value					string
+	Payment					string
+	ReferralAddress			string
+	Fingerprint				string	// the fingerprint of the Browser of the account that does referrals
+	DesiredSignerBalance	string
+	MaxExchangeRateInDAI	string
+	InputSig				string	// first 4 bytes of CallData, extracted for indexing
 }

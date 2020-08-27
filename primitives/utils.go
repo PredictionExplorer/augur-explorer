@@ -295,3 +295,17 @@ func (obj *GasSpent) Dump(l *log.Logger) {
 	)
 	l.Printf("}")
 }
+func (obj *ExecuteWalletTx) Dump(l *log.Logger) {
+	l.Printf("ExecuteWalletTransaction {\n")
+	l.Printf("\tto: %v\n",obj.To)
+	l.Printf("\tdata: %v\n",obj.CallData)
+	l.Printf("\tinput_sig: %v\n",obj.InputSig)
+	l.Printf("\tvalue: %v\n",obj.Value)
+	l.Printf("\tpayment: %v\n",obj.Payment)
+	l.Printf("\treferralAddress:  %v\n",obj.ReferralAddress)
+	l.Printf("\tfingerprint: %v\n",obj.Fingerprint)
+	l.Printf("\tdesiredSignerBalance: %v\n",obj.DesiredSignerBalance)
+	l.Printf("\tmaxExchangeRateInDai: %v\n",obj.MaxExchangeRateInDAI)
+	l.Printf("\trevertOnFaliure: %v\n",obj.RevertOnFailure)
+	l.Printf("}\n")
+}

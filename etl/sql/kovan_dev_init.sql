@@ -11,10 +11,12 @@ INSERT INTO contract_addresses(
 		zerox_trade,
 		zerox_xchg,
 		wallet_reg,
+		wallet_reg2,
 		fill_order,
 		eth_xchg,
 		share_token,
-		universe
+		universe,
+		create_order
 ) VALUES (
 		19830392,
 		'0xd50475cC7Ae9dd46a09D8415A57F0DF59E89b0f9',-- augur (main contract)
@@ -24,11 +26,13 @@ INSERT INTO contract_addresses(
 		'0x7859eF3B6D0Be006675990192Eea09cba46d9C35',-- rep token
 		'0x5673627689E6435D3Bea15A7B94cf6E5D2d450E3',-- zerox trade
 		'0x4eacd0aF335451709e1e7B570B8Ea68EdEC8bc97',-- zerox exchange
-		'0x29fD93b1Ebb775306b018BdDd107e2F5c889e70c',-- wallet registry
+		'0x29fD93b1Ebb775306b018BdDd107e2F5c889e70c',-- wallet registry (v1)
+		'0xe59A5988E6C73e392F37Bb8aEdAD078A8b96f394',-- wallet registry (v2)
 		'0x58f1a6a327dC8A4c73F72B37B75802EB24670A94',-- fill order
 		'0xA867A0291D23AC82bB9eA83DD52ee8B71922Fb42',-- eth exchange
 		'0xfB4B6fc159E2eB3Ab7e2E08f0056238488c6D5AB',-- share token
-		'0x48CB0042B1c0AE139Fd6b83481613a10Af4a32A8'-- universe
+		'0x48CB0042B1c0AE139Fd6b83481613a10Af4a32A8',-- universe
+		'0x8a4335054cDc61234aDB4435F5b445721fbA0Be2'-- CreateOrder
 );
 INSERT INTO last_block  VALUES(19830391);
 INSERT INTO ooconfig(osize_threshold) VALUES(0.0);
