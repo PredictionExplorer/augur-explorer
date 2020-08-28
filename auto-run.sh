@@ -12,28 +12,21 @@ function killeverything()
 }
 
 cd server
-. config/dev-config.env
-rm /var/tmp/backend-info.log 2>/dev/null;
-rm /var/tmp/backend-error.log 2>/dev/null;
-rm /var/tmp/backend-db.log 2>/dev/null;
+. config/local-testnet.env
 ./server 1>/var/tmp/backend-info.log 2>/var/tmp/backend-error.log &
 SRV_PID=$!
 cd ..
 
 cd etl
-. config/dev-config.env
-rm /var/tmp/etl-info.log 2>/dev/null;
-rm /var/tmp/etl-error.log 2>/dev/null;
-rm /var/tmp/db.log 2>/dev/null;
+. config/local-testnet.env
 ./etl 1>/var/tmp/etl-info.log 2>/var/tmp/etl-error.log &
 ETL_PID=$!
 
 trap killeverything SIGINT
 
-cd mesh
-. config/dev-config.env
-./mesh &
+cd dmesh
+. config/local-testnet.env
+./dmesh &
 MESH_PID=$!
 wait $MESH_PID
-
-
+echo Run complete, you can find all the errors in $HOME/ae_logs
