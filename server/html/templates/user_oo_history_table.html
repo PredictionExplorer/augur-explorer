@@ -1,4 +1,4 @@
-{{define "user_oo_history"}}
+{{define "user_oo_history_table"}}
 <table class="user_open_orders">
 	<tr class="user_open_orders">
 		<th class="user_open_orders">Date</th>
@@ -12,7 +12,7 @@
 		<th class="user_open_orders">Operation</th>
 	</tr>
 	{{- range $i, $oo:= .}}
-		{{template "open_order" $oo}}
+		{{template "open_order_hist" $oo}}
 	{{- end}}
 
 </table>

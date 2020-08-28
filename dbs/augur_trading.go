@@ -99,6 +99,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 	if amount.Cmp(amount_filled) != 0 {
 		opcode = p.OOOpCodePartialFill
 	}
+	ss.Info.Printf("amount = %v, amount_filled = %v, opcode=%v\n",amount,amount_filled,opcode)
 	query = "DELETE FROM oorders WHERE order_hash = $1"
 	_,err = ss.db.Exec(query,market_aid)
 	if err!=nil {
@@ -139,9 +140,9 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 				"(" + amount.String() + "/1e+18)," +
 				"$10," +
 				"(" + token_refund + "/1e+18)," +
-				"(" + shares_refund + "/1e18)," +
-				"(" + fees + "/1e18)," +
-				"(" + amount_filled.String() + "/1e)," +
+				"(" + shares_refund + "/1e+18)," +
+				"(" + fees + "/1e+18)," +
+				"(" + amount_filled.String() + "/1e+18)," +
 				"TO_TIMESTAMP($11)," +
 				"$12,$13,$14,$15) RETURNING id"
 
@@ -201,7 +202,7 @@ func (ss *SQLStorage) Update_open_order_history(order_hash string,opcode int) {
 	query = "SELECT update_oo_hist($1,$2)"
 	_,err := ss.db.Exec(query,order_hash,opcode)
 	if err!=nil {
-		msg:=fmt.Sprintf("DB error: couldn't update history of order with hash = %v\n",order_hash)
+		msg:=fmt.Sprintf("DB error: couldn't update history of order with hash = %v: %v\n",order_hash,err)
 		ss.Info.Printf(msg)
 		ss.Log_msg(msg)
 		os.Exit(1)
@@ -332,6 +333,8 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 }
 func (ss *SQLStorage) Delete_open_0x_order(order_hash string,opcode int) {
 
+	ss.Update_open_order_history(order_hash,opcode)
+
 	var query string
 	query = "DELETE FROM oorders WHERE order_hash = $1"
 	result,err := ss.db.Exec(query,order_hash)
@@ -342,7 +345,6 @@ func (ss *SQLStorage) Delete_open_0x_order(order_hash string,opcode int) {
 	if rows_affected == 0  {
 		ss.Info.Printf(fmt.Sprintf("DB error: couldn't delete open order with order_hash = %v (not found)\n",order_hash))
 	}
-	ss.Update_open_order_history(order_hash,opcode)
 }
 func (ss *SQLStorage) Update_0x_order_on_partial_fill(evt *zeroex.OrderEvent) {
 

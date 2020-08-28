@@ -410,7 +410,7 @@ func proc_cancel_zerox_order(log *types.Log) {
 	Info.Printf("CancelZeroXOrder event for contract %v (block=%v) : \n",
 								log.Address.String(),log.BlockNumber)
 	mevt.Dump(Info)
-	storage.Delete_open_0x_order(ohash_str,2)
+	storage.Delete_open_0x_order(ohash_str,OOOpCodeCancelledByUser)
 }
 func proc_market_oi_changed(block *types.Header, agtx *AugurTx, log *types.Log) {
 	var mevt EMarketOIChanged
@@ -819,6 +819,10 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		Info.Printf("\t from=%v\n",agtx.From)
 		Info.Printf("\t to=%v for $%v (%v bytes data)\n",
 						agtx.To,agtx.Value,len(agtx.Input))
+		if rcpt.Status == types.ReceiptStatusFailed {
+			Info.Printf("\t Status: Failed. Skipping this transaciton.\n")
+			continue	// transaction failed (i.e. Out of Gas, etc)
+		}
 		dump_tx_input_if_known(agtx.Input)
 		if rcpt.BlockNumber.Int64() != bnum {
 			Error.Printf(
@@ -860,43 +864,35 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 			sequencer.append_event(rcpt.Logs[i])
 		}
 		// Step 1.1 If a Wallet contract has been created, register EOA-Wallet link
-		wallet_created,wallet_addr := was_wallet_created(caddrs,rcpt.Logs)
+		wallet_created,wallet_addr,possible_eoa_addr := was_wallet_created(caddrs,rcpt.Logs)
 		if wallet_created {
 			tx_insert_if_needed(agtx)
-			storage.Register_eoa_and_wallet(agtx.From,wallet_addr.String(),agtx.BlockNum,agtx.TxId)
+			var from_addr *string = &agtx.From
+			var possible_eoa_str string
+			if possible_eoa_addr != nil {
+				possible_eoa_str = possible_eoa_addr.String()
+				from_addr = &possible_eoa_str
+			}
+			storage.Register_eoa_and_wallet(*from_addr,wallet_addr.String(),agtx.BlockNum,agtx.TxId)
 		}
 		// Step 1.2 If transaction contains executeWalletTransaction, store it in the DB
-		exec_wtx := contains_execute_wallet_transaction_call(agtx.Input)
-		if exec_wtx != nil {
-			// Note: Tests are pending for transactions going through GSN (EOA address must be extracted
-			//			from the tx.Data(), in the first 20 bytes
-			eoa_aid,err := storage.Nonfatal_lookup_address_id(agtx.From)
-			if err != nil {
-				Info.Printf(
-					"Couldn't lookup EOA for executeWalletTransaction(). Aborting for debugging. addr %v",
-					agtx.From,
-				)
-				Error.Printf(
-					"Couldn't lookup EOA for executeWalletTransaction(). Aborting for debugging. addr %v",
-					agtx.From,
-				)
-				os.Exit(1)
+		if (agtx.To == caddrs.WalletReg.String()) || (agtx.To == caddrs.WalletReg2.String()) {
+			exec_wtx := contains_execute_wallet_transaction_call(agtx.Input)
+			if exec_wtx != nil {
+				tx_insert_if_needed(agtx)
+				// Note: Tests are pending for transactions going through GSN (EOA address must be extracted
+				//			from the tx.Data(), in the first 20 bytes
+				eoa_aid := storage.Lookup_or_create_address(agtx.From,agtx.BlockNum,agtx.TxId)
+				wallet_aid,err := storage.Lookup_wallet_aid(eoa_aid)
+				if err != nil {
+					Info.Printf(
+						"executeWalletTransaction(): wallet_aid=0 for eoa=%v (id=%v)\n",
+						agtx.From,eoa_aid,
+					)
+				}
+				exec_wtx.Dump(Info)
+				storage.Insert_execute_wallet_tx(eoa_aid,wallet_aid,agtx,exec_wtx)
 			}
-			wallet_aid,err := storage.Lookup_wallet_aid(eoa_aid)
-			if err != nil {
-				Info.Printf(
-					"Couldn't lookup Wallet for executeWalletTransaction(). Aborting for debugging. addr %v",
-					agtx.From,
-				)
-				Error.Printf(
-					"Couldn't lookup Wallet for executeWalletTransaction(). Aborting for debugging. addr %v",
-					agtx.From,
-				)
-				os.Exit(1)
-			}
-			exec_wtx.Dump(Info)
-			tx_insert_if_needed(agtx)
-			storage.Insert_execute_wallet_tx(eoa_aid,wallet_aid,agtx,exec_wtx)
 		}
 		// Step 2: Knowing what kind of Augur Transaction, we are sorting events in an order
 		//			that is convinient for us to process the event series
@@ -1039,9 +1035,10 @@ func scan_profit_loss_data_for_debugging(block_num int64,position_changes *[]*Po
 		storage.Insert_profit_loss_debug_rec(pchg)
 	}
 }
-func was_wallet_created(caddrs *ContractAddresses,event_list []*types.Log) (bool,common.Address){
+func was_wallet_created(caddrs *ContractAddresses,event_list []*types.Log) (bool,common.Address,*common.Address){
 
 	var wallet_addr common.Address
+	var eoa_addr *common.Address = nil
 	// detects pattern of Wallet creation, function AugurWalletFactory::createAugurWallet()
 	// scans events and determines if the set of events has correct properties to consider
 	// that this is indeed a pattern of Wallet creation.
@@ -1053,6 +1050,7 @@ func was_wallet_created(caddrs *ContractAddresses,event_list []*types.Log) (bool
 	var sharetoken_fill_approval bool = false // Pattern 3: ApprovalForAll for FillOrder
 	var cash_zerox_trade_approval bool = false // Pattern 5: Approval event for ZeroexTrade contract
 	var wtx_status bool = false
+	var tx_relayed bool = false
 
 	// First we compare contract addresses, and after that for event signature because event signatures
 	//		appear more frequently than an event coming for a specific address owner
@@ -1082,6 +1080,12 @@ func was_wallet_created(caddrs *ContractAddresses,event_list []*types.Log) (bool
 
 		addr := common.BytesToAddress(log.Topics[2][12:])
 		Info.Printf("checking addr %v, contract=%v\n",addr.String(),log.Address.String())
+		if bytes.Equal(log.Topics[0].Bytes(),evt_tx_relayed) {
+			eoa_addr = new(common.Address)
+			eoa_addr.SetBytes(addr.Bytes())
+			tx_relayed = true
+			continue
+		}
 		if bytes.Equal(addr.Bytes(),caddrs.Augur.Bytes()) {
 			if bytes.Equal(log.Address.Bytes(),caddrs.Dai.Bytes()) {
 				if bytes.Equal(log.Topics[0].Bytes(),evt_erc20_approval) {
@@ -1146,6 +1150,7 @@ func was_wallet_created(caddrs *ContractAddresses,event_list []*types.Log) (bool
 		wtx_status {
 			output = true
 	}
+	Info.Printf("tx_relayed=%v\n",tx_relayed)
 	Info.Printf("augur_approval=%v\n",augur_approval)
 	Info.Printf("cash_create_approval=%v\n",cash_create_approval)
 	Info.Printf("sharetoken_create_approval=%v\n",sharetoken_create_approval)
@@ -1154,8 +1159,11 @@ func was_wallet_created(caddrs *ContractAddresses,event_list []*types.Log) (bool
 	Info.Printf("cash_zerox_trade_approval=%v\n",cash_zerox_trade_approval)
 	Info.Printf("wtx_status=%v\n",wtx_status)
 	Info.Printf("wallet_addr=%v\n",wallet_addr.String())
+	if eoa_addr != nil {
+		Info.Printf("eoa_addr=%v\n",eoa_addr.String())
+	}
 	Info.Printf("output=%v\n",output)
-	return output,wallet_addr
+	return output,wallet_addr,eoa_addr
 }
 func contains_execute_wallet_transaction_call(tx_data []byte) *ExecuteWalletTx {
 
@@ -1177,7 +1185,9 @@ func contains_execute_wallet_transaction_call(tx_data []byte) *ExecuteWalletTx {
 		exec_wtx:=new(ExecuteWalletTx)
 		exec_wtx.To=input_data.To.String()
 		exec_wtx.CallData=hex.EncodeToString(input_data.Data[:])
-		exec_wtx.InputSig=hex.EncodeToString(input_sig)
+		if len(input_data.Data)>=4 {
+			exec_wtx.InputSig=hex.EncodeToString(input_data.Data[:4])
+		}
 		exec_wtx.Value=input_data.Value.String()
 		exec_wtx.Payment=input_data.Payment.String()
 		exec_wtx.ReferralAddress=input_data.ReferralAddress.String()

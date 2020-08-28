@@ -197,25 +197,62 @@ func (ss *SQLStorage) Link_eoa_and_wallet_contract(eoa_aid, wallet_aid int64) {
 
 	var query string
 	query = "INSERT INTO ustats(eoa_aid,wallet_aid) " +
-			"VALUES($1,$2) ON CONFLICT DO NOTHING"
+			"VALUES($1,$2)"
 
 	res,err:=ss.db.Exec(query,eoa_aid,wallet_aid)
+	ss.Info.Printf("eoa2wallet link sql error: %v  eoa=%v wallet=%v\n",err,eoa_aid,wallet_aid)
 	if (err!=nil) {
-		if !strings.Contains(err.Error(),"duplicate key value") {
-			ss.Log_msg(
-				fmt.Sprintf(
-					"Link_eoa_and_wallet_contract(%v,%v) failed: %v, q=%v",
-					eoa_aid,wallet_aid,err,query,
-				),
-			)
-			os.Exit(1)
+		if strings.Contains(err.Error(),`duplicate key value violates unique constraint "ustats_pkey"`) {
+			if eoa_aid != wallet_aid {
+				// In rare cases we can have a record with eoa_aid=wallet_aid 
+				//  and it may be preventing the INSERT. If this is the case check if we can fix it
+				query = "SELECT wallet_aid FROM ustats where eoa_aid=$1"
+				var stored_wallet_aid int64 = 0
+				row := ss.db.QueryRow(query,eoa_aid)
+				err := row.Scan(&stored_wallet_aid)
+				if (err!=nil) {
+					ss.Log_msg(fmt.Sprintf("Error fixing wallet_aid: %v\n",err))
+					os.Exit(1)
+				}
+				if stored_wallet_aid == eoa_aid {
+					// rare case confirmed, we have eoa_aid=wallet_aid in ustats, so we can update
+					// wallet_aid with the new value
+					query = "UPDATE ustats SET wallet_aid = $3 WHERE eoa_aid=$1 AND wallet_aid=$2"
+					_,err:=ss.db.Exec(query,eoa_aid,eoa_aid,wallet_aid)
+					if (err!=nil) {
+						ss.Log_msg(fmt.Sprintf("Update ustats failed: %v, q=%v",err,query))
+						os.Exit(1)
+					}
+					ss.Info.Printf(
+						"eoa2wallet link UPDATE: new wallet_id=%v was set for eoa_aid=%v\n",
+						wallet_aid,eoa_aid,
+					)
+				}
+			}
+		} else {
+			if !strings.Contains(err.Error(),`duplicate key value"`) {
+				ss.Info.Printf(
+					"eoa2wallet link sql error: %v  eoa=%v wallet=%v\n",
+					err,eoa_aid,wallet_aid,
+				)
+				os.Exit(1)
+			}
 		}
+
 	} else {
 		affected_rows,err:=res.RowsAffected()
 		if err == nil {
 			if affected_rows > 0 {
 				ss.Info.Printf("eoa2wallet link success: eoa=%v wallet=%v\n",eoa_aid,wallet_aid)
+			} else {
+				ss.Info.Printf(
+					"eoa2wallet link without effect (affected rows=0): eoa=%v wallet=%v\n",
+					eoa_aid,wallet_aid,
+				)
 			}
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error on getting affected rows: %v\n",err))
+			os.Exit(1)
 		}
 	}
 }

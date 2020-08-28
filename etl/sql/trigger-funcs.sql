@@ -134,7 +134,7 @@ BEGIN
 	IF v_cnt > 0 THEN
 		INSERT INTO oohist(
 				otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
-				price,amount,evt_timestmap,srv_timestamp,expiration,order_hash
+				price,amount,evt_timestamp,srv_timestamp,expiration,order_hash
 			) VALUES (
 				oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
 				oo.price,oo.amount,oo.evt_timestamp,oo.srv_timestamp,oo.expiration,oo.order_hash

@@ -143,13 +143,19 @@ func (ss *SQLStorage) Register_eoa_and_wallet(eoa,wallet string,block_num int64,
 
 	eoa_aid := ss.Lookup_or_create_address(eoa,block_num,tx_id)
 	wallet_aid := ss.Lookup_or_create_address(wallet,block_num,tx_id)
+	ss.Info.Printf(
+		"Registering eoa=%v (eoa_aid=%v) with wallet %v (wallet_aid=%v)\n",
+		eoa,eoa_aid,wallet,wallet_aid,
+	)
 	ss.Link_eoa_and_wallet_contract(eoa_aid,wallet_aid)
 }
 func (ss *SQLStorage) Insert_execute_wallet_tx(eoa_aid int64,wallet_aid int64,agtx *p.AugurTx,wtx *p.ExecuteWalletTx) {
 
 	to_aid := ss.Lookup_or_create_address(agtx.To,agtx.BlockNum,agtx.TxId)
-	referral_aid := ss.Lookup_or_create_address(wtx.ReferralAddress,agtx.BlockNum,agtx.TxId)
-
+	var referral_aid int64  = 0
+	if wtx.ReferralAddress != "0x0000000000000000000000000000000000000000" {
+		referral_aid = ss.Lookup_or_create_address(wtx.ReferralAddress,agtx.BlockNum,agtx.TxId)
+	}
 	var query string
 	query = "INSERT INTO exec_wtx(" +
 				"block_num,tx_id,"+

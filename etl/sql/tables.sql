@@ -94,7 +94,7 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 	shares_escrowed		TEXT NOT NULL,
 	tokens_escrowed		TEXT NOT NULL,
 	trade_group			TEXT NOT NULL,			-- User defined group label to identify multiple trades
-	order_id			TEXT NOT NULL
+	order_hash			TEXT NOT NULL
 );
 CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later they are converted into 'mktord` records
 	id					BIGSERIAL PRIMARY KEY,
@@ -423,7 +423,7 @@ CREATE TABLE exec_wtx (	-- stores contract calls of input with sig=78dc0eed (exe
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	eoa_aid				BIGINT NOT NULL,
-	wallet_aid			BIGINT NOT NULL,
+	wallet_aid			BIGINT DEFAULT 0,	-- Uniswap can exchange tokens for EOAs, so Wallet id will be 0
 	to_aid				BIGINT NOT NULL,
 	referral_aid		BIGINT DEFAULT 0,	-- address of referral account (referral_aid will get commissions on TXs of eoa_aid)
 	value				DECIMAL(64,18) DEFAULT 0.0,

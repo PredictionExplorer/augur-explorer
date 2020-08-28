@@ -221,3 +221,12 @@ type EExecuteTransactionStatus struct {// Augur's transaction status
 	FundingSuccess bool
 	Raw            types.Log // Blockchain specific contextual infos
 }
+type ETransactionRelayed struct { // RelayHub event (v1)
+	Relay    common.Address
+	From     common.Address
+	To       common.Address
+	Selector [4]byte
+	Status   uint8
+	Charge   *big.Int
+	Raw      types.Log // Blockchain specific contextual infos
+}
