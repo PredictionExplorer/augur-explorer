@@ -152,7 +152,12 @@ func main() {
 	r.GET("/api/mkt_cards/:market_aid_list",a1_multiple_market_cards)
 	r.GET("/api/market/:market",  a1_market_info)
 	r.GET("/api/user/:user",  a1_user_info)
-
+	r.GET("/api/funds/:user",  a1_user_funds)
+	r.GET("/api/user_markets/:user/:active",  a1_user_markets)
+	r.GET("/api/utrades/:user/:market",  a1_user_trades_for_market)
+	r.GET("/api/user_pl/:user",  a1_user_profit_loss)
+	r.GET("/api/user_opos/:user",  a1_user_open_positions)
+	r.GET("/api/user_reports/:user",  a1_user_reports)
 
 	r.Static("/imgs", "./html/imgs")
 	r.Static("/res", "./html/res")			// resources (static)

@@ -288,6 +288,7 @@ func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.Report {
 
 	var query string
 	query = "SELECT " +
+				"m.market_aid,"+
 				"r.rpt_timestamp::date," +
 				"ma.addr as mkt_addr," +
 				"r.is_initial," +
@@ -332,6 +333,7 @@ func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.Report {
 		var initial_outcome int
 		var outcomes string
 		err=rows.Scan(
+			&rec.MktAid,
 			&rec.Date,
 			&rec.MktAddr,
 			&rec.IsInitial,
@@ -522,10 +524,17 @@ func (ss *SQLStorage) Get_mkt_participant_outcomes(mkt_addr *common.Address) []*
 	}
 	return output
 }
-func (ss *SQLStorage) Get_active_markets_for_user(eoa_aid int64) []p.InfoMarket {
+func (ss *SQLStorage) Get_active_markets_for_user(eoa_aid int64,active_flag int) []p.InfoMarket {
 
+	var where_condition string
+	if active_flag == 1 {
+		where_condition = "(m.status < 4) "
+	} else {
+		where_condition = "(m.status > 3) "
+	}
 	var query string
 	query = "SELECT " +
+				"m.market_aid," +
 				"ma.addr as mkt_addr," +
 				"sa.addr AS signer," +
 				"ca.addr as mcreator," +
@@ -553,7 +562,7 @@ func (ss *SQLStorage) Get_active_markets_for_user(eoa_aid int64) []p.InfoMarket 
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
 				"LEFT JOIN address AS sa ON m.eoa_aid= sa.address_id " +
 				"LEFT JOIN address AS ca ON m.wallet_aid = ca.address_id " +
-			"WHERE s.eoa_aid = $1 AND m.status < 4" +
+			"WHERE s.eoa_aid = $1 AND " + where_condition +
 			"ORDER BY s.volume_traded DESC"
 
 	rows,err := ss.db.Query(query,eoa_aid)
@@ -569,8 +578,8 @@ func (ss *SQLStorage) Get_active_markets_for_user(eoa_aid int64) []p.InfoMarket 
 		var description sql.NullString
 		var longdesc sql.NullString
 		var category sql.NullString
-		var status_code int
 		err=rows.Scan(
+					&rec.MktAid,
 					&rec.MktAddr,
 					&rec.Signer,
 					&rec.MktCreator,
@@ -581,7 +590,7 @@ func (ss *SQLStorage) Get_active_markets_for_user(eoa_aid int64) []p.InfoMarket 
 					&rec.Outcomes,
 					&rec.MktType,
 					&rec.MktTypeStr,
-					&status_code,
+					&rec.MktStatus,
 					&rec.Status,
 					&rec.Fee,
 					&rec.OpenInterest,
@@ -602,7 +611,7 @@ func (ss *SQLStorage) Get_active_markets_for_user(eoa_aid int64) []p.InfoMarket 
 		if category.Valid {
 			rec.CategoryStr = category.String
 		}
-		rec.Status=get_market_status_str(p.MarketStatus(status_code))
+		rec.Status=get_market_status_str(p.MarketStatus(rec.MktStatus))
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)
 		rec.MktCreatorSh=p.Short_address(rec.MktCreator)
 		records = append(records,rec)
