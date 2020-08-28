@@ -27,7 +27,6 @@ const (
 type AugurServer struct {
 	storage		*SQLStorage
 }
-
 func create_augur_server(mkt_order_id_ptr *int64,dblog_fname string,info_log *log.Logger) *AugurServer {
 
 	srv := new(AugurServer)
@@ -168,7 +167,6 @@ func explorer(c *gin.Context) {
 			"block_num" : blknum,
 	})
 }
-
 func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoMarket) {
 
 	var limit int64 = int64(DEFAILT_MARKET_TRADES_LIMIT);
@@ -209,6 +207,20 @@ func is_address_valid(c *gin.Context,json_output bool,addr string) (string,bool)
 	if (addr[0]=='0') && (addr[1] == 'x') {
 		addr = addr[2:]
 	}
+	if len(addr) != 40 {
+		if json_output {
+			c.JSON(200,gin.H{
+				"status": 0,
+				"error": fmt.Sprintf("Invalid address length"),
+			})
+		} else {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": fmt.Sprintf("Invalid address length"),
+			})
+		}
+		return "",false
+	}
 	var formatted_addr string
 	addr_bytes,err := hex.DecodeString(addr)
 	if err == nil {
@@ -229,6 +241,46 @@ func is_address_valid(c *gin.Context,json_output bool,addr string) (string,bool)
 		return "",false
 	}
 	return formatted_addr,true
+}
+func json_validate_and_lookup_address_or_aid(c *gin.Context,p_addr *string) (string,int64,bool) {
+	// Note: this function transforms address in checksumed format
+	var aid int64 = 0
+	if len(*p_addr) > 0 {
+		aid, err := strconv.ParseInt(*p_addr,10,64)
+		if err == nil {
+			var addr string
+			addr,err = augur_srv.storage.Lookup_address(aid)
+			if err!=nil {
+				c.JSON(http.StatusBadRequest,gin.H{
+					"status":0,
+					"error":fmt.Sprintf("Address with ID=%v not found",aid),
+				})
+				return "",aid,false
+			}
+			return addr,aid,true
+		} else {
+			aid = 0
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("Empty 'address' parameter for lookup"),
+		})
+		return "",0,false
+	}
+	address,valid:=is_address_valid(c,true,*p_addr)
+	if !valid {
+		return "",0,false
+	}
+	aid,err := augur_srv.storage.Nonfatal_lookup_address_id(*p_addr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("Address not found in the DB"),
+		})
+		return "",0,false
+	}
+	return address,aid,true
 }
 func show_market_not_found_error(c *gin.Context,json_output bool,addr *string) {
 
@@ -413,7 +465,7 @@ func serve_user_info_page(c *gin.Context,addr string,from_wallet bool) {
 			js_pl_data := build_js_profit_loss_history(&pl_entries)
 			js_open_pos_data := build_js_open_positions(&open_pos_entries)
 			user_reports := augur_srv.storage.Get_user_reports(eoa_aid,DEFAULT_USER_REPORTS_LIMIT)
-			user_active_markets := augur_srv.storage.Get_active_markets_for_user(eoa_aid)
+			user_active_markets := augur_srv.storage.Get_active_markets_for_user(eoa_aid,1)
 			var has_active_markets bool = false
 			if len(user_active_markets) > 0 {
 				has_active_markets = true
@@ -517,8 +569,61 @@ func get_eth_balance(addr *common.Address) float64 {
 	}
 	return float_eth_balance
 }
-func serve_money(c *gin.Context,addr common.Address) {
+func serve_user_funds_v2(c *gin.Context,addr *string) {
 	// the input address must be EOA, from that we can get Wallet addr
+	var (
+		eoa_dai_balance float64 = 0.0
+		eoa_rep_balance float64 = 0.0
+		eoa_eth_balance float64 = 0.0
+		wallet_dai_balance float64 = 0.0
+		wallet_rep_balance float64 = 0.0
+		wallet_eth_balance float64 = 0.0
+	)
+
+	var status_code int = 0
+	var error_text  string = ""
+	var wallet_aid int64 = 0
+	eoa_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(*addr)
+	if err == nil {
+		wallet_aid,_ = augur_srv.storage.Lookup_wallet_aid(eoa_aid)
+	} else {
+		error_text = "Address lookup failed"
+	}
+	if eoa_aid > 0 {
+		addr := common.HexToAddress(*addr)
+		eoa_dai_balance = get_token_balance(0,&addr)
+		eoa_rep_balance = get_token_balance(1,&addr)
+		eoa_eth_balance = get_eth_balance(&addr)
+		status_code = 1
+	}
+
+	if wallet_aid != 0 {
+		wallet_addr,err := augur_srv.storage.Lookup_address(wallet_aid)
+		if err == nil {
+			waddr := common.HexToAddress(wallet_addr)
+			wallet_dai_balance = get_token_balance(0,&waddr)
+			wallet_rep_balance = get_token_balance(1,&waddr)
+			wallet_eth_balance = get_eth_balance(&waddr)
+			status_code = 1
+		}
+	}
+
+	c.JSON(200, gin.H{
+		"status": status_code,
+		"error": error_text,
+		"eoa_eth": fmt.Sprintf("%v",eoa_eth_balance),
+		"wallet_eth": fmt.Sprintf("%v",wallet_eth_balance),
+		"eoa_dai": fmt.Sprintf("%v",eoa_dai_balance),
+		"wallet_dai": fmt.Sprintf("%v",wallet_dai_balance),
+		"eoa_rep": fmt.Sprintf("%v",eoa_rep_balance),
+		"wallet_rep": fmt.Sprintf("%v",wallet_rep_balance),
+		"eoa_usd" : 0,
+		"wallet_usd" : 0,
+	})
+}
+func serve_user_funds_v1(c *gin.Context,addr common.Address) {
+	// the input address must be EOA, from that we can get Wallet addr
+	// Note: this request is becoming obsolete, and will be removed later
 
 	var wallet_aid int64 = 0
 	eoa_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(addr.String())
@@ -654,7 +759,7 @@ func read_money(c *gin.Context) {
 		addr_bytes,err := hex.DecodeString(addr)
 		if err == nil {
 			addr := common.BytesToAddress(addr_bytes)
-			serve_money(c,addr)
+			serve_user_funds_v1(c,addr)
 		} else {
 			c.HTML(http.StatusBadRequest, "error.html", gin.H{
 				"title": "Augur Markets: Error",

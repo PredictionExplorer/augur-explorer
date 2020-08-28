@@ -239,7 +239,7 @@ func a1_multiple_market_cards(c *gin.Context) {
 			return
 		}
 	}
-	var status int = 0
+	var status int = 1
 	var err_str string = ""
 	c.JSON(200,gin.H{
 		"Markets": markets,
@@ -252,47 +252,145 @@ func a1_user_info(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	p_user:= c.Param("user")
-	if len(p_user) > 0 {
-		user_aid, err := strconv.ParseInt(p_user,10,64)
-		if err == nil {
-			p_user,err = augur_srv.storage.Lookup_address(user_aid)
-			if err!=nil {
-				c.JSON(http.StatusBadRequest,gin.H{
-					"status":0,
-					"error":fmt.Sprintf("User with ID=%v not found",user_aid),
-				})
-				return
-			}
-		}
-	} else {
-		c.JSON(http.StatusBadRequest,gin.H{
-			"status":0,
-			"error":fmt.Sprintf("Empty 'user' parameter for user lookup"),
-		})
+	_,eoa_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
 		return
 	}
-	user_addr,valid:=is_address_valid(c,true,p_user)
-	if !valid {
-		return
-	}
-
-	eoa_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(user_addr)
+	Info.Printf("eoa_aid=%v\n",eoa_aid)
+	user_info,err := augur_srv.storage.Get_user_info(eoa_aid)
 	if err == nil {
-		user_info,err := augur_srv.storage.Get_user_info(eoa_aid)
-		if err == nil {
-			c.JSON(http.StatusOK, gin.H{
-				"UserInfo" : user_info,
-			})
-		} else {
-			c.JSON(http.StatusOK,gin.H{
-				"status":0,
-				"error":fmt.Sprintf("User not found"),
-			})
-		}
+		c.JSON(http.StatusOK, gin.H{
+			"UserInfo" : user_info,
+		})
 	} else {
 		c.JSON(http.StatusOK,gin.H{
 			"status":0,
 			"error":fmt.Sprintf("User not found"),
 		})
 	}
+}
+func a1_user_funds(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	user_addr,_,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	serve_user_funds_v2(c,&user_addr)
+}
+func a1_user_markets(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,eoa_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	p_active_flag := c.Param("active")
+	var active_flag int = 1
+	if len(p_active_flag) > 0 {
+		var err error
+		active_flag, err = strconv.Atoi(p_active_flag)
+		if err != nil {
+			c.JSON(422,gin.H{
+				"Markets": make([]InfoMarket,0,0),
+				"status":0,
+				"error":fmt.Sprintf("Bad 'active' parameter: %v",err),
+			})
+			return
+		}
+	}
+	user_markets := augur_srv.storage.Get_active_markets_for_user(eoa_aid,active_flag)
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+		"Markets": user_markets,
+		"status": status,
+		"error": err_str,
+	})
+}
+func a1_user_reports(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,eoa_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	user_reports := augur_srv.storage.Get_user_reports(eoa_aid,10000000)
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+		"Reports": user_reports ,
+		"status": status ,
+		"error": err_str,
+	})
+}
+func a1_user_trades_for_market(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,eoa_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+
+	p_market := c.Param("market")
+	_,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	if !success {
+		return
+	}
+	var status int = 1
+	var err_str string = ""
+	trades := augur_srv.storage.Get_user_trades_for_market(eoa_aid,market_aid)
+	c.JSON(http.StatusOK,gin.H{
+		"UTrades" : trades,
+		"status": status,
+		"error": err_str,
+	})
+}
+func a1_user_profit_loss(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,eoa_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	pl_entries := augur_srv.storage.Get_profit_loss(eoa_aid)
+	js_pl_data := build_js_profit_loss_history(&pl_entries)
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+		"ProfitLossEntries" : pl_entries,
+		"JS_PL_ChartData" : js_pl_data,
+		"status": status,
+		"error": err_str,
+	})
+}
+func a1_user_open_positions(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,eoa_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	open_pos_entries := augur_srv.storage.Get_open_positions(eoa_aid)
+	js_open_pos_data := build_js_open_positions(&open_pos_entries)
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+		"OpenPositionEntries" : open_pos_entries,
+		"JS_OP_ChartData" : js_open_pos_data,
+		"status": status,
+		"error": err_str,
+	})
 }
