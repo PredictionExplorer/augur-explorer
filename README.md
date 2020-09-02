@@ -16,7 +16,7 @@ Exposes all extracted data via WEB. Demo: http://predictionexplorer.com
  * Converts Augur Platform trade data to SQL Database starting from the block Augur Platform was released
  * Does not need Etheeum archival node (Full node is enough)
  * Builds full trade history for all trading accounts
- * Keeps track of DAI balances of all User accounts without requiring archival Ethreum node
+ * Keeps track of DAI balances of all User accounts
  * Detects chain splits and reverts trading history towards the correct chain, keeping integrity of the data intact
  * Full synchronization of 0x Mesh orders with the DB
  * Block & Transaction info
@@ -66,9 +66,9 @@ This script will build everything, the only thing you need is the `go` command i
 	
 	./auto-build.sh
 
-### Starting Augur in Development mode with Augur Local TestNet config
+### Setting up Development Environment (Augur Local Test Net)
 
-First, start Augur. Instructions are located here: https://github.com/AugurProject/augur
+#### Step 1. Start Augur. Instructions are located here: https://github.com/AugurProject/augur
 
 But just in case, here is the command list to run:
 
@@ -83,12 +83,49 @@ on another terminal:
 
 	yarn workspace @augurproject/ui dev
 
+After Augur processes start, point the Browser to http://localhost:8080
 
-### Running a quick setup for development:
+Open MetaMask and add the Development account using this private key:
+
+    0xfae42052f82bed612a724fec3632f325f377120592c75bb78adfcceae6470c5a
+	(Address: 0x913dA4198E6bE1D5f5E4a40D0667f70C0B5430Eb)
+
+Go to 'Account Summary' page and use Facet buttons to get fake REP and DAI tokens
+
+#### Step 2. Create a database
+
+Create user on Ubuntu
+
+	useradd -m aedev
+	passwd aedev	# for example we will use '123' as password
+
+Enter Postgres as superuser
+
+	su - postgres
+	psql
+
+	postgres-#  CREATE ROLE aedev WITH LOGIN CREATEDB ENCRYPTED PASSWORD '123';
+	\q
+
+Enter Postgres as development user
+
+	su - aedev
+	createdb dev
+
+Init DB
+
+As 'aedev' unix user execute these commands:
+
+	cd etl/sql
+	./reset-db.sh dev ./dev_init.sql
+
+	Note: this script will drop tables if database already exist, all data will be deleted
+
+
+#### Step 3 Running all the processes
 
 	./auto-run.sh
 
-(only for testing purposes)
 
 ### Configuration for production
 
@@ -138,33 +175,6 @@ The logs will be created in $HOME/ae_logs automatically
 
 The `etl` daemon won't exit until it finishes the processing of current blocks completely , this usually takes a few seconds on the Main Net.
 
-### Database initialization
-
-Create user on Ubuntu
-
-	useradd -m aedev
-	passwd aedev	# for example we will use '123' as password
-
-Enter Postgres as superuser
-
-	su - postgres
-	psql
-
-	postgres-#  CREATE ROLE aedev WITH LOGIN CREATEDB ENCRYPTED PASSWORD '123';
-	\q
-
-Enter Postgres as development user
-
-	su - aedev
-	createdb dev
-
-Init DB
-
-	cd etl/sql
-	./reset-db.sh [database_name] [init_script.sql]
-
-	(init script will depend on the network , for local setup use `dev_init.sql`)
-	Note: this script will drop tables if database already exist, all data will be deleted
 
 ### Database Schema and documentation
 
