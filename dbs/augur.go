@@ -14,6 +14,7 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 
 	var query string
 	query="SELECT " +
+				"chain_id,"+
 				"augur,augur_trading,profit_loss,dai_cash,rep_token,zerox_trade,zerox_xchg,wallet_reg,"+
 				"wallet_reg2,fill_order,eth_xchg,share_token,universe,create_order "+
 			"FROM contract_addresses";
@@ -37,6 +38,7 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 		create_order string
 	)
 	err=row.Scan(
+		&c_addresses.ChainId,
 		&augur,&augur_trading,&pl,&dai,&rep,&zerox_trade,&zerox_xchg,&wallet_reg,&wallet_reg2,&fill_order,
 		&eth_xchg,&share_token,&universe,&create_order,
 	);

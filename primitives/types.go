@@ -17,9 +17,9 @@ const (
 	MktTypeScalar
 )
 const (
-	OOOpCodeCreated		= iota
-	OOOpCodePartialFill
-	OOOpCodeCompleteFill
+	OOOpCodeNone= iota
+	OOOpCodeCreated
+	OOOpCodeFill
 	OOOpCodeCancelledByUser
 	OOOpCodeExpired
 	OOOpCodeSyncProcess		// when no other reason exist, this one is used (this is a kind of a bugfix)
@@ -264,9 +264,11 @@ type PLEntry struct {	// profit loss entry
 type OpenOrder struct {		// the Order on 0x Mesh network, that is yet to be filled
 	Id					int64
 	Amount				float64
+	InitialAmount		float64
 	Price				float64
 	Timestamp			int64
 	MktExpirationTs		int64
+	MktOrderId			int64
 	MktStatus			int
 	MktType				int
 	MarketStatus		int
@@ -280,6 +282,7 @@ type OpenOrder struct {		// the Order on 0x Mesh network, that is yet to be fill
 	MktStatusStr		string
 	MktTypeStr			string
 	OrderHash			string
+	OrderHashSh			string
 	CreatorAddr			string
 	CreatorAddrSh		string	// shortened address
 	MktAddr				string
@@ -399,6 +402,7 @@ type BlockCash struct {
 	AccumCashFlow		float64
 }
 type ContractAddresses struct {
+	ChainId			int64
 	Augur			common.Address	// Main Augur contract
 	AugurTrading	common.Address	// Augur trading contract
 	PL				common.Address	// ProfitLoss contract

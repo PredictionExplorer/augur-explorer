@@ -16,7 +16,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_eoa_fill_aid int64,	evt *p.EOrderEvent,initial_amount *big.Int) {
+func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_eoa_fill_aid int64,	evt *p.EOrderEvent,initial_amounts map[string]*big.Int) {
 
 	// depending on the order action (Create/Cancel/Fill) different table is used for storage
 	//		Create/Cancel order actions go to 'oorders' (Open Orders) table because these orders
@@ -25,12 +25,14 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 	//		open interest increased
 
 	var order_hash_obj = common.BytesToHash(evt.OrderId[:])
+	var order_hash = order_hash_obj.String()
 
+	initial_amount := initial_amounts[order_hash]
 	if initial_amount == nil {
 		ss.Log_msg(
 			fmt.Sprintf(
 				"Initial amount for order %v (block %v) not found",
-				order_hash_obj.String(),agtx.BlockNum,
+				order_hash,agtx.BlockNum,
 			),
 		)
 		os.Exit(1)
@@ -66,11 +68,8 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 		eoa_fill_aid = wallet_fill_aid
 	}
 
-//	eoa_fill_aid := ss.Lookup_or_create_address(signer.String(),block_num,tx_id)
-
 	var oaction p.OrderAction = p.OrderAction(evt.EventType)
 	var otype p.OrderType = p.OrderType(evt.OrderType)
-	var order_hash = order_hash_obj.String()
 	// uint256data legend
 	// 0:  price
 	// 1:  amount
@@ -94,11 +93,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 	tokens_escrowed := evt.Uint256Data[9].String()
 
 	var query string
-
-	var opcode int = p.OOOpCodeCompleteFill
-	if amount.Cmp(amount_filled) != 0 {
-		opcode = p.OOOpCodePartialFill
-	}
+	var opcode int = p.OOOpCodeFill
 	ss.Info.Printf("amount = %v, amount_filled = %v, opcode=%v\n",amount,amount_filled,opcode)
 	query = "DELETE FROM oorders WHERE order_hash = $1"
 	_,err = ss.db.Exec(query,market_aid)
@@ -124,7 +119,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 			otype,
 			price,
 			amount,
-			outcome,
+			outcome_idx,
 			token_refund,
 			shares_refund,
 			fees,
@@ -136,7 +131,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 			order_hash
 		) VALUES (
 				$1,$2,$3,$4,$5,$6,$7,$8,$9,
-				(` + price + "/1e+18)," +
+				` + price + "," +
 				"(" + amount.String() + "/1e+18)," +
 				"$10," +
 				"(" + token_refund + "/1e+18)," +
@@ -188,9 +183,9 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 		ss.Log_msg(fmt.Sprintf("DB error at block %v : %v ; q=%v",agtx.BlockNum,err,query))
 		os.Exit(1)
 	}
-	ss.Update_open_order_history(order_hash,opcode)
+	ss.Update_open_order_history(*ss.mkt_order_id_ptr,order_hash,amount_filled.String(),opcode)
 }
-func (ss *SQLStorage) Update_open_order_history(order_hash string,opcode int) {
+func (ss *SQLStorage) Update_open_order_history(mktord_id int64,order_hash string,amount_filled string,opcode int) {
 
 	// Note: the following function may have null effect if the corresponding record already exists
 	//			the unique-key for the record is orderhash+opcode, so multiple calls can be made
@@ -199,8 +194,8 @@ func (ss *SQLStorage) Update_open_order_history(order_hash string,opcode int) {
 	//			going to be the first to insert the record, but the second call will result in
 	//			no effect at all
 	var query string
-	query = "SELECT update_oo_hist($1,$2)"
-	_,err := ss.db.Exec(query,order_hash,opcode)
+	query = "SELECT update_oo_hist($1,$2,$3,$4)"
+	_,err := ss.db.Exec(query,mktord_id,order_hash,amount_filled,opcode)
 	if err!=nil {
 		msg:=fmt.Sprintf("DB error: couldn't update history of order with hash = %v: %v\n",order_hash,err)
 		ss.Info.Printf(msg)
@@ -208,7 +203,7 @@ func (ss *SQLStorage) Update_open_order_history(order_hash string,opcode int) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,eoa_addr string,ospec *p.ZxMeshOrderSpec,opcode int,evt_timestamp int64) error {
+func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,fillable_amount *big.Int,eoa_addr string,ospec *p.ZxMeshOrderSpec,opcode int,evt_timestamp int64) error {
 	// Insert an open order, this order needs to be Filled by another market participant
 	// It also can be canceled by its creator (with another transaction)
 	var err error
@@ -230,11 +225,11 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 		if err != nil {
 			// Note: we can't INSERT an address from here because we need Transaction Hash (for reference)
 			ss.Info.Printf(
-				"MakerAddress %v is unregistered in the DB",
+				"MakerAddress %v is unregistered in the DB as EOA ",
 				order.MakerAddress.String(),
 			)
 			return errors.New(
-				fmt.Sprintf("MakerAddress %v is unregistered in the DB.",order.MakerAddress.String()),
+				fmt.Sprintf("MakerAddress %v is unregistered in the DB as EOA.",order.MakerAddress.String()),
 			)
 		}
 		// Now we need to validate this this address is indeed an EOA
@@ -251,7 +246,7 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 		if err != nil {
 			// Maker is not Wallet Contract, then it must be EOA
 			ss.Info.Printf(
-				"MakerAddress %v is unregistered in the DB : %v",
+				"MakerAddress %v is unregistered in the DB as wallet : %v",
 				order.MakerAddress.String(),err,
 			)
 			return errors.New(
@@ -285,7 +280,7 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 	}
 	price := float64(ospec.Price.Int64())
 	otype := ospec.Type	// Bid/Ask
-	amount := order.MakerAssetAmount.String()
+	amount := fillable_amount.String()
 
 	var query string
 	query = "INSERT INTO oostats(market_aid,eoa_aid,outcome_idx) VALUES($1,$2,$3)"
@@ -333,7 +328,9 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 }
 func (ss *SQLStorage) Delete_open_0x_order(order_hash string,opcode int) {
 
-	ss.Update_open_order_history(order_hash,opcode)
+	if opcode != p.OOOpCodeNone {
+		ss.Update_open_order_history(0,order_hash,"0",opcode)
+	}
 
 	var query string
 	query = "DELETE FROM oorders WHERE order_hash = $1"
@@ -405,7 +402,7 @@ func (ss *SQLStorage) Get_mkt_trades(mkt_addr string,limit int) []p.MarketTrade 
 				"o.time_stamp::text AS date," +
 				"o.price, " +
 				"o.amount_filled AS amount," +
-				"o.outcome," +
+				"o.outcome_idx," +
 				"m.market_type AS mtype," +
 				"m.outcomes AS outcomes_str " +
 			"FROM mktord AS o " +
@@ -571,7 +568,7 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 				"END AS dir, " +
 				"o.time_stamp::date AS date," +
 				"FLOOR(EXTRACT(EPOCH FROM o.time_stamp))::BIGINT as created_ts," +
-				"o.outcome," +
+				"o.outcome_idx," +
 				"o.price AS price, " +
 				"o.amount_filled AS volume " +
 			"FROM mktord AS o " +
@@ -581,7 +578,7 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 				"LEFT JOIN address AS c_e_a ON o.eoa_aid=c_e_a.address_id " +
 				"LEFT JOIN address AS f_w_a ON o.wallet_fill_aid=f_w_a.address_id " +
 				"LEFT JOIN address AS f_e_a ON o.eoa_fill_aid=f_e_a.address_id " +
-			"WHERE o.market_aid = $1 AND o.outcome=$2 " +
+			"WHERE o.market_aid = $1 AND o.outcome_idx=$2 " +
 			"ORDER BY o.time_stamp"
 	var accumulated_volume = 0.0
 	rows,err := ss.db.Query(query,market_aid,outc)
@@ -921,7 +918,7 @@ func order_info_query() string {
 				"END AS dir, " +
 				"o.time_stamp::date AS date," +
 				"FLOOR(EXTRACT(EPOCH FROM o.time_stamp))::BIGINT as created_ts," +
-				"o.outcome," +
+				"o.outcome_idx," +
 				"o.price AS price, " +
 				"o.amount_filled AS volume, " +
 				"m.market_type," +

@@ -114,16 +114,16 @@ BEGIN
 	-- Update Open Order history
 	INSERT INTO oohist(
 			otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
-			price,amount,evt_timestamp,srv_timestamp,expiration,order_hash
+			price,initial_amount,amount,evt_timestamp,srv_timestamp,expiration,order_hash
 		) VALUES (
 			NEW.otype,NEW.outcome_idx,NEW.opcode,NEW.market_aid,NEW.wallet_aid,NEW.eoa_aid,
-			NEW.price,NEW.amount,NEW.evt_timestamp,NEW.srv_timestamp,NEW.expiration,NEW.order_hash
+			NEW.price,NEW.initial_amount,NEW.amount,NEW.evt_timestamp,NEW.srv_timestamp,NEW.expiration,NEW.order_hash
 		) ON CONFLICT DO NOTHING;
 
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION update_oo_hist(p_order_hash text,p_opcode numeric) RETURNS void AS  $$ -- reverts order statistics on delete
+CREATE OR REPLACE FUNCTION update_oo_hist(p_mktord_id bigint,p_order_hash text,p_filled_amount text,p_opcode numeric) RETURNS void AS  $$ -- reverts order statistics on delete
 DECLARE
 	oo record;
 	v_cnt numeric;
@@ -133,12 +133,42 @@ BEGIN
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt > 0 THEN
 		INSERT INTO oohist(
-				otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
-				price,amount,evt_timestamp,srv_timestamp,expiration,order_hash
+				mktord_id,otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
+				price,initial_amount,amount,
+				evt_timestamp,srv_timestamp,expiration,order_hash
 			) VALUES (
-				oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
-				oo.price,oo.amount,oo.evt_timestamp,oo.srv_timestamp,oo.expiration,oo.order_hash
+				p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
+				oo.price,oo.initial_amount,p_filled_amount::DECIMAL/1e+18,
+				oo.evt_timestamp,oo.srv_timestamp,oo.expiration,oo.order_hash
 			) ON CONFLICT DO NOTHING;
+		RETURN;
+	END IF;
+	SELECT * FROM oohist WHERE order_hash = p_order_hash AND opcode=1 LIMIT 1 INTO oo;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt > 0 THEN
+		INSERT INTO oohist(
+				mktord_id,otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
+				price,initial_amount,amount,
+				evt_timestamp,srv_timestamp,expiration,order_hash
+			) VALUES (
+				p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
+				oo.price,oo.initial_amount,p_filled_amount::DECIMAL/1e+18,
+				oo.evt_timestamp,oo.srv_timestamp,oo.expiration,oo.order_hash
+			) ON CONFLICT DO NOTHING;
+	ELSE 
+		-- this code is executed in case 0x Mesh listener process didn't insert record in oorders table
+		-- is only valid for FILL operations becausse that's the only ones who have mktord_id > 0
+		SELECT * FROM mktord AS o WHERE o.id=p_mktord_id AND order_hash = p_order_hash INTO oo;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		IF v_cnt > 0 THEN
+			INSERT INTO oohist(
+					mktord_id,otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
+					price,initial_amount,amount,srv_timestamp,order_hash
+				) VALUES (
+					p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
+					oo.price,oo.amount,oo.amount_filled,oo.time_stamp,oo.order_hash
+				) ON CONFLICT DO NOTHING;
+		END IF;
 	END IF;
 
 END;

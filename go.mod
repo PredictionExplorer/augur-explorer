@@ -12,7 +12,7 @@ require (
 	//	github.com/0xProject/0x-mesh v7.1.0-beta+incompatible
 	//	github.com/0xProject/0x-mesh v9.2.0-incompatible
 	//	github.com/0xProject/0x-mesh v7.1.0-beta+incompatible
-	github.com/0xProject/0x-mesh v0.0.0-20200528184850-ee19434329a3
+	github.com/0xProject/0x-mesh v0.0.0-20200801025701-8123878dc210
 	github.com/ethereum/go-ethereum v1.9.13
 	github.com/gin-gonic/autotls v0.0.0-20200518075542-45033372a9ad
 	github.com/gin-gonic/gin v1.6.3

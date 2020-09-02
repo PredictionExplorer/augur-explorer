@@ -630,7 +630,7 @@ func (ss *SQLStorage) Get_user_trades_for_market(eoa_aid int64,mkt_aid int64) []
 				"o.time_stamp::text AS date," +
 				"o.price, " +
 				"o.amount_filled AS amount," +
-				"o.outcome," +
+				"o.outcome_idx," +
 				"m.market_type AS mtype," +
 				"m.outcomes AS outcomes_str " +
 			"FROM mktord AS o " +
@@ -796,6 +796,7 @@ func (ss *SQLStorage) Get_user_oo_history(user_aid int64) []p.OpenOrder {
 	// open orders on 0x Mesh network
 	var query string
 	query = "SELECT " +
+				"o.mktord_id," +
 				"ca.addr AS creator_addr," +
 				"ma.addr AS mkt_addr," +
 				"m.market_type," +
@@ -818,6 +819,7 @@ func (ss *SQLStorage) Get_user_oo_history(user_aid int64) []p.OpenOrder {
 				"END AS dir, " +
 				"o.outcome_idx," +
 				"ROUND(o.price,3), "+
+				"o.initial_amount,"+
 				"o.amount," +
 				"FLOOR(EXTRACT(EPOCH FROM o.evt_timestamp))::BIGINT AS ts," +
 				"o.order_hash " +
@@ -839,6 +841,7 @@ func (ss *SQLStorage) Get_user_oo_history(user_aid int64) []p.OpenOrder {
 		var outcomes string
 		var descr sql.NullString
 		err=rows.Scan(
+			&rec.MktOrderId,
 			&rec.CreatorAddr,
 			&rec.MktAddr,
 			&rec.MktType,
@@ -854,6 +857,7 @@ func (ss *SQLStorage) Get_user_oo_history(user_aid int64) []p.OpenOrder {
 			&rec.Direction,
 			&rec.Outcome,
 			&rec.Price,
+			&rec.InitialAmount,
 			&rec.Amount,
 			&rec.Timestamp,
 			&rec.OrderHash,
@@ -865,6 +869,7 @@ func (ss *SQLStorage) Get_user_oo_history(user_aid int64) []p.OpenOrder {
 		rec.MktStatusStr = get_market_status_str(p.MarketStatus(rec.MktStatus))
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)
 		rec.CreatorAddrSh=p.Short_address(rec.CreatorAddr)
+		rec.OrderHashSh=p.Short_hash(rec.OrderHash)
 		rec.OutcomeStr = get_outcome_str(uint8(rec.MktType),rec.Outcome,&outcomes)
 		records = append(records,rec)
 	}

@@ -84,7 +84,7 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 													-- Fill: User buys or sells existing (Created) order
 													-- Cancel: User removes active order (BID/ASK)
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
-	outcome				SMALLINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
 	price				DECIMAL(24,18) NOT NULL,
 	amount				DECIMAL(24,18) NOT NULL,
 	token_refund		DECIMAL(24,18) NOT NULL,
@@ -114,6 +114,7 @@ CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later th
 );
 CREATE TABLE oohist ( -- open order history
 	id					BIGSERIAL PRIMARY KEY,
+	mktord_id			BIGINT DEFAULT 0,			-- market order id, if exists
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
 	outcome_idx			SMALLINT NOT NULL,
 	opcode				SMALLINT NOT NULL,			-- operation; 0: CREATED, 1: AUTOEXPIRED, 2: USER-CANCELLED
@@ -121,10 +122,11 @@ CREATE TABLE oohist ( -- open order history
 	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
 	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
 	price				DECIMAL(32,18) NOT NULL,
-	amount				DECIMAL(32,18) NOT NULL,
-	evt_timestamp		TIMESTAMPTZ NOT NULL,		-- 0x Mesh event timestamp
-	srv_timestamp		TIMESTAMPTZ NOT NULL,		-- Postgres Server timestamp (not blockchain timestamp)
-	expiration			TIMESTAMPTZ NOT NULL,
+	initial_amount		DECIMAL(32,18) NOT NULL,	-- initial amount order was created
+	amount			DECIMAL(32,18) NOT NULL,		-- amount remaining to be filled
+	evt_timestamp		TIMESTAMPTZ DEFAULT to_timestamp(0),-- 0x Mesh event timestamp
+	srv_timestamp		TIMESTAMPTZ DEFAULT to_timestamp(0),-- Postgres Server timestamp (not blockchain timestamp)
+	expiration			TIMESTAMPTZ DEFAULT to_timestamp(0),
 	order_hash			CHAR(66)					-- Order Hash (github.com/0x-mesh/zeroex/order.go:Order.hash)
 );
 CREATE TABLE oostats (	-- open order statistics per User
@@ -381,6 +383,7 @@ CREATE TABLE uranks (   -- User Rankings (how this user ranks against each other
 );
 CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur Platform
 	upload_block		BIGINT DEFAULT 0,
+	chain_id			BIGINT DEFAULT 1,
 	augur				TEXT DEFAULT '',-- Augur Main contract
 	augur_trading		TEXT DEFAULT '',-- Augur Trading contract
 	profit_loss			TEXT DEFAULT '',-- Profit Loss contract
