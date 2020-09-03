@@ -654,7 +654,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 	}
 	return records
 }
-func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,off int, lim int) []int64 {
+func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,alive int,off int, lim int) []int64 {
 
 	var order_condition string
 	switch sort {
@@ -674,6 +674,9 @@ func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,off int, li
 	}
 	if all == 0 {
 		where_condition = where_condition + " AND (m.cur_volume > 0) AND (m.money_at_stake > 0) "
+	}
+	if alive == 1 {
+		where_condition = where_condition + " AND ((m.total_trades > 0) OR (m.total_oorders > 0)) "
 	}
 	var query string
 	query = "SELECT " +
@@ -990,6 +993,8 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 	query = "SELECT " +
 				"o.outcome_idx, " +
 				"o.volume," +
+				"o.total_trades," +
+				"o.total_oorders," +
 				"o.last_price, " +
 				"o.highest_bid," +
 				"o.lowest_ask," +
@@ -1016,6 +1021,8 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 		err=rows.Scan(
 			&rec.Outcome,
 			&rec.Volume,
+			&rec.TotalTrades,
+			&rec.TotalOpenOrders,
 			&rec.LastPrice,
 			&rec.HighestBid,
 			&rec.LowestAsk,

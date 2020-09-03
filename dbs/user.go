@@ -297,6 +297,7 @@ func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.Report {
 				"r.outcome_idx," +
 				"r.next_win_start," +
 				"r.next_win_end," +
+				"m.extra_info::json->>'description' AS descr," +
 				"m.initial_outcome," +
 				"m.designated_outcome," +
 				"m.winning_outcome," +
@@ -332,6 +333,7 @@ func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.Report {
 		var winning_outcome int
 		var initial_outcome int
 		var outcomes string
+		var mkt_descr sql.NullString
 		err=rows.Scan(
 			&rec.MktAid,
 			&rec.Date,
@@ -342,6 +344,7 @@ func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.Report {
 			&rec.OutcomeIdx,
 			&rec.WinStart,
 			&rec.WinEnd,
+			&mkt_descr,
 			&initial_outcome,
 			&designated_outcome,
 			&winning_outcome,
@@ -379,6 +382,9 @@ func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.Report {
 			}
 		}
 		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
+		if mkt_descr.Valid {
+			rec.MktDescription = mkt_descr.String
+		}
 		records = append(records,rec)
 	}
 	return records

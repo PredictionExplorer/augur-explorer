@@ -120,6 +120,10 @@ BEGIN
 			NEW.price,NEW.initial_amount,NEW.amount,NEW.evt_timestamp,NEW.srv_timestamp,NEW.expiration,NEW.order_hash
 		) ON CONFLICT DO NOTHING;
 
+	UPDATE market SET total_oorders = (total_oorders + 1) WHERE market_aid=NEW.market_aid;
+	UPDATE outcome_vol SET total_oorders = (total_oorders + 1) 
+		WHERE market_aid = NEW.market_aid AND outcome_idx = NEW.outcome_idx;
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -196,6 +200,10 @@ BEGIN
 
 	-- Update Open Order history
 	-- we do not DELETE anything here because oohist table should stay forverver
+
+	UPDATE market SET total_oorders = (total_oorders - 1) WHERE market_aid=OLD.market_aid;
+	UPDATE outcome_vol SET total_oorders = (total_oorders - 1) 
+		WHERE market_aid = OLD.market_aid AND outcome_idx = OLD.outcome_idx;
 
 	RETURN OLD;
 END;
@@ -328,6 +336,9 @@ BEGIN
 	UPDATE main_stats SET trades_count = (trades_count + 1);
 	UPDATE market SET total_trades = (total_trades + 1) WHERE market_aid = NEW.market_aid;
 
+	UPDATE outcome_vol SET total_trades = (total_trades + 1)
+		WHERE market_aid = NEW.market_aid AND outcome_idx = NEW.outcome_idx;
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -393,6 +404,9 @@ BEGIN
 	--- Update global statistics
 	UPDATE main_stats SET trades_count = (trades_count - 1);
 	UPDATE market SET total_trades = (total_trades - 1) WHERE market_aid = OLD.market_aid;
+
+	UPDATE outcome_vol SET total_trades = (total_trades - 1)
+		WHERE market_aid = OLD.market_aid AND outcome_idx = OLD.outcome_idx;
 
 	RETURN OLD;
 END;

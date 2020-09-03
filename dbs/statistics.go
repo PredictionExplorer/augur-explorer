@@ -67,7 +67,7 @@ func (ss *SQLStorage) Get_front_page_stats() p.FrontPageStats {
 	var stats p.FrontPageStats
 	var query string
 	query = "SELECT markets_count,money_at_stake,trades_count " +
-			"FROM main_stats WHERE universe_id=1"
+			"FROM main_stats LIMIT 1" // ToDo: we need support for multiple Universes
 	row := ss.db.QueryRow(query)
 	err := row.Scan(
 				&stats.MarketsCreated,

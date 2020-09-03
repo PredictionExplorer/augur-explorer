@@ -67,7 +67,20 @@ func a1_active_market_ids(c *gin.Context) {
 			return
 		}
 	}
-	ids := augur_srv.storage.Get_active_market_ids(sort,all,fin,off,1000000)
+	p_alive:= c.Query("alive")
+	var alive int = 0
+	if len(p_alive) > 0 {
+		alive , err = strconv.Atoi(p_alive)
+		if err != nil {
+			c.JSON(422,gin.H{
+				"MarketIDs": make([]int64,0,0),
+				"status":0,
+				"error":fmt.Sprintf("Bad 'alive' parameter: %v",err),
+			})
+			return
+		}
+	}
+	ids := augur_srv.storage.Get_active_market_ids(sort,all,fin,alive,off,1000000)
 	var status int = 1
 	c.JSON(200,gin.H{
 		"MarketIDs": ids,
@@ -364,12 +377,10 @@ func a1_user_profit_loss(c *gin.Context) {
 		return
 	}
 	pl_entries := augur_srv.storage.Get_profit_loss(eoa_aid)
-	js_pl_data := build_js_profit_loss_history(&pl_entries)
 	var status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK,gin.H{
 		"ProfitLossEntries" : pl_entries,
-		"JS_PL_ChartData" : js_pl_data,
 		"status": status,
 		"error": err_str,
 	})
@@ -384,12 +395,10 @@ func a1_user_open_positions(c *gin.Context) {
 		return
 	}
 	open_pos_entries := augur_srv.storage.Get_open_positions(eoa_aid)
-	js_open_pos_data := build_js_open_positions(&open_pos_entries)
 	var status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK,gin.H{
 		"OpenPositionEntries" : open_pos_entries,
-		"JS_OP_ChartData" : js_open_pos_data,
 		"status": status,
 		"error": err_str,
 	})
