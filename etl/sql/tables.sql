@@ -56,6 +56,7 @@ CREATE TABLE market (
 	num_ticks			BIGINT NOT NULL,			-- maximum price range (number of intervals)
 	create_timestamp	TIMESTAMPTZ NOT NULL,
 	total_trades		BIGINT DEFAULT 0,			-- current number of trades that took place
+	total_oorders		BIGINT DEFAULT 0,			-- number of open orders for this market
 	winning_outcome		SMALLINT DEFAULT -1,		-- outcome decided by MarketFinalized event
 	designated_outcome	SMALLINT DEFAULT -1,		-- outcome submitted by Designated Reported
 	initial_outcome		SMALLINT DEFAULT -1,		-- first report that was submitted
@@ -185,6 +186,8 @@ CREATE TABLE volume (	-- this is the VolumeChanged event
 CREATE TABLE outcome_vol (	-- this is the (accumulated) volume per outcome (indexed) upd. on VolumeChanged
 	id					BIGSERIAL PRIMARY KEY,
 	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
+	total_trades		BIGINT DEFAULT 0,
+	total_oorders		BIGINT DEFAULT 0,
 	outcome_idx			SMALLINT NOT NULL,
 	volume				DECIMAL(24,18) DEFAULT 0.0,
 	last_price			DECIMAL(24,18) DEFAULT 0.0,

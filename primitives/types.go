@@ -133,15 +133,17 @@ type MarketTrade struct {
 }
 type OutcomeVol struct {
 	Outcome			int
-	OutcomeStr		string
+	MktType			int
 	Volume			float64
 	LastPrice		float64
 	HighestBid		float64
 	LowestAsk		float64
 	CurSpread		float64
 	PriceEstimate	float64
-	MktType			int
+	TotalTrades		int64
+	TotalOpenOrders	int64
 	MktAddr			string
+	OutcomeStr		string
 }
 type DepthEntry struct {
 	MktAid			int64
@@ -349,6 +351,7 @@ type Report struct {
 	IsDesignated		bool
 	MktAddr				string
 	MktAddrSh			string
+	MktDescription		string
 	OutcomeStr			string
 	Date				string
 	ReportType			string
