@@ -402,21 +402,42 @@ type BlockCash struct {
 	AccumCashFlow		float64
 }
 type ContractAddresses struct {
-	ChainId			int64
-	Augur			common.Address	// Main Augur contract
-	AugurTrading	common.Address	// Augur trading contract
-	PL				common.Address	// ProfitLoss contract
-	ZeroxTrade		common.Address	// ZeroX Trade contract
-	ZeroxXchg		common.Address	// ZeroX Exchange contract
-	Dai				common.Address	// Shows DAI balance and also to fill dai_transf table and Cash Flow report
-	Reputation		common.Address	// used to query REP token balance when showing User info (among other stuff)
-	WalletReg		common.Address	// this contract is used to get the link between EOA and Wallet contract
-	WalletReg2		common.Address	// same as WalletReg but with GSN (transaction relaying), used for EOA-Wallet link
-	FillOrder		common.Address	// used to identify if DAI transfer is internal or not
-	EthXchg			common.Address	// used to identify if DAI transfer is internal or not
-	ShareToken		common.Address  // used to identify if DAI transfer is internal or not
-	Universe		common.Address	// used to identify if DAI transfer is internal or not
-	CreateOrder		common.Address	// CreateOrder contract, used to detect wallet creation pattern
+	ChainId					int64
+	Augur					common.Address	// Main Augur contract
+	AugurTrading			common.Address	// Augur trading contract
+	PL						common.Address	// ProfitLoss contract
+	ZeroxTrade				common.Address	// ZeroX Trade contract
+	ZeroxXchg				common.Address	// ZeroX Exchange contract
+	Dai						common.Address	// Shows DAI balance and also to fill dai_transf table 
+	Reputation				common.Address	// used to query REP token balance when showing User info
+	WalletReg				common.Address	// used to get the link between EOA and Wallet contract
+	WalletReg2				common.Address	// same as WalletReg but with GSN, used for EOA-Wallet link
+	FillOrder				common.Address	// used to identify if DAI transfer is internal or not
+	EthXchg					common.Address	// used to identify if DAI transfer is internal or not
+	ShareToken				common.Address  // used to identify if DAI transfer is internal or not
+	Universe				common.Address	// used to identify if DAI transfer is internal or not
+	CreateOrder				common.Address	// CreateOrder contract, used to detect wallet creation pattern
+	LegacyReputationToken	common.Address
+	BuyParticipationToken	common.Address
+	RedeemStake				common.Address
+	WarpSync				common.Address
+	HotLoading				common.Address
+	Affiliates				common.Address
+	AffiliateValidator		common.Address
+	Time					common.Address
+	CancelOrder				common.Address
+	Orders					common.Address
+	SimulateTrade			common.Address
+	Trade					common.Address
+	OICash					common.Address
+	UniswapV2Factory		common.Address
+	UniswapV2Router02		common.Address
+	AuditFunds				common.Address
+	WETH9					common.Address
+	USDC					common.Address
+	USDT					common.Address
+	RelayHubV2				common.Address
+	AccountLoader			common.Address
 }
 type UniqueAddrEntry struct {
 	Ts					int64

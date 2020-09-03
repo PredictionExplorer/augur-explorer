@@ -21,8 +21,14 @@ CREATE TABLE transaction (	-- we're only storing transactions related to Augur p
 );
 -- Universe: The container contract for Augur Service
 CREATE TABLE universe (
-	universe_id			BIGSERIAL PRIMARY KEY,
-	universe_addr		TEXT NOT NULL UNIQUE		-- Ethereum address of the Universe contract
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	universe_id			BIGINT NOT NULL,
+	parent_id			BIGINT DEFAULT 0,
+	creation_ts			TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
+	universe_addr		TEXT NOT NULL UNIQUE,		-- Ethereum address of the Universe contract
+	payout_numerators	TEXT DEFAULT ''
 );
 CREATE TABLE address (
 	address_id			BIGSERIAL	PRIMARY KEY,
@@ -382,22 +388,52 @@ CREATE TABLE uranks (   -- User Rankings (how this user ranks against each other
 	volume				DECIMAL(32,18) DEFAULT 0.0
 );
 CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur Platform
+	-- format for contract address comment -> [key]:[description]
+	-- the Key is used to Augur.sol::lookup() function
 	upload_block		BIGINT DEFAULT 0,
 	chain_id			BIGINT DEFAULT 1,
-	augur				TEXT DEFAULT '',-- Augur Main contract
-	augur_trading		TEXT DEFAULT '',-- Augur Trading contract
-	profit_loss			TEXT DEFAULT '',-- Profit Loss contract
-	dai_cash			TEXT DEFAULT '',-- Cash/CashFaucet (local testnet)
-	zerox_trade			TEXT DEFAULT '',-- ZeroX Trade
-	zerox_xchg			TEXT DEFAULT '',-- ZeroX Exchange
-	rep_token			TEXT DEFAULT '',--
-	wallet_reg			TEXT DEFAULT '',
-	wallet_reg2			TEXT DEFAULT '',
-	fill_order			TEXT DEFAULT '',
-	eth_xchg			TEXT DEFAULT '',
-	share_token			TEXT DEFAULT '',
-	universe			TEXT DEFAULT '',
-	create_order		TEXT DEFAULT ''-- CreateOrder
+	augur				TEXT DEFAULT '',-- Augur: Augur Main contract
+	augur_trading		TEXT DEFAULT '',-- AugurTrading: Augur Trading contract
+	profit_loss			TEXT DEFAULT '',-- ProfitLoss: Profit Loss contract
+	dai_cash			TEXT DEFAULT '',-- Cash: Cash/CashFaucet (local testnet)
+	zerox_trade			TEXT DEFAULT '',-- ZeroXTrade: ZeroX Trade
+	zerox_xchg			TEXT DEFAULT '',-- Exchange: 0x Exchange
+	rep_token			TEXT DEFAULT '',-- REPv2: Reuptation token
+	wallet_reg			TEXT DEFAULT '',-- AugurWalletRegistry: Wallet registry v1
+	wallet_reg2			TEXT DEFAULT '',-- AugurWalletRegistryV2: Wallet registry v2
+	fill_order			TEXT DEFAULT '',-- FillOrder: FillOrder.sol contract
+	eth_xchg			TEXT DEFAULT '',-- EthExchange: Uniswap v2 contract
+	share_token			TEXT DEFAULT '',-- ShareToken: ShareToken.sol contract
+	universe			TEXT DEFAULT '',-- Universe: This holds the Genesis Universe contract
+	create_order		TEXT DEFAULT '',-- CreateOrder:
+	leg_rep_token		TEXT DEFAULT '',-- LegacyReputationToken:
+	buy_part_tok		TEXT DEFAULT '',-- BuyParticipationTokens:
+	redeem_stake		TEXT DEFAULT '',-- RedeemStake:
+	warp_sync			TEXT DEFAULT '',-- WarpSync:
+	hot_loading			TEXT DEFAULT '',-- HotLoading:
+	affiliates			TEXT DEFAULT '',-- Affiliates:
+	affiliate_val		TEXT DEFAULT '',-- AffiliateValidator:
+	ctime				TEXT DEFAULT '',-- Time:
+	cancel_order		TEXT DEFAULT '',-- CancelOrder:
+	orders				TEXT DEFAULT '',-- Orders:
+	sim_trade			TEXT DEFAULT '',-- SiimulateTrade:
+	trade				TEXT DEFAULT '',-- Trade:
+	oi_cash				TEXT DEFAULT '',-- OICash:
+	uniswap_v2_fact		TEXT DEFAULT '',-- UniswapV2Factory:
+	uniswap_v2_r2		TEXT DEFAULT '',-- UniswapV2Router02:
+	audit_funds			TEXT DEFAULT '',-- AuditFunds:
+	weth9				TEXT DEFAULT '',-- WETH9:
+	usdc				TEXT DEFAULT '',-- USDC:
+	usdt				TEXT DEFAULT '',-- USDT:
+	relay_hub_v2		TEXT DEFAULT '',-- RelayHubV2:
+	account_loader		TEXT DEFAULT '' -- AccountLoader
+);
+CREATE TABLE register_contract (
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	addr				TEXT NOT NULL,
+	key					TEXT NOT NULL
 );
 CREATE TABLE unique_addrs (	-- Unique addresses per day, statistics
 	day					DATE PRIMARY KEY,

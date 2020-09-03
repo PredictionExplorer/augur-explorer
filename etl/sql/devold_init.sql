@@ -1,6 +1,6 @@
 -- Do not use, for Development only!
-INSERT INTO universe(universe_addr) VALUES('0x1b8dae4F281A437E797f6213C6564926a04D9959');
-INSERT INTO main_stats(universe_id) VALUES(1);
+--INSERT INTO universe(universe_addr) VALUES('0x1b8dae4F281A437E797f6213C6564926a04D9959');
+--INSERT INTO main_stats(universe_id) VALUES(1);
 INSERT INTO contract_addresses(
 		chain_id,
 		augur,

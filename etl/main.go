@@ -48,6 +48,8 @@ const (
 	ERC20_APPROVAL = "8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
 	EXEC_TX_STATUS = "ee9c28a7fe7177d351e891cb4ca5b7a4e4aba4974be67fb7665ba1ad0e703439"
 	RELAYHUB_TRANSACTION_RELAYED = "ab74390d395916d9e0006298d47938a5def5d367054dcca78fa6ec84381f3f22"
+	REGISTER_CONTRACT = "a037dd0e01f0488a530cb17065a6d2f284fae016004fc744ee2a41d5cacf85d5"
+	UNIVERSE_CREATED = "e36b09d83f9cfa88c37f071fc2cfb5ff30b764cbd98088e70d965573c9ce5bbd"
 
 	DEFAULT_WAIT_TIME = 5000	// 5 seconds
 	DEFAULT_DB_LOG				= "db.log"
@@ -79,6 +81,8 @@ var (
 	evt_erc20_approval,_ = hex.DecodeString(ERC20_APPROVAL)
 	evt_execute_tx_status,_ = hex.DecodeString(EXEC_TX_STATUS)
 	evt_tx_relayed,_ = hex.DecodeString(RELAYHUB_TRANSACTION_RELAYED)
+	evt_register_contract,_ = hex.DecodeString(REGISTER_CONTRACT)
+	evt_universe_created,_ = hex.DecodeString(UNIVERSE_CREATED)
 
 	exec_wtx_sig ,_ = hex.DecodeString("78dc0eed")
 

@@ -360,6 +360,14 @@ func (ss *SQLStorage) is_dai_transfer_internal(evt *p.ETransfer,ca *p.ContractAd
 	if err == nil {
 		to_internal = true
 	}
+	_,err=ss.lookup_universe_id(evt.From.String())
+	if err == nil {
+		from_internal = true
+	}
+	_,err=ss.lookup_universe_id(evt.To.String())
+	if err == nil {
+		to_internal = true
+	}
 
 	if 0 == bytes.Compare(evt.From.Bytes(),ca.ZeroxTrade.Bytes()) {
 		from_internal = true
@@ -383,12 +391,6 @@ func (ss *SQLStorage) is_dai_transfer_internal(evt *p.ETransfer,ca *p.ContractAd
 		from_internal = true
 	}
 	if 0 == bytes.Compare(evt.To.Bytes(),ca.ShareToken.Bytes()) {
-		to_internal = true
-	}
-	if 0 == bytes.Compare(evt.From.Bytes(),ca.Universe.Bytes()) {
-		from_internal = true
-	}
-	if 0 == bytes.Compare(evt.To.Bytes(),ca.Universe.Bytes()) {
 		to_internal = true
 	}
 	return from_internal,to_internal // its a Market in To

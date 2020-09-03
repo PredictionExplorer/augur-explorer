@@ -607,6 +607,50 @@ func proc_transaction_status(agtx *AugurTx, log *types.Log) {
 //	_ = eoa_aid
 	storage.Insert_augur_transaction_status(agtx,&evt)
 }
+func proc_register_contract(agtx *AugurTx,log *types.Log) {
+	var evt ERegisterContract
+	err := augur_abi.Unpack(&evt,"RegisterContract",log.Data)
+	if err != nil {
+		Fatalf("Event Register contract decode error: %v",err)
+		return
+	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		evt.Dump(Info)
+		Info.Printf(
+			"RegisterContract event received and ignored "+
+			"(belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),agtx.BlockNum,
+		)
+		return
+	}
+	Info.Printf("RegisterContract event for contract %v (block=%v) :\n",
+								log.Address.String(),log.BlockNumber)
+	evt.Dump(Info)
+	storage.Insert_register_contract_event(agtx,&evt)
+}
+func proc_universe_created(agtx *AugurTx,log *types.Log) {
+	var evt EUniverseCreated
+	evt.ParentUniverse = common.BytesToAddress(log.Topics[1][12:])
+	evt.ChildUniverse= common.BytesToAddress(log.Topics[2][12:])
+	err := augur_abi.Unpack(&evt,"UniverseCreated",log.Data)
+	if err != nil {
+		Fatalf("Event UniverseCreated decode error: %v",err)
+		return
+	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		evt.Dump(Info)
+		Info.Printf(
+			"UniverseCreated event received and ignored "+
+			"(belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),agtx.BlockNum,
+		)
+		return
+	}
+	Info.Printf("UniverseCreated event for contract %v (block=%v) :\n",
+								log.Address.String(),log.BlockNumber)
+	evt.Dump(Info)
+	storage.Insert_universe_created_event(agtx,&evt)
+}
 func tx_insert_if_needed(agtx *AugurTx) {
 	if agtx.TxId == 0 {
 		agtx.TxId=storage.Insert_transaction(agtx)
@@ -710,6 +754,14 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_execute_tx_status) {
 			tx_insert_if_needed(agtx)
 			proc_transaction_status(agtx,log)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_register_contract) {
+			tx_insert_if_needed(agtx)
+			proc_register_contract(agtx,log)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_universe_created) {
+			tx_insert_if_needed(agtx)
+			proc_universe_created(agtx,log)
 		}
 	}
 	for j:=1; j < num_topics ; j++ {

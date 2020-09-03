@@ -3,6 +3,7 @@ package dbs
 import (
 	"fmt"
 	"os"
+	"bytes"
 	"database/sql"
 	_  "github.com/lib/pq"
 
@@ -16,7 +17,10 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 	query="SELECT " +
 				"chain_id,"+
 				"augur,augur_trading,profit_loss,dai_cash,rep_token,zerox_trade,zerox_xchg,wallet_reg,"+
-				"wallet_reg2,fill_order,eth_xchg,share_token,universe,create_order "+
+				"wallet_reg2,fill_order,eth_xchg,share_token,universe,create_order, "+
+				"leg_rep_token,buy_part_tok,redeem_stake,warp_sync,hot_loading,affiliates," +
+				"affiliate_val,ctime,cancel_order,orders,sim_trade,trade,oi_cash,uniswap_v2_fact,"+
+				"uniswap_v2_r2,audit_funds,weth9,usdc,usdt,relay_hub_v2,account_loader " +
 			"FROM contract_addresses";
 	row := ss.db.QueryRow(query)
 	var c_addresses p.ContractAddresses
@@ -36,11 +40,35 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 		share_token string
 		universe string
 		create_order string
+		leg_rep_token string
+		buy_part_tok string
+		redeem_stake string
+		warp_sync string
+		hot_loading string
+		affiliates string
+		affiliate_val string
+		ctime string
+		cancel_order string
+		orders string
+		sim_trade string
+		trade string
+		oi_cash string
+		uniswap_v2_fact string
+		uniswap_v2_r2 string
+		audit_funds string
+		weth9 string
+		usdc string
+		usdt string
+		relay_hub_v2 string
+		account_loader string
 	)
 	err=row.Scan(
 		&c_addresses.ChainId,
 		&augur,&augur_trading,&pl,&dai,&rep,&zerox_trade,&zerox_xchg,&wallet_reg,&wallet_reg2,&fill_order,
-		&eth_xchg,&share_token,&universe,&create_order,
+		&eth_xchg,&share_token,&universe,&create_order,&leg_rep_token,&buy_part_tok,&redeem_stake,
+		&warp_sync,&hot_loading,&affiliates,&affiliate_val,&ctime,&cancel_order,&orders,&sim_trade,&trade,
+		&oi_cash,&uniswap_v2_fact,&uniswap_v2_r2,&audit_funds,&weth9,&usdc,&usdt,&relay_hub_v2,
+		&account_loader,
 	);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -64,6 +92,27 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 	c_addresses.ShareToken=common.HexToAddress(share_token)
 	c_addresses.Universe= common.HexToAddress(universe)
 	c_addresses.CreateOrder=common.HexToAddress(create_order)
+	c_addresses.LegacyReputationToken=common.HexToAddress(leg_rep_token)
+	c_addresses.BuyParticipationToken=common.HexToAddress(buy_part_tok)
+	c_addresses.RedeemStake=common.HexToAddress(redeem_stake)
+	c_addresses.WarpSync=common.HexToAddress(warp_sync)
+	c_addresses.HotLoading=common.HexToAddress(hot_loading)
+	c_addresses.Affiliates=common.HexToAddress(affiliates)
+	c_addresses.AffiliateValidator=common.HexToAddress(affiliate_val)
+	c_addresses.Time=common.HexToAddress(ctime)
+	c_addresses.CancelOrder=common.HexToAddress(cancel_order)
+	c_addresses.Orders=common.HexToAddress(orders)
+	c_addresses.SimulateTrade=common.HexToAddress(sim_trade)
+	c_addresses.Trade=common.HexToAddress(trade)
+	c_addresses.OICash=common.HexToAddress(oi_cash)
+	c_addresses.UniswapV2Factory=common.HexToAddress(uniswap_v2_fact)
+	c_addresses.UniswapV2Router02=common.HexToAddress(uniswap_v2_r2)
+	c_addresses.AuditFunds=common.HexToAddress(audit_funds)
+	c_addresses.WETH9=common.HexToAddress(weth9)
+	c_addresses.USDC=common.HexToAddress(usdc)
+	c_addresses.USDT=common.HexToAddress(usdt)
+	c_addresses.RelayHubV2=common.HexToAddress(relay_hub_v2)
+	c_addresses.AccountLoader=common.HexToAddress(account_loader)
 	return c_addresses,nil
 }
 func (ss *SQLStorage) Get_augur_blocks(market_aid int64) []int64 {
@@ -187,4 +236,53 @@ func (ss *SQLStorage) Insert_execute_wallet_tx(eoa_aid int64,wallet_aid int64,ag
 		os.Exit(1)
 	}
 
+}
+func (ss *SQLStorage) Insert_register_contract_event(agtx *p.AugurTx,evt *p.ERegisterContract) {
+
+	length := bytes.Index(evt.Key[:],[]byte{0})
+	key := string(evt.Key[:length])
+
+	var query string
+	query = "INSERT INTO register_contract(" +
+				"block_num,tx_id,addr,key" +
+			") VALUES ($1,$2,$3,$4)"
+
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,agtx.TxId,evt.ContractAddress.String(),key,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into register_contract table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_universe_created_event(agtx *p.AugurTx,evt *p.EUniverseCreated) {
+
+	payout_numerators:=p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	parent_id:=ss.Lookup_or_create_address(evt.ParentUniverse.String(),agtx.BlockNum,agtx.TxId)
+	universe_id:=ss.Lookup_or_create_address(evt.ChildUniverse.String(),agtx.BlockNum,agtx.TxId)
+
+	var query string
+	query = "INSERT INTO universe(" +
+				"block_num,tx_id,universe_id,parent_id,creation_ts,universe_addr,payout_numerators" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7)"
+
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,
+		agtx.TxId,
+		universe_id,
+		parent_id,
+		evt.CreationTimestamp.Int64(),
+		evt.ChildUniverse.String(),
+		payout_numerators,
+	)
+	if err!= nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert Universe : %v; q=%v",err,query))
+		os.Exit(1)
+	}
+	query = "INSERT INTO main_stats(universe_id) VALUES($1)"
+	_,err = ss.db.Exec(query,universe_id)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert record in main_stats table: %v",err,query))
+		os.Exit(1)
+	}
 }

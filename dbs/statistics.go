@@ -11,6 +11,7 @@ import (
 )
 func (ss *SQLStorage) Check_main_stats() {
 
+/* DISCONTINUED, to be deleted
 	var query string
 	query="SELECT id FROM main_stats LIMIT 1";
 	row := ss.db.QueryRow(query)
@@ -19,13 +20,12 @@ func (ss *SQLStorage) Check_main_stats() {
 	err=row.Scan(&null_id);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			query="INSERT INTO main_stats(universe_id) VALUES(1)";
-			_,_ =ss.db.Exec(query)
 		} else {
 			ss.Log_msg(fmt.Sprintf("Error in check_main_stats(): %v, q=%v",err,query))
 			os.Exit(1)
 		}
 	}
+*/
 }
 func (ss *SQLStorage) Get_main_stats() p.MainStats {
 
