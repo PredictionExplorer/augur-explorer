@@ -360,11 +360,19 @@ func (ss *SQLStorage) is_dai_transfer_internal(evt *p.ETransfer,ca *p.ContractAd
 	if err == nil {
 		to_internal = true
 	}
-
-	if 0 == bytes.Compare(evt.From.Bytes(),ca.Zerox.Bytes()) {
+	_,err=ss.lookup_universe_id(evt.From.String())
+	if err == nil {
 		from_internal = true
 	}
-	if 0 == bytes.Compare(evt.To.Bytes(),ca.Zerox.Bytes()) {
+	_,err=ss.lookup_universe_id(evt.To.String())
+	if err == nil {
+		to_internal = true
+	}
+
+	if 0 == bytes.Compare(evt.From.Bytes(),ca.ZeroxTrade.Bytes()) {
+		from_internal = true
+	}
+	if 0 == bytes.Compare(evt.To.Bytes(),ca.ZeroxTrade.Bytes()) {
 		to_internal = true
 	}
 	if 0 == bytes.Compare(evt.From.Bytes(),ca.FillOrder.Bytes()) {
@@ -383,12 +391,6 @@ func (ss *SQLStorage) is_dai_transfer_internal(evt *p.ETransfer,ca *p.ContractAd
 		from_internal = true
 	}
 	if 0 == bytes.Compare(evt.To.Bytes(),ca.ShareToken.Bytes()) {
-		to_internal = true
-	}
-	if 0 == bytes.Compare(evt.From.Bytes(),ca.Universe.Bytes()) {
-		from_internal = true
-	}
-	if 0 == bytes.Compare(evt.To.Bytes(),ca.Universe.Bytes()) {
 		to_internal = true
 	}
 	return from_internal,to_internal // its a Market in To
@@ -483,7 +485,7 @@ func internal_addr_info_note(addr *common.Address,info *string,caddrs *p.Contrac
 		*info = "ProfitLoss contract"
 		return
 	}
-	if bytes.Equal(addr.Bytes(),caddrs.Zerox.Bytes()) {
+	if bytes.Equal(addr.Bytes(),caddrs.ZeroxTrade.Bytes()) {
 		*info = "ZeroX contract"
 		return
 	}
@@ -511,8 +513,8 @@ func internal_addr_info_note(addr *common.Address,info *string,caddrs *p.Contrac
 		*info = "ShareToken contract"
 		return
 	}
-	if bytes.Equal(addr.Bytes(),caddrs.Universe.Bytes()) {
-		*info = "Universe contract"
+	if bytes.Equal(addr.Bytes(),caddrs.GenesisUniverse.Bytes()) {
+		*info = "GenesisUniverse contract"
 		return
 	}
 

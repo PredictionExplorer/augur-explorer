@@ -21,8 +21,14 @@ CREATE TABLE transaction (	-- we're only storing transactions related to Augur p
 );
 -- Universe: The container contract for Augur Service
 CREATE TABLE universe (
-	universe_id			BIGSERIAL PRIMARY KEY,
-	universe_addr		TEXT NOT NULL UNIQUE		-- Ethereum address of the Universe contract
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	universe_id			BIGINT NOT NULL,
+	parent_id			BIGINT DEFAULT 0,
+	creation_ts			TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
+	universe_addr		TEXT NOT NULL UNIQUE,		-- Ethereum address of the Universe contract
+	payout_numerators	TEXT DEFAULT ''
 );
 CREATE TABLE address (
 	address_id			BIGSERIAL	PRIMARY KEY,
@@ -84,7 +90,7 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 													-- Fill: User buys or sells existing (Created) order
 													-- Cancel: User removes active order (BID/ASK)
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
-	outcome				SMALLINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
 	price				DECIMAL(24,18) NOT NULL,
 	amount				DECIMAL(24,18) NOT NULL,
 	token_refund		DECIMAL(24,18) NOT NULL,
@@ -94,21 +100,53 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 	shares_escrowed		TEXT NOT NULL,
 	tokens_escrowed		TEXT NOT NULL,
 	trade_group			TEXT NOT NULL,			-- User defined group label to identify multiple trades
-	order_id			TEXT NOT NULL
+	order_hash			TEXT NOT NULL
 );
 CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later they are converted into 'mktord` records
 	id					BIGSERIAL PRIMARY KEY,
-	market_aid			BIGSERIAL NOT NULL,
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
 	outcome_idx			SMALLINT NOT NULL,
+	opcode				SMALLINT NOT NULL,			-- operation; 0: CREATED, 1: AUTOEXPIRED, 2: USER-CANCELLED, 3: FILLED DB SYNC
+	market_aid			BIGINT NOT NULL,
 	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
 	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
 	price				DECIMAL(32,18) NOT NULL,
+	initial_amount		DECIMAL(32,18) NOT NULL,	-- when partially filled, this keeps the original amount
 	amount				DECIMAL(32,18) NOT NULL,
 	evt_timestamp		TIMESTAMPTZ NOT NULL,		-- 0x Mesh event timestamp
 	srv_timestamp		TIMESTAMPTZ NOT NULL,		-- Postgres Server timestamp (not blockchain timestamp)
 	expiration			TIMESTAMPTZ NOT NULL,
-	order_id			TEXT NOT NULL UNIQUE
+	order_hash			CHAR(66) NULL UNIQUE
+);
+CREATE TABLE oohist ( -- open order history
+	id					BIGSERIAL PRIMARY KEY,
+	mktord_id			BIGINT DEFAULT 0,			-- market order id, if exists
+	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
+	outcome_idx			SMALLINT NOT NULL,
+	opcode				SMALLINT NOT NULL,			-- operation; 0: CREATED, 1: AUTOEXPIRED, 2: USER-CANCELLED
+	market_aid			BIGINT NOT NULL,
+	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
+	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
+	price				DECIMAL(32,18) NOT NULL,
+	initial_amount		DECIMAL(32,18) NOT NULL,	-- initial amount order was created
+	amount			DECIMAL(32,18) NOT NULL,		-- amount remaining to be filled
+	evt_timestamp		TIMESTAMPTZ DEFAULT to_timestamp(0),-- 0x Mesh event timestamp
+	srv_timestamp		TIMESTAMPTZ DEFAULT to_timestamp(0),-- Postgres Server timestamp (not blockchain timestamp)
+	expiration			TIMESTAMPTZ DEFAULT to_timestamp(0),
+	order_hash			CHAR(66)					-- Order Hash (github.com/0x-mesh/zeroex/order.go:Order.hash)
+);
+CREATE TABLE oostats (	-- open order statistics per User
+	id					BIGSERIAL PRIMARY KEY,
+	market_aid			BIGINT NOT NULL,
+	eoa_aid				BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	num_bids			INT DEFAULT 0,				-- number of total BID orders for this EOA
+	num_asks			INT DEFAULT 0,				-- number of total ASK orders for this EOA
+	num_cancel			INT DEFAULT 0				-- number of cancelled orders
+);
+CREATE TABLE ooconfig ( -- configuration for spread calculation
+	spread_threshold	DECIMAL(64,18) DEFAULT 110.0,	-- Reasonable spread to calculate Price Estimate
+	osize_threshold		DECIMAL(64,18) DEFAULT 0.0		-- Order size to calculate Price Estimate
 );
 -- Report, submitted by Market Creator
 CREATE TABLE report (
@@ -149,7 +187,11 @@ CREATE TABLE outcome_vol (	-- this is the (accumulated) volume per outcome (inde
 	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
 	outcome_idx			SMALLINT NOT NULL,
 	volume				DECIMAL(24,18) DEFAULT 0.0,
-	last_price			DECIMAL(24,18) DEFAULT 0.0
+	last_price			DECIMAL(24,18) DEFAULT 0.0,
+	highest_bid			DECIMAL(64,18) DEFAULT 0.0,	-- highest BID price , updated from open orders
+	lowest_ask			DECIMAL(64,18) DEFAULT 0.0,	-- lowest ASK price, updated from open orders
+	cur_spread			DECIMAL(64,18) DEFAULT 0.0,	-- spread from open orders (lowest_ask - highest bid)
+	price_estimate		DECIMAL(64,18) DEFAULT 0.0  -- calculated using trigger update_price_estimate()
 );
 CREATE table oi_chg ( -- open interest changed event
 	id					BIGSERIAL PRIMARY KEY,
@@ -255,15 +297,6 @@ CREATE TABLE main_stats (
 	money_at_stake		DECIMAL(64,18) DEFAULT 0.0,		-- amount in ETH
 	trades_count		BIGINT DEFAULT 0	-- total amount of trades
 );
-CREATE TABLE oostats (	-- open order statistics per User
-	id					BIGSERIAL PRIMARY KEY,
-	market_aid			BIGINT NOT NULL,
-	eoa_aid				BIGINT NOT NULL,
-	outcome_idx			SMALLINT NOT NULL,
-	num_bids			INT DEFAULT 0,				-- number of total BID orders for this EOA
-	num_asks			INT DEFAULT 0,				-- number of total ASK orders for this EOA
-	num_cancel			INT DEFAULT 0				-- number of cancelled orders
-);
 CREATE TABLE trd_mkt_stats (	-- trade statistics per User and per Market
 	id					BIGSERIAL PRIMARY KEY,
 	eoa_aid				BIGINT NOT NULL,
@@ -355,18 +388,52 @@ CREATE TABLE uranks (   -- User Rankings (how this user ranks against each other
 	volume				DECIMAL(32,18) DEFAULT 0.0
 );
 CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur Platform
+	-- format for contract address comment -> [key]:[description]
+	-- the Key is used to Augur.sol::lookup() function
 	upload_block		BIGINT DEFAULT 0,
-	augur				TEXT DEFAULT '',-- Augur Main contract
-	augur_trading		TEXT DEFAULT '',-- Augur Trading contract
-	profit_loss			TEXT DEFAULT '',-- Profit Loss contract
-	dai_cash			TEXT DEFAULT '',-- Cash/CashFaucet (local testnet)
-	zerox				TEXT DEFAULT '',-- ZeroXTrade
-	rep_token			TEXT DEFAULT '',--
-	wallet_reg			TEXT DEFAULT '',
-	fill_order			TEXT DEFAULT '',
-	eth_xchg			TEXT DEFAULT '',
-	share_token			TEXT DEFAULT '',
-	universe			TEXT DEFAULT ''
+	chain_id			BIGINT DEFAULT 1,
+	augur				TEXT DEFAULT '',-- Augur: Augur Main contract
+	augur_trading		TEXT DEFAULT '',-- AugurTrading: Augur Trading contract
+	profit_loss			TEXT DEFAULT '',-- ProfitLoss: Profit Loss contract
+	dai_cash			TEXT DEFAULT '',-- Cash: Cash/CashFaucet (local testnet)
+	zerox_trade			TEXT DEFAULT '',-- ZeroXTrade: ZeroX Trade
+	zerox_xchg			TEXT DEFAULT '',-- Exchange: 0x Exchange
+	rep_token			TEXT DEFAULT '',-- REPv2: Reuptation token
+	wallet_reg			TEXT DEFAULT '',-- AugurWalletRegistry: Wallet registry v1
+	wallet_reg2			TEXT DEFAULT '',-- AugurWalletRegistryV2: Wallet registry v2
+	fill_order			TEXT DEFAULT '',-- FillOrder: FillOrder.sol contract
+	eth_xchg			TEXT DEFAULT '',-- EthExchange: Uniswap v2 contract
+	share_token			TEXT DEFAULT '',-- ShareToken: ShareToken.sol contract
+	universe			TEXT DEFAULT '',-- Universe: This holds the Genesis Universe contract
+	create_order		TEXT DEFAULT '',-- CreateOrder:
+	leg_rep_token		TEXT DEFAULT '',-- LegacyReputationToken:
+	buy_part_tok		TEXT DEFAULT '',-- BuyParticipationTokens:
+	redeem_stake		TEXT DEFAULT '',-- RedeemStake:
+	warp_sync			TEXT DEFAULT '',-- WarpSync:
+	hot_loading			TEXT DEFAULT '',-- HotLoading:
+	affiliates			TEXT DEFAULT '',-- Affiliates:
+	affiliate_val		TEXT DEFAULT '',-- AffiliateValidator:
+	ctime				TEXT DEFAULT '',-- Time:
+	cancel_order		TEXT DEFAULT '',-- CancelOrder:
+	orders				TEXT DEFAULT '',-- Orders:
+	sim_trade			TEXT DEFAULT '',-- SiimulateTrade:
+	trade				TEXT DEFAULT '',-- Trade:
+	oi_cash				TEXT DEFAULT '',-- OICash:
+	uniswap_v2_fact		TEXT DEFAULT '',-- UniswapV2Factory:
+	uniswap_v2_r2		TEXT DEFAULT '',-- UniswapV2Router02:
+	audit_funds			TEXT DEFAULT '',-- AuditFunds:
+	weth9				TEXT DEFAULT '',-- WETH9:
+	usdc				TEXT DEFAULT '',-- USDC:
+	usdt				TEXT DEFAULT '',-- USDT:
+	relay_hub_v2		TEXT DEFAULT '',-- RelayHubV2:
+	account_loader		TEXT DEFAULT '' -- AccountLoader
+);
+CREATE TABLE register_contract (
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	addr				TEXT NOT NULL,
+	key					TEXT NOT NULL
 );
 CREATE TABLE unique_addrs (	-- Unique addresses per day, statistics
 	day					DATE PRIMARY KEY,
@@ -389,7 +456,26 @@ CREATE TABLE gas_spent (-- global gas spent
 	eth_markets			DECIMAL(64,18) DEFAULT 0.0,
 	eth_total			DECIMAL(64,18) DEFAULT 0.0
 );
+CREATE TABLE exec_wtx (	-- stores contract calls of input with sig=78dc0eed (executeTransactionStatus)
+-- source: AugurWalletRegistry.sol:executeWalletTransaction()
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	eoa_aid				BIGINT NOT NULL,
+	wallet_aid			BIGINT DEFAULT 0,	-- Uniswap can exchange tokens for EOAs, so Wallet id will be 0
+	to_aid				BIGINT NOT NULL,
+	referral_aid		BIGINT DEFAULT 0,	-- address of referral account (referral_aid will get commissions on TXs of eoa_aid)
+	value				DECIMAL(64,18) DEFAULT 0.0,
+	payment				DECIMAL(64,18) DEFAULT 0.0,
+	desired_signer_bal	DECIMAL(64,18) DEFAULT 0.0,	-- desiredSignerBalance
+	max_xchg_rate_dai	DECIMAL(64,18) DEFAULT 0.0,	-- maxExchangeRateInDai
+	input_sig			CHAR(8),			-- hex encoded first 4 bytes of call_data (indexed field)
+	fingerprint			TEXT NOT NULL,		-- hex-encoded 32 byte (64char) value of Browser fingerprint
+	call_data			TEXT DEFAULT '',	-- hex-encoded input to contract in 'to' field
+	revert_on_failure	BOOLEAN DEFAULT FALSE
+);
 CREATE TABLE agtx_status (-- Augur transaction status (used to track Gas fees for all interactions with Augur
+-- this table stores the result of the call registered in `exec_wtx` table
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,

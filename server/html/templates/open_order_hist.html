@@ -1,0 +1,31 @@
+{{define "open_order_hist"}}
+<tr class="user_open_orders">
+	<td class="user_open_orders" style="text-align: center">{{.OrderHashSh}}</td>
+	<td class="user_open_orders">
+		{{.OrderDate}}
+	</td>
+	<td class="user_open_orders" title="{{.MktDescr}}">
+		<a href="/search?q={{.MktAddr}}">{{.MktAddrSh}}</a>
+	</td>
+	<td class="user_open_orders" style="text-align: center">{{.MktTypeStr}}</td>
+	<td class="user_open_orders" style="text-align: center">{{.MktStatusStr}}</td>
+	<td class="user_open_orders" style="text-align: center">{{.OutcomeStr}}</td>
+	<td class="user_open_orders" style="text-align: center">{{.Direction}}</td>
+	<td class="user_open_orders" style="text-align: right">{{.InitialAmount}}</td>
+	<td class="user_open_orders" style="text-align: right">{{.Amount}}</td>
+	<td class="user_open_orders" style="text-align: right">{{.Price}}</td>
+	<td class="user_open_orders" style="text-align: right">
+		{{ if eq .OpCode 0 }} None {{ end }}
+		{{ if eq .OpCode 1 }} Created {{ end }}
+		{{ if eq .OpCode 2 }} Filled{{ end }}
+		{{ if eq .OpCode 3 }} Cancelled by User{{ end }}
+		{{ if eq .OpCode 4 }} Expired {{ end }}
+		{{ if eq .OpCode 5 }} 0x Mesh Sync Process {{ end }}
+	</td>
+	<td class="user_open_orders" style="text-align: right">
+		{{ if ne .MktOrderId 0 }}
+		<a class=addr href="/order/{{.MktOrderId}}">{{.OrderHashSh}}</a>
+		{{ end }}
+	</td>
+</tr>
+{{end}}

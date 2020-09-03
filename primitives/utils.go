@@ -3,6 +3,7 @@ package primitives
 import (
 	"log"
 	"encoding/hex"
+	"bytes"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 )
@@ -294,4 +295,73 @@ func (obj *GasSpent) Dump(l *log.Logger) {
 		obj.Total,obj.EthTotal,obj.Num_total,
 	)
 	l.Printf("}")
+}
+func (obj *ExecuteWalletTx) Dump(l *log.Logger) {
+	l.Printf("ExecuteWalletTransaction {\n")
+	l.Printf("\tto: %v\n",obj.To)
+	l.Printf("\tdata: %v\n",obj.CallData)
+	l.Printf("\tinput_sig: %v\n",obj.InputSig)
+	l.Printf("\tvalue: %v\n",obj.Value)
+	l.Printf("\tpayment: %v\n",obj.Payment)
+	l.Printf("\treferralAddress:  %v\n",obj.ReferralAddress)
+	l.Printf("\tfingerprint: %v\n",obj.Fingerprint)
+	l.Printf("\tdesiredSignerBalance: %v\n",obj.DesiredSignerBalance)
+	l.Printf("\tmaxExchangeRateInDai: %v\n",obj.MaxExchangeRateInDAI)
+	l.Printf("\trevertOnFaliure: %v\n",obj.RevertOnFailure)
+	l.Printf("}\n")
+}
+func (evt *ERegisterContract) Dump(l *log.Logger) {
+	l.Printf("RegisterContract {\n")
+	l.Printf("\tContractAddress: %v\n",evt.ContractAddress.String())
+	length := bytes.Index(evt.Key[:],[]byte{0})
+	l.Printf("\tKey: %v\n",string(evt.Key[:length]))
+	l.Printf("}\n")
+}
+func (caddrs *ContractAddresses) Dump(l *log.Logger) {
+	l.Printf("ContractAddresses {\n")
+	l.Printf("\tChainID: %v\n",caddrs.ChainId)
+	l.Printf("\tAugur: %v\n",caddrs.Augur.String())
+	l.Printf("\tAugurTrading: %v\n",caddrs.AugurTrading.String())
+	l.Printf("\tProfitLoss: %v\n",caddrs.PL.String())
+	l.Printf("\tCash: %v\n",caddrs.Dai.String())
+	l.Printf("\tZeroXTrade: %v\n",caddrs.ZeroxTrade.String())
+	l.Printf("\tExchange: %v\n",caddrs.ZeroxXchg.String())
+	l.Printf("\tREPv2: %v\n",caddrs.Reputation.String())
+	l.Printf("\tAugurWalletRegistry: %v\n",caddrs.WalletReg.String())
+	l.Printf("\tAugurWalletRegistryV2: %v\n",caddrs.WalletReg2.String())
+	l.Printf("\tFillOrder: %v\n",caddrs.FillOrder.String())
+	l.Printf("\tEthExchange: %v\n",caddrs.EthXchg.String())
+	l.Printf("\tShareToken: %v\n",caddrs.ShareToken.String())
+	l.Printf("\tGenesisUniverse: %v\n",caddrs.GenesisUniverse.String())
+	l.Printf("\tCreateOrder: %v\n",caddrs.CreateOrder.String())
+	l.Printf("\tLegacyReputationToken: %v\n",caddrs.LegacyReputationToken.String())
+	l.Printf("\tBuyParticipationTokens: %v\n",caddrs.BuyParticipationTokens.String())
+	l.Printf("\tRedeemStake: %v\n",caddrs.RedeemStake.String())
+	l.Printf("\tWarpSync: %v\n",caddrs.WarpSync.String())
+	l.Printf("\tHotLoading:%v\n",caddrs.HotLoading.String())
+	l.Printf("\tAffiliates: %v\n",caddrs.Affiliates.String())
+	l.Printf("\tAffiliateValidator: %v\n",caddrs.AffiliateValidator.String())
+	l.Printf("\tTime: %v\n",caddrs.Time.String())
+	l.Printf("\tCancelOrder: %v\n",caddrs.CancelOrder.String())
+	l.Printf("\tOrders: %v\n",caddrs.Orders.String())
+	l.Printf("\tSimulateTrade: %v\n",caddrs.SimulateTrade.String())
+	l.Printf("\tTrade: %v\n",caddrs.Trade.String())
+	l.Printf("\tOICash: %v\n",caddrs.OICash.String())
+	l.Printf("\tUniswapV2Factory: %v\n",caddrs.UniswapV2Factory.String())
+	l.Printf("\tUniswapV2Router02: %v\n",caddrs.UniswapV2Router02.String())
+	l.Printf("\tAuditFunds: %v\n",caddrs.AuditFunds.String())
+	l.Printf("\tWETH9: %v\n",caddrs.WETH9.String())
+	l.Printf("\tUSDC: %v\n",caddrs.USDC.String())
+	l.Printf("\tUSDT: %v\n",caddrs.USDT.String())
+	l.Printf("\tRelayHubV2: %v\n",caddrs.RelayHubV2.String())
+	l.Printf("\tAccountLoader: %v\n",caddrs.AccountLoader.String())
+	l.Printf("}\n")
+}
+func (evt *EUniverseCreated) Dump(l *log.Logger) {
+	l.Printf("UniverseCreated {\n")
+	l.Printf("\tParentUniverse: %v\n",evt.ParentUniverse.String())
+	l.Printf("\tChildUniverse: %v\n",evt.ChildUniverse.String())
+	l.Printf("\tPayoutNumerators: %v\n",Bigint_ptr_slice_to_str(&evt.PayoutNumerators,","))
+	l.Printf("\tCreationTimestamp: %v\n",evt.CreationTimestamp.Int64())
+	l.Printf("}\n")
 }

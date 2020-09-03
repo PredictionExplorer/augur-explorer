@@ -9,6 +9,8 @@ import (
 )
 func (ss *SQLStorage) lookup_universe_id(addr string) (int64,error) {
 
+	return ss.Nonfatal_lookup_address_id(addr)
+/* DISCONTINUED, to be deleted
 	var query string
 	query="SELECT universe_id FROM universe WHERE universe_addr=$1"
 	var universe_id int64 = 0
@@ -22,6 +24,7 @@ func (ss *SQLStorage) lookup_universe_id(addr string) (int64,error) {
 		}
 	}
 	return universe_id,nil
+*/
 }
 func (ss *SQLStorage) Lookup_eoa_aid(wallet_aid int64) (int64,error) {
 

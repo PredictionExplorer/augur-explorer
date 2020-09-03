@@ -18,6 +18,64 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION update_price_estimate(
+	p_market_aid bigint,p_outcome_idx integer,p_osize decimal
+) RETURNS void AS $$
+--updates open order statistics
+DECLARE
+	v_price_bid decimal;
+	v_price_ask decimal;
+	v_spread_threshold decimal;
+	v_osize_threshold decimal;
+	v_spread decimal;
+	v_price_estimate decimal;
+	v_num_ticks decimal;
+	v_osize decimal;
+BEGIN
+
+	SELECT spread_threshold,osize_threshold FROM ooconfig INTO v_spread_threshold,v_osize_threshold;
+
+	IF v_osize < v_osize_threshold THEN
+		RETURN;
+	END IF;
+
+	SELECT num_ticks FROM market WHERE market_aid = p_market_aid INTO v_num_ticks;
+	SELECT COALESCE(MAX(price),-1)
+		FROM oorders
+		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx
+		INTO v_price_bid;
+	SELECT COALESCE(MIN(price),-1)
+		FROM oorders
+		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx
+		INTO v_price_ask;
+	-- exit if we don't have enough bid/ask records
+	IF v_price_bid < 0 THEN
+		RETURN;
+	END IF;
+	IF v_price_ask < 0 THEN
+		RETURN;
+	END IF;
+
+	v_spread := v_price_ask - v_price_bid;
+	IF v_spread < v_spread_threshold THEN
+		v_price_estimate := (v_price_bid + v_price_ask) / 2 ;
+	ELSE
+		v_num_ticks:=v_num_ticks/2;
+		IF v_price_bid > v_num_ticks THEN
+			v_price_estimate := v_price_ask;
+		ELSE
+			v_price_estimate := v_price_bid;
+		END IF;
+	END IF;
+
+	UPDATE outcome_vol
+		SET	highest_bid = v_price_bid,
+			lowest_ask = v_price_ask,
+			price_estimate = v_price_estimate,
+			cur_spread = v_spread
+		WHERE market_aid = p_market_aid AND outcome_idx=p_outcome_idx;
+END;
+$$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_oorders_insert() RETURNS trigger AS  $$ --updates open order statistics
 DECLARE
 	v_cnt numeric;
@@ -51,7 +109,68 @@ BEGIN
 		END IF;
 	END IF;
 
+	PERFORM update_price_estimate(NEW.market_aid,NEW.outcome_idx,NEW.amount);
+
+	-- Update Open Order history
+	INSERT INTO oohist(
+			otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
+			price,initial_amount,amount,evt_timestamp,srv_timestamp,expiration,order_hash
+		) VALUES (
+			NEW.otype,NEW.outcome_idx,NEW.opcode,NEW.market_aid,NEW.wallet_aid,NEW.eoa_aid,
+			NEW.price,NEW.initial_amount,NEW.amount,NEW.evt_timestamp,NEW.srv_timestamp,NEW.expiration,NEW.order_hash
+		) ON CONFLICT DO NOTHING;
+
 	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION update_oo_hist(p_mktord_id bigint,p_order_hash text,p_filled_amount text,p_opcode numeric) RETURNS void AS  $$ -- reverts order statistics on delete
+DECLARE
+	oo record;
+	v_cnt numeric;
+BEGIN
+
+	SELECT * FROM oorders WHERE order_hash = p_order_hash LIMIT 1 INTO oo;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt > 0 THEN
+		INSERT INTO oohist(
+				mktord_id,otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
+				price,initial_amount,amount,
+				evt_timestamp,srv_timestamp,expiration,order_hash
+			) VALUES (
+				p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
+				oo.price,oo.initial_amount,p_filled_amount::DECIMAL/1e+18,
+				oo.evt_timestamp,oo.srv_timestamp,oo.expiration,oo.order_hash
+			) ON CONFLICT DO NOTHING;
+		RETURN;
+	END IF;
+	SELECT * FROM oohist WHERE order_hash = p_order_hash AND opcode=1 LIMIT 1 INTO oo;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt > 0 THEN
+		INSERT INTO oohist(
+				mktord_id,otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
+				price,initial_amount,amount,
+				evt_timestamp,srv_timestamp,expiration,order_hash
+			) VALUES (
+				p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
+				oo.price,oo.initial_amount,p_filled_amount::DECIMAL/1e+18,
+				oo.evt_timestamp,oo.srv_timestamp,oo.expiration,oo.order_hash
+			) ON CONFLICT DO NOTHING;
+	ELSE 
+		-- this code is executed in case 0x Mesh listener process didn't insert record in oorders table
+		-- is only valid for FILL operations becausse that's the only ones who have mktord_id > 0
+		SELECT * FROM mktord AS o WHERE o.id=p_mktord_id AND order_hash = p_order_hash INTO oo;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		IF v_cnt > 0 THEN
+			INSERT INTO oohist(
+					mktord_id,otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
+					price,initial_amount,amount,srv_timestamp,order_hash
+				) VALUES (
+					p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
+					oo.price,oo.amount,oo.amount_filled,oo.time_stamp,oo.order_hash
+				) ON CONFLICT DO NOTHING;
+		END IF;
+	END IF;
+
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_oorders_delete() RETURNS trigger AS  $$ -- reverts order statistics on delete
@@ -72,6 +191,11 @@ BEGIN
 					(s.eoa_aid = OLD.eoa_aid) AND
 					(s.outcome_idx = OLD.outcome_idx);
 	END IF;
+
+	PERFORM update_price_estimate(OLD.market_aid,OLD.outcome_idx,OLD.amount);
+
+	-- Update Open Order history
+	-- we do not DELETE anything here because oohist table should stay forverver
 
 	RETURN OLD;
 END;

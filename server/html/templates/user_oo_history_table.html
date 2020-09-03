@@ -1,0 +1,22 @@
+{{define "user_oo_history_table"}}
+<table class="user_open_orders">
+	<tr class="user_open_orders">
+		<th class="user_open_orders">Hash</th>
+		<th class="user_open_orders">Date</th>
+		<th class="user_open_orders">Market</th>
+		<th class="user_open_orders">Type</th>
+		<th class="user_open_orders">Status</th>
+		<th class="user_open_orders">Outcome</th>
+		<th class="user_open_orders">Type</th>
+		<th class="user_open_orders">Initial Amount</th>
+		<th class="user_open_orders">Amount</th>
+		<th class="user_open_orders">Price</th>
+		<th class="user_open_orders">Operation</th>
+		<th class="user_open_orders">Trade Order (if present)</th>
+	</tr>
+	{{- range $i, $oo:= .}}
+		{{template "open_order_hist" $oo}}
+	{{- end}}
+
+</table>
+{{end}}

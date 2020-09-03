@@ -16,6 +16,14 @@ const (
 	MktTypeCategorical
 	MktTypeScalar
 )
+const (
+	OOOpCodeNone= iota
+	OOOpCodeCreated
+	OOOpCodeFill
+	OOOpCodeCancelledByUser
+	OOOpCodeExpired
+	OOOpCodeSyncProcess		// when no other reason exist, this one is used (this is a kind of a bugfix)
+)
 
 var (
 	ErrChainSplit error = errors.New("Chainsplit detected")
@@ -128,6 +136,10 @@ type OutcomeVol struct {
 	OutcomeStr		string
 	Volume			float64
 	LastPrice		float64
+	HighestBid		float64
+	LowestAsk		float64
+	CurSpread		float64
+	PriceEstimate	float64
 	MktType			int
 	MktAddr			string
 }
@@ -252,14 +264,17 @@ type PLEntry struct {	// profit loss entry
 type OpenOrder struct {		// the Order on 0x Mesh network, that is yet to be filled
 	Id					int64
 	Amount				float64
+	InitialAmount		float64
 	Price				float64
 	Timestamp			int64
 	MktExpirationTs		int64
+	MktOrderId			int64
 	MktStatus			int
 	MktType				int
 	MarketStatus		int
 	Outcome				int
 	OrderType			int
+	OpCode				int
 	OrderDate			string
 	Direction			string
 	MktDescr			string
@@ -267,6 +282,7 @@ type OpenOrder struct {		// the Order on 0x Mesh network, that is yet to be fill
 	MktStatusStr		string
 	MktTypeStr			string
 	OrderHash			string
+	OrderHashSh			string
 	CreatorAddr			string
 	CreatorAddrSh		string	// shortened address
 	MktAddr				string
@@ -386,17 +402,42 @@ type BlockCash struct {
 	AccumCashFlow		float64
 }
 type ContractAddresses struct {
-	Augur			common.Address	// Main Augur contract
-	AugurTrading	common.Address	// Augur trading contract
-	PL				common.Address	// ProfitLoss contract
-	Zerox			common.Address
-	Dai				common.Address	// Shows DAI balance and also to fill dai_transf table and Cash Flow report
-	Reputation		common.Address	// used to query REP token balance when showing User info (among other stuff)
-	WalletReg		common.Address	// this contract is used to get the link between EOA and Wallet contract
-	FillOrder		common.Address	// used to identify if DAI transfer is internal or not
-	EthXchg			common.Address	// used to identify if DAI transfer is internal or not
-	ShareToken		common.Address  // used to identify if DAI transfer is internal or not
-	Universe		common.Address	// used to identify if DAI transfer is internal or not
+	ChainId					int64
+	Augur					common.Address	// Main Augur contract
+	AugurTrading			common.Address	// Augur trading contract
+	PL						common.Address	// ProfitLoss contract
+	ZeroxTrade				common.Address	// ZeroX Trade contract
+	ZeroxXchg				common.Address	// ZeroX Exchange contract
+	Dai						common.Address	// Shows DAI balance and also to fill dai_transf table 
+	Reputation				common.Address	// used to query REP token balance when showing User info
+	WalletReg				common.Address	// used to get the link between EOA and Wallet contract
+	WalletReg2				common.Address	// same as WalletReg but with GSN, used for EOA-Wallet link
+	FillOrder				common.Address	// used to identify if DAI transfer is internal or not
+	EthXchg					common.Address	// used to identify if DAI transfer is internal or not
+	ShareToken				common.Address  // used to identify if DAI transfer is internal or not
+	GenesisUniverse			common.Address	// used to identify if DAI transfer is internal or not
+	CreateOrder				common.Address	// CreateOrder contract, used to detect wallet creation pattern
+	LegacyReputationToken	common.Address
+	BuyParticipationTokens	common.Address
+	RedeemStake				common.Address
+	WarpSync				common.Address
+	HotLoading				common.Address
+	Affiliates				common.Address
+	AffiliateValidator		common.Address
+	Time					common.Address
+	CancelOrder				common.Address
+	Orders					common.Address
+	SimulateTrade			common.Address
+	Trade					common.Address
+	OICash					common.Address
+	UniswapV2Factory		common.Address
+	UniswapV2Router02		common.Address
+	AuditFunds				common.Address
+	WETH9					common.Address
+	USDC					common.Address
+	USDT					common.Address
+	RelayHubV2				common.Address
+	AccountLoader			common.Address
 }
 type UniqueAddrEntry struct {
 	Ts					int64
@@ -461,4 +502,16 @@ type StatementEntry struct {
 	ToSh				string
 	Info				string
 	MktAddr				string
+}
+type ExecuteWalletTx struct {
+	RevertOnFailure			bool
+	To						string
+	CallData				string	// hex-encoded bytecode of the Input to the contract in 'to'
+	Value					string
+	Payment					string
+	ReferralAddress			string
+	Fingerprint				string	// the fingerprint of the Browser of the account that does referrals
+	DesiredSignerBalance	string
+	MaxExchangeRateInDAI	string
+	InputSig				string	// first 4 bytes of CallData, extracted for indexing
 }

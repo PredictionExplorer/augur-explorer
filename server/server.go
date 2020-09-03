@@ -204,6 +204,21 @@ func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoM
 }
 func is_address_valid(c *gin.Context,json_output bool,addr string) (string,bool) {
 
+	if (len(addr) != 40) && (len(addr)!=42) {
+		var err_msg = fmt.Sprintf("Provided address has invalid length (len=%v)",len(addr))
+		if json_output {
+			c.JSON(200,gin.H{
+				"status": 0,
+				"error": err_msg,
+			})
+		} else {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": err_msg,
+			})
+		}
+		return "",false
+	}
 	if (addr[0]=='0') && (addr[1] == 'x') {
 		addr = addr[2:]
 	}
@@ -1142,5 +1157,34 @@ func account_statement(c *gin.Context) {
 	c.HTML(http.StatusOK, "account_statement.html", gin.H{
 			"Address" : addr,
 			"Transfers": transfers,
+	})
+}
+func open_order_history(c *gin.Context) {
+
+	p_addr := c.Param("addr")
+	user_addr_str,valid := is_address_valid(c,false,p_addr)
+	if !valid {
+		return
+	}
+	aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(user_addr_str)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Such address wasn't found: %v",user_addr_str),
+		})
+		return
+	}
+	user_info,err := augur_srv.storage.Get_user_info(aid)
+	if err!= nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("No records found for address: %v",user_addr_str),
+		})
+		return
+	}
+	oo_history := augur_srv.storage.Get_user_oo_history(aid)
+	c.HTML(http.StatusOK, "user_oo_history.html", gin.H{
+		"UserInfo" : user_info,
+		"OOHistory" : oo_history,
 	})
 }

@@ -144,6 +144,7 @@ func main() {
 	r.GET("/mdstat/:market_aid/:outcome_idx/:last_oo_id",market_depth_status)
 	r.GET("/umtrades.html",user_trades_for_market)
 	r.GET("/statement/:addr",account_statement)
+	r.GET("/oohist/:addr",open_order_history)
 
 	// API calls for the new FrontEnd
 	r.GET("/api/active_market_ids",a1_active_market_ids)

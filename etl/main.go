@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	//"bytes"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -14,18 +13,12 @@ import (
 	"fmt"
 	"context"
 	"log"
-	//"errors"
-	//"math/big"
+	"math/big"
 	"encoding/hex"
-	//"encoding/json"
 
-	//"github.com/ethereum/go-ethereum/common"
-	//"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/rpc"
-	//"github.com/ethereum/go-ethereum/common/hexutil"
-	//"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
@@ -51,13 +44,18 @@ const (
 	ERC20_TRANSFER = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 	EXCHANGE_FILL = "6869791f0a34781b29882982cc39e882768cf2c96995c2a110c577c53bc932d5"
 	TRADING_PROCEEDS_CLAIMED = "95366b7f64c6bb45149f9f7c522403fceebe5170ff76b8ffde2b0ab943ac11ce"
-	ZEROX_APPROVAL_FOR_ALL = "17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31"
+	ERC1155_APPROVAL_FOR_ALL = "17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31"
 	ERC20_APPROVAL = "8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
 	EXEC_TX_STATUS = "ee9c28a7fe7177d351e891cb4ca5b7a4e4aba4974be67fb7665ba1ad0e703439"
+	RELAYHUB_TRANSACTION_RELAYED = "ab74390d395916d9e0006298d47938a5def5d367054dcca78fa6ec84381f3f22"
+	REGISTER_CONTRACT = "a037dd0e01f0488a530cb17065a6d2f284fae016004fc744ee2a41d5cacf85d5"
+	UNIVERSE_CREATED = "e36b09d83f9cfa88c37f071fc2cfb5ff30b764cbd98088e70d965573c9ce5bbd"
 
 	DEFAULT_WAIT_TIME = 5000	// 5 seconds
 	DEFAULT_DB_LOG				= "db.log"
 	//DEFAULT_LOG_DIR				= "ae_logs"
+	MAX_APPROVAL_BASE10 string = "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+	NUM_AUGUR_CONTRACTS int = 35
 )
 var (
 	// these evt_ variables are here for speed to avoid calculation of Keccak256
@@ -80,9 +78,14 @@ var (
 	evt_erc20_transfer,_ = hex.DecodeString(ERC20_TRANSFER)
 	evt_exchange_fill,_ = hex.DecodeString(EXCHANGE_FILL)
 	evt_trading_proceeds_claimed,_ = hex.DecodeString(TRADING_PROCEEDS_CLAIMED)
-	evt_zerox_approval_for_all,_ = hex.DecodeString(ZEROX_APPROVAL_FOR_ALL)
+	evt_erc1155_approval_for_all,_ = hex.DecodeString(ERC1155_APPROVAL_FOR_ALL)
 	evt_erc20_approval,_ = hex.DecodeString(ERC20_APPROVAL)
 	evt_execute_tx_status,_ = hex.DecodeString(EXEC_TX_STATUS)
+	evt_tx_relayed,_ = hex.DecodeString(RELAYHUB_TRANSACTION_RELAYED)
+	evt_register_contract,_ = hex.DecodeString(REGISTER_CONTRACT)
+	evt_universe_created,_ = hex.DecodeString(UNIVERSE_CREATED)
+
+	exec_wtx_sig ,_ = hex.DecodeString("78dc0eed")
 
 	storage *SQLStorage
 
@@ -91,13 +94,13 @@ var (
 
 	augur_abi *abi.ABI
 	trading_abi *abi.ABI
-	zerox_abi *abi.ABI
+	zerox_trade_abi *abi.ABI
 	cash_abi *abi.ABI
 	exchange_abi *abi.ABI
 	wallet_abi *abi.ABI
 
 	ctrct_wallet_registry *AugurWalletRegistry
-	ctrct_zerox *ZeroX
+	ctrct_zerox_trade *ZeroX
 	ctrct_dai_token *DAICash
 	ctrct_pl *ProfitLoss
 
@@ -109,9 +112,9 @@ var (
 	// addresses of the contracts used in our code (for making eth.Call()s if needed)
 	caddrs *ContractAddresses
 
-	fill_order_id int64 = 0			// during event processing, holds id of record in mktord from Fill evt
 	market_order_id int64 = 0
 	owner_fld_offset int64 = int64(OWNER_FIELD_OFFSET)	// offset to AugurContract::owner field obtained with eth_getStorage()
+	initial_amount *big.Int = nil	// Initial order amount extracted from MakerAssetData of Fill event
 	
 	set_back_block_num int64 = 0
 
@@ -122,6 +125,9 @@ var (
 
 	//DISCONTINUED ErrChainSplit error = errors.New("Chainsplit detected")
 	split_simulated bool = false
+
+	max_approval *big.Int = big.NewInt(0)
+
 )
 type rpcBlockHash struct {
 	Hash		string
@@ -185,6 +191,9 @@ func main() {
 	}
 	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	Error = log.New(logfile,"ERROR: ",log.Ltime|log.Lshortfile)
+
+	max_approval.SetString(MAX_APPROVAL_BASE10,10)
+
 	rpcclient, err=rpc.DialContext(context.Background(), RPC_URL)
 	if err != nil {
 		log.Fatal(err)
@@ -195,15 +204,30 @@ func main() {
 	storage = Connect_to_storage(&market_order_id,Info)
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
-	storage.Check_main_stats()
 
 	caddrs_obj,err := storage.Get_contract_addresses()
 	if err!=nil {
 		Fatalf("Can't find contract addresses in 'contract_addresses' table")
 	}
 	caddrs=&caddrs_obj
-	augur_init(caddrs,&all_contracts)
 
+	net_caddrs,err := Get_contract_addresses_from_net(caddrs_obj.AugurTrading,eclient)
+	if err != nil {
+		Fatalf("Can't get contract addresses from Ethereum Network: %v",err)
+	}
+	num_mismatches,match_errors := Contract_addresses_match(caddrs,&net_caddrs)
+	if num_mismatches > 0 {
+		if num_mismatches == (NUM_AUGUR_CONTRACTS - 4) { // -1 for AugurTrading , -1 for AccountLoader
+			Info.Printf("Empty contract addresses found, populating...")
+			storage.Update_contract_addresses(&net_caddrs)
+			caddrs = &net_caddrs
+		} else {
+			Error.Printf("%v contract addresses mismatch, errors: %v\n",num_mismatches,match_errors)
+			Info.Printf("Exiting due to contract address mismatch.")
+			os.Exit(1)
+		}
+	}
+	augur_init(caddrs,&all_contracts)
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)

@@ -4,23 +4,20 @@ import (
 	"time"
 	"bytes"
 	"encoding/hex"
-	//"encoding/json"
 	"math/big"
 	"context"
 	"os"
 	"errors"
 	"fmt"
-//	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-//	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	//"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/0xProject/0x-mesh/zeroex"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-type InputStruct struct {
+type ExecWalletTxInputStruct struct {
 	To common.Address `abi:"_to"`
 	Data []byte `abi:"_data"`
 	Value *big.Int `abi:"_value"`
@@ -31,17 +28,23 @@ type InputStruct struct {
 	MaxExchangeRateInDai *big.Int `abi:"_maxExchangeRateInDai"`
 	RevertOnFailure bool `abi:"_revertOnFailure"`
 }
+type TradeInputStruct struct {
+	RequestedFillAmount		*big.Int `abi:"_requestedFillAmount"`
+	Fingerprint				[32]byte `abi:"_fingerprint"`
+	TradeGroupId			[32]byte `abi:"_tradeGroupId"`
+	MaxProtocolFeeDai		*big.Int `abi:"_maxProtocolFeeDai"`
+	MaxTrades				*big.Int `abi:"_maxTrades"`
+	Orders					[]IExchangeOrder `abi:"_orders"`
+	Signatures				[][]byte `abi:"_signatures"`
+}
 func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) {
 
-	//Init_contract_addresses(addresses)
-
 	all_contracts = Load_all_artifacts("./abis/augur-artifacts-abi.json")
-	//dump_all_artifacts()
 
 	// Augur service involves 39 contracts in total. We only use a few of them
 	augur_abi = Abi_from_artifacts(contracts,"Augur")
 	trading_abi = Abi_from_artifacts(contracts,"AugurTrading")
-	zerox_abi = Abi_from_artifacts(contracts,"ZeroXTrade")
+	zerox_trade_abi = Abi_from_artifacts(contracts,"ZeroXTrade")
 	cash_abi = Abi_from_artifacts(contracts,"Cash")
 	exchange_abi = Abi_from_artifacts(contracts,"Exchange")
 	wallet_abi = Abi_from_artifacts(contracts,"AugurWalletRegistry")
@@ -53,7 +56,7 @@ func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) 
 	if err != nil {
 		Fatalf("Failed to instantiate a AugurWalletRegistry contract: %v", err)
 	}
-	ctrct_zerox, err = NewZeroX(addresses.Zerox,eclient)
+	ctrct_zerox_trade, err = NewZeroX(addresses.ZeroxTrade,eclient)
 	if err != nil {
 		Fatalf("Failed to instantiate a ZeroX contract: %v", err)
 	}
@@ -89,7 +92,7 @@ func build_list_of_inspected_events() {
 							evt_erc20_transfer,
 							evt_exchange_fill,
 							evt_trading_proceeds_claimed,
-							evt_zerox_approval_for_all,
+							evt_erc1155_approval_for_all,
 							evt_erc20_approval,
 	)
 }
@@ -165,7 +168,7 @@ func proc_approval_for_all(log *types.Log) {
 	var mevt EApprovalForAll
 	mevt.Owner= common.BytesToAddress(log.Topics[1][12:])
 	mevt.Operator= common.BytesToAddress(log.Topics[2][12:])
-	err := zerox_abi.Unpack(&mevt,"ApprovalForAll",log.Data)
+	err := zerox_trade_abi.Unpack(&mevt,"ApprovalForAll",log.Data)
 	if err != nil {
 		Fatalf("Event ApprovalForAll decode error: %v",err)
 	} else {
@@ -208,18 +211,16 @@ func proc_fill_evt(log *types.Log) {
 		Fatalf("Event Fill for 0x decode error: %v",err)
 		return
 	}
-	if !bytes.Equal(log.Address.Bytes(),caddrs.AugurTrading.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),caddrs.ZeroxXchg.Bytes()) {
 		return
 	}
 	Info.Printf("Fill event found (block=%v) :\n",log.BlockNumber)
 	mevt.Dump(Info)
-	// we need to locate order id because Profit Loss events are linked to this Order 
-	fill_order_id = storage.Locate_fill_event_order(&mevt)
+	initial_amount = big.NewInt(0)
+	initial_amount.Set(mevt.MakerAssetFilledAmount)
 }
 func proc_erc20_transfer(log *types.Log,agtx *AugurTx) {
 	var mevt ETransfer
-	/*
-	*/
 	if len(log.Topics)!=3 {
 		Info.Printf("ERC20 transfer event is not compliant log.Topics!=3. Tx hash=%v\n",log.TxHash.String())
 		return
@@ -267,7 +268,6 @@ func proc_profit_loss_changed(agtx *AugurTx,log *types.Log) int64  {
 	pchg.Outcome = new(big.Int)
 	pchg.Outcome.Set(mevt.Outcome)
 	position_changes = append(position_changes,pchg)
-//		Info.Printf("position_changes len=%v\n",lken(position_changes)
 	eoa_aid := get_eoa_aid(&mevt.Account,agtx.BlockNum,agtx.TxId)
 	id = storage.Insert_profit_loss_evt(agtx,eoa_aid,&mevt)
 	return id
@@ -277,7 +277,7 @@ func proc_transfer_single(log *types.Log) {
 	mevt.Operator= common.BytesToAddress(log.Topics[1][12:])
 	mevt.From= common.BytesToAddress(log.Topics[2][12:])
 	mevt.To= common.BytesToAddress(log.Topics[3][12:])
-	err := zerox_abi.Unpack(&mevt,"TransferSingle",log.Data)
+	err := zerox_trade_abi.Unpack(&mevt,"TransferSingle",log.Data)
 	if err != nil {
 		Fatalf("Event TransferSingle decode error: %v",err)
 	} else {
@@ -290,12 +290,12 @@ func proc_transfer_batch(log *types.Log) {
 	mevt.Operator= common.BytesToAddress(log.Topics[1][12:])
 	mevt.From= common.BytesToAddress(log.Topics[2][12:])
 	mevt.To= common.BytesToAddress(log.Topics[3][12:])
-	err := zerox_abi.Unpack(&mevt,"TransferBatch",log.Data)
+	err := zerox_trade_abi.Unpack(&mevt,"TransferBatch",log.Data)
 	if err != nil {
 		Fatalf("Event TransferBatch decode error: %v",err)
 	} else {
 		Info.Printf("TransferBatch event found (block=%v) :\n",log.BlockNumber)
-		mevt.Dump(ctrct_zerox,Info)
+		mevt.Dump(ctrct_zerox_trade,Info)
 	}
 }
 func proc_tokens_transferred(agtx *AugurTx, log *types.Log) {
@@ -393,7 +393,13 @@ func proc_market_order_event(agtx *AugurTx,log *types.Log) {
 	eoa_aid := get_eoa_aid(&mevt.AddressData[0],agtx.BlockNum,agtx.TxId)
 	eoa_fill_aid := get_eoa_aid(&mevt.AddressData[1],agtx.BlockNum,agtx.TxId)
 	//storage.Insert_market_order_evt(BlockNumber(log.BlockNumber),tx_id,signer,eoa_aid,&mevt)
-	storage.Insert_market_order_evt(agtx,eoa_aid,eoa_fill_aid,&mevt)
+
+	orig_fill_amounts := extract_original_fill_amount(agtx.Input)
+	if len(orig_fill_amounts) == 0 {
+		Fatalf("Couldn't extract fill amount from Tx inpuit. Aborting.")
+	}
+
+	storage.Insert_market_order_evt(agtx,eoa_aid,eoa_fill_aid,&mevt,orig_fill_amounts)
 }
 func proc_cancel_zerox_order(log *types.Log) {
 	var mevt ECancelZeroXOrder
@@ -413,7 +419,7 @@ func proc_cancel_zerox_order(log *types.Log) {
 	Info.Printf("CancelZeroXOrder event for contract %v (block=%v) : \n",
 								log.Address.String(),log.BlockNumber)
 	mevt.Dump(Info)
-	storage.Delete_open_0x_order(ohash_str)
+	storage.Delete_open_0x_order(ohash_str,OOOpCodeCancelledByUser)
 }
 func proc_market_oi_changed(block *types.Header, agtx *AugurTx, log *types.Log) {
 	var mevt EMarketOIChanged
@@ -601,6 +607,50 @@ func proc_transaction_status(agtx *AugurTx, log *types.Log) {
 //	_ = eoa_aid
 	storage.Insert_augur_transaction_status(agtx,&evt)
 }
+func proc_register_contract(agtx *AugurTx,log *types.Log) {
+	var evt ERegisterContract
+	err := augur_abi.Unpack(&evt,"RegisterContract",log.Data)
+	if err != nil {
+		Fatalf("Event Register contract decode error: %v",err)
+		return
+	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		evt.Dump(Info)
+		Info.Printf(
+			"RegisterContract event received and ignored "+
+			"(belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),agtx.BlockNum,
+		)
+		return
+	}
+	Info.Printf("RegisterContract event for contract %v (block=%v) :\n",
+								log.Address.String(),log.BlockNumber)
+	evt.Dump(Info)
+	storage.Insert_register_contract_event(agtx,&evt)
+}
+func proc_universe_created(agtx *AugurTx,log *types.Log) {
+	var evt EUniverseCreated
+	evt.ParentUniverse = common.BytesToAddress(log.Topics[1][12:])
+	evt.ChildUniverse= common.BytesToAddress(log.Topics[2][12:])
+	err := augur_abi.Unpack(&evt,"UniverseCreated",log.Data)
+	if err != nil {
+		Fatalf("Event UniverseCreated decode error: %v",err)
+		return
+	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		evt.Dump(Info)
+		Info.Printf(
+			"UniverseCreated event received and ignored "+
+			"(belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),agtx.BlockNum,
+		)
+		return
+	}
+	Info.Printf("UniverseCreated event for contract %v (block=%v) :\n",
+								log.Address.String(),log.BlockNumber)
+	evt.Dump(Info)
+	storage.Insert_universe_created_event(agtx,&evt)
+}
 func tx_insert_if_needed(agtx *AugurTx) {
 	if agtx.TxId == 0 {
 		agtx.TxId=storage.Insert_transaction(agtx)
@@ -619,7 +669,7 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_approval) {
 			proc_approval(log)
 		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_zerox_approval_for_all) {
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc1155_approval_for_all) {
 			proc_approval_for_all(log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_trading_proceeds_claimed) {
@@ -692,7 +742,7 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 			show_market_created_evt(agtx,log)
 			var validity_bond string
 			var transf_evt ETransfer
-			tr_idx := lidx + 1	// the offset to ERC20 event (as they fired by contracts)
+			tr_idx := lidx - 1	// the offset to ERC20 event (as they fired by contracts)
 			err := cash_abi.Unpack(&transf_evt,"Transfer",(*logs)[tr_idx].Data)
 			if err == nil {
 				validity_bond = transf_evt.Value.String()
@@ -704,6 +754,14 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_execute_tx_status) {
 			tx_insert_if_needed(agtx)
 			proc_transaction_status(agtx,log)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_register_contract) {
+			tx_insert_if_needed(agtx)
+			proc_register_contract(agtx,log)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_universe_created) {
+			tx_insert_if_needed(agtx)
+			proc_universe_created(agtx,log)
 		}
 	}
 	for j:=1; j < num_topics ; j++ {
@@ -770,7 +828,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		return err
 	}
 	num_transactions := len(transactions)
-	Info.Printf("block hash = %v, num_tx=%v\n",block_hash_str,num_transactions)
+	Info.Printf("block %v hash = %v, num_tx=%v\n",bnum,block_hash_str,num_transactions)
 	if bnum!=header.Number.Int64() {
 		Info.Printf("Retrieved block number %v but Block object contains another number (%v)",bnum,header.Number.Int64())
 		Error.Printf("Retrieved block number %v but Block object contains another number (%v)",bnum,header.Number.Int64())
@@ -792,7 +850,6 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		os.Exit(1)
 	}
 	if num_transactions == 0 {
-		Info.Printf("block_proc: block: %v EMPTY\n",bnum)
 		if update_last_block {
 			storage.Set_last_block_num(bnum)
 		}
@@ -822,6 +879,10 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		Info.Printf("\t from=%v\n",agtx.From)
 		Info.Printf("\t to=%v for $%v (%v bytes data)\n",
 						agtx.To,agtx.Value,len(agtx.Input))
+		if rcpt.Status == types.ReceiptStatusFailed {
+			Info.Printf("\t Status: Failed. Skipping this transaciton.\n")
+			continue	// transaction failed (i.e. Out of Gas, etc)
+		}
 		dump_tx_input_if_known(agtx.Input)
 		if rcpt.BlockNumber.Int64() != bnum {
 			Error.Printf(
@@ -862,6 +923,37 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 			}
 			sequencer.append_event(rcpt.Logs[i])
 		}
+		// Step 1.1 If a Wallet contract has been created, register EOA-Wallet link
+		wallet_created,wallet_addr,possible_eoa_addr := was_wallet_created(caddrs,rcpt.Logs)
+		if wallet_created {
+			tx_insert_if_needed(agtx)
+			var from_addr *string = &agtx.From
+			var possible_eoa_str string
+			if possible_eoa_addr != nil {
+				possible_eoa_str = possible_eoa_addr.String()
+				from_addr = &possible_eoa_str
+			}
+			storage.Register_eoa_and_wallet(*from_addr,wallet_addr.String(),agtx.BlockNum,agtx.TxId)
+		}
+		// Step 1.2 If transaction contains executeWalletTransaction, store it in the DB
+		if (agtx.To == caddrs.WalletReg.String()) || (agtx.To == caddrs.WalletReg2.String()) {
+			exec_wtx := contains_execute_wallet_transaction_call(agtx.Input)
+			if exec_wtx != nil {
+				tx_insert_if_needed(agtx)
+				// Note: Tests are pending for transactions going through GSN (EOA address must be extracted
+				//			from the tx.Data(), in the first 20 bytes
+				eoa_aid := storage.Lookup_or_create_address(agtx.From,agtx.BlockNum,agtx.TxId)
+				wallet_aid,err := storage.Lookup_wallet_aid(eoa_aid)
+				if err != nil {
+					Info.Printf(
+						"executeWalletTransaction(): wallet_aid=0 for eoa=%v (id=%v)\n",
+						agtx.From,eoa_aid,
+					)
+				}
+				exec_wtx.Dump(Info)
+				storage.Insert_execute_wallet_tx(eoa_aid,wallet_aid,agtx,exec_wtx)
+			}
+		}
 		// Step 2: Knowing what kind of Augur Transaction, we are sorting events in an order
 		//			that is convinient for us to process the event series
 		var ordered_list []*types.Log
@@ -879,8 +971,9 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		}
 		num_logs = len(ordered_list)
 		pl_entries := make([]int64,0,2);// profit loss entries
+		// before processing events we need to reset these global vars as they accumulate some data
 		market_order_id = 0
-		fill_order_id = 0
+		initial_amount = nil
 		//
 		// Step 3: Execute events using ordered list prepared in previous step
 		for i:=0 ; i < num_logs ; i++ {
@@ -890,7 +983,6 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 					hex.EncodeToString(ordered_list[i].Topics[0][0:4]),
 					ordered_list[i].Address.String())
 				id := process_event(header,agtx,&ordered_list,i)
-				//var id int64 =0
 				if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),evt_profit_loss_changed) {
 					pl_entries = append(pl_entries,id)
 				}
@@ -902,6 +994,73 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		storage.Set_last_block_num(bnum)
 	}
 	return nil
+}
+func get_order_hash(o *IExchangeOrder) string {
+
+	zero_order := new(zeroex.Order)
+	zero_order.ChainID=big.NewInt(caddrs.ChainId)
+	zero_order.ExchangeAddress.SetBytes(caddrs.ZeroxXchg.Bytes())
+	zero_order.MakerAddress.SetBytes(o.MakerAddress.Bytes())
+	zero_order.MakerAssetData = make([]byte,len(o.MakerAssetData))
+	copy(zero_order.MakerAssetData,o.MakerAssetData)
+	zero_order.MakerFeeAssetData = make([]byte,len(o.MakerFeeAssetData))
+	copy(zero_order.MakerFeeAssetData,o.MakerFeeAssetData)
+	zero_order.MakerAssetAmount = new(big.Int)
+	zero_order.MakerAssetAmount.Set(o.MakerAssetAmount)
+	zero_order.MakerFee = new(big.Int)
+	zero_order.MakerFee.Set(o.MakerFee)
+	zero_order.TakerAddress.SetBytes(o.TakerAddress.Bytes())
+	zero_order.TakerAssetData = make([]byte,len(o.TakerAssetData))
+	copy(zero_order.TakerAssetData,o.TakerAssetData)
+	zero_order.TakerFeeAssetData = make([]byte,len(o.TakerFeeAssetData))
+	copy(zero_order.TakerFeeAssetData,o.TakerFeeAssetData)
+	zero_order.TakerAssetAmount = new(big.Int)
+	zero_order.TakerAssetAmount.Set(o.TakerAssetAmount)
+	zero_order.TakerFee = new(big.Int)
+	zero_order.TakerFee.Set(o.TakerFee)
+	zero_order.SenderAddress.SetBytes(o.SenderAddress.Bytes())
+	zero_order.FeeRecipientAddress.SetBytes(o.FeeRecipientAddress.Bytes())
+	zero_order.ExpirationTimeSeconds = new(big.Int)
+	zero_order.ExpirationTimeSeconds.Set(o.ExpirationTimeSeconds)
+	zero_order.Salt = new(big.Int)
+	zero_order.Salt.Set(o.Salt)
+	hash,err:=zero_order.ComputeOrderHash()
+	if err!=nil {
+		Fatalf("can't compute ZeroX order hash: %v\n",err)
+	}
+	Info.Printf("get_order_hash() returning %v\n",hash.String())
+	return hash.String()
+}
+func decode_original_fill_amount(input_data []byte,method_sig []byte) map[string]*big.Int {
+	output := make(map[string]*big.Int,0)
+	var input_data_decoded TradeInputStruct
+	method, err := zerox_trade_abi.MethodById(method_sig)
+	if err != nil {
+		Fatalf("Method not found")
+	}
+	err = method.Inputs.Unpack(&input_data_decoded, input_data)
+	if err != nil {
+		Fatalf("Couldn't decode input of tx: %v",err)
+	}
+	if len(input_data_decoded.Orders) > 0 {
+		Info.Printf("Requested fill amount = %v\n",input_data_decoded.RequestedFillAmount.String())
+		Info.Printf("num orders=%v\n",len(input_data_decoded.Orders))
+		for i,order := range input_data_decoded.Orders {
+			hash_str := get_order_hash(&order)
+			Info.Printf(
+				"Order %v (%v), maker amount = %v, taker amount=%v\n",
+				i,hash_str,order.MakerAssetAmount,order.TakerAssetAmount,
+			)
+			initial_amount := big.NewInt(0)
+			initial_amount.Set(order.MakerAssetAmount)
+			output[hash_str]=initial_amount
+		}
+	} else {
+		Error.Printf("Undefined behavior: no orders detected on the input of ZeroXTrade::trade()")
+		os.Exit(1)
+	}
+
+	return output
 }
 func dump_tx_input_if_known(tx_data []byte) {
 
@@ -918,7 +1077,7 @@ func dump_tx_input_if_known(tx_data []byte) {
 	decoded_sig ,_ := hex.DecodeString("78dc0eed")
 	if 0 == bytes.Compare(input_sig,decoded_sig) {
 		input_data_raw:= tx_data[4:]
-		var input_data InputStruct
+		var input_data ExecWalletTxInputStruct
 		method, err := wallet_abi.MethodById(decoded_sig)
 		if err != nil {
 			Fatalf("Method not found")
@@ -952,9 +1111,37 @@ func dump_tx_input_if_known(tx_data []byte) {
 				Info.Printf("augur_wallet_call: claimTradingProceeds()\n")
 				return
 			}
+			zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
+			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
+				Info.Printf("augur_wallet_call: ZeroEx::trade()\n")
+				amounts := decode_original_fill_amount(input_data.Data[4:],zeroex_trade_sig)
+				for h,a := range amounts {
+					if a == nil {
+						Fatalf("amounts map contains null initial_order bigint")
+					}
+					Info.Printf("o %v, amount = %v\n",h,a.String())
+				}
+				return
+			}
 		}
 	} else {
 		Info.Printf("dump_tx_input: input sig: %v\n",hex.EncodeToString(input_sig[:]))
+		if len(input_sig) >= 4 {
+			input_data_raw:= tx_data[4:]
+			Info.Printf("tx input= %v\n",hex.EncodeToString(input_data_raw))
+			zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
+			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
+				Info.Printf("direct call to ZeroEx::trade()\n")
+				amounts := decode_original_fill_amount(input_data_raw,zeroex_trade_sig)
+				for h,a := range amounts {
+					if a == nil {
+						Fatalf("amounts map contains null initial_order bigint")
+					}
+					Info.Printf("o %v, amount = %v\n",h,a.String())
+				}
+				return
+			}
+		}
 	}
 }
 func scan_profit_loss_data_for_debugging(block_num int64,position_changes *[]*PosChg) {
@@ -962,7 +1149,6 @@ func scan_profit_loss_data_for_debugging(block_num int64,position_changes *[]*Po
 	// right after each block is processed (developed for debugging purposes)
 
 	var copts = new(bind.CallOpts)
-	//Info.Printf("position_changes len=%v\n",len(*position_changes))
 	for i:=0 ; i<len(*position_changes) ; i++ {
 		pchg := (*position_changes)[i]
 		Info.Printf("profit_loss debug: processing pl for %v\n",pchg.Wallet_addr.String())
@@ -1002,4 +1188,204 @@ func scan_profit_loss_data_for_debugging(block_num int64,position_changes *[]*Po
 		Info.Printf("inserting pchg %+v\n",*pchg)
 		storage.Insert_profit_loss_debug_rec(pchg)
 	}
+}
+func was_wallet_created(caddrs *ContractAddresses,event_list []*types.Log) (bool,common.Address,*common.Address){
+
+	var wallet_addr common.Address
+	var eoa_addr *common.Address = nil
+	// detects pattern of Wallet creation, function AugurWalletFactory::createAugurWallet()
+	// scans events and determines if the set of events has correct properties to consider
+	// that this is indeed a pattern of Wallet creation.
+
+	var augur_approval bool = false // Pattern 1: Approval event for AugurContract for MAX_APPROVAL_AMOUNT
+	var cash_create_approval bool = false // Pattern 2: Approval event for CreateOrder for MAX_APPROVAL_AMOUNT
+	var sharetoken_create_approval bool = false // Pattern 3: ApprovalForAll for ShareToken
+	var cash_fill_approval bool = false // Pattern 4: Approval event for FillOrder contract
+	var sharetoken_fill_approval bool = false // Pattern 3: ApprovalForAll for FillOrder
+	var cash_zerox_trade_approval bool = false // Pattern 5: Approval event for ZeroexTrade contract
+	var wtx_status bool = false
+	var tx_relayed bool = false
+
+	// First we compare contract addresses, and after that for event signature because event signatures
+	//		appear more frequently than an event coming for a specific address owner
+	for _,log := range event_list {
+		if len(log.Topics) < 1 {
+			continue
+		}
+		if bytes.Equal(log.Address.Bytes(),caddrs.WalletReg.Bytes()) {
+			if bytes.Equal(log.Topics[0].Bytes(),evt_execute_tx_status) {
+				wtx_status = true
+				continue
+			}
+		}
+		if bytes.Equal(log.Address.Bytes(),caddrs.WalletReg2.Bytes()) {
+			if bytes.Equal(log.Topics[0].Bytes(),evt_execute_tx_status) {
+				wtx_status = true
+				continue
+			}
+		}
+		if len(log.Topics) < 3 {
+			continue		// an event with no topics, not our use case
+		}
+
+		addr := common.BytesToAddress(log.Topics[2][12:])
+		Info.Printf("checking addr %v, contract=%v\n",addr.String(),log.Address.String())
+		if bytes.Equal(log.Topics[0].Bytes(),evt_tx_relayed) {
+			eoa_addr = new(common.Address)
+			eoa_addr.SetBytes(addr.Bytes())
+			tx_relayed = true
+			continue
+		}
+		if bytes.Equal(addr.Bytes(),caddrs.Augur.Bytes()) {
+			if bytes.Equal(log.Address.Bytes(),caddrs.Dai.Bytes()) {
+				if bytes.Equal(log.Topics[0].Bytes(),evt_erc20_approval) {
+					augur_approval = true
+					continue
+				}
+			}
+		}
+		if bytes.Equal(addr.Bytes(),caddrs.CreateOrder.Bytes()) {
+			if bytes.Equal(log.Address.Bytes(),caddrs.Dai.Bytes()) {
+				if bytes.Equal(log.Topics[0].Bytes(),evt_erc20_approval) {
+					cash_create_approval = true
+					continue
+				}
+			}
+			if bytes.Equal(log.Address.Bytes(),caddrs.ShareToken.Bytes()) {
+				if bytes.Equal(log.Topics[0].Bytes(),evt_erc1155_approval_for_all) {
+					if len(log.Topics)!=3 {
+						Info.Printf("ERC20_ApprovalForAll not compliant log.Topics!=3. Aborting for debugging\n")
+						Error.Printf("ERC20_ApprovalForAll not compliant log.Topics!=3. Aborting for debugging\n")
+						os.Exit(1)
+					}
+					wallet_addr = common.BytesToAddress(log.Topics[1][12:])
+					sharetoken_create_approval = true
+					continue
+				}
+			}
+		}
+		if bytes.Equal(addr.Bytes(),caddrs.FillOrder.Bytes()) {
+			if bytes.Equal(log.Address.Bytes(),caddrs.Dai.Bytes()) {
+				if bytes.Equal(log.Topics[0].Bytes(),evt_erc20_approval) {
+					cash_fill_approval = true
+					continue
+				}
+			}
+			if bytes.Equal(log.Address.Bytes(),caddrs.ShareToken.Bytes()) {
+				if bytes.Equal(log.Topics[0].Bytes(),evt_erc1155_approval_for_all) {
+					if len(log.Topics)!=3 {
+						Info.Printf("ERC20_ApprovalForAll not compliant log.Topics!=3. Aborting for debugging\n")
+						Error.Printf("ERC20_ApprovalForAll not compliant log.Topics!=3. Aborting for debugging\n")
+						os.Exit(1)
+					}
+					sharetoken_fill_approval = true
+					continue
+				}
+			}
+		}
+		if bytes.Equal(addr.Bytes(),caddrs.ZeroxTrade.Bytes()) {
+			if bytes.Equal(log.Address.Bytes(),caddrs.Dai.Bytes()) {
+				if bytes.Equal(log.Topics[0].Bytes(),evt_erc20_approval) {
+					cash_zerox_trade_approval = true
+					continue
+				}
+			}
+		}
+	}
+	var output bool = false
+	if	augur_approval &&
+		cash_create_approval && sharetoken_create_approval &&
+		cash_fill_approval && sharetoken_fill_approval &&
+		cash_zerox_trade_approval &&
+		wtx_status {
+			output = true
+	}
+	Info.Printf("tx_relayed=%v\n",tx_relayed)
+	Info.Printf("augur_approval=%v\n",augur_approval)
+	Info.Printf("cash_create_approval=%v\n",cash_create_approval)
+	Info.Printf("sharetoken_create_approval=%v\n",sharetoken_create_approval)
+	Info.Printf("cash_fill_approval=%v\n",cash_fill_approval)
+	Info.Printf("sharetoken_fill_approval=%v\n",sharetoken_fill_approval)
+	Info.Printf("cash_zerox_trade_approval=%v\n",cash_zerox_trade_approval)
+	Info.Printf("wtx_status=%v\n",wtx_status)
+	Info.Printf("wallet_addr=%v\n",wallet_addr.String())
+	if eoa_addr != nil {
+		Info.Printf("eoa_addr=%v\n",eoa_addr.String())
+	}
+	Info.Printf("output=%v\n",output)
+	return output,wallet_addr,eoa_addr
+}
+func contains_execute_wallet_transaction_call(tx_data []byte) *ExecuteWalletTx {
+
+	if len(tx_data) < 32 {
+		return nil
+	}
+	input_sig := tx_data[:4]
+	if 0 == bytes.Compare(input_sig,exec_wtx_sig) {
+		input_data_raw:= tx_data[4:]
+		var input_data ExecWalletTxInputStruct
+		method, err := wallet_abi.MethodById(exec_wtx_sig)
+		if err != nil {
+			Fatalf("Method not found")
+		}
+		err = method.Inputs.Unpack(&input_data, input_data_raw)
+		if err != nil {
+			Fatalf("Couldn't decode input of tx %v",err)
+		}
+		exec_wtx:=new(ExecuteWalletTx)
+		exec_wtx.To=input_data.To.String()
+		exec_wtx.CallData=hex.EncodeToString(input_data.Data[:])
+		if len(input_data.Data)>=4 {
+			exec_wtx.InputSig=hex.EncodeToString(input_data.Data[:4])
+		}
+		exec_wtx.Value=input_data.Value.String()
+		exec_wtx.Payment=input_data.Payment.String()
+		exec_wtx.ReferralAddress=input_data.ReferralAddress.String()
+		exec_wtx.Fingerprint=hex.EncodeToString(input_data.Fingerprint[:])
+		exec_wtx.DesiredSignerBalance=input_data.DesiredSignerBalance.String()
+		exec_wtx.MaxExchangeRateInDAI=input_data.MaxExchangeRateInDai.String()
+		exec_wtx.RevertOnFailure=input_data.RevertOnFailure
+		return exec_wtx
+	}
+	return nil
+}
+func extract_original_fill_amount(tx_data []byte) map[string]*big.Int {
+
+	if len(tx_data) < 32 {
+		return make(map[string]*big.Int,0)
+	}
+	input_sig := tx_data[:4]
+	decoded_sig ,_ := hex.DecodeString("78dc0eed")
+	if 0 == bytes.Compare(input_sig,decoded_sig) {
+		input_data_raw:= tx_data[4:]
+		var input_data ExecWalletTxInputStruct
+		method, err := wallet_abi.MethodById(decoded_sig)
+		if err != nil {
+			Fatalf("Method not found")
+		}
+		err = method.Inputs.Unpack(&input_data, input_data_raw)
+		if err != nil {
+			Fatalf("Couldn't decode input of tx %v",err)
+		}
+
+		// check for internal transactions for the Wallet Registry contract
+		if len(input_data.Data) >= 4 {
+			input_sig := input_data.Data[:4]
+			zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
+			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
+				Info.Printf("augur_wallet_call: ZeroEx::trade()\n")
+				return decode_original_fill_amount(input_data.Data[4:],zeroex_trade_sig)
+			}
+		}
+	} else {
+		if len(input_sig) >= 4 {
+			input_data_raw:= tx_data[4:]
+			Info.Printf("tx input= %v\n",hex.EncodeToString(input_data_raw))
+			zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
+			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
+				return decode_original_fill_amount(input_data_raw,zeroex_trade_sig)
+			}
+		}
+	}
+	return make(map[string]*big.Int,0)
 }

@@ -1,0 +1,18 @@
+<html>
+<head>
+	<link href="/res/main.css" rel="stylesheet">
+	<title>Order History for User {{.UserInfo.EOAAddr}}</title>
+</head>
+<body>
+<h3 class="page_title">User's order history</h3>
+<table class="user_reports">
+<tr>
+	<td>Address:</td>
+	<td>{{.UserInfo.EOAAddr}}</td>
+</tr>
+</table>
+<br/><br/>
+<div id="user_reporting">
+	{{template "user_oo_history_table" .OOHistory}}
+</div>
+</body>

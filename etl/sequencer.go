@@ -20,6 +20,11 @@ func (sequencer *EventSequencer) append_event(new_log *types.Log) {
 func (sequencer *EventSequencer) get_ordered_event_list() []*types.Log {
 	// determines the correct event sequence for different event combinations
 	// this variation returns events in inverted order
+	return sequencer.unordered_list
+}
+func (sequencer *EventSequencer) get_inverse_ordered_event_list() []*types.Log {
+	// determines the correct event sequence for different event combinations
+	// this variation returns events in inverted order
 	output := make([]*types.Log,0,8)
 	for i := len(sequencer.unordered_list) - 1; i >= 0; i-- {
 		output = append(output,sequencer.unordered_list[i])
@@ -75,6 +80,7 @@ func (sequencer *EventSequencer) get_events_for_market_order_case() []*types.Log
 	//	contain 'Volume' field with depends on the order because it is a sum operation
 
 	output := make([]*types.Log,0,8)
+	var fill_event *types.Log
 	marketorder_events := make([]*types.Log,0,8)
 	other_events := make([]*types.Log,0,8)
 
@@ -83,12 +89,17 @@ func (sequencer *EventSequencer) get_events_for_market_order_case() []*types.Log
 			other_events = append(other_events,sequencer.unordered_list[i])
 			continue
 		}
+		if 0 == bytes.Compare(sequencer.unordered_list[i].Topics[0].Bytes(),evt_exchange_fill) {
+			fill_event = sequencer.unordered_list[i]
+			continue
+		}
 		if 0 == bytes.Compare(sequencer.unordered_list[i].Topics[0].Bytes(),evt_market_order) {
 			marketorder_events = append(marketorder_events,sequencer.unordered_list[i])
 			continue
 		}
 		other_events = append(other_events,sequencer.unordered_list[i])
 	}
+	output = append(output,fill_event)	// Fill events goes first because we need to extract initial_amount
 	for i := 0; i < len(marketorder_events) ; i++ {
 		output = append(output,marketorder_events[i])
 	}

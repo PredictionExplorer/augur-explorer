@@ -28,7 +28,7 @@ var (
 )
 
 // AugurWalletABI is the input ABI used to generate the binding from.
-const AugurWalletABI = "[{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"constant\":true,\"inputs\":[],\"name\":\"DOMAIN_SEPARATOR_TYPEHASH\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"MSG_TYPEHASH\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"cash\",\"outputs\":[{\"internalType\":\"contractIERC20\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"domainSeparator\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_to\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"_data\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"executeTransaction\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amountIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"reserveIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"reserveOut\",\"type\":\"uint256\"}],\"name\":\"getAmountOut\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"amountOut\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"getInitialized\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_message\",\"type\":\"bytes\"}],\"name\":\"getMessageHash\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_referralAddress\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"_fingerprint\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"_augur\",\"type\":\"address\"},{\"internalType\":\"contractIERC20\",\"name\":\"_cash\",\"type\":\"address\"},{\"internalType\":\"contractIAffiliates\",\"name\":\"_affiliates\",\"type\":\"address\"},{\"internalType\":\"contractIERC1155\",\"name\":\"_shareToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_createOrder\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_fillOrder\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_zeroXTrade\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_data\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"_signature\",\"type\":\"bytes\"}],\"name\":\"isValidSignature\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"registry\",\"outputs\":[{\"internalType\":\"contractIAugurWalletRegistry\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"transferCash\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_destination\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_minExchangeRateInDai\",\"type\":\"uint256\"}],\"name\":\"withdrawAllFundsAsDai\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"}]"
+const AugurWalletABI = "[{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"constant\":true,\"inputs\":[],\"name\":\"DOMAIN_SEPARATOR_TYPEHASH\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"MSG_TYPEHASH\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_authorizedProxy\",\"type\":\"address\"}],\"name\":\"addAuthorizedProxy\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"authorizedProxies\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"cash\",\"outputs\":[{\"internalType\":\"contractIERC20\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"domainSeparator\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_to\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"_data\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"executeTransaction\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amountIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"reserveIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"reserveOut\",\"type\":\"uint256\"}],\"name\":\"getAmountOut\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"amountOut\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"getInitialized\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_message\",\"type\":\"bytes\"}],\"name\":\"getMessageHash\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_referralAddress\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"_fingerprint\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"_augur\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_registry\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_registryV2\",\"type\":\"address\"},{\"internalType\":\"contractIERC20\",\"name\":\"_cash\",\"type\":\"address\"},{\"internalType\":\"contractIAffiliates\",\"name\":\"_affiliates\",\"type\":\"address\"},{\"internalType\":\"contractIERC1155\",\"name\":\"_shareToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_createOrder\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_fillOrder\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_zeroXTrade\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_data\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"_signature\",\"type\":\"bytes\"}],\"name\":\"isValidSignature\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"registry\",\"outputs\":[{\"internalType\":\"contractIAugurWalletRegistry\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_authorizedProxy\",\"type\":\"address\"}],\"name\":\"removeAuthorizedProxy\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"transferCash\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_destination\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_minExchangeRateInDai\",\"type\":\"uint256\"}],\"name\":\"withdrawAllFundsAsDai\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"}]"
 
 // AugurWallet is an auto generated Go binding around an Ethereum contract.
 type AugurWallet struct {
@@ -224,6 +224,32 @@ func (_AugurWallet *AugurWalletCallerSession) MSGTYPEHASH() ([32]byte, error) {
 	return _AugurWallet.Contract.MSGTYPEHASH(&_AugurWallet.CallOpts)
 }
 
+// AuthorizedProxies is a free data retrieval call binding the contract method 0x360d95b6.
+//
+// Solidity: function authorizedProxies(address ) view returns(bool)
+func (_AugurWallet *AugurWalletCaller) AuthorizedProxies(opts *bind.CallOpts, arg0 common.Address) (bool, error) {
+	var (
+		ret0 = new(bool)
+	)
+	out := ret0
+	err := _AugurWallet.contract.Call(opts, out, "authorizedProxies", arg0)
+	return *ret0, err
+}
+
+// AuthorizedProxies is a free data retrieval call binding the contract method 0x360d95b6.
+//
+// Solidity: function authorizedProxies(address ) view returns(bool)
+func (_AugurWallet *AugurWalletSession) AuthorizedProxies(arg0 common.Address) (bool, error) {
+	return _AugurWallet.Contract.AuthorizedProxies(&_AugurWallet.CallOpts, arg0)
+}
+
+// AuthorizedProxies is a free data retrieval call binding the contract method 0x360d95b6.
+//
+// Solidity: function authorizedProxies(address ) view returns(bool)
+func (_AugurWallet *AugurWalletCallerSession) AuthorizedProxies(arg0 common.Address) (bool, error) {
+	return _AugurWallet.Contract.AuthorizedProxies(&_AugurWallet.CallOpts, arg0)
+}
+
 // Cash is a free data retrieval call binding the contract method 0x961be391.
 //
 // Solidity: function cash() view returns(address)
@@ -406,6 +432,27 @@ func (_AugurWallet *AugurWalletCallerSession) Registry() (common.Address, error)
 	return _AugurWallet.Contract.Registry(&_AugurWallet.CallOpts)
 }
 
+// AddAuthorizedProxy is a paid mutator transaction binding the contract method 0x0283e758.
+//
+// Solidity: function addAuthorizedProxy(address _authorizedProxy) returns(bool)
+func (_AugurWallet *AugurWalletTransactor) AddAuthorizedProxy(opts *bind.TransactOpts, _authorizedProxy common.Address) (*types.Transaction, error) {
+	return _AugurWallet.contract.Transact(opts, "addAuthorizedProxy", _authorizedProxy)
+}
+
+// AddAuthorizedProxy is a paid mutator transaction binding the contract method 0x0283e758.
+//
+// Solidity: function addAuthorizedProxy(address _authorizedProxy) returns(bool)
+func (_AugurWallet *AugurWalletSession) AddAuthorizedProxy(_authorizedProxy common.Address) (*types.Transaction, error) {
+	return _AugurWallet.Contract.AddAuthorizedProxy(&_AugurWallet.TransactOpts, _authorizedProxy)
+}
+
+// AddAuthorizedProxy is a paid mutator transaction binding the contract method 0x0283e758.
+//
+// Solidity: function addAuthorizedProxy(address _authorizedProxy) returns(bool)
+func (_AugurWallet *AugurWalletTransactorSession) AddAuthorizedProxy(_authorizedProxy common.Address) (*types.Transaction, error) {
+	return _AugurWallet.Contract.AddAuthorizedProxy(&_AugurWallet.TransactOpts, _authorizedProxy)
+}
+
 // ExecuteTransaction is a paid mutator transaction binding the contract method 0x6b8d7a12.
 //
 // Solidity: function executeTransaction(address _to, bytes _data, uint256 _value) returns(bool)
@@ -427,25 +474,46 @@ func (_AugurWallet *AugurWalletTransactorSession) ExecuteTransaction(_to common.
 	return _AugurWallet.Contract.ExecuteTransaction(&_AugurWallet.TransactOpts, _to, _data, _value)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xe9582479.
+// Initialize is a paid mutator transaction binding the contract method 0xd688e8e5.
 //
-// Solidity: function initialize(address _owner, address _referralAddress, bytes32 _fingerprint, address _augur, address _cash, address _affiliates, address _shareToken, address _createOrder, address _fillOrder, address _zeroXTrade) returns()
-func (_AugurWallet *AugurWalletTransactor) Initialize(opts *bind.TransactOpts, _owner common.Address, _referralAddress common.Address, _fingerprint [32]byte, _augur common.Address, _cash common.Address, _affiliates common.Address, _shareToken common.Address, _createOrder common.Address, _fillOrder common.Address, _zeroXTrade common.Address) (*types.Transaction, error) {
-	return _AugurWallet.contract.Transact(opts, "initialize", _owner, _referralAddress, _fingerprint, _augur, _cash, _affiliates, _shareToken, _createOrder, _fillOrder, _zeroXTrade)
+// Solidity: function initialize(address _owner, address _referralAddress, bytes32 _fingerprint, address _augur, address _registry, address _registryV2, address _cash, address _affiliates, address _shareToken, address _createOrder, address _fillOrder, address _zeroXTrade) returns()
+func (_AugurWallet *AugurWalletTransactor) Initialize(opts *bind.TransactOpts, _owner common.Address, _referralAddress common.Address, _fingerprint [32]byte, _augur common.Address, _registry common.Address, _registryV2 common.Address, _cash common.Address, _affiliates common.Address, _shareToken common.Address, _createOrder common.Address, _fillOrder common.Address, _zeroXTrade common.Address) (*types.Transaction, error) {
+	return _AugurWallet.contract.Transact(opts, "initialize", _owner, _referralAddress, _fingerprint, _augur, _registry, _registryV2, _cash, _affiliates, _shareToken, _createOrder, _fillOrder, _zeroXTrade)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xe9582479.
+// Initialize is a paid mutator transaction binding the contract method 0xd688e8e5.
 //
-// Solidity: function initialize(address _owner, address _referralAddress, bytes32 _fingerprint, address _augur, address _cash, address _affiliates, address _shareToken, address _createOrder, address _fillOrder, address _zeroXTrade) returns()
-func (_AugurWallet *AugurWalletSession) Initialize(_owner common.Address, _referralAddress common.Address, _fingerprint [32]byte, _augur common.Address, _cash common.Address, _affiliates common.Address, _shareToken common.Address, _createOrder common.Address, _fillOrder common.Address, _zeroXTrade common.Address) (*types.Transaction, error) {
-	return _AugurWallet.Contract.Initialize(&_AugurWallet.TransactOpts, _owner, _referralAddress, _fingerprint, _augur, _cash, _affiliates, _shareToken, _createOrder, _fillOrder, _zeroXTrade)
+// Solidity: function initialize(address _owner, address _referralAddress, bytes32 _fingerprint, address _augur, address _registry, address _registryV2, address _cash, address _affiliates, address _shareToken, address _createOrder, address _fillOrder, address _zeroXTrade) returns()
+func (_AugurWallet *AugurWalletSession) Initialize(_owner common.Address, _referralAddress common.Address, _fingerprint [32]byte, _augur common.Address, _registry common.Address, _registryV2 common.Address, _cash common.Address, _affiliates common.Address, _shareToken common.Address, _createOrder common.Address, _fillOrder common.Address, _zeroXTrade common.Address) (*types.Transaction, error) {
+	return _AugurWallet.Contract.Initialize(&_AugurWallet.TransactOpts, _owner, _referralAddress, _fingerprint, _augur, _registry, _registryV2, _cash, _affiliates, _shareToken, _createOrder, _fillOrder, _zeroXTrade)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xe9582479.
+// Initialize is a paid mutator transaction binding the contract method 0xd688e8e5.
 //
-// Solidity: function initialize(address _owner, address _referralAddress, bytes32 _fingerprint, address _augur, address _cash, address _affiliates, address _shareToken, address _createOrder, address _fillOrder, address _zeroXTrade) returns()
-func (_AugurWallet *AugurWalletTransactorSession) Initialize(_owner common.Address, _referralAddress common.Address, _fingerprint [32]byte, _augur common.Address, _cash common.Address, _affiliates common.Address, _shareToken common.Address, _createOrder common.Address, _fillOrder common.Address, _zeroXTrade common.Address) (*types.Transaction, error) {
-	return _AugurWallet.Contract.Initialize(&_AugurWallet.TransactOpts, _owner, _referralAddress, _fingerprint, _augur, _cash, _affiliates, _shareToken, _createOrder, _fillOrder, _zeroXTrade)
+// Solidity: function initialize(address _owner, address _referralAddress, bytes32 _fingerprint, address _augur, address _registry, address _registryV2, address _cash, address _affiliates, address _shareToken, address _createOrder, address _fillOrder, address _zeroXTrade) returns()
+func (_AugurWallet *AugurWalletTransactorSession) Initialize(_owner common.Address, _referralAddress common.Address, _fingerprint [32]byte, _augur common.Address, _registry common.Address, _registryV2 common.Address, _cash common.Address, _affiliates common.Address, _shareToken common.Address, _createOrder common.Address, _fillOrder common.Address, _zeroXTrade common.Address) (*types.Transaction, error) {
+	return _AugurWallet.Contract.Initialize(&_AugurWallet.TransactOpts, _owner, _referralAddress, _fingerprint, _augur, _registry, _registryV2, _cash, _affiliates, _shareToken, _createOrder, _fillOrder, _zeroXTrade)
+}
+
+// RemoveAuthorizedProxy is a paid mutator transaction binding the contract method 0xcbdad2a1.
+//
+// Solidity: function removeAuthorizedProxy(address _authorizedProxy) returns(bool)
+func (_AugurWallet *AugurWalletTransactor) RemoveAuthorizedProxy(opts *bind.TransactOpts, _authorizedProxy common.Address) (*types.Transaction, error) {
+	return _AugurWallet.contract.Transact(opts, "removeAuthorizedProxy", _authorizedProxy)
+}
+
+// RemoveAuthorizedProxy is a paid mutator transaction binding the contract method 0xcbdad2a1.
+//
+// Solidity: function removeAuthorizedProxy(address _authorizedProxy) returns(bool)
+func (_AugurWallet *AugurWalletSession) RemoveAuthorizedProxy(_authorizedProxy common.Address) (*types.Transaction, error) {
+	return _AugurWallet.Contract.RemoveAuthorizedProxy(&_AugurWallet.TransactOpts, _authorizedProxy)
+}
+
+// RemoveAuthorizedProxy is a paid mutator transaction binding the contract method 0xcbdad2a1.
+//
+// Solidity: function removeAuthorizedProxy(address _authorizedProxy) returns(bool)
+func (_AugurWallet *AugurWalletTransactorSession) RemoveAuthorizedProxy(_authorizedProxy common.Address) (*types.Transaction, error) {
+	return _AugurWallet.Contract.RemoveAuthorizedProxy(&_AugurWallet.TransactOpts, _authorizedProxy)
 }
 
 // TransferCash is a paid mutator transaction binding the contract method 0xc067e263.
