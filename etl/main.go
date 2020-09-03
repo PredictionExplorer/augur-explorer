@@ -55,6 +55,7 @@ const (
 	DEFAULT_DB_LOG				= "db.log"
 	//DEFAULT_LOG_DIR				= "ae_logs"
 	MAX_APPROVAL_BASE10 string = "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+	NUM_AUGUR_CONTRACTS int = 35
 )
 var (
 	// these evt_ variables are here for speed to avoid calculation of Keccak256
@@ -203,15 +204,30 @@ func main() {
 	storage = Connect_to_storage(&market_order_id,Info)
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
-	storage.Check_main_stats()
 
 	caddrs_obj,err := storage.Get_contract_addresses()
 	if err!=nil {
 		Fatalf("Can't find contract addresses in 'contract_addresses' table")
 	}
 	caddrs=&caddrs_obj
-	augur_init(caddrs,&all_contracts)
 
+	net_caddrs,err := Get_contract_addresses_from_net(caddrs_obj.AugurTrading,eclient)
+	if err != nil {
+		Fatalf("Can't get contract addresses from Ethereum Network: %v",err)
+	}
+	num_mismatches,match_errors := Contract_addresses_match(caddrs,&net_caddrs)
+	if num_mismatches > 0 {
+		if num_mismatches == (NUM_AUGUR_CONTRACTS - 4) { // -1 for AugurTrading , -1 for AccountLoader
+			Info.Printf("Empty contract addresses found, populating...")
+			storage.Update_contract_addresses(&net_caddrs)
+			caddrs = &net_caddrs
+		} else {
+			Error.Printf("%v contract addresses mismatch, errors: %v\n",num_mismatches,match_errors)
+			Info.Printf("Exiting due to contract address mismatch.")
+			os.Exit(1)
+		}
+	}
+	augur_init(caddrs,&all_contracts)
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)

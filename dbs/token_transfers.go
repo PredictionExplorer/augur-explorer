@@ -513,8 +513,8 @@ func internal_addr_info_note(addr *common.Address,info *string,caddrs *p.Contrac
 		*info = "ShareToken contract"
 		return
 	}
-	if bytes.Equal(addr.Bytes(),caddrs.Universe.Bytes()) {
-		*info = "Universe contract"
+	if bytes.Equal(addr.Bytes(),caddrs.GenesisUniverse.Bytes()) {
+		*info = "GenesisUniverse contract"
 		return
 	}
 

@@ -90,10 +90,10 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 	c_addresses.FillOrder=common.HexToAddress(fill_order)
 	c_addresses.EthXchg=common.HexToAddress(eth_xchg)
 	c_addresses.ShareToken=common.HexToAddress(share_token)
-	c_addresses.Universe= common.HexToAddress(universe)
+	c_addresses.GenesisUniverse= common.HexToAddress(universe)
 	c_addresses.CreateOrder=common.HexToAddress(create_order)
 	c_addresses.LegacyReputationToken=common.HexToAddress(leg_rep_token)
-	c_addresses.BuyParticipationToken=common.HexToAddress(buy_part_tok)
+	c_addresses.BuyParticipationTokens=common.HexToAddress(buy_part_tok)
 	c_addresses.RedeemStake=common.HexToAddress(redeem_stake)
 	c_addresses.WarpSync=common.HexToAddress(warp_sync)
 	c_addresses.HotLoading=common.HexToAddress(hot_loading)
@@ -283,6 +283,52 @@ func (ss *SQLStorage) Insert_universe_created_event(agtx *p.AugurTx,evt *p.EUniv
 	_,err = ss.db.Exec(query,universe_id)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert record in main_stats table: %v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Update_contract_addresses(caddrs *p.ContractAddresses) {
+
+	var query string
+	query = "UPDATE contract_addresses SET "+
+				"augur = '"				+ caddrs.Augur.String() + "'," +
+				"augur_trading = '"		+ caddrs.AugurTrading.String() + "'," +
+				"profit_loss = '"		+ caddrs.PL.String() + "'," +
+				"dai_cash = '"			+ caddrs.Dai.String() + "'," +
+				"zerox_trade = '"		+ caddrs.ZeroxTrade.String() + "'," +
+				"zerox_xchg = '"		+ caddrs.ZeroxXchg.String() + "'," +
+				"rep_token = '"			+ caddrs.Reputation.String() + "'," +
+				"wallet_reg = '"		+ caddrs.WalletReg.String() + "'," +
+				"wallet_reg2 = '"		+ caddrs.WalletReg2.String() + "'," +
+				"fill_order = '"		+ caddrs.FillOrder.String() + "'," +
+				"eth_xchg = '"			+ caddrs.EthXchg.String() + "'," +
+				"share_token = '"		+ caddrs.ShareToken.String() + "'," +
+				"universe = '"			+ caddrs.GenesisUniverse.String() + "',"+
+				"create_order = '"		+ caddrs.CreateOrder.String() + "'," +
+				"leg_rep_token = '"		+ caddrs.LegacyReputationToken.String() + "'," +
+				"buy_part_tok = '"		+ caddrs.BuyParticipationTokens.String() + "'," +
+				"redeem_stake = '"		+ caddrs.RedeemStake.String() + "'," +
+				"warp_sync = '"			+ caddrs.WarpSync.String() + "'," +
+				"hot_loading = '"		+ caddrs.HotLoading.String() + "'," +
+				"affiliates = '"		+ caddrs.Affiliates.String() + "'," +
+				"affiliate_val ='"		+ caddrs.AffiliateValidator.String() + "'," +
+				"ctime = '"				+ caddrs.Time.String() + "'," +
+				"cancel_order = '"		+ caddrs.CancelOrder.String() + "'," +
+				"orders = '"			+ caddrs.Orders.String() + "'," +
+				"sim_trade = '"			+ caddrs.SimulateTrade.String() + "'," +
+				"trade = '"				+ caddrs.Trade.String() + "'," +
+				"oi_cash = '"			+ caddrs.OICash.String() + "'," +
+				"uniswap_v2_fact ='"	+ caddrs.UniswapV2Factory.String() + "'," +
+				"uniswap_v2_r2 ='"		+ caddrs.UniswapV2Router02.String() + "'," +
+				"audit_funds = '"		+ caddrs.AuditFunds.String() + "'," +
+				"weth9 = '"				+ caddrs.WETH9.String() + "'," +
+				"usdc = '"				+ caddrs.USDC.String() + "'," +
+				"usdt = '"				+ caddrs.USDT.String() + "'," +
+				"relay_hub_v2 = '"		+ caddrs.RelayHubV2.String() + "'," +
+				"account_loader = '"	+ caddrs.AccountLoader.String() + "'"
+
+	_,err := ss.db.Exec(query)
+	if err!= nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't update ContractAddresses: %v; q=%v",err,query))
 		os.Exit(1)
 	}
 }

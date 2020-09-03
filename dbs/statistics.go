@@ -9,9 +9,9 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
+/* DISCONTINUED, to be deleted
 func (ss *SQLStorage) Check_main_stats() {
 
-/* DISCONTINUED, to be deleted
 	var query string
 	query="SELECT id FROM main_stats LIMIT 1";
 	row := ss.db.QueryRow(query)
@@ -25,8 +25,8 @@ func (ss *SQLStorage) Check_main_stats() {
 			os.Exit(1)
 		}
 	}
-*/
 }
+*/
 func (ss *SQLStorage) Get_main_stats() p.MainStats {
 
 	var query string

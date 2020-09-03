@@ -415,10 +415,10 @@ type ContractAddresses struct {
 	FillOrder				common.Address	// used to identify if DAI transfer is internal or not
 	EthXchg					common.Address	// used to identify if DAI transfer is internal or not
 	ShareToken				common.Address  // used to identify if DAI transfer is internal or not
-	Universe				common.Address	// used to identify if DAI transfer is internal or not
+	GenesisUniverse			common.Address	// used to identify if DAI transfer is internal or not
 	CreateOrder				common.Address	// CreateOrder contract, used to detect wallet creation pattern
 	LegacyReputationToken	common.Address
-	BuyParticipationToken	common.Address
+	BuyParticipationTokens	common.Address
 	RedeemStake				common.Address
 	WarpSync				common.Address
 	HotLoading				common.Address
