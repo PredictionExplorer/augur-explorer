@@ -589,7 +589,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 	}
 	return records
 }
-func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,alive int,off int, lim int) []int64 {
+func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,alive int,invalid_thresh int,off int, lim int) []int64 {
 
 	var order_condition string
 	switch sort {
@@ -615,8 +615,10 @@ func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,alive int,o
 	}
 	var query string
 	query = "SELECT " +
-				"market_aid,substring(extra_info::json->>'description',1,43) as descr " +
+				"m.market_aid,substring(m.extra_info::json->>'description',1,43) as descr, " +
+				"ov.last_price AS invalid_price " +
 			"FROM market as m " +
+				"LEFT JOIN outcome_vol AS ov ON ov.market_aid=m.market_aid AND ov.outcome_idx=0 " +
 			"WHERE " + where_condition +
 			"ORDER BY " + order_condition + " " +
 			"OFFSET $1 LIMIT $2";
@@ -627,12 +629,13 @@ func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,alive int,o
 		os.Exit(1)
 	}
 	records := make([]int64,0,32)
-
+	invalid_limit := float64(invalid_thresh)
 	defer rows.Close()
 	for rows.Next() {
 		var market_aid int64
 		var null_descr sql.NullString
-		err=rows.Scan(&market_aid,&null_descr)
+		var null_invalid_price sql.NullFloat64
+		err=rows.Scan(&market_aid,&null_descr,&null_invalid_price)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
@@ -640,6 +643,15 @@ func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,alive int,o
 		if null_descr.Valid {
 			if null_descr.String == "What will the next Augur Warp Sync hash be?"  {
 //				continue			// skipping internal Augur Markets
+			}
+		}
+		if null_invalid_price.Valid {
+			if null_invalid_price.Float64 > invalid_limit {
+				ss.Info.Printf(
+					"Skipped invalid market %v (price=%v, thresh=%v)\n",
+					market_aid,null_invalid_price.Float64,invalid_thresh,
+				)
+				continue
 			}
 		}
 		records = append(records,market_aid)
