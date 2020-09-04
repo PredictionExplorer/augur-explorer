@@ -821,8 +821,9 @@ func (ss *SQLStorage) Get_user_oo_history(user_aid int64) []p.OpenOrder {
 					"WHEN 2 THEN 'SCALAR' " +
 				"END AS market_type_str," +
 				"m.status,"+
-				"FLOOR(EXTRACT(EPOCH FROM m.end_time))::BIGINT AS ts," +
-				"TO_CHAR(m.end_time,'dd/mm/yyyy HH24:SS UTC') as order_date," + 
+				"FLOOR(EXTRACT(EPOCH FROM m.end_time))::BIGINT AS mkt_end_ts," +
+				"FLOOR(EXTRACT(EPOCH FROM o.expiration))::BIGINT AS order_exp_ts," +
+				"TO_CHAR(o.srv_timestamp,'dd/mm/yyyy HH24:SS UTC') as order_date," + 
 				"m.extra_info::json->>'description' AS descr," +
 				"m.outcomes," +
 				"o.id," +
@@ -863,6 +864,7 @@ func (ss *SQLStorage) Get_user_oo_history(user_aid int64) []p.OpenOrder {
 			&rec.MktTypeStr,
 			&rec.MktStatus,
 			&rec.MktExpirationTs,
+			&rec.OrderExpirationTs,
 			&rec.OrderDate,
 			&descr,
 			&outcomes,
