@@ -270,6 +270,7 @@ type OpenOrder struct {		// the Order on 0x Mesh network, that is yet to be fill
 	Price				float64
 	Timestamp			int64
 	MktExpirationTs		int64
+	OrderExpirationTs	int64
 	MktOrderId			int64
 	MktStatus			int
 	MktType				int
