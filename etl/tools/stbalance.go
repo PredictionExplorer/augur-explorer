@@ -15,7 +15,8 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 const (
-	SHARE_TOKEN_ADDR_PROD = "0x9e4799ff2023819b1272eee430eadf510eDF85f0"
+//	SHARE_TOKEN_ADDR_PROD = "0x9e4799ff2023819b1272eee430eadf510eDF85f0"	// MainNet
+	SHARE_TOKEN_ADDR_PROD = "0xE60c9fe85aEE7B4848a97271dA8c86323CdFb897"	// Dev
 )
 var (
 	share_token_addr common.Address = common.HexToAddress(SHARE_TOKEN_ADDR_PROD)
