@@ -217,10 +217,11 @@ func main() {
 	}
 	num_mismatches,match_errors := Contract_addresses_match(caddrs,&net_caddrs)
 	if num_mismatches > 0 {
-		if num_mismatches == (NUM_AUGUR_CONTRACTS - 4) { // -1 for AugurTrading , -1 for AccountLoader
+		if num_mismatches >= (NUM_AUGUR_CONTRACTS - 4) { // -1 for AugurTrading , -1 for AccountLoader
 			Info.Printf("Empty contract addresses found, populating...")
 			storage.Update_contract_addresses(&net_caddrs)
-			caddrs = &net_caddrs
+			Info.Printf("Please restart")
+			os.Exit(0)
 		} else {
 			Error.Printf("%v contract addresses mismatch, errors: %v\n",num_mismatches,match_errors)
 			Info.Printf("Exiting due to contract address mismatch.")

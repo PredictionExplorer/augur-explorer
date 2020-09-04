@@ -2196,4 +2196,69 @@ func (_UniswapV2Factory *UniswapV2FactorySession) GetPair(arg0 common.Address, a
 func (_UniswapV2Factory *UniswapV2FactoryCallerSession) GetPair(arg0 common.Address, arg1 common.Address) (common.Address, error) {
 	return _UniswapV2Factory.Contract.GetPair(&_UniswapV2Factory.CallOpts, arg0, arg1)
 }
+// IsApprovedForAll is a free data retrieval call binding the contract method 0xe985e9c5.
+//
+// Solidity: function isApprovedForAll(address account, address operator) view returns(bool)
+func (_ShareToken *ShareTokenCaller) IsApprovedForAll(opts *bind.CallOpts, account common.Address, operator common.Address) (bool, error) {
+	var (
+		ret0 = new(bool)
+	)
+	out := ret0
+	err := _ShareToken.contract.Call(opts, out, "isApprovedForAll", account, operator)
+	return *ret0, err
+}
+
+// IsApprovedForAll is a free data retrieval call binding the contract method 0xe985e9c5.
+//
+// Solidity: function isApprovedForAll(address account, address operator) view returns(bool)
+func (_ShareToken *ShareTokenSession) IsApprovedForAll(account common.Address, operator common.Address) (bool, error) {
+	return _ShareToken.Contract.IsApprovedForAll(&_ShareToken.CallOpts, account, operator)
+}
+
+// IsApprovedForAll is a free data retrieval call binding the contract method 0xe985e9c5.
+//
+// Solidity: function isApprovedForAll(address account, address operator) view returns(bool)
+func (_ShareToken *ShareTokenCallerSession) IsApprovedForAll(account common.Address, operator common.Address) (bool, error) {
+	return _ShareToken.Contract.IsApprovedForAll(&_ShareToken.CallOpts, account, operator)
+}
+// SetApprovalForAll is a paid mutator transaction binding the contract method 0xa22cb465.
+//
+// Solidity: function setApprovalForAll(address operator, bool approved) returns()
+func (_ShareToken *ShareTokenTransactor) SetApprovalForAll(opts *bind.TransactOpts, operator common.Address, approved bool) (*types.Transaction, error) {
+	return _ShareToken.contract.Transact(opts, "setApprovalForAll", operator, approved)
+}
+
+// SetApprovalForAll is a paid mutator transaction binding the contract method 0xa22cb465.
+//
+// Solidity: function setApprovalForAll(address operator, bool approved) returns()
+func (_ShareToken *ShareTokenSession) SetApprovalForAll(operator common.Address, approved bool) (*types.Transaction, error) {
+	return _ShareToken.Contract.SetApprovalForAll(&_ShareToken.TransactOpts, operator, approved)
+}
+
+// SetApprovalForAll is a paid mutator transaction binding the contract method 0xa22cb465.
+//
+// Solidity: function setApprovalForAll(address operator, bool approved) returns()
+func (_ShareToken *ShareTokenTransactorSession) SetApprovalForAll(operator common.Address, approved bool) (*types.Transaction, error) {
+	return _ShareToken.Contract.SetApprovalForAll(&_ShareToken.TransactOpts, operator, approved)
+}
+// SafeTransferFrom is a paid mutator transaction binding the contract method 0xf242432a.
+//
+// Solidity: function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes data) returns()
+func (_ShareToken *ShareTokenTransactor) SafeTransferFrom(opts *bind.TransactOpts, from common.Address, to common.Address, id *big.Int, value *big.Int, data []byte) (*types.Transaction, error) {
+	return _ShareToken.contract.Transact(opts, "safeTransferFrom", from, to, id, value, data)
+}
+
+// SafeTransferFrom is a paid mutator transaction binding the contract method 0xf242432a.
+//
+// Solidity: function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes data) returns()
+func (_ShareToken *ShareTokenSession) SafeTransferFrom(from common.Address, to common.Address, id *big.Int, value *big.Int, data []byte) (*types.Transaction, error) {
+	return _ShareToken.Contract.SafeTransferFrom(&_ShareToken.TransactOpts, from, to, id, value, data)
+}
+
+// SafeTransferFrom is a paid mutator transaction binding the contract method 0xf242432a.
+//
+// Solidity: function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes data) returns()
+func (_ShareToken *ShareTokenTransactorSession) SafeTransferFrom(from common.Address, to common.Address, id *big.Int, value *big.Int, data []byte) (*types.Transaction, error) {
+	return _ShareToken.Contract.SafeTransferFrom(&_ShareToken.TransactOpts, from, to, id, value, data)
+}
 

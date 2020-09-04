@@ -230,14 +230,6 @@ func (ss *SQLStorage) init_market_outcome_volumes(market_aid int64,outcomes stri
 						"$1," +
 						"$2" +
 					")"
-			d_query := fmt.Sprintf("INSERT INTO outcome_vol(" +
-						"market_aid," +
-						"outcome_idx" +
-					") VALUES(" +
-						"%v," +
-						"%v" +
-					")",market_aid,outcome_idx)
-			ss.Info.Printf("insert into outcome volumes query: %v\n",d_query)
 			_,err := ss.db.Exec(query,market_aid,outcome_idx)
 			if (err!=nil) {
 				ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
@@ -273,7 +265,6 @@ func (ss *SQLStorage) Insert_market_oi_changed_evt(block *types.Header,agtx *p.A
 		os.Exit(1)
 	}
 
-	ss.Info.Printf("Set market (id=%v) open interest to %v",market_aid,evt.MarketOI.String())
 }
 func get_outcome_idx_from_numerators(mkt_type int,num_ticks int64,numerators []*big.Int) int {
 
@@ -485,62 +476,6 @@ func (ss *SQLStorage) Insert_share_balance_changed_evt(agtx *p.AugurTx,evt *p.ES
 	balance := evt.Balance.String()
 
 	var query string
-/* DISCONTINUED , in favor of triggers
-	query = "UPDATE sbalances SET balance = (" + balance + "/1e+18) " +
-				"WHERE " +
-					"market_aid = $1 AND " +
-					"account_aid = $2 AND " +
-					"outcome_idx = $3"
-	result,err := ss.db.Exec(query,	market_aid,account_aid,outcome)
-	if err != nil {
-		ss.Log_msg(
-			fmt.Sprintf(
-				"DB error: can't update 'sbalances' at block %v for account %v, market %v : %v; q=%v",
-					agtx.BlockNum,evt.Account.String(),evt.Market.String(),err,query,
-			),
-		)
-		os.Exit(1)
-	}
-*/
-/* DISCONTINUED, now inserts go into 'stbc' table
-	rows_affected,err:=result.RowsAffected()
-	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: %v",err))
-	}
-	if rows_affected > 0 {
-		//break
-	} else {
-		query = "INSERT INTO sbalances (" +
-					"block_num," + 
-					"tx_id," +
-					"account_aid," +
-					"market_aid," +
-					"outcome_idx," +
-					"balance" +
-				") VALUES(" +
-					"$1," +
-					"$2," +
-					"$3," +
-					"$4," +
-					"$5," +
-					balance + "/1e+18" +
-				")"
-		result,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,account_aid,market_aid,outcome)
-		if err != nil {
-			ss.Log_msg(fmt.Sprintf("DB error: can't insert into sbalances table: %v, q=%v",err,query))
-			os.Exit(1)
-		}
-		rows_affected,err:=result.RowsAffected()
-		if err != nil {
-			ss.Log_msg(fmt.Sprintf("DB error: %v, query=%v",err,query))
-		}
-		if rows_affected > 0 {
-			return
-		} else {
-			ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into 'sbalances' table. Rows affeced = 0"))
-		}
-	}
-	*/
 	query = "INSERT INTO stbc (" +
 				"block_num," + 
 				"tx_id," +
