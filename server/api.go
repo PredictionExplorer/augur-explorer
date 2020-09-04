@@ -80,7 +80,20 @@ func a1_active_market_ids(c *gin.Context) {
 			return
 		}
 	}
-	ids := augur_srv.storage.Get_active_market_ids(sort,all,fin,alive,off,1000000)
+	p_inval_thresh := c.Query("it")
+	var inval_thresh int = 0
+	if len(p_inval_thresh) > 0 {
+		inval_thresh , err = strconv.Atoi(p_inval_thresh)
+		if err != nil {
+			c.JSON(422,gin.H{
+				"MarketIDs": make([]int64,0,0),
+				"status":0,
+				"error":fmt.Sprintf("Bad 'it' (invalid_threshold) parameter: %v",err),
+			})
+			return
+		}
+	}
+	ids := augur_srv.storage.Get_active_market_ids(sort,all,fin,alive,inval_thresh,off,1000000)
 	var status int = 1
 	c.JSON(200,gin.H{
 		"MarketIDs": ids,
@@ -399,6 +412,24 @@ func a1_user_open_positions(c *gin.Context) {
 	var err_str string = ""
 	c.JSON(http.StatusOK,gin.H{
 		"OpenPositionEntries" : open_pos_entries,
+		"status": status,
+		"error": err_str,
+	})
+}
+func a1_user_open_orders(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,eoa_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	open_orders := augur_srv.storage.Get_user_open_orders(eoa_aid)
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+		"OpenOrders" : open_orders,
 		"status": status,
 		"error": err_str,
 	})

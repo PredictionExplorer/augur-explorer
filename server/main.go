@@ -159,6 +159,7 @@ func main() {
 	r.GET("/api/user_pl/:user",  a1_user_profit_loss)
 	r.GET("/api/user_opos/:user",  a1_user_open_positions)
 	r.GET("/api/user_reports/:user",  a1_user_reports)
+	r.GET("/api/user_oorders/:user",  a1_user_open_orders)
 
 	r.Static("/imgs", "./html/imgs")
 	r.Static("/res", "./html/res")			// resources (static)
