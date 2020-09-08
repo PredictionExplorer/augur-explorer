@@ -616,7 +616,8 @@ func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,alive int,i
 	var query string
 	query = "SELECT " +
 				"m.market_aid,substring(m.extra_info::json->>'description',1,43) as descr, " +
-				"ov.last_price AS invalid_price " +
+				"ov.last_price AS invalid_price, " +
+				"ov.highest_bid " +
 			"FROM market as m " +
 				"LEFT JOIN outcome_vol AS ov ON ov.market_aid=m.market_aid AND ov.outcome_idx=0 " +
 			"WHERE " + where_condition +
@@ -635,7 +636,8 @@ func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,alive int,i
 		var market_aid int64
 		var null_descr sql.NullString
 		var null_invalid_price sql.NullFloat64
-		err=rows.Scan(&market_aid,&null_descr,&null_invalid_price)
+		var null_highest_bid sql.NullFloat64
+		err=rows.Scan(&market_aid,&null_descr,&null_invalid_price,&null_highest_bid)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
@@ -645,11 +647,11 @@ func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,alive int,i
 //				continue			// skipping internal Augur Markets
 			}
 		}
-		if null_invalid_price.Valid {
-			if null_invalid_price.Float64 > invalid_limit {
-				ss.Info.Printf(
-					"Skipped invalid market %v (price=%v, thresh=%v)\n",
-					market_aid,null_invalid_price.Float64,invalid_thresh,
+		if null_highest_bid.Valid {
+				if null_highest_bid.Float64 > invalid_limit {
+					ss.Info.Printf(
+						"Skipped invalid market %v (price=%v, highest_bid=%v thresh=%v)\n",
+						market_aid,null_invalid_price.Float64,invalid_thresh,
 				)
 				continue
 			}
