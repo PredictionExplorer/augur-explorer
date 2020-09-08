@@ -3,6 +3,8 @@ package dbs
 import (
 	"fmt"
 	"os"
+	"encoding/hex"
+
 	"database/sql"
 	_  "github.com/lib/pq"
 
@@ -146,10 +148,17 @@ func (ss *SQLStorage) Insert_transaction(agtx *p.AugurTx) int64 {
 
 	ss.Info.Printf("Insert_transaction: from: %v, to: %v\n",agtx.From,agtx.To)
 
-	query = "INSERT INTO transaction (block_num,value,tx_hash,ctrct_create,gas_used,gas_price,tx_index) " +
-			"VALUES ($1,("+agtx.Value+"/1e+18),$2,$3,$4,"+agtx.GasPrice+"/1e+18,$5) RETURNING id"
+	query = "INSERT INTO transaction ("+
+				"block_num,value,tx_hash,ctrct_create,gas_used,gas_price,tx_index,input_sig" +
+			") " +
+			"VALUES ($1,("+agtx.Value+"/1e+18),$2,$3,$4,"+agtx.GasPrice+"/1e+18,$5,$6) " +
+			"RETURNING id"
 
-	row := ss.db.QueryRow(query,agtx.BlockNum,agtx.TxHash,agtx.CtrctCreate,agtx.GasUsed,agtx.TxIndex)
+	var sig string
+	if len(agtx.Input) >=4 {
+		sig = hex.EncodeToString(agtx.Input[:4])
+	}
+	row := ss.db.QueryRow(query,agtx.BlockNum,agtx.TxHash,agtx.CtrctCreate,agtx.GasUsed,agtx.TxIndex,sig)
 	err := row.Scan(&tx_id)
 	if err != nil {
 		ss.Log_msg(
@@ -520,6 +529,40 @@ func (ss *SQLStorage) Set_chain_id(chain_id int64) {
 	_,err:=ss.db.Exec(query,chain_id)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("Set_chain_id() failed: %v",err))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_tx_event_log(eel *p.EthereumEventLog) int64 {
+
+	contract_aid := ss.Lookup_or_create_address(eel.ContractAddress,eel.BlockNum,eel.TxId)
+
+	var query string
+	query = "INSERT INTO evt_log(block_num,tx_id,contract_aid,data) " +
+				"VALUES($1,$2,$3,$4) RETURNING id"
+
+	//_,err:=ss.db.Exec(query,eel.BlockNum,eel.TxId,contract_aid,eel.Data)
+	var err error
+	var null_id sql.NullInt64
+	row := ss.db.QueryRow(query,eel.BlockNum,eel.TxId,contract_aid,eel.Data)
+	err=row.Scan(&null_id);
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Insert_tx_event_log() failed: %v, q=%v, b=%v\n",err,query,eel.BlockNum))
+		os.Exit(1)
+	}
+	if !null_id.Valid {
+		ss.Log_msg(fmt.Sprintf("Insert_tx_event_log() failed: null id returned at block %v\n",eel.BlockNum))
+		os.Exit(1)
+	}
+	return null_id.Int64
+}
+func (ss *SQLStorage) Insert_event_log_topic(eet *p.EthereumEventTopic) {
+
+	var query string
+	query = "INSERT INTO evt_topic(block_num,tx_id,evtlog_id,pos,signature) " +
+				"VALUES($1,$2,$3,$4,$5)"
+	_,err:=ss.db.Exec(query,eet.BlockNum,eet.TxId,eet.EventLogId,eet.Pos,eet.Signature)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Insert_event_log_topic() failed: %v at block\n",err,eet.BlockNum))
 		os.Exit(1)
 	}
 }

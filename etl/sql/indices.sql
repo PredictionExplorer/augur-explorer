@@ -16,6 +16,10 @@ CREATE INDEX rep_idx				ON	rep_transf		(tx_id);
 CREATE INDEX tbc_idx				ON	tbc				(tx_id);
 CREATE INDEX toktr_idx				ON	tok_transf		(tx_id);
 CREATE INDEX pldbg_idx				ON	pl_debug		(block_num);
+CREATE INDEX agtx_idx				ON	agtx_status		(tx_id);
+CREATE INDEX execwtx_idx			ON	exec_wtx		(tx_id);
+CREATE INDEX regctrct_idx			ON	register_contract	(tx_id);
+CREATE INDEX txinp_idx				ON	tx_input		(tx_id);
 -- market_aid indices
 CREATE INDEX sbal_mkt_idx			ON	sbalances		(market_aid);
 CREATE INDEX mo_mkt_idx				ON	mktord			(market_aid);
@@ -63,3 +67,6 @@ CREATE INDEX exec_wtx_to_idx		ON exec_wtx			(to_aid);
 CREATE UNIQUE INDEX mesh_evt_uniq	ON mesh_evt			(order_hash,evt_code);
 CREATE INDEX pest_ts_idx			ON price_estimate	(time_stamp);
 CREATE INDEX mktord_ts_idx			ON mktord			(time_stamp);
+CREATE INDEX elog_ctrct_idx			ON evt_log			(contract_aid);
+CREATE INDEX etop_sig_idx			ON evt_topic		(signature);
+CREATE INDEX etop_tx_idx			ON evt_topic		(tx_id);

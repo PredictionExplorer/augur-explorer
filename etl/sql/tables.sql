@@ -1,11 +1,12 @@
+-- Layer1 tables
 -- Blockchain tables
 CREATE TABLE block (
 	block_num			BIGINT NOT NULL UNIQUE,
 	num_tx				BIGINT DEFAULT 0,
 	ts					TIMESTAMPTZ NOT NULL,
 	cash_flow			DECIMAL(64,18) DEFAULT 0.0,
-	block_hash			TEXT NOT NULL PRIMARY KEY,
-	parent_hash			TEXT NOT NULL
+	block_hash			CHAR(66) NOT NULL PRIMARY KEY,
+	parent_hash			CHAR(66) NOT NULL
 );
 CREATE TABLE transaction (	-- we're only storing transactions related to Augur platform
 	id					BIGSERIAL PRIMARY KEY,
@@ -17,13 +18,49 @@ CREATE TABLE transaction (	-- we're only storing transactions related to Augur p
 	ctrct_create		BOOLEAN DEFAULT FALSE,	-- true if To = nil
 	value				DECIMAL(64,18) DEFAULT 0.0,
 	gas_price			DECIMAL(64,18) DEFAULT 0.0,
-	tx_hash				TEXT NOT NULL UNIQUE
+	tx_hash				CHAR(66) NOT NULL UNIQUE,
+	input_sig			CHAR(10)	-- input signature (first 4 bytes of Transaction::Data(), hex encoded)
 );
+CREATE TABLE tx_input ( -- holds transaction input but only for those transactions that we store
+	-- since 'data' is holding binary data, this table will grow big if we don't store specific records
+	-- records in this table are created by Layer2 functions (specific purpose processing functions)
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	data				TEXT DEFAULT '' -- hex-encoded 0x prefixed core/types.go::Transaction::Data()
+);
+CREATE TABLE evt_log (
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	contract_aid		BIGINT NOT NULL, -- copied for easy data management
+	data				TEXT NOT NULL
+);
+CREATE TABLE evt_topic (
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,
+	tx_id				BIGINT NOT NULL,
+	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	pos					SMALLINT NOT NULL,
+	signature			CHAR(66)
+);
+CREATE TABLE abi_funcs (-- Ethereum function signature of the contract method
+	id					BIGSERIAL PRIMARY KEY,
+	signature			CHAR(8) UNIQUE,
+	func_name			TEXT NOT NULL,
+	contracts			TEXT NOT NULL
+);
+CREATE TABLE abi_events (-- Ethereum event signature of the contract event
+	id					BIGSERIAL PRIMARY KEY,
+	signature			CHAR(8) UNIQUE,
+	evt_name			TEXT NOT NULL,
+	contracts			TEXT NOT NULL
+);
+-- Layer2 tables
 -- Universe: The container contract for Augur Service
 CREATE TABLE universe (
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	universe_id			BIGINT NOT NULL,
 	parent_id			BIGINT DEFAULT 0,
 	creation_ts			TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"bytes"
+	"strings"
 	"database/sql"
 	_  "github.com/lib/pq"
 
@@ -413,4 +414,68 @@ func (ss *SQLStorage) Is_augur_activated(address string) bool {
 		return true
 	}
 	return false
+}
+func (ss *SQLStorage) Delete_abi_artifacts() {
+
+	var query string
+	query = "DELETE FROM abi_funcs"
+	_,err:=ss.db.Exec(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Delete_abi_artifacts() failed at function deletion: %v \n",err))
+		os.Exit(1)
+	}
+	query = "DELETE FROM abi_events"
+	_,err=ss.db.Exec(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Delete_abi_artifacts() failed at event deletion: %v \n",err))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_function_signature(signature,name,contract string) {
+
+	var query string
+	query = "INSERT INTO abi_funcs(signature,func_name,contracts) VALUES($1,$2,$3)"
+	_,err:=ss.db.Exec(query,signature,name,contract)
+	if (err!=nil) {
+		if strings.Contains(err.Error(),"duplicate key value") {
+			query = "UPDATE abi_funcs SET contracts=concat(contracts,',',$2::text) WHERE signature=$1"
+			_,err:=ss.db.Exec(query,signature,contract)
+			if (err!=nil) {
+				ss.Log_msg(fmt.Sprintf(
+					"Insert_function_signature(): failed to update contract name %v %v\n",contract,err,
+				))
+				os.Exit(1)
+			}
+		} else {
+			ss.Log_msg(
+				fmt.Sprintf(
+					"Insert_function_signature() function %v INSERT failed, sig %v ; Error : %v \n",
+					name,signature,err,
+				),
+			)
+			os.Exit(1)
+		}
+	}
+
+}
+func (ss *SQLStorage) Insert_event_signature(signature,name,contract string) {
+
+	var query string
+	query = "INSERT INTO abi_events(signature,evt_name,contracts) VALUES($1,$2,$3)"
+	_,err:=ss.db.Exec(query,signature,name,contract)
+	if (err!=nil) {
+		if strings.Contains(err.Error(),"duplicate key value") {
+			query = "UPDATE abi_events SET contracts=concat(contracts,',',$2::text) WHERE signature=$1"
+			_,err:=ss.db.Exec(query,signature,contract)
+			if (err!=nil) {
+				ss.Log_msg(fmt.Sprintf(
+					"Insert_function_signature(): failed to update contract name %v : %v\n",contract,err,
+				))
+				os.Exit(1)
+			}
+		} else {
+			ss.Log_msg(fmt.Sprintf("Insert_event_signature() failed at event insertion: %v \n",err))
+			os.Exit(1)
+		}
+	}
 }

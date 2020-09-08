@@ -742,3 +742,16 @@ type TradesByInterval struct {
 	Volume					float64
 	AccumVolume				float64
 }
+type EthereumEventTopic struct {
+	BlockNum				int64
+	TxId					int64
+	EventLogId				int64
+	Pos						int
+	Signature				string
+}
+type EthereumEventLog struct {
+	BlockNum				int64
+	TxId					int64
+	ContractAddress			string
+	Data					string
+}

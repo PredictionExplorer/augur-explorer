@@ -1,7 +1,7 @@
 package main
 
 import (
-	"time"
+//	"time"
 	"bytes"
 	"encoding/hex"
 	"math/big"
@@ -12,7 +12,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+//	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/0xProject/0x-mesh/zeroex"
 
 	ztypes "github.com/0xProject/0x-mesh/common/types"
@@ -681,11 +681,6 @@ func proc_universe_created(agtx *AugurTx,log *types.Log) {
 	evt.Dump(Info)
 	storage.Insert_universe_created_event(agtx,&evt)
 }
-func tx_insert_if_needed(agtx *AugurTx) {
-	if agtx.TxId == 0 {
-		agtx.TxId=storage.Insert_transaction(agtx)
-	}
-}
 func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx int) int64 {
 	// Return Value: id of the record inserted (if aplicable, or 0)
 
@@ -845,6 +840,7 @@ func roll_back_blocks(diverging_block *types.Header) error {
 	}
 	return errors.New("Chainsplit fix: Undefined behaviour")
 }
+<<<<<<< HEAD
 func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) error {
 
 	block_hash_str,err:=get_block_hash(bnum)
