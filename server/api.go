@@ -434,3 +434,45 @@ func a1_user_open_orders(c *gin.Context) {
 		"error": err_str,
 	})
 }
+func a1_market_open_orders(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_market := c.Param("market")
+	_,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	if !success {
+		return
+	}
+
+	var err error
+	p_outcome := c.Param("outcome")
+	var outcome int
+	if len(p_outcome) > 0 {
+		outcome , err = strconv.Atoi(p_outcome)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"status":0,
+				"error":fmt.Sprintf("Bad outcome parameter: %v",err),
+			})
+			return
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("Outcome parameter wasn't provided: %v",err),
+		})
+		return
+	}
+
+	mdepth,last_oo_id := augur_srv.storage.Get_mkt_depth(market_aid,outcome)
+	num_orders:=len(mdepth.Bids) + len(mdepth.Asks)
+	c.JSON(http.StatusOK,gin.H{
+			"LastOOID": last_oo_id,
+			"NumOrders" : num_orders,
+			"Bids": mdepth.Bids,
+			"Asks": mdepth.Asks,
+			"OutcomeIdx" : outcome,
+			"status": 1 ,
+			"error": "",
+	})
+}
