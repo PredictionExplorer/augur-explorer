@@ -622,3 +622,78 @@ func (ss *SQLStorage) Get_account_statement(aid int64) []p.StatementEntry {
 	}
 	return records
 }
+func (ss *SQLStorage) Get_token_transfers_batch(sig string,contract_aid int64,from_id int64) []p.TTEntry {
+
+	const BATCH_SIZE int = 256
+	output := make([]p.TTEntry,0,BATCH_SIZE)
+	var query string
+	query = "SELECT el.id,et.tx_id,tx.tx_hash " +
+				"FROM evt_topic AS et "+
+					"JOIN evt_log AS el ON et.evtlog_id=el.id " +
+					"JOIN transaction AS tx ON el.tx_id=tx.id " +
+				"WHERE (et.signature = $1) AND (el.contract_aid=$2) AND (et.id > $3) " +
+				"ORDER BY et.block_num,et.tx_id,et.id " +
+				"LIMIT $4"
+
+	ss.Info.Printf("q=%v, sig=%v, contract_aid=%v, from_id=%v LIMIT=%v\n",query,sig,contract_aid,from_id,BATCH_SIZE)
+	rows,err := ss.db.Query(query,sig,contract_aid,from_id,BATCH_SIZE)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.TTEntry
+		err=rows.Scan(&rec.EvtId,&rec.TxId,&rec.TxHash)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+		output = append(output,rec)
+	}
+	return output
+}
+func (ss *SQLStorage) Get_token_etl_process_config() *p.ETLTokenConfig {
+
+	output := new(p.ETLTokenConfig)
+	var null_last_id_dai,null_last_id_rep,null_last_id_stok,null_last_id_stbc sql.NullInt64
+
+	var query string
+	for {
+		query = "SELECT last_id_dai,last_id_rep,last_id_stok,last_id_stbc FROM etl_tokens"
+
+		res := ss.db.QueryRow(query)
+		err := res.Scan(&null_last_id_dai,&null_last_id_rep,&null_last_id_stok,&null_last_id_stbc)
+		if (err!=nil) {
+			if err == sql.ErrNoRows {
+				query = "INSERT INTO etl_tokens DEFAULT VALUES"
+				_,err := ss.db.Exec(query)
+				if (err!=nil) {
+					ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+					os.Exit(1)
+				}
+			} else {
+				if (err!=nil) {
+					ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+					os.Exit(1)
+				}
+			}
+		} else {
+			break
+		}
+	}
+	if null_last_id_dai.Valid {
+		output.LastIdDAI = null_last_id_dai.Int64
+	}
+	if null_last_id_rep.Valid {
+		output.LastIdREP = null_last_id_rep.Int64
+	}
+	if null_last_id_stok.Valid {
+		output.LastIdShareTokTransf = null_last_id_stok.Int64
+	}
+	if null_last_id_stbc.Valid {
+		output.LastIdShareTokBalChg = null_last_id_stbc.Int64
+	}
+	return output
+}

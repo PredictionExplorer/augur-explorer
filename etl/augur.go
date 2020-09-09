@@ -820,6 +820,10 @@ func roll_back_blocks(diverging_block *types.Header) error {
 				)
 				storage.Chainsplit_delete_blocks(my_block_num)
 				storage.Set_last_block_num(my_block_num)
+				var chain_reorg_event ChainReorg
+				chain_reorg_event.BlockNum = my_block_num
+				chain_reorg_event.Hash = block_hash
+				storage.Insert_chain_reorg_event(&chain_reorg_event)
 				return nil
 			}
 		} else {

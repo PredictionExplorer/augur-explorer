@@ -70,3 +70,5 @@ CREATE INDEX mktord_ts_idx			ON mktord			(time_stamp);
 CREATE INDEX elog_ctrct_idx			ON evt_log			(contract_aid);
 CREATE INDEX etop_sig_idx			ON evt_topic		(signature);
 CREATE INDEX etop_tx_idx			ON evt_topic		(tx_id);
+CREATE INDEX etop_bnum_idx			ON evt_topic		(block_num);
+CREATE INDEX etop_ctrct_idx			ON evt_topic		(contract_aid);

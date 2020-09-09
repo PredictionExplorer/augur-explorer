@@ -5,6 +5,7 @@ import (
 	"os"
 	"bytes"
 	"strings"
+	"encoding/hex"
 	"database/sql"
 	_  "github.com/lib/pq"
 
@@ -478,4 +479,36 @@ func (ss *SQLStorage) Insert_event_signature(signature,name,contract string) {
 			os.Exit(1)
 		}
 	}
+}
+func (ss *SQLStorage) Get_augur_tx_from_db(tx_id int64) *p.AugurTx {
+
+	output := new(p.AugurTx)
+
+	var query string
+	query = "SELECT block_num,fa.addr,ta.addr,ctrct_create,value*1e+18::text AS value,tx_hash,td.data " +
+				"FROM transaction as tx " +
+				"LEFT JOIN address AS fa ON tx.from_aid=fa.address_id " +
+				"LEFT JOIN address AS ta ON tx.to_aid=ta.address_id " +
+				"LEFT JOIN tx_input AS td on td.tx_id=tx.id " +
+			"WHERE tx.id=$1"
+
+	var null_tx_data sql.NullString
+	res := ss.db.QueryRow(query,tx_id)
+	err := res.Scan(&output.BlockNum,&output.From,&output.To,&output.CtrctCreate,&output.Value,&output.TxHash,&null_tx_data)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Get_augur_tx_from_Db() failed : %v \n",err))
+			os.Exit(1)
+		}
+	}
+	if null_tx_data.Valid {
+		data,err:=hex.DecodeString(null_tx_data.String)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("Get_augur_tx_from_Db() error decoding tx_data: %v \n",err))
+			os.Exit(1)
+		}
+
+		output.Input = data
+	}
+	return output
 }

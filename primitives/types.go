@@ -755,3 +755,18 @@ type EthereumEventLog struct {
 	ContractAddress			string
 	Data					string
 }
+type ChainReorg struct {
+	BlockNum				int64
+	Hash					string
+}
+type TTEntry struct { // TokenTransfer (batch) entry
+	TxId					int64
+	EvtId					int64
+	TxHash					string
+}
+type ETLTokenConfig struct {
+	LastIdDAI				int64
+	LastIdREP				int64
+	LastIdShareTokTransf	int64		// ShareToken.sol::Transfer event
+	LastIdShareTokBalChg	int64		// ShareToken.sol::ShareTokenBalanceChanged event
+}

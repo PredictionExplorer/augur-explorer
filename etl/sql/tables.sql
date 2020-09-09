@@ -29,6 +29,11 @@ CREATE TABLE tx_input ( -- holds transaction input but only for those transactio
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	data				TEXT DEFAULT '' -- hex-encoded 0x prefixed core/types.go::Transaction::Data()
 );
+CREATE TABLE chain_reorg ( -- stores chain reorg events, used by Layer2 to rebuild data on modified blocks
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,
+	hash				CHAR(66) NOT NULL
+);
 CREATE TABLE evt_log (
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,
@@ -617,4 +622,11 @@ CREATE TABLE pl_debug (-- Profit loss data for debugging, scanned after Block ha
 	frozen_funds		DECIMAL(64,36) DEFAULT 0.0,
 	net_position		DECIMAL(32,18) DEFAULT 0.0,
 	avg_price			DECIMAL(32,20) DEFAULT 0.0
+);
+CREATE TABLE etl_tokens ( -- ETL process state variables to import tokens from Geth 
+--single record table
+	last_id_dai			BIGINT DEFAULT 0,
+	last_id_rep			BIGINT DEFAULT 0, -- Rep V2 token
+	last_id_stok		BIGINT DEFAULT 0, -- ShareToken ERC20 transfer
+	last_id_stbc		BIGINT DEFAULT 0 -- ShareTokenBalance changed
 );

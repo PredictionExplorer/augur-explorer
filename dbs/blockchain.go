@@ -566,3 +566,27 @@ func (ss *SQLStorage) Insert_event_log_topic(eet *p.EthereumEventTopic) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Insert_chain_reorg_event(co *p.ChainReorg) {
+
+	var query string
+	query = "INSERT INTO chain_reorg(block_num,hash) VALUES($1,$2)"
+
+	_,err:=ss.db.Exec(query,co.BlockNum,co.Hash)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Insert_chain_reorg_event() failed: %v at block\n",err,co.BlockNum))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Get_event_log_data() string {
+
+	var output string
+	var query string
+	query = "SELECT data FROM evt_log WHERE id=$1"
+	res := ss.db.QueryRow(query)
+	err := res.Scan(&output)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+	return output
+}
