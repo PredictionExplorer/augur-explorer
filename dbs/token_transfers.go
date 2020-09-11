@@ -17,7 +17,7 @@ import (
 var (
 	ErrUnprocessedBalances error = errors.New("Unprocessed balance on past blocks")
 )
-func (ss *SQLStorage) Process_REP_token_transfer(evt *p.ETransfer,agtx *p.AugurTx) {
+func (ss *SQLStorage) Process_REP_token_transfer(evt *p.ETransfer,agtx *p.AugurTx,evtlog_id int64) {
 
 	from_aid := ss.Lookup_or_create_address(evt.From.String(),agtx.BlockNum,agtx.TxId)
 	to_aid := ss.Lookup_or_create_address(evt.To.String(),agtx.BlockNum,agtx.TxId)
@@ -395,7 +395,7 @@ func (ss *SQLStorage) is_dai_transfer_internal(evt *p.ETransfer,ca *p.ContractAd
 	}
 	return from_internal,to_internal // its a Market in To
 }
-func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.ETransfer,ca *p.ContractAddresses,agtx *p.AugurTx) {
+func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.ETransfer,ca *p.ContractAddresses,agtx *p.AugurTx,evtlog_id int64) {
 
 	from_aid := ss.Lookup_or_create_address(evt.From.String(),agtx.BlockNum,agtx.TxId)
 	to_aid := ss.Lookup_or_create_address(evt.To.String(),agtx.BlockNum,agtx.TxId)
@@ -404,9 +404,11 @@ func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.ETransfer,ca *p.Contract
 	from_internal,to_internal := ss.is_dai_transfer_internal(evt,ca)
 
 	var query string
-	query = "INSERT INTO dai_transf(block_num,tx_id,from_aid,to_aid,amount,from_internal,to_internal) " +
-			"VALUES($1,$2,$3,$4,(" + amount +"/1e+18),$5,$6)"
-	_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,from_aid,to_aid,from_internal,to_internal)
+	query = "INSERT INTO dai_transf("+
+				"evtlog_id,block_num,tx_id,from_aid,to_aid,amount,from_internal,to_internal" +
+			") " +
+			"VALUES($1,$2,$3,$4,$5,(" + amount +"/1e+18),$6,$7)"
+	_,err := ss.db.Exec(query,evtlog_id,agtx.BlockNum,agtx.TxId,from_aid,to_aid,from_internal,to_internal)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
@@ -627,12 +629,13 @@ func (ss *SQLStorage) Get_token_transfers_batch(sig string,contract_aid int64,fr
 	const BATCH_SIZE int = 256
 	output := make([]p.TTEntry,0,BATCH_SIZE)
 	var query string
-	query = "SELECT el.id,et.tx_id,tx.tx_hash " +
+	query = "SELECT el.block_num,el.id,et.tx_id,tx.tx_hash " +
 				"FROM evt_topic AS et "+
 					"JOIN evt_log AS el ON et.evtlog_id=el.id " +
 					"JOIN transaction AS tx ON el.tx_id=tx.id " +
-				"WHERE (et.signature = $1) AND (el.contract_aid=$2) AND (et.id > $3) " +
-				"ORDER BY et.block_num,et.tx_id,et.id " +
+				"WHERE (et.short_sig = $1) AND (el.contract_aid=$2) AND (et.id > $3) " +
+//				"ORDER BY et.block_num,et.tx_id,et.id " +
+				"ORDER BY et.id " +
 				"LIMIT $4"
 
 	ss.Info.Printf("q=%v, sig=%v, contract_aid=%v, from_id=%v LIMIT=%v\n",query,sig,contract_aid,from_id,BATCH_SIZE)
@@ -645,7 +648,49 @@ func (ss *SQLStorage) Get_token_transfers_batch(sig string,contract_aid int64,fr
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.TTEntry
-		err=rows.Scan(&rec.EvtId,&rec.TxId,&rec.TxHash)
+		err=rows.Scan(&rec.BlockNum,&rec.EvtId,&rec.TxId,&rec.TxHash)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+		output = append(output,rec)
+	}
+	return output
+}
+func (ss *SQLStorage) Get_evt_logs_by_signature(sig string,contract_aid int64,from_block_num int64) []p.TTEntry {
+
+	const NUM_BLOCKS_BATCH int64 = 256
+	output := make([]p.TTEntry,0,1024)
+
+	to_block_num := from_block_num + NUM_BLOCKS_BATCH
+	last_block_num,_ := ss.Get_last_block_num()
+	if to_block_num > last_block_num {
+		to_block_num = last_block_num
+	}
+	var query string
+	query = "SELECT block_num,id AS el_id,tx_id FROM evt_log WHERE id  IN (" +
+				"SELECT DISTINCT el_id FROM ( " +
+					"SELECT id as el_id " +
+						"FROM evt_log " +
+						"WHERE (block_num > $1) AND (block_num <= $2) " +
+								"AND (contract_aid=$3) " +
+								"AND (topic0_sig=$4) " +
+						"ORDER BY block_num,tx_id,el_id "+
+				") AS subeids " +
+			")"
+
+
+	ss.Info.Printf("q=%v, sig=%v, contract_aid=%v, from_block=%v to_block=%v\n",query,sig,contract_aid,from_block_num,to_block_num)
+	rows,err := ss.db.Query(query,from_block_num,to_block_num,contract_aid,sig)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.TTEntry
+		err=rows.Scan(&rec.BlockNum,&rec.EvtId,&rec.TxId)
 		if err != nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 			os.Exit(1)
@@ -696,4 +741,60 @@ func (ss *SQLStorage) Get_token_etl_process_config() *p.ETLTokenConfig {
 		output.LastIdShareTokBalChg = null_last_id_stbc.Int64
 	}
 	return output
+}
+func (ss *SQLStorage) Get_dai_process_status() p.DaiProcessStatus {
+
+	var output p.DaiProcessStatus
+	var null_last_block sql.NullInt64
+
+	var query string
+	for {
+		query = "SELECT last_block FROM dai_proc_status"
+
+		res := ss.db.QueryRow(query)
+		err := res.Scan(&null_last_block)
+		if (err!=nil) {
+			if err == sql.ErrNoRows {
+				first_block_num := ss.Get_first_block_num()
+				query = "INSERT INTO dai_proc_status(last_block) VALUES($1)"
+				_,err := ss.db.Exec(query,first_block_num)
+				if (err!=nil) {
+					ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+					os.Exit(1)
+				}
+			} else {
+				if (err!=nil) {
+					ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+					os.Exit(1)
+				}
+			}
+		} else {
+			break
+		}
+	}
+	if null_last_block.Valid {
+		output.LastBlock = null_last_block.Int64
+	}
+	return output
+}
+func (ss *SQLStorage) Update_dai_process_status(status *p.DaiProcessStatus) {
+
+	var query string
+	query = "UPDATE dai_proc_status SET last_block = $1"
+
+	_,err := ss.db.Exec(query,status.LastBlock)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_DAI_transfer_by_evtlog_id(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM dai_transf WHERE evtlog_id=$1"
+	_,err := ss.db.Exec(query,evtlog_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
 }

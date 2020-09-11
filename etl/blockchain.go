@@ -5,11 +5,13 @@ import (
 //	"bytes"
 	"encoding/hex"
 	"math/big"
+//	"bufio"
 //	"context"
 	"os"
 	"errors"
 //	"fmt"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 //	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -300,21 +302,27 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 	return nil
 }
 func process_tx_event_log(agtx *AugurTx,log *types.Log) {
-
+	var err error
 	var eel EthereumEventLog
 	eel.BlockNum = agtx.BlockNum
 	eel.TxId = agtx.TxId
 	eel.ContractAddress = log.Address.String()
-	eel.Data = hex.EncodeToString(log.Data)
-	event_id := storage.Insert_tx_event_log(&eel)
+	eel.Topic0_Sig = hex.EncodeToString(log.Topics[0][0:4])
+	eel.RlpLog, err = rlp.EncodeToBytes(log)
+	if err != nil {
+		Info.Printf("Couldn't RLP-encode log : %v\n",err)
+		os.Exit(1)
+	}
+	event_id,contract_aid := storage.Insert_tx_event_log(&eel)
 
 	for pos,topic := range log.Topics {
 		var eet EthereumEventTopic
 		eet.BlockNum = eel.BlockNum
 		eet.TxId = eel.TxId
 		eet.EventLogId = event_id
+		eet.ContractAid = contract_aid
 		eet.Pos = pos
-		eet.Signature = hex.EncodeToString(topic.Bytes())
+		eet.Value = hex.EncodeToString(topic.Bytes())
 		storage.Insert_event_log_topic(&eet)
 	}
 }

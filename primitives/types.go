@@ -746,27 +746,43 @@ type EthereumEventTopic struct {
 	BlockNum				int64
 	TxId					int64
 	EventLogId				int64
+	ContractAid				int64
 	Pos						int
-	Signature				string
+	Value					string	// Important note: this isn't 0x-prefixed
 }
 type EthereumEventLog struct {
 	BlockNum				int64
 	TxId					int64
 	ContractAddress			string
-	Data					string
+	Topic0_Sig				string
+	RlpLog					[]byte
 }
 type ChainReorg struct {
 	BlockNum				int64
 	Hash					string
 }
 type TTEntry struct { // TokenTransfer (batch) entry
+	BlockNum				int64
 	TxId					int64
 	EvtId					int64
 	TxHash					string
+}
+type EvtLogEntry struct {	// event log entry for queries by signature
+	BlockNum				int64
+	TxId					int64
+	EvtId					int64
 }
 type ETLTokenConfig struct {
 	LastIdDAI				int64
 	LastIdREP				int64
 	LastIdShareTokTransf	int64		// ShareToken.sol::Transfer event
 	LastIdShareTokBalChg	int64		// ShareToken.sol::ShareTokenBalanceChanged event
+}
+/*type EvtLogInfo struct {
+	Id						int64
+	BlockNum				int64
+	Data					string
+}*/
+type DaiProcessStatus struct {
+	LastBlock				int64
 }

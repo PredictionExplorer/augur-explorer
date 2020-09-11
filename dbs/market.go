@@ -220,22 +220,24 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,va
 				fmt.Sprintf("Invalid market type = % for market %v",evt.MarketType,evt.Market.String()),
 			)
 	}
-	ss.init_market_outcome_volumes(market_aid,outcomes)
+	ss.init_market_outcome_volumes(market_aid,outcomes,agtx)
 }
-func (ss *SQLStorage) init_market_outcome_volumes(market_aid int64,outcomes string) {
+func (ss *SQLStorage) init_market_outcome_volumes(market_aid int64,outcomes string,agtx *p.AugurTx) {
 
 	var query string
 	outcomes_list := strings.Split(outcomes,",")
 	for outcome_idx:=0 ; outcome_idx < len(outcomes_list) ; outcome_idx ++ {
 		if len(outcomes_list[outcome_idx])>0 {
 			query = "INSERT INTO outcome_vol(" +
+						"block_num," +
+						"tx_id," +
 						"market_aid," +
 						"outcome_idx" +
 					") VALUES(" +
 						"$1," +
 						"$2" +
 					")"
-			_,err := ss.db.Exec(query,market_aid,outcome_idx)
+			_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,market_aid,outcome_idx)
 			if (err!=nil) {
 				ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
 				os.Exit(1)

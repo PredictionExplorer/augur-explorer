@@ -262,12 +262,14 @@ func proc_erc20_transfer(log *types.Log,agtx *AugurTx) {
 		Info.Printf("ERC20_Transfer event, contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump(Info)
+		/*
 		if bytes.Equal(caddrs.Dai.Bytes(), log.Address.Bytes()) {	// this is DAI contract
 			storage.Process_DAI_token_transfer(&mevt,caddrs,agtx)
 		}
 		if bytes.Equal(caddrs.Reputation.Bytes(), log.Address.Bytes()) {	// this is DAI contract
 			storage.Process_REP_token_transfer(&mevt,agtx)
 		}
+		*/
 	}
 }
 func proc_profit_loss_changed(agtx *AugurTx,log *types.Log) int64  {

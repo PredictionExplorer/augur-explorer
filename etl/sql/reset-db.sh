@@ -11,5 +11,6 @@ then
 	echo usage: $0 '[dbname] [init_script.sql]'
 	exit 1
 fi
+psql $DBNAME < drop-tokens.sql
 psql $DBNAME < drop-tables.sql
-cat tables.sql trigger-funcs.sql triggers.sql indices.sql $INIT_SCRIPT | psql $DBNAME
+cat tables.sql tables_tokens.sql trigger-funcs.sql triggers.sql indices.sql indices_tokens.sql $INIT_SCRIPT | psql $DBNAME

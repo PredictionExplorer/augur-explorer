@@ -8,7 +8,7 @@ import (
 	"database/sql"
 	_  "github.com/lib/pq"
 
-	//"github.com/ethereum/go-ethereum/common"
+//	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
@@ -34,6 +34,29 @@ func (ss *SQLStorage) Get_last_block_num() (int64,bool) {
 	} else {
 		return -1,false
 	}
+}
+func (ss *SQLStorage) Get_first_block_num() int64 {
+
+	var query string
+	query="SELECT block_num FROM block LIMIT 1";
+	row := ss.db.QueryRow(query)
+	var null_block_num sql.NullInt64
+	var err error
+	err=row.Scan(&null_block_num);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("No blocks on Layer1, aborting."))
+			os.Exit(1)
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error in Get_first_block_num(): %v",err))
+			os.Exit(1)
+		}
+	}
+	if (!null_block_num.Valid) {
+		ss.Log_msg(fmt.Sprintf("First block is null on Layer1"))
+		os.Exit(1)
+	}
+	return null_block_num.Int64
 }
 func (ss *SQLStorage) Set_last_block_num(block_num int64) {
 
@@ -532,18 +555,18 @@ func (ss *SQLStorage) Set_chain_id(chain_id int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_tx_event_log(eel *p.EthereumEventLog) int64 {
+func (ss *SQLStorage) Insert_tx_event_log(eel *p.EthereumEventLog) (int64,int64) {
 
 	contract_aid := ss.Lookup_or_create_address(eel.ContractAddress,eel.BlockNum,eel.TxId)
-
+//	ss.Info.Printf("topic0_sig=%v, len=%v\n",eel.Topic0_Sig,len(eel.Topic0_Sig))
 	var query string
-	query = "INSERT INTO evt_log(block_num,tx_id,contract_aid,data) " +
-				"VALUES($1,$2,$3,$4) RETURNING id"
+	query = "INSERT INTO evt_log(block_num,tx_id,contract_aid,topic0_sig,log_rlp) " +
+				"VALUES($1,$2,$3,$4,$5) RETURNING id"
 
 	//_,err:=ss.db.Exec(query,eel.BlockNum,eel.TxId,contract_aid,eel.Data)
 	var err error
 	var null_id sql.NullInt64
-	row := ss.db.QueryRow(query,eel.BlockNum,eel.TxId,contract_aid,eel.Data)
+	row := ss.db.QueryRow(query,eel.BlockNum,eel.TxId,contract_aid,eel.Topic0_Sig,eel.RlpLog)
 	err=row.Scan(&null_id);
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("Insert_tx_event_log() failed: %v, q=%v, b=%v\n",err,query,eel.BlockNum))
@@ -553,14 +576,16 @@ func (ss *SQLStorage) Insert_tx_event_log(eel *p.EthereumEventLog) int64 {
 		ss.Log_msg(fmt.Sprintf("Insert_tx_event_log() failed: null id returned at block %v\n",eel.BlockNum))
 		os.Exit(1)
 	}
-	return null_id.Int64
+	return null_id.Int64,contract_aid
 }
 func (ss *SQLStorage) Insert_event_log_topic(eet *p.EthereumEventTopic) {
 
 	var query string
-	query = "INSERT INTO evt_topic(block_num,tx_id,evtlog_id,pos,signature) " +
-				"VALUES($1,$2,$3,$4,$5)"
-	_,err:=ss.db.Exec(query,eet.BlockNum,eet.TxId,eet.EventLogId,eet.Pos,eet.Signature)
+	query = "INSERT INTO evt_topic(block_num,tx_id,evtlog_id,contract_aid,pos,value) " +
+				"VALUES($1,$2,$3,$4,$5,$6)"
+	_,err:=ss.db.Exec(query,
+			eet.BlockNum,eet.TxId,eet.EventLogId,eet.ContractAid,eet.Pos,eet.Value,
+	)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("Insert_event_log_topic() failed: %v at block\n",err,eet.BlockNum))
 		os.Exit(1)
@@ -577,16 +602,37 @@ func (ss *SQLStorage) Insert_chain_reorg_event(co *p.ChainReorg) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Get_event_log_data() string {
+func (ss *SQLStorage) Get_event_log(evtlog_id int64) p.EthereumEventLog {
 
-	var output string
+	var evtlog p.EthereumEventLog
 	var query string
-	query = "SELECT data FROM evt_log WHERE id=$1"
-	res := ss.db.QueryRow(query)
-	err := res.Scan(&output)
+	query = "SELECT block_num,log_rlp FROM evt_log WHERE id=$1"
+	res := ss.db.QueryRow(query,evtlog_id)
+	err := res.Scan(&evtlog.BlockNum,&evtlog.RlpLog)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
-	return output
+
+	return evtlog
+}
+func (ss *SQLStorage) Get_augur_transaction(tx_id int64) *p.AugurTx {
+
+	agtx := new(p.AugurTx)
+	var query string
+	query = "SELECT block_num,tx_hash FROM transaction WHERE id=$1"
+
+//	var input string
+	res := ss.db.QueryRow(query,tx_id)
+	err := res.Scan(&agtx.BlockNum,&agtx.TxHash)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+/*	agtx.Input,err = hex.DecodeString(input)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("Cant decode transaction input '%v' : %v",input,err))
+		os.Exit(1)
+	}*/
+	return agtx
 }

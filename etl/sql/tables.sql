@@ -39,15 +39,18 @@ CREATE TABLE evt_log (
 	block_num			BIGINT NOT NULL,
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	contract_aid		BIGINT NOT NULL, -- copied for easy data management
-	data				TEXT NOT NULL
+	topic0_sig			CHAR(8) NOT NULL,-- 4 bytes (8 hex chars)  from Topics[0] (the event signature)
+	log_rlp				bytea NOT NULL -- RLP encoded (core/types.log:RLPEncode()) event log data
+--	data				TEXT NOT NULL
 );
-CREATE TABLE evt_topic (
+CREATE TABLE evt_topic (	-- stores indexed topics of Ethereum Event
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,
 	tx_id				BIGINT NOT NULL,
 	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	contract_aid		BIGINT NOT NULL,
 	pos					SMALLINT NOT NULL,
-	signature			CHAR(66)
+	value				CHAR(64)	-- hex encoded value of the topic
 );
 CREATE TABLE abi_funcs (-- Ethereum function signature of the contract method
 	id					BIGSERIAL PRIMARY KEY,
@@ -301,7 +304,9 @@ CREATE TABLE volume (	-- this is the VolumeChanged event
 );
 CREATE TABLE outcome_vol (	-- this is the (accumulated) volume per outcome (indexed) upd. on VolumeChanged
 	id					BIGSERIAL PRIMARY KEY,
-	market_aid			BIGINT NOT NULL REFERENCES market(market_aid) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
 	total_trades		BIGINT DEFAULT 0,
 	total_oorders		BIGINT DEFAULT 0,
 	outcome_idx			SMALLINT NOT NULL,
@@ -331,78 +336,6 @@ CREATE TABLE mkt_fin (
 );
 CREATE TABLE last_block (	-- the value in this table is guaranteeing integrity in the data up to last block
 	block_num			BIGINT	NOT NULL	-- last block processed by the ETL
-);
-CREATE table dai_transf (	-- transfers of DAI tokens (deposits/withdrawals of funds)
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	from_aid			BIGINT DEFAULT 0,
-	to_aid				BIGINT DEFAULT 0,
-	from_internal		BOOLEAN DEFAULT false,
-	to_internal			BOOLEAN DEFAULT false,
-	amount				DECIMAL(64,18) DEFAULT 0.0
-);
-CREATE table dai_bal (	-- DAI token balance
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	dai_transf_id		BIGINT NOT NULL,
-	aid					BIGINT NOT NULL,
-	processed			BOOLEAN DEFAULT false,	-- true if balances have been calculated
-	augur				BOOLEAN DEFAULT false,	-- true if the user has account on Augur Platform
-	internal			BOOLEAN DEFAULT false,	-- true if it is an exchange between Agur's contracts
-	balance				DECIMAL(64,18) DEFAULT 0.0,
-	amount				DECIMAL(64,18) DEFAULT 0.0
-);
-CREATE table rep_transf (
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	from_aid			BIGINT DEFAULT 0,
-	to_aid				BIGINT DEFAULT 0,
-	amount				DECIMAL(32,18) DEFAULT 0.0
-);
-CREATE table tok_transf (	-- Tokens Transferred event
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	market_aid			BIGINT NOT NULL,
-	token_aid			BIGINT NOT NULL,
-	from_aid			BIGINT NOT NULL,
-	to_aid				BIGINT NOT NULL,
-	token_type			SMALLINT DEFAULT 0,
-	value				DECIMAL(64,32) DEFAULT 0.0
-);
-CREATE table tbc (			-- Token Balance Changed event
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	market_aid			BIGINT NOT NULL,
-	owner_aid			BIGINT NOT NULL,
-	token_aid			BIGINT NOT NULL,
-	token_type			SMALLINT DEFAULT 0,
-	outcome				SMALLINT NOT NULL,
-	balance				DECIMAL(64,32) DEFAULT 0.0
-);
-CREATE table stbc (			-- Share Token Balance Changed event
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	market_aid			BIGINT NOT NULL,
-	account_aid			BIGINT NOT NULL,
-	outcome_idx			SMALLINT NOT NULL,
-	balance				DECIMAL(64,32) DEFAULT 0.0
-);
--- Balances of Share tokens per Market (accumulated data, one record per account)
-CREATE TABLE sbalances (
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			 -- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	account_aid			BIGINT NOT NULL,			-- address id of the User(holder of the shares)
-	market_aid			BIGINT NOT NULL,			-- market id of the Market these shares blong
-	num_transfers		BIGINT DEFAULT 0,			-- counter for tracking now many transfers we had
-	outcome_idx			SMALLINT NOT NULL,				-- market outcome (index)
-	balance				DECIMAL(24,18) NOT NULL		-- balance of shares (bigint as string)
 );
 -- Statistics, automatically accumulated for the main page
 CREATE TABLE main_stats (
@@ -622,11 +555,4 @@ CREATE TABLE pl_debug (-- Profit loss data for debugging, scanned after Block ha
 	frozen_funds		DECIMAL(64,36) DEFAULT 0.0,
 	net_position		DECIMAL(32,18) DEFAULT 0.0,
 	avg_price			DECIMAL(32,20) DEFAULT 0.0
-);
-CREATE TABLE etl_tokens ( -- ETL process state variables to import tokens from Geth 
---single record table
-	last_id_dai			BIGINT DEFAULT 0,
-	last_id_rep			BIGINT DEFAULT 0, -- Rep V2 token
-	last_id_stok		BIGINT DEFAULT 0, -- ShareToken ERC20 transfer
-	last_id_stbc		BIGINT DEFAULT 0 -- ShareTokenBalance changed
 );
