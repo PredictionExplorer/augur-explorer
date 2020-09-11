@@ -59,3 +59,4 @@ CREATE UNIQUE INDEX oohist_uniq		ON oohist			(mktord_id,order_hash,opcode);
 CREATE INDEX exec_wtx_in_sig_idx	ON exec_wtx			(input_sig);
 CREATE INDEX exec_wtx_referral_idx	ON exec_wtx			(referral_aid);
 CREATE INDEX exec_wtx_to_idx		ON exec_wtx			(to_aid);
+CREATE UNIQUe INDEX mesh_evt_uniq	ON mesh_evt			(order_hash,evt_code);

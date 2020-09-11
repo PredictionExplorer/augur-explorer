@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"time"
 	"bytes"
-	"encoding/hex"
+	//"encoding/hex"
 
 	"github.com/0xProject/0x-mesh/rpc"
 	"github.com/0xProject/0x-mesh/zeroex"
@@ -19,7 +19,7 @@ import (
 	"github.com/plaid/go-envvar/envvar"
 
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	//"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
@@ -118,6 +118,7 @@ func fetch_and_sync_orders() {
 		orders_total,augur_count,insert_count,update_count,deleted_count,
 	)
 }
+/*discontinued
 func oo_insert(order_hash *string,order *zeroex.SignedOrder,fillable_amount *big.Int,timestamp int64) error {
 
 	ctx := context.Background()
@@ -151,7 +152,8 @@ func oo_insert(order_hash *string,order *zeroex.SignedOrder,fillable_amount *big
 	err = storage.Insert_open_order(order_hash,order,fillable_amount,eoa_addr_str,&unpacked_id,OOOpCodeCreated,timestamp)
 	return err
 }
-func order_blongs_to_augur(order *zeroex.SignedOrder) bool {
+*/
+func order_belongs_to_augur(order *zeroex.SignedOrder) bool {
 
 	// detecting if the order belongs to Augur Platform and it does if MakerAssetData
 	// contains ZeroXTrade contract address
@@ -184,13 +186,16 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 	for i:=0 ; i<len(response.OrdersInfos); i++ {
 		order_info := response.OrdersInfos[i]
 		if order_info != nil {
-			if !order_blongs_to_augur(order_info.SignedOrder) {
+			if !order_belongs_to_augur(order_info.SignedOrder) {
 				continue
 			}
 			augur_count++
 			order_hash := order_info.OrderHash.String()
 			var empty struct{}
 			(*ohash_map)[order_hash]=empty
+
+			storage.Insert_0x_mesh_order_event(response.SnapshotTimestamp.Unix(),order_info,MeshEvtGetOrders)
+			/*discontinued
 			amount := order_info.FillableTakerAssetAmount
 			retval,bad_amount := storage.Update_oo_fillable_amount(order_hash,amount,order_info.SignedOrder)
 			if retval == 2 { // order doesn't exist
@@ -211,6 +216,7 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 				)
 				update_count++
 			}
+			*/
 		}
 	}
 	return augur_count,insert_count,update_count
@@ -296,12 +302,12 @@ func main() {
 	Info.Printf("Subscribed to events successfully..., 0x Mesh Listener started.\n")
 	fetch_and_sync_orders()
 	last_sync_time=time.Now().Unix()
-	var copts = new(bind.CallOpts)
+	//var copts = new(bind.CallOpts)
 	for {
 		select {
 		case orderEvents := <-orderEventsChan:
 			for _, orderEvent := range orderEvents {
-				if !order_blongs_to_augur(orderEvent.SignedOrder) {
+				if !order_belongs_to_augur(orderEvent.SignedOrder) {
 					//Info.Printf("Event listener, skipped non-augur: %v\n",orderEvent.OrderHash.String())
 					continue
 				}
@@ -311,6 +317,16 @@ func main() {
 				Info.Printf("Order Hash: %v\n",order_hash)
 				Info.Printf("FillableTakerAssetAmount: %v\n",orderEvent.FillableTakerAssetAmount)
 				Info.Printf("Timestamp: %v\n",orderEvent.Timestamp)
+				// store the event in the DB
+				var order_info types.OrderInfo
+				order_info.OrderHash.SetBytes(orderEvent.OrderHash.Bytes())
+				order_info.SignedOrder = orderEvent.SignedOrder
+				order_info.FillableTakerAssetAmount = new(big.Int)
+				order_info.FillableTakerAssetAmount.Set(orderEvent.FillableTakerAssetAmount)
+				event_code := Get_mesh_event_code(orderEvent.EndState)
+				storage.Insert_0x_mesh_order_event(orderEvent.Timestamp.Unix(),&order_info,event_code)
+
+/* discontinued
 				adata,err := zerox_contract.DecodeAssetData(copts,orderEvent.SignedOrder.Order.MakerAssetData)
 				if err==nil {
 					unpacked_position,err := zerox_contract.UnpackTokenId(copts,adata.TokenIds[0])
@@ -349,6 +365,7 @@ func main() {
 						// do a re-sync
 						fetch_and_sync_orders()
 				}
+*/
 			}
 			cur_time := time.Now().Unix()
 			time_diff := cur_time - last_sync_time

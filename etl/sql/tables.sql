@@ -103,6 +103,34 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 	trade_group			TEXT NOT NULL,			-- User defined group label to identify multiple trades
 	order_hash			TEXT NOT NULL
 );
+CREATE TABLE mesh_evt ( -- Events received from 0x Mesh network. source: github.com/0xProject/0x-mesh/zeroex
+	id						BIGSERIAL PRIMARY KEY,
+-- Event fields:
+	time_stamp				BIGINT NOT NULL,
+	fillable_amount			DECIMAL(32,18) NOT NULL,
+	evt_code				SMALLINT NOT NULL,
+-- `Order` struct follows:
+	order_hash				CHAR(66) NOT NULL,
+	chain_id				INT NOT NULL,
+	exchange_addr			CHAR(42) NOT NULL,
+	maker_addr				CHAR(42) NOT NULL,
+	maker_asset_data		TEXT NOT NULL,	-- hex encoded
+	maker_fee_asset_data	TEXT NOT NULL,	-- hex encoded
+	maker_asset_amount		DECIMAL(32,18) NOT NULL,
+	maker_fee				DECIMAL(32,18) NOT NULL,
+	taker_address			CHAR(42) NOT NULL,
+	taker_asset_data		TEXT NOT NULL,
+	taker_asset_amount		DECIMAL(32,18) NOT NULL,
+	taker_fee				DECIMAL(32,18) NOT NULL,
+	sender_address			CHAR(42) NOT NULL,
+	fee_recipient_address	CHAR(42) NOT NULL,
+	expiration_time_secs	BIGINT NOT NULL,
+	salt					TEXT NOT NULL, -- big.Int as string
+	signature				TEXT
+);
+CREATE TABLE mesh_status (
+	last_id_processed	BIGINT DEFAULT 0
+);
 CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later they are converted into 'mktord` records
 	id					BIGSERIAL PRIMARY KEY,
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK

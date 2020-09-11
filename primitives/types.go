@@ -26,6 +26,20 @@ const (
 	OOOpCodeExpired
 	OOOpCodeSyncProcess		// when no other reason exist, this one is used (this is a kind of a bugfix)
 )
+type MeshEvtCode int
+const (
+	MeshEvtGetOrders MeshEvtCode = iota
+	MeshEvtInvalid
+	MeshEvtAdded
+	MeshEvtFilled
+	MeshEvtFullyFilled
+	MeshEvtCancelled
+	MeshEvtExpired
+	MeshEvtUnexpired
+	MeshEvtBecameUnfunded
+	MeshEvtFillabilityIncreased
+	MeshEvtStoppedWatching
+)
 var (
 	ErrChainSplit error = errors.New("Chainsplit detected")
 )
@@ -536,4 +550,7 @@ type ExecuteWalletTx struct {
 	DesiredSignerBalance	string
 	MaxExchangeRateInDAI	string
 	InputSig				string	// first 4 bytes of CallData, extracted for indexing
+}
+type MeshProcStatus struct {
+	LastIdProcessed			int64
 }
