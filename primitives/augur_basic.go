@@ -112,7 +112,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("ProfitLoss"))
 	caddrs.PL,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -120,7 +120,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("ZeroXTrade"))
 	caddrs.ZeroxTrade,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -128,7 +128,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("ZeroXExchange"))
 	caddrs.ZeroxXchg,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -155,7 +155,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("AugurWalletRegistry"))
 	caddrs.WalletReg,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -163,7 +163,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("AugurWalletRegistryV2"))
 	caddrs.WalletReg2,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -171,7 +171,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("FillOrder"))
 	caddrs.FillOrder,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -195,7 +195,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("WETH9"))
 	caddrs.WETH9,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -224,7 +224,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("CreateOrder"))
 	caddrs.CreateOrder,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -295,21 +295,21 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("Orders"))
 	caddrs.Orders,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 	key = common.BigToHash(big.NewInt(0))
 	copy(key[:],[]byte("SimulateTrade"))
 	caddrs.SimulateTrade,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 	key = common.BigToHash(big.NewInt(0))
 	copy(key[:],[]byte("Trade"))
 	caddrs.Trade,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 	key = common.BigToHash(big.NewInt(0))
@@ -344,7 +344,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("RelayHubV2"))
 	caddrs.RelayHubV2,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 

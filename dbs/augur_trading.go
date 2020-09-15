@@ -11,6 +11,7 @@ import (
 	"encoding/hex"
 	_  "github.com/lib/pq"
 
+	ztypes "github.com/0xProject/0x-mesh/common/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/0xProject/0x-mesh/zeroex"
 
@@ -343,10 +344,10 @@ func (ss *SQLStorage) Delete_open_0x_order(order_hash string,opcode int) {
 		ss.Info.Printf(fmt.Sprintf("DB error: couldn't delete open order with order_hash = %v (not found)\n",order_hash))
 	}
 }
-func (ss *SQLStorage) Update_0x_order_on_partial_fill(evt *zeroex.OrderEvent) {
+func (ss *SQLStorage) Update_0x_order_on_partial_fill(oinfo *ztypes.OrderInfo) {
 
-	order_hash := evt.OrderHash.String()
-	amount := evt.FillableTakerAssetAmount.String()
+	order_hash := oinfo.OrderHash.String()
+	amount := oinfo.FillableTakerAssetAmount.String()
 
 	var query string
 	query = "UPDATE oorders "+
@@ -638,6 +639,75 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 	return records
 }
 func (ss *SQLStorage) Get_full_price_history(mkt_addr string,market_aid int64) p.FullPriceHistory {
+
+	var output p.FullPriceHistory
+	outcomes,_ := ss.Get_outcome_volumes(mkt_addr,market_aid,0);
+	for _,outc := range outcomes {
+		var ph p.PriceHistory
+		ph.OutcomeIdx = outc.Outcome
+		ph.OutcomeStr = outc.OutcomeStr
+		ph.Trades = ss.Get_price_history_for_outcome(market_aid,outc.Outcome)
+		output.Outcomes = append(output.Outcomes,ph)
+	}
+	return output
+}
+func (ss *SQLStorage) Get_zoomed_price_history_for_outcome(market_aid int64,outc int,zoom int,init_ts int,fin_ts int,interval_secs int) []p.ZHistEntry{
+
+	var query string
+	query = "SELECT " +
+				"o.id,"+
+				"o.order_hash," +
+				"o.market_aid," +
+				"c_e_a.addr AS filler_eoa_addr," +
+				"o.otype, " +
+				"CASE o.otype " +
+					"WHEN 0 THEN 'BID' " +
+					"ELSE 'ASK' " +
+				"END AS dir, " +
+				"o.time_stamp::date AS date," +
+				"FLOOR(EXTRACT(EPOCH FROM o.time_stamp))::BIGINT as created_ts," +
+				"o.outcome_idx," +
+				"o.price AS price, " +
+				"o.amount_filled AS volume " +
+			"FROM oohist AS o " +
+				"LEFT JOIN " +
+					"address AS a ON o.market_aid=a.address_id " +
+				"LEFT JOIN address AS c_e_a ON o.eoa_aid=c_e_a.address_id " +
+			"WHERE o.market_aid = $1 AND o.outcome_idx=$2 " +
+			"ORDER BY o.time_stamp"
+	rows,err := ss.db.Query(query,market_aid,outc)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.ZHistEntry,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.ZHistEntry
+		err=rows.Scan(
+			&rec.Id,
+			&rec.OrderHash,
+			&rec.MktAid,
+			&rec.CreatorAddr,
+			&rec.OrderType,
+			&rec.Direction,
+			&rec.OrderDate,
+			&rec.Timestamp,
+			&rec.OutcomeIdx,
+			&rec.Price,
+			&rec.Amount,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
+			os.Exit(1)
+		}
+		rec.CreatorAddrSh=p.Short_address(rec.CreatorAddr)
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_zoomed_price_history(mkt_addr string,market_aid int64) p.FullPriceHistory {
 
 	var output p.FullPriceHistory
 	outcomes,_ := ss.Get_outcome_volumes(mkt_addr,market_aid,0);

@@ -40,7 +40,7 @@ BEGIN
 	END IF;
 
 	SELECT num_ticks FROM market WHERE market_aid = p_market_aid INTO v_num_ticks;
-	SELECT COALESCE(MAX(price),-1)
+	SELECT COALESCE(MAX(price),0)
 		FROM oorders
 		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx
 		INTO v_price_bid;
@@ -48,12 +48,8 @@ BEGIN
 		FROM oorders
 		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx
 		INTO v_price_ask;
-	-- exit if we don't have enough bid/ask records
-	IF v_price_bid < 0 THEN
-		RETURN;
-	END IF;
 	IF v_price_ask < 0 THEN
-		RETURN;
+		SELECT num_ticks FROM market WHERE market_aid=p_market_aid INTO v_price_ask;
 	END IF;
 
 	v_spread := v_price_ask - v_price_bid;

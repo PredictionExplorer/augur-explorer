@@ -311,12 +311,12 @@ func main() {
 					//Info.Printf("Event listener, skipped non-augur: %v\n",orderEvent.OrderHash.String())
 					continue
 				}
-				order_hash:=orderEvent.OrderHash.String()
+				//order_hash:=orderEvent.OrderHash.String()
 				Info.Printf("--------------------------------------------------\n")
 				Info.Printf("Order event arrived in state=%+v:\n",orderEvent.EndState)
-				Info.Printf("Order Hash: %v\n",order_hash)
-				Info.Printf("FillableTakerAssetAmount: %v\n",orderEvent.FillableTakerAssetAmount)
-				Info.Printf("Timestamp: %v\n",orderEvent.Timestamp)
+	//			Info.Printf("Order Hash: %v\n",order_hash)
+	//			Info.Printf("FillableTakerAssetAmount: %v\n",orderEvent.FillableTakerAssetAmount)
+	//			Info.Printf("Timestamp: %v\n",orderEvent.Timestamp)
 				// store the event in the DB
 				var order_info types.OrderInfo
 				order_info.OrderHash.SetBytes(orderEvent.OrderHash.Bytes())
@@ -324,6 +324,7 @@ func main() {
 				order_info.FillableTakerAssetAmount = new(big.Int)
 				order_info.FillableTakerAssetAmount.Set(orderEvent.FillableTakerAssetAmount)
 				event_code := Get_mesh_event_code(orderEvent.EndState)
+				Dump_0x_mesh_order(Info,&order_info)
 				storage.Insert_0x_mesh_order_event(orderEvent.Timestamp.Unix(),&order_info,event_code)
 
 /* discontinued

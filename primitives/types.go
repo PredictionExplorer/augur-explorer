@@ -44,7 +44,6 @@ var (
 	ErrChainSplit error = errors.New("Chainsplit detected")
 )
 
-
 type OrderType uint8
 const (
 	OrderTypeBid		OrderType = 0
@@ -287,6 +286,7 @@ type PLEntry struct {	// profit loss entry
 }
 type OpenOrder struct {		// the Order on 0x Mesh network, that is yet to be filled
 	Id					int64
+	MktAid				int64
 	Amount				float64
 	InitialAmount		float64
 	Price				float64
@@ -525,6 +525,46 @@ type PriceHistory struct {
 type FullPriceHistory struct {
 	Outcomes			[]PriceHistory
 }
+type ZHistEntry struct {		// the Order on 0x Mesh network, that is yet to be filled
+	Id					int64
+	MktAid				int64
+	Amount				float64
+	InitialAmount		float64
+	Price				float64
+	Timestamp			int64
+	MktExpirationTs		int64
+	OrderExpirationTs	int64
+	MktOrderId			int64
+	MktStatus			int
+	MktType				int
+	MarketStatus		int
+	OutcomeIdx			int
+	OrderType			int
+	OpCode				int
+	OrderDate			string
+	Direction			string
+	MktDescr			string
+	OutcomeStr			string
+	MktStatusStr		string
+	MktTypeStr			string
+	OrderHash			string
+	OrderHashSh			string
+	CreatorAddr			string
+	CreatorAddrSh		string	// shortened address
+	MktAddr				string
+	MktAddrSh			string
+}
+type ZoomedPriceHist struct {
+	IniTs				int64
+	FinTs				int64
+	IntervalSecs		int64
+	OutcomeIdx			int
+	OutcomeStr			string
+	Trades				[]ZHistEntry
+}
+type FullZoomedPriceHist struct {
+	Outcomes			[]PriceHistory
+}
 type StatementEntry struct {
 	Id					int64
 	BlockNum			int64
@@ -553,4 +593,28 @@ type ExecuteWalletTx struct {
 }
 type MeshProcStatus struct {
 	LastIdProcessed			int64
+}
+type MeshEvent struct {
+	Id						int64
+	Timestamp				int64
+	FillableAmount			string
+	EvtCode					int
+	OrderHash				string
+	ChainId					int
+	ExchangeAddress			string
+	MakerAddress			string
+	MakerAssetData			string
+	MakerFeeAssetData		string
+	MakerAssetAmount		string
+	MakerFee				string
+	TakerAddress			string
+	TakerAssetData			string
+	TakerFeeAssetData		string
+	TakerAssetAmount		string
+	TakerFee				string
+	SenderAddress			string
+	FeeRecipientAddress		string
+	ExpirationTime			int64
+	Salt					string
+	Signature				string
 }

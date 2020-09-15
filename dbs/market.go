@@ -850,6 +850,8 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				"ca.addr as mcreator," +
 				"ra.addr AS reporter,"+
 				"reporter_aid," +
+				"FLOOR(EXTRACT(EPOCH FROM m.create_timestamp))::BIGINT as creation_ts," +
+				"FLOOR(EXTRACT(EPOCH FROM m.end_time))::BIGINT as expiration_ts," +
 				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') AS end_date," + 
 				"extra_info::json->>'description' AS descr," +
 				"extra_info::json->>'longDescription' AS long_desc," +
@@ -887,6 +889,8 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				&rec.MktCreator,
 				&rec.Reporter,
 				&reporter_aid,
+				&rec.CreationTs,
+				&rec.ExpirationTs,
 				&rec.EndDate,
 				&description,
 				&long_desc,

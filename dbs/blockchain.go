@@ -498,3 +498,26 @@ func (ss *SQLStorage) Get_all_address_ids() []int64 {
 	}
 	return records
 }
+func (ss *SQLStorage) Get_stored_chain_id() int64 {
+
+	var query string
+	query = "SELECT chain_id FROM contract_addresses"
+	row := ss.db.QueryRow(query)
+	var null_chain_id sql.NullInt64
+	var err error
+	err=row.Scan(&null_chain_id);
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Error in Get_stored_chain_id(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return null_chain_id.Int64
+}
+func (ss *SQLStorage) Set_chain_id(chain_id int64) {
+
+	var query string = "UPDATE contract_addresses SET chain_id=$1"
+	_,err:=ss.db.Exec(query,chain_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Set_chain_id() failed: %v",err))
+		os.Exit(1)
+	}
+}

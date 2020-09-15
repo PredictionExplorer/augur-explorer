@@ -106,7 +106,7 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 CREATE TABLE mesh_evt ( -- Events received from 0x Mesh network. source: github.com/0xProject/0x-mesh/zeroex
 	id						BIGSERIAL PRIMARY KEY,
 -- Event fields:
-	time_stamp				BIGINT NOT NULL,
+	time_stamp				TIMESTAMPTZ NOT NULL,
 	fillable_amount			DECIMAL(32,18) NOT NULL,
 	evt_code				SMALLINT NOT NULL,
 -- `Order` struct follows:
@@ -120,11 +120,12 @@ CREATE TABLE mesh_evt ( -- Events received from 0x Mesh network. source: github.
 	maker_fee				DECIMAL(32,18) NOT NULL,
 	taker_address			CHAR(42) NOT NULL,
 	taker_asset_data		TEXT NOT NULL,
+	taker_fee_asset_data	TEXT NOT NULL,
 	taker_asset_amount		DECIMAL(32,18) NOT NULL,
 	taker_fee				DECIMAL(32,18) NOT NULL,
 	sender_address			CHAR(42) NOT NULL,
 	fee_recipient_address	CHAR(42) NOT NULL,
-	expiration_time_secs	BIGINT NOT NULL,
+	expiration_time			TIMESTAMPTZ NOT NULL,
 	salt					TEXT NOT NULL, -- big.Int as string
 	signature				TEXT
 );
@@ -422,7 +423,7 @@ CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur P
 	-- format for contract address comment -> [key]:[description]
 	-- the Key is used to Augur.sol::lookup() function
 	upload_block		BIGINT DEFAULT 0,
-	chain_id			BIGINT DEFAULT 1,
+	chain_id			BIGINT DEFAULT 0,
 	augur				TEXT DEFAULT '',-- Augur: Augur Main contract
 	augur_trading		TEXT DEFAULT '',-- AugurTrading: Augur Trading contract
 	profit_loss			TEXT DEFAULT '',-- ProfitLoss: Profit Loss contract

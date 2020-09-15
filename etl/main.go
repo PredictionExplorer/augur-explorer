@@ -205,6 +205,24 @@ func main() {
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
 
+	ctx := context.Background()
+	stored_chain_id := storage.Get_stored_chain_id()
+	network_chain_id,err :=eclient.NetworkID(ctx)
+	if err != nil {
+		Fatalf("Can't get Network ID: %v\n",err)
+	}
+	if stored_chain_id != network_chain_id.Int64() {
+		if stored_chain_id == 0 {
+			// not initialized yet
+			storage.Set_chain_id(network_chain_id.Int64())
+		} else {
+			Fatalf(
+				"Network chain_id = %v , my chain_id = %v. Mismatch, exiting",
+				network_chain_id.Int64(),stored_chain_id,
+			)
+		}
+	}
+
 	caddrs_obj,err := storage.Get_contract_addresses()
 	if err!=nil {
 		Fatalf("Can't find contract addresses in 'contract_addresses' table")
@@ -255,7 +273,6 @@ func main() {
 	}
 
   main_loop:
-	ctx := context.Background()
 	latestBlock, err := eclient.BlockByNumber(ctx, nil)
 	if err != nil {
 		log.Fatal("oops:", err)
@@ -287,6 +304,7 @@ func main() {
 					}
 				default:
 			}
+			proc_open_orders()
 			err := process_block(bnum,true,false)
 			if err==nil {
 				break

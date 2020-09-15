@@ -591,4 +591,96 @@ func a1_stats_uniqaddr(c *gin.Context) {
 			"status": status,
 			"error": err_str,
 	})
+func a1_price_history_zoomed(c *gin.Context) {
+
+	p_market := c.Param("market")
+	_,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	if !success {
+		return
+	}
+	_ = market_aid
+	var err error
+
+	p_zoom := c.Param("zoom")
+	var zoom int = 0
+	if len(p_zoom) > 0 {
+		zoom, err = strconv.Atoi(p_zoom)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"status":0,
+				"error":fmt.Sprintf("Bad zoom parameter: %v",err),
+			})
+			return
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("zoom parameter wasn't provided: %v",err),
+		})
+		return
+	}
+	_ = zoom
+
+	p_init_ts := c.Param("init_ts")
+	var init_ts int = 0
+	if len(p_init_ts) > 0 {
+		init_ts, err = strconv.Atoi(p_init_ts)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"status":0,
+				"error":fmt.Sprintf("Bad 'init_ts' parameter: %v",err),
+			})
+			return
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("'init_ts' parameter wasn't provided: %v",err),
+		})
+		return
+	}
+	_ = init_ts
+
+	p_fin_ts := c.Param("fin_ts")
+	var fin_ts int = 0
+	if len(p_fin_ts) > 0 {
+		fin_ts, err = strconv.Atoi(p_fin_ts)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"status":0,
+				"error":fmt.Sprintf("'fin_ts' parameter: %v",err),
+			})
+			return
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("'fin_ts' parameter wasn't provided: %v",err),
+		})
+		return
+	}
+	_ = fin_ts
+
+	p_interval_secs := c.Param("interval_secs")
+	var interval_secs int = 0
+	if len(p_interval_secs) > 0 {
+		interval_secs, err = strconv.Atoi(p_interval_secs)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"status":0,
+				"error":fmt.Sprintf("Bad 'interval_secs' parameter: %v",err),
+			})
+			return
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("'interval_secs' parameter wasn't provided: %v",err),
+		})
+		return
+	}
+	_ = interval_secs
+
+	//price_history := augur_srv.storage.Get_zoomed_price_history(minfo.MktAddr,minfo.MktAid)
+>>>>>>> 0x order event data collection and storage
 }
