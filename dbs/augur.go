@@ -332,3 +332,57 @@ func (ss *SQLStorage) Update_contract_addresses(caddrs *p.ContractAddresses) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Set_augur_flag(address *common.Address,agtx *p.AugurTx,flag_name string) {
+
+	aid := ss.Lookup_or_create_address(address.String(),agtx.BlockNum,agtx.TxId)
+
+	infinite := false
+	var query string
+  again:
+	query = "UPDATE augur_flag SET "+flag_name+"=TRUE WHERE aid=$1"
+	result,err := ss.db.Exec(query,aid)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+	rows_affected,err:=result.RowsAffected()
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	if rows_affected == 0 {
+		query = "INSERT INTO augur_flag(aid) VALUES($1)"
+		_,err := ss.db.Exec(query,aid)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
+			os.Exit(1)
+		}
+		if !infinite {
+			infinite = true
+			goto again
+		} else {
+			ss.Log_msg(fmt.Sprintf("Infinite loop at Set_augur_flag"))
+			os.Exit(1)
+		}
+	}
+	query = "SELECT " +
+				"ap_0xtrade_on_cash,ap_fill_on_cash,ap_fill_on_shtok,set_referrer " +
+			"FROM augur_flag " +
+			"WHERE aid = $1"
+
+	var ap_0xtrade_on_cash,ap_fill_on_cash,ap_fill_on_shtok,set_referrer bool
+	row := ss.db.QueryRow(query,aid)
+	err=row.Scan(
+		&ap_0xtrade_on_cash,
+		&ap_fill_on_cash,
+		&ap_fill_on_shtok,
+		&set_referrer,
+	)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Error in Set_augur_flag(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	if  ap_0xtrade_on_cash && ap_fill_on_cash && ap_fill_on_shtok && set_referrer {
+		ss.Link_eoa_and_wallet_contract(aid,aid)
+	}
+}

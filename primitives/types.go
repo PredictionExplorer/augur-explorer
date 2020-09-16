@@ -525,12 +525,13 @@ type PriceHistory struct {
 type FullPriceHistory struct {
 	Outcomes			[]PriceHistory
 }
-type ZHistEntry struct {		// the Order on 0x Mesh network, that is yet to be filled
+type ZHistT1Entry struct {		// the Order on 0x Mesh network, that is yet to be filled
 	Id					int64
 	MktAid				int64
 	Amount				float64
 	InitialAmount		float64
 	Price				float64
+	PriceEstimate		float64
 	Timestamp			int64
 	MktExpirationTs		int64
 	OrderExpirationTs	int64
@@ -540,7 +541,7 @@ type ZHistEntry struct {		// the Order on 0x Mesh network, that is yet to be fil
 	MarketStatus		int
 	OutcomeIdx			int
 	OrderType			int
-	OpCode				int
+	OpCode				int		// OOOpCode*** operation code listed at the beginning of the file
 	OrderDate			string
 	Direction			string
 	MktDescr			string
@@ -554,16 +555,22 @@ type ZHistEntry struct {		// the Order on 0x Mesh network, that is yet to be fil
 	MktAddr				string
 	MktAddrSh			string
 }
+type ZHistT2Entry struct { // Type2 entry, summarized data
+	Timestamp			int64
+	Price				float64
+}
 type ZoomedPriceHist struct {
+	Zoom				int
+	OutcomeIdx			int
 	IniTs				int64
 	FinTs				int64
 	IntervalSecs		int64
-	OutcomeIdx			int
 	OutcomeStr			string
-	Trades				[]ZHistEntry
+	Type1Entries		[]ZHistT1Entry
+	Type2Entries		[]ZHistT2Entry
 }
 type FullZoomedPriceHist struct {
-	Outcomes			[]PriceHistory
+	Outcomes			[]ZoomedPriceHist
 }
 type StatementEntry struct {
 	Id					int64

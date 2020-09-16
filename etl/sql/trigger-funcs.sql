@@ -20,7 +20,7 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION update_price_estimate(
 	p_market_aid bigint,p_outcome_idx integer,p_osize decimal
-) RETURNS void AS $$
+) RETURNS DECIMAL AS $$
 --updates open order statistics
 DECLARE
 	v_price_bid decimal;
@@ -35,9 +35,9 @@ BEGIN
 
 	SELECT spread_threshold,osize_threshold FROM ooconfig INTO v_spread_threshold,v_osize_threshold;
 
-	IF v_osize < v_osize_threshold THEN
-		RETURN;
-	END IF;
+--	IF v_osize < v_osize_threshold THEN
+--		RETURN;
+--	END IF;
 
 	SELECT num_ticks FROM market WHERE market_aid = p_market_aid INTO v_num_ticks;
 	SELECT COALESCE(MAX(price),0)
@@ -63,18 +63,20 @@ BEGIN
 			v_price_estimate := v_price_bid;
 		END IF;
 	END IF;
-
 	UPDATE outcome_vol
 		SET	highest_bid = v_price_bid,
 			lowest_ask = v_price_ask,
 			price_estimate = v_price_estimate,
 			cur_spread = v_spread
 		WHERE market_aid = p_market_aid AND outcome_idx=p_outcome_idx;
+	RETURN v_price_estimate;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_oorders_insert() RETURNS trigger AS  $$ --updates open order statistics
 DECLARE
 	v_cnt numeric;
+	v_oohist_id bigint;
+	v_price_estimate decimal;
 BEGIN
 
 	IF NEW.otype = 0 THEN
@@ -105,7 +107,6 @@ BEGIN
 		END IF;
 	END IF;
 
-	PERFORM update_price_estimate(NEW.market_aid,NEW.outcome_idx,NEW.amount);
 
 	-- Update Open Order history
 	INSERT INTO oohist(
@@ -114,7 +115,14 @@ BEGIN
 		) VALUES (
 			NEW.otype,NEW.outcome_idx,NEW.opcode,NEW.market_aid,NEW.wallet_aid,NEW.eoa_aid,
 			NEW.price,NEW.initial_amount,NEW.amount,NEW.evt_timestamp,NEW.srv_timestamp,NEW.expiration,NEW.order_hash
-		) ON CONFLICT DO NOTHING;
+		) ON CONFLICT DO NOTHING
+		RETURNING v_oohist_id;
+
+	IF v_oohist_id IS NOT NULL THEN
+		-- there could be duplicate inserts, so we have this protection using 'if not NULL'
+		SELECT * FROM update_price_estimate(NEW.market_aid,NEW.outcome_idx,NEW.amount) INTO v_price_estimate;
+		UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
+	END IF;
 
 	UPDATE market SET total_oorders = (total_oorders + 1) WHERE market_aid=NEW.market_aid;
 	UPDATE outcome_vol SET total_oorders = (total_oorders + 1) 
@@ -127,8 +135,11 @@ CREATE OR REPLACE FUNCTION update_oo_hist(p_mktord_id bigint,p_order_hash text,p
 DECLARE
 	oo record;
 	v_cnt numeric;
+	v_oohist_id bigint;
+	v_price_estimate decimal;
 BEGIN
 
+	SELECT * FROM update_price_estimate(NEW.market_aid,NEW.outcome_idx,NEW.amount) INTO v_price_estimate;
 	SELECT * FROM oorders WHERE order_hash = p_order_hash LIMIT 1 INTO oo;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt > 0 THEN
@@ -140,7 +151,11 @@ BEGIN
 				p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
 				oo.price,oo.initial_amount,p_filled_amount::DECIMAL/1e+18,
 				oo.evt_timestamp,oo.srv_timestamp,oo.expiration,oo.order_hash
-			) ON CONFLICT DO NOTHING;
+			) ON CONFLICT DO NOTHING
+			RETURNING v_oohist_id;
+		IF v_oohist_id IS NOT NULL THEN
+			UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
+		END IF;
 		RETURN;
 	END IF;
 	SELECT * FROM oohist WHERE order_hash = p_order_hash AND opcode=1 LIMIT 1 INTO oo;
@@ -154,7 +169,11 @@ BEGIN
 				p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
 				oo.price,oo.initial_amount,p_filled_amount::DECIMAL/1e+18,
 				oo.evt_timestamp,oo.srv_timestamp,oo.expiration,oo.order_hash
-			) ON CONFLICT DO NOTHING;
+			) ON CONFLICT DO NOTHING
+			RETURNING v_oohist_id;
+		IF v_oohist_id IS NOT NULL THEN
+			UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
+		END IF;
 	ELSE 
 		-- this code is executed in case 0x Mesh listener process didn't insert record in oorders table
 		-- is only valid for FILL operations becausse that's the only ones who have mktord_id > 0
@@ -167,7 +186,11 @@ BEGIN
 				) VALUES (
 					p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
 					oo.price,oo.amount,oo.amount_filled,oo.time_stamp,oo.order_hash
-				) ON CONFLICT DO NOTHING;
+				) ON CONFLICT DO NOTHING
+				RETURNING v_oohist_id;
+			IF v_oohist_id IS NOT NULL THEN
+				UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
+			END IF;
 		END IF;
 	END IF;
 
@@ -192,10 +215,7 @@ BEGIN
 					(s.outcome_idx = OLD.outcome_idx);
 	END IF;
 
-	PERFORM update_price_estimate(OLD.market_aid,OLD.outcome_idx,OLD.amount);
-
-	-- Update Open Order history
-	-- we do not DELETE anything here because oohist table should stay forverver
+	-- Noote: We aren't inserting corresponding record into 'oohist' table here because we don't have the opcode
 
 	UPDATE market SET total_oorders = (total_oorders - 1) WHERE market_aid=OLD.market_aid;
 	UPDATE outcome_vol SET total_oorders = (total_oorders - 1) 

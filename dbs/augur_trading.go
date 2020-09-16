@@ -651,14 +651,14 @@ func (ss *SQLStorage) Get_full_price_history(mkt_addr string,market_aid int64) p
 	}
 	return output
 }
-func (ss *SQLStorage) Get_zoomed_price_history_for_outcome(market_aid int64,outc int,zoom int,init_ts int,fin_ts int,interval_secs int) []p.ZHistEntry{
+func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,outc int,init_ts int,fin_ts int) []p.ZHistT1Entry {
 
 	var query string
 	query = "SELECT " +
 				"o.id,"+
 				"o.order_hash," +
 				"o.market_aid," +
-				"c_e_a.addr AS filler_eoa_addr," +
+				"c_e_a.addr AS creator_addr," +
 				"o.otype, " +
 				"CASE o.otype " +
 					"WHEN 0 THEN 'BID' " +
@@ -666,25 +666,33 @@ func (ss *SQLStorage) Get_zoomed_price_history_for_outcome(market_aid int64,outc
 				"END AS dir, " +
 				"o.time_stamp::date AS date," +
 				"FLOOR(EXTRACT(EPOCH FROM o.time_stamp))::BIGINT as created_ts," +
+				"FLOOR(EXTRACT(EPOCH FROM o.expiration))::BIGINT as expiration_ts," +
+				"o.opcode," +
 				"o.outcome_idx," +
 				"o.price AS price, " +
+				"o.price_estimate, " +
+				"o.initial_amount, " +
 				"o.amount_filled AS volume " +
 			"FROM oohist AS o " +
 				"LEFT JOIN " +
 					"address AS a ON o.market_aid=a.address_id " +
 				"LEFT JOIN address AS c_e_a ON o.eoa_aid=c_e_a.address_id " +
-			"WHERE o.market_aid = $1 AND o.outcome_idx=$2 " +
+			"WHERE " +
+				"o.market_aid = $1 AND " +
+				"o.outcome_idx=$2 AND " +
+				"o.time_stamp >= $3 AND "+
+				"o.time_stamp < $4 " +
 			"ORDER BY o.time_stamp"
-	rows,err := ss.db.Query(query,market_aid,outc)
+	rows,err := ss.db.Query(query,market_aid,outc,init_ts,fin_ts)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.ZHistEntry,0,8)
+	records := make([]p.ZHistT1Entry,0,8)
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.ZHistEntry
+		var rec p.ZHistT1Entry
 		err=rows.Scan(
 			&rec.Id,
 			&rec.OrderHash,
@@ -694,8 +702,12 @@ func (ss *SQLStorage) Get_zoomed_price_history_for_outcome(market_aid int64,outc
 			&rec.Direction,
 			&rec.OrderDate,
 			&rec.Timestamp,
+			&rec.OrderExpirationTs,
+			&rec.OpCode,
 			&rec.OutcomeIdx,
 			&rec.Price,
+			&rec.PriceEstimate,
+			&rec.InitialAmount,
 			&rec.Amount,
 		)
 		if err!=nil {
@@ -707,15 +719,54 @@ func (ss *SQLStorage) Get_zoomed_price_history_for_outcome(market_aid int64,outc
 	}
 	return records
 }
-func (ss *SQLStorage) Get_zoomed_price_history(mkt_addr string,market_aid int64) p.FullPriceHistory {
+func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,outc int,init_ts int,fin_ts int,interval int) []p.ZHistT2Entry {
 
-	var output p.FullPriceHistory
+	var query string
+	query = "SELECT " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM o.time_stamp))::BIGINT/$1)*$1 AS start_ts,"+
+				"AVG(price_estimate) AS avg_price_estimate" +
+			"FROM oohist AS o " +
+			"WHERE " +
+				"o.time_stamp >= $1 AND "+
+				"o.time_stamp < $2 " +
+			"GROUP BY start_ts " +
+			"ORDER BY start_ts"
+	rows,err := ss.db.Query(query,market_aid,outc,init_ts,fin_ts)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.ZHistT2Entry,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.ZHistT2Entry
+		err=rows.Scan(
+			&rec.Timestamp,
+			&rec.Price,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_zoomed_price_history(mkt_addr string,market_aid int64,zoom int,init_ts int,fin_ts int,interval int) p.FullZoomedPriceHist {
+
+	var output p.FullZoomedPriceHist
 	outcomes,_ := ss.Get_outcome_volumes(mkt_addr,market_aid,0);
 	for _,outc := range outcomes {
-		var ph p.PriceHistory
+		var ph p.ZoomedPriceHist
 		ph.OutcomeIdx = outc.Outcome
 		ph.OutcomeStr = outc.OutcomeStr
-		ph.Trades = ss.Get_price_history_for_outcome(market_aid,outc.Outcome)
+		if zoom == 0 {
+			ph.Type1Entries= ss.Get_zoomed_t1_price_history_for_outcome(market_aid,outc.Outcome,init_ts,fin_ts)
+		}
+		if zoom == 1 {
+			ph.Type2Entries = ss.Get_zoomed_t2_price_history_for_outcome(market_aid,outc.Outcome,init_ts,fin_ts,interval)
+		}
 		output.Outcomes = append(output.Outcomes,ph)
 	}
 	return output

@@ -50,6 +50,7 @@ const (
 	RELAYHUB_TRANSACTION_RELAYED = "ab74390d395916d9e0006298d47938a5def5d367054dcca78fa6ec84381f3f22"
 	REGISTER_CONTRACT = "a037dd0e01f0488a530cb17065a6d2f284fae016004fc744ee2a41d5cacf85d5"
 	UNIVERSE_CREATED = "e36b09d83f9cfa88c37f071fc2cfb5ff30b764cbd98088e70d965573c9ce5bbd"
+	SET_REFERRER = "a18a7bfc"
 
 	DEFAULT_WAIT_TIME = 5000	// 5 seconds
 	DEFAULT_DB_LOG				= "db.log"
@@ -84,6 +85,7 @@ var (
 	evt_tx_relayed,_ = hex.DecodeString(RELAYHUB_TRANSACTION_RELAYED)
 	evt_register_contract,_ = hex.DecodeString(REGISTER_CONTRACT)
 	evt_universe_created,_ = hex.DecodeString(UNIVERSE_CREATED)
+	sig_set_referrer,_ = hex.DecodeString(SET_REFERRER)
 
 	exec_wtx_sig ,_ = hex.DecodeString("78dc0eed")
 

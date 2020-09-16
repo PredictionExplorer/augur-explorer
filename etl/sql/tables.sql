@@ -157,6 +157,7 @@ CREATE TABLE oohist ( -- open order history
 	market_aid			BIGINT NOT NULL,
 	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
 	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
+	price_estimate		DECIMAL(32,18) DEFAULT 0.0,
 	price				DECIMAL(32,18) NOT NULL,
 	initial_amount		DECIMAL(32,18) NOT NULL,	-- initial amount order was created
 	amount			DECIMAL(32,18) NOT NULL,		-- amount remaining to be filled
@@ -515,6 +516,14 @@ CREATE TABLE agtx_status (-- Augur transaction status (used to track Gas fees fo
 	wallet_aid			BIGINT NOT NULL,
 	success				BOOLEAN NOT NULL,
 	funding_success		BOOLEAN NOT NULL
+);
+CREATE TABLE augur_flag ( -- collection of signs required to consider an account as enabled for Augur trading
+	-- when all flags are TRUE , we insert a record into 'ustats' table with eoa_aid=wallet_aid=aid
+	aid					BIGINT PRIMARY KEY,
+	ap_0xtrade_on_cash	BOOLEAN DEFAULT FALSE,	-- Approval for ZeroXTrade at Cash (DAI) contract
+	ap_fill_on_cash		BOOLEAN DEFAULT FALSE,	-- Approval for FillOrder contract at Cash (DAI) contract
+	ap_fill_on_shtok	BOOLEAN DEFAULT FALSE,	-- ApprovalForAll for FillOrder at ShareToken contract
+	set_referrer		BOOLEAN DEFAULT FALSE	-- Affiliates::setReferrer() tx input
 );
 CREATE TABLE pl_debug (-- Profit loss data for debugging, scanned after Block has been processed
 	id					BIGSERIAL PRIMARY KEY,

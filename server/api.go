@@ -622,7 +622,7 @@ func a1_price_history_zoomed(c *gin.Context) {
 	_ = zoom
 
 	p_init_ts := c.Param("init_ts")
-	var init_ts int = 0
+	var init_ts int = 1
 	if len(p_init_ts) > 0 {
 		init_ts, err = strconv.Atoi(p_init_ts)
 		if err != nil {

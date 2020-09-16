@@ -141,7 +141,7 @@ func get_eoa_aid(wallet_addr *common.Address,block_num int64,tx_id int64) int64 
 	)
 	return eoa_aid
 }
-func proc_approval(log *types.Log) {
+func proc_approval(log *types.Log,agtx_ptr **AugurTx) {
 
 	if len(log.Topics)!=3 {
 		Info.Printf("ERC20_Approval event is not compliant log.Topics!=3. Tx hash=%v\n",log.TxHash.String())
@@ -157,9 +157,21 @@ func proc_approval(log *types.Log) {
 		Info.Printf("ERC20_Approval event for contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump(Info)
+		if bytes.Equal(log.Address.Bytes(),caddrs.Dai.Bytes()) {
+			if bytes.Equal(mevt.Spender.Bytes(),caddrs.ZeroxTrade.Bytes()) {
+				tx_insert_if_needed(*agtx_ptr)
+				storage.Set_augur_flag(&mevt.Owner,*agtx_ptr,"ap_0xtrade_on_cash")
+			}
+		}
+		if bytes.Equal(log.Address.Bytes(),caddrs.Dai.Bytes()) {
+			if bytes.Equal(mevt.Spender.Bytes(),caddrs.FillOrder.Bytes()) {
+				tx_insert_if_needed(*agtx_ptr)
+				storage.Set_augur_flag(&mevt.Owner,*agtx_ptr,"ap_fill_on_cash")
+			}
+		}
 	}
 }
-func proc_approval_for_all(log *types.Log) {
+func proc_approval_for_all(log *types.Log,agtx_ptr **AugurTx) {
 
 	if len(log.Topics)!=3 {
 		Info.Printf("ERC20_ApprovalForAll event is not compliant log.Topics!=3. Tx hash=%v\n",log.TxHash.String())
@@ -175,6 +187,12 @@ func proc_approval_for_all(log *types.Log) {
 		Info.Printf("ApprovalForAll event for contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump(Info)
+		if bytes.Equal(log.Address.Bytes(),caddrs.ShareToken.Bytes()) {
+			if bytes.Equal(mevt.Operator.Bytes(),caddrs.FillOrder.Bytes()) {
+				tx_insert_if_needed(*agtx_ptr)
+				storage.Set_augur_flag(&mevt.Owner,*agtx_ptr,"ap_fill_on_shtok")
+			}
+		}
 	}
 }
 func proc_trading_proceeds_claimed(agtx *AugurTx,timestamp int64,log *types.Log) {
@@ -667,10 +685,10 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 	if num_topics > 0 {
 
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_approval) {
-			proc_approval(log)
+			proc_approval(log,&agtx)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc1155_approval_for_all) {
-			proc_approval_for_all(log)
+			proc_approval_for_all(log,&agtx)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_trading_proceeds_claimed) {
 			tx_insert_if_needed(agtx)
@@ -898,6 +916,15 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		}
 		agtx.GasUsed = int64(rcpt.GasUsed)
 		agtx.TxIndex = int32(tnum)
+
+		if len(agtx.Input) >= 4 {
+			input_sig := agtx.Input[:4]
+			if bytes.Equal(input_sig,sig_set_referrer) {
+				sender := common.HexToAddress(agtx.From)
+				tx_insert_if_needed(agtx)
+				storage.Set_augur_flag(&sender,agtx,"set_referrer")
+			}
+		}
 		sequencer := new(EventSequencer)
 		num_logs := len(rcpt.Logs)
 		var agtx_type int = AgTxType_Unclassified

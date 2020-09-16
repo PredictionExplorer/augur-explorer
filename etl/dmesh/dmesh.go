@@ -193,8 +193,12 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 			order_hash := order_info.OrderHash.String()
 			var empty struct{}
 			(*ohash_map)[order_hash]=empty
-
-			storage.Insert_0x_mesh_order_event(response.SnapshotTimestamp.Unix(),order_info,MeshEvtGetOrders)
+			time_stamp:=response.SnapshotTimestamp.Unix()
+			new_timestamp := order_info.SignedOrder.Salt.Int64()/1000 // Salt usually contains timestamp
+			if new_timestamp > 1595894451	 { // 28 July (Augur v2 release date)
+				time_stamp = new_timestamp
+			}
+			storage.Insert_0x_mesh_order_event(time_stamp,order_info,MeshEvtGetOrders)
 			/*discontinued
 			amount := order_info.FillableTakerAssetAmount
 			retval,bad_amount := storage.Update_oo_fillable_amount(order_hash,amount,order_info.SignedOrder)

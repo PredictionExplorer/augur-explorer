@@ -20,7 +20,7 @@ func convert_db_event_to_mesh_order(evt *MeshEvent) *ztypes.OrderInfo {
 	oinfo.OrderHash = common.HexToHash(evt.OrderHash)
 	oinfo.FillableTakerAssetAmount = new(big.Int)
 	oinfo.FillableTakerAssetAmount.SetString(evt.FillableAmount,10)
-
+	oinfo.SignedOrder = new(zeroex.SignedOrder)
 	oinfo.SignedOrder.ChainID = new(big.Int)
 	oinfo.SignedOrder.ChainID.SetInt64(int64(evt.ChainId))
 	oinfo.SignedOrder.ExchangeAddress = common.HexToAddress(evt.ExchangeAddress)
@@ -88,11 +88,13 @@ func oo_insert(order_hash *string,order *zeroex.SignedOrder,fillable_amount *big
 func proc_open_orders() {
 
 	status := storage.Get_mesh_proc_status()
+//	Info.Printf("mesh_evt.Id=%v\n",status.LastIdProcessed)
 	db_events := storage.Get_mesh_events_from_id(status.LastIdProcessed)
 	for _,db_evt := range db_events {
 
 		zorder := convert_db_event_to_mesh_order(&db_evt)
 		evt_code := MeshEvtCode(db_evt.EvtCode)
+		Info.Printf("evt_code=%v, hash=%v\n",evt_code,db_evt.OrderHash)
 		switch evt_code {
 		case MeshEvtAdded:
 			err:=oo_insert(
