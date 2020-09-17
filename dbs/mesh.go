@@ -15,6 +15,23 @@ import (
 func (ss *SQLStorage) Insert_0x_mesh_order_event(timestamp int64,order_info *ztypes.OrderInfo,event_code p.MeshEvtCode) {
 
 	var query string
+
+	query = "SELECT id FROM mesh_evt WHERE order_hash=$1 AND evt_code=$2"
+
+	var null_id sql.NullInt64
+	err:=ss.db.QueryRow(query,order_info.OrderHash.String(),event_code).Scan(&null_id);
+	if (err!=nil) {
+		if (err==sql.ErrNoRows) {
+			// break
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error : %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		// market already exists
+		return
+	}
+
 	query = "INSERT INTO mesh_evt (" +
 				"time_stamp," +
 				"fillable_amount," +
@@ -47,7 +64,7 @@ func (ss *SQLStorage) Insert_0x_mesh_order_event(timestamp int64,order_info *zty
 					"$16,$17,$18,TO_TIMESTAMP($19),$20,$21"+
 			") ON CONFLICT DO NOTHING"
 
-	_,err:=ss.db.Exec(query,
+	_,err = ss.db.Exec(query,
 		timestamp,
 		order_info.FillableTakerAssetAmount.String(),
 		event_code,

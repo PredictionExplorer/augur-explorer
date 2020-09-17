@@ -19,7 +19,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION update_price_estimate(
-	p_market_aid bigint,p_outcome_idx integer,p_osize decimal
+	p_market_aid bigint,p_outcome_idx integer,p_osize decimal,p_timestamp timestamptz
 ) RETURNS DECIMAL AS $$
 --updates open order statistics
 DECLARE
@@ -31,10 +31,17 @@ DECLARE
 	v_price_estimate decimal;
 	v_num_ticks decimal;
 	v_osize decimal;
+	v_max_ts timestamptz;
 BEGIN
 
 	SELECT spread_threshold,osize_threshold FROM ooconfig INTO v_spread_threshold,v_osize_threshold;
 
+	SELECT MAX(evt_timestamp) AS max_ts FROM oorders INTO v_max_ts;
+	IF v_max_ts IS NOT NULL THEN
+		IF v_max_ts > p_timestamp THEN
+			RAISE EXCEPTION 'Can''t update price estimate. Provided timestamp %v  for market %v outcome %v is lower tham MAX(timestamp) in the database which is %V . Only records with future timestamp are allowed. To by pass this restriction feed the data ordered by evt_timestamp.',p_timestamp,p_market_aid,p_outcome_idx,v_max_ts;
+		END IF;
+	END IF;
 --	IF v_osize < v_osize_threshold THEN
 --		RETURN;
 --	END IF;
@@ -116,11 +123,11 @@ BEGIN
 			NEW.otype,NEW.outcome_idx,NEW.opcode,NEW.market_aid,NEW.wallet_aid,NEW.eoa_aid,
 			NEW.price,NEW.initial_amount,NEW.amount,NEW.evt_timestamp,NEW.srv_timestamp,NEW.expiration,NEW.order_hash
 		) ON CONFLICT DO NOTHING
-		RETURNING v_oohist_id;
+		RETURNING id INTO v_oohist_id;
 
 	IF v_oohist_id IS NOT NULL THEN
 		-- there could be duplicate inserts, so we have this protection using 'if not NULL'
-		SELECT * FROM update_price_estimate(NEW.market_aid,NEW.outcome_idx,NEW.amount) INTO v_price_estimate;
+		SELECT * FROM update_price_estimate(NEW.market_aid,NEW.outcome_idx,NEW.amount,NEW.evt_timestamp) INTO v_price_estimate;
 		UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
 	END IF;
 
@@ -131,7 +138,7 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION update_oo_hist(p_mktord_id bigint,p_order_hash text,p_filled_amount text,p_opcode numeric) RETURNS void AS  $$ -- reverts order statistics on delete
+CREATE OR REPLACE FUNCTION update_oo_hist(p_mktord_id bigint,p_order_hash text,p_evt_timestamp bigint,p_filled_amount text,p_opcode numeric) RETURNS void AS  $$ -- reverts order statistics on delete
 DECLARE
 	oo record;
 	v_cnt numeric;
@@ -139,7 +146,6 @@ DECLARE
 	v_price_estimate decimal;
 BEGIN
 
-	SELECT * FROM update_price_estimate(NEW.market_aid,NEW.outcome_idx,NEW.amount) INTO v_price_estimate;
 	SELECT * FROM oorders WHERE order_hash = p_order_hash LIMIT 1 INTO oo;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt > 0 THEN
@@ -150,10 +156,12 @@ BEGIN
 			) VALUES (
 				p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
 				oo.price,oo.initial_amount,p_filled_amount::DECIMAL/1e+18,
-				oo.evt_timestamp,oo.srv_timestamp,oo.expiration,oo.order_hash
+				TO_TIMESTAMP(p_evt_timestamp),NOW(),oo.expiration,oo.order_hash
 			) ON CONFLICT DO NOTHING
-			RETURNING v_oohist_id;
+			RETURNING id INTO v_oohist_id;
 		IF v_oohist_id IS NOT NULL THEN
+			SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx,p_filled_amount,oo.evt_timestamp)
+				INTO v_price_estimate;
 			UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
 		END IF;
 		RETURN;
@@ -168,10 +176,12 @@ BEGIN
 			) VALUES (
 				p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
 				oo.price,oo.initial_amount,p_filled_amount::DECIMAL/1e+18,
-				oo.evt_timestamp,oo.srv_timestamp,oo.expiration,oo.order_hash
+				TO_TIMESTAMP(p_evt_timestamp),NOW(),oo.expiration,oo.order_hash
 			) ON CONFLICT DO NOTHING
-			RETURNING v_oohist_id;
+			RETURNING id INTO v_oohist_id;
 		IF v_oohist_id IS NOT NULL THEN
+			SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx,p_filled_amount,oo.evt_timestamp)
+				INTO v_price_estimate;
 			UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
 		END IF;
 	ELSE 
@@ -182,13 +192,15 @@ BEGIN
 		IF v_cnt > 0 THEN
 			INSERT INTO oohist(
 					mktord_id,otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
-					price,initial_amount,amount,srv_timestamp,order_hash
+					price,initial_amount,amount,evt_timestamp,srv_timestamp,order_hash
 				) VALUES (
 					p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
-					oo.price,oo.amount,oo.amount_filled,oo.time_stamp,oo.order_hash
+					oo.price,oo.amount,oo.amount_filled,TO_TIMESTAMP(p_evt_timestamp),NOW(),oo.order_hash
 				) ON CONFLICT DO NOTHING
-				RETURNING v_oohist_id;
+				RETURNING id INTO v_oohist_id;
 			IF v_oohist_id IS NOT NULL THEN
+				SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx,p_filled_amount,oo.evt_timestamp)
+					INTO v_price_estimate;
 				UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
 			END IF;
 		END IF;
@@ -848,5 +860,20 @@ BEGIN
 			num_transfers = (num_transfers - 1)
 		WHERE market_aid = OLD.market_aid AND account_aid = OLD.account_aid AND outcome_idx=OLD.outcome_idx;
 	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_mesh_evt_insert() RETURNS trigger AS  $$
+DECLARE
+	v_max_ts timestamptz;
+BEGIN
+
+	SELECT MAX(time_stamp) AS max_ts FROM mesh_evt INTO v_max_ts;
+	IF v_max_ts IS NULL THEN
+		RETURN NEW;
+	END IF;
+	IF v_max_ts > NEW.time_stamp THEN
+		RAISE EXCEPTION 'Can''t INSERT into ''mesh_evt'' . Provided timestamp %v lower than MAX(time_stamp) in the database which is %V . Only records with future timestamp are allowed. To by pass this restriction feed the data ordered by time_stamp.',NEW.time_stamp,v_max_ts;
+	END IF;
+	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

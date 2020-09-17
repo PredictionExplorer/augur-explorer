@@ -107,12 +107,12 @@ func proc_open_orders() {
 				Info.Printf("Error inserting order %v: %v\n",db_evt.OrderHash,err)
 			}
 		case MeshEvtExpired:
-			storage.Delete_open_0x_order(db_evt.OrderHash,OOOpCodeExpired)
+			storage.Delete_open_0x_order(db_evt.OrderHash,db_evt.Timestamp,OOOpCodeExpired)
 		case MeshEvtCancelled:
-			storage.Delete_open_0x_order(db_evt.OrderHash,OOOpCodeCancelledByUser)
+			storage.Delete_open_0x_order(db_evt.OrderHash,db_evt.Timestamp,OOOpCodeCancelledByUser)
 		case MeshEvtFullyFilled:
 			// FULLY FILLED event: quantity of the order matches filling quantity
-			storage.Delete_open_0x_order(db_evt.OrderHash,OOOpCodeNone)
+			storage.Delete_open_0x_order(db_evt.OrderHash,db_evt.Timestamp,OOOpCodeNone)
 		case MeshEvtFilled:
 			// FILLED event: partial order fill
 			storage.Update_0x_order_on_partial_fill(zorder)

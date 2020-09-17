@@ -30,11 +30,11 @@ type MeshEvtCode int
 const (
 	MeshEvtGetOrders MeshEvtCode = iota
 	MeshEvtInvalid
-	MeshEvtAdded
-	MeshEvtFilled
-	MeshEvtFullyFilled
-	MeshEvtCancelled
-	MeshEvtExpired
+	MeshEvtAdded				// 2
+	MeshEvtFilled				// 3
+	MeshEvtFullyFilled			// 4
+	MeshEvtCancelled			// 5
+	MeshEvtExpired				// 6
 	MeshEvtUnexpired
 	MeshEvtBecameUnfunded
 	MeshEvtFillabilityIncreased
@@ -562,9 +562,9 @@ type ZHistT2Entry struct { // Type2 entry, summarized data
 type ZoomedPriceHist struct {
 	Zoom				int
 	OutcomeIdx			int
-	IniTs				int64
-	FinTs				int64
-	IntervalSecs		int64
+	InitTs				int
+	FinTs				int
+	IntervalSecs		int
 	OutcomeStr			string
 	Type1Entries		[]ZHistT1Entry
 	Type2Entries		[]ZHistT2Entry

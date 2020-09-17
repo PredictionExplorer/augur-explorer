@@ -366,23 +366,28 @@ func (ss *SQLStorage) Set_augur_flag(address *common.Address,agtx *p.AugurTx,fla
 		}
 	}
 	query = "SELECT " +
-				"ap_0xtrade_on_cash,ap_fill_on_cash,ap_fill_on_shtok,set_referrer " +
+				"ap_0xtrade_on_cash,ap_fill_on_cash,ap_fill_on_shtok " +
 			"FROM augur_flag " +
 			"WHERE aid = $1"
 
-	var ap_0xtrade_on_cash,ap_fill_on_cash,ap_fill_on_shtok,set_referrer bool
+	var ap_0xtrade_on_cash,ap_fill_on_cash,ap_fill_on_shtok bool
 	row := ss.db.QueryRow(query,aid)
 	err=row.Scan(
 		&ap_0xtrade_on_cash,
 		&ap_fill_on_cash,
 		&ap_fill_on_shtok,
-		&set_referrer,
 	)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("Error in Set_augur_flag(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
-	if  ap_0xtrade_on_cash && ap_fill_on_cash && ap_fill_on_shtok && set_referrer {
+	if  ap_0xtrade_on_cash && ap_fill_on_cash && ap_fill_on_shtok  {
+		query = "UPDATE augur_flag SET act_block_num=$2 WHERE aid=$1"
+		_,err := ss.db.Exec(query,aid,agtx.BlockNum)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
+			os.Exit(1)
+		}
 		ss.Link_eoa_and_wallet_contract(aid,aid)
 	}
 }

@@ -594,11 +594,10 @@ func a1_stats_uniqaddr(c *gin.Context) {
 func a1_price_history_zoomed(c *gin.Context) {
 
 	p_market := c.Param("market")
-	_,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	market_addr,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
 	if !success {
 		return
 	}
-	_ = market_aid
 	var err error
 
 	p_zoom := c.Param("zoom")
@@ -619,10 +618,9 @@ func a1_price_history_zoomed(c *gin.Context) {
 		})
 		return
 	}
-	_ = zoom
 
 	p_init_ts := c.Param("init_ts")
-	var init_ts int = 1
+	var init_ts int = 0
 	if len(p_init_ts) > 0 {
 		init_ts, err = strconv.Atoi(p_init_ts)
 		if err != nil {
@@ -639,7 +637,6 @@ func a1_price_history_zoomed(c *gin.Context) {
 		})
 		return
 	}
-	_ = init_ts
 
 	p_fin_ts := c.Param("fin_ts")
 	var fin_ts int = 0
@@ -659,10 +656,12 @@ func a1_price_history_zoomed(c *gin.Context) {
 		})
 		return
 	}
-	_ = fin_ts
+	if fin_ts == 0 {
+		fin_ts = 2147483647
+	}
 
 	p_interval_secs := c.Param("interval_secs")
-	var interval_secs int = 0
+	var interval_secs int = fin_ts - init_ts
 	if len(p_interval_secs) > 0 {
 		interval_secs, err = strconv.Atoi(p_interval_secs)
 		if err != nil {
@@ -679,8 +678,16 @@ func a1_price_history_zoomed(c *gin.Context) {
 		})
 		return
 	}
-	_ = interval_secs
+	if interval_secs == 0 {
+		interval_secs = fin_ts - init_ts // we can't divide by 0
+	}
 
-	//price_history := augur_srv.storage.Get_zoomed_price_history(minfo.MktAddr,minfo.MktAid)
->>>>>>> 0x order event data collection and storage
+	price_history := augur_srv.storage.Get_zoomed_price_history(
+		market_addr,market_aid,zoom,init_ts,fin_ts,interval_secs,
+	)
+	c.JSON(http.StatusOK,gin.H{
+		"PriceHistory": price_history,
+		"status": 1 ,
+		"error": "",
+	})
 }

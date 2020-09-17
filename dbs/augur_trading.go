@@ -96,6 +96,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 	var query string
 	var opcode int = p.OOOpCodeFill
 	ss.Info.Printf("amount = %v, amount_filled = %v, opcode=%v\n",amount,amount_filled,opcode)
+/* Discontinued
 	query = "DELETE FROM oorders WHERE order_hash = $1"
 	_,err = ss.db.Exec(query,market_aid)
 	if err!=nil {
@@ -104,7 +105,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 		ss.Log_msg(msg)
 		os.Exit(1)
 	}
-
+*/
 	ss.Info.Printf("OrderAction = %v, otype=%v, order_hash=%v\n",oaction,otype,order_hash)
 	ss.Info.Printf("Filling existing order %v\n",order_hash)
 	query = `
@@ -184,9 +185,9 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 		ss.Log_msg(fmt.Sprintf("DB error at block %v : %v ; q=%v",agtx.BlockNum,err,query))
 		os.Exit(1)
 	}
-	ss.Update_open_order_history(*ss.mkt_order_id_ptr,order_hash,amount_filled.String(),opcode)
+	ss.Update_open_order_history(*ss.mkt_order_id_ptr,order_hash,time_stamp,amount_filled.String(),opcode)
 }
-func (ss *SQLStorage) Update_open_order_history(mktord_id int64,order_hash string,amount_filled string,opcode int) {
+func (ss *SQLStorage) Update_open_order_history(mktord_id int64,order_hash string,timestamp int64,amount_filled string,opcode int) {
 
 	// Note: the following function may have null effect if the corresponding record already exists
 	//			the unique-key for the record is orderhash+opcode, so multiple calls can be made
@@ -195,8 +196,8 @@ func (ss *SQLStorage) Update_open_order_history(mktord_id int64,order_hash strin
 	//			going to be the first to insert the record, but the second call will result in
 	//			no effect at all
 	var query string
-	query = "SELECT update_oo_hist($1,$2,$3,$4)"
-	_,err := ss.db.Exec(query,mktord_id,order_hash,amount_filled,opcode)
+	query = "SELECT update_oo_hist($1,$2,$3,$4,$5)"
+	_,err := ss.db.Exec(query,mktord_id,order_hash,timestamp,amount_filled,opcode)
 	if err!=nil {
 		msg:=fmt.Sprintf("DB error: couldn't update history of order with hash = %v: %v\n",order_hash,err)
 		ss.Info.Printf(msg)
@@ -299,8 +300,30 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 				initial_amount+"/1e+18," + amount+"/1e+18,"+
 				"$6,$7," +
 				"TO_TIMESTAMP($8),NOW(),TO_TIMESTAMP($9),$10"+
-			")" +
+			") " +
 			"ON CONFLICT DO NOTHING"
+	d_query := fmt.Sprintf("INSERT INTO oorders(" +
+				"market_aid,otype,wallet_aid,eoa_aid,price,initial_amount,amount,outcome_idx,opcode," +
+				"evt_timestamp,srv_timestamp,expiration,order_hash" +
+			") VALUES("+
+				"%v,%v,%v,%v,%v,"+
+				initial_amount+"/1e+18," + amount+"/1e+18,"+
+				"%v,%v," +
+				"TO_TIMESTAMP(%v),NOW(),TO_TIMESTAMP(%v),'%v'"+
+			") " +
+			"ON CONFLICT DO NOTHING",
+			market_aid,
+			otype,
+			wallet_aid,
+			eoa_aid,
+			price,
+			ospec.Outcome,
+			opcode,
+			evt_timestamp,
+			expiration,
+			*order_hash,
+	)
+	ss.Info.Printf("query = %v\n",d_query)
 	result,err := ss.db.Exec(query,
 			market_aid,
 			otype,
@@ -311,7 +334,7 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 			opcode,
 			evt_timestamp,
 			expiration,
-			order_hash)
+			*order_hash)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into open orders table: %v, q=%v",err,query))
 		return err
@@ -327,10 +350,10 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 	}
 	return errors.New("Affected rows=0")
 }
-func (ss *SQLStorage) Delete_open_0x_order(order_hash string,opcode int) {
+func (ss *SQLStorage) Delete_open_0x_order(order_hash string,timestamp int64,opcode int) {
 
 	if opcode != p.OOOpCodeNone {
-		ss.Update_open_order_history(0,order_hash,"0",opcode)
+		ss.Update_open_order_history(0,order_hash,timestamp,"0",opcode)
 	}
 
 	var query string
@@ -664,15 +687,15 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,o
 					"WHEN 0 THEN 'BID' " +
 					"ELSE 'ASK' " +
 				"END AS dir, " +
-				"o.time_stamp::date AS date," +
-				"FLOOR(EXTRACT(EPOCH FROM o.time_stamp))::BIGINT as created_ts," +
+				"o.evt_timestamp::date AS date," +
+				"FLOOR(EXTRACT(EPOCH FROM o.evt_timestamp))::BIGINT as created_ts," +
 				"FLOOR(EXTRACT(EPOCH FROM o.expiration))::BIGINT as expiration_ts," +
 				"o.opcode," +
 				"o.outcome_idx," +
 				"o.price AS price, " +
 				"o.price_estimate, " +
 				"o.initial_amount, " +
-				"o.amount_filled AS volume " +
+				"o.amount " +
 			"FROM oohist AS o " +
 				"LEFT JOIN " +
 					"address AS a ON o.market_aid=a.address_id " +
@@ -680,9 +703,13 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,o
 			"WHERE " +
 				"o.market_aid = $1 AND " +
 				"o.outcome_idx=$2 AND " +
-				"o.time_stamp >= $3 AND "+
-				"o.time_stamp < $4 " +
-			"ORDER BY o.time_stamp"
+				"o.evt_timestamp >= TO_TIMESTAMP($3) AND "+
+				"o.evt_timestamp < TO_TIMESTAMP($4) " +
+			"ORDER BY o.evt_timestamp"
+	ss.Info.Printf(
+		"market_aid=%v, outcome=%v, init_ts=%v, fin_ts=%v, query=%v\n",
+		market_aid,outc,init_ts,fin_ts,query,
+	)
 	rows,err := ss.db.Query(query,market_aid,outc,init_ts,fin_ts)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -723,12 +750,12 @@ func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,o
 
 	var query string
 	query = "SELECT " +
-				"ROUND(FLOOR(EXTRACT(EPOCH FROM o.time_stamp))::BIGINT/$1)*$1 AS start_ts,"+
-				"AVG(price_estimate) AS avg_price_estimate" +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM o.evt_timestamp))::BIGINT/$1)*$1 AS start_ts,"+
+				"AVG(price_estimate) AS avg_price_estimate " +
 			"FROM oohist AS o " +
 			"WHERE " +
-				"o.time_stamp >= $1 AND "+
-				"o.time_stamp < $2 " +
+				"o.evt_timestamp >= $1 AND "+
+				"o.evt_timestamp < $2 " +
 			"GROUP BY start_ts " +
 			"ORDER BY start_ts"
 	rows,err := ss.db.Query(query,market_aid,outc,init_ts,fin_ts)
@@ -761,6 +788,10 @@ func (ss *SQLStorage) Get_zoomed_price_history(mkt_addr string,market_aid int64,
 		var ph p.ZoomedPriceHist
 		ph.OutcomeIdx = outc.Outcome
 		ph.OutcomeStr = outc.OutcomeStr
+		ph.Zoom = zoom
+		ph.InitTs = init_ts
+		ph.FinTs = fin_ts
+		ph.IntervalSecs = interval
 		if zoom == 0 {
 			ph.Type1Entries= ss.Get_zoomed_t1_price_history_for_outcome(market_aid,outc.Outcome,init_ts,fin_ts)
 		}

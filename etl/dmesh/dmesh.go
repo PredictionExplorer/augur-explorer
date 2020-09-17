@@ -103,7 +103,7 @@ func fetch_and_sync_orders() {
 		if exists {
 			// ok
 		} else {
-			storage.Delete_open_0x_order(db_orders[i],OOOpCodeSyncProcess)
+			storage.Delete_open_0x_order(db_orders[i],time.Now().Unix(),OOOpCodeSyncProcess)
 			Info.Printf(
 				"Order %v doesn't exist in Mesh Node, but does exist in the DB. Deleting. (DB_DIRTY_OORDERS)",
 				db_orders[i],
@@ -198,7 +198,7 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 			if new_timestamp > 1595894451	 { // 28 July (Augur v2 release date)
 				time_stamp = new_timestamp
 			}
-			storage.Insert_0x_mesh_order_event(time_stamp,order_info,MeshEvtGetOrders)
+			storage.Insert_0x_mesh_order_event(time_stamp,order_info,MeshEvtAdded)
 			/*discontinued
 			amount := order_info.FillableTakerAssetAmount
 			retval,bad_amount := storage.Update_oo_fillable_amount(order_hash,amount,order_info.SignedOrder)
@@ -257,7 +257,9 @@ func main() {
 		log.Fatalf("Can't find contract addresses in 'contract_addresses' table")
 	}
 	caddrs = &caddrs_obj
-
+	if caddrs.ChainId == 0 {
+		log.Fatalf("ChainID = 0, db is not initialized")
+	}
 	adecoder = zeroex.NewAssetDataDecoder()
 
 	eclient, err = ethclient.Dial(RPC_URL)

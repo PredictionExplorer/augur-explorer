@@ -419,7 +419,7 @@ func proc_market_order_event(agtx *AugurTx,log *types.Log) {
 
 	storage.Insert_market_order_evt(agtx,eoa_aid,eoa_fill_aid,&mevt,orig_fill_amounts)
 }
-func proc_cancel_zerox_order(log *types.Log) {
+func proc_cancel_zerox_order(log *types.Log,timestamp int64) {
 	var mevt ECancelZeroXOrder
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Market = common.BytesToAddress(log.Topics[2][12:])
@@ -437,7 +437,7 @@ func proc_cancel_zerox_order(log *types.Log) {
 	Info.Printf("CancelZeroXOrder event for contract %v (block=%v) : \n",
 								log.Address.String(),log.BlockNumber)
 	mevt.Dump(Info)
-	storage.Delete_open_0x_order(ohash_str,OOOpCodeCancelledByUser)
+	storage.Delete_open_0x_order(ohash_str,timestamp,OOOpCodeCancelledByUser)
 }
 func proc_market_oi_changed(block *types.Header, agtx *AugurTx, log *types.Log) {
 	var mevt EMarketOIChanged
@@ -728,7 +728,7 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 			proc_market_order_event(agtx,log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cancel_0x_order) {
-			proc_cancel_zerox_order(log)
+			proc_cancel_zerox_order(log,timestamp)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_oi_changed) {
 			tx_insert_if_needed(agtx)

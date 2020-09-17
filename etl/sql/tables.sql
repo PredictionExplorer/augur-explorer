@@ -150,7 +150,7 @@ CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later th
 );
 CREATE TABLE oohist ( -- open order history
 	id					BIGSERIAL PRIMARY KEY,
-	mktord_id			BIGINT DEFAULT 0,			-- market order id, if exists
+	mktord_id			BIGINT DEFAULT NULL REFERENCES mktord(id) ON DELETE CASCADE, -- used only for Fill events
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
 	outcome_idx			SMALLINT NOT NULL,
 	opcode				SMALLINT NOT NULL,			-- operation; 0: CREATED, 1: AUTOEXPIRED, 2: USER-CANCELLED
@@ -520,10 +520,11 @@ CREATE TABLE agtx_status (-- Augur transaction status (used to track Gas fees fo
 CREATE TABLE augur_flag ( -- collection of signs required to consider an account as enabled for Augur trading
 	-- when all flags are TRUE , we insert a record into 'ustats' table with eoa_aid=wallet_aid=aid
 	aid					BIGINT PRIMARY KEY,
+	act_block_num		BIGINT,					-- Block number when activation happened
 	ap_0xtrade_on_cash	BOOLEAN DEFAULT FALSE,	-- Approval for ZeroXTrade at Cash (DAI) contract
 	ap_fill_on_cash		BOOLEAN DEFAULT FALSE,	-- Approval for FillOrder contract at Cash (DAI) contract
 	ap_fill_on_shtok	BOOLEAN DEFAULT FALSE,	-- ApprovalForAll for FillOrder at ShareToken contract
-	set_referrer		BOOLEAN DEFAULT FALSE	-- Affiliates::setReferrer() tx input
+	set_referrer		BOOLEAN DEFAULT FALSE	-- Affiliates::setReferrer() tx input (informative only, not obligatory)
 );
 CREATE TABLE pl_debug (-- Profit loss data for debugging, scanned after Block has been processed
 	id					BIGSERIAL PRIMARY KEY,
