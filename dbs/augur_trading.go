@@ -17,7 +17,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_eoa_fill_aid int64,	evt *p.EOrderEvent,initial_amounts map[string]*big.Int) {
+func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,p_eoa_aid int64,p_eoa_fill_aid int64,	evt *p.EOrderEvent,submitted_orders map[string]*ztypes.OrderInfo) {
 
 	// depending on the order action (Create/Cancel/Fill) different table is used for storage
 	//		Create/Cancel order actions go to 'oorders' (Open Orders) table because these orders
@@ -28,7 +28,8 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 	var order_hash_obj = common.BytesToHash(evt.OrderId[:])
 	var order_hash = order_hash_obj.String()
 
-	initial_amount := initial_amounts[order_hash]
+	zorder := submitted_orders[order_hash]
+	initial_amount := zorder.SignedOrder.MakerAssetAmount
 	if initial_amount == nil {
 		ss.Log_msg(
 			fmt.Sprintf(
@@ -38,6 +39,12 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 		)
 		os.Exit(1)
 	}
+
+	mesh_evt_code := p.MeshEvtFullyFilled
+	if 0 != initial_amount.Cmp(zorder.SignedOrder.TakerAssetAmount) {
+		mesh_evt_code = p.MeshEvtFilled
+	}
+	ss.Insert_0x_mesh_order_event(timestamp,zorder,mesh_evt_code)
 
 	var wallet_aid int64;
 	wallet_aid = ss.Lookup_or_create_address(evt.AddressData[0].String(),agtx.BlockNum,agtx.TxId)
@@ -89,7 +96,6 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 	shares_refund := evt.Uint256Data[4].String()
 	fees := evt.Uint256Data[5].String()
 	amount_filled := evt.Uint256Data[6]
-	time_stamp := evt.Uint256Data[7].Int64()
 	shares_escrowed := evt.Uint256Data[8].String()
 	tokens_escrowed := evt.Uint256Data[9].String()
 
@@ -155,7 +161,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 			oaction,
 			otype,
 			outcome_idx,
-			time_stamp,
+			timestamp,
 			shares_escrowed,
 			tokens_escrowed,
 			hex.EncodeToString(evt.TradeGroupId[:]),
@@ -185,7 +191,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,p_eoa_aid int64,p_
 		ss.Log_msg(fmt.Sprintf("DB error at block %v : %v ; q=%v",agtx.BlockNum,err,query))
 		os.Exit(1)
 	}
-	ss.Update_open_order_history(*ss.mkt_order_id_ptr,order_hash,time_stamp,amount_filled.String(),opcode)
+	ss.Update_open_order_history(*ss.mkt_order_id_ptr,order_hash,timestamp,amount_filled.String(),opcode)
 }
 func (ss *SQLStorage) Update_open_order_history(mktord_id int64,order_hash string,timestamp int64,amount_filled string,opcode int) {
 
@@ -195,11 +201,21 @@ func (ss *SQLStorage) Update_open_order_history(mktord_id int64,order_hash strin
 	//			order insertion process, and from 0x Mesh daemon at the same time. We can't say which is
 	//			going to be the first to insert the record, but the second call will result in
 	//			no effect at all
+	var err error
 	var query string
-	query = "SELECT update_oo_hist($1,$2,$3,$4,$5)"
-	_,err := ss.db.Exec(query,mktord_id,order_hash,timestamp,amount_filled,opcode)
+	var d_query string
+	if mktord_id == 0 {
+		query = "SELECT update_oo_hist(NULL,$1,$2,$3,$4)"
+		d_query = fmt.Sprintf("SELECT update_oo_hist(NULL,'%v',%v,'%v',%v)",order_hash,timestamp,amount_filled,opcode)
+		_,err = ss.db.Exec(query,order_hash,timestamp,amount_filled,opcode)
+	} else {
+		query = "SELECT update_oo_hist($1,$2,$3,$4,$5)"
+		d_query = fmt.Sprintf("SELECT update_oo_hist(%v,'%v',%v,'%v',%v)",mktord_id,order_hash,timestamp,amount_filled,opcode)
+		_,err = ss.db.Exec(query,mktord_id,order_hash,timestamp,amount_filled,opcode)
+	}
+	ss.Info.Printf("Update_open_order_history query: %v\n",d_query)
 	if err!=nil {
-		msg:=fmt.Sprintf("DB error: couldn't update history of order with hash = %v: %v\n",order_hash,err)
+		msg:=fmt.Sprintf("DB error: couldn't update history of order with hash = %v mktord=%v: %v\n",order_hash,mktord_id,err)
 		ss.Info.Printf(msg)
 		ss.Log_msg(msg)
 		os.Exit(1)
@@ -349,6 +365,32 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 		ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into Open Orders table. Rows affeced = 0"))
 	}
 	return errors.New("Affected rows=0")
+}
+func (ss *SQLStorage) Cancel_open_order(orders map[string]*ztypes.OrderInfo,order_hash string,timestamp int64) {
+
+	oinfo := orders[order_hash]
+	if oinfo == nil {
+		ss.Log_msg(
+			fmt.Sprintf(
+				"DB error: can't find order on CancelZOrder event, hash=%v\n",order_hash,
+			),
+		)
+		os.Exit(1)
+	}
+
+	ss.Insert_0x_mesh_order_event(timestamp,oinfo,p.MeshEvtCancelled)
+	ss.Update_open_order_history(0,order_hash,timestamp,"0",p.OOOpCodeCancelledByUser)
+
+	var query string
+	query = "DELETE FROM oorders WHERE order_hash = $1"
+	result,err := ss.db.Exec(query,order_hash)
+	if err!=nil {
+		ss.Info.Printf(fmt.Sprintf("DB error: couldn't delete open order with order_hash = %v, q=%v\n",order_hash,query))
+	}
+	rows_affected,err:=result.RowsAffected()
+	if rows_affected == 0  {
+		ss.Info.Printf(fmt.Sprintf("DB error: couldn't delete open order with order_hash = %v (not found)\n",order_hash))
+	}
 }
 func (ss *SQLStorage) Delete_open_0x_order(order_hash string,timestamp int64,opcode int) {
 
@@ -750,15 +792,31 @@ func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,o
 
 	var query string
 	query = "SELECT " +
-				"ROUND(FLOOR(EXTRACT(EPOCH FROM o.evt_timestamp))::BIGINT/$1)*$1 AS start_ts,"+
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM o.evt_timestamp))/$5)::BIGINT*$5::BIGINT AS start_ts,"+
 				"AVG(price_estimate) AS avg_price_estimate " +
 			"FROM oohist AS o " +
 			"WHERE " +
-				"o.evt_timestamp >= $1 AND "+
-				"o.evt_timestamp < $2 " +
+				"o.market_aid = $1  AND " +
+				"o.outcome_idx = $2 AND " +
+				"o.evt_timestamp >= TO_TIMESTAMP($3) AND "+
+				"o.evt_timestamp < TO_TIMESTAMP($4) " +
 			"GROUP BY start_ts " +
 			"ORDER BY start_ts"
-	rows,err := ss.db.Query(query,market_aid,outc,init_ts,fin_ts)
+	d_query := fmt.Sprintf("SELECT " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM o.evt_timestamp))/%v)::BIGINT*%v::BIGINT AS start_ts,"+
+				"AVG(price_estimate) AS avg_price_estimate " +
+			"FROM oohist AS o " +
+			"WHERE " +
+				"o.market_aid = %v  AND " +
+				"o.outcome_idx = %v AND " +
+				"o.evt_timestamp >= TO_TIMESTAMP(%v) AND "+
+				"o.evt_timestamp < TO_TIMESTAMP(%v) " +
+			"GROUP BY start_ts " +
+			"ORDER BY start_ts",
+			interval,interval,market_aid,outc,init_ts,fin_ts,
+	)
+	ss.Info.Printf("Zoomed t2_query: %v\n",d_query)
+	rows,err := ss.db.Query(query,market_aid,outc,init_ts,fin_ts,interval)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)

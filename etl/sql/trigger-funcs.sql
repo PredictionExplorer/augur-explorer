@@ -127,7 +127,7 @@ BEGIN
 
 	IF v_oohist_id IS NOT NULL THEN
 		-- there could be duplicate inserts, so we have this protection using 'if not NULL'
-		SELECT * FROM update_price_estimate(NEW.market_aid,NEW.outcome_idx,NEW.amount,NEW.evt_timestamp) INTO v_price_estimate;
+		SELECT * FROM update_price_estimate(NEW.market_aid,NEW.outcome_idx::SMALLINT,NEW.amount,NEW.evt_timestamp) INTO v_price_estimate;
 		UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
 	END IF;
 
@@ -160,7 +160,7 @@ BEGIN
 			) ON CONFLICT DO NOTHING
 			RETURNING id INTO v_oohist_id;
 		IF v_oohist_id IS NOT NULL THEN
-			SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx,p_filled_amount,oo.evt_timestamp)
+			SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx::SMALLINT,p_filled_amount::DECIMAL/1e+18,oo.evt_timestamp)
 				INTO v_price_estimate;
 			UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
 		END IF;
@@ -180,7 +180,7 @@ BEGIN
 			) ON CONFLICT DO NOTHING
 			RETURNING id INTO v_oohist_id;
 		IF v_oohist_id IS NOT NULL THEN
-			SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx,p_filled_amount,oo.evt_timestamp)
+			SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx::SMALLINT,p_filled_amount::DECIMAL/1e+19,oo.evt_timestamp)
 				INTO v_price_estimate;
 			UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
 		END IF;
@@ -199,7 +199,7 @@ BEGIN
 				) ON CONFLICT DO NOTHING
 				RETURNING id INTO v_oohist_id;
 			IF v_oohist_id IS NOT NULL THEN
-				SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx,p_filled_amount,oo.evt_timestamp)
+				SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx::SMALLINT,p_filled_amount::DECIMAL/1e+18,TO_TIMESTAMP(p_evt_timestamp))
 					INTO v_price_estimate;
 				UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
 			END IF;
@@ -867,6 +867,11 @@ DECLARE
 	v_max_ts timestamptz;
 BEGIN
 
+	IF (NEW.evt_code = 3) OR (NEW.evt_code = 4) OR (NEW.evt_code=5) THEN
+		-- Cancelled(3),FullyFilled(5) and Partially filled(4) events are inserted on chain and its timestamp is valid
+		RETURN NEW;
+	END IF;
+
 	SELECT MAX(time_stamp) AS max_ts FROM mesh_evt INTO v_max_ts;
 	IF v_max_ts IS NULL THEN
 		RETURN NEW;
@@ -875,5 +880,94 @@ BEGIN
 		RAISE EXCEPTION 'Can''t INSERT into ''mesh_evt'' . Provided timestamp %v lower than MAX(time_stamp) in the database which is %V . Only records with future timestamp are allowed. To by pass this restriction feed the data ordered by time_stamp.',NEW.time_stamp,v_max_ts;
 	END IF;
 	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION duplicate_mesh_evt(p_order_hash TEXT,p_new_ts BIGINT,p_new_code SMALLINT,take_amount TEXT,fillable_amount TEXT) RETURNS BIGINT AS  $$
+DECLARE
+	mevt RECORD;
+	v_cnt NUMERIC;
+	v_id BIGINT;
+BEGIN
+
+	SELECT 
+		time_stamp,
+		fillable_amount,
+		evt_code,
+		chain_id,
+		exchange_addr,
+		maker_addr,
+		maker_asset_data,
+		maker_fee_asset_data,
+		maker_asset_amount,
+		maker_fee,
+		taker_address,
+		taker_asset_data,
+		taker_fee_asset_data,
+		taker_asset_amount,
+		taker_fee,
+		sender_address,
+		fee_recipient_address,
+		expiration_time,
+		salt,
+		signature
+	FROM
+		mesh_evt
+	WHERE
+		order_hash=p_order_hash
+	LIMIT 1
+	INTO mevt;
+
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		RAISE EXCEPTION 'Record with hash % wasn''t found in mesh_evt table',p_order_hash;
+	END IF;
+	INSERT INTO mesh_evt (
+		time_stamp,
+		fillable_amount,
+		evt_code,
+		order_hash,
+		chain_id,
+		exchange_addr,
+		maker_addr,
+		maker_asset_data,
+		maker_fee_asset_data,
+		maker_asset_amount,
+		maker_fee,
+		taker_address,
+		taker_asset_data,
+		taker_fee_asset_data,
+		taker_asset_amount,
+		taker_fee,
+		sender_address,
+		fee_recipient_address,
+		expiration_time,
+		salt,
+		signature
+	) VALUES (
+		TO_TIMESTAMP(p_new_ts),
+		mevt.fillable_amount,
+		p_new_code,
+		p_order_hash,
+		mevt.chain_id,
+		mevt.exchange_addr,
+		mevt.maker_addr,
+		mevt.maker_asset_data,
+		mevt.maker_fee_asset_data,
+		mevt.maker_asset_amount,
+		mevt.maker_fee,
+		mevt.taker_address,
+		mevt.taker_asset_data,
+		mevt.taker_fee_asset_data,
+		mevt.taker_asset_amount,
+		mevt.taker_fee,
+		mevt.sender_address,
+		mevt.fee_recipient_address,
+		mevt.expiration_time,
+		mevt.salt,
+		mevt.signature
+	)
+	RETURNING id INTO v_id;
+
+	RETURN v_id;
 END;
 $$ LANGUAGE plpgsql;

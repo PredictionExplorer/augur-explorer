@@ -331,8 +331,19 @@ func main() {
 				order_info.FillableTakerAssetAmount.Set(orderEvent.FillableTakerAssetAmount)
 				event_code := Get_mesh_event_code(orderEvent.EndState)
 				Dump_0x_mesh_order(Info,&order_info)
-				storage.Insert_0x_mesh_order_event(orderEvent.Timestamp.Unix(),&order_info,event_code)
-
+				switch orderEvent.EndState {
+				case zeroex.ESOrderAdded,
+					zeroex.ESOrderExpired,
+					zeroex.ESOrderFillabilityIncreased,
+					zeroex.ESOrderBecameUnfunded,
+					zeroex.ESStoppedWatching,
+					zeroex.ESOrderUnexpired:
+					storage.Insert_0x_mesh_order_event(
+						orderEvent.Timestamp.Unix(),
+						&order_info,
+						event_code,
+					)
+				}
 /* discontinued
 				adata,err := zerox_contract.DecodeAssetData(copts,orderEvent.SignedOrder.Order.MakerAssetData)
 				if err==nil {

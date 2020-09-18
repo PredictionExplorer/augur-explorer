@@ -1,3 +1,6 @@
+// 0x Mesh events
+//	A layer separating Augur trading from 0x Mesh orders
+//		Augur trading events are built in 'oohist' table
 package dbs
 
 import (
@@ -211,4 +214,62 @@ func (ss *SQLStorage) Get_mesh_events_from_id(id int64) []p.MeshEvent {
 		records = append(records,rec)
 	}
 	return records
+}
+func (ss *SQLStorage) Get_mesh_event_by_order_hash(order_hash string) (p.MeshEvent,error) {
+
+	var order p.MeshEvent
+	order.OrderHash = order_hash
+	var query string
+	query = "SELECT " +
+				"FLOOR(EXTRACT(EPOCH FROM time_stamp) AS time_stamp," +
+				"fillable_amount," +
+				"evt_code," +
+				"chain_id," +
+				"exchange_addr," +
+				"maker_addr," +
+				"maker_asset_data," +
+				"maker_fee_asset_data," +
+				"maker_asset_amount," +
+				"maker_fee," +
+				"taker_address," +
+				"taker_asset_data," +
+				"taker_asset_amount," +
+				"taker_fee," +
+				"taker_fee_asset_data," +
+				"sender_address," +
+				"fee_recipient_address," +
+				"FLOOR(EXTRACT(EPOCH FROM expiration_time))::BIGINT AS expiration_time," +
+				"salt," +
+				"signature" +
+			"FROM mesh_evt " +
+			"WHERE order_hash = $1 " +
+			"LIMIT 1"
+	row := ss.db.QueryRow(query,order_hash)
+	err := row.Scan(
+		&order.Timestamp,
+		&order.FillableAmount,
+		&order.EvtCode,
+		&order.ChainId,
+		&order.ExchangeAddress,
+		&order.MakerAddress,
+		&order.MakerAssetData,
+		&order.MakerFeeAssetData,
+		&order.MakerAssetAmount,
+		&order.MakerFee,
+		&order.TakerAddress,
+		&order.TakerAssetData,
+		&order.TakerFeeAssetData,
+		&order.TakerAssetAmount,
+		&order.TakerFee,
+		&order.SenderAddress,
+		&order.FeeRecipientAddress,
+		&order.ExpirationTime,
+		&order.Salt,
+		&order.Signature,
+	)
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return order,nil
 }

@@ -116,8 +116,7 @@ var (
 
 	market_order_id int64 = 0
 	owner_fld_offset int64 = int64(OWNER_FIELD_OFFSET)	// offset to AugurContract::owner field obtained with eth_getStorage()
-	initial_amount *big.Int = nil	// Initial order amount extracted from MakerAssetData of Fill event
-	
+
 	set_back_block_num int64 = 0
 
 	position_changes	[]*PosChg	// used to track changes in positions for debugging/verification

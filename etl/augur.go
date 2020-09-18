@@ -15,6 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/0xProject/0x-mesh/zeroex"
 
+	ztypes "github.com/0xProject/0x-mesh/common/types"
+
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 type ExecWalletTxInputStruct struct {
@@ -36,6 +38,12 @@ type TradeInputStruct struct {
 	MaxTrades				*big.Int `abi:"_maxTrades"`
 	Orders					[]IExchangeOrder `abi:"_orders"`
 	Signatures				[][]byte `abi:"_signatures"`
+}
+type CancelPrdersInputStruct struct {
+	Orders					[]IExchangeOrder `abi:"_orders"`
+	Signatures				[][]byte `abi:"_signatures"`
+	MaxProtocolFeeDai		*big.Int `abi:"_maxProtocolFeeDai"`
+
 }
 func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) {
 
@@ -234,8 +242,6 @@ func proc_fill_evt(log *types.Log) {
 	}
 	Info.Printf("Fill event found (block=%v) :\n",log.BlockNumber)
 	mevt.Dump(Info)
-	initial_amount = big.NewInt(0)
-	initial_amount.Set(mevt.MakerAssetFilledAmount)
 }
 func proc_erc20_transfer(log *types.Log,agtx *AugurTx) {
 	var mevt ETransfer
@@ -387,7 +393,7 @@ func proc_share_token_balance_changed(agtx *AugurTx,log *types.Log) {
 	mevt.Dump(Info)
 	storage.Insert_share_balance_changed_evt(agtx,&mevt)
 }
-func proc_market_order_event(agtx *AugurTx,log *types.Log) {
+func proc_market_order_event(agtx *AugurTx,log *types.Log,timestamp int64) {
 
 	var mevt EOrderEvent
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
@@ -410,16 +416,11 @@ func proc_market_order_event(agtx *AugurTx,log *types.Log) {
 	mevt.Dump(Info)
 	eoa_aid := get_eoa_aid(&mevt.AddressData[0],agtx.BlockNum,agtx.TxId)
 	eoa_fill_aid := get_eoa_aid(&mevt.AddressData[1],agtx.BlockNum,agtx.TxId)
-	//storage.Insert_market_order_evt(BlockNumber(log.BlockNumber),tx_id,signer,eoa_aid,&mevt)
 
-	orig_fill_amounts := extract_original_fill_amount(agtx.Input)
-	if len(orig_fill_amounts) == 0 {
-		Fatalf("Couldn't extract fill amount from Tx inpuit. Aborting.")
-	}
-
-	storage.Insert_market_order_evt(agtx,eoa_aid,eoa_fill_aid,&mevt,orig_fill_amounts)
+	orders:= extract_orders_from_input(agtx.Input)
+	storage.Insert_market_order_evt(agtx,timestamp,eoa_aid,eoa_fill_aid,&mevt,orders)
 }
-func proc_cancel_zerox_order(log *types.Log,timestamp int64) {
+func proc_cancel_zerox_order(agtx *AugurTx,log *types.Log,timestamp int64) {
 	var mevt ECancelZeroXOrder
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Market = common.BytesToAddress(log.Topics[2][12:])
@@ -437,7 +438,11 @@ func proc_cancel_zerox_order(log *types.Log,timestamp int64) {
 	Info.Printf("CancelZeroXOrder event for contract %v (block=%v) : \n",
 								log.Address.String(),log.BlockNumber)
 	mevt.Dump(Info)
-	storage.Delete_open_0x_order(ohash_str,timestamp,OOOpCodeCancelledByUser)
+	orders:= extract_orders_from_input(agtx.Input)
+	if len(orders) == 0 {
+		Fatalf("Couldn't extract fill amount from Tx input. Aborting.")
+	}
+	storage.Cancel_open_order(orders,ohash_str,timestamp)
 }
 func proc_market_oi_changed(block *types.Header, agtx *AugurTx, log *types.Log) {
 	var mevt EMarketOIChanged
@@ -725,10 +730,10 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_order) {
 			tx_insert_if_needed(agtx)
-			proc_market_order_event(agtx,log)
+			proc_market_order_event(agtx,log,timestamp)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cancel_0x_order) {
-			proc_cancel_zerox_order(log,timestamp)
+			proc_cancel_zerox_order(agtx,log,timestamp)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_oi_changed) {
 			tx_insert_if_needed(agtx)
@@ -1000,7 +1005,6 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		pl_entries := make([]int64,0,2);// profit loss entries
 		// before processing events we need to reset these global vars as they accumulate some data
 		market_order_id = 0
-		initial_amount = nil
 		//
 		// Step 3: Execute events using ordered list prepared in previous step
 		for i:=0 ; i < num_logs ; i++ {
@@ -1022,9 +1026,9 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 	}
 	return nil
 }
-func get_order_hash(o *IExchangeOrder) string {
+func get_order_data(o *IExchangeOrder) (zeroex.Order,common.Hash) {
 
-	zero_order := new(zeroex.Order)
+	var zero_order zeroex.Order
 	zero_order.ChainID=big.NewInt(caddrs.ChainId)
 	zero_order.ExchangeAddress.SetBytes(caddrs.ZeroxXchg.Bytes())
 	zero_order.MakerAddress.SetBytes(o.MakerAddress.Bytes())
@@ -1056,7 +1060,7 @@ func get_order_hash(o *IExchangeOrder) string {
 		Fatalf("can't compute ZeroX order hash: %v\n",err)
 	}
 	Info.Printf("get_order_hash() returning %v\n",hash.String())
-	return hash.String()
+	return zero_order,hash
 }
 func decode_original_fill_amount(input_data []byte,method_sig []byte) map[string]*big.Int {
 	output := make(map[string]*big.Int,0)
@@ -1073,7 +1077,8 @@ func decode_original_fill_amount(input_data []byte,method_sig []byte) map[string
 		Info.Printf("Requested fill amount = %v\n",input_data_decoded.RequestedFillAmount.String())
 		Info.Printf("num orders=%v\n",len(input_data_decoded.Orders))
 		for i,order := range input_data_decoded.Orders {
-			hash_str := get_order_hash(&order)
+			_,h := get_order_data(&order)
+			hash_str := h.String()
 			Info.Printf(
 				"Order %v (%v), maker amount = %v, taker amount=%v\n",
 				i,hash_str,order.MakerAssetAmount,order.TakerAssetAmount,
@@ -1081,6 +1086,65 @@ func decode_original_fill_amount(input_data []byte,method_sig []byte) map[string
 			initial_amount := big.NewInt(0)
 			initial_amount.Set(order.MakerAssetAmount)
 			output[hash_str]=initial_amount
+		}
+	} else {
+		Error.Printf("Undefined behavior: no orders detected on the input of ZeroXTrade::trade()")
+		os.Exit(1)
+	}
+
+	return output
+}
+func decode_0x_orders(input_data []byte,method_sig []byte) map[string]*ztypes.OrderInfo {
+
+	output := make(map[string]*ztypes.OrderInfo,0)
+
+	var trade_input_data_decoded TradeInputStruct
+	var cancel_order_input_data_decoded CancelPrdersInputStruct
+	var decoded_orders []IExchangeOrder
+	var decoded_signatures [][]byte
+
+	zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
+	if 0 == bytes.Compare(method_sig,zeroex_trade_sig) {
+		method, err := zerox_trade_abi.MethodById(method_sig)
+		if err != nil {
+			Fatalf("Method not found")
+		}
+		err = method.Inputs.Unpack(&trade_input_data_decoded, input_data)
+		if err != nil {
+			Fatalf("Couldn't decode input of tx: %v",err)
+		}
+		decoded_orders = trade_input_data_decoded.Orders
+		decoded_signatures = trade_input_data_decoded.Signatures
+	}
+	zeroex_cancel_sig,_ := hex.DecodeString("4ea96c30")
+	if 0 == bytes.Compare(method_sig,zeroex_cancel_sig) {
+		method, err := zerox_trade_abi.MethodById(method_sig)
+		if err != nil {
+			Fatalf("Method not found")
+		}
+		err = method.Inputs.Unpack(&cancel_order_input_data_decoded, input_data)
+		if err != nil {
+			Fatalf("Couldn't decode input of tx: %v",err)
+		}
+		decoded_orders=cancel_order_input_data_decoded.Orders
+		decoded_signatures=cancel_order_input_data_decoded.Signatures
+	}
+	if len(decoded_orders) > 0 {
+		for i,order := range decoded_orders {
+			ord,h := get_order_data(&order)
+			hash_str := h.String()
+			Info.Printf(
+				"Order %v (%v), maker amount = %v, taker amount=%v\n",
+				i,hash_str,order.MakerAssetAmount,order.TakerAssetAmount,
+			)
+			order_info := new(ztypes.OrderInfo)
+			order_info.OrderHash.SetBytes(h.Bytes())
+			order_info.SignedOrder=new(zeroex.SignedOrder)
+			order_info.SignedOrder.Signature=make([]byte,len(decoded_signatures[i]))
+			order_info.SignedOrder.Order = ord
+			order_info.FillableTakerAssetAmount = big.NewInt(0) // this value is incorrect, but we don't have the correct one
+			copy(order_info.SignedOrder.Signature,decoded_signatures[i])
+			output[hash_str]=order_info
 		}
 	} else {
 		Error.Printf("Undefined behavior: no orders detected on the input of ZeroXTrade::trade()")
@@ -1376,6 +1440,7 @@ func contains_execute_wallet_transaction_call(tx_data []byte) *ExecuteWalletTx {
 	}
 	return nil
 }
+/* DISCONTINUED
 func extract_original_fill_amount(tx_data []byte) map[string]*big.Int {
 
 	if len(tx_data) < 32 {
@@ -1415,4 +1480,53 @@ func extract_original_fill_amount(tx_data []byte) map[string]*big.Int {
 		}
 	}
 	return make(map[string]*big.Int,0)
+}*/
+func extract_orders_from_input(tx_data []byte) map[string]*ztypes.OrderInfo {
+	// returns orders in one map and initial amounts in another map
+	if len(tx_data) < 32 {
+		return make(map[string]*ztypes.OrderInfo,0)
+	}
+	input_sig := tx_data[:4]
+	decoded_sig ,_ := hex.DecodeString("78dc0eed")
+	if 0 == bytes.Compare(input_sig,decoded_sig) {
+		input_data_raw:= tx_data[4:]
+		var input_data ExecWalletTxInputStruct
+		method, err := wallet_abi.MethodById(decoded_sig)
+		if err != nil {
+			Fatalf("Method not found")
+		}
+		err = method.Inputs.Unpack(&input_data, input_data_raw)
+		if err != nil {
+			Fatalf("Couldn't decode input of tx %v",err)
+		}
+
+		// check for internal transactions for the Wallet Registry contract
+		if len(input_data.Data) >= 4 {
+			input_sig := input_data.Data[:4]
+			zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
+			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
+				Info.Printf("augur_wallet_call: ZeroEx::trade()\n")
+				return decode_0x_orders(input_data.Data[4:],zeroex_trade_sig)
+			}
+			zeroex_cancel_sig,_ := hex.DecodeString("4ea96c30")
+			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
+				Info.Printf("augur_wallet_call: ZeroEx::cancelOrder()\n")
+				return decode_0x_orders(input_data.Data[4:],zeroex_cancel_sig)
+			}
+		}
+	} else {
+		if len(input_sig) >= 4 {
+			input_data_raw:= tx_data[4:]
+			Info.Printf("tx input= %v\n",hex.EncodeToString(input_data_raw))
+			zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
+			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
+				return decode_0x_orders(input_data_raw,zeroex_trade_sig)
+			}
+			zeroex_cancel_sig,_ := hex.DecodeString("4ea96c30")
+			if 0 == bytes.Compare(input_sig,zeroex_cancel_sig) {
+				return decode_0x_orders(input_data_raw,zeroex_cancel_sig)
+			}
+		}
+	}
+	return make(map[string]*ztypes.OrderInfo,0)
 }

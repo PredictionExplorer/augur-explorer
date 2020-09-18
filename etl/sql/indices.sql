@@ -55,7 +55,8 @@ CREATE UNIQUE INDEX pldebug_uniq	ON pl_debug			(block_num,market_aid,wallet_aid,
 CREATE UNIQUE INDEX mkts_traded_unq	ON mkts_traded		(eoa_aid,market_aid);
 CREATE UNIQUE INDEX sbal_uniq		ON sbalances		(market_aid,account_aid,outcome_idx);
 CREATE INDEX daib_processed_idx		ON dai_bal			(processed);
-CREATE UNIQUE INDEX oohist_uniq		ON oohist			(mktord_id,order_hash,opcode);
+CREATE UNIQUE INDEX oohist_uniq1	ON oohist			(order_hash,opcode,(mktord_id IS NULL)) WHERE mktord_id IS NULL;
+CREATE UNIQUE INDEX oohist_uniq2	ON oohist			(order_hash,opcode,(mktord_id IS NOT NULL)) WHERE mktord_id IS NOT NULL;
 CREATE INDEX exec_wtx_in_sig_idx	ON exec_wtx			(input_sig);
 CREATE INDEX exec_wtx_referral_idx	ON exec_wtx			(referral_aid);
 CREATE INDEX exec_wtx_to_idx		ON exec_wtx			(to_aid);
