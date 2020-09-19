@@ -109,6 +109,11 @@ CREATE TABLE mesh_evt ( -- Events received from 0x Mesh network. source: github.
 	time_stamp				TIMESTAMPTZ NOT NULL,
 	fillable_amount			DECIMAL(32,18) NOT NULL,
 	evt_code				SMALLINT NOT NULL,
+-- Augur fields:
+	market_aid				BIGINT NOT NULL,
+	outcome_idx				SMALLINT NOT NULL,
+	otype					SMALLINT NOT NULL,
+	price					DECIMAL(32,18) NOT NULL,
 -- `Order` struct follows:
 	order_hash				CHAR(66) NOT NULL,
 	chain_id				INT NOT NULL,
@@ -131,6 +136,31 @@ CREATE TABLE mesh_evt ( -- Events received from 0x Mesh network. source: github.
 );
 CREATE TABLE mesh_status (
 	last_id_processed	BIGINT DEFAULT 0
+);
+CREATE TABLE depth_state ( -- the state market depth at any given point in time, used to calculate 
+	id					BIGSERIAL PRIMARY KEY,
+	meshevt_id			BIGINT NOT NULL REFERENCES mesh_evt(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	otype				SMALLINT NOT NULL,
+	order_hash			CHAR(66),
+	price				DECIMAL(32,18) NOT NULL,
+	amount				DECIMAL(32,18) NOT NULL,
+	ini_ts				TIMESTAMPTZ NOT NULL,
+	fin_ts				TIMESTAMPTZ NOT NULL
+);
+CREATE TABLE price_estimate (
+	id					BIGSERIAL PRIMARY KEY,
+	market_aid			BIGINT NOT NULL,
+	state_id			BIGINT NOT NULL REFERENCES depth_state(id) ON DELETE CASCADE,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	bid_state_id		BIGINT NOT NULL,
+	ask_state_id		BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	spread				DECIMAL(32,18) NOT NULL,
+	price_estimate		DECIMAL(32,18) NOT NULL,
+	max_bid				DECIMAL(32,18) NOT NULL,
+	min_ask				DECIMAL(32,18) NOT NULL
 );
 CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later they are converted into 'mktord` records
 	id					BIGSERIAL PRIMARY KEY,

@@ -32,50 +32,81 @@ DECLARE
 	v_num_ticks decimal;
 	v_osize decimal;
 	v_max_ts timestamptz;
+	r_oo record;
 BEGIN
 
 	SELECT spread_threshold,osize_threshold FROM ooconfig INTO v_spread_threshold,v_osize_threshold;
 
-	SELECT MAX(evt_timestamp) AS max_ts FROM oorders INTO v_max_ts;
-	IF v_max_ts IS NOT NULL THEN
-		IF v_max_ts > p_timestamp THEN
-			RAISE EXCEPTION 'Can''t update price estimate. Provided timestamp %v  for market %v outcome %v is lower tham MAX(timestamp) in the database which is %V . Only records with future timestamp are allowed. To by pass this restriction feed the data ordered by evt_timestamp.',p_timestamp,p_market_aid,p_outcome_idx,v_max_ts;
-		END IF;
-	END IF;
---	IF v_osize < v_osize_threshold THEN
+--	IF v_osize < v_osize_threshold THEN -- DISABLED (for now) to lower complexity
 --		RETURN;
 --	END IF;
 
 	SELECT num_ticks FROM market WHERE market_aid = p_market_aid INTO v_num_ticks;
+
+	-- initialize price values in case the loop results in 0 iterations
 	SELECT COALESCE(MAX(price),0)
-		FROM oorders
-		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx
+		FROM oohist
+		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx AND
+				evt_timestamp <= p_timestamp AND expiration >= p_timestamp
 		INTO v_price_bid;
 	SELECT COALESCE(MIN(price),-1)
-		FROM oorders
-		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx
+		FROM oohist
+		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx AND
+				evt_timestamp <= p_timestamp AND expiration >= p_timestamp
 		INTO v_price_ask;
 	IF v_price_ask < 0 THEN
-		SELECT num_ticks FROM market WHERE market_aid=p_market_aid INTO v_price_ask;
+		v_price_ask := v_num_ticks;
 	END IF;
 
-	v_spread := v_price_ask - v_price_bid;
-	IF v_spread < v_spread_threshold THEN
-		v_price_estimate := (v_price_bid + v_price_ask) / 2 ;
-	ELSE
-		v_num_ticks:=v_num_ticks/2;
-		IF v_price_bid > v_num_ticks THEN
-			v_price_estimate := v_price_ask;
-		ELSE
-			v_price_estimate := v_price_bid;
+	FOR r_oo IN
+		SELECT * FROM oohist
+			WHERE market_aid=p_market_aid AND
+				outcome_idx=p_outcome_idx AND
+				evt_timestamp <= p_timestamp AND
+				expiration >= p_timestamp
+			ORDER BY evt_timestamp,id
+	LOOP
+		SELECT COALESCE(MAX(price),0)
+			FROM oohist
+			WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx AND
+				evt_timestamp <= r_oo.evt_timestamp AND expiration >= p_timestamp
+			INTO v_price_bid;
+		SELECT COALESCE(MIN(price),-1)
+			FROM oohist
+			WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx AND
+				evt_timestamp <= r_oo.evt_timestamp AND expiration >= p_timestamp
+			INTO v_price_ask;
+		IF v_price_ask < 0 THEN
+			v_price_ask := v_num_ticks;
 		END IF;
+
+		v_spread := v_price_ask - v_price_bid;
+		IF v_spread < v_spread_threshold THEN
+			v_price_estimate := (v_price_bid + v_price_ask) / 2 ;
+		ELSE
+			v_num_ticks:=v_num_ticks/2;
+			IF v_price_bid > v_num_ticks THEN
+				v_price_estimate := v_price_ask;
+			ELSE
+				v_price_estimate := v_price_bid;
+			END IF;
+		END IF;
+		UPDATE oohist SET price_estimate = v_price_estimate WHERE id=r_oo.id;
+	END LOOP;
+
+	-- update the record that holds latest price estimate for the market
+	SELECT price_estimate FROM oohist
+		WHERE market_aid=p_market_aid AND outcome_idx=p_outcome_idx
+		ORDER BY evt_timestamp DESC LIMIT 1
+		INTO v_price_estimate;
+	IF v_price_estimate IS NOT NULL THEN
+		UPDATE outcome_vol
+			SET	highest_bid = v_price_bid,
+				lowest_ask = v_price_ask,
+				price_estimate = v_price_estimate,
+				cur_spread = v_spread
+			WHERE market_aid = p_market_aid AND outcome_idx=p_outcome_idx;
 	END IF;
-	UPDATE outcome_vol
-		SET	highest_bid = v_price_bid,
-			lowest_ask = v_price_ask,
-			price_estimate = v_price_estimate,
-			cur_spread = v_spread
-		WHERE market_aid = p_market_aid AND outcome_idx=p_outcome_idx;
 	RETURN v_price_estimate;
 END;
 $$ LANGUAGE plpgsql;
@@ -160,7 +191,7 @@ BEGIN
 			) ON CONFLICT DO NOTHING
 			RETURNING id INTO v_oohist_id;
 		IF v_oohist_id IS NOT NULL THEN
-			SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx::SMALLINT,p_filled_amount::DECIMAL/1e+18,oo.evt_timestamp)
+			SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx::SMALLINT,p_filled_amount::DECIMAL/1e+18,TO_TIMESTAMP(p_evt_timestamp))
 				INTO v_price_estimate;
 			UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
 		END IF;
@@ -180,7 +211,7 @@ BEGIN
 			) ON CONFLICT DO NOTHING
 			RETURNING id INTO v_oohist_id;
 		IF v_oohist_id IS NOT NULL THEN
-			SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx::SMALLINT,p_filled_amount::DECIMAL/1e+19,oo.evt_timestamp)
+			SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx::SMALLINT,p_filled_amount::DECIMAL/1e+19,TO_TIMESTAMP(p_evt_timestamp))
 				INTO v_price_estimate;
 			UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
 		END IF;
@@ -969,5 +1000,16 @@ BEGIN
 	RETURNING id INTO v_id;
 
 	RETURN v_id;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_mesh_evt_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	IF evt_code = 2 THEN -- ADDED
+		INSERT INTO depth_state(meshevt_id,otype,order_hash,price,amount,ini_ts,fin_ts)
+			VALUES(NEW.id,NEW.otype,NEW.order_hash,NEW.price);
+	END IF;
+	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

@@ -40,12 +40,6 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,p_
 		os.Exit(1)
 	}
 
-	mesh_evt_code := p.MeshEvtFullyFilled
-	if 0 != initial_amount.Cmp(zorder.SignedOrder.TakerAssetAmount) {
-		mesh_evt_code = p.MeshEvtFilled
-	}
-	ss.Insert_0x_mesh_order_event(timestamp,zorder,mesh_evt_code)
-
 	var wallet_aid int64;
 	wallet_aid = ss.Lookup_or_create_address(evt.AddressData[0].String(),agtx.BlockNum,agtx.TxId)
 	var wallet_fill_aid int64 = 0;
@@ -98,6 +92,12 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,p_
 	amount_filled := evt.Uint256Data[6]
 	shares_escrowed := evt.Uint256Data[8].String()
 	tokens_escrowed := evt.Uint256Data[9].String()
+
+	mesh_evt_code := p.MeshEvtFullyFilled
+	if 0 != initial_amount.Cmp(amount_filled) {
+		mesh_evt_code = p.MeshEvtFilled
+	}
+	ss.Insert_0x_mesh_order_event(timestamp,zorder,mesh_evt_code)
 
 	var query string
 	var opcode int = p.OOOpCodeFill

@@ -604,9 +604,9 @@ func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,alive int,i
 	}
 	var where_condition string
 	if fin == 0 {
-		where_condition = "(m.status < 4) "
+		where_condition = "(m.status < 2) "
 	} else {
-		where_condition = "(m.status > 3) "
+		where_condition = "(m.status > 1) "
 	}
 	if all == 0 {
 		where_condition = where_condition + " AND (m.cur_volume > 0) AND (m.money_at_stake > 0) "
