@@ -112,40 +112,53 @@ func main() {
 
 
 	r := gin.New()
+	//r.RedirectTrailingSlash=false
+	//r.RedirectFixedPath = false
 	r.LoadHTMLGlob("html/templates/*html")
+
 	r.Use(gin.Logger())
 
+	r.Static("/ui","/home/frontend/pe-ui/build")
+	r.StaticFile("/index.html", "/home/frontend/pe-ui/build/index.html")
+	r.StaticFile("/index.htm", "/home/frontend/pe-ui/build/index.html")
+	r.StaticFile("/INDEX.HTM", "/home/frontend/pe-ui/build/index.html")
+	r.StaticFile("/favicon.ico", "/home/frontend/pe-ui/build/favicon.ico")
+	r.StaticFile("/sw.js", "/home/frontend/pe-ui/build/sw.js")
+	r.StaticFile("/sw.js.gz", "/home/frontend/pe-ui/build/sw.js.gz")
+	r.StaticFile("/","/home/frontend/pe-ui/build/index.html")
+
 	// Main HTML
-	r.GET("/", main_page)
-	r.GET("/index.html", main_page)
-	r.GET("/index.htm", main_page)
-	r.GET("/INDEX.HTM", main_page)
+	r.GET("/black/", main_page)
+	r.GET("/black/index.html", main_page)
+	r.GET("/black/index.htm", main_page)
+	r.GET("/black/INDEX.HTM", main_page)
+	// Old version of the site with black templates
+	r.GET("/black/markets.html",markets)
+	r.GET("/black/statistics.html",statistics)
+	r.GET("/black/categories.html",categories)
+	r.GET("/black/explorer.html",explorer)
+	r.GET("/black/market/:market",  market_info)
+	r.GET("/black/fulltradelist/:market",  full_trade_list)
+	r.GET("/black/mdepth/:market/:outcome", market_depth)
+	r.GET("/black//deptha/:market_aid/:outcome", market_depth_ajax)
+	r.GET("/black/mphist/:market/:outcome", market_price_history)
+	r.GET("/black/search", search)
+	r.GET("/black/money/:addr",  read_money)
+	r.GET("/black/order/:order",  order)
+	r.GET("/black/category/:catid",  category)
+	r.GET("/black/user/:addr",  user_info)
+	r.GET("/black/fullreports/:addr",  full_reports)
+	r.GET("/black/umarkets/:addr",  user_markets)
+	r.GET("/black/udw/:addr",  user_deposits_withdrawals)
+	r.GET("/black/block/:block_num",  block_info)
+	r.GET("/black/topusers.html",top_users)
+	r.GET("/black/mdstat/:market_aid/:outcome_idx/:last_oo_id",market_depth_status)
+	r.GET("/black/umtrades.html",user_trades_for_market)
+	r.GET("/black/statement/:addr",account_statement)
+	r.GET("/black/oohist/:addr",open_order_history)
 
-	// All the other dynamic HTML pages
-	r.GET("/markets.html",markets)
-	r.GET("/statistics.html",statistics)
-	r.GET("/categories.html",categories)
-	r.GET("/explorer.html",explorer)
-	r.GET("/market/:market",  market_info)
-	r.GET("/fulltradelist/:market",  full_trade_list)
-	r.GET("/mdepth/:market/:outcome", market_depth)
-	r.GET("/deptha/:market_aid/:outcome", market_depth_ajax)
-	r.GET("/mphist/:market/:outcome", market_price_history)
-	r.GET("/search", search)
-	r.GET("/money/:addr",  read_money)
-	r.GET("/order/:order",  order)
-	r.GET("/category/:catid",  category)
-	r.GET("/user/:addr",  user_info)
-	r.GET("/fullreports/:addr",  full_reports)
-	r.GET("/umarkets/:addr",  user_markets)
-	r.GET("/udw/:addr",  user_deposits_withdrawals)
-	r.GET("/block/:block_num",  block_info)
-	r.GET("/topusers.html",top_users)
-	r.GET("/mdstat/:market_aid/:outcome_idx/:last_oo_id",market_depth_status)
-	r.GET("/umtrades.html",user_trades_for_market)
-	r.GET("/statement/:addr",account_statement)
-	r.GET("/oohist/:addr",open_order_history)
-
+	r.Static("/black/imgs", "./html/imgs")
+	r.Static("/black/res", "./html/res")			// resources (static)
 	// API calls for the new FrontEnd
 	r.GET("/api/active_market_ids",a1_active_market_ids)
 	r.GET("/api/active_markets/:start/:num_rows",a1_active_markets)
@@ -162,9 +175,6 @@ func main() {
 	r.GET("/api/user_oorders/:user",  a1_user_open_orders)
 	r.GET("/api/mkt_oo/:market/:outcome", a1_market_open_orders)
 
-	r.Static("/imgs", "./html/imgs")
-	r.Static("/res", "./html/res")			// resources (static)
-	r.StaticFile("/favicon.ico", "./html/res/favicon.ico")
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
