@@ -397,6 +397,9 @@ func (ss *SQLStorage) Get_user_markets(eoa_aid int64) []p.InfoMarket {
 				"sa.addr AS signer," +
 				"ca.addr as mcreator," +
 				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') as end_date," + 
+				"FLOOR(EXTRACT(EPOCH FROM m.create_timestamp))::BIGINT as created_ts," +
+				"FLOOR(EXTRACT(EPOCH FROM m.end_time))::BIGINT as end_ts," + 
+				"FLOOR(EXTRACT(EPOCH FROM m.fin_timestamp))::BIGINT as fin_ts," +
 				"extra_info::json->>'description' AS descr," +
 				"extra_info::json->>'longDescription' AS long_desc," +
 				"extra_info::json->>'categories' AS categories," +
@@ -408,7 +411,9 @@ func (ss *SQLStorage) Get_user_markets(eoa_aid int64) []p.InfoMarket {
 					"WHEN 2 THEN 'SCALAR' " +
 				"END AS mtype," +
 				"status,"+
+				"num_ticks,"+
 				"fee," +
+				"total_trades,"+
 				"open_interest AS OI," +
 				"cur_volume AS volume " +
 			"FROM market as m " +
@@ -435,20 +440,24 @@ func (ss *SQLStorage) Get_user_markets(eoa_aid int64) []p.InfoMarket {
 		var description sql.NullString
 		var longdesc sql.NullString
 		var categories sql.NullString
-		var status_code int
 		err=rows.Scan(
 					&rec.MktAddr,
 					&rec.Signer,
 					&rec.MktCreator,
 					&rec.EndDate,
+					&rec.CreatedTs,
+					&rec.EndTs,
+					&rec.FinTs,
 					&description,
 					&longdesc,
 					&categories,
 					&rec.Outcomes,
 					&rec.MktType,
 					&rec.MktTypeStr,
-					&status_code,
+					&rec.MktStatus,
+					&rec.NumTicks,
 					&rec.Fee,
+					&rec.TotalTrades,
 					&rec.OpenInterest,
 					&rec.CurVolume,
 		)
@@ -467,8 +476,8 @@ func (ss *SQLStorage) Get_user_markets(eoa_aid int64) []p.InfoMarket {
 			rec.CategoryStr = categories.String
 		}
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)
-		rec.MktCreator=p.Short_address(rec.MktCreator)
-		rec.Status=get_market_status_str(p.MarketStatus(status_code))
+		rec.MktCreatorSh=p.Short_address(rec.MktCreator)
+		rec.Status=get_market_status_str(p.MarketStatus(rec.MktStatus))
 		records = append(records,rec)
 	}
 	return records
@@ -545,10 +554,14 @@ func (ss *SQLStorage) Get_active_markets_for_user(eoa_aid int64,active_flag int)
 				"sa.addr AS signer," +
 				"ca.addr as mcreator," +
 				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') as end_date," + 
+				"FLOOR(EXTRACT(EPOCH FROM m.create_timestamp))::BIGINT as created_ts," +
+				"FLOOR(EXTRACT(EPOCH FROM m.end_time))::BIGINT as end_ts," + 
+				"FLOOR(EXTRACT(EPOCH FROM m.fin_timestamp))::BIGINT as fin_ts," +
 				"extra_info::json->>'description' AS descr," +
 				"extra_info::json->>'longDescription' AS long_desc," +
 				"extra_info::json->>'categories' AS categories," +
 				"outcomes," +
+				"m.winning_outcome," +
 				"m.market_type, " +
 				"CASE m.market_type " +
 					"WHEN 0 THEN 'YES/NO' " +
@@ -558,6 +571,7 @@ func (ss *SQLStorage) Get_active_markets_for_user(eoa_aid int64,active_flag int)
 				"status,"+
 				"CASE WHEN EXTRACT(epoch from (fin_timestamp-now())) < 0 " +
 					"THEN 'Trading' ELSE 'Reporting' END AS status_desc," +
+				"num_ticks,"+
 				"fee," +
 				"open_interest AS OI," +
 				"cur_volume AS volume, " +
@@ -590,14 +604,19 @@ func (ss *SQLStorage) Get_active_markets_for_user(eoa_aid int64,active_flag int)
 					&rec.Signer,
 					&rec.MktCreator,
 					&rec.EndDate,
+					&rec.CreatedTs,
+					&rec.EndTs,
+					&rec.FinTs,
 					&description,
 					&longdesc,
 					&category,
 					&rec.Outcomes,
+					&rec.WinOutcomeIdx,
 					&rec.MktType,
 					&rec.MktTypeStr,
 					&rec.MktStatus,
 					&rec.Status,
+					&rec.NumTicks,
 					&rec.Fee,
 					&rec.OpenInterest,
 					&rec.CurVolume,

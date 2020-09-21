@@ -86,8 +86,12 @@ type InfoMarket struct {
 	VolTraded		float64
 	TotalTrades		int64
 	NumTicks		int64
+	CreatedTs		int64
+	EndTs			int64
+	FinTs			int64
 	MktType			int
 	MktStatus		int
+	WinOutcomeIdx	int
 	MktAddr			string
 	MktAddrSh		string	// short address (with .. in the middle)
 	Signer			string
