@@ -895,121 +895,191 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_mesh_evt_insert() RETURNS trigger AS  $$
 DECLARE
-	v_max_ts timestamptz;
+	v_ini_ts timestamptz;
+	v_fin_ts timestamptz;
+	v_timestamp timestamptz;
+	v_add_id bigint;
+	v_depthst_id bigint;
 BEGIN
 
-	IF (NEW.evt_code = 3) OR (NEW.evt_code = 4) OR (NEW.evt_code=5) THEN
-		-- Cancelled(3),FullyFilled(5) and Partially filled(4) events are inserted on chain and its timestamp is valid
-		RETURN NEW;
+	IF NEW.evt_code = 2 THEN -- ADDED
+		v_ini_ts := NEW.time_stamp;
+		v_fin_ts := NEW.expiration;
 	END IF;
+	IF (NEW.evt_code= 3) OR (NEW.evt_code = 4) OR (NEW.evt_code = 5) OR (NEW.evt_code = 6) THEN
+		v_ini_ts := NEW.time_stamp;
+		SELECT time_stamp FROM depth_link
+			WHERE order_hash=NEW.order_hash
+			ORDER BY time_stamp DESC LIMIT 1
+			INTO v_timestamp;
+		IF v_timestamp IS NOT NULL THEN	-- prevents unordered data insertion
+			IF v_timestamp > NEW.time_stamp THEN
+				RAISE EXCEPTION 'Insertion of 0x Mesh event code=% with past date % for order %',
+					NEW.evt_code,NEW.time_stamp,NEW.order_hash;
+			END IF;
+		END IF;
+		SELECT d.id FROM depth_state
+			WHERE order_hash=NEW.order_hash
+			ORDER BY time_stamp DESC LIMIT 1
+			INTO v_depthst_id;
+		IF v_depthst_id IS NULL THEN
+			RAISE EXCEPTION 'Insertion of event code=% without existing depth_state entry for order: %',
+				NEW.evt_code,NEW.order_hash;
+		END IF;
+		UPDATE depth_state SET fin_ts = NEW.time_stamp WHERE id=v_depthst_id;
+		if (NEW.evt_code = 5) OR (NEW.evt_code = 6) THEN -- CANCLLED or EXPIRED
+			v_fin_ts := NEW.time_stamp;
+		END IF;
+	END IF;
+	INSERT INTO depth_state(
+			meshevt_id,market_aid,outcome_idx,otype,order_hash,
+			price,amount,ini_ts,fin_ts
+		) VALUES (
+			NEW.id,NEW.market_aid,NEW.outcome_idx,NEW.otype,NEW.order_hash,
+			NEW.price,NEW.amount,NEW.time_stamp,NEW.time_stamp
+		)
+		RETURNING id INTO v_depthst_id;
+	INSERT INTO mesh_link(depthst_id,meshvet_id,time_stamp,order_hash)
+		VALUES(v_depthst_id,NEW.id,v_ini_ts,NEW.order_hash);
 
-	SELECT MAX(time_stamp) AS max_ts FROM mesh_evt INTO v_max_ts;
-	IF v_max_ts IS NULL THEN
-		RETURN NEW;
-	END IF;
-	IF v_max_ts > NEW.time_stamp THEN
-		RAISE EXCEPTION 'Can''t INSERT into ''mesh_evt'' . Provided timestamp %v lower than MAX(time_stamp) in the database which is %V . Only records with future timestamp are allowed. To by pass this restriction feed the data ordered by time_stamp.',NEW.time_stamp,v_max_ts;
-	END IF;
+	PERFORM calc_price_estimate(v_depthst_id,NEW.market_aid,NEW.outcome_idx,v_ini_ts);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION duplicate_mesh_evt(p_order_hash TEXT,p_new_ts BIGINT,p_new_code SMALLINT,take_amount TEXT,fillable_amount TEXT) RETURNS BIGINT AS  $$
+CREATE OR REPLACE FUNCTION on_mesh_evt_delete() RETURNS trigger AS  $$
 DECLARE
-	mevt RECORD;
-	v_cnt NUMERIC;
-	v_id BIGINT;
+	v_fin_ts timestamptz;
+	v_depthst_id bigint;
 BEGIN
 
-	SELECT 
-		time_stamp,
-		fillable_amount,
-		evt_code,
-		chain_id,
-		exchange_addr,
-		maker_addr,
-		maker_asset_data,
-		maker_fee_asset_data,
-		maker_asset_amount,
-		maker_fee,
-		taker_address,
-		taker_asset_data,
-		taker_fee_asset_data,
-		taker_asset_amount,
-		taker_fee,
-		sender_address,
-		fee_recipient_address,
-		expiration_time,
-		salt,
-		signature
-	FROM
-		mesh_evt
-	WHERE
-		order_hash=p_order_hash
-	LIMIT 1
-	INTO mevt;
-
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		RAISE EXCEPTION 'Record with hash % wasn''t found in mesh_evt table',p_order_hash;
-	END IF;
-	INSERT INTO mesh_evt (
-		time_stamp,
-		fillable_amount,
-		evt_code,
-		order_hash,
-		chain_id,
-		exchange_addr,
-		maker_addr,
-		maker_asset_data,
-		maker_fee_asset_data,
-		maker_asset_amount,
-		maker_fee,
-		taker_address,
-		taker_asset_data,
-		taker_fee_asset_data,
-		taker_asset_amount,
-		taker_fee,
-		sender_address,
-		fee_recipient_address,
-		expiration_time,
-		salt,
-		signature
-	) VALUES (
-		TO_TIMESTAMP(p_new_ts),
-		mevt.fillable_amount,
-		p_new_code,
-		p_order_hash,
-		mevt.chain_id,
-		mevt.exchange_addr,
-		mevt.maker_addr,
-		mevt.maker_asset_data,
-		mevt.maker_fee_asset_data,
-		mevt.maker_asset_amount,
-		mevt.maker_fee,
-		mevt.taker_address,
-		mevt.taker_asset_data,
-		mevt.taker_fee_asset_data,
-		mevt.taker_asset_amount,
-		mevt.taker_fee,
-		mevt.sender_address,
-		mevt.fee_recipient_address,
-		mevt.expiration_time,
-		mevt.salt,
-		mevt.signature
-	)
-	RETURNING id INTO v_id;
-
-	RETURN v_id;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_mesh_evt_insert() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-
+	-- Noote: All DELETEs of an order must be ordered by expiration time in
+	-- 		accending order. This is because the last record deleted must be
+	-- 		active order due to existence of partially filled orders, so the
+	--		last order will be an active order and it must be deleted at the end
+	-- Noote2: All DELETEs in depth_state table are cascaded from mesh_evt DELETEs
 	IF evt_code = 2 THEN -- ADDED
-		INSERT INTO depth_state(meshevt_id,otype,order_hash,price,amount,ini_ts,fin_ts)
-			VALUES(NEW.id,NEW.otype,NEW.order_hash,NEW.price);
+		-- nothing to do, depth_state is automatically deleted
 	END IF;
+	IF evt_code != 2 THEN -- Not ADD
+		SELECT time_stamp FROM depth_link
+			WHERE order_hash=OLD.order_hash
+			ORDER BY time_stamp DESC LIMIT 1
+			INTO v_fin_ts;
+		IF v_fin_ts IS NOT NULL THEN	-- prevents unordered data deletion
+			IF v_timestamp != OLD.time_stamp THEN
+				RAISE EXCEPTION 'depth_state entry of 0x Mesh order % event code=% doest match timestamp (stored) % != % (param)',
+					OLD.order_hash,OLD.evt_code,v_fin_ts,OLD.time_stamp;
+			END IF;
+		ELSE
+			RAISE EXCEPTION 'Attempt to DELETE mesh_evt code=% order % with no depth_state entry at ts=%',
+				OLD.evt_code,OLD.order_hash,OLD.time_stamp;
+		END IF;
+		-- Noote: this trigger is exected AFTER delete. So, the record the following SELECT
+		--		is going to find is of the previous event for this order_hash
+		SELECT d.id FROM depth_state
+			WHERE order_hash=OLD.order_hash
+			ORDER BY time_stamp DESC LIMIT 1
+			INTO v_depthst_id;
+		IF v_depthst_id IS NULL THEN
+			RAISE EXCEPTION 'Update of preceding depth_state on DELETE of order % on event code=% failed because record wasn''t found',
+				OLD.order_hash,OLD.evt_code;
+		END IF;
+		UPDATE depth_state
+			SET fin_ts=OLD.time_stamp
+			WHERE id=v_depthst_id;
+
+	END IF;
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION calc_price_estimate(
+	p_depthst_id bigint,p_market_aid bigint,p_outcome_idx integer,p_timestamp timestamptz
+) RETURNS DECIMAL AS $$
+--updates open order statistics
+DECLARE
+	v_price_bid decimal;
+	v_price_ask decimal;
+	v_spread_threshold decimal;
+	v_osize_threshold decimal;
+	v_spread decimal;
+	v_price_estimate decimal;
+	v_weighted_price_estimate decimal;
+	v_num_ticks decimal;
+	v_osize decimal;
+	v_max_ts timestamptz;
+	v_bid_state_id bigint;
+	v_ask_state_id bigint;
+	v_weighted_bid decimal;
+	v_weighted_ask decimal;
+	v_wbid_total decimal;
+	v_wask_total decimal;
+	v_total_amount decimal;
+	r_oo record;
+BEGIN
+
+	SELECT spread_threshold,osize_threshold FROM ooconfig INTO v_spread_threshold,v_osize_threshold;
+	SELECT num_ticks FROM market WHERE market_aid = p_market_aid INTO v_num_ticks;
+
+	-- calculate non-weighted price estimate: (max bid+max_ask)/2
+	SELECT COALESCE(MAX(price),0),id
+		FROM depth_state
+		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx AND
+				evt_timestamp <= p_timestamp AND p_timestamp < expiration
+		INTO v_price_bid,v_bid_state_id;
+	SELECT COALESCE(MIN(price),-1)
+		FROM oohist
+		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx AND
+				evt_timestamp <= p_timestamp AND p_timestamp < expiration
+		INTO v_price_ask,v_ask_state_id;
+	IF v_price_ask < 0 THEN
+		v_price_ask := v_num_ticks;
+	END IF;
+	v_spread := v_price_ask - v_price_bid;
+	IF v_spread < v_spread_threshold THEN
+		v_price_estimate := (v_price_bid + v_price_ask) / 2 ;
+	ELSE
+		v_num_ticks:=v_num_ticks/2;
+		IF v_price_bid > v_num_ticks THEN
+			v_price_estimate := v_price_ask;
+		ELSE
+			v_price_estimate := v_price_bid;
+		END IF;
+	END IF;
+	-- calculated weighted price estimate:
+	SELECT SUM(amount) AS total_amount FROM depth_state
+		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx INTO v_wbid_total;
+	SELECT SUM(amount) AS total_amount FROM depth_state
+		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx INTO v_wask_total;
+	SELECT SUM(price*amount)/v_wbid_total AS wprice FROM depth_state
+		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx INTO v_weighted_bid;
+	SELECT SUM(price*amount)/v_wask_total AS wprice FROM depth_state
+		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx INTO v_weighted_ask;
+	IF (v_weighted_bid IS NOT NULL) AND (v_weighted_ask IS NOT NULL) THEN
+		v_weighted_price_estimate := (v_weighted_bid + v_weighted_ask) / 2;
+	END IF;
+	v_price_estimate := (v_price_bid + v_price_ask) / 2 ;
+	INSERT INTO price_estimate(
+		market_aid,state_id,time_stamp,outcome_idx,
+		bid_state_id,ask_state_id,spread,price_est,wprice_est,max_bid,min_ask
+	) VALUES (
+		p_market_aid,p_depthst_id,p_timestamp,p_outcome_idx,
+		v_bid_state_id,v_ask_state_id,v_spread,v_price_estimate,v_weighted_price_estimate,v_price_bid,v_price_ask
+	);
+	RETURN v_price_estimate;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_depth_state_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
 	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_depth_state_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

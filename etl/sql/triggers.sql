@@ -30,4 +30,5 @@ CREATE TRIGGER mkts_traded_insert AFTER INSERT on mkts_traded FOR EACH ROW EXECU
 CREATE TRIGGER mkts_traded_delete AFTER DELETE on mkts_traded FOR EACH ROW EXECUTE PROCEDURE on_mkts_traded_delete();
 CREATE TRIGGER stbc_insert AFTER INSERT on stbc FOR EACH ROW EXECUTE PROCEDURE on_stbc_insert();
 CREATE TRIGGER stbc_delete AFTER DELETE on stbc FOR EACH ROW EXECUTE PROCEDURE on_stbc_delete();
-CREATE TRIGGER mesh_evt_insert BEFORE INSERT on mesh_evt FOR EACH ROW EXECUTE PROCEDURE on_mesh_evt_insert();
+CREATE TRIGGER mesh_evt_insert AFTER INSERT on mesh_evt FOR EACH ROW EXECUTE PROCEDURE on_mesh_evt_insert();
+CREATE TRIGGER mesh_evt_delete AFTER DELETE on mesh_evt FOR EACH ROW EXECUTE PROCEDURE on_mesh_evt_delete();

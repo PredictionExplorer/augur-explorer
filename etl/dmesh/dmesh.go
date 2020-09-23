@@ -118,6 +118,22 @@ func fetch_and_sync_orders() {
 		orders_total,augur_count,insert_count,update_count,deleted_count,
 	)
 }
+func get_ospec(order *zeroex.SignedOrder) (ZxMeshOrderSpec,error) {
+
+	ctx := context.Background()
+	var copts = new(bind.CallOpts)
+	adata,err := zerox_contract.DecodeAssetData(copts,order.MakerAssetData)
+	if err!=nil {
+		Error.Printf("couldn't decode asset data for order %v : %v\n",*order_hash,err)
+		return err
+	}
+	unpacked_id,err := zerox_contract.UnpackTokenId(copts,adata.TokenIds[0])
+	if err!=nil {
+		Error.Printf("Unpack token id failed for order %v: %v\n",*order_hash,err)
+		return err
+	}
+	return unpacked_id,err
+]
 /*discontinued
 func oo_insert(order_hash *string,order *zeroex.SignedOrder,fillable_amount *big.Int,timestamp int64) error {
 
@@ -198,7 +214,14 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 			if new_timestamp > 1595894451	 { // 28 July (Augur v2 release date)
 				time_stamp = new_timestamp
 			}
-			storage.Insert_0x_mesh_order_event(time_stamp,order_info,MeshEvtAdded)
+			ospec,err := get_ospec(order_info.SignedOrder)
+			if err!=nil {
+				Info.Printf("Error decoding market data: %v\n",err)
+				Error.Printf("Error decoding market data: %v\n",err)
+			} else {
+				DumpOrderSpec(Info,&ospec)
+				storage.Insert_0x_mesh_order_event(time_stamp,order_info,ospec,MeshEvtAdded)
+			}
 			/*discontinued
 			amount := order_info.FillableTakerAssetAmount
 			retval,bad_amount := storage.Update_oo_fillable_amount(order_hash,amount,order_info.SignedOrder)
@@ -330,7 +353,14 @@ func main() {
 				order_info.FillableTakerAssetAmount = new(big.Int)
 				order_info.FillableTakerAssetAmount.Set(orderEvent.FillableTakerAssetAmount)
 				event_code := Get_mesh_event_code(orderEvent.EndState)
+				ospec,err := get_ospec(order_info.SignedOrder)
+				if err!=nil {
+					Info.Printf("Error decoding market data: %v\n",err)
+					Error.Printf("Error decoding market data: %v\n",err)
+					continue
+				}
 				Dump_0x_mesh_order(Info,&order_info)
+				DumpOrderSpec(Info,&ospec)
 				switch orderEvent.EndState {
 				case zeroex.ESOrderAdded,
 					zeroex.ESOrderExpired,

@@ -15,7 +15,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Insert_0x_mesh_order_event(timestamp int64,order_info *ztypes.OrderInfo,event_code p.MeshEvtCode) {
+func (ss *SQLStorage) Insert_0x_mesh_order_event(timestamp int64,order_info *ztypes.OrderInfo,ospec *ZxMeshOrderSpec,event_code p.MeshEvtCode) {
 
 	var query string
 
@@ -39,6 +39,10 @@ func (ss *SQLStorage) Insert_0x_mesh_order_event(timestamp int64,order_info *zty
 				"time_stamp," +
 				"fillable_amount," +
 				"evt_code," +
+				"market_aid," +
+				"outcome_idx," +
+				"otype," +
+				"price," +
 				"order_hash," +
 				"chain_id," +
 				"exchange_addr," +
@@ -59,18 +63,23 @@ func (ss *SQLStorage) Insert_0x_mesh_order_event(timestamp int64,order_info *zty
 				"signature" +
 			") VALUES (" +
 					"TO_TIMESTAMP($1)," +
-					"($2::decimal/1e+18),"+
-					"$3,$4,$5,$6,$7,$8,$9," +
-					"($10::decimal/1e+18),($11::decimal/1e+18),"+
-					"$12,$13,"+
-					"($14::decimal/1e+18),($15::decimal/1e+18),"+
-					"$16,$17,$18,TO_TIMESTAMP($19),$20,$21"+
+					"($2::decimal/1e+18),$3,"+
+					"$4,$5,$6,($7/1e+18)," +
+					"$8,$9,$10,$12,$13,$14," +
+					"($15::decimal/1e+18),($16::decimal/1e+18),"+
+					"$17,$18,"+
+					"($19::decimal/1e+18),($20::decimal/1e+18),"+
+					"$21,$22,$23,TO_TIMESTAMP($24),$25,$26"+
 			") ON CONFLICT DO NOTHING"
 
 	_,err = ss.db.Exec(query,
 		timestamp,
 		order_info.FillableTakerAssetAmount.String(),
 		event_code,
+		ospec.Market.String(),
+		ospec.Outcome,
+		ospec.Type,
+		ospec.Price.String(),
 		order_info.OrderHash.String(),
 		order_info.SignedOrder.Order.ChainID.Int64(),
 		order_info.SignedOrder.Order.ExchangeAddress.String(),

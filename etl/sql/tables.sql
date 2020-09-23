@@ -112,7 +112,7 @@ CREATE TABLE mesh_evt ( -- Events received from 0x Mesh network. source: github.
 -- Augur fields:
 	market_aid				BIGINT NOT NULL,
 	outcome_idx				SMALLINT NOT NULL,
-	otype					SMALLINT NOT NULL,
+	otype					SMALLINT NOT NULL,-- 0: BID, 1: ASK
 	price					DECIMAL(32,18) NOT NULL,
 -- `Order` struct follows:
 	order_hash				CHAR(66) NOT NULL,
@@ -149,16 +149,24 @@ CREATE TABLE depth_state ( -- the state market depth at any given point in time,
 	ini_ts				TIMESTAMPTZ NOT NULL,
 	fin_ts				TIMESTAMPTZ NOT NULL
 );
+CREATE TABLE mesh_link ( -- links two mesh events (ex. one event cancel order created in another event)
+	id					BIGSERIAL PRIMARY KEY,
+	depthst_id			BIGINT NOT NULL REFERENCES depth_state(id) ON DELETE CASCADE,
+	meshevt_id			BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	order_hash			CHAR(66) NOT NULL
+);
 CREATE TABLE price_estimate (
 	id					BIGSERIAL PRIMARY KEY,
 	market_aid			BIGINT NOT NULL,
-	state_id			BIGINT NOT NULL REFERENCES depth_state(id) ON DELETE CASCADE,
+	meshevt_id			BIGINT NOT NULL REFERENCES mesh_evt(id) ON DELETE CASCADE,
 	time_stamp			TIMESTAMPTZ NOT NULL,
-	bid_state_id		BIGINT NOT NULL,
-	ask_state_id		BIGINT NOT NULL,
+	bid_state_id		BIGINT, -- will be NULL if there is are no orders (fake orders used)
+	ask_state_id		BIGINT,	-- will be NULL if there is are no orders (fake orders used)
 	outcome_idx			SMALLINT NOT NULL,
 	spread				DECIMAL(32,18) NOT NULL,
-	price_estimate		DECIMAL(32,18) NOT NULL,
+	price_est			DECIMAL(32,18) NOT NULL,
+	wprice_est			DECIMAL(32,18),-- weighted price estimate (taking volume into consideration)
 	max_bid				DECIMAL(32,18) NOT NULL,
 	min_ask				DECIMAL(32,18) NOT NULL
 );

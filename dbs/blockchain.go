@@ -173,6 +173,7 @@ func (ss *SQLStorage) Insert_transaction(agtx *p.AugurTx) int64 {
 
 	return tx_id
 }
+/*
 func (ss *SQLStorage) Fix_chainsplit(block *types.Header) int64 {
 	// DISCONTINUED: removal pending
 	var query string
@@ -212,11 +213,16 @@ func (ss *SQLStorage) Fix_chainsplit(block *types.Header) int64 {
 	}
 	return my_block_num + 1	// parent + 1 = current
 }
+*/
 func (ss *SQLStorage) Chainsplit_delete_blocks(starting_block_num int64) {
 
 	var err error
 	var query string
-	query = "DELETE FROM block WHERE block_num > $1"
+	// Note: We must delete in reverse order of block creation because the triggers
+	//			in the DB have made cumulative operations
+	query = "DELETE FROM block WHERE block_num IN (" +
+				"SELECT block_num FROM block WHERE block_num > $1 ORDER BY block_num DESC" +
+			")"
 	_,err = ss.db.Exec(query,starting_block_num)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v, block_num=%v",err,query,starting_block_num))
