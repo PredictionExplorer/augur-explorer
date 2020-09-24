@@ -417,8 +417,8 @@ func proc_market_order_event(agtx *AugurTx,log *types.Log,timestamp int64) {
 	eoa_aid := get_eoa_aid(&mevt.AddressData[0],agtx.BlockNum,agtx.TxId)
 	eoa_fill_aid := get_eoa_aid(&mevt.AddressData[1],agtx.BlockNum,agtx.TxId)
 
-	orders:= extract_orders_from_input(agtx.Input)
-	storage.Insert_market_order_evt(agtx,timestamp,eoa_aid,eoa_fill_aid,&mevt,orders)
+	orders,ospecs := extract_orders_from_input(agtx.Input)
+	storage.Insert_market_order_evt(agtx,timestamp,eoa_aid,eoa_fill_aid,&mevt,orders,ospecs)
 }
 func proc_cancel_zerox_order(agtx *AugurTx,log *types.Log,timestamp int64) {
 	var mevt ECancelZeroXOrder
@@ -438,11 +438,11 @@ func proc_cancel_zerox_order(agtx *AugurTx,log *types.Log,timestamp int64) {
 	Info.Printf("CancelZeroXOrder event for contract %v (block=%v) : \n",
 								log.Address.String(),log.BlockNumber)
 	mevt.Dump(Info)
-	orders:= extract_orders_from_input(agtx.Input)
+	orders,ospecs := extract_orders_from_input(agtx.Input)
 	if len(orders) == 0 {
 		Fatalf("Couldn't extract fill amount from Tx input. Aborting.")
 	}
-	storage.Cancel_open_order(orders,ohash_str,timestamp)
+	storage.Cancel_open_order(orders,ospecs,ohash_str,timestamp)
 }
 func proc_market_oi_changed(block *types.Header, agtx *AugurTx, log *types.Log) {
 	var mevt EMarketOIChanged
@@ -1094,9 +1094,10 @@ func decode_original_fill_amount(input_data []byte,method_sig []byte) map[string
 
 	return output
 }
-func decode_0x_orders(input_data []byte,method_sig []byte) map[string]*ztypes.OrderInfo {
+func decode_0x_orders(input_data []byte,method_sig []byte) (map[string]*ztypes.OrderInfo,map[string]*ZxMeshOrderSpec) {
 
-	output := make(map[string]*ztypes.OrderInfo,0)
+	output1 := make(map[string]*ztypes.OrderInfo,0)
+	output2 := make(map[string]*ZxMeshOrderSpec,0)
 
 	var trade_input_data_decoded TradeInputStruct
 	var cancel_order_input_data_decoded CancelPrdersInputStruct
@@ -1144,14 +1145,16 @@ func decode_0x_orders(input_data []byte,method_sig []byte) map[string]*ztypes.Or
 			order_info.SignedOrder.Order = ord
 			order_info.FillableTakerAssetAmount = big.NewInt(0) // this value is incorrect, but we don't have the correct one
 			copy(order_info.SignedOrder.Signature,decoded_signatures[i])
-			output[hash_str]=order_info
+			output1[hash_str]=order_info
+			ospec := get_ospec(ord.MakerAssetData,&hash_str)
+			output2[hash_str] = ospec
 		}
 	} else {
 		Error.Printf("Undefined behavior: no orders detected on the input of ZeroXTrade::trade()")
 		os.Exit(1)
 	}
 
-	return output
+	return output1,output2
 }
 func dump_tx_input_if_known(tx_data []byte) {
 
@@ -1481,10 +1484,11 @@ func extract_original_fill_amount(tx_data []byte) map[string]*big.Int {
 	}
 	return make(map[string]*big.Int,0)
 }*/
-func extract_orders_from_input(tx_data []byte) map[string]*ztypes.OrderInfo {
+func extract_orders_from_input(tx_data []byte) (map[string]*ztypes.OrderInfo,map[string]*ZxMeshOrderSpec) {
 	// returns orders in one map and initial amounts in another map
 	if len(tx_data) < 32 {
-		return make(map[string]*ztypes.OrderInfo,0)
+		return make(map[string]*ztypes.OrderInfo,0),make(map[string]*ZxMeshOrderSpec,0)
+
 	}
 	input_sig := tx_data[:4]
 	decoded_sig ,_ := hex.DecodeString("78dc0eed")
@@ -1528,5 +1532,23 @@ func extract_orders_from_input(tx_data []byte) map[string]*ztypes.OrderInfo {
 			}
 		}
 	}
-	return make(map[string]*ztypes.OrderInfo,0)
+	return make(map[string]*ztypes.OrderInfo,0),make(map[string]*ZxMeshOrderSpec,0)
 }
+func get_ospec(maker_asset_data []byte,order_hash *string) *ZxMeshOrderSpec {
+
+	var copts = new(bind.CallOpts)
+	adata,err := ctrct_zerox_trade.DecodeAssetData(copts,maker_asset_data)
+	if err!=nil {
+		Info.Printf("couldn't decode asset data for order %v : %v\n",*order_hash,err)
+		Error.Printf("couldn't decode asset data for order %v : %v\n",*order_hash,err)
+		os.Exit(1)
+	}
+	unpacked_id,err := ctrct_zerox_trade.UnpackTokenId(copts,adata.TokenIds[0])
+	if err!=nil {
+		Info.Printf("Unpack token id failed for order %v: %v\n",*order_hash,err)
+		Error.Printf("Unpack token id failed for order %v: %v\n",*order_hash,err)
+		os.Exit(1)
+	}
+	return &unpacked_id
+}
+

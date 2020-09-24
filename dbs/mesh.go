@@ -6,6 +6,7 @@ package dbs
 import (
 	"fmt"
 	"os"
+	"math/big"
 	"encoding/hex"
 	"database/sql"
 	_  "github.com/lib/pq"
@@ -15,14 +16,23 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Insert_0x_mesh_order_event(timestamp int64,order_info *ztypes.OrderInfo,ospec *ZxMeshOrderSpec,event_code p.MeshEvtCode) {
+func (ss *SQLStorage) Insert_0x_mesh_order_event(timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) {
 
+	if ospec == nil {
+		ss.Log_msg(
+			fmt.Sprintf(
+				"Null ospec parameter in Insert_0x_mesh_order_event(h=%v)",
+				oi.OrderHash.String(),
+			),
+		)
+		os.Exit(1)
+	}
 	var query string
 
+	// Prevent duplicate insertion and exit if this is the case
 	query = "SELECT id FROM mesh_evt WHERE order_hash=$1 AND evt_code=$2"
-
 	var null_id sql.NullInt64
-	err:=ss.db.QueryRow(query,order_info.OrderHash.String(),event_code).Scan(&null_id);
+	err := ss.db.QueryRow(query,oi.OrderHash.String(),event_code).Scan(&null_id);
 	if (err!=nil) {
 		if (err==sql.ErrNoRows) {
 			// break
@@ -31,21 +41,38 @@ func (ss *SQLStorage) Insert_0x_mesh_order_event(timestamp int64,order_info *zty
 			os.Exit(1)
 		}
 	} else {
-		// market already exists
+		// event with this code already exists
 		return
 	}
 
+	// Prevent insertion of event without ADD event. If ADD event is missing then simulate it
+	query = "SELECT id FROM mesh_evt WHERE order_hash=$1 AND evt_code=2"
+	err = ss.db.QueryRow(query,oi.OrderHash.String()).Scan(&null_id);
+	if (err!=nil) {
+		if (err==sql.ErrNoRows) {
+			// ADD event is missing, INSERT
+			ts := oi.SignedOrder.Order.Salt.Int64()
+			ss.do_insert_0x_mesh_order_event(ts,oi,ospec,nil,p.MeshEvtAdded)
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error : %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	ss.do_insert_0x_mesh_order_event(timestamp,oi,ospec,amount_fill,event_code)
+}
+func (ss *SQLStorage) do_insert_0x_mesh_order_event(timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) {
+
+	market_aid := ss.Lookup_address_id(ospec.Market.String())
+	amount_fill_str := "0"
+	if amount_fill != nil {
+		amount_fill_str = amount_fill.String()
+	}
+	var query string
+	var err error
 	query = "INSERT INTO mesh_evt (" +
-				"time_stamp," +
-				"fillable_amount," +
-				"evt_code," +
-				"market_aid," +
-				"outcome_idx," +
-				"otype," +
-				"price," +
-				"order_hash," +
-				"chain_id," +
-				"exchange_addr," +
+				"time_stamp,fillable_amount,evt_code," +
+				"market_aid,outcome_idx,otype,price," +
+				"order_hash,chain_id,exchange_addr," +
 				"maker_addr," +
 				"maker_asset_data," +
 				"maker_fee_asset_data," +
@@ -53,51 +80,69 @@ func (ss *SQLStorage) Insert_0x_mesh_order_event(timestamp int64,order_info *zty
 				"maker_fee," +
 				"taker_address," +
 				"taker_asset_data," +
+				"taker_fee_asset_data," +
 				"taker_asset_amount," +
 				"taker_fee," +
-				"taker_fee_asset_data," +
 				"sender_address," +
 				"fee_recipient_address," +
 				"expiration_time," +
 				"salt," +
-				"signature" +
+				"signature," +
+				"amount_fill" +
 			") VALUES (" +
-					"TO_TIMESTAMP($1)," +
-					"($2::decimal/1e+18),$3,"+
+					"TO_TIMESTAMP($1),($2::decimal/1e+18),$3,"+
 					"$4,$5,$6,($7/1e+18)," +
-					"$8,$9,$10,$12,$13,$14," +
-					"($15::decimal/1e+18),($16::decimal/1e+18),"+
-					"$17,$18,"+
+					"$8,$9,$10," +
+					"$11,$12,$13," +
+					"($14::decimal/1e+18),($15::decimal/1e+18),"+
+					"$16,$17,$18,"+
 					"($19::decimal/1e+18),($20::decimal/1e+18),"+
-					"$21,$22,$23,TO_TIMESTAMP($24),$25,$26"+
+					"$21,$22,TO_TIMESTAMP($23::BIGINT),$24,$25,($26::decimal/1e+18)"+
 			") ON CONFLICT DO NOTHING"
 
+	d_query := fmt.Sprintf("INSERT INTO mesh_evt (" +
+				"time_stamp,fillable_amount,evt_code," +
+				"market_aid,outcome_idx,otype,price," +
+				"order_hash,chain_id,exchange_addr," +
+				"maker_addr,maker_asset_data,maker_fee_asset_data," +
+				"maker_asset_amount,maker_fee," +
+				"taker_address,taker_asset_data,taker_fee_asset_data," +
+				"taker_asset_amount,taker_fee," +
+				"sender_address," +
+				"fee_recipient_address," +
+				"expiration_time," +
+				"salt," +
+				"signature," +
+				"amount_fill"+
+			") VALUES (" +
+					"TO_TIMESTAMP(%v),(%v::decimal/1e+18),%v,"+
+					"%v,%v,%v,(%v/1e+18)," +
+					"'%v',%v,'%v'," +
+					"'%v','%v','%v'," +
+					"(%v::decimal/1e+18),(%v::decimal/1e+18),"+
+					"'%v','%v','%v',"+
+					"(%v::decimal/1e+18),(%v::decimal/1e+18),"+
+					"'%v','%v',TO_TIMESTAMP(%v::BIGINT),%v,'%v',(%v::decimal/1e+18)"+
+			") ON CONFLICT DO NOTHING",
+			timestamp,oi.FillableTakerAssetAmount.String(),event_code,
+			market_aid,ospec.Outcome,ospec.Type,ospec.Price.String(),
+			oi.OrderHash.String(),oi.SignedOrder.Order.ChainID.Int64(),oi.SignedOrder.Order.ExchangeAddress.String(),
+			oi.SignedOrder.Order.MakerAddress.String(),hex.EncodeToString(oi.SignedOrder.Order.MakerAssetData),hex.EncodeToString(oi.SignedOrder.Order.MakerFeeAssetData),
+			oi.SignedOrder.Order.MakerAssetAmount.String(),oi.SignedOrder.Order.MakerFee.String(),
+			oi.SignedOrder.Order.TakerAddress.String(),hex.EncodeToString(oi.SignedOrder.Order.TakerAssetData),hex.EncodeToString(oi.SignedOrder.Order.TakerFeeAssetData),
+			oi.SignedOrder.Order.TakerAssetAmount.String(),oi.SignedOrder.Order.TakerFee.String(),
+			oi.SignedOrder.Order.SenderAddress.String(),oi.SignedOrder.Order.FeeRecipientAddress.String(),oi.SignedOrder.Order.ExpirationTimeSeconds.Int64(),oi.SignedOrder.Order.Salt.String(),hex.EncodeToString(oi.SignedOrder.Signature),amount_fill_str,
+	)
+	ss.Info.Printf("q=%v\n",d_query)
 	_,err = ss.db.Exec(query,
-		timestamp,
-		order_info.FillableTakerAssetAmount.String(),
-		event_code,
-		ospec.Market.String(),
-		ospec.Outcome,
-		ospec.Type,
-		ospec.Price.String(),
-		order_info.OrderHash.String(),
-		order_info.SignedOrder.Order.ChainID.Int64(),
-		order_info.SignedOrder.Order.ExchangeAddress.String(),
-		order_info.SignedOrder.Order.MakerAddress.String(),
-		hex.EncodeToString(order_info.SignedOrder.Order.MakerAssetData),
-		hex.EncodeToString(order_info.SignedOrder.Order.MakerFeeAssetData),
-		order_info.SignedOrder.Order.MakerAssetAmount.String(),
-		order_info.SignedOrder.Order.MakerFee.String(),
-		order_info.SignedOrder.Order.TakerAddress.String(),
-		hex.EncodeToString(order_info.SignedOrder.Order.TakerAssetData),
-		order_info.SignedOrder.Order.TakerAssetAmount.String(),
-		order_info.SignedOrder.Order.TakerFee.String(),
-		hex.EncodeToString(order_info.SignedOrder.Order.TakerFeeAssetData),
-		order_info.SignedOrder.Order.SenderAddress.String(),
-		order_info.SignedOrder.Order.FeeRecipientAddress.String(),
-		order_info.SignedOrder.Order.ExpirationTimeSeconds.Int64(),
-		order_info.SignedOrder.Order.Salt.String(),
-		hex.EncodeToString(order_info.SignedOrder.Signature),
+		timestamp,oi.FillableTakerAssetAmount.String(),event_code,
+		market_aid,ospec.Outcome,ospec.Type,ospec.Price.String(),
+		oi.OrderHash.String(),oi.SignedOrder.Order.ChainID.Int64(),oi.SignedOrder.Order.ExchangeAddress.String(),
+		oi.SignedOrder.Order.MakerAddress.String(),hex.EncodeToString(oi.SignedOrder.Order.MakerAssetData),hex.EncodeToString(oi.SignedOrder.Order.MakerFeeAssetData),
+		oi.SignedOrder.Order.MakerAssetAmount.String(),oi.SignedOrder.Order.MakerFee.String(),
+		oi.SignedOrder.Order.TakerAddress.String(),hex.EncodeToString(oi.SignedOrder.Order.TakerAssetData),hex.EncodeToString(oi.SignedOrder.Order.TakerFeeAssetData),
+		oi.SignedOrder.Order.TakerAssetAmount.String(),oi.SignedOrder.Order.TakerFee.String(),
+		oi.SignedOrder.Order.SenderAddress.String(),oi.SignedOrder.Order.FeeRecipientAddress.String(),oi.SignedOrder.Order.ExpirationTimeSeconds.Int64(),oi.SignedOrder.Order.Salt.String(),hex.EncodeToString(oi.SignedOrder.Signature),amount_fill_str,
 	)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("Insert_0x_mesh_order_event() failed: %v, q=%v",err,query))

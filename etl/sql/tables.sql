@@ -114,6 +114,8 @@ CREATE TABLE mesh_evt ( -- Events received from 0x Mesh network. source: github.
 	outcome_idx				SMALLINT NOT NULL,
 	otype					SMALLINT NOT NULL,-- 0: BID, 1: ASK
 	price					DECIMAL(32,18) NOT NULL,
+-- Fill fields:
+	amount_fill				DECIMAL(32,18) DEFAULT 0.0,
 -- `Order` struct follows:
 	order_hash				CHAR(66) NOT NULL,
 	chain_id				INT NOT NULL,

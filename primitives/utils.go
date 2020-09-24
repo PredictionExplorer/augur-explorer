@@ -389,7 +389,7 @@ func Dump_0x_mesh_order(l *log.Logger,o *types.OrderInfo) {
 	l.Printf("\tSalt: %v\n",o.SignedOrder.Salt.String())
 	l.Printf("}\n")
 }
-func DumpOrderSpec (l *log.Logger,o *ZxMeshOrdeSpec) {
+func DumpOrderSpec (l *log.Logger,o *ZxMeshOrderSpec) {
 	l.Printf("ZxMeshOrderSpec {\n")
 	l.Printf("\tMarket: %v\n",o.Market.String())
 	l.Printf("\tOutcome: %v\n",o.Outcome)

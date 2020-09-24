@@ -900,11 +900,14 @@ DECLARE
 	v_timestamp timestamptz;
 	v_add_id bigint;
 	v_depthst_id bigint;
+	v_amount decimal;
+	v_prev_amount decimal;
 BEGIN
 
 	IF NEW.evt_code = 2 THEN -- ADDED
 		v_ini_ts := NEW.time_stamp;
-		v_fin_ts := NEW.expiration;
+		v_fin_ts := NEW.expiration_time;
+		v_amount := NEW.maker_asset_amount;
 	END IF;
 	IF (NEW.evt_code= 3) OR (NEW.evt_code = 4) OR (NEW.evt_code = 5) OR (NEW.evt_code = 6) THEN
 		v_ini_ts := NEW.time_stamp;
@@ -918,10 +921,10 @@ BEGIN
 					NEW.evt_code,NEW.time_stamp,NEW.order_hash;
 			END IF;
 		END IF;
-		SELECT d.id FROM depth_state
+		SELECT d.id,amount FROM depth_state
 			WHERE order_hash=NEW.order_hash
 			ORDER BY time_stamp DESC LIMIT 1
-			INTO v_depthst_id;
+			INTO v_depthst_id,v_prev_amount;
 		IF v_depthst_id IS NULL THEN
 			RAISE EXCEPTION 'Insertion of event code=% without existing depth_state entry for order: %',
 				NEW.evt_code,NEW.order_hash;
@@ -929,6 +932,9 @@ BEGIN
 		UPDATE depth_state SET fin_ts = NEW.time_stamp WHERE id=v_depthst_id;
 		if (NEW.evt_code = 5) OR (NEW.evt_code = 6) THEN -- CANCLLED or EXPIRED
 			v_fin_ts := NEW.time_stamp;
+			v_amount := v_prev_amount - NEW.amount_fill;
+		ELSE
+			v_amount := -NEW.amount_fill;
 		END IF;
 	END IF;
 	INSERT INTO depth_state(
@@ -936,13 +942,13 @@ BEGIN
 			price,amount,ini_ts,fin_ts
 		) VALUES (
 			NEW.id,NEW.market_aid,NEW.outcome_idx,NEW.otype,NEW.order_hash,
-			NEW.price,NEW.amount,NEW.time_stamp,NEW.time_stamp
+			NEW.price,v_amount,v_ini_ts,v_fin_ts
 		)
 		RETURNING id INTO v_depthst_id;
-	INSERT INTO mesh_link(depthst_id,meshvet_id,time_stamp,order_hash)
+	INSERT INTO mesh_link(depthst_id,meshevt_id,time_stamp,order_hash)
 		VALUES(v_depthst_id,NEW.id,v_ini_ts,NEW.order_hash);
 
-	PERFORM calc_price_estimate(v_depthst_id,NEW.market_aid,NEW.outcome_idx,v_ini_ts);
+	PERFORM calc_price_estimate(NEW.id,NEW.market_aid,NEW.outcome_idx,v_ini_ts);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -994,7 +1000,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION calc_price_estimate(
-	p_depthst_id bigint,p_market_aid bigint,p_outcome_idx integer,p_timestamp timestamptz
+	p_meshevt_id bigint,p_market_aid bigint,p_outcome_idx integer,p_timestamp timestamptz
 ) RETURNS DECIMAL AS $$
 --updates open order statistics
 DECLARE
@@ -1022,19 +1028,24 @@ BEGIN
 	SELECT num_ticks FROM market WHERE market_aid = p_market_aid INTO v_num_ticks;
 
 	-- calculate non-weighted price estimate: (max bid+max_ask)/2
-	SELECT COALESCE(MAX(price),0),id
+	SELECT price,id
 		FROM depth_state
 		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx AND
-				evt_timestamp <= p_timestamp AND p_timestamp < expiration
+			ini_ts	<= p_timestamp AND p_timestamp < fin_ts
+		GROUP BY id
 		INTO v_price_bid,v_bid_state_id;
-	SELECT COALESCE(MIN(price),-1)
-		FROM oohist
-		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx AND
-				evt_timestamp <= p_timestamp AND p_timestamp < expiration
-		INTO v_price_ask,v_ask_state_id;
-	IF v_price_ask < 0 THEN
-		v_price_ask := v_num_ticks;
+	IF v_price_bid IS NULL THEN
+		v_price_bid := 0;
 	END IF;
+	SELECT price,id
+		FROM depth_state
+		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx AND
+				ini_ts <= p_timestamp AND p_timestamp < fin_ts
+		GROUP BY id
+		INTO v_price_ask,v_ask_state_id;
+	IF v_price_ask IS NULL THEN
+		v_price_ask := v_num_ticks;
+	END IF ;
 	v_spread := v_price_ask - v_price_bid;
 	IF v_spread < v_spread_threshold THEN
 		v_price_estimate := (v_price_bid + v_price_ask) / 2 ;
@@ -1060,10 +1071,10 @@ BEGIN
 	END IF;
 	v_price_estimate := (v_price_bid + v_price_ask) / 2 ;
 	INSERT INTO price_estimate(
-		market_aid,state_id,time_stamp,outcome_idx,
+		market_aid,meshevt_id,time_stamp,outcome_idx,
 		bid_state_id,ask_state_id,spread,price_est,wprice_est,max_bid,min_ask
 	) VALUES (
-		p_market_aid,p_depthst_id,p_timestamp,p_outcome_idx,
+		p_market_aid,p_meshevt_id,p_timestamp,p_outcome_idx,
 		v_bid_state_id,v_ask_state_id,v_spread,v_price_estimate,v_weighted_price_estimate,v_price_bid,v_price_ask
 	);
 	RETURN v_price_estimate;

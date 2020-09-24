@@ -19,7 +19,7 @@ import (
 	"github.com/plaid/go-envvar/envvar"
 
 	"github.com/ethereum/go-ethereum/ethclient"
-	//"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
@@ -118,22 +118,21 @@ func fetch_and_sync_orders() {
 		orders_total,augur_count,insert_count,update_count,deleted_count,
 	)
 }
-func get_ospec(order *zeroex.SignedOrder) (ZxMeshOrderSpec,error) {
+func get_ospec(order *zeroex.SignedOrder,order_hash *string) (ZxMeshOrderSpec,error) {
 
-	ctx := context.Background()
 	var copts = new(bind.CallOpts)
 	adata,err := zerox_contract.DecodeAssetData(copts,order.MakerAssetData)
 	if err!=nil {
 		Error.Printf("couldn't decode asset data for order %v : %v\n",*order_hash,err)
-		return err
+		return ZxMeshOrderSpec{},err
 	}
 	unpacked_id,err := zerox_contract.UnpackTokenId(copts,adata.TokenIds[0])
 	if err!=nil {
 		Error.Printf("Unpack token id failed for order %v: %v\n",*order_hash,err)
-		return err
+		return ZxMeshOrderSpec{},err
 	}
 	return unpacked_id,err
-]
+}
 /*discontinued
 func oo_insert(order_hash *string,order *zeroex.SignedOrder,fillable_amount *big.Int,timestamp int64) error {
 
@@ -214,13 +213,13 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 			if new_timestamp > 1595894451	 { // 28 July (Augur v2 release date)
 				time_stamp = new_timestamp
 			}
-			ospec,err := get_ospec(order_info.SignedOrder)
+			ospec,err := get_ospec(order_info.SignedOrder,&order_hash)
 			if err!=nil {
 				Info.Printf("Error decoding market data: %v\n",err)
 				Error.Printf("Error decoding market data: %v\n",err)
 			} else {
 				DumpOrderSpec(Info,&ospec)
-				storage.Insert_0x_mesh_order_event(time_stamp,order_info,ospec,MeshEvtAdded)
+				storage.Insert_0x_mesh_order_event(time_stamp,order_info,&ospec,nil,MeshEvtAdded)
 			}
 			/*discontinued
 			amount := order_info.FillableTakerAssetAmount
@@ -353,7 +352,8 @@ func main() {
 				order_info.FillableTakerAssetAmount = new(big.Int)
 				order_info.FillableTakerAssetAmount.Set(orderEvent.FillableTakerAssetAmount)
 				event_code := Get_mesh_event_code(orderEvent.EndState)
-				ospec,err := get_ospec(order_info.SignedOrder)
+				order_hash := orderEvent.OrderHash.String()
+				ospec,err := get_ospec(order_info.SignedOrder,&order_hash)
 				if err!=nil {
 					Info.Printf("Error decoding market data: %v\n",err)
 					Error.Printf("Error decoding market data: %v\n",err)
@@ -371,6 +371,8 @@ func main() {
 					storage.Insert_0x_mesh_order_event(
 						orderEvent.Timestamp.Unix(),
 						&order_info,
+						&ospec,
+						nil,//amount_filled
 						event_code,
 					)
 				}

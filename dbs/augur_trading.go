@@ -17,7 +17,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,p_eoa_aid int64,p_eoa_fill_aid int64,	evt *p.EOrderEvent,submitted_orders map[string]*ztypes.OrderInfo) {
+func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,p_eoa_aid int64,p_eoa_fill_aid int64,	evt *p.EOrderEvent,submitted_orders map[string]*ztypes.OrderInfo,order_specs map[string]*p.ZxMeshOrderSpec) {
 
 	// depending on the order action (Create/Cancel/Fill) different table is used for storage
 	//		Create/Cancel order actions go to 'oorders' (Open Orders) table because these orders
@@ -97,7 +97,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,p_
 	if 0 != initial_amount.Cmp(amount_filled) {
 		mesh_evt_code = p.MeshEvtFilled
 	}
-	ss.Insert_0x_mesh_order_event(timestamp,zorder,mesh_evt_code)
+	ss.Insert_0x_mesh_order_event(timestamp,zorder,order_specs[order_hash],amount_filled,mesh_evt_code)
 
 	var query string
 	var opcode int = p.OOOpCodeFill
@@ -366,7 +366,7 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 	}
 	return errors.New("Affected rows=0")
 }
-func (ss *SQLStorage) Cancel_open_order(orders map[string]*ztypes.OrderInfo,order_hash string,timestamp int64) {
+func (ss *SQLStorage) Cancel_open_order(orders map[string]*ztypes.OrderInfo,order_specs map[string]*p.ZxMeshOrderSpec,order_hash string,timestamp int64) {
 
 	oinfo := orders[order_hash]
 	if oinfo == nil {
@@ -377,8 +377,17 @@ func (ss *SQLStorage) Cancel_open_order(orders map[string]*ztypes.OrderInfo,orde
 		)
 		os.Exit(1)
 	}
+	ospec := order_specs[order_hash]
+	if ospec == nil {
+		ss.Log_msg(
+			fmt.Sprintf(
+				"No Augur Trading data for order hash=%v in CancelOrder event\n",order_hash,
+			),
+		)
+		os.Exit(1)
+	}
 
-	ss.Insert_0x_mesh_order_event(timestamp,oinfo,p.MeshEvtCancelled)
+	ss.Insert_0x_mesh_order_event(timestamp,oinfo,ospec,nil,p.MeshEvtCancelled)
 	ss.Update_open_order_history(0,order_hash,timestamp,"0",p.OOOpCodeCancelledByUser)
 
 	var query string
