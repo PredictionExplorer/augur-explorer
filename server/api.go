@@ -476,3 +476,21 @@ func a1_market_open_orders(c *gin.Context) {
 			"error": "",
 	})
 }
+func a1_top_users(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	top_profit_makers := augur_srv.storage.Get_top_profit_makers()
+	top_trade_makers := augur_srv.storage.Get_top_trade_makers()
+	top_volume_makers := augur_srv.storage.Get_top_volume_makers()
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"ProfitMakers" : top_profit_makers,
+			"TradeMakers" : top_trade_makers,
+			"VolumeMakers" : top_volume_makers,
+			"status": status,
+			"error": err_str,
+	})
+}
