@@ -160,6 +160,7 @@ func main() {
 	r.GET("/api/user_opos/:user",  a1_user_open_positions)
 	r.GET("/api/user_reports/:user",  a1_user_reports)
 	r.GET("/api/user_oorders/:user",  a1_user_open_orders)
+	r.GET("/api/top_users",  a1_top_users)
 
 	r.Static("/imgs", "./html/imgs")
 	r.Static("/res", "./html/res")			// resources (static)
@@ -167,7 +168,7 @@ func main() {
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
-		HostPolicy: autocert.HostWhitelist("predictionexplorer.com","www.predictionexplorer.com"),
+		HostPolicy: autocert.HostWhitelist("api.predictionexplorer.com"),
 		Cache:      autocert.DirCache(os.Getenv("HOME")+".tls-autocert-cache"),
 	}
 	_ = m
@@ -175,8 +176,7 @@ func main() {
 	log.Printf("Listening on port %s", port_plain)
 
 	go func() {
-		log.Printf("%v",autotls.Run(r, "predictionexplorer.com"))
+		log.Printf("%v",autotls.Run(r, "api.predictionexplorer.com"))
 	}()
 	r.Run(":" + port_plain)
-
 }
