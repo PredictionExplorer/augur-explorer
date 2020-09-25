@@ -1188,3 +1188,47 @@ func open_order_history(c *gin.Context) {
 		"OOHistory" : oo_history,
 	})
 }
+func price_estimate_history(c *gin.Context) {
+
+	// Market Depth Info: https://en.wikipedia.org/wiki/Order_book_(trading)
+	market := c.Param("market")
+	market_addr,valid := is_address_valid(c,false,market)
+	if !valid {
+		return
+	}
+	p_outcome := c.Param("outcome")
+	var outcome int
+	if len(p_outcome) > 0 {
+		p, err := strconv.Atoi(p_outcome)
+		if err != nil {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": "Can't parse outcome",
+			})
+			return
+		}
+		outcome = int(p)
+	} else {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": "Can't parse outcome",
+		})
+		return
+	}
+	market_info,err := augur_srv.storage.Get_market_info(market_addr,outcome,true)
+	if err != nil {
+		show_market_not_found_error(c,false,&market_addr)
+		return
+	}
+	phist := augur_srv.storage.Get_price_estimate_history(market_info.MktAid,outcome)
+/*
+	mdepth,last_oo_id := augur_srv.storage.Get_mkt_depth(market_info.MktAid,outcome)
+	num_orders:=len(mdepth.Bids) + len(mdepth.Asks)
+	js_bid_data,js_ask_data := build_js_data_obj(mdepth)
+*/
+	c.HTML(http.StatusOK, "price_estimate.html", gin.H{
+		"Market": market_info,
+		"OutcomeIdx" : outcome,
+		"PriceHistory" : phist,
+	})
+}

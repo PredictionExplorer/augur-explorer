@@ -194,7 +194,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,p_
 	ss.Update_open_order_history(*ss.mkt_order_id_ptr,order_hash,timestamp,amount_filled.String(),opcode)
 }
 func (ss *SQLStorage) Update_open_order_history(mktord_id int64,order_hash string,timestamp int64,amount_filled string,opcode int) {
-
+/* Discontinued
 	// Note: the following function may have null effect if the corresponding record already exists
 	//			the unique-key for the record is orderhash+opcode, so multiple calls can be made
 	//			to this function without any problem. In fact multiple calls will come from the
@@ -220,6 +220,7 @@ func (ss *SQLStorage) Update_open_order_history(mktord_id int64,order_hash strin
 		ss.Log_msg(msg)
 		os.Exit(1)
 	}
+	*/
 }
 func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,fillable_amount *big.Int,eoa_addr string,ospec *p.ZxMeshOrderSpec,opcode int,evt_timestamp int64) error {
 	// Insert an open order, this order needs to be Filled by another market participant
@@ -1386,6 +1387,106 @@ func (ss *SQLStorage) Get_all_open_order_hashes() []string {
 			os.Exit(1)
 		}
 		records = append(records,order_hash)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_depth_states(market_aid int64,outcome_idx int,otype int,ts int64) []p.DepthState {
+
+	records := make([]p.DepthState,0,32)
+	var query string
+		query = "SELECT " +
+					"d.id,d.meshevt_id,d.market_aid,d.outcome_idx,d.otype,d.order_hash," +
+					"d.price,d.amount,"+
+					"FLOOR(EXTRACT(EPOCH FROM d.ini_ts))::BIGINT, " +
+					"FLOOR(EXTRACT(EPOCH FROM d.fin_ts))::BIGINT, " +
+					"d.ini_ts,d.fin_ts " +
+				"FROM depth_state AS d " +
+				"WHERE d.market_aid=$1 AND d.outcome_idx=$2 AND otype=$3 AND "+
+						"(d.ini_ts <= TO_TIMESTAMP($4)) AND (TO_TIMESTAMP($4) < fin_ts) "+
+				"ORDER BY ini_ts"
+	rows,err := ss.db.Query(query,market_aid,outcome_idx,otype,ts)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var ds p.DepthState
+		err = rows.Scan(
+			&ds.Id,
+			&ds.MeshEvtId,
+			&ds.MarketAid,
+			&ds.OutcomeIdx,
+			&ds.OrderType,
+			&ds.OrderHash,
+			&ds.Price,
+			&ds.Amount,
+			&ds.IniTs,
+			&ds.FinTs,
+			&ds.IniDate,
+			&ds.FinDate,
+		)
+		records = append(records,ds)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_price_estimate_history(market_aid int64,outcome_idx int) []p.PriceEstimate {
+
+	records := make([]p.PriceEstimate,0,32)
+	var query string
+	query = "SELECT " +
+				"p.id,p.market_aid,p.meshevt_id,"+
+				"FLOOR(EXTRACT(EPOCH FROM p.time_stamp))::BIGINT, " +
+				"p.time_stamp, " +
+				"p.bid_state_id,p.ask_state_id,p.outcome_idx,"+
+				"p.spread,"+
+				"ROUND(p.price_est,3),ROUND(p.wprice_est,3)"+
+				",p.max_bid,p.min_ask "+
+			"FROM price_estimate AS p " +
+			"WHERE p.market_aid=$1 AND p.outcome_idx=$2 " +
+			"ORDER BY p.time_stamp"
+
+	rows,err := ss.db.Query(query,market_aid,outcome_idx)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var pe p.PriceEstimate
+		var null_bid_state,null_ask_state sql.NullInt64
+		var null_wprice sql.NullFloat64
+		err = rows.Scan(
+			&pe.Id,
+			&pe.MarketAid,
+			&pe.MeshEvtId,
+			&pe.TimeStamp,
+			&pe.Date,
+			&null_bid_state,
+			&null_ask_state,
+			&pe.OutcomeIdx,
+			&pe.Spread,
+			&pe.PriceEst,
+			&null_wprice,
+			&pe.MaxBid,
+			&pe.MinAsk,
+		)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		if null_bid_state.Valid {
+			pe.BidStateId = null_bid_state.Int64
+		}
+		if null_ask_state.Valid {
+			pe.AskStateId = null_ask_state.Int64
+		}
+		if null_wprice.Valid {
+			pe.WeightedPriceEst = null_wprice.Float64
+		}
+		pe.MatchingBids= ss.Get_depth_states(market_aid,outcome_idx,int(p.OrderTypeBid),pe.TimeStamp)
+		pe.MatchingAsks= ss.Get_depth_states(market_aid,outcome_idx,int(p.OrderTypeAsk),pe.TimeStamp)
+		records = append(records,pe)
 	}
 	return records
 }

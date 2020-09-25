@@ -145,6 +145,7 @@ func main() {
 	r.GET("/black/umtrades.html",user_trades_for_market)
 	r.GET("/black/statement/:addr",account_statement)
 	r.GET("/black/oohist/:addr",open_order_history)
+	r.GET("/black/pehist/:market/:outcome", price_estimate_history)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)

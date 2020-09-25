@@ -1,0 +1,18 @@
+{{define "price_est_record"}}
+<tr class="trade_makers">
+	<td>{{.TimeStamp}}</td>
+	<td>{{.Date}}</td>
+	<td class="right">{{.PriceEst}}</td>
+	<td class="right">{{.WeightedPriceEst}}</td>
+	<td>{{.Spread}}</td>
+	<td>{{.MaxBid}}</td>
+	<td>{{.MinAsk}}</td>
+	<td bgcolor="#1f1e3d">
+		Bids:
+		{{template "depth_state_list" .MatchingBids}}
+		<br/>
+		Asks:
+		{{template "depth_state_list" .MatchingAsks}}
+	</td>
+</tr>
+{{end}}

@@ -209,7 +209,8 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 			var empty struct{}
 			(*ohash_map)[order_hash]=empty
 			time_stamp:=response.SnapshotTimestamp.Unix()
-			new_timestamp := order_info.SignedOrder.Salt.Int64()/1000 // Salt usually contains timestamp
+			var new_timestamp int64
+			new_timestamp = order_info.SignedOrder.Salt.Int64()/1000 // Salt usually contains timestamp
 			if new_timestamp > 1595894451	 { // 28 July (Augur v2 release date)
 				time_stamp = new_timestamp
 			}

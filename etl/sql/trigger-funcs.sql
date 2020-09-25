@@ -18,7 +18,7 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION update_price_estimate(
+CREATE OR REPLACE FUNCTION update_price_estimate_v1(
 	p_market_aid bigint,p_outcome_idx integer,p_osize decimal,p_timestamp timestamptz
 ) RETURNS DECIMAL AS $$
 --updates open order statistics
@@ -904,14 +904,15 @@ DECLARE
 	v_prev_amount decimal;
 BEGIN
 
+	v_fin_ts := NEW.expiration_time;
 	IF NEW.evt_code = 2 THEN -- ADDED
 		v_ini_ts := NEW.time_stamp;
-		v_fin_ts := NEW.expiration_time;
 		v_amount := NEW.maker_asset_amount;
 	END IF;
 	IF (NEW.evt_code= 3) OR (NEW.evt_code = 4) OR (NEW.evt_code = 5) OR (NEW.evt_code = 6) THEN
 		v_ini_ts := NEW.time_stamp;
-		SELECT time_stamp FROM depth_link
+
+		SELECT time_stamp FROM mesh_link
 			WHERE order_hash=NEW.order_hash
 			ORDER BY time_stamp DESC LIMIT 1
 			INTO v_timestamp;
@@ -921,9 +922,9 @@ BEGIN
 					NEW.evt_code,NEW.time_stamp,NEW.order_hash;
 			END IF;
 		END IF;
-		SELECT d.id,amount FROM depth_state
+		SELECT id,amount FROM depth_state
 			WHERE order_hash=NEW.order_hash
-			ORDER BY time_stamp DESC LIMIT 1
+			ORDER BY ini_ts DESC LIMIT 1
 			INTO v_depthst_id,v_prev_amount;
 		IF v_depthst_id IS NULL THEN
 			RAISE EXCEPTION 'Insertion of event code=% without existing depth_state entry for order: %',
@@ -963,11 +964,11 @@ BEGIN
 	-- 		active order due to existence of partially filled orders, so the
 	--		last order will be an active order and it must be deleted at the end
 	-- Noote2: All DELETEs in depth_state table are cascaded from mesh_evt DELETEs
-	IF evt_code = 2 THEN -- ADDED
+	IF OLD.evt_code = 2 THEN -- ADDED
 		-- nothing to do, depth_state is automatically deleted
 	END IF;
-	IF evt_code != 2 THEN -- Not ADD
-		SELECT time_stamp FROM depth_link
+	IF OLD.evt_code != 2 THEN -- Not ADD
+		SELECT time_stamp FROM mesh_link
 			WHERE order_hash=OLD.order_hash
 			ORDER BY time_stamp DESC LIMIT 1
 			INTO v_fin_ts;
@@ -982,12 +983,12 @@ BEGIN
 		END IF;
 		-- Noote: this trigger is exected AFTER delete. So, the record the following SELECT
 		--		is going to find is of the previous event for this order_hash
-		SELECT d.id FROM depth_state
+		SELECT id FROM depth_state
 			WHERE order_hash=OLD.order_hash
-			ORDER BY time_stamp DESC LIMIT 1
+			ORDER BY ini_ts DESC LIMIT 1
 			INTO v_depthst_id;
 		IF v_depthst_id IS NULL THEN
-			RAISE EXCEPTION 'Update of preceding depth_state on DELETE of order % on event code=% failed because record wasn''t found',
+			RAISE EXCEPTION 'Update of preceding depth_state on DELETE of order % on event code=% failed because past record (to revert the timestamp) wasn''t found',
 				OLD.order_hash,OLD.evt_code;
 		END IF;
 		UPDATE depth_state
@@ -1032,7 +1033,7 @@ BEGIN
 		FROM depth_state
 		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx AND
 			ini_ts	<= p_timestamp AND p_timestamp < fin_ts
-		GROUP BY id
+		GROUP BY id ORDER BY price DESC LIMIT 1
 		INTO v_price_bid,v_bid_state_id;
 	IF v_price_bid IS NULL THEN
 		v_price_bid := 0;
@@ -1041,7 +1042,7 @@ BEGIN
 		FROM depth_state
 		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx AND
 				ini_ts <= p_timestamp AND p_timestamp < fin_ts
-		GROUP BY id
+		GROUP BY id ORDER BY price LIMIT 1
 		INTO v_price_ask,v_ask_state_id;
 	IF v_price_ask IS NULL THEN
 		v_price_ask := v_num_ticks;
@@ -1062,10 +1063,18 @@ BEGIN
 		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx INTO v_wbid_total;
 	SELECT SUM(amount) AS total_amount FROM depth_state
 		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx INTO v_wask_total;
-	SELECT SUM(price*amount)/v_wbid_total AS wprice FROM depth_state
-		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx INTO v_weighted_bid;
-	SELECT SUM(price*amount)/v_wask_total AS wprice FROM depth_state
-		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx INTO v_weighted_ask;
+	IF v_wbid_total IS NOT NULL THEN
+		IF v_wbid_total != 0 THEN
+			SELECT SUM(price*amount)/v_wbid_total AS wprice FROM depth_state
+				WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx INTO v_weighted_bid;
+		END IF;
+	END IF;
+	IF v_wask_total IS NOT NULL THEN
+		IF v_wask_total != 0 THEN 
+			SELECT SUM(price*amount)/v_wask_total AS wprice FROM depth_state
+				WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx INTO v_weighted_ask;
+		END IF;
+	END IF;
 	IF (v_weighted_bid IS NOT NULL) AND (v_weighted_ask IS NOT NULL) THEN
 		v_weighted_price_estimate := (v_weighted_bid + v_weighted_ask) / 2;
 	END IF;
@@ -1078,6 +1087,15 @@ BEGIN
 		v_bid_state_id,v_ask_state_id,v_spread,v_price_estimate,v_weighted_price_estimate,v_price_bid,v_price_ask
 	);
 	RETURN v_price_estimate;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION update_price_estimate(
+	p_meshevt_id bigint,p_market_aid bigint,p_outcome_idx integer,p_timestamp timestamptz
+) RETURNS void AS $$
+BEGIN
+	DELETE FROM price_estimate WHERE meshevt_id=p_meshevt_id;
+	PERFORM calc_price_estimate(p_meshevt_id,p_market_aid,p_outcome_idx,p_timestamp);
+
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_depth_state_insert() RETURNS trigger AS  $$

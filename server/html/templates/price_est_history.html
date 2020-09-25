@@ -1,0 +1,17 @@
+{{define "price_est_history"}}
+<table class="trade_makers">
+<tr class="trade_makers">
+	<th>Timestamp</th>
+	<th>Date</th>
+	<th>PriceEstimate</th>
+	<th>Weighted PriceEst</th>
+	<th>Spread</th>
+	<th>Max Bid</th>
+	<th>Min Ask</th>
+	<th>Market Depth State</th>
+</tr>
+{{- range .}}
+	{{template "price_est_record" .}}
+{{- end}}
+</table>
+{{end}}

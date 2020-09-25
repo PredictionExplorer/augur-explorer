@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"encoding/hex"
 	"database/sql"
-	_  "github.com/lib/pq"
+	pq  "github.com/lib/pq"
 
 //	"github.com/0xProject/0x-mesh/zeroex"
 	ztypes "github.com/0xProject/0x-mesh/common/types"
@@ -46,21 +46,63 @@ func (ss *SQLStorage) Insert_0x_mesh_order_event(timestamp int64,oi *ztypes.Orde
 	}
 
 	// Prevent insertion of event without ADD event. If ADD event is missing then simulate it
-	query = "SELECT id FROM mesh_evt WHERE order_hash=$1 AND evt_code=2"
-	err = ss.db.QueryRow(query,oi.OrderHash.String()).Scan(&null_id);
+	if event_code != p.MeshEvtAdded {
+		query = "SELECT id FROM mesh_evt WHERE order_hash=$1 AND evt_code=2"
+		err = ss.db.QueryRow(query,oi.OrderHash.String()).Scan(&null_id);
+		if (err!=nil) {
+			if (err==sql.ErrNoRows) {
+				// ADD event is missing, INSERT
+				ts := int64(oi.SignedOrder.Order.Salt.Int64()/1000)
+				ss.do_insert_0x_mesh_order_event(ts,oi,ospec,nil,p.MeshEvtAdded)
+			} else {
+				ss.Log_msg(fmt.Sprintf("DB error : %v, q=%v",err,query))
+				os.Exit(1)
+			}
+		}
+	}
+	market_aid := ss.do_insert_0x_mesh_order_event(timestamp,oi,ospec,amount_fill,event_code)
+	// now we need to update all posterior records because future price estimate values
+	// depend on past values
+	ss.Update_future_price_estimates(market_aid,int(ospec.Outcome),timestamp)
+}
+func (ss *SQLStorage) Update_future_price_estimates(market_aid int64,outcome_idx int,timestamp int64) {
+
+	var query string
+	query = "SELECT "+
+			"id,market_aid,outcome_idx,FLOOR(EXTRACT(EPOCH FROM time_stamp))::BIGINT as ts " +
+			"FROM mesh_evt " +
+			"WHERE market_aid=$1 AND outcome_idx=$2 AND time_stamp > TO_TIMESTAMP($3) " +
+			"ORDER BY time_stamp"
+
+	rows,err := ss.db.Query(query,market_aid,outcome_idx,timestamp)
 	if (err!=nil) {
-		if (err==sql.ErrNoRows) {
-			// ADD event is missing, INSERT
-			ts := oi.SignedOrder.Order.Salt.Int64()
-			ss.do_insert_0x_mesh_order_event(ts,oi,ospec,nil,p.MeshEvtAdded)
-		} else {
-			ss.Log_msg(fmt.Sprintf("DB error : %v, q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var meshevt_id,market_aid,ts int64
+		var outcome_idx int
+		err=rows.Scan(&meshevt_id,&market_aid,&outcome_idx,&ts)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("Scan failed: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		_,err = ss.db.Exec(
+			"SELECT update_price_estimate($1,$2,$3,TO_TIMESTAMP($4))",
+			meshevt_id,market_aid,outcome_idx,ts,
+		)
+		ss.Info.Printf(
+			"Future price estimate update: meshevt_id=%v, market_aid=%v,outc=%v,ts=%v\n",
+			meshevt_id,market_aid,outcome_idx,ts,
+		)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("Update future price estimate failed: %v",err))
 			os.Exit(1)
 		}
 	}
-	ss.do_insert_0x_mesh_order_event(timestamp,oi,ospec,amount_fill,event_code)
 }
-func (ss *SQLStorage) do_insert_0x_mesh_order_event(timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) {
+func (ss *SQLStorage) do_insert_0x_mesh_order_event(timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) int64 {
 
 	market_aid := ss.Lookup_address_id(ospec.Market.String())
 	amount_fill_str := "0"
@@ -91,7 +133,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(timestamp int64,oi *ztypes.O
 				"amount_fill" +
 			") VALUES (" +
 					"TO_TIMESTAMP($1),($2::decimal/1e+18),$3,"+
-					"$4,$5,$6,($7/1e+18)," +
+					"$4,$5,$6,$7," +
 					"$8,$9,$10," +
 					"$11,$12,$13," +
 					"($14::decimal/1e+18),($15::decimal/1e+18),"+
@@ -116,7 +158,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(timestamp int64,oi *ztypes.O
 				"amount_fill"+
 			") VALUES (" +
 					"TO_TIMESTAMP(%v),(%v::decimal/1e+18),%v,"+
-					"%v,%v,%v,(%v/1e+18)," +
+					"%v,%v,%v,%v," +
 					"'%v',%v,'%v'," +
 					"'%v','%v','%v'," +
 					"(%v::decimal/1e+18),(%v::decimal/1e+18),"+
@@ -145,9 +187,17 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(timestamp int64,oi *ztypes.O
 		oi.SignedOrder.Order.SenderAddress.String(),oi.SignedOrder.Order.FeeRecipientAddress.String(),oi.SignedOrder.Order.ExpirationTimeSeconds.Int64(),oi.SignedOrder.Order.Salt.String(),hex.EncodeToString(oi.SignedOrder.Signature),amount_fill_str,
 	)
 	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("Insert_0x_mesh_order_event() failed: %v, q=%v",err,query))
+		pq_err := err.(*pq.Error)
+		ss.Log_msg(
+			fmt.Sprintf(
+				"do_insert_0x_mesh_order_event() failed: %v %v %v %v; q=%v",
+				pq_err,pq_err.Routine,pq_err.Position,pq_err.Where,
+				query,
+			),
+		)
 		os.Exit(1)
 	}
+	return market_aid
 }
 func (ss *SQLStorage) Get_mesh_proc_status() p.MeshProcStatus {
 

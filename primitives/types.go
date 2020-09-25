@@ -625,3 +625,34 @@ type MeshEvent struct {
 	Salt					string
 	Signature				string
 }
+type DepthState struct {
+	Id						int64
+	MeshEvtId				int64
+	MarketAid				int64
+	OutcomeIdx				int64
+	OrderType				int
+	OrderHash				string
+	Price					float64
+	Amount					float64
+	IniTs					int64
+	FinTs					int64
+	IniDate					string
+	FinDate					string
+}
+type PriceEstimate struct {
+	Id						int64
+	MarketAid				int64
+	MeshEvtId				int64
+	TimeStamp				int64
+	BidStateId				int64
+	AskStateId				int64
+	OutcomeIdx				int64
+	Spread					float64
+	PriceEst				float64
+	WeightedPriceEst		float64
+	MaxBid					float64
+	MinAsk					float64
+	Date					string
+	MatchingBids			[]DepthState
+	MatchingAsks			[]DepthState
+}

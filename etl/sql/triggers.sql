@@ -1,7 +1,7 @@
 CREATE TRIGGER oi_chg_insert AFTER INSERT ON oi_chg FOR EACH ROW EXECUTE PROCEDURE on_oi_chg_insert();
 CREATE TRIGGER volume_insert AFTER INSERT ON volume FOR EACH ROW EXECUTE PROCEDURE on_volume_insert();
-CREATE TRIGGER oorders_insert AFTER INSERT ON oorders FOR EACH ROW EXECUTE PROCEDURE on_oorders_insert();
-CREATE TRIGGER oorders_delete AFTER DELETE ON oorders FOR EACH ROW EXECUTE PROCEDURE on_oorders_delete();
+--CREATE TRIGGER oorders_insert AFTER INSERT ON oorders FOR EACH ROW EXECUTE PROCEDURE on_oorders_insert();
+--CREATE TRIGGER oorders_delete AFTER DELETE ON oorders FOR EACH ROW EXECUTE PROCEDURE on_oorders_delete();
 CREATE TRIGGER market_insert AFTER INSERT ON market FOR EACH ROW EXECUTE PROCEDURE on_market_insert();
 CREATE TRIGGER market_delete AFTER DELETE ON market FOR EACH ROW EXECUTE PROCEDURE on_market_delete();
 CREATE TRIGGER mktord_insert AFTER INSERT ON mktord FOR EACH ROW EXECUTE PROCEDURE on_mktord_insert();
