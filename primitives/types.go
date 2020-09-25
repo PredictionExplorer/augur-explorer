@@ -652,6 +652,9 @@ type PriceEstimate struct {
 	WeightedPriceEst		float64
 	MaxBid					float64
 	MinAsk					float64
+	WMaxBid					float64
+	WMinAsk					float64
+	EvtCode					int
 	Date					string
 	MatchingBids			[]DepthState
 	MatchingAsks			[]DepthState

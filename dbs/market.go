@@ -49,8 +49,13 @@ func get_market_status_str(status_code p.MarketStatus) string {
 func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,validity_bond string,evt *p.EMarketCreated) {
 
 	var query string
-	var market_aid int64;
-	market_aid = ss.Lookup_or_create_address(evt.Market.String(),agtx.BlockNum,agtx.TxId)
+
+	market_aid,_:=ss.Nonfatal_lookup_address_id(evt.Market.String())
+	if market_aid == 0 {
+		market_aid = ss.Lookup_or_create_address(evt.Market.String(),agtx.BlockNum,agtx.TxId)
+	} else {
+		ss.Update_address_metadata(market_aid,agtx)
+	}
 	// check if Market is already registered
 	query = "SELECT market_aid FROM market WHERE market_aid=$1"
 	err:=ss.db.QueryRow(query,market_aid).Scan(&market_aid);

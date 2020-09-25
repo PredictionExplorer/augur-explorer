@@ -74,7 +74,7 @@ func (ss *SQLStorage) Nonfatal_lookup_address_id(addr string) (int64,error) {
 
 	return addr_id,nil
 }
-func (ss *SQLStorage) lookup_market_by_addr_str(addr string) (int64,error) {
+func (ss *SQLStorage) Lookup_market_by_addr_str(addr string) (int64,error) {
 
 	var addr_id int64;
 	var query string

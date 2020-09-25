@@ -931,23 +931,29 @@ BEGIN
 				NEW.evt_code,NEW.order_hash;
 		END IF;
 		UPDATE depth_state SET fin_ts = NEW.time_stamp WHERE id=v_depthst_id;
-		if (NEW.evt_code = 5) OR (NEW.evt_code = 6) THEN -- CANCLLED or EXPIRED
-			v_fin_ts := NEW.time_stamp;
-			v_amount := v_prev_amount - NEW.amount_fill;
+		v_amount := v_prev_amount - NEW.amount_fill;
+		IF (NEW.evt_code = 3) OR (NEW.evt_code = 4) THEN
+			IF v_amount > 0 THEN
+				v_fin_ts := NEW.expiration_time;
+			ELSE
+				v_fin_ts := NEW.time_stamp;
+			END IF;
 		ELSE
-			v_amount := -NEW.amount_fill;
+			v_fin_ts := NEW.time_stamp;
 		END IF;
 	END IF;
-	INSERT INTO depth_state(
-			meshevt_id,market_aid,outcome_idx,otype,order_hash,
-			price,amount,ini_ts,fin_ts
-		) VALUES (
-			NEW.id,NEW.market_aid,NEW.outcome_idx,NEW.otype,NEW.order_hash,
-			NEW.price,v_amount,v_ini_ts,v_fin_ts
-		)
-		RETURNING id INTO v_depthst_id;
-	INSERT INTO mesh_link(depthst_id,meshevt_id,time_stamp,order_hash)
-		VALUES(v_depthst_id,NEW.id,v_ini_ts,NEW.order_hash);
+	IF v_amount > 0 THEN
+		INSERT INTO depth_state(
+				meshevt_id,market_aid,outcome_idx,otype,order_hash,
+				price,amount,ini_ts,fin_ts
+			) VALUES (
+				NEW.id,NEW.market_aid,NEW.outcome_idx,NEW.otype,NEW.order_hash,
+				NEW.price,v_amount,v_ini_ts,v_fin_ts
+			)
+			RETURNING id INTO v_depthst_id;
+		INSERT INTO mesh_link(depthst_id,meshevt_id,time_stamp,order_hash)
+			VALUES(v_depthst_id,NEW.id,v_ini_ts,NEW.order_hash);
+	END IF;
 
 	PERFORM calc_price_estimate(NEW.id,NEW.market_aid,NEW.outcome_idx,v_ini_ts);
 	RETURN NEW;
@@ -1026,7 +1032,13 @@ DECLARE
 BEGIN
 
 	SELECT spread_threshold,osize_threshold FROM ooconfig INTO v_spread_threshold,v_osize_threshold;
+	IF v_spread_threshold IS NULL THEN
+		RAISE EXCEPTION 'Spread threshold is not configured';
+	END IF;
 	SELECT num_ticks FROM market WHERE market_aid = p_market_aid INTO v_num_ticks;
+	IF v_num_ticks IS NULL THEN
+		RAISE EXCEPTION 'Market with id=% is not registered',p_market_aid;
+	END IF;
 
 	-- calculate non-weighted price estimate: (max bid+max_ask)/2
 	SELECT price,id
@@ -1060,19 +1072,27 @@ BEGIN
 	END IF;
 	-- calculated weighted price estimate:
 	SELECT SUM(amount) AS total_amount FROM depth_state
-		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx INTO v_wbid_total;
+		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx AND
+									ini_ts <= p_timestamp AND p_timestamp < fin_ts
+		INTO v_wbid_total;
 	SELECT SUM(amount) AS total_amount FROM depth_state
-		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx INTO v_wask_total;
+		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx AND
+									ini_ts <= p_timestamp AND p_timestamp < fin_ts
+		INTO v_wask_total;
 	IF v_wbid_total IS NOT NULL THEN
 		IF v_wbid_total != 0 THEN
 			SELECT SUM(price*amount)/v_wbid_total AS wprice FROM depth_state
-				WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx INTO v_weighted_bid;
+				WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx AND
+									ini_ts <= p_timestamp AND p_timestamp < fin_ts
+				INTO v_weighted_bid;
 		END IF;
 	END IF;
 	IF v_wask_total IS NOT NULL THEN
-		IF v_wask_total != 0 THEN 
+		IF v_wask_total != 0 THEN
 			SELECT SUM(price*amount)/v_wask_total AS wprice FROM depth_state
-				WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx INTO v_weighted_ask;
+				WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx AND
+									ini_ts <= p_timestamp AND p_timestamp < fin_ts
+				INTO v_weighted_ask;
 		END IF;
 	END IF;
 	IF (v_weighted_bid IS NOT NULL) AND (v_weighted_ask IS NOT NULL) THEN
@@ -1081,10 +1101,12 @@ BEGIN
 	v_price_estimate := (v_price_bid + v_price_ask) / 2 ;
 	INSERT INTO price_estimate(
 		market_aid,meshevt_id,time_stamp,outcome_idx,
-		bid_state_id,ask_state_id,spread,price_est,wprice_est,max_bid,min_ask
+		bid_state_id,ask_state_id,spread,price_est,wprice_est,max_bid,
+		min_ask,wmax_bid,wmin_ask
 	) VALUES (
 		p_market_aid,p_meshevt_id,p_timestamp,p_outcome_idx,
-		v_bid_state_id,v_ask_state_id,v_spread,v_price_estimate,v_weighted_price_estimate,v_price_bid,v_price_ask
+		v_bid_state_id,v_ask_state_id,v_spread,v_price_estimate,v_weighted_price_estimate,
+		v_price_bid,v_price_ask,v_weighted_bid,v_weighted_ask
 	);
 	RETURN v_price_estimate;
 END;

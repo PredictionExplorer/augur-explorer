@@ -16,6 +16,19 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
+func (ss *SQLStorage) Try_insert_0x_mesh_order_event(timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) bool {
+
+	_,err := ss.Lookup_market_by_addr_str(ospec.Market.String())
+	if err != nil {
+		ss.Info.Printf(
+			"Try_insert_0x_mesh_order_event() fails: market %v isn't registered\n",
+			ospec.Market.String(),
+		)
+		return false
+	}
+	ss.Insert_0x_mesh_order_event(timestamp,oi,ospec,amount_fill,event_code)
+	return true
+}
 func (ss *SQLStorage) Insert_0x_mesh_order_event(timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) {
 
 	if ospec == nil {
@@ -104,7 +117,7 @@ func (ss *SQLStorage) Update_future_price_estimates(market_aid int64,outcome_idx
 }
 func (ss *SQLStorage) do_insert_0x_mesh_order_event(timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) int64 {
 
-	market_aid := ss.Lookup_address_id(ospec.Market.String())
+	market_aid := ss.Lookup_or_create_address(ospec.Market.String(),0,0)// block and tx_id will be updated on market creation event
 	amount_fill_str := "0"
 	if amount_fill != nil {
 		amount_fill_str = amount_fill.String()

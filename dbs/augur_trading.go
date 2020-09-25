@@ -1440,9 +1440,12 @@ func (ss *SQLStorage) Get_price_estimate_history(market_aid int64,outcome_idx in
 				"p.time_stamp, " +
 				"p.bid_state_id,p.ask_state_id,p.outcome_idx,"+
 				"p.spread,"+
-				"ROUND(p.price_est,3),ROUND(p.wprice_est,3)"+
-				",p.max_bid,p.min_ask "+
+				"ROUND(p.price_est,1),ROUND(p.wprice_est,1),"+
+				"p.max_bid,p.min_ask,"+
+				"ROUND(wmax_bid,1),ROUND(wmin_ask,1), "+
+				"e.evt_code " +
 			"FROM price_estimate AS p " +
+				"JOIN mesh_evt AS e ON p.meshevt_id=e.id " +
 			"WHERE p.market_aid=$1 AND p.outcome_idx=$2 " +
 			"ORDER BY p.time_stamp"
 
@@ -1455,7 +1458,7 @@ func (ss *SQLStorage) Get_price_estimate_history(market_aid int64,outcome_idx in
 	for rows.Next() {
 		var pe p.PriceEstimate
 		var null_bid_state,null_ask_state sql.NullInt64
-		var null_wprice sql.NullFloat64
+		var null_wprice,null_wmax_bid,null_wmin_ask sql.NullFloat64
 		err = rows.Scan(
 			&pe.Id,
 			&pe.MarketAid,
@@ -1470,6 +1473,9 @@ func (ss *SQLStorage) Get_price_estimate_history(market_aid int64,outcome_idx in
 			&null_wprice,
 			&pe.MaxBid,
 			&pe.MinAsk,
+			&null_wmax_bid,
+			&null_wmin_ask,
+			&pe.EvtCode,
 		)
 		if err != nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -1483,6 +1489,12 @@ func (ss *SQLStorage) Get_price_estimate_history(market_aid int64,outcome_idx in
 		}
 		if null_wprice.Valid {
 			pe.WeightedPriceEst = null_wprice.Float64
+		}
+		if null_wmax_bid.Valid {
+			pe.WMaxBid = null_wmax_bid.Float64
+		}
+		if null_wmin_ask.Valid {
+			pe.WMinAsk = null_wmin_ask.Float64
 		}
 		pe.MatchingBids= ss.Get_depth_states(market_aid,outcome_idx,int(p.OrderTypeBid),pe.TimeStamp)
 		pe.MatchingAsks= ss.Get_depth_states(market_aid,outcome_idx,int(p.OrderTypeAsk),pe.TimeStamp)

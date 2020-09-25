@@ -352,11 +352,11 @@ func (ss *SQLStorage) is_dai_transfer_internal(evt *p.ETransfer,ca *p.ContractAd
 
 	var from_internal bool = false
 	var to_internal bool = false
-	_,err:=ss.lookup_market_by_addr_str(evt.From.String())
+	_,err:=ss.Lookup_market_by_addr_str(evt.From.String())
 	if err == nil {
 		from_internal = true
 	}
-	_,err=ss.lookup_market_by_addr_str(evt.To.String())
+	_,err=ss.Lookup_market_by_addr_str(evt.To.String())
 	if err == nil {
 		to_internal = true
 	}

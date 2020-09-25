@@ -27,7 +27,7 @@ import (
 
 )
 const (
-	DEFAULT_SYNC_INTERVAL_SECS int64 = 60*10
+	DEFAULT_SYNC_INTERVAL_SECS int64 = 60*1
 )
 var (
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -220,7 +220,7 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 				Error.Printf("Error decoding market data: %v\n",err)
 			} else {
 				DumpOrderSpec(Info,&ospec)
-				storage.Insert_0x_mesh_order_event(time_stamp,order_info,&ospec,nil,MeshEvtAdded)
+				storage.Try_insert_0x_mesh_order_event(time_stamp,order_info,&ospec,nil,MeshEvtAdded)
 			}
 			/*discontinued
 			amount := order_info.FillableTakerAssetAmount
@@ -369,7 +369,7 @@ func main() {
 					zeroex.ESOrderBecameUnfunded,
 					zeroex.ESStoppedWatching,
 					zeroex.ESOrderUnexpired:
-					storage.Insert_0x_mesh_order_event(
+					storage.Try_insert_0x_mesh_order_event(
 						orderEvent.Timestamp.Unix(),
 						&order_info,
 						&ospec,

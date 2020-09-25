@@ -169,6 +169,8 @@ CREATE TABLE price_estimate (
 	spread				DECIMAL(32,18) NOT NULL,
 	price_est			DECIMAL(32,18) NOT NULL,
 	wprice_est			DECIMAL(32,18),-- weighted price estimate (taking volume into consideration)
+	wmax_bid			DECIMAL(32,18),
+	wmin_ask			DECIMAL(32,18),
 	max_bid				DECIMAL(32,18) NOT NULL,
 	min_ask				DECIMAL(32,18) NOT NULL
 );
