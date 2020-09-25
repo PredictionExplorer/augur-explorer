@@ -99,17 +99,6 @@ func main() {
 	}
 
 	port_plain := os.Getenv("AUGUR_HTTP_PORT")
-	port_secure := os.Getenv("AUGUR_HTTPS_PORT")
-
-	if port_plain == "" {
-		port_plain = "9090"
-		log.Printf("Defaulting plain HTTP to port %s", port_plain)
-	}
-	if port_secure== "" {
-		port_secure= "9443"
-		log.Printf("Defaulting secure protocol to port %s", port_secure)
-	}
-
 
 	r := gin.New()
 	//r.RedirectTrailingSlash=false
@@ -188,5 +177,10 @@ func main() {
 	go func() {
 		log.Printf("%v",autotls.Run(r, "api.predictionexplorer.com"))
 	}()
-	r.Run(":" + port_plain)
+	if len(port_plain) > 0 {
+		go func() {
+			r.Run(":" + port_plain)
+		}()
+	}
+	select{} // infinite suspend for the main go-routine
 }
