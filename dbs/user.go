@@ -284,6 +284,41 @@ func (ss *SQLStorage) Get_top_volume_makers() []p.VolumeMaker {
 	}
 	return records
 }
+func (ss *SQLStorage) Get_user_ranks(sort int,order int) []p.UserRank {
+
+	records := make([]p.UserRank,0,256)
+	var query string
+	var order_field string
+	var order_dir string = "DESC"
+
+	switch (sort) {
+	case 0: order_field = "profit"
+	case 1: order_field = "volume"
+	case 2: order_field = "total_trades"
+	default:
+		return records
+	}
+	if order!=0 {
+		order_dir="ASC"
+	}
+
+	query = "SELECT r.eoa_aid,a.addr,r.profit,r.total_trades,r.volume FROM uranks AS r " +
+			"LEFT JOIN address AS a ON r.eoa_aid = a.address_id " +
+			"ORDER BY r."+order_field+" "+order_dir
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UserRank
+		err=rows.Scan(&rec.EoaAid,&rec.EOAAddr,&rec.ProfitLoss,&rec.TotalTrades,&rec.VolumeTraded)
+		records = append(records,rec)
+	}
+	return records
+}
 func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.Report {
 
 	var query string

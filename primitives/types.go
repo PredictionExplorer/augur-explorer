@@ -316,6 +316,13 @@ type VolumeMaker struct {
 	Volume				float64
 	EOAAddr				string
 }
+type UserRank struct {
+	EoaAid				int64
+	ProfitLoss			float64
+	TotalTrades			int64
+	VolumeTraded		float64
+	EOAAddr				string
+}
 type OrderInfo struct {		// this is a full order information, to show in dedicated webpage
 	OrderId				int64
 	MktAid				int64

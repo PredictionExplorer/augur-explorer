@@ -480,16 +480,40 @@ func a1_top_users(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
-	top_profit_makers := augur_srv.storage.Get_top_profit_makers()
-	top_trade_makers := augur_srv.storage.Get_top_trade_makers()
-	top_volume_makers := augur_srv.storage.Get_top_volume_makers()
+	var err error
+	p_sort := c.Query("sort")
+	var sort int = 0
+	if len(p_sort) > 0 {
+		sort, err = strconv.Atoi(p_sort)
+		if err != nil {
+			c.JSON(422,gin.H{
+				"MarketIDs": make([]int64,0,0),
+				"status":0,
+				"error":fmt.Sprintf("Bad 'sort' parameter: %v",err),
+			})
+			return
+		}
+	}
+	ord_str := c.Query("ord")
+	var ord int = 0
+	if len(ord_str) > 0 {
+		ord, err = strconv.Atoi(ord_str)
+		if err != nil {
+			c.JSON(422,gin.H{
+				"UserRanks": make([]int64,0,0),
+				"status":0,
+				"error":fmt.Sprintf("Bad 'order' parameter: %v",err),
+			})
+			return
+		}
+	}
+
+	user_ranks := augur_srv.storage.Get_user_ranks(sort,ord)
 
 	var status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK,gin.H{
-			"ProfitMakers" : top_profit_makers,
-			"TradeMakers" : top_trade_makers,
-			"VolumeMakers" : top_volume_makers,
+			"UserRanks" : user_ranks,
 			"status": status,
 			"error": err_str,
 	})
