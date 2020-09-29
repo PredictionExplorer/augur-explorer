@@ -306,7 +306,7 @@ func a1_user_funds(c *gin.Context) {
 	}
 	serve_user_funds_v2(c,&user_addr)
 }
-func a1_user_markets(c *gin.Context) {
+func a1_user_traded_markets(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -329,11 +329,29 @@ func a1_user_markets(c *gin.Context) {
 			return
 		}
 	}
-	user_markets := augur_srv.storage.Get_active_markets_for_user(eoa_aid,active_flag)
+	user_markets := augur_srv.storage.Get_traded_markets_for_user(eoa_aid,active_flag)
 	var status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK,gin.H{
 		"Markets": user_markets,
+		"status": status,
+		"error": err_str,
+	})
+}
+func a1_user_created_markets(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,eoa_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	created_markets := augur_srv.storage.Get_created_markets_for_user(eoa_aid)
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+		"Markets": created_markets,
 		"status": status,
 		"error": err_str,
 	})
