@@ -574,7 +574,7 @@ func (ss *SQLStorage) Get_mkt_participant_outcomes(mkt_addr *common.Address) []*
 	}
 	return output
 }
-func (ss *SQLStorage) Get_active_markets_for_user(eoa_aid int64,active_flag int) []p.InfoMarket {
+func (ss *SQLStorage) Get_traded_markets_for_user(eoa_aid int64,active_flag int) []p.InfoMarket {
 
 	var where_condition string
 	if active_flag == 1 {
@@ -657,6 +657,101 @@ func (ss *SQLStorage) Get_active_markets_for_user(eoa_aid int64,active_flag int)
 					&rec.CurVolume,
 					&rec.VolTraded,
 					&rec.TotalTrades,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		if description.Valid {
+			rec.Description = description.String
+		}
+		if longdesc.Valid {
+			rec.LongDesc = longdesc.String
+		}
+		if category.Valid {
+			rec.CategoryStr = category.String
+		}
+		rec.Status=get_market_status_str(p.MarketStatus(rec.MktStatus))
+		rec.MktAddrSh=p.Short_address(rec.MktAddr)
+		rec.MktCreatorSh=p.Short_address(rec.MktCreator)
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_created_markets_for_user(eoa_aid int64) []p.InfoMarket {
+
+	var query string
+	query = "SELECT " +
+				"m.market_aid," +
+				"ma.addr as mkt_addr," +
+				"sa.addr AS signer," +
+				"ca.addr as mcreator," +
+				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') as end_date," + 
+				"FLOOR(EXTRACT(EPOCH FROM m.create_timestamp))::BIGINT as created_ts," +
+				"FLOOR(EXTRACT(EPOCH FROM m.end_time))::BIGINT as end_ts," + 
+				"FLOOR(EXTRACT(EPOCH FROM m.fin_timestamp))::BIGINT as fin_ts," +
+				"extra_info::json->>'description' AS descr," +
+				"extra_info::json->>'longDescription' AS long_desc," +
+				"extra_info::json->>'categories' AS categories," +
+				"outcomes," +
+				"m.winning_outcome," +
+				"m.market_type, " +
+				"CASE m.market_type " +
+					"WHEN 0 THEN 'YES/NO' " +
+					"WHEN 1 THEN 'CATEGORICAL' " +
+					"WHEN 2 THEN 'SCALAR' " +
+				"END AS mtype," +
+				"status,"+
+				"CASE WHEN EXTRACT(epoch from (fin_timestamp-now())) < 0 " +
+					"THEN 'Trading' ELSE 'Reporting' END AS status_desc," +
+				"num_ticks,"+
+				"fee," +
+				"open_interest AS OI," +
+				"cur_volume," +
+				"money_at_stake " +
+			"FROM market as m " +
+				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
+				"LEFT JOIN address AS sa ON m.eoa_aid= sa.address_id " +
+				"LEFT JOIN address AS ca ON m.wallet_aid = ca.address_id " +
+			"WHERE m.eoa_aid = $1 " +
+			"ORDER BY m.create_timestamp"
+
+	rows,err := ss.db.Query(query,eoa_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	var rec p.InfoMarket
+	records := make([]p.InfoMarket,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var description sql.NullString
+		var longdesc sql.NullString
+		var category sql.NullString
+		err=rows.Scan(
+					&rec.MktAid,
+					&rec.MktAddr,
+					&rec.Signer,
+					&rec.MktCreator,
+					&rec.EndDate,
+					&rec.CreatedTs,
+					&rec.EndTs,
+					&rec.FinTs,
+					&description,
+					&longdesc,
+					&category,
+					&rec.Outcomes,
+					&rec.WinOutcomeIdx,
+					&rec.MktType,
+					&rec.MktTypeStr,
+					&rec.MktStatus,
+					&rec.Status,
+					&rec.NumTicks,
+					&rec.Fee,
+					&rec.OpenInterest,
+					&rec.CurVolume,
+					&rec.MoneyAtStake,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))

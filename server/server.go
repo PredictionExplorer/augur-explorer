@@ -480,7 +480,7 @@ func serve_user_info_page(c *gin.Context,addr string,from_wallet bool) {
 			js_pl_data := build_js_profit_loss_history(&pl_entries)
 			js_open_pos_data := build_js_open_positions(&open_pos_entries)
 			user_reports := augur_srv.storage.Get_user_reports(eoa_aid,DEFAULT_USER_REPORTS_LIMIT)
-			user_active_markets := augur_srv.storage.Get_active_markets_for_user(eoa_aid,1)
+			user_active_markets := augur_srv.storage.Get_traded_markets_for_user(eoa_aid,1)
 			var has_active_markets bool = false
 			if len(user_active_markets) > 0 {
 				has_active_markets = true

@@ -84,6 +84,8 @@ type InfoMarket struct {
 	CurVolume		float64
 	MoneyAtStake	float64
 	VolTraded		float64
+	NoShowBond		float64
+	ValidityBond	float64
 	TotalTrades		int64
 	NumTicks		int64
 	CreatedTs		int64

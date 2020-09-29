@@ -598,6 +598,7 @@ func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,alive int,i
 		case 3: order_condition = "m.create_timestamp DESC,m.market_aid DESC";
 		case 4: order_condition = "m.end_time DESC,m.market_aid DESC";
 		case 5: order_condition = "m.fin_timestamp DESC,m.market_aid DESC";
+		case 6: order_condition = "m.open_interest DESC,m.market_aid DESC";
 		default:
 			order_condition = "m.market_aid DESC";
 	}
@@ -669,6 +670,7 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 				"ma.addr as mkt_addr," +
 				"sa.addr AS signer," +
 				"ca.addr as mcreator," +
+				"ra.addr as reporter," +
 				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') as end_date," + 
 				"extra_info::json->>'description' AS descr," +
 				"extra_info::json->>'longDescription' AS long_desc," +
@@ -687,6 +689,8 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 				"fee," +
 				"money_at_stake, " +
 				"open_interest AS OI," +
+				"no_show_bond," +
+				"validity_bond," +
 				"cur_volume AS volume " +
 			"FROM market as m " +
 				"LEFT JOIN " +
@@ -695,6 +699,8 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 					"address AS sa ON m.eoa_aid= sa.address_id " +
 				"LEFT JOIN " +
 					"address AS ca ON m.wallet_aid = ca.address_id " +
+				"LEFT JOIN " +
+					"address AS ra ON m.reporter_aid = ra.address_id " +
 			"WHERE m.market_aid=$1 " +
 			"ORDER BY " +
 				"m.fin_timestamp DESC "
@@ -709,6 +715,7 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 			&rec.MktAddr,
 			&rec.Signer,
 			&rec.MktCreator,
+			&rec.Reporter,
 			&rec.EndDate,
 			&description,
 			&longdesc,
@@ -722,6 +729,8 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 			&rec.Fee,
 			&rec.MoneyAtStake,
 			&rec.OpenInterest,
+			&rec.NoShowBond,
+			&rec.ValidityBond,
 			&rec.CurVolume,
 	)
 	if (err!=nil) {
@@ -732,6 +741,7 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 	}
 	rec.MktAddrSh=p.Short_address(rec.MktAddr)
 	rec.MktCreatorSh=p.Short_address(rec.MktCreator)
+	rec.ReporterSh = p.Short_address(rec.Reporter)
 	if description.Valid {
 		rec.Description = description.String
 	}
