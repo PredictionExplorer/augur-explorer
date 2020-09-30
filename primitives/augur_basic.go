@@ -46,7 +46,7 @@ func dump_all_artifacts(contracts *map[string]interface{}) {
 }
 func Load_all_artifacts(filename string) map[string]interface{} {
 
-	abi_data, err := ioutil.ReadFile("./abis/augur-artifacts-abi.json")
+	abi_data, err := ioutil.ReadFile(filename)
 	check(err)
 	all_abis_rdr := bytes.NewReader(abi_data)
 	check(err)

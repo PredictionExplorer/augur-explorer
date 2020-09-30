@@ -388,6 +388,24 @@ func (ss *SQLStorage) Tx_exists(tx_hash string) bool {
 	return true
 }
 
+func (ss *SQLStorage) Get_block_timestamp(block_num int64) (int64,error) {
+
+	var query string
+	query = "SELECT FLOOR(EXTRACT(EPOCH FROM block.ts))::BIGINT AS ts " +
+			"FROM block WHERE block_num=$1"
+	row := ss.db.QueryRow(query,block_num)
+	var ts int64
+	var err error
+	err=row.Scan(&ts);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,err
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Get_block_timestamp(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return ts,nil
+}
 func (ss *SQLStorage) Get_last_block_timestamp() int64 {
 
 	var query string
