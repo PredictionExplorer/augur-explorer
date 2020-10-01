@@ -9,69 +9,47 @@
 <script src="https://code.highcharts.com/modules/data.js"></script>
 <script src="/res/ajax.js"></script>
 <script>
-	function load_order_data(eoa_addr,wallet_addr,mkt_aid,outcome_idx,total_bids,total_asks,total_cancel,order_date,expires) {
-		console.log(eoa_addr)
-		console.log(mkt_aid)
-		console.log(outcome_idx)
+	function load_pest_data(
+		entry_date,price_estimate,spread,max_bid,min_ask,
+		weighted_estimate,wmax_bid,wmin_ask,evt_code
+	) {
 		var elt
-		elt = document.getElementById("usermktinfo")
+		elt = document.getElementById("price_est_info")
 		elt.style.display="block"
-		elt = document.getElementById("fld_wallet_addr")
-		elt.innerHTML = wallet_addr
-		elt = document.getElementById("fld_eoa_addr")
-		elt.innerHTML = eoa_addr
-		elt = document.getElementById("fld_num_bids")
-		elt.innerHTML = total_bids
-		elt = document.getElementById("fld_num_asks")
-		elt.innerHTML = total_asks
-		elt = document.getElementById("fld_num_cancel")
-		elt.innerHTML = total_cancel
-		elt = document.getElementById("fld_order_date")
-		elt.innerHTML = order_date
-		elt = document.getElementById("fld_expires")
-		elt.innerHTML = expires
+		elt = document.getElementById("fld_pest_date")
+		elt.innerHTML =entry_date
+		elt = document.getElementById("fld_pest_price_est")
+		elt.innerHTML = price_estimate
+		elt = document.getElementById("fld_pest_max_bid")
+		elt.innerHTML = max_bid
+		elt = document.getElementById("fld_pest_min_ask")
+		elt.innerHTML = min_ask
+		elt = document.getElementById("fld_spread")
+		elt.innerHTML = spread
+		elt = document.getElementById("fld_weighted_estimate")
+		elt.innerHTML = weighted_estimate
+		elt = document.getElementById("fld_weighted_max_bid")
+		elt.innerHTML = wmax_bid
+		elt = document.getElementById("fld_weighted_min_ask")
+		elt.innerHTML = wmin_ask
+		elt = document.getElementById("fld_evt_code")
+		var evt_code_str
+		switch (evt_code) {
+			case 2: evt_code_str="Added"; break;
+			case 3: evt_code_str="Filled"; break;
+			case 4: evt_code_str="Fully Filled"; break;
+			case 5: evt_code_str="Cancelled"; break;
+			case 6: evt_code_str="Expired"; break;
+		}
+
+		elt.innerHTML = evt_code_str + "(" + evt_code + ")"
 	}
 
-	var ask_data = {{.JSAskData}}
-	var bid_data = {{.JSBidData}}
+	var price_est_data = {{.JSPriceEst}}
 	var market_aid = {{.Market.MktAid}}
 	var outcome_idx = {{.OutcomeIdx}}
-	var last_oo_id = {{.LastOOID}}
-	var num_orders = {{.NumOrders}}
-	console.log("market_aid="+market_aid+", last_oo_id="+last_oo_id+",num_orders="+num_orders)
-	function check_new_open_orders() {
-		if (market_aid == 0) {
-			return
-		}
-		var url = '/mdstat/'+market_aid+"/"+outcome_idx+"/"+last_oo_id
-		console.log("calling status. num_orders="+num_orders+", last_oo_id="+last_oo_id)
-		Ajax_GET(url,function(data) {
-			var response=JSON.parse(data)
-			console.log(response)
-			if ( (response.last_oo_id>last_oo_id) || (num_orders!=response.num_orders) ) {
-				console.log("New oopen orders available,reloading.")
-				/* POSTPONED for being too complex, maybe later
-				Ajax_GET('/deptha/'+market_aid+"/"+last_oo_id,function(data) {
-					var response=JSON.parse(data)
-					console.log("depth ajax:")
-					console.log(response)
-					ask_data = data.asks
-					bid_data = data.bids
-					last_oo_id = data.LastOOID
-				}
-				*/
-				// for now reload() will do
-				//alert("reloading")
-				location.reload()
-			} else {
-				setTimeout(check_new_open_orders, 10000);
-				console.log("watching for new orders from id>"+last_oo_id)
-			}
-		});
-	}
-	setTimeout(check_new_open_orders, 10000);
 </script>
-<h3 class="page_title">Market Details</h3>
+<h3 class="page_title">Price Estimate Verification Page</h3>
 <table class="market_detail">
 <tr>
 	<td>Address:</td>
@@ -88,46 +66,46 @@
 </table>
 <br/><br/>
 <div id="price_estimate_graph"></div>
-<div id="price_est_info" style="display: none;">
-	User statistics on this market for this outcome in particular:
+<div id="price_est_info" style="display: none; padding: 1em;">
+	Price Estimate Info:
 	<table class="order_info">
 		<tr class="order_info">
-			<td>Order Date</td>
-			<td><span id="fld_order_date"></span></td>
+			<td>Date</td>
+			<td><span id="fld_pest_date"></span></td>
 		</tr>
 		<tr class="order_info">
-			<td>Expires</td>
-			<td><span id="fld_expires"></span></td>
+			<td>Price Estimate</td>
+			<td><span id="fld_pest_price_est"></span></td>
 		</tr>
 		<tr class="order_info">
-			<td>Trading Wallet Address</td>
-			<td><span id="fld_wallet_addr"></span></td>
+			<td>Max Bid</td>
+			<td><span id="fld_pest_max_bid"></span></td>
 		</tr>
 		<tr class="order_info">
-			<td>Real User Account (EOA):</td>
-			<td><span id="fld_eoa_addr"></span></td>
+			<td>MinAsk</td>
+			<td><span id="fld_pest_min_ask"></span></td>
 		</tr>
 		<tr class="order_info">
-			<td>Number of BIDs:</td>
-			<td><span id="fld_num_bids"></span></td>
+			<td>Spread:</td>
+			<td><span id="fld_spread"></span></td>
 		</tr>
 		<tr class="order_info">
-			<td>Number of ASKs:</td>
-			<td><span id="fld_num_asks"></span></td>
+			<td>Weighted Estimate:</td>
+			<td><span id="fld_weighted_estimate"></span></td>
 		</tr>
 		<tr class="order_info">
-			<td>Number of Cancelled orders:</td>
-			<td><span id="fld_num_cancel"></span></td>
+			<td>Weighted Max Bid:</td>
+			<td><span id="fld_weighted_max_bid"></span></td>
+		</tr>
+		<tr class="order_info">
+			<td>Weighted Min Ask:</td>
+			<td><span id="fld_weighted_min_ask"></span></td>
+		</tr>
+		<tr class="order_info">
+			<td>Event code:</td>
+			<td><span id="fld_evt_code"></span></td>
 		</tr>
 	</table>
-	<nav>
-		<ul>
-		<li>
-			<a class="btn_link" href="/index.html">Full Statistics</a>
-			<span></span><span></span><span></span><span></span>
-		</li>
-	</ul>
-	</nav>
 </div>
 {{template "price_est_history" .PriceHistory}}
 <nav>
@@ -355,21 +333,20 @@ Highcharts.theme = {
 // Apply the theme
 Highcharts.setOptions(Highcharts.theme);
 // Dark theme setup ends
-
 // begin of chart container setup
 Highcharts.chart('price_estimate_graph', {
 
     title: {
-        text: 'Market Depth'
+		text: 'Price Estimate History. Outcome: {{.OutcomeIdx}}'
     },
 
     subtitle: {
-        text: 'Will Mexico declare stage 4 emergency today?'
+		text: '{{.Market.Description}}'
     },
 
     yAxis: {
         title: {
-            text: 'Market Depth'
+            text: 'Price Estimate'
         }
     },
 
@@ -377,7 +354,7 @@ Highcharts.chart('price_estimate_graph', {
 //		max: 1.0,
 //		min: 0,
         accessibility: {
-            rangeDescription: 'BIDs and ASKs for Market'
+            rangeDescription: 'Price Estimate for the Market'
         }
     },
 
@@ -397,22 +374,14 @@ Highcharts.chart('price_estimate_graph', {
     },
 
     series: [{
-        name: 'ASKs',
+        name: 'PriceEstimate',
 		point: {
 			events: {
 				click: function() {this.click.call()}
 			}
 		},
-		data: ask_data
-	}, {
-		name: 'BIDs',
-		point: {
-			events: {
-				click: function() {this.click.call()}
-			}
-		},
-        data: bid_data
-    }],
+		data: price_est_data
+	}],
 
     responsive: {
         rules: [{
@@ -430,11 +399,12 @@ Highcharts.chart('price_estimate_graph', {
     },
     tooltip: {
       formatter: function() {
-		tooltip ="<div>User: "+this.point.addr + "<br/>Price:" + this.point.price +"<br/>Volume: "+this.point.volume+"</div>"
+		tooltip ="<div>Price: "+this.point.price+ "<br/>Date:" + this.point.date+"<br/>Spread: "+this.point.spread+"</div>"
         return tooltip;
       }
     },
 });
+
 </script>
 </body>
 </html>

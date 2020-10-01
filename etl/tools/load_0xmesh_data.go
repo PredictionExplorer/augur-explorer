@@ -115,6 +115,8 @@ func get_order_data(o *IExchangeOrder) (zeroex.Order,common.Hash) {
 }
 func decode_0x_orders(input_data []byte,method_sig []byte) (map[string]*ztypes.OrderInfo,map[string]*ZxMeshOrderSpec) {
 
+	Info.Printf("decode_0x_orders(): ilen=%v input: %v\n",len(input_data),hex.EncodeToString(input_data))
+	Info.Printf("decode_0x_orders(): method_sig: %v\n",hex.EncodeToString(method_sig))
 	output1 := make(map[string]*ztypes.OrderInfo,0)
 	output2 := make(map[string]*ZxMeshOrderSpec,0)
 
@@ -127,11 +129,13 @@ func decode_0x_orders(input_data []byte,method_sig []byte) (map[string]*ztypes.O
 	if 0 == bytes.Compare(method_sig,zeroex_trade_sig) {
 		method, err := zerox_trade_abi.MethodById(method_sig)
 		if err != nil {
-			Fatalf("Method not found")
+			Info.Printf("Method not found\n")
+			os.Exit(1)
 		}
 		err = method.Inputs.Unpack(&trade_input_data_decoded, input_data)
 		if err != nil {
-			Fatalf("Couldn't decode input of tx: %v",err)
+			Info.Printf("Couldn't decode input of tx: %v\n",err)
+			os.Exit(1)
 		}
 		decoded_orders = trade_input_data_decoded.Orders
 		decoded_signatures = trade_input_data_decoded.Signatures
@@ -140,11 +144,13 @@ func decode_0x_orders(input_data []byte,method_sig []byte) (map[string]*ztypes.O
 	if 0 == bytes.Compare(method_sig,zeroex_cancel_sig) {
 		method, err := zerox_trade_abi.MethodById(method_sig)
 		if err != nil {
-			Fatalf("Method not found")
+			Info.Printf("Method not found")
+			os.Exit(1)
 		}
 		err = method.Inputs.Unpack(&cancel_order_input_data_decoded, input_data)
 		if err != nil {
-			Fatalf("Couldn't decode input of tx: %v",err)
+			Info.Printf("Couldn't decode input of tx: %v\n",err)
+			os.Exit(1)
 		}
 		decoded_orders=cancel_order_input_data_decoded.Orders
 		decoded_signatures=cancel_order_input_data_decoded.Signatures
@@ -181,30 +187,35 @@ func extract_orders_from_input(tx_data []byte) (map[string]*ztypes.OrderInfo,map
 		return make(map[string]*ztypes.OrderInfo,0),make(map[string]*ZxMeshOrderSpec,0)
 
 	}
+	Info.Printf("extract_orders_from_input(): tx_data=%v\n",hex.EncodeToString(tx_data))
 	input_sig := tx_data[:4]
+	Info.Printf("extract_orders_from_input(): input_sig=%v\n",hex.EncodeToString(input_sig))
 	decoded_sig ,_ := hex.DecodeString("78dc0eed")
 	if 0 == bytes.Compare(input_sig,decoded_sig) {
 		input_data_raw:= tx_data[4:]
 		var input_data ExecWalletTxInputStruct
 		method, err := wallet_abi.MethodById(decoded_sig)
 		if err != nil {
-			Fatalf("Method not found")
+			Info.Printf("Method not found\n")
+			os.Exit(1)
 		}
 		err = method.Inputs.Unpack(&input_data, input_data_raw)
 		if err != nil {
-			Fatalf("Couldn't decode input of tx %v",err)
+			Info.Printf("Couldn't decode input of tx %v\n",err)
+			os.Exit(1)
 		}
-
+		Info.Printf("input_data: %v\n",hex.EncodeToString(input_data.Data))
 		// check for internal transactions for the Wallet Registry contract
 		if len(input_data.Data) >= 4 {
 			input_sig := input_data.Data[:4]
+			Info.Printf("matching sig %v\n",hex.EncodeToString(input_sig))
 			zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
 			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
 				Info.Printf("augur_wallet_call: ZeroEx::trade()\n")
 				return decode_0x_orders(input_data.Data[4:],zeroex_trade_sig)
 			}
 			zeroex_cancel_sig,_ := hex.DecodeString("4ea96c30")
-			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
+			if 0 == bytes.Compare(input_sig,zeroex_cancel_sig) {
 				Info.Printf("augur_wallet_call: ZeroEx::cancelOrder()\n")
 				return decode_0x_orders(input_data.Data[4:],zeroex_cancel_sig)
 			}
@@ -212,13 +223,15 @@ func extract_orders_from_input(tx_data []byte) (map[string]*ztypes.OrderInfo,map
 	} else {
 		if len(input_sig) >= 4 {
 			input_data_raw:= tx_data[4:]
-			//Info.Printf("tx input= %v\n",hex.EncodeToString(input_data_raw))
+			Info.Printf("passing input_data_raw (len=%v) : %v\n",len(input_data_raw),hex.EncodeToString(input_data_raw))
 			zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
 			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
+				Info.Printf("call: ZeroEx::trade()\n")
 				return decode_0x_orders(input_data_raw,zeroex_trade_sig)
 			}
 			zeroex_cancel_sig,_ := hex.DecodeString("4ea96c30")
 			if 0 == bytes.Compare(input_sig,zeroex_cancel_sig) {
+				Info.Printf("call: ZeroEx::cancelOrder()\n")
 				return decode_0x_orders(input_data_raw,zeroex_cancel_sig)
 			}
 		}
@@ -239,6 +252,91 @@ func get_ospec(maker_asset_data []byte,order_hash *string) *ZxMeshOrderSpec {
 		os.Exit(1)
 	}
 	return &unpacked_id
+}
+func dump_tx_input_if_known(tx_data []byte) bool {
+	known:=false
+	if len(tx_data) < 32 {
+		//Info.Printf("dump_tx_input: input sig: %v\n",hex.EncodeToString(tx_data[:]))
+		return known
+	}
+	input_sig := tx_data[:4]
+	set_timestamp_sig ,_ := hex.DecodeString("a0a2b573")
+	if 0 == bytes.Compare(input_sig,set_timestamp_sig) {
+		Info.Printf("augur_wallet_call: Skipping setTimestamp() transaction\n")
+		return known
+	}
+	decoded_sig ,_ := hex.DecodeString("78dc0eed")
+	if 0 == bytes.Compare(input_sig,decoded_sig) {
+		input_data_raw:= tx_data[4:]
+		var input_data ExecWalletTxInputStruct
+		method, err := wallet_abi.MethodById(decoded_sig)
+		if err != nil {
+			Info.Printf("Method not found")
+			os.Exit(1)
+		}
+		err = method.Inputs.Unpack(&input_data, input_data_raw)
+		if err != nil {
+			Info.Printf("Couldn't decode input of tx %v\n",err)
+			os.Exit(1)
+		}
+		Info.Printf("ExecuteWalletTransaction {\n")
+		Info.Printf("\tto: %v\n",input_data.To.String())
+		Info.Printf("\tdata: %v\n",hex.EncodeToString(input_data.Data[:]))
+		Info.Printf("\tvalue: %v\n",input_data.Value.String())
+		Info.Printf("\tpayment: %v\n",input_data.Payment.String())
+		Info.Printf("\treferralAddress:  %v\n",input_data.ReferralAddress.String())
+		Info.Printf("\tfingerprint: %v\n",hex.EncodeToString(input_data.Fingerprint[:]))
+		Info.Printf("\tdesiredSignerBalance: %v\n",input_data.DesiredSignerBalance.String())
+		Info.Printf("\tmaxExchangeRateInDai: %v\n",input_data.MaxExchangeRateInDai.String())
+		Info.Printf("\trevertOnFaliure: %v\n",input_data.RevertOnFailure)
+		Info.Printf("}\n")
+
+		// check for internal transactions for the Wallet Registry contract
+		if len(input_data.Data) >= 4 {
+			input_sig := input_data.Data[:4]
+			market_proceeds_sig ,_ := hex.DecodeString("db754422")
+			if 0 == bytes.Compare(input_sig,market_proceeds_sig) {
+				Info.Printf("augur_wallet_call: claimMarketProceeds()\n")
+				return true
+			}
+			trading_proceeds_sig ,_ := hex.DecodeString("efd342c1")
+			if 0 == bytes.Compare(input_sig,trading_proceeds_sig) {
+				Info.Printf("augur_wallet_call: claimTradingProceeds()\n")
+				return true
+			}
+			zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
+			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
+				Info.Printf("augur_wallet_call: ZeroEx::trade()\n")
+				orders,_ := decode_0x_orders(input_data.Data[4:],zeroex_trade_sig) 
+				for h,a := range orders {
+					if a == nil {
+						Fatalf("orders map contains null pointers")
+					}
+					Info.Printf("\torder %\n",h)
+				}
+				return true
+			}
+		}
+	} else {
+		//Info.Printf("dump_tx_input: input sig: %v\n",hex.EncodeToString(input_sig[:]))
+		if len(input_sig) >= 4 {
+			input_data_raw:= tx_data[4:]
+			Info.Printf("tx input= %v\n",hex.EncodeToString(input_data_raw))
+			zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
+			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
+				Info.Printf("direct call to ZeroEx::trade()\n")
+				orders,_ := decode_0x_orders(input_data_raw,zeroex_trade_sig)
+				for h,a := range orders {
+					if a == nil {
+						Fatalf("orders map contains null pointers")
+					}
+					Info.Printf("\torder %\n",h)
+				}
+				return true
+			}
+		}
+	}
+	return known
 }
 func create_mesh_history_table(ss *SQLStorage) {
 
@@ -321,6 +419,7 @@ func process_onchain_fill_events(txs []string) {
 			Info.Printf("Error getting transaction %v: %v\n",tx_hash,err)
 			os.Exit(1)
 		}
+		Info.Printf("Processing tx %v, input len=%v\n",hash.String(),len(tx.Data()))
 		orders,ospecs := extract_orders_from_input(tx.Data())
 		receipt,err := eclient.TransactionReceipt(ctx,hash)
 		if err != nil {
@@ -336,6 +435,9 @@ func process_onchain_fill_events(txs []string) {
 		if err != nil {
 			Info.Printf("Error getting timestamp for block %v : %v\n",bnum,err)
 			os.Exit(1)
+		}
+		if dump_tx_input_if_known(tx.Data()) {
+			Info.Printf("known tx input: hash=%v input len=%v\n",tx_hash,len(tx.Data()))
 		}
 		//Info.Printf("Receipt has %v logs\n",len(receipt.Logs))
 		for _,log := range receipt.Logs {
@@ -357,11 +459,12 @@ func process_onchain_fill_events(txs []string) {
 					)
 					continue
 				}
+				Info.Printf("Orders on input: %v\n",len(orders))
 				var order_hash_obj = common.BytesToHash(evt.OrderId[:])
 				var order_hash = order_hash_obj.String()
 				zorder := orders[order_hash]
 				if zorder == nil {
-					Info.Printf("Error, couldn't find order %v in tx input",order_hash)
+					Info.Printf("Error, couldn't find order %v in tx input for OrderEvent: %v",order_hash,)
 					os.Exit(1)
 				}
 				initial_amount := zorder.SignedOrder.MakerAssetAmount
@@ -372,20 +475,17 @@ func process_onchain_fill_events(txs []string) {
 				}
 				Info.Printf(
 					"OrderEvent: 0x Mesh Evt inset: ohash: %v, ts: %v, fill_amount: %v, evt: %v\n",
-					order_hash,timestamp,amount_filled.String,mesh_evt_code,
+					order_hash,timestamp,amount_filled.String(),mesh_evt_code,
 				)
-				/*storage.Insert_0x_mesh_order_event(
-					timestamp,zorder,ospecs[order_hash],amount_filled,mesh_evt_code,
+				spec:=ospecs[order_hash]
+				storage.Insert_0x_mesh_order_event(
+					timestamp,zorder,spec,amount_filled,mesh_evt_code,
 				)
-				market_aid:=storage.Lookup_address_id(ospec.Market.String())
-				storage.Update_future_price_estimates(market_aid,int(ospec.Outcome),timestamp)
-				*/
+				market_aid:=storage.Lookup_address_id(spec.Market.String())
+				storage.Update_future_price_estimates(market_aid,int(spec.Outcome),timestamp)
 				Info.Printf(
 					"\tOrder type: %v, market: %v, outcome %v, price: %v\n",
-					ospecs[order_hash].Type,
-					ospecs[order_hash].Market.String(),
-					ospecs[order_hash].Outcome,
-					ospecs[order_hash].Price.String(),
+					spec.Type,spec.Market.String(),spec.Outcome,spec.Price.String(),
 				)
 			}
 			if bytes.Equal(log.Topics[0].Bytes(),evt_cancel_0x_order) {
@@ -404,21 +504,22 @@ func process_onchain_fill_events(txs []string) {
 					)
 					continue
 				}
+				Info.Printf("Orders on input: %v\n",len(orders))
 				var order_hash_obj = common.BytesToHash(evt.OrderHash[:])
 				var order_hash = order_hash_obj.String()
 				zorder := orders[order_hash]
 				if zorder == nil {
-					Info.Printf("Error, couldn't find order %v in tx input",order_hash)
+					Info.Printf("Error, couldn't find order %v in tx input for CancelZeroXOrder",order_hash)
 					os.Exit(1)
 				}
 				spec:=ospecs[order_hash]
 				Info.Printf(
-					"CancelOrder: 0x Mesh Evt insert: ohash: %v, ts: %v, evt: %v\n",order_hash,timestamp)
-				/*
-				storage.Insert_0x_mesh_order_event(timestamp,zorder,spec,nil,p.MeshEvtCancelled)
-				market_aid:=storage.Lookup_address_id(ospec.Market.String())
-				storage.Update_future_price_estimates(market_aid,int(ospec.Outcome),timestamp)
-				*/
+					"CancelOrder: 0x Mesh Evt insert: ohash: %v, ts: %v\n",order_hash,timestamp)
+				
+				storage.Insert_0x_mesh_order_event(timestamp,zorder,spec,nil,MeshEvtCancelled)
+				market_aid:=storage.Lookup_address_id(spec.Market.String())
+				storage.Update_future_price_estimates(market_aid,int(spec.Outcome),timestamp)
+				
 				Info.Printf(
 					"\tOrder type: %v, market: %v, outcome %v, price: %v\n",
 					spec.Type,spec.Market.String(),spec.Outcome,spec.Price.String(),
