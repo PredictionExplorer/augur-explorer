@@ -5,7 +5,7 @@
 		{{.OrderDate}}
 	</td>
 	<td class="user_open_orders" title="{{.MktDescr}}">
-		<a href="/search?q={{.MktAddr}}">{{.MktAddrSh}}</a>
+		<a href="search?q={{.MktAddr}}">{{.MktAddrSh}}</a>
 	</td>
 	<td class="user_open_orders" style="text-align: center">{{.MktTypeStr}}</td>
 	<td class="user_open_orders" style="text-align: center">{{.MktStatusStr}}</td>
@@ -24,7 +24,7 @@
 	</td>
 	<td class="user_open_orders" style="text-align: right">
 		{{ if ne .MktOrderId 0 }}
-		<a class=addr href="/order/{{.MktOrderId}}">{{.OrderHashSh}}</a>
+		<a class=addr href="order/{{.MktOrderId}}">{{.OrderHashSh}}</a>
 		{{ end }}
 	</td>
 </tr>

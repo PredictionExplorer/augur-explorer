@@ -157,7 +157,7 @@ func main() {
 	r.GET("/api/user/:user",  a1_user_info)
 	r.GET("/api/funds/:user",  a1_user_funds)
 	r.GET("/api/user_traded_markets/:user/:active",  a1_user_traded_markets)
-	r.GET("/api/user_created_markets/:user/",  a1_user_created_markets)
+	r.GET("/api/user_created_markets/:user",  a1_user_created_markets)
 	r.GET("/api/utrades/:user/:market",  a1_user_trades_for_market)
 	r.GET("/api/user_pl/:user",  a1_user_profit_loss)
 	r.GET("/api/user_opos/:user",  a1_user_open_positions)
@@ -165,6 +165,10 @@ func main() {
 	r.GET("/api/user_oorders/:user",  a1_user_open_orders)
 	r.GET("/api/mkt_oo/:market/:outcome", a1_market_open_orders)
 	r.GET("/api/top_users",  a1_top_users)
+	r.GET("/api/stats_main",  a1_stats_main)
+	r.GET("/api/stats_cashflow",  a1_stats_cashflow)
+	r.GET("/api/stats_uniqaddr",  a1_stats_uniqaddr)
+	r.GET("/api/stats_gasusage",  a1_stats_gasusage)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

@@ -204,6 +204,7 @@ type UserInfo struct {
 	WalletAddrSh	string	// short version of the above addr
 }
 type MainStats struct {
+	LastBlockNum	int64
 	MarketsCount	int64
 	YesNoCount		int64
 	CategCount		int64

@@ -1,11 +1,11 @@
 <html>
 <head>
 	<title>{{.title}}</title>
-	<link href="/res/main.css" rel="stylesheet">
+	<link href="res/main.css" rel="stylesheet">
 </head>
 <body>
-<script src="/res/darktheme.js"></script>
-<script src="/res/ajax.js"></script>
+<script src="res/darktheme.js"></script>
+<script src="res/ajax.js"></script>
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script src="https://code.highcharts.com/modules/data.js"></script>
 <script>
@@ -63,11 +63,11 @@
 		}
 		// setup links
 		elt = document.getElementById("f2_market_href")
-		elt.href="/market/" + mkt_addr
+		elt.href="market/" + mkt_addr
 		elt = document.getElementById("f2_counterparty_href")
-		elt.href="/search?q=" + counterparty
+		elt.href="search?q=" + counterparty
 		elt = document.getElementById("f2_order_hash_href")
-		elt.href="/order/" + order_hash
+		elt.href="order/" + order_hash
 	}
 	function load_open_pos_data(price,frozen,net_position,mkt_addr,mkt_addr_sh,outcome,
 				mkt_descr,date_str,counterparty,counterparty_sh,order_hash,block_num) {
@@ -103,15 +103,15 @@
 		elt.innerHTML = block_num
 		// setup links
 		elt = document.getElementById("f1_market_href")
-		elt.href="/market/" + mkt_addr
+		elt.href="market/" + mkt_addr
 		elt = document.getElementById("f1_counterparty_href")
-		elt.href="/search?q=" + counterparty
+		elt.href="search?q=" + counterparty
 		elt = document.getElementById("f1_order_hash_href")
-		elt.href="/order/" + order_hash
+		elt.href="order/" + order_hash
 	}
 	var open_positions_data = {{.JSOpenPosData}}
 	var profit_loss_data = {{.JSPLData}}
-	Ajax_GET('/money/'+eoa_addr,function(data) {
+	Ajax_GET('money/'+eoa_addr,function(data) {
 		var response=JSON.parse(data)
 		var elt
 		elt = document.getElementById("fld_eoa_dai")
@@ -144,11 +144,11 @@
 	<table class="user_info">
 		<tr class="user_info">
 			<td>User's Real Address (EOA)</td>
-			<td class="right addr" title="{{.UserInfo.EOAAddr}}">{{.UserInfo.EOAAddr}}</td>
+			<td class="right addr" title="{{.UserInfo.EOAAid}}:{{.UserInfo.EOAAddr}}">{{.UserInfo.EOAAddr}}</td>
 		</tr>
 		<tr class="user_info">
 			<td>Wallet Contract Address</td>
-			<td class="right addr" title="{{.UserInfo.WalletAddr}}">{{.UserInfo.WalletAddr}}</td>
+			<td class="right addr" title="{{.UserInfo.WalletAid}}:{{.UserInfo.WalletAddr}}">{{.UserInfo.WalletAddr}}</td>
 		</tr>
 		<tr class="user_info">
 			<td>Lifetime Profit/Loss (DAI)</td>
@@ -160,7 +160,7 @@
 		</tr>
 		<tr class="user_info">
 			<td>Markets Created</td>
-			<td class="right"><a href="/umarkets/{{.UserInfo.EOAAddr}}">{{.UserInfo.MarketsCreated}}</a></td>
+			<td class="right"><a href="umarkets/{{.UserInfo.EOAAddr}}">{{.UserInfo.MarketsCreated}}</a></td>
 		</tr>
 		<tr class="user_info">
 			<td>Markets Traded</td>
@@ -176,7 +176,7 @@
 		</tr>
 		<tr class="user_info">
 			<td>Total Reports</td>
-			<td class="right"><a href="/fullreports/{{.UserInfo.EOAAddr}}">{{.UserInfo.TotalReports}}</a></td>
+			<td class="right"><a href="fullreports/{{.UserInfo.EOAAddr}}">{{.UserInfo.TotalReports}}</a></td>
 		</tr>
 		<tr class="user_info">
 			<td>Reports as Designated Reporter</td>
@@ -279,7 +279,7 @@
 		</tr>
 		<tr class="user_info">
 			<td>Registration Block Number</td>
-			<td><a href="/block/{{.UserInfo.BlockNum}}">{{.UserInfo.BlockNum}}</a></td>
+			<td><a href="block/{{.UserInfo.BlockNum}}">{{.UserInfo.BlockNum}}</a></td>
 		</tr>
 	</table>
 	<br/>
@@ -287,7 +287,7 @@
 <nav>
 	<ul>
 	<li>
-		<a class="btn_link" href="/udw/{{.UserInfo.EOAAddr}}">Operations</a>
+		<a class="btn_link" href="udw/{{.UserInfo.EOAAddr}}">Operations</a>
 		<span></span><span></span><span></span><span></span>
 	</li>
 </ul>
@@ -356,7 +356,7 @@
 <br/><br/>
 {{ if .HasActiveMarkets }}
 	User is currently trading these markets:
-	<form action="/umtrades.html" type=GET>
+	<form action="umtrades.html" type=GET>
 		<select name="market">
 			<option selected>------</option>
 				{{- range $i, $market := .UserActiveMarkets}}
@@ -442,7 +442,7 @@
 	<nav id="market_trades_nav">
 		<ul>
 			<li style="float: left">
-				<a class="btn_link" href="/fullreports/{{.UserInfo.EOAAddr}}">All Reports</a>
+				<a class="btn_link" href="fullreports/{{.UserInfo.EOAAddr}}">All Reports</a>
 				<span></span><span></span><span></span><span></span>
 			</li>
 		</ul>
@@ -612,7 +612,7 @@ Highcharts.chart('open_positions_chart', {
 <nav>
 	<ul>
 	<li>
-		<a class="btn_link" href="/index.html">Back</a>
+		<a class="btn_link" href="index.html">Back</a>
 		<span></span><span></span><span></span><span></span>
 	</li>
 </ul>

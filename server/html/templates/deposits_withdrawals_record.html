@@ -3,7 +3,7 @@
 	<td class="deposits_withdrawal_field">{{.Date}}</td>
 	<td class="deposits_withdrawal_field">{{.BlockNum}}</td>
 	<td class="deposits_withdrawal_field">
-		<a class="addr "href="/search?q={{.FromAddr}}">{{.FromAddr}}</a>
+		<a class="addr "href="search?q={{.FromAddr}}">{{.FromAddr}}</a>
 	</td>
 	<td class="deposits_withdrawal_field" style="text-align: right">
 			{{.Deposit}}
@@ -12,7 +12,7 @@
 			{{.Withdrawal}}
 	</td>
 	<td class="deposits_withdrawal_field">
-		<a class="addr" href="/search?q={{.ToAddr}}">{{.ToAddr}}</a>
+		<a class="addr" href="search?q={{.ToAddr}}">{{.ToAddr}}</a>
 	</td>
 </tr>
 {{end}}
