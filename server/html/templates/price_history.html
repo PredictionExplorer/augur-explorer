@@ -1,6 +1,6 @@
 <html>
 <head>
-	<link href="/res/main.css" rel="stylesheet">
+	<link href="res/main.css" rel="stylesheet">
 	<title>Augur Market Price History {{.Market.MktAddr}}</title>
 	<meta name="description" content="{{.Market.Description}}">
 </head>
@@ -25,9 +25,9 @@
 		elt = document.getElementById("fld_volume")
 		elt.innerHTML = volume
 		elt = document.getElementById("fld_creator_href")
-		elt.href="/user/" + creator_eoa_addr
+		elt.href="user/" + creator_eoa_addr
 		elt = document.getElementById("fld_filler_href")
-		elt.href="/user/" + filler_eoa_addr
+		elt.href="user/" + filler_eoa_addr
 	}
 
 	var price_history_data = {{.JSPriceData}}
@@ -73,7 +73,7 @@
 <nav>
 	<ul>
 	<li>
-		<a class="btn_link" href="/index.html">Back</a>
+		<a class="btn_link" href="index.html">Back</a>
 		<span></span><span></span><span></span><span></span>
 	</li>
 </ul>

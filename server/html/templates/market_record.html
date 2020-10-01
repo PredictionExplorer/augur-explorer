@@ -1,12 +1,12 @@
 {{define "market_record"}}
 <tr class="markets">
 	<td nowrap class="market_field" title="{{.MktAddr}}">
-			<a href="/market/{{.MktAddr}}" class="addr market_record">{{.MktAddrSh}}</a>
+			<a href="market/{{.MktAddr}}" class="addr market_record">{{.MktAddrSh}}</a>
 	</td>
 	<td class="market_field">{{.MktTypeStr}}</td>
 	<td class="market_field">{{.Status}}</td>
 	<td class="market_field">
-		<a href="/market/{{.MktAddr}}" class="market_record">{{.Description}}</a>
+		<a href="market/{{.MktAddr}}" class="market_record">{{.Description}}</a>
 	</td>
 	<td nowrap class="market_field">{{.EndDate}}</td>
 	<td class="market_field" style="text-align: right;">{{.CurVolume}}</td>

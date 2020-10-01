@@ -60,6 +60,7 @@ func (ss *SQLStorage) Get_main_stats() p.MainStats {
 		}
 	}
 	s.FinalizedCount = (s.YesNoCount + s.CategCount + s.ScalarCount) - s.ActiveCount
+	s.LastBlockNum,_ =  ss.Get_last_block_num()
 	return s
 }
 func (ss *SQLStorage) Get_front_page_stats() p.FrontPageStats {
@@ -92,7 +93,7 @@ func (ss *SQLStorage) Get_last_unique_addr_day() int64 {
 		if err == sql.ErrNoRows {
 			return 0
 		} else {
-			ss.Log_msg(fmt.Sprintf("Error in Get_last_block_timestamp(): %v, q=%v",err,query))
+			ss.Log_msg(fmt.Sprintf("Error in Get_last_unique_addr_day(): %v, q=%v",err,query))
 			os.Exit(1)
 		}
 	}

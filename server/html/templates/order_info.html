@@ -1,7 +1,7 @@
 <html>
 <head>
 	<title>{{.title}}</title>
-	<link href="/res/main.css" rel="stylesheet">
+	<link href="../res/main.css" rel="stylesheet">
 </head>
 <body>
 <h3 class="page_title">Order {{.OrderInfo.OrderHashSh}}</h3>
@@ -18,12 +18,12 @@
 		<tr>
 			<td>Market</td>
 			<td>
-				<a class="addr" href="/market/{{.OrderInfo.MarketAddr}}">{{.OrderInfo.MarketAddrSh}}</a>
+				<a class="addr" href="../market/{{.OrderInfo.MarketAddr}}">{{.OrderInfo.MarketAddrSh}}</a>
 			</td>
 		<tr>
 			<td>Creator</td>
 			<td title="{{.OrderInfo.CreatorEOAAddr}}">
-				<a class="addr" href="/search?q={{.OrderInfo.CreatorEOAAddr}}">
+				<a class="addr" href="../search?q={{.OrderInfo.CreatorEOAAddr}}">
 					{{.OrderInfo.CreatorEOAAddrSh}}
 				</a>
 				{{- if .OrderInfo.CreatorBuyer }}
@@ -36,7 +36,7 @@
 		<tr>
 			<td>Filler</td>
 			<td title="{{.OrderInfo.FillerEOAAddr}}">
-				<a class="addr" href="/search?q={{.OrderInfo.FillerEOAAddr}}">
+				<a class="addr" href="../search?q={{.OrderInfo.FillerEOAAddr}}">
 					{{.OrderInfo.FillerEOAAddrSh}}
 				</a>
 				{{- if .OrderInfo.FillerBuyer }}
@@ -68,7 +68,7 @@
 <nav>
 	<ul>
 	<li>
-		<a class="btn_link" href="/index.html">Back</a>
+		<a class="btn_link" href="../index.html">Back</a>
 		<span></span><span></span><span></span><span></span>
 	</li>
 </ul>

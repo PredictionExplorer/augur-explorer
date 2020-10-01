@@ -536,3 +536,59 @@ func a1_top_users(c *gin.Context) {
 			"error": err_str,
 	})
 }
+func a1_stats_main(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	stats := augur_srv.storage.Get_main_stats()
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"MainStats" : stats,
+			"status": status,
+			"error": err_str,
+	})
+}
+func a1_stats_cashflow(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	cash_flow_entries := augur_srv.storage.Get_cash_flow()
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"CashFlow" : cash_flow_entries,
+			"status": status,
+			"error": err_str,
+	})
+}
+func a1_stats_gasusage(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	gas_usage := augur_srv.storage.Get_gas_usage_global()
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"GasUsage" : gas_usage,
+			"status": status,
+			"error": err_str,
+	})
+}
+func a1_stats_uniqaddr(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	uniq_addrs := augur_srv.storage.Get_unique_addresses()
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"UniqueAddresses" : uniq_addrs,
+			"status": status,
+			"error": err_str,
+	})
+}
