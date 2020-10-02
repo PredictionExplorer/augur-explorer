@@ -302,8 +302,12 @@ func (ss *SQLStorage) Get_user_ranks(sort int,order int) []p.UserRank {
 		order_dir="ASC"
 	}
 
-	query = "SELECT r.eoa_aid,a.addr,r.profit,r.total_trades,r.volume FROM uranks AS r " +
-			"LEFT JOIN address AS a ON r.eoa_aid = a.address_id " +
+	query = "SELECT " +
+				"r.eoa_aid,ea.addr,r.profit,r.total_trades,r.volume,s.markets_created,wa.address_id,wa.addr " +
+				"FROM uranks AS r " +
+					"JOIN  ustats AS s ON r.eoa_aid=s.eoa_aid " +
+			"LEFT JOIN address AS ea ON r.eoa_aid = ea.address_id " +
+			"LEFT JOIN address AS wa ON s.wallet_aid = wa.address_id " +
 			"ORDER BY r."+order_field+" "+order_dir
 
 	rows,err := ss.db.Query(query)
@@ -314,7 +318,16 @@ func (ss *SQLStorage) Get_user_ranks(sort int,order int) []p.UserRank {
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.UserRank
-		err=rows.Scan(&rec.EoaAid,&rec.EOAAddr,&rec.ProfitLoss,&rec.TotalTrades,&rec.VolumeTraded)
+		err=rows.Scan(
+			&rec.EoaAid,
+			&rec.EOAAddr,
+			&rec.ProfitLoss,
+			&rec.TotalTrades,
+			&rec.VolumeTraded,
+			&rec.NumMktCreated,
+			&rec.WalletAid,
+			&rec.WalletAddr,
+		)
 		records = append(records,rec)
 	}
 	return records
