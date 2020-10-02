@@ -811,10 +811,10 @@ func (ss *SQLStorage) Get_user_trades_for_market(eoa_aid int64,mkt_aid int64) []
 				"m.market_type AS mtype," +
 				"m.outcomes AS outcomes_str " +
 			"FROM mktord AS o " +
+				"JOIN market AS m ON o.market_aid=m.market_aid " +
 				"LEFT JOIN address AS a ON o.market_aid=a.address_id " +
 				"LEFT JOIN address AS fa ON o.eoa_fill_aid=fa.address_id " +
 				"LEFT JOIN address AS ca ON o.eoa_aid=ca.address_id " +
-				"LEFT JOIN market AS m ON o.market_aid = m.market_aid " +
 			"WHERE o.market_aid = $1 AND ((o.eoa_aid=$2) OR (o.eoa_fill_aid=$2)) " +
 			"ORDER BY o.block_num DESC,o.time_stamp DESC"
 
@@ -852,6 +852,7 @@ func (ss *SQLStorage) Get_user_trades_for_market(eoa_aid int64,mkt_aid int64) []
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		p.Augur_UI_price_adjustments(&rec.Price,&rec.Amount,mkt_type)
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)
 		rec.CreatorAddrSh=p.Short_address(rec.CreatorAddr)
 		rec.FillerAddrSh=p.Short_address(rec.FillerAddr)
@@ -931,6 +932,7 @@ func (ss *SQLStorage) Get_user_open_orders(user_aid int64) []p.OpenOrder {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		p.Augur_UI_price_adjustments(&rec.Price,&rec.Amount,rec.MktType)
 		rec.MktStatusStr = get_market_status_str(p.MarketStatus(rec.MktStatus))
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)
 		rec.CreatorAddrSh=p.Short_address(rec.CreatorAddr)
@@ -1045,6 +1047,8 @@ func (ss *SQLStorage) Get_user_oo_history(user_aid int64) []p.OpenOrder {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		p.Augur_UI_price_adjustments(&rec.Price,&rec.Amount,rec.MktType)
+		p.Augur_UI_price_adjustments(nil,&rec.InitialAmount,rec.MktType)
 		rec.MktStatusStr = get_market_status_str(p.MarketStatus(rec.MktStatus))
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)
 		rec.CreatorAddrSh=p.Short_address(rec.CreatorAddr)

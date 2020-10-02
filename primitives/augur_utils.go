@@ -54,3 +54,4 @@ func addresses_to_str(addresses *[]common.Address,separator string) string {
 	}
 	return output.String()
 }
+

@@ -453,6 +453,7 @@ func (ss *SQLStorage) Get_mkt_trades(mkt_addr string,limit int) []p.MarketTrade 
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		p.Augur_UI_price_adjustments(&rec.Price,&rec.Amount,mkt_type)
 		rec.OrderHashSh=p.Short_hash(rec.OrderHash)
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)
 		rec.CreatorAddrSh=p.Short_address(rec.CreatorAddr)
@@ -469,6 +470,7 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 				"o.id," +
 				"o.market_aid," +
 				"o.outcome_idx," +
+				"m.market_type," +
 				"wa.addr AS wallet_addr," +
 				"ua.addr AS user_addr," +
 				"o.srv_timestamp::date AS date_created," +
@@ -480,6 +482,7 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 				"s.num_asks," +
 				"s.num_cancel " +
 			"FROM oorders AS o " +
+				"JOIN market AS m ON m.market_aid=o.market_aid " +
 				"LEFT JOIN oostats AS s ON (" +
 						"o.market_aid=s.market_aid AND " +
 						"o.eoa_aid=s.eoa_aid AND " +
@@ -507,6 +510,7 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 	var oo_id int64 = 0
 	defer rows.Close()
 	for rows.Next() {
+		var mkt_type int
 		var rec p.DepthEntry
 		var num_bids sql.NullInt64
 		var num_asks sql.NullInt64
@@ -515,6 +519,7 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 			&oo_id,
 			&rec.MktAid,
 			&rec.OutcomeIdx,
+			&mkt_type,
 			&rec.WalletAddr,
 			&rec.EOAAddr,
 			&rec.DateCreated,
@@ -530,6 +535,7 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		p.Augur_UI_price_adjustments(&rec.Price,&rec.Volume,mkt_type)
 		if num_bids.Valid {
 			rec.TotalBids = int32(num_bids.Int64)
 		}
@@ -557,6 +563,7 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 				"o.id,"+
 				"o.order_hash," +
 				"o.market_aid," +
+				"m.market_type," +
 				"c_w_a.addr AS c_w_a_addr," +
 				"c_e_a.addr AS filler_eoa_addr," +
 				"f_w_a.addr AS f_w_a_addr," +
@@ -572,8 +579,8 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 				"o.price AS price, " +
 				"o.amount_filled AS volume " +
 			"FROM mktord AS o " +
-				"LEFT JOIN " +
-					"address AS a ON o.market_aid=a.address_id " +
+				"JOIN market AS m on o.market_aid=m.market_aid " +
+				"LEFT JOIN address AS a ON o.market_aid=a.address_id " +
 				"LEFT JOIN address AS c_w_a ON o.wallet_aid=c_w_a.address_id " +
 				"LEFT JOIN address AS c_e_a ON o.eoa_aid=c_e_a.address_id " +
 				"LEFT JOIN address AS f_w_a ON o.wallet_fill_aid=f_w_a.address_id " +
@@ -591,10 +598,12 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.OrderInfo
+		var mkt_type int
 		err=rows.Scan(
 			&rec.OrderId,
 			&rec.OrderHash,
 			&rec.MktAid,
+			&mkt_type,
 			&rec.CreatorWalletAddr,
 			&rec.CreatorEOAAddr,
 			&rec.FillerWalletAddr,
@@ -611,6 +620,7 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
 			os.Exit(1)
 		}
+		p.Augur_UI_price_adjustments(&rec.Price,&rec.Amount,mkt_type)
 		rec.CreatorBuyer = true
 		rec.FillerBuyer = false
 		if rec.OType == 1 {
@@ -824,6 +834,7 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 			ss.Log_msg(fmt.Sprintf("DB error: %v eoa_aid=%v q=%v",err,eoa_aid,query))
 			os.Exit(1)
 		}
+		p.Augur_UI_price_adjustments(&rec.AvgPrice,&rec.NetPosition,rec.MktType)
 		rec.CreatorBuyer = true
 		rec.FillerBuyer = false
 		if otype == 1 {
@@ -969,6 +980,7 @@ func (ss *SQLStorage) Get_order_info_by_id(order_id int64) (p.OrderInfo,error) {
 			os.Exit(1)
 		}
 	}
+	p.Augur_UI_price_adjustments(&order.Price,&order.Amount,int(order.MktType))
 	order.CreatorBuyer = true
 	order.FillerBuyer = false
 	if order.OType == 1 {
@@ -1024,6 +1036,7 @@ func (ss *SQLStorage) Get_filling_orders_by_hash(order_hash string) []p.OrderInf
 			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
 			os.Exit(1)
 		}
+		p.Augur_UI_price_adjustments(&rec.Price,&rec.Amount,int(rec.MktType))
 		rec.CreatorBuyer = true
 		rec.FillerBuyer = false
 		if rec.OType == 1 {

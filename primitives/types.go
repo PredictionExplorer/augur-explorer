@@ -10,6 +10,8 @@ import (
 const (
 	MAX_BLOCKS_CHAIN_SPLIT = 128
 	OWNER_FIELD_OFFSET int = 2	// offset to the 'owner' field in WalletContract in EVM (contract storage)
+	CATEGORICAL_MULTIPLIER int = 1000
+	SCALAR_MULTIPLIER int = 10
 )
 const (
 	MktTypeYesNo		= iota
@@ -24,7 +26,6 @@ const (
 	OOOpCodeExpired
 	OOOpCodeSyncProcess		// when no other reason exist, this one is used (this is a kind of a bugfix)
 )
-
 var (
 	ErrChainSplit error = errors.New("Chainsplit detected")
 )

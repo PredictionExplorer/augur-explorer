@@ -990,6 +990,11 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 			&rec.MktType,
 			&outcomes,
 		)
+		p.Augur_UI_price_adjustments(&rec.LastPrice,nil,rec.MktType)
+		p.Augur_UI_price_adjustments(&rec.HighestBid,nil,rec.MktType)
+		p.Augur_UI_price_adjustments(&rec.LowestAsk,nil,rec.MktType)
+		p.Augur_UI_price_adjustments(&rec.CurSpread,nil,rec.MktType)
+		p.Augur_UI_price_adjustments(&rec.PriceEstimate,nil,rec.MktType)
 		rec.MktAddr = mkt_addr
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
