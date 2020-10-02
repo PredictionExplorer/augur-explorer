@@ -1,13 +1,13 @@
 <html>
 <head>
-	<link href="res/main.css" rel="stylesheet">
+	<link href="../../res/main.css" rel="stylesheet">
 	<title>Augur Market Depth {{.Market.MktAddr}}</title>
 	<meta name="description" content="{{.Market.Description}}">
 </head>
 <body>
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script src="https://code.highcharts.com/modules/data.js"></script>
-<script src="res/ajax.js"></script>
+<script src="../../res/ajax.js"></script>
 <script>
 	function load_order_data(eoa_addr,wallet_addr,mkt_aid,outcome_idx,total_bids,total_asks,total_cancel,order_date,expires) {
 		console.log(eoa_addr)
@@ -43,7 +43,7 @@
 		if (market_aid == 0) {
 			return
 		}
-		var url = 'mdstat/'+market_aid+"/"+outcome_idx+"/"+last_oo_id
+		var url = '../mdstat/'+market_aid+"/"+outcome_idx+"/"+last_oo_id
 		console.log("calling status. num_orders="+num_orders+", last_oo_id="+last_oo_id)
 		Ajax_GET(url,function(data) {
 			var response=JSON.parse(data)
