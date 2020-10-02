@@ -1226,10 +1226,12 @@ func price_estimate_history(c *gin.Context) {
 	num_orders:=len(mdepth.Bids) + len(mdepth.Asks)
 */
 	js_price_estimate_data := build_js_price_estimate_history(&price_estimates)
+	js_weighted_price_data := build_js_weighted_price_history(&price_estimates)
 	c.HTML(http.StatusOK, "price_estimate.html", gin.H{
 		"Market": market_info,
 		"OutcomeIdx" : outcome,
 		"PriceHistory" : price_estimates ,
 		"JSPriceEst" : js_price_estimate_data,
+		"JSWeightedPrice" : js_weighted_price_data,
 	})
 }

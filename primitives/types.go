@@ -529,9 +529,15 @@ type ZHistT1Entry struct {		// the Order on 0x Mesh network, that is yet to be f
 	Id					int64
 	MktAid				int64
 	Amount				float64
-	InitialAmount		float64
+	FillableAmount		float64
 	Price				float64
 	PriceEstimate		float64
+	WeightedPriceEst	float64
+	Spread				float64
+	MaxBid				float64
+	MinAsk				float64
+	WMaxBid				float64
+	WMinAsk				float64
 	Timestamp			int64
 	MktExpirationTs		int64
 	OrderExpirationTs	int64
@@ -541,7 +547,7 @@ type ZHistT1Entry struct {		// the Order on 0x Mesh network, that is yet to be f
 	MarketStatus		int
 	OutcomeIdx			int
 	OrderType			int
-	OpCode				int		// OOOpCode*** operation code listed at the beginning of the file
+	EvtCode				int
 	OrderDate			string
 	Direction			string
 	MktDescr			string
@@ -556,8 +562,9 @@ type ZHistT1Entry struct {		// the Order on 0x Mesh network, that is yet to be f
 	MktAddrSh			string
 }
 type ZHistT2Entry struct { // Type2 entry, summarized data
-	Timestamp			int64
-	Price				float64
+	Timestamp				int64
+	PriceEstimate			float64
+	WeightedPriceEstimate	float64
 }
 type ZoomedPriceHist struct {
 	Zoom				int

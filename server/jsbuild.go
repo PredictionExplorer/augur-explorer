@@ -232,3 +232,25 @@ func build_js_price_estimate_history(prices *[]PriceEstimate) template.JS {
 	data_str = data_str + "]"
 	return template.JS(data_str)
 }
+func build_js_weighted_price_history(prices *[]PriceEstimate) template.JS {
+	var data_str string = "["
+
+	for i:=0 ; i < len(*prices) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		var e = &(*prices)[i];
+		var entry string
+		entry = "{" +
+				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.TimeStamp)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.WeightedPriceEst) + "," +
+				"price: " + fmt.Sprintf("%v",e.WeightedPriceEst) + "," +
+				"spread: " + fmt.Sprintf("%v",e.Spread) + "," +
+				"wmaxbid:" + fmt.Sprintf("\"%v\"",e.WMaxBid) + "," +
+				"wminask:" + fmt.Sprintf("\"%v\"",e.WMinAsk) + "," +
+				"}"
+		data_str= data_str + entry
+	}
+	data_str = data_str + "]"
+	return template.JS(data_str)
+}

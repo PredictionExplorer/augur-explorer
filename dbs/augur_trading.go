@@ -729,6 +729,7 @@ func (ss *SQLStorage) Get_full_price_history(mkt_addr string,market_aid int64) p
 func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,outc int,init_ts int,fin_ts int) []p.ZHistT1Entry {
 
 	var query string
+	/* DISCONTINUED
 	query = "SELECT " +
 				"o.id,"+
 				"o.order_hash," +
@@ -758,6 +759,43 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,o
 				"o.evt_timestamp >= TO_TIMESTAMP($3) AND "+
 				"o.evt_timestamp < TO_TIMESTAMP($4) " +
 			"ORDER BY o.evt_timestamp"
+	*/
+	query = "SELECT " +
+				"p.id,"+
+				"e.order_hash," +
+				"p.market_aid," +
+				"'PENDING' AS creator_addr," +
+				"e.otype, " +
+				"CASE e.otype " +
+					"WHEN 0 THEN 'BID' " +
+					"ELSE 'ASK' " +
+				"END AS dir, " +
+				"p.time_stamp::date AS date," +
+				"FLOOR(EXTRACT(EPOCH FROM p.time_stamp))::BIGINT as time_stamp," +
+				"FLOOR(EXTRACT(EPOCH FROM e.expiration_time))::BIGINT as expiration_ts," +
+				"e.evt_code," +
+				"p.outcome_idx," +
+				"e.price AS price, " +
+				"p.price_est, " +
+				"p.wprice_est, " +
+				"e.fillable_amount, " +
+				"e.amount_fill, " +
+				"p.max_bid," +
+				"p.min_ask," +
+				"p.wmax_bid," +
+				"p.wmin_ask," +
+				"p.spread " +
+			"FROM price_estimate AS p " +
+				"JOIN mesh_evt AS e ON p.meshevt_id=e.id " +
+				"LEFT JOIN " +
+					"address AS a ON p.market_aid=a.address_id " +
+//				"LEFT JOIN address AS c_e_a ON o.eoa_aid=c_e_a.address_id " +
+			"WHERE " +
+				"p.market_aid = $1 AND " +
+				"p.outcome_idx=$2 AND " +
+				"p.time_stamp >= TO_TIMESTAMP($3) AND "+
+				"p.time_stamp < TO_TIMESTAMP($4) " +
+			"ORDER BY p.time_stamp"
 	ss.Info.Printf(
 		"market_aid=%v, outcome=%v, init_ts=%v, fin_ts=%v, query=%v\n",
 		market_aid,outc,init_ts,fin_ts,query,
@@ -782,18 +820,24 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,o
 			&rec.OrderDate,
 			&rec.Timestamp,
 			&rec.OrderExpirationTs,
-			&rec.OpCode,
+			&rec.EvtCode,
 			&rec.OutcomeIdx,
 			&rec.Price,
 			&rec.PriceEstimate,
-			&rec.InitialAmount,
+			&rec.WeightedPriceEst,
+			&rec.FillableAmount,
 			&rec.Amount,
+			&rec.MaxBid,
+			&rec.MinAsk,
+			&rec.WMaxBid,
+			&rec.WMinAsk,
+			&rec.Spread,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
 			os.Exit(1)
 		}
-		rec.CreatorAddrSh=p.Short_address(rec.CreatorAddr)
+		//rec.CreatorAddrSh=p.Short_address(rec.CreatorAddr)
 		records = append(records,rec)
 	}
 	return records
@@ -801,6 +845,7 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,o
 func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,outc int,init_ts int,fin_ts int,interval int) []p.ZHistT2Entry {
 
 	var query string
+	/*
 	query = "SELECT " +
 				"ROUND(FLOOR(EXTRACT(EPOCH FROM o.evt_timestamp))/$5)::BIGINT*$5::BIGINT AS start_ts,"+
 				"AVG(price_estimate) AS avg_price_estimate " +
@@ -812,20 +857,19 @@ func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,o
 				"o.evt_timestamp < TO_TIMESTAMP($4) " +
 			"GROUP BY start_ts " +
 			"ORDER BY start_ts"
-	d_query := fmt.Sprintf("SELECT " +
-				"ROUND(FLOOR(EXTRACT(EPOCH FROM o.evt_timestamp))/%v)::BIGINT*%v::BIGINT AS start_ts,"+
-				"AVG(price_estimate) AS avg_price_estimate " +
-			"FROM oohist AS o " +
+	*/
+	query = "SELECT " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM p.time_stamp))/$5)::BIGINT*$5::BIGINT AS start_ts,"+
+				"AVG(price_est) AS avg_price_estimate, " +
+				"AVG(wprice_est) AS avg_weighted_price_est " +
+			"FROM price_estimate as p " +
 			"WHERE " +
-				"o.market_aid = %v  AND " +
-				"o.outcome_idx = %v AND " +
-				"o.evt_timestamp >= TO_TIMESTAMP(%v) AND "+
-				"o.evt_timestamp < TO_TIMESTAMP(%v) " +
+				"p.market_aid = $1  AND " +
+				"p.outcome_idx = $2 AND " +
+				"p.time_stamp >= TO_TIMESTAMP($3) AND "+
+				"p.time_stamp < TO_TIMESTAMP($4) " +
 			"GROUP BY start_ts " +
-			"ORDER BY start_ts",
-			interval,interval,market_aid,outc,init_ts,fin_ts,
-	)
-	ss.Info.Printf("Zoomed t2_query: %v\n",d_query)
+			"ORDER BY start_ts"
 	rows,err := ss.db.Query(query,market_aid,outc,init_ts,fin_ts,interval)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -838,7 +882,8 @@ func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,o
 		var rec p.ZHistT2Entry
 		err=rows.Scan(
 			&rec.Timestamp,
-			&rec.Price,
+			&rec.PriceEstimate,
+			&rec.WeightedPriceEstimate,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v",err))

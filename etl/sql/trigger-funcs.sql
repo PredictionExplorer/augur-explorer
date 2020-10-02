@@ -18,6 +18,7 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+/* DISCONTINUED
 CREATE OR REPLACE FUNCTION update_price_estimate_v1(
 	p_market_aid bigint,p_outcome_idx integer,p_osize decimal,p_timestamp timestamptz
 ) RETURNS DECIMAL AS $$
@@ -110,6 +111,7 @@ BEGIN
 	RETURN v_price_estimate;
 END;
 $$ LANGUAGE plpgsql;
+*/
 CREATE OR REPLACE FUNCTION on_oorders_insert() RETURNS trigger AS  $$ --updates open order statistics
 DECLARE
 	v_cnt numeric;
@@ -147,6 +149,7 @@ BEGIN
 
 
 	-- Update Open Order history
+/*
 	INSERT INTO oohist(
 			otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
 			price,initial_amount,amount,evt_timestamp,srv_timestamp,expiration,order_hash
@@ -161,7 +164,7 @@ BEGIN
 		SELECT * FROM update_price_estimate(NEW.market_aid,NEW.outcome_idx::SMALLINT,NEW.amount,NEW.evt_timestamp) INTO v_price_estimate;
 		UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
 	END IF;
-
+*/
 	UPDATE market SET total_oorders = (total_oorders + 1) WHERE market_aid=NEW.market_aid;
 	UPDATE outcome_vol SET total_oorders = (total_oorders + 1) 
 		WHERE market_aid = NEW.market_aid AND outcome_idx = NEW.outcome_idx;
@@ -169,6 +172,7 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+/* DISCONTINUED
 CREATE OR REPLACE FUNCTION update_oo_hist(p_mktord_id bigint,p_order_hash text,p_evt_timestamp bigint,p_filled_amount text,p_opcode numeric) RETURNS void AS  $$ -- reverts order statistics on delete
 DECLARE
 	oo record;
@@ -239,6 +243,7 @@ BEGIN
 
 END;
 $$ LANGUAGE plpgsql;
+*/
 CREATE OR REPLACE FUNCTION on_oorders_delete() RETURNS trigger AS  $$ -- reverts order statistics on delete
 DECLARE
 BEGIN
@@ -257,8 +262,6 @@ BEGIN
 					(s.eoa_aid = OLD.eoa_aid) AND
 					(s.outcome_idx = OLD.outcome_idx);
 	END IF;
-
-	-- Noote: We aren't inserting corresponding record into 'oohist' table here because we don't have the opcode
 
 	UPDATE market SET total_oorders = (total_oorders - 1) WHERE market_aid=OLD.market_aid;
 	UPDATE outcome_vol SET total_oorders = (total_oorders - 1) 
@@ -1086,6 +1089,8 @@ BEGIN
 									ini_ts <= p_timestamp AND p_timestamp < fin_ts
 				INTO v_weighted_bid;
 		END IF;
+	ELSE
+		v_weighted_bid := 0;
 	END IF;
 	IF v_wask_total IS NOT NULL THEN
 		IF v_wask_total != 0 THEN
@@ -1094,6 +1099,8 @@ BEGIN
 									ini_ts <= p_timestamp AND p_timestamp < fin_ts
 				INTO v_weighted_ask;
 		END IF;
+	ELSE
+		v_weighted_ask := v_num_ticks;
 	END IF;
 	IF (v_weighted_bid IS NOT NULL) AND (v_weighted_ask IS NOT NULL) THEN
 		v_weighted_price_estimate := (v_weighted_bid + v_weighted_ask) / 2;

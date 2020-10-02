@@ -46,6 +46,7 @@
 	}
 
 	var price_est_data = {{.JSPriceEst}}
+	var weighted_price_data = {{.JSWeightedPrice}}
 	var market_aid = {{.Market.MktAid}}
 	var outcome_idx = {{.OutcomeIdx}}
 </script>
@@ -381,6 +382,12 @@ Highcharts.chart('price_estimate_graph', {
 			}
 		},
 		data: price_est_data
+	},
+	{
+        name: 'WeightedPrice',
+		point: {
+		},
+		data: weighted_price_data
 	}],
 
     responsive: {
@@ -399,7 +406,9 @@ Highcharts.chart('price_estimate_graph', {
     },
     tooltip: {
       formatter: function() {
-		tooltip ="<div>Price: "+this.point.price+ "<br/>Date:" + this.point.date+"<br/>Spread: "+this.point.spread+"</div>"
+		tooltip = "<br/>Date:" + this.point.date +
+			"<div>Price: "+this.point.price + 
+			"<br/>Spread: "+this.point.spread+"</div>"
         return tooltip;
       }
     },
