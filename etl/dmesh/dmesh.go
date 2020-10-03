@@ -1,6 +1,5 @@
 // +build !js
 
-// demo/add_order is a short program that adds an order to 0x Mesh via RPC
 package main
 
 import (
@@ -11,7 +10,7 @@ import (
 	"fmt"
 	"time"
 	"bytes"
-	//"encoding/hex"
+	"errors"
 
 	"github.com/0xProject/0x-mesh/rpc"
 	"github.com/0xProject/0x-mesh/zeroex"
@@ -31,6 +30,7 @@ const (
 )
 var (
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
+	errEoaLookupFailed = errors.New("EOA Lookup failed for maker addr")
 	ctrct_zerox *ZeroX
 	market_order_id int64 = 0
 	fill_order_id int64 = 0
@@ -133,41 +133,24 @@ func get_ospec(order *zeroex.SignedOrder,order_hash *string) (ZxMeshOrderSpec,er
 	}
 	return unpacked_id,err
 }
-/*discontinued
-func oo_insert(order_hash *string,order *zeroex.SignedOrder,fillable_amount *big.Int,timestamp int64) error {
+func get_possible_eoa_by_wallet_addr(maker_addr *common.Address,order_hash *common.Hash) (common.Address,error) {
 
 	ctx := context.Background()
-	var copts = new(bind.CallOpts)
-	adata,err := zerox_contract.DecodeAssetData(copts,order.MakerAssetData)
-	if err!=nil {
-		Error.Printf("couldn't decode asset data for order %v : %v\n",*order_hash,err)
-		return err
-	}
-	unpacked_id,err := zerox_contract.UnpackTokenId(copts,adata.TokenIds[0])
-	if err!=nil {
-		Error.Printf("Unpack token id failed for order %v: %v\n",*order_hash,err)
-		return err
-	}
 	num:=big.NewInt(int64(owner_fld_offset))
 	key:=common.BigToHash(num)
-	eoa,err := eclient.StorageAt(ctx,order.MakerAddress,key,nil)
-	Info.Printf("oo_insert: order_hash=%v\n",*order_hash)
-	Info.Printf("oo insert: maker=%v eoa=%v; err=%v\n",order.MakerAddress.String(),hex.EncodeToString(eoa[:]),err)
-	var eoa_addr_str string
+	eoa,err := eclient.StorageAt(ctx,*maker_addr,key,nil)
 	if err == nil {
-		eoa_addr_str = common.BytesToAddress(eoa[12:]).String()
+		eoa_addr := common.BytesToAddress(eoa[12:])
+		return eoa_addr,nil
 	} else {
 		Info.Printf(
 			"ethclient::StorageAt() failed for order %v, maker addr %v: %v. " +
 			"Order will be inserted without EOA link. (ETH_STORAGE_FAIL)",
-			order.MakerAddress.String(),*order_hash,err,
+			maker_addr.String(),*order_hash,err,
 		)
-		return err
+		return common.Address{},err
 	}
-	err = storage.Insert_open_order(order_hash,order,fillable_amount,eoa_addr_str,&unpacked_id,OOOpCodeCreated,timestamp)
-	return err
 }
-*/
 func order_belongs_to_augur(order *zeroex.SignedOrder) bool {
 
 	// detecting if the order belongs to Augur Platform and it does if MakerAssetData
@@ -220,30 +203,10 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 				Error.Printf("Error decoding market data: %v\n",err)
 			} else {
 				DumpOrderSpec(Info,&ospec)
-				storage.Try_insert_0x_mesh_order_event(time_stamp,order_info,&ospec,nil,MeshEvtAdded)
+				maybe_eoa_addr,_ := get_possible_eoa_by_wallet_addr(&order_info.SignedOrder.Order.MakerAddress,&order_info.OrderHash)
+				eoa_aid,wallet_aid,_ := storage.Lookup_maker_eoa_wallet_ids(&maybe_eoa_addr,&order_info.SignedOrder.Order.MakerAddress)
+				storage.Try_insert_0x_mesh_order_event(eoa_aid,wallet_aid,time_stamp,order_info,&ospec,nil,MeshEvtAdded)
 			}
-			/*discontinued
-			amount := order_info.FillableTakerAssetAmount
-			retval,bad_amount := storage.Update_oo_fillable_amount(order_hash,amount,order_info.SignedOrder)
-			if retval == 2 { // order doesn't exist
-				err := oo_insert(&order_hash,order_info.SignedOrder,order_info.FillableTakerAssetAmount,0)
-				if err!=nil {
-					// nothing
-					Info.Printf("Error inserting open order %v: %v\n",order_hash,err)
-					Error.Printf("Error inserting open order %v: %v\n",order_hash,err)
-				} else {
-					insert_count++
-					Info.Printf("Inserted open order %v\n",order_hash)
-				}
-			}
-			if retval == 1 {
-				Info.Printf(
-					"Order %v had incorrect amount, fixed. (bad amount=%v, good amount=%v) (BAD_AMOUNT)",
-					order_hash,bad_amount,amount.String(),
-				)
-				update_count++
-			}
-			*/
 		}
 	}
 	return augur_count,insert_count,update_count
@@ -362,6 +325,8 @@ func main() {
 				}
 				Dump_0x_mesh_order(Info,&order_info)
 				DumpOrderSpec(Info,&ospec)
+				maybe_eoa_addr,_ := get_possible_eoa_by_wallet_addr(&order_info.SignedOrder.Order.MakerAddress,&order_info.OrderHash)
+				eoa_aid,wallet_aid,ew_err := storage.Lookup_maker_eoa_wallet_ids(&maybe_eoa_addr,&order_info.SignedOrder.Order.MakerAddress)
 				switch orderEvent.EndState {
 				case zeroex.ESOrderAdded,
 					zeroex.ESOrderExpired,
@@ -370,6 +335,8 @@ func main() {
 					zeroex.ESStoppedWatching,
 					zeroex.ESOrderUnexpired:
 					storage.Try_insert_0x_mesh_order_event(
+						eoa_aid,
+						wallet_aid,
 						orderEvent.Timestamp.Unix(),
 						&order_info,
 						&ospec,
@@ -377,37 +344,32 @@ func main() {
 						event_code,
 					)
 				}
-/* discontinued
-				adata,err := zerox_contract.DecodeAssetData(copts,orderEvent.SignedOrder.Order.MakerAssetData)
-				if err==nil {
-					unpacked_position,err := zerox_contract.UnpackTokenId(copts,adata.TokenIds[0])
-					if err!=nil {
-						Info.Printf("Market: %v\n",unpacked_position.Market.String())
-						Info.Printf("Outcome: %v\n",unpacked_position.Outcome)
-						Info.Printf("Type: %v\n",unpacked_position.Type)
-						Info.Printf("Price: %v\n",unpacked_position.Price)
-					} else {
-						Error.Printf("Couldn't decode position data for order %v: %v\n",order_hash,err)
-					}
-				} else {
-					Error.Printf("Failed to decode market data for order %v: %v\n",order_hash,err)
-				}
 				switch orderEvent.EndState {
 					case zeroex.ESOrderAdded:
-						err:=oo_insert(&order_hash,orderEvent.SignedOrder,orderEvent.FillableTakerAssetAmount,orderEvent.Timestamp.Unix())
-						if err!=nil {
-							Info.Printf("Error inserting order %v: %v\n",order_hash,err)
+						if ew_err == nil {
+							err := storage.Insert_open_order(
+								&order_hash,
+								orderEvent.SignedOrder,
+								orderEvent.FillableTakerAssetAmount,
+								&maybe_eoa_addr,
+								&ospec,
+								OOOpCodeCreated,
+								orderEvent.Timestamp.Unix(),
+							)
+							if err != nil {
+								Info.Printf("Error inserting order %v: %v\n",order_hash,err)
+							}
 						}
 					case zeroex.ESOrderExpired:
-						storage.Delete_open_0x_order(orderEvent.OrderHash.String(),OOOpCodeExpired)
+						storage.Delete_open_0x_order(orderEvent.OrderHash.String(),orderEvent.Timestamp.Unix(),OOOpCodeExpired)
 					case zeroex.ESOrderCancelled:
-						storage.Delete_open_0x_order(orderEvent.OrderHash.String(),OOOpCodeCancelledByUser)
+						storage.Delete_open_0x_order(orderEvent.OrderHash.String(),orderEvent.Timestamp.Unix(),OOOpCodeCancelledByUser)
 					case zeroex.ESOrderFullyFilled:
 						// FULLY FILLED event: quantity of the order matches filling quantity
-						storage.Delete_open_0x_order(orderEvent.OrderHash.String(),OOOpCodeNone)
+						storage.Delete_open_0x_order(orderEvent.OrderHash.String(),orderEvent.Timestamp.Unix(),OOOpCodeNone)
 					case zeroex.ESOrderFilled:
 						// FILLED event: partial order fill
-						storage.Update_0x_order_on_partial_fill(orderEvent)
+						storage.Update_0x_order_on_partial_fill(&order_info)
 					// the following are rare events, so we don't implement them, just do a resync
 					case zeroex.ESOrderFillabilityIncreased,
 						zeroex.ESOrderBecameUnfunded,
@@ -416,7 +378,6 @@ func main() {
 						// do a re-sync
 						fetch_and_sync_orders()
 				}
-*/
 			}
 			cur_time := time.Now().Unix()
 			time_diff := cur_time - last_sync_time

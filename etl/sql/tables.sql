@@ -105,6 +105,8 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 );
 CREATE TABLE mesh_evt ( -- Events received from 0x Mesh network. source: github.com/0xProject/0x-mesh/zeroex
 	id						BIGSERIAL PRIMARY KEY,
+	eoa_aid					BIGINT DEFAULT 0,	-- can be 0 if address isn't registered yet
+	wallet_aid				BIGINT DEFAULT 0,	-- can be 0 if address isn't registered yet
 -- Event fields:
 	time_stamp				TIMESTAMPTZ NOT NULL,
 	fillable_amount			DECIMAL(32,18) NOT NULL,

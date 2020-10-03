@@ -554,3 +554,38 @@ func Copy_iexchange_order_to_zeroxorder(in *IExchangeOrder) zeroex.Order {
 
 	return out
 }
+func Copy_zerox_order_to_iexchange_order(in *zeroex.Order ) IExchangeOrder {
+	// copies the data between compatible types
+	var out IExchangeOrder
+
+	out.MakerAddress.SetBytes(in.MakerAddress.Bytes())
+	out.TakerAddress.SetBytes(in.TakerAddress.Bytes())
+	out.FeeRecipientAddress.SetBytes(in.FeeRecipientAddress.Bytes())
+	out.SenderAddress.SetBytes(in.SenderAddress.Bytes())
+	out.MakerAssetAmount=new(big.Int)
+	out.MakerAssetAmount.Set(in.MakerAssetAmount)
+	out.TakerAssetAmount=new(big.Int)
+	out.TakerAssetAmount.Set(in.TakerAssetAmount)
+	out.MakerFee=new(big.Int)
+	out.MakerFee.Set(in.MakerFee)
+	out.ExpirationTimeSeconds=new(big.Int)
+	out.ExpirationTimeSeconds.Set(in.ExpirationTimeSeconds)
+	out.Salt=new(big.Int)
+	out.Salt.Set(in.Salt)
+
+
+	out.MakerAssetData = make([]byte,len(in.MakerAssetData))
+	copy(out.MakerAssetData,in.MakerAssetData)
+
+	out.TakerAssetData = make([]byte,len(in.TakerAssetData))
+	copy(out.TakerAssetData,in.TakerAssetData)
+
+
+	out.MakerFeeAssetData = make([]byte,len(in.MakerFeeAssetData))
+	copy(out.MakerFeeAssetData,in.MakerFeeAssetData)
+
+	out.TakerFeeAssetData = make([]byte,len(in.TakerFeeAssetData))
+	copy(out.TakerFeeAssetData,in.TakerFeeAssetData)
+
+	return out
+}

@@ -12,8 +12,8 @@ import (
 	_  "github.com/lib/pq"
 
 	ztypes "github.com/0xProject/0x-mesh/common/types"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/0xProject/0x-mesh/zeroex"
+	"github.com/ethereum/go-ethereum/common"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
@@ -97,7 +97,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,p_
 	if 0 != initial_amount.Cmp(amount_filled) {
 		mesh_evt_code = p.MeshEvtFilled
 	}
-	ss.Insert_0x_mesh_order_event(timestamp,zorder,order_specs[order_hash],amount_filled,mesh_evt_code)
+	ss.Insert_0x_mesh_order_event(eoa_fill_aid,wallet_fill_aid,timestamp,zorder,order_specs[order_hash],amount_filled,mesh_evt_code)
 
 	var query string
 	var opcode int = p.OOOpCodeFill
@@ -222,7 +222,7 @@ func (ss *SQLStorage) Update_open_order_history(mktord_id int64,order_hash strin
 	}
 	*/
 }
-func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,fillable_amount *big.Int,eoa_addr string,ospec *p.ZxMeshOrderSpec,opcode int,evt_timestamp int64) error {
+func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,fillable_amount *big.Int,eoa_addr *common.Address,ospec *p.ZxMeshOrderSpec,opcode int,evt_timestamp int64) error {
 	// Insert an open order, this order needs to be Filled by another market participant
 	// It also can be canceled by its creator (with another transaction)
 	var err error
@@ -234,54 +234,10 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 		ospec.Market.String(),ospec.Price.String(),ospec.Outcome,
 	)
 	initial_amount := order.MakerAssetAmount.String()
-	// Note: the MakerAddress can be either EOA of the User or Wallet contract of the User
-	//			we need to figure out which one we have been given
-	var wallet_aid int64 = 0
-	var eoa_aid int64 = 0
-	zero_addr := common.BigToAddress(zero)
-	if zero_addr.String()==eoa_addr {	// MakerAddress must be an EOA address
-		eoa_aid,err = ss.Nonfatal_lookup_address_id(order.MakerAddress.String())
-		if err != nil {
-			// Note: we can't INSERT an address from here because we need Transaction Hash (for reference)
-			ss.Info.Printf(
-				"MakerAddress %v is unregistered in the DB as EOA ",
-				order.MakerAddress.String(),
-			)
-			return errors.New(
-				fmt.Sprintf("MakerAddress %v is unregistered in the DB as EOA.",order.MakerAddress.String()),
-			)
-		}
-		// Now we need to validate this this address is indeed an EOA
-		wallet_aid,err = ss.Lookup_wallet_aid(eoa_aid)
-		if err != nil {
-			ss.Info.Printf(
-				"MakerAddress %v doesn't have an associated Wallet contract",
-				order.MakerAddress.String(),
-			)
-			return errors.New("EOA address provided from Mesh listener is zero address and un-registered.")
-		}
-	} else { // MakerAddress has an EOA address, means MakerAddress is a Wallet contract
-		wallet_aid,err = ss.Nonfatal_lookup_address_id(order.MakerAddress.String())
-		if err != nil {
-			// Maker is not Wallet Contract, then it must be EOA
-			ss.Info.Printf(
-				"MakerAddress %v is unregistered in the DB as wallet : %v",
-				order.MakerAddress.String(),err,
-			)
-			return errors.New(
-				fmt.Sprintf("MakerAddress %v is unregistered in the DB.",order.MakerAddress.String()),
-			)
-		}
-		eoa_aid,err = ss.Lookup_eoa_aid(wallet_aid)
-		if err != nil {
-			ss.Info.Printf(
-				"MakerAddress %v is a Wallet contract that doesn't have an associated EOA address: %v",
-				order.MakerAddress.String,err,
-			)
-			return errors.New(
-				fmt.Sprintf("MakerAddress %v doesn't have associated EOA",order.MakerAddress.String()),
-			)
-		}
+
+	eoa_aid,wallet_aid,err := ss.Lookup_maker_eoa_wallet_ids(eoa_addr,&order.MakerAddress)
+	if err != nil {
+		return err
 	}
 	ss.Link_eoa_and_wallet_contract(eoa_aid,wallet_aid) // enforce EOA-Wallet link (though it may exist)
 
@@ -367,7 +323,7 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 	}
 	return errors.New("Affected rows=0")
 }
-func (ss *SQLStorage) Cancel_open_order(orders map[string]*ztypes.OrderInfo,order_specs map[string]*p.ZxMeshOrderSpec,order_hash string,timestamp int64) {
+func (ss *SQLStorage) Cancel_open_order(eoa_aid,wallet_aid int64,orders map[string]*ztypes.OrderInfo,order_specs map[string]*p.ZxMeshOrderSpec,order_hash string,timestamp int64) {
 
 	oinfo := orders[order_hash]
 	if oinfo == nil {
@@ -388,7 +344,7 @@ func (ss *SQLStorage) Cancel_open_order(orders map[string]*ztypes.OrderInfo,orde
 		os.Exit(1)
 	}
 
-	ss.Insert_0x_mesh_order_event(timestamp,oinfo,ospec,nil,p.MeshEvtCancelled)
+	ss.Insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp,oinfo,ospec,nil,p.MeshEvtCancelled)
 	ss.Update_open_order_history(0,order_hash,timestamp,"0",p.OOOpCodeCancelledByUser)
 
 	var query string

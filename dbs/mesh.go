@@ -7,16 +7,18 @@ import (
 	"fmt"
 	"os"
 	"math/big"
+	"errors"
 	"encoding/hex"
 	"database/sql"
 	pq  "github.com/lib/pq"
 
 //	"github.com/0xProject/0x-mesh/zeroex"
 	ztypes "github.com/0xProject/0x-mesh/common/types"
+	"github.com/ethereum/go-ethereum/common"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Try_insert_0x_mesh_order_event(timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) bool {
+func (ss *SQLStorage) Try_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) bool {
 
 	_,err := ss.Lookup_market_by_addr_str(ospec.Market.String())
 	if err != nil {
@@ -26,10 +28,10 @@ func (ss *SQLStorage) Try_insert_0x_mesh_order_event(timestamp int64,oi *ztypes.
 		)
 		return false
 	}
-	ss.Insert_0x_mesh_order_event(timestamp,oi,ospec,amount_fill,event_code)
+	ss.Insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp,oi,ospec,amount_fill,event_code)
 	return true
 }
-func (ss *SQLStorage) Insert_0x_mesh_order_event(timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) {
+func (ss *SQLStorage) Insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) {
 
 	if ospec == nil {
 		ss.Log_msg(
@@ -66,14 +68,14 @@ func (ss *SQLStorage) Insert_0x_mesh_order_event(timestamp int64,oi *ztypes.Orde
 			if (err==sql.ErrNoRows) {
 				// ADD event is missing, INSERT
 				ts := int64(oi.SignedOrder.Order.Salt.Int64()/1000)
-				ss.do_insert_0x_mesh_order_event(ts,oi,ospec,nil,p.MeshEvtAdded)
+				ss.do_insert_0x_mesh_order_event(eoa_aid,wallet_aid,ts,oi,ospec,nil,p.MeshEvtAdded)
 			} else {
 				ss.Log_msg(fmt.Sprintf("DB error : %v, q=%v",err,query))
 				os.Exit(1)
 			}
 		}
 	}
-	market_aid := ss.do_insert_0x_mesh_order_event(timestamp,oi,ospec,amount_fill,event_code)
+	market_aid := ss.do_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp,oi,ospec,amount_fill,event_code)
 	// now we need to update all posterior records because future price estimate values
 	// depend on past values
 	ss.Update_future_price_estimates(market_aid,int(ospec.Outcome),timestamp)
@@ -115,7 +117,7 @@ func (ss *SQLStorage) Update_future_price_estimates(market_aid int64,outcome_idx
 		}
 	}
 }
-func (ss *SQLStorage) do_insert_0x_mesh_order_event(timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) int64 {
+func (ss *SQLStorage) do_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) int64 {
 
 	market_aid := ss.Lookup_or_create_address(ospec.Market.String(),0,0)// block and tx_id will be updated on market creation event
 	amount_fill_str := "0"
@@ -125,6 +127,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(timestamp int64,oi *ztypes.O
 	var query string
 	var err error
 	query = "INSERT INTO mesh_evt (" +
+				"eoa_aid,wallet_aid," +
 				"time_stamp,fillable_amount,evt_code," +
 				"market_aid,outcome_idx,otype,price," +
 				"order_hash,chain_id,exchange_addr," +
@@ -145,17 +148,19 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(timestamp int64,oi *ztypes.O
 				"signature," +
 				"amount_fill" +
 			") VALUES (" +
-					"TO_TIMESTAMP($1),($2::decimal/1e+18),$3,"+
-					"$4,$5,$6,$7," +
-					"$8,$9,$10," +
-					"$11,$12,$13," +
-					"($14::decimal/1e+18),($15::decimal/1e+18),"+
-					"$16,$17,$18,"+
-					"($19::decimal/1e+18),($20::decimal/1e+18),"+
-					"$21,$22,TO_TIMESTAMP($23::BIGINT),$24,$25,($26::decimal/1e+18)"+
+					"$1,$2," +
+					"TO_TIMESTAMP($3),($4::decimal/1e+18),$5,"+
+					"$6,$7,$8,$9," +
+					"$10,$11,$12," +
+					"$13,$14,$15," +
+					"($16::decimal/1e+18),($17::decimal/1e+18),"+
+					"$18,$19,$20,"+
+					"($21::decimal/1e+18),($22::decimal/1e+18),"+
+					"$23,$24,TO_TIMESTAMP($25::BIGINT),$26,$27,($28::decimal/1e+18)"+
 			") ON CONFLICT DO NOTHING"
 
 	d_query := fmt.Sprintf("INSERT INTO mesh_evt (" +
+				"eoa_aid,wallet_aid," +
 				"time_stamp,fillable_amount,evt_code," +
 				"market_aid,outcome_idx,otype,price," +
 				"order_hash,chain_id,exchange_addr," +
@@ -170,6 +175,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(timestamp int64,oi *ztypes.O
 				"signature," +
 				"amount_fill"+
 			") VALUES (" +
+					"%v,%v" +
 					"TO_TIMESTAMP(%v),(%v::decimal/1e+18),%v,"+
 					"%v,%v,%v,%v," +
 					"'%v',%v,'%v'," +
@@ -179,6 +185,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(timestamp int64,oi *ztypes.O
 					"(%v::decimal/1e+18),(%v::decimal/1e+18),"+
 					"'%v','%v',TO_TIMESTAMP(%v::BIGINT),%v,'%v',(%v::decimal/1e+18)"+
 			") ON CONFLICT DO NOTHING",
+			eoa_aid,wallet_aid,
 			timestamp,oi.FillableTakerAssetAmount.String(),event_code,
 			market_aid,ospec.Outcome,ospec.Type,ospec.Price.String(),
 			oi.OrderHash.String(),oi.SignedOrder.Order.ChainID.Int64(),oi.SignedOrder.Order.ExchangeAddress.String(),
@@ -389,4 +396,62 @@ func (ss *SQLStorage) Get_mesh_event_by_order_hash(order_hash string) (p.MeshEve
 		os.Exit(1)
 	}
 	return order,nil
+}
+func (ss *SQLStorage) Lookup_maker_eoa_wallet_ids(possible_eoa_addr *common.Address,maker_addr *common.Address) (int64,int64,error) {
+
+	// Note: the MakerAddress can be either EOA of the User or Wallet contract of the User
+	//			we need to figure out which one we have been given
+	//	This function returns error if the addres is unregistered (by 'unregistered' we mean that it wasnt
+	//	activated for Augur trading (no Approvals or no Wallet Contract created)
+	var wallet_aid int64 = 0
+	var eoa_aid int64 = 0
+	var err error
+	zero_addr := common.Address{}
+	if zero_addr.String()==possible_eoa_addr.String() {	// MakerAddress must be an EOA address
+		eoa_aid,err = ss.Nonfatal_lookup_address_id(maker_addr.String())
+		if err != nil {
+			// Note: we can't INSERT an address from here because we need Transaction Hash (for reference)
+			ss.Info.Printf(
+				"MakerAddress %v is unregistered in the DB as EOA ",
+				maker_addr.String(),
+			)
+			return eoa_aid,wallet_aid,errors.New(
+				fmt.Sprintf("MakerAddress %v is unregistered in the DB as EOA.",maker_addr.String()),
+			)
+		}
+		// Now we need to validate this this address is indeed an EOA
+		wallet_aid,err = ss.Lookup_wallet_aid(eoa_aid)
+		if err != nil {
+			ss.Info.Printf(
+				"MakerAddress %v doesn't have an associated Wallet contract",
+				maker_addr.String(),
+			)
+			return eoa_aid,wallet_aid,errors.New(
+				"EOA address provided from Mesh listener is zero address and un-registered.",
+			)
+		}
+	} else { // MakerAddress has an EOA address, means MakerAddress is a Wallet contract
+		wallet_aid,err = ss.Nonfatal_lookup_address_id(maker_addr.String())
+		if err != nil {
+			// Maker is not Wallet Contract, then it must be EOA
+			ss.Info.Printf(
+				"MakerAddress %v is unregistered in the DB as wallet : %v",
+				maker_addr.String(),err,
+			)
+			return eoa_aid,wallet_aid,errors.New(
+				fmt.Sprintf("MakerAddress %v is unregistered in the DB.",maker_addr.String()),
+			)
+		}
+		eoa_aid,err = ss.Lookup_eoa_aid(wallet_aid)
+		if err != nil {
+			ss.Info.Printf(
+				"MakerAddress %v is a Wallet contract that doesn't have an associated EOA address: %v",
+				maker_addr.String(),err,
+			)
+			return eoa_aid,wallet_aid,errors.New(
+				fmt.Sprintf("MakerAddress %v doesn't have associated EOA",maker_addr.String()),
+			)
+		}
+	}
+	return eoa_aid,wallet_aid,nil
 }
