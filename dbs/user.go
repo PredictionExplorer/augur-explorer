@@ -292,9 +292,10 @@ func (ss *SQLStorage) Get_user_ranks(sort int,order int) []p.UserRank {
 	var order_dir string = "DESC"
 
 	switch (sort) {
-	case 0: order_field = "profit"
-	case 1: order_field = "volume"
-	case 2: order_field = "total_trades"
+	case 0: order_field = "r.profit"
+	case 1: order_field = "r.volume"
+	case 2: order_field = "r.total_trades"
+	case 3: order_field = "s.markets_created"
 	default:
 		return records
 	}
@@ -308,7 +309,7 @@ func (ss *SQLStorage) Get_user_ranks(sort int,order int) []p.UserRank {
 					"JOIN  ustats AS s ON r.eoa_aid=s.eoa_aid " +
 			"LEFT JOIN address AS ea ON r.eoa_aid = ea.address_id " +
 			"LEFT JOIN address AS wa ON s.wallet_aid = wa.address_id " +
-			"ORDER BY r."+order_field+" "+order_dir
+			"ORDER BY "+order_field+" "+order_dir
 
 	rows,err := ss.db.Query(query)
 	if (err!=nil) {
