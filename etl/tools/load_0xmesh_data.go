@@ -30,6 +30,7 @@ const (
 var (
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 
+	owner_fld_offset int64 = 2	// offset to AugurContract::owner field obtained with eth_getStorage()
 	storage *SQLStorage
 	l1_storage *SQLStorage
 
@@ -252,6 +253,24 @@ func get_ospec(maker_asset_data []byte,order_hash *string) *ZxMeshOrderSpec {
 		os.Exit(1)
 	}
 	return &unpacked_id
+}
+func get_possible_eoa_by_wallet_addr(maker_addr *common.Address,order_hash *common.Hash) (common.Address,error) {
+
+	ctx := context.Background()
+	num:=big.NewInt(int64(owner_fld_offset))
+	key:=common.BigToHash(num)
+	eoa,err := eclient.StorageAt(ctx,*maker_addr,key,nil)
+	if err == nil {
+		eoa_addr := common.BytesToAddress(eoa[12:])
+		return eoa_addr,nil
+	} else {
+		Info.Printf(
+			"ethclient::StorageAt() failed for order %v, maker addr %v: %v. " +
+			"Order will be inserted without EOA link. (ETH_STORAGE_FAIL)",
+			maker_addr.String(),*order_hash,err,
+		)
+		return common.Address{},err
+	}
 }
 func dump_tx_input_if_known(tx_data []byte) bool {
 	known:=false
@@ -478,8 +497,14 @@ func process_onchain_fill_events(txs []string) {
 					order_hash,timestamp,amount_filled.String(),mesh_evt_code,
 				)
 				spec:=ospecs[order_hash]
+				maybe_eoa_addr,_ := get_possible_eoa_by_wallet_addr(
+					&zorder.SignedOrder.Order.MakerAddress,&zorder.OrderHash,
+				)
+				eoa_aid,wallet_aid,_ := storage.Lookup_maker_eoa_wallet_ids(
+					&maybe_eoa_addr,&zorder.SignedOrder.Order.MakerAddress,
+				)
 				storage.Insert_0x_mesh_order_event(
-					timestamp,zorder,spec,amount_filled,mesh_evt_code,
+					eoa_aid,wallet_aid,timestamp,zorder,spec,amount_filled,mesh_evt_code,
 				)
 				market_aid:=storage.Lookup_address_id(spec.Market.String())
 				storage.Update_future_price_estimates(market_aid,int(spec.Outcome),timestamp)
@@ -516,7 +541,15 @@ func process_onchain_fill_events(txs []string) {
 				Info.Printf(
 					"CancelOrder: 0x Mesh Evt insert: ohash: %v, ts: %v\n",order_hash,timestamp)
 				
-				storage.Insert_0x_mesh_order_event(timestamp,zorder,spec,nil,MeshEvtCancelled)
+				maybe_eoa_addr,_ := get_possible_eoa_by_wallet_addr(
+					&zorder.SignedOrder.Order.MakerAddress,&zorder.OrderHash,
+				)
+				eoa_aid,wallet_aid,_ := storage.Lookup_maker_eoa_wallet_ids(
+					&maybe_eoa_addr,&zorder.SignedOrder.Order.MakerAddress,
+				)
+				storage.Insert_0x_mesh_order_event(
+					eoa_aid,wallet_aid,timestamp,zorder,spec,nil,MeshEvtCancelled,
+				)
 				market_aid:=storage.Lookup_address_id(spec.Market.String())
 				storage.Update_future_price_estimates(market_aid,int(spec.Outcome),timestamp)
 				
@@ -546,7 +579,7 @@ func main() {
 	eclient = ethclient.NewClient(rpcclient)
 	var dummy_int_var,market_id int64
 	l1_storage = New_sql_storage(
-		&dummy_int_var,Info,
+		&dummy_int_var,Info,Info,
 		os.Getenv("L1_HOST"),
 		os.Getenv("L1_DB"),
 		os.Getenv("L1_USER"),

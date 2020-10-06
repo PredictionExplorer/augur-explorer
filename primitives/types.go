@@ -526,7 +526,7 @@ type FullPriceHistory struct {
 	Outcomes			[]PriceHistory
 }
 type ZHistT1Entry struct {		// the Order on 0x Mesh network, that is yet to be filled
-	Id					int64
+	Id						int64
 	MktAid				int64
 	Amount				float64
 	FillableAmount		float64
@@ -556,8 +556,14 @@ type ZHistT1Entry struct {		// the Order on 0x Mesh network, that is yet to be f
 	MktTypeStr			string
 	OrderHash			string
 	OrderHashSh			string
-	CreatorAddr			string
-	CreatorAddrSh		string	// shortened address
+	MakerAddr			string
+	MakerAddrSh			string	// shortened address
+	RelatedAddr			string	// address of the filler or the one who cancles, or nil
+	EOAAddr				string
+	EOAAddrSh			string
+	WalletAddr			string
+	WalletAddrSh		string
+	RelatedAddrSh		string
 	MktAddr				string
 	MktAddrSh			string
 }

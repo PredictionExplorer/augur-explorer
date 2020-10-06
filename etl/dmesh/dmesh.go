@@ -202,6 +202,7 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 				Info.Printf("Error decoding market data: %v\n",err)
 				Error.Printf("Error decoding market data: %v\n",err)
 			} else {
+				Dump_0x_mesh_order(Info,order_info)
 				DumpOrderSpec(Info,&ospec)
 				maybe_eoa_addr,_ := get_possible_eoa_by_wallet_addr(&order_info.SignedOrder.Order.MakerAddress,&order_info.OrderHash)
 				eoa_aid,wallet_aid,_ := storage.Lookup_maker_eoa_wallet_ids(&maybe_eoa_addr,&order_info.SignedOrder.Order.MakerAddress)

@@ -172,10 +172,6 @@ func main() {
 	r.GET("/api/stats_gasusage",  a1_stats_gasusage)
 	r.GET("/api/price_history/:market/:zoom/:init_ts/:fin_ts/:interval_secs/", a1_price_history_zoomed)
 
-	r.Static("/imgs", "./html/imgs")
-	r.Static("/res", "./html/res")			// resources (static)
-	r.StaticFile("/favicon.ico", "./html/res/favicon.ico")
-
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
 		HostPolicy: autocert.HostWhitelist("api.predictionexplorer.com"),

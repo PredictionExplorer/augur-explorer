@@ -442,7 +442,12 @@ func proc_cancel_zerox_order(agtx *AugurTx,log *types.Log,timestamp int64) {
 	if len(orders) == 0 {
 		Fatalf("Couldn't extract fill amount from Tx input. Aborting.")
 	}
-	storage.Cancel_open_order(orders,ospecs,ohash_str,timestamp)
+	eoa_aid := get_eoa_aid(&mevt.Account,agtx.BlockNum,agtx.TxId)
+	wallet_aid,err := storage.Lookup_wallet_aid(eoa_aid)
+	if err!=nil {
+		Error.Printf("Lookup of wallet_aid failed for CancelOrder (eoa_aid=%v): %v\n",eoa_aid,err)
+	}
+	storage.Cancel_open_order(eoa_aid,wallet_aid,orders,ospecs,ohash_str,timestamp)
 }
 func proc_market_oi_changed(block *types.Header, agtx *AugurTx, log *types.Log) {
 	var mevt EMarketOIChanged

@@ -175,7 +175,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp
 				"signature," +
 				"amount_fill"+
 			") VALUES (" +
-					"%v,%v" +
+					"%v,%v," +
 					"TO_TIMESTAMP(%v),(%v::decimal/1e+18),%v,"+
 					"%v,%v,%v,%v," +
 					"'%v',%v,'%v'," +
@@ -197,6 +197,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp
 	)
 	ss.Info.Printf("q=%v\n",d_query)
 	_,err = ss.db.Exec(query,
+		eoa_aid,wallet_aid,
 		timestamp,oi.FillableTakerAssetAmount.String(),event_code,
 		market_aid,ospec.Outcome,ospec.Type,ospec.Price.String(),
 		oi.OrderHash.String(),oi.SignedOrder.Order.ChainID.Int64(),oi.SignedOrder.Order.ExchangeAddress.String(),
@@ -207,14 +208,35 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp
 		oi.SignedOrder.Order.SenderAddress.String(),oi.SignedOrder.Order.FeeRecipientAddress.String(),oi.SignedOrder.Order.ExpirationTimeSeconds.Int64(),oi.SignedOrder.Order.Salt.String(),hex.EncodeToString(oi.SignedOrder.Signature),amount_fill_str,
 	)
 	if (err!=nil) {
-		pq_err := err.(*pq.Error)
-		ss.Log_msg(
-			fmt.Sprintf(
-				"do_insert_0x_mesh_order_event() failed: %v %v %v %v; q=%v",
-				pq_err,pq_err.Routine,pq_err.Position,pq_err.Where,
-				query,
-			),
-		)
+		switch err.(type) {
+			default:
+				ss.Log_msg(fmt.Sprintf("do_insert_0x_mesh_order_event() failed: %v ; q=%v",err,query))
+			case *pq.Error:
+				pq_err,_ := err.(*pq.Error)
+				ss.Log_msg(
+					fmt.Sprintf(
+						"do_insert_0x_mesh_order_event() failed: %v %v %v %v; q=%v",
+						pq_err,pq_err.Routine,pq_err.Position,pq_err.Where,
+						query,
+					),
+				)
+		}
+
+/*				
+		pq_err,ok := err.(*pq.Error)
+		if ok {
+			ss.Log_msg(
+				fmt.Sprintf(
+					"do_insert_0x_mesh_order_event() failed: %v %v %v %v; q=%v",
+					pq_err,pq_err.Routine,pq_err.Position,pq_err.Where,
+					query,
+				),
+			)
+		} else {
+			fmt.Sprintf("do_insert_0x_mesh_order_event() failed: %v ; q=%v",err,query)
+		}
+*/		
+		ss.Info.Printf("Exiting due to error\n")
 		os.Exit(1)
 	}
 	return market_aid

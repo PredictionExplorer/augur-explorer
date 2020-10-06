@@ -498,7 +498,6 @@ func Contract_addresses_match(ca1 *ContractAddresses,ca2 *ContractAddresses) (in
 	}
 	return num_mismatches,errors.New(all_errors)
 }
-<<<<<<< HEAD
 func Augur_UI_price_adjustments(price *float64,amount *float64,mkt_type int) {
 
 	// Price and amount are fixed floating points of 18 precision
@@ -519,6 +518,7 @@ func Augur_UI_price_adjustments(price *float64,amount *float64,mkt_type int) {
 			*amount = *amount * float64(CATEGORICAL_MULTIPLIER)
 		}
 	}
+}
 func Copy_iexchange_order_to_zeroxorder(in *IExchangeOrder) zeroex.Order {
 	// copies the data between compatible types
 	var out zeroex.Order

@@ -25,7 +25,7 @@ type SQLStorage struct {
 func (ss *SQLStorage) Db() *sql.DB {
 	return ss.db
 }
-func New_sql_storage(mkt_order_ptr *int64,info_log *log.Logger,host_port,db_name,user,pass string) *SQLStorage {
+func New_sql_storage(mkt_order_ptr *int64,info_log *log.Logger,db_log *log.Logger,host_port,db_name,user,pass string) *SQLStorage {
 	var err error
 	host,port,err:=net.SplitHostPort(host_port)
 	if (err!=nil) {
@@ -46,6 +46,7 @@ func New_sql_storage(mkt_order_ptr *int64,info_log *log.Logger,host_port,db_name
 	ss := new(SQLStorage)
 	ss.db = db
 	ss.mkt_order_id_ptr = mkt_order_ptr
+	ss.db_logger = db_log
 	ss.Info = info_log
 	ss.Info.Printf("DB: connected to %v:%v",host,port)
 	return ss

@@ -720,7 +720,9 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,o
 				"p.id,"+
 				"e.order_hash," +
 				"p.market_aid," +
-				"'PENDING' AS creator_addr," +
+				"e.maker_addr AS maker_addr," +
+				"ea.addr AS eoa_addr," +
+				"wa.addr AS wallet_addr," +
 				"e.otype, " +
 				"CASE e.otype " +
 					"WHEN 0 THEN 'BID' " +
@@ -743,8 +745,9 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,o
 				"p.spread " +
 			"FROM price_estimate AS p " +
 				"JOIN mesh_evt AS e ON p.meshevt_id=e.id " +
-				"LEFT JOIN " +
-					"address AS a ON p.market_aid=a.address_id " +
+				"LEFT JOIN address AS a ON p.market_aid=a.address_id " +
+				"LEFT JOIN address AS ea ON e.eoa_aid=ea.address_id " +
+				"LEFT JOIN address AS wa ON e.wallet_aid=ea.address_id " +
 //				"LEFT JOIN address AS c_e_a ON o.eoa_aid=c_e_a.address_id " +
 			"WHERE " +
 				"p.market_aid = $1 AND " +
@@ -766,11 +769,15 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,o
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.ZHistT1Entry
+		var eoa_addr sql.NullString
+		var wallet_addr sql.NullString
 		err=rows.Scan(
 			&rec.Id,
 			&rec.OrderHash,
 			&rec.MktAid,
-			&rec.CreatorAddr,
+			&rec.MakerAddr,
+			&eoa_addr,
+			&wallet_addr,
 			&rec.OrderType,
 			&rec.Direction,
 			&rec.OrderDate,
@@ -793,7 +800,15 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,o
 			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
 			os.Exit(1)
 		}
-		//rec.CreatorAddrSh=p.Short_address(rec.CreatorAddr)
+		rec.MakerAddrSh=p.Short_address(rec.MakerAddr)
+		if eoa_addr.Valid {
+			rec.EOAAddr = eoa_addr.String
+			rec.EOAAddrSh = p.Short_address(eoa_addr.String)
+		}
+		if wallet_addr.Valid {
+			rec.WalletAddr = wallet_addr.String
+			rec.WalletAddrSh = p.Short_address(wallet_addr.String)
+		}
 		records = append(records,rec)
 	}
 	return records

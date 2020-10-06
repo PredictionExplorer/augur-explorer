@@ -69,9 +69,12 @@ func oo_insert(order_hash *string,order *zeroex.SignedOrder,fillable_amount *big
 		"oo insert: maker=%v eoa=%v; err=%v\n",
 		order.MakerAddress.String(),hex.EncodeToString(eoa[:]),err,
 	)
-	var eoa_addr_str string
 	if err == nil {
-		eoa_addr_str = common.BytesToAddress(eoa[12:]).String()
+		eoa_addr := common.BytesToAddress(eoa[12:])
+		err = storage.Insert_open_order(
+			order_hash,order,fillable_amount,&eoa_addr,&unpacked_id,OOOpCodeCreated,timestamp,
+		)
+		return err
 	} else {
 		Info.Printf(
 			"ethclient::StorageAt() failed for order %v, maker addr %v: %v. " +
@@ -80,9 +83,6 @@ func oo_insert(order_hash *string,order *zeroex.SignedOrder,fillable_amount *big
 		)
 		return err
 	}
-	err = storage.Insert_open_order(
-		order_hash,order,fillable_amount,eoa_addr_str,&unpacked_id,OOOpCodeCreated,timestamp,
-	)
 	return err
 }
 func proc_open_orders() {

@@ -591,6 +591,7 @@ func a1_stats_uniqaddr(c *gin.Context) {
 			"status": status,
 			"error": err_str,
 	})
+}
 func a1_price_history_zoomed(c *gin.Context) {
 
 	p_market := c.Param("market")
