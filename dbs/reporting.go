@@ -31,7 +31,7 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 	ss.Info.Printf("insert_initial_report_evt(): market_aid=%v, reporter_id=%v, signer_aid=%v\n",
 					market_aid,reporter_aid,signer_aid)
 
-	market_type,mticks := ss.get_market_type_and_ticks(market_aid)
+	market_type,mticks,_ := ss.get_market_type_and_ticks(market_aid)
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 
 	var query string
@@ -112,7 +112,7 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDispu
 	ss.Info.Printf("insert_dispute_crows_contrib(): market_aid=%v, reporter_id=%v, signer_aid=%v",
 					market_aid,reporter_aid,signer_aid)
 
-	market_type,mticks := ss.get_market_type_and_ticks(market_aid)
+	market_type,mticks,_ := ss.get_market_type_and_ticks(market_aid)
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 
 	var query string

@@ -66,7 +66,7 @@ func (ss *SQLStorage) calculate_profit_loss_for_all_users(market_aid int64,block
 
 	var query string
 
-	market_type,num_ticks:=ss.get_market_type_and_ticks(market_aid)
+	market_type,num_ticks,_:=ss.get_market_type_and_ticks(market_aid)
 	_ = market_type
 
 	query = "SELECT " +
