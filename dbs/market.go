@@ -49,8 +49,13 @@ func get_market_status_str(status_code p.MarketStatus) string {
 func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,validity_bond string,evt *p.EMarketCreated) {
 
 	var query string
-	var market_aid int64;
-	market_aid = ss.Lookup_or_create_address(evt.Market.String(),agtx.BlockNum,agtx.TxId)
+
+	market_aid,_:=ss.Nonfatal_lookup_address_id(evt.Market.String())
+	if market_aid == 0 {
+		market_aid = ss.Lookup_or_create_address(evt.Market.String(),agtx.BlockNum,agtx.TxId)
+	} else {
+		ss.Update_address_metadata(market_aid,agtx)
+	}
 	// check if Market is already registered
 	query = "SELECT market_aid FROM market WHERE market_aid=$1"
 	err:=ss.db.QueryRow(query,market_aid).Scan(&market_aid);
@@ -604,9 +609,9 @@ func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,alive int,i
 	}
 	var where_condition string
 	if fin == 0 {
-		where_condition = "(m.status < 4) "
+		where_condition = "(m.status < 2) "
 	} else {
-		where_condition = "(m.status > 3) "
+		where_condition = "(m.status > 1) "
 	}
 	if all == 0 {
 		where_condition = where_condition + " AND (m.cur_volume > 0) AND (m.money_at_stake > 0) "
@@ -850,6 +855,8 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				"ca.addr as mcreator," +
 				"ra.addr AS reporter,"+
 				"reporter_aid," +
+				"FLOOR(EXTRACT(EPOCH FROM m.create_timestamp))::BIGINT as creation_ts," +
+				"FLOOR(EXTRACT(EPOCH FROM m.end_time))::BIGINT as expiration_ts," +
 				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') AS end_date," + 
 				"extra_info::json->>'description' AS descr," +
 				"extra_info::json->>'longDescription' AS long_desc," +
@@ -887,6 +894,8 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				&rec.MktCreator,
 				&rec.Reporter,
 				&reporter_aid,
+				&rec.CreatedTs,
+				&rec.EndTs,
 				&rec.EndDate,
 				&description,
 				&long_desc,

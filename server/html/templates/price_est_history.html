@@ -1,0 +1,20 @@
+{{define "price_est_history"}}
+<table class="trade_makers">
+<tr class="trade_makers">
+	<th title="Event Code">Evt</th>
+	<th>Timestamp</th>
+	<th>Date</th>
+	<th title="Price Estimate">PE</th>
+	<th>Spread</th>
+	<th title="Minimum Bid">Bid</th>
+	<th title="Maximum Ask">Ask</th>
+	<th title="Weighted Price Estimate">WPE</th>
+	<th title="Weighted Maximum Bid">WBid</th>
+	<th title="Weighted Minimum Ask">WAsk</th>
+	<th>Market Depth State</th>
+</tr>
+{{- range .}}
+	{{template "price_est_record" .}}
+{{- end}}
+</table>
+{{end}}

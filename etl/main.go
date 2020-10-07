@@ -50,6 +50,7 @@ const (
 	RELAYHUB_TRANSACTION_RELAYED = "ab74390d395916d9e0006298d47938a5def5d367054dcca78fa6ec84381f3f22"
 	REGISTER_CONTRACT = "a037dd0e01f0488a530cb17065a6d2f284fae016004fc744ee2a41d5cacf85d5"
 	UNIVERSE_CREATED = "e36b09d83f9cfa88c37f071fc2cfb5ff30b764cbd98088e70d965573c9ce5bbd"
+	SET_REFERRER = "a18a7bfc"
 
 	DEFAULT_WAIT_TIME = 5000	// 5 seconds
 	DEFAULT_DB_LOG				= "db.log"
@@ -84,6 +85,7 @@ var (
 	evt_tx_relayed,_ = hex.DecodeString(RELAYHUB_TRANSACTION_RELAYED)
 	evt_register_contract,_ = hex.DecodeString(REGISTER_CONTRACT)
 	evt_universe_created,_ = hex.DecodeString(UNIVERSE_CREATED)
+	sig_set_referrer,_ = hex.DecodeString(SET_REFERRER)
 
 	exec_wtx_sig ,_ = hex.DecodeString("78dc0eed")
 
@@ -114,8 +116,7 @@ var (
 
 	market_order_id int64 = 0
 	owner_fld_offset int64 = int64(OWNER_FIELD_OFFSET)	// offset to AugurContract::owner field obtained with eth_getStorage()
-	initial_amount *big.Int = nil	// Initial order amount extracted from MakerAssetData of Fill event
-	
+
 	set_back_block_num int64 = 0
 
 	position_changes	[]*PosChg	// used to track changes in positions for debugging/verification
@@ -205,6 +206,24 @@ func main() {
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
 
+	ctx := context.Background()
+	stored_chain_id := storage.Get_stored_chain_id()
+	network_chain_id,err :=eclient.NetworkID(ctx)
+	if err != nil {
+		Fatalf("Can't get Network ID: %v\n",err)
+	}
+	if stored_chain_id != network_chain_id.Int64() {
+		if stored_chain_id == 0 {
+			// not initialized yet
+			storage.Set_chain_id(network_chain_id.Int64())
+		} else {
+			Fatalf(
+				"Network chain_id = %v , my chain_id = %v. Mismatch, exiting",
+				network_chain_id.Int64(),stored_chain_id,
+			)
+		}
+	}
+
 	caddrs_obj,err := storage.Get_contract_addresses()
 	if err!=nil {
 		Fatalf("Can't find contract addresses in 'contract_addresses' table")
@@ -255,7 +274,6 @@ func main() {
 	}
 
   main_loop:
-	ctx := context.Background()
 	latestBlock, err := eclient.BlockByNumber(ctx, nil)
 	if err != nil {
 		log.Fatal("oops:", err)
@@ -287,6 +305,7 @@ func main() {
 					}
 				default:
 			}
+			proc_open_orders()
 			err := process_block(bnum,true,false)
 			if err==nil {
 				break

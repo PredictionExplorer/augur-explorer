@@ -1,0 +1,12 @@
+{{define "depth_state_rec"}}
+<tr class="trade_makers">
+	<td bgcolor="#1f1e3d">
+		{{ if eq .OrderType 0 }} BID {{ end }}
+		{{ if eq .OrderType 1 }} ASK {{ end }}
+	</td>
+	<td bgcolor="#1f1e3d">{{.IniDate}}</td>
+	<td bgcolor="#1f1e3d">{{.FinDate}}</td>
+	<td bgcolor="#1f1e3d" class="right">{{.Price}}</td>
+	<td bgcolor="#1f1e3d" class="right">{{.Amount}}</td>
+</tr>
+{{end}}

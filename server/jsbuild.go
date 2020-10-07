@@ -205,3 +205,52 @@ func build_js_global_gas_usage_data(entries *[]GasSpent,field int) template.JS {
 	data_str = data_str + "]"
 	return template.JS(data_str)
 }
+func build_js_price_estimate_history(prices *[]PriceEstimate) template.JS {
+	var data_str string = "["
+
+	for i:=0 ; i < len(*prices) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		var e = &(*prices)[i];
+		var entry string
+		entry = "{" +
+				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.TimeStamp)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.PriceEst) + "," +
+				"price: " + fmt.Sprintf("%v",e.PriceEst) + "," +
+				"spread: " + fmt.Sprintf("%v",e.Spread) + "," +
+				"date:" + fmt.Sprintf("\"%v\"",e.Date) + "," +
+				"click: function() {load_pest_data(" +
+					fmt.Sprintf("new Date(%v * 1000)",e.TimeStamp)+"," +
+					fmt.Sprintf("%v,%v,%v,%v,",e.PriceEst,e.Spread,e.MaxBid,e.MinAsk) +
+					fmt.Sprintf("%v,%v,%v,",e.WeightedPriceEst,e.WMaxBid,e.WMinAsk) +
+					fmt.Sprintf("%v",e.EvtCode) +
+				")}" +
+				"}"
+		data_str= data_str + entry
+	}
+	data_str = data_str + "]"
+	return template.JS(data_str)
+}
+func build_js_weighted_price_history(prices *[]PriceEstimate) template.JS {
+	var data_str string = "["
+
+	for i:=0 ; i < len(*prices) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		var e = &(*prices)[i];
+		var entry string
+		entry = "{" +
+				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.TimeStamp)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.WeightedPriceEst) + "," +
+				"price: " + fmt.Sprintf("%v",e.WeightedPriceEst) + "," +
+				"spread: " + fmt.Sprintf("%v",e.Spread) + "," +
+				"wmaxbid:" + fmt.Sprintf("\"%v\"",e.WMaxBid) + "," +
+				"wminask:" + fmt.Sprintf("\"%v\"",e.WMinAsk) + "," +
+				"}"
+		data_str= data_str + entry
+	}
+	data_str = data_str + "]"
+	return template.JS(data_str)
+}

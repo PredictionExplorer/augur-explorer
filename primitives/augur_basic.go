@@ -14,6 +14,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+
+	//ztypes "github.com/0xProject/0x-mesh/common/types"
+	"github.com/0xProject/0x-mesh/zeroex"
 )
 const (
 	DEFAULT_LOG_DIR	 = "ae_logs"
@@ -43,7 +46,7 @@ func dump_all_artifacts(contracts *map[string]interface{}) {
 }
 func Load_all_artifacts(filename string) map[string]interface{} {
 
-	abi_data, err := ioutil.ReadFile("./abis/augur-artifacts-abi.json")
+	abi_data, err := ioutil.ReadFile(filename)
 	check(err)
 	all_abis_rdr := bytes.NewReader(abi_data)
 	check(err)
@@ -112,7 +115,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("ProfitLoss"))
 	caddrs.PL,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -120,7 +123,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("ZeroXTrade"))
 	caddrs.ZeroxTrade,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -128,7 +131,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("ZeroXExchange"))
 	caddrs.ZeroxXchg,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -155,7 +158,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("AugurWalletRegistry"))
 	caddrs.WalletReg,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -163,7 +166,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("AugurWalletRegistryV2"))
 	caddrs.WalletReg2,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -171,7 +174,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("FillOrder"))
 	caddrs.FillOrder,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -195,7 +198,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("WETH9"))
 	caddrs.WETH9,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -224,7 +227,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("CreateOrder"))
 	caddrs.CreateOrder,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -295,21 +298,21 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("Orders"))
 	caddrs.Orders,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 	key = common.BigToHash(big.NewInt(0))
 	copy(key[:],[]byte("SimulateTrade"))
 	caddrs.SimulateTrade,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 	key = common.BigToHash(big.NewInt(0))
 	copy(key[:],[]byte("Trade"))
 	caddrs.Trade,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 	key = common.BigToHash(big.NewInt(0))
@@ -344,7 +347,7 @@ func Get_contract_addresses_from_net(augur_trading_address common.Address,eclien
 	copy(key[:],[]byte("RelayHubV2"))
 	caddrs.RelayHubV2,err = ctrct_augurtrading.Lookup(copts,key)
 	if err != nil {
-		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed",string(key[:]),err.Error()))
+		newerr:=errors.New(fmt.Sprintf("Lookup of %v failed: %v",string(key[:]),err.Error()))
 		return caddrs,newerr
 	}
 
@@ -515,4 +518,74 @@ func Augur_UI_price_adjustments(price *float64,amount *float64,mkt_type int) {
 			*amount = *amount * float64(CATEGORICAL_MULTIPLIER)
 		}
 	}
+}
+func Copy_iexchange_order_to_zeroxorder(in *IExchangeOrder) zeroex.Order {
+	// copies the data between compatible types
+	var out zeroex.Order
+
+	out.MakerAddress.SetBytes(in.MakerAddress.Bytes())
+	out.TakerAddress.SetBytes(in.TakerAddress.Bytes())
+	out.FeeRecipientAddress.SetBytes(in.FeeRecipientAddress.Bytes())
+	out.SenderAddress.SetBytes(in.SenderAddress.Bytes())
+	out.MakerAssetAmount=new(big.Int)
+	out.MakerAssetAmount.Set(in.MakerAssetAmount)
+	out.TakerAssetAmount=new(big.Int)
+	out.TakerAssetAmount.Set(in.TakerAssetAmount)
+	out.MakerFee=new(big.Int)
+	out.MakerFee.Set(in.MakerFee)
+	out.ExpirationTimeSeconds=new(big.Int)
+	out.ExpirationTimeSeconds.Set(in.ExpirationTimeSeconds)
+	out.Salt=new(big.Int)
+	out.Salt.Set(in.Salt)
+
+
+	out.MakerAssetData = make([]byte,len(in.MakerAssetData))
+	copy(out.MakerAssetData,in.MakerAssetData)
+
+	out.TakerAssetData = make([]byte,len(in.TakerAssetData))
+	copy(out.TakerAssetData,in.TakerAssetData)
+
+
+	out.MakerFeeAssetData = make([]byte,len(in.MakerFeeAssetData))
+	copy(out.MakerFeeAssetData,in.MakerFeeAssetData)
+
+	out.TakerFeeAssetData = make([]byte,len(in.TakerFeeAssetData))
+	copy(out.TakerFeeAssetData,in.TakerFeeAssetData)
+
+	return out
+}
+func Copy_zerox_order_to_iexchange_order(in *zeroex.Order ) IExchangeOrder {
+	// copies the data between compatible types
+	var out IExchangeOrder
+
+	out.MakerAddress.SetBytes(in.MakerAddress.Bytes())
+	out.TakerAddress.SetBytes(in.TakerAddress.Bytes())
+	out.FeeRecipientAddress.SetBytes(in.FeeRecipientAddress.Bytes())
+	out.SenderAddress.SetBytes(in.SenderAddress.Bytes())
+	out.MakerAssetAmount=new(big.Int)
+	out.MakerAssetAmount.Set(in.MakerAssetAmount)
+	out.TakerAssetAmount=new(big.Int)
+	out.TakerAssetAmount.Set(in.TakerAssetAmount)
+	out.MakerFee=new(big.Int)
+	out.MakerFee.Set(in.MakerFee)
+	out.ExpirationTimeSeconds=new(big.Int)
+	out.ExpirationTimeSeconds.Set(in.ExpirationTimeSeconds)
+	out.Salt=new(big.Int)
+	out.Salt.Set(in.Salt)
+
+
+	out.MakerAssetData = make([]byte,len(in.MakerAssetData))
+	copy(out.MakerAssetData,in.MakerAssetData)
+
+	out.TakerAssetData = make([]byte,len(in.TakerAssetData))
+	copy(out.TakerAssetData,in.TakerAssetData)
+
+
+	out.MakerFeeAssetData = make([]byte,len(in.MakerFeeAssetData))
+	copy(out.MakerFeeAssetData,in.MakerFeeAssetData)
+
+	out.TakerFeeAssetData = make([]byte,len(in.TakerFeeAssetData))
+	copy(out.TakerFeeAssetData,in.TakerFeeAssetData)
+
+	return out
 }

@@ -26,10 +26,23 @@ const (
 	OOOpCodeExpired
 	OOOpCodeSyncProcess		// when no other reason exist, this one is used (this is a kind of a bugfix)
 )
+type MeshEvtCode int
+const (
+	MeshEvtGetOrders MeshEvtCode = iota
+	MeshEvtInvalid
+	MeshEvtAdded				// 2
+	MeshEvtFilled				// 3
+	MeshEvtFullyFilled			// 4
+	MeshEvtCancelled			// 5
+	MeshEvtExpired				// 6
+	MeshEvtUnexpired
+	MeshEvtBecameUnfunded
+	MeshEvtFillabilityIncreased
+	MeshEvtStoppedWatching
+)
 var (
 	ErrChainSplit error = errors.New("Chainsplit detected")
 )
-
 
 type OrderType uint8
 const (
@@ -273,6 +286,7 @@ type PLEntry struct {	// profit loss entry
 }
 type OpenOrder struct {		// the Order on 0x Mesh network, that is yet to be filled
 	Id					int64
+	MktAid				int64
 	Amount				float64
 	InitialAmount		float64
 	Price				float64
@@ -511,6 +525,66 @@ type PriceHistory struct {
 type FullPriceHistory struct {
 	Outcomes			[]PriceHistory
 }
+type ZHistT1Entry struct {		// the Order on 0x Mesh network, that is yet to be filled
+	Id						int64
+	MktAid				int64
+	Amount				float64
+	FillableAmount		float64
+	Price				float64
+	PriceEstimate		float64
+	WeightedPriceEst	float64
+	Spread				float64
+	MaxBid				float64
+	MinAsk				float64
+	WMaxBid				float64
+	WMinAsk				float64
+	Timestamp			int64
+	MktExpirationTs		int64
+	OrderExpirationTs	int64
+	MktOrderId			int64
+	MktStatus			int
+	MktType				int
+	MarketStatus		int
+	OutcomeIdx			int
+	OrderType			int
+	EvtCode				int
+	OrderDate			string
+	Direction			string
+	MktDescr			string
+	OutcomeStr			string
+	MktStatusStr		string
+	MktTypeStr			string
+	OrderHash			string
+	OrderHashSh			string
+	MakerAddr			string
+	MakerAddrSh			string	// shortened address
+	RelatedAddr			string	// address of the filler or the one who cancles, or nil
+	EOAAddr				string
+	EOAAddrSh			string
+	WalletAddr			string
+	WalletAddrSh		string
+	RelatedAddrSh		string
+	MktAddr				string
+	MktAddrSh			string
+}
+type ZHistT2Entry struct { // Type2 entry, summarized data
+	Timestamp				int64
+	PriceEstimate			float64
+	WeightedPriceEstimate	float64
+}
+type ZoomedPriceHist struct {
+	Zoom				int
+	OutcomeIdx			int
+	InitTs				int
+	FinTs				int
+	IntervalSecs		int
+	OutcomeStr			string
+	Type1Entries		[]ZHistT1Entry
+	Type2Entries		[]ZHistT2Entry
+}
+type FullZoomedPriceHist struct {
+	Outcomes			[]ZoomedPriceHist
+}
 type StatementEntry struct {
 	Id					int64
 	BlockNum			int64
@@ -536,4 +610,65 @@ type ExecuteWalletTx struct {
 	DesiredSignerBalance	string
 	MaxExchangeRateInDAI	string
 	InputSig				string	// first 4 bytes of CallData, extracted for indexing
+}
+type MeshProcStatus struct {
+	LastIdProcessed			int64
+}
+type MeshEvent struct {
+	Id						int64
+	Timestamp				int64
+	FillableAmount			string
+	EvtCode					int
+	OrderHash				string
+	ChainId					int
+	ExchangeAddress			string
+	MakerAddress			string
+	MakerAssetData			string
+	MakerFeeAssetData		string
+	MakerAssetAmount		string
+	MakerFee				string
+	TakerAddress			string
+	TakerAssetData			string
+	TakerFeeAssetData		string
+	TakerAssetAmount		string
+	TakerFee				string
+	SenderAddress			string
+	FeeRecipientAddress		string
+	ExpirationTime			int64
+	Salt					string
+	Signature				string
+}
+type DepthState struct {
+	Id						int64
+	MeshEvtId				int64
+	MarketAid				int64
+	OutcomeIdx				int64
+	OrderType				int
+	OrderHash				string
+	Price					float64
+	Amount					float64
+	IniTs					int64
+	FinTs					int64
+	IniDate					string
+	FinDate					string
+}
+type PriceEstimate struct {
+	Id						int64
+	MarketAid				int64
+	MeshEvtId				int64
+	TimeStamp				int64
+	BidStateId				int64
+	AskStateId				int64
+	OutcomeIdx				int64
+	Spread					float64
+	PriceEst				float64
+	WeightedPriceEst		float64
+	MaxBid					float64
+	MinAsk					float64
+	WMaxBid					float64
+	WMinAsk					float64
+	EvtCode					int
+	Date					string
+	MatchingBids			[]DepthState
+	MatchingAsks			[]DepthState
 }

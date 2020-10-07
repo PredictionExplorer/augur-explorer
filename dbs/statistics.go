@@ -201,9 +201,11 @@ func (ss *SQLStorage) Link_eoa_and_wallet_contract(eoa_aid, wallet_aid int64) {
 			"VALUES($1,$2)"
 
 	res,err:=ss.db.Exec(query,eoa_aid,wallet_aid)
-	ss.Info.Printf("eoa2wallet link sql error: %v  eoa=%v wallet=%v\n",err,eoa_aid,wallet_aid)
+	ss.Info.Printf("reporting eoa2wallet link sql error: %v  eoa=%v wallet=%v\n",err,eoa_aid,wallet_aid)
 	if (err!=nil) {
-		if strings.Contains(err.Error(),`duplicate key value violates unique constraint "ustats_pkey"`) {
+		unique_wallet := strings.Contains(err.Error(),`duplicate key value violates unique constraint "ustats2_idx"`)
+		unique_eoa := strings.Contains(err.Error(),`duplicate key value violates unique constraint "ustats_pkey"`)
+		if unique_wallet || unique_eoa {
 			if eoa_aid != wallet_aid {
 				// In rare cases we can have a record with eoa_aid=wallet_aid 
 				//  and it may be preventing the INSERT. If this is the case check if we can fix it
@@ -229,17 +231,16 @@ func (ss *SQLStorage) Link_eoa_and_wallet_contract(eoa_aid, wallet_aid int64) {
 						wallet_aid,eoa_aid,
 					)
 				}
+			} else {
+				// EOA=Wallet , we already have this record, duplicated registration ignored
 			}
 		} else {
-			if !strings.Contains(err.Error(),`duplicate key value"`) {
-				ss.Info.Printf(
-					"eoa2wallet link sql error: %v  eoa=%v wallet=%v\n",
-					err,eoa_aid,wallet_aid,
-				)
-				os.Exit(1)
-			}
+			ss.Info.Printf(
+				"eoa2wallet link sql error other than dup-key: %v  eoa=%v wallet=%v\n",
+				err,eoa_aid,wallet_aid,
+			)
+			os.Exit(1)
 		}
-
 	} else {
 		affected_rows,err:=res.RowsAffected()
 		if err == nil {

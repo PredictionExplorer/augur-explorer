@@ -15,6 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/0xProject/0x-mesh/zeroex"
 
+	ztypes "github.com/0xProject/0x-mesh/common/types"
+
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 type ExecWalletTxInputStruct struct {
@@ -36,6 +38,12 @@ type TradeInputStruct struct {
 	MaxTrades				*big.Int `abi:"_maxTrades"`
 	Orders					[]IExchangeOrder `abi:"_orders"`
 	Signatures				[][]byte `abi:"_signatures"`
+}
+type CancelPrdersInputStruct struct {
+	Orders					[]IExchangeOrder `abi:"_orders"`
+	Signatures				[][]byte `abi:"_signatures"`
+	MaxProtocolFeeDai		*big.Int `abi:"_maxProtocolFeeDai"`
+
 }
 func augur_init(addresses *ContractAddresses,contracts *map[string]interface{}) {
 
@@ -141,7 +149,7 @@ func get_eoa_aid(wallet_addr *common.Address,block_num int64,tx_id int64) int64 
 	)
 	return eoa_aid
 }
-func proc_approval(log *types.Log) {
+func proc_approval(log *types.Log,agtx_ptr **AugurTx) {
 
 	if len(log.Topics)!=3 {
 		Info.Printf("ERC20_Approval event is not compliant log.Topics!=3. Tx hash=%v\n",log.TxHash.String())
@@ -157,9 +165,21 @@ func proc_approval(log *types.Log) {
 		Info.Printf("ERC20_Approval event for contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump(Info)
+		if bytes.Equal(log.Address.Bytes(),caddrs.Dai.Bytes()) {
+			if bytes.Equal(mevt.Spender.Bytes(),caddrs.ZeroxTrade.Bytes()) {
+				tx_insert_if_needed(*agtx_ptr)
+				storage.Set_augur_flag(&mevt.Owner,*agtx_ptr,"ap_0xtrade_on_cash")
+			}
+		}
+		if bytes.Equal(log.Address.Bytes(),caddrs.Dai.Bytes()) {
+			if bytes.Equal(mevt.Spender.Bytes(),caddrs.FillOrder.Bytes()) {
+				tx_insert_if_needed(*agtx_ptr)
+				storage.Set_augur_flag(&mevt.Owner,*agtx_ptr,"ap_fill_on_cash")
+			}
+		}
 	}
 }
-func proc_approval_for_all(log *types.Log) {
+func proc_approval_for_all(log *types.Log,agtx_ptr **AugurTx) {
 
 	if len(log.Topics)!=3 {
 		Info.Printf("ERC20_ApprovalForAll event is not compliant log.Topics!=3. Tx hash=%v\n",log.TxHash.String())
@@ -175,6 +195,12 @@ func proc_approval_for_all(log *types.Log) {
 		Info.Printf("ApprovalForAll event for contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump(Info)
+		if bytes.Equal(log.Address.Bytes(),caddrs.ShareToken.Bytes()) {
+			if bytes.Equal(mevt.Operator.Bytes(),caddrs.FillOrder.Bytes()) {
+				tx_insert_if_needed(*agtx_ptr)
+				storage.Set_augur_flag(&mevt.Owner,*agtx_ptr,"ap_fill_on_shtok")
+			}
+		}
 	}
 }
 func proc_trading_proceeds_claimed(agtx *AugurTx,timestamp int64,log *types.Log) {
@@ -216,8 +242,6 @@ func proc_fill_evt(log *types.Log) {
 	}
 	Info.Printf("Fill event found (block=%v) :\n",log.BlockNumber)
 	mevt.Dump(Info)
-	initial_amount = big.NewInt(0)
-	initial_amount.Set(mevt.MakerAssetFilledAmount)
 }
 func proc_erc20_transfer(log *types.Log,agtx *AugurTx) {
 	var mevt ETransfer
@@ -369,7 +393,7 @@ func proc_share_token_balance_changed(agtx *AugurTx,log *types.Log) {
 	mevt.Dump(Info)
 	storage.Insert_share_balance_changed_evt(agtx,&mevt)
 }
-func proc_market_order_event(agtx *AugurTx,log *types.Log) {
+func proc_market_order_event(agtx *AugurTx,log *types.Log,timestamp int64) {
 
 	var mevt EOrderEvent
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
@@ -392,16 +416,11 @@ func proc_market_order_event(agtx *AugurTx,log *types.Log) {
 	mevt.Dump(Info)
 	eoa_aid := get_eoa_aid(&mevt.AddressData[0],agtx.BlockNum,agtx.TxId)
 	eoa_fill_aid := get_eoa_aid(&mevt.AddressData[1],agtx.BlockNum,agtx.TxId)
-	//storage.Insert_market_order_evt(BlockNumber(log.BlockNumber),tx_id,signer,eoa_aid,&mevt)
 
-	orig_fill_amounts := extract_original_fill_amount(agtx.Input)
-	if len(orig_fill_amounts) == 0 {
-		Fatalf("Couldn't extract fill amount from Tx inpuit. Aborting.")
-	}
-
-	storage.Insert_market_order_evt(agtx,eoa_aid,eoa_fill_aid,&mevt,orig_fill_amounts)
+	orders,ospecs := extract_orders_from_input(agtx.Input)
+	storage.Insert_market_order_evt(agtx,timestamp,eoa_aid,eoa_fill_aid,&mevt,orders,ospecs)
 }
-func proc_cancel_zerox_order(log *types.Log) {
+func proc_cancel_zerox_order(agtx *AugurTx,log *types.Log,timestamp int64) {
 	var mevt ECancelZeroXOrder
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Market = common.BytesToAddress(log.Topics[2][12:])
@@ -419,7 +438,18 @@ func proc_cancel_zerox_order(log *types.Log) {
 	Info.Printf("CancelZeroXOrder event for contract %v (block=%v) : \n",
 								log.Address.String(),log.BlockNumber)
 	mevt.Dump(Info)
-	storage.Delete_open_0x_order(ohash_str,OOOpCodeCancelledByUser)
+	orders,ospecs := extract_orders_from_input(agtx.Input)
+	if len(orders) == 0 {
+		Info.Printf("Couldn't extract fill amount from Tx input: tx hash=%v block %v. Aborting.",agtx.TxHash,agtx.BlockNum)
+		Error.Printf("Couldn't extract fill amount from Tx input: tx hash=%v block %v. Aborting.",agtx.TxHash,agtx.BlockNum)
+		os.Exit(1)
+	}
+	eoa_aid := get_eoa_aid(&mevt.Account,agtx.BlockNum,agtx.TxId)
+	wallet_aid,err := storage.Lookup_wallet_aid(eoa_aid)
+	if err!=nil {
+		Error.Printf("Lookup of wallet_aid failed for CancelOrder (eoa_aid=%v): %v\n",eoa_aid,err)
+	}
+	storage.Cancel_open_order(eoa_aid,wallet_aid,orders,ospecs,ohash_str,timestamp)
 }
 func proc_market_oi_changed(block *types.Header, agtx *AugurTx, log *types.Log) {
 	var mevt EMarketOIChanged
@@ -667,10 +697,10 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 	if num_topics > 0 {
 
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_approval) {
-			proc_approval(log)
+			proc_approval(log,&agtx)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc1155_approval_for_all) {
-			proc_approval_for_all(log)
+			proc_approval_for_all(log,&agtx)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_trading_proceeds_claimed) {
 			tx_insert_if_needed(agtx)
@@ -707,10 +737,10 @@ func process_event(block *types.Header, agtx *AugurTx,logs *[]*types.Log,lidx in
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_order) {
 			tx_insert_if_needed(agtx)
-			proc_market_order_event(agtx,log)
+			proc_market_order_event(agtx,log,timestamp)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cancel_0x_order) {
-			proc_cancel_zerox_order(log)
+			proc_cancel_zerox_order(agtx,log,timestamp)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_oi_changed) {
 			tx_insert_if_needed(agtx)
@@ -898,6 +928,15 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		}
 		agtx.GasUsed = int64(rcpt.GasUsed)
 		agtx.TxIndex = int32(tnum)
+
+		if len(agtx.Input) >= 4 {
+			input_sig := agtx.Input[:4]
+			if bytes.Equal(input_sig,sig_set_referrer) {
+				sender := common.HexToAddress(agtx.From)
+				tx_insert_if_needed(agtx)
+				storage.Set_augur_flag(&sender,agtx,"set_referrer")
+			}
+		}
 		sequencer := new(EventSequencer)
 		num_logs := len(rcpt.Logs)
 		var agtx_type int = AgTxType_Unclassified
@@ -973,7 +1012,6 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		pl_entries := make([]int64,0,2);// profit loss entries
 		// before processing events we need to reset these global vars as they accumulate some data
 		market_order_id = 0
-		initial_amount = nil
 		//
 		// Step 3: Execute events using ordered list prepared in previous step
 		for i:=0 ; i < num_logs ; i++ {
@@ -995,9 +1033,9 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 	}
 	return nil
 }
-func get_order_hash(o *IExchangeOrder) string {
+func get_order_data(o *IExchangeOrder) (zeroex.Order,common.Hash) {
 
-	zero_order := new(zeroex.Order)
+	var zero_order zeroex.Order
 	zero_order.ChainID=big.NewInt(caddrs.ChainId)
 	zero_order.ExchangeAddress.SetBytes(caddrs.ZeroxXchg.Bytes())
 	zero_order.MakerAddress.SetBytes(o.MakerAddress.Bytes())
@@ -1029,7 +1067,7 @@ func get_order_hash(o *IExchangeOrder) string {
 		Fatalf("can't compute ZeroX order hash: %v\n",err)
 	}
 	Info.Printf("get_order_hash() returning %v\n",hash.String())
-	return hash.String()
+	return zero_order,hash
 }
 func decode_original_fill_amount(input_data []byte,method_sig []byte) map[string]*big.Int {
 	output := make(map[string]*big.Int,0)
@@ -1046,7 +1084,8 @@ func decode_original_fill_amount(input_data []byte,method_sig []byte) map[string
 		Info.Printf("Requested fill amount = %v\n",input_data_decoded.RequestedFillAmount.String())
 		Info.Printf("num orders=%v\n",len(input_data_decoded.Orders))
 		for i,order := range input_data_decoded.Orders {
-			hash_str := get_order_hash(&order)
+			_,h := get_order_data(&order)
+			hash_str := h.String()
 			Info.Printf(
 				"Order %v (%v), maker amount = %v, taker amount=%v\n",
 				i,hash_str,order.MakerAssetAmount,order.TakerAssetAmount,
@@ -1061,6 +1100,68 @@ func decode_original_fill_amount(input_data []byte,method_sig []byte) map[string
 	}
 
 	return output
+}
+func decode_0x_orders(input_data []byte,method_sig []byte) (map[string]*ztypes.OrderInfo,map[string]*ZxMeshOrderSpec) {
+
+	output1 := make(map[string]*ztypes.OrderInfo,0)
+	output2 := make(map[string]*ZxMeshOrderSpec,0)
+
+	var trade_input_data_decoded TradeInputStruct
+	var cancel_order_input_data_decoded CancelPrdersInputStruct
+	var decoded_orders []IExchangeOrder
+	var decoded_signatures [][]byte
+
+	zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
+	if 0 == bytes.Compare(method_sig,zeroex_trade_sig) {
+		method, err := zerox_trade_abi.MethodById(method_sig)
+		if err != nil {
+			Fatalf("Method not found")
+		}
+		err = method.Inputs.Unpack(&trade_input_data_decoded, input_data)
+		if err != nil {
+			Fatalf("Couldn't decode input of tx: %v",err)
+		}
+		decoded_orders = trade_input_data_decoded.Orders
+		decoded_signatures = trade_input_data_decoded.Signatures
+	}
+	zeroex_cancel_sig,_ := hex.DecodeString("4ea96c30")
+	if 0 == bytes.Compare(method_sig,zeroex_cancel_sig) {
+		method, err := zerox_trade_abi.MethodById(method_sig)
+		if err != nil {
+			Fatalf("Method not found")
+		}
+		err = method.Inputs.Unpack(&cancel_order_input_data_decoded, input_data)
+		if err != nil {
+			Fatalf("Couldn't decode input of tx: %v",err)
+		}
+		decoded_orders=cancel_order_input_data_decoded.Orders
+		decoded_signatures=cancel_order_input_data_decoded.Signatures
+	}
+	if len(decoded_orders) > 0 {
+		for i,order := range decoded_orders {
+			ord,h := get_order_data(&order)
+			hash_str := h.String()
+			Info.Printf(
+				"Order %v (%v), maker amount = %v, taker amount=%v\n",
+				i,hash_str,order.MakerAssetAmount,order.TakerAssetAmount,
+			)
+			order_info := new(ztypes.OrderInfo)
+			order_info.OrderHash.SetBytes(h.Bytes())
+			order_info.SignedOrder=new(zeroex.SignedOrder)
+			order_info.SignedOrder.Signature=make([]byte,len(decoded_signatures[i]))
+			order_info.SignedOrder.Order = ord
+			order_info.FillableTakerAssetAmount = big.NewInt(0) // this value is incorrect, but we don't have the correct one
+			copy(order_info.SignedOrder.Signature,decoded_signatures[i])
+			output1[hash_str]=order_info
+			ospec := get_ospec(ord.MakerAssetData,&hash_str)
+			output2[hash_str] = ospec
+		}
+	} else {
+		Error.Printf("Undefined behavior: no orders detected on the input of ZeroXTrade::trade()")
+		os.Exit(1)
+	}
+
+	return output1,output2
 }
 func dump_tx_input_if_known(tx_data []byte) {
 
@@ -1349,6 +1450,7 @@ func contains_execute_wallet_transaction_call(tx_data []byte) *ExecuteWalletTx {
 	}
 	return nil
 }
+/* DISCONTINUED
 func extract_original_fill_amount(tx_data []byte) map[string]*big.Int {
 
 	if len(tx_data) < 32 {
@@ -1388,4 +1490,122 @@ func extract_original_fill_amount(tx_data []byte) map[string]*big.Int {
 		}
 	}
 	return make(map[string]*big.Int,0)
+}*/
+func extract_orders_from_input(tx_data []byte) (map[string]*ztypes.OrderInfo,map[string]*ZxMeshOrderSpec) {
+	// returns orders in one map and initial amounts in another map
+	if len(tx_data) < 32 {
+		return make(map[string]*ztypes.OrderInfo,0),make(map[string]*ZxMeshOrderSpec,0)
+
+	}
+	input_sig := tx_data[:4]
+	decoded_sig ,_ := hex.DecodeString("78dc0eed")
+	if 0 == bytes.Compare(input_sig,decoded_sig) {
+		input_data_raw:= tx_data[4:]
+		var input_data ExecWalletTxInputStruct
+		method, err := wallet_abi.MethodById(decoded_sig)
+		if err != nil {
+			Fatalf("Method not found")
+		}
+		err = method.Inputs.Unpack(&input_data, input_data_raw)
+		if err != nil {
+			Fatalf("Couldn't decode input of tx %v",err)
+		}
+
+		// check for internal transactions for the Wallet Registry contract
+		if len(input_data.Data) >= 4 {
+			input_sig := input_data.Data[:4]
+			zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
+			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
+				Info.Printf("augur_wallet_call: ZeroEx::trade()\n")
+				return decode_0x_orders(input_data.Data[4:],zeroex_trade_sig)
+			}
+			zeroex_cancel_sig,_ := hex.DecodeString("4ea96c30")
+			if 0 == bytes.Compare(input_sig,zeroex_cancel_sig) {
+				Info.Printf("augur_wallet_call: ZeroEx::cancelOrder()\n")
+				return decode_0x_orders(input_data.Data[4:],zeroex_cancel_sig)
+			}
+		}
+	} else {
+		if len(input_sig) >= 4 {
+			input_data_raw:= tx_data[4:]
+			Info.Printf("tx input= %v\n",hex.EncodeToString(input_data_raw))
+			zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
+			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
+				return decode_0x_orders(input_data_raw,zeroex_trade_sig)
+			}
+			zeroex_cancel_sig,_ := hex.DecodeString("4ea96c30")
+			if 0 == bytes.Compare(input_sig,zeroex_cancel_sig) {
+				return decode_0x_orders(input_data_raw,zeroex_cancel_sig)
+			}
+		}
+	}
+	return make(map[string]*ztypes.OrderInfo,0),make(map[string]*ZxMeshOrderSpec,0)
 }
+func get_ospec(maker_asset_data []byte,order_hash *string) *ZxMeshOrderSpec {
+
+	var copts = new(bind.CallOpts)
+	adata,err := ctrct_zerox_trade.DecodeAssetData(copts,maker_asset_data)
+	if err!=nil {
+		Info.Printf("couldn't decode asset data for order %v : %v\n",*order_hash,err)
+		Error.Printf("couldn't decode asset data for order %v : %v\n",*order_hash,err)
+		os.Exit(1)
+	}
+	unpacked_id,err := ctrct_zerox_trade.UnpackTokenId(copts,adata.TokenIds[0])
+	if err!=nil {
+		Info.Printf("Unpack token id failed for order %v: %v\n",*order_hash,err)
+		Error.Printf("Unpack token id failed for order %v: %v\n",*order_hash,err)
+		os.Exit(1)
+	}
+	return &unpacked_id
+}
+func Discover_augur_account(addr *common.Address,caddrs *ContractAddresses) bool {
+
+	// checks if provided address has a set of approvals required to consider an account Augur-enabled
+	var copts = new(bind.CallOpts)
+	var agtx AugurTx	// a bogus transaction with empty values
+	allow_amount,err := ctrct_dai_token.Allowance(copts,*addr,caddrs.ZeroxTrade)
+	if err != nil {
+		Info.Printf("Discover_augur_account(): allowance() at DAI for ZeroxTrade failed for %v: %v\n",addr.String(),err)
+		return false
+	}
+	z:=big.NewInt(0)
+	if z.Cmp(allow_amount) >= 0 {
+		Info.Printf("Discover_augur_account(): allowance() amount at DAI for ZeroxTrade is 0 for %v\n",addr.String())
+		return false
+	}
+	storage.Set_augur_flag(addr,&agtx,"ap_0xtrade_on_cash")
+	allow_amount,err = ctrct_dai_token.Allowance(copts,*addr,caddrs.FillOrder)
+	if err != nil {
+		Info.Printf("Discover_augur_account(): allowance() at DAI for FillOrder failed for %v: %v\n",addr.String(),err)
+		return false
+	}
+	if z.Cmp(allow_amount) >= 0 {
+		Info.Printf("Discover_augur_account(): allowance() amount at DAI for FillOrder is 0 for %v\n",addr.String())
+		return false
+	}
+	storage.Set_augur_flag(addr,&agtx,"ap_fill_on_cash")
+
+	ctrct_share_token,err := NewShareToken(caddrs.ShareToken,eclient)
+	if err != nil {
+		Info.Printf("Discover_augur_account(): instantiation of ShareToken contract failed for %v: %v\n",*addr,err)
+		return false
+	}
+	approved4all,err := ctrct_share_token.IsApprovedForAll(copts,*addr,caddrs.FillOrder)
+	if err != nil {
+		Info.Printf("Discover_augur_account(): isApprovedForAll failed for %v : %v\n",addr.String(),err)
+		return false
+	}
+	if !approved4all {
+		Info.Printf("Discover_augur_account(): isApprovedForAll set to false for %v\n",addr.String())
+		return false
+	}
+
+	storage.Set_augur_flag(addr,&agtx,"ap_fill_on_shtok")
+	if storage.Is_augur_activated(addr.String()) {
+		Info.Printf("Discovered address %v as augur-enabled\n",addr.String())
+		return true
+	}
+	Info.Printf("Discovery of address %v as augur-enabled not successfull\n",*addr)
+	return false
+}
+

@@ -145,6 +145,7 @@ func main() {
 	r.GET("/black/umtrades.html",user_trades_for_market)
 	r.GET("/black/statement/:addr",account_statement)
 	r.GET("/black/oohist/:addr",open_order_history)
+	r.GET("/black/pehist/:market/:outcome", price_estimate_history)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -169,6 +170,7 @@ func main() {
 	r.GET("/api/stats_cashflow",  a1_stats_cashflow)
 	r.GET("/api/stats_uniqaddr",  a1_stats_uniqaddr)
 	r.GET("/api/stats_gasusage",  a1_stats_gasusage)
+	r.GET("/api/price_history/:market/:zoom/:init_ts/:fin_ts/:interval_secs/", a1_price_history_zoomed)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

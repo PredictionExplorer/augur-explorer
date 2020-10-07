@@ -173,50 +173,34 @@ func (ss *SQLStorage) Insert_transaction(agtx *p.AugurTx) int64 {
 
 	return tx_id
 }
-func (ss *SQLStorage) Fix_chainsplit(block *types.Header) int64 {
-	// DISCONTINUED: removal pending
+func (ss *SQLStorage) Update_address_metadata(aid int64,agtx *p.AugurTx) {
+
+	// When a market address is inserted into 'address' table before market itself (this can
+	// happen if 0x Mesh listener processes events before processing the blockhain data)
+	// block_num and tx_id of market address will be 0. This function updates real block_num & tx_id
+
 	var query string
-	var my_block_num int64
-	parent_hash := block.ParentHash.String()
-	query = "SELECT block_num FROM block WHERE block_hash = $1"
-	row := ss.db.QueryRow(query,parent_hash)
-	err := row.Scan(&my_block_num);
-	if (err!=nil) {
-		if err==sql.ErrNoRows {
-			ss.Log_msg(
-				fmt.Sprintf(
-					"Chainsplit detected, I don't have the parent hash %v, exiting. ",
-					parent_hash,
-				),
-			)
-		} else {
-			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
-			os.Exit(1)
-		}
-	}
-	cur_block_num := int64(block.Number.Uint64())
-	if cur_block_num > (my_block_num + p.MAX_BLOCKS_CHAIN_SPLIT) {
+	query = "UPDATE address SET block_num=$2,tx_id=$3 WHERE address_id=$1"
+	_,err := ss.db.Exec(query,aid,agtx.BlockNum,agtx.TxId)
+	if err != nil {
 		ss.Log_msg(
 			fmt.Sprintf(
-				"Chainsplit detected, and it is more than %v blocks, aborting. " +
-				"(my_block_num=%v, cur_block_num=%v)",
-				p.MAX_BLOCKS_CHAIN_SPLIT,my_block_num,cur_block_num,
+				"DB error: can't update address metadata for address %v : %v: q=%v",
+				agtx.BlockNum,err,query,
 			),
 		)
-	}
-	query = "DELETE FROM block WHERE block_num > $1"
-	_,err = ss.db.Exec(query,my_block_num)
-	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v, block_num=%v",err,query,my_block_num))
 		os.Exit(1)
 	}
-	return my_block_num + 1	// parent + 1 = current
 }
 func (ss *SQLStorage) Chainsplit_delete_blocks(starting_block_num int64) {
 
 	var err error
 	var query string
-	query = "DELETE FROM block WHERE block_num > $1"
+	// Note: We must delete in reverse order of block creation because the triggers
+	//			in the DB have made cumulative operations
+	query = "DELETE FROM block WHERE block_num IN (" +
+				"SELECT block_num FROM block WHERE block_num > $1 ORDER BY block_num DESC" +
+			")"
 	_,err = ss.db.Exec(query,starting_block_num)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v, block_num=%v",err,query,starting_block_num))
@@ -404,6 +388,24 @@ func (ss *SQLStorage) Tx_exists(tx_hash string) bool {
 	return true
 }
 
+func (ss *SQLStorage) Get_block_timestamp(block_num int64) (int64,error) {
+
+	var query string
+	query = "SELECT FLOOR(EXTRACT(EPOCH FROM block.ts))::BIGINT AS ts " +
+			"FROM block WHERE block_num=$1"
+	row := ss.db.QueryRow(query,block_num)
+	var ts int64
+	var err error
+	err=row.Scan(&ts);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,err
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Get_block_timestamp(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return ts,nil
+}
 func (ss *SQLStorage) Get_last_block_timestamp() int64 {
 
 	var query string
@@ -497,4 +499,27 @@ func (ss *SQLStorage) Get_all_address_ids() []int64 {
 		records = append(records,aid)
 	}
 	return records
+}
+func (ss *SQLStorage) Get_stored_chain_id() int64 {
+
+	var query string
+	query = "SELECT chain_id FROM contract_addresses"
+	row := ss.db.QueryRow(query)
+	var null_chain_id sql.NullInt64
+	var err error
+	err=row.Scan(&null_chain_id);
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Error in Get_stored_chain_id(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return null_chain_id.Int64
+}
+func (ss *SQLStorage) Set_chain_id(chain_id int64) {
+
+	var query string = "UPDATE contract_addresses SET chain_id=$1"
+	_,err:=ss.db.Exec(query,chain_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Set_chain_id() failed: %v",err))
+		os.Exit(1)
+	}
 }

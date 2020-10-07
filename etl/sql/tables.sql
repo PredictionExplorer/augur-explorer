@@ -103,6 +103,79 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 	trade_group			TEXT NOT NULL,			-- User defined group label to identify multiple trades
 	order_hash			TEXT NOT NULL
 );
+CREATE TABLE mesh_evt ( -- Events received from 0x Mesh network. source: github.com/0xProject/0x-mesh/zeroex
+	id						BIGSERIAL PRIMARY KEY,
+	eoa_aid					BIGINT DEFAULT 0,	-- can be 0 if address isn't registered yet
+	wallet_aid				BIGINT DEFAULT 0,	-- can be 0 if address isn't registered yet
+-- Event fields:
+	time_stamp				TIMESTAMPTZ NOT NULL,
+	fillable_amount			DECIMAL(32,18) NOT NULL,
+	evt_code				SMALLINT NOT NULL,
+-- Augur fields:
+	market_aid				BIGINT NOT NULL,
+	outcome_idx				SMALLINT NOT NULL,
+	otype					SMALLINT NOT NULL,-- 0: BID, 1: ASK
+	price					DECIMAL(32,18) NOT NULL,
+-- Fill fields:
+	amount_fill				DECIMAL(32,18) DEFAULT 0.0,
+-- `Order` struct follows:
+	order_hash				CHAR(66) NOT NULL,
+	chain_id				INT NOT NULL,
+	exchange_addr			CHAR(42) NOT NULL,
+	maker_addr				CHAR(42) NOT NULL,
+	maker_asset_data		TEXT NOT NULL,	-- hex encoded
+	maker_fee_asset_data	TEXT NOT NULL,	-- hex encoded
+	maker_asset_amount		DECIMAL(32,18) NOT NULL,
+	maker_fee				DECIMAL(32,18) NOT NULL,
+	taker_address			CHAR(42) NOT NULL,
+	taker_asset_data		TEXT NOT NULL,
+	taker_fee_asset_data	TEXT NOT NULL,
+	taker_asset_amount		DECIMAL(32,18) NOT NULL,
+	taker_fee				DECIMAL(32,18) NOT NULL,
+	sender_address			CHAR(42) NOT NULL,
+	fee_recipient_address	CHAR(42) NOT NULL,
+	expiration_time			TIMESTAMPTZ NOT NULL,
+	salt					TEXT NOT NULL, -- big.Int as string
+	signature				TEXT
+);
+CREATE TABLE mesh_status (
+	last_id_processed	BIGINT DEFAULT 0
+);
+CREATE TABLE depth_state ( -- the state market depth at any given point in time, used to calculate 
+	id					BIGSERIAL PRIMARY KEY,
+	meshevt_id			BIGINT NOT NULL REFERENCES mesh_evt(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	otype				SMALLINT NOT NULL,
+	order_hash			CHAR(66),
+	price				DECIMAL(32,18) NOT NULL,
+	amount				DECIMAL(32,18) NOT NULL,
+	ini_ts				TIMESTAMPTZ NOT NULL,
+	fin_ts				TIMESTAMPTZ NOT NULL
+);
+CREATE TABLE mesh_link ( -- links two mesh events (ex. one event cancel order created in another event)
+	id					BIGSERIAL PRIMARY KEY,
+	depthst_id			BIGINT NOT NULL REFERENCES depth_state(id) ON DELETE CASCADE,
+	meshevt_id			BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	order_hash			CHAR(66) NOT NULL
+);
+CREATE TABLE price_estimate (
+	id					BIGSERIAL PRIMARY KEY,
+	market_aid			BIGINT NOT NULL,
+	meshevt_id			BIGINT NOT NULL REFERENCES mesh_evt(id) ON DELETE CASCADE,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	bid_state_id		BIGINT, -- will be NULL if there is are no orders (fake orders used)
+	ask_state_id		BIGINT,	-- will be NULL if there is are no orders (fake orders used)
+	outcome_idx			SMALLINT NOT NULL,
+	spread				DECIMAL(32,18) NOT NULL,
+	price_est			DECIMAL(32,18) NOT NULL,
+	wprice_est			DECIMAL(32,18),-- weighted price estimate (taking volume into consideration)
+	wmax_bid			DECIMAL(32,18),
+	wmin_ask			DECIMAL(32,18),
+	max_bid				DECIMAL(32,18) NOT NULL,
+	min_ask				DECIMAL(32,18) NOT NULL
+);
 CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later they are converted into 'mktord` records
 	id					BIGSERIAL PRIMARY KEY,
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
@@ -121,13 +194,14 @@ CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later th
 );
 CREATE TABLE oohist ( -- open order history
 	id					BIGSERIAL PRIMARY KEY,
-	mktord_id			BIGINT DEFAULT 0,			-- market order id, if exists
+	mktord_id			BIGINT DEFAULT NULL REFERENCES mktord(id) ON DELETE CASCADE, -- used only for Fill events
 	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
 	outcome_idx			SMALLINT NOT NULL,
 	opcode				SMALLINT NOT NULL,			-- operation; 0: CREATED, 1: AUTOEXPIRED, 2: USER-CANCELLED
 	market_aid			BIGINT NOT NULL,
 	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
 	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
+	price_estimate		DECIMAL(32,18) DEFAULT 0.0,
 	price				DECIMAL(32,18) NOT NULL,
 	initial_amount		DECIMAL(32,18) NOT NULL,	-- initial amount order was created
 	amount			DECIMAL(32,18) NOT NULL,		-- amount remaining to be filled
@@ -394,7 +468,7 @@ CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur P
 	-- format for contract address comment -> [key]:[description]
 	-- the Key is used to Augur.sol::lookup() function
 	upload_block		BIGINT DEFAULT 0,
-	chain_id			BIGINT DEFAULT 1,
+	chain_id			BIGINT DEFAULT 0,
 	augur				TEXT DEFAULT '',-- Augur: Augur Main contract
 	augur_trading		TEXT DEFAULT '',-- AugurTrading: Augur Trading contract
 	profit_loss			TEXT DEFAULT '',-- ProfitLoss: Profit Loss contract
@@ -486,6 +560,15 @@ CREATE TABLE agtx_status (-- Augur transaction status (used to track Gas fees fo
 	wallet_aid			BIGINT NOT NULL,
 	success				BOOLEAN NOT NULL,
 	funding_success		BOOLEAN NOT NULL
+);
+CREATE TABLE augur_flag ( -- collection of signs required to consider an account as enabled for Augur trading
+	-- when all flags are TRUE , we insert a record into 'ustats' table with eoa_aid=wallet_aid=aid
+	aid					BIGINT PRIMARY KEY,
+	act_block_num		BIGINT,					-- Block number when activation happened
+	ap_0xtrade_on_cash	BOOLEAN DEFAULT FALSE,	-- Approval for ZeroXTrade at Cash (DAI) contract
+	ap_fill_on_cash		BOOLEAN DEFAULT FALSE,	-- Approval for FillOrder contract at Cash (DAI) contract
+	ap_fill_on_shtok	BOOLEAN DEFAULT FALSE,	-- ApprovalForAll for FillOrder at ShareToken contract
+	set_referrer		BOOLEAN DEFAULT FALSE	-- Affiliates::setReferrer() tx input (informative only, not obligatory)
 );
 CREATE TABLE pl_debug (-- Profit loss data for debugging, scanned after Block has been processed
 	id					BIGSERIAL PRIMARY KEY,

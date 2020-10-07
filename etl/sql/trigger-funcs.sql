@@ -18,9 +18,10 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION update_price_estimate(
-	p_market_aid bigint,p_outcome_idx integer,p_osize decimal
-) RETURNS void AS $$
+/* DISCONTINUED
+CREATE OR REPLACE FUNCTION update_price_estimate_v1(
+	p_market_aid bigint,p_outcome_idx integer,p_osize decimal,p_timestamp timestamptz
+) RETURNS DECIMAL AS $$
 --updates open order statistics
 DECLARE
 	v_price_bid decimal;
@@ -31,54 +32,91 @@ DECLARE
 	v_price_estimate decimal;
 	v_num_ticks decimal;
 	v_osize decimal;
+	v_max_ts timestamptz;
+	r_oo record;
 BEGIN
 
 	SELECT spread_threshold,osize_threshold FROM ooconfig INTO v_spread_threshold,v_osize_threshold;
 
-	IF v_osize < v_osize_threshold THEN
-		RETURN;
-	END IF;
+--	IF v_osize < v_osize_threshold THEN -- DISABLED (for now) to lower complexity
+--		RETURN;
+--	END IF;
 
 	SELECT num_ticks FROM market WHERE market_aid = p_market_aid INTO v_num_ticks;
-	SELECT COALESCE(MAX(price),-1)
-		FROM oorders
-		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx
+
+	-- initialize price values in case the loop results in 0 iterations
+	SELECT COALESCE(MAX(price),0)
+		FROM oohist
+		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx AND
+				evt_timestamp <= p_timestamp AND expiration >= p_timestamp
 		INTO v_price_bid;
 	SELECT COALESCE(MIN(price),-1)
-		FROM oorders
-		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx
+		FROM oohist
+		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx AND
+				evt_timestamp <= p_timestamp AND expiration >= p_timestamp
 		INTO v_price_ask;
-	-- exit if we don't have enough bid/ask records
-	IF v_price_bid < 0 THEN
-		RETURN;
-	END IF;
 	IF v_price_ask < 0 THEN
-		RETURN;
+		v_price_ask := v_num_ticks;
 	END IF;
 
-	v_spread := v_price_ask - v_price_bid;
-	IF v_spread < v_spread_threshold THEN
-		v_price_estimate := (v_price_bid + v_price_ask) / 2 ;
-	ELSE
-		v_num_ticks:=v_num_ticks/2;
-		IF v_price_bid > v_num_ticks THEN
-			v_price_estimate := v_price_ask;
-		ELSE
-			v_price_estimate := v_price_bid;
+	FOR r_oo IN
+		SELECT * FROM oohist
+			WHERE market_aid=p_market_aid AND
+				outcome_idx=p_outcome_idx AND
+				evt_timestamp <= p_timestamp AND
+				expiration >= p_timestamp
+			ORDER BY evt_timestamp,id
+	LOOP
+		SELECT COALESCE(MAX(price),0)
+			FROM oohist
+			WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx AND
+				evt_timestamp <= r_oo.evt_timestamp AND expiration >= p_timestamp
+			INTO v_price_bid;
+		SELECT COALESCE(MIN(price),-1)
+			FROM oohist
+			WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx AND
+				evt_timestamp <= r_oo.evt_timestamp AND expiration >= p_timestamp
+			INTO v_price_ask;
+		IF v_price_ask < 0 THEN
+			v_price_ask := v_num_ticks;
 		END IF;
-	END IF;
 
-	UPDATE outcome_vol
-		SET	highest_bid = v_price_bid,
-			lowest_ask = v_price_ask,
-			price_estimate = v_price_estimate,
-			cur_spread = v_spread
-		WHERE market_aid = p_market_aid AND outcome_idx=p_outcome_idx;
+		v_spread := v_price_ask - v_price_bid;
+		IF v_spread < v_spread_threshold THEN
+			v_price_estimate := (v_price_bid + v_price_ask) / 2 ;
+		ELSE
+			v_num_ticks:=v_num_ticks/2;
+			IF v_price_bid > v_num_ticks THEN
+				v_price_estimate := v_price_ask;
+			ELSE
+				v_price_estimate := v_price_bid;
+			END IF;
+		END IF;
+		UPDATE oohist SET price_estimate = v_price_estimate WHERE id=r_oo.id;
+	END LOOP;
+
+	-- update the record that holds latest price estimate for the market
+	SELECT price_estimate FROM oohist
+		WHERE market_aid=p_market_aid AND outcome_idx=p_outcome_idx
+		ORDER BY evt_timestamp DESC LIMIT 1
+		INTO v_price_estimate;
+	IF v_price_estimate IS NOT NULL THEN
+		UPDATE outcome_vol
+			SET	highest_bid = v_price_bid,
+				lowest_ask = v_price_ask,
+				price_estimate = v_price_estimate,
+				cur_spread = v_spread
+			WHERE market_aid = p_market_aid AND outcome_idx=p_outcome_idx;
+	END IF;
+	RETURN v_price_estimate;
 END;
 $$ LANGUAGE plpgsql;
+*/
 CREATE OR REPLACE FUNCTION on_oorders_insert() RETURNS trigger AS  $$ --updates open order statistics
 DECLARE
 	v_cnt numeric;
+	v_oohist_id bigint;
+	v_price_estimate decimal;
 BEGIN
 
 	IF NEW.otype = 0 THEN
@@ -109,17 +147,24 @@ BEGIN
 		END IF;
 	END IF;
 
-	PERFORM update_price_estimate(NEW.market_aid,NEW.outcome_idx,NEW.amount);
 
 	-- Update Open Order history
+/*
 	INSERT INTO oohist(
 			otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
 			price,initial_amount,amount,evt_timestamp,srv_timestamp,expiration,order_hash
 		) VALUES (
 			NEW.otype,NEW.outcome_idx,NEW.opcode,NEW.market_aid,NEW.wallet_aid,NEW.eoa_aid,
 			NEW.price,NEW.initial_amount,NEW.amount,NEW.evt_timestamp,NEW.srv_timestamp,NEW.expiration,NEW.order_hash
-		) ON CONFLICT DO NOTHING;
+		) ON CONFLICT DO NOTHING
+		RETURNING id INTO v_oohist_id;
 
+	IF v_oohist_id IS NOT NULL THEN
+		-- there could be duplicate inserts, so we have this protection using 'if not NULL'
+		SELECT * FROM update_price_estimate(NEW.market_aid,NEW.outcome_idx::SMALLINT,NEW.amount,NEW.evt_timestamp) INTO v_price_estimate;
+		UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
+	END IF;
+*/
 	UPDATE market SET total_oorders = (total_oorders + 1) WHERE market_aid=NEW.market_aid;
 	UPDATE outcome_vol SET total_oorders = (total_oorders + 1) 
 		WHERE market_aid = NEW.market_aid AND outcome_idx = NEW.outcome_idx;
@@ -127,10 +172,13 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION update_oo_hist(p_mktord_id bigint,p_order_hash text,p_filled_amount text,p_opcode numeric) RETURNS void AS  $$ -- reverts order statistics on delete
+/* DISCONTINUED
+CREATE OR REPLACE FUNCTION update_oo_hist(p_mktord_id bigint,p_order_hash text,p_evt_timestamp bigint,p_filled_amount text,p_opcode numeric) RETURNS void AS  $$ -- reverts order statistics on delete
 DECLARE
 	oo record;
 	v_cnt numeric;
+	v_oohist_id bigint;
+	v_price_estimate decimal;
 BEGIN
 
 	SELECT * FROM oorders WHERE order_hash = p_order_hash LIMIT 1 INTO oo;
@@ -143,8 +191,14 @@ BEGIN
 			) VALUES (
 				p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
 				oo.price,oo.initial_amount,p_filled_amount::DECIMAL/1e+18,
-				oo.evt_timestamp,oo.srv_timestamp,oo.expiration,oo.order_hash
-			) ON CONFLICT DO NOTHING;
+				TO_TIMESTAMP(p_evt_timestamp),NOW(),oo.expiration,oo.order_hash
+			) ON CONFLICT DO NOTHING
+			RETURNING id INTO v_oohist_id;
+		IF v_oohist_id IS NOT NULL THEN
+			SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx::SMALLINT,p_filled_amount::DECIMAL/1e+18,TO_TIMESTAMP(p_evt_timestamp))
+				INTO v_price_estimate;
+			UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
+		END IF;
 		RETURN;
 	END IF;
 	SELECT * FROM oohist WHERE order_hash = p_order_hash AND opcode=1 LIMIT 1 INTO oo;
@@ -157,8 +211,14 @@ BEGIN
 			) VALUES (
 				p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
 				oo.price,oo.initial_amount,p_filled_amount::DECIMAL/1e+18,
-				oo.evt_timestamp,oo.srv_timestamp,oo.expiration,oo.order_hash
-			) ON CONFLICT DO NOTHING;
+				TO_TIMESTAMP(p_evt_timestamp),NOW(),oo.expiration,oo.order_hash
+			) ON CONFLICT DO NOTHING
+			RETURNING id INTO v_oohist_id;
+		IF v_oohist_id IS NOT NULL THEN
+			SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx::SMALLINT,p_filled_amount::DECIMAL/1e+19,TO_TIMESTAMP(p_evt_timestamp))
+				INTO v_price_estimate;
+			UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
+		END IF;
 	ELSE 
 		-- this code is executed in case 0x Mesh listener process didn't insert record in oorders table
 		-- is only valid for FILL operations becausse that's the only ones who have mktord_id > 0
@@ -167,16 +227,23 @@ BEGIN
 		IF v_cnt > 0 THEN
 			INSERT INTO oohist(
 					mktord_id,otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
-					price,initial_amount,amount,srv_timestamp,order_hash
+					price,initial_amount,amount,evt_timestamp,srv_timestamp,order_hash
 				) VALUES (
 					p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
-					oo.price,oo.amount,oo.amount_filled,oo.time_stamp,oo.order_hash
-				) ON CONFLICT DO NOTHING;
+					oo.price,oo.amount,oo.amount_filled,TO_TIMESTAMP(p_evt_timestamp),NOW(),oo.order_hash
+				) ON CONFLICT DO NOTHING
+				RETURNING id INTO v_oohist_id;
+			IF v_oohist_id IS NOT NULL THEN
+				SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx::SMALLINT,p_filled_amount::DECIMAL/1e+18,TO_TIMESTAMP(p_evt_timestamp))
+					INTO v_price_estimate;
+				UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
+			END IF;
 		END IF;
 	END IF;
 
 END;
 $$ LANGUAGE plpgsql;
+*/
 CREATE OR REPLACE FUNCTION on_oorders_delete() RETURNS trigger AS  $$ -- reverts order statistics on delete
 DECLARE
 BEGIN
@@ -195,11 +262,6 @@ BEGIN
 					(s.eoa_aid = OLD.eoa_aid) AND
 					(s.outcome_idx = OLD.outcome_idx);
 	END IF;
-
-	PERFORM update_price_estimate(OLD.market_aid,OLD.outcome_idx,OLD.amount);
-
-	-- Update Open Order history
-	-- we do not DELETE anything here because oohist table should stay forverver
 
 	UPDATE market SET total_oorders = (total_oorders - 1) WHERE market_aid=OLD.market_aid;
 	UPDATE outcome_vol SET total_oorders = (total_oorders - 1) 
@@ -831,6 +893,256 @@ BEGIN
 		SET balance = OLD.balance,
 			num_transfers = (num_transfers - 1)
 		WHERE market_aid = OLD.market_aid AND account_aid = OLD.account_aid AND outcome_idx=OLD.outcome_idx;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_mesh_evt_insert() RETURNS trigger AS  $$
+DECLARE
+	v_ini_ts timestamptz;
+	v_fin_ts timestamptz;
+	v_timestamp timestamptz;
+	v_add_id bigint;
+	v_depthst_id bigint;
+	v_amount decimal;
+	v_prev_amount decimal;
+BEGIN
+
+	v_fin_ts := NEW.expiration_time;
+	IF NEW.evt_code = 2 THEN -- ADDED
+		v_ini_ts := NEW.time_stamp;
+		v_amount := NEW.maker_asset_amount;
+	END IF;
+	IF (NEW.evt_code= 3) OR (NEW.evt_code = 4) OR (NEW.evt_code = 5) OR (NEW.evt_code = 6) THEN
+		v_ini_ts := NEW.time_stamp;
+
+		SELECT time_stamp FROM mesh_link
+			WHERE order_hash=NEW.order_hash
+			ORDER BY time_stamp DESC LIMIT 1
+			INTO v_timestamp;
+		IF v_timestamp IS NOT NULL THEN	-- prevents unordered data insertion
+			IF v_timestamp > NEW.time_stamp THEN
+				RAISE EXCEPTION 'Insertion of 0x Mesh event code=% with past date % for order %',
+					NEW.evt_code,NEW.time_stamp,NEW.order_hash;
+			END IF;
+		END IF;
+		SELECT id,amount FROM depth_state
+			WHERE order_hash=NEW.order_hash
+			ORDER BY ini_ts DESC LIMIT 1
+			INTO v_depthst_id,v_prev_amount;
+		IF v_depthst_id IS NULL THEN
+			RAISE EXCEPTION 'Insertion of event code=% without existing depth_state entry for order: %',
+				NEW.evt_code,NEW.order_hash;
+		END IF;
+		UPDATE depth_state SET fin_ts = NEW.time_stamp WHERE id=v_depthst_id;
+		v_amount := v_prev_amount - NEW.amount_fill;
+		IF (NEW.evt_code = 3) OR (NEW.evt_code = 4) THEN
+			IF v_amount > 0 THEN
+				v_fin_ts := NEW.expiration_time;
+			ELSE
+				v_fin_ts := NEW.time_stamp;
+			END IF;
+		ELSE
+			v_fin_ts := NEW.time_stamp;
+		END IF;
+	END IF;
+	IF (NEW.evt_code= 7) OR (NEW.evt_code = 8)  OR (NEW.evt_code = 9) OR (NEW.evt_code = 10) THEN
+		v_ini_ts := NEW.time_stamp;
+		v_amount := 0;
+		v_fin_ts := NEW.time_stamp;
+	END IF;
+	IF v_amount > 0 THEN
+		INSERT INTO depth_state(
+				meshevt_id,market_aid,outcome_idx,otype,order_hash,
+				price,amount,ini_ts,fin_ts
+			) VALUES (
+				NEW.id,NEW.market_aid,NEW.outcome_idx,NEW.otype,NEW.order_hash,
+				NEW.price,v_amount,v_ini_ts,v_fin_ts
+			)
+			RETURNING id INTO v_depthst_id;
+		INSERT INTO mesh_link(depthst_id,meshevt_id,time_stamp,order_hash)
+			VALUES(v_depthst_id,NEW.id,v_ini_ts,NEW.order_hash);
+	END IF;
+
+	PERFORM calc_price_estimate(NEW.id,NEW.market_aid,NEW.outcome_idx,v_ini_ts);
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_mesh_evt_delete() RETURNS trigger AS  $$
+DECLARE
+	v_fin_ts timestamptz;
+	v_depthst_id bigint;
+BEGIN
+
+	-- Noote: All DELETEs of an order must be ordered by expiration time in
+	-- 		accending order. This is because the last record deleted must be
+	-- 		active order due to existence of partially filled orders, so the
+	--		last order will be an active order and it must be deleted at the end
+	-- Noote2: All DELETEs in depth_state table are cascaded from mesh_evt DELETEs
+	IF OLD.evt_code = 2 THEN -- ADDED
+		-- nothing to do, depth_state is automatically deleted
+	END IF;
+	IF OLD.evt_code != 2 THEN -- Not ADD
+		SELECT time_stamp FROM mesh_link
+			WHERE order_hash=OLD.order_hash
+			ORDER BY time_stamp DESC LIMIT 1
+			INTO v_fin_ts;
+		IF v_fin_ts IS NOT NULL THEN	-- prevents unordered data deletion
+			IF v_timestamp != OLD.time_stamp THEN
+				RAISE EXCEPTION 'depth_state entry of 0x Mesh order % event code=% doest match timestamp (stored) % != % (param)',
+					OLD.order_hash,OLD.evt_code,v_fin_ts,OLD.time_stamp;
+			END IF;
+		ELSE
+			RAISE EXCEPTION 'Attempt to DELETE mesh_evt code=% order % with no depth_state entry at ts=%',
+				OLD.evt_code,OLD.order_hash,OLD.time_stamp;
+		END IF;
+		-- Noote: this trigger is exected AFTER delete. So, the record the following SELECT
+		--		is going to find is of the previous event for this order_hash
+		SELECT id FROM depth_state
+			WHERE order_hash=OLD.order_hash
+			ORDER BY ini_ts DESC LIMIT 1
+			INTO v_depthst_id;
+		IF v_depthst_id IS NULL THEN
+			RAISE EXCEPTION 'Update of preceding depth_state on DELETE of order % on event code=% failed because past record (to revert the timestamp) wasn''t found',
+				OLD.order_hash,OLD.evt_code;
+		END IF;
+		UPDATE depth_state
+			SET fin_ts=OLD.time_stamp
+			WHERE id=v_depthst_id;
+
+	END IF;
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION calc_price_estimate(
+	p_meshevt_id bigint,p_market_aid bigint,p_outcome_idx integer,p_timestamp timestamptz
+) RETURNS DECIMAL AS $$
+--updates open order statistics
+DECLARE
+	v_price_bid decimal;
+	v_price_ask decimal;
+	v_spread_threshold decimal;
+	v_osize_threshold decimal;
+	v_spread decimal;
+	v_price_estimate decimal;
+	v_weighted_price_estimate decimal;
+	v_num_ticks decimal;
+	v_osize decimal;
+	v_max_ts timestamptz;
+	v_bid_state_id bigint;
+	v_ask_state_id bigint;
+	v_weighted_bid decimal;
+	v_weighted_ask decimal;
+	v_wbid_total decimal;
+	v_wask_total decimal;
+	v_total_amount decimal;
+	r_oo record;
+BEGIN
+
+	SELECT spread_threshold,osize_threshold FROM ooconfig INTO v_spread_threshold,v_osize_threshold;
+	IF v_spread_threshold IS NULL THEN
+		RAISE EXCEPTION 'Spread threshold is not configured';
+	END IF;
+	SELECT num_ticks FROM market WHERE market_aid = p_market_aid INTO v_num_ticks;
+	IF v_num_ticks IS NULL THEN
+		RAISE EXCEPTION 'Market with id=% is not registered',p_market_aid;
+	END IF;
+
+	-- calculate non-weighted price estimate: (max bid+max_ask)/2
+	SELECT price,id
+		FROM depth_state
+		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx AND
+			ini_ts	<= p_timestamp AND p_timestamp < fin_ts
+		GROUP BY id ORDER BY price DESC LIMIT 1
+		INTO v_price_bid,v_bid_state_id;
+	IF v_price_bid IS NULL THEN
+		v_price_bid := 0;
+	END IF;
+	SELECT price,id
+		FROM depth_state
+		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx AND
+				ini_ts <= p_timestamp AND p_timestamp < fin_ts
+		GROUP BY id ORDER BY price LIMIT 1
+		INTO v_price_ask,v_ask_state_id;
+	IF v_price_ask IS NULL THEN
+		v_price_ask := v_num_ticks;
+	END IF ;
+	v_spread := v_price_ask - v_price_bid;
+	IF v_spread < v_spread_threshold THEN
+		v_price_estimate := (v_price_bid + v_price_ask) / 2 ;
+	ELSE
+		v_num_ticks:=v_num_ticks/2;
+		IF v_price_bid > v_num_ticks THEN
+			v_price_estimate := v_price_ask;
+		ELSE
+			v_price_estimate := v_price_bid;
+		END IF;
+	END IF;
+	-- calculated weighted price estimate:
+	SELECT SUM(amount) AS total_amount FROM depth_state
+		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx AND
+									ini_ts <= p_timestamp AND p_timestamp < fin_ts
+		INTO v_wbid_total;
+	SELECT SUM(amount) AS total_amount FROM depth_state
+		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx AND
+									ini_ts <= p_timestamp AND p_timestamp < fin_ts
+		INTO v_wask_total;
+	IF v_wbid_total IS NOT NULL THEN
+		IF v_wbid_total != 0 THEN
+			SELECT SUM(price*amount)/v_wbid_total AS wprice FROM depth_state
+				WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx AND
+									ini_ts <= p_timestamp AND p_timestamp < fin_ts
+				INTO v_weighted_bid;
+		END IF;
+	ELSE
+		v_weighted_bid := 0;
+	END IF;
+	IF v_wask_total IS NOT NULL THEN
+		IF v_wask_total != 0 THEN
+			SELECT SUM(price*amount)/v_wask_total AS wprice FROM depth_state
+				WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx AND
+									ini_ts <= p_timestamp AND p_timestamp < fin_ts
+				INTO v_weighted_ask;
+		END IF;
+	ELSE
+		v_weighted_ask := v_num_ticks;
+	END IF;
+	IF (v_weighted_bid IS NOT NULL) AND (v_weighted_ask IS NOT NULL) THEN
+		v_weighted_price_estimate := (v_weighted_bid + v_weighted_ask) / 2;
+	END IF;
+	v_price_estimate := (v_price_bid + v_price_ask) / 2 ;
+	INSERT INTO price_estimate(
+		market_aid,meshevt_id,time_stamp,outcome_idx,
+		bid_state_id,ask_state_id,spread,price_est,wprice_est,max_bid,
+		min_ask,wmax_bid,wmin_ask
+	) VALUES (
+		p_market_aid,p_meshevt_id,p_timestamp,p_outcome_idx,
+		v_bid_state_id,v_ask_state_id,v_spread,v_price_estimate,v_weighted_price_estimate,
+		v_price_bid,v_price_ask,v_weighted_bid,v_weighted_ask
+	);
+	RETURN v_price_estimate;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION update_price_estimate(
+	p_meshevt_id bigint,p_market_aid bigint,p_outcome_idx integer,p_timestamp timestamptz
+) RETURNS void AS $$
+BEGIN
+	DELETE FROM price_estimate WHERE meshevt_id=p_meshevt_id;
+	PERFORM calc_price_estimate(p_meshevt_id,p_market_aid,p_outcome_idx,p_timestamp);
+
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_depth_state_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_depth_state_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

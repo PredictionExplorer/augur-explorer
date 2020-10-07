@@ -1,79 +1,118 @@
 <html>
 <head>
 	<link href="../../res/main.css" rel="stylesheet">
-	<title>Augur Market Price History {{.Market.MktAddr}}</title>
+	<title>Augur Market Depth {{.Market.MktAddr}}</title>
 	<meta name="description" content="{{.Market.Description}}">
 </head>
 <body>
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script src="https://code.highcharts.com/modules/data.js"></script>
+<script src="../../res/ajax.js"></script>
 <script>
-	function load_order_data(
-				creator_eoa_addr,filler_eoa_addr,
-				mkt_aid,price,volume,order_date) {
+	function load_pest_data(
+		entry_date,price_estimate,spread,max_bid,min_ask,
+		weighted_estimate,wmax_bid,wmin_ask,evt_code
+	) {
 		var elt
-		elt = document.getElementById("usermktinfo")
+		elt = document.getElementById("price_est_info")
 		elt.style.display="block"
-		elt = document.getElementById("fld_creator_eoa_addr")
-		elt.innerHTML = creator_eoa_addr
-		elt = document.getElementById("fld_filler_eoa_addr")
-		elt.innerHTML = filler_eoa_addr
-		elt = document.getElementById("fld_order_date")
-		elt.innerHTML = order_date
-		elt = document.getElementById("fld_price")
-		elt.innerHTML = price
-		elt = document.getElementById("fld_volume")
-		elt.innerHTML = volume
-		elt = document.getElementById("fld_creator_href")
-		elt.href="user/" + creator_eoa_addr
-		elt = document.getElementById("fld_filler_href")
-		elt.href="user/" + filler_eoa_addr
+		elt = document.getElementById("fld_pest_date")
+		elt.innerHTML =entry_date
+		elt = document.getElementById("fld_pest_price_est")
+		elt.innerHTML = price_estimate
+		elt = document.getElementById("fld_pest_max_bid")
+		elt.innerHTML = max_bid
+		elt = document.getElementById("fld_pest_min_ask")
+		elt.innerHTML = min_ask
+		elt = document.getElementById("fld_spread")
+		elt.innerHTML = spread
+		elt = document.getElementById("fld_weighted_estimate")
+		elt.innerHTML = weighted_estimate
+		elt = document.getElementById("fld_weighted_max_bid")
+		elt.innerHTML = wmax_bid
+		elt = document.getElementById("fld_weighted_min_ask")
+		elt.innerHTML = wmin_ask
+		elt = document.getElementById("fld_evt_code")
+		var evt_code_str
+		switch (evt_code) {
+			case 2: evt_code_str="Added"; break;
+			case 3: evt_code_str="Filled"; break;
+			case 4: evt_code_str="Fully Filled"; break;
+			case 5: evt_code_str="Cancelled"; break;
+			case 6: evt_code_str="Expired"; break;
+		}
+
+		elt.innerHTML = evt_code_str + "(" + evt_code + ")"
 	}
 
-	var price_history_data = {{.JSPriceData}}
+	var price_est_data = {{.JSPriceEst}}
+	var weighted_price_data = {{.JSWeightedPrice}}
+	var market_aid = {{.Market.MktAid}}
+	var outcome_idx = {{.OutcomeIdx}}
 </script>
-<h3 class="page_title">Market Details</h3>
+<h3 class="page_title">Price Estimate Verification Page</h3>
 <table class="market_detail">
-<tr class="market_detail">
-	<td>Address (ID):</td>
-	<td class="addr">{{.Market.MktAddr}}</td>
+<tr>
+	<td>Address:</td>
+	<td>{{.Market.MktAddr}}</td>
 </tr>
-<tr class="market_detail">
+<tr>
 	<td>Description</td>
 	<td>{{.Market.Description}}</td>
 </tr>
+<tr>
+	<td>Outcome</td>
+	<td>{{.OutcomeIdx}}</td>
+</tr>
 </table>
 <br/><br/>
-<div id="price_history_graph"></div>
-<div id="usermktinfo" style="display: none;">
-	<br/><font color="yellow"><b>Order Info:</b></font><br/>
+<div id="price_estimate_graph"></div>
+<div id="price_est_info" style="display: none; padding: 1em;">
+	Price Estimate Info:
 	<table class="order_info">
 		<tr class="order_info">
-			<td>Order Date</td>
-			<td><span id="fld_order_date"></span></td>
+			<td>Date</td>
+			<td><span id="fld_pest_date"></span></td>
 		</tr>
 		<tr class="order_info">
-			<td>Creator's Address</td>
-			<td><a id="fld_creator_href" href=""><span id="fld_creator_eoa_addr"></span></a></td>
+			<td>Price Estimate</td>
+			<td><span id="fld_pest_price_est"></span></td>
 		</tr>
 		<tr class="order_info">
-			<td>Filler's Address</td>
-			<td><a id="fld_filler_href"><span id="fld_filler_eoa_addr"></span></a></td>
+			<td>Max Bid</td>
+			<td><span id="fld_pest_max_bid"></span></td>
 		</tr>
 		<tr class="order_info">
-			<td>Price</td>
-			<td><span id="fld_price"></span></td>
+			<td>MinAsk</td>
+			<td><span id="fld_pest_min_ask"></span></td>
 		</tr>
 		<tr class="order_info">
-			<td>Volume</td>
-			<td><span id="fld_volume"></span></td>
+			<td>Spread:</td>
+			<td><span id="fld_spread"></span></td>
+		</tr>
+		<tr class="order_info">
+			<td>Weighted Estimate:</td>
+			<td><span id="fld_weighted_estimate"></span></td>
+		</tr>
+		<tr class="order_info">
+			<td>Weighted Max Bid:</td>
+			<td><span id="fld_weighted_max_bid"></span></td>
+		</tr>
+		<tr class="order_info">
+			<td>Weighted Min Ask:</td>
+			<td><span id="fld_weighted_min_ask"></span></td>
+		</tr>
+		<tr class="order_info">
+			<td>Event code:</td>
+			<td><span id="fld_evt_code"></span></td>
 		</tr>
 	</table>
 </div>
+{{template "price_est_history" .PriceHistory}}
 <nav>
 	<ul>
 	<li>
-		<a class="btn_link" href="index.html">Back</a>
+		<a class="btn_link" href="/index.html">Back</a>
 		<span></span><span></span><span></span><span></span>
 	</li>
 </ul>
@@ -295,12 +334,11 @@ Highcharts.theme = {
 // Apply the theme
 Highcharts.setOptions(Highcharts.theme);
 // Dark theme setup ends
-
 // begin of chart container setup
-Highcharts.chart('price_history_graph', {
+Highcharts.chart('price_estimate_graph', {
 
     title: {
-		text: 'Market Price History. Outcome: {{.Market.CurOutcome}}'
+		text: 'Price Estimate History. Outcome: {{.OutcomeIdx}}'
     },
 
     subtitle: {
@@ -309,7 +347,7 @@ Highcharts.chart('price_history_graph', {
 
     yAxis: {
         title: {
-            text: 'Market Price'
+            text: 'Price Estimate'
         }
     },
 
@@ -317,7 +355,7 @@ Highcharts.chart('price_history_graph', {
 //		max: 1.0,
 //		min: 0,
         accessibility: {
-            rangeDescription: 'Price history for Market'
+            rangeDescription: 'Price Estimate for the Market'
         }
     },
 
@@ -337,13 +375,19 @@ Highcharts.chart('price_history_graph', {
     },
 
     series: [{
-        name: 'Orders',
+        name: 'PriceEstimate',
 		point: {
 			events: {
 				click: function() {this.click.call()}
 			}
 		},
-		data: price_history_data
+		data: price_est_data
+	},
+	{
+        name: 'WeightedPrice',
+		point: {
+		},
+		data: weighted_price_data
 	}],
 
     responsive: {
@@ -362,11 +406,14 @@ Highcharts.chart('price_history_graph', {
     },
     tooltip: {
       formatter: function() {
-		tooltip ="<div>User: "+this.point.addr + "<br/>Price:" + this.point.price +"<br/>Volume: "+this.point.volume+"</div>"
+		tooltip = "<br/>Date:" + this.point.date +
+			"<div>Price: "+this.point.price + 
+			"<br/>Spread: "+this.point.spread+"</div>"
         return tooltip;
       }
     },
 });
+
 </script>
 </body>
 </html>

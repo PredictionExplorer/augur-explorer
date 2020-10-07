@@ -6,6 +6,7 @@ import (
 	"bytes"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/0xProject/0x-mesh/common/types"
 )
 func (evt *EMarketCreated) Dump(l *log.Logger) {	// dumps struct to stdout for debugging
 	l.Printf("MarketCreated {\n")
@@ -158,7 +159,7 @@ func (evt *ECancelZeroXOrder) Dump(l *log.Logger) {
 	l.Printf("\tAmount: %v\n",evt.Amount.String())
 	l.Printf("\tOrderType: %v\n",evt.OrderType)
 	l.Printf("\tOrderHash: %v\n",hex.EncodeToString(evt.OrderHash[:]))
-	l.Printf("\t\n")
+	l.Printf("}\n")
 }
 func (evt *ETransferBatch) Dump(zc *ZeroX,l *log.Logger) {
 	l.Printf("TransferBatch {\n")
@@ -363,5 +364,36 @@ func (evt *EUniverseCreated) Dump(l *log.Logger) {
 	l.Printf("\tChildUniverse: %v\n",evt.ChildUniverse.String())
 	l.Printf("\tPayoutNumerators: %v\n",Bigint_ptr_slice_to_str(&evt.PayoutNumerators,","))
 	l.Printf("\tCreationTimestamp: %v\n",evt.CreationTimestamp.Int64())
+	l.Printf("}\n")
+}
+func Dump_0x_mesh_order(l *log.Logger,o *types.OrderInfo) {
+	l.Printf("0x Mesh Order {\n")
+	l.Printf("\tOrderHash: %v\n",o.OrderHash.String())
+	l.Printf("\tSignature: %v\n",hex.EncodeToString(o.SignedOrder.Signature))
+	l.Printf("\tFillableTakerAssetAmount: %v\n",o.FillableTakerAssetAmount.String())
+	l.Printf("\tChainId: %v\n",o.SignedOrder.ChainID.String())
+	l.Printf("\tExchangeAddress: %v\n",o.SignedOrder.ExchangeAddress.String())
+	l.Printf("\tMakerAddress: %v\n",o.SignedOrder.MakerAddress.String())
+	l.Printf("\tMakerAssetData: %v\n",hex.EncodeToString(o.SignedOrder.MakerAssetData))
+	l.Printf("\tMakerFeeAssetData: %v\n",hex.EncodeToString(o.SignedOrder.MakerFeeAssetData))
+	l.Printf("\tMakerAssetAmount: %v\n",o.SignedOrder.MakerAssetAmount.String())
+	l.Printf("\tMakerFee: %v\n",o.SignedOrder.MakerFee.String())
+	l.Printf("\tTakerAddress: %v\n",o.SignedOrder.TakerAddress.String())
+	l.Printf("\tTakerAssetData: %v\n",hex.EncodeToString(o.SignedOrder.TakerAssetData))
+	l.Printf("\tTakerFeeAssetData: %v\n",hex.EncodeToString(o.SignedOrder.TakerFeeAssetData))
+	l.Printf("\tTakerAssetAmount: %v\n",o.SignedOrder.TakerAssetAmount.String())
+	l.Printf("\tTakerFee: %v\n",o.SignedOrder.TakerFee.String())
+	l.Printf("\tSenderAddress: %v\n",o.SignedOrder.SenderAddress.String())
+	l.Printf("\tFeeRecipientAddress: %v\n",o.SignedOrder.FeeRecipientAddress.String())
+	l.Printf("\tExpirationTimeSeconds: %v\n",o.SignedOrder.ExpirationTimeSeconds.String())
+	l.Printf("\tSalt: %v\n",o.SignedOrder.Salt.String())
+	l.Printf("}\n")
+}
+func DumpOrderSpec (l *log.Logger,o *ZxMeshOrderSpec) {
+	l.Printf("ZxMeshOrderSpec {\n")
+	l.Printf("\tMarket: %v\n",o.Market.String())
+	l.Printf("\tOutcome: %v\n",o.Outcome)
+	l.Printf("\tPrice:  %v\n",o.Price.String())
+	l.Printf("\tType: %v\n",o.Type)
 	l.Printf("}\n")
 }

@@ -34,3 +34,19 @@ BEGIN
 	END LOOP;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION test_insert()
+RETURNS void AS $$
+DECLARE
+	v_cnt numeric;
+	v_field integer;
+BEGIN
+
+	INSERT INTO test(field) VALUES(1) ON CONFLICT DO NOTHING RETURNING field  INTO v_field ;
+	IF v_field IS NULL THEN
+		RAISE NOTICE 'field is null';
+	END IF;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	RAISE NOTICE 'row count is % v_id=%',v_cnt,v_field;
+
+END;
+$$ LANGUAGE plpgsql;

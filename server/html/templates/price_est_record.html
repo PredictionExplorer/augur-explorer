@@ -1,0 +1,24 @@
+{{define "price_est_record"}}
+<tr class="trade_makers">
+	<td>{{ if eq 2 .EvtCode }}Added{{ end }}{{ if eq 3 .EvtCode }}Partial Fill{{ end }}{{ if eq 4 .EvtCode }}Full Fill{{ end }}{{ if eq 5 .EvtCode }}Cancelled{{ end }}{{ if eq 6 .EvtCode }}Expired{{ end }}</td>
+	<td>{{.TimeStamp}}</td>
+	<td>{{.Date}}</td>
+	<td class="right">{{.PriceEst}}</td>
+	<td>{{.Spread}}</td>
+	<td>{{.MaxBid}}</td>
+	<td>{{.MinAsk}}</td>
+	<td class="right">{{.WeightedPriceEst}}</td>
+	<td class="right">{{.WMaxBid}}</td>
+	<td class="right">{{.WMinAsk}}</td>
+	<td bgcolor="#1f1e3d">
+		{{if .MatchingBids}}
+			Bids:
+			{{template "depth_state_list" .MatchingBids}}
+		{{ end }}
+		{{if .MatchingAsks}}
+			Asks:
+			{{template "depth_state_list" .MatchingAsks}}
+		{{ end }}
+	</td>
+</tr>
+{{end}}
