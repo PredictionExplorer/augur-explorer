@@ -303,7 +303,7 @@ func (ss *SQLStorage) Insert_market_finalized_evt(agtx *p.AugurTx,timestamp int6
 	fin_timestamp := evt.Timestamp.Int64()
 	winning_payouts := p.Bigint_ptr_slice_to_str(&evt.WinningPayoutNumerators,",")
 
-	market_type,mticks := ss.get_market_type_and_ticks(market_aid)
+	market_type,mticks,_ := ss.get_market_type_and_ticks(market_aid)
 	winning_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.WinningPayoutNumerators)
 
 	query = "INSERT INTO mkt_fin(block_num,tx_id,market_aid,fin_timestamp,winning_payouts,winning_outcome)" +
@@ -326,7 +326,7 @@ func (ss *SQLStorage) Insert_market_finalized_evt(agtx *p.AugurTx,timestamp int6
 	ss.calculate_profit_loss_for_all_users(market_aid,agtx.BlockNum,agtx.TxId,timestamp,evt)
 	ss.close_all_open_positions_for_market(market_aid)
 }
-func (ss *SQLStorage) get_market_type_and_ticks(market_aid int64) (int,int64) {
+func (ss *SQLStorage) get_market_type_and_ticks(market_aid int64) (int,int64,error) {
 
 	var query string
 	query = "SELECT market_type,num_ticks FROM market WHERE market_aid=$1"
@@ -335,11 +335,14 @@ func (ss *SQLStorage) get_market_type_and_ticks(market_aid int64) (int,int64) {
 	var num_ticks int64
 	err:=ss.db.QueryRow(query,market_aid).Scan(&market_type,&num_ticks);
 	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,0,err
+		}
 		d_query:=strings.ReplaceAll(query,"$1",fmt.Sprintf("%v",market_aid))
 		ss.Log_msg(fmt.Sprintf("DB Error: %v, q=%v market_aid=%v\n",err,d_query,market_aid))
 		os.Exit(1)
 	}
-	return market_type,num_ticks
+	return market_type,num_ticks,nil
 }
 func (ss *SQLStorage) update_market_status(market_aid int64,status p.MarketStatus) {
 	var query string

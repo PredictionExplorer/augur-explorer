@@ -727,7 +727,7 @@ func (ss *SQLStorage) Get_created_markets_for_user(eoa_aid int64) []p.InfoMarket
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
 				"LEFT JOIN address AS sa ON m.eoa_aid= sa.address_id " +
 				"LEFT JOIN address AS ca ON m.wallet_aid = ca.address_id " +
-			"WHERE m.wallet_aid = $1 " +
+			"WHERE (m.wallet_aid = $1) OR (m.eoa_aid=$1) " +
 			"ORDER BY m.create_timestamp"
 
 	rows,err := ss.db.Query(query,eoa_aid)

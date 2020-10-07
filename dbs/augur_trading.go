@@ -673,7 +673,7 @@ func (ss *SQLStorage) Get_full_price_history(mkt_addr string,market_aid int64) p
 	}
 	return output
 }
-func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,outc int,init_ts int,fin_ts int) []p.ZHistT1Entry {
+func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,mkt_type int,outc int,init_ts int,fin_ts int) []p.ZHistT1Entry {
 
 //	ss.Info.Printf("Get_zoomed_t1_price_history_for_outcome() starts\n")
 	var query string
@@ -797,13 +797,21 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,o
 			rec.WalletAddr = wallet_addr.String
 			rec.WalletAddrSh = p.Short_address(wallet_addr.String)
 		}
+		p.Augur_UI_price_adjustments(&rec.Price,&rec.FillableAmount,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.PriceEstimate,&rec.Amount,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.WeightedPriceEst,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.MaxBid,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.MinAsk,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.WMaxBid,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.WMinAsk,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.Spread,nil,mkt_type)
 //		ss.Info.Printf("zoomed phist: appending rec: ID=%v,Order hash %v, price %v\n",
 //			rec.Id,rec.OrderHash,rec.Price)
 		records = append(records,rec)
 	}
 	return records
 }
-func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,outc int,init_ts int,fin_ts int,interval int) []p.ZHistT2Entry {
+func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,mkt_type int,outc int,init_ts int,fin_ts int,interval int) []p.ZHistT2Entry {
 
 	var query string
 	query = "SELECT " +
@@ -837,6 +845,8 @@ func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,o
 			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
 			os.Exit(1)
 		}
+		p.Augur_UI_price_adjustments(&rec.PriceEstimate,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.WeightedPriceEstimate,nil,mkt_type)
 		records = append(records,rec)
 	}
 	return records
@@ -844,6 +854,11 @@ func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,o
 func (ss *SQLStorage) Get_zoomed_price_history(mkt_addr string,market_aid int64,zoom int,init_ts int,fin_ts int,interval int) p.FullZoomedPriceHist {
 
 	var output p.FullZoomedPriceHist
+	mkt_type,_,err := ss.get_market_type_and_ticks(market_aid)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("Aborting Get_zoomed_price_history() call, market %v not found\n",market_aid))
+		return output
+	}
 	outcomes,_ := ss.Get_outcome_volumes(mkt_addr,market_aid,0);
 	for _,outc := range outcomes {
 		var ph p.ZoomedPriceHist
@@ -854,10 +869,10 @@ func (ss *SQLStorage) Get_zoomed_price_history(mkt_addr string,market_aid int64,
 		ph.FinTs = fin_ts
 		ph.IntervalSecs = interval
 		if zoom == 0 {
-			ph.Type1Entries= ss.Get_zoomed_t1_price_history_for_outcome(market_aid,outc.Outcome,init_ts,fin_ts)
+			ph.Type1Entries= ss.Get_zoomed_t1_price_history_for_outcome(market_aid,mkt_type,outc.Outcome,init_ts,fin_ts)
 		}
 		if zoom == 1 {
-			ph.Type2Entries = ss.Get_zoomed_t2_price_history_for_outcome(market_aid,outc.Outcome,init_ts,fin_ts,interval)
+			ph.Type2Entries = ss.Get_zoomed_t2_price_history_for_outcome(market_aid,mkt_type,outc.Outcome,init_ts,fin_ts,interval)
 		}
 		output.Outcomes = append(output.Outcomes,ph)
 	}
@@ -1381,7 +1396,7 @@ func (ss *SQLStorage) Get_all_open_order_hashes() []string {
 	}
 	return records
 }
-func (ss *SQLStorage) Get_depth_states(market_aid int64,outcome_idx int,otype int,ts int64) []p.DepthState {
+func (ss *SQLStorage) Get_depth_states(market_aid int64,mkt_type int,outcome_idx int,otype int,ts int64) []p.DepthState {
 
 	records := make([]p.DepthState,0,32)
 	var query string
@@ -1417,6 +1432,7 @@ func (ss *SQLStorage) Get_depth_states(market_aid int64,outcome_idx int,otype in
 			&ds.IniDate,
 			&ds.FinDate,
 		)
+		p.Augur_UI_price_adjustments(&ds.Price,&ds.Amount,mkt_type)
 		records = append(records,ds)
 	}
 	return records
@@ -1424,6 +1440,13 @@ func (ss *SQLStorage) Get_depth_states(market_aid int64,outcome_idx int,otype in
 func (ss *SQLStorage) Get_price_estimate_history(market_aid int64,outcome_idx int) []p.PriceEstimate {
 
 	records := make([]p.PriceEstimate,0,32)
+
+	mkt_type,_,err := ss.get_market_type_and_ticks(market_aid)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("Get_price_estimate_history() aborted: market_aid=%v not found",market_aid))
+		return records
+	}
+
 	var query string
 	query = "SELECT " +
 				"p.id,p.market_aid,p.meshevt_id,"+
@@ -1487,8 +1510,14 @@ func (ss *SQLStorage) Get_price_estimate_history(market_aid int64,outcome_idx in
 		if null_wmin_ask.Valid {
 			pe.WMinAsk = null_wmin_ask.Float64
 		}
-		pe.MatchingBids= ss.Get_depth_states(market_aid,outcome_idx,int(p.OrderTypeBid),pe.TimeStamp)
-		pe.MatchingAsks= ss.Get_depth_states(market_aid,outcome_idx,int(p.OrderTypeAsk),pe.TimeStamp)
+		p.Augur_UI_price_adjustments(&pe.PriceEst,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&pe.MaxBid,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&pe.MinAsk,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&pe.WeightedPriceEst,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&pe.WMaxBid,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&pe.WMinAsk,nil,mkt_type)
+		pe.MatchingBids= ss.Get_depth_states(market_aid,mkt_type,outcome_idx,int(p.OrderTypeBid),pe.TimeStamp)
+		pe.MatchingAsks= ss.Get_depth_states(market_aid,mkt_type,outcome_idx,int(p.OrderTypeAsk),pe.TimeStamp)
 		records = append(records,pe)
 	}
 	return records
