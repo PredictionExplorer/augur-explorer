@@ -159,7 +159,7 @@ func (evt *ECancelZeroXOrder) Dump(l *log.Logger) {
 	l.Printf("\tAmount: %v\n",evt.Amount.String())
 	l.Printf("\tOrderType: %v\n",evt.OrderType)
 	l.Printf("\tOrderHash: %v\n",hex.EncodeToString(evt.OrderHash[:]))
-	l.Printf("\t\n")
+	l.Printf("}\n")
 }
 func (evt *ETransferBatch) Dump(zc *ZeroX,l *log.Logger) {
 	l.Printf("TransferBatch {\n")

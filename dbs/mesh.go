@@ -103,12 +103,12 @@ func (ss *SQLStorage) Update_future_price_estimates(market_aid int64,outcome_idx
 			ss.Log_msg(fmt.Sprintf("Scan failed: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		_,err = ss.db.Exec(
-			"SELECT update_price_estimate($1,$2,$3,TO_TIMESTAMP($4))",
-			meshevt_id,market_aid,outcome_idx,ts,
-		)
 		ss.Info.Printf(
 			"Future price estimate update: meshevt_id=%v, market_aid=%v,outc=%v,ts=%v\n",
+			meshevt_id,market_aid,outcome_idx,ts,
+		)
+		_,err = ss.db.Exec(
+			"SELECT update_price_estimate($1,$2,$3,TO_TIMESTAMP($4))",
 			meshevt_id,market_aid,outcome_idx,ts,
 		)
 		if err != nil {

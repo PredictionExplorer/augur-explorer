@@ -102,16 +102,6 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,p_
 	var query string
 	var opcode int = p.OOOpCodeFill
 	ss.Info.Printf("amount = %v, amount_filled = %v, opcode=%v\n",amount,amount_filled,opcode)
-/* Discontinued
-	query = "DELETE FROM oorders WHERE order_hash = $1"
-	_,err = ss.db.Exec(query,market_aid)
-	if err!=nil {
-		msg:=fmt.Sprintf("DB error: couldn't delete open order with hash = %v\n",order_hash)
-		ss.Info.Printf(msg)
-		ss.Log_msg(msg)
-		os.Exit(1)
-	}
-*/
 	ss.Info.Printf("OrderAction = %v, otype=%v, order_hash=%v\n",oaction,otype,order_hash)
 	ss.Info.Printf("Filling existing order %v\n",order_hash)
 	query = `
@@ -308,6 +298,7 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 			evt_timestamp,
 			expiration,
 			*order_hash)
+	ss.Info.Printf("Afeter oorders INSERT, err=%v\n",err)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into open orders table: %v, q=%v",err,query))
 		return err
@@ -319,7 +310,7 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 	if rows_affected > 0 {
 		return nil
 	} else {
-		ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into Open Orders table. Rows affeced = 0"))
+		ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into Open Orders table. Rows affeced = 0, order_hash=%v",*order_hash))
 	}
 	return errors.New("Affected rows=0")
 }
@@ -530,7 +521,7 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 	} else {
 				query = query + "o.price ASC,o.evt_timestamp DESC";
 	}
-	ss.Info.Printf("q=%v\n",query)
+	//ss.Info.Printf("q=%v\n",query)
 	var accumulated_volume = 0.0
 	rows,err := ss.db.Query(query,market_aid,outc,otype)
 	if (err!=nil) {
@@ -684,6 +675,7 @@ func (ss *SQLStorage) Get_full_price_history(mkt_addr string,market_aid int64) p
 }
 func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,outc int,init_ts int,fin_ts int) []p.ZHistT1Entry {
 
+//	ss.Info.Printf("Get_zoomed_t1_price_history_for_outcome() starts\n")
 	var query string
 	/* DISCONTINUED
 	query = "SELECT " +
@@ -747,7 +739,7 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,o
 				"JOIN mesh_evt AS e ON p.meshevt_id=e.id " +
 				"LEFT JOIN address AS a ON p.market_aid=a.address_id " +
 				"LEFT JOIN address AS ea ON e.eoa_aid=ea.address_id " +
-				"LEFT JOIN address AS wa ON e.wallet_aid=ea.address_id " +
+				"LEFT JOIN address AS wa ON e.wallet_aid=wa.address_id " +
 //				"LEFT JOIN address AS c_e_a ON o.eoa_aid=c_e_a.address_id " +
 			"WHERE " +
 				"p.market_aid = $1 AND " +
@@ -755,10 +747,6 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,o
 				"p.time_stamp >= TO_TIMESTAMP($3) AND "+
 				"p.time_stamp < TO_TIMESTAMP($4) " +
 			"ORDER BY p.time_stamp"
-	ss.Info.Printf(
-		"market_aid=%v, outcome=%v, init_ts=%v, fin_ts=%v, query=%v\n",
-		market_aid,outc,init_ts,fin_ts,query,
-	)
 	rows,err := ss.db.Query(query,market_aid,outc,init_ts,fin_ts)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -809,6 +797,8 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,o
 			rec.WalletAddr = wallet_addr.String
 			rec.WalletAddrSh = p.Short_address(wallet_addr.String)
 		}
+//		ss.Info.Printf("zoomed phist: appending rec: ID=%v,Order hash %v, price %v\n",
+//			rec.Id,rec.OrderHash,rec.Price)
 		records = append(records,rec)
 	}
 	return records
@@ -816,19 +806,6 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,o
 func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,outc int,init_ts int,fin_ts int,interval int) []p.ZHistT2Entry {
 
 	var query string
-	/*
-	query = "SELECT " +
-				"ROUND(FLOOR(EXTRACT(EPOCH FROM o.evt_timestamp))/$5)::BIGINT*$5::BIGINT AS start_ts,"+
-				"AVG(price_estimate) AS avg_price_estimate " +
-			"FROM oohist AS o " +
-			"WHERE " +
-				"o.market_aid = $1  AND " +
-				"o.outcome_idx = $2 AND " +
-				"o.evt_timestamp >= TO_TIMESTAMP($3) AND "+
-				"o.evt_timestamp < TO_TIMESTAMP($4) " +
-			"GROUP BY start_ts " +
-			"ORDER BY start_ts"
-	*/
 	query = "SELECT " +
 				"ROUND(FLOOR(EXTRACT(EPOCH FROM p.time_stamp))/$5)::BIGINT*$5::BIGINT AS start_ts,"+
 				"AVG(price_est) AS avg_price_estimate, " +
@@ -1010,8 +987,6 @@ func (ss *SQLStorage) Get_trade_data(eoa_aid int64,open_positions bool) []p.PLEn
 			" ORDER BY pl.time_stamp"
 
 
-	d_query:=strings.ReplaceAll(query,"$1",fmt.Sprintf("%v",eoa_aid))
-	ss.Info.Printf("get_market_data(eoa_aid=%v,open_pos=%v): %v\n",eoa_aid,open_positions,d_query)
 	rows,err := ss.db.Query(query,eoa_aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

@@ -945,6 +945,11 @@ BEGIN
 			v_fin_ts := NEW.time_stamp;
 		END IF;
 	END IF;
+	IF (NEW.evt_code= 7) OR (NEW.evt_code = 8)  OR (NEW.evt_code = 9) OR (NEW.evt_code = 10) THEN
+		v_ini_ts := NEW.time_stamp;
+		v_amount := 0;
+		v_fin_ts := NEW.time_stamp;
+	END IF;
 	IF v_amount > 0 THEN
 		INSERT INTO depth_state(
 				meshevt_id,market_aid,outcome_idx,otype,order_hash,

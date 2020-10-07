@@ -797,6 +797,29 @@ func (_DAICash *DAICashSession) BalanceOf(_owner common.Address) (*big.Int, erro
 func (_DAICash *DAICashCallerSession) BalanceOf(_owner common.Address) (*big.Int, error) {
 	return _DAICash.Contract.BalanceOf(&_DAICash.CallOpts, _owner)
 }
+func (_DAICash *DAICashCaller) Allowance(opts *bind.CallOpts, _owner common.Address, _spender common.Address) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _DAICash.contract.Call(opts, out, "allowance", _owner, _spender)
+	return *ret0, err
+}
+
+// Allowance is a free data retrieval call binding the contract method 0xdd62ed3e.
+//
+// Solidity: function allowance(address _owner, address _spender) view returns(uint256)
+func (_DAICash *DAICashSession) Allowance(_owner common.Address, _spender common.Address) (*big.Int, error) {
+	return _DAICash.Contract.Allowance(&_DAICash.CallOpts, _owner, _spender)
+}
+
+// Allowance is a free data retrieval call binding the contract method 0xdd62ed3e.
+//
+// Solidity: function allowance(address _owner, address _spender) view returns(uint256)
+func (_DAICash *DAICashCallerSession) Allowance(_owner common.Address, _spender common.Address) (*big.Int, error) {
+	return _DAICash.Contract.Allowance(&_DAICash.CallOpts, _owner, _spender)
+}
+
 
 
 ////////////////// Reputation Token 

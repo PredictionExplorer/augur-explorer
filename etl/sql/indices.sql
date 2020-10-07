@@ -35,7 +35,7 @@ CREATE UNIQUE INDEX ustats1_idx		ON ustats			(eoa_aid);
 CREATE INDEX pl_eoa_idx				ON profit_loss		(eoa_aid);
 CREATE INDEX exec_wtx_eoa_idx		ON exec_wtx			(eoa_aid);
 -- wallet aid indices (pure Wallet contract, not composite indices)
-CREATE UNIQUE INDEX ustats2_idx		ON ustats			(wallet_aid);
+CREATE UNIQUE INDEX ustats2_idx		ON ustats			(wallet_aid);--N0TE: do not change index name, it is used in statistics.go
 CREATE INDEX pl_wallet_idx			ON profit_loss		(wallet_aid);
 CREATE INDEX exec_wtx_wallet_idx	ON exec_wtx			(wallet_aid);
 -- other indices

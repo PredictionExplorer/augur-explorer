@@ -391,3 +391,26 @@ func (ss *SQLStorage) Set_augur_flag(address *common.Address,agtx *p.AugurTx,fla
 		ss.Link_eoa_and_wallet_contract(aid,aid)
 	}
 }
+func (ss *SQLStorage) Is_augur_activated(address string) bool {
+
+	aid,err :=	ss.Nonfatal_lookup_address_id(address)
+	if err!=nil {
+		return false
+	}
+	var query string
+	query = "SELECT act_block_num FROM augur_flag WHERE aid = $1"
+	var null_block sql.NullInt64
+	row := ss.db.QueryRow(query,aid)
+	err=row.Scan(&null_block)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
+		os.Exit(1)
+	}
+	if null_block.Valid {
+		return true
+	}
+	return false
+}

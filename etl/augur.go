@@ -440,7 +440,9 @@ func proc_cancel_zerox_order(agtx *AugurTx,log *types.Log,timestamp int64) {
 	mevt.Dump(Info)
 	orders,ospecs := extract_orders_from_input(agtx.Input)
 	if len(orders) == 0 {
-		Fatalf("Couldn't extract fill amount from Tx input. Aborting.")
+		Info.Printf("Couldn't extract fill amount from Tx input: tx hash=%v block %v. Aborting.",agtx.TxHash,agtx.BlockNum)
+		Error.Printf("Couldn't extract fill amount from Tx input: tx hash=%v block %v. Aborting.",agtx.TxHash,agtx.BlockNum)
+		os.Exit(1)
 	}
 	eoa_aid := get_eoa_aid(&mevt.Account,agtx.BlockNum,agtx.TxId)
 	wallet_aid,err := storage.Lookup_wallet_aid(eoa_aid)
@@ -1518,7 +1520,7 @@ func extract_orders_from_input(tx_data []byte) (map[string]*ztypes.OrderInfo,map
 				return decode_0x_orders(input_data.Data[4:],zeroex_trade_sig)
 			}
 			zeroex_cancel_sig,_ := hex.DecodeString("4ea96c30")
-			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
+			if 0 == bytes.Compare(input_sig,zeroex_cancel_sig) {
 				Info.Printf("augur_wallet_call: ZeroEx::cancelOrder()\n")
 				return decode_0x_orders(input_data.Data[4:],zeroex_cancel_sig)
 			}
@@ -1555,5 +1557,55 @@ func get_ospec(maker_asset_data []byte,order_hash *string) *ZxMeshOrderSpec {
 		os.Exit(1)
 	}
 	return &unpacked_id
+}
+func Discover_augur_account(addr *common.Address,caddrs *ContractAddresses) bool {
+
+	// checks if provided address has a set of approvals required to consider an account Augur-enabled
+	var copts = new(bind.CallOpts)
+	var agtx AugurTx	// a bogus transaction with empty values
+	allow_amount,err := ctrct_dai_token.Allowance(copts,*addr,caddrs.ZeroxTrade)
+	if err != nil {
+		Info.Printf("Discover_augur_account(): allowance() at DAI for ZeroxTrade failed for %v: %v\n",addr.String(),err)
+		return false
+	}
+	z:=big.NewInt(0)
+	if z.Cmp(allow_amount) >= 0 {
+		Info.Printf("Discover_augur_account(): allowance() amount at DAI for ZeroxTrade is 0 for %v\n",addr.String())
+		return false
+	}
+	storage.Set_augur_flag(addr,&agtx,"ap_0xtrade_on_cash")
+	allow_amount,err = ctrct_dai_token.Allowance(copts,*addr,caddrs.FillOrder)
+	if err != nil {
+		Info.Printf("Discover_augur_account(): allowance() at DAI for FillOrder failed for %v: %v\n",addr.String(),err)
+		return false
+	}
+	if z.Cmp(allow_amount) >= 0 {
+		Info.Printf("Discover_augur_account(): allowance() amount at DAI for FillOrder is 0 for %v\n",addr.String())
+		return false
+	}
+	storage.Set_augur_flag(addr,&agtx,"ap_fill_on_cash")
+
+	ctrct_share_token,err := NewShareToken(caddrs.ShareToken,eclient)
+	if err != nil {
+		Info.Printf("Discover_augur_account(): instantiation of ShareToken contract failed for %v: %v\n",*addr,err)
+		return false
+	}
+	approved4all,err := ctrct_share_token.IsApprovedForAll(copts,*addr,caddrs.FillOrder)
+	if err != nil {
+		Info.Printf("Discover_augur_account(): isApprovedForAll failed for %v : %v\n",addr.String(),err)
+		return false
+	}
+	if !approved4all {
+		Info.Printf("Discover_augur_account(): isApprovedForAll set to false for %v\n",addr.String())
+		return false
+	}
+
+	storage.Set_augur_flag(addr,&agtx,"ap_fill_on_shtok")
+	if storage.Is_augur_activated(addr.String()) {
+		Info.Printf("Discovered address %v as augur-enabled\n",addr.String())
+		return true
+	}
+	Info.Printf("Discovery of address %v as augur-enabled not successfull\n",*addr)
+	return false
 }
 
