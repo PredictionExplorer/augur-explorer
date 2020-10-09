@@ -624,10 +624,11 @@ func (ss *SQLStorage) Get_account_statement(aid int64) []p.StatementEntry {
 	}
 	return records
 }
-func (ss *SQLStorage) Get_token_transfers_batch(sig string,contract_aid int64,from_id int64) []p.TTEntry {
+/* DISCONTINUED
+func (ss *SQLStorage) Get_token_transfers_batch(sig string,contract_aid int64,from_id int64) []p.EvtLogEntry {
 
 	const BATCH_SIZE int = 256
-	output := make([]p.TTEntry,0,BATCH_SIZE)
+	output := make([]p.EvtLogEntry,0,BATCH_SIZE)
 	var query string
 	query = "SELECT el.block_num,el.id,et.tx_id,tx.tx_hash " +
 				"FROM evt_topic AS et "+
@@ -647,50 +648,8 @@ func (ss *SQLStorage) Get_token_transfers_batch(sig string,contract_aid int64,fr
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.TTEntry
+		var rec p.EvtLogEntry
 		err=rows.Scan(&rec.BlockNum,&rec.EvtId,&rec.TxId,&rec.TxHash)
-		if err != nil {
-			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
-			os.Exit(1)
-		}
-		output = append(output,rec)
-	}
-	return output
-}
-func (ss *SQLStorage) Get_evt_logs_by_signature(sig string,contract_aid int64,from_block_num int64) []p.TTEntry {
-
-	const NUM_BLOCKS_BATCH int64 = 256
-	output := make([]p.TTEntry,0,1024)
-
-	to_block_num := from_block_num + NUM_BLOCKS_BATCH
-	last_block_num,_ := ss.Get_last_block_num()
-	if to_block_num > last_block_num {
-		to_block_num = last_block_num
-	}
-	var query string
-	query = "SELECT block_num,id AS el_id,tx_id FROM evt_log WHERE id  IN (" +
-				"SELECT DISTINCT el_id FROM ( " +
-					"SELECT id as el_id " +
-						"FROM evt_log " +
-						"WHERE (block_num > $1) AND (block_num <= $2) " +
-								"AND (contract_aid=$3) " +
-								"AND (topic0_sig=$4) " +
-						"ORDER BY block_num,tx_id,el_id "+
-				") AS subeids " +
-			")"
-
-
-	ss.Info.Printf("q=%v, sig=%v, contract_aid=%v, from_block=%v to_block=%v\n",query,sig,contract_aid,from_block_num,to_block_num)
-	rows,err := ss.db.Query(query,from_block_num,to_block_num,contract_aid,sig)
-	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-		os.Exit(1)
-	}
-
-	defer rows.Close()
-	for rows.Next() {
-		var rec p.TTEntry
-		err=rows.Scan(&rec.BlockNum,&rec.EvtId,&rec.TxId)
 		if err != nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 			os.Exit(1)
@@ -742,6 +701,7 @@ func (ss *SQLStorage) Get_token_etl_process_config() *p.ETLTokenConfig {
 	}
 	return output
 }
+*/
 func (ss *SQLStorage) Get_dai_process_status() p.DaiProcessStatus {
 
 	var output p.DaiProcessStatus

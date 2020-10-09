@@ -78,7 +78,7 @@ func process_erc20_tokens(contract_aid int64) {
 		status := storage.Get_dai_process_status()
 		start1 := time.Now()
 	//		dai_events := storage.Get_token_transfers_batch(ERC20_TRANSFER,contract_aid,conf.LastIdDAI)
-		dai_events := storage.Get_evt_logs_by_signature(ERC20_TRANSFER,contract_aid,status.LastBlock)
+		dai_events := storage.Get_evt_logs_by_signature(ERC20_TRANSFER,contract_aid,status.LastBlock,256)
 		duration1 := time.Since(start1)
 		Info.Printf("BENCH Get_token_transfers_batch() took %v milliseconds\n",duration1.Milliseconds())
 		for _,evt := range dai_events {

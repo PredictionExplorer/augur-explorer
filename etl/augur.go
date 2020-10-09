@@ -117,7 +117,7 @@ func get_eoa_aid(wallet_addr *common.Address,block_num int64,tx_id int64) int64 
 	} else {
 		wallet_aid = storage.Lookup_or_create_address(wallet_addr.String(),block_num,tx_id)
 	}
-	num:=big.NewInt(int64(owner_fld_offset)) 
+	num:=big.NewInt(int64(owner_fld_offset))
 	key:=common.BigToHash(num)
 	Info.Printf("get_eoa_aid: Looking up eoa addr via RPC: wallet addr = %v\n",wallet_addr.String())
 	eoa,err := eclient.StorageAt(context.Background(),*wallet_addr,key,nil)

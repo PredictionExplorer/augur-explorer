@@ -11,7 +11,7 @@ import (
 	_  "github.com/lib/pq"
 
 	//"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+//	"github.com/ethereum/go-ethereum/core/types"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
@@ -245,17 +245,16 @@ func (ss *SQLStorage) init_market_outcome_volumes(market_aid int64,outcomes stri
 		}
 	}
 }
-func (ss *SQLStorage) Insert_market_oi_changed_evt(block *types.Header,agtx *p.AugurTx,evt *p.EMarketOIChanged) {
+func (ss *SQLStorage) Insert_market_oi_changed_evt(timestamp int64,agtx *p.AugurTx,evt *p.EMarketOIChanged) {
 	// Note: this event arrives with evt.Market set to 0x0000000000000000000000000 (a contract bug?) ,
 	//			so we pass the market address as parameter ('market_addr') to the function
 	var query string
 	market_aid := ss.Lookup_address_id(evt.Market.String())
-	ts_inserted := int64(block.Time)
 	query = "INSERT INTO oi_chg(block_num,tx_id,market_aid,ts_inserted,oi) " +
 			"VALUES($1,$2,$3,TO_TIMESTAMP($4),(" +
 			evt.MarketOI.String() +
 			"/1e+18))"
-	result,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,market_aid,ts_inserted)
+	result,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,market_aid,timestamp)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into oi_chg table: %v; q=%v",err,query))
 		os.Exit(1)

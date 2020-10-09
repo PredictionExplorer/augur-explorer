@@ -3,6 +3,8 @@
 echo Building ETL daemon ...
 cd etl
 go build ./
+go build cmd/tokens/tokens.go
+go build cmd/augur/main.go cmd/augur/augur.go cmd/augur/rpc.go
 
 echo Building 0x Mesh order listener
 cd dmesh

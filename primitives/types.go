@@ -761,16 +761,11 @@ type ChainReorg struct {
 	BlockNum				int64
 	Hash					string
 }
-type TTEntry struct { // TokenTransfer (batch) entry
+type EvtLogEntry struct { // Layer1 entry (event)
 	BlockNum				int64
 	TxId					int64
 	EvtId					int64
-	TxHash					string
-}
-type EvtLogEntry struct {	// event log entry for queries by signature
-	BlockNum				int64
-	TxId					int64
-	EvtId					int64
+//	TxHash					*string
 }
 type ETLTokenConfig struct {
 	LastIdDAI				int64
@@ -778,11 +773,18 @@ type ETLTokenConfig struct {
 	LastIdShareTokTransf	int64		// ShareToken.sol::Transfer event
 	LastIdShareTokBalChg	int64		// ShareToken.sol::ShareTokenBalanceChanged event
 }
+type InspectedEvent struct {
+	ContractAid				int64
+	Signature				string
+}
 /*type EvtLogInfo struct {
 	Id						int64
 	BlockNum				int64
 	Data					string
 }*/
 type DaiProcessStatus struct {
+	LastBlock				int64
+}
+type AugurProcessStatus struct {
 	LastBlock				int64
 }

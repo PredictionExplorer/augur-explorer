@@ -512,3 +512,53 @@ func (ss *SQLStorage) Get_augur_tx_from_db(tx_id int64) *p.AugurTx {
 	}
 	return output
 }
+func (ss *SQLStorage) Get_augur_process_status() p.AugurProcessStatus {
+
+	var output p.AugurProcessStatus
+	var null_last_block sql.NullInt64
+
+	var query string
+	for {
+		query = "SELECT last_block FROM augur_proc_status"
+
+		res := ss.db.QueryRow(query)
+		err := res.Scan(&null_last_block)
+//		ss.Info.Printf("null last block = %v\n",null_last_block)
+		if (err!=nil) {
+//			ss.Info.Printf("Get_augur_process_status(): err=%v\n",err)
+			if err == sql.ErrNoRows {
+				first_block_num := ss.Get_first_block_num()
+//				ss.Info.Printf("first block num = %v\n",first_block_num)
+				query = "INSERT INTO augur_proc_status(last_block) VALUES($1)"
+				_,err := ss.db.Exec(query,first_block_num)
+				if (err!=nil) {
+					ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+					os.Exit(1)
+				}
+			} else {
+				if (err!=nil) {
+					ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+					os.Exit(1)
+				}
+			}
+		} else {
+			break
+		}
+	}
+	if null_last_block.Valid {
+		output.LastBlock = null_last_block.Int64
+	}
+	return output
+}
+func (ss *SQLStorage) Update_augur_process_status(status *p.AugurProcessStatus) {
+
+	var query string
+	query = "UPDATE augur_proc_status SET last_block = $1"
+
+	_,err := ss.db.Exec(query,status.LastBlock)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+

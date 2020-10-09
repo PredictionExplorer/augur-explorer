@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"encoding/hex"
+	"strings"
 
 	"database/sql"
 	_  "github.com/lib/pq"
@@ -38,7 +39,7 @@ func (ss *SQLStorage) Get_last_block_num() (int64,bool) {
 func (ss *SQLStorage) Get_first_block_num() int64 {
 
 	var query string
-	query="SELECT block_num FROM block LIMIT 1";
+	query="SELECT block_num FROM block ORDER by block_num LIMIT 1";
 	row := ss.db.QueryRow(query)
 	var null_block_num sql.NullInt64
 	var err error
@@ -184,6 +185,17 @@ func (ss *SQLStorage) Insert_transaction(agtx *p.AugurTx) int64 {
 	row := ss.db.QueryRow(query,agtx.BlockNum,agtx.TxHash,agtx.CtrctCreate,agtx.GasUsed,agtx.TxIndex,sig)
 	err := row.Scan(&tx_id)
 	if err != nil {
+		if !strings.Contains(
+			err.Error(),
+			`duplicate key value violates unique constraint "transaction_tx_hash_key"`,
+		) {
+			if false {
+				tx_id,err = ss.Get_tx_id_by_hash(agtx.TxHash)
+				if err != nil {
+					return tx_id
+				}
+			}
+		}
 		ss.Log_msg(
 			fmt.Sprintf(
 				"DB error: tx_hash=%v; can't insert into transactions table: %v, q=%v",
@@ -401,6 +413,40 @@ func (ss *SQLStorage) Get_transaction(tx_hash string) (p.TxInfo,error) {
 	}
 	return ti,err
 }
+func (ss *SQLStorage) Get_tx_hash_by_id(tx_id int64) (string,error) {
+
+	var tx_hash string
+	var query string
+	query = "select tx_hash from transaction where id=$1"
+	row := ss.db.QueryRow(query,tx_id)
+	err := row.Scan(&tx_hash)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return "",err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return tx_hash,nil
+}
+func (ss *SQLStorage) Get_tx_id_by_hash(tx_hash string) (int64,error) {
+
+	var tx_id int64
+	var query string
+	query = "select id from transaction where tx_hash=$1"
+	row := ss.db.QueryRow(query,tx_hash)
+	err := row.Scan(&tx_id)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return tx_id,nil
+}
 func (ss *SQLStorage) Tx_exists(tx_hash string) bool {
 
 	var query string
@@ -419,7 +465,16 @@ func (ss *SQLStorage) Tx_exists(tx_hash string) bool {
 	}
 	return true
 }
+func (ss *SQLStorage) Delete_transaction(tx_hash string) {
 
+	var query string
+	query = "DELETE FROM transaction WHERE tx_hash=$1"
+	_,err:=ss.db.Exec(query,tx_hash)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Delete_transaction() failed: %v, q=%v, h=%v",err,query,tx_hash))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Get_block_timestamp(block_num int64) (int64,error) {
 
 	var query string
@@ -635,4 +690,40 @@ func (ss *SQLStorage) Get_augur_transaction(tx_id int64) *p.AugurTx {
 		os.Exit(1)
 	}*/
 	return agtx
+}
+func (ss *SQLStorage) Get_evt_logs_by_signature(sig string,contract_aid int64,from_block_num int64,to_block_num int64) []p.EvtLogEntry {
+
+	output := make([]p.EvtLogEntry,0,1024)
+
+	var query string
+	query = "SELECT block_num,id AS el_id,tx_id FROM evt_log WHERE id  IN (" +
+				"SELECT DISTINCT el_id FROM ( " +
+					"SELECT id as el_id " +
+						"FROM evt_log " +
+						"WHERE (block_num > $1) AND (block_num <= $2) " +
+								"AND (contract_aid=$3) " +
+								"AND (topic0_sig=$4) " +
+						"ORDER BY block_num,tx_id,el_id "+
+				") AS subeids " +
+			")"
+
+
+	//ss.Info.Printf("q=%v, sig=%v, contract_aid=%v, from_block=%v to_block=%v\n",query,sig,contract_aid,from_block_num,to_block_num)
+	rows,err := ss.db.Query(query,from_block_num,to_block_num,contract_aid,sig)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.EvtLogEntry
+		err=rows.Scan(&rec.BlockNum,&rec.EvtId,&rec.TxId)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+		output = append(output,rec)
+	}
+	return output
 }
