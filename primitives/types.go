@@ -225,6 +225,7 @@ type MainStats struct {
 	ScalarCount		int64
 	ActiveCount		int64
 	FinalizedCount	int64
+	InvalidCount	int64
 	MoneyAtStake	float64
 	TradesCount		int64
 }

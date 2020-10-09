@@ -61,6 +61,18 @@ func (ss *SQLStorage) Get_main_stats() p.MainStats {
 	}
 	s.FinalizedCount = (s.YesNoCount + s.CategCount + s.ScalarCount) - s.ActiveCount
 	s.LastBlockNum,_ =  ss.Get_last_block_num()
+	query = "SELECT count(*) AS total FROM market WHERE status=5"
+	row = ss.db.QueryRow(query)
+	var null_count sql.NullInt64
+	err = row.Scan(&null_count)
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	if null_count.Valid {
+		s.InvalidCount = null_count.Int64
+	}
+
 	return s
 }
 func (ss *SQLStorage) Get_front_page_stats() p.FrontPageStats {
