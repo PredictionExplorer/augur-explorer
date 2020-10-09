@@ -594,6 +594,8 @@ func a1_stats_uniqaddr(c *gin.Context) {
 }
 func a1_price_history_zoomed(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
 	p_market := c.Param("market")
 	market_addr,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
 	if !success {
