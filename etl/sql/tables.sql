@@ -8,6 +8,12 @@ CREATE TABLE block (
 	block_hash			CHAR(66) NOT NULL PRIMARY KEY,
 	parent_hash			CHAR(66) NOT NULL
 );
+CREATE TABLE address (
+	address_id			BIGSERIAL	PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- block number at which this address was created
+	tx_id				BIGINT NOT NULL,			-- transaction at which this address was created
+	addr				TEXT NOT NULL UNIQUE		-- 20 byte Ethereum address , stored as 42 hex string (0x+addr)
+);
 CREATE TABLE transaction (	-- we're only storing transactions related to Augur platform
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,

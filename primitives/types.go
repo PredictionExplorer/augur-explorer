@@ -753,7 +753,8 @@ type EthereumEventTopic struct {
 type EthereumEventLog struct {
 	BlockNum				int64
 	TxId					int64
-	ContractAddress			string
+	ContractAid				int64
+//	ContractAddress			string
 	Topic0_Sig				string
 	RlpLog					[]byte
 }
@@ -786,5 +787,5 @@ type DaiProcessStatus struct {
 	LastBlock				int64
 }
 type AugurProcessStatus struct {
-	LastBlock				int64
+	LastTxId				int64
 }

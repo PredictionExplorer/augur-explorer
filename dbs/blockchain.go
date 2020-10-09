@@ -14,6 +14,19 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
+// Notes on design:
+//		Layer1 is checking block hash sequence to always be valid by matching parent hash
+//		Blocks are deleted during chain reorg in reverse order (from highest block to lowest)
+//		When block is deleted from `block` table, the DELETEs are cascaded to `transaction` table
+//		and to any tables on Layer2, therefore DELETEs on higher layers occur automatically
+//		During incremental data population higher layers are using ID fields to select event records
+//		for processing, since ID fields are never decreasing the data being processed will be
+//		always newer than previously processed data
+//		Processing granularity on layer2 is by transaction, while on layer1 it is by block,
+//		Event atomicity: when event logs of a Tx are added, they are INSERTed all at once to ensure
+//		atomic appearance of the data of all event log records and avoid inconsistency that can
+//		occurr on layer2 Unix processes which are running separately (independently from layer1)
+
 func (ss *SQLStorage) Get_last_block_num() (int64,bool) {
 
 	var query string
@@ -413,22 +426,23 @@ func (ss *SQLStorage) Get_transaction(tx_hash string) (p.TxInfo,error) {
 	}
 	return ti,err
 }
-func (ss *SQLStorage) Get_tx_hash_by_id(tx_id int64) (string,error) {
+func (ss *SQLStorage) Get_tx_hash_by_id(tx_id int64) (string,int64,error) {
 
 	var tx_hash string
+	var block_num int64
 	var query string
-	query = "select tx_hash from transaction where id=$1"
+	query = "select tx_hash,block_num from transaction where id=$1"
 	row := ss.db.QueryRow(query,tx_id)
-	err := row.Scan(&tx_hash)
+	err := row.Scan(&tx_hash,&block_num)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			return "",err
+			return "",0,err
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
 	}
-	return tx_hash,nil
+	return tx_hash,block_num,nil
 }
 func (ss *SQLStorage) Get_tx_id_by_hash(tx_hash string) (int64,error) {
 
@@ -464,16 +478,6 @@ func (ss *SQLStorage) Tx_exists(tx_hash string) bool {
 		}
 	}
 	return true
-}
-func (ss *SQLStorage) Delete_transaction(tx_hash string) {
-
-	var query string
-	query = "DELETE FROM transaction WHERE tx_hash=$1"
-	_,err:=ss.db.Exec(query,tx_hash)
-	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("Delete_transaction() failed: %v, q=%v, h=%v",err,query,tx_hash))
-		os.Exit(1)
-	}
 }
 func (ss *SQLStorage) Get_block_timestamp(block_num int64) (int64,error) {
 
@@ -610,9 +614,9 @@ func (ss *SQLStorage) Set_chain_id(chain_id int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_tx_event_log(eel *p.EthereumEventLog) (int64,int64) {
+func (ss *SQLStorage) Insert_tx_event_log(eel *p.EthereumEventLog) int64 {
 
-	contract_aid := ss.Lookup_or_create_address(eel.ContractAddress,eel.BlockNum,eel.TxId)
+	//contract_aid := ss.Lookup_or_create_address(eel.ContractAddress,eel.BlockNum,eel.TxId)
 //	ss.Info.Printf("topic0_sig=%v, len=%v\n",eel.Topic0_Sig,len(eel.Topic0_Sig))
 	var query string
 	query = "INSERT INTO evt_log(block_num,tx_id,contract_aid,topic0_sig,log_rlp) " +
@@ -621,7 +625,7 @@ func (ss *SQLStorage) Insert_tx_event_log(eel *p.EthereumEventLog) (int64,int64)
 	//_,err:=ss.db.Exec(query,eel.BlockNum,eel.TxId,contract_aid,eel.Data)
 	var err error
 	var null_id sql.NullInt64
-	row := ss.db.QueryRow(query,eel.BlockNum,eel.TxId,contract_aid,eel.Topic0_Sig,eel.RlpLog)
+	row := ss.db.QueryRow(query,eel.BlockNum,eel.TxId,eel.ContractAid,eel.Topic0_Sig,eel.RlpLog)
 	err=row.Scan(&null_id);
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("Insert_tx_event_log() failed: %v, q=%v, b=%v\n",err,query,eel.BlockNum))
@@ -631,7 +635,32 @@ func (ss *SQLStorage) Insert_tx_event_log(eel *p.EthereumEventLog) (int64,int64)
 		ss.Log_msg(fmt.Sprintf("Insert_tx_event_log() failed: null id returned at block %v\n",eel.BlockNum))
 		os.Exit(1)
 	}
-	return null_id.Int64,contract_aid
+	return null_id.Int64
+}
+func (ss *SQLStorage) Insert_all_tx_event_logs(eelogs []p.EthereumEventLog) {
+
+	var query strings.Builder
+	query.WriteString("INSERT INTO evt_log(block_num,tx_id,contract_aid,topic0_sig,log_rlp) VALUES")
+
+	for i,eel := range(eelogs) {
+		if i > 0 {
+			query.WriteString(",")
+		}
+		query.WriteString(fmt.Sprintf(
+			"(%v,%v,%v,'%v',decode('%v','hex'))",
+			eel.BlockNum,
+			eel.TxId,
+			eel.ContractAid,
+			eel.Topic0_Sig,
+			hex.EncodeToString(eel.RlpLog),
+		))
+	}
+	var err error
+	_,err = ss.db.Exec(query.String())
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("Insert_all_tx_event_logs() failed: %v, q=%v\n",err,query.String()))
+		os.Exit(1)
+	}
 }
 func (ss *SQLStorage) Insert_event_log_topic(eet *p.EthereumEventTopic) {
 
@@ -691,25 +720,20 @@ func (ss *SQLStorage) Get_augur_transaction(tx_id int64) *p.AugurTx {
 	}*/
 	return agtx
 }
-func (ss *SQLStorage) Get_evt_logs_by_signature(sig string,contract_aid int64,from_block_num int64,to_block_num int64) []p.EvtLogEntry {
+func (ss *SQLStorage) Get_evt_logs_by_signature(sig string,contract_aid int64,from_tx_id int64,num_rows int64) []int64 {
 
-	output := make([]p.EvtLogEntry,0,1024)
+
+	output := make([]int64,0,1024)
 
 	var query string
-	query = "SELECT block_num,id AS el_id,tx_id FROM evt_log WHERE id  IN (" +
-				"SELECT DISTINCT el_id FROM ( " +
-					"SELECT id as el_id " +
-						"FROM evt_log " +
-						"WHERE (block_num > $1) AND (block_num <= $2) " +
-								"AND (contract_aid=$3) " +
-								"AND (topic0_sig=$4) " +
-						"ORDER BY block_num,tx_id,el_id "+
-				") AS subeids " +
-			")"
+	query = "SELECT DISTINCT tx_id FROM evt_log " +
+				"WHERE tx_id > $1 " +
+						"AND (contract_aid=$2) " +
+						"AND (topic0_sig=$3) " +
+				"ORDER BY tx_id "+
+				"LIMIT $4"
 
-
-	//ss.Info.Printf("q=%v, sig=%v, contract_aid=%v, from_block=%v to_block=%v\n",query,sig,contract_aid,from_block_num,to_block_num)
-	rows,err := ss.db.Query(query,from_block_num,to_block_num,contract_aid,sig)
+	rows,err := ss.db.Query(query,from_tx_id,contract_aid,sig,num_rows)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -717,13 +741,13 @@ func (ss *SQLStorage) Get_evt_logs_by_signature(sig string,contract_aid int64,fr
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.EvtLogEntry
-		err=rows.Scan(&rec.BlockNum,&rec.EvtId,&rec.TxId)
+		var tx_id int64 
+		err=rows.Scan(&tx_id)
 		if err != nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 			os.Exit(1)
 		}
-		output = append(output,rec)
+		output = append(output,tx_id)
 	}
 	return output
 }

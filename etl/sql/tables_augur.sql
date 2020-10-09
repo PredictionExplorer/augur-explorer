@@ -9,12 +9,6 @@ CREATE TABLE universe (
 	universe_addr		TEXT NOT NULL UNIQUE,		-- Ethereum address of the Universe contract
 	payout_numerators	TEXT DEFAULT ''
 );
-CREATE TABLE address (
-	address_id			BIGSERIAL	PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- block number at which this address was created
-	tx_id				BIGINT NOT NULL,			-- transaction at which this address was created
-	addr				TEXT NOT NULL UNIQUE		-- 20 byte Ethereum address , stored as 42 hex string (0x+addr)
-);
 -- Market category
 CREATE TABLE category (
 	cat_id				BIGSERIAL	PRIMARY KEY,
@@ -355,5 +349,5 @@ CREATE TABLE pl_debug (-- Profit loss data for debugging, scanned after Block ha
 	avg_price			DECIMAL(32,20) DEFAULT 0.0
 );
 CREATE TABLE augur_proc_status (-- Augur Tradign process status
-	last_block			BIGINT DEFAULT 0
+	last_tx_id			BIGINT DEFAULT 0
 );
