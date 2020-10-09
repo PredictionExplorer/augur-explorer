@@ -692,3 +692,31 @@ func a1_price_history_zoomed(c *gin.Context) {
 		"error": "",
 	})
 }
+func a1_stats_accum_trades(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	trades := augur_srv.storage.Get_accumulated_trades_all_markets()
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"AccumulatedTrades" : trades,
+			"status": status,
+			"error": err_str,
+	})
+}
+func a1_stats_accum_oi(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	oi := augur_srv.storage.Get_accumulated_open_interest_all_markets()
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"AccumulatedOpenInterest" : oi,
+			"status": status,
+			"error": err_str,
+	})
+}

@@ -1522,3 +1522,66 @@ func (ss *SQLStorage) Get_price_estimate_history(market_aid int64,outcome_idx in
 	}
 	return records
 }
+func (ss *SQLStorage) Get_accumulated_open_interest_all_markets() []p.OIAccum {
+
+	output := make([]p.OIAccum,0,512)
+	var query string
+	query = "SELECT start_ts,sum(oi) as oi " +
+				"FROM ( " +
+					"SELECT " +
+						"ROUND(FLOOR(EXTRACT(EPOCH FROM ts_inserted))/86400)::BIGINT*86400::BIGINT AS start_ts," +
+						"market_aid," +
+						"MAX(oi) AS oi " +
+					"FROM oi_chg " +
+					"GROUP by start_ts,market_aid " +
+					"ORDER by start_ts,market_aid " +
+				") AS subq "+
+			"GROUP BY start_ts"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var row p.OIAccum
+		err = rows.Scan(&row.TimeStamp,&row.AccumOpenInterest)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		output = append(output,row)
+	}
+	return output
+}
+func (ss *SQLStorage) Get_accumulated_trades_all_markets() []p.TradesPerDay {
+
+	output := make([]p.TradesPerDay,0,512)
+	var query string
+	query = "SELECT " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM time_stamp))/86400)::BIGINT*86400::BIGINT AS start_ts," +
+				"count(*) as num_trades " +
+			"FROM mktord " +
+			"GROUP by start_ts " +
+			"ORDER by start_ts"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var row p.TradesPerDay
+		err = rows.Scan(&row.TimeStamp,&row.NumTrades)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		output = append(output,row)
+	}
+	return output
+}
+
+

@@ -171,6 +171,9 @@ func main() {
 	r.GET("/api/stats_uniqaddr",  a1_stats_uniqaddr)
 	r.GET("/api/stats_gasusage",  a1_stats_gasusage)
 	r.GET("/api/price_history/:market/:zoom/:init_ts/:fin_ts/:interval_secs/", a1_price_history_zoomed)
+	r.GET("/api/stats_accum_trades",  a1_stats_accum_trades)
+	r.GET("/api/stats_accum_oi",  a1_stats_accum_oi)
+
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
