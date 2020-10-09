@@ -672,3 +672,11 @@ type PriceEstimate struct {
 	MatchingBids			[]DepthState
 	MatchingAsks			[]DepthState
 }
+type OIAccum struct {
+	TimeStamp				int64
+	AccumOpenInterest		float64
+}
+type TradesPerDay struct {
+	TimeStamp				int64
+	NumTrades				int64
+}
