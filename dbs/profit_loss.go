@@ -37,16 +37,12 @@ func (ss *SQLStorage) calculate_profit(num_ticks int64,win_tick int64,amount *bi
 		ss.Info.Printf("substracted price =%v, new price=%v\n",price.String(),result.String())
 		result.Mul(result,amount)
 		ss.Info.Printf("multiplication = %v\n",result.String())
-//		result.Quo(result,ticks) part of original formula of Augur, but this op doesn't work
-//		ss.Info.Printf("division by %v : %v\n",ticks.String(),result.String())
 	}
 	if amount.Cmp(zero) > 0 {	// Long
 		result.Sub(win_price,price)
 		ss.Info.Printf("substracted price = %v\n",result.String())
 		result.Mul(result,amount)
 		ss.Info.Printf("multiplication = %v\n",result.String())
-//		result.Quo(result,ticks)
-//		ss.Info.Printf("division by %v : %v\n",ticks.String(),result.String())
 	}
 	// Note: if amount == 0 , returns 0
 	return result
@@ -307,6 +303,16 @@ func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,eoa_aid int64,evt *
 	}
 
 	return pl_id
+}
+func (ss *SQLStorage) Delete_profit_loss_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM profit_loss WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
 }
 func (ss *SQLStorage) Get_profit_loss(eoa_aid int64) []p.PLEntry {
 	return ss.Get_trade_data(eoa_aid,false)

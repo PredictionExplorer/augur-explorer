@@ -90,6 +90,16 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 	// ToDo: possibly migrate to triggers (or maybe not)
 	ss.update_market_status(market_aid,p.MktStatusReported)
 }
+func (ss *SQLStorage) Delete_report_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM report WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDisputeCrowdsourcerContribution) {
 
 	_,err := ss.lookup_universe_id(evt.Universe.String())

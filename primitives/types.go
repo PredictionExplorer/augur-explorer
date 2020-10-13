@@ -778,13 +778,12 @@ type InspectedEvent struct {
 	ContractAid				int64
 	Signature				string
 }
-/*type EvtLogInfo struct {
-	Id						int64
-	BlockNum				int64
-	Data					string
-}*/
-type DaiProcessStatus struct {
-	LastBlock				int64
+type ShortEvtLog struct {
+	EvtId					int64
+	TxId					int64
+}
+type TokProcessStatus struct {
+	LastEvtId				int64
 }
 type AugurProcessStatus struct {
 	LastTxId				int64

@@ -233,16 +233,29 @@ func (ss *SQLStorage) init_market_outcome_volumes(market_aid int64,outcomes stri
 						"tx_id," +
 						"market_aid," +
 						"outcome_idx" +
-					") VALUES(" +
-						"$1," +
-						"$2" +
-					")"
+					") VALUES($1,$2,$3,$4)"
 			_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,market_aid,outcome_idx)
 			if (err!=nil) {
 				ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
 				os.Exit(1)
 			}
 		}
+	}
+}
+func (ss *SQLStorage) Delete_market_created_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM market WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+	query = "DELETE FROM outcome_vol WHERE tx_id=$1"
+	_,err = ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
 	}
 }
 func (ss *SQLStorage) Insert_market_oi_changed_evt(timestamp int64,agtx *p.AugurTx,evt *p.EMarketOIChanged) {
@@ -271,6 +284,16 @@ func (ss *SQLStorage) Insert_market_oi_changed_evt(timestamp int64,agtx *p.Augur
 		os.Exit(1)
 	}
 
+}
+func (ss *SQLStorage) Delete_market_oi_changed_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM oi_chg WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
 }
 func get_outcome_idx_from_numerators(mkt_type int,num_ticks int64,numerators []*big.Int) int {
 
@@ -326,6 +349,16 @@ func (ss *SQLStorage) Insert_market_finalized_evt(agtx *p.AugurTx,timestamp int6
 	ss.update_market_status(market_aid,mkt_status)
 	ss.calculate_profit_loss_for_all_users(market_aid,agtx.BlockNum,agtx.TxId,timestamp,evt)
 	ss.close_all_open_positions_for_market(market_aid)
+}
+func (ss *SQLStorage) Delete_market_finalized_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM mkt_fin WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
 }
 func (ss *SQLStorage) get_market_type_and_ticks(market_aid int64) (int,int64,error) {
 
@@ -494,6 +527,16 @@ func (ss *SQLStorage) Insert_market_volume_changed_evt_v2(agtx *p.AugurTx,evt *p
 		}
 	}
 }
+func (ss *SQLStorage) Delete_market_vol_changed_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM volume WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Insert_share_balance_changed_evt(agtx *p.AugurTx,evt *p.EShareTokenBalanceChanged) {
 
 	market_aid := ss.Lookup_address_id(evt.Market.String())
@@ -521,6 +564,16 @@ func (ss *SQLStorage) Insert_share_balance_changed_evt(agtx *p.AugurTx,evt *p.ES
 	_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,account_aid,market_aid,outcome)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into sbalances table at block %v: %v, q=%v",agtx.BlockNum,err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_share_balance_changed_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM stbc WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
 }

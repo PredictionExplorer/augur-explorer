@@ -192,6 +192,16 @@ func (ss *SQLStorage) Insert_augur_transaction_status(agtx *p.AugurTx,evt *p.EEx
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Delete_augur_transaction_status(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM agtx_status WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Register_eoa_and_wallet(eoa,wallet string,block_num int64,tx_id int64) {
 
 	eoa_aid := ss.Lookup_or_create_address(eoa,block_num,tx_id)
@@ -254,6 +264,16 @@ func (ss *SQLStorage) Insert_register_contract_event(agtx *p.AugurTx,evt *p.EReg
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into register_contract table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_register_contract_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM register_contact WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
 }

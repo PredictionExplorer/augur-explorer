@@ -720,7 +720,7 @@ func (ss *SQLStorage) Get_augur_transaction(tx_id int64) *p.AugurTx {
 	}*/
 	return agtx
 }
-func (ss *SQLStorage) Get_evt_logs_by_signature(sig string,contract_aid int64,from_tx_id int64,num_rows int64) []int64 {
+func (ss *SQLStorage) Get_tx_ids_from_evt_logs_by_signature(sig string,contract_aid int64,from_tx_id int64,num_rows int64) []int64 {
 
 
 	output := make([]int64,0,1024)
@@ -748,6 +748,37 @@ func (ss *SQLStorage) Get_evt_logs_by_signature(sig string,contract_aid int64,fr
 			os.Exit(1)
 		}
 		output = append(output,tx_id)
+	}
+	return output
+}
+func (ss *SQLStorage) Get_evt_log_ids_by_signature(sig string,contract_aids string,from_evt_id int64,num_rows int64) []p.ShortEvtLog {
+
+
+	output := make([]p.ShortEvtLog,0,1024)
+
+	var query string
+	query = "SELECT id,tx_id FROM evt_log " +
+				"WHERE id > $1 " +
+						"AND (contract_aid IN ("+contract_aids+")) " +
+						"AND (topic0_sig=$3) " +
+				"ORDER BY id "+
+				"LIMIT $4"
+
+	rows,err := ss.db.Query(query,from_evt_id,sig,num_rows)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var evt_log p.ShortEvtLog
+		err=rows.Scan(&evt_log.EvtId,&evt_log.TxId)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+		output = append(output,evt_log)
 	}
 	return output
 }

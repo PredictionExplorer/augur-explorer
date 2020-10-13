@@ -40,9 +40,9 @@ CREATE table rep_transf (
 );
 CREATE table tok_transf (	-- Tokens Transferred event
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	evtlog_id			BIGINT NOT NULL,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL,
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
 	token_aid			BIGINT NOT NULL,
 	from_aid			BIGINT NOT NULL,
@@ -52,9 +52,8 @@ CREATE table tok_transf (	-- Tokens Transferred event
 );
 CREATE table tbc (			-- Token Balance Changed event
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL,
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
 	owner_aid			BIGINT NOT NULL,
 	token_aid			BIGINT NOT NULL,
@@ -64,9 +63,8 @@ CREATE table tbc (			-- Token Balance Changed event
 );
 CREATE table stbc (			-- Share Token Balance Changed event
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL,
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
 	account_aid			BIGINT NOT NULL,
 	outcome_idx			SMALLINT NOT NULL,
@@ -75,9 +73,8 @@ CREATE table stbc (			-- Share Token Balance Changed event
 -- Balances of Share tokens per Market (accumulated data, one record per account)
 CREATE TABLE sbalances (
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			 -- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL,
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	account_aid			BIGINT NOT NULL,			-- address id of the User(holder of the shares)
 	market_aid			BIGINT NOT NULL,			-- market id of the Market these shares blong
 	num_transfers		BIGINT DEFAULT 0,			-- counter for tracking now many transfers we had
@@ -96,7 +93,6 @@ CREATE TABLE chain_reorg_dai ( -- stores chain reorg events
 	block_num			BIGINT NOT NULL,
 	hash				CHAR(66) NOT NULL
 );
-CREATE TABLE dai_proc_status (-- DAI processing status
-	last_block			BIGINT DEFAULT 0
---	last_id_dai			BIGINT DEFAULT 0 --id of last event log processed
+CREATE TABLE token_proc_status (-- DAI processing status
+	last_evt_id			BIGINT DEFAULT 0 --id of last event log processed
 );

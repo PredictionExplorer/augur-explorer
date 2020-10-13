@@ -313,6 +313,15 @@ func (ss *SQLStorage) Cancel_open_order(eoa_aid,wallet_aid int64,orders map[stri
 	result,err := ss.db.Exec(query,order_hash)
 	if err!=nil {
 		ss.Info.Printf(fmt.Sprintf("DB error: couldn't delete open order with order_hash = %v, q=%v\n",order_hash,query))
+		if result == nil {
+			ss.Log_msg(
+				fmt.Sprintf(
+					"DB error: couldn't delete open order with order_hash = %v, q=%v\n",
+					order_hash,query,
+				),
+			)
+			os.Exit(1)
+		}
 	}
 	rows_affected,err:=result.RowsAffected()
 	if rows_affected == 0  {

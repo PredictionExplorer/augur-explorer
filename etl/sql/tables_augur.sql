@@ -1,8 +1,16 @@
 
+CREATE TABLE register_contract (
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	addr				TEXT NOT NULL,
+	key					TEXT NOT NULL
+);
 -- Universe: The container contract for Augur Service
 CREATE TABLE universe (
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	universe_id			BIGINT NOT NULL,
 	parent_id			BIGINT DEFAULT 0,
 	creation_ts			TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
@@ -75,41 +83,6 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 	tokens_escrowed		TEXT NOT NULL,
 	trade_group			TEXT NOT NULL,			-- User defined group label to identify multiple trades
 	order_hash			TEXT NOT NULL
-);
-CREATE TABLE mesh_evt ( -- Events received from 0x Mesh network. source: github.com/0xProject/0x-mesh/zeroex
-	id						BIGSERIAL PRIMARY KEY,
-	eoa_aid					BIGINT DEFAULT 0,	-- can be 0 if address isn't registered yet
-	wallet_aid				BIGINT DEFAULT 0,	-- can be 0 if address isn't registered yet
--- Event fields:
-	time_stamp				TIMESTAMPTZ NOT NULL,
-	fillable_amount			DECIMAL(32,18) NOT NULL,
-	evt_code				SMALLINT NOT NULL,
--- Augur fields:
-	market_aid				BIGINT NOT NULL,
-	outcome_idx				SMALLINT NOT NULL,
-	otype					SMALLINT NOT NULL,-- 0: BID, 1: ASK
-	price					DECIMAL(32,18) NOT NULL,
--- Fill fields:
-	amount_fill				DECIMAL(32,18) DEFAULT 0.0,
--- `Order` struct follows:
-	order_hash				CHAR(66) NOT NULL,
-	chain_id				INT NOT NULL,
-	exchange_addr			CHAR(42) NOT NULL,
-	maker_addr				CHAR(42) NOT NULL,
-	maker_asset_data		TEXT NOT NULL,	-- hex encoded
-	maker_fee_asset_data	TEXT NOT NULL,	-- hex encoded
-	maker_asset_amount		DECIMAL(32,18) NOT NULL,
-	maker_fee				DECIMAL(32,18) NOT NULL,
-	taker_address			CHAR(42) NOT NULL,
-	taker_asset_data		TEXT NOT NULL,
-	taker_fee_asset_data	TEXT NOT NULL,
-	taker_asset_amount		DECIMAL(32,18) NOT NULL,
-	taker_fee				DECIMAL(32,18) NOT NULL,
-	sender_address			CHAR(42) NOT NULL,
-	fee_recipient_address	CHAR(42) NOT NULL,
-	expiration_time			TIMESTAMPTZ NOT NULL,
-	salt					TEXT NOT NULL, -- big.Int as string
-	signature				TEXT
 );
 -- Report, submitted by Market Creator
 CREATE TABLE report (

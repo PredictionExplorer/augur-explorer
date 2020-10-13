@@ -24,7 +24,9 @@ func (ss *SQLStorage) Process_REP_token_transfer(evt *p.ETransfer,agtx *p.AugurT
 	amount := evt.Value.String()
 
 	var query string
-	query = "INSERT INTO rep_transf(block_num,tx_id,from_aid,to_aid,amount) VALUES($1,$2,$3,$4,$5/1e+18)"
+	query = "INSERT INTO rep_transf("+
+				"evtlog_id,block_num,tx_id,from_aid,to_aid,amount" +
+			") VALUES($1,$2,$3,$4,$5,$6/1e+18)"
 	_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,from_aid,to_aid,amount)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -40,19 +42,31 @@ func (ss *SQLStorage) Insert_token_balance_changed_evt(evt *p.ETokenBalanceChang
 	balance := evt.Balance.String()
 
 	var query string
-	query = "INSERT INTO tbc(block_num,tx_id,market_aid,owner_aid,token_aid,token_type,outcome,balance) " +
+	query = "INSERT INTO tbc(" +
+				"block_num,tx_id,market_aid,owner_aid,token_aid,token_type,outcome,balance"+
+			") " +
 				"VALUES($1,$2,$3,$4,$5,$6,$7,("+balance+"/1e+18))"
 	_,err := ss.db.Exec(query,
-							block_num,
-							tx_id,
-							market_aid,
-							owner_aid,
-							token_aid,
-							evt.TokenType,
-							outcome_idx,
+		block_num,
+		tx_id,
+		market_aid,
+		owner_aid,
+		token_aid,
+		evt.TokenType,
+		outcome_idx,
 	)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v tx_id=%v q=%v",err,tx_id,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_token_balance_changed_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM tbc WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
 }
@@ -702,22 +716,21 @@ func (ss *SQLStorage) Get_token_etl_process_config() *p.ETLTokenConfig {
 	return output
 }
 */
-func (ss *SQLStorage) Get_dai_process_status() p.DaiProcessStatus {
+func (ss *SQLStorage) Get_tok_process_status() p.TokProcessStatus {
 
-	var output p.DaiProcessStatus
-	var null_last_block sql.NullInt64
+	var output p.TokProcessStatus
+	var null_last_evtid sql.NullInt64
 
 	var query string
 	for {
-		query = "SELECT last_block FROM dai_proc_status"
+		query = "SELECT last_evt_id FROM token_proc_status"
 
 		res := ss.db.QueryRow(query)
-		err := res.Scan(&null_last_block)
+		err := res.Scan(&null_last_evtid)
 		if (err!=nil) {
 			if err == sql.ErrNoRows {
-				first_block_num := ss.Get_first_block_num()
-				query = "INSERT INTO dai_proc_status(last_block) VALUES($1)"
-				_,err := ss.db.Exec(query,first_block_num)
+				query = "INSERT INTO token_proc_status DEFAULT VALUES"
+				_,err := ss.db.Exec(query)
 				if (err!=nil) {
 					ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 					os.Exit(1)
@@ -732,17 +745,17 @@ func (ss *SQLStorage) Get_dai_process_status() p.DaiProcessStatus {
 			break
 		}
 	}
-	if null_last_block.Valid {
-		output.LastBlock = null_last_block.Int64
+	if null_last_evtid.Valid {
+		output.LastEvtId  = null_last_evtid.Int64
 	}
 	return output
 }
-func (ss *SQLStorage) Update_dai_process_status(status *p.DaiProcessStatus) {
+func (ss *SQLStorage) Update_tok_process_status(status *p.TokProcessStatus) {
 
 	var query string
-	query = "UPDATE dai_proc_status SET last_block = $1"
+	query = "UPDATE token_proc_status SET last_evt_id = $1"
 
-	_,err := ss.db.Exec(query,status.LastBlock)
+	_,err := ss.db.Exec(query,status.LastEvtId)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
@@ -752,6 +765,16 @@ func (ss *SQLStorage) Delete_DAI_transfer_by_evtlog_id(evtlog_id int64) {
 
 	var query string
 	query = "DELETE FROM dai_transf WHERE evtlog_id=$1"
+	_,err := ss.db.Exec(query,evtlog_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_REP_transfer_by_evtlog_id(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM rep_transf WHERE evtlog_id=$1"
 	_,err := ss.db.Exec(query,evtlog_id)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))

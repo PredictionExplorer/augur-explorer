@@ -62,26 +62,24 @@ func proc_erc20_transfer(log *types.Log,agtx *AugurTx,evtlog_id int64) {
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump(Info)
 		if bytes.Equal(caddrs.Dai.Bytes(), log.Address.Bytes()) {	// this is DAI contract
-			storage.Delete_DAI_transfer_by_evtlog_id(evtlog_id)
+			storage.Delete_DAI_transfer_by_evtlog_id(evtlog_id)	// prevention against duplication
 			storage.Process_DAI_token_transfer(&mevt,caddrs,agtx,evtlog_id)
 		}
-		
 		if bytes.Equal(caddrs.Reputation.Bytes(), log.Address.Bytes()) {	// this is DAI contract
+			storage.Delete_REP_transfer_by_evtlog_id(evtlog_id) // prevention against duplication
 			storage.Process_REP_token_transfer(&mevt,agtx,evtlog_id)
 		}
-		
 	}
 }
-func process_erc20_tokens(contract_aid int64) {
+func process_erc20_tokens(contract_aids string) {
 
 	for {
-		status := storage.Get_dai_process_status()
+		status := storage.Get_tok_process_status()
 		start1 := time.Now()
-	//		dai_events := storage.Get_token_transfers_batch(ERC20_TRANSFER,contract_aid,conf.LastIdDAI)
-		dai_events := storage.Get_evt_logs_by_signature(ERC20_TRANSFER,contract_aid,status.LastBlock,256)
+		tok_events := storage.Get_evt_log_ids_by_signature(ERC20_TRANSFER,contract_aids,status.LastEvtId,256)
 		duration1 := time.Since(start1)
 		Info.Printf("BENCH Get_token_transfers_batch() took %v milliseconds\n",duration1.Milliseconds())
-		for _,evt := range dai_events {
+		for _,evt := range tok_events {
 			Info.Printf("event = %+v\n",evt)
 			start2 := time.Now()
 			evtlog := storage.Get_event_log(evt.EvtId)
@@ -92,11 +90,11 @@ func process_erc20_tokens(contract_aid int64) {
 			log.Address.SetBytes(caddrs.Dai.Bytes())
 			agtx := storage.Get_augur_transaction(evt.TxId)
 			proc_erc20_transfer(&log,agtx,evt.EvtId)
-			status.LastBlock=agtx.BlockNum
+			status.LastEvtId = evt.EvtId
+			storage.Update_tok_process_status(&status)
 		}
-		storage.Update_dai_process_status(&status)
-		Info.Printf("processed %v events\n",len(dai_events))
-		if len(dai_events) == 0 {
+		Info.Printf("processed %v events\n",len(tok_events))
+		if len(tok_events) == 0 {
 			return
 		}
 	}
@@ -111,19 +109,9 @@ func process_tokens(exit_chan chan bool,caddrs *ContractAddresses) {
 				}
 			default:
 		}
-		contract_aid,err := storage.Nonfatal_lookup_address_id(caddrs.Dai.String())
-		if err != nil {
-			Error.Printf("DAI contract is not in the 'address' table")
-			os.Exit(1)
-		}
-		process_erc20_tokens(contract_aid)
-		//contract_aid,err = storage.Nonfatal_lookup_address_id(caddrs.Reputation.String())
-		contract_aid= storage.Lookup_or_create_address(caddrs.Reputation.String(),0,0)
-		if err != nil {
-			Error.Printf("REPv2 contract is not in the 'address' table")
-			os.Exit(1)
-		}
-		process_erc20_tokens(contract_aid)
+		dai_contract_aid:= storage.Lookup_or_create_address(caddrs.Dai.String(),0,0)
+		rep_contract_aid := storage.Lookup_or_create_address(caddrs.Reputation.String(),0,0)
+		process_erc20_tokens(fmt.Sprintf("%v,%v",dai_contract_aid,rep_contract_aid))
 		time.Sleep(1 * time.Second)
 	}
 }
