@@ -675,39 +675,7 @@ func (ss *SQLStorage) Get_full_price_history(mkt_addr string,market_aid int64) p
 }
 func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,mkt_type int,outc int,init_ts int,fin_ts int) []p.ZHistT1Entry {
 
-//	ss.Info.Printf("Get_zoomed_t1_price_history_for_outcome() starts\n")
 	var query string
-	/* DISCONTINUED
-	query = "SELECT " +
-				"o.id,"+
-				"o.order_hash," +
-				"o.market_aid," +
-				"c_e_a.addr AS creator_addr," +
-				"o.otype, " +
-				"CASE o.otype " +
-					"WHEN 0 THEN 'BID' " +
-					"ELSE 'ASK' " +
-				"END AS dir, " +
-				"o.evt_timestamp::date AS date," +
-				"FLOOR(EXTRACT(EPOCH FROM o.evt_timestamp))::BIGINT as created_ts," +
-				"FLOOR(EXTRACT(EPOCH FROM o.expiration))::BIGINT as expiration_ts," +
-				"o.opcode," +
-				"o.outcome_idx," +
-				"o.price AS price, " +
-				"o.price_estimate, " +
-				"o.initial_amount, " +
-				"o.amount " +
-			"FROM oohist AS o " +
-				"LEFT JOIN " +
-					"address AS a ON o.market_aid=a.address_id " +
-				"LEFT JOIN address AS c_e_a ON o.eoa_aid=c_e_a.address_id " +
-			"WHERE " +
-				"o.market_aid = $1 AND " +
-				"o.outcome_idx=$2 AND " +
-				"o.evt_timestamp >= TO_TIMESTAMP($3) AND "+
-				"o.evt_timestamp < TO_TIMESTAMP($4) " +
-			"ORDER BY o.evt_timestamp"
-	*/
 	query = "SELECT " +
 				"p.id,"+
 				"e.order_hash," +
@@ -740,7 +708,6 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,m
 				"LEFT JOIN address AS a ON p.market_aid=a.address_id " +
 				"LEFT JOIN address AS ea ON e.eoa_aid=ea.address_id " +
 				"LEFT JOIN address AS wa ON e.wallet_aid=wa.address_id " +
-//				"LEFT JOIN address AS c_e_a ON o.eoa_aid=c_e_a.address_id " +
 			"WHERE " +
 				"p.market_aid = $1 AND " +
 				"p.outcome_idx=$2 AND " +
@@ -805,8 +772,6 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,m
 		p.Augur_UI_price_adjustments(&rec.WMaxBid,nil,mkt_type)
 		p.Augur_UI_price_adjustments(&rec.WMinAsk,nil,mkt_type)
 		p.Augur_UI_price_adjustments(&rec.Spread,nil,mkt_type)
-//		ss.Info.Printf("zoomed phist: appending rec: ID=%v,Order hash %v, price %v\n",
-//			rec.Id,rec.OrderHash,rec.Price)
 		records = append(records,rec)
 	}
 	return records
@@ -1522,14 +1487,15 @@ func (ss *SQLStorage) Get_price_estimate_history(market_aid int64,outcome_idx in
 	}
 	return records
 }
-func (ss *SQLStorage) Get_accumulated_open_interest_all_markets() []p.OIAccum {
-
+func (ss *SQLStorage) Get_accumulated_open_interest_all_markets_v1(init_ts int,fin_ts int,interval int) []p.OIAccum {
+	// we need to make a matrix of intervals and multiply it by matrix of markets
+	//	this is somewhat resource consuming and not scalable (query pending)
 	output := make([]p.OIAccum,0,512)
 	var query string
 	query = "SELECT start_ts,sum(oi) as oi " +
 				"FROM ( " +
 					"SELECT " +
-						"ROUND(FLOOR(EXTRACT(EPOCH FROM ts_inserted))/86400)::BIGINT*86400::BIGINT AS start_ts," +
+						"ROUND(FLOOR(EXTRACT(EPOCH FROM ts_inserted))/$3)::BIGINT*$3::BIGINT AS start_ts," +
 						"market_aid," +
 						"MAX(oi) AS oi " +
 					"FROM oi_chg " +
@@ -1555,31 +1521,100 @@ func (ss *SQLStorage) Get_accumulated_open_interest_all_markets() []p.OIAccum {
 	}
 	return output
 }
-func (ss *SQLStorage) Get_accumulated_trades_all_markets() []p.TradesPerDay {
+func calc_oi_total(oi_map map[int64]float64) float64 {
 
-	output := make([]p.TradesPerDay,0,512)
+	var sum float64 = 0.0
+	for _,oi_value := range oi_map {
+		sum = sum + oi_value
+	}
+	return sum
+}
+func (ss *SQLStorage) Get_accumulated_open_interest_all_markets_v2(init_ts int,fin_ts int,interval int) []p.OIAccum {
+
+	oi_map := make(map[int64]float64)
+	output := make([]p.OIAccum,0,512)
 	var query string
 	query = "SELECT " +
-				"ROUND(FLOOR(EXTRACT(EPOCH FROM time_stamp))/86400)::BIGINT*86400::BIGINT AS start_ts," +
-				"count(*) as num_trades " +
-			"FROM mktord " +
-			"GROUP by start_ts " +
-			"ORDER by start_ts"
+				"market_aid," +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM ts_inserted)))::BIGINT AS ts," +
+				"oi AS oi " +
+			"FROM oi_chg " +
+			"WHERE " +
+				"ts_inserted >= TO_TIMESTAMP($1) AND "+
+				"ts_inserted < TO_TIMESTAMP($2) " +
+			"ORDER BY ts"
 
-	rows,err := ss.db.Query(query)
+	rows,err := ss.db.Query(query,init_ts,fin_ts)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
 	defer rows.Close()
+	var period_accumulator float64 = 0.0
+	var cur_ts int = 0
 	for rows.Next() {
-		var row p.TradesPerDay
-		err = rows.Scan(&row.TimeStamp,&row.NumTrades)
+		var row p.OIAccum
+		var ts int
+		var market_aid int64
+		var oi float64
+		err = rows.Scan(&market_aid,&ts,&oi)
 		if err != nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		output = append(output,row)
+		if cur_ts == 0 {
+			cur_ts = ts / interval
+			cur_ts = cur_ts * interval
+		}
+	
+		oi_map[market_aid] = oi_map[market_aid] + oi
+		sum_oi := calc_oi_total(oi_map)
+		period_accumulator = period_accumulator + sum_oi
+		if ts > cur_ts  {
+			row.AccumOpenInterest = period_accumulator
+			row.TimeStamp = cur_ts - interval
+			output = append(output,row)
+			cur_ts = cur_ts + interval
+			period_accumulator = 0.0
+		}
+	}
+	return output
+}
+func (ss *SQLStorage) Get_accumulated_trades_all_markets(init_ts int,fin_ts int,interval int) []p.TradesByInterval {
+
+	output := make([]p.TradesByInterval,0,512)
+	var query string
+	query = "SELECT " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM time_stamp))/$3)::BIGINT*$3::BIGINT AS start_ts," +
+				"SUM(amount_filled*price) AS volume," +
+				"count(*) as num_trades " +
+			"FROM mktord " +
+			"WHERE " +
+				"time_stamp >= TO_TIMESTAMP($1) AND "+
+				"time_stamp < TO_TIMESTAMP($2) " +
+			"GROUP by start_ts " +
+			"ORDER by start_ts"
+
+	rows,err := ss.db.Query(query,init_ts,fin_ts,interval)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	var accum_num_trades int64 = 0
+	var accum_volume float64 = 0.0
+	for rows.Next() {
+		var rec p.TradesByInterval
+		err = rows.Scan(&rec.TimeStamp,&rec.Volume,&rec.NumTrades)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		accum_num_trades = accum_num_trades + rec.NumTrades
+		accum_volume = accum_volume + rec.Volume
+		rec.AccumNumTrades = accum_num_trades
+		rec.AccumVolume = accum_volume
+		output = append(output,rec)
 	}
 	return output
 }

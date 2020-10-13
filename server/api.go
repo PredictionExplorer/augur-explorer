@@ -621,7 +621,7 @@ func a1_price_history_zoomed(c *gin.Context) {
 		})
 		return
 	}
-
+/*
 	p_init_ts := c.Param("init_ts")
 	var init_ts int = 0
 	if len(p_init_ts) > 0 {
@@ -684,7 +684,11 @@ func a1_price_history_zoomed(c *gin.Context) {
 	if interval_secs == 0 {
 		interval_secs = fin_ts - init_ts // we can't divide by 0
 	}
-
+*/
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
 	price_history := augur_srv.storage.Get_zoomed_price_history(
 		market_addr,market_aid,zoom,init_ts,fin_ts,interval_secs,
 	)
@@ -698,7 +702,11 @@ func a1_stats_accum_trades(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
-	trades := augur_srv.storage.Get_accumulated_trades_all_markets()
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+	trades := augur_srv.storage.Get_accumulated_trades_all_markets(int(init_ts),int(fin_ts),int(interval_secs))
 
 	var status int = 1
 	var err_str string = ""
@@ -712,7 +720,11 @@ func a1_stats_accum_oi(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
-	oi := augur_srv.storage.Get_accumulated_open_interest_all_markets()
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+	oi := augur_srv.storage.Get_accumulated_open_interest_all_markets_v2(init_ts,fin_ts,interval_secs)
 
 	var status int = 1
 	var err_str string = ""
