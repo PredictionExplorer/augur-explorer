@@ -574,7 +574,6 @@ type ZHistT2Entry struct { // Type2 entry, summarized data
 	WeightedPriceEstimate	float64
 }
 type ZoomedPriceHist struct {
-	Zoom				int
 	OutcomeIdx			int
 	InitTs				int
 	FinTs				int
