@@ -778,20 +778,38 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,m
 }
 func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,mkt_type int,outc int,init_ts int,fin_ts int,interval int) []p.ZHistT2Entry {
 
+	init_ts = init_ts / interval
+	init_ts = init_ts * interval
 	var query string
-	query = "SELECT " +
-				"ROUND(FLOOR(EXTRACT(EPOCH FROM p.time_stamp))/$5)::BIGINT*$5::BIGINT AS start_ts,"+
-				"AVG(price_est) AS avg_price_estimate, " +
-				"AVG(wprice_est) AS avg_weighted_price_est " +
-			"FROM price_estimate as p " +
-			"WHERE " +
-				"p.market_aid = $1  AND " +
-				"p.outcome_idx = $2 AND " +
-				"p.time_stamp >= TO_TIMESTAMP($3) AND "+
-				"p.time_stamp < TO_TIMESTAMP($4) " +
+	query = "WITH periods AS (" +
+				"SELECT * FROM (" +
+					"SELECT " +
+						"generate_series AS start_ts,"+
+						"TO_TIMESTAMP(EXTRACT(EPOCH FROM generate_series) + $3) AS end_ts "+
+					"FROM (" +
+						"SELECT * " +
+							"FROM generate_series(" +
+								"TO_TIMESTAMP($1)," +
+								"TO_TIMESTAMP($2)," +
+								"TO_TIMESTAMP($3)-TO_TIMESTAMP(0)) " +
+					") AS i" +
+				") AS data " +
+			") " +
+			"SELECT " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
+				"AVG(price_est) AS avg_price_estimate," +
+				"AVG(wprice_est) AS avg_wpe " +
+			"FROM periods AS p " +
+				"LEFT JOIN price_estimate AS pr ON (" +
+					"p.start_ts <= pr.time_stamp AND "+
+					"pr.time_stamp < p.end_ts AND " +
+					"market_aid=$4 AND " +
+					"outcome_idx=$5" +
+			") " +
 			"GROUP BY start_ts " +
 			"ORDER BY start_ts"
-	rows,err := ss.db.Query(query,market_aid,outc,init_ts,fin_ts,interval)
+
+	rows,err := ss.db.Query(query,init_ts,fin_ts,interval,market_aid,outc)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -801,14 +819,21 @@ func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,m
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.ZHistT2Entry
+		var null_pest,null_wpest sql.NullFloat64
 		err=rows.Scan(
 			&rec.Timestamp,
-			&rec.PriceEstimate,
-			&rec.WeightedPriceEstimate,
+			&null_pest,
+			&null_wpest,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
 			os.Exit(1)
+		}
+		if null_pest.Valid {
+			rec.PriceEstimate = null_pest.Float64
+		}
+		if null_wpest.Valid {
+			rec.WeightedPriceEstimate = null_wpest.Float64
 		}
 		p.Augur_UI_price_adjustments(&rec.PriceEstimate,nil,mkt_type)
 		p.Augur_UI_price_adjustments(&rec.WeightedPriceEstimate,nil,mkt_type)
@@ -816,7 +841,7 @@ func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,m
 	}
 	return records
 }
-func (ss *SQLStorage) Get_zoomed_price_history(mkt_addr string,market_aid int64,zoom int,init_ts int,fin_ts int,interval int) p.FullZoomedPriceHist {
+func (ss *SQLStorage) Get_zoomed_price_history(mkt_addr string,market_aid int64,init_ts int,fin_ts int,interval int) p.FullZoomedPriceHist {
 
 	var output p.FullZoomedPriceHist
 	mkt_type,_,err := ss.get_market_type_and_ticks(market_aid)
@@ -829,16 +854,17 @@ func (ss *SQLStorage) Get_zoomed_price_history(mkt_addr string,market_aid int64,
 		var ph p.ZoomedPriceHist
 		ph.OutcomeIdx = outc.Outcome
 		ph.OutcomeStr = outc.OutcomeStr
-		ph.Zoom = zoom
 		ph.InitTs = init_ts
 		ph.FinTs = fin_ts
 		ph.IntervalSecs = interval
-		if zoom == 0 {
-			ph.Type1Entries= ss.Get_zoomed_t1_price_history_for_outcome(market_aid,mkt_type,outc.Outcome,init_ts,fin_ts)
-		}
-		if zoom == 1 {
-			ph.Type2Entries = ss.Get_zoomed_t2_price_history_for_outcome(market_aid,mkt_type,outc.Outcome,init_ts,fin_ts,interval)
-		}
+		ph.Type2Entries = ss.Get_zoomed_t2_price_history_for_outcome(
+			market_aid,
+			mkt_type,
+			outc.Outcome,
+			init_ts,
+			fin_ts,
+			interval,
+		)
 		output.Outcomes = append(output.Outcomes,ph)
 	}
 	return output
