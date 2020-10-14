@@ -28,15 +28,11 @@ CREATE INDEX mfin_mkt_idx			ON	mkt_fin			(market_aid);
 CREATE INDEX mpl_mkt_idx			ON	profit_loss		(market_aid);
 CREATE INDEX cf_mkt_idx				ON	claim_funds		(market_aid);
 CREATE INDEX trd_mkt_stat_idx		ON	trd_mkt_stats	(market_aid);
--- eoa_aid indices	(pure EOA, not composite)
-CREATE INDEX uranks_eoa_idx			ON	uranks			(eoa_aid);
-CREATE UNIQUE INDEX ustats1_idx		ON ustats			(eoa_aid);
-CREATE INDEX pl_eoa_idx				ON profit_loss		(eoa_aid);
-CREATE INDEX exec_wtx_eoa_idx		ON exec_wtx			(eoa_aid);
--- wallet aid indices (pure Wallet contract, not composite indices)
-CREATE UNIQUE INDEX ustats2_idx		ON ustats			(wallet_aid);--N0TE: do not change index name, it is used in statistics.go
-CREATE INDEX pl_wallet_idx			ON profit_loss		(wallet_aid);
-CREATE INDEX exec_wtx_wallet_idx	ON exec_wtx			(wallet_aid);
+-- aid indices
+CREATE INDEX uranks_aid_idx			ON	uranks			(aid);
+CREATE UNIQUE INDEX ustats1_idx		ON	ustats			(aid);
+CREATE INDEX pl_aid_idx				ON	profit_loss		(aid);
+CREATE INDEX exec_wtx_aid_idx		ON	exec_wtx		(aid);
 -- other indices
 CREATE INDEX blk_ph_idx				ON block			(parent_hash);
 CREATE UNIQUE INDEX blk_hash_uniq	ON block			(block_hash);
@@ -44,14 +40,14 @@ CREATE INDEX mord_ts_idx			ON mktord			(time_stamp);
 CREATE UNIQUE INDEX ovol_idx		ON outcome_vol		(market_aid,outcome_idx);
 CREATE INDEX oo_depth_idx			ON oorders			(market_aid,outcome_idx,otype);
 CREATE INDEX oo_uniq				ON oorders			(order_hash);
-CREATE UNIQUE INDEX oostats_uniq	ON oostats			(market_aid,eoa_aid,outcome_idx);
-CREATE UNIQUE INDEX tmstats_uniq	ON trd_mkt_stats	(market_aid,eoa_aid);
-CREATE INDEX pl_profit_srch_idx		ON profit_loss		(market_aid,eoa_aid,outcome_idx);
-CREATE INDEX open_positions_idx		ON profit_loss		(eoa_aid,realized_profit) WHERE realized_profit = 0.0;
-CREATE INDEX closed_positions_idx	ON profit_loss		(eoa_aid,realized_profit) WHERE realized_profit <> 0.0;
-CREATE UNIQUE INDEX cl_uniq			ON claim_funds		(eoa_aid,market_aid,outcome_idx);
-CREATE UNIQUE INDEX pldebug_uniq	ON pl_debug			(block_num,market_aid,wallet_aid,outcome_idx);
-CREATE UNIQUE INDEX mkts_traded_unq	ON mkts_traded		(eoa_aid,market_aid);
+CREATE UNIQUE INDEX oostats_uniq	ON oostats			(market_aid,aid,outcome_idx);
+CREATE UNIQUE INDEX tmstats_uniq	ON trd_mkt_stats	(market_aid,aid);
+CREATE INDEX pl_profit_srch_idx		ON profit_loss		(market_aid,aid,outcome_idx);
+CREATE INDEX open_positions_idx		ON profit_loss		(aid,realized_profit) WHERE realized_profit = 0.0;
+CREATE INDEX closed_positions_idx	ON profit_loss		(aid,realized_profit) WHERE realized_profit <> 0.0;
+CREATE UNIQUE INDEX cl_uniq			ON claim_funds		(aid,market_aid,outcome_idx);
+CREATE UNIQUE INDEX pldebug_uniq	ON pl_debug			(block_num,market_aid,aid,outcome_idx);
+CREATE UNIQUE INDEX mkts_traded_unq	ON mkts_traded		(aid,market_aid);
 CREATE UNIQUE INDEX sbal_uniq		ON sbalances		(market_aid,account_aid,outcome_idx);
 CREATE INDEX daib_processed_idx		ON dai_bal			(processed);
 CREATE UNIQUE INDEX oohist_uniq1	ON oohist			(order_hash,opcode,(mktord_id IS NULL)) WHERE mktord_id IS NULL;

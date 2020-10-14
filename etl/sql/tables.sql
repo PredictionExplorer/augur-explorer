@@ -73,8 +73,7 @@ CREATE TABLE abi_events (-- Ethereum event signature of the contract event
 -- Layer2 tables
 CREATE TABLE mesh_evt ( -- Events received from 0x Mesh network. source: github.com/0xProject/0x-mesh/zeroex
 	id						BIGSERIAL PRIMARY KEY,
-	eoa_aid					BIGINT DEFAULT 0,	-- can be 0 if address isn't registered yet
-	wallet_aid				BIGINT DEFAULT 0,	-- can be 0 if address isn't registered yet
+	aid						BIGINT DEFAULT 0,	-- can be 0 if address isn't registered yet
 -- Event fields:
 	time_stamp				TIMESTAMPTZ NOT NULL,
 	fillable_amount			DECIMAL(32,18) NOT NULL,
@@ -144,22 +143,6 @@ CREATE TABLE price_estimate (
 	max_bid				DECIMAL(32,18) NOT NULL,
 	min_ask				DECIMAL(32,18) NOT NULL
 );
-CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later they are converted into 'mktord` records
-	id					BIGSERIAL PRIMARY KEY,
-	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
-	outcome_idx			SMALLINT NOT NULL,
-	opcode				SMALLINT NOT NULL,			-- operation; 0: CREATED, 1: AUTOEXPIRED, 2: USER-CANCELLED, 3: FILLED DB SYNC
-	market_aid			BIGINT NOT NULL,
-	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
-	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
-	price				DECIMAL(32,18) NOT NULL,
-	initial_amount		DECIMAL(32,18) NOT NULL,	-- when partially filled, this keeps the original amount
-	amount				DECIMAL(32,18) NOT NULL,
-	evt_timestamp		TIMESTAMPTZ NOT NULL,		-- 0x Mesh event timestamp
-	srv_timestamp		TIMESTAMPTZ NOT NULL,		-- Postgres Server timestamp (not blockchain timestamp)
-	expiration			TIMESTAMPTZ NOT NULL,
-	order_hash			CHAR(66) NULL UNIQUE
-);
 CREATE TABLE oohist ( -- open order history
 	id					BIGSERIAL PRIMARY KEY,
 	mktord_id			BIGINT DEFAULT NULL REFERENCES mktord(id) ON DELETE CASCADE, -- used only for Fill events
@@ -167,8 +150,7 @@ CREATE TABLE oohist ( -- open order history
 	outcome_idx			SMALLINT NOT NULL,
 	opcode				SMALLINT NOT NULL,			-- operation; 0: CREATED, 1: AUTOEXPIRED, 2: USER-CANCELLED
 	market_aid			BIGINT NOT NULL,
-	eoa_aid				BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
-	wallet_aid			BIGINT NOT NULL,			-- address of the Wallet Contract of the EOA
+	aid					BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
 	price_estimate		DECIMAL(32,18) DEFAULT 0.0,
 	price				DECIMAL(32,18) NOT NULL,
 	initial_amount		DECIMAL(32,18) NOT NULL,	-- initial amount order was created
@@ -177,86 +159,6 @@ CREATE TABLE oohist ( -- open order history
 	srv_timestamp		TIMESTAMPTZ DEFAULT to_timestamp(0),-- Postgres Server timestamp (not blockchain timestamp)
 	expiration			TIMESTAMPTZ DEFAULT to_timestamp(0),
 	order_hash			CHAR(66)					-- Order Hash (github.com/0x-mesh/zeroex/order.go:Order.hash)
-);
-CREATE TABLE oostats (	-- open order statistics per User
-	id					BIGSERIAL PRIMARY KEY,
-	market_aid			BIGINT NOT NULL,
-	eoa_aid				BIGINT NOT NULL,
-	outcome_idx			SMALLINT NOT NULL,
-	num_bids			INT DEFAULT 0,				-- number of total BID orders for this EOA
-	num_asks			INT DEFAULT 0,				-- number of total ASK orders for this EOA
-	num_cancel			INT DEFAULT 0				-- number of cancelled orders
-);
-CREATE TABLE ooconfig ( -- configuration for spread calculation
-	spread_threshold	DECIMAL(64,18) DEFAULT 110.0,	-- Reasonable spread to calculate Price Estimate
-	osize_threshold		DECIMAL(64,18) DEFAULT 0.0		-- Order size to calculate Price Estimate
-);
-<<<<<<< HEAD
--- Report, submitted by Market Creator
-CREATE TABLE report (
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	market_aid			BIGINT NOT NULL,
-	eoa_aid				BIGINT NOT NULL,			-- User's address (EOA) of the Reporter
-	wallet_aid			BIGINT NOT NULL,			-- Wallet's contract address of the Reporter
-	ini_reporter_aid	BIGINT DEFAULT 0,
-	disputed_aid		BIGINT DEFAULT 0,
-	dispute_round		BIGINT DEFAULT 1,
-	outcome_idx			SMALLINT NOT NULL,
-	is_initial			BOOLEAN DEFAULT false,
-	is_designated		BOOLEAN DEFAULT false,
-	amount_staked		DECIMAL(24,18) NOT NULL,
-	pnumerators			TEXT NOT NULL,		-- payout numerators
-	description			TEXT DEFAULT '',
-	current_stake		DECIMAL(24,18) DEFAULT 0.0,
-	stake_remaining		DECIMAL(24,18) DEFAULT 0.0,
-	next_win_start		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
-	next_win_end		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
-	rpt_timestamp		TIMESTAMPTZ NOT NULL
-);
--- Volume
-CREATE TABLE volume (	-- this is the VolumeChanged event
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	market_aid			BIGINT NOT NULL,
-	total_trades		BIGINT DEFAULT 0,
-	volume				DECIMAL(24,18) NOT NULL,
-	outcome_vols		TEXT NOT NULL,		-- this his not numeric because it is not queried (archive only)
-	ins_timestamp		TIMESTAMPTZ NOT NULL
-);
-CREATE TABLE outcome_vol (	-- this is the (accumulated) volume per outcome (indexed) upd. on VolumeChanged
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	market_aid			BIGINT NOT NULL,
-	total_trades		BIGINT DEFAULT 0,
-	total_oorders		BIGINT DEFAULT 0,
-	outcome_idx			SMALLINT NOT NULL,
-	volume				DECIMAL(24,18) DEFAULT 0.0,
-	last_price			DECIMAL(24,18) DEFAULT 0.0,
-	highest_bid			DECIMAL(64,18) DEFAULT 0.0,	-- highest BID price , updated from open orders
-	lowest_ask			DECIMAL(64,18) DEFAULT 0.0,	-- lowest ASK price, updated from open orders
-	cur_spread			DECIMAL(64,18) DEFAULT 0.0,	-- spread from open orders (lowest_ask - highest bid)
-	price_estimate		DECIMAL(64,18) DEFAULT 0.0  -- calculated using trigger update_price_estimate()
-);
-CREATE table oi_chg ( -- open interest changed event
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	market_aid			BIGINT NOT NULL,
-	ts_inserted			TIMESTAMPTZ NOT NULL, -- timestamp
-	oi					DECIMAL(64,18) NOT NULL
-);
-CREATE TABLE mkt_fin (
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	market_aid			BIGINT NOT NULL,
-	winning_outcome		SMALLINT DEFAULT 0,
-	fin_timestamp		TIMESTAMPTZ NOT NULL,
-	winning_payouts		TEXT NOT NULL
 );
 CREATE TABLE last_block (	-- the value in this table is guaranteeing integrity in the data up to last block
 	block_num			BIGINT	NOT NULL	-- last block processed by the ETL

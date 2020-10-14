@@ -12,8 +12,6 @@ CREATE INDEX sbal_mkt_idx			ON	sbalances		(market_aid);
 CREATE INDEX tbc_mkt_idx			ON	tbc				(market_aid);
 CREATE INDEX tokt_mtk_idx			ON	tok_transf		(market_aid);
 
--- eoa_aid indices	(pure EOA, not composite)
-
 -- other indices
 CREATE INDEX daib_processed_idx		ON dai_bal			(processed);
 CREATE UNIQUE INDEX sbal_uniq		ON sbalances		(market_aid,account_aid,outcome_idx);

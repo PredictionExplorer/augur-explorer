@@ -30,8 +30,7 @@ CREATE TABLE market (
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	cat_id				BIGINT NOT NULL,			-- category id
 	universe_id			BIGSERIAL NOT NULL,			-- reference to universe table
-	wallet_aid			BIGINT NOT NULL,			-- address ID of the contract wallet of the User
-	eoa_aid				BIGINT NOT NULL,			-- address ID of the User (EOA) who created the market
+	aid					BIGINT NOT NULL,			-- address ID of account creating the market
 	reporter_aid		BIGINT NOT NULL,			-- address ID of the User who will report on the outcome
 	end_time			TIMESTAMPTZ NOT NULL,		-- when the Market expires
 	num_ticks			BIGINT NOT NULL,			-- maximum price range (number of intervals)
@@ -61,10 +60,8 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 	id					BIGSERIAL PRIMARY KEY,
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
-	eoa_aid				BIGINT NOT NULL,			-- Address of the user who created the order (Creator)
-	wallet_aid			BIGINT NOT NULL,			-- address of the creator
-	eoa_fill_aid		BIGINT NOT NULL,			-- address of the filler; source: AugurTrading.sol:24
-	wallet_fill_aid		BIGINT NOT NULL,			-- address of the Wallet address of the filler
+	aid					BIGINT NOT NULL,			-- Address of the user who created the order (Creator)
+	fill_aid			BIGINT NOT NULL,			-- address of the filler; source: AugurTrading.sol:24
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	oaction				SMALLINT NOT NULL,			-- order action:  0=>Create, 1=>Cancel, 2=>Fill
@@ -90,8 +87,7 @@ CREATE TABLE report (
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
-	eoa_aid				BIGINT NOT NULL,			-- User's address (EOA) of the Reporter
-	wallet_aid			BIGINT NOT NULL,			-- Wallet's contract address of the Reporter
+	aid					BIGINT NOT NULL,			-- User's address (EOA) of the Reporter
 	ini_reporter_aid	BIGINT DEFAULT 0,
 	disputed_aid		BIGINT DEFAULT 0,
 	dispute_round		BIGINT DEFAULT 1,
@@ -164,8 +160,7 @@ CREATE TABLE main_stats (
 );
 CREATE TABLE trd_mkt_stats (	-- trade statistics per User and per Market
 	id					BIGSERIAL PRIMARY KEY,
-	eoa_aid				BIGINT NOT NULL,
-	wallet_aid			BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
 	market_aid			BIGINT NOT NULL,
 	total_trades		BIGINT DEFAULT 0,
 	total_reports		BIGINT DEFAULT 0,
@@ -176,13 +171,12 @@ CREATE TABLE trd_mkt_stats (	-- trade statistics per User and per Market
 	frozen_funds		DECIMAL(32,18) DEFAULT 0.0
 );
 CREATE TABLE mkts_traded (	-- just a simple link to calculate how many markets a User has traded
-	eoa_aid				BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
 	market_aid			BIGINT NOT NULL
 );
 CREATE TABLE ustats (	-- statistics per User account
 	-- Notte: not only this table is for statistics, but it keeps important link between EOA and Wallet contract
-	eoa_aid				BIGINT PRIMARY KEY,		-- Externally Owned ACcount (EOA) address for this user
-	wallet_aid			BIGINT NOT NULL,	-- Wallet Contract address id
+	aid					BIGINT PRIMARY KEY,		-- Externally Owned ACcount (EOA) address for this user
 	total_trades		BIGINT DEFAULT 0,
 	markets_created		BIGINT DEFAULT 0,
 	markets_traded		BIGINT DEFAULT 0,
@@ -209,13 +203,16 @@ CREATE TABLE ustats (	-- statistics per User account
 	geth_reporting		DECIMAL(64,18) DEFAULT 0.0,
 	geth_markets		DECIMAL(64,18) DEFAULT 0.0
 );
+CREATE TABLE eoa_wallet (	-- Table linking EOA and Wallet addresses
+	eoa_aid				BIGINT PRIMARY KEY,
+	wallet_aid			BIGINT NOT NULL
+);
 CREATE TABLE profit_loss ( -- captures ProfitLossChanged event
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
-	eoa_aid				BIGINT NOT NULL,
-	wallet_aid			BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,			-- addressID of Ethereum account that is doing the operation
 	mktord_id			BIGINT DEFAULT 0,			-- this is the id of the market order generated this PL
 	outcome_idx			SMALLINT NOT NULL,
 	closed_position		SMALLINT DEFAULT 0,			-- 0 - open position, 1 - closed position
@@ -233,7 +230,7 @@ CREATE TABLE claim_funds (
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	eoa_aid				BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
 	market_aid			BIGINT NOT NULL,
 	outcome_idx			BIGINT NOT NULL,
 	last_pl_id			BIGINT NOT NULL,			-- last id of profit loss that updated this record
@@ -244,7 +241,7 @@ CREATE TABLE claim_funds (
 	unfrozen_funds		DECIMAL(64,18) DEFAULT 0.0	-- amount of funds removed from frozen funds
 );
 CREATE TABLE uranks (   -- User Rankings (how this user ranks against each other, ex: Top 13% in profit made
-	eoa_aid             BIGINT PRIMARY KEY,
+	aid		            BIGINT PRIMARY KEY,
 	total_trades		BIGINT DEFAULT 0,
 	top_profit          DECIMAL(5,2) DEFAULT 100.0,    -- position of the user in profits accumulated over lifetime
 	top_trades          DECIMAL(5,2) DEFAULT 100.0,    -- position of the user in number of accumulated trades
@@ -278,10 +275,9 @@ CREATE TABLE exec_wtx (	-- stores contract calls of input with sig=78dc0eed (exe
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	eoa_aid				BIGINT NOT NULL,
-	wallet_aid			BIGINT DEFAULT 0,	-- Uniswap can exchange tokens for EOAs, so Wallet id will be 0
-	to_aid				BIGINT NOT NULL,
-	referral_aid		BIGINT DEFAULT 0,	-- address of referral account (referral_aid will get commissions on TXs of eoa_aid)
+	aid					BIGINT NOT NULL,
+	to_aid				BIGINT NOT NULL,	-- destination contract address to where the transaciton is sent
+	referral_aid		BIGINT DEFAULT 0,	-- address of referral account (referral_aid will get commissions on TXs)
 	value				DECIMAL(64,18) DEFAULT 0.0,
 	payment				DECIMAL(64,18) DEFAULT 0.0,
 	desired_signer_bal	DECIMAL(64,18) DEFAULT 0.0,	-- desiredSignerBalance
@@ -296,13 +292,12 @@ CREATE TABLE agtx_status (-- Augur transaction status (used to track Gas fees fo
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	eoa_aid				BIGINT NOT NULL,
-	wallet_aid			BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
 	success				BOOLEAN NOT NULL,
 	funding_success		BOOLEAN NOT NULL
 );
 CREATE TABLE augur_flag ( -- collection of signs required to consider an account as enabled for Augur trading
-	-- when all flags are TRUE , we insert a record into 'ustats' table with eoa_aid=wallet_aid=aid
+	-- when all flags are TRUE , we insert a record into 'ustats' table meaning that this is an Augur account
 	aid					BIGINT PRIMARY KEY,
 	act_block_num		BIGINT,					-- Block number when activation happened
 	ap_0xtrade_on_cash	BOOLEAN DEFAULT FALSE,	-- Approval for ZeroXTrade at Cash (DAI) contract
@@ -310,11 +305,39 @@ CREATE TABLE augur_flag ( -- collection of signs required to consider an account
 	ap_fill_on_shtok	BOOLEAN DEFAULT FALSE,	-- ApprovalForAll for FillOrder at ShareToken contract
 	set_referrer		BOOLEAN DEFAULT FALSE	-- Affiliates::setReferrer() tx input (informative only, not obligatory)
 );
+CREATE TABLE oorders (	-- contains open orders made on 0x Mesh network, later they are converted into 'mktord` records
+	id					BIGSERIAL PRIMARY KEY,
+	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
+	outcome_idx			SMALLINT NOT NULL,
+	opcode				SMALLINT NOT NULL,			-- operation; 0: CREATED, 1: AUTOEXPIRED, 2: USER-CANCELLED, 3: FILLED DB SYNC
+	market_aid			BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,			-- address of the account that created the order
+	price				DECIMAL(32,18) NOT NULL,
+	initial_amount		DECIMAL(32,18) NOT NULL,	-- when partially filled, this keeps the original amount
+	amount				DECIMAL(32,18) NOT NULL,
+	evt_timestamp		TIMESTAMPTZ NOT NULL,		-- 0x Mesh event timestamp
+	srv_timestamp		TIMESTAMPTZ NOT NULL,		-- Postgres Server timestamp (not blockchain timestamp)
+	expiration			TIMESTAMPTZ NOT NULL,
+	order_hash			CHAR(66) NULL UNIQUE
+);
+CREATE TABLE oostats (	-- open order statistics per User
+	id					BIGSERIAL PRIMARY KEY,
+	market_aid			BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	num_bids			INT DEFAULT 0,				-- number of total BID orders for this EOA
+	num_asks			INT DEFAULT 0,				-- number of total ASK orders for this EOA
+	num_cancel			INT DEFAULT 0				-- number of cancelled orders
+);
+CREATE TABLE ooconfig ( -- configuration for spread calculation
+	spread_threshold	DECIMAL(64,18) DEFAULT 110.0,	-- Reasonable spread to calculate Price Estimate
+	osize_threshold		DECIMAL(64,18) DEFAULT 0.0		-- Order size to calculate Price Estimate
+);
 CREATE TABLE pl_debug (-- Profit loss data for debugging, scanned after Block has been processed
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
-	wallet_aid			BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
 	outcome_idx			SMALLINT NOT NULL,
 	profit_loss			DECIMAL(64,36) DEFAULT 0.0,
 	frozen_funds		DECIMAL(64,36) DEFAULT 0.0,

@@ -1,6 +1,8 @@
 #!/bin/bash
 
-rm ./etl/etl
+rm ./etl/cmd/augur
+rm ./etl/cmd/tokens
+rm ./etl/cmd/layer1
 rm ./etl/dmesh/dmesh
 rm ./etl/tools/augur_blocks
 rm ./etl/tools/dai_balances

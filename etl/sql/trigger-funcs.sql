@@ -18,100 +18,6 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-/* DISCONTINUED
-CREATE OR REPLACE FUNCTION update_price_estimate_v1(
-	p_market_aid bigint,p_outcome_idx integer,p_osize decimal,p_timestamp timestamptz
-) RETURNS DECIMAL AS $$
---updates open order statistics
-DECLARE
-	v_price_bid decimal;
-	v_price_ask decimal;
-	v_spread_threshold decimal;
-	v_osize_threshold decimal;
-	v_spread decimal;
-	v_price_estimate decimal;
-	v_num_ticks decimal;
-	v_osize decimal;
-	v_max_ts timestamptz;
-	r_oo record;
-BEGIN
-
-	SELECT spread_threshold,osize_threshold FROM ooconfig INTO v_spread_threshold,v_osize_threshold;
-
---	IF v_osize < v_osize_threshold THEN -- DISABLED (for now) to lower complexity
---		RETURN;
---	END IF;
-
-	SELECT num_ticks FROM market WHERE market_aid = p_market_aid INTO v_num_ticks;
-
-	-- initialize price values in case the loop results in 0 iterations
-	SELECT COALESCE(MAX(price),0)
-		FROM oohist
-		WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx AND
-				evt_timestamp <= p_timestamp AND expiration >= p_timestamp
-		INTO v_price_bid;
-	SELECT COALESCE(MIN(price),-1)
-		FROM oohist
-		WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx AND
-				evt_timestamp <= p_timestamp AND expiration >= p_timestamp
-		INTO v_price_ask;
-	IF v_price_ask < 0 THEN
-		v_price_ask := v_num_ticks;
-	END IF;
-
-	FOR r_oo IN
-		SELECT * FROM oohist
-			WHERE market_aid=p_market_aid AND
-				outcome_idx=p_outcome_idx AND
-				evt_timestamp <= p_timestamp AND
-				expiration >= p_timestamp
-			ORDER BY evt_timestamp,id
-	LOOP
-		SELECT COALESCE(MAX(price),0)
-			FROM oohist
-			WHERE market_aid=p_market_aid AND otype=0 AND outcome_idx=p_outcome_idx AND
-				evt_timestamp <= r_oo.evt_timestamp AND expiration >= p_timestamp
-			INTO v_price_bid;
-		SELECT COALESCE(MIN(price),-1)
-			FROM oohist
-			WHERE market_aid=p_market_aid AND otype=1 AND outcome_idx=p_outcome_idx AND
-				evt_timestamp <= r_oo.evt_timestamp AND expiration >= p_timestamp
-			INTO v_price_ask;
-		IF v_price_ask < 0 THEN
-			v_price_ask := v_num_ticks;
-		END IF;
-
-		v_spread := v_price_ask - v_price_bid;
-		IF v_spread < v_spread_threshold THEN
-			v_price_estimate := (v_price_bid + v_price_ask) / 2 ;
-		ELSE
-			v_num_ticks:=v_num_ticks/2;
-			IF v_price_bid > v_num_ticks THEN
-				v_price_estimate := v_price_ask;
-			ELSE
-				v_price_estimate := v_price_bid;
-			END IF;
-		END IF;
-		UPDATE oohist SET price_estimate = v_price_estimate WHERE id=r_oo.id;
-	END LOOP;
-
-	-- update the record that holds latest price estimate for the market
-	SELECT price_estimate FROM oohist
-		WHERE market_aid=p_market_aid AND outcome_idx=p_outcome_idx
-		ORDER BY evt_timestamp DESC LIMIT 1
-		INTO v_price_estimate;
-	IF v_price_estimate IS NOT NULL THEN
-		UPDATE outcome_vol
-			SET	highest_bid = v_price_bid,
-				lowest_ask = v_price_ask,
-				price_estimate = v_price_estimate,
-				cur_spread = v_spread
-			WHERE market_aid = p_market_aid AND outcome_idx=p_outcome_idx;
-	END IF;
-	RETURN v_price_estimate;
-END;
-$$ LANGUAGE plpgsql;
-*/
 CREATE OR REPLACE FUNCTION on_oorders_insert() RETURNS trigger AS  $$ --updates open order statistics
 DECLARE
 	v_cnt numeric;
@@ -123,12 +29,12 @@ BEGIN
 		UPDATE oostats AS s
 			SET num_bids = (num_bids + 1)
 			WHERE	(s.market_aid = NEW.market_aid) AND
-					(s.eoa_aid = NEW.eoa_aid) AND
+					(s.aid = NEW.aid) AND
 					(s.outcome_idx = NEW.outcome_idx);
 		GET DIAGNOSTICS v_cnt = ROW_COUNT;
 		IF v_cnt = 0 THEN
-			INSERT	INTO oostats(market_aid,eoa_aid,outcome_idx,num_bids)
-					VALUES(NEW.market_aid,NEW.eoa_aid,NEW.outcome_idx,1)
+			INSERT	INTO oostats(market_aid,aid,outcome_idx,num_bids)
+					VALUES(NEW.market_aid,NEW.aid,NEW.outcome_idx,1)
 					ON CONFLICT DO NOTHING;
 
 		END IF;
@@ -137,34 +43,17 @@ BEGIN
 		UPDATE oostats AS s
 			SET num_asks = (num_asks + 1)
 			WHERE	(s.market_aid = NEW.market_aid) AND
-					(s.eoa_aid = NEW.eoa_aid) AND
+					(s.aid = NEW.aid) AND
 					(s.outcome_idx = NEW.outcome_idx);
 		GET DIAGNOSTICS v_cnt = ROW_COUNT;
 		IF v_cnt = 0 THEN
-			INSERT	INTO oostats(market_aid,eoa_aid,outcome_idx,num_asks)
-					VALUES(NEW.market_aid,NEW.eoa_aid,NEW.outcome_idx,1)
+			INSERT	INTO oostats(market_aid,aid,outcome_idx,num_asks)
+					VALUES(NEW.market_aid,NEW.aid,NEW.outcome_idx,1)
 					ON CONFLICT DO NOTHING;
 		END IF;
 	END IF;
 
 
-	-- Update Open Order history
-/*
-	INSERT INTO oohist(
-			otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
-			price,initial_amount,amount,evt_timestamp,srv_timestamp,expiration,order_hash
-		) VALUES (
-			NEW.otype,NEW.outcome_idx,NEW.opcode,NEW.market_aid,NEW.wallet_aid,NEW.eoa_aid,
-			NEW.price,NEW.initial_amount,NEW.amount,NEW.evt_timestamp,NEW.srv_timestamp,NEW.expiration,NEW.order_hash
-		) ON CONFLICT DO NOTHING
-		RETURNING id INTO v_oohist_id;
-
-	IF v_oohist_id IS NOT NULL THEN
-		-- there could be duplicate inserts, so we have this protection using 'if not NULL'
-		SELECT * FROM update_price_estimate(NEW.market_aid,NEW.outcome_idx::SMALLINT,NEW.amount,NEW.evt_timestamp) INTO v_price_estimate;
-		UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
-	END IF;
-*/
 	UPDATE market SET total_oorders = (total_oorders + 1) WHERE market_aid=NEW.market_aid;
 	UPDATE outcome_vol SET total_oorders = (total_oorders + 1) 
 		WHERE market_aid = NEW.market_aid AND outcome_idx = NEW.outcome_idx;
@@ -172,78 +61,6 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-/* DISCONTINUED
-CREATE OR REPLACE FUNCTION update_oo_hist(p_mktord_id bigint,p_order_hash text,p_evt_timestamp bigint,p_filled_amount text,p_opcode numeric) RETURNS void AS  $$ -- reverts order statistics on delete
-DECLARE
-	oo record;
-	v_cnt numeric;
-	v_oohist_id bigint;
-	v_price_estimate decimal;
-BEGIN
-
-	SELECT * FROM oorders WHERE order_hash = p_order_hash LIMIT 1 INTO oo;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt > 0 THEN
-		INSERT INTO oohist(
-				mktord_id,otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
-				price,initial_amount,amount,
-				evt_timestamp,srv_timestamp,expiration,order_hash
-			) VALUES (
-				p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
-				oo.price,oo.initial_amount,p_filled_amount::DECIMAL/1e+18,
-				TO_TIMESTAMP(p_evt_timestamp),NOW(),oo.expiration,oo.order_hash
-			) ON CONFLICT DO NOTHING
-			RETURNING id INTO v_oohist_id;
-		IF v_oohist_id IS NOT NULL THEN
-			SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx::SMALLINT,p_filled_amount::DECIMAL/1e+18,TO_TIMESTAMP(p_evt_timestamp))
-				INTO v_price_estimate;
-			UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
-		END IF;
-		RETURN;
-	END IF;
-	SELECT * FROM oohist WHERE order_hash = p_order_hash AND opcode=1 LIMIT 1 INTO oo;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt > 0 THEN
-		INSERT INTO oohist(
-				mktord_id,otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
-				price,initial_amount,amount,
-				evt_timestamp,srv_timestamp,expiration,order_hash
-			) VALUES (
-				p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
-				oo.price,oo.initial_amount,p_filled_amount::DECIMAL/1e+18,
-				TO_TIMESTAMP(p_evt_timestamp),NOW(),oo.expiration,oo.order_hash
-			) ON CONFLICT DO NOTHING
-			RETURNING id INTO v_oohist_id;
-		IF v_oohist_id IS NOT NULL THEN
-			SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx::SMALLINT,p_filled_amount::DECIMAL/1e+19,TO_TIMESTAMP(p_evt_timestamp))
-				INTO v_price_estimate;
-			UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
-		END IF;
-	ELSE 
-		-- this code is executed in case 0x Mesh listener process didn't insert record in oorders table
-		-- is only valid for FILL operations becausse that's the only ones who have mktord_id > 0
-		SELECT * FROM mktord AS o WHERE o.id=p_mktord_id AND order_hash = p_order_hash INTO oo;
-		GET DIAGNOSTICS v_cnt = ROW_COUNT;
-		IF v_cnt > 0 THEN
-			INSERT INTO oohist(
-					mktord_id,otype,outcome_idx,opcode,market_aid,wallet_aid,eoa_aid,
-					price,initial_amount,amount,evt_timestamp,srv_timestamp,order_hash
-				) VALUES (
-					p_mktord_id,oo.otype,oo.outcome_idx,p_opcode,oo.market_aid,oo.wallet_aid,oo.eoa_aid,
-					oo.price,oo.amount,oo.amount_filled,TO_TIMESTAMP(p_evt_timestamp),NOW(),oo.order_hash
-				) ON CONFLICT DO NOTHING
-				RETURNING id INTO v_oohist_id;
-			IF v_oohist_id IS NOT NULL THEN
-				SELECT * FROM update_price_estimate(oo.market_aid,oo.outcome_idx::SMALLINT,p_filled_amount::DECIMAL/1e+18,TO_TIMESTAMP(p_evt_timestamp))
-					INTO v_price_estimate;
-				UPDATE oohist SET price_estimate = v_price_estimate WHERE id=v_oohist_id;
-			END IF;
-		END IF;
-	END IF;
-
-END;
-$$ LANGUAGE plpgsql;
-*/
 CREATE OR REPLACE FUNCTION on_oorders_delete() RETURNS trigger AS  $$ -- reverts order statistics on delete
 DECLARE
 BEGIN
@@ -252,14 +69,14 @@ BEGIN
 		UPDATE oostats AS s
 			SET num_bids = (num_bids - 1)
 			WHERE	(s.market_aid = OLD.market_aid) AND
-					(s.eoa_aid = OLD.eoa_aid) AND
+					(s.aid = OLD.aid) AND
 					(s.outcome_idx = OLD.outcome_idx);
 	END IF;
 	IF OLD.otype = 1 THEN
 		UPDATE oostats AS s
 			SET num_asks = (num_asks - 1)
 			WHERE	(s.market_aid = OLD.market_aid) AND
-					(s.eoa_aid = OLD.eoa_aid) AND
+					(s.aid = OLD.aid) AND
 					(s.outcome_idx = OLD.outcome_idx);
 	END IF;
 
@@ -279,17 +96,17 @@ BEGIN
 	UPDATE ustats
 			SET markets_created = (markets_created + 1),
 				validity_bonds = (validity_bonds + NEW.validity_bond)
-			WHERE eoa_aid = NEW.eoa_aid;
+			WHERE aid = NEW.aid;
 	UPDATE ustats
 			SET gmarkets = (gmarkets + t.gas_used),
 				geth_markets = (geth_markets + (t.gas_used * t.gas_price))
 			FROM transaction AS t
-			WHERE t.id = NEW.tx_id AND eoa_aid=NEW.eoa_aid;
+			WHERE t.id = NEW.tx_id AND aid=NEW.aid;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT	INTO ustats(eoa_aid,wallet_aid,markets_created,validity_bonds)
-				VALUES(NEW.eoa_aid,NEW.wallet_aid,1,NEW.validity_bond);
+		INSERT	INTO ustats(aid,markets_created,validity_bonds)
+				VALUES(NEW.aid,1,NEW.validity_bond);
 	END IF;
 
 	UPDATE main_stats
@@ -317,12 +134,12 @@ BEGIN
 	UPDATE ustats
 			SET markets_created = markets_created - 1,
 				validity_bonds = validity_bonds - OLD.validity_bond
-			WHERE eoa_aid = OLD.eoa_aid;
+			WHERE aid = OLD.aid;
 	UPDATE ustats
 			SET gmarkets = (gmarkets - t.gas_used),
 				geth_markets = (geth_markets - (t.gas_used * t.gas_price))
 			FROM transaction AS t
-			WHERE t.id = OLD.tx_id AND eoa_aid=OLD.eoa_aid;
+			WHERE t.id = OLD.tx_id AND aid=OLD.aid;
 
 	UPDATE main_stats
 		SET markets_count = (markets_count - 1), active_count = (active_count - 1);
@@ -348,49 +165,49 @@ DECLARE
 BEGIN
 
 	-- Make sure user stats record exists
-	INSERT INTO mkts_traded(eoa_aid,market_aid) VALUES(NEW.eoa_aid,NEW.market_aid)
+	INSERT INTO mkts_traded(aid,market_aid) VALUES(NEW.aid,NEW.market_aid)
 		ON CONFLICT DO NOTHING;
-	INSERT INTO mkts_traded(eoa_aid,market_aid) VALUES(NEW.eoa_fill_aid,NEW.market_aid)
+	INSERT INTO mkts_traded(aid,market_aid) VALUES(NEW.fill_aid,NEW.market_aid)
 		ON CONFLICT DO NOTHING;
 
 	-- Update statistics for the Creator of the Order (Seller)
 	UPDATE trd_mkt_stats AS s
 			SET total_trades = (total_trades + 1),
 				volume_traded = (volume_traded + (NEW.price * NEW.amount_filled))
-			WHERE	s.eoa_aid = NEW.eoa_aid AND
+			WHERE	s.aid = NEW.aid AND
 					s.market_aid = NEW.market_aid;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid,total_trades,volume_traded)
-				VALUES(NEW.eoa_aid,NEW.wallet_aid,NEW.market_aid,1,(NEW.price * NEW.amount_filled));
+		INSERT	INTO trd_mkt_stats(aid,market_aid,total_trades,volume_traded)
+				VALUES(NEW.aid,NEW.market_aid,1,(NEW.price * NEW.amount_filled));
 	END IF;
 	UPDATE ustats
 		SET total_trades = (total_trades + 1),
 			volume_traded = (volume_traded + (NEW.price * NEW.amount_filled))
-		WHERE eoa_aid=NEW.eoa_aid;
+		WHERE aid=NEW.aid;
 
 	-- Update statistics for the Filler of the Order (Buyer)
 	UPDATE trd_mkt_stats AS s
 			SET total_trades = (total_trades + 1),
 				volume_traded = (volume_traded + (NEW.price * NEW.amount_filled))
-			WHERE	s.eoa_aid = NEW.eoa_fill_aid AND
+			WHERE	s.aid = NEW.fill_aid AND
 					s.market_aid = NEW.market_aid;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid,total_trades,volume_traded)
-			VALUES(NEW.eoa_fill_aid,NEW.wallet_fill_aid,NEW.market_aid,1,(NEW.price * NEW.amount_filled));
+		INSERT	INTO trd_mkt_stats(aid,market_aid,total_trades,volume_traded)
+			VALUES(NEW.fill_aid,NEW.market_aid,1,(NEW.price * NEW.amount_filled));
 	END IF;
 	UPDATE ustats
 		SET total_trades = (total_trades + 1),
 			volume_traded = (volume_traded + (NEW.price * NEW.amount_filled))
-		WHERE eoa_aid=NEW.eoa_fill_aid;
+		WHERE aid=NEW.fill_aid;
 	UPDATE ustats	-- only Filler pays Gas price so we only update on Filler's EOA
 		SET gtrading = (gtrading + t.gas_used),
 			geth_trading = (geth_trading + (t.gas_used * t.gas_price))
 		FROM transaction AS t
-		WHERE eoa_aid = NEW.eoa_fill_aid AND t.id=NEW.tx_id;
+		WHERE aid = NEW.fill_aid AND t.id=NEW.tx_id;
 		
 
 	-- Noote: for Main statistics a trade between 2 users is counted as single trade (i.e its a +1)_
@@ -415,53 +232,53 @@ BEGIN
 	UPDATE trd_mkt_stats AS s
 			SET total_trades = (total_trades - 1),
 				volume_traded = (volume_traded - (OLD.price * OLD.amount_filled))
-			WHERE	s.eoa_aid = OLD.eoa_aid AND
+			WHERE	s.aid = OLD.aid AND
 					s.market_aid = OLD.market_aid
 			RETURNING total_trades INTO v_total_trades;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN	-- this condition won't be true during normal operation
-		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid)
-				VALUES(OLD.eoa_aid,OLD.wallet_aid,OLD.market_aid);
+		INSERT	INTO trd_mkt_stats(aid,market_aid)
+				VALUES(OLD.aid,OLD.market_aid);
 	END IF;
 
 	IF v_total_trades = 0 THEN
-		DELETE FROM mkts_traded WHERE eoa_aid = OLD.eoa_aid AND market_aid = OLD.market_aid;
+		DELETE FROM mkts_traded WHERE aid = OLD.aid AND market_aid = OLD.market_aid;
 	END IF;
 
 	UPDATE ustats
 		SET total_trades = (total_trades - 1),
 			volume_traded = (volume_traded - (OLD.price * OLD.amount_filled))
-		WHERE eoa_aid=OLD.eoa_aid;
+		WHERE aid=OLD.aid;
 
 
 	-- Update statistics for the Filler of the Order (Buyer)
 	UPDATE trd_mkt_stats AS s
 			SET total_trades = (total_trades - 1),
 				volume_traded = (volume_traded - (OLD.price * OLD.amount_filled))
-			WHERE	s.eoa_aid = OLD.eoa_fill_aid AND
+			WHERE	s.aid = OLD.fill_aid AND
 					s.market_aid = OLD.market_aid
 			RETURNING total_trades INTO v_total_trades;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid)
-				VALUES(OLD.eoa_fill_aid,OLD.wallet_fill_aid,OLD.market_aid);
+		INSERT	INTO trd_mkt_stats(aid,market_aid)
+				VALUES(OLD.fill_aid,OLD.market_aid);
 	END IF;
 
 	IF v_total_trades = 0 THEN
-		DELETE FROM mkts_traded WHERE eoa_aid = OLD.eoa_fill_aid AND market_aid = OLD.market_aid;
+		DELETE FROM mkts_traded WHERE aid = OLD.fill_aid AND market_aid = OLD.market_aid;
 	END IF;
 
 	UPDATE ustats
 		SET total_trades = (total_trades - 1),
 			volume_traded = (volume_traded - (OLD.price * OLD.amount_filled))
-		WHERE eoa_aid=OLD.eoa_fill_aid;
+		WHERE aid=OLD.fill_aid;
 	UPDATE ustats	-- only Filler pays Gas price so we only update on Filler's EOA.
 		SET gtrading = (gtrading - t.gas_used),
 			geth_trading = (geth_trading - (t.gas_used * t.gas_price))
 		FROM transaction AS t
-		WHERE eoa_aid = OLD.eoa_fill_aid AND t.id=OLD.tx_id;
+		WHERE aid = OLD.fill_aid AND t.id=OLD.tx_id;
 
 	--- Update global statistics
 	UPDATE main_stats SET trades_count = (trades_count - 1);
@@ -502,11 +319,11 @@ BEGIN
 	UPDATE ustats AS s
 			SET profit_loss = (profit_loss + (NEW.profit_loss - OLD.profit_loss)),
 				money_at_stake = (money_at_stake + (NEW.frozen_funds - OLD.frozen_funds))
-			WHERE	s.eoa_aid = NEW.eoa_aid;
+			WHERE	s.aid = NEW.aid;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		--RAISE EXCEPTION 'Corresponding row in ustats ( % - % ) table doesnt exist',NEW.eoa_aid,NEW.wallet_aid;
+		--RAISE EXCEPTION 'Corresponding row in ustats ( % ) table doesnt exist',NEW.aid;
 	END IF;
 	-- End of update profit loss
 
@@ -516,7 +333,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_mktfin_insert() RETURNS trigger AS  $$
 DECLARE
 	v_validity_bond decimal;
-	v_eoa_aid bigint;
+	v_aid bigint;
 BEGIN
 
 	UPDATE market
@@ -525,9 +342,9 @@ BEGIN
 			winning_outcome=NEW.winning_outcome
 		WHERE market.market_aid=NEW.market_aid;
 	UPDATE main_stats SET active_count = (active_count - 1);
-	SELECT eoa_aid,validity_bond FROM market WHERE market_aid = NEW.market_aid INTO v_eoa_aid,v_validity_bond;
+	SELECT aid,validity_bond FROM market WHERE market_aid = NEW.market_aid INTO v_aid,v_validity_bond;
 	UPDATE ustats SET validity_bonds = validity_bonds - v_validity_bond
-		WHERE eoa_aid = v_eoa_aid;
+		WHERE aid = v_aid;
 
 	RETURN NEW;
 END;
@@ -535,13 +352,13 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_mktfin_delete() RETURNS trigger AS  $$
 DECLARE
 	v_validity_bond decimal;
-	v_eoa_aid bigint;
+	v_aid bigint;
 BEGIN
 
 	UPDATE main_stats SET active_count = (active_count + 1);
-	SELECT eoa_aid,validity_bond FROM market WHERE market_aid = OLD.market_aid INTO v_eoa_aid,v_validity_bond;
+	SELECT aid,validity_bond FROM market WHERE market_aid = OLD.market_aid INTO v_aid,v_validity_bond;
 	UPDATE ustats SET validity_bonds = validity_bonds + v_validity_bond
-		WHERE eoa_aid = v_eoa_aid;
+		WHERE aid = v_aid;
 
 	RETURN OLD;
 END;
@@ -555,7 +372,7 @@ BEGIN
 			UPDATE trd_mkt_stats
 				SET frozen_funds = (frozen_funds + NEW.immediate_ff),
 					profit_loss = (profit_loss + NEW.immediate_profit)
-				WHERE market_aid = NEW.market_aid AND eoa_aid = NEW.eoa_aid;
+				WHERE market_aid = NEW.market_aid AND aid = NEW.aid;
 			UPDATE main_stats SET money_at_stake = (money_at_stake + NEW.immediate_ff);
 			UPDATE market
 				SET money_at_stake = (money_at_stake + NEW.immediate_ff)
@@ -576,7 +393,7 @@ BEGIN
 		UPDATE trd_mkt_stats AS s
 			SET frozen_funds = (frozen_funds - OLD.immediate_ff),
 				profit_loss = (profit_loss - OLD.immediate_profit)
-			WHERE market_aid = OLD.market_aid AND eoa_aid = OLD.eoa_aid;
+			WHERE market_aid = OLD.market_aid AND aid = OLD.aid;
 		UPDATE main_stats SET money_at_stake = (money_at_stake - OLD.immediate_ff);
 		UPDATE market
 			SET money_at_stake = (money_at_stake - OLD.immediate_ff)
@@ -609,21 +426,21 @@ BEGIN
 	-- Update statistics for the Reporter
 	UPDATE trd_mkt_stats AS s
 			SET total_reports = (total_reports + 1)
-			WHERE	s.eoa_aid = NEW.eoa_aid AND
+			WHERE	s.aid = NEW.aid AND
 					s.market_aid = NEW.market_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid)
-				VALUES(NEW.eoa_aid,NEW.wallet_aid,NEW.market_aid);
+		INSERT	INTO trd_mkt_stats(aid,market_aid)
+				VALUES(NEW.aid,NEW.market_aid);
 	END IF;
 	UPDATE ustats
 		SET total_reports = (total_reports + 1)
-		WHERE	eoa_aid = NEW.eoa_aid;
+		WHERE	aid = NEW.aid;
 	UPDATE ustats
 		SET greporting = (greporting + t.gas_used),
 			geth_reporting = (geth_reporting + (t.gas_used::DECIMAL * t.gas_price))
 		FROM transaction AS t
-		WHERE eoa_aid=NEW.eoa_aid AND t.id=NEW.tx_id;
+		WHERE _aid=NEW.aid AND t.id=NEW.tx_id;
 
 	IF NEW.is_designated IS TRUE THEN
 		UPDATE market
@@ -631,7 +448,7 @@ BEGIN
 			WHERE market_aid = NEW.market_aid;
 		UPDATE ustats
 			SET total_designated = (total_designated + 1)
-			WHERE eoa_aid = NEW.eoa_aid;
+			WHERE aid = NEW.aid;
 	END IF;
 	IF NEW.is_initial THEN
 		UPDATE market
@@ -649,28 +466,28 @@ BEGIN
 	-- Update statistics for the Reporter
 	UPDATE trd_mkt_stats AS s
 			SET total_reports = (total_reports - 1)
-			WHERE	s.eoa_aid = OLD.eoa_aid AND
+			WHERE	s.aid = OLD.aid AND
 					s.market_aid = OLD.market_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT	INTO trd_mkt_stats(eoa_aid,wallet_aid,market_aid)
-				VALUES(OLD.eoa_aid,OLD.wallet_aid,OLD.market_aid);
+		INSERT	INTO trd_mkt_stats(aid,market_aid)
+				VALUES(OLD.aid,OLD.market_aid);
 	END IF;
 	UPDATE ustats
 		SET total_reports = (total_reports - 1)
-		WHERE	eoa_aid = OLD.eoa_aid;
+		WHERE	aid = OLD.aid;
 	UPDATE ustats 
 		SET greporting = (greporting - t.gas_used),
 			geth_reporting = (geth_reporting - (t.gas_used::DECIMAL * t.gas_price))
 		FROM transaction AS t
-		WHERE eoa_aid=OLD.eoa_aid AND t.id=OLD.tx_id;
+		WHERE aid=OLD.aid AND t.id=OLD.tx_id;
 	IF OLD.is_designated THEN
 		UPDATE market
 			SET designated_outcome = -1
 			WHERE market_aid = OLD.market_aid;
 		UPDATE ustats
 			SET total_designated = (total_designated - 1)
-			WHERE	eoa_aid = OLD.eoa_aid;
+			WHERE	aid = OLD.aid;
 	END IF;
 	IF OLD.is_initial THEN
 		UPDATE market
@@ -704,14 +521,14 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_dai_transf_insert() RETURNS trigger AS  $$
 DECLARE
-	v_eoa_aid bigint;
+	v_aid bigint;
 	v_cnt numeric;
 	v_augur bool;	-- true if this transfer is made to Augur Wallet account
 	v_internal bool;
 BEGIN
 
 	v_augur := false;
-	SELECT eoa_aid FROM ustats WHERE wallet_aid = NEW.from_aid INTO v_eoa_aid;
+	SELECT aid FROM ustats WHERE aid = NEW.from_aid INTO v_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt > 0 THEN
 		v_augur := true;
@@ -721,7 +538,7 @@ BEGIN
 
 
 	v_augur := false;
-	SELECT eoa_aid FROM ustats WHERE wallet_aid = NEW.to_aid INTO v_eoa_aid;
+	SELECT aid FROM ustats WHERE aid = NEW.to_aid INTO v_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt > 0 THEN
 		v_augur := true;
@@ -743,13 +560,13 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_dai_bal_insert() RETURNS trigger AS  $$
 DECLARE
-	v_eoa_aid bigint;
+	v_aid bigint;
 	v_cnt numeric;
 	v_augur bool;
 BEGIN
 
 	v_augur := false;
-	SELECT eoa_aid FROM ustats WHERE wallet_aid = NEW.aid INTO v_eoa_aid;
+	SELECT aid FROM ustats WHERE aid = NEW.aid INTO v_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt > 0 THEN
 		v_augur := true;
@@ -768,12 +585,12 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_dai_bal_delete() RETURNS trigger AS  $$
 DECLARE
 	v_augur bool;	-- true if this transfer is made to Augur Wallet account
-	v_eoa_aid bigint;
+	v_aid bigint;
 	v_cnt numeric;
 BEGIN
 
 	v_augur := false;
-	SELECT eoa_aid FROM ustats WHERE wallet_aid = OLD.aid INTO v_eoa_aid;
+	SELECT aid FROM ustats WHERE aid = OLD.aid INTO v_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt > 0 THEN
 		v_augur := true;
@@ -791,7 +608,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_dai_bal_update() RETURNS trigger AS  $$
 DECLARE
 	v_augur bool;	-- true if this transfer is made to Augur Wallet account
-	v_eoa_aid bigint;
+	v_aid bigint;
 	v_cnt numeric;
 BEGIN
 	-- Noute: this trigger only calculates block.cash_flow. For another process
@@ -818,13 +635,13 @@ DECLARE
 BEGIN
 
 	-- this exception is for debugging purposes, to_do: remove later
-	IF NEW.wallet_aid = 0 THEN
-		RAISE EXCEPTION 'INSERT into ustats: wallet_aid cant be 0';
+	IF NEW.aid = 0 THEN
+		RAISE EXCEPTION 'INSERT into ustats: aid cant be 0';
 	END IF;
 
 
 	-- The transfers of DAI can happen before wallet is created, so we fix it
-	UPDATE dai_bal SET augur = true WHERE aid = NEW.wallet_aid;
+	UPDATE dai_bal SET augur = true WHERE aid = NEW.aid;
 
 	RETURN NEW;
 END;
@@ -836,7 +653,7 @@ BEGIN
 	UPDATE trd_mkt_stats
 		SET	profit_loss = (profit_loss + NEW.final_profit),
 			frozen_funds = (frozen_funds - NEW.unfrozen_funds)
-		WHERE market_aid = NEW.market_aid AND eoa_aid = NEW.eoa_aid;
+		WHERE market_aid = NEW.market_aid AND aid = NEW.aid;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -847,7 +664,7 @@ BEGIN
 	UPDATE trd_mkt_stats
 		SET frozen_funds = (frozen_funds + OLD.unfrozen_funds),
 			profit_loss = (profit_loss - OLD.final_profit)
-		WHERE market_aid = OLd.market_aid AND eoa_aid = OLD.eoa_aid;
+		WHERE market_aid = OLd.market_aid AND aid = OLD.aid;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -855,7 +672,7 @@ CREATE OR REPLACE FUNCTION on_mkts_traded_insert() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	UPDATE ustats SET markets_traded = (markets_traded + 1) WHERE eoa_aid = NEW.eoa_aid;
+	UPDATE ustats SET markets_traded = (markets_traded + 1) WHERE aid = NEW.aid;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -863,7 +680,7 @@ CREATE OR REPLACE FUNCTION on_mkts_traded_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	UPDATE ustats SET markets_traded = (markets_traded - 1) WHERE eoa_aid = OLD.eoa_aid;
+	UPDATE ustats SET markets_traded = (markets_traded - 1) WHERE aid = OLD.aid;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

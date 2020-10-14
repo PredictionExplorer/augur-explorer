@@ -179,10 +179,8 @@ type DepthEntry struct {
 	TotalAsks		int32
 	TotalCancel		int32
 	OutcomeIdx		int32
-	WalletAddr		string
-	WalletAddrSh	string	// short version of the addr
-	EOAAddr			string
-	EOAAddrSh		string	// short version of the addr
+	Addr			string
+	AddrSh			string	// short version of the addr
 	DateCreated		string
 	Expires			string
 	OrderHash		string
@@ -278,10 +276,8 @@ type PLEntry struct {	// profit loss entry
 	CreatorBuyer		bool
 	FillerBuyer			bool
 	Date				string
-	EOAAddr				string
-	EOAAddrSh			string
-	WalletAddr			string
-	WalletAddrSh		string
+	Addr				string
+	AddrSh				string
 	MktAddr				string
 	MktAddrSh			string
 	OutcomeStr			string
@@ -367,14 +363,10 @@ type OrderInfo struct {		// this is a full order information, to show in dedicat
 	OrderHash			string
 	OTypeStr			string
 	OutcomeStr			string
-	CreatorWalletAddr	string
-	CreatorWalletAddrSh	string	// short version of the addr
-	CreatorEOAAddr		string
-	CreatorEOAAddrSh	string	// short version of the addr
-	FillerWalletAddr	string
-	FillerWalletAddrSh	string
-	FillerEOAAddr		string
-	FillerEOAAddrSh		string
+	CreatorAddr			string
+	CreatorAddrSh		string	// short version of the addr
+	FillerAddr			string
+	FillerAddrSh		string
 	Date				string
 	MarketAddr			string
 	MarketAddrSh		string

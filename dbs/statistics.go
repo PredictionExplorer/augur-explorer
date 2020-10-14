@@ -171,8 +171,8 @@ func (ss *SQLStorage) Calc_unique_addresses(ts_from int64,ts_to int64) (int64,bo
 
 	var query string
 	query = "SELECT count(*) FROM ( " +
-				"SELECT DISTINCT u.eoa_aid FROM address a " +
-				"JOIN ustats u ON u.eoa_aid=a.address_id " +
+				"SELECT DISTINCT u.aid FROM address a " +
+				"JOIN ustats u ON u.aid=a.address_id " +
 				"JOIN block b ON a.block_num=b.block_num " +
 				"WHERE b.ts >= to_timestamp($1) AND b.ts < to_timestamp($2)" +
 			") AS s"
@@ -209,43 +209,15 @@ func (ss *SQLStorage) Calc_unique_addresses(ts_from int64,ts_to int64) (int64,bo
 func (ss *SQLStorage) Link_eoa_and_wallet_contract(eoa_aid, wallet_aid int64) {
 
 	var query string
-	query = "INSERT INTO ustats(eoa_aid,wallet_aid) " +
+	query = "INSERT INTO eoa_wallet(eoa_aid,wallet_aid) " +
 			"VALUES($1,$2)"
 
 	res,err:=ss.db.Exec(query,eoa_aid,wallet_aid)
 	ss.Info.Printf("reporting eoa2wallet link sql error: %v  eoa=%v wallet=%v\n",err,eoa_aid,wallet_aid)
 	if (err!=nil) {
-		unique_wallet := strings.Contains(err.Error(),`duplicate key value violates unique constraint "ustats2_idx"`)
-		unique_eoa := strings.Contains(err.Error(),`duplicate key value violates unique constraint "ustats_pkey"`)
-		if unique_wallet || unique_eoa {
-			if eoa_aid != wallet_aid {
-				// In rare cases we can have a record with eoa_aid=wallet_aid 
-				//  and it may be preventing the INSERT. If this is the case check if we can fix it
-				query = "SELECT wallet_aid FROM ustats where eoa_aid=$1"
-				var stored_wallet_aid int64 = 0
-				row := ss.db.QueryRow(query,eoa_aid)
-				err := row.Scan(&stored_wallet_aid)
-				if (err!=nil) {
-					ss.Log_msg(fmt.Sprintf("Error fixing wallet_aid: %v\n",err))
-					os.Exit(1)
-				}
-				if stored_wallet_aid == eoa_aid {
-					// rare case confirmed, we have eoa_aid=wallet_aid in ustats, so we can update
-					// wallet_aid with the new value
-					query = "UPDATE ustats SET wallet_aid = $3 WHERE eoa_aid=$1 AND wallet_aid=$2"
-					_,err:=ss.db.Exec(query,eoa_aid,eoa_aid,wallet_aid)
-					if (err!=nil) {
-						ss.Log_msg(fmt.Sprintf("Update ustats failed: %v, q=%v",err,query))
-						os.Exit(1)
-					}
-					ss.Info.Printf(
-						"eoa2wallet link UPDATE: new wallet_id=%v was set for eoa_aid=%v\n",
-						wallet_aid,eoa_aid,
-					)
-				}
-			} else {
-				// EOA=Wallet , we already have this record, duplicated registration ignored
-			}
+		unique := strings.Contains(err.Error(),`duplicate key value violates unique constraint"`)
+		if unique {
+			// allow
 		} else {
 			ss.Info.Printf(
 				"eoa2wallet link sql error other than dup-key: %v  eoa=%v wallet=%v\n",

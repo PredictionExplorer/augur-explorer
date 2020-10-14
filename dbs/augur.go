@@ -270,7 +270,7 @@ func (ss *SQLStorage) Insert_register_contract_event(agtx *p.AugurTx,evt *p.EReg
 func (ss *SQLStorage) Delete_register_contract_evt(tx_id int64) {
 
 	var query string
-	query = "DELETE FROM register_contact WHERE tx_id=$1"
+	query = "DELETE FROM register_contract WHERE tx_id=$1"
 	_,err := ss.db.Exec(query,tx_id)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
