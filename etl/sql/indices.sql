@@ -61,3 +61,5 @@ CREATE INDEX exec_wtx_in_sig_idx	ON exec_wtx			(input_sig);
 CREATE INDEX exec_wtx_referral_idx	ON exec_wtx			(referral_aid);
 CREATE INDEX exec_wtx_to_idx		ON exec_wtx			(to_aid);
 CREATE UNIQUE INDEX mesh_evt_uniq	ON mesh_evt			(order_hash,evt_code);
+CREATE INDEX pest_ts_idx			ON price_estimate	(time_stamp);
+CREATE INDEX mktord_ts_idx			ON mktord			(time_stamp);
