@@ -326,7 +326,7 @@ func (ss *SQLStorage) Get_block_info(block_num int64) (p.BlockInfo,error) {
 	// get MARKETS
 	query = "SELECT a.addr,u.addr FROM market m " +
 			"LEFT JOIN address a ON m.market_aid=a.address_id " +
-			"LEFT JOIN address u ON m.eoa_aid=u.address_id " +
+			"LEFT JOIN address u ON m.aid=u.address_id " +
 			"WHERE m.block_num = $1"
 
 	rows,err = ss.db.Query(query,block_num)
@@ -357,12 +357,12 @@ func (ss *SQLStorage) Get_block_info(block_num int64) (p.BlockInfo,error) {
 			"(" +
 				"(" +
 					"SELECT addr FROM mktord,address " +
-					"WHERE mktord.eoa_aid = address.address_id AND mktord.block_num=$1" +
+					"WHERE mktord.aid = address.address_id AND mktord.block_num=$1" +
 				")" +
 				" UNION ALL "+
 				"(" +
 					"SELECT addr FROM mktord,address " +
-					"WHERE mktord.eoa_fill_aid = address.address_id AND mktord.block_num=$1" +
+					"WHERE mktord.fill_aid = address.address_id AND mktord.block_num=$1" +
 				")" +
 			") AS records"
 

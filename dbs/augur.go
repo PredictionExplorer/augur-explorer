@@ -180,13 +180,11 @@ func (ss *SQLStorage) Get_upload_block() int64 {
 }
 func (ss *SQLStorage) Insert_augur_transaction_status(agtx *p.AugurTx,evt *p.EExecuteTransactionStatus) {
 
-	//eoa_aid,err := ss.Lookup_eoa_aid(wallet_aid)
-	eoa_aid:=0
-	wallet_aid:=0
+	aid:=0
 	var query string
-	query = "INSERT INTO agtx_status(block_num,tx_id,eoa_aid,wallet_aid,success,funding_success) " +
-			"VALUES($1,$2,$3,$4,$5,$6)"
-	_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,eoa_aid,wallet_aid,evt.Success,evt.FundingSuccess)
+	query = "INSERT INTO agtx_status(block_num,tx_id,aid,success,funding_success) " +
+			"VALUES($1,$2,$3,$4,$5)"
+	_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,aid,evt.Success,evt.FundingSuccess)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into agtx_status table: %v; q=%v",err,query))
 		os.Exit(1)
@@ -247,7 +245,7 @@ func (ss *SQLStorage) Insert_execute_wallet_tx(eoa_aid int64,wallet_aid int64,ag
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into agtx_status table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
-
+	ss.Insert_ustats_record(wallet_aid)
 }
 func (ss *SQLStorage) Insert_register_contract_event(agtx *p.AugurTx,evt *p.ERegisterContract) {
 
@@ -410,7 +408,7 @@ func (ss *SQLStorage) Set_augur_flag(address *common.Address,agtx *p.AugurTx,fla
 			ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
 			os.Exit(1)
 		}
-		ss.Link_eoa_and_wallet_contract(aid,aid)
+		ss.Insert_ustats_record(aid)
 	}
 }
 func (ss *SQLStorage) Is_augur_activated(address string) bool {

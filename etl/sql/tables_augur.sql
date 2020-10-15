@@ -30,7 +30,7 @@ CREATE TABLE market (
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	cat_id				BIGINT NOT NULL,			-- category id
 	universe_id			BIGSERIAL NOT NULL,			-- reference to universe table
-	aid					BIGINT NOT NULL,			-- address ID of account creating the market
+	creator_aid			BIGINT NOT NULL,			-- address ID of account creating the market
 	reporter_aid		BIGINT NOT NULL,			-- address ID of the User who will report on the outcome
 	end_time			TIMESTAMPTZ NOT NULL,		-- when the Market expires
 	num_ticks			BIGINT NOT NULL,			-- maximum price range (number of intervals)

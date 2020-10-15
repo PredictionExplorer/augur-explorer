@@ -95,7 +95,7 @@ func (ss *SQLStorage) Insert_token_transf_evt(evt *p.ETokensTransferred,agtx *p.
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) get_previous_profit_and_ff(market_aid int64,eoa_aid int64,outcome_idx int) (string,string) {
+func (ss *SQLStorage) get_previous_profit_and_ff(market_aid int64,aid int64,outcome_idx int) (string,string) {
 
 	var previous_realized_profit string
 	var previous_frozen_funds string
@@ -103,10 +103,10 @@ func (ss *SQLStorage) get_previous_profit_and_ff(market_aid int64,eoa_aid int64,
 	query = "SELECT  round(pl.realized_profit*1e+36) AS rpl," +
 					"round(pl.frozen_funds*1e+36) as ff " +
 			"FROM profit_loss AS pl " +
-			"WHERE  market_aid=$1 AND eoa_aid=$2 AND outcome_idx=$3 " +
+			"WHERE  market_aid=$1 AND aid=$2 AND outcome_idx=$3 " +
 			"ORDER BY pl.id DESC LIMIT 1"
 
-	res := ss.db.QueryRow(query,market_aid,eoa_aid,outcome_idx)
+	res := ss.db.QueryRow(query,market_aid,aid,outcome_idx)
 	var null_pl,null_ff sql.NullString
 	err := res.Scan(&null_pl,&null_ff)
 	if (err!=nil) {
@@ -537,9 +537,9 @@ func internal_addr_info_note(addr *common.Address,info *string,caddrs *p.Contrac
 }
 func (ss *SQLStorage) check_internal_user(aid int64,is_to bool,info *string) {
 
-	eoa_aid,err := ss.Lookup_eoa_aid(aid)
+	success,err := ss.Ustats_entry_exists(aid)
 	if err==nil {
-		if eoa_aid > 0 {
+		if success {
 			if is_to {
 				*info = "Transfer to Another Augur Trading account"
 			} else {

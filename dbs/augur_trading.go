@@ -58,17 +58,6 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,p_
 	}
 	_ = universe_id	// ToDo: add universe_id match condition (for market)
 	market_aid,_:= ss.lookup_market_id(evt.Market.String())
-	/*
-	eoa_aid,err := ss.Lookup_eoa_aid(wallet_aid);
-	if err!=nil {
-		// sometimes creator can be an EOA, so we set eoa_aid to wallet_aid
-		eoa_aid = wallet_aid
-	}
-	eoa_fill_aid,err := ss.Lookup_eoa_aid(wallet_fill_aid)
-	if err != nil {
-		// sometimes creator can be an EOA, so we set eoa_aid to wallet_aid
-		eoa_fill_aid = wallet_fill_aid
-	}*/
 
 	var oaction p.OrderAction = p.OrderAction(evt.EventType)
 	var otype p.OrderType = p.OrderType(evt.OrderType)
@@ -192,10 +181,7 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 	)
 	initial_amount := order.MakerAssetAmount.String()
 
-	aid,err := ss.Lookup_or_create_address(*acct_addr,0,0)
-	if err != nil {
-		return err
-	}
+	aid:= ss.Lookup_or_create_address(acct_addr.String(),0,0)
 
 	ss.Info.Printf(
 		"creating open order made by %v : market=%v, price=%v, Outcome=%v, Type=%v\n",
@@ -680,8 +666,6 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,m
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.ZHistT1Entry
-		var eoa_addr sql.NullString
-		var wallet_addr sql.NullString
 		err=rows.Scan(
 			&rec.Id,
 			&rec.OrderHash,
@@ -977,9 +961,9 @@ func (ss *SQLStorage) Get_trade_data(aid int64,open_positions bool) []p.PLEntry 
 					"LEFT JOIN address AS ma ON pl.market_aid=a.address_id " +
 					"LEFT JOIN address AS aa ON pl.aid=aa.address_id " +
 					"LEFT JOIN market AS m ON pl.market_aid = m.market_aid " +
-					"LEFT JOIN claim_funds AS cf ON (pl.market_aid=cf.market_aid AND pl.outcome_idx=cf.outcome_idx AND pl.eoa_aid=cf.eoa_aid AND pl.id=cf.last_pl_id) " +
+					"LEFT JOIN claim_funds AS cf ON (pl.market_aid=cf.market_aid AND pl.outcome_idx=cf.outcome_idx AND pl.aid=cf.aid AND pl.id=cf.last_pl_id) " +
 					"LEFT JOIN LATERAL ( " +
-						"SELECT mo.id,mo.order_hash,mo.otype,mo.block_num,mo.eoa_aid,mo.eoa_fill_aid," +
+						"SELECT mo.id,mo.order_hash,mo.otype,mo.block_num,mo.aid,mo.fill_aid," +
 							"cr_a.addr AS creator_addr," +
 							"fil_a.addr AS filler_addr " +
 						"FROM mktord AS mo " +
@@ -1079,7 +1063,6 @@ func (ss *SQLStorage) Get_trade_data(aid int64,open_positions bool) []p.PLEntry 
 
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)
 		rec.AddrSh=p.Short_address(rec.Addr)
-		rec.WalletAddrSh=p.Short_address(rec.WalletAddr)
 		if creator_aid.Valid {
 			if aid == creator_aid.Int64 {
 				if filler_addr.Valid {
@@ -1168,7 +1151,7 @@ func (ss *SQLStorage) Get_order_info_by_id(order_id int64) (p.OrderInfo,error) {
 		&order.OrderId,
 		&order.OrderHash,
 		&order.OType,
-		&order.CreatortAddr,
+		&order.CreatorAddr,
 		&order.FillerAddr,
 		&order.OTypeStr,
 		&order.Date,

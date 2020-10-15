@@ -18,7 +18,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Try_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) bool {
+func (ss *SQLStorage) Try_insert_0x_mesh_order_event(aid int64,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) bool {
 
 	_,err := ss.Lookup_market_by_addr_str(ospec.Market.String())
 	if err != nil {
@@ -28,10 +28,10 @@ func (ss *SQLStorage) Try_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestam
 		)
 		return false
 	}
-	ss.Insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp,oi,ospec,amount_fill,event_code)
+	ss.Insert_0x_mesh_order_event(aid,timestamp,oi,ospec,amount_fill,event_code)
 	return true
 }
-func (ss *SQLStorage) Insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) {
+func (ss *SQLStorage) Insert_0x_mesh_order_event(aid int64,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) {
 
 	if ospec == nil {
 		ss.Log_msg(
@@ -68,14 +68,14 @@ func (ss *SQLStorage) Insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp in
 			if (err==sql.ErrNoRows) {
 				// ADD event is missing, INSERT
 				ts := int64(oi.SignedOrder.Order.Salt.Int64()/1000)
-				ss.do_insert_0x_mesh_order_event(eoa_aid,wallet_aid,ts,oi,ospec,nil,p.MeshEvtAdded)
+				ss.do_insert_0x_mesh_order_event(aid,ts,oi,ospec,nil,p.MeshEvtAdded)
 			} else {
 				ss.Log_msg(fmt.Sprintf("DB error : %v, q=%v",err,query))
 				os.Exit(1)
 			}
 		}
 	}
-	market_aid := ss.do_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp,oi,ospec,amount_fill,event_code)
+	market_aid := ss.do_insert_0x_mesh_order_event(aid,timestamp,oi,ospec,amount_fill,event_code)
 	// now we need to update all posterior records because future price estimate values
 	// depend on past values
 	ss.Update_future_price_estimates(market_aid,int(ospec.Outcome),timestamp)
@@ -120,7 +120,7 @@ func (ss *SQLStorage) Update_future_price_estimates(market_aid int64,outcome_idx
 		}
 	}
 }
-func (ss *SQLStorage) do_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) int64 {
+func (ss *SQLStorage) do_insert_0x_mesh_order_event(aid int64,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) int64 {
 
 	market_aid := ss.Lookup_or_create_address(ospec.Market.String(),0,0)// block and tx_id will be updated on market creation event
 	amount_fill_str := "0"
@@ -130,7 +130,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp
 	var query string
 	var err error
 	query = "INSERT INTO mesh_evt (" +
-				"eoa_aid,wallet_aid," +
+				"aid," +
 				"time_stamp,fillable_amount,evt_code," +
 				"market_aid,outcome_idx,otype,price," +
 				"order_hash,chain_id,exchange_addr," +
@@ -151,19 +151,19 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp
 				"signature," +
 				"amount_fill" +
 			") VALUES (" +
-					"$1,$2," +
-					"TO_TIMESTAMP($3),($4::decimal/1e+18),$5,"+
-					"$6,$7,$8,$9," +
-					"$10,$11,$12," +
-					"$13,$14,$15," +
-					"($16::decimal/1e+18),($17::decimal/1e+18),"+
-					"$18,$19,$20,"+
-					"($21::decimal/1e+18),($22::decimal/1e+18),"+
-					"$23,$24,TO_TIMESTAMP($25::BIGINT),$26,$27,($28::decimal/1e+18)"+
+					"$1," +
+					"TO_TIMESTAMP($2),($3::decimal/1e+18),$4,"+
+					"$5,$6,$7,$8," +
+					"$9,$10,$11," +
+					"$12,$13,$14," +
+					"($15::decimal/1e+18),($16::decimal/1e+18),"+
+					"$17,$18,$19,"+
+					"($20::decimal/1e+18),($21::decimal/1e+18),"+
+					"$22,$23,TO_TIMESTAMP($24::BIGINT),$25,$26,($27::decimal/1e+18)"+
 			") ON CONFLICT DO NOTHING"
 
 	d_query := fmt.Sprintf("INSERT INTO mesh_evt (" +
-				"eoa_aid,wallet_aid," +
+				"aid," +
 				"time_stamp,fillable_amount,evt_code," +
 				"market_aid,outcome_idx,otype,price," +
 				"order_hash,chain_id,exchange_addr," +
@@ -178,7 +178,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp
 				"signature," +
 				"amount_fill"+
 			") VALUES (" +
-					"%v,%v," +
+					"%v," +
 					"TO_TIMESTAMP(%v),(%v::decimal/1e+18),%v,"+
 					"%v,%v,%v,%v," +
 					"'%v',%v,'%v'," +
@@ -188,7 +188,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp
 					"(%v::decimal/1e+18),(%v::decimal/1e+18),"+
 					"'%v','%v',TO_TIMESTAMP(%v::BIGINT),%v,'%v',(%v::decimal/1e+18)"+
 			") ON CONFLICT DO NOTHING",
-			eoa_aid,wallet_aid,
+			aid,
 			timestamp,oi.FillableTakerAssetAmount.String(),event_code,
 			market_aid,ospec.Outcome,ospec.Type,ospec.Price.String(),
 			oi.OrderHash.String(),oi.SignedOrder.Order.ChainID.Int64(),oi.SignedOrder.Order.ExchangeAddress.String(),
@@ -200,7 +200,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp
 	)
 	ss.Info.Printf("q=%v\n",d_query)
 	_,err = ss.db.Exec(query,
-		eoa_aid,wallet_aid,
+		aid,
 		timestamp,oi.FillableTakerAssetAmount.String(),event_code,
 		market_aid,ospec.Outcome,ospec.Type,ospec.Price.String(),
 		oi.OrderHash.String(),oi.SignedOrder.Order.ChainID.Int64(),oi.SignedOrder.Order.ExchangeAddress.String(),
@@ -225,20 +225,6 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp
 				)
 		}
 
-/*				
-		pq_err,ok := err.(*pq.Error)
-		if ok {
-			ss.Log_msg(
-				fmt.Sprintf(
-					"do_insert_0x_mesh_order_event() failed: %v %v %v %v; q=%v",
-					pq_err,pq_err.Routine,pq_err.Position,pq_err.Where,
-					query,
-				),
-			)
-		} else {
-			fmt.Sprintf("do_insert_0x_mesh_order_event() failed: %v ; q=%v",err,query)
-		}
-*/		
 		ss.Info.Printf("Exiting due to error\n")
 		os.Exit(1)
 	}

@@ -46,7 +46,7 @@ func get_market_status_str(status_code p.MarketStatus) string {
 	}
 	return "undefined"
 }
-func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,validity_bond string,evt *p.EMarketCreated) {
+func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,validity_bond string,evt *p.EMarketCreated) {
 
 	var query string
 
@@ -70,7 +70,7 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,va
 		// market already registered, sliently exit
 		return
 	}
-	wallet_aid := ss.Lookup_or_create_address(evt.MarketCreator.String(),agtx.BlockNum,agtx.TxId)
+	creator_aid := ss.Lookup_or_create_address(evt.MarketCreator.String(),agtx.BlockNum,agtx.TxId)
 	universe_id,err := ss.lookup_universe_id(evt.Universe.String())
 	if err != nil {
 		ss.Log_msg(
@@ -83,21 +83,9 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,va
 	}
 	reporter_aid := ss.Lookup_or_create_address(evt.DesignatedReporter.String(),agtx.BlockNum,agtx.TxId)
 	ss.Info.Printf(
-		"create_market: eoa_aid = %v, wallet_aid=%v (%v), reporter_id=%v (%v)\n",
-		eoa_aid,wallet_aid,evt.MarketCreator.String(),reporter_aid,evt.DesignatedReporter.String(),
+		"create_market: creator_aid = %v , reporter_id=%v (%v)\n",
+		creator_aid,evt.MarketCreator.String(),reporter_aid,evt.DesignatedReporter.String(),
 	)
-	if eoa_aid==0 {
-		eoa_aid = wallet_aid	// WarpSync contract creates markets with eoa_aid=0
-	}
-	if wallet_aid == 0 {
-		ss.Log_msg(
-			fmt.Sprintf(
-				"insert_market_created_evt(): creator addr = %v, wallet_aid = 0, can't continue, exiting\n",
-				evt.MarketCreator.String(),
-			),
-		)
-		os.Exit(1)
-	}
 	prices := p.Bigint_ptr_slice_to_str(&evt.Prices,",")
 	outcomes := p.Outcomes_to_str(&evt.Outcomes,",")
 
@@ -113,8 +101,7 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,va
 			cat_id,
 			universe_id,
 			market_aid,
-			wallet_aid,
-			eoa_aid,
+			creator_aid,
 			reporter_aid,
 			end_time,
 			num_ticks,
@@ -131,55 +118,13 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,eoa_aid int64,va
 						"/1e+16,$12,$13,$14,$15,(" + evt.NoShowBond.String() + "/1e+18)," +
 						"("+ validity_bond + "/1e+18))";
 
-	d_query := fmt.Sprintf( `
-		INSERT INTO market(
-			block_num,
-			tx_id,
-			cat_id,
-			universe_id,
-			market_aid,
-			wallet_aid,
-			eoa_aid,
-			reporter_aid,
-			end_time,
-			num_ticks,
-			create_timestamp,
-			fee,
-			prices,
-			market_type,
-			extra_info,
-			outcomes,
-			no_show_bond,
-			validity_bond
-		) VALUES (%v,%v,%v,%v,%v,%v,%v,%v,TO_TIMESTAMP(%v),%v,TO_TIMESTAMP(%v),` +
-						evt.FeePerCashInAttoCash.String() +
-						"/1e+16,'%v',%v,'%v','%v',(" + evt.NoShowBond.String() + "/1e+18)," +
-						"("+ validity_bond + "/1e+18))",
-			agtx.BlockNum,
-			agtx.TxId,
-			cat_id,
-			universe_id,
-			market_aid,
-			wallet_aid,
-			eoa_aid,
-			reporter_aid,
-			evt.EndTime.Int64(),
-			evt.NumTicks.Int64(),
-			evt.Timestamp.Int64(),
-			prices,
-			evt.MarketType,
-			evt.ExtraInfo,
-			outcomes,
-	)
-	_ = d_query
 	result,err := ss.db.Exec(query,
 			agtx.BlockNum,
 			agtx.TxId,
 			cat_id,
 			universe_id,
 			market_aid,
-			wallet_aid,
-			eoa_aid,
+			creator_aid,
 			reporter_aid,
 			evt.EndTime.Int64(),
 			evt.NumTicks.Int64(),
@@ -605,12 +550,8 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 				"open_interest AS OI," +
 				"cur_volume AS volume " +
 			"FROM market as m " +
-				"LEFT JOIN " +
-					"address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN " +
-					"address AS sa ON m.eoa_aid= sa.address_id " +
-				"LEFT JOIN " +
-					"address AS ca ON m.wallet_aid = ca.address_id " +
+				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
+				"LEFT JOIN address AS ca ON m.aid = ca.address_id " +
 			"WHERE m.status < 4 " +
 			"ORDER BY " +
 				"m.fin_timestamp DESC " +
@@ -632,7 +573,6 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 		err=rows.Scan(
 					&rec.MktAid,
 					&rec.MktAddr,
-					&rec.Signer,
 					&rec.MktCreator,
 					&rec.EndDate,
 					&description,
@@ -748,7 +688,6 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 	query = "SELECT " +
 				"m.market_aid," +
 				"ma.addr as mkt_addr," +
-				"sa.addr AS signer," +
 				"ca.addr as mcreator," +
 				"ra.addr as reporter," +
 				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') as end_date," + 
@@ -776,14 +715,9 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim, " +
 				"split_part(prices,',',2)::decimal/1e+18 AS high_price_lim " +
 			"FROM market as m " +
-				"LEFT JOIN " +
-					"address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN " +
-					"address AS sa ON m.eoa_aid= sa.address_id " +
-				"LEFT JOIN " +
-					"address AS ca ON m.wallet_aid = ca.address_id " +
-				"LEFT JOIN " +
-					"address AS ra ON m.reporter_aid = ra.address_id " +
+				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
+				"LEFT JOIN address AS ca ON m.aid = ca.address_id " +
+				"LEFT JOIN address AS ra ON m.reporter_aid = ra.address_id " +
 			"WHERE m.market_aid=$1 " +
 			"ORDER BY " +
 				"m.fin_timestamp DESC "
@@ -797,7 +731,6 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 	err := res.Scan(
 			&rec.MktAid,
 			&rec.MktAddr,
-			&rec.Signer,
 			&rec.MktCreator,
 			&rec.Reporter,
 			&rec.EndDate,
@@ -937,7 +870,6 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 	query = "SELECT " +
 				"m.market_type," +
 				"ma.addr as mkt_addr," +
-				"sa.addr AS signer," +
 				"ca.addr as mcreator," +
 				"ra.addr AS reporter,"+
 				"reporter_aid," +
@@ -966,8 +898,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				"split_part(prices,',',2)::decimal/1e+18 AS high_price_lim " +
 			"FROM market as m " +
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN address AS sa ON m.eoa_aid = sa.address_id " +
-				"LEFT JOIN address AS ca ON m.wallet_aid = ca.address_id " +
+				"LEFT JOIN address AS ca ON m.aid = ca.address_id " +
 				"LEFT JOIN address AS ra ON m.reporter_aid = ra.address_id " +
 				"LEFT JOIN category AS cat On m.cat_id = cat.cat_id " +
 			"WHERE market_aid = $1"
@@ -981,7 +912,6 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 	err=row.Scan(
 				&mkt_type,
 				&rec.MktAddr,
-				&rec.Signer,
 				&rec.MktCreator,
 				&rec.Reporter,
 				&reporter_aid,
@@ -1006,7 +936,6 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				&rec.HighPriceLimit,
 	)
 	rec.MktAddrSh=p.Short_address(rec.MktAddr)
-	rec.SignerSh=p.Short_address(rec.Signer)
 	rec.MktCreatorSh=p.Short_address(rec.MktCreator)
 	rec.ReporterSh=p.Short_address(rec.Reporter)
 	if description.Valid {
@@ -1032,13 +961,10 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 		os.Exit(1)
 	}
 	rec.Status=get_market_status_str(p.MarketStatus(rec.MktStatus))
-	reporter_eoa_aid,err := ss.Lookup_eoa_aid(reporter_aid)
+	rep_addr,err := ss.Lookup_address(reporter_aid)
 	if err == nil {
-		rep_addr,err := ss.Lookup_address(reporter_eoa_aid)
-		if err == nil {
-			rec.Reporter = rep_addr
-			rec.ReporterSh = string(rep_addr[0:6]+string('…')+rep_addr[26:32])
-		}
+		rec.Reporter = rep_addr
+		rec.ReporterSh = p.Short_address(rec.Reporter)
 	}
 	subcategories := make_subcategories(&rec.CategoryStr)
 	rec.Subcategories = subcategories
@@ -1173,7 +1099,6 @@ func (ss *SQLStorage) Get_category_markets(cat_id int64) []p.InfoMarket {
 	var query string
 	query = "SELECT " +
 				"ma.addr as mkt_addr," +
-				"sa.addr AS signer," +
 				"ca.addr as mcreator," +
 				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') as end_date," + 
 				"extra_info::json->>'description' AS descr," +
@@ -1193,12 +1118,8 @@ func (ss *SQLStorage) Get_category_markets(cat_id int64) []p.InfoMarket {
 				"open_interest AS OI," +
 				"cur_volume AS volume " +
 			"FROM market as m " +
-				"LEFT JOIN " +
-					"address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN " +
-					"address AS sa ON m.eoa_aid= sa.address_id " +
-				"LEFT JOIN " +
-					"address AS ca ON m.wallet_aid = ca.address_id " +
+				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
+				"LEFT JOIN address AS ca ON m.aid = ca.address_id " +
 			"WHERE cat_id = $1 " +
 			"ORDER BY m.market_aid "
 
@@ -1217,7 +1138,6 @@ func (ss *SQLStorage) Get_category_markets(cat_id int64) []p.InfoMarket {
 		var category_str sql.NullString
 		err=rows.Scan(
 					&rec.MktAddr,
-					&rec.Signer,
 					&rec.MktCreator,
 					&rec.EndDate,
 					&description,

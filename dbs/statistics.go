@@ -9,24 +9,6 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-/* DISCONTINUED, to be deleted
-func (ss *SQLStorage) Check_main_stats() {
-
-	var query string
-	query="SELECT id FROM main_stats LIMIT 1";
-	row := ss.db.QueryRow(query)
-	var null_id sql.NullInt64
-	var err error
-	err=row.Scan(&null_id);
-	if (err!=nil) {
-		if err == sql.ErrNoRows {
-		} else {
-			ss.Log_msg(fmt.Sprintf("Error in check_main_stats(): %v, q=%v",err,query))
-			os.Exit(1)
-		}
-	}
-}
-*/
 func (ss *SQLStorage) Get_main_stats() p.MainStats {
 
 	var query string
@@ -238,6 +220,25 @@ func (ss *SQLStorage) Link_eoa_and_wallet_contract(eoa_aid, wallet_aid int64) {
 			}
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error on getting affected rows: %v\n",err))
+			os.Exit(1)
+		}
+	}
+//	ss.Insert_ustats_record(eoa_aid)
+//	ss.Insert_ustats_record(wallet_aid)
+}
+func (ss *SQLStorage) Insert_ustats_record(aid int64) {
+
+	var query string
+	query = "INSERT INTO ustats(aid) " +
+			"VALUES($1)"
+
+	_,err:=ss.db.Exec(query,aid)
+	if (err!=nil) {
+		unique := strings.Contains(err.Error(),`duplicate key value violates unique constraint"`)
+		if unique {
+			// allow
+		} else {
+			ss.Info.Printf("eoa2wallet link sql error other than dup-key: %v  aid=%v \n",err,aid)
 			os.Exit(1)
 		}
 	}

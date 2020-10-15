@@ -316,7 +316,7 @@ type OpenOrder struct {		// the Order on 0x Mesh network, that is yet to be fill
 	MktAddrSh			string
 }
 type RankStats struct {
-	EoaAid				int64
+	Aid					int64
 	TotalTrades			int64
 	ProfitLoss			float64
 	VolumeTraded		float64
@@ -324,27 +324,25 @@ type RankStats struct {
 type ProfitMaker struct {
 	Percentage			float64
 	ProfitLoss			float64
-	EOAAddr				string
+	Addr				string
 }
 type TradeMaker struct {
 	Percentage			float64
 	TotalTrades			int64
-	EOAAddr				string
+	Addr				string
 }
 type VolumeMaker struct {
 	Percentage			float64
 	Volume				float64
-	EOAAddr				string
+	Addr				string
 }
 type UserRank struct {
-	EoaAid				int64
-	WalletAid			int64
+	Aid					int64
 	ProfitLoss			float64
 	TotalTrades			int64
 	VolumeTraded		float64
 	NumMktCreated		int64
-	EOAAddr				string
-	WalletAddr			string
+	Addr				string
 }
 type OrderInfo struct {		// this is a full order information, to show in dedicated webpage
 	OrderId				int64
@@ -485,7 +483,7 @@ type MktDepthStatus struct {
 }
 type PosChg struct {		// change in positon for logging/debugging purposes
 	Mkt_addr			common.Address
-	Wallet_addr			common.Address
+	Addr				common.Address
 	BlockNum			int64
 	Outcome				*big.Int
 	ProfitLoss			*big.Int
