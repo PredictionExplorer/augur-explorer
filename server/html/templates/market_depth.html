@@ -9,16 +9,14 @@
 <script src="https://code.highcharts.com/modules/data.js"></script>
 <script src="../../res/ajax.js"></script>
 <script>
-	function load_order_data(eoa_addr,wallet_addr,mkt_aid,outcome_idx,total_bids,total_asks,total_cancel,order_date,expires) {
+	function load_order_data(addr,mkt_aid,outcome_idx,total_bids,total_asks,total_cancel,order_date,expires) {
 		console.log(eoa_addr)
 		console.log(mkt_aid)
 		console.log(outcome_idx)
 		var elt
 		elt = document.getElementById("usermktinfo")
 		elt.style.display="block"
-		elt = document.getElementById("fld_wallet_addr")
-		elt.innerHTML = wallet_addr
-		elt = document.getElementById("fld_eoa_addr")
+		elt = document.getElementById("fld_addr")
 		elt.innerHTML = eoa_addr
 		elt = document.getElementById("fld_num_bids")
 		elt.innerHTML = total_bids
@@ -96,12 +94,8 @@
 			<td><span id="fld_expires"></span></td>
 		</tr>
 		<tr class="order_info">
-			<td>Trading Wallet Address</td>
-			<td><span id="fld_wallet_addr"></span></td>
-		</tr>
-		<tr class="order_info">
-			<td>Real User Account (EOA):</td>
-			<td><span id="fld_eoa_addr"></span></td>
+			<td>Trading Address</td>
+			<td><span id="fld_addr"></span></td>
 		</tr>
 		<tr class="order_info">
 			<td>Number of BIDs:</td>

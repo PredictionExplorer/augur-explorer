@@ -197,7 +197,8 @@ func (ss *SQLStorage) Link_eoa_and_wallet_contract(eoa_aid, wallet_aid int64) {
 	res,err:=ss.db.Exec(query,eoa_aid,wallet_aid)
 	ss.Info.Printf("reporting eoa2wallet link sql error: %v  eoa=%v wallet=%v\n",err,eoa_aid,wallet_aid)
 	if (err!=nil) {
-		unique := strings.Contains(err.Error(),`duplicate key value violates unique constraint"`)
+//		ss.Info.Printf("errstr: %v\ncmpstr:%v
+		unique := strings.Contains(err.Error(),`duplicate key value violates unique constraint`)
 		if unique {
 			// allow
 		} else {
@@ -234,11 +235,11 @@ func (ss *SQLStorage) Insert_ustats_record(aid int64) {
 
 	_,err:=ss.db.Exec(query,aid)
 	if (err!=nil) {
-		unique := strings.Contains(err.Error(),`duplicate key value violates unique constraint"`)
+		unique := strings.Contains(err.Error(),`duplicate key value violates unique constraint`)
 		if unique {
 			// allow
 		} else {
-			ss.Info.Printf("eoa2wallet link sql error other than dup-key: %v  aid=%v \n",err,aid)
+			ss.Info.Printf("ustats link sql error other than dup-key: %v  aid=%v \n",err,aid)
 			os.Exit(1)
 		}
 	}

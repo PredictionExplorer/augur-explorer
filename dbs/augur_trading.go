@@ -17,7 +17,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,p_aid int64,p_fill_aid int64,	evt *p.EOrderEvent,submitted_orders map[string]*ztypes.OrderInfo,order_specs map[string]*p.ZxMeshOrderSpec) {
+func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,evt *p.EOrderEvent,submitted_orders map[string]*ztypes.OrderInfo,order_specs map[string]*p.ZxMeshOrderSpec) {
 
 	// depending on the order action (Create/Cancel/Fill) different table is used for storage
 	//		Create/Cancel order actions go to 'oorders' (Open Orders) table because these orders
@@ -115,16 +115,16 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,p_
 			trade_group,
 			order_hash
 		) VALUES (
-				$1,$2,$3,$4,$5,$6,$7,$8,$9,
+				$1,$2,$3,$4,$5,$6,$7,
 				` + price + "," +
 				"(" + amount.String() + "/1e+18)," +
-				"$10," +
+				"$8," +
 				"(" + token_refund + "/1e+18)," +
 				"(" + shares_refund + "/1e+18)," +
 				"(" + fees + "/1e+18)," +
 				"(" + amount_filled.String() + "/1e+18)," +
-				"TO_TIMESTAMP($11)," +
-				"$12,$13,$14,$15) RETURNING id"
+				"TO_TIMESTAMP($9)," +
+				"$10,$11,$12,$13) RETURNING id"
 
 	var null_id sql.NullInt64
 	err=ss.db.QueryRow(query,
@@ -958,7 +958,7 @@ func (ss *SQLStorage) Get_trade_data(aid int64,open_positions bool) []p.PLEntry 
 				"cf.claim_status " +
 			"FROM " +
 				"profit_loss AS pl " +
-					"LEFT JOIN address AS ma ON pl.market_aid=a.address_id " +
+					"LEFT JOIN address AS ma ON pl.market_aid=ma.address_id " +
 					"LEFT JOIN address AS aa ON pl.aid=aa.address_id " +
 					"LEFT JOIN market AS m ON pl.market_aid = m.market_aid " +
 					"LEFT JOIN claim_funds AS cf ON (pl.market_aid=cf.market_aid AND pl.outcome_idx=cf.outcome_idx AND pl.aid=cf.aid AND pl.id=cf.last_pl_id) " +

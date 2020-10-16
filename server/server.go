@@ -66,12 +66,11 @@ func mkt_depth_entry_to_js_obj(de *DepthEntry) string {
 				"x:" + fmt.Sprintf("%v",de.Price)  + "," +
 				"y:"  + fmt.Sprintf("%v",de.AccumVol) + "," +
 				"price: " + fmt.Sprintf("%v",de.Price) + "," +
-				"addr: \"" + de.EOAAddrSh + "\"," +
+				"addr: \"" + de.AddrSh + "\"," +
 				"expires: \"" + de.Expires + "\"," +
 				"volume: " + fmt.Sprintf("%v",de.Volume) + "," +
 				"click: function() {load_order_data(\"" +
-					de.EOAAddrSh +"\",\"" +
-					de.WalletAddrSh + "\"," +
+					de.AddrSh +"\",\"" +
 					fmt.Sprintf("%v,%v,%v,%v,%v,%v,\"%v\",\"%v\"",
 										de.MktAid,
 										de.OutcomeIdx,
@@ -488,7 +487,7 @@ func serve_user_info_page(c *gin.Context,addr string,from_wallet bool) {
 			if len(user_active_markets) > 0 {
 				has_active_markets = true
 			}
-			open_orders := augur_srv.storage.Get_user_open_orders(user_info.EOAAid)
+			open_orders := augur_srv.storage.Get_user_open_orders(user_info.Aid)
 			gas_spent,_ := augur_srv.storage.Get_gas_spent_for_user(eoa_aid)
 
 			c.HTML(http.StatusOK, "user_info.html", gin.H{

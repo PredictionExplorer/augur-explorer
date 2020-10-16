@@ -242,7 +242,7 @@ func (ss *SQLStorage) Insert_execute_wallet_tx(eoa_aid int64,wallet_aid int64,ag
 		wtx.RevertOnFailure,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into agtx_status table: %v; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into exec_wtx table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
 	ss.Insert_ustats_record(wallet_aid)
@@ -550,10 +550,8 @@ func (ss *SQLStorage) Get_augur_process_status() p.AugurProcessStatus {
 					os.Exit(1)
 				}
 			} else {
-				if (err!=nil) {
-					ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
-					os.Exit(1)
-				}
+				ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+				os.Exit(1)
 			}
 		} else {
 			break

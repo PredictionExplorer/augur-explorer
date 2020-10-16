@@ -191,8 +191,7 @@ type MarketDepth struct {
 	Asks			[]DepthEntry
 }
 type UserInfo struct {
-	EOAAid			int64
-	WalletAid		int64
+	Aid				int64
 	BlockNum		int64
 	TimeStamp		int64	// user registration timestamp (from block table)
 	ProfitLoss		float64 // profit/loss for the (account) lifetime
@@ -215,10 +214,8 @@ type UserInfo struct {
 	DepositReqs		uint32	// number of Deposit requests
 	TotalReports	uint32	// amount of reports User has made
 	TotalDesignated	uint32	// total reports submitted as designated reporter
-	EOAAddr			string	// User's Ethereum address (Externally Owned Account)
-	EOAAddrSh		string	// short version of the above addr
-	WalletAddr		string	// User's Wallet Contract Address
-	WalletAddrSh	string	// short version of the above addr
+	Addr			string	// User's Ethereum address (Externally Owned Account)
+	AddrSh			string	// short version of the above addr
 }
 type MainStats struct {
 	LastBlockNum	int64

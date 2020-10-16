@@ -96,17 +96,17 @@ BEGIN
 	UPDATE ustats
 			SET markets_created = (markets_created + 1),
 				validity_bonds = (validity_bonds + NEW.validity_bond)
-			WHERE aid = NEW.aid;
+			WHERE aid = NEW.creator_aid;
 	UPDATE ustats
 			SET gmarkets = (gmarkets + t.gas_used),
 				geth_markets = (geth_markets + (t.gas_used * t.gas_price))
 			FROM transaction AS t
-			WHERE t.id = NEW.tx_id AND aid=NEW.aid;
+			WHERE t.id = NEW.tx_id AND aid=NEW.creator_aid;
 
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		INSERT	INTO ustats(aid,markets_created,validity_bonds)
-				VALUES(NEW.aid,1,NEW.validity_bond);
+				VALUES(NEW.creator_aid,1,NEW.validity_bond);
 	END IF;
 
 	UPDATE main_stats
@@ -134,12 +134,12 @@ BEGIN
 	UPDATE ustats
 			SET markets_created = markets_created - 1,
 				validity_bonds = validity_bonds - OLD.validity_bond
-			WHERE aid = OLD.aid;
+			WHERE aid = OLD.creator_aid;
 	UPDATE ustats
 			SET gmarkets = (gmarkets - t.gas_used),
 				geth_markets = (geth_markets - (t.gas_used * t.gas_price))
 			FROM transaction AS t
-			WHERE t.id = OLD.tx_id AND aid=OLD.aid;
+			WHERE t.id = OLD.tx_id AND aid=OLD.creator_aid;
 
 	UPDATE main_stats
 		SET markets_count = (markets_count - 1), active_count = (active_count - 1);

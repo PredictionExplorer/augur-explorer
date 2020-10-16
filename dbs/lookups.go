@@ -3,6 +3,7 @@ package dbs
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
 	"database/sql"
 	_  "github.com/lib/pq"
 
@@ -92,6 +93,7 @@ func (ss *SQLStorage) Lookup_address_id(addr string) int64 {
 	if (err!=nil) {
 		if (err==sql.ErrNoRows) {
 			ss.Log_msg(fmt.Sprintf("Forced address lookup failed for %v : addr not found",addr))
+			debug.PrintStack()
 			os.Exit(1)
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error upon address lookup: %v ; q=%v",err,query))

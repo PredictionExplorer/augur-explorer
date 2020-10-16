@@ -249,7 +249,7 @@ func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,evt *p.EProfitLossC
 				"immediate_profit," +
 				"immediate_ff," +
 				"time_stamp" +
-			") VALUES($1,$2,$3,$4,$5,$6,$7," +
+			") VALUES($1,$2,$3,$4,$5,$6," +
 				"(" +net_position+ "/1e+"+qty_divisor+")," +
 				"(" +avg_price+ "/1e+"+price_divisor+")," +
 				"(" +frozen_funds+ "/1e+36)," +
@@ -257,7 +257,7 @@ func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,evt *p.EProfitLossC
 				"(" +realized_cost + "/1e+36)," +
 				"(" +immed_profit_str + "/1e+36)," +
 				"(" +immed_ff_str + "/1e+36)," +
-				"TO_TIMESTAMP($8)" +
+				"TO_TIMESTAMP($7)" +
 			") RETURNING id,realized_profit,realized_cost,net_position"
 
 	var null_pl_id sql.NullInt64

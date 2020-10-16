@@ -113,9 +113,9 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,validity_bond st
 			outcomes,
 			no_show_bond,
 			validity_bond
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TO_TIMESTAMP($9),$10,TO_TIMESTAMP($11),` +
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,TO_TIMESTAMP($8),$9,TO_TIMESTAMP($10),` +
 						evt.FeePerCashInAttoCash.String() +
-						"/1e+16,$12,$13,$14,$15,(" + evt.NoShowBond.String() + "/1e+18)," +
+						"/1e+16,$11,$12,$13,$14,(" + evt.NoShowBond.String() + "/1e+18)," +
 						"("+ validity_bond + "/1e+18))";
 
 	result,err := ss.db.Exec(query,
@@ -528,7 +528,6 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 	query = "SELECT " +
 				"m.market_aid,"+
 				"ma.addr as mkt_addr," +
-				"sa.addr AS signer," +
 				"ca.addr as mcreator," +
 				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') as end_date," + 
 				"extra_info::json->>'description' AS descr," +
@@ -551,7 +550,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 				"cur_volume AS volume " +
 			"FROM market as m " +
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN address AS ca ON m.aid = ca.address_id " +
+				"LEFT JOIN address AS ca ON m.creator_aid = ca.address_id " +
 			"WHERE m.status < 4 " +
 			"ORDER BY " +
 				"m.fin_timestamp DESC " +
@@ -716,7 +715,7 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 				"split_part(prices,',',2)::decimal/1e+18 AS high_price_lim " +
 			"FROM market as m " +
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN address AS ca ON m.aid = ca.address_id " +
+				"LEFT JOIN address AS ca ON m.creator_aid = ca.address_id " +
 				"LEFT JOIN address AS ra ON m.reporter_aid = ra.address_id " +
 			"WHERE m.market_aid=$1 " +
 			"ORDER BY " +
@@ -898,7 +897,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				"split_part(prices,',',2)::decimal/1e+18 AS high_price_lim " +
 			"FROM market as m " +
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN address AS ca ON m.aid = ca.address_id " +
+				"LEFT JOIN address AS ca ON m.creator_aid = ca.address_id " +
 				"LEFT JOIN address AS ra ON m.reporter_aid = ra.address_id " +
 				"LEFT JOIN category AS cat On m.cat_id = cat.cat_id " +
 			"WHERE market_aid = $1"
@@ -1119,7 +1118,7 @@ func (ss *SQLStorage) Get_category_markets(cat_id int64) []p.InfoMarket {
 				"cur_volume AS volume " +
 			"FROM market as m " +
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN address AS ca ON m.aid = ca.address_id " +
+				"LEFT JOIN address AS ca ON m.creator_aid = ca.address_id " +
 			"WHERE cat_id = $1 " +
 			"ORDER BY m.market_aid "
 

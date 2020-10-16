@@ -20,7 +20,7 @@ func (ss *SQLStorage) fill_block_info(ui *p.UserInfo,user_aid int64) {
 			"FROM address a,block b " +
 			"WHERE (a.address_id=$1) AND (a.block_num=b.block_num) "
 	row := ss.db.QueryRow(query,user_aid)
-	err := row.Scan(&ui.EOAAid,&ui.EOAAddr,&ui.BlockNum,&ui.TimeStamp)
+	err := row.Scan(&ui.Aid,&ui.Addr,&ui.BlockNum,&ui.TimeStamp)
 	if err != nil {
 		if err!=sql.ErrNoRows {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
@@ -44,7 +44,7 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 
 	var query string
 	query = "SELECT " +
-				"s.wallet_aid," +
+				"s.aid," +
 				"s.total_trades," +
 				"s.markets_created," +
 				"s.markets_traded," +
@@ -71,9 +71,9 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 		top_profits		sql.NullFloat64
 		top_trades		sql.NullFloat64
 	)
-	ui.EOAAid = user_aid
+	ui.Aid = user_aid
 	err=row.Scan(
-				&ui.WalletAid,
+				&ui.Aid,
 				&ui.TotalTrades,
 				&ui.MarketsCreated,
 				&ui.MarketsTraded,
@@ -103,13 +103,9 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 		}
 		os.Exit(1)
 	}
-	ui.EOAAddr,err = ss.Lookup_address(eoa_aid)
+	ui.Addr,err = ss.Lookup_address(eoa_aid)
 	if err == nil {
-		ui.EOAAddrSh = p.Short_address(ui.EOAAddr)
-	}
-	ui.WalletAddr,err = ss.Lookup_address(wallet_aid)
-	if err == nil {
-		ui.WalletAddrSh = p.Short_address(ui.WalletAddr)
+		ui.AddrSh = p.Short_address(ui.Addr)
 	}
 	if top_profits.Valid {
 		ui.TopProfit = top_profits.Float64
@@ -455,7 +451,7 @@ func (ss *SQLStorage) Get_user_markets(aid int64) []p.InfoMarket {
 				"cur_volume AS volume " +
 			"FROM market as m " +
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN address AS ca ON m.aid = ca.address_id " +
+				"LEFT JOIN address AS ca ON m.creator_aid = ca.address_id " +
 			"WHERE aid = $1 " +
 			"ORDER BY " +
 				"m.market_aid "
@@ -611,7 +607,7 @@ func (ss *SQLStorage) Get_traded_markets_for_user(aid int64,active_flag int) []p
 			"FROM market as m " +
 				"JOIN trd_mkt_stats AS s ON m.market_aid = s.market_aid " +
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN address AS ca ON m.wallet_aid = ca.address_id " +
+				"LEFT JOIN address AS ca ON m.creator_aid = ca.address_id " +
 			"WHERE s.aid = $1 AND " + where_condition +
 			"ORDER BY s.volume_traded DESC"
 
@@ -704,8 +700,8 @@ func (ss *SQLStorage) Get_created_markets_for_user(aid int64) []p.InfoMarket {
 				"money_at_stake " +
 			"FROM market as m " +
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN address AS ca ON m.aid = ca.address_id " +
-			"WHERE m.aid=$1 " +
+				"LEFT JOIN address AS ca ON m.creator_aid = ca.address_id " +
+			"WHERE m.creator_aid=$1 " +
 			"ORDER BY m.create_timestamp"
 
 	rows,err := ss.db.Query(query,aid)

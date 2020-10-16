@@ -275,7 +275,8 @@ CREATE TABLE exec_wtx (	-- stores contract calls of input with sig=78dc0eed (exe
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	aid					BIGINT NOT NULL,
+	eoa_aid				BIGINT NOT NULL,
+	wallet_aid			BIGINT DEFAULT 0,   -- Uniswap can exchange tokens for EOAs, so Wallet id will be 0
 	to_aid				BIGINT NOT NULL,	-- destination contract address to where the transaciton is sent
 	referral_aid		BIGINT DEFAULT 0,	-- address of referral account (referral_aid will get commissions on TXs)
 	value				DECIMAL(64,18) DEFAULT 0.0,
