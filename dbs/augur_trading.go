@@ -794,6 +794,7 @@ func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,m
 				") AS data " +
 			") " +
 			"SELECT " +
+				"COALESCE(COUNT(pr.id),0) as num_rows, " +
 				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
 				"AVG(price_est) AS avg_price_estimate," +
 				"AVG(wprice_est) AS avg_wpe " +
@@ -813,12 +814,14 @@ func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,m
 		os.Exit(1)
 	}
 	records := make([]p.ZHistT2Entry,0,8)
-
+	var last_rec p.ZHistT2Entry
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.ZHistT2Entry
 		var null_pest,null_wpest sql.NullFloat64
+		var num_rows int
 		err=rows.Scan(
+			&num_rows,
 			&rec.Timestamp,
 			&null_pest,
 			&null_wpest,
@@ -835,6 +838,13 @@ func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,m
 		}
 		p.Augur_UI_price_adjustments(&rec.PriceEstimate,nil,mkt_type)
 		p.Augur_UI_price_adjustments(&rec.WeightedPriceEstimate,nil,mkt_type)
+		if num_rows == 0 {
+			rec.PriceEstimate = last_rec.PriceEstimate
+			rec.WeightedPriceEstimate = last_rec.WeightedPriceEstimate
+		} else {
+			last_rec.PriceEstimate = rec.PriceEstimate
+			last_rec.WeightedPriceEstimate = rec.WeightedPriceEstimate
+		}
 		records = append(records,rec)
 	}
 	return records
@@ -850,7 +860,8 @@ func (ss *SQLStorage) Get_zoomed_price_history(mkt_addr string,market_aid int64,
 
 		var null_ts sql.NullInt64
 		err := ss.db.QueryRow(query,market_aid).Scan(&null_ts)
-		ss.adjust_ts(&fin_ts,err,&null_ts,1)	// we +1 because our comparison operator is '<'
+		ss.adjust_ts(&fin_ts,err,&null_ts)
+		fin_ts++
 	}
 	if init_ts == 0 {
 		query = "SELECT  EXTRACT(EPOCH FROM time_stamp)::BIGINT AS starting_ts "+
@@ -859,7 +870,7 @@ func (ss *SQLStorage) Get_zoomed_price_history(mkt_addr string,market_aid int64,
 				"ORDER BY starting_ts LIMIT 1"
 		var null_ts sql.NullInt64
 		err := ss.db.QueryRow(query,market_aid).Scan(&null_ts)
-		ss.adjust_ts(&init_ts,err,&null_ts,0)
+		ss.adjust_ts(&init_ts,err,&null_ts)
 
 	}
 	init_ts = init_ts / interval
@@ -1542,9 +1553,27 @@ func calc_oi_total(oi_map map[int64]float64) float64 {
 	}
 	return sum
 }
-func (ss *SQLStorage) Get_accumulated_open_interest_all_markets_v2(init_ts int,fin_ts int,interval int) []p.OIAccum {
+func (ss *SQLStorage) Get_accumulated_open_interest_all_markets_v3(init_ts int,fin_ts int,interval int) []p.OIAccum {
+	// Return value: given initial and finel timestamps and the interval, this function splits the
+	//		open interest data in equal intervals and for each interval it returns open interst
+	//		for all markets althogether (the sum of open intersest) in an array
+	// Tech Notes:
+	//		Open Interest is a value that is already being accumulated
+	//		The process is made of 2 subprocesses:
+	//			1. First. We select the last open interest records that exist before 'init_ts' and these 
+	//					values are going to be used as initial values, in case data point for the 
+	//					corresponding period isn't returned by the query
+	//			2. After that we query records within the period (init_ts-fin_ts) tobuild the data. 
+	//				If no data exist for a particular market we pick it from the query we did on step 1
+	//		The overall process takes the open interest value at the end of the interval (it is not AVG)
+	//		Autofills intervals if there is no data by copying open interest from previous interval
+	//			using the 'for' loop
+	// 		This process could be implemented with genetate_series() function and remove the 'for' loop
+	//			that does the autofill, but for loop is faster
+	//		The hashmap is required because open interest stored in the database is an accumulted value
+	//			(it is being accumulated by Augur) so we can't replace it with just one variable where
+	//			we could track total open interest for all markets
 
-	oi_map := make(map[int64]float64)
 	output := make([]p.OIAccum,0,512)
 	var query string
 
@@ -1555,7 +1584,8 @@ func (ss *SQLStorage) Get_accumulated_open_interest_all_markets_v2(init_ts int,f
 
 		var null_ts sql.NullInt64
 		err := ss.db.QueryRow(query).Scan(&null_ts)
-		ss.adjust_ts(&fin_ts,err,&null_ts,1)	// we +1 because our comparison operator is '<'
+		ss.adjust_ts(&fin_ts,err,&null_ts)
+		fin_ts++ // +1 second because we have our comparison operator '<', not '<=' in SELECT
 	}
 	if init_ts == 0 {
 		query = "SELECT  EXTRACT(EPOCH FROM ts_inserted)::BIGINT AS starting_ts "+
@@ -1563,60 +1593,100 @@ func (ss *SQLStorage) Get_accumulated_open_interest_all_markets_v2(init_ts int,f
 				"ORDER BY starting_ts LIMIT 1"
 		var null_ts sql.NullInt64
 		err := ss.db.QueryRow(query).Scan(&null_ts)
-		ss.adjust_ts(&init_ts,err,&null_ts,0)
-
+		ss.adjust_ts(&init_ts,err,&null_ts)
+		if null_ts.Valid {
+			init_ts = int(null_ts.Int64)
+		} else {
+			init_ts = 1595894400 // 28 July 2020 GMT-0  (Augur Release date)
+		}
 	}
+	// align timestamp to interval boundaries:
 	init_ts = init_ts / interval
 	init_ts = init_ts * interval
 
+	query = "SELECT oi,market_aid,id,EXTRACT(EPOCH FROM ts_inserted)::BIGINT " +
+			"FROM oi_chg " +
+			"WHERE id IN (" +
+				"SELECT MAX(id) " +
+				"FROM oi_chg " +
+				"WHERE ts_inserted < TO_TIMESTAMP($1) " + // Note the '<' rows fetched must not intersect with the query in Step 2
+				"GROUP BY market_aid " +
+			")"
+	rows,err := ss.db.Query(query,init_ts)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	oi_map := make(map[int64]float64)
+	
+	// build map of initial open interest values , these values are the last entries found
+	// before our 'init_ts'.
+	defer rows.Close()
+	for rows.Next() {
+		var market_aid int64
+		var oi float64
+		var id,ts int64
+		err = rows.Scan(&oi,&market_aid,&id,&ts)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		oi_map[market_aid] = oi
+	}
+
+	// Step 2 . Fetch available data points whitin interval length
 	query = "SELECT " +
+				"id," +
 				"market_aid," +
 				"ROUND(FLOOR(EXTRACT(EPOCH FROM ts_inserted)))::BIGINT AS ts," +
-				"oi AS oi " +
+				"oi " +
 			"FROM oi_chg " +
 			"WHERE " +
 				"ts_inserted >= TO_TIMESTAMP($1) AND "+
 				"ts_inserted < TO_TIMESTAMP($2) " +
 			"ORDER BY ts"
 
-	rows,err := ss.db.Query(query,init_ts,fin_ts)
+	rows,err = ss.db.Query(query,init_ts,fin_ts)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
+	var cur_ts int = init_ts
 	defer rows.Close()
-	var period_accumulator float64 = 0.0
-	var cur_ts int = 0
 	for rows.Next() {
 		var row p.OIAccum
 		var ts int
 		var market_aid int64
 		var oi float64
-		err = rows.Scan(&market_aid,&ts,&oi)
+		var id int64
+		err = rows.Scan(&id,&market_aid,&ts,&oi)
 		if err != nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		if cur_ts == 0 {
-			cur_ts = ts / interval
-			cur_ts = cur_ts * interval
+		for {
+			if ts >= (cur_ts + interval)  {
+				sum_oi := calc_oi_total(oi_map)
+				row.AccumOpenInterest = sum_oi
+				row.TimeStamp = cur_ts
+				output = append(output,row)
+				cur_ts = cur_ts + interval
+			} else {
+				break
+			}
 		}
-	
-		oi_map[market_aid] = oi_map[market_aid] + oi
-		sum_oi := calc_oi_total(oi_map)
-		period_accumulator = period_accumulator + sum_oi
-		if ts > cur_ts  {
-			row.AccumOpenInterest = period_accumulator
-			row.TimeStamp = cur_ts - interval
-			output = append(output,row)
-			cur_ts = cur_ts + interval
-			period_accumulator = 0.0
-		}
+		oi_map[market_aid] = oi
 	}
+	var row p.OIAccum
+	sum_oi := calc_oi_total(oi_map)
+	row.AccumOpenInterest = sum_oi
+	row.TimeStamp = cur_ts
+	output = append(output,row)
 	return output
 }
-func (ss *SQLStorage) adjust_ts(ts_ptr *int,err error,field *sql.NullInt64,increment int) {
-	
+func (ss *SQLStorage) adjust_ts(ts_ptr *int,err error,field *sql.NullInt64) {
+	// sets ts_ptr to value stored in the DB or, sets NOW()
 	var query string
 	if (err!=nil) {
 		if err==sql.ErrNoRows {
@@ -1628,15 +1698,13 @@ func (ss *SQLStorage) adjust_ts(ts_ptr *int,err error,field *sql.NullInt64,incre
 				os.Exit(1)
 			} else {
 				*ts_ptr = int(null_ts.Int64)
-				ss.Info.Printf("adjust_ts(): Using %v timestamp from NOW\n",*ts_ptr)
 			}
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
 			os.Exit(1)
 		}
 	} else {
-		*ts_ptr = int(field.Int64) + increment
-		ss.Info.Printf("adjust_ts(): Using %v timestamp from in the DB\n",*ts_ptr)
+		*ts_ptr = int(field.Int64)
 	}
 }
 func (ss *SQLStorage) Get_accumulated_trades_all_markets(init_ts int,fin_ts int,interval int) []p.TradesByInterval {
@@ -1651,7 +1719,8 @@ func (ss *SQLStorage) Get_accumulated_trades_all_markets(init_ts int,fin_ts int,
 
 		var null_ts sql.NullInt64
 		err := ss.db.QueryRow(query).Scan(&null_ts)
-		ss.adjust_ts(&fin_ts,err,&null_ts,1)	// we +1 because our comparison operator is '<'
+		ss.adjust_ts(&fin_ts,err,&null_ts)
+		fin_ts++
 	}
 	if init_ts == 0 {
 		query = "SELECT  EXTRACT(EPOCH FROM time_stamp)::BIGINT AS starting_ts "+
@@ -1659,8 +1728,7 @@ func (ss *SQLStorage) Get_accumulated_trades_all_markets(init_ts int,fin_ts int,
 				"ORDER BY starting_ts LIMIT 1"
 		var null_ts sql.NullInt64
 		err := ss.db.QueryRow(query).Scan(&null_ts)
-		ss.adjust_ts(&init_ts,err,&null_ts,0)
-
+		ss.adjust_ts(&init_ts,err,&null_ts)
 	}
 	init_ts = init_ts / interval
 	init_ts = init_ts * interval
@@ -1682,7 +1750,7 @@ func (ss *SQLStorage) Get_accumulated_trades_all_markets(init_ts int,fin_ts int,
 			"SELECT " +
 				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
 				"SUM(amount_filled*price) AS volume," +
-				"count(*) as num_trades " +
+				"COALESCE(COUNT(o.id),0) as num_trades " +
 			"FROM periods AS p " +
 				"LEFT JOIN mktord AS o ON (" +
 					"p.start_ts <= o.time_stamp AND "+
@@ -1690,6 +1758,34 @@ func (ss *SQLStorage) Get_accumulated_trades_all_markets(init_ts int,fin_ts int,
 			") " +
 			"GROUP BY start_ts " +
 			"ORDER BY start_ts"
+	d_query := fmt.Sprintf("WITH periods AS (" +
+				"SELECT * FROM (" +
+					"SELECT " +
+						"generate_series AS start_ts," +
+						"TO_TIMESTAMP(EXTRACT(EPOCH FROM generate_series) + %v) AS end_ts " +
+					"FROM (" +
+						"SELECT * " +
+							"FROM generate_series(" +
+								"TO_TIMESTAMP(%v)," +
+								"TO_TIMESTAMP(%v)," +
+								"TO_TIMESTAMP(%v)-TO_TIMESTAMP(0)" +
+							") " +
+					") AS i" +
+				") AS data " +
+			")" +
+			"SELECT " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
+				"SUM(amount_filled*price) AS volume," +
+				"count(*) as num_trades " +
+			"FROM periods AS p " +
+				"LEFT JOIN mktord AS o ON (" +
+					"p.start_ts <= o.time_stamp AND "+
+					"o.time_stamp < p.end_ts " +
+			") " +
+			"GROUP BY start_ts " +
+			"ORDER BY start_ts",
+			interval,init_ts,fin_ts,interval)
+	ss.Info.Printf("query=%v\n",d_query)
 	rows,err := ss.db.Query(query,init_ts,fin_ts,interval)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
