@@ -342,7 +342,7 @@ BEGIN
 			winning_outcome=NEW.winning_outcome
 		WHERE market.market_aid=NEW.market_aid;
 	UPDATE main_stats SET active_count = (active_count - 1);
-	SELECT aid,validity_bond FROM market WHERE market_aid = NEW.market_aid INTO v_aid,v_validity_bond;
+	SELECT creator_aid,validity_bond FROM market WHERE market_aid = NEW.market_aid INTO v_aid,v_validity_bond;
 	UPDATE ustats SET validity_bonds = validity_bonds - v_validity_bond
 		WHERE aid = v_aid;
 
@@ -356,7 +356,7 @@ DECLARE
 BEGIN
 
 	UPDATE main_stats SET active_count = (active_count + 1);
-	SELECT aid,validity_bond FROM market WHERE market_aid = OLD.market_aid INTO v_aid,v_validity_bond;
+	SELECT creator_aid,validity_bond FROM market WHERE market_aid = OLD.market_aid INTO v_aid,v_validity_bond;
 	UPDATE ustats SET validity_bonds = validity_bonds + v_validity_bond
 		WHERE aid = v_aid;
 
@@ -440,7 +440,7 @@ BEGIN
 		SET greporting = (greporting + t.gas_used),
 			geth_reporting = (geth_reporting + (t.gas_used::DECIMAL * t.gas_price))
 		FROM transaction AS t
-		WHERE _aid=NEW.aid AND t.id=NEW.tx_id;
+		WHERE aid=NEW.aid AND t.id=NEW.tx_id;
 
 	IF NEW.is_designated IS TRUE THEN
 		UPDATE market

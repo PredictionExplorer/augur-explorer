@@ -230,8 +230,7 @@ func (ss *SQLStorage) Link_eoa_and_wallet_contract(eoa_aid, wallet_aid int64) {
 func (ss *SQLStorage) Insert_ustats_record(aid int64) {
 
 	var query string
-	query = "INSERT INTO ustats(aid) " +
-			"VALUES($1)"
+	query = "INSERT INTO ustats(aid) VALUES($1)"
 
 	_,err:=ss.db.Exec(query,aid)
 	if (err!=nil) {

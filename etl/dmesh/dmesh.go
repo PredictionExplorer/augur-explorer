@@ -204,9 +204,10 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 			} else {
 				Dump_0x_mesh_order(Info,order_info)
 				DumpOrderSpec(Info,&ospec)
-				maybe_eoa_addr,_ := get_possible_eoa_by_wallet_addr(&order_info.SignedOrder.Order.MakerAddress,&order_info.OrderHash)
-				eoa_aid,wallet_aid,_ := storage.Lookup_maker_eoa_wallet_ids(&maybe_eoa_addr,&order_info.SignedOrder.Order.MakerAddress)
-				storage.Try_insert_0x_mesh_order_event(eoa_aid,wallet_aid,time_stamp,order_info,&ospec,nil,MeshEvtAdded)
+				//maybe_eoa_addr,_ := get_possible_eoa_by_wallet_addr(&order_info.SignedOrder.Order.MakerAddress,&order_info.OrderHash)
+				//eoa_aid,wallet_aid,_ := storage.Lookup_maker_eoa_wallet_ids(&maybe_eoa_addr,&order_info.SignedOrder.Order.MakerAddress)
+				aid := storage.Lookup_or_create_address(order_info.SignedOrder.Order.MakerAddress.String(),0,0)
+				storage.Try_insert_0x_mesh_order_event(aid,time_stamp,order_info,&ospec,nil,MeshEvtAdded)
 			}
 		}
 	}
@@ -326,8 +327,9 @@ func main() {
 				}
 				Dump_0x_mesh_order(Info,&order_info)
 				DumpOrderSpec(Info,&ospec)
-				maybe_eoa_addr,_ := get_possible_eoa_by_wallet_addr(&order_info.SignedOrder.Order.MakerAddress,&order_info.OrderHash)
-				eoa_aid,wallet_aid,ew_err := storage.Lookup_maker_eoa_wallet_ids(&maybe_eoa_addr,&order_info.SignedOrder.Order.MakerAddress)
+				//maybe_eoa_addr,_ := get_possible_eoa_by_wallet_addr(&order_info.SignedOrder.Order.MakerAddress,&order_info.OrderHash)
+				//eoa_aid,wallet_aid,ew_err := storage.Lookup_maker_eoa_wallet_ids(&maybe_eoa_addr,&order_info.SignedOrder.Order.MakerAddress)
+				aid := storage.Lookup_or_create_address(order_info.SignedOrder.MakerAddress.String(),0,0)
 				switch orderEvent.EndState {
 				case zeroex.ESOrderAdded,
 					zeroex.ESOrderExpired,
@@ -336,8 +338,7 @@ func main() {
 					zeroex.ESStoppedWatching,
 					zeroex.ESOrderUnexpired:
 					storage.Try_insert_0x_mesh_order_event(
-						eoa_aid,
-						wallet_aid,
+						aid,
 						orderEvent.Timestamp.Unix(),
 						&order_info,
 						&ospec,
@@ -347,19 +348,17 @@ func main() {
 				}
 				switch orderEvent.EndState {
 					case zeroex.ESOrderAdded:
-						if ew_err == nil {
-							err := storage.Insert_open_order(
-								&order_hash,
-								orderEvent.SignedOrder,
-								orderEvent.FillableTakerAssetAmount,
-								&maybe_eoa_addr,
-								&ospec,
-								OOOpCodeCreated,
-								orderEvent.Timestamp.Unix(),
-							)
-							if err != nil {
-								Info.Printf("Error inserting order %v: %v\n",order_hash,err)
-							}
+						err := storage.Insert_open_order(
+							&order_hash,
+							orderEvent.SignedOrder,
+							orderEvent.FillableTakerAssetAmount,
+							&order_info.SignedOrder.MakerAddress,
+							&ospec,
+							OOOpCodeCreated,
+							orderEvent.Timestamp.Unix(),
+						)
+						if err != nil {
+							Info.Printf("Error inserting order %v: %v\n",order_hash,err)
 						}
 					case zeroex.ESOrderExpired:
 						storage.Delete_open_0x_order(orderEvent.OrderHash.String(),orderEvent.Timestamp.Unix(),OOOpCodeExpired)

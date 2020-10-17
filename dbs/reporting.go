@@ -50,10 +50,10 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 			next_win_end,
 			rpt_timestamp
 		) VALUES (
-			$1,$2,$3,$4,$5,$6,$7,$8,$9,(` + amount_staked + `/1e+18),$10,$11,
+			$1,$2,$3,$4,$5,$6,$7,$8,(` + amount_staked + `/1e+18),$9,$10,
+			TO_TIMESTAMP($11),
 			TO_TIMESTAMP($12),
-			TO_TIMESTAMP($13),
-			TO_TIMESTAMP($14)
+			TO_TIMESTAMP($13)
 		)`
 	result,err := ss.db.Exec(query,
 			agtx.BlockNum,
@@ -137,8 +137,8 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDispu
 			current_stake,
 			stake_remaining,
 			rpt_timestamp
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,`+amount_staked+`/1e+18,$9,$10,
-				`+cur_stake+`/1e+18,`+stake_remaining+`/1e+18,TO_TIMESTAMP($11))`
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,`+amount_staked+`/1e+18,$8,$9,
+				`+cur_stake+`/1e+18,`+stake_remaining+`/1e+18,TO_TIMESTAMP($10))`
 	result,err := ss.db.Exec(query,
 			agtx.BlockNum,
 			agtx.TxId,

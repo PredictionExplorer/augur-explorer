@@ -2,16 +2,16 @@
 <tr class="forders_list">
 	<td class="forders_field"><a class="addr" href="order/{{.OrderId}}">{{.OrderHashSh}}</a></td>
 	<td class="forders_field">{{.Date}}</td>
-	<td class="forders_field" title="{{.CreatorEOAAddr}}">
+	<td class="forders_field" title="{{.CreatorAddr}}">
 		{{- if .CreatorBuyer }}
 			<font color=green><b>BUYER</b></font> 
 		{{- else }}
 			<font color=red><b>SELLER</b></font> 
 		{{- end }}
-		<a class="addr" href="../search?q={{.CreatorEOAAddr}}">{{.CreatorEOAAddrSh}}</a>
+		<a class="addr" href="../search?q={{.CreatorAddr}}">{{.CreatorAddrSh}}</a>
 	</td>
-	<td class="forders_field" title="{{.FillerEOAAddr}}">
-		<a class="addr" href="../search?q={{.FillerEOAAddr}}">{{.FillerEOAAddrSh}}</a>
+	<td class="forders_field" title="{{.FillerAddr}}">
+		<a class="addr" href="../search?q={{.FillerAddr}}">{{.FillerAddrSh}}</a>
 		{{- if .FillerBuyer }}
 			<font color=green><b>BUYER</b></font> 
 		{{- else }}
