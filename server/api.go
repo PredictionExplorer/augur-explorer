@@ -641,7 +641,7 @@ func a1_stats_accum_oi(c *gin.Context) {
 	if !success {
 		return
 	}
-	oi := augur_srv.storage.Get_accumulated_open_interest_all_markets_v2(init_ts,fin_ts,interval_secs)
+	oi := augur_srv.storage.Get_accumulated_open_interest_all_markets_v3(init_ts,fin_ts,interval_secs)
 
 	var status int = 1
 	var err_str string = ""
