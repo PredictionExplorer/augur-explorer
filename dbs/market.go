@@ -967,10 +967,6 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 				"o.total_trades," +
 				"o.total_oorders," +
 				"o.last_price, " +
-				"o.highest_bid," +
-				"o.lowest_ask," +
-				"o.cur_spread," +
-				"o.price_estimate,"+
 				"m.market_type, " +
 				"m.outcomes " +
 			"FROM outcome_vol AS o " +
@@ -995,18 +991,10 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 			&rec.TotalTrades,
 			&rec.TotalOpenOrders,
 			&rec.LastPrice,
-			&rec.HighestBid,
-			&rec.LowestAsk,
-			&rec.CurSpread,
-			&rec.PriceEstimate,
 			&rec.MktType,
 			&outcomes,
 		)
 		p.Augur_UI_price_adjustments(&rec.LastPrice,nil,rec.MktType)
-		p.Augur_UI_price_adjustments(&rec.HighestBid,nil,rec.MktType)
-		p.Augur_UI_price_adjustments(&rec.LowestAsk,nil,rec.MktType)
-		p.Augur_UI_price_adjustments(&rec.CurSpread,nil,rec.MktType)
-		p.Augur_UI_price_adjustments(&rec.PriceEstimate,nil,rec.MktType)
 		rec.MktAddr = mkt_addr
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
@@ -1016,6 +1004,60 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 		records = append(records,rec)
 	}
 	return records,nil
+}
+func (ss *SQLStorage) Get_price_estimates(market_aid int64,outcomes []p.OutcomeVol) []p.PriceEstimate {
+
+	var rec p.PriceEstimate
+	records := make([]p.PriceEstimate,0,8)
+
+	var query string
+	query = "SELECT " +
+				"p.outcome_idx, " +
+				"FLOOR(EXTRACT(EPOCH FROM p.time_stamp))::BIGINT AS ts," +
+				"p.price_est," +
+				"p.spread," +
+				"p.max_bid," +
+				"p.min_ask," +
+				"p.wprice_est, " +
+				"p.wmax_bid," +
+				"p.wmin_ask, "+
+				"m.market_type " +
+			"FROM price_estimate AS p " +
+				"JOIN market AS m on p.market_aid=m.market_aid " +
+			"WHERE p.market_aid = $1 AND outcome_idx=$2" +
+			"ORDER BY ts DESC LIMIT 1"
+
+	for _,outc := range outcomes {
+		var mkt_type int
+		err:=ss.db.QueryRow(query,market_aid,outc.Outcome).Scan(
+			&rec.OutcomeIdx,
+			&rec.TimeStamp,
+			&rec.PriceEst,
+			&rec.Spread,
+			&rec.MaxBid,
+			&rec.MinAsk,
+			&rec.WeightedPriceEst,
+			&rec.WMaxBid,
+			&rec.WMinAsk,
+			&mkt_type,
+		)
+		if (err!=nil) {
+			if (err==sql.ErrNoRows) {
+			} else {
+				ss.Log_msg(fmt.Sprintf("DB error for market_aid=%v: %v, q=%v",market_aid,err,query))
+				os.Exit(1)
+			}
+		}
+		p.Augur_UI_price_adjustments(&rec.PriceEst,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.Spread,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.MaxBid,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.MinAsk,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.WeightedPriceEst,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.WMaxBid,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.WMinAsk,nil,mkt_type)
+		records = append(records,rec)
+	}
+	return records
 }
 func (ss *SQLStorage) Get_category_markets(cat_id int64) []p.InfoMarket {
 

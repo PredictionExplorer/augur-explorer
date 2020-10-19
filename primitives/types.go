@@ -156,10 +156,10 @@ type OutcomeVol struct {
 	MktType			int
 	Volume			float64
 	LastPrice		float64
-	HighestBid		float64
-	LowestAsk		float64
-	CurSpread		float64
-	PriceEstimate	float64
+//	HighestBid		float64
+//	LowestAsk		float64
+//	CurSpread		float64
+//	PriceEstimate	float64
 	TotalTrades		int64
 	TotalOpenOrders	int64
 	MktAddr			string
