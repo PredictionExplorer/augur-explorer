@@ -683,6 +683,7 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 				"extra_info::json->>'description' AS descr," +
 				"extra_info::json->>'longDescription' AS long_desc," +
 				"extra_info::json->>'categories' AS categories," +
+				"extra_info::json->>'_scalarDenomination' AS scalar_units," +
 				"outcomes," +
 				"num_ticks," +
 				"m.market_type, " +
@@ -700,7 +701,8 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 				"no_show_bond," +
 				"validity_bond," +
 				"cur_volume AS volume, " +
-				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim " +
+				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim, " +
+				"split_part(prices,',',2)::decimal/1e+18 AS high_price_lim " +
 			"FROM market as m " +
 				"LEFT JOIN " +
 					"address AS ma ON m.market_aid = ma.address_id " +
@@ -718,6 +720,7 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 	var description sql.NullString
 	var longdesc sql.NullString
 	var category sql.NullString
+	var scalar_units sql.NullString
 	res := ss.db.QueryRow(query,id)
 	err := res.Scan(
 			&rec.MktAid,
@@ -729,6 +732,7 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 			&description,
 			&longdesc,
 			&category,
+			&scalar_units,
 			&rec.Outcomes,
 			&rec.NumTicks,
 			&rec.MktType,
@@ -742,6 +746,7 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 			&rec.ValidityBond,
 			&rec.CurVolume,
 			&rec.LowPriceLimit,
+			&rec.HighPriceLimit,
 	)
 	if (err!=nil) {
 		if err!=sql.ErrNoRows {
@@ -760,6 +765,9 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 	}
 	if category.Valid {
 		rec.CategoryStr=category.String
+	}
+	if scalar_units.Valid {
+		rec.ScalarUnits = scalar_units.String
 	}
 	rec.Status = get_market_status_str(p.MarketStatus(rec.MktStatus))
 
@@ -866,6 +874,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') AS end_date," + 
 				"extra_info::json->>'description' AS descr," +
 				"extra_info::json->>'longDescription' AS long_desc," +
+				"extra_info::json->>'_scalarDenomination' AS scalar_units," +
 				"cat.category," +
 				"outcomes," +
 				"m.market_type, " +
@@ -880,7 +889,8 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				"cur_volume AS volume, " +
 				"total_trades," +
 				"money_at_stake, " +
-				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim " +
+				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim, " +
+				"split_part(prices,',',2)::decimal/1e+18 AS high_price_lim " +
 			"FROM market as m " +
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
 				"LEFT JOIN address AS sa ON m.eoa_aid = sa.address_id " +
@@ -894,6 +904,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 	var description sql.NullString
 	var long_desc sql.NullString
 	var category sql.NullString
+	var scalar_units sql.NullString
 	err=row.Scan(
 				&mkt_type,
 				&rec.MktAddr,
@@ -907,6 +918,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				&description,
 				&long_desc,
 				&category,
+				&scalar_units,
 				&rec.Outcomes,
 				&rec.MktType,
 				&rec.MktTypeStr,
@@ -917,6 +929,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				&rec.TotalTrades,
 				&rec.MoneyAtStake,
 				&rec.LowPriceLimit,
+				&rec.HighPriceLimit,
 	)
 	rec.MktAddrSh=p.Short_address(rec.MktAddr)
 	rec.SignerSh=p.Short_address(rec.Signer)
@@ -930,6 +943,9 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 	}
 	if category.Valid {
 		rec.CategoryStr = category.String
+	}
+	if scalar_units.Valid {
+		rec.ScalarUnits = scalar_units.String
 	}
 	if oc { // get outcome string
 		rec.CurOutcome = get_outcome_str(uint8(mkt_type),outcome_idx,&rec.Outcomes)
@@ -1000,7 +1016,9 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 			&outcomes,
 		)
 		p.Augur_UI_price_adjustments(&rec.LastPrice,nil,rec.MktType)
-		rec.LastPrice = rec.LastPrice + low_price_limit
+		if rec.Outcome != 0 {
+			rec.LastPrice = rec.LastPrice + low_price_limit
+		}
 		rec.MktAddr = mkt_addr
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))

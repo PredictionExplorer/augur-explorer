@@ -462,7 +462,7 @@ func market_price_history(c *gin.Context) {
 		show_market_not_found_error(c,false,&market_addr)
 		return
 	}
-	mkt_price_hist := augur_srv.storage.Get_price_history_for_outcome(market_info.MktAid,outcome)
+	mkt_price_hist := augur_srv.storage.Get_price_history_for_outcome(market_info.MktAid,outcome,market_info.LowPriceLimit)
 	js_price_history := build_js_price_history(&mkt_price_hist)
 	fmt.Printf("js price history = %v\n",js_price_history)
 	c.HTML(http.StatusOK, "price_history.html", gin.H{
