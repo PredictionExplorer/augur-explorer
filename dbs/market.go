@@ -768,6 +768,7 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 		return rec,err
 	}
 	rec.OutcomeVolumes = volumes
+	rec.PriceEstimates = ss.Get_price_estimates(id,volumes)
 
 	return rec,nil
 }
