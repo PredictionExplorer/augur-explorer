@@ -101,6 +101,7 @@ type InfoMarket struct {
 	NoShowBond		float64
 	ValidityBond	float64
 	LowPriceLimit	float64
+	HighPriceLimit	float64
 	TotalTrades		int64
 	NumTicks		int64
 	CreatedTs		int64
@@ -125,6 +126,7 @@ type InfoMarket struct {
 	MktTypeStr		string
 	Status			string
 	CurOutcome		string	// calculated only if the query is made on specific outcome
+	ScalarUnits		string
 	Subcategories	[]string	// splitted string of subcategories
 	OutcomeVolumes	[]OutcomeVol
 	PriceEstimates	[]PriceEstimate

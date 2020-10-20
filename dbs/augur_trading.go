@@ -579,7 +579,7 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 	}
 	return records,max_id
 }
-func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) []p.OrderInfo {
+func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int,low_price_limit float64) []p.OrderInfo {
 
 	var query string
 	query = "SELECT " +
@@ -644,6 +644,9 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 			os.Exit(1)
 		}
 		p.Augur_UI_price_adjustments(&rec.Price,&rec.Amount,mkt_type)
+		if rec.OutcomeIdx != 0 {
+			rec.Price = rec.Price + low_price_limit
+		}
 		rec.CreatorBuyer = true
 		rec.FillerBuyer = false
 		if rec.OType == 1 {
@@ -668,7 +671,7 @@ func (ss *SQLStorage) Get_full_price_history(mkt_addr string,market_aid int64,lo
 		var ph p.PriceHistory
 		ph.OutcomeIdx = outc.Outcome
 		ph.OutcomeStr = outc.OutcomeStr
-		ph.Trades = ss.Get_price_history_for_outcome(market_aid,outc.Outcome)
+		ph.Trades = ss.Get_price_history_for_outcome(market_aid,outc.Outcome,low_price_limit)
 		output.Outcomes = append(output.Outcomes,ph)
 	}
 	return output
