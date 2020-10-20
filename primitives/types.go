@@ -126,6 +126,7 @@ type InfoMarket struct {
 	CurOutcome		string	// calculated only if the query is made on specific outcome
 	Subcategories	[]string	// splitted string of subcategories
 	OutcomeVolumes	[]OutcomeVol
+	PriceEstimates	[]PriceEstimate
 }
 type InfoCategories struct {
 	CatId			int64
