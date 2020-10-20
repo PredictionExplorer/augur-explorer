@@ -699,7 +699,8 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 				"open_interest AS OI," +
 				"no_show_bond," +
 				"validity_bond," +
-				"cur_volume AS volume " +
+				"cur_volume AS volume, " +
+				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim " +
 			"FROM market as m " +
 				"LEFT JOIN " +
 					"address AS ma ON m.market_aid = ma.address_id " +
@@ -740,6 +741,7 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 			&rec.NoShowBond,
 			&rec.ValidityBond,
 			&rec.CurVolume,
+			&rec.LowPriceLimit,
 	)
 	if (err!=nil) {
 		if err!=sql.ErrNoRows {
@@ -762,13 +764,13 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 	rec.Status = get_market_status_str(p.MarketStatus(rec.MktStatus))
 
 
-	volumes,err := ss.Get_outcome_volumes(rec.MktAddr,id,1)
+	volumes,err := ss.Get_outcome_volumes(rec.MktAddr,id,1,rec.LowPriceLimit)
 	if err!=nil {
 		ss.Log_msg(fmt.Sprintf("DB error querying card for id=%v : %v (query=%v)",id,err,query))
 		return rec,err
 	}
 	rec.OutcomeVolumes = volumes
-	rec.PriceEstimates = ss.Get_price_estimates(id,volumes)
+	rec.PriceEstimates = ss.Get_price_estimates(id,volumes,rec.LowPriceLimit)
 
 	return rec,nil
 }
@@ -877,7 +879,8 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				"open_interest AS OI," +
 				"cur_volume AS volume, " +
 				"total_trades," +
-				"money_at_stake " +
+				"money_at_stake, " +
+				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim " +
 			"FROM market as m " +
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
 				"LEFT JOIN address AS sa ON m.eoa_aid = sa.address_id " +
@@ -913,6 +916,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				&rec.CurVolume,
 				&rec.TotalTrades,
 				&rec.MoneyAtStake,
+				&rec.LowPriceLimit,
 	)
 	rec.MktAddrSh=p.Short_address(rec.MktAddr)
 	rec.SignerSh=p.Short_address(rec.Signer)
@@ -951,7 +955,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 
 	return rec,nil
 }
-func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,orderby int) ([]p.OutcomeVol,error) {
+func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,orderby int,low_price_limit float64) ([]p.OutcomeVol,error) {
 
 
 	var rec p.OutcomeVol
@@ -996,6 +1000,7 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 			&outcomes,
 		)
 		p.Augur_UI_price_adjustments(&rec.LastPrice,nil,rec.MktType)
+		rec.LastPrice = rec.LastPrice + low_price_limit
 		rec.MktAddr = mkt_addr
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
@@ -1006,7 +1011,7 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 	}
 	return records,nil
 }
-func (ss *SQLStorage) Get_price_estimates(market_aid int64,outcomes []p.OutcomeVol) []p.PriceEstimate {
+func (ss *SQLStorage) Get_price_estimates(market_aid int64,outcomes []p.OutcomeVol,low_price_limit float64) []p.PriceEstimate {
 
 	var rec p.PriceEstimate
 	records := make([]p.PriceEstimate,0,8)
@@ -1028,6 +1033,8 @@ func (ss *SQLStorage) Get_price_estimates(market_aid int64,outcomes []p.OutcomeV
 			"WHERE p.market_aid = $1 AND outcome_idx=$2" +
 			"ORDER BY ts DESC LIMIT 1"
 
+
+
 	for _,outc := range outcomes {
 		var mkt_type int
 		err:=ss.db.QueryRow(query,market_aid,outc.Outcome).Scan(
@@ -1044,6 +1051,7 @@ func (ss *SQLStorage) Get_price_estimates(market_aid int64,outcomes []p.OutcomeV
 		)
 		if (err!=nil) {
 			if (err==sql.ErrNoRows) {
+				continue
 			} else {
 				ss.Log_msg(fmt.Sprintf("DB error for market_aid=%v: %v, q=%v",market_aid,err,query))
 				os.Exit(1)
@@ -1056,6 +1064,14 @@ func (ss *SQLStorage) Get_price_estimates(market_aid int64,outcomes []p.OutcomeV
 		p.Augur_UI_price_adjustments(&rec.WeightedPriceEst,nil,mkt_type)
 		p.Augur_UI_price_adjustments(&rec.WMaxBid,nil,mkt_type)
 		p.Augur_UI_price_adjustments(&rec.WMinAsk,nil,mkt_type)
+		if rec.OutcomeIdx != 0 {
+			rec.PriceEst = rec.PriceEst + low_price_limit
+			rec.MaxBid = rec.MaxBid + low_price_limit
+			rec.MinAsk = rec.MinAsk + low_price_limit
+			rec.WeightedPriceEst = rec.WeightedPriceEst + low_price_limit
+			rec.WMaxBid = rec.WMaxBid + low_price_limit
+			rec.WMinAsk = rec.MinAsk + low_price_limit
+		}
 		records = append(records,rec)
 	}
 	return records
