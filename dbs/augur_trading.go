@@ -660,10 +660,10 @@ func (ss *SQLStorage) Get_price_history_for_outcome(market_aid int64,outc int) [
 	}
 	return records
 }
-func (ss *SQLStorage) Get_full_price_history(mkt_addr string,market_aid int64) p.FullPriceHistory {
+func (ss *SQLStorage) Get_full_price_history(mkt_addr string,market_aid int64,low_price_limit float64) p.FullPriceHistory {
 
 	var output p.FullPriceHistory
-	outcomes,_ := ss.Get_outcome_volumes(mkt_addr,market_aid,0);
+	outcomes,_ := ss.Get_outcome_volumes(mkt_addr,market_aid,0,low_price_limit);
 	for _,outc := range outcomes {
 		var ph p.PriceHistory
 		ph.OutcomeIdx = outc.Outcome
@@ -776,7 +776,7 @@ func (ss *SQLStorage) Get_zoomed_t1_price_history_for_outcome(market_aid int64,m
 	}
 	return records
 }
-func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,mkt_type int,outc int,init_ts int,fin_ts int,interval int) []p.ZHistT2Entry {
+func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,mkt_type int,outc int,init_ts int,fin_ts int,interval int,low_price_limit float64) []p.ZHistT2Entry {
 
 	var query string
 	query = "WITH periods AS (" +
@@ -845,12 +845,17 @@ func (ss *SQLStorage) Get_zoomed_t2_price_history_for_outcome(market_aid int64,m
 			last_rec.PriceEstimate = rec.PriceEstimate
 			last_rec.WeightedPriceEstimate = rec.WeightedPriceEstimate
 		}
+		if outc != 0 {
+			rec.PriceEstimate = rec.PriceEstimate + low_price_limit
+			rec.WeightedPriceEstimate = rec.WeightedPriceEstimate + low_price_limit
+		}
 		records = append(records,rec)
 	}
 	return records
 }
 func (ss *SQLStorage) Get_zoomed_price_history(mkt_addr string,market_aid int64,init_ts int,fin_ts int,interval int) p.FullZoomedPriceHist {
 
+	var output p.FullZoomedPriceHist
 	var query string
 	if fin_ts == 2147483647 {
 		query = "SELECT  EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ending_ts "+
@@ -873,15 +878,31 @@ func (ss *SQLStorage) Get_zoomed_price_history(mkt_addr string,market_aid int64,
 		ss.adjust_ts(&init_ts,err,&null_ts)
 
 	}
+	query = "SELECT " +
+				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim " +
+			"FROM market " +
+			"WHERE market_aid = $1"
+
+	row := ss.db.QueryRow(query,market_aid)
+	var low_price_limit float64
+	err := row.Scan(&low_price_limit);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return output
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+
 	init_ts = init_ts / interval
 	init_ts = init_ts * interval
-	var output p.FullZoomedPriceHist
 	mkt_type,_,err := ss.get_market_type_and_ticks(market_aid)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("Aborting Get_zoomed_price_history() call, market %v not found\n",market_aid))
 		return output
 	}
-	outcomes,_ := ss.Get_outcome_volumes(mkt_addr,market_aid,0);
+	outcomes,_ := ss.Get_outcome_volumes(mkt_addr,market_aid,0,low_price_limit);
 	for _,outc := range outcomes {
 		var ph p.ZoomedPriceHist
 		ph.OutcomeIdx = outc.Outcome
@@ -896,6 +917,7 @@ func (ss *SQLStorage) Get_zoomed_price_history(mkt_addr string,market_aid int64,
 			init_ts,
 			fin_ts,
 			interval,
+			low_price_limit,
 		)
 		output.Outcomes = append(output.Outcomes,ph)
 	}

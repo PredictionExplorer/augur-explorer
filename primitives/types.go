@@ -100,6 +100,7 @@ type InfoMarket struct {
 	VolTraded		float64
 	NoShowBond		float64
 	ValidityBond	float64
+	LowPriceLimit	float64
 	TotalTrades		int64
 	NumTicks		int64
 	CreatedTs		int64
