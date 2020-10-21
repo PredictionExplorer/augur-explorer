@@ -874,10 +874,11 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') AS end_date," + 
 				"extra_info::json->>'description' AS descr," +
 				"extra_info::json->>'longDescription' AS long_desc," +
-				"extra_info::json->>'_scalarDenomination' AS scalar_units," +
 				"cat.category," +
+				"extra_info::json->>'_scalarDenomination' AS scalar_units," +
 				"outcomes," +
 				"m.market_type, " +
+				"m.num_ticks," +
 				"CASE m.market_type " +
 					"WHEN 0 THEN 'YES/NO' " +
 					"WHEN 1 THEN 'CATEGORICAL' " +
@@ -921,6 +922,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				&scalar_units,
 				&rec.Outcomes,
 				&rec.MktType,
+				&rec.NumTicks,
 				&rec.MktTypeStr,
 				&rec.MktStatus,
 				&rec.Fee,
