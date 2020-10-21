@@ -573,4 +573,13 @@ func (ss *SQLStorage) Update_augur_process_status(status *p.AugurProcessStatus) 
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Delete_exec_wtx(tx_id int64) {
 
+	var query string
+	query = "DELETE FROM exec_wtx WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}

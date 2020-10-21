@@ -782,3 +782,22 @@ func (ss *SQLStorage) Get_evt_log_ids_by_signature(sig string,contract_aids stri
 	}
 	return output
 }
+func (ss *SQLStorage) Delete_transaction_related_data(tx_id int64) {
+
+	// Note: the list of DELETEs must match the list of event signatures
+	//			built in built_list_of_expected_events() function
+
+	ss.Delete_market_created_evt(tx_id)
+	ss.Delete_market_oi_changed_evt(tx_id)
+	ss.Delete_market_order_evt(tx_id)
+	ss.Delete_market_finalized_evt(tx_id)
+	ss.Delete_report_evt(tx_id)
+	ss.Delete_market_vol_changed_evt(tx_id)
+	ss.Delete_token_balance_changed_evt(tx_id)
+	ss.Delete_share_balance_changed_evt(tx_id)
+	ss.Delete_cancel_open_order_evt(tx_id)
+	ss.Delete_profit_loss_evt(tx_id)
+	ss.Delete_trading_proceeds_claimed_evt(tx_id)
+	ss.Delete_register_contract_evt(tx_id)
+	ss.Delete_claim_funds(tx_id)
+}

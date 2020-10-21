@@ -163,6 +163,41 @@ func (ss *SQLStorage) Update_claim_status(agtx *p.AugurTx,evt *p.ETradingProceed
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Insert_trading_proceeds_claimed_evt(agtx *p.AugurTx,evt *p.ETradingProceedsClaimed) {
+
+	market_aid := ss.Lookup_address_id(evt.Market.String())
+	aid := ss.Lookup_or_create_address(evt.Sender.String(),agtx.BlockNum,agtx.TxId)
+	var query string
+	query = "INSERT INTO tproceeds(" +
+				"block_num,tx_id,market_aid,aid,time_stamp,outcome_idx,num_shares,num_payout_tok,fees" +
+			") VALUES ($1,$2,$3,$4,$5,$6,($7::DECIMAL/1e+18),($8::DECIMAL/1e+18),($9::DECIMAL/1e+18))"
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,
+		agtx.TxId,
+		market_aid,
+		aid,
+		evt.Timestamp.Int64(),
+		evt.Outcome.Int64(),
+		evt.NumShares.String(),
+		evt.NumPayoutTokens.String(),
+		evt.Fees.String(),
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: %v:q=%v",err,query))
+		os.Exit(1)
+	}
+
+}
+func (ss *SQLStorage) Delete_trading_proceeds_claimed_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM tproceeds WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,evt *p.EProfitLossChanged) int64  {
 
 	var query string
@@ -336,6 +371,16 @@ func (ss *SQLStorage) Insert_profit_loss_debug_rec(pchg *p.PosChg) {
 	_,err := ss.db.Exec(query,pchg.BlockNum,market_aid,aid,pchg.Outcome.Int64())
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB Error: %v q=%v",err,query));
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_claim_funds(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM claim_funds WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
 }

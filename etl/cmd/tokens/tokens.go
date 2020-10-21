@@ -28,6 +28,7 @@ import (
 const (
 	DEFAULT_DB_LOG				= "db.log"
 	ERC20_TRANSFER = "ddf252ad"
+	BALANCER_SWAP = "908fb5ee"
 )
 var (
 	storage *SQLStorage

@@ -168,6 +168,18 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,ev
 	}
 	ss.Update_oo_fillable_amount(order_hash,zorder.SignedOrder)
 }
+func (ss *SQLStorage) Delete_market_order_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM mktord WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Update_open_order_history(mktord_id int64,order_hash string,timestamp int64,amount_filled string,opcode int) {
+}
 func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,fillable_amount *big.Int,acct_addr *common.Address,ospec *p.ZxMeshOrderSpec,opcode int,evt_timestamp int64) error {
 	// Insert an open order, this order needs to be Filled by another market participant
 	// It also can be canceled by its creator (with another transaction)
@@ -264,6 +276,41 @@ func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,
 	}
 	return errors.New("Affected rows=0")
 }
+func (ss *SQLStorage) Insert_cancel_open_order_evt(agtx *p.AugurTx,evt *p.ECancelZeroXOrder) {
+
+	market_aid := ss.Lookup_address_id(evt.Market.String())
+	aid := ss.Lookup_or_create_address(evt.Account.String(),agtx.BlockNum,agtx.TxId)
+	ohash := common.BytesToHash(evt.OrderHash[:])
+	ohash_str := ohash.String()
+
+	var query string
+	query = "INSERT INTO cancel_0x(block_num,tx_id,market_aid,aid,outcome_idx,otype,price,order_hash) " +
+			"VALUES($1,$2,$3,$4,$5,($6::DECIMAL/1e+18),$7)"
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,
+		agtx.TxId,
+		market_aid,
+		aid,
+		evt.Outcome.Int64(),
+		evt.OrderType,
+		evt.Price.String(),
+		ohash_str,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_cancel_open_order_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM cancel_0x WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Cancel_open_order(aid int64,orders map[string]*ztypes.OrderInfo,order_specs map[string]*p.ZxMeshOrderSpec,order_hash string,timestamp int64) {
 
 	oinfo := orders[order_hash]
@@ -284,10 +331,9 @@ func (ss *SQLStorage) Cancel_open_order(aid int64,orders map[string]*ztypes.Orde
 		)
 		os.Exit(1)
 	}
-
+	var query string
 	ss.Insert_0x_mesh_order_event(aid,timestamp,oinfo,ospec,nil,p.MeshEvtCancelled)
 
-	var query string
 	query = "DELETE FROM oorders WHERE order_hash = $1"
 	result,err := ss.db.Exec(query,order_hash)
 	if err!=nil {

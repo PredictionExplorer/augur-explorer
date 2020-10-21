@@ -129,6 +129,29 @@ CREATE TABLE outcome_vol (	-- this is the (accumulated) volume per outcome (inde
 	cur_spread			DECIMAL(64,18) DEFAULT 0.0,	-- spread from open orders (lowest_ask - highest bid)
 	price_estimate		DECIMAL(64,18) DEFAULT 0.0  -- calculated using trigger update_price_estimate()
 );
+CREATE TABLE cancel_0x ( -- events canceling 0x orders
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	otype				SMALLINT NOT NULL,-- 0: BID, 1: ASK
+	price				DECIMAL(32,18) NOT NULL,
+	order_hash			CHAR(66) NULL UNIQUE
+);
+CREATE TABLE tproceeds (	-- table to store TradingProceedsClaimed event (User has claimed his funds)
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	num_shares			DECIMAL(36,18) NOT NULL,
+	num_payout_tok		DECIMAL(36,18) NOT NULL,
+	fees				DECIMAL(36,18) NOT NULL
+);
 CREATE table oi_chg ( -- open interest changed event
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)

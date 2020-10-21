@@ -242,4 +242,8 @@ type EUniverseCreated struct {
 	CreationTimestamp *big.Int
 	Raw               types.Log // Blockchain specific contextual infos
 }
-
+type EAugurFoundryWrapperCreated struct {
+	TokenId      *big.Int
+	TokenAddress common.Address
+	Raw          types.Log // Blockchain specific contextual infos
+}
