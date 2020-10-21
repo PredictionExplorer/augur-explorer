@@ -1757,6 +1757,26 @@ func (ss *SQLStorage) Get_accumulated_trades_all_markets(init_ts int,fin_ts int,
 	}
 	init_ts = init_ts / interval
 	init_ts = init_ts * interval
+
+	var accum_num_trades int64 = 0
+	var accum_volume float64 = 0.0
+
+	query = "SELECT count(*) as num_trades,SUM(amount_filled*price) AS volume " +
+			"FROM mktord WHERE time_stamp < TO_TIMESTAMP($1)"
+	var null_num_trades sql.NullInt64
+	var null_volume sql.NullFloat64
+	err := ss.db.QueryRow(query,init_ts).Scan(&null_num_trades,&null_volume);
+	if (err!=nil) {
+		ss.Log_msg(	fmt.Sprintf("DB error: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	if null_num_trades.Valid {
+		accum_num_trades = null_num_trades.Int64
+	}
+	if null_volume.Valid {
+		accum_volume = null_volume.Float64
+	}
+
 	query = "WITH periods AS (" +
 				"SELECT * FROM (" +
 					"SELECT " +
@@ -1817,8 +1837,6 @@ func (ss *SQLStorage) Get_accumulated_trades_all_markets(init_ts int,fin_ts int,
 		os.Exit(1)
 	}
 	defer rows.Close()
-	var accum_num_trades int64 = 0
-	var accum_volume float64 = 0.0
 	for rows.Next() {
 		var rec p.TradesByInterval
 		var null_vol sql.NullFloat64
