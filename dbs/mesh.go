@@ -31,7 +31,7 @@ func (ss *SQLStorage) Try_insert_0x_mesh_order_event(aid int64,timestamp int64,o
 	ss.Insert_0x_mesh_order_event(aid,timestamp,oi,ospec,amount_fill,event_code)
 	return true
 }
-func (ss *SQLStorage) Insert_0x_mesh_order_event(aid int64,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) {
+func (ss *SQLStorage) Insert_0x_mesh_order_event(aid int64,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) bool {
 
 	if ospec == nil {
 		ss.Log_msg(
@@ -57,7 +57,7 @@ func (ss *SQLStorage) Insert_0x_mesh_order_event(aid int64,timestamp int64,oi *z
 		}
 	} else {
 		// event with this code already exists
-		return
+		return false
 	}
 
 	// Prevent insertion of event without ADD event. If ADD event is missing then simulate it
@@ -75,13 +75,17 @@ func (ss *SQLStorage) Insert_0x_mesh_order_event(aid int64,timestamp int64,oi *z
 			}
 		}
 	}
-	market_aid := ss.do_insert_0x_mesh_order_event(aid,timestamp,oi,ospec,amount_fill,event_code)
+	market_aid,err := ss.do_insert_0x_mesh_order_event(aid,timestamp,oi,ospec,amount_fill,event_code)
+	if err != nil {
+		return false
+	}
 	// now we need to update all posterior records because future price estimate values
 	// depend on past values
 	ss.Update_future_price_estimates(market_aid,int(ospec.Outcome),timestamp)
 	if ( event_code == p.MeshEvtFilled) || (event_code == p.MeshEvtFullyFilled) {
 		ss.Update_oo_fillable_amount(oi.OrderHash.String(),oi.SignedOrder)
 	}
+	return true
 }
 func (ss *SQLStorage) Update_future_price_estimates(market_aid int64,outcome_idx int,timestamp int64) {
 
@@ -120,7 +124,7 @@ func (ss *SQLStorage) Update_future_price_estimates(market_aid int64,outcome_idx
 		}
 	}
 }
-func (ss *SQLStorage) do_insert_0x_mesh_order_event(aid int64,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) int64 {
+func (ss *SQLStorage) do_insert_0x_mesh_order_event(aid int64,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) (int64,error) {
 
 	market_aid := ss.Lookup_or_create_address(ospec.Market.String(),0,0)// block and tx_id will be updated on market creation event
 	amount_fill_str := "0"
@@ -224,11 +228,9 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(aid int64,timestamp int64,oi
 					),
 				)
 		}
-
-		ss.Info.Printf("Exiting due to error\n")
-		os.Exit(1)
+		return 0,err
 	}
-	return market_aid
+	return market_aid,nil
 }
 func (ss *SQLStorage) Get_mesh_proc_status() p.MeshProcStatus {
 

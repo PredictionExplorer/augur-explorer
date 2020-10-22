@@ -706,34 +706,28 @@ func (ss *SQLStorage) Get_augur_transaction(tx_id int64) *p.AugurTx {
 	var query string
 	query = "SELECT block_num,tx_hash FROM transaction WHERE id=$1"
 
-//	var input string
 	res := ss.db.QueryRow(query,tx_id)
 	err := res.Scan(&agtx.BlockNum,&agtx.TxHash)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
-/*	agtx.Input,err = hex.DecodeString(input)
-	if err != nil {
-		ss.Log_msg(fmt.Sprintf("Cant decode transaction input '%v' : %v",input,err))
-		os.Exit(1)
-	}*/
+	agtx.TxId=tx_id
 	return agtx
 }
-func (ss *SQLStorage) Get_tx_ids_from_evt_logs_by_signature(sig string,contract_aid int64,from_tx_id int64,num_rows int64) []int64 {
+func (ss *SQLStorage) Get_tx_ids_from_evt_logs_by_signature(sig string,contract_aid int64,from_tx_id int64,to_tx_id int64) []int64 {
 
 
 	output := make([]int64,0,1024)
 
 	var query string
 	query = "SELECT DISTINCT tx_id FROM evt_log " +
-				"WHERE tx_id > $1 " +
-						"AND (contract_aid=$2) " +
-						"AND (topic0_sig=$3) " +
-				"ORDER BY tx_id "+
-				"LIMIT $4"
+				"WHERE (tx_id > $1) AND (tx_id <= $2) " +
+						"AND (contract_aid=$3) " +
+						"AND (topic0_sig=$4) " +
+				"ORDER BY tx_id "
 
-	rows,err := ss.db.Query(query,from_tx_id,contract_aid,sig,num_rows)
+	rows,err := ss.db.Query(query,from_tx_id,to_tx_id,contract_aid,sig)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -760,9 +754,9 @@ func (ss *SQLStorage) Get_evt_log_ids_by_signature(sig string,contract_aids stri
 	query = "SELECT id,tx_id FROM evt_log " +
 				"WHERE id > $1 " +
 						"AND (contract_aid IN ("+contract_aids+")) " +
-						"AND (topic0_sig=$3) " +
+						"AND (topic0_sig=$2) " +
 				"ORDER BY id "+
-				"LIMIT $4"
+				"LIMIT $3"
 
 	rows,err := ss.db.Query(query,from_evt_id,sig,num_rows)
 	if (err!=nil) {

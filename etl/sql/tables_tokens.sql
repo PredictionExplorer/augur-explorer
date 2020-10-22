@@ -38,49 +38,6 @@ CREATE table rep_transf (
 	to_aid				BIGINT DEFAULT 0,
 	amount				DECIMAL(32,18) DEFAULT 0.0
 );
-CREATE table tok_transf (	-- Tokens Transferred event
-	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	market_aid			BIGINT NOT NULL,
-	token_aid			BIGINT NOT NULL,
-	from_aid			BIGINT NOT NULL,
-	to_aid				BIGINT NOT NULL,
-	token_type			SMALLINT DEFAULT 0,
-	value				DECIMAL(64,32) DEFAULT 0.0
-);
-CREATE table tbc (			-- Token Balance Changed event
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	market_aid			BIGINT NOT NULL,
-	owner_aid			BIGINT NOT NULL,
-	token_aid			BIGINT NOT NULL,
-	token_type			SMALLINT DEFAULT 0,
-	outcome				SMALLINT NOT NULL,
-	balance				DECIMAL(64,32) DEFAULT 0.0
-);
-CREATE table stbc (			-- Share Token Balance Changed event
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	market_aid			BIGINT NOT NULL,
-	account_aid			BIGINT NOT NULL,
-	outcome_idx			SMALLINT NOT NULL,
-	balance				DECIMAL(64,32) DEFAULT 0.0
-);
--- Balances of Share tokens per Market (accumulated data, one record per account)
-CREATE TABLE sbalances (
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			 -- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	account_aid			BIGINT NOT NULL,			-- address id of the User(holder of the shares)
-	market_aid			BIGINT NOT NULL,			-- market id of the Market these shares blong
-	num_transfers		BIGINT DEFAULT 0,			-- counter for tracking now many transfers we had
-	outcome_idx			SMALLINT NOT NULL,				-- market outcome (index)
-	balance				DECIMAL(24,18) NOT NULL		-- balance of shares (bigint as string)
-);
 CREATE TABLE etl_tokens ( -- ETL process state variables to import tokens from Geth 
 --single record table
 	last_id_dai			BIGINT DEFAULT 0,
@@ -88,11 +45,40 @@ CREATE TABLE etl_tokens ( -- ETL process state variables to import tokens from G
 	last_id_stok		BIGINT DEFAULT 0, -- ShareToken ERC20 transfer
 	last_id_stbc		BIGINT DEFAULT 0 -- ShareTokenBalance changed
 );
-CREATE TABLE chain_reorg_dai ( -- stores chain reorg events
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,
-	hash				CHAR(66) NOT NULL
-);
 CREATE TABLE token_proc_status (-- DAI processing status
 	last_evt_id			BIGINT DEFAULT 0 --id of last event log processed
 );
+CREATE TABLE af_wrapper ( -- Augur Foundry wrapper (wraps ShareToken to ERC20 contract)
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	wrapper_aid			BIGINT NOT NULL,	-- address_id of ERC20 contract wrapping this share token
+	market_aid			BIGINT NOT NULL,
+	last_evt_id			BIGINT DEFAULT 0,	-- the event ID of ERC20 Transfer event processed last time
+	outcome_idx			INT NOT NULL,
+	decimals			INT DEFAULT 0,
+	time_stamp			BIGINT DEFAULT 0,	-- timestamp copied from block
+	token_id			TEXT,	-- hex encode token id (ShareToken format)
+	name				TEXT DEFAULT '',
+	symbol				TEXT DEFAULT '',
+	UNIQUE(wrapper_aid)
+);
+CREATE TABLE wstok_transf ( -- ERC20 Wrapped ShareToken transfer
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	wrapper_aid			BIGINT NOT NULL,			-- foreign key to af_wrapper.wrapper_aid
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	from_aid			BIGINT DEFAULT 0,
+	to_aid				BIGINT DEFAULT 0,
+	amount				DECIMAL(32,18) DEFAULT 0.0,
+	balance				DECIMAL(32,18) DEFAULT 0.0
+);
+CREATE TABLE af_addr (
+	augur_foundry_addr	TEXT DEFAULT '0x87876F172087E2fb5838E655DC6A929dC2Dcf85c'
+);
+CREATE TABLE af_status (
+	last_evt_id			BIGINT DEFAULT 0	-- event id
+);
+

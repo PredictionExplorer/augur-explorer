@@ -371,3 +371,46 @@ CREATE TABLE pl_debug (-- Profit loss data for debugging, scanned after Block ha
 CREATE TABLE augur_proc_status (-- Augur Tradign process status
 	last_tx_id			BIGINT DEFAULT 0
 );
+CREATE table tok_transf (	-- Tokens Transferred event
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	token_aid			BIGINT NOT NULL,
+	from_aid			BIGINT NOT NULL,
+	to_aid				BIGINT NOT NULL,
+	token_type			SMALLINT DEFAULT 0,
+	value				DECIMAL(64,32) DEFAULT 0.0
+);
+CREATE table tbc (			-- Token Balance Changed event
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	owner_aid			BIGINT NOT NULL,
+	token_aid			BIGINT NOT NULL,
+	token_type			SMALLINT DEFAULT 0,
+	outcome				SMALLINT NOT NULL,
+	balance				DECIMAL(64,32) DEFAULT 0.0
+);
+CREATE table stbc (			-- Share Token Balance Changed event
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	account_aid			BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	balance				DECIMAL(64,32) DEFAULT 0.0
+);
+-- Balances of Share tokens per Market (accumulated data, one record per account)
+CREATE TABLE sbalances (
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			 -- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	account_aid			BIGINT NOT NULL,			-- address id of the User(holder of the shares)
+	market_aid			BIGINT NOT NULL,			-- market id of the Market these shares blong
+	num_transfers		BIGINT DEFAULT 0,			-- counter for tracking now many transfers we had
+	outcome_idx			SMALLINT NOT NULL,				-- market outcome (index)
+	balance				DECIMAL(24,18) NOT NULL		-- balance of shares (bigint as string)
+);

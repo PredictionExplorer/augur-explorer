@@ -775,3 +775,25 @@ type TokProcessStatus struct {
 type AugurProcessStatus struct {
 	LastTxId				int64
 }
+type AugurFoundryStatus struct {
+	LastEvtId				int64
+}
+type ERC20ShTokContract struct {
+	WrapperAid				int64
+	LastEvtId				int64
+	MarketAid				int64
+	OutcomeIdx				int
+	Decimals				int
+	Address					string
+}
+type WShTokTransfer struct { // (ERC20) Wrapped ShareToken Transfer
+	EvtLogId				int64
+	WrapperAid				int64
+	BlockNum				int64
+	TxId					int64
+	FromAid					int64
+	ToAid					int64
+	AmountStr				string
+	From					string
+	To						string
+}
