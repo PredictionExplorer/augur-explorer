@@ -689,10 +689,11 @@ func (ss *SQLStorage) Insert_chain_reorg_event(co *p.ChainReorg) {
 func (ss *SQLStorage) Get_event_log(evtlog_id int64) p.EthereumEventLog {
 
 	var evtlog p.EthereumEventLog
+	evtlog.EvtId = evtlog_id
 	var query string
-	query = "SELECT block_num,log_rlp FROM evt_log WHERE id=$1"
+	query = "SELECT block_num,tx_id,contract_aid,topic0_sig,log_rlp FROM evt_log WHERE id=$1"
 	res := ss.db.QueryRow(query,evtlog_id)
-	err := res.Scan(&evtlog.BlockNum,&evtlog.RlpLog)
+	err := res.Scan(&evtlog.BlockNum,&evtlog.TxId,&evtlog.ContractAid,&evtlog.Topic0_Sig,&evtlog.RlpLog)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
@@ -773,6 +774,65 @@ func (ss *SQLStorage) Get_evt_log_ids_by_signature(sig string,contract_aids stri
 			os.Exit(1)
 		}
 		output = append(output,evt_log)
+	}
+	return output
+}
+func (ss *SQLStorage) Get_evtlogs_by_signature_in_range(sig string,contract_aids string,from_evt_id,to_evt_id int64) []int64 {
+
+
+	output := make([]int64,0,1024)
+
+	var query string
+	query = "SELECT id FROM evt_log " +
+				"WHERE (id > $1) AND (id<=$2) " +
+						"AND (contract_aid IN ("+contract_aids+")) " +
+						"AND (topic0_sig=$3) " +
+				"ORDER BY id "
+
+	rows,err := ss.db.Query(query,from_evt_id,to_evt_id,sig)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var evtlog_id int64
+		err=rows.Scan(&evtlog_id)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+		output = append(output,evtlog_id)
+	}
+	return output
+}
+func (ss *SQLStorage) Get_evtlogs_by_signature_only_in_range(sig string,from_evt_id,to_evt_id int64) []int64 {
+
+
+	output := make([]int64,0,1024)
+
+	var query string
+	query = "SELECT id FROM evt_log " +
+				"WHERE (id > $1) AND (id<=$2) " +
+						"AND (topic0_sig=$3) " +
+				"ORDER BY id "
+
+	rows,err := ss.db.Query(query,from_evt_id,to_evt_id,sig)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var evtlog_id int64
+		err=rows.Scan(&evtlog_id)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+		output = append(output,evtlog_id)
 	}
 	return output
 }

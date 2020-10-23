@@ -738,6 +738,7 @@ type EthereumEventTopic struct {
 	Value					string	// Important note: this isn't 0x-prefixed
 }
 type EthereumEventLog struct {
+	EvtId					int64
 	BlockNum				int64
 	TxId					int64
 	ContractAid				int64
@@ -796,4 +797,59 @@ type WShTokTransfer struct { // (ERC20) Wrapped ShareToken Transfer
 	AmountStr				string
 	From					string
 	To						string
+}
+type BalancerStatus struct {
+	LastEvtId				int64
+}
+type BalancerNewPool struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	PoolAid					int64
+	CallerAid				int64
+	PoolAddr				string
+	CallerAddr				string
+}
+type BalancerJoin struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	PoolAid					int64
+	CallerAid				int64
+	TokenAid				int64
+	PoolAddr				string
+	CallerAddr				string
+	TokenInAddr				string
+	AmountIn				string
+}
+type BalancerExit struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	PoolAid					int64
+	CallerAid				int64
+	TokenAid				int64
+	PoolAddr				string
+	CallerAddr				string
+	TokenOutAddr			string
+	AmountOut				string
+}
+type BalancerSwap struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	PoolAid					int64
+	CallerAid				int64
+	TokenInAid				int64
+	TokenOutAid				int64
+	PoolAddr				string
+	CallerAddr				string
+	TokenInAddr				string
+	TokenOutAddr			string
+	AmountIn				string
+	AmountOut				string
 }
