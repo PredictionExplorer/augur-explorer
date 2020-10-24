@@ -1,0 +1,39 @@
+<html>
+<head>
+	<link href="../res/main.css" rel="stylesheet">
+	<title>Transfers for Market{{.Market.MktAddr}}</title>
+	<meta name="description" content="{{.Market.Description}}">
+</head>
+<body>
+	<h3 class="page_title">Transfers of {{.TokenInfo.Name}} ( {{.TokenInfo.Symbol}} )</h3>
+<table class="market_detail">
+<tr>
+	<td>Market Address:</td>
+	<td>{{.MarketInfo.MktAddr}}</td>
+</tr>
+<tr>
+	<td>Outcome</td>
+	<td>{{.OutcomeIdx}} {{.MarketInfo.CurOutcome}}</td>
+</tr>
+<tr>
+	<td>ERC20 Token Wrapper Address</td>
+	<td>{{.TokenInfo.Address}}</td>
+</tr>
+<tr>
+	<td>ERC20 Token Wapprer Name </td>
+	<td>{{.TokenInfo.Name}}</td>
+</tr>
+<tr>
+	<td>ERC20 Token Wrapper Symbol</td>
+	<td>{{.TokenInfo.Symbol}}</td>
+</tr>
+<tr>
+	<td>ERC20 Token Wrapper Decimal places</td>
+	<td>{{.TokenInfo.Decimals}}</td>
+</tr>
+</table>
+<br/><br/>
+<div class="market_info">
+	{{template "wrapped_transfers_table" .WrappedTransfers}}
+</div>
+</body>

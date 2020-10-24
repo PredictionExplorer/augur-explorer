@@ -1,0 +1,15 @@
+{{define "wrapping_contracts_table"}}
+<table class="market_trades">
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Timestamp</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Token Addr</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Outcome</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Decimals</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Name</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Symbol</th>
+	</tr>
+		{{- range $i, $contract := .}}
+			{{template "wrapping_ctrct" $contract}}
+		{{- end}}
+</table>
+{{end}}

@@ -1,0 +1,13 @@
+{{define "wrapped_transfer"}}
+<tr class="market_trades" style="background-color: {{if .NonPoolTransfer }}#24292e{{ else }}black{{end}};">
+	<td class="mkt_trade_field">{{.TimeStamp}}</td>
+	<td class="mkt_trade_field">{{.BlockNum}}</td>
+	<td class="mkt_trade_field">{{.TxId}}</td>
+	<td class="mkt_trade_field">{{.From}}</td>
+	<td class="mkt_trade_field">{{.To}}</td>
+	<td class="mkt_trade_field" style="text-align: right">{{.Amount}}</td>
+	<td class="mkt_trade_field" style="text-align: center">{{.FromPool}}</td>
+	<td class="mkt_trade_field" style="text-align: center">{{.ToPool}}</td>
+	<td class="mkt_trade_field" style="text-align: center">{{.NonPoolTransfer}}</td>
+</tr>
+{{end}}

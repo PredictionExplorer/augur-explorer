@@ -1237,3 +1237,67 @@ func price_estimate_history(c *gin.Context) {
 		"JSWeightedPrice" : js_weighted_price_data,
 	})
 }
+func wrapped_tokens(c *gin.Context) {
+
+	market := c.Param("market")
+	market_addr,valid := is_address_valid(c,false,market)
+	if !valid {
+		return
+	}
+	market_info,err := augur_srv.storage.Get_market_info(market_addr,0,false)
+	if err != nil {
+		show_market_not_found_error(c,false,&market_addr)
+		return
+	}
+	wrappers := augur_srv.storage.Get_wrapped_tokens_for_market(market_info.MktAid)
+	c.HTML(http.StatusOK, "wrapper_contracts.html", gin.H{
+			"WrapperContracts" : wrappers,
+			"Market": market_info,
+	})
+}
+func wrapped_token_transfers(c *gin.Context) {
+
+	address:= c.Param("address")
+	addr,valid := is_address_valid(c,false,address)
+	if !valid {
+		return
+	}
+	aid,err := augur_srv.storage.Nonfatal_lookup_address_id(addr)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Such address wasn't found: %v",address),
+		})
+		return
+	}
+	wrapper_info := augur_srv.storage.Get_wrapped_token_info(aid)
+	market_info,err := augur_srv.storage.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
+	transfers := augur_srv.storage.Get_wrapped_token_transfers(aid)
+	c.HTML(http.StatusOK, "wrapped_transfers.html", gin.H{
+			"MarketInfo" : market_info,
+			"TokenInfo" : wrapper_info,
+			"WrappedTransfers" : transfers,
+	})
+}
+func pool_swaps(c *gin.Context) {
+
+	address:= c.Param("address")
+	addr,valid := is_address_valid(c,false,address)
+	if !valid {
+		return
+	}
+	aid,err := augur_srv.storage.Nonfatal_lookup_address_id(addr)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Such address wasn't found: %v",address),
+		})
+		return
+	}
+	pool_info := augur_srv.storage.Get_pool_info(aid)
+	swaps := augur_srv.storage.Get_pool_swaps(aid)
+	c.HTML(http.StatusOK, "pool_swaps.html", gin.H{
+			"PoolInfo" : pool_info,
+			"PoolSwaps" : swaps,
+	})
+}

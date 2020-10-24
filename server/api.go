@@ -729,7 +729,6 @@ func a1_mkt_trade_history(c *gin.Context) {
 	if !success {
 		return
 	}
-
 	low_price,err := augur_srv.storage.Get_market_price_range(market_aid)
 	if err!=nil {
 		c.JSON(http.StatusOK,gin.H{
@@ -747,5 +746,61 @@ func a1_mkt_trade_history(c *gin.Context) {
 		"UTrades" : price_history,
 		"status": status,
 		"error": err_str,
+	})
+}
+func a1_wrapped_tokens(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_market:= c.Param("market")
+	market_addr,_,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	market_info,err := augur_srv.storage.Get_market_info(market_addr,0,false)
+	if err != nil {
+		show_market_not_found_error(c,false,&market_addr)
+		return
+	}
+	wrappers := augur_srv.storage.Get_wrapped_tokens_for_market(market_info.MktAid)
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+		"MarketInfo": market_info,
+		"WrappedContracts": wrappers,
+		"status": status ,
+		"error": err_str,
+	})
+}
+func a1_wrapped_token_transfers(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_address:= c.Param("address")
+	_,wrapper_aid,success := json_validate_and_lookup_address_or_aid(c,&p_address)
+	if !success {
+		return
+	}
+
+	wrapper_info := augur_srv.storage.Get_wrapped_token_info(wrapper_aid)
+	market_info,_ := augur_srv.storage.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
+	transfers := augur_srv.storage.Get_wrapped_token_transfers(wrapper_aid)
+	c.JSON(http.StatusOK, gin.H{
+			"MarketInfo" : market_info,
+			"TokenInfo" : wrapper_info,
+			"WrappedTransfers" : transfers,
+	})
+}
+func a1_pool_swaps(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_address:= c.Param("address")
+	_,pool_aid,success := json_validate_and_lookup_address_or_aid(c,&p_address)
+	if !success {
+		return
+	}
+	pool_info := augur_srv.storage.Get_pool_info(pool_aid)
+	swaps := augur_srv.storage.Get_pool_swaps(pool_aid)
+	c.JSON(http.StatusOK, gin.H{
+			"PoolInfo" : pool_info,
+			"PoolSwaps" : swaps,
 	})
 }

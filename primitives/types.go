@@ -780,20 +780,29 @@ type AugurFoundryStatus struct {
 	LastEvtId				int64
 }
 type ERC20ShTokContract struct {
+	TimeStamp				int64
 	WrapperAid				int64
 	LastEvtId				int64
 	MarketAid				int64
 	OutcomeIdx				int
 	Decimals				int
 	Address					string
+	Symbol					string
+	Name					string
+	MktAddr					string
 }
 type WShTokTransfer struct { // (ERC20) Wrapped ShareToken Transfer
+	TimeStamp				int64
 	EvtLogId				int64
 	WrapperAid				int64
 	BlockNum				int64
 	TxId					int64
 	FromAid					int64
 	ToAid					int64
+	Amount					float64
+	FromPool				bool
+	ToPool					bool
+	NonPoolTransfer			bool
 	AmountStr				string
 	From					string
 	To						string
@@ -846,6 +855,8 @@ type BalancerSwap struct {
 	CallerAid				int64
 	TokenInAid				int64
 	TokenOutAid				int64
+	AmountInF				float64
+	AmountOutF				float64
 	PoolAddr				string
 	CallerAddr				string
 	TokenInAddr				string

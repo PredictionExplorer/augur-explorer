@@ -1,0 +1,12 @@
+{{define "pool_swap"}}
+<tr class="market_trades">
+	<td class="mkt_trade_field">{{.TimeStamp}}</td>
+	<td class="mkt_trade_field">{{.BlockNum}}</td>
+	<td class="mkt_trade_field">{{.TxId}}</td>
+	<td class="mkt_trade_field">{{.CallerAddr}}</td>
+	<td class="mkt_trade_field">{{.TokenInAddr}}</td>
+	<td class="mkt_trade_field">{{.TokenOutAddr}}</td>
+	<td class="mkt_trade_field" style="text-align: right">{{.AmountInF}}</td>
+	<td class="mkt_trade_field" style="text-align: right">{{.AmountOutF}}</td>
+</tr>
+{{end}}

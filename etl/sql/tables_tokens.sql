@@ -58,7 +58,7 @@ CREATE TABLE af_wrapper ( -- Augur Foundry wrapper (wraps ShareToken to ERC20 co
 	last_evt_id			BIGINT DEFAULT 0,	-- the event ID of ERC20 Transfer event processed last time
 	outcome_idx			INT NOT NULL,
 	decimals			INT DEFAULT 0,
-	time_stamp			BIGINT DEFAULT 0,	-- timestamp copied from block
+	time_stamp			TIMESTAMPTZ NOT NULL,	-- timestamp copied from block
 	token_id			TEXT,	-- hex encode token id (ShareToken format)
 	name				TEXT DEFAULT '',
 	symbol				TEXT DEFAULT '',

@@ -1,0 +1,29 @@
+<html>
+<head>
+	<link href="../res/main.css" rel="stylesheet">
+	<title>Swaps for Pool{{.PoolInfo.PoolAddr}}</title>
+	<meta name="description" content="{{.Market.Description}}">
+</head>
+<body>
+	<h3 class="page_title">Swaps of {{.PoolInfo.PoolAddr}}</h3>
+<table class="market_detail">
+<tr>
+	<td>Pool Address:</td>
+	<td>{{.PoolInfo.PoolAddr}}</td>
+</tr>
+<tr>
+	<td>Creator Address:</td>
+	<td>{{.PoolInfo.CallerAddr}}</td>
+<tr>
+	<td>Creation TimeStamp</td>
+	<td>{{.PoolInfo.TimeStamp}}<td>
+</tr>
+<tr>
+	<td>Block Num</td>
+	<td>{{.PoolInfo.BlockNum}}</td>
+</table>
+<br/><br/>
+<div class="market_info">
+	{{template "pool_swaps_table" .PoolSwaps}}
+</div>
+</body>

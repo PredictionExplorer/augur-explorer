@@ -73,6 +73,16 @@ func (ss *SQLStorage) Insert_balancer_pool_created_evt(evt *p.BalancerNewPool) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Delete_balancer_pool_created_evt(evt_id int64) {
+
+	var query string
+	query = "DELETE FROM bpool WHERE evtlog_id=$1"
+	_,err := ss.db.Exec(query,evt_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Insert_balancer_pool_join_evt(evt *p.BalancerJoin) {
 
 	pool_aid := ss.Lookup_or_create_address(evt.PoolAddr,evt.BlockNum,evt.TxId)
@@ -98,6 +108,16 @@ func (ss *SQLStorage) Insert_balancer_pool_join_evt(evt *p.BalancerJoin) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Delete_balancer_join_evt(evt_id int64) {
+
+	var query string
+	query = "DELETE FROM bjoin WHERE evtlog_id=$1"
+	_,err := ss.db.Exec(query,evt_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Insert_balancer_pool_exit_evt(evt *p.BalancerExit) {
 
 	pool_aid := ss.Lookup_or_create_address(evt.PoolAddr,evt.BlockNum,evt.TxId)
@@ -120,6 +140,16 @@ func (ss *SQLStorage) Insert_balancer_pool_exit_evt(evt *p.BalancerExit) {
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_balancer_exit_evt(evt_id int64) {
+
+	var query string
+	query = "DELETE FROM bexit WHERE evtlog_id=$1"
+	_,err := ss.db.Exec(query,evt_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
 }
@@ -152,6 +182,16 @@ func (ss *SQLStorage) Insert_balancer_swap_evt(evt *p.BalancerSwap) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Delete_balancer_swap_evt(evt_id int64) {
+
+	var query string
+	query = "DELETE FROM bswap WHERE evtlog_id=$1"
+	_,err := ss.db.Exec(query,evt_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Get_balancer_contracts() (string,string,string) {
 
 	var query string
@@ -171,3 +211,88 @@ func (ss *SQLStorage) Get_balancer_contracts() (string,string,string) {
 	}
 	return null_pool.String,null_factory.String,null_xchg.String
 }
+func (ss *SQLStorage) Get_pool_info(pool_aid int64) p.BalancerNewPool {
+
+	var output p.BalancerNewPool
+	var query string
+	query = "SELECT " +
+//				"FLOOR(EXTRACT(EPOCH FROM p.time_stamp))::BIGINT AS ts, " +
+				"p.time_stamp,"+
+				"p.pool_aid," +
+				"p.caller_aid," +
+				"pa.addr," +
+				"ca.addr," +
+				"p.block_num " +
+			"FROM bpool AS p " +
+				"LEFT JOIN address AS pa ON p.pool_aid=pa.address_id " +
+				"LEFT JOIN address AS ca ON p.caller_aid=ca.address_id " +
+			"WHERE p.pool_aid=$1 "
+
+	row := ss.db.QueryRow(query,pool_aid)
+	err := row.Scan(
+			&output.TimeStamp,
+			&output.PoolAid,
+			&output.CallerAid,
+			&output.PoolAddr,
+			&output.CallerAddr,
+			&output.BlockNum,
+	)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return output
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error Augur Foundry contract address is not set: %v",err))
+			os.Exit(1)
+		}
+	}
+	return output
+}
+func (ss *SQLStorage) Get_pool_swaps(pool_aid int64) []p.BalancerSwap {
+
+	records := make([]p.BalancerSwap,0,64)
+	var query string
+	query = "SELECT " +
+//				"FLOOR(EXTRACT(EPOCH FROM s.time_stamp))::BIGINT AS ts, " +
+				"s.time_stamp AS ts,"+
+				"s.block_num," +
+				"s.tx_id,"+
+				"ca.addr,"+
+				"tia.addr," +
+				"toa.addr," +
+				"s.amount_in, " +
+				"s.amount_out " +
+			"FROM bswap AS s " +
+				"LEFT JOIN address AS ca ON s.caller_aid=ca.address_id " +
+				"LEFT JOIN address AS tia ON s.token_in_aid=tia.address_id " +
+				"LEFT JOIN address AS toa ON s.token_out_aid=toa.address_id " +
+			"WHERE s.pool_aid=$1 " +
+			"ORDER BY ts"
+	rows,err := ss.db.Query(query,pool_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BalancerSwap
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.CallerAddr,
+			&rec.TokenInAddr,
+			&rec.TokenOutAddr,
+			&rec.AmountInF,
+			&rec.AmountOutF,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+
+

@@ -146,6 +146,9 @@ func main() {
 	r.GET("/black/statement/:addr",account_statement)
 	r.GET("/black/oohist/:addr",open_order_history)
 	r.GET("/black/pehist/:market/:outcome", price_estimate_history)
+	r.GET("/black/wrapped/:market",wrapped_tokens)
+	r.GET("/black/wr_transfers/:address",wrapped_token_transfers)
+	r.GET("/black/pool_swaps/:address",pool_swaps)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -177,7 +180,9 @@ func main() {
 	r.GET("/api/stats_accum_trades/:init_ts/:fin_ts/:interval_secs",  a1_stats_accum_trades)
 	r.GET("/api/stats_accum_oi/:init_ts/:fin_ts/:interval_secs",  a1_stats_accum_oi)
 	r.GET("/api/trade_history/:market",a1_mkt_trade_history)
-
+	r.GET("/api/wrapped_tokens/:market",a1_wrapped_tokens)
+	r.GET("/api/wr_transfers/:address",a1_wrapped_token_transfers)
+	r.GET("/api/pool_swaps/:address",a1_pool_swaps)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
