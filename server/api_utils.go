@@ -73,3 +73,48 @@ func parse_timeframe_params(c *gin.Context) (bool,int,int,int) {
 	}
 	return true,init_ts,fin_ts,interval_secs
 }
+func parse_timeframe_ini_fin(c *gin.Context) (bool,int,int) {
+
+	var err error
+	p_init_ts := c.Param("init_ts")
+	var init_ts int = 0
+	if len(p_init_ts) > 0 {
+		init_ts, err = strconv.Atoi(p_init_ts)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"status":0,
+				"error":fmt.Sprintf("Bad 'init_ts' parameter: %v",err),
+			})
+			return false,0,0
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("'init_ts' parameter wasn't provided: %v",err),
+		})
+		return false,0,0
+	}
+
+	p_fin_ts := c.Param("fin_ts")
+	var fin_ts int = 0
+	if len(p_fin_ts) > 0 {
+		fin_ts, err = strconv.Atoi(p_fin_ts)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"status":0,
+				"error":fmt.Sprintf("'fin_ts' parameter: %v",err),
+			})
+			return false,0,0
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("'fin_ts' parameter wasn't provided: %v",err),
+		})
+		return false,0,0
+	}
+	if fin_ts == 0 {
+		fin_ts = 2147483647
+	}
+	return true,init_ts,fin_ts
+}

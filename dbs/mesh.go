@@ -79,6 +79,9 @@ func (ss *SQLStorage) Insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp in
 	// now we need to update all posterior records because future price estimate values
 	// depend on past values
 	ss.Update_future_price_estimates(market_aid,int(ospec.Outcome),timestamp)
+	if ( event_code == p.MeshEvtFilled) || (event_code == p.MeshEvtFullyFilled) {
+		ss.Update_oo_fillable_amount(oi.OrderHash.String(),oi.SignedOrder)
+	}
 }
 func (ss *SQLStorage) Update_future_price_estimates(market_aid int64,outcome_idx int,timestamp int64) {
 

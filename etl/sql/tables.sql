@@ -276,7 +276,7 @@ CREATE table oi_chg ( -- open interest changed event
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
 	ts_inserted			TIMESTAMPTZ NOT NULL, -- timestamp
-	oi					DECIMAL(24,18) NOT NULL
+	oi					DECIMAL(64,18) NOT NULL
 );
 CREATE TABLE mkt_fin (
 	id					BIGSERIAL PRIMARY KEY,

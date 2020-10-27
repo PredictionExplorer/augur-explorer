@@ -185,6 +185,7 @@ type DepthEntry struct {
 	EOAAddrSh		string	// short version of the addr
 	DateCreated		string
 	Expires			string
+	OrderHash		string
 }
 type MarketDepth struct {
 	LastOOID		int64
@@ -511,6 +512,30 @@ type GasSpent struct {	// used to pass values of Statistics of Gas Usage
 	Reporting			string
 	Markets				string
 	Total				string
+	EthTrading			string
+	EthReporting		string
+	EthMarkets			string
+	EthTotal			string
+}
+type GasUsed struct {	// used to pass values of Statistics of Gas Usage
+	Day					int64
+	Ts					int64
+	Num_trading			int64
+	Num_reporting		int64
+	Num_markets			int64
+	Num_total			int64
+	Trading				string
+	Reporting			string
+	Markets				string
+	Total				string
+}
+type TxCost struct {	// used to pass values of Statistics of Gas Usage
+	Day					int64
+	Ts					int64
+	Num_trading			int64
+	Num_reporting		int64
+	Num_markets			int64
+	Num_total			int64
 	EthTrading			string
 	EthReporting		string
 	EthMarkets			string
