@@ -578,6 +578,37 @@ func a1_stats_gasusage(c *gin.Context) {
 			"error": err_str,
 	})
 }
+func a1_stats_gasused(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	gas_usage := augur_srv.storage.Get_gas_used()
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"GasUsed" : gas_usage,
+			"status": status,
+			"error": err_str,
+	})
+}
+func a1_stats_txcost(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	success,init_ts,fin_ts := parse_timeframe_ini_fin(c)
+	if !success {
+		return
+	}
+	tx_cost := augur_srv.storage.Get_txcost(init_ts,fin_ts)
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"TxCost" : tx_cost ,
+			"status": status,
+			"error": err_str,
+	})
+}
 func a1_stats_uniqaddr(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")

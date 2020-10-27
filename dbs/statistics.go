@@ -491,3 +491,72 @@ func (ss *SQLStorage) Get_gas_usage_global() []p.GasSpent {
 	return records
 
 }
+func (ss *SQLStorage) Get_gas_used() []p.GasUsed {
+
+	var query string
+	query =
+		"SELECT " +
+			"EXTRACT(EPOCH FROM day::TIMESTAMP)::BIGINT AS ts,"+
+			"trading,reporting,markets,total," +
+			"num_trading,num_reporting,num_markets,num_total "+
+		"FROM gas_spent "+
+		"ORDER BY day"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.GasUsed,0,256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.GasUsed
+		err=rows.Scan(
+			&rec.Ts,
+			&rec.Trading,&rec.Reporting,&rec.Markets,&rec.Total,
+			&rec.Num_trading,&rec.Num_reporting,&rec.Num_markets,&rec.Num_total,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+
+}
+func (ss *SQLStorage) Get_txcost(init_ts,fin_ts int) []p.TxCost {
+
+	var query string
+	query =
+		"SELECT " +
+			"EXTRACT(EPOCH FROM day::TIMESTAMP)::BIGINT AS ts,"+
+			"eth_trading,eth_reporting,eth_markets,eth_total,"+
+			"num_trading,num_reporting,num_markets,num_total "+
+		"FROM gas_spent " +
+		"WHERE day >= TO_TIMESTAMP($1)::DATE AND day < TO_TIMESTAMP($2)::DATE " +
+		"ORDER BY day"
+
+	rows,err := ss.db.Query(query,init_ts,fin_ts)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.TxCost,0,256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.TxCost
+		err=rows.Scan(
+			&rec.Ts,
+			&rec.EthTrading,&rec.EthReporting,&rec.EthMarkets,&rec.EthTotal,
+			&rec.Num_trading,&rec.Num_reporting,&rec.Num_markets,&rec.Num_total,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+
+}

@@ -121,10 +121,12 @@ func proc_open_orders() {
 			storage.Delete_open_0x_order(db_evt.OrderHash,db_evt.Timestamp,OOOpCodeCancelledByUser)
 		case MeshEvtFullyFilled:
 			// FULLY FILLED event: quantity of the order matches filling quantity
+			storage.Update_oo_fillable_amount(db_evt.OrderHash,zorder.SignedOrder)
 			storage.Delete_open_0x_order(db_evt.OrderHash,db_evt.Timestamp,OOOpCodeNone)
 		case MeshEvtFilled:
 			// FILLED event: partial order fill
-			storage.Update_0x_order_on_partial_fill(zorder)
+			//storage.Update_0x_order_on_partial_fill(zorder)
+			storage.Update_oo_fillable_amount(db_evt.OrderHash,zorder.SignedOrder)
 			// the following are rare events, so we don't implement them, just do a resync
 		}
 		storage.Set_mesh_proc_status(db_evt.Id)

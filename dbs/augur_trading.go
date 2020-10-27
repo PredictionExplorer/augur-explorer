@@ -181,36 +181,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,p_
 		ss.Log_msg(fmt.Sprintf("DB error at block %v : %v ; q=%v",agtx.BlockNum,err,query))
 		os.Exit(1)
 	}
-	ss.Update_open_order_history(*ss.mkt_order_id_ptr,order_hash,timestamp,amount_filled.String(),opcode)
-}
-func (ss *SQLStorage) Update_open_order_history(mktord_id int64,order_hash string,timestamp int64,amount_filled string,opcode int) {
-/* Discontinued
-	// Note: the following function may have null effect if the corresponding record already exists
-	//			the unique-key for the record is orderhash+opcode, so multiple calls can be made
-	//			to this function without any problem. In fact multiple calls will come from the
-	//			order insertion process, and from 0x Mesh daemon at the same time. We can't say which is
-	//			going to be the first to insert the record, but the second call will result in
-	//			no effect at all
-	var err error
-	var query string
-	var d_query string
-	if mktord_id == 0 {
-		query = "SELECT update_oo_hist(NULL,$1,$2,$3,$4)"
-		d_query = fmt.Sprintf("SELECT update_oo_hist(NULL,'%v',%v,'%v',%v)",order_hash,timestamp,amount_filled,opcode)
-		_,err = ss.db.Exec(query,order_hash,timestamp,amount_filled,opcode)
-	} else {
-		query = "SELECT update_oo_hist($1,$2,$3,$4,$5)"
-		d_query = fmt.Sprintf("SELECT update_oo_hist(%v,'%v',%v,'%v',%v)",mktord_id,order_hash,timestamp,amount_filled,opcode)
-		_,err = ss.db.Exec(query,mktord_id,order_hash,timestamp,amount_filled,opcode)
-	}
-	ss.Info.Printf("Update_open_order_history query: %v\n",d_query)
-	if err!=nil {
-		msg:=fmt.Sprintf("DB error: couldn't update history of order with hash = %v mktord=%v: %v\n",order_hash,mktord_id,err)
-		ss.Info.Printf(msg)
-		ss.Log_msg(msg)
-		os.Exit(1)
-	}
-	*/
+	ss.Update_oo_fillable_amount(order_hash,zorder.SignedOrder)
 }
 func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,fillable_amount *big.Int,eoa_addr *common.Address,ospec *p.ZxMeshOrderSpec,opcode int,evt_timestamp int64) error {
 	// Insert an open order, this order needs to be Filled by another market participant
@@ -336,7 +307,6 @@ func (ss *SQLStorage) Cancel_open_order(eoa_aid,wallet_aid int64,orders map[stri
 	}
 
 	ss.Insert_0x_mesh_order_event(eoa_aid,wallet_aid,timestamp,oinfo,ospec,nil,p.MeshEvtCancelled)
-	ss.Update_open_order_history(0,order_hash,timestamp,"0",p.OOOpCodeCancelledByUser)
 
 	var query string
 	query = "DELETE FROM oorders WHERE order_hash = $1"
@@ -350,10 +320,6 @@ func (ss *SQLStorage) Cancel_open_order(eoa_aid,wallet_aid int64,orders map[stri
 	}
 }
 func (ss *SQLStorage) Delete_open_0x_order(order_hash string,timestamp int64,opcode int) {
-
-	if opcode != p.OOOpCodeNone {
-		ss.Update_open_order_history(0,order_hash,timestamp,"0",opcode)
-	}
 
 	var query string
 	query = "DELETE FROM oorders WHERE order_hash = $1"
@@ -501,6 +467,7 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 				"FLOOR(EXTRACT(EPOCH FROM o.expiration))::BIGINT as expires_ts," +
 				"o.price AS price, " +
 				"o.amount AS amount," +
+				"o.order_hash," +
 				"s.num_bids," +
 				"s.num_asks," +
 				"s.num_cancel " +
@@ -550,6 +517,7 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 			&rec.ExpiresTs,
 			&rec.Price,
 			&rec.Volume,
+			&rec.OrderHash,
 			&num_bids,
 			&num_asks,
 			&num_cancels,
@@ -1394,31 +1362,31 @@ func (ss *SQLStorage) Get_mdepth_status(market_aid int64,outcome_idx int,last_oo
 	ss.Info.Printf("num_orders=%v, last_oo_id=%v\n",status.NumOrders,status.LastOOID)
 	return status,nil
 }
-func (ss *SQLStorage) Update_oo_fillable_amount(order_hash string,cur_amount *big.Int,order *zeroex.SignedOrder) (int,string) {
+func (ss *SQLStorage) Update_oo_fillable_amount(order_hash string,order *zeroex.SignedOrder) {
 	// Return value: 0 - no need to update, 1 - updated incorrect amount, 2 - order doesn't exist
-	var id int64 = 0
 	var order_amount string
 	var query string
-	query = "SELECT id,ROUND(amount*1e+18)::text AS amount FROM oorders WHERE order_hash=$1"
+	ss.Info.Printf("Updating fillable amount for ohash %v\n",order_hash)
+	query = "SELECT ROUND(amount_fill*1e+18)::text AS amount FROM mesh_evt AS e " +
+				"WHERE order_hash=$1 AND " +
+					"((e.evt_code=3) OR (e.evt_code=4))"
 	row := ss.db.QueryRow(query,order_hash)
-	err := row.Scan(&id,&order_amount)
+	err := row.Scan(&order_amount)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			ss.Log_msg(fmt.Sprintf("Error in Scan(): %v: q=%v\n",err,query))
 			os.Exit(1)
 		}
-		return 2,""
+		ss.Info.Printf("no previous fill actions found, returning\n")
+		return
 	}
-	if order_amount != cur_amount.String() {
-		query = "UPDATE oorders SET amount = ("+cur_amount.String()+"/1e+18) WHERE id=$1"
-		_,err:=ss.db.Exec(query,id)
-		if (err!=nil) {
-			ss.Log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
-			os.Exit(1)
-		}
-		return 1,order_amount
+	query = "UPDATE oorders SET amount = initial_amount - ("+order_amount+"/1e+18) WHERE order_hash=$1"
+	ss.Info.Printf("Fillable amount for %v is now %v (query=%v)\n",order_hash,order_amount,query)
+	_,err = ss.db.Exec(query,order_hash)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
+		os.Exit(1)
 	}
-	return 0,""
 }
 func (ss *SQLStorage) Get_all_open_order_hashes() []string {
 	// Used in 0x Mesh listener to delete orders that no longer present in 0x Mesh Network
