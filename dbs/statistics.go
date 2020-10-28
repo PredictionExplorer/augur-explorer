@@ -558,5 +558,252 @@ func (ss *SQLStorage) Get_txcost(init_ts,fin_ts int) []p.TxCost {
 		records = append(records,rec)
 	}
 	return records
+}
+func (ss *SQLStorage) get_initial_gas_usage(table_name string,init_ts int,everything bool) (int64,int64,float64) {
 
+	var query string
+	query = 
+		"SELECT " +
+			"COALESCE(COUNT(tx_id),0) as num_rows, " +
+			"SUM(gas_used::decimal) AS sum," +
+			"SUM(gas_used::decimal * gas_price) as tx_fee " +
+		"FROM (" +
+			"SELECT tx_id,b.ts,gas_used,gas_price " +
+			"FROM ("
+
+				if everything {
+					query = query +
+					"SELECT DISTINCT tx_id FROM (" +
+						"(SELECT t.tx_id FROM mktord AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM market AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM mkt_fin AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM claim_funds AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM sbalances AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM volume AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM oi_chg AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM profit_loss AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM report AS t,block AS b WHERE (b.block_num=t.block_num))" +
+					") AS d "
+				} else {
+					query = query +
+					"SELECT DISTINCT tx_id FROM (" +
+						"("+
+
+							"SELECT t.tx_id FROM "+table_name+" AS t,block AS b " +
+							"WHERE (b.block_num=t.block_num)" +
+						")" +
+					") AS d "
+				}
+	query = query +
+			") AS i " +
+			"JOIN transaction AS t ON i.tx_id = t.id " +
+			"JOIN block AS b ON t.block_num=b.block_num " +
+		") AS t " +
+		"WHERE t.ts < TO_TIMESTAMP($1) "
+
+	row := ss.db.QueryRow(query,init_ts)
+	var null_count,null_gas_used sql.NullInt64
+	var null_txfee sql.NullFloat64
+	var err error
+	err=row.Scan(&null_count,&null_gas_used,&null_txfee);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return null_count.Int64,null_gas_used.Int64,null_txfee.Float64
+}
+func gas_usage_accum_query(table_name string,everything bool) string {
+
+	var query string
+
+	query = 
+		"WITH periods AS (" +
+				"SELECT * FROM (" +
+					"SELECT " +
+						"generate_series AS start_ts,"+
+						"TO_TIMESTAMP(EXTRACT(EPOCH FROM generate_series) + $3) AS end_ts "+
+					"FROM (" +
+						"SELECT * " +
+							"FROM generate_series(" +
+								"TO_TIMESTAMP($1)," +
+								"TO_TIMESTAMP($2)," +
+								"TO_TIMESTAMP($3)-TO_TIMESTAMP(0)) " +
+					") AS i" +
+				") AS data " +
+			") " +
+		"SELECT " +
+			"COALESCE(COUNT(tx_id),0) as num_rows, " +
+			"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
+			"SUM(gas_used::decimal) AS sum," +
+			"SUM(gas_used::decimal * gas_price) as tx_fee " +
+		"FROM periods AS p " +
+		"LEFT JOIN (" +
+			"SELECT tx_id,b.ts,gas_used,gas_price " +
+			"FROM ("
+
+				if everything {
+					query = query +
+					"SELECT DISTINCT tx_id FROM (" +
+						"(SELECT t.tx_id FROM mktord AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM market AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM mkt_fin AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM claim_funds AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM sbalances AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM volume AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM oi_chg AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM profit_loss AS t,block AS b WHERE (b.block_num=t.block_num))" +
+							"UNION ALL" +
+						"(SELECT t.tx_id FROM report AS t,block AS b WHERE (b.block_num=t.block_num))" +
+					") AS d " 
+				} else {
+					query = query +
+					"SELECT DISTINCT tx_id FROM (" +
+						"("+
+							"SELECT t.tx_id FROM "+table_name+" AS t,block AS b " +
+							"WHERE (b.block_num=t.block_num)" +
+						")" +
+					") AS d "
+				}
+
+	query = query +
+			") AS i " +
+			"JOIN transaction AS t ON i.tx_id = t.id " +
+			"JOIN block AS b ON t.block_num=b.block_num " +
+		") AS t ON (" +
+			"p.start_ts <= t.ts AND "+
+			"t.ts < p.end_ts " +
+		") " +
+		"GROUP BY start_ts " +
+		"ORDER BY start_ts"
+
+	return query
+}
+func (ss *SQLStorage) get_counter_data(table_name string,init_ts,fin_ts,interval int,everything bool) []p.GasCounter {
+
+	var query string
+	query = gas_usage_accum_query(table_name,everything)
+
+	rows,err := ss.db.Query(query,init_ts,fin_ts,interval)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	count,gas_used,txfee := ss.get_initial_gas_usage(table_name,init_ts,everything)
+	records := make([]p.GasCounter,0,256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.GasCounter
+		var null_gas_used sql.NullInt64
+		var null_txcost sql.NullFloat64
+		err=rows.Scan(
+			&rec.NumRecs,&rec.TimeStamp,&null_gas_used,&null_txcost,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		count = count + rec.NumRecs
+		rec.NumRecs = count
+		if null_gas_used.Valid {
+			gas_used = gas_used + null_gas_used.Int64
+		}
+		rec.GasUsed = gas_used
+		if null_txcost.Valid {
+			txfee = txfee + null_txcost.Float64
+		}
+		rec.TxCost = txfee
+		records = append(records,rec)
+	}
+	return records
+
+}
+func (ss *SQLStorage) Get_gasused_accum(init_ts,fin_ts,interval int) []p.AccumGasUsed {
+
+	records := make([]p.AccumGasUsed,0,256)
+	{
+		stats := ss.get_counter_data("mktord",init_ts,fin_ts,interval,false)
+		for _,elt := range stats {
+			var rec p.AccumGasUsed
+			rec.Ts = elt.TimeStamp
+			rec.Trading = elt.GasUsed
+			rec.Num_trading = elt.NumRecs
+			records = append(records,rec)
+		}
+	}
+	{
+		stats := ss.get_counter_data("report",init_ts,fin_ts,interval,false)
+		for i,elt := range stats {
+			records[i].Reporting = elt.GasUsed
+			records[i].Num_reporting = elt.NumRecs
+		}
+	}
+	{
+		stats := ss.get_counter_data("market",init_ts,fin_ts,interval,false)
+		for i,elt := range stats {
+			records[i].Markets = elt.GasUsed
+			records[i].Num_markets = elt.NumRecs
+		}
+	}
+	{
+		stats := ss.get_counter_data("",init_ts,fin_ts,interval,true)
+		for i,elt := range stats {
+			records[i].Total = elt.GasUsed
+			records[i].Num_total= elt.NumRecs
+		}
+	}
+	return records
+}
+func (ss *SQLStorage) Get_txcost_accum(init_ts,fin_ts,interval int) []p.AccumTxCost {
+
+	records := make([]p.AccumTxCost,0,256)
+	{
+		stats := ss.get_counter_data("mktord",init_ts,fin_ts,interval,false)
+		for _,elt := range stats {
+			var rec p.AccumTxCost
+			rec.Ts = elt.TimeStamp
+			rec.EthTrading = elt.TxCost
+			rec.Num_trading = elt.NumRecs
+			records = append(records,rec)
+		}
+	}
+	{
+		stats := ss.get_counter_data("report",init_ts,fin_ts,interval,false)
+		for i,elt := range stats {
+			records[i].EthReporting = elt.TxCost
+			records[i].Num_reporting = elt.NumRecs
+		}
+	}
+	{
+		stats := ss.get_counter_data("market",init_ts,fin_ts,interval,false)
+		for i,elt := range stats {
+			records[i].EthMarkets = elt.TxCost
+			records[i].Num_markets = elt.NumRecs
+		}
+	}
+	{
+		stats := ss.get_counter_data("",init_ts,fin_ts,interval,true)
+		for i,elt := range stats {
+			records[i].EthTotal = elt.TxCost
+			records[i].Num_total= elt.NumRecs
+		}
+	}
+	return records
 }

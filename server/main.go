@@ -170,6 +170,8 @@ func main() {
 	r.GET("/api/stats_cashflow",  a1_stats_cashflow)
 	r.GET("/api/stats_uniqaddr",  a1_stats_uniqaddr)
 	r.GET("/api/stats_gasused",  a1_stats_gasused)
+	r.GET("/api/stats_gasused_accum/:init_ts/:fin_ts/:interval_secs",a1_stats_gasused_accum)
+	r.GET("/api/stats_txcost_accum/:init_ts/:fin_ts/:interval_secs",a1_stats_txcost_accum)
 	r.GET("/api/stats_txcost/:init_ts/:fin_ts",  a1_stats_txcost)
 	r.GET("/api/price_history/:market/:init_ts/:fin_ts/:interval_secs", a1_price_history_zoomed)
 	r.GET("/api/stats_accum_trades/:init_ts/:fin_ts/:interval_secs",  a1_stats_accum_trades)

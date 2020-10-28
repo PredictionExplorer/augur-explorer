@@ -541,6 +541,36 @@ type TxCost struct {	// used to pass values of Statistics of Gas Usage
 	EthMarkets			string
 	EthTotal			string
 }
+type AccumGasUsed struct {
+	Day					int64
+	Ts					int64
+	Num_trading			int64
+	Num_reporting		int64
+	Num_markets			int64
+	Num_total			int64
+	Trading				int64
+	Reporting			int64
+	Markets				int64
+	Total				int64
+}
+type AccumTxCost struct {
+	Day					int64
+	Ts					int64
+	Num_trading			int64
+	Num_reporting		int64
+	Num_markets			int64
+	Num_total			int64
+	EthTrading			float64
+	EthReporting		float64
+	EthMarkets			float64
+	EthTotal			float64
+}
+type GasCounter struct {
+	TimeStamp			int64
+	GasUsed				int64
+	TxCost				float64
+	NumRecs				int64
+}
 func (obj *GasSpent) Has_rows() bool {
 	if (obj.Num_trading==0) && (obj.Num_reporting==0) && (obj.Num_markets==0) && (obj.Num_total==0) {
 		return false
