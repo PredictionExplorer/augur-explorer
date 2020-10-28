@@ -1377,13 +1377,14 @@ func (ss *SQLStorage) Update_oo_fillable_amount(order_hash string,order *zeroex.
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Get_all_open_order_hashes() []string {
+func (ss *SQLStorage) Get_all_open_order_hashes() ([]string,[]int64) {
 	// Used in 0x Mesh listener to delete orders that no longer present in 0x Mesh Network
 
-	records := make([]string,0,512)
+	records_hashes := make([]string,0,512)
+	records_expirations := make([]int64,0,512)
 	// open orders on 0x Mesh network
 	var query string
-	query = "SELECT order_hash FROM oorders"
+	query = "SELECT order_hash,FLOOR(EXTRACT(EPOCH FROM expiration))::BIGINT  FROM oorders"
 	rows,err := ss.db.Query(query)
 	if err!=nil {
 		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
@@ -1392,14 +1393,16 @@ func (ss *SQLStorage) Get_all_open_order_hashes() []string {
 	defer rows.Close()
 	for rows.Next() {
 		var order_hash string
-		err=rows.Scan(&order_hash)
+		var order_expiration int64
+		err=rows.Scan(&order_hash,&order_expiration)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		records = append(records,order_hash)
+		records_hashes = append(records_hashes,order_hash)
+		records_expirations = append(records_expirations,order_expiration)
 	}
-	return records
+	return records_hashes,records_expirations
 }
 func (ss *SQLStorage) Get_depth_states(market_aid int64,mkt_type int,outcome_idx int,otype int,ts int64) []p.DepthState {
 

@@ -70,7 +70,7 @@ func mkt_depth_entry_to_js_obj(de *DepthEntry) string {
 				"expires: \"" + de.Expires + "\"," +
 				"volume: " + fmt.Sprintf("%v",de.Volume) + "," +
 				"click: function() {load_order_data(\"" +
-					de.AddrSh +"\",\"" +
+					de.AddrSh +"\"," +
 					fmt.Sprintf("%v,%v,%v,%v,%v,%v,\"%v\",\"%v\"",
 										de.MktAid,
 										de.OutcomeIdx,

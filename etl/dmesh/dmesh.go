@@ -97,19 +97,25 @@ func fetch_and_sync_orders() {
 		}
 		page_num++
 	}
-	db_orders := storage.Get_all_open_order_hashes()
+	cur_timestamp:=time.Now().Unix()
+	db_orders,expirations := storage.Get_all_open_order_hashes()
 	for i:=0 ; i<len(db_orders) ; i++ {
+		order_timestamp := expirations[i]
 		_, exists := ohash_map[db_orders[i]];
 		if exists {
 			// ok
 		} else {
-			storage.Delete_open_0x_order(db_orders[i],time.Now().Unix(),OOOpCodeSyncProcess)
-			Info.Printf(
-				"Order %v doesn't exist in Mesh Node, but does exist in the DB. Deleting. (DB_DIRTY_OORDERS)",
-				db_orders[i],
-			)
-			anomalies_count++
-			deleted_count++
+			// verify that the order has expired
+			if order_timestamp < cur_timestamp {
+				storage.Delete_open_0x_order(db_orders[i],time.Now().Unix(),OOOpCodeSyncProcess)
+				Info.Printf(
+					"Order %v doesn't exist in Mesh Node, but does exist in the DB. " +
+					"(%v < $v)  Deleting. (DB_DIRTY_OORDERS)",
+					db_orders[i],order_timestamp,cur_timestamp,
+				)
+				anomalies_count++
+				deleted_count++
+			}
 		}
 	}
 	Info.Printf(

@@ -63,8 +63,7 @@ func build_js_price_history(orders *[]OrderInfo) template.JS {
 				"price: " + fmt.Sprintf("%v",e.Price) + "," +
 				"volume: " + fmt.Sprintf("%v",e.Amount) + "," +
 				"click: function() {load_order_data(\"" +
-					e.CreatorAddr +"\",\"" +
-					e.FillerAddr+ "\"," +
+					e.CreatorAddr +"\",\"" +e.FillerAddr+ "\"," +
 					fmt.Sprintf("%v,%v,%v,\"%v\"",e.MktAid,e.Price,e.Amount,e.Date) +
 				")}" +
 				"}"

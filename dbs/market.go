@@ -553,7 +553,7 @@ func (ss *SQLStorage) Get_active_market_list(off int, lim int) []p.InfoMarket {
 				"LEFT JOIN address AS ca ON m.creator_aid = ca.address_id " +
 			"WHERE m.status < 4 " +
 			"ORDER BY " +
-				"m.fin_timestamp DESC " +
+				"m.open_interest DESC " +
 			"OFFSET $1 LIMIT $2";
 
 	rows,err := ss.db.Query(query,off,lim)
