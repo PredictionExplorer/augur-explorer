@@ -682,3 +682,39 @@ func a1_stats_accum_oi(c *gin.Context) {
 			"error": err_str,
 	})
 }
+func a1_stats_gasused_accum(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+	gasused  := augur_srv.storage.Get_gasused_accum(init_ts,fin_ts,interval_secs)
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"GasUsed" : gasused,
+			"status": status,
+			"error": err_str,
+	})
+}
+func a1_stats_txcost_accum(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+	txcost  := augur_srv.storage.Get_txcost_accum(init_ts,fin_ts,interval_secs)
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"TxCost" : txcost,
+			"status": status,
+			"error": err_str,
+	})
+}
