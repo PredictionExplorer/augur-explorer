@@ -283,10 +283,12 @@ func a1_user_info(c *gin.Context) {
 		return
 	}
 	Info.Printf("eoa_aid=%v\n",eoa_aid)
+	gas_spent,_ := augur_srv.storage.Get_gas_spent_for_user(eoa_aid)
 	user_info,err := augur_srv.storage.Get_user_info(eoa_aid)
 	if err == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"UserInfo" : user_info,
+			"GasSpent" : gas_spent,
 		})
 	} else {
 		c.JSON(http.StatusOK,gin.H{
