@@ -46,7 +46,9 @@ CREATE TABLE market (
 	money_at_stake		DECIMAL(64,18) DEFAULT 0.0,	-- accumulated money bet on outcomes
 	open_interest		DECIMAL(64,18) DEFAULT 0.0,	-- amount of shares created
 	fee					DECIMAL(64,18) NOT NULL,	-- fee to be paid to Market creator as percentage of transaction
-	prices				TEXT NOT NULL,				-- range of prices the Market can take
+	lo_price			DECIMAL(78,18) DEFAULT 0,
+	hi_price			DECIMAL(78,18) DEFAULT 0,
+--DISCONTINUED	prices				TEXT NOT NULL,				-- range of prices the Market can take
 	extra_info			TEXT NOT NULL,				-- specific market metadata (JSON format)
 	outcomes			TEXT NOT NULL,				-- possible outcomes of the market
 	winning_payouts		TEXT DEFAULT '',
@@ -158,7 +160,7 @@ CREATE table oi_chg ( -- open interest changed event
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
 	ts_inserted			TIMESTAMPTZ NOT NULL, -- timestamp
-	oi					DECIMAL(24,18) NOT NULL
+	oi					DECIMAL(64,18) NOT NULL
 );
 CREATE TABLE mkt_fin (
 	id					BIGSERIAL PRIMARY KEY,
@@ -401,6 +403,7 @@ CREATE table stbc (			-- Share Token Balance Changed event
 	market_aid			BIGINT NOT NULL,
 	account_aid			BIGINT NOT NULL,
 	outcome_idx			SMALLINT NOT NULL,
+	outside_augur_ui	BOOLEAN DEFAULT false, -- true if the transfer was not made by Augur UI (fontend)
 	balance				DECIMAL(64,32) DEFAULT 0.0
 );
 -- Balances of Share tokens per Market (accumulated data, one record per account)

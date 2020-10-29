@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS
 	dai_transf,dai_bal,
 	rep_transf,
 	etl_tokens,
+	wstok_transf,
 	af_wrapper,
 	af_status,
 	af_addr

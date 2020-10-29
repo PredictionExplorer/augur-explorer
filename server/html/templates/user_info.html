@@ -129,21 +129,30 @@
 	});
 </script>
 	<h3 class="page_title">User Info for {{.UserInfo.AddrSh}}</h3>
-	{{ if .QueriedWallet }}
-		<h4>
-			<font color=yellow>
-				You queried a Wallet Address, we are showng the User this wallet belongs to
-			</font>
-		</h4>
-	{{ end }}
-	{{ if .UserInfo.NotAugur }}
+	{{ if .UserInfo.AugurFlags.AugurEnabled }}
+	{{ else }}
 		<h4><font color="red">Not an Augur account</font></h4>
-		<h5><font color="red">(This account doesn't have an associated Augur Wallet contract)</font></h5>
+		<h5><font color="red">(This account doesn't have the set of Approvals required to trade at Augur Platform)</font></h5>
+		Current Approval list:
+		<table>
+			<tr>
+				<td>Approval for 0x at DAI</td>
+				<td>{{ if .UserInfo.AugurFlags.ZeroXOnCash }}Yes{{else}}No{{end}}</td>
+			</tr>
+			<tr>
+				<td>Approval for FillOrder at DAI</td>
+				<td>{{ if .UserInfo.AugurFlags.FillOnCash}}Yes{{else}}No{{end}}</td>
+			</tr>
+			<tr>
+				<td>ApprovalForAll for FillOrder at ShareToken</td>
+				<td>{{ if .UserInfo.AugurFlags.FillOnShareToken}}Yes{{else}}No{{end}}</td>
+			</tr>
+		</table>
 	{{ end }}
 <div class="user_info">
 	<table class="user_info">
 		<tr class="user_info">
-			<td>User's Real Address (EOA)</td>
+			<td>Account Address</td>
 			<td class="right addr" title="{{.UserInfo.Aid}}:{{.UserInfo.Addr}}">{{.UserInfo.Addr}}</td>
 		</tr>
 		</tr>

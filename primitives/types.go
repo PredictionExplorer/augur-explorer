@@ -206,7 +206,7 @@ type UserInfo struct {
 	TopProfit		float64
 	UnclaimedProfit	float64
 	HedgingProfits	bool	// Flag to indicate negative 'MoneyAtStake' field
-	NotAugur		bool	// True if doesn't have entry in 'ustats' table
+	NoActivity		bool	// True if doesn't have entry in 'ustats' table
 	TotalTrades		uint32	// how many trades were made by this User
 	MarketsCreated	uint32	// how many markets this User has created
 	MarketsTraded	uint32	// how many markets this User has traded
@@ -214,6 +214,7 @@ type UserInfo struct {
 	DepositReqs		uint32	// number of Deposit requests
 	TotalReports	uint32	// amount of reports User has made
 	TotalDesignated	uint32	// total reports submitted as designated reporter
+	AugurFlags		AugurAcctFlags
 	Addr			string	// User's Ethereum address (Externally Owned Account)
 	AddrSh			string	// short version of the above addr
 }
@@ -863,4 +864,13 @@ type BalancerSwap struct {
 	TokenOutAddr			string
 	AmountIn				string
 	AmountOut				string
+}
+type AugurAcctFlags struct { // indicates if Account is Augur - enabled or not (by approvals)
+	BlockNum				int64
+	CreatedTs				int64
+	AugurEnabled			bool
+	ZeroXOnCash				bool
+	FillOnCash				bool
+	FillOnShareToken		bool
+	SetReferrer				bool
 }

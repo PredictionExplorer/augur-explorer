@@ -93,21 +93,17 @@ DECLARE
 	v_cnt numeric;
 BEGIN
 
+	INSERT INTO ustats(aid) VALUES(NEW.creator_aid) ON CONFLICT DO NOTHING;
 	UPDATE ustats
 			SET markets_created = (markets_created + 1),
 				validity_bonds = (validity_bonds + NEW.validity_bond)
 			WHERE aid = NEW.creator_aid;
+
 	UPDATE ustats
 			SET gmarkets = (gmarkets + t.gas_used),
 				geth_markets = (geth_markets + (t.gas_used * t.gas_price))
 			FROM transaction AS t
 			WHERE t.id = NEW.tx_id AND aid=NEW.creator_aid;
-
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		INSERT	INTO ustats(aid,markets_created,validity_bonds)
-				VALUES(NEW.creator_aid,1,NEW.validity_bond);
-	END IF;
 
 	UPDATE main_stats
 		SET markets_count = (markets_count + 1), active_count = (active_count +1);
@@ -182,6 +178,7 @@ BEGIN
 		INSERT	INTO trd_mkt_stats(aid,market_aid,total_trades,volume_traded)
 				VALUES(NEW.aid,NEW.market_aid,1,(NEW.price * NEW.amount_filled));
 	END IF;
+	INSERT INTO ustats(aid) VALUES(NEW.aid) ON CONFLICT DO NOTHING;
 	UPDATE ustats
 		SET total_trades = (total_trades + 1),
 			volume_traded = (volume_traded + (NEW.price * NEW.amount_filled))
@@ -199,6 +196,7 @@ BEGIN
 		INSERT	INTO trd_mkt_stats(aid,market_aid,total_trades,volume_traded)
 			VALUES(NEW.fill_aid,NEW.market_aid,1,(NEW.price * NEW.amount_filled));
 	END IF;
+	INSERT INTO ustats(aid) VALUES(NEW.fill_aid) ON CONFLICT DO NOTHING;
 	UPDATE ustats
 		SET total_trades = (total_trades + 1),
 			volume_traded = (volume_traded + (NEW.price * NEW.amount_filled))
@@ -316,15 +314,12 @@ BEGIN
 	-- into a single User statistics record
 
 	-- Begin of update profit loss
+	INSERT INTO ustats(aid) VALUES(NEW.aid) ON CONFLICT DO NOTHING;
 	UPDATE ustats AS s
 			SET profit_loss = (profit_loss + (NEW.profit_loss - OLD.profit_loss)),
 				money_at_stake = (money_at_stake + (NEW.frozen_funds - OLD.frozen_funds))
 			WHERE	s.aid = NEW.aid;
 
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		--RAISE EXCEPTION 'Corresponding row in ustats ( % ) table doesnt exist',NEW.aid;
-	END IF;
 	-- End of update profit loss
 
 	RETURN NEW;
@@ -334,6 +329,7 @@ CREATE OR REPLACE FUNCTION on_mktfin_insert() RETURNS trigger AS  $$
 DECLARE
 	v_validity_bond decimal;
 	v_aid bigint;
+	v_cnt numeric;
 BEGIN
 
 	UPDATE market
@@ -343,6 +339,7 @@ BEGIN
 		WHERE market.market_aid=NEW.market_aid;
 	UPDATE main_stats SET active_count = (active_count - 1);
 	SELECT creator_aid,validity_bond FROM market WHERE market_aid = NEW.market_aid INTO v_aid,v_validity_bond;
+	INSERT INTO ustats(aid) VALUES(v_aid) ON CONFLICT DO NOTHING;
 	UPDATE ustats SET validity_bonds = validity_bonds - v_validity_bond
 		WHERE aid = v_aid;
 
@@ -433,6 +430,7 @@ BEGIN
 		INSERT	INTO trd_mkt_stats(aid,market_aid)
 				VALUES(NEW.aid,NEW.market_aid);
 	END IF;
+	INSERT INTO ustats(aid) VALUES(NEW.aid) ON CONFLICT DO NOTHING;
 	UPDATE ustats
 		SET total_reports = (total_reports + 1)
 		WHERE	aid = NEW.aid;
@@ -670,8 +668,10 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_mkts_traded_insert() RETURNS trigger AS  $$
 DECLARE
+	v_cnt numeric;
 BEGIN
 
+	INSERT INTO ustats(aid) VALUES(NEW.aid) ON CONFLICT DO NOTHING;
 	UPDATE ustats SET markets_traded = (markets_traded + 1) WHERE aid = NEW.aid;
 	RETURN NEW;
 END;
@@ -858,7 +858,8 @@ BEGIN
 
 	SELECT spread_threshold,osize_threshold FROM ooconfig INTO v_spread_threshold,v_osize_threshold;
 	IF v_spread_threshold IS NULL THEN
-		RAISE EXCEPTION 'Spread threshold is not configured';
+		INSERT INTO ooconfig DEFAULT VALUES;
+		SELECT spread_threshold,osize_threshold FROM ooconfig INTO v_spread_threshold,v_osize_threshold;
 	END IF;
 	SELECT num_ticks FROM market WHERE market_aid = p_market_aid INTO v_num_ticks;
 	IF v_num_ticks IS NULL THEN

@@ -411,6 +411,48 @@ func (ss *SQLStorage) Set_augur_flag(address *common.Address,agtx *p.AugurTx,fla
 		ss.Insert_ustats_record(aid)
 	}
 }
+func (ss *SQLStorage) Get_augur_flags(aid int64) p.AugurAcctFlags {
+
+	var output p.AugurAcctFlags
+	var query string
+	query = "SELECT " +
+				"b.ts, " +
+				"act_block_num,ap_0xtrade_on_cash,ap_fill_on_cash,ap_fill_on_shtok,set_referrer " +
+			"FROM augur_flag AS af " +
+			"LEFT JOIN block AS b ON af.act_block_num = b.block_num " +
+			"WHERE aid = $1 "
+
+	var null_block,null_ts sql.NullInt64
+	var a1,a2,a3,a4 sql.NullBool
+	row := ss.db.QueryRow(query,aid)
+	err := row.Scan(&null_ts,&null_block,&a1,&a2,&a3,&a4)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return output
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
+		os.Exit(1)
+	}
+	if null_ts.Valid {
+		output.CreatedTs = null_ts.Int64
+	}
+	if null_block.Valid {
+		output.BlockNum = null_block.Int64
+	}
+	if a1.Valid {
+		output.ZeroXOnCash = a1.Bool
+	}
+	if a2.Valid {
+		output.FillOnCash = a2.Bool
+	}
+	if a2.Valid {
+		output.FillOnShareToken = a3.Bool
+	}
+	if output.ZeroXOnCash && output.FillOnCash && output.FillOnShareToken {
+		output.AugurEnabled = true
+	}
+	return output
+}
 func (ss *SQLStorage) Is_augur_activated(address string) bool {
 
 	aid,err :=	ss.Nonfatal_lookup_address_id(address)

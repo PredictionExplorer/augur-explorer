@@ -855,7 +855,8 @@ func (ss *SQLStorage) Get_zoomed_price_history(mkt_addr string,market_aid int64,
 
 	}
 	query = "SELECT " +
-				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim " +
+//				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim " +
+				"lo_price " +
 			"FROM market " +
 			"WHERE market_aid = $1"
 

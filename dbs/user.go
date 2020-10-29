@@ -33,14 +33,7 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 
 	var ui p.UserInfo
 	ss.fill_block_info(&ui,user_aid)
-
-	var eoa_aid int64
-	var wallet_aid int64
-	eoa_aid,_=ss.Lookup_eoa_aid(user_aid)
-	wallet_aid,_=ss.Lookup_wallet_aid(user_aid)
-	if (eoa_aid==0) && (wallet_aid==0) {
-		ui.NotAugur = true
-	}
+	ui.AugurFlags = ss.Get_augur_flags(user_aid)
 
 	var query string
 	query = "SELECT " +
@@ -103,7 +96,7 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 		}
 		os.Exit(1)
 	}
-	ui.Addr,err = ss.Lookup_address(eoa_aid)
+	ui.Addr,err = ss.Lookup_address(user_aid)
 	if err == nil {
 		ui.AddrSh = p.Short_address(ui.Addr)
 	}

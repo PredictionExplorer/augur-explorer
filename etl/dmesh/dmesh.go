@@ -302,22 +302,15 @@ func main() {
 	Info.Printf("Subscribed to events successfully..., 0x Mesh Listener started.\n")
 	fetch_and_sync_orders()
 	last_sync_time=time.Now().Unix()
-	//var copts = new(bind.CallOpts)
 	for {
 		select {
 		case orderEvents := <-orderEventsChan:
 			for _, orderEvent := range orderEvents {
 				if !order_belongs_to_augur(orderEvent.SignedOrder) {
-					//Info.Printf("Event listener, skipped non-augur: %v\n",orderEvent.OrderHash.String())
 					continue
 				}
-				//order_hash:=orderEvent.OrderHash.String()
 				Info.Printf("--------------------------------------------------\n")
 				Info.Printf("Order event arrived in state=%+v:\n",orderEvent.EndState)
-	//			Info.Printf("Order Hash: %v\n",order_hash)
-	//			Info.Printf("FillableTakerAssetAmount: %v\n",orderEvent.FillableTakerAssetAmount)
-	//			Info.Printf("Timestamp: %v\n",orderEvent.Timestamp)
-				// store the event in the DB
 				var order_info types.OrderInfo
 				order_info.OrderHash.SetBytes(orderEvent.OrderHash.Bytes())
 				order_info.SignedOrder = orderEvent.SignedOrder

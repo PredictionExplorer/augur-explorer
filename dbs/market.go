@@ -87,6 +87,9 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,validity_bond st
 		creator_aid,evt.MarketCreator.String(),reporter_aid,evt.DesignatedReporter.String(),
 	)
 	prices := p.Bigint_ptr_slice_to_str(&evt.Prices,",")
+	psplit := strings.Split(prices,",")
+	lo_price := psplit[0]
+	hi_price := psplit[1]
 	outcomes := p.Outcomes_to_str(&evt.Outcomes,",")
 
 	var extra_info p.ExtraInfo
@@ -107,15 +110,17 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,validity_bond st
 			num_ticks,
 			create_timestamp,
 			fee,
-			prices,
+			lo_price,
+			hi_price,
 			market_type,
 			extra_info,
 			outcomes,
 			no_show_bond,
 			validity_bond
 		) VALUES ($1,$2,$3,$4,$5,$6,$7,TO_TIMESTAMP($8),$9,TO_TIMESTAMP($10),` +
-						evt.FeePerCashInAttoCash.String() +
-						"/1e+16,$11,$12,$13,$14,(" + evt.NoShowBond.String() + "/1e+18)," +
+						evt.FeePerCashInAttoCash.String() +	"/1e+16,"+
+						"$11::DECIMAL/1e+18,$12::DECIMAL/1e+18," +
+						"$13,$14,$15,(" + evt.NoShowBond.String() + "/1e+18)," +
 						"("+ validity_bond + "/1e+18))";
 
 	result,err := ss.db.Exec(query,
@@ -129,7 +134,8 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,validity_bond st
 			evt.EndTime.Int64(),
 			evt.NumTicks.Int64(),
 			evt.Timestamp.Int64(),
-			prices,
+			lo_price,
+			hi_price,
 			evt.MarketType,
 			evt.ExtraInfo,
 			outcomes,
@@ -711,8 +717,10 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 				"no_show_bond," +
 				"validity_bond," +
 				"cur_volume AS volume, " +
-				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim, " +
-				"split_part(prices,',',2)::decimal/1e+18 AS high_price_lim " +
+//				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim, " +
+//				"split_part(prices,',',2)::decimal/1e+18 AS high_price_lim " +
+				"lo_price," +
+				"hi_price "+
 			"FROM market as m " +
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
 				"LEFT JOIN address AS ca ON m.creator_aid = ca.address_id " +
@@ -893,8 +901,10 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				"cur_volume AS volume, " +
 				"total_trades," +
 				"money_at_stake, " +
-				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim, " +
-				"split_part(prices,',',2)::decimal/1e+18 AS high_price_lim " +
+//				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim, " +
+//				"split_part(prices,',',2)::decimal/1e+18 AS high_price_lim " +
+				"lo_price," +
+				"hi_price " +
 			"FROM market as m " +
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
 				"LEFT JOIN address AS ca ON m.creator_aid = ca.address_id " +
