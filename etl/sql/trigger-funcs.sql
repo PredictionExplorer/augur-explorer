@@ -916,7 +916,7 @@ BEGIN
 		v_ini_ts := NEW.time_stamp;
 
 		SELECT time_stamp FROM mesh_link
-			WHERE order_hash=NEW.order_hash
+			WHERE order_hash=NEW.order_hash AND time_stamp < NEW.time_stamp
 			ORDER BY time_stamp DESC LIMIT 1
 			INTO v_timestamp;
 		IF v_timestamp IS NOT NULL THEN	-- prevents unordered data insertion
