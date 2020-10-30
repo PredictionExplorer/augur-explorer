@@ -1828,5 +1828,3 @@ func (ss *SQLStorage) Get_accumulated_trades_all_markets(init_ts int,fin_ts int,
 	}
 	return output
 }
-
-

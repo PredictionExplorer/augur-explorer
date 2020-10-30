@@ -176,6 +176,7 @@ func main() {
 	r.GET("/api/price_history/:market/:init_ts/:fin_ts/:interval_secs", a1_price_history_zoomed)
 	r.GET("/api/stats_accum_trades/:init_ts/:fin_ts/:interval_secs",  a1_stats_accum_trades)
 	r.GET("/api/stats_accum_oi/:init_ts/:fin_ts/:interval_secs",  a1_stats_accum_oi)
+	r.GET("/api/trade_history/:market",a1_mkt_trade_history)
 
 
 	m := autocert.Manager{
