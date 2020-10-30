@@ -86,7 +86,6 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,ev
 	if 0 != initial_amount.Cmp(amount_filled) {
 		mesh_evt_code = p.MeshEvtFilled
 	}
-	ss.Insert_0x_mesh_order_event(fill_aid,timestamp,zorder,order_specs[order_hash],amount_filled,mesh_evt_code)
 
 	var query string
 	var opcode int = p.OOOpCodeFill
@@ -156,6 +155,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,ev
 	} else {
 		*(ss.mkt_order_id_ptr) = 0
 	}
+	ss.Insert_0x_mesh_order_event(null_id.Int64,fill_aid,timestamp,zorder,order_specs[order_hash],amount_filled,mesh_evt_code)
 	query = "UPDATE outcome_vol " +
 			"SET " +
 				"last_price = "+price+ " " +
@@ -166,7 +166,6 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,ev
 		ss.Log_msg(fmt.Sprintf("DB error at block %v : %v ; q=%v",agtx.BlockNum,err,query))
 		os.Exit(1)
 	}
-	ss.Update_oo_fillable_amount(order_hash,zorder.SignedOrder)
 }
 func (ss *SQLStorage) Delete_market_order_evt(tx_id int64) {
 
@@ -332,7 +331,7 @@ func (ss *SQLStorage) Cancel_open_order(aid int64,orders map[string]*ztypes.Orde
 		os.Exit(1)
 	}
 	var query string
-	ss.Insert_0x_mesh_order_event(aid,timestamp,oinfo,ospec,nil,p.MeshEvtCancelled)
+	ss.Insert_0x_mesh_order_event(0,aid,timestamp,oinfo,ospec,nil,p.MeshEvtCancelled)
 
 	query = "DELETE FROM oorders WHERE order_hash = $1"
 	result,err := ss.db.Exec(query,order_hash)
@@ -1418,7 +1417,7 @@ func (ss *SQLStorage) Get_depth_states(market_aid int64,mkt_type int,outcome_idx
 				"FROM depth_state AS d " +
 				"WHERE d.market_aid=$1 AND d.outcome_idx=$2 AND otype=$3 AND "+
 						"(d.ini_ts <= TO_TIMESTAMP($4)) AND (TO_TIMESTAMP($4) < fin_ts) "+
-				"ORDER BY ini_ts"
+				"ORDER BY d.price DESC, ini_ts"
 	rows,err := ss.db.Query(query,market_aid,outcome_idx,otype,ts)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

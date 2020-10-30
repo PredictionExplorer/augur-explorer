@@ -285,6 +285,7 @@ BEGIN
 	UPDATE outcome_vol SET total_trades = (total_trades - 1)
 		WHERE market_aid = OLD.market_aid AND outcome_idx = OLD.outcome_idx;
 
+	DELETE FROM mesh_evt WHERE mktord_id = OLD.id;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -788,6 +789,7 @@ CREATE OR REPLACE FUNCTION on_mesh_evt_delete() RETURNS trigger AS  $$
 DECLARE
 	v_fin_ts timestamptz;
 	v_depthst_id bigint;
+	v_timestamp timestamptz;
 BEGIN
 
 	-- Noote: All DELETEs of an order must be ordered by expiration time in
@@ -932,11 +934,11 @@ BEGIN
 	INSERT INTO price_estimate(
 		market_aid,meshevt_id,time_stamp,outcome_idx,
 		bid_state_id,ask_state_id,spread,price_est,wprice_est,max_bid,
-		min_ask,wmax_bid,wmin_ask
+		min_ask,wmax_bid,wmin_ask,wbid_size,wask_size
 	) VALUES (
 		p_market_aid,p_meshevt_id,p_timestamp,p_outcome_idx,
 		v_bid_state_id,v_ask_state_id,v_spread,v_price_estimate,v_weighted_price_estimate,
-		v_price_bid,v_price_ask,v_weighted_bid,v_weighted_ask
+		v_price_bid,v_price_ask,v_weighted_bid,v_weighted_ask,v_wbid_total,v_wask_total
 	);
 	RETURN v_price_estimate;
 END;

@@ -11,13 +11,13 @@
 	<td class="right">{{.WMaxBid}}</td>
 	<td class="right">{{.WMinAsk}}</td>
 	<td bgcolor="#1f1e3d">
-		{{if .MatchingBids}}
-			Bids:
-			{{template "depth_state_list" .MatchingBids}}
-		{{ end }}
 		{{if .MatchingAsks}}
 			Asks:
 			{{template "depth_state_list" .MatchingAsks}}
+		{{ end }}
+		{{if .MatchingBids}}
+			Bids:
+			{{template "depth_state_list" .MatchingBids}}
 		{{ end }}
 	</td>
 </tr>

@@ -28,11 +28,12 @@ func (ss *SQLStorage) Try_insert_0x_mesh_order_event(aid int64,timestamp int64,o
 		)
 		return false
 	}
-	ss.Insert_0x_mesh_order_event(aid,timestamp,oi,ospec,amount_fill,event_code)
+	ss.Insert_0x_mesh_order_event(0,aid,timestamp,oi,ospec,amount_fill,event_code)
 	return true
 }
-func (ss *SQLStorage) Insert_0x_mesh_order_event(aid int64,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) bool {
+func (ss *SQLStorage) Insert_0x_mesh_order_event(mktord_id int64,aid int64,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) bool {
 
+	ss.Info.Printf("Inserting 0x mesh event, order %v\n",oi.OrderHash.String())
 	if ospec == nil {
 		ss.Log_msg(
 			fmt.Sprintf(
@@ -43,7 +44,7 @@ func (ss *SQLStorage) Insert_0x_mesh_order_event(aid int64,timestamp int64,oi *z
 		os.Exit(1)
 	}
 	var query string
-
+/*DISCONTINUED: now handled with unique index check
 	// Prevent duplicate insertion and exit if this is the case
 	query = "SELECT id FROM mesh_evt WHERE order_hash=$1 AND evt_code=$2"
 	var null_id sql.NullInt64
@@ -59,24 +60,26 @@ func (ss *SQLStorage) Insert_0x_mesh_order_event(aid int64,timestamp int64,oi *z
 		// event with this code already exists
 		return false
 	}
-
+*/
 	// Prevent insertion of event without ADD event. If ADD event is missing then simulate it
 	if event_code != p.MeshEvtAdded {
 		query = "SELECT id FROM mesh_evt WHERE order_hash=$1 AND evt_code=2"
-		err = ss.db.QueryRow(query,oi.OrderHash.String()).Scan(&null_id);
+		var null_id sql.NullInt64
+		err := ss.db.QueryRow(query,oi.OrderHash.String()).Scan(&null_id);
 		if (err!=nil) {
 			if (err==sql.ErrNoRows) {
 				// ADD event is missing, INSERT
 				ts := int64(oi.SignedOrder.Order.Salt.Int64()/1000)
-				ss.do_insert_0x_mesh_order_event(aid,ts,oi,ospec,nil,p.MeshEvtAdded)
+				ss.do_insert_0x_mesh_order_event(0,aid,ts,oi,ospec,nil,p.MeshEvtAdded)
 			} else {
 				ss.Log_msg(fmt.Sprintf("DB error : %v, q=%v",err,query))
 				os.Exit(1)
 			}
 		}
 	}
-	market_aid,err := ss.do_insert_0x_mesh_order_event(aid,timestamp,oi,ospec,amount_fill,event_code)
+	market_aid,err := ss.do_insert_0x_mesh_order_event(mktord_id,aid,timestamp,oi,ospec,amount_fill,event_code)
 	if err != nil {
+		ss.Info.Printf("not updating price estimate due to error: %v\n",err)
 		return false
 	}
 	// now we need to update all posterior records because future price estimate values
@@ -124,19 +127,24 @@ func (ss *SQLStorage) Update_future_price_estimates(market_aid int64,outcome_idx
 		}
 	}
 }
-func (ss *SQLStorage) do_insert_0x_mesh_order_event(aid int64,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) (int64,error) {
+func (ss *SQLStorage) do_insert_0x_mesh_order_event(mktord_id int64,aid int64,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) (int64,error) {
 
 	market_aid := ss.Lookup_or_create_address(ospec.Market.String(),0,0)// block and tx_id will be updated on market creation event
 	amount_fill_str := "0"
 	if amount_fill != nil {
 		amount_fill_str = amount_fill.String()
 	}
+	var mktord_field,mktord_value string
+	if mktord_id != 0 { // non-nul value is inserted to related mesh_evt to mktord table
+		mktord_field = "mktord_id,"
+		mktord_value = fmt.Sprintf("%v,",mktord_id)
+	}
 	var query string
 	var err error
 	query = "INSERT INTO mesh_evt (" +
 				"aid," +
 				"time_stamp,fillable_amount,evt_code," +
-				"market_aid,outcome_idx,otype,price," +
+				mktord_field + "market_aid,outcome_idx,otype,price," +
 				"order_hash,chain_id,exchange_addr," +
 				"maker_addr," +
 				"maker_asset_data," +
@@ -157,7 +165,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(aid int64,timestamp int64,oi
 			") VALUES (" +
 					"$1," +
 					"TO_TIMESTAMP($2),($3::decimal/1e+18),$4,"+
-					"$5,$6,$7,$8," +
+					mktord_value + "$5,$6,$7,$8," +
 					"$9,$10,$11," +
 					"$12,$13,$14," +
 					"($15::decimal/1e+18),($16::decimal/1e+18),"+
@@ -169,7 +177,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(aid int64,timestamp int64,oi
 	d_query := fmt.Sprintf("INSERT INTO mesh_evt (" +
 				"aid," +
 				"time_stamp,fillable_amount,evt_code," +
-				"market_aid,outcome_idx,otype,price," +
+				mktord_field + "market_aid,outcome_idx,otype,price," +
 				"order_hash,chain_id,exchange_addr," +
 				"maker_addr,maker_asset_data,maker_fee_asset_data," +
 				"maker_asset_amount,maker_fee," +
@@ -184,7 +192,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(aid int64,timestamp int64,oi
 			") VALUES (" +
 					"%v," +
 					"TO_TIMESTAMP(%v),(%v::decimal/1e+18),%v,"+
-					"%v,%v,%v,%v," +
+					"%v %v,%v,%v,%v," +
 					"'%v',%v,'%v'," +
 					"'%v','%v','%v'," +
 					"(%v::decimal/1e+18),(%v::decimal/1e+18),"+
@@ -194,7 +202,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(aid int64,timestamp int64,oi
 			") ON CONFLICT DO NOTHING",
 			aid,
 			timestamp,oi.FillableTakerAssetAmount.String(),event_code,
-			market_aid,ospec.Outcome,ospec.Type,ospec.Price.String(),
+			mktord_value,market_aid,ospec.Outcome,ospec.Type,ospec.Price.String(),
 			oi.OrderHash.String(),oi.SignedOrder.Order.ChainID.Int64(),oi.SignedOrder.Order.ExchangeAddress.String(),
 			oi.SignedOrder.Order.MakerAddress.String(),hex.EncodeToString(oi.SignedOrder.Order.MakerAssetData),hex.EncodeToString(oi.SignedOrder.Order.MakerFeeAssetData),
 			oi.SignedOrder.Order.MakerAssetAmount.String(),oi.SignedOrder.Order.MakerFee.String(),
@@ -214,6 +222,7 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(aid int64,timestamp int64,oi
 		oi.SignedOrder.Order.TakerAssetAmount.String(),oi.SignedOrder.Order.TakerFee.String(),
 		oi.SignedOrder.Order.SenderAddress.String(),oi.SignedOrder.Order.FeeRecipientAddress.String(),oi.SignedOrder.Order.ExpirationTimeSeconds.Int64(),oi.SignedOrder.Order.Salt.String(),hex.EncodeToString(oi.SignedOrder.Signature),amount_fill_str,
 	)
+	ss.Info.Printf("err=%v\n",err)
 	if (err!=nil) {
 		switch err.(type) {
 			default:

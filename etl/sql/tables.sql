@@ -79,6 +79,7 @@ CREATE TABLE mesh_evt ( -- Events received from 0x Mesh network. source: github.
 	fillable_amount			DECIMAL(32,18) NOT NULL,
 	evt_code				SMALLINT NOT NULL,
 -- Augur fields:
+	mktord_id				BIGINT DEFAULT NULL, -- the DELETE trigger in 'mktord' does the deletion
 	market_aid				BIGINT NOT NULL,
 	outcome_idx				SMALLINT NOT NULL,
 	otype					SMALLINT NOT NULL,-- 0: BID, 1: ASK
@@ -141,7 +142,9 @@ CREATE TABLE price_estimate (
 	wmax_bid			DECIMAL(32,18),
 	wmin_ask			DECIMAL(32,18),
 	max_bid				DECIMAL(32,18) NOT NULL,
-	min_ask				DECIMAL(32,18) NOT NULL
+	min_ask				DECIMAL(32,18) NOT NULL,
+	wbid_size			DECIMAL(64,18),
+	wask_size			DECIMAL(64,18)
 );
 CREATE TABLE oohist ( -- open order history
 	id					BIGSERIAL PRIMARY KEY,
