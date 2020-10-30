@@ -720,3 +720,32 @@ func a1_stats_txcost_accum(c *gin.Context) {
 			"error": err_str,
 	})
 }
+func a1_mkt_trade_history(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_market := c.Param("market")
+	mkt_addr,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	if !success {
+		return
+	}
+
+	low_price,err := augur_srv.storage.Get_market_price_range(market_aid)
+	if err!=nil {
+		c.JSON(http.StatusOK,gin.H{
+				"status": 0,
+				"error": err.Error(),
+		})
+		return
+	}
+
+	price_history := augur_srv.storage.Get_full_price_history(mkt_addr,market_aid,low_price)
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+		"UTrades" : price_history,
+		"status": status,
+		"error": err_str,
+	})
+}

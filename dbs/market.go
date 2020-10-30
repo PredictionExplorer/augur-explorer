@@ -344,6 +344,24 @@ func (ss *SQLStorage) get_market_type_and_ticks(market_aid int64) (int,int64,err
 	}
 	return market_type,num_ticks,nil
 }
+func (ss *SQLStorage) Get_market_price_range(market_aid int64) (float64,error) {
+
+	var query string
+	query = "SELECT " +
+				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim " +
+			"FROM market WHERE market_aid=$1"
+
+	var lo_price sql.NullFloat64
+	err:=ss.db.QueryRow(query,market_aid).Scan(&lo_price);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0.0,err
+		}
+		ss.Log_msg(fmt.Sprintf("DB Error: %v, q=%v market_aid=%v\n",err,query,market_aid))
+		os.Exit(1)
+	}
+	return lo_price.Float64,nil
+}
 func (ss *SQLStorage) update_market_status(market_aid int64,status p.MarketStatus) {
 	var query string
 	query = "UPDATE market SET status=$2 WHERE market_aid = $1"
