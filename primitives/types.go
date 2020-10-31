@@ -35,8 +35,8 @@ const (
 	MeshEvtFullyFilled			// 4
 	MeshEvtCancelled			// 5
 	MeshEvtExpired				// 6
-	MeshEvtUnexpired
-	MeshEvtBecameUnfunded
+	MeshEvtUnexpired			// 7
+	MeshEvtBecameUnfunded		// 8
 	MeshEvtFillabilityIncreased
 	MeshEvtStoppedWatching
 )
@@ -684,6 +684,9 @@ type MeshEvent struct {
 	ExpirationTime			int64
 	Salt					string
 	Signature				string
+	// helping fields
+	MarketAddress			string
+	NumTicks				int
 }
 type DepthState struct {
 	Id						int64

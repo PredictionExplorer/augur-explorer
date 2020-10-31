@@ -14,6 +14,7 @@ CREATE INDEX tbc_idx				ON	tbc				(tx_id);
 CREATE INDEX stbc_idx				ON	stbc			(tx_id);
 CREATE INDEX toktr_idx				ON	tok_transf		(tx_id);
 CREATE INDEX sbal_tx_idx			ON	sbalances		(tx_id);
+CREATE INDEX pldbg_idx				ON	pl_debug		(block_num);
 -- market_aid indices
 CREATE INDEX mo_mkt_idx				ON	mktord			(market_aid);
 CREATE INDEX oord_mkt_idx			ON	oorders			(market_aid);
@@ -50,3 +51,4 @@ CREATE INDEX exec_wtx_in_sig_idx	ON exec_wtx			(input_sig);
 CREATE INDEX exec_wtx_referral_idx	ON exec_wtx			(referral_aid);
 CREATE INDEX exec_wtx_to_idx		ON exec_wtx			(to_aid);
 CREATE INDEX mktord_ts_idx			ON mktord			(time_stamp);
+CREATE UNIQUE INDEX pldebug_uniq	ON pl_debug			(block_num,market_aid,aid,outcome_idx);

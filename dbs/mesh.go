@@ -44,23 +44,6 @@ func (ss *SQLStorage) Insert_0x_mesh_order_event(mktord_id int64,aid int64,times
 		os.Exit(1)
 	}
 	var query string
-/*DISCONTINUED: now handled with unique index check
-	// Prevent duplicate insertion and exit if this is the case
-	query = "SELECT id FROM mesh_evt WHERE order_hash=$1 AND evt_code=$2"
-	var null_id sql.NullInt64
-	err := ss.db.QueryRow(query,oi.OrderHash.String(),event_code).Scan(&null_id);
-	if (err!=nil) {
-		if (err==sql.ErrNoRows) {
-			// break
-		} else {
-			ss.Log_msg(fmt.Sprintf("DB error : %v, q=%v",err,query))
-			os.Exit(1)
-		}
-	} else {
-		// event with this code already exists
-		return false
-	}
-*/
 	// Prevent insertion of event without ADD event. If ADD event is missing then simulate it
 	if event_code != p.MeshEvtAdded {
 		query = "SELECT id FROM mesh_evt WHERE order_hash=$1 AND evt_code=2"

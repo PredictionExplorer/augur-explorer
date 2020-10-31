@@ -355,10 +355,6 @@ CREATE TABLE oostats (	-- open order statistics per User
 	num_asks			INT DEFAULT 0,				-- number of total ASK orders for this EOA
 	num_cancel			INT DEFAULT 0				-- number of cancelled orders
 );
-CREATE TABLE ooconfig ( -- configuration for spread calculation
-	spread_threshold	DECIMAL(64,18) DEFAULT 110.0,	-- Reasonable spread to calculate Price Estimate
-	osize_threshold		DECIMAL(64,18) DEFAULT 0.0		-- Order size to calculate Price Estimate
-);
 CREATE TABLE pl_debug (-- Profit loss data for debugging, scanned after Block has been processed
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,

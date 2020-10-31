@@ -102,7 +102,7 @@ CREATE TABLE mesh_evt ( -- Events received from 0x Mesh network. source: github.
 	taker_fee				DECIMAL(32,18) NOT NULL,
 	sender_address			CHAR(42) NOT NULL,
 	fee_recipient_address	CHAR(42) NOT NULL,
-	expiration_time			TIMESTAMPTZ NOT NULL,
+	expiration_time			TIMESTAMPTZ(3) NOT NULL,
 	salt					TEXT NOT NULL, -- big.Int as string
 	signature				TEXT
 );
@@ -145,23 +145,6 @@ CREATE TABLE price_estimate (
 	min_ask				DECIMAL(32,18) NOT NULL,
 	wbid_size			DECIMAL(64,18),
 	wask_size			DECIMAL(64,18)
-);
-CREATE TABLE oohist ( -- open order history
-	id					BIGSERIAL PRIMARY KEY,
-	mktord_id			BIGINT DEFAULT NULL REFERENCES mktord(id) ON DELETE CASCADE, -- used only for Fill events
-	otype				SMALLINT NOT NULL,			-- enum:  0 => BID, 1 => ASK
-	outcome_idx			SMALLINT NOT NULL,
-	opcode				SMALLINT NOT NULL,			-- operation; 0: CREATED, 1: AUTOEXPIRED, 2: USER-CANCELLED
-	market_aid			BIGINT NOT NULL,
-	aid					BIGINT NOT NULL,			-- address of EOA (Externally Owned Account, the real User)
-	price_estimate		DECIMAL(32,18) DEFAULT 0.0,
-	price				DECIMAL(32,18) NOT NULL,
-	initial_amount		DECIMAL(32,18) NOT NULL,	-- initial amount order was created
-	amount			DECIMAL(32,18) NOT NULL,		-- amount remaining to be filled
-	evt_timestamp		TIMESTAMPTZ DEFAULT to_timestamp(0),-- 0x Mesh event timestamp
-	srv_timestamp		TIMESTAMPTZ DEFAULT to_timestamp(0),-- Postgres Server timestamp (not blockchain timestamp)
-	expiration			TIMESTAMPTZ DEFAULT to_timestamp(0),
-	order_hash			CHAR(66)					-- Order Hash (github.com/0x-mesh/zeroex/order.go:Order.hash)
 );
 CREATE TABLE last_block (	-- the value in this table is guaranteeing integrity in the data up to last block
 	block_num			BIGINT	NOT NULL	-- last block processed by the ETL
@@ -206,4 +189,8 @@ CREATE TABLE contract_addresses ( -- Addresses of contracts that compose Augur P
 	usdt				TEXT DEFAULT '',-- USDT:
 	relay_hub_v2		TEXT DEFAULT '',-- RelayHubV2:
 	account_loader		TEXT DEFAULT '' -- AccountLoader
+);
+CREATE TABLE ooconfig ( -- configuration for spread calculation
+	spread_threshold	DECIMAL(64,18) DEFAULT 110.0,	-- Reasonable spread to calculate Price Estimate
+	osize_threshold		DECIMAL(64,18) DEFAULT 0.0		-- Order size to calculate Price Estimate
 );

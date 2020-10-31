@@ -730,7 +730,7 @@ BEGIN
 		v_ini_ts := NEW.time_stamp;
 		v_amount := NEW.maker_asset_amount;
 	END IF;
-	IF (NEW.evt_code= 3) OR (NEW.evt_code = 4) OR (NEW.evt_code = 5) OR (NEW.evt_code = 6) THEN
+	IF (NEW.evt_code= 3) OR (NEW.evt_code = 4) OR (NEW.evt_code = 5) OR (NEW.evt_code = 6) OR (NEW.evt_code=8) THEN
 		v_ini_ts := NEW.time_stamp;
 
 		SELECT time_stamp FROM mesh_link
@@ -763,9 +763,9 @@ BEGIN
 			v_fin_ts := NEW.time_stamp;
 		END IF;
 	END IF;
-	IF (NEW.evt_code= 7) OR (NEW.evt_code = 8)  OR (NEW.evt_code = 9) OR (NEW.evt_code = 10) THEN
-		v_ini_ts := NEW.time_stamp;
+	IF (NEW.evt_code= 7) OR (NEW.evt_code = 9) OR (NEW.evt_code = 10) THEN
 		v_amount := 0;
+		v_ini_ts := NEW.time_stamp;
 		v_fin_ts := NEW.time_stamp;
 	END IF;
 	IF v_amount > 0 THEN
