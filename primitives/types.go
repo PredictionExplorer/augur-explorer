@@ -877,3 +877,9 @@ type AugurAcctFlags struct { // indicates if Account is Augur - enabled or not (
 	FillOnShareToken		bool
 	SetReferrer				bool
 }
+type UpdatePriceEst struct {
+	MktAid					int64
+	TimeStamp				int64
+	MktType					int
+	Outcomes				string
+}

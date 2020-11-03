@@ -20,6 +20,7 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 var (
+	ALLOW_DUMMY_MARKETS bool = false
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 	storage *SQLStorage
 
@@ -36,6 +37,11 @@ var (
 )
 func read_mesh_import_file(fname string) []MeshEvent {
 
+	var dummy_agtx AugurTx
+	dummy_agtx.Value="0"
+	dummy_agtx.GasPrice="0"
+	dummy_agtx.From ="0x0"
+	dummy_agtx.To="0x0"
 	var num_fields int = 23
 	data,err := ioutil.ReadFile(fname)
 	if err != nil {
@@ -108,6 +114,20 @@ func read_mesh_import_file(fname string) []MeshEvent {
 			os.Exit(1)
 		}
 		rec.NumTicks = intval
+		_,err := storage.Lookup_market_by_addr_str(rec.MarketAddress)
+		if err != nil {
+			if ALLOW_DUMMY_MARKETS {
+				if dummy_agtx.TxId == 0 {
+					storage.Insert_dummy_block(0)
+					dummy_agtx.TxId = storage.Insert_transaction(&dummy_agtx)
+				}
+				// this code is needed for testing pruposes
+				storage.Insert_dummy_market(rec.MarketAddress,dummy_agtx.TxId,int64(rec.NumTicks))
+			} else {
+				fmt.Printf("Market %v wasn't found, can't continue import process\n",rec.MarketAddress)
+				os.Exit(1)
+			}
+		}
 		output = append(output,rec)
 	}
 	return output
@@ -199,7 +219,6 @@ func main() {	// returns 0 - no changes, 2 - day was added
 		fmt.Printf("usage: %v [mesh_events_file]\n",os.Args[0])
 		os.Exit(1)
 	}
-	events := read_mesh_import_file(os.Args[1])
 
 	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 	storage = Connect_to_storage(&market_order_id,Info)
@@ -224,6 +243,7 @@ func main() {	// returns 0 - no changes, 2 - day was added
 			),
 			eclient,
 	)
+	events := read_mesh_import_file(os.Args[1])
 	for i,evt := range events {
 		evt_code := MeshEvtCode(evt.EvtCode)
 		switch evt_code {

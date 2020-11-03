@@ -460,3 +460,39 @@ func (ss *SQLStorage) Lookup_maker_eoa_wallet_ids(possible_eoa_addr *common.Addr
 	}
 	return eoa_aid,wallet_aid,nil
 }
+func (ss *SQLStorage) Get_price_estimate_update_market_list() []p.UpdatePriceEst {
+
+	var query string
+	query = "SELECT " +
+				"market_aid," +
+				"FLOOR(EXTRACT(EPOCH FROM create_timestamp))::BIGINT as created_ts, " +
+				"market_type," +
+				"outcomes " +
+			"FROM market "
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.UpdatePriceEst,0,256)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UpdatePriceEst
+		var market_aid int64
+		var timestamp int64
+		var market_type int
+		var outcomes string
+		err=rows.Scan(&market_aid,&timestamp,&market_type,&outcomes)
+		if err != nil {
+			ss.Info.Printf("DB error: %v\n",err)
+			os.Exit(1)
+		}
+		rec.MktAid = market_aid
+		rec.TimeStamp = timestamp
+		rec.MktType = market_type
+		rec.Outcomes = outcomes
+		records = append(records,rec)
+	}
+	return records
+}

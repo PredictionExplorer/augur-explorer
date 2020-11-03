@@ -855,3 +855,18 @@ func (ss *SQLStorage) Delete_transaction_related_data(tx_id int64) {
 	ss.Delete_register_contract_evt(tx_id)
 	ss.Delete_claim_funds(tx_id)
 }
+func (ss *SQLStorage) Insert_dummy_block(block_num int64) {
+
+	var query string
+	query = 
+		"INSERT INTO block(block_num,block_hash,ts,parent_hash) " +
+		"VALUES ($1,'hash',NOW(),'parent_hash')"
+
+	_,err := ss.db.Exec(query,block_num)
+	if err != nil {
+		ss.Log_msg(
+			fmt.Sprintf("DB error: %v, q=%v",err,query),
+		)
+		os.Exit(1)
+	}
+}

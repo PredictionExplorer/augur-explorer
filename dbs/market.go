@@ -1278,3 +1278,24 @@ func (ss *SQLStorage) Get_market_reports(market_aid int64,limit int) []p.Report 
 	}
 	return records
 }
+func (ss *SQLStorage) Insert_dummy_market(addr string,tx_id int64, num_ticks int64) {
+	// Used to verify mesh event import/export process
+
+	ss.Info.Printf("Inserting dummy market %v with tx_id=%v\n",addr,tx_id)
+	creator_aid := ss.Lookup_or_create_address("0x0",0,0)
+	reporter_aid := ss.Lookup_or_create_address("0x0",0,0)
+	market_aid := ss.Lookup_or_create_address(addr,0,0)
+	var query string
+	query = "INSERT INTO market(" +
+				"market_aid,block_num,tx_id,cat_id,universe_id,creator_aid,reporter_aid," +
+				"end_time,num_ticks,create_timestamp,fee,market_type,extra_info,outcomes" +
+			") VALUES ($1,0,$2,0,0,$3,$4,NOW(),$5,NOW(),0.0,0,'','')"
+
+	_,err := ss.db.Exec(query,market_aid,tx_id,creator_aid,reporter_aid,num_ticks)
+	if err != nil {
+		ss.Log_msg(
+			fmt.Sprintf("DB error: %v: q=%v",err,query),
+		)
+		os.Exit(1)
+	}
+}

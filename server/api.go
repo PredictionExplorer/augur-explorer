@@ -754,6 +754,9 @@ func a1_wrapped_tokens(c *gin.Context) {
 
 	p_market:= c.Param("market")
 	market_addr,_,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	if !success {
+		return
+	}
 	market_info,err := augur_srv.storage.Get_market_info(market_addr,0,false)
 	if err != nil {
 		show_market_not_found_error(c,false,&market_addr)
