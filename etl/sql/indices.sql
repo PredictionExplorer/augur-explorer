@@ -14,3 +14,4 @@ CREATE INDEX etop_topic0_sig		ON evt_log			(topic0_sig);
 CREATE INDEX etop_val_key			ON evt_topic		(value);
 CREATE INDEX etop_bnum_key			ON evt_topic		(block_num);
 CREATE INDEX etop_ctrct_idx			ON evt_topic		(contract_aid);
+CREATE INDEX tx_input_sig_idx		ON transaction		(input_sig);

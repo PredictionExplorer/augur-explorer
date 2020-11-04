@@ -883,3 +883,19 @@ type UpdatePriceEst struct {
 	MktType					int
 	Outcomes				string
 }
+type OutsideAugurSBChg struct {
+	AccountAid				int64
+	TimeStamp				int64
+	MktAid					int64
+	Balance					float64
+	OutcomeIdx				int
+	Address					string
+	DateTime				string
+}
+type MarketBalancerPool struct {
+	TimeStamp				int64
+	PoolAid					int64
+	OutcomeIdx				int
+	PoolAddr				string
+	WrapperAddr				string
+}

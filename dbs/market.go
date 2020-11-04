@@ -488,7 +488,7 @@ func (ss *SQLStorage) Delete_market_vol_changed_evt(tx_id int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_share_balance_changed_evt(agtx *p.AugurTx,evt *p.EShareTokenBalanceChanged) {
+func (ss *SQLStorage) Insert_share_balance_changed_evt(agtx *p.AugurTx,evt *p.EShareTokenBalanceChanged,outside_augur_ui bool) {
 
 	market_aid := ss.Lookup_address_id(evt.Market.String())
 	account_aid := ss.Lookup_or_create_address(evt.Account.String(),agtx.BlockNum,agtx.TxId)
@@ -503,16 +503,12 @@ func (ss *SQLStorage) Insert_share_balance_changed_evt(agtx *p.AugurTx,evt *p.ES
 				"account_aid," +
 				"market_aid," +
 				"outcome_idx," +
+				"outside_augur_ui," +
 				"balance" +
-			") VALUES(" +
-				"$1," +
-				"$2," +
-				"$3," +
-				"$4," +
-				"$5," +
-				balance + "/1e+18" +
-			")"
-	_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,account_aid,market_aid,outcome)
+			") VALUES($1,$2,$3,$4,$5,$6,$7::DECIMAL/1e+18)"
+	_,err := ss.db.Exec(
+		query,agtx.BlockNum,agtx.TxId,account_aid,market_aid,outcome,outside_augur_ui,balance,
+	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into sbalances table at block %v: %v, q=%v",agtx.BlockNum,err,query))
 		os.Exit(1)

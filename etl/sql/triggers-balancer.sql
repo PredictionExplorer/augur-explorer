@@ -1,38 +1,6 @@
-CREATE OR REPLACE FUNCTION on_bjoin_insert() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-	INSERT INTO bholder(pool_aid,holder_aid)
-		VALUES(NEW.pool_aid,NEW.caller_aid);
-	UPDATE bholder SET amount = amount + NEW.amount
-		WHERE pool_aid=NEW.pool_aid AND holder_aid=NEW.caller_aid;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_bjoin_delete() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-
-	UPDATE bholder SET amount = amount - OLD.amount
-		WHERE pool_aid=OLD.pool_aid AND holder_aid=OLD.caller_aid;
-	RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_bexit_insert() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-	INSERT INTO bholder(pool_aid,holder_aid)
-		VALUES(NEW.pool_aid,NEW.caller_aid);
-	UPDATE bholder SET amount = amount - NEW.amount
-		WHERE pool_aid=NEW.pool_aid AND holder_aid=NEW.caller_aid;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_bjoin_delete() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-
-	UPDATE bholder SET amount = amount + OLD.amount
-		WHERE pool_aid=OLD.pool_aid AND holder_aid=OLD.caller_aid;
-	RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+CREATE TRIGGER bjoin_insert AFTER INSERT on bjoin FOR EACH ROW EXECUTE PROCEDURE on_bjoin_insert();
+CREATE TRIGGER bjoin_delete AFTER DELETE on bjoin FOR EACH ROW EXECUTE PROCEDURE on_bjoin_delete();
+CREATE TRIGGER bexit_insert AFTER INSERT on bexit FOR EACH ROW EXECUTE PROCEDURE on_bexit_insert();
+CREATE TRIGGER bexit_delete AFTER DELETE on bexit FOR EACH ROW EXECUTE PROCEDURE on_bexit_delete();
+CREATE TRIGGER bbind_insert AFTER INSERT on bbind FOR EACH ROW EXECUTE PROCEDURE on_bbind_insert();
+CREATE TRIGGER bbind_delete AFTER DELETE on bbind FOR EACH ROW EXECUTE PROCEDURE on_bbind_delete();

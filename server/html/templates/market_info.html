@@ -88,6 +88,29 @@
 		</ul>
 	</nav>
 </div>
+{{if .OutsideAugurBalanceChanges }}
+<h3>Share Balance changes outside Augur UI</h3>
+<div id="outside_ag_bal_changes">
+<table class="market_reports">
+	<tr class="market_reports">
+		<th class="market_reports">Timestamp</th>
+		<th class="market_reports">Account</th>
+		<th class="market_reports">Outcome</th>
+		<th class="market_reports">Balance</th>
+	</tr>
+	{{- range $i, $change := .OutsideAugurBalanceChanges }}
+		<tr class="market_reports">
+			<td class="market_reports_field">{{.DateTime}}</td>
+			<td class="market_reports_field" title="{{.Address}}">
+				<a class="addr" href="../search?q={{.Address}}">{{.Address}}</a>
+			</td>
+			<td class="market_reports_field" style="text-align: center">{{.OutcomeIdx}}</td>
+			<td class="market_reports_field" style="text-align: center">{{.Balance}}</td>
+		</tr>
+	{{- end}}
+</table>
+</div>
+{{ end }}
 {{ if ne .Market.MktStatus 0 }}
 <h3>Reports for this Market</h3>
 <div id="market_reports">

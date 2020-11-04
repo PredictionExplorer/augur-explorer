@@ -416,7 +416,7 @@ func (ss *SQLStorage) Get_augur_flags(aid int64) p.AugurAcctFlags {
 	var output p.AugurAcctFlags
 	var query string
 	query = "SELECT " +
-				"b.ts, " +
+				"FLOOR(EXTRACT(EPOCH FROM b.ts))::BIGINT as ts, " +
 				"act_block_num,ap_0xtrade_on_cash,ap_fill_on_cash,ap_fill_on_shtok,set_referrer " +
 			"FROM augur_flag AS af " +
 			"LEFT JOIN block AS b ON af.act_block_num = b.block_num " +

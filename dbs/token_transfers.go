@@ -781,3 +781,46 @@ func (ss *SQLStorage) Delete_REP_transfer_by_evtlog_id(evtlog_id int64) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Outside_augur_share_balance_changes(market_aid int64) []p.OutsideAugurSBChg {
+
+	market_type,_,_ := ss.get_market_type_and_ticks(market_aid)
+	var query string
+	query = "SELECT " +
+				"sb.market_aid," +
+				"FLOOR(EXTRACT(EPOCH FROM b.ts))::BIGINT as time_stamp," +
+				"b.ts," +
+				"sb.account_aid,"+
+				"a.addr," +
+				"outcome_idx," +
+				"balance " +
+			"FROM stbc AS sb " +
+				"JOIN market AS m ON sb.market_aid=m.market_aid " +
+				"JOIN block AS b ON sb.block_num=b.block_num " +
+				"LEFT JOIN address AS a ON sb.account_aid=a.address_id "+
+			"WHERE sb.market_aid=$1 " +
+			"ORDER BY time_stamp"
+
+
+	rows,err := ss.db.Query(query,market_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.OutsideAugurSBChg,0)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.OutsideAugurSBChg
+		err=rows.Scan(
+			&rec.MktAid,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.AccountAid,
+			&rec.Address,
+			&rec.OutcomeIdx,
+			&rec.Balance,
+		)
+		p.Augur_UI_price_adjustments(nil,&rec.Balance,market_type)
+		records = append(records,rec)
+	}
+	return records
+}

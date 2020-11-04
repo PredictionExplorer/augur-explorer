@@ -1,4 +1,3 @@
-
 CREATE TABLE register_contract (
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)

@@ -807,3 +807,20 @@ func a1_pool_swaps(c *gin.Context) {
 			"PoolSwaps" : swaps,
 	})
 }
+func a1_market_share_token_balance_changes(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_market := c.Param("market")
+	_,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	if !success {
+		return
+	}
+
+	balance_changes := augur_srv.storage.Outside_augur_share_balance_changes(market_aid)
+	c.JSON(http.StatusOK,gin.H{
+			"OutsideAugurBalanceChanges": balance_changes,
+			"status": 1 ,
+			"error": "",
+	})
+}

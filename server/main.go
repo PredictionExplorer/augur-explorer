@@ -129,7 +129,7 @@ func main() {
 	r.GET("/black/market/:market",  market_info)
 	r.GET("/black/fulltradelist/:market",  full_trade_list)
 	r.GET("/black/mdepth/:market/:outcome", market_depth)
-	r.GET("/black//deptha/:market_aid/:outcome", market_depth_ajax)
+	r.GET("/black/deptha/:market_aid/:outcome", market_depth_ajax)
 	r.GET("/black/mphist/:market/:outcome", market_price_history)
 	r.GET("/black/search", search)
 	r.GET("/black/money/:addr",  read_money)
@@ -183,6 +183,7 @@ func main() {
 	r.GET("/api/wrapped_tokens/:market",a1_wrapped_tokens)
 	r.GET("/api/wr_transfers/:address",a1_wrapped_token_transfers)
 	r.GET("/api/pool_swaps/:address",a1_pool_swaps)
+	r.GET("/api/mkt_stbc/:market",a1_market_share_token_balance_changes)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

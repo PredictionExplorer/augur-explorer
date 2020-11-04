@@ -5,7 +5,24 @@ CREATE TABLE bpool ( -- Balancer Pool creation event
 	tx_id				BIGINT NOT NULL,
 	time_stamp			BIGINT NOT NULL,
 	pool_aid			BIGINT NOT NULL UNIQUE,
-	caller_aid			BIGINT NOT NULL
+	caller_aid			BIGINT NOT NULL,
+	controller_aid		BIGINT DEFAULT 0,
+	num_swaps			BIGINT DEFAULT 0,
+	num_holders			BIGINT DEFAULT 0,
+	num_tokens			BIGINT DEFAULT 0,
+	went_public			BIGINT DEFAULT 0,-- block number of when the pool went public
+	was_finalied		BIGINT DEFAULT 0,-- block number of when the pool was finalized
+	swap_fee			DECIMAL(64,18) DEFAULT 0.0
+);
+CREATE TABLE bbind (-- Balancer bind function calls
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	pool_aid			BIGINT NOT NULL,
+	token_aid			BIGINT NOT NULL, -- token address linked to this pool
+	balance				DECIMAL(64,18) NOT NULL,
+	denorm				BIGINT NOT NULL
 );
 CREATE TABLE bjoin ( -- Join event to join balancer pool
 	id					BIGSERIAL PRIMARY KEY,

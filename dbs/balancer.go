@@ -294,5 +294,8 @@ func (ss *SQLStorage) Get_pool_swaps(pool_aid int64) []p.BalancerSwap {
 	}
 	return records
 }
+func (ss *SQLStorage) Get_market_balancer_pools(market_aid int64) []p.MarketBalancerPool {
 
+				
 
+}
