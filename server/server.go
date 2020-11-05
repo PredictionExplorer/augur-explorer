@@ -184,6 +184,7 @@ func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoM
 	reports := augur_srv.storage.Get_market_reports(minfo.MktAid,DEFAULT_MARKET_REPORTS_LIMIT)
 	price_history := augur_srv.storage.Get_full_price_history(minfo.MktAddr,minfo.MktAid,minfo.LowPriceLimit)
 	outag_sh_bal_chgs := augur_srv.storage.Outside_augur_share_balance_changes(minfo.MktAid)
+	balancer_pools := augur_srv.storage.Get_market_balancer_pools(minfo.MktAid)
 
 	if json_output {
 		c.JSON(200,gin.H{
@@ -194,6 +195,7 @@ func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoM
 			"PriceHistory" : price_history,
 			"PriceEstimates" : price_estimates,
 			"OutisdeAugurBalanceChanges": outag_sh_bal_chgs,
+			"BalancerPools" : balancer_pools,
 		})
 	} else {
 		c.HTML(http.StatusOK, "market_info.html", gin.H{
@@ -205,6 +207,7 @@ func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoM
 			"PriceHistory" : price_history,
 			"PriceEstimates" : price_estimates,
 			"OutsideAugurBalanceChanges": outag_sh_bal_chgs,
+			"BalancerPools" : balancer_pools,
 		})
 	}
 }

@@ -868,6 +868,90 @@ type BalancerSwap struct {
 	AmountIn				string
 	AmountOut				string
 }
+type SetSwapFee struct {
+	Id						int64
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	PoolAid					int64
+	PoolAddr				string
+	FeeStr					string
+}
+type SetController struct {
+	Id						int64
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	PoolAid					int64
+	PoolAddr				string
+	ControllerAddr			string
+}
+type SetPublic struct {
+	Id						int64
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	PoolAid					int64
+	PoolAddr				string
+	Public					bool
+}
+type Finalize struct {
+	Id						int64
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	PoolAid					int64
+	PoolAddr				string
+}
+type PoolBind struct {
+	Id						int64
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	PoolAid					int64
+	Denorm					int
+	PoolAddr				string
+	TokenAddr				string
+	Balance					string
+}
+type PoolUnBind struct {
+	Id						int64
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	PoolAid					int64
+	PoolAddr				string
+	TokenAddr				string
+}
+type PoolReBind struct {
+	Id						int64
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	PoolAid					int64
+	Denorm					int
+	PoolAddr				string
+	TokenAddr				string
+	Balance					string
+}
+type PoolGulp struct {
+	Id						int64
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	PoolAid					int64
+	PoolAddr				string
+	TokenAddr				string
+	AbsorbedBalance			string
+}
 type AugurAcctFlags struct { // indicates if Account is Augur - enabled or not (by approvals)
 	BlockNum				int64
 	CreatedTs				int64
@@ -892,10 +976,23 @@ type OutsideAugurSBChg struct {
 	Address					string
 	DateTime				string
 }
-type MarketBalancerPool struct {
-	TimeStamp				int64
+type PoolInfo struct {
 	PoolAid					int64
+	NumHolders				int64
+	NumSwaps				int64
+	CreatedBlockNum			int64
+	WentPublicTs			int64
+	CreatedTs				int64
+	FinalizedTs				int64
+	NumTokens				int
 	OutcomeIdx				int
+	UsdLiquidity			float64
+	SwapFee					float64
 	PoolAddr				string
 	WrapperAddr				string
+}
+type MarketPool struct {
+	OutcomeIdx				int
+	OutcomeStr				string
+	MktAddress				string
 }

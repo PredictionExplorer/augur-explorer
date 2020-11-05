@@ -836,6 +836,38 @@ func (ss *SQLStorage) Get_evtlogs_by_signature_only_in_range(sig string,from_evt
 	}
 	return output
 }
+func (ss *SQLStorage) Get_LOG_CALL_evtlogs(sig string,from_evt_id,to_evt_id int64) []int64 {
+
+	// this function scans transaction input signatures, but returns event_ids
+	//			(using evtlog_ids is required for ID merge-sort functions)
+	output := make([]int64,0,1024)
+
+	var query string
+	query = "SELECT e.id FROM evt_log e " +
+				"JOIN transaction AS t ON e.tx_id=t.id " +
+				"WHERE (e.id > $1) AND (e.id<=$2) " +
+						"AND (t.input_sig=$3) " +
+						"AND (e.topic0_sig=$3)" + // this is the patern of anonymous LOG_CALL event
+				"ORDER BY e.id "
+
+	rows,err := ss.db.Query(query,from_evt_id,to_evt_id,sig)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var evtlog_id int64
+		err=rows.Scan(&evtlog_id)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+		output = append(output,evtlog_id)
+	}
+	return output
+}
 func (ss *SQLStorage) Delete_transaction_related_data(tx_id int64) {
 
 	// Note: the list of DELETEs must match the list of event signatures

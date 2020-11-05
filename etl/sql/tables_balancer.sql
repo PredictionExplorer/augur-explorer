@@ -1,35 +1,41 @@
 CREATE TABLE bpool ( -- Balancer Pool creation event
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
-	time_stamp			BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
 	pool_aid			BIGINT NOT NULL UNIQUE,
 	caller_aid			BIGINT NOT NULL,
-	controller_aid		BIGINT DEFAULT 0,
+	controller_aid		BIGINT NOT NULL,
 	num_swaps			BIGINT DEFAULT 0,
 	num_holders			BIGINT DEFAULT 0,
 	num_tokens			BIGINT DEFAULT 0,
 	went_public			BIGINT DEFAULT 0,-- block number of when the pool went public
 	was_finalied		BIGINT DEFAULT 0,-- block number of when the pool was finalized
-	swap_fee			DECIMAL(64,18) DEFAULT 0.0
+	total_weight		INT DEFAULT 0,
+	is_public			BOOLEAN DEFAULT FALSE,
+	went_public_ts		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
+	finalized_ts		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
+	swap_fee			DECIMAL(64,18) DEFAULT 0.0,
+	usd_liquidity		DECIMAL(64,18) DEFAULT 0.0 -- Pool's liquidity calculated in US dollars
 );
-CREATE TABLE bbind (-- Balancer bind function calls
+CREATE TABLE btoken ( -- Token contained in Balancer pool
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
 	pool_aid			BIGINT NOT NULL,
-	token_aid			BIGINT NOT NULL, -- token address linked to this pool
-	balance				DECIMAL(64,18) NOT NULL,
-	denorm				BIGINT NOT NULL
+	token_aid			BIGINT NOT NULL,
+	denorm				INT DEFAULT 0,
+	balance				DECIMAL(64,18) DEFAULT 0.0
 );
 CREATE TABLE bjoin ( -- Join event to join balancer pool
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
-	time_stamp			BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
 	pool_aid			BIGINT NOT NULL,
 	caller_aid			BIGINT NOT NULL,
 	token_aid			BIGINT NOT NULL,
@@ -37,10 +43,10 @@ CREATE TABLE bjoin ( -- Join event to join balancer pool
 );
 CREATE TABLE bexit ( -- Join event to join balancer pool
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
-	time_stamp			BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
 	pool_aid			BIGINT NOT NULL,
 	caller_aid			BIGINT NOT NULL,
 	token_aid			BIGINT NOT NULL,
@@ -54,16 +60,99 @@ CREATE TABLE bholder ( -- User who holds liquidity for the pool
 );
 CREATE TABLE bswap ( -- Balancer swap events
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
-	time_stamp			BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
 	pool_aid			BIGINT NOT NULL,
 	caller_aid			BIGINT NOT NULL,
 	token_in_aid		BIGINT NOT NULL,
 	token_out_aid		BIGINT NOT NULL,
 	amount_in			DECIMAL(64,18),
 	amount_out			DECIMAL(64,18)
+);
+CREATE TABLE b_set_swap_fee (-- setSwapFee() calls
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	pool_aid			BIGINT NOT NULL,
+	fee					DECIMAL(32,18)
+);
+CREATE TABLE b_set_controller (-- setController() calls
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	pool_aid			BIGINT NOT NULL,
+	controller_aid		BIGINT NOT NULL,
+	old_controller_aid	BIGINT NOT NULL
+);
+CREATE TABLE b_set_public ( -- setPublicSwap() calls
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	pool_aid			BIGINT NOT NULL,
+	is_public			BOOLEAN NOT NULL,
+	old_is_public		BOOLEAN NOT NULL,
+	old_went_public		BIGINT NOT NULL,
+	old_went_public_ts	BIGINT NOT NULL
+);
+CREATE TABLE b_finalized ( -- finazlie() calls
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	pool_aid			BIGINT NOT NULL
+);
+CREATE TABLE b_bind (-- Balancer bind() function calls
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	pool_aid			BIGINT NOT NULL,
+	token_aid			BIGINT NOT NULL, -- token address linked to this pool
+	denorm				BIGINT NOT NULL,
+	balance				DECIMAL(64,18) NOT NULL
+);
+CREATE TABLE b_unbind (-- Balancer unbind() function calls
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	pool_aid			BIGINT NOT NULL,
+	token_aid			BIGINT NOT NULL, -- token address linked to this pool
+	saved_denorm		INT NOT NULL,
+	saved_balance		DECIMAL(64,18) NOT NULL
+);
+CREATE TABLE b_rebind (-- Balancer rebind() function calls
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	pool_aid			BIGINT NOT NULL,
+	token_aid			BIGINT NOT NULL, -- token address linked to this pool
+	denorm				INT NOT NULL,
+	balance				DECIMAL(64,18) NOT NULL,
+	saved_denorm		INT NOT NULL,
+	saved_balance		DECIMAL(64,18) NOT NULL
+);
+CREATE TABLE b_gulp (-- Balancer gulp() function calls
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	pool_aid			BIGINT NOT NULL,
+	token_aid			BIGINT NOT NULL, -- token address linked to this pool
+	abs_balance			DECIMAL(64,18) DEFAULT 0.0 -- absorbed balance
 );
 CREATE TABLE balancer_status (
 	last_evt_id			BIGINT DEFAULT 0	-- event id
