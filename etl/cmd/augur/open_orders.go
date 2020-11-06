@@ -81,7 +81,7 @@ func oo_insert(order_hash *string,order *zeroex.SignedOrder,fillable_amount *big
 			}
 		}
 		err = storage.Insert_open_order(
-			order_hash,order,fillable_amount,&eoa_addr,&unpacked_id,OOOpCodeCreated,timestamp,
+			order_hash,order,fillable_amount,&order.MakerAddress,&unpacked_id,OOOpCodeCreated,timestamp,
 		)
 		return err
 	} else {

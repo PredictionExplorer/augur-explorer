@@ -31,6 +31,22 @@ func (ss *SQLStorage) Try_insert_0x_mesh_order_event(aid int64,timestamp int64,o
 	ss.Insert_0x_mesh_order_event(0,aid,timestamp,oi,ospec,amount_fill,event_code)
 	return true
 }
+func (ss *SQLStorage) Is_ADD_event_missing(order_hash string) bool {
+
+	var query string
+	query = "SELECT id FROM mesh_evt WHERE order_hash=$1 AND evt_code=2"
+	var null_id sql.NullInt64
+	err := ss.db.QueryRow(query,order_hash).Scan(&null_id);
+	if (err!=nil) {
+		if (err==sql.ErrNoRows) {
+			return true
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error : %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return false
+}
 func (ss *SQLStorage) Insert_0x_mesh_order_event(mktord_id int64,aid int64,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) bool {
 
 	ss.Info.Printf("Inserting 0x mesh event, order %v\n",oi.OrderHash.String())

@@ -305,7 +305,7 @@ func (ss *SQLStorage) Insert_set_public(p *p.SetPublic) {
 	query = "INSERT INTO b_set_public(" +
 				"evtlog_id,block_num,tx_id,time_stamp,pool_aid,is_public," +
 				"old_is_public,old_went_public,old_went_public_ts "+
-			") VALUES ($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9)"
+			") VALUES ($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,TO_TIMESTAMP($9))"
 	_,err = ss.db.Exec(query,
 		p.EvtId,
 		p.BlockNum,

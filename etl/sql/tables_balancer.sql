@@ -100,7 +100,7 @@ CREATE TABLE b_set_public ( -- setPublicSwap() calls
 	is_public			BOOLEAN NOT NULL,
 	old_is_public		BOOLEAN NOT NULL,
 	old_went_public		BIGINT NOT NULL,
-	old_went_public_ts	BIGINT NOT NULL
+	old_went_public_ts	TIMESTAMPTZ NOT NULL
 );
 CREATE TABLE b_finalized ( -- finazlie() calls
 	id					BIGSERIAL PRIMARY KEY,
@@ -120,7 +120,7 @@ CREATE TABLE b_bind (-- Balancer bind() function calls
 	token_aid			BIGINT NOT NULL, -- token address linked to this pool
 	denorm				DECIMAL(32,18) NOT NULL,
 	balance				DECIMAL(64,18) NOT NULL,
-	UNIQUE(pool_aid,token_aid)
+	UNIQUE(pool_aid,token_aid,tx_id)
 );
 CREATE TABLE b_unbind (-- Balancer unbind() function calls
 	id					BIGSERIAL PRIMARY KEY,
@@ -132,7 +132,7 @@ CREATE TABLE b_unbind (-- Balancer unbind() function calls
 	token_aid			BIGINT NOT NULL, -- token address linked to this pool
 	saved_denorm		DECIMAL(32,18) NOT NULL,
 	saved_balance		DECIMAL(64,18) NOT NULL,
-	UNIQUE(pool_aid,token_aid)
+	UNIQUE(pool_aid,token_aid,tx_id)
 );
 CREATE TABLE b_rebind (-- Balancer rebind() function calls
 	id					BIGSERIAL PRIMARY KEY,

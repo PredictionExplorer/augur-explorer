@@ -552,6 +552,7 @@ func (ss *SQLStorage) build_depth_by_otype(market_aid int64,outc int,otype p.Ord
 			&num_asks,
 			&num_cancels,
 		)
+		ss.Info.Printf("Addr=%v (ooid=%v, hash=%v)\n",rec.Addr,oo_id,rec.OrderHash)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)

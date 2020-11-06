@@ -338,13 +338,14 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 			return
 		}
 		//Info.Printf("public: Data= %v\n",hex.EncodeToString(log.Data))
+		var offset int = 32+32+4// first 32 - big.Int size; second 32 - length of Input; 4 - signature size
 		var p SetPublic
 		p.EvtId = e.EvtId
 		p.BlockNum = e.BlockNum
 		p.TxId = e.TxId
 		p.TimeStamp = timestamp
 		p.PoolAddr = log.Address.String()
-		if log.Data[31] == 1 {
+		if log.Data[offset+31] == 1 {
 			p.Public = true
 		} else {
 			p.Public = false

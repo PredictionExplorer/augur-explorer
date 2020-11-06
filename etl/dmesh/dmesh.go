@@ -195,6 +195,7 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 			}
 			augur_count++
 			order_hash := order_info.OrderHash.String()
+			Info.Printf("sync: order_hash= %v\n",order_hash)
 			var empty struct{}
 			(*ohash_map)[order_hash]=empty
 			time_stamp:=response.SnapshotTimestamp.Unix()
@@ -208,12 +209,16 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 				Info.Printf("Error decoding market data: %v\n",err)
 				Error.Printf("Error decoding market data: %v\n",err)
 			} else {
-				Dump_0x_mesh_order(Info,order_info)
-				DumpOrderSpec(Info,&ospec)
-				//maybe_eoa_addr,_ := get_possible_eoa_by_wallet_addr(&order_info.SignedOrder.Order.MakerAddress,&order_info.OrderHash)
-				//eoa_aid,wallet_aid,_ := storage.Lookup_maker_eoa_wallet_ids(&maybe_eoa_addr,&order_info.SignedOrder.Order.MakerAddress)
-				aid := storage.Lookup_or_create_address(order_info.SignedOrder.Order.MakerAddress.String(),0,0)
-				storage.Try_insert_0x_mesh_order_event(aid,time_stamp,order_info,&ospec,nil,MeshEvtAdded)
+				if storage.Is_ADD_event_missing(order_hash) {
+					Dump_0x_mesh_order(Info,order_info)
+					DumpOrderSpec(Info,&ospec)
+					aid := storage.Lookup_or_create_address(
+						order_info.SignedOrder.Order.MakerAddress.String(),0,0,
+					)
+					storage.Try_insert_0x_mesh_order_event(
+						aid,time_stamp,order_info,&ospec,nil,MeshEvtAdded,
+					)
+				}
 			}
 		}
 	}
