@@ -3,6 +3,7 @@ package dbs
 import (
 	"fmt"
 	"os"
+	"strings"
 	"database/sql"
 	_  "github.com/lib/pq"
 
@@ -353,7 +354,7 @@ func (ss *SQLStorage) Insert_pool_finalize(f *p.Finalize) {
 
 	pool_aid := ss.Lookup_or_create_address(f.PoolAddr,f.BlockNum,f.TxId)
 	var query string
-	query = "INSERT INTO b_finalized(evtlog_id,block_num,tx_id,time_stamp,pool_aid) "+
+	query = "INSERT INTO b_finalized(evtlog_id,block_num,tx_id,time_stamp,pool_aid) " +
 			"VALUES($1,$2,$3,TO_TIMESTAMP($4),$5)"
 	_,err := ss.db.Exec(query,
 		f.EvtId,
@@ -382,7 +383,7 @@ func (ss *SQLStorage) Insert_pool_bind(b *p.PoolBind) {
 	token_aid := ss.Lookup_or_create_address(b.TokenAddr,b.BlockNum,b.TxId)
 	var query string
 	query = "INSERT INTO b_bind(evtlog_id,block_num,tx_id,time_stamp,pool_aid,token_aid,denorm,balance) "+
-			"VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8::DECIMAL/1e+18)"
+			"VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7::DECIMAL/1e+18,$8::DECIMAL/1e+18)"
 	_,err := ss.db.Exec(query,
 		b.EvtId,
 		b.BlockNum,
@@ -394,8 +395,13 @@ func (ss *SQLStorage) Insert_pool_bind(b *p.PoolBind) {
 		b.Balance,
 	)
 	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error: %v for evt_id=%v q=%v",err,b.EvtId,query))
-		os.Exit(1)
+		if strings.Contains(err.Error(),"duplicate key value") {
+			// its ok
+			// this happens because bind() calls rebind() at the end so we get duplicated events
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v for evt_id=%v q=%v",err,b.EvtId,query))
+			os.Exit(1)
+		}
 	}
 }
 func (ss *SQLStorage) Delete_pool_bind(evt_id int64) {
@@ -413,10 +419,10 @@ func (ss *SQLStorage) Insert_pool_unbind(u *p.PoolUnBind) {
 	token_aid := ss.Lookup_or_create_address(u.TokenAddr,u.BlockNum,u.TxId)
 	var query string
 
-	query = "SELECT denorm,(balance*1e+18)::TEXT FROM btoken WHERE pool_aid=$1 AND token_aid=$2"
+	query = "SELECT (denorm*1e+18)::TEXT,(balance*1e+18)::TEXT " +
+			"FROM btoken WHERE pool_aid=$1 AND token_aid=$2"
 	row := ss.db.QueryRow(query,pool_aid,token_aid)
-	var null_denorm sql.NullInt64
-	var null_balance sql.NullString
+	var null_denorm,null_balance sql.NullString
 	var err error
 	err=row.Scan(&null_denorm,&null_balance)
 	if (err!=nil) {
@@ -429,18 +435,18 @@ func (ss *SQLStorage) Insert_pool_unbind(u *p.PoolUnBind) {
 			os.Exit(1)
 		}
 	}
-	var saved_denorm int = 0
+	var saved_denorm string = "0"
 	var saved_balance string = "0"
 	if null_denorm.Valid {
-		saved_denorm = int(null_denorm.Int64)
+		saved_denorm = null_denorm.String
 	}
 	if null_balance.Valid {
 		saved_balance = null_balance.String
 	}
 
 	query = "INSERT INTO b_unbind(" +
-				"evtlog_id,block_num,tx_id,time_stamp,pool_aid,token_aid,saved_denorm,saved_balance) "+
-			"VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8::DECIMAL/1e+18)"
+				"evtlog_id,block_num,tx_id,time_stamp,pool_aid,token_aid,saved_denorm,saved_balance" +
+			") VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7::DECIMAL/1e+18,$8::DECIMAL/1e+18)"
 	_,err = ss.db.Exec(query,
 		u.EvtId,
 		u.BlockNum,
@@ -471,10 +477,10 @@ func (ss *SQLStorage) Insert_pool_rebind(r *p.PoolReBind) {
 	token_aid := ss.Lookup_or_create_address(r.TokenAddr,r.BlockNum,r.TxId)
 	var query string
 
-	query = "SELECT denorm,(balance*1e+18)::TEXT FROM btoken WHERE pool_aid=$1 AND token_aid=$2"
+	query = "SELECT (denorm*1e+18)::TEXT,(balance*1e+18)::TEXT " +
+			"FROM btoken WHERE pool_aid=$1 AND token_aid=$2"
 	row := ss.db.QueryRow(query,pool_aid,token_aid)
-	var null_denorm sql.NullInt64
-	var null_balance sql.NullString
+	var null_denorm,null_balance sql.NullString
 	var err error
 	err=row.Scan(&null_denorm,&null_balance)
 	if (err!=nil) {
@@ -487,10 +493,10 @@ func (ss *SQLStorage) Insert_pool_rebind(r *p.PoolReBind) {
 			os.Exit(1)
 		}
 	}
-	var saved_denorm int = 0
+	var saved_denorm string = "0"
 	var saved_balance string = "0"
 	if null_denorm.Valid {
-		saved_denorm = int(null_denorm.Int64)
+		saved_denorm = null_denorm.String
 	}
 	if null_balance.Valid {
 		saved_balance = null_balance.String
@@ -499,7 +505,10 @@ func (ss *SQLStorage) Insert_pool_rebind(r *p.PoolReBind) {
 	query = "INSERT INTO b_rebind(" +
 				"evtlog_id,block_num,tx_id,time_stamp,pool_aid,token_aid," +
 				"denorm,balance,saved_denorm,saved_balance) "+
-			"VALUES($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8::DECIMAL/1e+18,$9,$10::DECIMAL/1e+18)"
+			"VALUES("+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6," +
+				"$7::DECIMAL/1e+18,$8::DECIMAL/1e+18,$9::DECIMAL/1e+18,$10::DECIMAL/1e+18"+
+			")"
 	_,err = ss.db.Exec(query,
 		r.EvtId,
 		r.BlockNum,
@@ -549,14 +558,13 @@ func (ss *SQLStorage) Insert_pool_gulp(g *p.PoolGulp) {
 }
 func (ss *SQLStorage) Delete_pool_gulp(evt_id int64) {
 	var query string
-	query = "DELETE FROM b_gulpWHERE evtlog_id=$1"
+	query = "DELETE FROM b_gulp WHERE evtlog_id=$1"
 	_,err := ss.db.Exec(query,evt_id)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
 }
-
 func (ss *SQLStorage) Get_pool_info(pool_aid int64) p.BalancerNewPool {
 
 	var output p.BalancerNewPool
@@ -645,23 +653,24 @@ func (ss *SQLStorage) Get_market_balancer_pools(market_aid int64) []p.PoolInfo {
 	records := make([]p.PoolInfo,0,16)
 	var query string
 	query = "WITH pool_ids AS (" +
-				"SELECT DISTINCT pool_aid FROM af_wrapper "+
-				"WHERE market_aid=$1"+
+				"SELECT DISTINCT t.pool_aid FROM af_wrapper AS w "+
+					"JOIN btoken AS t on w.wrapper_aid=t.token_aid " +
+				"WHERE w.market_aid=$1"+
 			")" +
 			"SELECT " +
-//				"FLOOR()EXTRACT(EPOCH FROM s.time_stamp)::BIGINT AS ts, " +
-				"p.time_stamp AS ts,"+
+				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS ts, " +
+//				"p.time_stamp AS ts,"+
 				"p.block_num," +
 				"pa.addr," +
 				"p.num_swaps,"+
 				"p.num_holders,"+
 				"p.num_tokens," +
 				"p.swap_fee," +
-				"EXTRACT(EPOCH FROM p.went_puplic_ts)::BIGINT, " +
+				"EXTRACT(EPOCH FROM p.went_public_ts)::BIGINT, " +
 				"EXTRACT(EPOCH FROM p.finalized_ts)::BIGINT, " +
 				"p.usd_liquidity " +
 			"FROM pool_ids AS ids " +
-				"JOIN pool AS p ON p.pool_aid=ids.pool_aid " +
+				"JOIN bpool AS p ON p.pool_aid=ids.pool_aid " +
 				"LEFT JOIN address AS pa ON p.pool_aid=pa.address_id " +
 			"ORDER BY ts"
 	rows,err := ss.db.Query(query,market_aid)
@@ -676,7 +685,7 @@ func (ss *SQLStorage) Get_market_balancer_pools(market_aid int64) []p.PoolInfo {
 		err=rows.Scan(
 			&rec.CreatedTs,
 			&rec.CreatedBlockNum,
-			&rec.WrapperAddr,
+			&rec.PoolAddr,
 			&rec.NumSwaps,
 			&rec.NumHolders,
 			&rec.NumTokens,
@@ -694,4 +703,42 @@ func (ss *SQLStorage) Get_market_balancer_pools(market_aid int64) []p.PoolInfo {
 
 	return records
 
+}
+func (ss *SQLStorage) Get_last_evtlog_id() (int64,error) {
+
+	var query string
+	query = "SELECT id FROM evt_log ORDER BY id DESC LIMIT 1"
+	res := ss.db.QueryRow(query)
+	var null_id sql.NullInt64
+	err := res.Scan(&null_id)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return null_id.Int64,nil
+}
+func (ss *SQLStorage) Is_address_balancer_pool(addr string) bool {
+
+
+	var query string
+	query = "SELECT p.pool_aid FROM bpool AS p " +
+				"JOIN address AS a ON p.pool_aid=a.address_id " +
+			"WHERE a.addr=$1"
+
+	res := ss.db.QueryRow(query,addr)
+	var null_id sql.NullInt64
+	err := res.Scan(&null_id)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return false
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return true
 }

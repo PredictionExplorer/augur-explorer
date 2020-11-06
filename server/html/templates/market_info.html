@@ -111,6 +111,31 @@
 </table>
 </div>
 {{ end }}
+{{if .BalancerPools }}
+<h3>Balancer Pools where the Outcomes of this Market can be traded</h3>
+<div id="outside_ag_bal_changes">
+<table class="market_reports">
+	<tr class="market_reports">
+		<th class="market_reports">Pool Address</th>
+		<th class="market_reports">Tokens in the Pool</th>
+		<td class="market_reports">Amount of Holders</h>
+		<th class="market_reports">Amount of Swaps</th>
+		<th class="market_reports">Pool Fee</th>
+		<th class="market_reports">Liquidity (USD)</th>
+	</tr>
+	{{- range $i, $change := .BalancerPools }}
+		<tr class="market_reports">
+			<td class="market_reports_field">{{.PoolAddr}}</td>
+			<td class="market_reports_field" title="{{.NumTokens}}">
+			<td class="market_reports_field" title="{{.NumHolders}}">
+			<td class="market_reports_field" title="{{.NumSwaps}}">
+			<td class="market_reports_field" style="text-align: center">{{.SwapFee}}</td>
+			<td class="market_reports_field" style="text-align: center">{{.UsdLiquidity}}</td>
+		</tr>
+	{{- end}}
+</table>
+</div>
+{{ end }}
 {{ if ne .Market.MktStatus 0 }}
 <h3>Reports for this Market</h3>
 <div id="market_reports">

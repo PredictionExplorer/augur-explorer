@@ -75,8 +75,8 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_b_bind_insert() RETURNS trigger AS  $$
 DECLARE
 BEGIN
-	INSERT INTO btoken(block_num,tx_id,time_stamp,pool_aid,token_aid,denorm,balance)
-		VALUES(NEW.block_num,NEW,tx_id,NEW.time_stamp,NEW.pool_aid,NEW.token_aid,NEW.denorm,NEW.balance)
+	INSERT INTO btoken(evtlog_id,block_num,tx_id,time_stamp,pool_aid,token_aid,denorm,balance)
+		VALUES(NEW.evtlog_id,NEW.block_num,NEW.tx_id,NEW.time_stamp,NEW.pool_aid,NEW.token_aid,NEW.denorm,NEW.balance)
 		ON CONFLICT DO NOTHING;
 	UPDATE bpool
 		SET
@@ -106,7 +106,7 @@ BEGIN
 	UPDATE bpool
 		SET
 			num_tokens = (num_tokens - 1),
-			total_weight = (total_weight - NEW.denorm)
+			total_weight = (total_weight - NEW.saved_denorm)
 		WHERE pool_aid=NEW.pool_aid;
 	RETURN NEW;
 END;
@@ -128,21 +128,21 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_b_rebind_insert() RETURNS trigger AS  $$
 DECLARE
-	v_old_denorm int;
-	v_denorm_diff int;
+	v_old_denorm decimal;
+	v_denorm_diff decimal;
 	v_old_balance decimal;
 	v_balance_diff decimal;
 BEGIN
 	SELECT denorm,balance FROM btoken WHERE pool_aid=NEW.pool_aid AND token_aid=NEW.token_aid
 		INTO v_old_denorm,v_old_balance;
 	IF v_old_denorm IS NULL THEN
-		v_old_denorm := 0;
+		v_old_denorm := 0.0;
 	END IF;
 	IF v_old_balance IS NULL THEN
-		v_old_balance := 0;
+		v_old_balance := 0.0;
 	END IF;
 	v_denorm_diff := NEW.denorm - v_old_denorm;
-	v_balance_diff := NEW_balance - v_old_balance;
+	v_balance_diff := NEW.balance - v_old_balance;
 	UPDATE btoken
 		SET
 			denorm = (denorm + v_denorm_diff),
@@ -157,18 +157,18 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_b_rebind_delete() RETURNS trigger AS  $$
 DECLARE
-	v_old_denorm int;
-	v_denorm_diff int;
+	v_old_denorm decimal;
+	v_denorm_diff decimal;
 	v_old_balance decimal;
 	v_balance_diff decimal;
 BEGIN
 	SELECT denorm,balance FROM btoken WHERE pool_aid=OLD.pool_aid AND token_aid=OLD.token_aid
 		INTO v_old_denorm,v_old_balance;
 	IF v_old_denorm IS NULL THEN
-		v_old_denorm := 0;
+		v_old_denorm := 0.0;
 	END IF;
 	IF v_old_balance IS NULL THEN
-		v_old_balance := 0;
+		v_old_balance := 0.0;
 	END IF;
 	v_denorm_diff := v_old_denorm - OLD.denorm;
 	v_balance_diff := v_old_balance - OLD_balance;
@@ -207,7 +207,7 @@ DECLARE
 BEGIN
 	UPDATE bpool
 		SET
-			swap_fee = NEW.swap_fee
+			swap_fee = NEW.fee
 		WHERE pool_aid = NEW.pool_aid;
 	RETURN NEW;
 END;

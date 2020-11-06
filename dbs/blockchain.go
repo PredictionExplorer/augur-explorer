@@ -444,6 +444,24 @@ func (ss *SQLStorage) Get_tx_hash_by_id(tx_id int64) (string,int64,error) {
 	}
 	return tx_hash,block_num,nil
 }
+func (ss *SQLStorage) Get_tx_hash_and_input_sig(tx_id int64) (string,string,error) {
+
+	var tx_hash string
+	var input_sig string
+	var query string
+	query = "select tx_hash,input_sig from transaction where id=$1"
+	row := ss.db.QueryRow(query,tx_id)
+	err := row.Scan(&tx_hash,&input_sig)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return "","",err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return tx_hash,input_sig,nil
+}
 func (ss *SQLStorage) Get_tx_id_by_hash(tx_hash string) (int64,error) {
 
 	var tx_id int64
@@ -843,10 +861,16 @@ func (ss *SQLStorage) Get_LOG_CALL_evtlogs(sig string,from_evt_id,to_evt_id int6
 	output := make([]int64,0,1024)
 
 	var query string
+	/*DISCONTINUED, doesn't fetch proxied controlling transactions
 	query = "SELECT e.id FROM evt_log e " +
 				"JOIN transaction AS t ON e.tx_id=t.id " +
 				"WHERE (e.id > $1) AND (e.id<=$2) " +
 						"AND (t.input_sig=$3) " +
+						"AND (e.topic0_sig=$3)" + // this is the patern of anonymous LOG_CALL event
+				"ORDER BY e.id "
+	*/
+	query = "SELECT e.id FROM evt_log e " +
+				"WHERE (e.id > $1) AND (e.id<=$2) " +
 						"AND (e.topic0_sig=$3)" + // this is the patern of anonymous LOG_CALL event
 				"ORDER BY e.id "
 

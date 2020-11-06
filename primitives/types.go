@@ -914,7 +914,7 @@ type PoolBind struct {
 	TxId					int64
 	TimeStamp				int64
 	PoolAid					int64
-	Denorm					int
+	Denorm					string
 	PoolAddr				string
 	TokenAddr				string
 	Balance					string
@@ -936,7 +936,7 @@ type PoolReBind struct {
 	TxId					int64
 	TimeStamp				int64
 	PoolAid					int64
-	Denorm					int
+	Denorm					string
 	PoolAddr				string
 	TokenAddr				string
 	Balance					string
@@ -985,11 +985,9 @@ type PoolInfo struct {
 	CreatedTs				int64
 	FinalizedTs				int64
 	NumTokens				int
-	OutcomeIdx				int
 	UsdLiquidity			float64
 	SwapFee					float64
 	PoolAddr				string
-	WrapperAddr				string
 }
 type MarketPool struct {
 	OutcomeIdx				int

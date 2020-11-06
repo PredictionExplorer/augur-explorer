@@ -11,7 +11,7 @@ CREATE TABLE bpool ( -- Balancer Pool creation event
 	num_holders			BIGINT DEFAULT 0,
 	num_tokens			BIGINT DEFAULT 0,
 	went_public			BIGINT DEFAULT 0,-- block number of when the pool went public
-	was_finalied		BIGINT DEFAULT 0,-- block number of when the pool was finalized
+	was_finalized		BIGINT DEFAULT 0,-- block number of when the pool was finalized
 	total_weight		INT DEFAULT 0,
 	is_public			BOOLEAN DEFAULT FALSE,
 	went_public_ts		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
@@ -27,7 +27,7 @@ CREATE TABLE btoken ( -- Token contained in Balancer pool
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	pool_aid			BIGINT NOT NULL,
 	token_aid			BIGINT NOT NULL,
-	denorm				INT DEFAULT 0,
+	denorm				DECIMAL(32,18) DEFAULT 0.0,
 	balance				DECIMAL(64,18) DEFAULT 0.0
 );
 CREATE TABLE bjoin ( -- Join event to join balancer pool
@@ -114,12 +114,13 @@ CREATE TABLE b_bind (-- Balancer bind() function calls
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL,
+	tx_id				BIGINT NOT NULL,	-- duplicated events occur due to additional call to rebind()
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	pool_aid			BIGINT NOT NULL,
 	token_aid			BIGINT NOT NULL, -- token address linked to this pool
-	denorm				BIGINT NOT NULL,
-	balance				DECIMAL(64,18) NOT NULL
+	denorm				DECIMAL(32,18) NOT NULL,
+	balance				DECIMAL(64,18) NOT NULL,
+	UNIQUE(pool_aid,token_aid)
 );
 CREATE TABLE b_unbind (-- Balancer unbind() function calls
 	id					BIGSERIAL PRIMARY KEY,
@@ -129,8 +130,9 @@ CREATE TABLE b_unbind (-- Balancer unbind() function calls
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	pool_aid			BIGINT NOT NULL,
 	token_aid			BIGINT NOT NULL, -- token address linked to this pool
-	saved_denorm		INT NOT NULL,
-	saved_balance		DECIMAL(64,18) NOT NULL
+	saved_denorm		DECIMAL(32,18) NOT NULL,
+	saved_balance		DECIMAL(64,18) NOT NULL,
+	UNIQUE(pool_aid,token_aid)
 );
 CREATE TABLE b_rebind (-- Balancer rebind() function calls
 	id					BIGSERIAL PRIMARY KEY,
@@ -140,9 +142,9 @@ CREATE TABLE b_rebind (-- Balancer rebind() function calls
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	pool_aid			BIGINT NOT NULL,
 	token_aid			BIGINT NOT NULL, -- token address linked to this pool
-	denorm				INT NOT NULL,
+	denorm				DECIMAL(32,18) NOT NULL,
 	balance				DECIMAL(64,18) NOT NULL,
-	saved_denorm		INT NOT NULL,
+	saved_denorm		DECIMAL(32,18) NOT NULL,
 	saved_balance		DECIMAL(64,18) NOT NULL
 );
 CREATE TABLE b_gulp (-- Balancer gulp() function calls
@@ -150,6 +152,7 @@ CREATE TABLE b_gulp (-- Balancer gulp() function calls
 	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
 	pool_aid			BIGINT NOT NULL,
 	token_aid			BIGINT NOT NULL, -- token address linked to this pool
 	abs_balance			DECIMAL(64,18) DEFAULT 0.0 -- absorbed balance
