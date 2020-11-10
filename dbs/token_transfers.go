@@ -792,12 +792,14 @@ func (ss *SQLStorage) Outside_augur_share_balance_changes(market_aid int64) []p.
 				"sb.account_aid,"+
 				"a.addr," +
 				"outcome_idx," +
-				"balance " +
+				"balance," +
+				"t.tx_hash " +
 			"FROM stbc AS sb " +
 				"JOIN market AS m ON sb.market_aid=m.market_aid " +
 				"JOIN block AS b ON sb.block_num=b.block_num " +
+				"JOIN transaction AS t ON sb.tx_id=t.id " +
 				"LEFT JOIN address AS a ON sb.account_aid=a.address_id "+
-			"WHERE sb.market_aid=$1 " +
+			"WHERE sb.market_aid=$1 AND outside_augur_ui=TRUE " +
 			"ORDER BY time_stamp"
 
 
@@ -818,9 +820,12 @@ func (ss *SQLStorage) Outside_augur_share_balance_changes(market_aid int64) []p.
 			&rec.Address,
 			&rec.OutcomeIdx,
 			&rec.Balance,
+			&rec.TxHash,
 		)
 		p.Augur_UI_price_adjustments(nil,&rec.Balance,market_type)
+		rec.TxHashSh = p.Short_hash(rec.TxHash)
 		records = append(records,rec)
 	}
+	ss.Info.Printf("returning %v records\n",len(records))
 	return records
 }

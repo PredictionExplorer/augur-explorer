@@ -12,7 +12,7 @@ CREATE TABLE bpool ( -- Balancer Pool creation event
 	num_tokens			BIGINT DEFAULT 0,
 	went_public			BIGINT DEFAULT 0,-- block number of when the pool went public
 	was_finalized		BIGINT DEFAULT 0,-- block number of when the pool was finalized
-	total_weight		INT DEFAULT 0,
+	total_weight		DECIMAL(32,18) DEFAULT 0.0,
 	is_public			BOOLEAN DEFAULT FALSE,
 	went_public_ts		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
 	finalized_ts		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),

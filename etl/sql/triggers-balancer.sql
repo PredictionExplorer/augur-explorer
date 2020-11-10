@@ -2,6 +2,8 @@ CREATE TRIGGER bjoin_insert AFTER INSERT on bjoin FOR EACH ROW EXECUTE PROCEDURE
 CREATE TRIGGER bjoin_delete AFTER DELETE on bjoin FOR EACH ROW EXECUTE PROCEDURE on_bjoin_delete();
 CREATE TRIGGER bexit_insert AFTER INSERT on bexit FOR EACH ROW EXECUTE PROCEDURE on_bexit_insert();
 CREATE TRIGGER bexit_delete AFTER DELETE on bexit FOR EACH ROW EXECUTE PROCEDURE on_bexit_delete();
+CREATE TRIGGER bswap_insert AFTER INSERT on bswap FOR EACH ROW EXECUTE PROCEDURE on_bswap_insert();
+CREATE TRIGGER bswap_delete AFTER DELETE on bswap FOR EACH ROW EXECUTE PROCEDURE on_bswap_delete();
 CREATE TRIGGER b_bind_insert AFTER INSERT on b_bind FOR EACH ROW EXECUTE PROCEDURE on_b_bind_insert();
 CREATE TRIGGER b_bind_delete AFTER DELETE on b_bind FOR EACH ROW EXECUTE PROCEDURE on_b_bind_delete();
 CREATE TRIGGER b_unbind_insert AFTER INSERT on b_unbind FOR EACH ROW EXECUTE PROCEDURE on_b_unbind_insert();
@@ -18,3 +20,5 @@ CREATE TRIGGER b_set_public_insert AFTER INSERT on b_set_public FOR EACH ROW EXE
 CREATE TRIGGER b_set_public_delete AFTER DELETE on b_set_public FOR EACH ROW EXECUTE PROCEDURE on_b_set_public_delete();
 CREATE TRIGGER b_finalized_insert AFTER INSERT on b_finalized FOR EACH ROW EXECUTE PROCEDURE on_b_finalized_insert();
 CREATE TRIGGER b_finalized_delete AFTER DELETE on b_finalized FOR EACH ROW EXECUTE PROCEDURE on_b_finalized_delete();
+CREATE TRIGGER b_holder_insert AFTER INSERT on bholder FOR EACH ROW EXECUTE PROCEDURE on_bholder_insert();
+CREATE TRIGGER b_holder_delete AFTER DELETE on bholder FOR EACH ROW EXECUTE PROCEDURE on_bholder_delete();

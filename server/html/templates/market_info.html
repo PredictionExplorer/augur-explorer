@@ -78,37 +78,28 @@
 </div>
 <br/><br/>
 <div class="market_info">
-	{{template "market_trades" .Trades}}
+	Market has {{.Market.TotalTrades}} trades in total
 	<nav id="market_trades_nav">
 		<ul>
-			<li style="float: right">
-				<a class="btn_link" href="../fulltradelist/{{.Market.MktAddr}}">Full List</a>
+			<li style="">
+				<a class="btn_link" href="../fulltradelist/{{.Market.MktAddr}}">Trade List</a>
 				<span></span><span></span><span></span><span></span>
 			</li>
 		</ul>
 	</nav>
 </div>
-{{if .OutsideAugurBalanceChanges }}
-<h3>Share Balance changes outside Augur UI</h3>
-<div id="outside_ag_bal_changes">
-<table class="market_reports">
-	<tr class="market_reports">
-		<th class="market_reports">Timestamp</th>
-		<th class="market_reports">Account</th>
-		<th class="market_reports">Outcome</th>
-		<th class="market_reports">Balance</th>
-	</tr>
-	{{- range $i, $change := .OutsideAugurBalanceChanges }}
-		<tr class="market_reports">
-			<td class="market_reports_field">{{.DateTime}}</td>
-			<td class="market_reports_field" title="{{.Address}}">
-				<a class="addr" href="../search?q={{.Address}}">{{.Address}}</a>
-			</td>
-			<td class="market_reports_field" style="text-align: center">{{.OutcomeIdx}}</td>
-			<td class="market_reports_field" style="text-align: center">{{.Balance}}</td>
-		</tr>
-	{{- end}}
-</table>
+{{if .Market.OutsideAugurBalanceChanges }}
+<h3>This market has share-token balance changes outside Augur UI</h3>
+<div>
+	<nav id="market_reports_nav">
+		<ul>
+			<li style="float: left">
+				<a class="btn_link" href="../stbc/{{.Market.MktAddr}}">ShareToken balance changes</a>
+				<span></span><span></span><span></span><span></span>
+			</li>
+		</ul>
+	</nav>
+	<br/><br/><br/><br/>
 </div>
 {{ end }}
 {{if .BalancerPools }}
@@ -125,7 +116,9 @@
 	</tr>
 	{{- range $i, $change := .BalancerPools }}
 		<tr class="market_reports">
-			<td class="market_reports_field">{{.PoolAddr}}</td>
+			<td class="market_reports_field">
+				<a class="addr" href="../pool_swaps/{{.PoolAddr}}">{{.PoolAddr}}</a>
+			</td>
 			<td class="market_reports_field" title="{{.NumTokens}}">
 			<td class="market_reports_field" title="{{.NumHolders}}">
 			<td class="market_reports_field" title="{{.NumSwaps}}">

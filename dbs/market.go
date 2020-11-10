@@ -974,6 +974,19 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 	subcategories := make_subcategories(&rec.CategoryStr)
 	rec.Subcategories = subcategories
 
+	query = "SELECT id FROM stbc WHERE market_aid=$1 AND outside_augur_ui=TRUE"
+	var null_id sql.NullInt64
+	err=ss.db.QueryRow(query,market_aid).Scan(&null_id)
+	if (err!=nil) {
+		if (err==sql.ErrNoRows) {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error for market_aid=%v: %v, q=%v",market_aid,err,query))
+			os.Exit(1)
+		}
+	} else {
+		rec.OutsideAugurBalanceChanges = true
+	}
+
 	return rec,nil
 }
 func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,orderby int,low_price_limit float64) ([]p.OutcomeVol,error) {

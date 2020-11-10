@@ -183,8 +183,8 @@ func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoM
 	price_estimates := augur_srv.storage.Get_price_estimates(minfo.MktAid,outcome_vols,minfo.LowPriceLimit)
 	reports := augur_srv.storage.Get_market_reports(minfo.MktAid,DEFAULT_MARKET_REPORTS_LIMIT)
 	price_history := augur_srv.storage.Get_full_price_history(minfo.MktAddr,minfo.MktAid,minfo.LowPriceLimit)
-	outag_sh_bal_chgs := augur_srv.storage.Outside_augur_share_balance_changes(minfo.MktAid)
 	balancer_pools := augur_srv.storage.Get_market_balancer_pools(minfo.MktAid)
+	wrappers := augur_srv.storage.Get_wrapped_tokens_for_market(minfo.MktAid)
 
 	if json_output {
 		c.JSON(200,gin.H{
@@ -194,8 +194,8 @@ func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoM
 			"OutcomeVols" : outcome_vols,
 			"PriceHistory" : price_history,
 			"PriceEstimates" : price_estimates,
-			"OutisdeAugurBalanceChanges": outag_sh_bal_chgs,
 			"BalancerPools" : balancer_pools,
+			"WrappedContracts": wrappers,
 		})
 	} else {
 		c.HTML(http.StatusOK, "market_info.html", gin.H{
@@ -206,7 +206,6 @@ func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoM
 			"OutcomeVols" : outcome_vols,
 			"PriceHistory" : price_history,
 			"PriceEstimates" : price_estimates,
-			"OutsideAugurBalanceChanges": outag_sh_bal_chgs,
 			"BalancerPools" : balancer_pools,
 		})
 	}
@@ -1294,9 +1293,28 @@ func pool_swaps(c *gin.Context) {
 		return
 	}
 	pool_info := augur_srv.storage.Get_pool_info(aid)
-	swaps := augur_srv.storage.Get_pool_swaps(aid)
+	swaps := augur_srv.storage.Get_pool_swaps(aid,0,200)
 	c.HTML(http.StatusOK, "pool_swaps.html", gin.H{
 			"PoolInfo" : pool_info,
 			"PoolSwaps" : swaps,
+	})
+}
+func sharetoken_balance_changes(c *gin.Context) {
+
+	market := c.Param("market")
+	market_addr,valid:=is_address_valid(c,false,market)
+	if !valid {
+		return
+	}
+	minfo,err := augur_srv.storage.Get_market_info(market_addr,0,false)
+	if err != nil {
+		show_market_not_found_error(c,false,&market_addr)
+		return
+	}
+
+	outag_sh_bal_chgs := augur_srv.storage.Outside_augur_share_balance_changes(minfo.MktAid)
+	c.HTML(http.StatusOK, "sharetoken_balance_changes.html", gin.H{
+			"MarketInfo" : minfo,
+			"OutsideAugurBalanceChanges": outag_sh_bal_chgs,
 	})
 }

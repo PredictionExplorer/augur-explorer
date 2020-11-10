@@ -385,6 +385,23 @@ func (ss *SQLStorage) Update_0x_order_on_partial_fill(oinfo *ztypes.OrderInfo) {
 		ss.Info.Printf(fmt.Sprintf("DB error: couldn't delete open order with order_hash = %v (not found)\n",order_hash))
 	}
 }
+func (ss *SQLStorage) Open_order_exists(oo_hash string) bool {
+
+	var query string
+	query = "SELECT id FROM oorders WHERE order_hash=$1"
+	row := ss.db.QueryRow(query,oo_hash)
+	var null_id sql.NullInt64
+	err := row.Scan(&null_id);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return false
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return true
+}
 func (ss *SQLStorage) close_all_open_positions_for_market(market_aid int64) {
 
 	var query string

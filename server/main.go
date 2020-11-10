@@ -149,6 +149,7 @@ func main() {
 	r.GET("/black/wrapped/:market",wrapped_tokens)
 	r.GET("/black/wr_transfers/:address",wrapped_token_transfers)
 	r.GET("/black/pool_swaps/:address",pool_swaps)
+	r.GET("/black/stbc/:market",sharetoken_balance_changes)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -182,7 +183,7 @@ func main() {
 	r.GET("/api/trade_history/:market",a1_mkt_trade_history)
 	r.GET("/api/wrapped_tokens/:market",a1_wrapped_tokens)
 	r.GET("/api/wr_transfers/:address",a1_wrapped_token_transfers)
-	r.GET("/api/pool_swaps/:address",a1_pool_swaps)
+	r.GET("/api/pool_swaps/:address/:offset/:limit",a1_pool_swaps)
 	r.GET("/api/mkt_stbc/:market",a1_market_share_token_balance_changes)
 
 	m := autocert.Manager{

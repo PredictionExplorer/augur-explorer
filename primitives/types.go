@@ -110,6 +110,7 @@ type InfoMarket struct {
 	MktType			int
 	MktStatus		int
 	WinOutcomeIdx	int
+	OutsideAugurBalanceChanges	bool	
 	MktAddr			string
 	MktAddrSh		string	// short address (with .. in the middle)
 	Signer			string
@@ -821,8 +822,25 @@ type BalancerNewPool struct {
 	TimeStamp				int64
 	PoolAid					int64
 	CallerAid				int64
+	NumSwaps				int64
+	NumHolders				int64
+	NumTokens				int64
+	SwapFee					float64
 	PoolAddr				string
 	CallerAddr				string
+	CreatedDate				string
+	ControllerAddr			string
+	Tokens					[]BalancerToken
+}
+type BalancerToken struct {
+	TimeStampAdded			int64
+	TokenAid				int64
+	Denorm					float64
+	Weight					float64
+	Balance					float64
+	TokenAddr				string
+	DateAdded				string
+	WrappingContract		ERC20ShTokContract 
 }
 type BalancerJoin struct {
 	EvtId					int64
@@ -867,6 +885,7 @@ type BalancerSwap struct {
 	TokenOutAddr			string
 	AmountIn				string
 	AmountOut				string
+	Date					string
 }
 type SetSwapFee struct {
 	Id						int64
@@ -975,6 +994,8 @@ type OutsideAugurSBChg struct {
 	OutcomeIdx				int
 	Address					string
 	DateTime				string
+	TxHash					string
+	TxHashSh				string
 }
 type PoolInfo struct {
 	PoolAid					int64

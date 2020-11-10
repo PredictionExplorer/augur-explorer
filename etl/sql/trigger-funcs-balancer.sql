@@ -63,7 +63,7 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_bswap_delete() RETURNS trigger AS  $$
+CREATE OR REPLACE FUNCTION on_bholder_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
@@ -171,11 +171,11 @@ BEGIN
 		v_old_balance := 0.0;
 	END IF;
 	v_denorm_diff := v_old_denorm - OLD.denorm;
-	v_balance_diff := v_old_balance - OLD_balance;
+	v_balance_diff := v_old_balance - OLD.balance;
 	UPDATE btoken SET 
 			denorm = (denorm + v_denorm_diff),
 			balance = (v_old_balance + v_balance_diff)
-		WHERE pool_aid=NEW.pool_aid AND token_aid=NEW.token_aid;
+		WHERE pool_aid=OLD.pool_aid AND token_aid=OLD.token_aid;
 	UPDATE bpool
 		SET
 			total_weight = (total_weight + v_denorm_diff)

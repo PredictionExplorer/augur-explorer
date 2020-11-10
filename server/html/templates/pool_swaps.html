@@ -15,12 +15,38 @@
 	<td>Creator Address:</td>
 	<td>{{.PoolInfo.CallerAddr}}</td>
 <tr>
-	<td>Creation TimeStamp</td>
-	<td>{{.PoolInfo.TimeStamp}}<td>
+	<td>Created</td>
+	<td>{{.PoolInfo.CreatedDate}}<td>
 </tr>
 <tr>
 	<td>Block Num</td>
 	<td>{{.PoolInfo.BlockNum}}</td>
+</tr>
+</table>
+<h3>Pool Tokens</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Date Added</th>
+		<th class="market_reports">Token Addr</th>
+		<td class="market_reports">Weight</th>
+		<td class="market_reports">Market</th>
+		<td class="market_reports">Outcome</th>
+		<td class="market_reports">Symbol</th>
+		<td class="market_reports">Name</th>
+	</tr>
+	{{- range $i, $change := .PoolInfo.Tokens }}
+		<tr class="market_reports">
+			<td class="market_reports_field">
+				{{.DateAdded}}
+			</td>
+			<td class="market_reports_field">{{.TokenAddr}}</td>
+			<td class="market_reports_field">{{.Weight}} %</td>
+			<td class="market_reports_field">{{.WrappingContract.MktAddr}}</td>
+			<td class="market_reports_field">{{.WrappingContract.OutcomeIdx}}</td>
+			<td class="market_reports_field">{{.WrappingContract.Symbol}}</td>
+			<td class="market_reports_field">{{.WrappingContract.Name}}</td>
+		</tr>
+	{{- end}}
 </table>
 <br/><br/>
 <div class="market_info">

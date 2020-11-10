@@ -570,26 +570,41 @@ func (ss *SQLStorage) Get_pool_info(pool_aid int64) p.BalancerNewPool {
 	var output p.BalancerNewPool
 	var query string
 	query = "SELECT " +
-//				"FLOOR(EXTRACT(EPOCH FROM p.time_stamp))::BIGINT AS ts, " +
+				"FLOOR(EXTRACT(EPOCH FROM p.time_stamp))::BIGINT AS ts, " +
 				"p.time_stamp,"+
 				"p.pool_aid," +
 				"p.caller_aid," +
 				"pa.addr," +
 				"ca.addr," +
-				"p.block_num " +
+				"co.addr," +
+				"p.block_num," +
+				"total_weight, " +
+				"num_swaps," +
+				"num_holders," +
+				"num_tokens," +
+				"swap_fee " +
 			"FROM bpool AS p " +
 				"LEFT JOIN address AS pa ON p.pool_aid=pa.address_id " +
 				"LEFT JOIN address AS ca ON p.caller_aid=ca.address_id " +
+				"LEFT JOIN address AS co ON p.controller_aid=co.address_id " +
 			"WHERE p.pool_aid=$1 "
 
 	row := ss.db.QueryRow(query,pool_aid)
+	var total_weight float64
 	err := row.Scan(
 			&output.TimeStamp,
+			&output.CreatedDate,
 			&output.PoolAid,
 			&output.CallerAid,
 			&output.PoolAddr,
 			&output.CallerAddr,
+			&output.ControllerAddr,
 			&output.BlockNum,
+			&total_weight,
+			&output.NumSwaps,
+			&output.NumHolders,
+			&output.NumTokens,
+			&output.SwapFee,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -599,20 +614,84 @@ func (ss *SQLStorage) Get_pool_info(pool_aid int64) p.BalancerNewPool {
 			os.Exit(1)
 		}
 	}
+	query = "SELECT " +
+				"FLOOR(EXTRACT(EPOCH FROM t.time_stamp))::BIGINT AS ts, " +
+				"t.time_stamp,"+
+				"token_aid," +
+				"denorm," +
+				"balance," +
+				"ta.addr, " +
+				"w.mkt_addr," +
+				"w.outcome_idx,"+
+				"w.name,"+
+				"w.symbol "+
+			"FROM btoken AS t " +
+				"LEFT JOIN address AS ta ON t.token_aid=ta.address_id " +
+				"LEFT JOIN LATERAL (" +
+					"SELECT wrapper_aid,ma.addr AS mkt_addr,outcome_idx,name,symbol "+
+					"FROM af_wrapper AS afw " +
+						"LEFT JOIN address AS ma ON afw.market_aid=ma.address_id "+
+				") AS w ON w.wrapper_aid=t.token_aid " +
+			"WHERE pool_aid=$1 ORDER BY t.block_num,t.id"
+	rows,err := ss.db.Query(query,pool_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	tokens := make([]p.BalancerToken,0,4)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BalancerToken
+		var mkt_addr,name,symbol sql.NullString
+		var outc sql.NullInt64
+		err=rows.Scan(
+			&rec.TimeStampAdded,
+			&rec.DateAdded,
+			&rec.TokenAid,
+			&rec.Denorm,
+			&rec.Balance,
+			&rec.TokenAddr,
+			&mkt_addr,
+			&outc,
+			&name,
+			&symbol,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.Weight = 100*rec.Denorm/total_weight
+		if mkt_addr.Valid {
+			rec.WrappingContract.MktAddr = mkt_addr.String
+		}
+		if outc.Valid {
+			rec.WrappingContract.OutcomeIdx = int(outc.Int64)
+		}
+		if name.Valid {
+			rec.WrappingContract.Name = name.String
+		}
+		if symbol.Valid {
+			rec.WrappingContract.Symbol = symbol.String
+		}
+		tokens = append(tokens,rec)
+	}
+	output.Tokens = tokens
 	return output
 }
-func (ss *SQLStorage) Get_pool_swaps(pool_aid int64) []p.BalancerSwap {
+func (ss *SQLStorage) Get_pool_swaps(pool_aid int64,offset int,limit int) []p.BalancerSwap {
 
 	records := make([]p.BalancerSwap,0,64)
 	var query string
 	query = "SELECT " +
-//				"FLOOR(EXTRACT(EPOCH FROM s.time_stamp))::BIGINT AS ts, " +
-				"s.time_stamp AS ts,"+
+				"FLOOR(EXTRACT(EPOCH FROM s.time_stamp))::BIGINT AS ts, " +
+				"s.time_stamp as datetime,"+
 				"s.block_num," +
 				"s.tx_id,"+
 				"ca.addr,"+
 				"tia.addr," +
 				"toa.addr," +
+				"s.token_in_aid," +
+				"s.token_out_aid," +
 				"s.amount_in, " +
 				"s.amount_out " +
 			"FROM bswap AS s " +
@@ -620,8 +699,8 @@ func (ss *SQLStorage) Get_pool_swaps(pool_aid int64) []p.BalancerSwap {
 				"LEFT JOIN address AS tia ON s.token_in_aid=tia.address_id " +
 				"LEFT JOIN address AS toa ON s.token_out_aid=toa.address_id " +
 			"WHERE s.pool_aid=$1 " +
-			"ORDER BY ts"
-	rows,err := ss.db.Query(query,pool_aid)
+			"ORDER BY ts DESC OFFSET $2 LIMIT $3"
+	rows,err := ss.db.Query(query,pool_aid,offset,limit)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -632,11 +711,14 @@ func (ss *SQLStorage) Get_pool_swaps(pool_aid int64) []p.BalancerSwap {
 		var rec p.BalancerSwap
 		err=rows.Scan(
 			&rec.TimeStamp,
+			&rec.Date,
 			&rec.BlockNum,
 			&rec.TxId,
 			&rec.CallerAddr,
 			&rec.TokenInAddr,
 			&rec.TokenOutAddr,
+			&rec.TokenInAid,
+			&rec.TokenOutAid,
 			&rec.AmountInF,
 			&rec.AmountOutF,
 		)

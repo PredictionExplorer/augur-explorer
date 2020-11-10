@@ -104,9 +104,11 @@ func fetch_and_sync_orders() {
 		_, exists := ohash_map[db_orders[i]];
 		if exists {
 			// ok
+			Info.Printf("order %v is active\n",db_orders[i])
 		} else {
 			// verify that the order has expired
-			if order_timestamp < cur_timestamp {
+			//if order_timestamp < cur_timestamp {
+				Info.Printf("order %v is inactive and will be deleted\n",db_orders[i])
 				storage.Delete_open_0x_order(db_orders[i],time.Now().Unix(),OOOpCodeSyncProcess)
 				Info.Printf(
 					"Order %v doesn't exist in Mesh Node, but does exist in the DB. " +
@@ -115,7 +117,7 @@ func fetch_and_sync_orders() {
 				)
 				anomalies_count++
 				deleted_count++
-			}
+			//}
 		}
 	}
 	Info.Printf(
@@ -218,6 +220,20 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 					storage.Try_insert_0x_mesh_order_event(
 						aid,time_stamp,order_info,&ospec,nil,MeshEvtAdded,
 					)
+				}
+			}
+			if !storage.Open_order_exists(order_hash) {
+				err := storage.Insert_open_order(
+					&order_hash,
+					order_info.SignedOrder,
+					order_info.FillableTakerAssetAmount,
+					&order_info.SignedOrder.MakerAddress,
+					&ospec,
+					OOOpCodeCreated,
+					time_stamp,
+				)
+				if err != nil {
+					Info.Printf("Error inserting order %v: %v\n",order_hash,err)
 				}
 			}
 		}

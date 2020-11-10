@@ -126,7 +126,6 @@ func a1_market_card(c *gin.Context) {
 		return
 	}
 	mkt_info,err := augur_srv.storage.Get_market_card_data(market_aid)
-	fmt.Printf("mkt_info=%+v",mkt_info)
 	var status int = 0
 	var err_str string = ""
 	if err == nil {
@@ -795,13 +794,16 @@ func a1_pool_swaps(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
+
 	p_address:= c.Param("address")
 	_,pool_aid,success := json_validate_and_lookup_address_or_aid(c,&p_address)
 	if !success {
 		return
 	}
+	success,offset,limit := parse_offset_limit_params(c)
+
 	pool_info := augur_srv.storage.Get_pool_info(pool_aid)
-	swaps := augur_srv.storage.Get_pool_swaps(pool_aid)
+	swaps := augur_srv.storage.Get_pool_swaps(pool_aid,offset,limit)
 	c.JSON(http.StatusOK, gin.H{
 			"PoolInfo" : pool_info,
 			"PoolSwaps" : swaps,
