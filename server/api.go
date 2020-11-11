@@ -780,13 +780,16 @@ func a1_wrapped_token_transfers(c *gin.Context) {
 	if !success {
 		return
 	}
+	success,offset,limit := parse_offset_limit_params(c)
 
 	wrapper_info := augur_srv.storage.Get_wrapped_token_info(wrapper_aid)
 	market_info,_ := augur_srv.storage.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
-	transfers := augur_srv.storage.Get_wrapped_token_transfers(wrapper_aid)
+	transfers := augur_srv.storage.Get_wrapped_token_transfers(wrapper_aid,offset,limit)
 	c.JSON(http.StatusOK, gin.H{
 			"MarketInfo" : market_info,
 			"TokenInfo" : wrapper_info,
+			"Offset" : offset,
+			"Limit" : limit,
 			"WrappedTransfers" : transfers,
 	})
 }
@@ -818,11 +821,61 @@ func a1_market_share_token_balance_changes(c *gin.Context) {
 	if !success {
 		return
 	}
+	success,offset,limit := parse_offset_limit_params(c)
 
-	balance_changes := augur_srv.storage.Outside_augur_share_balance_changes(market_aid)
+	balance_changes := augur_srv.storage.Outside_augur_share_balance_changes(market_aid,offset,limit)
 	c.JSON(http.StatusOK,gin.H{
 			"OutsideAugurBalanceChanges": balance_changes,
 			"status": 1 ,
 			"error": "",
 	})
+}
+func a1_pool_volume(c *gin.Context) {
+
+	p_market := c.Param("market")
+	_,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	if !success {
+		return
+	}
+	success,outcome_idx:= parse_outcome_param(c)
+	if !success {
+		return
+	}
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+	volume := augur_srv.storage.Get_balancer_pool_volume(market_aid,outcome_idx,init_ts,fin_ts,interval_secs)
+
+	c.JSON(http.StatusOK,gin.H{
+			"AllPoolsVolume": volume,
+			"MktAid" : market_aid,
+			"MktAddr" : p_market,
+			"OutcomeIdx" : outcome_idx,
+			"status": 1 ,
+			"error": "",
+	})
+
+}
+func a1_wrapped_token_volume(c *gin.Context) {
+
+	p_wrapper:= c.Param("address")
+	_,wrapper_aid,success := json_validate_and_lookup_address_or_aid(c,&p_wrapper)
+	if !success {
+		return
+	}
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+	volume := augur_srv.storage.Get_wrapped_transfers_volume(wrapper_aid,init_ts,fin_ts,interval_secs)
+
+	c.JSON(http.StatusOK,gin.H{
+			"Volume": volume,
+			"WrapperAid" : wrapper_aid,
+			"WrapperAddr" : p_wrapper,
+			"status": 1 ,
+			"error": "",
+	})
+
 }

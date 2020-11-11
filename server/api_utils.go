@@ -163,3 +163,25 @@ func parse_offset_limit_params(c *gin.Context) (bool,int,int) {
 	}
 	return true,offset,limit
 }
+func parse_outcome_param(c *gin.Context) (bool,int) {
+	var err error
+	p_outcome := c.Param("outcome")
+	var outcome int
+	if len(p_outcome) > 0 {
+		outcome , err = strconv.Atoi(p_outcome)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"status":0,
+				"error":fmt.Sprintf("Bad outcome parameter: %v",err),
+			})
+			return false,0
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("Outcome parameter wasn't provided: %v",err),
+		})
+		return false,0
+	}
+	return true,outcome
+}

@@ -182,9 +182,11 @@ func main() {
 	r.GET("/api/stats_accum_oi/:init_ts/:fin_ts/:interval_secs",  a1_stats_accum_oi)
 	r.GET("/api/trade_history/:market",a1_mkt_trade_history)
 	r.GET("/api/wrapped_tokens/:market",a1_wrapped_tokens)
-	r.GET("/api/wr_transfers/:address",a1_wrapped_token_transfers)
+	r.GET("/api/wr_transfers/:address/:offset/:limit",a1_wrapped_token_transfers)
+	r.GET("/api/wr_vol/:address/:init_ts/:fin_ts/:interval_secs",a1_wrapped_token_volume)
 	r.GET("/api/pool_swaps/:address/:offset/:limit",a1_pool_swaps)
-	r.GET("/api/mkt_stbc/:market",a1_market_share_token_balance_changes)
+	r.GET("/api/mkt_pool_vol/:market/:outcome/:init_ts/:fin_ts/:interval_secs",a1_pool_volume)
+	r.GET("/api/mkt_stbc/:market/:offset/:limit",a1_market_share_token_balance_changes)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

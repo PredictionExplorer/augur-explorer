@@ -75,6 +75,7 @@ type AugurTx struct {	// just a wrapper for Ethereum Transaction object, but in 
 	TxId				int64		// once inserted tx_id is stored here
 	BlockNum			int64
 	GasUsed				int64
+	TimeStamp			int64
 	TxIndex				int32
 	CtrctCreate			bool
 //	TxMsg				*types.Message	Discontinued , to be deleted
@@ -1014,4 +1015,19 @@ type MarketPool struct {
 	OutcomeIdx				int
 	OutcomeStr				string
 	MktAddress				string
+}
+type TradingVolume struct {
+	TimeStamp				int64
+	NumRecords				int64
+	Amount					float64
+}
+type ERC20Info struct {
+	Id						int64
+	Aid						int64
+	TotalSupplyF			float64
+	Decimals				int
+	TotalSupply				string
+	Address					string
+	Name					string
+	Symbol					string
 }

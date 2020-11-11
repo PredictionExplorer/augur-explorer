@@ -1,14 +1,11 @@
 package main
 
 import (
-//	"time"
 	"bytes"
 	"encoding/hex"
 	"math/big"
 	"context"
 	"os"
-	"errors"
-	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -832,6 +829,7 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 	}
 	return id
 }
+/*DISCONTINUED
 func roll_back_blocks(diverging_block *types.Header) error {
 	// Finds the block from which the fork started
 	ctx := context.Background()
@@ -881,7 +879,7 @@ func roll_back_blocks(diverging_block *types.Header) error {
 		}
 	}
 	return errors.New("Chainsplit fix: Undefined behaviour")
-}
+}*/
 func process_transaction(tx_id int64) error {
 
 	tx_hash,bnum,err := storage.Get_tx_hash_by_id(tx_id)

@@ -1270,7 +1270,7 @@ func wrapped_token_transfers(c *gin.Context) {
 	}
 	wrapper_info := augur_srv.storage.Get_wrapped_token_info(aid)
 	market_info,err := augur_srv.storage.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
-	transfers := augur_srv.storage.Get_wrapped_token_transfers(aid)
+	transfers := augur_srv.storage.Get_wrapped_token_transfers(aid,0,500)
 	c.HTML(http.StatusOK, "wrapped_transfers.html", gin.H{
 			"MarketInfo" : market_info,
 			"TokenInfo" : wrapper_info,
@@ -1312,7 +1312,7 @@ func sharetoken_balance_changes(c *gin.Context) {
 		return
 	}
 
-	outag_sh_bal_chgs := augur_srv.storage.Outside_augur_share_balance_changes(minfo.MktAid)
+	outag_sh_bal_chgs := augur_srv.storage.Outside_augur_share_balance_changes(minfo.MktAid,0,500)
 	c.HTML(http.StatusOK, "sharetoken_balance_changes.html", gin.H{
 			"MarketInfo" : minfo,
 			"OutsideAugurBalanceChanges": outag_sh_bal_chgs,

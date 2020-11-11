@@ -824,3 +824,232 @@ func (ss *SQLStorage) Is_address_balancer_pool(addr string) bool {
 	}
 	return true
 }
+func (ss *SQLStorage) Get_balancer_pool_volume(market_aid int64,outc int,init_ts,fin_ts,interval int) []p.TradingVolume {
+
+	records := make([]p.TradingVolume,0,64)
+	var query string
+	query = "SELECT " +
+				"FLOOR(EXTRACT(EPOCH FROM bs.time_stamp))::BIGINT AS ts " +
+			"FROM bswap bs " +
+			"JOIN af_wrapper w ON (bs.token_in_aid=w.wrapper_aid) OR (bs.token_out_aid=w.wrapper_aid)"+
+			"WHERE w.market_aid=$1 AND w.outcome_idx=$2 " +
+			"ORDER BY bs.time_stamp ASC LIMIT 1"
+
+	res := ss.db.QueryRow(query,market_aid,outc)
+	var null_ts sql.NullInt64
+	err := res.Scan(&null_ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		if null_ts.Valid {
+			if init_ts < int(null_ts.Int64) {
+				init_ts = int(null_ts.Int64)
+			}
+		}
+	}
+	query = "SELECT " +
+				"FLOOR(EXTRACT(EPOCH FROM bs.time_stamp))::BIGINT AS ts " +
+			"FROM bswap bs " +
+			"JOIN af_wrapper w ON (bs.token_in_aid=w.wrapper_aid) OR (bs.token_out_aid=w.wrapper_aid)"+
+			"WHERE w.market_aid=$1 AND w.outcome_idx=$2 " +
+			"ORDER BY bs.time_stamp DESC LIMIT 1"
+
+	res = ss.db.QueryRow(query,market_aid,outc)
+	err = res.Scan(&null_ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		if null_ts.Valid {
+			if fin_ts > int(null_ts.Int64) {
+				fin_ts = int(null_ts.Int64)
+			}
+		}
+	}
+
+	query = 
+			"WITH periods AS (" +
+				"SELECT * FROM (" +
+					"SELECT " +
+						"generate_series AS start_ts,"+
+						"TO_TIMESTAMP(EXTRACT(EPOCH FROM generate_series) + $3) AS end_ts "+
+					"FROM (" +
+						"SELECT * " +
+							"FROM generate_series(" +
+								"TO_TIMESTAMP($1)," +
+								"TO_TIMESTAMP($2)," +
+								"TO_TIMESTAMP($3)-TO_TIMESTAMP(0)) " +
+					") AS i" +
+				") AS data " +
+			") " +
+			"SELECT " +
+				"COALESCE(COUNT(sw.id),0) as num_rows, " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
+				"SUM(amount) AS volume " +
+			"FROM periods AS p " +
+				"LEFT JOIN (" +
+					"(" +
+						"SELECT bs.id,amount_in AS amount,bs.time_stamp AS ts " +
+						"FROM bswap bs " +
+						"JOIN af_wrapper w ON bs.token_in_aid=w.wrapper_aid " +
+						"WHERE w.market_aid=$4 AND w.outcome_idx=$5 " +
+					") UNION ALL (" +
+						"SELECT bs.id,amount_out AS amount,bs.time_stamp AS ts " +
+						"FROM bswap bs " +
+						"JOIN af_wrapper w ON bs.token_out_aid=w.wrapper_aid " +
+						"WHERE w.market_aid=$4 AND w.outcome_idx=$5 " +
+					")" +
+				") AS sw ON " +
+					"p.start_ts <= sw.ts AND "+
+					"sw.ts < p.end_ts " +
+			"GROUP BY start_ts " +
+			"ORDER BY start_ts"
+
+	rows,err := ss.db.Query(query,init_ts,fin_ts,interval,market_aid,outc)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.TradingVolume
+		var null_amount sql.NullFloat64
+		var null_ts,null_num_rows sql.NullInt64
+		rows.Scan(&null_num_rows,&null_ts,&null_amount)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
+			os.Exit(1)
+		}
+		if null_num_rows.Valid {
+			rec.NumRecords = null_num_rows.Int64
+		}
+		if null_amount.Valid {
+			rec.Amount= null_amount.Float64
+		}
+		if null_ts.Valid {
+			rec.TimeStamp= null_ts.Int64
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_wrapped_transfers_volume(wrapper_aid int64,init_ts,fin_ts,interval int) []p.TradingVolume {
+
+	records := make([]p.TradingVolume,0,64)
+	var query string
+	query = "SELECT " +
+				"FLOOR(EXTRACT(EPOCH FROM b.ts))::BIGINT AS ts " +
+			"FROM wstok_transf t " +
+			"JOIN block AS b on t.block_num=b.block_num " +
+			"WHERE t.wrapper_aid=$1 " +
+			"ORDER BY ts ASC LIMIT 1"
+
+	res := ss.db.QueryRow(query,wrapper_aid)
+	var null_ts sql.NullInt64
+	err := res.Scan(&null_ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		if null_ts.Valid {
+			if init_ts < int(null_ts.Int64) {
+				init_ts = int(null_ts.Int64)
+			}
+		}
+	}
+	query = "SELECT " +
+				"FLOOR(EXTRACT(EPOCH FROM b.ts))::BIGINT AS ts " +
+			"FROM wstok_transf t " +
+			"JOIN block AS b on t.block_num=b.block_num " +
+			"WHERE t.wrapper_aid=$1 " +
+			"ORDER BY ts DESC LIMIT 1"
+
+	res = ss.db.QueryRow(query,wrapper_aid)
+	err = res.Scan(&null_ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		if null_ts.Valid {
+			if fin_ts > int(null_ts.Int64) {
+				fin_ts = int(null_ts.Int64)
+			}
+		}
+	}
+
+	query = 
+			"WITH periods AS (" +
+				"SELECT * FROM (" +
+					"SELECT " +
+						"generate_series AS start_ts,"+
+						"TO_TIMESTAMP(EXTRACT(EPOCH FROM generate_series) + $3) AS end_ts "+
+					"FROM (" +
+						"SELECT * " +
+							"FROM generate_series(" +
+								"TO_TIMESTAMP($1)," +
+								"TO_TIMESTAMP($2)," +
+								"TO_TIMESTAMP($3)-TO_TIMESTAMP(0)) " +
+					") AS i" +
+				") AS data " +
+			") " +
+			"SELECT " +
+				"COALESCE(COUNT(d.id),0) as num_rows, " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
+				"SUM(amount) AS volume " +
+			"FROM periods AS p " +
+				"LEFT JOIN (" +
+					"SELECT " +
+						"tr.id," +
+						"b.ts, " +
+						"amount " +
+					"FROM wstok_transf AS tr " +
+					"JOIN block AS b ON tr.block_num=b.block_num " +
+					"WHERE tr.wrapper_aid=$4" +
+				") AS d ON (" +
+					"p.start_ts <= d.ts AND " +
+					"d.ts < p.end_ts " +
+				") " +
+			"GROUP BY start_ts " +
+			"ORDER BY start_ts"
+
+	rows,err := ss.db.Query(query,init_ts,fin_ts,interval,wrapper_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.TradingVolume
+		var null_amount sql.NullFloat64
+		var null_ts,null_num_rows sql.NullInt64
+		rows.Scan(&null_num_rows,&null_ts,&null_amount)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
+			os.Exit(1)
+		}
+		if null_num_rows.Valid {
+			rec.NumRecords = null_num_rows.Int64
+		}
+		if null_amount.Valid {
+			rec.Amount= null_amount.Float64
+		}
+		if null_ts.Valid {
+			rec.TimeStamp= null_ts.Int64
+		}
+		records = append(records,rec)
+	}
+	return records
+}

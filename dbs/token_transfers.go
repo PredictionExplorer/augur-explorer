@@ -781,7 +781,7 @@ func (ss *SQLStorage) Delete_REP_transfer_by_evtlog_id(evtlog_id int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Outside_augur_share_balance_changes(market_aid int64) []p.OutsideAugurSBChg {
+func (ss *SQLStorage) Outside_augur_share_balance_changes(market_aid int64,offset,limit int) []p.OutsideAugurSBChg {
 
 	market_type,_,_ := ss.get_market_type_and_ticks(market_aid)
 	var query string
@@ -800,10 +800,11 @@ func (ss *SQLStorage) Outside_augur_share_balance_changes(market_aid int64) []p.
 				"JOIN transaction AS t ON sb.tx_id=t.id " +
 				"LEFT JOIN address AS a ON sb.account_aid=a.address_id "+
 			"WHERE sb.market_aid=$1 AND outside_augur_ui=TRUE " +
-			"ORDER BY time_stamp"
+			"ORDER BY time_stamp DESC " +
+			"OFFSET $2 LIMIT $3"
 
 
-	rows,err := ss.db.Query(query,market_aid)
+	rows,err := ss.db.Query(query,market_aid,offset,limit)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -828,4 +829,63 @@ func (ss *SQLStorage) Outside_augur_share_balance_changes(market_aid int64) []p.
 	}
 	ss.Info.Printf("returning %v records\n",len(records))
 	return records
+}
+func (ss *SQLStorage) Get_ERC20Info(addr string) (bool,p.ERC20Info) {
+
+	var query string
+	query = "SELECT aid,a.addr,decimals,total_supply,name,symbol " +
+			"FROM erc20_info AS e,address AS a " +
+			"WHERE e.aid=a.address_id AND a.addr=$1"
+
+	d_query := fmt.Sprintf(
+			"SELECT aid,a.addr,decimals,total_supply,name,symbol " +
+			"FROM erc20_info AS e,address AS a " +
+			"WHERE e.aid=a.address_id AND a.addr='%v'",
+			addr,
+	)
+	ss.Info.Printf("get ercinfo q: %v\n",d_query)
+	res := ss.db.QueryRow(query,addr)
+	var info p.ERC20Info
+	err := res.Scan(
+		&info.Aid,
+		&info.Address,
+		&info.Decimals,
+		&info.TotalSupplyF,
+		&info.Name,
+		&info.Symbol,
+	)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		} else {
+			return false,info
+		}
+	}
+	return true,info
+}
+func (ss *SQLStorage) Insert_ERC20Info(info *p.ERC20Info) {
+
+	aid := ss.Lookup_or_create_address(info.Address,0,0)
+	var query string
+	query = "INSERT INTO erc20_info(aid,decimals,total_supply,name,symbol) "+
+			"VALUES($1,$2,$3::DECIMAL/1e+18,$4,$5) ON CONFLICT DO NOTHING"
+
+	d_query := fmt.Sprintf("INSERT INTO erc20_info(aid,decimals,total_supply,name,symbol) "+
+			"VALUES(%v,%v,%v::DECIMAL/1e+18,'%v','%v') ON CONFLICT DO NOTHING",
+			aid,info.Decimals,info.TotalSupply,info.Name,info.Symbol,
+	)
+
+	_,err := ss.db.Exec(query,
+		aid,
+		info.Decimals,
+		info.TotalSupply,
+		info.Name,
+		info.Symbol,
+	)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("d_query: %v\n",d_query))
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
 }

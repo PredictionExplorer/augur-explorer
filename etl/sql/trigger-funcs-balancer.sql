@@ -94,7 +94,7 @@ BEGIN
 	UPDATE bpool
 		SET
 			num_tokens = (num_tokens - 1),
-			total_weight = (total_weight - NEW.denorm)
+			total_weight = (total_weight - OLD.denorm)
 		WHERE pool_aid=OLD.pool_aid;
 	RETURN OLD;
 END;

@@ -161,14 +161,15 @@ func (ss *SQLStorage) Insert_augur_foundry_transfer_evt(t *p.WShTokTransfer,deci
 	to_aid := ss.Lookup_or_create_address(t.To,t.BlockNum,t.TxId)
 	var query string
 	query = "INSERT INTO wstok_transf( " +
-				"evtlog_id,wrapper_aid,block_num,tx_id,from_aid,to_aid,amount,balance" +
-				") VALUES($1,$2,$3,$4,$5,$6,($7::DECIMAL/1e+"+fmt.Sprintf("%v",decimals)+"),$8)"
+				"evtlog_id,wrapper_aid,block_num,tx_id,time_stamp,from_aid,to_aid,amount,balance" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,($8::DECIMAL/1e+"+fmt.Sprintf("%v",decimals)+"),$9)"
 
 	_,err := ss.db.Exec(query,
 		t.EvtLogId,
 		t.WrapperAid,
 		t.BlockNum,
 		t.TxId,
+		t.TimeStamp,
 		from_aid,
 		to_aid,
 		t.AmountStr,
@@ -266,7 +267,7 @@ func (ss *SQLStorage) Get_wrapped_token_info(wrapper_aid int64) p.ERC20ShTokCont
 	}
 	return output
 }
-func (ss *SQLStorage) Get_wrapped_token_transfers(wrapper_aid int64) []p.WShTokTransfer {
+func (ss *SQLStorage) Get_wrapped_token_transfers(wrapper_aid int64,offset,limit int) []p.WShTokTransfer {
 
 	records := make([]p.WShTokTransfer,0,64)
 	var query string
@@ -286,8 +287,9 @@ func (ss *SQLStorage) Get_wrapped_token_transfers(wrapper_aid int64) []p.WShTokT
 				"LEFT JOIN bpool AS fbp ON t.from_aid=fbp.pool_aid " +
 				"LEFT JOIN bpool AS tbp ON t.to_aid=tbp.pool_aid " +
 			"WHERE t.wrapper_aid=$1 " +
-			"ORDER BY ts"
-	rows,err := ss.db.Query(query,wrapper_aid)
+			"ORDER BY ts DESC " +
+			"OFFSET $2 LIMIT $3"
+	rows,err := ss.db.Query(query,wrapper_aid,offset,limit)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)

@@ -40,8 +40,6 @@ var (
 	market_order_id int64 = 0
 	owner_fld_offset int64 = int64(OWNER_FIELD_OFFSET)	// offset to AugurContract::owner field obtained with eth_getStorage()
 
-	set_back_block_num int64 = 0
-
 	Error   *log.Logger
 	Info	*log.Logger
 
@@ -189,29 +187,20 @@ func main() {
 		bnum_high = int64(stop_block)
 	}
 	for ; bnum<bnum_high; bnum++ {
-		//block_hash:=common.HexToHash(block_hash_str)
-		for {
-			select {
-				case exit_flag := <-exit_chan:
-					if exit_flag {
-						Info.Println("Exiting by user request.")
-						os.Exit(0)
-					}
-				default:
-			}
-			//proc_open_orders()
-			err := process_block(bnum,true,false)
-			if err==nil {
-				break
-			} else {
-				// this is probably happening due to RPC unavailability, so we use a delay
-				time.Sleep(1 * time.Second)
-				if err == ErrChainSplit {
-					bnum = set_back_block_num
-					continue
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.")
+					os.Exit(0)
 				}
-				Error.Printf("Block processing error: %v\n",err)
-			}
+			default:
+		}
+		err := process_block(bnum,true,false)
+		if err!=nil {
+			// this is probably happening due to RPC unavailability, so we use a delay
+			time.Sleep(1 * time.Second)
+			Error.Printf("Block processing error: %v\n",err)
+			break
 		}
 	}// for block_num
 	latestBlock, err = eclient.BlockByNumber(ctx, nil)

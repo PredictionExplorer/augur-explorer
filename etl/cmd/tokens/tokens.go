@@ -189,6 +189,7 @@ func process_single_erc20wrapped_transfer_evt(wrapper_aid int64,decimals int,evt
 	t.WrapperAid = wrapper_aid
 	t.BlockNum = agtx.BlockNum
 	t.TxId = agtx.TxId
+	t.TimeStamp = agtx.TimeStamp
 	t.From = transfer.From.String()
 	t.To = transfer.To.String()
 	t.AmountStr = transfer.Value.String()

@@ -1,12 +1,12 @@
 package primitives
 
 import (
-	//"fmt"
 	"math/big"
 	"bytes"
-	//"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 func Eth_addr_is_zero(addr_ptr *common.Address) bool {
 	if bytes.Equal(addr_ptr.Bytes(), common.Address{}.Bytes()) {
@@ -53,5 +53,41 @@ func addresses_to_str(addresses *[]common.Address,separator string) string {
 		output.WriteString((*addresses)[i].String())
 	}
 	return output.String()
+}
+func Fetch_erc20_info(client *ethclient.Client,contract_address *common.Address) (ERC20Info,error) {
+
+	var erc20Info ERC20Info
+	var copts = new(bind.CallOpts)
+
+	contract,err := NewERC20Wrapper(*contract_address,client)
+	if err != nil {
+		return erc20Info,err
+	}
+
+	total_supply,err := contract.TotalSupply(copts)
+	if err != nil {
+		return erc20Info,err
+	}
+	erc20Info.TotalSupply = total_supply.String()
+
+	decimals,err := contract.Decimals(copts)
+	if err != nil {
+		return erc20Info,err
+	}
+	erc20Info.Decimals = int(decimals)
+
+	name,err := contract.Name(copts)
+	if err != nil {
+		return erc20Info,err
+	}
+	erc20Info.Name = name
+
+	symbol,err := contract.Symbol(copts)
+	if err != nil {
+		return erc20Info,err
+	}
+	erc20Info.Symbol = symbol
+
+	return erc20Info,nil
 }
 

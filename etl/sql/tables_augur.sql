@@ -24,7 +24,8 @@ CREATE TABLE category (
 );
 -- Market
 CREATE TABLE market (
-	market_aid			BIGINT NOT NULL PRIMARY KEY,-- address ID of the Market
+	id					BIGSERIAL PRIMARY KEY,
+	market_aid			BIGINT NOT NULL UNIQUE,-- address ID of the Market
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	cat_id				BIGINT NOT NULL,			-- category id

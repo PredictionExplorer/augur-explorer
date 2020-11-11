@@ -70,6 +70,7 @@ CREATE TABLE wstok_transf ( -- ERC20 Wrapped ShareToken transfer
 	wrapper_aid			BIGINT NOT NULL,			-- foreign key to af_wrapper.wrapper_aid
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,	-- timestamp copied from block
 	from_aid			BIGINT DEFAULT 0,
 	to_aid				BIGINT DEFAULT 0,
 	amount				DECIMAL(32,18) DEFAULT 0.0,
@@ -81,4 +82,11 @@ CREATE TABLE af_addr (
 CREATE TABLE af_status (
 	last_evt_id			BIGINT DEFAULT 0	-- event id
 );
-
+CREATE TABLE erc20_info (
+	id					BIGSERIAL PRIMARY KEY,
+	aid					BIGINT NOT NULL UNIQUE,
+	decimals			INT NOT NULL,
+	total_supply		DECIMAL(78,18),
+	name				TEXT NOT NULL,
+	symbol				TEXT NOT NULL
+);

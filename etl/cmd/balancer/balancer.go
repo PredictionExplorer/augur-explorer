@@ -6,6 +6,7 @@ import (
 	"syscall"
 	"bytes"
 	"strings"
+	"context"
 	"time"
 	"sort"
 	"fmt"
@@ -17,9 +18,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	//"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-//	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-//	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/rpc"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
@@ -57,6 +58,8 @@ var (
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
+	eclient *ethclient.Client
+	rpcclient *rpc.Client
 	Error   *log.Logger
 	Info	*log.Logger
 	market_order_id int64 = 0
@@ -68,6 +71,21 @@ var (
 	bpool_abi abi.ABI
 
 )
+func fetch_and_store_erc20_info(token_addr common.Address) {
+	// note: this func is called as goroutine for speed. however duplicate calls can occur,
+	//		which are prevented with DO NOTHING on conflict in the INSERT query
+	found,_ := storage.Get_ERC20Info(token_addr.String())
+	if found {
+		return
+	}
+	erc20_info,err := Fetch_erc20_info(eclient,&token_addr)
+	if err != nil {
+		Error.Printf("Couldn't fetch ERC20 token info for addr %v : %v\n",token_addr.String(),err)
+		return
+	}
+	erc20_info.Address = token_addr.String()
+	storage.Insert_ERC20Info(&erc20_info)
+}
 func build_list_of_inspected_events(pool,factory,exchange string) []InspectedEvent {
 
 	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)
@@ -294,12 +312,12 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 	//		Topic[0] isn't present. Instead, Topic[0] is 'Sig' , Topic[1] is 'Caller'
 	//		and log.Data[0] is 'data'. Since Topic[0] is the signature, we use it for bytes.Equal() instead
 	//		of using tx.Input[0:4]
+	var offset int = 32+32+4// first 32 - big.Int size; second 32 - length of Input; 4 - signature size
 	if bytes.Equal(log.Topics[0].Bytes()[:4],b_balancer_set_swap_fee) {
 		if !storage.Is_address_balancer_pool(log.Address.String()) {
 			return
 		}
 		//Info.Printf("setfee: Data= %v\n",hex.EncodeToString(log.Data))
-		var offset int = 32+32+4// first 32 - big.Int size; second 32 - length of Input; 4 - signature size
 		fee := big.NewInt(0)
 		fee.SetBytes(log.Data[offset+0:offset+32])
 		//Info.Printf("Set fee with caller %v for pool %v\n",caller.String(),log.Address.String())
@@ -313,13 +331,10 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 		storage.Delete_set_swap_fee(e.EvtId)
 		storage.Insert_set_swap_fee(&f)
 	}
-	Info.Printf("before set_controller log.Address=%v topicsig=%v\n",log.Address.String(),hex.EncodeToString(log.Topics[0].Bytes()))
 	if bytes.Equal(log.Topics[0].Bytes()[:4],b_balancer_set_controller) {
 		if !storage.Is_address_balancer_pool(log.Address.String()) {
 			return
 		}
-		//Info.Printf("controller: Data= %v\n",hex.EncodeToString(log.Data))
-		var offset int = 32+32+4// first 32 - big.Int size; second 32 - length of Input; 4 - signature size
 		controller := common.BytesToAddress(log.Data[offset+12:offset+32])
 		var c SetController
 		c.EvtId = e.EvtId
@@ -328,7 +343,6 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 		c.TimeStamp = timestamp
 		c.PoolAddr = log.Address.String()
 		c.ControllerAddr = controller.String()
-		//Info.Printf("set_controller for %v to %v\n",log.Address.String(),c.ControllerAddr)
 		storage.Delete_set_controller(e.EvtId)
 		storage.Insert_set_controller(&c)
 	}
@@ -337,8 +351,6 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 		if !storage.Is_address_balancer_pool(log.Address.String()) {
 			return
 		}
-		//Info.Printf("public: Data= %v\n",hex.EncodeToString(log.Data))
-		var offset int = 32+32+4// first 32 - big.Int size; second 32 - length of Input; 4 - signature size
 		var p SetPublic
 		p.EvtId = e.EvtId
 		p.BlockNum = e.BlockNum
@@ -357,7 +369,6 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 		if !storage.Is_address_balancer_pool(log.Address.String()) {
 			return
 		}
-		//Info.Printf("finalize: Data= %v\n",hex.EncodeToString(log.Data))
 		var f Finalize 
 		f.EvtId = e.EvtId
 		f.BlockNum = e.BlockNum
@@ -372,7 +383,6 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 			return
 		}
 		Info.Printf("bind: Data= %v\n",hex.EncodeToString(log.Data))
-		var offset int = 32+32+4// first 32 - big.Int size; second 32 - length of Input; 4 - signature size
 		token := common.BytesToAddress(log.Data[offset+12:offset+32])
 		balance := big.NewInt(0)
 		balance.SetBytes(log.Data[offset+32:offset+64])
@@ -389,13 +399,12 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 		b.Denorm = denorm.String()
 		storage.Delete_pool_bind(e.EvtId)
 		storage.Insert_pool_bind(&b)
+		go fetch_and_store_erc20_info(token)
 	}
 	if bytes.Equal(log.Topics[0].Bytes()[:4],b_balancer_unbind) {
 		if !storage.Is_address_balancer_pool(log.Address.String()) {
 			return
 		}
-		//Info.Printf("unbind: Data= %v\n",hex.EncodeToString(log.Data))
-		var offset int = 32+32+4// first 32 - big.Int size; second 32 - length of Input; 4 - signature size
 		token := common.BytesToAddress(log.Data[offset+12:offset+32])
 		var u PoolUnBind
 		u.EvtId = e.EvtId
@@ -412,29 +421,11 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 		if !storage.Is_address_balancer_pool(log.Address.String()) {
 			return
 		}
-		//Info.Printf("rebind: Data= %v\n",hex.EncodeToString(log.Data))
-		var offset int = 32+32+4// first 32 - big.Int size; second 32 - length of Input; 4 - signature size
 		token := common.BytesToAddress(log.Data[offset+12:offset+32])
 		balance := big.NewInt(0)
 		balance.SetBytes(log.Data[offset+32:offset+64])
 		denorm := big.NewInt(0)
 		denorm.SetBytes(log.Data[offset+64:offset+96])
-		/*type ReBindInput struct {
-			Token			common.Address
-			Balance			*big.Int
-			Denorm			*big.Int
-		}
-		var input_data ReBindInput
-		method, err := bpool_abi.MethodById(b_balancer_rebind)
-		if err != nil {
-			Info.Printf("Can't find method for rebind: %v\n",err)
-			os.Exit(1)
-		}
-		err = method.Inputs.Unpack(&input_data, log.Data[64+4:])
-		if err != nil {
-			Error.Printf("Input decode error: %v",err)
-			os.Exit(1)
-		}*/
 		var r PoolReBind
 		r.EvtId = e.EvtId
 		r.BlockNum = e.BlockNum
@@ -452,8 +443,6 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 			return
 		}
 
-		//Info.Printf("gulp: Data= %v\n",hex.EncodeToString(log.Data))
-		var offset int = 32+32+4// first 32 - big.Int size; second 32 - length of Input; 4 - signature size
 		token := common.BytesToAddress(log.Data[offset+12:offset+32])
 		var g PoolGulp
 		g.EvtId = e.EvtId
@@ -512,6 +501,7 @@ func process_balancer(exit_chan chan bool) {
 }
 func main() {
 
+
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 	os.MkdirAll(log_dir, os.ModePerm)
 	db_log_file:=fmt.Sprintf("%v/balancer_%v",log_dir,DEFAULT_DB_LOG)
@@ -532,6 +522,12 @@ func main() {
 	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	Error = log.New(logfile,"ERROR: ",log.Ltime|log.Lshortfile)
 
+	rpcclient, err := rpc.DialContext(context.Background(), RPC_URL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	Info.Printf("Connected to ETH node: %v\n",RPC_URL)
+	eclient = ethclient.NewClient(rpcclient)
 	storage = Connect_to_storage(&market_order_id,Info)
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")

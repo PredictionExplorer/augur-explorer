@@ -723,10 +723,11 @@ func (ss *SQLStorage) Get_augur_transaction(tx_id int64) *p.AugurTx {
 
 	agtx := new(p.AugurTx)
 	var query string
-	query = "SELECT block_num,tx_hash FROM transaction WHERE id=$1"
+	query = "SELECT block_num,tx_hash,b.ts FROM transaction t,block b " +
+			"WHERE t.id=$1 AND b.block_num=t.block_num"
 
 	res := ss.db.QueryRow(query,tx_id)
-	err := res.Scan(&agtx.BlockNum,&agtx.TxHash)
+	err := res.Scan(&agtx.BlockNum,&agtx.TxHash,&agtx.TimeStamp)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
