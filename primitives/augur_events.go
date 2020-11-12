@@ -272,3 +272,19 @@ type ELOG_SWAP struct { // 0x908fb5ee8f16c6bc9bc3690973819f32a4d4b10188134543c88
 	TokenAmountOut *big.Int
 	Raw            types.Log // Blockchain specific contextual infos
 }
+type UPairCreated struct {
+	Token0			common.Address
+	Token1			common.Address
+	Pair			common.Address
+	PairSeq			*big.Int
+	Raw    types.Log // Blockchain specific contextual infos
+}
+type UPairSwap struct {
+	Sender			common.Address
+	Amount0In		*big.Int
+	Amount1In		*big.Int
+	Amount0Out		*big.Int
+	Amount1Out		*big.Int
+	To				common.Address
+	Raw				types.Log // Blockchain specific contextual infos
+}

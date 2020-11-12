@@ -23,7 +23,7 @@ import (
 )
 const (
 
-	DEFAULT_WAIT_TIME = 5000	// 5 seconds
+	DEFAULT_WAIT_TIME = 2000	// 2 seconds
 	DEFAULT_DB_LOG				= "db.log"
 	//DEFAULT_LOG_DIR				= "ae_logs"
 	MAX_APPROVAL_BASE10 string = "115792089237316195423570985008687907853269984665640564039457584007913129639935"
@@ -75,16 +75,6 @@ func read_block_numbers(fname string)  []int64 {
 func main() {
 	//client, err := ethclient.Dial("http://:::8545")
 
-	var block_numbers []int64
-	stop_block := int(0)
-	if len(os.Args) > 1 {
-		var err error
-		stop_block,err=strconv.Atoi(os.Args[1])
-		if err != nil {
-			// must be file number specifying block numbers to process
-			block_numbers = read_block_numbers(os.Args[1])
-		}
-	}
 	if len(RPC_URL) == 0 {
 		Fatalf("Configuration error: RPC URL of Ethereum node is not set."+
 				" Please set AUGUR_ETH_NODE_RPC environment variable")
@@ -151,25 +141,12 @@ func main() {
 		exit_chan <- true
 	}()
 
-	//go balance_updater()	// updates DAI token balances very 10 seconds
-
-	if len(block_numbers) > 0 {
-		for i:=0 ; i<len(block_numbers); i++ {
-			bnum := block_numbers[i]
-			err := process_block(bnum,false,true)
-			if err!=nil {
-				fmt.Printf("Process failed: %v. Repeat again.\n",err)
-				os.Exit(1)
-			}
-		}
-		os.Exit(0)
-	}
-
   main_loop:
 	latestBlock, err := eclient.BlockByNumber(ctx, nil)
 	if err != nil {
 		log.Fatal("oops:", err)
 	}
+	Info.Printf("Latest block=%v\n",latestBlock.Number().Int64())
 
 	bnum,exists := storage.Get_last_block_num()
 	if !exists {
@@ -181,10 +158,6 @@ func main() {
 	if bnum_high < bnum {
 		Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
 		os.Exit(1)
-	}
-	if stop_block > 0 {
-		Info.Printf("Will exit at block %v for debugging\n",stop_block)
-		bnum_high = int64(stop_block)
 	}
 	for ; bnum<bnum_high; bnum++ {
 		select {
@@ -203,15 +176,6 @@ func main() {
 			break
 		}
 	}// for block_num
-	latestBlock, err = eclient.BlockByNumber(ctx, nil)
-	if err != nil {
-		log.Fatal("oops:", err)
-	} else {
-		if latestBlock.Number().Int64() >= bnum {
-			time.Sleep(DEFAULT_WAIT_TIME * time.Millisecond)
-		}
-	}
-	if stop_block == 0 {
-		goto main_loop
-	}
+	time.Sleep(DEFAULT_WAIT_TIME * time.Millisecond)
+	goto main_loop // infinite loop without loss of one indentation level
 }

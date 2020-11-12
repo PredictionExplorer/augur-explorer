@@ -431,7 +431,7 @@ func (ss *SQLStorage) Get_tx_hash_by_id(tx_id int64) (string,int64,error) {
 	var tx_hash string
 	var block_num int64
 	var query string
-	query = "select tx_hash,block_num from transaction where id=$1"
+	query = "SELECT tx_hash,block_num FROM transaction WHERE id=$1"
 	row := ss.db.QueryRow(query,tx_id)
 	err := row.Scan(&tx_hash,&block_num)
 	if (err!=nil) {
@@ -443,6 +443,27 @@ func (ss *SQLStorage) Get_tx_hash_by_id(tx_id int64) (string,int64,error) {
 		}
 	}
 	return tx_hash,block_num,nil
+}
+func (ss *SQLStorage) Get_tx_hash_with_timestamp_by_id(tx_id int64) (string,int64,int64,error) {
+
+	var tx_hash string
+	var block_num int64
+	var timestamp int64
+	var query string
+	query = "SELECT t.tx_hash,t.block_num,EXTRACT(EPOCH FROM b.ts)::BIGINT AS ts " +
+			"FROM transaction AS t,block AS b "+
+			"WHERE t.id=$1 AND t.block_num=b.block_num"
+	row := ss.db.QueryRow(query,tx_id)
+	err := row.Scan(&tx_hash,&block_num,&timestamp)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return "",0,0,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return tx_hash,block_num,timestamp,nil
 }
 func (ss *SQLStorage) Get_tx_hash_and_input_sig(tx_id int64) (string,string,error) {
 

@@ -45,7 +45,9 @@ func roll_back_blocks(diverging_block *types.Header) error {
 				chain_reorg_event.BlockNum = my_block_num
 				chain_reorg_event.Hash = block_hash
 				storage.Insert_chain_reorg_event(&chain_reorg_event)
-				return nil
+				return errors.New(fmt.Sprintf(
+					"Chainsplit occurred at block %v and was fixedx at block %v",block_num,my_block_num,
+				))
 			}
 		} else {
 			Info.Printf(

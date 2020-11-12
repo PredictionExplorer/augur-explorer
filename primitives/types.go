@@ -1031,3 +1031,12 @@ type ERC20Info struct {
 	Name					string
 	Symbol					string
 }
+type UniswapStatus struct {
+	LastEvtId				int64
+}
+type BasicChainInfo struct { // piece of common information for storing in tables
+	BlockNum				int64
+	TxId					int64
+	EvtId					int64
+	TimeStamp				int64
+}
