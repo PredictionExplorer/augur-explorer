@@ -150,6 +150,7 @@ func main() {
 	r.GET("/black/wr_transfers/:address",wrapped_token_transfers)
 	r.GET("/black/pool_swaps/:address",pool_swaps)
 	r.GET("/black/stbc/:market",sharetoken_balance_changes)
+	r.GET("/black/mkt_uniswaps/:market",market_uniswap_pairs)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)

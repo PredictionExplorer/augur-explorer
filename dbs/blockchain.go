@@ -111,19 +111,31 @@ func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header,no_chains
 	}
 	if (err!=nil) {
 		if (err==sql.ErrNoRows) {
-			starting_block:=ss.Get_upload_block()
-			if block.Number.Int64() == starting_block {
-				// this is the first block that will be processed (we aren't starting from block 0)
-				// allow
+			query = "SELECT count(*) FROM block"
+			row := ss.db.QueryRow(query)
+			var block_count int64
+			err := row.Scan(&block_count)
+			if (err!=nil) {
+				ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+				os.Exit(1)
+			}
+			if block_count > 0 {
+				starting_block:=ss.Get_upload_block()
+				if block.Number.Int64() == starting_block {
+					// this is the first block that will be processed (we aren't starting from block 0)
+					// allow
+				} else {
+					ss.Info.Printf(
+						fmt.Sprintf(
+							"Insert_block() Can't insert block (block_num=%v, block_hash=%v, parent_hash=%v"+
+							"), parent not found. Chain split, need recovery procedure. (CHAIN_SPLIT)",
+							block.Number.Int64(),hash_str,parent_hash,
+						),
+					);
+					return p.ErrChainSplit // chain split occured (parent block wasn't found)
+				}
 			} else {
-				ss.Info.Printf(
-					fmt.Sprintf(
-						"Insert_block() Can't insert block (block_num=%v, block_hash=%v, parent_hash=%v"+
-						"), parent not found. Chain split, need recovery procedure. (CHAIN_SPLIT)",
-						block.Number.Int64(),hash_str,parent_hash,
-					),
-				);
-				return p.ErrChainSplit // chain split occured (parent block wasn't found)
+				// database is empty, continue
 			}
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB Error: %v; query=%v",err,query));
@@ -947,4 +959,19 @@ func (ss *SQLStorage) Insert_dummy_block(block_num int64) {
 		)
 		os.Exit(1)
 	}
+}
+func (ss *SQLStorage) Get_first_event_log() p.BasicChainInfo {
+
+	var query string
+	query = "SELECT id,block_num,tx_id FROM evt_log ORDER BY id DESC LIMIT 1"
+
+	row := ss.db.QueryRow(query)
+	var bci p.BasicChainInfo
+	var err error
+	err=row.Scan(&bci.EvtId,&bci.BlockNum,&bci.TxId);
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Error in Get_first_event_log(): %v",err))
+		os.Exit(1)
+	}
+	return bci
 }

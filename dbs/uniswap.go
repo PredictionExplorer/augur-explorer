@@ -88,14 +88,32 @@ func (ss *SQLStorage) Delete_uniswap_pair_created_evt(evt_id int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_uniswap_pair_swap_evt(pair,user *common.Address,bci *p.BasicChainInfo,evt *p.UPairSwap) {
+func (ss *SQLStorage) Pair_exists(pair_addr string) bool {
+
+	var query string
+	query = "SELECT id FROM upair AS p,address AS a " +
+			"WHERE a.addr=$1 AND a.address_id=p.pair_aid"
+	row := ss.db.QueryRow(query,pair_addr)
+	var id int64
+	var err error
+	err=row.Scan(&id)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return false
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return true
+}
+func (ss *SQLStorage) Insert_uniswap_pair_swap_evt(pair *common.Address,bci *p.BasicChainInfo,evt *p.UPairSwap) {
 
 	// sender and recipient do not contain meaningful data, it is the contract address
 	sender_aid := ss.Lookup_or_create_address(evt.Sender.String(),bci.BlockNum,bci.TxId)
 	recipient_aid := ss.Lookup_or_create_address(evt.To.String(),bci.BlockNum,bci.TxId)
 
 	pair_aid := ss.Lookup_or_create_address(pair.String(),bci.BlockNum,bci.TxId)
-	aid := ss.Lookup_or_create_address(user.String(),bci.BlockNum,bci.TxId)
 
 	amount0_in := evt.Amount0In.String()
 	amount1_in := evt.Amount1In.String()
@@ -105,17 +123,17 @@ func (ss *SQLStorage) Insert_uniswap_pair_swap_evt(pair,user *common.Address,bci
 	var query string
 	query = "INSERT INTO uswap1(" +
 				"evtlog_id,block_num,tx_id,time_stamp,"+
-				"pair_aid,sender_aid,recipient_aid,aid," +
+				"pair_aid,sender_aid,recipient_aid," +
 				"amount0_in,amount1_in,amount0_out,amount1_out"+
 			") VALUES (" +
 				"$1,$2,$3,TO_TIMESTAMP($4),"+
-				"$5,$6,$7,$8,"+
-				"$9::DECIMAL/1e+18,$10::DECIMAL/1e+18,$11::DECIMAL/1e+18,$12::DECIMAL/1e+18" +
+				"$5,$6,$7,"+
+				"$8::DECIMAL/1e+18,$9::DECIMAL/1e+18,$10::DECIMAL/1e+18,$11::DECIMAL/1e+18" +
 			")"
 
 	_,err := ss.db.Exec(query,
 		bci.EvtId,bci.BlockNum,bci.TxId,bci.TimeStamp,
-		pair_aid,sender_aid,recipient_aid,aid,
+		pair_aid,sender_aid,recipient_aid,
 		amount0_in,amount1_in,amount0_out,amount1_out,
 	)
 	if err != nil {
@@ -175,4 +193,12 @@ func (ss *SQLStorage) Find_uniswap_transfer_events(tx_id int64) [][]byte {
 		output = append(output,rlp_data)
 	}
 	return output
+}
+func (ss *SQLStorage) Get_market_uniswap_pairs(market_aid int64) {
+
+	var query string
+	query = "SELECT " +
+			"FROM af_wrapper AS w " +
+			"JOIN upair AS p ON w.wrapper_aid = p.pair_aid " +
+
 }

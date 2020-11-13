@@ -1318,3 +1318,11 @@ func sharetoken_balance_changes(c *gin.Context) {
 			"OutsideAugurBalanceChanges": outag_sh_bal_chgs,
 	})
 }
+func market_uniswap_pairs(c *gin.Context) {
+
+	market := c.Param("market")
+	market_addr,valid:=is_address_valid(c,false,market)
+	if !valid {
+		return
+	}
+}

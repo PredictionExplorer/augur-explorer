@@ -397,3 +397,14 @@ func DumpOrderSpec (l *log.Logger,o *ZxMeshOrderSpec) {
 	l.Printf("\tType: %v\n",o.Type)
 	l.Printf("}\n")
 }
+func (evt *UPairSwap) Dump(l *log.Logger) {
+    l.Printf("PairSwap{\n")
+    l.Printf("\tSender: %v\n",evt.Sender.String())
+    l.Printf("\tAmount0In: %v\n",evt.Amount0In.String())
+    l.Printf("\tAmount1In: %v\n",evt.Amount1In.String())
+    l.Printf("\tAmount0Out: %v\n",evt.Amount0Out.String())
+    l.Printf("\tAmount1Out: %v\n",evt.Amount1Out.String())
+    l.Printf("\tTo: %v\n",evt.To.String())
+    l.Printf("}\n")
+}
+

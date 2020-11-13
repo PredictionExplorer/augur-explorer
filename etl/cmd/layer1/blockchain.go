@@ -95,11 +95,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 	err = storage.Insert_block(block_hash_str,header,no_chainsplit_check)
 	if err != nil {
 		err = roll_back_blocks(header)
-		if err == nil {
-			return nil
-		}
-		Error.Printf("Unable to recover from chainsplit: %v. Aborting",err)
-		os.Exit(1)
+		return err
 	}
 	if num_transactions == 0 {
 		if update_last_block {
