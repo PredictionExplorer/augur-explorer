@@ -151,6 +151,7 @@ func main() {
 	r.GET("/black/pool_swaps/:address",pool_swaps)
 	r.GET("/black/stbc/:market",sharetoken_balance_changes)
 	r.GET("/black/mkt_uniswaps/:market",market_uniswap_pairs)
+	r.GET("/black/uniswap_swaps/:address",uniswap_swaps)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -186,8 +187,11 @@ func main() {
 	r.GET("/api/wr_transfers/:address/:offset/:limit",a1_wrapped_token_transfers)
 	r.GET("/api/wr_vol/:address/:init_ts/:fin_ts/:interval_secs",a1_wrapped_token_volume)
 	r.GET("/api/pool_swaps/:address/:offset/:limit",a1_pool_swaps)
-	r.GET("/api/mkt_pool_vol/:market/:outcome/:init_ts/:fin_ts/:interval_secs",a1_pool_volume)
+	r.GET("/api/mkt_pool_vol/:market/:outcome/:init_ts/:fin_ts/:interval_secs",a1_balancer_volume)
 	r.GET("/api/mkt_stbc/:market/:offset/:limit",a1_market_share_token_balance_changes)
+	r.GET("/api/mkt_uniswaps/:market/",a1_market_uniswap_pairs)
+	r.GET("/api/uniswap_swaps/:address/:offset/:limit",a1_uniswap_pair_swaps)
+	r.GET("/api/mkt_uniswap_vol/:market/:outcome/:init_ts/:fin_ts/:interval_secs",a1_uniswap_volume)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

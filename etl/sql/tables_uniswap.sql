@@ -34,7 +34,7 @@ CREATE TABLE uswap2( -- shorter version of swap, splitting tokens for easier dat
 	uswap1_id			BIGINT NOT NULL,	-- parent record in 'uswap' table
 	aid					BIGINT NOT NULL,
 	token_aid			BIGINT NOT NULL,
-	amount				BIGINT NOT NULL	-- negative means 'in', positive 'out'
+	amount				DECIMAL(64,18) NOT NULL -- negative means 'in', positive 'out'
 );
 CREATE TABLE uswap_stats(
 	aid					BIGINT PRIMARY KEY,

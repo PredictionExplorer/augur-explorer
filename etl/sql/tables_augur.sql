@@ -112,7 +112,7 @@ CREATE TABLE volume (	-- this is the VolumeChanged event
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
 	total_trades		BIGINT DEFAULT 0,
-	volume				DECIMAL(24,18) NOT NULL,
+	volume				DECIMAL(64,18) NOT NULL,
 	outcome_vols		TEXT NOT NULL,		-- this his not numeric because it is not queried (archive only)
 	ins_timestamp		TIMESTAMPTZ NOT NULL
 );

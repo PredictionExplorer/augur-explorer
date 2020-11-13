@@ -194,11 +194,315 @@ func (ss *SQLStorage) Find_uniswap_transfer_events(tx_id int64) [][]byte {
 	}
 	return output
 }
-func (ss *SQLStorage) Get_market_uniswap_pairs(market_aid int64) {
+func (ss *SQLStorage) Get_market_uniswap_pairs(market_aid int64) []p.MarketUPair {
+
+	records := make([]p.MarketUPair,0,32)
+	var query string
+	query = "SELECT market_type,outcomes FROM market WHERE market_aid=$1"
+	res := ss.db.QueryRow(query,market_aid)
+	var outcomes string
+	var mkt_type int64
+	err := res.Scan(&mkt_type,&outcomes)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return records
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+	query = "SELECT " +
+				"ma.addr AS mkt_addr," +
+				"w.market_aid," +
+				"w.outcome_idx, " +
+				"p.pair_aid," +
+				"p.token0_aid," +
+				"p.token1_aid," +
+				"pa.addr AS pair_addr," +
+				"t0a.addr AS token0_addr," +
+				"t1a.addr AS token1_addr," +
+				"p.total_swaps, " +
+				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS created_ts, "+
+				"p.time_stamp," +
+				"inf0.decimals," +
+				"inf0.name," +
+				"inf0.symbol, " +
+				"inf1.decimals," +
+				"inf1.name," +
+				"inf1.symbol " +
+			"FROM af_wrapper AS w " +
+			"JOIN upair AS p ON (w.wrapper_aid = p.token0_aid) OR (w.wrapper_aid=p.token1_aid) " +
+			"LEFT JOIN address AS ma ON w.market_aid=ma.address_id " +
+			"LEFT JOIN address AS pa ON p.pair_aid=pa.address_id " +
+			"LEFT JOIN address AS t0a ON p.token0_aid=t0a.address_id " +
+			"LEFT JOIN address AS t1a ON p.token1_aid=t1a.address_id " +
+			"LEFT JOIN erc20_info AS inf0 ON p.token0_aid=inf0.aid " +
+			"LEFT JOIN erc20_info AS inf1 ON p.token1_aid=inf1.aid " +
+			"WHERE w.market_aid=$1 "
+
+	rows,err := ss.db.Query(query,market_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.MarketUPair
+		var decimals0,decimals1 sql.NullInt64
+		var name0,symbol0,name1,symbol1 sql.NullString
+		err=rows.Scan(
+			&rec.MktAddr,
+			&rec.MktAid,
+			&rec.OutcomeIdx,
+			&rec.PairAid,
+			&rec.Token0Aid,
+			&rec.Token1Aid,
+			&rec.PairAddr,
+			&rec.Token0Addr,
+			&rec.Token1Addr,
+			&rec.TotalSwaps,
+			&rec.CreatedTs,
+			&rec.CreatedDate,
+			&decimals0,
+			&name0,
+			&symbol0,
+			&decimals1,
+			&name1,
+			&symbol1,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		if decimals0.Valid {rec.Token0Decimals = decimals0.Int64	}
+		if decimals1.Valid {rec.Token1Decimals = decimals1.Int64 }
+		if name0.Valid { rec.Token0Name = name0.String }
+		if name1.Valid { rec.Token1Name = name1.String }
+		if symbol0.Valid { rec.Token0Symbol = symbol0.String }
+		if symbol1.Valid { rec.Token1Symbol = symbol1.String }
+		rec.Outcome = get_outcome_str(uint8(mkt_type),int(rec.OutcomeIdx),&outcomes)
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_uniswap_pair_info(pair_aid int64) (p.MarketUPair,error) {
 
 	var query string
 	query = "SELECT " +
-			"FROM af_wrapper AS w " +
-			"JOIN upair AS p ON w.wrapper_aid = p.pair_aid " +
+				"p.pair_aid," +
+				"p.token0_aid," +
+				"p.token1_aid," +
+				"pa.addr AS pair_addr," +
+				"t0a.addr AS token0_addr," +
+				"t1a.addr AS token1_addr," +
+				"p.total_swaps, " +
+				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS created_ts, "+
+				"p.time_stamp," +
+				"inf0.decimals," +
+				"inf0.name," +
+				"inf0.symbol, " +
+				"inf1.decimals," +
+				"inf1.name," +
+				"inf1.symbol " +
+			"FROM upair AS p " +
+			"LEFT JOIN address AS pa ON p.pair_aid=pa.address_id " +
+			"LEFT JOIN address AS t0a ON p.token0_aid=t0a.address_id " +
+			"LEFT JOIN address AS t1a ON p.token1_aid=t1a.address_id " +
+			"LEFT JOIN erc20_info AS inf0 ON p.token0_aid=inf0.aid " +
+			"LEFT JOIN erc20_info AS inf1 ON p.token1_aid=inf1.aid " +
+			"WHERE p.pair_aid=$1 "
 
+	res := ss.db.QueryRow(query,pair_aid)
+	var rec p.MarketUPair
+	var decimals0,decimals1 sql.NullInt64
+	var name0,symbol0,name1,symbol1 sql.NullString
+	err := res.Scan(
+		&rec.PairAid,
+		&rec.Token0Aid,
+		&rec.Token1Aid,
+		&rec.PairAddr,
+		&rec.Token0Addr,
+		&rec.Token1Addr,
+		&rec.TotalSwaps,
+		&rec.CreatedTs,
+		&rec.CreatedDate,
+		&decimals0,
+		&name0,
+		&symbol0,
+		&decimals1,
+		&name1,
+		&symbol1,
+	)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return rec,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	if decimals0.Valid {rec.Token0Decimals = decimals0.Int64	}
+	if decimals1.Valid {rec.Token1Decimals = decimals1.Int64 }
+	if name0.Valid { rec.Token0Name = name0.String }
+	if name1.Valid { rec.Token1Name = name1.String }
+	if symbol0.Valid { rec.Token0Symbol = symbol0.String }
+	if symbol1.Valid { rec.Token1Symbol = symbol1.String }
+	return rec,nil
+}
+func (ss *SQLStorage) Get_uniswap_swaps(pair_aid int64,offset int,limit int) []p.UniswapSwap {
+
+	records := make([]p.UniswapSwap,0,128)
+	var query string
+	query = "SELECT " +
+				"sw.block_num," +
+				"sw.amount0_in, " +
+				"sw.amount1_in," +
+				"sw.amount0_out," +
+				"sw.amount1_out," +
+				"sw.time_stamp," +
+				"EXTRACT(EPOCH FROM sw.time_stamp)::BIGINT AS created_ts, "+
+				"ra.addr AS recipient_addr," +
+				"sw.recipient_aid " +
+			"FROM uswap1 AS sw " +
+			"LEFT JOIN address AS ra ON sw.recipient_aid=ra.address_id " +
+			"WHERE sw.pair_aid=$1 " +
+			"ORDER BY sw.time_stamp DESC "+
+			"OFFSET $2 LIMIT $3"
+
+	rows,err := ss.db.Query(query,pair_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UniswapSwap
+		err=rows.Scan(
+			&rec.BlockNum,
+			&rec.Amount0_In,
+			&rec.Amount1_In,
+			&rec.Amount0_Out,
+			&rec.Amount1_Out,
+			&rec.CreatedDate,
+			&rec.CreatedTs,
+			&rec.RequesterAddr,
+			&rec.RequesterAid,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_uniswap_volume(market_aid int64,outc int,init_ts,fin_ts,interval int) []p.TradingVolume {
+
+	records := make([]p.TradingVolume,0,64)
+	var query string
+	query = "SELECT " +
+				"FLOOR(EXTRACT(EPOCH FROM sw.time_stamp))::BIGINT AS ts " +
+			"FROM uswap1 sw " +
+			"JOIN upair AS sp ON sw.pair_aid=sp.pair_aid " +
+			"JOIN af_wrapper w ON (sp.token0_aid=w.wrapper_aid) OR (sp.token1_aid=w.wrapper_aid)"+
+			"WHERE w.market_aid=$1 AND w.outcome_idx=$2 " +
+			"ORDER BY sw.time_stamp ASC LIMIT 1"
+
+	res := ss.db.QueryRow(query,market_aid,outc)
+	var null_ts sql.NullInt64
+	err := res.Scan(&null_ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		if null_ts.Valid {
+			if init_ts < int(null_ts.Int64) {
+				init_ts = int(null_ts.Int64)
+			}
+		}
+	}
+	query = "SELECT " +
+				"FLOOR(EXTRACT(EPOCH FROM sw.time_stamp))::BIGINT AS ts " +
+			"FROM uswap1 sw " +
+			"JOIN upair AS sp ON sw.pair_aid=sp.pair_aid " +
+			"JOIN af_wrapper w ON (sp.token0_aid=w.wrapper_aid) OR (sp.token1_aid=w.wrapper_aid) "+
+			"WHERE w.market_aid=$1 AND w.outcome_idx=$2 " +
+			"ORDER BY sw.time_stamp DESC LIMIT 1"
+
+	res = ss.db.QueryRow(query,market_aid,outc)
+	err = res.Scan(&null_ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		if null_ts.Valid {
+			if fin_ts > int(null_ts.Int64) {
+				fin_ts = int(null_ts.Int64)
+			}
+		}
+	}
+
+	query = 
+			"WITH periods AS (" +
+				"SELECT * FROM (" +
+					"SELECT " +
+						"generate_series AS start_ts,"+
+						"TO_TIMESTAMP(EXTRACT(EPOCH FROM generate_series) + $3) AS end_ts "+
+					"FROM (" +
+						"SELECT * " +
+							"FROM generate_series(" +
+								"TO_TIMESTAMP($1)," +
+								"TO_TIMESTAMP($2)," +
+								"TO_TIMESTAMP($3)-TO_TIMESTAMP(0)) " +
+					") AS i" +
+				") AS data " +
+			") " +
+			"SELECT " +
+				"COALESCE(COUNT(sw.id),0) as num_rows, " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
+				"SUM(ABS(amount)) AS volume " +
+			"FROM periods AS p " +
+				"LEFT JOIN (" +
+						"SELECT s.id,(amount*POWER(10,3)) AS amount,s.time_stamp AS ts " +
+						"FROM uswap2 s " +
+						"JOIN af_wrapper w ON s.token_aid=w.wrapper_aid " +
+						"WHERE w.market_aid=$4 AND w.outcome_idx=$5 " +
+				") AS sw ON " +
+					"p.start_ts <= sw.ts AND "+
+					"sw.ts < p.end_ts " +
+			"GROUP BY start_ts " +
+			"ORDER BY start_ts"
+
+	rows,err := ss.db.Query(query,init_ts,fin_ts,interval,market_aid,outc)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.TradingVolume
+		var null_amount sql.NullFloat64
+		var null_ts,null_num_rows sql.NullInt64
+		rows.Scan(&null_num_rows,&null_ts,&null_amount)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
+			os.Exit(1)
+		}
+		if null_num_rows.Valid {
+			rec.NumRecords = null_num_rows.Int64
+		}
+		if null_amount.Valid {
+			rec.Amount= null_amount.Float64
+		}
+		if null_ts.Valid {
+			rec.TimeStamp= null_ts.Int64
+		}
+		records = append(records,rec)
+	}
+	return records
 }

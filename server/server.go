@@ -1325,4 +1325,37 @@ func market_uniswap_pairs(c *gin.Context) {
 	if !valid {
 		return
 	}
+	minfo,err := augur_srv.storage.Get_market_info(market_addr,0,false)
+	if err != nil {
+		show_market_not_found_error(c,false,&market_addr)
+		return
+	}
+	pairs := augur_srv.storage.Get_market_uniswap_pairs(minfo.MktAid)
+	c.HTML(http.StatusOK, "market_upairs.html", gin.H{
+			"Market" : minfo,
+			"MarketUniswapPairs": pairs,
+	})
+
+}
+func uniswap_swaps(c *gin.Context) {
+
+	address:= c.Param("address")
+	addr,valid := is_address_valid(c,false,address)
+	if !valid {
+		return
+	}
+	aid,err := augur_srv.storage.Nonfatal_lookup_address_id(addr)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Such address wasn't found: %v",address),
+		})
+		return
+	}
+	pair_info,_:= augur_srv.storage.Get_uniswap_pair_info(aid)
+	swaps := augur_srv.storage.Get_uniswap_swaps(aid,0,200)
+	c.HTML(http.StatusOK, "uniswap_swaps.html", gin.H{
+			"PairInfo" : pair_info,
+			"PairSwaps" : swaps,
+	})
 }

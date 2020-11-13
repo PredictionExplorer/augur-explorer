@@ -1,0 +1,36 @@
+<html>
+<head>
+	<link href="../res/main.css" rel="stylesheet">
+	<title>Uniswap Pairs for Market {{.Market.MktAddr}}</title>
+	<meta name="description" content="{{.Market.Description}}">
+</head>
+<body>
+	<h3 class="page_title">Uniswap Pairs for Market{{.Market.MktAddr}}</h3>
+	<p>{{.Market.Description}}</p>
+<h3>Uniswap Pairs</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Date Created</th>
+		<th class="market_reports">Pair Address</th>
+		<td class="market_reports">Token1</th>
+		<td class="market_reports">Token2</th>
+		<td class="market_reports">Outcome</th>
+		<td class="market_reports">Swaps</th>
+	</tr>
+	{{- range $i, $change := .MarketUniswapPairs }}
+		<tr class="market_reports">
+			<td class="market_reports_field">
+				{{.CreatedDate}}
+			</td>
+			<td class="market_reports_field">
+				<a class="link" href="../uniswap_swaps/{{.PairAddr}}">{{.PairAddr}}</a>
+			</td>
+			<td class="market_reports_field">{{.Token0Addr}}<br/>{{.Token0Name}}<br/>{{.Token0Symbol}}</td>
+			<td class="market_reports_field">{{.Token1Addr}}<br/>{{.Token1Name}}<br/>{{.Token1Symbol}}</td>
+			<td class="market_reports_field">{{.Outcome}} ({{.OutcomeIdx}})</td>
+			<td class="market_reports_field">{{.TotalSwaps}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>

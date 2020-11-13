@@ -830,7 +830,7 @@ func a1_market_share_token_balance_changes(c *gin.Context) {
 			"error": "",
 	})
 }
-func a1_pool_volume(c *gin.Context) {
+func a1_balancer_volume(c *gin.Context) {
 
 	p_market := c.Param("market")
 	_,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
@@ -845,7 +845,7 @@ func a1_pool_volume(c *gin.Context) {
 	if !success {
 		return
 	}
-	volume := augur_srv.storage.Get_balancer_pool_volume(market_aid,outcome_idx,init_ts,fin_ts,interval_secs)
+	volume := augur_srv.storage.Get_balancer_volume(market_aid,outcome_idx,init_ts,fin_ts,interval_secs)
 
 	c.JSON(http.StatusOK,gin.H{
 			"AllPoolsVolume": volume,
@@ -874,6 +874,70 @@ func a1_wrapped_token_volume(c *gin.Context) {
 			"Volume": volume,
 			"WrapperAid" : wrapper_aid,
 			"WrapperAddr" : p_wrapper,
+			"status": 1 ,
+			"error": "",
+	})
+
+}
+func a1_market_uniswap_pairs(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_market:= c.Param("market")
+	market_addr,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	if !success {
+		return
+	}
+
+	pairs := augur_srv.storage.Get_market_uniswap_pairs(market_aid)
+	c.JSON(http.StatusOK,gin.H{
+		"MktAid": market_aid,
+		"MktAddr" :market_addr,
+		"MarketUniswapPairs": pairs,
+		"status": 1,
+		"error": "",
+	})
+}
+func a1_uniswap_pair_swaps(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_address:= c.Param("address")
+	_,pair_aid,success := json_validate_and_lookup_address_or_aid(c,&p_address)
+	if !success {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+
+	pair_info,_ := augur_srv.storage.Get_uniswap_pair_info(pair_aid)
+	swaps := augur_srv.storage.Get_uniswap_swaps(pair_aid,offset,limit)
+	c.JSON(http.StatusOK, gin.H{
+			"PairInfo" : pair_info,
+			"PairSwaps" : swaps,
+	})
+}
+func a1_uniswap_volume(c *gin.Context) {
+
+	p_market := c.Param("market")
+	_,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	if !success {
+		return
+	}
+	success,outcome_idx:= parse_outcome_param(c)
+	if !success {
+		return
+	}
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+	volume := augur_srv.storage.Get_uniswap_volume(market_aid,outcome_idx,init_ts,fin_ts,interval_secs)
+
+	c.JSON(http.StatusOK,gin.H{
+			"AllPairsVolume": volume,
+			"MktAid" : market_aid,
+			"MktAddr" : p_market,
+			"OutcomeIdx" : outcome_idx,
 			"status": 1 ,
 			"error": "",
 	})

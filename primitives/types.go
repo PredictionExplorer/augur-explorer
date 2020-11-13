@@ -1040,3 +1040,35 @@ type BasicChainInfo struct { // piece of common information for storing in table
 	EvtId					int64
 	TimeStamp				int64
 }
+type MarketUPair struct { // Uniswap Pair where the Market can be traded
+	MktAid					int64
+	OutcomeIdx				int64
+	PairAid					int64
+	Token0Aid				int64
+	Token1Aid				int64
+	TotalSwaps				int64
+	CreatedTs				int64
+	Token0Decimals			int64
+	Token1Decimals			int64
+	Outcome					string
+	MktAddr					string
+	CreatedDate				string
+	PairAddr				string
+	Token0Addr				string
+	Token1Addr				string
+	Token0Name				string
+	Token1Name				string
+	Token0Symbol			string
+	Token1Symbol			string
+}
+type UniswapSwap struct {
+	BlockNum				int64
+	RequesterAid			int64
+	CreatedTs				int64
+	Amount0_In				float64
+	Amount1_In				float64
+	Amount0_Out				float64
+	Amount1_Out				float64
+	CreatedDate				string
+	RequesterAddr			string
+}

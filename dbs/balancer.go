@@ -824,7 +824,7 @@ func (ss *SQLStorage) Is_address_balancer_pool(addr string) bool {
 	}
 	return true
 }
-func (ss *SQLStorage) Get_balancer_pool_volume(market_aid int64,outc int,init_ts,fin_ts,interval int) []p.TradingVolume {
+func (ss *SQLStorage) Get_balancer_volume(market_aid int64,outc int,init_ts,fin_ts,interval int) []p.TradingVolume {
 
 	records := make([]p.TradingVolume,0,64)
 	var query string

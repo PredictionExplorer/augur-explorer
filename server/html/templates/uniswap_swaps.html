@@ -1,0 +1,52 @@
+<html>
+<head>
+	<link href="../res/main.css" rel="stylesheet">
+	<title>Uniswap Swaps {{.PairInfo.PairAddr}}</title>
+</head>
+<body>
+	<h3 class="page_title">Swaps of {{.PoolInfo.PoolAddr}}</h3>
+<table class="market_detail">
+<tr>
+	<td>Pair Address:</td>
+	<td>{{.PairInfo.PairAddr}}</td>
+</tr>
+<tr>
+	<td>Token1:</td>
+	<td>{{.PairInfo.Token0Addr}} / {{.PairInfo.Token0Symbol}} / {{.PairInfo.Token0Name}}</td>
+</tr>
+<tr>
+	<td>Token2:</td>
+	<td>{{.PairInfo.Token0Addr}} / {{.PairInfo.Token1Symbol}} / {{.PairInfo.Token1Name}}</td>
+</tr>
+<tr>
+	<td>Created</td>
+	<td>{{.PairInfo.CreatedDate}}<td>
+</tr>
+<tr>
+	<td>Total Swaps</td>
+	<td>{{.PairInfo.TotalSwaps}}</td>
+</tr>
+</table>
+<h3>Pair Swaps</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Date</th>
+		<th class="market_reports">Amount0 In</th>
+		<td class="market_reports">Amount1 In</th>
+		<td class="market_reports">Amount0 Out</th>
+		<td class="market_reports">Amount1 Out</th>
+		<td class="market_reports">Requester</th>
+	</tr>
+	{{- range $i, $change := .PairSwaps}}
+		<tr class="market_reports">
+			<td class="market_reports_field">{{.CreatedDate}}</td>
+			<td class="market_reports_field">{{.Amount0_In}}</td>
+			<td class="market_reports_field">{{.Amount1_In}}</td>
+			<td class="market_reports_field">{{.Amount0_Out}}</td>
+			<td class="market_reports_field">{{.Amount1_Out}}</td>
+			<td class="market_reports_field">{{.RequesterAddr}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>
