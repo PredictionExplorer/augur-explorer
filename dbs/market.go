@@ -332,9 +332,7 @@ func (ss *SQLStorage) get_market_type_and_ticks(market_aid int64) (int,int64,err
 func (ss *SQLStorage) Get_market_price_range(market_aid int64) (float64,error) {
 
 	var query string
-	query = "SELECT " +
-				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim " +
-			"FROM market WHERE market_aid=$1"
+	query = "SELECT lo_price FROM market WHERE market_aid=$1"
 
 	var lo_price sql.NullFloat64
 	err:=ss.db.QueryRow(query,market_aid).Scan(&lo_price);
@@ -713,8 +711,6 @@ func (ss *SQLStorage) Get_market_card_data(id int64) (p.InfoMarket,error) {
 				"no_show_bond," +
 				"validity_bond," +
 				"cur_volume AS volume, " +
-//				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim, " +
-//				"split_part(prices,',',2)::decimal/1e+18 AS high_price_lim " +
 				"lo_price," +
 				"hi_price "+
 			"FROM market as m " +
@@ -897,8 +893,6 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				"cur_volume AS volume, " +
 				"total_trades," +
 				"money_at_stake, " +
-//				"split_part(prices,',',1)::decimal/1e+18 AS low_price_lim, " +
-//				"split_part(prices,',',2)::decimal/1e+18 AS high_price_lim " +
 				"lo_price," +
 				"hi_price " +
 			"FROM market as m " +

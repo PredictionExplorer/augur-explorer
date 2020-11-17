@@ -1007,6 +1007,8 @@ type PoolInfo struct {
 	CreatedTs				int64
 	FinalizedTs				int64
 	NumTokens				int
+	IsPublic				bool
+	WasFinalized			bool
 	UsdLiquidity			float64
 	SwapFee					float64
 	PoolAddr				string

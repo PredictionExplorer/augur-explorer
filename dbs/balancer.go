@@ -748,6 +748,8 @@ func (ss *SQLStorage) Get_market_balancer_pools(market_aid int64) []p.PoolInfo {
 				"p.num_holders,"+
 				"p.num_tokens," +
 				"p.swap_fee," +
+				"p.is_public," +
+				"(p.was_finalized>0),"+
 				"EXTRACT(EPOCH FROM p.went_public_ts)::BIGINT, " +
 				"EXTRACT(EPOCH FROM p.finalized_ts)::BIGINT, " +
 				"p.usd_liquidity " +
@@ -772,6 +774,8 @@ func (ss *SQLStorage) Get_market_balancer_pools(market_aid int64) []p.PoolInfo {
 			&rec.NumHolders,
 			&rec.NumTokens,
 			&rec.SwapFee,
+			&rec.IsPublic,
+			&rec.WasFinalized,
 			&rec.WentPublicTs,
 			&rec.FinalizedTs,
 			&rec.UsdLiquidity,

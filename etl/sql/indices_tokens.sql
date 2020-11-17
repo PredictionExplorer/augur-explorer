@@ -7,3 +7,9 @@ CREATE INDEX rep_idx				ON	rep_transf		(evtlog_id);
 
 -- other indices
 CREATE INDEX daib_processed_idx		ON dai_bal			(processed);
+
+-- 
+CREATE INDEX wstok_from_idx			ON wstok_transf		(from_aid);
+CREATE INDEX wstok_to_idx			ON wstok_transf		(to_aid);
+CREATE INDEX wstok_wrapper_aid_idx	ON wstok_transf		(wrapper_aid);
+CREATE INDEX wstok_market_aid_idx	ON wstok_transf		(market_aid);

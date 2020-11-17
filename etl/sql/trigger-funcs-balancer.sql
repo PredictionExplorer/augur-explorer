@@ -284,7 +284,9 @@ BEGIN
 	UPDATE bpool
 		SET
 			was_finalized = NEW.block_num,
-			finalized_ts = NEW.time_stamp
+			finalized_ts = NEW.time_stamp,
+			went_public = NEW.block_num,	-- 'finalized' implies 'public'
+			went_public_ts = NEW.time_stamp
 		WHERE pool_aid = NEW.pool_aid;
 	RETURN NEW;
 END;
