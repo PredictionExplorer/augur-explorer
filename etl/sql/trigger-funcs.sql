@@ -118,6 +118,7 @@ BEGIN
 	END IF;
 
 	UPDATE category set total_markets = (total_markets + 1) WHERE cat_id=NEW.cat_id;
+	PERFORM insert_search_tokens(NEW.market_aid,NEW.extra_info::json->>'description',NEW.extra_info::json->'categories');
 
 	RETURN NEW;
 END;
@@ -150,6 +151,7 @@ BEGIN
 	END IF;
 
 	UPDATE category set total_markets = (total_markets - 1) WHERE cat_id=OLD.cat_id;
+	PERFORM delete_search_tokens(OLD.market_aid);
 
 	RETURN OLD;
 END;
@@ -964,5 +966,30 @@ DECLARE
 BEGIN
 
 	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION insert_search_tokens(p_market_aid bigint,p_cat_id bigint,p_desc TEXT,p_categ TEXT) RETURNS void AS  $$
+DECLARE
+	v_categ text;
+BEGIN
+
+	v_categ := replace(replace(replace(p_categ,'"',' '),'[',''),']','');
+
+	RAISE NOTICE 'Insert category %',p_cat_id;
+	INSERT INTO mkt_words(cat_id,tok_type,tokens)
+		VALUES(p_cat_id,1,setweight(to_tsvector(coalesce(v_categ,'')),'A'))
+		ON CONFLICT DO NOTHING;
+	RAISE NOTICE 'Insert market %v',p_market_aid;
+	INSERT INTO mkt_words(market_aid,tok_type,tokens)
+		VALUES(p_market_aid,0,setweight(to_tsvector(coalesce(p_desc,'')),'D'))
+		ON CONFLICT DO NOTHING;
+
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION delete_search_tokens(p_market_aid bigint) RETURNS VOID AS  $$
+DECLARE
+BEGIN
+
+	DELETE from mkt_words WHERE market_aid=p_market_aid;
 END;
 $$ LANGUAGE plpgsql;

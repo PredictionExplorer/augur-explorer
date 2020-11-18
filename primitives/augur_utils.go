@@ -3,6 +3,8 @@ package primitives
 import (
 	"math/big"
 	"bytes"
+	"errors"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -61,32 +63,61 @@ func Fetch_erc20_info(client *ethclient.Client,contract_address *common.Address)
 
 	contract,err := NewERC20Wrapper(*contract_address,client)
 	if err != nil {
-		return erc20Info,err
+		return erc20Info,errors.New(fmt.Sprintf("NewERC20Wrapper error: %v",err))
 	}
 
 	total_supply,err := contract.TotalSupply(copts)
 	if err != nil {
-		return erc20Info,err
+		return erc20Info,errors.New(fmt.Sprintf("TotalSupply() error: %v",err))
 	}
 	erc20Info.TotalSupply = total_supply.String()
 
 	decimals,err := contract.Decimals(copts)
 	if err != nil {
-		return erc20Info,err
+		erc20Info.Decimals = 18
+	} else {
+		erc20Info.Decimals = int(decimals)
 	}
-	erc20Info.Decimals = int(decimals)
-
-	name,err := contract.Name(copts)
-	if err != nil {
-		return erc20Info,err
-	}
-	erc20Info.Name = name
 
 	symbol,err := contract.Symbol(copts)
 	if err != nil {
-		return erc20Info,err
+		old_contract,err := NewOldERC20Token(*contract_address,client)
+		if err != nil {
+			return erc20Info,errors.New(fmt.Sprintf("OldERC20Token instantiation error: %v",err))
+		}
+		byte_symbol,err := old_contract.Symbol(copts)
+		if err != nil {
+			//return erc20Info,errors.New(fmt.Sprintf("Symbol() old version error: %v",err))
+		} else {
+			length := bytes.Index(byte_symbol[:], []byte{0})
+			if length == -1 {
+				length = 32
+			}
+			erc20Info.Symbol = string(byte_symbol[:length])
+		}
+	} else {
+		erc20Info.Symbol = symbol
 	}
-	erc20Info.Symbol = symbol
+
+	name,err := contract.Name(copts)
+	if err != nil {
+		old_contract,err := NewOldERC20Token(*contract_address,client)
+		if err != nil {
+			return erc20Info,errors.New(fmt.Sprintf("OldERC20Token instantiation error: %v",err))
+		}
+		byte_name,err := old_contract.Name(copts)
+		if err != nil {
+			//return erc20Info,errors.New(fmt.Sprintf("Name() old version error: %v",err))
+		} else {
+			length := bytes.Index(byte_name[:], []byte{0})
+			if length == -1 {
+				length = 32
+			}
+			erc20Info.Name = string(byte_name[:length])
+		}
+	} else {
+		erc20Info.Name = name
+	}
 
 	return erc20Info,nil
 }

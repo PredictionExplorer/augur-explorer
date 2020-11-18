@@ -107,6 +107,35 @@ func (ss *SQLStorage) Pair_exists(pair_addr string) bool {
 	}
 	return true
 }
+func (ss *SQLStorage) Get_pair_tokens(pair_addr string) (p.UPairTokens,error) {
+
+	var query string
+	query = "SELECT t0a.addr,t1a.addr,inf0.decimals,inf1.decimals " +
+			"FROM upair AS p " +
+			"JOIN address AS a ON p.pair_aid=a.address_id " +
+			"JOIN address AS t0a ON p.token0_aid=t0a.address_id " +
+			"JOIN address AS t1a ON p.token1_aid=t1a.address_id " +
+			"LEFT JOIN erc20_info AS inf0 ON inf0.aid=p.token0_aid " +
+			"LEFT JOIN erc20_info AS inf1 ON inf1.aid=p.token1_aid " +
+			"WHERE a.addr=$1 AND a.address_id=p.pair_aid"
+	row := ss.db.QueryRow(query,pair_addr)
+	var err error
+	var ptoks p.UPairTokens
+	var decimals0,decimals1 sql.NullInt64
+	var t0addr,t1addr string
+	err=row.Scan(&t0addr,&t1addr,&decimals0,&decimals1)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return ptoks,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	ptoks.Token0Addr = common.HexToAddress(t0addr)
+	ptoks.Token1Addr = common.HexToAddress(t1addr)
+	return ptoks,nil
+}
 func (ss *SQLStorage) Insert_uniswap_pair_swap_evt(pair *common.Address,bci *p.BasicChainInfo,evt *p.UPairSwap) {
 
 	// sender and recipient do not contain meaningful data, it is the contract address
@@ -128,7 +157,10 @@ func (ss *SQLStorage) Insert_uniswap_pair_swap_evt(pair *common.Address,bci *p.B
 			") VALUES (" +
 				"$1,$2,$3,TO_TIMESTAMP($4),"+
 				"$5,$6,$7,"+
-				"$8::DECIMAL/1e+18,$9::DECIMAL/1e+18,$10::DECIMAL/1e+18,$11::DECIMAL/1e+18" +
+				"$8::DECIMAL/1e+"+fmt.Sprintf("%v",evt.Decimals0)+"," +
+				"$9::DECIMAL/1e+"+fmt.Sprintf("%v",evt.Decimals1)+"," +
+				"$10::DECIMAL/1e+"+fmt.Sprintf("%v",evt.Decimals0)+"," +
+				"$11::DECIMAL/1e+"+fmt.Sprintf("%v",evt.Decimals1)+"" +
 			")"
 
 	_,err := ss.db.Exec(query,

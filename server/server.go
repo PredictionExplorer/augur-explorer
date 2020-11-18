@@ -1359,3 +1359,23 @@ func uniswap_swaps(c *gin.Context) {
 			"PairSwaps" : swaps,
 	})
 }
+func do_text_search(c *gin.Context) {
+
+	keywords := c.Query("keywords")
+	if len(keywords) == 0 {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Empty search query"),
+		})
+		return
+	}
+	search_results := augur_srv.storage.Search_keywords_in_markets(keywords)
+	c.HTML(http.StatusOK, "text_search_results.html", gin.H{
+			"SearchResults" : search_results,
+	})
+}
+func show_text_search_form(c *gin.Context) {
+
+	c.HTML(http.StatusOK, "text_search_form.html", gin.H{
+	})
+}

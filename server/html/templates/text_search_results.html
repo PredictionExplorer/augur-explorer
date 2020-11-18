@@ -1,0 +1,38 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="../black/res/main.css" rel="stylesheet">
+</head>
+<body>
+<h3 class="page_title">Search results</h3>
+<br/><br/><br/>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Text</th>
+		<th class="market_reports">Object type</th>
+		<td class="market_reports">Object</th>
+	</tr>
+	{{- range $i, $change := .SearchResults}}
+		<tr class="market_reports">
+			<td class="market_reports_field">{{.MktDescription}} with volume of {{.Volume }} / {{.Category}} {{ if ne .CatId 0 }} with {{.TotalMarkets}} markets {{ end }}</td>
+			<td class="market_reports_field">{{.ObjType}}</td>
+			<td class="market_reports_field">
+				{{ if eq 0 .ObjType }}
+					<a class="addr" href="/black/market/{{.MktAddr}}">{{.MktAddr}}</a>
+				{{ else }}
+					<a class="addr" href="/black/category/{{.CatId}}">{{.Category}}</a>
+				{{ end }}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="../index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

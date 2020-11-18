@@ -413,3 +413,10 @@ CREATE TABLE sbalances (
 	outcome_idx			SMALLINT NOT NULL,				-- market outcome (index)
 	balance				DECIMAL(24,18) NOT NULL		-- balance of shares (bigint as string)
 );
+CREATE TABLE mkt_words(-- search tokens for searching markets by description/category
+	id					BIGSERIAL PRIMARY KEY,
+	market_aid			BIGINT,
+	cat_id				BIGINT,
+	tok_type			SMALLINT DEFAULT 0,				-- 0-market 1 - category
+	tokens				TSVECTOR
+);

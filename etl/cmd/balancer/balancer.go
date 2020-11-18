@@ -71,20 +71,21 @@ var (
 	bpool_abi abi.ABI
 
 )
-func fetch_and_store_erc20_info(token_addr common.Address) {
+func fetch_and_store_erc20_info(token_addr common.Address) (int,error) {
 	// note: this func is called as goroutine for speed. however duplicate calls can occur,
 	//		which are prevented with DO NOTHING on conflict in the INSERT query
-	found,_ := storage.Get_ERC20Info(token_addr.String())
+	found,info := storage.Get_ERC20Info(token_addr.String())
 	if found {
-		return
+		return info.Decimals,nil
 	}
 	erc20_info,err := Fetch_erc20_info(eclient,&token_addr)
 	if err != nil {
 		Error.Printf("Couldn't fetch ERC20 token info for addr %v : %v\n",token_addr.String(),err)
-		return
+		return 0,err
 	}
 	erc20_info.Address = token_addr.String()
 	storage.Insert_ERC20Info(&erc20_info)
+	return erc20_info.Decimals,nil
 }
 func build_list_of_inspected_events(pool,factory,exchange string) []InspectedEvent {
 
@@ -188,7 +189,7 @@ func remove_duplicates(nums []int64) int {
 	}
 	return j
 }
-func execute_event(e *EthereumEventLog,log *types.Log) {
+func execute_event(e *EthereumEventLog,log *types.Log) error {
 	tx_hash,_,err := storage.Get_tx_hash_by_id(e.TxId)
 	if err != nil {
 		Error.Printf("Couldn't get tx record from DB: %v\n",err)
@@ -305,6 +306,16 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 		evt.AmountIn = swapevt.TokenAmountIn.String()
 		evt.AmountOut = swapevt.TokenAmountOut.String()
 		Info.Printf("Inserting pool SWAP event of caller %v from pool %v\n",caller.String(),evt.PoolAddr)
+		evt.DecimalsIn,err = fetch_and_store_erc20_info(token_in)
+		if err != nil {
+			Error.Printf("Can't process swap event, decimals for token_in (%v) are unknown: %v\n",token_in.String(),err)
+			return err
+		}
+		evt.DecimalsOut,err = fetch_and_store_erc20_info(token_out)
+		if err != nil {
+			Error.Printf("Can't process swap event, decimals for token_in (%v) are unknown: %v\n",token_out.String(),err)
+			return err
+		}
 		storage.Delete_balancer_swap_evt(evt.EvtId)
 		storage.Insert_balancer_swap_evt(&evt)
 	}
@@ -315,7 +326,7 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 	var offset int = 32+32+4// first 32 - big.Int size; second 32 - length of Input; 4 - signature size
 	if bytes.Equal(log.Topics[0].Bytes()[:4],b_balancer_set_swap_fee) {
 		if !storage.Is_address_balancer_pool(log.Address.String()) {
-			return
+			return nil
 		}
 		//Info.Printf("setfee: Data= %v\n",hex.EncodeToString(log.Data))
 		fee := big.NewInt(0)
@@ -333,7 +344,7 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 	}
 	if bytes.Equal(log.Topics[0].Bytes()[:4],b_balancer_set_controller) {
 		if !storage.Is_address_balancer_pool(log.Address.String()) {
-			return
+			return nil
 		}
 		controller := common.BytesToAddress(log.Data[offset+12:offset+32])
 		var c SetController
@@ -349,7 +360,7 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 	if bytes.Equal(log.Topics[0].Bytes()[:4],b_balancer_set_public_swap) {
 		
 		if !storage.Is_address_balancer_pool(log.Address.String()) {
-			return
+			return nil
 		}
 		var p SetPublic
 		p.EvtId = e.EvtId
@@ -367,7 +378,7 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 	}
 	if bytes.Equal(log.Topics[0].Bytes()[:4],b_balancer_finalize) {
 		if !storage.Is_address_balancer_pool(log.Address.String()) {
-			return
+			return nil
 		}
 		var f Finalize 
 		f.EvtId = e.EvtId
@@ -380,7 +391,7 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 	}
 	if bytes.Equal(log.Topics[0].Bytes()[:4],b_balancer_bind) {
 		if !storage.Is_address_balancer_pool(log.Address.String()) {
-			return
+			return nil
 		}
 		Info.Printf("bind: Data= %v\n",hex.EncodeToString(log.Data))
 		token := common.BytesToAddress(log.Data[offset+12:offset+32])
@@ -403,7 +414,7 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 	}
 	if bytes.Equal(log.Topics[0].Bytes()[:4],b_balancer_unbind) {
 		if !storage.Is_address_balancer_pool(log.Address.String()) {
-			return
+			return nil
 		}
 		token := common.BytesToAddress(log.Data[offset+12:offset+32])
 		var u PoolUnBind
@@ -419,7 +430,7 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 	if bytes.Equal(log.Topics[0].Bytes()[:4],b_balancer_rebind) {
 		
 		if !storage.Is_address_balancer_pool(log.Address.String()) {
-			return
+			return nil
 		}
 		token := common.BytesToAddress(log.Data[offset+12:offset+32])
 		balance := big.NewInt(0)
@@ -440,7 +451,7 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 	}
 	if bytes.Equal(log.Topics[0].Bytes()[:4],b_balancer_gulp) {
 		if !storage.Is_address_balancer_pool(log.Address.String()) {
-			return
+			return nil
 		}
 
 		token := common.BytesToAddress(log.Data[offset+12:offset+32])
@@ -454,20 +465,21 @@ func execute_event(e *EthereumEventLog,log *types.Log) {
 		storage.Delete_pool_gulp(e.EvtId)
 		storage.Insert_pool_gulp(&g)
 	}
+	return nil
 }
-func process_balancer_event(evt_id int64) {
+func process_balancer_event(evt_id int64) error {
 
 	Info.Printf("Processing event id=%v\n",evt_id)
 	evtlog := storage.Get_event_log(evt_id)
 	var log types.Log
 	rlp.DecodeBytes(evtlog.RlpLog,&log)
-	execute_event(&evtlog,&log)
+	return execute_event(&evtlog,&log)
 }
 func process_balancer(exit_chan chan bool) {
 
-	status := storage.Get_balancer_status()
 	var max_batch_size int64 = 1024*100
 	for {
+		status := storage.Get_balancer_status()
 		select {
 			case exit_flag := <-exit_chan:
 				if exit_flag {
@@ -488,7 +500,12 @@ func process_balancer(exit_chan chan bool) {
 		}
 		events := get_event_ids(status.LastEvtId,id_upper_limit)
 		for _,evt_id := range events {
-			process_balancer_event(evt_id)
+			err := process_balancer_event(evt_id)
+			if err != nil {
+				Error.Printf("Pausing event processing loop for 5 sec due to error")
+				time.Sleep(5 * time.Second)
+				break
+			}
 			status.LastEvtId=evt_id
 			storage.Update_balancer_status(&status)
 		}

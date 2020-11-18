@@ -64,3 +64,16 @@ BEGIN
 	END LOOP;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION update_all_search_tokens() RETURNS void AS  $$
+DECLARE
+	v_rec record;
+BEGIN
+
+--	SELECT block_num FROM block ORDER BY block_num LIMIT 1 INTO v_first_block;
+	FOR v_rec IN (SELECT cat_id,market_aid,extra_info FROM market AS m)
+	LOOP
+		PERFORM delete_search_tokens(v_rec.market_aid);
+		PERFORM insert_search_tokens(v_rec.market_aid,v_rec.cat_id,v_rec.extra_info::json->>'description',v_rec.extra_info::json->>'categories');
+	END LOOP;
+END;
+$$ LANGUAGE plpgsql;

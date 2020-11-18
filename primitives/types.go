@@ -880,6 +880,8 @@ type BalancerSwap struct {
 	TokenOutAid				int64
 	AmountInF				float64
 	AmountOutF				float64
+	DecimalsIn				int
+	DecimalsOut				int
 	PoolAddr				string
 	CallerAddr				string
 	TokenInAddr				string
@@ -1073,4 +1075,21 @@ type UniswapSwap struct {
 	Amount1_Out				float64
 	CreatedDate				string
 	RequesterAddr			string
+}
+type TextSearchResult struct {
+	ObjType					int
+	CatId					int64
+	MktAid					int64
+	TotalMarkets			int64
+	Volume					float64
+	MktAddr					string
+	MktDescription			string
+	Category				string
+}
+type UPairTokens struct {
+	Decimals0				int
+	Decimals1				int
+	Token0Addr				common.Address
+	Token1Addr				common.Address
+
 }

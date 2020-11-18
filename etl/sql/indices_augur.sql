@@ -52,3 +52,7 @@ CREATE INDEX exec_wtx_referral_idx	ON exec_wtx			(referral_aid);
 CREATE INDEX exec_wtx_to_idx		ON exec_wtx			(to_aid);
 CREATE INDEX mktord_ts_idx			ON mktord			(time_stamp);
 CREATE UNIQUE INDEX pldebug_uniq	ON pl_debug			(block_num,market_aid,aid,outcome_idx);
+CREATE INDEX mkt_tsv_idx			ON mkt_words		USING gin(tokens);
+CREATE UNIQUE INDEX mktwrds_uniq1	ON mkt_words		(market_aid) WHERE market_aid IS NOT NULL;
+CREATE UNIQUE INDEX mktwrds_uniq2	ON mkt_words		(cat_id) WHERE cat_id IS NOT NULL;
+

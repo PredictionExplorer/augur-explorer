@@ -280,11 +280,13 @@ type UPairCreated struct {
 	Raw    types.Log // Blockchain specific contextual infos
 }
 type UPairSwap struct {
-	Sender			common.Address
-	Amount0In		*big.Int
-	Amount1In		*big.Int
-	Amount0Out		*big.Int
-	Amount1Out		*big.Int
-	To				common.Address
-	Raw				types.Log // Blockchain specific contextual infos
+	Decimals0				int
+	Decimals1				int
+	Sender					common.Address
+	Amount0In				*big.Int
+	Amount1In				*big.Int
+	Amount0Out				*big.Int
+	Amount1Out				*big.Int
+	To						common.Address
+	Raw						types.Log // Blockchain specific contextual infos
 }

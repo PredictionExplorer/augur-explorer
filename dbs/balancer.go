@@ -165,7 +165,11 @@ func (ss *SQLStorage) Insert_balancer_swap_evt(evt *p.BalancerSwap) {
 	query = "INSERT INTO bswap (" +
 				"evtlog_id,block_num,tx_id,time_stamp,pool_aid,caller_aid,"+
 				"token_in_aid,token_out_aid,amount_in,amount_out" +
-			") VALUES ($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9::DECIMAL/1e+18,$10::DECIMAL/1e+18)"
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,"+
+				"$9::DECIMAL/1e+" + fmt.Sprintf("%v",evt.DecimalsIn) + "," +
+				"$10::DECIMAL/1e+" + fmt.Sprintf("%v",evt.DecimalsOut) +
+			")"
 
 	_,err := ss.db.Exec(query,
 		evt.EvtId,
