@@ -338,7 +338,7 @@ func (ss *SQLStorage) Get_block_info(block_num int64) (p.BlockInfo,error) {
 	// get MARKETS
 	query = "SELECT a.addr,u.addr FROM market m " +
 			"LEFT JOIN address a ON m.market_aid=a.address_id " +
-			"LEFT JOIN address u ON m.aid=u.address_id " +
+			"LEFT JOIN address u ON m.creator_aid=u.address_id " +
 			"WHERE m.block_num = $1"
 
 	rows,err = ss.db.Query(query,block_num)

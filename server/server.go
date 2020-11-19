@@ -6,10 +6,9 @@ import (
 	"net/http"
 	"encoding/hex"
 	"github.com/gin-gonic/gin"
-	//"html/template"
 	"math/big"
 	"context"
-	//"strings"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -167,17 +166,6 @@ func explorer(c *gin.Context) {
 	})
 }
 func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoMarket) {
-/*
-	var limit int64 = int64(DEFAILT_MARKET_TRADES_LIMIT);
-	p_limit := c.Query("limit")
-	if len(p_limit) > 0 {
-		var success bool
-		limit,success = parse_int_from_remote_or_error(c,json_output,&p_limit)
-		if !success {
-			return
-		}
-	}
-*/
 	trades := augur_srv.storage.Get_mkt_trades(minfo.MktAddr,10000000)
 	outcome_vols,_ := augur_srv.storage.Get_outcome_volumes(minfo.MktAddr,minfo.MktAid,0,minfo.LowPriceLimit)
 	price_estimates := augur_srv.storage.Get_price_estimates(minfo.MktAid,outcome_vols,minfo.LowPriceLimit)
@@ -688,7 +676,7 @@ func serve_user_funds_v1(c *gin.Context,addr common.Address) {
 }
 func search(c *gin.Context) {
 
-	keyword := c.Query("q")
+	keyword := c.Query("keywords")
 	if (len(keyword) == 40) || (len(keyword) == 42) { // address
 		if len(keyword) == 42 {	// strip 0x prefix
 			keyword = keyword[2:]
@@ -762,6 +750,203 @@ func search(c *gin.Context) {
 			})
 			return
 		}
+	}
+}
+func search_v2(c *gin.Context) {
+	// ToDo
+
+	// ......
+	// execute_search(keyword)
+	// .....
+}
+func has0xPrefix(input string) bool {
+	return len(input) >= 2 && input[0] == '0' && (input[1] == 'x' || input[1] == 'X')
+}
+func execute_search(keyword string) SearchResultObject {
+
+	idx := strings.Index(keyword, " ") // if there is a space, then it is some text to search
+	if idx == -1 {
+		var hex_data []byte
+		var err error
+		if has0xPrefix(keyword) {
+			hex_data,err = hex.DecodeString(keyword[2:])
+		} else {
+			hex_data,err = hex.DecodeString(keyword)
+		}
+		if err == nil {
+			// could be: Hash or Address
+			if (len(keyword) == 40) || (len(keyword) == 42) { // Address
+				addr := common.BytesToAddress(hex_data) // corrects any lower-case input
+				addr_str := addr.String()
+				Info.Printf("addr str = %v\n",addr_str)
+				aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(addr_str)
+				if err != nil {
+					var iface interface{}
+					return SearchResultObject {
+						SRType:		SR_Address,
+						Found:		false,
+						ErrStr:		"Address not found",
+						Object:		iface,
+					}
+				}
+				market_info,err := augur_srv.storage.Get_market_info(addr_str,0,false)
+				if err == nil {
+					var iface interface{}
+					iface = &market_info
+					return SearchResultObject {
+						SRType:		SR_AugurMarketInfo,
+						Found:		true,
+						ErrStr:		"",
+						Object:		iface,
+					}
+				}
+				pool_info,err := augur_srv.storage.Get_pool_info(aid)
+				if err == nil {
+					var iface interface{}
+					iface = &pool_info
+					return SearchResultObject {
+						SRType:		SR_BalancerPool,
+						Found:		true,
+						ErrStr:		"",
+						Object:		iface,
+					}
+				}
+				uniswap_info,err := augur_srv.storage.Get_uniswap_pair_info(aid)
+				if err == nil {
+					var iface interface{}
+					iface = &uniswap_info
+					return SearchResultObject {
+						SRType:		SR_UniswapPair,
+						Found:		true,
+						ErrStr:		"",
+						Object:		iface,
+					}
+				}
+				af_wrapper,err := augur_srv.storage.Get_wrapped_token_info(aid)
+				if err == nil {
+					var iface interface{}
+					iface = &af_wrapper
+					return SearchResultObject {
+						SRType:		SR_ShareTokenWrapper,
+						Found:		true,
+						ErrStr:		"",
+						Object:		iface,
+					}
+				}
+				user_info,err := augur_srv.storage.Get_user_info(aid)
+				if err == nil {
+					var iface interface{}
+					iface= &user_info
+					return SearchResultObject {
+						SRType:		SR_UserInfo,
+						Found:		true,
+						ErrStr:		"",
+						Object:		iface,
+					}
+				}
+				var iface interface{}
+				return SearchResultObject {
+					SRType:		SR_Address,
+					Found:		false,
+					Object:		iface,
+				}
+			}
+			if (len(keyword) == 64) || (len(keyword) == 66) { // Hash (Tx hash)
+				hash := common.BytesToHash(hex_data)	// corrects any lower-case input
+				hash_str := hash.String()
+				tx_info,err := augur_srv.storage.Get_transaction(hash_str)
+				if err == nil {
+					var iface interface{}
+					iface = &tx_info
+					return SearchResultObject {
+						SRType:		SR_Transaction,
+						Found:		true,
+						ErrStr:		"",
+						Object:		iface,
+					}
+				}
+				orders := augur_srv.storage.Get_filling_orders_by_hash(hash_str)
+				if len(orders) > 0 {
+					var iface interface{}
+					iface = &orders
+					return SearchResultObject {
+						SRType:		SR_MarketOrders,
+						Found:		true,
+						ErrStr:		"",
+						Object:		iface,
+					}
+				}
+				block_num,err := augur_srv.storage.Get_block_num_by_hash(hash_str)
+				if err == nil {
+					block_info,err := augur_srv.storage.Get_block_info(block_num)
+					if err != nil {
+						var iface interface{}
+						return SearchResultObject {
+							SRType:		SR_Block,
+							Found:		false,
+							ErrStr:		err.Error(),
+							Object:		iface,
+						}
+					}
+					var iface interface{}
+					iface = &block_info
+					return SearchResultObject {
+						SRType:		SR_Block,
+						Found:		true,
+						ErrStr:		"",
+						Object:		iface,
+					}
+				}
+				var iface interface{}
+				return SearchResultObject {
+					SRType:			SR_Hash,
+					Found:			false,
+					ErrStr:			"Hash not found",
+					Object:			iface,
+				}
+			}
+		}
+		block_num,err := strconv.Atoi(keyword)
+		if err == nil {
+			if block_num <= 0 {
+				var iface interface{}
+				return SearchResultObject {
+					SRType:		SR_Block,
+					Found:		false,
+					ErrStr:		"Given block number is not a positive number",
+					Object:		iface,
+				}
+			}
+			block_info,err := augur_srv.storage.Get_block_info(int64(block_num))
+			if err != nil {
+				var iface interface{}
+				return SearchResultObject {
+					SRType:		SR_Block,
+					Found:		false,
+					ErrStr:		err.Error(),
+					Object:		iface,
+				}
+			}
+			var iface interface{}
+			iface = &block_info
+			return SearchResultObject {
+				SRType:		SR_Block,
+				Found:		true,
+				ErrStr:		"",
+				Object:		iface,
+			}
+		}
+	}
+
+	search_results := augur_srv.storage.Search_keywords_in_markets(keyword)
+	var iface interface{}
+	Info.Printf("search results for keyword=%v is len=%v\n",keyword,len(search_results))
+	iface = &search_results
+	return SearchResultObject {
+		SRType:		SR_TextSearchResults,
+		Found:		true,
+		ErrStr:		"",
+		Object:		iface,
 	}
 }
 func read_money(c *gin.Context) {
@@ -1221,10 +1406,6 @@ func price_estimate_history(c *gin.Context) {
 		return
 	}
 	price_estimates := augur_srv.storage.Get_price_estimate_history(market_info.MktAid,outcome)
-/*
-	mdepth,last_oo_id := augur_srv.storage.Get_mkt_depth(market_info.MktAid,outcome)
-	num_orders:=len(mdepth.Bids) + len(mdepth.Asks)
-*/
 	js_price_estimate_data := build_js_price_estimate_history(&price_estimates)
 	js_weighted_price_data := build_js_weighted_price_history(&price_estimates)
 	c.HTML(http.StatusOK, "price_estimate.html", gin.H{
@@ -1268,7 +1449,7 @@ func wrapped_token_transfers(c *gin.Context) {
 		})
 		return
 	}
-	wrapper_info := augur_srv.storage.Get_wrapped_token_info(aid)
+	wrapper_info,_ := augur_srv.storage.Get_wrapped_token_info(aid)
 	market_info,err := augur_srv.storage.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
 	transfers := augur_srv.storage.Get_wrapped_token_transfers(aid,0,500)
 	c.HTML(http.StatusOK, "wrapped_transfers.html", gin.H{
@@ -1292,7 +1473,7 @@ func pool_swaps(c *gin.Context) {
 		})
 		return
 	}
-	pool_info := augur_srv.storage.Get_pool_info(aid)
+	pool_info,_ := augur_srv.storage.Get_pool_info(aid)
 	swaps := augur_srv.storage.Get_pool_swaps(aid,0,200)
 	c.HTML(http.StatusOK, "pool_swaps.html", gin.H{
 			"PoolInfo" : pool_info,
@@ -1377,5 +1558,80 @@ func do_text_search(c *gin.Context) {
 func show_text_search_form(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "text_search_form.html", gin.H{
+	})
+}
+func show_pool_swap_prices(c *gin.Context) {
+
+	p_pool_aid := c.Param("pool_aid")
+	var pool_aid int64
+	if len(p_pool_aid) > 0 {
+		var success bool
+		pool_aid,success = parse_int_from_remote_or_error(c,false,&p_pool_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"Pool ID is not set")
+		return
+	}
+	p_token1_aid := c.Param("token1_aid")
+	var token1_aid int64
+	if len(p_token1_aid) > 0 {
+		var success bool
+		token1_aid,success = parse_int_from_remote_or_error(c,false,&p_token1_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"Token1 ID is not set")
+		return
+	}
+	p_token2_aid := c.Param("token2_aid")
+	var token2_aid int64
+	if len(p_token2_aid) > 0 {
+		var success bool
+		token2_aid,success = parse_int_from_remote_or_error(c,false,&p_token2_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"Token2 ID is not set")
+		return
+	}
+	var err error
+	p_init_ts := c.Param("init_ts")
+	var init_ts int
+	if len(p_init_ts) > 0 {
+		init_ts, err = strconv.Atoi(p_init_ts)
+		if err != nil {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": "Can't parse init_ts",
+			})
+			return
+		}
+	}
+	p_fin_ts := c.Param("fin_ts")
+	var fin_ts int
+	if len(p_fin_ts) > 0 {
+		fin_ts, err = strconv.Atoi(p_fin_ts)
+		if err != nil {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": "Can't parse fin_ts",
+			})
+			return
+		}
+	}
+
+	pool_info,_ := augur_srv.storage.Get_pool_info(pool_aid)
+	prices := augur_srv.storage.Get_balancer_token_prices(pool_aid,token1_aid,token2_aid,init_ts,fin_ts)
+	js_prices := build_js_bpool_swap_prices(&prices)
+	c.HTML(http.StatusOK, "bswap_prices.html", gin.H{
+			"PoolInfo" : pool_info,
+			"Prices" : prices,
+			"JSPriceData" :js_prices,
+			"InitTimeStamp": init_ts,
+			"FinTimeSTamp": fin_ts,
 	})
 }

@@ -224,7 +224,7 @@ func (ss *SQLStorage) Get_wrapped_tokens_for_market(market_aid int64) []p.ERC20S
 	}
 	return records
 }
-func (ss *SQLStorage) Get_wrapped_token_info(wrapper_aid int64) p.ERC20ShTokContract {
+func (ss *SQLStorage) Get_wrapped_token_info(wrapper_aid int64) (p.ERC20ShTokContract,error) {
 
 	var output p.ERC20ShTokContract
 	var query string
@@ -259,13 +259,13 @@ func (ss *SQLStorage) Get_wrapped_token_info(wrapper_aid int64) p.ERC20ShTokCont
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			return output
+			return output,err
 		} else {
 			ss.Log_msg(fmt.Sprintf("Error Augur Foundry contract address is not set: %v",err))
 			os.Exit(1)
 		}
 	}
-	return output
+	return output,nil
 }
 func (ss *SQLStorage) Get_wrapped_token_transfers(wrapper_aid int64,offset,limit int) []p.WShTokTransfer {
 

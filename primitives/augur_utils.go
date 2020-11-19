@@ -68,7 +68,7 @@ func Fetch_erc20_info(client *ethclient.Client,contract_address *common.Address)
 
 	total_supply,err := contract.TotalSupply(copts)
 	if err != nil {
-		return erc20Info,errors.New(fmt.Sprintf("TotalSupply() error: %v",err))
+		total_supply = big.NewInt(0)
 	}
 	erc20Info.TotalSupply = total_supply.String()
 

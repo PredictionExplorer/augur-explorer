@@ -40,6 +40,23 @@ const (
 	MeshEvtFillabilityIncreased
 	MeshEvtStoppedWatching
 )
+type SearchResultType int
+const (
+	SR_Unknow SearchResultType = iota
+	SR_MarketOrders				// 1
+	SR_Address					// 2
+	SR_Hash						// 3
+	SR_Transaction				// 4
+	SR_Block					// 5
+	SR_UserInfo					// 6
+	SR_WalletContractInfo		// 7
+	SR_AugurMarketInfo			// 8
+	SR_AugurUniverseInfo		// 9
+	SR_ShareTokenWrapper		// 10
+	SR_BalancerPool				// 11
+	SR_UniswapPair				// 12
+	SR_TextSearchResults		// 13
+)
 var (
 	ErrChainSplit error = errors.New("Chainsplit detected")
 )
@@ -1092,4 +1109,16 @@ type UPairTokens struct {
 	Token0Addr				common.Address
 	Token1Addr				common.Address
 
+}
+type SearchResultObject struct {
+	SRType					SearchResultType
+	Found					bool
+	ErrStr					string
+	Object					interface{}
+}
+type BSwapPrice struct {
+	Id						int64
+	TimeStamp				int64
+	Price					float64
+	Date					string
 }

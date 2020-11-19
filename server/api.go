@@ -782,7 +782,7 @@ func a1_wrapped_token_transfers(c *gin.Context) {
 	}
 	success,offset,limit := parse_offset_limit_params(c)
 
-	wrapper_info := augur_srv.storage.Get_wrapped_token_info(wrapper_aid)
+	wrapper_info,_ := augur_srv.storage.Get_wrapped_token_info(wrapper_aid)
 	market_info,_ := augur_srv.storage.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
 	transfers := augur_srv.storage.Get_wrapped_token_transfers(wrapper_aid,offset,limit)
 	c.JSON(http.StatusOK, gin.H{
@@ -805,7 +805,7 @@ func a1_pool_swaps(c *gin.Context) {
 	}
 	success,offset,limit := parse_offset_limit_params(c)
 
-	pool_info := augur_srv.storage.Get_pool_info(pool_aid)
+	pool_info,_ := augur_srv.storage.Get_pool_info(pool_aid)
 	swaps := augur_srv.storage.Get_pool_swaps(pool_aid,offset,limit)
 	c.JSON(http.StatusOK, gin.H{
 			"PoolInfo" : pool_info,
@@ -831,6 +831,8 @@ func a1_market_share_token_balance_changes(c *gin.Context) {
 	})
 }
 func a1_balancer_volume(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	p_market := c.Param("market")
 	_,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
@@ -858,6 +860,8 @@ func a1_balancer_volume(c *gin.Context) {
 
 }
 func a1_wrapped_token_volume(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	p_wrapper:= c.Param("address")
 	_,wrapper_aid,success := json_validate_and_lookup_address_or_aid(c,&p_wrapper)
@@ -918,6 +922,7 @@ func a1_uniswap_pair_swaps(c *gin.Context) {
 }
 func a1_uniswap_volume(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	p_market := c.Param("market")
 	_,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
 	if !success {
@@ -942,4 +947,41 @@ func a1_uniswap_volume(c *gin.Context) {
 			"error": "",
 	})
 
+}
+func a1_search(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	keyword := c.Query("q")
+	if len(keyword) == 0 {
+		c.JSON(http.StatusOK,gin.H{
+			"status": 1 ,
+			"error": "Empty keyword",
+		})
+		return
+	}
+	sro := execute_search(keyword)
+	var status int = 1
+	if len(sro.ErrStr) > 0 {
+		status = 0
+	}
+	c.JSON(http.StatusOK,gin.H{
+			"SearchResult": sro,
+			"status": status ,
+			"error": sro.ErrStr,
+	})
+}
+func a1_categories(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	categories := augur_srv.storage.Get_categories()
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"Categories" : categories,
+			"status": status,
+			"error": err_str,
+	})
 }

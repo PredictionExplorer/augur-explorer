@@ -253,3 +253,27 @@ func build_js_weighted_price_history(prices *[]PriceEstimate) template.JS {
 	data_str = data_str + "]"
 	return template.JS(data_str)
 }
+func build_js_bpool_swap_prices(prices* []BSwapPrice) template.JS {
+	var data_str string = "["
+
+	for i:=0 ; i < len(*prices) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		var e = &(*prices)[i];
+		var entry string
+		entry = "{" +
+				"x:" + fmt.Sprintf("%v",i)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.Price) + "," +
+				"price: " + fmt.Sprintf("%v",e.Price) + "," +
+				"date: " + fmt.Sprintf("\"%v\"",e.Date) + "," +
+				"click: function() {load_price_data(\"" +
+					e.Date+"\"," +fmt.Sprintf("%v",e.Price)+
+				")}" +
+				"}"
+		data_str= data_str + entry
+	}
+	data_str = data_str + "]"
+	fmt.Printf("JS price string: %v\n",data_str)
+	return template.JS(data_str)
+}

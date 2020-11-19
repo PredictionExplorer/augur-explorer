@@ -569,7 +569,7 @@ func (ss *SQLStorage) Delete_pool_gulp(evt_id int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Get_pool_info(pool_aid int64) p.BalancerNewPool {
+func (ss *SQLStorage) Get_pool_info(pool_aid int64) (p.BalancerNewPool,error) {
 
 	var output p.BalancerNewPool
 	var query string
@@ -612,7 +612,7 @@ func (ss *SQLStorage) Get_pool_info(pool_aid int64) p.BalancerNewPool {
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			return output
+			return output,err
 		} else {
 			ss.Log_msg(fmt.Sprintf("Error Augur Foundry contract address is not set: %v",err))
 			os.Exit(1)
@@ -680,7 +680,7 @@ func (ss *SQLStorage) Get_pool_info(pool_aid int64) p.BalancerNewPool {
 		tokens = append(tokens,rec)
 	}
 	output.Tokens = tokens
-	return output
+	return output,nil
 }
 func (ss *SQLStorage) Get_pool_swaps(pool_aid int64,offset int,limit int) []p.BalancerSwap {
 
@@ -1060,4 +1060,45 @@ func (ss *SQLStorage) Get_wrapped_transfers_volume(wrapper_aid int64,init_ts,fin
 		records = append(records,rec)
 	}
 	return records
+}
+func (ss *SQLStorage) Get_balancer_token_prices(pool_aid,token1_aid,token2_aid int64,init_ts,fin_ts int) []p.BSwapPrice {
+
+	var query string
+	query = "SELECT * FROM ("+
+				"(" +
+					"SELECT id,EXTRACT(EPOCH FROM time_stamp)::BIGINT ts,time_stamp,amount_in/amount_out AS price " +
+					"FROM bswap WHERE token_in_aid=$1 AND token_out_aid=$2 AND pool_aid=$3 " +
+						"AND time_stamp >= TO_TIMESTAMP($4) AND time_stamp < TO_TIMESTAMP($5) " +
+				") UNION ALL (" +
+					"SELECT id,EXTRACT(EPOCH FROM time_stamp)::BIGINT ts,time_stamp,amount_out/amount_in AS price " +
+					"FROM bswap WHERE token_out_aid=$1 AND token_in_aid=$2 AND pool_aid=$3 " +
+						"AND time_stamp >= TO_TIMESTAMP($4) AND time_stamp < TO_TIMESTAMP($5) " +
+				")" +
+			") AS s"
+
+	records := make([]p.BSwapPrice,0,128)
+
+	rows,err := ss.db.Query(query,token1_aid,token2_aid,pool_aid,init_ts,fin_ts)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BSwapPrice
+		err=rows.Scan(
+			&rec.Id,
+			&rec.TimeStamp,
+			&rec.Date,
+			&rec.Price,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+
 }
