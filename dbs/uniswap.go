@@ -538,3 +538,49 @@ func (ss *SQLStorage) Get_uniswap_volume(market_aid int64,outc int,init_ts,fin_t
 	}
 	return records
 }
+func (ss *SQLStorage) Get_uniswap_token_prices(pair_aid int64,inverse bool,init_ts,fin_ts int) []p.UPairPrice {
+
+	var price_field = "amount1_in/amount0_out AS price "
+	var price_cond = " amount0_out > 0 "
+	if inverse {
+		price_field = "amount0_in/amount1_out AS price "
+		price_cond =" amount1_out > 0 "
+	}
+	var query string
+	query =	"SELECT " +
+				"id," +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts,"+
+				"time_stamp," +
+				price_field +
+			"FROM uswap1 " +
+			"WHERE pair_aid=$1 AND " + price_cond + " AND " +
+				"time_stamp >= TO_TIMESTAMP($2) AND " +
+				"time_stamp < TO_TIMESTAMP($3) " +
+			"ORDER BY time_stamp"
+
+	records := make([]p.UPairPrice,0,128)
+
+	rows,err := ss.db.Query(query,pair_aid,init_ts,fin_ts)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UPairPrice
+		err=rows.Scan(
+			&rec.Id,
+			&rec.TimeStamp,
+			&rec.Date,
+			&rec.Price,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	ss.Info.Printf("returning %v records for price chart\n",len(records))
+	return records
+}

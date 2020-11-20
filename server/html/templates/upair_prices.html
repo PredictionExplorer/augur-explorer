@@ -1,6 +1,6 @@
 <html>
 <head>
-	<link href="../../../../../res/main.css" rel="stylesheet">
+	<link href="../../../../res/main.css" rel="stylesheet">
 	<title>Balancer Pool Token Prices </title>
 </head>
 <body>
@@ -19,59 +19,30 @@
 	var unit = "{{.Token1Info.WrappingContract.Symbol}}"
 	var price_history_data = {{.JSPriceData}}
 </script>
-<h3 class="page_title">Pool Swaps for {{.PoolInfo.PoolAddr}}</h3>
+<h3 class="page_title">UPair Swaps for {{.PairInfo.PairAddr}}</h3>
 <table class="market_detail">
-<tr class="market_detail">
-	<td>Address (ID):</td>
-	<td class="addr">{{.PoolInfo.PoolAddr}}</td>
+<tr>
+	<td>Pair Address:</td>
+	<td>{{.PairInfo.PairAddr}}</td>
 </tr>
-<tr class="market_detail">
-	<td>Total Swaps:</td>
-	<td class="addr">{{.PoolInfo.NumSwaps}}</td>
+<tr>
+	<td>Token1:</td>
+	<td nowrap>{{.PairInfo.Token0Addr}} / {{.PairInfo.Token0Symbol}} / {{.PairInfo.Token0Name}}</td>
 </tr>
-<tr class="market_detail">
-	<td>Number of tokens:</td>
-	<td class="addr">{{.PoolInfo.NumTokens}}</td>
+<tr>
+	<td>Token2:</td>
+	<td nowrap>{{.PairInfo.Token0Addr}} / {{.PairInfo.Token1Symbol}} / {{.PairInfo.Token1Name}}</td>
 </tr>
-<tr class="market_detail">
-	<td>Number of holders:</td>
-	<td class="addr">{{.PoolInfo.NumHolders}}</td>
+<tr>
+	<td>Created</td>
+	<td>{{.PairInfo.CreatedDate}}<td>
 </tr>
-<tr class="market_detail">
-	<td>Swap fee:</td>
-	<td class="addr">{{.PoolInfo.SwapFee}} %</td>
+<tr>
+	<td>Total Swaps</td>
+	<td>{{.PairInfo.TotalSwaps}}</td>
 </tr>
 </table>
 <br/><br/>
-You are seeing the price of Token {{.Token2Info.WrappingContract.Name}} ({{.Token2Info.WrappingContract.Symbol}}) in terms of token {{.Token1Info.WrappingContract.Name}} ({{.Token1Info.WrappingContract.Symbol}})
-<table class="market_detail">
-<tr class="market_detail">
-	<td>Token 1 Address:</td>
-	<td class="addr">{{.Token1Info.TokenAddr}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Token 1 Name :</td>
-	<td class="addr">{{.Token1Info.WrappingContract.Name}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Token 1 Symbol :</td>
-	<td class="addr">{{.Token1Info.WrappingContract.Symbol}}</td>
-</tr>
-</table>
-<table class="market_detail">
-<tr class="market_detail">
-	<td>Token 2 Address:</td>
-	<td class="addr">{{.Token2Info.TokenAddr}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Token 2 Name :</td>
-	<td class="addr">{{.Token2Info.WrappingContract.Name}}</td>
-</tr>
-<tr class="market_detail">
-	<td>Token 2 Symbol :</td>
-	<td class="addr">{{.Token2Info.WrappingContract.Symbol}}</td>
-</tr>
-</table>
 <div id="price_history_graph"></div>
 <div id="usermktinfo" style="display: none;">
 	<br/><font color="yellow"><b>Point Info:</b></font><br/>
@@ -317,7 +288,7 @@ Highcharts.setOptions(Highcharts.theme);
 Highcharts.chart('price_history_graph', {
 
     title: {
-		text: 'Pool Swaps Price Chart'
+		text: 'Uniswap Swaps Price Chart'
     },
 
     subtitle: {

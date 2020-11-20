@@ -822,6 +822,9 @@ func a1_market_share_token_balance_changes(c *gin.Context) {
 		return
 	}
 	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
 
 	balance_changes := augur_srv.storage.Outside_augur_share_balance_changes(market_aid,offset,limit)
 	c.JSON(http.StatusOK,gin.H{
@@ -912,6 +915,9 @@ func a1_uniswap_pair_swaps(c *gin.Context) {
 		return
 	}
 	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
 
 	pair_info,_ := augur_srv.storage.Get_uniswap_pair_info(pair_aid)
 	swaps := augur_srv.storage.Get_uniswap_swaps(pair_aid,offset,limit)
@@ -983,5 +989,90 @@ func a1_categories(c *gin.Context) {
 			"Categories" : categories,
 			"status": status,
 			"error": err_str,
+	})
+}
+func a1_pool_price_history(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_pool:= c.Param("pool")
+	_,pool_aid,success := json_validate_and_lookup_address_or_aid(c,&p_pool)
+	if !success {
+		return
+	}
+	p_token1:= c.Param("token1")
+	_,token1_aid,success := json_validate_and_lookup_address_or_aid(c,&p_token1)
+	if !success {
+		return
+	}
+	p_token2:= c.Param("token2")
+	_,token2_aid,success := json_validate_and_lookup_address_or_aid(c,&p_token2)
+	if !success {
+		return
+	}
+	success,init_ts,fin_ts := parse_timeframe_ini_fin(c)
+	if !success {
+		return
+	}
+
+	pool_info,_ := augur_srv.storage.Get_pool_info(pool_aid)
+	token1_info,_ := augur_srv.storage.Get_bpool_token_info(pool_aid,token1_aid)
+	token2_info,_ := augur_srv.storage.Get_bpool_token_info(pool_aid,token2_aid)
+	prices := augur_srv.storage.Get_balancer_token_prices(pool_aid,token1_aid,token2_aid,init_ts,fin_ts)
+	c.JSON(http.StatusOK, gin.H{
+			"PoolInfo" : pool_info,
+			"Token1Info" : token1_info,
+			"Token2Info" : token2_info,
+			"Prices" : prices,
+			"InitTimeStamp": init_ts,
+			"FinTimeSTamp": fin_ts,
+	})
+}
+func a1_upair_price_history(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_pair:= c.Param("pair")
+	_,pair_aid,success := json_validate_and_lookup_address_or_aid(c,&p_pair)
+	if !success {
+		return
+	}
+
+	var err error
+	p_inverse := c.Param("inverse")
+	var inverse int = 0
+	if len(p_inverse) > 0 {
+		inverse, err = strconv.Atoi(p_inverse)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"status":0,
+				"error":fmt.Sprintf("'inverse' parameter: %v",err),
+			})
+			return
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("'inverse' parameter wasn't provided: %v",err),
+		})
+		return
+	}
+
+	success,init_ts,fin_ts := parse_timeframe_ini_fin(c)
+	if !success {
+		return
+	}
+
+	bool_inverse := false
+	if inverse > 0 {
+		bool_inverse = true
+	}
+	pair_info,_:= augur_srv.storage.Get_uniswap_pair_info(pair_aid)
+	prices := augur_srv.storage.Get_uniswap_token_prices(pair_aid,bool_inverse,init_ts,fin_ts)
+	c.JSON(http.StatusOK, gin.H{
+			"PairInfo" : pair_info,
+			"Prices" : prices,
+			"InitTimeStamp": init_ts,
+			"FinTimeSTamp": fin_ts,
 	})
 }

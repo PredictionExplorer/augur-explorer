@@ -1122,3 +1122,9 @@ type BSwapPrice struct {
 	Price					float64
 	Date					string
 }
+type UPairPrice struct {
+	Id						int64
+	TimeStamp				int64
+	Price					float64
+	Date					string
+}

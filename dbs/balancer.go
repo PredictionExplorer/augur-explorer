@@ -627,15 +627,16 @@ func (ss *SQLStorage) Get_pool_info(pool_aid int64) (p.BalancerNewPool,error) {
 				"ta.addr, " +
 				"w.mkt_addr," +
 				"w.outcome_idx,"+
-				"w.name,"+
-				"w.symbol "+
+				"inf.name,"+
+				"inf.symbol "+
 			"FROM btoken AS t " +
 				"LEFT JOIN address AS ta ON t.token_aid=ta.address_id " +
 				"LEFT JOIN LATERAL (" +
-					"SELECT wrapper_aid,ma.addr AS mkt_addr,outcome_idx,name,symbol "+
+					"SELECT wrapper_aid,ma.addr AS mkt_addr,outcome_idx "+
 					"FROM af_wrapper AS afw " +
 						"LEFT JOIN address AS ma ON afw.market_aid=ma.address_id "+
 				") AS w ON w.wrapper_aid=t.token_aid " +
+				"LEFT JOIN erc20_info AS inf ON t.token_aid=inf.aid " +
 			"WHERE pool_aid=$1 ORDER BY t.block_num,t.id"
 	rows,err := ss.db.Query(query,pool_aid)
 	if (err!=nil) {
@@ -1074,7 +1075,23 @@ func (ss *SQLStorage) Get_balancer_token_prices(pool_aid,token1_aid,token2_aid i
 					"FROM bswap WHERE token_out_aid=$1 AND token_in_aid=$2 AND pool_aid=$3 " +
 						"AND time_stamp >= TO_TIMESTAMP($4) AND time_stamp < TO_TIMESTAMP($5) " +
 				")" +
-			") AS s"
+			") AS s " +
+				"ORDER BY time_stamp" 
+
+	d_query := fmt.Sprintf("SELECT * FROM ("+
+				"(" +
+					"SELECT id,EXTRACT(EPOCH FROM time_stamp)::BIGINT ts,time_stamp,amount_in/amount_out AS price " +
+					"FROM bswap WHERE token_in_aid=%v AND token_out_aid=%v AND pool_aid=%v " +
+						"AND time_stamp >= TO_TIMESTAMP(%v) AND time_stamp < TO_TIMESTAMP(%v) " +
+				") UNION ALL (" +
+					"SELECT id,EXTRACT(EPOCH FROM time_stamp)::BIGINT ts,time_stamp,amount_out/amount_in AS price " +
+					"FROM bswap WHERE token_out_aid=%v AND token_in_aid=%v AND pool_aid=%v " +
+						"AND time_stamp >= TO_TIMESTAMP(%v) AND time_stamp < TO_TIMESTAMP(%v) " +
+				")" +
+			") AS s" +
+			"ORDER BY time_stamp",
+			token1_aid,token2_aid,pool_aid,init_ts,fin_ts,token1_aid,token2_aid,pool_aid,init_ts,fin_ts)
+	ss.Info.Printf("dquery= %v\n",d_query)
 
 	records := make([]p.BSwapPrice,0,128)
 
@@ -1099,6 +1116,74 @@ func (ss *SQLStorage) Get_balancer_token_prices(pool_aid,token1_aid,token2_aid i
 		}
 		records = append(records,rec)
 	}
+	ss.Info.Printf("returning %v records for price chart\n",len(records))
 	return records
 
+}
+func (ss *SQLStorage) Get_bpool_token_info(pool_aid,token_aid int64) (p.BalancerToken,error) {
+
+	var query string
+	query = "SELECT " +
+				"FLOOR(EXTRACT(EPOCH FROM t.time_stamp))::BIGINT AS ts, " +
+				"t.time_stamp,"+
+				"token_aid," +
+				"p.total_weight,"+
+				"denorm," +
+				"balance," +
+				"ta.addr, " +
+				"w.mkt_addr," +
+				"w.outcome_idx,"+
+				"inf.name,"+
+				"inf.symbol "+
+			"FROM btoken AS t " +
+				"LEFT JOIN address AS ta ON t.token_aid=ta.address_id " +
+				"LEFT JOIN LATERAL (" +
+					"SELECT wrapper_aid,ma.addr AS mkt_addr,outcome_idx "+
+					"FROM af_wrapper AS afw " +
+						"LEFT JOIN address AS ma ON afw.market_aid=ma.address_id "+
+				") AS w ON w.wrapper_aid=t.token_aid " +
+				"LEFT JOIN erc20_info AS inf ON t.token_aid=inf.aid " +
+				"JOIN bpool AS p on t.pool_aid=p.pool_aid " +
+			"WHERE t.pool_aid=$1 and t.token_aid=$2"
+
+	var rec p.BalancerToken
+	var mkt_addr,name,symbol sql.NullString
+	var outc sql.NullInt64
+	var total_weight sql.NullFloat64
+	res := ss.db.QueryRow(query,pool_aid,token_aid)
+	err := res.Scan(
+		&rec.TimeStampAdded,
+		&rec.DateAdded,
+		&rec.TokenAid,
+		&total_weight,
+		&rec.Denorm,
+		&rec.Balance,
+		&rec.TokenAddr,
+		&mkt_addr,
+		&outc,
+		&name,
+		&symbol,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return rec,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	rec.Weight = 100*rec.Denorm/total_weight.Float64
+	if mkt_addr.Valid {
+		rec.WrappingContract.MktAddr = mkt_addr.String
+	}
+	if outc.Valid {
+		rec.WrappingContract.OutcomeIdx = int(outc.Int64)
+	}
+	if name.Valid {
+		rec.WrappingContract.Name = name.String
+	}
+	if symbol.Valid {
+		rec.WrappingContract.Symbol = symbol.String
+	}
+	return rec,nil
 }

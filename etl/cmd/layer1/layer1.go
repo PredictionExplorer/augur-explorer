@@ -141,12 +141,10 @@ func main() {
 		exit_chan <- true
 	}()
 
-  main_loop:
 	latestBlock, err := eclient.BlockByNumber(ctx, nil)
 	if err != nil {
 		log.Fatal("oops:", err)
 	}
-	Info.Printf("Latest block=%v\n",latestBlock.Number().Int64())
 
 	bnum,exists := storage.Get_last_block_num()
 	if !exists {
@@ -158,6 +156,25 @@ func main() {
 	if bnum_high < bnum {
 		Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
 		os.Exit(1)
+	}
+  main_loop:
+	latestBlock, err = eclient.BlockByNumber(ctx, nil)
+	if err != nil {
+		log.Fatal("oops:", err)
+	}
+
+	bnum,exists = storage.Get_last_block_num()
+	if !exists {
+		bnum = 0
+	} else {
+		bnum = bnum + 1
+	}
+	bnum_high = latestBlock.Number().Int64()
+	Info.Printf("Latest block=%v, bnum=%v\n",latestBlock.Number().Int64(),bnum)
+	if bnum_high < bnum {
+		Info.Printf("Database has more blocks than the blockchain, aborting. Sleeping to wait\n")
+		time.Sleep(10 * time.Second)
+		goto main_loop
 	}
 	for ; bnum<bnum_high; bnum++ {
 		select {
