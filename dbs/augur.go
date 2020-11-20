@@ -178,9 +178,8 @@ func (ss *SQLStorage) Get_upload_block() int64 {
 	}
 	return block_num
 }
-func (ss *SQLStorage) Insert_augur_transaction_status(agtx *p.AugurTx,evt *p.EExecuteTransactionStatus) {
+func (ss *SQLStorage) Insert_augur_transaction_status(aid int64,agtx *p.AugurTx,evt *p.EExecuteTransactionStatus) {
 
-	aid:=0
 	var query string
 	query = "INSERT INTO agtx_status(block_num,tx_id,aid,success,funding_success) " +
 			"VALUES($1,$2,$3,$4,$5)"

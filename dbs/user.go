@@ -53,9 +53,21 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 				"s.total_withdrawn," +
 				"s.total_deposited, " +
 				"r.top_trades, " +
-				"r.top_profit " +
+				"r.top_profit, " +
+				"ew.wallet_aid, " +
+				"ew.addr, " +
+				"ea.eoa_aid, " +
+				"ea.addr " +
 			"FROM ustats as s " +
 			"LEFT JOIN uranks AS r ON s.aid = r.aid " +
+			"LEFT JOIN LATERAL (" +
+				"SELECT eoa_aid,wallet_aid,a.addr FROM eoa_wallet ew " +
+				"JOIN address a ON ew.wallet_aid=a.address_id " +
+			") AS ew ON s.aid=ew.eoa_aid " +
+			"LEFT JOIN LATERAL (" +
+				"SELECT eoa_aid,wallet_aid,a.addr FROM eoa_wallet ew " +
+				"JOIN address a ON ew.eoa_aid=a.address_id " +
+			") AS ea ON s.aid=ew.wallet_aid " +
 			"WHERE s.aid = $1"
 
 	row := ss.db.QueryRow(query,user_aid)
@@ -63,6 +75,10 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 	var (
 		top_profits		sql.NullFloat64
 		top_trades		sql.NullFloat64
+		wallet_addr		sql.NullString
+		wallet_aid		sql.NullInt64
+		eoa_addr		sql.NullString
+		eoa_aid			sql.NullInt64
 	)
 	ui.Aid = user_aid
 	err=row.Scan(
@@ -83,6 +99,10 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 				&ui.TotalDeposited,
 				&top_trades,
 				&top_profits,
+				&wallet_aid,
+				&wallet_addr,
+				&eoa_aid,
+				&eoa_addr,
 	);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -110,6 +130,14 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 		ui.HedgingProfits = true
 	}
 	ui.UnclaimedProfit=ss.Get_unclaimed_profit(user_aid)
+	if wallet_aid.Valid {
+		ui.WalletAid = wallet_aid.Int64
+		ui.WalletAddr = wallet_addr.String
+	}
+	if eoa_aid.Valid {
+		ui.EOAAid = eoa_aid.Int64
+		ui.EOAAddr = eoa_addr.String
+	}
 	return ui,nil
 }
 func (ss *SQLStorage) Get_ranking_data_for_all_users() []p.RankStats {

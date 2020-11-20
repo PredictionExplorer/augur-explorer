@@ -118,7 +118,7 @@ BEGIN
 	END IF;
 
 	UPDATE category set total_markets = (total_markets + 1) WHERE cat_id=NEW.cat_id;
-	PERFORM insert_search_tokens(NEW.market_aid,NEW.extra_info::json->>'description',NEW.extra_info::json->'categories');
+	PERFORM insert_search_tokens(NEW.market_aid,NEW.cat_id,NEW.extra_info::json->>'description',NEW.extra_info::json->>'categories');
 
 	RETURN NEW;
 END;

@@ -667,11 +667,12 @@ func proc_transaction_status(agtx *AugurTx, log *types.Log) {
 	}
 	Info.Printf("ExecuteTransactionStatus event found (block=%v) : \n",log.BlockNumber)
 	evt.Dump(Info)
-// finding EOA-Wallet link is pending and not clear how it is going to be done
-//	eoa_aid := get_eoa_aid(&common.Address{},agtx.BlockNum,agtx.TxId)
-//	_ = eoa_aid
+	wallet_addr := common.HexToAddress(agtx.From)
+	eoa_aid := get_eoa_aid(&wallet_addr,agtx.BlockNum,agtx.TxId)
+	eoa_addr,_ := storage.Lookup_address(eoa_aid)
+	storage.Register_eoa_and_wallet(eoa_addr,wallet_addr.String(),agtx.BlockNum,agtx.TxId)
 	storage.Delete_augur_transaction_status(agtx.TxId)
-	storage.Insert_augur_transaction_status(agtx,&evt)
+	storage.Insert_augur_transaction_status(eoa_aid,agtx,&evt)
 }
 func proc_register_contract(agtx *AugurTx,log *types.Log) {
 	var evt ERegisterContract
@@ -829,57 +830,6 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 	}
 	return id
 }
-/*DISCONTINUED
-func roll_back_blocks(diverging_block *types.Header) error {
-	// Finds the block from which the fork started
-	ctx := context.Background()
-	block_num:=diverging_block.Number.Int64()
-	starting_block_num:=block_num
-	for {
-		big_block_num := big.NewInt(block_num)
-		block, err := eclient.BlockByNumber(ctx,big_block_num)
-		if err != nil {
-			return err
-		}
-		if block == nil {
-			e:=errors.New(fmt.Sprintf("ETH client api returned NULL block object (bnum=%v)",block_num))
-			return e
-		}
-		block_hash:=block.Hash().String()
-		my_block_num,err := storage.Get_block_num_by_hash(block_hash)
-		Info.Printf("Chainsplit fix: hash %v, my_block_num=%v err=%v\n",block_hash,my_block_num,err)
-		if err == nil {
-			if my_block_num == block.Number().Int64() {
-				Info.Printf(
-					"Chainsplit fix: deleting blocks higher than %v ; good block hash = %v\n",
-					my_block_num,block_hash,
-				)
-				storage.Chainsplit_delete_blocks(my_block_num)
-				storage.Set_last_block_num(my_block_num)
-				var chain_reorg_event ChainReorg
-				chain_reorg_event.BlockNum = my_block_num
-				chain_reorg_event.Hash = block_hash
-				storage.Insert_chain_reorg_event(&chain_reorg_event)
-				return nil
-			}
-		} else {
-			Info.Printf(
-				"Chainsplit fix: block %v donesn't fit, block_hash=%v not found in my DB.\n",
-				block_num,block_hash,
-			)
-		}
-		block_num--
-		if (starting_block_num - block_num) > MAX_BLOCKS_CHAIN_SPLIT {
-			Info.Printf(
-				"Chainsplit fix: Chain split is longer than reasonal length, aborting. " +
-				"(starting_block_num=%v, cur_block_num=%v",
-				starting_block_num,block_num,
-			)
-			return errors.New("Chain split max size overflow")
-		}
-	}
-	return errors.New("Chainsplit fix: Undefined behaviour")
-}*/
 func process_transaction(tx_id int64) error {
 
 	tx_hash,bnum,err := storage.Get_tx_hash_by_id(tx_id)

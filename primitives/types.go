@@ -224,6 +224,8 @@ type UserInfo struct {
 	TopTrades		float64
 	TopProfit		float64
 	UnclaimedProfit	float64
+	WalletAid		int64	// Filled only if present
+	EOAAid			int64	// Filled only if present
 	HedgingProfits	bool	// Flag to indicate negative 'MoneyAtStake' field
 	NoActivity		bool	// True if doesn't have entry in 'ustats' table
 	TotalTrades		uint32	// how many trades were made by this User
@@ -236,6 +238,8 @@ type UserInfo struct {
 	AugurFlags		AugurAcctFlags
 	Addr			string	// User's Ethereum address (Externally Owned Account)
 	AddrSh			string	// short version of the above addr
+	WalletAddr		string	// Wallet contract address, filled only if present
+	EOAAddr			string	// EOA address (controlling account) for wallet contract (if present)
 }
 type MainStats struct {
 	LastBlockNum	int64
