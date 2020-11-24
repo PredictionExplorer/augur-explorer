@@ -781,10 +781,26 @@ func (ss *SQLStorage) Delete_REP_transfer_by_evtlog_id(evtlog_id int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Outside_augur_share_balance_changes(market_aid int64,offset,limit int) []p.OutsideAugurSBChg {
+func (ss *SQLStorage) Outside_augur_share_balance_changes(market_aid int64,offset,limit int) ([]p.OutsideAugurSBChg,int64) {
 
 	market_type,_,_ := ss.get_market_type_and_ticks(market_aid)
 	var query string
+
+	var total_rows int64
+	query = "SELECT COUNT(*) AS total_rows FROM stbc " +
+			"WHERE market_aid=$1 AND outside_augur_ui=TRUE"
+
+	var null_counter sql.NullInt64
+	var err error
+	err=ss.db.QueryRow(query,market_aid).Scan(&null_counter);
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v , q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	total_rows=null_counter.Int64
+
 	query = "SELECT " +
 				"sb.market_aid," +
 				"FLOOR(EXTRACT(EPOCH FROM b.ts))::BIGINT as time_stamp," +
@@ -828,7 +844,7 @@ func (ss *SQLStorage) Outside_augur_share_balance_changes(market_aid int64,offse
 		records = append(records,rec)
 	}
 	ss.Info.Printf("returning %v records\n",len(records))
-	return records
+	return records,total_rows
 }
 func (ss *SQLStorage) Get_ERC20Info(addr string) (bool,p.ERC20Info) {
 

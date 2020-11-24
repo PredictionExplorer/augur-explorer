@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"context"
 	"os"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -166,8 +167,13 @@ func get_eoa_aid(wallet_addr *common.Address,block_num int64,tx_id int64) int64 
 	if err == nil {
 		eoa_aid,err = storage.Lookup_eoa_aid(wallet_aid)
 		if err == nil {
-			storage.Link_eoa_and_wallet_contract(eoa_aid,wallet_aid)
 			return eoa_aid
+		}
+		// not found
+		_,err = storage.Lookup_wallet_aid(wallet_aid)
+		if err == nil {
+			// it was an EOA , not Wallet addr
+			return wallet_aid
 		}
 	} else {
 		wallet_aid = storage.Lookup_or_create_address(wallet_addr.String(),block_num,tx_id)
@@ -651,7 +657,7 @@ func proc_market_created(agtx *AugurTx,log *types.Log,validity_bond string) {
 	//eoa_aid := get_eoa_aid(&mevt.MarketCreator,agtx.BlockNum,agtx.TxId)
 	storage.Insert_market_created_evt(agtx,validity_bond,&mevt)
 }
-func proc_transaction_status(agtx *AugurTx, log *types.Log) {
+func proc_transaction_status(agtx *AugurTx, log *types.Log,relayed_from_addr *common.Address) {
 	var evt EExecuteTransactionStatus
 	err := wallet_abi.Unpack(&evt,"ExecuteTransactionStatus",log.Data)
 	if err != nil {
@@ -665,14 +671,30 @@ func proc_transaction_status(agtx *AugurTx, log *types.Log) {
 		)
 		return
 	}
-	Info.Printf("ExecuteTransactionStatus event found (block=%v) : \n",log.BlockNumber)
+	var relayed_status string
+	if relayed_from_addr == nil {
+		relayed_status = "No relay addr."
+	} else {
+		relayed_status = fmt.Sprintf("Relayed tx, from= %v\n",relayed_from_addr.String())
+	}
+	Info.Printf("ExecuteTransactionStatus event found (block=%v) %v : \n",log.BlockNumber,relayed_status)
 	evt.Dump(Info)
-	wallet_addr := common.HexToAddress(agtx.From)
-	eoa_aid := get_eoa_aid(&wallet_addr,agtx.BlockNum,agtx.TxId)
-	eoa_addr,_ := storage.Lookup_address(eoa_aid)
-	storage.Register_eoa_and_wallet(eoa_addr,wallet_addr.String(),agtx.BlockNum,agtx.TxId)
+	var owner_addr common.Address
+	if relayed_from_addr != nil { // Transaction was relayed via GSN v2
+		owner_addr.SetBytes(relayed_from_addr.Bytes())
+	} else {
+		owner_addr = common.HexToAddress(agtx.From)
+	}
+	var copts = new(bind.CallOpts)
+	wallet_addr,err:=ctrct_wallet_registry.GetWallet(copts,owner_addr)
+	if err != nil {
+		Error.Printf("Couldn't locate wallet contract for owner %v : %v\n",owner_addr.String(),err)
+		os.Exit(1)
+	}
+
+	wallet_aid := storage.Lookup_address_id(wallet_addr.String())
 	storage.Delete_augur_transaction_status(agtx.TxId)
-	storage.Insert_augur_transaction_status(eoa_aid,agtx,&evt)
+	storage.Insert_augur_transaction_status(wallet_aid,agtx,&evt)
 }
 func proc_register_contract(agtx *AugurTx,log *types.Log) {
 	var evt ERegisterContract
@@ -718,6 +740,19 @@ func proc_universe_created(agtx *AugurTx,log *types.Log) {
 	evt.Dump(Info)
 	// no DELETE statement here because table 'universe' isn't linked by tx_id
 	storage.Insert_universe_created_event(agtx,&evt)
+}
+func get_tx_relayed_from_addr(logs *[]*types.Log) (*common.Address) {
+
+	var output *common.Address = nil
+	for i:=0 ; i < len(*logs) ; i++ {
+		log := (*logs)[i]
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_tx_relayed) {
+			output := new(common.Address)
+			output.SetBytes(log.Topics[2].Bytes())
+			return output
+		}
+	}
+	return output
 }
 func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) int64 {
 	// Return Value: id of the record inserted (if aplicable, or 0)
@@ -814,7 +849,8 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_execute_tx_status) {
 			tx_lookup_if_needed(agtx)
-			proc_transaction_status(agtx,log)
+			tx_relayed_from := get_tx_relayed_from_addr(logs)
+			proc_transaction_status(agtx,log,tx_relayed_from)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_register_contract) {
 			tx_lookup_if_needed(agtx)

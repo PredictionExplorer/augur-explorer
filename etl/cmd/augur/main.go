@@ -149,7 +149,6 @@ func remove_duplicates(nums []int64) int {
 
 func process_augur_trading_events(exit_chan chan bool,caddrs *ContractAddresses) {
 
-	status := storage.Get_augur_process_status()
 	var max_batch_size int64 = 1024*100
 	for {
 		select {
@@ -160,7 +159,9 @@ func process_augur_trading_events(exit_chan chan bool,caddrs *ContractAddresses)
 				}
 			default:
 		}
-		events := get_event_ids(status.LastTxId,status.LastTxId+max_batch_size)
+		status := storage.Get_augur_process_status()
+		id_upper_limit := status.LastTxId + max_batch_size
+		events := get_event_ids(status.LastTxId,id_upper_limit)
 		for _,tx_id := range events {
 			err := process_transaction(tx_id)
 			if err != nil {
@@ -172,6 +173,7 @@ func process_augur_trading_events(exit_chan chan bool,caddrs *ContractAddresses)
 		}
 		if len(events) == 0 {
 			status.LastTxId = status.LastTxId + max_batch_size
+			storage.Update_augur_process_status(&status)
 		}
 		proc_open_orders()
 		time.Sleep(1 * time.Second)

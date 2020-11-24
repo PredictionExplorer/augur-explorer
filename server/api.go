@@ -784,10 +784,11 @@ func a1_wrapped_token_transfers(c *gin.Context) {
 
 	wrapper_info,_ := augur_srv.storage.Get_wrapped_token_info(wrapper_aid)
 	market_info,_ := augur_srv.storage.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
-	transfers := augur_srv.storage.Get_wrapped_token_transfers(wrapper_aid,offset,limit)
+	transfers,total_rows := augur_srv.storage.Get_wrapped_token_transfers(wrapper_aid,offset,limit)
 	c.JSON(http.StatusOK, gin.H{
 			"MarketInfo" : market_info,
 			"TokenInfo" : wrapper_info,
+			"TotalRows" : total_rows,
 			"Offset" : offset,
 			"Limit" : limit,
 			"WrappedTransfers" : transfers,
@@ -826,9 +827,12 @@ func a1_market_share_token_balance_changes(c *gin.Context) {
 		return
 	}
 
-	balance_changes := augur_srv.storage.Outside_augur_share_balance_changes(market_aid,offset,limit)
+	balance_changes,nr := augur_srv.storage.Outside_augur_share_balance_changes(market_aid,offset,limit)
 	c.JSON(http.StatusOK,gin.H{
 			"OutsideAugurBalanceChanges": balance_changes,
+			"TotalRows" : nr,
+			"Offset" : offset,
+			"Limit" : limit,
 			"status": 1 ,
 			"error": "",
 	})

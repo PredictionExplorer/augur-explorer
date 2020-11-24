@@ -124,7 +124,7 @@ CREATE TABLE outcome_vol (	-- this is the (accumulated) volume per outcome (inde
 	total_trades		BIGINT DEFAULT 0,
 	total_oorders		BIGINT DEFAULT 0,
 	outcome_idx			SMALLINT NOT NULL,
-	volume				DECIMAL(24,18) DEFAULT 0.0,
+	volume				DECIMAL(64,18) DEFAULT 0.0,
 	last_price			DECIMAL(24,18) DEFAULT 0.0,
 	highest_bid			DECIMAL(64,18) DEFAULT 0.0,	-- highest BID price , updated from open orders
 	lowest_ask			DECIMAL(64,18) DEFAULT 0.0,	-- lowest ASK price, updated from open orders

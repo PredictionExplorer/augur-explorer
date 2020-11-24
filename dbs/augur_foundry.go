@@ -267,10 +267,26 @@ func (ss *SQLStorage) Get_wrapped_token_info(wrapper_aid int64) (p.ERC20ShTokCon
 	}
 	return output,nil
 }
-func (ss *SQLStorage) Get_wrapped_token_transfers(wrapper_aid int64,offset,limit int) []p.WShTokTransfer {
+func (ss *SQLStorage) Get_wrapped_token_transfers(wrapper_aid int64,offset,limit int) ([]p.WShTokTransfer,int64) {
 
 	records := make([]p.WShTokTransfer,0,64)
 	var query string
+
+	var total_rows int64
+	query = "SELECT COUNT(*) AS total_rows FROM wstok_transf t " +
+			"WHERE t.wrapper_aid=$1"
+
+	var null_counter sql.NullInt64
+	var err error
+	err=ss.db.QueryRow(query,wrapper_aid).Scan(&null_counter);
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v , q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	total_rows=null_counter.Int64
+
 	query = "SELECT " +
 				"FLOOR(EXTRACT(EPOCH FROM b.ts))::BIGINT AS ts, " +
 				"t.block_num," +
@@ -325,5 +341,5 @@ func (ss *SQLStorage) Get_wrapped_token_transfers(wrapper_aid int64,offset,limit
 		}
 		records = append(records,rec)
 	}
-	return records
+	return records,total_rows
 }

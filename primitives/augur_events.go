@@ -222,9 +222,9 @@ type EExecuteTransactionStatus struct {// Augur's transaction status
 	Raw            types.Log // Blockchain specific contextual infos
 }
 type ETransactionRelayed struct { // RelayHub event (v1)
-	Relay    common.Address
-	From     common.Address
-	To       common.Address
+	Relay    common.Address		//Topics[1]
+	From     common.Address		//Topics[2]
+	To       common.Address		//Topics[3]
 	Selector [4]byte
 	Status   uint8
 	Charge   *big.Int
