@@ -408,6 +408,22 @@ type Report struct {
 	WinStart			string
 	WinEnd				string
 }
+type AgtxInBlock struct {
+	TxId				int64
+	BlockNum			int64
+	ContextAid			int64
+	MarketAid			int64
+	PoolAid				int64
+	PairAid				int64
+	TimeStamp			int64
+	TxType				int
+	ContextAddr			string		// Address related to transaction type
+	MarketAddr			string		// Market address related to tx
+	TxHash				string
+	OrderHash			string		// if available, hash of the Order
+	PoolAddr			string
+	PairAddr			string
+}
 type BlockInfo struct {
 	BlockNum			int64
 	NumTx				int64
@@ -416,6 +432,8 @@ type BlockInfo struct {
 	Addresses			[]string	//list of addresses participated in this block
 	Transactions		[]string
 	Markets				[]string	// list of market addresses created at this block
+	BlockTransactions	[]AgtxInBlock
+
 }
 type TxInfo struct {
 	BlockNum			int64

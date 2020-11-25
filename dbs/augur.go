@@ -357,6 +357,7 @@ func (ss *SQLStorage) Set_augur_flag(address *common.Address,agtx *p.AugurTx,fla
 
 	infinite := false
 	var query string
+	ss.Info.Printf("Setting augur flag %v for %v (block=%v,tx=%v)\n",flag_name,address.String(),agtx.BlockNum,agtx.TxId)
   again:
 	query = "UPDATE augur_flag SET "+flag_name+"=TRUE WHERE aid=$1"
 	result,err := ss.db.Exec(query,aid)
@@ -385,29 +386,34 @@ func (ss *SQLStorage) Set_augur_flag(address *common.Address,agtx *p.AugurTx,fla
 		}
 	}
 	query = "SELECT " +
-				"ap_0xtrade_on_cash,ap_fill_on_cash,ap_fill_on_shtok " +
+				"ap_0xtrade_on_cash,ap_fill_on_cash,ap_fill_on_shtok,act_block_num " +
 			"FROM augur_flag " +
 			"WHERE aid = $1"
 
 	var ap_0xtrade_on_cash,ap_fill_on_cash,ap_fill_on_shtok bool
+	var null_block sql.NullInt64
 	row := ss.db.QueryRow(query,aid)
 	err=row.Scan(
 		&ap_0xtrade_on_cash,
 		&ap_fill_on_cash,
 		&ap_fill_on_shtok,
+		&null_block,
 	)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("Error in Set_augur_flag(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
 	if  ap_0xtrade_on_cash && ap_fill_on_cash && ap_fill_on_shtok  {
-		query = "UPDATE augur_flag SET act_block_num=$2 WHERE aid=$1"
-		_,err := ss.db.Exec(query,aid,agtx.BlockNum)
-		if err != nil {
-			ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
-			os.Exit(1)
+		if !null_block.Valid {
+			query = "UPDATE augur_flag SET act_block_num=$2 WHERE aid=$1 AND act_block_num IS NULL"
+			ss.Info.Printf("Updating block num to %v for addr %v in augur flags\n",agtx.BlockNum,address.String())
+			_,err := ss.db.Exec(query,aid,agtx.BlockNum)
+			if err != nil {
+				ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
+				os.Exit(1)
+			}
+			ss.Insert_ustats_record(aid)
 		}
-		ss.Insert_ustats_record(aid)
 	}
 }
 func (ss *SQLStorage) Get_augur_flags(aid int64) p.AugurAcctFlags {

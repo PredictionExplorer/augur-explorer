@@ -44,9 +44,11 @@ func main() {
 	wallet_addr,err:=ctrct_wallet_reg.GetWallet(copts,eoa_addr)
 	if err!=nil {
 		fmt.Printf("Error during call: %v\n",err)
+		os.Exit(2)
 	} else {
 		if !Eth_addr_is_zero(&wallet_addr) {
 			fmt.Printf("Creation status: exists at %v\n",wallet_addr.String())
+			os.Exit(0)
 		} else {
 			fmt.Printf("Creation status: DOES NOT EXIST\n")
 			wallet_addr,err = ctrct_wallet_reg.GetCreate2WalletAddress(copts,eoa_addr)
@@ -55,6 +57,7 @@ func main() {
 			} else {
 				fmt.Printf("Contract address when created will be: %v\n",wallet_addr.String())
 			}
+			os.Exit(2)
 		}
 	}
 }

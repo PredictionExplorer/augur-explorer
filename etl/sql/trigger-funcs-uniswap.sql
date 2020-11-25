@@ -2,6 +2,8 @@ CREATE OR REPLACE FUNCTION on_uswap1_insert() RETURNS trigger AS  $$
 DECLARE
 	v_token0_aid		bigint;
 	v_token1_aid		bigint;
+	v_wrapper_aid		bigint;
+	v_market_aid		bigint;
 BEGIN
 
 	SELECT token0_aid,token1_aid
@@ -29,6 +31,14 @@ BEGIN
 
 	UPDATE upair SET total_swaps = (total_swaps + 1) WHERE pair_aid=NEW.pair_aid;
 
+	SELECT wrapper_aid,v_market_aid FROM af_wrapper
+		WHERE wrapper_aid IN(v_token0_aid,v_token1_aid) LIMIT 1
+		INTO v_wrapper_aid,v_market_aid;
+	IF v_wrapper_aid IS NOT NULL THEN
+		INSERT INTO agtx(tx_id,block_num,account_aid,market_aid,tx_type)
+			VALUES(NEW.tx_id,NEW.block_num,NEW.recipient_aid,v_market_aid,1)
+			ON CONFLICT DO NOTHING;
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -38,6 +48,7 @@ BEGIN
 
 	DELETE FROM uswap2 WHERE uswap1_id=OLD.id;
 	UPDATE upair SET total_swaps = (total_swaps - 1) WHERE pair_aid=OLD.pair_aid;
+	DELETE FROM agtx WHERE tx_id=OLD.tx_id;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

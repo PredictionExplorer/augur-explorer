@@ -247,7 +247,7 @@ func (evt *EOwnershipTransferred) Dump(l *log.Logger) {
 func (evt *ETradingProceedsClaimed) Dump(l *log.Logger) {
 	l.Printf("TradingProceedsClaimed {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
-	l.Printf("\tSender: %v\n",evt.Sender.String())
+	l.Printf("\tShareholder: %v\n",evt.Shareholder.String())
 	l.Printf("\tMarket: %v\n",evt.Market.String())
 	l.Printf("\tOutcome: %v\n",evt.Outcome.String())
 	l.Printf("\tNumShares: %v\n",evt.NumShares.String())

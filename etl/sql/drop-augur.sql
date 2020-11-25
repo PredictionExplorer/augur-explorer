@@ -32,5 +32,7 @@ DROP TABLE IF EXISTS
 	cancel_0x,
 	tproceeds,
 	oostats,
-	mkt_words
+	mkt_words,
+	agtx,
+	agblk
 CASCADE;

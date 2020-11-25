@@ -5,20 +5,12 @@ import (
 	"os/signal"
 	"syscall"
 	"sort"
-//	"bytes"
-//	"io/ioutil"
-//	"strings"
 	"time"
-//	"strconv"
 	"fmt"
 	"context"
 	"log"
-//	"math/big"
 	"encoding/hex"
 
-//	"github.com/ethereum/go-ethereum/rlp"
-//	"github.com/ethereum/go-ethereum/common"
-//	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -123,10 +115,6 @@ func get_event_ids(from_tx_id,to_tx_id int64) []int64 {
 		event_list := storage.Get_tx_ids_from_evt_logs_by_signature(
 			e.Signature,e.ContractAid,from_tx_id,to_tx_id,
 		)
-	/*	Info.Printf("selected events for signature %v:\n",e.Signature)
-		for _,tx_id := range event_list {
-			Info.Printf("\tTxId:\t%9v\n",tx_id)
-		}*/
 		output = append(output,event_list...)
 	}
 	sort.Slice(output, func(i, j int) bool { return output[i] < output[j] })
@@ -161,6 +149,14 @@ func process_augur_trading_events(exit_chan chan bool,caddrs *ContractAddresses)
 		}
 		status := storage.Get_augur_process_status()
 		id_upper_limit := status.LastTxId + max_batch_size
+		last_tx_id,err := storage.Get_last_tx_id()
+		if err != nil {
+			Error.Printf("Error: %v. Possibly transaction table is empty")
+			os.Exit(1)
+		}
+		if id_upper_limit > last_tx_id {
+			id_upper_limit = last_tx_id
+		}
 		events := get_event_ids(status.LastTxId,id_upper_limit)
 		for _,tx_id := range events {
 			err := process_transaction(tx_id)
@@ -172,7 +168,7 @@ func process_augur_trading_events(exit_chan chan bool,caddrs *ContractAddresses)
 			storage.Update_augur_process_status(&status)
 		}
 		if len(events) == 0 {
-			status.LastTxId = status.LastTxId + max_batch_size
+			status.LastTxId = id_upper_limit
 			storage.Update_augur_process_status(&status)
 		}
 		proc_open_orders()

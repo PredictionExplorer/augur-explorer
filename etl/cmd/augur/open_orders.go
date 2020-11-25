@@ -70,7 +70,7 @@ func oo_insert(order_hash *string,order *zeroex.SignedOrder,fillable_amount *big
 		order.MakerAddress.String(),hex.EncodeToString(eoa[:]),err,
 	)
 	if err == nil {
-		eoa_addr := common.BytesToAddress(eoa[12:])
+		/*eoa_addr := common.BytesToAddress(eoa[12:])
 		eoa_aid,wallet_aid,err := storage.Lookup_maker_eoa_wallet_ids(&eoa_addr,&order.MakerAddress)
 		if err != nil {
 			success := Discover_augur_account(&order.MakerAddress,caddrs)
@@ -79,7 +79,7 @@ func oo_insert(order_hash *string,order *zeroex.SignedOrder,fillable_amount *big
 				wallet_aid=eoa_aid
 				storage.Link_eoa_and_wallet_contract(eoa_aid,wallet_aid)
 			}
-		}
+		}*/
 		err = storage.Insert_open_order(
 			order_hash,order,fillable_amount,&order.MakerAddress,&unpacked_id,OOOpCodeCreated,timestamp,
 		)

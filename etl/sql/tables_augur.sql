@@ -180,6 +180,7 @@ CREATE TABLE main_stats (
 	categ_count			BIGINT DEFAULT 0,	-- counter for Categorical markets
 	scalar_count		BIGINT DEFAULT 0,	-- counter for Scalar markets
 	active_count		BIGINT DEFAULT 0,	-- counter for not-finalized markets
+	total_accounts		BIGINT DEFAULT 0,	-- total number of accounts that have Augur-related activity
 	money_at_stake		DECIMAL(64,18) DEFAULT 0.0,		-- amount in ETH
 	trades_count		BIGINT DEFAULT 0	-- total amount of trades
 );
@@ -325,7 +326,7 @@ CREATE TABLE agtx_status (-- Augur transaction status (used to track Gas fees fo
 CREATE TABLE augur_flag ( -- collection of signs required to consider an account as enabled for Augur trading
 	-- when all flags are TRUE , we insert a record into 'ustats' table meaning that this is an Augur account
 	aid					BIGINT PRIMARY KEY,
-	act_block_num		BIGINT,					-- Block number when activation happened
+	act_block_num		BIGINT,					-- Block number when activation happened (not always gathered, 0 if unknown but active)
 	ap_0xtrade_on_cash	BOOLEAN DEFAULT FALSE,	-- Approval for ZeroXTrade at Cash (DAI) contract
 	ap_fill_on_cash		BOOLEAN DEFAULT FALSE,	-- Approval for FillOrder contract at Cash (DAI) contract
 	ap_fill_on_shtok	BOOLEAN DEFAULT FALSE,	-- ApprovalForAll for FillOrder at ShareToken contract
@@ -419,4 +420,19 @@ CREATE TABLE mkt_words(-- search tokens for searching markets by description/cat
 	cat_id				BIGINT,
 	tok_type			SMALLINT DEFAULT 0,				-- 0-market 1 - category
 	tokens				TSVECTOR
+);
+CREATE TABLE agtx( -- augur transaction (transaction related to Augur trading (UI only)
+	tx_id				BIGINT PRIMARY KEY REFERENCES transaction(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			 -- this is just a copy (for easy data management)
+	account_aid			BIGINT DEFAULT 0,	-- if account is created, the address of the account
+	market_aid			BIGINT DEFAULT 0,	-- if market is related, the market address
+	--tx_type's: 0:Outside Augur and outside DeFI trading (i.e. Uknown), 1: DeFi trading 2: Market Created,
+	-- 3: Trade, 4: Report, 5: Claim profits. 6:Other Augur UI
+	tx_type				INT DEFAULT 0
+);
+CREATE TABLE agblk( -- augur block (a block which has Augur-related data), used for counters and Gas Usage stats
+	block_num			BIGINT PRIMARY KEY REFERENCES block(block_num) ON DELETE CASCADE,
+	num_agtx			INT DEFAULT 0,		-- counter for number of transactions (Augur UI related)
+	num_defi_tx			INT DEFAULT 0,		-- counter for number of trades on DeFi platforms
+	num_other_tx		INT DEFAULT 0		-- counter for number of other type of transactions (like direct sharetoken transfs)
 );

@@ -230,12 +230,14 @@ func proc_approval(log *types.Log,agtx_ptr **AugurTx) {
 			if bytes.Equal(mevt.Spender.Bytes(),caddrs.ZeroxTrade.Bytes()) {
 				tx_lookup_if_needed(*agtx_ptr)
 				storage.Set_augur_flag(&mevt.Owner,*agtx_ptr,"ap_0xtrade_on_cash")
+				Discover_augur_account(&mevt.Owner,caddrs,*agtx_ptr)
 			}
 		}
 		if bytes.Equal(log.Address.Bytes(),caddrs.Dai.Bytes()) {
 			if bytes.Equal(mevt.Spender.Bytes(),caddrs.FillOrder.Bytes()) {
 				tx_lookup_if_needed(*agtx_ptr)
 				storage.Set_augur_flag(&mevt.Owner,*agtx_ptr,"ap_fill_on_cash")
+				Discover_augur_account(&mevt.Owner,caddrs,*agtx_ptr)
 			}
 		}
 	}
@@ -260,6 +262,7 @@ func proc_approval_for_all(log *types.Log,agtx_ptr **AugurTx) {
 			if bytes.Equal(mevt.Operator.Bytes(),caddrs.FillOrder.Bytes()) {
 				tx_lookup_if_needed(*agtx_ptr)
 				storage.Set_augur_flag(&mevt.Owner,*agtx_ptr,"ap_fill_on_shtok")
+				Discover_augur_account(&mevt.Owner,caddrs,*agtx_ptr)
 			}
 		}
 	}
@@ -268,7 +271,7 @@ func proc_trading_proceeds_claimed(agtx *AugurTx,timestamp int64,log *types.Log)
 
 	var mevt ETradingProceedsClaimed
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
-	mevt.Sender = common.BytesToAddress(log.Topics[2][12:])
+	mevt.Shareholder = common.BytesToAddress(log.Topics[2][12:])
 	err := augur_abi.Unpack(&mevt,"TradingProceedsClaimed",log.Data)
 	if err != nil {
 		Fatalf("EventTradingProceedsClaimed error: %v",err)
@@ -281,6 +284,7 @@ func proc_trading_proceeds_claimed(agtx *AugurTx,timestamp int64,log *types.Log)
 	Info.Printf("TradingProceedsClaimed event found (block=%v) :\n",log.BlockNumber)
 	mevt.Dump(Info)
 	storage.Update_claim_status(agtx,&mevt,timestamp)
+	Discover_augur_account(&mevt.Shareholder,caddrs,nil)
 }
 func proc_fill_evt(log *types.Log) {
 	var mevt EFill
@@ -335,8 +339,8 @@ func proc_profit_loss_changed(agtx *AugurTx,log *types.Log) int64  {
 	}
 	Info.Printf("ProfitLossChanged event found (block=%v) :\n",log.BlockNumber)
 	mevt.Dump(Info)
-	//eoa_aid := get_eoa_aid(&mevt.Account,agtx.BlockNum,agtx.TxId)
 	id = storage.Insert_profit_loss_evt(agtx,&mevt)
+	Discover_augur_account(&mevt.Account,caddrs,nil)
 	return id
 }
 func proc_transfer_single(log *types.Log) {
@@ -464,6 +468,8 @@ func proc_market_order_event(agtx *AugurTx,log *types.Log,timestamp int64) {
 
 	orders,ospecs := extract_orders_from_input(agtx.Input)
 	storage.Insert_market_order_evt(agtx,timestamp,&mevt,orders,ospecs)
+	Discover_augur_account(&mevt.AddressData[0],caddrs,nil)
+	Discover_augur_account(&mevt.AddressData[1],caddrs,nil)
 }
 func proc_cancel_zerox_order(agtx *AugurTx,log *types.Log,timestamp int64) {
 	var mevt ECancelZeroXOrder
@@ -496,6 +502,7 @@ func proc_cancel_zerox_order(agtx *AugurTx,log *types.Log,timestamp int64) {
 	}*/
 	aid := storage.Lookup_or_create_address(mevt.Account.String(),agtx.BlockNum,agtx.TxId)
 	storage.Cancel_open_order(aid,orders,ospecs,ohash_str,timestamp)
+	Discover_augur_account(&mevt.Account,caddrs,nil)
 }
 func proc_market_oi_changed(timestamp int64, agtx *AugurTx, log *types.Log) {
 	var mevt EMarketOIChanged
@@ -563,6 +570,7 @@ func proc_initial_report_submitted(agtx *AugurTx, log *types.Log) {
 	mevt.Market = common.BytesToAddress(log.Topics[3][12:])
 	mevt.Dump(Info)
 	storage.Insert_initial_report_evt(agtx,&mevt)
+	Discover_augur_account(&mevt.Reporter,caddrs,nil)
 }
 func proc_dispute_crowdsourcerer_contribution(agtx *AugurTx,log *types.Log) {
 	var mevt EDisputeCrowdsourcerContribution
@@ -580,6 +588,7 @@ func proc_dispute_crowdsourcerer_contribution(agtx *AugurTx,log *types.Log) {
 	mevt.Market = common.BytesToAddress(log.Topics[3][12:])
 	mevt.Dump(Info)
 	storage.Insert_dispute_crowd_contrib(agtx,&mevt)
+	Discover_augur_account(&mevt.Reporter,caddrs,nil)
 }
 func proc_market_volume_changed_v1(agtx *AugurTx, log *types.Log) {
 	var mevt EMarketVolumeChanged_v1
@@ -656,6 +665,7 @@ func proc_market_created(agtx *AugurTx,log *types.Log,validity_bond string) {
 	mevt.Dump(Info)
 	//eoa_aid := get_eoa_aid(&mevt.MarketCreator,agtx.BlockNum,agtx.TxId)
 	storage.Insert_market_created_evt(agtx,validity_bond,&mevt)
+	Discover_augur_account(&mevt.MarketCreator,caddrs,nil)
 }
 func proc_transaction_status(agtx *AugurTx, log *types.Log,relayed_from_addr *common.Address) {
 	var evt EExecuteTransactionStatus
@@ -691,7 +701,7 @@ func proc_transaction_status(agtx *AugurTx, log *types.Log,relayed_from_addr *co
 		Error.Printf("Couldn't locate wallet contract for owner %v : %v\n",owner_addr.String(),err)
 		os.Exit(1)
 	}
-
+	Discover_augur_account(&owner_addr,caddrs,nil)
 	wallet_aid := storage.Lookup_address_id(wallet_addr.String())
 	storage.Delete_augur_transaction_status(agtx.TxId)
 	storage.Insert_augur_transaction_status(wallet_aid,agtx,&evt)
@@ -1002,196 +1012,6 @@ func process_transaction(tx_id int64) error {
 	}
 	return nil
 }
-/*
-func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) error {
-
-	block_hash_str,err:=get_block_hash(bnum)
-	if err!=nil {
-		return err
-	}
-	big_bnum:=big.NewInt(int64(bnum))
-	block_hash,header,transactions,err := get_full_block(bnum)
-	if err!=nil {
-		Info.Printf("Can't decode Block object received on RPC: %v. Aborting.\n",err)
-		return err
-	}
-	num_transactions := len(transactions)
-	Info.Printf("block %v hash = %v, num_tx=%v\n",bnum,block_hash_str,num_transactions)
-	if bnum!=header.Number.Int64() {
-		Info.Printf("Retrieved block number %v but Block object contains another number (%v)",bnum,header.Number.Int64())
-		Error.Printf("Retrieved block number %v but Block object contains another number (%v)",bnum,header.Number.Int64())
-		return errors.New("Block object inconsistency")
-	}
-	storage.Block_delete_with_everything(big_bnum.Int64())
-	receipt_calls := make([]*receiptCallResult,num_transactions,num_transactions)
-	for i,tx := range transactions {
-		hash := common.HexToHash(tx.TxHash)
-		go get_receipt_async(i,hash,&receipt_calls)
-	}
-	err = storage.Insert_block(block_hash_str,header,no_chainsplit_check)
-	if err != nil {
-		err = roll_back_blocks(header)
-		if err == nil {
-			return nil
-		}
-		Error.Printf("Unable to recover from chainsplit: %v. Aborting",err)
-		os.Exit(1)
-	}
-	if num_transactions == 0 {
-		if update_last_block {
-			storage.Set_last_block_num(bnum)
-		}
-		return nil
-	}
-	for tnum,agtx := range transactions {
-		// wait for receipt to arrive
-		for {
-			if receipt_calls[tnum] != nil {
-				break	// receipt arrived from the net, stop waiting
-			}
-			time.Sleep(1 * time.Millisecond)
-		}
-		if receipt_calls[tnum].err != nil {
-			Info.Printf(
-				"Failed to get Tx Receipt for %v, block num=%v. Aborting block processing: %v\n",
-				agtx.TxHash,bnum,err,
-			)
-			Error.Printf(
-				"Failed to get Tx Receipt for %v, block num=%v. Aborting block processing: %v\n",
-				agtx.TxHash,bnum,err,
-			)
-			return receipt_calls[tnum].err
-		}
-		rcpt := receipt_calls[tnum].receipt
-		Info.Printf("\ttx: %v of %v : %v at blockNum=%v\n",tnum,num_transactions,agtx.TxHash,bnum)
-		Info.Printf("\t from=%v\n",agtx.From)
-		Info.Printf("\t to=%v for $%v (%v bytes data)\n",
-						agtx.To,agtx.Value,len(agtx.Input))
-		if rcpt.Status == types.ReceiptStatusFailed {
-			Info.Printf("\t Status: Failed. Skipping this transaciton.\n")
-			continue	// transaction failed (i.e. Out of Gas, etc)
-		}
-		dump_tx_input_if_known(agtx.Input)
-		if rcpt.BlockNumber.Int64() != bnum {
-			Error.Printf(
-				"Transaction's receipt doesn't match current block number. (block possibly changed)" +
-				" cur_block_num=%v, receipt.block_num=%v\n",
-				bnum,rcpt.BlockNumber.Int64(),
-			)
-			return errors.New("Block changed during processing")
-		}
-		agtx.TxId = 0
-		if agtx.CtrctCreate == true {
-			agtx.To = rcpt.ContractAddress.String()
-		}
-		agtx.GasUsed = int64(rcpt.GasUsed)
-		agtx.TxIndex = int32(tnum)
-
-		if len(agtx.Input) >= 4 {
-			input_sig := agtx.Input[:4]
-			if bytes.Equal(input_sig,sig_set_referrer) {
-				sender := common.HexToAddress(agtx.From)
-				tx_insert_if_needed(agtx)
-				storage.Set_augur_flag(&sender,agtx,"set_referrer")
-			}
-		}
-		sequencer := new(EventSequencer)
-		num_logs := len(rcpt.Logs)
-		var agtx_type int = AgTxType_Unclassified
-		// Step 1: First detect what kind of Augur Transaction we are dealing with
-		for i:=0 ; i<num_logs ; i++ {
-			if len(rcpt.Logs[i].Topics) > 0 {
-				Info.Printf(
-					"\t\tlog %v\t for contract %v (%v of %v items)\n",
-					hex.EncodeToString(rcpt.Logs[i].Topics[0][0:4]),
-					rcpt.Logs[i].Address.String(),(i+1),len(rcpt.Logs))
-				if 0 == bytes.Compare(rcpt.Logs[i].Topics[0].Bytes(),evt_market_finalized) {
-					if is_warp_sync_event(rcpt.Logs[i]) {
-						// WarpSync market emits 2 events MarketFFinalized and MarketCreated
-						// MarketFinalized doesn't have ProfitLoss events, so we can process it
-						// just using inverse order (i.e. considering it as non-MarketFinalized)
-					} else {
-						agtx_type = AgTxType_MarketFinalized
-					}
-				}
-				if 0 == bytes.Compare(rcpt.Logs[i].Topics[0].Bytes(),evt_market_order) {
-					agtx_type = AgTxType_MarketOrder
-				}
-			}
-			sequencer.append_event(rcpt.Logs[i])
-		}
-		// Step 1.1 If a Wallet contract has been created, register EOA-Wallet link
-		wallet_created,wallet_addr,possible_eoa_addr := was_wallet_created(caddrs,rcpt.Logs)
-		if wallet_created {
-			tx_insert_if_needed(agtx)
-			var from_addr *string = &agtx.From
-			var possible_eoa_str string
-			if possible_eoa_addr != nil {
-				possible_eoa_str = possible_eoa_addr.String()
-				from_addr = &possible_eoa_str
-			}
-			storage.Register_eoa_and_wallet(*from_addr,wallet_addr.String(),agtx.BlockNum,agtx.TxId)
-		}
-		// Step 1.2 If transaction contains executeWalletTransaction, store it in the DB
-		if (agtx.To == caddrs.WalletReg.String()) || (agtx.To == caddrs.WalletReg2.String()) {
-			exec_wtx := contains_execute_wallet_transaction_call(agtx.Input)
-			if exec_wtx != nil {
-				tx_insert_if_needed(agtx)
-				// Note: Tests are pending for transactions going through GSN (EOA address must be extracted
-				//			from the tx.Data(), in the first 20 bytes
-				eoa_aid := storage.Lookup_or_create_address(agtx.From,agtx.BlockNum,agtx.TxId)
-				wallet_aid,err := storage.Lookup_wallet_aid(eoa_aid)
-				if err != nil {
-					Info.Printf(
-						"executeWalletTransaction(): wallet_aid=0 for eoa=%v (id=%v)\n",
-						agtx.From,eoa_aid,
-					)
-				}
-				exec_wtx.Dump(Info)
-				storage.Insert_execute_wallet_tx(eoa_aid,wallet_aid,agtx,exec_wtx)
-			}
-		}
-		// Step 2: Knowing what kind of Augur Transaction, we are sorting events in an order
-		//			that is convinient for us to process the event series
-		var ordered_list []*types.Log
-		switch agtx_type {
-			case AgTxType_Unclassified:
-				ordered_list = sequencer.get_ordered_event_list()
-			case AgTxType_MarketFinalized:
-				// logs with Market finalized event need to have special order
-				ordered_list = sequencer.get_events_for_market_finalized_case()
-			case AgTxType_MarketOrder:
-				ordered_list = sequencer.get_events_for_market_order_case()
-			default:
-				Info.Printf("Undefined behaviour in detecting Augur Transaction type")
-				os.Exit(1)
-		}
-		num_logs = len(ordered_list)
-		pl_entries := make([]int64,0,2);// profit loss entries
-		// before processing events we need to reset these global vars as they accumulate some data
-		market_order_id = 0
-		//
-		// Step 3: Execute events using ordered list prepared in previous step
-		for i:=0 ; i < num_logs ; i++ {
-			if len(ordered_list[i].Topics) > 0 {
-				Info.Printf(
-					"\t\tchecking log with sig %v\t for contract %v\n",
-					hex.EncodeToString(ordered_list[i].Topics[0][0:4]),
-					ordered_list[i].Address.String())
-				id := process_event(header,agtx,&ordered_list,i)
-				if 0 == bytes.Compare(ordered_list[i].Topics[0].Bytes(),evt_profit_loss_changed) {
-					pl_entries = append(pl_entries,id)
-				}
-			}
-		}
-	}
-	Info.Printf("block_proc: %v %v ; %v transactions\n",bnum,block_hash.String(),num_transactions)
-	if update_last_block {
-		storage.Set_last_block_num(bnum)
-	}
-	return nil
-}
-*/
 func get_order_data(o *IExchangeOrder) (zeroex.Order,common.Hash) {
 
 	var zero_order zeroex.Order
@@ -1676,11 +1496,15 @@ func get_ospec(maker_asset_data []byte,order_hash *string) *ZxMeshOrderSpec {
 	}
 	return &unpacked_id
 }
-func Discover_augur_account(addr *common.Address,caddrs *ContractAddresses) bool {
+func Discover_augur_account(addr *common.Address,caddrs *ContractAddresses,agtx_ptr *AugurTx) bool {
 
 	// checks if provided address has a set of approvals required to consider an account Augur-enabled
 	var copts = new(bind.CallOpts)
 	var agtx AugurTx	// a bogus transaction with empty values
+	if agtx_ptr !=  nil {
+		agtx.BlockNum = agtx_ptr.BlockNum
+		agtx.TxId = agtx_ptr.TxId
+	}
 	allow_amount,err := ctrct_dai_token.Allowance(copts,*addr,caddrs.ZeroxTrade)
 	if err != nil {
 		Info.Printf("Discover_augur_account(): allowance() at DAI for ZeroxTrade failed for %v: %v\n",addr.String(),err)
@@ -1720,7 +1544,7 @@ func Discover_augur_account(addr *common.Address,caddrs *ContractAddresses) bool
 
 	storage.Set_augur_flag(addr,&agtx,"ap_fill_on_shtok")
 	if storage.Is_augur_activated(addr.String()) {
-		Info.Printf("Discovered address %v as augur-enabled\n",addr.String())
+		Info.Printf("Discovered address %v as augur-enabled (block=%v,tx_id=%v)\n",addr.String(),agtx.BlockNum,agtx.TxId)
 		return true
 	}
 	Info.Printf("Discovery of address %v as augur-enabled not successfull\n",*addr)

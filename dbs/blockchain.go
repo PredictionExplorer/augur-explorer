@@ -530,6 +530,23 @@ func (ss *SQLStorage) Tx_exists(tx_hash string) bool {
 	}
 	return true
 }
+func (ss *SQLStorage) Get_last_tx_id() (int64,error) {
+
+	var query string
+	query = "SELECT id FROM transaction ORDER BY id DESC LIMIT 1"
+	res := ss.db.QueryRow(query)
+	var null_id sql.NullInt64
+	err := res.Scan(&null_id)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return null_id.Int64,nil
+}
 func (ss *SQLStorage) Get_block_timestamp(block_num int64) (int64,error) {
 
 	var query string

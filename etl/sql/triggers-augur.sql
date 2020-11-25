@@ -23,3 +23,8 @@ CREATE TRIGGER mkts_traded_insert AFTER INSERT on mkts_traded FOR EACH ROW EXECU
 CREATE TRIGGER mkts_traded_delete AFTER DELETE on mkts_traded FOR EACH ROW EXECUTE PROCEDURE on_mkts_traded_delete();
 CREATE TRIGGER stbc_insert AFTER INSERT on stbc FOR EACH ROW EXECUTE PROCEDURE on_stbc_insert();
 CREATE TRIGGER stbc_delete AFTER DELETE on stbc FOR EACH ROW EXECUTE PROCEDURE on_stbc_delete();
+CREATE TRIGGER agtx_insert_before BEFORE INSERT on agtx FOR EACH ROW EXECUTE PROCEDURE on_agtx_before_insert();
+CREATE TRIGGER agtx_insert_after AFTER INSERT on agtx FOR EACH ROW EXECUTE PROCEDURE on_agtx_after_insert();
+CREATE TRIGGER agtx_delete AFTER DELETE on agtx FOR EACH ROW EXECUTE PROCEDURE on_agtx_delete();
+CREATE TRIGGER tproceeds_insert AFTER INSERT on tproceeds FOR EACH ROW EXECUTE PROCEDURE on_tproceeds_insert();
+CREATE TRIGGER tproceeds_delete AFTER DELETE on tproceeds FOR EACH ROW EXECUTE PROCEDURE on_tproceeds_delete();

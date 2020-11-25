@@ -14,6 +14,7 @@ CREATE INDEX tbc_idx				ON	tbc				(tx_id);
 CREATE INDEX stbc_idx				ON	stbc			(tx_id);
 CREATE INDEX toktr_idx				ON	tok_transf		(tx_id);
 CREATE INDEX sbal_tx_idx			ON	sbalances		(tx_id);
+CREATE INDEX agtx_tx_idx			ON	agtx			(tx_id);
 CREATE INDEX pldbg_idx				ON	pl_debug		(block_num);
 -- market_aid indices
 CREATE INDEX mo_mkt_idx				ON	mktord			(market_aid);
@@ -55,4 +56,5 @@ CREATE UNIQUE INDEX pldebug_uniq	ON pl_debug			(block_num,market_aid,aid,outcome
 CREATE INDEX mkt_tsv_idx			ON mkt_words		USING gin(tokens);
 CREATE UNIQUE INDEX mktwrds_uniq1	ON mkt_words		(market_aid) WHERE market_aid IS NOT NULL;
 CREATE UNIQUE INDEX mktwrds_uniq2	ON mkt_words		(cat_id) WHERE cat_id IS NOT NULL;
-
+CREATE INDEX bnum_agtx_idx			ON agtx				(block_num);
+CREATE INDEX agtx_type_idx			ON agtx				(tx_type);

@@ -120,6 +120,9 @@ BEGIN
 	UPDATE category set total_markets = (total_markets + 1) WHERE cat_id=NEW.cat_id;
 	PERFORM insert_search_tokens(NEW.market_aid,NEW.cat_id,NEW.extra_info::json->>'description',NEW.extra_info::json->>'categories');
 
+	INSERT INTO agtx(tx_id,block_num,account_aid,market_aid,tx_type)
+		VALUES(NEW.tx_id,NEW.block_num,NEW.creator_aid,NEW.market_aid,2);
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -152,6 +155,8 @@ BEGIN
 
 	UPDATE category set total_markets = (total_markets - 1) WHERE cat_id=OLD.cat_id;
 	PERFORM delete_search_tokens(OLD.market_aid);
+
+	DELETE FROM agtx WHERE tx_id=OLD.tx_id;
 
 	RETURN OLD;
 END;
@@ -217,6 +222,10 @@ BEGIN
 
 	UPDATE outcome_vol SET total_trades = (total_trades + 1)
 		WHERE market_aid = NEW.market_aid AND outcome_idx = NEW.outcome_idx;
+
+	INSERT INTO agtx(tx_id,block_num,account_aid,market_aid,tx_type)
+		VALUES(NEW.tx_id,NEW.block_num,NEW.fill_aid,NEW.market_aid,3)
+		ON CONFLICT DO NOTHING; -- multiple orders will try to insert many of these
 
 	RETURN NEW;
 END;
@@ -288,6 +297,9 @@ BEGIN
 		WHERE market_aid = OLD.market_aid AND outcome_idx = OLD.outcome_idx;
 
 	DELETE FROM mesh_evt WHERE mktord_id = OLD.id;
+
+	DELETE FROM agtx WHERE tx_id=OLD.tx_id;
+
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -456,6 +468,11 @@ BEGIN
 			SET initial_outcome = NEW.outcome_idx
 			WHERE market_aid = NEW.market_aid;
 	END IF;
+
+	INSERT INTO agtx(tx_id,block_num,account_aid,market_aid,tx_type)
+		VALUES(NEW.tx_id,NEW.block_num,NEW.aid,NEW.market_aid,4)
+		ON CONFLICT DO NOTHING;
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -495,6 +512,9 @@ BEGIN
 			SET initial_outcome = -1
 			WHERE market_aid = OLD.market_aid;
 	END IF;
+
+	DELETE FROM agtx WHERE tx_id=OLD.tx_id;
+
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -639,7 +659,7 @@ BEGIN
 	IF NEW.aid = 0 THEN
 		RAISE EXCEPTION 'INSERT into ustats: aid cant be 0';
 	END IF;
-
+	UPDATE main_stats SET total_accounts = total_accounts + 1;
 
 	-- The transfers of DAI can happen before wallet is created, so we fix it
 	UPDATE dai_bal SET augur = true WHERE aid = NEW.aid;
@@ -655,6 +675,7 @@ BEGIN
 		SET	profit_loss = (profit_loss + NEW.final_profit),
 			frozen_funds = (frozen_funds - NEW.unfrozen_funds)
 		WHERE market_aid = NEW.market_aid AND aid = NEW.aid;
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -665,7 +686,7 @@ BEGIN
 	UPDATE trd_mkt_stats
 		SET frozen_funds = (frozen_funds + OLD.unfrozen_funds),
 			profit_loss = (profit_loss - OLD.final_profit)
-		WHERE market_aid = OLd.market_aid AND aid = OLD.aid;
+		WHERE market_aid = OLD.market_aid AND aid = OLD.aid;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -991,5 +1012,66 @@ DECLARE
 BEGIN
 
 	DELETE from mkt_words WHERE market_aid=p_market_aid;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_agtx_before_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	INSERT INTO agblk(block_num) VALUES(NEW.block_num) ON CONFLICT DO NOTHING;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_agtx_after_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	IF NEW.tx_type = 0 THEN
+		UPDATE agblk SET num_other_tx = (num_other_tx + 1) WHERE block_num=NEW.block_num;
+		RETURN NEW;
+	END IF;
+	IF NEW.tx_type = 1 THEN
+		UPDATE agblk SET num_defi = (num_defi + 1) WHERE block_num=NEW.block_num;
+		RETURN NEW;
+	END IF;
+
+	UPDATE agblk SET num_agtx = (num_agtx + 1) WHERE block_num=NEW.block_num;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_agtx_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	IF OLD.tx_type = 0 THEN
+		UPDATE agblk SET num_other_tx = (num_other_tx - 1) WHERE block_num=OLD.block_num;
+	END IF;
+	IF OLD.tx_type = 1 THEN
+		UPDATE agblk SET num_defi = (num_defi - 1) WHERE block_num=OLD.block_num;
+	END IF;
+	IF OLD.tx_type!=0 AND OLD.tx_type!=1 THEN
+		UPDATE agblk SET num_agtx = (num_agtx - 1) WHERE block_num=OLD.block_num;
+	END IF;
+	DELETE FROM agblk
+		WHERE block_num=OLD.block_num AND num_agtx=0 AND num_defi_tx=0 AND num_other_tx=0;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_tproceeds_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	INSERT INTO agtx(tx_id,evtlog_id,block_num,account_aid,market_aid,tx_type)
+		VALUES(NEW.tx_id,NEW.evtlog_id,NEW.block_num,NEW.aid,NEW.market_aid,5);
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_tproceeds_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	DELETE FROM agtx WHERE tx_id=OLD.tx_id;
+	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

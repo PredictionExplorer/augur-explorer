@@ -195,7 +195,7 @@ type EOwnershipTransferred struct {
 }
 type ETradingProceedsClaimed struct {
 	Universe        common.Address
-	Sender          common.Address
+	Shareholder		common.Address
 	Market          common.Address
 	Outcome         *big.Int
 	NumShares       *big.Int

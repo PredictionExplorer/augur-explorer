@@ -153,11 +153,18 @@ func (ss *SQLStorage) Calc_unique_addresses(ts_from int64,ts_to int64) (int64,bo
 
 	var query string
 	query = "SELECT count(*) FROM ( " +
-				"SELECT DISTINCT u.aid FROM address a " +
-				"JOIN ustats u ON u.aid=a.address_id " +
+				"SELECT DISTINCT aid FROM (" +
+					"(" +
+						"SELECT wallet_aid AS aid FROM eoa_wallet" +
+					") UNION ALL (" +
+						"SELECT eoa_aid AS aid FROM eoa_wallet" +
+					") UNION ALL (" +
+						"SELECT aid FROM augur_flag WHERE act_block_num IS NOT NULL)" +
+					")" +
+				") as d " +
+				"JOIN address AS a ON d.aid=a.address_id " +
 				"JOIN block b ON a.block_num=b.block_num " +
-				"WHERE b.ts >= to_timestamp($1) AND b.ts < to_timestamp($2)" +
-			") AS s"
+				"WHERE b.ts >= to_timestamp($1) AND b.ts < to_timestamp($2)"
 	row := ss.db.QueryRow(query,ts_from,ts_to)
 	var null_counter sql.NullInt64
 	var err error
@@ -194,8 +201,10 @@ func (ss *SQLStorage) Link_eoa_and_wallet_contract(eoa_aid, wallet_aid int64) {
 	query = "INSERT INTO eoa_wallet(eoa_aid,wallet_aid) " +
 			"VALUES($1,$2)"
 
+	eoa_addr,_ := ss.Lookup_address(eoa_aid)
+	wallet_addr,_ := ss.Lookup_address(wallet_aid)
 	res,err:=ss.db.Exec(query,eoa_aid,wallet_aid)
-	ss.Info.Printf("reporting eoa2wallet link sql error: %v  eoa=%v wallet=%v\n",err,eoa_aid,wallet_aid)
+	ss.Info.Printf("creating eoa2wallet link eoa= %v ,wallet= %v ,  eoa ID=%v wallet ID=%v\n",eoa_addr,wallet_addr,eoa_aid,wallet_aid)
 	if (err!=nil) {
 //		ss.Info.Printf("errstr: %v\ncmpstr:%v
 		unique := strings.Contains(err.Error(),`duplicate key value violates unique constraint`)

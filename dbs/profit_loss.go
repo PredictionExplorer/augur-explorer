@@ -166,7 +166,7 @@ func (ss *SQLStorage) Update_claim_status(agtx *p.AugurTx,evt *p.ETradingProceed
 func (ss *SQLStorage) Insert_trading_proceeds_claimed_evt(agtx *p.AugurTx,evt *p.ETradingProceedsClaimed) {
 
 	market_aid := ss.Lookup_address_id(evt.Market.String())
-	aid := ss.Lookup_or_create_address(evt.Sender.String(),agtx.BlockNum,agtx.TxId)
+	aid := ss.Lookup_or_create_address(evt.Shareholder.String(),agtx.BlockNum,agtx.TxId)
 	var query string
 	query = "INSERT INTO tproceeds(" +
 				"block_num,tx_id,market_aid,aid,time_stamp,outcome_idx,num_shares,num_payout_tok,fees" +
