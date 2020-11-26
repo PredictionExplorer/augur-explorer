@@ -152,6 +152,7 @@ func (ss *SQLStorage) Get_unique_addresses() []p.UniqueAddrEntry {
 func (ss *SQLStorage) Calc_unique_addresses(ts_from int64,ts_to int64) (int64,bool) {
 
 	var query string
+	/* This query will ALL report existing addresses, but not all of them can have activity
 	query = "SELECT count(*) FROM ( " +
 				"SELECT DISTINCT aid FROM (" +
 					"(" +
@@ -165,6 +166,15 @@ func (ss *SQLStorage) Calc_unique_addresses(ts_from int64,ts_to int64) (int64,bo
 				"JOIN address AS a ON d.aid=a.address_id " +
 				"JOIN block b ON a.block_num=b.block_num " +
 				"WHERE b.ts >= to_timestamp($1) AND b.ts < to_timestamp($2)"
+	*/
+	// This query will report existing addresses with some usage. 
+	query = "SELECT count(*) FROM ( " +
+				"SELECT DISTINCT u.eoa_aid FROM address a " +
+				"JOIN ustats u ON u.eoa_aid=a.address_id " +
+				"JOIN block b ON a.block_num=b.block_num " +
+			"WHERE b.ts >= to_timestamp($1) AND b.ts < to_timestamp($2)" +
+			") AS s"
+
 	row := ss.db.QueryRow(query,ts_from,ts_to)
 	var null_counter sql.NullInt64
 	var err error
@@ -233,8 +243,6 @@ func (ss *SQLStorage) Link_eoa_and_wallet_contract(eoa_aid, wallet_aid int64) {
 			os.Exit(1)
 		}
 	}
-//	ss.Insert_ustats_record(eoa_aid)
-//	ss.Insert_ustats_record(wallet_aid)
 }
 func (ss *SQLStorage) Insert_ustats_record(aid int64) {
 

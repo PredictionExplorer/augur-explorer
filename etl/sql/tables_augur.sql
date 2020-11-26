@@ -421,18 +421,39 @@ CREATE TABLE mkt_words(-- search tokens for searching markets by description/cat
 	tok_type			SMALLINT DEFAULT 0,				-- 0-market 1 - category
 	tokens				TSVECTOR
 );
-CREATE TABLE agtx( -- augur transaction (transaction related to Augur trading (UI only)
-	tx_id				BIGINT PRIMARY KEY REFERENCES transaction(id) ON DELETE CASCADE,
-	block_num			BIGINT NOT NULL,			 -- this is just a copy (for easy data management)
+CREATE TABLE agtx_evt(	-- augur transaction event (for accumulating Augur-related events)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	ref_id				BIGINT NOT NULL,	-- reference id (event id or market order id)
+	block_num			BIGINT NOT NULL,	-- this is just a copy (for easy data management)
 	account_aid			BIGINT DEFAULT 0,	-- if account is created, the address of the account
 	market_aid			BIGINT DEFAULT 0,	-- if market is related, the market address
-	--tx_type's: 0:Outside Augur and outside DeFI trading (i.e. Uknown), 1: DeFi trading 2: Market Created,
+	defi_platform		INT	DEFAULT 0,		-- 0: Unknown, 1: Uniswap, 2: Balancer
+	--evt_type's: 0:Outside Augur-UI and outside DeFI trading (i.e. Unknown), 1: DeFi trading 2: Market Created,
 	-- 3: Trade, 4: Report, 5: Claim profits. 6:Other Augur UI
-	tx_type				INT DEFAULT 0
+	evt_type			INT DEFAULT 0,
+	PRIMARY KEY(tx_id,ref_id)
 );
-CREATE TABLE agblk( -- augur block (a block which has Augur-related data), used for counters and Gas Usage stats
+CREATE TABLE agtx( -- augur transaction (transaction related to Augur trading (transfer of market shares of any kind)
+	tx_id				BIGINT PRIMARY KEY REFERENCES transaction(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			 -- this is just a copy (for easy data management)
+	num_events			INT DEFAULT 0,		-- number of augur events in this transaction
+	num_tx				INT DEFAULT 0,		-- counter for number of Ethereum Transactions
+	num_agtx_evts		INT DEFAULT 0,		-- counter for number of Augur events 
+	num_defi_evts		INT DEFAULT 0,		-- counter for number of swaps on DeFi platforms
+	num_other_evts		INT DEFAULT 0,		-- counter for number of other type of events
+	num_bal_swaps		INT DEFAULT 0,		-- counter for how many balancer swaps were made
+	num_uni_swaps		INT DEFAULT 0,		-- counter for how many uniswap v2 swaps were made
+	gas_used			BIGINT NOT NULL,	-- copy from 'transaction' table
+	gas_price			DECIMAL(64,18) NOT NULL	-- copy from 'transaction' table
+);
+CREATE TABLE agblk( -- augur block (a block which has Augur-related data , data derived from 'agtx' table)
 	block_num			BIGINT PRIMARY KEY REFERENCES block(block_num) ON DELETE CASCADE,
-	num_agtx			INT DEFAULT 0,		-- counter for number of transactions (Augur UI related)
-	num_defi_tx			INT DEFAULT 0,		-- counter for number of trades on DeFi platforms
-	num_other_tx		INT DEFAULT 0		-- counter for number of other type of transactions (like direct sharetoken transfs)
+	-- the following counters are accumulated from 'agtx' table using triggers
+	num_events			INT DEFAULT 0,		-- number of augur events in this block
+	num_tx				INT DEFAULT 0,		-- counter for number of Ethereum Transactions
+	num_agtx_evts		INT DEFAULT 0,		-- counter for number of transactions (Augur UI related)
+	num_defi_evts		INT DEFAULT 0,		-- counter for number of trades on DeFi platforms
+	num_other_evts		INT DEFAULT 0,		-- counter for number of other type of transactions (like direct sharetoken transfs)
+	num_bal_swaps		INT DEFAULT 0,
+	num_uni_swaps		INT DEFAULT 0
 );

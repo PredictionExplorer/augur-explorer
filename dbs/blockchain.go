@@ -287,21 +287,45 @@ func (ss *SQLStorage) Block_delete_with_everything(block_num int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Get_block_info(block_num int64) (p.BlockInfo,error) {
+func (ss *SQLStorage) Get_block_info(block_num_from,block_num_to int64) (p.BlockInfo,error) {
+
+	if block_num_to == 0 {
+		var success bool
+		block_num_to,success = ss.Get_last_block_num()
+		if !success {
+			block_num_to = block_num_from
+		}
+	}
 
 	var binfo p.BlockInfo
-	records_market := make([]string,0,8)
-	records_addresses := make([]string,0,8)
-	records_transactions := make([]string,0,8)
+	binfo.BlockNumFrom = block_num_from
+	binfo.BlockNumTo = block_num_to
+	binfo.NumBlocks = block_num_to - block_num_from
+	if binfo.NumBlocks < 0 { binfo.NumBlocks = 0 }
+
 
 	var query string
-	query = "SELECT block_num,num_tx FROM block WHERE block_num = $1"
+	query = "SELECT " +
+				"SUM(num_tx) AS num_tx," +
+				"SUM(num_events) AS num_events," +
+				"SUM(num_agtx_evts) AS num_tx," +
+				"SUM(num_defi_evts) AS num_defi_evts," +
+				"SUM(num_other_evts) AS num_other_events, " +
+				"SUM(num_bal_swaps) AS num_bal_swaps," +
+				"SUM(num_uni_swaps) AS num_uni_swaps " +
+			"FROM agblk WHERE (block_num >= $1) AND (block_num <= $2)"
 
-	row := ss.db.QueryRow(query,block_num)
-	var null_bnum sql.NullInt64
-	var null_num_tx sql.NullInt64
+	row := ss.db.QueryRow(query,block_num_from,block_num_to)
 	var err error
-	err=row.Scan(&null_bnum,&null_num_tx);
+	err=row.Scan(
+		&binfo.NumAugurTx,
+		&binfo.NumEvents,
+		&binfo.NumAugurEvents,
+		&binfo.NumDefiEvents,
+		&binfo.NumOtherEvents,
+		&binfo.NumBalSwaps,
+		&binfo.NumUniSwaps,
+	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			return binfo,err
@@ -310,11 +334,37 @@ func (ss *SQLStorage) Get_block_info(block_num int64) (p.BlockInfo,error) {
 			os.Exit(1)
 		}
 	}
+
+	query = "SELECT " +
+				"SUM(gas_used) AS gas_used, " +
+				"(SUM(gas_used*gas_price)/1e+18)::DECIMAL(64,18) AS tx_cost_eth " +
+			"FROM agtx WHERE (block_num >= $1) AND (block_num <= $2)"
+	row = ss.db.QueryRow(query,block_num_from,block_num_to)
+	var null_gas sql.NullInt64
+	var null_tx_cost sql.NullFloat64
+	err=row.Scan(&null_gas,&null_tx_cost)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		if null_gas.Valid {
+			binfo.GasUsed = null_gas.Int64
+		}
+		if null_tx_cost.Valid {
+			binfo.TxCostEth = null_tx_cost.Float64
+		}
+	}
 	// get TRANSACTIONS
-	query = "SELECT tx_hash FROM transaction WHERE block_num = $1"
+	records_transactions := make([]string,0,8)
+	query = "SELECT tx_hash FROM agtx agt " +
+			"JOIN transaction t ON agt.tx_id=t.id " +
+			"WHERE (agt.block_num >= $1) AND (agt.block_num <= $2)"
 
 	var rows *sql.Rows
-	rows,err = ss.db.Query(query,block_num)
+	rows,err = ss.db.Query(query,block_num_from,block_num_to)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			return binfo,err
@@ -335,13 +385,41 @@ func (ss *SQLStorage) Get_block_info(block_num int64) (p.BlockInfo,error) {
 	}
 	binfo.Transactions = records_transactions
 
-	// get MARKETS
-	query = "SELECT a.addr,u.addr FROM market m " +
-			"LEFT JOIN address a ON m.market_aid=a.address_id " +
-			"LEFT JOIN address u ON m.creator_aid=u.address_id " +
-			"WHERE m.block_num = $1"
+	// get ORDERs
+	records_orders:= make([]string,0,8)
+	query = "SELECT DISTINCT order_hash FROM agtx agt " +
+			"JOIN mktord o ON agt.tx_id=o.id " +
+			"WHERE (agt.block_num >= $1) AND (agt.block_num <= $2)"
 
-	rows,err = ss.db.Query(query,block_num)
+	rows,err = ss.db.Query(query,block_num_from,block_num_to)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return binfo,err
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var order_hash string
+		err=rows.Scan(&order_hash)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records_orders = append(records_orders,order_hash)
+	}
+	binfo.Orders= records_orders
+	binfo.NumUniqueOrders = int64(len(binfo.Orders))
+
+	// get MARKETS
+	records_market := make([]string,0,8)
+	query = "SELECT DISTINCT a.addr FROM market m " +
+			"LEFT JOIN address a ON m.market_aid=a.address_id " +
+			"WHERE (m.block_num >= $1) AND (m.block_num <= $2)"
+
+	rows,err = ss.db.Query(query,block_num_from,block_num_to)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			return binfo,err
@@ -353,32 +431,33 @@ func (ss *SQLStorage) Get_block_info(block_num int64) (p.BlockInfo,error) {
 	defer rows.Close()
 	for rows.Next() {
 		var market_addr string
-		var creator_addr string
-		err=rows.Scan(&market_addr,&creator_addr)
+		err=rows.Scan(&market_addr)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
 		records_market = append(records_market,market_addr)
-		records_addresses = append(records_addresses,creator_addr)
 	}
 	binfo.Markets = records_market
+	binfo.NumUniqueMarkets=int64(len(binfo.Markets))
 
 	// get Active addresses
-	query = "SELECT DISTINCT addr FROM " +
-			"(" +
-				"(" +
-					"SELECT addr FROM mktord,address " +
-					"WHERE mktord.aid = address.address_id AND mktord.block_num=$1" +
-				")" +
-				" UNION ALL "+
-				"(" +
-					"SELECT addr FROM mktord,address " +
-					"WHERE mktord.fill_aid = address.address_id AND mktord.block_num=$1" +
-				")" +
-			") AS records"
+	records_addresses := make([]string,0,8)
+	query = "WITH aids AS (" +
+				"SELECT DISTINCT aid FROM ( "+
+					"(" +
+						"SELECT DISTINCT account_aid AS aid FROM agtx_evt " +
+						"WHERE (block_num >= $1) AND (block_num <= $2)" +
+					") UNION ALL (" +
+						"SELECT DISTINCT aid FROM mktord " + // agtx_evt only stored Fill account addr
+						"WHERE (block_num >= $1) AND (block_num <= $2)" +
+					") " +
+				") AS d " +
+			") " +
+			"SELECT a.addr FROM address AS a " +
+				"JOIN aids ON aids.aid=a.address_id "
 
-	rows,err = ss.db.Query(query,block_num)
+	rows,err = ss.db.Query(query,block_num_from,block_num_to)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			return binfo,err
@@ -397,12 +476,8 @@ func (ss *SQLStorage) Get_block_info(block_num int64) (p.BlockInfo,error) {
 		}
 		records_addresses = append(records_addresses,active_addr)
 	}
-	binfo.Addresses= records_addresses
-
-	binfo.BlockNum = block_num
-	binfo.NumTx=int64(len(binfo.Transactions))
-	binfo.NumAddresses=int64(len(binfo.Addresses))
-	binfo.NumMarkets=int64(len(binfo.Markets))
+	binfo.ActiveAddresses= records_addresses
+	binfo.NumUniqueAddresses=int64(len(binfo.ActiveAddresses))
 
 	return binfo,nil
 }
@@ -773,7 +848,8 @@ func (ss *SQLStorage) Get_augur_transaction(tx_id int64) *p.AugurTx {
 
 	agtx := new(p.AugurTx)
 	var query string
-	query = "SELECT block_num,tx_hash,b.ts FROM transaction t,block b " +
+	query = "SELECT t.block_num,tx_hash,EXTRACT(EPOCH FROM b.ts)::BIGINT AS ts " +
+			"FROM transaction t,block b " +
 			"WHERE t.id=$1 AND b.block_num=t.block_num"
 
 	res := ss.db.QueryRow(query,tx_id)

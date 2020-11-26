@@ -49,9 +49,9 @@ BEGIN
 		WHERE wrapper_aid IN(NEW.token_in_aid,NEW.token_out_aid) LIMIT 1
 		INTO v_wrapper_aid,v_market_aid;
 	IF v_wrapper_aid IS NOT NULL THEN
-		INSERT INTO agtx(tx_id,block_num,account_aid,market_aid,tx_type)
-			VALUES(NEW.tx_id,NEW.block_num,NEW.caller_aid,v_market_aid,1)
-			ON CONFLICT DO NOTHING;
+		PERFORM insert_agtx_event(
+			NEW.tx_id,NEW.evtlog_id,NEW.block_num,NEW.caller_aid,v_market_aid,2,1
+		);
 	END IF;
 	RETURN NEW;
 END;
@@ -62,7 +62,7 @@ BEGIN
 
 	UPDATE bpool SET num_swaps = num_swaps -1
 		WHERE pool_aid=OLD.pool_aid;
-	DELETE FROM agtx WHERE tx_id=OLD.tx_id;
+	PERFORM delete_agtx_event(OLD.tx_id,OLD.evtlog_id);
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

@@ -425,14 +425,26 @@ type AgtxInBlock struct {
 	PairAddr			string
 }
 type BlockInfo struct {
-	BlockNum			int64
-	NumTx				int64
-	NumAddresses		int64
-	NumMarkets			int64
-	Addresses			[]string	//list of addresses participated in this block
+	BlockNumFrom		int64
+	BlockNumTo			int64
+	NumBlocks			int64
+	NumAugurTx			int64		// Only Augur-related transaction counter
+	NumEvents			int64
+	NumAugurEvents		int64
+	NumDefiEvents		int64
+	NumOtherEvents		int64
+	NumBalSwaps			int64		// Num swaps at Balancer
+	NumUniSwaps			int64		// Num swaps at Uniswap
+	NumUniqueMarkets	int64
+	NumUniqueAddresses	int64
+	NumUniqueOrders		int64
+	GasUsed				int64
+	TxCostEth			float64
+	ActiveAddresses		[]string	//list of addresses participated in this block
 	Transactions		[]string
+	Orders				[]string
 	Markets				[]string	// list of market addresses created at this block
-	BlockTransactions	[]AgtxInBlock
+//	BlockTransactions	[]AgtxInBlock	DISCONTINUED
 
 }
 type TxInfo struct {

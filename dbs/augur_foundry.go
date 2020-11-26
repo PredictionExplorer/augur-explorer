@@ -75,7 +75,7 @@ func (ss *SQLStorage) Insert_wrapper_created_evt(evtlog_id int64,timestamp int64
 
 	token_id := hex.EncodeToString(evt.TokenId.Bytes())
 	wrapper_aid := ss.Lookup_or_create_address(evt.TokenAddress.String(),agtx.BlockNum,agtx.TxId)
-	market_aid := ss.Lookup_address_id(market_addr.String())
+	market_aid := ss.Lookup_or_create_address(market_addr.String(),0,0)
 	var query string
 	query = "INSERT INTO af_wrapper (" +
 				"evtlog_id,block_num,tx_id,token_id,wrapper_aid,time_stamp,name,symbol,decimals,"+

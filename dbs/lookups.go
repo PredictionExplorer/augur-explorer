@@ -93,6 +93,7 @@ func (ss *SQLStorage) Lookup_address_id(addr string) int64 {
 	if (err!=nil) {
 		if (err==sql.ErrNoRows) {
 			ss.Log_msg(fmt.Sprintf("Forced address lookup failed for %v : addr not found",addr))
+			ss.Log_msg(fmt.Sprintf("Printing stack trace to help locating the actual function with error"))
 			debug.PrintStack()
 			os.Exit(1)
 		} else {

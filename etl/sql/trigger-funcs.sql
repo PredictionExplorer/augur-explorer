@@ -120,8 +120,7 @@ BEGIN
 	UPDATE category set total_markets = (total_markets + 1) WHERE cat_id=NEW.cat_id;
 	PERFORM insert_search_tokens(NEW.market_aid,NEW.cat_id,NEW.extra_info::json->>'description',NEW.extra_info::json->>'categories');
 
-	INSERT INTO agtx(tx_id,block_num,account_aid,market_aid,tx_type)
-		VALUES(NEW.tx_id,NEW.block_num,NEW.creator_aid,NEW.market_aid,2);
+	PERFORM insert_agtx_event(NEW.tx_id,0,NEW.block_num,NEW.creator_aid,NEW.market_aid,0,2);
 
 	RETURN NEW;
 END;
@@ -156,7 +155,7 @@ BEGIN
 	UPDATE category set total_markets = (total_markets - 1) WHERE cat_id=OLD.cat_id;
 	PERFORM delete_search_tokens(OLD.market_aid);
 
-	DELETE FROM agtx WHERE tx_id=OLD.tx_id;
+	PERFORM delete_agtx_event(OLD.tx_id,0);
 
 	RETURN OLD;
 END;
@@ -223,9 +222,7 @@ BEGIN
 	UPDATE outcome_vol SET total_trades = (total_trades + 1)
 		WHERE market_aid = NEW.market_aid AND outcome_idx = NEW.outcome_idx;
 
-	INSERT INTO agtx(tx_id,block_num,account_aid,market_aid,tx_type)
-		VALUES(NEW.tx_id,NEW.block_num,NEW.fill_aid,NEW.market_aid,3)
-		ON CONFLICT DO NOTHING; -- multiple orders will try to insert many of these
+	PERFORM insert_agtx_event(NEW.tx_id,NEW.id,NEW.block_num,NEW.fill_aid,NEW.market_aid,0,3);
 
 	RETURN NEW;
 END;
@@ -298,7 +295,7 @@ BEGIN
 
 	DELETE FROM mesh_evt WHERE mktord_id = OLD.id;
 
-	DELETE FROM agtx WHERE tx_id=OLD.tx_id;
+	PERFORM delete_agtx_event(OLD.tx_id,OLD.id);
 
 	RETURN OLD;
 END;
@@ -469,9 +466,7 @@ BEGIN
 			WHERE market_aid = NEW.market_aid;
 	END IF;
 
-	INSERT INTO agtx(tx_id,block_num,account_aid,market_aid,tx_type)
-		VALUES(NEW.tx_id,NEW.block_num,NEW.aid,NEW.market_aid,4)
-		ON CONFLICT DO NOTHING;
+	PERFORM insert_agtx_event(NEW.tx_id,0,NEW.block_num,NEW.aid,NEW.market_aid,0,4);
 
 	RETURN NEW;
 END;
@@ -513,142 +508,9 @@ BEGIN
 			WHERE market_aid = OLD.market_aid;
 	END IF;
 
-	DELETE FROM agtx WHERE tx_id=OLD.tx_id;
+	PERFORM delete_agtx_event(OLD.tx_id,0);
 
 	RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_tx_insert() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-
-	UPDATE block
-		SET  num_tx = num_tx + 1
-		WHERE block_num=NEW.block_num;
-
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_tx_delete() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-
-	UPDATE block
-		SET  num_tx = num_tx - 1
-		WHERE block_num=OLD.block_num;
-	RETURN OLD;
-
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_dai_transf_insert() RETURNS trigger AS  $$
-DECLARE
-	v_aid bigint;
-	v_cnt numeric;
-	v_augur bool;	-- true if this transfer is made to Augur Wallet account
-	v_internal bool;
-BEGIN
-
-	v_augur := false;
-	SELECT aid FROM ustats WHERE aid = NEW.from_aid INTO v_aid;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt > 0 THEN
-		v_augur := true;
-	END IF;
-	INSERT INTO dai_bal(block_num,tx_id,dai_transf_id,aid,amount,augur,internal)
-			VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.from_aid,-NEW.amount,v_augur,NEW.from_internal);
-
-
-	v_augur := false;
-	SELECT aid FROM ustats WHERE aid = NEW.to_aid INTO v_aid;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt > 0 THEN
-		v_augur := true;
-	END IF;
-	INSERT INTO dai_bal(block_num,tx_id,dai_transf_id,aid,amount,augur,internal)
-			VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.to_aid,NEW.amount,v_augur,NEW.to_internal);
-
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_dai_transf_delete() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-
-	DELETE FROM dai_bal WHERE dai_transf_id = OLD.id;
-	RETURN OLD;
-
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_dai_bal_insert() RETURNS trigger AS  $$
-DECLARE
-	v_aid bigint;
-	v_cnt numeric;
-	v_augur bool;
-BEGIN
-
-	v_augur := false;
-	SELECT aid FROM ustats WHERE aid = NEW.aid INTO v_aid;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt > 0 THEN
-		v_augur := true;
-	END IF;
-
-	IF v_augur THEN
-		if NEW.internal IS FALSE THEN
-			UPDATE block AS b
-				SET cash_flow = (cash_flow + NEW.amount)
-				WHERE	b.block_num = NEW.block_num;
-		END IF;
-	END IF;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_dai_bal_delete() RETURNS trigger AS  $$
-DECLARE
-	v_augur bool;	-- true if this transfer is made to Augur Wallet account
-	v_aid bigint;
-	v_cnt numeric;
-BEGIN
-
-	v_augur := false;
-	SELECT aid FROM ustats WHERE aid = OLD.aid INTO v_aid;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt > 0 THEN
-		v_augur := true;
-	END IF;
-	IF v_augur THEN
-		IF OLD.internal IS FALSE THEN
-			UPDATE block AS b
-				SET cash_flow = (cash_flow - OLD.amount)
-				WHERE	b.block_num = OLD.block_num;
-		END IF;
-	END IF;
-	RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_dai_bal_update() RETURNS trigger AS  $$
-DECLARE
-	v_augur bool;	-- true if this transfer is made to Augur Wallet account
-	v_aid bigint;
-	v_cnt numeric;
-BEGIN
-	-- Noute: this trigger only calculates block.cash_flow. For another process
-	--			use another trigger function
-	-- cash_flow calculation starts
-	IF NEW.internal != OLD.internal THEN
-		RAISE EXCEPTION 'Changing dai_bal.internal field not possible. Delete the whole block';
-	END IF;
-	IF OLD.augur != NEW.augur THEN -- this update is coming from ustats table
-		IF NEW.augur THEN
-			IF NEW.internal IS FALSE THEN
-				UPDATE block AS b
-					SET cash_flow = (cash_flow + NEW.amount)
-					WHERE	b.block_num = NEW.block_num;
-			END IF;
-		END IF;
-	END IF;
-	-- cash flow calculation ends
-	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_ustats_insert() RETURNS trigger AS  $$
@@ -1014,6 +876,70 @@ BEGIN
 	DELETE from mkt_words WHERE market_aid=p_market_aid;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_agtx_evt_before_insert() RETURNS trigger AS  $$
+DECLARE
+	v_gas_used BIGINT;
+	v_gas_price DECIMAL;
+BEGIN
+
+	SELECT gas_used,gas_price FROM transaction WHERE id=NEW.tx_id INTO v_gas_used,v_gas_price;
+	IF v_gas_used IS NULL THEN
+		RAISE EXCEPTION 'Couldn''t find transaction id=% to insert agtx_evt record',NEW.tx_id;
+	END IF;
+	INSERT INTO agtx(tx_id,block_num,gas_used,gas_price)
+		VALUES(NEW.tx_id,NEW.block_num,v_gas_used,v_gas_price)
+		ON CONFLICT DO NOTHING;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_agtx_evt_after_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE agtx SET num_events = (num_events + 1) WHERE tx_id=NEW.tx_id;
+	IF NEW.defi_platform = 1 THEN
+		UPDATE agtx SET num_uni_swaps = (num_uni_swaps + 1) WHERE tx_id=NEW.tx_id;
+	END IF;
+	IF NEW.defi_platform = 2 THEN
+		UPDATE agtx SET num_bal_swaps = (num_bal_swaps + 1) WHERE tx_id=NEW.tx_id;
+	END IF;
+	IF NEW.evt_type = 0 THEN
+		UPDATE agtx SET num_other_evts = (num_other_evts + 1) WHERE tx_id=NEW.tx_id;
+	END IF;
+	IF NEW.evt_type = 1 THEN
+		UPDATE agtx SET num_defi_evts = (num_defi_evts + 1) WHERE tx_id=NEW.tx_id;
+	END IF;
+	IF NEW.evt_type > 1 AND NEW.evt_type < 6 THEN
+		UPDATE agtx SET num_agtx_evts = (num_agtx_evts + 1) WHERE tx_id=NEW.tx_id;
+	END IF;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_agtx_evt_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE agtx SET num_events = (num_events - 1) WHERE tx_id=OLD.tx_id;
+	IF OLD.defi_platform = 1 THEN
+		UPDATE agtx SET num_uni_swaps = (num_uni_swaps - 1) WHERE tx_id=OLD.tx_id;
+	END IF;
+	IF OLD.defi_platform = 2 THEN
+		UPDATE agtx SET num_bal_swaps = (num_bal_swaps - 1) WHERE tx_id=OLD.tx_id;
+	END IF;
+	IF OLD.evt_type = 0 THEN
+		UPDATE agtx SET num_other_evts = (num_other_evts - 1) WHERE tx_id=OLD.tx_id;
+	END IF;
+	IF OLD.evt_type = 1 THEN
+		UPDATE agtx SET num_defi_evts = (num_defi_evts - 1) WHERE tx_id=OLD.tx_id;
+	END IF;
+	IF OLD.evt_type > 1 AND OLD.evt_type < 6 THEN
+		UPDATE agtx SET num_agtx_evts = (num_agtx_evts - 1) WHERE tx_id=OLD.tx_id;
+	END IF;
+	DELETE FROM agtx WHERE tx_id=OLD.tx_id AND num_events=0;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_agtx_before_insert() RETURNS trigger AS  $$
 DECLARE
 BEGIN
@@ -1026,17 +952,7 @@ CREATE OR REPLACE FUNCTION on_agtx_after_insert() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	IF NEW.tx_type = 0 THEN
-		UPDATE agblk SET num_other_tx = (num_other_tx + 1) WHERE block_num=NEW.block_num;
-		RETURN NEW;
-	END IF;
-	IF NEW.tx_type = 1 THEN
-		UPDATE agblk SET num_defi = (num_defi + 1) WHERE block_num=NEW.block_num;
-		RETURN NEW;
-	END IF;
-
-	UPDATE agblk SET num_agtx = (num_agtx + 1) WHERE block_num=NEW.block_num;
-
+	UPDATE agblk SET num_tx = (num_tx + 1) WHERE block_num=NEW.block_num;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -1044,26 +960,58 @@ CREATE OR REPLACE FUNCTION on_agtx_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	IF OLD.tx_type = 0 THEN
-		UPDATE agblk SET num_other_tx = (num_other_tx - 1) WHERE block_num=OLD.block_num;
-	END IF;
-	IF OLD.tx_type = 1 THEN
-		UPDATE agblk SET num_defi = (num_defi - 1) WHERE block_num=OLD.block_num;
-	END IF;
-	IF OLD.tx_type!=0 AND OLD.tx_type!=1 THEN
-		UPDATE agblk SET num_agtx = (num_agtx - 1) WHERE block_num=OLD.block_num;
-	END IF;
-	DELETE FROM agblk
-		WHERE block_num=OLD.block_num AND num_agtx=0 AND num_defi_tx=0 AND num_other_tx=0;
+	UPDATE agblk SET num_tx = (num_tx - 1) WHERE block_num=OLD.block_num;
+	DELETE FROM agblk WHERE block_num=OLD.block_num AND num_events=0;
 	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_agtx_update() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	-- on update in agtx (augur-related transaction) propagate higher to the block table
+	UPDATE agblk AS b SET
+		num_events		= (num_events + (NEW.num_events - OLD.num_events)),
+		num_agtx_evts	= (num_agtx_evts +	(NEW.num_agtx_evts - OLD.num_agtx_evts)),
+		num_defi_evts	= (num_defi_evts + (NEW.num_defi_evts - OLD.num_defi_evts)),
+		num_other_evts	= (num_other_evts + (NEW.num_other_evts - OLD.num_other_evts)),
+		num_bal_swaps	= (num_bal_swaps + (NEW.num_bal_swaps - OLD.num_bal_swaps)),
+		num_uni_swaps	= (num_uni_swaps + (NEW.num_uni_swaps - OLD.num_uni_swaps))
+	WHERE b.block_num	= NEW.block_num;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION insert_agtx_event(
+	p_tx_id BIGINT,
+	p_ref_id BIGINT,
+	p_block_num BIGINT,
+	p_account_aid BIGINT,
+	p_market_aid BIGINT,
+	p_defi_platform INT,
+	p_evt_type INT
+) RETURNS void AS  $$
+DECLARE
+BEGIN
+
+	INSERT INTO agtx_evt(tx_id,ref_id,block_num,account_aid,market_aid,defi_platform,evt_type)
+		VALUES(p_tx_id,p_ref_id,p_block_num,p_account_aid,p_market_aid,p_defi_platform,p_evt_type)
+		ON CONFLICT DO NOTHING;
+
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION delete_agtx_event(p_tx_id BIGINT,p_ref_id BIGINT) RETURNS void AS  $$
+DECLARE
+BEGIN
+
+	DELETE FROM agtx_evt WHERE tx_id=p_tx_id AND ref_id=p_ref_id;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_tproceeds_insert() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	INSERT INTO agtx(tx_id,evtlog_id,block_num,account_aid,market_aid,tx_type)
-		VALUES(NEW.tx_id,NEW.evtlog_id,NEW.block_num,NEW.aid,NEW.market_aid,5);
+	PERFORM insert_agtx_event(NEW.tx_id,0,NEW.block_num,NEW.aid,NEW.market_aid,0,5);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -1071,7 +1019,7 @@ CREATE OR REPLACE FUNCTION on_tproceeds_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	DELETE FROM agtx WHERE tx_id=OLD.tx_id;
+	PERFORM delete_agtx_event(OLD.tx_id,0);
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

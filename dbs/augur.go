@@ -244,7 +244,6 @@ func (ss *SQLStorage) Insert_execute_wallet_tx(eoa_aid int64,wallet_aid int64,ag
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into exec_wtx table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
-//	ss.Insert_ustats_record(wallet_aid)
 }
 func (ss *SQLStorage) Insert_register_contract_event(agtx *p.AugurTx,evt *p.ERegisterContract) {
 
@@ -412,7 +411,6 @@ func (ss *SQLStorage) Set_augur_flag(address *common.Address,agtx *p.AugurTx,fla
 				ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
 				os.Exit(1)
 			}
-			ss.Insert_ustats_record(aid)
 		}
 	}
 }

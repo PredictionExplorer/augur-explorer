@@ -765,7 +765,58 @@ func has0xPrefix(input string) bool {
 }
 func execute_search(keyword string) SearchResultObject {
 
-	idx := strings.Index(keyword, " ") // if there is a space, then it is some text to search
+	idx := strings.Index(keyword, ":") // if there is a colon, then it is a range of block search
+	if idx != -1 {
+		block_range := strings.Split(keyword,":")
+		if len(block_range) !=2  {
+			var iface interface{}
+			return SearchResultObject {
+				SRType:			SR_Block,
+				Found:			false,
+				ErrStr:			"Invalid block range, two blocks are needed",
+				Object:			iface,
+			}
+		}
+		block_num_from,err := strconv.Atoi(block_range[0])
+		if err != nil {
+			var iface interface{}
+			return SearchResultObject {
+				SRType:		SR_Block,
+				Found:		false,
+				ErrStr:		fmt.Sprintf("Error in converting first block num: %v",err.Error()),
+				Object:		iface,
+			}
+		}
+		block_num_to,err := strconv.Atoi(block_range[1])
+		if err != nil {
+			var iface interface{}
+			return SearchResultObject {
+				SRType:		SR_Block,
+				Found:		false,
+				ErrStr:		fmt.Sprintf("Error in converting second block num: %v",err.Error()),
+				Object:		iface,
+			}
+		}
+		block_info,err := augur_srv.storage.Get_block_info(int64(block_num_from),int64(block_num_to))
+		if err != nil {
+			var iface interface{}
+			return SearchResultObject {
+				SRType:		SR_Block,
+				Found:		false,
+				ErrStr:		err.Error(),
+				Object:		iface,
+			}
+		}
+		var iface interface{}
+		iface = &block_info
+		return SearchResultObject {
+			SRType:		SR_Block,
+			Found:		true,
+			ErrStr:		"",
+			Object:		iface,
+		}
+	}
+	idx = strings.Index(keyword, " ") // if there is a space, then it is some text to search
 	if idx == -1 {
 		var hex_data []byte
 		var err error
@@ -879,7 +930,7 @@ func execute_search(keyword string) SearchResultObject {
 				}
 				block_num,err := augur_srv.storage.Get_block_num_by_hash(hash_str)
 				if err == nil {
-					block_info,err := augur_srv.storage.Get_block_info(block_num)
+					block_info,err := augur_srv.storage.Get_block_info(block_num,block_num)
 					if err != nil {
 						var iface interface{}
 						return SearchResultObject {
@@ -918,7 +969,7 @@ func execute_search(keyword string) SearchResultObject {
 					Object:		iface,
 				}
 			}
-			block_info,err := augur_srv.storage.Get_block_info(int64(block_num))
+			block_info,err := augur_srv.storage.Get_block_info(int64(block_num),int64(block_num))
 			if err != nil {
 				var iface interface{}
 				return SearchResultObject {
@@ -1204,7 +1255,7 @@ func serve_block_info(p_block_num string,c *gin.Context) {
 			return
 		}
 	}
-	block_info,err := augur_srv.storage.Get_block_info(block_num)
+	block_info,err := augur_srv.storage.Get_block_info(block_num,block_num)
 	if err == nil {
 		c.HTML(http.StatusOK, "block_info.html", gin.H{
 			"title": fmt.Sprintf("Block Number %v",block_num),

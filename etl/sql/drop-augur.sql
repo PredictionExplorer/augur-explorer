@@ -33,6 +33,7 @@ DROP TABLE IF EXISTS
 	tproceeds,
 	oostats,
 	mkt_words,
+	agtx_evt,
 	agtx,
 	agblk
 CASCADE;
