@@ -760,7 +760,7 @@ func search_v2(c *gin.Context) {
 	if !sr.Found {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
-			"ErrDescr": fmt.Sprintf("Search object %v not found: ",keyword,sr.ErrStr),
+			"ErrDescr": fmt.Sprintf("Search object %v not found: %v",keyword,sr.ErrStr),
 		})
 		return
 	}
@@ -785,16 +785,48 @@ func search_v2(c *gin.Context) {
 			"title": "Transaction " + keyword,
 			"TxInfo" : tx_info,
 		})
+	case SR_Block:
+		block_info := sr.Object.(*BlockInfo)
+		c.HTML(http.StatusOK, "block_info.html", gin.H{
+			"BlockInfo" : block_info,
+		})
+	case SR_UserInfo:
+		user_info := sr.Object.(*UserInfo)
+		serve_user_info_page(c,user_info.Addr)
+	case SR_ShareTokenWrapper:
+		winfo := sr.Object.(*ERC20ShTokContract)
+		c.HTML(http.StatusOK, "wrapped_shtok_info.html", gin.H{
+			"WrapperInfo" : winfo,
+		})
 	case SR_AugurMarketInfo:
 		minfo:=sr.Object.(*InfoMarket)
 		complete_and_output_market_info(c,false,*minfo)
 		return
+	case SR_BalancerPool:
+		pool_obj := sr.Object.(*BalancerNewPool)
+		pool_info,_ := augur_srv.storage.Get_pool_info(pool_obj.PoolAid)
+		swaps := augur_srv.storage.Get_pool_swaps(pool_info.PoolAid,0,200)
+		c.HTML(http.StatusOK, "pool_swaps.html", gin.H{
+				"PoolInfo" : pool_info,
+				"PoolSwaps" : swaps,
+		})
+	case SR_UniswapPair:
+		now_ts := time.Now().Unix()
+		past_ts := now_ts - 100 * 3600 * 24
+		pair_info := sr.Object.(*MarketUPair)//.storage.Get_uniswap_pair_info(aid)
+		swaps := augur_srv.storage.Get_uniswap_swaps(pair_info.PairAid,0,200)
+		c.HTML(http.StatusOK, "uniswap_swaps.html", gin.H{
+				"PairInfo" : pair_info,
+				"PairSwaps" : swaps,
+				"SampleFinTs" : now_ts,
+				"SampleInitTs" : past_ts,
+		})
 	case SR_Unknown:
 		fallthrough
 	default:
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
-			"ErrDescr": fmt.Sprintf("Search object %v found but no HTML template for output found",keyword),
+			"ErrDescr": fmt.Sprintf("Search object %v found but no HTML template for output found for object type=%v",keyword,sr.SRType),
 		})
 	}
 }
@@ -1888,5 +1920,26 @@ func show_single_balancer_swap(c *gin.Context) {
 	c.HTML(http.StatusOK, "single_balancer_swap.html", gin.H{
 			"BalancerSwap" : swap,
 			"Id": id,
+	})
+}
+func wrapped_token_info(c *gin.Context) {
+
+	p_address := c.Param("address")
+	wrapper_addr,valid:=is_address_valid(c,false,p_address)
+	if !valid {
+		return
+	}
+	wrapper_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(wrapper_addr)
+	if err == nil {
+		respond_error(c,fmt.Sprintf("Address %v not found",p_address))
+		return
+	}
+	winfo,err := augur_srv.storage.Get_wrapped_token_info(wrapper_aid)
+	if err != nil {
+		respond_error(c,fmt.Sprintf("ShareToken wrapper with address %v not found",p_address))
+		return
+	}
+	c.HTML(http.StatusOK, "wrapped_shtok_info.html", gin.H{
+		"WrapperInfo" : winfo,
 	})
 }

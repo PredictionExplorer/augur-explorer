@@ -13,15 +13,15 @@
 	</tr>
 	<tr>
 		<td>Block Number</td>
-		<td><a href="/black/block/{{.TxInfo.BlockNum}}">{{.TxInfo.BlockNum}}</a></td>
+		<td><a  class="addr" href="/black/block/{{.TxInfo.BlockNum}}">{{.TxInfo.BlockNum}}</a></td>
 	</tr>
 	<tr>
 		<td>From</td>
-		<td><a href="/black/search?q={{.TxInfo.From}}" title="{{.TxInfo.FromAid}}">{{.TxInfo.From}}</a></td>
+		<td><a  class="addr" href="/black/search?q={{.TxInfo.From}}" title="{{.TxInfo.FromAid}}">{{.TxInfo.From}}</a></td>
 	</tr>
 	<tr>
 		<td>To</td>
-		<td><a href="/black/search?q={{.TxInfo.To}}" title="{{.TxInfo.ToAid}}">{{.TxInfo.To}}</a></td>
+		<td><a  class="addr" href="/black/search?q={{.TxInfo.To}}" title="{{.TxInfo.ToAid}}">{{.TxInfo.To}}</a></td>
 	</tr>
 	<tr>
 		<td>Value</td>
@@ -70,7 +70,7 @@
 </table>
 
 {{if .TxInfo.BalancerSwaps }}
-<h3>Balance Swaps</h3>
+<h3>Balancer Swaps</h3>
 <table class="market_trades">
 	<tr class="market_trades">
 		<th class="mkt_trade_hdr" style="text-align: center">Timestamp</th>
@@ -158,10 +158,10 @@
 				{{ end }}
 			</td>
 			<td class="market_reports_field">
-				{{.RequesterAddr}}
+				<a class="addr" href="/black/search?q={{.RequesterAddr}}">{{.RequesterAddr}}</a>
 			</td>
 			<td class="market_reports_field">
-				{{.PairAddr}}
+				<a class="addr" href="/black/search?q={{.PairAddr}}">{{.PairAddr}}</a>
 			</td>
 		</tr>
 	{{- end}}
@@ -213,9 +213,11 @@
 				{{ if eq 5 .EvtType }}Claim funds{{end}}
 				{{ if eq 6 .EvtType }}Other type{{end}}
 			</td>
-			<td class="market_reports_field" style="text-align: center">{{.Addr}}</td>
 			<td class="market_reports_field" style="text-align: center">
-				<a href="/black/market/{{.MktAddr}}">{{.MktAddr}}</a><br/>
+				<a class="addr" href="/black/search?q={{.Addr}}">{{.Addr}}</a>
+			</td>
+			<td class="market_reports_field" style="text-align: center">
+				<a  class="addr" href="/black/market/{{.MktAddr}}">{{.MktAddr}}</a><br/>
 				{{.MktDescr}}
 			</td>
 			<td class="market_reports_field" style="text-align: center">

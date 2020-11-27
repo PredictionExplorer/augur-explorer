@@ -158,6 +158,7 @@ func main() {
 	r.GET("/black/upair_swap_price/:pair_aid/:inverse/:init_ts/:fin_ts",show_upair_swap_prices)
 	r.GET("/black/uni_swap/:id",show_single_uniswap_swap)
 	r.GET("/black/bal_swap/:id",show_single_balancer_swap)
+	r.GET("/black/wrtok_info/:address",wrapped_token_info)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -195,7 +196,7 @@ func main() {
 	r.GET("/api/pool_swaps/:address/:offset/:limit",a1_pool_swaps)
 	r.GET("/api/mkt_pool_vol/:market/:outcome/:init_ts/:fin_ts/:interval_secs",a1_balancer_volume)
 	r.GET("/api/mkt_stbc/:market/:offset/:limit",a1_market_share_token_balance_changes)
-	r.GET("/api/mkt_uniswaps/:market/",a1_market_uniswap_pairs)
+	r.GET("/api/mkt_uniswaps/:market",a1_market_uniswap_pairs)
 	r.GET("/api/uniswap_swaps/:address/:offset/:limit",a1_uniswap_pair_swaps)
 	r.GET("/api/mkt_uniswap_vol/:market/:outcome/:init_ts/:fin_ts/:interval_secs",a1_uniswap_volume)
 	r.GET("/api/search",a1_search)

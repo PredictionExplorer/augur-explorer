@@ -1,49 +1,125 @@
 <html>
 <head>
 	<title>{{.title}}</title>
-	<link href="../res/main.css" rel="stylesheet">
+	<link href="/black/res/main.css" rel="stylesheet">
 </head>
 <body>
-	<h3 class="page_title">Block Info for {{.BlockInfo.BlockNum}}</h3>
+	{{ if eq .BlockInfo.BlockNumFrom .BlockInfo.BlockNumTo }}
+		<h3 class="page_title">Block Info for {{.BlockInfo.BlockNumFrom}}</h3>
+	{{ else }}
+	<h3 class="page_title">Block Info for range of blocks from {{.BlockInfo.BlockNumFrom}} to {{.BlockInfo.BlockNumTo}}</h3>
+	{{ end }}
 <div class="block_info">
 	<table class="block_info">
+		{{ if eq .BlockInfo.BlockNumFrom .BlockInfo.BlockNumTo }}
 		<tr>
 			<td>Block Number</td>
-			<td>{{.BlockInfo.BlockNum}}</td>
+			<td>{{.BlockInfo.BlockNumFrom}} ({{.BlockInfo.FromDate}})</td>
+		</tr>
+		{{ else }}
+		<tr>
+			<td>From Block Number</td>
+			<td>{{.BlockInfo.BlockNumFrom}} ({{.BlockInfo.FromDate}})</td>
 		</tr>
 		<tr>
-			<td>Transactions</td>
-			<td title="{{.BlockInfo.NumTx}}">{{.BlockInfo.NumTx}}</td>
+			<td>To Block Number</td>
+			<td>{{.BlockInfo.BlockNumTo}} {{.BlockInfo.ToDate}})</td>
 		</tr>
 		<tr>
-			<td>Active Addresses</td>
-			<td>{{.BlockInfo.NumAddresses}}</td>
+			<td>Blocks</td>
+			<td>{{.BlockInfo.NumBlocks}}</td>
+		</tr>
+		{{ end }}
+		<tr>
+			<td>Unique Active Addresses (Accounts)</td>
+			<td>{{.BlockInfo.NumUniqueAddresses}}</td>
 		</tr>
 		<tr>
-			<td>New Markets</td>
-			<td>{{.BlockInfo.NumMarkets}}</td>
+			<td>Augur-related transactions</td>
+			<td>{{.BlockInfo.NumAugurTx}}</td>
+		</tr>
+		<tr>
+			<td>Augur-related events</td>
+			<td>{{.BlockInfo.NumEvents}}</td>
+		</tr>
+		<tr>
+			<td>Augur-related events at DeFi platforms</td>
+			<td>{{.BlockInfo.NumDefiEvents}}</td>
+		</tr>
+		<tr>
+			<td>Other Augur-related events</td>
+			<td>{{.BlockInfo.NumOtherEvents}}</td>
+		</tr>
+		<tr>
+			<td>Augur-related Balancer swaps</td>
+			<td>{{.BlockInfo.NumBalSwaps}}</td>
+		</tr>
+		<tr>
+			<td>Augur-related Uniswap(v2) swaps</td>
+			<td>{{.BlockInfo.NumUniSwaps}}</td>
+		</tr>
+		<tr>
+			<td>New Markets created</td>
+			<td>{{.BlockInfo.NumMarketsCreated}}</td>
+		</tr>
+		<tr>
+			<td>Markets traded</td>
+			<td>{{.BlockInfo.NumMarketsTraded}}</td>
+		</tr>
+		<tr>
+			<td>Number of unique Augur orders created</td>
+			<td>{{.BlockInfo.NumUniqueOrders}}</td>
+		</tr>
+		<tr>
+			<td>Total Gas used by Augur activity</td>
+			<td>{{.BlockInfo.GasUsed}}</td>
+		</tr>
+		<tr>
+			<td>Total cost in transaction fees</td>
+			<td>{{.BlockInfo.TxCostEth}} ETH</td>
 		</tr>
 	</table>
 	<br/>
 </div>
-<span class="block_transactions">Transactions</span><br/><br/>
+{{- if .BlockInfo.Transactions }}
+<h3 class="page_title">Augur-related Transactions:</h3>
 {{template "block_transactions" .BlockInfo.Transactions}}
-<br/><br/>
-<br/>
-<span class="block_markets">New Markets created</span>
-{{- if ne .BlockInfo.NumMarkets 0}}
-{{template "block_markets" .BlockInfo.Markets}}
 {{- else }}
 	: None
 {{- end}}
 <br/><br/><br/>
-<span class="block_active_addresses">Active Addresses</span><br/><br/>
-{{template "block_active_addresses" .BlockInfo.Addresses}}
-
+<h3 class="page_title">New Markets:</h3>
+{{- if .BlockInfo.MarketsCreated }}
+{{template "block_markets" .BlockInfo.MarketsCreated}}
+{{- else }}
+	: None
+{{- end}}
+<br/><br/><br/>
+<h3 class="page_title">Markets traded:</h3>
+{{- if .BlockInfo.MarketsTraded }}
+{{template "block_markets" .BlockInfo.MarketsTraded}}
+{{- else }}
+	: None
+{{- end}}
+<br/><br/><br/>
+<h3 class="page_title">Active Addresses:</h3>
+{{- if .BlockInfo.ActiveAddresses}}
+{{template "block_active_addresses" .BlockInfo.ActiveAddresses}}
+{{- else }}
+	: None
+{{- end}}
+<br/><br/><br/>
+<h3 class="page_title">Trade Orders:</h3>
+{{- if .BlockInfo.Orders}}
+{{template "block_transactions" .BlockInfo.Orders}}
+{{- else }}
+	: None
+{{- end}}
+<br/><br/><br/>
 <nav>
 	<ul>
 	<li>
-		<a class="btn_link" href="../index.html">Back</a>
+		<a class="btn_link" href="/black/index.html">Back</a>
 		<span></span><span></span><span></span><span></span>
 	</li>
 </ul>

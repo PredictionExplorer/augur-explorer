@@ -688,6 +688,7 @@ func (ss *SQLStorage) Get_pool_swaps(pool_aid int64,offset int,limit int) []p.Ba
 	records := make([]p.BalancerSwap,0,64)
 	var query string
 	query = "SELECT " +
+				"s.id,"+
 				"FLOOR(EXTRACT(EPOCH FROM s.time_stamp))::BIGINT AS ts, " +
 				"s.time_stamp as datetime,"+
 				"s.block_num," +
@@ -705,8 +706,8 @@ func (ss *SQLStorage) Get_pool_swaps(pool_aid int64,offset int,limit int) []p.Ba
 				"LEFT JOIN address AS ca ON s.caller_aid=ca.address_id " +
 				"LEFT JOIN address AS tia ON s.token_in_aid=tia.address_id " +
 				"LEFT JOIN address AS toa ON s.token_out_aid=toa.address_id " +
-				"LEFT JOIN erc20_info AS e_in ON s.token_in=e_in.aid " +
-				"LEFT JOIN erc20_info AS e_out ON s.token_out=e_out.aid " +
+				"LEFT JOIN erc20_info AS e_in ON s.token_in_aid=e_in.aid " +
+				"LEFT JOIN erc20_info AS e_out ON s.token_out_aid=e_out.aid " +
 			"WHERE s.pool_aid=$1 " +
 			"ORDER BY ts DESC OFFSET $2 LIMIT $3"
 	rows,err := ss.db.Query(query,pool_aid,offset,limit)
@@ -720,6 +721,7 @@ func (ss *SQLStorage) Get_pool_swaps(pool_aid int64,offset int,limit int) []p.Ba
 		var rec p.BalancerSwap
 		var symbol_in,symbol_out sql.NullString
 		err=rows.Scan(
+			&rec.Id,
 			&rec.TimeStamp,
 			&rec.Date,
 			&rec.BlockNum,
@@ -1202,6 +1204,7 @@ func (ss *SQLStorage) Get_balancer_swap_by_id(id int64) (p.BalancerSwap,error) {
 	var query string
 
 	query = "SELECT " +
+				"s.Id," +
 				"s.pool_aid,"+
 				"pa.addr, " +
 				"FLOOR(EXTRACT(EPOCH FROM s.time_stamp))::BIGINT AS ts, " +
@@ -1229,6 +1232,7 @@ func (ss *SQLStorage) Get_balancer_swap_by_id(id int64) (p.BalancerSwap,error) {
 	res := ss.db.QueryRow(query,id)
 	var symbol_in,symbol_out sql.NullString
 	err := res.Scan(
+		&rec.Id,
 		&rec.PoolAid,
 		&rec.PoolAddr,
 		&rec.TimeStamp,

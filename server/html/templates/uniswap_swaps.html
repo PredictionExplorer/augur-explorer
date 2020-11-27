@@ -1,6 +1,6 @@
 <html>
 <head>
-	<link href="../res/main.css" rel="stylesheet">
+	<link href="/black/res/main.css" rel="stylesheet">
 	<title>Uniswap Swaps {{.PairInfo.PairAddr}}</title>
 </head>
 <body>
@@ -80,7 +80,7 @@ Prices : <br/>
 				{{ end }}
 			</td>
 			<td class="market_reports_field">
-				{{.RequesterAddr}}
+				<a class="addr" href="/black/search?q={{.RequesterAddr}}">{{.RequesterAddr}}</a>
 			</td>
 		</tr>
 	{{- end}}

@@ -385,6 +385,7 @@ func (ss *SQLStorage) Get_uniswap_swaps(pair_aid int64,offset int,limit int) []p
 	records := make([]p.UniswapSwap,0,128)
 	var query string
 	query = "SELECT " +
+				"sw.id,"+
 				"sw.block_num," +
 				"sw.amount0_in, " +
 				"sw.amount1_in," +
@@ -409,6 +410,7 @@ func (ss *SQLStorage) Get_uniswap_swaps(pair_aid int64,offset int,limit int) []p
 	for rows.Next() {
 		var rec p.UniswapSwap
 		err=rows.Scan(
+			&rec.Id,
 			&rec.BlockNum,
 			&rec.Amount0_In,
 			&rec.Amount1_In,
@@ -589,6 +591,7 @@ func (ss *SQLStorage) Get_uniswap_swap_by_id(id int64) (p.UniswapSwap,error) {
 	var rec p.UniswapSwap
 	var query string
 	query = "SELECT " +
+				"sw.id,"+
 				"sw.pair_aid," +
 				"pa.addr," +
 				"sw.block_num," +
@@ -613,6 +616,7 @@ func (ss *SQLStorage) Get_uniswap_swap_by_id(id int64) (p.UniswapSwap,error) {
 
 	res := ss.db.QueryRow(query,id)
 	err := res.Scan(
+		&rec.Id,
 		&rec.PairAid,
 		&rec.PairAddr,
 		&rec.BlockNum,

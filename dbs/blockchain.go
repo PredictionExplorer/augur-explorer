@@ -649,6 +649,7 @@ func (ss *SQLStorage) Get_transaction(tx_hash string) (p.TxInfo,error) {
 
 	balancer_records := make([]p.BalancerSwap,0,64)
 	query = "SELECT " +
+				"s.id," +
 				"s.pool_aid,"+
 				"pa.addr, " +
 				"FLOOR(EXTRACT(EPOCH FROM s.time_stamp))::BIGINT AS ts, " +
@@ -683,6 +684,7 @@ func (ss *SQLStorage) Get_transaction(tx_hash string) (p.TxInfo,error) {
 		var rec p.BalancerSwap
 		var symbol_in,symbol_out sql.NullString
 		err=rows.Scan(
+			&rec.Id,
 			&rec.PoolAid,
 			&rec.PoolAddr,
 			&rec.TimeStamp,
@@ -712,6 +714,7 @@ func (ss *SQLStorage) Get_transaction(tx_hash string) (p.TxInfo,error) {
 	// Uniswap Swaps
 	uniswap_records := make([]p.UniswapSwap,0,128)
 	query = "SELECT " +
+				"sw.id,"+
 				"sw.pair_aid," +
 				"pa.addr," +
 				"sw.block_num," +
@@ -743,6 +746,7 @@ func (ss *SQLStorage) Get_transaction(tx_hash string) (p.TxInfo,error) {
 	for rows.Next() {
 		var rec p.UniswapSwap
 		err=rows.Scan(
+			&rec.Id,
 			&rec.PairAid,
 			&rec.PairAddr,
 			&rec.BlockNum,

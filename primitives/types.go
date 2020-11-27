@@ -978,6 +978,7 @@ type BalancerExit struct {
 	AmountOut				string
 }
 type BalancerSwap struct {
+	Id						int64
 	EvtId					int64
 	BlockNum				int64
 	TxId					int64
@@ -1176,6 +1177,7 @@ type MarketUPair struct { // Uniswap Pair where the Market can be traded
 	Token1Symbol			string
 }
 type UniswapSwap struct {
+	Id						int64
 	PairAid					int64
 	BlockNum				int64
 	RequesterAid			int64
