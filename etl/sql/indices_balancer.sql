@@ -19,4 +19,4 @@ CREATE INDEX b_gulp					ON	b_gulp			(pool_aid);
 CREATE INDEX btoken					ON	btoken			(token_aid);
 CREATE INDEX bswap_token_in_idx     ON	bswap			(token_in_aid);
 CREATE INDEX bswap_token_out_idx    ON	bswap			(token_out_aid);
-
+CREATE INDEX bswap_txid_idx			ON	bswap			(tx_id);

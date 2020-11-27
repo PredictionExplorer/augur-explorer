@@ -45,7 +45,7 @@ DECLARE
 BEGIN
 	UPDATE bpool SET num_swaps = num_swaps + 1
 		WHERE pool_aid=NEW.pool_aid;
-	SELECT wrapper_aid,v_market_aid FROM af_wrapper
+	SELECT wrapper_aid,market_aid FROM af_wrapper
 		WHERE wrapper_aid IN(NEW.token_in_aid,NEW.token_out_aid) LIMIT 1
 		INTO v_wrapper_aid,v_market_aid;
 	IF v_wrapper_aid IS NOT NULL THEN

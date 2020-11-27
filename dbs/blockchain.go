@@ -303,20 +303,44 @@ func (ss *SQLStorage) Get_block_info(block_num_from,block_num_to int64) (p.Block
 	binfo.NumBlocks = block_num_to - block_num_from
 	if binfo.NumBlocks < 0 { binfo.NumBlocks = 0 }
 
-
 	var query string
+	var err error
+
 	query = "SELECT " +
-				"SUM(num_tx) AS num_tx," +
-				"SUM(num_events) AS num_events," +
-				"SUM(num_agtx_evts) AS num_tx," +
-				"SUM(num_defi_evts) AS num_defi_evts," +
-				"SUM(num_other_evts) AS num_other_events, " +
-				"SUM(num_bal_swaps) AS num_bal_swaps," +
-				"SUM(num_uni_swaps) AS num_uni_swaps " +
+				"EXTRACT(EPOCH FROM b1.ts)::BIGINT AS ini_ts," +
+				"b1.ts AS ini_date," +
+				"EXTRACT(EPOCH FROM b2.ts)::BIGINT AS fin_ts," +
+				"b2.ts AS fin_date " +
+			"FROM block b1 LEFT JOIN block b2 ON $2=b2.block_num " +
+			"WHERE b1.block_num=$1"
+	var nts1,nts2 sql.NullInt64
+	var nd1,nd2 sql.NullString
+	row := ss.db.QueryRow(query,binfo.BlockNumFrom,binfo.BlockNumTo)
+	err=row.Scan(&nts1,&nd1,&nts2,&nd2)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return binfo,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	binfo.FromTimeStamp = nts1.Int64
+	binfo.ToTimeStamp = nts2.Int64
+	binfo.FromDate = nd1.String
+	binfo.ToDate = nd2.String
+
+	query = "SELECT " +
+				"COALESCE(SUM(num_tx),0) AS num_tx," +
+				"COALESCE(SUM(num_events),0) AS num_events," +
+				"COALESCE(SUM(num_agtx_evts),0) AS num_tx," +
+				"COALESCE(SUM(num_defi_evts),0) AS num_defi_evts," +
+				"COALESCE(SUM(num_other_evts),0) AS num_other_events, " +
+				"COALESCE(SUM(num_bal_swaps),0) AS num_bal_swaps," +
+				"COALESCE(SUM(num_uni_swaps),0) AS num_uni_swaps " +
 			"FROM agblk WHERE (block_num >= $1) AND (block_num <= $2)"
 
-	row := ss.db.QueryRow(query,block_num_from,block_num_to)
-	var err error
+	row = ss.db.QueryRow(query,block_num_from,block_num_to)
 	err=row.Scan(
 		&binfo.NumAugurTx,
 		&binfo.NumEvents,
@@ -330,14 +354,16 @@ func (ss *SQLStorage) Get_block_info(block_num_from,block_num_to int64) (p.Block
 		if err == sql.ErrNoRows {
 			return binfo,err
 		} else {
-			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			d_query:=strings.ReplaceAll(query,`$1`,fmt.Sprintf("%v",binfo.BlockNumFrom))
+			d_query = strings.ReplaceAll(d_query,`$2`,fmt.Sprintf("%v",binfo.BlockNumTo))
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,d_query))
 			os.Exit(1)
 		}
 	}
 
 	query = "SELECT " +
 				"SUM(gas_used) AS gas_used, " +
-				"(SUM(gas_used*gas_price)/1e+18)::DECIMAL(64,18) AS tx_cost_eth " +
+				"SUM(gas_used*gas_price) AS tx_cost_eth " +
 			"FROM agtx WHERE (block_num >= $1) AND (block_num <= $2)"
 	row = ss.db.QueryRow(query,block_num_from,block_num_to)
 	var null_gas sql.NullInt64
@@ -387,9 +413,9 @@ func (ss *SQLStorage) Get_block_info(block_num_from,block_num_to int64) (p.Block
 
 	// get ORDERs
 	records_orders:= make([]string,0,8)
-	query = "SELECT DISTINCT order_hash FROM agtx agt " +
-			"JOIN mktord o ON agt.tx_id=o.id " +
-			"WHERE (agt.block_num >= $1) AND (agt.block_num <= $2)"
+	query = "SELECT DISTINCT order_hash FROM agtx_evt e " +
+			"JOIN mktord o ON e.ref_id=o.id " +
+			"WHERE (e.block_num >= $1) AND (e.block_num <= $2)"
 
 	rows,err = ss.db.Query(query,block_num_from,block_num_to)
 	if (err!=nil) {
@@ -413,9 +439,12 @@ func (ss *SQLStorage) Get_block_info(block_num_from,block_num_to int64) (p.Block
 	binfo.Orders= records_orders
 	binfo.NumUniqueOrders = int64(len(binfo.Orders))
 
-	// get MARKETS
-	records_market := make([]string,0,8)
-	query = "SELECT DISTINCT a.addr FROM market m " +
+	// get MARKETS created
+	records_markets_created := make([]p.MarketVeryShortInfo,0,8)
+	query = "SELECT " +
+				"DISTINCT a.addr, " +
+				"m.extra_info::json->>'description' AS descr " +
+			"FROM market m " +
 			"LEFT JOIN address a ON m.market_aid=a.address_id " +
 			"WHERE (m.block_num >= $1) AND (m.block_num <= $2)"
 
@@ -430,16 +459,57 @@ func (ss *SQLStorage) Get_block_info(block_num_from,block_num_to int64) (p.Block
 
 	defer rows.Close()
 	for rows.Next() {
-		var market_addr string
-		err=rows.Scan(&market_addr)
+		var minfo p.MarketVeryShortInfo
+		var market_desc sql.NullString
+		err=rows.Scan(&minfo.MktAddr,&market_desc)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		records_market = append(records_market,market_addr)
+		minfo.MktDesc = market_desc.String
+		records_markets_created = append(records_markets_created,minfo)
 	}
-	binfo.Markets = records_market
-	binfo.NumUniqueMarkets=int64(len(binfo.Markets))
+	binfo.MarketsCreated = records_markets_created
+	binfo.NumMarketsCreated=int64(len(binfo.MarketsCreated))
+
+	// get MARKETS traded
+	records_markets_traded := make([]p.MarketVeryShortInfo,0,8)
+	query = "WITH aids AS (" +
+				"SELECT DISTINCT aid FROM ( "+
+					"SELECT DISTINCT market_aid AS aid FROM agtx_evt " +
+					"WHERE (block_num >= $1) AND (block_num <= $2)" +
+				") AS d " +
+			") " +
+			"SELECT " +
+				"a.addr, " +
+				"m.extra_info::json->>'description' AS descr  " +
+			"FROM market AS m " +
+				"JOIN aids ON aids.aid=m.market_aid " +
+				"JOIN address AS a ON a.address_id=m.market_aid"
+
+	rows,err = ss.db.Query(query,block_num_from,block_num_to)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return binfo,err
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var minfo p.MarketVeryShortInfo
+		var market_desc sql.NullString
+		err=rows.Scan(&minfo.MktAddr,&market_desc)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		minfo.MktDesc = market_desc.String
+		records_markets_traded = append(records_markets_traded,minfo)
+	}
+	binfo.MarketsTraded = records_markets_traded
+	binfo.NumMarketsTraded=int64(len(binfo.MarketsTraded))
 
 	// get Active addresses
 	records_addresses := make([]string,0,8)
@@ -487,21 +557,47 @@ func (ss *SQLStorage) Get_transaction(tx_hash string) (p.TxInfo,error) {
 	ti.Hash = tx_hash
 	var query string
 	query = "SELECT " +
+				"t.id," +
 				"t.block_num," +
 				"sa.addr," +
 				"ra.addr," +
-				"t.value " +
+				"t.value, " +
+				"t.from_aid,"+
+				"t.to_aid," +
+				"t.gas_used," +
+				"t.gas_used*t.gas_price AS tx_fee," +
+				"t.tx_hash," +
+				"at.num_events,"+
+				"at.num_defi_evts,"+
+				"at.num_agtx_evts,"+
+				"at.num_other_evts,"+
+				"at.num_bal_swaps,"+
+				"at.num_uni_swaps "+
 			"FROM transaction t " +
+				"LEFT JOIN agtx AS at ON t.id=at.tx_id " +
 				"LEFT JOIN address sa ON t.from_aid = sa.address_id " +
 				"LEFT JOIN address ra ON t.to_aid = ra.address_id " +
 			"WHERE t.tx_hash=$1"
 
 	row := ss.db.QueryRow(query,tx_hash)
+	var num_events,num_defi_events,num_agtx_events,num_other_events,num_bal_swaps,num_uni_swaps sql.NullInt64
 	err := row.Scan(
-				&ti.BlockNum,
-				&ti.From,
-				&ti.To,
-				&ti.Value,
+		&ti.TxId,
+		&ti.BlockNum,
+		&ti.From,
+		&ti.To,
+		&ti.Value,
+		&ti.FromAid,
+		&ti.ToAid,
+		&ti.GasUsed,
+		&ti.TxFeeEth,
+		&ti.Hash,
+		&num_events,
+		&num_defi_events,
+		&num_agtx_events,
+		&num_other_events,
+		&num_bal_swaps,
+		&num_uni_swaps,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -511,6 +607,255 @@ func (ss *SQLStorage) Get_transaction(tx_hash string) (p.TxInfo,error) {
 			os.Exit(1)
 		}
 	}
+	ti.TotalEvents=int(num_events.Int64)
+	ti.NumDeFiEvents=int(num_defi_events.Int64)
+	ti.NumAugurEvents=int(num_agtx_events.Int64)
+	ti.NumOtherEvents=int(num_other_events.Int64)
+	ti.NumBalancerSwaps=int(num_bal_swaps.Int64)
+	ti.NumUniswapSwaps=int(num_uni_swaps.Int64)
+
+	query = "SELECT DISTINCT p.pool_aid,a.addr,num_swaps,num_holders " +
+			"FROM agtx_evt AS e " +
+				"JOIN bswap s ON e.ref_id=s.evtlog_id " +
+				"JOIN bpool p ON p.pool_aid=s.pool_aid " +
+				"JOIN address AS a ON p.pool_aid=a.address_id " +
+			"WHERE e.tx_id=$1"
+
+	d_query := fmt.Sprintf("SELECT DISTINCT p.pool_aid,a.addr,num_swaps,num_holders " +
+			"FROM agtx_evt AS e " +
+				"JOIN bswap s ON e.ref_id=s.evtlog_id " +
+				"JOIN bpool p ON p.pool_aid=s.pool_aid " +
+				"JOIN address AS a ON p.pool_aid=a.address_id " +
+			"WHERE e.tx_id=%v",ti.TxId)
+	ss.Info.Printf("d_query= %v\n",d_query)
+	rows,err := ss.db.Query(query,ti.TxId)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	} else {
+		defer rows.Close()
+		for rows.Next() {
+			var rec p.PoolVeryShortInfo
+			err=rows.Scan(&rec.PoolAid,&rec.PoolAddr,&rec.NumSwaps,&rec.NumHolders)
+			if err!=nil {
+				ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+				os.Exit(1)
+			}
+			ti.BalancerPools = append(ti.BalancerPools,rec)
+		}
+	}
+
+	balancer_records := make([]p.BalancerSwap,0,64)
+	query = "SELECT " +
+				"s.pool_aid,"+
+				"pa.addr, " +
+				"FLOOR(EXTRACT(EPOCH FROM s.time_stamp))::BIGINT AS ts, " +
+				"s.time_stamp as datetime,"+
+				"s.block_num," +
+				"s.tx_id,"+
+				"ca.addr,"+
+				"tia.addr," +
+				"toa.addr," +
+				"s.token_in_aid," +
+				"s.token_out_aid," +
+				"e_in.Symbol,"+
+				"e_out.Symbol," +
+				"s.amount_in, " +
+				"s.amount_out " +
+			"FROM bswap AS s " +
+				"LEFT JOIN address AS pa ON s.pool_aid=pa.address_id " +
+				"LEFT JOIN address AS ca ON s.caller_aid=ca.address_id " +
+				"LEFT JOIN address AS tia ON s.token_in_aid=tia.address_id " +
+				"LEFT JOIN address AS toa ON s.token_out_aid=toa.address_id " +
+				"LEFT JOIN erc20_info e_in ON s.token_in_aid=e_in.aid " +
+				"LEFT JOIN erc20_info e_out ON s.token_out_aid=e_out.aid " +
+			"WHERE s.tx_id=$1 "
+	rows,err = ss.db.Query(query,ti.TxId)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BalancerSwap
+		var symbol_in,symbol_out sql.NullString
+		err=rows.Scan(
+			&rec.PoolAid,
+			&rec.PoolAddr,
+			&rec.TimeStamp,
+			&rec.Date,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.CallerAddr,
+			&rec.TokenInAddr,
+			&rec.TokenOutAddr,
+			&rec.TokenInAid,
+			&rec.TokenOutAid,
+			&symbol_in,
+			&symbol_out,
+			&rec.AmountInF,
+			&rec.AmountOutF,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.SymbolIn = symbol_in.String
+		rec.SymbolOut = symbol_out.String
+		balancer_records = append(balancer_records,rec)
+	}
+	ti.BalancerSwaps=balancer_records
+
+	// Uniswap Swaps
+	uniswap_records := make([]p.UniswapSwap,0,128)
+	query = "SELECT " +
+				"sw.pair_aid," +
+				"pa.addr," +
+				"sw.block_num," +
+				"sw.amount0_in, " +
+				"sw.amount1_in," +
+				"sw.amount0_out," +
+				"sw.amount1_out," +
+				"sw.time_stamp," +
+				"EXTRACT(EPOCH FROM sw.time_stamp)::BIGINT AS created_ts, "+
+				"ra.addr AS recipient_addr," +
+				"sw.recipient_aid, " +
+				"e1.symbol,"+
+				"e2.symbol "+
+			"FROM uswap1 AS sw " +
+			"JOIN upair AS p ON sw.pair_aid=p.pair_aid " +
+			"LEFT JOIN address AS ra ON sw.recipient_aid=ra.address_id " +
+			"LEFT JOIN address AS pa ON sw.pair_aid=pa.address_id " +
+			"LEFT JOIN erc20_info e1 ON p.token0_aid=e1.aid " +
+			"LEFT JOIN erc20_info e2 ON p.token1_aid=e2.aid " +
+			"WHERE sw.tx_id=$1 " +
+			"ORDER BY sw.id"
+
+	rows,err = ss.db.Query(query,ti.TxId)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UniswapSwap
+		err=rows.Scan(
+			&rec.PairAid,
+			&rec.PairAddr,
+			&rec.BlockNum,
+			&rec.Amount0_In,
+			&rec.Amount1_In,
+			&rec.Amount0_Out,
+			&rec.Amount1_Out,
+			&rec.CreatedDate,
+			&rec.CreatedTs,
+			&rec.RequesterAddr,
+			&rec.RequesterAid,
+			&rec.Symbol0,
+			&rec.Symbol1,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		uniswap_records = append(uniswap_records,rec)
+	}
+	ti.UniswapSwaps = uniswap_records
+
+	query = "SELECT DISTINCT p.pair_aid,a.addr,total_swaps " +
+			"FROM agtx_evt AS e " +
+				"JOIN uswap1 s ON e.ref_id=s.evtlog_id " +
+				"JOIN upair p ON p.pair_aid=s.pair_aid " +
+				"JOIN address AS a ON p.pair_aid=a.address_id " +
+			"WHERE e.tx_id=$1"
+
+	rows,err = ss.db.Query(query,ti.TxId)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	} else {
+		defer rows.Close()
+		for rows.Next() {
+			var rec p.PairVeryShortInfo
+			err=rows.Scan(&rec.PairAid,&rec.PairAddr,&rec.TotalSwaps)
+			if err!=nil {
+				ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+				os.Exit(1)
+			}
+			ti.UniswapPairs = append(ti.UniswapPairs,rec)
+		}
+	}
+
+	query = "SELECT " +
+				"evt_type," +
+				"ref_id," +
+				"account_aid," +
+				"a.addr," +
+				"e.market_aid," +
+				"ma.addr," +
+				"defi_platform, " +
+				"o.order_hash, " +
+				"m.extra_info::json->>'description' AS descr, " +
+				"bsw.id AS bal_swap_id, " +
+				"usw.id AS uni_swap_id " +
+			"FROM agtx_evt e " +
+				"LEFT JOIN address a ON e.account_aid=a.address_id " +
+				"LEFT JOIN address ma ON e.market_aid=ma.address_id " +
+				"LEFT JOIN mktord AS o ON (e.ref_id=o.id AND e.evt_type=3) " +
+				"LEFT JOIN bswap AS bsw ON (e.ref_id=bsw.evtlog_id AND e.evt_type=1 AND defi_platform=2) " +
+				"LEFT JOIN uswap1 AS usw ON (e.ref_id=usw.evtlog_id AND e.evt_type=1 AND defi_platform=1) " +
+				"LEFT JOIN market AS m ON e.market_aid=m.market_aid " +
+			"WHERE e.tx_id = $1"
+
+	event_records := make([]p.AgtxEvent,0,32)
+	rows,err = ss.db.Query(query,ti.TxId)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	} else {
+		defer rows.Close()
+		for rows.Next() {
+			var rec p.AgtxEvent
+			var balancer_swap_id,uniswap_swap_id sql.NullInt64
+			var order_hash,mkt_descr sql.NullString
+			err=rows.Scan(
+				&rec.EvtType,
+				&rec.ReferenceId,
+				&rec.Aid,
+				&rec.Addr,
+				&rec.MktAid,
+				&rec.MktAddr,
+				&rec.DeFiPlatformCode,
+				&order_hash,
+				&mkt_descr,
+				&balancer_swap_id,
+				&uniswap_swap_id,
+			)
+			if err!=nil {
+				ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+				os.Exit(1)
+			}
+			if order_hash.Valid { rec.OrderHash = order_hash.String }
+			if mkt_descr.Valid { rec.MktDescr = mkt_descr.String }
+			if rec.DeFiPlatformCode == 1 { // Uniswap
+				if uniswap_swap_id.Valid { rec.DeFiSwapId = uniswap_swap_id.Int64 }
+			}
+			if rec.DeFiPlatformCode == 2 { // Balancer
+				if balancer_swap_id.Valid { rec.DeFiSwapId = balancer_swap_id.Int64 }
+			}
+			event_records = append(event_records,rec)
+		}
+	}
+	ti.FullEventList = event_records
+
+
 	return ti,err
 }
 func (ss *SQLStorage) Get_tx_hash_by_id(tx_id int64) (string,int64,error) {

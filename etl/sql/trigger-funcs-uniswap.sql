@@ -31,7 +31,7 @@ BEGIN
 
 	UPDATE upair SET total_swaps = (total_swaps + 1) WHERE pair_aid=NEW.pair_aid;
 
-	SELECT wrapper_aid,v_market_aid FROM af_wrapper
+	SELECT wrapper_aid,market_aid FROM af_wrapper
 		WHERE wrapper_aid IN(v_token0_aid,v_token1_aid) LIMIT 1
 		INTO v_wrapper_aid,v_market_aid;
 	IF v_wrapper_aid IS NOT NULL THEN

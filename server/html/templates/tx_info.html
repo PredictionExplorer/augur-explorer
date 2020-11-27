@@ -8,22 +8,238 @@
 <br/>
 <Table>
 	<tr>
+		<td>Hash</td>
+		<td>{{.TxInfo.Hash}}</td>
+	</tr>
+	<tr>
 		<td>Block Number</td>
-		<td><a href="block/{{.TxInfo.BlockNum}}">{{.TxInfo.BlockNum}}</a></td>
+		<td><a href="/black/block/{{.TxInfo.BlockNum}}">{{.TxInfo.BlockNum}}</a></td>
 	</tr>
 	<tr>
 		<td>From</td>
-		<td><a href="search?q={{.TxInfo.From}}">{{.TxInfo.From}}</a></td>
+		<td><a href="/black/search?q={{.TxInfo.From}}" title="{{.TxInfo.FromAid}}">{{.TxInfo.From}}</a></td>
 	</tr>
 	<tr>
 		<td>To</td>
-		<td><a href="search?q={{.TxInfo.To}}">{{.TxInfo.To}}</a></td>
+		<td><a href="/black/search?q={{.TxInfo.To}}" title="{{.TxInfo.ToAid}}">{{.TxInfo.To}}</a></td>
 	</tr>
 	<tr>
 		<td>Value</td>
 		<td>{{.TxInfo.Value}}</td>
 	</tr>
+	<tr>
+		<td>Gas Used</td>
+		<td>{{.TxInfo.GasUsed}}</td>
+	</tr>
+	<tr>
+		<td>Tx Fee</td>
+		<td>{{ printf "%.18f" .TxInfo.TxFeeEth}} ETH</td>
+	</tr>
+	<tr>
+		<td title="Total number of events related to Augur trading">
+			Total events in Transaction
+		</td>
+		<td>{{.TxInfo.TotalEvents}}</td>
+	</tr>
+	<tr>
+		<td title="Number of events this transaction registered in Augur User Interface at augur.net">
+			Augur UI Events
+		</td>
+		<td>{{.TxInfo.NumAugurEvents}}</td>
+	</tr>
+	<tr>
+		<td title="Number of events related to Augur trading found in Decentralized Finance platforms">
+			DeFi Platform Events
+		</td>
+		<td>{{.TxInfo.NumDeFiEvents}}</td>
+	</tr>
+	<tr>
+		<td title="Secondary events related to Augur trading (account created, funds deposited, etc)">
+			Other events
+		</td>
+		<td>{{.TxInfo.NumOtherEvents}}</td>
+	</tr>
+	<tr>
+		<td title="Number of swaps related to Augur trading at any Balancer pool">Num Balancer Swaps</td>
+		<td>{{.TxInfo.NumBalancerSwaps}}</td>
+	</tr>
+	<tr>
+		<td title="Number of swaps related to Augur trading at any Uniswap pair">Num Uniswap Swaps</td>
+		<td>{{.TxInfo.NumUniswapSwaps}}</td>
+	</tr>
 </table>
+
+{{if .TxInfo.BalancerSwaps }}
+<h3>Balance Swaps</h3>
+<table class="market_trades">
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Timestamp</th>
+		<th class="mkt_trade_hdr" style="text-align: center">BlockNum</th>
+		<th class="mkt_trade_hdr" style="text-align: center">TxId</th>
+		<th class="mkt_trade_hdr" style="text-align: center">User Address</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Token In</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Token Out</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Amount In</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Amount Out</th>
+	</tr>
+		{{- range $i, $swap:= .TxInfo.BalancerSwaps}}
+			{{template "pool_swap" $swap }}
+		{{- end}}
+</table>
+{{ end }}
+
+{{if .TxInfo.BalancerPools }}
+<h3>Augur-Related Balancer Pools in this Transaction</h3>
+<div id="outside_ag_bal_changes">
+<table class="market_reports">
+	<tr class="market_reports">
+		<th class="market_reports">Pool Address</th>
+		<td class="market_reports">Amount of Holders</h>
+		<th class="market_reports">Amount of Swaps</th>
+	</tr>
+	{{- range $i, $change := .TxInfo.BalancerPools }}
+		<tr class="market_reports">
+			<td class="market_reports_field">
+				<a class="addr" href="/black/pool_swaps/{{.PoolAddr}}">{{.PoolAddr}}</a>
+			</td>
+			<td class="market_reports_field" style="text-align: center">{{.NumHolders}}
+			<td class="market_reports_field" style="text-align: center">{{.NumSwaps}}
+		</tr>
+	{{- end}}
+</table>
+</div>
+{{ end }}
+
+
+{{if .TxInfo.UniswapSwaps }}
+
+<h3>Uniswap Swaps</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Date</th>
+		<th class="market_reports" colspan=2 style="text-align: center">Input</th>
+		<td class="market_reports" colspan=2 style="text-align: center">Output</th>
+		<td class="market_reports">Requester</th>
+		<td class="market_reports">Pair</th>
+	</tr>
+	{{- range $i, $change := .TxInfo.UniswapSwaps}}
+		<tr class="market_reports">
+			<td class="market_reports_field">{{.CreatedDate}}</td>
+			<td class="market_reports_field" nowrap style="text-align: right">
+				{{ if gt .Amount1_Out 0.0 }}
+					<b>{{ printf "%.4f" .Amount0_In}}</b>
+				{{ end }}
+				{{ if gt .Amount0_Out 0.0 }}
+					<b>{{ printf "%.4f" .Amount1_In}}</b>
+				{{ end }}
+			</td>
+			<td class="market_reports_field" nowrap>
+				{{ if gt .Amount1_Out 0.0 }}
+					<font color="#555555">{{.Symbol0}}</font>
+				{{ end }}
+				{{ if gt .Amount0_Out 0.0 }}
+					<font color="#555555"> {{.Symbol1}}</font>
+				{{ end }}
+			</td>
+			<td class="market_reports_field" nowrap style="text-align: right">
+				{{ if gt .Amount0_Out 0.0 }}
+					<b><tt>{{ printf "%.4f" .Amount0_Out}}</tt></b>
+				{{ end }}
+				{{ if gt .Amount1_Out 0.0 }}
+					<b><tt>{{ printf "%.4f" .Amount1_Out}}</tt></b>
+				{{ end }}
+			</td>
+			<td class="market_reports_field" nowrap>
+				{{ if gt .Amount0_Out 0.0 }}
+					<font color="#555555">{{.Symbol0}}</font>
+				{{ end }}
+				{{ if gt .Amount1_Out 0.0 }}
+					<font color="#555555">{{.Symbol1}}</font>
+				{{ end }}
+			</td>
+			<td class="market_reports_field">
+				{{.RequesterAddr}}
+			</td>
+			<td class="market_reports_field">
+				{{.PairAddr}}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+{{ end }}
+
+{{if .TxInfo.UniswapPairs }}
+<h3>Augur-Related Uniswap Pairs in this Transaction</h3>
+<div id="outside_ag_bal_changes">
+<table class="market_reports">
+	<tr class="market_reports">
+		<th class="market_reports">Pair Address</th>
+		<th class="market_reports">Amount of Swaps</th>
+	</tr>
+	{{- range $i, $change := .TxInfo.UniswapPairs }}
+		<tr class="market_reports">
+			<td class="market_reports_field">
+				<a class="addr" href="/black/uniswap_swaps/{{.PairAddr}}">{{.PairAddr}}</a>
+			</td>
+			<td class="market_reports_field" style="text-align: center">{{.TotalSwaps}}
+		</tr>
+	{{- end}}
+</table>
+</div>
+{{ end }}
+
+{{if .TxInfo.FullEventList }}
+<h3>Augur-related event list</h3>
+<div id="outside_ag_bal_changes">
+<table class="market_reports">
+	<tr class="market_reports">
+		<th class="market_reports">Type</th>
+		<th class="market_reports">Account</th>
+		<th class="market_reports">Market</th>
+		<th class="market_reports">DeFi Platform</th>
+		<th class="market_reports">OrderHash</th>
+		<th class="market_reports">Swap Link</th>
+	</tr>
+	{{- range $i, $change := .TxInfo.FullEventList}}
+		<tr class="market_reports">
+			<td class="market_reports_field" style="text-align: center">
+				
+				{{ if eq 0 .EvtType }}Unknown {{end}}
+				{{ if eq 1 .EvtType }}DeFi Trading {{end}}
+				{{ if eq 2 .EvtType }}Market Creation{{end}}
+				{{ if eq 3 .EvtType }}Trade{{end}}
+				{{ if eq 4 .EvtType }}Report{{end}}
+				{{ if eq 5 .EvtType }}Claim funds{{end}}
+				{{ if eq 6 .EvtType }}Other type{{end}}
+			</td>
+			<td class="market_reports_field" style="text-align: center">{{.Addr}}</td>
+			<td class="market_reports_field" style="text-align: center">
+				<a href="/black/market/{{.MktAddr}}">{{.MktAddr}}</a><br/>
+				{{.MktDescr}}
+			</td>
+			<td class="market_reports_field" style="text-align: center">
+				{{ if eq 0 .DeFiPlatformCode }}Unknown{{end}}
+				{{ if eq 1 .DeFiPlatformCode }}Uniswap{{end}}
+				{{ if eq 2 .DeFiPlatformCode }}Balancer{{end}}
+			</td>
+			<td class="market_reports_field">
+				<a class="addr" href="/black/order/{{.OrderHash}}">{{.OrderHash}}</a>
+			</td>
+			<td class="market_reports_field">
+				{{ if eq 1 .DeFiPlatformCode }}
+					<a class="addr" href="/black/uni_swap/{{.DeFiSwapId}}">Show Swap</a>
+				{{ end }}
+				{{ if eq 2 .DeFiPlatformCode }}
+					<a class="addr" href="/black/bal_swap/{{.DeFiSwapId}}">Show Swap</a>
+				{{ end }}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+</div>
+{{ end }}
+
 <nav>
 	<ul>
 	<li>

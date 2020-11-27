@@ -42,7 +42,7 @@ const (
 )
 type SearchResultType int
 const (
-	SR_Unknow SearchResultType = iota
+	SR_Unknown SearchResultType = iota
 	SR_MarketOrders				// 1
 	SR_Address					// 2
 	SR_Hash						// 3
@@ -424,9 +424,15 @@ type AgtxInBlock struct {
 	PoolAddr			string
 	PairAddr			string
 }
+type MarketVeryShortInfo struct {
+	MktAddr				string
+	MktDesc				string
+}
 type BlockInfo struct {
 	BlockNumFrom		int64
 	BlockNumTo			int64
+	FromTimeStamp		int64
+	ToTimeStamp			int64
 	NumBlocks			int64
 	NumAugurTx			int64		// Only Augur-related transaction counter
 	NumEvents			int64
@@ -435,24 +441,75 @@ type BlockInfo struct {
 	NumOtherEvents		int64
 	NumBalSwaps			int64		// Num swaps at Balancer
 	NumUniSwaps			int64		// Num swaps at Uniswap
-	NumUniqueMarkets	int64
+	NumMarketsTraded	int64
+	NumMarketsCreated	int64
 	NumUniqueAddresses	int64
 	NumUniqueOrders		int64
 	GasUsed				int64
 	TxCostEth			float64
+	FromDate			string
+	ToDate				string
 	ActiveAddresses		[]string	//list of addresses participated in this block
 	Transactions		[]string
 	Orders				[]string
-	Markets				[]string	// list of market addresses created at this block
+	MarketsTraded		[]MarketVeryShortInfo // list of market addresses created at this block
+	MarketsCreated		[]MarketVeryShortInfo
 //	BlockTransactions	[]AgtxInBlock	DISCONTINUED
 
 }
+type PoolVeryShortInfo struct {
+	PoolAid				int64
+	NumSwaps			int64
+	NumHolders			int64
+	PoolAddr			string
+}
+type PairVeryShortInfo struct {
+	PairAid				int64
+	TotalSwaps			int64
+	PairAddr			string
+}
+type TokenVeryShortInfo struct {
+	TokenAid			int64
+	TokenAddr			string
+	Name				string
+	Symbol				string
+}
+type AgtxEvent struct {
+	EvtType				int
+	DeFiPlatformCode	int
+	ReferenceId			int64	// Could be Market Order ID, or Event Log id
+	Aid					int64
+	MktAid				int64
+	DeFiSwapId			int64
+	Addr				string
+	MktAddr				string
+	OrderHash			string
+	MktDescr			string
+}
 type TxInfo struct {
+	TotalEvents			int
+	NumAugurEvents		int
+	NumDeFiEvents		int
+	NumOtherEvents		int
+	NumBalancerSwaps	int
+	NumUniswapSwaps		int
+	TxId				int64
+	GasUsed				int64
 	BlockNum			int64
+	FromAid				int64
+	ToAid				int64
 	Value				float64
+	TxFeeEth			float64
 	Hash				string
 	From				string
 	To					string
+	BalancerSwaps		[]BalancerSwap
+	UniswapSwaps		[]UniswapSwap
+	BalancerPools		[]PoolVeryShortInfo
+	UniswapPairs		[]PairVeryShortInfo
+	TokensTraded		[]TokenVeryShortInfo
+	MarketsTraded		[]MarketVeryShortInfo
+	FullEventList		[]AgtxEvent
 }
 type FrontPageStats struct {
 	MoneyAtStake		float64
@@ -937,6 +994,8 @@ type BalancerSwap struct {
 	CallerAddr				string
 	TokenInAddr				string
 	TokenOutAddr			string
+	SymbolIn				string
+	SymbolOut				string
 	AmountIn				string
 	AmountOut				string
 	Date					string
@@ -1117,6 +1176,7 @@ type MarketUPair struct { // Uniswap Pair where the Market can be traded
 	Token1Symbol			string
 }
 type UniswapSwap struct {
+	PairAid					int64
 	BlockNum				int64
 	RequesterAid			int64
 	CreatedTs				int64
@@ -1126,6 +1186,9 @@ type UniswapSwap struct {
 	Amount1_Out				float64
 	CreatedDate				string
 	RequesterAddr			string
+	PairAddr				string
+	Symbol0					string
+	Symbol1					string
 }
 type TextSearchResult struct {
 	ObjType					int
@@ -1142,12 +1205,12 @@ type UPairTokens struct {
 	Decimals1				int
 	Token0Addr				common.Address
 	Token1Addr				common.Address
-
 }
 type SearchResultObject struct {
 	SRType					SearchResultType
 	Found					bool
 	ErrStr					string
+	Query					string
 	Object					interface{}
 }
 type BSwapPrice struct {
@@ -1161,4 +1224,8 @@ type UPairPrice struct {
 	TimeStamp				int64
 	Price					float64
 	Date					string
+}
+type AddressInfo struct {
+	Aid						int64
+	Addr					string
 }

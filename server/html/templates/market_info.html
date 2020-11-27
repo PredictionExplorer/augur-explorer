@@ -1,6 +1,6 @@
 <html>
 <head>
-	<link href="../res/main.css" rel="stylesheet">
+	<link href="/black/res/main.css" rel="stylesheet">
 	<title>Augur Market {{.Market.MktAddr}}</title>
 	<meta name="description" content="{{.Market.Description}}">
 </head>
@@ -13,11 +13,11 @@
 </tr>
 <tr class="market_detail">
 	<td>Creator:</td>
-	<td><a class="addr" href="../search?q={{.Market.Signer}}">{{.Market.Signer}}</a></td>
+	<td><a class="addr" href="/black/search?q={{.Market.Signer}}">{{.Market.Signer}}</a></td>
 </tr>
 <tr class="market_detail">
 	<td>Reporter</td>
-	<td><a class="addr" href="../search?q={{.Market.Reporter}}">{{.Market.Reporter}}</a></td>
+	<td><a class="addr" href="/black/search?q={{.Market.Reporter}}">{{.Market.Reporter}}</a></td>
 </tr>
 <tr class="market_detail">
 	<td>End Date</td>
@@ -82,7 +82,7 @@
 	<nav id="market_trades_nav">
 		<ul>
 			<li style="">
-				<a class="btn_link" href="../fulltradelist/{{.Market.MktAddr}}">Trade List</a>
+				<a class="btn_link" href="/black/fulltradelist/{{.Market.MktAddr}}">Trade List</a>
 				<span></span><span></span><span></span><span></span>
 			</li>
 		</ul>
@@ -94,7 +94,7 @@
 	<nav id="market_reports_nav">
 		<ul>
 			<li style="float: left">
-				<a class="btn_link" href="../stbc/{{.Market.MktAddr}}">ShareToken balance changes</a>
+				<a class="btn_link" href="/black/stbc/{{.Market.MktAddr}}">ShareToken balance changes</a>
 				<span></span><span></span><span></span><span></span>
 			</li>
 		</ul>
@@ -117,7 +117,7 @@
 	{{- range $i, $change := .BalancerPools }}
 		<tr class="market_reports">
 			<td class="market_reports_field">
-				<a class="addr" href="../pool_swaps/{{.PoolAddr}}">{{.PoolAddr}}</a>
+				<a class="addr" href="/black/pool_swaps/{{.PoolAddr}}">{{.PoolAddr}}</a>
 			</td>
 			<td class="market_reports_field" style="text-align: center">{{.NumTokens}}
 			<td class="market_reports_field" style="text-align: center">{{.NumHolders}}
@@ -136,7 +136,7 @@
 	<nav id="market_reports_nav">
 		<ul>
 			<li style="float: left">
-				<a class="btn_link" href="../fullreports/{{.UserInfo.Addr}}">All Reports</a>
+				<a class="btn_link" href="/black/fullreports/{{.UserInfo.Addr}}">All Reports</a>
 				<span></span><span></span><span></span><span></span>
 			</li>
 		</ul>
@@ -145,7 +145,7 @@
 	<nav id="market_reports_nav">
 		<ul>
 			<li style="float: left">
-				<a class="btn_link" href="../mkt_uniswaps/{{.Market.MktAddr}}">Uniswap Pairs</a>
+				<a class="btn_link" href="/black/mkt_uniswaps/{{.Market.MktAddr}}">Uniswap Pairs</a>
 				<span></span><span></span><span></span><span></span>
 			</li>
 		</ul>

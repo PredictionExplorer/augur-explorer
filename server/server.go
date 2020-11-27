@@ -754,17 +754,64 @@ func search(c *gin.Context) {
 	}
 }
 func search_v2(c *gin.Context) {
-	// ToDo
 
-	// ......
-	// execute_search(keyword)
-	// .....
+	keyword := c.Query("q")
+	sr := execute_search(keyword)
+	if !sr.Found {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Search object %v not found: ",keyword,sr.ErrStr),
+		})
+		return
+	}
+	Info.Printf("SRType=%v\n",sr.SRType)
+	switch (sr.SRType) {
+	case SR_MarketOrders:
+		orders:=sr.Object.(*[]OrderInfo)
+		output_filling_orders(c,sr.Query,*orders)
+	case SR_Address:
+		addr := sr.Object.(*common.Address)
+		c.HTML(http.StatusBadRequest, "address.html", gin.H{
+			"Address" : addr.String(),
+		})
+	case SR_Hash:
+		hash := sr.Object.(*common.Hash)
+		c.HTML(http.StatusBadRequest, "hash.html", gin.H{
+			"Hash" : hash.String(),
+		})
+	case SR_Transaction:
+		tx_info := sr.Object.(*TxInfo)
+		c.HTML(http.StatusOK, "tx_info.html", gin.H{
+			"title": "Transaction " + keyword,
+			"TxInfo" : tx_info,
+		})
+	case SR_AugurMarketInfo:
+		minfo:=sr.Object.(*InfoMarket)
+		complete_and_output_market_info(c,false,*minfo)
+		return
+	case SR_Unknown:
+		fallthrough
+	default:
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Search object %v found but no HTML template for output found",keyword),
+		})
+	}
 }
 func has0xPrefix(input string) bool {
 	return len(input) >= 2 && input[0] == '0' && (input[1] == 'x' || input[1] == 'X')
 }
 func execute_search(keyword string) SearchResultObject {
 
+	if len(keyword) == 0 {
+		var iface interface{}
+		return SearchResultObject {
+			SRType:			SR_Block,
+			Found:			false,
+			ErrStr:			"keyword is empty",
+			Object:			iface,
+		}
+	}
 	idx := strings.Index(keyword, ":") // if there is a colon, then it is a range of block search
 	if idx != -1 {
 		block_range := strings.Split(keyword,":")
@@ -774,6 +821,7 @@ func execute_search(keyword string) SearchResultObject {
 				SRType:			SR_Block,
 				Found:			false,
 				ErrStr:			"Invalid block range, two blocks are needed",
+				Query:			keyword,
 				Object:			iface,
 			}
 		}
@@ -784,6 +832,7 @@ func execute_search(keyword string) SearchResultObject {
 				SRType:		SR_Block,
 				Found:		false,
 				ErrStr:		fmt.Sprintf("Error in converting first block num: %v",err.Error()),
+				Query:		keyword,
 				Object:		iface,
 			}
 		}
@@ -794,6 +843,7 @@ func execute_search(keyword string) SearchResultObject {
 				SRType:		SR_Block,
 				Found:		false,
 				ErrStr:		fmt.Sprintf("Error in converting second block num: %v",err.Error()),
+				Query:		keyword,
 				Object:		iface,
 			}
 		}
@@ -804,6 +854,7 @@ func execute_search(keyword string) SearchResultObject {
 				SRType:		SR_Block,
 				Found:		false,
 				ErrStr:		err.Error(),
+				Query:		keyword,
 				Object:		iface,
 			}
 		}
@@ -813,6 +864,7 @@ func execute_search(keyword string) SearchResultObject {
 			SRType:		SR_Block,
 			Found:		true,
 			ErrStr:		"",
+			Query:		keyword,
 			Object:		iface,
 		}
 	}
@@ -834,10 +886,12 @@ func execute_search(keyword string) SearchResultObject {
 				aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(addr_str)
 				if err != nil {
 					var iface interface{}
+					iface = &addr
 					return SearchResultObject {
 						SRType:		SR_Address,
-						Found:		false,
-						ErrStr:		"Address not found",
+						Found:		true,
+						ErrStr:		"",
+						Query:		keyword,
 						Object:		iface,
 					}
 				}
@@ -849,6 +903,7 @@ func execute_search(keyword string) SearchResultObject {
 						SRType:		SR_AugurMarketInfo,
 						Found:		true,
 						ErrStr:		"",
+						Query:		keyword,
 						Object:		iface,
 					}
 				}
@@ -860,6 +915,7 @@ func execute_search(keyword string) SearchResultObject {
 						SRType:		SR_BalancerPool,
 						Found:		true,
 						ErrStr:		"",
+						Query:		keyword,
 						Object:		iface,
 					}
 				}
@@ -871,6 +927,7 @@ func execute_search(keyword string) SearchResultObject {
 						SRType:		SR_UniswapPair,
 						Found:		true,
 						ErrStr:		"",
+						Query:		keyword,
 						Object:		iface,
 					}
 				}
@@ -893,13 +950,16 @@ func execute_search(keyword string) SearchResultObject {
 						SRType:		SR_UserInfo,
 						Found:		true,
 						ErrStr:		"",
+						Query:		keyword,
 						Object:		iface,
 					}
 				}
 				var iface interface{}
+				iface = &addr
 				return SearchResultObject {
 					SRType:		SR_Address,
-					Found:		false,
+					Found:		true,
+					Query:		keyword,
 					Object:		iface,
 				}
 			}
@@ -914,6 +974,7 @@ func execute_search(keyword string) SearchResultObject {
 						SRType:		SR_Transaction,
 						Found:		true,
 						ErrStr:		"",
+						Query:		keyword,
 						Object:		iface,
 					}
 				}
@@ -925,6 +986,7 @@ func execute_search(keyword string) SearchResultObject {
 						SRType:		SR_MarketOrders,
 						Found:		true,
 						ErrStr:		"",
+						Query:		keyword,
 						Object:		iface,
 					}
 				}
@@ -937,6 +999,7 @@ func execute_search(keyword string) SearchResultObject {
 							SRType:		SR_Block,
 							Found:		false,
 							ErrStr:		err.Error(),
+							Query:		keyword,
 							Object:		iface,
 						}
 					}
@@ -950,10 +1013,12 @@ func execute_search(keyword string) SearchResultObject {
 					}
 				}
 				var iface interface{}
+				iface = &hash
 				return SearchResultObject {
 					SRType:			SR_Hash,
-					Found:			false,
-					ErrStr:			"Hash not found",
+					Found:			true,
+					ErrStr:			"",
+					Query:			keyword,
 					Object:			iface,
 				}
 			}
@@ -966,6 +1031,7 @@ func execute_search(keyword string) SearchResultObject {
 					SRType:		SR_Block,
 					Found:		false,
 					ErrStr:		"Given block number is not a positive number",
+					Query:		keyword,
 					Object:		iface,
 				}
 			}
@@ -976,6 +1042,7 @@ func execute_search(keyword string) SearchResultObject {
 					SRType:		SR_Block,
 					Found:		false,
 					ErrStr:		err.Error(),
+					Query:		keyword,
 					Object:		iface,
 				}
 			}
@@ -985,6 +1052,7 @@ func execute_search(keyword string) SearchResultObject {
 				SRType:		SR_Block,
 				Found:		true,
 				ErrStr:		"",
+				Query:		keyword,
 				Object:		iface,
 			}
 		}
@@ -998,6 +1066,7 @@ func execute_search(keyword string) SearchResultObject {
 		SRType:		SR_TextSearchResults,
 		Found:		true,
 		ErrStr:		"",
+		Query:		keyword,
 		Object:		iface,
 	}
 }
@@ -1761,5 +1830,63 @@ func show_upair_swap_prices(c *gin.Context) {
 			"JSPriceData" :js_prices,
 			"InitTimeStamp": init_ts,
 			"FinTimeSTamp": fin_ts,
+	})
+}
+func show_single_uniswap_swap(c *gin.Context) {
+
+	p_id:= c.Param("id")
+	var id int64
+	if len(p_id) > 0 {
+		var success bool
+		id,success = parse_int_from_remote_or_error(c,false,&p_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'id' parameter is not set")
+		return
+	}
+
+	swap,err := augur_srv.storage.Get_uniswap_swap_by_id(id)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Error getting swap with id=%v : %v",id,err),
+		})
+		return
+	}
+
+	c.HTML(http.StatusOK, "single_uniswap_swap.html", gin.H{
+			"UniswapSwap" : swap,
+			"Id": id,
+	})
+}
+func show_single_balancer_swap(c *gin.Context) {
+
+	p_id:= c.Param("id")
+	var id int64
+	if len(p_id) > 0 {
+		var success bool
+		id,success = parse_int_from_remote_or_error(c,false,&p_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'id' parameter is not set")
+		return
+	}
+
+	swap,err := augur_srv.storage.Get_balancer_swap_by_id(id)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Error getting swap with id=%v : %v",id,err),
+		})
+		return
+	}
+
+	c.HTML(http.StatusOK, "single_balancer_swap.html", gin.H{
+			"BalancerSwap" : swap,
+			"Id": id,
 	})
 }

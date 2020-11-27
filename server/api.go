@@ -1080,3 +1080,67 @@ func a1_upair_price_history(c *gin.Context) {
 			"FinTimeSTamp": fin_ts,
 	})
 }
+func a1_single_uniswap_swap(c *gin.Context) {
+
+	p_id := c.Param("id")
+	var id int64
+	var err error
+	id, err = strconv.ParseInt(p_id,10,64)
+	if err != nil {
+		c.JSON(422,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("Bad integer for 'id' parameter: %v",err),
+		})
+		return
+	}
+
+	swap,err := augur_srv.storage.Get_uniswap_swap_by_id(id)
+	if err!=nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"UniswapSwap" : swap,
+			"Id": id,
+			"status": status,
+			"error": err_str,
+	})
+}
+func a1_single_balancer_swap(c *gin.Context) {
+
+	p_id := c.Param("id")
+	var id int64
+	var err error
+	id, err = strconv.ParseInt(p_id,10,64)
+	if err != nil {
+		c.JSON(422,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("Bad integer for 'id' parameter: %v",err),
+		})
+		return
+	}
+
+	swap,err := augur_srv.storage.Get_balancer_swap_by_id(id)
+	if err!=nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"BalancerSwap" : swap,
+			"Id": id,
+			"status": status,
+			"error": err_str,
+	})
+}

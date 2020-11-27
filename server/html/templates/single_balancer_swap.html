@@ -1,0 +1,56 @@
+<html>
+<head>
+	<title>Balancer Swap</title>
+	<link href="/black/res/main.css" rel="stylesheet">
+</head>
+<body>
+<h3 class="page_title">Balancer Swap</h3>
+<br/>
+<Table>
+<h3>Balance Swaps</h3>
+<table class="market_trades">
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: center">Timestamp</td>
+		<td class="mkt_trade_field">{{.BalancerSwap.TimeStamp}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: center">BlockNum</td>
+		<td class="mkt_trade_field">{{.BalancerSwap.BlockNum}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: center">TxId</td>
+		<td class="mkt_trade_field">{{.BalancerSwap.TxId}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: center">User Address</td>
+		<td class="mkt_trade_field">{{.BalancerSwap.CallerAddr}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: center">Token In</td>
+		<td class="mkt_trade_field" title="{{.TokenInAddr}}">{{.BalancerSwap.SymbolIn}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: center">Token Out</td>
+		<td class="mkt_trade_field" title="{{.TokenOutAddr}}">{{.BalancerSwap.SymbolOut}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: center">Amount In</td>
+		<td class="mkt_trade_field" style="text-align: left">{{.BalancerSwap.AmountInF}}</td>
+	</tr>
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: center">Amount Out</td>
+		<td class="mkt_trade_field" style="text-align: left">{{.BalancerSwap.AmountOutF}}</td>
+	</tr>
+<tr class="market_trades">
+</tr>
+</table>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

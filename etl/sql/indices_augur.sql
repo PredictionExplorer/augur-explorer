@@ -58,3 +58,4 @@ CREATE UNIQUE INDEX mktwrds_uniq1	ON mkt_words		(market_aid) WHERE market_aid IS
 CREATE UNIQUE INDEX mktwrds_uniq2	ON mkt_words		(cat_id) WHERE cat_id IS NOT NULL;
 CREATE INDEX bnum_agtx_idx			ON agtx				(block_num);
 CREATE INDEX agtx_evt_type_idx		ON agtx_evt			(evt_type);
+CREATE INDEX agtx_defi_idx			ON agtx_evt			(defi_platform);

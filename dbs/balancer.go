@@ -697,12 +697,16 @@ func (ss *SQLStorage) Get_pool_swaps(pool_aid int64,offset int,limit int) []p.Ba
 				"toa.addr," +
 				"s.token_in_aid," +
 				"s.token_out_aid," +
+				"e_in.symbol,"+
+				"e_out.symbol," +
 				"s.amount_in, " +
 				"s.amount_out " +
 			"FROM bswap AS s " +
 				"LEFT JOIN address AS ca ON s.caller_aid=ca.address_id " +
 				"LEFT JOIN address AS tia ON s.token_in_aid=tia.address_id " +
 				"LEFT JOIN address AS toa ON s.token_out_aid=toa.address_id " +
+				"LEFT JOIN erc20_info AS e_in ON s.token_in=e_in.aid " +
+				"LEFT JOIN erc20_info AS e_out ON s.token_out=e_out.aid " +
 			"WHERE s.pool_aid=$1 " +
 			"ORDER BY ts DESC OFFSET $2 LIMIT $3"
 	rows,err := ss.db.Query(query,pool_aid,offset,limit)
@@ -714,6 +718,7 @@ func (ss *SQLStorage) Get_pool_swaps(pool_aid int64,offset int,limit int) []p.Ba
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.BalancerSwap
+		var symbol_in,symbol_out sql.NullString
 		err=rows.Scan(
 			&rec.TimeStamp,
 			&rec.Date,
@@ -724,6 +729,8 @@ func (ss *SQLStorage) Get_pool_swaps(pool_aid int64,offset int,limit int) []p.Ba
 			&rec.TokenOutAddr,
 			&rec.TokenInAid,
 			&rec.TokenOutAid,
+			&symbol_in,
+			&symbol_out,
 			&rec.AmountInF,
 			&rec.AmountOutF,
 		)
@@ -731,6 +738,8 @@ func (ss *SQLStorage) Get_pool_swaps(pool_aid int64,offset int,limit int) []p.Ba
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		rec.SymbolIn = symbol_in.String
+		rec.SymbolOut = symbol_out.String
 		records = append(records,rec)
 	}
 	return records
@@ -1185,5 +1194,67 @@ func (ss *SQLStorage) Get_bpool_token_info(pool_aid,token_aid int64) (p.Balancer
 	if symbol.Valid {
 		rec.WrappingContract.Symbol = symbol.String
 	}
+	return rec,nil
+}
+func (ss *SQLStorage) Get_balancer_swap_by_id(id int64) (p.BalancerSwap,error) {
+
+	var rec p.BalancerSwap
+	var query string
+
+	query = "SELECT " +
+				"s.pool_aid,"+
+				"pa.addr, " +
+				"FLOOR(EXTRACT(EPOCH FROM s.time_stamp))::BIGINT AS ts, " +
+				"s.time_stamp as datetime,"+
+				"s.block_num," +
+				"s.tx_id,"+
+				"ca.addr,"+
+				"tia.addr," +
+				"toa.addr," +
+				"s.token_in_aid," +
+				"s.token_out_aid," +
+				"e_in.Symbol,"+
+				"e_out.Symbol," +
+				"s.amount_in, " +
+				"s.amount_out " +
+			"FROM bswap AS s " +
+				"LEFT JOIN address AS pa ON s.pool_aid=pa.address_id " +
+				"LEFT JOIN address AS ca ON s.caller_aid=ca.address_id " +
+				"LEFT JOIN address AS tia ON s.token_in_aid=tia.address_id " +
+				"LEFT JOIN address AS toa ON s.token_out_aid=toa.address_id " +
+				"LEFT JOIN erc20_info e_in ON s.token_in_aid=e_in.aid " +
+				"LEFT JOIN erc20_info e_out ON s.token_out_aid=e_out.aid " +
+			"WHERE s.id=$1 "
+
+	res := ss.db.QueryRow(query,id)
+	var symbol_in,symbol_out sql.NullString
+	err := res.Scan(
+		&rec.PoolAid,
+		&rec.PoolAddr,
+		&rec.TimeStamp,
+		&rec.Date,
+		&rec.BlockNum,
+		&rec.TxId,
+		&rec.CallerAddr,
+		&rec.TokenInAddr,
+		&rec.TokenOutAddr,
+		&rec.TokenInAid,
+		&rec.TokenOutAid,
+		&symbol_in,
+		&symbol_out,
+		&rec.AmountInF,
+		&rec.AmountOutF,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return rec,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	rec.SymbolIn = symbol_in.String
+	rec.SymbolOut = symbol_out.String
+
 	return rec,nil
 }

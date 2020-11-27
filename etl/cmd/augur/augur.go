@@ -283,6 +283,7 @@ func proc_trading_proceeds_claimed(agtx *AugurTx,timestamp int64,log *types.Log)
 
 	Info.Printf("TradingProceedsClaimed event found (block=%v) :\n",log.BlockNumber)
 	mevt.Dump(Info)
+	storage.Insert_trading_proceeds_claimed_evt(agtx,&mevt)
 	storage.Update_claim_status(agtx,&mevt,timestamp)
 	Discover_augur_account(&mevt.Shareholder,caddrs,nil)
 }

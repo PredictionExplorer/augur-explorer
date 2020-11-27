@@ -128,8 +128,6 @@ BEGIN
 		PERFORM insert_agtx_event(
 			v_rec.tx_id,v_rec.evtlog_id,v_rec.block_num,v_rec.caller_aid,NEW.market_aid,2,1
 		);
-		INSERT INTO agtx(tx_id,evtlog_id,block_num,account_aid,market_aid,tx_type)
-			VALUES(v_rec.tx_id,v_rec.evtlog_id,v_rec.block_num,v_rec.caller_aid,NEW.market_aid,1);
 	END LOOP;
 
 	-- Uniswap

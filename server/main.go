@@ -131,7 +131,7 @@ func main() {
 	r.GET("/black/mdepth/:market/:outcome", market_depth)
 	r.GET("/black/deptha/:market_aid/:outcome", market_depth_ajax)
 	r.GET("/black/mphist/:market/:outcome", market_price_history)
-	r.GET("/black/search", search)
+	r.GET("/black/search", search_v2)
 	r.GET("/black/money/:addr",  read_money)
 	r.GET("/black/order/:order",  order)
 	r.GET("/black/category/:catid",  category)
@@ -156,6 +156,8 @@ func main() {
 	r.GET("/black/text_search_form",show_text_search_form)
 	r.GET("/black/pool_swap_price/:pool_aid/:token1_aid/:token2_aid/:init_ts/:fin_ts",show_pool_swap_prices)
 	r.GET("/black/upair_swap_price/:pair_aid/:inverse/:init_ts/:fin_ts",show_upair_swap_prices)
+	r.GET("/black/uni_swap/:id",show_single_uniswap_swap)
+	r.GET("/black/bal_swap/:id",show_single_balancer_swap)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -200,6 +202,8 @@ func main() {
 	r.GET("/api/categories",a1_categories)
 	r.GET("/api/pool_price_hist/:pool/:token1/:token2/:init_ts/:fin_ts",a1_pool_price_history)
 	r.GET("/api/upair_price_hist/:pair/:inverse/:init_ts/:fin_ts",a1_upair_price_history)
+	r.GET("/api/uni_swap/:id",a1_single_uniswap_swap)
+	r.GET("/api/bal_swap/:id",a1_single_balancer_swap)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

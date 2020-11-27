@@ -584,3 +584,57 @@ func (ss *SQLStorage) Get_uniswap_token_prices(pair_aid int64,inverse bool,init_
 	ss.Info.Printf("returning %v records for price chart\n",len(records))
 	return records
 }
+func (ss *SQLStorage) Get_uniswap_swap_by_id(id int64) (p.UniswapSwap,error) {
+
+	var rec p.UniswapSwap
+	var query string
+	query = "SELECT " +
+				"sw.pair_aid," +
+				"pa.addr," +
+				"sw.block_num," +
+				"sw.amount0_in, " +
+				"sw.amount1_in," +
+				"sw.amount0_out," +
+				"sw.amount1_out," +
+				"sw.time_stamp," +
+				"EXTRACT(EPOCH FROM sw.time_stamp)::BIGINT AS created_ts, "+
+				"ra.addr AS recipient_addr," +
+				"sw.recipient_aid, " +
+				"e1.symbol,"+
+				"e2.symbol "+
+			"FROM uswap1 AS sw " +
+			"JOIN upair AS p ON sw.pair_aid=p.pair_aid " +
+			"LEFT JOIN address AS ra ON sw.recipient_aid=ra.address_id " +
+			"LEFT JOIN address AS pa ON sw.pair_aid=pa.address_id " +
+			"LEFT JOIN erc20_info e1 ON p.token0_aid=e1.aid " +
+			"LEFT JOIN erc20_info e2 ON p.token1_aid=e2.aid " +
+			"WHERE sw.id=$1 " +
+			"ORDER BY sw.id"
+
+	res := ss.db.QueryRow(query,id)
+	err := res.Scan(
+		&rec.PairAid,
+		&rec.PairAddr,
+		&rec.BlockNum,
+		&rec.Amount0_In,
+		&rec.Amount1_In,
+		&rec.Amount0_Out,
+		&rec.Amount1_Out,
+		&rec.CreatedDate,
+		&rec.CreatedTs,
+		&rec.RequesterAddr,
+		&rec.RequesterAid,
+		&rec.Symbol0,
+		&rec.Symbol1,
+	)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return rec,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+
+	return rec,nil
+}
