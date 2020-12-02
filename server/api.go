@@ -1082,6 +1082,7 @@ func a1_upair_price_history(c *gin.Context) {
 }
 func a1_single_uniswap_swap(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	p_id := c.Param("id")
 	var id int64
 	var err error
@@ -1114,6 +1115,7 @@ func a1_single_uniswap_swap(c *gin.Context) {
 }
 func a1_single_balancer_swap(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	p_id := c.Param("id")
 	var id int64
 	var err error
@@ -1142,5 +1144,42 @@ func a1_single_balancer_swap(c *gin.Context) {
 			"Id": id,
 			"status": status,
 			"error": err_str,
+	})
+}
+func a1_balancer_calculate_slippage(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	
+	p_pool := c.Param("pool")
+	pool_addr,_,success := json_validate_and_lookup_address_or_aid(c,&p_pool)
+	if !success {
+		return
+	}
+	p_tok_in := c.Param("tok_in")
+	tok_in,_,success := json_validate_and_lookup_address_or_aid(c,&p_tok_in)
+	if !success {
+		return
+	}
+	p_tok_out := c.Param("tok_out")
+	tok_out,_,success := json_validate_and_lookup_address_or_aid(c,&p_tok_out)
+	if !success {
+		return
+	}
+	p_amount:= c.Param("amount")
+	slippage,err := balancer_calc_slippage(pool_addr,tok_in,tok_out,p_amount)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+			"status": status,
+			"error": err_str,
+			"Slippage" : slippage,
 	})
 }

@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS
 	bexit,
 	bholder,
 	bswap,
+	b_swaps_per_pair,
 	b_set_swap_fee,
 	b_set_controller,
 	b_set_public,

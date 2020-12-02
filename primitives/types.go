@@ -1231,3 +1231,13 @@ type AddressInfo struct {
 	Aid						int64
 	Addr					string
 }
+type TokensForSlippage struct {
+	TokenInAddr				string
+	TokenOutAddr			string
+	PoolAddr				string
+	NumSwaps				int64
+	DecimalsIn				int
+	DecimalsOut				int
+	Slippage				float64
+	Amount					float64
+}

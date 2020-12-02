@@ -30,6 +30,13 @@ CREATE TABLE btoken ( -- Token contained in Balancer pool
 	denorm				DECIMAL(32,18) DEFAULT 0.0,
 	balance				DECIMAL(64,18) DEFAULT 0.0
 );
+CREATE TABLE b_swaps_per_pair ( -- table counting number of swaps per pair of tokens
+	id					BIGSERIAL PRIMARY KEY,
+	pool_aid			BIGINT NOT NULL,
+	token_in_aid		BIGINT NOT NULL,
+	token_out_aid		BIGINT NOT NULL,
+	num_swaps			BIGINT DEFAULT 0,
+);
 CREATE TABLE bjoin ( -- Join event to join balancer pool
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,

@@ -45,6 +45,8 @@ DECLARE
 BEGIN
 	UPDATE bpool SET num_swaps = num_swaps + 1
 		WHERE pool_aid=NEW.pool_aid;
+	UPDATE b_swaps_per_pair SET num_swaps = num_swaps + 1
+		WHERE pool_aid=NEW.pool_aid AND token_in_aid=NEW.token_in_aid AND token_out_aid=NEW.token_out_aid;
 	SELECT wrapper_aid,market_aid FROM af_wrapper
 		WHERE wrapper_aid IN(NEW.token_in_aid,NEW.token_out_aid) LIMIT 1
 		INTO v_wrapper_aid,v_market_aid;
@@ -60,8 +62,10 @@ CREATE OR REPLACE FUNCTION on_bswap_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	UPDATE bpool SET num_swaps = num_swaps -1
+	UPDATE bpool SET num_swaps = num_swaps - 1
 		WHERE pool_aid=OLD.pool_aid;
+	UPDATE b_swaps_per_pair SET num_swaps = num_swaps - 1
+		WHERE pool_aid=NEW.pool_aid AND token_in_aid=NEW.token_in_aid AND token_out_aid=NEW.token_out_aid;
 	PERFORM delete_agtx_event(OLD.tx_id,OLD.evtlog_id);
 	RETURN OLD;
 END;

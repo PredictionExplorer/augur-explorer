@@ -1262,3 +1262,50 @@ func (ss *SQLStorage) Get_balancer_swap_by_id(id int64) (p.BalancerSwap,error) {
 
 	return rec,nil
 }
+func (ss *SQLStorage) Get_balancer_pool_tokens_for_slippage(pool_aid int64) []p.TokensForSlippage {
+
+	var query string
+	records := make([]p.TokensForSlippage,0,8)
+	query = "SELECT " +
+				"inf1.decimals AS decimals1," +
+				"inf2.decimals AS decimals2," +
+				"sp.num_swaps, " +
+				"pa.addr, " +
+				"t1a.addr," +
+				"t2a.addr " +
+			"FROM b_swaps_per_pair AS sp " +
+			"JOIN erc20_info AS inf1 ON t.token_in_aid=inf1.aid " +
+			"JOIN erc20_info AS inf2 ON t.token_out_aid=inf2.aid " +
+			"JOIN address AS pa ON sp.pool_aid=pa.pool_aid " +
+			"JOIN address AS t1a ON t.token_in_aid=t1a.address_id " +
+			"JOIN address AS t2a ON t.token_out_aid=t2a.address_id " +
+			"WHERE t.pool_aid=$1 " +
+			"ORDER BY t.num_swaps DESC " +
+			"LIMIT 3"
+	rows,err := ss.db.Query(query,pool_aid)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return records
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.TokensForSlippage
+		err=rows.Scan(
+			&rec.DecimalsIn,
+			&rec.DecimalsOut,
+			&rec.NumSwaps,
+			&rec.PoolAddr,
+			&rec.TokenInAddr,
+			&rec.TokenOutAddr,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
