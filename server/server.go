@@ -3,6 +3,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"bytes"
 	"strconv"
 	"net/http"
 	"encoding/hex"
@@ -1943,14 +1944,14 @@ func wrapped_token_info(c *gin.Context) {
 		"WrapperInfo" : winfo,
 	})
 }
-func balancer_calc_slippage(addr_str string,token_in_str string,token_out_str string,amount_str string) (string,error) {
+func balancer_calc_slippage(addr_str string,token_in_str string,token_out_str string,amount_str string) (*big.Int,*big.Int,error) {
 
 	addr := common.HexToAddress(addr_str)
 	token_in := common.HexToAddress(token_in_str)
 	token_out := common.HexToAddress(token_out_str)
 	ctrct_bpool,err := NewBPool(addr,rpcclient)
 	if err != nil {
-		return "0",err
+		return nil,nil,err
 	}
 	var copts = new(bind.CallOpts)
 	ten := big.NewInt(10)
@@ -1959,37 +1960,32 @@ func balancer_calc_slippage(addr_str string,token_in_str string,token_out_str st
 
 	token_in_balance,err := ctrct_bpool.GetBalance(copts,token_in)
 	if err != nil {
-		return "0",err
+		return nil,nil,err
 	}
 	token_out_balance,err := ctrct_bpool.GetBalance(copts,token_out)
 	if err != nil {
-		return "0",err
+		return nil,nil,err
 	}
 	token_in_weight,err := ctrct_bpool.GetDenormalizedWeight(copts,token_in)
 	if err != nil {
-		return "0",err
+		return nil,nil,err
 	}
 	token_out_weight,err := ctrct_bpool.GetDenormalizedWeight(copts,token_out)
 	if err != nil {
-		return "0",err
+		return nil,nil,err
 	}
 	swap_fee,err := ctrct_bpool.GetSwapFee(copts)
 	if err != nil {
-		return "0",err
+		return nil,nil,err
 	}
-	Info.Printf("token_in balance=%v, token_out_balance=%v\n",token_in_balance,token_out_balance)
-	Info.Printf("token_in weight=%v, token_out weight=%v\n",token_in_weight,token_out_weight)
-	Info.Printf("swap fee=%v\n",swap_fee)
 	spot_price,err := ctrct_bpool.CalcSpotPrice(copts,token_in_balance,token_in_weight,token_out_balance,token_out_weight,swap_fee)
-	Info.Printf("spot price=%v\n",spot_price)
 	max_price.Mul(spot_price,ten)
 
 	amount := big.NewInt(0)
 	amount.SetString(amount_str,10)
-	Info.Printf("amount = %v\n",amount.String())
 	token_amount_out,err := ctrct_bpool.CalcOutGivenIn(copts,token_in_balance,token_in_weight,token_out_balance,token_out_weight,amount,swap_fee)
 	if err != nil {
-		return "0",err
+		return nil,nil,err
 	}
 	new_in_balance := big.NewInt(0)
 	new_in_balance.Set(token_in_balance)
@@ -1997,16 +1993,49 @@ func balancer_calc_slippage(addr_str string,token_in_str string,token_out_str st
 	new_out_balance := big.NewInt(0)
 	new_out_balance.Set(token_out_balance)
 	new_out_balance.Add(new_out_balance,token_amount_out)
-	Info.Printf("token_out_amount= %v, new_token_out_balance\n",token_amount_out,new_out_balance)
-	Info.Printf("new_in_balance =%v\n",new_in_balance)
 	spot_price_after,err := ctrct_bpool.CalcSpotPrice(copts,new_in_balance,token_in_weight,new_out_balance,token_out_weight,swap_fee)
 	if err != nil {
-		return "0",err
+		return nil,nil,err
 	}
 	slippage := big.NewInt(0)
 	slippage.Sub(spot_price,spot_price_after)
-	Info.Printf("Pair %v. Spot price=%v, price after=%v, slippage=%v\n",addr_str,spot_price,spot_price_after,slippage)
-	return slippage.String(),nil
+	return slippage,token_amount_out,nil
+}
+func produce_pool_slippages(amount_to_trade string,pool_aid int64) []TokenSlippage {
+
+	tokens := augur_srv.storage.Get_balancer_pool_tokens_for_slippage(pool_aid)
+	for i:=0; i < len(tokens) ; i++ {
+		t := &tokens[i]
+		amount := fmt.Sprintf("%v%0*d",amount_to_trade,t.Decimals1, 0)
+		slippage,amount_token_out,_:= balancer_calc_slippage(
+			t.PoolAddr,
+			t.Token1Addr,
+			t.Token2Addr,
+			amount,
+		)
+		if slippage != nil {
+			fslippage := big.NewFloat(0.0)
+			fslippage.SetString(slippage.String())
+			divisor1_str := fmt.Sprintf("1%0*d", t.Decimals1, 0)
+			divisor2_str := fmt.Sprintf("1%0*d", t.Decimals2, 0)
+			divisor1 := big.NewFloat(0.0)
+			divisor1.SetString(divisor1_str)
+			divisor2 := big.NewFloat(0.0)
+			divisor2.SetString(divisor2_str)
+			quo := big.NewFloat(0.0)
+			quo.Quo(fslippage,divisor1)
+			resulting_slippage,_ := quo.Float64()
+			t.Slippage = resulting_slippage
+			famount := big.NewFloat(0.0)
+			famount.SetString(amount)
+			famount.Quo(famount,divisor1)
+			t.AmountIn,_ = famount.Float64()
+			famount.SetString(amount_token_out.String())
+			famount.Quo(famount,divisor2)
+			t.AmountOut,_ = famount.Float64()
+		}
+	}
+	return tokens
 }
 func show_pool_slippage(c *gin.Context) {
 
@@ -2016,22 +2045,70 @@ func show_pool_slippage(c *gin.Context) {
 		return
 	}
 	pool_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(pool_addr)
-	if err == nil {
-		respond_error(c,fmt.Sprintf("Address %v not found",p_pool))
+	if err != nil {
+		respond_error(c,fmt.Sprintf("Address %v not found",))
 		return
 	}
-	tokens := augur_srv.storage.Get_balancer_pool_tokens_for_slippage(pool_aid)
-
-	for t := range tokens {
-		slippage,_:= balancer_calc_slippage(
-			t.PoolAddr,
-			t.TokenInAddr,
-			t.TokenOutAddr,
-			"1000000000",
-		)
-	}
-
-	c.HTML(http.StatusOK, "wrapped_shtok_info.html", gin.H{
-		"WrapperInfo" : winfo,
+	pool_info,_ := augur_srv.storage.Get_pool_info(pool_aid)
+	amount_to_trade := "100";
+	tokens := produce_pool_slippages(amount_to_trade,pool_aid)
+	c.HTML(http.StatusOK, "pool_slippage.html", gin.H{
+		"PoolInfo" : pool_info,
+		"TokenSlippage" : tokens,
+		"AmountToTrade" : amount_to_trade,
 	})
+}
+func uniswap_calc_slippage(pair_addr_str string,token_str string,amount_str string) (*big.Int,*big.Int,error) {
+
+	addr := common.HexToAddress(pair_addr_str)
+	qtoken := common.HexToAddress(token_str)
+
+	ctrct_pair,err := NewUniswapV2Pair(addr,rpcclient)
+	if err != nil {
+		return nil,nil,err
+	}
+	var copts = new(bind.CallOpts)
+	reserves,err := ctrct_pair.GetReserves(copts)
+	if err != nil {
+		return nil,nil,err
+	}
+	token0,err := ctrct_pair.Token0(copts)
+	if err != nil {
+		return nil,nil,err
+	}
+	token1,err := ctrct_pair.Token1(copts)
+	if err != nil {
+		return nil,nil,err
+	}
+	var r1,r2 *big.Int
+	if bytes.Equal(qtoken.Bytes(),token0.Bytes()) {
+		r1=reserves.Reserve0
+		r2=reserves.Reserve1
+	} else {
+		r1=reserves.Reserve1
+		r2=reserves.Reserve0
+	}
+	_,augur_srv.storage.Get_balancer_contracts()
+	Info.Printf("reserves token0=%v, token1=%v\n",r1.String(),r2.String())
+	amount := big.NewInt(0)
+	amount.SetString(amount_str,10)
+	token_amount_out,err := ctrct_pair.GetAmountOut(copts,amount,r1,r2)
+	Info.Printf("token %v amount in = %v , amount out = %v\n",amount_str,token_amount_out.String())
+
+	spot_price := big.NewInt(0)
+	spot_price.Quo(r1,r2)
+
+	spot_price_after := big.NewInt(0)
+	r1_after := big.NewInt(0)
+	r1_after.Set(r1)
+	r1_after.Add(r1,amount)
+	r2_after := big.NewInt(0)
+	r2_after.Set(r2)
+	r2_after.Sub(r2,token_amount_out)
+	spot_price_after.Quo(r1_after,r2_after)
+	slippage := big.NewInt(0)
+	slippage.Sub(spot_price_after,spot_price)
+	Info.Printf("r1_after = %v, r2_after = %v\n",r1_after.String(),r2_after.String())
+
+	return slippage,token_amount_out,nil
 }

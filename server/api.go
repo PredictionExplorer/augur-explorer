@@ -1167,7 +1167,7 @@ func a1_balancer_calculate_slippage(c *gin.Context) {
 		return
 	}
 	p_amount:= c.Param("amount")
-	slippage,err := balancer_calc_slippage(pool_addr,tok_in,tok_out,p_amount)
+	slippage,token_amount_out,err := balancer_calc_slippage(pool_addr,tok_in,tok_out,p_amount)
 	if err != nil {
 		c.JSON(http.StatusBadRequest,gin.H{
 			"status":0,
@@ -1177,9 +1177,81 @@ func a1_balancer_calculate_slippage(c *gin.Context) {
 	}
 	var status int = 1
 	var err_str string = ""
+	var amount_out_str string = "?"
+	var slippage_str string = "?"
+	if slippage != nil {
+		slippage_str = slippage.String()
+	}
+	if token_amount_out != nil {
+		amount_out_str = token_amount_out.String()
+	}
 	c.JSON(http.StatusOK, gin.H{
 			"status": status,
 			"error": err_str,
-			"Slippage" : slippage,
+			"Slippage" : slippage_str,
+			"AmountOut" : amount_out_str,
+	})
+}
+func a1_pool_slippage(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_pool:= c.Param("pool")
+	_,pool_aid,success := json_validate_and_lookup_address_or_aid(c,&p_pool)
+	if !success {
+		return
+	}
+	pool_info,_ := augur_srv.storage.Get_pool_info(pool_aid)
+	amount_to_trade := "100";
+	tokens := produce_pool_slippages(amount_to_trade,pool_aid)
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+			"status": status,
+			"error": err_str,
+			"PoolInfo" : pool_info,
+			"TokenSlippages" : tokens,
+			"AmountToTrade" : amount_to_trade,
+	})
+}
+func a1_uniswap_calculate_slippage(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_pair := c.Param("pair")
+	pair_addr,_,success := json_validate_and_lookup_address_or_aid(c,&p_pair)
+	if !success {
+		return
+	}
+	p_tok_in := c.Param("tok_in")
+	tok_in,_,success := json_validate_and_lookup_address_or_aid(c,&p_tok_in)
+	if !success {
+		return
+	}
+	p_amount:= c.Param("amount")
+	slippage,token_amount_out,err := uniswap_calc_slippage(pair_addr,tok_in,p_amount)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	var status int = 1
+	var err_str string = ""
+	var amount_out_str string = "?"
+	var slippage_str string = "?"
+	if slippage != nil {
+		slippage_str = slippage.String()
+	}
+	if token_amount_out != nil {
+		amount_out_str = token_amount_out.String()
+	}
+	c.JSON(http.StatusOK, gin.H{
+			"status": status,
+			"error": err_str,
+			"Slippage" : slippage_str,
+			"AmountOut" : amount_out_str,
 	})
 }

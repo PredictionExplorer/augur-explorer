@@ -42,11 +42,26 @@ CREATE OR REPLACE FUNCTION on_bswap_insert() RETURNS trigger AS  $$
 DECLARE
 	v_wrapper_aid bigint;
 	v_market_aid bigint;
+	v_cnt numeric;
 BEGIN
 	UPDATE bpool SET num_swaps = num_swaps + 1
 		WHERE pool_aid=NEW.pool_aid;
 	UPDATE b_swaps_per_pair SET num_swaps = num_swaps + 1
-		WHERE pool_aid=NEW.pool_aid AND token_in_aid=NEW.token_in_aid AND token_out_aid=NEW.token_out_aid;
+		WHERE pool_aid=NEW.pool_aid AND token1_aid=NEW.token1_aid AND token2_aid=NEW.token2_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO b_swaps_per_pair(pool_aid,token1_aid,token2_aid,num_swaps,last_price_block,last_amount1,last_amount2)
+		VALUES(NEW.pool_aid,NEW.token1_aid,NEW.token2_aid,1,NEW.block_num,NEW.token1_amount,NEW.token2_amount);
+	END IF;
+	UPDATE b_swaps_per_pair SET
+			last_price_block = NEW.block_num,
+			last_amount1 = NEW.token1_amount,
+			last_amount2 = NEW.token2_amount
+		WHERE
+				pool_aid=NEW.pool_aid AND
+				token1_aid=NEW.token1_aid AND
+				token2_aid=NEW.token2_aid AND
+				last_price_block < NEW.block_num;
 	SELECT wrapper_aid,market_aid FROM af_wrapper
 		WHERE wrapper_aid IN(NEW.token_in_aid,NEW.token_out_aid) LIMIT 1
 		INTO v_wrapper_aid,v_market_aid;
@@ -65,7 +80,7 @@ BEGIN
 	UPDATE bpool SET num_swaps = num_swaps - 1
 		WHERE pool_aid=OLD.pool_aid;
 	UPDATE b_swaps_per_pair SET num_swaps = num_swaps - 1
-		WHERE pool_aid=NEW.pool_aid AND token_in_aid=NEW.token_in_aid AND token_out_aid=NEW.token_out_aid;
+		WHERE pool_aid=NEW.pool_aid AND token1_aid=NEW.token1_aid AND token2_aid=NEW.token2_aid;
 	PERFORM delete_agtx_event(OLD.tx_id,OLD.evtlog_id);
 	RETURN OLD;
 END;

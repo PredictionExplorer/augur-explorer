@@ -1231,13 +1231,16 @@ type AddressInfo struct {
 	Aid						int64
 	Addr					string
 }
-type TokensForSlippage struct {
-	TokenInAddr				string
-	TokenOutAddr			string
+type TokenSlippage struct {
+	Token1Addr				string
+	Token2Addr				string
+	Token1Symbol			string
+	Token2Symbol			string
 	PoolAddr				string
 	NumSwaps				int64
-	DecimalsIn				int
-	DecimalsOut				int
+	Decimals1				int
+	Decimals2				int
 	Slippage				float64
-	Amount					float64
+	AmountIn				float64
+	AmountOut				float64
 }

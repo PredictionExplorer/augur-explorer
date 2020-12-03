@@ -1,4 +1,4 @@
-CREATE TABLE upair( -- uniswap pair (PairCreated event)
+REATE TABLE upair( -- uniswap pair (PairCreated event)
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)

@@ -31,11 +31,14 @@ CREATE TABLE btoken ( -- Token contained in Balancer pool
 	balance				DECIMAL(64,18) DEFAULT 0.0
 );
 CREATE TABLE b_swaps_per_pair ( -- table counting number of swaps per pair of tokens
-	id					BIGSERIAL PRIMARY KEY,
 	pool_aid			BIGINT NOT NULL,
-	token_in_aid		BIGINT NOT NULL,
-	token_out_aid		BIGINT NOT NULL,
+	token1_aid			BIGINT NOT NULL,
+	token2_aid			BIGINT NOT NULL,
 	num_swaps			BIGINT DEFAULT 0,
+	last_price_block	BIGINT DEFAULT 0,
+	last_amount1		DECIMAL(64,18) DEFAULT 0.0,
+	last_amount2		DECIMAL(64,18) DEFAULT 0.0,
+	PRIMARY KEY(pool_aid,token1_aid,token2_aid)
 );
 CREATE TABLE bjoin ( -- Join event to join balancer pool
 	id					BIGSERIAL PRIMARY KEY,
@@ -75,6 +78,10 @@ CREATE TABLE bswap ( -- Balancer swap events
 	caller_aid			BIGINT NOT NULL,
 	token_in_aid		BIGINT NOT NULL,
 	token_out_aid		BIGINT NOT NULL,
+	token1_aid			BIGINT NOT NULL,	-- these are ordered IDs to facilitate reporting
+	token2_aid			BIGINT NOT NULL,
+	token1_amount		DECIMAL NOT NULL,
+	token2_amount		DECIMAL NOT NULL,
 	amount_in			DECIMAL(64,18),
 	amount_out			DECIMAL(64,18)
 );

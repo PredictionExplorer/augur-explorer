@@ -159,7 +159,7 @@ func main() {
 	r.GET("/black/uni_swap/:id",show_single_uniswap_swap)
 	r.GET("/black/bal_swap/:id",show_single_balancer_swap)
 	r.GET("/black/wrtok_info/:address",wrapped_token_info)
-	r.GET("/black/pool_slippage/:address",show_pool_slippage)
+	r.GET("/black/pool_slippage/:pool",show_pool_slippage)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -207,7 +207,8 @@ func main() {
 	r.GET("/api/uni_swap/:id",a1_single_uniswap_swap)
 	r.GET("/api/bal_swap/:id",a1_single_balancer_swap)
 	r.GET("/api/bal_calc_slip/:pool/:tok_in/:tok_out/:amount",a1_balancer_calculate_slippage)
-	//r.GET("/api/pool_slippage/:pool",a1_pool_slippage)
+	r.GET("/api/pool_slippage/:pool",a1_pool_slippage)
+	r.GET("/api/uni_calc_slip/:pool/:tok_in/:amount",a1_uniswap_calculate_slippage)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
