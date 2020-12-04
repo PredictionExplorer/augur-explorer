@@ -152,10 +152,36 @@
 <div class="user_info">
 	<table class="user_info">
 		<tr class="user_info">
+			<td>Account type</td>
+			<td title="">
+				{{ if eq 0 .UserInfo.WalletAid }}
+					Augur Wallet Contract
+				{{ end }}
+				{{ if eq 0 .UserInfo.EOAAid }}
+					EOA (Externally Owned Account)
+				{{ end }}
+			<td>
+		</tr>
+		<tr class="user_info">
 			<td>Account Address</td>
-			<td class="right addr" title="{{.UserInfo.Aid}}:{{.UserInfo.Addr}}">{{.UserInfo.Addr}}</td>
+			<td class="addr" title="{{.UserInfo.Aid}}:{{.UserInfo.Addr}}">{{.UserInfo.Addr}}</td>
 		</tr>
+		{{ if ne 0 .UserInfo.EOAAid }}
+		<tr class="user_info">
+			<td>Related EOA account</td>
+			<td title="" class="addr">
+				<a href="/black/search?q={{.UserInfo.EOAAddr}}">{{.UserInfo.EOAAddr }}</a>
+			<td>
 		</tr>
+		{{ end }}
+		{{ if ne 0 .UserInfo.WalletAid }}
+		<tr class="user_info">
+			<td>Related Wallet contract</td>
+			<td title="" class="addr">
+				<a href="/black/search?q={{.UserInfo.WalletAddr}}">{{.UserInfo.WalletAddr}}</a>
+			<td>
+		</tr>
+		{{ end }}
 		<tr class="user_info">
 			<td>Lifetime Profit/Loss (DAI)</td>
 			<td title="" class="right">{{.UserInfo.ProfitLoss}}<td>

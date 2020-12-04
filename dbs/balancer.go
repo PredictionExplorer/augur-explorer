@@ -699,6 +699,7 @@ func (ss *SQLStorage) Get_pool_info(pool_aid int64) (p.BalancerNewPool,error) {
 		}
 		tokens = append(tokens,rec)
 	}
+	output.NumAugurTokens,_ = ss.Get_pool_augur_tokens(pool_aid)
 	output.Tokens = tokens
 	return output,nil
 }
@@ -1331,4 +1332,26 @@ func (ss *SQLStorage) Get_balancer_pool_tokens_for_slippage(pool_aid int64) []p.
 		records = append(records,rec)
 	}
 	return records
+}
+func (ss *SQLStorage) Get_pool_augur_tokens(pool_aid int64) (int64,error) {
+	// returns number of Augur-related tokens
+	var query string
+	query = "SELECT " +
+				"count(*) AS num_toks " +
+			"FROM btoken AS t " +
+				"JOIN af_wrapper aw ON t.token_aid=aw.wrapper_aid " +
+			"WHERE t.pool_aid=$1"
+
+	row := ss.db.QueryRow(query,pool_aid)
+	var null_count sql.NullInt64	
+	err := row.Scan(&null_count)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error : %v",err))
+			os.Exit(1)
+		}
+	}
+	return null_count.Int64,nil
 }

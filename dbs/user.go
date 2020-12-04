@@ -3,6 +3,7 @@ package dbs
 import (
 	"fmt"
 	"os"
+	"strings"
 	"strconv"
 	"math/big"
 	"database/sql"
@@ -37,6 +38,43 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 
 	var query string
 	query = "SELECT " +
+				"af.aid, " +
+				"ea.eoa_aid AS eoa_aid," +
+				"ea.addr AS eoa_addr," +
+				"ew.wallet_aid AS wallet_aid," +
+				"ew.addr AS wallet_addr," +
+				"s.total_trades," +
+				"s.markets_created," +
+				"s.markets_traded," +
+				"s.withdraw_reqs," +
+				"s.deposit_reqs," +
+				"s.total_reports," +
+				"s.total_designated," +
+				"s.profit_loss," +
+				"s.report_profits," +
+				"s.aff_profits," +
+				"s.money_at_stake," +
+				"s.validity_bonds," +
+				"s.total_withdrawn," +
+				"s.total_deposited, " +
+				"r.top_trades, " +
+				"r.top_profit " +
+			"FROM augur_flag AS af " +
+				"LEFT JOIN ustats AS s ON af.aid=s.aid "+
+				"LEFT JOIN uranks AS r ON af.aid = r.aid " +
+				"LEFT JOIN LATERAL (" +
+					"SELECT eoa_aid,wallet_aid,a.addr FROM eoa_wallet ea " +
+					"JOIN address a ON ea.eoa_aid=a.address_id " +
+				") AS ea ON af.aid=ea.wallet_aid " +
+				"LEFT JOIN LATERAL (" +
+					"SELECT eoa_aid,wallet_aid,a.addr FROM eoa_wallet ew " +
+					"JOIN address a ON ew.wallet_aid=a.address_id " +
+				") AS ew ON af.aid=ew.eoa_aid " +
+				"WHERE af.aid=$1"
+	d_query := strings.ReplaceAll(query,`$1`,fmt.Sprintf("%v",user_aid))
+	ss.Info.Printf("query = %v\n",d_query)
+/*
+	query = "SELECT " +
 				"s.aid," +
 				"s.total_trades," +
 				"s.markets_created," +
@@ -69,40 +107,54 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 				"JOIN address a ON ew.eoa_aid=a.address_id " +
 			") AS ea ON s.aid=ew.wallet_aid " +
 			"WHERE s.aid = $1"
-
+*/
 	row := ss.db.QueryRow(query,user_aid)
 	var err error
 	var (
-		top_profits		sql.NullFloat64
-		top_trades		sql.NullFloat64
-		wallet_addr		sql.NullString
-		wallet_aid		sql.NullInt64
-		eoa_addr		sql.NullString
-		eoa_aid			sql.NullInt64
+		top_profits					sql.NullFloat64
+		top_trades				sql.NullFloat64
+		wallet_addr				sql.NullString
+		wallet_aid				sql.NullInt64
+		eoa_addr				sql.NullString
+		eoa_aid					sql.NullInt64
+		null_total_trades		sql.NullInt32
+		null_markets_created	sql.NullInt32
+		null_markets_traded		sql.NullInt32
+		null_withdraw_reqs		sql.NullInt32
+		null_deposit_reqs		sql.NullInt32
+		null_total_reports		sql.NullInt32
+		null_total_designated	sql.NullInt32
+		null_profit_loss		sql.NullFloat64
+		null_report_profits		sql.NullFloat64
+		null_aff_profits		sql.NullFloat64
+		null_money_at_stake		sql.NullFloat64
+		null_validity_bonds		sql.NullFloat64
+		null_total_withdrawn	sql.NullFloat64
+		null_total_deposited	sql.NullFloat64
 	)
 	ui.Aid = user_aid
 	err=row.Scan(
 				&ui.Aid,
-				&ui.TotalTrades,
-				&ui.MarketsCreated,
-				&ui.MarketsTraded,
-				&ui.WithdrawReqs,
-				&ui.DepositReqs,
-				&ui.TotalReports,
-				&ui.TotalDesignated,
-				&ui.ProfitLoss,
-				&ui.ReportProfits,
-				&ui.AffProfits,
-				&ui.MoneyAtStake,
-				&ui.ValidityBonds,
-				&ui.TotalWithdrawn,
-				&ui.TotalDeposited,
-				&top_trades,
-				&top_profits,
-				&wallet_aid,
-				&wallet_addr,
 				&eoa_aid,
 				&eoa_addr,
+				&wallet_aid,
+				&wallet_addr,
+				&null_total_trades,
+				&null_markets_created,
+				&null_markets_traded,
+				&null_withdraw_reqs,
+				&null_deposit_reqs,
+				&null_total_reports,
+				&null_total_designated,
+				&null_profit_loss,
+				&null_report_profits,
+				&null_aff_profits,
+				&null_money_at_stake,
+				&null_validity_bonds,
+				&null_total_withdrawn,
+				&null_total_deposited,
+				&top_trades,
+				&top_profits,
 	);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -120,24 +172,27 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 	if err == nil {
 		ui.AddrSh = p.Short_address(ui.Addr)
 	}
-	if top_profits.Valid {
-		ui.TopProfit = top_profits.Float64
-	}
-	if top_trades.Valid {
-		ui.TopTrades = top_trades.Float64
-	}
-	if ui.MoneyAtStake < 0 {
-		ui.HedgingProfits = true
-	}
+	if null_total_trades.Valid { ui.TotalTrades = null_total_trades.Int32 }
+	if null_markets_created.Valid { ui.MarketsCreated = null_markets_created.Int32 }
+	if null_markets_traded.Valid { ui.MarketsTraded = null_markets_traded.Int32 }
+	if null_withdraw_reqs.Valid { ui.WithdrawReqs = null_withdraw_reqs.Int32 }
+	if null_deposit_reqs.Valid { ui.DepositReqs = null_deposit_reqs.Int32 }
+	if null_total_reports.Valid { ui.TotalReports = null_total_reports.Int32 }
+	if null_total_designated.Valid { ui.TotalDesignated = null_total_designated.Int32 }
+	if null_profit_loss.Valid { ui.ProfitLoss = null_profit_loss.Float64 }
+	if null_report_profits.Valid { ui.ReportProfits = null_report_profits.Float64 }
+	if null_aff_profits.Valid { ui.AffProfits = null_aff_profits.Float64 }
+	if null_money_at_stake.Valid { ui.MoneyAtStake = null_money_at_stake.Float64 }
+	if null_validity_bonds.Valid { ui.ValidityBonds = null_validity_bonds.Float64 }
+	if null_total_withdrawn.Valid { ui.TotalWithdrawn = null_total_withdrawn.Float64 }
+	if null_total_deposited.Valid { ui.TotalDeposited = null_total_deposited.Float64 }
+
+	if top_profits.Valid { ui.TopProfit = top_profits.Float64 }
+	if top_trades.Valid { ui.TopTrades = top_trades.Float64 }
+	if ui.MoneyAtStake < 0 { ui.HedgingProfits = true }
 	ui.UnclaimedProfit=ss.Get_unclaimed_profit(user_aid)
-	if wallet_aid.Valid {
-		ui.WalletAid = wallet_aid.Int64
-		ui.WalletAddr = wallet_addr.String
-	}
-	if eoa_aid.Valid {
-		ui.EOAAid = eoa_aid.Int64
-		ui.EOAAddr = eoa_addr.String
-	}
+	if wallet_aid.Valid { ui.WalletAid = wallet_aid.Int64; ui.WalletAddr = wallet_addr.String }
+	if eoa_aid.Valid { ui.EOAAid = eoa_aid.Int64; ui.EOAAddr = eoa_addr.String }
 	return ui,nil
 }
 func (ss *SQLStorage) Get_ranking_data_for_all_users() []p.RankStats {

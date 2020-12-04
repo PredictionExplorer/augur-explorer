@@ -228,13 +228,13 @@ type UserInfo struct {
 	EOAAid			int64	// Filled only if present
 	HedgingProfits	bool	// Flag to indicate negative 'MoneyAtStake' field
 	NoActivity		bool	// True if doesn't have entry in 'ustats' table
-	TotalTrades		uint32	// how many trades were made by this User
-	MarketsCreated	uint32	// how many markets this User has created
-	MarketsTraded	uint32	// how many markets this User has traded
-	WithdrawReqs	uint32	// number of withdrawal requests
-	DepositReqs		uint32	// number of Deposit requests
-	TotalReports	uint32	// amount of reports User has made
-	TotalDesignated	uint32	// total reports submitted as designated reporter
+	TotalTrades		int32	// how many trades were made by this User
+	MarketsCreated	int32	// how many markets this User has created
+	MarketsTraded	int32	// how many markets this User has traded
+	WithdrawReqs	int32	// number of withdrawal requests
+	DepositReqs		int32	// number of Deposit requests
+	TotalReports	int32	// amount of reports User has made
+	TotalDesignated	int32	// total reports submitted as designated reporter
 	AugurFlags		AugurAcctFlags
 	Addr			string	// User's Ethereum address (Externally Owned Account)
 	AddrSh			string	// short version of the above addr
@@ -934,6 +934,7 @@ type BalancerNewPool struct {
 	NumSwaps				int64
 	NumHolders				int64
 	NumTokens				int64
+	NumAugurTokens			int64
 	SwapFee					float64
 	PoolAddr				string
 	CallerAddr				string
@@ -1163,6 +1164,7 @@ type MarketUPair struct { // Uniswap Pair where the Market can be traded
 	Token1Aid				int64
 	TotalSwaps				int64
 	CreatedTs				int64
+	NumAugurTokens			int64
 	Token0Decimals			int
 	Token1Decimals			int
 	Outcome					string

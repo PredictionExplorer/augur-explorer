@@ -378,6 +378,7 @@ func (ss *SQLStorage) Get_uniswap_pair_info(pair_aid int64) (p.MarketUPair,error
 	if name1.Valid { rec.Token1Name = name1.String }
 	if symbol0.Valid { rec.Token0Symbol = symbol0.String }
 	if symbol1.Valid { rec.Token1Symbol = symbol1.String }
+	rec.NumAugurTokens,_ = ss.Get_uniswap_augur_tokens(pair_aid)
 	return rec,nil
 }
 func (ss *SQLStorage) Get_uniswap_swaps(pair_aid int64,offset int,limit int) []p.UniswapSwap {
@@ -641,4 +642,26 @@ func (ss *SQLStorage) Get_uniswap_swap_by_id(id int64) (p.UniswapSwap,error) {
 	}
 
 	return rec,nil
+}
+func (ss *SQLStorage) Get_uniswap_augur_tokens(pair_aid int64) (int64,error) {
+	// returns number of Augur-related tokens
+	var query string
+	query = "SELECT " +
+				"count(*) AS num_toks " +
+			"FROM upair AS p " +
+				"JOIN af_wrapper aw ON (p.token0_aid=aw.wrapper_aid OR p.token1_aid=aw.wrapper_aid) " +
+			"WHERE p.pair_aid=$1"
+
+	row := ss.db.QueryRow(query,pair_aid)
+	var null_count sql.NullInt64	
+	err := row.Scan(&null_count)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error : %v",err))
+			os.Exit(1)
+		}
+	}
+	return null_count.Int64,nil
 }
