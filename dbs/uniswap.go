@@ -305,8 +305,8 @@ func (ss *SQLStorage) Get_market_uniswap_pairs(market_aid int64) []p.MarketUPair
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		if decimals0.Valid {rec.Token0Decimals = decimals0.Int64	}
-		if decimals1.Valid {rec.Token1Decimals = decimals1.Int64 }
+		if decimals0.Valid {rec.Token0Decimals = int(decimals0.Int64)	}
+		if decimals1.Valid {rec.Token1Decimals = int(decimals1.Int64) }
 		if name0.Valid { rec.Token0Name = name0.String }
 		if name1.Valid { rec.Token1Name = name1.String }
 		if symbol0.Valid { rec.Token0Symbol = symbol0.String }
@@ -372,8 +372,8 @@ func (ss *SQLStorage) Get_uniswap_pair_info(pair_aid int64) (p.MarketUPair,error
 			os.Exit(1)
 		}
 	}
-	if decimals0.Valid {rec.Token0Decimals = decimals0.Int64	}
-	if decimals1.Valid {rec.Token1Decimals = decimals1.Int64 }
+	if decimals0.Valid {rec.Token0Decimals = int(decimals0.Int64)	}
+	if decimals1.Valid {rec.Token1Decimals = int(decimals1.Int64) }
 	if name0.Valid { rec.Token0Name = name0.String }
 	if name1.Valid { rec.Token1Name = name1.String }
 	if symbol0.Valid { rec.Token0Symbol = symbol0.String }

@@ -16,7 +16,7 @@
 </tr>
 <tr>
 	<td>Token2:</td>
-	<td nowrap>{{.PairInfo.Token0Addr}} / {{.PairInfo.Token1Symbol}} / {{.PairInfo.Token1Name}}</td>
+	<td nowrap>{{.PairInfo.Token1Addr}} / {{.PairInfo.Token1Symbol}} / {{.PairInfo.Token1Name}}</td>
 </tr>
 <tr>
 	<td>Created</td>
@@ -36,6 +36,8 @@ Prices : <br/>
 	<b>{{.PairInfo.Token1Symbol}}</b> <font color="#555555">in</font> <b>{{.PairInfo.Token0Symbol}}</b> 
 </a>
 </ul>
+
+<a href="/black/uniswap_slippage/{{.PairInfo.PairAddr}}">Show Slippage</a>
 <h3>Pair Swaps</h3>
 <table>
 	<tr class="market_reports">

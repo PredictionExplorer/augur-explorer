@@ -1163,8 +1163,8 @@ type MarketUPair struct { // Uniswap Pair where the Market can be traded
 	Token1Aid				int64
 	TotalSwaps				int64
 	CreatedTs				int64
-	Token0Decimals			int64
-	Token1Decimals			int64
+	Token0Decimals			int
+	Token1Decimals			int
 	Outcome					string
 	MktAddr					string
 	CreatedDate				string

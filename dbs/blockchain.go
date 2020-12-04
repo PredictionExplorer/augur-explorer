@@ -1417,3 +1417,22 @@ func (ss *SQLStorage) Get_first_event_log() p.BasicChainInfo {
 	}
 	return bci
 }
+func (ss *SQLStorage) Get_erc20_info(tok_addr string) (p.ERC20Info,error) {
+	
+	var query string
+	query = "SELECT aid,decimals,total_supply,name,symbol " +
+			"FROM erc20_info inf,address a WHERE inf.aid=a.address_id and a.addr=$1"
+
+	row := ss.db.QueryRow(query,tok_addr)
+	var info p.ERC20Info
+	var err error
+	err=row.Scan(&info.Aid,&info.Decimals,&info.TotalSupply,&info.Name,&info.Symbol);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return info,err
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Get_first_event_log(): %v",err))
+		os.Exit(1)
+	}
+	return info,nil
+}

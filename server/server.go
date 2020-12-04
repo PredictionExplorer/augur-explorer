@@ -1999,6 +1999,10 @@ func balancer_calc_slippage(addr_str string,token_in_str string,token_out_str st
 	}
 	slippage := big.NewInt(0)
 	slippage.Sub(spot_price,spot_price_after)
+	Info.Printf(
+		"Calculating slippage: price_before= %v , price_after= %v , slippage= %v\n",
+		spot_price.String(),spot_price_after.String(),slippage.String(),
+	)
 	return slippage,token_amount_out,nil
 }
 func produce_pool_slippages(amount_to_trade string,pool_aid int64) []TokenSlippage {
@@ -2058,7 +2062,33 @@ func show_pool_slippage(c *gin.Context) {
 		"AmountToTrade" : amount_to_trade,
 	})
 }
-func uniswap_calc_slippage(pair_addr_str string,token_str string,amount_str string) (*big.Int,*big.Int,error) {
+func uniswap_correct_for_difference_in_decimals(value *big.Float,decimals1,decimals2 int) {
+	Info.Printf("Correcting slippage for difference: %v\n",value.String())
+	if decimals1 != decimals2 {
+		var dec_diff int = 0
+		if decimals1 < decimals2 {
+			dec_diff = decimals2 - decimals1;
+			divisor_str := fmt.Sprintf("1%0*d",dec_diff, 0)
+			divisor_big := big.NewFloat(0.0)
+			divisor_big.SetString(divisor_str)
+			value.Quo(value,divisor_big)
+			Info.Printf("Difference in decimals is %v, dividing slippage by %v\n",dec_diff,divisor_big.String())
+		} else {
+			dec_diff = decimals1 - decimals2;
+			multiplier_str := fmt.Sprintf("1%0*d",dec_diff, 0)
+			multiplier_big := big.NewFloat(0.0)
+			multiplier_big.SetString(multiplier_str)
+			value.Mul(value,multiplier_big)
+			Info.Printf("Difference in decimals is %v, multiplying slippage by %v\n",dec_diff,multiplier_big.String())
+		}
+	}
+	Info.Printf("Corrected slippage = %v\n",value)
+}
+func uniswap_calc_slippage(pair_addr_str string,token_str string,amount_str string) (*big.Float,*big.Int,error) {
+	// note: we are receiving decimals as parameter because the fetch porcess to get decimals from the
+	//		contract is more complicated than just calling Decimals() on the contract. The code to
+	//		fetch all token info is at primitives/augur_utils.go 
+	//		the decimals should be provided from the DB
 
 	addr := common.HexToAddress(pair_addr_str)
 	qtoken := common.HexToAddress(token_str)
@@ -2080,6 +2110,10 @@ func uniswap_calc_slippage(pair_addr_str string,token_str string,amount_str stri
 	if err != nil {
 		return nil,nil,err
 	}
+	Info.Printf(
+		"Calculatig uniswap slippage for %v. Amount %v. Pair.Token0=%v, Pair.Token1=%v",
+		token_str,amount_str,token0.String(),token1.String(),
+	)
 	var r1,r2 *big.Int
 	if bytes.Equal(qtoken.Bytes(),token0.Bytes()) {
 		r1=reserves.Reserve0
@@ -2088,27 +2122,147 @@ func uniswap_calc_slippage(pair_addr_str string,token_str string,amount_str stri
 		r1=reserves.Reserve1
 		r2=reserves.Reserve0
 	}
-	_,augur_srv.storage.Get_balancer_contracts()
-	Info.Printf("reserves token0=%v, token1=%v\n",r1.String(),r2.String())
+	_,_,router02_addr_str := augur_srv.storage.Get_uniswap_contracts()
+	router02_addr := common.HexToAddress(router02_addr_str)
+	ctrct_router,err := NewUniswapV2Router02(router02_addr,rpcclient)
+	Info.Printf("Reserves for token0=%v, reserves for token1=%v\n",reserves.Reserve0.String(),reserves.Reserve1.String())
 	amount := big.NewInt(0)
 	amount.SetString(amount_str,10)
-	token_amount_out,err := ctrct_pair.GetAmountOut(copts,amount,r1,r2)
-	Info.Printf("token %v amount in = %v , amount out = %v\n",amount_str,token_amount_out.String())
+	token_amount_out,err := ctrct_router.GetAmountOut(copts,amount,r1,r2)
+	Info.Printf("Token %v amount in = %v , amount out = %v\n",token0.String(),amount_str,token_amount_out.String())
 
-	spot_price := big.NewInt(0)
-	spot_price.Quo(r1,r2)
+	// calculate spot price before swap
+	spot_price_before := big.NewFloat(0.0)
+	r1_float := big.NewFloat(0.0)
+	r1_float.SetString(r1.String())
+	r2_float := big.NewFloat(0.0)
+	r2_float.SetString(r2.String())
+	spot_price_before.Quo(r1_float,r2_float)
+	Info.Printf("Spot price before = %v\n",spot_price_before.String())
 
-	spot_price_after := big.NewInt(0)
-	r1_after := big.NewInt(0)
-	r1_after.Set(r1)
-	r1_after.Add(r1,amount)
-	r2_after := big.NewInt(0)
-	r2_after.Set(r2)
-	r2_after.Sub(r2,token_amount_out)
-	spot_price_after.Quo(r1_after,r2_after)
-	slippage := big.NewInt(0)
-	slippage.Sub(spot_price_after,spot_price)
-	Info.Printf("r1_after = %v, r2_after = %v\n",r1_after.String(),r2_after.String())
+	r1big := big.NewInt(0)
+	r2big := big.NewInt(0)
+	r1big.Set(r1)
+	r1big.Add(r1big,amount)
+	r2big.Sub(r2,token_amount_out)
+	spot_price_after := big.NewFloat(0.0)
+	r1_float = big.NewFloat(0.0)
+	r1_float.SetString(r1.String())
+	amount_float := big.NewFloat(0.0)
+	amount_float.SetString(amount.String())
+	r1_float.Add(r1_float,amount_float)
+	r2_float = big.NewFloat(0.0)
+	r2_float.SetString(r2.String())
+	token_out_float := big.NewFloat(0.0)
+	r2_float.Sub(r2_float,token_out_float)
+	spot_price_after.Quo(r1_float,r2_float)
+	Info.Printf("Spot price after = %v\n",spot_price_after.String())
 
-	return slippage,token_amount_out,nil
+	slippage_float:= big.NewFloat(0.0)
+	slippage_float.Sub(spot_price_after,spot_price_before)
+	Info.Printf("Slippage: %v\n",slippage_float)
+	Info.Printf("Returning slippage = %v, token_out_amount= %v\n",slippage_float.String(),token_amount_out.String())
+	return slippage_float,token_amount_out,nil
+}
+func produce_uniswap_slippages(pi *MarketUPair,amount_str string) ([]TokenSlippage,error) {
+
+	output := make([]TokenSlippage,0,2)
+	{
+		var ts TokenSlippage
+		ts.Token1Addr = pi.Token0Addr
+		ts.Token2Addr = pi.Token1Addr
+		ts.Token1Symbol = pi.Token0Symbol
+		ts.Token2Symbol = pi.Token1Symbol
+		ts.Decimals1 = pi.Token0Decimals
+		ts.Decimals2 = pi.Token1Decimals
+		ts.PoolAddr = pi.PairAddr
+		ts.NumSwaps = pi.TotalSwaps
+		in_float := big.NewFloat(0.0)
+		in_float.SetString(amount_str)
+		ts.AmountIn,_ = in_float.Float64()
+
+		amount := fmt.Sprintf("%v%0*d",amount_str,ts.Decimals1,0)
+		slippage,token_amount_out,err := uniswap_calc_slippage(pi.PairAddr,ts.Token1Addr,amount)
+		if err != nil {
+			return output,err
+		}
+		uniswap_correct_for_difference_in_decimals(slippage,ts.Decimals2,ts.Decimals1)
+		ts.Slippage,_ = slippage.Float64()
+
+		famount := big.NewFloat(0.0)
+		famount.SetString(token_amount_out.String())
+		divisor := fmt.Sprintf("%v%0*d",1,ts.Decimals2,0)
+		fdivisor := big.NewFloat(0.0)
+		fdivisor.SetString(divisor)
+		famount.Quo(famount,fdivisor)
+		ts.AmountOut,_ = famount.Float64()
+
+		output = append(output,ts)
+	}
+	{
+		var ts TokenSlippage
+		ts.Token1Addr = pi.Token1Addr
+		ts.Token2Addr = pi.Token0Addr
+		ts.Token1Symbol = pi.Token1Symbol
+		ts.Token2Symbol = pi.Token0Symbol
+		ts.Decimals1 = pi.Token1Decimals
+		ts.Decimals2 = pi.Token0Decimals
+		ts.PoolAddr = pi.PairAddr
+		ts.NumSwaps = pi.TotalSwaps
+		in_float := big.NewFloat(0.0)
+		in_float.SetString(amount_str)
+		ts.AmountIn,_ = in_float.Float64()
+
+		amount := fmt.Sprintf("%v%0*d",amount_str,ts.Decimals1,0)
+		slippage,token_amount_out,err := uniswap_calc_slippage(pi.PairAddr,ts.Token1Addr,amount)
+		if err != nil {
+			return output,err
+		}
+		uniswap_correct_for_difference_in_decimals(slippage,ts.Decimals2,ts.Decimals1)
+		ts.Slippage,_ = slippage.Float64()
+
+		famount := big.NewFloat(0.0)
+		famount.SetString(token_amount_out.String())
+		divisor := fmt.Sprintf("%v%0*d",1,ts.Decimals2,0)
+		fdivisor := big.NewFloat(0.0)
+		fdivisor.SetString(divisor)
+		famount.Quo(famount,fdivisor)
+		ts.AmountOut,_ = famount.Float64()
+
+		output = append(output,ts)
+	}
+	return output,nil
+}
+func show_uniswap_slippage(c *gin.Context) {
+
+	p_pair:= c.Param("pair")
+	pair_addr,valid:=is_address_valid(c,false,p_pair)
+	if !valid {
+		return
+	}
+	pair_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(pair_addr)
+	if err != nil {
+		respond_error(c,fmt.Sprintf("Address %v not found",))
+		return
+	}
+	pair_info,err := augur_srv.storage.Get_uniswap_pair_info(pair_aid)
+	if err != nil {
+		respond_error(c,err.Error())
+		return
+	}
+	amount_to_trade := "100";
+	slippages,err := produce_uniswap_slippages(&pair_info,amount_to_trade)
+	if err!=nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.HTML(http.StatusOK, "uniswap_slippages.html", gin.H{
+		"PairInfo" : pair_info,
+		"TokenSlippage" : slippages,
+		"AmountToTrade" : amount_to_trade,
+	})
 }

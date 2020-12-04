@@ -1216,11 +1216,11 @@ func a1_pool_slippage(c *gin.Context) {
 	})
 }
 func a1_uniswap_calculate_slippage(c *gin.Context) {
-
+	// Calculates slippage for swapping single token in the Pair
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	p_pair := c.Param("pair")
-	pair_addr,_,success := json_validate_and_lookup_address_or_aid(c,&p_pair)
+	pair_addr,pair_aid,success := json_validate_and_lookup_address_or_aid(c,&p_pair)
 	if !success {
 		return
 	}
@@ -1229,8 +1229,7 @@ func a1_uniswap_calculate_slippage(c *gin.Context) {
 	if !success {
 		return
 	}
-	p_amount:= c.Param("amount")
-	slippage,token_amount_out,err := uniswap_calc_slippage(pair_addr,tok_in,p_amount)
+	einf,err := augur_srv.storage.Get_erc20_info(p_tok_in)
 	if err != nil {
 		c.JSON(http.StatusBadRequest,gin.H{
 			"status":0,
@@ -1238,6 +1237,33 @@ func a1_uniswap_calculate_slippage(c *gin.Context) {
 		})
 		return
 	}
+	pair_info,err := augur_srv.storage.Get_uniswap_pair_info(pair_aid)
+	if err!=nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	p_amount:= c.Param("amount")
+	amount := fmt.Sprintf("%v%0*d",p_amount,einf.Decimals,0)
+	slippage,token_amount_out,err := uniswap_calc_slippage(pair_addr,tok_in,amount)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	var dec1,dec2 *int
+	if pair_info.Token1Addr == p_tok_in { // figure out which token is the divisor
+		dec1 = &pair_info.Token0Decimals
+		dec2 = &pair_info.Token1Decimals
+	} else {
+		dec1 = &pair_info.Token1Decimals
+		dec2 = &pair_info.Token0Decimals
+	}
+	uniswap_correct_for_difference_in_decimals(slippage,*dec1,*dec2)
 	var status int = 1
 	var err_str string = ""
 	var amount_out_str string = "?"
@@ -1253,5 +1279,44 @@ func a1_uniswap_calculate_slippage(c *gin.Context) {
 			"error": err_str,
 			"Slippage" : slippage_str,
 			"AmountOut" : amount_out_str,
+			"AmountToTrade": p_amount,
+			"AmountToTradeWei" : amount,
+	})
+}
+func a1_uniswap_slippage(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_pair:= c.Param("pair")
+	_,pair_aid,success := json_validate_and_lookup_address_or_aid(c,&p_pair)
+	if !success {
+		return
+	}
+	pair_info,err := augur_srv.storage.Get_uniswap_pair_info(pair_aid)
+	if err!=nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	amount_to_trade := "100";
+	slippages,err := produce_uniswap_slippages(&pair_info,amount_to_trade)
+	if err!=nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+			"status": status,
+			"error": err_str,
+			"PairInfo" : pair_info,
+			"AmountToTrade" : amount_to_trade,
+			"TokenSlippages" : slippages,
 	})
 }

@@ -1,24 +1,22 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Balancer Pool Slippage for Address{{.PoolInfo.PoolAddr}}</title>
+	<title>Uniswap Pair Swap Slippage for Pair {{.PairInfo.PairAddr}}</title>
 </head>
 <body>
-<h3 class="page_title">Pool Token Slippage Table</h3>
+<h3 class="page_title">Uniswap Pair Slippage Table</h3>
 <table class="market_detail">
 <tr>
-	<td>Pool Address:</td>
-	<td>{{.PoolInfo.PoolAddr}}</td>
+	<td>Pair Address:</td>
+	<td>{{.PairInfo.PairAddr}}</td>
 </tr>
 </table>
 <br/><br/>
 <div class="market_info">
-	Table of slippage costs for a trade of {{.AmountToTrade}} token units , including swap fee of {{.PoolInfo.SwapFee}}%
+	Table of slippage costs for a trade of {{.AmountToTrade}} token units (including Uniswap commission)
 	<br/>
-	Showing data for top-3 most used token combination in this pool
 <table class="market_trades">
 	<tr class="market_trades">
-		<th class="mkt_trade_hdr" style="text-align: center">Number of Swaps</th>
 		<th class="mkt_trade_hdr" style="text-align: center" nowrap>Token 1</th>
 		<th class="mkt_trade_hdr" style="text-align: center" nowrap>Symbol 1</th>
 		<th class="mkt_trade_hdr" style="text-align: center" nowrap>Token 2</th>
@@ -30,7 +28,6 @@
 	</tr>
 	{{- range $i, $record := .TokenSlippage}}
 	<tr class="market_trades">
-		<td class="mkt_trade_field" style="text-align: right">{{.NumSwaps}}</td>
 		<td class="mkt_trade_field">{{.Token1Addr}}</td>
 		<td class="mkt_trade_field">{{.Token1Symbol}}</td>
 		<td class="mkt_trade_field">{{.Token2Addr}}</td>
