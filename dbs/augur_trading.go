@@ -1383,7 +1383,6 @@ func (ss *SQLStorage) Update_oo_fillable_amount(order_hash string,order *zeroex.
 			ss.Log_msg(fmt.Sprintf("Error in Scan(): %v: q=%v\n",err,query))
 			os.Exit(1)
 		}
-		ss.Info.Printf("no previous fill actions found, returning\n")
 		return
 	}
 	query = "UPDATE oorders SET amount = initial_amount - ("+order_amount+"/1e+18) WHERE order_hash=$1"

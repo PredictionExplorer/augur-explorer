@@ -1004,6 +1004,12 @@ func a1_pool_price_history(c *gin.Context) {
 	if !success {
 		return
 	}
+
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+
 	p_token1:= c.Param("token1")
 	_,token1_aid,success := json_validate_and_lookup_address_or_aid(c,&p_token1)
 	if !success {
@@ -1014,15 +1020,11 @@ func a1_pool_price_history(c *gin.Context) {
 	if !success {
 		return
 	}
-	success,init_ts,fin_ts := parse_timeframe_ini_fin(c)
-	if !success {
-		return
-	}
 
 	pool_info,_ := augur_srv.storage.Get_pool_info(pool_aid)
 	token1_info,_ := augur_srv.storage.Get_bpool_token_info(pool_aid,token1_aid)
 	token2_info,_ := augur_srv.storage.Get_bpool_token_info(pool_aid,token2_aid)
-	prices := augur_srv.storage.Get_balancer_token_prices(pool_aid,token1_aid,token2_aid,init_ts,fin_ts)
+	prices := augur_srv.storage.Get_balancer_token_prices(pool_aid,token1_aid,token2_aid,init_ts,fin_ts,interval_secs)
 	c.JSON(http.StatusOK, gin.H{
 			"PoolInfo" : pool_info,
 			"Token1Info" : token1_info,
@@ -1030,6 +1032,7 @@ func a1_pool_price_history(c *gin.Context) {
 			"Prices" : prices,
 			"InitTimeStamp": init_ts,
 			"FinTimeSTamp": fin_ts,
+			"Interval" : interval_secs,
 	})
 }
 func a1_upair_price_history(c *gin.Context) {
@@ -1062,7 +1065,7 @@ func a1_upair_price_history(c *gin.Context) {
 		return
 	}
 
-	success,init_ts,fin_ts := parse_timeframe_ini_fin(c)
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
 	if !success {
 		return
 	}
@@ -1072,12 +1075,13 @@ func a1_upair_price_history(c *gin.Context) {
 		bool_inverse = true
 	}
 	pair_info,_:= augur_srv.storage.Get_uniswap_pair_info(pair_aid)
-	prices := augur_srv.storage.Get_uniswap_token_prices(pair_aid,bool_inverse,init_ts,fin_ts)
+	prices := augur_srv.storage.Get_uniswap_token_prices(pair_aid,bool_inverse,init_ts,fin_ts,interval_secs)
 	c.JSON(http.StatusOK, gin.H{
 			"PairInfo" : pair_info,
 			"Prices" : prices,
 			"InitTimeStamp": init_ts,
 			"FinTimeSTamp": fin_ts,
+			"Interval" : interval_secs,
 	})
 }
 func a1_single_uniswap_swap(c *gin.Context) {

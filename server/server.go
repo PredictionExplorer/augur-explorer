@@ -1783,11 +1783,29 @@ func show_pool_swap_prices(c *gin.Context) {
 			return
 		}
 	}
+	if fin_ts == 0 {
+		fin_ts = 2147483647
+	}
+	p_interval_secs := c.Param("interval_secs")
+	var interval_secs int = 0
+	if len(p_interval_secs) > 0 {
+		interval_secs, err = strconv.Atoi(p_interval_secs)
+		if err != nil {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": "Can't parse 'interval_secs' param",
+			})
+			return
+		}
+	}
+	if interval_secs == 0 {
+		interval_secs = 60*60
+	}
 
 	pool_info,_ := augur_srv.storage.Get_pool_info(pool_aid)
 	token1_info,_ := augur_srv.storage.Get_bpool_token_info(pool_aid,token1_aid)
 	token2_info,_ := augur_srv.storage.Get_bpool_token_info(pool_aid,token2_aid)
-	prices := augur_srv.storage.Get_balancer_token_prices(pool_aid,token1_aid,token2_aid,init_ts,fin_ts)
+	prices := augur_srv.storage.Get_balancer_token_prices(pool_aid,token1_aid,token2_aid,init_ts,fin_ts,interval_secs)
 	js_prices := build_js_bpool_swap_prices(&prices)
 	c.HTML(http.StatusOK, "bswap_prices.html", gin.H{
 			"PoolInfo" : pool_info,
@@ -1797,6 +1815,7 @@ func show_pool_swap_prices(c *gin.Context) {
 			"JSPriceData" :js_prices,
 			"InitTimeStamp": init_ts,
 			"FinTimeSTamp": fin_ts,
+			"IntervalSecs": interval_secs,
 	})
 }
 func show_upair_swap_prices(c *gin.Context) {
@@ -1850,12 +1869,32 @@ func show_upair_swap_prices(c *gin.Context) {
 			return
 		}
 	}
+	if fin_ts == 0 {
+		fin_ts = 2147483647
+	}
+
+	p_interval_secs := c.Param("interval_secs")
+	var interval_secs int = 0
+	if len(p_interval_secs) > 0 {
+		interval_secs, err = strconv.Atoi(p_interval_secs)
+		if err != nil {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": "Can't parse 'interval_secs' param",
+			})
+			return
+		}
+	}
+	if interval_secs == 0 {
+		interval_secs = 60*60
+	}
+
 	bool_inverse := false
 	if inverse > 0 {
 		bool_inverse = true
 	}
 	pair_info,_:= augur_srv.storage.Get_uniswap_pair_info(pair_aid)
-	prices := augur_srv.storage.Get_uniswap_token_prices(pair_aid,bool_inverse,init_ts,fin_ts)
+	prices := augur_srv.storage.Get_uniswap_token_prices(pair_aid,bool_inverse,init_ts,fin_ts,interval_secs)
 	js_prices := build_js_upair_swap_prices(&prices)
 	c.HTML(http.StatusOK, "upair_prices.html", gin.H{
 			"PairInfo" : pair_info,

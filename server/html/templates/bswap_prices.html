@@ -1,6 +1,6 @@
 <html>
 <head>
-	<link href="../../../../../res/main.css" rel="stylesheet">
+	<link href="/black/res/main.css" rel="stylesheet">
 	<title>Balancer Pool Token Prices </title>
 </head>
 <body>
@@ -385,7 +385,7 @@ Highcharts.chart('price_history_graph', {
     },
     tooltip: {
       formatter: function() {
-		tooltip ="<div>Price:" + this.point.price +"<br/>Date: "+this.point.date_str+"</div>"
+		  tooltip ="<div>Price:" + this.point.price +"<br/>Date: "+this.point.date_str+"<br/>NumRecords: "+this.point.num_recs+"</div>"
         return tooltip;
       }
     },

@@ -266,9 +266,10 @@ func build_js_bpool_swap_prices(prices* []BSwapPrice) template.JS {
 				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.TimeStamp)  + "," +
 				"y:"  + fmt.Sprintf("%v",e.Price) + "," +
 				"price: " + fmt.Sprintf("%v",e.Price) + "," +
+				"num_recs: " + fmt.Sprintf("%v",e.NumRecords) + "," +
 				"date_str: " + fmt.Sprintf("\"%v\"",e.Date) + "," +
 				"click: function() {load_price_data(\"" +
-					e.Date+"\"," +fmt.Sprintf("%v",e.Price)+
+					e.Date+"\"," +fmt.Sprintf("%v",e.Price)+","+fmt.Sprintf("%v",e.NumRecords)+
 				")}" +
 				"}"
 		data_str= data_str + entry
@@ -290,9 +291,10 @@ func build_js_upair_swap_prices(prices* []UPairPrice) template.JS {
 				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.TimeStamp)  + "," +
 				"y:"  + fmt.Sprintf("%v",e.Price) + "," +
 				"price: " + fmt.Sprintf("%v",e.Price) + "," +
+				"num_recs: " + fmt.Sprintf("%v",e.NumRecords) + "," +
 				"date_str: " + fmt.Sprintf("\"%v\"",e.Date) + "," +
 				"click: function() {load_price_data(\"" +
-					e.Date+"\"," +fmt.Sprintf("%v",e.Price)+
+					e.Date+"\"," +fmt.Sprintf("%v",e.Price)+ ","+fmt.Sprintf("%v",e.NumRecords)+
 				")}" +
 				"}"
 		data_str= data_str + entry

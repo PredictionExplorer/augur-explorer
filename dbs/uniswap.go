@@ -541,8 +541,9 @@ func (ss *SQLStorage) Get_uniswap_volume(market_aid int64,outc int,init_ts,fin_t
 	}
 	return records
 }
-func (ss *SQLStorage) Get_uniswap_token_prices(pair_aid int64,inverse bool,init_ts,fin_ts int) []p.UPairPrice {
+func (ss *SQLStorage) Get_uniswap_token_prices(pair_aid int64,inverse bool,init_ts,fin_ts,interval int) []p.UPairPrice {
 
+	ss.Info.Printf("pair_aid=%v, inverse=%v, init_ts=%v, fin_ts=%v, interval=%v\n",pair_aid,inverse,init_ts,fin_ts,interval)
 	var price_field = "amount1_in/amount0_out AS price "
 	var price_cond = " amount0_out > 0 "
 	if inverse {
@@ -550,6 +551,65 @@ func (ss *SQLStorage) Get_uniswap_token_prices(pair_aid int64,inverse bool,init_
 		price_cond =" amount1_out > 0 "
 	}
 	var query string
+
+	if fin_ts == 2147483647 {
+		query = "SELECT " +
+					"EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ts " +
+					"FROM uswap1 " +
+				"WHERE pair_aid=$1 AND " + price_cond + " " +
+					"ORDER BY ts DESC LIMIT 1"
+
+		var null_ts sql.NullInt64
+		err := ss.db.QueryRow(query,pair_aid).Scan(&null_ts)
+		ss.adjust_ts(&fin_ts,err,&null_ts)
+		fin_ts++
+	}
+	if init_ts == 0 {
+		query = "SELECT " +
+					"EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ts " +
+					"FROM uswap1 " +
+				"WHERE pair_aid=$1 AND " + price_cond + " " +
+					"ORDER BY ts LIMIT 1"
+
+		var null_ts sql.NullInt64
+		err := ss.db.QueryRow(query,pair_aid).Scan(&null_ts)
+		ss.adjust_ts(&init_ts,err,&null_ts)
+	}
+	init_ts = init_ts / interval
+	init_ts = init_ts * interval
+
+	query = "WITH periods AS (" +
+				"SELECT * FROM (" +
+					"SELECT " +
+						"generate_series AS start_ts," +
+						"TO_TIMESTAMP(EXTRACT(EPOCH FROM generate_series) + $3) AS end_ts " +
+					"FROM (" +
+						"SELECT * " +
+							"FROM generate_series(" +
+								"TO_TIMESTAMP($1)," +
+								"TO_TIMESTAMP($2)," +
+								"TO_TIMESTAMP($3)-TO_TIMESTAMP(0)" +
+							") " +
+					") AS i" +
+				") AS data " +
+			")" +
+			"SELECT " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
+				"start_ts AS start_date," +
+				"AVG(price) AS avg_price," +
+				"COALESCE(COUNT(d.id),0) as num_recs " +
+			"FROM periods AS p " +
+				"LEFT JOIN ( " +
+					"SELECT id,time_stamp," + price_field +
+					"FROM uswap1 WHERE pair_aid=$4 AND " + price_cond +
+			") AS d ON (" +
+				"p.start_ts <= d.time_stamp AND "+
+				"d.time_stamp < p.end_ts " +
+			") " +
+			"GROUP BY start_ts " +
+			"ORDER BY start_ts"
+
+/*
 	query =	"SELECT " +
 				"id," +
 				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts,"+
@@ -560,28 +620,38 @@ func (ss *SQLStorage) Get_uniswap_token_prices(pair_aid int64,inverse bool,init_
 				"time_stamp >= TO_TIMESTAMP($2) AND " +
 				"time_stamp < TO_TIMESTAMP($3) " +
 			"ORDER BY time_stamp"
-
+*/
 	records := make([]p.UPairPrice,0,128)
 
-	rows,err := ss.db.Query(query,pair_aid,init_ts,fin_ts)
+	rows,err := ss.db.Query(query,init_ts,fin_ts,interval,pair_aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
 
+	var prev_val float64
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.UPairPrice
+		var null_num_recs sql.NullInt64
+		var null_price sql.NullFloat64
 		err=rows.Scan(
-			&rec.Id,
 			&rec.TimeStamp,
 			&rec.Date,
-			&rec.Price,
+			&null_price,
+			&null_num_recs,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		if null_price.Valid {
+			rec.Price = null_price.Float64
+			prev_val = rec.Price
+		} else {
+			rec.Price = prev_val
+		}
+		if null_num_recs.Valid { rec.NumRecords = null_num_recs.Int64 }
 		records = append(records,rec)
 	}
 	ss.Info.Printf("returning %v records for price chart\n",len(records))

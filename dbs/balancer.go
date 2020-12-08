@@ -1093,61 +1093,118 @@ func (ss *SQLStorage) Get_wrapped_transfers_volume(wrapper_aid int64,init_ts,fin
 	}
 	return records
 }
-func (ss *SQLStorage) Get_balancer_token_prices(pool_aid,token1_aid,token2_aid int64,init_ts,fin_ts int) []p.BSwapPrice {
+func (ss *SQLStorage) Get_balancer_token_prices(pool_aid,token1_aid,token2_aid int64,init_ts int,fin_ts int,interval int) []p.BSwapPrice {
 
 	var query string
-	query = "SELECT * FROM ("+
+	if fin_ts == 2147483647 {
+		query = "SELECT * FROM ("+
 				"(" +
-					"SELECT id,EXTRACT(EPOCH FROM time_stamp)::BIGINT ts,time_stamp,amount_in/amount_out AS price " +
+					"SELECT EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ts " +
 					"FROM bswap WHERE token_in_aid=$1 AND token_out_aid=$2 AND pool_aid=$3 " +
-						"AND time_stamp >= TO_TIMESTAMP($4) AND time_stamp < TO_TIMESTAMP($5) " +
+					"ORDER BY ts DESC LIMIT 1" +
 				") UNION ALL (" +
-					"SELECT id,EXTRACT(EPOCH FROM time_stamp)::BIGINT ts,time_stamp,amount_out/amount_in AS price " +
+					"SELECT EXTRACT(EPOCH FROM time_stamp)::BIGINT ts " +
 					"FROM bswap WHERE token_out_aid=$1 AND token_in_aid=$2 AND pool_aid=$3 " +
-						"AND time_stamp >= TO_TIMESTAMP($4) AND time_stamp < TO_TIMESTAMP($5) " +
+					"ORDER BY ts DESC LIMIT 1 " +
 				")" +
 			") AS s " +
-				"ORDER BY time_stamp" 
-
-	d_query := fmt.Sprintf("SELECT * FROM ("+
+				"ORDER BY ts DESC LIMIT 1"
+		var null_ts sql.NullInt64
+		err := ss.db.QueryRow(query,token1_aid,token2_aid,pool_aid).Scan(&null_ts)
+		ss.adjust_ts(&fin_ts,err,&null_ts)
+		fin_ts++
+	}
+	if init_ts == 0 {
+		query = "SELECT * FROM ("+
 				"(" +
-					"SELECT id,EXTRACT(EPOCH FROM time_stamp)::BIGINT ts,time_stamp,amount_in/amount_out AS price " +
-					"FROM bswap WHERE token_in_aid=%v AND token_out_aid=%v AND pool_aid=%v " +
-						"AND time_stamp >= TO_TIMESTAMP(%v) AND time_stamp < TO_TIMESTAMP(%v) " +
+					"SELECT EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ts " +
+					"FROM bswap WHERE token_in_aid=$1 AND token_out_aid=$2 AND pool_aid=$3 " +
+					"ORDER BY ts LIMIT 1" +
 				") UNION ALL (" +
-					"SELECT id,EXTRACT(EPOCH FROM time_stamp)::BIGINT ts,time_stamp,amount_out/amount_in AS price " +
-					"FROM bswap WHERE token_out_aid=%v AND token_in_aid=%v AND pool_aid=%v " +
-						"AND time_stamp >= TO_TIMESTAMP(%v) AND time_stamp < TO_TIMESTAMP(%v) " +
+					"SELECT EXTRACT(EPOCH FROM time_stamp)::BIGINT ts " +
+					"FROM bswap WHERE token_out_aid=$1 AND token_in_aid=$2 AND pool_aid=$3 " +
+					"ORDER BY ts LIMIT 1 " +
 				")" +
-			") AS s" +
-			"ORDER BY time_stamp",
-			token1_aid,token2_aid,pool_aid,init_ts,fin_ts,token1_aid,token2_aid,pool_aid,init_ts,fin_ts)
-	ss.Info.Printf("dquery= %v\n",d_query)
+			") AS s " +
+				"ORDER BY ts LIMIT 1"
+
+		var null_ts sql.NullInt64
+		err := ss.db.QueryRow(query,token1_aid,token2_aid,pool_aid).Scan(&null_ts)
+		ss.adjust_ts(&init_ts,err,&null_ts)
+	}
+	init_ts = init_ts / interval
+	init_ts = init_ts * interval
+
+	query = "WITH periods AS (" +
+				"SELECT * FROM (" +
+					"SELECT " +
+						"generate_series AS start_ts," +
+						"TO_TIMESTAMP(EXTRACT(EPOCH FROM generate_series) + $3) AS end_ts " +
+					"FROM (" +
+						"SELECT * " +
+							"FROM generate_series(" +
+								"TO_TIMESTAMP($1)," +
+								"TO_TIMESTAMP($2)," +
+								"TO_TIMESTAMP($3)-TO_TIMESTAMP(0)" +
+							") " +
+					") AS i" +
+				") AS data " +
+			")" +
+			"SELECT " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
+				"start_ts AS start_date," +
+				"AVG(price) AS avg_price," +
+				"COALESCE(COUNT(d.id),0) as num_recs " +
+			"FROM periods AS p " +
+				"LEFT JOIN ( " +
+					"(" +
+						"SELECT id,time_stamp,amount_in/amount_out AS price " +
+						"FROM bswap WHERE token_in_aid=$4 AND token_out_aid=$5 AND pool_aid=$6 " +
+							"AND time_stamp >= TO_TIMESTAMP($1) AND time_stamp < TO_TIMESTAMP($2) " +
+					") UNION ALL (" +
+						"SELECT id,time_stamp,amount_out/amount_in AS price " +
+						"FROM bswap WHERE token_out_aid=$4 AND token_in_aid=$5 AND pool_aid=$6 " +
+							"AND time_stamp >= TO_TIMESTAMP($1) AND time_stamp < TO_TIMESTAMP($2) " +
+					")" +
+			") AS d ON (" +
+				"p.start_ts <= d.time_stamp AND "+
+				"d.time_stamp < p.end_ts " +
+			") " +
+			"GROUP BY start_ts " +
+			"ORDER BY start_ts"
 
 	records := make([]p.BSwapPrice,0,128)
 
-	rows,err := ss.db.Query(query,token1_aid,token2_aid,pool_aid,init_ts,fin_ts)
+	rows,err := ss.db.Query(query,init_ts,fin_ts,interval,token1_aid,token2_aid,pool_aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-
+	var prev_val float64
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.BSwapPrice
+		var null_num_recs sql.NullInt64
+		var null_price sql.NullFloat64
 		err=rows.Scan(
-			&rec.Id,
 			&rec.TimeStamp,
 			&rec.Date,
-			&rec.Price,
+			&null_price,
+			&null_num_recs,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		if null_price.Valid {
+			rec.Price = null_price.Float64
+			prev_val = rec.Price
+		} else {
+			rec.Price = prev_val
+		}
+		if null_num_recs.Valid { rec.NumRecords = null_num_recs.Int64 }
 		records = append(records,rec)
 	}
-	ss.Info.Printf("returning %v records for price chart\n",len(records))
 	return records
 
 }

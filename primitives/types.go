@@ -1220,12 +1220,14 @@ type SearchResultObject struct {
 type BSwapPrice struct {
 	Id						int64
 	TimeStamp				int64
+	NumRecords				int64
 	Price					float64
 	Date					string
 }
 type UPairPrice struct {
 	Id						int64
 	TimeStamp				int64
+	NumRecords				int64
 	Price					float64
 	Date					string
 }

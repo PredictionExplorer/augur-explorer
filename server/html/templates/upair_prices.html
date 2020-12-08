@@ -1,13 +1,13 @@
 <html>
 <head>
-	<link href="../../../../res/main.css" rel="stylesheet">
+	<link href="/black/res/main.css" rel="stylesheet">
 	<title>Balancer Pool Token Prices </title>
 </head>
 <body>
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script src="https://code.highcharts.com/modules/data.js"></script>
 <script>
-	function load_price_data(v_date,v_price) {
+	function load_price_data(v_date,v_price,v_num_recs) {
 		var elt
 		elt = document.getElementById("usermktinfo")
 		elt.style.display="block"
@@ -15,6 +15,8 @@
 		elt.innerHTML = v_date
 		elt = document.getElementById("fld_price")
 		elt.innerHTML = v_price + " " + unit
+		elt = document.getElementById("fld_num_recs")
+		elt.innerHTML = v_num_recs
 	}
 	var unit = "{{.Token1Info.WrappingContract.Symbol}}"
 	var price_history_data = {{.JSPriceData}}
@@ -54,6 +56,10 @@
 		<tr class="order_info">
 			<td>Price</td>
 			<td><span id="fld_price"> </span></td>
+		</tr>
+		<tr class="order_info">
+			<td>NumRecords</td>
+			<td><span id="fld_num_recs"> </span></td>
 		</tr>
 	</table>
 </div>
@@ -356,7 +362,7 @@ Highcharts.chart('price_history_graph', {
     },
     tooltip: {
       formatter: function() {
-		tooltip ="<div>Price:" + this.point.price +"<br/>Date: "+this.point.date_str+"</div>"
+		  tooltip ="<div>Price:" + this.point.price +"<br/>Date: "+this.point.date_str+"<br/>NumRecords:"+date.point.num_recs+"</div>"
         return tooltip;
       }
     },
