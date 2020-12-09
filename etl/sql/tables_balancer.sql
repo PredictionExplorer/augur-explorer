@@ -171,6 +171,16 @@ CREATE TABLE b_gulp (-- Balancer gulp() function calls
 	token_aid			BIGINT NOT NULL, -- token address linked to this pool
 	abs_balance			DECIMAL(64,18) DEFAULT 0.0 -- absorbed balance
 );
+CREATE TABLE b_slippage (
+	pool_aid			BIGINT NOT NULL,
+	upd_block_num		BIGINT NOT NULL,
+	token_in			BIGINT NOT NULL,
+	token_out			BIGINT NOT NULL,
+	slippage			DECIMAL(64,18),
+	amount_in			DECIMAL(64,18),
+	amount_out			DECIMAL(64,18),
+	PRIMARY KEY(pool_aid,token_in,token_out)
+);
 CREATE TABLE balancer_status (
 	last_evt_id			BIGINT DEFAULT 0	-- event id
 );
