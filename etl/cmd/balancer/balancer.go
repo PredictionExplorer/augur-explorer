@@ -106,6 +106,9 @@ func balancer_calc_slippage(addr_str string,token_in_str string,token_out_str st
 		return nil,nil,err
 	}
 	spot_price,err := ctrct_bpool.CalcSpotPrice(copts,token_in_balance,token_in_weight,token_out_balance,token_out_weight,swap_fee)
+	if err != nil {
+		return nil,nil,err
+	}
 	max_price.Mul(spot_price,ten)
 
 	amount := big.NewInt(0)

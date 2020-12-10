@@ -161,6 +161,7 @@ func main() {
 	r.GET("/black/wrtok_info/:address",wrapped_token_info)
 	r.GET("/black/pool_slippage/:pool",show_pool_slippage)
 	r.GET("/black/uniswap_slippage/:pair",show_uniswap_slippage)
+	r.GET("/black/rt_uniswap_slippage/:pair",rt_show_uniswap_slippage)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)

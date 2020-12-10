@@ -1206,8 +1206,14 @@ func a1_pool_slippage(c *gin.Context) {
 		return
 	}
 	pool_info,_ := augur_srv.storage.Get_pool_info(pool_aid)
-	amount_to_trade := "100";
-	tokens := produce_pool_slippages(amount_to_trade,pool_aid)
+
+	tokens := augur_srv.storage.Get_balancer_latest_slippages(pool_aid)
+	var amount_to_trade float64 = 0.0
+	if len(tokens) > 0 {
+		amount_to_trade = tokens[0].AmountIn
+	}
+
+	//tokens := produce_pool_slippages(amount_to_trade,pool_aid)
 
 	var status int = 1
 	var err_str string = ""
@@ -1304,8 +1310,15 @@ func a1_uniswap_slippage(c *gin.Context) {
 		})
 		return
 	}
-	amount_to_trade := "100";
-	slippages,err := produce_uniswap_slippages(&pair_info,amount_to_trade)
+	//amount_to_trade := "100";
+	//slippages,err := produce_uniswap_slippages(&pair_info,amount_to_trade)
+
+	slippages := augur_srv.storage.Get_uniswap_latest_slippages(pair_aid)
+	var amount_to_trade float64 = 0.0
+	if len(slippages) > 0 {
+		amount_to_trade = slippages[0].AmountIn
+	}
+
 	if err!=nil {
 		c.JSON(http.StatusBadRequest,gin.H{
 			"status":0,

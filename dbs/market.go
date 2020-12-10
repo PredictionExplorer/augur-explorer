@@ -1200,12 +1200,13 @@ func (ss *SQLStorage) Get_market_reports(market_aid int64,limit int) []p.Report 
 				"m.designated_outcome," +
 				"m.winning_outcome," +
 				"m.market_type AS mtype," +
-				"m.outcomes AS outcomes_str " +
-			"FROM " +
-					"report AS r, " +
-					"market AS m " +
-						"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
-			"WHERE (r.market_aid = m.market_aid) and (r.market_aid=$1) " +
+				"m.outcomes AS outcomes_str, " +
+				"ra.addr AS rep_addr " +
+			"FROM report AS r " +
+				"JOIN market AS m ON r.market_aid = m.market_aid " +
+				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
+				"LEFT JOIN address AS ra ON r.aid = ra.address_id " +
+			"WHERE r.market_aid=$1 " +
 			"ORDER BY r.rpt_timestamp"
 	if limit > 0 {
 		query = query +	" LIMIT " + strconv.Itoa(limit)
@@ -1245,6 +1246,7 @@ func (ss *SQLStorage) Get_market_reports(market_aid int64,limit int) []p.Report 
 			&winning_outcome,
 			&rec.MktType,
 			&outcomes,
+			&rec.Reporter,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))

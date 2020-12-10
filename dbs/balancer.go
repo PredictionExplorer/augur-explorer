@@ -1415,13 +1415,13 @@ func (ss *SQLStorage) Get_pool_augur_tokens(pool_aid int64) (int64,error) {
 func (ss *SQLStorage) Update_bpool_slippages(block_num int64,pool_aid int64,slippages []p.TokenSlippage) {
 
 	var i_query,u_query string
-	i_query = "NSERT INTO b_slippage(pool_aid,token_in,token_out,upd_block_num,slippage,amount_in,amount_out) " +
-			"VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING"
+	i_query = "INSERT INTO b_slippage(pool_aid,token_in,token_out,upd_block_num,slippage,amount_in,amount_out) " +
+			"VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING"
 	u_query =	"UPDATE b_slippage SET " +
 					"upd_block_num = $4, " +
 					"slippage = $5, "+
 					"amount_in = $6," +
-					"amount_out  $7 " +
+					"amount_out = $7 " +
 				"WHERE pool_aid=$1 AND token_in=$2 AND token_out=$3"
 
 	for i:=0 ; i<len(slippages); i++ {
@@ -1462,4 +1462,61 @@ func (ss *SQLStorage) Update_bpool_slippages(block_num int64,pool_aid int64,slip
 			}
 		}
 	}
+}
+func (ss *SQLStorage) Get_balancer_latest_slippages(pool_aid int64) []p.TokenSlippage {
+
+	var query string
+	records := make([]p.TokenSlippage,0,8)
+	query = "SELECT " +
+				"inf1.decimals AS decimals1," +
+				"inf2.decimals AS decimals2," +
+				"p.num_swaps, " +
+				"pa.addr, " +
+				"t1a.addr," +
+				"t2a.addr, " +
+				"inf1.symbol,"+
+				"inf2.symbol, " +
+				"sp.slippage," +
+				"sp.amount_in, " +
+				"sp.amount_out " +
+			"FROM b_slippage AS sp " +
+			"JOIN bpool AS p ON sp.pool_aid=p.pool_aid " +
+			"JOIN erc20_info AS inf1 ON sp.token_in=inf1.aid " +
+			"JOIN erc20_info AS inf2 ON sp.token_out=inf2.aid " +
+			"JOIN address AS pa ON sp.pool_aid=pa.address_id " +
+			"JOIN address AS t1a ON sp.token_in=t1a.address_id " +
+			"JOIN address AS t2a ON sp.token_in=t2a.address_id " +
+			"WHERE sp.pool_aid=$1 " +
+			"ORDER BY p.num_swaps DESC "
+	rows,err := ss.db.Query(query,pool_aid)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return records
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.TokenSlippage
+		err=rows.Scan(
+			&rec.Decimals1,
+			&rec.Decimals2,
+			&rec.NumSwaps,
+			&rec.PoolAddr,
+			&rec.Token1Addr,
+			&rec.Token2Addr,
+			&rec.Token1Symbol,
+			&rec.Token2Symbol,
+			&rec.Slippage,
+			&rec.AmountIn,
+			&rec.AmountOut,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
 }

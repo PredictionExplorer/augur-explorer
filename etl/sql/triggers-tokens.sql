@@ -5,3 +5,5 @@ CREATE TRIGGER dai_bal_delete AFTER DELETE on dai_bal FOR EACH ROW EXECUTE PROCE
 CREATE TRIGGER dai_bal_update AFTER UPDATE ON dai_bal FOR EACH ROW EXECUTE PROCEDURE on_dai_bal_update();
 CREATE TRIGGER af_wrapper_insert AFTER INSERT on af_wrapper FOR EACH ROW EXECUTE PROCEDURE on_af_wrapper_insert();
 CREATE TRIGGER af_wrapper_delete AFTER DELETE on af_wrapper FOR EACH ROW EXECUTE PROCEDURE on_af_wrapper_delete();
+CREATE TRIGGER wstok_transf_insert BEFORE INSERT on wstok_transf FOR EACH ROW EXECUTE PROCEDURE on_wstok_transf_insert();
+CREATE TRIGGER wstok_transf_delete AFTER DELETE on wstok_transf FOR EACH ROW EXECUTE PROCEDURE on_wstok_transf_delete();

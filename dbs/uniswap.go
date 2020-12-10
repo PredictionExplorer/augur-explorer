@@ -735,3 +735,111 @@ func (ss *SQLStorage) Get_uniswap_augur_tokens(pair_aid int64) (int64,error) {
 	}
 	return null_count.Int64,nil
 }
+func (ss *SQLStorage) Update_uniswap_slippages(block_num int64,pair_aid int64,slippages []p.TokenSlippage) {
+
+	var i_query,u_query string
+	i_query = "INSERT INTO u_slippage(pair_aid,token_in,token_out,upd_block_num,slippage,amount_in,amount_out) " +
+			"VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING"
+	u_query =	"UPDATE u_slippage SET " +
+					"upd_block_num = $4, " +
+					"slippage = $5, "+
+					"amount_in = $6," +
+					"amount_out = $7 " +
+				"WHERE pair_aid=$1 AND token_in=$2 AND token_out=$3"
+
+	for i:=0 ; i<len(slippages); i++ {
+		t := slippages[i]
+		token_in := ss.Lookup_address_id(t.Token1Addr)
+		token_out := ss.Lookup_address_id(t.Token2Addr)
+		res,err := ss.db.Exec(u_query,
+			pair_aid,
+			token_in,
+			token_out,
+			block_num,
+			t.Slippage,
+			t.AmountIn,
+			t.AmountOut,
+		)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,u_query))
+			os.Exit(1)
+		}
+		affected_rows,err:=res.RowsAffected()
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,u_query))
+			os.Exit(1)
+		}
+		if affected_rows == 0 {
+			_,err := ss.db.Exec(i_query,
+				pair_aid,
+				token_in,
+				token_out,
+				block_num,
+				t.Slippage,
+				t.AmountIn,
+				t.AmountOut,
+			)
+			if (err!=nil) {
+				ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,i_query))
+				os.Exit(1)
+			}
+		}
+	}
+}
+func (ss *SQLStorage) Get_uniswap_latest_slippages(pair_aid int64) []p.TokenSlippage {
+
+	records := make([]p.TokenSlippage,0,8)
+	var query string
+	query = "SELECT " +
+				"inf0.decimals," +
+				"inf1.decimals," +
+				"p.total_swaps," +
+				"pa.addr AS pair_addr," +
+				"t0a.addr AS token0_addr," +
+				"t1a.addr AS token1_addr," +
+				"inf0.symbol, " +
+				"inf1.symbol, " +
+				"sl.slippage," +
+				"sl.amount_in," +
+				"sl.amount_out " +
+			"FROM u_slippage AS sl " +
+			"JOIN upair AS p ON sl.pair_aid=p.pair_aid " +
+			"LEFT JOIN address AS pa ON sl.pair_aid=pa.address_id " +
+			"LEFT JOIN address AS t0a ON sl.token_in=t0a.address_id " +
+			"LEFT JOIN address AS t1a ON sl.token_out=t1a.address_id " +
+			"LEFT JOIN erc20_info AS inf0 ON sl.token_in=inf0.aid " +
+			"LEFT JOIN erc20_info AS inf1 ON sl.token_out=inf1.aid " +
+			"WHERE sl.pair_aid=$1 "
+
+	rows,err := ss.db.Query(query,pair_aid)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return records
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.TokenSlippage
+		err=rows.Scan(
+			&rec.Decimals1,
+			&rec.Decimals2,
+			&rec.NumSwaps,
+			&rec.PoolAddr,
+			&rec.Token1Addr,
+			&rec.Token2Addr,
+			&rec.Token1Symbol,
+			&rec.Token2Symbol,
+			&rec.Slippage,
+			&rec.AmountIn,
+			&rec.AmountOut,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}

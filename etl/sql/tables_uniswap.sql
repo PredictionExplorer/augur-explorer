@@ -43,6 +43,16 @@ CREATE TABLE uswap_stats(
 	volume				DECIMAL(128,18) DEFAULT 0.0,
 	UNIQUE(aid,token_aid)
 );
+CREATE TABLE u_slippage (
+	pair_aid			BIGINT NOT NULL,
+	upd_block_num		BIGINT NOT NULL,
+	token_in			BIGINT NOT NULL,
+	token_out			BIGINT NOT NULL,
+	slippage			DECIMAL(64,18),
+	amount_in			DECIMAL(64,18),
+	amount_out			DECIMAL(64,18),
+	PRIMARY KEY(pair_aid,token_in,token_out)
+);
 CREATE TABLE uniswap_status (
 	last_evt_id			BIGINT DEFAULT 0	-- event id (latest processed)
 );

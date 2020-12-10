@@ -399,6 +399,7 @@ type Report struct {
 	MktType				int
 	IsInitial			bool
 	IsDesignated		bool
+	Reporter			string
 	MktAddr				string
 	MktAddrSh			string
 	MktDescription		string
@@ -1105,6 +1106,7 @@ type OutsideAugurSBChg struct {
 	AccountAid				int64
 	TimeStamp				int64
 	MktAid					int64
+	BlockNum				int64
 	Balance					float64
 	OutcomeIdx				int
 	Address					string

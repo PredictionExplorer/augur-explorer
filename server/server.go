@@ -2093,8 +2093,13 @@ func show_pool_slippage(c *gin.Context) {
 		return
 	}
 	pool_info,_ := augur_srv.storage.Get_pool_info(pool_aid)
-	amount_to_trade := "100";
-	tokens := produce_pool_slippages(amount_to_trade,pool_aid)
+	//amount_to_trade := "100";
+	//tokens := produce_pool_slippages(amount_to_trade,pool_aid)
+	tokens := augur_srv.storage.Get_balancer_latest_slippages(pool_aid)
+	var amount_to_trade float64 = 0.0
+	if len(tokens) > 0 {
+		amount_to_trade = tokens[0].AmountIn
+	}
 	c.HTML(http.StatusOK, "pool_slippage.html", gin.H{
 		"PoolInfo" : pool_info,
 		"TokenSlippage" : tokens,
@@ -2273,6 +2278,44 @@ func produce_uniswap_slippages(pi *MarketUPair,amount_str string) ([]TokenSlippa
 	return output,nil
 }
 func show_uniswap_slippage(c *gin.Context) {
+
+	p_pair:= c.Param("pair")
+	pair_addr,valid:=is_address_valid(c,false,p_pair)
+	if !valid {
+		return
+	}
+	pair_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(pair_addr)
+	if err != nil {
+		respond_error(c,fmt.Sprintf("Address %v not found",))
+		return
+	}
+	pair_info,err := augur_srv.storage.Get_uniswap_pair_info(pair_aid)
+	if err != nil {
+		respond_error(c,err.Error())
+		return
+	}
+	//slippages,err := produce_uniswap_slippages(&pair_info,amount_to_trade)
+	slippages := augur_srv.storage.Get_uniswap_latest_slippages(pair_aid)
+	//amount_to_trade := "100";
+	var amount_to_trade float64 = 0.0
+	if len(slippages) > 0 {
+		amount_to_trade = slippages[0].AmountIn
+	}
+	if err!=nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.HTML(http.StatusOK, "uniswap_slippages.html", gin.H{
+		"PairInfo" : pair_info,
+		"TokenSlippage" : slippages,
+		"AmountToTrade" : amount_to_trade,
+	})
+}
+func rt_show_uniswap_slippage(c *gin.Context) {
 
 	p_pair:= c.Param("pair")
 	pair_addr,valid:=is_address_valid(c,false,p_pair)

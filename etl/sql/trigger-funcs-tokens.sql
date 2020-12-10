@@ -160,3 +160,32 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_wstok_transf_insert() RETURNS trigger AS  $$
+DECLARE
+	v_balance decimal;
+	v_amount decimal;
+BEGIN
+
+	SELECT balance,amount FROM wstok_transf
+		WHERE wrapper_aid=$NEW.wrapper_aid AND 
+			((from_aid=$NEW.from_aid) OR (to_aid=$NEW.to_aid))
+		ORDER BY id DESC LIMIT 1
+		INTO v_balance,v_amount;
+
+	IF v_balance IS NULL THEN
+		v_balance := 0
+	END IF;
+	IF v_amount IS NOT NULL THEN
+		v_balance := v_balance + v_amount;
+	END IF;
+	NEW.balance := v_balance;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_wstok_transf_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
