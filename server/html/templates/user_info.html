@@ -1,11 +1,11 @@
 <html>
 <head>
 	<title>{{.title}}</title>
-	<link href="res/main.css" rel="stylesheet">
+	<link href="/black/res/main.css" rel="stylesheet">
 </head>
 <body>
-<script src="res/darktheme.js"></script>
-<script src="res/ajax.js"></script>
+<script src="/black/res/darktheme.js"></script>
+<script src="/black/res/ajax.js"></script>
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script src="https://code.highcharts.com/modules/data.js"></script>
 <script>
@@ -131,8 +131,7 @@
 	<h3 class="page_title">User Info for {{.UserInfo.AddrSh}}</h3>
 	{{ if .UserInfo.AugurFlags.AugurEnabled }}
 	{{ else }}
-		<h4><font color="red">Not an Augur account</font></h4>
-		<h5><font color="red">(This account doesn't have the set of Approvals required to trade at Augur Platform)</font></h5>
+		<h5><font>(This account doesn't have the set of Approvals required to trade at Augur Platform)</font></h5>
 		Current Approval list:
 		<table>
 			<tr>
@@ -154,11 +153,14 @@
 		<tr class="user_info">
 			<td>Account type</td>
 			<td title="">
-				{{ if eq 0 .UserInfo.WalletAid }}
-					Augur Wallet Contract
-				{{ end }}
-				{{ if eq 0 .UserInfo.EOAAid }}
+				{{ if lt 0 .UserInfo.WalletAid }}
 					EOA (Externally Owned Account)
+				{{ else }}
+					{{ if lt 0 .UserInfo.EOAAid }}
+						Augur Wallet Contract
+					{{ else }}
+						EOA (Externally Owned Account)
+					{{ end }}
 				{{ end }}
 			<td>
 		</tr>
@@ -313,16 +315,24 @@
 			<td>Registration Block Number</td>
 			<td><a href="block/{{.UserInfo.BlockNum}}">{{.UserInfo.BlockNum}}</a></td>
 		</tr>
+		<tr class="user_info">
+			<td>Decentralized Finance trading (DeFi)</td>
+			<td>
+				<table border=1>
+					<tr>
+						<td>Swaps at Balancer</td>
+						<td>Swaps at Uniswap</td>
+					</tr>
+					<tr>
+						<td>{{.UserInfo.BalancerNumSwaps}}</td>
+						<td>{{.UserInfo.UniswapNumSwaps}}</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
 	</table>
 	<br/>
 </div>
-<nav>
-	<ul>
-	<li>
-		<a class="btn_link" href="udw/{{.UserInfo.Addr}}">Operations</a>
-		<span></span><span></span><span></span><span></span>
-	</li>
-</ul>
 <h3>User's Open (Un-filled) Orders</h3>
 {{template "user_open_orders" .OpenOrders}}
 <br/><br/>
@@ -480,6 +490,31 @@
 		</ul>
 	</nav>
 
+{{ if .ShtokBalances}}
+	User has the following balances in ERC20 market outcomes:
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Address</th>
+		<th class="market_reports">Symbol</th>
+		<td class="market_reports">Num Transfers</th>
+		<td class="market_reports">Market</th>
+		<td class="market_reports">Outcome</th>
+		<td class="market_reports">Balance</th>
+	</tr>
+	{{- range $i, $change := .ShtokBalances }}
+		<tr class="market_reports">
+			<td class="market_reports_field">
+				{{.WrapperAddr}}
+			</td>
+			<td class="market_reports_field">{{.Symbol}}</td>
+			<td class="market_reports_field">{{.NumTransfers}}</td>
+			<td class="market_reports_field">{{.MarketAddr}}</td>
+			<td class="market_reports_field">{{.OutcomeIdx}}</td>
+			<td class="market_reports_field">{{.Balance}}</td>
+		</tr>
+	{{- end}}
+</table>
+{{ end }}
 <script>
 // font loading begins
 	Highcharts.createElement('link', {

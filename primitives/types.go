@@ -210,36 +210,38 @@ type MarketDepth struct {
 	Asks			[]DepthEntry
 }
 type UserInfo struct {
-	Aid				int64
-	BlockNum		int64
-	TimeStamp		int64	// user registration timestamp (from block table)
-	ProfitLoss		float64 // profit/loss for the (account) lifetime
-	TradeFreq		float64	// trade frequency as percentil of all users (ex: top 15% of all users)
-	ReportProfits	float64	// amount of money user has made in profits in outcome reporting
-	AffProfits		float64	// profits made in affiliate commissions
-	MoneyAtStake	float64	// how much money User has invested
-	ValidityBonds	float64	// amount of validity bonds for all the markets user created
-	TotalWithdrawn	float64	// amount of money User has deposited
-	TotalDeposited	float64	// amount of money User has withdrawn
-	TopTrades		float64
-	TopProfit		float64
-	UnclaimedProfit	float64
-	WalletAid		int64	// Filled only if present
-	EOAAid			int64	// Filled only if present
-	HedgingProfits	bool	// Flag to indicate negative 'MoneyAtStake' field
-	NoActivity		bool	// True if doesn't have entry in 'ustats' table
-	TotalTrades		int32	// how many trades were made by this User
-	MarketsCreated	int32	// how many markets this User has created
-	MarketsTraded	int32	// how many markets this User has traded
-	WithdrawReqs	int32	// number of withdrawal requests
-	DepositReqs		int32	// number of Deposit requests
-	TotalReports	int32	// amount of reports User has made
-	TotalDesignated	int32	// total reports submitted as designated reporter
-	AugurFlags		AugurAcctFlags
-	Addr			string	// User's Ethereum address (Externally Owned Account)
-	AddrSh			string	// short version of the above addr
-	WalletAddr		string	// Wallet contract address, filled only if present
-	EOAAddr			string	// EOA address (controlling account) for wallet contract (if present)
+	Aid						int64
+	BlockNum				int64
+	TimeStamp				int64	// user registration timestamp (from block table)
+	ProfitLoss				float64 // profit/loss for the (account) lifetime
+	TradeFreq				float64	// trade frequency as percentil of all users (ex: top 15% of all users)
+	ReportProfits			float64	// amount of money user has made in profits in outcome reporting
+	AffProfits				float64	// profits made in affiliate commissions
+	MoneyAtStake			float64	// how much money User has invested
+	ValidityBonds			float64	// amount of validity bonds for all the markets user created
+	TotalWithdrawn			float64	// amount of money User has deposited
+	TotalDeposited			float64	// amount of money User has withdrawn
+	TopTrades				float64
+	TopProfit				float64
+	UnclaimedProfit			float64
+	WalletAid				int64	// Filled only if present
+	EOAAid					int64	// Filled only if present
+	BalancerNumSwaps		int64	// statistics: how many swaps at Balancer
+	UniswapNumSwaps			int64	// statistics: how many swaps at Uniswap
+	HedgingProfits			bool	// Flag to indicate negative 'MoneyAtStake' field
+	NoActivity				bool	// True if doesn't have entry in 'ustats' table
+	TotalTrades				int32	// how many trades were made by this User
+	MarketsCreated			int32	// how many markets this User has created
+	MarketsTraded			int32	// how many markets this User has traded
+	WithdrawReqs			int32	// number of withdrawal requests
+	DepositReqs				int32	// number of Deposit requests
+	TotalReports			int32	// amount of reports User has made
+	TotalDesignated			int32	// total reports submitted as designated reporter
+	AugurFlags				AugurAcctFlags
+	Addr					string	// User's Ethereum address (Externally Owned Account)
+	AddrSh					string	// short version of the above addr
+	WalletAddr				string	// Wallet contract address, filled only if present
+	EOAAddr					string	// EOA address (controlling account) for wallet contract (if present)
 }
 type MainStats struct {
 	LastBlockNum	int64
@@ -1246,7 +1248,20 @@ type TokenSlippage struct {
 	NumSwaps				int64
 	Decimals1				int
 	Decimals2				int
+	ReservesTok1			float64
+	ReservesTok2			float64
 	Slippage				float64
 	AmountIn				float64
 	AmountOut				float64
+}
+type UserShTokens struct {
+	WrapperAid				int64
+	NumTransfers			int64
+	MarketAid				int64
+	Balance					float64
+	OutcomeIdx				int
+	Symbol					string
+	Name					string
+	WrapperAddr				string
+	MarketAddr				string
 }

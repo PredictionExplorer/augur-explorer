@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS
 	rep_transf,
 	etl_tokens,
 	wstok_transf,
+	wstok_bal,
 	af_wrapper,
 	af_status,
 	af_addr

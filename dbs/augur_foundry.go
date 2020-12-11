@@ -161,8 +161,8 @@ func (ss *SQLStorage) Insert_augur_foundry_transfer_evt(t *p.WShTokTransfer,deci
 	to_aid := ss.Lookup_or_create_address(t.To,t.BlockNum,t.TxId)
 	var query string
 	query = "INSERT INTO wstok_transf( " +
-				"evtlog_id,wrapper_aid,block_num,tx_id,time_stamp,from_aid,to_aid,amount,balance" +
-				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,($8::DECIMAL/1e+"+fmt.Sprintf("%v",decimals)+"),$9)"
+				"evtlog_id,wrapper_aid,block_num,tx_id,time_stamp,from_aid,to_aid,amount" +
+			") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,($8::DECIMAL/1e+"+fmt.Sprintf("%v",decimals)+"))"
 
 	_,err := ss.db.Exec(query,
 		t.EvtLogId,
@@ -173,7 +173,6 @@ func (ss *SQLStorage) Insert_augur_foundry_transfer_evt(t *p.WShTokTransfer,deci
 		from_aid,
 		to_aid,
 		t.AmountStr,
-		"0",
 	)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))

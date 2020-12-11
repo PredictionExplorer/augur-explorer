@@ -73,8 +73,15 @@ CREATE TABLE wstok_transf ( -- ERC20 Wrapped ShareToken transfer
 	time_stamp			TIMESTAMPTZ NOT NULL,	-- timestamp copied from block
 	from_aid			BIGINT DEFAULT 0,
 	to_aid				BIGINT DEFAULT 0,
-	amount				DECIMAL(32,18) DEFAULT 0.0,
-	balance				DECIMAL(32,18) DEFAULT 0.0
+	amount				DECIMAL(64,18) DEFAULT 0.0
+);
+CREATE TABLE wstok_bal (	-- balance tracking table
+	id					BIGSERIAL PRIMARY KEY,
+	tr_id				BIGINT NOT NULL REFERENCES wstok_transf(id) ON DELETE CASCADE,
+	wrapper_aid			BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
+	balance				DECIMAL(64,18) DEFAULT 0.0,
+	amount				DECIMAL(64,18) DEFAULT 0.0
 );
 CREATE TABLE af_addr (
 	augur_foundry_addr	TEXT DEFAULT '0x87876F172087E2fb5838E655DC6A929dC2Dcf85c'

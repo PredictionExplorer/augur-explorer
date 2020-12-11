@@ -5,5 +5,6 @@ DROP TABLE IF EXISTS
 	upair,
 	uswap1,
 	uswap2,
-	uswap_stats
+	uswap_stats,
+	u_slippage
 CASCADE;

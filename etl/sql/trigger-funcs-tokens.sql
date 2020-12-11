@@ -123,7 +123,7 @@ BEGIN
 
 	-- Balancer
 	FOR v_rec IN 
-		SELECT * FROM bswap WHERE token_in_aid=v_rec.wrapper_aid OR token_out_aid=v_rec.wrapper_aid
+		SELECT * FROM bswap WHERE token_in_aid=NEW.wrapper_aid OR token_out_aid=NEW.wrapper_aid
 	LOOP
 		PERFORM insert_agtx_event(
 			v_rec.tx_id,v_rec.evtlog_id,v_rec.block_num,v_rec.caller_aid,NEW.market_aid,2,1
@@ -132,10 +132,10 @@ BEGIN
 
 	-- Uniswap
 	FOR v_rec IN 
-		SELECT * FROM uswap2 WHERE token_aid=v_rec.wrapper_aid
+		SELECT * FROM uswap2 WHERE token_aid=NEW.wrapper_aid
 	LOOP
 		PERFORM insert_agtx_event(
-			v_rec.tx_id,v_rec.evtlog_id,v_rec.block_num,v_rec.recipient_aid,NEW.market_aid,1,1
+			v_rec.tx_id,v_rec.evtlog_id,v_rec.block_num,v_rec.aid,NEW.market_aid,1,1
 		);
 	END LOOP;
 	RETURN NEW;
@@ -147,13 +147,13 @@ DECLARE
 BEGIN
 
 	FOR v_rec IN 
-		SELECT * FROM bswap WHERE token_in_aid=v_rec.wrapper_aid OR token_out_aid=v_rec.wrapper_aid
+		SELECT * FROM bswap WHERE token_in_aid=OLD.wrapper_aid OR token_out_aid=OLD.wrapper_aid
 	LOOP
 		PERFORM delete_agtx_event(v_rec.tx_id,v_rec.evtlog_id);
 	END LOOP;
 
 	FOR v_rec IN 
-		SELECT * FROM uswap2 WHERE token_aid=v_rec.wrapper_aid
+		SELECT * FROM uswap2 WHERE token_aid=OLD.wrapper_aid
 	LOOP
 		PERFORM delete_agtx_event(v_rec.tx_id,v_rec.evtlog_id);
 	END LOOP;
@@ -166,19 +166,32 @@ DECLARE
 	v_amount decimal;
 BEGIN
 
-	SELECT balance,amount FROM wstok_transf
-		WHERE wrapper_aid=$NEW.wrapper_aid AND 
-			((from_aid=$NEW.from_aid) OR (to_aid=$NEW.to_aid))
+	SELECT balance,amount FROM wstok_bal
+		WHERE wrapper_aid=NEW.wrapper_aid AND aid=NEW.from_aid
 		ORDER BY id DESC LIMIT 1
 		INTO v_balance,v_amount;
-
 	IF v_balance IS NULL THEN
-		v_balance := 0
+		v_balance := 0;
 	END IF;
 	IF v_amount IS NOT NULL THEN
 		v_balance := v_balance + v_amount;
 	END IF;
-	NEW.balance := v_balance;
+	INSERT INTO wstok_bal(tr_id,wrapper_aid,aid,balance,amount)
+		VALUES(NEW.id,NEW.wrapper_aid,NEW.from_aid,v_balance,-NEW.amount);
+
+	SELECT balance,amount FROM wstok_bal
+		WHERE wrapper_aid=NEW.wrapper_aid AND aid=NEW.to_aid
+		ORDER BY id DESC LIMIT 1
+		INTO v_balance,v_amount;
+	IF v_balance IS NULL THEN
+		v_balance := 0;
+	END IF;
+	IF v_amount IS NOT NULL THEN
+		v_balance := v_balance + v_amount;
+	END IF;
+	INSERT INTO wstok_bal(tr_id,wrapper_aid,aid,balance,amount)
+		VALUES(NEW.id,NEW.wrapper_aid,NEW.to_aid,v_balance,NEW.amount);
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

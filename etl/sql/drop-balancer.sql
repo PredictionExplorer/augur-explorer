@@ -15,5 +15,6 @@ DROP TABLE IF EXISTS
 	b_bind,
 	b_unbind,
 	b_rebind,
-	b_gulp
+	b_gulp,
+	b_slippage
 CASCADE;

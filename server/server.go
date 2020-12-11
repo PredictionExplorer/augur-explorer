@@ -485,6 +485,8 @@ func serve_user_info_page(c *gin.Context,addr string) {
 			}
 			open_orders := augur_srv.storage.Get_user_open_orders(user_info.Aid)
 			gas_spent,_ := augur_srv.storage.Get_gas_spent_for_user(eoa_aid)
+			shtoken_balances := augur_srv.storage.Get_wrapped_shtoken_balances(eoa_aid)
+			Info.Printf("num shtoks=%v\n",len(shtoken_balances))
 
 			c.HTML(http.StatusOK, "user_info.html", gin.H{
 				"title": "User "+addr,
@@ -498,6 +500,7 @@ func serve_user_info_page(c *gin.Context,addr string) {
 				"UserActiveMarkets" : user_active_markets,
 				"HasActiveMarkets" : has_active_markets,
 				"GasSpent" : gas_spent,
+				"ShtokBalances" : shtoken_balances,
 			})
 		} else {
 			c.HTML(http.StatusOK, "user_not_found.html", gin.H{

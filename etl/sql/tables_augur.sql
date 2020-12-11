@@ -421,6 +421,11 @@ CREATE TABLE mkt_words(-- search tokens for searching markets by description/cat
 	tok_type			SMALLINT DEFAULT 0,				-- 0-market 1 - category
 	tokens				TSVECTOR
 );
+CREATE TABLE defi_stats( -- statistics of DeFi trading
+	aid					BIGINT NOT NULL,
+	balancer_swaps		BIGINT DEFAULT 0,
+	uniswap_swaps		BIGINT DEFAULT 0
+);
 CREATE TABLE agtx_evt(	-- augur transaction event (for accumulating Augur-related events)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	ref_id				BIGINT NOT NULL,	-- reference id (event id or market order id)

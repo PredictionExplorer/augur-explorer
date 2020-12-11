@@ -894,14 +894,25 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_agtx_evt_after_insert() RETURNS trigger AS  $$
 DECLARE
+	v_cnt numeric;
 BEGIN
 
 	UPDATE agtx SET num_events = (num_events + 1) WHERE tx_id=NEW.tx_id;
 	IF NEW.defi_platform = 1 THEN
 		UPDATE agtx SET num_uni_swaps = (num_uni_swaps + 1) WHERE tx_id=NEW.tx_id;
+		UPDATE defi_stats SET uniswap_swaps = (uniswap_swaps + 1) WHERE aid=NEW.account_aid;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		IF v_cnt = 0 THEN
+			INSERT INTO defi_stats (aid,uniswap_swaps) VALUES(NEW.account_aid,1);
+		END IF;
 	END IF;
 	IF NEW.defi_platform = 2 THEN
 		UPDATE agtx SET num_bal_swaps = (num_bal_swaps + 1) WHERE tx_id=NEW.tx_id;
+		UPDATE defi_stats SET balancer_swaps = (balancer_swaps + 1) WHERE aid=NEW.account_aid;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		IF v_cnt = 0 THEN
+			INSERT INTO defi_stats (aid,balancer_swaps) VALUES(NEW.account_aid,1);
+		END IF;
 	END IF;
 	IF NEW.evt_type = 0 THEN
 		UPDATE agtx SET num_other_evts = (num_other_evts + 1) WHERE tx_id=NEW.tx_id;
@@ -923,9 +934,11 @@ BEGIN
 	UPDATE agtx SET num_events = (num_events - 1) WHERE tx_id=OLD.tx_id;
 	IF OLD.defi_platform = 1 THEN
 		UPDATE agtx SET num_uni_swaps = (num_uni_swaps - 1) WHERE tx_id=OLD.tx_id;
+		UPDATE defi_stats SET uniswap_swaps = (uniswap_swaps - 1) WHERE aid=OLD.account_aid;
 	END IF;
 	IF OLD.defi_platform = 2 THEN
 		UPDATE agtx SET num_bal_swaps = (num_bal_swaps - 1) WHERE tx_id=OLD.tx_id;
+		UPDATE defi_stats SET balancer_swaps = (balancer_swaps - 1) WHERE aid=OLD.account_aid;
 	END IF;
 	IF OLD.evt_type = 0 THEN
 		UPDATE agtx SET num_other_evts = (num_other_evts - 1) WHERE tx_id=OLD.tx_id;

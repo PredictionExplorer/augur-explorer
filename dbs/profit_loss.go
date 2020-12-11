@@ -170,7 +170,7 @@ func (ss *SQLStorage) Insert_trading_proceeds_claimed_evt(agtx *p.AugurTx,evt *p
 	var query string
 	query = "INSERT INTO tproceeds(" +
 				"block_num,tx_id,market_aid,aid,time_stamp,outcome_idx,num_shares,num_payout_tok,fees" +
-			") VALUES ($1,$2,$3,$4,$5,$6,($7::DECIMAL/1e+18),($8::DECIMAL/1e+18),($9::DECIMAL/1e+18))"
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,($7::DECIMAL/1e+18),($8::DECIMAL/1e+18),($9::DECIMAL/1e+18))"
 	_,err := ss.db.Exec(query,
 		agtx.BlockNum,
 		agtx.TxId,
