@@ -80,7 +80,7 @@ BEGIN
 	UPDATE bpool SET num_swaps = num_swaps - 1
 		WHERE pool_aid=OLD.pool_aid;
 	UPDATE b_swaps_per_pair SET num_swaps = num_swaps - 1
-		WHERE pool_aid=NEW.pool_aid AND token1_aid=NEW.token1_aid AND token2_aid=NEW.token2_aid;
+		WHERE pool_aid=OLD.pool_aid AND token1_aid=OLD.token1_aid AND token2_aid=OLD.token2_aid;
 	PERFORM delete_agtx_event(OLD.tx_id,OLD.evtlog_id);
 	RETURN OLD;
 END;

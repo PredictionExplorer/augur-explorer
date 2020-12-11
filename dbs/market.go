@@ -874,7 +874,8 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				"reporter_aid," +
 				"FLOOR(EXTRACT(EPOCH FROM m.create_timestamp))::BIGINT as creation_ts," +
 				"FLOOR(EXTRACT(EPOCH FROM m.end_time))::BIGINT as expiration_ts," +
-				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') AS end_date," + 
+				"EXTRACT(EPOCH FROM (m.end_time-NOW()))::BIGINT rep_time_left," +
+				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') AS end_date," +
 				"extra_info::json->>'description' AS descr," +
 				"extra_info::json->>'longDescription' AS long_desc," +
 				"cat.category," +
@@ -908,6 +909,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 	var long_desc sql.NullString
 	var category sql.NullString
 	var scalar_units sql.NullString
+	var time_left_report int64
 	err=row.Scan(
 				&mkt_type,
 				&rec.MktAddr,
@@ -916,6 +918,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 				&reporter_aid,
 				&rec.CreatedTs,
 				&rec.EndTs,
+				&time_left_report,
 				&rec.EndDate,
 				&description,
 				&long_desc,
@@ -968,7 +971,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 	subcategories := make_subcategories(&rec.CategoryStr)
 	rec.Subcategories = subcategories
 
-	query = "SELECT id FROM stbc WHERE market_aid=$1 AND outside_augur_ui=TRUE"
+	query = "SELECT id FROM stbc WHERE market_aid=$1 AND outside_augur_ui=TRUE LIMIT 1"
 	var null_id sql.NullInt64
 	err=ss.db.QueryRow(query,market_aid).Scan(&null_id)
 	if (err!=nil) {
@@ -980,7 +983,36 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 	} else {
 		rec.OutsideAugurBalanceChanges = true
 	}
-
+	query = "SELECT count(*) FROM report WHERE market_aid=$1"
+	var num_reports sql.NullInt64
+	err=ss.db.QueryRow(query,market_aid).Scan(&num_reports)
+	if (err!=nil) {
+		if (err==sql.ErrNoRows) {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error for market_aid=%v: %v, q=%v",market_aid,err,query))
+			os.Exit(1)
+		}
+	} else {
+		if num_reports.Valid {
+			if num_reports.Int64 == 0 { // no reports yet
+				if time_left_report < 0 {
+					// negative, market ended
+					var max_wait_time int64 = 60*60*72
+					time_left_report = -time_left_report
+					if time_left_report > max_wait_time {
+						rec.DesignRepTimeLeft = -2
+					} else {
+						rec.DesignRepTimeLeft = max_wait_time - time_left_report
+					}
+				} else {
+					// positive, market doesnt end yet
+					rec.DesignRepTimeLeft = -1
+				}
+			} else {
+				rec.DesignRepTimeLeft = 0
+			}
+		}
+	}
 	return rec,nil
 }
 func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,orderby int,low_price_limit float64) ([]p.OutcomeVol,error) {

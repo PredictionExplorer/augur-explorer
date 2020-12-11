@@ -1337,3 +1337,21 @@ func a1_uniswap_slippage(c *gin.Context) {
 			"TokenSlippages" : slippages,
 	})
 }
+func a1_wrapped_shtoken_balances(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,eoa_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	shtoken_balances := augur_srv.storage.Get_wrapped_shtoken_balances(eoa_aid)
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+		"WrappedShareTokenBalances" : shtoken_balances,
+		"status": status,
+		"error": err_str,
+	})
+}

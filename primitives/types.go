@@ -110,45 +110,46 @@ type ExtraInfo struct {
 	LongDescription		string		`json:"longDescription"`
 }
 type InfoMarket struct {
-	MktAid			int64
-	Fee				float64
-	OpenInterest	float64
-	CurVolume		float64
-	MoneyAtStake	float64
-	VolTraded		float64
-	NoShowBond		float64
-	ValidityBond	float64
-	LowPriceLimit	float64
-	HighPriceLimit	float64
-	TotalTrades		int64
-	NumTicks		int64
-	CreatedTs		int64
-	EndTs			int64
-	FinTs			int64
-	MktType			int
-	MktStatus		int
-	WinOutcomeIdx	int
-	OutsideAugurBalanceChanges	bool	
-	MktAddr			string
-	MktAddrSh		string	// short address (with .. in the middle)
-	Signer			string
-	SignerSh		string
-	MktCreator		string
-	MktCreatorSh	string	// short address (with .. in the middle)
-	Reporter		string
-	ReporterSh		string
-	EndDate			string
-	Description		string
-	LongDesc		string
-	CategoryStr		string
-	Outcomes		string
-	MktTypeStr		string
-	Status			string
-	CurOutcome		string	// calculated only if the query is made on specific outcome
-	ScalarUnits		string
-	Subcategories	[]string	// splitted string of subcategories
-	OutcomeVolumes	[]OutcomeVol
-	PriceEstimates	[]PriceEstimate
+	MktAid						int64
+	Fee							float64
+	OpenInterest				float64
+	CurVolume					float64
+	MoneyAtStake				float64
+	VolTraded					float64
+	NoShowBond					float64
+	ValidityBond				float64
+	LowPriceLimit				float64
+	HighPriceLimit				float64
+	TotalTrades					int64
+	NumTicks					int64
+	CreatedTs					int64
+	EndTs						int64
+	FinTs						int64
+	DesignRepTimeLeft			int64
+	MktType						int
+	MktStatus					int
+	WinOutcomeIdx				int
+	OutsideAugurBalanceChanges	bool
+	MktAddr						string
+	MktAddrSh					string	// short address (with .. in the middle)
+	Signer						string
+	SignerSh					string
+	MktCreator					string
+	MktCreatorSh				string	// short address (with .. in the middle)
+	Reporter					string
+	ReporterSh					string
+	EndDate						string
+	Description					string
+	LongDesc					string
+	CategoryStr					string
+	Outcomes					string
+	MktTypeStr					string
+	Status						string
+	CurOutcome					string	// calculated only if the query is made on specific outcome
+	ScalarUnits					string
+	Subcategories				[]string	// splitted string of subcategories
+	OutcomeVolumes				[]OutcomeVol
+	PriceEstimates				[]PriceEstimate
 }
 type InfoCategories struct {
 	CatId			int64
