@@ -97,3 +97,14 @@ CREATE TABLE erc20_info (
 	name				TEXT NOT NULL,
 	symbol				TEXT NOT NULL
 );
+CREATE TABLE ethusd_price (
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	eth_price			DECIMAL(64,18) NOT NULL	-- ETHUSD price
+);
+CREATE TABLE ethusd_status (
+	last_evt_id			BIGINT DEFAULT 0	-- event id
+);

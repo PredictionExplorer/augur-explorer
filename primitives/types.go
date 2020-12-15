@@ -1266,3 +1266,17 @@ type UserShTokens struct {
 	WrapperAddr				string
 	MarketAddr				string
 }
+type EthUsdPriceEvt struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Amount0In				float64
+	Amount1In				float64
+	Amount0Out				float64
+	Amount1Out				float64
+	EthUsd					float64
+}
+type EthUsdProcessStatus struct {
+	LastEvtId				int64
+}

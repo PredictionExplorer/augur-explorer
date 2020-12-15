@@ -213,6 +213,32 @@ func process_erc20wrapped_sharetokens() {
 		process_single_erc20wrapped_contract(&c)
 	}
 }
+func process_ethusd_price_events(exit_chan chan bool) {
+
+	status := storage.Get_ethusd_price_process_status()
+	events := storage.Get_ethusd_price_events(status.LastEvtId)
+	for _,e := range events {
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.\n")
+					os.Exit(0)
+				}
+			default:
+		}
+		status.LastEvtId = e.EvtId
+		if e.Amount0Out > 0 {
+			e.EthUsd = e.Amount0Out / e.Amount1In
+		} else {
+			if e.Amount1Out > 0 {
+				e.EthUsd = e.Amount0In / e.Amount1Out
+			}
+		}
+		storage.Delete_ethusd_price_evt(e.EvtId)
+		storage.Insert_ethusd_price_evt(&e)
+		storage.Update_ethusd_process_status(&status)
+	}
+}
 func process_tokens(exit_chan chan bool,caddrs *ContractAddresses) {
 	for {
 		select {
@@ -228,8 +254,9 @@ func process_tokens(exit_chan chan bool,caddrs *ContractAddresses) {
 		_=dai_contract_aid
 		_=rep_contract_aid
 	//	process_erc20_tokens(fmt.Sprintf("%v,%v",dai_contract_aid,rep_contract_aid))
-		process_afoundry_wrapper_created_events()
-		process_erc20wrapped_sharetokens()
+//		process_afoundry_wrapper_created_events()
+//		process_erc20wrapped_sharetokens()
+		process_ethusd_price_events(exit_chan)
 		time.Sleep(1 * time.Second)
 	}
 }

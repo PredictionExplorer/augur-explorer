@@ -8,5 +8,7 @@ DROP TABLE IF EXISTS
 	wstok_bal,
 	af_wrapper,
 	af_status,
-	af_addr
+	af_addr,
+	ethusd_price,
+	ethusd_status
 CASCADE;
