@@ -114,18 +114,18 @@
 	Ajax_GET('money/'+eoa_addr,function(data) {
 		var response=JSON.parse(data)
 		var elt
-		elt = document.getElementById("fld_eoa_dai")
-		elt.innerHTML=response.eoa_dai
-		elt = document.getElementById("fld_wallet_dai")
-		elt.innerHTML=response.wallet_dai
-		elt = document.getElementById("fld_eoa_rep")
-		elt.innerHTML=response.eoa_rep
-		elt = document.getElementById("fld_wallet_rep")
-		elt.innerHTML=response.wallet_rep
-		elt = document.getElementById("fld_eoa_eth")
-		elt.innerHTML=response.eoa_eth
-		elt = document.getElementById("fld_wallet_eth")
-		elt.innerHTML=response.wallet_eth
+		elt = document.getElementById("fld_dai")
+		elt.innerHTML=response.DAI
+		elt = document.getElementById("fld_eth")
+		elt.innerHTML=response.Eth
+		elt = document.getElementById("fld_eth_in_usd")
+		elt.innerHTML=response.EthInUsd
+		elt = document.getElementById("fld_rep")
+		elt.innerHTML=response.REP
+		elt = document.getElementById("fld_rep_usd")
+		elt.innerHTML=response.REPUSD
+		elt = document.getElementById("fld_total_usd")
+		elt.innerHTML=response.TotalUSDAcctValue
 	});
 </script>
 	<h3 class="page_title">User Info for {{.UserInfo.AddrSh}}</h3>
@@ -260,22 +260,22 @@
 					<tr>
 						<td></td>
 						<td>Real User (EOA)</td>
-						<td>User's Augur Wallet</td>
 					</tr>
 					<tr>
 						<td>DAI</td>
-						<td><span id="fld_eoa_dai"></span></td>
-						<td><span id="fld_wallet_dai"></span></td>
+						<td><span id="fld_dai"></span></td>
 					</tr>
 					<tr>
 						<td>REP</td>
-						<td><span id="fld_eoa_rep"></span></td>
-						<td><span id="fld_wallet_rep"></span></td>
+						<td><span id="fld_rep"></span> (<span id="fld_rep_usd"></span> USD)</td>
 					</tr>
 					<tr>
 						<td>ETH</td>
-						<td><span id="fld_eoa_eth"></span></td>
-						<td><span id="fld_wallet_eth"></span></td>
+						<td><span id="fld_eth"></span> (<span id="fld_eth_in_usd"></span>USD)</td>
+					</tr>
+					<tr>
+						<td>Total Assets (USD)</td>
+						<td><span id="fld_total_usd"></span></td>
 					</tr>
 				</table>
 			</td>

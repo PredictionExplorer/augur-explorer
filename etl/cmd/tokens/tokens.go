@@ -228,13 +228,35 @@ func process_ethusd_price_events(exit_chan chan bool) {
 		}
 		status.LastEvtId = e.EvtId
 		if e.Amount0Out > 0 {
-			e.EthUsd = e.Amount0Out / e.Amount1In
+			if e.Amount1In > 0 {
+				e.EthUsd = e.Amount0Out / e.Amount1In
+			} else {
+				Info.Printf(
+					"EthUsd ignored. no swap were done. " +
+					"Amount0In=%v, Amount1In=%v, Amount0Out=%v,Amount1Out=%v, evt=%v\n",
+					e.EthUsd,e.Amount0In,e.Amount1In,e.Amount0Out,e.Amount1Out,e.EvtId,
+				)
+				continue
+			}
 		} else {
 			if e.Amount1Out > 0 {
-				e.EthUsd = e.Amount0In / e.Amount1Out
+				if e.Amount0In > 0 {
+					e.EthUsd = e.Amount0In / e.Amount1Out
+				} else {
+					Info.Printf(
+						"EthUsd ignored. no swap were done. " +
+						"Amount0In=%v, Amount1In=%v, Amount0Out=%v,Amount1Out=%v, evt=%v\n",
+						e.EthUsd,e.Amount0In,e.Amount1In,e.Amount0Out,e.Amount1Out,e.EvtId,
+					)
+					continue
+				}
 			}
 		}
 		storage.Delete_ethusd_price_evt(e.EvtId)
+		Info.Printf(
+			"Inserting eth price of $%v. Amount0In=%v, Amount1In=%v, Amount0Out=%v,Amount1Out=%v, evt=%v\n",
+			e.EthUsd,e.Amount0In,e.Amount1In,e.Amount0Out,e.Amount1Out,e.EvtId,
+		)
 		storage.Insert_ethusd_price_evt(&e)
 		storage.Update_ethusd_process_status(&status)
 	}

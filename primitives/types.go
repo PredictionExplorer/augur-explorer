@@ -610,6 +610,7 @@ type GasSpent struct {	// used to pass values of Statistics of Gas Usage
 	Num_reporting		int64
 	Num_markets			int64
 	Num_total			int64
+	EthUsdPrice			float64
 	Trading				string
 	Reporting			string
 	Markets				string
@@ -1279,4 +1280,8 @@ type EthUsdPriceEvt struct {
 }
 type EthUsdProcessStatus struct {
 	LastEvtId				int64
+}
+type EthUsdPrice struct {
+	TimeStamp				int64
+	Price					float64
 }

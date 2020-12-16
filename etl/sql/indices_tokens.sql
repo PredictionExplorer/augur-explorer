@@ -12,3 +12,4 @@ CREATE INDEX daib_processed_idx		ON dai_bal			(processed);
 CREATE INDEX wstok_from_idx			ON wstok_transf		(from_aid);
 CREATE INDEX wstok_to_idx			ON wstok_transf		(to_aid);
 CREATE INDEX wstok_wrapper_aid_idx	ON wstok_transf		(wrapper_aid);
+CREATE INDEX ethusd_price_ts_idx	ON ethusd_price		(time_stamp);

@@ -530,6 +530,28 @@ func serve_tx_info_page(c *gin.Context,tx_hash string) {
 		})
 	}
 }
+func get_REP_token_price_in_ETH() (float64,error) {
+
+	// token0 - REP (0x221657776846890989a759BA2973e427DfF5C9bB)
+	// token1 - Wrapped ETH (0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)
+	addr := common.HexToAddress(REP_ETH_UNISWAP_PAIR_ADDR)
+	ctrct_pair,err := NewUniswapV2Pair(addr,rpcclient)
+	if err != nil {
+		return 0.0,err
+	}
+	var copts = new(bind.CallOpts)
+	reserves,err := ctrct_pair.GetReserves(copts)
+	if err != nil {
+		return 0.0,err
+	}
+	price_f := big.NewFloat(0.0)
+	price_f.SetString(reserves.Reserve0.String()) // REP
+	eth_f := big.NewFloat(0.0)
+	eth_f.SetString(reserves.Reserve1.String()) // WETH
+	price_f.Quo(price_f,eth_f)
+	output,_ := price_f.Float64()
+	return output,nil
+}
 func get_token_balance(token_type int,addr *common.Address) float64 {
 	// input: token_type = 0 => DAI token; token_type = 1 => Rep token
 	switch token_type {	//  null pointer error prevention
@@ -587,53 +609,53 @@ func get_eth_balance(addr *common.Address) float64 {
 func serve_user_funds_v2(c *gin.Context,addr *string) {
 	// the input address must be EOA, from that we can get Wallet addr
 	var (
-		eoa_dai_balance float64 = 0.0
-		eoa_rep_balance float64 = 0.0
-		eoa_eth_balance float64 = 0.0
-		wallet_dai_balance float64 = 0.0
-		wallet_rep_balance float64 = 0.0
-		wallet_eth_balance float64 = 0.0
-	)
+		dai_balance float64 = 0.0
+		rep_balance float64 = 0.0
+		rep_balance_usd float64 = 0.0
+		eth_balance float64 = 0.0
+		eth_balance_usd float64 = 0.0
 
+	)
+	Info.Printf("serve_user_funds_v2(): addr= %v\n",*addr)
 	var status_code int = 0
 	var error_text  string = ""
-	var wallet_aid int64 = 0
+	var total_usd float64 = 0
 	eoa_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(*addr)
-	if err == nil {
-		wallet_aid,_ = augur_srv.storage.Lookup_wallet_aid(eoa_aid)
-	} else {
+	if err != nil {
 		error_text = "Address lookup failed"
 	}
 	if eoa_aid > 0 {
 		addr := common.HexToAddress(*addr)
-		eoa_dai_balance = get_token_balance(0,&addr)
-		eoa_rep_balance = get_token_balance(1,&addr)
-		eoa_eth_balance = get_eth_balance(&addr)
+		dai_balance = get_token_balance(0,&addr)
+		rep_balance = get_token_balance(1,&addr)
+		eth_balance = get_eth_balance(&addr)
 		status_code = 1
 	}
 
-	if wallet_aid != 0 {
-		wallet_addr,err := augur_srv.storage.Lookup_address(wallet_aid)
+	rep_in_eth,err :=get_REP_token_price_in_ETH()
+	Info.Printf("REP balancve = %v\n",rep_balance)
+	Info.Printf("REP in ETH = %v\n",rep_in_eth)
+	if err == nil {
+		ethusd,err := augur_srv.storage.Get_last_ethusd_price()
 		if err == nil {
-			waddr := common.HexToAddress(wallet_addr)
-			wallet_dai_balance = get_token_balance(0,&waddr)
-			wallet_rep_balance = get_token_balance(1,&waddr)
-			wallet_eth_balance = get_eth_balance(&waddr)
-			status_code = 1
+			Info.Printf("ETHUSD = %v\n",ethusd)
+			rep_balance_usd = rep_balance / rep_in_eth * ethusd
+			total_usd = dai_balance + eth_balance * ethusd + rep_balance_usd
+			eth_balance_usd = eth_balance * ethusd
 		}
+	} else {
+		error_text = fmt.Sprintf("Error at checking REP price: %v\n",err.Error())
 	}
 
 	c.JSON(200, gin.H{
 		"status": status_code,
 		"error": error_text,
-		"eoa_eth": fmt.Sprintf("%v",eoa_eth_balance),
-		"wallet_eth": fmt.Sprintf("%v",wallet_eth_balance),
-		"eoa_dai": fmt.Sprintf("%v",eoa_dai_balance),
-		"wallet_dai": fmt.Sprintf("%v",wallet_dai_balance),
-		"eoa_rep": fmt.Sprintf("%v",eoa_rep_balance),
-		"wallet_rep": fmt.Sprintf("%v",wallet_rep_balance),
-		"eoa_usd" : 0,
-		"wallet_usd" : 0,
+		"Eth": fmt.Sprintf("%v",eth_balance),
+		"EthInUsd": fmt.Sprintf("%v",eth_balance_usd),
+		"DAI": fmt.Sprintf("%v",dai_balance),
+		"REP": fmt.Sprintf("%v",rep_balance),
+		"REPUSD" : fmt.Sprintf("%v",rep_balance_usd),
+		"TotalUSDAcctValue" : total_usd,
 	})
 }
 func serve_user_funds_v1(c *gin.Context,addr common.Address) {
@@ -1109,6 +1131,7 @@ func execute_search(keyword string) SearchResultObject {
 func read_money(c *gin.Context) {
 	// this function gets amount of currencies the User holds: ETH, DAI and REP (all in one call)
 	addr := c.Param("addr")
+	Info.Printf("addr=%v\n",addr)
 	if (len(addr) == 40) || (len(addr) == 42) { // address
 		if len(addr) == 42 {	// strip 0x prefix
 			addr = addr[2:]
@@ -1116,7 +1139,8 @@ func read_money(c *gin.Context) {
 		addr_bytes,err := hex.DecodeString(addr)
 		if err == nil {
 			addr := common.BytesToAddress(addr_bytes)
-			serve_user_funds_v1(c,addr)
+			addr_str := addr.String()
+			serve_user_funds_v2(c,&addr_str)
 		} else {
 			c.HTML(http.StatusBadRequest, "error.html", gin.H{
 				"title": "Augur Markets: Error",
@@ -1124,6 +1148,12 @@ func read_money(c *gin.Context) {
 			})
 			return
 		}
+	} else {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Invalid address len (must be 40 or 42 chars) len=%v",len(addr)),
+		})
+		return
 	}
 }
 func output_filling_orders(c *gin.Context,order_hash string,orders []OrderInfo) {
@@ -2349,5 +2379,50 @@ func rt_show_uniswap_slippage(c *gin.Context) {
 		"PairInfo" : pair_info,
 		"TokenSlippage" : slippages,
 		"AmountToTrade" : amount_to_trade,
+	})
+}
+func show_ethusd_price(c *gin.Context) {
+
+	var err error
+	p_init_ts := c.Param("init_ts")
+	var init_ts int
+	if len(p_init_ts) > 0 {
+		init_ts, err = strconv.Atoi(p_init_ts)
+		if err != nil {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": "Can't parse init_ts",
+			})
+			return
+		}
+	}
+	p_fin_ts := c.Param("fin_ts")
+	var fin_ts int
+	if len(p_fin_ts) > 0 {
+		fin_ts, err = strconv.Atoi(p_fin_ts)
+		if err != nil {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": "Can't parse fin_ts",
+			})
+			return
+		}
+	}
+	if fin_ts == 0 {
+		fin_ts = 2147483647
+	}
+	ini,fin,prices:= augur_srv.storage.Get_ethusd_price_history(init_ts,fin_ts)
+	ts := time.Unix(int64(ini),0)
+	start_date := ts.String()
+	ts = time.Unix(int64(fin),0)
+	end_date := ts.String()
+	js_prices := build_js_ethusd_price_history(&prices)
+	c.HTML(http.StatusOK, "ethusd_price.html", gin.H{
+			"Prices" : prices,
+			"JSPriceData" :js_prices,
+			"InitTimeStamp": init_ts,
+			"FinTimeSTamp": fin_ts,
+			"InitDate" : start_date,
+			"FinDate" : end_date,
 	})
 }

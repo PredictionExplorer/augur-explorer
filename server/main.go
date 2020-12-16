@@ -28,6 +28,7 @@ var (
 	ctrct_dai_token *DAICash
 	ctrct_rep_token *RepTok
 
+	REP_ETH_UNISWAP_PAIR_ADDR string = "0x8979A3Ef9D540480342AC0F56e9D4c88807b1CBa"
 	// thes variables should be removed on the next code reorg task
 	market_order_id int64 = 0
 	fill_order_id int64 = 0
@@ -162,6 +163,7 @@ func main() {
 	r.GET("/black/pool_slippage/:pool",show_pool_slippage)
 	r.GET("/black/uniswap_slippage/:pair",show_uniswap_slippage)
 	r.GET("/black/rt_uniswap_slippage/:pair",rt_show_uniswap_slippage)
+	r.GET("/black/ethusd/",show_ethusd_price)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)

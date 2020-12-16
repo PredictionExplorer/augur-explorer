@@ -134,3 +134,80 @@ func (ss *SQLStorage) Insert_ethusd_price_evt(pr *p.EthUsdPriceEvt) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Get_ethusd_price_history(init_ts,fin_ts int) (int,int,[]p.EthUsdPrice) {
+
+	var query string
+	if fin_ts == 2147483647 {
+		query = "SELECT  EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ending_ts "+
+				"FROM ethusd_price " +
+				"ORDER BY ending_ts DESC LIMIT 1"
+
+		var null_ts sql.NullInt64
+		err := ss.db.QueryRow(query).Scan(&null_ts)
+		ss.adjust_ts(&fin_ts,err,&null_ts)
+		fin_ts++
+	}
+	if init_ts == 0 {
+		query = "SELECT  EXTRACT(EPOCH FROM time_stamp)::BIGINT AS starting_ts "+
+				"FROM ethusd_price " +
+				"ORDER BY starting_ts LIMIT 1"
+		var null_ts sql.NullInt64
+		err := ss.db.QueryRow(query).Scan(&null_ts)
+		ss.adjust_ts(&init_ts,err,&null_ts)
+
+	}
+/*	query =	"SELECT EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ts,eth_price FROM ethusd_price " +
+			"WHERE time_stamp >= TO_TIMESTAMP($1) AND time_stamp < TO_TIMESTAMP($2) " +
+			"ORDER by time_stamp "*/
+	query =	"SELECT " +
+				"AVG(p.eth_price), "+
+				"(EXTRACT(EPOCH FROM time_stamp)::BIGINT/300)*300 AS ts "+
+				"FROM ethusd_price AS p " +
+			"WHERE time_stamp >= TO_TIMESTAMP($1) AND time_stamp < TO_TIMESTAMP($2) " +
+			"GROUP BY ts " +
+			"ORDER by ts "
+
+	records := make([]p.EthUsdPrice,0,8)
+	rows,err := ss.db.Query(query,init_ts,fin_ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return init_ts,fin_ts,records
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.EthUsdPrice
+		err=rows.Scan(
+			&rec.Price,
+			&rec.TimeStamp,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return init_ts,fin_ts,records
+}
+func (ss *SQLStorage) Get_last_ethusd_price() (float64,error) {
+
+
+	var query string
+	query = "SELECT eth_price FROM ethusd_price " +
+			"ORDER by block_num DESC,tx_id DESC,evtlog_id DESC " +
+			"LIMIT 1"
+	res := ss.db.QueryRow(query)
+	var null_price sql.NullFloat64
+	err := res.Scan(&null_price)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0.0,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return null_price.Float64,nil
+}
