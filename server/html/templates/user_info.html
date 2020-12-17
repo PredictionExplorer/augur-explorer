@@ -504,7 +504,9 @@
 	{{- range $i, $change := .ShtokBalances }}
 		<tr class="market_reports">
 			<td class="market_reports_field">
-				{{.WrapperAddr}}
+				<a href="/black/user_wr_transfers/{{$.UserInfo.Addr}}/{{.WrapperAddr}}">
+					{{.WrapperAddr}}
+				</a>
 			</td>
 			<td class="market_reports_field">{{.Symbol}}</td>
 			<td class="market_reports_field">{{.NumTransfers}}</td>

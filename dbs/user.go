@@ -1126,3 +1126,62 @@ func (ss *SQLStorage) Get_wrapped_shtoken_balances(aid int64) []p.UserShTokens {
 	}
 	return records
 }
+func (ss *SQLStorage) Get_user_wrapped_shtoken_transfers(aid,wrapper_aid int64,offset,limit int) (int64,[]p.UserShtokTransfer) {
+
+	var query string
+
+	var total_rows int64
+	query = "SELECT COUNT(*) AS total_rows FROM wstok_bal b " +
+			"WHERE b.aid=$1 AND b.wrapper_aid=$2"
+
+	var null_counter sql.NullInt64
+	var err error
+	err=ss.db.QueryRow(query,aid,wrapper_aid).Scan(&null_counter);
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v , q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	total_rows=null_counter.Int64
+
+	query = "SELECT " +
+				"fa.addr," +
+				"ta.addr," +
+				"EXTRACT(EPOCH FROM tr.time_stamp)::BIGINT AS ts," +
+				"tr.time_stamp," +
+				"tr.from_aid," +
+				"tr.to_aid," +
+				"tr.amount, " +
+				"tb.balance " +
+			"FROM wstok_bal AS tb " +
+			"JOIN wstok_transf AS tr ON tb.tr_id=tr.id " +
+			"LEFT JOIN address AS fa ON tr.from_aid=fa.address_id " +
+			"LEFT JOIN address AS ta ON tr.to_aid=ta.address_id " +
+			"WHERE tb.aid=$1 AND tb.wrapper_aid=$2 " +
+			"ORDER BY tr.time_stamp DESC,tb.id DESC " +
+			"OFFSET $3 LIMIT $4"
+	
+	rows,err := ss.db.Query(query,aid,wrapper_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.UserShtokTransfer,0,8)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UserShtokTransfer
+		err=rows.Scan(
+			&rec.From,
+			&rec.To,
+			&rec.TimeStamp,
+			&rec.Date,
+			&rec.FromAid,
+			&rec.ToAid,
+			&rec.Amount,
+			&rec.Balance,
+		)
+		records = append(records,rec)
+	}
+	return total_rows,records
+}

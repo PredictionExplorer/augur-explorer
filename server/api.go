@@ -781,6 +781,9 @@ func a1_wrapped_token_transfers(c *gin.Context) {
 		return
 	}
 	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
 
 	wrapper_info,_ := augur_srv.storage.Get_wrapped_token_info(wrapper_aid)
 	market_info,_ := augur_srv.storage.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
@@ -805,6 +808,9 @@ func a1_pool_swaps(c *gin.Context) {
 		return
 	}
 	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
 
 	pool_info,_ := augur_srv.storage.Get_pool_info(pool_aid)
 	swaps := augur_srv.storage.Get_pool_swaps(pool_aid,offset,limit)
@@ -1353,5 +1359,36 @@ func a1_wrapped_shtoken_balances(c *gin.Context) {
 		"WrappedShareTokenBalances" : shtoken_balances,
 		"status": status,
 		"error": err_str,
+	})
+}
+func a1_user_wrapped_token_transfers(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,user_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	p_wrapper:= c.Param("wrapper")
+	_,wrapper_aid,success := json_validate_and_lookup_address_or_aid(c,&p_wrapper)
+	if !success {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	wrapper_info,_ := augur_srv.storage.Get_wrapped_token_info(wrapper_aid)
+	market_info,_ := augur_srv.storage.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
+	total_rows,transfers:= augur_srv.storage.Get_user_wrapped_shtoken_transfers(user_aid,wrapper_aid,offset,limit)
+	c.JSON(http.StatusOK, gin.H{
+			"MarketInfo" : market_info,
+			"TokenInfo" : wrapper_info,
+			"Offset" : offset,
+			"Limit" : limit,
+			"Transfers" : transfers,
+			"TotalRows" : total_rows,
 	})
 }

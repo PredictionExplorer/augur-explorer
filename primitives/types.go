@@ -1285,3 +1285,13 @@ type EthUsdPrice struct {
 	TimeStamp				int64
 	Price					float64
 }
+type UserShtokTransfer struct {
+	TimeStamp				int64
+	Amount					float64
+	Balance					float64
+	FromAid					int64
+	ToAid					int64
+	From					string
+	To						string
+	Date					string
+}
