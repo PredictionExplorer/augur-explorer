@@ -169,8 +169,8 @@ func (ss *SQLStorage) Calc_unique_addresses(ts_from int64,ts_to int64) (int64,bo
 	*/
 	// This query will report existing addresses with some usage. 
 	query = "SELECT count(*) FROM ( " +
-				"SELECT DISTINCT u.eoa_aid FROM address a " +
-				"JOIN ustats u ON u.eoa_aid=a.address_id " +
+				"SELECT DISTINCT u.aid FROM address a " +
+				"JOIN ustats u ON u.aid=a.address_id " +
 				"JOIN block b ON a.block_num=b.block_num " +
 			"WHERE b.ts >= to_timestamp($1) AND b.ts < to_timestamp($2)" +
 			") AS s"

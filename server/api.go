@@ -7,6 +7,9 @@ import (
 
 	"net/http"
 	"github.com/gin-gonic/gin"
+	"github.com/ethereum/go-ethereum/common"
+
+	ens "github.com/wealdtech/go-ens/v3"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
@@ -1390,5 +1393,29 @@ func a1_user_wrapped_token_transfers(c *gin.Context) {
 			"Limit" : limit,
 			"Transfers" : transfers,
 			"TotalRows" : total_rows,
+	})
+}
+func a1_ens_reverse_lookup(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_address:= c.Param("address")
+/*	address_str,aid,success := json_validate_and_lookup_address_or_aid(c,&p_address)
+	if !success {
+		return
+	}*/
+	addr := common.HexToAddress(p_address)
+	name, err := ens.ReverseResolve(rpcclient, addr)
+	Info.Printf("reverse lookup of %v, name=%v\n",addr.String(),name)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+			"Addr" : p_address,
+			"Name" : name,
 	})
 }

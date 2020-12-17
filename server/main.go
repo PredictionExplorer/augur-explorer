@@ -217,6 +217,7 @@ func main() {
 	r.GET("/api/uni_calc_slip/:pair/:tok_in/:amount",a1_uniswap_calculate_slippage)
 	r.GET("/api/uniswap_slippage/:pair",a1_uniswap_slippage)
 	r.GET("/api/wshtok_balances/:user",a1_wrapped_shtoken_balances)
+	r.GET("/api/rlookup/:address",a1_ens_reverse_lookup)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
