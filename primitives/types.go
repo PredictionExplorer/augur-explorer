@@ -1295,3 +1295,7 @@ type UserShtokTransfer struct {
 	To						string
 	Date					string
 }
+type EnsProcStatus struct {
+	IniLoadBlockNumLimit	int64
+	LastEvtId				int64
+}

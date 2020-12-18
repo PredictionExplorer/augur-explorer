@@ -290,3 +290,11 @@ type UPairSwap struct {
 	To						common.Address
 	Raw						types.Log // Blockchain specific contextual infos
 }
+type NameRegistered_v1 struct { //0xca6abbe9d7f11422cb6ca7629fbf6fe9efb1c621f71ce8f02b9f2a230097404f.
+	Name    string
+	Label   [32]byte
+	Owner   common.Address
+	Cost    *big.Int
+	Expires *big.Int
+	Raw     types.Log // Blockchain specific contextual infos
+}
