@@ -145,6 +145,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		}
 		agtx.GasUsed = int64(rcpt.GasUsed)
 		agtx.TxIndex = int32(tnum)
+		agtx.NumLogs = int32(len(rcpt.Logs))
 		logs_to_insert := prepare_event_log_batch(agtx,rcpt.Logs)
 		if len(logs_to_insert) > 0 {
 			storage.Insert_all_tx_event_logs(logs_to_insert)

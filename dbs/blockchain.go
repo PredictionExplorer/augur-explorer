@@ -198,16 +198,16 @@ func (ss *SQLStorage) Insert_transaction(agtx *p.AugurTx) int64 {
 	ss.Info.Printf("Insert_transaction: from: %v, to: %v\n",agtx.From,agtx.To)
 
 	query = "INSERT INTO transaction ("+
-				"block_num,value,tx_hash,ctrct_create,gas_used,gas_price,tx_index,input_sig" +
+				"block_num,value,tx_hash,ctrct_create,gas_used,gas_price,tx_index,input_sig,num_logs" +
 			") " +
-			"VALUES ($1,("+agtx.Value+"/1e+18),$2,$3,$4,"+agtx.GasPrice+"/1e+18,$5,$6) " +
+			"VALUES ($1,("+agtx.Value+"/1e+18),$2,$3,$4,"+agtx.GasPrice+"/1e+18,$5,$6,$7) " +
 			"RETURNING id"
 
 	var sig string
 	if len(agtx.Input) >=4 {
 		sig = hex.EncodeToString(agtx.Input[:4])
 	}
-	row := ss.db.QueryRow(query,agtx.BlockNum,agtx.TxHash,agtx.CtrctCreate,agtx.GasUsed,agtx.TxIndex,sig)
+	row := ss.db.QueryRow(query,agtx.BlockNum,agtx.TxHash,agtx.CtrctCreate,agtx.GasUsed,agtx.TxIndex,sig,agtx.NumLogs)
 	err := row.Scan(&tx_id)
 	if err != nil {
 		if !strings.Contains(

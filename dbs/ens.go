@@ -1,4 +1,17 @@
-func (ss *SQLStorage) Get_ens_processing_status() p.UniswapStatus {
+package dbs
+
+import (
+	"fmt"
+	"os"
+
+	"database/sql"
+	_  "github.com/lib/pq"
+
+//	"github.com/ethereum/go-ethereum/common"
+
+	p "github.com/PredictionExplorer/augur-explorer/primitives"
+)
+func (ss *SQLStorage) Get_ens_processing_status() p.EnsProcStatus {
 
 	var output p.EnsProcStatus
 	var null_id sql.NullInt64

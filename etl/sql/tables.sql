@@ -21,6 +21,7 @@ CREATE TABLE transaction (	-- we're only storing transactions related to Augur p
 	to_aid				BIGINT DEFAULT 0,
 	gas_used			BIGINT DEFAULT 0,
 	tx_index			INT DEFAULT 0,
+	num_logs			INT DEFAULT 0,
 	ctrct_create		BOOLEAN DEFAULT FALSE,	-- true if To = nil
 	value				DECIMAL(64,18) DEFAULT 0.0,
 	gas_price			DECIMAL(64,18) DEFAULT 0.0,

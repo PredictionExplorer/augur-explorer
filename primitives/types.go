@@ -94,6 +94,7 @@ type AugurTx struct {	// just a wrapper for Ethereum Transaction object, but in 
 	GasUsed				int64
 	TimeStamp			int64
 	TxIndex				int32
+	NumLogs				int32
 	CtrctCreate			bool
 //	TxMsg				*types.Message	Discontinued , to be deleted
 	GasPrice			string
