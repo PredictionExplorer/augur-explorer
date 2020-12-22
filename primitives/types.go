@@ -57,6 +57,15 @@ const (
 	SR_UniswapPair				// 12
 	SR_TextSearchResults		// 13
 )
+type WhatsNewAugurCode int 
+const (
+	WNA_6Hours WhatsNewAugurCode = iota
+	WNA_12Hours					// 1
+	WNA_1Day					// 2
+	WNA_2Days					// 3
+	WNA_3Days					// 4
+	WNA_1Week					// 5
+)
 var (
 	ErrChainSplit error = errors.New("Chainsplit detected")
 )

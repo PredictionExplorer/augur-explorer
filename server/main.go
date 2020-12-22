@@ -165,6 +165,7 @@ func main() {
 	r.GET("/black/uniswap_slippage/:pair",show_uniswap_slippage)
 	r.GET("/black/rt_uniswap_slippage/:pair",rt_show_uniswap_slippage)
 	r.GET("/black/ethusd/",show_ethusd_price)
+	r.GET("/black/whats_new_augur/",whats_new_in_augur)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -218,6 +219,7 @@ func main() {
 	r.GET("/api/uniswap_slippage/:pair",a1_uniswap_slippage)
 	r.GET("/api/wshtok_balances/:user",a1_wrapped_shtoken_balances)
 	r.GET("/api/rlookup/:address",a1_ens_reverse_lookup)
+	r.GET("/api/whats_new_augur/:code",a1_whats_new_augur)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

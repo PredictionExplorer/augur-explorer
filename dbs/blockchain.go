@@ -1436,3 +1436,48 @@ func (ss *SQLStorage) Get_erc20_info(tok_addr string) (p.ERC20Info,error) {
 	}
 	return info,nil
 }
+func (ss *SQLStorage) Get_block_range_for_whats_new(interval_code p.WhatsNewAugurCode) (int,int,error) {
+
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM b.ts)::BIGINT AS ts,lb.block_num " +
+			"FROM block AS b,last_block AS lb WHERE lb.block_num=b.block_num"
+
+	row := ss.db.QueryRow(query)
+	var err error
+	var to_ts,to_block_num sql.NullInt64
+	err=row.Scan(&to_ts,&to_block_num)
+	if (err!=nil) {
+		return 0,0,err
+	}
+	ss.Info.Printf("from_date=%v\n",to_ts.Int64)
+	var timestamp_q int
+	switch interval_code {
+	case p.WNA_6Hours:
+		timestamp_q=int(to_ts.Int64) - 6*60*60
+	case p.WNA_12Hours:
+		timestamp_q=int(to_ts.Int64) - 12*60*60
+	case p.WNA_1Day:
+		timestamp_q=int(to_ts.Int64) - 24*60*60
+	case p.WNA_2Days:
+		timestamp_q=int(to_ts.Int64) - 48*60*60
+	case p.WNA_3Days:
+		timestamp_q=int(to_ts.Int64) - 72*60*60
+	default:
+		panic("WhatsNewAugurCode with invalid value")
+	}
+	query = "SELECT " +
+				"block_num " +
+			"FROM block AS b " +
+			"WHERE ts < TO_TIMESTAMP($1) " +
+			"ORDER BY ts DESC " +
+			"LIMIT 1"
+	ss.Info.Printf("timestamp_q=%v, interval code=%v\n",timestamp_q,interval_code)
+	row = ss.db.QueryRow(query,timestamp_q)
+	var from_block_num sql.NullInt64
+	err=row.Scan(&from_block_num)
+	if (err!=nil) {
+		return 0,0,err
+	}
+	return int(from_block_num.Int64),int(to_block_num.Int64),nil
+}

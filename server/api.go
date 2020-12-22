@@ -1386,6 +1386,8 @@ func a1_user_wrapped_token_transfers(c *gin.Context) {
 	wrapper_info,_ := augur_srv.storage.Get_wrapped_token_info(wrapper_aid)
 	market_info,_ := augur_srv.storage.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
 	total_rows,transfers:= augur_srv.storage.Get_user_wrapped_shtoken_transfers(user_aid,wrapper_aid,offset,limit)
+	var status int = 1
+	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 			"MarketInfo" : market_info,
 			"TokenInfo" : wrapper_info,
@@ -1393,6 +1395,8 @@ func a1_user_wrapped_token_transfers(c *gin.Context) {
 			"Limit" : limit,
 			"Transfers" : transfers,
 			"TotalRows" : total_rows,
+			"status": status,
+			"error": err_str,
 	})
 }
 func a1_ens_reverse_lookup(c *gin.Context) {
@@ -1414,8 +1418,50 @@ func a1_ens_reverse_lookup(c *gin.Context) {
 		})
 		return
 	}
+	var status int = 1
+	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 			"Addr" : p_address,
 			"Name" : name,
+			"status": status,
+			"error": err_str,
+	})
+}
+func a1_whats_new_augur(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	var err error
+	p_code := c.Param("code")
+	var code int = 0
+	if len(p_code) > 0 {
+		code , err = strconv.Atoi(p_code)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"status":0,
+				"error": err.Error(),
+			})
+			return
+		}
+	}
+	block_num_from,block_num_to,err := augur_srv.storage.Get_block_range_for_whats_new(WhatsNewAugurCode(code))
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	Info.Printf("from_block=%v, to_block=%v\n",block_num_from,block_num_to)
+	block_info,err := augur_srv.storage.Get_block_info(int64(block_num_from),int64(block_num_to))
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	c.HTML(http.StatusOK, "block_info.html", gin.H{
+		"BlockInfo" : block_info,
 	})
 }

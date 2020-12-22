@@ -2464,3 +2464,43 @@ func show_ethusd_price(c *gin.Context) {
 			"FinDate" : end_date,
 	})
 }
+func whats_new_in_augur(c *gin.Context) {
+
+	var err error
+	var p_code string
+	p_code = c.Param("code")
+	if len(c.Query("code"))>0 {
+		p_code = c.Query("code")
+	}
+	var code int = 0
+	if len(p_code) > 0 {
+		code , err = strconv.Atoi(p_code)
+		if err != nil {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": "Can't parse code",
+			})
+			return
+		}
+	}
+	block_num_from,block_num_to,err := augur_srv.storage.Get_block_range_for_whats_new(WhatsNewAugurCode(code))
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("%v",err.Error()),
+		})
+		return
+	}
+	Info.Printf("from_block=%v, to_block=%v\n",block_num_from,block_num_to)
+	block_info,err := augur_srv.storage.Get_block_info(int64(block_num_from),int64(block_num_to))
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("%v",err.Error()),
+		})
+		return
+	}
+	c.HTML(http.StatusOK, "block_info.html", gin.H{
+		"BlockInfo" : block_info,
+	})
+}
