@@ -58,7 +58,6 @@ func build_js_price_history(orders *[]OrderInfo) template.JS {
 		var e = &(*orders)[i];
 		var entry string
 		entry = "{" +
-//				"x:" + fmt.Sprintf("\"%v\"",e.Date)  + "," +
 				"x:" + fmt.Sprintf("%v",i)  + "," +
 				"y:"  + fmt.Sprintf("%v",e.Price) + "," +
 				"price: " + fmt.Sprintf("%v",e.Price) + "," +
@@ -71,7 +70,6 @@ func build_js_price_history(orders *[]OrderInfo) template.JS {
 		data_str= data_str + entry
 	}
 	data_str = data_str + "]"
-	fmt.Printf("JS price history string: %v\n",data_str)
 	return template.JS(data_str)
 }
 func build_js_profit_loss_history(entries *[]PLEntry) template.JS {
@@ -140,7 +138,6 @@ func build_js_cash_flow_data(entries *[]BlockCash) template.JS {
 		var e = &(*entries)[i];
 		var entry string
 		entry = "{" +
-				//"x:" + fmt.Sprintf("%v",i)  + "," +
 				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.Ts)  + "," +
 				"y:"  + fmt.Sprintf("%.2f",e.AccumCashFlow) + "," +
 				"block_num: " + fmt.Sprintf("%v",e.BlockNum) + "," +
@@ -161,7 +158,6 @@ func build_js_uniq_addrs(entries *[]UniqueAddrEntry) template.JS {
 		var e = &(*entries)[i];
 		var entry string
 		entry = "{" +
-//				"x:" + fmt.Sprintf("\"%v\"",e.Day)  + "," +
 				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.Ts)  + "," +
 				"y:"  + fmt.Sprintf("%v",e.NumAddrsAccum) + "," +
 				"num_addrs: " + fmt.Sprintf("%v",e.NumAddrs) + "," +
@@ -175,7 +171,6 @@ func build_js_uniq_addrs(entries *[]UniqueAddrEntry) template.JS {
 }
 func build_js_global_gas_usage_data(entries *[]GasSpent,field int) template.JS {
 	var data_str string = "["
-	Info.Printf("dumping entries for field=%v\n",field)
 	for i:=0 ; i < len(*entries) ; i++ {
 		if len(data_str) > 1 {
 			data_str = data_str + ","
@@ -194,13 +189,11 @@ func build_js_global_gas_usage_data(entries *[]GasSpent,field int) template.JS {
 		}
 		var entry string
 		entry = "{" +
-				//"x:" + fmt.Sprintf("%v",i)  + "," +
 				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.Ts)  + "," +
 				"y:"  + fmt.Sprintf("%v",datum) + "," +
 				"day: " + fmt.Sprintf("new Date(%v * 1000)",e.Ts)+ "" +
 				"}"
 		data_str= data_str + entry
-		Info.Printf("datum=%v\n",entry)
 	}
 	data_str = data_str + "]"
 	return template.JS(data_str)
@@ -276,7 +269,6 @@ func build_js_bpool_swap_prices(prices* []BSwapPrice) template.JS {
 		data_str= data_str + entry
 	}
 	data_str = data_str + "]"
-	fmt.Printf("JS price string: %v\n",data_str)
 	return template.JS(data_str)
 }
 func build_js_upair_swap_prices(prices* []UPairPrice) template.JS {
@@ -301,7 +293,6 @@ func build_js_upair_swap_prices(prices* []UPairPrice) template.JS {
 		data_str= data_str + entry
 	}
 	data_str = data_str + "]"
-	fmt.Printf("JS price string: %v\n",data_str)
 	return template.JS(data_str)
 }
 func build_js_ethusd_price_history(prices* []EthUsdPrice) template.JS {
@@ -324,6 +315,5 @@ func build_js_ethusd_price_history(prices* []EthUsdPrice) template.JS {
 		data_str= data_str + entry
 	}
 	data_str = data_str + "]"
-	fmt.Printf("JS price string: %v\n",data_str)
 	return template.JS(data_str)
 }

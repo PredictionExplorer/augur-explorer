@@ -16,7 +16,7 @@ CREATE TABLE ens_name(
 	time_stamp			TIMESTAMPTZ,
 	owner_aid			BIGINT NOT NULL,
 	label				TEXT,
-	cost				DECIMAL(32,18),
+	cost				DECIMAL(32,18)
 );
 CREATE TABLE ens_status (
 	block_num_limit		BIGINT DEFAULT 10543755, -- limit for initial load

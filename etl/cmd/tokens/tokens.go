@@ -276,8 +276,8 @@ func process_tokens(exit_chan chan bool,caddrs *ContractAddresses) {
 		_=dai_contract_aid
 		_=rep_contract_aid
 	//	process_erc20_tokens(fmt.Sprintf("%v,%v",dai_contract_aid,rep_contract_aid))
-//		process_afoundry_wrapper_created_events()
-//		process_erc20wrapped_sharetokens()
+		process_afoundry_wrapper_created_events()
+		process_erc20wrapped_sharetokens()
 		process_ethusd_price_events(exit_chan)
 		time.Sleep(1 * time.Second)
 	}

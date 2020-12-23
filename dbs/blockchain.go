@@ -1450,7 +1450,6 @@ func (ss *SQLStorage) Get_block_range_for_whats_new(interval_code p.WhatsNewAugu
 	if (err!=nil) {
 		return 0,0,err
 	}
-	ss.Info.Printf("from_date=%v\n",to_ts.Int64)
 	var timestamp_q int
 	switch interval_code {
 	case p.WNA_6Hours:
@@ -1463,6 +1462,10 @@ func (ss *SQLStorage) Get_block_range_for_whats_new(interval_code p.WhatsNewAugu
 		timestamp_q=int(to_ts.Int64) - 48*60*60
 	case p.WNA_3Days:
 		timestamp_q=int(to_ts.Int64) - 72*60*60
+	case p.WNA_1Week:
+		timestamp_q=int(to_ts.Int64) - 7*24*60*60
+	case p.WNA_2Weeks:
+		timestamp_q=int(to_ts.Int64) - 2*7*24*60*60
 	default:
 		panic("WhatsNewAugurCode with invalid value")
 	}
@@ -1472,7 +1475,6 @@ func (ss *SQLStorage) Get_block_range_for_whats_new(interval_code p.WhatsNewAugu
 			"WHERE ts < TO_TIMESTAMP($1) " +
 			"ORDER BY ts DESC " +
 			"LIMIT 1"
-	ss.Info.Printf("timestamp_q=%v, interval code=%v\n",timestamp_q,interval_code)
 	row = ss.db.QueryRow(query,timestamp_q)
 	var from_block_num sql.NullInt64
 	err=row.Scan(&from_block_num)

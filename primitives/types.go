@@ -65,6 +65,7 @@ const (
 	WNA_2Days					// 3
 	WNA_3Days					// 4
 	WNA_1Week					// 5
+	WNA_2Weeks					// 6
 )
 var (
 	ErrChainSplit error = errors.New("Chainsplit detected")
@@ -1308,4 +1309,14 @@ type UserShtokTransfer struct {
 type EnsProcStatus struct {
 	IniLoadBlockNumLimit	int64
 	LastEvtId				int64
+}
+type ENS_Name1  struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Owner					string
+	Label					string
+	Cost					string
+
 }

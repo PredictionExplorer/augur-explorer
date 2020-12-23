@@ -174,6 +174,7 @@ func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoM
 	reports := augur_srv.storage.Get_market_reports(minfo.MktAid,DEFAULT_MARKET_REPORTS_LIMIT)
 	price_history := augur_srv.storage.Get_full_price_history(minfo.MktAddr,minfo.MktAid,minfo.LowPriceLimit)
 	balancer_pools := augur_srv.storage.Get_market_balancer_pools(minfo.MktAid)
+	uniswap_pairs := augur_srv.storage.Get_market_uniswap_pairs(minfo.MktAid)
 	wrappers := augur_srv.storage.Get_wrapped_tokens_for_market(minfo.MktAid)
 
 	if json_output {
@@ -185,6 +186,7 @@ func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoM
 			"PriceHistory" : price_history,
 			"PriceEstimates" : price_estimates,
 			"BalancerPools" : balancer_pools,
+			"UniswapPairs":  uniswap_pairs,
 			"WrappedContracts": wrappers,
 		})
 	} else {
@@ -197,6 +199,7 @@ func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoM
 			"PriceHistory" : price_history,
 			"PriceEstimates" : price_estimates,
 			"BalancerPools" : balancer_pools,
+			"UniswapPairs" : uniswap_pairs,
 		})
 	}
 }
@@ -2422,7 +2425,7 @@ func rt_show_uniswap_slippage(c *gin.Context) {
 func show_ethusd_price(c *gin.Context) {
 
 	var err error
-	p_init_ts := c.Param("init_ts")
+	p_init_ts := c.Query("init_ts")
 	var init_ts int
 	if len(p_init_ts) > 0 {
 		init_ts, err = strconv.Atoi(p_init_ts)
@@ -2434,7 +2437,11 @@ func show_ethusd_price(c *gin.Context) {
 			return
 		}
 	}
-	p_fin_ts := c.Param("fin_ts")
+	if init_ts == 0 {
+		init_ts = int(time.Now().Unix())
+		init_ts = init_ts - 30 * 24 * 60* 60
+	}
+	p_fin_ts := c.Query("fin_ts")
 	var fin_ts int
 	if len(p_fin_ts) > 0 {
 		fin_ts, err = strconv.Atoi(p_fin_ts)

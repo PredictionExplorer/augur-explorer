@@ -9,7 +9,7 @@
 <script>
 	var price_history_data = {{.JSPriceData}}
 </script>
-<h3 class="page_title">ETHUSD price averaged from USDC and DAI swaps (5Min timeframe)</h3>
+<h3 class="page_title">ETHUSD price averaged from USDC and DAI swaps on Uniswap v2 (5Min timeframe)</h3>
 <table class="market_detail">
 <tr>
 	<td>From:</td>
@@ -24,7 +24,7 @@
 <nav>
 	<ul>
 	<li>
-		<a class="btn_link" href="index.html">Back</a>
+		<a class="btn_link" href="/black/index.html">Back</a>
 		<span></span><span></span><span></span><span></span>
 	</li>
 </ul>
@@ -121,7 +121,7 @@ Highcharts.theme = {
           fontSize: '13px'
         }
       },
-		turboThreshold:500000,
+		turboThreshold:1000000,
       marker: {
         lineColor: '#333'
       }

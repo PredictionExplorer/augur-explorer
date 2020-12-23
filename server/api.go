@@ -1461,7 +1461,11 @@ func a1_whats_new_augur(c *gin.Context) {
 		})
 		return
 	}
-	c.HTML(http.StatusOK, "block_info.html", gin.H{
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
 		"BlockInfo" : block_info,
+		"status": status,
+		"error": err_str,
 	})
 }
