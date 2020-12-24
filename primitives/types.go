@@ -1310,7 +1310,7 @@ type EnsProcStatus struct {
 	IniLoadBlockNumLimit	int64
 	LastEvtId				int64
 }
-type ENS_Name1  struct {
+type ENS_Name1  struct {	// NameRegistered since 2019
 	EvtId					int64
 	BlockNum				int64
 	TxId					int64
@@ -1322,7 +1322,28 @@ type ENS_Name1  struct {
 	Cost					string
 	TxHash					string
 }
+type ENS_Name2  struct {	// NameRegistered old version
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Expires					int64
+	Owner					string
+	NameId					string
+	TxHash					string
+}
 type ENS_Transfer struct {
 	From					string
 	To						string
+}
+type ENS_NewOwner struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Expires					int64
+	Owner					string
+	Label					string
+	Node					string
+	TxHash					string
 }

@@ -125,3 +125,55 @@ func (ss *SQLStorage) Expire_ens_names(l *log.Logger) {
 	}
 
 }
+func (ss *SQLStorage) Get_count_of_active_names() int64 {
+
+	var null_count sql.NullInt64
+	var query string
+	query = "SELECT count(*) AS total FROM active_name"
+	_,err := ss.db.Exec(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+	if !null_count.Valid {
+		ss.Log_msg(fmt.Sprintf("Can't get number of active names"))
+		os.Exit(1)
+	}
+	return null_count.Int64
+}
+func (ss *SQLStorage) Insert_new_owner(rec *p.ENS_NewOwner) {
+
+	var query string
+	var err error
+	owner_aid := ss.Lookup_or_create_address(rec.Owner,rec.BlockNum,rec.TxId)
+	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
+		query = "INSERT INTO ens_new_owner(tx_hash,time_stamp,block_num,owner_aid,label,node) " +
+				"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6)"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.TimeStamp,
+			rec.BlockNum,
+			owner_aid,
+			rec.Label,
+			rec.Node,
+		)
+	} else {
+		query = "INSERT INTO ens_new_owner(" +
+					"tx_hash,evtlog_id,block_num,tx_id,time_stamp,owner_aid,label,node" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.EvtId,
+			rec.BlockNum,
+			rec.TxId,
+			rec.TimeStamp,
+			owner_aid,
+			rec.Label,
+			rec.Node,
+		)
+	}
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}

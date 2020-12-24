@@ -26,7 +26,7 @@ const (
 	ENS_NEWOWNER				= "ce0457fe73731f824cc272376169235128c118b49d344817417c6d108d155e82"
 
 	ENS_NAME_REGISTERED1		= "ca6abbe9d7f11422cb6ca7629fbf6fe9efb1c621f71ce8f02b9f2a230097404f"
-	//	NameRegistered (
+	//	NameRegistered (	// this was introduced in 2019
 	//		string name,
 	//		index_topic_1 bytes32 label,
 	//		index_topic_2 address owner,
@@ -59,6 +59,7 @@ const (
 var (
 	evt_newowner,_ = hex.DecodeString(ENS_NEWOWNER)
 	evt_name_registered1,_ = hex.DecodeString(ENS_NAME_REGISTERED1)
+	evt_name_registered2,_ = hex.DecodeString(ENS_NAME_REGISTERED2)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -71,7 +72,7 @@ var (
 	ens_abi abi.ABI
 
 )
-func initiial_load_name_registered1(block_num_from,block_num_to int64) {
+func do_initiial_load_name_registered1(block_num_from,block_num_to int64) {
 
 	filter := ethereum.FilterQuery{}
 	filter.FromBlock = big.NewInt(block_num_from)
@@ -133,7 +134,115 @@ func initiial_load_name_registered1(block_num_from,block_num_to int64) {
 		storage.Insert_name_registered1(&evt)
 	}
 }
-func initial_load(exit_chan chan bool,block_num_limit int64) {
+func do_initiial_load_new_owner(block_num_from,block_num_to int64) {
+
+	filter := ethereum.FilterQuery{}
+	filter.FromBlock = big.NewInt(block_num_from)
+	filter.ToBlock = big.NewInt(block_num_to)
+//	filter.FromBlock = big.NewInt(0)
+//	filter.ToBlock = nil
+	topics := make([]common.Hash,0,1)
+	signature := common.BytesToHash(evt_newowner)
+	topics = append(topics,signature)
+	filter.Topics= append(filter.Topics,topics)
+	filter.Addresses = nil
+	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
+	Info.Printf("filter query = %+v\n",filter)
+	Info.Printf("NewOwner: block range: %v - %v\n",block_num_from,block_num_to)
+	logs,err := eclient.FilterLogs(context.Background(),filter)
+	if err!= nil {
+		Error.Printf("Error: %v\n",err)
+		Info.Printf("Error: %v\n",err)
+		os.Exit(1)
+	}
+	for _,log := range logs {
+		if log.Removed {
+			continue
+		}
+///		Info.Printf("%v: log = %+v\n",i,log)
+		var evt ENS_NewOwner
+		evt.EvtId = 0
+		evt.BlockNum = int64(log.BlockNumber)
+		evt.TxId = 0
+		bnum := big.NewInt(int64(log.BlockNumber))
+		ctx := context.Background()
+		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+		if err != nil {
+			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		}
+		evt.TimeStamp = int64(block_hdr.Time)
+		evt.Label = hex.EncodeToString(log.Topics[2][:])
+		evt.Node = hex.EncodeToString(log.Topics[1][:])
+		evt.Owner = common.BytesToAddress(log.Data[12:]).String()
+		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+		evt.TxHash = log.TxHash.String()
+		owner_addr := common.BytesToAddress(log.Topics[2][12:])
+		evt.Owner = owner_addr.String()
+//		Info.Printf("label = %v, name=%v\n",hex.EncodeToString(eth_event.Label[:]),eth_event.Name)
+//		Info.Printf("log data hex=%v\n",hex.EncodeToString(log.Data[:]))
+//		Info.Printf("NameRegistered1: label=%v, Owner=%v, cost=%v, block %v tx %v\n",evt.Label,evt.Owner,log.BlockNumber,eth_event.Cost.String(),log.TxHash.String())
+		storage.Insert_new_owner(&evt)
+	}
+}
+func do_initiial_load_name_registered2(block_num_from,block_num_to int64) {
+
+	filter := ethereum.FilterQuery{}
+	filter.FromBlock = big.NewInt(block_num_from)
+	filter.ToBlock = big.NewInt(block_num_to)
+//	filter.FromBlock = big.NewInt(0)
+//	filter.ToBlock = nil
+	topics := make([]common.Hash,0,1)
+	signature := common.BytesToHash(evt_name_registered2)
+	topics = append(topics,signature)
+	filter.Topics= append(filter.Topics,topics)
+	filter.Addresses = nil
+	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
+	Info.Printf("filter query = %+v\n",filter)
+	Info.Printf("NameRegisterd2: block range: %v - %v\n",block_num_from,block_num_to)
+	logs,err := eclient.FilterLogs(context.Background(),filter)
+	if err!= nil {
+		Error.Printf("Error: %v\n",err)
+		Info.Printf("Error: %v\n",err)
+		os.Exit(1)
+	}
+	for _,log := range logs {
+		if log.Removed {
+			continue
+		}
+///		Info.Printf("%v: log = %+v\n",i,log)
+		var evt ENS_Name2
+		evt.EvtId = 0
+		evt.BlockNum = int64(log.BlockNumber)
+		evt.TxId = 0
+		ctx := context.Background()
+		bnum := big.NewInt(int64(log.BlockNumber))
+		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+		if err != nil {
+			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		}
+		evt.TimeStamp = int64(block_hdr.Time)
+		evt.NameId = hex.EncodeToString(log.Topics[1][:])
+		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+		evt.TxHash = log.TxHash.String()
+		owner_addr := common.BytesToAddress(log.Topics[2][12:])
+		evt.Owner = owner_addr.String()
+		expires := big.NewInt(0)
+		expires.SetBytes(log.Data[:])
+		evt.Expires = expires.Int64()
+		Info.Printf("ENS_Name2 {\n")
+		Info.Printf("\tOwner: %v\n",evt.Owner)
+		Info.Printf("\tNameId: %v\n",evt.NameId)
+		Info.Printf("\tExpires: %v\n",evt.Expires)
+		Info.Printf("}")
+//		Info.Printf("label = %v, name=%v\n",hex.EncodeToString(eth_event.Label[:]),eth_event.Name)
+//		Info.Printf("log data hex=%v\n",hex.EncodeToString(log.Data[:]))
+//		Info.Printf("NameRegistered1: label=%v, Owner=%v, cost=%v, block %v tx %v\n",evt.Label,evt.Owner,log.BlockNumber,eth_event.Cost.String(),log.TxHash.String())
+//		storage.Insert_name_registered1(&evt)
+	}
+}
+func range_initial_load_name_registered1(exit_chan chan bool,block_num_limit int64) {
 
 	var block_num int64 = 7691000 // found empirically
 	for ; block_num <= block_num_limit ; {
@@ -148,20 +257,96 @@ func initial_load(exit_chan chan bool,block_num_limit int64) {
 
 		next_block_num := block_num + 1000 - 1
 		if next_block_num > block_num_limit {
-			initiial_load_name_registered1(block_num,block_num_limit)
+			do_initiial_load_name_registered1(block_num,block_num_limit)
 			break
 		} else {
-			initiial_load_name_registered1(block_num,next_block_num)
+			do_initiial_load_name_registered1(block_num,next_block_num)
 			block_num = next_block_num + 1
 		}
 		storage.Expire_ens_names(Info)
 	}
 }
+func range_initial_load_new_owner(exit_chan chan bool,block_num_limit int64) {
+
+	var block_num int64 = 2933000 // found empirically
+	for ; block_num <= block_num_limit ; {
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.\n")
+					os.Exit(0)
+				}
+			default:
+		}
+
+		next_block_num := block_num + 1000 - 1
+		if next_block_num > block_num_limit {
+			do_initiial_load_new_owner(block_num,block_num_limit)
+			break
+		} else {
+			do_initiial_load_new_owner(block_num,next_block_num)
+			block_num = next_block_num + 1
+		}
+	}
+}
+func range_initial_load_name_registered2(exit_chan chan bool,block_num_limit int64) {
+
+	var block_num int64 = 0 // found empirically
+	for ; block_num <= block_num_limit ; {
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.\n")
+					os.Exit(0)
+				}
+			default:
+		}
+
+		next_block_num := block_num + 1000 - 1
+		if next_block_num > block_num_limit {
+			do_initiial_load_name_registered2(block_num,block_num_limit)
+			break
+		} else {
+			do_initiial_load_name_registered2(block_num,next_block_num)
+			block_num = next_block_num + 1
+		}
+	}
+}
+func initial_load(exit_chan chan bool,block_num_limit int64) {
+	//range_initial_load_name_registered1(exit_chan,block_num_limit)
+	//range_initial_load_new_owner(exit_chan,block_num_limit)
+	range_initial_load_name_registered2(exit_chan,block_num_limit)
+}
 func process_name_registered_events() {
 
 }
+func check_initial_load_completness() bool {
+
+	const correct_num_active_names int64 = 14040; // empirically found
+	num_active_names := storage.Get_count_of_active_names()
+	if num_active_names != correct_num_active_names {
+		msg := fmt.Sprintf(
+			"Number of active names is %v but should be %v\n",
+			num_active_names,
+			correct_num_active_names,
+		)
+		Error.Printf(msg)
+		Info.Printf(msg)
+		return false
+	}
+	return true
+}
 func main() {
 
+	var do_initial_load bool = false
+	if len(os.Args) > 1 {
+		if os.Args[1] != "-i" {
+			fmt.Printf("Unknown option %v\n",os.Args[1])
+			fmt.Printf("Usage: %v [-i]\n\t -i = initial load\n",os.Args[0])
+			os.Exit(1)
+		}
+		do_initial_load = true
+	}
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 	os.MkdirAll(log_dir, os.ModePerm)
 	db_log_file:=fmt.Sprintf("%v/ensscan_%v",log_dir,DEFAULT_DB_LOG)
@@ -207,22 +392,12 @@ func main() {
 		Info.Printf("Can't parse Augur Foundry ABI: %v\n",err)
 		os.Exit(1)
 	}
-/*
-	abi_parsed := strings.NewReader(UniswapV2FactoryABI)
-	factory_abi,err = abi.JSON(abi_parsed)
-	if err!= nil {
-		Info.Printf("Can't parse Uniswap Factory ABI: %v\n",err)
-		os.Exit(1)
-	}
-	abi_parsed = strings.NewReader(UniswapV2PairABI)
-	pair_abi,err = abi.JSON(abi_parsed)
-	if err!= nil {
-		Info.Printf("Can't parse Uniswap Pair ABI: %v\n",err)
-		os.Exit(1)
-	}
-*/
 	status := storage.Get_ens_processing_status()
-	initial_load(exit_chan,status.IniLoadBlockNumLimit)
+	if do_initial_load {
+		initial_load(exit_chan,status.IniLoadBlockNumLimit)
+		fmt.Printf("Initial load finished.")
+		return
+	}
 	/*
 	filter := ethereum.FilterQuery{}
 	//filter.FromBlock = big.NewInt(11000000)

@@ -30,8 +30,16 @@ CREATE TABLE active_name( -- ENS names that are currently active (i.e. haven't e
 	name				TEXT UNIQUE,
 	label				TEXT
 );
-CREATE TABLE ens_transfer(
-
+CREATE TABLE ens_new_owner(
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	time_stamp			TIMESTAMPTZ,
+	owner_aid			BIGINT NOT NULL,
+	tx_hash				TEXT NOT NULL,
+	label				TEXT NOT NULL,
+	node				TEXT NOT NULL
 );
 CREATE TABLE ens_status (
 	block_num_limit		BIGINT DEFAULT 10543755, -- limit for initial load
