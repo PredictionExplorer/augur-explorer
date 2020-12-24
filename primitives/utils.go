@@ -407,4 +407,13 @@ func (evt *UPairSwap) Dump(l *log.Logger) {
     l.Printf("\tTo: %v\n",evt.To.String())
     l.Printf("}\n")
 }
+func (evt *NameRegistered_v1) Dump(l *log.Logger) {
+    l.Printf("NameRegistered_v1{\n")
+    l.Printf("\tName: %v\n",evt.Name)
+	l.Printf("\tLabel: %v\n",hex.EncodeToString(evt.Label[:]))
+    l.Printf("\tOwner: %v\n",evt.Owner.String())
+    l.Printf("\tCost : %v\n",evt.Cost.String())
+    l.Printf("\tExpires: %v\n",evt.Expires.String())
+    l.Printf("}\n")
+}
 

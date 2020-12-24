@@ -1315,8 +1315,14 @@ type ENS_Name1  struct {
 	BlockNum				int64
 	TxId					int64
 	TimeStamp				int64
+	Expires					int64
 	Owner					string
 	Label					string
+	Name					string
 	Cost					string
-
+	TxHash					string
+}
+type ENS_Transfer struct {
+	From					string
+	To						string
 }

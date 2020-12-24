@@ -8,7 +8,6 @@ import (
 	"math/big"
 	"fmt"
 	"log"
-	"bytes"
 	"strings"
 	"encoding/hex"
 
@@ -23,6 +22,7 @@ import (
 )
 const (
 	DEFAULT_DB_LOG				= "db.log"
+	GRACE_PERIOD			int = 90 * 24 * 60 * 60 // 90 days
 	ENS_NEWOWNER				= "ce0457fe73731f824cc272376169235128c118b49d344817417c6d108d155e82"
 
 	ENS_NAME_REGISTERED1		= "ca6abbe9d7f11422cb6ca7629fbf6fe9efb1c621f71ce8f02b9f2a230097404f"
@@ -53,6 +53,7 @@ const (
 	ENS_ADDR_CHANGED			= "52d7d861f09ab3d26239d492e8968629f95e9e318cf0b73bfddc441522a15fd2"
 	ENS_ADDRESS_CHANGED			= "65412581168e88a1e60c6459d7f44ae83ad0832e670826c05a4e2476b57af752"
 	NEW_RESOLVER				= "335721b01866dc23fbee8b6b2c7b1e14d6f05c28cd35a2c934239f94095602a0"
+	ENS_TRANSFER				= "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
 )
 var (
@@ -82,8 +83,8 @@ func initiial_load_name_registered1(block_num_from,block_num_to int64) {
 	topics = append(topics,signature)
 	filter.Topics= append(filter.Topics,topics)
 	filter.Addresses = nil
-//	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
-//	Info.Printf("filter query = %+v\n",filter)
+	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
+	Info.Printf("filter query = %+v\n",filter)
 	Info.Printf("NameRegisterd1: block range: %v - %v\n",block_num_from,block_num_to)
 	logs,err := eclient.FilterLogs(context.Background(),filter)
 	if err!= nil {
@@ -91,14 +92,14 @@ func initiial_load_name_registered1(block_num_from,block_num_to int64) {
 		Info.Printf("Error: %v\n",err)
 		os.Exit(1)
 	}
-	for i,log := range logs {
+	for _,log := range logs {
 		if log.Removed {
 			continue
 		}
-		Info.Printf("%v: log = %+v\n",i,log)
+///		Info.Printf("%v: log = %+v\n",i,log)
 		var evt ENS_Name1
 		evt.EvtId = 0
-		evt.BlockNum = 0
+		evt.BlockNum = int64(log.BlockNumber)
 		evt.TxId = 0
 		var eth_event NameRegistered_v1
 		err := ens_abi.Unpack(&eth_event,"NameRegistered1",log.Data)
@@ -107,20 +108,34 @@ func initiial_load_name_registered1(block_num_from,block_num_to int64) {
 			Info.Printf("Error upacking NameRegistered1: %v\n",err)
 			continue
 		}
-		length := bytes.Index(eth_event.Label[:], []byte{0})
-		if length == -1 {
-			length = 32
+		ctx := context.Background()
+		bnum := big.NewInt(int64(log.BlockNumber))
+		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+		if err != nil {
+			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
 		}
-		evt.Label = string(eth_event.Label[:length])
+		evt.TimeStamp = int64(block_hdr.Time)
+		eth_event.Label = log.Topics[1]
+		eth_event.Owner = common.BytesToAddress(log.Topics[2][12:])
+		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+		eth_event.Dump(Info)
+		evt.TxHash = log.TxHash.String()
+		evt.Label = hex.EncodeToString(eth_event.Label[:])
 		owner_addr := common.BytesToAddress(log.Topics[2][12:])
 		evt.Owner = owner_addr.String()
-		Info.Printf("NameRegistered1: label=%v, Owner=%v, block %v\n",evt.Label,evt.Owner,log.BlockNumber)
+		evt.Name = eth_event.Name
+		evt.Cost = eth_event.Cost.String()
+		evt.Expires = eth_event.Expires.Int64()
+//		Info.Printf("label = %v, name=%v\n",hex.EncodeToString(eth_event.Label[:]),eth_event.Name)
+//		Info.Printf("log data hex=%v\n",hex.EncodeToString(log.Data[:]))
+//		Info.Printf("NameRegistered1: label=%v, Owner=%v, cost=%v, block %v tx %v\n",evt.Label,evt.Owner,log.BlockNumber,eth_event.Cost.String(),log.TxHash.String())
 		storage.Insert_name_registered1(&evt)
 	}
 }
 func initial_load(exit_chan chan bool,block_num_limit int64) {
 
-	var block_num int64 = 3645000 // 1 day before the launch of ENS
+	var block_num int64 = 7691000 // found empirically
 	for ; block_num <= block_num_limit ; {
 		select {
 			case exit_flag := <-exit_chan:
@@ -131,14 +146,15 @@ func initial_load(exit_chan chan bool,block_num_limit int64) {
 			default:
 		}
 
-		next_block_num := block_num + 1000
+		next_block_num := block_num + 1000 - 1
 		if next_block_num > block_num_limit {
 			initiial_load_name_registered1(block_num,block_num_limit)
 			break
 		} else {
 			initiial_load_name_registered1(block_num,next_block_num)
-			block_num = next_block_num
+			block_num = next_block_num + 1
 		}
+		storage.Expire_ens_names(Info)
 	}
 }
 func process_name_registered_events() {
