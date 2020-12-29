@@ -177,3 +177,42 @@ func (ss *SQLStorage) Insert_new_owner(rec *p.ENS_NewOwner) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Insert_hash_invalidated(rec *p.ENS_HashInvalidated) {
+
+	var query string
+	var err error
+	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
+		query = "INSERT INTO ens_hash_inval(tx_hash,time_stamp,block_num,hash,name,value,reg_date) " +
+		"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6::DECIMAL/1e+18,TO_TIMESTAMP($7))"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.TimeStamp,
+			rec.BlockNum,
+			rec.Hash,
+			rec.Name,
+			rec.Value,
+			rec.RegistrationDate,
+		)
+	} else {
+		/*
+		Pending
+		query = "INSERT INTO ens_new_owner(" +
+					"tx_hash,evtlog_id,block_num,tx_id,time_stamp,owner_aid,label,node" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.EvtId,
+			rec.BlockNum,
+			rec.TxId,
+			rec.TimeStamp,
+			owner_aid,
+			rec.Label,
+			rec.Node,
+		)
+		*/
+	}
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}

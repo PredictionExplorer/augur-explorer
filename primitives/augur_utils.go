@@ -121,4 +121,11 @@ func Fetch_erc20_info(client *ethclient.Client,contract_address *common.Address)
 
 	return erc20Info,nil
 }
+func Bytes32_to_string(data []byte) string {
 
+	length := bytes.Index(data, []byte{0})
+	if length == -1 {
+		length = 32
+	}
+	return string(data[:length])
+}

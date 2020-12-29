@@ -1332,6 +1332,18 @@ type ENS_Name2  struct {	// NameRegistered old version
 	NameId					string
 	TxHash					string
 }
+type ENS_Name3  struct {	// NameRegistered old version
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	CreatedDate				int64
+	Caller					string
+	Beneficiary				string
+	Label					string
+	Subdomain				string
+	TxHash					string
+}
 type ENS_Transfer struct {
 	From					string
 	To						string
@@ -1346,4 +1358,15 @@ type ENS_NewOwner struct {
 	Label					string
 	Node					string
 	TxHash					string
+}
+type ENS_HashInvalidated struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	RegistrationDate		int64
+	Hash					string
+	Name					string
+	TxHash					string
+	Value					string
 }

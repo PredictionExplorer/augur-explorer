@@ -53,13 +53,15 @@ const (
 	ENS_ADDR_CHANGED			= "52d7d861f09ab3d26239d492e8968629f95e9e318cf0b73bfddc441522a15fd2"
 	ENS_ADDRESS_CHANGED			= "65412581168e88a1e60c6459d7f44ae83ad0832e670826c05a4e2476b57af752"
 	NEW_RESOLVER				= "335721b01866dc23fbee8b6b2c7b1e14d6f05c28cd35a2c934239f94095602a0"
-	ENS_TRANSFER				= "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
-
+	ENS_TRANSFER				= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+	HASH_INVALIDATED			= "1f9c649fe47e58bb60f4e52f0d90e4c47a526c9f90c5113df842c025970b66ad"
 )
 var (
 	evt_newowner,_ = hex.DecodeString(ENS_NEWOWNER)
 	evt_name_registered1,_ = hex.DecodeString(ENS_NAME_REGISTERED1)
 	evt_name_registered2,_ = hex.DecodeString(ENS_NAME_REGISTERED2)
+	evt_name_registered3,_ = hex.DecodeString(ENS_NAME_REGISTERED3)
+	evt_hash_invalidated,_ = hex.DecodeString(HASH_INVALIDATED)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -312,10 +314,181 @@ func range_initial_load_name_registered2(exit_chan chan bool,block_num_limit int
 		}
 	}
 }
+func do_initiial_load_name_registered3(block_num_from,block_num_to int64) {
+
+	filter := ethereum.FilterQuery{}
+	filter.FromBlock = big.NewInt(block_num_from)
+	filter.ToBlock = big.NewInt(block_num_to)
+	topics := make([]common.Hash,0,1)
+	signature := common.BytesToHash(evt_name_registered3)
+	topics = append(topics,signature)
+	filter.Topics= append(filter.Topics,topics)
+	filter.Addresses = nil
+	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
+	Info.Printf("filter query = %+v\n",filter)
+	Info.Printf("NameRegisterd3: block range: %v - %v\n",block_num_from,block_num_to)
+	logs,err := eclient.FilterLogs(context.Background(),filter)
+	if err!= nil {
+		Error.Printf("Error: %v\n",err)
+		Info.Printf("Error: %v\n",err)
+		os.Exit(1)
+	}
+	for _,log := range logs {
+		if log.Removed {
+			continue
+		}
+		var evt ENS_Name3
+		evt.EvtId = 0
+		evt.BlockNum = int64(log.BlockNumber)
+		evt.TxId = 0
+		ctx := context.Background()
+		bnum := big.NewInt(int64(log.BlockNumber))
+		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+		if err != nil {
+			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		}
+
+		var eth_event NameRegistered_v3
+		err = ens_abi.Unpack(&eth_event,"NameRegistered3",log.Data)
+		if err != nil {
+			Error.Printf("Error upacking NameRegistered3: %v\n",err)
+			Info.Printf("Error upacking NameRegistered3: %v\n",err)
+			continue
+		}
+		evt.TimeStamp = int64(block_hdr.Time)
+		eth_event.Caller= common.BytesToAddress(log.Topics[1][12:])
+		eth_event.Beneficiary = common.BytesToAddress(log.Topics[2][12:])
+		eth_event.Label = log.Topics[3]
+		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+		evt.TxHash = log.TxHash.String()
+		evt.Label = hex.EncodeToString(eth_event.Label[:])
+		evt.Subdomain = eth_event.Subdomain
+		evt.CreatedDate = eth_event.CreatedDate.Int64()
+
+		Info.Printf("ENS_Name3 {\n")
+		Info.Printf("\tCaller: %v\n",eth_event.Caller.String())
+		Info.Printf("\tBeneficiary: %v\n",eth_event.Beneficiary.String())
+		Info.Printf("\tLabel: %v\n",eth_event.Label)
+		Info.Printf("\tSubdomain: %v\n",eth_event.Subdomain)
+		Info.Printf("\tCreatedDate: %v\n",evt.CreatedDate)
+		Info.Printf("}")
+	}
+}
+func range_initial_load_name_registered3(exit_chan chan bool,block_num_limit int64) {
+
+	var block_num int64 = 0 // found empirically
+	for ; block_num <= block_num_limit ; {
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.\n")
+					os.Exit(0)
+				}
+			default:
+		}
+
+		next_block_num := block_num + 1000 - 1
+		if next_block_num > block_num_limit {
+			do_initiial_load_name_registered3(block_num,block_num_limit)
+			break
+		} else {
+			do_initiial_load_name_registered3(block_num,next_block_num)
+			block_num = next_block_num + 1
+		}
+	}
+}
+func do_initiial_load_hash_invalidated(block_num_from,block_num_to int64) {
+
+	filter := ethereum.FilterQuery{}
+	filter.FromBlock = big.NewInt(block_num_from)
+	filter.ToBlock = big.NewInt(block_num_to)
+	topics := make([]common.Hash,0,1)
+	signature := common.BytesToHash(evt_hash_invalidated)
+	topics = append(topics,signature)
+	filter.Topics= append(filter.Topics,topics)
+	filter.Addresses = nil
+	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
+	Info.Printf("filter query = %+v\n",filter)
+	Info.Printf("HashInvalidated : block range: %v - %v\n",block_num_from,block_num_to)
+	logs,err := eclient.FilterLogs(context.Background(),filter)
+	if err!= nil {
+		Error.Printf("Error: %v\n",err)
+		Info.Printf("Error: %v\n",err)
+		os.Exit(1)
+	}
+	for _,log := range logs {
+		if log.Removed {
+			continue
+		}
+		var evt ENS_HashInvalidated
+		evt.EvtId = 0
+		evt.BlockNum = int64(log.BlockNumber)
+		evt.TxId = 0
+		ctx := context.Background()
+		bnum := big.NewInt(int64(log.BlockNumber))
+		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+		if err != nil {
+			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		}
+
+		var eth_event HashInvalidated
+		err = ens_abi.Unpack(&eth_event,"HashInvalidated",log.Data)
+		if err != nil {
+			Error.Printf("Error upacking HashInvalidated: %v\n",err)
+			Info.Printf("Error upacking HashInvalidated: %v\n",err)
+			continue
+		}
+		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+		evt.TimeStamp = int64(block_hdr.Time)
+		copy(eth_event.Hash[:],log.Topics[1].Bytes())
+		//eth_event.Name = Bytes32_to_string(log.Topics[2].Bytes())
+		eth_event.Name = hex.EncodeToString(log.Topics[2][:])
+		evt.TxHash = log.TxHash.String()
+		evt.Hash = hex.EncodeToString(eth_event.Hash[:])
+		evt.Name = eth_event.Name
+		evt.RegistrationDate=eth_event.RegistrationDate.Int64()
+		evt.Value = eth_event.Value.String()
+
+		Info.Printf("HashInvalidated {\n")
+		Info.Printf("\tHash: %v\n",hex.EncodeToString(eth_event.Hash[:]))
+		Info.Printf("\tName: %v\n",eth_event.Name)
+		Info.Printf("\tValue: %v\n",eth_event.Value.String())
+		Info.Printf("\tRegDate: %v\n",eth_event.RegistrationDate.String())
+		Info.Printf("}")
+		storage.Insert_hash_invalidated(&evt)
+	}
+}
+func range_initial_load_hash_invalidated(exit_chan chan bool,block_num_limit int64) {
+
+	var block_num int64 = 0 // found empirically
+	for ; block_num <= block_num_limit ; {
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.\n")
+					os.Exit(0)
+				}
+			default:
+		}
+
+		next_block_num := block_num + 1000 - 1
+		if next_block_num > block_num_limit {
+			do_initiial_load_hash_invalidated(block_num,block_num_limit)
+			break
+		} else {
+			do_initiial_load_hash_invalidated(block_num,next_block_num)
+			block_num = next_block_num + 1
+		}
+	}
+}
 func initial_load(exit_chan chan bool,block_num_limit int64) {
 	//range_initial_load_name_registered1(exit_chan,block_num_limit)
 	//range_initial_load_new_owner(exit_chan,block_num_limit)
-	range_initial_load_name_registered2(exit_chan,block_num_limit)
+	//range_initial_load_name_registered2(exit_chan,block_num_limit)
+	//range_initial_load_name_registered3(exit_chan,block_num_limit)
+	range_initial_load_hash_invalidated(exit_chan,block_num_limit)
 }
 func process_name_registered_events() {
 
@@ -389,7 +562,7 @@ func main() {
 	abi_parsed := strings.NewReader(ENSABI)
 	ens_abi,err = abi.JSON(abi_parsed)
 	if err!= nil {
-		Info.Printf("Can't parse Augur Foundry ABI: %v\n",err)
+		Info.Printf("Can't parse ENS ABI: %v\n",err)
 		os.Exit(1)
 	}
 	status := storage.Get_ens_processing_status()
@@ -398,27 +571,4 @@ func main() {
 		fmt.Printf("Initial load finished.")
 		return
 	}
-	/*
-	filter := ethereum.FilterQuery{}
-	//filter.FromBlock = big.NewInt(11000000)
-	filter.FromBlock = big.NewInt(11470000)
-	filter.ToBlock = nil // latest
-	topics := make([]common.Hash,0,1)
-	signature := common.BytesToHash(evt_newowner)
-	topics = append(topics,signature)
-	filter.Topics= append(filter.Topics,topics)
-	filter.Addresses = nil
-	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
-	Info.Printf("filter query = %+v\n",filter)
-	logs,err := eclient.FilterLogs(context.Background(),filter)
-	if err!= nil {
-		Error.Printf("Error: %v\n",err)
-		Info.Printf("Error: %v\n",err)
-		os.Exit(1)
-	}
-	Info.Printf("call error=%v, len logs=%v\n",err,len(logs))
-	for i,log := range logs {
-		Info.Printf("%v: log = %+v\n",i,log)
-	}
-	*/
 }
