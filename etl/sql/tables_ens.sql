@@ -53,6 +53,22 @@ CREATE TABLE ens_hash_inval(	-- HashInvalidated event
 	name				TEXT NOT NULL,
 	value				DECIMAL(32,18)
 );
+CREATE TABLE alexa_top1m(	-- Alexa's top 1M domain names, about 700k records
+	name				TEXT,
+	hash				TEXT UNIQUE	-- label hash
+);
+CREATE TABLE en_prop_names(	-- English proper names (list of 61k words)
+	word				TEXT,
+	hash				TEXT UNIQUE	-- label hash
+);
+CREATE TABLE email_tokens( -- Words extracted from 300million emails list dataset
+	token				TEXT,
+	hash				TEXT UNIQUE	-- label hash
+);
+CREATE TABLE pwd_db ( -- 36 million record password database
+	password			TEXT,
+	hash				TEXT UNIQUE	-- label hash
+);
 CREATE TABLE ens_status (
 	block_num_limit		BIGINT DEFAULT 10543755, -- limit for initial load
 	last_evt_id			BIGINT DEFAULT 0	-- event id (latest processed)
