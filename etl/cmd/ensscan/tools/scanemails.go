@@ -7,10 +7,46 @@ import (
 	"encoding/hex"
 	"bufio"
 	"strings"
+	"unicode/utf8"
 
 	 . "github.com/PredictionExplorer/augur-explorer/primitives"
 )
+var (
+	some_names map[string]struct{} = make(map[string]struct{})
+)
+func process_token(token string) bool {
 
+	if len(token)==0 {
+		return false
+	}
+	token = strings.ReplaceAll(token,` `,``)
+	token = strings.ReplaceAll(token,`'`,``)
+	token = strings.ReplaceAll(token,"\t",``)
+	token = strings.ReplaceAll(token,"\r",``)
+	token = strings.ReplaceAll(token,`\`,``)
+	if len(token)==0 {
+		return false
+	}
+	if len(token) <= 10 {
+		_,exists := some_names[token]
+		if exists {
+			return true
+		}
+	}
+	if !utf8.ValidString(token) {
+		return false
+	}
+	hash,err := LabelHash(token)
+	if err != nil {
+		return false
+	}
+	if len(token) <= 10 {
+		some_names[token] = struct{}{}
+	}
+	hash_str := hex.EncodeToString(hash[:])
+	fmt.Printf("%v\t%v\n",token,hash_str)
+	return true
+}
 func main() {
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -22,30 +58,21 @@ func main() {
 		if idx < 0 {
 			continue
 		}
+		var bad_line bool = false
 		parsed := strings.Split(line,"@")
-		if len(parsed) > 1 {
-			username := parsed[0]
-			domain_name := parsed[1]
-			words_user := strings.Split(username,".")
-			length := len(words_user)
-			for i:=0 ; i<length ; i++ {
-				hash,err := LabelHash(words_user[i])
-				if err != nil {
-					continue
+		for j:=0 ; j < len(parsed) ; j ++ {
+			email_addr := parsed[j]
+			tokens := strings.Split(email_addr,".")
+			for k:=0 ; k<len(tokens) ; k++ {
+				tok := tokens[k]
+				result := process_token(tok)
+				if result == false {
+					bad_line = true
 				}
-				hash_str := hex.EncodeToString(hash[:])
-				fmt.Printf("%v\t%v\n",words_user[i],hash_str)
 			}
-			words_domain := strings.Split(domain_name,".")
-			length = len(words_domain)
-			for i:=0 ; i<length ; i++ {
-				hash,err := LabelHash(words_domain[i])
-				if err != nil {
-					continue
-				}
-				hash_str := hex.EncodeToString(hash[:])
-				fmt.Printf("%v\t%v\n",words_domain[i],hash_str)
-			}
+		}
+		if bad_line {
+			os.Stderr.WriteString(line+"\n")
 		}
 	}
 	if err := scanner.Err(); err != nil {

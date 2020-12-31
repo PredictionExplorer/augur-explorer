@@ -35,7 +35,7 @@ CREATE TABLE active_name( -- ENS names that are currently active (i.e. haven't e
 );
 CREATE TABLE ens_label ( -- label <=> real world name, mapping
 	label				TEXT UNIQUE,
-	word				TEXT
+	word				TEXT UNIQUE
 );
 CREATE TABLE ens_new_owner(
 	id					BIGSERIAL PRIMARY KEY,
