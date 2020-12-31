@@ -147,8 +147,8 @@ func (ss *SQLStorage) Insert_new_owner(rec *p.ENS_NewOwner) {
 	var err error
 	owner_aid := ss.Lookup_or_create_address(rec.Owner,rec.BlockNum,rec.TxId)
 	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
-		query = "INSERT INTO ens_new_owner(tx_hash,time_stamp,block_num,owner_aid,label,node) " +
-				"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6)"
+		query = "INSERT INTO ens_new_owner(tx_hash,time_stamp,block_num,owner_aid,label,node,fqdn) " +
+				"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
 			rec.TimeStamp,
@@ -156,10 +156,11 @@ func (ss *SQLStorage) Insert_new_owner(rec *p.ENS_NewOwner) {
 			owner_aid,
 			rec.Label,
 			rec.Node,
+			rec.FQDN,
 		)
 	} else {
 		query = "INSERT INTO ens_new_owner(" +
-					"tx_hash,evtlog_id,block_num,tx_id,time_stamp,owner_aid,label,node" +
+					"tx_hash,evtlog_id,block_num,tx_id,time_stamp,owner_aid,label,node,fqdn" +
 				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
@@ -170,6 +171,7 @@ func (ss *SQLStorage) Insert_new_owner(rec *p.ENS_NewOwner) {
 			owner_aid,
 			rec.Label,
 			rec.Node,
+			rec.FQDN,
 		)
 	}
 	if (err!=nil) {
@@ -192,6 +194,44 @@ func (ss *SQLStorage) Insert_hash_invalidated(rec *p.ENS_HashInvalidated) {
 			rec.Name,
 			rec.Value,
 			rec.RegistrationDate,
+		)
+	} else {
+		/*
+		Pending
+		query = "INSERT INTO ens_new_owner(" +
+					"tx_hash,evtlog_id,block_num,tx_id,time_stamp,owner_aid,label,node" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.EvtId,
+			rec.BlockNum,
+			rec.TxId,
+			rec.TimeStamp,
+			owner_aid,
+			rec.Label,
+			rec.Node,
+		)
+		*/
+	}
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_new_resolver(rec *p.ENS_NewResolver) {
+
+	aid := ss.Lookup_or_create_address(rec.Address,rec.BlockNum,rec.TxId)
+	var query string
+	var err error
+	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
+		query = "INSERT INTO ens_new_resolver(tx_hash,time_stamp,block_num,node,aid) " +
+		"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5)"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.TimeStamp,
+			rec.BlockNum,
+			rec.Node,
+			aid,
 		)
 	} else {
 		/*

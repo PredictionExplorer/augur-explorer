@@ -13,10 +13,9 @@ import (
 
 func main() {
 
-	names:=make(map[string]struct{})
 	scanner := bufio.NewScanner(os.Stdin)
 	buf := make([]byte, 0, 64*1024)
-	scanner.Buffer(buf, 1024*1024)
+	scanner.Buffer(buf,32*1024*1024)
 	for scanner.Scan() {
 		line := scanner.Text()
 		idx := strings.Index(line, "@")
@@ -35,12 +34,7 @@ func main() {
 					continue
 				}
 				hash_str := hex.EncodeToString(hash[:])
-				_,exists := names[hash_str]
-				if exists {
-					continue
-				}
 				fmt.Printf("%v\t%v\n",words_user[i],hash_str)
-				names[hash_str]=struct{}{}
 			}
 			words_domain := strings.Split(domain_name,".")
 			length = len(words_domain)
@@ -50,12 +44,7 @@ func main() {
 					continue
 				}
 				hash_str := hex.EncodeToString(hash[:])
-				_,exists := names[hash_str]
-				if exists {
-					continue
-				}
 				fmt.Printf("%v\t%v\n",words_domain[i],hash_str)
-				names[hash_str]=struct{}{}
 			}
 		}
 	}
@@ -63,5 +52,4 @@ func main() {
 		fmt.Printf("Error : %v",err)
 		os.Exit(1)
 	}
-
 }

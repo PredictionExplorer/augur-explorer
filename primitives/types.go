@@ -1358,6 +1358,7 @@ type ENS_NewOwner struct {
 	Label					string
 	Node					string
 	TxHash					string
+	FQDN					string	// fully qualified domain name
 }
 type ENS_HashInvalidated struct {
 	EvtId					int64
@@ -1369,4 +1370,13 @@ type ENS_HashInvalidated struct {
 	Name					string
 	TxHash					string
 	Value					string
+}
+type ENS_NewResolver struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Node					string
+	Address					string
+	TxHash					string
 }

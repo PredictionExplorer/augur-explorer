@@ -11,6 +11,7 @@ import (
 	"strings"
 	"encoding/hex"
 
+	"golang.org/x/crypto/sha3"
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -62,6 +63,7 @@ var (
 	evt_name_registered2,_ = hex.DecodeString(ENS_NAME_REGISTERED2)
 	evt_name_registered3,_ = hex.DecodeString(ENS_NAME_REGISTERED3)
 	evt_hash_invalidated,_ = hex.DecodeString(HASH_INVALIDATED)
+	evt_new_resolver,_ = hex.DecodeString(NEW_RESOLVER)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -177,13 +179,22 @@ func do_initiial_load_new_owner(block_num_from,block_num_to int64) {
 		evt.Label = hex.EncodeToString(log.Topics[2][:])
 		evt.Node = hex.EncodeToString(log.Topics[1][:])
 		evt.Owner = common.BytesToAddress(log.Data[12:]).String()
+		var new_node_hash [32]byte
+		data :=make([]byte,32,64)
+		copy(data,log.Topics[1][:]) // copying Node (bytes)
+		data = append(data[:],log.Topics[2].Bytes()...)
+		sha := sha3.NewLegacyKeccak256()
+		if _, err := sha.Write(data[:]); err != nil {
+			Error.Printf("cant calculate hash of new node: %v\n",err)
+			os.Exit(1)
+		}
+		sha.Sum(new_node_hash[:0])
+		evt.FQDN = hex.EncodeToString(new_node_hash[:])
 		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+		Info.Printf("NewOwner for %v (node: %v, label: %v)\n",evt.FQDN,evt.Node,evt.Label)
 		evt.TxHash = log.TxHash.String()
 		owner_addr := common.BytesToAddress(log.Topics[2][12:])
 		evt.Owner = owner_addr.String()
-//		Info.Printf("label = %v, name=%v\n",hex.EncodeToString(eth_event.Label[:]),eth_event.Name)
-//		Info.Printf("log data hex=%v\n",hex.EncodeToString(log.Data[:]))
-//		Info.Printf("NameRegistered1: label=%v, Owner=%v, cost=%v, block %v tx %v\n",evt.Label,evt.Owner,log.BlockNumber,eth_event.Cost.String(),log.TxHash.String())
 		storage.Insert_new_owner(&evt)
 	}
 }
@@ -483,12 +494,84 @@ func range_initial_load_hash_invalidated(exit_chan chan bool,block_num_limit int
 		}
 	}
 }
+func do_initiial_load_new_resolver(block_num_from,block_num_to int64) {
+
+	filter := ethereum.FilterQuery{}
+	filter.FromBlock = big.NewInt(block_num_from)
+	filter.ToBlock = big.NewInt(block_num_to)
+	topics := make([]common.Hash,0,1)
+	signature := common.BytesToHash(evt_new_resolver)
+	topics = append(topics,signature)
+	filter.Topics= append(filter.Topics,topics)
+	filter.Addresses = nil
+	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
+	Info.Printf("filter query = %+v\n",filter)
+	Info.Printf("NewResolver: block range: %v - %v\n",block_num_from,block_num_to)
+	logs,err := eclient.FilterLogs(context.Background(),filter)
+	if err!= nil {
+		Error.Printf("Error: %v\n",err)
+		Info.Printf("Error: %v\n",err)
+		os.Exit(1)
+	}
+	for _,log := range logs {
+		if log.Removed {
+			continue
+		}
+		var evt ENS_NewResolver
+		evt.EvtId = 0
+		evt.BlockNum = int64(log.BlockNumber)
+		evt.TxId = 0
+		ctx := context.Background()
+		bnum := big.NewInt(int64(log.BlockNumber))
+		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+		if err != nil {
+			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		}
+
+		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+		evt.TimeStamp = int64(block_hdr.Time)
+		evt.Node = hex.EncodeToString(log.Topics[1][:])
+		addr := common.BytesToAddress(log.Data[12:])
+		evt.Address = addr.String()
+		evt.TxHash = log.TxHash.String()
+		Info.Printf("NewResolver {\n")
+		Info.Printf("\tNode: %v\n",evt.Node)
+		Info.Printf("\tAddress: %v\n",evt.Address)
+		Info.Printf("}")
+		storage.Insert_new_resolver(&evt)
+	}
+}
+func range_initial_load_new_resolver(exit_chan chan bool,block_num_limit int64) {
+
+	var block_num int64 = 0 // found empirically
+	for ; block_num <= block_num_limit ; {
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.\n")
+					os.Exit(0)
+				}
+			default:
+		}
+
+		next_block_num := block_num + 1000 - 1
+		if next_block_num > block_num_limit {
+			do_initiial_load_new_resolver(block_num,block_num_limit)
+			break
+		} else {
+			do_initiial_load_new_resolver(block_num,next_block_num)
+			block_num = next_block_num + 1
+		}
+	}
+}
 func initial_load(exit_chan chan bool,block_num_limit int64) {
 	//range_initial_load_name_registered1(exit_chan,block_num_limit)
 	//range_initial_load_new_owner(exit_chan,block_num_limit)
 	//range_initial_load_name_registered2(exit_chan,block_num_limit)
 	//range_initial_load_name_registered3(exit_chan,block_num_limit)
-	range_initial_load_hash_invalidated(exit_chan,block_num_limit)
+	//range_initial_load_hash_invalidated(exit_chan,block_num_limit)
+	range_initial_load_new_resolver(exit_chan,block_num_limit)
 }
 func process_name_registered_events() {
 

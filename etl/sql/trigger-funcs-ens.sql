@@ -36,3 +36,52 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_ens_new_owner_insert() RETURNS trigger AS  $$
+DECLARE
+	v_prev_timestamp timestamptz;
+	v_cnt numeric;
+BEGIN
+
+	INSERT INTO ens_node(evtlog_id,block_num,tx_id,time_stamp,label,node,fqdn)
+		VALUES(NEW.evtlog_id,NEW.block_num,NEW.tx_id,NEW.time_stamp,NEW.label,NEW.node,NEW.fqdn)
+		ON CONFLICT DO NOTHING;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_email_tokens_insert() RETURNS trigger AS  $$
+DECLARE
+	v_rec	RECORD;
+BEGIN
+	-- we use the trigger to prevent 'duplicate index' error by returning NULL on duplicates
+	SELECT * FROM email_tokens WHERE hash=NEW.hash INTO v_rec;
+	IF v_rec IS NOT NULL THEN
+		RETURN NULL;
+	END IF;
+	BEGIN 
+		INSERT INTO email_tokens(token,hash) VALUES(NEW.token,NEW.hash)
+			ON CONFLICT DO NOTHING;
+	EXCEPTION
+		WHEN OTHERS THEN
+			NULL;
+	END;
+	RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_pwd_db_insert() RETURNS trigger AS  $$
+DECLARE
+	v_rec	RECORD;
+BEGIN
+	SELECT * FROM pwd_db WHERE hash=NEW.hash INTO v_rec;
+	IF v_rec IS NOT NULL THEN
+		RETURN NULL;
+	END IF;
+	BEGIN 
+		INSERT INTO pwd_db(password,hash) VALUES(NEW.password,NEW.hash)
+			ON CONFLICT DO NOTHING;
+	EXCEPTION
+		WHEN OTHERS THEN
+			RETURN NULL;
+	END;
+	RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
