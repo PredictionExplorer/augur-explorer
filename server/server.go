@@ -2511,3 +2511,49 @@ func whats_new_in_augur(c *gin.Context) {
 		"BlockInfo" : block_info,
 	})
 }
+func user_uniswap_swaps(c *gin.Context) {
+
+	user := c.Param("user")
+	user_addr,valid := is_address_valid(c,false,user)
+	if !valid {
+		return
+	}
+	user_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(user_addr)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Such address wasn't found: %v",user_addr),
+		})
+		return
+	}
+	user_info,err := augur_srv.storage.Get_user_info(user_aid)
+	swaps,total_rows := augur_srv.storage.Get_user_uniswap_swaps(user_aid,0,200)
+	c.HTML(http.StatusOK, "user_uniswap_swaps.html", gin.H{
+		"UserInfo" : user_info,
+		"UserSwaps" : swaps,
+		"TotalRows" : total_rows,
+	})
+}
+func user_balancer_swaps(c *gin.Context) {
+
+	user := c.Param("user")
+	user_addr,valid := is_address_valid(c,false,user)
+	if !valid {
+		return
+	}
+	user_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(user_addr)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Such address wasn't found: %v",user_addr),
+		})
+		return
+	}
+	user_info,err := augur_srv.storage.Get_user_info(user_aid)
+	swaps,total_rows := augur_srv.storage.Get_user_balancer_swaps(user_aid,0,200)
+	c.HTML(http.StatusOK, "user_balancer_swaps.html", gin.H{
+		"UserInfo" : user_info,
+		"UserSwaps" : swaps,
+		"TotalRows" : total_rows,
+	})
+}

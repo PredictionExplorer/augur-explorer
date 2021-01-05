@@ -324,8 +324,24 @@
 						<td>Swaps at Uniswap</td>
 					</tr>
 					<tr>
-						<td>{{.UserInfo.BalancerNumSwaps}}</td>
-						<td>{{.UserInfo.UniswapNumSwaps}}</td>
+						<td>
+							{{ if gt .UserInfo.BalancerNumSwaps 0 }}
+							<a href="/black/user_bswaps/{{.UserInfo.Addr}}">
+							{{ end }}
+							{{.UserInfo.BalancerNumSwaps}}
+							{{ if gt .UserInfo.BalancerNumSwaps 0 }}
+							</a>
+							{{ end }}
+						</td>
+						<td>
+							{{ if gt .UserInfo.UniswapNumSwaps 0 }}
+							<a href="/black/user_uswaps/{{.UserInfo.Addr}}">
+							{{ end }}
+							{{.UserInfo.UniswapNumSwaps}}
+							{{ if gt .UserInfo.UniswapNumSwaps 0 }}
+							</a>
+							{{ end }}
+						</td>
 					</tr>
 				</table>
 			</td>

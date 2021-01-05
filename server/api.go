@@ -1469,3 +1469,63 @@ func a1_whats_new_augur(c *gin.Context) {
 		"error": err_str,
 	})
 }
+func a1_user_uniswap_swaps(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,user_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	user_info,err := augur_srv.storage.Get_user_info(user_aid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": fmt.Sprintf("Error getting UserInfo: %v",err.Error()),
+		})
+	}
+	swaps,total_recs := augur_srv.storage.Get_user_uniswap_swaps(user_aid,offset,limit)
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"UserInfo" : user_info,
+		"UserSwaps" : swaps,
+		"TotalRows" : total_recs,
+		"status": status,
+		"error": err_str,
+	})
+}
+func a1_user_balancer_swaps(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,user_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	user_info,err := augur_srv.storage.Get_user_info(user_aid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": fmt.Sprintf("Error getting UserInfo: %v",err.Error()),
+		})
+	}
+	swaps,total_rows := augur_srv.storage.Get_user_balancer_swaps(user_aid,offset,limit)
+	c.JSON(http.StatusOK, gin.H{
+			"PoolInfo" : user_info,
+			"PoolSwaps" : swaps,
+			"TotalRows" : total_rows,
+	})
+}

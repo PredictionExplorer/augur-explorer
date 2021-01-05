@@ -1185,3 +1185,218 @@ func (ss *SQLStorage) Get_user_wrapped_shtoken_transfers(aid,wrapper_aid int64,o
 	}
 	return total_rows,records
 }
+func (ss *SQLStorage) Get_user_uniswap_swaps(user_aid int64,offset int,limit int) ([]p.UserUniswapSwap , int64) {
+
+	records := make([]p.UserUniswapSwap,0,128)
+	var query string
+
+	query = "SELECT COUNT(*) AS total_recs FROM uswap1 sw " +
+			"JOIN upair AS p ON sw.pair_aid = p.pair_aid " +
+			"JOIN af_wrapper AS w ON (w.wrapper_aid=p.token0_aid OR w.wrapper_aid=p.token1_aid) " +
+			"WHERE sw.recipient_aid=$1"
+	var total_rows int64 = 0
+	var null_recs sql.NullInt64
+	err := ss.db.QueryRow(query,user_aid).Scan(&null_recs)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+	total_rows = null_recs.Int64
+
+	query = "SELECT " +
+				"sw.id,"+
+				"sw.block_num," +
+				"sw.amount0_in, " +
+				"sw.amount1_in," +
+				"sw.amount0_out," +
+				"sw.amount1_out," +
+				"sw.time_stamp," +
+				"EXTRACT(EPOCH FROM sw.time_stamp)::BIGINT AS created_ts, "+
+				"ra.addr AS recipient_addr," +
+				"sw.recipient_aid, " +
+				"p.pair_aid, " +
+				"pa.addr, " +
+				"inf1.symbol," +
+				"inf1.name," +
+				"inf2.symbol," +
+				"inf2.name, " +
+				"w.outcome_idx, " +
+				"m.market_aid,"+
+				"ma.addr," +
+				"m.market_type, " +
+				"m.extra_info::json->>'description' AS descr," +
+				"m.outcomes " +
+			"FROM uswap1 AS sw " +
+			"JOIN upair AS p ON sw.pair_aid = p.pair_aid " +
+			"JOIN af_wrapper AS w ON (w.wrapper_aid=p.token0_aid OR w.wrapper_aid=p.token1_aid) " +
+			"JOIN market AS m ON w.market_aid=m.market_aid " +
+			"LEFT JOIN address AS ra ON sw.recipient_aid=ra.address_id " +
+			"LEFT JOIN address AS pa ON sw.pair_aid=pa.address_id " +
+			"LEFT JOIN address AS ma ON m.market_aid=ma.address_id " +
+			"LEFT JOIN erc20_info inf1 ON p.token0_aid=inf1.aid " +
+			"LEFT JOIN erc20_info inf2 ON p.token1_aid=inf2.aid " +
+			"WHERE sw.recipient_aid=$1 " +
+			"ORDER BY sw.time_stamp DESC "+
+			"OFFSET $2 LIMIT $3"
+
+	rows,err := ss.db.Query(query,user_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UserUniswapSwap
+		var mkt_type int
+		var null_desc sql.NullString
+		var outcomes string
+		err=rows.Scan(
+			&rec.Id,
+			&rec.BlockNum,
+			&rec.Amount0_In,
+			&rec.Amount1_In,
+			&rec.Amount0_Out,
+			&rec.Amount1_Out,
+			&rec.CreatedDate,
+			&rec.CreatedTs,
+			&rec.RequesterAddr,
+			&rec.RequesterAid,
+			&rec.PairAid,
+			&rec.PairAddr,
+			&rec.Symbol0,
+			&rec.Name0,
+			&rec.Symbol1,
+			&rec.Name1,
+			&rec.OutcomeIdx,
+			&rec.MktAid,
+			&rec.MktAddr,
+			&mkt_type,
+			&null_desc,
+			&outcomes,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		if null_desc.Valid {
+			rec.MktDescription = null_desc.String
+		}
+		rec.Outcome = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
+		records = append(records,rec)
+	}
+	return records,total_rows
+}
+func (ss *SQLStorage) Get_user_balancer_swaps(user_aid int64,offset int,limit int) ([]p.UserBalancerSwap,int64) {
+
+	records := make([]p.UserBalancerSwap,0,64)
+	var query string
+	query = "SELECT count(*) as total " +
+			"FROM bswap AS s " +
+				"JOIN af_wrapper AS w ON (w.wrapper_aid=s.token_in_aid OR w.wrapper_aid=s.token_out_aid) "+
+			"WHERE s.caller_aid=$1"
+	var total_rows int64 = 0
+	var null_recs sql.NullInt64
+	err := ss.db.QueryRow(query,user_aid).Scan(&null_recs)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+	total_rows = null_recs.Int64
+
+	query = "SELECT " +
+				"s.id,"+
+				"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT AS ts, " +
+				"s.time_stamp as datetime,"+
+				"s.block_num," +
+				"s.tx_id,"+
+				"ca.addr,"+
+				"tia.addr," +
+				"toa.addr," +
+				"s.token_in_aid," +
+				"s.token_out_aid," +
+				"e_in.symbol,"+
+				"e_out.symbol," +
+				"e_in.name," +
+				"e_out.name," +
+				"s.amount_in, " +
+				"s.amount_out, " +
+				"s.pool_aid," +
+				"pa.addr," +
+				"w.outcome_idx, "+
+				"m.market_aid," +
+				"ma.addr," +
+				"m.market_type, " +
+				"m.extra_info::json->>'description' AS descr," +
+				"m.outcomes " +
+			"FROM bswap AS s " +
+				"JOIN af_wrapper AS w ON (w.wrapper_aid=s.token_in_aid OR w.wrapper_aid=s.token_out_aid) "+
+				"JOIN market AS m ON w.market_aid=m.market_aid " +
+				"LEFT JOIN address AS ca ON s.caller_aid=ca.address_id " +
+				"LEFT JOIN address AS tia ON s.token_in_aid=tia.address_id " +
+				"LEFT JOIN address AS toa ON s.token_out_aid=toa.address_id " +
+				"LEFT JOIN address AS ma ON m.market_aid=ma.address_id " +
+				"LEFT JOIN address AS pa ON s.pool_aid=pa.address_id "+
+				"LEFT JOIN erc20_info AS e_in ON s.token_in_aid=e_in.aid " +
+				"LEFT JOIN erc20_info AS e_out ON s.token_out_aid=e_out.aid " +
+			"WHERE s.caller_aid=$1 " +
+			"ORDER BY ts DESC OFFSET $2 LIMIT $3"
+	rows,err := ss.db.Query(query,user_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UserBalancerSwap
+		var symbol_in,symbol_out,name_in,name_out sql.NullString
+		var mkt_type int
+		var null_desc sql.NullString
+		var outcomes string
+		err=rows.Scan(
+			&rec.Id,
+			&rec.TimeStamp,
+			&rec.Date,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.CallerAddr,
+			&rec.TokenInAddr,
+			&rec.TokenOutAddr,
+			&rec.TokenInAid,
+			&rec.TokenOutAid,
+			&symbol_in,
+			&symbol_out,
+			&name_in,
+			&name_out,
+			&rec.AmountInF,
+			&rec.AmountOutF,
+			&rec.PoolAid,
+			&rec.PoolAddr,
+			&rec.OutcomeIdx,
+			&rec.MktAid,
+			&rec.MktAddr,
+			&mkt_type,
+			&null_desc,
+			&outcomes,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.CallerAid = user_aid
+		rec.SymbolIn = symbol_in.String
+		rec.SymbolOut = symbol_out.String
+		rec.NameIn = name_in.String
+		rec.NameOut = name_out.String
+		if null_desc.Valid {
+			rec.MktDescription = null_desc.String
+		}
+		rec.Outcome = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
+		records = append(records,rec)
+	}
+	return records,total_rows
+}

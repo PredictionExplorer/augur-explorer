@@ -1018,6 +1018,37 @@ type BalancerSwap struct {
 	AmountOut				string
 	Date					string
 }
+type UserBalancerSwap struct {
+	Id						int64
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	PoolAid					int64
+	CallerAid				int64
+	TokenInAid				int64
+	TokenOutAid				int64
+	MktAid					int64
+	AmountInF				float64
+	AmountOutF				float64
+	DecimalsIn				int
+	DecimalsOut				int
+	OutcomeIdx				int
+	PoolAddr				string
+	CallerAddr				string
+	TokenInAddr				string
+	TokenOutAddr			string
+	SymbolIn				string
+	SymbolOut				string
+	NameIn					string
+	NameOut					string
+	AmountIn				string
+	AmountOut				string
+	Date					string
+	MktAddr					string
+	MktDescription			string
+	Outcome					string
+}
 type SetSwapFee struct {
 	Id						int64
 	EvtId					int64
@@ -1210,6 +1241,29 @@ type UniswapSwap struct {
 	PairAddr				string
 	Symbol0					string
 	Symbol1					string
+}
+type UserUniswapSwap struct {
+	Id                      int64
+	PairAid                 int64
+	BlockNum                int64
+	RequesterAid            int64
+	CreatedTs               int64
+	MktAid                  int64
+	Amount0_In              float64
+	Amount1_In              float64
+	Amount0_Out             float64
+	Amount1_Out             float64
+	OutcomeIdx              int
+	CreatedDate             string
+	RequesterAddr           string
+	PairAddr                string
+	Symbol0                 string
+	Symbol1                 string
+	Name0                   string
+	Name1                   string
+	MktAddr                 string
+	MktDescription			string
+	Outcome                 string
 }
 type TextSearchResult struct {
 	ObjType					int
