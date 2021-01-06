@@ -256,3 +256,51 @@ func (ss *SQLStorage) Insert_new_resolver(rec *p.ENS_NewResolver) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Get_all_ens_labels_from_owners(output *map[string]struct{}) {
+
+	var query string
+	query = "SELECT DISTINCT label AS label FROM ens_new_owner ORDER BY label"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var label string
+		err=rows.Scan(&label)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		(*output)[label]=struct{}{}
+	}
+}
+func (ss *SQLStorage) Insert_word_for_ens_label(word string,label string) {
+
+	var query string
+	query = "INSERT INTO ens_label(word,label) VALUES($1,$2) ON CONFLICT DO NOTHING"
+	_,err := ss.db.Exec(query,word,label)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v with label %v for word %v ; q=%v",err,label,word,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Label_exists_in_ens_labels(label string) bool {
+
+	var query string
+	query = "SELECT label FROM ens_label WHERE label=$1"
+	res := ss.db.QueryRow(query,label)
+	var null_label sql.NullString
+	err := res.Scan(&null_label)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return false
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return true
+}
