@@ -32,6 +32,7 @@ var (
 	Info				*log.Logger
 	storage				*SQLStorage
 	market_order_id int64 = 0
+	status_file_name	string
 )
 func dump_all_files() {
 
@@ -82,7 +83,7 @@ func process_single_file(fname string) {
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 	buf := make([]byte, 0, 64*1024)
-	scanner.Buffer(buf,1024*1024)
+	scanner.Buffer(buf,32*1024*1024)
 	for scanner.Scan() {
 		line := scanner.Text()
 		parsed := strings.Split(line,":")
@@ -104,7 +105,7 @@ func process_single_file(fname string) {
 		os.Exit(1)
 	}
 }
-func process(exit_chan chan bool,status_file string) {
+func process(exit_chan chan bool) {
 
 //	dump_all_files()
 	fmt.Printf("Current file name: %v\n",statusf.CurrentFile)
@@ -128,29 +129,31 @@ func process(exit_chan chan bool,status_file string) {
 		fmt.Printf("Processing file %v\n",filename)
 		process_single_file(filename)
 		statusf.CurrentFile = filename
+		write_status(status_file_name)
 		current_idx++
 		select {
 			case exit_flag := <-exit_chan:
 			if exit_flag {
 				fmt.Println("Exiting by user request.")
-				fmt.Println("But before, exiting, lets save process status...")
-				encoded,err := rlp.EncodeToBytes(&statusf)
-				if err != nil {
-					fmt.Printf("Error at RLP encoding: %v\n",err)
-					os.Exit(1)
-				}
-				err = ioutil.WriteFile(status_file, encoded[:], 0644)
-				if err != nil {
-					fmt.Printf("Error : %v\n",err)
-					os.Exit(1)
-				}
-				fmt.Printf("Latest processed file was %v\n",statusf.CurrentFile)
 				fmt.Printf("Done. Exiting...\n")
 				os.Exit(0)
 			}
 			default:
 		}
 	}
+}
+func write_status(status_file string) {
+	encoded,err := rlp.EncodeToBytes(&statusf)
+	if err != nil {
+		fmt.Printf("Error at RLP encoding: %v\n",err)
+		os.Exit(1)
+	}
+	err = ioutil.WriteFile(status_file, encoded[:], 0644)
+	if err != nil {
+		fmt.Printf("Error : %v\n",err)
+		os.Exit(1)
+	}
+	fmt.Printf("Latest processed file was %v\n",statusf.CurrentFile)
 }
 func main() {
 
@@ -160,9 +163,9 @@ func main() {
 		os.Exit(1)
 	}
 	source_dir := os.Args[1]
-	status_file := os.Args[2]
+	status_file_name = os.Args[2]
 
-	_, err := os.Stat(status_file);
+	_, err := os.Stat(status_file_name);
 	if 	os.IsNotExist(err) {
 		fmt.Printf("Starting a brand new process. (for continuation of pevious process specify a non-empty status file)\n")
 		fmt.Printf("Reading directory structure from %v\n",source_dir)
@@ -180,8 +183,8 @@ func main() {
 		}
 		fmt.Printf("%v files were read\n",num_files)
 	} else {
-		fmt.Printf("Loading previous state variables from %v\n",status_file)
-		encoded, err := ioutil.ReadFile(status_file)
+		fmt.Printf("Loading previous state variables from %v\n",status_file_name)
+		encoded, err := ioutil.ReadFile(status_file_name)
 		if err != nil {
 			fmt.Printf("Error: %v\n",err)
 			os.Exit(1)
@@ -205,5 +208,5 @@ func main() {
 			" To interrupt abruptly send SIGKILL (9) to the kernel.\n")
 		exit_chan <- true
 	}()
-	process(exit_chan,status_file)
+	process(exit_chan)
 }

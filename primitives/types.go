@@ -1434,3 +1434,12 @@ type ENS_NewResolver struct {
 	Address					string
 	TxHash					string
 }
+type ENS_RegistryTransfer struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	TxHash					string
+	Owner					string
+	Node					string
+}

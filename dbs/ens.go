@@ -304,3 +304,41 @@ func (ss *SQLStorage) Label_exists_in_ens_labels(label string) bool {
 	}
 	return true
 }
+func (ss *SQLStorage) Insert_registry_transfer(rec *p.ENS_RegistryTransfer) {
+
+	aid := ss.Lookup_or_create_address(rec.Owner,rec.BlockNum,rec.TxId)
+	var query string
+	var err error
+	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
+		query = "INSERT INTO ens_reg_transf(tx_hash,time_stamp,block_num,node,aid) " +
+		"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5)"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.TimeStamp,
+			rec.BlockNum,
+			rec.Node,
+			aid,
+		)
+	} else {
+		/*
+		Pending
+		query = "INSERT INTO ens_reg_transf (" +
+					"tx_hash,evtlog_id,block_num,tx_id,time_stamp,owner_aid,label,node" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.EvtId,
+			rec.BlockNum,
+			rec.TxId,
+			rec.TimeStamp,
+			owner_aid,
+			rec.Label,
+			rec.Node,
+		)
+		*/
+	}
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}

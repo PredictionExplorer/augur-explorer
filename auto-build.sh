@@ -17,6 +17,9 @@ cd ../..
 cd cmd/uniswap
 go build ./
 cd ../..
+cd cmd/ensscan
+go build ./
+cd ../..
 echo Building 0x Mesh order listener
 cd dmesh
 go build ./

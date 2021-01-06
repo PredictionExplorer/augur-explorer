@@ -3,10 +3,13 @@ CREATE TABLE ens_node(
 	evtlog_id			BIGINT,
 	block_num			BIGINT,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT,
+	cur_owner_aid		BIGINT DEFAULT 0,	-- current owner
+	cur_owner_evt		BIGINT DEFAULT 0,	-- evtlog_id of the last update of the owner aid
 	time_stamp			TIMESTAMPTZ,
 	label				TEXT,
 	node				TEXT,
 	fqdn				TEXT,			-- fully qualified domain name hash
+	fqdn_words			TEXT DEFAULT '',
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(fqdn)
 );
@@ -70,6 +73,16 @@ CREATE TABLE ens_hash_inval(	-- HashInvalidated event
 	hash				TEXT NOT NULL,
 	name				TEXT NOT NULL,
 	value				DECIMAL(32,18)
+);
+CREATE TABLE ens_reg_transf ( -- Transfer event on the ENS Registry contract
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	time_stamp			TIMESTAMPTZ,
+	aid					BIGINT NOT NULL,
+	tx_hash				TEXT NOT NULL,
+	node				TEXT NOT NULL
 );
 CREATE TABLE ens_status (
 	block_num_limit		BIGINT DEFAULT 10543755, -- limit for initial load

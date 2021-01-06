@@ -55,7 +55,9 @@ const (
 	ENS_ADDRESS_CHANGED			= "65412581168e88a1e60c6459d7f44ae83ad0832e670826c05a4e2476b57af752"
 	NEW_RESOLVER				= "335721b01866dc23fbee8b6b2c7b1e14d6f05c28cd35a2c934239f94095602a0"
 	ENS_TRANSFER				= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+	ENS_REGISTRY_TRANSFER		= "d4735d920b0f87494915f556dd9b54c8f309026070caea5c737245152564d266"
 	HASH_INVALIDATED			= "1f9c649fe47e58bb60f4e52f0d90e4c47a526c9f90c5113df842c025970b66ad"
+	NEW_TTL						= "1d4f9bbfc9cab89d66e1a1562f2233ccbf1308cb4f63de2ead5787adddb8fa68."
 )
 var (
 	evt_newowner,_ = hex.DecodeString(ENS_NEWOWNER)
@@ -64,6 +66,7 @@ var (
 	evt_name_registered3,_ = hex.DecodeString(ENS_NAME_REGISTERED3)
 	evt_hash_invalidated,_ = hex.DecodeString(HASH_INVALIDATED)
 	evt_new_resolver,_ = hex.DecodeString(NEW_RESOLVER)
+	evt_registry_transfer,_ = hex.DecodeString(ENS_REGISTRY_TRANSFER)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -565,16 +568,85 @@ func range_initial_load_new_resolver(exit_chan chan bool,block_num_limit int64) 
 		}
 	}
 }
+func do_initiial_load_registry_transfer(block_num_from,block_num_to int64) {
+
+	filter := ethereum.FilterQuery{}
+	filter.FromBlock = big.NewInt(block_num_from)
+	filter.ToBlock = big.NewInt(block_num_to)
+	topics := make([]common.Hash,0,1)
+	signature := common.BytesToHash(evt_registry_transfer)
+	topics = append(topics,signature)
+	filter.Topics= append(filter.Topics,topics)
+	filter.Addresses = nil
+	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
+	Info.Printf("filter query = %+v\n",filter)
+	Info.Printf("Registry Transfer: block range: %v - %v\n",block_num_from,block_num_to)
+	logs,err := eclient.FilterLogs(context.Background(),filter)
+	if err!= nil {
+		Error.Printf("Error: %v\n",err)
+		Info.Printf("Error: %v\n",err)
+		os.Exit(1)
+	}
+	for _,log := range logs {
+		if log.Removed {
+			continue
+		}
+		var evt ENS_RegistryTransfer
+		evt.EvtId = 0
+		evt.BlockNum = int64(log.BlockNumber)
+		evt.TxId = 0
+		ctx := context.Background()
+		bnum := big.NewInt(int64(log.BlockNumber))
+		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+		if err != nil {
+			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		}
+
+		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+		evt.TimeStamp = int64(block_hdr.Time)
+		evt.Node = hex.EncodeToString(log.Topics[1][:])
+		addr := common.BytesToAddress(log.Data[12:])
+		evt.Owner = addr.String()
+		evt.TxHash = log.TxHash.String()
+		Info.Printf("(Registry) Transfer {\n")
+		Info.Printf("\tNode: %v\n",evt.Node)
+		Info.Printf("\tAddress: %v\n",evt.Owner)
+		Info.Printf("}")
+		storage.Insert_registry_transfer(&evt)
+	}
+}
+func range_initial_load_registry_transfer(exit_chan chan bool,block_num_limit int64) {
+
+	var block_num int64 = 0 // found empirically
+	for ; block_num <= block_num_limit ; {
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.\n")
+					os.Exit(0)
+				}
+			default:
+		}
+
+		next_block_num := block_num + 1000 - 1
+		if next_block_num > block_num_limit {
+			do_initiial_load_registry_transfer(block_num,block_num_limit)
+			break
+		} else {
+			do_initiial_load_registry_transfer(block_num,next_block_num)
+			block_num = next_block_num + 1
+		}
+	}
+}
 func initial_load(exit_chan chan bool,block_num_limit int64) {
 	//range_initial_load_name_registered1(exit_chan,block_num_limit)
 	//range_initial_load_new_owner(exit_chan,block_num_limit)
 	//range_initial_load_name_registered2(exit_chan,block_num_limit)
 	//range_initial_load_name_registered3(exit_chan,block_num_limit)
 	//range_initial_load_hash_invalidated(exit_chan,block_num_limit)
-	range_initial_load_new_resolver(exit_chan,block_num_limit)
-}
-func process_name_registered_events() {
-
+	//range_initial_load_new_resolver(exit_chan,block_num_limit)
+	range_initial_load_registry_transfer(exit_chan,block_num_limit)
 }
 func check_initial_load_completness() bool {
 
