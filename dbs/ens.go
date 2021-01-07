@@ -52,13 +52,16 @@ func (ss *SQLStorage) Insert_name_registered1(rec *p.ENS_Name1) {
 	var query string
 	var err error
 	owner_aid := ss.Lookup_or_create_address(rec.Owner,rec.BlockNum,rec.TxId)
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
 	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
-		query = "INSERT INTO ens_name(tx_hash,time_stamp,block_num,owner_aid,label,name,cost,expires) " +
-				"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7::DECIMAL/1e+18,TO_TIMESTAMP($8))"
+		query = "INSERT INTO ens_name(" +
+					"tx_hash,time_stamp,block_num,contract_aid,owner_aid,label,name,cost,expires" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8::DECIMAL/1e+18,TO_TIMESTAMP($9))"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
 			rec.TimeStamp,
 			rec.BlockNum,
+			contract_aid,
 			owner_aid,
 			rec.Label,
 			rec.Name,
@@ -146,13 +149,16 @@ func (ss *SQLStorage) Insert_new_owner(rec *p.ENS_NewOwner) {
 	var query string
 	var err error
 	owner_aid := ss.Lookup_or_create_address(rec.Owner,rec.BlockNum,rec.TxId)
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
 	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
-		query = "INSERT INTO ens_new_owner(tx_hash,time_stamp,block_num,owner_aid,label,node,fqdn) " +
-				"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
+		query = "INSERT INTO ens_new_owner(" +
+					"tx_hash,time_stamp,block_num,contract_aid,owner_aid,label,node,fqdn" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
 			rec.TimeStamp,
 			rec.BlockNum,
+			contract_aid,
 			owner_aid,
 			rec.Label,
 			rec.Node,
@@ -160,13 +166,14 @@ func (ss *SQLStorage) Insert_new_owner(rec *p.ENS_NewOwner) {
 		)
 	} else {
 		query = "INSERT INTO ens_new_owner(" +
-					"tx_hash,evtlog_id,block_num,tx_id,time_stamp,owner_aid,label,node,fqdn" +
-				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
+					"tx_hash,evtlog_id,block_num,tx_id,contract_aid,time_stamp,owner_aid,label,node,fqdn" +
+				") VALUES($1,$2,$3,$4,$5,$6,TO_TIMESTAMP($7),$8,$9,$10)"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
 			rec.EvtId,
 			rec.BlockNum,
 			rec.TxId,
+			contract_aid,
 			rec.TimeStamp,
 			owner_aid,
 			rec.Label,
@@ -181,15 +188,18 @@ func (ss *SQLStorage) Insert_new_owner(rec *p.ENS_NewOwner) {
 }
 func (ss *SQLStorage) Insert_hash_invalidated(rec *p.ENS_HashInvalidated) {
 
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
 	var query string
 	var err error
 	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
-		query = "INSERT INTO ens_hash_inval(tx_hash,time_stamp,block_num,hash,name,value,reg_date) " +
-		"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6::DECIMAL/1e+18,TO_TIMESTAMP($7))"
+		query = "INSERT INTO ens_hash_inval("+
+					"tx_hash,time_stamp,block_num,contract_aid,hash,name,value,reg_date" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7::DECIMAL/1e+18,TO_TIMESTAMP($8))"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
 			rec.TimeStamp,
 			rec.BlockNum,
+			contract_aid,
 			rec.Hash,
 			rec.Name,
 			rec.Value,
@@ -221,15 +231,17 @@ func (ss *SQLStorage) Insert_hash_invalidated(rec *p.ENS_HashInvalidated) {
 func (ss *SQLStorage) Insert_new_resolver(rec *p.ENS_NewResolver) {
 
 	aid := ss.Lookup_or_create_address(rec.Address,rec.BlockNum,rec.TxId)
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
 	var query string
 	var err error
 	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
-		query = "INSERT INTO ens_new_resolver(tx_hash,time_stamp,block_num,node,aid) " +
+		query = "INSERT INTO ens_new_resolver(tx_hash,time_stamp,block_num,contract_aid,node,aid) " +
 		"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5)"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
 			rec.TimeStamp,
 			rec.BlockNum,
+			contract_aid,
 			rec.Node,
 			aid,
 		)
@@ -307,17 +319,59 @@ func (ss *SQLStorage) Label_exists_in_ens_labels(label string) bool {
 func (ss *SQLStorage) Insert_registry_transfer(rec *p.ENS_RegistryTransfer) {
 
 	aid := ss.Lookup_or_create_address(rec.Owner,rec.BlockNum,rec.TxId)
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
 	var query string
 	var err error
 	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
-		query = "INSERT INTO ens_reg_transf(tx_hash,time_stamp,block_num,node,aid) " +
-		"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5)"
+		query = "INSERT INTO ens_reg_transf(tx_hash,time_stamp,block_num,contract_aid,node,aid) " +
+		"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6)"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
 			rec.TimeStamp,
 			rec.BlockNum,
+			contract_aid,
 			rec.Node,
 			aid,
+		)
+	} else {
+		/*
+		Pending
+		query = "INSERT INTO ens_reg_transf (" +
+					"tx_hash,evtlog_id,block_num,tx_id,time_stamp,owner_aid,label,node" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.EvtId,
+			rec.BlockNum,
+			rec.TxId,
+			rec.TimeStamp,
+			owner_aid,
+			rec.Label,
+			rec.Node,
+		)
+		*/
+	}
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_text_changed(rec *p.ENS_TextChanged) {
+
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
+	var query string
+	var err error
+	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
+		query = "INSERT INTO ens_text_chg(tx_hash,time_stamp,block_num,contract_aid,node,key,value) " +
+		"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.TimeStamp,
+			rec.BlockNum,
+			contract_aid,
+			rec.Node,
+			rec.Key,
+			rec.Value,
 		)
 	} else {
 		/*

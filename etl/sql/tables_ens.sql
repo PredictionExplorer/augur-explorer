@@ -3,6 +3,7 @@ CREATE TABLE ens_node(
 	evtlog_id			BIGINT,
 	block_num			BIGINT,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
 	cur_owner_aid		BIGINT DEFAULT 0,	-- current owner
 	cur_owner_evt		BIGINT DEFAULT 0,	-- evtlog_id of the last update of the owner aid
 	time_stamp			TIMESTAMPTZ,
@@ -18,9 +19,10 @@ CREATE TABLE ens_name( -- NameRegistered_v1 event
 	evtlog_id			BIGINT,
 	block_num			BIGINT,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	owner_aid			BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
 	expires				TIMESTAMPTZ,
-	owner_aid			BIGINT NOT NULL,
 	label				TEXT,
 	name				TEXT,
 	tx_hash				TEXT NOT NULL,
@@ -36,7 +38,7 @@ CREATE TABLE active_name( -- ENS names that are currently active (i.e. haven't e
 	label				TEXT,
 	fqdn				TEXT UNIQUE
 );
-CREATE TABLE ens_label ( -- label <=> real world name, mapping
+CREATE TABLE IF NOT EXISTS ens_label ( -- label <=> real world name, mapping
 	label				TEXT UNIQUE,
 	word				TEXT UNIQUE
 );
@@ -45,6 +47,7 @@ CREATE TABLE ens_new_owner(
 	evtlog_id			BIGINT,
 	block_num			BIGINT,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
 	owner_aid			BIGINT NOT NULL,
 	tx_hash				TEXT NOT NULL,
@@ -57,6 +60,7 @@ CREATE TABLE ens_new_resolver(
 	evtlog_id			BIGINT,
 	block_num			BIGINT,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
 	aid					BIGINT NOT NULL,
 	tx_hash				TEXT NOT NULL,
@@ -67,6 +71,7 @@ CREATE TABLE ens_hash_inval(	-- HashInvalidated event
 	evtlog_id			BIGINT,
 	block_num			BIGINT,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
 	reg_date			TIMESTAMPTZ,
 	tx_hash				TEXT NOT NULL,
@@ -79,10 +84,23 @@ CREATE TABLE ens_reg_transf ( -- Transfer event on the ENS Registry contract
 	evtlog_id			BIGINT,
 	block_num			BIGINT,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
 	aid					BIGINT NOT NULL,
 	tx_hash				TEXT NOT NULL,
 	node				TEXT NOT NULL
+);
+CREATE TABLE ens_text_chg (
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	tx_hash				TEXT NOT NULL,
+	node				TEXT NOT NULL,
+	key					TEXT NOT NULL,
+	value				TEXT NOT NULL
 );
 CREATE TABLE ens_status (
 	block_num_limit		BIGINT DEFAULT 10543755, -- limit for initial load

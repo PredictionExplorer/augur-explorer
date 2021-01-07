@@ -1370,6 +1370,7 @@ type ENS_Name1  struct {	// NameRegistered since 2019
 	TxId					int64
 	TimeStamp				int64
 	Expires					int64
+	Contract				string
 	Owner					string
 	Label					string
 	Name					string
@@ -1382,6 +1383,7 @@ type ENS_Name2  struct {	// NameRegistered old version
 	TxId					int64
 	TimeStamp				int64
 	Expires					int64
+	Contract				string
 	Owner					string
 	NameId					string
 	TxHash					string
@@ -1392,6 +1394,7 @@ type ENS_Name3  struct {	// NameRegistered old version
 	TxId					int64
 	TimeStamp				int64
 	CreatedDate				int64
+	Contract				string
 	Caller					string
 	Beneficiary				string
 	Label					string
@@ -1408,6 +1411,7 @@ type ENS_NewOwner struct {
 	TxId					int64
 	TimeStamp				int64
 	Expires					int64
+	Contract				string
 	Owner					string
 	Label					string
 	Node					string
@@ -1420,6 +1424,7 @@ type ENS_HashInvalidated struct {
 	TxId					int64
 	TimeStamp				int64
 	RegistrationDate		int64
+	Contract				string
 	Hash					string
 	Name					string
 	TxHash					string
@@ -1430,6 +1435,7 @@ type ENS_NewResolver struct {
 	BlockNum				int64
 	TxId					int64
 	TimeStamp				int64
+	Contract				string
 	Node					string
 	Address					string
 	TxHash					string
@@ -1439,7 +1445,19 @@ type ENS_RegistryTransfer struct {
 	BlockNum				int64
 	TxId					int64
 	TimeStamp				int64
+	Contract				string
 	TxHash					string
 	Owner					string
 	Node					string
+}
+type ENS_TextChanged struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Contract				string
+	TxHash					string
+	Node					string
+	Key						string
+	Value					string
 }

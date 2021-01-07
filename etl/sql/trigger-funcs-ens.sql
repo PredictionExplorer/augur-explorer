@@ -42,8 +42,8 @@ DECLARE
 	v_cnt numeric;
 BEGIN
 
-	INSERT INTO ens_node(evtlog_id,block_num,tx_id,time_stamp,label,node,fqdn)
-		VALUES(NEW.evtlog_id,NEW.block_num,NEW.tx_id,NEW.time_stamp,NEW.label,NEW.node,NEW.fqdn)
+	INSERT INTO ens_node(evtlog_id,block_num,tx_id,contract_aid,time_stamp,label,node,fqdn)
+		VALUES(NEW.evtlog_id,NEW.block_num,NEW.tx_id,NEW.contract_aid,NEW.time_stamp,NEW.label,NEW.node,NEW.fqdn)
 		ON CONFLICT DO NOTHING;
 	RETURN NEW;
 END;

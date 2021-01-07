@@ -10,6 +10,7 @@ import (
 	"log"
 	"strings"
 	"encoding/hex"
+	"bytes"
 
 	"golang.org/x/crypto/sha3"
 	ethereum "github.com/ethereum/go-ethereum"
@@ -58,6 +59,10 @@ const (
 	ENS_REGISTRY_TRANSFER		= "d4735d920b0f87494915f556dd9b54c8f309026070caea5c737245152564d266"
 	HASH_INVALIDATED			= "1f9c649fe47e58bb60f4e52f0d90e4c47a526c9f90c5113df842c025970b66ad"
 	NEW_TTL						= "1d4f9bbfc9cab89d66e1a1562f2233ccbf1308cb4f63de2ead5787adddb8fa68."
+	ENS_TEXT_CHANGED			= "d8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550"
+
+	ENS_V1_REGISTRY_ADDR		= "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"	// 10 Mar 2017
+	ENS_V2_REGISTRY_ADDR		= "0x314159265dD8dbb310642f98f50C066173C1259b"	// 30 Jan 2020
 )
 var (
 	evt_newowner,_ = hex.DecodeString(ENS_NEWOWNER)
@@ -67,6 +72,7 @@ var (
 	evt_hash_invalidated,_ = hex.DecodeString(HASH_INVALIDATED)
 	evt_new_resolver,_ = hex.DecodeString(NEW_RESOLVER)
 	evt_registry_transfer,_ = hex.DecodeString(ENS_REGISTRY_TRANSFER)
+	evt_text_changed,_		= hex.DecodeString(ENS_TEXT_CHANGED)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -78,6 +84,8 @@ var (
 	market_order_id int64 = 0
 	ens_abi abi.ABI
 
+	ens1_addr			= common.HexToAddress(ENS_V1_REGISTRY_ADDR)
+	ens2_addr			= common.HexToAddress(ENS_V2_REGISTRY_ADDR)
 )
 func do_initiial_load_name_registered1(block_num_from,block_num_to int64) {
 
@@ -135,6 +143,7 @@ func do_initiial_load_name_registered1(block_num_from,block_num_to int64) {
 		evt.Name = eth_event.Name
 		evt.Cost = eth_event.Cost.String()
 		evt.Expires = eth_event.Expires.Int64()
+		evt.Contract = log.Address.String()
 //		Info.Printf("label = %v, name=%v\n",hex.EncodeToString(eth_event.Label[:]),eth_event.Name)
 //		Info.Printf("log data hex=%v\n",hex.EncodeToString(log.Data[:]))
 //		Info.Printf("NameRegistered1: label=%v, Owner=%v, cost=%v, block %v tx %v\n",evt.Label,evt.Owner,log.BlockNumber,eth_event.Cost.String(),log.TxHash.String())
@@ -166,6 +175,12 @@ func do_initiial_load_new_owner(block_num_from,block_num_to int64) {
 		if log.Removed {
 			continue
 		}
+		if	ens1,ens2 :=
+				bytes.Equal(ens1_addr.Bytes(),log.Address.Bytes()),
+				bytes.Equal(ens2_addr.Bytes(),log.Address.Bytes());
+			!(ens1 || ens2) {
+				continue
+		}
 ///		Info.Printf("%v: log = %+v\n",i,log)
 		var evt ENS_NewOwner
 		evt.EvtId = 0
@@ -194,10 +209,9 @@ func do_initiial_load_new_owner(block_num_from,block_num_to int64) {
 		sha.Sum(new_node_hash[:0])
 		evt.FQDN = hex.EncodeToString(new_node_hash[:])
 		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
-		Info.Printf("NewOwner for %v (node: %v, label: %v)\n",evt.FQDN,evt.Node,evt.Label)
+		Info.Printf("NewOwner %v for %v (node: %v, label: %v)\n",evt.Owner,evt.FQDN,evt.Node,evt.Label)
 		evt.TxHash = log.TxHash.String()
-		owner_addr := common.BytesToAddress(log.Topics[2][12:])
-		evt.Owner = owner_addr.String()
+		evt.Contract = log.Address.String()
 		storage.Insert_new_owner(&evt)
 	}
 }
@@ -247,6 +261,7 @@ func do_initiial_load_name_registered2(block_num_from,block_num_to int64) {
 		expires := big.NewInt(0)
 		expires.SetBytes(log.Data[:])
 		evt.Expires = expires.Int64()
+		evt.Contract = log.Address.String()
 		Info.Printf("ENS_Name2 {\n")
 		Info.Printf("\tOwner: %v\n",evt.Owner)
 		Info.Printf("\tNameId: %v\n",evt.NameId)
@@ -379,6 +394,7 @@ func do_initiial_load_name_registered3(block_num_from,block_num_to int64) {
 		evt.Label = hex.EncodeToString(eth_event.Label[:])
 		evt.Subdomain = eth_event.Subdomain
 		evt.CreatedDate = eth_event.CreatedDate.Int64()
+		evt.Contract = log.Address.String()
 
 		Info.Printf("ENS_Name3 {\n")
 		Info.Printf("\tCaller: %v\n",eth_event.Caller.String())
@@ -464,6 +480,7 @@ func do_initiial_load_hash_invalidated(block_num_from,block_num_to int64) {
 		evt.Name = eth_event.Name
 		evt.RegistrationDate=eth_event.RegistrationDate.Int64()
 		evt.Value = eth_event.Value.String()
+		evt.Contract = log.Address.String()
 
 		Info.Printf("HashInvalidated {\n")
 		Info.Printf("\tHash: %v\n",hex.EncodeToString(eth_event.Hash[:]))
@@ -538,6 +555,7 @@ func do_initiial_load_new_resolver(block_num_from,block_num_to int64) {
 		addr := common.BytesToAddress(log.Data[12:])
 		evt.Address = addr.String()
 		evt.TxHash = log.TxHash.String()
+		evt.Contract = log.Address.String()
 		Info.Printf("NewResolver {\n")
 		Info.Printf("\tNode: %v\n",evt.Node)
 		Info.Printf("\tAddress: %v\n",evt.Address)
@@ -609,6 +627,7 @@ func do_initiial_load_registry_transfer(block_num_from,block_num_to int64) {
 		addr := common.BytesToAddress(log.Data[12:])
 		evt.Owner = addr.String()
 		evt.TxHash = log.TxHash.String()
+		evt.Contract = log.Address.String()
 		Info.Printf("(Registry) Transfer {\n")
 		Info.Printf("\tNode: %v\n",evt.Node)
 		Info.Printf("\tAddress: %v\n",evt.Owner)
@@ -639,6 +658,78 @@ func range_initial_load_registry_transfer(exit_chan chan bool,block_num_limit in
 		}
 	}
 }
+func do_initiial_load_text_changed(block_num_from,block_num_to int64) {
+
+	filter := ethereum.FilterQuery{}
+	filter.FromBlock = big.NewInt(block_num_from)
+	filter.ToBlock = big.NewInt(block_num_to)
+	topics := make([]common.Hash,0,1)
+	signature := common.BytesToHash(evt_text_changed)
+	topics = append(topics,signature)
+	filter.Topics= append(filter.Topics,topics)
+	filter.Addresses = nil
+	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
+	Info.Printf("filter query = %+v\n",filter)
+	Info.Printf("TextChanged: block range: %v - %v\n",block_num_from,block_num_to)
+	logs,err := eclient.FilterLogs(context.Background(),filter)
+	if err!= nil {
+		Error.Printf("Error: %v\n",err)
+		Info.Printf("Error: %v\n",err)
+		os.Exit(1)
+	}
+	for _,log := range logs {
+		if log.Removed {
+			continue
+		}
+		var evt ENS_TextChanged
+		evt.EvtId = 0
+		evt.BlockNum = int64(log.BlockNumber)
+		evt.TxId = 0
+		ctx := context.Background()
+		bnum := big.NewInt(int64(log.BlockNumber))
+		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+		if err != nil {
+			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		}
+
+		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+		evt.TimeStamp = int64(block_hdr.Time)
+		evt.Node = hex.EncodeToString(log.Topics[1][:])
+		evt.Key = string(log.Data[:])
+		evt.TxHash = log.TxHash.String()
+		evt.Contract = log.Address.String()
+
+		Info.Printf("TextChanged {\n")
+		Info.Printf("\tNode: %v\n",evt.Node)
+		Info.Printf("\tKEy: %v\n",evt.Key)
+		Info.Printf("}")
+		storage.Insert_text_changed(&evt)
+	}
+}
+func range_initial_load_text_changed(exit_chan chan bool,block_num_limit int64) {
+
+	var block_num int64 = 0 // found empirically
+	for ; block_num <= block_num_limit ; {
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.\n")
+					os.Exit(0)
+				}
+			default:
+		}
+
+		next_block_num := block_num + 1000 - 1
+		if next_block_num > block_num_limit {
+			do_initiial_load_text_changed(block_num,block_num_limit)
+			break
+		} else {
+			do_initiial_load_text_changed(block_num,next_block_num)
+			block_num = next_block_num + 1
+		}
+	}
+}
 func initial_load(exit_chan chan bool,block_num_limit int64) {
 	//range_initial_load_name_registered1(exit_chan,block_num_limit)
 	//range_initial_load_new_owner(exit_chan,block_num_limit)
@@ -646,7 +737,8 @@ func initial_load(exit_chan chan bool,block_num_limit int64) {
 	//range_initial_load_name_registered3(exit_chan,block_num_limit)
 	//range_initial_load_hash_invalidated(exit_chan,block_num_limit)
 	//range_initial_load_new_resolver(exit_chan,block_num_limit)
-	range_initial_load_registry_transfer(exit_chan,block_num_limit)
+	//range_initial_load_registry_transfer(exit_chan,block_num_limit)
+	range_initial_load_text_changed(exit_chan,block_num_limit)
 }
 func check_initial_load_completness() bool {
 
