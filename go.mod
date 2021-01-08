@@ -24,6 +24,7 @@ require (
 	github.com/multiformats/go-multiaddr-dns v0.2.0 // indirect
 	github.com/plaid/go-envvar v1.1.0
 	github.com/sirupsen/logrus v1.6.0 // indirect
+	github.com/wealdtech/go-ens v1.0.0 // indirect
 	github.com/wealdtech/go-ens/v3 v3.4.4-0.20200816153207-2be8e3e5fa10
 	//	github.com/wealdtech/go-ens 2be8e3e5fa10e897e9957584302fae93d43d6cc1
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
