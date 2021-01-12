@@ -316,6 +316,27 @@ func (ss *SQLStorage) Label_exists_in_ens_labels(label string) bool {
 	}
 	return true
 }
+func (ss *SQLStorage) Reverse_lookup_registration_exists(address string,node string) bool {
+	// Used by the process that scans reverse names, to make sure the label we are about
+	//	to insert in the 'ens_labels' is the correct one
+
+//	aid := ss.Lookup_address_id(address)
+	var query string
+	query = "SELECT id FROM ens_new_owner WHERE fqdn=$1"
+	res := ss.db.QueryRow(query,node)
+	var null_id sql.NullInt64
+	err := res.Scan(&null_id)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return false
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return true
+}
+
 func (ss *SQLStorage) Insert_registry_transfer(rec *p.ENS_RegistryTransfer) {
 
 	aid := ss.Lookup_or_create_address(rec.Owner,rec.BlockNum,rec.TxId)

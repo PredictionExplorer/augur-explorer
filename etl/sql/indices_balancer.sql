@@ -22,3 +22,4 @@ CREATE INDEX bswap_token_out_idx    ON	bswap			(token_out_aid);-- drop this inde
 CREATE INDEX bswap_txid_idx			ON	bswap			(tx_id);
 CREATE INDEX bswap_token1_idx		ON	bswap			(token1_aid);
 CREATE INDEX bswap_token2_idx		ON	bswap			(token2_aid);
+CREATE INDEX bswap_caller_idx		ON	bswap			(caller_aid);
