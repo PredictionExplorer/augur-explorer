@@ -1461,3 +1461,14 @@ type ENS_TextChanged struct {
 	Key						string
 	Value					string
 }
+type ENS_Rec struct {
+	Word					string
+	Label					string
+	FQDN					string	// aka 'node'
+}
+type UserENS struct {
+	TsNameAcquired			int64
+	DateNameAcquired		string
+	ENS_Name				string
+	NodeHash				string
+}

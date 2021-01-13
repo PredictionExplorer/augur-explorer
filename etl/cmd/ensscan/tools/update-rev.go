@@ -122,6 +122,7 @@ func main() {
 		fmt.Printf("\tnode exists in DB: %v\n",exists)
 		if !exists {
 			fmt.Printf("\tINSERT: word %v , label %v can be inserted\n",word,label_str)
+			//storage.Insert_word_for_ens_label(word,label_str)
 		}
 	}
 }

@@ -147,6 +147,7 @@ func main() {
 	r.GET("/black/user_wr_transfers/:user/:wrapper",user_wrapped_token_transfers)
 	r.GET("/black/user_uswaps/:user",user_uniswap_swaps)
 	r.GET("/black/user_bswaps/:user",user_balancer_swaps)
+	r.GET("/black/user_ens_names/:user",user_ens_names)
 	r.GET("/black/statement/:addr",account_statement)
 	r.GET("/black/oohist/:addr",open_order_history)
 	r.GET("/black/pehist/:market/:outcome", price_estimate_history)
@@ -188,6 +189,7 @@ func main() {
 	r.GET("/api/user_oorders/:user",  a1_user_open_orders)
 	r.GET("/api/user_uniswaps/:user/:offset/:limit",a1_user_uniswap_swaps)
 	r.GET("/api/user_balswaps/:user/:offset/:limit",a1_user_balancer_swaps)
+	r.GET("/api/user_ens_names/:user/:offset/:limit",a1_user_ens_names)
 	r.GET("/api/mkt_oo/:market/:outcome", a1_market_open_orders)
 	r.GET("/api/top_users",  a1_top_users)
 	r.GET("/api/stats_main",  a1_stats_main)
@@ -224,6 +226,7 @@ func main() {
 	r.GET("/api/wshtok_balances/:user",a1_wrapped_shtoken_balances)
 	r.GET("/api/rlookup/:address",a1_ens_reverse_lookup)
 	r.GET("/api/whats_new_augur/:code",a1_whats_new_augur)
+
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

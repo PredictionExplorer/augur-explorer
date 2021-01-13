@@ -533,6 +533,37 @@
 	{{- end}}
 </table>
 {{ end }}
+{{ if .ENS_Names}}
+</div>
+This User has owned {{.Total_ENS_Names }} ENS names in the past, listing first 10:
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">ENS Name</th>
+		<th class="market_reports">Date of acquisition</th>
+	</tr>
+	{{- range $i, $change := .ENS_Names}}
+		<tr class="market_reports">
+			<td class="market_reports_field">
+				<a href="/black/ens_name_info/{{.NodeHash}}">
+					{{.ENS_Name}}
+				</a>
+			</td>
+			<td class="market_reports_field">{{.DateNameAcquired}}</td>
+		</tr>
+	{{- end}}
+</table>
+<nav >
+	<ul style="margin-left: 5em;">
+	<li>
+		<a class="btn_link" href="/black/user_ens_names/{{.UserInfo.Addr}}">Show All</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</div>
+<br/><br/>
+<br/><br/>
+{{ end }}
 <script>
 // font loading begins
 	Highcharts.createElement('link', {

@@ -151,6 +151,7 @@ BEGIN
 						UPDATE ens_node
 							SET fqdn_words = CONCAT(v_word,'.',v_word_parent)
 							WHERE id=v_rec.id;
+						v_updated_count := v_updated_count + 1;
 					END IF;
 				END IF;
 			END IF;

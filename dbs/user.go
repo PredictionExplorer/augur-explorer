@@ -1400,3 +1400,65 @@ func (ss *SQLStorage) Get_user_balancer_swaps(user_aid int64,offset int,limit in
 	}
 	return records,total_rows
 }
+func (ss *SQLStorage) Get_user_ens_names(user_aid int64,offset int,limit int) ([]p.UserENS,int64) {
+
+	records := make([]p.UserENS,0,4)
+	var query string
+	query = "WITH last_owner AS (" +
+			"SELECT DISTINCT fqdn " +
+					"FROM ens_new_owner " +
+					"WHERE owner_aid=$1 " +
+			") " +
+			"SELECT " +
+				"count(n.fqdn)"+
+			"FROM last_owner AS last " +
+				"JOIN ens_node AS n ON last.fqdn=n.fqdn " +
+			"WHERE " +
+				"LENGTH(n.fqdn_words) > 0"
+	var total_rows int64 = 0
+	var null_recs sql.NullInt64
+	err := ss.db.QueryRow(query,user_aid).Scan(&null_recs)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+	total_rows = null_recs.Int64
+
+	query = "WITH last_owner AS (" +
+			"SELECT DISTINCT fqdn time_stamp AS dt,EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ts" +
+					"FROM ens_new_owner " +
+					"WHERE owner_aid=$1 " +
+					"ORDER BY time_stamp DESC " +
+			") " +
+			"SELECT " +
+				"n.fqdn,"+
+				"last.dt," +
+				"last.ts," +
+				"n.fqdn_words " +
+			"FROM last_owner AS last " +
+				"JOIN ens_node AS n ON last.fqdn=n.fqdn " +
+			"WHERE " +
+				"LENGTH(n.fqdn_words) > 0" +
+			"ORDER BY ts DESC OFFSET $2 LIMIT $3"
+
+	ss.Info.Printf("getens query: %v\n",query)
+
+	rows,err := ss.db.Query(query,user_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UserENS
+		err := rows.Scan(&rec.NodeHash,&rec.DateNameAcquired,&rec.TsNameAcquired,&rec.ENS_Name)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records,total_rows
+}

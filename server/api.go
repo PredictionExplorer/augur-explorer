@@ -1529,3 +1529,31 @@ func a1_user_balancer_swaps(c *gin.Context) {
 			"TotalRows" : total_rows,
 	})
 }
+func a1_user_ens_names(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,user_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	user_info,err := augur_srv.storage.Get_user_info(user_aid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": fmt.Sprintf("Error getting UserInfo: %v",err.Error()),
+		})
+	}
+	ens_names,total_rows := augur_srv.storage.Get_user_ens_names(user_aid,offset,limit)
+	c.JSON(http.StatusOK, gin.H{
+			"UserInfo" : user_info,
+			"ENS_Names" : ens_names,
+			"TotalRows" : total_rows,
+	})
+}

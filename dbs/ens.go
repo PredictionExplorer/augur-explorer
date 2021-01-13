@@ -446,3 +446,32 @@ func (ss *SQLStorage) Get_addrs_with_reverse_name() []string {
 	}
 	return records
 }
+func (ss *SQLStorage) Select_TLDs() []string {
+
+	var query string
+	query = "SELECT DISTINCT a.addr AS addr " +
+				"FROM ens_new_owner AS o " +
+				"JOIN address AS a ON o.owner_aid = a.address_id "
+		//		"WHERE node='91d1777781884d03a6757a803996e38de2a42967fb37eeaca72729271025a9e2'"
+
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB Error: %v",err))
+			os.Exit(1)
+		}
+	}
+	records := make([]string,0,256)
+	defer rows.Close()
+	for rows.Next() {
+		var addr string
+		err=rows.Scan(&addr)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,addr)
+	}
+	return records
+}

@@ -21,5 +21,5 @@ func main() {
 		fmt.Printf("Error: %v\n",err)
 		os.Exit(1)
 	}
-	fmt.Printf("Label hash: %v\n",hex.EncodeToString(hash[:]))
+	fmt.Printf("Name hash: %v\n",hex.EncodeToString(hash[:]))
 }

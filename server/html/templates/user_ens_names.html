@@ -1,0 +1,32 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>ENS names for User {{.UserInfo.Addr}}</title>
+</head>
+<body>
+	<h3 class="page_title">ENS Name registrations of {{.UserInfo.Addr}}</h3>
+<table class="market_detail">
+<tr>
+	<td>User Address:</td>
+	<td>{{.UserInfo.Addr}} (aid={{.UserInfo.Aid}})</td>
+</tr>
+</table>
+<h3>ENS names registered by this User:</h3>
+<br/><br/>
+<div class="market_info">
+<table class="market_trades">
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Date</th>
+		<th class="mkt_trade_hdr" style="text-align: center">ENS Name</th>
+	</tr>
+		{{- range $i, $swap:= .ENS_Names}}
+			<tr class="market_trades">
+				<td class="mkt_trade_field">{{.DateNameAcquired}}</td>
+				<td class="mkt_trade_field">
+					<a class="addr" href="/black/ens_name/{{.NodeHash}}">{{.ENS_Name}}</a>
+				</td>
+			</tr>
+		{{- end}}
+</table>
+</div>
+</body>
