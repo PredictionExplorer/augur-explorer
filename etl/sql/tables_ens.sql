@@ -102,8 +102,15 @@ CREATE TABLE ens_text_chg (
 	key					TEXT NOT NULL,
 	value				TEXT NOT NULL
 );
+CREATE TABLE ens_user_text (
+	node				TEXT NOT NULL,
+	key					TEXT NOT NULL,
+	value				TEXT NOT NULL,
+	PRIMARY KEY(node,key)
+);
 CREATE TABLE ens_status (
-	block_num_limit		BIGINT DEFAULT 10543755, -- limit for initial load
+	--block_num_limit		BIGINT DEFAULT 10543755, -- limit for initial load
+	block_num_limit		BIGINT DEFAULT 11650046, -- limit for initial load
 	last_evt_id			BIGINT DEFAULT 0	-- event id (latest processed)
 );
 CREATE TABLE alexa_top1m(	-- Alexa's top 1M domain names, about 700k records

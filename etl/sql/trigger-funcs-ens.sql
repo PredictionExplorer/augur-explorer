@@ -196,3 +196,32 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_ens_text_chg_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt numeric;
+BEGIN
+
+	UPDATE ens_user_text SET value = NEW.value
+		WHERE node = NEW.node AND key = NEW.key;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO ens_user_text(node,key,value)
+			VALUES(NEW.node,NEW.key,NEW.value);
+	END IF;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_ens_text_chg_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	-- we do not resotre keys on delete, too complicated for such a very rare event
+	--	i.e. User sends a transaction , then fork occurs on the chain which causes block
+	--	deletion, then the User	cancels the transaction by sending another (empty) transaction
+	--	with higher Gas, and this must happen before his transaction is included in the block
+	--	by the miner. This table doesn't have event_ids or block numbers, so it can be updated
+	--	on any block
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;

@@ -236,7 +236,7 @@ func (ss *SQLStorage) Insert_new_resolver(rec *p.ENS_NewResolver) {
 	var err error
 	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
 		query = "INSERT INTO ens_new_resolver(tx_hash,time_stamp,block_num,contract_aid,node,aid) " +
-		"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5)"
+		"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6)"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
 			rec.TimeStamp,

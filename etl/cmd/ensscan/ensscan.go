@@ -8,9 +8,9 @@ import (
 	"math/big"
 	"fmt"
 	"log"
+	"bytes"
 	"strings"
 	"encoding/hex"
-	"bytes"
 
 	"golang.org/x/crypto/sha3"
 	ethereum "github.com/ethereum/go-ethereum"
@@ -18,6 +18,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/wealdtech/go-ens/v3"
+	"github.com/wealdtech/go-ens/v3/contracts/resolver"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
@@ -701,13 +703,72 @@ func do_initiial_load_text_changed(block_num_from,block_num_to int64) {
 		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
 		evt.TimeStamp = int64(block_hdr.Time)
 		evt.Node = hex.EncodeToString(log.Topics[1][:])
-		evt.Key = string(log.Data[:])
+		if len(log.Data) < 64 {
+			Error.Printf("Got event with log.Data of length lower than 64 bytes: %v bytes, skipping\n",len(log.Data))
+			Info.Printf("Got event with log.Data of length lower than 64 bytes: %v bytes, skipping\n",len(log.Data))
+			continue
+		}
+		key_data := log.Data[64:]
+		length := bytes.Index(key_data,[]byte{0})
+		if length == -1 {
+			length = 0
+		}
+		evt.Key = string(key_data[:length])
 		evt.TxHash = log.TxHash.String()
 		evt.Contract = log.Address.String()
 
+		// the event doesn't provide the value, so we have to make a call to the contract
+		var node [32]byte
+		copy(node[:],log.Topics[1][:])
+		registry,err := ens.NewRegistry(eclient)
+		if err != nil {
+			err_str := fmt.Sprintf(
+				"Can't instantiate Registry contract for node %v (tx %v): %v",
+				evt.Node,evt.TxHash,err,
+			)
+			Info.Print(err_str)
+			Error.Print(err_str)
+			os.Exit(1)
+		}
+		resolver_addr,err := registry.Contract.Resolver(nil,node)
+		if err != nil {
+			err_str := fmt.Sprintf(
+				"Can't fetch Resolver contract addr for node %v (tx %v): %v",
+				evt.Node,evt.TxHash,err,
+			)
+			Info.Print(err_str)
+			Error.Print(err_str)
+			os.Exit(1)
+		}
+		resolver_ctrct,err := resolver.NewContract(resolver_addr, eclient)
+		if err != nil {
+			err_str := fmt.Sprintf(
+				"Can't instantiate Resolver contract for node %v (tx %v, ctrct addr %v): %v",
+				evt.Node,evt.TxHash,resolver_addr.String(),err,
+			)
+			Info.Print(err_str)
+			Error.Print(err_str)
+			os.Exit(1)
+		}
+		text,err := resolver_ctrct.Text(nil,node,evt.Key)
+		if err != nil {
+			err_str := fmt.Sprintf(
+				"Can't call Text() method for node %v (tx %v ctrct addrt %v): %v",
+				evt.Node,evt.TxHash,resolver_addr.String(),err,
+			)
+			Info.Print(err_str)
+			Error.Print(err_str)
+			continue
+		}
+		textbytes := []byte(evt.Value)
+		Info.Printf("key bytes = %v\n",hex.EncodeToString([]byte(evt.Key)))
+		Info.Printf("text bytes = %v\n",hex.EncodeToString(textbytes))
+		evt.Value = hex.EncodeToString([]byte(strings.ReplaceAll(text,"\x00", "")))
+		Info.Printf("text bytes after replace= %v\n",hex.EncodeToString(textbytes))
 		Info.Printf("TextChanged {\n")
 		Info.Printf("\tNode: %v\n",evt.Node)
-		Info.Printf("\tKEy: %v\n",evt.Key)
+		Info.Printf("\tKey: %v\n",evt.Key)
+		Info.Printf("\tValue: %v\n",evt.Value)
 		Info.Printf("}")
 		storage.Insert_text_changed(&evt)
 	}
