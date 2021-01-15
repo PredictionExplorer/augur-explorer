@@ -18,12 +18,22 @@
 	<tr class="market_trades">
 		<th class="mkt_trade_hdr" style="text-align: center">Date</th>
 		<th class="mkt_trade_hdr" style="text-align: center">ENS Name</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Number of Text Key-Value Pairs</th>
 	</tr>
 		{{- range $i, $swap:= .ENS_Names}}
 			<tr class="market_trades">
 				<td class="mkt_trade_field">{{.DateNameAcquired}}</td>
 				<td class="mkt_trade_field">
 					<a class="addr" href="/black/ens_name/{{.NodeHash}}">{{.ENS_Name}}</a>
+				</td>
+				<td class="mkt_trade_field" style="text-align: center;">
+					{{ if ne .NumTextKeyValuePairs 0 }}
+					<a href="/black/node_text_data/{{.NodeHash}}">
+					{{ end }}
+						{{.NumTextKeyValuePairs}}
+					{{ if ne .NumTextKeyValuePairs 0 }}
+					</a>
+					{{ end }}
 				</td>
 			</tr>
 		{{- end}}

@@ -540,6 +540,7 @@ This User has owned {{.Total_ENS_Names }} ENS names in the past, listing first 1
 	<tr class="market_reports">
 		<th class="market_reports">ENS Name</th>
 		<th class="market_reports">Date of acquisition</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Number of Text Key-Value Pairs</th>
 	</tr>
 	{{- range $i, $change := .ENS_Names}}
 		<tr class="market_reports">
@@ -549,6 +550,15 @@ This User has owned {{.Total_ENS_Names }} ENS names in the past, listing first 1
 				</a>
 			</td>
 			<td class="market_reports_field">{{.DateNameAcquired}}</td>
+			<td class="mkt_trade_field" style="text-align: center;">
+				{{ if ne .NumTextKeyValuePairs 0 }}
+				<a href="/black/node_text_data/{{.NodeHash}}">
+				{{ end }}
+					{{.NumTextKeyValuePairs}}
+				{{ if ne .NumTextKeyValuePairs 0 }}
+				</a>
+				{{ end }}
+			</td>
 		</tr>
 	{{- end}}
 </table>

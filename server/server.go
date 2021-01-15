@@ -2582,3 +2582,13 @@ func user_ens_names(c *gin.Context) {
 		"TotalRows" : total_rows,
 	})
 }
+func show_node_text_data(c *gin.Context) {
+
+	node := c.Param("node")
+	fqdn,key_value_pairs:= augur_srv.storage.Get_node_text_key_values(node)
+	c.HTML(http.StatusOK, "user_text_kv_pairs.html", gin.H{
+		"Node" : node,
+		"FullName" : fqdn,
+		"KeyValuePairs" : key_value_pairs,
+	})
+}

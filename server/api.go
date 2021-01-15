@@ -1557,3 +1557,16 @@ func a1_user_ens_names(c *gin.Context) {
 			"TotalRows" : total_rows,
 	})
 }
+func a1_node_text_key_value_pairs(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	node := c.Param("node")
+	fqdn,key_value_pairs:= augur_srv.storage.Get_node_text_key_values(node)
+
+	c.JSON(http.StatusOK, gin.H{
+		"Node" : node,
+		"FullName" : fqdn,
+		"KeyValuePairs" : key_value_pairs,
+	})
+}

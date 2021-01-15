@@ -1,0 +1,33 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Text for ENS account, Node {{.FullName}}</title>
+</head>
+<body>
+	<h3 class="page_title">ENS Text information related to <b>Name</b> {{.FullName}}</h3>
+<table class="market_detail">
+<tr>
+	<td>FullName:</td>
+	<td>{{.FullName}}</td>
+</tr>
+<tr>
+	<td>NameHash (Node):</td>
+	<td>{{.Node}}</td>
+</tr>
+</table>
+<br/><br/>
+<div class="market_info">
+<table class="market_trades">
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Key</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Value</th>
+	</tr>
+		{{- range $i, $swap:= .KeyValuePairs}}
+			<tr class="market_trades">
+				<td class="mkt_trade_field">{{.Key}}</td>
+				<td class="mkt_trade_field">{{.Value}}</td>
+			</tr>
+		{{- end}}
+</table>
+</div>
+</body>

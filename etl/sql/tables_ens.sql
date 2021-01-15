@@ -102,11 +102,17 @@ CREATE TABLE ens_text_chg (
 	key					TEXT NOT NULL,
 	value				TEXT NOT NULL
 );
-CREATE TABLE ens_user_text (
+CREATE TABLE ens_text_key (
 	node				TEXT NOT NULL,
 	key					TEXT NOT NULL,
 	value				TEXT NOT NULL,
 	PRIMARY KEY(node,key)
+);
+CREATE TABLE ens_text (	-- all keys althogether
+	node				TEXT NOT NULL,
+	num_keys			INT DEFAULT 0,
+	all_keys			JSONB NOT NULL,
+	PRIMARY KEY(node)
 );
 CREATE TABLE ens_status (
 	--block_num_limit		BIGINT DEFAULT 10543755, -- limit for initial load

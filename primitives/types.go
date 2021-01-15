@@ -1468,7 +1468,12 @@ type ENS_Rec struct {
 }
 type UserENS struct {
 	TsNameAcquired			int64
+	NumTextKeyValuePairs	int64
 	DateNameAcquired		string
 	ENS_Name				string
 	NodeHash				string
+}
+type ENS_TextKeyValue struct {	// the data extracted from TextChanged event of ENS
+	Key						string
+	Value					string
 }

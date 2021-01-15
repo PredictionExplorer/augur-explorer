@@ -201,11 +201,11 @@ DECLARE
 	v_cnt numeric;
 BEGIN
 
-	UPDATE ens_user_text SET value = NEW.value
+	UPDATE ens_text_key SET value = NEW.value
 		WHERE node = NEW.node AND key = NEW.key;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO ens_user_text(node,key,value)
+		INSERT INTO ens_text_key(node,key,value)
 			VALUES(NEW.node,NEW.key,NEW.value);
 	END IF;
 
@@ -222,6 +222,33 @@ BEGIN
 	--	with higher Gas, and this must happen before his transaction is included in the block
 	--	by the miner. This table doesn't have event_ids or block numbers, so it can be updated
 	--	on any block
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_ens_text_key_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt NUMERIC;
+	v_val TEXT;
+BEGIN
+	UPDATE ens_text SET
+			all_keys = JSONB_SET(all_keys, ARRAY[NEW.key::TEXT], ('"'||NEW.value||'"')::JSONB)
+		WHERE node = NEW.node;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		--v_val := CONCAT('{"',NEW.key,'":"',NEW.value,'"}');
+		v_val := CONCAT('{"',NEW.key,'":"',NEW.value,'"}');
+		INSERT INTO ens_text(node,all_keys)
+			VALUES(NEW.node,v_val::JSONB);
+	END IF;
+	UPDATE ens_text SET num_keys = (num_keys + 1) WHERE node=NEW.node;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_ens_text_key_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

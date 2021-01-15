@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"log"
+	"encoding/hex"
 
 	"database/sql"
 	_  "github.com/lib/pq"
@@ -474,4 +475,51 @@ func (ss *SQLStorage) Select_TLDs() []string {
 		records = append(records,addr)
 	}
 	return records
+}
+func (ss *SQLStorage) Get_node_text_key_values(node string) (string,[]p.ENS_TextKeyValue) {
+
+	var query string
+
+	query = "SELECT fqdn_words FROM ens_node WHERE node=$1"
+	res := ss.db.QueryRow(query,node)
+	var null_fqdn sql.NullString
+	err := res.Scan(&null_fqdn)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			// nothing, we will return empty name
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	fqdn_words := null_fqdn.String
+
+	query = "SELECT " +
+				"kv.key," +
+				"kv.value " +
+			"FROM ens_text_key AS kv " +
+			"WHERE kv.node=$1 " +
+			"ORDER BY kv.key "
+
+	rows,err := ss.db.Query(query,node)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.ENS_TextKeyValue,0,8)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.ENS_TextKeyValue
+		err=rows.Scan(&rec.Key,&rec.Value)
+		decoded_txt,err_decode := hex.DecodeString(rec.Value)
+		if err_decode != nil {
+			ss.Log_msg(fmt.Sprintf(
+				"Error decoding hex for key-value pairs of node %v, key %v : %v\n",
+				node,rec.Key,err_decode,
+			))
+		}
+		rec.Value = string(decoded_txt)
+		records = append(records,rec)
+	}
+	return fqdn_words,records
 }
