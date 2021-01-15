@@ -79,6 +79,19 @@ CREATE TABLE ens_hash_inval(	-- HashInvalidated event
 	name				TEXT NOT NULL,
 	value				DECIMAL(32,18)
 );
+CREATE TABLE ens_hash_reg (	-- HashRegistered event
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	owner_id			BIGINT,
+	time_stamp			TIMESTAMPTZ,
+	reg_date			TIMESTAMPTZ,
+	tx_hash				TEXT NOT NULL,
+	hash				TEXT NOT NULL,
+	value				DECIMAL(32,18)
+);
 CREATE TABLE ens_reg_transf ( -- Transfer event on the ENS Registry contract
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT,

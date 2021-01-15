@@ -311,5 +311,12 @@ type HashInvalidated struct { //1f9c649fe47e58bb60f4e52f0d90e4c47a526c9f90c5113d
 	Name					string
 	Value					*big.Int
 	RegistrationDate		*big.Int
-	Raw     				types.Log // Blockchain specific contextual infos
+	Raw						types.Log // Blockchain specific contextual infos
+}
+type HashRegistered struct { //0f0c27adfd84b60b6f456b0e87cdccb1e5fb9603991588d87fa99f5b6b61e670
+	Hash					[32]byte
+	Owner					common.Address
+	Value					*big.Int
+	RegistrationDate		*big.Int
+	Raw						types.Log // Blockchain specific contextual infos
 }

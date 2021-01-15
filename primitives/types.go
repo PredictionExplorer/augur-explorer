@@ -1430,6 +1430,18 @@ type ENS_HashInvalidated struct {
 	TxHash					string
 	Value					string
 }
+type ENS_HashRegistered struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	RegistrationDate		int64
+	Contract				string
+	Hash					string
+	Owner					string
+	TxHash					string
+	Value					string
+}
 type ENS_NewResolver struct {
 	EvtId					int64
 	BlockNum				int64

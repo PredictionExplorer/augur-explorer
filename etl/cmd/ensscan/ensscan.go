@@ -59,9 +59,17 @@ const (
 	NEW_RESOLVER				= "335721b01866dc23fbee8b6b2c7b1e14d6f05c28cd35a2c934239f94095602a0"
 	ENS_TRANSFER				= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 	ENS_REGISTRY_TRANSFER		= "d4735d920b0f87494915f556dd9b54c8f309026070caea5c737245152564d266"
+	HASH_REGISTERED				= "0f0c27adfd84b60b6f456b0e87cdccb1e5fb9603991588d87fa99f5b6b61e670"
+	//  HashRegistered (	Sample tx: 0x216d8103a59c3f3921210b3a4c6aca32c21724dac8451d32ed0d88103c20b802
+	//		index_topic_1 bytes32 hash,
+	//		index_topic_2 address owner,
+	//		uint256 value,
+	//		uint256 registrationDate
+	//	)
 	HASH_INVALIDATED			= "1f9c649fe47e58bb60f4e52f0d90e4c47a526c9f90c5113df842c025970b66ad"
 	NEW_TTL						= "1d4f9bbfc9cab89d66e1a1562f2233ccbf1308cb4f63de2ead5787adddb8fa68."
 	ENS_TEXT_CHANGED			= "d8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550"
+	NAME_BOUGHT					= "0xb8c56202a5ae8b00edfcd57a54ec6c3fb8d2f6deb3067a7ba11408a7bd014a3e"
 
 	ENS_V1_REGISTRY_ADDR		= "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"	// 10 Mar 2017
 	ENS_V2_REGISTRY_ADDR		= "0x314159265dD8dbb310642f98f50C066173C1259b"	// 30 Jan 2020
@@ -77,9 +85,11 @@ var (
 	evt_name_registered2,_ = hex.DecodeString(ENS_NAME_REGISTERED2)
 	evt_name_registered3,_ = hex.DecodeString(ENS_NAME_REGISTERED3)
 	evt_hash_invalidated,_ = hex.DecodeString(HASH_INVALIDATED)
+	evt_hash_registered,_ = hex.DecodeString(HASH_REGISTERED)
 	evt_new_resolver,_ = hex.DecodeString(NEW_RESOLVER)
 	evt_registry_transfer,_ = hex.DecodeString(ENS_REGISTRY_TRANSFER)
 	evt_text_changed,_		= hex.DecodeString(ENS_TEXT_CHANGED)
+	evt_name_bought,_ = hex.DecodeString(NAME_BOUGHT)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -796,6 +806,92 @@ func range_initial_load_text_changed(exit_chan chan bool,block_num_limit int64) 
 		}
 	}
 }
+func do_initiial_load_hash_registered(block_num_from,block_num_to int64) {
+
+	filter := ethereum.FilterQuery{}
+	filter.FromBlock = big.NewInt(block_num_from)
+	filter.ToBlock = big.NewInt(block_num_to)
+	topics := make([]common.Hash,0,1)
+	signature := common.BytesToHash(evt_hash_registered)
+	topics = append(topics,signature)
+	filter.Topics= append(filter.Topics,topics)
+	filter.Addresses = nil
+	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
+	Info.Printf("filter query = %+v\n",filter)
+	Info.Printf("HashRegistered: block range: %v - %v\n",block_num_from,block_num_to)
+	logs,err := eclient.FilterLogs(context.Background(),filter)
+	if err!= nil {
+		Error.Printf("Error: %v\n",err)
+		Info.Printf("Error: %v\n",err)
+		os.Exit(1)
+	}
+	for _,log := range logs {
+		if log.Removed {
+			continue
+		}
+		var evt ENS_HashRegistered
+		evt.EvtId = 0
+		evt.BlockNum = int64(log.BlockNumber)
+		evt.TxId = 0
+		ctx := context.Background()
+		bnum := big.NewInt(int64(log.BlockNumber))
+		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+		if err != nil {
+			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		}
+
+		var eth_event HashRegistered
+		err = ens_abi.Unpack(&eth_event,"HashRegistered",log.Data)
+		if err != nil {
+			Error.Printf("Error upacking HashRegistered: %v\n",err)
+			Info.Printf("Error upacking HashRegistered: %v\n",err)
+			continue
+		}
+		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+		evt.TimeStamp = int64(block_hdr.Time)
+		copy(eth_event.Hash[:],log.Topics[1].Bytes())
+		//eth_event.Name = Bytes32_to_string(log.Topics[2].Bytes())
+		eth_event.Owner = common.BytesToAddress(log.Topics[2][12:])
+		evt.Owner = eth_event.Owner.String()
+		evt.TxHash = log.TxHash.String()
+		evt.Hash = hex.EncodeToString(eth_event.Hash[:])
+		evt.RegistrationDate=eth_event.RegistrationDate.Int64()
+		evt.Value = eth_event.Value.String()
+		evt.Contract = log.Address.String()
+
+		Info.Printf("HashRegistered {\n")
+		Info.Printf("\tHash: %v\n",hex.EncodeToString(eth_event.Hash[:]))
+		Info.Printf("\tOwner: %v\n",evt.Owner)
+		Info.Printf("\tValue: %v\n",eth_event.Value.String())
+		Info.Printf("\tRegDate: %v\n",eth_event.RegistrationDate.String())
+		Info.Printf("}")
+		storage.Insert_hash_registered(&evt)
+	}
+}
+func range_initial_load_hash_registered(exit_chan chan bool,block_num_limit int64) {
+
+	var block_num int64 = 0 // found empirically
+	for ; block_num <= block_num_limit ; {
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.\n")
+					os.Exit(0)
+				}
+			default:
+		}
+
+		next_block_num := block_num + 1000 - 1
+		if next_block_num > block_num_limit {
+			do_initiial_load_hash_registered(block_num,block_num_limit)
+			break
+		} else {
+			do_initiial_load_hash_registered(block_num,next_block_num)
+			block_num = next_block_num + 1
+		}
+	}
+}
 func initial_load(exit_chan chan bool,block_num_limit int64) {
 	//range_initial_load_name_registered1(exit_chan,block_num_limit)
 	//range_initial_load_new_owner(exit_chan,block_num_limit)
@@ -804,7 +900,8 @@ func initial_load(exit_chan chan bool,block_num_limit int64) {
 	//range_initial_load_hash_invalidated(exit_chan,block_num_limit)
 	//range_initial_load_new_resolver(exit_chan,block_num_limit)
 	//range_initial_load_registry_transfer(exit_chan,block_num_limit)
-	range_initial_load_text_changed(exit_chan,block_num_limit)
+	//range_initial_load_text_changed(exit_chan,block_num_limit)
+	range_initial_load_hash_registered(exit_chan,block_num_limit)
 }
 func check_initial_load_completness() bool {
 
