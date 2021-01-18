@@ -1,0 +1,17 @@
+{{define "pool_swaps_table"}}
+<table class="market_trades">
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Timestamp</th>
+		<th class="mkt_trade_hdr" style="text-align: center">BlockNum</th>
+		<th class="mkt_trade_hdr" style="text-align: center">TxId</th>
+		<th class="mkt_trade_hdr" style="text-align: center">User Address</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Token In</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Token Out</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Amount In</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Amount Out</th>
+	</tr>
+		{{- range $i, $swap:= .}}
+			{{template "pool_swap" $swap }}
+		{{- end}}
+</table>
+{{end}}

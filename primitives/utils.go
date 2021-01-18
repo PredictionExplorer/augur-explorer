@@ -247,7 +247,7 @@ func (evt *EOwnershipTransferred) Dump(l *log.Logger) {
 func (evt *ETradingProceedsClaimed) Dump(l *log.Logger) {
 	l.Printf("TradingProceedsClaimed {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
-	l.Printf("\tSender: %v\n",evt.Sender.String())
+	l.Printf("\tShareholder: %v\n",evt.Shareholder.String())
 	l.Printf("\tMarket: %v\n",evt.Market.String())
 	l.Printf("\tOutcome: %v\n",evt.Outcome.String())
 	l.Printf("\tNumShares: %v\n",evt.NumShares.String())
@@ -397,3 +397,23 @@ func DumpOrderSpec (l *log.Logger,o *ZxMeshOrderSpec) {
 	l.Printf("\tType: %v\n",o.Type)
 	l.Printf("}\n")
 }
+func (evt *UPairSwap) Dump(l *log.Logger) {
+    l.Printf("PairSwap{\n")
+    l.Printf("\tSender: %v\n",evt.Sender.String())
+    l.Printf("\tAmount0In: %v\n",evt.Amount0In.String())
+    l.Printf("\tAmount1In: %v\n",evt.Amount1In.String())
+    l.Printf("\tAmount0Out: %v\n",evt.Amount0Out.String())
+    l.Printf("\tAmount1Out: %v\n",evt.Amount1Out.String())
+    l.Printf("\tTo: %v\n",evt.To.String())
+    l.Printf("}\n")
+}
+func (evt *NameRegistered_v1) Dump(l *log.Logger) {
+    l.Printf("NameRegistered_v1{\n")
+    l.Printf("\tName: %v\n",evt.Name)
+	l.Printf("\tLabel: %v\n",hex.EncodeToString(evt.Label[:]))
+    l.Printf("\tOwner: %v\n",evt.Owner.String())
+    l.Printf("\tCost : %v\n",evt.Cost.String())
+    l.Printf("\tExpires: %v\n",evt.Expires.String())
+    l.Printf("}\n")
+}
+

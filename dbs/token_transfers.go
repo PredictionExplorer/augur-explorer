@@ -17,14 +17,16 @@ import (
 var (
 	ErrUnprocessedBalances error = errors.New("Unprocessed balance on past blocks")
 )
-func (ss *SQLStorage) Process_REP_token_transfer(evt *p.ETransfer,agtx *p.AugurTx) {
+func (ss *SQLStorage) Process_REP_token_transfer(evt *p.ETransfer,agtx *p.AugurTx,evtlog_id int64) {
 
 	from_aid := ss.Lookup_or_create_address(evt.From.String(),agtx.BlockNum,agtx.TxId)
 	to_aid := ss.Lookup_or_create_address(evt.To.String(),agtx.BlockNum,agtx.TxId)
 	amount := evt.Value.String()
 
 	var query string
-	query = "INSERT INTO rep_transf(block_num,tx_id,from_aid,to_aid,amount) VALUES($1,$2,$3,$4,$5/1e+18)"
+	query = "INSERT INTO rep_transf("+
+				"evtlog_id,block_num,tx_id,from_aid,to_aid,amount" +
+			") VALUES($1,$2,$3,$4,$5,$6/1e+18)"
 	_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,from_aid,to_aid,amount)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -40,19 +42,31 @@ func (ss *SQLStorage) Insert_token_balance_changed_evt(evt *p.ETokenBalanceChang
 	balance := evt.Balance.String()
 
 	var query string
-	query = "INSERT INTO tbc(block_num,tx_id,market_aid,owner_aid,token_aid,token_type,outcome,balance) " +
+	query = "INSERT INTO tbc(" +
+				"block_num,tx_id,market_aid,owner_aid,token_aid,token_type,outcome,balance"+
+			") " +
 				"VALUES($1,$2,$3,$4,$5,$6,$7,("+balance+"/1e+18))"
 	_,err := ss.db.Exec(query,
-							block_num,
-							tx_id,
-							market_aid,
-							owner_aid,
-							token_aid,
-							evt.TokenType,
-							outcome_idx,
+		block_num,
+		tx_id,
+		market_aid,
+		owner_aid,
+		token_aid,
+		evt.TokenType,
+		outcome_idx,
 	)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v tx_id=%v q=%v",err,tx_id,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_token_balance_changed_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM tbc WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
 }
@@ -81,7 +95,7 @@ func (ss *SQLStorage) Insert_token_transf_evt(evt *p.ETokensTransferred,agtx *p.
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) get_previous_profit_and_ff(market_aid int64,eoa_aid int64,outcome_idx int) (string,string) {
+func (ss *SQLStorage) get_previous_profit_and_ff(market_aid int64,aid int64,outcome_idx int) (string,string) {
 
 	var previous_realized_profit string
 	var previous_frozen_funds string
@@ -89,10 +103,10 @@ func (ss *SQLStorage) get_previous_profit_and_ff(market_aid int64,eoa_aid int64,
 	query = "SELECT  round(pl.realized_profit*1e+36) AS rpl," +
 					"round(pl.frozen_funds*1e+36) as ff " +
 			"FROM profit_loss AS pl " +
-			"WHERE  market_aid=$1 AND eoa_aid=$2 AND outcome_idx=$3 " +
+			"WHERE  market_aid=$1 AND aid=$2 AND outcome_idx=$3 " +
 			"ORDER BY pl.id DESC LIMIT 1"
 
-	res := ss.db.QueryRow(query,market_aid,eoa_aid,outcome_idx)
+	res := ss.db.QueryRow(query,market_aid,aid,outcome_idx)
 	var null_pl,null_ff sql.NullString
 	err := res.Scan(&null_pl,&null_ff)
 	if (err!=nil) {
@@ -395,7 +409,7 @@ func (ss *SQLStorage) is_dai_transfer_internal(evt *p.ETransfer,ca *p.ContractAd
 	}
 	return from_internal,to_internal // its a Market in To
 }
-func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.ETransfer,ca *p.ContractAddresses,agtx *p.AugurTx) {
+func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.ETransfer,ca *p.ContractAddresses,agtx *p.AugurTx,evtlog_id int64) {
 
 	from_aid := ss.Lookup_or_create_address(evt.From.String(),agtx.BlockNum,agtx.TxId)
 	to_aid := ss.Lookup_or_create_address(evt.To.String(),agtx.BlockNum,agtx.TxId)
@@ -404,9 +418,11 @@ func (ss *SQLStorage) Process_DAI_token_transfer(evt *p.ETransfer,ca *p.Contract
 	from_internal,to_internal := ss.is_dai_transfer_internal(evt,ca)
 
 	var query string
-	query = "INSERT INTO dai_transf(block_num,tx_id,from_aid,to_aid,amount,from_internal,to_internal) " +
-			"VALUES($1,$2,$3,$4,(" + amount +"/1e+18),$5,$6)"
-	_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,from_aid,to_aid,from_internal,to_internal)
+	query = "INSERT INTO dai_transf("+
+				"evtlog_id,block_num,tx_id,from_aid,to_aid,amount,from_internal,to_internal" +
+			") " +
+			"VALUES($1,$2,$3,$4,$5,(" + amount +"/1e+18),$6,$7)"
+	_,err := ss.db.Exec(query,evtlog_id,agtx.BlockNum,agtx.TxId,from_aid,to_aid,from_internal,to_internal)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
@@ -521,9 +537,9 @@ func internal_addr_info_note(addr *common.Address,info *string,caddrs *p.Contrac
 }
 func (ss *SQLStorage) check_internal_user(aid int64,is_to bool,info *string) {
 
-	eoa_aid,err := ss.Lookup_eoa_aid(aid)
+	success,err := ss.Ustats_entry_exists(aid)
 	if err==nil {
-		if eoa_aid > 0 {
+		if success {
 			if is_to {
 				*info = "Transfer to Another Augur Trading account"
 			} else {
@@ -621,4 +637,194 @@ func (ss *SQLStorage) Get_account_statement(aid int64) []p.StatementEntry {
 		records = append(records,rec)
 	}
 	return records
+}
+func (ss *SQLStorage) Get_tok_process_status() p.TokProcessStatus {
+
+	var output p.TokProcessStatus
+	var null_last_evtid sql.NullInt64
+
+	var query string
+	for {
+		query = "SELECT last_evt_id FROM token_proc_status"
+
+		res := ss.db.QueryRow(query)
+		err := res.Scan(&null_last_evtid)
+		if (err!=nil) {
+			if err == sql.ErrNoRows {
+				query = "INSERT INTO token_proc_status DEFAULT VALUES"
+				_,err := ss.db.Exec(query)
+				if (err!=nil) {
+					ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+					os.Exit(1)
+				}
+			} else {
+				if (err!=nil) {
+					ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+					os.Exit(1)
+				}
+			}
+		} else {
+			break
+		}
+	}
+	if null_last_evtid.Valid {
+		output.LastEvtId  = null_last_evtid.Int64
+	}
+	return output
+}
+func (ss *SQLStorage) Update_tok_process_status(status *p.TokProcessStatus) {
+
+	var query string
+	query = "UPDATE token_proc_status SET last_evt_id = $1"
+
+	_,err := ss.db.Exec(query,status.LastEvtId)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_DAI_transfer_by_evtlog_id(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM dai_transf WHERE evtlog_id=$1"
+	_,err := ss.db.Exec(query,evtlog_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_REP_transfer_by_evtlog_id(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM rep_transf WHERE evtlog_id=$1"
+	_,err := ss.db.Exec(query,evtlog_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Outside_augur_share_balance_changes(market_aid int64,offset,limit int) ([]p.OutsideAugurSBChg,int64) {
+
+	market_type,_,_ := ss.get_market_type_and_ticks(market_aid)
+	var query string
+
+	var total_rows int64
+	query = "SELECT COUNT(*) AS total_rows FROM stbc " +
+			"WHERE market_aid=$1 AND outside_augur_ui=TRUE"
+
+	var null_counter sql.NullInt64
+	var err error
+	err=ss.db.QueryRow(query,market_aid).Scan(&null_counter);
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v , q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	total_rows=null_counter.Int64
+
+	query = "SELECT " +
+				"sb.market_aid," +
+				"sb.block_num," +
+				"FLOOR(EXTRACT(EPOCH FROM b.ts))::BIGINT as time_stamp," +
+				"b.ts," +
+				"sb.account_aid,"+
+				"a.addr," +
+				"outcome_idx," +
+				"balance," +
+				"t.tx_hash " +
+			"FROM stbc AS sb " +
+				"JOIN market AS m ON sb.market_aid=m.market_aid " +
+				"JOIN block AS b ON sb.block_num=b.block_num " +
+				"JOIN transaction AS t ON sb.tx_id=t.id " +
+				"LEFT JOIN address AS a ON sb.account_aid=a.address_id "+
+			"WHERE sb.market_aid=$1 AND outside_augur_ui=TRUE " +
+			"ORDER BY time_stamp DESC " +
+			"OFFSET $2 LIMIT $3"
+
+	rows,err := ss.db.Query(query,market_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.OutsideAugurSBChg,0)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.OutsideAugurSBChg
+		err=rows.Scan(
+			&rec.MktAid,
+			&rec.BlockNum,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.AccountAid,
+			&rec.Address,
+			&rec.OutcomeIdx,
+			&rec.Balance,
+			&rec.TxHash,
+		)
+		p.Augur_UI_price_adjustments(nil,&rec.Balance,market_type)
+		rec.TxHashSh = p.Short_hash(rec.TxHash)
+		records = append(records,rec)
+	}
+	ss.Info.Printf("returning %v records\n",len(records))
+	return records,total_rows
+}
+func (ss *SQLStorage) Get_ERC20Info(addr string) (bool,p.ERC20Info) {
+
+	var query string
+	query = "SELECT aid,a.addr,decimals,total_supply,name,symbol " +
+			"FROM erc20_info AS e,address AS a " +
+			"WHERE e.aid=a.address_id AND a.addr=$1"
+
+	d_query := fmt.Sprintf(
+			"SELECT aid,a.addr,decimals,total_supply,name,symbol " +
+			"FROM erc20_info AS e,address AS a " +
+			"WHERE e.aid=a.address_id AND a.addr='%v'",
+			addr,
+	)
+	ss.Info.Printf("get ercinfo q: %v\n",d_query)
+	res := ss.db.QueryRow(query,addr)
+	var info p.ERC20Info
+	err := res.Scan(
+		&info.Aid,
+		&info.Address,
+		&info.Decimals,
+		&info.TotalSupplyF,
+		&info.Name,
+		&info.Symbol,
+	)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		} else {
+			return false,info
+		}
+	}
+	return true,info
+}
+func (ss *SQLStorage) Insert_ERC20Info(info *p.ERC20Info) {
+
+	aid := ss.Lookup_or_create_address(info.Address,0,0)
+	var query string
+	query = "INSERT INTO erc20_info(aid,decimals,total_supply,name,symbol) "+
+			"VALUES($1,$2,$3::DECIMAL/1e+18,$4,$5) ON CONFLICT DO NOTHING"
+
+	d_query := fmt.Sprintf("INSERT INTO erc20_info(aid,decimals,total_supply,name,symbol) "+
+			"VALUES(%v,%v,%v::DECIMAL/1e+18,'%v','%v') ON CONFLICT DO NOTHING",
+			aid,info.Decimals,info.TotalSupply,info.Name,info.Symbol,
+	)
+
+	_,err := ss.db.Exec(query,
+		aid,
+		info.Decimals,
+		info.TotalSupply,
+		info.Name,
+		info.Symbol,
+	)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("d_query: %v\n",d_query))
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
 }

@@ -195,7 +195,7 @@ type EOwnershipTransferred struct {
 }
 type ETradingProceedsClaimed struct {
 	Universe        common.Address
-	Sender          common.Address
+	Shareholder		common.Address
 	Market          common.Address
 	Outcome         *big.Int
 	NumShares       *big.Int
@@ -222,9 +222,9 @@ type EExecuteTransactionStatus struct {// Augur's transaction status
 	Raw            types.Log // Blockchain specific contextual infos
 }
 type ETransactionRelayed struct { // RelayHub event (v1)
-	Relay    common.Address
-	From     common.Address
-	To       common.Address
+	Relay    common.Address		//Topics[1]
+	From     common.Address		//Topics[2]
+	To       common.Address		//Topics[3]
 	Selector [4]byte
 	Status   uint8
 	Charge   *big.Int
@@ -242,4 +242,81 @@ type EUniverseCreated struct {
 	CreationTimestamp *big.Int
 	Raw               types.Log // Blockchain specific contextual infos
 }
-
+type EAugurFoundryWrapperCreated struct {
+	TokenId      *big.Int
+	TokenAddress common.Address
+	Raw          types.Log // Blockchain specific contextual infos
+}
+type ELOG_NEW_POOL struct { //0x8ccec77b0cb63ac2cafd0f5de8cdfadab91ce656d262240ba8a6343bccc5f945
+	Caller common.Address
+	Pool   common.Address
+	Raw    types.Log // Blockchain specific contextual infos
+}
+type ELOG_JOIN struct {	//0x63982df10efd8dfaaaa0fcc7f50b2d93b7cba26ccc48adee2873220d485dc39a
+	Caller        common.Address
+	TokenIn       common.Address
+	TokenAmountIn *big.Int
+	Raw           types.Log // Blockchain specific contextual infos
+}
+type ELOG_EXIT struct {	//0xe74c91552b64c2e2e7bd255639e004e693bd3e1d01cc33e65610b86afcc1ffed
+	Caller         common.Address
+	TokenOut       common.Address
+	TokenAmountOut *big.Int
+	Raw            types.Log // Blockchain specific contextual infos
+}
+type ELOG_SWAP struct { // 0x908fb5ee8f16c6bc9bc3690973819f32a4d4b10188134543c88706e0e1d43378
+	Caller         common.Address
+	TokenIn        common.Address
+	TokenOut       common.Address
+	TokenAmountIn  *big.Int
+	TokenAmountOut *big.Int
+	Raw            types.Log // Blockchain specific contextual infos
+}
+type UPairCreated struct {
+	Token0			common.Address
+	Token1			common.Address
+	Pair			common.Address
+	PairSeq			*big.Int
+	Raw    types.Log // Blockchain specific contextual infos
+}
+type UPairSwap struct {
+	Decimals0				int
+	Decimals1				int
+	Sender					common.Address
+	Amount0In				*big.Int
+	Amount1In				*big.Int
+	Amount0Out				*big.Int
+	Amount1Out				*big.Int
+	To						common.Address
+	Raw						types.Log // Blockchain specific contextual infos
+}
+type NameRegistered_v1 struct { //0xca6abbe9d7f11422cb6ca7629fbf6fe9efb1c621f71ce8f02b9f2a230097404f.
+	Name    string
+	Label   [32]byte
+	Owner   common.Address
+	Cost    *big.Int
+	Expires *big.Int
+	Raw     types.Log // Blockchain specific contextual infos
+}
+type NameRegistered_v3 struct { //570313dae523ecb48b1176a4b60272e5ea7ec637f5b2d09983cbc4bf25e7e9e3
+	Caller		common.Address
+	Beneficiary common.Address
+	Label		[32]byte
+	Subdomain	string
+	CreatedDate	*big.Int
+	Raw     types.Log // Blockchain specific contextual infos
+}
+type HashInvalidated struct { //1f9c649fe47e58bb60f4e52f0d90e4c47a526c9f90c5113df842c025970b66ad
+	Hash					[32]byte
+	Name					string
+	Value					*big.Int
+	RegistrationDate		*big.Int
+	Raw						types.Log // Blockchain specific contextual infos
+}
+type HashRegistered struct { //0f0c27adfd84b60b6f456b0e87cdccb1e5fb9603991588d87fa99f5b6b61e670
+	Hash					[32]byte
+	Owner					common.Address
+	Value					*big.Int
+	RegistrationDate		*big.Int
+	Raw						types.Log // Blockchain specific contextual infos
+}

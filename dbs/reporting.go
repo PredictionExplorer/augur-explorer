@@ -19,7 +19,6 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 	_ = universe_id
 	market_aid := ss.Lookup_address_id(evt.Market.String())
 	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),agtx.BlockNum,agtx.TxId)
-	signer_aid := ss.Lookup_or_create_address(agtx.From,agtx.BlockNum,agtx.TxId)
 	ini_reporter_aid := ss.Lookup_or_create_address(evt.InitialReporter.String(),agtx.BlockNum,agtx.TxId)
 
 	amount_staked := evt.AmountStaked.String()
@@ -28,8 +27,7 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 	next_win_end := evt.NextWindowEndTime.Int64()
 	rpt_timestamp := evt.Timestamp.Int64()
 
-	ss.Info.Printf("insert_initial_report_evt(): market_aid=%v, reporter_id=%v, signer_aid=%v\n",
-					market_aid,reporter_aid,signer_aid)
+	ss.Info.Printf("insert_initial_report_evt(): market_aid=%v, reporter_id=%v\n",market_aid,reporter_aid)
 
 	market_type,mticks,_ := ss.get_market_type_and_ticks(market_aid)
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
@@ -40,8 +38,7 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 			block_num,
 			tx_id,
 			market_aid,
-			wallet_aid,
-			eoa_aid,
+			aid,
 			ini_reporter_aid,
 			outcome_idx,
 			is_initial,
@@ -53,17 +50,16 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 			next_win_end,
 			rpt_timestamp
 		) VALUES (
-			$1,$2,$3,$4,$5,$6,$7,$8,$9,(` + amount_staked + `/1e+18),$10,$11,
+			$1,$2,$3,$4,$5,$6,$7,$8,(` + amount_staked + `/1e+18),$9,$10,
+			TO_TIMESTAMP($11),
 			TO_TIMESTAMP($12),
-			TO_TIMESTAMP($13),
-			TO_TIMESTAMP($14)
+			TO_TIMESTAMP($13)
 		)`
 	result,err := ss.db.Exec(query,
 			agtx.BlockNum,
 			agtx.TxId,
 			market_aid,
 			reporter_aid,
-			signer_aid,
 			ini_reporter_aid,
 			reported_outcome,
 			true,
@@ -89,6 +85,16 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 	// set 'Reporting' status
 	// ToDo: possibly migrate to triggers (or maybe not)
 	ss.update_market_status(market_aid,p.MktStatusReported)
+}
+func (ss *SQLStorage) Delete_report_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM report WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
 }
 func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDisputeCrowdsourcerContribution) {
 
@@ -121,8 +127,7 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDispu
 			block_num,
 			tx_id,
 			market_aid,
-			wallet_aid,
-			eoa_aid,
+			aid,
 			disputed_aid,
 			dispute_round,
 			outcome_idx,
@@ -132,14 +137,13 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDispu
 			current_stake,
 			stake_remaining,
 			rpt_timestamp
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,`+amount_staked+`/1e+18,$9,$10,
-				`+cur_stake+`/1e+18,`+stake_remaining+`/1e+18,TO_TIMESTAMP($11))`
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,`+amount_staked+`/1e+18,$8,$9,
+				`+cur_stake+`/1e+18,`+stake_remaining+`/1e+18,TO_TIMESTAMP($10))`
 	result,err := ss.db.Exec(query,
 			agtx.BlockNum,
 			agtx.TxId,
 			market_aid,
 			reporter_aid,
-			signer_aid,
 			disputed_aid,
 			dispute_round,
 			reported_outcome,

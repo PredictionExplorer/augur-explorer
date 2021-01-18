@@ -1,0 +1,19 @@
+<html>
+<head>
+	<link href="../res/main.css" rel="stylesheet">
+	<title>Wrapping Contracts for Market{{.Market.MktAddr}}</title>
+	<meta name="description" content="{{.Market.Description}}">
+</head>
+<body>
+<h3 class="page_title">AugurFoundry Wrapping Contracts</h3>
+<table class="market_detail">
+<tr>
+	<td>Address:</td>
+	<td>{{.Market.MktAddr}}</td>
+</tr>
+</table>
+<br/><br/>
+<div class="market_info">
+	{{template "wrapping_contracts_table" .WrapperContracts}}
+</div>
+</body>

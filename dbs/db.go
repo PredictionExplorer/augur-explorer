@@ -1,6 +1,11 @@
 // Database Storage package
 package dbs
 
+// Notes:
+// 		the functions contained in this package should be only storing objects defined in 
+//		primitves::types.go , thus having ver low amount of business logic of the application
+//		(though, some exceptions may apply)
+
 import (
 	"fmt"
 	"net"

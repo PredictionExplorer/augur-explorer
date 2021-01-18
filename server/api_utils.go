@@ -118,3 +118,70 @@ func parse_timeframe_ini_fin(c *gin.Context) (bool,int,int) {
 	}
 	return true,init_ts,fin_ts
 }
+func parse_offset_limit_params(c *gin.Context) (bool,int,int) {
+
+	var err error
+	p_offset := c.Param("offset")
+	var offset int = 0
+	if len(p_offset) > 0 {
+		offset, err = strconv.Atoi(p_offset)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"status":0,
+				"error":fmt.Sprintf("Bad 'offset' parameter: %v",err),
+			})
+			return false,0,0
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("'offset' parameter wasn't provided: %v",err),
+		})
+		return false,0,0
+	}
+
+	p_limit := c.Param("limit")
+	var limit int = 0
+	if len(p_limit) > 0 {
+		limit, err = strconv.Atoi(p_limit)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"status":0,
+				"error":fmt.Sprintf("'limit' parameter: %v",err),
+			})
+			return false,0,0
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("'limit' parameter wasn't provided: %v",err),
+		})
+		return false,0,0
+	}
+	if limit == 0 {
+		limit = 20
+	}
+	return true,offset,limit
+}
+func parse_outcome_param(c *gin.Context) (bool,int) {
+	var err error
+	p_outcome := c.Param("outcome")
+	var outcome int
+	if len(p_outcome) > 0 {
+		outcome , err = strconv.Atoi(p_outcome)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"status":0,
+				"error":fmt.Sprintf("Bad outcome parameter: %v",err),
+			})
+			return false,0
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("Outcome parameter wasn't provided: %v",err),
+		})
+		return false,0
+	}
+	return true,outcome
+}

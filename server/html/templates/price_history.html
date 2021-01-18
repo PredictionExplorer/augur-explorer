@@ -318,7 +318,13 @@ Highcharts.chart('price_history_graph', {
 //		min: 0,
         accessibility: {
             rangeDescription: 'Price history for Market'
-        }
+        },
+		 type: "datetime",
+	    labels: {
+        	formatter: function() {
+          		return Highcharts.dateFormat('%b/%e/%Y', this.value);
+       		}
+		}
     },
 
     legend: {

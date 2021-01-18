@@ -3,6 +3,7 @@ package dbs
 import (
 	"fmt"
 	"os"
+	"strings"
 	"strconv"
 	"math/big"
 	"database/sql"
@@ -20,7 +21,7 @@ func (ss *SQLStorage) fill_block_info(ui *p.UserInfo,user_aid int64) {
 			"FROM address a,block b " +
 			"WHERE (a.address_id=$1) AND (a.block_num=b.block_num) "
 	row := ss.db.QueryRow(query,user_aid)
-	err := row.Scan(&ui.EOAAid,&ui.EOAAddr,&ui.BlockNum,&ui.TimeStamp)
+	err := row.Scan(&ui.Aid,&ui.Addr,&ui.BlockNum,&ui.TimeStamp)
 	if err != nil {
 		if err!=sql.ErrNoRows {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
@@ -33,20 +34,15 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 
 	var ui p.UserInfo
 	ss.fill_block_info(&ui,user_aid)
-
-	var eoa_aid int64
-	var wallet_aid int64
-	eoa_aid,_=ss.Lookup_eoa_aid(user_aid)
-	wallet_aid,_=ss.Lookup_wallet_aid(user_aid)
-	if (eoa_aid==0) && (wallet_aid==0) {
-		ui.NotAugur = true
-	}
+	ui.AugurFlags = ss.Get_augur_flags(user_aid)
 
 	var query string
 	query = "SELECT " +
-				"s.wallet_aid," +
-				"a.addr as eoa_addr," +
-				"w.addr as wallet_addr," +
+				"act.address_id, " +
+				"ea.eoa_aid AS eoa_aid," +
+				"ea.addr AS eoa_addr," +
+				"ew.wallet_aid AS wallet_aid," +
+				"ew.addr AS wallet_addr," +
 				"s.total_trades," +
 				"s.markets_created," +
 				"s.markets_traded," +
@@ -62,42 +58,75 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 				"s.total_withdrawn," +
 				"s.total_deposited, " +
 				"r.top_trades, " +
-				"r.top_profit " +
-			"FROM ustats as s " +
-			"LEFT JOIN address AS a ON s.eoa_aid = a.address_id " +
-			"LEFT JOIN address AS w ON s.wallet_aid = w.address_id " +
-			"LEFT JOIN uranks AS r ON s.eoa_aid = r.eoa_aid " +
-			"WHERE s.eoa_aid = $1"
-
+				"r.top_profit, " +
+				"ds.balancer_swaps," +
+				"ds.uniswap_swaps " +
+			"FROM address AS act " +
+				"LEFT JOIN ustats AS s ON act.address_id = s.aid "+
+				"LEFT JOIN uranks AS r ON act.address_id = r.aid " +
+				"LEFT JOIN LATERAL (" +
+					"SELECT eoa_aid,wallet_aid,a.addr FROM eoa_wallet ea " +
+					"JOIN address a ON ea.eoa_aid=a.address_id " +
+				") AS ea ON act.address_id=ea.wallet_aid " +
+				"LEFT JOIN LATERAL (" +
+					"SELECT eoa_aid,wallet_aid,a.addr FROM eoa_wallet ew " +
+					"JOIN address a ON ew.wallet_aid=a.address_id " +
+				") AS ew ON act.address_id=ew.eoa_aid " +
+				"LEFT JOIN defi_stats AS ds ON act.address_id=ds.aid " +
+				"WHERE act.address_id=$1"
+	d_query := strings.ReplaceAll(query,`$1`,fmt.Sprintf("%v",user_aid))
+	ss.Info.Printf("query = %v\n",d_query)
 	row := ss.db.QueryRow(query,user_aid)
 	var err error
 	var (
-		eoa_addr		sql.NullString
-		wallet_addr		sql.NullString
-		top_profits		sql.NullFloat64
-		top_trades		sql.NullFloat64
+		top_profits					sql.NullFloat64
+		top_trades				sql.NullFloat64
+		wallet_addr				sql.NullString
+		wallet_aid				sql.NullInt64
+		eoa_addr				sql.NullString
+		eoa_aid					sql.NullInt64
+		null_total_trades		sql.NullInt32
+		null_markets_created	sql.NullInt32
+		null_markets_traded		sql.NullInt32
+		null_withdraw_reqs		sql.NullInt32
+		null_deposit_reqs		sql.NullInt32
+		null_total_reports		sql.NullInt32
+		null_total_designated	sql.NullInt32
+		null_profit_loss		sql.NullFloat64
+		null_report_profits		sql.NullFloat64
+		null_aff_profits		sql.NullFloat64
+		null_money_at_stake		sql.NullFloat64
+		null_validity_bonds		sql.NullFloat64
+		null_total_withdrawn	sql.NullFloat64
+		null_total_deposited	sql.NullFloat64
+		null_balancer_swaps		sql.NullInt64
+		null_uniswap_swaps		sql.NullInt64
 	)
-	ui.EOAAid = user_aid
+	ui.Aid = user_aid
 	err=row.Scan(
-				&ui.WalletAid,
+				&ui.Aid,
+				&eoa_aid,
 				&eoa_addr,
+				&wallet_aid,
 				&wallet_addr,
-				&ui.TotalTrades,
-				&ui.MarketsCreated,
-				&ui.MarketsTraded,
-				&ui.WithdrawReqs,
-				&ui.DepositReqs,
-				&ui.TotalReports,
-				&ui.TotalDesignated,
-				&ui.ProfitLoss,
-				&ui.ReportProfits,
-				&ui.AffProfits,
-				&ui.MoneyAtStake,
-				&ui.ValidityBonds,
-				&ui.TotalWithdrawn,
-				&ui.TotalDeposited,
+				&null_total_trades,
+				&null_markets_created,
+				&null_markets_traded,
+				&null_withdraw_reqs,
+				&null_deposit_reqs,
+				&null_total_reports,
+				&null_total_designated,
+				&null_profit_loss,
+				&null_report_profits,
+				&null_aff_profits,
+				&null_money_at_stake,
+				&null_validity_bonds,
+				&null_total_withdrawn,
+				&null_total_deposited,
 				&top_trades,
 				&top_profits,
+				&null_balancer_swaps,
+				&null_uniswap_swaps,
 	);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -111,30 +140,39 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 		}
 		os.Exit(1)
 	}
-	if eoa_addr.Valid {
-		ui.EOAAddr = eoa_addr.String
-		ui.EOAAddrSh = p.Short_address(eoa_addr.String)
+	ui.Addr,err = ss.Lookup_address(user_aid)
+	if err == nil {
+		ui.AddrSh = p.Short_address(ui.Addr)
 	}
-	if wallet_addr.Valid {
-		ui.WalletAddr = wallet_addr.String
-		ui.WalletAddrSh = p.Short_address(wallet_addr.String)
-	}
-	if top_profits.Valid {
-		ui.TopProfit = top_profits.Float64
-	}
-	if top_trades.Valid {
-		ui.TopTrades = top_trades.Float64
-	}
-	if ui.MoneyAtStake < 0 {
-		ui.HedgingProfits = true
-	}
+	if null_total_trades.Valid { ui.TotalTrades = null_total_trades.Int32 }
+	if null_markets_created.Valid { ui.MarketsCreated = null_markets_created.Int32 }
+	if null_markets_traded.Valid { ui.MarketsTraded = null_markets_traded.Int32 }
+	if null_withdraw_reqs.Valid { ui.WithdrawReqs = null_withdraw_reqs.Int32 }
+	if null_deposit_reqs.Valid { ui.DepositReqs = null_deposit_reqs.Int32 }
+	if null_total_reports.Valid { ui.TotalReports = null_total_reports.Int32 }
+	if null_total_designated.Valid { ui.TotalDesignated = null_total_designated.Int32 }
+	if null_profit_loss.Valid { ui.ProfitLoss = null_profit_loss.Float64 }
+	if null_report_profits.Valid { ui.ReportProfits = null_report_profits.Float64 }
+	if null_aff_profits.Valid { ui.AffProfits = null_aff_profits.Float64 }
+	if null_money_at_stake.Valid { ui.MoneyAtStake = null_money_at_stake.Float64 }
+	if null_validity_bonds.Valid { ui.ValidityBonds = null_validity_bonds.Float64 }
+	if null_total_withdrawn.Valid { ui.TotalWithdrawn = null_total_withdrawn.Float64 }
+	if null_total_deposited.Valid { ui.TotalDeposited = null_total_deposited.Float64 }
+
+	if top_profits.Valid { ui.TopProfit = top_profits.Float64 }
+	if top_trades.Valid { ui.TopTrades = top_trades.Float64 }
+	if ui.MoneyAtStake < 0 { ui.HedgingProfits = true }
 	ui.UnclaimedProfit=ss.Get_unclaimed_profit(user_aid)
+	if wallet_aid.Valid { ui.WalletAid = wallet_aid.Int64; ui.WalletAddr = wallet_addr.String }
+	if eoa_aid.Valid { ui.EOAAid = eoa_aid.Int64; ui.EOAAddr = eoa_addr.String }
+	if null_balancer_swaps.Valid { ui.BalancerNumSwaps = null_balancer_swaps.Int64 }
+	if null_uniswap_swaps.Valid { ui.UniswapNumSwaps = null_uniswap_swaps.Int64 }
 	return ui,nil
 }
 func (ss *SQLStorage) Get_ranking_data_for_all_users() []p.RankStats {
 
 	var query string
-	query = "SELECT eoa_aid,total_trades,profit_loss,volume_traded FROM ustats"
+	query = "SELECT aid,total_trades,profit_loss,volume_traded FROM ustats"
 
 	rows,err := ss.db.Query(query)
 	if (err!=nil) {
@@ -145,16 +183,16 @@ func (ss *SQLStorage) Get_ranking_data_for_all_users() []p.RankStats {
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.RankStats
-		err=rows.Scan(&rec.EoaAid,&rec.TotalTrades,&rec.ProfitLoss,&rec.VolumeTraded)
+		err=rows.Scan(&rec.Aid,&rec.TotalTrades,&rec.ProfitLoss,&rec.VolumeTraded)
 		records = append(records,rec)
 	}
 	return records
 }
-func (ss *SQLStorage) Update_top_profit_rank(eoa_aid int64,value float64,profit float64) int64 {
+func (ss *SQLStorage) Update_top_profit_rank(aid int64,value float64,profit float64) int64 {
 
 	var query string
-	query = "UPDATE uranks SET top_profit = $2,profit=$3 WHERE eoa_aid = $1"
-	res,err:=ss.db.Exec(query,eoa_aid,value,profit)
+	query = "UPDATE uranks SET top_profit = $2,profit=$3 WHERE aid = $1"
+	res,err:=ss.db.Exec(query,aid,value,profit)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("update_top_profit_rank() failed: %v, q=%v",err,query))
 		os.Exit(1)
@@ -164,8 +202,8 @@ func (ss *SQLStorage) Update_top_profit_rank(eoa_aid int64,value float64,profit 
 		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in update_top_profit_rank(): %v",err))
 	}
 	if affected_rows == 0 {
-		query = "INSERT INTO uranks(eoa_aid,top_profit,profit) VALUES($1,$2,$3)"
-		_,err:=ss.db.Exec(query,eoa_aid,value,profit)
+		query = "INSERT INTO uranks(aid,top_profit,profit) VALUES($1,$2,$3)"
+		_,err:=ss.db.Exec(query,aid,value,profit)
 		if (err!=nil) {
 			ss.Log_msg(fmt.Sprintf("update_top_profit_rank() failed: %v, q=%v",err,query))
 		}
@@ -173,11 +211,11 @@ func (ss *SQLStorage) Update_top_profit_rank(eoa_aid int64,value float64,profit 
 	}
 	return affected_rows
 }
-func (ss *SQLStorage) Update_top_total_trades_rank(eoa_aid int64,value float64,total_trades int64) int64 {
+func (ss *SQLStorage) Update_top_total_trades_rank(aid int64,value float64,total_trades int64) int64 {
 
 	var query string
-	query = "UPDATE uranks SET top_trades = $2,total_trades=$3 WHERE eoa_aid = $1"
-	res,err:=ss.db.Exec(query,eoa_aid,value,total_trades)
+	query = "UPDATE uranks SET top_trades = $2,total_trades=$3 WHERE aid = $1"
+	res,err:=ss.db.Exec(query,aid,value,total_trades)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("update_top_total_trades_rank() failed: %v, q=%v",err,query))
 		os.Exit(1)
@@ -187,8 +225,8 @@ func (ss *SQLStorage) Update_top_total_trades_rank(eoa_aid int64,value float64,t
 		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in update_top_total_trades_rank(): %v",err))
 	}
 	if affected_rows == 0 {
-		query = "INSERT INTO uranks(eoa_aid,top_trades,total_trades) VALUES($1,$2,$3)"
-		_,err:=ss.db.Exec(query,eoa_aid,value,total_trades)
+		query = "INSERT INTO uranks(aid,top_trades,total_trades) VALUES($1,$2,$3)"
+		_,err:=ss.db.Exec(query,aid,value,total_trades)
 		if (err!=nil) {
 			ss.Log_msg(fmt.Sprintf("update_top_total_trades_rank() failed: value=%v, err: %v, q=%v",value,err,query))
 			os.Exit(1)
@@ -197,11 +235,11 @@ func (ss *SQLStorage) Update_top_total_trades_rank(eoa_aid int64,value float64,t
 	}
 	return affected_rows
 }
-func (ss *SQLStorage) Update_top_volume_rank(eoa_aid int64,value float64,volume float64) int64 {
+func (ss *SQLStorage) Update_top_volume_rank(aid int64,value float64,volume float64) int64 {
 
 	var query string
-	query = "UPDATE uranks SET top_volume = $2,volume=$3 WHERE eoa_aid = $1"
-	res,err:=ss.db.Exec(query,eoa_aid,value,volume)
+	query = "UPDATE uranks SET top_volume = $2,volume=$3 WHERE aid = $1"
+	res,err:=ss.db.Exec(query,aid,value,volume)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("update_top_volume_rank() failed: %v, q=%v",err,query))
 		os.Exit(1)
@@ -211,8 +249,8 @@ func (ss *SQLStorage) Update_top_volume_rank(eoa_aid int64,value float64,volume 
 		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in update_top_volume_rank(): %v",err))
 	}
 	if affected_rows == 0 {
-		query = "INSERT INTO uranks(eoa_aid,top_volume,volume) VALUES($1,$2,$3)"
-		_,err:=ss.db.Exec(query,eoa_aid,value,volume)
+		query = "INSERT INTO uranks(aid,top_volume,volume) VALUES($1,$2,$3)"
+		_,err:=ss.db.Exec(query,aid,value,volume)
 		if (err!=nil) {
 			ss.Log_msg(fmt.Sprintf("update_top_volume_rank() failed: value=%v, err: %v, q=%v",value,err,query))
 			os.Exit(1)
@@ -225,7 +263,7 @@ func (ss *SQLStorage) Get_top_profit_makers() []p.ProfitMaker {
 
 	var query string
 	query = "SELECT a.addr,r.top_profit,r.profit FROM uranks AS r " +
-			"LEFT JOIN address AS a ON r.eoa_aid = a.address_id " +
+			"LEFT JOIN address AS a ON r.aid = a.address_id " +
 			"ORDER BY r.top_profit ASC,r.profit DESC LIMIT 100"
 
 	rows,err := ss.db.Query(query)
@@ -237,7 +275,7 @@ func (ss *SQLStorage) Get_top_profit_makers() []p.ProfitMaker {
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.ProfitMaker
-		err=rows.Scan(&rec.EOAAddr,&rec.Percentage,&rec.ProfitLoss)
+		err=rows.Scan(&rec.Addr,&rec.Percentage,&rec.ProfitLoss)
 		records = append(records,rec)
 	}
 	return records
@@ -246,7 +284,7 @@ func (ss *SQLStorage) Get_top_trade_makers() []p.TradeMaker {
 
 	var query string
 	query = "SELECT a.addr,r.top_trades,r.total_trades FROM uranks AS r " +
-			"LEFT JOIN address AS a ON r.eoa_aid = a.address_id " +
+			"LEFT JOIN address AS a ON r.aid = a.address_id " +
 			"ORDER BY r.top_trades ASC,r.total_trades DESC LIMIT 100"
 
 	rows,err := ss.db.Query(query)
@@ -258,7 +296,7 @@ func (ss *SQLStorage) Get_top_trade_makers() []p.TradeMaker {
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.TradeMaker
-		err=rows.Scan(&rec.EOAAddr,&rec.Percentage,&rec.TotalTrades)
+		err=rows.Scan(&rec.Addr,&rec.Percentage,&rec.TotalTrades)
 		records = append(records,rec)
 	}
 	return records
@@ -267,7 +305,7 @@ func (ss *SQLStorage) Get_top_volume_makers() []p.VolumeMaker {
 
 	var query string
 	query = "SELECT a.addr,r.top_volume,r.volume FROM uranks AS r " +
-			"LEFT JOIN address AS a ON r.eoa_aid = a.address_id " +
+			"LEFT JOIN address AS a ON r.aid = a.address_id " +
 			"ORDER BY r.top_volume ASC,r.volume DESC LIMIT 100"
 
 	rows,err := ss.db.Query(query)
@@ -279,7 +317,7 @@ func (ss *SQLStorage) Get_top_volume_makers() []p.VolumeMaker {
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.VolumeMaker
-		err=rows.Scan(&rec.EOAAddr,&rec.Percentage,&rec.Volume)
+		err=rows.Scan(&rec.Addr,&rec.Percentage,&rec.Volume)
 		records = append(records,rec)
 	}
 	return records
@@ -304,11 +342,10 @@ func (ss *SQLStorage) Get_user_ranks(sort int,order int) []p.UserRank {
 	}
 
 	query = "SELECT " +
-				"r.eoa_aid,ea.addr,r.profit,r.total_trades,r.volume,s.markets_created,wa.address_id,wa.addr " +
+				"r.aid,a.addr,r.profit,r.total_trades,r.volume,s.markets_created " +
 				"FROM uranks AS r " +
-					"JOIN  ustats AS s ON r.eoa_aid=s.eoa_aid " +
-			"LEFT JOIN address AS ea ON r.eoa_aid = ea.address_id " +
-			"LEFT JOIN address AS wa ON s.wallet_aid = wa.address_id " +
+					"JOIN  ustats AS s ON r.aid=s.aid " +
+			"LEFT JOIN address AS a ON r.aid = a.address_id " +
 			"ORDER BY "+order_field+" "+order_dir
 
 	rows,err := ss.db.Query(query)
@@ -320,20 +357,18 @@ func (ss *SQLStorage) Get_user_ranks(sort int,order int) []p.UserRank {
 	for rows.Next() {
 		var rec p.UserRank
 		err=rows.Scan(
-			&rec.EoaAid,
-			&rec.EOAAddr,
+			&rec.Aid,
+			&rec.Addr,
 			&rec.ProfitLoss,
 			&rec.TotalTrades,
 			&rec.VolumeTraded,
 			&rec.NumMktCreated,
-			&rec.WalletAid,
-			&rec.WalletAddr,
 		)
 		records = append(records,rec)
 	}
 	return records
 }
-func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.Report {
+func (ss *SQLStorage) Get_user_reports(aid int64,limit int) []p.Report {
 
 	var query string
 	query = "SELECT " +
@@ -356,7 +391,7 @@ func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.Report {
 					"report AS r, " +
 					"market AS m " +
 						"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
-			"WHERE (r.market_aid = m.market_aid) and (r.eoa_aid=$1) " +
+			"WHERE (r.market_aid = m.market_aid) and (r.aid=$1) " +
 			"ORDER BY r.rpt_timestamp"
 	if limit > 0 {
 		query = query +	" LIMIT " + strconv.Itoa(limit)
@@ -365,7 +400,7 @@ func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.Report {
 	records := make([]p.Report,0,8)
 	var rows *sql.Rows
 	var err error
-	rows,err = ss.db.Query(query,eoa_aid)
+	rows,err = ss.db.Query(query,aid)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			return records
@@ -438,12 +473,11 @@ func (ss *SQLStorage) Get_user_reports(eoa_aid int64,limit int) []p.Report {
 	}
 	return records
 }
-func (ss *SQLStorage) Get_user_markets(eoa_aid int64) []p.InfoMarket {
+func (ss *SQLStorage) Get_user_markets(aid int64) []p.InfoMarket {
 
 	var query string
 	query = "SELECT " +
 				"ma.addr as mkt_addr," +
-				"sa.addr AS signer," +
 				"ca.addr as mcreator," +
 				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') as end_date," + 
 				"FLOOR(EXTRACT(EPOCH FROM m.create_timestamp))::BIGINT as created_ts," +
@@ -466,17 +500,13 @@ func (ss *SQLStorage) Get_user_markets(eoa_aid int64) []p.InfoMarket {
 				"open_interest AS OI," +
 				"cur_volume AS volume " +
 			"FROM market as m " +
-				"LEFT JOIN " +
-					"address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN " +
-					"address AS sa ON m.eoa_aid= sa.address_id " +
-				"LEFT JOIN " +
-					"address AS ca ON m.wallet_aid = ca.address_id " +
-			"WHERE eoa_aid = $1 " +
+				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
+				"LEFT JOIN address AS ca ON m.creator_aid = ca.address_id " +
+			"WHERE aid = $1 " +
 			"ORDER BY " +
 				"m.market_aid "
 
-	rows,err := ss.db.Query(query,eoa_aid)
+	rows,err := ss.db.Query(query,aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -491,7 +521,6 @@ func (ss *SQLStorage) Get_user_markets(eoa_aid int64) []p.InfoMarket {
 		var categories sql.NullString
 		err=rows.Scan(
 					&rec.MktAddr,
-					&rec.Signer,
 					&rec.MktCreator,
 					&rec.EndDate,
 					&rec.CreatedTs,
@@ -531,11 +560,11 @@ func (ss *SQLStorage) Get_user_markets(eoa_aid int64) []p.InfoMarket {
 	}
 	return records
 }
-func (ss *SQLStorage) Get_unclaimed_profit(eoa_aid int64) float64 {
+func (ss *SQLStorage) Get_unclaimed_profit(aid int64) float64 {
 
 	var query string
-	query = "SELECT sum(final_profit) AS pl FROM claim_funds WHERE eoa_aid=$1 AND claim_status=1"
-	row := ss.db.QueryRow(query,eoa_aid)
+	query = "SELECT sum(final_profit) AS pl FROM claim_funds WHERE aid=$1 AND claim_status=1"
+	row := ss.db.QueryRow(query,aid)
 
 	var profit sql.NullFloat64
 	var err error
@@ -561,7 +590,7 @@ func (ss *SQLStorage) Get_mkt_participant_outcomes(mkt_addr *common.Address) []*
 
 	var query string
 	query = "SELECT wa.addr,pl.outcome_idx FROM profit_loss AS pl " +
-				"LEFT JOIN address AS wa ON pl.wallet_aid=wa.address_id " +
+				"LEFT JOIN address AS a ON pl.aid=a.address_id " +
 				"WHERE pl.market_aid=$1 "
 	rows,err := ss.db.Query(query,market_aid)
 	if (err!=nil) {
@@ -581,14 +610,14 @@ func (ss *SQLStorage) Get_mkt_participant_outcomes(mkt_addr *common.Address) []*
 		}
 		pchg := new(p.PosChg)
 		pchg.Mkt_addr = *mkt_addr
-		pchg.Wallet_addr = common.HexToAddress(addr)
+		pchg.Addr = common.HexToAddress(addr)
 		pchg.Outcome = new(big.Int)
 		pchg.Outcome.SetInt64(int64(outcome_idx))
 		output = append(output,pchg)
 	}
 	return output
 }
-func (ss *SQLStorage) Get_traded_markets_for_user(eoa_aid int64,active_flag int) []p.InfoMarket {
+func (ss *SQLStorage) Get_traded_markets_for_user(aid int64,active_flag int) []p.InfoMarket {
 
 	var where_condition string
 	if active_flag == 1 {
@@ -600,7 +629,6 @@ func (ss *SQLStorage) Get_traded_markets_for_user(eoa_aid int64,active_flag int)
 	query = "SELECT " +
 				"m.market_aid," +
 				"ma.addr as mkt_addr," +
-				"sa.addr AS signer," +
 				"ca.addr as mcreator," +
 				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') as end_date," + 
 				"FLOOR(EXTRACT(EPOCH FROM m.create_timestamp))::BIGINT as created_ts," +
@@ -629,12 +657,11 @@ func (ss *SQLStorage) Get_traded_markets_for_user(eoa_aid int64,active_flag int)
 			"FROM market as m " +
 				"JOIN trd_mkt_stats AS s ON m.market_aid = s.market_aid " +
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN address AS sa ON m.eoa_aid= sa.address_id " +
-				"LEFT JOIN address AS ca ON m.wallet_aid = ca.address_id " +
-			"WHERE s.eoa_aid = $1 AND " + where_condition +
+				"LEFT JOIN address AS ca ON m.creator_aid = ca.address_id " +
+			"WHERE s.aid = $1 AND " + where_condition +
 			"ORDER BY s.volume_traded DESC"
 
-	rows,err := ss.db.Query(query,eoa_aid)
+	rows,err := ss.db.Query(query,aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -650,7 +677,6 @@ func (ss *SQLStorage) Get_traded_markets_for_user(eoa_aid int64,active_flag int)
 		err=rows.Scan(
 					&rec.MktAid,
 					&rec.MktAddr,
-					&rec.Signer,
 					&rec.MktCreator,
 					&rec.EndDate,
 					&rec.CreatedTs,
@@ -692,13 +718,12 @@ func (ss *SQLStorage) Get_traded_markets_for_user(eoa_aid int64,active_flag int)
 	}
 	return records
 }
-func (ss *SQLStorage) Get_created_markets_for_user(eoa_aid int64) []p.InfoMarket {
+func (ss *SQLStorage) Get_created_markets_for_user(aid int64) []p.InfoMarket {
 
 	var query string
 	query = "SELECT " +
 				"m.market_aid," +
 				"ma.addr as mkt_addr," +
-				"sa.addr AS signer," +
 				"ca.addr as mcreator," +
 				"TO_CHAR(end_time,'dd/mm/yyyy HH24:SS UTC') as end_date," + 
 				"FLOOR(EXTRACT(EPOCH FROM m.create_timestamp))::BIGINT as created_ts," +
@@ -725,12 +750,11 @@ func (ss *SQLStorage) Get_created_markets_for_user(eoa_aid int64) []p.InfoMarket
 				"money_at_stake " +
 			"FROM market as m " +
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN address AS sa ON m.eoa_aid= sa.address_id " +
-				"LEFT JOIN address AS ca ON m.wallet_aid = ca.address_id " +
-			"WHERE (m.wallet_aid = $1) OR (m.eoa_aid=$1) " +
+				"LEFT JOIN address AS ca ON m.creator_aid = ca.address_id " +
+			"WHERE m.creator_aid=$1 " +
 			"ORDER BY m.create_timestamp"
 
-	rows,err := ss.db.Query(query,eoa_aid)
+	rows,err := ss.db.Query(query,aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -746,7 +770,6 @@ func (ss *SQLStorage) Get_created_markets_for_user(eoa_aid int64) []p.InfoMarket
 		err=rows.Scan(
 					&rec.MktAid,
 					&rec.MktAddr,
-					&rec.Signer,
 					&rec.MktCreator,
 					&rec.EndDate,
 					&rec.CreatedTs,
@@ -787,7 +810,7 @@ func (ss *SQLStorage) Get_created_markets_for_user(eoa_aid int64) []p.InfoMarket
 	}
 	return records
 }
-func (ss *SQLStorage) Get_user_trades_for_market(eoa_aid int64,mkt_aid int64) []p.MarketTrade {
+func (ss *SQLStorage) Get_user_trades_for_market(aid int64,mkt_aid int64) []p.MarketTrade {
 	// get market trades with mixed outcomes
 	var query string
 	query = "SELECT " +
@@ -814,15 +837,15 @@ func (ss *SQLStorage) Get_user_trades_for_market(eoa_aid int64,mkt_aid int64) []
 			"FROM mktord AS o " +
 				"JOIN market AS m ON o.market_aid=m.market_aid " +
 				"LEFT JOIN address AS a ON o.market_aid=a.address_id " +
-				"LEFT JOIN address AS fa ON o.eoa_fill_aid=fa.address_id " +
-				"LEFT JOIN address AS ca ON o.eoa_aid=ca.address_id " +
-			"WHERE o.market_aid = $1 AND ((o.eoa_aid=$2) OR (o.eoa_fill_aid=$2)) " +
+				"LEFT JOIN address AS fa ON o.fill_aid=fa.address_id " +
+				"LEFT JOIN address AS ca ON o.aid=ca.address_id " +
+			"WHERE o.market_aid = $1 AND ((o.aid=$2) OR (o.fill_aid=$2)) " +
 			"ORDER BY o.block_num DESC,o.time_stamp DESC"
 
-	ss.Info.Printf("eoa_aid=%v, market_aid=%v, query=%v\n",eoa_aid,mkt_aid,query)
+	ss.Info.Printf("aid=%v, market_aid=%v, query=%v\n",aid,mkt_aid,query)
 	var rows *sql.Rows
 	var err error
-	rows,err = ss.db.Query(query,mkt_aid,eoa_aid)
+	rows,err = ss.db.Query(query,mkt_aid,aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -896,8 +919,8 @@ func (ss *SQLStorage) Get_user_open_orders(user_aid int64) []p.OpenOrder {
 			"FROM oorders AS o " +
 				"LEFT JOIN market AS m ON o.market_aid = m.market_aid " +
 				"LEFT JOIN address AS ma ON o.market_aid = ma.address_id " +
-				"LEFT JOIN address AS ca ON o.eoa_aid = ca.address_id " +
-			"WHERE o.eoa_aid = $1 " +
+				"LEFT JOIN address AS ca ON o.aid = ca.address_id " +
+			"WHERE o.aid = $1 " +
 			"ORDER BY o.id DESC"
 
 	rows,err := ss.db.Query(query,user_aid)
@@ -942,7 +965,7 @@ func (ss *SQLStorage) Get_user_open_orders(user_aid int64) []p.OpenOrder {
 	}
 	return records
 }
-func  (ss *SQLStorage) Get_gas_spent_for_user(eoa_aid int64) (p.GasSpent,error) {
+func  (ss *SQLStorage) Get_gas_spent_for_user(aid int64) (p.GasSpent,error) {
 
 	var output p.GasSpent
 	var query string
@@ -951,9 +974,9 @@ func  (ss *SQLStorage) Get_gas_spent_for_user(eoa_aid int64) (p.GasSpent,error) 
 			"gtrading,greporting,gmarkets," +
 			"geth_trading,geth_reporting,geth_markets "+
 		"FROM ustats "+
-		"WHERE eoa_aid=$1"
+		"WHERE aid=$1"
 
-	row := ss.db.QueryRow(query,eoa_aid)
+	row := ss.db.QueryRow(query,aid)
 	err := row.Scan(
 		&output.Trading,
 		&output.Reporting,
@@ -970,7 +993,7 @@ func  (ss *SQLStorage) Get_gas_spent_for_user(eoa_aid int64) (p.GasSpent,error) 
 	}
 	return output,nil
 }
-func (ss *SQLStorage) Get_user_oo_history(user_aid int64) []p.OpenOrder {
+func (ss *SQLStorage) Get_user_oo_history(aid int64) []p.OpenOrder {
 
 	records := make([]p.OpenOrder,0,8)
 	// open orders on 0x Mesh network
@@ -1007,11 +1030,11 @@ func (ss *SQLStorage) Get_user_oo_history(user_aid int64) []p.OpenOrder {
 			"FROM oohist AS o " +
 				"LEFT JOIN market AS m ON o.market_aid = m.market_aid " +
 				"LEFT JOIN address AS ma ON o.market_aid = ma.address_id " +
-				"LEFT JOIN address AS ca ON o.eoa_aid = ca.address_id " +
-			"WHERE o.eoa_aid = $1 " +
+				"LEFT JOIN address AS ca ON o.aid = ca.address_id " +
+			"WHERE o.aid = $1 " +
 			"ORDER BY o.id DESC"
 
-	rows,err := ss.db.Query(query,user_aid)
+	rows,err := ss.db.Query(query,aid)
 	if err!=nil {
 		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 		os.Exit(1)
@@ -1058,4 +1081,394 @@ func (ss *SQLStorage) Get_user_oo_history(user_aid int64) []p.OpenOrder {
 		records = append(records,rec)
 	}
 	return records
+}
+func (ss *SQLStorage) Get_wrapped_shtoken_balances(aid int64) []p.UserShTokens {
+
+	var query string
+	query = "WITH idrecs AS (" +
+				"SELECT MAX(id) AS id,count(*) AS num_recs,wrapper_aid " +
+				"FROM wstok_bal WHERE aid=$1 GROUP BY wrapper_aid" +
+			") " +
+			"SELECT " +
+				"balance + amount AS balance," +
+				"num_recs, " +
+				"wa.addr," +
+				"inf.symbol,"+
+				"inf.name, " +
+				"w.outcome_idx," +
+				"ma.addr " +
+			"FROM idrecs AS i " +
+				"JOIN wstok_bal AS b ON i.id=b.id " +
+				"JOIN af_wrapper AS w ON i.wrapper_aid=w.wrapper_aid " +
+				"JOIN erc20_info AS inf ON inf.aid=i.wrapper_aid " +
+				"JOIN address AS wa ON i.wrapper_aid=wa.address_id " +
+				"JOIN address AS ma ON w.market_aid = ma.address_id " +
+			"ORDER BY num_recs DESC "
+	rows,err := ss.db.Query(query,aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.UserShTokens,0,8)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UserShTokens
+		err=rows.Scan(
+			&rec.Balance,
+			&rec.NumTransfers,
+			&rec.WrapperAddr,
+			&rec.Symbol,
+			&rec.Name,
+			&rec.OutcomeIdx,
+			&rec.MarketAddr,
+		)
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_user_wrapped_shtoken_transfers(aid,wrapper_aid int64,offset,limit int) (int64,[]p.UserShtokTransfer) {
+
+	var query string
+
+	var total_rows int64
+	query = "SELECT COUNT(*) AS total_rows FROM wstok_bal b " +
+			"WHERE b.aid=$1 AND b.wrapper_aid=$2"
+
+	var null_counter sql.NullInt64
+	var err error
+	err=ss.db.QueryRow(query,aid,wrapper_aid).Scan(&null_counter);
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v , q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	total_rows=null_counter.Int64
+
+	query = "SELECT " +
+				"fa.addr," +
+				"ta.addr," +
+				"EXTRACT(EPOCH FROM tr.time_stamp)::BIGINT AS ts," +
+				"tr.time_stamp," +
+				"tr.from_aid," +
+				"tr.to_aid," +
+				"tr.amount, " +
+				"tb.balance " +
+			"FROM wstok_bal AS tb " +
+			"JOIN wstok_transf AS tr ON tb.tr_id=tr.id " +
+			"LEFT JOIN address AS fa ON tr.from_aid=fa.address_id " +
+			"LEFT JOIN address AS ta ON tr.to_aid=ta.address_id " +
+			"WHERE tb.aid=$1 AND tb.wrapper_aid=$2 " +
+			"ORDER BY tr.time_stamp DESC,tb.id DESC " +
+			"OFFSET $3 LIMIT $4"
+	
+	rows,err := ss.db.Query(query,aid,wrapper_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.UserShtokTransfer,0,8)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UserShtokTransfer
+		err=rows.Scan(
+			&rec.From,
+			&rec.To,
+			&rec.TimeStamp,
+			&rec.Date,
+			&rec.FromAid,
+			&rec.ToAid,
+			&rec.Amount,
+			&rec.Balance,
+		)
+		records = append(records,rec)
+	}
+	return total_rows,records
+}
+func (ss *SQLStorage) Get_user_uniswap_swaps(user_aid int64,offset int,limit int) ([]p.UserUniswapSwap , int64) {
+
+	records := make([]p.UserUniswapSwap,0,128)
+	var query string
+
+	query = "SELECT COUNT(*) AS total_recs FROM uswap1 sw " +
+			"JOIN upair AS p ON sw.pair_aid = p.pair_aid " +
+			"JOIN af_wrapper AS w ON (w.wrapper_aid=p.token0_aid OR w.wrapper_aid=p.token1_aid) " +
+			"WHERE sw.recipient_aid=$1"
+	var total_rows int64 = 0
+	var null_recs sql.NullInt64
+	err := ss.db.QueryRow(query,user_aid).Scan(&null_recs)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+	total_rows = null_recs.Int64
+
+	query = "SELECT " +
+				"sw.id,"+
+				"sw.block_num," +
+				"sw.amount0_in, " +
+				"sw.amount1_in," +
+				"sw.amount0_out," +
+				"sw.amount1_out," +
+				"sw.time_stamp," +
+				"EXTRACT(EPOCH FROM sw.time_stamp)::BIGINT AS created_ts, "+
+				"ra.addr AS recipient_addr," +
+				"sw.recipient_aid, " +
+				"p.pair_aid, " +
+				"pa.addr, " +
+				"inf1.symbol," +
+				"inf1.name," +
+				"inf2.symbol," +
+				"inf2.name, " +
+				"w.outcome_idx, " +
+				"m.market_aid,"+
+				"ma.addr," +
+				"m.market_type, " +
+				"m.extra_info::json->>'description' AS descr," +
+				"m.outcomes " +
+			"FROM uswap1 AS sw " +
+			"JOIN upair AS p ON sw.pair_aid = p.pair_aid " +
+			"JOIN af_wrapper AS w ON (w.wrapper_aid=p.token0_aid OR w.wrapper_aid=p.token1_aid) " +
+			"JOIN market AS m ON w.market_aid=m.market_aid " +
+			"LEFT JOIN address AS ra ON sw.recipient_aid=ra.address_id " +
+			"LEFT JOIN address AS pa ON sw.pair_aid=pa.address_id " +
+			"LEFT JOIN address AS ma ON m.market_aid=ma.address_id " +
+			"LEFT JOIN erc20_info inf1 ON p.token0_aid=inf1.aid " +
+			"LEFT JOIN erc20_info inf2 ON p.token1_aid=inf2.aid " +
+			"WHERE sw.recipient_aid=$1 " +
+			"ORDER BY sw.time_stamp DESC "+
+			"OFFSET $2 LIMIT $3"
+
+	rows,err := ss.db.Query(query,user_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UserUniswapSwap
+		var mkt_type int
+		var null_desc sql.NullString
+		var outcomes string
+		err=rows.Scan(
+			&rec.Id,
+			&rec.BlockNum,
+			&rec.Amount0_In,
+			&rec.Amount1_In,
+			&rec.Amount0_Out,
+			&rec.Amount1_Out,
+			&rec.CreatedDate,
+			&rec.CreatedTs,
+			&rec.RequesterAddr,
+			&rec.RequesterAid,
+			&rec.PairAid,
+			&rec.PairAddr,
+			&rec.Symbol0,
+			&rec.Name0,
+			&rec.Symbol1,
+			&rec.Name1,
+			&rec.OutcomeIdx,
+			&rec.MktAid,
+			&rec.MktAddr,
+			&mkt_type,
+			&null_desc,
+			&outcomes,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		if null_desc.Valid {
+			rec.MktDescription = null_desc.String
+		}
+		rec.Outcome = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
+		records = append(records,rec)
+	}
+	return records,total_rows
+}
+func (ss *SQLStorage) Get_user_balancer_swaps(user_aid int64,offset int,limit int) ([]p.UserBalancerSwap,int64) {
+
+	records := make([]p.UserBalancerSwap,0,64)
+	var query string
+	query = "SELECT count(*) as total " +
+			"FROM bswap AS s " +
+				"JOIN af_wrapper AS w ON (w.wrapper_aid=s.token_in_aid OR w.wrapper_aid=s.token_out_aid) "+
+			"WHERE s.caller_aid=$1"
+	var total_rows int64 = 0
+	var null_recs sql.NullInt64
+	err := ss.db.QueryRow(query,user_aid).Scan(&null_recs)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+	total_rows = null_recs.Int64
+
+	query = "SELECT " +
+				"s.id,"+
+				"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT AS ts, " +
+				"s.time_stamp as datetime,"+
+				"s.block_num," +
+				"s.tx_id,"+
+				"ca.addr,"+
+				"tia.addr," +
+				"toa.addr," +
+				"s.token_in_aid," +
+				"s.token_out_aid," +
+				"e_in.symbol,"+
+				"e_out.symbol," +
+				"e_in.name," +
+				"e_out.name," +
+				"s.amount_in, " +
+				"s.amount_out, " +
+				"s.pool_aid," +
+				"pa.addr," +
+				"w.outcome_idx, "+
+				"m.market_aid," +
+				"ma.addr," +
+				"m.market_type, " +
+				"m.extra_info::json->>'description' AS descr," +
+				"m.outcomes " +
+			"FROM bswap AS s " +
+				"JOIN af_wrapper AS w ON (w.wrapper_aid=s.token_in_aid OR w.wrapper_aid=s.token_out_aid) "+
+				"JOIN market AS m ON w.market_aid=m.market_aid " +
+				"LEFT JOIN address AS ca ON s.caller_aid=ca.address_id " +
+				"LEFT JOIN address AS tia ON s.token_in_aid=tia.address_id " +
+				"LEFT JOIN address AS toa ON s.token_out_aid=toa.address_id " +
+				"LEFT JOIN address AS ma ON m.market_aid=ma.address_id " +
+				"LEFT JOIN address AS pa ON s.pool_aid=pa.address_id "+
+				"LEFT JOIN erc20_info AS e_in ON s.token_in_aid=e_in.aid " +
+				"LEFT JOIN erc20_info AS e_out ON s.token_out_aid=e_out.aid " +
+			"WHERE s.caller_aid=$1 " +
+			"ORDER BY ts DESC OFFSET $2 LIMIT $3"
+	rows,err := ss.db.Query(query,user_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UserBalancerSwap
+		var symbol_in,symbol_out,name_in,name_out sql.NullString
+		var mkt_type int
+		var null_desc sql.NullString
+		var outcomes string
+		err=rows.Scan(
+			&rec.Id,
+			&rec.TimeStamp,
+			&rec.Date,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.CallerAddr,
+			&rec.TokenInAddr,
+			&rec.TokenOutAddr,
+			&rec.TokenInAid,
+			&rec.TokenOutAid,
+			&symbol_in,
+			&symbol_out,
+			&name_in,
+			&name_out,
+			&rec.AmountInF,
+			&rec.AmountOutF,
+			&rec.PoolAid,
+			&rec.PoolAddr,
+			&rec.OutcomeIdx,
+			&rec.MktAid,
+			&rec.MktAddr,
+			&mkt_type,
+			&null_desc,
+			&outcomes,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.CallerAid = user_aid
+		rec.SymbolIn = symbol_in.String
+		rec.SymbolOut = symbol_out.String
+		rec.NameIn = name_in.String
+		rec.NameOut = name_out.String
+		if null_desc.Valid {
+			rec.MktDescription = null_desc.String
+		}
+		rec.Outcome = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
+		records = append(records,rec)
+	}
+	return records,total_rows
+}
+func (ss *SQLStorage) Get_user_ens_names(user_aid int64,offset int,limit int) ([]p.UserENS,int64) {
+
+	records := make([]p.UserENS,0,4)
+	var query string
+	query = "WITH last_owner AS (" +
+				"SELECT DISTINCT fqdn " +
+					"FROM ens_new_owner " +
+					"WHERE owner_aid=$1 " +
+			") " +
+			"SELECT " +
+				"count(n.fqdn)"+
+			"FROM last_owner AS last " +
+				"JOIN ens_node AS n ON last.fqdn=n.fqdn " +
+			"WHERE " +
+				"LENGTH(n.fqdn_words) > 0"
+	var total_rows int64 = 0
+	var null_recs sql.NullInt64
+	err := ss.db.QueryRow(query,user_aid).Scan(&null_recs)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+	total_rows = null_recs.Int64
+
+	query = "WITH last_owner AS (" +
+			"SELECT DISTINCT fqdn,time_stamp AS dt,EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ts " +
+					"FROM ens_new_owner " +
+					"WHERE owner_aid=$1 " +
+					"ORDER BY time_stamp DESC " +
+			") " +
+			"SELECT " +
+				"n.fqdn,"+
+				"last.dt," +
+				"last.ts," +
+				"n.fqdn_words, " +
+				"txt.num_keys " +
+			"FROM last_owner AS last " +
+				"JOIN ens_node AS n ON last.fqdn=n.fqdn " +
+				"LEFT JOIN ens_text AS txt ON n.fqdn=txt.node " +
+			"WHERE " +
+				"LENGTH(n.fqdn_words) > 0 " +
+			"ORDER BY ts DESC OFFSET $2 LIMIT $3"
+
+	ss.Info.Printf("getens query: %v\n",query)
+
+	rows,err := ss.db.Query(query,user_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UserENS
+		var null_num_keys sql.NullInt64
+		err := rows.Scan(
+			&rec.NodeHash,
+			&rec.DateNameAcquired,
+			&rec.TsNameAcquired,
+			&rec.ENS_Name,
+			&null_num_keys,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.NumTextKeyValuePairs = null_num_keys.Int64
+		records = append(records,rec)
+	}
+	return records,total_rows
 }

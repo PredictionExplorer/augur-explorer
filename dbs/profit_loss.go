@@ -37,26 +37,22 @@ func (ss *SQLStorage) calculate_profit(num_ticks int64,win_tick int64,amount *bi
 		ss.Info.Printf("substracted price =%v, new price=%v\n",price.String(),result.String())
 		result.Mul(result,amount)
 		ss.Info.Printf("multiplication = %v\n",result.String())
-//		result.Quo(result,ticks) part of original formula of Augur, but this op doesn't work
-//		ss.Info.Printf("division by %v : %v\n",ticks.String(),result.String())
 	}
 	if amount.Cmp(zero) > 0 {	// Long
 		result.Sub(win_price,price)
 		ss.Info.Printf("substracted price = %v\n",result.String())
 		result.Mul(result,amount)
 		ss.Info.Printf("multiplication = %v\n",result.String())
-//		result.Quo(result,ticks)
-//		ss.Info.Printf("division by %v : %v\n",ticks.String(),result.String())
 	}
 	// Note: if amount == 0 , returns 0
 	return result
 }
-func (ss *SQLStorage) set_all_unclaimed_to_claimed(market_aid int64,eoa_aid int64,timestamp int64) {
+func (ss *SQLStorage) set_all_unclaimed_to_claimed(market_aid int64,aid int64,timestamp int64) {
 	var query string
 	query = "UPDATE claim_funds SET claim_status=2,claim_ts=TO_TIMESTAMP($3) " +
-			"WHERE claim_status=1 AND market_aid=$1 AND eoa_aid=$2"
-	ss.Info.Printf("update_claimed: market=%v, aid=%v, query=%v",market_aid,eoa_aid,query)
-	_,err := ss.db.Exec(query,market_aid,eoa_aid,timestamp)
+			"WHERE claim_status=1 AND market_aid=$1 AND aid=$2"
+	ss.Info.Printf("update_claimed: market=%v, aid=%v, query=%v",market_aid,aid,query)
+	_,err := ss.db.Exec(query,market_aid,aid,timestamp)
 	if err!=nil {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -71,7 +67,7 @@ func (ss *SQLStorage) calculate_profit_loss_for_all_users(market_aid int64,block
 
 	query = "SELECT " +
 				"pl.id," +
-				"pl.eoa_aid," +
+				"pl.aid," +
 				"pl.outcome_idx," +
 				"round(pl.net_position*1e+18)::text," +
 				"round(pl.avg_price*1e+18)::text, " +
@@ -93,14 +89,14 @@ func (ss *SQLStorage) calculate_profit_loss_for_all_users(market_aid int64,block
 		var (
 			claim_status int = 0
 			pl_id int64
-			eoa_aid int64
+			aid int64
 			outcome_idx int
 			str_net_position string
 			str_price string
 			frozen_funds string
 			frozen_funds_big string
 		)
-		err=rows.Scan(&pl_id,&eoa_aid,&outcome_idx,&str_net_position,&str_price,&frozen_funds,&frozen_funds_big)
+		err=rows.Scan(&pl_id,&aid,&outcome_idx,&str_net_position,&str_price,&frozen_funds,&frozen_funds_big)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v ; q=%v",err,query))
 			os.Exit(1)
@@ -117,7 +113,7 @@ func (ss *SQLStorage) calculate_profit_loss_for_all_users(market_aid int64,block
 		ss.Info.Printf("loss = %v\n",profit)
 		profit_str := profit.String()
 		query = "INSERT INTO claim_funds(" +
-						"block_num,tx_id,eoa_aid,market_aid,outcome_idx,last_pl_id,"+
+						"block_num,tx_id,aid,market_aid,outcome_idx,last_pl_id,"+
 						"claim_status,autocalculated,final_profit,unfrozen_funds" +
 					") VALUES (" +
 						"$1,$2,$3,$4,$5,$6,$7,$8,(("+profit_str+"/1e+36)),("+frozen_funds+")" +
@@ -128,12 +124,12 @@ func (ss *SQLStorage) calculate_profit_loss_for_all_users(market_aid int64,block
 		if ff_big.Cmp(zero) < 0 {
 			claim_status=2 // if we have negative frozen funds, then this position is considered claimed
 		}
-		ss.Info.Printf("update_losing: pl_id=%v eoa_aid=%v frozen=%v profit=%v\n",pl_id,eoa_aid,frozen_funds,profit.String())
+		ss.Info.Printf("update_losing: pl_id=%v aid=%v frozen=%v profit=%v\n",pl_id,aid,frozen_funds,profit.String())
 		ss.Info.Printf("update_losing: INSERT: %v\n",query)
 		_,err:=ss.db.Exec(query,
 			block_num,
 			tx_id,
-			eoa_aid,
+			aid,
 			market_aid,
 			outcome_idx,
 			pl_id,
@@ -160,14 +156,49 @@ func (ss *SQLStorage) Update_claim_status(agtx *p.AugurTx,evt *p.ETradingProceed
 
 	var query string
 	query = "UPDATE claim_funds SET claim_status=2,autocalculated=FALSE,claim_ts=TO_TIMESTAMP($3) " +
-			"WHERE market_aid=$1 AND eoa_aid=$2 AND claim_status=1"
+			"WHERE market_aid=$1 AND aid=$2 AND claim_status=1"
 	_,err := ss.db.Exec(query,	market_aid,signer_aid,timestamp)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: %v:q=%v",err,query))
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,eoa_aid int64,evt *p.EProfitLossChanged) int64  {
+func (ss *SQLStorage) Insert_trading_proceeds_claimed_evt(agtx *p.AugurTx,evt *p.ETradingProceedsClaimed) {
+
+	market_aid := ss.Lookup_address_id(evt.Market.String())
+	aid := ss.Lookup_or_create_address(evt.Shareholder.String(),agtx.BlockNum,agtx.TxId)
+	var query string
+	query = "INSERT INTO tproceeds(" +
+				"block_num,tx_id,market_aid,aid,time_stamp,outcome_idx,num_shares,num_payout_tok,fees" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,($7::DECIMAL/1e+18),($8::DECIMAL/1e+18),($9::DECIMAL/1e+18))"
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,
+		agtx.TxId,
+		market_aid,
+		aid,
+		evt.Timestamp.Int64(),
+		evt.Outcome.Int64(),
+		evt.NumShares.String(),
+		evt.NumPayoutTokens.String(),
+		evt.Fees.String(),
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: %v:q=%v",err,query))
+		os.Exit(1)
+	}
+
+}
+func (ss *SQLStorage) Delete_trading_proceeds_claimed_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM tproceeds WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,evt *p.EProfitLossChanged) int64  {
 
 	var query string
 	var err error
@@ -183,7 +214,7 @@ func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,eoa_aid int64,evt *
 		os.Exit(1)
 	}
 	market_aid,market_type := ss.lookup_market_id(evt.Market.String())
-	wallet_aid := ss.Lookup_or_create_address(evt.Account.String(),agtx.BlockNum,agtx.TxId)
+	aid := ss.Lookup_or_create_address(evt.Account.String(),agtx.BlockNum,agtx.TxId)
 
 	var qty_divisor string = "18" //16
 	var price_divisor string = "18" //20
@@ -214,9 +245,9 @@ func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,eoa_aid int64,evt *
 		realized_cost = "0"
 	}
 	time_stamp := evt.Timestamp.Int64()
-	ss.close_previous_positions(market_aid,eoa_aid,int(outcome_idx),"")
+	ss.close_previous_positions(market_aid,aid,int(outcome_idx),"")
 	var immed_profit_str string
-	previous_rprofit_str,previous_ff_str:=ss.get_previous_profit_and_ff(market_aid,eoa_aid,int(outcome_idx))
+	previous_rprofit_str,previous_ff_str:=ss.get_previous_profit_and_ff(market_aid,aid,int(outcome_idx))
 	prev_profit:=new(big.Int)
 	if len(previous_rprofit_str) > 0 {
 		prev_profit.SetString(previous_rprofit_str,10)
@@ -242,8 +273,7 @@ func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,eoa_aid int64,evt *
 				"block_num," + 
 				"tx_id," +
 				"market_aid," +
-				"eoa_aid," +
-				"wallet_aid," +
+				"aid," +
 				"outcome_idx," +
 				"mktord_id," +
 				"net_position," +
@@ -254,7 +284,7 @@ func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,eoa_aid int64,evt *
 				"immediate_profit," +
 				"immediate_ff," +
 				"time_stamp" +
-			") VALUES($1,$2,$3,$4,$5,$6,$7," +
+			") VALUES($1,$2,$3,$4,$5,$6," +
 				"(" +net_position+ "/1e+"+qty_divisor+")," +
 				"(" +avg_price+ "/1e+"+price_divisor+")," +
 				"(" +frozen_funds+ "/1e+36)," +
@@ -262,7 +292,7 @@ func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,eoa_aid int64,evt *
 				"(" +realized_cost + "/1e+36)," +
 				"(" +immed_profit_str + "/1e+36)," +
 				"(" +immed_ff_str + "/1e+36)," +
-				"TO_TIMESTAMP($8)" +
+				"TO_TIMESTAMP($7)" +
 			") RETURNING id,realized_profit,realized_cost,net_position"
 
 	var null_pl_id sql.NullInt64
@@ -274,8 +304,7 @@ func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,eoa_aid int64,evt *
 			agtx.BlockNum,
 			agtx.TxId,
 			market_aid,
-			eoa_aid,
-			wallet_aid,
+			aid,
 			outcome_idx,
 			*ss.mkt_order_id_ptr,// note, this contains meaningful value only because we reverse event processing order
 			time_stamp,
@@ -287,9 +316,9 @@ func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,eoa_aid int64,evt *
 		} else {
 			ss.Log_msg(
 				fmt.Sprintf(
-					"DB error @block %v : %v; q=%v VALUES: block_num=%v,tx_id=%v,mkt_aid=%v, eoa_aid=%v, "+
-					"wallet_aid=%v, outcome_idx=%v, order_id=%v, time_stamp=%v",
-					agtx.BlockNum,err,query,agtx.BlockNum,agtx.TxId,market_aid,eoa_aid,wallet_aid,
+					"DB error @block %v : %v; q=%v VALUES: block_num=%v,tx_id=%v,mkt_aid=%v, aid=%v, "+
+					" outcome_idx=%v, order_id=%v, time_stamp=%v",
+					agtx.BlockNum,err,query,agtx.BlockNum,agtx.TxId,market_aid,aid,
 					outcome_idx,*ss.mkt_order_id_ptr,time_stamp,
 				),
 			)
@@ -302,23 +331,33 @@ func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,eoa_aid int64,evt *
 		if null_volume.Float64 == 0 {
 			// Volume = 0 means the User has closed all his positions,
 			// therefore we must mark position as closed in the DB too
-			ss.close_previous_positions(market_aid,eoa_aid,int(outcome_idx),"")
+			ss.close_previous_positions(market_aid,aid,int(outcome_idx),"")
 		}
 	}
 
 	return pl_id
 }
-func (ss *SQLStorage) Get_profit_loss(eoa_aid int64) []p.PLEntry {
-	return ss.Get_trade_data(eoa_aid,false)
+func (ss *SQLStorage) Delete_profit_loss_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM profit_loss WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Get_profit_loss(aid int64) []p.PLEntry {
+	return ss.Get_trade_data(aid,false)
 }
 func (ss *SQLStorage) Insert_profit_loss_debug_rec(pchg *p.PosChg) {
 
 	market_aid := ss.Lookup_address_id(pchg.Mkt_addr.String())
-	wallet_aid := ss.Lookup_address_id(pchg.Wallet_addr.String())
+	aid := ss.Lookup_address_id(pchg.Addr.String())
 
 	var query string
 
-	query = "INSERT INTO pl_debug(block_num,market_aid,wallet_aid,outcome_idx," +
+	query = "INSERT INTO pl_debug(block_num,market_aid,aid,outcome_idx," +
 									"profit_loss,frozen_funds,net_position,avg_price) " +
 				" VALUES(" +
 					"$1,$2,$3,$4,"+
@@ -329,9 +368,19 @@ func (ss *SQLStorage) Insert_profit_loss_debug_rec(pchg *p.PosChg) {
 				") " +
 				"ON CONFLICT DO NOTHING"
 
-	_,err := ss.db.Exec(query,pchg.BlockNum,market_aid,wallet_aid,pchg.Outcome.Int64())
+	_,err := ss.db.Exec(query,pchg.BlockNum,market_aid,aid,pchg.Outcome.Int64())
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB Error: %v q=%v",err,query));
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_claim_funds(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM claim_funds WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
 }

@@ -1,0 +1,51 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="/black/res/main.css" rel="stylesheet">
+</head>
+<body>
+	<h3 class="page_title">ShareToken ERC20 Wrapper for Market {{.WrapperInfo.Address}} outcome {{.WrapperInfo.OutcomeIdx}}</h3>
+<div class="block_info">
+	<table class="block_info">
+		<tr>
+			<td>Registration Timestamp</td>
+			<td>{{.WrapperInfo.TimeStamp}}</td>
+		</tr>
+		<tr>
+			<td>Symbol</td>
+			<td>{{.WrapperInfo.Symbol}}</td>
+		</tr>
+		<tr>
+			<td>Name</td>
+			<td>{{.WrapperInfo.Name}}</td>
+		</tr>
+		<tr>
+			<td>Decimals</td>
+			<td>{{.WrapperInfo.Decimals}}</td>
+		</tr>
+		<tr>
+			<td>Market Address</td>
+			<td>
+				<a class="addr" href="/black/search?q={{.WrapperInfo.MktAddr}}">
+				{{.WrapperInfo.MktAddr}}
+				</a>
+			</td>
+		</tr>
+		<tr>
+			<td>Outcome</td>
+			<td>{{.WrapperInfo.OutcomeIdx}}</td>
+		</tr>
+	</table>
+	<br/>
+</div>
+<br/><br/><br/>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="/black/index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

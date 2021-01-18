@@ -7,6 +7,9 @@ import (
 
 	"net/http"
 	"github.com/gin-gonic/gin"
+	"github.com/ethereum/go-ethereum/common"
+
+	ens "github.com/wealdtech/go-ens/v3"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
@@ -126,7 +129,6 @@ func a1_market_card(c *gin.Context) {
 		return
 	}
 	mkt_info,err := augur_srv.storage.Get_market_card_data(market_aid)
-	fmt.Printf("mkt_info=%+v",mkt_info)
 	var status int = 0
 	var err_str string = ""
 	if err == nil {
@@ -729,7 +731,6 @@ func a1_mkt_trade_history(c *gin.Context) {
 	if !success {
 		return
 	}
-
 	low_price,err := augur_srv.storage.Get_market_price_range(market_aid)
 	if err!=nil {
 		c.JSON(http.StatusOK,gin.H{
@@ -747,5 +748,825 @@ func a1_mkt_trade_history(c *gin.Context) {
 		"UTrades" : price_history,
 		"status": status,
 		"error": err_str,
+	})
+}
+func a1_wrapped_tokens(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_market:= c.Param("market")
+	market_addr,_,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	if !success {
+		return
+	}
+	market_info,err := augur_srv.storage.Get_market_info(market_addr,0,false)
+	if err != nil {
+		show_market_not_found_error(c,false,&market_addr)
+		return
+	}
+	wrappers := augur_srv.storage.Get_wrapped_tokens_for_market(market_info.MktAid)
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+		"MarketInfo": market_info,
+		"WrappedContracts": wrappers,
+		"status": status ,
+		"error": err_str,
+	})
+}
+func a1_wrapped_token_transfers(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_address:= c.Param("address")
+	_,wrapper_aid,success := json_validate_and_lookup_address_or_aid(c,&p_address)
+	if !success {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	wrapper_info,_ := augur_srv.storage.Get_wrapped_token_info(wrapper_aid)
+	market_info,_ := augur_srv.storage.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
+	transfers,total_rows := augur_srv.storage.Get_wrapped_token_transfers(wrapper_aid,offset,limit)
+	c.JSON(http.StatusOK, gin.H{
+			"MarketInfo" : market_info,
+			"TokenInfo" : wrapper_info,
+			"TotalRows" : total_rows,
+			"Offset" : offset,
+			"Limit" : limit,
+			"WrappedTransfers" : transfers,
+	})
+}
+func a1_pool_swaps(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+
+	p_address:= c.Param("address")
+	_,pool_aid,success := json_validate_and_lookup_address_or_aid(c,&p_address)
+	if !success {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	pool_info,_ := augur_srv.storage.Get_pool_info(pool_aid)
+	swaps := augur_srv.storage.Get_pool_swaps(pool_aid,offset,limit)
+	c.JSON(http.StatusOK, gin.H{
+			"PoolInfo" : pool_info,
+			"PoolSwaps" : swaps,
+	})
+}
+func a1_market_share_token_balance_changes(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_market := c.Param("market")
+	_,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	if !success {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	balance_changes,nr := augur_srv.storage.Outside_augur_share_balance_changes(market_aid,offset,limit)
+	c.JSON(http.StatusOK,gin.H{
+			"OutsideAugurBalanceChanges": balance_changes,
+			"TotalRows" : nr,
+			"Offset" : offset,
+			"Limit" : limit,
+			"status": 1 ,
+			"error": "",
+	})
+}
+func a1_balancer_volume(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_market := c.Param("market")
+	_,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	if !success {
+		return
+	}
+	success,outcome_idx:= parse_outcome_param(c)
+	if !success {
+		return
+	}
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+	volume := augur_srv.storage.Get_balancer_volume(market_aid,outcome_idx,init_ts,fin_ts,interval_secs)
+
+	c.JSON(http.StatusOK,gin.H{
+			"AllPoolsVolume": volume,
+			"MktAid" : market_aid,
+			"MktAddr" : p_market,
+			"OutcomeIdx" : outcome_idx,
+			"status": 1 ,
+			"error": "",
+	})
+
+}
+func a1_wrapped_token_volume(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_wrapper:= c.Param("address")
+	_,wrapper_aid,success := json_validate_and_lookup_address_or_aid(c,&p_wrapper)
+	if !success {
+		return
+	}
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+	volume := augur_srv.storage.Get_wrapped_transfers_volume(wrapper_aid,init_ts,fin_ts,interval_secs)
+
+	c.JSON(http.StatusOK,gin.H{
+			"Volume": volume,
+			"WrapperAid" : wrapper_aid,
+			"WrapperAddr" : p_wrapper,
+			"status": 1 ,
+			"error": "",
+	})
+
+}
+func a1_market_uniswap_pairs(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_market:= c.Param("market")
+	market_addr,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	if !success {
+		return
+	}
+
+	pairs := augur_srv.storage.Get_market_uniswap_pairs(market_aid)
+	c.JSON(http.StatusOK,gin.H{
+		"MktAid": market_aid,
+		"MktAddr" :market_addr,
+		"MarketUniswapPairs": pairs,
+		"status": 1,
+		"error": "",
+	})
+}
+func a1_uniswap_pair_swaps(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_address:= c.Param("address")
+	_,pair_aid,success := json_validate_and_lookup_address_or_aid(c,&p_address)
+	if !success {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	pair_info,_ := augur_srv.storage.Get_uniswap_pair_info(pair_aid)
+	swaps := augur_srv.storage.Get_uniswap_swaps(pair_aid,offset,limit)
+	c.JSON(http.StatusOK, gin.H{
+			"PairInfo" : pair_info,
+			"PairSwaps" : swaps,
+	})
+}
+func a1_uniswap_volume(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	p_market := c.Param("market")
+	_,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	if !success {
+		return
+	}
+	success,outcome_idx:= parse_outcome_param(c)
+	if !success {
+		return
+	}
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+	volume := augur_srv.storage.Get_uniswap_volume(market_aid,outcome_idx,init_ts,fin_ts,interval_secs)
+
+	c.JSON(http.StatusOK,gin.H{
+			"AllPairsVolume": volume,
+			"MktAid" : market_aid,
+			"MktAddr" : p_market,
+			"OutcomeIdx" : outcome_idx,
+			"status": 1 ,
+			"error": "",
+	})
+
+}
+func a1_search(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	keyword := c.Query("q")
+	if len(keyword) == 0 {
+		c.JSON(http.StatusOK,gin.H{
+			"status": 1 ,
+			"error": "Empty keyword",
+		})
+		return
+	}
+	sro := execute_search(keyword)
+	var status int = 1
+	if len(sro.ErrStr) > 0 {
+		status = 0
+	}
+	c.JSON(http.StatusOK,gin.H{
+			"SearchResult": sro,
+			"status": status ,
+			"error": sro.ErrStr,
+	})
+}
+func a1_categories(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	categories := augur_srv.storage.Get_categories()
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"Categories" : categories,
+			"status": status,
+			"error": err_str,
+	})
+}
+func a1_pool_price_history(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_pool:= c.Param("pool")
+	_,pool_aid,success := json_validate_and_lookup_address_or_aid(c,&p_pool)
+	if !success {
+		return
+	}
+
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+
+	p_token1:= c.Param("token1")
+	_,token1_aid,success := json_validate_and_lookup_address_or_aid(c,&p_token1)
+	if !success {
+		return
+	}
+	p_token2:= c.Param("token2")
+	_,token2_aid,success := json_validate_and_lookup_address_or_aid(c,&p_token2)
+	if !success {
+		return
+	}
+
+	pool_info,_ := augur_srv.storage.Get_pool_info(pool_aid)
+	token1_info,_ := augur_srv.storage.Get_bpool_token_info(pool_aid,token1_aid)
+	token2_info,_ := augur_srv.storage.Get_bpool_token_info(pool_aid,token2_aid)
+	prices := augur_srv.storage.Get_balancer_token_prices(pool_aid,token1_aid,token2_aid,init_ts,fin_ts,interval_secs)
+	c.JSON(http.StatusOK, gin.H{
+			"PoolInfo" : pool_info,
+			"Token1Info" : token1_info,
+			"Token2Info" : token2_info,
+			"Prices" : prices,
+			"InitTimeStamp": init_ts,
+			"FinTimeSTamp": fin_ts,
+			"Interval" : interval_secs,
+	})
+}
+func a1_upair_price_history(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_pair:= c.Param("pair")
+	_,pair_aid,success := json_validate_and_lookup_address_or_aid(c,&p_pair)
+	if !success {
+		return
+	}
+
+	var err error
+	p_inverse := c.Param("inverse")
+	var inverse int = 0
+	if len(p_inverse) > 0 {
+		inverse, err = strconv.Atoi(p_inverse)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"status":0,
+				"error":fmt.Sprintf("'inverse' parameter: %v",err),
+			})
+			return
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("'inverse' parameter wasn't provided: %v",err),
+		})
+		return
+	}
+
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+
+	bool_inverse := false
+	if inverse > 0 {
+		bool_inverse = true
+	}
+	pair_info,_:= augur_srv.storage.Get_uniswap_pair_info(pair_aid)
+	prices := augur_srv.storage.Get_uniswap_token_prices(pair_aid,bool_inverse,init_ts,fin_ts,interval_secs)
+	c.JSON(http.StatusOK, gin.H{
+			"PairInfo" : pair_info,
+			"Prices" : prices,
+			"InitTimeStamp": init_ts,
+			"FinTimeSTamp": fin_ts,
+			"Interval" : interval_secs,
+	})
+}
+func a1_single_uniswap_swap(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	p_id := c.Param("id")
+	var id int64
+	var err error
+	id, err = strconv.ParseInt(p_id,10,64)
+	if err != nil {
+		c.JSON(422,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("Bad integer for 'id' parameter: %v",err),
+		})
+		return
+	}
+
+	swap,err := augur_srv.storage.Get_uniswap_swap_by_id(id)
+	if err!=nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"UniswapSwap" : swap,
+			"Id": id,
+			"status": status,
+			"error": err_str,
+	})
+}
+func a1_single_balancer_swap(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	p_id := c.Param("id")
+	var id int64
+	var err error
+	id, err = strconv.ParseInt(p_id,10,64)
+	if err != nil {
+		c.JSON(422,gin.H{
+			"status":0,
+			"error":fmt.Sprintf("Bad integer for 'id' parameter: %v",err),
+		})
+		return
+	}
+
+	swap,err := augur_srv.storage.Get_balancer_swap_by_id(id)
+	if err!=nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"BalancerSwap" : swap,
+			"Id": id,
+			"status": status,
+			"error": err_str,
+	})
+}
+func a1_balancer_calculate_slippage(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	
+	p_pool := c.Param("pool")
+	pool_addr,_,success := json_validate_and_lookup_address_or_aid(c,&p_pool)
+	if !success {
+		return
+	}
+	p_tok_in := c.Param("tok_in")
+	tok_in,_,success := json_validate_and_lookup_address_or_aid(c,&p_tok_in)
+	if !success {
+		return
+	}
+	p_tok_out := c.Param("tok_out")
+	tok_out,_,success := json_validate_and_lookup_address_or_aid(c,&p_tok_out)
+	if !success {
+		return
+	}
+	p_amount:= c.Param("amount")
+	slippage,token_amount_out,err := balancer_calc_slippage(pool_addr,tok_in,tok_out,p_amount)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	var status int = 1
+	var err_str string = ""
+	var amount_out_str string = "?"
+	var slippage_str string = "?"
+	if slippage != nil {
+		slippage_str = slippage.String()
+	}
+	if token_amount_out != nil {
+		amount_out_str = token_amount_out.String()
+	}
+	c.JSON(http.StatusOK, gin.H{
+			"status": status,
+			"error": err_str,
+			"Slippage" : slippage_str,
+			"AmountOut" : amount_out_str,
+	})
+}
+func a1_pool_slippage(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_pool:= c.Param("pool")
+	_,pool_aid,success := json_validate_and_lookup_address_or_aid(c,&p_pool)
+	if !success {
+		return
+	}
+	pool_info,_ := augur_srv.storage.Get_pool_info(pool_aid)
+
+	tokens := augur_srv.storage.Get_balancer_latest_slippages(pool_aid)
+	var amount_to_trade float64 = 0.0
+	if len(tokens) > 0 {
+		amount_to_trade = tokens[0].AmountIn
+	}
+
+	//tokens := produce_pool_slippages(amount_to_trade,pool_aid)
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+			"status": status,
+			"error": err_str,
+			"PoolInfo" : pool_info,
+			"TokenSlippages" : tokens,
+			"AmountToTrade" : amount_to_trade,
+	})
+}
+func a1_uniswap_calculate_slippage(c *gin.Context) {
+	// Calculates slippage for swapping single token in the Pair
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_pair := c.Param("pair")
+	pair_addr,pair_aid,success := json_validate_and_lookup_address_or_aid(c,&p_pair)
+	if !success {
+		return
+	}
+	p_tok_in := c.Param("tok_in")
+	tok_in,_,success := json_validate_and_lookup_address_or_aid(c,&p_tok_in)
+	if !success {
+		return
+	}
+	einf,err := augur_srv.storage.Get_erc20_info(p_tok_in)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	pair_info,err := augur_srv.storage.Get_uniswap_pair_info(pair_aid)
+	if err!=nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	p_amount:= c.Param("amount")
+	amount := fmt.Sprintf("%v%0*d",p_amount,einf.Decimals,0)
+	slippage,token_amount_out,err := uniswap_calc_slippage(pair_addr,tok_in,amount)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	var dec1,dec2 *int
+	if pair_info.Token1Addr == p_tok_in { // figure out which token is the divisor
+		dec1 = &pair_info.Token0Decimals
+		dec2 = &pair_info.Token1Decimals
+	} else {
+		dec1 = &pair_info.Token1Decimals
+		dec2 = &pair_info.Token0Decimals
+	}
+	uniswap_correct_for_difference_in_decimals(slippage,*dec1,*dec2)
+	var status int = 1
+	var err_str string = ""
+	var amount_out_str string = "?"
+	var slippage_str string = "?"
+	if slippage != nil {
+		slippage_str = slippage.String()
+	}
+	if token_amount_out != nil {
+		amount_out_str = token_amount_out.String()
+	}
+	c.JSON(http.StatusOK, gin.H{
+			"status": status,
+			"error": err_str,
+			"Slippage" : slippage_str,
+			"AmountOut" : amount_out_str,
+			"AmountToTrade": p_amount,
+			"AmountToTradeWei" : amount,
+	})
+}
+func a1_uniswap_slippage(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_pair:= c.Param("pair")
+	_,pair_aid,success := json_validate_and_lookup_address_or_aid(c,&p_pair)
+	if !success {
+		return
+	}
+	pair_info,err := augur_srv.storage.Get_uniswap_pair_info(pair_aid)
+	if err!=nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	//amount_to_trade := "100";
+	//slippages,err := produce_uniswap_slippages(&pair_info,amount_to_trade)
+
+	slippages := augur_srv.storage.Get_uniswap_latest_slippages(pair_aid)
+	var amount_to_trade float64 = 0.0
+	if len(slippages) > 0 {
+		amount_to_trade = slippages[0].AmountIn
+	}
+
+	if err!=nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+			"status": status,
+			"error": err_str,
+			"PairInfo" : pair_info,
+			"AmountToTrade" : amount_to_trade,
+			"TokenSlippages" : slippages,
+	})
+}
+func a1_wrapped_shtoken_balances(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,eoa_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	shtoken_balances := augur_srv.storage.Get_wrapped_shtoken_balances(eoa_aid)
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+		"WrappedShareTokenBalances" : shtoken_balances,
+		"status": status,
+		"error": err_str,
+	})
+}
+func a1_user_wrapped_token_transfers(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,user_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	p_wrapper:= c.Param("wrapper")
+	_,wrapper_aid,success := json_validate_and_lookup_address_or_aid(c,&p_wrapper)
+	if !success {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	wrapper_info,_ := augur_srv.storage.Get_wrapped_token_info(wrapper_aid)
+	market_info,_ := augur_srv.storage.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
+	total_rows,transfers:= augur_srv.storage.Get_user_wrapped_shtoken_transfers(user_aid,wrapper_aid,offset,limit)
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+			"MarketInfo" : market_info,
+			"TokenInfo" : wrapper_info,
+			"Offset" : offset,
+			"Limit" : limit,
+			"Transfers" : transfers,
+			"TotalRows" : total_rows,
+			"status": status,
+			"error": err_str,
+	})
+}
+func a1_ens_reverse_lookup(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_address:= c.Param("address")
+/*	address_str,aid,success := json_validate_and_lookup_address_or_aid(c,&p_address)
+	if !success {
+		return
+	}*/
+	addr := common.HexToAddress(p_address)
+	name, err := ens.ReverseResolve(rpcclient, addr)
+	Info.Printf("reverse lookup of %v, name=%v\n",addr.String(),name)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+			"Addr" : p_address,
+			"Name" : name,
+			"status": status,
+			"error": err_str,
+	})
+}
+func a1_whats_new_augur(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	var err error
+	p_code := c.Param("code")
+	var code int = 0
+	if len(p_code) > 0 {
+		code , err = strconv.Atoi(p_code)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"status":0,
+				"error": err.Error(),
+			})
+			return
+		}
+	}
+	block_num_from,block_num_to,err := augur_srv.storage.Get_block_range_for_whats_new(WhatsNewAugurCode(code))
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	Info.Printf("from_block=%v, to_block=%v\n",block_num_from,block_num_to)
+	block_info,err := augur_srv.storage.Get_block_info(int64(block_num_from),int64(block_num_to))
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"BlockInfo" : block_info,
+		"status": status,
+		"error": err_str,
+	})
+}
+func a1_user_uniswap_swaps(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,user_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	user_info,err := augur_srv.storage.Get_user_info(user_aid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": fmt.Sprintf("Error getting UserInfo: %v",err.Error()),
+		})
+	}
+	swaps,total_recs := augur_srv.storage.Get_user_uniswap_swaps(user_aid,offset,limit)
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"UserInfo" : user_info,
+		"UserSwaps" : swaps,
+		"TotalRows" : total_recs,
+		"status": status,
+		"error": err_str,
+	})
+}
+func a1_user_balancer_swaps(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,user_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	user_info,err := augur_srv.storage.Get_user_info(user_aid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": fmt.Sprintf("Error getting UserInfo: %v",err.Error()),
+		})
+	}
+	swaps,total_rows := augur_srv.storage.Get_user_balancer_swaps(user_aid,offset,limit)
+	c.JSON(http.StatusOK, gin.H{
+			"PoolInfo" : user_info,
+			"PoolSwaps" : swaps,
+			"TotalRows" : total_rows,
+	})
+}
+func a1_user_ens_names(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,user_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	user_info,err := augur_srv.storage.Get_user_info(user_aid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": fmt.Sprintf("Error getting UserInfo: %v",err.Error()),
+		})
+	}
+	ens_names,total_rows := augur_srv.storage.Get_user_ens_names(user_aid,offset,limit)
+	c.JSON(http.StatusOK, gin.H{
+			"UserInfo" : user_info,
+			"ENS_Names" : ens_names,
+			"TotalRows" : total_rows,
+	})
+}
+func a1_node_text_key_value_pairs(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	node := c.Param("node")
+	fqdn,key_value_pairs:= augur_srv.storage.Get_node_text_key_values(node)
+
+	c.JSON(http.StatusOK, gin.H{
+		"Node" : node,
+		"FullName" : fqdn,
+		"KeyValuePairs" : key_value_pairs,
 	})
 }

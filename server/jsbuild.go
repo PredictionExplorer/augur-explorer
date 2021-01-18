@@ -2,6 +2,7 @@
 package main
 import (
 	"fmt"
+	"time"
 	"html/template"
 	"strings"
 
@@ -57,21 +58,18 @@ func build_js_price_history(orders *[]OrderInfo) template.JS {
 		var e = &(*orders)[i];
 		var entry string
 		entry = "{" +
-//				"x:" + fmt.Sprintf("\"%v\"",e.Date)  + "," +
 				"x:" + fmt.Sprintf("%v",i)  + "," +
 				"y:"  + fmt.Sprintf("%v",e.Price) + "," +
 				"price: " + fmt.Sprintf("%v",e.Price) + "," +
 				"volume: " + fmt.Sprintf("%v",e.Amount) + "," +
 				"click: function() {load_order_data(\"" +
-					e.CreatorEOAAddr +"\",\"" +
-					e.FillerEOAAddr+ "\"," +
+					e.CreatorAddr +"\",\"" +e.FillerAddr+ "\"," +
 					fmt.Sprintf("%v,%v,%v,\"%v\"",e.MktAid,e.Price,e.Amount,e.Date) +
 				")}" +
 				"}"
 		data_str= data_str + entry
 	}
 	data_str = data_str + "]"
-	fmt.Printf("JS price history string: %v\n",data_str)
 	return template.JS(data_str)
 }
 func build_js_profit_loss_history(entries *[]PLEntry) template.JS {
@@ -140,7 +138,6 @@ func build_js_cash_flow_data(entries *[]BlockCash) template.JS {
 		var e = &(*entries)[i];
 		var entry string
 		entry = "{" +
-				//"x:" + fmt.Sprintf("%v",i)  + "," +
 				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.Ts)  + "," +
 				"y:"  + fmt.Sprintf("%.2f",e.AccumCashFlow) + "," +
 				"block_num: " + fmt.Sprintf("%v",e.BlockNum) + "," +
@@ -161,7 +158,6 @@ func build_js_uniq_addrs(entries *[]UniqueAddrEntry) template.JS {
 		var e = &(*entries)[i];
 		var entry string
 		entry = "{" +
-//				"x:" + fmt.Sprintf("\"%v\"",e.Day)  + "," +
 				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.Ts)  + "," +
 				"y:"  + fmt.Sprintf("%v",e.NumAddrsAccum) + "," +
 				"num_addrs: " + fmt.Sprintf("%v",e.NumAddrs) + "," +
@@ -175,7 +171,6 @@ func build_js_uniq_addrs(entries *[]UniqueAddrEntry) template.JS {
 }
 func build_js_global_gas_usage_data(entries *[]GasSpent,field int) template.JS {
 	var data_str string = "["
-	Info.Printf("dumping entries for field=%v\n",field)
 	for i:=0 ; i < len(*entries) ; i++ {
 		if len(data_str) > 1 {
 			data_str = data_str + ","
@@ -194,13 +189,11 @@ func build_js_global_gas_usage_data(entries *[]GasSpent,field int) template.JS {
 		}
 		var entry string
 		entry = "{" +
-				//"x:" + fmt.Sprintf("%v",i)  + "," +
 				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.Ts)  + "," +
 				"y:"  + fmt.Sprintf("%v",datum) + "," +
 				"day: " + fmt.Sprintf("new Date(%v * 1000)",e.Ts)+ "" +
 				"}"
 		data_str= data_str + entry
-		Info.Printf("datum=%v\n",entry)
 	}
 	data_str = data_str + "]"
 	return template.JS(data_str)
@@ -248,6 +241,76 @@ func build_js_weighted_price_history(prices *[]PriceEstimate) template.JS {
 				"spread: " + fmt.Sprintf("%v",e.Spread) + "," +
 				"wmaxbid:" + fmt.Sprintf("\"%v\"",e.WMaxBid) + "," +
 				"wminask:" + fmt.Sprintf("\"%v\"",e.WMinAsk) + "," +
+				"}"
+		data_str= data_str + entry
+	}
+	data_str = data_str + "]"
+	return template.JS(data_str)
+}
+func build_js_bpool_swap_prices(prices* []BSwapPrice) template.JS {
+	var data_str string = "["
+
+	for i:=0 ; i < len(*prices) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		var e = &(*prices)[i];
+		var entry string
+		entry = "{" +
+				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.TimeStamp)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.Price) + "," +
+				"price: " + fmt.Sprintf("%v",e.Price) + "," +
+				"num_recs: " + fmt.Sprintf("%v",e.NumRecords) + "," +
+				"date_str: " + fmt.Sprintf("\"%v\"",e.Date) + "," +
+				"click: function() {load_price_data(\"" +
+					e.Date+"\"," +fmt.Sprintf("%v",e.Price)+","+fmt.Sprintf("%v",e.NumRecords)+
+				")}" +
+				"}"
+		data_str= data_str + entry
+	}
+	data_str = data_str + "]"
+	return template.JS(data_str)
+}
+func build_js_upair_swap_prices(prices* []UPairPrice) template.JS {
+	var data_str string = "["
+
+	for i:=0 ; i < len(*prices) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		var e = &(*prices)[i];
+		var entry string
+		entry = "{" +
+				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.TimeStamp)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.Price) + "," +
+				"price: " + fmt.Sprintf("%v",e.Price) + "," +
+				"num_recs: " + fmt.Sprintf("%v",e.NumRecords) + "," +
+				"date_str: " + fmt.Sprintf("\"%v\"",e.Date) + "," +
+				"click: function() {load_price_data(\"" +
+					e.Date+"\"," +fmt.Sprintf("%v",e.Price)+ ","+fmt.Sprintf("%v",e.NumRecords)+
+				")}" +
+				"}"
+		data_str= data_str + entry
+	}
+	data_str = data_str + "]"
+	return template.JS(data_str)
+}
+func build_js_ethusd_price_history(prices* []EthUsdPrice) template.JS {
+	var data_str string = "["
+
+	for i:=0 ; i < len(*prices) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		var e = &(*prices)[i];
+		var entry string
+		ts := time.Unix(int64(e.TimeStamp),0)
+		date_str := fmt.Sprintf("%v",ts)
+		entry = "{" +
+				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.TimeStamp)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.Price) + "," +
+				"price: " + fmt.Sprintf("%v",e.Price) + "," +
+				"date_str: \"" + date_str + "\"," +
 				"}"
 		data_str= data_str + entry
 	}

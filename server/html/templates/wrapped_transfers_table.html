@@ -1,0 +1,18 @@
+{{define "wrapped_transfers_table"}}
+<table class="market_trades">
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Timestamp</th>
+		<th class="mkt_trade_hdr" style="text-align: center">BlockNum</th>
+		<th class="mkt_trade_hdr" style="text-align: center">TxId</th>
+		<th class="mkt_trade_hdr" style="text-align: center">From</th>
+		<th class="mkt_trade_hdr" style="text-align: center">To</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Amount</th>
+		<th class="mkt_trade_hdr" style="text-align: center">From Balancer Pool</th>
+		<th class="mkt_trade_hdr" style="text-align: center">To Balancer Pool</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Non-pool Transfer</th>
+	</tr>
+		{{- range $i, $transfer := .}}
+			{{template "wrapped_transfer" $transfer }}
+		{{- end}}
+</table>
+{{end}}

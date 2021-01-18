@@ -1,0 +1,46 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Swaps for User {{.UserInfo.Addr}}</title>
+</head>
+<body>
+	<h3 class="page_title">Swaps of {{.UserInfo.Addr}}</h3>
+<table class="market_detail">
+<tr>
+	<td>User Address:</td>
+	<td>{{.UserInfo.Addr}} (aid={{.UserInfo.Aid}})</td>
+</tr>
+</table>
+<h3>Balancer Pool Swaps</h3>
+<br/><br/>
+<div class="market_info">
+<table class="market_trades">
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Timestamp</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Balancer Pool Address</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Token In</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Token Out</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Amount In</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Amount Out</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Market</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Outcome</th>
+	</tr>
+		{{- range $i, $swap:= .UserSwaps}}
+			<tr class="market_trades">
+				<td class="mkt_trade_field">{{.TimeStamp}}</td>
+				<td class="mkt_trade_field">
+					<a class="addr" href="/black/search?q={{.PoolAddr}}">{{.PoolAddr}}</a>
+				</td>
+				<td class="mkt_trade_field" title="{{.TokenInAddr}}">{{.SymbolIn}}</td>
+				<td class="mkt_trade_field" title="{{.TokenOutAddr}}">{{.SymbolOut}}</td>
+				<td class="mkt_trade_field" style="text-align: right">{{.AmountInF}}</td>
+				<td class="mkt_trade_field" style="text-align: right">{{.AmountOutF}}</td>
+				<td class="mkt_trade_field" style="text-align: right">
+					<a href="/black/search?q={{.MktAddr}}">{{.MktAddr}}</a>
+					{{.MktDescription}}</td>
+				<td class="mkt_trade_field" style="text-align: right">{{.Outcome}}</td>
+			</tr>
+		{{- end}}
+</table>
+</div>
+</body>

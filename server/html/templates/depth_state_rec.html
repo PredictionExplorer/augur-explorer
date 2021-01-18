@@ -1,5 +1,6 @@
 {{define "depth_state_rec"}}
 <tr class="trade_makers">
+	<td bgcolor="#1f1e3d">{{.MeshEvtId}}</td>
 	<td bgcolor="#1f1e3d">
 		{{ if eq .OrderType 0 }} BID {{ end }}
 		{{ if eq .OrderType 1 }} ASK {{ end }}

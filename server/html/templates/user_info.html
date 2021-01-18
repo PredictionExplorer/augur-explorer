@@ -1,15 +1,15 @@
 <html>
 <head>
 	<title>{{.title}}</title>
-	<link href="res/main.css" rel="stylesheet">
+	<link href="/black/res/main.css" rel="stylesheet">
 </head>
 <body>
-<script src="res/darktheme.js"></script>
-<script src="res/ajax.js"></script>
+<script src="/black/res/darktheme.js"></script>
+<script src="/black/res/ajax.js"></script>
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script src="https://code.highcharts.com/modules/data.js"></script>
 <script>
-	var eoa_addr = '{{.UserInfo.EOAAddr}}'
+	var eoa_addr = '{{.UserInfo.Addr}}'
 	function load_pl_data(pl_id,claim_status,net_pos,price,profit_loss,accum_pl,mkt_addr,mkt_addr_sh,outcome,
 							mkt_descr,date_str,counterparty,counterparty_sh,order_hash,block_num) {
 		var elt
@@ -114,42 +114,76 @@
 	Ajax_GET('money/'+eoa_addr,function(data) {
 		var response=JSON.parse(data)
 		var elt
-		elt = document.getElementById("fld_eoa_dai")
-		elt.innerHTML=response.eoa_dai
-		elt = document.getElementById("fld_wallet_dai")
-		elt.innerHTML=response.wallet_dai
-		elt = document.getElementById("fld_eoa_rep")
-		elt.innerHTML=response.eoa_rep
-		elt = document.getElementById("fld_wallet_rep")
-		elt.innerHTML=response.wallet_rep
-		elt = document.getElementById("fld_eoa_eth")
-		elt.innerHTML=response.eoa_eth
-		elt = document.getElementById("fld_wallet_eth")
-		elt.innerHTML=response.wallet_eth
+		elt = document.getElementById("fld_dai")
+		elt.innerHTML=response.DAI
+		elt = document.getElementById("fld_eth")
+		elt.innerHTML=response.Eth
+		elt = document.getElementById("fld_eth_in_usd")
+		elt.innerHTML=response.EthInUsd
+		elt = document.getElementById("fld_rep")
+		elt.innerHTML=response.REP
+		elt = document.getElementById("fld_rep_usd")
+		elt.innerHTML=response.REPUSD
+		elt = document.getElementById("fld_total_usd")
+		elt.innerHTML=response.TotalUSDAcctValue
 	});
 </script>
-	<h3 class="page_title">User Info for {{.UserInfo.EOAAddrSh}}</h3>
-	{{ if .QueriedWallet }}
-		<h4>
-			<font color=yellow>
-				You queried a Wallet Address, we are showng the User this wallet belongs to
-			</font>
-		</h4>
-	{{ end }}
-	{{ if .UserInfo.NotAugur }}
-		<h4><font color="red">Not an Augur account</font></h4>
-		<h5><font color="red">(This account doesn't have an associated Augur Wallet contract)</font></h5>
+	<h3 class="page_title">User Info for {{.UserInfo.AddrSh}}</h3>
+	{{ if .UserInfo.AugurFlags.AugurEnabled }}
+	{{ else }}
+		<h5><font>(This account doesn't have the set of Approvals required to trade at Augur Platform)</font></h5>
+		Current Approval list:
+		<table>
+			<tr>
+				<td>Approval for 0x at DAI</td>
+				<td>{{ if .UserInfo.AugurFlags.ZeroXOnCash }}Yes{{else}}No{{end}}</td>
+			</tr>
+			<tr>
+				<td>Approval for FillOrder at DAI</td>
+				<td>{{ if .UserInfo.AugurFlags.FillOnCash}}Yes{{else}}No{{end}}</td>
+			</tr>
+			<tr>
+				<td>ApprovalForAll for FillOrder at ShareToken</td>
+				<td>{{ if .UserInfo.AugurFlags.FillOnShareToken}}Yes{{else}}No{{end}}</td>
+			</tr>
+		</table>
 	{{ end }}
 <div class="user_info">
 	<table class="user_info">
 		<tr class="user_info">
-			<td>User's Real Address (EOA)</td>
-			<td class="right addr" title="{{.UserInfo.EOAAid}}:{{.UserInfo.EOAAddr}}">{{.UserInfo.EOAAddr}}</td>
+			<td>Account type</td>
+			<td title="">
+				{{ if lt 0 .UserInfo.WalletAid }}
+					EOA (Externally Owned Account)
+				{{ else }}
+					{{ if lt 0 .UserInfo.EOAAid }}
+						Augur Wallet Contract
+					{{ else }}
+						EOA (Externally Owned Account)
+					{{ end }}
+				{{ end }}
+			<td>
 		</tr>
 		<tr class="user_info">
-			<td>Wallet Contract Address</td>
-			<td class="right addr" title="{{.UserInfo.WalletAid}}:{{.UserInfo.WalletAddr}}">{{.UserInfo.WalletAddr}}</td>
+			<td>Account Address</td>
+			<td class="addr" title="{{.UserInfo.Aid}}:{{.UserInfo.Addr}}">{{.UserInfo.Addr}}</td>
 		</tr>
+		{{ if ne 0 .UserInfo.EOAAid }}
+		<tr class="user_info">
+			<td>Related EOA account</td>
+			<td title="" class="addr">
+				<a href="/black/search?q={{.UserInfo.EOAAddr}}">{{.UserInfo.EOAAddr }}</a>
+			<td>
+		</tr>
+		{{ end }}
+		{{ if ne 0 .UserInfo.WalletAid }}
+		<tr class="user_info">
+			<td>Related Wallet contract</td>
+			<td title="" class="addr">
+				<a href="/black/search?q={{.UserInfo.WalletAddr}}">{{.UserInfo.WalletAddr}}</a>
+			<td>
+		</tr>
+		{{ end }}
 		<tr class="user_info">
 			<td>Lifetime Profit/Loss (DAI)</td>
 			<td title="" class="right">{{.UserInfo.ProfitLoss}}<td>
@@ -160,7 +194,7 @@
 		</tr>
 		<tr class="user_info">
 			<td>Markets Created</td>
-			<td class="right"><a href="umarkets/{{.UserInfo.EOAAddr}}">{{.UserInfo.MarketsCreated}}</a></td>
+			<td class="right"><a href="umarkets/{{.UserInfo.Addr}}">{{.UserInfo.MarketsCreated}}</a></td>
 		</tr>
 		<tr class="user_info">
 			<td>Markets Traded</td>
@@ -176,7 +210,7 @@
 		</tr>
 		<tr class="user_info">
 			<td>Total Reports</td>
-			<td class="right"><a href="fullreports/{{.UserInfo.EOAAddr}}">{{.UserInfo.TotalReports}}</a></td>
+			<td class="right"><a href="fullreports/{{.UserInfo.Addr}}">{{.UserInfo.TotalReports}}</a></td>
 		</tr>
 		<tr class="user_info">
 			<td>Reports as Designated Reporter</td>
@@ -226,22 +260,22 @@
 					<tr>
 						<td></td>
 						<td>Real User (EOA)</td>
-						<td>User's Augur Wallet</td>
 					</tr>
 					<tr>
 						<td>DAI</td>
-						<td><span id="fld_eoa_dai"></span></td>
-						<td><span id="fld_wallet_dai"></span></td>
+						<td><span id="fld_dai"></span></td>
 					</tr>
 					<tr>
 						<td>REP</td>
-						<td><span id="fld_eoa_rep"></span></td>
-						<td><span id="fld_wallet_rep"></span></td>
+						<td><span id="fld_rep"></span> (<span id="fld_rep_usd"></span> USD)</td>
 					</tr>
 					<tr>
 						<td>ETH</td>
-						<td><span id="fld_eoa_eth"></span></td>
-						<td><span id="fld_wallet_eth"></span></td>
+						<td><span id="fld_eth"></span> (<span id="fld_eth_in_usd"></span>USD)</td>
+					</tr>
+					<tr>
+						<td>Total Assets (USD)</td>
+						<td><span id="fld_total_usd"></span></td>
 					</tr>
 				</table>
 			</td>
@@ -281,16 +315,40 @@
 			<td>Registration Block Number</td>
 			<td><a href="block/{{.UserInfo.BlockNum}}">{{.UserInfo.BlockNum}}</a></td>
 		</tr>
+		<tr class="user_info">
+			<td>Decentralized Finance trading (DeFi)</td>
+			<td>
+				<table border=1>
+					<tr>
+						<td>Swaps at Balancer</td>
+						<td>Swaps at Uniswap</td>
+					</tr>
+					<tr>
+						<td>
+							{{ if gt .UserInfo.BalancerNumSwaps 0 }}
+							<a href="/black/user_bswaps/{{.UserInfo.Addr}}">
+							{{ end }}
+							{{.UserInfo.BalancerNumSwaps}}
+							{{ if gt .UserInfo.BalancerNumSwaps 0 }}
+							</a>
+							{{ end }}
+						</td>
+						<td>
+							{{ if gt .UserInfo.UniswapNumSwaps 0 }}
+							<a href="/black/user_uswaps/{{.UserInfo.Addr}}">
+							{{ end }}
+							{{.UserInfo.UniswapNumSwaps}}
+							{{ if gt .UserInfo.UniswapNumSwaps 0 }}
+							</a>
+							{{ end }}
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
 	</table>
 	<br/>
 </div>
-<nav>
-	<ul>
-	<li>
-		<a class="btn_link" href="udw/{{.UserInfo.EOAAddr}}">Operations</a>
-		<span></span><span></span><span></span><span></span>
-	</li>
-</ul>
 <h3>User's Open (Un-filled) Orders</h3>
 {{template "user_open_orders" .OpenOrders}}
 <br/><br/>
@@ -363,7 +421,7 @@
 				<option value="{{$market.MktAddr}}">{{ $market.MktAddr }}</option>
 				{{- end }}
 		</select>
-		<input type="hidden" name="addr" value="{{.UserInfo.EOAAddr}}">
+		<input type="hidden" name="addr" value="{{.UserInfo.Addr}}">
 		<input type="submit" value="Submit">
 	</form>
 {{ end }}
@@ -442,12 +500,80 @@
 	<nav id="market_trades_nav">
 		<ul>
 			<li style="float: left">
-				<a class="btn_link" href="fullreports/{{.UserInfo.EOAAddr}}">All Reports</a>
+				<a class="btn_link" href="fullreports/{{.UserInfo.Addr}}">All Reports</a>
 				<span></span><span></span><span></span><span></span>
 			</li>
 		</ul>
 	</nav>
 
+{{ if .ShtokBalances}}
+	User has the following balances in ERC20 market outcomes:
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Address</th>
+		<th class="market_reports">Symbol</th>
+		<td class="market_reports">Num Transfers</th>
+		<td class="market_reports">Market</th>
+		<td class="market_reports">Outcome</th>
+		<td class="market_reports">Balance</th>
+	</tr>
+	{{- range $i, $change := .ShtokBalances }}
+		<tr class="market_reports">
+			<td class="market_reports_field">
+				<a href="/black/user_wr_transfers/{{$.UserInfo.Addr}}/{{.WrapperAddr}}">
+					{{.WrapperAddr}}
+				</a>
+			</td>
+			<td class="market_reports_field">{{.Symbol}}</td>
+			<td class="market_reports_field">{{.NumTransfers}}</td>
+			<td class="market_reports_field">{{.MarketAddr}}</td>
+			<td class="market_reports_field">{{.OutcomeIdx}}</td>
+			<td class="market_reports_field">{{.Balance}}</td>
+		</tr>
+	{{- end}}
+</table>
+{{ end }}
+{{ if .ENS_Names}}
+</div>
+This User has owned {{.Total_ENS_Names }} ENS names in the past, listing first 10:
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">ENS Name</th>
+		<th class="market_reports">Date of acquisition</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Number of Text Key-Value Pairs</th>
+	</tr>
+	{{- range $i, $change := .ENS_Names}}
+		<tr class="market_reports">
+			<td class="market_reports_field">
+				<a href="/black/ens_name_info/{{.NodeHash}}">
+					{{.ENS_Name}}
+				</a>
+			</td>
+			<td class="market_reports_field">{{.DateNameAcquired}}</td>
+			<td class="mkt_trade_field" style="text-align: center;">
+				{{ if ne .NumTextKeyValuePairs 0 }}
+				<a href="/black/node_text_data/{{.NodeHash}}">
+				{{ end }}
+					{{.NumTextKeyValuePairs}}
+				{{ if ne .NumTextKeyValuePairs 0 }}
+				</a>
+				{{ end }}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<nav >
+	<ul style="margin-left: 5em;">
+	<li>
+		<a class="btn_link" href="/black/user_ens_names/{{.UserInfo.Addr}}">Show All</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</div>
+<br/><br/>
+<br/><br/>
+{{ end }}
 <script>
 // font loading begins
 	Highcharts.createElement('link', {

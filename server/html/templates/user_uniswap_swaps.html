@@ -1,0 +1,72 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Uniswap Swaps {{.PairInfo.PairAddr}}</title>
+</head>
+<body>
+	<h3 class="page_title">Swaps of User {{.UserInfo.Addr}}</h3>
+<table class="market_detail">
+<tr>
+	<td>User Address:</td>
+	<td>{{.UserInfo.Addr}}</td>
+</tr>
+</table>
+<h3>User Swaps</h3>
+Showing 200 out of {{.TotalRows}} records (ordered by Date in descending order)
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">DateTime</th>
+		<th class="market_reports" colspan=2 style="text-align: center">Input</th>
+		<td class="market_reports" colspan=2 style="text-align: center">Output</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Uniswap Pair</th>
+		<td class="market_reports" style="text-align: center">Market</th>
+		<td class="market_reports">Outcome</th>
+	</tr>
+	{{- range $i, $change := .UserSwaps}}
+		<tr class="market_reports">
+			<td class="market_reports_field">{{.CreatedDate}}</td>
+			<td class="market_reports_field" nowrap style="text-align: right">
+				{{ if gt .Amount1_Out 0.0 }}
+					<b>{{ printf "%.4f" .Amount0_In}}</b>
+				{{ end }}
+				{{ if gt .Amount0_Out 0.0 }}
+					<b>{{ printf "%.4f" .Amount1_In}}</b>
+				{{ end }}
+			</td>
+			<td class="market_reports_field" nowrap>
+				{{ if gt .Amount1_Out 0.0 }}
+					<font color="#555555">{{.Symbol0}}</font>
+				{{ end }}
+				{{ if gt .Amount0_Out 0.0 }}
+					<font color="#555555"> {{.Symbol1}}</font>
+				{{ end }}
+			</td>
+			<td class="market_reports_field" nowrap style="text-align: right">
+				{{ if gt .Amount0_Out 0.0 }}
+					<b><tt>{{ printf "%.4f" .Amount0_Out}}</tt></b>
+				{{ end }}
+				{{ if gt .Amount1_Out 0.0 }}
+					<b><tt>{{ printf "%.4f" .Amount1_Out}}</tt></b>
+				{{ end }}
+			</td>
+			<td class="market_reports_field" nowrap>
+				{{ if gt .Amount0_Out 0.0 }}
+					<font color="#555555">{{.Symbol0}}</font>
+				{{ end }}
+				{{ if gt .Amount1_Out 0.0 }}
+					<font color="#555555">{{.Symbol1}}</font>
+				{{ end }}
+			</td>
+			<td class="mkt_trade_field" style="text-align: right">
+				<a href="/black/search?q={{.PairAddr}}">{{.PairAddr}}</a>
+			</td>
+			<td class="market_reports_field">
+				<a class="addr" href="/black/search?q={{.MktAddr}}">{{.MktAddr}}</a>
+				{{.MktDescription}}
+			</td>
+			<td class="market_reports_field"> {{.Outcome}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>

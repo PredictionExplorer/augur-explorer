@@ -97,19 +97,27 @@ func fetch_and_sync_orders() {
 		}
 		page_num++
 	}
-	db_orders := storage.Get_all_open_order_hashes()
+	cur_timestamp:=time.Now().Unix()
+	db_orders,expirations := storage.Get_all_open_order_hashes()
 	for i:=0 ; i<len(db_orders) ; i++ {
+		order_timestamp := expirations[i]
 		_, exists := ohash_map[db_orders[i]];
 		if exists {
 			// ok
+			Info.Printf("order %v is active\n",db_orders[i])
 		} else {
-			storage.Delete_open_0x_order(db_orders[i],time.Now().Unix(),OOOpCodeSyncProcess)
-			Info.Printf(
-				"Order %v doesn't exist in Mesh Node, but does exist in the DB. Deleting. (DB_DIRTY_OORDERS)",
-				db_orders[i],
-			)
-			anomalies_count++
-			deleted_count++
+			// verify that the order has expired
+			//if order_timestamp < cur_timestamp {
+				Info.Printf("order %v is inactive and will be deleted\n",db_orders[i])
+				storage.Delete_open_0x_order(db_orders[i],time.Now().Unix(),OOOpCodeSyncProcess)
+				Info.Printf(
+					"Order %v doesn't exist in Mesh Node, but does exist in the DB. " +
+					"(%v < $v)  Deleting. (DB_DIRTY_OORDERS)",
+					db_orders[i],order_timestamp,cur_timestamp,
+				)
+				anomalies_count++
+				deleted_count++
+			//}
 		}
 	}
 	Info.Printf(
@@ -189,6 +197,7 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 			}
 			augur_count++
 			order_hash := order_info.OrderHash.String()
+			Info.Printf("sync: order_hash= %v\n",order_hash)
 			var empty struct{}
 			(*ohash_map)[order_hash]=empty
 			time_stamp:=response.SnapshotTimestamp.Unix()
@@ -202,11 +211,30 @@ func sync_orders(response *types.GetOrdersResponse,ohash_map *map[string]struct{
 				Info.Printf("Error decoding market data: %v\n",err)
 				Error.Printf("Error decoding market data: %v\n",err)
 			} else {
-				Dump_0x_mesh_order(Info,order_info)
-				DumpOrderSpec(Info,&ospec)
-				maybe_eoa_addr,_ := get_possible_eoa_by_wallet_addr(&order_info.SignedOrder.Order.MakerAddress,&order_info.OrderHash)
-				eoa_aid,wallet_aid,_ := storage.Lookup_maker_eoa_wallet_ids(&maybe_eoa_addr,&order_info.SignedOrder.Order.MakerAddress)
-				storage.Try_insert_0x_mesh_order_event(eoa_aid,wallet_aid,time_stamp,order_info,&ospec,nil,MeshEvtAdded)
+				if storage.Is_ADD_event_missing(order_hash) {
+					Dump_0x_mesh_order(Info,order_info)
+					DumpOrderSpec(Info,&ospec)
+					aid := storage.Lookup_or_create_address(
+						order_info.SignedOrder.Order.MakerAddress.String(),0,0,
+					)
+					storage.Try_insert_0x_mesh_order_event(
+						aid,time_stamp,order_info,&ospec,nil,MeshEvtAdded,
+					)
+				}
+			}
+			if !storage.Open_order_exists(order_hash) {
+				err := storage.Insert_open_order(
+					&order_hash,
+					order_info.SignedOrder,
+					order_info.FillableTakerAssetAmount,
+					&order_info.SignedOrder.MakerAddress,
+					&ospec,
+					OOOpCodeCreated,
+					time_stamp,
+				)
+				if err != nil {
+					Info.Printf("Error inserting order %v: %v\n",order_hash,err)
+				}
 			}
 		}
 	}
@@ -295,22 +323,15 @@ func main() {
 	Info.Printf("Subscribed to events successfully..., 0x Mesh Listener started.\n")
 	fetch_and_sync_orders()
 	last_sync_time=time.Now().Unix()
-	//var copts = new(bind.CallOpts)
 	for {
 		select {
 		case orderEvents := <-orderEventsChan:
 			for _, orderEvent := range orderEvents {
 				if !order_belongs_to_augur(orderEvent.SignedOrder) {
-					//Info.Printf("Event listener, skipped non-augur: %v\n",orderEvent.OrderHash.String())
 					continue
 				}
-				//order_hash:=orderEvent.OrderHash.String()
 				Info.Printf("--------------------------------------------------\n")
 				Info.Printf("Order event arrived in state=%+v:\n",orderEvent.EndState)
-	//			Info.Printf("Order Hash: %v\n",order_hash)
-	//			Info.Printf("FillableTakerAssetAmount: %v\n",orderEvent.FillableTakerAssetAmount)
-	//			Info.Printf("Timestamp: %v\n",orderEvent.Timestamp)
-				// store the event in the DB
 				var order_info types.OrderInfo
 				order_info.OrderHash.SetBytes(orderEvent.OrderHash.Bytes())
 				order_info.SignedOrder = orderEvent.SignedOrder
@@ -326,8 +347,9 @@ func main() {
 				}
 				Dump_0x_mesh_order(Info,&order_info)
 				DumpOrderSpec(Info,&ospec)
-				maybe_eoa_addr,_ := get_possible_eoa_by_wallet_addr(&order_info.SignedOrder.Order.MakerAddress,&order_info.OrderHash)
-				eoa_aid,wallet_aid,ew_err := storage.Lookup_maker_eoa_wallet_ids(&maybe_eoa_addr,&order_info.SignedOrder.Order.MakerAddress)
+				//maybe_eoa_addr,_ := get_possible_eoa_by_wallet_addr(&order_info.SignedOrder.Order.MakerAddress,&order_info.OrderHash)
+				//eoa_aid,wallet_aid,ew_err := storage.Lookup_maker_eoa_wallet_ids(&maybe_eoa_addr,&order_info.SignedOrder.Order.MakerAddress)
+				aid := storage.Lookup_or_create_address(order_info.SignedOrder.MakerAddress.String(),0,0)
 				switch orderEvent.EndState {
 				case zeroex.ESOrderAdded,
 					zeroex.ESOrderExpired,
@@ -336,8 +358,7 @@ func main() {
 					zeroex.ESStoppedWatching,
 					zeroex.ESOrderUnexpired:
 					storage.Try_insert_0x_mesh_order_event(
-						eoa_aid,
-						wallet_aid,
+						aid,
 						orderEvent.Timestamp.Unix(),
 						&order_info,
 						&ospec,
@@ -347,19 +368,17 @@ func main() {
 				}
 				switch orderEvent.EndState {
 					case zeroex.ESOrderAdded:
-						if ew_err == nil {
-							err := storage.Insert_open_order(
-								&order_hash,
-								orderEvent.SignedOrder,
-								orderEvent.FillableTakerAssetAmount,
-								&maybe_eoa_addr,
-								&ospec,
-								OOOpCodeCreated,
-								orderEvent.Timestamp.Unix(),
-							)
-							if err != nil {
-								Info.Printf("Error inserting order %v: %v\n",order_hash,err)
-							}
+						err := storage.Insert_open_order(
+							&order_hash,
+							orderEvent.SignedOrder,
+							orderEvent.FillableTakerAssetAmount,
+							&order_info.SignedOrder.MakerAddress,
+							&ospec,
+							OOOpCodeCreated,
+							orderEvent.Timestamp.Unix(),
+						)
+						if err != nil {
+							Info.Printf("Error inserting order %v: %v\n",order_hash,err)
 						}
 					case zeroex.ESOrderExpired:
 						storage.Delete_open_0x_order(orderEvent.OrderHash.String(),orderEvent.Timestamp.Unix(),OOOpCodeExpired)

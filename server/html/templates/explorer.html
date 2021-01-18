@@ -9,14 +9,35 @@ Type one of the following and press 'Search' button:
 <br/>
 <ul>
 	<li>Ethereum User Address
-	<li>Transaction Hash
+	<li>Augur Order Hash
+	<li>Augur Market Address
+	<li>Augur ShareToken ERC20 Wrapper
+	<li>Balancer Pool Address
+	<li>Uniswap Pair Address
 	<li>Block Number
+	<li>Range of blocks <small>(11999000:12111000, or up to the latest block: 11000000:0)</small>
+	<li>Transaction Hash
 </ul>
 <div class="explorer">
 	<form type=GET action="search/">
 		<input type="text" name="q">
 		<input type="submit" value=" Search ">
 	</form>
+</div>
+<br/><br/><br/>
+<div style="margin: 1em;">
+<h5>What's new in Augur:</h5>
+<form action="/black/whats_new_augur">
+	<select name="code">
+		<option value="0">Last 6 hours</option>
+		<option value="1">Last 12 hours</option>
+		<option value="2">Last 24 hours</option>
+		<option value="3">Last 2 days</option>
+		<option value="4">Last 3 days</option>
+		<option value="5">Las week</option>
+	</select>
+	<input type="submit" value= " View Report ">
+</form>
 </div>
 <br/><br/><br/>
 <nav>

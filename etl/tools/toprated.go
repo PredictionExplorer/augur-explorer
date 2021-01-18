@@ -24,7 +24,7 @@ func update_profit_ranks(records []RankStats) {
 		record := &records[i]
 		rank_value := (float64(i)/float64(num_recs))*100.0 + 1.0
 //		fmt.Printf("rank for Profit of %v is %v pl=%v\n",record.EoaAid,rank_value,record.ProfitLoss)
-		storage.Update_top_profit_rank(record.EoaAid,rank_value,record.ProfitLoss)
+		storage.Update_top_profit_rank(record.Aid,rank_value,record.ProfitLoss)
 	}
 }
 func update_trade_ranks(records []RankStats) {
@@ -34,7 +34,7 @@ func update_trade_ranks(records []RankStats) {
 		record := &records[i]
 		rank_value := (float64(i)/float64(num_recs))*100.0 + 1.0
 //		fmt.Printf("rank for TotalTrades of %v is %v trades=%v\n",record.EoaAid,rank_value,record.TotalTrades)
-		storage.Update_top_total_trades_rank(record.EoaAid,rank_value,record.TotalTrades)
+		storage.Update_top_total_trades_rank(record.Aid,rank_value,record.TotalTrades)
 	}
 }
 func update_volume_ranks(records []RankStats) {
@@ -44,7 +44,7 @@ func update_volume_ranks(records []RankStats) {
 		record := &records[i]
 		rank_value := (float64(i)/float64(num_recs))*100.0 + 1.0
 //		fmt.Printf("rank for Volume of %v is %v volume=%v\n",record.EoaAid,rank_value,record.VolumeTraded)
-		storage.Update_top_volume_rank(record.EoaAid,rank_value,record.VolumeTraded)
+		storage.Update_top_volume_rank(record.Aid,rank_value,record.VolumeTraded)
 	}
 }
 func main() {

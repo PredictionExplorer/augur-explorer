@@ -1,0 +1,91 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Uniswap Swaps {{.PairInfo.PairAddr}}</title>
+</head>
+<body>
+	<h3 class="page_title">Swaps of {{.PairInfo.PairAddr}}</h3>
+<table class="market_detail">
+<tr>
+	<td>Pair Address:</td>
+	<td>{{.PairInfo.PairAddr}}</td>
+</tr>
+<tr>
+	<td>Token1:</td>
+	<td nowrap>{{.PairInfo.Token0Addr}} / {{.PairInfo.Token0Symbol}} / {{.PairInfo.Token0Name}}</td>
+</tr>
+<tr>
+	<td>Token2:</td>
+	<td nowrap>{{.PairInfo.Token1Addr}} / {{.PairInfo.Token1Symbol}} / {{.PairInfo.Token1Name}}</td>
+</tr>
+<tr>
+	<td>Created</td>
+	<td>{{.PairInfo.CreatedDate}}<td>
+</tr>
+<tr>
+	<td>Total Swaps</td>
+	<td>{{.PairInfo.TotalSwaps}}</td>
+</tr>
+</table>
+Prices : <br/>
+<ul>
+<a href="/black/upair_swap_price/{{.PairInfo.PairAid}}/0/{{.SampleInitTs}}/{{.SampleFinTs}}">
+	<b>{{.PairInfo.Token0Symbol}}</b> <font color="#555555">in</font> <b>{{.PairInfo.Token1Symbol}}</b>
+</a><br/>
+<a href="/black/upair_swap_price/{{.PairInfo.PairAid}}/1/{{.SampleInitTs}}/{{.SampleFinTs}}">
+	<b>{{.PairInfo.Token1Symbol}}</b> <font color="#555555">in</font> <b>{{.PairInfo.Token0Symbol}}</b> 
+</a>
+</ul>
+
+<a href="/black/uniswap_slippage/{{.PairInfo.PairAddr}}">Show Slippage</a>
+<h3>Pair Swaps</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Date</th>
+		<th class="market_reports" colspan=2 style="text-align: center">Input</th>
+		<td class="market_reports" colspan=2 style="text-align: center">Output</th>
+		<td class="market_reports">Requester</th>
+	</tr>
+	{{- range $i, $change := .PairSwaps}}
+		<tr class="market_reports">
+			<td class="market_reports_field">{{.CreatedDate}}</td>
+			<td class="market_reports_field" nowrap style="text-align: right">
+				{{ if gt .Amount1_Out 0.0 }}
+					<b>{{ printf "%.4f" .Amount0_In}}</b>
+				{{ end }}
+				{{ if gt .Amount0_Out 0.0 }}
+					<b>{{ printf "%.4f" .Amount1_In}}</b>
+				{{ end }}
+			</td>
+			<td class="market_reports_field" nowrap>
+				{{ if gt .Amount1_Out 0.0 }}
+					<font color="#555555">{{$.PairInfo.Token0Symbol}}</font>
+				{{ end }}
+				{{ if gt .Amount0_Out 0.0 }}
+					<font color="#555555"> {{$.PairInfo.Token1Symbol}}</font>
+				{{ end }}
+			</td>
+			<td class="market_reports_field" nowrap style="text-align: right">
+				{{ if gt .Amount0_Out 0.0 }}
+					<b><tt>{{ printf "%.4f" .Amount0_Out}}</tt></b>
+				{{ end }}
+				{{ if gt .Amount1_Out 0.0 }}
+					<b><tt>{{ printf "%.4f" .Amount1_Out}}</tt></b>
+				{{ end }}
+			</td>
+			<td class="market_reports_field" nowrap>
+				{{ if gt .Amount0_Out 0.0 }}
+					<font color="#555555">{{$.PairInfo.Token0Symbol}}</font>
+				{{ end }}
+				{{ if gt .Amount1_Out 0.0 }}
+					<font color="#555555">{{$.PairInfo.Token1Symbol}}</font>
+				{{ end }}
+			</td>
+			<td class="market_reports_field">
+				<a class="addr" href="/black/search?q={{.RequesterAddr}}">{{.RequesterAddr}}</a>
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>

@@ -1,0 +1,62 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Uniswap Swap</title>
+</head>
+<body>
+<h3 class="page_title">Uniswap Swap</h3>
+<table>
+	<tr class="market_reports">
+		<td class="market_reports_field">Created</td>
+		<td class="market_reports_field">{{.UniswapSwap.CreatedDate}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports_field">Input</td>
+		<td class="market_reports_field">
+				{{ if gt .UniswapSwap.Amount1_Out 0.0 }}
+					<b>{{ printf "%.4f" .UniswapSwap.Amount0_In}}</b>
+				{{ end }}
+				{{ if gt .UniswapSwap.Amount0_Out 0.0 }}
+					<b>{{ printf "%.4f" .UniswapSwap.Amount1_In}}</b>
+				{{ end }}
+				&nbsp;
+				{{ if gt .UniswapSwap.Amount1_Out 0.0 }}
+					<font color="#555555">{{.UniswapSwap.Symbol0}}</font>
+				{{ end }}
+				{{ if gt .UniswapSwap.Amount0_Out 0.0 }}
+					<font color="#555555"> {{.UniswapSwap.Symbol1}}</font>
+				{{ end }}
+		</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports_field">Output</td>
+		<td class="market_reports_field">
+				{{ if gt .UniswapSwap.Amount0_Out 0.0 }}
+					<b><tt>{{ printf "%.4f" .UniswapSwap.Amount0_Out}}</tt></b>
+				{{ end }}
+				{{ if gt .UniswapSwap.Amount1_Out 0.0 }}
+					<b><tt>{{ printf "%.4f" .UniswapSwap.Amount1_Out}}</tt></b>
+				{{ end }}
+				{{ if gt .UniswapSwap.Amount0_Out 0.0 }}
+					<font color="#555555">{{.UniswapSwap.Symbol0}}</font>
+				{{ end }}
+				{{ if gt .UniswapSwap.Amount1_Out 0.0 }}
+					<font color="#555555">{{.UniswapSwap.Symbol1}}</font>
+				{{ end }}
+		</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports_field">Requester Address</td>
+		<td class="market_reports_field">{{.UniswapSwap.RequesterAddr}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports_field">Pair Address</td>
+		<td class="market_reports_field">
+			<a class="addr" href="/black/uniswap_swaps/{{.UniswapSwap.PairAddr}}">
+				{{.UniswapSwap.PairAddr}}
+			</a>
+		</td>
+	</tr>
+</table>
+<br/><br/>
+</body>

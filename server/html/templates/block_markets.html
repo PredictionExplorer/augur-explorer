@@ -2,7 +2,7 @@
 <table class="block_markets">
 	</tr>
 		{{- range $i, $address  := .}}
-			{{template "block_mkt_row" $address}}
+			{{template "block_mkt_row" .}}
 		{{- end}}
 </table>
 {{end}}

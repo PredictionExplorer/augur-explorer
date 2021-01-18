@@ -589,3 +589,9 @@ func Copy_zerox_order_to_iexchange_order(in *zeroex.Order ) IExchangeOrder {
 
 	return out
 }
+func Unpack_sharetoken_id(packed_token_id []byte) (common.Address,uint8) {
+
+	addr := common.BytesToAddress(packed_token_id[0:20])
+	outcome_idx := packed_token_id[20]
+	return addr,outcome_idx
+}

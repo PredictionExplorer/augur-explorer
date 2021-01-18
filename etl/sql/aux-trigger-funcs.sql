@@ -47,6 +47,33 @@ BEGIN
 	END IF;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	RAISE NOTICE 'row count is % v_id=%',v_cnt,v_field;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION update_creator_id() RETURNS void AS  $$
+DECLARE
+	v_rec record;
+BEGIN
 
+--	SELECT block_num FROM block ORDER BY block_num LIMIT 1 INTO v_first_block;
+	FOR v_rec IN (SELECT et.id,el.contract_aid,signature FROM evt_topic AS et JOIN evt_log AS el ON et.evtlog_id=el.id)
+	LOOP
+		UPDATE evt_topic
+			SET contract_aid = v_rec.contract_aid,
+				short_sig = SUBSTRING(v_rec.signature,1,8)
+		WHERE id=v_rec.id;
+	END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION update_all_search_tokens() RETURNS void AS  $$
+DECLARE
+	v_rec record;
+BEGIN
+
+--	SELECT block_num FROM block ORDER BY block_num LIMIT 1 INTO v_first_block;
+	FOR v_rec IN (SELECT cat_id,market_aid,extra_info FROM market AS m)
+	LOOP
+		PERFORM delete_search_tokens(v_rec.market_aid);
+		PERFORM insert_search_tokens(v_rec.market_aid,v_rec.cat_id,v_rec.extra_info::json->>'description',v_rec.extra_info::json->>'categories');
+	END LOOP;
 END;
 $$ LANGUAGE plpgsql;

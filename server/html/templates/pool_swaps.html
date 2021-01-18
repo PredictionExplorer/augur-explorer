@@ -1,0 +1,102 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Swaps for Pool{{.PoolInfo.PoolAddr}}</title>
+	<meta name="description" content="{{.Market.Description}}">
+</head>
+<body>
+	<h3 class="page_title">Swaps of {{.PoolInfo.PoolAddr}}</h3>
+<table class="market_detail">
+<tr>
+	<td>Pool Address:</td>
+	<td>{{.PoolInfo.PoolAddr}} (aid={{.PoolInfo.PoolAid}})</td>
+</tr>
+<tr>
+	<td>Creator Address:</td>
+	<td>{{.PoolInfo.CallerAddr}}</td>
+<tr>
+	<td>Created</td>
+	<td>{{.PoolInfo.CreatedDate}}<td>
+</tr>
+<tr>
+	<td>Block Num</td>
+	<td>{{.PoolInfo.BlockNum}}</td>
+</tr>
+</table>
+<h3>Pool Tokens</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Date Added</th>
+		<th class="market_reports">Token Addr</th>
+		<td class="market_reports">Weight</th>
+		<td class="market_reports">Market</th>
+		<td class="market_reports">Outcome</th>
+		<td class="market_reports">Symbol</th>
+		<td class="market_reports">Name</th>
+	</tr>
+	{{- range $i, $change := .PoolInfo.Tokens }}
+		<tr class="market_reports">
+			<td class="market_reports_field">
+				{{.DateAdded}}
+			</td>
+			<td class="market_reports_field">{{.TokenAddr}}</td>
+			<td class="market_reports_field">{{.Weight}} %</td>
+			<td class="market_reports_field">{{.WrappingContract.MktAddr}}</td>
+			<td class="market_reports_field">{{.WrappingContract.OutcomeIdx}}</td>
+			<td class="market_reports_field">{{.WrappingContract.Symbol}}</td>
+			<td class="market_reports_field">{{.WrappingContract.Name}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<a href="/black/pool_slippage/{{.PoolInfo.PoolAddr}}">Show Slippage</a>
+<br/><br/>
+Check Pool Swaps price chart. To do this, select two tokens and click 'Go' to draw the chart:<br/>
+<form id="price_form" action="/black/pool_swap_price/">
+	From <input type="text" id="init_ts" name="init_ts" value="">
+	To <input type="text" id="fin_ts" name="fin_ts"><br/>
+	<br/>
+	<input id="t1_aid" type="hidden" name="pool_aid" value="{{.PoolInfo.PoolAid}}">
+	Tokens: 
+	<select id="t1_select" name="token1_aid">
+		{{- range $i, $change := .PoolInfo.Tokens }}
+		<option value="{{.TokenAid}}">{{.WrappingContract.Symbol}} : {{.WrappingContract.Name}}</option>
+		{{- end }}
+	</select>
+	<select id="t2_select" name="token2_aid">
+		{{- range $i, $change := .PoolInfo.Tokens }}
+		<option value="{{.TokenAid}}">{{.WrappingContract.Symbol}} : {{.WrappingContract.Name}}</option>
+		{{- end }}
+	</select>&nbsp;
+	<a href="javascript: submit_form()">Go</a>
+</form>
+<script type="text/javascript">
+	var ts =  Math.floor(Date.now() / 1000);
+	var elt = document.getElementById("fin_ts")
+	elt.value = ts
+	elt = document.getElementById("init_ts")
+	elt.value = ts - 3600*24*30
+	function submit_form() {
+		var elt = document.getElementById("price_form")
+		var elt_t1 = document.getElementById("t1_select")
+		var elt_t2 = document.getElementById("t2_select")
+		var pool_aid = "{{.PoolInfo.PoolAid}}"
+		var elt_form = document.getElementById("price_form")
+		var idx1 = 0
+		if (elt_t1.selectedIndex) {
+			idx1 = elt_t1.selectedIndex
+		}
+		var idx2 = 0
+		if (elt_t2.selectedIndex) {
+			idx2 = elt_t2.selectedIndex
+		}
+		var init_ts = document.getElementById("init_ts").value
+		var fin_ts = document.getElementById("fin_ts").value
+		elt_form.action="/black/pool_swap_price/"+pool_aid+"/"+elt_t1.options[idx1].value+"/"+elt_t2.options[idx2].value+"/0/0/0"
+		elt_form.submit()
+	}
+</script>
+<div class="market_info">
+	{{template "pool_swaps_table" .PoolSwaps}}
+</div>
+</body>

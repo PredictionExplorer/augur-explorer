@@ -2,14 +2,29 @@
 
 echo Building ETL daemon ...
 cd etl
+cd cmd/tokens
 go build ./
-
+cd ../..
+cd cmd/augur
+go build ./
+cd ../..
+cd cmd/layer1
+go build ./
+cd ../..
+cd cmd/balancer
+go build ./
+cd ../..
+cd cmd/uniswap
+go build ./
+cd ../..
+cd cmd/ensscan
+go build ./
+cd ../..
 echo Building 0x Mesh order listener
 cd dmesh
 go build ./
+cd ../..
 
-cd ..
-cd ..
 echo Building Web Server ...
 cd server
 go build ./

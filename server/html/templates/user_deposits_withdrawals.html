@@ -4,15 +4,11 @@
 	<link href="../res/main.css" rel="stylesheet">
 </head>
 <body>
-	<h3 class="page_title">Deposits/Withdrawals for {{.UserInfo.EOAAddr}}</h3>
+	<h3 class="page_title">Deposits/Withdrawals for {{.UserInfo.Addr}}</h3>
 <table>
 	<tr>
-		<td>User's Real Address (EOA)</td>
-		<td>{{.UserInfo.EOAAddr}}</td>
-	</tr>
-	<tr>
-		<td>Wallet Contract:</td>
-		<td>{{.UserInfo.WalletAddr}}</td>
+		<td>Account Address</td>
+		<td>{{.UserInfo.Addr}}</td>
 	</tr>
 </table>
 <br/><br/>

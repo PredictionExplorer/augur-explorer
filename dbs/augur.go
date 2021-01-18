@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"bytes"
+	"strings"
+	"encoding/hex"
 	"database/sql"
 	_  "github.com/lib/pq"
 
@@ -176,17 +178,24 @@ func (ss *SQLStorage) Get_upload_block() int64 {
 	}
 	return block_num
 }
-func (ss *SQLStorage) Insert_augur_transaction_status(agtx *p.AugurTx,evt *p.EExecuteTransactionStatus) {
+func (ss *SQLStorage) Insert_augur_transaction_status(aid int64,agtx *p.AugurTx,evt *p.EExecuteTransactionStatus) {
 
-	//eoa_aid,err := ss.Lookup_eoa_aid(wallet_aid)
-	eoa_aid:=0
-	wallet_aid:=0
 	var query string
-	query = "INSERT INTO agtx_status(block_num,tx_id,eoa_aid,wallet_aid,success,funding_success) " +
-			"VALUES($1,$2,$3,$4,$5,$6)"
-	_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,eoa_aid,wallet_aid,evt.Success,evt.FundingSuccess)
+	query = "INSERT INTO agtx_status(block_num,tx_id,aid,success,funding_success) " +
+			"VALUES($1,$2,$3,$4,$5)"
+	_,err := ss.db.Exec(query,agtx.BlockNum,agtx.TxId,aid,evt.Success,evt.FundingSuccess)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into agtx_status table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_augur_transaction_status(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM agtx_status WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
 }
@@ -232,10 +241,9 @@ func (ss *SQLStorage) Insert_execute_wallet_tx(eoa_aid int64,wallet_aid int64,ag
 		wtx.RevertOnFailure,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into agtx_status table: %v; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into exec_wtx table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
-
 }
 func (ss *SQLStorage) Insert_register_contract_event(agtx *p.AugurTx,evt *p.ERegisterContract) {
 
@@ -252,6 +260,16 @@ func (ss *SQLStorage) Insert_register_contract_event(agtx *p.AugurTx,evt *p.EReg
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into register_contract table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_register_contract_evt(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM register_contract WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
 }
@@ -338,6 +356,7 @@ func (ss *SQLStorage) Set_augur_flag(address *common.Address,agtx *p.AugurTx,fla
 
 	infinite := false
 	var query string
+	ss.Info.Printf("Setting augur flag %v for %v (block=%v,tx=%v)\n",flag_name,address.String(),agtx.BlockNum,agtx.TxId)
   again:
 	query = "UPDATE augur_flag SET "+flag_name+"=TRUE WHERE aid=$1"
 	result,err := ss.db.Exec(query,aid)
@@ -366,30 +385,76 @@ func (ss *SQLStorage) Set_augur_flag(address *common.Address,agtx *p.AugurTx,fla
 		}
 	}
 	query = "SELECT " +
-				"ap_0xtrade_on_cash,ap_fill_on_cash,ap_fill_on_shtok " +
+				"ap_0xtrade_on_cash,ap_fill_on_cash,ap_fill_on_shtok,act_block_num " +
 			"FROM augur_flag " +
 			"WHERE aid = $1"
 
 	var ap_0xtrade_on_cash,ap_fill_on_cash,ap_fill_on_shtok bool
+	var null_block sql.NullInt64
 	row := ss.db.QueryRow(query,aid)
 	err=row.Scan(
 		&ap_0xtrade_on_cash,
 		&ap_fill_on_cash,
 		&ap_fill_on_shtok,
+		&null_block,
 	)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("Error in Set_augur_flag(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
 	if  ap_0xtrade_on_cash && ap_fill_on_cash && ap_fill_on_shtok  {
-		query = "UPDATE augur_flag SET act_block_num=$2 WHERE aid=$1"
-		_,err := ss.db.Exec(query,aid,agtx.BlockNum)
-		if err != nil {
-			ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
-			os.Exit(1)
+		if !null_block.Valid {
+			query = "UPDATE augur_flag SET act_block_num=$2 WHERE aid=$1 AND act_block_num IS NULL"
+			ss.Info.Printf("Updating block num to %v for addr %v in augur flags\n",agtx.BlockNum,address.String())
+			_,err := ss.db.Exec(query,aid,agtx.BlockNum)
+			if err != nil {
+				ss.Log_msg(fmt.Sprintf("DB error: %v; q=%v",err,query))
+				os.Exit(1)
+			}
 		}
-		ss.Link_eoa_and_wallet_contract(aid,aid)
 	}
+}
+func (ss *SQLStorage) Get_augur_flags(aid int64) p.AugurAcctFlags {
+
+	var output p.AugurAcctFlags
+	var query string
+	query = "SELECT " +
+				"FLOOR(EXTRACT(EPOCH FROM b.ts))::BIGINT as ts, " +
+				"act_block_num,ap_0xtrade_on_cash,ap_fill_on_cash,ap_fill_on_shtok,set_referrer " +
+			"FROM augur_flag AS af " +
+			"LEFT JOIN block AS b ON af.act_block_num = b.block_num " +
+			"WHERE aid = $1 "
+
+	var null_block,null_ts sql.NullInt64
+	var a1,a2,a3,a4 sql.NullBool
+	row := ss.db.QueryRow(query,aid)
+	err := row.Scan(&null_ts,&null_block,&a1,&a2,&a3,&a4)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return output
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v\n",err,query))
+		os.Exit(1)
+	}
+	if null_ts.Valid {
+		output.CreatedTs = null_ts.Int64
+	}
+	if null_block.Valid {
+		output.BlockNum = null_block.Int64
+	}
+	if a1.Valid {
+		output.ZeroXOnCash = a1.Bool
+	}
+	if a2.Valid {
+		output.FillOnCash = a2.Bool
+	}
+	if a2.Valid {
+		output.FillOnShareToken = a3.Bool
+	}
+	if output.ZeroXOnCash && output.FillOnCash && output.FillOnShareToken {
+		output.AugurEnabled = true
+	}
+	return output
 }
 func (ss *SQLStorage) Is_augur_activated(address string) bool {
 
@@ -413,4 +478,153 @@ func (ss *SQLStorage) Is_augur_activated(address string) bool {
 		return true
 	}
 	return false
+}
+func (ss *SQLStorage) Delete_abi_artifacts() {
+
+	var query string
+	query = "DELETE FROM abi_funcs"
+	_,err:=ss.db.Exec(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Delete_abi_artifacts() failed at function deletion: %v \n",err))
+		os.Exit(1)
+	}
+	query = "DELETE FROM abi_events"
+	_,err=ss.db.Exec(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Delete_abi_artifacts() failed at event deletion: %v \n",err))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_function_signature(signature,name,contract string) {
+
+	var query string
+	query = "INSERT INTO abi_funcs(signature,func_name,contracts) VALUES($1,$2,$3)"
+	_,err:=ss.db.Exec(query,signature,name,contract)
+	if (err!=nil) {
+		if strings.Contains(err.Error(),"duplicate key value") {
+			query = "UPDATE abi_funcs SET contracts=concat(contracts,',',$2::text) WHERE signature=$1"
+			_,err:=ss.db.Exec(query,signature,contract)
+			if (err!=nil) {
+				ss.Log_msg(fmt.Sprintf(
+					"Insert_function_signature(): failed to update contract name %v %v\n",contract,err,
+				))
+				os.Exit(1)
+			}
+		} else {
+			ss.Log_msg(
+				fmt.Sprintf(
+					"Insert_function_signature() function %v INSERT failed, sig %v ; Error : %v \n",
+					name,signature,err,
+				),
+			)
+			os.Exit(1)
+		}
+	}
+
+}
+func (ss *SQLStorage) Insert_event_signature(signature,name,contract string) {
+
+	var query string
+	query = "INSERT INTO abi_events(signature,evt_name,contracts) VALUES($1,$2,$3)"
+	_,err:=ss.db.Exec(query,signature,name,contract)
+	if (err!=nil) {
+		if strings.Contains(err.Error(),"duplicate key value") {
+			query = "UPDATE abi_events SET contracts=concat(contracts,',',$2::text) WHERE signature=$1"
+			_,err:=ss.db.Exec(query,signature,contract)
+			if (err!=nil) {
+				ss.Log_msg(fmt.Sprintf(
+					"Insert_function_signature(): failed to update contract name %v : %v\n",contract,err,
+				))
+				os.Exit(1)
+			}
+		} else {
+			ss.Log_msg(fmt.Sprintf("Insert_event_signature() failed at event insertion: %v \n",err))
+			os.Exit(1)
+		}
+	}
+}
+func (ss *SQLStorage) Get_augur_tx_from_db(tx_id int64) *p.AugurTx {
+
+	output := new(p.AugurTx)
+
+	var query string
+	query = "SELECT block_num,fa.addr,ta.addr,ctrct_create,value*1e+18::text AS value,tx_hash,td.data " +
+				"FROM transaction as tx " +
+				"LEFT JOIN address AS fa ON tx.from_aid=fa.address_id " +
+				"LEFT JOIN address AS ta ON tx.to_aid=ta.address_id " +
+				"LEFT JOIN tx_input AS td on td.tx_id=tx.id " +
+			"WHERE tx.id=$1"
+
+	var null_tx_data sql.NullString
+	res := ss.db.QueryRow(query,tx_id)
+	err := res.Scan(&output.BlockNum,&output.From,&output.To,&output.CtrctCreate,&output.Value,&output.TxHash,&null_tx_data)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Get_augur_tx_from_Db() failed : %v \n",err))
+			os.Exit(1)
+		}
+	}
+	if null_tx_data.Valid {
+		data,err:=hex.DecodeString(null_tx_data.String)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("Get_augur_tx_from_Db() error decoding tx_data: %v \n",err))
+			os.Exit(1)
+		}
+
+		output.Input = data
+	}
+	return output
+}
+func (ss *SQLStorage) Get_augur_process_status() p.AugurProcessStatus {
+
+	var output p.AugurProcessStatus
+	var null_id sql.NullInt64
+
+	var query string
+	for {
+		query = "SELECT last_tx_id FROM augur_proc_status"
+
+		res := ss.db.QueryRow(query)
+		err := res.Scan(&null_id)
+		if (err!=nil) {
+			if err == sql.ErrNoRows {
+				query = "INSERT INTO augur_proc_status DEFAULT VALUES"
+				_,err := ss.db.Exec(query)
+				if (err!=nil) {
+					ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+					os.Exit(1)
+				}
+			} else {
+				ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+				os.Exit(1)
+			}
+		} else {
+			break
+		}
+	}
+	if null_id.Valid {
+		output.LastTxId = null_id.Int64
+	}
+	return output
+}
+func (ss *SQLStorage) Update_augur_process_status(status *p.AugurProcessStatus) {
+
+	var query string
+	query = "UPDATE augur_proc_status SET last_tx_id = $1"
+
+	_,err := ss.db.Exec(query,status.LastTxId)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_exec_wtx(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM exec_wtx WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
 }

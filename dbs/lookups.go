@@ -3,6 +3,7 @@ package dbs
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
 	"database/sql"
 	_  "github.com/lib/pq"
 
@@ -10,27 +11,12 @@ import (
 func (ss *SQLStorage) lookup_universe_id(addr string) (int64,error) {
 
 	return ss.Nonfatal_lookup_address_id(addr)
-/* DISCONTINUED, to be deleted
-	var query string
-	query="SELECT universe_id FROM universe WHERE universe_addr=$1"
-	var universe_id int64 = 0
-	err:=ss.db.QueryRow(query,addr).Scan(&universe_id);
-	if (err!=nil) {
-		if (err==sql.ErrNoRows) {
-			return 0,err
-		} else {
-			ss.Log_msg(fmt.Sprintf("DB error looking up for Universe record: %v",err))
-			os.Exit(1)
-		}
-	}
-	return universe_id,nil
-*/
 }
 func (ss *SQLStorage) Lookup_eoa_aid(wallet_aid int64) (int64,error) {
 
 	var addr_id int64;
 	var query string
-	query="SELECT eoa_aid FROM ustats WHERE wallet_aid=$1"
+	query="SELECT eoa_aid FROM eoa_wallet WHERE wallet_aid=$1"
 	err:=ss.db.QueryRow(query,wallet_aid).Scan(&addr_id);
 	if (err!=nil) {
 		if err != sql.ErrNoRows {
@@ -45,7 +31,7 @@ func (ss *SQLStorage) Lookup_wallet_aid(eoa_aid int64) (int64,error) {
 
 	var addr_id int64;
 	var query string
-	query="SELECT wallet_aid FROM ustats WHERE eoa_aid=$1"
+	query="SELECT wallet_aid FROM eoa_wallet WHERE eoa_aid=$1"
 	err:=ss.db.QueryRow(query,eoa_aid).Scan(&addr_id);
 	if (err!=nil) {
 		if err!=sql.ErrNoRows {
@@ -107,6 +93,8 @@ func (ss *SQLStorage) Lookup_address_id(addr string) int64 {
 	if (err!=nil) {
 		if (err==sql.ErrNoRows) {
 			ss.Log_msg(fmt.Sprintf("Forced address lookup failed for %v : addr not found",addr))
+			ss.Log_msg(fmt.Sprintf("Printing stack trace to help locating the actual function with error"))
+			debug.PrintStack()
 			os.Exit(1)
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error upon address lookup: %v ; q=%v",err,query))
@@ -202,4 +190,19 @@ func (ss *SQLStorage) lookup_or_create_category(categories string) int64 {
 	}
 
 	return cat_id
+}
+func (ss *SQLStorage) Ustats_entry_exists(aid int64) (bool,error) {
+
+	var addr_id int64;
+	var query string
+	query="SELECT aid FROM ustats WHERE aid=$1"
+	err:=ss.db.QueryRow(query,aid).Scan(&addr_id);
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Ustats_entry_exists(aid=%v) sql error=%v\n",aid,err))
+			os.Exit(1)
+		}
+		return false,err
+	}
+	return true,nil
 }

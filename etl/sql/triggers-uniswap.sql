@@ -1,0 +1,4 @@
+CREATE TRIGGER uswap1_insert AFTER INSERT on uswap1 FOR EACH ROW EXECUTE PROCEDURE on_uswap1_insert();
+CREATE TRIGGER uswap1_delete AFTER DELETE on uswap1 FOR EACH ROW EXECUTE PROCEDURE on_uswap1_delete();
+CREATE TRIGGER uswap2_insert AFTER INSERT on uswap2 FOR EACH ROW EXECUTE PROCEDURE on_uswap2_insert();
+CREATE TRIGGER uswap2_delete AFTER DELETE on uswap2 FOR EACH ROW EXECUTE PROCEDURE on_uswap2_delete();

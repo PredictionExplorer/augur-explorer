@@ -22,9 +22,9 @@
 			</td>
 		<tr>
 			<td>Creator</td>
-			<td title="{{.OrderInfo.CreatorEOAAddr}}">
-				<a class="addr" href="../search?q={{.OrderInfo.CreatorEOAAddr}}">
-					{{.OrderInfo.CreatorEOAAddrSh}}
+			<td title="{{.OrderInfo.CreatorAddr}}">
+				<a class="addr" href="../search?q={{.OrderInfo.CreatorAddr}}">
+					{{.OrderInfo.CreatorAddrSh}}
 				</a>
 				{{- if .OrderInfo.CreatorBuyer }}
 					<font color=green><b>BUYER</b></font> 
@@ -35,9 +35,9 @@
 		</tr>
 		<tr>
 			<td>Filler</td>
-			<td title="{{.OrderInfo.FillerEOAAddr}}">
-				<a class="addr" href="../search?q={{.OrderInfo.FillerEOAAddr}}">
-					{{.OrderInfo.FillerEOAAddrSh}}
+			<td title="{{.OrderInfo.FillerAddr}}">
+				<a class="addr" href="../search?q={{.OrderInfo.FillerAddr}}">
+					{{.OrderInfo.FillerAddrSh}}
 				</a>
 				{{- if .OrderInfo.FillerBuyer }}
 					<font color=green><b>BUYER</b></font> 
