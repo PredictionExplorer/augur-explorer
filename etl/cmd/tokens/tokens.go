@@ -236,6 +236,7 @@ func process_ethusd_price_events(exit_chan chan bool) {
 					"Amount0In=%v, Amount1In=%v, Amount0Out=%v,Amount1Out=%v, evt=%v\n",
 					e.EthUsd,e.Amount0In,e.Amount1In,e.Amount0Out,e.Amount1Out,e.EvtId,
 				)
+				storage.Update_ethusd_process_status(&status)
 				continue
 			}
 		} else {
@@ -248,6 +249,7 @@ func process_ethusd_price_events(exit_chan chan bool) {
 						"Amount0In=%v, Amount1In=%v, Amount0Out=%v,Amount1Out=%v, evt=%v\n",
 						e.EthUsd,e.Amount0In,e.Amount1In,e.Amount0Out,e.Amount1Out,e.EvtId,
 					)
+					storage.Update_ethusd_process_status(&status)
 					continue
 				}
 			}
