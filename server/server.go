@@ -834,7 +834,7 @@ func search_v2(c *gin.Context) {
 		complete_and_output_market_info(c,false,*minfo)
 		return
 	case SR_BalancerPool:
-		pool_obj := sr.Object.(*BalancerNewPool)
+		pool_obj := sr.Object.(*BalancerPoolInfo)
 		pool_info,_ := augur_srv.storage.Get_pool_info(pool_obj.PoolAid)
 		swaps := augur_srv.storage.Get_pool_swaps(pool_info.PoolAid,0,200)
 		c.HTML(http.StatusOK, "pool_swaps.html", gin.H{
@@ -2590,5 +2590,12 @@ func show_node_text_data(c *gin.Context) {
 		"Node" : node,
 		"FullName" : fqdn,
 		"KeyValuePairs" : key_value_pairs,
+	})
+}
+func show_augur_foundry_contracts(c *gin.Context) {
+
+	wrappers:= augur_srv.storage.Get_augur_foundry_wrapper_list()
+	c.HTML(http.StatusOK, "augur_foundry_wrappers.html", gin.H{
+		"ERC20MarketOutcomeWrappers" : wrappers,
 	})
 }

@@ -52,7 +52,7 @@ func (ss *SQLStorage) Update_balancer_status(status *p.BalancerStatus) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_balancer_pool_created_evt(evt *p.BalancerNewPool) {
+func (ss *SQLStorage) Insert_balancer_pool_created_evt(evt *p.BalancerPoolInfo) {
 
 	pool_aid := ss.Lookup_or_create_address(evt.PoolAddr,evt.BlockNum,evt.TxId)
 	caller_aid := ss.Lookup_or_create_address(evt.CallerAddr,evt.BlockNum,evt.TxId)
@@ -588,9 +588,9 @@ func (ss *SQLStorage) Delete_pool_gulp(evt_id int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Get_pool_info(pool_aid int64) (p.BalancerNewPool,error) {
+func (ss *SQLStorage) Get_pool_info(pool_aid int64) (p.BalancerPoolInfo,error) {
 
-	var output p.BalancerNewPool
+	var output p.BalancerPoolInfo
 	var query string
 	query = "SELECT " +
 				"FLOOR(EXTRACT(EPOCH FROM p.time_stamp))::BIGINT AS ts, " +
@@ -637,6 +637,7 @@ func (ss *SQLStorage) Get_pool_info(pool_aid int64) (p.BalancerNewPool,error) {
 			os.Exit(1)
 		}
 	}
+	output.SwapFee = output.SwapFee * 100
 	query = "SELECT " +
 				"FLOOR(EXTRACT(EPOCH FROM t.time_stamp))::BIGINT AS ts, " +
 				"t.time_stamp,"+

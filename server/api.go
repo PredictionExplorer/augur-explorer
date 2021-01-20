@@ -1523,8 +1523,12 @@ func a1_user_balancer_swaps(c *gin.Context) {
 		})
 	}
 	swaps,total_rows := augur_srv.storage.Get_user_balancer_swaps(user_aid,offset,limit)
+	var status int = 1
+	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
-			"PoolInfo" : user_info,
+			"status": status,
+			"error" : err_str,
+			"UserInfo" : user_info,
 			"PoolSwaps" : swaps,
 			"TotalRows" : total_rows,
 	})
@@ -1551,7 +1555,11 @@ func a1_user_ens_names(c *gin.Context) {
 		})
 	}
 	ens_names,total_rows := augur_srv.storage.Get_user_ens_names(user_aid,offset,limit)
+	var status int = 1
+	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
+			"status": status,
+			"error" : err_str,
 			"UserInfo" : user_info,
 			"ENS_Names" : ens_names,
 			"TotalRows" : total_rows,
@@ -1564,9 +1572,26 @@ func a1_node_text_key_value_pairs(c *gin.Context) {
 	node := c.Param("node")
 	fqdn,key_value_pairs:= augur_srv.storage.Get_node_text_key_values(node)
 
+	var status int = 1
+	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
+		"status": status,
+		"error" : err_str,
 		"Node" : node,
 		"FullName" : fqdn,
 		"KeyValuePairs" : key_value_pairs,
+	})
+}
+func a1_augur_foundry_contracts(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	wrappers:= augur_srv.storage.Get_augur_foundry_wrapper_list()
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": status,
+		"error" : err_str,
+		"ERC20MarketOutcomeWrappers" : wrappers,
 	})
 }

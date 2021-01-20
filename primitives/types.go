@@ -910,16 +910,19 @@ type AugurFoundryStatus struct {
 	LastEvtId				int64
 }
 type ERC20ShTokContract struct {
-	TimeStamp				int64
-	WrapperAid				int64
-	LastEvtId				int64
-	MarketAid				int64
-	OutcomeIdx				int
-	Decimals				int
-	Address					string
-	Symbol					string
-	Name					string
-	MktAddr					string
+	TimeStamp               int64
+	WrapperAid              int64
+	LastEvtId               int64
+	MarketAid               int64
+	OutcomeIdx              int
+	Decimals                int
+	Address                 string
+	Symbol                  string
+	Name                    string
+	MktAddr                 string
+	MktDescr                string
+	DateTime                string
+	Outcome                 string
 }
 type WShTokTransfer struct { // (ERC20) Wrapped ShareToken Transfer
 	TimeStamp				int64
@@ -940,7 +943,7 @@ type WShTokTransfer struct { // (ERC20) Wrapped ShareToken Transfer
 type BalancerStatus struct {
 	LastEvtId				int64
 }
-type BalancerNewPool struct {
+type BalancerPoolInfo struct {
 	EvtId					int64
 	BlockNum				int64
 	TxId					int64
@@ -956,6 +959,7 @@ type BalancerNewPool struct {
 	CallerAddr				string
 	CreatedDate				string
 	ControllerAddr			string
+	MktAddr					string
 	Tokens					[]BalancerToken
 }
 type BalancerToken struct {
@@ -966,7 +970,7 @@ type BalancerToken struct {
 	Balance					float64
 	TokenAddr				string
 	DateAdded				string
-	WrappingContract		ERC20ShTokContract 
+	WrappingContract		ERC20ShTokContract
 }
 type BalancerJoin struct {
 	EvtId					int64

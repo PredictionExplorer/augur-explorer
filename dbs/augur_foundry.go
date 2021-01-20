@@ -342,3 +342,63 @@ func (ss *SQLStorage) Get_wrapped_token_transfers(wrapper_aid int64,offset,limit
 	}
 	return records,total_rows
 }
+func (ss *SQLStorage) Get_augur_foundry_wrapper_list() []p.ERC20ShTokContract {
+
+	records := make([]p.ERC20ShTokContract,0,4)
+	var query string
+	query = "SELECT " +
+				"w.wrapper_aid, " +
+				"wa.addr, " +
+				"ma.addr," +
+				"FLOOR(EXTRACT(EPOCH FROM w.time_stamp))::BIGINT AS ts, " +
+				"w.time_stamp," +
+				"w.outcome_idx," +
+				"w.market_aid," +
+				"m.extra_info::json->>'description'," +
+				"m.market_type," +
+				"m.outcomes," +
+				"w.name," +
+				"w.symbol, " +
+				"w.decimals " +
+			"FROM " +
+				"af_wrapper AS w " +
+				"JOIN address AS wa ON w.wrapper_aid=wa.address_id " +
+				"LEFT JOIN market AS m ON m.market_aid=w.market_aid " +
+				"LEFT JOIN address AS ma on w.market_aid=ma.address_id " +
+			"ORDER BY w.time_stamp "
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.ERC20ShTokContract
+		var market_type int64
+		var null_outcomes sql.NullString
+		err=rows.Scan(
+			&rec.WrapperAid,
+			&rec.Address,
+			&rec.MktAddr,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.OutcomeIdx,
+			&rec.MarketAid,
+			&rec.MktDescr,
+			&market_type,
+			&null_outcomes,
+			&rec.Name,
+			&rec.Symbol,
+			&rec.Decimals,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.Outcome = get_outcome_str(uint8(market_type),rec.OutcomeIdx,&null_outcomes.String)
+		records = append(records,rec)
+	}
+	return records
+}
