@@ -229,7 +229,7 @@ func execute_event(e *EthereumEventLog,log *types.Log) error {
 
 		caller := common.BytesToAddress(log.Topics[1][12:])
 		pool := common.BytesToAddress(log.Topics[2][12:])
-		var evt BalancerNewPool
+		var evt BalancerPoolInfo
 		evt.EvtId = e.EvtId
 		evt.BlockNum = e.BlockNum
 		evt.TxId = e.TxId

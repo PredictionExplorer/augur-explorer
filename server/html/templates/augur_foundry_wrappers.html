@@ -1,0 +1,37 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Registered Augur Foundry ERC20-wrapping contracts for Market Outcomes</title>
+</head>
+<body>
+	<h3 class="page_title">Registered Augur Foundry ERC20-wrapping contracts for Market Outcomes</h3>
+<br/><br/>
+<div class="market_info">
+<table class="market_trades">
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Date</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Wrapping Contract</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Market</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Outcome</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Market Description</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Name</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Symbol</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Decimals</th>
+	</tr>
+		{{- range $i, $swap:= .ERC20MarketOutcomeWrappers }}
+			<tr class="market_trades">
+				<td class="mkt_trade_field">{{.DateTime}}</td>
+				<td class="mkt_trade_field" style="text-align: center;">{{.Address}}</td>
+				<td class="mkt_trade_field">
+					<a class="addr" href="/black/search?q={{.MktAddr}}">{{.MktAddr}}</a>
+				</td>
+				<td class="mkt_trade_field" style="text-align: center;">{{.Outcome}}</td>
+				<td class="mkt_trade_field" style="text-align: center;">{{.MktDescr}}</td>
+				<td class="mkt_trade_field" style="text-align: center;">{{.Name}}</td>
+				<td class="mkt_trade_field" style="text-align: center;">{{.Symbol}}</td>
+				<td class="mkt_trade_field" style="text-align: center;">{{.Decimals}}</td>
+			</tr>
+		{{- end}}
+</table>
+</div>
+</body>
