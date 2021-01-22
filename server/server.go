@@ -241,6 +241,8 @@ func is_address_valid(c *gin.Context,json_output bool,addr string) (string,bool)
 	addr_bytes,err := hex.DecodeString(addr)
 	if err == nil {
 		addr := common.BytesToAddress(addr_bytes)
+		fmt.Printf("addr = %v\n",addr.String())
+		fmt.Printf("addr hex = %v\n",addr.Hex())
 		formatted_addr = addr.String()
 	} else {
 		if json_output {

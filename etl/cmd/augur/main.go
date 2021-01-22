@@ -52,6 +52,10 @@ const (
 	VALIDITY_BOND_CHANGED = "69af68e366a0570364e3a086f3b5ac79f08ecc3f93eaccbfcf3864809b12b5d8"
 	NOSHOW_BOND_CHANGED = "d1fc3f2cb1387e602db0e6f8f22649df65df5246eeff281cf6d1ef62feda4ece"
 	DISPUTE_CROWDSOURCER_CREATED = "f9a0b30bcf861874bf36630742f0d56b22648898d7cdd0cd785d74acd17e0d44"
+	DISPUTE_WINDOW_CREATED = "97f8b399e255f30d56b759b645c86652624ee258937579ff4a747abaeae857c4"
+	DESIGNATED_REPORT_STAKE_CHANGED = "9c75a088fcb0527d67a80a7d0a5006bbabe02f4b23984234ae68b2b146f001bc"
+	COMPLETE_SETS_PURCHASED = "fe06587917de7df83a446bcbb889cee699d7fc35b7b53e263282c2acb5a16499"
+	COMPLETE_SETS_SOLD = "dd7dcfa6708112395eb94e9b1889295fb19af21ef290e918256838c979b2dfbd"
 )
 var (
 	evt_market_created,_ = hex.DecodeString(MARKET_CREATED)
@@ -85,6 +89,10 @@ var (
 	evt_validity_bond_changed,_ = hex.DecodeString(VALIDITY_BOND_CHANGED)
 	evt_noshow_bond_changed,_ = hex.DecodeString(NOSHOW_BOND_CHANGED)
 	evt_dispute_crowdsourcer_created,_ = hex.DecodeString(DISPUTE_CROWDSOURCER_CREATED)
+	evt_dispute_window_created,_ = hex.DecodeString(DISPUTE_WINDOW_CREATED)
+	evt_designated_report_stake_changed,_ = hex.DecodeString(DESIGNATED_REPORT_STAKE_CHANGED)
+	evt_complete_sets_purchased,_ = hex.DecodeString(COMPLETE_SETS_PURCHASED)
+	evt_complete_sets_sold,_ = hex.DecodeString(COMPLETE_SETS_SOLD)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")

@@ -23,3 +23,5 @@ CREATE INDEX bswap_txid_idx			ON	bswap			(tx_id);
 CREATE INDEX bswap_token1_idx		ON	bswap			(token1_aid);
 CREATE INDEX bswap_token2_idx		ON	bswap			(token2_aid);
 CREATE INDEX bswap_caller_idx		ON	bswap			(caller_aid);
+
+CREATE INDEX bfinalized_evtid_idx	ON	b_finalized		(evtlog_id);

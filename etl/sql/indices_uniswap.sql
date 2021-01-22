@@ -11,3 +11,5 @@ CREATE INDEX upair_token1_idx		ON	upair		(token1_aid);
 CREATE INDEX uswap2_txid_idx		ON	uswap2		(tx_id);
 CREATE INDEX uswap1_tx_id_idx		ON	uswap1		(tx_id);
 CREATE INDEX uswqp1_aid_idx			ON	uswap1		(recipient_aid);
+
+CREATE INDEX uswap2_evtlog_idx		ON	uswap2		(evtlog_id);

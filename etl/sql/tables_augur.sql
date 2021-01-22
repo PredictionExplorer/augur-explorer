@@ -478,7 +478,7 @@ CREATE TABLE noshow_bond_chg( -- validity bond changed event (sig: 69af68e3)
 	universe_id			BIGINT NOT NULL,
 	bond_value			DECIMAL(64,18)
 );
-CREATE table dispute_created (			-- Share Token Balance Changed event
+CREATE table dispute_created (			--
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
@@ -487,4 +487,41 @@ CREATE table dispute_created (			-- Share Token Balance Changed event
 	dispute_round		INT NOT NULL,
 	payout_numerators	TEXT DEFAULT '',
 	size				DECIMAL(64,18)
+);
+CREATE table dispute_window (
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	universe_id			BIGINT NOT NULL,
+	wid					BIGINT NOT NULL, -- window ID (not the address of the contract)
+	window_aid			BIGINT NOT NULL, -- address of Window contract
+	start_time			TIMESTAMPTZ NOT NULL,
+	end_time			TIMESTAMPTZ NOT NULL,
+	initial				BOOLEAN NOT NULL
+);
+CREATE table rep_stake_chg ( -- DesignatedReportStakeChanged event
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	universe_id			BIGINT NOT NULL,
+	rep_stake			DECIMAL(64,18)
+);
+CREATE TABLE cset_buy (-- CompleteSetPurchases event
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	num_sets			DECIMAL(64,18)
+);
+CREATE TABLE cset_sell (--CompleteSetSold event
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	num_sets			DECIMAL(64,18),
+	fees				DECIMAL(64,18)
 );

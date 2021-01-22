@@ -163,8 +163,106 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDispu
 	}
 	ss.update_market_status(market_aid,p.MktStatusDisputing)
 }
+func (ss *SQLStorage) Insert_dispute_created(agtx *p.AugurTx,evt *p.EDisputeCrowdsourcerCreated) {
+
+	market_aid:=ss.Lookup_or_create_address(evt.Market.String(),agtx.BlockNum,agtx.TxId)
+	dispute_aid:=ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
+	payouts := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	var query string
+	query = "INSERT INTO dispute_created (" +
+				"block_num,tx_id,market_aid,dispute_aid,dispute_round,payout_numerators,size" +
+				") VALUES ($1,$2,$3,$4,$5,$6,$7::DECIMAL/1e+18)"
+
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,
+		agtx.TxId,
+		market_aid,
+		dispute_aid,
+		evt.DisputeRound.Int64(),
+		payouts,
+		evt.Size.String(),
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into dispute_created table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_dispute_created(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM dispute_created WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_dispute_window_created(agtx *p.AugurTx,evt *p.EDisputeWindowCreated) {
+
+	universe_id:=ss.Lookup_address_id(evt.Universe.String())
+	window_aid:=ss.Lookup_or_create_address(evt.DisputeWindow.String(),agtx.BlockNum,agtx.TxId)
+	var query string
+	query = "INSERT INTO dispute_window (" +
+				"block_num,tx_id,universe_id,wid,window_aid,start_time,end_time,initial" +
+			") VALUES ($1,$2,$3,$4,$5,TO_TIMESTAMP($6),TO_TIMESTAMP($7),$8)"
+
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,
+		agtx.TxId,
+		universe_id,
+		evt.Id.Int64(),
+		window_aid,
+		evt.StartTime.Int64(),
+		evt.EndTime.Int64(),
+		evt.Initial,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into dispute_created table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_dispute_window_created(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM dispute_window WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_designated_report_stake_changed(agtx *p.AugurTx,evt *p.EDesignatedReportStakeChanged) {
+
+	universe_id:=ss.Lookup_address_id(evt.Universe.String())
+	var query string
+	query = "INSERT INTO rep_stake_chg (" +
+				"block_num,tx_id,universe_id,rep_stake" +
+				") VALUES ($1,$2,$3,$4::DECIMAL/1e+18)"
+
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,
+		agtx.TxId,
+		universe_id,
+		evt.DesignatedReportStake.String(),
+		)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into rep_stake_chg table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_designated_report_stake_changed(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM rep_stake_chg WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+
 func (ss *SQLStorage) Get_reporting_status(market_aid int64) p.ReportingStatus {
-	
+
 	var repst p.ReportingStatus
 	return repst
 }

@@ -59,3 +59,8 @@ CREATE UNIQUE INDEX mktwrds_uniq2	ON mkt_words		(cat_id) WHERE cat_id IS NOT NUL
 CREATE INDEX bnum_agtx_idx			ON agtx				(block_num);
 CREATE INDEX agtx_evt_type_idx		ON agtx_evt			(evt_type);
 CREATE INDEX agtx_defi_idx			ON agtx_evt			(defi_platform);
+CREATE INDEX agtx_evt_tx_id_idx		ON agtx_evt			(tx_id);
+CREATE INDEX agtx_status_tx_idx		ON agtx_status		(tx_id);
+CREATE INDEX cancel_0x_tx_idx		ON cancel_0x		(tx_id);
+CREATE INDEX tproceeds_tx_idx		ON tproceeds		(tx_id);
+CREATE INDEX universe_tx_idx		ON universe			(tx_id);

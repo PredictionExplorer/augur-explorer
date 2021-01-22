@@ -163,7 +163,7 @@ type ECompleteSetsPurchased struct {//0xfe06587917de7df83a446bcbb889cee699d7fc35
 	Timestamp       *big.Int
 	Raw             types.Log // Blockchain specific contextual infos
 }
-type EAugurCompleteSetsSold struct {//0xdd7dcfa6708112395eb94e9b1889295fb19af21ef290e918256838c979b2dfbd
+type ECompleteSetsSold struct {//0xdd7dcfa6708112395eb94e9b1889295fb19af21ef290e918256838c979b2dfbd
 	Universe        common.Address
 	Market          common.Address
 	Account         common.Address

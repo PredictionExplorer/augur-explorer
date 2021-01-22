@@ -439,3 +439,37 @@ func (evt* EDisputeCrowdsourcerCreated) Dump(l *log.Logger) {
 	l.Printf("\tDisputeRound: %v\n",evt.DisputeRound.String())
 	l.Printf("}\n")
 }
+func (evt* EDisputeWindowCreated) Dump(l *log.Logger) {
+	l.Printf("DisputeWindowCreated {\n")
+	l.Printf("\tUniverse: %v\n",evt.Universe.String())
+	l.Printf("\tDisputeWindow: %v\n",evt.DisputeWindow.String())
+	l.Printf("\tStartTime: %v\n",evt.StartTime.String())
+	l.Printf("\tEndTime: %v\n",evt.EndTime.String())
+	l.Printf("\tId: %v\n",evt.Id.String())
+	l.Printf("}\n")
+}
+func (evt* EDesignatedReportStakeChanged) Dump(l *log.Logger) {
+	l.Printf("DesignatedReportStakeChanged {\n")
+	l.Printf("\tUniverse: %v\n",evt.Universe.String())
+	l.Printf("\tDesignatedReportStake: %v\n",evt.DesignatedReportStake.String())
+	l.Printf("}\n")
+}
+func (evt* ECompleteSetsPurchased) Dump(l *log.Logger) {
+	l.Printf("CompleteSetsPurchased{\n")
+	l.Printf("\tUniverse: %v\n",evt.Universe.String())
+	l.Printf("\tMarket: %v\n",evt.Market.String())
+	l.Printf("\tAccount: %v\n",evt.Account.String())
+	l.Printf("\tNumCompleteSets: %v\n",evt.NumCompleteSets.String())
+	l.Printf("\tTimestamp: %v\n",evt.Timestamp.String())
+	l.Printf("}\n")
+}
+func (evt* ECompleteSetsSold) Dump(l *log.Logger) {
+	l.Printf("CompleteSetsSold{\n")
+	l.Printf("\tUniverse: %v\n",evt.Universe.String())
+	l.Printf("\tMarket: %v\n",evt.Market.String())
+	l.Printf("\tAccount: %v\n",evt.Account.String())
+	l.Printf("\tNumCompleteSets: %v\n",evt.NumCompleteSets.String())
+	l.Printf("\tFees: %v\n",evt.Fees.String())
+	l.Printf("\tTimestamp: %v\n",evt.Timestamp.String())
+	l.Printf("}\n")
+}

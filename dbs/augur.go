@@ -682,34 +682,69 @@ func (ss *SQLStorage) Delete_noshow_bond_changed_event(tx_id int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_dispute_created(agtx *p.AugurTx,evt *p.EDisputeCrowdsourcerCreated) {
+func (ss *SQLStorage) Insert_complete_sets_purchased(agtx *p.AugurTx,evt *p.ECompleteSetsPurchased) {
 
-	market_aid:=ss.Lookup_or_create_address(evt.Market.String(),agtx.BlockNum,agtx.TxId)
-	dispute_aid:=ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
-	payouts := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	_=ss.Lookup_address_id(evt.Universe.String())
+	market_aid:=ss.Lookup_address_id(evt.Market.String())
+	account_aid:=ss.Lookup_or_create_address(evt.Account.String(),agtx.BlockNum,agtx.TxId)
+
 	var query string
-	query = "INSERT INTO dispute_created (" +
-				"block_num,tx_id,market_aid,dispute_aid,dispute_round,payout_numerators,size" +
-				") VALUES ($1,$2,$3,$4,$5,$6,$7::DECIMAL/1e+18)"
+	query = "INSERT INTO cset_buy (" +
+				"block_num,tx_id,market_aid,aid,time_stamp,num_sets" +
+				") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6::DECIMAL/1e+18)"
 
 	_,err := ss.db.Exec(query,
 		agtx.BlockNum,
 		agtx.TxId,
 		market_aid,
-		dispute_aid,
-		evt.DisputeRound.Int64(),
-		payouts,
-		evt.Size.String(),
+		account_aid,
+		evt.Timestamp,
+		evt.NumCompleteSets.String(),
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into dispute_created table: %v; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into cst_buy table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Delete_dispute_created(tx_id int64) {
+func (ss *SQLStorage) Delete_complete_sets_purchased(tx_id int64) {
 
 	var query string
-	query = "DELETE FROM dispute_created WHERE tx_id=$1"
+	query = "DELETE FROM cset_buy WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_complete_sets_sold(agtx *p.AugurTx,evt *p.ECompleteSetsSold) {
+
+	_=ss.Lookup_address_id(evt.Universe.String())
+	market_aid:=ss.Lookup_address_id(evt.Market.String())
+	account_aid:=ss.Lookup_or_create_address(evt.Account.String(),agtx.BlockNum,agtx.TxId)
+
+	var query string
+	query = "INSERT INTO cset_sell (" +
+				"block_num,tx_id,market_aid,aid,time_stamp,num_sets,fees" +
+				") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6::DECIMAL/1e+18,$7::DECIMAL/1e+18)"
+
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,
+		agtx.TxId,
+		market_aid,
+		account_aid,
+		evt.Timestamp,
+		evt.NumCompleteSets.String(),
+		evt.Fees.String(),
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into cst_sell table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_complete_sets_sold(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM cset_sell WHERE tx_id=$1"
 	_,err := ss.db.Exec(query,tx_id)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
