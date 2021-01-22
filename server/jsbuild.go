@@ -22,17 +22,6 @@ func build_js_data_obj(mdepth *MarketDepth) (template.JS,template.JS) {
 		asks_str= asks_str + entry
 		last_price = mdepth.Asks[i].Price
 	}
-/*	// Possibly replace this with a line indicating the spread, as another Serie
-	if len(mdepth.Asks) > 0 {
-		if len(mdepth.Bids) > 0 {
-			// add fake BID entry to fill the hole for the spread
-			last_elt:=len(mdepth.Asks)-1
-			fake_entry := mdepth.Asks[last_elt]
-			fake_entry.Price = mdepth.Bids[0].Price*10
-			bids_str = "[" + mkt_depth_entry_to_js_obj(&fake_entry)
-		}
-	}
-*/
 	for i:=0 ; i < len(mdepth.Bids) ; i++ {
 		if len(bids_str) > 1 {
 			bids_str = bids_str + ","

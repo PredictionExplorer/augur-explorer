@@ -23,7 +23,7 @@ func a1_active_market_ids(c *gin.Context) {
 	if len(off_str) > 0 {
 		off, err = strconv.Atoi(off_str)
 		if err != nil {
-			c.JSON(422,gin.H{
+			c.JSON(http.StatusBadRequest,gin.H{
 				"MarketIDs": make([]int64,0,0),
 				"status":0,
 				"error":fmt.Sprintf("Bad offset parameter: %v",err),
@@ -36,7 +36,7 @@ func a1_active_market_ids(c *gin.Context) {
 	if len(p_sort) > 0 {
 		sort, err = strconv.Atoi(p_sort)
 		if err != nil {
-			c.JSON(422,gin.H{
+			c.JSON(http.StatusBadRequest,gin.H{
 				"MarketIDs": make([]int64,0,0),
 				"status":0,
 				"error":fmt.Sprintf("Bad sort parameter: %v",err),
@@ -49,7 +49,7 @@ func a1_active_market_ids(c *gin.Context) {
 	if len(p_all) > 0 {
 		all , err = strconv.Atoi(p_all)
 		if err != nil {
-			c.JSON(422,gin.H{
+			c.JSON(http.StatusBadRequest,gin.H{
 				"MarketIDs": make([]int64,0,0),
 				"status":0,
 				"error":fmt.Sprintf("Bad 'all' parameter: %v",err),
@@ -62,7 +62,7 @@ func a1_active_market_ids(c *gin.Context) {
 	if len(p_fin) > 0 {
 		fin , err = strconv.Atoi(p_fin)
 		if err != nil {
-			c.JSON(422,gin.H{
+			c.JSON(http.StatusBadRequest,gin.H{
 				"MarketIDs": make([]int64,0,0),
 				"status":0,
 				"error":fmt.Sprintf("Bad 'fin' parameter: %v",err),
@@ -75,7 +75,7 @@ func a1_active_market_ids(c *gin.Context) {
 	if len(p_alive) > 0 {
 		alive , err = strconv.Atoi(p_alive)
 		if err != nil {
-			c.JSON(422,gin.H{
+			c.JSON(http.StatusBadRequest,gin.H{
 				"MarketIDs": make([]int64,0,0),
 				"status":0,
 				"error":fmt.Sprintf("Bad 'alive' parameter: %v",err),
@@ -88,7 +88,7 @@ func a1_active_market_ids(c *gin.Context) {
 	if len(p_inval_thresh) > 0 {
 		inval_thresh , err = strconv.Atoi(p_inval_thresh)
 		if err != nil {
-			c.JSON(422,gin.H{
+			c.JSON(http.StatusBadRequest,gin.H{
 				"MarketIDs": make([]int64,0,0),
 				"status":0,
 				"error":fmt.Sprintf("Bad 'it' (invalid_threshold) parameter: %v",err),
@@ -98,7 +98,7 @@ func a1_active_market_ids(c *gin.Context) {
 	}
 	ids := augur_srv.storage.Get_active_market_ids(sort,all,fin,alive,inval_thresh,off,1000000)
 	var status int = 1
-	c.JSON(200,gin.H{
+	c.JSON(http.StatusOK,gin.H{
 		"MarketIDs": ids,
 		"status":status,
 		"error":"",
@@ -113,7 +113,7 @@ func a1_market_card(c *gin.Context) {
 	if len(p_market_aid ) > 0 {
 		market_aid, err = strconv.ParseInt(p_market_aid,10,64)
 		if err != nil {
-			c.JSON(422,gin.H{
+			c.JSON(http.StatusBadRequest,gin.H{
 				"MarketInfo": make([]int64,0,0),
 				"status":0,
 				"error":fmt.Sprintf("Bad integer for market_aid parameter: %v",err),
@@ -121,7 +121,7 @@ func a1_market_card(c *gin.Context) {
 			return
 		}
 	} else {
-		c.JSON(422,gin.H{
+		c.JSON(http.StatusBadRequest,gin.H{
 			"MarketInfo": make([]int64,0,0),
 			"status":0,
 			"error":fmt.Sprintf("market_aid parameter wasn't provided"),
@@ -136,7 +136,7 @@ func a1_market_card(c *gin.Context) {
 	} else {
 		err_str = err.Error()
 	}
-	c.JSON(200,gin.H{
+	c.JSON(http.StatusOK,gin.H{
 		"MarketInfo": mkt_info,
 		"status":status,
 		"error":err_str,
@@ -154,7 +154,7 @@ func a1_active_markets(c *gin.Context) {
 	if len(p_start) > 0 {
 		start, err = strconv.Atoi(p_start)
 		if err != nil {
-			c.JSON(422,gin.H{
+			c.JSON(http.StatusBadRequest,gin.H{
 				"Markets": make([]int64,0,0),
 				"status":0,
 				"error":fmt.Sprintf("Bad number for 'start' parameter: %v",err),
@@ -162,7 +162,7 @@ func a1_active_markets(c *gin.Context) {
 			return
 		}
 	} else {
-		c.JSON(422,gin.H{
+		c.JSON(http.StatusBadRequest,gin.H{
 			"Markets": make([]int64,0,0),
 			"status":0,
 			"error":fmt.Sprintf("Empty 'start' parameter for page offset"),
@@ -171,7 +171,7 @@ func a1_active_markets(c *gin.Context) {
 	if len(p_num_rows) > 0 {
 		num_rows, err = strconv.Atoi(p_num_rows)
 		if err != nil {
-			c.JSON(422,gin.H{
+			c.JSON(http.StatusBadRequest,gin.H{
 				"Markets": make([]int64,0,0),
 				"status":0,
 				"error":fmt.Sprintf("Bad number for 'num_rows' parameter: %v",err),
@@ -182,7 +182,7 @@ func a1_active_markets(c *gin.Context) {
 			num_rows = DEFAULT_MARKET_ROWS_LIMIT
 		}
 	} else {
-		c.JSON(422,gin.H{
+		c.JSON(http.StatusBadRequest,gin.H{
 			"Markets": make([]int64,0,0),
 			"status":0,
 			"error":fmt.Sprintf("Empty 'num_rows' parameter for number of records to return"),
@@ -191,7 +191,7 @@ func a1_active_markets(c *gin.Context) {
 
 	markets := augur_srv.storage.Get_active_market_list(start,num_rows)
 	var status int = 1
-	c.JSON(200,gin.H{
+	c.JSON(http.StatusOK,gin.H{
 		"Markets": markets,
 		"status":status,
 		"error":"",
@@ -269,7 +269,7 @@ func a1_multiple_market_cards(c *gin.Context) {
 	}
 	var status int = 1
 	var err_str string = ""
-	c.JSON(200,gin.H{
+	c.JSON(http.StatusOK,gin.H{
 		"Markets": markets,
 		"status":status,
 		"error":err_str,
@@ -293,7 +293,7 @@ func a1_user_info(c *gin.Context) {
 			"GasSpent" : gas_spent,
 		})
 	} else {
-		c.JSON(http.StatusOK,gin.H{
+		c.JSON(http.StatusBadRequest,gin.H{
 			"status":0,
 			"error":fmt.Sprintf("User not found"),
 		})
@@ -325,7 +325,7 @@ func a1_user_traded_markets(c *gin.Context) {
 		var err error
 		active_flag, err = strconv.Atoi(p_active_flag)
 		if err != nil {
-			c.JSON(422,gin.H{
+			c.JSON(http.StatusBadRequest,gin.H{
 				"Markets": make([]InfoMarket,0,0),
 				"status":0,
 				"error":fmt.Sprintf("Bad 'active' parameter: %v",err),
@@ -508,7 +508,7 @@ func a1_top_users(c *gin.Context) {
 	if len(p_sort) > 0 {
 		sort, err = strconv.Atoi(p_sort)
 		if err != nil {
-			c.JSON(422,gin.H{
+			c.JSON(http.StatusBadRequest,gin.H{
 				"MarketIDs": make([]int64,0,0),
 				"status":0,
 				"error":fmt.Sprintf("Bad 'sort' parameter: %v",err),
@@ -521,7 +521,7 @@ func a1_top_users(c *gin.Context) {
 	if len(ord_str) > 0 {
 		ord, err = strconv.Atoi(ord_str)
 		if err != nil {
-			c.JSON(422,gin.H{
+			c.JSON(http.StatusBadRequest,gin.H{
 				"UserRanks": make([]int64,0,0),
 				"status":0,
 				"error":fmt.Sprintf("Bad 'order' parameter: %v",err),
@@ -1101,7 +1101,7 @@ func a1_single_uniswap_swap(c *gin.Context) {
 	var err error
 	id, err = strconv.ParseInt(p_id,10,64)
 	if err != nil {
-		c.JSON(422,gin.H{
+		c.JSON(http.StatusBadRequest,gin.H{
 			"status":0,
 			"error":fmt.Sprintf("Bad integer for 'id' parameter: %v",err),
 		})
@@ -1134,7 +1134,7 @@ func a1_single_balancer_swap(c *gin.Context) {
 	var err error
 	id, err = strconv.ParseInt(p_id,10,64)
 	if err != nil {
-		c.JSON(422,gin.H{
+		c.JSON(http.StatusBadRequest,gin.H{
 			"status":0,
 			"error":fmt.Sprintf("Bad integer for 'id' parameter: %v",err),
 		})

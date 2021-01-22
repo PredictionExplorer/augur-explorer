@@ -178,7 +178,7 @@ func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoM
 	wrappers := augur_srv.storage.Get_wrapped_tokens_for_market(minfo.MktAid)
 
 	if json_output {
-		c.JSON(200,gin.H{
+		c.JSON(http.StatusOK,gin.H{
 			"Trades" : trades,
 			"Reports" : reports,
 			"Market": minfo ,
@@ -208,7 +208,7 @@ func is_address_valid(c *gin.Context,json_output bool,addr string) (string,bool)
 	if (len(addr) != 40) && (len(addr)!=42) {
 		var err_msg = fmt.Sprintf("Provided address has invalid length (len=%v)",len(addr))
 		if json_output {
-			c.JSON(200,gin.H{
+			c.JSON(http.StatusOK,gin.H{
 				"status": 0,
 				"error": err_msg,
 			})
@@ -225,7 +225,7 @@ func is_address_valid(c *gin.Context,json_output bool,addr string) (string,bool)
 	}
 	if len(addr) != 40 {
 		if json_output {
-			c.JSON(200,gin.H{
+			c.JSON(http.StatusOK,gin.H{
 				"status": 0,
 				"error": fmt.Sprintf("Invalid address length"),
 			})
@@ -244,7 +244,7 @@ func is_address_valid(c *gin.Context,json_output bool,addr string) (string,bool)
 		formatted_addr = addr.String()
 	} else {
 		if json_output {
-			c.JSON(200,gin.H{
+			c.JSON(http.StatusOK,gin.H{
 				"status": 0,
 				"error": fmt.Sprintf("Provided address parameter is invalid : %v",err),
 			})
@@ -422,7 +422,7 @@ func market_depth_ajax(c *gin.Context) {
 	}
 	mdepth,last_oo_id := augur_srv.storage.Get_mkt_depth(market_aid,int(outcome))
 	js_bid_data,js_ask_data := build_js_data_obj(mdepth)
-	c.JSON(200,gin.H{
+	c.JSON(http.StatusOK,gin.H{
 		"bids":js_bid_data,
 		"asks":js_ask_data,
 		"LastOOID":last_oo_id,
@@ -621,7 +621,6 @@ func serve_user_funds_v2(c *gin.Context,addr *string) {
 		eth_balance_usd float64 = 0.0
 
 	)
-	Info.Printf("serve_user_funds_v2(): addr= %v\n",*addr)
 	var status_code int = 0
 	var error_text  string = ""
 	var total_usd float64 = 0
@@ -638,12 +637,9 @@ func serve_user_funds_v2(c *gin.Context,addr *string) {
 	}
 
 	rep_in_eth,err :=get_REP_token_price_in_ETH()
-	Info.Printf("REP balancve = %v\n",rep_balance)
-	Info.Printf("REP in ETH = %v\n",rep_in_eth)
 	if err == nil {
 		ethusd,err := augur_srv.storage.Get_last_ethusd_price()
 		if err == nil {
-			Info.Printf("ETHUSD = %v\n",ethusd)
 			rep_balance_usd = rep_balance / rep_in_eth * ethusd
 			total_usd = dai_balance + eth_balance * ethusd + rep_balance_usd
 			eth_balance_usd = eth_balance * ethusd
@@ -651,8 +647,11 @@ func serve_user_funds_v2(c *gin.Context,addr *string) {
 	} else {
 		error_text = fmt.Sprintf("Error at checking REP price: %v\n",err.Error())
 	}
-
-	c.JSON(200, gin.H{
+	scode := http.StatusOK
+	if status_code == 0 {
+		status_code = http.StatusBadRequest
+	}
+	c.JSON(scode, gin.H{
 		"status": status_code,
 		"error": error_text,
 		"Eth": fmt.Sprintf("%v",eth_balance),
@@ -672,7 +671,7 @@ func serve_user_funds_v1(c *gin.Context,addr common.Address) {
 	if err == nil {
 		wallet_aid,_ = augur_srv.storage.Lookup_wallet_aid(eoa_aid)
 	} else {
-		c.JSON(200,gin.H{
+		c.JSON(http.StatusOK,gin.H{
 			"eoa_eth":0,"wallet_eth":0,"eoa_dai":0,"wallet_dai":0,"eoa_rep":0,"wallet_rep":0,
 		})
 		return
@@ -697,7 +696,7 @@ func serve_user_funds_v1(c *gin.Context,addr common.Address) {
 		}
 	}
 
-	c.JSON(200, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 			"eoa_eth": fmt.Sprintf("%v",eoa_eth_balance),
 			"wallet_eth": fmt.Sprintf("%v",wallet_eth_balance),
 			"eoa_dai": fmt.Sprintf("%v",eoa_dai_balance),
@@ -795,7 +794,6 @@ func search_v2(c *gin.Context) {
 		})
 		return
 	}
-	Info.Printf("SRType=%v\n",sr.SRType)
 	switch (sr.SRType) {
 	case SR_MarketOrders:
 		orders:=sr.Object.(*[]OrderInfo)
@@ -945,7 +943,6 @@ func execute_search(keyword string) SearchResultObject {
 			if (len(keyword) == 40) || (len(keyword) == 42) { // Address
 				addr := common.BytesToAddress(hex_data) // corrects any lower-case input
 				addr_str := addr.String()
-				Info.Printf("addr str = %v\n",addr_str)
 				aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(addr_str)
 				if err != nil {
 					var iface interface{}
@@ -1123,7 +1120,6 @@ func execute_search(keyword string) SearchResultObject {
 
 	search_results := augur_srv.storage.Search_keywords_in_markets(keyword)
 	var iface interface{}
-	Info.Printf("search results for keyword=%v is len=%v\n",keyword,len(search_results))
 	iface = &search_results
 	return SearchResultObject {
 		SRType:		SR_TextSearchResults,
@@ -1465,7 +1461,7 @@ func market_depth_status(c *gin.Context) {
 		respond_error(c,fmt.Sprintf("Error: %v",err))
 		return
 	}
-	c.JSON(200,gin.H{
+	c.JSON(http.StatusOK,gin.H{
 		"num_orders":status.NumOrders,
 		"last_oo_id":status.LastOOID,
 	})
@@ -2114,10 +2110,6 @@ func balancer_calc_slippage(addr_str string,token_in_str string,token_out_str st
 	}
 	slippage := big.NewInt(0)
 	slippage.Sub(spot_price,spot_price_after)
-	Info.Printf(
-		"Calculating slippage: price_before= %v , price_after= %v , slippage= %v\n",
-		spot_price.String(),spot_price_after.String(),slippage.String(),
-	)
 	return slippage,token_amount_out,nil
 }
 func produce_pool_slippages(amount_to_trade string,pool_aid int64) []TokenSlippage {
@@ -2183,7 +2175,6 @@ func show_pool_slippage(c *gin.Context) {
 	})
 }
 func uniswap_correct_for_difference_in_decimals(value *big.Float,decimals1,decimals2 int) {
-	Info.Printf("Correcting slippage for difference: %v\n",value.String())
 	if decimals1 != decimals2 {
 		var dec_diff int = 0
 		if decimals1 < decimals2 {
@@ -2192,17 +2183,14 @@ func uniswap_correct_for_difference_in_decimals(value *big.Float,decimals1,decim
 			divisor_big := big.NewFloat(0.0)
 			divisor_big.SetString(divisor_str)
 			value.Quo(value,divisor_big)
-			Info.Printf("Difference in decimals is %v, dividing slippage by %v\n",dec_diff,divisor_big.String())
 		} else {
 			dec_diff = decimals1 - decimals2;
 			multiplier_str := fmt.Sprintf("1%0*d",dec_diff, 0)
 			multiplier_big := big.NewFloat(0.0)
 			multiplier_big.SetString(multiplier_str)
 			value.Mul(value,multiplier_big)
-			Info.Printf("Difference in decimals is %v, multiplying slippage by %v\n",dec_diff,multiplier_big.String())
 		}
 	}
-	Info.Printf("Corrected slippage = %v\n",value)
 }
 func uniswap_calc_slippage(pair_addr_str string,token_str string,amount_str string) (*big.Float,*big.Int,error) {
 	// note: we are receiving decimals as parameter because the fetch porcess to get decimals from the
@@ -2230,10 +2218,7 @@ func uniswap_calc_slippage(pair_addr_str string,token_str string,amount_str stri
 	if err != nil {
 		return nil,nil,err
 	}
-	Info.Printf(
-		"Calculatig uniswap slippage for %v. Amount %v. Pair.Token0=%v, Pair.Token1=%v",
-		token_str,amount_str,token0.String(),token1.String(),
-	)
+	_=token1
 	var r1,r2 *big.Int
 	if bytes.Equal(qtoken.Bytes(),token0.Bytes()) {
 		r1=reserves.Reserve0
@@ -2245,11 +2230,9 @@ func uniswap_calc_slippage(pair_addr_str string,token_str string,amount_str stri
 	_,_,router02_addr_str := augur_srv.storage.Get_uniswap_contracts()
 	router02_addr := common.HexToAddress(router02_addr_str)
 	ctrct_router,err := NewUniswapV2Router02(router02_addr,rpcclient)
-	Info.Printf("Reserves for token0=%v, reserves for token1=%v\n",reserves.Reserve0.String(),reserves.Reserve1.String())
 	amount := big.NewInt(0)
 	amount.SetString(amount_str,10)
 	token_amount_out,err := ctrct_router.GetAmountOut(copts,amount,r1,r2)
-	Info.Printf("Token %v amount in = %v , amount out = %v\n",token0.String(),amount_str,token_amount_out.String())
 
 	// calculate spot price before swap
 	spot_price_before := big.NewFloat(0.0)
@@ -2258,7 +2241,6 @@ func uniswap_calc_slippage(pair_addr_str string,token_str string,amount_str stri
 	r2_float := big.NewFloat(0.0)
 	r2_float.SetString(r2.String())
 	spot_price_before.Quo(r1_float,r2_float)
-	Info.Printf("Spot price before = %v\n",spot_price_before.String())
 
 	r1big := big.NewInt(0)
 	r2big := big.NewInt(0)
@@ -2276,12 +2258,9 @@ func uniswap_calc_slippage(pair_addr_str string,token_str string,amount_str stri
 	token_out_float := big.NewFloat(0.0)
 	r2_float.Sub(r2_float,token_out_float)
 	spot_price_after.Quo(r1_float,r2_float)
-	Info.Printf("Spot price after = %v\n",spot_price_after.String())
 
 	slippage_float:= big.NewFloat(0.0)
 	slippage_float.Sub(spot_price_after,spot_price_before)
-	Info.Printf("Slippage: %v\n",slippage_float)
-	Info.Printf("Returning slippage = %v, token_out_amount= %v\n",slippage_float.String(),token_amount_out.String())
 	return slippage_float,token_amount_out,nil
 }
 func produce_uniswap_slippages(pi *MarketUPair,amount_str string) ([]TokenSlippage,error) {
@@ -2500,7 +2479,6 @@ func whats_new_in_augur(c *gin.Context) {
 		})
 		return
 	}
-	Info.Printf("from_block=%v, to_block=%v\n",block_num_from,block_num_to)
 	block_info,err := augur_srv.storage.Get_block_info(int64(block_num_from),int64(block_num_to))
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
