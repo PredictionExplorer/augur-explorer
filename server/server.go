@@ -288,7 +288,7 @@ func json_validate_and_lookup_address_or_aid(c *gin.Context,p_addr *string) (str
 	if !valid {
 		return "",0,false
 	}
-	aid,err := augur_srv.storage.Nonfatal_lookup_address_id(*p_addr)
+	aid,err := augur_srv.storage.Nonfatal_lookup_address_id(address)
 	if err != nil {
 		c.JSON(http.StatusBadRequest,gin.H{
 			"status":0,
