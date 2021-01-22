@@ -177,13 +177,17 @@ func build_list_of_inspected_events() []InspectedEvent {
 			Signature: hex.EncodeToString(evt_designated_report_stake_changed[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
-	*/
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_complete_sets_purchased[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_complete_sets_sold[:4]),
+			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
+		},
+	*/
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_initial_reporter_redeemed[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
 
@@ -214,6 +218,7 @@ func delete_augur_transaction_related_data(tx_id int64) {
 	storage.Delete_dispute_window_created(tx_id)
 	storage.Delete_complete_sets_purchased(tx_id)
 	storage.Delete_complete_sets_sold(tx_id)
+	storage.Delete_initial_reporter_redeemed(tx_id)
 }
 func get_eoa_aid(wallet_addr *common.Address,block_num int64,tx_id int64) int64 {
 
@@ -965,6 +970,30 @@ func proc_complete_sets_sold(agtx *AugurTx,log *types.Log) {
 	evt.Dump(Info)
 	storage.Insert_complete_sets_sold(agtx,&evt)
 }
+func proc_initial_reporter_redeemed(agtx *AugurTx,log *types.Log) {
+	var evt EInitialReporterRedeemed
+	err := augur_abi.Unpack(&evt,"InitialReporterRedeemed",log.Data)
+	if err != nil {
+		Fatalf("Event InitialReporterRedeemed decode error: %v",err)
+		return
+	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		evt.Dump(Info)
+		Info.Printf(
+			"InitialReporterRedeemed event received and ignored "+
+			"(belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),agtx.BlockNum,
+		)
+		return
+	}
+	evt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
+	evt.Reporter = common.BytesToAddress(log.Topics[2][12:])
+	evt.Market = common.BytesToAddress(log.Topics[3][12:])
+	Info.Printf("InitialReporterRedeemed event for contract %v (block=%v) :\n",
+								log.Address.String(),log.BlockNumber)
+	evt.Dump(Info)
+	storage.Insert_initial_reporter_redeemed(agtx,&evt)
+}
 func get_tx_relayed_from_addr(logs *[]*types.Log) (*common.Address) {
 
 	var output *common.Address = nil
@@ -1104,7 +1133,6 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 			tx_lookup_if_needed(agtx)
 			proc_designated_report_stake_changed(agtx,log)
 		}
-		*/
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_complete_sets_purchased) {
 			tx_lookup_if_needed(agtx)
 			proc_complete_sets_sold(agtx,log)
@@ -1112,6 +1140,11 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_complete_sets_sold) {
 			tx_lookup_if_needed(agtx)
 			proc_complete_sets_sold(agtx,log)
+		}
+		*/
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_initial_reporter_redeemed) {
+			tx_lookup_if_needed(agtx)
+			proc_initial_reporter_redeemed(agtx,log)
 		}
 	}
 	for j:=1; j < num_topics ; j++ {

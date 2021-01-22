@@ -260,6 +260,43 @@ func (ss *SQLStorage) Delete_designated_report_stake_changed(tx_id int64) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Insert_initial_reporter_redeemed(agtx *p.AugurTx,evt *p.EInitialReporterRedeemed) {
+
+	market_aid := ss.Lookup_address_id(evt.Market.String())
+	reporter_aid := ss.Lookup_address_id(evt.Reporter.String())
+	ini_rep_aid := ss.Lookup_address_id(evt.InitialReporter.String())
+	payout_numerators := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	var query string
+	query = "INSERT INTO irep_redeem (" +
+				"block_num,tx_id,market_aid,reporter_aid,ini_rep_aid,time_stamp,amount,rep,payout_numerators" +
+				") VALUES ($1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7::DECIMAL/1e+18,$8::DECIMAL/1e+18,$9)"
+
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,
+		agtx.TxId,
+		market_aid,
+		reporter_aid,
+		ini_rep_aid,
+		evt.Timestamp.Int64(),
+		evt.AmountRedeemed.String(),
+		evt.RepReceived.String(),
+		payout_numerators,
+		)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into irep_redeem table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_initial_reporter_redeemed(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM irep_redeem WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 
 func (ss *SQLStorage) Get_reporting_status(market_aid int64) p.ReportingStatus {
 

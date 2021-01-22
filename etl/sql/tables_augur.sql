@@ -525,3 +525,15 @@ CREATE TABLE cset_sell (--CompleteSetSold event
 	num_sets			DECIMAL(64,18),
 	fees				DECIMAL(64,18)
 );
+CREATE table irep_redeem ( -- InitialReporterRedeemed event
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	reporter_aid		BIGINT NOT NULL,
+	ini_rep_aid			BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	amount				DECIMAL(64,18) NOT NULL,
+	rep					DECIMAL(64,18) NOT NULL,
+	payout_numerators	TEXT DEFAULT ''
+);

@@ -473,3 +473,16 @@ func (evt* ECompleteSetsSold) Dump(l *log.Logger) {
 	l.Printf("\tTimestamp: %v\n",evt.Timestamp.String())
 	l.Printf("}\n")
 }
+func (evt* EInitialReporterRedeemed) Dump(l *log.Logger) {
+	l.Printf("InitialReporterRedeemed {\n")
+	l.Printf("\tUniverse: %v\n",evt.Universe.String())
+	l.Printf("\tReporter: %v\n",evt.Reporter.String())
+	l.Printf("\tMarket: %v\n",evt.Market.String())
+	l.Printf("\tInitialReporter: %v\n",evt.InitialReporter.String())
+	l.Printf("\tAmountRedeemed: %v\n",evt.AmountRedeemed.String())
+	l.Printf("\tRepReceived: %v\n",evt.RepReceived.String())
+	payouts := Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	l.Printf("\tPayoutNumerators: %v\n",payouts)
+	l.Printf("\tTimestamp: %v\n",evt.Timestamp.String())
+	l.Printf("}\n")
+}
