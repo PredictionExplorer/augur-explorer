@@ -13,6 +13,8 @@ CREATE TABLE universe (
 	universe_id			BIGINT NOT NULL,
 	parent_id			BIGINT DEFAULT 0,
 	creation_ts			TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
+	validity_bond		DECIMAL(64,18) DEFAULT 0.0,
+	noshow_bond		DECIMAL(64,18) DEFAULT 0.0,
 	universe_addr		TEXT NOT NULL UNIQUE,		-- Ethereum address of the Universe contract
 	payout_numerators	TEXT DEFAULT ''
 );
@@ -461,4 +463,28 @@ CREATE TABLE agblk( -- augur block (a block which has Augur-related data , data 
 	num_other_evts		INT DEFAULT 0,		-- counter for number of other type of transactions (like direct sharetoken transfs)
 	num_bal_swaps		INT DEFAULT 0,
 	num_uni_swaps		INT DEFAULT 0
+);
+CREATE TABLE val_bond_chg( -- validity bond changed event (sig: 69af68e3)
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	universe_id			BIGINT NOT NULL,
+	bond_value			DECIMAL(64,18)
+);
+CREATE TABLE noshow_bond_chg( -- validity bond changed event (sig: 69af68e3)
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	universe_id			BIGINT NOT NULL,
+	bond_value			DECIMAL(64,18)
+);
+CREATE table dispute_created (			-- Share Token Balance Changed event
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	dispute_aid			BIGINT NOT NULL,
+	dispute_round		INT NOT NULL,
+	payout_numerators	TEXT DEFAULT '',
+	size				DECIMAL(64,18)
 );

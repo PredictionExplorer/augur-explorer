@@ -1493,3 +1493,8 @@ type ENS_TextKeyValue struct {	// the data extracted from TextChanged event of E
 	Key						string
 	Value					string
 }
+type ReportingStatus struct {
+	TentativeWinningOutcome		string
+
+
+}

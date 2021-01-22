@@ -628,3 +628,91 @@ func (ss *SQLStorage) Delete_exec_wtx(tx_id int64) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Insert_validity_bond_changed_event(agtx *p.AugurTx,evt *p.EValidityBondChanged) {
+
+	universe_id:=ss.Lookup_or_create_address(evt.Universe.String(),agtx.BlockNum,agtx.TxId)
+
+	var query string
+	query = "INSERT INTO val_bond_chg(" +
+				"block_num,tx_id,universe_id,bond_value" +
+				") VALUES ($1,$2,$3,$4::DECIMAL/1e+18)"
+
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,agtx.TxId,universe_id,evt.ValidityBond.String(),
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into val_bond_chg table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_validity_bond_changed_event(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM validity_bond_chg WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_noshow_bond_changed_event(agtx *p.AugurTx,evt *p.ENoShowBondChanged) {
+
+	universe_id:=ss.Lookup_or_create_address(evt.Universe.String(),agtx.BlockNum,agtx.TxId)
+
+	var query string
+	query = "INSERT INTO noshow_bond_chg(" +
+				"block_num,tx_id,universe_id,bond_value" +
+				") VALUES ($1,$2,$3,$4::DECIMAL/1e+18)"
+
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,agtx.TxId,universe_id,evt.NoShowBond.String(),
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into noshow_bond_chg table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_noshow_bond_changed_event(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM noshow_bond_chg WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_dispute_created(agtx *p.AugurTx,evt *p.EDisputeCrowdsourcerCreated) {
+
+	market_aid:=ss.Lookup_or_create_address(evt.Market.String(),agtx.BlockNum,agtx.TxId)
+	dispute_aid:=ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
+	payouts := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	var query string
+	query = "INSERT INTO dispute_created (" +
+				"block_num,tx_id,market_aid,dispute_aid,dispute_round,payout_numerators,size" +
+				") VALUES ($1,$2,$3,$4,$5,$6,$7::DECIMAL/1e+18)"
+
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,
+		agtx.TxId,
+		market_aid,
+		dispute_aid,
+		evt.DisputeRound.Int64(),
+		payouts,
+		evt.Size.String(),
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into dispute_created table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_dispute_created(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM dispute_created WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}

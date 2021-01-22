@@ -163,3 +163,8 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDispu
 	}
 	ss.update_market_status(market_aid,p.MktStatusDisputing)
 }
+func (ss *SQLStorage) Get_reporting_status(market_aid int64) p.ReportingStatus {
+	
+	var repst p.ReportingStatus
+	return repst
+}

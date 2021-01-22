@@ -1036,3 +1036,33 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_val_bond_chg_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE universe SET validity_bond=NEW.bond_value WHERE universe_id=NEW.universe_id;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_val_bond_chg_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_noshow_bond_chg_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE universe SET noshow_bond=NEW.bond_value WHERE universe_id=NEW.universe_id;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_noshow_bond_chg_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;

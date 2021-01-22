@@ -80,6 +80,7 @@ func build_list_of_inspected_events() []InspectedEvent {
 	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)
 	inspected_events= make([]InspectedEvent,0,32)
 	inspected_events = append(inspected_events,
+	/*
 		InspectedEvent {
 			Signature:	hex.EncodeToString(evt_market_created[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
@@ -128,14 +129,14 @@ func build_list_of_inspected_events() []InspectedEvent {
 			Signature: hex.EncodeToString(evt_cancel_0x_order[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.AugurTrading.String(),0,0),
 		},
-		/*InspectedEvent {
-			Signature: hex.EncodeToString(evt_transfer_batch[:4]),
-			ContractAid: storage.Lookup_or_create_address(caddrs.ZeroxTrade.String(),0,0),
-		},*/
-		/*InspectedEvent {
-			Signature: hex.EncodeToString(evt_transfer_single[:4]),
-			ContractAid: storage.Lookup_or_create_address(caddrs.ZeroxTrade.String(),0,0),
-		},*/
+		//InspectedEvent {
+		//	Signature: hex.EncodeToString(evt_transfer_batch[:4]),
+		//	ContractAid: storage.Lookup_or_create_address(caddrs.ZeroxTrade.String(),0,0),
+		//},
+		//InspectedEvent {
+		//	Signature: hex.EncodeToString(evt_transfer_single[:4]),
+		//	ContractAid: storage.Lookup_or_create_address(caddrs.ZeroxTrade.String(),0,0),
+		//},
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_profit_loss_changed[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.ZeroxTrade.String(),0,0),
@@ -156,9 +157,44 @@ func build_list_of_inspected_events() []InspectedEvent {
 			Signature: hex.EncodeToString(evt_register_contract[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
-		
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_validity_bond_changed[:4]),
+			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_noshow_bond_changed[:4]),
+			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
+		},
+	*/
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_dispute_crowdsourcer_created[:4]),
+			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
+		},
+
 	)
 	return inspected_events
+}
+func delete_augur_transaction_related_data(tx_id int64) {
+
+	// Note: the list of DELETEs must match the list of event signatures
+	//          built in built_list_of_inspected_events() function
+
+	storage.Delete_market_created_evt(tx_id)
+	storage.Delete_market_oi_changed_evt(tx_id)
+	storage.Delete_market_order_evt(tx_id)
+	storage.Delete_market_finalized_evt(tx_id)
+	storage.Delete_report_evt(tx_id)
+	storage.Delete_market_vol_changed_evt(tx_id)
+	storage.Delete_token_balance_changed_evt(tx_id)
+	storage.Delete_share_balance_changed_evt(tx_id)
+	storage.Delete_cancel_open_order_evt(tx_id)
+	storage.Delete_profit_loss_evt(tx_id)
+	storage.Delete_trading_proceeds_claimed_evt(tx_id)
+	storage.Delete_register_contract_evt(tx_id)
+	storage.Delete_claim_funds(tx_id)
+	storage.Delete_validity_bond_changed_event(tx_id)
+	storage.Delete_noshow_bond_changed_event(tx_id)
+	storage.Delete_dispute_created(tx_id)
 }
 func get_eoa_aid(wallet_addr *common.Address,block_num int64,tx_id int64) int64 {
 
@@ -752,6 +788,72 @@ func proc_universe_created(agtx *AugurTx,log *types.Log) {
 	// no DELETE statement here because table 'universe' isn't linked by tx_id
 	storage.Insert_universe_created_event(agtx,&evt)
 }
+func proc_validity_bond_changed(agtx *AugurTx,log *types.Log) {
+	var evt EValidityBondChanged
+	err := augur_abi.Unpack(&evt,"ValidityBondChanged",log.Data)
+	if err != nil {
+		Fatalf("Event ValidityBondChanged decode error: %v",err)
+		return
+	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		evt.Dump(Info)
+		Info.Printf(
+			"ValidityBondChanged event received and ignored "+
+			"(belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),agtx.BlockNum,
+		)
+		return
+	}
+	evt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
+	Info.Printf("ValidityBondChanged event for contract %v (block=%v) :\n",
+								log.Address.String(),log.BlockNumber)
+	evt.Dump(Info)
+	storage.Insert_validity_bond_changed_event(agtx,&evt)
+}
+func proc_noshow_bond_changed(agtx *AugurTx,log *types.Log) {
+	var evt ENoShowBondChanged
+	err := augur_abi.Unpack(&evt,"NoShowBondChanged",log.Data)
+	if err != nil {
+		Fatalf("Event NoShowBondChanged decode error: %v",err)
+		return
+	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		evt.Dump(Info)
+		Info.Printf(
+			"NoShowBondChanged event received and ignored "+
+			"(belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),agtx.BlockNum,
+		)
+		return
+	}
+	evt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
+	Info.Printf("NoShowBondChanged event for contract %v (block=%v) :\n",
+								log.Address.String(),log.BlockNumber)
+	evt.Dump(Info)
+	storage.Insert_noshow_bond_changed_event(agtx,&evt)
+}
+func proc_dispute_crowdsourcer_created(agtx *AugurTx,log *types.Log) {
+	var evt EDisputeCrowdsourcerCreated
+	err := augur_abi.Unpack(&evt,"DisputeCrowdsourcerCreated",log.Data)
+	if err != nil {
+		Fatalf("Event DisputeCrowdsourcerCreated decode error: %v",err)
+		return
+	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		evt.Dump(Info)
+		Info.Printf(
+			"DisputeCrowdsourcerCreated event received and ignored "+
+			"(belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),agtx.BlockNum,
+		)
+		return
+	}
+	evt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
+	Info.Printf("DisputeCrowdsourcerCreated event for contract %v (block=%v) :\n",
+								log.Address.String(),log.BlockNumber)
+	evt.Dump(Info)
+	storage.Insert_dispute_created(agtx,&evt)
+}
 func get_tx_relayed_from_addr(logs *[]*types.Log) (*common.Address) {
 
 	var output *common.Address = nil
@@ -870,6 +972,18 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_universe_created) {
 			tx_lookup_if_needed(agtx)
 			proc_universe_created(agtx,log)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_validity_bond_changed) {
+			tx_lookup_if_needed(agtx)
+			proc_validity_bond_changed(agtx,log)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_noshow_bond_changed) {
+			tx_lookup_if_needed(agtx)
+			proc_noshow_bond_changed(agtx,log)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_crowdsourcer_created) {
+			tx_lookup_if_needed(agtx)
+			proc_dispute_crowdsourcer_created(agtx,log)
 		}
 	}
 	for j:=1; j < num_topics ; j++ {
@@ -991,7 +1105,7 @@ func process_transaction(tx_id int64) error {
 			os.Exit(1)
 	}
 
-	storage.Delete_transaction_related_data(agtx.TxId)
+//	delete_augur_transaction_related_data(agtx.TxId)
 	num_logs = len(ordered_list)
 	pl_entries := make([]int64,0,2);// profit loss entries
 	// before processing events we need to reset these global vars as they accumulate some data

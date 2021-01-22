@@ -32,3 +32,7 @@ CREATE TRIGGER agtx_update AFTER UPDATE ON agtx FOR EACH ROW EXECUTE PROCEDURE o
 CREATE TRIGGER agtx_after_delete AFTER DELETE ON agtx FOR EACH ROW EXECUTE PROCEDURE on_agtx_delete();
 CREATE TRIGGER tproceeds_insert AFTER INSERT on tproceeds FOR EACH ROW EXECUTE PROCEDURE on_tproceeds_insert();
 CREATE TRIGGER tproceeds_delete AFTER DELETE on tproceeds FOR EACH ROW EXECUTE PROCEDURE on_tproceeds_delete();
+CREATE TRIGGER val_bond_chg_insert AFTER INSERT on val_bond_chg FOR EACH ROW EXECUTE PROCEDURE on_val_bond_chg_insert();
+CREATE TRIGGER val_bond_delete AFTER DELETE on val_bond_chg FOR EACH ROW EXECUTE PROCEDURE on_val_bond_chg_delete();
+CREATE TRIGGER noshow_bond_chg_insert AFTER INSERT on noshow_bond_chg FOR EACH ROW EXECUTE PROCEDURE on_noshow_bond_chg_insert();
+CREATE TRIGGER noshow_bond_delete AFTER DELETE on noshow_bond_chg FOR EACH ROW EXECUTE PROCEDURE on_noshow_bond_chg_delete();

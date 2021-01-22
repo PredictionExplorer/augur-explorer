@@ -2577,3 +2577,23 @@ func show_augur_foundry_contracts(c *gin.Context) {
 		"ERC20MarketOutcomeWrappers" : wrappers,
 	})
 }
+func show_reporting_status(c *gin.Context) {
+
+	market := c.Param("market")
+	market_addr,valid := is_address_valid(c,false,market)
+	if !valid {
+		return
+	}
+	market_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(market_addr)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Such address wasn't found: %v",market_addr),
+		})
+		return
+	}
+	reporting_status := augur_srv.storage.Get_reporting_status(market_aid)
+	c.HTML(http.StatusOK, "reporting_status.html", gin.H{
+		"ReportingStatus" : reporting_status,
+	})
+}

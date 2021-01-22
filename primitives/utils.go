@@ -416,4 +416,26 @@ func (evt *NameRegistered_v1) Dump(l *log.Logger) {
     l.Printf("\tExpires: %v\n",evt.Expires.String())
     l.Printf("}\n")
 }
-
+func (evt* EValidityBondChanged) Dump(l *log.Logger) {
+	l.Printf("ValidityBondChanged {\n")
+	l.Printf("\tUniverse: %v\n",evt.Universe.String())
+	l.Printf("\tValidityBond: %v\n",evt.ValidityBond.String())
+	l.Printf("}\n")
+}
+func (evt* ENoShowBondChanged) Dump(l *log.Logger) {
+	l.Printf("NoShowBondChanged {\n")
+	l.Printf("\tUniverse: %v\n",evt.Universe.String())
+	l.Printf("\tNoShowBond: %v\n",evt.NoShowBond.String())
+	l.Printf("}\n")
+}
+func (evt* EDisputeCrowdsourcerCreated) Dump(l *log.Logger) {
+	l.Printf("DisputeCrowdorcerCreated {\n")
+	l.Printf("\tUniverse: %v\n",evt.Universe.String())
+	l.Printf("\tMarket: %v\n",evt.Market.String())
+	l.Printf("\tDisputeCrowdsourcer: %v\n",evt.DisputeCrowdsourcer.String())
+	payouts := Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	l.Printf("\tPayoutNumerators: %v\n",payouts)
+	l.Printf("\tSize: %v\n",evt.Size.String())
+	l.Printf("\tDisputeRound: %v\n",evt.DisputeRound.String())
+	l.Printf("}\n")
+}

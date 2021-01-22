@@ -49,11 +49,11 @@ const (
 	EXECUTE_WALLET_TRANSACTION = "78dc0eed"
 	TRADE = "2f562016"
 	CLAIM_PROCEEDS = "db754422"
-
+	VALIDITY_BOND_CHANGED = "69af68e366a0570364e3a086f3b5ac79f08ecc3f93eaccbfcf3864809b12b5d8"
+	NOSHOW_BOND_CHANGED = "d1fc3f2cb1387e602db0e6f8f22649df65df5246eeff281cf6d1ef62feda4ece"
+	DISPUTE_CROWDSOURCER_CREATED = "f9a0b30bcf861874bf36630742f0d56b22648898d7cdd0cd785d74acd17e0d44"
 )
 var (
-	// these evt_ variables are here for speed to avoid calculation of Keccak256
-	//		on each bytes.Compare() operation
 	evt_market_created,_ = hex.DecodeString(MARKET_CREATED)
 	evt_market_oi_changed,_ = hex.DecodeString(MARKET_OI_CHANGED)
 	evt_market_order,_ = hex.DecodeString(MARKET_ORDER)
@@ -82,6 +82,9 @@ var (
 	exec_wtx_sig ,_ = hex.DecodeString(EXECUTE_WALLET_TRANSACTION)
 	trade_sig,_ = hex.DecodeString(TRADE)
 	claim_proceeds_sig,_ = hex.DecodeString(CLAIM_PROCEEDS)
+	evt_validity_bond_changed,_ = hex.DecodeString(VALIDITY_BOND_CHANGED)
+	evt_noshow_bond_changed,_ = hex.DecodeString(NOSHOW_BOND_CHANGED)
+	evt_dispute_crowdsourcer_created,_ = hex.DecodeString(DISPUTE_CROWDSOURCER_CREATED)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
