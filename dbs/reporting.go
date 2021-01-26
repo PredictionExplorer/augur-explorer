@@ -163,19 +163,20 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDispu
 	}
 	ss.update_market_status(market_aid,p.MktStatusDisputing)
 }
-func (ss *SQLStorage) Insert_dispute_created(agtx *p.AugurTx,evt *p.EDisputeCrowdsourcerCreated) {
+func (ss *SQLStorage) Insert_dispute_crowdsourcer_created(agtx *p.AugurTx,timestamp int64,evt *p.EDisputeCrowdsourcerCreated) {
 
 	market_aid:=ss.Lookup_or_create_address(evt.Market.String(),agtx.BlockNum,agtx.TxId)
 	dispute_aid:=ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
 	payouts := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
 	var query string
-	query = "INSERT INTO dispute_created (" +
-				"block_num,tx_id,market_aid,dispute_aid,dispute_round,payout_numerators,size" +
-				") VALUES ($1,$2,$3,$4,$5,$6,$7::DECIMAL/1e+18)"
+	query = "INSERT INTO crowdsourcer_created (" +
+				"block_num,tx_id,time_stamp,market_aid,dispute_aid,dispute_round,payout_numerators,size" +
+				") VALUES ($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8::DECIMAL/1e+18)"
 
 	_,err := ss.db.Exec(query,
 		agtx.BlockNum,
 		agtx.TxId,
+		timestamp,
 		market_aid,
 		dispute_aid,
 		evt.DisputeRound.Int64(),
@@ -187,7 +188,7 @@ func (ss *SQLStorage) Insert_dispute_created(agtx *p.AugurTx,evt *p.EDisputeCrow
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Delete_dispute_created(tx_id int64) {
+func (ss *SQLStorage) Delete_dispute_crowdsourcer_created(tx_id int64) {
 
 	var query string
 	query = "DELETE FROM dispute_created WHERE tx_id=$1"
@@ -263,8 +264,8 @@ func (ss *SQLStorage) Delete_designated_report_stake_changed(tx_id int64) {
 func (ss *SQLStorage) Insert_initial_reporter_redeemed(agtx *p.AugurTx,evt *p.EInitialReporterRedeemed) {
 
 	market_aid := ss.Lookup_address_id(evt.Market.String())
-	reporter_aid := ss.Lookup_address_id(evt.Reporter.String())
-	ini_rep_aid := ss.Lookup_address_id(evt.InitialReporter.String())
+	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),agtx.BlockNum,agtx.TxId)
+	ini_rep_aid := ss.Lookup_or_create_address(evt.InitialReporter.String(),agtx.BlockNum,agtx.TxId)
 	payout_numerators := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
 	var query string
 	query = "INSERT INTO irep_redeem (" +
@@ -297,6 +298,90 @@ func (ss *SQLStorage) Delete_initial_reporter_redeemed(tx_id int64) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Insert_dispute_crowdsourcer_redeemed(agtx *p.AugurTx,evt *p.EDisputeCrowdsourcerRedeemed) {
+
+	ss.Lookup_address_id(evt.Universe.String())
+	market_aid := ss.Lookup_address_id(evt.Market.String())
+	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),agtx.BlockNum,agtx.TxId)
+	crowdsourcer_aid := ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
+	payout_numerators := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	var query string
+	query = "INSERT INTO crowdsourcer_redeemed (" +
+				"block_num,tx_id,market_aid,reporter_aid,crowdsourcer_aid," +
+				"time_stamp,amount,rep,payout_numerators" +
+			") VALUES ($1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7::DECIMAL/1e+18,$8::DECIMAL/1e+18,$9)"
+
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,
+		agtx.TxId,
+		market_aid,
+		reporter_aid,
+		crowdsourcer_aid,
+		evt.Timestamp.Int64(),
+		evt.AmountRedeemed.String(),
+		evt.RepReceived.String(),
+		payout_numerators,
+		)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into crowdsourcer_redeemed : %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_dispute_crowdsourcer_redeemed(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM crowdsourcer_redeemed WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_dispute_crowdsourcer_completed(agtx *p.AugurTx,evt *p.EDisputeCrowdsourcerCompleted) {
+
+	ss.Lookup_address_id(evt.Universe.String())
+	market_aid := ss.Lookup_address_id(evt.Market.String())
+	crowdsourcer_aid := ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
+	payout_numerators := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	var query string
+	query = "INSERT INTO crowdsourcer_completed (" +
+				"block_num,tx_id,time_stamp,market_aid,crowdsrc_aid,next_win_start,next_win_end," +
+				"dispute_round,pacing_on,tot_rep_payout,tot_rep_market,payout_numerators" +
+			") VALUES (" +
+				"$1,$2,TO_TIMESTAMP($3),$4,$5,TO_TIMESTAMP($6),TO_TIMESTAMP($7),"+
+				"$8,$9,$10::DECIMAL/1e+18,$11::DECIMAL/1e+18,$12"+
+			")"
+
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,
+		agtx.TxId,
+		evt.Timestamp.Int64(),
+		market_aid,
+		crowdsourcer_aid,
+		evt.NextWindowStartTime.Int64(),
+		evt.NextWindowEndTime.Int64(),
+		evt.DisputeRound.Int64(),
+		evt.PacingOn,
+		evt.TotalRepStakedInPayout.String(),
+		evt.TotalRepStakedInMarket.String(),
+		payout_numerators,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into crowdsourcer_completed : %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_dispute_crowdsourcer_completed(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM crowdsourcer_completed WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+
 
 func (ss *SQLStorage) Get_reporting_status(market_aid int64) p.ReportingStatus {
 

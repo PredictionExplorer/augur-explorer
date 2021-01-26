@@ -1216,11 +1216,22 @@ func (ss *SQLStorage) Get_tx_ids_from_evt_logs_by_signature(sig string,contract_
 	output := make([]int64,0,1024)
 
 	var query string
-	query = "SELECT DISTINCT tx_id FROM evt_log " +
+/*WAY TOO SLOW	query = "SELECT DISTINCT tx_id FROM evt_log " +
 				"WHERE (tx_id > $1) AND (tx_id <= $2) " +
 						"AND (contract_aid=$3) " +
 						"AND (topic0_sig=$4) " +
-				"ORDER BY tx_id "
+				"ORDER BY tx_id "*/
+	query = "WITH elogs AS (" +
+				"SELECT tx_id,contract_aid,id AS evtlog_id " +
+					"FROM evt_log " +
+					"WHERE topic0_sig=$4" +
+				")" +
+			"SELECT " +
+					"tx_id " +
+				"FROM elogs AS e " +
+				"WHERE " +
+					"(tx_id > $1 AND tx_id <= $2) AND " +
+					"contract_aid = $3"
 
 	rows,err := ss.db.Query(query,from_tx_id,to_tx_id,contract_aid,sig)
 	if (err!=nil) {

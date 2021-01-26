@@ -732,7 +732,7 @@ func (ss *SQLStorage) Insert_complete_sets_sold(agtx *p.AugurTx,evt *p.EComplete
 		agtx.TxId,
 		market_aid,
 		account_aid,
-		evt.Timestamp,
+		evt.Timestamp.Int64(),
 		evt.NumCompleteSets.String(),
 		evt.Fees.String(),
 	)

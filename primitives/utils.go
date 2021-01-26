@@ -486,3 +486,32 @@ func (evt* EInitialReporterRedeemed) Dump(l *log.Logger) {
 	l.Printf("\tTimestamp: %v\n",evt.Timestamp.String())
 	l.Printf("}\n")
 }
+func (evt* EDisputeCrowdsourcerRedeemed) Dump(l *log.Logger) {
+	l.Printf("DisputeCrowdsourcerRedeemed {\n")
+	l.Printf("\tUniverse: %v\n",evt.Universe.String())
+	l.Printf("\tReporter: %v\n",evt.Reporter.String())
+	l.Printf("\tMarket: %v\n",evt.Market.String())
+	l.Printf("\tDisputeCrowdsourcer %v\n",evt.DisputeCrowdsourcer.String())
+	l.Printf("\tAmountRedeemed: %v\n",evt.AmountRedeemed.String())
+	l.Printf("\tRepReceived: %v\n",evt.RepReceived.String())
+	payouts := Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	l.Printf("\tPayoutNumerators: %v\n",payouts)
+	l.Printf("\tTimestamp: %v\n",evt.Timestamp.String())
+	l.Printf("}\n")
+}
+func (evt* EDisputeCrowdsourcerCompleted) Dump(l *log.Logger) {
+	l.Printf("DisputeCrowdsourcerCompleted {\n")
+	l.Printf("\tUniverse: %v\n",evt.Universe.String())
+	l.Printf("\tMarket: %v\n",evt.Market.String())
+	l.Printf("\tDisputeCrowdsourcer %v\n",evt.DisputeCrowdsourcer.String())
+	payouts := Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	l.Printf("\tPayoutNumerators: %v\n",payouts)
+	l.Printf("\tNextWindowStartTime: %v\n",evt.NextWindowStartTime)
+	l.Printf("\tNextWindowEndTime: %v\n",evt.NextWindowEndTime)
+	l.Printf("\tPacingOn: %v\n",evt.PacingOn)
+	l.Printf("\tTotalRepStakedInPayout: %v\n",evt.TotalRepStakedInPayout.String())
+	l.Printf("\tTotalRepStakedInMarket: %v\n",evt.TotalRepStakedInMarket.String())
+	l.Printf("\tDisputeRound: %v\n",evt.DisputeRound.String())
+	l.Printf("\tTimestamp: %v\n",evt.Timestamp.String())
+	l.Printf("}\n")
+}

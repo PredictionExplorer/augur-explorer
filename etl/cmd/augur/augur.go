@@ -114,10 +114,6 @@ func build_list_of_inspected_events() []InspectedEvent {
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_tokens_transferred[:4]),
-			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
-		},
-		InspectedEvent {
 			Signature: hex.EncodeToString(evt_token_balance_changed[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
@@ -158,19 +154,15 @@ func build_list_of_inspected_events() []InspectedEvent {
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_tokens_transferred[:4]),
+			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_validity_bond_changed[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_noshow_bond_changed[:4]),
-			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_dispute_crowdsourcer_created[:4]),
-			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_dispute_window_created[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
 		InspectedEvent {
@@ -185,9 +177,21 @@ func build_list_of_inspected_events() []InspectedEvent {
 			Signature: hex.EncodeToString(evt_complete_sets_sold[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
-	*/
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_initial_reporter_redeemed[:4]),
+			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_dispute_crowdsourcer_created[:4]),
+			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_dispute_window_created[:4]),
+			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
+		},
+	*/
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_dispute_crowdsourcer_completed[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
 
@@ -214,11 +218,12 @@ func delete_augur_transaction_related_data(tx_id int64) {
 	storage.Delete_claim_funds(tx_id)
 	storage.Delete_validity_bond_changed_event(tx_id)
 	storage.Delete_noshow_bond_changed_event(tx_id)
-	storage.Delete_dispute_created(tx_id)
+	storage.Delete_dispute_crowdsourcer_created(tx_id)
 	storage.Delete_dispute_window_created(tx_id)
 	storage.Delete_complete_sets_purchased(tx_id)
 	storage.Delete_complete_sets_sold(tx_id)
 	storage.Delete_initial_reporter_redeemed(tx_id)
+	storage.Delete_dispute_crowdsourcer_redeemed(tx_id)
 }
 func get_eoa_aid(wallet_addr *common.Address,block_num int64,tx_id int64) int64 {
 
@@ -452,6 +457,7 @@ func proc_tokens_transferred(agtx *AugurTx, log *types.Log) {
 	Info.Printf("TokensTransferred event for contract %v (block=%v) :\n",
 								log.Address.String(),log.BlockNumber)
 	mevt.Dump(Info)
+	storage.Insert_token_transf_evt(&mevt,agtx)
 }
 func proc_token_balance_changed(agtx *AugurTx,log *types.Log) {
 	var mevt ETokenBalanceChanged
@@ -856,7 +862,7 @@ func proc_noshow_bond_changed(agtx *AugurTx,log *types.Log) {
 	evt.Dump(Info)
 	storage.Insert_noshow_bond_changed_event(agtx,&evt)
 }
-func proc_dispute_crowdsourcer_created(agtx *AugurTx,log *types.Log) {
+func proc_dispute_crowdsourcer_created(agtx *AugurTx,timestamp int64,log *types.Log) {
 	var evt EDisputeCrowdsourcerCreated
 	err := augur_abi.Unpack(&evt,"DisputeCrowdsourcerCreated",log.Data)
 	if err != nil {
@@ -873,10 +879,11 @@ func proc_dispute_crowdsourcer_created(agtx *AugurTx,log *types.Log) {
 		return
 	}
 	evt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
+	evt.Market = common.BytesToAddress(log.Topics[2][12:])	// extract universe addr
 	Info.Printf("DisputeCrowdsourcerCreated event for contract %v (block=%v) :\n",
 								log.Address.String(),log.BlockNumber)
 	evt.Dump(Info)
-	storage.Insert_dispute_created(agtx,&evt)
+	storage.Insert_dispute_crowdsourcer_created(agtx,timestamp,&evt)
 }
 func proc_dispute_window_created(agtx *AugurTx,log *types.Log) {
 	var evt EDisputeWindowCreated
@@ -994,6 +1001,53 @@ func proc_initial_reporter_redeemed(agtx *AugurTx,log *types.Log) {
 	evt.Dump(Info)
 	storage.Insert_initial_reporter_redeemed(agtx,&evt)
 }
+func proc_dispute_crowdsourcer_redeemed(agtx *AugurTx,log *types.Log) {
+	var evt EDisputeCrowdsourcerRedeemed
+	err := augur_abi.Unpack(&evt,"DisputeCrowdsourcerRedeemed",log.Data)
+	if err != nil {
+		Fatalf("Event DisputeCrowdsourcerRedeemed decode error: %v",err)
+		return
+	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		evt.Dump(Info)
+		Info.Printf(
+			"DisputeCrowdsourcerRedeemed event received and ignored "+
+			"(belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),agtx.BlockNum,
+		)
+		return
+	}
+	evt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
+	evt.Reporter = common.BytesToAddress(log.Topics[2][12:])
+	evt.Market = common.BytesToAddress(log.Topics[3][12:])
+	Info.Printf("DisputeCrowdsourcerRedeemed event for contract %v (block=%v) :\n",
+								log.Address.String(),log.BlockNumber)
+	evt.Dump(Info)
+	storage.Insert_dispute_crowdsourcer_redeemed(agtx,&evt)
+}
+func proc_dispute_crowdsourcer_completed(agtx *AugurTx,log *types.Log) {
+	var evt EDisputeCrowdsourcerCompleted
+	err := augur_abi.Unpack(&evt,"DisputeCrowdsourcerCompleted",log.Data)
+	if err != nil {
+		Fatalf("Event DisputeCrowdsourcerCompleted decode error: %v",err)
+		return
+	}
+	if !bytes.Equal(log.Address.Bytes(),caddrs.Augur.Bytes()) {
+		evt.Dump(Info)
+		Info.Printf(
+			"DisputeCrowdsourcerCompleted event received and ignored "+
+			"(belongs to different contract: %v) at block %v (EVENT_IGNORE)",
+			log.Address.String(),agtx.BlockNum,
+		)
+		return
+	}
+	evt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
+	evt.Market = common.BytesToAddress(log.Topics[2][12:])
+	Info.Printf("DisputeCrowdsourcerCompleted event for contract %v (block=%v) :\n",
+								log.Address.String(),log.BlockNumber)
+	evt.Dump(Info)
+	storage.Insert_dispute_crowdsourcer_completed(agtx,&evt)
+}
 func get_tx_relayed_from_addr(logs *[]*types.Log) (*common.Address) {
 
 	var output *common.Address = nil
@@ -1041,10 +1095,6 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_transfer_batch) {
 			proc_transfer_batch(log)
-		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_tokens_transferred) {
-			tx_lookup_if_needed(agtx)
-			proc_tokens_transferred(agtx,log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_token_balance_changed) {
 			tx_lookup_if_needed(agtx)
@@ -1113,6 +1163,10 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 			tx_lookup_if_needed(agtx)
 			proc_universe_created(agtx,log)
 		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_tokens_transferred) {
+			tx_lookup_if_needed(agtx)
+			proc_tokens_transferred(agtx,log)
+		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_validity_bond_changed) {
 			tx_lookup_if_needed(agtx)
 			proc_validity_bond_changed(agtx,log)
@@ -1120,14 +1174,6 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_noshow_bond_changed) {
 			tx_lookup_if_needed(agtx)
 			proc_noshow_bond_changed(agtx,log)
-		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_crowdsourcer_created) {
-			tx_lookup_if_needed(agtx)
-			proc_dispute_crowdsourcer_created(agtx,log)
-		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_window_created) {
-			tx_lookup_if_needed(agtx)
-			proc_dispute_window_created(agtx,log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_designated_report_stake_changed) {
 			tx_lookup_if_needed(agtx)
@@ -1141,10 +1187,26 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 			tx_lookup_if_needed(agtx)
 			proc_complete_sets_sold(agtx,log)
 		}
-		*/
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_crowdsourcer_created) {
+			tx_lookup_if_needed(agtx)
+			proc_dispute_crowdsourcer_created(agtx,timestamp,log)
+		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_initial_reporter_redeemed) {
 			tx_lookup_if_needed(agtx)
 			proc_initial_reporter_redeemed(agtx,log)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_window_created) {
+			tx_lookup_if_needed(agtx)
+			proc_dispute_window_created(agtx,log)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_crowdsourcer_redeemed) {
+			tx_lookup_if_needed(agtx)
+			proc_dispute_crowdsourcer_redeemed(agtx,log)
+		}
+		*/
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_crowdsourcer_completed) {
+			tx_lookup_if_needed(agtx)
+			proc_dispute_crowdsourcer_completed(agtx,log)
 		}
 	}
 	for j:=1; j < num_topics ; j++ {

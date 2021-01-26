@@ -374,7 +374,7 @@ CREATE TABLE augur_proc_status (-- Augur Tradign process status
 );
 CREATE table tok_transf (	-- Tokens Transferred event
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL,
+	evtlog_id			BIGINT,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	market_aid			BIGINT NOT NULL,
@@ -478,15 +478,43 @@ CREATE TABLE noshow_bond_chg( -- validity bond changed event (sig: 69af68e3)
 	universe_id			BIGINT NOT NULL,
 	bond_value			DECIMAL(64,18)
 );
-CREATE table dispute_created (			--
+CREATE table crowdsourcer_created (			--
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	time_stamp			TIMESTAMPTZ NOT NULL,
 	market_aid			BIGINT NOT NULL,
 	dispute_aid			BIGINT NOT NULL,
 	dispute_round		INT NOT NULL,
 	payout_numerators	TEXT DEFAULT '',
 	size				DECIMAL(64,18)
+);
+CREATE table crowdsourcer_completed (	--
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	market_aid			BIGINT NOT NULL,
+	crowdsrc_aid		BIGINT NOT NULL,
+	next_win_start		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
+	next_win_end		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
+	dispute_round		INT NOT NULL,
+	pacing_on			BOOLEAN NOT NULL,
+	payout_numerators	TEXT DEFAULT '',
+	tot_rep_payout		DECIMAL(64,18),
+	tot_rep_market		DECIMAL(64,18)
+);
+CREATE table crowdsourcer_redeemed ( -- DisputeCrowdsourcerRedeemed event
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	market_aid			BIGINT NOT NULL,
+	reporter_aid		BIGINT NOT NULL,
+	crowdsourcer_aid	BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	amount				DECIMAL(64,18) NOT NULL,
+	rep					DECIMAL(64,18) NOT NULL,
+	payout_numerators	TEXT DEFAULT ''
 );
 CREATE table dispute_window (
 	id					BIGSERIAL PRIMARY KEY,

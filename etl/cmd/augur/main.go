@@ -57,6 +57,8 @@ const (
 	INITIAL_REPORTER_REDEEMED = "3ffffb51f92f91faf4ba8c906f5a0180d1033be93b1e227cd92c872dc234fdf0"
 	COMPLETE_SETS_PURCHASED = "fe06587917de7df83a446bcbb889cee699d7fc35b7b53e263282c2acb5a16499"
 	COMPLETE_SETS_SOLD = "dd7dcfa6708112395eb94e9b1889295fb19af21ef290e918256838c979b2dfbd"
+	DISPUTE_CROWDSOURCER_REDEEMED = "6afb0328cf957750be87a6f34b1cd21457ddf1382af65f9592ff2d333945633f"
+	DISPUTE_CROWDSOURCER_COMPLETED="81afc41f9f2f0d22a52a2ddb3a0b6db83baf39c05544fd25f2751b72b1943bb5"
 )
 var (
 	evt_market_created,_ = hex.DecodeString(MARKET_CREATED)
@@ -95,6 +97,8 @@ var (
 	evt_complete_sets_purchased,_ = hex.DecodeString(COMPLETE_SETS_PURCHASED)
 	evt_complete_sets_sold,_ = hex.DecodeString(COMPLETE_SETS_SOLD)
 	evt_initial_reporter_redeemed,_ = hex.DecodeString(INITIAL_REPORTER_REDEEMED)
+	evt_dispute_crowdsourcer_redeemed,_ = hex.DecodeString(DISPUTE_CROWDSOURCER_REDEEMED)
+	evt_dispute_crowdsourcer_completed,_ = hex.DecodeString(DISPUTE_CROWDSOURCER_COMPLETED)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -150,7 +154,7 @@ func remove_duplicates(nums []int64) int {
 
 func process_augur_trading_events(exit_chan chan bool,caddrs *ContractAddresses) {
 
-	var max_batch_size int64 = 1024*100
+	var max_batch_size int64 = 1024*1000
 	for {
 		select {
 			case exit_flag := <-exit_chan:
