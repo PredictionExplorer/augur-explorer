@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"encoding/hex"
 
 	"net/http"
 	"github.com/gin-gonic/gin"
@@ -1593,5 +1594,82 @@ func a1_augur_foundry_contracts(c *gin.Context) {
 		"status": status,
 		"error" : err_str,
 		"ERC20MarketOutcomeWrappers" : wrappers,
+	})
+}
+func a1_transaction_info(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_hash := c.Param("hash")
+	if len(p_hash)==66 {
+		p_hash = p_hash[2:]
+	}
+	hash_bytes,err := hex.DecodeString(p_hash)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": fmt.Sprintf("Error decoding hash hex: %v",err.Error()),
+		})
+		return
+	}
+
+	hash := common.BytesToHash(hash_bytes)
+	hash_str := hash.String()
+	tx_info,err := augur_srv.storage.Get_transaction(hash_str)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": fmt.Sprintf("Error in DB query: %v",err.Error()),
+		})
+		return
+	}
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": status,
+		"error" : err_str,
+		"TransactionInfo" : tx_info,
+	})
+}
+func a1_block_info(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	var block_num int64
+	var err error
+	p_block_num:= c.Param("block_num")
+	if len(p_block_num) > 0 {
+		block_num, err = strconv.ParseInt(p_block_num,10,64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"MarketInfo": make([]int64,0,0),
+				"status":0,
+				"error":fmt.Sprintf("Bad integer for block_num parameter: %v",err),
+			})
+			return
+		}
+	} else {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"MarketInfo": make([]int64,0,0),
+			"status":0,
+			"error":fmt.Sprintf("block_num parameter wasn't provided"),
+		})
+		return
+	}
+	block_info,err := augur_srv.storage.Get_block_info(block_num,block_num)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"MarketInfo": make([]int64,0,0),
+			"status":0,
+			"error":fmt.Sprintf("block_num parameter wasn't provided"),
+		})
+		return
+	}
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": status,
+		"error" : err_str,
+		"BlockInfo" : block_info,
 	})
 }
