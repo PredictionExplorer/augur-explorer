@@ -381,8 +381,97 @@ func (ss *SQLStorage) Delete_dispute_crowdsourcer_completed(tx_id int64) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Insert_reporting_participant_disavowed(agtx *p.AugurTx,timestamp int64,evt *p.EReportingParticipantDisavowed) {
 
+	ss.Lookup_address_id(evt.Universe.String())
+	reporter_aid := ss.Lookup_address_id(evt.ReportingParticipant.String())
+	var query string
+	query = "INSERT INTO reporter_disavowed (block_num,tx_id,time_stamp,reporter_aid) " +
+				"VALUES ($1,$2,TO_TIMESTAMP($3),$4)" 
 
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,
+		agtx.TxId,
+		timestamp,
+		reporter_aid,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into reporter_disavowed : %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_reporting_participant_disavowed(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM reporter_disavowed WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_reporting_fee_changed(agtx *p.AugurTx,timestamp int64,evt *p.EReportingFeeChanged) {
+
+	ss.Lookup_address_id(evt.Universe.String())
+	var query string
+	query = "INSERT INTO reporting_fee(block_num,tx_id,time_stamp,fee_divisor) " +
+			"VALUES ($1,$2,TO_TIMESTAMP($3),$4::DECIMAL)"
+
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,
+		agtx.TxId,
+		timestamp,
+		evt.ReportingFee.String(),
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into reporting_fee: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_reporting_fee(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM reporting_fee WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_participation_tokens_redeemed(agtx *p.AugurTx,evt *p.EParticipationTokensRedeemed) {
+
+	ss.Lookup_address_id(evt.Universe.String())
+	dispwin_aid := ss.Lookup_or_create_address(evt.DisputeWindow.String(),agtx.BlockNum,agtx.TxId)
+	account_aid := ss.Lookup_or_create_address(evt.Account.String(),agtx.BlockNum,agtx.TxId)
+
+	var query string
+	query = "INSERT INTO rep_tok_redeem(block_num,tx_id,time_stamp,dispwin_aid,aid,ptokens,fee_payout) " +
+			"VALUES ($1,$2,TO_TIMESTAMP($3),$4,$5,$6::DECIMAL/1e+18,$7::DECIMAL/1e+18)"
+
+	_,err := ss.db.Exec(query,
+		agtx.BlockNum,
+		agtx.TxId,
+		evt.Timestamp.Int64(),
+		dispwin_aid,
+		account_aid,
+		evt.AttoParticipationTokens.String(),
+		evt.FeePayoutShare.String(),
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into rep_tok_redeem: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Delete_participation_tokens_redeemed(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM rep_tok_redeem WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Get_reporting_status(market_aid int64) p.ReportingStatus {
 
 	var repst p.ReportingStatus

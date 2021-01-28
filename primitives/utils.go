@@ -515,3 +515,26 @@ func (evt* EDisputeCrowdsourcerCompleted) Dump(l *log.Logger) {
 	l.Printf("\tTimestamp: %v\n",evt.Timestamp.String())
 	l.Printf("}\n")
 }
+func (evt* EReportingParticipantDisavowed) Dump(l *log.Logger) {
+	l.Printf("ReportingParticipantDisavowed {\n")
+	l.Printf("\tUniverse: %v\n",evt.Universe.String())
+	l.Printf("\tMarket: %v\n",evt.Market.String())
+	l.Printf("\tReportingParticipant: %v\n",evt.ReportingParticipant.String())
+	l.Printf("}\n")
+}
+func (evt* EReportingFeeChanged) Dump(l *log.Logger) {
+	l.Printf("ReportingFeeChanged{\n")
+	l.Printf("\tUniverse: %v\n",evt.Universe.String())
+	l.Printf("\tReportingFee: %v\n",evt.ReportingFee.String())
+	l.Printf("}\n")
+}
+func (evt* EParticipationTokensRedeemed) Dump(l *log.Logger) {
+	l.Printf("ParticipationTokensRedeemed {\n")
+	l.Printf("\tUniverse: %v\n",evt.Universe.String())
+	l.Printf("\tDisputeWindow: %v\n",evt.DisputeWindow.String())
+	l.Printf("\tAccount: %v\n",evt.Account.String())
+	l.Printf("\tAttoParticipationTokens: %v\n",evt.AttoParticipationTokens.String())
+	l.Printf("\tFeePayoutShare: %v\n",evt.FeePayoutShare.String())
+	l.Printf("\tTimestamp: %v\n",evt.Timestamp.String())
+	l.Printf("}\n")
+}

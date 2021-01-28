@@ -59,6 +59,9 @@ const (
 	COMPLETE_SETS_SOLD = "dd7dcfa6708112395eb94e9b1889295fb19af21ef290e918256838c979b2dfbd"
 	DISPUTE_CROWDSOURCER_REDEEMED = "6afb0328cf957750be87a6f34b1cd21457ddf1382af65f9592ff2d333945633f"
 	DISPUTE_CROWDSOURCER_COMPLETED="81afc41f9f2f0d22a52a2ddb3a0b6db83baf39c05544fd25f2751b72b1943bb5"
+	REPORTING_PARTICIPANT_DISAVOWED = "b20adf682c8f82b94a135452f54ac4483c9ee8c9b2324e946120696ab1d034b4"
+	REPORTING_FEE_CHANGED = "adddfaec4505d90a6a211907536944e6e1af7ff5cf6d1873de43e36020f36009"
+	PARTICIPATION_TOKENS_REDEEMED = "18052b5e29020458e154999fa71891a5db3404a5b0b9c5ec60c90adca7d38d63"
 )
 var (
 	evt_market_created,_ = hex.DecodeString(MARKET_CREATED)
@@ -99,6 +102,9 @@ var (
 	evt_initial_reporter_redeemed,_ = hex.DecodeString(INITIAL_REPORTER_REDEEMED)
 	evt_dispute_crowdsourcer_redeemed,_ = hex.DecodeString(DISPUTE_CROWDSOURCER_REDEEMED)
 	evt_dispute_crowdsourcer_completed,_ = hex.DecodeString(DISPUTE_CROWDSOURCER_COMPLETED)
+	evt_reporting_participant_disavowed,_ = hex.DecodeString(REPORTING_PARTICIPANT_DISAVOWED)
+	evt_reporting_fee_changed,_ = hex.DecodeString(REPORTING_FEE_CHANGED)
+	evt_participation_tokens_redeemed,_ = hex.DecodeString(PARTICIPATION_TOKENS_REDEEMED)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")

@@ -553,7 +553,7 @@ CREATE TABLE cset_sell (--CompleteSetSold event
 	num_sets			DECIMAL(64,18),
 	fees				DECIMAL(64,18)
 );
-CREATE table irep_redeem ( -- InitialReporterRedeemed event
+CREATE TABLE irep_redeem ( -- InitialReporterRedeemed event
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
@@ -565,3 +565,28 @@ CREATE table irep_redeem ( -- InitialReporterRedeemed event
 	rep					DECIMAL(64,18) NOT NULL,
 	payout_numerators	TEXT DEFAULT ''
 );
+CREATE TABLE reporter_disavowed ( -- ReportingParticipantDisavowed event
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	reporter_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL
+);
+CREATE TABLE reporting_fee ( -- ReportingFeeChanged event
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	fee_divisor			DECIMAL NOT NULL
+);
+CREATE TABLE rep_tok_redeem ( -- ParticipationTokensRedeemed event
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	dispwin_aid			BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
+	ptokens				DECIMAL(64,18),
+	fee_payout			DECIMAL(64,18)
+);
+
