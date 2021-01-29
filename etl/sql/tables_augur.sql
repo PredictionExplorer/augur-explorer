@@ -85,28 +85,6 @@ CREATE TABLE mktord (-- in this table only 'Fill' type orders are stored (Create
 	trade_group			TEXT NOT NULL,			-- User defined group label to identify multiple trades
 	order_hash			TEXT NOT NULL
 );
--- Report, submitted by Market Creator
-CREATE TABLE report (
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	market_aid			BIGINT NOT NULL,
-	aid					BIGINT NOT NULL,			-- User's address (EOA) of the Reporter
-	ini_reporter_aid	BIGINT DEFAULT 0,
-	disputed_aid		BIGINT DEFAULT 0,
-	dispute_round		BIGINT DEFAULT 1,
-	outcome_idx			SMALLINT NOT NULL,
-	is_initial			BOOLEAN DEFAULT false,
-	is_designated		BOOLEAN DEFAULT false,
-	amount_staked		DECIMAL(24,18) NOT NULL,
-	pnumerators			TEXT NOT NULL,		-- payout numerators
-	description			TEXT DEFAULT '',
-	current_stake		DECIMAL(24,18) DEFAULT 0.0,
-	stake_remaining		DECIMAL(24,18) DEFAULT 0.0,
-	next_win_start		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
-	next_win_end		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
-	rpt_timestamp		TIMESTAMPTZ NOT NULL
-);
 -- Volume
 CREATE TABLE volume (	-- this is the VolumeChanged event
 	id					BIGSERIAL PRIMARY KEY,
@@ -464,27 +442,47 @@ CREATE TABLE agblk( -- augur block (a block which has Augur-related data , data 
 	num_bal_swaps		INT DEFAULT 0,
 	num_uni_swaps		INT DEFAULT 0
 );
-CREATE TABLE val_bond_chg( -- validity bond changed event (sig: 69af68e3)
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	universe_id			BIGINT NOT NULL,
-	bond_value			DECIMAL(64,18)
-);
-CREATE TABLE noshow_bond_chg( -- validity bond changed event (sig: 69af68e3)
-	id					BIGSERIAL PRIMARY KEY,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
-	universe_id			BIGINT NOT NULL,
-	bond_value			DECIMAL(64,18)
-);
-CREATE table crowdsourcer_created (			--
+-- REPORTS
+-- Report, submitted by Market Creator
+CREATE TABLE initial_report ( -- InitialReportSubmitted event
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	market_aid			BIGINT NOT NULL,
-	dispute_aid			BIGINT NOT NULL,
+	reporter_aid		BIGINT NOT NULL,			-- 
+	ini_reporter_aid	BIGINT NOT NULL,			-- 
+	outcome_idx			SMALLINT NOT NULL,
+	is_designated		BOOLEAN DEFAULT false,
+	amount_staked		DECIMAL(64,18) NOT NULL,
+	pnumerators			TEXT NOT NULL,		-- payout numerators
+	next_win_start		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
+	next_win_end		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
+	description			TEXT DEFAULT ''
+);
+CREATE TABLE crowdsourcer_contrib (
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	market_aid			BIGINT NOT NULL,
+	reporter_aid		BIGINT NOT NULL,			-- 
+	crowdsrc_aid		BIGINT NOT NULL,
+	dispute_round		BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	amount_staked		DECIMAL(64,18) NOT NULL,
+	current_stake		DECIMAL(64,18) NOT NULL,
+	stake_remaining		DECIMAL(64,18) NOT NULL,
+	pnumerators			TEXT NOT NULL,		-- payout numerators
+	description			TEXT DEFAULT ''
+);
+CREATE TABLE crowdsourcer_created (			--
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	market_aid			BIGINT NOT NULL,
+	crowdsrc_aid		BIGINT NOT NULL,
 	dispute_round		INT NOT NULL,
 	payout_numerators	TEXT DEFAULT '',
 	size				DECIMAL(64,18)
@@ -589,4 +587,17 @@ CREATE TABLE rep_tok_redeem ( -- ParticipationTokensRedeemed event
 	ptokens				DECIMAL(64,18),
 	fee_payout			DECIMAL(64,18)
 );
-
+CREATE TABLE val_bond_chg( -- validity bond changed event (sig: 69af68e3)
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	universe_id			BIGINT NOT NULL,
+	bond_value			DECIMAL(64,18)
+);
+CREATE TABLE noshow_bond_chg( -- validity bond changed event (sig: 69af68e3)
+	id					BIGSERIAL PRIMARY KEY,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL REFERENCES transaction(id) ON DELETE CASCADE,
+	universe_id			BIGINT NOT NULL,
+	bond_value			DECIMAL(64,18)
+);

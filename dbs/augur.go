@@ -648,7 +648,7 @@ func (ss *SQLStorage) Insert_validity_bond_changed_event(agtx *p.AugurTx,evt *p.
 func (ss *SQLStorage) Delete_validity_bond_changed_event(tx_id int64) {
 
 	var query string
-	query = "DELETE FROM validity_bond_chg WHERE tx_id=$1"
+	query = "DELETE FROM val_bond_chg WHERE tx_id=$1"
 	_,err := ss.db.Exec(query,tx_id)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))

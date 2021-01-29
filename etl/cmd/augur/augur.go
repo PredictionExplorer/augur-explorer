@@ -177,38 +177,36 @@ func build_list_of_inspected_events() []InspectedEvent {
 			Signature: hex.EncodeToString(evt_dispute_window_created[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
-	*/
-	/*
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_dispute_crowdsourcer_completed[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
-		},
-*/
-	/*	InspectedEvent {
+		},*/
+		InspectedEvent {
 			Signature: 	hex.EncodeToString(evt_initial_report_submitted[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_dispute_crowd_contrib[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
-		},*/
-		/*InspectedEvent {
+		},
+		/*
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_token_balance_changed[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
-		},*/
-		/*InspectedEvent {
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_reporting_participant_disavowed[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
-		},*/
-		/*InspectedEvent {
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_reporting_fee_changed[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
-		},*/
+		},
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_participation_tokens_redeemed[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
-
+		*/
 	)
 	return inspected_events
 }
@@ -221,7 +219,8 @@ func delete_augur_transaction_related_data(tx_id int64) {
 	storage.Delete_market_oi_changed_evt(tx_id)
 	storage.Delete_market_order_evt(tx_id)
 	storage.Delete_market_finalized_evt(tx_id)
-	storage.Delete_report_evt(tx_id)
+	storage.Delete_initial_report_evt(tx_id)
+	storage.Delete_crowdsourcer_contrib(tx_id)
 	storage.Delete_market_vol_changed_evt(tx_id)
 	storage.Delete_token_balance_changed_evt(tx_id)
 	storage.Delete_share_balance_changed_evt(tx_id)
@@ -1277,31 +1276,32 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 			tx_lookup_if_needed(agtx)
 			proc_dispute_crowdsourcer_redeemed(agtx,log)
 		}
-		*/
-		/*if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_crowdsourcer_completed) {
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_crowdsourcer_completed) {
 			tx_lookup_if_needed(agtx)
 			proc_dispute_crowdsourcer_completed(agtx,log)
-		}*/
-		/*if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_initial_report_submitted) {
+		}
+		*/
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_initial_report_submitted) {
 			tx_lookup_if_needed(agtx)
 			proc_initial_report_submitted(agtx,log)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_crowd_contrib) {
 			tx_lookup_if_needed(agtx)
 			proc_dispute_crowdsourcerer_contribution(agtx,log)
-		}*/
-		/*if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_reporting_participant_disavowed) {
+		}
+		/*
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_reporting_participant_disavowed) {
 			tx_lookup_if_needed(agtx)
 			proc_reporting_participant_disavowed(agtx,timestamp,log)
-		}*/
-		/*if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_reporting_fee_changed) {
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_reporting_fee_changed) {
 			tx_lookup_if_needed(agtx)
 			proc_reporting_fee_changed(agtx,timestamp,log)
-		}*/
+		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_participation_tokens_redeemed) {
 			tx_lookup_if_needed(agtx)
 			proc_participation_tokens_redeemed(agtx,log)
-		}
+		}*/
 	}
 	for j:=1; j < num_topics ; j++ {
 		Info.Printf("\t\t\t\tLog Topic %v , %v \n",j,log.Topics[j].String())
@@ -1422,7 +1422,7 @@ func process_transaction(tx_id int64) error {
 			os.Exit(1)
 	}
 
-//	delete_augur_transaction_related_data(agtx.TxId)
+	//delete_augur_transaction_related_data(agtx.TxId)
 	num_logs = len(ordered_list)
 	pl_entries := make([]int64,0,2);// profit loss entries
 	// before processing events we need to reset these global vars as they accumulate some data

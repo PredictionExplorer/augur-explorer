@@ -2579,7 +2579,7 @@ func show_augur_foundry_contracts(c *gin.Context) {
 		"ERC20MarketOutcomeWrappers" : wrappers,
 	})
 }
-func show_reporting_status(c *gin.Context) {
+func show_reporting_table(c *gin.Context) {
 
 	market := c.Param("market")
 	market_addr,valid := is_address_valid(c,false,market)
@@ -2594,7 +2594,7 @@ func show_reporting_status(c *gin.Context) {
 		})
 		return
 	}
-	reporting_status := augur_srv.storage.Get_reporting_status(market_aid)
+	reporting_status := augur_srv.storage.Get_reporting_table(market_aid)
 	c.HTML(http.StatusOK, "reporting_status.html", gin.H{
 		"ReportingStatus" : reporting_status,
 	})

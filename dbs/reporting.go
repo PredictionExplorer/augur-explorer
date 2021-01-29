@@ -3,6 +3,8 @@ package dbs
 import (
 	"fmt"
 	"os"
+	"errors"
+	"database/sql"
 	_  "github.com/lib/pq"
 
 	//"github.com/ethereum/go-ethereum/common"
@@ -34,41 +36,40 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 
 	var query string
 	query = `
-		INSERT INTO report (
+		INSERT INTO initial_report (
 			block_num,
 			tx_id,
+			time_stamp,
 			market_aid,
-			aid,
+			reporter_aid,
 			ini_reporter_aid,
 			outcome_idx,
-			is_initial,
 			is_designated,
 			amount_staked,
 			pnumerators,
 			description,
 			next_win_start,
-			next_win_end,
-			rpt_timestamp
+			next_win_end
 		) VALUES (
-			$1,$2,$3,$4,$5,$6,$7,$8,(` + amount_staked + `/1e+18),$9,$10,
-			TO_TIMESTAMP($11),
+			$1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9::DECIMAL/1e+18,$10,$11,
 			TO_TIMESTAMP($12),
 			TO_TIMESTAMP($13)
 		)`
 	result,err := ss.db.Exec(query,
 			agtx.BlockNum,
 			agtx.TxId,
+			rpt_timestamp,
 			market_aid,
 			reporter_aid,
 			ini_reporter_aid,
 			reported_outcome,
-			true,
 			evt.IsDesignatedReporter,
+			amount_staked,
 			payout_numerators,
 			evt.Description,
 			next_win_start,
 			next_win_end,
-			rpt_timestamp)
+	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into report table: %v,q=%v",err,query))
 		os.Exit(1)
@@ -86,10 +87,10 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 	// ToDo: possibly migrate to triggers (or maybe not)
 	ss.update_market_status(market_aid,p.MktStatusReported)
 }
-func (ss *SQLStorage) Delete_report_evt(tx_id int64) {
+func (ss *SQLStorage) Delete_initial_report_evt(tx_id int64) {
 
 	var query string
-	query = "DELETE FROM report WHERE tx_id=$1"
+	query = "DELETE FROM initial_report WHERE tx_id=$1"
 	_,err := ss.db.Exec(query,tx_id)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -106,7 +107,7 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDispu
 	market_aid := ss.Lookup_address_id(evt.Market.String())
 	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),agtx.BlockNum,agtx.TxId)
 	signer_aid := ss.Lookup_or_create_address(agtx.From,agtx.BlockNum,agtx.TxId)
-	disputed_aid := ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
+	crowdsrc_aid := ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
 
 	amount_staked := evt.AmountStaked.String()
 	payout_numerators := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
@@ -123,33 +124,39 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDispu
 
 	var query string
 	query = `
-		INSERT INTO report (
+		INSERT INTO crowdsourcer_contrib (
 			block_num,
 			tx_id,
+			time_stamp,
 			market_aid,
-			aid,
-			disputed_aid,
+			reporter_aid,
+			crowdsrc_aid,
 			dispute_round,
 			outcome_idx,
 			amount_staked,
 			description,
 			pnumerators,
 			current_stake,
-			stake_remaining,
-			rpt_timestamp
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,`+amount_staked+`/1e+18,$8,$9,
-				`+cur_stake+`/1e+18,`+stake_remaining+`/1e+18,TO_TIMESTAMP($10))`
+			stake_remaining
+		) VALUES (
+			$1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,
+			$9::DECIMAL/1e+18,$10,$11,$12::DECIMAL/1e+18,$13::DECIMAL/1e+18
+		)`
 	result,err := ss.db.Exec(query,
 			agtx.BlockNum,
 			agtx.TxId,
+			rpt_timestamp,
 			market_aid,
 			reporter_aid,
-			disputed_aid,
+			crowdsrc_aid,
 			dispute_round,
 			reported_outcome,
+			amount_staked,
 			evt.Description,
 			payout_numerators,
-			rpt_timestamp)
+			cur_stake,
+			stake_remaining,
+	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert dispute into report table: %v; q=%v",err,query))
 		os.Exit(1)
@@ -163,6 +170,16 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDispu
 	}
 	ss.update_market_status(market_aid,p.MktStatusDisputing)
 }
+func (ss *SQLStorage) Delete_crowdsourcer_contrib(tx_id int64) {
+
+	var query string
+	query = "DELETE FROM crowdsourcer_contrib WHERE tx_id=$1"
+	_,err := ss.db.Exec(query,tx_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Insert_dispute_crowdsourcer_created(agtx *p.AugurTx,timestamp int64,evt *p.EDisputeCrowdsourcerCreated) {
 
 	market_aid:=ss.Lookup_or_create_address(evt.Market.String(),agtx.BlockNum,agtx.TxId)
@@ -170,7 +187,7 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_created(agtx *p.AugurTx,timest
 	payouts := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
 	var query string
 	query = "INSERT INTO crowdsourcer_created (" +
-				"block_num,tx_id,time_stamp,market_aid,dispute_aid,dispute_round,payout_numerators,size" +
+				"block_num,tx_id,time_stamp,market_aid,crowdsrc_aid,dispute_round,payout_numerators,size" +
 				") VALUES ($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8::DECIMAL/1e+18)"
 
 	_,err := ss.db.Exec(query,
@@ -184,14 +201,14 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_created(agtx *p.AugurTx,timest
 		evt.Size.String(),
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into dispute_created table: %v; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into 'crowdsourcer_created': %v; q=%v",err,query))
 		os.Exit(1)
 	}
 }
 func (ss *SQLStorage) Delete_dispute_crowdsourcer_created(tx_id int64) {
 
 	var query string
-	query = "DELETE FROM dispute_created WHERE tx_id=$1"
+	query = "DELETE FROM crowdsourcer_created WHERE tx_id=$1"
 	_,err := ss.db.Exec(query,tx_id)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -472,8 +489,95 @@ func (ss *SQLStorage) Delete_participation_tokens_redeemed(tx_id int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Get_reporting_status(market_aid int64) p.ReportingStatus {
+func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,error) {
 
-	var repst p.ReportingStatus
-	return repst
+	var rst p.ReportingStatus
+
+	var query string
+	query = "SELECT num_ticks,market_type,outcomes FROM market WHERE market_aid=$1"
+	var num_ticks,mkt_type int
+	var outcomes string
+	row := ss.db.QueryRow(query,market_aid)
+	err := row.Scan(&num_ticks,&mkt_type,&outcomes)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Error in Get_upload_block(): %v",err))
+			os.Exit(1)
+		}
+		return rst,errors.New(fmt.Sprintf("Market not found: %v",err.Error()))
+	}
+
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts" +
+				"time_stamp," +
+				"tx.tx_hash," +
+				"ira.address_id," +
+				"ira.addr," +
+				"ara.address_id," +
+				"ara.addr," +
+				"r.outcome_idx," +
+				"r.is_designated," +
+				"r.amount_staked/1e+18 AS amount_staked "+
+			"FROM initial_report r " +
+				"JOIN transaction tx ON r.tx_id=tx.id " +
+				"LEFT JOIN address ira ON ini_reporter_aid=ira.address_id " +
+				"LEFT JOIN address ara ON reporter_aid=ara.address_id "+
+			"WHERE market_aid=$1"
+	row = ss.db.QueryRow(query,market_aid)
+	err=row.Scan(&num_ticks,mkt_type,outcomes)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Error in Get_upload_block(): %v",err))
+			os.Exit(1)
+		}
+		return rst,err
+	}
+	rst.InitialReport.OutcomeStr=get_outcome_str(uint8(mkt_type),rst.InitialReport.OutcomeIdx,&outcomes)
+
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts" +
+				"cc.time_stamp," +
+				"tx.tx_hash, " +
+				"cc.crowdsrc_aid, " +
+				"ca.addr, " +
+				"cc.dispute_round, " +
+				"cc.payout_numerators, " +
+				"cc.size/1e+18 " +
+			"FROM crowdsourcer_created cc " +
+				"JOIN transaction tx ON cc.tx_id=tx.id " +
+				"LEFT JOIN address ca ON cc.crowdsrc_aid=ca.address_id " +
+			"WHERE market_aid = $1 " +
+			"ORDER BY cc.time_stamp"
+
+	rows,err := ss.db.Query(query,market_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	disputes := make([]p.DisputeInfo,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.DisputeInfo
+		var payout_numerators string
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.TxHash,
+			&rec.CrowdsourcerAid,
+			&rec.CrowdsourcerAddr,
+			&rec.DisputeRound,
+			&payout_numerators,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		outcidx := get_outcome_idx_from_numerators(mkt_type,int64(num_ticks),payout_numerators)
+		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),outcidx,&outcomes)
+		disputes = append(disputes,rec)
+	}
+	rst.Disputes = disputes
+
+	return rst,nil
 }

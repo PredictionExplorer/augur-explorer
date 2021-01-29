@@ -1493,8 +1493,53 @@ type ENS_TextKeyValue struct {	// the data extracted from TextChanged event of E
 	Key						string
 	Value					string
 }
-type ReportingStatus struct {
-	TentativeWinningOutcome		string
+type PayoutNumerator struct {
+	IsInvalid				bool
+	WinningOutcomeYesNo		int		// 0-reserved 1- No, 2-Yes
+	WinningValueScalar	float64		// the value that has won
+}
+type InitialReportInfo struct {
+	InitialReporterAid		int64
+	ActualReporterAid		int64
+	TimeStamp				int64
+	AmountStaked			float64
+	OutcomeIdx				int
+	IsDesignated			bool
+	OutcomeStr				string
+	InitialReporterAddr		string
+	ActualReporterAddr		string	// in case someone has to do the job of InitialReporter
+	TxHash					string
+	DateTime				string
+}
+type CrowdsourcerInfo struct {
+	CrowdsourcerAid			int64
+	Size					float64
+	Round					int
+	OutcomeIdx				int
+	OutcomeStr				string
+	CrowdsourcerAddr		string
+	TxHash					string
+}
+type DisputeContribution struct {
 
+}
+type DisputeInfo struct{
+	CrowdsourcerAid			int64
+	TimeStamp				int64
+	ReporterAid				int64
+	Amount					float64
+	OutcomeIdx				int
+	DisputeRound			int
+	CrowdsourcerAddr		string
+	ReporterAddr			string
+	OutcomeStr				string
+	TxHash					string
+	DateTime				string
+	Contributions			[]DisputeContribution
+}
+type ReportingStatus struct {
+	TentativeWinningOutcome			string
+	InitialReport					InitialReportInfo
+	Disputes						[]DisputeInfo
 
 }

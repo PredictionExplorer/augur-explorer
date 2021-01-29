@@ -8,7 +8,7 @@ DROP TABLE IF EXISTS
 	oi_chg,
 	oorders,
 	outcome_vol,
-	report,
+	initial_report,
 	ustats,
 	volume,
 	profit_loss,
@@ -35,5 +35,18 @@ DROP TABLE IF EXISTS
 	mkt_words,
 	agtx_evt,
 	agtx,
-	agblk
+	agblk,
+	val_bond_chg,
+	noshow_bond_chg,
+	crowdsourcer_created,
+	crowdsourcer_completed,
+	crowdsourcer_redeemed,
+	dispute_window,
+	rep_stake_chg,
+	cset_buy,
+	cset_sell,
+	irep_redeem,
+	reporter_disavowed,
+	reporting_fee,
+	rep_tok_redeem
 CASCADE;
