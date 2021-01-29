@@ -171,7 +171,7 @@ func main() {
 	r.GET("/black/whats_new_augur/",whats_new_in_augur)
 	r.GET("/black/node_text_data/:node",show_node_text_data)
 	r.GET("/black/augur_foundry",show_augur_foundry_contracts)
-	r.GET("/black/reporting_status/:market",show_reporting_status)
+	r.GET("/black/reports_table/:market",show_reporting_table)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)

@@ -983,7 +983,7 @@ func (ss *SQLStorage) Get_market_info(mkt_addr string,outcome_idx int,oc bool) (
 	} else {
 		rec.OutsideAugurBalanceChanges = true
 	}
-	query = "SELECT count(*) FROM report WHERE market_aid=$1"
+	query = "SELECT count(*) FROM initial_report WHERE market_aid=$1"
 	var num_reports sql.NullInt64
 	err=ss.db.QueryRow(query,market_aid).Scan(&num_reports)
 	if (err!=nil) {
@@ -1220,26 +1220,21 @@ func (ss *SQLStorage) Get_market_reports(market_aid int64,limit int) []p.Report 
 
 	var query string
 	query = "SELECT " +
-				"r.rpt_timestamp::date," +
+				"r.time_stamp::date," +
 				"ma.addr as mkt_addr," +
-				"r.is_initial," +
-				"r.is_designated," +
 				"round(r.amount_staked,2),"+
 				"r.outcome_idx," +
-				"r.next_win_start," +
-				"r.next_win_end," +
 				"m.initial_outcome," +
-				"m.designated_outcome," +
 				"m.winning_outcome," +
 				"m.market_type AS mtype," +
 				"m.outcomes AS outcomes_str, " +
 				"ra.addr AS rep_addr " +
-			"FROM report AS r " +
+			"FROM crowdsourcer_contrib AS r " +
 				"JOIN market AS m ON r.market_aid = m.market_aid " +
 				"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
-				"LEFT JOIN address AS ra ON r.aid = ra.address_id " +
+				"LEFT JOIN address AS ra ON r.reporter_aid = ra.address_id " +
 			"WHERE r.market_aid=$1 " +
-			"ORDER BY r.rpt_timestamp"
+			"ORDER BY r.time_stamp"
 	if limit > 0 {
 		query = query +	" LIMIT " + strconv.Itoa(limit)
 	}
@@ -1267,14 +1262,9 @@ func (ss *SQLStorage) Get_market_reports(market_aid int64,limit int) []p.Report 
 		err=rows.Scan(
 			&rec.Date,
 			&rec.MktAddr,
-			&rec.IsInitial,
-			&rec.IsDesignated,
 			&rec.RepStake,
 			&rec.OutcomeIdx,
-			&rec.WinStart,
-			&rec.WinEnd,
 			&initial_outcome,
-			&designated_outcome,
 			&winning_outcome,
 			&rec.MktType,
 			&outcomes,

@@ -2594,8 +2594,22 @@ func show_reporting_table(c *gin.Context) {
 		})
 		return
 	}
-	reporting_status := augur_srv.storage.Get_reporting_table(market_aid)
-	c.HTML(http.StatusOK, "reporting_status.html", gin.H{
-		"ReportingStatus" : reporting_status,
+	market_info,err := augur_srv.storage.Get_market_info(market_addr,0,false)
+	if err != nil {
+		show_market_not_found_error(c,false,&market_addr)
+		return
+	}
+	reporting_status,err := augur_srv.storage.Get_reporting_table(market_aid)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Error: %v",err.Error()),
+		})
+		return
+	}
+
+	c.HTML(http.StatusOK, "reporting_table.html", gin.H{
+		"MarketInfo" : market_info,
+		"ReportingTable" : reporting_status,
 	})
 }

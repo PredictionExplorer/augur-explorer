@@ -3,7 +3,9 @@ package dbs
 import (
 	"fmt"
 	"os"
+	"math/big"
 	"errors"
+	"strings"
 	"database/sql"
 	_  "github.com/lib/pq"
 
@@ -489,6 +491,17 @@ func (ss *SQLStorage) Delete_participation_tokens_redeemed(tx_id int64) {
 		os.Exit(1)
 	}
 }
+func payout_numerators_text_to_big(payout_numerators_str string) []*big.Int {
+
+	output := make([]*big.Int,0,8)
+	tokens := strings.Split(payout_numerators_str,",")
+	for _,t := range tokens {
+		b := new(big.Int)
+		b.SetString(t,10)
+		output = append(output,b)
+	}
+	return output
+}
 func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,error) {
 
 	var rst p.ReportingStatus
@@ -501,14 +514,14 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 	err := row.Scan(&num_ticks,&mkt_type,&outcomes)
 	if (err!=nil) {
 		if err != sql.ErrNoRows {
-			ss.Log_msg(fmt.Sprintf("Error in Get_upload_block(): %v",err))
+			ss.Log_msg(fmt.Sprintf("Error in Get_reporting_table(): %v : %v",err,query))
 			os.Exit(1)
 		}
 		return rst,errors.New(fmt.Sprintf("Market not found: %v",err.Error()))
 	}
 
 	query = "SELECT " +
-				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts" +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
 				"time_stamp," +
 				"tx.tx_hash," +
 				"ira.address_id," +
@@ -517,17 +530,28 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 				"ara.addr," +
 				"r.outcome_idx," +
 				"r.is_designated," +
-				"r.amount_staked/1e+18 AS amount_staked "+
+				"r.amount_staked AS amount_staked "+
 			"FROM initial_report r " +
 				"JOIN transaction tx ON r.tx_id=tx.id " +
 				"LEFT JOIN address ira ON ini_reporter_aid=ira.address_id " +
 				"LEFT JOIN address ara ON reporter_aid=ara.address_id "+
 			"WHERE market_aid=$1"
 	row = ss.db.QueryRow(query,market_aid)
-	err=row.Scan(&num_ticks,mkt_type,outcomes)
+	err=row.Scan(
+		&rst.InitialReport.TimeStamp,
+		&rst.InitialReport.DateTime,
+		&rst.InitialReport.TxHash,
+		&rst.InitialReport.InitialReporterAid,
+		&rst.InitialReport.InitialReporterAddr,
+		&rst.InitialReport.ActualReporterAid,
+		&rst.InitialReport.ActualReporterAddr,
+		&rst.InitialReport.OutcomeIdx,
+		&rst.InitialReport.IsDesignated,
+		&rst.InitialReport.AmountStaked,
+	)
 	if (err!=nil) {
 		if err != sql.ErrNoRows {
-			ss.Log_msg(fmt.Sprintf("Error in Get_upload_block(): %v",err))
+			ss.Log_msg(fmt.Sprintf("Error in Get_reporting_table(): %v : %v",err,query))
 			os.Exit(1)
 		}
 		return rst,err
@@ -535,14 +559,14 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 	rst.InitialReport.OutcomeStr=get_outcome_str(uint8(mkt_type),rst.InitialReport.OutcomeIdx,&outcomes)
 
 	query = "SELECT " +
-				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts" +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
 				"cc.time_stamp," +
 				"tx.tx_hash, " +
 				"cc.crowdsrc_aid, " +
 				"ca.addr, " +
 				"cc.dispute_round, " +
 				"cc.payout_numerators, " +
-				"cc.size/1e+18 " +
+				"cc.size " +
 			"FROM crowdsourcer_created cc " +
 				"JOIN transaction tx ON cc.tx_id=tx.id " +
 				"LEFT JOIN address ca ON cc.crowdsrc_aid=ca.address_id " +
@@ -568,12 +592,14 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 			&rec.CrowdsourcerAddr,
 			&rec.DisputeRound,
 			&payout_numerators,
+			&rec.Size,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		outcidx := get_outcome_idx_from_numerators(mkt_type,int64(num_ticks),payout_numerators)
+		big_pnumerators := payout_numerators_text_to_big(payout_numerators)
+		outcidx := get_outcome_idx_from_numerators(mkt_type,int64(num_ticks),big_pnumerators)
 		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),outcidx,&outcomes)
 		disputes = append(disputes,rec)
 	}

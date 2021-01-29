@@ -1527,7 +1527,7 @@ type DisputeInfo struct{
 	CrowdsourcerAid			int64
 	TimeStamp				int64
 	ReporterAid				int64
-	Amount					float64
+	Size					float64
 	OutcomeIdx				int
 	DisputeRound			int
 	CrowdsourcerAddr		string
