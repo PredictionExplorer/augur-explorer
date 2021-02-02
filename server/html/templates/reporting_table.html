@@ -1,0 +1,113 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Report Table for Market {{.MarketInfo.MktAddr}}</title>
+</head>
+<body>
+	<h3 class="page_title">Report Table for Market {{.MarketInfo.MktAddr}}<h3>
+<p>
+{{.MarketInfo.Description}}
+</p>
+<br/><br/>
+<div class="market_info">
+<table class="market_trades">
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: center" >Initial Report</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Disputes</td>
+	</tr>
+	<tr>
+		<td class="mkt_trade_field" style="vertical-align: top">
+			<table>
+				<tr class="market_trades">
+					<td class="mkt_trade_field">Initial Reporter</td>
+					<td class="mkt_trade_field">{{.ReportingTable.InitialReport.InitialReporterAddr}}</td>
+				</tr>
+				<tr class="market_trades">
+					<td class="mkt_trade_field">Reporter</td>
+					<td class="mkt_trade_field">{{.ReportingTable.InitialReport.ActualReporterAddr}}</td>
+				</tr>
+				<tr class="market_trades">
+					<td class="mkt_trade_field">Date Submitted</td>
+					<td class="mkt_trade_field">{{.ReportingTable.InitialReport.DateTime}}</td>
+				</tr>
+				<tr class="market_trades">
+					<td class="mkt_trade_field">Is Designated?</td>
+					<td class="mkt_trade_field">{{.ReportingTable.InitialReport.IsDesignated}}</td>
+				</tr>
+				<tr class="market_trades">
+					<td class="mkt_trade_field">
+						Outcome 
+						{{.ReportingTable.InitialReport.OutcomeStr}}
+						({{.ReportingTable.InitialReport.OutcomeIdx}})
+					</td>
+					<td class="mkt_trade_field">{{.ReportingTable.InitialReport.IsDesignated}}</td>
+				</tr>
+				<tr class="market_trades">
+					<td class="mkt_trade_field">Amount Staked</td>
+					<td class="mkt_trade_field">{{.ReportingTable.InitialReport.AmountStaked}}</td>
+				</tr>
+				<tr class="market_trades">
+					<td class="mkt_trade_field">Transaction Hash</td>
+					<td class="mkt_trade_field">
+						<a href="/black/search?q={{.ReportingTable.InitialReport.TxHash}}">
+							{{.ReportingTable.InitialReport.TxHashSh}}
+						</a>
+						(<a href="https://etherscan.io/tx/{{.ReportingTable.InitialReport.TxHash}}">
+							Etherscan link
+						</a>)
+					</td>
+				</tr>
+			</table>
+		</td>
+		<td class="mkt_trade_field">
+			<table>
+				<tr>
+					{{- range $i, $rpt := .ReportingTable.Disputes }}
+					<td style="vertical-align: top">
+						<table>
+							<tr class="market_trades">
+								<td class="mkt_trade_field">Date</td>
+								<td>{{.DateTime}}</td>
+							</tr>
+							<tr class="market_trades">
+								<td class="mkt_trade_field">Outcome</td>
+								<td class="mkt_trade_field">{{.OutcomeStr}}</td>
+							</tr>
+							<tr class="market_trades">
+								<td class="mkt_trade_field" title="{{.CrowdsourcerAid}}">Round</td>
+								<td class="mkt_trade_field">{{.DisputeRound}}</td>
+							</tr>
+							<tr class="market_trades">
+								<td class="mkt_trade_field">Size</td>
+								<td class="mkt_trade_field">{{ printf "%.3f" .Size}}</td>
+							</tr>
+							<tr class="market_trades">
+								<td class="mkt_trade_field">Transaction Hash</td>
+								<td class="mkt_trade_field">
+									<a href="/black/search?q={{.TxHash}}">
+										{{.TxHashSh}}
+									</a>
+								</td>
+							</tr>
+							<tr>
+								<td class="mkt_trade_field" colspan=2>
+									(<a href="https://etherscan.io/tx/{{.TxHash}}">
+										Etherscan link
+									</a>)
+								</td>
+							</tr>
+							<tr>
+								<td class="mkt_trade_field contributions" colspan=2>
+									{{template "dispute_contributions.html" .Contributions}}
+								</td>
+							</tr>
+						</table>
+					</td>
+					{{- end}}
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>
+</div>
+</body>

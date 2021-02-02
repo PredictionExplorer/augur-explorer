@@ -484,6 +484,7 @@ CREATE TABLE crowdsourcer_created (			--
 	market_aid			BIGINT NOT NULL,
 	crowdsrc_aid		BIGINT NOT NULL,
 	dispute_round		INT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
 	payout_numerators	TEXT DEFAULT '',
 	size				DECIMAL(64,18)
 );
@@ -497,6 +498,7 @@ CREATE table crowdsourcer_completed (	--
 	next_win_start		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
 	next_win_end		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
 	dispute_round		INT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
 	pacing_on			BOOLEAN NOT NULL,
 	payout_numerators	TEXT DEFAULT '',
 	tot_rep_payout		DECIMAL(64,18),
@@ -510,6 +512,7 @@ CREATE table crowdsourcer_redeemed ( -- DisputeCrowdsourcerRedeemed event
 	reporter_aid		BIGINT NOT NULL,
 	crowdsourcer_aid	BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
 	amount				DECIMAL(64,18) NOT NULL,
 	rep					DECIMAL(64,18) NOT NULL,
 	payout_numerators	TEXT DEFAULT ''

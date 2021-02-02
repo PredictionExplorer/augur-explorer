@@ -170,9 +170,15 @@ func build_list_of_inspected_events() []InspectedEvent {
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_dispute_crowdsourcer_redeemed[:4]),
+			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
+		},
+		*/
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_dispute_crowdsourcer_created[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
+		/*
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_dispute_window_created[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
@@ -180,7 +186,7 @@ func build_list_of_inspected_events() []InspectedEvent {
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_dispute_crowdsourcer_completed[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
-		},*/
+		},
 		InspectedEvent {
 			Signature: 	hex.EncodeToString(evt_initial_report_submitted[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
@@ -189,7 +195,6 @@ func build_list_of_inspected_events() []InspectedEvent {
 			Signature: hex.EncodeToString(evt_dispute_crowd_contrib[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
-		/*
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_token_balance_changed[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
@@ -1260,10 +1265,12 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 			tx_lookup_if_needed(agtx)
 			proc_complete_sets_sold(agtx,log)
 		}
+		*/
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_crowdsourcer_created) {
 			tx_lookup_if_needed(agtx)
 			proc_dispute_crowdsourcer_created(agtx,timestamp,log)
 		}
+		/*
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_initial_reporter_redeemed) {
 			tx_lookup_if_needed(agtx)
 			proc_initial_reporter_redeemed(agtx,log)
@@ -1280,7 +1287,6 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 			tx_lookup_if_needed(agtx)
 			proc_dispute_crowdsourcer_completed(agtx,log)
 		}
-		*/
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_initial_report_submitted) {
 			tx_lookup_if_needed(agtx)
 			proc_initial_report_submitted(agtx,log)
@@ -1289,7 +1295,6 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 			tx_lookup_if_needed(agtx)
 			proc_dispute_crowdsourcerer_contribution(agtx,log)
 		}
-		/*
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_reporting_participant_disavowed) {
 			tx_lookup_if_needed(agtx)
 			proc_reporting_participant_disavowed(agtx,timestamp,log)

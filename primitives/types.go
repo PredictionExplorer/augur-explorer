@@ -1509,6 +1509,7 @@ type InitialReportInfo struct {
 	InitialReporterAddr		string
 	ActualReporterAddr		string	// in case someone has to do the job of InitialReporter
 	TxHash					string
+	TxHashSh				string
 	DateTime				string
 }
 type CrowdsourcerInfo struct {
@@ -1519,9 +1520,23 @@ type CrowdsourcerInfo struct {
 	OutcomeStr				string
 	CrowdsourcerAddr		string
 	TxHash					string
+	TxHashSh				string
 }
 type DisputeContribution struct {
-
+	TimeStamp				int64
+	ReporterAid				int64
+	AmountStaked			float64
+	CurrentStake			float64
+	StakeRemaining			float64
+	OutcomeIdx				int
+	DisputeRound			int
+	CrowdsourcerAddr		string
+	ReporterAddr			string
+	ReporterAddrSh			string
+	OutcomeStr				string
+	TxHash					string
+	TxHashSh				string
+	DateTime				string
 }
 type DisputeInfo struct{
 	CrowdsourcerAid			int64
@@ -1534,6 +1549,7 @@ type DisputeInfo struct{
 	ReporterAddr			string
 	OutcomeStr				string
 	TxHash					string
+	TxHashSh				string
 	DateTime				string
 	Contributions			[]DisputeContribution
 }

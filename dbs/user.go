@@ -373,14 +373,11 @@ func (ss *SQLStorage) Get_user_reports(aid int64,limit int) []p.Report {
 	var query string
 	query = "SELECT " +
 				"m.market_aid,"+
-				"r.rpt_timestamp::date," +
+				"r.time_stamp::date," +
 				"ma.addr as mkt_addr," +
-				"r.is_initial," +
 				"r.is_designated," +
 				"round(r.amount_staked,2),"+
 				"r.outcome_idx," +
-				"r.next_win_start," +
-				"r.next_win_end," +
 				"m.extra_info::json->>'description' AS descr," +
 				"m.initial_outcome," +
 				"m.designated_outcome," +
@@ -388,11 +385,11 @@ func (ss *SQLStorage) Get_user_reports(aid int64,limit int) []p.Report {
 				"m.market_type AS mtype," +
 				"m.outcomes AS outcomes_str " +
 			"FROM " +
-					"report AS r, " +
+					"initial_report AS r, " +
 					"market AS m " +
 						"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
-			"WHERE (r.market_aid = m.market_aid) and (r.aid=$1) " +
-			"ORDER BY r.rpt_timestamp"
+			"WHERE (r.market_aid = m.market_aid) and (r.reporter_aid=$1) " +
+			"ORDER BY r.time_stamp"
 	if limit > 0 {
 		query = query +	" LIMIT " + strconv.Itoa(limit)
 	}
@@ -422,12 +419,9 @@ func (ss *SQLStorage) Get_user_reports(aid int64,limit int) []p.Report {
 			&rec.MktAid,
 			&rec.Date,
 			&rec.MktAddr,
-			&rec.IsInitial,
 			&rec.IsDesignated,
 			&rec.RepStake,
 			&rec.OutcomeIdx,
-			&rec.WinStart,
-			&rec.WinEnd,
 			&mkt_descr,
 			&initial_outcome,
 			&designated_outcome,

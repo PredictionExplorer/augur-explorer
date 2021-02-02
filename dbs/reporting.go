@@ -187,10 +187,13 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_created(agtx *p.AugurTx,timest
 	market_aid:=ss.Lookup_or_create_address(evt.Market.String(),agtx.BlockNum,agtx.TxId)
 	dispute_aid:=ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
 	payouts := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	market_type,mticks,_ := ss.get_market_type_and_ticks(market_aid)
+	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	var query string
 	query = "INSERT INTO crowdsourcer_created (" +
-				"block_num,tx_id,time_stamp,market_aid,crowdsrc_aid,dispute_round,payout_numerators,size" +
-				") VALUES ($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8::DECIMAL/1e+18)"
+				"block_num,tx_id,time_stamp,market_aid,crowdsrc_aid," +
+				"dispute_round,outcome_idx,payout_numerators,size" +
+			") VALUES ($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9::DECIMAL/1e+18)"
 
 	_,err := ss.db.Exec(query,
 		agtx.BlockNum,
@@ -199,6 +202,7 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_created(agtx *p.AugurTx,timest
 		market_aid,
 		dispute_aid,
 		evt.DisputeRound.Int64(),
+		reported_outcome,
 		payouts,
 		evt.Size.String(),
 	)
@@ -324,11 +328,13 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_redeemed(agtx *p.AugurTx,evt *
 	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),agtx.BlockNum,agtx.TxId)
 	crowdsourcer_aid := ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
 	payout_numerators := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	market_type,mticks,_ := ss.get_market_type_and_ticks(market_aid)
+	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	var query string
 	query = "INSERT INTO crowdsourcer_redeemed (" +
 				"block_num,tx_id,market_aid,reporter_aid,crowdsourcer_aid," +
-				"time_stamp,amount,rep,payout_numerators" +
-			") VALUES ($1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7::DECIMAL/1e+18,$8::DECIMAL/1e+18,$9)"
+				"time_stamp,outcome_idx,amount,rep,payout_numerators" +
+			") VALUES ($1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7,$8::DECIMAL/1e+18,$9::DECIMAL/1e+18,$10)"
 
 	_,err := ss.db.Exec(query,
 		agtx.BlockNum,
@@ -337,6 +343,7 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_redeemed(agtx *p.AugurTx,evt *
 		reporter_aid,
 		crowdsourcer_aid,
 		evt.Timestamp.Int64(),
+		reported_outcome,
 		evt.AmountRedeemed.String(),
 		evt.RepReceived.String(),
 		payout_numerators,
@@ -362,13 +369,15 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_completed(agtx *p.AugurTx,evt 
 	market_aid := ss.Lookup_address_id(evt.Market.String())
 	crowdsourcer_aid := ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
 	payout_numerators := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	market_type,mticks,_ := ss.get_market_type_and_ticks(market_aid)
+	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	var query string
 	query = "INSERT INTO crowdsourcer_completed (" +
 				"block_num,tx_id,time_stamp,market_aid,crowdsrc_aid,next_win_start,next_win_end," +
-				"dispute_round,pacing_on,tot_rep_payout,tot_rep_market,payout_numerators" +
+				"dispute_round,outcome_idx,pacing_on,tot_rep_payout,tot_rep_market,payout_numerators" +
 			") VALUES (" +
 				"$1,$2,TO_TIMESTAMP($3),$4,$5,TO_TIMESTAMP($6),TO_TIMESTAMP($7),"+
-				"$8,$9,$10::DECIMAL/1e+18,$11::DECIMAL/1e+18,$12"+
+				"$8,$9,$10,$11::DECIMAL/1e+18,$12::DECIMAL/1e+18,$13"+
 			")"
 
 	_,err := ss.db.Exec(query,
@@ -380,6 +389,7 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_completed(agtx *p.AugurTx,evt 
 		evt.NextWindowStartTime.Int64(),
 		evt.NextWindowEndTime.Int64(),
 		evt.DisputeRound.Int64(),
+		reported_outcome,
 		evt.PacingOn,
 		evt.TotalRepStakedInPayout.String(),
 		evt.TotalRepStakedInMarket.String(),
@@ -502,6 +512,56 @@ func payout_numerators_text_to_big(payout_numerators_str string) []*big.Int {
 	}
 	return output
 }
+func (ss *SQLStorage) get_dispute_contributions(crowdsourcer_aid int64,mkt_type uint8,num_ticks int,outcomes *string) []p.DisputeContribution {
+
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
+				"time_stamp," +
+				"tx.tx_hash," +
+				"ra.address_id," +
+				"ra.addr," +
+				"cc.dispute_round," +
+				"cc.outcome_idx," +
+				"cc.amount_staked," +
+				"cc.current_stake," +
+				"cc.stake_remaining " +
+			"FROM crowdsourcer_contrib cc " +
+				"JOIN transaction tx ON cc.tx_id=tx.id " +
+				"LEFT JOIN address ra ON reporter_aid=ra.address_id " +
+			"WHERE crowdsrc_aid = $1 " +
+			"ORDER BY cc.time_stamp"
+	
+	rows,err := ss.db.Query(query,crowdsourcer_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	contribs := make([]p.DisputeContribution,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.DisputeContribution
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.TxHash,
+			&rec.ReporterAid,
+			&rec.ReporterAddr,
+			&rec.DisputeRound,
+			&rec.OutcomeIdx,
+			&rec.AmountStaked,
+			&rec.CurrentStake,
+			&rec.StakeRemaining,
+		)
+
+		rec.TxHashSh = p.Short_hash(rec.TxHash)
+		rec.ReporterAddrSh = p.Short_address(rec.ReporterAddr)
+		rec.OutcomeStr=get_outcome_str(mkt_type,rec.OutcomeIdx,outcomes)
+		contribs = append(contribs,rec)
+	}
+	return contribs
+}
 func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,error) {
 
 	var rst p.ReportingStatus
@@ -556,6 +616,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 		}
 		return rst,err
 	}
+	rst.InitialReport.TxHashSh = p.Short_hash(rst.InitialReport.TxHash)
 	rst.InitialReport.OutcomeStr=get_outcome_str(uint8(mkt_type),rst.InitialReport.OutcomeIdx,&outcomes)
 
 	query = "SELECT " +
@@ -598,9 +659,11 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		rec.TxHashSh = p.Short_hash(rec.TxHash)
 		big_pnumerators := payout_numerators_text_to_big(payout_numerators)
 		outcidx := get_outcome_idx_from_numerators(mkt_type,int64(num_ticks),big_pnumerators)
 		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),outcidx,&outcomes)
+		rec.Contributions = ss.get_dispute_contributions(rec.CrowdsourcerAid,uint8(mkt_type),num_ticks,&outcomes)
 		disputes = append(disputes,rec)
 	}
 	rst.Disputes = disputes
