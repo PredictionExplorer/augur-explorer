@@ -562,24 +562,33 @@ func (ss *SQLStorage) get_dispute_contributions(crowdsourcer_aid int64,mkt_type 
 	}
 	return contribs
 }
-func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,error) {
-
-	var rst p.ReportingStatus
+func (ss *SQLStorage) Get_key_market_fields(market_aid int64) (num_ticks int,mkt_type int,outcomes string,err error) {
 
 	var query string
 	query = "SELECT num_ticks,market_type,outcomes FROM market WHERE market_aid=$1"
-	var num_ticks,mkt_type int
-	var outcomes string
 	row := ss.db.QueryRow(query,market_aid)
-	err := row.Scan(&num_ticks,&mkt_type,&outcomes)
+	err = row.Scan(&num_ticks,&mkt_type,&outcomes)
 	if (err!=nil) {
 		if err != sql.ErrNoRows {
 			ss.Log_msg(fmt.Sprintf("Error in Get_reporting_table(): %v : %v",err,query))
 			os.Exit(1)
 		}
-		return rst,errors.New(fmt.Sprintf("Market not found: %v",err.Error()))
+		err = errors.New(fmt.Sprintf("Market not found: %v",err.Error()))
+		return
+	}
+	return
+}
+func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,error) {
+
+	var rst p.ReportingStatus
+
+	num_ticks,mkt_type,outcomes,err := ss.Get_key_market_fields(market_aid)
+	if err != nil {
+		return rst,err
 	}
 
+
+	var query string
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
 				"time_stamp," +
@@ -596,7 +605,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 				"LEFT JOIN address ira ON ini_reporter_aid=ira.address_id " +
 				"LEFT JOIN address ara ON reporter_aid=ara.address_id "+
 			"WHERE market_aid=$1"
-	row = ss.db.QueryRow(query,market_aid)
+	row := ss.db.QueryRow(query,market_aid)
 	err=row.Scan(
 		&rst.InitialReport.TimeStamp,
 		&rst.InitialReport.DateTime,
@@ -669,4 +678,85 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 	rst.Disputes = disputes
 
 	return rst,nil
+}
+func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,string) {
+
+	_,mkt_type,outcomes,_ := ss.Get_key_market_fields(market_aid)
+	fmt.Printf("market outcomes = %v\n",outcomes)
+	outcomes = adjust_outcomes_str(mkt_type,outcomes)
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
+				"cc.time_stamp," +
+				"tot_rep_payout," +
+				"tot_rep_market," +
+				"dispute_round, " +
+				"pacing_on, " +
+				"outcome_idx " +
+			"FROM crowdsourcer_completed cc " +
+			"WHERE market_aid=$1 " +
+			"ORDER BY time_stamp"
+	fmt.Printf("query=%v\n",query)
+	rows,err := ss.db.Query(query,market_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	num_outcomes := 3	// Invalid,No,Yes
+	if mkt_type == 1 { // categorical
+		num_outcomes = len(strings.Split(outcomes,","))
+	}
+	if mkt_type == 2 { // scalar
+		num_outcomes = 2
+	}
+	rounds := make([]p.RoundsRow,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rr p.RoundsRow
+		var rec p.DisputeRound
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.RepPayout,
+			&rec.MarketRep,
+			&rec.RoundNum,
+			&rec.PacingOn,
+			&rec.OutcomeIdx,
+		)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		fmt.Printf("dump rec : %+v\n",rec)
+		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
+		rec.RoundNum--
+
+		fmt.Printf("Timestamp=%v, Date=%v, outcomestr=%v, outcomeidx=%v\n",rec.TimeStamp,rec.DateTime,rec.OutcomeStr,rec.OutcomeIdx)
+		//var outc_rounds p.OutcomeRounds
+		rr.Rounds.RoundNum = rec.RoundNum
+		rr.Rounds.ORounds = make([]p.DisputeRound,0,8)
+		for i:=0; i<num_outcomes ; i++ {
+			var empty_rec p.DisputeRound
+			if i==rec.OutcomeIdx {
+				rec.Color = true
+				rr.Rounds.ORounds = append(rr.Rounds.ORounds,rec)
+				fmt.Printf("Appending good record at i=%v, date=%v\n",i,rec.DateTime)
+			} else {
+				if len(rounds) > 0 {
+					prev_rec := &rounds[len(rounds)-1].Rounds.ORounds[i]
+					if prev_rec.TimeStamp != 0 {
+						empty_rec = *prev_rec
+						empty_rec.Color = false
+						fmt.Printf("copying rec from previous: %+v\n",empty_rec)
+					}
+				}
+				rr.Rounds.ORounds = append(rr.Rounds.ORounds,empty_rec)
+				fmt.Printf("Appending empty record at i=%v\n",i)
+			}
+		}
+		rounds = append(rounds,rr)
+	}
+	return rounds,num_outcomes,outcomes
 }

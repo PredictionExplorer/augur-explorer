@@ -241,8 +241,6 @@ func is_address_valid(c *gin.Context,json_output bool,addr string) (string,bool)
 	addr_bytes,err := hex.DecodeString(addr)
 	if err == nil {
 		addr := common.BytesToAddress(addr_bytes)
-		fmt.Printf("addr = %v\n",addr.String())
-		fmt.Printf("addr hex = %v\n",addr.Hex())
 		formatted_addr = addr.String()
 	} else {
 		if json_output {
@@ -2607,9 +2605,17 @@ func show_reporting_table(c *gin.Context) {
 		})
 		return
 	}
+	round_table,num_outcomes,outcomes := augur_srv.storage.Get_round_table(market_aid)
+	fmt.Printf("outcomes = %v\n",outcomes)
+	outcomes_split := strings.Split(outcomes,",")
+	fmt.Printf("split = %+v\n",outcomes_split)
 
 	c.HTML(http.StatusOK, "reporting_table.html", gin.H{
 		"MarketInfo" : market_info,
 		"ReportingTable" : reporting_status,
+		"RoundTable" : round_table,
+		"NumOutcomes" : num_outcomes,
+		"Outcomes" : outcomes,
+		"OutcomesSplit" : outcomes_split,
 	})
 }

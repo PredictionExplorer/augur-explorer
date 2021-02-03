@@ -9,6 +9,49 @@
 {{.MarketInfo.Description}}
 </p>
 <br/><br/>
+<h3>Round table</h3>
+This table shows dispute rounds sequentially from left to right: <br/>
+<table>
+<tr><td>
+	<table>
+	<tr><td>&nbsp;&nbsp;</td></tr>
+	{{- range $i, $rpt := .OutcomesSplit }}
+	<tr><td>{{.}}</td></tr>
+	{{ end }}
+	</table>
+</td>
+<td>
+<table class="market_trades">
+	<tr class="market_trades">
+		{{- range $i, $rpt := .RoundTable }}
+		<td style="text-align:center">
+			Round {{.Rounds.RoundNum}}
+			<table>
+		{{- range $i, $rpt := .Rounds.ORounds}}
+			<tr>
+				<td style="text-align: right">
+					{{ if eq true .PacingOn }}
+					<img src="/black/imgs/stopsign.png">
+					{{ end }}
+					{{ if eq true .Color }}
+					<font color="#fa5b84"><b>
+					{{ end }}
+					{{ printf "%.2f" .RepPayout}}
+					{{ if eq true .Color }}
+						</b><font>
+					{{ end }}
+				</td>
+			</tr>
+		{{- end}}
+			</table>
+		</td>
+		{{- end}}
+	</tr>
+</table>
+</td>
+</tr>
+</table>
+<br/><br/>
 <div class="market_info">
 <table class="market_trades">
 	<tr class="market_trades">

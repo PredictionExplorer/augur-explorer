@@ -46,6 +46,20 @@ func get_market_status_str(status_code p.MarketStatus) string {
 	}
 	return "undefined"
 }
+func adjust_outcomes_str(mkt_type int,outcomes string) string {
+
+	switch mkt_type {
+		case 0:
+			outcomes = "Invalid,No,Yes"
+		case 1:
+			outcomes = "Invalid," + outcomes	// Categorical
+		case 2:
+			outcomes = "Invalid,,Scalar"
+		default:
+			panic("Unknown market type")
+	}
+	return outcomes
+}
 func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,validity_bond string,evt *p.EMarketCreated) {
 
 	var query string

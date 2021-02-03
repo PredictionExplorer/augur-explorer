@@ -1559,3 +1559,23 @@ type ReportingStatus struct {
 	Disputes						[]DisputeInfo
 
 }
+type DisputeRound struct {
+	TimeStamp				int64
+	RepPayout				float64 // collected REP (sum of all contributions) for this round
+	MarketRep				float64	// accumulated REP amount
+	OutcomeIdx				int
+	RoundNum				int
+	PacingOn				bool	// temporal halt on all reporting (if true)
+	Color					bool	// true if highlite the row
+	DateTime				string
+	OutcomeStr				string
+}
+type OutcomeRounds struct {
+	RoundNum				int
+	ORounds					[]DisputeRound
+}
+type RoundsRow struct {
+	Rounds					OutcomeRounds
+	NumOutcomes				int
+	Outcomes				string
+}
