@@ -627,7 +627,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 	}
 	rst.InitialReport.TxHashSh = p.Short_hash(rst.InitialReport.TxHash)
 	rst.InitialReport.OutcomeStr=get_outcome_str(uint8(mkt_type),rst.InitialReport.OutcomeIdx,&outcomes)
-
+/* OLD VERSION, pending for delete
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
 				"cc.time_stamp," +
@@ -642,6 +642,30 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 				"LEFT JOIN address ca ON cc.crowdsrc_aid=ca.address_id " +
 			"WHERE market_aid = $1 " +
 			"ORDER BY cc.time_stamp"
+*/
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM cr.time_stamp)::BIGINT created_ts," +
+				"cr.time_stamp," +
+				"EXTRACT(EPOCH FROM co.time_stamp)::BIGINT completed_ts," +
+				"co.time_stamp," +
+				"cr_addr.addr, "+
+				"cr_tx.tx_hash," +
+				"co_tx.tx_hash," +
+				"cr.crowdsrc_aid," +
+				"cr.dispute_round rstart,"+	// round start (round in Augur = number of participants)
+				"co.dispute_round rend," +	// round end
+				"cr.outcome_idx," +
+				"round(cr.size,5) min_size," +
+				"co.pacing_on p," +
+				"co.tot_rep_payout," +
+				"co.tot_rep_market " +
+			"FROM crowdsourcer_created cr " +
+				"LEFT JOIN transaction co_tx ON cr.tx_id=co_tx.id " +
+				"LEFT JOIN transaction cr_tx ON cr.tx_id=cr_tx.id " +
+				"LEFT JOIN crowdsourcer_completed co ON cr.crowdsrc_aid=co.crowdsrc_aid " +
+				"LEFT JOIN address cr_addr ON cr.crowdsrc_aid=cr_addr.address_id " +
+			"WHERE cr.market_aid=$1 " +
+			"ORDER BY rend,co.time_stamp,rstart,cr.time_stamp"
 
 	rows,err := ss.db.Query(query,market_aid)
 	if (err!=nil) {
@@ -650,28 +674,43 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 	}
 	disputes := make([]p.DisputeInfo,0,8)
 
+
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.DisputeInfo
-		var payout_numerators string
+		var null_completed_ts,null_round_end sql.NullInt64
+		var null_completed_date,null_tx_hash sql.NullString
+		var null_rep_payout,null_rep_market sql.NullFloat64
 		err=rows.Scan(
-			&rec.TimeStamp,
-			&rec.DateTime,
-			&rec.TxHash,
-			&rec.CrowdsourcerAid,
+			&rec.CreatedTs,
+			&rec.CreatedDate,
+			&null_completed_ts,
+			&null_completed_date,
 			&rec.CrowdsourcerAddr,
-			&rec.DisputeRound,
-			&payout_numerators,
-			&rec.Size,
+			&rec.CreatedTxHash,
+			&null_tx_hash,
+			&rec.CrowdsourcerAid,
+			&rec.DisputeRoundStart,
+			&null_round_end,
+			&rec.OutcomeIdx,
+			&rec.MinDisputeSize,
+			&rec.PacingOn,
+			&null_rep_payout,
+			&null_rep_market,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		rec.TxHashSh = p.Short_hash(rec.TxHash)
-		big_pnumerators := payout_numerators_text_to_big(payout_numerators)
-		outcidx := get_outcome_idx_from_numerators(mkt_type,int64(num_ticks),big_pnumerators)
-		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),outcidx,&outcomes)
+		if null_completed_ts.Valid { rec.CompletedTs = null_completed_ts.Int64 }
+		if null_completed_date.Valid { rec.CompletedDate = null_completed_date.String }
+		if null_tx_hash.Valid { rec.CompletedTxHash = null_tx_hash.String }
+		if null_round_end.Valid { rec.DisputeRoundEnd = int(null_round_end.Int64) }
+		if null_rep_payout.Valid { rec.TotalRepPayout = null_rep_payout.Float64 }
+		if null_rep_market.Valid { rec.RepInMarket = null_rep_market.Float64 }
+		rec.CreatedTxHashSh = p.Short_hash(rec.CreatedTxHash)
+		rec.CompletedTxHashSh = p.Short_hash(rec.CompletedTxHash)
+		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
 		rec.Contributions = ss.get_dispute_contributions(rec.CrowdsourcerAid,uint8(mkt_type),num_ticks,&outcomes)
 		disputes = append(disputes,rec)
 	}
@@ -684,10 +723,76 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 	_,mkt_type,outcomes,_ := ss.Get_key_market_fields(market_aid)
 	fmt.Printf("market outcomes = %v\n",outcomes)
 	outcomes = adjust_outcomes_str(mkt_type,outcomes)
+	num_outcomes := 3	// Invalid,No,Yes
+	if mkt_type == 1 { // categorical
+		num_outcomes = len(strings.Split(outcomes,","))
+	}
+	if mkt_type == 2 { // scalar
+		num_outcomes = 2
+	}
+
+	rounds := make([]p.RoundsRow,0,8)
 	var query string
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
-				"cc.time_stamp," +
+				"TO_CHAR(time_stamp, 'dd/mm/yyyy')," +
+				"tx.tx_hash," +
+				"ira.address_id," +
+				"ira.addr," +
+				"ara.address_id," +
+				"ara.addr," +
+				"r.outcome_idx," +
+				"r.is_designated," +
+				"r.amount_staked AS amount_staked "+
+			"FROM initial_report r " +
+				"JOIN transaction tx ON r.tx_id=tx.id " +
+				"LEFT JOIN address ira ON ini_reporter_aid=ira.address_id " +
+				"LEFT JOIN address ara ON reporter_aid=ara.address_id "+
+			"WHERE market_aid=$1"
+	row := ss.db.QueryRow(query,market_aid)
+	var inirep p.InitialReportInfo
+	err := row.Scan(
+		&inirep.TimeStamp,
+		&inirep.DateTime,
+		&inirep.TxHash,
+		&inirep.InitialReporterAid,
+		&inirep.InitialReporterAddr,
+		&inirep.ActualReporterAid,
+		&inirep.ActualReporterAddr,
+		&inirep.OutcomeIdx,
+		&inirep.IsDesignated,
+		&inirep.AmountStaked,
+	)
+	if (err == nil) {
+		if inirep.TimeStamp != 0 {
+			var rr p.RoundsRow
+			var rec p.DisputeRound
+			rr.Rounds.RoundNum = 1
+			rr.Rounds.ORounds = make([]p.DisputeRound,0,8)
+
+			for i:=0; i<num_outcomes ; i++ {
+				var empty_rec p.DisputeRound
+				if i==inirep.OutcomeIdx {
+					rec.TimeStamp = inirep.TimeStamp
+					rec.DateTime = inirep.DateTime
+					rec.OutcomeIdx = inirep.OutcomeIdx
+					rec.RepPayout = inirep.AmountStaked
+					rec.Color = true
+					rr.Rounds.ORounds = append(rr.Rounds.ORounds,rec)
+					rr.Rounds.MarketRep = inirep.AmountStaked
+					rr.Rounds.TimeStamp = inirep.TimeStamp
+					rr.Rounds.DateTime = inirep.DateTime
+				} else {
+					rr.Rounds.ORounds = append(rr.Rounds.ORounds,empty_rec)
+				}
+			}
+			rounds = append(rounds,rr)
+		}
+	}
+
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
+				"TO_CHAR(cc.time_stamp, 'dd/mm/yyyy')," +
 				"tot_rep_payout," +
 				"tot_rep_market," +
 				"dispute_round, " +
@@ -703,14 +808,6 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 		os.Exit(1)
 	}
 
-	num_outcomes := 3	// Invalid,No,Yes
-	if mkt_type == 1 { // categorical
-		num_outcomes = len(strings.Split(outcomes,","))
-	}
-	if mkt_type == 2 { // scalar
-		num_outcomes = 2
-	}
-	rounds := make([]p.RoundsRow,0,8)
 
 	defer rows.Close()
 	for rows.Next() {
@@ -729,11 +826,8 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		fmt.Printf("dump rec : %+v\n",rec)
 		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
-		rec.RoundNum--
 
-		fmt.Printf("Timestamp=%v, Date=%v, outcomestr=%v, outcomeidx=%v\n",rec.TimeStamp,rec.DateTime,rec.OutcomeStr,rec.OutcomeIdx)
 		//var outc_rounds p.OutcomeRounds
 		rr.Rounds.RoundNum = rec.RoundNum
 		rr.Rounds.ORounds = make([]p.DisputeRound,0,8)
@@ -742,18 +836,18 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 			if i==rec.OutcomeIdx {
 				rec.Color = true
 				rr.Rounds.ORounds = append(rr.Rounds.ORounds,rec)
-				fmt.Printf("Appending good record at i=%v, date=%v\n",i,rec.DateTime)
+				rr.Rounds.MarketRep = rec.MarketRep
+				rr.Rounds.TimeStamp = rec.TimeStamp
+				rr.Rounds.DateTime = rec.DateTime
 			} else {
 				if len(rounds) > 0 {
 					prev_rec := &rounds[len(rounds)-1].Rounds.ORounds[i]
 					if prev_rec.TimeStamp != 0 {
 						empty_rec = *prev_rec
 						empty_rec.Color = false
-						fmt.Printf("copying rec from previous: %+v\n",empty_rec)
 					}
 				}
 				rr.Rounds.ORounds = append(rr.Rounds.ORounds,empty_rec)
-				fmt.Printf("Appending empty record at i=%v\n",i)
 			}
 		}
 		rounds = append(rounds,rr)

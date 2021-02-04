@@ -9,23 +9,31 @@
 {{.MarketInfo.Description}}
 </p>
 <br/><br/>
-<h3>Round table</h3>
+<h3>Table of Reporting Rounds</h3>
 This table shows dispute rounds sequentially from left to right: <br/>
-<table>
+<table class="report_rounds" style="border: none">
 <tr><td>
 	<table>
-	<tr><td>&nbsp;&nbsp;</td></tr>
+	<tr><td>&nbsp;</br>&nbsp;</td></tr>
 	{{- range $i, $rpt := .OutcomesSplit }}
 	<tr><td>{{.}}</td></tr>
 	{{ end }}
+	<tr><td>&nbsp;</td></tr>
+	<tr><td>Total Market REP</td></tr>
 	</table>
 </td>
 <td>
-<table class="market_trades">
+<table class="report_rounds">
 	<tr class="market_trades">
 		{{- range $i, $rpt := .RoundTable }}
 		<td style="text-align:center">
+			{{ if eq 1 .Rounds.RoundNum }}
+			Initial Round
+			{{ else }}
 			Round {{.Rounds.RoundNum}}
+			{{ end }}
+			<br/>
+			{{.Rounds.DateTime}}
 			<table>
 		{{- range $i, $rpt := .Rounds.ORounds}}
 			<tr>
@@ -38,11 +46,16 @@ This table shows dispute rounds sequentially from left to right: <br/>
 					{{ end }}
 					{{ printf "%.2f" .RepPayout}}
 					{{ if eq true .Color }}
-						</b><font>
+						</b></font>
 					{{ end }}
+					<br/>
 				</td>
 			</tr>
+			<tr><td>
+			</td></tr>
 		{{- end}}
+		<tr><td>&nbsp;</td></tr>
+		<tr><td style="text-align: right">{{ printf "%.2f" .Rounds.MarketRep}}</td></tr>
 			</table>
 		</td>
 		{{- end}}
@@ -109,8 +122,12 @@ This table shows dispute rounds sequentially from left to right: <br/>
 					<td style="vertical-align: top">
 						<table>
 							<tr class="market_trades">
-								<td class="mkt_trade_field">Date</td>
-								<td>{{.DateTime}}</td>
+								<td class="mkt_trade_field">Date Created</td>
+								<td>{{.CreatedDate}}</td>
+							</tr>
+							<tr class="market_trades">
+								<td class="mkt_trade_field">Date Completed</td>
+								<td>{{.CompletedDate}}</td>
 							</tr>
 							<tr class="market_trades">
 								<td class="mkt_trade_field">Outcome</td>
@@ -118,23 +135,30 @@ This table shows dispute rounds sequentially from left to right: <br/>
 							</tr>
 							<tr class="market_trades">
 								<td class="mkt_trade_field" title="{{.CrowdsourcerAid}}">Round</td>
-								<td class="mkt_trade_field">{{.DisputeRound}}</td>
+								<td class="mkt_trade_field">{{.DisputeRoundEnd}}</td>
 							</tr>
 							<tr class="market_trades">
-								<td class="mkt_trade_field">Size</td>
-								<td class="mkt_trade_field">{{ printf "%.3f" .Size}}</td>
+								<td class="mkt_trade_field">Minmium Dispute Size</td>
+								<td class="mkt_trade_field">{{ printf "%.3f" .MinDisputeSize}}</td>
 							</tr>
 							<tr class="market_trades">
-								<td class="mkt_trade_field">Transaction Hash</td>
+								<td class="mkt_trade_field">Creation Transaction Hash</td>
 								<td class="mkt_trade_field">
-									<a href="/black/search?q={{.TxHash}}">
-										{{.TxHashSh}}
+									<a href="/black/search?q={{.CreatedTxHash}}">
+										{{.CreatedTxHashSh}}
 									</a>
+									(<a href="https://etherscan.io/tx/{{.CreatedTxHash}}">
+										Etherscan link
+									</a>)
 								</td>
 							</tr>
-							<tr>
-								<td class="mkt_trade_field" colspan=2>
-									(<a href="https://etherscan.io/tx/{{.TxHash}}">
+							<tr class="market_trades">
+								<td class="mkt_trade_field">Completion Transaction Hash</td>
+								<td class="mkt_trade_field">
+									<a href="/black/search?q={{.CompletedTxHash}}">
+										{{.CompletedTxHashSh}}
+									</a>
+									(<a href="https://etherscan.io/tx/{{.CompletedTxHash}}">
 										Etherscan link
 									</a>)
 								</td>

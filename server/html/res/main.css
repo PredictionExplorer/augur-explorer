@@ -400,3 +400,10 @@ table.market_reports {
 tr.market_reports {
 	background-color: #161616;
 }
+table.report_rounds {
+	border:							solid 1px white;
+	border-spacing:					1em;
+	border-collapse: separate;
+	padding:						1em;
+	font-weight:                    bold;
+}

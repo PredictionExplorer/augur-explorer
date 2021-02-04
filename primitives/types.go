@@ -1538,20 +1538,29 @@ type DisputeContribution struct {
 	TxHashSh				string
 	DateTime				string
 }
-type DisputeInfo struct{
-	CrowdsourcerAid			int64
-	TimeStamp				int64
-	ReporterAid				int64
-	Size					float64
-	OutcomeIdx				int
-	DisputeRound			int
-	CrowdsourcerAddr		string
-	ReporterAddr			string
-	OutcomeStr				string
-	TxHash					string
-	TxHashSh				string
-	DateTime				string
-	Contributions			[]DisputeContribution
+type DisputeInfo struct{	
+	// A dispute can be created, but not yet completed
+	CrowdsourcerAid				int64
+	CreatedTs					int64	// Dispute created timetamp
+	CompletedTs					int64	// Dispute completed timestamp
+	ReporterAid					int64
+	MinDisputeSize				float64
+	TotalRepPayout				float64
+	RepInMarket					float64
+	OutcomeIdx					int
+	DisputeRoundStart			int
+	DisputeRoundEnd				int
+	PacingOn					bool	// temporal halt on all reporting (if true)
+	CrowdsourcerAddr			string
+	ReporterAddr				string
+	OutcomeStr					string
+	CreatedTxHash				string
+	CreatedTxHashSh				string
+	CompletedTxHash				string
+	CompletedTxHashSh			string
+	CreatedDate					string
+	CompletedDate				string
+	Contributions				[]DisputeContribution
 }
 type ReportingStatus struct {
 	TentativeWinningOutcome			string
@@ -1571,7 +1580,10 @@ type DisputeRound struct {
 	OutcomeStr				string
 }
 type OutcomeRounds struct {
+	MarketRep				float64
+	TimeStamp				int64
 	RoundNum				int
+	DateTime				string
 	ORounds					[]DisputeRound
 }
 type RoundsRow struct {
