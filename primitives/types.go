@@ -1618,3 +1618,19 @@ type RedeemedParticipant struct {
 	TxHash					string
 	TxHashSh				string
 }
+type UserRepProfit struct {
+	TimeStamp				int64
+	MarketAid				int64
+	OutcomeIdx				int
+	RepInvested				float64
+	RepReturned				float64
+	Profit					float64
+	ROI						float64
+	MarketAddr				string
+	MarketDescr				string
+	OutcomeStr				string
+	DateTime				string
+	ReporterAddr			string
+	TxHash					string
+	TxHashSh				string
+}

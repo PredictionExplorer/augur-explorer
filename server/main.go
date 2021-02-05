@@ -148,6 +148,7 @@ func main() {
 	r.GET("/black/user_uswaps/:user",user_uniswap_swaps)
 	r.GET("/black/user_bswaps/:user",user_balancer_swaps)
 	r.GET("/black/user_ens_names/:user",user_ens_names)
+	r.GET("/black/user_rep_pl/:user",user_rep_profit_loss)
 	r.GET("/black/statement/:addr",account_statement)
 	r.GET("/black/oohist/:addr",open_order_history)
 	r.GET("/black/pehist/:market/:outcome", price_estimate_history)
@@ -234,6 +235,7 @@ func main() {
 	r.GET("/api/tx/:hash",a1_transaction_info)
 	r.GET("/api/block/:block_num",a1_block_info)
 	r.GET("/api/reporting_table/:market",a1_reporting_table)
+	r.GET("/api/user_rep_pl/:user",a1_user_rep_profit_loss)
 
 
 	m := autocert.Manager{

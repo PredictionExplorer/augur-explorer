@@ -2621,3 +2621,32 @@ func show_reporting_table(c *gin.Context) {
 		"RedeemedParticipants" : redeemed_participants,
 	})
 }
+func user_rep_profit_loss(c *gin.Context) {
+
+	user := c.Param("user")
+	user_addr,valid := is_address_valid(c,false,user)
+	if !valid {
+		return
+	}
+	user_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(user_addr)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Such address wasn't found: %v",user_addr),
+		})
+		return
+	}
+	user_info,err := augur_srv.storage.Get_user_info(user_aid)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Such address wasn't found: %v",user_addr),
+		})
+		return
+	}
+	rep_profits := augur_srv.storage.Get_user_report_profits(user_aid)
+	c.HTML(http.StatusOK, "user_rep_pl.html", gin.H{
+		"UserInfo" : user_info,
+		"RepProfits" : rep_profits,
+	})
+}

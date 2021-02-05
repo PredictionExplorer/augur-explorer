@@ -1466,3 +1466,65 @@ func (ss *SQLStorage) Get_user_ens_names(user_aid int64,offset int,limit int) ([
 	}
 	return records,total_rows
 }
+func (ss *SQLStorage) Get_user_report_profits(user_aid int64) []p.UserRepProfit {
+
+	records := make([]p.UserRepProfit,0,8)
+
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
+				"TO_CHAR(c.time_stamp, 'dd/mm/yyyy HH:ii')," +
+				"m.market_aid," +
+				"ma.addr," +
+				"m.extra_info::json->>'description' AS descr," +
+				"m.market_type," +
+				"m.outcomes," +
+				"outcome_idx," +
+				"amount, " +
+				"rep," +
+				"tx.tx_hash " +
+			"FROM crowdsourcer_redeemed c " +
+				"JOIN transaction tx ON tx_id=tx.id " +
+				"JOIN market m ON c.market_aid=m.market_aid " +
+				"LEFT JOIN address ma ON c.market_aid=ma.address_id " +
+			"WHERE c.reporter_aid=$1 AND amount<rep" // amount>rep because otherwise it is a return of unused stake (pre loaded in case somebody disputes the outcome)
+
+	rows,err := ss.db.Query(query,user_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UserRepProfit
+		var mkt_type int
+		var outcomes string
+		err := rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.MarketAid,
+			&rec.MarketAddr,
+			&rec.MarketDescr,
+			&mkt_type,
+			&outcomes,
+			&rec.OutcomeIdx,
+			&rec.RepInvested,
+			&rec.RepReturned,
+			&rec.TxHash,
+		)
+		if (err!=nil) {
+			if err != sql.ErrNoRows {
+				ss.Log_msg(fmt.Sprintf("Error in Get_reporting_table(): %v : %v",err,query))
+				os.Exit(1)
+			}
+			return records
+		}
+		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
+		rec.TxHashSh = p.Short_hash(rec.TxHash)
+		rec.Profit = rec.RepReturned - rec.RepInvested
+		rec.ROI = 100*(rec.RepReturned - rec.RepInvested)/rec.RepInvested
+		records = append(records,rec)
+	}
+	return records
+}

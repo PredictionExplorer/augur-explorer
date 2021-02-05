@@ -1707,3 +1707,31 @@ func a1_reporting_table(c *gin.Context) {
 		"RedeemedParticipants" : redeemed_participants,
 	})
 }
+func a1_user_rep_profit_loss(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,user_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+
+	user_info,err := augur_srv.storage.Get_user_info(user_aid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": fmt.Sprintf("Error getting UserInfo: %v",err.Error()),
+		})
+	}
+	rep_profits := augur_srv.storage.Get_user_report_profits(user_aid)
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+			"status": status,
+			"error" : err_str,
+			"UserInfo" : user_info,
+			"RepProfits" : rep_profits,
+			"RepLosses" : 0,
+	})
+}

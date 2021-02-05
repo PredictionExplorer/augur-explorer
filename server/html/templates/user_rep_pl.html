@@ -1,0 +1,55 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="../res/main.css" rel="stylesheet">
+</head>
+<body>
+	<h3 class="page_title">Profit/Loss on Reports made by account {{.UserInfo.Addr}}</h3>
+<table>
+	<tr>
+		<td>Account address:</td>
+		<td>{{.UserInfo.Addr}}</td>
+	</tr>
+</table>
+Profits made in reporting:
+<table>
+	<tr>
+		<td class="mkt_trade_field">Date</td>
+		<td class="mkt_trade_field">Market</td>
+		<td class="mkt_trade_field">Description</td>
+		<td class="mkt_trade_field">Outcome</td>
+		<td class="mkt_trade_field">REP invested</td>
+		<td class="mkt_trade_field">REP returned</td>
+		<td class="mkt_trade_field">Profit</td>
+		<td class="mkt_trade_field">ROI</td>
+		<td class="mkt_trade_field">TxHash</td>
+	</tr>
+	 {{- range $i, $rpt := .RepProfits}}
+	<tr>
+		<td>{{.DateTime}}</td>
+		<td>{{.MarketAddr}}</td>
+		<td>{{.MarketDescr}}</td>
+		<td>{{.OutcomeStr}} ({{.OutcomeIdx}})</td>
+		<td style="text-align: right">{{ printf "%.2f" .RepInvested}}</td>
+		<td style="text-align: right">{{ printf "%.2f" .RepReturned}}</td>
+		<td style="text-align: right">{{ printf "%.2f" .Profit}}</td>
+		<td style="text-align: right">{{ printf "%.2f" .ROI}} %</td>
+		<td>
+			<a href="/black/search?q={{.TxHash}}">{{.TxHashSh}}</a>
+			&nbsp;&nbsp;
+			(<a href="https://etherscan.io/tx/{{.TxHash}}">Etherscan link</a>)
+		</td>
+	</tr>
+	{{- end}}
+</table>
+<br/><br/><br/>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="../index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>
