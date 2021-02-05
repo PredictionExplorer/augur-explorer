@@ -233,6 +233,7 @@ func main() {
 	r.GET("/api/augur_foundry",a1_augur_foundry_contracts)
 	r.GET("/api/tx/:hash",a1_transaction_info)
 	r.GET("/api/block/:block_num",a1_block_info)
+	r.GET("/api/reporting_table/:market",a1_reporting_table)
 
 
 	m := autocert.Manager{

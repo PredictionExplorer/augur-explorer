@@ -1591,3 +1591,30 @@ type RoundsRow struct {
 	NumOutcomes				int
 	Outcomes				string
 }
+type IniRepRedeemed struct {
+	ReporterAid				int64
+	InitialReporterAid		int64
+	TimeStamp				int64
+	Amount					float64
+	RepReceived				float64
+	OutcomeIdx				int
+	OutcomeStr				string
+	DateTime				string
+	ReporterAddr			string
+	InitialReporterAddr		string
+	TxHash					string
+	TxHashSh				string
+}
+type RedeemedParticipant struct {
+	ReporterAid				int64
+	TimeStamp				int64
+	OutcomeIdx				int
+	RepInvested				float64
+	RepReturned				float64
+	Profit					float64
+	OutcomeStr				string
+	DateTime				string
+	ReporterAddr			string
+	TxHash					string
+	TxHashSh				string
+}

@@ -562,6 +562,7 @@ CREATE TABLE irep_redeem ( -- InitialReporterRedeemed event
 	reporter_aid		BIGINT NOT NULL,
 	ini_rep_aid			BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
 	amount				DECIMAL(64,18) NOT NULL,
 	rep					DECIMAL(64,18) NOT NULL,
 	payout_numerators	TEXT DEFAULT ''

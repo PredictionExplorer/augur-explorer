@@ -290,10 +290,13 @@ func (ss *SQLStorage) Insert_initial_reporter_redeemed(agtx *p.AugurTx,evt *p.EI
 	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),agtx.BlockNum,agtx.TxId)
 	ini_rep_aid := ss.Lookup_or_create_address(evt.InitialReporter.String(),agtx.BlockNum,agtx.TxId)
 	payout_numerators := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
+	market_type,mticks,_ := ss.get_market_type_and_ticks(market_aid)
+	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	var query string
 	query = "INSERT INTO irep_redeem (" +
-				"block_num,tx_id,market_aid,reporter_aid,ini_rep_aid,time_stamp,amount,rep,payout_numerators" +
-				") VALUES ($1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7::DECIMAL/1e+18,$8::DECIMAL/1e+18,$9)"
+				"block_num,tx_id,market_aid,reporter_aid,ini_rep_aid,time_stamp,"+
+				"outcome_idx,amount,rep,payout_numerators" +
+				") VALUES ($1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7,$8::DECIMAL/1e+18,$9::DECIMAL/1e+18,$10)"
 
 	_,err := ss.db.Exec(query,
 		agtx.BlockNum,
@@ -302,10 +305,11 @@ func (ss *SQLStorage) Insert_initial_reporter_redeemed(agtx *p.AugurTx,evt *p.EI
 		reporter_aid,
 		ini_rep_aid,
 		evt.Timestamp.Int64(),
+		reported_outcome,
 		evt.AmountRedeemed.String(),
 		evt.RepReceived.String(),
 		payout_numerators,
-		)
+	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into irep_redeem table: %v; q=%v",err,query))
 		os.Exit(1)
@@ -681,6 +685,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 		var null_completed_ts,null_round_end sql.NullInt64
 		var null_completed_date,null_tx_hash sql.NullString
 		var null_rep_payout,null_rep_market sql.NullFloat64
+		var null_pacing sql.NullBool
 		err=rows.Scan(
 			&rec.CreatedTs,
 			&rec.CreatedDate,
@@ -694,7 +699,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 			&null_round_end,
 			&rec.OutcomeIdx,
 			&rec.MinDisputeSize,
-			&rec.PacingOn,
+			&null_pacing,
 			&null_rep_payout,
 			&null_rep_market,
 		)
@@ -708,6 +713,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 		if null_round_end.Valid { rec.DisputeRoundEnd = int(null_round_end.Int64) }
 		if null_rep_payout.Valid { rec.TotalRepPayout = null_rep_payout.Float64 }
 		if null_rep_market.Valid { rec.RepInMarket = null_rep_market.Float64 }
+		if null_pacing.Valid { rec.PacingOn = null_pacing.Bool }
 		rec.CreatedTxHashSh = p.Short_hash(rec.CreatedTxHash)
 		rec.CompletedTxHashSh = p.Short_hash(rec.CompletedTxHash)
 		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
@@ -721,7 +727,6 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,string) {
 
 	_,mkt_type,outcomes,_ := ss.Get_key_market_fields(market_aid)
-	fmt.Printf("market outcomes = %v\n",outcomes)
 	outcomes = adjust_outcomes_str(mkt_type,outcomes)
 	num_outcomes := 3	// Invalid,No,Yes
 	if mkt_type == 1 { // categorical
@@ -845,6 +850,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 					if prev_rec.TimeStamp != 0 {
 						empty_rec = *prev_rec
 						empty_rec.Color = false
+						empty_rec.PacingOn = false
 					}
 				}
 				rr.Rounds.ORounds = append(rr.Rounds.ORounds,empty_rec)
@@ -853,4 +859,102 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 		rounds = append(rounds,rr)
 	}
 	return rounds,num_outcomes,outcomes
+}
+func (ss *SQLStorage) Get_initial_report_redeemed_record(market_aid int64) *p.IniRepRedeemed {
+
+	rec := new(p.IniRepRedeemed)
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
+				"TO_CHAR(ir.time_stamp, 'dd/mm/yyyy HH:ii')," +
+				"ir.ini_rep_aid," +
+				"aini.addr," +
+				"ir.reporter_aid," +
+				"arep.addr," +
+				"outcome_idx," +
+				"amount, " +
+				"rep," +
+				"tx.tx_hash " +
+			"FROM irep_redeem ir " +
+				"JOIN transaction tx ON ir.tx_id=tx.id " +
+				"LEFT JOIN address aini ON ir.ini_rep_aid=aini.address_id " +
+				"LEFT JOIN address arep ON ir.reporter_aid=arep.address_id " +
+			"WHERE ir.market_aid=$1"
+	row := ss.db.QueryRow(query,market_aid)
+	err := row.Scan(
+		&rec.TimeStamp,
+		&rec.DateTime,
+		&rec.InitialReporterAid,
+		&rec.InitialReporterAddr,
+		&rec.ReporterAid,
+		&rec.ReporterAddr,
+		&rec.OutcomeIdx,
+		&rec.Amount,
+		&rec.RepReceived,
+		&rec.TxHash,
+	)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Error in Get_reporting_table(): %v : %v",err,query))
+			os.Exit(1)
+		}
+		return nil
+	}
+	_,mkt_type,outcomes,_ := ss.Get_key_market_fields(market_aid)
+	rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
+	rec.TxHashSh = p.Short_address(rec.TxHash)
+	return rec
+}
+func (ss *SQLStorage) Get_redeemed_participants(market_aid int64) []p.RedeemedParticipant {
+
+	records := make([]p.RedeemedParticipant,0,8)
+	_,mkt_type,outcomes,_ := ss.Get_key_market_fields(market_aid)
+
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
+				"TO_CHAR(c.time_stamp, 'dd/mm/yyyy HH:ii')," +
+				"reporter_aid," +
+				"ra.addr," +
+				"outcome_idx," +
+				"amount, " +
+				"rep," +
+				"tx.tx_hash " +
+			"FROM crowdsourcer_redeemed c " +
+				"JOIN transaction tx ON tx_id=tx.id " +
+				"LEFT JOIN address ra ON c.reporter_aid=ra.address_id " +
+			"WHERE c.market_aid=$1"
+
+	rows,err := ss.db.Query(query,market_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RedeemedParticipant
+		err := rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.ReporterAid,
+			&rec.ReporterAddr,
+			&rec.OutcomeIdx,
+			&rec.RepInvested,
+			&rec.RepReturned,
+			&rec.TxHash,
+		)
+		if (err!=nil) {
+			if err != sql.ErrNoRows {
+				ss.Log_msg(fmt.Sprintf("Error in Get_reporting_table(): %v : %v",err,query))
+				os.Exit(1)
+			}
+			return records
+		}
+		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
+		rec.TxHashSh = p.Short_address(rec.TxHash)
+		rec.Profit = rec.RepReturned - rec.RepInvested
+		records = append(records,rec)
+	}
+	return records
 }

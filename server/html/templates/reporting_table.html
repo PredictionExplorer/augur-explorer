@@ -92,11 +92,12 @@ This table shows dispute rounds sequentially from left to right: <br/>
 				</tr>
 				<tr class="market_trades">
 					<td class="mkt_trade_field">
-						Outcome 
+						Outcome
+					</td>
+					<td class="mkt_trade_field">
 						{{.ReportingTable.InitialReport.OutcomeStr}}
 						({{.ReportingTable.InitialReport.OutcomeIdx}})
 					</td>
-					<td class="mkt_trade_field">{{.ReportingTable.InitialReport.IsDesignated}}</td>
 				</tr>
 				<tr class="market_trades">
 					<td class="mkt_trade_field">Amount Staked</td>
@@ -114,6 +115,50 @@ This table shows dispute rounds sequentially from left to right: <br/>
 					</td>
 				</tr>
 			</table>
+			{{ if .RedeemIniReporter }}
+			<br/>
+			<br/>
+			<h4>Initial Reporter was redeemed:</h4>
+			<table>
+				<tr>
+					<td>Date Redemed</td>
+					<td>{{ .RedeemIniReporter.DateTime }}</td>
+				</tr>
+				<tr>
+					<td>Reporter</td>
+					<td>{{ .RedeemIniReporter.ReporterAddr }}</td>
+				</tr>
+				<tr>
+					<td>Initial Reporter</td>
+					<td>{{ .RedeemIniReporter.InitialReporterAddr }}</td>
+				</tr>
+				<tr>
+					<td>Outcome</td>
+					<td>{{ .RedeemIniReporter.OutcomeStr }}
+						({{.RedeemIniReporter.OutcomeIdx }})
+					</td>
+				</tr>
+				<tr>
+					<td>Amount</td>
+					<td>{{ .RedeemIniReporter.Amount }}</td>
+				</tr>
+				<tr>
+					<td>REP Received</td>
+					<td>{{ .RedeemIniReporter.RepReceived }}</td>
+				</tr>
+				<tr>
+					<td>Tx Hash</td>
+					<td>
+						<a href="/black/search?q={{.RedeemIniReporter.TxHash}}">
+							{{.RedeemIniReporter.TxHashSh}}
+						</a>
+						(<a href="https://etherscan.io/tx/{{.RedeemIniReporter.TxHash}}">
+							Etherscan link
+						</a>)
+					</td>
+				</tr>
+			</table>
+			{{ end }}
 		</td>
 		<td class="mkt_trade_field">
 			<table>
@@ -177,4 +222,47 @@ This table shows dispute rounds sequentially from left to right: <br/>
 	</tr>
 </table>
 </div>
+<div>
+	<h4>Redeemed reporting participants</h4>
+	Lists all the reports of those participants who have made profits in reporting activity:
+	<table class="market_trades">
+		<tr class="market_trades">
+			{{- range $i, $rpt := .RedeemedParticipants }}
+			<td style="text-align:center">
+				<table class="market_trades">
+				<tr>
+					<td style="text-align: right">DateTime</td>
+					<td>{{.DateTime}}</td>
+				</tr>
+				<tr>
+					<td>Reporter</td>
+					<td>{{.ReporterAddr}}</td>
+				</tr>
+				<tr>
+					<td>Outcome</td>
+					<td>{{.OutcomeStr}} ({{.OutcomeIdx}})</td>
+				</tr>
+				<tr>
+					<td>REP invested</td>
+					<td>{{.RepInvested }}</td>
+				</tr>
+				<tr>
+					<td>Profit</td>
+					<td>{{ printf "%.2f" .Profit }}</td>
+				</tr>
+				<tr>
+					<td>REP Returned</td>
+					<td>{{.RepReturned}}</td>
+				</tr>
+				<tr>
+					<td>ROI</td>
+					<td>40%</td>
+				</tr>
+				</table>
+			</td>
+			{{- end}}
+		</tr>
+	</table>
+</div>
+<br/><br/><br/>
 </body>

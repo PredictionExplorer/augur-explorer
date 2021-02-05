@@ -2606,9 +2606,9 @@ func show_reporting_table(c *gin.Context) {
 		return
 	}
 	round_table,num_outcomes,outcomes := augur_srv.storage.Get_round_table(market_aid)
-	fmt.Printf("outcomes = %v\n",outcomes)
 	outcomes_split := strings.Split(outcomes,",")
-	fmt.Printf("split = %+v\n",outcomes_split)
+	initial_report_redemption := augur_srv.storage.Get_initial_report_redeemed_record(market_aid)
+	redeemed_participants := augur_srv.storage.Get_redeemed_participants(market_aid)
 
 	c.HTML(http.StatusOK, "reporting_table.html", gin.H{
 		"MarketInfo" : market_info,
@@ -2617,5 +2617,7 @@ func show_reporting_table(c *gin.Context) {
 		"NumOutcomes" : num_outcomes,
 		"Outcomes" : outcomes,
 		"OutcomesSplit" : outcomes_split,
+		"RedeemIniReporter" : initial_report_redemption,
+		"RedeemedParticipants" : redeemed_participants,
 	})
 }

@@ -1665,11 +1665,45 @@ func a1_block_info(c *gin.Context) {
 		})
 		return
 	}
+}
+func a1_reporting_table(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_market := c.Param("market")
+	market_addr,market_aid,success := json_validate_and_lookup_address_or_aid(c,&p_market)
+	if !success {
+		return
+	}
+	market_info,err := augur_srv.storage.Get_market_info(market_addr,0,false)
+	if err != nil {
+		show_market_not_found_error(c,true,&market_addr)
+		return
+	}
+	reporting_status,err := augur_srv.storage.Get_reporting_table(market_aid)
+	if err!=nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": err.Error(),
+		})
+		return
+	}
+
+	round_table,num_outcomes,outcomes := augur_srv.storage.Get_round_table(market_aid)
+	initial_report_redemption := augur_srv.storage.Get_initial_report_redeemed_record(market_aid)
+	redeemed_participants := augur_srv.storage.Get_redeemed_participants(market_aid)
+
 	var status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 		"status": status,
 		"error" : err_str,
-		"BlockInfo" : block_info,
+		"MarketInfo" : market_info,
+		"ReportingTable" : reporting_status,
+		"RoundTable" : round_table,
+		"NumOutcomes" : num_outcomes,
+		"Outcomes" : outcomes,
+		"RedeemIniReporter" : initial_report_redemption,
+		"RedeemedParticipants" : redeemed_participants,
 	})
 }

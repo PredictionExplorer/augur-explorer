@@ -165,20 +165,20 @@ func build_list_of_inspected_events() []InspectedEvent {
 			Signature: hex.EncodeToString(evt_complete_sets_sold[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
+		|*/
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_initial_reporter_redeemed[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
+		/*
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_dispute_crowdsourcer_redeemed[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
-		*/
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_dispute_crowdsourcer_created[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
 		},
-		/*
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_dispute_window_created[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.Augur.String(),0,0),
@@ -219,7 +219,7 @@ func delete_augur_transaction_related_data(tx_id int64) {
 
 	// Note: the list of DELETEs must match the list of event signatures
 	//          built in built_list_of_inspected_events() function
-
+/*
 	storage.Delete_market_created_evt(tx_id)
 	storage.Delete_market_oi_changed_evt(tx_id)
 	storage.Delete_market_order_evt(tx_id)
@@ -240,11 +240,14 @@ func delete_augur_transaction_related_data(tx_id int64) {
 	storage.Delete_dispute_window_created(tx_id)
 	storage.Delete_complete_sets_purchased(tx_id)
 	storage.Delete_complete_sets_sold(tx_id)
+	*/
 	storage.Delete_initial_reporter_redeemed(tx_id)
+	/*
 	storage.Delete_dispute_crowdsourcer_redeemed(tx_id)
 	storage.Delete_reporting_participant_disavowed(tx_id)
 	storage.Delete_reporting_fee(tx_id)
 	storage.Delete_participation_tokens_redeemed(tx_id)
+	*/
 }
 func get_eoa_aid(wallet_addr *common.Address,block_num int64,tx_id int64) int64 {
 
@@ -1265,16 +1268,16 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 			tx_lookup_if_needed(agtx)
 			proc_complete_sets_sold(agtx,log)
 		}
-		*/
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_crowdsourcer_created) {
 			tx_lookup_if_needed(agtx)
 			proc_dispute_crowdsourcer_created(agtx,timestamp,log)
 		}
-		/*
+		*/
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_initial_reporter_redeemed) {
 			tx_lookup_if_needed(agtx)
 			proc_initial_reporter_redeemed(agtx,log)
 		}
+		/*
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_dispute_window_created) {
 			tx_lookup_if_needed(agtx)
 			proc_dispute_window_created(agtx,log)
@@ -1427,7 +1430,7 @@ func process_transaction(tx_id int64) error {
 			os.Exit(1)
 	}
 
-	//delete_augur_transaction_related_data(agtx.TxId)
+	delete_augur_transaction_related_data(agtx.TxId)
 	num_logs = len(ordered_list)
 	pl_entries := make([]int64,0,2);// profit loss entries
 	// before processing events we need to reset these global vars as they accumulate some data
