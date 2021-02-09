@@ -483,6 +483,7 @@ CREATE TABLE crowdsourcer_created (			--
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	market_aid			BIGINT NOT NULL,
 	crowdsrc_aid		BIGINT NOT NULL,
+	dispute_win_id		BIGINT 
 	dispute_round		INT NOT NULL,
 	outcome_idx			SMALLINT NOT NULL,
 	payout_numerators	TEXT DEFAULT '',

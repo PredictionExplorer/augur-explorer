@@ -12,57 +12,62 @@
 <h3>Table of Reporting Rounds</h3>
 This table shows dispute rounds sequentially from left to right: <br/>
 <table class="report_rounds" style="border: none">
-<tr><td>
-	<table>
-	<tr><td>&nbsp;</br>&nbsp;</td></tr>
-	{{- range $i, $rpt := .OutcomesSplit }}
-	<tr><td>{{.}}</td></tr>
-	{{ end }}
-	<tr><td>&nbsp;</td></tr>
-	<tr><td>Total Market REP</td></tr>
-	</table>
-</td>
-<td>
-<table class="report_rounds">
-	<tr class="market_trades">
-		{{- range $i, $rpt := .RoundTable }}
-		<td style="text-align:center">
-			{{ if eq 1 .Rounds.RoundNum }}
-			Initial Round
-			{{ else }}
-			Round {{.Rounds.RoundNum}}
-			{{ end }}
-			<br/>
-			{{.Rounds.DateTime}}
+	<tr>
+		<td>
 			<table>
-		{{- range $i, $rpt := .Rounds.ORounds}}
-			<tr>
-				<td style="text-align: right">
-					{{ if eq true .PacingOn }}
-					<img src="/black/imgs/stopsign.png">
-					{{ end }}
-					{{ if eq true .Color }}
-					<font color="#fa5b84"><b>
-					{{ end }}
-					{{ printf "%.2f" .RepPayout}}
-					{{ if eq true .Color }}
-						</b></font>
-					{{ end }}
-					<br/>
-				</td>
-			</tr>
-			<tr><td>
-			</td></tr>
-		{{- end}}
-		<tr><td>&nbsp;</td></tr>
-		<tr><td style="text-align: right">{{ printf "%.2f" .Rounds.MarketRep}}</td></tr>
+			<tr><td>&nbsp;</br>&nbsp;</td></tr>
+			{{- range $i, $rpt := .OutcomesSplit }}
+			<tr><td>{{.}}</td></tr>
+			{{ end }}
+			<tr><td>&nbsp;</td></tr>
+			<tr><td>Total Market REP</td></tr>
 			</table>
 		</td>
-		{{- end}}
+		<td>
+			<table class="report_rounds">
+				<tr class="market_trades">
+					{{- range $i, $rpt := .RoundTable }}
+					<td style="text-align:center">
+						{{ if eq 1 .Rounds.RoundNum }}
+						Initial Round
+						{{ else }}
+						Round {{.Rounds.RoundNum}}
+						{{ end }}
+						<br/>
+						{{.Rounds.DateTime}}
+						<table>
+							{{- range $i, $rpt := .Rounds.ORounds}}
+								<tr>
+									<td style="text-align: right">
+										{{ if eq true .PacingOn }}
+										<img src="/black/imgs/stopsign.png">
+										{{ end }}
+										{{ if eq true .Color }}
+										<font color="#fa5b84"><b>
+										{{ end }}
+										{{ printf "%.2f" .RepPayout}}
+										{{ if eq true .Color }}
+											</b></font>
+										{{ end }}
+										<br/>
+									</td>
+								</tr>
+								<tr><td>
+								</td></tr>
+							{{- end}}
+								<tr><td>&nbsp;</td></tr>
+								<tr>
+									<td style="text-align: right">
+										{{ printf "%.2f" .Rounds.MarketRep}}
+									</td>
+								</tr>
+						</table>
+					</td>
+					{{- end}}
+				</tr>
+			</table>
+		</td>
 	</tr>
-</table>
-</td>
-</tr>
 </table>
 <br/><br/>
 <div class="market_info">
@@ -227,7 +232,7 @@ This table shows dispute rounds sequentially from left to right: <br/>
 	Lists all the reports of those participants who have made profits in reporting activity:
 	<table class="market_trades">
 		<tr class="market_trades">
-			{{- range $i, $rpt := .RedeemedParticipants }}
+			{{- range $i, $rpt := .WinningReports }}
 			<td style="text-align:center">
 				<table class="market_trades">
 				<tr>
@@ -265,4 +270,43 @@ This table shows dispute rounds sequentially from left to right: <br/>
 	</table>
 </div>
 <br/><br/><br/>
+<div>
+	<h4>Losing participants</h4>
+	Lists all the reports of those participants who have lost in reporting activity by providing incorrect outcome report:
+	<table class="market_trades">
+		<tr class="market_trades">
+			{{- range $i, $rpt := .LosingReports }}
+			<td style="text-align:center">
+				<table class="market_trades">
+				<tr>
+					<td style="text-align: right">DateTime</td>
+					<td>{{.DateTime}}</td>
+				</tr>
+				<tr>
+					<td style="text-align: right">Reporter</td>
+					<td>{{.ReporterAddr}}</td>
+				</tr>
+				<tr>
+					<td style="text-align: right">Amount lost</td>
+					<td>{{.RepLost}}</td>
+				</tr>
+				<tr class="market_trades">
+					<td class="mkt_trade_field">Transaction Hash</td>
+					<td class="mkt_trade_field">
+						<a href="/black/search?q={{.TxHash}}">
+							{{.TxHashSh}}
+						</a>
+						(<a href="https://etherscan.io/tx/{{.TxHash}}">
+							Etherscan link
+						</a>)
+					</td>
+				</tr>
+				</table>
+			</td>
+			{{- end}}
+		</tr>
+	</table>
+	<br/><br/><br/>
+</div>
 </body>
+</html>

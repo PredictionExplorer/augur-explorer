@@ -2609,6 +2609,7 @@ func show_reporting_table(c *gin.Context) {
 	outcomes_split := strings.Split(outcomes,",")
 	initial_report_redemption := augur_srv.storage.Get_initial_report_redeemed_record(market_aid)
 	redeemed_participants := augur_srv.storage.Get_redeemed_participants(market_aid)
+	losing_reports := augur_srv.storage.Get_losing_rep_participants(market_aid)
 
 	c.HTML(http.StatusOK, "reporting_table.html", gin.H{
 		"MarketInfo" : market_info,
@@ -2618,7 +2619,8 @@ func show_reporting_table(c *gin.Context) {
 		"Outcomes" : outcomes,
 		"OutcomesSplit" : outcomes_split,
 		"RedeemIniReporter" : initial_report_redemption,
-		"RedeemedParticipants" : redeemed_participants,
+		"WinningReports" : redeemed_participants,
+		"LosingReports" : losing_reports,
 	})
 }
 func user_rep_profit_loss(c *gin.Context) {

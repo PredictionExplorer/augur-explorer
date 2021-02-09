@@ -958,3 +958,71 @@ func (ss *SQLStorage) Get_redeemed_participants(market_aid int64) []p.RedeemedPa
 	}
 	return records
 }
+func (ss *SQLStorage) Get_losing_rep_participants(market_aid int64) []p.RepLosingParticipant{
+
+	records := make([]p.RepLosingParticipant,0,8)
+	_,mkt_type,outcomes,_ := ss.Get_key_market_fields(market_aid)
+
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM c.time_stamp)::BIGINT ts," +
+				"TO_CHAR(c.time_stamp, 'dd/mm/yyyy HH:ii')," +
+				"c.reporter_aid," +
+				"ra.addr," +
+				"m.market_type," +
+				"m.winning_outcome," +
+				"c.outcome_idx," +
+				"c.amount_staked, " +
+				"tx.tx_hash " +
+			"FROM crowdsourcer_contrib c " +
+				"JOIN transaction tx ON tx_id=tx.id " +
+				"JOIN market m ON c.market_aid=m.market_aid " +
+				"LEFT JOIN address ra ON c.reporter_aid=ra.address_id " +
+				"LEFT JOIN crowdsourcer_redeemed r ON (" +
+					"c.reporter_aid=r.reporter_aid AND " +
+					"c.market_aid=r.market_aid AND " +
+					"c.outcome_idx=r.outcome_idx" +
+				") " +
+			"WHERE c.market_aid=$1 AND r.id IS NULL AND m.status>3 " + // status: Fin or Fin invalid
+			"ORDER BY c.time_stamp"
+
+	rows,err := ss.db.Query(query,market_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RepLosingParticipant
+		var mkt_type,winning_outc int
+		err := rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.ReporterAid,
+			&rec.ReporterAddr,
+			&mkt_type,
+			&winning_outc,
+			&rec.OutcomeIdx,
+			&rec.RepLost,
+			&rec.TxHash,
+		)
+		if (err!=nil) {
+			if err != sql.ErrNoRows {
+				ss.Log_msg(fmt.Sprintf("Error in Get_reporting_table(): %v : %v",err,query))
+				os.Exit(1)
+			}
+			return records
+		}
+		if mkt_type == 2 {
+		} else {
+			if rec.OutcomeIdx == winning_outc {
+				continue // winning report records are inserted into 'crowdsourcer_redeemed' table
+			}
+		}
+		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
+		rec.TxHashSh = p.Short_address(rec.TxHash)
+		records = append(records,rec)
+	}
+	return records
+}

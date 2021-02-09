@@ -1634,3 +1634,14 @@ type UserRepProfit struct {
 	TxHash					string
 	TxHashSh				string
 }
+type RepLosingParticipant struct {
+	ReporterAid				int64
+	TimeStamp				int64
+	OutcomeIdx				int
+	RepLost					float64
+	OutcomeStr				string
+	DateTime				string
+	ReporterAddr			string
+	TxHash					string
+	TxHashSh				string
+}

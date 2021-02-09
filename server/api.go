@@ -1642,7 +1642,6 @@ func a1_block_info(c *gin.Context) {
 		block_num, err = strconv.ParseInt(p_block_num,10,64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest,gin.H{
-				"MarketInfo": make([]int64,0,0),
 				"status":0,
 				"error":fmt.Sprintf("Bad integer for block_num parameter: %v",err),
 			})
@@ -1650,7 +1649,6 @@ func a1_block_info(c *gin.Context) {
 		}
 	} else {
 		c.JSON(http.StatusBadRequest,gin.H{
-			"MarketInfo": make([]int64,0,0),
 			"status":0,
 			"error":fmt.Sprintf("block_num parameter wasn't provided"),
 		})
@@ -1659,12 +1657,19 @@ func a1_block_info(c *gin.Context) {
 	block_info,err := augur_srv.storage.Get_block_info(block_num,block_num)
 	if err != nil {
 		c.JSON(http.StatusBadRequest,gin.H{
-			"MarketInfo": make([]int64,0,0),
 			"status":0,
 			"error":fmt.Sprintf("block_num parameter wasn't provided"),
 		})
 		return
 	}
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+			"BlockInfo" : block_info,
+			"status": status,
+			"error": err_str,
+	})
+
 }
 func a1_reporting_table(c *gin.Context) {
 
