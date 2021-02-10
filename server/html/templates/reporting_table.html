@@ -25,9 +25,18 @@ This table shows dispute rounds sequentially from left to right: <br/>
 		</td>
 		<td>
 			<table class="report_rounds">
+				<tr>
+					{{- range $i, $rpt := .RoundTable }}
+					<td colspan={{.Rounds.WindowSpan}} style="text-align: center">
+						{{.Rounds.WindowNum}}<br/>
+						{{.Rounds.WindowStartDate}} - {{.Rounds.WindowEndDate}}
+					</td>
+					{{- end }}
+				</tr>
 				<tr class="market_trades">
 					{{- range $i, $rpt := .RoundTable }}
 					<td style="text-align:center">
+						wspa = {{ .Rounds.WindowSpan }}<br/>
 						{{ if eq 1 .Rounds.RoundNum }}
 						Initial Round
 						{{ else }}

@@ -14,8 +14,8 @@ CREATE TRIGGER mktfin_delete AFTER DELETE ON mkt_fin FOR EACH ROW EXECUTE PROCED
 CREATE TRIGGER pl_insert AFTER INSERT ON profit_loss FOR EACH ROW EXECUTE PROCEDURE on_profit_loss_insert();
 CREATE TRIGGER pl_delete AFTER DELETE ON profit_loss FOR EACH ROW EXECUTE PROCEDURE on_profit_loss_delete();
 CREATE TRIGGER pl_update AFTER UPDATE ON profit_loss FOR EACH ROW EXECUTE PROCEDURE on_profit_loss_update();
-CREATE TRIGGER report_insert AFTER INSERT ON report FOR EACH ROW EXECUTE PROCEDURE on_report_insert();
-CREATE TRIGGER report_delete AFTER DELETE ON report FOR EACH ROW EXECUTE PROCEDURE on_report_delete();
+CREATE TRIGGER report_insert AFTER INSERT ON initial_report FOR EACH ROW EXECUTE PROCEDURE on_report_insert();
+CREATE TRIGGER report_delete AFTER DELETE ON initial_report FOR EACH ROW EXECUTE PROCEDURE on_report_delete();
 CREATE TRIGGER ustats_insert AFTER INSERT ON ustats FOR EACH ROW EXECUTE PROCEDURE on_ustats_insert();
 CREATE TRIGGER claim_funds_insert AFTER INSERT ON claim_funds FOR EACH ROW EXECUTE PROCEDURE on_claim_funds_insert();
 CREATE TRIGGER claim_funds_delete AFTER DELETE ON claim_funds FOR EACH ROW EXECUTE PROCEDURE on_claim_funds_delete();
@@ -36,3 +36,5 @@ CREATE TRIGGER val_bond_chg_insert AFTER INSERT on val_bond_chg FOR EACH ROW EXE
 CREATE TRIGGER val_bond_delete AFTER DELETE on val_bond_chg FOR EACH ROW EXECUTE PROCEDURE on_val_bond_chg_delete();
 CREATE TRIGGER noshow_bond_chg_insert AFTER INSERT on noshow_bond_chg FOR EACH ROW EXECUTE PROCEDURE on_noshow_bond_chg_insert();
 CREATE TRIGGER noshow_bond_delete AFTER DELETE on noshow_bond_chg FOR EACH ROW EXECUTE PROCEDURE on_noshow_bond_chg_delete();
+CREATE TRIGGER crowdsourcer_created_insert BEFORE INSERT on crowdsourcer_created FOR EACH ROW EXECUTE PROCEDURE on_crowdsourcer_created_insert();
+CREATE TRIGGER crowdsourcer_created_delete AFTER DELETE on crowdsourcer_created FOR EACH ROW EXECUTE PROCEDURE on_crowdsourcer_created_delete();

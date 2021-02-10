@@ -1544,6 +1544,9 @@ type DisputeInfo struct{
 	CreatedTs					int64	// Dispute created timetamp
 	CompletedTs					int64	// Dispute completed timestamp
 	ReporterAid					int64
+	DisputeWindowAid			int64
+	WindowStartTs				int64
+	WindowEndTs					int64
 	MinDisputeSize				float64
 	TotalRepPayout				float64
 	RepInMarket					float64
@@ -1560,6 +1563,8 @@ type DisputeInfo struct{
 	CompletedTxHashSh			string
 	CreatedDate					string
 	CompletedDate				string
+	WindowStartDate				string
+	WindowEndDate				string
 	Contributions				[]DisputeContribution
 }
 type ReportingStatus struct {
@@ -1570,20 +1575,33 @@ type ReportingStatus struct {
 }
 type DisputeRound struct {
 	TimeStamp				int64
+	WindowStartTs			int64
+	WindowEndTs				int64
+	DisputeWinAid			int64
 	RepPayout				float64 // collected REP (sum of all contributions) for this round
 	MarketRep				float64	// accumulated REP amount
+	MinDisputeSize			float64
 	OutcomeIdx				int
 	RoundNum				int
+	Completed				bool
 	PacingOn				bool	// temporal halt on all reporting (if true)
 	Color					bool	// true if highlite the row
 	DateTime				string
 	OutcomeStr				string
+	WindowStartDate			string
+	WindowEndDate			string
 }
 type OutcomeRounds struct {
 	MarketRep				float64
 	TimeStamp				int64
+	WindowStartTs			int64
+	WindowEndTs				int64
+	WindowNum				int		// consecutive window number (local to current report)
+	WindowSpan				int		// how many rounds does the window span
 	RoundNum				int
 	DateTime				string
+	WindowStartDate			string
+	WindowEndDate			string
 	ORounds					[]DisputeRound
 }
 type RoundsRow struct {

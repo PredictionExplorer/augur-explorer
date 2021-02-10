@@ -435,22 +435,22 @@ BEGIN
 	-- Update statistics for the Reporter
 	UPDATE trd_mkt_stats AS s
 			SET total_reports = (total_reports + 1)
-			WHERE	s.aid = NEW.aid AND
+			WHERE	s.aid = NEW.reporter_aid AND
 					s.market_aid = NEW.market_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		INSERT	INTO trd_mkt_stats(aid,market_aid)
-				VALUES(NEW.aid,NEW.market_aid);
+				VALUES(NEW.reporter_aid,NEW.market_aid);
 	END IF;
-	INSERT INTO ustats(aid) VALUES(NEW.aid) ON CONFLICT DO NOTHING;
+	INSERT INTO ustats(aid) VALUES(NEW.reporter_aid) ON CONFLICT DO NOTHING;
 	UPDATE ustats
 		SET total_reports = (total_reports + 1)
-		WHERE	aid = NEW.aid;
+		WHERE	aid = NEW.reporter_aid;
 	UPDATE ustats
 		SET greporting = (greporting + t.gas_used),
 			geth_reporting = (geth_reporting + (t.gas_used::DECIMAL * t.gas_price))
 		FROM transaction AS t
-		WHERE aid=NEW.aid AND t.id=NEW.tx_id;
+		WHERE aid=NEW.reporter_aid AND t.id=NEW.tx_id;
 
 	IF NEW.is_designated IS TRUE THEN
 		UPDATE market
@@ -458,15 +458,13 @@ BEGIN
 			WHERE market_aid = NEW.market_aid;
 		UPDATE ustats
 			SET total_designated = (total_designated + 1)
-			WHERE aid = NEW.aid;
+			WHERE aid = NEW.reporter_aid;
 	END IF;
-	IF NEW.is_initial THEN
-		UPDATE market
-			SET initial_outcome = NEW.outcome_idx
-			WHERE market_aid = NEW.market_aid;
-	END IF;
+	UPDATE market
+		SET initial_outcome = NEW.outcome_idx
+		WHERE market_aid = NEW.market_aid;
 
-	PERFORM insert_agtx_event(NEW.tx_id,0,NEW.block_num,NEW.aid,NEW.market_aid,0,4);
+	PERFORM insert_agtx_event(NEW.tx_id,0,NEW.block_num,NEW.reporter_aid,NEW.market_aid,0,4);
 
 	RETURN NEW;
 END;
@@ -479,34 +477,32 @@ BEGIN
 	-- Update statistics for the Reporter
 	UPDATE trd_mkt_stats AS s
 			SET total_reports = (total_reports - 1)
-			WHERE	s.aid = OLD.aid AND
+			WHERE	s.aid = OLD.reporter_aid AND
 					s.market_aid = OLD.market_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		INSERT	INTO trd_mkt_stats(aid,market_aid)
-				VALUES(OLD.aid,OLD.market_aid);
+				VALUES(OLD.reporter_aid,OLD.market_aid);
 	END IF;
 	UPDATE ustats
 		SET total_reports = (total_reports - 1)
-		WHERE	aid = OLD.aid;
+		WHERE	aid = OLD.reporter_aid;
 	UPDATE ustats 
 		SET greporting = (greporting - t.gas_used),
 			geth_reporting = (geth_reporting - (t.gas_used::DECIMAL * t.gas_price))
 		FROM transaction AS t
-		WHERE aid=OLD.aid AND t.id=OLD.tx_id;
+		WHERE aid=OLD.reporter_aid AND t.id=OLD.tx_id;
 	IF OLD.is_designated THEN
 		UPDATE market
 			SET designated_outcome = -1
 			WHERE market_aid = OLD.market_aid;
 		UPDATE ustats
 			SET total_designated = (total_designated - 1)
-			WHERE	aid = OLD.aid;
+			WHERE	aid = OLD.reporter_aid;
 	END IF;
-	IF OLD.is_initial THEN
-		UPDATE market
-			SET initial_outcome = -1
-			WHERE market_aid = OLD.market_aid;
-	END IF;
+	UPDATE market
+		SET initial_outcome = -1
+		WHERE market_aid = OLD.market_aid;
 
 	PERFORM delete_agtx_event(OLD.tx_id,0);
 
@@ -1060,6 +1056,39 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_noshow_bond_chg_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_crowdsourcer_created_insert() RETURNS trigger AS  $$
+DECLARE
+	v_disp_win_id	BIGINT;
+	v_cnt numeric;
+BEGIN
+
+	SELECT d.id FROM dispute_window d
+	JOIN crowdsourcer_completed c ON (c.next_win_start=d.start_time AND c.next_win_end=d.end_time)
+		ORDER BY c.time_stamp DESC
+		LIMIT 1
+		INTO v_disp_win_id;
+	IF v_disp_win_id IS NULL THEN -- prevous completed crowdsourcers, check initial report
+		SELECT d.id FROM dispute_window d
+		JOIN initial_report r ON (r.next_win_start=d.start_time AND r.next_win_end=d.end_time)
+			ORDER BY r.time_stamp DESC	-- there should be only 1 initial report, but anyway , limit 1 it
+			LIMIT 1
+			INTO v_disp_win_id;
+		IF v_disp_win_id IS NULL THEN
+			RAISE EXCEPTION 'Cant find dispute window for date % (initial report check)',NEW.time_stamp;
+		END IF;
+	END IF;
+	NEW.dispute_win_id = v_disp_win_id;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_crowdsourcer_created_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 

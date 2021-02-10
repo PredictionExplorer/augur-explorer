@@ -594,8 +594,8 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 
 	var query string
 	query = "SELECT " +
-				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
-				"time_stamp," +
+				"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts," +
+				"r.time_stamp," +
 				"tx.tx_hash," +
 				"ira.address_id," +
 				"ira.addr," +
@@ -631,22 +631,6 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 	}
 	rst.InitialReport.TxHashSh = p.Short_hash(rst.InitialReport.TxHash)
 	rst.InitialReport.OutcomeStr=get_outcome_str(uint8(mkt_type),rst.InitialReport.OutcomeIdx,&outcomes)
-/* OLD VERSION, pending for delete
-	query = "SELECT " +
-				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
-				"cc.time_stamp," +
-				"tx.tx_hash, " +
-				"cc.crowdsrc_aid, " +
-				"ca.addr, " +
-				"cc.dispute_round, " +
-				"cc.payout_numerators, " +
-				"cc.size " +
-			"FROM crowdsourcer_created cc " +
-				"JOIN transaction tx ON cc.tx_id=tx.id " +
-				"LEFT JOIN address ca ON cc.crowdsrc_aid=ca.address_id " +
-			"WHERE market_aid = $1 " +
-			"ORDER BY cc.time_stamp"
-*/
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM cr.time_stamp)::BIGINT created_ts," +
 				"cr.time_stamp," +
@@ -662,10 +646,16 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 				"round(cr.size,5) min_size," +
 				"co.pacing_on p," +
 				"co.tot_rep_payout," +
-				"co.tot_rep_market " +
+				"co.tot_rep_market, " +
+				"EXTRACT(EPOCH FROM d.start_time)::BIGINT dwin_start_ts," +
+				"d.start_time dwin_start," +
+				"EXTRACT(EPOCH FROM d.end_time)::BIGINT dwin_end_ts," +
+				"d.end_time dwin_end," +
+				"d.window_aid dwin_aid " +
 			"FROM crowdsourcer_created cr " +
 				"LEFT JOIN transaction co_tx ON cr.tx_id=co_tx.id " +
 				"LEFT JOIN transaction cr_tx ON cr.tx_id=cr_tx.id " +
+				"LEFT JOIN dispute_window d ON cr.dispute_win_id = d.id " +
 				"LEFT JOIN crowdsourcer_completed co ON cr.crowdsrc_aid=co.crowdsrc_aid " +
 				"LEFT JOIN address cr_addr ON cr.crowdsrc_aid=cr_addr.address_id " +
 			"WHERE cr.market_aid=$1 " +
@@ -702,6 +692,11 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 			&null_pacing,
 			&null_rep_payout,
 			&null_rep_market,
+			&rec.WindowStartTs,
+			&rec.WindowStartDate,
+			&rec.WindowEndTs,
+			&rec.WindowEndDate,
+			&rec.DisputeWindowAid,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
@@ -720,6 +715,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 		rec.Contributions = ss.get_dispute_contributions(rec.CrowdsourcerAid,uint8(mkt_type),num_ticks,&outcomes)
 		disputes = append(disputes,rec)
 	}
+
 	rst.Disputes = disputes
 
 	return rst,nil
@@ -739,7 +735,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 	rounds := make([]p.RoundsRow,0,8)
 	var query string
 	query = "SELECT " +
-				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
+				"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts," +
 				"TO_CHAR(time_stamp, 'dd/mm/yyyy')," +
 				"tx.tx_hash," +
 				"ira.address_id," +
@@ -753,7 +749,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 				"JOIN transaction tx ON r.tx_id=tx.id " +
 				"LEFT JOIN address ira ON ini_reporter_aid=ira.address_id " +
 				"LEFT JOIN address ara ON reporter_aid=ara.address_id "+
-			"WHERE market_aid=$1"
+			"WHERE r.market_aid=$1"
 	row := ss.db.QueryRow(query,market_aid)
 	var inirep p.InitialReportInfo
 	err := row.Scan(
@@ -794,7 +790,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 			rounds = append(rounds,rr)
 		}
 	}
-
+/* on hold
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
 				"TO_CHAR(cc.time_stamp, 'dd/mm/yyyy')," +
@@ -804,8 +800,33 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 				"pacing_on, " +
 				"outcome_idx " +
 			"FROM crowdsourcer_completed cc " +
+				"JOIN crowdsourcer_created cr ON cc.crowdsrc_aid=cr.crowdsrc_aid " +
+				"JOIN dispute_window d ON cr.dispute_win_id=d.id " +
 			"WHERE market_aid=$1 " +
 			"ORDER BY time_stamp"
+			*/
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM cr.time_stamp)::BIGINT ts," +
+				"TO_CHAR(cr.time_stamp, 'dd/mm/yyyy')," +
+				"EXTRACT(EPOCH FROM co.time_stamp)::BIGINT ts," +
+				"TO_CHAR(co.time_stamp, 'dd/mm/yyyy')," +
+				"cr.size," +
+				"co.tot_rep_payout," +
+				"co.tot_rep_market," +
+				"cr.dispute_round," +
+				"co.dispute_round," +
+				"co.pacing_on, " +
+				"cr.outcome_idx, " +
+				"EXTRACT(EPOCH FROM d.start_time)::BIGINT dwin_start_ts," +
+				"d.start_time dwin_start," +
+				"EXTRACT(EPOCH FROM d.end_time)::BIGINT dwin_end_ts," +
+				"d.end_time dwin_end," +
+				"d.window_aid dwin_aid " +
+			"FROM crowdsourcer_created cr " +
+				"JOIN dispute_window d ON cr.dispute_win_id=d.id " +
+				"LEFT JOIN crowdsourcer_completed co ON co.crowdsrc_aid=cr.crowdsrc_aid " +
+			"WHERE cr.market_aid=$1 " +
+			"ORDER BY cr.time_stamp"
 	fmt.Printf("query=%v\n",query)
 	rows,err := ss.db.Query(query,market_aid)
 	if (err!=nil) {
@@ -818,19 +839,40 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 	for rows.Next() {
 		var rr p.RoundsRow
 		var rec p.DisputeRound
+		var null_rep_payout,null_rep_market sql.NullFloat64
+		var null_dispute_round,null_ts sql.NullInt64
+		var null_pacing sql.NullBool
+		var null_date sql.NullString
 		err=rows.Scan(
 			&rec.TimeStamp,
 			&rec.DateTime,
-			&rec.RepPayout,
-			&rec.MarketRep,
+			&null_ts,
+			&null_date,
+			&rec.MinDisputeSize,
+			&null_rep_payout,
+			&null_rep_market,
 			&rec.RoundNum,
-			&rec.PacingOn,
+			&null_dispute_round,
+			&null_pacing,
 			&rec.OutcomeIdx,
+			&rec.WindowStartTs,
+			&rec.WindowStartDate,
+			&rec.WindowEndTs,
+			&rec.WindowEndDate,
+			&rec.DisputeWinAid,
 		)
 		if (err!=nil) {
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
+		if null_ts.Valid {
+			rec.TimeStamp = null_ts.Int64
+			rec.DateTime = null_date.String
+		}
+		if null_rep_payout.Valid { rec.RepPayout = null_rep_payout.Float64 }
+		if null_rep_market.Valid { rec.MarketRep = null_rep_market.Float64 }
+		if null_dispute_round.Valid { rec.RoundNum = int(null_dispute_round.Int64) }
+		if null_pacing.Valid { rec.PacingOn = null_pacing.Bool }
 		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
 
 		//var outc_rounds p.OutcomeRounds
@@ -844,6 +886,10 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 				rr.Rounds.MarketRep = rec.MarketRep
 				rr.Rounds.TimeStamp = rec.TimeStamp
 				rr.Rounds.DateTime = rec.DateTime
+				rr.Rounds.WindowStartDate = rec.WindowStartDate
+				rr.Rounds.WindowEndDate = rec.WindowEndDate
+				rr.Rounds.WindowStartTs = rec.WindowStartTs
+				rr.Rounds.WindowEndTs = rec.WindowEndTs
 			} else {
 				if len(rounds) > 0 {
 					prev_rec := &rounds[len(rounds)-1].Rounds.ORounds[i]
@@ -858,6 +904,30 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 		}
 		rounds = append(rounds,rr)
 	}
+	var prev_win_start int64 = 0
+	var prev_win_end int64 = 0
+	var widx int = 0
+	// calculate window number
+	var i int = 0
+	var wcounter int = 1
+	for ; i< len(rounds); i++ {
+		if prev_win_start == 0 {
+			prev_win_start = rounds[i].Rounds.WindowStartTs
+			prev_win_end = rounds[i].Rounds.WindowEndTs
+		}
+		if (prev_win_start == rounds[i].Rounds.WindowStartTs) && (prev_win_end == rounds[i].Rounds.WindowEndTs) {
+			continue // same window 
+		}
+		// window changed
+		rounds[widx].Rounds.WindowSpan = i-widx
+		rounds[widx].Rounds.WindowNum = wcounter
+		widx = i
+		prev_win_start = rounds[widx].Rounds.WindowStartTs
+		prev_win_end = rounds[widx].Rounds.WindowEndTs
+		wcounter++
+	}
+	rounds[widx].Rounds.WindowSpan = i-widx
+	rounds[widx].Rounds.WindowNum = wcounter
 	return rounds,num_outcomes,outcomes
 }
 func (ss *SQLStorage) Get_initial_report_redeemed_record(market_aid int64) *p.IniRepRedeemed {
@@ -969,7 +1039,6 @@ func (ss *SQLStorage) Get_losing_rep_participants(market_aid int64) []p.RepLosin
 				"TO_CHAR(c.time_stamp, 'dd/mm/yyyy HH:ii')," +
 				"c.reporter_aid," +
 				"ra.addr," +
-				"m.market_type," +
 				"m.winning_outcome," +
 				"c.outcome_idx," +
 				"c.amount_staked, " +
@@ -995,13 +1064,12 @@ func (ss *SQLStorage) Get_losing_rep_participants(market_aid int64) []p.RepLosin
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.RepLosingParticipant
-		var mkt_type,winning_outc int
+		var winning_outc int
 		err := rows.Scan(
 			&rec.TimeStamp,
 			&rec.DateTime,
 			&rec.ReporterAid,
 			&rec.ReporterAddr,
-			&mkt_type,
 			&winning_outc,
 			&rec.OutcomeIdx,
 			&rec.RepLost,

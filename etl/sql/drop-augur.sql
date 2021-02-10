@@ -40,6 +40,7 @@ DROP TABLE IF EXISTS
 	noshow_bond_chg,
 	crowdsourcer_created,
 	crowdsourcer_completed,
+	crowdsourcer_contrib,
 	crowdsourcer_redeemed,
 	dispute_window,
 	rep_stake_chg,
