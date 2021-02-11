@@ -1502,7 +1502,11 @@ type InitialReportInfo struct {
 	InitialReporterAid		int64
 	ActualReporterAid		int64
 	TimeStamp				int64
+	WinStartTs				int64
+	WinEndTs				int64
+	ScalarValue				float64
 	AmountStaked			float64
+	MktType					int
 	OutcomeIdx				int
 	IsDesignated			bool
 	OutcomeStr				string
@@ -1511,6 +1515,8 @@ type InitialReportInfo struct {
 	TxHash					string
 	TxHashSh				string
 	DateTime				string
+	WinStartDate			string
+	WinEndDate				string
 }
 type CrowdsourcerInfo struct {
 	CrowdsourcerAid			int64
@@ -1550,10 +1556,13 @@ type DisputeInfo struct{
 	MinDisputeSize				float64
 	TotalRepPayout				float64
 	RepInMarket					float64
+	ScalarValue					float64
+	MktType						int
 	OutcomeIdx					int
 	DisputeRoundStart			int
 	DisputeRoundEnd				int
 	PacingOn					bool	// temporal halt on all reporting (if true)
+	Completed					bool
 	CrowdsourcerAddr			string
 	ReporterAddr				string
 	OutcomeStr					string
@@ -1578,9 +1587,12 @@ type DisputeRound struct {
 	WindowStartTs			int64
 	WindowEndTs				int64
 	DisputeWinAid			int64
+	CompletedTs				int64
 	RepPayout				float64 // collected REP (sum of all contributions) for this round
 	MarketRep				float64	// accumulated REP amount
 	MinDisputeSize			float64
+	ScalarValue				float64
+	MktType					int
 	OutcomeIdx				int
 	RoundNum				int
 	Completed				bool
@@ -1590,18 +1602,24 @@ type DisputeRound struct {
 	OutcomeStr				string
 	WindowStartDate			string
 	WindowEndDate			string
+	CompletedDate			string
 }
 type OutcomeRounds struct {
 	MarketRep				float64
 	TimeStamp				int64
 	WindowStartTs			int64
 	WindowEndTs				int64
+	CompletedTs				int64
+	ScalarValue				float64
+	MktType					int
 	WindowNum				int		// consecutive window number (local to current report)
 	WindowSpan				int		// how many rounds does the window span
 	RoundNum				int
+	Completed				bool
 	DateTime				string
 	WindowStartDate			string
 	WindowEndDate			string
+	CompletedDate			string
 	ORounds					[]DisputeRound
 }
 type RoundsRow struct {
@@ -1615,6 +1633,7 @@ type IniRepRedeemed struct {
 	TimeStamp				int64
 	Amount					float64
 	RepReceived				float64
+	ScalarValue				float64
 	OutcomeIdx				int
 	OutcomeStr				string
 	DateTime				string

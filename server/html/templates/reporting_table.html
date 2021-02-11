@@ -15,7 +15,10 @@ This table shows dispute rounds sequentially from left to right: <br/>
 	<tr>
 		<td>
 			<table>
-			<tr><td>&nbsp;</br>&nbsp;</td></tr>
+				<tr><td>
+						&nbsp;</br>&nbsp;<br/>&nbsp;<br/>&nbsp;
+						<br/>&nbsp;<br/>&nbsp;<br/>&nbsp;<br/>
+				</td></tr>
 			{{- range $i, $rpt := .OutcomesSplit }}
 			<tr><td>{{.}}</td></tr>
 			{{ end }}
@@ -27,23 +30,35 @@ This table shows dispute rounds sequentially from left to right: <br/>
 			<table class="report_rounds">
 				<tr>
 					{{- range $i, $rpt := .RoundTable }}
+					{{ if gt .Rounds.WindowNum 0 }}
 					<td colspan={{.Rounds.WindowSpan}} style="text-align: center">
-						{{.Rounds.WindowNum}}<br/>
+						Window {{.Rounds.WindowNum}}<br/>
 						{{.Rounds.WindowStartDate}} - {{.Rounds.WindowEndDate}}
 					</td>
+					{{- end }}
 					{{- end }}
 				</tr>
 				<tr class="market_trades">
 					{{- range $i, $rpt := .RoundTable }}
 					<td style="text-align:center">
-						wspa = {{ .Rounds.WindowSpan }}<br/>
-						{{ if eq 1 .Rounds.RoundNum }}
+						{{ if eq -1 .Rounds.RoundNum }}
 						Initial Round
 						{{ else }}
 						Round {{.Rounds.RoundNum}}
 						{{ end }}
 						<br/>
-						{{.Rounds.DateTime}}
+						{{ if eq 2 .Rounds.MktType }}
+						Scalar Value : {{.Rounds.ScalarValue }} <br/>
+						{{ end }}
+						Started: {{.Rounds.DateTime}}
+						<br/>
+						Completed: {{.Rounds.CompletedDate}}
+						<br/>
+						{{ if eq false .Rounds.Completed }}
+						Status: <font color=red><b>Incomplete</b></font>
+						{{ else }}
+						Status: <font color=green><b>Completed</b></font>
+						{{ end }}
 						<table>
 							{{- range $i, $rpt := .Rounds.ORounds}}
 								<tr>

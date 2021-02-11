@@ -63,6 +63,8 @@ const (
 	REPORTING_PARTICIPANT_DISAVOWED = "b20adf682c8f82b94a135452f54ac4483c9ee8c9b2324e946120696ab1d034b4"
 	REPORTING_FEE_CHANGED = "adddfaec4505d90a6a211907536944e6e1af7ff5cf6d1873de43e36020f36009"
 	PARTICIPATION_TOKENS_REDEEMED = "18052b5e29020458e154999fa71891a5db3404a5b0b9c5ec60c90adca7d38d63"
+
+	NUM_AUGUR_CONTRACTS int = 35
 )
 var (
 	evt_market_created,_ = hex.DecodeString(MARKET_CREATED)
@@ -139,6 +141,10 @@ func get_event_ids(from_tx_id,to_tx_id int64) []int64 {
 		event_list := storage.Get_tx_ids_from_evt_logs_by_signature(
 			e.Signature,e.ContractAid,from_tx_id,to_tx_id,
 		)
+		/*fmt.Printf("dumping ids for sig %v\n",e.Signature)
+		for _,v := range event_list {
+			fmt.Printf("%v,",v)
+		}*/
 		output = append(output,event_list...)
 	}
 	sort.Slice(output, func(i, j int) bool { return output[i] < output[j] })
@@ -247,6 +253,27 @@ func main() {
 		Fatalf("Can't find contract addresses in 'contract_addresses' table")
 	}
 	caddrs = &caddrs_obj
+	net_caddrs,err := Get_contract_addresses_from_net(caddrs_obj.AugurTrading,eclient)
+	if err != nil {
+		Fatalf("Can't get contract addresses from Ethereum Network: %v",err)
+	}
+	num_mismatches,match_errors := Contract_addresses_match(caddrs,&net_caddrs)
+	if num_mismatches > 0 {
+		if num_mismatches >= (NUM_AUGUR_CONTRACTS - 4) { // -1 for AugurTrading , -1 for AccountLoader
+			fmt.Printf("Empty contract addresses found, populating...")
+			Info.Printf("Empty contract addresses found, populating...")
+			storage.Update_contract_addresses(&net_caddrs)
+			fmt.Printf("Please restart")
+			Info.Printf("Please restart")
+			os.Exit(0)
+		} else {
+			Error.Printf("%v contract addresses mismatch, errors: %v\n",num_mismatches,match_errors)
+			Info.Printf("Exiting due to contract address mismatch.")
+			fmt.Printf("Exiting due to contract address mismatch.")
+			os.Exit(1)
+		}
+	}
+
 
 	all_contracts = Load_all_artifacts("./abis/augur-artifacts-abi.json")
 

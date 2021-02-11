@@ -33,8 +33,12 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 
 	ss.Info.Printf("insert_initial_report_evt(): market_aid=%v, reporter_id=%v\n",market_aid,reporter_aid)
 
-	market_type,mticks,_ := ss.get_market_type_and_ticks(market_aid)
+	market_type,mticks,lo_price,_ := ss.get_market_type_ticks_lo_price(market_aid)
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
+	scalar_val := float64(0)
+	if market_type == 2 { // scalar
+		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))/float64(p.SCALAR_MULTIPLIER)
+	}
 
 	var query string
 	query = `
@@ -46,6 +50,7 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 			reporter_aid,
 			ini_reporter_aid,
 			outcome_idx,
+			scalar_val,
 			is_designated,
 			amount_staked,
 			pnumerators,
@@ -53,9 +58,9 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 			next_win_start,
 			next_win_end
 		) VALUES (
-			$1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9::DECIMAL/1e+18,$10,$11,
-			TO_TIMESTAMP($12),
-			TO_TIMESTAMP($13)
+			$1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10::DECIMAL/1e+18,$11,$12,
+			TO_TIMESTAMP($13),
+			TO_TIMESTAMP($14)
 		)`
 	result,err := ss.db.Exec(query,
 			agtx.BlockNum,
@@ -65,6 +70,7 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 			reporter_aid,
 			ini_reporter_aid,
 			reported_outcome,
+			scalar_val,
 			evt.IsDesignatedReporter,
 			amount_staked,
 			payout_numerators,
@@ -121,8 +127,12 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDispu
 	ss.Info.Printf("insert_dispute_crows_contrib(): market_aid=%v, reporter_id=%v, signer_aid=%v",
 					market_aid,reporter_aid,signer_aid)
 
-	market_type,mticks,_ := ss.get_market_type_and_ticks(market_aid)
+	market_type,mticks,lo_price,_ := ss.get_market_type_ticks_lo_price(market_aid)
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
+	scalar_val := float64(0)
+	if market_type == 2 { // scalar
+		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))/float64(p.SCALAR_MULTIPLIER)
+	}
 
 	var query string
 	query = `
@@ -135,14 +145,15 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDispu
 			crowdsrc_aid,
 			dispute_round,
 			outcome_idx,
+			scalar_val,
 			amount_staked,
 			description,
 			pnumerators,
 			current_stake,
 			stake_remaining
 		) VALUES (
-			$1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,
-			$9::DECIMAL/1e+18,$10,$11,$12::DECIMAL/1e+18,$13::DECIMAL/1e+18
+			$1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,
+			$10::DECIMAL/1e+18,$11,$12,$13::DECIMAL/1e+18,$14::DECIMAL/1e+18
 		)`
 	result,err := ss.db.Exec(query,
 			agtx.BlockNum,
@@ -153,6 +164,7 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDispu
 			crowdsrc_aid,
 			dispute_round,
 			reported_outcome,
+			scalar_val,
 			amount_staked,
 			evt.Description,
 			payout_numerators,
@@ -187,13 +199,17 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_created(agtx *p.AugurTx,timest
 	market_aid:=ss.Lookup_or_create_address(evt.Market.String(),agtx.BlockNum,agtx.TxId)
 	dispute_aid:=ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
 	payouts := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
-	market_type,mticks,_ := ss.get_market_type_and_ticks(market_aid)
+	market_type,mticks,lo_price,_ := ss.get_market_type_ticks_lo_price(market_aid)
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
+	scalar_val := float64(0)
+	if market_type == 2 { // scalar
+		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))/float64(p.SCALAR_MULTIPLIER)
+	}
 	var query string
 	query = "INSERT INTO crowdsourcer_created (" +
 				"block_num,tx_id,time_stamp,market_aid,crowdsrc_aid," +
-				"dispute_round,outcome_idx,payout_numerators,size" +
-			") VALUES ($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9::DECIMAL/1e+18)"
+				"dispute_round,outcome_idx,scalar_val,payout_numerators,size" +
+			") VALUES ($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10::DECIMAL/1e+18)"
 
 	_,err := ss.db.Exec(query,
 		agtx.BlockNum,
@@ -203,6 +219,7 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_created(agtx *p.AugurTx,timest
 		dispute_aid,
 		evt.DisputeRound.Int64(),
 		reported_outcome,
+		scalar_val,
 		payouts,
 		evt.Size.String(),
 	)
@@ -290,13 +307,18 @@ func (ss *SQLStorage) Insert_initial_reporter_redeemed(agtx *p.AugurTx,evt *p.EI
 	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),agtx.BlockNum,agtx.TxId)
 	ini_rep_aid := ss.Lookup_or_create_address(evt.InitialReporter.String(),agtx.BlockNum,agtx.TxId)
 	payout_numerators := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
-	market_type,mticks,_ := ss.get_market_type_and_ticks(market_aid)
+	market_type,mticks,lo_price,_ := ss.get_market_type_ticks_lo_price(market_aid)
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
+	scalar_val := float64(0)
+	if market_type == 2 { // scalar
+		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))/float64(p.SCALAR_MULTIPLIER)
+	}
+
 	var query string
 	query = "INSERT INTO irep_redeem (" +
 				"block_num,tx_id,market_aid,reporter_aid,ini_rep_aid,time_stamp,"+
-				"outcome_idx,amount,rep,payout_numerators" +
-				") VALUES ($1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7,$8::DECIMAL/1e+18,$9::DECIMAL/1e+18,$10)"
+				"outcome_idx,scalar_val,amount,rep,payout_numerators" +
+				") VALUES ($1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7,$8,$9::DECIMAL/1e+18,$10::DECIMAL/1e+18,$11)"
 
 	_,err := ss.db.Exec(query,
 		agtx.BlockNum,
@@ -306,6 +328,7 @@ func (ss *SQLStorage) Insert_initial_reporter_redeemed(agtx *p.AugurTx,evt *p.EI
 		ini_rep_aid,
 		evt.Timestamp.Int64(),
 		reported_outcome,
+		scalar_val,
 		evt.AmountRedeemed.String(),
 		evt.RepReceived.String(),
 		payout_numerators,
@@ -332,13 +355,18 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_redeemed(agtx *p.AugurTx,evt *
 	reporter_aid := ss.Lookup_or_create_address(evt.Reporter.String(),agtx.BlockNum,agtx.TxId)
 	crowdsourcer_aid := ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
 	payout_numerators := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
-	market_type,mticks,_ := ss.get_market_type_and_ticks(market_aid)
+	market_type,mticks,lo_price,_ := ss.get_market_type_ticks_lo_price(market_aid)
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
+	scalar_val := float64(0)
+	if market_type == 2 { // scalar
+		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))/float64(p.SCALAR_MULTIPLIER)
+	}
+
 	var query string
 	query = "INSERT INTO crowdsourcer_redeemed (" +
 				"block_num,tx_id,market_aid,reporter_aid,crowdsourcer_aid," +
-				"time_stamp,outcome_idx,amount,rep,payout_numerators" +
-			") VALUES ($1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7,$8::DECIMAL/1e+18,$9::DECIMAL/1e+18,$10)"
+				"time_stamp,outcome_idx,scalar_val,amount,rep,payout_numerators" +
+			") VALUES ($1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7,$8,$9::DECIMAL/1e+18,$10::DECIMAL/1e+18,$11)"
 
 	_,err := ss.db.Exec(query,
 		agtx.BlockNum,
@@ -348,6 +376,7 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_redeemed(agtx *p.AugurTx,evt *
 		crowdsourcer_aid,
 		evt.Timestamp.Int64(),
 		reported_outcome,
+		scalar_val,
 		evt.AmountRedeemed.String(),
 		evt.RepReceived.String(),
 		payout_numerators,
@@ -373,15 +402,19 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_completed(agtx *p.AugurTx,evt 
 	market_aid := ss.Lookup_address_id(evt.Market.String())
 	crowdsourcer_aid := ss.Lookup_or_create_address(evt.DisputeCrowdsourcer.String(),agtx.BlockNum,agtx.TxId)
 	payout_numerators := p.Bigint_ptr_slice_to_str(&evt.PayoutNumerators,",")
-	market_type,mticks,_ := ss.get_market_type_and_ticks(market_aid)
+	market_type,mticks,lo_price,_ := ss.get_market_type_ticks_lo_price(market_aid)
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
+	scalar_val := float64(0)
+	if market_type == 2 { // scalar
+		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))/float64(p.SCALAR_MULTIPLIER)
+	}
 	var query string
 	query = "INSERT INTO crowdsourcer_completed (" +
 				"block_num,tx_id,time_stamp,market_aid,crowdsrc_aid,next_win_start,next_win_end," +
-				"dispute_round,outcome_idx,pacing_on,tot_rep_payout,tot_rep_market,payout_numerators" +
+				"dispute_round,outcome_idx,scalar_val,pacing_on,tot_rep_payout,tot_rep_market,payout_numerators" +
 			") VALUES (" +
 				"$1,$2,TO_TIMESTAMP($3),$4,$5,TO_TIMESTAMP($6),TO_TIMESTAMP($7),"+
-				"$8,$9,$10,$11::DECIMAL/1e+18,$12::DECIMAL/1e+18,$13"+
+				"$8,$9,$10,$11,$12::DECIMAL/1e+18,$13::DECIMAL/1e+18,$14"+
 			")"
 
 	_,err := ss.db.Exec(query,
@@ -394,6 +427,7 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_completed(agtx *p.AugurTx,evt 
 		evt.NextWindowEndTime.Int64(),
 		evt.DisputeRound.Int64(),
 		reported_outcome,
+		scalar_val,
 		evt.PacingOn,
 		evt.TotalRepStakedInPayout.String(),
 		evt.TotalRepStakedInMarket.String(),
@@ -601,14 +635,17 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 				"ira.addr," +
 				"ara.address_id," +
 				"ara.addr," +
+				"m.market_type," +
 				"r.outcome_idx," +
+				"r.scalar_val," +
 				"r.is_designated," +
 				"r.amount_staked AS amount_staked "+
 			"FROM initial_report r " +
 				"JOIN transaction tx ON r.tx_id=tx.id " +
-				"LEFT JOIN address ira ON ini_reporter_aid=ira.address_id " +
-				"LEFT JOIN address ara ON reporter_aid=ara.address_id "+
-			"WHERE market_aid=$1"
+				"JOIN market m ON r.market_aid=m.market_aid " +
+				"LEFT JOIN address ira ON r.ini_reporter_aid=ira.address_id " +
+				"LEFT JOIN address ara ON r.reporter_aid=ara.address_id "+
+			"WHERE r.market_aid=$1"
 	row := ss.db.QueryRow(query,market_aid)
 	err=row.Scan(
 		&rst.InitialReport.TimeStamp,
@@ -618,7 +655,9 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 		&rst.InitialReport.InitialReporterAddr,
 		&rst.InitialReport.ActualReporterAid,
 		&rst.InitialReport.ActualReporterAddr,
+		&rst.InitialReport.MktType,
 		&rst.InitialReport.OutcomeIdx,
+		&rst.InitialReport.ScalarValue,
 		&rst.InitialReport.IsDesignated,
 		&rst.InitialReport.AmountStaked,
 	)
@@ -633,15 +672,16 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 	rst.InitialReport.OutcomeStr=get_outcome_str(uint8(mkt_type),rst.InitialReport.OutcomeIdx,&outcomes)
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM cr.time_stamp)::BIGINT created_ts," +
-				"cr.time_stamp," +
+				"TO_CHAR(cr.time_stamp,'dd/mm/yyyy HH:ii')," +
 				"EXTRACT(EPOCH FROM co.time_stamp)::BIGINT completed_ts," +
-				"co.time_stamp," +
+				"TO_CHAR(co.time_stamp,'dd/mm/yyyy HH:ii')," +
 				"cr_addr.addr, "+
 				"cr_tx.tx_hash," +
 				"co_tx.tx_hash," +
 				"cr.crowdsrc_aid," +
 				"cr.dispute_round rstart,"+	// round start (round in Augur = number of participants)
 				"co.dispute_round rend," +	// round end
+				"m.market_type," +
 				"cr.outcome_idx," +
 				"round(cr.size,5) min_size," +
 				"co.pacing_on p," +
@@ -653,6 +693,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 				"d.end_time dwin_end," +
 				"d.window_aid dwin_aid " +
 			"FROM crowdsourcer_created cr " +
+				"JOIN market m ON cr.market_aid=m.market_aid " +
 				"LEFT JOIN transaction co_tx ON cr.tx_id=co_tx.id " +
 				"LEFT JOIN transaction cr_tx ON cr.tx_id=cr_tx.id " +
 				"LEFT JOIN dispute_window d ON cr.dispute_win_id = d.id " +
@@ -687,6 +728,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 			&rec.CrowdsourcerAid,
 			&rec.DisputeRoundStart,
 			&null_round_end,
+			&rec.MktType,
 			&rec.OutcomeIdx,
 			&rec.MinDisputeSize,
 			&null_pacing,
@@ -702,7 +744,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		if null_completed_ts.Valid { rec.CompletedTs = null_completed_ts.Int64 }
+		if null_completed_ts.Valid { rec.CompletedTs = null_completed_ts.Int64; rec.Completed=true }
 		if null_completed_date.Valid { rec.CompletedDate = null_completed_date.String }
 		if null_tx_hash.Valid { rec.CompletedTxHash = null_tx_hash.String }
 		if null_round_end.Valid { rec.DisputeRoundEnd = int(null_round_end.Int64) }
@@ -736,19 +778,26 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 	var query string
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts," +
-				"TO_CHAR(time_stamp, 'dd/mm/yyyy')," +
+				"TO_CHAR(time_stamp, 'dd/mm/yyyy HH:ii')," +
 				"tx.tx_hash," +
 				"ira.address_id," +
 				"ira.addr," +
 				"ara.address_id," +
 				"ara.addr," +
+				"m.market_type," +
 				"r.outcome_idx," +
+				"r.scalar_val," +
 				"r.is_designated," +
-				"r.amount_staked AS amount_staked "+
+				"r.amount_staked AS amount_staked,"+
+				"EXTRACT(EPOCH FROM m.end_time)::BIGINT win_start_ts," +
+				"TO_CHAR(m.end_time, 'dd/mm/yyyy HH:ii') win_start_date," +
+				"EXTRACT(EPOCH FROM m.end_time+interval '1' day)::BIGINT win_end_ts," +
+				"TO_CHAR(m.end_time+interval '1' day, 'dd/mm/yyyy HH:ii') win_end_date " +
 			"FROM initial_report r " +
 				"JOIN transaction tx ON r.tx_id=tx.id " +
-				"LEFT JOIN address ira ON ini_reporter_aid=ira.address_id " +
-				"LEFT JOIN address ara ON reporter_aid=ara.address_id "+
+				"JOIN market m ON r.market_aid=m.market_aid " +
+				"LEFT JOIN address ira ON r.ini_reporter_aid=ira.address_id " +
+				"LEFT JOIN address ara ON r.reporter_aid=ara.address_id "+
 			"WHERE r.market_aid=$1"
 	row := ss.db.QueryRow(query,market_aid)
 	var inirep p.InitialReportInfo
@@ -760,19 +809,29 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 		&inirep.InitialReporterAddr,
 		&inirep.ActualReporterAid,
 		&inirep.ActualReporterAddr,
+		&inirep.MktType,
 		&inirep.OutcomeIdx,
+		&inirep.ScalarValue,
 		&inirep.IsDesignated,
 		&inirep.AmountStaked,
+		&inirep.WinStartTs,
+		&inirep.WinStartDate,
+		&inirep.WinEndTs,
+		&inirep.WinEndDate,
 	)
 	if (err == nil) {
 		if inirep.TimeStamp != 0 {
 			var rr p.RoundsRow
 			var rec p.DisputeRound
-			rr.Rounds.RoundNum = 1
+			rr.Rounds.RoundNum = -1
 			rr.Rounds.ORounds = make([]p.DisputeRound,0,8)
+			rr.Rounds.MktType = inirep.MktType
 
 			for i:=0; i<num_outcomes ; i++ {
 				var empty_rec p.DisputeRound
+				if (inirep.MktType == 2) && (inirep.OutcomeIdx==2){ // scalar
+					inirep.OutcomeIdx=1 // skip outcome idx = 1
+				}
 				if i==inirep.OutcomeIdx {
 					rec.TimeStamp = inirep.TimeStamp
 					rec.DateTime = inirep.DateTime
@@ -783,11 +842,25 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 					rr.Rounds.MarketRep = inirep.AmountStaked
 					rr.Rounds.TimeStamp = inirep.TimeStamp
 					rr.Rounds.DateTime = inirep.DateTime
+					rr.Rounds.WindowStartTs = inirep.WinStartTs
+					rr.Rounds.WindowEndTs = inirep.WinEndTs
+					rr.Rounds.WindowStartDate = inirep.WinStartDate
+					rr.Rounds.WindowEndDate = inirep.WinEndDate
+					rr.Rounds.CompletedTs = rec.TimeStamp
+					rr.Rounds.CompletedDate = rec.DateTime
+					rr.Rounds.Completed = true
+					rr.Rounds.MktType = inirep.MktType
+					rr.Rounds.ScalarValue = inirep.ScalarValue
 				} else {
 					rr.Rounds.ORounds = append(rr.Rounds.ORounds,empty_rec)
 				}
 			}
 			rounds = append(rounds,rr)
+		}
+	} else {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
 		}
 	}
 /* on hold
@@ -807,26 +880,29 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 			*/
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM cr.time_stamp)::BIGINT ts," +
-				"TO_CHAR(cr.time_stamp, 'dd/mm/yyyy')," +
+				"TO_CHAR(cr.time_stamp, 'dd/mm/yyyy HH:ii')," +
 				"EXTRACT(EPOCH FROM co.time_stamp)::BIGINT ts," +
-				"TO_CHAR(co.time_stamp, 'dd/mm/yyyy')," +
+				"TO_CHAR(co.time_stamp, 'dd/mm/yyyy HH:ii')," +
 				"cr.size," +
 				"co.tot_rep_payout," +
 				"co.tot_rep_market," +
 				"cr.dispute_round," +
 				"co.dispute_round," +
 				"co.pacing_on, " +
+				"m.market_type, " +
 				"cr.outcome_idx, " +
+				"cr.scalar_val, " +
 				"EXTRACT(EPOCH FROM d.start_time)::BIGINT dwin_start_ts," +
-				"d.start_time dwin_start," +
+				"TO_CHAR(d.start_time,'dd/mm/yyyy HH:ii') dwin_start," +
 				"EXTRACT(EPOCH FROM d.end_time)::BIGINT dwin_end_ts," +
-				"d.end_time dwin_end," +
+				"TO_CHAR(d.end_time,'dd/mm/yyyy HH:ii') dwin_end," +
 				"d.window_aid dwin_aid " +
 			"FROM crowdsourcer_created cr " +
 				"JOIN dispute_window d ON cr.dispute_win_id=d.id " +
+				"JOIN market m ON cr.market_aid = m.market_aid " +
 				"LEFT JOIN crowdsourcer_completed co ON co.crowdsrc_aid=cr.crowdsrc_aid " +
 			"WHERE cr.market_aid=$1 " +
-			"ORDER BY cr.time_stamp"
+			"ORDER BY co.dispute_round,cr.dispute_round"
 	fmt.Printf("query=%v\n",query)
 	rows,err := ss.db.Query(query,market_aid)
 	if (err!=nil) {
@@ -854,7 +930,9 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 			&rec.RoundNum,
 			&null_dispute_round,
 			&null_pacing,
+			&rec.MktType,
 			&rec.OutcomeIdx,
+			&rec.ScalarValue,
 			&rec.WindowStartTs,
 			&rec.WindowStartDate,
 			&rec.WindowEndTs,
@@ -866,8 +944,8 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 			os.Exit(1)
 		}
 		if null_ts.Valid {
-			rec.TimeStamp = null_ts.Int64
-			rec.DateTime = null_date.String
+			rec.CompletedTs = null_ts.Int64
+			rec.CompletedDate = null_date.String
 		}
 		if null_rep_payout.Valid { rec.RepPayout = null_rep_payout.Float64 }
 		if null_rep_market.Valid { rec.MarketRep = null_rep_market.Float64 }
@@ -875,11 +953,17 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 		if null_pacing.Valid { rec.PacingOn = null_pacing.Bool }
 		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
 
+		if null_rep_payout.Valid {
+			rr.Rounds.Completed = true
+		}
 		//var outc_rounds p.OutcomeRounds
 		rr.Rounds.RoundNum = rec.RoundNum
 		rr.Rounds.ORounds = make([]p.DisputeRound,0,8)
 		for i:=0; i<num_outcomes ; i++ {
 			var empty_rec p.DisputeRound
+			if (rec.MktType == 2) && (rec.OutcomeIdx==2) { // scalar
+				rec.OutcomeIdx=1 // skip outcome idx = 1
+			}
 			if i==rec.OutcomeIdx {
 				rec.Color = true
 				rr.Rounds.ORounds = append(rr.Rounds.ORounds,rec)
@@ -890,6 +974,10 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 				rr.Rounds.WindowEndDate = rec.WindowEndDate
 				rr.Rounds.WindowStartTs = rec.WindowStartTs
 				rr.Rounds.WindowEndTs = rec.WindowEndTs
+				rr.Rounds.CompletedTs = rec.CompletedTs
+				rr.Rounds.CompletedDate = rec.CompletedDate
+				rr.Rounds.MktType = rec.MktType
+				rr.Rounds.ScalarValue = rec.ScalarValue
 			} else {
 				if len(rounds) > 0 {
 					prev_rec := &rounds[len(rounds)-1].Rounds.ORounds[i]
@@ -897,6 +985,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 						empty_rec = *prev_rec
 						empty_rec.Color = false
 						empty_rec.PacingOn = false
+						empty_rec.Completed = false
 					}
 				}
 				rr.Rounds.ORounds = append(rr.Rounds.ORounds,empty_rec)
@@ -984,7 +1073,7 @@ func (ss *SQLStorage) Get_redeemed_participants(market_aid int64) []p.RedeemedPa
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
 				"TO_CHAR(c.time_stamp, 'dd/mm/yyyy HH:ii')," +
-				"reporter_aid," +
+				"c.reporter_aid," +
 				"ra.addr," +
 				"outcome_idx," +
 				"amount, " +

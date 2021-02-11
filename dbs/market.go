@@ -60,6 +60,10 @@ func adjust_outcomes_str(mkt_type int,outcomes string) string {
 	}
 	return outcomes
 }
+func calc_scalar_value_from_numerators(payout_numerators []*big.Int) {
+
+
+}
 func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,validity_bond string,evt *p.EMarketCreated) {
 
 	var query string
@@ -342,6 +346,25 @@ func (ss *SQLStorage) get_market_type_and_ticks(market_aid int64) (int,int64,err
 		os.Exit(1)
 	}
 	return market_type,num_ticks,nil
+}
+func (ss *SQLStorage) get_market_type_ticks_lo_price(market_aid int64) (int,int64,float64,error) {
+
+	var query string
+	query = "SELECT market_type,num_ticks,lo_price FROM market WHERE market_aid=$1"
+
+	var market_type int
+	var num_ticks int64
+	var lo_price float64
+	err:=ss.db.QueryRow(query,market_aid).Scan(&market_type,&num_ticks,&lo_price);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,0,0.0,err
+		}
+		d_query:=strings.ReplaceAll(query,"$1",fmt.Sprintf("%v",market_aid))
+		ss.Log_msg(fmt.Sprintf("DB Error: %v, q=%v market_aid=%v\n",err,d_query,market_aid))
+		os.Exit(1)
+	}
+	return market_type,num_ticks,lo_price,nil
 }
 func (ss *SQLStorage) Get_market_price_range(market_aid int64) (float64,error) {
 

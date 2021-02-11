@@ -453,6 +453,7 @@ CREATE TABLE initial_report ( -- InitialReportSubmitted event
 	reporter_aid		BIGINT NOT NULL,			-- 
 	ini_reporter_aid	BIGINT NOT NULL,			-- 
 	outcome_idx			SMALLINT NOT NULL,
+	scalar_val			DECIMAL NOT NULL,-- the scalar value for scalar markets
 	is_designated		BOOLEAN DEFAULT false,
 	amount_staked		DECIMAL(64,18) NOT NULL,
 	pnumerators			TEXT NOT NULL,		-- payout numerators
@@ -470,6 +471,7 @@ CREATE TABLE crowdsourcer_contrib (
 	crowdsrc_aid		BIGINT NOT NULL,
 	dispute_round		BIGINT NOT NULL,
 	outcome_idx			SMALLINT NOT NULL,
+	scalar_val			DECIMAL NOT NULL,-- the scalar value for scalar markets
 	amount_staked		DECIMAL(64,18) NOT NULL,
 	current_stake		DECIMAL(64,18) NOT NULL,
 	stake_remaining		DECIMAL(64,18) NOT NULL,
@@ -486,6 +488,7 @@ CREATE TABLE crowdsourcer_created (			--
 	dispute_win_id		BIGINT NOT NULL,
 	dispute_round		INT NOT NULL,
 	outcome_idx			SMALLINT NOT NULL,
+	scalar_val			DECIMAL NOT NULL,-- the scalar value for scalar markets
 	payout_numerators	TEXT DEFAULT '',
 	size				DECIMAL(64,18)
 );
@@ -500,6 +503,7 @@ CREATE table crowdsourcer_completed (	--
 	next_win_end		TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),
 	dispute_round		INT NOT NULL,
 	outcome_idx			SMALLINT NOT NULL,
+	scalar_val			DECIMAL NOT NULL,-- the scalar value for scalar markets
 	pacing_on			BOOLEAN NOT NULL,
 	payout_numerators	TEXT DEFAULT '',
 	tot_rep_payout		DECIMAL(64,18),
@@ -514,6 +518,7 @@ CREATE table crowdsourcer_redeemed ( -- DisputeCrowdsourcerRedeemed event
 	crowdsourcer_aid	BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	outcome_idx			SMALLINT NOT NULL,
+	scalar_val			DECIMAL NOT NULL,-- the scalar value for scalar markets
 	amount				DECIMAL(64,18) NOT NULL,
 	rep					DECIMAL(64,18) NOT NULL,
 	payout_numerators	TEXT DEFAULT ''
@@ -564,6 +569,7 @@ CREATE TABLE irep_redeem ( -- InitialReporterRedeemed event
 	ini_rep_aid			BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	outcome_idx			SMALLINT NOT NULL,
+	scalar_val			DECIMAL NOT NULL,-- the scalar value for scalar markets
 	amount				DECIMAL(64,18) NOT NULL,
 	rep					DECIMAL(64,18) NOT NULL,
 	payout_numerators	TEXT DEFAULT ''
