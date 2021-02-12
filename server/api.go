@@ -732,7 +732,7 @@ func a1_mkt_trade_history(c *gin.Context) {
 	if !success {
 		return
 	}
-	low_price,err := augur_srv.storage.Get_market_price_range(market_aid)
+	lo_price,err := augur_srv.storage.Get_market_lo_price(market_aid)
 	if err!=nil {
 		c.JSON(http.StatusOK,gin.H{
 				"status": 0,
@@ -741,7 +741,7 @@ func a1_mkt_trade_history(c *gin.Context) {
 		return
 	}
 
-	price_history := augur_srv.storage.Get_full_price_history(mkt_addr,market_aid,low_price)
+	price_history := augur_srv.storage.Get_full_price_history(mkt_addr,market_aid,lo_price)
 
 	var status int = 1
 	var err_str string = ""

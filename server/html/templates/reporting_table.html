@@ -18,6 +18,9 @@ This table shows dispute rounds sequentially from left to right: <br/>
 				<tr><td>
 						&nbsp;</br>&nbsp;<br/>&nbsp;<br/>&nbsp;
 						<br/>&nbsp;<br/>&nbsp;<br/>&nbsp;<br/>
+						{{ if eq 2 .MarketInfo.MktType }}
+						&nbsp;<br/>
+						{{ end }}
 				</td></tr>
 			{{- range $i, $rpt := .OutcomesSplit }}
 			<tr><td>{{.}}</td></tr>

@@ -884,21 +884,6 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 			os.Exit(1)
 		}
 	}
-/* on hold
-	query = "SELECT " +
-				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
-				"TO_CHAR(cc.time_stamp, 'dd/mm/yyyy')," +
-				"tot_rep_payout," +
-				"tot_rep_market," +
-				"dispute_round, " +
-				"pacing_on, " +
-				"outcome_idx " +
-			"FROM crowdsourcer_completed cc " +
-				"JOIN crowdsourcer_created cr ON cc.crowdsrc_aid=cr.crowdsrc_aid " +
-				"JOIN dispute_window d ON cr.dispute_win_id=d.id " +
-			"WHERE market_aid=$1 " +
-			"ORDER BY time_stamp"
-			*/
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM cr.time_stamp)::BIGINT ts," +
 				"TO_CHAR(cr.time_stamp, 'dd/mm/yyyy HH:ii')," +
@@ -982,6 +967,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 		if null_rep_payout.Valid {
 			rr.Rounds.Completed = true
 		}
+		scalar_values := make([]float64,0,4)
 		//var outc_rounds p.OutcomeRounds
 		rr.Rounds.RoundNum = rec.RoundNum
 		rr.Rounds.ORounds = make([]p.DisputeRound,0,8)
@@ -993,6 +979,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 			if i==rec.OutcomeIdx {
 				rec.Color = true
 				rr.Rounds.ORounds = append(rr.Rounds.ORounds,rec)
+				// update current
 				rr.Rounds.MarketRep = rec.MarketRep
 				rr.Rounds.TimeStamp = rec.TimeStamp
 				rr.Rounds.DateTime = rec.DateTime

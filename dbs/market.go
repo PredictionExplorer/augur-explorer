@@ -120,12 +120,21 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,validity_bond st
 	if invalid_num_ticks.CmpAbs(evt.NumTicks) >= 0 {
 		divisor := new(big.Int)
 		divisor.SetString("1000000000000000000",10)	// 10^18
-		big_hi_price := new(big.Int)
-		big_hi_price.Quo(evt.Prices[1],divisor)
+		ss.Info.Printf("divisor=%v\n",divisor.String())
+		big_price := new(big.Int)
+		big_price.Sub(evt.Prices[1],evt.Prices[0])
+		ss.Info.Printf("evt.Prices[1]=%v\n",evt.Prices[1].String())
+		ss.Info.Printf("evt_Prices[0]=%v\n",evt.Prices[0].String())
+		ss.Info.Printf("price after subtraction = %v\n",big_price.String())
+		big_price.Quo(big_price,divisor)
+		ss.Info.Printf("price after division: %v\n",big_price.String())
 		big_decimals := new(big.Int)
-		big_decimals.Quo(evt.NumTicks,big_hi_price)
+		big_decimals.Quo(evt.NumTicks,big_price)
+		ss.Info.Printf("big_decimals = %v\n",big_decimals.String())
 		multiplier := int(big_decimals.Int64())
+		ss.Info.Printf("multiplier = %v\n",multiplier)
 		switch multiplier { // mini log10(x) implementation
+		case 1: decimals = 0
 		case 10: decimals = 1
 		case 100: decimals = 2
 		case 1000: decimals = 3
@@ -390,7 +399,8 @@ func (ss *SQLStorage) get_market_type_and_ticks(market_aid int64) (int,int,int,e
 func (ss *SQLStorage) get_market_type_ticks_lo_price(market_aid int64) (int,int,float64,error) {
 
 	var query string
-	query = "SELECT market_type,num_ticks,lo_price FROM market WHERE market_aid=$1"
+	query = "SELECT market_type,num_ticks,lo_price*POWER(10,decimals) as lo_price " +
+			"FROM market WHERE market_aid=$1"
 
 	var market_type int
 	var num_ticks int
@@ -406,10 +416,10 @@ func (ss *SQLStorage) get_market_type_ticks_lo_price(market_aid int64) (int,int,
 	}
 	return market_type,num_ticks,lo_price,nil
 }
-func (ss *SQLStorage) Get_market_price_range(market_aid int64) (float64,error) {
+func (ss *SQLStorage) Get_market_lo_price(market_aid int64) (float64,error) {
 
 	var query string
-	query = "SELECT lo_price FROM market WHERE market_aid=$1"
+	query = "SELECT lo_price*POWER(10,decimals) as lo_price FROM market WHERE market_aid=$1"
 
 	var lo_price sql.NullFloat64
 	err:=ss.db.QueryRow(query,market_aid).Scan(&lo_price);

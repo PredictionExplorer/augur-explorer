@@ -87,6 +87,13 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,ev
 		mesh_evt_code = p.MeshEvtFilled
 	}
 
+	lo_price,err := ss.Get_market_lo_price(market_aid)
+	if err != nil {
+		ss.Log_msg(
+			fmt.Sprintf("DB error: can't get lo price range for market %v : %v",market_aid,err),
+		)
+		os.Exit(1)
+	}
 	var query string
 	var opcode int = p.OOOpCodeFill
 	ss.Info.Printf("amount = %v, amount_filled = %v, opcode=%v\n",amount,amount_filled,opcode)
@@ -115,7 +122,7 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,ev
 			order_hash
 		) VALUES (
 				$1,$2,$3,$4,$5,$6,$7,
-				` + price + "," +
+				(` + fmt.Sprintf("%v",lo_price) +" + "+ price+ ")," +
 				"(" + amount.String() + "/1e+18)," +
 				"$8," +
 				"(" + token_refund + "/1e+18)," +
