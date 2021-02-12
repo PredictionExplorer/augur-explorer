@@ -135,22 +135,6 @@ var (
 
 	owner_fld_offset int64 = int64(OWNER_FIELD_OFFSET)	// offset to AugurContract::owner field obtained with eth_getStorage()
 )
-func get_event_ids(from_tx_id,to_tx_id int64) []int64 {
-	output := make([]int64 ,0,1024)
-	for _,e := range inspected_events {
-		event_list := storage.Get_tx_ids_from_evt_logs_by_signature(
-			e.Signature,e.ContractAid,from_tx_id,to_tx_id,
-		)
-		/*fmt.Printf("dumping ids for sig %v\n",e.Signature)
-		for _,v := range event_list {
-			fmt.Printf("%v,",v)
-		}*/
-		output = append(output,event_list...)
-	}
-	sort.Slice(output, func(i, j int) bool { return output[i] < output[j] })
-	num_elts:=remove_duplicates(output)
-	return output[0:num_elts]
-}
 func remove_duplicates(nums []int64) int {
 	if len(nums) == 0 {
 		return 0
@@ -164,7 +148,27 @@ func remove_duplicates(nums []int64) int {
 	}
 	return j
 }
-
+func get_event_ids(from_tx_id,to_tx_id int64) []int64 {
+	output := make([]int64 ,0,1024)
+	for _,e := range inspected_events {
+		event_list := storage.Get_tx_ids_from_evt_logs_by_signature(
+			e.Signature,e.ContractAid,from_tx_id,to_tx_id,
+		)
+		if len(event_list)>0 {
+			Info.Printf("dumping ids for sig %v: ",e.Signature)
+		}
+		for _,v := range event_list {
+			Info.Printf("%v,",v)
+		}
+		if len(event_list)>0 {
+			Info.Printf("\n")
+		}
+		output = append(output,event_list...)
+	}
+	sort.Slice(output, func(i, j int) bool { return output[i] < output[j] })
+	num_elts:=remove_duplicates(output)
+	return output[0:num_elts]
+}
 func process_augur_trading_events(exit_chan chan bool,caddrs *ContractAddresses) {
 
 	var max_batch_size int64 = 1024*1000
@@ -188,6 +192,13 @@ func process_augur_trading_events(exit_chan chan bool,caddrs *ContractAddresses)
 			id_upper_limit = last_tx_id
 		}
 		events := get_event_ids(status.LastTxId,id_upper_limit)
+		if len(events) > 0 {
+			Info.Printf("after removing duplicates, tx ids %v: ",events)
+			for _,v := range events {
+				Info.Printf("%v,",v)
+			}
+			Info.Printf("\n")
+		}
 		for _,tx_id := range events {
 			err := process_transaction(tx_id)
 			if err != nil {
@@ -198,8 +209,17 @@ func process_augur_trading_events(exit_chan chan bool,caddrs *ContractAddresses)
 			storage.Update_augur_process_status(&status)
 		}
 		if len(events) == 0 {
-			status.LastTxId = id_upper_limit
-			storage.Update_augur_process_status(&status)
+			last_tx_id,err := storage.Get_last_tx_id()
+			if err != nil {
+				Info.Printf("Error getting last tx id: %v\n",err)
+				os.Exit(1)
+			}
+			if last_tx_id > id_upper_limit {
+				// events we were looking for not found, but there are more data so we
+				// moive the ID range forward
+				status.LastTxId = id_upper_limit
+				storage.Update_augur_process_status(&status)
+			}
 		}
 		proc_open_orders()
 		time.Sleep(1 * time.Second)
@@ -260,16 +280,16 @@ func main() {
 	num_mismatches,match_errors := Contract_addresses_match(caddrs,&net_caddrs)
 	if num_mismatches > 0 {
 		if num_mismatches >= (NUM_AUGUR_CONTRACTS - 4) { // -1 for AugurTrading , -1 for AccountLoader
-			fmt.Printf("Empty contract addresses found, populating...")
-			Info.Printf("Empty contract addresses found, populating...")
+			fmt.Printf("Empty contract addresses found, populating...\n")
+			Info.Printf("Empty contract addresses found, populating...\n")
 			storage.Update_contract_addresses(&net_caddrs)
-			fmt.Printf("Please restart")
-			Info.Printf("Please restart")
+			fmt.Printf("Please restart\n")
+			Info.Printf("Please restart\n")
 			os.Exit(0)
 		} else {
 			Error.Printf("%v contract addresses mismatch, errors: %v\n",num_mismatches,match_errors)
-			Info.Printf("Exiting due to contract address mismatch.")
-			fmt.Printf("Exiting due to contract address mismatch.")
+			Info.Printf("Exiting due to contract address mismatch.\n")
+			fmt.Printf("Exiting due to contract address mismatch.\n")
 			os.Exit(1)
 		}
 	}

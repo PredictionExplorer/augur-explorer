@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"math"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/common"
@@ -498,17 +499,20 @@ func Contract_addresses_match(ca1 *ContractAddresses,ca2 *ContractAddresses) (in
 	}
 	return num_mismatches,errors.New(all_errors)
 }
-func Augur_UI_price_adjustments(price *float64,amount *float64,mkt_type int) {
+func Augur_UI_price_adjustments(price *float64,amount *float64,mkt_type int,decimals int) {
 
 	// Price and amount are fixed floating points of 18 precision
 	// According to specs, the price of the outcom can range between 0 to [num_ticks]
 	// however Augur multiplies quanty and divides the price to allow 0..1 price ranges
+	multiplier := math.Pow(10,float64(decimals))
 	if mkt_type == MktTypeScalar {
 		if price != nil {
-			*price = *price / float64(SCALAR_MULTIPLIER)
+			//*price = *price / float64(CATEGORICAL_MULTIPLIER)
+			*price = *price / multiplier
 		}
 		if amount != nil {
-			*amount = *amount * float64(SCALAR_MULTIPLIER)
+			//*amount = *amount * float64(CATEGORICAL_MULTIPLIER)
+			*amount = *amount * multiplier
 		}
 	} else {
 		if price != nil {

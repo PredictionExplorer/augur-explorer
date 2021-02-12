@@ -42,6 +42,7 @@ CREATE TABLE market (
 	winning_outcome		SMALLINT DEFAULT -1,		-- outcome decided by MarketFinalized event
 	designated_outcome	SMALLINT DEFAULT -1,		-- outcome submitted by Designated Reported
 	initial_outcome		SMALLINT DEFAULT -1,		-- first report that was submitted
+	decimals			SMALLINT DEFAULT 3,			-- number of decimal places to divide the price
 	-- Status lookup codes  0=>Traded,1=>Reporting,3=>Reported,4=>Disputing,5=>Finalized,6=>Finalized as invalid
 	status				SMALLINT DEFAULT 0,
 	market_type			SMALLINT NOT NULL,			-- enum: 0:YES_NO | 1:CATEGORICAL | 2:SCALAR

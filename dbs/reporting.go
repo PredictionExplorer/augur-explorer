@@ -37,7 +37,7 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	scalar_val := float64(0)
 	if market_type == 2 { // scalar
-		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))/float64(p.SCALAR_MULTIPLIER)
+		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
 	}
 
 	var query string
@@ -131,7 +131,7 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDispu
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	scalar_val := float64(0)
 	if market_type == 2 { // scalar
-		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))/float64(p.SCALAR_MULTIPLIER)
+		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
 	}
 
 	var query string
@@ -203,7 +203,7 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_created(agtx *p.AugurTx,timest
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	scalar_val := float64(0)
 	if market_type == 2 { // scalar
-		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))/float64(p.SCALAR_MULTIPLIER)
+		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
 	}
 	var query string
 	query = "INSERT INTO crowdsourcer_created (" +
@@ -311,7 +311,7 @@ func (ss *SQLStorage) Insert_initial_reporter_redeemed(agtx *p.AugurTx,evt *p.EI
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	scalar_val := float64(0)
 	if market_type == 2 { // scalar
-		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))/float64(p.SCALAR_MULTIPLIER)
+		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
 	}
 
 	var query string
@@ -359,7 +359,7 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_redeemed(agtx *p.AugurTx,evt *
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	scalar_val := float64(0)
 	if market_type == 2 { // scalar
-		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))/float64(p.SCALAR_MULTIPLIER)
+		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
 	}
 
 	var query string
@@ -406,7 +406,7 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_completed(agtx *p.AugurTx,evt 
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	scalar_val := float64(0)
 	if market_type == 2 { // scalar
-		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))/float64(p.SCALAR_MULTIPLIER)
+		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
 	}
 	var query string
 	query = "INSERT INTO crowdsourcer_completed (" +
@@ -560,13 +560,17 @@ func (ss *SQLStorage) get_dispute_contributions(crowdsourcer_aid int64,mkt_type 
 				"ra.address_id," +
 				"ra.addr," +
 				"cc.dispute_round," +
+				"m.market_type," +
+				"m.decimals," +
 				"cc.outcome_idx," +
+				"cc.scalar_val," +
 				"cc.amount_staked," +
 				"cc.current_stake," +
 				"cc.stake_remaining " +
 			"FROM crowdsourcer_contrib cc " +
 				"JOIN transaction tx ON cc.tx_id=tx.id " +
-				"LEFT JOIN address ra ON reporter_aid=ra.address_id " +
+				"JOIN market m ON cc.market_aid=m.market_aid "+
+				"LEFT JOIN address ra ON cc.reporter_aid=ra.address_id " +
 			"WHERE crowdsrc_aid = $1 " +
 			"ORDER BY cc.time_stamp"
 	
@@ -580,6 +584,7 @@ func (ss *SQLStorage) get_dispute_contributions(crowdsourcer_aid int64,mkt_type 
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.DisputeContribution
+		var decimals int
 		err=rows.Scan(
 			&rec.TimeStamp,
 			&rec.DateTime,
@@ -587,12 +592,16 @@ func (ss *SQLStorage) get_dispute_contributions(crowdsourcer_aid int64,mkt_type 
 			&rec.ReporterAid,
 			&rec.ReporterAddr,
 			&rec.DisputeRound,
+			&rec.MktType,
+			&decimals,
 			&rec.OutcomeIdx,
+			&rec.ScalarValue,
 			&rec.AmountStaked,
 			&rec.CurrentStake,
 			&rec.StakeRemaining,
 		)
 
+		p.Augur_UI_price_adjustments(&rec.ScalarValue,nil,rec.MktType,decimals)
 		rec.TxHashSh = p.Short_hash(rec.TxHash)
 		rec.ReporterAddrSh = p.Short_address(rec.ReporterAddr)
 		rec.OutcomeStr=get_outcome_str(mkt_type,rec.OutcomeIdx,outcomes)
@@ -636,6 +645,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 				"ara.address_id," +
 				"ara.addr," +
 				"m.market_type," +
+				"m.decimals," +
 				"r.outcome_idx," +
 				"r.scalar_val," +
 				"r.is_designated," +
@@ -647,6 +657,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 				"LEFT JOIN address ara ON r.reporter_aid=ara.address_id "+
 			"WHERE r.market_aid=$1"
 	row := ss.db.QueryRow(query,market_aid)
+	var decimals int
 	err=row.Scan(
 		&rst.InitialReport.TimeStamp,
 		&rst.InitialReport.DateTime,
@@ -656,6 +667,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 		&rst.InitialReport.ActualReporterAid,
 		&rst.InitialReport.ActualReporterAddr,
 		&rst.InitialReport.MktType,
+		&decimals,
 		&rst.InitialReport.OutcomeIdx,
 		&rst.InitialReport.ScalarValue,
 		&rst.InitialReport.IsDesignated,
@@ -668,6 +680,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 		}
 		return rst,err
 	}
+	p.Augur_UI_price_adjustments(&rst.InitialReport.ScalarValue,nil,rst.InitialReport.MktType,decimals)
 	rst.InitialReport.TxHashSh = p.Short_hash(rst.InitialReport.TxHash)
 	rst.InitialReport.OutcomeStr=get_outcome_str(uint8(mkt_type),rst.InitialReport.OutcomeIdx,&outcomes)
 	query = "SELECT " +
@@ -682,6 +695,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 				"cr.dispute_round rstart,"+	// round start (round in Augur = number of participants)
 				"co.dispute_round rend," +	// round end
 				"m.market_type," +
+				"m.decimals," +
 				"cr.outcome_idx," +
 				"round(cr.size,5) min_size," +
 				"co.pacing_on p," +
@@ -717,6 +731,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 		var null_completed_date,null_tx_hash sql.NullString
 		var null_rep_payout,null_rep_market sql.NullFloat64
 		var null_pacing sql.NullBool
+		var decimals int
 		err=rows.Scan(
 			&rec.CreatedTs,
 			&rec.CreatedDate,
@@ -729,6 +744,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 			&rec.DisputeRoundStart,
 			&null_round_end,
 			&rec.MktType,
+			&decimals,
 			&rec.OutcomeIdx,
 			&rec.MinDisputeSize,
 			&null_pacing,
@@ -744,6 +760,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		p.Augur_UI_price_adjustments(&rec.ScalarValue,nil,rec.MktType,decimals)
 		if null_completed_ts.Valid { rec.CompletedTs = null_completed_ts.Int64; rec.Completed=true }
 		if null_completed_date.Valid { rec.CompletedDate = null_completed_date.String }
 		if null_tx_hash.Valid { rec.CompletedTxHash = null_tx_hash.String }
@@ -785,6 +802,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 				"ara.address_id," +
 				"ara.addr," +
 				"m.market_type," +
+				"m.decimals," +
 				"r.outcome_idx," +
 				"r.scalar_val," +
 				"r.is_designated," +
@@ -801,6 +819,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 			"WHERE r.market_aid=$1"
 	row := ss.db.QueryRow(query,market_aid)
 	var inirep p.InitialReportInfo
+	var decimals int
 	err := row.Scan(
 		&inirep.TimeStamp,
 		&inirep.DateTime,
@@ -810,6 +829,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 		&inirep.ActualReporterAid,
 		&inirep.ActualReporterAddr,
 		&inirep.MktType,
+		&decimals,
 		&inirep.OutcomeIdx,
 		&inirep.ScalarValue,
 		&inirep.IsDesignated,
@@ -820,6 +840,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 		&inirep.WinEndDate,
 	)
 	if (err == nil) {
+		p.Augur_UI_price_adjustments(&inirep.ScalarValue,nil,inirep.MktType,decimals)
 		if inirep.TimeStamp != 0 {
 			var rr p.RoundsRow
 			var rec p.DisputeRound
@@ -890,6 +911,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 				"co.dispute_round," +
 				"co.pacing_on, " +
 				"m.market_type, " +
+				"m.decimals," +
 				"cr.outcome_idx, " +
 				"cr.scalar_val, " +
 				"EXTRACT(EPOCH FROM d.start_time)::BIGINT dwin_start_ts," +
@@ -919,6 +941,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 		var null_dispute_round,null_ts sql.NullInt64
 		var null_pacing sql.NullBool
 		var null_date sql.NullString
+		var decimals int
 		err=rows.Scan(
 			&rec.TimeStamp,
 			&rec.DateTime,
@@ -931,6 +954,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 			&null_dispute_round,
 			&null_pacing,
 			&rec.MktType,
+			&decimals,
 			&rec.OutcomeIdx,
 			&rec.ScalarValue,
 			&rec.WindowStartTs,
@@ -943,6 +967,8 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
+		p.Augur_UI_price_adjustments(&rec.ScalarValue,nil,rec.MktType,decimals)
+
 		if null_ts.Valid {
 			rec.CompletedTs = null_ts.Int64
 			rec.CompletedDate = null_date.String
@@ -1023,6 +1049,7 @@ func (ss *SQLStorage) Get_initial_report_redeemed_record(market_aid int64) *p.In
 
 	rec := new(p.IniRepRedeemed)
 	var query string
+	var decimals int
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
 				"TO_CHAR(ir.time_stamp, 'dd/mm/yyyy HH:ii')," +
@@ -1030,12 +1057,16 @@ func (ss *SQLStorage) Get_initial_report_redeemed_record(market_aid int64) *p.In
 				"aini.addr," +
 				"ir.reporter_aid," +
 				"arep.addr," +
+				"m.market_type," +
+				"m.decimals," +
 				"outcome_idx," +
+				"scalar_val," +
 				"amount, " +
 				"rep," +
 				"tx.tx_hash " +
 			"FROM irep_redeem ir " +
 				"JOIN transaction tx ON ir.tx_id=tx.id " +
+				"JOIN market m ON ir.market_aid=m.market_aid " +
 				"LEFT JOIN address aini ON ir.ini_rep_aid=aini.address_id " +
 				"LEFT JOIN address arep ON ir.reporter_aid=arep.address_id " +
 			"WHERE ir.market_aid=$1"
@@ -1047,7 +1078,10 @@ func (ss *SQLStorage) Get_initial_report_redeemed_record(market_aid int64) *p.In
 		&rec.InitialReporterAddr,
 		&rec.ReporterAid,
 		&rec.ReporterAddr,
+		&rec.MktType,
+		&decimals,
 		&rec.OutcomeIdx,
+		&rec.ScalarValue,
 		&rec.Amount,
 		&rec.RepReceived,
 		&rec.TxHash,
@@ -1059,6 +1093,7 @@ func (ss *SQLStorage) Get_initial_report_redeemed_record(market_aid int64) *p.In
 		}
 		return nil
 	}
+	p.Augur_UI_price_adjustments(&rec.ScalarValue,nil,rec.MktType,decimals)
 	_,mkt_type,outcomes,_ := ss.Get_key_market_fields(market_aid)
 	rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
 	rec.TxHashSh = p.Short_address(rec.TxHash)
@@ -1075,12 +1110,16 @@ func (ss *SQLStorage) Get_redeemed_participants(market_aid int64) []p.RedeemedPa
 				"TO_CHAR(c.time_stamp, 'dd/mm/yyyy HH:ii')," +
 				"c.reporter_aid," +
 				"ra.addr," +
+				"m.market_type," +
+				"m.decimals," +
 				"outcome_idx," +
+				"c.scalar_val," +
 				"amount, " +
 				"rep," +
 				"tx.tx_hash " +
 			"FROM crowdsourcer_redeemed c " +
 				"JOIN transaction tx ON tx_id=tx.id " +
+				"JOIN market m ON c.market_aid=m.market_aid " +
 				"LEFT JOIN address ra ON c.reporter_aid=ra.address_id " +
 			"WHERE c.market_aid=$1"
 
@@ -1093,12 +1132,16 @@ func (ss *SQLStorage) Get_redeemed_participants(market_aid int64) []p.RedeemedPa
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.RedeemedParticipant
+		var decimals int
 		err := rows.Scan(
 			&rec.TimeStamp,
 			&rec.DateTime,
 			&rec.ReporterAid,
 			&rec.ReporterAddr,
+			&rec.MktType,
+			&decimals,
 			&rec.OutcomeIdx,
+			&rec.ScalarValue,
 			&rec.RepInvested,
 			&rec.RepReturned,
 			&rec.TxHash,
@@ -1110,6 +1153,7 @@ func (ss *SQLStorage) Get_redeemed_participants(market_aid int64) []p.RedeemedPa
 			}
 			return records
 		}
+		p.Augur_UI_price_adjustments(&rec.ScalarValue,nil,rec.MktType,decimals)
 		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
 		rec.TxHashSh = p.Short_address(rec.TxHash)
 		rec.Profit = rec.RepReturned - rec.RepInvested

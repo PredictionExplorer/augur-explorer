@@ -705,7 +705,7 @@ func (ss *SQLStorage) Delete_REP_transfer_by_evtlog_id(evtlog_id int64) {
 }
 func (ss *SQLStorage) Outside_augur_share_balance_changes(market_aid int64,offset,limit int) ([]p.OutsideAugurSBChg,int64) {
 
-	market_type,_,_ := ss.get_market_type_and_ticks(market_aid)
+	market_type,_,decimals,_ := ss.get_market_type_and_ticks(market_aid)
 	var query string
 
 	var total_rows int64
@@ -762,7 +762,7 @@ func (ss *SQLStorage) Outside_augur_share_balance_changes(market_aid int64,offse
 			&rec.Balance,
 			&rec.TxHash,
 		)
-		p.Augur_UI_price_adjustments(nil,&rec.Balance,market_type)
+		p.Augur_UI_price_adjustments(nil,&rec.Balance,market_type,decimals)
 		rec.TxHashSh = p.Short_hash(rec.TxHash)
 		records = append(records,rec)
 	}

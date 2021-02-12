@@ -12,7 +12,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) calculate_profit(num_ticks int64,win_tick int64,amount *big.Int,price *big.Int) *big.Int {
+func (ss *SQLStorage) calculate_profit(num_ticks int,win_tick int,amount *big.Int,price *big.Int) *big.Int {
 	// Calculates the profit for a position
 	// Source:
 	//	https://github.com/AugurProject/augur/blob/master/packages/augur-core/src/contracts/trading/ProfitLoss.sol#L82a
@@ -23,10 +23,10 @@ func (ss *SQLStorage) calculate_profit(num_ticks int64,win_tick int64,amount *bi
 	ether_in_weis:= new(big.Int)
 	ether_in_weis.SetString("1000000000000000000",10)	// 10 ^ 18
 
-	win_price := big.NewInt(win_tick)
+	win_price := big.NewInt(int64(win_tick))
 	win_price.Mul(win_price,ether_in_weis)
 
-	ticks:=big.NewInt(num_ticks)
+	ticks:=big.NewInt(int64(num_ticks))
 	adjusted_ticks:=big.NewInt(0)
 	adjusted_ticks.Mul(ticks,ether_in_weis)
 
@@ -62,7 +62,7 @@ func (ss *SQLStorage) calculate_profit_loss_for_all_users(market_aid int64,block
 
 	var query string
 
-	market_type,num_ticks,_:=ss.get_market_type_and_ticks(market_aid)
+	market_type,num_ticks,_,_:=ss.get_market_type_and_ticks(market_aid)
 	_ = market_type
 
 	query = "SELECT " +
@@ -108,7 +108,7 @@ func (ss *SQLStorage) calculate_profit_loss_for_all_users(market_aid int64,block
 		net_position.SetString(str_net_position,10)
 		price := big.NewInt(0)
 		price.SetString(str_price,10)
-		winning_tick := evt.WinningPayoutNumerators[outcome_idx].Int64()
+		winning_tick := int(evt.WinningPayoutNumerators[outcome_idx].Int64())
 		profit := ss.calculate_profit(num_ticks,winning_tick,net_position,price)
 		ss.Info.Printf("loss = %v\n",profit)
 		profit_str := profit.String()

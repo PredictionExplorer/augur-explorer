@@ -11,7 +11,7 @@ const (
 	MAX_BLOCKS_CHAIN_SPLIT = 128
 	OWNER_FIELD_OFFSET int = 2	// offset to the 'owner' field in WalletContract in EVM (contract storage)
 	CATEGORICAL_MULTIPLIER int = 1000
-	SCALAR_MULTIPLIER int = 10
+//	SCALAR_MULTIPLIER int = 10
 )
 const (
 	MktTypeYesNo		= iota
@@ -1534,6 +1534,8 @@ type DisputeContribution struct {
 	AmountStaked			float64
 	CurrentStake			float64
 	StakeRemaining			float64
+	ScalarValue				float64
+	MktType					int
 	OutcomeIdx				int
 	DisputeRound			int
 	CrowdsourcerAddr		string
@@ -1634,6 +1636,7 @@ type IniRepRedeemed struct {
 	Amount					float64
 	RepReceived				float64
 	ScalarValue				float64
+	MktType					int
 	OutcomeIdx				int
 	OutcomeStr				string
 	DateTime				string
@@ -1645,10 +1648,12 @@ type IniRepRedeemed struct {
 type RedeemedParticipant struct {
 	ReporterAid				int64
 	TimeStamp				int64
+	MktType					int
 	OutcomeIdx				int
 	RepInvested				float64
 	RepReturned				float64
 	Profit					float64
+	ScalarValue				float64
 	OutcomeStr				string
 	DateTime				string
 	ReporterAddr			string

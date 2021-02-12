@@ -849,7 +849,7 @@ func (ss *SQLStorage) Get_user_trades_for_market(aid int64,mkt_aid int64) []p.Ma
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.MarketTrade
-		var mkt_type int
+		var mkt_type,decimals int
 		var outcomes string
 		err=rows.Scan(
 			&rec.OrderId,
@@ -864,13 +864,14 @@ func (ss *SQLStorage) Get_user_trades_for_market(aid int64,mkt_aid int64) []p.Ma
 			&rec.Amount,
 			&rec.Outcome,
 			&mkt_type,
+			&decimals,
 			&outcomes,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		p.Augur_UI_price_adjustments(&rec.Price,&rec.Amount,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.Price,&rec.Amount,mkt_type,decimals)
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)
 		rec.CreatorAddrSh=p.Short_address(rec.CreatorAddr)
 		rec.FillerAddrSh=p.Short_address(rec.FillerAddr)
@@ -889,6 +890,7 @@ func (ss *SQLStorage) Get_user_open_orders(user_aid int64) []p.OpenOrder {
 				"ca.addr AS creator_addr," +
 				"ma.addr AS mkt_addr," +
 				"m.market_type," +
+				"m.decimals," +
 				"CASE m.market_type " +
 					"WHEN 0 THEN 'YES/NO' " +
 					"WHEN 1 THEN 'CATEGORICAL' " +
@@ -926,11 +928,13 @@ func (ss *SQLStorage) Get_user_open_orders(user_aid int64) []p.OpenOrder {
 	for rows.Next() {
 		var rec p.OpenOrder
 		var outcomes string
+		var decimals int
 		var descr sql.NullString
 		err=rows.Scan(
 			&rec.CreatorAddr,
 			&rec.MktAddr,
 			&rec.MktType,
+			&decimals,
 			&rec.MktTypeStr,
 			&rec.MktStatus,
 			&rec.MktExpirationTs,
@@ -950,7 +954,7 @@ func (ss *SQLStorage) Get_user_open_orders(user_aid int64) []p.OpenOrder {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		p.Augur_UI_price_adjustments(&rec.Price,&rec.Amount,rec.MktType)
+		p.Augur_UI_price_adjustments(&rec.Price,&rec.Amount,rec.MktType,decimals)
 		rec.MktStatusStr = get_market_status_str(p.MarketStatus(rec.MktStatus))
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)
 		rec.CreatorAddrSh=p.Short_address(rec.CreatorAddr)
@@ -1037,12 +1041,14 @@ func (ss *SQLStorage) Get_user_oo_history(aid int64) []p.OpenOrder {
 	for rows.Next() {
 		var rec p.OpenOrder
 		var outcomes string
+		var decimals int
 		var descr sql.NullString
 		err=rows.Scan(
 			&rec.MktOrderId,
 			&rec.CreatorAddr,
 			&rec.MktAddr,
 			&rec.MktType,
+			&decimals,
 			&rec.MktTypeStr,
 			&rec.MktStatus,
 			&rec.MktExpirationTs,
@@ -1065,8 +1071,8 @@ func (ss *SQLStorage) Get_user_oo_history(aid int64) []p.OpenOrder {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		p.Augur_UI_price_adjustments(&rec.Price,&rec.Amount,rec.MktType)
-		p.Augur_UI_price_adjustments(nil,&rec.InitialAmount,rec.MktType)
+		p.Augur_UI_price_adjustments(&rec.Price,&rec.Amount,rec.MktType,decimals)
+		p.Augur_UI_price_adjustments(nil,&rec.InitialAmount,rec.MktType,decimals)
 		rec.MktStatusStr = get_market_status_str(p.MarketStatus(rec.MktStatus))
 		rec.MktAddrSh=p.Short_address(rec.MktAddr)
 		rec.CreatorAddrSh=p.Short_address(rec.CreatorAddr)
@@ -1404,7 +1410,7 @@ func (ss *SQLStorage) Get_user_ens_names(user_aid int64,offset int,limit int) ([
 					"WHERE owner_aid=$1 " +
 			") " +
 			"SELECT " +
-				"count(n.fqdn)"+
+				"count(n.fqdn) "+
 			"FROM last_owner AS last " +
 				"JOIN ens_node AS n ON last.fqdn=n.fqdn " +
 			"WHERE " +

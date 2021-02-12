@@ -114,6 +114,41 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,validity_bond st
 	json.Unmarshal([]byte(evt.ExtraInfo), &extra_info)
 	categories := strings.Join(extra_info.Categories,",")
 	cat_id := ss.lookup_or_create_category(categories)
+	num_ticks := evt.NumTicks.Int64()
+	invalid_num_ticks := big.NewInt(100000000)
+	decimals := int(0)
+	if invalid_num_ticks.CmpAbs(evt.NumTicks) >= 0 {
+		divisor := new(big.Int)
+		divisor.SetString("1000000000000000000",10)	// 10^18
+		big_hi_price := new(big.Int)
+		big_hi_price.Quo(evt.Prices[1],divisor)
+		big_decimals := new(big.Int)
+		big_decimals.Quo(evt.NumTicks,big_hi_price)
+		multiplier := int(big_decimals.Int64())
+		switch multiplier { // mini log10(x) implementation
+		case 10: decimals = 1
+		case 100: decimals = 2
+		case 1000: decimals = 3
+		default:
+			panic(fmt.Sprintf("Undefined price multipler : %v",multiplier))
+		}
+	} else {
+		// it is Augur Warp Sync market
+		lo_price ="0"
+		hi_price ="0"
+		num_ticks = 1
+	}
+/*	switch 	tcks := evt.NumTicks.Int64(); {
+	case tcks < 10:
+		decimals = 0
+	case tcks < 100:
+		decimals = 1
+	case tcks < 1000:
+		decimals = 2
+	default:
+		decimals = 3
+		//panic(fmt.Sprintf("Undefined tick range: %v",tcks))
+	}*/
 
 	query = `
 		INSERT INTO market(
@@ -126,6 +161,7 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,validity_bond st
 			reporter_aid,
 			end_time,
 			num_ticks,
+			decimals,
 			create_timestamp,
 			fee,
 			lo_price,
@@ -135,11 +171,10 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,validity_bond st
 			outcomes,
 			no_show_bond,
 			validity_bond
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,TO_TIMESTAMP($8),$9,TO_TIMESTAMP($10),` +
-						evt.FeePerCashInAttoCash.String() +	"/1e+16,"+
-						"$11::DECIMAL/1e+18,$12::DECIMAL/1e+18," +
-						"$13,$14,$15,(" + evt.NoShowBond.String() + "/1e+18)," +
-						"("+ validity_bond + "/1e+18))";
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,TO_TIMESTAMP($8),$9,$10,TO_TIMESTAMP($11),` +
+			"$12::DECIMAL/1e+16,$13::DECIMAL/1e+18,$14::DECIMAL/1e+18," +
+			"$15,$16,$17,$18::DECIMAL/1e+18,$19::DECIMAL/1e+18" +
+		")";
 
 	result,err := ss.db.Exec(query,
 			agtx.BlockNum,
@@ -150,13 +185,17 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,validity_bond st
 			creator_aid,
 			reporter_aid,
 			evt.EndTime.Int64(),
-			evt.NumTicks.Int64(),
+			num_ticks,
+			decimals,
 			evt.Timestamp.Int64(),
+			evt.FeePerCashInAttoCash.String(),
 			lo_price,
 			hi_price,
 			evt.MarketType,
 			evt.ExtraInfo,
 			outcomes,
+			evt.NoShowBond.String(),
+			validity_bond,
 	)
 	if err != nil {
 		ss.Log_msg(
@@ -264,12 +303,12 @@ func (ss *SQLStorage) Delete_market_oi_changed_evt(tx_id int64) {
 		os.Exit(1)
 	}
 }
-func get_outcome_idx_from_numerators(mkt_type int,num_ticks int64,numerators []*big.Int) int {
+func get_outcome_idx_from_numerators(mkt_type int,num_ticks int,numerators []*big.Int) int {
 
 	if mkt_type == 2 {
 		return 2
 	}
-	big_num_ticks := big.NewInt(num_ticks)
+	big_num_ticks := big.NewInt(int64(num_ticks))
 	for i:=0 ; i < len(numerators) ; i++ {
 		if big_num_ticks.Cmp(numerators[i]) == 0 {
 			return i
@@ -296,7 +335,7 @@ func (ss *SQLStorage) Insert_market_finalized_evt(agtx *p.AugurTx,timestamp int6
 	fin_timestamp := evt.Timestamp.Int64()
 	winning_payouts := p.Bigint_ptr_slice_to_str(&evt.WinningPayoutNumerators,",")
 
-	market_type,mticks,_ := ss.get_market_type_and_ticks(market_aid)
+	market_type,mticks,_,_ := ss.get_market_type_and_ticks(market_aid)
 	winning_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.WinningPayoutNumerators)
 
 	query = "INSERT INTO mkt_fin(block_num,tx_id,market_aid,fin_timestamp,winning_payouts,winning_outcome)" +
@@ -329,31 +368,32 @@ func (ss *SQLStorage) Delete_market_finalized_evt(tx_id int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) get_market_type_and_ticks(market_aid int64) (int,int64,error) {
+func (ss *SQLStorage) get_market_type_and_ticks(market_aid int64) (int,int,int,error) {
 
 	var query string
-	query = "SELECT market_type,num_ticks FROM market WHERE market_aid=$1"
+	query = "SELECT market_type,num_ticks,decimals FROM market WHERE market_aid=$1"
 
 	var market_type int
-	var num_ticks int64
-	err:=ss.db.QueryRow(query,market_aid).Scan(&market_type,&num_ticks);
+	var num_ticks int
+	var decimals int
+	err:=ss.db.QueryRow(query,market_aid).Scan(&market_type,&num_ticks,&decimals);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			return 0,0,err
+			return 0,0,0,err
 		}
 		d_query:=strings.ReplaceAll(query,"$1",fmt.Sprintf("%v",market_aid))
 		ss.Log_msg(fmt.Sprintf("DB Error: %v, q=%v market_aid=%v\n",err,d_query,market_aid))
 		os.Exit(1)
 	}
-	return market_type,num_ticks,nil
+	return market_type,num_ticks,decimals,nil
 }
-func (ss *SQLStorage) get_market_type_ticks_lo_price(market_aid int64) (int,int64,float64,error) {
+func (ss *SQLStorage) get_market_type_ticks_lo_price(market_aid int64) (int,int,float64,error) {
 
 	var query string
 	query = "SELECT market_type,num_ticks,lo_price FROM market WHERE market_aid=$1"
 
 	var market_type int
-	var num_ticks int64
+	var num_ticks int
 	var lo_price float64
 	err:=ss.db.QueryRow(query,market_aid).Scan(&market_type,&num_ticks,&lo_price);
 	if (err!=nil) {
@@ -1070,6 +1110,7 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 				"o.total_oorders," +
 				"o.last_price, " +
 				"m.market_type, " +
+				"m.decimals," +
 				"m.outcomes " +
 			"FROM outcome_vol AS o " +
 				"LEFT JOIN " +
@@ -1087,6 +1128,7 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 	defer rows.Close()
 	for rows.Next() {
 		var outcomes string
+		var decimals int
 		err=rows.Scan(
 			&rec.Outcome,
 			&rec.Volume,
@@ -1094,9 +1136,10 @@ func (ss *SQLStorage) Get_outcome_volumes(mkt_addr string,market_aid int64,order
 			&rec.TotalOpenOrders,
 			&rec.LastPrice,
 			&rec.MktType,
+			&decimals,
 			&outcomes,
 		)
-		p.Augur_UI_price_adjustments(&rec.LastPrice,nil,rec.MktType)
+		p.Augur_UI_price_adjustments(&rec.LastPrice,nil,rec.MktType,decimals)
 		if rec.Outcome != 0 {
 			rec.LastPrice = rec.LastPrice + low_price_limit
 		}
@@ -1126,7 +1169,8 @@ func (ss *SQLStorage) Get_price_estimates(market_aid int64,outcomes []p.OutcomeV
 				"p.wprice_est, " +
 				"p.wmax_bid," +
 				"p.wmin_ask, "+
-				"m.market_type " +
+				"m.market_type," +
+				"m.decimals " +
 			"FROM price_estimate AS p " +
 				"JOIN market AS m on p.market_aid=m.market_aid " +
 			"WHERE p.market_aid = $1 AND outcome_idx=$2" +
@@ -1135,7 +1179,7 @@ func (ss *SQLStorage) Get_price_estimates(market_aid int64,outcomes []p.OutcomeV
 
 
 	for _,outc := range outcomes {
-		var mkt_type int
+		var mkt_type,decimals int
 		err:=ss.db.QueryRow(query,market_aid,outc.Outcome).Scan(
 			&rec.OutcomeIdx,
 			&rec.TimeStamp,
@@ -1147,6 +1191,7 @@ func (ss *SQLStorage) Get_price_estimates(market_aid int64,outcomes []p.OutcomeV
 			&rec.WMaxBid,
 			&rec.WMinAsk,
 			&mkt_type,
+			&decimals,
 		)
 		if (err!=nil) {
 			if (err==sql.ErrNoRows) {
@@ -1156,13 +1201,13 @@ func (ss *SQLStorage) Get_price_estimates(market_aid int64,outcomes []p.OutcomeV
 				os.Exit(1)
 			}
 		}
-		p.Augur_UI_price_adjustments(&rec.PriceEst,nil,mkt_type)
-		p.Augur_UI_price_adjustments(&rec.Spread,nil,mkt_type)
-		p.Augur_UI_price_adjustments(&rec.MaxBid,nil,mkt_type)
-		p.Augur_UI_price_adjustments(&rec.MinAsk,nil,mkt_type)
-		p.Augur_UI_price_adjustments(&rec.WeightedPriceEst,nil,mkt_type)
-		p.Augur_UI_price_adjustments(&rec.WMaxBid,nil,mkt_type)
-		p.Augur_UI_price_adjustments(&rec.WMinAsk,nil,mkt_type)
+		p.Augur_UI_price_adjustments(&rec.PriceEst,nil,mkt_type,decimals)
+		p.Augur_UI_price_adjustments(&rec.Spread,nil,mkt_type,decimals)
+		p.Augur_UI_price_adjustments(&rec.MaxBid,nil,mkt_type,decimals)
+		p.Augur_UI_price_adjustments(&rec.MinAsk,nil,mkt_type,decimals)
+		p.Augur_UI_price_adjustments(&rec.WeightedPriceEst,nil,mkt_type,decimals)
+		p.Augur_UI_price_adjustments(&rec.WMaxBid,nil,mkt_type,decimals)
+		p.Augur_UI_price_adjustments(&rec.WMinAsk,nil,mkt_type,decimals)
 		if rec.OutcomeIdx != 0 {
 			rec.PriceEst = rec.PriceEst + low_price_limit
 			rec.MaxBid = rec.MaxBid + low_price_limit

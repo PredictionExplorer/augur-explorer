@@ -19,6 +19,17 @@
 						</a>
 					</td>
 					<td class="mkt_trade_field">{{.OutcomeStr}}</td>
+					{{ if eq 2 .MktType }}
+					<tr class="market_trades">
+						<td class="mkt_trade_field">
+							Scalar Value
+						</td>
+						<td class="mkt_trade_field">
+							{{.ScalarValue }}
+						</td>
+					</tr>
+					{{ end }}
+
 					<td class="mkt_trade_field" style="text-align: right">{{ printf "%.3f" .AmountStaked}}</td>
 					<td class="mkt_trade_field" style="text-align: right">{{ printf "%.3f" .CurrentStake}}</td>
 					<td class="mkt_trade_field" style="text-align: right">{{ printf "%.3f" .StakeRemaining}}</td>
