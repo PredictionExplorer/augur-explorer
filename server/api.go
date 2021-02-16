@@ -1694,7 +1694,7 @@ func a1_reporting_table(c *gin.Context) {
 		return
 	}
 
-	round_table,num_outcomes,outcomes := augur_srv.storage.Get_round_table(market_aid)
+	round_table,num_outcomes,outcomes,scalar_vals := augur_srv.storage.Get_round_table(market_aid)
 	initial_report_redemption := augur_srv.storage.Get_initial_report_redeemed_record(market_aid)
 	redeemed_participants := augur_srv.storage.Get_redeemed_participants(market_aid)
 
@@ -1708,6 +1708,7 @@ func a1_reporting_table(c *gin.Context) {
 		"RoundTable" : round_table,
 		"NumOutcomes" : num_outcomes,
 		"Outcomes" : outcomes,
+		"ScalarValues" : scalar_vals,
 		"RedeemIniReporter" : initial_report_redemption,
 		"RedeemedParticipants" : redeemed_participants,
 	})

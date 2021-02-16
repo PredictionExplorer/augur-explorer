@@ -131,7 +131,9 @@ func (ss *SQLStorage) Insert_dispute_crowd_contrib(agtx *p.AugurTx,evt *p.EDispu
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	scalar_val := float64(0)
 	if market_type == 2 { // scalar
-		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
+		if reported_outcome != 0 {
+			scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
+		}
 	}
 
 	var query string
@@ -779,8 +781,22 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 
 	return rst,nil
 }
-func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,string) {
+func update_current_round(rr *p.RoundsRow,rec *p.DisputeRound) {
+		rr.Rounds.MarketRep = rec.MarketRep
+		rr.Rounds.TimeStamp = rec.TimeStamp
+		rr.Rounds.DateTime = rec.DateTime
+		rr.Rounds.WindowStartDate = rec.WindowStartDate
+		rr.Rounds.WindowEndDate = rec.WindowEndDate
+		rr.Rounds.WindowStartTs = rec.WindowStartTs
+		rr.Rounds.WindowEndTs = rec.WindowEndTs
+		rr.Rounds.CompletedTs = rec.CompletedTs
+		rr.Rounds.CompletedDate = rec.CompletedDate
+		rr.Rounds.MktType = rec.MktType
+		rr.Rounds.ScalarValue = rec.ScalarValue
+}
+func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,string,[]float64) {
 
+	scalar_values := make([]float64,0,4)
 	_,mkt_type,outcomes,_ := ss.Get_key_market_fields(market_aid)
 	outcomes = adjust_outcomes_str(mkt_type,outcomes)
 	num_outcomes := 3	// Invalid,No,Yes
@@ -872,6 +888,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 					rr.Rounds.Completed = true
 					rr.Rounds.MktType = inirep.MktType
 					rr.Rounds.ScalarValue = inirep.ScalarValue
+					scalar_values = append(scalar_values,inirep.ScalarValue)
 				} else {
 					rr.Rounds.ORounds = append(rr.Rounds.ORounds,empty_rec)
 				}
@@ -967,33 +984,34 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 		if null_rep_payout.Valid {
 			rr.Rounds.Completed = true
 		}
-		scalar_values := make([]float64,0,4)
+		
 		//var outc_rounds p.OutcomeRounds
 		rr.Rounds.RoundNum = rec.RoundNum
 		rr.Rounds.ORounds = make([]p.DisputeRound,0,8)
-		for i:=0; i<num_outcomes ; i++ {
-			var empty_rec p.DisputeRound
-			if (rec.MktType == 2) && (rec.OutcomeIdx==2) { // scalar
-				rec.OutcomeIdx=1 // skip outcome idx = 1
+		if rec.MktType ==2  {
+			current_seen := false
+			for _,entry := range scalar_values {
+				if rec.ScalarValue == entry {
+					current_seen = true
+				}
 			}
-			if i==rec.OutcomeIdx {
+			if !current_seen {
+				// we append at the beginning because we need the loop to include current rec
+				if rec.OutcomeIdx != 0 { // if is not invalid
+					scalar_values = append(scalar_values,rec.ScalarValue)
+				}
+			}
+			// for scalar markets outcome_idx is ignored because it is always 2
+			//	but Invalid outcome is present, so we will check only that one
+			if rec.OutcomeIdx == 0 { // invalid
 				rec.Color = true
 				rr.Rounds.ORounds = append(rr.Rounds.ORounds,rec)
-				// update current
-				rr.Rounds.MarketRep = rec.MarketRep
-				rr.Rounds.TimeStamp = rec.TimeStamp
-				rr.Rounds.DateTime = rec.DateTime
-				rr.Rounds.WindowStartDate = rec.WindowStartDate
-				rr.Rounds.WindowEndDate = rec.WindowEndDate
-				rr.Rounds.WindowStartTs = rec.WindowStartTs
-				rr.Rounds.WindowEndTs = rec.WindowEndTs
-				rr.Rounds.CompletedTs = rec.CompletedTs
-				rr.Rounds.CompletedDate = rec.CompletedDate
-				rr.Rounds.MktType = rec.MktType
-				rr.Rounds.ScalarValue = rec.ScalarValue
+				update_current_round(&rr,&rec)
 			} else {
+				var empty_rec p.DisputeRound
+				// add empty record for invalid entry
 				if len(rounds) > 0 {
-					prev_rec := &rounds[len(rounds)-1].Rounds.ORounds[i]
+					prev_rec := &rounds[len(rounds)-1].Rounds.ORounds[0]
 					if prev_rec.TimeStamp != 0 {
 						empty_rec = *prev_rec
 						empty_rec.Color = false
@@ -1002,6 +1020,49 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 					}
 				}
 				rr.Rounds.ORounds = append(rr.Rounds.ORounds,empty_rec)
+			}
+			// now we parse entries using scalar value as distinctive property
+			// (because the outcome = 2 for scalar markets)
+			num_svalues := len(scalar_values)
+			for j:=0; j<num_svalues; j++ {
+				if scalar_values[j] == rec.ScalarValue {
+					rec.Color = true
+					rr.Rounds.ORounds = append(rr.Rounds.ORounds,rec)
+					update_current_round(&rr,&rec)
+				} else {
+					var empty_rec p.DisputeRound
+					if len(rounds) > 0 {
+						prev_rec := &rounds[len(rounds)-1].Rounds.ORounds[j]
+						if prev_rec.TimeStamp != 0 {
+							empty_rec = *prev_rec
+							empty_rec.Color = false
+							empty_rec.PacingOn = false
+							empty_rec.Completed = false
+						}
+					}
+					rr.Rounds.ORounds = append(rr.Rounds.ORounds,empty_rec)
+				}
+			}
+		} else {
+			for i:=0; i<num_outcomes ; i++ {
+				if i==rec.OutcomeIdx {
+					rec.Color = true
+					rr.Rounds.ORounds = append(rr.Rounds.ORounds,rec)
+					// update current
+					update_current_round(&rr,&rec)
+				} else {
+					var empty_rec p.DisputeRound
+					if len(rounds) > 0 {
+						prev_rec := &rounds[len(rounds)-1].Rounds.ORounds[i]
+						if prev_rec.TimeStamp != 0 {
+							empty_rec = *prev_rec
+							empty_rec.Color = false
+							empty_rec.PacingOn = false
+							empty_rec.Completed = false
+						}
+					}
+					rr.Rounds.ORounds = append(rr.Rounds.ORounds,empty_rec)
+				}
 			}
 		}
 		rounds = append(rounds,rr)
@@ -1030,7 +1091,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 	}
 	rounds[widx].Rounds.WindowSpan = i-widx
 	rounds[widx].Rounds.WindowNum = wcounter
-	return rounds,num_outcomes,outcomes
+	return rounds,num_outcomes,outcomes,scalar_values
 }
 func (ss *SQLStorage) Get_initial_report_redeemed_record(market_aid int64) *p.IniRepRedeemed {
 

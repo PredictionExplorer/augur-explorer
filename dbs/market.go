@@ -314,10 +314,14 @@ func (ss *SQLStorage) Delete_market_oi_changed_evt(tx_id int64) {
 }
 func get_outcome_idx_from_numerators(mkt_type int,num_ticks int,numerators []*big.Int) int {
 
-	if mkt_type == 2 {
-		return 2
-	}
 	big_num_ticks := big.NewInt(int64(num_ticks))
+	if mkt_type == 2 {
+		if big_num_ticks.Cmp(numerators[0]) == 0 {
+			return 0
+		} else {
+			return 2
+		}
+	}
 	for i:=0 ; i < len(numerators) ; i++ {
 		if big_num_ticks.Cmp(numerators[i]) == 0 {
 			return i

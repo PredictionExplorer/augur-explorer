@@ -19,13 +19,21 @@ This table shows dispute rounds sequentially from left to right: <br/>
 						&nbsp;</br>&nbsp;<br/>&nbsp;<br/>&nbsp;
 						<br/>&nbsp;<br/>&nbsp;<br/>&nbsp;<br/>
 						{{ if eq 2 .MarketInfo.MktType }}
-						&nbsp;<br/>
+						&nbsp;<br/>&nbsp;<br/>
 						{{ end }}
 				</td></tr>
-			{{- range $i, $rpt := .OutcomesSplit }}
-			<tr><td>{{.}}</td></tr>
+			{{ if eq 2 .MarketInfo.MktType }}
+				<tr><td>Invalid</td>
+				{{- range $i, $val := .ScalarValues }}
+				<tr><td>Scalar Value {{.}}</td></tr>
+				{{- end }}
+			{{ else }}
+				{{- range $i, $rpt := .OutcomesSplit }}
+				<tr><td>{{.}}</td></tr>
+				{{ end }}
 			{{ end }}
 			<tr><td>&nbsp;</td></tr>
+
 			<tr><td>Total Market REP</td></tr>
 			</table>
 		</td>
