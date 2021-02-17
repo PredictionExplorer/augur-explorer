@@ -13,10 +13,10 @@
 This table shows dispute rounds sequentially from left to right: <br/>
 <table class="report_rounds" style="border: none">
 	<tr>
-		<td>
+		<td style="vertical-align: top">
 			<table>
-				<tr><td>
-						&nbsp;</br>&nbsp;<br/>&nbsp;<br/>&nbsp;
+				<tr><td style="vertical-align: top">
+						&nbsp;</br>&nbsp;<br/>&nbsp;<br/>&nbsp;<br/>
 						<br/>&nbsp;<br/>&nbsp;<br/>&nbsp;<br/>
 						{{ if eq 2 .MarketInfo.MktType }}
 						&nbsp;<br/>&nbsp;<br/>
@@ -37,12 +37,12 @@ This table shows dispute rounds sequentially from left to right: <br/>
 			<tr><td>Total Market REP</td></tr>
 			</table>
 		</td>
-		<td>
+		<td style="vertical-align: top">
 			<table class="report_rounds">
 				<tr>
 					{{- range $i, $rpt := .RoundTable }}
 					{{ if gt .Rounds.WindowNum 0 }}
-					<td colspan={{.Rounds.WindowSpan}} style="text-align: center">
+					<td colspan={{.Rounds.WindowSpan}} style="text-align: center; vertical-align: top">
 						Window {{.Rounds.WindowNum}}<br/>
 						{{.Rounds.WindowStartDate}} - {{.Rounds.WindowEndDate}}
 					</td>
@@ -51,7 +51,7 @@ This table shows dispute rounds sequentially from left to right: <br/>
 				</tr>
 				<tr class="market_trades">
 					{{- range $i, $rpt := .RoundTable }}
-					<td style="text-align:center">
+					<td style="text-align:center; vertical-align: top">
 						{{ if eq -1 .Rounds.RoundNum }}
 						Initial Round
 						{{ else }}

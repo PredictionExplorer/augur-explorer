@@ -154,6 +154,7 @@ func get_event_ids(from_tx_id,to_tx_id int64) []int64 {
 		event_list := storage.Get_tx_ids_from_evt_logs_by_signature(
 			e.Signature,e.ContractAid,from_tx_id,to_tx_id,
 		)
+		/*
 		if len(event_list)>0 {
 			Info.Printf("dumping ids for sig %v: ",e.Signature)
 		}
@@ -163,6 +164,7 @@ func get_event_ids(from_tx_id,to_tx_id int64) []int64 {
 		if len(event_list)>0 {
 			Info.Printf("\n")
 		}
+		*/
 		output = append(output,event_list...)
 	}
 	sort.Slice(output, func(i, j int) bool { return output[i] < output[j] })
@@ -192,6 +194,7 @@ func process_augur_trading_events(exit_chan chan bool,caddrs *ContractAddresses)
 			id_upper_limit = last_tx_id
 		}
 		events := get_event_ids(status.LastTxId,id_upper_limit)
+		/*
 		if len(events) > 0 {
 			Info.Printf("after removing duplicates, tx ids %v: ",events)
 			for _,v := range events {
@@ -199,6 +202,7 @@ func process_augur_trading_events(exit_chan chan bool,caddrs *ContractAddresses)
 			}
 			Info.Printf("\n")
 		}
+		*/
 		for _,tx_id := range events {
 			err := process_transaction(tx_id)
 			if err != nil {

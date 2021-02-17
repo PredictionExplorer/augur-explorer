@@ -37,7 +37,9 @@ func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialR
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	scalar_val := float64(0)
 	if market_type == 2 { // scalar
-		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
+		if reported_outcome != 0 {
+			scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
+		}
 	}
 
 	var query string
@@ -205,7 +207,9 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_created(agtx *p.AugurTx,timest
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	scalar_val := float64(0)
 	if market_type == 2 { // scalar
-		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
+		if reported_outcome != 0 {
+			scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
+		}
 	}
 	var query string
 	query = "INSERT INTO crowdsourcer_created (" +
@@ -313,7 +317,9 @@ func (ss *SQLStorage) Insert_initial_reporter_redeemed(agtx *p.AugurTx,evt *p.EI
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	scalar_val := float64(0)
 	if market_type == 2 { // scalar
-		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
+		if reported_outcome != 0 {
+			scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
+		}
 	}
 
 	var query string
@@ -361,7 +367,9 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_redeemed(agtx *p.AugurTx,evt *
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	scalar_val := float64(0)
 	if market_type == 2 { // scalar
-		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
+		if reported_outcome != 0 {
+			scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
+		}
 	}
 
 	var query string
@@ -408,7 +416,9 @@ func (ss *SQLStorage) Insert_dispute_crowdsourcer_completed(agtx *p.AugurTx,evt 
 	reported_outcome := get_outcome_idx_from_numerators(market_type,mticks,evt.PayoutNumerators)
 	scalar_val := float64(0)
 	if market_type == 2 { // scalar
-		scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
+		if reported_outcome != 0 {
+			scalar_val = (float64(lo_price) + float64(evt.PayoutNumerators[2].Int64()))
+		}
 	}
 	var query string
 	query = "INSERT INTO crowdsourcer_completed (" +
@@ -984,11 +994,12 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 		if null_rep_payout.Valid {
 			rr.Rounds.Completed = true
 		}
-		
+		fmt.Printf("\n---------------------\n")
+		fmt.Printf("record with date=%v, outc=%v, sval=%v\n",rec.DateTime,rec.OutcomeIdx,rec.ScalarValue)
 		//var outc_rounds p.OutcomeRounds
 		rr.Rounds.RoundNum = rec.RoundNum
 		rr.Rounds.ORounds = make([]p.DisputeRound,0,8)
-		if rec.MktType ==2  {
+		if rec.MktType == 2  {
 			current_seen := false
 			for _,entry := range scalar_values {
 				if rec.ScalarValue == entry {
@@ -1001,6 +1012,11 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 					scalar_values = append(scalar_values,rec.ScalarValue)
 				}
 			}
+			fmt.Printf("scalar values are: ")
+			for _,v := range scalar_values {
+				fmt.Printf("%v,",v)
+			}
+			fmt.Printf("\n")
 			// for scalar markets outcome_idx is ignored because it is always 2
 			//	but Invalid outcome is present, so we will check only that one
 			if rec.OutcomeIdx == 0 { // invalid
@@ -1025,14 +1041,15 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 			// (because the outcome = 2 for scalar markets)
 			num_svalues := len(scalar_values)
 			for j:=0; j<num_svalues; j++ {
-				if scalar_values[j] == rec.ScalarValue {
+				if (scalar_values[j] == rec.ScalarValue) && (rec.OutcomeIdx!=0) {
+					fmt.Printf("j=%v, adding entry for scalar value %v\n",j,rec.ScalarValue)
 					rec.Color = true
 					rr.Rounds.ORounds = append(rr.Rounds.ORounds,rec)
 					update_current_round(&rr,&rec)
 				} else {
 					var empty_rec p.DisputeRound
 					if len(rounds) > 0 {
-						prev_rec := &rounds[len(rounds)-1].Rounds.ORounds[j]
+						prev_rec := &rounds[len(rounds)-1].Rounds.ORounds[j+1]// +1 for invalid
 						if prev_rec.TimeStamp != 0 {
 							empty_rec = *prev_rec
 							empty_rec.Color = false
@@ -1040,6 +1057,7 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 							empty_rec.Completed = false
 						}
 					}
+					fmt.Printf("adding empty record, j=%v, scalar val = %v\n",j,scalar_values[j])
 					rr.Rounds.ORounds = append(rr.Rounds.ORounds,empty_rec)
 				}
 			}
