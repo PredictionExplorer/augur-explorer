@@ -1535,12 +1535,33 @@ func (ss *SQLStorage) Get_user_report_profits(user_aid int64) []p.UserRepProfit 
 				"outcome_idx," +
 				"amount, " +
 				"rep," +
+				"1 AS rtype," +
 				"tx.tx_hash " +
 			"FROM crowdsourcer_redeemed c " +
-				"JOIN transaction tx ON tx_id=tx.id " +
+				"JOIN transaction tx ON c.tx_id=tx.id " +
 				"JOIN market m ON c.market_aid=m.market_aid " +
-				"LEFT JOIN address ma ON c.market_aid=ma.address_id " +
-			"WHERE c.reporter_aid=$1 AND amount<rep" // amount>rep because otherwise it is a return of unused stake (pre loaded in case somebody disputes the outcome)
+				"JOIN address ma ON c.market_aid=ma.address_id " +
+			"WHERE (c.reporter_aid=$1) AND (amount<rep) " + // amount>rep because otherwise it is a return of unused stake (pre loaded in case somebody disputes the outcome)
+			"UNION ALL " +
+			"SELECT  " +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
+				"TO_CHAR(r.time_stamp, 'dd/mm/yyyy HH:ii')," +
+				"m.market_aid," +
+				"ma.addr," +
+				"m.extra_info::json->>'description' AS descr," +
+				"m.market_type," +
+				"m.outcomes," +
+				"outcome_idx," +
+				"amount, " +
+				"rep," +
+				"0 AS rtype," +
+				"tx.tx_hash " +
+			"FROM irep_redeem r " +
+				"JOIN transaction tx ON r.tx_id=tx.id " +
+				"JOIN market m ON r.market_aid=m.market_aid " +
+				"JOIN address ma ON r.market_aid=ma.address_id " +
+			"WHERE (r.reporter_aid=$1) AND (amount<rep) " + // amount>rep because otherwise it is a return of unused stake (pre loaded in case somebody disputes the outcome)
+			"ORDER BY ts"
 
 	rows,err := ss.db.Query(query,user_aid)
 	if (err!=nil) {
@@ -1564,6 +1585,7 @@ func (ss *SQLStorage) Get_user_report_profits(user_aid int64) []p.UserRepProfit 
 			&rec.OutcomeIdx,
 			&rec.RepInvested,
 			&rec.RepReturned,
+			&rec.RType,
 			&rec.TxHash,
 		)
 		if (err!=nil) {

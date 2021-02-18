@@ -1666,6 +1666,7 @@ type UserRepProfit struct {
 	TimeStamp				int64
 	MarketAid				int64
 	OutcomeIdx				int
+	RType					int		// report type : 0-Initial, 1-Contribution
 	RepInvested				float64
 	RepReturned				float64
 	Profit					float64

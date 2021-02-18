@@ -22,6 +22,7 @@ Profits made in reporting:
 		<td class="mkt_trade_field">REP returned</td>
 		<td class="mkt_trade_field">Profit</td>
 		<td class="mkt_trade_field">ROI</td>
+		<td class="mkt_trade_field">Report Type</td>
 		<td class="mkt_trade_field">TxHash</td>
 	</tr>
 	 {{- range $i, $rpt := .RepProfits}}
@@ -34,6 +35,10 @@ Profits made in reporting:
 		<td style="text-align: right">{{ printf "%.2f" .RepReturned}}</td>
 		<td style="text-align: right">{{ printf "%.2f" .Profit}}</td>
 		<td style="text-align: right">{{ printf "%.2f" .ROI}} %</td>
+		<td style="text-align: center">
+			{{ if eq 0 .RType }}Initial Report{{ end}}
+			{{ if eq 1 .RType }}Contribution Report {{end}}
+		</td>
 		<td>
 			<a href="/black/search?q={{.TxHash}}">{{.TxHashSh}}</a>
 			&nbsp;&nbsp;
