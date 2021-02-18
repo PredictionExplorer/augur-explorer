@@ -1741,3 +1741,31 @@ func a1_user_rep_profit_loss(c *gin.Context) {
 			"RepLosses" : 0,
 	})
 }
+func a1_noshow_bond_prices(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	bond_prices := augur_srv.storage.Get_noshow_bond_price_history()
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": status,
+		"error" : err_str,
+		"NoShowBondPrices" : bond_prices,
+	})
+}
+func a1_validity_bond_prices(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	bond_prices := augur_srv.storage.Get_validity_bond_price_history()
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": status,
+		"error" : err_str,
+		"ValidityBondPrices" : bond_prices,
+	})
+}

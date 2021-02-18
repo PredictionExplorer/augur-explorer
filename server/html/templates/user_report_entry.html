@@ -2,11 +2,20 @@
 <tr class="user_reports">
 	<td class="user_reports_field">{{.Date}}</td>
 	<td class="user_reports_field" title="{{.MktAddr}}">
-		<a href="search?q={{.MktAddr}}">{{.MktAddrSh}}</a>
+		<a href="/black/search?q={{.MktAddr}}">{{.MktAddrSh}}</a>
 	</td>
 	<td class="user_reports_field" style="text-align: center">{{.OutcomeStr}}</td>
 	<td class="user_reports_field" style="text-align: center">{{.ReportType}}</td>
 	<td class="user_reports_field" style="text-align: center">{{.RepStake}}</td>
 	<td class="user_reports_field" style="text-align: center">{{.Round}}</td>
+	<td class="user_reports_field" style="text-align: center">
+		{{ if eq 0 .RType }}
+		Initial Report
+		{{ end }}
+		{{ if eq 1 .RType }}
+		Contribution Report
+		{{ end }}
+	</td>
+
 </tr>
 {{end}}

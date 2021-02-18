@@ -1095,3 +1095,22 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_crowdsourcer_contrib_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE ustats SET total_reports = (total_reports + 1)
+		WHERE aid=NEW.reporter_aid;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_crowdsourcer_contrib_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE ustats SET total_reports = (total_reports - 1)
+		WHERE aid=NEW.reporter_aid;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;

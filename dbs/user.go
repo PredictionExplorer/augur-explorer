@@ -371,12 +371,13 @@ func (ss *SQLStorage) Get_user_ranks(sort int,order int) []p.UserRank {
 func (ss *SQLStorage) Get_user_reports(aid int64,limit int) []p.Report {
 
 	var query string
+	/* OLD, removal pending
 	query = "SELECT " +
 				"m.market_aid,"+
 				"r.time_stamp::date," +
 				"ma.addr as mkt_addr," +
 				"r.is_designated," +
-				"round(r.amount_staked,2),"+
+				"r.amount_staked,"+
 				"r.outcome_idx," +
 				"m.extra_info::json->>'description' AS descr," +
 				"m.initial_outcome," +
@@ -390,6 +391,49 @@ func (ss *SQLStorage) Get_user_reports(aid int64,limit int) []p.Report {
 						"LEFT JOIN address AS ma ON m.market_aid = ma.address_id " +
 			"WHERE (r.market_aid = m.market_aid) and (r.reporter_aid=$1) " +
 			"ORDER BY r.time_stamp"
+	*/
+	query = "SELECT " +
+				"m.market_aid AS maid,"+
+				"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT AS ts," +
+				"r.time_stamp::date AS datetime," +
+				"ma.addr AS mkt_addr," +
+				"r.is_designated," +
+				"r.amount_staked,"+
+				"r.outcome_idx," +
+				"m.extra_info::json->>'description' AS descr," +
+				"m.initial_outcome," +
+				"m.designated_outcome," +
+				"m.winning_outcome," +
+				"m.market_type AS mtype," +
+				"1 AS dispute_round," +
+				"0 AS rtype," +
+				"m.outcomes AS outcomes_str " +
+			"FROM initial_report AS r " +
+				"JOIN market AS m ON r.market_aid=m.market_aid " +
+				"JOIN address AS ma ON r.market_aid = ma.address_id " +
+			"WHERE r.reporter_aid=$1 " +
+			"UNION ALL " +
+			"SELECT " +
+				"m.market_aid as maid," +
+				"EXTRACT(EPOCH FROM c.time_stamp)::BIGINT AS ts," +
+				"c.time_stamp::date AS datetime," +
+				"ma.addr AS mkt_addr," +
+				"FALSE as is_designated," +
+				"c.amount_staked," +
+				"c.outcome_idx," +
+				"m.extra_info::json->>'description' AS descr," +
+				"m.initial_outcome," +
+				"m.designated_outcome," +
+				"m.winning_outcome," +
+				"m.market_type AS mtype," +
+				"c.dispute_round," +
+				"1 AS rtype," +
+				"m.outcomes AS outcomes_str " +
+			"FROM crowdsourcer_contrib AS c " +
+				"JOIN market AS m ON c.market_aid=m.market_aid " +
+				"JOIN address AS ma ON c.market_aid = ma.address_id " +
+			"WHERE c.reporter_aid=$1 " +
+			"ORDER BY ts"
 	if limit > 0 {
 		query = query +	" LIMIT " + strconv.Itoa(limit)
 	}
@@ -417,6 +461,7 @@ func (ss *SQLStorage) Get_user_reports(aid int64,limit int) []p.Report {
 		var mkt_descr sql.NullString
 		err=rows.Scan(
 			&rec.MktAid,
+			&rec.TimeStamp,
 			&rec.Date,
 			&rec.MktAddr,
 			&rec.IsDesignated,
@@ -427,6 +472,8 @@ func (ss *SQLStorage) Get_user_reports(aid int64,limit int) []p.Report {
 			&designated_outcome,
 			&winning_outcome,
 			&rec.MktType,
+			&rec.Round,
+			&rec.RType,
 			&outcomes,
 		)
 		if err!=nil {

@@ -38,3 +38,5 @@ CREATE TRIGGER noshow_bond_chg_insert AFTER INSERT on noshow_bond_chg FOR EACH R
 CREATE TRIGGER noshow_bond_delete AFTER DELETE on noshow_bond_chg FOR EACH ROW EXECUTE PROCEDURE on_noshow_bond_chg_delete();
 CREATE TRIGGER crowdsourcer_created_insert BEFORE INSERT on crowdsourcer_created FOR EACH ROW EXECUTE PROCEDURE on_crowdsourcer_created_insert();
 CREATE TRIGGER crowdsourcer_created_delete AFTER DELETE on crowdsourcer_created FOR EACH ROW EXECUTE PROCEDURE on_crowdsourcer_created_delete();
+CREATE TRIGGER crowdsourcer_contrib_insert AFTER INSERT on crowdsourcer_contrib FOR EACH ROW EXECUTE PROCEDURE on_crowdsourcer_contrib_insert();
+CREATE TRIGGER crowdsourcer_created_delete AFTER DELETE on crowdsourcer_contrib FOR EACH ROW EXECUTE PROCEDURE on_crowdsourcer_contrib_delete();

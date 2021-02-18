@@ -171,7 +171,7 @@ func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoM
 	trades := augur_srv.storage.Get_mkt_trades(minfo.MktAddr,10000000)
 	outcome_vols,_ := augur_srv.storage.Get_outcome_volumes(minfo.MktAddr,minfo.MktAid,0,minfo.LowPriceLimit)
 	price_estimates := augur_srv.storage.Get_price_estimates(minfo.MktAid,outcome_vols,minfo.LowPriceLimit)
-	reports := augur_srv.storage.Get_market_reports(minfo.MktAid,DEFAULT_MARKET_REPORTS_LIMIT)
+	reports := augur_srv.storage.Get_market_reports(minfo.MktAid,0)
 	price_history := augur_srv.storage.Get_full_price_history(minfo.MktAddr,minfo.MktAid,minfo.LowPriceLimit)
 	balancer_pools := augur_srv.storage.Get_market_balancer_pools(minfo.MktAid)
 	uniswap_pairs := augur_srv.storage.Get_market_uniswap_pairs(minfo.MktAid)
@@ -2651,5 +2651,23 @@ func user_rep_profit_loss(c *gin.Context) {
 	c.HTML(http.StatusOK, "user_rep_pl.html", gin.H{
 		"UserInfo" : user_info,
 		"RepProfits" : rep_profits,
+	})
+}
+func augur_noshow_bond_prices(c *gin.Context) {
+
+	bond_prices := augur_srv.storage.Get_noshow_bond_price_history()
+	js_prices := build_js_noshow_bond_price_history(&bond_prices)
+	c.HTML(http.StatusOK, "noshow_bond_prices.html", gin.H{
+		"Prices" : bond_prices,
+		"JSPriceData" :js_prices,
+	})
+}
+func augur_validity_bond_prices(c *gin.Context) {
+
+	bond_prices := augur_srv.storage.Get_validity_bond_price_history()
+	js_prices := build_js_validity_bond_price_history(&bond_prices)
+	c.HTML(http.StatusOK, "validity_bond_prices.html", gin.H{
+		"Prices" : bond_prices,
+		"JSPriceData" :js_prices,
 	})
 }

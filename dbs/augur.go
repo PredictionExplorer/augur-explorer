@@ -751,3 +751,75 @@ func (ss *SQLStorage) Delete_complete_sets_sold(tx_id int64) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Get_noshow_bond_price_history() []p.NoShowBondPrice {
+
+	var query string
+	query =	"SELECT " +
+				"EXTRACT(EPOCH FROM b.ts)::BIGINT AS ts, "+
+				"TO_CHAR(b.ts,'dd/mm/yyyy HH:ii'), " +
+				"bond_value "+
+			"FROM noshow_bond_chg v " +
+				"JOIN block b ON b.block_num=v.block_num " +
+			"ORDER by b.ts "
+
+	records := make([]p.NoShowBondPrice,0,32)
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return records
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.NoShowBondPrice
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.Price,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_validity_bond_price_history() []p.ValidityBondPrice {
+
+	var query string
+	query =	"SELECT " +
+				"EXTRACT(EPOCH FROM b.ts)::BIGINT AS ts, "+
+				"TO_CHAR(b.ts,'dd/mm/yyyy HH:ii'), " +
+				"bond_value "+
+			"FROM val_bond_chg v " +
+				"JOIN block b ON b.block_num=v.block_num " +
+			"ORDER by b.ts "
+
+	records := make([]p.ValidityBondPrice,0,32)
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return records
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.ValidityBondPrice
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.Price,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}

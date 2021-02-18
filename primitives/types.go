@@ -407,10 +407,12 @@ type OrderInfo struct {		// this is a full order information, to show in dedicat
 }
 type Report struct {
 	MktAid				int64
+	TimeStamp			int64
 	RepStake			float64
 	Round				int
 	OutcomeIdx			int
 	MktType				int
+	RType				int		// Report Type : 0-Initial, 1-Contribution
 	IsInitial			bool
 	IsDesignated		bool
 	Reporter			string
@@ -1686,4 +1688,14 @@ type RepLosingParticipant struct {
 	ReporterAddr			string
 	TxHash					string
 	TxHashSh				string
+}
+type NoShowBondPrice struct {
+	TimeStamp				int64
+	Price					float64
+	DateTime				string
+}
+type ValidityBondPrice struct {
+	TimeStamp				int64
+	Price					float64
+	DateTime				string
 }

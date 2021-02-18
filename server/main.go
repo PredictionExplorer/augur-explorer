@@ -173,6 +173,8 @@ func main() {
 	r.GET("/black/node_text_data/:node",show_node_text_data)
 	r.GET("/black/augur_foundry",show_augur_foundry_contracts)
 	r.GET("/black/reports_table/:market",show_reporting_table)
+	r.GET("/black/noshow_bond",augur_noshow_bond_prices)
+	r.GET("/black/validity_bond",augur_validity_bond_prices)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -236,7 +238,8 @@ func main() {
 	r.GET("/api/block/:block_num",a1_block_info)
 	r.GET("/api/reporting_table/:market",a1_reporting_table)
 	r.GET("/api/user_rep_pl/:user",a1_user_rep_profit_loss)
-
+	r.GET("/api/noshow_bond",a1_noshow_bond_prices)
+	r.GET("/api/validity_bond",a1_validity_bond_prices)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

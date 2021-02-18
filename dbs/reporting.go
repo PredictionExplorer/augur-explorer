@@ -709,6 +709,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 				"m.market_type," +
 				"m.decimals," +
 				"cr.outcome_idx," +
+				"cr.scalar_val," +
 				"round(cr.size,5) min_size," +
 				"co.pacing_on p," +
 				"co.tot_rep_payout," +
@@ -758,6 +759,7 @@ func (ss *SQLStorage) Get_reporting_table(market_aid int64) (p.ReportingStatus,e
 			&rec.MktType,
 			&decimals,
 			&rec.OutcomeIdx,
+			&rec.ScalarValue,
 			&rec.MinDisputeSize,
 			&null_pacing,
 			&null_rep_payout,
@@ -994,8 +996,6 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 		if null_rep_payout.Valid {
 			rr.Rounds.Completed = true
 		}
-		fmt.Printf("\n---------------------\n")
-		fmt.Printf("record with date=%v, outc=%v, sval=%v\n",rec.DateTime,rec.OutcomeIdx,rec.ScalarValue)
 		//var outc_rounds p.OutcomeRounds
 		rr.Rounds.RoundNum = rec.RoundNum
 		rr.Rounds.ORounds = make([]p.DisputeRound,0,8)
@@ -1012,11 +1012,6 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 					scalar_values = append(scalar_values,rec.ScalarValue)
 				}
 			}
-			fmt.Printf("scalar values are: ")
-			for _,v := range scalar_values {
-				fmt.Printf("%v,",v)
-			}
-			fmt.Printf("\n")
 			// for scalar markets outcome_idx is ignored because it is always 2
 			//	but Invalid outcome is present, so we will check only that one
 			if rec.OutcomeIdx == 0 { // invalid
@@ -1042,7 +1037,6 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 			num_svalues := len(scalar_values)
 			for j:=0; j<num_svalues; j++ {
 				if (scalar_values[j] == rec.ScalarValue) && (rec.OutcomeIdx!=0) {
-					fmt.Printf("j=%v, adding entry for scalar value %v\n",j,rec.ScalarValue)
 					rec.Color = true
 					rr.Rounds.ORounds = append(rr.Rounds.ORounds,rec)
 					update_current_round(&rr,&rec)
@@ -1057,7 +1051,6 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 							empty_rec.Completed = false
 						}
 					}
-					fmt.Printf("adding empty record, j=%v, scalar val = %v\n",j,scalar_values[j])
 					rr.Rounds.ORounds = append(rr.Rounds.ORounds,empty_rec)
 				}
 			}
@@ -1162,7 +1155,7 @@ func (ss *SQLStorage) Get_initial_report_redeemed_record(market_aid int64) *p.In
 	p.Augur_UI_price_adjustments(&rec.ScalarValue,nil,rec.MktType,decimals)
 	_,mkt_type,outcomes,_ := ss.Get_key_market_fields(market_aid)
 	rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
-	rec.TxHashSh = p.Short_address(rec.TxHash)
+	rec.TxHashSh = p.Short_hash(rec.TxHash)
 	return rec
 }
 func (ss *SQLStorage) Get_redeemed_participants(market_aid int64) []p.RedeemedParticipant {
@@ -1187,7 +1180,7 @@ func (ss *SQLStorage) Get_redeemed_participants(market_aid int64) []p.RedeemedPa
 				"JOIN transaction tx ON tx_id=tx.id " +
 				"JOIN market m ON c.market_aid=m.market_aid " +
 				"LEFT JOIN address ra ON c.reporter_aid=ra.address_id " +
-			"WHERE c.market_aid=$1"
+			"WHERE c.market_aid=$1 AND (amount < rep)"
 
 	rows,err := ss.db.Query(query,market_aid)
 	if (err!=nil) {
@@ -1221,7 +1214,7 @@ func (ss *SQLStorage) Get_redeemed_participants(market_aid int64) []p.RedeemedPa
 		}
 		p.Augur_UI_price_adjustments(&rec.ScalarValue,nil,rec.MktType,decimals)
 		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
-		rec.TxHashSh = p.Short_address(rec.TxHash)
+		rec.TxHashSh = p.Short_hash(rec.TxHash)
 		rec.Profit = rec.RepReturned - rec.RepInvested
 		records = append(records,rec)
 	}
@@ -1288,7 +1281,7 @@ func (ss *SQLStorage) Get_losing_rep_participants(market_aid int64) []p.RepLosin
 			}
 		}
 		rec.OutcomeStr = get_outcome_str(uint8(mkt_type),rec.OutcomeIdx,&outcomes)
-		rec.TxHashSh = p.Short_address(rec.TxHash)
+		rec.TxHashSh = p.Short_hash(rec.TxHash)
 		records = append(records,rec)
 	}
 	return records

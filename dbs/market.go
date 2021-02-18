@@ -1321,6 +1321,7 @@ func (ss *SQLStorage) Get_market_reports(market_aid int64,limit int) []p.Report 
 				"round(r.amount_staked,2),"+
 				"r.outcome_idx," +
 				"m.initial_outcome," +
+				"m.designated_outcome,"+
 				"m.winning_outcome," +
 				"m.market_type AS mtype," +
 				"m.outcomes AS outcomes_str, " +
@@ -1361,6 +1362,7 @@ func (ss *SQLStorage) Get_market_reports(market_aid int64,limit int) []p.Report 
 			&rec.RepStake,
 			&rec.OutcomeIdx,
 			&initial_outcome,
+			&designated_outcome,
 			&winning_outcome,
 			&rec.MktType,
 			&outcomes,

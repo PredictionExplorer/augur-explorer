@@ -306,3 +306,47 @@ func build_js_ethusd_price_history(prices* []EthUsdPrice) template.JS {
 	data_str = data_str + "]"
 	return template.JS(data_str)
 }
+func build_js_noshow_bond_price_history(prices* []NoShowBondPrice) template.JS {
+	var data_str string = "["
+
+	for i:=0 ; i < len(*prices) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		var e = &(*prices)[i];
+		var entry string
+		ts := time.Unix(int64(e.TimeStamp),0)
+		date_str := fmt.Sprintf("%v",ts)
+		entry = "{" +
+				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.TimeStamp)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.Price) + "," +
+				"price: " + fmt.Sprintf("%v",e.Price) + "," +
+				"date_str: \"" + date_str + "\"," +
+				"}"
+		data_str= data_str + entry
+	}
+	data_str = data_str + "]"
+	return template.JS(data_str)
+}
+func build_js_validity_bond_price_history(prices* []ValidityBondPrice) template.JS {
+	var data_str string = "["
+
+	for i:=0 ; i < len(*prices) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		var e = &(*prices)[i];
+		var entry string
+		ts := time.Unix(int64(e.TimeStamp),0)
+		date_str := fmt.Sprintf("%v",ts)
+		entry = "{" +
+				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.TimeStamp)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.Price) + "," +
+				"price: " + fmt.Sprintf("%v",e.Price) + "," +
+				"date_str: \"" + date_str + "\"," +
+				"}"
+		data_str= data_str + entry
+	}
+	data_str = data_str + "]"
+	return template.JS(data_str)
+}
