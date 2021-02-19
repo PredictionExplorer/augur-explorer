@@ -3,6 +3,7 @@ package dbs
 import (
 	"fmt"
 	"os"
+	"strings"
 	"database/sql"
 	_  "github.com/lib/pq"
 
@@ -130,6 +131,17 @@ func (ss *SQLStorage) Insert_ethusd_price_evt(pr *p.EthUsdPriceEvt) {
 		pr.EthUsd,
 	)
 	if (err!=nil) {
+		unique := strings.Contains(err.Error(),`ethusd_price_evtlog_id_fkey`)
+		if unique {
+			ss.Log_msg(
+				fmt.Sprintf(
+					"Attempt to insert event log that was already deleted due to chain split" +
+					", blocknum=%v",
+					pr.BlockNum,err,query,
+				),
+			)
+			return
+		}
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
