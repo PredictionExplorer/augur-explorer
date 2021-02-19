@@ -1409,6 +1409,23 @@ func (ss *SQLStorage) Get_first_event_log() p.BasicChainInfo {
 	}
 	return bci
 }
+func (ss *SQLStorage) Get_last_evtlog_id() (int64,error) {
+
+	var query string
+	query = "SELECT id FROM evt_log ORDER BY id DESC LIMIT 1"
+	res := ss.db.QueryRow(query)
+	var null_id sql.NullInt64
+	err := res.Scan(&null_id)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return null_id.Int64,nil
+}
 func (ss *SQLStorage) Get_erc20_info(tok_addr string) (p.ERC20Info,error) {
 
 	var query string

@@ -14,4 +14,6 @@ rm ./etl/tools/check_owner
 rm ./etl/tools/check_wallet
 rm ./etl/tests/verif_dai_balances
 rm ./etl/tests/verif_cash_flow
+rm ./etl/ens/scanpropnames
+rm ./etl/ens/scantlds
 rm ./server/server

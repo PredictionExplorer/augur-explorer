@@ -827,23 +827,6 @@ func (ss *SQLStorage) Get_market_balancer_pools(market_aid int64) []p.PoolInfo {
 	return records
 
 }
-func (ss *SQLStorage) Get_last_evtlog_id() (int64,error) {
-
-	var query string
-	query = "SELECT id FROM evt_log ORDER BY id DESC LIMIT 1"
-	res := ss.db.QueryRow(query)
-	var null_id sql.NullInt64
-	err := res.Scan(&null_id)
-	if (err!=nil) {
-		if err == sql.ErrNoRows {
-			return 0,err
-		} else {
-			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
-			os.Exit(1)
-		}
-	}
-	return null_id.Int64,nil
-}
 func (ss *SQLStorage) Is_address_balancer_pool(addr string) bool {
 
 

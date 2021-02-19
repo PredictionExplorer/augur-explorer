@@ -893,14 +893,14 @@ func range_initial_load_hash_registered(exit_chan chan bool,block_num_limit int6
 	}
 }
 func initial_load(exit_chan chan bool,block_num_limit int64) {
-	//range_initial_load_name_registered1(exit_chan,block_num_limit)
-	//range_initial_load_new_owner(exit_chan,block_num_limit)
-	//range_initial_load_name_registered2(exit_chan,block_num_limit)
-	//range_initial_load_name_registered3(exit_chan,block_num_limit)
-	//range_initial_load_hash_invalidated(exit_chan,block_num_limit)
-	//range_initial_load_new_resolver(exit_chan,block_num_limit)
-	//range_initial_load_registry_transfer(exit_chan,block_num_limit)
-	//range_initial_load_text_changed(exit_chan,block_num_limit)
+	range_initial_load_name_registered1(exit_chan,block_num_limit)
+	range_initial_load_new_owner(exit_chan,block_num_limit)
+	range_initial_load_name_registered2(exit_chan,block_num_limit)
+	range_initial_load_name_registered3(exit_chan,block_num_limit)
+	range_initial_load_hash_invalidated(exit_chan,block_num_limit)
+	range_initial_load_new_resolver(exit_chan,block_num_limit)
+	range_initial_load_registry_transfer(exit_chan,block_num_limit)
+	range_initial_load_text_changed(exit_chan,block_num_limit)
 	range_initial_load_hash_registered(exit_chan,block_num_limit)
 }
 func check_initial_load_completness() bool {
@@ -977,8 +977,17 @@ func main() {
 	}
 	status := storage.Get_ens_processing_status()
 	if do_initial_load {
+		ens_status := storage.Get_ens_proc_status()
+		if ens_status.LastEvtId != 0 {
+			fmt.Printf("ENS status record shows prior usage: last_evt_id=%v\n",ens_status.LastEvtId)
+			fmt.Printf("Will refuse to run initialization process\n")
+			os.Exit(1)
+		}
 		initial_load(exit_chan,status.IniLoadBlockNumLimit)
 		fmt.Printf("Initial load finished.")
 		return
+	} else {
+		process_ens_events(exit_chan)
 	}
+
 }

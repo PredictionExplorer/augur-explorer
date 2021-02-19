@@ -566,3 +566,46 @@ func (ss *SQLStorage) Get_node_text_key_values(node string) (string,[]p.ENS_Text
 	}
 	return fqdn_words,records
 }
+func (ss *SQLStorage) Update_ens_proc_status(status *p.EnsProcStatus) {
+
+	var query string
+	query = "UPDATE ens_status SET last_evt_id = $1"
+
+	_,err := ss.db.Exec(query,status.LastEvtId)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Get_ens_proc_status() p.EnsProcStatus {
+
+	var output p.EnsProcStatus
+	var null_id sql.NullInt64
+
+	var query string
+	for {
+		query = "SELECT last_evt_id FROM ens_status"
+
+		res := ss.db.QueryRow(query)
+		err := res.Scan(&null_id)
+		if (err!=nil) {
+			if err == sql.ErrNoRows {
+				query = "INSERT INTO ens_status DEFAULT VALUES"
+				_,err := ss.db.Exec(query)
+				if (err!=nil) {
+					ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+					os.Exit(1)
+				}
+			} else {
+				ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+				os.Exit(1)
+			}
+		} else {
+			break
+		}
+	}
+	if null_id.Valid {
+		output.LastEvtId = null_id.Int64
+	}
+	return output
+}
