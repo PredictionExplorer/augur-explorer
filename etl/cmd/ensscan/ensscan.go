@@ -12,14 +12,14 @@ import (
 	"strings"
 	"encoding/hex"
 
-	"golang.org/x/crypto/sha3"
+//	"golang.org/x/crypto/sha3"
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/wealdtech/go-ens/v3"
-	"github.com/wealdtech/go-ens/v3/contracts/resolver"
+//	"github.com/wealdtech/go-ens/v3"
+//	"github.com/wealdtech/go-ens/v3/contracts/resolver"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
@@ -130,41 +130,7 @@ func do_initiial_load_name_registered1(block_num_from,block_num_to int64) {
 			continue
 		}
 ///		Info.Printf("%v: log = %+v\n",i,log)
-		var evt ENS_Name1
-		evt.EvtId = 0
-		evt.BlockNum = int64(log.BlockNumber)
-		evt.TxId = 0
-		var eth_event NameRegistered_v1
-		err := ens_abi.Unpack(&eth_event,"NameRegistered1",log.Data)
-		if err != nil {
-			Error.Printf("Error upacking NameRegistered1: %v\n",err)
-			Info.Printf("Error upacking NameRegistered1: %v\n",err)
-			continue
-		}
-		ctx := context.Background()
-		bnum := big.NewInt(int64(log.BlockNumber))
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-		}
-		evt.TimeStamp = int64(block_hdr.Time)
-		eth_event.Label = log.Topics[1]
-		eth_event.Owner = common.BytesToAddress(log.Topics[2][12:])
-		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
-		eth_event.Dump(Info)
-		evt.TxHash = log.TxHash.String()
-		evt.Label = hex.EncodeToString(eth_event.Label[:])
-		owner_addr := common.BytesToAddress(log.Topics[2][12:])
-		evt.Owner = owner_addr.String()
-		evt.Name = eth_event.Name
-		evt.Cost = eth_event.Cost.String()
-		evt.Expires = eth_event.Expires.Int64()
-		evt.Contract = log.Address.String()
-//		Info.Printf("label = %v, name=%v\n",hex.EncodeToString(eth_event.Label[:]),eth_event.Name)
-//		Info.Printf("log data hex=%v\n",hex.EncodeToString(log.Data[:]))
-//		Info.Printf("NameRegistered1: label=%v, Owner=%v, cost=%v, block %v tx %v\n",evt.Label,evt.Owner,log.BlockNumber,eth_event.Cost.String(),log.TxHash.String())
-		storage.Insert_name_registered1(&evt)
+		proc_name_registered1(&log,0,0)
 	}
 }
 func do_initiial_load_new_owner(block_num_from,block_num_to int64) {
@@ -198,38 +164,7 @@ func do_initiial_load_new_owner(block_num_from,block_num_to int64) {
 			!(ens1 || ens2) {
 				continue
 		}
-///		Info.Printf("%v: log = %+v\n",i,log)
-		var evt ENS_NewOwner
-		evt.EvtId = 0
-		evt.BlockNum = int64(log.BlockNumber)
-		evt.TxId = 0
-		bnum := big.NewInt(int64(log.BlockNumber))
-		ctx := context.Background()
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-		}
-		evt.TimeStamp = int64(block_hdr.Time)
-		evt.Label = hex.EncodeToString(log.Topics[2][:])
-		evt.Node = hex.EncodeToString(log.Topics[1][:])
-		evt.Owner = common.BytesToAddress(log.Data[12:]).String()
-		var new_node_hash [32]byte
-		data :=make([]byte,32,64)
-		copy(data,log.Topics[1][:]) // copying Node (bytes)
-		data = append(data[:],log.Topics[2].Bytes()...)
-		sha := sha3.NewLegacyKeccak256()
-		if _, err := sha.Write(data[:]); err != nil {
-			Error.Printf("cant calculate hash of new node: %v\n",err)
-			os.Exit(1)
-		}
-		sha.Sum(new_node_hash[:0])
-		evt.FQDN = hex.EncodeToString(new_node_hash[:])
-		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
-		Info.Printf("NewOwner %v for %v (node: %v, label: %v)\n",evt.Owner,evt.FQDN,evt.Node,evt.Label)
-		evt.TxHash = log.TxHash.String()
-		evt.Contract = log.Address.String()
-		storage.Insert_new_owner(&evt)
+		proc_newowner(&log,0,0)
 	}
 }
 func do_initiial_load_name_registered2(block_num_from,block_num_to int64) {
@@ -258,36 +193,7 @@ func do_initiial_load_name_registered2(block_num_from,block_num_to int64) {
 			continue
 		}
 ///		Info.Printf("%v: log = %+v\n",i,log)
-		var evt ENS_Name2
-		evt.EvtId = 0
-		evt.BlockNum = int64(log.BlockNumber)
-		evt.TxId = 0
-		ctx := context.Background()
-		bnum := big.NewInt(int64(log.BlockNumber))
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-		}
-		evt.TimeStamp = int64(block_hdr.Time)
-		evt.NameId = hex.EncodeToString(log.Topics[1][:])
-		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
-		evt.TxHash = log.TxHash.String()
-		owner_addr := common.BytesToAddress(log.Topics[2][12:])
-		evt.Owner = owner_addr.String()
-		expires := big.NewInt(0)
-		expires.SetBytes(log.Data[:])
-		evt.Expires = expires.Int64()
-		evt.Contract = log.Address.String()
-		Info.Printf("ENS_Name2 {\n")
-		Info.Printf("\tOwner: %v\n",evt.Owner)
-		Info.Printf("\tNameId: %v\n",evt.NameId)
-		Info.Printf("\tExpires: %v\n",evt.Expires)
-		Info.Printf("}")
-//		Info.Printf("label = %v, name=%v\n",hex.EncodeToString(eth_event.Label[:]),eth_event.Name)
-//		Info.Printf("log data hex=%v\n",hex.EncodeToString(log.Data[:]))
-//		Info.Printf("NameRegistered1: label=%v, Owner=%v, cost=%v, block %v tx %v\n",evt.Label,evt.Owner,log.BlockNumber,eth_event.Cost.String(),log.TxHash.String())
-//		storage.Insert_name_registered1(&evt)
+		proc_name_registered2(&log,0,0)
 	}
 }
 func range_initial_load_name_registered1(exit_chan chan bool,block_num_limit int64) {
@@ -383,43 +289,7 @@ func do_initiial_load_name_registered3(block_num_from,block_num_to int64) {
 		if log.Removed {
 			continue
 		}
-		var evt ENS_Name3
-		evt.EvtId = 0
-		evt.BlockNum = int64(log.BlockNumber)
-		evt.TxId = 0
-		ctx := context.Background()
-		bnum := big.NewInt(int64(log.BlockNumber))
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-		}
-
-		var eth_event NameRegistered_v3
-		err = ens_abi.Unpack(&eth_event,"NameRegistered3",log.Data)
-		if err != nil {
-			Error.Printf("Error upacking NameRegistered3: %v\n",err)
-			Info.Printf("Error upacking NameRegistered3: %v\n",err)
-			continue
-		}
-		evt.TimeStamp = int64(block_hdr.Time)
-		eth_event.Caller= common.BytesToAddress(log.Topics[1][12:])
-		eth_event.Beneficiary = common.BytesToAddress(log.Topics[2][12:])
-		eth_event.Label = log.Topics[3]
-		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
-		evt.TxHash = log.TxHash.String()
-		evt.Label = hex.EncodeToString(eth_event.Label[:])
-		evt.Subdomain = eth_event.Subdomain
-		evt.CreatedDate = eth_event.CreatedDate.Int64()
-		evt.Contract = log.Address.String()
-
-		Info.Printf("ENS_Name3 {\n")
-		Info.Printf("\tCaller: %v\n",eth_event.Caller.String())
-		Info.Printf("\tBeneficiary: %v\n",eth_event.Beneficiary.String())
-		Info.Printf("\tLabel: %v\n",eth_event.Label)
-		Info.Printf("\tSubdomain: %v\n",eth_event.Subdomain)
-		Info.Printf("\tCreatedDate: %v\n",evt.CreatedDate)
-		Info.Printf("}")
+		proc_name_registered3(&log,0,0)
 	}
 }
 func range_initial_load_name_registered3(exit_chan chan bool,block_num_limit int64) {
@@ -468,44 +338,7 @@ func do_initiial_load_hash_invalidated(block_num_from,block_num_to int64) {
 		if log.Removed {
 			continue
 		}
-		var evt ENS_HashInvalidated
-		evt.EvtId = 0
-		evt.BlockNum = int64(log.BlockNumber)
-		evt.TxId = 0
-		ctx := context.Background()
-		bnum := big.NewInt(int64(log.BlockNumber))
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-		}
-
-		var eth_event HashInvalidated
-		err = ens_abi.Unpack(&eth_event,"HashInvalidated",log.Data)
-		if err != nil {
-			Error.Printf("Error upacking HashInvalidated: %v\n",err)
-			Info.Printf("Error upacking HashInvalidated: %v\n",err)
-			continue
-		}
-		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
-		evt.TimeStamp = int64(block_hdr.Time)
-		copy(eth_event.Hash[:],log.Topics[1].Bytes())
-		//eth_event.Name = Bytes32_to_string(log.Topics[2].Bytes())
-		eth_event.Name = hex.EncodeToString(log.Topics[2][:])
-		evt.TxHash = log.TxHash.String()
-		evt.Hash = hex.EncodeToString(eth_event.Hash[:])
-		evt.Name = eth_event.Name
-		evt.RegistrationDate=eth_event.RegistrationDate.Int64()
-		evt.Value = eth_event.Value.String()
-		evt.Contract = log.Address.String()
-
-		Info.Printf("HashInvalidated {\n")
-		Info.Printf("\tHash: %v\n",hex.EncodeToString(eth_event.Hash[:]))
-		Info.Printf("\tName: %v\n",eth_event.Name)
-		Info.Printf("\tValue: %v\n",eth_event.Value.String())
-		Info.Printf("\tRegDate: %v\n",eth_event.RegistrationDate.String())
-		Info.Printf("}")
-		storage.Insert_hash_invalidated(&evt)
+		proc_hash_invalidated(&log,0,0)
 	}
 }
 func range_initial_load_hash_invalidated(exit_chan chan bool,block_num_limit int64) {
@@ -554,30 +387,7 @@ func do_initiial_load_new_resolver(block_num_from,block_num_to int64) {
 		if log.Removed {
 			continue
 		}
-		var evt ENS_NewResolver
-		evt.EvtId = 0
-		evt.BlockNum = int64(log.BlockNumber)
-		evt.TxId = 0
-		ctx := context.Background()
-		bnum := big.NewInt(int64(log.BlockNumber))
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-		}
-
-		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
-		evt.TimeStamp = int64(block_hdr.Time)
-		evt.Node = hex.EncodeToString(log.Topics[1][:])
-		addr := common.BytesToAddress(log.Data[12:])
-		evt.Address = addr.String()
-		evt.TxHash = log.TxHash.String()
-		evt.Contract = log.Address.String()
-		Info.Printf("NewResolver {\n")
-		Info.Printf("\tNode: %v\n",evt.Node)
-		Info.Printf("\tAddress: %v\n",evt.Address)
-		Info.Printf("}")
-		storage.Insert_new_resolver(&evt)
+		proc_new_resolver(&log,0,0)
 	}
 }
 func range_initial_load_new_resolver(exit_chan chan bool,block_num_limit int64) {
@@ -626,30 +436,7 @@ func do_initiial_load_registry_transfer(block_num_from,block_num_to int64) {
 		if log.Removed {
 			continue
 		}
-		var evt ENS_RegistryTransfer
-		evt.EvtId = 0
-		evt.BlockNum = int64(log.BlockNumber)
-		evt.TxId = 0
-		ctx := context.Background()
-		bnum := big.NewInt(int64(log.BlockNumber))
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-		}
-
-		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
-		evt.TimeStamp = int64(block_hdr.Time)
-		evt.Node = hex.EncodeToString(log.Topics[1][:])
-		addr := common.BytesToAddress(log.Data[12:])
-		evt.Owner = addr.String()
-		evt.TxHash = log.TxHash.String()
-		evt.Contract = log.Address.String()
-		Info.Printf("(Registry) Transfer {\n")
-		Info.Printf("\tNode: %v\n",evt.Node)
-		Info.Printf("\tAddress: %v\n",evt.Owner)
-		Info.Printf("}")
-		storage.Insert_registry_transfer(&evt)
+		proc_registry_transfer(&log,0,0)
 	}
 }
 func range_initial_load_registry_transfer(exit_chan chan bool,block_num_limit int64) {
@@ -698,89 +485,7 @@ func do_initiial_load_text_changed(block_num_from,block_num_to int64) {
 		if log.Removed {
 			continue
 		}
-		var evt ENS_TextChanged
-		evt.EvtId = 0
-		evt.BlockNum = int64(log.BlockNumber)
-		evt.TxId = 0
-		ctx := context.Background()
-		bnum := big.NewInt(int64(log.BlockNumber))
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-		}
-
-		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
-		evt.TimeStamp = int64(block_hdr.Time)
-		evt.Node = hex.EncodeToString(log.Topics[1][:])
-		if len(log.Data) < 64 {
-			Error.Printf("Got event with log.Data of length lower than 64 bytes: %v bytes, skipping\n",len(log.Data))
-			Info.Printf("Got event with log.Data of length lower than 64 bytes: %v bytes, skipping\n",len(log.Data))
-			continue
-		}
-		key_data := log.Data[64:]
-		length := bytes.Index(key_data,[]byte{0})
-		if length == -1 {
-			length = 0
-		}
-		evt.Key = string(key_data[:length])
-		evt.TxHash = log.TxHash.String()
-		evt.Contract = log.Address.String()
-
-		// the event doesn't provide the value, so we have to make a call to the contract
-		var node [32]byte
-		copy(node[:],log.Topics[1][:])
-		registry,err := ens.NewRegistry(eclient)
-		if err != nil {
-			err_str := fmt.Sprintf(
-				"Can't instantiate Registry contract for node %v (tx %v): %v",
-				evt.Node,evt.TxHash,err,
-			)
-			Info.Print(err_str)
-			Error.Print(err_str)
-			os.Exit(1)
-		}
-		resolver_addr,err := registry.Contract.Resolver(nil,node)
-		if err != nil {
-			err_str := fmt.Sprintf(
-				"Can't fetch Resolver contract addr for node %v (tx %v): %v",
-				evt.Node,evt.TxHash,err,
-			)
-			Info.Print(err_str)
-			Error.Print(err_str)
-			os.Exit(1)
-		}
-		resolver_ctrct,err := resolver.NewContract(resolver_addr, eclient)
-		if err != nil {
-			err_str := fmt.Sprintf(
-				"Can't instantiate Resolver contract for node %v (tx %v, ctrct addr %v): %v",
-				evt.Node,evt.TxHash,resolver_addr.String(),err,
-			)
-			Info.Print(err_str)
-			Error.Print(err_str)
-			os.Exit(1)
-		}
-		text,err := resolver_ctrct.Text(nil,node,evt.Key)
-		if err != nil {
-			err_str := fmt.Sprintf(
-				"Can't call Text() method for node %v (tx %v ctrct addrt %v): %v",
-				evt.Node,evt.TxHash,resolver_addr.String(),err,
-			)
-			Info.Print(err_str)
-			Error.Print(err_str)
-			continue
-		}
-		textbytes := []byte(evt.Value)
-		Info.Printf("key bytes = %v\n",hex.EncodeToString([]byte(evt.Key)))
-		Info.Printf("text bytes = %v\n",hex.EncodeToString(textbytes))
-		evt.Value = hex.EncodeToString([]byte(strings.ReplaceAll(text,"\x00", "")))
-		Info.Printf("text bytes after replace= %v\n",hex.EncodeToString(textbytes))
-		Info.Printf("TextChanged {\n")
-		Info.Printf("\tNode: %v\n",evt.Node)
-		Info.Printf("\tKey: %v\n",evt.Key)
-		Info.Printf("\tValue: %v\n",evt.Value)
-		Info.Printf("}")
-		storage.Insert_text_changed(&evt)
+		proc_text_changed(&log,0,0)
 	}
 }
 func range_initial_load_text_changed(exit_chan chan bool,block_num_limit int64) {
@@ -829,44 +534,7 @@ func do_initiial_load_hash_registered(block_num_from,block_num_to int64) {
 		if log.Removed {
 			continue
 		}
-		var evt ENS_HashRegistered
-		evt.EvtId = 0
-		evt.BlockNum = int64(log.BlockNumber)
-		evt.TxId = 0
-		ctx := context.Background()
-		bnum := big.NewInt(int64(log.BlockNumber))
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-		}
-
-		var eth_event HashRegistered
-		err = ens_abi.Unpack(&eth_event,"HashRegistered",log.Data)
-		if err != nil {
-			Error.Printf("Error upacking HashRegistered: %v\n",err)
-			Info.Printf("Error upacking HashRegistered: %v\n",err)
-			continue
-		}
-		Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
-		evt.TimeStamp = int64(block_hdr.Time)
-		copy(eth_event.Hash[:],log.Topics[1].Bytes())
-		//eth_event.Name = Bytes32_to_string(log.Topics[2].Bytes())
-		eth_event.Owner = common.BytesToAddress(log.Topics[2][12:])
-		evt.Owner = eth_event.Owner.String()
-		evt.TxHash = log.TxHash.String()
-		evt.Hash = hex.EncodeToString(eth_event.Hash[:])
-		evt.RegistrationDate=eth_event.RegistrationDate.Int64()
-		evt.Value = eth_event.Value.String()
-		evt.Contract = log.Address.String()
-
-		Info.Printf("HashRegistered {\n")
-		Info.Printf("\tHash: %v\n",hex.EncodeToString(eth_event.Hash[:]))
-		Info.Printf("\tOwner: %v\n",evt.Owner)
-		Info.Printf("\tValue: %v\n",eth_event.Value.String())
-		Info.Printf("\tRegDate: %v\n",eth_event.RegistrationDate.String())
-		Info.Printf("}")
-		storage.Insert_hash_registered(&evt)
+		proc_hash_registered(&log,0,0)
 	}
 }
 func range_initial_load_hash_registered(exit_chan chan bool,block_num_limit int64) {
@@ -987,6 +655,7 @@ func main() {
 		fmt.Printf("Initial load finished.")
 		return
 	} else {
+		init_ens_processing()
 		process_ens_events(exit_chan)
 	}
 
