@@ -93,6 +93,7 @@ func proc_name_registered1(log *types.Log,evt_id int64,tx_id int64) {
 	evt.EvtId = evt_id
 	evt.BlockNum = int64(log.BlockNumber)
 	evt.TxId = tx_id
+	evt.TxHash = log.TxHash.String()
 	var eth_event NameRegistered_v1
 	err := ens_abi.Unpack(&eth_event,"NameRegistered1",log.Data)
 	if err != nil {
@@ -513,7 +514,9 @@ func process_ens_event(evt_id int64) error {
 	evtlog := storage.Get_event_log(evt_id)
 	var log types.Log
 	rlp.DecodeBytes(evtlog.RlpLog,&log)
-	
+	log.BlockNumber=uint64(evtlog.BlockNum)
+	log.TxHash.SetBytes(common.HexToHash(evtlog.TxHash).Bytes())
+	log.Address.SetBytes(common.HexToHash(evtlog.ContractAddress).Bytes())
 	num_topics := len(log.Topics)
 	if num_topics > 0 {
 		Info.Printf("found event with sig = %v\n",log.Topics[0].String())

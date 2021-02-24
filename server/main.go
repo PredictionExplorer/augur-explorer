@@ -232,7 +232,7 @@ func main() {
 	r.GET("/api/wshtok_balances/:user",a1_wrapped_shtoken_balances)
 	r.GET("/api/rlookup/:address",a1_ens_reverse_lookup)
 	r.GET("/api/whats_new_augur/:code",a1_whats_new_augur)
-	//r.GET("/api/node_text_data/:node",a1_node_text_data)
+	r.GET("/api/node_text_data/:node",a1_node_text_key_value_pairs)
 	r.GET("/api/augur_foundry",a1_augur_foundry_contracts)
 	r.GET("/api/tx/:hash",a1_transaction_info)
 	r.GET("/api/block/:block_num",a1_block_info)

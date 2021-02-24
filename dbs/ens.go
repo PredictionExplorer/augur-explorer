@@ -71,17 +71,19 @@ func (ss *SQLStorage) Insert_name_registered1(rec *p.ENS_Name1) {
 		)
 	} else {
 		query = "INSERT INTO ens_name(" +
-					"tx_hash,evtlog_id,block_num,tx_id,time_stamp,owner_aid,label,name,cost,expires" +
-				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9::DECIMAL/1e+18,TO_TIMESTAMP($10))"
+					"evtlog_id,block_num,tx_id,contract_aid,owner_aid,"+
+					"time_stamp,label,name,tx_hash,cost,expires" +
+				") VALUES($1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7,$8,$9,$10::DECIMAL/1e+18,TO_TIMESTAMP($11))"
 		_,err = ss.db.Exec(query,
-			rec.TxHash,
 			rec.EvtId,
 			rec.BlockNum,
 			rec.TxId,
+			contract_aid,
 			rec.TimeStamp,
 			owner_aid,
 			rec.Label,
 			rec.Name,
+			rec.TxHash,
 			rec.Cost,
 			rec.Expires,
 		)
@@ -167,16 +169,16 @@ func (ss *SQLStorage) Insert_new_owner(rec *p.ENS_NewOwner) {
 		)
 	} else {
 		query = "INSERT INTO ens_new_owner(" +
-					"tx_hash,evtlog_id,block_num,tx_id,contract_aid,time_stamp,owner_aid,label,node,fqdn" +
-				") VALUES($1,$2,$3,$4,$5,$6,TO_TIMESTAMP($7),$8,$9,$10)"
+					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,owner_aid,tx_hash,label,node,fqdn" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9,$10)"
 		_,err = ss.db.Exec(query,
-			rec.TxHash,
 			rec.EvtId,
 			rec.BlockNum,
 			rec.TxId,
 			contract_aid,
 			rec.TimeStamp,
 			owner_aid,
+			rec.TxHash,
 			rec.Label,
 			rec.Node,
 			rec.FQDN,
@@ -207,22 +209,21 @@ func (ss *SQLStorage) Insert_hash_invalidated(rec *p.ENS_HashInvalidated) {
 			rec.RegistrationDate,
 		)
 	} else {
-		/*
-		Pending
-		query = "INSERT INTO ens_new_owner(" +
-					"tx_hash,evtlog_id,block_num,tx_id,time_stamp,owner_aid,label,node" +
-				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
+		query = "INSERT INTO ens_hash_inval(" +
+					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,reg_date,tx_hash,hash,name,value" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),TO_TIMESTAMP($6),$7,$8,$9,$10)"
 		_,err = ss.db.Exec(query,
-			rec.TxHash,
 			rec.EvtId,
 			rec.BlockNum,
 			rec.TxId,
+			contract_aid,
 			rec.TimeStamp,
-			owner_aid,
-			rec.Label,
-			rec.Node,
+			rec.RegistrationDate,
+			rec.TxHash,
+			rec.Hash,
+			rec.Name,
+			rec.Value,
 		)
-		*/
 	}
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -250,22 +251,22 @@ func (ss *SQLStorage) Insert_hash_registered(rec *p.ENS_HashRegistered) {
 			rec.RegistrationDate,
 		)
 	} else {
-		/*
-		Pending
-		query = "INSERT INTO ens_new_owner(" +
-					"tx_hash,evtlog_id,block_num,tx_id,time_stamp,owner_aid,label,node" +
-				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
+		query = "INSERT INTO ens_hash_reg(" +
+					"evtlog_id,block_num,tx_id,contract_aid,owner_aid,"+
+					"time_stamp,reg_date,tx_hash,hash,value" +
+				") VALUES($1,$2,$3,$4,$5,TO_TIMESTAMP($6),TO_TIMESTAMP($7),$8,$9,$10)"
 		_,err = ss.db.Exec(query,
-			rec.TxHash,
 			rec.EvtId,
 			rec.BlockNum,
 			rec.TxId,
-			rec.TimeStamp,
+			contract_aid,
 			owner_aid,
-			rec.Label,
-			rec.Node,
+			rec.TimeStamp,
+			rec.RegistrationDate,
+			rec.TxHash,
+			rec.Hash,
+			rec.Value,
 		)
-		*/
 	}
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -290,22 +291,19 @@ func (ss *SQLStorage) Insert_new_resolver(rec *p.ENS_NewResolver) {
 			aid,
 		)
 	} else {
-		/*
-		Pending
-		query = "INSERT INTO ens_new_owner(" +
-					"tx_hash,evtlog_id,block_num,tx_id,time_stamp,owner_aid,label,node" +
+		query = "INSERT INTO ens_new_resolver (" +
+					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,aid,tx_hash,node" +
 				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
 		_,err = ss.db.Exec(query,
-			rec.TxHash,
 			rec.EvtId,
 			rec.BlockNum,
 			rec.TxId,
+			contract_aid,
 			rec.TimeStamp,
-			owner_aid,
-			rec.Label,
+			aid,
+			rec.TxHash,
 			rec.Node,
 		)
-		*/
 	}
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -399,22 +397,19 @@ func (ss *SQLStorage) Insert_registry_transfer(rec *p.ENS_RegistryTransfer) {
 			aid,
 		)
 	} else {
-		/*
-		Pending
 		query = "INSERT INTO ens_reg_transf (" +
-					"tx_hash,evtlog_id,block_num,tx_id,time_stamp,owner_aid,label,node" +
+					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,aid,tx_hash,node" +
 				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
 		_,err = ss.db.Exec(query,
-			rec.TxHash,
 			rec.EvtId,
 			rec.BlockNum,
 			rec.TxId,
+			contract_aid,
 			rec.TimeStamp,
-			owner_aid,
-			rec.Label,
+			aid,
+			rec.TxHash,
 			rec.Node,
 		)
-		*/
 	}
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -439,22 +434,20 @@ func (ss *SQLStorage) Insert_text_changed(rec *p.ENS_TextChanged) {
 			rec.Value,
 		)
 	} else {
-		/*
-		Pending
-		query = "INSERT INTO ens_reg_transf (" +
-					"tx_hash,evtlog_id,block_num,tx_id,time_stamp,owner_aid,label,node" +
-				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
+		query = "INSERT INTO ens_text_chg (" +
+					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,tx_hash,node,key,value" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9)"
 		_,err = ss.db.Exec(query,
-			rec.TxHash,
 			rec.EvtId,
 			rec.BlockNum,
 			rec.TxId,
+			contract_aid,
 			rec.TimeStamp,
-			owner_aid,
-			rec.Label,
+			rec.TxHash,
 			rec.Node,
+			rec.Key,
+			rec.Value,
 		)
-		*/
 	}
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))

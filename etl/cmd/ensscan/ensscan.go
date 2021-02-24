@@ -563,8 +563,8 @@ func range_initial_load_hash_registered(exit_chan chan bool,block_num_limit int6
 func initial_load(exit_chan chan bool,block_num_limit int64) {
 	range_initial_load_name_registered1(exit_chan,block_num_limit)
 	range_initial_load_new_owner(exit_chan,block_num_limit)
-	range_initial_load_name_registered2(exit_chan,block_num_limit)
-	range_initial_load_name_registered3(exit_chan,block_num_limit)
+	//range_initial_load_name_registered2(exit_chan,block_num_limit)
+	//range_initial_load_name_registered3(exit_chan,block_num_limit)
 	range_initial_load_hash_invalidated(exit_chan,block_num_limit)
 	range_initial_load_new_resolver(exit_chan,block_num_limit)
 	range_initial_load_registry_transfer(exit_chan,block_num_limit)

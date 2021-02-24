@@ -1183,9 +1183,27 @@ func (ss *SQLStorage) Get_event_log(evtlog_id int64) p.EthereumEventLog {
 	var evtlog p.EthereumEventLog
 	evtlog.EvtId = evtlog_id
 	var query string
-	query = "SELECT block_num,tx_id,contract_aid,topic0_sig,log_rlp FROM evt_log WHERE id=$1"
+	query = "SELECT " +
+				"block_num," +
+				"tx_id," +
+				"tx.tx_hash," +
+				"contract_aid," +
+				"ca.addr, " +
+				"topic0_sig," +
+				"log_rlp" +
+			"FROM evt_log " +
+				"JOIN address ca ON evt_log.contract_aid=ca.address_id " +
+			"WHERE id=$1"
 	res := ss.db.QueryRow(query,evtlog_id)
-	err := res.Scan(&evtlog.BlockNum,&evtlog.TxId,&evtlog.ContractAid,&evtlog.Topic0_Sig,&evtlog.RlpLog)
+	err := res.Scan(
+		&evtlog.BlockNum,
+		&evtlog.TxId,
+		&evtlog.TxHash,
+		&evtlog.ContractAid,
+		&evtlog.ContractAddress,
+		&evtlog.Topic0_Sig,
+		&evtlog.RlpLog,
+	)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
