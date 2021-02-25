@@ -1380,6 +1380,8 @@ type ENS_Name1  struct {	// NameRegistered since 2019
 	Contract				string
 	Owner					string
 	Label					string
+	Node					string
+	FQDN					string
 	Name					string
 	Cost					string
 	TxHash					string
@@ -1488,6 +1490,7 @@ type ENS_Rec struct {
 type UserENS struct {
 	TsNameAcquired			int64
 	NumTextKeyValuePairs	int64
+	TsExpiration			int64
 	DateNameAcquired		string
 	ENS_Name				string
 	NodeHash				string
@@ -1700,4 +1703,8 @@ type ValidityBondPrice struct {
 	TimeStamp				int64
 	Price					float64
 	DateTime				string
+}
+type ENSResolver struct {
+	Aid						int64
+	Node					string
 }

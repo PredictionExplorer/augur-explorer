@@ -24,6 +24,8 @@ CREATE TABLE ens_name( -- NameRegistered_v1 event
 	time_stamp			TIMESTAMPTZ,
 	expires				TIMESTAMPTZ,
 	label				TEXT,
+	node				TEXT,
+	fqdn				TEXT,
 	name				TEXT,
 	tx_hash				TEXT NOT NULL,
 	cost				DECIMAL(32,18),

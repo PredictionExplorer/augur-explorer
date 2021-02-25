@@ -167,6 +167,7 @@ func (ss *SQLStorage) Get_user_info(user_aid int64) (p.UserInfo,error) {
 	if eoa_aid.Valid { ui.EOAAid = eoa_aid.Int64; ui.EOAAddr = eoa_addr.String }
 	if null_balancer_swaps.Valid { ui.BalancerNumSwaps = null_balancer_swaps.Int64 }
 	if null_uniswap_swaps.Valid { ui.UniswapNumSwaps = null_uniswap_swaps.Int64 }
+
 	return ui,nil
 }
 func (ss *SQLStorage) Get_ranking_data_for_all_users() []p.RankStats {

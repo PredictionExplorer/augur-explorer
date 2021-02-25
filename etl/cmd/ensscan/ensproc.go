@@ -13,10 +13,13 @@ import (
 
 	"github.com/wealdtech/go-ens/v3"
 	"github.com/wealdtech/go-ens/v3/contracts/resolver"
+	"github.com/wealdtech/go-ens/v3/contracts/baseregistrar"
+	"github.com/wealdtech/go-ens/v3/contracts/auctionregistrar"
 	"golang.org/x/crypto/sha3"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 var (
@@ -99,7 +102,7 @@ func proc_name_registered1(log *types.Log,evt_id int64,tx_id int64) {
 	if err != nil {
 		Error.Printf("Error upacking NameRegistered1: %v\n",err)
 		Info.Printf("Error upacking NameRegistered1: %v\n",err)
-		return
+		os.Exit(1)
 	}
 	ctx := context.Background()
 	bnum := big.NewInt(int64(log.BlockNumber))
@@ -107,6 +110,7 @@ func proc_name_registered1(log *types.Log,evt_id int64,tx_id int64) {
 	if err != nil {
 		Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
 		Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		os.Exit(1)
 	}
 	evt.TimeStamp = int64(block_hdr.Time)
 	eth_event.Label = log.Topics[1]
@@ -115,6 +119,61 @@ func proc_name_registered1(log *types.Log,evt_id int64,tx_id int64) {
 	eth_event.Dump(Info)
 	evt.TxHash = log.TxHash.String()
 	evt.Label = hex.EncodeToString(eth_event.Label[:])
+	// Fetch Node hash from Contract itself
+	base_registrar_ctrct,err := baseregistrar.NewContract(log.Address,eclient)
+	if err != nil {
+		Error.Printf("Error instantiating base registrar contract %v : %v\n",log.Address.String(),err)
+		Info.Printf("Error instantiating base registrar contract %v : %v\n",log.Address.String(),err)
+		os.Exit(1)
+	}
+	var node_hash [32]byte
+	ens_resolver,err := storage.Get_ens_resolver(log.Address.String())
+	if err != nil {
+		Info.Printf("No resolver %v registered in the DB, querying geth\n",log.Address.String())
+		var copts = new(bind.CallOpts)
+		node_hash,err = base_registrar_ctrct.BaseNode(copts)
+		if err != nil {
+			Error.Printf("Error calling baseNode() for ctrct %v : %v\n",log.Address.String(),err)
+			Info.Printf("Error calling baseNode() for ctrct %v : %v\n",log.Address.String(),err)
+			auction_registrar_ctrct,err := auctionregistrar.NewContract(log.Address,eclient)
+			if err != nil {
+				Error.Printf("Error instantiating auction registrar contract %v : %v\n",log.Address.String(),err)
+				Info.Printf("Error instantiating auction registrar contract %v : %v\n",log.Address.String(),err)
+				os.Exit(1)
+			}
+			node_hash,err = auction_registrar_ctrct.RootNode(copts)
+			if err != nil {
+				Error.Printf("Error calling rootNode() for ctrct %v : %v\n",log.Address.String(),err)
+				Info.Printf("Error calling rootNode() for ctrct %v : %v\n",log.Address.String(),err)
+				os.Exit(1)
+			}
+		}
+	} else {
+		Info.Printf("resolver.Node=%v\n",ens_resolver.Node)
+		hash,err := hex.DecodeString(ens_resolver.Node)
+		if err!=nil {
+			Error.Printf("Error decoding node hash str for %v: %v\n",log.Address.String,err)
+			Info.Printf("Error decoding node hash str for %v: %v\n",log.Address.String,err)
+			os.Exit(1)
+		}
+		copy(node_hash[:],hash[:])
+	}
+	var fqdn_hash [32]byte
+	data :=make([]byte,32,64)
+	Info.Printf("node_hash before: %v\n",hex.EncodeToString(node_hash[:]))
+	copy(data,node_hash[:]) // copying Node (bytes)
+	Info.Printf("label_hash before: %v\n",hex.EncodeToString(eth_event.Label[:]))
+	data = append(data[:],eth_event.Label[:]...)
+	sha := sha3.NewLegacyKeccak256()
+	if _, err := sha.Write(data[:]); err != nil {
+		Error.Printf("cant calculate hash of new node: %v\n",err)
+		os.Exit(1)
+	}
+	sha.Sum(fqdn_hash[:0])
+	evt.FQDN = hex.EncodeToString(fqdn_hash[:])
+	Info.Printf("resulting fqdn: %v\n",hex.EncodeToString(fqdn_hash[:]))
+
+	evt.Node = hex.EncodeToString(node_hash[:])
 	owner_addr := common.BytesToAddress(log.Topics[2][12:])
 	evt.Owner = owner_addr.String()
 	evt.Name = eth_event.Name
@@ -137,6 +196,7 @@ func proc_name_registered2(log *types.Log,evt_id,tx_id int64) {
 	if err != nil {
 		Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
 		Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		os.Exit(1)
 	}
 	evt.TimeStamp = int64(block_hdr.Time)
 	evt.NameId = hex.EncodeToString(log.Topics[1][:])
@@ -171,6 +231,7 @@ func proc_newowner(log *types.Log,evt_id,tx_id int64) {
 	if err != nil {
 		Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
 		Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		os.Exit(1)
 	}
 	evt.TimeStamp = int64(block_hdr.Time)
 	evt.Label = hex.EncodeToString(log.Topics[2][:])
@@ -206,6 +267,7 @@ func proc_name_registered3(log *types.Log,evt_id,tx_id int64) {
 	if err != nil {
 		Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
 		Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		os.Exit(1)
 	}
 
 	var eth_event NameRegistered_v3
@@ -213,7 +275,7 @@ func proc_name_registered3(log *types.Log,evt_id,tx_id int64) {
 	if err != nil {
 		Error.Printf("Error upacking NameRegistered3: %v\n",err)
 		Info.Printf("Error upacking NameRegistered3: %v\n",err)
-		return
+		os.Exit(1)
 	}
 	evt.TimeStamp = int64(block_hdr.Time)
 	eth_event.Caller= common.BytesToAddress(log.Topics[1][12:])
@@ -246,6 +308,7 @@ func proc_hash_invalidated(log *types.Log,evt_id,tx_id int64) {
 	if err != nil {
 		Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
 		Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		os.Exit(1)
 	}
 
 	var eth_event HashInvalidated
@@ -253,7 +316,7 @@ func proc_hash_invalidated(log *types.Log,evt_id,tx_id int64) {
 	if err != nil {
 		Error.Printf("Error upacking HashInvalidated: %v\n",err)
 		Info.Printf("Error upacking HashInvalidated: %v\n",err)
-		return
+		os.Exit(1)
 	}
 	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
 	evt.TimeStamp = int64(block_hdr.Time)
@@ -286,6 +349,7 @@ func proc_new_resolver(log *types.Log,evt_id,tx_id int64) {
 	if err != nil {
 		Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
 		Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		os.Exit(1)
 	}
 
 	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
@@ -313,6 +377,7 @@ func proc_registry_transfer(log *types.Log,evt_id,tx_id int64) {
 	if err != nil {
 		Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
 		Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		os.Exit(1)
 	}
 
 	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
@@ -340,6 +405,7 @@ func proc_text_changed(log *types.Log,evt_id,tx_id int64) {
 	if err != nil {
 		Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
 		Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		os.Exit(1)
 	}
 
 	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
@@ -400,7 +466,7 @@ func proc_text_changed(log *types.Log,evt_id,tx_id int64) {
 		)
 		Info.Print(err_str)
 		Error.Print(err_str)
-		return
+		os.Exit(1)
 	}
 	textbytes := []byte(evt.Value)
 	Info.Printf("key bytes = %v\n",hex.EncodeToString([]byte(evt.Key)))
@@ -426,6 +492,7 @@ func proc_hash_registered(log *types.Log,evt_id,tx_id int64) {
 	if err != nil {
 		Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
 		Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+		os.Exit(1)
 	}
 
 	var eth_event HashRegistered
@@ -433,7 +500,7 @@ func proc_hash_registered(log *types.Log,evt_id,tx_id int64) {
 	if err != nil {
 		Error.Printf("Error upacking HashRegistered: %v\n",err)
 		Info.Printf("Error upacking HashRegistered: %v\n",err)
-		return
+		os.Exit(1)
 	}
 	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
 	evt.TimeStamp = int64(block_hdr.Time)

@@ -56,8 +56,9 @@ func (ss *SQLStorage) Insert_name_registered1(rec *p.ENS_Name1) {
 	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
 	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
 		query = "INSERT INTO ens_name(" +
-					"tx_hash,time_stamp,block_num,contract_aid,owner_aid,label,name,cost,expires" +
-				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8::DECIMAL/1e+18,TO_TIMESTAMP($9))"
+					"tx_hash,time_stamp,block_num,contract_aid,owner_aid," +
+					"label,node,fqdn,name,cost,expires" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10::DECIMAL/1e+18,TO_TIMESTAMP($11))"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
 			rec.TimeStamp,
@@ -65,6 +66,8 @@ func (ss *SQLStorage) Insert_name_registered1(rec *p.ENS_Name1) {
 			contract_aid,
 			owner_aid,
 			rec.Label,
+			rec.Node,
+			rec.FQDN,
 			rec.Name,
 			rec.Cost,
 			rec.Expires,
@@ -72,8 +75,11 @@ func (ss *SQLStorage) Insert_name_registered1(rec *p.ENS_Name1) {
 	} else {
 		query = "INSERT INTO ens_name(" +
 					"evtlog_id,block_num,tx_id,contract_aid,owner_aid,"+
-					"time_stamp,label,name,tx_hash,cost,expires" +
-				") VALUES($1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7,$8,$9,$10::DECIMAL/1e+18,TO_TIMESTAMP($11))"
+					"time_stamp,label,node,fqdn,name,tx_hash,cost,expires" +
+				") VALUES(" +
+					"$1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7,$8,$9,$10,$11,"+
+					"$12::DECIMAL/1e+18,TO_TIMESTAMP($13)"+
+				")"
 		_,err = ss.db.Exec(query,
 			rec.EvtId,
 			rec.BlockNum,
@@ -82,6 +88,8 @@ func (ss *SQLStorage) Insert_name_registered1(rec *p.ENS_Name1) {
 			rec.TimeStamp,
 			owner_aid,
 			rec.Label,
+			rec.Node,
+			rec.FQDN,
 			rec.Name,
 			rec.TxHash,
 			rec.Cost,
@@ -601,4 +609,23 @@ func (ss *SQLStorage) Get_ens_proc_status() p.EnsProcStatus {
 		output.LastEvtId = null_id.Int64
 	}
 	return output
+}
+func (ss *SQLStorage) Get_ens_resolver(address string) (p.ENSResolver,error) {
+
+	var output p.ENSResolver
+	var query string
+	query = "SELECT node,a.address_id FROM ens_new_resolver r " +
+				"JOIN address a ON r.aid=a.address_id " +
+				"WHERE a.addr=$1"
+	res := ss.db.QueryRow(query,address)
+	err := res.Scan(&output.Node,&output.Aid)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return output,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return output,nil
 }
