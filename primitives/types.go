@@ -874,6 +874,7 @@ type EthereumEventLog struct {
 	BlockNum				int64
 	TxId					int64
 	ContractAid				int64
+	TimeStamp				int64
 	ContractAddress			string
 	TxHash					string
 	Topic0_Sig				string
@@ -1393,6 +1394,9 @@ type ENS_Name2  struct {	// NameRegistered old version
 	TimeStamp				int64
 	Expires					int64
 	Contract				string
+	Label					string
+	Node					string
+	FQDN					string
 	Owner					string
 	NameId					string
 	TxHash					string
@@ -1486,6 +1490,27 @@ type ENS_Rec struct {
 	Word					string
 	Label					string
 	FQDN					string	// aka 'node'
+}
+type ENS_AddrChanged struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	TxHash					string
+	Contract				string
+	Node					string
+	Address					string
+}
+type ENS_AddressChanged struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Contract				string
+	TxHash					string
+	CoinType				int
+	Node					string
+	Address					string
 }
 type UserENS struct {
 	TsNameAcquired			int64

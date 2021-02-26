@@ -1185,6 +1185,7 @@ func (ss *SQLStorage) Get_event_log(evtlog_id int64) p.EthereumEventLog {
 	var query string
 	query = "SELECT " +
 				"e.block_num," +
+				"b.ts, "+
 				"e.tx_id," +
 				"tx.tx_hash," +
 				"e.contract_aid," +
@@ -1192,12 +1193,14 @@ func (ss *SQLStorage) Get_event_log(evtlog_id int64) p.EthereumEventLog {
 				"e.topic0_sig," +
 				"e.log_rlp " +
 			"FROM evt_log e " +
+				"JOIN block b ON e.block_num=b.block_num " +
 				"JOIN transaction tx ON e.tx_id=tx.id " +
 				"JOIN address ca ON e.contract_aid=ca.address_id " +
 			"WHERE e.id=$1"
 	res := ss.db.QueryRow(query,evtlog_id)
 	err := res.Scan(
 		&evtlog.BlockNum,
+		&evtlog.TimeStamp,
 		&evtlog.TxId,
 		&evtlog.TxHash,
 		&evtlog.ContractAid,

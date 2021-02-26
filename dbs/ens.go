@@ -55,7 +55,7 @@ func (ss *SQLStorage) Insert_name_registered1(rec *p.ENS_Name1) {
 	owner_aid := ss.Lookup_or_create_address(rec.Owner,rec.BlockNum,rec.TxId)
 	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
 	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
-		query = "INSERT INTO ens_name(" +
+		query = "INSERT INTO ens_name_reg1(" +
 					"tx_hash,time_stamp,block_num,contract_aid,owner_aid," +
 					"label,node,fqdn,name,cost,expires" +
 				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10::DECIMAL/1e+18,TO_TIMESTAMP($11))"
@@ -73,7 +73,7 @@ func (ss *SQLStorage) Insert_name_registered1(rec *p.ENS_Name1) {
 			rec.Expires,
 		)
 	} else {
-		query = "INSERT INTO ens_name(" +
+		query = "INSERT INTO ens_name_reg1(" +
 					"evtlog_id,block_num,tx_id,contract_aid,owner_aid,"+
 					"time_stamp,label,node,fqdn,name,tx_hash,cost,expires" +
 				") VALUES(" +
@@ -93,6 +93,49 @@ func (ss *SQLStorage) Insert_name_registered1(rec *p.ENS_Name1) {
 			rec.Name,
 			rec.TxHash,
 			rec.Cost,
+			rec.Expires,
+		)
+	}
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_name_registered2(rec *p.ENS_Name2) {
+
+	var query string
+	var err error
+	owner_aid := ss.Lookup_or_create_address(rec.Owner,rec.BlockNum,rec.TxId)
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
+	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
+		query = "INSERT INTO ens_name_reg2(" +
+					"tx_hash,time_stamp,block_num,contract_aid,owner_aid,fqdn,expires" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,TO_TIMESTAMP($8))"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.TimeStamp,
+			rec.BlockNum,
+			contract_aid,
+			owner_aid,
+			rec.FQDN,
+			rec.Expires,
+		)
+	} else {
+		query = "INSERT INTO ens_name_reg2(" +
+					"evtlog_id,block_num,tx_id,contract_aid,owner_aid,"+
+					"time_stamp,fqdn,tx_hash,expires" +
+				") VALUES(" +
+					"$1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7,$8,TO_TIMESTAMP($9)"+
+				")"
+		_,err = ss.db.Exec(query,
+			rec.EvtId,
+			rec.BlockNum,
+			rec.TxId,
+			contract_aid,
+			rec.TimeStamp,
+			owner_aid,
+			rec.FQDN,
+			rec.TxHash,
 			rec.Expires,
 		)
 	}
@@ -190,6 +233,84 @@ func (ss *SQLStorage) Insert_new_owner(rec *p.ENS_NewOwner) {
 			rec.Label,
 			rec.Node,
 			rec.FQDN,
+		)
+	}
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_address_changed1(rec *p.ENS_AddrChanged) {
+
+	var query string
+	var err error
+	aid := ss.Lookup_or_create_address(rec.Address,rec.BlockNum,rec.TxId)
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
+	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
+		query = "INSERT INTO ens_addr1(" +
+					"tx_hash,time_stamp,block_num,contract_aid,node" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.TimeStamp,
+			rec.BlockNum,
+			contract_aid,
+			aid,
+			rec.Node,
+		)
+	} else {
+		query = "INSERT INTO ens_addr1(" +
+					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,aid,tx_hash,node" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9,$10)"
+		_,err = ss.db.Exec(query,
+			rec.EvtId,
+			rec.BlockNum,
+			rec.TxId,
+			contract_aid,
+			rec.TimeStamp,
+			aid,
+			rec.TxHash,
+			rec.Node,
+		)
+	}
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_address_changed2(rec *p.ENS_AddressChanged) {
+
+	var query string
+	var err error
+	aid := ss.Lookup_or_create_address(rec.Address,rec.BlockNum,rec.TxId)
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
+	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
+		query = "INSERT INTO ens_addr1(" +
+					"tx_hash,time_stamp,block_num,contract_aid,node,coin_type" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9)"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.TimeStamp,
+			rec.BlockNum,
+			contract_aid,
+			aid,
+			rec.Node,
+			rec.CoinType,
+		)
+	} else {
+		query = "INSERT INTO ens_addr1(" +
+					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,aid,tx_hash,node,coin_type" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9,$10,$11)"
+		_,err = ss.db.Exec(query,
+			rec.EvtId,
+			rec.BlockNum,
+			rec.TxId,
+			contract_aid,
+			rec.TimeStamp,
+			aid,
+			rec.TxHash,
+			rec.Node,
+			rec.CoinType,
 		)
 	}
 	if (err!=nil) {

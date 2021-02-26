@@ -35,3 +35,10 @@ type HashRegistered struct { //0f0c27adfd84b60b6f456b0e87cdccb1e5fb9603991588d87
 	RegistrationDate		*big.Int
 	Raw						types.Log // Blockchain specific contextual infos
 }
+type AddressChanged struct {
+	Node       [32]byte
+	CoinType   *big.Int
+	NewAddress []byte
+	Raw        types.Log // Blockchain specific contextual infos
+}
+

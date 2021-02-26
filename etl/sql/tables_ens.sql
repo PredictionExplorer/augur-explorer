@@ -38,13 +38,24 @@ CREATE TABLE active_name( -- ENS names that are currently active (i.e. haven't e
 	id					BIGSERIAL PRIMARY KEY,
 	ensname_id			BIGINT NOT NULL, -- latest `ens_name.id` field
 	expires				TIMESTAMPTZ NOT NULL,
-	prev_expires		TIMESTAMPTZ,
 	name				TEXT,
 	label				TEXT NOT NULL,
 	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL UNIQUE
 );
-CREATE TABLE name_reg1(-- ENS NameRegistered1 event (signature ca6abbe9)
+CREATE TABLE ens_name (-- ENS NameRegistered1 event (signature ca6abbe9)
+	id					BIGSERIAL PRIMARY KEY,
+	owner_aid			BIGINT NOT NULL,
+	expires				TIMESTAMPTZ,
+	label				TEXT,
+	node				TEXT,
+	fqdn				TEXT NOT NULL,
+	name				TEXT,	-- human name
+	pubkey				TEXT DEFAULT '',
+	content_hash		TEXT DEFAULT '',
+	cost				DECIMAL(32,18)
+);
+CREATE TABLE ens_name_reg1(-- ENS NameRegistered1 event (signature ca6abbe9)
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT,
 	block_num			BIGINT,			-- this is just a copy (for easy data management)
@@ -58,14 +69,23 @@ CREATE TABLE name_reg1(-- ENS NameRegistered1 event (signature ca6abbe9)
 	fqdn				TEXT NOT NULL,
 	name				TEXT,
 	tx_hash				TEXT NOT NULL,
-	pubkey				TEXT DEFAULT '',
-	content_hash		TEXT DEFAULT '',
 	cost				DECIMAL(32,18),
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(tx_hash,label)
 );
-CREATE TABLE name_reg2(-- ENS NAmeRegistered2 event (signature b3d98796)
-
+CREATE TABLE ens_name_reg2(-- ENS NAmeRegistered2 event (signature b3d98796)
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	owner_aid			BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	expires				TIMESTAMPTZ,
+	fqdn				TEXT NOT NULL,
+	tx_hash				TEXT NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,fqdn)
 );
 CREATE TABLE IF NOT EXISTS ens_label ( -- label <=> real world name, mapping
 	label				TEXT UNIQUE,
@@ -79,6 +99,35 @@ CREATE TABLE ens_new_owner(
 	contract_aid		BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
 	owner_aid			BIGINT NOT NULL,
+	tx_hash				TEXT NOT NULL,
+	label				TEXT NOT NULL,
+	node				TEXT NOT NULL,
+	fqdn				TEXT NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+);
+CREATE TABLE ens_addr1 (-- AddrChanged event
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	tx_hash				TEXT NOT NULL,
+	label				TEXT NOT NULL,
+	node				TEXT NOT NULL,
+	fqdn				TEXT NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+);
+CREATE TABLE ens_addr2(-- AddressChanged event (the event with coin type field)
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	coin_type			INT NOT NULL,
 	tx_hash				TEXT NOT NULL,
 	label				TEXT NOT NULL,
 	node				TEXT NOT NULL,

@@ -90,6 +90,8 @@ var (
 	evt_registry_transfer,_ = hex.DecodeString(ENS_REGISTRY_TRANSFER)
 	evt_text_changed,_		= hex.DecodeString(ENS_TEXT_CHANGED)
 	evt_name_bought,_ = hex.DecodeString(NAME_BOUGHT)
+	evt_addrchanged1,_ = hex.DecodeString(ENS_ADDR_CHANGED)
+	evt_addresschanged2,_ = hex.DecodeString(ENS_ADDRESS_CHANGED)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -130,7 +132,7 @@ func do_initiial_load_name_registered1(block_num_from,block_num_to int64) {
 			continue
 		}
 ///		Info.Printf("%v: log = %+v\n",i,log)
-		proc_name_registered1(&log,0,0)
+		proc_name_registered1(&log,0,0,0)
 	}
 }
 func do_initiial_load_new_owner(block_num_from,block_num_to int64) {
@@ -164,7 +166,7 @@ func do_initiial_load_new_owner(block_num_from,block_num_to int64) {
 			!(ens1 || ens2) {
 				continue
 		}
-		proc_newowner(&log,0,0)
+		proc_newowner(&log,0,0,0)
 	}
 }
 func do_initiial_load_name_registered2(block_num_from,block_num_to int64) {
@@ -193,7 +195,7 @@ func do_initiial_load_name_registered2(block_num_from,block_num_to int64) {
 			continue
 		}
 ///		Info.Printf("%v: log = %+v\n",i,log)
-		proc_name_registered2(&log,0,0)
+		proc_name_registered2(&log,0,0,0)
 	}
 }
 func range_initial_load_name_registered1(exit_chan chan bool,block_num_limit int64) {
@@ -289,7 +291,7 @@ func do_initiial_load_name_registered3(block_num_from,block_num_to int64) {
 		if log.Removed {
 			continue
 		}
-		proc_name_registered3(&log,0,0)
+		proc_name_registered3(&log,0,0,0)
 	}
 }
 func range_initial_load_name_registered3(exit_chan chan bool,block_num_limit int64) {
@@ -338,7 +340,7 @@ func do_initiial_load_hash_invalidated(block_num_from,block_num_to int64) {
 		if log.Removed {
 			continue
 		}
-		proc_hash_invalidated(&log,0,0)
+		proc_hash_invalidated(&log,0,0,0)
 	}
 }
 func range_initial_load_hash_invalidated(exit_chan chan bool,block_num_limit int64) {
@@ -387,7 +389,7 @@ func do_initiial_load_new_resolver(block_num_from,block_num_to int64) {
 		if log.Removed {
 			continue
 		}
-		proc_new_resolver(&log,0,0)
+		proc_new_resolver(&log,0,0,0)
 	}
 }
 func range_initial_load_new_resolver(exit_chan chan bool,block_num_limit int64) {
@@ -436,7 +438,7 @@ func do_initiial_load_registry_transfer(block_num_from,block_num_to int64) {
 		if log.Removed {
 			continue
 		}
-		proc_registry_transfer(&log,0,0)
+		proc_registry_transfer(&log,0,0,0)
 	}
 }
 func range_initial_load_registry_transfer(exit_chan chan bool,block_num_limit int64) {
@@ -485,7 +487,7 @@ func do_initiial_load_text_changed(block_num_from,block_num_to int64) {
 		if log.Removed {
 			continue
 		}
-		proc_text_changed(&log,0,0)
+		proc_text_changed(&log,0,0,0)
 	}
 }
 func range_initial_load_text_changed(exit_chan chan bool,block_num_limit int64) {
@@ -534,7 +536,7 @@ func do_initiial_load_hash_registered(block_num_from,block_num_to int64) {
 		if log.Removed {
 			continue
 		}
-		proc_hash_registered(&log,0,0)
+		proc_hash_registered(&log,0,0,0)
 	}
 }
 func range_initial_load_hash_registered(exit_chan chan bool,block_num_limit int64) {
@@ -562,8 +564,8 @@ func range_initial_load_hash_registered(exit_chan chan bool,block_num_limit int6
 }
 func initial_load(exit_chan chan bool,block_num_limit int64) {
 	range_initial_load_name_registered1(exit_chan,block_num_limit)
+	range_initial_load_name_registered2(exit_chan,block_num_limit)
 	//range_initial_load_new_owner(exit_chan,block_num_limit)
-	////range_initial_load_name_registered2(exit_chan,block_num_limit)
 	////range_initial_load_name_registered3(exit_chan,block_num_limit)
 	//range_initial_load_hash_invalidated(exit_chan,block_num_limit)
 	//range_initial_load_new_resolver(exit_chan,block_num_limit)

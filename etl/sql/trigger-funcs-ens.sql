@@ -1,42 +1,51 @@
-CREATE OR REPLACE FUNCTION on_ens_name_insert_before() RETURNS trigger AS  $$
+CREATE OR REPLACE FUNCTION on_ens_name_reg1_insert_before() RETURNS trigger AS  $$
 DECLARE
 	v_prev_timestamp timestamptz;
 	v_cnt numeric;
 BEGIN
 
 	IF NEW.fqdn='' THEN
-		RAISE EXCEPTION 'Attempt to INSERT ens_name with empty fqdn';
+		RAISE EXCEPTION 'Attempt to INSERT ens_name with empty fqdn in ens_reg_name1';
 	END IF;
 	SELECT expires FROM active_name WHERE label = NEW.label INTO v_prev_timestamp;
 	UPDATE active_name SET
 		ensname_id = NEW.id,
-		expires = NEW.expires
+		expires = NEW.expires,
+		cost=NEW.cost
 		WHERE fqdn=NEW.fqdn;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
+		INSERT INTO ens_name(owner_aid,expires,label,node,fqdn,name,cost)
+			VALUES(NEW.owner_aid,NEW.expires,NEW.label,NEW.node,NEW.fqdn,NEW.name,NEW.cost);
 		INSERT INTO active_name(ensname_id,expires,prev_expires,name,label,node,fqdn)
-		VALUES(NEW.id,NEW.expires,v_prev_timestamp,NEW.name,NEW.label,NEW.node,NEW.fqdn);
+			VALUES(NEW.id,NEW.expires,v_prev_timestamp,NEW.name,NEW.label,NEW.node,NEW.fqdn);
 	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_ens_name_insert_after() RETURNS trigger AS  $$
+CREATE OR REPLACE FUNCTION on_ens_name_reg2_insert_before() RETURNS trigger AS  $$
 DECLARE
+	v_prev_timestamp timestamptz;
+	v_cnt numeric;
 BEGIN
 
-	-- Noote: the process that execute DELETEs in 'active_name' table is running outside
-
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_ens_name_delete() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-
+	IF NEW.fqdn='' THEN
+		RAISE EXCEPTION 'Attempt to INSERT ens_name with empty fqdn in ens_name_reg2';
+	END IF;
+	SELECT expires FROM active_name WHERE label = NEW.label INTO v_prev_timestamp;
 	UPDATE active_name SET
-		expires = OLD.prev_expires
-		WHERE label=OLD.label;
-	RETURN OLD;
+		ensname_id = NEW.id,
+		expires = NEW.expires,
+		cost=NEW.cost
+		WHERE fqdn=NEW.fqdn;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO ens_name(owner_aid,expires,label,node,fqdn)-- event v2 doesn't have cost/name fields
+			VALUES(NEW.owner_aid,NEW.expires,NEW.label,NEW.node,NEW.fqdn);
+		INSERT INTO active_name(ensname_id,expires,prev_expires,name,label,node,fqdn)
+			VALUES(NEW.id,NEW.expires,v_prev_timestamp,NEW.name,NEW.label,NEW.node,NEW.fqdn);
+	END IF;
+	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_ens_new_owner_insert() RETURNS trigger AS  $$
