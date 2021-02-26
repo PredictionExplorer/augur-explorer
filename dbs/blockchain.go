@@ -1511,3 +1511,31 @@ func (ss *SQLStorage) Get_block_range_for_whats_new(interval_code p.WhatsNewAugu
 	}
 	return int(from_block_num.Int64),int(to_block_num.Int64),nil
 }
+func (ss *SQLStorage) Get_events_by_sig_and_tx_id(tx_id int64,sig string) ([]p.EthereumEventLog,error) {
+
+	var query string
+	records := make([]p.EthereumEventLog,0,4)
+	query = "SELECT id,block_num,contract_aid,topic0_sig,log_rlp FROM evt_log " +
+			"WHERE tx_id=$1 AND topic0_sig=$2"
+
+	rows,err := ss.db.Query(query,tx_id,sig)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return records,nil
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var event p.EthereumEventLog
+		err=rows.Scan(&event.EvtId,&event.BlockNum,&event.ContractAid,&event.Topic0_Sig,&event.RlpLog)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,event)
+	}
+	return records,nil
+}

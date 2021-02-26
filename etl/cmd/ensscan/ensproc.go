@@ -13,13 +13,13 @@ import (
 
 	"github.com/wealdtech/go-ens/v3"
 	"github.com/wealdtech/go-ens/v3/contracts/resolver"
-	"github.com/wealdtech/go-ens/v3/contracts/baseregistrar"
-	"github.com/wealdtech/go-ens/v3/contracts/auctionregistrar"
+	//"github.com/wealdtech/go-ens/v3/contracts/baseregistrar"
+	//"github.com/wealdtech/go-ens/v3/contracts/auctionregistrar"
 	"golang.org/x/crypto/sha3"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	//"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 var (
@@ -91,6 +91,55 @@ func get_event_ids(from_evt_id,to_evt_id int64) []int64 {
 	num_elts:=Remove_duplicates_int64(output)
 	return output[0:num_elts]
 }
+func Get_node_hash_via_new_owner_event(tx_id int64,tx_hash *common.Hash,label []byte) ([]byte,error) {
+    // NameRegistered event doesn't provide the node hash in the event itself,
+    // but there is a common pattern: when ENS name is registered a NewOwner event
+    // is emitted and it contains Node hash. This function extracts node hash value
+    // from linked NewOwner event
+	possible_events,err := storage.Get_events_by_sig_and_tx_id(tx_id,"ce0457fe")
+	if err != nil {
+		Error.Printf("Error getting events by sig and tx_id: %v\n",err)
+		os.Exit(1)
+	}
+	if len(possible_events) == 0 {
+		// try from Receipts
+		ctx := context.Background()
+		receipt,err := eclient.TransactionReceipt(ctx,*tx_hash)
+		if err != nil {
+			Error.Printf("Receipt call failed for %v : %v)\n",tx_hash,err)
+			os.Exit(1)
+		}
+		for i:=0; i<len(receipt.Logs); i++ {
+			log := receipt.Logs[i]
+			if bytes.Equal(log.Topics[2][:],label[:]) && (len(log.Data)>0) {
+				return log.Topics[1][:],nil
+			}
+		}
+		Error.Printf("No NewOwner events found after scanning transaction receipt logs, tx=%v\n",tx_hash.String())
+		os.Exit(1)
+	}
+	for i:=0; i<len(possible_events); i++ {
+		evtlog := possible_events[i]
+		var log types.Log
+		err := rlp.DecodeBytes(evtlog.RlpLog,&log)
+		if err != nil {
+			Error.Printf("Error decoding RLP of event id=%v: %v\n",evtlog.EvtId)
+			os.Exit(1)
+		}
+		if len(log.Data)<32 {
+			Error.Printf("Found NewOwner event but the log.Data size is less than 32: %v\n",len(log.Data))
+			os.Exit(1)
+		}
+		if bytes.Equal(log.Topics[2][:],label[:]) {
+			return log.Topics[1][:],nil
+		}
+
+	}
+	Error.Printf("Couldn't find NewOwner event linked with NameRegistered event, tx_id=%v\n",tx_id)
+	os.Exit(1)
+	return nil,nil
+}
+
 func proc_name_registered1(log *types.Log,evt_id int64,tx_id int64) {
 	var evt ENS_Name1
 	evt.EvtId = evt_id
@@ -112,51 +161,20 @@ func proc_name_registered1(log *types.Log,evt_id int64,tx_id int64) {
 		Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
 		os.Exit(1)
 	}
+	owner_addr := common.BytesToAddress(log.Topics[2][12:])
+
 	evt.TimeStamp = int64(block_hdr.Time)
 	eth_event.Label = log.Topics[1]
-	eth_event.Owner = common.BytesToAddress(log.Topics[2][12:])
+	eth_event.Owner = owner_addr
 	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
 	eth_event.Dump(Info)
 	evt.TxHash = log.TxHash.String()
 	evt.Label = hex.EncodeToString(eth_event.Label[:])
-	// Fetch Node hash from Contract itself
-	base_registrar_ctrct,err := baseregistrar.NewContract(log.Address,eclient)
+
+	node_hash,err := Get_node_hash_via_new_owner_event(evt.TxId,&log.TxHash,eth_event.Label[:])
 	if err != nil {
-		Error.Printf("Error instantiating base registrar contract %v : %v\n",log.Address.String(),err)
-		Info.Printf("Error instantiating base registrar contract %v : %v\n",log.Address.String(),err)
+		Error.Printf("Error getting node hash: %v\n",err)
 		os.Exit(1)
-	}
-	var node_hash [32]byte
-	ens_resolver,err := storage.Get_ens_resolver(log.Address.String())
-	if err != nil {
-		Info.Printf("No resolver %v registered in the DB, querying geth\n",log.Address.String())
-		var copts = new(bind.CallOpts)
-		node_hash,err = base_registrar_ctrct.BaseNode(copts)
-		if err != nil {
-			Error.Printf("Error calling baseNode() for ctrct %v : %v\n",log.Address.String(),err)
-			Info.Printf("Error calling baseNode() for ctrct %v : %v\n",log.Address.String(),err)
-			auction_registrar_ctrct,err := auctionregistrar.NewContract(log.Address,eclient)
-			if err != nil {
-				Error.Printf("Error instantiating auction registrar contract %v : %v\n",log.Address.String(),err)
-				Info.Printf("Error instantiating auction registrar contract %v : %v\n",log.Address.String(),err)
-				os.Exit(1)
-			}
-			node_hash,err = auction_registrar_ctrct.RootNode(copts)
-			if err != nil {
-				Error.Printf("Error calling rootNode() for ctrct %v : %v\n",log.Address.String(),err)
-				Info.Printf("Error calling rootNode() for ctrct %v : %v\n",log.Address.String(),err)
-				os.Exit(1)
-			}
-		}
-	} else {
-		Info.Printf("resolver.Node=%v\n",ens_resolver.Node)
-		hash,err := hex.DecodeString(ens_resolver.Node)
-		if err!=nil {
-			Error.Printf("Error decoding node hash str for %v: %v\n",log.Address.String,err)
-			Info.Printf("Error decoding node hash str for %v: %v\n",log.Address.String,err)
-			os.Exit(1)
-		}
-		copy(node_hash[:],hash[:])
 	}
 	var fqdn_hash [32]byte
 	data :=make([]byte,32,64)
@@ -174,7 +192,6 @@ func proc_name_registered1(log *types.Log,evt_id int64,tx_id int64) {
 	Info.Printf("resulting fqdn: %v\n",hex.EncodeToString(fqdn_hash[:]))
 
 	evt.Node = hex.EncodeToString(node_hash[:])
-	owner_addr := common.BytesToAddress(log.Topics[2][12:])
 	evt.Owner = owner_addr.String()
 	evt.Name = eth_event.Name
 	evt.Cost = eth_event.Cost.String()
@@ -580,7 +597,10 @@ func process_ens_event(evt_id int64) error {
 
 	evtlog := storage.Get_event_log(evt_id)
 	var log types.Log
-	rlp.DecodeBytes(evtlog.RlpLog,&log)
+	err := rlp.DecodeBytes(evtlog.RlpLog,&log)
+	if err!= nil {
+		panic(fmt.Sprintf("RLP Decode error: %v",err))
+	}
 	log.BlockNumber=uint64(evtlog.BlockNum)
 	log.TxHash.SetBytes(common.HexToHash(evtlog.TxHash).Bytes())
 	log.Address.SetBytes(common.HexToHash(evtlog.ContractAddress).Bytes())
@@ -622,3 +642,44 @@ func process_ens_event(evt_id int64) error {
 	}
 	return nil
 }
+	/*this code doesn't work, pending for removal
+	// Fetch Node hash from Contract itself
+	base_registrar_ctrct,err := baseregistrar.NewContract(log.Address,eclient)
+	if err != nil {
+		Error.Printf("Error instantiating base registrar contract %v : %v\n",log.Address.String(),err)
+		Info.Printf("Error instantiating base registrar contract %v : %v\n",log.Address.String(),err)
+		os.Exit(1)
+	}
+	var node_hash [32]byte
+	ens_resolver,err := storage.Get_ens_resolver(log.Address.String())
+	if err != nil {
+		Info.Printf("No resolver %v registered in the DB, querying geth\n",log.Address.String())
+		var copts = new(bind.CallOpts)
+		node_hash,err = base_registrar_ctrct.BaseNode(copts)
+		if err != nil {
+			Error.Printf("Error calling baseNode() for ctrct %v : %v\n",log.Address.String(),err)
+			Info.Printf("Error calling baseNode() for ctrct %v : %v\n",log.Address.String(),err)
+			auction_registrar_ctrct,err := auctionregistrar.NewContract(log.Address,eclient)
+			if err != nil {
+				Error.Printf("Error instantiating auction registrar contract %v : %v\n",log.Address.String(),err)
+				Info.Printf("Error instantiating auction registrar contract %v : %v\n",log.Address.String(),err)
+				os.Exit(1)
+			}
+			node_hash,err = auction_registrar_ctrct.RootNode(copts)
+			if err != nil {
+				Error.Printf("Error calling rootNode() for ctrct %v : %v\n",log.Address.String(),err)
+				Info.Printf("Error calling rootNode() for ctrct %v : %v\n",log.Address.String(),err)
+				os.Exit(1)
+			}
+		}
+	} else {
+		Info.Printf("resolver.Node=%v\n",ens_resolver.Node)
+		hash,err := hex.DecodeString(ens_resolver.Node)
+		if err!=nil {
+			Error.Printf("Error decoding node hash str for %v: %v\n",log.Address.String,err)
+			Info.Printf("Error decoding node hash str for %v: %v\n",log.Address.String,err)
+			os.Exit(1)
+		}
+		copy(node_hash[:],hash[:])
+	}
+*/

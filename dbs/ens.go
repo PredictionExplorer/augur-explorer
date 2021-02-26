@@ -616,7 +616,8 @@ func (ss *SQLStorage) Get_ens_resolver(address string) (p.ENSResolver,error) {
 	var query string
 	query = "SELECT node,a.address_id FROM ens_new_resolver r " +
 				"JOIN address a ON r.aid=a.address_id " +
-				"WHERE a.addr=$1"
+				"WHERE a.addr=$1 " +
+				"ORDER BY r.time_stamp DESC LIMIT 1"
 	res := ss.db.QueryRow(query,address)
 	err := res.Scan(&output.Node,&output.Aid)
 	if (err!=nil) {

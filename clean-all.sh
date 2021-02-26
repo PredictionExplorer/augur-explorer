@@ -7,7 +7,8 @@ rm ./etl/cmd/balancer/balancer
 rm ./etl/cmd/uniswap/uniswap
 rm ./etl/cmd/ensscan/ensscan
 rm ./etl/cmd/ensscan/tools/scanpropnames
-rm ./etl/cmd/ensscan/tools/scantlds
+rm ./etl/cmd/ensscan/tools/labelhash
+rm ./etl/cmd/ensscan/tools/namehash
 rm ./etl/dmesh/dmesh
 rm ./etl/tools/augur_blocks
 rm ./etl/tools/dai_balances

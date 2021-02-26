@@ -4,15 +4,18 @@ DECLARE
 	v_cnt numeric;
 BEGIN
 
+	IF NEW.fqdn='' THEN
+		RAISE EXCEPTION 'Attempt to INSERT ens_name with empty fqdn';
+	END IF;
 	SELECT expires FROM active_name WHERE label = NEW.label INTO v_prev_timestamp;
 	UPDATE active_name SET
 		ensname_id = NEW.id,
 		expires = NEW.expires
-		WHERE label=NEW.label;
+		WHERE fqdn=NEW.fqdn;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO active_name(ensname_id,expires,prev_expires,name,label)
-		VALUES(NEW.id,NEW.expires,v_prev_timestamp,NEW.name,NEW.label);
+		INSERT INTO active_name(ensname_id,expires,prev_expires,name,label,node,fqdn)
+		VALUES(NEW.id,NEW.expires,v_prev_timestamp,NEW.name,NEW.label,NEW.node,NEW.fqdn);
 	END IF;
 	RETURN NEW;
 END;
