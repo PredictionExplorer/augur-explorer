@@ -106,7 +106,7 @@ var (
 	ens1_addr			= common.HexToAddress(ENS_V1_REGISTRY_ADDR)
 	ens2_addr			= common.HexToAddress(ENS_V2_REGISTRY_ADDR)
 )
-func do_initiial_load_name_registered1(block_num_from,block_num_to int64) {
+func do_initial_load_name_registered1(block_num_from,block_num_to int64) {
 
 	filter := ethereum.FilterQuery{}
 	filter.FromBlock = big.NewInt(block_num_from)
@@ -135,13 +135,11 @@ func do_initiial_load_name_registered1(block_num_from,block_num_to int64) {
 		proc_name_registered1(&log,0,0,0)
 	}
 }
-func do_initiial_load_new_owner(block_num_from,block_num_to int64) {
+func do_initial_load_new_owner(block_num_from,block_num_to int64) {
 
 	filter := ethereum.FilterQuery{}
 	filter.FromBlock = big.NewInt(block_num_from)
 	filter.ToBlock = big.NewInt(block_num_to)
-//	filter.FromBlock = big.NewInt(0)
-//	filter.ToBlock = nil
 	topics := make([]common.Hash,0,1)
 	signature := common.BytesToHash(evt_newowner)
 	topics = append(topics,signature)
@@ -169,7 +167,71 @@ func do_initiial_load_new_owner(block_num_from,block_num_to int64) {
 		proc_newowner(&log,0,0,0)
 	}
 }
-func do_initiial_load_name_registered2(block_num_from,block_num_to int64) {
+func do_initial_load_address_changed1(block_num_from,block_num_to int64) {
+
+	filter := ethereum.FilterQuery{}
+	filter.FromBlock = big.NewInt(block_num_from)
+	filter.ToBlock = big.NewInt(block_num_to)
+	topics := make([]common.Hash,0,1)
+	signature := common.BytesToHash(evt_addrchanged1)
+	topics = append(topics,signature)
+	filter.Topics= append(filter.Topics,topics)
+	filter.Addresses = nil
+	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
+	Info.Printf("filter query = %+v\n",filter)
+	Info.Printf("NewOwner: block range: %v - %v\n",block_num_from,block_num_to)
+	logs,err := eclient.FilterLogs(context.Background(),filter)
+	if err!= nil {
+		Error.Printf("Error: %v\n",err)
+		Info.Printf("Error: %v\n",err)
+		os.Exit(1)
+	}
+	for _,log := range logs {
+		if log.Removed {
+			continue
+		}
+		if	ens1,ens2 :=
+				bytes.Equal(ens1_addr.Bytes(),log.Address.Bytes()),
+				bytes.Equal(ens2_addr.Bytes(),log.Address.Bytes());
+			!(ens1 || ens2) {
+				continue
+		}
+		proc_addr_changed1(&log,0,0,0)
+	}
+}
+func do_initial_load_address_changed2(block_num_from,block_num_to int64) {
+
+	filter := ethereum.FilterQuery{}
+	filter.FromBlock = big.NewInt(block_num_from)
+	filter.ToBlock = big.NewInt(block_num_to)
+	topics := make([]common.Hash,0,1)
+	signature := common.BytesToHash(evt_addresschanged2)
+	topics = append(topics,signature)
+	filter.Topics= append(filter.Topics,topics)
+	filter.Addresses = nil
+	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
+	Info.Printf("filter query = %+v\n",filter)
+	Info.Printf("NewOwner: block range: %v - %v\n",block_num_from,block_num_to)
+	logs,err := eclient.FilterLogs(context.Background(),filter)
+	if err!= nil {
+		Error.Printf("Error: %v\n",err)
+		Info.Printf("Error: %v\n",err)
+		os.Exit(1)
+	}
+	for _,log := range logs {
+		if log.Removed {
+			continue
+		}
+		if	ens1,ens2 :=
+				bytes.Equal(ens1_addr.Bytes(),log.Address.Bytes()),
+				bytes.Equal(ens2_addr.Bytes(),log.Address.Bytes());
+			!(ens1 || ens2) {
+				continue
+		}
+		proc_address_changed2(&log,0,0,0)
+	}
+}
+func do_initial_load_name_registered2(block_num_from,block_num_to int64) {
 
 	filter := ethereum.FilterQuery{}
 	filter.FromBlock = big.NewInt(block_num_from)
@@ -213,10 +275,10 @@ func range_initial_load_name_registered1(exit_chan chan bool,block_num_limit int
 
 		next_block_num := block_num + 1000 - 1
 		if next_block_num > block_num_limit {
-			do_initiial_load_name_registered1(block_num,block_num_limit)
+			do_initial_load_name_registered1(block_num,block_num_limit)
 			break
 		} else {
-			do_initiial_load_name_registered1(block_num,next_block_num)
+			do_initial_load_name_registered1(block_num,next_block_num)
 			block_num = next_block_num + 1
 		}
 		storage.Expire_ens_names(Info)
@@ -237,10 +299,56 @@ func range_initial_load_new_owner(exit_chan chan bool,block_num_limit int64) {
 
 		next_block_num := block_num + 1000 - 1
 		if next_block_num > block_num_limit {
-			do_initiial_load_new_owner(block_num,block_num_limit)
+			do_initial_load_new_owner(block_num,block_num_limit)
 			break
 		} else {
-			do_initiial_load_new_owner(block_num,next_block_num)
+			do_initial_load_new_owner(block_num,next_block_num)
+			block_num = next_block_num + 1
+		}
+	}
+}
+func range_initial_load_address_changed1(exit_chan chan bool,block_num_limit int64) {
+
+	var block_num int64 = 2933000 // found empirically
+	for ; block_num <= block_num_limit ; {
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.\n")
+					os.Exit(0)
+				}
+			default:
+		}
+
+		next_block_num := block_num + 1000 - 1
+		if next_block_num > block_num_limit {
+			do_initial_load_address_changed1(block_num,block_num_limit)
+			break
+		} else {
+			do_initial_load_address_changed1(block_num,next_block_num)
+			block_num = next_block_num + 1
+		}
+	}
+}
+func range_initial_load_address_changed2(exit_chan chan bool,block_num_limit int64) {
+
+	var block_num int64 = 2933000 // found empirically
+	for ; block_num <= block_num_limit ; {
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.\n")
+					os.Exit(0)
+				}
+			default:
+		}
+
+		next_block_num := block_num + 1000 - 1
+		if next_block_num > block_num_limit {
+			do_initial_load_address_changed2(block_num,block_num_limit)
+			break
+		} else {
+			do_initial_load_address_changed2(block_num,next_block_num)
 			block_num = next_block_num + 1
 		}
 	}
@@ -260,15 +368,16 @@ func range_initial_load_name_registered2(exit_chan chan bool,block_num_limit int
 
 		next_block_num := block_num + 1000 - 1
 		if next_block_num > block_num_limit {
-			do_initiial_load_name_registered2(block_num,block_num_limit)
+			do_initial_load_name_registered2(block_num,block_num_limit)
 			break
 		} else {
-			do_initiial_load_name_registered2(block_num,next_block_num)
+			do_initial_load_name_registered2(block_num,next_block_num)
 			block_num = next_block_num + 1
 		}
 	}
+	storage.Expire_ens_names(Info)
 }
-func do_initiial_load_name_registered3(block_num_from,block_num_to int64) {
+func do_initial_load_name_registered3(block_num_from,block_num_to int64) {
 
 	filter := ethereum.FilterQuery{}
 	filter.FromBlock = big.NewInt(block_num_from)
@@ -309,15 +418,15 @@ func range_initial_load_name_registered3(exit_chan chan bool,block_num_limit int
 
 		next_block_num := block_num + 1000 - 1
 		if next_block_num > block_num_limit {
-			do_initiial_load_name_registered3(block_num,block_num_limit)
+			do_initial_load_name_registered3(block_num,block_num_limit)
 			break
 		} else {
-			do_initiial_load_name_registered3(block_num,next_block_num)
+			do_initial_load_name_registered3(block_num,next_block_num)
 			block_num = next_block_num + 1
 		}
 	}
 }
-func do_initiial_load_hash_invalidated(block_num_from,block_num_to int64) {
+func do_initial_load_hash_invalidated(block_num_from,block_num_to int64) {
 
 	filter := ethereum.FilterQuery{}
 	filter.FromBlock = big.NewInt(block_num_from)
@@ -358,15 +467,15 @@ func range_initial_load_hash_invalidated(exit_chan chan bool,block_num_limit int
 
 		next_block_num := block_num + 1000 - 1
 		if next_block_num > block_num_limit {
-			do_initiial_load_hash_invalidated(block_num,block_num_limit)
+			do_initial_load_hash_invalidated(block_num,block_num_limit)
 			break
 		} else {
-			do_initiial_load_hash_invalidated(block_num,next_block_num)
+			do_initial_load_hash_invalidated(block_num,next_block_num)
 			block_num = next_block_num + 1
 		}
 	}
 }
-func do_initiial_load_new_resolver(block_num_from,block_num_to int64) {
+func do_initial_load_new_resolver(block_num_from,block_num_to int64) {
 
 	filter := ethereum.FilterQuery{}
 	filter.FromBlock = big.NewInt(block_num_from)
@@ -407,15 +516,15 @@ func range_initial_load_new_resolver(exit_chan chan bool,block_num_limit int64) 
 
 		next_block_num := block_num + 1000 - 1
 		if next_block_num > block_num_limit {
-			do_initiial_load_new_resolver(block_num,block_num_limit)
+			do_initial_load_new_resolver(block_num,block_num_limit)
 			break
 		} else {
-			do_initiial_load_new_resolver(block_num,next_block_num)
+			do_initial_load_new_resolver(block_num,next_block_num)
 			block_num = next_block_num + 1
 		}
 	}
 }
-func do_initiial_load_registry_transfer(block_num_from,block_num_to int64) {
+func do_initial_load_registry_transfer(block_num_from,block_num_to int64) {
 
 	filter := ethereum.FilterQuery{}
 	filter.FromBlock = big.NewInt(block_num_from)
@@ -456,15 +565,15 @@ func range_initial_load_registry_transfer(exit_chan chan bool,block_num_limit in
 
 		next_block_num := block_num + 1000 - 1
 		if next_block_num > block_num_limit {
-			do_initiial_load_registry_transfer(block_num,block_num_limit)
+			do_initial_load_registry_transfer(block_num,block_num_limit)
 			break
 		} else {
-			do_initiial_load_registry_transfer(block_num,next_block_num)
+			do_initial_load_registry_transfer(block_num,next_block_num)
 			block_num = next_block_num + 1
 		}
 	}
 }
-func do_initiial_load_text_changed(block_num_from,block_num_to int64) {
+func do_initial_load_text_changed(block_num_from,block_num_to int64) {
 
 	filter := ethereum.FilterQuery{}
 	filter.FromBlock = big.NewInt(block_num_from)
@@ -505,15 +614,15 @@ func range_initial_load_text_changed(exit_chan chan bool,block_num_limit int64) 
 
 		next_block_num := block_num + 1000 - 1
 		if next_block_num > block_num_limit {
-			do_initiial_load_text_changed(block_num,block_num_limit)
+			do_initial_load_text_changed(block_num,block_num_limit)
 			break
 		} else {
-			do_initiial_load_text_changed(block_num,next_block_num)
+			do_initial_load_text_changed(block_num,next_block_num)
 			block_num = next_block_num + 1
 		}
 	}
 }
-func do_initiial_load_hash_registered(block_num_from,block_num_to int64) {
+func do_initial_load_hash_registered(block_num_from,block_num_to int64) {
 
 	filter := ethereum.FilterQuery{}
 	filter.FromBlock = big.NewInt(block_num_from)
@@ -554,10 +663,10 @@ func range_initial_load_hash_registered(exit_chan chan bool,block_num_limit int6
 
 		next_block_num := block_num + 1000 - 1
 		if next_block_num > block_num_limit {
-			do_initiial_load_hash_registered(block_num,block_num_limit)
+			do_initial_load_hash_registered(block_num,block_num_limit)
 			break
 		} else {
-			do_initiial_load_hash_registered(block_num,next_block_num)
+			do_initial_load_hash_registered(block_num,next_block_num)
 			block_num = next_block_num + 1
 		}
 	}
@@ -565,6 +674,8 @@ func range_initial_load_hash_registered(exit_chan chan bool,block_num_limit int6
 func initial_load(exit_chan chan bool,block_num_limit int64) {
 	range_initial_load_name_registered1(exit_chan,block_num_limit)
 	range_initial_load_name_registered2(exit_chan,block_num_limit)
+	range_initial_load_address_changed1(exit_chan,block_num_limit)
+	range_initial_load_address_changed2(exit_chan,block_num_limit)
 	//range_initial_load_new_owner(exit_chan,block_num_limit)
 	////range_initial_load_name_registered3(exit_chan,block_num_limit)
 	//range_initial_load_hash_invalidated(exit_chan,block_num_limit)

@@ -14,33 +14,34 @@ CREATE TABLE ens_node(
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(fqdn)
 );
-CREATE TABLE ens_name( -- ENS name global data
-	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT,
-	block_num			BIGINT,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT,
-	contract_aid		BIGINT NOT NULL,
-	owner_aid			BIGINT NOT NULL,
-	time_stamp			TIMESTAMPTZ,
-	expires				TIMESTAMPTZ,
-	label				TEXT,
-	node				TEXT,
-	fqdn				TEXT NOT NULL,
-	name				TEXT,
-	tx_hash				TEXT NOT NULL,
-	pubkey				TEXT DEFAULT '',
-	content_hash		TEXT DEFAULT '',
-	cost				DECIMAL(32,18),
-	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
-	UNIQUE(tx_hash,label)
-);
+-- DISCONTINUED, removal pending
+--CREATE TABLE ens_name( -- ENS name global data
+--	id					BIGSERIAL PRIMARY KEY,
+--	evtlog_id			BIGINT,
+--	block_num			BIGINT,			-- this is just a copy (for easy data management)
+--	tx_id				BIGINT,
+--	contract_aid		BIGINT NOT NULL,
+--	owner_aid			BIGINT NOT NULL,
+--	time_stamp			TIMESTAMPTZ,
+--	expires				TIMESTAMPTZ,
+--	label				TEXT,
+--	node				TEXT,
+--	fqdn				TEXT NOT NULL,
+--	name				TEXT,
+--	tx_hash				TEXT NOT NULL,
+--	pubkey				TEXT DEFAULT '',
+--	content_hash		TEXT DEFAULT '',
+--	cost				DECIMAL(32,18),
+--	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+--	UNIQUE(tx_hash,label)
+--);
 CREATE TABLE active_name( -- ENS names that are currently active (i.e. haven't expired)
 	id					BIGSERIAL PRIMARY KEY,
 	ensname_id			BIGINT NOT NULL, -- latest `ens_name.id` field
 	expires				TIMESTAMPTZ NOT NULL,
 	name				TEXT,
-	label				TEXT NOT NULL,
-	node				TEXT NOT NULL,
+	label				TEXT,	-- can be null if inserted from NameRegistered2 event trigger
+	node				TEXT,	-- can be null if inserted from NameRegistered2 event trigger
 	fqdn				TEXT NOT NULL UNIQUE
 );
 CREATE TABLE ens_name (-- ENS NameRegistered1 event (signature ca6abbe9)
@@ -64,8 +65,8 @@ CREATE TABLE ens_name_reg1(-- ENS NameRegistered1 event (signature ca6abbe9)
 	owner_aid			BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
 	expires				TIMESTAMPTZ,
-	label				TEXT,
-	node				TEXT,
+	label				TEXT NOT NULL,
+	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,
 	name				TEXT,
 	tx_hash				TEXT NOT NULL,
@@ -82,6 +83,26 @@ CREATE TABLE ens_name_reg2(-- ENS NAmeRegistered2 event (signature b3d98796)
 	owner_aid			BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
 	expires				TIMESTAMPTZ,
+	label				TEXT NOT NULL,
+	node				TEXT NOT NULL,
+	fqdn				TEXT NOT NULL,
+	tx_hash				TEXT NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,fqdn)
+);
+CREATE TABLE ens_name_reg3(-- ENS NAmeRegistered3 event (signature 0f0c27ad)
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	caller_aid			BIGINT NOT NULL,
+	beneficiary_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	created_date		TIMESTAMPTZ,
+	subdomain			TEXT NOT NULL,
+	label				TEXT NOT NULL,
+	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,
 	tx_hash				TEXT NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,

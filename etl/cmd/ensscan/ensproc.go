@@ -91,7 +91,21 @@ func get_event_ids(from_evt_id,to_evt_id int64) []int64 {
 	num_elts:=Remove_duplicates_int64(output)
 	return output[0:num_elts]
 }
-func Get_node_hash_via_new_owner_event(tx_id int64,tx_hash *common.Hash,label []byte) ([]byte,error) {
+func calculate_name_hash(node,label []byte) [32]byte {
+
+	var fqdn_hash [32]byte
+	data :=make([]byte,32,64)
+	copy(data,node[:]) // copying Node (bytes)
+	data = append(data[:],label[:]...)
+	sha := sha3.NewLegacyKeccak256()
+	if _, err := sha.Write(data[:]); err != nil {
+		Error.Printf("cant calculate name hash: %v\n",err)
+		os.Exit(1)
+	}
+	sha.Sum(fqdn_hash[:0])
+	return fqdn_hash
+}
+func get_node_hash_via_new_owner_event(tx_id int64,tx_hash *common.Hash,value[]byte,is_label bool) ([]byte,[]byte,error) {
     // NameRegistered event doesn't provide the node hash in the event itself,
     // but there is a common pattern: when ENS name is registered a NewOwner event
     // is emitted and it contains Node hash. This function extracts node hash value
@@ -111,8 +125,16 @@ func Get_node_hash_via_new_owner_event(tx_id int64,tx_hash *common.Hash,label []
 		}
 		for i:=0; i<len(receipt.Logs); i++ {
 			log := receipt.Logs[i]
-			if bytes.Equal(log.Topics[2][:],label[:]) && (len(log.Data)>0) {
-				return log.Topics[1][:],nil
+			if is_label {
+				if bytes.Equal(log.Topics[2][:],value[:]) && (len(log.Data)>0) {
+					return log.Topics[1][:],value[:],nil
+				}
+			} else {
+				// its the FQDN (aka 'id' or 'name hash')
+				namehash := calculate_name_hash(log.Topics[1][:],log.Topics[2][:])
+				if bytes.Equal(value,namehash[:]) {
+					return log.Topics[1][:],log.Topics[2][:],nil
+				}
 			}
 		}
 		Error.Printf("No NewOwner events found after scanning transaction receipt logs, tx=%v\n",tx_hash.String())
@@ -130,14 +152,24 @@ func Get_node_hash_via_new_owner_event(tx_id int64,tx_hash *common.Hash,label []
 			Error.Printf("Found NewOwner event but the log.Data size is less than 32: %v\n",len(log.Data))
 			os.Exit(1)
 		}
-		if bytes.Equal(log.Topics[2][:],label[:]) {
-			return log.Topics[1][:],nil
+		if bytes.Equal(log.Topics[0].Bytes(),evt_newowner[:]) {
+			if is_label {
+				if bytes.Equal(log.Topics[2][:],value[:]) {
+					return log.Topics[1][:],value[:],nil
+				}
+			} else {
+				// its the FQDN (aka 'id' or 'name hash')
+				namehash := calculate_name_hash(log.Topics[1][:],log.Topics[2][:])
+				if bytes.Equal(value,namehash[:]) {
+					return log.Topics[1][:],log.Topics[2][:],nil
+				}
+			}
 		}
 
 	}
 	Error.Printf("Couldn't find NewOwner event linked with NameRegistered event, tx_id=%v\n",tx_id)
 	os.Exit(1)
-	return nil,nil
+	return nil,nil,nil
 }
 
 func proc_name_registered1(log *types.Log,evt_id,tx_id,timestamp int64) {
@@ -174,7 +206,7 @@ func proc_name_registered1(log *types.Log,evt_id,tx_id,timestamp int64) {
 	evt.TxHash = log.TxHash.String()
 	evt.Label = hex.EncodeToString(eth_event.Label[:])
 
-	node_hash,err := Get_node_hash_via_new_owner_event(evt.TxId,&log.TxHash,eth_event.Label[:])
+	node_hash,_,err := get_node_hash_via_new_owner_event(evt.TxId,&log.TxHash,eth_event.Label[:],true)
 	if err != nil {
 		Error.Printf("Error getting node hash: %v\n",err)
 		os.Exit(1)
@@ -230,11 +262,21 @@ func proc_name_registered2(log *types.Log,evt_id,tx_id,timestamp int64) {
 	expires.SetBytes(log.Data[:])
 	evt.Expires = expires.Int64()
 	evt.Contract = log.Address.String()
+
+	node_hash,label_hash,err := get_node_hash_via_new_owner_event(evt.TxId,&log.TxHash,log.Topics[1][:],false)
+	if err != nil {
+		Error.Printf("Error getting node hash: %v\n",err)
+		os.Exit(1)
+	}
+	evt.Node = hex.EncodeToString(node_hash[:])
+	evt.Label = hex.EncodeToString(label_hash[:])
+
 	Info.Printf("ENS_Name2 {\n")
 	Info.Printf("\tOwner: %v\n",evt.Owner)
 	Info.Printf("\tNameId: %v\n",evt.NameId)
 	Info.Printf("\tExpires: %v\n",evt.Expires)
 	Info.Printf("}")
+	Info.Printf("Node: %v , Label: %v \n",evt.Node,evt.Label)
 	storage.Insert_name_registered2(&evt)
 }
 func proc_newowner(log *types.Log,evt_id,tx_id,timestamp int64) {
@@ -380,6 +422,26 @@ func proc_name_registered3(log *types.Log,evt_id,tx_id,timestamp int64) {
 	evt.CreatedDate = eth_event.CreatedDate.Int64()
 	evt.Contract = log.Address.String()
 
+	node_hash,_,err := get_node_hash_via_new_owner_event(evt.TxId,&log.TxHash,eth_event.Label[:],true)
+	if err != nil {
+		Error.Printf("Error getting node hash: %v\n",err)
+		os.Exit(1)
+	}
+	var fqdn_hash [32]byte
+	data :=make([]byte,32,64)
+	Info.Printf("node_hash before: %v\n",hex.EncodeToString(node_hash[:]))
+	copy(data,node_hash[:]) // copying Node (bytes)
+	Info.Printf("label_hash before: %v\n",hex.EncodeToString(eth_event.Label[:]))
+	data = append(data[:],eth_event.Label[:]...)
+	sha := sha3.NewLegacyKeccak256()
+	if _, err := sha.Write(data[:]); err != nil {
+		Error.Printf("cant calculate hash of new node: %v\n",err)
+		os.Exit(1)
+	}
+	sha.Sum(fqdn_hash[:0])
+	evt.FQDN = hex.EncodeToString(fqdn_hash[:])
+	evt.Node = hex.EncodeToString(node_hash[:])
+
 	Info.Printf("ENS_Name3 {\n")
 	Info.Printf("\tCaller: %v\n",eth_event.Caller.String())
 	Info.Printf("\tBeneficiary: %v\n",eth_event.Beneficiary.String())
@@ -387,6 +449,9 @@ func proc_name_registered3(log *types.Log,evt_id,tx_id,timestamp int64) {
 	Info.Printf("\tSubdomain: %v\n",eth_event.Subdomain)
 	Info.Printf("\tCreatedDate: %v\n",evt.CreatedDate)
 	Info.Printf("}")
+	Info.Printf("(node: %v, fqdn: %v\n",evt.Node,evt.FQDN)
+
+	storage.Insert_name_registered3(&evt)
 }
 func proc_hash_invalidated(log *types.Log,evt_id,tx_id,timestamp int64) {
 
@@ -679,6 +744,7 @@ func process_ens_events(exit_chan chan bool) {
 				storage.Update_ens_proc_status(&status)
 			}
 			time.Sleep(1 * time.Second) // sleep only if there is no data
+			storage.Expire_ens_names(Info)
 		}
 	}
 }

@@ -110,7 +110,7 @@ func (ss *SQLStorage) Insert_name_registered2(rec *p.ENS_Name2) {
 	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
 		query = "INSERT INTO ens_name_reg2(" +
 					"tx_hash,time_stamp,block_num,contract_aid,owner_aid,fqdn,expires" +
-				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,TO_TIMESTAMP($8))"
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,TO_TIMESTAMP($7))"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
 			rec.TimeStamp,
@@ -137,6 +137,55 @@ func (ss *SQLStorage) Insert_name_registered2(rec *p.ENS_Name2) {
 			rec.FQDN,
 			rec.TxHash,
 			rec.Expires,
+		)
+	}
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_name_registered3(rec *p.ENS_Name3) {
+
+	var query string
+	var err error
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
+	beneficiary_aid := ss.Lookup_or_create_address(rec.Beneficiary,rec.BlockNum,rec.TxId)
+	caller_aid := ss.Lookup_or_create_address(rec.Caller,rec.BlockNum,rec.TxId)
+	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
+		query = "INSERT INTO ens_name_reg3(" +
+					"tx_hash,time_stamp,block_num,contract_aid,caller_aid,beneficiary_aid," +
+					"subdomain,fqdn,created_date" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,TO_TIMESTAMP($9))"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.TimeStamp,
+			rec.BlockNum,
+			contract_aid,
+			caller_aid,
+			beneficiary_aid,
+			rec.Subdomain,
+			rec.FQDN,
+			rec.CreatedDate,
+		)
+	} else {
+		query = "INSERT INTO ens_name_reg3(" +
+					"evtlog_id,time_stamp,block_num,tx_id,contract_aid,caller_aid,"+
+					"beneficiary_aid,subdomain,fqdn,tx_hash,created_date" +
+				") VALUES(" +
+					"$1,TO_TIMESTAMP($2),$3,$4,$5,,$7,$8,$9,$10,TO_TIMESTAMP($11)"+
+				")"
+		_,err = ss.db.Exec(query,
+			rec.EvtId,
+			rec.TimeStamp,
+			rec.BlockNum,
+			rec.TxId,
+			contract_aid,
+			caller_aid,
+			beneficiary_aid,
+			rec.Subdomain,
+			rec.FQDN,
+			rec.TxHash,
+			rec.CreatedDate,
 		)
 	}
 	if (err!=nil) {

@@ -1,49 +1,46 @@
 CREATE OR REPLACE FUNCTION on_ens_name_reg1_insert_before() RETURNS trigger AS  $$
 DECLARE
-	v_prev_timestamp timestamptz;
 	v_cnt numeric;
 BEGIN
 
 	IF NEW.fqdn='' THEN
 		RAISE EXCEPTION 'Attempt to INSERT ens_name with empty fqdn in ens_reg_name1';
 	END IF;
-	SELECT expires FROM active_name WHERE label = NEW.label INTO v_prev_timestamp;
 	UPDATE active_name SET
 		ensname_id = NEW.id,
-		expires = NEW.expires,
-		cost=NEW.cost
+		name= NEW.name,
+		label = NEW.label,	-- we update node/label/name because NameRegistered2 event doesn't carry these fields
+		node = NEW.node,
+		expires = NEW.expires
 		WHERE fqdn=NEW.fqdn;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		INSERT INTO ens_name(owner_aid,expires,label,node,fqdn,name,cost)
 			VALUES(NEW.owner_aid,NEW.expires,NEW.label,NEW.node,NEW.fqdn,NEW.name,NEW.cost);
-		INSERT INTO active_name(ensname_id,expires,prev_expires,name,label,node,fqdn)
-			VALUES(NEW.id,NEW.expires,v_prev_timestamp,NEW.name,NEW.label,NEW.node,NEW.fqdn);
+		INSERT INTO active_name(ensname_id,expires,name,label,node,fqdn)
+			VALUES(NEW.id,NEW.expires,NEW.name,NEW.label,NEW.node,NEW.fqdn);
 	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_ens_name_reg2_insert_before() RETURNS trigger AS  $$
 DECLARE
-	v_prev_timestamp timestamptz;
 	v_cnt numeric;
 BEGIN
 
 	IF NEW.fqdn='' THEN
 		RAISE EXCEPTION 'Attempt to INSERT ens_name with empty fqdn in ens_name_reg2';
 	END IF;
-	SELECT expires FROM active_name WHERE label = NEW.label INTO v_prev_timestamp;
 	UPDATE active_name SET
 		ensname_id = NEW.id,
-		expires = NEW.expires,
-		cost=NEW.cost
+		expires = NEW.expires
 		WHERE fqdn=NEW.fqdn;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO ens_name(owner_aid,expires,label,node,fqdn)-- event v2 doesn't have cost/name fields
-			VALUES(NEW.owner_aid,NEW.expires,NEW.label,NEW.node,NEW.fqdn);
-		INSERT INTO active_name(ensname_id,expires,prev_expires,name,label,node,fqdn)
-			VALUES(NEW.id,NEW.expires,v_prev_timestamp,NEW.name,NEW.label,NEW.node,NEW.fqdn);
+		INSERT INTO ens_name(owner_aid,expires,fqdn)-- event v2 doesn't have cost/name fields
+			VALUES(NEW.owner_aid,NEW.expires,NEW.fqdn);
+		INSERT INTO active_name(ensname_id,expires,fqdn)
+			VALUES(NEW.id,NEW.expires,NEW.fqdn);
 	END IF;
 	RETURN NEW;
 END;
@@ -57,6 +54,26 @@ BEGIN
 	INSERT INTO ens_node(evtlog_id,block_num,tx_id,contract_aid,time_stamp,label,node,fqdn)
 		VALUES(NEW.evtlog_id,NEW.block_num,NEW.tx_id,NEW.contract_aid,NEW.time_stamp,NEW.label,NEW.node,NEW.fqdn)
 		ON CONFLICT DO NOTHING;
+	-- fixes active_name records that do not have label/node set
+	UPDATE active_name SET	label = NEW.label,node = NEW.node WHERE fqdn=NEW.fqdn AND label IS NULL;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_ens_addr_changed1() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	-- fixes active_name records that do not have label/node set
+	UPDATE active_name SET	label = NEW.label,node = NEW.node WHERE fqdn=NEW.fqdn AND label IS NULL;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_ens_addr_changed2() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	-- fixes active_name records that do not have label/node set
+	UPDATE active_name SET	label = NEW.label,node = NEW.node WHERE fqdn=NEW.fqdn AND label IS NULL;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

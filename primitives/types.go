@@ -1410,8 +1410,10 @@ type ENS_Name3  struct {	// NameRegistered old version
 	Contract				string
 	Caller					string
 	Beneficiary				string
+	Node					string
 	Label					string
 	Subdomain				string
+	FQDN					string
 	TxHash					string
 }
 type ENS_Transfer struct {
