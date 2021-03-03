@@ -40,16 +40,16 @@ CREATE TABLE active_name( -- ENS names that are currently active (i.e. haven't e
 	ensname_id			BIGINT NOT NULL, -- latest `ens_name.id` field
 	expires				TIMESTAMPTZ NOT NULL,
 	name				TEXT,
-	label				TEXT,	-- can be null if inserted from NameRegistered2 event trigger
-	node				TEXT,	-- can be null if inserted from NameRegistered2 event trigger
+	label				TEXT NOT NULL,
+	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL UNIQUE
 );
 CREATE TABLE ens_name (-- ENS NameRegistered1 event (signature ca6abbe9)
 	id					BIGSERIAL PRIMARY KEY,
 	owner_aid			BIGINT NOT NULL,
 	expires				TIMESTAMPTZ,
-	label				TEXT,
-	node				TEXT,
+	label				TEXT NOT NULL,
+	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,
 	name				TEXT,	-- human name
 	pubkey				TEXT DEFAULT '',

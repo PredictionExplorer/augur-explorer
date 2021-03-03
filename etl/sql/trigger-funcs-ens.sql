@@ -8,9 +8,6 @@ BEGIN
 	END IF;
 	UPDATE active_name SET
 		ensname_id = NEW.id,
-		name= NEW.name,
-		label = NEW.label,	-- we update node/label/name because NameRegistered2 event doesn't carry these fields
-		node = NEW.node,
 		expires = NEW.expires
 		WHERE fqdn=NEW.fqdn;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
@@ -37,10 +34,32 @@ BEGIN
 		WHERE fqdn=NEW.fqdn;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO ens_name(owner_aid,expires,fqdn)-- event v2 doesn't have cost/name fields
-			VALUES(NEW.owner_aid,NEW.expires,NEW.fqdn);
-		INSERT INTO active_name(ensname_id,expires,fqdn)
-			VALUES(NEW.id,NEW.expires,NEW.fqdn);
+		INSERT INTO ens_name(owner_aid,expires,label,node,fqdn)-- event v2 doesn't have cost/name fields
+			VALUES(NEW.owner_aid,NEW.expires,NEW.label,NEW.node,NEW.fqdn);
+		INSERT INTO active_name(ensname_id,expires,label,node,fqdn)
+			VALUES(NEW.id,NEW.expires,NEW.label,NEW.node,NEW.fqdn);
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_ens_name_reg3_insert_before() RETURNS trigger AS  $$
+DECLARE
+	v_cnt numeric;
+BEGIN
+
+	IF NEW.fqdn='' THEN
+		RAISE EXCEPTION 'Attempt to INSERT ens_name with empty fqdn in ens_name_reg3';
+	END IF;
+	UPDATE active_name SET
+		ensname_id = NEW.id,
+		expires = NEW.expires
+		WHERE fqdn=NEW.fqdn;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO ens_name(owner_aid,expires,label,node,fqdn)-- event v2 doesn't have cost/name fields
+			VALUES(NEW.owner_aid,NEW.expires,NEW.label,NEW.node,NEW.fqdn);
+		INSERT INTO active_name(ensname_id,expires,label,node,fqdn)
+			VALUES(NEW.id,NEW.expires,NEW.label,NEW.node,NEW.fqdn);
 	END IF;
 	RETURN NEW;
 END;
@@ -59,7 +78,7 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_ens_addr_changed1() RETURNS trigger AS  $$
+CREATE OR REPLACE FUNCTION on_ens_addr_changed1_insert() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
@@ -68,7 +87,7 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_ens_addr_changed2() RETURNS trigger AS  $$
+CREATE OR REPLACE FUNCTION on_ens_addr_changed2_insert() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 

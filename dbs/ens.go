@@ -109,14 +109,16 @@ func (ss *SQLStorage) Insert_name_registered2(rec *p.ENS_Name2) {
 	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
 	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
 		query = "INSERT INTO ens_name_reg2(" +
-					"tx_hash,time_stamp,block_num,contract_aid,owner_aid,fqdn,expires" +
-				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,TO_TIMESTAMP($7))"
+					"tx_hash,time_stamp,block_num,contract_aid,owner_aid,node,label,fqdn,expires" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,TO_TIMESTAMP($9))"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
 			rec.TimeStamp,
 			rec.BlockNum,
 			contract_aid,
 			owner_aid,
+			rec.Node,
+			rec.Label,
 			rec.FQDN,
 			rec.Expires,
 		)
@@ -198,7 +200,7 @@ func (ss *SQLStorage) Expire_ens_names(l *log.Logger) {
 	var query string
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM expires)::BIGINT, " +
-				"label,name " +
+				"label,COALESCE(name,'') " +
 			"FROM active_name " +
 			"WHERE expires < (NOW() + interval '90 day')"
 

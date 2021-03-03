@@ -1398,7 +1398,6 @@ type ENS_Name2  struct {	// NameRegistered old version
 	Node					string
 	FQDN					string
 	Owner					string
-	NameId					string
 	TxHash					string
 }
 type ENS_Name3  struct {	// NameRegistered old version

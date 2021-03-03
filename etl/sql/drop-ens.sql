@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS
 	active_name,
 	ens_name_reg1,
 	ens_name_reg2,
+	ens_name_reg3,
 	ens_addr1,
 	ens_addr2,
 	ens_new_owner,
