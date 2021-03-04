@@ -2,8 +2,6 @@ CREATE TRIGGER ens_name_reg1_insert_before BEFORE INSERT on ens_name_reg1
 	FOR EACH ROW EXECUTE PROCEDURE on_ens_name_reg1_insert_before();
 CREATE TRIGGER ens_name_reg2_insert_before BEFORE INSERT on ens_name_reg2
 	FOR EACH ROW EXECUTE PROCEDURE on_ens_name_reg2_insert_before();
-CREATE TRIGGER ens_name_reg3_insert_before BEFORE INSERT on ens_name_reg3
-	FOR EACH ROW EXECUTE PROCEDURE on_ens_name_reg3_insert_before();
 CREATE TRIGGER ens_new_owner_insert AFTER INSERT on ens_new_owner
 	FOR EACH ROW EXECUTE PROCEDURE on_ens_new_owner_insert();
 CREATE TRIGGER ens_addr1 AFTER INSERT on ens_addr1

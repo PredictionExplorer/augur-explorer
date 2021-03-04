@@ -1185,7 +1185,7 @@ func (ss *SQLStorage) Get_event_log(evtlog_id int64) p.EthereumEventLog {
 	var query string
 	query = "SELECT " +
 				"e.block_num," +
-				"b.ts, "+
+				"EXTRACT(EPOCH FROM b.ts)::BIGINT AS ts, "+
 				"e.tx_id," +
 				"tx.tx_hash," +
 				"e.contract_aid," +

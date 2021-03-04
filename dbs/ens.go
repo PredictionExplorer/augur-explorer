@@ -125,17 +125,19 @@ func (ss *SQLStorage) Insert_name_registered2(rec *p.ENS_Name2) {
 	} else {
 		query = "INSERT INTO ens_name_reg2(" +
 					"evtlog_id,block_num,tx_id,contract_aid,owner_aid,"+
-					"time_stamp,fqdn,tx_hash,expires" +
+					"time_stamp,node,label,fqdn,tx_hash,expires" +
 				") VALUES(" +
-					"$1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7,$8,TO_TIMESTAMP($9)"+
+					"$1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7,$8,$9,$10,TO_TIMESTAMP($11)"+
 				")"
 		_,err = ss.db.Exec(query,
 			rec.EvtId,
 			rec.BlockNum,
 			rec.TxId,
 			contract_aid,
-			rec.TimeStamp,
 			owner_aid,
+			rec.TimeStamp,
+			rec.Node,
+			rec.Label,
 			rec.FQDN,
 			rec.TxHash,
 			rec.Expires,
@@ -156,8 +158,8 @@ func (ss *SQLStorage) Insert_name_registered3(rec *p.ENS_Name3) {
 	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
 		query = "INSERT INTO ens_name_reg3(" +
 					"tx_hash,time_stamp,block_num,contract_aid,caller_aid,beneficiary_aid," +
-					"subdomain,fqdn,created_date" +
-				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,TO_TIMESTAMP($9))"
+					"subdomain,node,label,fqdn,created_date" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,TO_TIMESTAMP($11))"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
 			rec.TimeStamp,
@@ -166,15 +168,17 @@ func (ss *SQLStorage) Insert_name_registered3(rec *p.ENS_Name3) {
 			caller_aid,
 			beneficiary_aid,
 			rec.Subdomain,
+			rec.Node,
+			rec.Label,
 			rec.FQDN,
 			rec.CreatedDate,
 		)
 	} else {
 		query = "INSERT INTO ens_name_reg3(" +
 					"evtlog_id,time_stamp,block_num,tx_id,contract_aid,caller_aid,"+
-					"beneficiary_aid,subdomain,fqdn,tx_hash,created_date" +
+					"beneficiary_aid,subdomain,node,label,fqdn,tx_hash,created_date" +
 				") VALUES(" +
-					"$1,TO_TIMESTAMP($2),$3,$4,$5,,$7,$8,$9,$10,TO_TIMESTAMP($11)"+
+					"$1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,TO_TIMESTAMP($13)"+
 				")"
 		_,err = ss.db.Exec(query,
 			rec.EvtId,
@@ -185,6 +189,8 @@ func (ss *SQLStorage) Insert_name_registered3(rec *p.ENS_Name3) {
 			caller_aid,
 			beneficiary_aid,
 			rec.Subdomain,
+			rec.Node,
+			rec.Label,
 			rec.FQDN,
 			rec.TxHash,
 			rec.CreatedDate,
@@ -299,20 +305,20 @@ func (ss *SQLStorage) Insert_address_changed1(rec *p.ENS_AddrChanged) {
 	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
 	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
 		query = "INSERT INTO ens_addr1(" +
-					"tx_hash,time_stamp,block_num,contract_aid,node" +
-				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
+					"tx_hash,time_stamp,block_num,contract_aid,aid,fqdn" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6)"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
 			rec.TimeStamp,
 			rec.BlockNum,
 			contract_aid,
 			aid,
-			rec.Node,
+			rec.FQDN,
 		)
 	} else {
 		query = "INSERT INTO ens_addr1(" +
-					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,aid,tx_hash,node" +
-				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9,$10)"
+					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,aid,tx_hash,fqdn" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
 		_,err = ss.db.Exec(query,
 			rec.EvtId,
 			rec.BlockNum,
@@ -321,7 +327,7 @@ func (ss *SQLStorage) Insert_address_changed1(rec *p.ENS_AddrChanged) {
 			rec.TimeStamp,
 			aid,
 			rec.TxHash,
-			rec.Node,
+			rec.FQDN,
 		)
 	}
 	if (err!=nil) {
@@ -336,22 +342,22 @@ func (ss *SQLStorage) Insert_address_changed2(rec *p.ENS_AddressChanged) {
 	aid := ss.Lookup_or_create_address(rec.Address,rec.BlockNum,rec.TxId)
 	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
 	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
-		query = "INSERT INTO ens_addr1(" +
-					"tx_hash,time_stamp,block_num,contract_aid,node,coin_type" +
-				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9)"
+		query = "INSERT INTO ens_addr2(" +
+					"tx_hash,time_stamp,block_num,contract_aid,aid,fqdn,coin_type" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
 			rec.TimeStamp,
 			rec.BlockNum,
 			contract_aid,
 			aid,
-			rec.Node,
+			rec.FQDN,
 			rec.CoinType,
 		)
 	} else {
-		query = "INSERT INTO ens_addr1(" +
-					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,aid,tx_hash,node,coin_type" +
-				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9,$10,$11)"
+		query = "INSERT INTO ens_addr2(" +
+					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,aid,tx_hash,fqdn,coin_type" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9)"
 		_,err = ss.db.Exec(query,
 			rec.EvtId,
 			rec.BlockNum,
@@ -360,7 +366,7 @@ func (ss *SQLStorage) Insert_address_changed2(rec *p.ENS_AddressChanged) {
 			rec.TimeStamp,
 			aid,
 			rec.TxHash,
-			rec.Node,
+			rec.FQDN,
 			rec.CoinType,
 		)
 	}

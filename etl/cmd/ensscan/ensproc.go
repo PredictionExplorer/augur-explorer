@@ -352,9 +352,13 @@ func proc_addr_changed1(log *types.Log,evt_id,tx_id,timestamp int64) {
 		}
 		evt.TimeStamp = int64(block_hdr.Time)
 	}
-	evt.Node = hex.EncodeToString(log.Topics[1][:])
+	if len(log.Data) < 32 {	// not our event
+		return
+	}
+	fqdn_hash := log.Topics[1][:]
+	evt.FQDN = hex.EncodeToString(fqdn_hash)
 	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
-	Info.Printf("AddrChanged (addr= %v ) (node: %v ) \n",evt.Address,evt.Node)
+	Info.Printf("AddrChanged (addr= %v ) (fqdn: %v ) \n",evt.Address,evt.FQDN)
 	evt.Contract = log.Address.String()
 	addr := common.BytesToAddress(log.Data[12:])
 	evt.Address = addr.String()
@@ -381,9 +385,13 @@ func proc_address_changed2(log *types.Log,evt_id,tx_id,timestamp int64) {
 		}
 		evt.TimeStamp = int64(block_hdr.Time)
 	}
-	evt.Node = hex.EncodeToString(log.Topics[1][:])
+	if len(log.Data) < 32 {	// not our event
+		return
+	}
+	fqdn_hash := log.Topics[1][:]
+	evt.FQDN = hex.EncodeToString(fqdn_hash)
 	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
-	Info.Printf("AddressChanged(2) (addr= %v ) (node: %v ) (coin: %v) \n",evt.Address,evt.Node,evt.CoinType)
+	Info.Printf("AddressChanged(2) (addr= %v ) (node: %v ) (coin: %v) \n",evt.Address,evt.FQDN,evt.CoinType)
 	evt.Contract = log.Address.String()
 	var eth_event AddressChanged
 	err := ens_abi.Unpack(&eth_event,"AddressChanged",log.Data)
@@ -434,6 +442,8 @@ func proc_name_registered3(log *types.Log,evt_id,tx_id,timestamp int64) {
 	evt.Subdomain = eth_event.Subdomain
 	evt.CreatedDate = eth_event.CreatedDate.Int64()
 	evt.Contract = log.Address.String()
+	evt.Beneficiary = eth_event.Beneficiary.String()
+	evt.Caller = eth_event.Caller.String()
 
 	node_hash,_,err := get_node_hash_via_new_owner_event(evt.TxId,&log.TxHash,eth_event.Label[:],true)
 	if err != nil {

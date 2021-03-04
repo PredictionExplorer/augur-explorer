@@ -1499,7 +1499,7 @@ type ENS_AddrChanged struct {
 	TimeStamp				int64
 	TxHash					string
 	Contract				string
-	Node					string
+	FQDN					string
 	Address					string
 }
 type ENS_AddressChanged struct {
@@ -1510,7 +1510,7 @@ type ENS_AddressChanged struct {
 	Contract				string
 	TxHash					string
 	CoinType				int
-	Node					string
+	FQDN					string
 	Address					string
 }
 type UserENS struct {

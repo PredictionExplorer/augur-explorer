@@ -1,4 +1,4 @@
-CREATE TABLE ens_node(
+CREATE TABLE ens_node( -- strictly ENS data about a node
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT,
 	block_num			BIGINT,			-- this is just a copy (for easy data management)
@@ -14,27 +14,6 @@ CREATE TABLE ens_node(
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(fqdn)
 );
--- DISCONTINUED, removal pending
---CREATE TABLE ens_name( -- ENS name global data
---	id					BIGSERIAL PRIMARY KEY,
---	evtlog_id			BIGINT,
---	block_num			BIGINT,			-- this is just a copy (for easy data management)
---	tx_id				BIGINT,
---	contract_aid		BIGINT NOT NULL,
---	owner_aid			BIGINT NOT NULL,
---	time_stamp			TIMESTAMPTZ,
---	expires				TIMESTAMPTZ,
---	label				TEXT,
---	node				TEXT,
---	fqdn				TEXT NOT NULL,
---	name				TEXT,
---	tx_hash				TEXT NOT NULL,
---	pubkey				TEXT DEFAULT '',
---	content_hash		TEXT DEFAULT '',
---	cost				DECIMAL(32,18),
---	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
---	UNIQUE(tx_hash,label)
---);
 CREATE TABLE active_name( -- ENS names that are currently active (i.e. haven't expired)
 	id					BIGSERIAL PRIMARY KEY,
 	ensname_id			BIGINT NOT NULL, -- latest `ens_name.id` field
@@ -44,7 +23,7 @@ CREATE TABLE active_name( -- ENS names that are currently active (i.e. haven't e
 	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL UNIQUE
 );
-CREATE TABLE ens_name (-- ENS NameRegistered1 event (signature ca6abbe9)
+CREATE TABLE ens_name (-- this is a complementary table to ens_onode (with more non-ENS info about node)
 	id					BIGSERIAL PRIMARY KEY,
 	owner_aid			BIGINT NOT NULL,
 	expires				TIMESTAMPTZ,
@@ -135,8 +114,6 @@ CREATE TABLE ens_addr1 (-- AddrChanged event
 	aid					BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
 	tx_hash				TEXT NOT NULL,
-	label				TEXT NOT NULL,
-	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
 );
@@ -150,8 +127,6 @@ CREATE TABLE ens_addr2(-- AddressChanged event (the event with coin type field)
 	time_stamp			TIMESTAMPTZ,
 	coin_type			INT NOT NULL,
 	tx_hash				TEXT NOT NULL,
-	label				TEXT NOT NULL,
-	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
 );

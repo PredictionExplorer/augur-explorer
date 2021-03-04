@@ -179,7 +179,7 @@ func do_initial_load_address_changed1(block_num_from,block_num_to int64) {
 	filter.Addresses = nil
 	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
 	Info.Printf("filter query = %+v\n",filter)
-	Info.Printf("NewOwner: block range: %v - %v\n",block_num_from,block_num_to)
+	Info.Printf("AddrChanged1: block range: %v - %v\n",block_num_from,block_num_to)
 	logs,err := eclient.FilterLogs(context.Background(),filter)
 	if err!= nil {
 		Error.Printf("Error: %v\n",err)
@@ -189,12 +189,6 @@ func do_initial_load_address_changed1(block_num_from,block_num_to int64) {
 	for _,log := range logs {
 		if log.Removed {
 			continue
-		}
-		if	ens1,ens2 :=
-				bytes.Equal(ens1_addr.Bytes(),log.Address.Bytes()),
-				bytes.Equal(ens2_addr.Bytes(),log.Address.Bytes());
-			!(ens1 || ens2) {
-				continue
 		}
 		proc_addr_changed1(&log,0,0,0)
 	}
@@ -211,7 +205,7 @@ func do_initial_load_address_changed2(block_num_from,block_num_to int64) {
 	filter.Addresses = nil
 	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
 	Info.Printf("filter query = %+v\n",filter)
-	Info.Printf("NewOwner: block range: %v - %v\n",block_num_from,block_num_to)
+	Info.Printf("AddressChanged2: block range: %v - %v\n",block_num_from,block_num_to)
 	logs,err := eclient.FilterLogs(context.Background(),filter)
 	if err!= nil {
 		Error.Printf("Error: %v\n",err)
@@ -221,12 +215,6 @@ func do_initial_load_address_changed2(block_num_from,block_num_to int64) {
 	for _,log := range logs {
 		if log.Removed {
 			continue
-		}
-		if	ens1,ens2 :=
-				bytes.Equal(ens1_addr.Bytes(),log.Address.Bytes()),
-				bytes.Equal(ens2_addr.Bytes(),log.Address.Bytes());
-			!(ens1 || ens2) {
-				continue
 		}
 		proc_address_changed2(&log,0,0,0)
 	}
@@ -309,7 +297,7 @@ func range_initial_load_new_owner(exit_chan chan bool,block_num_limit int64) {
 }
 func range_initial_load_address_changed1(exit_chan chan bool,block_num_limit int64) {
 
-	var block_num int64 = 2933000 // found empirically
+	var block_num int64 = 0// found empirically
 	for ; block_num <= block_num_limit ; {
 		select {
 			case exit_flag := <-exit_chan:
@@ -332,7 +320,7 @@ func range_initial_load_address_changed1(exit_chan chan bool,block_num_limit int
 }
 func range_initial_load_address_changed2(exit_chan chan bool,block_num_limit int64) {
 
-	var block_num int64 = 2933000 // found empirically
+	var block_num int64 = 0// found empirically
 	for ; block_num <= block_num_limit ; {
 		select {
 			case exit_flag := <-exit_chan:
@@ -356,7 +344,6 @@ func range_initial_load_address_changed2(exit_chan chan bool,block_num_limit int
 func range_initial_load_name_registered2(exit_chan chan bool,block_num_limit int64) {
 
 	var block_num int64 = 0 // found empirically
-	//var block_num int64 = 9411465 // DEBUG
 	for ; block_num <= block_num_limit ; {
 		select {
 			case exit_flag := <-exit_chan:
@@ -674,9 +661,9 @@ func range_initial_load_hash_registered(exit_chan chan bool,block_num_limit int6
 }
 func initial_load(exit_chan chan bool,block_num_limit int64) {
 	//range_initial_load_name_registered1(exit_chan,block_num_limit)
-	range_initial_load_name_registered2(exit_chan,block_num_limit)
+	//range_initial_load_name_registered2(exit_chan,block_num_limit)
 	//range_initial_load_name_registered3(exit_chan,block_num_limit)
-	//range_initial_load_address_changed1(exit_chan,block_num_limit)
+	range_initial_load_address_changed1(exit_chan,block_num_limit)
 	//range_initial_load_address_changed2(exit_chan,block_num_limit)
 	//range_initial_load_new_owner(exit_chan,block_num_limit)
 	////range_initial_load_name_registered3(exit_chan,block_num_limit)
