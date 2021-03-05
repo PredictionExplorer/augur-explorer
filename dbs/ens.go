@@ -808,3 +808,81 @@ func (ss *SQLStorage) Get_ens_resolver(address string) (p.ENSResolver,error) {
 	}
 	return output,nil
 }
+func (ss *SQLStorage) Insert_pubkey_changed(rec *p.ENS_PubkeyChanged) {
+
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
+	var query string
+	var err error
+	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
+		query = "INSERT INTO ens_pkey("+
+					"tx_hash,time_stamp,block_num,contract_aid,node,x,y,derived_addr" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.TimeStamp,
+			rec.BlockNum,
+			contract_aid,
+			rec.Node,
+			rec.X,
+			rec.Y,
+			rec.DerivedAddr,
+		)
+	} else {
+		query = "INSERT INTO ens_pkey(" +
+					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,tx_hash,node,x,y,derived_addr" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9,$10)"
+		_,err = ss.db.Exec(query,
+			rec.EvtId,
+			rec.BlockNum,
+			rec.TxId,
+			contract_aid,
+			rec.TimeStamp,
+			rec.TxHash,
+			rec.Node,
+			rec.X,
+			rec.Y,
+			rec.DerivedAddr,
+		)
+	}
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_contenthash_changed(rec *p.ENS_ContentHashChanged) {
+
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
+	var query string
+	var err error
+	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
+		query = "INSERT INTO ens_hash("+
+					"tx_hash,time_stamp,block_num,contract_aid,node,hash" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6)"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.TimeStamp,
+			rec.BlockNum,
+			contract_aid,
+			rec.Node,
+			rec.Hash,
+		)
+	} else {
+		query = "INSERT INTO ens_hash(" +
+					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,tx_hash,node,hash" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9)"
+		_,err = ss.db.Exec(query,
+			rec.EvtId,
+			rec.BlockNum,
+			rec.TxId,
+			contract_aid,
+			rec.TimeStamp,
+			rec.TxHash,
+			rec.Node,
+			rec.Hash,
+		)
+	}
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}

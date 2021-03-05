@@ -1520,10 +1520,36 @@ type UserENS struct {
 	DateNameAcquired		string
 	ENS_Name				string
 	NodeHash				string
+	ContentHash				string
+	PublicKey_X				string
+	PublicKey_Y				string
+	PublicKey_Addr			string
 }
 type ENS_TextKeyValue struct {	// the data extracted from TextChanged event of ENS
 	Key						string
 	Value					string
+}
+type ENS_PubkeyChanged struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Contract				string
+	TxHash					string
+	Node					string
+	X						string
+	Y						string
+	DerivedAddr				string	// address calcualted from X/Y
+}
+type ENS_ContentHashChanged struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Contract				string
+	TxHash					string
+	Node					string
+	Hash					string
 }
 type PayoutNumerator struct {
 	IsInvalid				bool

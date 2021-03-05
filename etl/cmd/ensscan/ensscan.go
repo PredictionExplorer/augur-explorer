@@ -71,6 +71,9 @@ const (
 	ENS_TEXT_CHANGED			= "d8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550"
 	NAME_BOUGHT					= "0xb8c56202a5ae8b00edfcd57a54ec6c3fb8d2f6deb3067a7ba11408a7bd014a3e"
 
+	PUBKEY_CHANGED				= "1d6f5e03d3f63eb58751986629a5439baee5079ff04f345becb66e23eb154e46"
+	CONTENT_HASH_CHANGED		= "e379c1624ed7e714cc0937528a32359d69d5281337765313dba4e081b72d7578"
+
 	ENS_V1_REGISTRY_ADDR		= "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"	// 10 Mar 2017
 	ENS_V2_REGISTRY_ADDR		= "0x314159265dD8dbb310642f98f50C066173C1259b"	// 30 Jan 2020
 
@@ -92,6 +95,8 @@ var (
 	evt_name_bought,_ = hex.DecodeString(NAME_BOUGHT)
 	evt_addrchanged1,_ = hex.DecodeString(ENS_ADDR_CHANGED)
 	evt_addresschanged2,_ = hex.DecodeString(ENS_ADDRESS_CHANGED)
+	evt_pubkey_changed,_ = hex.DecodeString(PUBKEY_CHANGED)
+	evt_contenthash_changed,_ = hex.DecodeString(CONTENT_HASH_CHANGED)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -106,35 +111,6 @@ var (
 	ens1_addr			= common.HexToAddress(ENS_V1_REGISTRY_ADDR)
 	ens2_addr			= common.HexToAddress(ENS_V2_REGISTRY_ADDR)
 )
-func do_initial_load_name_registered1(block_num_from,block_num_to int64) {
-
-	filter := ethereum.FilterQuery{}
-	filter.FromBlock = big.NewInt(block_num_from)
-	filter.ToBlock = big.NewInt(block_num_to)
-//	filter.FromBlock = big.NewInt(0)
-//	filter.ToBlock = nil
-	topics := make([]common.Hash,0,1)
-	signature := common.BytesToHash(evt_name_registered1)
-	topics = append(topics,signature)
-	filter.Topics= append(filter.Topics,topics)
-	filter.Addresses = nil
-	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
-	Info.Printf("filter query = %+v\n",filter)
-	Info.Printf("NameRegisterd1: block range: %v - %v\n",block_num_from,block_num_to)
-	logs,err := eclient.FilterLogs(context.Background(),filter)
-	if err!= nil {
-		Error.Printf("Error: %v\n",err)
-		Info.Printf("Error: %v\n",err)
-		os.Exit(1)
-	}
-	for _,log := range logs {
-		if log.Removed {
-			continue
-		}
-///		Info.Printf("%v: log = %+v\n",i,log)
-		proc_name_registered1(&log,0,0,0)
-	}
-}
 func do_initial_load_new_owner(block_num_from,block_num_to int64) {
 
 	filter := ethereum.FilterQuery{}
@@ -167,111 +143,6 @@ func do_initial_load_new_owner(block_num_from,block_num_to int64) {
 		proc_newowner(&log,0,0,0)
 	}
 }
-func do_initial_load_address_changed1(block_num_from,block_num_to int64) {
-
-	filter := ethereum.FilterQuery{}
-	filter.FromBlock = big.NewInt(block_num_from)
-	filter.ToBlock = big.NewInt(block_num_to)
-	topics := make([]common.Hash,0,1)
-	signature := common.BytesToHash(evt_addrchanged1)
-	topics = append(topics,signature)
-	filter.Topics= append(filter.Topics,topics)
-	filter.Addresses = nil
-	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
-	Info.Printf("filter query = %+v\n",filter)
-	Info.Printf("AddrChanged1: block range: %v - %v\n",block_num_from,block_num_to)
-	logs,err := eclient.FilterLogs(context.Background(),filter)
-	if err!= nil {
-		Error.Printf("Error: %v\n",err)
-		Info.Printf("Error: %v\n",err)
-		os.Exit(1)
-	}
-	for _,log := range logs {
-		if log.Removed {
-			continue
-		}
-		proc_addr_changed1(&log,0,0,0)
-	}
-}
-func do_initial_load_address_changed2(block_num_from,block_num_to int64) {
-
-	filter := ethereum.FilterQuery{}
-	filter.FromBlock = big.NewInt(block_num_from)
-	filter.ToBlock = big.NewInt(block_num_to)
-	topics := make([]common.Hash,0,1)
-	signature := common.BytesToHash(evt_addresschanged2)
-	topics = append(topics,signature)
-	filter.Topics= append(filter.Topics,topics)
-	filter.Addresses = nil
-	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
-	Info.Printf("filter query = %+v\n",filter)
-	Info.Printf("AddressChanged2: block range: %v - %v\n",block_num_from,block_num_to)
-	logs,err := eclient.FilterLogs(context.Background(),filter)
-	if err!= nil {
-		Error.Printf("Error: %v\n",err)
-		Info.Printf("Error: %v\n",err)
-		os.Exit(1)
-	}
-	for _,log := range logs {
-		if log.Removed {
-			continue
-		}
-		proc_address_changed2(&log,0,0,0)
-	}
-}
-func do_initial_load_name_registered2(block_num_from,block_num_to int64) {
-
-	filter := ethereum.FilterQuery{}
-	filter.FromBlock = big.NewInt(block_num_from)
-	filter.ToBlock = big.NewInt(block_num_to)
-//	filter.FromBlock = big.NewInt(0)
-//	filter.ToBlock = nil
-	topics := make([]common.Hash,0,1)
-	signature := common.BytesToHash(evt_name_registered2)
-	topics = append(topics,signature)
-	filter.Topics= append(filter.Topics,topics)
-	filter.Addresses = nil
-	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
-	Info.Printf("filter query = %+v\n",filter)
-	Info.Printf("NameRegisterd2: block range: %v - %v\n",block_num_from,block_num_to)
-	logs,err := eclient.FilterLogs(context.Background(),filter)
-	if err!= nil {
-		Error.Printf("Error: %v\n",err)
-		Info.Printf("Error: %v\n",err)
-		os.Exit(1)
-	}
-	for _,log := range logs {
-		if log.Removed {
-			continue
-		}
-///		Info.Printf("%v: log = %+v\n",i,log)
-		proc_name_registered2(&log,0,0,0)
-	}
-}
-func range_initial_load_name_registered1(exit_chan chan bool,block_num_limit int64) {
-
-	var block_num int64 = 7691000 // found empirically
-	for ; block_num <= block_num_limit ; {
-		select {
-			case exit_flag := <-exit_chan:
-				if exit_flag {
-					Info.Println("Exiting by user request.\n")
-					os.Exit(0)
-				}
-			default:
-		}
-
-		next_block_num := block_num + 1000 - 1
-		if next_block_num > block_num_limit {
-			do_initial_load_name_registered1(block_num,block_num_limit)
-			break
-		} else {
-			do_initial_load_name_registered1(block_num,next_block_num)
-			block_num = next_block_num + 1
-		}
-		storage.Expire_ens_names(Info)
-	}
-}
 func range_initial_load_new_owner(exit_chan chan bool,block_num_limit int64) {
 
 	var block_num int64 = 2933000 // found empirically
@@ -295,89 +166,19 @@ func range_initial_load_new_owner(exit_chan chan bool,block_num_limit int64) {
 		}
 	}
 }
-func range_initial_load_address_changed1(exit_chan chan bool,block_num_limit int64) {
-
-	var block_num int64 = 0// found empirically
-	for ; block_num <= block_num_limit ; {
-		select {
-			case exit_flag := <-exit_chan:
-				if exit_flag {
-					Info.Println("Exiting by user request.\n")
-					os.Exit(0)
-				}
-			default:
-		}
-
-		next_block_num := block_num + 1000 - 1
-		if next_block_num > block_num_limit {
-			do_initial_load_address_changed1(block_num,block_num_limit)
-			break
-		} else {
-			do_initial_load_address_changed1(block_num,next_block_num)
-			block_num = next_block_num + 1
-		}
-	}
-}
-func range_initial_load_address_changed2(exit_chan chan bool,block_num_limit int64) {
-
-	var block_num int64 = 0// found empirically
-	for ; block_num <= block_num_limit ; {
-		select {
-			case exit_flag := <-exit_chan:
-				if exit_flag {
-					Info.Println("Exiting by user request.\n")
-					os.Exit(0)
-				}
-			default:
-		}
-
-		next_block_num := block_num + 1000 - 1
-		if next_block_num > block_num_limit {
-			do_initial_load_address_changed2(block_num,block_num_limit)
-			break
-		} else {
-			do_initial_load_address_changed2(block_num,next_block_num)
-			block_num = next_block_num + 1
-		}
-	}
-}
-func range_initial_load_name_registered2(exit_chan chan bool,block_num_limit int64) {
-
-	var block_num int64 = 0 // found empirically
-	for ; block_num <= block_num_limit ; {
-		select {
-			case exit_flag := <-exit_chan:
-				if exit_flag {
-					Info.Println("Exiting by user request.\n")
-					os.Exit(0)
-				}
-			default:
-		}
-
-		next_block_num := block_num + 1000 - 1
-		if next_block_num > block_num_limit {
-			do_initial_load_name_registered2(block_num,block_num_limit)
-			break
-		} else {
-			do_initial_load_name_registered2(block_num,next_block_num)
-			block_num = next_block_num + 1
-		}
-		storage.Expire_ens_names(Info)
-	}
-}
-func do_initial_load_name_registered3(block_num_from,block_num_to int64) {
+func do_std_initial_load(block_num_from,block_num_to int64,f std_proc_func,evtname string,sig []byte) {
 
 	filter := ethereum.FilterQuery{}
 	filter.FromBlock = big.NewInt(block_num_from)
 	filter.ToBlock = big.NewInt(block_num_to)
 	topics := make([]common.Hash,0,1)
-	signature := common.BytesToHash(evt_name_registered3)
+	signature := common.BytesToHash(sig)
 	topics = append(topics,signature)
 	filter.Topics= append(filter.Topics,topics)
 	filter.Addresses = nil
 	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
 	Info.Printf("filter query = %+v\n",filter)
-	Info.Printf("NameRegisterd3: block range: %v - %v\n",block_num_from,block_num_to)
+	Info.Printf("%v: block range: %v - %v\n",evtname,block_num_from,block_num_to)
 	logs,err := eclient.FilterLogs(context.Background(),filter)
 	if err!= nil {
 		Error.Printf("Error: %v\n",err)
@@ -388,10 +189,10 @@ func do_initial_load_name_registered3(block_num_from,block_num_to int64) {
 		if log.Removed {
 			continue
 		}
-		proc_name_registered3(&log,0,0,0)
+		f(&log,0,0,0)
 	}
 }
-func range_initial_load_name_registered3(exit_chan chan bool,block_num_limit int64) {
+func std_initial_load(exit_chan chan bool,block_num_limit int64,f std_proc_func,evtname string,sig []byte) {
 
 	var block_num int64 = 0 // found empirically
 	for ; block_num <= block_num_limit ; {
@@ -406,272 +207,29 @@ func range_initial_load_name_registered3(exit_chan chan bool,block_num_limit int
 
 		next_block_num := block_num + 1000 - 1
 		if next_block_num > block_num_limit {
-			do_initial_load_name_registered3(block_num,block_num_limit)
+			do_std_initial_load(block_num,block_num_limit,f,evtname,sig)
 			break
 		} else {
-			do_initial_load_name_registered3(block_num,next_block_num)
+			do_std_initial_load(block_num,next_block_num,f,evtname,sig)
 			block_num = next_block_num + 1
 		}
 	}
 }
-func do_initial_load_hash_invalidated(block_num_from,block_num_to int64) {
+func initial_load(exit_chan chan bool,bnum_lim int64) {
 
-	filter := ethereum.FilterQuery{}
-	filter.FromBlock = big.NewInt(block_num_from)
-	filter.ToBlock = big.NewInt(block_num_to)
-	topics := make([]common.Hash,0,1)
-	signature := common.BytesToHash(evt_hash_invalidated)
-	topics = append(topics,signature)
-	filter.Topics= append(filter.Topics,topics)
-	filter.Addresses = nil
-	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
-	Info.Printf("filter query = %+v\n",filter)
-	Info.Printf("HashInvalidated : block range: %v - %v\n",block_num_from,block_num_to)
-	logs,err := eclient.FilterLogs(context.Background(),filter)
-	if err!= nil {
-		Error.Printf("Error: %v\n",err)
-		Info.Printf("Error: %v\n",err)
-		os.Exit(1)
-	}
-	for _,log := range logs {
-		if log.Removed {
-			continue
-		}
-		proc_hash_invalidated(&log,0,0,0)
-	}
-}
-func range_initial_load_hash_invalidated(exit_chan chan bool,block_num_limit int64) {
-
-	var block_num int64 = 0 // found empirically
-	for ; block_num <= block_num_limit ; {
-		select {
-			case exit_flag := <-exit_chan:
-				if exit_flag {
-					Info.Println("Exiting by user request.\n")
-					os.Exit(0)
-				}
-			default:
-		}
-
-		next_block_num := block_num + 1000 - 1
-		if next_block_num > block_num_limit {
-			do_initial_load_hash_invalidated(block_num,block_num_limit)
-			break
-		} else {
-			do_initial_load_hash_invalidated(block_num,next_block_num)
-			block_num = next_block_num + 1
-		}
-	}
-}
-func do_initial_load_new_resolver(block_num_from,block_num_to int64) {
-
-	filter := ethereum.FilterQuery{}
-	filter.FromBlock = big.NewInt(block_num_from)
-	filter.ToBlock = big.NewInt(block_num_to)
-	topics := make([]common.Hash,0,1)
-	signature := common.BytesToHash(evt_new_resolver)
-	topics = append(topics,signature)
-	filter.Topics= append(filter.Topics,topics)
-	filter.Addresses = nil
-	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
-	Info.Printf("filter query = %+v\n",filter)
-	Info.Printf("NewResolver: block range: %v - %v\n",block_num_from,block_num_to)
-	logs,err := eclient.FilterLogs(context.Background(),filter)
-	if err!= nil {
-		Error.Printf("Error: %v\n",err)
-		Info.Printf("Error: %v\n",err)
-		os.Exit(1)
-	}
-	for _,log := range logs {
-		if log.Removed {
-			continue
-		}
-		proc_new_resolver(&log,0,0,0)
-	}
-}
-func range_initial_load_new_resolver(exit_chan chan bool,block_num_limit int64) {
-
-	var block_num int64 = 0 // found empirically
-	for ; block_num <= block_num_limit ; {
-		select {
-			case exit_flag := <-exit_chan:
-				if exit_flag {
-					Info.Println("Exiting by user request.\n")
-					os.Exit(0)
-				}
-			default:
-		}
-
-		next_block_num := block_num + 1000 - 1
-		if next_block_num > block_num_limit {
-			do_initial_load_new_resolver(block_num,block_num_limit)
-			break
-		} else {
-			do_initial_load_new_resolver(block_num,next_block_num)
-			block_num = next_block_num + 1
-		}
-	}
-}
-func do_initial_load_registry_transfer(block_num_from,block_num_to int64) {
-
-	filter := ethereum.FilterQuery{}
-	filter.FromBlock = big.NewInt(block_num_from)
-	filter.ToBlock = big.NewInt(block_num_to)
-	topics := make([]common.Hash,0,1)
-	signature := common.BytesToHash(evt_registry_transfer)
-	topics = append(topics,signature)
-	filter.Topics= append(filter.Topics,topics)
-	filter.Addresses = nil
-	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
-	Info.Printf("filter query = %+v\n",filter)
-	Info.Printf("Registry Transfer: block range: %v - %v\n",block_num_from,block_num_to)
-	logs,err := eclient.FilterLogs(context.Background(),filter)
-	if err!= nil {
-		Error.Printf("Error: %v\n",err)
-		Info.Printf("Error: %v\n",err)
-		os.Exit(1)
-	}
-	for _,log := range logs {
-		if log.Removed {
-			continue
-		}
-		proc_registry_transfer(&log,0,0,0)
-	}
-}
-func range_initial_load_registry_transfer(exit_chan chan bool,block_num_limit int64) {
-
-	var block_num int64 = 0 // found empirically
-	for ; block_num <= block_num_limit ; {
-		select {
-			case exit_flag := <-exit_chan:
-				if exit_flag {
-					Info.Println("Exiting by user request.\n")
-					os.Exit(0)
-				}
-			default:
-		}
-
-		next_block_num := block_num + 1000 - 1
-		if next_block_num > block_num_limit {
-			do_initial_load_registry_transfer(block_num,block_num_limit)
-			break
-		} else {
-			do_initial_load_registry_transfer(block_num,next_block_num)
-			block_num = next_block_num + 1
-		}
-	}
-}
-func do_initial_load_text_changed(block_num_from,block_num_to int64) {
-
-	filter := ethereum.FilterQuery{}
-	filter.FromBlock = big.NewInt(block_num_from)
-	filter.ToBlock = big.NewInt(block_num_to)
-	topics := make([]common.Hash,0,1)
-	signature := common.BytesToHash(evt_text_changed)
-	topics = append(topics,signature)
-	filter.Topics= append(filter.Topics,topics)
-	filter.Addresses = nil
-	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
-	Info.Printf("filter query = %+v\n",filter)
-	Info.Printf("TextChanged: block range: %v - %v\n",block_num_from,block_num_to)
-	logs,err := eclient.FilterLogs(context.Background(),filter)
-	if err!= nil {
-		Error.Printf("Error: %v\n",err)
-		Info.Printf("Error: %v\n",err)
-		os.Exit(1)
-	}
-	for _,log := range logs {
-		if log.Removed {
-			continue
-		}
-		proc_text_changed(&log,0,0,0)
-	}
-}
-func range_initial_load_text_changed(exit_chan chan bool,block_num_limit int64) {
-
-	var block_num int64 = 0 // found empirically
-	for ; block_num <= block_num_limit ; {
-		select {
-			case exit_flag := <-exit_chan:
-				if exit_flag {
-					Info.Println("Exiting by user request.\n")
-					os.Exit(0)
-				}
-			default:
-		}
-
-		next_block_num := block_num + 1000 - 1
-		if next_block_num > block_num_limit {
-			do_initial_load_text_changed(block_num,block_num_limit)
-			break
-		} else {
-			do_initial_load_text_changed(block_num,next_block_num)
-			block_num = next_block_num + 1
-		}
-	}
-}
-func do_initial_load_hash_registered(block_num_from,block_num_to int64) {
-
-	filter := ethereum.FilterQuery{}
-	filter.FromBlock = big.NewInt(block_num_from)
-	filter.ToBlock = big.NewInt(block_num_to)
-	topics := make([]common.Hash,0,1)
-	signature := common.BytesToHash(evt_hash_registered)
-	topics = append(topics,signature)
-	filter.Topics= append(filter.Topics,topics)
-	filter.Addresses = nil
-	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
-	Info.Printf("filter query = %+v\n",filter)
-	Info.Printf("HashRegistered: block range: %v - %v\n",block_num_from,block_num_to)
-	logs,err := eclient.FilterLogs(context.Background(),filter)
-	if err!= nil {
-		Error.Printf("Error: %v\n",err)
-		Info.Printf("Error: %v\n",err)
-		os.Exit(1)
-	}
-	for _,log := range logs {
-		if log.Removed {
-			continue
-		}
-		proc_hash_registered(&log,0,0,0)
-	}
-}
-func range_initial_load_hash_registered(exit_chan chan bool,block_num_limit int64) {
-
-	var block_num int64 = 0 // found empirically
-	for ; block_num <= block_num_limit ; {
-		select {
-			case exit_flag := <-exit_chan:
-				if exit_flag {
-					Info.Println("Exiting by user request.\n")
-					os.Exit(0)
-				}
-			default:
-		}
-
-		next_block_num := block_num + 1000 - 1
-		if next_block_num > block_num_limit {
-			do_initial_load_hash_registered(block_num,block_num_limit)
-			break
-		} else {
-			do_initial_load_hash_registered(block_num,next_block_num)
-			block_num = next_block_num + 1
-		}
-	}
-}
-func initial_load(exit_chan chan bool,block_num_limit int64) {
-	//range_initial_load_name_registered1(exit_chan,block_num_limit)
-	//range_initial_load_name_registered2(exit_chan,block_num_limit)
-	//range_initial_load_name_registered3(exit_chan,block_num_limit)
-	range_initial_load_address_changed1(exit_chan,block_num_limit)
-	//range_initial_load_address_changed2(exit_chan,block_num_limit)
-	//range_initial_load_new_owner(exit_chan,block_num_limit)
-	////range_initial_load_name_registered3(exit_chan,block_num_limit)
-	//range_initial_load_hash_invalidated(exit_chan,block_num_limit)
-	//range_initial_load_new_resolver(exit_chan,block_num_limit)
-	//range_initial_load_registry_transfer(exit_chan,block_num_limit)
-	//range_initial_load_text_changed(exit_chan,block_num_limit)
-	//range_initial_load_hash_registered(exit_chan,block_num_limit)
+	std_initial_load(exit_chan,bnum_lim,proc_name_registered1,"NameRegistered1",evt_name_registered1)
+	std_initial_load(exit_chan,bnum_lim,proc_name_registered2,"NameRegistered2",evt_name_registered2)
+	std_initial_load(exit_chan,bnum_lim,proc_name_registered3,"NameRegistered3",evt_name_registered3)
+	range_initial_load_new_owner(exit_chan,bnum_lim)
+	std_initial_load(exit_chan,bnum_lim,proc_addr_changed1,"AddrChanged_1",evt_addrchanged1)
+	std_initial_load(exit_chan,bnum_lim,proc_address_changed2,"AddressChanged_2",evt_addresschanged2)
+	std_initial_load(exit_chan,bnum_lim,proc_hash_invalidated,"HashInvalidated",evt_hash_invalidated)
+	std_initial_load(exit_chan,bnum_lim,proc_new_resolver,"NewResolver",evt_new_resolver)
+	std_initial_load(exit_chan,bnum_lim,proc_registry_transfer,"RegistryTransfer",evt_registry_transfer)
+	std_initial_load(exit_chan,bnum_lim,proc_text_changed,"TextChanged",evt_text_changed)
+	std_initial_load(exit_chan,bnum_lim,proc_hash_registered,"HashRegistered",evt_hash_registered)
+	std_initial_load(exit_chan,bnum_lim,proc_pubkey_changed,"PubkeyChanged",evt_pubkey_changed[:])
+	std_initial_load(exit_chan,bnum_lim,proc_contenthash_changed,"ContenthashChanged",evt_contenthash_changed[:])
 }
 func check_initial_load_completness() bool {
 

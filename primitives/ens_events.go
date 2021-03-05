@@ -41,4 +41,15 @@ type AddressChanged struct {
 	NewAddress []byte
 	Raw        types.Log // Blockchain specific contextual infos
 }
+type PubkeyChanged struct {
+	Node [32]byte
+	X    [32]byte
+	Y    [32]byte
+	Raw  types.Log // Blockchain specific contextual infos
+}
+type ContenthashChanged struct {
+	Node [32]byte
+	Hash []byte
+	Raw  types.Log // Blockchain specific contextual infos
+}
 

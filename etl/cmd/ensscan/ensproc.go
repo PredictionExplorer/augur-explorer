@@ -10,7 +10,10 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
-
+	"crypto/ecdsa"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto/secp256k1"
+//	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/wealdtech/go-ens/v3"
 	"github.com/wealdtech/go-ens/v3/contracts/resolver"
 	"github.com/wealdtech/go-ens/v3/contracts/baseregistrar"
@@ -22,6 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
+type std_proc_func func(log *types.Log,evt_id,tx_id,timestamp int64)
 var (
 
 	inspected_events []InspectedEvent
@@ -647,7 +651,7 @@ func proc_text_changed(log *types.Log,evt_id,tx_id,timestamp int64) {
 		)
 		Info.Print(err_str)
 		Error.Print(err_str)
-		os.Exit(1)
+		return
 	}
 	textbytes := []byte(evt.Value)
 	Info.Printf("key bytes = %v\n",hex.EncodeToString([]byte(evt.Key)))
@@ -705,6 +709,98 @@ func proc_hash_registered(log *types.Log,evt_id,tx_id,timestamp int64) {
 	Info.Printf("\tRegDate: %v\n",eth_event.RegistrationDate.String())
 	Info.Printf("}")
 	storage.Insert_hash_registered(&evt)
+}
+func proc_pubkey_changed(log *types.Log,evt_id,tx_id,timestamp int64) {
+
+	var evt ENS_PubkeyChanged
+	evt.EvtId = evt_id
+	evt.BlockNum = int64(log.BlockNumber)
+	evt.TxId = tx_id
+	evt.TimeStamp = timestamp
+	if evt.TimeStamp == 0 {
+		ctx := context.Background()
+		bnum := big.NewInt(int64(log.BlockNumber))
+		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+		if err != nil {
+			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			os.Exit(1)
+		}
+		evt.TimeStamp = int64(block_hdr.Time)
+	}
+
+	var eth_event PubkeyChanged
+	err := ens_abi.Unpack(&eth_event,"PubkeyChanged",log.Data)
+	if err != nil {
+		Error.Printf("Error upacking PubkeyChanged: %v\n",err)
+		Info.Printf("Error upacking PubkeyChanged: %v\n",err)
+		os.Exit(1)
+	}
+	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+	evt.TxHash = log.TxHash.String()
+	evt.Contract = log.Address.String()
+	evt.Node = hex.EncodeToString(log.Topics[1][:])
+	evt.X = hex.EncodeToString(eth_event.X[:])
+	evt.Y = hex.EncodeToString(eth_event.Y[:])
+
+	Info.Printf("PubkeyChanged {\n")
+	Info.Printf("\tNode: %v\n",hex.EncodeToString(eth_event.Node[:]))
+	Info.Printf("\tX: %v\n",hex.EncodeToString(eth_event.X[:]))
+	Info.Printf("\tY: %v\n",hex.EncodeToString(eth_event.Y[:]))
+	Info.Printf("}")
+	xhash := common.BytesToHash(eth_event.X[:])
+	yhash := common.BytesToHash(eth_event.Y[:])
+	xb := xhash.Big()
+	yb := yhash.Big()
+	pkey := &ecdsa.PublicKey {
+		Curve:	secp256k1.S256(),
+		X:		xb,
+		Y:		yb,
+	}
+	addr := crypto.PubkeyToAddress(*pkey)
+	evt.DerivedAddr = addr.String()
+//		Error.Printf("X/Y decode errors for tx %v : err1=%v, err2=%v\n",evt.TxHash,err1,err2)
+//		Info.Printf("X/Y decode errors for tx %v : err1=%v, err2=%v\n",evt.TxHash,err1,err2)
+
+	storage.Insert_pubkey_changed(&evt)
+}
+func proc_contenthash_changed(log *types.Log,evt_id,tx_id,timestamp int64) {
+
+	var evt ENS_ContentHashChanged
+	evt.EvtId = evt_id
+	evt.BlockNum = int64(log.BlockNumber)
+	evt.TxId = tx_id
+	evt.TimeStamp = timestamp
+	if evt.TimeStamp == 0 {
+		ctx := context.Background()
+		bnum := big.NewInt(int64(log.BlockNumber))
+		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+		if err != nil {
+			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			os.Exit(1)
+		}
+		evt.TimeStamp = int64(block_hdr.Time)
+	}
+
+	var eth_event ContenthashChanged
+	err := ens_abi.Unpack(&eth_event,"ContenthashChanged",log.Data)
+	if err != nil {
+		Error.Printf("Error upacking ContentHashChanged: %v\n",err)
+		Info.Printf("Error upacking ContentHashChanged: %v\n",err)
+		os.Exit(1)
+	}
+	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+	evt.TxHash = log.TxHash.String()
+	evt.Contract = log.Address.String()
+	evt.Node = hex.EncodeToString(log.Topics[1][:])
+	evt.Hash = hex.EncodeToString(eth_event.Hash[:])
+
+	Info.Printf("ContentHashChanged {\n")
+	Info.Printf("\tNode: %v\n",hex.EncodeToString(eth_event.Node[:]))
+	Info.Printf("\tHash: %v\n",hex.EncodeToString(eth_event.Hash[:]))
+	Info.Printf("}")
+	storage.Insert_contenthash_changed(&evt)
 }
 func init_ens_processing() {
 

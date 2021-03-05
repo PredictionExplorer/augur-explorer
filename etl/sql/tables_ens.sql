@@ -207,6 +207,32 @@ CREATE TABLE ens_text (	-- all keys althogether
 	all_keys			JSONB NOT NULL,
 	PRIMARY KEY(node)
 );
+CREATE TABLE ens_pkey (	-- PubkeyChanged event
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	tx_hash				TEXT NOT NULL,
+	node				TEXT NOT NULL,
+	x					TEXT NOT NULL,
+	y					TEXT NOT NULL,
+	derived_addr		TEXT DEFAULT '',	-- address derived from public key (in case it is different from owner)
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+);
+CREATE TABLE ens_hash (	-- ContenthashChanged event
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	tx_hash				TEXT NOT NULL,
+	node				TEXT NOT NULL,
+	hash				TEXT NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+);
 CREATE TABLE ens_status (
 	block_num_limit		BIGINT DEFAULT 10543755, -- limit for initial load
 	--block_num_limit		BIGINT DEFAULT 11650046, -- limit for initial load

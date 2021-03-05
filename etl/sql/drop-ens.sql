@@ -15,6 +15,8 @@ DROP TABLE IF EXISTS
 	ens_text,
 	ens_text_chg,
 	ens_text_key,
+	ens_pkey,
+	ens_hash,
 	ens_status,
 	alexa_top1m,
 	en_prop_names,
