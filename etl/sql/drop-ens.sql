@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS
 	ens_name_reg3,
 	ens_addr1,
 	ens_addr2,
+	ens_rev_name,
 	ens_new_owner,
 	ens_new_resolver,
 	ens_hash_inval,

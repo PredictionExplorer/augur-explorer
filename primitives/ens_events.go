@@ -52,4 +52,9 @@ type ContenthashChanged struct {
 	Hash []byte
 	Raw  types.Log // Blockchain specific contextual infos
 }
+type NameChanged struct {
+	Node [32]byte
+	Name string
+	Raw  types.Log // Blockchain specific contextual infos
+}
 

@@ -61,7 +61,6 @@ DECLARE
 BEGIN
 
 	-- fixes active_name records that do not have label/node set
-	UPDATE active_name SET	label = NEW.label,node = NEW.node WHERE fqdn=NEW.fqdn AND label IS NULL;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -70,7 +69,6 @@ DECLARE
 BEGIN
 
 	-- fixes active_name records that do not have label/node set
-	UPDATE active_name SET	label = NEW.label,node = NEW.node WHERE fqdn=NEW.fqdn AND label IS NULL;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

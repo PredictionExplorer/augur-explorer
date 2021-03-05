@@ -1520,6 +1520,34 @@ func (ss *SQLStorage) Get_user_ens_names(user_aid int64,offset int,limit int) ([
 	}
 	return records,total_rows
 }
+func (ss  *SQLStorage) Get_node_addresses(node string) map[int]string {
+	
+	var query string
+	rows,err := ss.db.Query(query,node)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UserENS
+		var null_num_keys sql.NullInt64
+		err := rows.Scan(
+			&rec.NodeHash,
+			&rec.DateNameAcquired,
+			&rec.TsNameAcquired,
+			&rec.ENS_Name,
+			&null_num_keys,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.NumTextKeyValuePairs = null_num_keys.Int64
+		records = append(records,rec)
+	}
+	return records,total_rows
+}
 func (ss *SQLStorage) Get_user_report_profits(user_aid int64) []p.UserRepProfit {
 
 	records := make([]p.UserRepProfit,0,8)

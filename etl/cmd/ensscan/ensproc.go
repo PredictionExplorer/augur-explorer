@@ -470,6 +470,43 @@ func proc_name_registered3(log *types.Log,evt_id,tx_id,timestamp int64) {
 
 	storage.Insert_name_registered3(&evt)
 }
+func proc_name_changed(log *types.Log,evt_id,tx_id,timestamp int64) {
+
+	var evt ENS_NameChanged
+	evt.EvtId = evt_id
+	evt.BlockNum = int64(log.BlockNumber)
+	evt.TxId = tx_id
+	evt.TxHash = log.TxHash.String()
+	evt.TimeStamp = timestamp
+	if evt.TimeStamp == 0 {
+		bnum := big.NewInt(int64(log.BlockNumber))
+		ctx := context.Background()
+		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+		if err != nil {
+			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			os.Exit(1)
+		}
+		evt.TimeStamp = int64(block_hdr.Time)
+	}
+	if len(log.Data) < 32 {	// not our event
+		return
+	}
+	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+	Info.Printf("NameChanged (name= %v ) (coin: %v) \n",evt.Name,evt.Node)
+	evt.Contract = log.Address.String()
+	var eth_event NameChanged
+	err := ens_abi.Unpack(&eth_event,"NameChanged",log.Data)
+	if err != nil {
+		Error.Printf("Error upacking NameChanged: %v\n",err)
+		Info.Printf("Error upacking NameChanged: %v\n",err)
+		os.Exit(1)
+	}
+	evt.Node = hex.EncodeToString(log.Topics[1][:])
+	evt.Name = eth_event.Name
+	storage.Insert_name_changed(&evt)
+
+}
 func proc_hash_invalidated(log *types.Log,evt_id,tx_id,timestamp int64) {
 
 	var evt ENS_HashInvalidated

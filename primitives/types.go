@@ -19,6 +19,18 @@ const (
 	MktTypeScalar
 )
 const (
+	COINTYPE_ETHEREUM   int = 60
+	COINTYPE_BITCOIN		=  0
+	COINTYPE_LITECOIN		=  2
+	COINTYPE_DOGECOIN		=  3
+	COINTYPE_MONACOIN		= 22
+	COINTYPE_ETHEREUM_CLASSIC = 61
+	COINTYPE_ROOTSTOCK		= 137
+	COINTYPE_RIPPLE			= 144
+	COINTYPE_BITCOIN_CASH	= 145
+	COINTYPE_BINANCE		= 714
+)
+const (
 	OOOpCodeNone= iota
 	OOOpCodeCreated
 	OOOpCodeFill
@@ -1550,6 +1562,16 @@ type ENS_ContentHashChanged struct {
 	TxHash					string
 	Node					string
 	Hash					string
+}
+type ENS_NameChanged struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Contract				string
+	TxHash					string
+	Node					string
+	Name					string
 }
 type PayoutNumerator struct {
 	IsInvalid				bool

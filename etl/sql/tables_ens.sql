@@ -130,6 +130,18 @@ CREATE TABLE ens_addr2(-- AddressChanged event (the event with coin type field)
 	fqdn				TEXT NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
 );
+CREATE TABLE ens_rev_name( -- Reverse name for storing NameChanged events
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	tx_hash				TEXT NOT NULL,
+	node				TEXT NOT NULL,
+	name				TEXT,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+);
 CREATE TABLE ens_new_resolver(
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT,

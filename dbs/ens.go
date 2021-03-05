@@ -375,6 +375,43 @@ func (ss *SQLStorage) Insert_address_changed2(rec *p.ENS_AddressChanged) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Insert_name_changed(rec *p.ENS_NameChanged) {
+
+	var query string
+	var err error
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
+	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
+		query = "INSERT INTO ens_rev_name(" +
+					"tx_hash,time_stamp,block_num,contract_aid,node,name" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6)"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.TimeStamp,
+			rec.BlockNum,
+			contract_aid,
+			rec.Node,
+			rec.Name,
+		)
+	} else {
+		query = "INSERT INTO ens_rev_name(" +
+					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,tx_hash,node,name" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
+		_,err = ss.db.Exec(query,
+			rec.EvtId,
+			rec.BlockNum,
+			rec.TxId,
+			contract_aid,
+			rec.TimeStamp,
+			rec.TxHash,
+			rec.Node,
+			rec.Name,
+		)
+	}
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Insert_hash_invalidated(rec *p.ENS_HashInvalidated) {
 
 	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
