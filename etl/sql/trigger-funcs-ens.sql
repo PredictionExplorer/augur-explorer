@@ -53,6 +53,8 @@ BEGIN
 		ON CONFLICT DO NOTHING;
 	-- fixes active_name records that do not have label/node set
 	UPDATE active_name SET	label = NEW.label,node = NEW.node WHERE fqdn=NEW.fqdn AND label IS NULL;
+	INSERT INTO name_ownership(tx_hash,owner_aid,fqdn)
+		VALUES(NEW.tx_hash,NEW.owner_aid,NEW.node) ON CONFLICT DO NOTHING;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -196,6 +198,8 @@ BEGIN
 		SET cur_owner_aid = NEW.aid,
 			cur_owner_evt = NEW.evtlog_id
 		WHERE fqdn=NEW.node AND (cur_owner_evt >= NEW.evtlog_id);
+	INSERT INTO name_ownership(tx_hash,owner_aid,fqdn)
+		VALUES(NEW.tx_hash,NEW.aid,NEW.node) ON CONFLICT DO NOTHING;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

@@ -1448,7 +1448,99 @@ func (ss *SQLStorage) Get_user_balancer_swaps(user_aid int64,offset int,limit in
 	}
 	return records,total_rows
 }
-func (ss *SQLStorage) Get_user_ens_names(user_aid int64,offset int,limit int) ([]p.UserENS,int64) {
+func (ss *SQLStorage) Get_user_ens_names_active(user_aid int64,offset int,limit int) ([]p.UserENS,int64) {
+
+	records := make([]p.UserENS,0,4)
+
+	query_last_owner :=
+		"SELECT DISTINCT ON (fqdn) fqdn,id,EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,o.time_stamp " +
+			"FROM ens_new_owner AS o " +
+			"WHERE o.owner_aid=$1 " +
+			"ORDER BY o.fqdn,o.time_stamp DESC"
+
+	var query string
+	var total_rows int64 = 0
+	var null_recs sql.NullInt64
+	query = "SELECT COUNT(*) FROM ("+ query_last_owner + ") AS names"
+	err := ss.db.QueryRow(query,user_aid).Scan(&null_recs)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+	total_rows = null_recs.Int64
+
+	query  = 
+		"WITH " +
+			"last_owner_user AS (" + query_last_owner + "), " + // this is User's ownership
+			"ens_names_to_check AS (SELECT DISTINCT ON (fqdn) fqdn,id FROM ens_new_owner WHERE owner_aid=$1)," +
+			"last_name_owner AS (" + // this is the last owner of the name which might not be the User's
+				"SELECT " +
+					"DISTINCT ON (o.fqdn) o.fqdn, "+
+					"o.id," +
+					"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts," +
+					"o.time_stamp " +
+				"FROM ens_new_owner AS o " +
+					"JOIN ens_names_to_check AS chk ON chk.fqdn=o.fqdn " +
+					// Note: here 'WHERE' is omitted and we will get all the owners for this name list
+			") " +
+		"SELECT " +
+				"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT AS ts," +
+				"o.time_stamp," +
+				"o.fqdn," +
+				"n.fqdn_words, " +
+				"txt.num_keys " +
+			"FROM ens_new_owner AS o " +
+				"JOIN ens_node n ON o.fqdn=n.fqdn " +
+				"JOIN last_owner_user lown ON lown.fqdn=o.fqdn " +
+				"JOIN last_name_owner nown ON nown.fqdn=o.fqdn " +
+				"LEFT JOIN ens_text AS txt ON n.fqdn=txt.node " +
+			"WHERE o.id=lown.id AND o.id=nown.id AND lown.id=nown.id " +
+			"ORDER BY ts DESC OFFSET $2 LIMIT $3"
+
+	ss.Info.Printf("getens query (owner_aid=%v) : %v\n",user_aid,query)
+
+	rows,err := ss.db.Query(query,user_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UserENS
+		var null_num_keys sql.NullInt64
+		var null_ens_name sql.NullString
+		err := rows.Scan(
+			&rec.TsNameAcquired,
+			&rec.DateNameAcquired,
+			&rec.NodeHash,
+			&null_ens_name,
+			&null_num_keys,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		ss.Info.Printf("fqdn = %v valid=%v, ensname=%v\n",rec.NodeHash,null_ens_name.Valid,null_ens_name.String)
+		if null_ens_name.Valid {
+			rec.ENS_Name = null_ens_name.String
+		}
+		if len(rec.ENS_Name) == 0 {
+			rec.ENS_Name = "ENS Name is not public"
+		}
+		rec.NumTextKeyValuePairs = null_num_keys.Int64
+		node_addresses := ss.Get_ens_node_addresses(rec.NodeHash)
+		if len(node_addresses) > 0 {
+			rec.CurAddr = node_addresses[0].Address
+			rec.CurAddrAid = node_addresses[0].Aid
+		}
+		rec.NodeAddressHistory = node_addresses
+		records = append(records,rec)
+	}
+	return records,total_rows
+}
+func (ss *SQLStorage) Get_user_ens_names_history(user_aid int64,offset int,limit int) ([]p.UserENS,int64) {
 
 	records := make([]p.UserENS,0,4)
 	var query string
@@ -1460,9 +1552,9 @@ func (ss *SQLStorage) Get_user_ens_names(user_aid int64,offset int,limit int) ([
 			"SELECT " +
 				"count(n.fqdn) "+
 			"FROM last_owner AS last " +
-				"JOIN ens_node AS n ON last.fqdn=n.fqdn " +
-			"WHERE " +
-				"LENGTH(n.fqdn_words) > 0"
+				"JOIN ens_node AS n ON last.fqdn=n.fqdn "
+//			"WHERE " +
+//				"LENGTH(n.fqdn_words) > 0"
 	var total_rows int64 = 0
 	var null_recs sql.NullInt64
 	err := ss.db.QueryRow(query,user_aid).Scan(&null_recs)
@@ -1474,26 +1566,20 @@ func (ss *SQLStorage) Get_user_ens_names(user_aid int64,offset int,limit int) ([
 	}
 	total_rows = null_recs.Int64
 
-	query = "WITH last_owner AS (" +
-			"SELECT DISTINCT fqdn,time_stamp AS dt,EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ts " +
-					"FROM ens_new_owner " +
-					"WHERE owner_aid=$1 " +
-					"ORDER BY time_stamp DESC " +
-			") " +
-			"SELECT " +
-				"n.fqdn,"+
-				"last.dt," +
-				"last.ts," +
+	query  = "SELECT " +
+				"DISTINCT ON (fqdn) " +
+				"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT AS ts," +
+				"o.time_stamp," +
+				"o.fqdn," +
 				"n.fqdn_words, " +
 				"txt.num_keys " +
-			"FROM last_owner AS last " +
-				"JOIN ens_node AS n ON last.fqdn=n.fqdn " +
+			"FROM ens_new_owner AS o " +
+				"JOIN ens_node n ON o.fqdn=n.fqdn " +
 				"LEFT JOIN ens_text AS txt ON n.fqdn=txt.node " +
-			"WHERE " +
-				"LENGTH(n.fqdn_words) > 0 " +
-			"ORDER BY ts DESC OFFSET $2 LIMIT $3"
+			"WHERE o.owner_aid=$1 " +
+			"ORDER BY fqdn,ts DESC OFFSET $2 LIMIT $3"
 
-	ss.Info.Printf("getens query: %v\n",query)
+	ss.Info.Printf("getens query (owner_aid=%v) : %v\n",user_aid,query)
 
 	rows,err := ss.db.Query(query,user_aid,offset,limit)
 	if (err!=nil) {
@@ -1504,46 +1590,32 @@ func (ss *SQLStorage) Get_user_ens_names(user_aid int64,offset int,limit int) ([
 	for rows.Next() {
 		var rec p.UserENS
 		var null_num_keys sql.NullInt64
+		var null_ens_name sql.NullString
 		err := rows.Scan(
-			&rec.NodeHash,
-			&rec.DateNameAcquired,
 			&rec.TsNameAcquired,
-			&rec.ENS_Name,
+			&rec.DateNameAcquired,
+			&rec.NodeHash,
+			&null_ens_name,
 			&null_num_keys,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		rec.NumTextKeyValuePairs = null_num_keys.Int64
-		records = append(records,rec)
-	}
-	return records,total_rows
-}
-func (ss  *SQLStorage) Get_node_addresses(node string) map[int]string {
-	
-	var query string
-	rows,err := ss.db.Query(query,node)
-	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-		os.Exit(1)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var rec p.UserENS
-		var null_num_keys sql.NullInt64
-		err := rows.Scan(
-			&rec.NodeHash,
-			&rec.DateNameAcquired,
-			&rec.TsNameAcquired,
-			&rec.ENS_Name,
-			&null_num_keys,
-		)
-		if err!=nil {
-			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
-			os.Exit(1)
+		ss.Info.Printf("fqdn = %v valid=%v, ensname=%v\n",rec.NodeHash,null_ens_name.Valid,null_ens_name.String)
+		if null_ens_name.Valid {
+			rec.ENS_Name = null_ens_name.String
+		}
+		if len(rec.ENS_Name) == 0 {
+			rec.ENS_Name = "ENS Name is not public"
 		}
 		rec.NumTextKeyValuePairs = null_num_keys.Int64
+		node_addresses := ss.Get_ens_node_addresses(rec.NodeHash)
+		if len(node_addresses) > 0 {
+			rec.CurAddr = node_addresses[0].Address
+			rec.CurAddrAid = node_addresses[0].Aid
+		}
+		rec.NodeAddressHistory = node_addresses
 		records = append(records,rec)
 	}
 	return records,total_rows

@@ -1555,15 +1555,18 @@ func a1_user_ens_names(c *gin.Context) {
 			"error": fmt.Sprintf("Error getting UserInfo: %v",err.Error()),
 		})
 	}
-	ens_names,total_rows := augur_srv.storage.Get_user_ens_names(user_aid,offset,limit)
+	active_ens_names,active_total_rows := augur_srv.storage.Get_user_ens_names_active(user_aid,offset,limit)
+	history_ens_names,history_total_rows := augur_srv.storage.Get_user_ens_names_history(user_aid,offset,limit)
 	var status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 			"status": status,
 			"error" : err_str,
 			"UserInfo" : user_info,
-			"ENS_Names" : ens_names,
-			"TotalRows" : total_rows,
+			"ENS_Names_Active" : active_ens_names,
+			"ENS_Names_History" : history_ens_names,
+			"TotalRowsActive" : active_total_rows,
+			"TotalRowsHistory" : history_total_rows,
 	})
 }
 func a1_node_text_key_value_pairs(c *gin.Context) {

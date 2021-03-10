@@ -1529,6 +1529,7 @@ type UserENS struct {
 	TsNameAcquired			int64
 	NumTextKeyValuePairs	int64
 	TsExpiration			int64
+	CurAddrAid				int64
 	DateNameAcquired		string
 	ENS_Name				string
 	NodeHash				string
@@ -1536,6 +1537,8 @@ type UserENS struct {
 	PublicKey_X				string
 	PublicKey_Y				string
 	PublicKey_Addr			string
+	CurAddr					string // current address (the last one, empty if non-existent)
+	NodeAddressHistory		[]ENS_NodeAddr
 }
 type ENS_TextKeyValue struct {	// the data extracted from TextChanged event of ENS
 	Key						string
@@ -1572,6 +1575,14 @@ type ENS_NameChanged struct {
 	TxHash					string
 	Node					string
 	Name					string
+}
+type ENS_NodeAddr struct {
+	Aid						int64
+	AddressSetTs			int64
+	BlockNum				int64
+	Address					string
+	AddressSetDate			string
+	TxHash					string
 }
 type PayoutNumerator struct {
 	IsInvalid				bool

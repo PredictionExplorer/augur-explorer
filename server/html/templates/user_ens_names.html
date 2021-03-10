@@ -11,21 +11,59 @@
 	<td>{{.UserInfo.Addr}} (aid={{.UserInfo.Aid}})</td>
 </tr>
 </table>
-<h3>ENS names registered by this User:</h3>
+
+<h3>ENS names owned by this User at current time:</h3>
 <br/><br/>
 <div class="market_info">
 <table class="market_trades">
 	<tr class="market_trades">
 		<th class="mkt_trade_hdr" style="text-align: center">Date</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Name Hash</th>
 		<th class="mkt_trade_hdr" style="text-align: center">ENS Name</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Resolves to Address</th>
 		<th class="mkt_trade_hdr" style="text-align: center">Number of Text Key-Value Pairs</th>
 	</tr>
-		{{- range $i, $swap:= .ENS_Names}}
+		{{- range $i, $swap:= .ENS_Names_Active}}
 			<tr class="market_trades">
 				<td class="mkt_trade_field">{{.DateNameAcquired}}</td>
+				<td class="mkt_trade_field addr">{{.NodeHash}}</td>
 				<td class="mkt_trade_field">
 					<a class="addr" href="/black/ens_name/{{.NodeHash}}">{{.ENS_Name}}</a>
 				</td>
+				<td class="mkt_trade_field addr">{{.CurAddr}}</td>
+				<td class="mkt_trade_field" style="text-align: center;">
+					{{ if ne .NumTextKeyValuePairs 0 }}
+					<a href="/black/node_text_data/{{.NodeHash}}">
+					{{ end }}
+						{{.NumTextKeyValuePairs}}
+					{{ if ne .NumTextKeyValuePairs 0 }}
+					</a>
+					{{ end }}
+				</td>
+			</tr>
+		{{- end}}
+</table>
+</div>
+
+<h3>ENS names owned by this User in the past:</h3>
+<br/><br/>
+<div class="market_info">
+<table class="market_trades">
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Date</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Name Hash</th>
+		<th class="mkt_trade_hdr" style="text-align: center">ENS Name</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Address</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Number of Text Key-Value Pairs</th>
+	</tr>
+		{{- range $i, $swap:= .ENS_Names_History}}
+			<tr class="market_trades">
+				<td class="mkt_trade_field">{{.DateNameAcquired}}</td>
+				<td class="mkt_trade_field addr">{{.NodeHash}}</td>
+				<td class="mkt_trade_field">
+					<a class="addr" href="/black/ens_name/{{.NodeHash}}">{{.ENS_Name}}</a>
+				</td>
+				<td class="mkt_trade_field addr">{{.CurAddr}}</td>
 				<td class="mkt_trade_field" style="text-align: center;">
 					{{ if ne .NumTextKeyValuePairs 0 }}
 					<a href="/black/node_text_data/{{.NodeHash}}">

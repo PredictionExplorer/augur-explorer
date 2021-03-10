@@ -923,3 +923,47 @@ func (ss *SQLStorage) Insert_contenthash_changed(rec *p.ENS_ContentHashChanged) 
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Get_ens_node_addresses(node string) []p.ENS_NodeAddr{
+
+	var query string
+	query = "SELECT DISTINCT aid FROM ens_addr1 a1 WHERE a1.fqdn=$1"
+	rows,err := ss.db.Query(query,node)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	records := make([]p.ENS_NodeAddr,0,4)
+	defer rows.Close()
+	for rows.Next() {
+		var aid int64
+		err=rows.Scan(&aid)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		query = "SELECT " +
+					"EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ts," +
+					"time_stamp,block_num,tx_hash " +
+				"FROM ens_addr1 " +
+				"WHERE fqdn=$1 AND aid=$2 " +
+				"ORDER BY ts DESC " +
+				"LIMIT 1"
+		subrows,err := ss.db.Query(query,node,aid)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		defer subrows.Close()
+		for subrows.Next() {
+			var rec p.ENS_NodeAddr
+			err=subrows.Scan(&rec.AddressSetTs,&rec.AddressSetDate,&rec.BlockNum,&rec.TxHash)
+			if (err!=nil) {
+				ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+				os.Exit(1)
+			}
+			records = append(records,rec)
+		}
+	}
+	return records
+}

@@ -245,6 +245,13 @@ CREATE TABLE ens_hash (	-- ContenthashChanged event
 	hash				TEXT NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
 );
+CREATE TABLE name_ownership ( -- created from NewOwner and Transfer events
+	-- unique place to link owner with the name
+	tx_hash				TEXT PRIMARY KEY,
+	owner_aid			BIGINT NOT NULL,
+	fqdn				TEXT, -- the name
+	UNIQUE(fqdn,owner_aid)
+);
 CREATE TABLE ens_status (
 	block_num_limit		BIGINT DEFAULT 10543755, -- limit for initial load
 	--block_num_limit		BIGINT DEFAULT 11650046, -- limit for initial load
