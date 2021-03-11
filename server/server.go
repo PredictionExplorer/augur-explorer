@@ -2558,12 +2558,15 @@ func user_ens_names(c *gin.Context) {
 	user_info,err := augur_srv.storage.Get_user_info(user_aid)
 	active_ens_names,active_total_rows := augur_srv.storage.Get_user_ens_names_active(user_aid,0,1000000)
 	history_ens_names,history_total_rows := augur_srv.storage.Get_user_ens_names_history(user_aid,0,1000000)
+	addr_changes,achanges_total_rows := augur_srv.storage.Get_user_address_change_history(user_aid,0,1000000)
 	c.HTML(http.StatusOK, "user_ens_names.html", gin.H{
 		"UserInfo" : user_info,
 		"ENS_Names_Active" : active_ens_names,
 		"ENS_Names_History" : history_ens_names,
+		"ENS_AddrChanges" : addr_changes,
 		"TotalRowsActive" : active_total_rows,
 		"TotalRowsHistory" : history_total_rows,
+		"TotalRowsAddrChanges" : achanges_total_rows,
 	})
 }
 func show_node_text_data(c *gin.Context) {

@@ -130,6 +130,13 @@ CREATE TABLE ens_addr2(-- AddressChanged event (the event with coin type field)
 	fqdn				TEXT NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
 );
+CREATE TABLE name_address ( -- consolidates AddrChanged and AddressChanged events in a single table
+	id					BIGSERIAL PRIMARY KEY,
+	aid					BIGINT NOT NULL,
+	coin_type			INT NOT NULL,
+	fqdn				TEXT NOT NULL,
+	UNIQUE(coin_type,aid,fqdn)
+);
 CREATE TABLE ens_rev_name( -- Reverse name for storing NameChanged events
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT,
@@ -246,8 +253,9 @@ CREATE TABLE ens_hash (	-- ContenthashChanged event
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
 );
 CREATE TABLE name_ownership ( -- created from NewOwner and Transfer events
-	-- unique place to link owner with the name
-	tx_hash				TEXT PRIMARY KEY,
+	-- the table is a unique place to link owner with the name
+	id					BIGSERIAL PRIMARY KEY,
+	tx_hash				TEXT,
 	owner_aid			BIGINT NOT NULL,
 	fqdn				TEXT, -- the name
 	UNIQUE(fqdn,owner_aid)

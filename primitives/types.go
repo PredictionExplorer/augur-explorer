@@ -1525,6 +1525,13 @@ type ENS_AddressChanged struct {
 	FQDN					string
 	Address					string
 }
+type UserAddrChange struct {
+	TimeStamp				int64
+	CoinType				int
+	DateTime				string
+	FQDN					string
+	FQDN_Words				string
+}
 type UserENS struct {
 	TsNameAcquired			int64
 	NumTextKeyValuePairs	int64
@@ -1717,8 +1724,6 @@ type OutcomeRounds struct {
 }
 type RoundsRow struct {
 	Rounds					OutcomeRounds
-	NumOutcomes				int
-	Outcomes				string
 }
 type IniRepRedeemed struct {
 	ReporterAid				int64

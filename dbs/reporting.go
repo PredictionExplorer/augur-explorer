@@ -878,15 +878,19 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 
 			for i:=0; i<num_outcomes ; i++ {
 				var empty_rec p.DisputeRound
-				if (inirep.MktType == 2) && (inirep.OutcomeIdx==2){ // scalar
-					inirep.OutcomeIdx=1 // skip outcome idx = 1
+				rec.OutcomeIdx=inirep.OutcomeIdx
+				if (inirep.MktType == 2) && (rec.OutcomeIdx==2){ // scalar
+					rec.OutcomeIdx=1
 				}
-				if i==inirep.OutcomeIdx {
+				if i==rec.OutcomeIdx {
 					rec.TimeStamp = inirep.TimeStamp
 					rec.DateTime = inirep.DateTime
 					rec.OutcomeIdx = inirep.OutcomeIdx
 					rec.RepPayout = inirep.AmountStaked
+					rec.ScalarValue = inirep.ScalarValue
+					rec.RoundNum = -1
 					rec.Color = true
+					rec.Completed = true
 					rr.Rounds.ORounds = append(rr.Rounds.ORounds,rec)
 					rr.Rounds.MarketRep = inirep.AmountStaked
 					rr.Rounds.TimeStamp = inirep.TimeStamp

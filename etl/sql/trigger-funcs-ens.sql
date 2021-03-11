@@ -62,7 +62,8 @@ CREATE OR REPLACE FUNCTION on_ens_addr_changed1_insert() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	-- fixes active_name records that do not have label/node set
+	INSERT INTO name_address(fqdn,aid,coin_type) VALUES(NEW.fqdn,NEW.aid,60) 
+		ON CONFLICT DO NOTHING;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -70,7 +71,8 @@ CREATE OR REPLACE FUNCTION on_ens_addr_changed2_insert() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	-- fixes active_name records that do not have label/node set
+	INSERT INTO name_address(fqdn,aid,coin_type) VALUES(NEW.fqdn,NEW.aid,NEW.coin_type)
+		ON CONFLICT DO NOTHING;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

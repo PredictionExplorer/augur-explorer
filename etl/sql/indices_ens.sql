@@ -10,3 +10,6 @@ CREATE INDEX ens_cur_own_idx		ON	ens_node(cur_owner_aid);
 CREATE INDEX len_node_words_idx		ON	ens_node(LENGTH(fqdn_words));
 CREATE INDEX ens_newown_owner_idx	ON	ens_new_owner(owner_aid);
 CREATE INDEX ens_node_evtlog_idx	ON 	ens_node(evtlog_id);
+CREATE INDEX name_own_idx			ON	name_ownership(owner_aid);
+CREATE INDEX name_own_txhash_idx	ON	name_ownership(tx_hash);
+CREATE INDEX nameaddr_fqdn_idx		ON	name_address(fqdn);
