@@ -601,7 +601,6 @@ func (ss *SQLStorage) Reverse_lookup_registration_exists(address string,node str
 	}
 	return true
 }
-
 func (ss *SQLStorage) Insert_registry_transfer(rec *p.ENS_RegistryTransfer) {
 
 	aid := ss.Lookup_or_create_address(rec.Owner,rec.BlockNum,rec.TxId)
@@ -966,4 +965,61 @@ func (ss *SQLStorage) Get_ens_node_addresses(node string) []p.ENS_NodeAddr{
 		}
 	}
 	return records
+}
+func (ss *SQLStorage) Get_node_lot(start_id,limit int64) []p.ENS_NodeShort{
+
+	records := make([]p.ENS_NodeShort,0,32)
+	var query string
+	query = "SELECT node,label,fqdn,fqdn_words FROM ens_node " +
+			"WHERE id>$1 ORDER BY id LIMIT $2"
+
+	rows,err := ss.db.Query(query,start_id,limit)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.ENS_NodeShort
+		err=rows.Scan(&rec.Node,&rec.Label,&rec.FQDN,&rec.FQDN_Words)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+
+	return records
+}
+func (ss *SQLStorage)  Get_last_owner_last_addr(fqdn string) (string,string,error) {
+
+	var addr_owner,addr_assigned sql.NullString
+	var query string
+	query =	"SELECT a.addr addr_owner " +
+				"FROM ens_new_owner o " +
+				"JOIN address a ON o.owner_aid=a.address_id " +
+				"WHERE fqdn=$1 ORDER BY id DESC limit 1"
+	res := ss.db.QueryRow(query,fqdn)
+	err := res.Scan(&addr_owner)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+	query = "SELECT a.addr addr_assigned "+
+				"FROM ens_addr1 ac " +
+				"JOIN address a ON ac.aid=a.address_id " +
+				"WHERE ac.fqdn=$1 "
+	res = ss.db.QueryRow(query,fqdn)
+	err = res.Scan(&addr_assigned)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+	return addr_owner.String,addr_assigned.String,nil
 }

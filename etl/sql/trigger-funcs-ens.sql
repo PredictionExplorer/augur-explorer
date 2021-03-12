@@ -54,7 +54,7 @@ BEGIN
 	-- fixes active_name records that do not have label/node set
 	UPDATE active_name SET	label = NEW.label,node = NEW.node WHERE fqdn=NEW.fqdn AND label IS NULL;
 	INSERT INTO name_ownership(tx_hash,owner_aid,fqdn)
-		VALUES(NEW.tx_hash,NEW.owner_aid,NEW.node) ON CONFLICT DO NOTHING;
+		VALUES(NEW.tx_hash,NEW.owner_aid,NEW.fqdn) ON CONFLICT DO NOTHING;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -282,3 +282,22 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION ens_name_list_by_addr(aid BIGINT) RETURNS text AS  $$
+-- Returns all active names for an address (resolution from resolver)
+DECLARE
+BEGIN
+
+
+	RETURN something
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION ens_name_list_by_ownership(aid BIGINT) RETURNS text AS  $$
+-- Returns all active names for an address (resolution from resolver)
+DECLARE
+BEGIN
+
+	RETURN something
+END;
+$$ LANGUAGE plpgsql;
+
+

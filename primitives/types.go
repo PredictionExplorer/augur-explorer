@@ -1525,6 +1525,13 @@ type ENS_AddressChanged struct {
 	FQDN					string
 	Address					string
 }
+type ENS_NodeShort struct {
+	CurOwnerAid				int64
+	Label					string
+	Node					string
+	FQDN					string
+	FQDN_Words				string
+}
 type UserAddrChange struct {
 	TimeStamp				int64
 	CoinType				int
