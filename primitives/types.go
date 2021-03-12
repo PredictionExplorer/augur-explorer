@@ -1443,6 +1443,8 @@ type ENS_NewOwner struct {
 	Node					string
 	TxHash					string
 	FQDN					string	// fully qualified domain name
+	DateTime				string
+	Name					string
 }
 type ENS_HashInvalidated struct {
 	EvtId					int64
@@ -1527,6 +1529,7 @@ type ENS_AddressChanged struct {
 }
 type ENS_NodeShort struct {
 	CurOwnerAid				int64
+	Id						int64
 	Label					string
 	Node					string
 	FQDN					string
@@ -1597,6 +1600,29 @@ type ENS_NodeAddr struct {
 	Address					string
 	AddressSetDate			string
 	TxHash					string
+}
+type ENS_Info struct {
+	LastOwnerAddr			string
+	FirstRegisteredTs		int64
+	NumTextKeyValuePairs	int64
+	TsExpiration			int64
+	CurAddrAid				int64
+	DeactivatedTimeStamp	int64
+	Active					bool
+	FirstRegisteredDate		string
+	ENS_Name				string
+	Label					string
+	Node					string
+	FQDN					string
+	ContentHash				string
+	PublicKey_X				string
+	PublicKey_Y				string
+	CurAddr					string // current address (the last one, empty if non-existent)
+	DeactivatedDate			string
+	DeactivationTxHash		string
+	AddressChangeHistory	ENS_NodeAddr
+	TextMetaInfo			[]ENS_TextKeyValue
+	OwnershipChangeHistory	[]ENS_NewOwner
 }
 type PayoutNumerator struct {
 	IsInvalid				bool

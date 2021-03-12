@@ -18,6 +18,8 @@ DROP TABLE IF EXISTS
 	ens_text_key,
 	ens_pkey,
 	ens_hash,
+	name_ownership,
+	name_address,
 	ens_status,
 	alexa_top1m,
 	en_prop_names,

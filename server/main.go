@@ -175,6 +175,7 @@ func main() {
 	r.GET("/black/reports_table/:market",show_reporting_table)
 	r.GET("/black/noshow_bond",augur_noshow_bond_prices)
 	r.GET("/black/validity_bond",augur_validity_bond_prices)
+	r.GET("/black/ens_name_info",ens_name_info)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)

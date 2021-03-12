@@ -1,0 +1,125 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>ENS Name {{.ENSInfo.FQDN}}</title>
+</head>
+<body>
+	<h3 class="page_title">ENS Name ownershipsownerships  of {{.UserInfo.Addr}}</h3>
+<table class="market_detail">
+<tr>
+	<td>Name:</td>
+	<td>{{.ENSInfo.ENS_Name}})</td>
+</tr>
+<tr>
+	<td>Last Owner Address</td>
+	<td>{{.ENSInfo.LastOwnerAddr</td>
+</tr>
+<tr>
+	<td>First Time Registered</td>
+	<td>{{.ENSInfo.FirstRegisteredDate}}</td>
+</tr>
+<tr>
+	<td>Parent Node</td>
+	<td>{{.ENSInfo.Node}}</td>
+</tr>
+<tr>
+	<td>Name Hash</td>
+	<td>{{.ENSInfo.FQDN}}</td>
+</tr>
+<tr>
+	<td>Active<td>
+	<td>
+		{{.ENSInfo.Active}}
+	</td>
+</td>
+</table>
+
+<h3>ENS names owned by this User at current time:</h3>
+<br/><br/>
+<div class="market_info">
+<table class="market_trades">
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Date</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Name Hash</th>
+		<th class="mkt_trade_hdr" style="text-align: center">ENS Name</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Resolves to Address</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Number of Text Key-Value Pairs</th>
+	</tr>
+		{{- range $i, $swap:= .ENS_Names_Active}}
+			<tr class="market_trades">
+				<td class="mkt_trade_field">{{.DateNameAcquired}}</td>
+				<td class="mkt_trade_field addr">{{.NodeHash}}</td>
+				<td class="mkt_trade_field">
+					<a class="addr" href="/black/ens_name/{{.NodeHash}}">{{.ENS_Name}}</a>
+				</td>
+				<td class="mkt_trade_field addr">{{.CurAddr}}</td>
+				<td class="mkt_trade_field" style="text-align: center;">
+					{{ if ne .NumTextKeyValuePairs 0 }}
+					<a href="/black/node_text_data/{{.NodeHash}}">
+					{{ end }}
+						{{.NumTextKeyValuePairs}}
+					{{ if ne .NumTextKeyValuePairs 0 }}
+					</a>
+					{{ end }}
+				</td>
+			</tr>
+		{{- end}}
+</table>
+</div>
+
+<h3>ENS names owned by this User in the past:</h3>
+<br/><br/>
+<div class="market_info">
+<table class="market_trades">
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Date</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Name Hash</th>
+		<th class="mkt_trade_hdr" style="text-align: center">ENS Name</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Address</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Number of Text Key-Value Pairs</th>
+	</tr>
+		{{- range $i, $swap:= .ENS_Names_History}}
+			<tr class="market_trades">
+				<td class="mkt_trade_field">{{.DateNameAcquired}}</td>
+				<td class="mkt_trade_field addr">{{.NodeHash}}</td>
+				<td class="mkt_trade_field">
+					<a class="addr" href="/black/ens_name/{{.NodeHash}}">{{.ENS_Name}}</a>
+				</td>
+				<td class="mkt_trade_field addr">{{.CurAddr}}</td>
+				<td class="mkt_trade_field" style="text-align: center;">
+					{{ if ne .NumTextKeyValuePairs 0 }}
+					<a href="/black/node_text_data/{{.NodeHash}}">
+					{{ end }}
+						{{.NumTextKeyValuePairs}}
+					{{ if ne .NumTextKeyValuePairs 0 }}
+					</a>
+					{{ end }}
+				</td>
+			</tr>
+		{{- end}}
+</table>
+</div>
+<h3>List of ENS names that belonged to this user in the past:</h3>
+<br/><br/>
+<div class="market_info">
+<table class="market_trades">
+	<tr class="market_trades">
+		<th class="mkt_trade_hdr" style="text-align: center">Date Assigned</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Name Hash</th>
+		<th class="mkt_trade_hdr" style="text-align: center">ENS Name</th>
+		<th class="mkt_trade_hdr" style="text-align: center">Coin Type</th>
+	</tr>
+		{{- range $i, $swap:= .ENS_AddrChanges}}
+			<tr class="market_trades">
+				<td class="mkt_trade_field">{{.DateTime}}</td>
+				<td class="mkt_trade_field addr">{{.FQDN}}</td>
+				<td class="mkt_trade_field">
+					<a class="addr" href="/black/ens_name/{{.FQDN}}">{{.FQDN_Words}}</a>
+				</td>
+				<td class="mkt_trade_field addr">{{ template "coin_type_lookup" .CoinType}}</td>
+
+			</tr>
+		{{- end}}
+</table>
+</div>
+</body>

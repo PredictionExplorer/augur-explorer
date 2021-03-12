@@ -288,7 +288,7 @@ DECLARE
 BEGIN
 
 
-	RETURN something
+	RETURN '';
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION ens_name_list_by_ownership(aid BIGINT) RETURNS text AS  $$
@@ -296,7 +296,7 @@ CREATE OR REPLACE FUNCTION ens_name_list_by_ownership(aid BIGINT) RETURNS text A
 DECLARE
 BEGIN
 
-	RETURN something
+	RETURN '';
 END;
 $$ LANGUAGE plpgsql;
 

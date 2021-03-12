@@ -70,7 +70,7 @@ func main() {
 			assigned := common.HexToAddress(assigned_addr)
 			
 			nodehash:= common.HexToHash("0x"+node_entry.FQDN)
-
+			fmt.Printf("%v : %v : id=%v\n",node_entry.FQDN_Words,node_entry.FQDN,node_entry.Id)
 			regstr, err := ens.NewRegistry(eclient)
 			if err!=nil {
 				fmt.Printf("NewRegistry error: %v\n",err)
@@ -83,11 +83,12 @@ func main() {
 			}
 			if bytes.Equal(owner_addr_ens.Bytes(),zeroaddr.Bytes()) {
 				fmt.Printf("Node %v unregistered\n",node_entry.FQDN)
-				os.Exit(1)
+				continue;
+				//os.Exit(1)
 			}
 			resolver_addr, err := regstr.Contract.Resolver(nil,nodehash)
 			if err!=nil {
-				fmt.Printf("Resolver() call on node %v failed: %v",node_entry.FQDN,err)
+				fmt.Printf("Resolver() call on node %v failed: %v (resolver addr is %v)",node_entry.FQDN,err,resolver_addr.String())
 				os.Exit(1)
 			}
 			resolver_ctrct,err := resolver.NewContract(resolver_addr,eclient)
@@ -97,9 +98,10 @@ func main() {
 			}
 			looked_up,err := resolver_ctrct.Addr(nil,nodehash)
 			if err != nil {
-				fmt.Printf("resolver's Address() call on node %v failed: %v\n",node_entry.FQDN,err)
+				fmt.Printf("resolver's Address() call on node %v failed: %v (resolver addr is %v)\n",node_entry.FQDN,err,resolver_addr.String())
 				os.Exit(1)
 			}
+			fmt.Printf("\tlookup at Resolver: addr = %v\n",looked_up.String())
 /*
 			looked_up,err := ens.Resolve(eclient, node_entry.FQDN)
 			if err!=nil {
@@ -109,10 +111,12 @@ func main() {
 			if len(assigned_addr) > 0 {
 				if !bytes.Equal(assigned.Bytes(),looked_up[:]) {
 					fmt.Printf(
-						"Resolution for node %v is incorrect\n\tmust be %v\n\towner : %v\n\tassigned : %v\n",
+						"Resolution for node %v is incorrect!\n\tmust be %v\n\towner : %v\n\tassigned : %v\n",
 						node_entry.FQDN,looked_up.String(),owner_addr,assigned_addr,
 					)
 					os.Exit(1)
+				} else {
+					fmt.Printf("\tnode ok: addr = %v\n",assigned_addr)
 				}
 			} else {
 				if len(owner_addr) >0 {

@@ -585,7 +585,6 @@ func (ss *SQLStorage) Reverse_lookup_registration_exists(address string,node str
 	// Used by the process that scans reverse names, to make sure the label we are about
 	//	to insert in the 'ens_labels' is the correct one
 
-//	aid := ss.Lookup_address_id(address)
 	var query string
 	query = "SELECT id FROM ens_new_owner WHERE fqdn=$1"
 	res := ss.db.QueryRow(query,node)
@@ -970,7 +969,7 @@ func (ss *SQLStorage) Get_node_lot(start_id,limit int64) []p.ENS_NodeShort{
 
 	records := make([]p.ENS_NodeShort,0,32)
 	var query string
-	query = "SELECT node,label,fqdn,fqdn_words FROM ens_node " +
+	query = "SELECT id,node,label,fqdn,fqdn_words FROM ens_node " +
 			"WHERE id>$1 ORDER BY id LIMIT $2"
 
 	rows,err := ss.db.Query(query,start_id,limit)
@@ -981,7 +980,7 @@ func (ss *SQLStorage) Get_node_lot(start_id,limit int64) []p.ENS_NodeShort{
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.ENS_NodeShort
-		err=rows.Scan(&rec.Node,&rec.Label,&rec.FQDN,&rec.FQDN_Words)
+		err=rows.Scan(&rec.Id,&rec.Node,&rec.Label,&rec.FQDN,&rec.FQDN_Words)
 		if (err!=nil) {
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
@@ -991,14 +990,14 @@ func (ss *SQLStorage) Get_node_lot(start_id,limit int64) []p.ENS_NodeShort{
 
 	return records
 }
-func (ss *SQLStorage)  Get_last_owner_last_addr(fqdn string) (string,string,error) {
+func (ss *SQLStorage)  Get_last_owner_addr(fqdn string) (string,string,error) {
 
 	var addr_owner,addr_assigned sql.NullString
 	var query string
 	query =	"SELECT a.addr addr_owner " +
 				"FROM ens_new_owner o " +
 				"JOIN address a ON o.owner_aid=a.address_id " +
-				"WHERE fqdn=$1 ORDER BY id DESC limit 1"
+				"WHERE fqdn=$1 ORDER BY id DESC LIMIT 1"
 	res := ss.db.QueryRow(query,fqdn)
 	err := res.Scan(&addr_owner)
 	if (err!=nil) {
@@ -1011,7 +1010,7 @@ func (ss *SQLStorage)  Get_last_owner_last_addr(fqdn string) (string,string,erro
 	query = "SELECT a.addr addr_assigned "+
 				"FROM ens_addr1 ac " +
 				"JOIN address a ON ac.aid=a.address_id " +
-				"WHERE ac.fqdn=$1 "
+				"WHERE ac.fqdn=$1 ORDER BY id DESC LIMIT 1"
 	res = ss.db.QueryRow(query,fqdn)
 	err = res.Scan(&addr_assigned)
 	if (err!=nil) {
@@ -1022,4 +1021,113 @@ func (ss *SQLStorage)  Get_last_owner_last_addr(fqdn string) (string,string,erro
 		}
 	}
 	return addr_owner.String,addr_assigned.String,nil
+}
+func (ss *SQLStorage) Get_new_owner_events(fqdn string) []p.ENS_NewOwner {
+
+	records := make([]p.ENS_NewOwner,0,24)
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT, " +
+				"time_stamp," +
+				"o.block_num,"+
+				"o.label,"+
+				"o.node," +
+				"o.fqdn," +
+				"o.tx_hash," +
+				"n.fqdn_words," +
+				"a.addr addr_owner " +
+			"FROM ens_new_owner o " +
+				"JOIN address a ON o.owner_aid=a.address_id " +
+				"WHERE fqdn=$1 ORDER BY id"
+
+	rows,err := ss.db.Query(query)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.ENS_NewOwner
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.Label,
+			&rec.Node,
+			&rec.FQDN,
+			&rec.TxHash,
+			&rec.Name,
+			&rec.Owner,
+		)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_ens_record_info(fqdn string) (p.ENS_Info,error) {
+
+	var output p.ENS_Info
+	last_owner_addr,last_assigned_addr,err := ss.Get_last_owner_addr(fqdn)
+	if err != nil {
+		return output,err
+	}
+	if len(last_assigned_addr) > 0 {
+		output.LastOwnerAddr = last_assigned_addr
+	} else {
+		output.LastOwnerAddr = last_owner_addr
+	}
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM n.time_stamp)::BIGINT AS time_stamp, " +
+				"time_stamp," +
+				"label," +
+				"node," +
+				"fqdn," +
+				"fqdn_words," +
+				"txt.num_keys," +
+			"FROM ens_node n " +
+				"LEFT JOIN ens_text txt ON n.fqdn=txt.node " +
+			"WHERE n.fqdn=$1 "
+	res := ss.db.QueryRow(query,fqdn)
+	err = res.Scan(
+		&output.FirstRegisteredTs,
+		&output.FirstRegisteredDate,
+		&output.Label,
+		&output.Node,
+		&output.FQDN,
+		&output.ENS_Name,
+		&output.NumTextKeyValuePairs,
+	)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return output,nil 
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	query = "SELECT hash FROM ens_hash WHERE node=$1 ORDER BY id DESC LIMIT 1"
+	res = ss.db.QueryRow(query,fqdn)
+	var null_content_hash sql.NullString
+	res.Scan(&null_content_hash)
+	output.ContentHash = null_content_hash.String
+
+	query = "SELECT hash FROM ens_hash WHERE node=$1 ORDER BY id DESC LIMIT 1"
+	res = ss.db.QueryRow(query,fqdn)
+	var null_pkey_x,null_pkey_y,null sql.NullString
+	res.Scan(&null_pkey_x,&null_pkey_y)
+	output.PublicKey_X = null_pkey_x.String
+	output.PublicKey_Y = null_pkey_y.String
+
+	if len(output.ENS_Name) == 0 {
+		output.ENS_Name = "ENS Name is not public"
+	}
+	output.ContentHash = null_content_hash.String
+	output.AddressChangeHistory = ss.Get_ens_node_addresses(fqdn)
+	output.TextMetaInfo,_ = ss.Get_node_text_key_values(fqdn) 
+	output.OwnershipChangeHistory = ss.Get_new_owner_events(fqdn)
+	return output,nil
 }

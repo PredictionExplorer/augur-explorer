@@ -2680,3 +2680,18 @@ func augur_validity_bond_prices(c *gin.Context) {
 		"JSPriceData" :js_prices,
 	})
 }
+func ens_name_info(c *gin.Context) {
+
+	fqdn := c.Param("fqdn")
+	ens_info,err := augur_srv.storage.Get_ens_record_info(fqdn)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("%v",err),
+		})
+		return
+	}
+	c.HTML(http.StatusOK, "ens_info.html", gin.H{
+		"ENSInfo" : ens_info,
+	})
+}
