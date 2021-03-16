@@ -77,3 +77,35 @@ BEGIN
 	END LOOP;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION update_ens_name_active_field()
+RETURNS BIGINT AS $$
+DECLARE
+	v_rec RECORD;
+	v_aid BIGINT;
+	v_counter BIGINT;
+BEGIN
+
+	v_counter := 0;
+	FOR v_rec IN 
+		SELECT * FROM ens_name
+	LOOP
+		SELECT owner_aid FROM ens_new_owner WHERE fqdn = v_rec.fqdn
+				ORDER BY id DESC LIMIT 1 INTO v_aid;
+		IF v_aid IS NOT NULL THEN
+			IF v_aid = 4159027 THEN
+				UPDATE ens_name SET inactive=TRUE where fqdn=v_rec.fqdn;
+				v_counter := v_counter + 1;
+			END IF;
+		END IF;
+		SELECT aid FROM ens_reg_transf WHERE node = v_rec.fqdn
+				ORDER BY id DESC LIMIT 1 INTO v_aid;
+		IF v_aid IS NOT NULL THEN
+			IF v_aid = 4159027 THEN
+				UPDATE ens_name SET inactive=TRUE where fqdn=v_rec.fqdn;
+				v_counter := v_counter + 1;
+			END IF;
+		END IF;
+	END LOOP;
+	RETURN v_counter;
+END;
+$$ LANGUAGE plpgsql;

@@ -14,6 +14,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/wealdtech/go-ens/v3"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
@@ -2690,6 +2691,22 @@ func ens_name_info(c *gin.Context) {
 			"ErrDescr": fmt.Sprintf("%v",err),
 		})
 		return
+	}
+	if len(ens_info.ContentHash) > 0 {
+		data,err := hex.DecodeString(ens_info.ContentHash)
+		if err==nil {
+			ens_info.ContentHash,err = ens.ContenthashToString(data[:])
+			Error.Printf(
+				"Content hash bianry string for node %v  has invalid bin fmt : %v\n",
+				ens_info.FQDN,err,
+			)
+		} else {
+			Error.Printf(
+				"Content hash bianry string couldn't be decoded for node %v : %v\n",
+				ens_info.FQDN,err,
+			)
+		}
+
 	}
 	c.HTML(http.StatusOK, "ens_info.html", gin.H{
 		"ENSInfo" : ens_info,

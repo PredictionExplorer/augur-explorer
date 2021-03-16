@@ -27,6 +27,7 @@ CREATE TABLE ens_name (-- this is a complementary table to ens_onode (with more 
 	id					BIGSERIAL PRIMARY KEY,
 	owner_aid			BIGINT NOT NULL,
 	expires				TIMESTAMPTZ,
+	inactive			BOOLEAN DEFAULT FALSE,
 	label				TEXT NOT NULL,
 	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,

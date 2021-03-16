@@ -61,7 +61,7 @@ func main() {
 		}
 		for i:=0 ; i<len(lot); i++ {
 			node_entry := lot[i]
-			owner_addr,assigned_addr,err := storage.Get_last_owner_last_addr(node_entry.FQDN)
+			owner_addr,assigned_addr,err := storage.Get_last_owner_addr(node_entry.FQDN)
 			if err!=nil {
 				fmt.Printf("Error at node %v: %v\n",node_entry.FQDN,err)
 				os.Exit(1)

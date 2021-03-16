@@ -1601,6 +1601,10 @@ type ENS_NodeAddr struct {
 	AddressSetDate			string
 	TxHash					string
 }
+type ENS_NodeTextInfo  struct {
+	FQDN					string
+	TextMetaInfo			[]ENS_TextKeyValue
+}
 type ENS_Info struct {
 	LastOwnerAddr			string
 	FirstRegisteredTs		int64
@@ -1620,9 +1624,9 @@ type ENS_Info struct {
 	CurAddr					string // current address (the last one, empty if non-existent)
 	DeactivatedDate			string
 	DeactivationTxHash		string
-	AddressChangeHistory	ENS_NodeAddr
-	TextMetaInfo			[]ENS_TextKeyValue
+	AddressChangeHistory	[]ENS_NodeAddr
 	OwnershipChangeHistory	[]ENS_NewOwner
+	NameTextMetaInfo		ENS_NodeTextInfo
 }
 type PayoutNumerator struct {
 	IsInvalid				bool

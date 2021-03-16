@@ -941,10 +941,14 @@ func (ss *SQLStorage) Get_ens_node_addresses(node string) []p.ENS_NodeAddr{
 			os.Exit(1)
 		}
 		query = "SELECT " +
-					"EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ts," +
-					"time_stamp,block_num,tx_hash " +
-				"FROM ens_addr1 " +
-				"WHERE fqdn=$1 AND aid=$2 " +
+					"EXTRACT(EPOCH FROM ea.time_stamp)::BIGINT AS ts," +
+					"ea.time_stamp," +
+					"ea.block_num," +
+					"ea.tx_hash, " +
+					"a.addr " +
+				"FROM ens_addr1 ea " +
+					"JOIN address a ON aid=address_id " +
+				"WHERE ea.fqdn=$1 AND ea.aid=$2 " +
 				"ORDER BY ts DESC " +
 				"LIMIT 1"
 		subrows,err := ss.db.Query(query,node,aid)
@@ -955,10 +959,18 @@ func (ss *SQLStorage) Get_ens_node_addresses(node string) []p.ENS_NodeAddr{
 		defer subrows.Close()
 		for subrows.Next() {
 			var rec p.ENS_NodeAddr
-			err=subrows.Scan(&rec.AddressSetTs,&rec.AddressSetDate,&rec.BlockNum,&rec.TxHash)
+			err=subrows.Scan(
+				&rec.AddressSetTs,
+				&rec.AddressSetDate,
+				&rec.BlockNum,
+				&rec.TxHash,
+				&rec.Address,
+			)
 			if (err!=nil) {
 				ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 				os.Exit(1)
+			}
+			if rec.Address == "0x0000000000000000000000000000000000000000" {
 			}
 			records = append(records,rec)
 		}
@@ -1028,7 +1040,7 @@ func (ss *SQLStorage) Get_new_owner_events(fqdn string) []p.ENS_NewOwner {
 	var query string
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT, " +
-				"time_stamp," +
+				"o.time_stamp," +
 				"o.block_num,"+
 				"o.label,"+
 				"o.node," +
@@ -1037,10 +1049,11 @@ func (ss *SQLStorage) Get_new_owner_events(fqdn string) []p.ENS_NewOwner {
 				"n.fqdn_words," +
 				"a.addr addr_owner " +
 			"FROM ens_new_owner o " +
+				"LEFT JOIN ens_node n ON o.fqdn=n.fqdn " +
 				"JOIN address a ON o.owner_aid=a.address_id " +
-				"WHERE fqdn=$1 ORDER BY id"
+				"WHERE o.fqdn=$1 ORDER BY o.id"
 
-	rows,err := ss.db.Query(query)
+	rows,err := ss.db.Query(query,fqdn)
 		if (err!=nil) {
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
@@ -1048,6 +1061,7 @@ func (ss *SQLStorage) Get_new_owner_events(fqdn string) []p.ENS_NewOwner {
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.ENS_NewOwner
+		var null_name sql.NullString
 		err=rows.Scan(
 			&rec.TimeStamp,
 			&rec.DateTime,
@@ -1056,7 +1070,7 @@ func (ss *SQLStorage) Get_new_owner_events(fqdn string) []p.ENS_NewOwner {
 			&rec.Node,
 			&rec.FQDN,
 			&rec.TxHash,
-			&rec.Name,
+			&null_name,
 			&rec.Owner,
 		)
 		if (err!=nil) {
@@ -1074,6 +1088,7 @@ func (ss *SQLStorage) Get_ens_record_info(fqdn string) (p.ENS_Info,error) {
 	if err != nil {
 		return output,err
 	}
+	fmt.Printf("last owner=%v, last assigned=%v\n",last_owner_addr,last_assigned_addr)
 	if len(last_assigned_addr) > 0 {
 		output.LastOwnerAddr = last_assigned_addr
 	} else {
@@ -1082,16 +1097,17 @@ func (ss *SQLStorage) Get_ens_record_info(fqdn string) (p.ENS_Info,error) {
 	var query string
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM n.time_stamp)::BIGINT AS time_stamp, " +
-				"time_stamp," +
-				"label," +
-				"node," +
-				"fqdn," +
-				"fqdn_words," +
-				"txt.num_keys," +
+				"n.time_stamp," +
+				"n.label," +
+				"n.node," +
+				"n.fqdn," +
+				"n.fqdn_words," +
+				"txt.num_keys " +
 			"FROM ens_node n " +
 				"LEFT JOIN ens_text txt ON n.fqdn=txt.node " +
 			"WHERE n.fqdn=$1 "
 	res := ss.db.QueryRow(query,fqdn)
+	var null_num_keys sql.NullInt64
 	err = res.Scan(
 		&output.FirstRegisteredTs,
 		&output.FirstRegisteredDate,
@@ -1099,26 +1115,41 @@ func (ss *SQLStorage) Get_ens_record_info(fqdn string) (p.ENS_Info,error) {
 		&output.Node,
 		&output.FQDN,
 		&output.ENS_Name,
-		&output.NumTextKeyValuePairs,
+		&null_num_keys,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			return output,nil 
+			return output,nil
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 			os.Exit(1)
 		}
 	}
+	if null_num_keys.Valid {
+		output.NumTextKeyValuePairs = null_num_keys.Int64
+	}
 	query = "SELECT hash FROM ens_hash WHERE node=$1 ORDER BY id DESC LIMIT 1"
 	res = ss.db.QueryRow(query,fqdn)
 	var null_content_hash sql.NullString
-	res.Scan(&null_content_hash)
+	err = res.Scan(&null_content_hash)
+	if (err!=nil) {
+		if err!=sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
 	output.ContentHash = null_content_hash.String
 
-	query = "SELECT hash FROM ens_hash WHERE node=$1 ORDER BY id DESC LIMIT 1"
+	query = "SELECT x,y FROM ens_pkey WHERE node=$1 ORDER BY id DESC LIMIT 1"
 	res = ss.db.QueryRow(query,fqdn)
-	var null_pkey_x,null_pkey_y,null sql.NullString
-	res.Scan(&null_pkey_x,&null_pkey_y)
+	var null_pkey_x,null_pkey_y sql.NullString
+	err = res.Scan(&null_pkey_x,&null_pkey_y)
+	if (err!=nil) {
+		if err!=sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
 	output.PublicKey_X = null_pkey_x.String
 	output.PublicKey_Y = null_pkey_y.String
 
@@ -1127,7 +1158,9 @@ func (ss *SQLStorage) Get_ens_record_info(fqdn string) (p.ENS_Info,error) {
 	}
 	output.ContentHash = null_content_hash.String
 	output.AddressChangeHistory = ss.Get_ens_node_addresses(fqdn)
-	output.TextMetaInfo,_ = ss.Get_node_text_key_values(fqdn) 
+	var metainfo p.ENS_NodeTextInfo
+	metainfo.FQDN,metainfo.TextMetaInfo = ss.Get_node_text_key_values(fqdn)
+	output.NameTextMetaInfo = metainfo
 	output.OwnershipChangeHistory = ss.Get_new_owner_events(fqdn)
 	return output,nil
 }
