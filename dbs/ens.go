@@ -1154,7 +1154,7 @@ func (ss *SQLStorage) Get_ens_record_info(fqdn string) (p.ENS_Info,error) {
 	output.PublicKey_Y = null_pkey_y.String
 
 	if len(output.ENS_Name) == 0 {
-		output.ENS_Name = "ENS Name is not public"
+		output.ENS_Name = p.ENS_NOT_PUBLIC
 	}
 	output.ContentHash = null_content_hash.String
 	output.AddressChangeHistory = ss.Get_ens_node_addresses(fqdn)
@@ -1163,4 +1163,20 @@ func (ss *SQLStorage) Get_ens_record_info(fqdn string) (p.ENS_Info,error) {
 	output.NameTextMetaInfo = metainfo
 	output.OwnershipChangeHistory = ss.Get_new_owner_events(fqdn)
 	return output,nil
+}
+func (ss *SQLStorage) Lookup_ens_names(aid int64) (string,int64){
+
+	var output string
+	names,total_names:=ss.Get_user_ens_names_active(aid,0,10000000)
+	for _,record := range names {
+		if len(output)>0 {
+			output = output + ","
+		}
+		if len(record.ENS_Name) > 0 {
+			if record.ENS_Name != p.ENS_NOT_PUBLIC {
+				output = output + record.ENS_Name
+			}
+		}
+	}
+	return output,total_names
 }

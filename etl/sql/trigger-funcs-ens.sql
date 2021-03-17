@@ -46,6 +46,7 @@ CREATE OR REPLACE FUNCTION on_ens_new_owner_insert() RETURNS trigger AS  $$
 DECLARE
 	v_prev_timestamp timestamptz;
 	v_cnt numeric;
+	v_zero_aid BIGINT;
 BEGIN
 
 	INSERT INTO ens_node(evtlog_id,block_num,tx_id,contract_aid,time_stamp,label,node,fqdn)
@@ -55,24 +56,39 @@ BEGIN
 	UPDATE active_name SET	label = NEW.label,node = NEW.node WHERE fqdn=NEW.fqdn AND label IS NULL;
 	INSERT INTO name_ownership(tx_hash,owner_aid,fqdn)
 		VALUES(NEW.tx_hash,NEW.owner_aid,NEW.fqdn) ON CONFLICT DO NOTHING;
+	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
+	IF NEW.owner_aid = v_zero_aid  THEN
+		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+	END IF;
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_ens_addr_changed1_insert() RETURNS trigger AS  $$
 DECLARE
+	v_zero_aid BIGINT;
 BEGIN
 
 	INSERT INTO name_address(fqdn,aid,coin_type) VALUES(NEW.fqdn,NEW.aid,60) 
 		ON CONFLICT DO NOTHING;
+	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
+	IF NEW.aid = v_zero_aid  THEN
+		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_ens_addr_changed2_insert() RETURNS trigger AS  $$
 DECLARE
+	v_zero_aid BIGINT;
 BEGIN
 
 	INSERT INTO name_address(fqdn,aid,coin_type) VALUES(NEW.fqdn,NEW.aid,NEW.coin_type)
 		ON CONFLICT DO NOTHING;
+	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
+	IF NEW.aid = v_zero_aid  THEN
+		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -191,6 +207,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_ens_reg_transfer_insert() RETURNS trigger AS  $$
 DECLARE
 	v_node_id			BIGINT;
+	v_zero_aid			BIGINT;
 BEGIN
 
 	IF NEW.evtlog_id IS NULL THEN
@@ -202,6 +219,12 @@ BEGIN
 		WHERE fqdn=NEW.node AND (cur_owner_evt >= NEW.evtlog_id);
 	INSERT INTO name_ownership(tx_hash,owner_aid,fqdn)
 		VALUES(NEW.tx_hash,NEW.aid,NEW.node) ON CONFLICT DO NOTHING;
+
+	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
+	IF NEW.aid = v_zero_aid  THEN
+		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+	END IF;
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -299,5 +322,19 @@ BEGIN
 	RETURN '';
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_ens_new_resolver_insert() RETURNS trigger AS  $$
+DECLARE
+	v_zero_aid BIGINT;
+BEGIN
 
+	IF NEW.evtlog_id IS NULL THEN
+		NEW.evtlog_id := 0;
+	END IF;
+	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
+	IF NEW.aid = v_zero_aid  THEN
+		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 

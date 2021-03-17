@@ -747,6 +747,50 @@ func proc_hash_registered(log *types.Log,evt_id,tx_id,timestamp int64) {
 	Info.Printf("}")
 	storage.Insert_hash_registered(&evt)
 }
+func proc_owner_changed(log *types.Log,evt_id,tx_id,timestamp int64) {
+/*
+	var evt ENS_HashRegistered
+	evt.EvtId = evt_id
+	evt.BlockNum = int64(log.BlockNumber)
+	evt.TxId = tx_id
+	evt.TimeStamp = timestamp
+	if evt.TimeStamp == 0 {
+		ctx := context.Background()
+		bnum := big.NewInt(int64(log.BlockNumber))
+		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+		if err != nil {
+			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			os.Exit(1)
+		}
+		evt.TimeStamp = int64(block_hdr.Time)
+	}
+
+	var eth_event HashRegistered
+	err := ens_abi.Unpack(&eth_event,"HashRegistered",log.Data)
+	if err != nil {
+		Error.Printf("Error upacking HashRegistered: %v\n",err)
+		Info.Printf("Error upacking HashRegistered: %v\n",err)
+		os.Exit(1)
+	}
+	copy(eth_event.Hash[:],log.Topics[1].Bytes())
+	//eth_event.Name = Bytes32_to_string(log.Topics[2].Bytes())
+	eth_event.Owner = common.BytesToAddress(log.Topics[2][12:])
+	evt.Owner = eth_event.Owner.String()
+	evt.TxHash = log.TxHash.String()
+	evt.Hash = hex.EncodeToString(eth_event.Hash[:])
+	evt.RegistrationDate=eth_event.RegistrationDate.Int64()
+	evt.Value = eth_event.Value.String()
+	evt.Contract = log.Address.String()
+
+	*/
+	Info.Printf("Processing block %v, tx %v\n",int64(log.BlockNumber),log.TxHash.String())
+	Info.Printf("OwnerChanged {\n")
+	Info.Printf("\tLabel: %v\n",hex.EncodeToString(log.Topics[1][:]))
+	Info.Printf("\toldOwner: %v\n",hex.EncodeToString(log.Topics[2][:]))
+	Info.Printf("\tnewOwner: %v\n",hex.EncodeToString(log.Topics[3][:]))
+	Info.Printf("}")
+}
 func proc_pubkey_changed(log *types.Log,evt_id,tx_id,timestamp int64) {
 
 	var evt ENS_PubkeyChanged

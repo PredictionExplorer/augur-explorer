@@ -241,6 +241,8 @@ func main() {
 	r.GET("/api/user_rep_pl/:user",a1_user_rep_profit_loss)
 	r.GET("/api/noshow_bond",a1_noshow_bond_prices)
 	r.GET("/api/validity_bond",a1_validity_bond_prices)
+	r.GET("/api/ens_name_info/:fqdn",a1_ens_name_info)
+	r.GET("/api/ens_lookup/:user",a1_ens_name_lookup)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

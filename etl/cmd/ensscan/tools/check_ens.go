@@ -91,6 +91,11 @@ func main() {
 				fmt.Printf("Resolver() call on node %v failed: %v (resolver addr is %v)",node_entry.FQDN,err,resolver_addr.String())
 				os.Exit(1)
 			}
+			if bytes.Equal(resolver_addr.Bytes(),zeroaddr.Bytes()) {
+				fmt.Printf("Node %v has resolver at 0x0 addr\n",node_entry.FQDN)
+				continue;
+				//os.Exit(1)
+			}
 			resolver_ctrct,err := resolver.NewContract(resolver_addr,eclient)
 			if err!=nil {
 				fmt.Printf("NewContract() for resolver failed (node=%v): %v\n",node_entry.FQDN,err)
@@ -101,7 +106,7 @@ func main() {
 				fmt.Printf("resolver's Address() call on node %v failed: %v (resolver addr is %v)\n",node_entry.FQDN,err,resolver_addr.String())
 				os.Exit(1)
 			}
-			fmt.Printf("\tlookup at Resolver: addr = %v\n",looked_up.String())
+			fmt.Printf("\tlookup at Resolver: node addr = %v\n",looked_up.String())
 /*
 			looked_up,err := ens.Resolve(eclient, node_entry.FQDN)
 			if err!=nil {
@@ -114,7 +119,7 @@ func main() {
 						"Resolution for node %v is incorrect!\n\tmust be %v\n\towner : %v\n\tassigned : %v\n",
 						node_entry.FQDN,looked_up.String(),owner_addr,assigned_addr,
 					)
-					os.Exit(1)
+					//os.Exit(1)
 				} else {
 					fmt.Printf("\tnode ok: addr = %v\n",assigned_addr)
 				}
@@ -125,13 +130,13 @@ func main() {
 							"Resolution for node %v is incorrect\n\tmust be %v\n\towner : %v\n\tassigned : %v\n",
 							node_entry.FQDN,looked_up.String(),owner_addr,assigned_addr,
 						)
-						os.Exit(1)
+						//os.Exit(1)
 					} else {
 						fmt.Printf("Node %v : ok\n",node_entry.FQDN)
 					}
 				} else {
-					fmt.Printf("owner address wasn't found in the DB for ndoe %v\n",node_entry.FQDN)
-					os.Exit(1)
+					fmt.Printf("Resolution incorrect: owner address wasn't found in the DB for node %v\n",node_entry.FQDN)
+					//os.Exit(1)
 				}
 			}
 		}

@@ -285,7 +285,7 @@ func a1_user_info(c *gin.Context) {
 	if !success {
 		return
 	}
-	Info.Printf("eoa_aid=%v\n",eoa_aid)
+	
 	gas_spent,_ := augur_srv.storage.Get_gas_spent_for_user(eoa_aid)
 	user_info,err := augur_srv.storage.Get_user_info(eoa_aid)
 	if err == nil {
@@ -1770,5 +1770,49 @@ func a1_validity_bond_prices(c *gin.Context) {
 		"status": status,
 		"error" : err_str,
 		"ValidityBondPrices" : bond_prices,
+	})
+}
+func a1_ens_name_info(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	fqdn:= c.Param("fqdn")
+
+	ens_info,err := augur_srv.storage.Get_ens_record_info(fqdn)
+	if err!=nil {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"status":0,
+			"error": fmt.Sprintf("%v",err),
+		})
+		return
+	}
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+			"status": status,
+			"error" : err_str,
+			"ENSInfo" : ens_info,
+	})
+}
+func a1_ens_name_lookup(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_user:= c.Param("user")
+	_,eoa_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+
+	names,total_names := augur_srv.storage.Lookup_ens_names(eoa_aid)
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+			"status": status,
+			"error" : err_str,
+			"Names" : names,
+			"TotalRows" : total_names,
 	})
 }

@@ -12,6 +12,7 @@ const (
 	OWNER_FIELD_OFFSET int = 2	// offset to the 'owner' field in WalletContract in EVM (contract storage)
 	CATEGORICAL_MULTIPLIER int = 1000
 //	SCALAR_MULTIPLIER int = 10
+	ENS_NOT_PUBLIC			= "ENS Name is not public"
 )
 const (
 	MktTypeYesNo		= iota

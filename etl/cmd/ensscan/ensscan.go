@@ -66,6 +66,11 @@ const (
 	//		uint256 value,
 	//		uint256 registrationDate
 	//	)
+
+	OWNER_CHANGED				= "06e9c07310f63759634ddbb7257dbb19ca404f90bd6bdef1d3386fab033cebce"
+	// event OwnerChanged(bytes32 indexed label, address indexed oldOwner, address indexed newOwner);
+	//  from ENS migration contract
+
 	HASH_INVALIDATED			= "1f9c649fe47e58bb60f4e52f0d90e4c47a526c9f90c5113df842c025970b66ad"
 	NEW_TTL						= "1d4f9bbfc9cab89d66e1a1562f2233ccbf1308cb4f63de2ead5787adddb8fa68."
 	ENS_TEXT_CHANGED			= "d8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550"
@@ -99,6 +104,7 @@ var (
 	evt_pubkey_changed,_ = hex.DecodeString(PUBKEY_CHANGED)
 	evt_contenthash_changed,_ = hex.DecodeString(CONTENT_HASH_CHANGED)
 	evt_name_changed,_ = hex.DecodeString(NAME_CHANGED)
+	evt_owner_changed,_ = hex.DecodeString(OWNER_CHANGED)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -218,16 +224,14 @@ func std_initial_load(exit_chan chan bool,block_num_limit int64,f std_proc_func,
 	}
 }
 func initial_load(exit_chan chan bool,bnum_lim int64) {
-
-	/*std_initial_load(exit_chan,bnum_lim,proc_name_registered1,"NameRegistered1",evt_name_registered1)
+/*
+	std_initial_load(exit_chan,bnum_lim,proc_name_registered1,"NameRegistered1",evt_name_registered1)
 	std_initial_load(exit_chan,bnum_lim,proc_name_registered2,"NameRegistered2",evt_name_registered2)
 	std_initial_load(exit_chan,bnum_lim,proc_name_registered3,"NameRegistered3",evt_name_registered3)
 	range_initial_load_new_owner(exit_chan,bnum_lim)
 	std_initial_load(exit_chan,bnum_lim,proc_addr_changed1,"AddrChanged_1",evt_addrchanged1)
 	std_initial_load(exit_chan,bnum_lim,proc_address_changed2,"AddressChanged_2",evt_addresschanged2)
-	*/
 	std_initial_load(exit_chan,bnum_lim,proc_name_changed,"NameChanged",evt_name_changed)
-	/*
 	std_initial_load(exit_chan,bnum_lim,proc_hash_invalidated,"HashInvalidated",evt_hash_invalidated)
 	std_initial_load(exit_chan,bnum_lim,proc_new_resolver,"NewResolver",evt_new_resolver)
 	std_initial_load(exit_chan,bnum_lim,proc_registry_transfer,"RegistryTransfer",evt_registry_transfer)
@@ -236,6 +240,7 @@ func initial_load(exit_chan chan bool,bnum_lim int64) {
 	std_initial_load(exit_chan,bnum_lim,proc_pubkey_changed,"PubkeyChanged",evt_pubkey_changed[:])
 	std_initial_load(exit_chan,bnum_lim,proc_contenthash_changed,"ContenthashChanged",evt_contenthash_changed[:])
 	*/
+	std_initial_load(exit_chan,bnum_lim,proc_owner_changed,"OwnerChanged",evt_owner_changed[:])
 }
 func check_initial_load_completness() bool {
 
