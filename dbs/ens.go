@@ -201,6 +201,56 @@ func (ss *SQLStorage) Insert_name_registered3(rec *p.ENS_Name3) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Insert_name_renewed(rec *p.ENS_NameRenewed) {
+
+	var query string
+	var err error
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
+	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
+		query = "INSERT INTO ens_name_renewed(" +
+					"tx_hash,time_stamp,block_num,contract_aid," +
+					"label,node,fqdn,name,cost,expires" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9::DECIMAL/1e+18,TO_TIMESTAMP($10))"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.TimeStamp,
+			rec.BlockNum,
+			contract_aid,
+			rec.Label,
+			rec.Node,
+			rec.FQDN,
+			rec.Name,
+			rec.Cost,
+			rec.Expires,
+		)
+	} else {
+		query = "INSERT INTO ens_name_renewed(" +
+					"evtlog_id,block_num,tx_id,contract_aid,"+
+					"time_stamp,label,node,fqdn,name,tx_hash,cost,expires" +
+				") VALUES(" +
+					"$1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7,$8,$9,$10,"+
+					"$11::DECIMAL/1e+18,TO_TIMESTAMP($12)"+
+				")"
+		_,err = ss.db.Exec(query,
+			rec.EvtId,
+			rec.BlockNum,
+			rec.TxId,
+			contract_aid,
+			rec.TimeStamp,
+			rec.Label,
+			rec.Node,
+			rec.FQDN,
+			rec.Name,
+			rec.TxHash,
+			rec.Cost,
+			rec.Expires,
+		)
+	}
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Expire_ens_names(l *log.Logger) {
 
 	var query string
@@ -630,6 +680,51 @@ func (ss *SQLStorage) Insert_registry_transfer(rec *p.ENS_RegistryTransfer) {
 			aid,
 			rec.TxHash,
 			rec.Node,
+		)
+	}
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_registrar_transfer(rec *p.ENS_RegistrarTransfer) {
+
+	from_aid := ss.Lookup_or_create_address(rec.From,rec.BlockNum,rec.TxId)
+	to_aid := ss.Lookup_or_create_address(rec.To,rec.BlockNum,rec.TxId)
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
+	var query string
+	var err error
+	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
+		query = "INSERT INTO ens_rstr_transf(" +
+					"tx_hash,time_stamp,block_num,contract_aid,label,node,fqdn,from_aid,to_aid" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9)"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.TimeStamp,
+			rec.BlockNum,
+			contract_aid,
+			rec.Label,
+			rec.Node,
+			rec.FQDN,
+			from_aid,
+			to_aid,
+		)
+	} else {
+		query = "INSERT INTO ens_reg_transf (" +
+					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,from_aid,to_aid,tx_hash,label,node,fqdn" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9,$10,$11)"
+		_,err = ss.db.Exec(query,
+			rec.EvtId,
+			rec.BlockNum,
+			rec.TxId,
+			contract_aid,
+			rec.TimeStamp,
+			from_aid,
+			to_aid,
+			rec.TxHash,
+			rec.Label,
+			rec.Node,
+			rec.FQDN,
 		)
 	}
 	if (err!=nil) {

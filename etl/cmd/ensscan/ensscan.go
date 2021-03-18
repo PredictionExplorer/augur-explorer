@@ -57,8 +57,22 @@ const (
 	ENS_ADDR_CHANGED			= "52d7d861f09ab3d26239d492e8968629f95e9e318cf0b73bfddc441522a15fd2"
 	ENS_ADDRESS_CHANGED			= "65412581168e88a1e60c6459d7f44ae83ad0832e670826c05a4e2476b57af752"
 	NEW_RESOLVER				= "335721b01866dc23fbee8b6b2c7b1e14d6f05c28cd35a2c934239f94095602a0"
-	ENS_TRANSFER				= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+
+	ENS_REGISTRAR_TRANSFER		= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+	// transfer at the Registrar level
+	//	event Transfer(
+	//		address indexed from,
+	//		address indexed to,
+	//		uint256 indexed tokenId
+	//	);
+
 	ENS_REGISTRY_TRANSFER		= "d4735d920b0f87494915f556dd9b54c8f309026070caea5c737245152564d266"
+	// transfer at Registry level
+	// event Transfer(
+	//		bytes32 indexed node,
+	//		address owner
+	//	);
+
 	HASH_REGISTERED				= "0f0c27adfd84b60b6f456b0e87cdccb1e5fb9603991588d87fa99f5b6b61e670"
 	//  HashRegistered (	Sample tx: 0x216d8103a59c3f3921210b3a4c6aca32c21724dac8451d32ed0d88103c20b802
 	//		index_topic_1 bytes32 hash,
@@ -66,6 +80,12 @@ const (
 	//		uint256 value,
 	//		uint256 registrationDate
 	//	)
+
+	NAME_RENEWED				= "3da24c024582931cfaf8267d8ed24d13a82a8068d5bd337d30ec45cea4e506ae"
+	//	event NameRenewed(
+	//		uint256 indexed id,
+	//		uint expires
+	//	);
 
 	OWNER_CHANGED				= "06e9c07310f63759634ddbb7257dbb19ca404f90bd6bdef1d3386fab033cebce"
 	// event OwnerChanged(bytes32 indexed label, address indexed oldOwner, address indexed newOwner);
@@ -93,10 +113,12 @@ var (
 	evt_name_registered1,_ = hex.DecodeString(ENS_NAME_REGISTERED1)
 	evt_name_registered2,_ = hex.DecodeString(ENS_NAME_REGISTERED2)
 	evt_name_registered3,_ = hex.DecodeString(ENS_NAME_REGISTERED3)
+	evt_name_renewed,_ = hex.DecodeString(NAME_RENEWED)
 	evt_hash_invalidated,_ = hex.DecodeString(HASH_INVALIDATED)
 	evt_hash_registered,_ = hex.DecodeString(HASH_REGISTERED)
 	evt_new_resolver,_ = hex.DecodeString(NEW_RESOLVER)
 	evt_registry_transfer,_ = hex.DecodeString(ENS_REGISTRY_TRANSFER)
+	evt_registrar_transfer,_ = hex.DecodeString(ENS_REGISTRAR_TRANSFER)
 	evt_text_changed,_		= hex.DecodeString(ENS_TEXT_CHANGED)
 	evt_name_bought,_ = hex.DecodeString(NAME_BOUGHT)
 	evt_addrchanged1,_ = hex.DecodeString(ENS_ADDR_CHANGED)
@@ -202,7 +224,7 @@ func do_std_initial_load(block_num_from,block_num_to int64,f std_proc_func,evtna
 }
 func std_initial_load(exit_chan chan bool,block_num_limit int64,f std_proc_func,evtname string,sig []byte) {
 
-	var block_num int64 = 0 // found empirically
+	var block_num int64 = 0
 	for ; block_num <= block_num_limit ; {
 		select {
 			case exit_flag := <-exit_chan:
@@ -235,12 +257,16 @@ func initial_load(exit_chan chan bool,bnum_lim int64) {
 	std_initial_load(exit_chan,bnum_lim,proc_hash_invalidated,"HashInvalidated",evt_hash_invalidated)
 	std_initial_load(exit_chan,bnum_lim,proc_new_resolver,"NewResolver",evt_new_resolver)
 	std_initial_load(exit_chan,bnum_lim,proc_registry_transfer,"RegistryTransfer",evt_registry_transfer)
+*/
+	//std_initial_load(exit_chan,bnum_lim,proc_registrar_transfer,"RegistrarTransfer",evt_registrar_transfer)
+	std_initial_load(exit_chan,bnum_lim,proc_name_renewed,"NameRenewed",evt_name_renewed)
+/*
 	std_initial_load(exit_chan,bnum_lim,proc_text_changed,"TextChanged",evt_text_changed)
 	std_initial_load(exit_chan,bnum_lim,proc_hash_registered,"HashRegistered",evt_hash_registered)
 	std_initial_load(exit_chan,bnum_lim,proc_pubkey_changed,"PubkeyChanged",evt_pubkey_changed[:])
 	std_initial_load(exit_chan,bnum_lim,proc_contenthash_changed,"ContenthashChanged",evt_contenthash_changed[:])
-	*/
 	std_initial_load(exit_chan,bnum_lim,proc_owner_changed,"OwnerChanged",evt_owner_changed[:])
+	*/
 }
 func check_initial_load_completness() bool {
 

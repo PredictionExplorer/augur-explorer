@@ -416,6 +416,14 @@ func (evt *NameRegistered_v1) Dump(l *log.Logger) {
     l.Printf("\tExpires: %v\n",evt.Expires.String())
     l.Printf("}\n")
 }
+func (evt *NameRenewed) Dump(l *log.Logger) {
+    l.Printf("NameRenewed {\n")
+    l.Printf("\tName: %v\n",evt.Name)
+	l.Printf("\tLabel: %v\n",hex.EncodeToString(evt.Label[:]))
+    l.Printf("\tCost : %v\n",evt.Cost.String())
+    l.Printf("\tExpires: %v\n",evt.Expires.String())
+    l.Printf("}\n")
+}
 func (evt* EValidityBondChanged) Dump(l *log.Logger) {
 	l.Printf("ValidityBondChanged {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())

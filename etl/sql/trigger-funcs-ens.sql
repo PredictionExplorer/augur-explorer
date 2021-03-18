@@ -42,6 +42,28 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_ens_name_renewed_insert_before() RETURNS trigger AS  $$
+DECLARE
+	v_cnt numeric;
+BEGIN
+
+	IF NEW.fqdn='' THEN
+		RAISE EXCEPTION 'Attempt to INSERT ens_name with empty fqdn in ens_name_renewed';
+	END IF;
+	UPDATE active_name SET
+		ensname_id = NEW.id,
+		expires = NEW.expires
+		WHERE fqdn=NEW.fqdn;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO ens_name(owner_aid,expires,label,node,fqdn,name,cost)
+			VALUES(NEW.owner_aid,NEW.expires,NEW.label,NEW.node,NEW.fqdn,NEW.name,NEW.cost);
+		INSERT INTO active_name(ensname_id,expires,name,label,node,fqdn)
+			VALUES(NEW.id,NEW.expires,NEW.name,NEW.label,NEW.node,NEW.fqdn);
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_ens_new_owner_insert() RETURNS trigger AS  $$
 DECLARE
 	v_prev_timestamp timestamptz;

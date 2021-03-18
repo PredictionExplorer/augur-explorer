@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"bytes"
 	"fmt"
+	"errors"
 	"strings"
 	"crypto/ecdsa"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -66,6 +67,10 @@ func build_list_of_inspected_events() []InspectedEvent {
 		},
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_registry_transfer[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_registrar_transfer[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -155,7 +160,7 @@ func get_node_hash_via_new_owner_event(tx_id int64,tx_hash *common.Hash,value[]b
 			}
 		}
 		Error.Printf("No NewOwner events found after scanning transaction receipt logs, tx=%v\n",tx_hash.String())
-		os.Exit(1)
+		return nil,nil,errors.New("No NewOwner events found")
 	}
 	// this code decodes events from DB
 	for i:=0; i<len(possible_events); i++ {
@@ -187,8 +192,7 @@ func get_node_hash_via_new_owner_event(tx_id int64,tx_hash *common.Hash,value[]b
 
 	}
 	Error.Printf("Couldn't find NewOwner event linked with NameRegistered event, tx_id=%v\n",tx_id)
-	os.Exit(1)
-	return nil,nil,nil
+	return nil,nil,errors.New("No NewOwner events linked with NameRegistered events found")
 }
 
 func proc_name_registered1(log *types.Log,evt_id,tx_id,timestamp int64) {
@@ -303,6 +307,55 @@ func proc_name_registered2(log *types.Log,evt_id,tx_id,timestamp int64) {
 	Info.Printf("}")
 	Info.Printf("Node: %v , Label: %v , FQDN: %v\n",evt.Node,evt.Label,evt.FQDN)
 	storage.Insert_name_registered2(&evt)
+}
+func proc_name_renewed(log *types.Log,evt_id,tx_id,timestamp int64) {
+	var evt ENS_NameRenewed
+	evt.EvtId = evt_id
+	evt.BlockNum = int64(log.BlockNumber)
+	evt.TxId = tx_id
+	evt.TimeStamp = timestamp
+	if evt.TimeStamp == 0 {
+		ctx := context.Background()
+		bnum := big.NewInt(int64(log.BlockNumber))
+		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+		if err != nil {
+			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			os.Exit(1)
+		}
+		evt.TimeStamp = int64(block_hdr.Time)
+	}
+	evt.TxHash = log.TxHash.String()
+	var eth_event NameRenewed
+	err := ens_abi.Unpack(&eth_event,"NameRenewed",log.Data)
+	if err != nil {
+		Error.Printf("Error upacking NameRenewed: %v\n",err)
+		Info.Printf("Error upacking NameRenewed: %v\n",err)
+		os.Exit(1)
+	}
+
+	eth_event.Label = log.Topics[1]
+	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+	eth_event.Dump(Info)
+	evt.TxHash = log.TxHash.String()
+	evt.Label = hex.EncodeToString(eth_event.Label[:])
+
+	node_hash,_,err := get_node_hash_via_new_owner_event(evt.TxId,&log.TxHash,eth_event.Label[:],true)
+	if err != nil {
+		Error.Printf("Error getting node hash: %v\n",err)
+		os.Exit(1)
+	}
+
+	fqdn_bytes := calculate_name_hash(node_hash,eth_event.Label[:])
+	evt.FQDN = hex.EncodeToString(fqdn_bytes[:])
+	Info.Printf("resulting fqdn: %v\n",hex.EncodeToString(fqdn_bytes[:]))
+
+	evt.Node = hex.EncodeToString(node_hash[:])
+	evt.Name = eth_event.Name
+	evt.Cost = eth_event.Cost.String()
+	evt.Expires = eth_event.Expires.Int64()
+	evt.Contract = log.Address.String()
+	storage.Insert_name_renewed(&evt)
 }
 func proc_newowner(log *types.Log,evt_id,tx_id,timestamp int64) {
 
@@ -611,6 +664,74 @@ func proc_registry_transfer(log *types.Log,evt_id,tx_id,timestamp int64) {
 	Info.Printf("\tAddress: %v\n",evt.Owner)
 	Info.Printf("}")
 	storage.Insert_registry_transfer(&evt)
+}
+func proc_registrar_transfer(log *types.Log,evt_id,tx_id,timestamp int64) {
+	var evt ENS_RegistrarTransfer
+	evt.EvtId = evt_id
+	evt.BlockNum = int64(log.BlockNumber)
+	evt.TxId = tx_id
+	evt.TimeStamp = timestamp
+
+	if evt.TimeStamp == 0 {
+		ctx := context.Background()
+		bnum := big.NewInt(int64(log.BlockNumber))
+		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+		if err != nil {
+			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+			os.Exit(1)
+		}
+		evt.TimeStamp = int64(block_hdr.Time)
+	}
+
+	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+	if len(log.Topics) !=4 {
+		Info.Printf("log.Topics length invalid, skipping\n")
+		return
+	}
+
+	evt.TxHash = log.TxHash.String()
+	from_addr := common.BytesToAddress(log.Topics[1][12:])
+	to_addr := common.BytesToAddress(log.Topics[2][12:])
+	token_id := log.Topics[3][:]
+	evt.TokenId = hex.EncodeToString(token_id[:])
+	evt.From = from_addr.String()
+	evt.To = to_addr.String()
+	evt.Contract = log.Address.String()
+
+	base_registrar_ctrct,err := baseregistrar.NewContract(log.Address,eclient)
+	if err != nil {
+		Error.Printf("Error instantiating base registrar contract %v : %v\n",log.Address.String(),err)
+		Info.Printf("Error instantiating base registrar contract %v : %v\n",log.Address.String(),err)
+		os.Exit(1)
+	}
+	var node_hash []byte
+	label_hash := token_id
+	var node_bytes[32]byte
+	var copts = new(bind.CallOpts)
+	node_bytes,err = base_registrar_ctrct.BaseNode(copts)
+	if err == nil {
+		node_hash = node_bytes[:]
+	} else {
+		node_hash,_,err = get_node_hash_via_new_owner_event(evt.TxId,&log.TxHash,label_hash,true)
+		if err != nil {
+			Error.Printf("Error getting node hash: %v\n",err)
+			//os.Exit(1)
+			return
+		}
+	}
+	fqdn_bytes := calculate_name_hash(node_hash,label_hash)
+	evt.FQDN = hex.EncodeToString(fqdn_bytes)
+	evt.Node = hex.EncodeToString(node_hash[:])
+	evt.Label = hex.EncodeToString(label_hash[:])
+
+	Info.Printf("Registrar Transfer{\n")
+	Info.Printf("\tFrom: %v\n",evt.From)
+	Info.Printf("\tTo: %v\n",evt.To)
+	Info.Printf("\tTokenID: %v\n",evt.TokenId)
+	Info.Printf("}")
+	Info.Printf("Node: %v , Label: %v , FQDN: %v\n",evt.Node,evt.Label,evt.FQDN)
+	storage.Insert_registrar_transfer(&evt)
 }
 func proc_text_changed(log *types.Log,evt_id,tx_id,timestamp int64) {
 
@@ -981,6 +1102,9 @@ func process_ens_event(evt_id int64) error {
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_registry_transfer) {
 			proc_registry_transfer(&log,evtlog.EvtId,evtlog.TxId,evtlog.TimeStamp)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_registrar_transfer) {
+			proc_registrar_transfer(&log,evtlog.EvtId,evtlog.TxId,evtlog.TimeStamp)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_text_changed) {
 			proc_text_changed(&log,evtlog.EvtId,evtlog.TxId,evtlog.TimeStamp)

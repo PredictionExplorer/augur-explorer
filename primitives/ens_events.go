@@ -21,6 +21,14 @@ type NameRegistered_v3 struct { //570313dae523ecb48b1176a4b60272e5ea7ec637f5b2d0
 	CreatedDate	*big.Int
 	Raw     types.Log // Blockchain specific contextual infos
 }
+type NameRenewed struct {
+	Name    string
+	Label   [32]byte
+	Cost    *big.Int
+	Expires *big.Int
+	Raw     types.Log // Blockchain specific contextual infos
+}
+
 type HashInvalidated struct { //1f9c649fe47e58bb60f4e52f0d90e4c47a526c9f90c5113df842c025970b66ad
 	Hash					[32]byte
 	Name					string

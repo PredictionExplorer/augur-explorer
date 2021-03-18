@@ -1428,6 +1428,20 @@ type ENS_Name3  struct {	// NameRegistered old version
 	FQDN					string
 	TxHash					string
 }
+type ENS_NameRenewed  struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Expires					int64
+	Contract				string
+	Label					string
+	Node					string
+	FQDN					string
+	Name					string
+	Cost					string
+	TxHash					string
+}
 type ENS_Transfer struct {
 	From					string
 	To						string
@@ -1490,6 +1504,20 @@ type ENS_RegistryTransfer struct {
 	TxHash					string
 	Owner					string
 	Node					string
+}
+type ENS_RegistrarTransfer struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Contract				string
+	TxHash					string
+	From					string
+	To						string
+	TokenId					string
+	Label					string
+	Node					string
+	FQDN					string
 }
 type ENS_TextChanged struct {
 	EvtId					int64

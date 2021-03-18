@@ -103,8 +103,12 @@ func main() {
 			}
 			looked_up,err := resolver_ctrct.Addr(nil,nodehash)
 			if err != nil {
+				if err.Error() == "no contract code at given address" {
+					fmt.Printf("node %v has resolver set to EOA account\n",node_entry.FQDN)
+					continue
+				}
 				fmt.Printf("resolver's Address() call on node %v failed: %v (resolver addr is %v)\n",node_entry.FQDN,err,resolver_addr.String())
-				os.Exit(1)
+				continue
 			}
 			fmt.Printf("\tlookup at Resolver: node addr = %v\n",looked_up.String())
 /*
