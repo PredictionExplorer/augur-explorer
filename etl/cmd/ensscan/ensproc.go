@@ -623,9 +623,25 @@ func proc_new_resolver(log *types.Log,evt_id,tx_id,timestamp int64) {
 		evt.TimeStamp = int64(block_hdr.Time)
 	}
 	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+	resolver_addr := common.BytesToAddress(log.Data[12:])
+
+	evt.NameAddr = common.Address{}.String()
+	resolver_ctrct,err := resolver.NewContract(resolver_addr,eclient)
+	if err == nil {
+		looked_up_addr,err := resolver_ctrct.Addr(nil,log.Topics[1])
+		if err == nil {
+			evt.NameAddr = looked_up_addr.String()
+		} else {
+			Error.Printf("Can't lookup address at new resolver %v : %v\n",resolver_addr.String(),err)
+			Info.Printf("Can't lookup address at new resolver %v : %v\n",resolver_addr.String(),err)
+		}
+	} else {
+		Error.Printf("Can't instantiate resolver contract for address %v\n",resolver_addr.String())
+		Info.Printf("Can't instantiate resolver contract for address %v\n",resolver_addr.String())
+	}
+
 	evt.Node = hex.EncodeToString(log.Topics[1][:])
-	addr := common.BytesToAddress(log.Data[12:])
-	evt.Address = addr.String()
+	evt.Address = resolver_addr.String()
 	evt.TxHash = log.TxHash.String()
 	evt.Contract = log.Address.String()
 	Info.Printf("NewResolver {\n")
@@ -652,7 +668,6 @@ func proc_registry_transfer(log *types.Log,evt_id,tx_id,timestamp int64) {
 		}
 		evt.TimeStamp = int64(block_hdr.Time)
 	}
-
 	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
 	evt.Node = hex.EncodeToString(log.Topics[1][:])
 	addr := common.BytesToAddress(log.Data[12:])
@@ -666,6 +681,12 @@ func proc_registry_transfer(log *types.Log,evt_id,tx_id,timestamp int64) {
 	storage.Insert_registry_transfer(&evt)
 }
 func proc_registrar_transfer(log *types.Log,evt_id,tx_id,timestamp int64) {
+	// note, blocks > 6M
+	_,exists := blacklisted[log.Address]
+	if exists {
+		return
+	}
+
 	var evt ENS_RegistrarTransfer
 	evt.EvtId = evt_id
 	evt.BlockNum = int64(log.BlockNumber)
@@ -687,6 +708,7 @@ func proc_registrar_transfer(log *types.Log,evt_id,tx_id,timestamp int64) {
 	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
 	if len(log.Topics) !=4 {
 		Info.Printf("log.Topics length invalid, skipping\n")
+		blacklisted[log.Address]=struct{}{}
 		return
 	}
 
@@ -716,7 +738,7 @@ func proc_registrar_transfer(log *types.Log,evt_id,tx_id,timestamp int64) {
 		node_hash,_,err = get_node_hash_via_new_owner_event(evt.TxId,&log.TxHash,label_hash,true)
 		if err != nil {
 			Error.Printf("Error getting node hash: %v\n",err)
-			//os.Exit(1)
+			blacklisted[log.Address]=struct{}{}	// this contract is not related to ENS
 			return
 		}
 	}

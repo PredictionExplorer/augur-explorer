@@ -13,6 +13,8 @@ DROP TABLE IF EXISTS
 	ens_hash_inval,
 	ens_hash_reg,
 	ens_reg_transf,
+	ens_rstr_transf,
+	ens_name_renewed,
 	ens_text,
 	ens_text_chg,
 	ens_text_key,

@@ -1493,6 +1493,7 @@ type ENS_NewResolver struct {
 	Contract				string
 	Node					string
 	Address					string
+	NameAddr				string
 	TxHash					string
 }
 type ENS_RegistryTransfer struct {

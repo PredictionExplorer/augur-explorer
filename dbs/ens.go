@@ -549,12 +549,13 @@ func (ss *SQLStorage) Insert_hash_registered(rec *p.ENS_HashRegistered) {
 func (ss *SQLStorage) Insert_new_resolver(rec *p.ENS_NewResolver) {
 
 	aid := ss.Lookup_or_create_address(rec.Address,rec.BlockNum,rec.TxId)
+	name_aid := ss.Lookup_or_create_address(rec.NameAddr,rec.BlockNum,rec.TxId)
 	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
 	var query string
 	var err error
 	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
-		query = "INSERT INTO ens_new_resolver(tx_hash,time_stamp,block_num,contract_aid,node,aid) " +
-		"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6)"
+		query = "INSERT INTO ens_new_resolver(tx_hash,time_stamp,block_num,contract_aid,node,aid,name_aid) " +
+		"VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
 		_,err = ss.db.Exec(query,
 			rec.TxHash,
 			rec.TimeStamp,
@@ -562,11 +563,12 @@ func (ss *SQLStorage) Insert_new_resolver(rec *p.ENS_NewResolver) {
 			contract_aid,
 			rec.Node,
 			aid,
+			name_aid,
 		)
 	} else {
 		query = "INSERT INTO ens_new_resolver (" +
-					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,aid,tx_hash,node" +
-				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
+					"evtlog_id,block_num,tx_id,contract_aid,time_stamp,aid,name_aid,tx_hash,node" +
+				") VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9)"
 		_,err = ss.db.Exec(query,
 			rec.EvtId,
 			rec.BlockNum,
@@ -574,6 +576,7 @@ func (ss *SQLStorage) Insert_new_resolver(rec *p.ENS_NewResolver) {
 			contract_aid,
 			rec.TimeStamp,
 			aid,
+			name_aid,
 			rec.TxHash,
 			rec.Node,
 		)
@@ -1128,6 +1131,25 @@ func (ss *SQLStorage)  Get_last_owner_addr(fqdn string) (string,string,error) {
 		}
 	}
 	return addr_owner.String,addr_assigned.String,nil
+}
+func (ss *SQLStorage) Get_last_new_resolver_name_addr(fqdn string) (string,error) {
+	// returns address of the name on last resolver change
+	var addr sql.NullString
+	var query string
+	query =	"SELECT a.addr " +
+				"FROM ens_new_resolver r " +
+				"JOIN address a ON r.name_aid=a.address_id " +
+				"WHERE node=$1 ORDER BY id DESC LIMIT 1"
+	res := ss.db.QueryRow(query,fqdn)
+	err := res.Scan(&addr)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+	return addr.String,nil
 }
 func (ss *SQLStorage) Get_new_owner_events(fqdn string) []p.ENS_NewOwner {
 

@@ -140,6 +140,8 @@ var (
 
 	ens1_addr			= common.HexToAddress(ENS_V1_REGISTRY_ADDR)
 	ens2_addr			= common.HexToAddress(ENS_V2_REGISTRY_ADDR)
+
+	blacklisted				map[common.Address]struct{}	// contracts we need to ignore
 )
 func do_initial_load_new_owner(block_num_from,block_num_to int64) {
 
@@ -225,6 +227,9 @@ func do_std_initial_load(block_num_from,block_num_to int64,f std_proc_func,evtna
 func std_initial_load(exit_chan chan bool,block_num_limit int64,f std_proc_func,evtname string,sig []byte) {
 
 	var block_num int64 = 0
+	if evtname == "RegistrarTransfer" {
+		block_num = 7691000 // otherwise it takes very long (first block found empirically)
+	}
 	for ; block_num <= block_num_limit ; {
 		select {
 			case exit_flag := <-exit_chan:
@@ -258,9 +263,9 @@ func initial_load(exit_chan chan bool,bnum_lim int64) {
 	std_initial_load(exit_chan,bnum_lim,proc_new_resolver,"NewResolver",evt_new_resolver)
 	std_initial_load(exit_chan,bnum_lim,proc_registry_transfer,"RegistryTransfer",evt_registry_transfer)
 */
-	//std_initial_load(exit_chan,bnum_lim,proc_registrar_transfer,"RegistrarTransfer",evt_registrar_transfer)
-	std_initial_load(exit_chan,bnum_lim,proc_name_renewed,"NameRenewed",evt_name_renewed)
+	std_initial_load(exit_chan,bnum_lim,proc_registrar_transfer,"RegistrarTransfer",evt_registrar_transfer)
 /*
+	std_initial_load(exit_chan,bnum_lim,proc_name_renewed,"NameRenewed",evt_name_renewed)
 	std_initial_load(exit_chan,bnum_lim,proc_text_changed,"TextChanged",evt_text_changed)
 	std_initial_load(exit_chan,bnum_lim,proc_hash_registered,"HashRegistered",evt_hash_registered)
 	std_initial_load(exit_chan,bnum_lim,proc_pubkey_changed,"PubkeyChanged",evt_pubkey_changed[:])
@@ -340,6 +345,7 @@ func main() {
 		Info.Printf("Can't parse ENS ABI: %v\n",err)
 		os.Exit(1)
 	}
+	blacklisted = make(map[common.Address]struct{})
 	status := storage.Get_ens_processing_status()
 	if do_initial_load {
 		ens_status := storage.Get_ens_proc_status()

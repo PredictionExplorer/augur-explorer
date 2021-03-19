@@ -157,7 +157,8 @@ CREATE TABLE ens_new_resolver(
 	tx_id				BIGINT,
 	contract_aid		BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
-	aid					BIGINT NOT NULL,
+	aid					BIGINT NOT NULL, -- resolver's contract addr
+	name_aid			BIGINT NOT NULL, -- name's address at this resolver
 	tx_hash				TEXT NOT NULL,
 	node				TEXT NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE

@@ -244,7 +244,7 @@ BEGIN
 
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.aid = v_zero_aid  THEN
-		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.node;
 	END IF;
 
 	RETURN NEW;
@@ -354,7 +354,10 @@ BEGIN
 	END IF;
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.aid = v_zero_aid  THEN
-		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.node;
+	END IF;
+	IF NEW.name_aid = v_zero_aid THEN -- when changing Resolvers, the name address got deleted
+		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.node;
 	END IF;
 	RETURN NEW;
 END;

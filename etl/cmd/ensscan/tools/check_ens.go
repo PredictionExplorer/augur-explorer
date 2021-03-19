@@ -63,10 +63,15 @@ func main() {
 			node_entry := lot[i]
 			owner_addr,assigned_addr,err := storage.Get_last_owner_addr(node_entry.FQDN)
 			if err!=nil {
-				fmt.Printf("Error at node %v: %v\n",node_entry.FQDN,err)
+				fmt.Printf("SQL error at owner/assigned query for node %v: %v\n",node_entry.FQDN,err)
 				os.Exit(1)
 			}
-			owner := common.HexToAddress(owner_addr)
+			nr_addr,err := storage.Get_last_new_resolver_name_addr(node_entry.FQDN)
+			if err != nil {
+				fmt.Printf("SQL error at resolver/addr for node %v: %v\n",node_entry.FQDN,err)
+				os.Exit(1)
+			}
+			//owner := common.HexToAddress(owner_addr)
 			assigned := common.HexToAddress(assigned_addr)
 			
 			nodehash:= common.HexToHash("0x"+node_entry.FQDN)
@@ -110,17 +115,24 @@ func main() {
 				fmt.Printf("resolver's Address() call on node %v failed: %v (resolver addr is %v)\n",node_entry.FQDN,err,resolver_addr.String())
 				continue
 			}
-			fmt.Printf("\tlookup at Resolver: node addr = %v\n",looked_up.String())
+			fmt.Printf(
+				"\tlookup at Resolver %v : \tnode addr = %v\n",
+				resolver_addr.String(),	looked_up.String(),
+			)
 /*
 			looked_up,err := ens.Resolve(eclient, node_entry.FQDN)
 			if err!=nil {
 				fmt.Printf("ENS lookup error for node %v : %v\n",node_entry.FQDN,err)
 				os.Exit(1)
 			}*/
+			if zeroaddr.String() == nr_addr {
+				fmt.Printf("\tname has been unregistered\n")
+				continue
+			}
 			if len(assigned_addr) > 0 {
 				if !bytes.Equal(assigned.Bytes(),looked_up[:]) {
 					fmt.Printf(
-						"Resolution for node %v is incorrect!\n\tmust be %v\n\towner : %v\n\tassigned : %v\n",
+						"\tResolution for node %v is incorrect!\n\tmust be %v\n\towner : %v\n\tassigned : %v\n",
 						node_entry.FQDN,looked_up.String(),owner_addr,assigned_addr,
 					)
 					//os.Exit(1)
@@ -128,6 +140,15 @@ func main() {
 					fmt.Printf("\tnode ok: addr = %v\n",assigned_addr)
 				}
 			} else {
+				if bytes.Equal(zeroaddr.Bytes(),looked_up[:]) {
+					fmt.Printf("\tname unregistered (0x0 addr)\n")
+				} else {
+					fmt.Printf(
+						"Resolution for node %v is incorrect\n\tmust be %v\n\towner : %v\n\tassigned : %v\n",
+						node_entry.FQDN,looked_up.String(),owner_addr,assigned_addr,
+					)
+				}
+				/*
 				if len(owner_addr) >0 {
 					if !bytes.Equal(owner.Bytes(),looked_up[:]) {
 						fmt.Printf(
@@ -142,6 +163,7 @@ func main() {
 					fmt.Printf("Resolution incorrect: owner address wasn't found in the DB for node %v\n",node_entry.FQDN)
 					//os.Exit(1)
 				}
+				*/
 			}
 		}
 		cur_id = cur_id + lot_size
