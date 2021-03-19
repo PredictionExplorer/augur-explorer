@@ -14,6 +14,7 @@ import (
 
 //	"golang.org/x/crypto/sha3"
 	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -211,11 +212,26 @@ func do_std_initial_load(block_num_from,block_num_to int64,f std_proc_func,evtna
 	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(signature.Bytes()))
 	Info.Printf("filter query = %+v\n",filter)
 	Info.Printf("%v: block range: %v - %v\n",evtname,block_num_from,block_num_to)
-	logs,err := eclient.FilterLogs(context.Background(),filter)
-	if err!= nil {
-		Error.Printf("Error: %v\n",err)
-		Info.Printf("Error: %v\n",err)
-		os.Exit(1)
+
+	// FilterLogs sometimes returns EOF error (possibly too much resources used and connection is aborted)
+	// so we do it in a loop for 10 times, to avoid our load process to fail due to random resource problem
+	var logs []types.Log
+	num_tries := 10
+	for {
+		var err error
+		logs,err = eclient.FilterLogs(context.Background(),filter)
+		if err!= nil {
+			Error.Printf("Error: %v\n",err)
+			Info.Printf("Error: %v\n",err)
+		} else {
+			break;
+		}
+		num_tries = num_tries - 1
+		if num_tries == 0 {
+			Error.Printf("Aborting process. Error: %v\n",err)
+			Info.Printf("Aborting processs. Error: %v\n",err)
+			os.Exit(1)
+		}
 	}
 	for _,log := range logs {
 		if log.Removed {
@@ -227,8 +243,10 @@ func do_std_initial_load(block_num_from,block_num_to int64,f std_proc_func,evtna
 func std_initial_load(exit_chan chan bool,block_num_limit int64,f std_proc_func,evtname string,sig []byte) {
 
 	var block_num int64 = 0
+	var interval int64 = 1000
 	if evtname == "RegistrarTransfer" {
 		block_num = 7691000 // otherwise it takes very long (first block found empirically)
+		interval = 250	// load is to high on 1000, we decrease by 50%
 	}
 	for ; block_num <= block_num_limit ; {
 		select {
@@ -240,7 +258,7 @@ func std_initial_load(exit_chan chan bool,block_num_limit int64,f std_proc_func,
 			default:
 		}
 
-		next_block_num := block_num + 1000 - 1
+		next_block_num := block_num + interval - 1
 		if next_block_num > block_num_limit {
 			do_std_initial_load(block_num,block_num_limit,f,evtname,sig)
 			break
@@ -263,7 +281,6 @@ func initial_load(exit_chan chan bool,bnum_lim int64) {
 	std_initial_load(exit_chan,bnum_lim,proc_new_resolver,"NewResolver",evt_new_resolver)
 	std_initial_load(exit_chan,bnum_lim,proc_registry_transfer,"RegistryTransfer",evt_registry_transfer)
 */
-	std_initial_load(exit_chan,bnum_lim,proc_registrar_transfer,"RegistrarTransfer",evt_registrar_transfer)
 /*
 	std_initial_load(exit_chan,bnum_lim,proc_name_renewed,"NameRenewed",evt_name_renewed)
 	std_initial_load(exit_chan,bnum_lim,proc_text_changed,"TextChanged",evt_text_changed)
@@ -272,6 +289,7 @@ func initial_load(exit_chan chan bool,bnum_lim int64) {
 	std_initial_load(exit_chan,bnum_lim,proc_contenthash_changed,"ContenthashChanged",evt_contenthash_changed[:])
 	std_initial_load(exit_chan,bnum_lim,proc_owner_changed,"OwnerChanged",evt_owner_changed[:])
 	*/
+	std_initial_load(exit_chan,bnum_lim,proc_registrar_transfer,"RegistrarTransfer",evt_registrar_transfer)
 }
 func check_initial_load_completness() bool {
 

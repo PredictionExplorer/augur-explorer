@@ -104,7 +104,8 @@ CREATE TABLE ens_new_owner(
 	label				TEXT NOT NULL,
 	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,
-	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,fqdn)
 );
 CREATE TABLE ens_addr1 (-- AddrChanged event
 	id					BIGSERIAL PRIMARY KEY,
@@ -116,7 +117,8 @@ CREATE TABLE ens_addr1 (-- AddrChanged event
 	time_stamp			TIMESTAMPTZ,
 	tx_hash				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,
-	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,fqdn)
 );
 CREATE TABLE ens_addr2(-- AddressChanged event (the event with coin type field)
 	id					BIGSERIAL PRIMARY KEY,
@@ -129,7 +131,8 @@ CREATE TABLE ens_addr2(-- AddressChanged event (the event with coin type field)
 	coin_type			INT NOT NULL,
 	tx_hash				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,
-	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,fqdn)
 );
 CREATE TABLE name_address ( -- consolidates AddrChanged and AddressChanged events in a single table
 	id					BIGSERIAL PRIMARY KEY,
@@ -148,7 +151,8 @@ CREATE TABLE ens_rev_name( -- Reverse name for storing NameChanged events
 	tx_hash				TEXT NOT NULL,
 	node				TEXT NOT NULL,
 	name				TEXT,
-	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,node)
 );
 CREATE TABLE ens_new_resolver(
 	id					BIGSERIAL PRIMARY KEY,
@@ -161,7 +165,8 @@ CREATE TABLE ens_new_resolver(
 	name_aid			BIGINT NOT NULL, -- name's address at this resolver
 	tx_hash				TEXT NOT NULL,
 	node				TEXT NOT NULL,
-	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,node)
 );
 CREATE TABLE ens_hash_inval(	-- HashInvalidated event
 	id					BIGSERIAL PRIMARY KEY,
@@ -175,7 +180,8 @@ CREATE TABLE ens_hash_inval(	-- HashInvalidated event
 	hash				TEXT NOT NULL,
 	name				TEXT NOT NULL,
 	value				DECIMAL(32,18),
-	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,hash)
 );
 CREATE TABLE ens_hash_reg (	-- HashRegistered event
 	id					BIGSERIAL PRIMARY KEY,
@@ -189,7 +195,8 @@ CREATE TABLE ens_hash_reg (	-- HashRegistered event
 	tx_hash				TEXT NOT NULL,
 	hash				TEXT NOT NULL,
 	value				DECIMAL(32,18),
-	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,hash)
 );
 CREATE TABLE ens_reg_transf ( -- Transfer event on the ENS Registry contract
 	id					BIGSERIAL PRIMARY KEY,
@@ -201,7 +208,8 @@ CREATE TABLE ens_reg_transf ( -- Transfer event on the ENS Registry contract
 	aid					BIGINT NOT NULL,
 	tx_hash				TEXT NOT NULL,
 	node				TEXT NOT NULL,
-	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,node)
 );
 CREATE TABLE ens_rstr_transf ( -- Transfer event on the ENS Registrar contract
 	id					BIGSERIAL PRIMARY KEY,
@@ -216,7 +224,8 @@ CREATE TABLE ens_rstr_transf ( -- Transfer event on the ENS Registrar contract
 	label				TEXT NOT NULL,
 	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,
-	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,from_aid,to_aid,label)
 );
 CREATE TABLE ens_name_renewed (	-- HashRegistered event
 	id					BIGSERIAL PRIMARY KEY,
@@ -232,7 +241,8 @@ CREATE TABLE ens_name_renewed (	-- HashRegistered event
 	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,
 	cost				DECIMAL(32,18),
-	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,fqdn)
 );
 CREATE TABLE ens_text_chg (
 	id					BIGSERIAL PRIMARY KEY,
@@ -245,7 +255,8 @@ CREATE TABLE ens_text_chg (
 	node				TEXT NOT NULL,
 	key					TEXT NOT NULL,
 	value				TEXT NOT NULL,
-	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,node)
 );
 CREATE TABLE ens_text_key (
 	node				TEXT NOT NULL,
@@ -271,7 +282,8 @@ CREATE TABLE ens_pkey (	-- PubkeyChanged event
 	x					TEXT NOT NULL,
 	y					TEXT NOT NULL,
 	derived_addr		TEXT DEFAULT '',	-- address derived from public key (in case it is different from owner)
-	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,node)
 );
 CREATE TABLE ens_hash (	-- ContenthashChanged event
 	id					BIGSERIAL PRIMARY KEY,
@@ -283,7 +295,8 @@ CREATE TABLE ens_hash (	-- ContenthashChanged event
 	tx_hash				TEXT NOT NULL,
 	node				TEXT NOT NULL,
 	hash				TEXT NOT NULL,
-	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,node)
 );
 CREATE TABLE name_ownership ( -- created from NewOwner and Transfer events
 	-- the table is a unique place to link owner with the name
@@ -297,20 +310,4 @@ CREATE TABLE ens_status (
 	block_num_limit		BIGINT DEFAULT 10543755, -- limit for initial load
 	--block_num_limit		BIGINT DEFAULT 11650046, -- limit for initial load
 	last_evt_id			BIGINT DEFAULT 0	-- event id (latest processed)
-);
-CREATE TABLE alexa_top1m(	-- Alexa's top 1M domain names, about 700k records
-	name				TEXT,
-	hash				TEXT UNIQUE	-- label hash
-);
-CREATE TABLE en_prop_names(	-- English proper names (list of 61k words)
-	word				TEXT,
-	hash				TEXT UNIQUE	-- label hash
-);
-CREATE TABLE email_tokens( -- Words extracted from 300million emails list dataset
-	token				TEXT,
-	hash				TEXT UNIQUE	-- label hash
-);
-CREATE TABLE pwd_db ( -- 36 million record password database
-	password			TEXT,
-	hash				TEXT UNIQUE	-- label hash
 );

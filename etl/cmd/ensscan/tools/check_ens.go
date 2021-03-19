@@ -71,9 +71,10 @@ func main() {
 				fmt.Printf("SQL error at resolver/addr for node %v: %v\n",node_entry.FQDN,err)
 				os.Exit(1)
 			}
+			_ = nr_addr
 			//owner := common.HexToAddress(owner_addr)
 			assigned := common.HexToAddress(assigned_addr)
-			
+
 			nodehash:= common.HexToHash("0x"+node_entry.FQDN)
 			fmt.Printf("%v : %v : id=%v\n",node_entry.FQDN_Words,node_entry.FQDN,node_entry.Id)
 			regstr, err := ens.NewRegistry(eclient)
@@ -87,9 +88,20 @@ func main() {
 				os.Exit(1)
 			}
 			if bytes.Equal(owner_addr_ens.Bytes(),zeroaddr.Bytes()) {
-				fmt.Printf("Node %v unregistered\n",node_entry.FQDN)
+				inactive_in_db,err := storage.ENS_name_inactive(node_entry.FQDN)
+				if err != nil {
+					fmt.Sprintf("DB error: %v\n",err)
+					os.Exit(1)
+				}
+				if inactive_in_db {
+					fmt.Printf("\tmarked as inactive. ok\n")
+					continue;
+				}
+				fmt.Printf(
+					"Resolution for node %v is incorrect: name should be marked as inactive in the DB\n",
+					node_entry.FQDN,
+				)
 				continue;
-				//os.Exit(1)
 			}
 			resolver_addr, err := regstr.Contract.Resolver(nil,nodehash)
 			if err!=nil {
@@ -98,7 +110,19 @@ func main() {
 			}
 			if bytes.Equal(resolver_addr.Bytes(),zeroaddr.Bytes()) {
 				fmt.Printf("Node %v has resolver at 0x0 addr\n",node_entry.FQDN)
-				continue;
+				inactive_in_db,err := storage.ENS_name_inactive(node_entry.FQDN)
+				if err != nil {
+					fmt.Sprintf("DB error: %v\n",err)
+					os.Exit(1)
+				}
+				if inactive_in_db {
+					fmt.Printf("\tmarked as inactive. ok\n")
+					continue;
+				}
+				fmt.Printf(
+					"Resolution for node %v is incorrect: name should be inactive",
+					node_entry.FQDN,
+				)
 				//os.Exit(1)
 			}
 			resolver_ctrct,err := resolver.NewContract(resolver_addr,eclient)
@@ -119,14 +143,20 @@ func main() {
 				"\tlookup at Resolver %v : \tnode addr = %v\n",
 				resolver_addr.String(),	looked_up.String(),
 			)
-/*
-			looked_up,err := ens.Resolve(eclient, node_entry.FQDN)
-			if err!=nil {
-				fmt.Printf("ENS lookup error for node %v : %v\n",node_entry.FQDN,err)
-				os.Exit(1)
-			}*/
-			if zeroaddr.String() == nr_addr {
-				fmt.Printf("\tname has been unregistered\n")
+			if bytes.Equal(looked_up.Bytes(),zeroaddr.Bytes()) {
+				inactive_in_db,err := storage.ENS_name_inactive(node_entry.FQDN)
+				if err != nil {
+					fmt.Sprintf("DB error: %v\n",err)
+					os.Exit(1)
+				}
+				if inactive_in_db {
+					fmt.Printf("\tmarked as inactive. ok\n")
+					continue;
+				}
+				fmt.Printf(
+					"Resolution for node %v is incorrect: looked up addr is 0x0, but the DB hasn't it marked as inactive",
+					node_entry.FQDN,
+				)
 				continue
 			}
 			if len(assigned_addr) > 0 {
@@ -168,4 +198,5 @@ func main() {
 		}
 		cur_id = cur_id + lot_size
 	}
+	fmt.Printf("Exiting\n")
 }

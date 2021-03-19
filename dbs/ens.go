@@ -1297,3 +1297,22 @@ func (ss *SQLStorage) Lookup_ens_names(aid int64) (string,int64){
 	}
 	return output,total_names
 }
+func (ss *SQLStorage) ENS_name_inactive(fqdn string) (bool,error) {
+
+	var query string
+	query = "SELECT inactive FROM ens_name WHERE fqdn=$1"
+
+	res := ss.db.QueryRow(query,fqdn)
+	var null_inactive sql.NullBool
+	err := res.Scan(&null_inactive)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return false,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			//os.Exit(1)
+			return false,err
+		}
+	}
+	return null_inactive.Bool,nil
+}

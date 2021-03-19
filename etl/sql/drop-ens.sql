@@ -22,9 +22,5 @@ DROP TABLE IF EXISTS
 	ens_hash,
 	name_ownership,
 	name_address,
-	ens_status,
-	alexa_top1m,
-	en_prop_names,
-	email_tokens,
-	pwd_db
+	ens_status
 CASCADE;
