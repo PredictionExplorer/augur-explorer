@@ -24,3 +24,5 @@ CREATE TRIGGER ens_text_key_delete AFTER DELETE on ens_text_key
 	FOR EACH ROW EXECUTE PROCEDURE on_ens_text_key_delete();
 CREATE TRIGGER ens_new_resolver AFTER INSERT on ens_new_resolver
 	FOR EACH ROW EXECUTE PROCEDURE on_ens_new_resolver_insert();
+CREATE TRIGGER ens_rstr_transf AFTER INSERT on ens_rstr_transf
+	FOR EACH ROW EXECUTE PROCEDURE on_ens_rstr_transf_insert();

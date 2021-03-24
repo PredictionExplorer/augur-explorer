@@ -255,15 +255,20 @@ func proc_name_registered2(log *types.Log,evt_id,tx_id,timestamp int64) {
 	evt.TimeStamp = timestamp
 
 	if evt.TimeStamp == 0 {
-		ctx := context.Background()
-		bnum := big.NewInt(int64(log.BlockNumber))
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			os.Exit(1)
+		ts_in_db,exists := storage.ENS_get_cached_block_data(evt.BlockNum)
+		if exists {
+			evt.TimeStamp = ts_in_db
+		} else {
+			ctx := context.Background()
+			bnum := big.NewInt(int64(log.BlockNumber))
+			block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+			if err != nil {
+				Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				os.Exit(1)
+			}
+			evt.TimeStamp = int64(block_hdr.Time)
 		}
-		evt.TimeStamp = int64(block_hdr.Time)
 	}
 
 	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
@@ -315,15 +320,20 @@ func proc_name_renewed(log *types.Log,evt_id,tx_id,timestamp int64) {
 	evt.TxId = tx_id
 	evt.TimeStamp = timestamp
 	if evt.TimeStamp == 0 {
-		ctx := context.Background()
-		bnum := big.NewInt(int64(log.BlockNumber))
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			os.Exit(1)
+		ts_in_db,exists := storage.ENS_get_cached_block_data(evt.BlockNum)
+		if exists {
+			evt.TimeStamp = ts_in_db
+		} else {
+			ctx := context.Background()
+			bnum := big.NewInt(int64(log.BlockNumber))
+			block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+			if err != nil {
+				Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				os.Exit(1)
+			}
+			evt.TimeStamp = int64(block_hdr.Time)
 		}
-		evt.TimeStamp = int64(block_hdr.Time)
 	}
 	evt.TxHash = log.TxHash.String()
 	var eth_event NameRenewed
@@ -366,15 +376,20 @@ func proc_newowner(log *types.Log,evt_id,tx_id,timestamp int64) {
 	evt.TxId = tx_id
 	evt.TimeStamp = timestamp
 	if evt.TimeStamp == 0 {
-		bnum := big.NewInt(int64(log.BlockNumber))
-		ctx := context.Background()
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			os.Exit(1)
+		ts_in_db,exists := storage.ENS_get_cached_block_data(evt.BlockNum)
+		if exists {
+			evt.TimeStamp = ts_in_db
+		} else {
+			bnum := big.NewInt(int64(log.BlockNumber))
+			ctx := context.Background()
+			block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+			if err != nil {
+				Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				os.Exit(1)
+			}
+			evt.TimeStamp = int64(block_hdr.Time)
 		}
-		evt.TimeStamp = int64(block_hdr.Time)
 	}
 	evt.Label = hex.EncodeToString(log.Topics[2][:])
 	evt.Node = hex.EncodeToString(log.Topics[1][:])
@@ -399,15 +414,20 @@ func proc_addr_changed1(log *types.Log,evt_id,tx_id,timestamp int64) {
 	evt.TxHash = log.TxHash.String()
 	evt.TimeStamp = timestamp
 	if evt.TimeStamp == 0 {
-		bnum := big.NewInt(int64(log.BlockNumber))
-		ctx := context.Background()
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			os.Exit(1)
+		ts_in_db,exists := storage.ENS_get_cached_block_data(evt.BlockNum)
+		if exists {
+			evt.TimeStamp = ts_in_db
+		} else {
+			bnum := big.NewInt(int64(log.BlockNumber))
+			ctx := context.Background()
+			block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+			if err != nil {
+				Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				os.Exit(1)
+			}
+			evt.TimeStamp = int64(block_hdr.Time)
 		}
-		evt.TimeStamp = int64(block_hdr.Time)
 	}
 	if len(log.Data) < 32 {	// not our event
 		return
@@ -432,15 +452,20 @@ func proc_address_changed2(log *types.Log,evt_id,tx_id,timestamp int64) {
 	evt.TxHash = log.TxHash.String()
 	evt.TimeStamp = timestamp
 	if evt.TimeStamp == 0 {
-		bnum := big.NewInt(int64(log.BlockNumber))
-		ctx := context.Background()
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			os.Exit(1)
+		ts_in_db,exists := storage.ENS_get_cached_block_data(evt.BlockNum)
+		if exists {
+			evt.TimeStamp = ts_in_db
+		} else {
+			bnum := big.NewInt(int64(log.BlockNumber))
+			ctx := context.Background()
+			block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+			if err != nil {
+				Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				os.Exit(1)
+			}
+			evt.TimeStamp = int64(block_hdr.Time)
 		}
-		evt.TimeStamp = int64(block_hdr.Time)
 	}
 	if len(log.Data) < 32 {	// not our event
 		return
@@ -472,15 +497,20 @@ func proc_name_registered3(log *types.Log,evt_id,tx_id,timestamp int64) {
 	evt.TxId = tx_id
 	evt.TimeStamp = timestamp
 	if evt.TimeStamp == 0 {
-		ctx := context.Background()
-		bnum := big.NewInt(int64(log.BlockNumber))
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			os.Exit(1)
+		ts_in_db,exists := storage.ENS_get_cached_block_data(evt.BlockNum)
+		if exists {
+			evt.TimeStamp = ts_in_db
+		} else {
+			ctx := context.Background()
+			bnum := big.NewInt(int64(log.BlockNumber))
+			block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+			if err != nil {
+				Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				os.Exit(1)
+			}
+			evt.TimeStamp = int64(block_hdr.Time)
 		}
-		evt.TimeStamp = int64(block_hdr.Time)
 	}
 
 	var eth_event NameRegistered_v3
@@ -532,15 +562,20 @@ func proc_name_changed(log *types.Log,evt_id,tx_id,timestamp int64) {
 	evt.TxHash = log.TxHash.String()
 	evt.TimeStamp = timestamp
 	if evt.TimeStamp == 0 {
-		bnum := big.NewInt(int64(log.BlockNumber))
-		ctx := context.Background()
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			os.Exit(1)
+		ts_in_db,exists := storage.ENS_get_cached_block_data(evt.BlockNum)
+		if exists {
+			evt.TimeStamp = ts_in_db
+		} else {
+			bnum := big.NewInt(int64(log.BlockNumber))
+			ctx := context.Background()
+			block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+			if err != nil {
+				Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				os.Exit(1)
+			}
+			evt.TimeStamp = int64(block_hdr.Time)
 		}
-		evt.TimeStamp = int64(block_hdr.Time)
 	}
 	if len(log.Data) < 32 {	// not our event
 		return
@@ -612,15 +647,20 @@ func proc_new_resolver(log *types.Log,evt_id,tx_id,timestamp int64) {
 	evt.TxId = tx_id
 	evt.TimeStamp = timestamp
 	if evt.TimeStamp == 0 {
-		ctx := context.Background()
-		bnum := big.NewInt(int64(log.BlockNumber))
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			os.Exit(1)
+		ts_in_db,exists := storage.ENS_get_cached_block_data(evt.BlockNum)
+		if exists {
+			evt.TimeStamp = ts_in_db
+		} else {
+			ctx := context.Background()
+			bnum := big.NewInt(int64(log.BlockNumber))
+			block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+			if err != nil {
+				Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				os.Exit(1)
+			}
+			evt.TimeStamp = int64(block_hdr.Time)
 		}
-		evt.TimeStamp = int64(block_hdr.Time)
 	}
 	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
 	resolver_addr := common.BytesToAddress(log.Data[12:])
@@ -658,15 +698,20 @@ func proc_registry_transfer(log *types.Log,evt_id,tx_id,timestamp int64) {
 	evt.BlockNum = int64(log.BlockNumber)
 	evt.TxId = tx_id
 	if evt.TimeStamp == 0 {
-		ctx := context.Background()
-		bnum := big.NewInt(int64(log.BlockNumber))
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			os.Exit(1)
+		ts_in_db,exists := storage.ENS_get_cached_block_data(evt.BlockNum)
+		if exists {
+			evt.TimeStamp = ts_in_db
+		} else {
+			ctx := context.Background()
+			bnum := big.NewInt(int64(log.BlockNumber))
+			block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+			if err != nil {
+				Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				os.Exit(1)
+			}
+			evt.TimeStamp = int64(block_hdr.Time)
 		}
-		evt.TimeStamp = int64(block_hdr.Time)
 	}
 	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
 	evt.Node = hex.EncodeToString(log.Topics[1][:])
@@ -694,15 +739,20 @@ func proc_registrar_transfer(log *types.Log,evt_id,tx_id,timestamp int64) {
 	evt.TimeStamp = timestamp
 
 	if evt.TimeStamp == 0 {
-		ctx := context.Background()
-		bnum := big.NewInt(int64(log.BlockNumber))
-		block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
-		if err != nil {
-			Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
-			os.Exit(1)
+		ts_in_db,exists := storage.ENS_get_cached_block_data(evt.BlockNum)
+		if exists {
+			evt.TimeStamp = ts_in_db
+		} else {
+			ctx := context.Background()
+			bnum := big.NewInt(int64(log.BlockNumber))
+			block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+			if err != nil {
+				Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				os.Exit(1)
+			}
+			evt.TimeStamp = int64(block_hdr.Time)
 		}
-		evt.TimeStamp = int64(block_hdr.Time)
 	}
 
 	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())

@@ -28,6 +28,9 @@ CREATE TABLE ens_name (-- this is a complementary table to ens_onode (with more 
 	owner_aid			BIGINT NOT NULL,
 	expires				TIMESTAMPTZ,
 	inactive			BOOLEAN DEFAULT FALSE,
+	unregistered		BOOLEAN DEFAULT TRUE,	-- true if name has no owner
+	no_resolver			BOOLEAN DEFAULT TRUE,	-- true if name nas no Resolver set (NewResolver event)
+	no_address			BOOLEAN DEFAULT TRUE,	-- true if name nas no address set (AddrChanged event)
 	label				TEXT NOT NULL,
 	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,
@@ -286,6 +289,23 @@ CREATE TABLE ens_pkey (	-- PubkeyChanged event
 	UNIQUE(tx_hash,node)
 );
 CREATE TABLE ens_hash (	-- ContenthashChanged event
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	tx_hash				TEXT NOT NULL,
+	node				TEXT NOT NULL,
+	hash				TEXT NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,node)
+);
+CREATE TABLE ens_block_cache ( -- caches block data to avoid calls to Geth node, used only in initial loads
+	block_num			BIGINT PRIMARY KEY,
+	ts					BIGINT -- timestamp
+);
+CREATE TABLE ens_ctrl_add (	-- ControllerAdded  event
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT,
 	block_num			BIGINT,			-- this is just a copy (for easy data management)

@@ -81,6 +81,9 @@ BEGIN
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.owner_aid = v_zero_aid  THEN
 		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_name SET unregistered = TRUE WHERE fqdn = NEW.fqdn;
+	ELSE
+		UPDATE ens_name SET unregistered = FALSE WHERE fqdn = NEW.fqdn;
 	END IF;
 
 	RETURN NEW;
@@ -96,6 +99,9 @@ BEGIN
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.aid = v_zero_aid  THEN
 		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_name SET no_address = TRUE WHERE fqdn=NEW.fqdn;
+	ELSE
+		UPDATE ens_name SET no_address = FALSE WHERE fqdn=NEW.fqdn;
 	END IF;
 	RETURN NEW;
 END;
@@ -110,6 +116,9 @@ BEGIN
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.aid = v_zero_aid  THEN
 		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_name SET no_address = TRUE WHERE fqdn=NEW.fqdn;
+	ELSE
+		UPDATE ens_name SET no_address = FALSE WHERE fqdn=NEW.fqdn;
 	END IF;
 	RETURN NEW;
 END;
@@ -245,6 +254,9 @@ BEGIN
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.aid = v_zero_aid  THEN
 		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.node;
+		UPDATE ens_name SET unregistered=TRUE WHERE fqdn=NEW.node;
+	ELSE
+		UPDATE ens_name SET unregistered=FALSE WHERE fqdn=NEW.node;
 	END IF;
 
 	RETURN NEW;
@@ -353,11 +365,29 @@ BEGIN
 		NEW.evtlog_id := 0;
 	END IF;
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
-	IF NEW.aid = v_zero_aid  THEN
-		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.node;
-	END IF;
 	IF NEW.name_aid = v_zero_aid THEN -- when changing Resolvers, the name address got deleted
 		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.node;
+		UPDATE ens_name SET no_resolver = TRUE WHERE fqdn=NEW.node;
+	ELSE
+		UPDATE ens_name SET no_resolver = FALSE WHERE fqdn=NEW.node;
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_ens_rstr_transf_insert() RETURNS trigger AS  $$
+DECLARE
+	v_zero_aid BIGINT;
+BEGIN
+
+	IF NEW.evtlog_id IS NULL THEN
+		NEW.evtlog_id := 0;
+	END IF;
+	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
+	IF NEW.to_aid = v_zero_aid THEN -- when changing Resolvers, the name address got deleted
+		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_name SET unregistered = TRUE WHERE fqdn=NEW.fqdn;
+	ELSE
+		UPDATE ens_name SET unregistered = FALSE WHERE fqdn=NEW.fqdn;
 	END IF;
 	RETURN NEW;
 END;

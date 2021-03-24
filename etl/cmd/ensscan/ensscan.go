@@ -92,6 +92,12 @@ const (
 	// event OwnerChanged(bytes32 indexed label, address indexed oldOwner, address indexed newOwner);
 	//  from ENS migration contract
 
+	CONTROLLER_ADDED			= "0a8bb31534c0ed46f380cb867bd5c803a189ced9a764e30b3a4991a9901d7474"
+	//	event ControllerAdded(address indexed controller);
+
+	CONTROLLER_REMOVED			= "33d83959be2573f5453b12eb9d43b3499bc57d96bd2f067ba44803c859e81113"
+	//	event ControllerRemoved(address indexed controller);
+
 	HASH_INVALIDATED			= "1f9c649fe47e58bb60f4e52f0d90e4c47a526c9f90c5113df842c025970b66ad"
 	NEW_TTL						= "1d4f9bbfc9cab89d66e1a1562f2233ccbf1308cb4f63de2ead5787adddb8fa68."
 	ENS_TEXT_CHANGED			= "d8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550"
@@ -128,6 +134,8 @@ var (
 	evt_contenthash_changed,_ = hex.DecodeString(CONTENT_HASH_CHANGED)
 	evt_name_changed,_ = hex.DecodeString(NAME_CHANGED)
 	evt_owner_changed,_ = hex.DecodeString(OWNER_CHANGED)
+	evt_controller_added,_ = hex.DecodeString(CONTROLLER_ADDED)
+	evt_controller_removed,_ = hex.DecodeString(CONTROLLER_REMOVED)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")

@@ -74,6 +74,13 @@ func main() {
 			_ = nr_addr
 			//owner := common.HexToAddress(owner_addr)
 			assigned := common.HexToAddress(assigned_addr)
+			unregistered,no_resolver,no_address,err := storage.ENS_name_resolution_status(node_entry.FQDN)
+			if err!=nil {
+				fmt.Printf(
+					"Data incorrect: no corresponding ENS name record found for %v : %v\n",
+					node_entry.FQDN,err,
+				)
+			}
 
 			nodehash:= common.HexToHash("0x"+node_entry.FQDN)
 			fmt.Printf("%v : %v : id=%v\n",node_entry.FQDN_Words,node_entry.FQDN,node_entry.Id)
@@ -87,42 +94,40 @@ func main() {
 				fmt.Printf("Owner error: %v\n",err)
 				os.Exit(1)
 			}
+			fmt.Printf("\t Owner: %v\n",owner_addr_ens.String())
 			if bytes.Equal(owner_addr_ens.Bytes(),zeroaddr.Bytes()) {
-				inactive_in_db,err := storage.ENS_name_inactive(node_entry.FQDN)
-				if err != nil {
-					fmt.Sprintf("DB error: %v\n",err)
-					os.Exit(1)
-				}
-				if inactive_in_db {
-					fmt.Printf("\tmarked as inactive. ok\n")
+				if unregistered {
+					fmt.Printf("\tmarked as unregistered. ok\n")
 					continue;
 				}
 				fmt.Printf(
-					"Resolution for node %v is incorrect: name should be marked as inactive in the DB\n",
+					"\tResolution for node %v is incorrect: name should be marked as unregistered in the DB" +
+					"(owner address is 0x0)\n",
 					node_entry.FQDN,
 				)
 				continue;
 			}
 			resolver_addr, err := regstr.Contract.Resolver(nil,nodehash)
+			fmt.Printf("\tResolver addr = %v\n",resolver_addr.String())
 			if err!=nil {
-				fmt.Printf("Resolver() call on node %v failed: %v (resolver addr is %v)",node_entry.FQDN,err,resolver_addr.String())
+				fmt.Printf(
+					"\tResolver() call on node %v failed: %v (resolver addr is %v)",
+					node_entry.FQDN,err,resolver_addr.String(),
+				)
 				os.Exit(1)
 			}
 			if bytes.Equal(resolver_addr.Bytes(),zeroaddr.Bytes()) {
-				fmt.Printf("Node %v has resolver at 0x0 addr\n",node_entry.FQDN)
-				inactive_in_db,err := storage.ENS_name_inactive(node_entry.FQDN)
-				if err != nil {
-					fmt.Sprintf("DB error: %v\n",err)
-					os.Exit(1)
-				}
-				if inactive_in_db {
-					fmt.Printf("\tmarked as inactive. ok\n")
+				fmt.Printf("\tNode %v has resolver at 0x0 addr\n",node_entry.FQDN)
+				if no_resolver {
+					fmt.Printf("\tno_resolver set to true, ok\n")
 					continue;
 				}
 				fmt.Printf(
-					"Resolution for node %v is incorrect: name should be inactive",
+					"\tResolution for node %v is incorrect: name should be market with " +
+					"no_resolver = true in the DB\n",
 					node_entry.FQDN,
 				)
+				continue
 				//os.Exit(1)
 			}
 			resolver_ctrct,err := resolver.NewContract(resolver_addr,eclient)
@@ -133,7 +138,7 @@ func main() {
 			looked_up,err := resolver_ctrct.Addr(nil,nodehash)
 			if err != nil {
 				if err.Error() == "no contract code at given address" {
-					fmt.Printf("node %v has resolver set to EOA account\n",node_entry.FQDN)
+					fmt.Printf("\tnode %v has resolver set to EOA account\n",node_entry.FQDN)
 					continue
 				}
 				fmt.Printf("resolver's Address() call on node %v failed: %v (resolver addr is %v)\n",node_entry.FQDN,err,resolver_addr.String())
@@ -144,17 +149,13 @@ func main() {
 				resolver_addr.String(),	looked_up.String(),
 			)
 			if bytes.Equal(looked_up.Bytes(),zeroaddr.Bytes()) {
-				inactive_in_db,err := storage.ENS_name_inactive(node_entry.FQDN)
-				if err != nil {
-					fmt.Sprintf("DB error: %v\n",err)
-					os.Exit(1)
-				}
-				if inactive_in_db {
-					fmt.Printf("\tmarked as inactive. ok\n")
+				if no_resolver || no_address {
+					fmt.Printf("\tname doesn't have resolver/address set. ok\n")
 					continue;
 				}
 				fmt.Printf(
-					"Resolution for node %v is incorrect: looked up addr is 0x0, but the DB hasn't it marked as inactive",
+					"\tResolution for node %v is incorrect: looked up addr is 0x0, " +
+					"but the DB hasn't it marked as no resolver/address flag\n",
 					node_entry.FQDN,
 				)
 				continue
@@ -162,7 +163,8 @@ func main() {
 			if len(assigned_addr) > 0 {
 				if !bytes.Equal(assigned.Bytes(),looked_up[:]) {
 					fmt.Printf(
-						"\tResolution for node %v is incorrect!\n\tmust be %v\n\towner : %v\n\tassigned : %v\n",
+						"\tResolution for node %v is incorrect, address mismatch!\n"+
+						"\tmust be %v\n\towner : %v\n\tassigned : %v\n",
 						node_entry.FQDN,looked_up.String(),owner_addr,assigned_addr,
 					)
 					//os.Exit(1)
@@ -170,30 +172,10 @@ func main() {
 					fmt.Printf("\tnode ok: addr = %v\n",assigned_addr)
 				}
 			} else {
-				if bytes.Equal(zeroaddr.Bytes(),looked_up[:]) {
-					fmt.Printf("\tname unregistered (0x0 addr)\n")
-				} else {
-					fmt.Printf(
-						"Resolution for node %v is incorrect\n\tmust be %v\n\towner : %v\n\tassigned : %v\n",
-						node_entry.FQDN,looked_up.String(),owner_addr,assigned_addr,
-					)
-				}
-				/*
-				if len(owner_addr) >0 {
-					if !bytes.Equal(owner.Bytes(),looked_up[:]) {
-						fmt.Printf(
-							"Resolution for node %v is incorrect\n\tmust be %v\n\towner : %v\n\tassigned : %v\n",
-							node_entry.FQDN,looked_up.String(),owner_addr,assigned_addr,
-						)
-						//os.Exit(1)
-					} else {
-						fmt.Printf("Node %v : ok\n",node_entry.FQDN)
-					}
-				} else {
-					fmt.Printf("Resolution incorrect: owner address wasn't found in the DB for node %v\n",node_entry.FQDN)
-					//os.Exit(1)
-				}
-				*/
+				fmt.Printf(
+					"\tResolution for node %v is incorrect\n\tmust be %v\n\towner : %v\n\tassigned : %v\n",
+					node_entry.FQDN,looked_up.String(),owner_addr,assigned_addr,
+				)
 			}
 		}
 		cur_id = cur_id + lot_size

@@ -1305,14 +1305,48 @@ func (ss *SQLStorage) ENS_name_inactive(fqdn string) (bool,error) {
 	res := ss.db.QueryRow(query,fqdn)
 	var null_inactive sql.NullBool
 	err := res.Scan(&null_inactive)
-	if (err!=nil) {
+	if err != nil {
 		if err == sql.ErrNoRows {
-			return false,err
+			return false,nil
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
-			//os.Exit(1)
-			return false,err
+			os.Exit(1)
 		}
 	}
 	return null_inactive.Bool,nil
+}
+func (ss *SQLStorage) ENS_get_cached_block_data(block_num int64) (int64,bool) {
+
+	var query string
+	query = "SELECT ts FROM ens_block_cache WHERE block_num=$1"
+	var null_ts sql.NullInt64
+	res := ss.db.QueryRow(query,block_num)
+	err := res.Scan(&null_ts)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0,false
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return null_ts.Int64,true
+}
+func (ss *SQLStorage) ENS_name_resolution_status(fqdn string) (bool,bool,bool,error) {
+
+	var query string
+	query = "SELECT unregistered,no_resolver,no_address FROM ens_name WHERE fqdn=$1"
+
+	res := ss.db.QueryRow(query,fqdn)
+	var null_1,null_2,null_3 sql.NullBool
+	err := res.Scan(&null_1,&null_2,&null_3)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false,false,false,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return null_1.Bool,null_2.Bool,null_3.Bool,nil
 }
