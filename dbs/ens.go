@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"log"
+	"strings"
 	"encoding/hex"
 
 	"database/sql"
@@ -381,8 +382,15 @@ func (ss *SQLStorage) Insert_address_changed1(rec *p.ENS_AddrChanged) {
 		)
 	}
 	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
-		os.Exit(1)
+		if (err!=nil) {
+			if strings.Contains(err.Error(),"duplicate key value") {
+				//	ignore
+				//	unique index key checks will make it bounce, this event may contain duplicates
+			}
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
 	}
 }
 func (ss *SQLStorage) Insert_address_changed2(rec *p.ENS_AddressChanged) {

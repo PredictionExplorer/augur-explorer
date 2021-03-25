@@ -1,65 +1,71 @@
 CREATE OR REPLACE FUNCTION on_ens_name_reg1_insert_before() RETURNS trigger AS  $$
 DECLARE
-	v_cnt numeric;
+	v_id BIGINT;
 BEGIN
 
 	IF NEW.fqdn='' THEN
 		RAISE EXCEPTION 'Attempt to INSERT ens_name with empty fqdn in ens_reg_name1';
 	END IF;
-	UPDATE active_name SET
-		ensname_id = NEW.id,
-		expires = NEW.expires
-		WHERE fqdn=NEW.fqdn;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		INSERT INTO ens_name(owner_aid,expires,label,node,fqdn,name,cost)
-			VALUES(NEW.owner_aid,NEW.expires,NEW.label,NEW.node,NEW.fqdn,NEW.name,NEW.cost);
-		INSERT INTO active_name(ensname_id,expires,name,label,node,fqdn)
-			VALUES(NEW.id,NEW.expires,NEW.name,NEW.label,NEW.node,NEW.fqdn);
+	SELECT id FROM ens_name WHERE fqdn=NEW.fqdn INTO v_id;
+	IF v_id IS NULL THEN
+		INSERT INTO ens_name(owner_aid,expires,exp_update,label,node,fqdn,name,cost)
+			VALUES(NEW.owner_aid,NEW.expires,NEW.time_stamp,NEW.label,NEW.node,NEW.fqdn,NEW.name,NEW.cost);
+		INSERT INTO active_name(expires,name,label,node,fqdn)
+			VALUES(NEW.expires,NEW.name,NEW.label,NEW.node,NEW.fqdn);
+	ELSE
+		UPDATE ens_name SET
+				expires = NEW.expires
+			WHERE fqdn=NEW.fqdn AND exp_update < NEW.time_stamp;
 	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_ens_name_reg2_insert_before() RETURNS trigger AS  $$
 DECLARE
-	v_cnt numeric;
+	v_id BIGINT;
 BEGIN
 
 	IF NEW.fqdn='' THEN
 		RAISE EXCEPTION 'Attempt to INSERT ens_name with empty fqdn in ens_name_reg2';
 	END IF;
-	UPDATE active_name SET
-		ensname_id = NEW.id,
-		expires = NEW.expires
-		WHERE fqdn=NEW.fqdn;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		INSERT INTO ens_name(owner_aid,expires,label,node,fqdn)-- event v2 doesn't have cost/name fields
-			VALUES(NEW.owner_aid,NEW.expires,NEW.label,NEW.node,NEW.fqdn);
-		INSERT INTO active_name(ensname_id,expires,label,node,fqdn)
-			VALUES(NEW.id,NEW.expires,NEW.label,NEW.node,NEW.fqdn);
+	SELECT id FROM ens_name WHERE fqdn=NEW.fqdn INTO v_id;
+	IF v_id IS NULL THEN
+		INSERT INTO ens_name(owner_aid,expires,exp_update,label,node,fqdn)-- event v2 doesn't have cost/name fields
+			VALUES(NEW.owner_aid,NEW.expires,NEW.time_stamp,NEW.label,NEW.node,NEW.fqdn);
+		INSERT INTO active_name(expires,label,node,fqdn)
+			VALUES(NEW.expires,NEW.label,NEW.node,NEW.fqdn);
+	ELSE
+		UPDATE ens_name SET
+				expires = NEW.expires
+			WHERE fqdn=NEW.fqdn AND exp_update < NEW.time_stamp;
 	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_ens_name_update() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE active_name SET
+			expires = NEW.expires
+		WHERE fqdn=NEW.fqdn;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_ens_name_renewed_insert_before() RETURNS trigger AS  $$
 DECLARE
-	v_cnt numeric;
+	v_id BIGINT;
 BEGIN
 
 	IF NEW.fqdn='' THEN
 		RAISE EXCEPTION 'Attempt to INSERT ens_name with empty fqdn in ens_name_renewed';
 	END IF;
-	UPDATE active_name SET
-		ensname_id = NEW.id,
-		expires = NEW.expires
-		WHERE fqdn=NEW.fqdn;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		INSERT INTO ens_name(owner_aid,expires,label,node,fqdn,name,cost)
-			VALUES(NEW.owner_aid,NEW.expires,NEW.label,NEW.node,NEW.fqdn,NEW.name,NEW.cost);
-		INSERT INTO active_name(ensname_id,expires,name,label,node,fqdn)
-			VALUES(NEW.id,NEW.expires,NEW.name,NEW.label,NEW.node,NEW.fqdn);
+	SELECT id FROM ens_name WHERE fqdn=NEW.fqdn INTO v_id;
+	IF v_id IS NULL THEN
+		INSERT INTO ens_name(owner_aid,expires,exp_update,label,node,fqdn,name,cost)
+			VALUES(NEW.owner_aid,NEW.expires,NEW.time_stamp,NEW.label,NEW.node,NEW.fqdn,NEW.name,NEW.cost);
+		INSERT INTO active_name(expires,name,label,node,fqdn)
+			VALUES(id,NEW.expires,NEW.name,NEW.label,NEW.node,NEW.fqdn);
 	END IF;
 	RETURN NEW;
 END;
@@ -80,10 +86,10 @@ BEGIN
 		VALUES(NEW.tx_hash,NEW.owner_aid,NEW.fqdn) ON CONFLICT DO NOTHING;
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.owner_aid = v_zero_aid  THEN
-		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.fqdn;
-		UPDATE ens_name SET unregistered = TRUE WHERE fqdn = NEW.fqdn;
+		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_node SET unregistered = TRUE WHERE fqdn = NEW.fqdn;
 	ELSE
-		UPDATE ens_name SET unregistered = FALSE WHERE fqdn = NEW.fqdn;
+		UPDATE ens_node SET unregistered = FALSE WHERE fqdn = NEW.fqdn;
 	END IF;
 
 	RETURN NEW;
@@ -98,10 +104,10 @@ BEGIN
 		ON CONFLICT DO NOTHING;
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.aid = v_zero_aid  THEN
-		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.fqdn;
-		UPDATE ens_name SET no_address = TRUE WHERE fqdn=NEW.fqdn;
+		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_node SET no_address = TRUE WHERE fqdn=NEW.fqdn;
 	ELSE
-		UPDATE ens_name SET no_address = FALSE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_node SET no_address = FALSE WHERE fqdn=NEW.fqdn;
 	END IF;
 	RETURN NEW;
 END;
@@ -115,10 +121,10 @@ BEGIN
 		ON CONFLICT DO NOTHING;
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.aid = v_zero_aid  THEN
-		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.fqdn;
-		UPDATE ens_name SET no_address = TRUE WHERE fqdn=NEW.fqdn;
+		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_node SET no_address = TRUE WHERE fqdn=NEW.fqdn;
 	ELSE
-		UPDATE ens_name SET no_address = FALSE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_naode SET no_address = FALSE WHERE fqdn=NEW.fqdn;
 	END IF;
 	RETURN NEW;
 END;
@@ -253,10 +259,10 @@ BEGIN
 
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.aid = v_zero_aid  THEN
-		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.node;
-		UPDATE ens_name SET unregistered=TRUE WHERE fqdn=NEW.node;
+		--UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.node;
+		UPDATE ens_node SET unregistered=TRUE WHERE fqdn=NEW.node;
 	ELSE
-		UPDATE ens_name SET unregistered=FALSE WHERE fqdn=NEW.node;
+		UPDATE ens_node SET unregistered=FALSE WHERE fqdn=NEW.node;
 	END IF;
 
 	RETURN NEW;
@@ -366,10 +372,10 @@ BEGIN
 	END IF;
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.name_aid = v_zero_aid THEN -- when changing Resolvers, the name address got deleted
-		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.node;
-		UPDATE ens_name SET no_resolver = TRUE WHERE fqdn=NEW.node;
+		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.node;
+		UPDATE ens_node SET no_resolver = TRUE WHERE fqdn=NEW.node;
 	ELSE
-		UPDATE ens_name SET no_resolver = FALSE WHERE fqdn=NEW.node;
+		UPDATE ens_node SET no_resolver = FALSE WHERE fqdn=NEW.node;
 	END IF;
 	RETURN NEW;
 END;
@@ -384,11 +390,13 @@ BEGIN
 	END IF;
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.to_aid = v_zero_aid THEN -- when changing Resolvers, the name address got deleted
-		UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.fqdn;
-		UPDATE ens_name SET unregistered = TRUE WHERE fqdn=NEW.fqdn;
+		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_node SET unregistered = TRUE WHERE fqdn=NEW.fqdn;
 	ELSE
-		UPDATE ens_name SET unregistered = FALSE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_node SET unregistered = FALSE WHERE fqdn=NEW.fqdn;
 	END IF;
+	INSERT INTO name_ownership(tx_hash,owner_aid,fqdn)
+		VALUES(NEW.tx_hash,NEW.to_aid,NEW.fqdn) ON CONFLICT DO NOTHING;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

@@ -11,32 +11,32 @@ CREATE TABLE ens_node( -- strictly ENS data about a node
 	node				TEXT,
 	fqdn				TEXT,			-- fully qualified domain name hash
 	fqdn_words			TEXT DEFAULT '',
+	pubkey				TEXT DEFAULT '',
+	content_hash		TEXT DEFAULT '',
+--	inactive			BOOLEAN DEFAULT FALSE,
+	unregistered		BOOLEAN DEFAULT TRUE,	-- true if name has no owner
+	no_resolver			BOOLEAN DEFAULT TRUE,	-- true if name nas no Resolver set (NewResolver event)
+	no_address			BOOLEAN DEFAULT TRUE,	-- true if name nas no address set (AddrChanged event)
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(fqdn)
 );
 CREATE TABLE active_name( -- ENS names that are currently active (i.e. haven't expired)
 	id					BIGSERIAL PRIMARY KEY,
-	ensname_id			BIGINT NOT NULL, -- latest `ens_name.id` field
 	expires				TIMESTAMPTZ NOT NULL,
 	name				TEXT,
 	label				TEXT NOT NULL,
 	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL UNIQUE
 );
-CREATE TABLE ens_name (-- this is a complementary table to ens_onode (with more non-ENS info about node)
+CREATE TABLE ens_name (-- this is a complementary table to ens_onode (it controlis the expiration date)
 	id					BIGSERIAL PRIMARY KEY,
 	owner_aid			BIGINT NOT NULL,
 	expires				TIMESTAMPTZ,
-	inactive			BOOLEAN DEFAULT FALSE,
-	unregistered		BOOLEAN DEFAULT TRUE,	-- true if name has no owner
-	no_resolver			BOOLEAN DEFAULT TRUE,	-- true if name nas no Resolver set (NewResolver event)
-	no_address			BOOLEAN DEFAULT TRUE,	-- true if name nas no address set (AddrChanged event)
+	exp_update			TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0), -- date when the expiration date was last updated
 	label				TEXT NOT NULL,
 	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,
 	name				TEXT,	-- human name
-	pubkey				TEXT DEFAULT '',
-	content_hash		TEXT DEFAULT '',
 	cost				DECIMAL(32,18)
 );
 CREATE TABLE ens_name_reg1(-- ENS NameRegistered1 event (signature ca6abbe9)
@@ -108,7 +108,7 @@ CREATE TABLE ens_new_owner(
 	node				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
-	UNIQUE(tx_hash,fqdn)
+	UNIQUE(tx_hash,fqdn,contract_aid,owner_aid)
 );
 CREATE TABLE ens_addr1 (-- AddrChanged event
 	id					BIGSERIAL PRIMARY KEY,
@@ -121,7 +121,7 @@ CREATE TABLE ens_addr1 (-- AddrChanged event
 	tx_hash				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
-	UNIQUE(tx_hash,fqdn)
+	UNIQUE(tx_hash,fqdn,aid)
 );
 CREATE TABLE ens_addr2(-- AddressChanged event (the event with coin type field)
 	id					BIGSERIAL PRIMARY KEY,
@@ -135,7 +135,7 @@ CREATE TABLE ens_addr2(-- AddressChanged event (the event with coin type field)
 	tx_hash				TEXT NOT NULL,
 	fqdn				TEXT NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
-	UNIQUE(tx_hash,fqdn)
+	UNIQUE(tx_hash,fqdn,aid)
 );
 CREATE TABLE name_address ( -- consolidates AddrChanged and AddressChanged events in a single table
 	id					BIGSERIAL PRIMARY KEY,
@@ -169,7 +169,7 @@ CREATE TABLE ens_new_resolver(
 	tx_hash				TEXT NOT NULL,
 	node				TEXT NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
-	UNIQUE(tx_hash,node)
+	UNIQUE(tx_hash,node,aid)
 );
 CREATE TABLE ens_hash_inval(	-- HashInvalidated event
 	id					BIGSERIAL PRIMARY KEY,
@@ -212,7 +212,7 @@ CREATE TABLE ens_reg_transf ( -- Transfer event on the ENS Registry contract
 	tx_hash				TEXT NOT NULL,
 	node				TEXT NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
-	UNIQUE(tx_hash,node)
+	UNIQUE(tx_hash,node,aid)
 );
 CREATE TABLE ens_rstr_transf ( -- Transfer event on the ENS Registrar contract
 	id					BIGSERIAL PRIMARY KEY,
@@ -259,7 +259,7 @@ CREATE TABLE ens_text_chg (
 	key					TEXT NOT NULL,
 	value				TEXT NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
-	UNIQUE(tx_hash,node)
+	UNIQUE(tx_hash,node,contract_aid,key,value)
 );
 CREATE TABLE ens_text_key (
 	node				TEXT NOT NULL,
