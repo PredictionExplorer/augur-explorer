@@ -288,16 +288,14 @@ func initial_load(exit_chan chan bool,bnum_lim int64) {
 	std_initial_load(exit_chan,bnum_lim,proc_hash_invalidated,"HashInvalidated",evt_hash_invalidated)
 	std_initial_load(exit_chan,bnum_lim,proc_new_resolver,"NewResolver",evt_new_resolver)
 	std_initial_load(exit_chan,bnum_lim,proc_registry_transfer,"RegistryTransfer",evt_registry_transfer)
-*/
-/*
 	std_initial_load(exit_chan,bnum_lim,proc_name_renewed,"NameRenewed",evt_name_renewed)
 	std_initial_load(exit_chan,bnum_lim,proc_text_changed,"TextChanged",evt_text_changed)
 	std_initial_load(exit_chan,bnum_lim,proc_hash_registered,"HashRegistered",evt_hash_registered)
 	std_initial_load(exit_chan,bnum_lim,proc_pubkey_changed,"PubkeyChanged",evt_pubkey_changed[:])
 	std_initial_load(exit_chan,bnum_lim,proc_contenthash_changed,"ContenthashChanged",evt_contenthash_changed[:])
 	std_initial_load(exit_chan,bnum_lim,proc_owner_changed,"OwnerChanged",evt_owner_changed[:])
-	*/
 	std_initial_load(exit_chan,bnum_lim,proc_registrar_transfer,"RegistrarTransfer",evt_registrar_transfer)
+	*/
 }
 func check_initial_load_completness() bool {
 

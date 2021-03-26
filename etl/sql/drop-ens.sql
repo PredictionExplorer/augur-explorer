@@ -20,6 +20,7 @@ DROP TABLE IF EXISTS
 	ens_text_key,
 	ens_pkey,
 	ens_hash,
+	ens_ctrl_add,
 	name_ownership,
 	name_address,
 	ens_status

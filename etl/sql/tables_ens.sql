@@ -7,6 +7,9 @@ CREATE TABLE ens_node( -- strictly ENS data about a node
 	cur_owner_aid		BIGINT DEFAULT 0,	-- current owner
 	cur_owner_evt		BIGINT DEFAULT 0,	-- evtlog_id of the last update of the owner aid
 	time_stamp			TIMESTAMPTZ,
+	unreg_ts			TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),-- when whas 'unregistered' field updated
+	noresolv_ts			TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),-- when whas 'no_resolver' field updated
+	noaddr_ts			TIMESTAMPTZ DEFAULT TO_TIMESTAMP(0),-- when whas 'no_address' field updates
 	label				TEXT,
 	node				TEXT,
 	fqdn				TEXT,			-- fully qualified domain name hash

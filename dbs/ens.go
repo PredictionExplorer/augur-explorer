@@ -1350,7 +1350,7 @@ func (ss *SQLStorage) ENS_get_cached_block_data(block_num int64) (int64,bool) {
 func (ss *SQLStorage) ENS_name_resolution_status(fqdn string) (bool,bool,bool,error) {
 
 	var query string
-	query = "SELECT unregistered,no_resolver,no_address FROM ens_name WHERE fqdn=$1"
+	query = "SELECT unregistered,no_resolver,no_address FROM ens_node WHERE fqdn=$1"
 
 	res := ss.db.QueryRow(query,fqdn)
 	var null_1,null_2,null_3 sql.NullBool

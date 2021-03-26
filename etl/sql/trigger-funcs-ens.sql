@@ -87,9 +87,11 @@ BEGIN
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.owner_aid = v_zero_aid  THEN
 		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.fqdn;
-		UPDATE ens_node SET unregistered = TRUE WHERE fqdn = NEW.fqdn;
+		UPDATE ens_node SET unregistered = TRUE,unreg_ts=NEW.time_stamp
+			WHERE fqdn = NEW.fqdn AND unreg_ts <= NEW.time_stamp;
 	ELSE
-		UPDATE ens_node SET unregistered = FALSE WHERE fqdn = NEW.fqdn;
+		UPDATE ens_node SET unregistered = FALSE,unreg_ts=NEW.time_stamp
+			WHERE fqdn = NEW.fqdn AND unreg_ts <= NEW.time_stamp;
 	END IF;
 
 	RETURN NEW;
@@ -105,9 +107,11 @@ BEGIN
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.aid = v_zero_aid  THEN
 		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.fqdn;
-		UPDATE ens_node SET no_address = TRUE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_node SET no_address = TRUE,noaddr_ts=NEW.time_stamp
+			WHERE fqdn=NEW.fqdn AND noaddr_ts<=NEW.time_stamp;
 	ELSE
-		UPDATE ens_node SET no_address = FALSE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_node SET no_address = FALSE,noaddr_ts=NEW.time_stamp
+			WHERE fqdn=NEW.fqdn AND noaddr_ts<=NEW.time_stamp;
 	END IF;
 	RETURN NEW;
 END;
@@ -122,9 +126,11 @@ BEGIN
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.aid = v_zero_aid  THEN
 		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.fqdn;
-		UPDATE ens_node SET no_address = TRUE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_node SET no_address = TRUE,noaddr_ts=NEW.time_stamp
+			WHERE fqdn=NEW.fqdn AND noaddr_ts<=NEW.time_stamp AND coin_type=60;
 	ELSE
-		UPDATE ens_node SET no_address = FALSE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_node SET no_address = FALSE,noaddr_ts=NEW.time_stamp
+			WHERE fqdn=NEW.fqdn AND noaddr_ts<=NEW.time_stamp AND coin_type=60;
 	END IF;
 	RETURN NEW;
 END;
@@ -260,9 +266,11 @@ BEGIN
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.aid = v_zero_aid  THEN
 		--UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.node;
-		UPDATE ens_node SET unregistered=TRUE WHERE fqdn=NEW.node;
+		UPDATE ens_node SET unregistered=TRUE,unreg_ts=NEW.time_stamp
+			WHERE fqdn=NEW.node AND unreg_ts<=NEW.time_stamp;
 	ELSE
-		UPDATE ens_node SET unregistered=FALSE WHERE fqdn=NEW.node;
+		UPDATE ens_node SET unregistered=FALSE,unreg_ts=NEW.time_stamp
+			WHERE fqdn=NEW.node AND unreg_ts<=NEW.time_stamp;
 	END IF;
 
 	RETURN NEW;
@@ -373,9 +381,11 @@ BEGIN
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.name_aid = v_zero_aid THEN -- when changing Resolvers, the name address got deleted
 		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.node;
-		UPDATE ens_node SET no_resolver = TRUE WHERE fqdn=NEW.node;
+		UPDATE ens_node SET no_resolver = TRUE,noresolv_ts=NEW.time_stamp
+			WHERE fqdn=NEW.node AND noresolv_ts<=NEW.time_stamp;
 	ELSE
-		UPDATE ens_node SET no_resolver = FALSE WHERE fqdn=NEW.node;
+		UPDATE ens_node SET no_resolver = FALSE,noresolv_ts=NEW.time_stamp
+			WHERE fqdn=NEW.node AND noresolv_ts<=NEW.time_stamp;
 	END IF;
 	RETURN NEW;
 END;
@@ -391,9 +401,11 @@ BEGIN
 	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
 	IF NEW.to_aid = v_zero_aid THEN -- when changing Resolvers, the name address got deleted
 		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.fqdn;
-		UPDATE ens_node SET unregistered = TRUE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_node SET unregistered = TRUE,unreg_ts=NEW.time_stamp
+			WHERE fqdn=NEW.fqdn AND unreg_ts<=NEW.time_stamp;
 	ELSE
-		UPDATE ens_node SET unregistered = FALSE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_node SET unregistered = FALSE,unreg_ts=NEW.time_stamp
+			WHERE fqdn=NEW.fqdn AND unreg_ts<=NEW.time_stamp;
 	END IF;
 	INSERT INTO name_ownership(tx_hash,owner_aid,fqdn)
 		VALUES(NEW.tx_hash,NEW.to_aid,NEW.fqdn) ON CONFLICT DO NOTHING;
