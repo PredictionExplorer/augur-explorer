@@ -1572,6 +1572,16 @@ type UserAddrChange struct {
 	FQDN					string
 	FQDN_Words				string
 }
+type UserOwnershipChange struct {
+	TimeStamp				int64
+	BlockNum				int64
+	DateTime				string
+	Label					string
+	Node					string
+	FQDN					string
+	FQDN_Words				string
+	TxHash					string
+}
 type UserENS struct {
 	TsNameAcquired			int64
 	NumTextKeyValuePairs	int64

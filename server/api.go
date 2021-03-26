@@ -1555,18 +1555,26 @@ func a1_user_ens_names(c *gin.Context) {
 			"error": fmt.Sprintf("Error getting UserInfo: %v",err.Error()),
 		})
 	}
-	active_ens_names,active_total_rows := augur_srv.storage.Get_user_ens_names_active(user_aid,offset,limit)
-	history_ens_names,history_total_rows := augur_srv.storage.Get_user_ens_names_history(user_aid,offset,limit)
+
+
+	active_names,active_total_rows := augur_srv.storage.Get_user_ens_names_active(user_aid,offset,limit)
+	inactive_names,inactive_total_rows := augur_srv.storage.Get_user_ens_names_inactive(user_aid,offset,limit)
+	addr_changes,achanges_total_rows := augur_srv.storage.Get_user_address_change_history(user_aid,offset,limit)
+	ownership_changes,own_changes_total_rows := augur_srv.storage.Get_user_ownership_change_history(user_aid,offset,limit)
 	var status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 			"status": status,
 			"error" : err_str,
 			"UserInfo" : user_info,
-			"ENS_Names_Active" : active_ens_names,
-			"ENS_Names_History" : history_ens_names,
+			"ENS_Names_Active" : active_names,
+			"ENS_Names_Inactive" : inactive_names,
+			"ENS_OwnershipChanges" : ownership_changes,
+			"ENS_AddrChanges" : addr_changes,
 			"TotalRowsActive" : active_total_rows,
-			"TotalRowsHistory" : history_total_rows,
+			"TotalRowsInactive" :inactive_total_rows,
+			"TotalRowsAddrChanges" : achanges_total_rows,
+			"TotalRowsOwnershipChanges" : own_changes_total_rows,
 	})
 }
 func a1_node_text_key_value_pairs(c *gin.Context) {

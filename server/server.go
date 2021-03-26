@@ -490,8 +490,8 @@ func serve_user_info_page(c *gin.Context,addr string) {
 			open_orders := augur_srv.storage.Get_user_open_orders(user_info.Aid)
 			gas_spent,_ := augur_srv.storage.Get_gas_spent_for_user(eoa_aid)
 			shtoken_balances := augur_srv.storage.Get_wrapped_shtoken_balances(eoa_aid)
-			active_ens_names,active_total_ens_names := augur_srv.storage.Get_user_ens_names_active(user_info.Aid,0,10)
-			history_ens_names,history_total_ens_names := augur_srv.storage.Get_user_ens_names_history(user_info.Aid,0,10)
+			active_names,active_total_rows := augur_srv.storage.Get_user_ens_names_active(eoa_aid,0,1000000)
+			inactive_names,inactive_total_rows := augur_srv.storage.Get_user_ens_names_inactive(eoa_aid,0,1000000)
 
 			c.HTML(http.StatusOK, "user_info.html", gin.H{
 				"title": "User "+addr,
@@ -506,10 +506,10 @@ func serve_user_info_page(c *gin.Context,addr string) {
 				"HasActiveMarkets" : has_active_markets,
 				"GasSpent" : gas_spent,
 				"ShtokBalances" : shtoken_balances,
-				"ENS_Names_Active" : active_ens_names,
-				"ENS_Names_History" : history_ens_names,
-				"Total_ENS_Names_Active": active_total_ens_names,
-				"Total_ENS_Names_History": history_total_ens_names,
+				"ENS_Names_Active" : active_names,
+				"ENS_Names_Inactive" : inactive_names,
+				"Total_ENS_Names_Active": active_total_rows,
+				"Total_ENS_Names_History": inactive_total_rows,
 			})
 		} else {
 			c.HTML(http.StatusOK, "user_not_found.html", gin.H{
@@ -2557,17 +2557,20 @@ func user_ens_names(c *gin.Context) {
 		return
 	}
 	user_info,err := augur_srv.storage.Get_user_info(user_aid)
-	active_ens_names,active_total_rows := augur_srv.storage.Get_user_ens_names_active(user_aid,0,1000000)
-	history_ens_names,history_total_rows := augur_srv.storage.Get_user_ens_names_history(user_aid,0,1000000)
+	active_names,active_total_rows := augur_srv.storage.Get_user_ens_names_active(user_aid,0,1000000)
+	inactive_names,inactive_total_rows := augur_srv.storage.Get_user_ens_names_inactive(user_aid,0,1000000)
 	addr_changes,achanges_total_rows := augur_srv.storage.Get_user_address_change_history(user_aid,0,1000000)
+	ownership_changes,own_changes_total_rows := augur_srv.storage.Get_user_ownership_change_history(user_aid,0,1000000)
 	c.HTML(http.StatusOK, "user_ens_names.html", gin.H{
 		"UserInfo" : user_info,
-		"ENS_Names_Active" : active_ens_names,
-		"ENS_Names_History" : history_ens_names,
+		"ENS_Names_Active" : active_names,
+		"ENS_Names_Inactive" : inactive_names,
+		"ENS_OwnershipChanges" : ownership_changes,
 		"ENS_AddrChanges" : addr_changes,
 		"TotalRowsActive" : active_total_rows,
-		"TotalRowsHistory" : history_total_rows,
+		"TotalRowsInactive" :inactive_total_rows,
 		"TotalRowsAddrChanges" : achanges_total_rows,
+		"TotalRowsOwnershipChanges" : own_changes_total_rows,
 	})
 }
 func show_node_text_data(c *gin.Context) {

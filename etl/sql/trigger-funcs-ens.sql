@@ -124,7 +124,7 @@ BEGIN
 		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.fqdn;
 		UPDATE ens_node SET no_address = TRUE WHERE fqdn=NEW.fqdn;
 	ELSE
-		UPDATE ens_naode SET no_address = FALSE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_node SET no_address = FALSE WHERE fqdn=NEW.fqdn;
 	END IF;
 	RETURN NEW;
 END;

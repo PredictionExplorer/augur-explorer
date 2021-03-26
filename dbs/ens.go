@@ -429,8 +429,15 @@ func (ss *SQLStorage) Insert_address_changed2(rec *p.ENS_AddressChanged) {
 		)
 	}
 	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
-		os.Exit(1)
+		if (err!=nil) {
+			if strings.Contains(err.Error(),"duplicate key value") {
+				//	ignore
+				//	unique index key checks will make it bounce, this event may contain duplicates
+			}
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
 	}
 }
 func (ss *SQLStorage) Insert_name_changed(rec *p.ENS_NameChanged) {
@@ -1294,10 +1301,10 @@ func (ss *SQLStorage) Lookup_ens_names(aid int64) (string,int64){
 	var output string
 	names,total_names:=ss.Get_user_ens_names_active(aid,0,10000000)
 	for _,record := range names {
-		if len(output)>0 {
-			output = output + ","
-		}
 		if len(record.ENS_Name) > 0 {
+			if len(output)>0 {
+				output = output + ","
+			}
 			if record.ENS_Name != p.ENS_NOT_PUBLIC {
 				output = output + record.ENS_Name
 			}
