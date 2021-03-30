@@ -334,3 +334,12 @@ CREATE TABLE ens_status (
 	--block_num_limit		BIGINT DEFAULT 11650046, -- limit for initial load
 	last_evt_id			BIGINT DEFAULT 0	-- event id (latest processed)
 );
+CREATE TABLE unreg_log ( -- log on all flag that unregister/change owner/set new resolver 
+	id					BIGSERIAL PRIMARY KEY,
+	related_id			BIGINT NOT NULL, -- id of the record invoking this action
+	block_num			BIGINT NOT NULL,
+	tx_id				BIGINT,
+	fqdn				TEXT,
+	event				TEXT,
+	descr				TEXT
+);

@@ -89,9 +89,17 @@ BEGIN
 		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.fqdn;
 		UPDATE ens_node SET unregistered = TRUE,unreg_ts=NEW.time_stamp
 			WHERE fqdn = NEW.fqdn AND unreg_ts <= NEW.time_stamp;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
+			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.fqdn,'NewOwner',
+				CONCAT('Affected rows: ',v_cnt::TEXT,', unregistered=TRUE, owner_aid=',NEW.owner_aid::TEXT));
 	ELSE
 		UPDATE ens_node SET unregistered = FALSE,unreg_ts=NEW.time_stamp
 			WHERE fqdn = NEW.fqdn AND unreg_ts <= NEW.time_stamp;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
+			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.fqdn,'NewOwner',
+				CONCAT('Affected rows: ',v_cnt::TEXT,', unregistered=FALSE, owner_aid=',NEW.owner_aid::TEXT));
 	END IF;
 
 	RETURN NEW;
@@ -100,6 +108,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_ens_addr_changed1_insert() RETURNS trigger AS  $$
 DECLARE
 	v_zero_aid BIGINT;
+	v_cnt numeric;
 BEGIN
 
 	INSERT INTO name_address(fqdn,aid,coin_type) VALUES(NEW.fqdn,NEW.aid,60) 
@@ -109,9 +118,17 @@ BEGIN
 		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.fqdn;
 		UPDATE ens_node SET no_address = TRUE,noaddr_ts=NEW.time_stamp
 			WHERE fqdn=NEW.fqdn AND noaddr_ts<=NEW.time_stamp;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
+			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.fqdn,'AddrChanged1',
+				CONCAT('Affected rows: ',v_cnt::TEXT,', no_address=TRUE, aid=',NEW.aid::TEXT));
 	ELSE
 		UPDATE ens_node SET no_address = FALSE,noaddr_ts=NEW.time_stamp
 			WHERE fqdn=NEW.fqdn AND noaddr_ts<=NEW.time_stamp;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
+			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.fqdn,'AddrChanged1',
+				CONCAT('Affected rows: ',v_cnt::TEXT,', no_address=FALSE, aid=',NEW.aid::TEXT));
 	END IF;
 	RETURN NEW;
 END;
@@ -119,6 +136,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_ens_addr_changed2_insert() RETURNS trigger AS  $$
 DECLARE
 	v_zero_aid BIGINT;
+	v_cnt numeric;
 BEGIN
 
 	INSERT INTO name_address(fqdn,aid,coin_type) VALUES(NEW.fqdn,NEW.aid,NEW.coin_type)
@@ -127,10 +145,18 @@ BEGIN
 	IF NEW.aid = v_zero_aid  THEN
 		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.fqdn;
 		UPDATE ens_node SET no_address = TRUE,noaddr_ts=NEW.time_stamp
-			WHERE fqdn=NEW.fqdn AND noaddr_ts<=NEW.time_stamp AND coin_type=60;
+			WHERE fqdn=NEW.fqdn AND noaddr_ts<=NEW.time_stamp;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
+			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.fqdn,'AddressChanged2',
+				CONCAT('Affected rows: ',v_cnt::TEXT,', no_address=TRUE, aid=',NEW.aid::TEXT));
 	ELSE
 		UPDATE ens_node SET no_address = FALSE,noaddr_ts=NEW.time_stamp
-			WHERE fqdn=NEW.fqdn AND noaddr_ts<=NEW.time_stamp AND coin_type=60;
+			WHERE fqdn=NEW.fqdn AND noaddr_ts<=NEW.time_stamp;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
+			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.fqdn,'AddressChanged2',
+				CONCAT('Affected rows: ',v_cnt::TEXT,', no_address=FALSE, aid=',NEW.aid::TEXT));
 	END IF;
 	RETURN NEW;
 END;
@@ -251,6 +277,7 @@ CREATE OR REPLACE FUNCTION on_ens_reg_transfer_insert() RETURNS trigger AS  $$
 DECLARE
 	v_node_id			BIGINT;
 	v_zero_aid			BIGINT;
+	v_cnt numeric;
 BEGIN
 
 	IF NEW.evtlog_id IS NULL THEN
@@ -268,9 +295,17 @@ BEGIN
 		--UPDATE ens_name SET inactive=TRUE WHERE fqdn=NEW.node;
 		UPDATE ens_node SET unregistered=TRUE,unreg_ts=NEW.time_stamp
 			WHERE fqdn=NEW.node AND unreg_ts<=NEW.time_stamp;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
+			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.node,'Registry Transfer',
+				CONCAT('Affected rows: ',v_cnt::TEXT,', unregistered=TRUE, aid=',NEW.aid::TEXT));
 	ELSE
 		UPDATE ens_node SET unregistered=FALSE,unreg_ts=NEW.time_stamp
 			WHERE fqdn=NEW.node AND unreg_ts<=NEW.time_stamp;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
+			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.node,'Registry Transfer',
+				CONCAT('Affected rows: ',v_cnt::TEXT,', unregistered=FALSE, aid=',NEW.aid::TEXT));
 	END IF;
 
 	RETURN NEW;
@@ -373,6 +408,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_ens_new_resolver_insert() RETURNS trigger AS  $$
 DECLARE
 	v_zero_aid BIGINT;
+	v_cnt numeric;
 BEGIN
 
 	IF NEW.evtlog_id IS NULL THEN
@@ -383,9 +419,17 @@ BEGIN
 		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.node;
 		UPDATE ens_node SET no_resolver = TRUE,noresolv_ts=NEW.time_stamp
 			WHERE fqdn=NEW.node AND noresolv_ts<=NEW.time_stamp;
+
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
+			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.node,'NewResolver',
+				CONCAT('Affected rows: ',v_cnt::TEXT,', no_resolver=TRUE, Resolver aid=',NEW.aid::TEXT,', name_aid=',NEW.name_aid::TEXT));
 	ELSE
 		UPDATE ens_node SET no_resolver = FALSE,noresolv_ts=NEW.time_stamp
 			WHERE fqdn=NEW.node AND noresolv_ts<=NEW.time_stamp;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
+			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.node,'NewResolver',CONCAT('no_resolver=FALSE, Resolver aid ',NEW.aid::TEXT,' name_aid ',NEW.name_aid::TEXT));
 	END IF;
 	RETURN NEW;
 END;
@@ -393,6 +437,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_ens_rstr_transf_insert() RETURNS trigger AS  $$
 DECLARE
 	v_zero_aid BIGINT;
+	v_cnt numeric;
 BEGIN
 
 	IF NEW.evtlog_id IS NULL THEN
@@ -403,9 +448,17 @@ BEGIN
 		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.fqdn;
 		UPDATE ens_node SET unregistered = TRUE,unreg_ts=NEW.time_stamp
 			WHERE fqdn=NEW.fqdn AND unreg_ts<=NEW.time_stamp;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
+			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.fqdn,'Registrar Transfer',
+				CONCAT('Affected rows: ',v_cnt::TEXT,', unregistered=TRUE, to_aid=',NEW.to_aid::TEXT,', name_aid=',NEW.name_aid::TEXT));
 	ELSE
 		UPDATE ens_node SET unregistered = FALSE,unreg_ts=NEW.time_stamp
 			WHERE fqdn=NEW.fqdn AND unreg_ts<=NEW.time_stamp;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
+			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.fqdn,'Registrar Transfer',
+				CONCAT('Affected rows: ',v_cnt::TEXT,', unregistered=FALSE, to_aid=',NEW.to_aid::TEXT,', name_aid=',NEW.name_aid::TEXT));
 	END IF;
 	INSERT INTO name_ownership(tx_hash,owner_aid,fqdn)
 		VALUES(NEW.tx_hash,NEW.to_aid,NEW.fqdn) ON CONFLICT DO NOTHING;

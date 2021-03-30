@@ -23,5 +23,6 @@ DROP TABLE IF EXISTS
 	ens_ctrl_add,
 	name_ownership,
 	name_address,
-	ens_status
+	ens_status,
+	unreg_log
 CASCADE;

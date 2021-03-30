@@ -1565,6 +1565,14 @@ type ENS_NodeShort struct {
 	FQDN					string
 	FQDN_Words				string
 }
+type ENS_MultiAddress struct { // all possible addresses of a Node
+	OwnerAddrTs				int64
+	AddrChgTs				int64	// AddrChanged event
+	NewResAddrTs			int64
+	OwnerAddr				string
+	AddrChgAddr				string
+	NewResAddr				string
+}
 type UserAddrChange struct {
 	TimeStamp				int64
 	CoinType				int

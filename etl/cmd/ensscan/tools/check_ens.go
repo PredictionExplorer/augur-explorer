@@ -61,17 +61,20 @@ func main() {
 		}
 		for i:=0 ; i<len(lot); i++ {
 			node_entry := lot[i]
-			owner_addr,assigned_addr,err := storage.Get_last_owner_addr(node_entry.FQDN)
+			multiaddr,err := storage.Get_last_name_address(node_entry.FQDN)
+			owner_addr := multiaddr.OwnerAddr
+			assigned_addr := multiaddr.AddrChgAddr
 			if err!=nil {
 				fmt.Printf("SQL error at owner/assigned query for node %v: %v\n",node_entry.FQDN,err)
 				os.Exit(1)
 			}
-			nr_addr,err := storage.Get_last_new_resolver_name_addr(node_entry.FQDN)
+			nr_addr,_,err := storage.Get_last_new_resolver_name_addr(node_entry.FQDN)
 			if err != nil {
 				fmt.Printf("SQL error at resolver/addr for node %v: %v\n",node_entry.FQDN,err)
 				os.Exit(1)
 			}
 			_ = nr_addr
+			//name_addr := common.HexToAddress(name_addr_str)
 			//owner := common.HexToAddress(owner_addr)
 			assigned := common.HexToAddress(assigned_addr)
 			unregistered,no_resolver,no_address,err := storage.ENS_name_resolution_status(node_entry.FQDN)
@@ -162,12 +165,16 @@ func main() {
 			}
 			if len(assigned_addr) > 0 {
 				if !bytes.Equal(assigned.Bytes(),looked_up[:]) {
-					fmt.Printf(
-						"\tResolution for node %v is incorrect, address mismatch!\n"+
-						"\tmust be %v\n\towner : %v\n\tassigned : %v\n",
-						node_entry.FQDN,looked_up.String(),owner_addr,assigned_addr,
-					)
-					//os.Exit(1)
+					fmt.Printf("\tmultiaddr=%v, looked up=%v\n",multiaddr.NewResAddr,looked_up.String())
+					if multiaddr.NewResAddr == looked_up.String() {
+						// the address was changed by NewResolver event , ok
+					} else {
+						fmt.Printf(
+							"\tResolution for node %v is incorrect, address mismatch!\n"+
+							"\tmust be %v\n\towner : %v\n\tassigned : %v\n",
+							node_entry.FQDN,looked_up.String(),owner_addr,assigned_addr,
+						)
+					}
 				} else {
 					fmt.Printf("\tnode ok: addr = %v\n",assigned_addr)
 				}

@@ -9,6 +9,9 @@ rm ./etl/cmd/ensscan/ensscan
 rm ./etl/cmd/ensscan/tools/scanpropnames
 rm ./etl/cmd/ensscan/tools/labelhash
 rm ./etl/cmd/ensscan/tools/namehash
+rm ./etl/cmd/ensscan/tools/lookup
+rm ./etl/cmd/ensscan/tools/pk
+rm ./etl/cmd/ensscan/tools/check_ens
 rm ./etl/dmesh/dmesh
 rm ./etl/tools/augur_blocks
 rm ./etl/tools/dai_balances

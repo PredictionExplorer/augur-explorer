@@ -429,11 +429,9 @@ func (ss *SQLStorage) Insert_address_changed2(rec *p.ENS_AddressChanged) {
 		)
 	}
 	if (err!=nil) {
-		if (err!=nil) {
-			if strings.Contains(err.Error(),"duplicate key value") {
-				//	ignore
-				//	unique index key checks will make it bounce, this event may contain duplicates
-			}
+		if strings.Contains(err.Error(),"duplicate key value") {
+			//	ignore
+			//	unique index key checks will make it bounce, this event may contain duplicates
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 			os.Exit(1)
@@ -1115,16 +1113,21 @@ func (ss *SQLStorage) Get_node_lot(start_id,limit int64) []p.ENS_NodeShort{
 
 	return records
 }
-func (ss *SQLStorage)  Get_last_owner_addr(fqdn string) (string,string,error) {
+//func (ss *SQLStorage)  Get_last_name_address(fqdn string) (string,string,error) { DISCONTINUED
+func (ss *SQLStorage)  Get_last_name_address(fqdn string) (p.ENS_MultiAddress,error) {
 
-	var addr_owner,addr_assigned sql.NullString
+	var output p.ENS_MultiAddress
+	var addr_owner sql.NullString
+	var addr_own_ts sql.NullInt64
 	var query string
-	query =	"SELECT a.addr addr_owner " +
-				"FROM ens_new_owner o " +
-				"JOIN address a ON o.owner_aid=a.address_id " +
-				"WHERE fqdn=$1 ORDER BY id DESC LIMIT 1"
+	query =	"SELECT " +
+				"a.addr addr_owner, " +
+				"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT " +
+			"FROM ens_new_owner o " +
+			"JOIN address a ON o.owner_aid=a.address_id " +
+			"WHERE fqdn=$1 ORDER BY id DESC LIMIT 1"
 	res := ss.db.QueryRow(query,fqdn)
-	err := res.Scan(&addr_owner)
+	err := res.Scan(&addr_owner,&addr_own_ts)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 		} else {
@@ -1132,12 +1135,19 @@ func (ss *SQLStorage)  Get_last_owner_addr(fqdn string) (string,string,error) {
 			os.Exit(1)
 		}
 	}
-	query = "SELECT a.addr addr_assigned "+
-				"FROM ens_addr1 ac " +
-				"JOIN address a ON ac.aid=a.address_id " +
-				"WHERE ac.fqdn=$1 ORDER BY id DESC LIMIT 1"
+	output.OwnerAddr = addr_owner.String
+	output.OwnerAddrTs = addr_own_ts.Int64
+
+	var addr_assigned sql.NullString
+	var addr_assign_ts sql.NullInt64
+	query = "SELECT " + 
+				"a.addr addr_assigned, "+
+				"EXTRACT(EPOCH FROM ac.time_stamp)::BIGINT " +
+			"FROM ens_addr1 ac " +
+			"JOIN address a ON ac.aid=a.address_id " +
+			"WHERE ac.fqdn=$1 ORDER BY id DESC LIMIT 1"
 	res = ss.db.QueryRow(query,fqdn)
-	err = res.Scan(&addr_assigned)
+	err = res.Scan(&addr_assigned,&addr_assign_ts)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 		} else {
@@ -1145,18 +1155,45 @@ func (ss *SQLStorage)  Get_last_owner_addr(fqdn string) (string,string,error) {
 			os.Exit(1)
 		}
 	}
-	return addr_owner.String,addr_assigned.String,nil
+	output.AddrChgAddr = addr_assigned.String
+	output.AddrChgTs = addr_assign_ts.Int64
+
+
+	var addr_at_resolver sql.NullString
+	var addr_at_res_ts sql.NullInt64
+	query = "SELECT " +
+				"a.addr, " +
+				"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT " +
+			"FROM ens_new_resolver r " +
+			"JOIN address a ON r.name_aid=a.address_id "+
+			"WHERE node=$1 ORDER BY id DESC LIMIT 1"
+
+	res = ss.db.QueryRow(query,fqdn)
+	err = res.Scan(&addr_at_resolver,&addr_at_res_ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+	output.NewResAddr = addr_at_resolver.String
+	output.NewResAddrTs = addr_at_res_ts.Int64
+
+	//return addr_owner.String,addr_assigned.String,nil DISCONTINUED
+	return output,nil
 }
-func (ss *SQLStorage) Get_last_new_resolver_name_addr(fqdn string) (string,error) {
+func (ss *SQLStorage) Get_last_new_resolver_name_addr(fqdn string) (string,string,error) {
 	// returns address of the name on last resolver change
-	var addr sql.NullString
+	var addr,name_addr sql.NullString
 	var query string
-	query =	"SELECT a.addr " +
+	query =	"SELECT a.addr,na.addr AS name_addr " +
 				"FROM ens_new_resolver r " +
 				"JOIN address a ON r.name_aid=a.address_id " +
+				"JOIN address na ON r.name_aid=na.address_id " +
 				"WHERE node=$1 ORDER BY id DESC LIMIT 1"
 	res := ss.db.QueryRow(query,fqdn)
-	err := res.Scan(&addr)
+	err := res.Scan(&addr,&name_addr)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 		} else {
@@ -1164,7 +1201,7 @@ func (ss *SQLStorage) Get_last_new_resolver_name_addr(fqdn string) (string,error
 			os.Exit(1)
 		}
 	}
-	return addr.String,nil
+	return addr.String,name_addr.String,nil
 }
 func (ss *SQLStorage) Get_new_owner_events(fqdn string) []p.ENS_NewOwner {
 
@@ -1216,10 +1253,13 @@ func (ss *SQLStorage) Get_new_owner_events(fqdn string) []p.ENS_NewOwner {
 func (ss *SQLStorage) Get_ens_record_info(fqdn string) (p.ENS_Info,error) {
 
 	var output p.ENS_Info
-	last_owner_addr,last_assigned_addr,err := ss.Get_last_owner_addr(fqdn)
+	//last_owner_addr,last_assigned_addr,err := ss.Get_last_name_address(fqdn) DICSONTINUED
+	multiaddr,err := ss.Get_last_name_address(fqdn)
 	if err != nil {
 		return output,err
 	}
+	last_owner_addr := multiaddr.OwnerAddr
+	last_assigned_addr := multiaddr.AddrChgAddr
 	fmt.Printf("last owner=%v, last assigned=%v\n",last_owner_addr,last_assigned_addr)
 	if len(last_assigned_addr) > 0 {
 		output.LastOwnerAddr = last_assigned_addr
