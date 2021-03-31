@@ -451,14 +451,14 @@ BEGIN
 		GET DIAGNOSTICS v_cnt = ROW_COUNT;
 		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
 			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.fqdn,'Registrar Transfer',
-				CONCAT('Affected rows: ',v_cnt::TEXT,', unregistered=TRUE, to_aid=',NEW.to_aid::TEXT,', name_aid=',NEW.name_aid::TEXT));
+				CONCAT('Affected rows: ',v_cnt::TEXT,', unregistered=TRUE, to_aid=',NEW.to_aid::TEXT));
 	ELSE
 		UPDATE ens_node SET unregistered = FALSE,unreg_ts=NEW.time_stamp
 			WHERE fqdn=NEW.fqdn AND unreg_ts<=NEW.time_stamp;
 		GET DIAGNOSTICS v_cnt = ROW_COUNT;
 		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
 			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.fqdn,'Registrar Transfer',
-				CONCAT('Affected rows: ',v_cnt::TEXT,', unregistered=FALSE, to_aid=',NEW.to_aid::TEXT,', name_aid=',NEW.name_aid::TEXT));
+				CONCAT('Affected rows: ',v_cnt::TEXT,', unregistered=FALSE, to_aid=',NEW.to_aid::TEXT));
 	END IF;
 	INSERT INTO name_ownership(tx_hash,owner_aid,fqdn)
 		VALUES(NEW.tx_hash,NEW.to_aid,NEW.fqdn) ON CONFLICT DO NOTHING;
