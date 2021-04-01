@@ -1442,6 +1442,19 @@ type ENS_NameRenewed  struct {
 	Cost					string
 	TxHash					string
 }
+type ENS_NameMigrated  struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Expires					int64
+	Contract				string
+	Owner					string
+	Label					string
+	Node					string
+	FQDN					string
+	TxHash					string
+}
 type ENS_Transfer struct {
 	From					string
 	To						string

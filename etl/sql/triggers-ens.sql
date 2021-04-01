@@ -28,3 +28,5 @@ CREATE TRIGGER ens_rstr_transf AFTER INSERT on ens_rstr_transf
 	FOR EACH ROW EXECUTE PROCEDURE on_ens_rstr_transf_insert();
 CREATE TRIGGER ens_name_update AFTER UPDATE on ens_name
 	FOR EACH ROW EXECUTE PROCEDURE on_ens_name_update();
+CREATE TRIGGER ens_name_migrated_insert AFTER INSERT on ens_name_migrated
+	FOR EACH ROW EXECUTE PROCEDURE on_ens_name_migrated_insert();

@@ -55,6 +55,13 @@ const (
 	//		uint256 _createdDate
 	//	)
 
+	ENS_NAME_MIGRATED			= "ea3d7e1195a15d2ddcd859b01abd4c6b960fa9f9264e499a70a90c7f0c64b717"
+	//	NameMigrated(
+	//		uint256 indexed hash,
+	//		address indexed owner,
+	//		uint expires
+	//  )
+
 	ENS_ADDR_CHANGED			= "52d7d861f09ab3d26239d492e8968629f95e9e318cf0b73bfddc441522a15fd2"
 	ENS_ADDRESS_CHANGED			= "65412581168e88a1e60c6459d7f44ae83ad0832e670826c05a4e2476b57af752"
 	NEW_RESOLVER				= "335721b01866dc23fbee8b6b2c7b1e14d6f05c28cd35a2c934239f94095602a0"
@@ -121,6 +128,7 @@ var (
 	evt_name_registered2,_ = hex.DecodeString(ENS_NAME_REGISTERED2)
 	evt_name_registered3,_ = hex.DecodeString(ENS_NAME_REGISTERED3)
 	evt_name_renewed,_ = hex.DecodeString(NAME_RENEWED)
+	evt_name_migrated,_ = hex.DecodeString(ENS_NAME_MIGRATED)
 	evt_hash_invalidated,_ = hex.DecodeString(HASH_INVALIDATED)
 	evt_hash_registered,_ = hex.DecodeString(HASH_REGISTERED)
 	evt_new_resolver,_ = hex.DecodeString(NEW_RESOLVER)
@@ -287,6 +295,7 @@ func initial_load(exit_chan chan bool,bnum_lim int64) {
 	std_initial_load(exit_chan,bnum_lim,proc_name_changed,"NameChanged",evt_name_changed)
 	std_initial_load(exit_chan,bnum_lim,proc_hash_invalidated,"HashInvalidated",evt_hash_invalidated)
 	std_initial_load(exit_chan,bnum_lim,proc_new_resolver,"NewResolver",evt_new_resolver)
+	std_initial_load(exit_chan,bnum_lim,proc_name_migrated,"NameMigrated",evt_name_migrated)
 	std_initial_load(exit_chan,bnum_lim,proc_registry_transfer,"RegistryTransfer",evt_registry_transfer)
 	std_initial_load(exit_chan,bnum_lim,proc_name_renewed,"NameRenewed",evt_name_renewed)
 	std_initial_load(exit_chan,bnum_lim,proc_text_changed,"TextChanged",evt_text_changed)

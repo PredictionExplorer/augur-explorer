@@ -465,4 +465,36 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_ens_name_migrated_insert() RETURNS trigger AS  $$
+DECLARE
+	v_zero_aid BIGINT;
+	v_cnt numeric;
+BEGIN
+
+	IF NEW.evtlog_id IS NULL THEN
+		NEW.evtlog_id := 0;
+	END IF;
+	SELECT address_id FROM address WHERE addr='0x0000000000000000000000000000000000000000' INTO v_zero_aid;
+	IF NEW.owner_aid = v_zero_aid THEN -- when changing Resolvers, the name address got deleted
+		--UPDATE ens_node SET inactive=TRUE WHERE fqdn=NEW.fqdn;
+		UPDATE ens_node SET unregistered = TRUE,unreg_ts=NEW.time_stamp
+			WHERE fqdn=NEW.fqdn AND unreg_ts<=NEW.time_stamp;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
+			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.fqdn,'NameMigrated',
+				CONCAT('Affected rows: ',v_cnt::TEXT,', unregistered=TRUE, owner_aid=',NEW.owner_aid::TEXT));
+	ELSE
+		UPDATE ens_node SET unregistered = FALSE,unreg_ts=NEW.time_stamp
+			WHERE fqdn=NEW.fqdn AND unreg_ts<=NEW.time_stamp;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		INSERT INTO unreg_log(related_id,block_num,tx_id,fqdn,event,descr)
+			VALUES(NEW.id,NEW.block_num,NEW.tx_id,NEW.fqdn,'NameMigrated',
+				CONCAT('Affected rows: ',v_cnt::TEXT,', unregistered=FALSE, owner_aid=',NEW.owner_aid::TEXT));
+	END IF;
+	INSERT INTO name_ownership(tx_hash,owner_aid,fqdn)
+		VALUES(NEW.tx_hash,NEW.owner_aid,NEW.fqdn) ON CONFLICT DO NOTHING;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 

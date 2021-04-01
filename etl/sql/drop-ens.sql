@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS
 	ens_reg_transf,
 	ens_rstr_transf,
 	ens_name_renewed,
+	ens_name_migrated,
 	ens_text,
 	ens_text_chg,
 	ens_text_key,

@@ -252,6 +252,54 @@ func (ss *SQLStorage) Insert_name_renewed(rec *p.ENS_NameRenewed) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Insert_name_migrated(rec *p.ENS_NameMigrated) {
+
+	var query string
+	var err error
+	owner_aid := ss.Lookup_or_create_address(rec.Owner,rec.BlockNum,rec.TxId)
+	contract_aid := ss.Lookup_or_create_address(rec.Contract,rec.BlockNum,rec.TxId)
+	if rec.EvtId == 0 {	// initial load, we don't have the Block in 'block' table
+		query = "INSERT INTO ens_name_migrated(" +
+					"tx_hash,time_stamp,block_num,contract_aid,owner_aid," +
+					"label,node,fqdn,expires" +
+				") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,TO_TIMESTAMP($9))"
+		_,err = ss.db.Exec(query,
+			rec.TxHash,
+			rec.TimeStamp,
+			rec.BlockNum,
+			contract_aid,
+			owner_aid,
+			rec.Label,
+			rec.Node,
+			rec.FQDN,
+			rec.Expires,
+		)
+	} else {
+		query = "INSERT INTO ens_name_migrated(" +
+					"evtlog_id,block_num,tx_id,contract_aid,owner_aid,"+
+					"time_stamp,label,node,fqdn,tx_hash,expires" +
+				") VALUES(" +
+					"$1,$2,$3,$4,$5,TO_TIMESTAMP($6),$7,$8,$9,$10,TO_TIMESTAMP($11)"+
+				")"
+		_,err = ss.db.Exec(query,
+			rec.EvtId,
+			rec.BlockNum,
+			rec.TxId,
+			contract_aid,
+			rec.TimeStamp,
+			owner_aid,
+			rec.Label,
+			rec.Node,
+			rec.FQDN,
+			rec.TxHash,
+			rec.Expires,
+		)
+	}
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Expire_ens_names(l *log.Logger) {
 
 	var query string
@@ -1404,4 +1452,122 @@ func (ss *SQLStorage) ENS_name_resolution_status(fqdn string) (bool,bool,bool,er
 		}
 	}
 	return null_1.Bool,null_2.Bool,null_3.Bool,nil
+}
+func (ss *SQLStorage) Resolve_ens_name(fqdn string) (string,int,error) {
+
+	// finds out which is the Node's address
+	var query string
+	var field_code int = 0 // unknown
+
+	var owner_address sql.NullString
+	var owner_address_ts sql.NullInt64
+	query =	"SELECT " +
+				"a.addr addr_owner, " +
+				"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT " +
+			"FROM ens_new_owner o " +
+			"JOIN address a ON o.owner_aid=a.address_id " +
+			"WHERE fqdn=$1 ORDER BY id DESC LIMIT 1"
+	res := ss.db.QueryRow(query,fqdn)
+	err := res.Scan(&owner_address,&owner_address_ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+
+	var assigned_address sql.NullString
+	var assigned_address_ts sql.NullInt64
+	query = "SELECT " + 
+				"a.addr addr_assigned, "+
+				"EXTRACT(EPOCH FROM ac.time_stamp)::BIGINT " +
+			"FROM ens_addr1 ac " +
+			"JOIN address a ON ac.aid=a.address_id " +
+			"WHERE ac.fqdn=$1 ORDER BY id DESC LIMIT 1"
+	res = ss.db.QueryRow(query,fqdn)
+	err = res.Scan(&assigned_address,&assigned_address_ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+
+	var resolver_address sql.NullString
+	var resolver_address_ts sql.NullInt64
+	query = "SELECT " +
+				"a.addr, " +
+				"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT " +
+			"FROM ens_new_resolver r " +
+			"JOIN address a ON r.name_aid=a.address_id "+
+			"WHERE node=$1 ORDER BY id DESC LIMIT 1"
+
+	res = ss.db.QueryRow(query,fqdn)
+	err = res.Scan(&resolver_address,&resolver_address_ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+
+	// timestamp is our selector to pick the correct address
+	if resolver_address_ts.Valid {
+		field_code = 1
+		resolver_latest := true
+		if assigned_address_ts.Valid {
+			if assigned_address_ts.Int64 > resolver_address_ts.Int64 {
+				resolver_latest = false
+			}
+		}
+		if owner_address_ts.Valid {
+			if owner_address_ts.Int64 > resolver_address_ts.Int64 {
+				resolver_latest = false
+			}
+		}
+		if resolver_latest {
+			return resolver_address.String,field_code,nil
+		}
+	}
+
+	if assigned_address_ts.Valid {
+		field_code = 2
+		assigned_latest := true
+		if resolver_address_ts.Valid {
+			if resolver_address_ts.Int64 > assigned_address_ts.Int64 {
+				assigned_latest = false
+			}
+		}
+		if owner_address_ts.Valid {
+			if owner_address_ts.Int64 > assigned_address_ts.Int64 {
+				assigned_latest = false
+			}
+		}
+		if assigned_latest {
+			return assigned_address.String,field_code,nil
+		}
+	}
+
+	if owner_address_ts.Valid {
+		field_code = 3
+		owner_latest := true
+		if resolver_address_ts.Valid {
+			if resolver_address_ts.Int64 > owner_address_ts.Int64 {
+				owner_latest = false
+			}
+		}
+		if assigned_address_ts.Valid {
+			if assigned_address_ts.Int64 > owner_address_ts.Int64 {
+				owner_latest = false
+			}
+		}
+		if owner_latest {
+			return owner_address.String,field_code,nil
+		}
+	}
+
+	return "",field_code,nil
 }

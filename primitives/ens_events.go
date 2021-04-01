@@ -65,4 +65,10 @@ type NameChanged struct {
 	Name string
 	Raw  types.Log // Blockchain specific contextual infos
 }
+type NameMigrated struct {
+	Id      *big.Int
+	Owner   common.Address
+	Expires *big.Int
+	Raw     types.Log // Blockchain specific contextual infos
+}
 

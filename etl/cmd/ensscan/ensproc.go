@@ -367,6 +367,63 @@ func proc_name_renewed(log *types.Log,evt_id,tx_id,timestamp int64) {
 	evt.Contract = log.Address.String()
 	storage.Insert_name_renewed(&evt)
 }
+func proc_name_migrated(log *types.Log,evt_id,tx_id,timestamp int64) {
+	var evt ENS_NameMigrated
+	evt.EvtId = evt_id
+	evt.BlockNum = int64(log.BlockNumber)
+	evt.TxId = tx_id
+	evt.TimeStamp = timestamp
+	if evt.TimeStamp == 0 {
+		ts_in_db,exists := storage.ENS_get_cached_block_data(evt.BlockNum)
+		if exists {
+			evt.TimeStamp = ts_in_db
+		} else {
+			ctx := context.Background()
+			bnum := big.NewInt(int64(log.BlockNumber))
+			block_hdr,err := eclient.HeaderByNumber(ctx,bnum)
+			if err != nil {
+				Error.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				Info.Printf("Error getting block header %v : %v\n",log.BlockNumber,err)
+				os.Exit(1)
+			}
+			evt.TimeStamp = int64(block_hdr.Time)
+		}
+	}
+	evt.TxHash = log.TxHash.String()
+	var eth_event NameMigrated
+	err := ens_abi.Unpack(&eth_event,"NameMigrated",log.Data)
+	if err != nil {
+		Error.Printf("Error upacking NameMigrated: %v\n",err)
+		Info.Printf("Error upacking NameMigrated: %v\n",err)
+		os.Exit(1)
+	}
+	owner_addr := common.BytesToAddress(log.Topics[2][12:])
+
+	eth_event.Id = new(big.Int)
+	eth_event.Id.SetBytes(log.Topics[1].Bytes())
+	label := log.Topics[1].Bytes()
+	eth_event.Owner = owner_addr
+	Info.Printf("Processing block %v, tx %v\n",evt.BlockNum,log.TxHash.String())
+	eth_event.Dump(Info)
+	evt.TxHash = log.TxHash.String()
+	evt.Label = hex.EncodeToString(label)
+
+	node_hash,_,err := get_node_hash_via_new_owner_event(evt.TxId,&log.TxHash,label,true)
+	if err != nil {
+		Error.Printf("Error getting node hash: %v\n",err)
+		os.Exit(1)
+	}
+
+	fqdn_bytes := calculate_name_hash(node_hash,label)
+	evt.FQDN = hex.EncodeToString(fqdn_bytes[:])
+	Info.Printf("resulting fqdn: %v\n",hex.EncodeToString(fqdn_bytes[:]))
+
+	evt.Node = hex.EncodeToString(node_hash[:])
+	evt.Owner = owner_addr.String()
+	evt.Expires = eth_event.Expires.Int64()
+	evt.Contract = log.Address.String()
+	storage.Insert_name_migrated(&evt)
+}
 func proc_newowner(log *types.Log,evt_id,tx_id,timestamp int64) {
 
 ///		Info.Printf("%v: log = %+v\n",i,log)

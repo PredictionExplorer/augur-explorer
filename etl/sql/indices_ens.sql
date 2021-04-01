@@ -32,4 +32,5 @@ CREATE INDEX textchg_idx			ON	ens_text_chg(evtlog_id);
 CREATE INDEX enspkey_idx			ON	ens_pkey(evtlog_id);
 CREATE INDEX enshash_idx			ON	ens_hash(evtlog_id);
 CREATE INDEX ctrladd_idx			ON	ens_ctrl_add(evtlog_id);
-CREATE INDEX hashchg_idx			ON	ens_hash_chg(evtlog_id);
+CREATE INDEX enshashchg_idx			ON	ens_hash_chg(evtlog_id);
+CREATE INDEX nmigr_idx				ON	ens_name_migrated(evtlog_id);

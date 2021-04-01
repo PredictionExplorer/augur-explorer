@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"bytes"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/0xProject/0x-mesh/common/types"
 )
@@ -421,6 +422,14 @@ func (evt *NameRenewed) Dump(l *log.Logger) {
     l.Printf("\tName: %v\n",evt.Name)
 	l.Printf("\tLabel: %v\n",hex.EncodeToString(evt.Label[:]))
     l.Printf("\tCost : %v\n",evt.Cost.String())
+    l.Printf("\tExpires: %v\n",evt.Expires.String())
+    l.Printf("}\n")
+}
+func (evt *NameMigrated) Dump(l *log.Logger) {
+    l.Printf("NameMigrated {\n")
+	hash:=common.BigToHash(evt.Id)
+	l.Printf("\tId: %v\n",hex.EncodeToString(hash[:]))
+    l.Printf("\tOwner: %v\n",evt.Owner.String())
     l.Printf("\tExpires: %v\n",evt.Expires.String())
     l.Printf("}\n")
 }

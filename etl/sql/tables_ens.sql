@@ -250,6 +250,22 @@ CREATE TABLE ens_name_renewed (	-- HashRegistered event
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(tx_hash,fqdn)
 );
+CREATE TABLE ens_name_migrated(	-- NameMIgrated event
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	owner_aid			BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	expires				TIMESTAMPTZ,
+	tx_hash				TEXT NOT NULL,
+	label				TEXT NOT NULL,
+	node				TEXT NOT NULL,
+	fqdn				TEXT NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(tx_hash,fqdn)
+);
 CREATE TABLE ens_text_chg (
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT,
