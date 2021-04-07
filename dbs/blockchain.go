@@ -97,7 +97,7 @@ func (ss *SQLStorage) Set_last_block_num(block_num int64) {
 		}
 	}
 }
-func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header,no_chainsplit_check bool) error {
+func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header,num_tx int,no_chainsplit_check bool) error {
 
 	var query string
 	var parent_block_num int64
@@ -161,14 +161,17 @@ func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header,no_chains
 			block_num,
 			block_hash,
 			ts,
-			parent_hash
-		) VALUES ($1,$2,TO_TIMESTAMP($3),$4)`
+			parent_hash,
+			num_tx
+		) VALUES ($1,$2,TO_TIMESTAMP($3),$4,$5)`
 
 	result,err := ss.db.Exec(query,
 			block_num,
 			hash_str,
 			block.Time,
-			parent_hash)
+			parent_hash,
+			num_tx,
+	)
 	if err != nil {
 		ss.Log_msg(
 			fmt.Sprintf(
