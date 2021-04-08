@@ -1,0 +1,310 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_owner",
+        "type": "address"
+      },
+      {
+        "internalType": "contract ITurboHatchery",
+        "name": "_hatchery",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "_arbiterConfiguration",
+        "type": "bytes"
+      }
+    ],
+    "name": "decodeConfiguration",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "startTime",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "duration",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "extraInfo",
+            "type": "string"
+          },
+          {
+            "internalType": "int256[]",
+            "name": "prices",
+            "type": "int256[]"
+          },
+          {
+            "internalType": "enum TrustedArbiter.MarketType",
+            "name": "marketType",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct TrustedArbiter.TrustedConfiguration",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_startTime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_duration",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "_extraInfo",
+        "type": "string"
+      },
+      {
+        "internalType": "int256[]",
+        "name": "_prices",
+        "type": "int256[]"
+      },
+      {
+        "internalType": "enum TrustedArbiter.MarketType",
+        "name": "_marketType",
+        "type": "uint8"
+      }
+    ],
+    "name": "encodeConfiguration",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getOwner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_payout",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "getPayoutHash",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_id",
+        "type": "uint256"
+      }
+    ],
+    "name": "getTurboResolution",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "hatchery",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string[]",
+        "name": "_outcomeSymbols",
+        "type": "string[]"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "_outcomeNames",
+        "type": "bytes32[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_numTicks",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_arbiterConfiguration",
+        "type": "bytes"
+      }
+    ],
+    "name": "onTurboCreated",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_payout",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "setTurboResolution",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "turboData",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "startTime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "endTime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "extraInfo",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "numTicks",
+        "type": "uint256"
+      },
+      {
+        "internalType": "enum TrustedArbiter.MarketType",
+        "name": "marketType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "winningPayoutHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalStake",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_payout",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "validatePayout",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

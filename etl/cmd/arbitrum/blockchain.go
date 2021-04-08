@@ -123,10 +123,12 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 				"Failed to get Tx Receipt for %v, block num=%v. Aborting block processing: %v\n",
 				agtx.TxHash,bnum,receipt_calls[tnum].err,
 			)
-			storage.Block_delete_with_everything(bnum)
-			Info.Printf("Aborting")
-			os.Exit(1)
-			return receipt_calls[tnum].err
+		//  currently disabled until Arbitrum fixes its bugs
+		//	storage.Block_delete_with_everything(bnum)
+		//	Info.Printf("Aborting")
+		//	os.Exit(1)
+		//	return receipt_calls[tnum].err
+			continue
 		}
 		rcpt := receipt_calls[tnum].receipt
 		Info.Printf("\ttx: %v of %v : %v at blockNum=%v\n",tnum,num_transactions,agtx.TxHash,bnum)

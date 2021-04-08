@@ -1896,3 +1896,7 @@ type ENSResolver struct {
 	Aid						int64
 	Node					string
 }
+type AA_ContractAddrs struct {// Arbitrum-Augur contract addresses
+	AMM_Factory				common.Address
+	HatcheryRegistry		common.Address
+}
