@@ -1900,3 +1900,17 @@ type AA_ContractAddrs struct {// Arbitrum-Augur contract addresses
 	AMM_Factory				common.Address
 	HatcheryRegistry		common.Address
 }
+type ArbitrumAugurProcessStatus struct {
+	LastEvtId				int64
+}
+type AA_PoolCreated struct {// Arbitrum Augur Pool Created event
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Contract				string
+	PoolAddr				string
+	HatcheryAddr			string
+	TurboId					string
+	CreatorAddr				string
+}
