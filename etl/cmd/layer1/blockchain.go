@@ -120,6 +120,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 				"Failed to get Tx Receipt for %v, block num=%v. Aborting block processing: %v\n",
 				agtx.TxHash,bnum,err,
 			)
+			storage.Block_delete_with_everything(bnum)
 			return receipt_calls[tnum].err
 		}
 		rcpt := receipt_calls[tnum].receipt
@@ -137,6 +138,12 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 				" cur_block_num=%v, receipt.block_num=%v\n",
 				bnum,rcpt.BlockNumber.Int64(),
 			)
+			Info.Printf(
+				"Transaction's receipt doesn't match current block number. (block possibly changed)" +
+				" cur_block_num=%v, receipt.block_num=%v\n",
+				bnum,rcpt.BlockNumber.Int64(),
+			)
+			storage.Block_delete_with_everything(bnum)
 			return errors.New("Block changed during processing")
 		}
 		agtx.TxId = 0

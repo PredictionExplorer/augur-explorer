@@ -1542,3 +1542,35 @@ func (ss *SQLStorage) Get_events_by_sig_and_tx_id(tx_id int64,sig string) ([]p.E
 	}
 	return records,nil
 }
+func (ss *SQLStorage) Get_all_event_logs_by_tx_hash_rlp_encoded(tx_hash string) ([][]byte,error) {
+
+	var query string
+	records := make([][]byte,0,4)
+	query = "SELECT " +
+				"e.log_rlp " +
+			"FROM evt_log e " +
+				"JOIN transaction tx ON e.tx_id=tx.id " +
+			"WHERE tx_hash=$1 " +
+			"ORDER BY e.id"
+
+	rows,err := ss.db.Query(query,tx_hash)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return records,nil
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var logdata []byte
+		err=rows.Scan(&logdata)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,logdata)
+	}
+	return records,nil
+}
