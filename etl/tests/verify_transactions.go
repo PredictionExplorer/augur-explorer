@@ -132,6 +132,19 @@ func get_full_block(bnum int64) (common.Hash,*types.Header,[]*AugurTx,error) {
 
 	return body.Hash,head,txs,nil
 }
+func calculate_num_logs(logs []*types.Log) int {
+	// just counts which events have topics
+	var output int = 0
+	num_logs := len(logs)
+	for i:=0 ; i < num_logs ; i++ {
+		log := logs[i]
+		if len(log.Topics) > 0 {
+			output++
+		}
+	}
+
+	return output
+}
 func verify_block(bnum int64) error {
 
 	ctx := context.Background()
@@ -171,18 +184,23 @@ func verify_block(bnum int64) error {
 				Error.Printf("At block %v ,can't get logs for tx %v from DB: %v\n",bnum,tx.TxHash)
 				os.Exit(1)
 			}
-			if len(stored_logs)!=num_logs {
+			logs_to_insert := calculate_num_logs(rcpt.Logs)
+			if len(stored_logs)!=logs_to_insert {
 				Mismatch.Printf(
 					"At block %v, tx %v number of logs doesnt match (should=%v, stored=%v)\n",
-					num_logs,len(stored_logs),
+					bnum,tx.TxHash,num_logs,len(stored_logs),
 				)
 				continue
 			} else {
 				for i:=0 ; i < num_logs ; i++ {
 					lg := rcpt.Logs[i]
+					if len(lg.Topics) == 0 {
+						continue
+					}
 					encoded_rlp_bytes, err := rlp.EncodeToBytes(lg)
 					if err != nil {
 						Info.Printf("Couldn't RLP-encode log : %v\n",err)
+						Error.Printf("Couldn't RLP-encode log : %v\n",err)
 						os.Exit(1)
 					}
 					if !bytes.Equal(encoded_rlp_bytes,stored_logs[i]) {
@@ -338,4 +356,5 @@ func main() {
 			break
 		}
 	}// for block_num
+	Info.Printf("All blocks were scanned, finishing and exiting\n")
 }
