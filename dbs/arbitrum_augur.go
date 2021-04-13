@@ -74,7 +74,7 @@ func (ss *SQLStorage) Insert_aa_pool_created_event(evt *p.AA_PoolCreated) {
 			evt.TurboId,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into val_bond_chg table: %v; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_pool_created table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
 }
@@ -109,4 +109,33 @@ func (ss *SQLStorage) Get_arbitrum_augur_processing_status() p.ArbitrumAugurProc
 		output.LastEvtId = null_id.Int64
 	}
 	return output
+}
+func (ss *SQLStorage) Insert_aa_new_hatchery_event(evt *p.AA_NewHatchery) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	hatchery_aid:=ss.Lookup_or_create_address(evt.HatcheryAddr,evt.BlockNum,evt.TxId)
+	collateral_aid:=ss.Lookup_or_create_address(evt.CollateralAddr,evt.BlockNum,evt.TxId)
+	shtok_aid:=ss.Lookup_or_create_address(evt.HatcheryAddr,evt.BlockNum,evt.TxId)
+	feepot_aid:=ss.Lookup_or_create_address(evt.FeePotAddr,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO aa_new_hatchery(" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
+				"hatchery_aid,collateral_aid,shtok_aid,feepot_aid" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9)"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			hatchery_aid,
+			collateral_aid,
+			shtok_aid,
+			feepot_aid,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_new_hatchery table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
 }

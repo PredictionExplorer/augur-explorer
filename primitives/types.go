@@ -1914,3 +1914,14 @@ type AA_PoolCreated struct {// Arbitrum Augur Pool Created event
 	TurboId					string
 	CreatorAddr				string
 }
+type AA_NewHatchery struct {// Arbitrum Augur Pool Created event
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Contract				string
+	HatcheryAddr			string
+	CollateralAddr			string
+	ShareTokenAddr			string
+	FeePotAddr				string
+}

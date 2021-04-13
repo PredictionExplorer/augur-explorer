@@ -74,6 +74,38 @@ func proc_pool_created(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_aa_pool_created_event(&evt)
 }
+func proc_new_hatchery(log *types.Log,elog *EthereumEventLog) {
+
+	var evt AA_NewHatchery
+	hatchery_addr := common.BytesToAddress(log.Data[12:32])
+	collateral_addr := common.BytesToAddress(log.Topics[1][12:])
+	sharetoken_addr:= common.BytesToAddress(log.Data[32+12:64])
+	feepot_addr:= common.BytesToAddress(log.Data[64+12:64+32])
+
+	Info.Printf("Processing PoolCreated event, txhash %v\n",elog.TxHash)
+	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+
+//	err := cash_abi.Unpack(&mevt,"Approval",log.Data)
+//	if err != nil {
+//		Fatalf("Event ERC20_Approval Cash decode error: %v",err)
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.HatcheryAddr = hatchery_addr.String()
+	evt.CollateralAddr= collateral_addr.String()
+	evt.FeePotAddr= feepot_addr.String()
+
+	Info.Printf("NewHatchery{\n")
+	Info.Printf("\tHatcheryAddress: %v\n",hatchery_addr.String())
+	Info.Printf("\tCollateral: %v\n",collateral_addr.String())
+	Info.Printf("\tShareToken: %v\n",sharetoken_addr.String())
+	Info.Printf("\tFeePot: %v\n",feepot_addr.String())
+	Info.Printf("}\n")
+
+	storage.Insert_aa_new_hatchery_event(&evt)
+}
 func process_arbitrum_augur_event(evt_id int64) error {
 
 	evtlog := storage.Get_event_log(evt_id)
@@ -90,6 +122,9 @@ func process_arbitrum_augur_event(evt_id int64) error {
 		Info.Printf("found event with sig = %v\n",log.Topics[0].String())
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_pool_created) {
 			proc_pool_created(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_new_hatchery) {
+			proc_new_hatchery(&log,&evtlog)
 		}
 	}
 	return nil
