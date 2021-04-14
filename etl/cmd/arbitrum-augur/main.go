@@ -8,6 +8,7 @@ import (
 	"sort"
 	"time"
 	"fmt"
+	"strings"
 	"context"
 	"log"
 	"encoding/hex"
@@ -24,7 +25,7 @@ const (
 
 	POOL_CREATED = "0537d3e5d88810bbfb16874b28bc0f95856d7bb24c8f29511fe463c5b1d27c6b"
 	NEW_HATCHERY= "08afdadd49d632c11dbde177a7ab47701b5adaac8f633beedd892c8da8d4393f"
-	TURBO_CREATED = "0x2c4d919a4805caed2e2fdd9bb8a122413c2a643b61e08b957445484bbbfd8f4f"
+	TURBO_CREATED = "2c4d919a4805caed2e2fdd9bb8a122413c2a643b61e08b957445484bbbfd8f4f"
 	COMPLETE_SETS_MINTED = "51b2bca5bb2f65b2670950591ce7b54cfc4d99b2db85abfea36b8b92d10ac380"
 	COMPLETE_SETS_BURNED = "2df8f390c89a8c8e8b89875f61085269c64b16b81e7745b844ba42a40a3dde27"
 	CLAIM = "7bb2b3c10797baccb6f8c4791f1edd6ca2f0d028ee0eda64b01a9a57e3a653f7"
@@ -85,6 +86,7 @@ var (
 
 	caddrs *AA_ContractAddrs
 	augur_abi *abi.ABI
+	aa_abi abi.ABI
 
 	ctrct_wallet_registry *AugurWalletRegistry
 
@@ -189,6 +191,13 @@ func main() {
 	storage = Connect_to_storage(&market_order_id,Info)
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
+
+	abi_parsed := strings.NewReader(Arbitrum_ABI)
+	aa_abi,err = abi.JSON(abi_parsed)
+	if err!= nil {
+		Info.Printf("Can't parse Arbitrum Augur ABI: %v\n",err)
+		os.Exit(1)
+	}
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)

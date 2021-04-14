@@ -18,6 +18,7 @@ func build_list_of_inspected_events() []InspectedEvent {
 	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)
 	inspected_events= make([]InspectedEvent,0,32)
 	inspected_events = append(inspected_events,
+	/*
 		InspectedEvent {
 			Signature:	hex.EncodeToString(evt_pool_created[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.AMM_Factory.String(),0,0),
@@ -25,11 +26,12 @@ func build_list_of_inspected_events() []InspectedEvent {
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_new_hatchery[:4]),
 			ContractAid: 0,
-		},
+		},*/
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_turbo_created[:4]),
 			ContractAid: 0,
 		},
+		/*
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_complete_sets_minted[:4]),
 			ContractAid: 0,
@@ -41,7 +43,7 @@ func build_list_of_inspected_events() []InspectedEvent {
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_claim[:4]),
 			ContractAid: 0,
-		},
+		},*/
 	)
 	return inspected_events
 }
@@ -96,6 +98,7 @@ func proc_new_hatchery(log *types.Log,elog *EthereumEventLog) {
 	evt.HatcheryAddr = hatchery_addr.String()
 	evt.CollateralAddr= collateral_addr.String()
 	evt.FeePotAddr= feepot_addr.String()
+	evt.ShareTokenAddr = sharetoken_addr.String()
 
 	Info.Printf("NewHatchery{\n")
 	Info.Printf("\tHatcheryAddress: %v\n",hatchery_addr.String())
@@ -105,6 +108,65 @@ func proc_new_hatchery(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("}\n")
 
 	storage.Insert_aa_new_hatchery_event(&evt)
+}
+func proc_turbo_created(log *types.Log,elog *EthereumEventLog) {
+
+	var evt AA_TurboCreated
+	var eth_evt TurboCreated
+
+	err := aa_abi.Unpack(&eth_evt,"TurboCreated",log.Data)
+	if err != nil {
+		Error.Printf("Error unpacking TurboCreated event: %v\n",err)
+		os.Exit(1)
+	}
+
+	evt.TurboId = eth_evt.Id.Int64()
+	evt.CreatorFee = eth_evt.CreatorFee.String()
+	for _,sym:= range eth_evt.OutcomeSymbols {
+		if len(evt.OutcomeSymbols) > 0 {
+			evt.OutcomeSymbols=evt.OutcomeSymbols + ","
+		}
+		evt.OutcomeSymbols = evt.OutcomeSymbols + sym
+	}
+	for _,n:= range eth_evt.OutcomeNames {
+		if len(evt.OutcomeNames) > 0 {
+			evt.OutcomeNames=evt.OutcomeNames + ","
+		}
+		evt.OutcomeNames= evt.OutcomeNames+ Bytes32_to_string(n[:])
+	}
+	evt.NumTicks = eth_evt.NumTicks.Int64()
+	evt.ArbiterAddr = eth_evt.Arbiter.String()
+	evt.ArbiterConfiguration = eth_evt.ArbiterConfiguration
+	if eth_evt.Index == nil {
+		evt.Index = "0"
+	} else {
+		evt.Index = eth_evt.Index.String()
+	}
+
+	Info.Printf("Processing TurboCreated event, txhash %v\n",elog.TxHash)
+	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+
+//	err := cash_abi.Unpack(&mevt,"Approval",log.Data)
+//	if err != nil {
+//		Fatalf("Event ERC20_Approval Cash decode error: %v",err)
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+
+	Info.Printf("TurboCreated{\n")
+	Info.Printf("\tId: %v\n",evt.TurboId)
+	Info.Printf("\tCreatorFee: %v\n",evt.CreatorFee)
+	Info.Printf("\tOutcomeSymbols: %v\n",evt.OutcomeSymbols)
+	Info.Printf("\tOutcomeNames: %v\n",evt.OutcomeNames)
+	Info.Printf("\tNumTicks: %v\n",evt.NumTicks)
+	Info.Printf("\tArbiterAddr: %v\n",evt.ArbiterAddr)
+	Info.Printf("\tArbiterConfiguration: %v\n",evt.ArbiterConfiguration)
+	Info.Printf("\tIndex: %v\n",evt.Index)
+	Info.Printf("}\n")
+
+	storage.Insert_aa_turbo_created_event(&evt)
 }
 func process_arbitrum_augur_event(evt_id int64) error {
 
@@ -125,6 +187,9 @@ func process_arbitrum_augur_event(evt_id int64) error {
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_new_hatchery) {
 			proc_new_hatchery(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_turbo_created) {
+			proc_turbo_created(&log,&evtlog)
 		}
 	}
 	return nil

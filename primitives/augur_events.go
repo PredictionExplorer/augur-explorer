@@ -410,6 +410,16 @@ type EReportingFeeChanged struct {//0xadddfaec4505d90a6a211907536944e6e1af7ff5cf
 
 
 /////////// (AUGUR) ARBITRUM EVENTS
-
+type TurboCreated struct {
+	Id                   *big.Int
+	CreatorFee           *big.Int
+	OutcomeSymbols       []string
+	OutcomeNames         [][32]byte
+	NumTicks             *big.Int
+	Arbiter              common.Address
+	ArbiterConfiguration []byte
+	Index                *big.Int
+	Raw                  types.Log // Blockchain specific contextual infos
+}
 
 

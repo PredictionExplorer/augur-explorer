@@ -115,7 +115,7 @@ func (ss *SQLStorage) Insert_aa_new_hatchery_event(evt *p.AA_NewHatchery) {
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	hatchery_aid:=ss.Lookup_or_create_address(evt.HatcheryAddr,evt.BlockNum,evt.TxId)
 	collateral_aid:=ss.Lookup_or_create_address(evt.CollateralAddr,evt.BlockNum,evt.TxId)
-	shtok_aid:=ss.Lookup_or_create_address(evt.HatcheryAddr,evt.BlockNum,evt.TxId)
+	shtok_aid:=ss.Lookup_or_create_address(evt.ShareTokenAddr,evt.BlockNum,evt.TxId)
 	feepot_aid:=ss.Lookup_or_create_address(evt.FeePotAddr,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO aa_new_hatchery(" +
@@ -136,6 +136,35 @@ func (ss *SQLStorage) Insert_aa_new_hatchery_event(evt *p.AA_NewHatchery) {
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_new_hatchery table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_aa_turbo_created_event(evt *p.AA_TurboCreated) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	arbiter_aid:=ss.Lookup_or_create_address(evt.ArbiterAddr,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO aa_turbo_created (" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
+				"num_ticks,arbiter_aid,creator_fee,tindex,outcome_symbols,outcome_names,arbiter_config" +
+				") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8::DECIMAL/1e+19,$9,$10,$11,$12)"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			evt.NumTicks,
+			arbiter_aid,
+			evt.CreatorFee,
+			evt.Index,
+			evt.OutcomeSymbols,
+			evt.OutcomeNames,
+			evt.ArbiterConfiguration,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_turbo_created table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
 }

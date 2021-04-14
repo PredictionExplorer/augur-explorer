@@ -1903,7 +1903,7 @@ type AA_ContractAddrs struct {// Arbitrum-Augur contract addresses
 type ArbitrumAugurProcessStatus struct {
 	LastEvtId				int64
 }
-type AA_PoolCreated struct {// Arbitrum Augur Pool Created event
+type AA_PoolCreated struct {// Arbitrum Augur PoolCreated event
 	EvtId					int64
 	BlockNum				int64
 	TxId					int64
@@ -1914,7 +1914,7 @@ type AA_PoolCreated struct {// Arbitrum Augur Pool Created event
 	TurboId					string
 	CreatorAddr				string
 }
-type AA_NewHatchery struct {// Arbitrum Augur Pool Created event
+type AA_NewHatchery struct {// Arbitrum Augur NewHatchery Created event
 	EvtId					int64
 	BlockNum				int64
 	TxId					int64
@@ -1925,3 +1925,19 @@ type AA_NewHatchery struct {// Arbitrum Augur Pool Created event
 	ShareTokenAddr			string
 	FeePotAddr				string
 }
+type AA_TurboCreated struct {// Arbitrum Augur TurboCreated event
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	TurboId					int64
+	NumTicks				int64
+	Contract				string
+	CreatorFee				string
+	OutcomeSymbols		    string // comma separated
+	OutcomeNames			string // comma separated
+	ArbiterAddr             string
+	ArbiterConfiguration	[]byte
+	Index					string
+}
+
