@@ -1940,4 +1940,31 @@ type AA_TurboCreated struct {// Arbitrum Augur TurboCreated event
 	ArbiterConfiguration	[]byte
 	Index					string
 }
-
+type AA_CompleteSetsMinted struct {// Arbitrum Augur TurboCreated event
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	TurboId					int64
+	Contract				string
+	Amount					string
+	TargetAddr				string
+}
+type AA_CompleteSetsBurned struct {// Arbitrum Augur TurboCreated event
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	TurboId					int64
+	Contract				string
+	Amount					string
+	TargetAddr				string
+}
+type AA_Claim struct {// Arbitrum Augur Claim event
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	TurboId					int64
+	Contract				string
+}

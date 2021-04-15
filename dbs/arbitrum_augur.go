@@ -168,3 +168,74 @@ func (ss *SQLStorage) Insert_aa_turbo_created_event(evt *p.AA_TurboCreated) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Insert_aa_complete_sets_minted_event(evt *p.AA_CompleteSetsMinted) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	aid:=ss.Lookup_or_create_address(evt.TargetAddr,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO aa_sets_minted (" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
+				"aid,turbo_id,amount" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8::DECIMAL/1e+18)"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			aid,
+			evt.TurboId,
+			evt.Amount,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_sets_minted table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_aa_complete_sets_burned_event(evt *p.AA_CompleteSetsBurned) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	aid:=ss.Lookup_or_create_address(evt.TargetAddr,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO aa_sets_burned(" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
+				"aid,turbo_id,amount" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8::DECIMAL/1e+18)"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			aid,
+			evt.TurboId,
+			evt.Amount,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_sets_burned table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_aa_claim_event(evt *p.AA_Claim) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO aa_claim(" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,turbo_id" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6)"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			evt.TurboId,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_claim table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}

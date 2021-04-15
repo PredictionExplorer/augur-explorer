@@ -126,12 +126,12 @@ func process_arbitrum_augur_events(exit_chan chan bool) {
 		Info.Printf("scanning event range from %v to %v\n",status.LastEvtId,status.LastEvtId+max_batch_size)
 		id_upper_limit := status.LastEvtId + max_batch_size
 		last_evt_id,err := storage.Get_last_evtlog_id()
-		if err != nil {
+		if er != nil {
 			Error.Printf("Error: %v. Possibly 'evt_log' table is empty, aborting",err)
 			os.Exit(1)
 		}
 		if  id_upper_limit > last_evt_id {
-			id_upper_limit = last_evt_id
+			_upper_limit = last_evt_id
 		}
 		events := get_event_ids(status.LastEvtId,id_upper_limit)
 		for _,evt_id := range events {

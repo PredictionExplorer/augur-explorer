@@ -18,7 +18,6 @@ func build_list_of_inspected_events() []InspectedEvent {
 	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)
 	inspected_events= make([]InspectedEvent,0,32)
 	inspected_events = append(inspected_events,
-	/*
 		InspectedEvent {
 			Signature:	hex.EncodeToString(evt_pool_created[:4]),
 			ContractAid: storage.Lookup_or_create_address(caddrs.AMM_Factory.String(),0,0),
@@ -26,12 +25,11 @@ func build_list_of_inspected_events() []InspectedEvent {
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_new_hatchery[:4]),
 			ContractAid: 0,
-		},*/
+		},
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_turbo_created[:4]),
 			ContractAid: 0,
 		},
-		/*
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_complete_sets_minted[:4]),
 			ContractAid: 0,
@@ -43,7 +41,7 @@ func build_list_of_inspected_events() []InspectedEvent {
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_claim[:4]),
 			ContractAid: 0,
-		},*/
+		},
 	)
 	return inspected_events
 }
@@ -84,7 +82,7 @@ func proc_new_hatchery(log *types.Log,elog *EthereumEventLog) {
 	sharetoken_addr:= common.BytesToAddress(log.Data[32+12:64])
 	feepot_addr:= common.BytesToAddress(log.Data[64+12:64+32])
 
-	Info.Printf("Processing PoolCreated event, txhash %v\n",elog.TxHash)
+	Info.Printf("Processing NewHatchery event, txhash %v\n",elog.TxHash)
 	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
 
 //	err := cash_abi.Unpack(&mevt,"Approval",log.Data)
@@ -168,6 +166,95 @@ func proc_turbo_created(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_aa_turbo_created_event(&evt)
 }
+func proc_complete_sets_minted(log *types.Log,elog *EthereumEventLog) {
+
+	var evt AA_CompleteSetsMinted
+	var eth_evt CompleteSetsMinted
+
+	err := aa_abi.Unpack(&eth_evt,"CompleteSetsMinted",log.Data)
+	if err != nil {
+		Error.Printf("Error unpacking CompleteSetsMinted event: %v\n",err)
+		os.Exit(1)
+	}
+
+	Info.Printf("Processing CompleteSetsMinted event, txhash %v\n",elog.TxHash)
+	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+	evt.Amount = eth_evt.Amount.String()
+	evt.TurboId = eth_evt.TurboId.Int64()
+	evt.TargetAddr = eth_evt.Target.String()
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+
+	Info.Printf("CompleteSetsMinted{\n")
+	Info.Printf("\tTurboId: %v\n",evt.TurboId)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tTarget: %v\n",evt.TargetAddr)
+	Info.Printf("}\n")
+
+	storage.Insert_aa_complete_sets_minted_event(&evt)
+}
+func proc_complete_sets_burned(log *types.Log,elog *EthereumEventLog) {
+
+	var evt AA_CompleteSetsBurned
+	var eth_evt CompleteSetsBurned
+
+	err := aa_abi.Unpack(&eth_evt,"CompleteSetsBurned",log.Data)
+	if err != nil {
+		Error.Printf("Error unpacking CompleteSetsBurned event: %v\n",err)
+		os.Exit(1)
+	}
+
+	Info.Printf("Processing CompleteSetsBurned event, txhash %v\n",elog.TxHash)
+	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+	evt.Amount = eth_evt.Amount.String()
+	evt.TurboId = eth_evt.TurboId.Int64()
+	evt.TargetAddr = eth_evt.Target.String()
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+
+	Info.Printf("CompleteSetsBurned{\n")
+	Info.Printf("\tTurboId: %v\n",evt.TurboId)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tTarget: %v\n",evt.TargetAddr)
+	Info.Printf("}\n")
+
+	storage.Insert_aa_complete_sets_burned_event(&evt)
+}
+func proc_claim(log *types.Log,elog *EthereumEventLog) {
+
+	var evt AA_Claim
+	var eth_evt Claim
+
+	err := aa_abi.Unpack(&eth_evt,"Claim",log.Data)
+	if err != nil {
+		Error.Printf("Error unpacking Claim event: %v\n",err)
+		os.Exit(1)
+	}
+
+	Info.Printf("Processing Claim event, txhash %v\n",elog.TxHash)
+	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+	evt.TurboId = eth_evt.TurboId.Int64()
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+
+	Info.Printf("Claim {\n")
+	Info.Printf("\tTurboId: %v\n",evt.TurboId)
+	Info.Printf("}\n")
+
+	storage.Insert_aa_claim_event(&evt)
+}
 func process_arbitrum_augur_event(evt_id int64) error {
 
 	evtlog := storage.Get_event_log(evt_id)
@@ -190,6 +277,15 @@ func process_arbitrum_augur_event(evt_id int64) error {
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_turbo_created) {
 			proc_turbo_created(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_complete_sets_minted) {
+			proc_complete_sets_minted(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_complete_sets_burned) {
+			proc_complete_sets_burned(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_claim) {
+			proc_claim(&log,&evtlog)
 		}
 	}
 	return nil

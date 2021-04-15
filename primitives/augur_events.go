@@ -421,5 +421,20 @@ type TurboCreated struct {
 	Index                *big.Int
 	Raw                  types.Log // Blockchain specific contextual infos
 }
-
+type CompleteSetsBurned struct {
+	TurboId *big.Int
+	Amount  *big.Int
+	Target  common.Address
+	Raw     types.Log // Blockchain specific contextual infos
+}
+type CompleteSetsMinted struct {
+	TurboId *big.Int
+	Amount  *big.Int
+	Target  common.Address
+	Raw     types.Log // Blockchain specific contextual infos
+}
+type Claim struct {
+	TurboId *big.Int
+	Raw     types.Log // Blockchain specific contextual infos
+}
 
