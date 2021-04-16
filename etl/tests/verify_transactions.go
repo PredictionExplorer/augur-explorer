@@ -166,13 +166,24 @@ func verify_block(bnum int64) error {
 	}
 	for txidx,tx := range transactions {
 		tx_hash := common.HexToHash(tx.TxHash)
-		rcpt,err := eclient.TransactionReceipt(ctx,tx_hash)
-		if err != nil {
-			Error.Printf(
-				"Can't get receipt at block %v for tx (%v) %v , getReceipt err: %v\n",
-				bnum,txidx,tx.TxHash,err,
-			)
-			os.Exit(1)
+		var err error
+		var rcpt *types.Receipt
+		var max_tries int = 10
+		for {
+			rcpt,err = eclient.TransactionReceipt(ctx,tx_hash)
+			if err != nil {
+				Error.Printf(
+					"Can't get receipt at block %v for tx (%v) %v , getReceipt err: %v\n",
+					bnum,txidx,tx.TxHash,err,
+				)
+			} else {
+				break
+			}
+			max_tries--
+			if max_tries==0 {
+				Info.Printf("Too many errors at RPC, exiting\n")
+				os.Exit(1)
+			}
 		}
 		if rcpt.Status == types.ReceiptStatusFailed {
 			continue	// transaction failed (i.e. Out of Gas, etc)
