@@ -30,6 +30,9 @@ const (
 	COMPLETE_SETS_BURNED = "2df8f390c89a8c8e8b89875f61085269c64b16b81e7745b844ba42a40a3dde27"
 	CLAIM = "7bb2b3c10797baccb6f8c4791f1edd6ca2f0d028ee0eda64b01a9a57e3a653f7"
 
+	ERC20_TRANSFER = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+	//																		(used by FeePot)
+
 	NUM_AUGUR_CONTRACTS int = 35
 )
 var (
@@ -77,6 +80,8 @@ var (
 	evt_claim,_ = hex.DecodeString(CLAIM)
 	//event Claim(uint256 turboId);
 
+	evt_erc20_transfer,_ = hex.DecodeString(ERC20_TRANSFER)
+
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 	Error   *log.Logger
@@ -112,7 +117,7 @@ func get_event_ids(from_evt_id,to_evt_id int64) []int64 {
 }
 func process_arbitrum_augur_events(exit_chan chan bool) {
 
-	var max_batch_size int64 = 1024*100
+	var max_batch_size int64 = 1024*5
 	for {
 		status := storage.Get_arbitrum_augur_processing_status()
 		select {
@@ -126,12 +131,12 @@ func process_arbitrum_augur_events(exit_chan chan bool) {
 		Info.Printf("scanning event range from %v to %v\n",status.LastEvtId,status.LastEvtId+max_batch_size)
 		id_upper_limit := status.LastEvtId + max_batch_size
 		last_evt_id,err := storage.Get_last_evtlog_id()
-		if er != nil {
+		if err != nil {
 			Error.Printf("Error: %v. Possibly 'evt_log' table is empty, aborting",err)
 			os.Exit(1)
 		}
 		if  id_upper_limit > last_evt_id {
-			_upper_limit = last_evt_id
+			id_upper_limit = last_evt_id
 		}
 		events := get_event_ids(status.LastEvtId,id_upper_limit)
 		for _,evt_id := range events {

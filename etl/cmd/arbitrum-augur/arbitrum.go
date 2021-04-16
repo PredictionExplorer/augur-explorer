@@ -42,6 +42,10 @@ func build_list_of_inspected_events() []InspectedEvent {
 			Signature: hex.EncodeToString(evt_claim[:4]),
 			ContractAid: 0,
 		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_erc20_transfer[:4]),
+			ContractAid: 0,
+		},
 	)
 	return inspected_events
 }
@@ -255,6 +259,46 @@ func proc_claim(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_aa_claim_event(&evt)
 }
+func proc_erc20_transfer(log *types.Log,elog *EthereumEventLog) {
+	var evt AA_FeePotTransfer
+	var eth_evt ETransfer
+	if len(log.Topics)!=3 {
+		Info.Printf(
+			"ERC20 transfer event is not compliant log.Topics!=3. Tx (id=%v) hash=%v\n",
+			elog.TxId,log.TxHash.String(),
+		)
+		return
+	}
+	eth_evt.From= common.BytesToAddress(log.Topics[1][12:])
+	eth_evt.To= common.BytesToAddress(log.Topics[2][12:])
+	err := aa_abi.Unpack(&eth_evt,"Transfer",log.Data)
+	if err != nil {
+		Error.Printf("Event ERC20_Transfer, decode error: %v",err)
+	}
+	evt.Contract = log.Address.String()
+	Info.Printf("Processing FeePot ERC20 transfer event, txhash %v\n",elog.TxHash)
+	is_feepot := storage.Is_feepot(evt.Contract)
+	if !is_feepot {
+		Info.Printf("\t not a FeePot address, skipping\n")
+		return
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.TimeStamp = elog.TimeStamp
+	evt.From=eth_evt.From.String()
+	evt.To=eth_evt.To.String()
+	evt.Value=eth_evt.Value.String()
+
+	Info.Printf("FeePot Transfer {\n")
+	Info.Printf("\tFrom: %v\n",evt.From)
+	Info.Printf("\tTo: %v\n",evt.To)
+	Info.Printf("\tValue: %v\n",evt.Value)
+	Info.Print("}\n")
+
+	storage.Insert_aa_feepot_transfer_event(&evt)
+}
 func process_arbitrum_augur_event(evt_id int64) error {
 
 	evtlog := storage.Get_event_log(evt_id)
@@ -286,6 +330,9 @@ func process_arbitrum_augur_event(evt_id int64) error {
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_claim) {
 			proc_claim(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_transfer) {
+			proc_erc20_transfer(&log,&evtlog)
 		}
 	}
 	return nil

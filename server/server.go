@@ -2715,3 +2715,10 @@ func ens_name_info(c *gin.Context) {
 		"ENSInfo" : ens_info,
 	})
 }
+func arbitrum_augur_pools(c *gin.Context) {
+
+	pools := augur_srv.storage.Get_arbitrum_augur_pools()
+	c.HTML(http.StatusOK, "arbitrum_augur_pools.html", gin.H{
+		"ArbitrumAugurPools" : pools,
+	})
+}

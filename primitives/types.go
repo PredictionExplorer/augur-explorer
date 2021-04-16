@@ -1968,3 +1968,25 @@ type AA_Claim struct {// Arbitrum Augur Claim event
 	TurboId					int64
 	Contract				string
 }
+type AA_Pool struct {// Arbitrum Augur Pool 
+	BlockNum				int64
+	TimeStamp				int64
+	PoolAid					int64
+	HatcheryAid				int64
+	TurboId					int64
+	DateTime				string
+	PoolAddr				string
+	HatcheryAddr			string
+	CreatorAddr				string
+	TxHash					string
+}
+type AA_FeePotTransfer struct { //ERC20 transfer event for FeePot
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Contract				string
+	From					string
+	To						string
+	Value					string
+}

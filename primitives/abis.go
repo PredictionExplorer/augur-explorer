@@ -83,7 +83,8 @@ const (
 			`{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"id","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"creatorFee","type":"uint256"},{"indexed":false,"internalType":"string[]","name":"outcomeSymbols","type":"string[]"},{"indexed":false,"internalType":"bytes32[]","name":"outcomeNames","type":"bytes32[]"},{"indexed":false,"internalType":"uint256","name":"numTicks","type":"uint256"},{"indexed":false,"internalType":"contractIArbiter","name":"arbiter","type":"address"},{"indexed":false,"internalType":"bytes","name":"arbiterConfiguration","type":"bytes"},{"indexed":true,"internalType":"uint256","name":"index","type":"uint256"}],"name":"TurboCreated","type":"event"},`+
 			`{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"turboId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"address","name":"target","type":"address"}],"name":"CompleteSetsMinted","type":"event"},`+
 			`{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"turboId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"address","name":"target","type":"address"}],"name":"CompleteSetsBurned","type":"event"},` +
-			`{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"turboId","type":"uint256"}],"name":"Claim","type":"event"}`+
+			`{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"turboId","type":"uint256"}],"name":"Claim","type":"event"},`+
+			`{"anonymous":false,"inputs":[{"indexed":true,"internalType": "address","name": "from","type": "address"},{"indexed": true,"internalType": "address","name": "to","type": "address"},{"indexed": false,"internalType": "uint256","name": "value","type": "uint256"}],"name": "Transfer","type": "event"}`+
 	"]"
 )
 

@@ -176,6 +176,7 @@ func main() {
 	r.GET("/black/noshow_bond",augur_noshow_bond_prices)
 	r.GET("/black/validity_bond",augur_validity_bond_prices)
 	r.GET("/black/ens_name_info/:fqdn",ens_name_info)
+	r.GET("/black/aa/pools",arbitrum_augur_pools)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -243,6 +244,7 @@ func main() {
 	r.GET("/api/validity_bond",a1_validity_bond_prices)
 	r.GET("/api/ens_name_info/:fqdn",a1_ens_name_info)
 	r.GET("/api/ens_lookup/:user",a1_ens_name_lookup)
+	r.GET("/api/aa/pools",a1_arbitrum_augur_pools)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

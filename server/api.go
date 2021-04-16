@@ -1824,3 +1824,16 @@ func a1_ens_name_lookup(c *gin.Context) {
 			"TotalRows" : total_names,
 	})
 }
+func a1_arbitrum_augur_pools(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	pool := augur_srv.storage.Get_arbitrum_augur_pools()
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": status,
+		"error" : err_str,
+		"ArbitrumAugurPools" : pools,
+	})
+}
