@@ -203,6 +203,7 @@ func verify_block(bnum int64) error {
 				)
 				continue
 			} else {
+				stored_idx:=-1
 				for i:=0 ; i < num_logs ; i++ {
 					lg := rcpt.Logs[i]
 					if len(lg.Topics) == 0 {
@@ -214,11 +215,12 @@ func verify_block(bnum int64) error {
 						Error.Printf("Couldn't RLP-encode log : %v\n",err)
 						os.Exit(1)
 					}
-					if !bytes.Equal(encoded_rlp_bytes,stored_logs[i]) {
+					stored_idx++
+					if !bytes.Equal(encoded_rlp_bytes,stored_logs[stored_idx]) {
 						Mismatch.Printf(
 							"At block %v for tx %v log #%v does not match (should %v, stored %v)\n",
 							bnum,tx.TxHash,i,
-							hex.EncodeToString(encoded_rlp_bytes),hex.EncodeToString(stored_logs[i]),
+							hex.EncodeToString(encoded_rlp_bytes),hex.EncodeToString(stored_logs[stored_idx]),
 						)
 						continue
 					} else {
