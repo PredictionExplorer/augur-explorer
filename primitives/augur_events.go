@@ -410,6 +410,13 @@ type EReportingFeeChanged struct {//0xadddfaec4505d90a6a211907536944e6e1af7ff5cf
 
 
 /////////// (AUGUR) ARBITRUM EVENTS
+type AMMFactoryPoolCreated struct {
+	Pool          common.Address
+	MarketFactory common.Address
+	MarketId      *big.Int
+	Creator       common.Address
+	Raw           types.Log // Blockchain specific contextual infos
+}
 type TurboCreated struct {
 	Id                   *big.Int
 	CreatorFee           *big.Int
@@ -421,6 +428,7 @@ type TurboCreated struct {
 	Index                *big.Int
 	Raw                  types.Log // Blockchain specific contextual infos
 }
+/* DISCONTINUED
 type CompleteSetsBurned struct {
 	TurboId *big.Int
 	Amount  *big.Int
@@ -433,8 +441,56 @@ type CompleteSetsMinted struct {
 	Target  common.Address
 	Raw     types.Log // Blockchain specific contextual infos
 }
-type Claim struct {
-	TurboId *big.Int
-	Raw     types.Log // Blockchain specific contextual infos
+*/
+type WinningsClaimed struct {
+	Id       *big.Int
+	Amount   *big.Int
+	Receiver common.Address
+	Raw      types.Log // Blockchain specific contextual infos
 }
+type PriceMarketCreated struct {
+	Id        *big.Int
+	Creator   common.Address
+	EndTime   *big.Int
+	SpotPrice *big.Int
+	Raw       types.Log // Blockchain specific contextual infos
+}
+type SportsLinkMarketCreated struct {
+	Id                *big.Int
+	Creator           common.Address
+	EndTime           *big.Int
+	MarketType        uint8
+	EventId           *big.Int
+	HomeTeamId        *big.Int
+	AwayTeamId        *big.Int
+	EstimatedStarTime *big.Int
+	Score             *big.Int
+	Raw               types.Log // Blockchain specific contextual infos
+}
+type TrustedMarketCreated struct {
+	Id          *big.Int
+	Creator     common.Address
+	EndTime     *big.Int
+	Description string
+	Outcomes    []string
+	Raw         types.Log // Blockchain specific contextual infos
+}
+type MarketResolved struct {
+	Id     *big.Int
+	Winner common.Address
+	Raw    types.Log // Blockchain specific contextual infos
+}
+type SharesMinted struct {
+	Id       *big.Int
+	Amount   *big.Int
+	Receiver common.Address
+	Raw      types.Log // Blockchain specific contextual infos
+}
+type SharesBurned struct {
+	Id       *big.Int
+	Amount   *big.Int
+	Receiver common.Address
+	Raw      types.Log // Blockchain specific contextual infos
+}
+
 

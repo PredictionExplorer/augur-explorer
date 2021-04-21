@@ -5,6 +5,11 @@
         "internalType": "contract BFactory",
         "name": "_bFactory",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_fee",
+        "type": "uint256"
       }
     ],
     "stateMutability": "nonpayable",
@@ -16,25 +21,25 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "_pool",
+        "name": "pool",
         "type": "address"
       },
       {
         "indexed": true,
         "internalType": "address",
-        "name": "_hatchery",
+        "name": "marketFactory",
         "type": "address"
       },
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "_turboId",
+        "name": "marketId",
         "type": "uint256"
       },
       {
         "indexed": true,
         "internalType": "address",
-        "name": "_creator",
+        "name": "creator",
         "type": "address"
       }
     ],
@@ -44,13 +49,13 @@
   {
     "inputs": [
       {
-        "internalType": "contract ITurboHatchery",
-        "name": "_hatchery",
+        "internalType": "contract AbstractMarketFactory",
+        "name": "_marketFactory",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "_turboId",
+        "name": "_marketId",
         "type": "uint256"
       },
       {
@@ -96,13 +101,13 @@
   {
     "inputs": [
       {
-        "internalType": "contract ITurboHatchery",
-        "name": "_hatchery",
+        "internalType": "contract AbstractMarketFactory",
+        "name": "_marketFactory",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "_turboId",
+        "name": "_marketId",
         "type": "uint256"
       },
       {
@@ -135,13 +140,13 @@
   {
     "inputs": [
       {
-        "internalType": "contract ITurboHatchery",
-        "name": "_hatchery",
+        "internalType": "contract AbstractMarketFactory",
+        "name": "_marketFactory",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "_turboId",
+        "name": "_marketId",
         "type": "uint256"
       },
       {
@@ -174,6 +179,78 @@
   {
     "inputs": [
       {
+        "internalType": "contract AbstractMarketFactory",
+        "name": "_marketFactory",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPoolBalances",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract AbstractMarketFactory",
+        "name": "_marketFactory",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPoolWeights",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract AbstractMarketFactory",
+        "name": "_marketFactory",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getSwapFee",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -198,37 +275,13 @@
   {
     "inputs": [
       {
-        "internalType": "contract ITurboHatchery",
-        "name": "_hatchery",
+        "internalType": "contract AbstractMarketFactory",
+        "name": "_marketFactory",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "_turboId",
-        "type": "uint256"
-      }
-    ],
-    "name": "prices",
-    "outputs": [
-      {
-        "internalType": "uint256[]",
-        "name": "",
-        "type": "uint256[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "contract ITurboHatchery",
-        "name": "_hatchery",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_turboId",
+        "name": "_marketId",
         "type": "uint256"
       },
       {
@@ -256,13 +309,13 @@
   {
     "inputs": [
       {
-        "internalType": "contract ITurboHatchery",
-        "name": "_hatchery",
+        "internalType": "contract AbstractMarketFactory",
+        "name": "_marketFactory",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "_turboId",
+        "name": "_marketId",
         "type": "uint256"
       },
       {
@@ -271,17 +324,17 @@
         "type": "uint256"
       },
       {
-        "internalType": "uint256[]",
-        "name": "_swaps",
-        "type": "uint256[]"
+        "internalType": "uint256",
+        "name": "_shareTokensIn",
+        "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "_minCollateralOut",
+        "name": "_minSetsOut",
         "type": "uint256"
       }
     ],
-    "name": "sell",
+    "name": "sellForCollateral",
     "outputs": [
       {
         "internalType": "uint256",
@@ -295,13 +348,13 @@
   {
     "inputs": [
       {
-        "internalType": "contract ITurboHatchery",
-        "name": "_hatchery",
+        "internalType": "contract AbstractMarketFactory",
+        "name": "_marketFactory",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "_turboId",
+        "name": "_marketId",
         "type": "uint256"
       }
     ],

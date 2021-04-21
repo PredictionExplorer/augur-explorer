@@ -28,7 +28,7 @@ var (
 )
 
 // AMMFactoryABI is the input ABI used to generate the binding from.
-const AMMFactoryABI = "[{\"inputs\":[{\"internalType\":\"contractBFactory\",\"name\":\"_bFactory\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_pool\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"_hatchery\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"_turboId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"_creator\",\"type\":\"address\"}],\"name\":\"PoolCreated\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"contractITurboHatchery\",\"name\":\"_hatchery\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_turboId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_collateralIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_minLPTokensOut\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_lpTokenRecipient\",\"type\":\"address\"}],\"name\":\"addLiquidity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bFactory\",\"outputs\":[{\"internalType\":\"contractBFactory\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractITurboHatchery\",\"name\":\"_hatchery\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_turboId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_collateralIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_minTokensOut\",\"type\":\"uint256\"}],\"name\":\"buy\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractITurboHatchery\",\"name\":\"_hatchery\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_turboId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_initialLiquidity\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"_weights\",\"type\":\"uint256[]\"},{\"internalType\":\"address\",\"name\":\"_lpTokenRecipient\",\"type\":\"address\"}],\"name\":\"createPool\",\"outputs\":[{\"internalType\":\"contractBPool\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"pools\",\"outputs\":[{\"internalType\":\"contractBPool\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractITurboHatchery\",\"name\":\"_hatchery\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_turboId\",\"type\":\"uint256\"}],\"name\":\"prices\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractITurboHatchery\",\"name\":\"_hatchery\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_turboId\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"_lpTokensPerOutcome\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256\",\"name\":\"_minCollateralOut\",\"type\":\"uint256\"}],\"name\":\"removeLiquidity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractITurboHatchery\",\"name\":\"_hatchery\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_turboId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"_swaps\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256\",\"name\":\"_minCollateralOut\",\"type\":\"uint256\"}],\"name\":\"sell\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractITurboHatchery\",\"name\":\"_hatchery\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_turboId\",\"type\":\"uint256\"}],\"name\":\"tokenRatios\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"
+const AMMFactoryABI = "[{\"inputs\":[{\"internalType\":\"contractBFactory\",\"name\":\"_bFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_fee\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"pool\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"marketFactory\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"marketId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"}],\"name\":\"PoolCreated\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_collateralIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_minLPTokensOut\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_lpTokenRecipient\",\"type\":\"address\"}],\"name\":\"addLiquidity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bFactory\",\"outputs\":[{\"internalType\":\"contractBFactory\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_collateralIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_minTokensOut\",\"type\":\"uint256\"}],\"name\":\"buy\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_initialLiquidity\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"_weights\",\"type\":\"uint256[]\"},{\"internalType\":\"address\",\"name\":\"_lpTokenRecipient\",\"type\":\"address\"}],\"name\":\"createPool\",\"outputs\":[{\"internalType\":\"contractBPool\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"getPoolBalances\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"getPoolWeights\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"getSwapFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"pools\",\"outputs\":[{\"internalType\":\"contractBPool\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"_lpTokensPerOutcome\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256\",\"name\":\"_minCollateralOut\",\"type\":\"uint256\"}],\"name\":\"removeLiquidity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_shareTokensIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_minSetsOut\",\"type\":\"uint256\"}],\"name\":\"sellForCollateral\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"tokenRatios\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"
 
 // AMMFactory is an auto generated Go binding around an Ethereum contract.
 type AMMFactory struct {
@@ -198,6 +198,84 @@ func (_AMMFactory *AMMFactoryCallerSession) BFactory() (common.Address, error) {
 	return _AMMFactory.Contract.BFactory(&_AMMFactory.CallOpts)
 }
 
+// GetPoolBalances is a free data retrieval call binding the contract method 0xd2364bf3.
+//
+// Solidity: function getPoolBalances(address _marketFactory, uint256 _marketId) view returns(uint256[])
+func (_AMMFactory *AMMFactoryCaller) GetPoolBalances(opts *bind.CallOpts, _marketFactory common.Address, _marketId *big.Int) ([]*big.Int, error) {
+	var (
+		ret0 = new([]*big.Int)
+	)
+	out := ret0
+	err := _AMMFactory.contract.Call(opts, out, "getPoolBalances", _marketFactory, _marketId)
+	return *ret0, err
+}
+
+// GetPoolBalances is a free data retrieval call binding the contract method 0xd2364bf3.
+//
+// Solidity: function getPoolBalances(address _marketFactory, uint256 _marketId) view returns(uint256[])
+func (_AMMFactory *AMMFactorySession) GetPoolBalances(_marketFactory common.Address, _marketId *big.Int) ([]*big.Int, error) {
+	return _AMMFactory.Contract.GetPoolBalances(&_AMMFactory.CallOpts, _marketFactory, _marketId)
+}
+
+// GetPoolBalances is a free data retrieval call binding the contract method 0xd2364bf3.
+//
+// Solidity: function getPoolBalances(address _marketFactory, uint256 _marketId) view returns(uint256[])
+func (_AMMFactory *AMMFactoryCallerSession) GetPoolBalances(_marketFactory common.Address, _marketId *big.Int) ([]*big.Int, error) {
+	return _AMMFactory.Contract.GetPoolBalances(&_AMMFactory.CallOpts, _marketFactory, _marketId)
+}
+
+// GetPoolWeights is a free data retrieval call binding the contract method 0xd055da71.
+//
+// Solidity: function getPoolWeights(address _marketFactory, uint256 _marketId) view returns(uint256[])
+func (_AMMFactory *AMMFactoryCaller) GetPoolWeights(opts *bind.CallOpts, _marketFactory common.Address, _marketId *big.Int) ([]*big.Int, error) {
+	var (
+		ret0 = new([]*big.Int)
+	)
+	out := ret0
+	err := _AMMFactory.contract.Call(opts, out, "getPoolWeights", _marketFactory, _marketId)
+	return *ret0, err
+}
+
+// GetPoolWeights is a free data retrieval call binding the contract method 0xd055da71.
+//
+// Solidity: function getPoolWeights(address _marketFactory, uint256 _marketId) view returns(uint256[])
+func (_AMMFactory *AMMFactorySession) GetPoolWeights(_marketFactory common.Address, _marketId *big.Int) ([]*big.Int, error) {
+	return _AMMFactory.Contract.GetPoolWeights(&_AMMFactory.CallOpts, _marketFactory, _marketId)
+}
+
+// GetPoolWeights is a free data retrieval call binding the contract method 0xd055da71.
+//
+// Solidity: function getPoolWeights(address _marketFactory, uint256 _marketId) view returns(uint256[])
+func (_AMMFactory *AMMFactoryCallerSession) GetPoolWeights(_marketFactory common.Address, _marketId *big.Int) ([]*big.Int, error) {
+	return _AMMFactory.Contract.GetPoolWeights(&_AMMFactory.CallOpts, _marketFactory, _marketId)
+}
+
+// GetSwapFee is a free data retrieval call binding the contract method 0xfa0de359.
+//
+// Solidity: function getSwapFee(address _marketFactory, uint256 _marketId) view returns(uint256)
+func (_AMMFactory *AMMFactoryCaller) GetSwapFee(opts *bind.CallOpts, _marketFactory common.Address, _marketId *big.Int) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _AMMFactory.contract.Call(opts, out, "getSwapFee", _marketFactory, _marketId)
+	return *ret0, err
+}
+
+// GetSwapFee is a free data retrieval call binding the contract method 0xfa0de359.
+//
+// Solidity: function getSwapFee(address _marketFactory, uint256 _marketId) view returns(uint256)
+func (_AMMFactory *AMMFactorySession) GetSwapFee(_marketFactory common.Address, _marketId *big.Int) (*big.Int, error) {
+	return _AMMFactory.Contract.GetSwapFee(&_AMMFactory.CallOpts, _marketFactory, _marketId)
+}
+
+// GetSwapFee is a free data retrieval call binding the contract method 0xfa0de359.
+//
+// Solidity: function getSwapFee(address _marketFactory, uint256 _marketId) view returns(uint256)
+func (_AMMFactory *AMMFactoryCallerSession) GetSwapFee(_marketFactory common.Address, _marketId *big.Int) (*big.Int, error) {
+	return _AMMFactory.Contract.GetSwapFee(&_AMMFactory.CallOpts, _marketFactory, _marketId)
+}
+
 // Pools is a free data retrieval call binding the contract method 0x8f38a555.
 //
 // Solidity: function pools(address , uint256 ) view returns(address)
@@ -224,161 +302,135 @@ func (_AMMFactory *AMMFactoryCallerSession) Pools(arg0 common.Address, arg1 *big
 	return _AMMFactory.Contract.Pools(&_AMMFactory.CallOpts, arg0, arg1)
 }
 
-// Prices is a free data retrieval call binding the contract method 0xbbc492c0.
-//
-// Solidity: function prices(address _hatchery, uint256 _turboId) view returns(uint256[])
-func (_AMMFactory *AMMFactoryCaller) Prices(opts *bind.CallOpts, _hatchery common.Address, _turboId *big.Int) ([]*big.Int, error) {
-	var (
-		ret0 = new([]*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "prices", _hatchery, _turboId)
-	return *ret0, err
-}
-
-// Prices is a free data retrieval call binding the contract method 0xbbc492c0.
-//
-// Solidity: function prices(address _hatchery, uint256 _turboId) view returns(uint256[])
-func (_AMMFactory *AMMFactorySession) Prices(_hatchery common.Address, _turboId *big.Int) ([]*big.Int, error) {
-	return _AMMFactory.Contract.Prices(&_AMMFactory.CallOpts, _hatchery, _turboId)
-}
-
-// Prices is a free data retrieval call binding the contract method 0xbbc492c0.
-//
-// Solidity: function prices(address _hatchery, uint256 _turboId) view returns(uint256[])
-func (_AMMFactory *AMMFactoryCallerSession) Prices(_hatchery common.Address, _turboId *big.Int) ([]*big.Int, error) {
-	return _AMMFactory.Contract.Prices(&_AMMFactory.CallOpts, _hatchery, _turboId)
-}
-
 // TokenRatios is a free data retrieval call binding the contract method 0xc7b4b6dd.
 //
-// Solidity: function tokenRatios(address _hatchery, uint256 _turboId) view returns(uint256[])
-func (_AMMFactory *AMMFactoryCaller) TokenRatios(opts *bind.CallOpts, _hatchery common.Address, _turboId *big.Int) ([]*big.Int, error) {
+// Solidity: function tokenRatios(address _marketFactory, uint256 _marketId) view returns(uint256[])
+func (_AMMFactory *AMMFactoryCaller) TokenRatios(opts *bind.CallOpts, _marketFactory common.Address, _marketId *big.Int) ([]*big.Int, error) {
 	var (
 		ret0 = new([]*big.Int)
 	)
 	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "tokenRatios", _hatchery, _turboId)
+	err := _AMMFactory.contract.Call(opts, out, "tokenRatios", _marketFactory, _marketId)
 	return *ret0, err
 }
 
 // TokenRatios is a free data retrieval call binding the contract method 0xc7b4b6dd.
 //
-// Solidity: function tokenRatios(address _hatchery, uint256 _turboId) view returns(uint256[])
-func (_AMMFactory *AMMFactorySession) TokenRatios(_hatchery common.Address, _turboId *big.Int) ([]*big.Int, error) {
-	return _AMMFactory.Contract.TokenRatios(&_AMMFactory.CallOpts, _hatchery, _turboId)
+// Solidity: function tokenRatios(address _marketFactory, uint256 _marketId) view returns(uint256[])
+func (_AMMFactory *AMMFactorySession) TokenRatios(_marketFactory common.Address, _marketId *big.Int) ([]*big.Int, error) {
+	return _AMMFactory.Contract.TokenRatios(&_AMMFactory.CallOpts, _marketFactory, _marketId)
 }
 
 // TokenRatios is a free data retrieval call binding the contract method 0xc7b4b6dd.
 //
-// Solidity: function tokenRatios(address _hatchery, uint256 _turboId) view returns(uint256[])
-func (_AMMFactory *AMMFactoryCallerSession) TokenRatios(_hatchery common.Address, _turboId *big.Int) ([]*big.Int, error) {
-	return _AMMFactory.Contract.TokenRatios(&_AMMFactory.CallOpts, _hatchery, _turboId)
+// Solidity: function tokenRatios(address _marketFactory, uint256 _marketId) view returns(uint256[])
+func (_AMMFactory *AMMFactoryCallerSession) TokenRatios(_marketFactory common.Address, _marketId *big.Int) ([]*big.Int, error) {
+	return _AMMFactory.Contract.TokenRatios(&_AMMFactory.CallOpts, _marketFactory, _marketId)
 }
 
 // AddLiquidity is a paid mutator transaction binding the contract method 0x45fa6783.
 //
-// Solidity: function addLiquidity(address _hatchery, uint256 _turboId, uint256 _collateralIn, uint256 _minLPTokensOut, address _lpTokenRecipient) returns(uint256)
-func (_AMMFactory *AMMFactoryTransactor) AddLiquidity(opts *bind.TransactOpts, _hatchery common.Address, _turboId *big.Int, _collateralIn *big.Int, _minLPTokensOut *big.Int, _lpTokenRecipient common.Address) (*types.Transaction, error) {
-	return _AMMFactory.contract.Transact(opts, "addLiquidity", _hatchery, _turboId, _collateralIn, _minLPTokensOut, _lpTokenRecipient)
+// Solidity: function addLiquidity(address _marketFactory, uint256 _marketId, uint256 _collateralIn, uint256 _minLPTokensOut, address _lpTokenRecipient) returns(uint256)
+func (_AMMFactory *AMMFactoryTransactor) AddLiquidity(opts *bind.TransactOpts, _marketFactory common.Address, _marketId *big.Int, _collateralIn *big.Int, _minLPTokensOut *big.Int, _lpTokenRecipient common.Address) (*types.Transaction, error) {
+	return _AMMFactory.contract.Transact(opts, "addLiquidity", _marketFactory, _marketId, _collateralIn, _minLPTokensOut, _lpTokenRecipient)
 }
 
 // AddLiquidity is a paid mutator transaction binding the contract method 0x45fa6783.
 //
-// Solidity: function addLiquidity(address _hatchery, uint256 _turboId, uint256 _collateralIn, uint256 _minLPTokensOut, address _lpTokenRecipient) returns(uint256)
-func (_AMMFactory *AMMFactorySession) AddLiquidity(_hatchery common.Address, _turboId *big.Int, _collateralIn *big.Int, _minLPTokensOut *big.Int, _lpTokenRecipient common.Address) (*types.Transaction, error) {
-	return _AMMFactory.Contract.AddLiquidity(&_AMMFactory.TransactOpts, _hatchery, _turboId, _collateralIn, _minLPTokensOut, _lpTokenRecipient)
+// Solidity: function addLiquidity(address _marketFactory, uint256 _marketId, uint256 _collateralIn, uint256 _minLPTokensOut, address _lpTokenRecipient) returns(uint256)
+func (_AMMFactory *AMMFactorySession) AddLiquidity(_marketFactory common.Address, _marketId *big.Int, _collateralIn *big.Int, _minLPTokensOut *big.Int, _lpTokenRecipient common.Address) (*types.Transaction, error) {
+	return _AMMFactory.Contract.AddLiquidity(&_AMMFactory.TransactOpts, _marketFactory, _marketId, _collateralIn, _minLPTokensOut, _lpTokenRecipient)
 }
 
 // AddLiquidity is a paid mutator transaction binding the contract method 0x45fa6783.
 //
-// Solidity: function addLiquidity(address _hatchery, uint256 _turboId, uint256 _collateralIn, uint256 _minLPTokensOut, address _lpTokenRecipient) returns(uint256)
-func (_AMMFactory *AMMFactoryTransactorSession) AddLiquidity(_hatchery common.Address, _turboId *big.Int, _collateralIn *big.Int, _minLPTokensOut *big.Int, _lpTokenRecipient common.Address) (*types.Transaction, error) {
-	return _AMMFactory.Contract.AddLiquidity(&_AMMFactory.TransactOpts, _hatchery, _turboId, _collateralIn, _minLPTokensOut, _lpTokenRecipient)
+// Solidity: function addLiquidity(address _marketFactory, uint256 _marketId, uint256 _collateralIn, uint256 _minLPTokensOut, address _lpTokenRecipient) returns(uint256)
+func (_AMMFactory *AMMFactoryTransactorSession) AddLiquidity(_marketFactory common.Address, _marketId *big.Int, _collateralIn *big.Int, _minLPTokensOut *big.Int, _lpTokenRecipient common.Address) (*types.Transaction, error) {
+	return _AMMFactory.Contract.AddLiquidity(&_AMMFactory.TransactOpts, _marketFactory, _marketId, _collateralIn, _minLPTokensOut, _lpTokenRecipient)
 }
 
 // Buy is a paid mutator transaction binding the contract method 0x72b60c30.
 //
-// Solidity: function buy(address _hatchery, uint256 _turboId, uint256 _outcome, uint256 _collateralIn, uint256 _minTokensOut) returns(uint256)
-func (_AMMFactory *AMMFactoryTransactor) Buy(opts *bind.TransactOpts, _hatchery common.Address, _turboId *big.Int, _outcome *big.Int, _collateralIn *big.Int, _minTokensOut *big.Int) (*types.Transaction, error) {
-	return _AMMFactory.contract.Transact(opts, "buy", _hatchery, _turboId, _outcome, _collateralIn, _minTokensOut)
+// Solidity: function buy(address _marketFactory, uint256 _marketId, uint256 _outcome, uint256 _collateralIn, uint256 _minTokensOut) returns(uint256)
+func (_AMMFactory *AMMFactoryTransactor) Buy(opts *bind.TransactOpts, _marketFactory common.Address, _marketId *big.Int, _outcome *big.Int, _collateralIn *big.Int, _minTokensOut *big.Int) (*types.Transaction, error) {
+	return _AMMFactory.contract.Transact(opts, "buy", _marketFactory, _marketId, _outcome, _collateralIn, _minTokensOut)
 }
 
 // Buy is a paid mutator transaction binding the contract method 0x72b60c30.
 //
-// Solidity: function buy(address _hatchery, uint256 _turboId, uint256 _outcome, uint256 _collateralIn, uint256 _minTokensOut) returns(uint256)
-func (_AMMFactory *AMMFactorySession) Buy(_hatchery common.Address, _turboId *big.Int, _outcome *big.Int, _collateralIn *big.Int, _minTokensOut *big.Int) (*types.Transaction, error) {
-	return _AMMFactory.Contract.Buy(&_AMMFactory.TransactOpts, _hatchery, _turboId, _outcome, _collateralIn, _minTokensOut)
+// Solidity: function buy(address _marketFactory, uint256 _marketId, uint256 _outcome, uint256 _collateralIn, uint256 _minTokensOut) returns(uint256)
+func (_AMMFactory *AMMFactorySession) Buy(_marketFactory common.Address, _marketId *big.Int, _outcome *big.Int, _collateralIn *big.Int, _minTokensOut *big.Int) (*types.Transaction, error) {
+	return _AMMFactory.Contract.Buy(&_AMMFactory.TransactOpts, _marketFactory, _marketId, _outcome, _collateralIn, _minTokensOut)
 }
 
 // Buy is a paid mutator transaction binding the contract method 0x72b60c30.
 //
-// Solidity: function buy(address _hatchery, uint256 _turboId, uint256 _outcome, uint256 _collateralIn, uint256 _minTokensOut) returns(uint256)
-func (_AMMFactory *AMMFactoryTransactorSession) Buy(_hatchery common.Address, _turboId *big.Int, _outcome *big.Int, _collateralIn *big.Int, _minTokensOut *big.Int) (*types.Transaction, error) {
-	return _AMMFactory.Contract.Buy(&_AMMFactory.TransactOpts, _hatchery, _turboId, _outcome, _collateralIn, _minTokensOut)
+// Solidity: function buy(address _marketFactory, uint256 _marketId, uint256 _outcome, uint256 _collateralIn, uint256 _minTokensOut) returns(uint256)
+func (_AMMFactory *AMMFactoryTransactorSession) Buy(_marketFactory common.Address, _marketId *big.Int, _outcome *big.Int, _collateralIn *big.Int, _minTokensOut *big.Int) (*types.Transaction, error) {
+	return _AMMFactory.Contract.Buy(&_AMMFactory.TransactOpts, _marketFactory, _marketId, _outcome, _collateralIn, _minTokensOut)
 }
 
 // CreatePool is a paid mutator transaction binding the contract method 0xfd212cf6.
 //
-// Solidity: function createPool(address _hatchery, uint256 _turboId, uint256 _initialLiquidity, uint256[] _weights, address _lpTokenRecipient) returns(address)
-func (_AMMFactory *AMMFactoryTransactor) CreatePool(opts *bind.TransactOpts, _hatchery common.Address, _turboId *big.Int, _initialLiquidity *big.Int, _weights []*big.Int, _lpTokenRecipient common.Address) (*types.Transaction, error) {
-	return _AMMFactory.contract.Transact(opts, "createPool", _hatchery, _turboId, _initialLiquidity, _weights, _lpTokenRecipient)
+// Solidity: function createPool(address _marketFactory, uint256 _marketId, uint256 _initialLiquidity, uint256[] _weights, address _lpTokenRecipient) returns(address)
+func (_AMMFactory *AMMFactoryTransactor) CreatePool(opts *bind.TransactOpts, _marketFactory common.Address, _marketId *big.Int, _initialLiquidity *big.Int, _weights []*big.Int, _lpTokenRecipient common.Address) (*types.Transaction, error) {
+	return _AMMFactory.contract.Transact(opts, "createPool", _marketFactory, _marketId, _initialLiquidity, _weights, _lpTokenRecipient)
 }
 
 // CreatePool is a paid mutator transaction binding the contract method 0xfd212cf6.
 //
-// Solidity: function createPool(address _hatchery, uint256 _turboId, uint256 _initialLiquidity, uint256[] _weights, address _lpTokenRecipient) returns(address)
-func (_AMMFactory *AMMFactorySession) CreatePool(_hatchery common.Address, _turboId *big.Int, _initialLiquidity *big.Int, _weights []*big.Int, _lpTokenRecipient common.Address) (*types.Transaction, error) {
-	return _AMMFactory.Contract.CreatePool(&_AMMFactory.TransactOpts, _hatchery, _turboId, _initialLiquidity, _weights, _lpTokenRecipient)
+// Solidity: function createPool(address _marketFactory, uint256 _marketId, uint256 _initialLiquidity, uint256[] _weights, address _lpTokenRecipient) returns(address)
+func (_AMMFactory *AMMFactorySession) CreatePool(_marketFactory common.Address, _marketId *big.Int, _initialLiquidity *big.Int, _weights []*big.Int, _lpTokenRecipient common.Address) (*types.Transaction, error) {
+	return _AMMFactory.Contract.CreatePool(&_AMMFactory.TransactOpts, _marketFactory, _marketId, _initialLiquidity, _weights, _lpTokenRecipient)
 }
 
 // CreatePool is a paid mutator transaction binding the contract method 0xfd212cf6.
 //
-// Solidity: function createPool(address _hatchery, uint256 _turboId, uint256 _initialLiquidity, uint256[] _weights, address _lpTokenRecipient) returns(address)
-func (_AMMFactory *AMMFactoryTransactorSession) CreatePool(_hatchery common.Address, _turboId *big.Int, _initialLiquidity *big.Int, _weights []*big.Int, _lpTokenRecipient common.Address) (*types.Transaction, error) {
-	return _AMMFactory.Contract.CreatePool(&_AMMFactory.TransactOpts, _hatchery, _turboId, _initialLiquidity, _weights, _lpTokenRecipient)
+// Solidity: function createPool(address _marketFactory, uint256 _marketId, uint256 _initialLiquidity, uint256[] _weights, address _lpTokenRecipient) returns(address)
+func (_AMMFactory *AMMFactoryTransactorSession) CreatePool(_marketFactory common.Address, _marketId *big.Int, _initialLiquidity *big.Int, _weights []*big.Int, _lpTokenRecipient common.Address) (*types.Transaction, error) {
+	return _AMMFactory.Contract.CreatePool(&_AMMFactory.TransactOpts, _marketFactory, _marketId, _initialLiquidity, _weights, _lpTokenRecipient)
 }
 
 // RemoveLiquidity is a paid mutator transaction binding the contract method 0xd3b7634f.
 //
-// Solidity: function removeLiquidity(address _hatchery, uint256 _turboId, uint256[] _lpTokensPerOutcome, uint256 _minCollateralOut) returns(uint256)
-func (_AMMFactory *AMMFactoryTransactor) RemoveLiquidity(opts *bind.TransactOpts, _hatchery common.Address, _turboId *big.Int, _lpTokensPerOutcome []*big.Int, _minCollateralOut *big.Int) (*types.Transaction, error) {
-	return _AMMFactory.contract.Transact(opts, "removeLiquidity", _hatchery, _turboId, _lpTokensPerOutcome, _minCollateralOut)
+// Solidity: function removeLiquidity(address _marketFactory, uint256 _marketId, uint256[] _lpTokensPerOutcome, uint256 _minCollateralOut) returns(uint256)
+func (_AMMFactory *AMMFactoryTransactor) RemoveLiquidity(opts *bind.TransactOpts, _marketFactory common.Address, _marketId *big.Int, _lpTokensPerOutcome []*big.Int, _minCollateralOut *big.Int) (*types.Transaction, error) {
+	return _AMMFactory.contract.Transact(opts, "removeLiquidity", _marketFactory, _marketId, _lpTokensPerOutcome, _minCollateralOut)
 }
 
 // RemoveLiquidity is a paid mutator transaction binding the contract method 0xd3b7634f.
 //
-// Solidity: function removeLiquidity(address _hatchery, uint256 _turboId, uint256[] _lpTokensPerOutcome, uint256 _minCollateralOut) returns(uint256)
-func (_AMMFactory *AMMFactorySession) RemoveLiquidity(_hatchery common.Address, _turboId *big.Int, _lpTokensPerOutcome []*big.Int, _minCollateralOut *big.Int) (*types.Transaction, error) {
-	return _AMMFactory.Contract.RemoveLiquidity(&_AMMFactory.TransactOpts, _hatchery, _turboId, _lpTokensPerOutcome, _minCollateralOut)
+// Solidity: function removeLiquidity(address _marketFactory, uint256 _marketId, uint256[] _lpTokensPerOutcome, uint256 _minCollateralOut) returns(uint256)
+func (_AMMFactory *AMMFactorySession) RemoveLiquidity(_marketFactory common.Address, _marketId *big.Int, _lpTokensPerOutcome []*big.Int, _minCollateralOut *big.Int) (*types.Transaction, error) {
+	return _AMMFactory.Contract.RemoveLiquidity(&_AMMFactory.TransactOpts, _marketFactory, _marketId, _lpTokensPerOutcome, _minCollateralOut)
 }
 
 // RemoveLiquidity is a paid mutator transaction binding the contract method 0xd3b7634f.
 //
-// Solidity: function removeLiquidity(address _hatchery, uint256 _turboId, uint256[] _lpTokensPerOutcome, uint256 _minCollateralOut) returns(uint256)
-func (_AMMFactory *AMMFactoryTransactorSession) RemoveLiquidity(_hatchery common.Address, _turboId *big.Int, _lpTokensPerOutcome []*big.Int, _minCollateralOut *big.Int) (*types.Transaction, error) {
-	return _AMMFactory.Contract.RemoveLiquidity(&_AMMFactory.TransactOpts, _hatchery, _turboId, _lpTokensPerOutcome, _minCollateralOut)
+// Solidity: function removeLiquidity(address _marketFactory, uint256 _marketId, uint256[] _lpTokensPerOutcome, uint256 _minCollateralOut) returns(uint256)
+func (_AMMFactory *AMMFactoryTransactorSession) RemoveLiquidity(_marketFactory common.Address, _marketId *big.Int, _lpTokensPerOutcome []*big.Int, _minCollateralOut *big.Int) (*types.Transaction, error) {
+	return _AMMFactory.Contract.RemoveLiquidity(&_AMMFactory.TransactOpts, _marketFactory, _marketId, _lpTokensPerOutcome, _minCollateralOut)
 }
 
-// Sell is a paid mutator transaction binding the contract method 0xdcd80dcf.
+// SellForCollateral is a paid mutator transaction binding the contract method 0x3fec5cac.
 //
-// Solidity: function sell(address _hatchery, uint256 _turboId, uint256 _outcome, uint256[] _swaps, uint256 _minCollateralOut) returns(uint256)
-func (_AMMFactory *AMMFactoryTransactor) Sell(opts *bind.TransactOpts, _hatchery common.Address, _turboId *big.Int, _outcome *big.Int, _swaps []*big.Int, _minCollateralOut *big.Int) (*types.Transaction, error) {
-	return _AMMFactory.contract.Transact(opts, "sell", _hatchery, _turboId, _outcome, _swaps, _minCollateralOut)
+// Solidity: function sellForCollateral(address _marketFactory, uint256 _marketId, uint256 _outcome, uint256 _shareTokensIn, uint256 _minSetsOut) returns(uint256)
+func (_AMMFactory *AMMFactoryTransactor) SellForCollateral(opts *bind.TransactOpts, _marketFactory common.Address, _marketId *big.Int, _outcome *big.Int, _shareTokensIn *big.Int, _minSetsOut *big.Int) (*types.Transaction, error) {
+	return _AMMFactory.contract.Transact(opts, "sellForCollateral", _marketFactory, _marketId, _outcome, _shareTokensIn, _minSetsOut)
 }
 
-// Sell is a paid mutator transaction binding the contract method 0xdcd80dcf.
+// SellForCollateral is a paid mutator transaction binding the contract method 0x3fec5cac.
 //
-// Solidity: function sell(address _hatchery, uint256 _turboId, uint256 _outcome, uint256[] _swaps, uint256 _minCollateralOut) returns(uint256)
-func (_AMMFactory *AMMFactorySession) Sell(_hatchery common.Address, _turboId *big.Int, _outcome *big.Int, _swaps []*big.Int, _minCollateralOut *big.Int) (*types.Transaction, error) {
-	return _AMMFactory.Contract.Sell(&_AMMFactory.TransactOpts, _hatchery, _turboId, _outcome, _swaps, _minCollateralOut)
+// Solidity: function sellForCollateral(address _marketFactory, uint256 _marketId, uint256 _outcome, uint256 _shareTokensIn, uint256 _minSetsOut) returns(uint256)
+func (_AMMFactory *AMMFactorySession) SellForCollateral(_marketFactory common.Address, _marketId *big.Int, _outcome *big.Int, _shareTokensIn *big.Int, _minSetsOut *big.Int) (*types.Transaction, error) {
+	return _AMMFactory.Contract.SellForCollateral(&_AMMFactory.TransactOpts, _marketFactory, _marketId, _outcome, _shareTokensIn, _minSetsOut)
 }
 
-// Sell is a paid mutator transaction binding the contract method 0xdcd80dcf.
+// SellForCollateral is a paid mutator transaction binding the contract method 0x3fec5cac.
 //
-// Solidity: function sell(address _hatchery, uint256 _turboId, uint256 _outcome, uint256[] _swaps, uint256 _minCollateralOut) returns(uint256)
-func (_AMMFactory *AMMFactoryTransactorSession) Sell(_hatchery common.Address, _turboId *big.Int, _outcome *big.Int, _swaps []*big.Int, _minCollateralOut *big.Int) (*types.Transaction, error) {
-	return _AMMFactory.Contract.Sell(&_AMMFactory.TransactOpts, _hatchery, _turboId, _outcome, _swaps, _minCollateralOut)
+// Solidity: function sellForCollateral(address _marketFactory, uint256 _marketId, uint256 _outcome, uint256 _shareTokensIn, uint256 _minSetsOut) returns(uint256)
+func (_AMMFactory *AMMFactoryTransactorSession) SellForCollateral(_marketFactory common.Address, _marketId *big.Int, _outcome *big.Int, _shareTokensIn *big.Int, _minSetsOut *big.Int) (*types.Transaction, error) {
+	return _AMMFactory.Contract.SellForCollateral(&_AMMFactory.TransactOpts, _marketFactory, _marketId, _outcome, _shareTokensIn, _minSetsOut)
 }
 
 // AMMFactoryPoolCreatedIterator is returned from FilterPoolCreated and is used to iterate over the raw logs and unpacked data for PoolCreated events raised by the AMMFactory contract.
@@ -450,32 +502,32 @@ func (it *AMMFactoryPoolCreatedIterator) Close() error {
 
 // AMMFactoryPoolCreated represents a PoolCreated event raised by the AMMFactory contract.
 type AMMFactoryPoolCreated struct {
-	Pool     common.Address
-	Hatchery common.Address
-	TurboId  *big.Int
-	Creator  common.Address
-	Raw      types.Log // Blockchain specific contextual infos
+	Pool          common.Address
+	MarketFactory common.Address
+	MarketId      *big.Int
+	Creator       common.Address
+	Raw           types.Log // Blockchain specific contextual infos
 }
 
 // FilterPoolCreated is a free log retrieval operation binding the contract event 0x0537d3e5d88810bbfb16874b28bc0f95856d7bb24c8f29511fe463c5b1d27c6b.
 //
-// Solidity: event PoolCreated(address _pool, address indexed _hatchery, uint256 indexed _turboId, address indexed _creator)
-func (_AMMFactory *AMMFactoryFilterer) FilterPoolCreated(opts *bind.FilterOpts, _hatchery []common.Address, _turboId []*big.Int, _creator []common.Address) (*AMMFactoryPoolCreatedIterator, error) {
+// Solidity: event PoolCreated(address pool, address indexed marketFactory, uint256 indexed marketId, address indexed creator)
+func (_AMMFactory *AMMFactoryFilterer) FilterPoolCreated(opts *bind.FilterOpts, marketFactory []common.Address, marketId []*big.Int, creator []common.Address) (*AMMFactoryPoolCreatedIterator, error) {
 
-	var _hatcheryRule []interface{}
-	for _, _hatcheryItem := range _hatchery {
-		_hatcheryRule = append(_hatcheryRule, _hatcheryItem)
+	var marketFactoryRule []interface{}
+	for _, marketFactoryItem := range marketFactory {
+		marketFactoryRule = append(marketFactoryRule, marketFactoryItem)
 	}
-	var _turboIdRule []interface{}
-	for _, _turboIdItem := range _turboId {
-		_turboIdRule = append(_turboIdRule, _turboIdItem)
+	var marketIdRule []interface{}
+	for _, marketIdItem := range marketId {
+		marketIdRule = append(marketIdRule, marketIdItem)
 	}
-	var _creatorRule []interface{}
-	for _, _creatorItem := range _creator {
-		_creatorRule = append(_creatorRule, _creatorItem)
+	var creatorRule []interface{}
+	for _, creatorItem := range creator {
+		creatorRule = append(creatorRule, creatorItem)
 	}
 
-	logs, sub, err := _AMMFactory.contract.FilterLogs(opts, "PoolCreated", _hatcheryRule, _turboIdRule, _creatorRule)
+	logs, sub, err := _AMMFactory.contract.FilterLogs(opts, "PoolCreated", marketFactoryRule, marketIdRule, creatorRule)
 	if err != nil {
 		return nil, err
 	}
@@ -484,23 +536,23 @@ func (_AMMFactory *AMMFactoryFilterer) FilterPoolCreated(opts *bind.FilterOpts, 
 
 // WatchPoolCreated is a free log subscription operation binding the contract event 0x0537d3e5d88810bbfb16874b28bc0f95856d7bb24c8f29511fe463c5b1d27c6b.
 //
-// Solidity: event PoolCreated(address _pool, address indexed _hatchery, uint256 indexed _turboId, address indexed _creator)
-func (_AMMFactory *AMMFactoryFilterer) WatchPoolCreated(opts *bind.WatchOpts, sink chan<- *AMMFactoryPoolCreated, _hatchery []common.Address, _turboId []*big.Int, _creator []common.Address) (event.Subscription, error) {
+// Solidity: event PoolCreated(address pool, address indexed marketFactory, uint256 indexed marketId, address indexed creator)
+func (_AMMFactory *AMMFactoryFilterer) WatchPoolCreated(opts *bind.WatchOpts, sink chan<- *AMMFactoryPoolCreated, marketFactory []common.Address, marketId []*big.Int, creator []common.Address) (event.Subscription, error) {
 
-	var _hatcheryRule []interface{}
-	for _, _hatcheryItem := range _hatchery {
-		_hatcheryRule = append(_hatcheryRule, _hatcheryItem)
+	var marketFactoryRule []interface{}
+	for _, marketFactoryItem := range marketFactory {
+		marketFactoryRule = append(marketFactoryRule, marketFactoryItem)
 	}
-	var _turboIdRule []interface{}
-	for _, _turboIdItem := range _turboId {
-		_turboIdRule = append(_turboIdRule, _turboIdItem)
+	var marketIdRule []interface{}
+	for _, marketIdItem := range marketId {
+		marketIdRule = append(marketIdRule, marketIdItem)
 	}
-	var _creatorRule []interface{}
-	for _, _creatorItem := range _creator {
-		_creatorRule = append(_creatorRule, _creatorItem)
+	var creatorRule []interface{}
+	for _, creatorItem := range creator {
+		creatorRule = append(creatorRule, creatorItem)
 	}
 
-	logs, sub, err := _AMMFactory.contract.WatchLogs(opts, "PoolCreated", _hatcheryRule, _turboIdRule, _creatorRule)
+	logs, sub, err := _AMMFactory.contract.WatchLogs(opts, "PoolCreated", marketFactoryRule, marketIdRule, creatorRule)
 	if err != nil {
 		return nil, err
 	}
@@ -534,7 +586,7 @@ func (_AMMFactory *AMMFactoryFilterer) WatchPoolCreated(opts *bind.WatchOpts, si
 
 // ParsePoolCreated is a log parse operation binding the contract event 0x0537d3e5d88810bbfb16874b28bc0f95856d7bb24c8f29511fe463c5b1d27c6b.
 //
-// Solidity: event PoolCreated(address _pool, address indexed _hatchery, uint256 indexed _turboId, address indexed _creator)
+// Solidity: event PoolCreated(address pool, address indexed marketFactory, uint256 indexed marketId, address indexed creator)
 func (_AMMFactory *AMMFactoryFilterer) ParsePoolCreated(log types.Log) (*AMMFactoryPoolCreated, error) {
 	event := new(AMMFactoryPoolCreated)
 	if err := _AMMFactory.contract.UnpackLog(event, "PoolCreated", log); err != nil {

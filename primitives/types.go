@@ -1908,22 +1908,49 @@ type AA_PoolCreated struct {// Arbitrum Augur PoolCreated event
 	BlockNum				int64
 	TxId					int64
 	TimeStamp				int64
+	MarketId				int64
 	Contract				string
 	PoolAddr				string
-	HatcheryAddr			string
-	TurboId					string
+	FactoryAddr				string
 	CreatorAddr				string
 }
-type AA_NewHatchery struct {// Arbitrum Augur NewHatchery Created event
+type AA_PriceMarket struct {// Arbitrum Augur PriceMarket event
 	EvtId					int64
 	BlockNum				int64
 	TxId					int64
 	TimeStamp				int64
+	EndTime					int64
 	Contract				string
-	HatcheryAddr			string
-	CollateralAddr			string
-	ShareTokenAddr			string
-	FeePotAddr				string
+	CreatorAddr				string
+	SpotPrice				string
+}
+type AA_SportsMarket struct {// Arbitrum Augur Sports Market Created event
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	EstimatedStarTime		int64
+	EndTime					int64
+	MarketId				int64
+	EventId					int64
+	HomeTeamId				int64
+	AwayTeamId				int64
+	Score					int64
+	MarketType				int
+	Contract				string
+	CreatorAddr				string
+}
+type AA_TrustedMarket struct {// Arbitrum Augur TrustedMarket Created event
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	MarketId				int64
+	EndTime					int64
+	Contract				string
+	CreatorAddr				string
+	Description				string
+	Outcomes				string
 }
 type AA_TurboCreated struct {// Arbitrum Augur TurboCreated event
 	EvtId					int64
@@ -1940,33 +1967,35 @@ type AA_TurboCreated struct {// Arbitrum Augur TurboCreated event
 	ArbiterConfiguration	[]byte
 	Index					string
 }
-type AA_CompleteSetsMinted struct {// Arbitrum Augur TurboCreated event
+type AA_SharesMinted struct {// Arbitrum Augur SharesMinted event
 	EvtId					int64
 	BlockNum				int64
 	TxId					int64
 	TimeStamp				int64
-	TurboId					int64
+	MarketId				int64
 	Contract				string
 	Amount					string
-	TargetAddr				string
+	ReceiverAddr			string
 }
-type AA_CompleteSetsBurned struct {// Arbitrum Augur TurboCreated event
+type AA_SharesBurned struct {// Arbitrum Augur SharesBurned event
 	EvtId					int64
 	BlockNum				int64
 	TxId					int64
 	TimeStamp				int64
-	TurboId					int64
+	MarketId				int64
 	Contract				string
 	Amount					string
-	TargetAddr				string
+	ReceiverAddr			string
 }
-type AA_Claim struct {// Arbitrum Augur Claim event
+type AA_WinningsClaimed struct {// Arbitrum Augur Winnnings Claimed
 	EvtId					int64
 	BlockNum				int64
 	TxId					int64
 	TimeStamp				int64
-	TurboId					int64
+	MarketId				int64
 	Contract				string
+	Amount					string
+	ReceiverAddr			string
 }
 type AA_Pool struct {// Arbitrum Augur Pool 
 	BlockNum				int64
@@ -1989,4 +2018,14 @@ type AA_FeePotTransfer struct { //ERC20 transfer event for FeePot
 	From					string
 	To						string
 	Value					string
+}
+type AA_Turbo struct {
+	BlockNum				int64
+	TimeStamp				int64
+	CratorFee				float64
+	ArbiterAid				int64
+	NumTicks				int
+	ArbiterAddr				string
+
+
 }

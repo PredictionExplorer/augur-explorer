@@ -54,12 +54,12 @@ func (ss *SQLStorage) Insert_aa_pool_created_event(evt *p.AA_PoolCreated) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	pool_aid:=ss.Lookup_or_create_address(evt.PoolAddr,evt.BlockNum,evt.TxId)
-	hatchery_aid:=ss.Lookup_or_create_address(evt.HatcheryAddr,evt.BlockNum,evt.TxId)
+	factory_aid:=ss.Lookup_or_create_address(evt.FactoryAddr,evt.BlockNum,evt.TxId)
 	creator_aid:=ss.Lookup_or_create_address(evt.CreatorAddr,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO aa_pool_created(" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"pool_aid,hatchery_aid,creator_aid,turbo_id" +
+				"pool_aid,factory_aid,creator_aid,market_id" +
 			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9)"
 
 	_,err := ss.db.Exec(query,
@@ -69,9 +69,9 @@ func (ss *SQLStorage) Insert_aa_pool_created_event(evt *p.AA_PoolCreated) {
 			contract_aid,
 			evt.TimeStamp,
 			pool_aid,
-			hatchery_aid,
+			factory_aid,
 			creator_aid,
-			evt.TurboId,
+			evt.MarketId,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_pool_created table: %v; q=%v",err,query))
@@ -110,18 +110,15 @@ func (ss *SQLStorage) Get_arbitrum_augur_processing_status() p.ArbitrumAugurProc
 	}
 	return output
 }
-func (ss *SQLStorage) Insert_aa_new_hatchery_event(evt *p.AA_NewHatchery) {
+func (ss *SQLStorage) Insert_aa_price_market_event(evt *p.AA_PriceMarket) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
-	hatchery_aid:=ss.Lookup_or_create_address(evt.HatcheryAddr,evt.BlockNum,evt.TxId)
-	collateral_aid:=ss.Lookup_or_create_address(evt.CollateralAddr,evt.BlockNum,evt.TxId)
-	shtok_aid:=ss.Lookup_or_create_address(evt.ShareTokenAddr,evt.BlockNum,evt.TxId)
-	feepot_aid:=ss.Lookup_or_create_address(evt.FeePotAddr,evt.BlockNum,evt.TxId)
+	creator_aid:=ss.Lookup_or_create_address(evt.CreatorAddr,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO aa_new_hatchery(" +
+	query = "INSERT INTO aa_price_market (" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"hatchery_aid,collateral_aid,shtok_aid,feepot_aid" +
-			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9)"
+				"creator_aid,end_time,spot_price" +
+				") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,TO_TIMESTAMP($7),$8::DECIMAL/1e+18)"
 
 	_,err := ss.db.Exec(query,
 			evt.EvtId,
@@ -129,25 +126,25 @@ func (ss *SQLStorage) Insert_aa_new_hatchery_event(evt *p.AA_NewHatchery) {
 			evt.TxId,
 			contract_aid,
 			evt.TimeStamp,
-			hatchery_aid,
-			collateral_aid,
-			shtok_aid,
-			feepot_aid,
+			creator_aid,
+			evt.EndTime,
+			evt.SpotPrice,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_new_hatchery table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_aa_turbo_created_event(evt *p.AA_TurboCreated) {
+func (ss *SQLStorage) Insert_aa_sports_market_event(evt *p.AA_SportsMarket) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
-	arbiter_aid:=ss.Lookup_or_create_address(evt.ArbiterAddr,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO aa_turbo_created (" +
+	query = "INSERT INTO aa_sports_market (" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"num_ticks,arbiter_aid,creator_fee,tindex,outcome_symbols,outcome_names,arbiter_config" +
-				") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8::DECIMAL/1e+19,$9,$10,$11,$12)"
+				"market_id,start_time,end_time,market_type,event_id,home_team_id,away_team_id,score" +
+				") VALUES ("+
+					"$1,$2,$3,$4,TO_TIMESTAMP($5),$6,TO_TIMESTAMP($7),TO_TIMESTAMP()$8,"+
+					"$9,$10,$11,$12,$13)"
 
 	_,err := ss.db.Exec(query,
 			evt.EvtId,
@@ -155,27 +152,56 @@ func (ss *SQLStorage) Insert_aa_turbo_created_event(evt *p.AA_TurboCreated) {
 			evt.TxId,
 			contract_aid,
 			evt.TimeStamp,
-			evt.NumTicks,
-			arbiter_aid,
-			evt.CreatorFee,
-			evt.Index,
-			evt.OutcomeSymbols,
-			evt.OutcomeNames,
-			evt.ArbiterConfiguration,
+			evt.MarketId,
+			evt.EstimatedStarTime,
+			evt.EndTime,
+			evt.MarketType,
+			evt.EventId,
+			evt.HomeTeamId,
+			evt.AwayTeamId,
+			evt.Score,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_turbo_created table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_aa_complete_sets_minted_event(evt *p.AA_CompleteSetsMinted) {
+func (ss *SQLStorage) Insert_aa_trusted_market_event(evt *p.AA_TrustedMarket) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
-	aid:=ss.Lookup_or_create_address(evt.TargetAddr,evt.BlockNum,evt.TxId)
+	creator_aid:=ss.Lookup_or_create_address(evt.CreatorAddr,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO aa_trusted_market (" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
+				"market_id,end_time,creator_aid,description,outcomes" +
+				") VALUES ("+
+					"$1,$2,$3,$4,TO_TIMESTAMP($5),$6,TO_TIMESTAMP($7),$8,$9,$10)"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			evt.MarketId,
+			evt.EndTime,
+			creator_aid,
+			evt.Description,
+			evt.Outcomes,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_turbo_created table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_aa_shares_minted_event(evt *p.AA_SharesMinted) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	aid:=ss.Lookup_or_create_address(evt.ReceiverAddr,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO aa_sets_minted (" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"aid,turbo_id,amount" +
+				"aid,market_id,amount" +
 			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8::DECIMAL/1e+18)"
 
 	_,err := ss.db.Exec(query,
@@ -185,22 +211,22 @@ func (ss *SQLStorage) Insert_aa_complete_sets_minted_event(evt *p.AA_CompleteSet
 			contract_aid,
 			evt.TimeStamp,
 			aid,
-			evt.TurboId,
+			evt.MarketId,
 			evt.Amount,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_sets_minted table: %v; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_shares_minted table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_aa_complete_sets_burned_event(evt *p.AA_CompleteSetsBurned) {
+func (ss *SQLStorage) Insert_aa_shares_burned_event(evt *p.AA_SharesBurned) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
-	aid:=ss.Lookup_or_create_address(evt.TargetAddr,evt.BlockNum,evt.TxId)
+	aid:=ss.Lookup_or_create_address(evt.ReceiverAddr,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO aa_sets_burned(" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"aid,turbo_id,amount" +
+				"aid,market_id,amount" +
 			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8::DECIMAL/1e+18)"
 
 	_,err := ss.db.Exec(query,
@@ -210,21 +236,22 @@ func (ss *SQLStorage) Insert_aa_complete_sets_burned_event(evt *p.AA_CompleteSet
 			contract_aid,
 			evt.TimeStamp,
 			aid,
-			evt.TurboId,
+			evt.MarketId,
 			evt.Amount,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_sets_burned table: %v; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_shares_burned table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_aa_claim_event(evt *p.AA_Claim) {
+func (ss *SQLStorage) Insert_aa_winnings_claimed_event(evt *p.AA_WinningsClaimed) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	receiver_aid:=ss.Lookup_or_create_address(evt.ReceiverAddr,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO aa_claim(" +
-				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,turbo_id" +
-			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6)"
+	query = "INSERT INTO aa_winclaim(" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,market_id,receiver_aid,amount" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
 
 	_,err := ss.db.Exec(query,
 			evt.EvtId,
@@ -232,10 +259,12 @@ func (ss *SQLStorage) Insert_aa_claim_event(evt *p.AA_Claim) {
 			evt.TxId,
 			contract_aid,
 			evt.TimeStamp,
-			evt.TurboId,
+			evt.MarketId,
+			receiver_aid,
+			evt.Amount,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_claim table: %v; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_winclaim table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
 }
@@ -332,4 +361,8 @@ func (ss *SQLStorage) Is_feepot(addr string) bool {
 	}
 	_=null_id
 	return true
+}
+func (ss *SQLStorage) Get_turbos() {
+
+
 }

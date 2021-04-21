@@ -20,40 +20,45 @@ func build_list_of_inspected_events() []InspectedEvent {
 	inspected_events = append(inspected_events,
 		InspectedEvent {
 			Signature:	hex.EncodeToString(evt_pool_created[:4]),
-			ContractAid: storage.Lookup_or_create_address(caddrs.AMM_Factory.String(),0,0),
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_new_hatchery[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_turbo_created[:4]),
+			Signature: hex.EncodeToString(evt_sports_market_created[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_complete_sets_minted[:4]),
+			Signature: hex.EncodeToString(evt_price_market_created[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_complete_sets_burned[:4]),
+			Signature: hex.EncodeToString(evt_trusted_market_created[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_claim[:4]),
+			Signature: hex.EncodeToString(evt_shares_minted[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_shares_burned[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_winnings_claimed[:4]),
+			ContractAid: 0,
+		},
+/*		InspectedEvent {
 			Signature: hex.EncodeToString(evt_erc20_transfer[:4]),
 			ContractAid: 0,
-		},
+		},*/
 	)
 	return inspected_events
 }
 func proc_pool_created(log *types.Log,elog *EthereumEventLog) {
 
 	var evt AA_PoolCreated
-	hatchery_addr := common.BytesToAddress(log.Topics[1][12:])
+	factory_addr := common.BytesToAddress(log.Topics[1][12:])
 	creator_addr := common.BytesToAddress(log.Topics[3][12:])
+	market_id:= log.Topics[2].Big()
 	Info.Printf("Processing PoolCreated event, txhash %v\n",elog.TxHash)
 	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
 	Info.Printf("topics[2] = %v\n",hex.EncodeToString(log.Topics[2][:]))
@@ -65,87 +70,72 @@ func proc_pool_created(log *types.Log,elog *EthereumEventLog) {
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.PoolAddr = pool_addr.String()
-	evt.HatcheryAddr = hatchery_addr.String()
-	evt.TurboId = hex.EncodeToString(log.Topics[2][:])
+	evt.MarketId = market_id.Int64()
 	evt.CreatorAddr = creator_addr.String()
 
 	Info.Printf("PoolCreated {\n")
 	Info.Printf("\tPoolAddr: %v\n",pool_addr.String())
-	Info.Printf("\tHatchery: %v\n",hatchery_addr.String())
+	Info.Printf("\tMarketFactory: %v\n",factory_addr.String())
 	Info.Printf("\tCreator: %v\n",creator_addr.String())
-	Info.Printf("\tTurbo Id: %v\n",evt.TurboId)
+	Info.Printf("\tMarket Id: %v\n",evt.MarketId)
 	Info.Printf("}\n")
 
 	storage.Insert_aa_pool_created_event(&evt)
 }
-func proc_new_hatchery(log *types.Log,elog *EthereumEventLog) {
+func proc_new_price_market(log *types.Log,elog *EthereumEventLog) {
 
-	var evt AA_NewHatchery
-	hatchery_addr := common.BytesToAddress(log.Data[12:32])
-	collateral_addr := common.BytesToAddress(log.Topics[1][12:])
-	sharetoken_addr:= common.BytesToAddress(log.Data[32+12:64])
-	feepot_addr:= common.BytesToAddress(log.Data[64+12:64+32])
+	var evt AA_PriceMarket
+	var eth_evt PriceMarketCreated
 
 	Info.Printf("Processing NewHatchery event, txhash %v\n",elog.TxHash)
 	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
 
-//	err := cash_abi.Unpack(&mevt,"Approval",log.Data)
-//	if err != nil {
-//		Fatalf("Event ERC20_Approval Cash decode error: %v",err)
+	err := aa_abi.Unpack(&mevt,"PriceMarketCreated",log.Data)
+	if err != nil {
+		Error.Printf("Event PriceMarketCreated decode error: %v",err)
+		os.Exit(1)
+	}
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.HatcheryAddr = hatchery_addr.String()
-	evt.CollateralAddr= collateral_addr.String()
-	evt.FeePotAddr= feepot_addr.String()
-	evt.ShareTokenAddr = sharetoken_addr.String()
+	evt.MarketId = eth_evt.Id.Int64()
+	evt.CreatorAddr = eth_evt.Creator.String()
+	evt.EndTime = eth_evt.Int64()
+	evt.SpotPrice = eth_evt.SpotPrice.String()
 
-	Info.Printf("NewHatchery{\n")
-	Info.Printf("\tHatcheryAddress: %v\n",hatchery_addr.String())
-	Info.Printf("\tCollateral: %v\n",collateral_addr.String())
-	Info.Printf("\tShareToken: %v\n",sharetoken_addr.String())
-	Info.Printf("\tFeePot: %v\n",feepot_addr.String())
+	Info.Printf("PriceMarketCreated{\n")
+	Info.Printf("\tId: %v\n",evt.MarketId)
+	Info.Printf("\tCreator: %v\n",creator_addr.String())
+	Info.Printf("\tEndTime: %v\n",evt.EndTime)
+	Info.Printf("\tSpotPrice: %v\n",evt.SpotPrice)
 	Info.Printf("}\n")
 
-	storage.Insert_aa_new_hatchery_event(&evt)
+	storage.Insert_aa_price_market_event(&evt)
 }
-func proc_turbo_created(log *types.Log,elog *EthereumEventLog) {
+func proc_sports_market(log *types.Log,elog *EthereumEventLog) {
 
-	var evt AA_TurboCreated
-	var eth_evt TurboCreated
+	var evt AA_SportsMarket
+	var eth_evt SportsMarketCreated
 
-	err := aa_abi.Unpack(&eth_evt,"TurboCreated",log.Data)
+	err := aa_abi.Unpack(&eth_evt,"SportsMarketCreated",log.Data)
 	if err != nil {
-		Error.Printf("Error unpacking TurboCreated event: %v\n",err)
+		Error.Printf("Error unpacking SportsMarketCreated event: %v\n",err)
 		os.Exit(1)
 	}
 
-	evt.TurboId = eth_evt.Id.Int64()
-	evt.CreatorFee = eth_evt.CreatorFee.String()
-	for _,sym:= range eth_evt.OutcomeSymbols {
-		if len(evt.OutcomeSymbols) > 0 {
-			evt.OutcomeSymbols=evt.OutcomeSymbols + ","
-		}
-		evt.OutcomeSymbols = evt.OutcomeSymbols + sym
-	}
-	for _,n:= range eth_evt.OutcomeNames {
-		if len(evt.OutcomeNames) > 0 {
-			evt.OutcomeNames=evt.OutcomeNames + ","
-		}
-		evt.OutcomeNames= evt.OutcomeNames+ Bytes32_to_string(n[:])
-	}
-	evt.NumTicks = eth_evt.NumTicks.Int64()
-	evt.ArbiterAddr = eth_evt.Arbiter.String()
-	evt.ArbiterConfiguration = eth_evt.ArbiterConfiguration
-	if eth_evt.Index == nil {
-		evt.Index = "0"
-	} else {
-		evt.Index = eth_evt.Index.String()
-	}
+	event_id := log.Topics[1].Big()
+	evt.EventId = event_id.Int64()
+	evt.CreatorAddr = eth_evt.Creator.String()
+	evt.EndTime = eth_evt.EndTime.Int64()
+	evt.MarketType = eth_evt.MarketType
+	evt.HomeTeamId = eth_evt.HomeTeamId.Int64()
+	evt.AwayTeamId = eth_evt.AwayTeamId.Int64()
+	evt.EstimatedStarTime = eth_evt.EstimatedStarTime.Int64()
+	evt.Score = eth_evt.Score
 
-	Info.Printf("Processing TurboCreated event, txhash %v\n",elog.TxHash)
+	Info.Printf("Processing SportsMarketCreated event, txhash %v\n",elog.TxHash)
 	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
 
 //	err := cash_abi.Unpack(&mevt,"Approval",log.Data)
@@ -157,35 +147,79 @@ func proc_turbo_created(log *types.Log,elog *EthereumEventLog) {
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 
-	Info.Printf("TurboCreated{\n")
-	Info.Printf("\tId: %v\n",evt.TurboId)
-	Info.Printf("\tCreatorFee: %v\n",evt.CreatorFee)
-	Info.Printf("\tOutcomeSymbols: %v\n",evt.OutcomeSymbols)
-	Info.Printf("\tOutcomeNames: %v\n",evt.OutcomeNames)
-	Info.Printf("\tNumTicks: %v\n",evt.NumTicks)
-	Info.Printf("\tArbiterAddr: %v\n",evt.ArbiterAddr)
-	Info.Printf("\tArbiterConfiguration: %v\n",evt.ArbiterConfiguration)
-	Info.Printf("\tIndex: %v\n",evt.Index)
+	Info.Printf("SportsMarketCreated{\n")
+	Info.Printf("\tId: %v\n",evt.MarketId)
+	Info.Printf("\tCreator: %v\n",evt.CreatorAddr)
+	Info.Printf("\tEndTime: %v\n",evt.EndTime)
+	Info.Printf("\tMarketType: %v\n",evt.MarketType)
+	Info.Printf("\tEventId: %v\n",evt.EventId)
+	Info.Printf("\tHomeTeamId: %v\n",evt.HomeTeamId)
+	Info.Printf("\tAwayTeamId: %v\n",evt.AwayTeamId)
+	Info.Printf("\tEstimatedStarTime: %v\n",evt.EstimatedStarTime)
+	Info.Printf("\tScore: %v\n",evt.Score)
 	Info.Printf("}\n")
 
-	storage.Insert_aa_turbo_created_event(&evt)
+	storage.Insert_aa_sports_market_event(&evt)
 }
-func proc_complete_sets_minted(log *types.Log,elog *EthereumEventLog) {
+func proc_trusted_market(log *types.Log,elog *EthereumEventLog) {
 
-	var evt AA_CompleteSetsMinted
-	var eth_evt CompleteSetsMinted
+	var evt AA_TrustedMarket
+	var eth_evt TrustedMarketCreated
 
-	err := aa_abi.Unpack(&eth_evt,"CompleteSetsMinted",log.Data)
+	err := aa_abi.Unpack(&eth_evt,"TrustedMarketCreated",log.Data)
 	if err != nil {
-		Error.Printf("Error unpacking CompleteSetsMinted event: %v\n",err)
+		Error.Printf("Error unpacking TrustedMarketCreated event: %v\n",err)
 		os.Exit(1)
 	}
 
-	Info.Printf("Processing CompleteSetsMinted event, txhash %v\n",elog.TxHash)
+	evt.MarketId= eth_evt.Id.Int64()
+	evt.CreatorAddr = eth_evt.Creator.String()
+	evt.EndTime = eth_evt.Int64()
+	evt.Description = eth_evt.Description
+	var outcomes string
+	for _,outc:= range eth_evt.Outcomes {
+		if len(outcomes) > 0 {
+			outcomes=outc+ ","
+		}
+		outcomes = outcoms + sym
+	}
+	evt.Outcomes = outcomes
+
+	Info.Printf("Processing TrustedMarketCreated event, txhash %v\n",elog.TxHash)
+	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+
+	Info.Printf("TrustedMarketreated{\n")
+	Info.Printf("\tId: %v\n",evt.MarketId)
+	Info.Printf("\tCreator: %v\n",evt.CreatorAddr)
+	Info.Printf("\tEndTime: %v\n",evt.EndTime)
+	Info.Printf("\tDescription: %v\n",evt.Description)
+	Info.Printf("\tOutcomes: %v\n",evt.Outcomes)
+	Info.Printf("}\n")
+
+	storage.Insert_aa_trusted_market_event(&evt)
+}
+func proc_shares_minted(log *types.Log,elog *EthereumEventLog) {
+
+	var evt AA_SharesMinted
+	var eth_evt SharesMinted
+
+	err := aa_abi.Unpack(&eth_evt,"SharesMinted",log.Data)
+	if err != nil {
+		Error.Printf("Error unpacking SharesMinted event: %v\n",err)
+		os.Exit(1)
+	}
+
+	Info.Printf("Processing SharesMinted event, txhash %v\n",elog.TxHash)
 	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
 	evt.Amount = eth_evt.Amount.String()
-	evt.TurboId = eth_evt.TurboId.Int64()
-	evt.TargetAddr = eth_evt.Target.String()
+	evt.MarketId = eth_evt.Id.Int64()
+	evt.ReceiverAddr = eth_evt.Target.String()
 
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
@@ -193,30 +227,30 @@ func proc_complete_sets_minted(log *types.Log,elog *EthereumEventLog) {
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 
-	Info.Printf("CompleteSetsMinted{\n")
-	Info.Printf("\tTurboId: %v\n",evt.TurboId)
+	Info.Printf("SharesMinted{\n")
+	Info.Printf("\tId: %v\n",evt.MarketId)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
-	Info.Printf("\tTarget: %v\n",evt.TargetAddr)
+	Info.Printf("\tReceiver: %v\n",evt.ReceiverAddr)
 	Info.Printf("}\n")
 
-	storage.Insert_aa_complete_sets_minted_event(&evt)
+	storage.Insert_aa_shares_minted_event(&evt)
 }
 func proc_complete_sets_burned(log *types.Log,elog *EthereumEventLog) {
 
-	var evt AA_CompleteSetsBurned
-	var eth_evt CompleteSetsBurned
+	var evt AA_SharesBurned
+	var eth_evt SharesBurned
 
-	err := aa_abi.Unpack(&eth_evt,"CompleteSetsBurned",log.Data)
+	err := aa_abi.Unpack(&eth_evt,"SharesBurned",log.Data)
 	if err != nil {
-		Error.Printf("Error unpacking CompleteSetsBurned event: %v\n",err)
+		Error.Printf("Error unpacking SharesBurned event: %v\n",err)
 		os.Exit(1)
 	}
 
-	Info.Printf("Processing CompleteSetsBurned event, txhash %v\n",elog.TxHash)
+	Info.Printf("Processing SharesBurned event, txhash %v\n",elog.TxHash)
 	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
 	evt.Amount = eth_evt.Amount.String()
-	evt.TurboId = eth_evt.TurboId.Int64()
-	evt.TargetAddr = eth_evt.Target.String()
+	evt.MarketId = eth_evt.Id.Int64()
+	evt.ReceiverAddr = eth_evt.Receiver.String()
 
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
@@ -224,28 +258,30 @@ func proc_complete_sets_burned(log *types.Log,elog *EthereumEventLog) {
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 
-	Info.Printf("CompleteSetsBurned{\n")
-	Info.Printf("\tTurboId: %v\n",evt.TurboId)
+	Info.Printf("SharesBurned{\n")
+	Info.Printf("\tId: %v\n",evt.TurboId)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
-	Info.Printf("\tTarget: %v\n",evt.TargetAddr)
+	Info.Printf("\tReceiver: %v\n",evt.ReceiverAddr)
 	Info.Printf("}\n")
 
-	storage.Insert_aa_complete_sets_burned_event(&evt)
+	storage.Insert_aa_shares_burned_event(&evt)
 }
-func proc_claim(log *types.Log,elog *EthereumEventLog) {
+func proc_winnings_claimed(log *types.Log,elog *EthereumEventLog) {
 
-	var evt AA_Claim
-	var eth_evt Claim
+	var evt AA_WinningsClaimed
+	var eth_evt WinningsClamed
 
-	err := aa_abi.Unpack(&eth_evt,"Claim",log.Data)
+	err := aa_abi.Unpack(&eth_evt,"WinningsClaimed",log.Data)
 	if err != nil {
-		Error.Printf("Error unpacking Claim event: %v\n",err)
+		Error.Printf("Error unpacking WinningsClaimed event: %v\n",err)
 		os.Exit(1)
 	}
 
-	Info.Printf("Processing Claim event, txhash %v\n",elog.TxHash)
+	Info.Printf("Processing WinningsClaimed event, txhash %v\n",elog.TxHash)
 	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
-	evt.TurboId = eth_evt.TurboId.Int64()
+	evt.MarketId = eth_evt.Id.Int64()
+	evt.Amount=eth_evt.Amount.Int64()
+	evt.ReceiverAddr=eth_evt.Receiver.String()
 
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
@@ -253,8 +289,10 @@ func proc_claim(log *types.Log,elog *EthereumEventLog) {
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 
-	Info.Printf("Claim {\n")
-	Info.Printf("\tTurboId: %v\n",evt.TurboId)
+	Info.Printf("WinningsClaimed {\n")
+	Info.Printf("\tId: %v\n",evt.MarketId)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tReceiver: %v\n",evt.ReceiverAddr)
 	Info.Printf("}\n")
 
 	storage.Insert_aa_claim_event(&evt)

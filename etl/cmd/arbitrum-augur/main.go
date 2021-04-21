@@ -24,26 +24,35 @@ const (
 	DEFAULT_DB_LOG				= "db.log"
 
 	POOL_CREATED = "0537d3e5d88810bbfb16874b28bc0f95856d7bb24c8f29511fe463c5b1d27c6b"
-	NEW_HATCHERY= "08afdadd49d632c11dbde177a7ab47701b5adaac8f633beedd892c8da8d4393f"
-	TURBO_CREATED = "2c4d919a4805caed2e2fdd9bb8a122413c2a643b61e08b957445484bbbfd8f4f"
-	COMPLETE_SETS_MINTED = "51b2bca5bb2f65b2670950591ce7b54cfc4d99b2db85abfea36b8b92d10ac380"
-	COMPLETE_SETS_BURNED = "2df8f390c89a8c8e8b89875f61085269c64b16b81e7745b844ba42a40a3dde27"
-	CLAIM = "7bb2b3c10797baccb6f8c4791f1edd6ca2f0d028ee0eda64b01a9a57e3a653f7"
+	SPORTS_MARKET_CREATED = "afad6545e5200f9fdf4db34dfca61a9e7d72518593fd5155d11fd69c20e1555f"
+	PRICE_MARKET_CREATED = "28c8de42a10b7bcc4a65ea3618bc8ada3e24cd7394886eae1b4f5f7440477080"
+	TRUSTED_MARKET_CREATED = "a1bb41461c32765a0cc838c35ce6b8e28985bb6a069dfe2af0873796438670d4"
+	SHARES_MINTED = "d81c0442e10068a9818f3aa093c9ccb804584690df572d7df3da2d892a6973f2"
+	SHARES_BURNED = "b6fdb729b2ed801daf629f0ab713e4a7a73619505790f6f27fd92d6f2c9688d7"
+	MARKET_RESOLVED = "c68d106ea6e4bec784925cfd91767212c71ced92adbac107dc364435321113f6"
+	WINNINGS_CLAIMED = "2bdd7a5109193ce6270ec3b4afcf4ccd4a06c27742ba11f660498cb41433bb00"
 
 	ERC20_TRANSFER = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 	//																		(used by FeePot)
 
-	NUM_AUGUR_CONTRACTS int = 35
 )
 var (
 	evt_pool_created,_ = hex.DecodeString(POOL_CREATED)
-	//event PoolCreated(
-	//	address _pool,
-	//	address indexed _hatchery,
-	//	uint256 indexed _turboId,
-	//	address indexed _creator
+	// event PoolCreated(
+	//	address pool,
+	//	address indexed marketFactory,
+	//	uint256 indexed marketId,
+	//	address indexed creator
 	//);
+							// DISCONTINUED
+							//event PoolCreated(
+							//	address _pool,
+							//	address indexed _hatchery,
+							//	uint256 indexed _turboId,
+							//	address indexed _creator
+							//);
 
+/*DISCONTINUED							
 	evt_new_hatchery,_ = hex.DecodeString(NEW_HATCHERY)
 	//event NewHatchery(
 	//	address id,
@@ -51,7 +60,8 @@ var (
 	//	address shareTokenFactory,
 	//	address feePot
 	//);
-
+*/
+/* DISCONTINUED
 	evt_turbo_created,_ = hex.DecodeString(TURBO_CREATED)
 	//    event TurboCreated(
 	//        uint256 id,
@@ -63,22 +73,84 @@ var (
 	//        bytes arbiterConfiguration,
 	//        uint256 indexed index
 	//    );
+*/
+	// Price Market
+	evt_price_market_created,_ = hex.DecodeString(PRICE_MARKET_CREATED)
+	//event MarketCreated(
+	//	uint256 id, address creator,
+	//	uint256 endTime,
+	//	uint256 spotPrice
+	//);
 
-	evt_complete_sets_minted,_ = hex.DecodeString(COMPLETE_SETS_MINTED)
+	// Sports  Market
+	evt_sports_market_created,_ = hex.DecodeString(SPORTS_MARKET_CREATED)
+	//event MarketCreated(
+	//  uint256 id,
+	//  address creator,
+	//	uint256 endTime,
+	//	MarketType marketType,
+	//	uint256 indexed eventId,
+	//	uint256 homeTeamId,
+	//	uint256 awayTeamId,
+	//	uint256 estimatedStarTime,
+	//	int256 score
+	//);
+
+	// Trusted Market
+	evt_trusted_market_created,_ = hex.DecodeString(TRUSTED_MARKET_CREATED)
+	//event MarketCreated(
+	//	uint256 id,
+	//	address creator,
+	//	uint256 _endTime,
+	//	string description,
+	//	string[] outcomes
+	//);
+
+	// MarketResolved
+	evt_market_resolved,_= hex.DecodeString(MARKET_RESOLVED)
+	//event MarketResolved(
+	//	uint256 id,
+	//	address winner
+	//);
+
+
+	/* DISCONTINUED
 	//event CompleteSetsMinted(
 	//	uint256 turboId,
 	//	uint256 amount,
 	//	address target
 	//);
-	evt_complete_sets_burned,_ = hex.DecodeString(COMPLETE_SETS_BURNED)
+	*/
+
+	evt_shares_minted,_ = hex.DecodeString(SHARES_MINTED)
+	//event SharesMinted(
+	//	uint256 id,
+	//	uint256 amount,
+	//	address receiver
+	//);
+
+	/*DISCONTINUED
 	//event CompleteSetsBurned(
 	//	uint256 turboId,
 	//	uint256 amount,
 	//	address target
 	//);
+	*/
+	evt_shares_burned,_ = hex.DecodeString(SHARES_BURNED)
+	//event SharesBurned(
+	//	uint256 id,
+	//	uint256 amount,
+	//	address receiver
+	//);
 
-	evt_claim,_ = hex.DecodeString(CLAIM)
-	//event Claim(uint256 turboId);
+
+	// DISCONTINUED //event Claim(uint256 turboId);
+	evt_winnings_claimed,_ = hex.DecodeString(WINNINGS_CLAIMED)
+	//event WinningsClaimed(
+	//	uint256 id,
+	//	uint256 amount,
+	//	address receiver
+	//);
 
 	evt_erc20_transfer,_ = hex.DecodeString(ERC20_TRANSFER)
 
