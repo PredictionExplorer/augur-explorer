@@ -72,6 +72,7 @@ func proc_pool_created(log *types.Log,elog *EthereumEventLog) {
 	evt.PoolAddr = pool_addr.String()
 	evt.MarketId = market_id.Int64()
 	evt.CreatorAddr = creator_addr.String()
+	evt.FactoryAddr = factory_addr.String()
 
 	Info.Printf("PoolCreated {\n")
 	Info.Printf("\tPoolAddr: %v\n",pool_addr.String())
@@ -82,7 +83,7 @@ func proc_pool_created(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_aa_pool_created_event(&evt)
 }
-func proc_new_price_market(log *types.Log,elog *EthereumEventLog) {
+func proc_price_market(log *types.Log,elog *EthereumEventLog) {
 
 	var evt AA_PriceMarket
 	var eth_evt PriceMarketCreated
@@ -90,7 +91,7 @@ func proc_new_price_market(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("Processing NewHatchery event, txhash %v\n",elog.TxHash)
 	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
 
-	err := aa_abi.Unpack(&mevt,"PriceMarketCreated",log.Data)
+	err := aa_abi.Unpack(&eth_evt,"PriceMarketCreated",log.Data)
 	if err != nil {
 		Error.Printf("Event PriceMarketCreated decode error: %v",err)
 		os.Exit(1)
@@ -102,12 +103,12 @@ func proc_new_price_market(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.MarketId = eth_evt.Id.Int64()
 	evt.CreatorAddr = eth_evt.Creator.String()
-	evt.EndTime = eth_evt.Int64()
+	evt.EndTime = eth_evt.EndTime.Int64()
 	evt.SpotPrice = eth_evt.SpotPrice.String()
 
 	Info.Printf("PriceMarketCreated{\n")
 	Info.Printf("\tId: %v\n",evt.MarketId)
-	Info.Printf("\tCreator: %v\n",creator_addr.String())
+	Info.Printf("\tCreator: %v\n",evt.CreatorAddr)
 	Info.Printf("\tEndTime: %v\n",evt.EndTime)
 	Info.Printf("\tSpotPrice: %v\n",evt.SpotPrice)
 	Info.Printf("}\n")
@@ -117,7 +118,7 @@ func proc_new_price_market(log *types.Log,elog *EthereumEventLog) {
 func proc_sports_market(log *types.Log,elog *EthereumEventLog) {
 
 	var evt AA_SportsMarket
-	var eth_evt SportsMarketCreated
+	var eth_evt SportsLinkMarketCreated
 
 	err := aa_abi.Unpack(&eth_evt,"SportsMarketCreated",log.Data)
 	if err != nil {
@@ -129,11 +130,11 @@ func proc_sports_market(log *types.Log,elog *EthereumEventLog) {
 	evt.EventId = event_id.Int64()
 	evt.CreatorAddr = eth_evt.Creator.String()
 	evt.EndTime = eth_evt.EndTime.Int64()
-	evt.MarketType = eth_evt.MarketType
+	evt.MarketType = int(eth_evt.MarketType)
 	evt.HomeTeamId = eth_evt.HomeTeamId.Int64()
 	evt.AwayTeamId = eth_evt.AwayTeamId.Int64()
 	evt.EstimatedStarTime = eth_evt.EstimatedStarTime.Int64()
-	evt.Score = eth_evt.Score
+	evt.Score = eth_evt.Score.Int64()
 
 	Info.Printf("Processing SportsMarketCreated event, txhash %v\n",elog.TxHash)
 	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
@@ -174,14 +175,14 @@ func proc_trusted_market(log *types.Log,elog *EthereumEventLog) {
 
 	evt.MarketId= eth_evt.Id.Int64()
 	evt.CreatorAddr = eth_evt.Creator.String()
-	evt.EndTime = eth_evt.Int64()
+	evt.EndTime = eth_evt.EndTime.Int64()
 	evt.Description = eth_evt.Description
 	var outcomes string
 	for _,outc:= range eth_evt.Outcomes {
 		if len(outcomes) > 0 {
 			outcomes=outc+ ","
 		}
-		outcomes = outcoms + sym
+		outcomes = outcomes + outc
 	}
 	evt.Outcomes = outcomes
 
@@ -219,7 +220,7 @@ func proc_shares_minted(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
 	evt.Amount = eth_evt.Amount.String()
 	evt.MarketId = eth_evt.Id.Int64()
-	evt.ReceiverAddr = eth_evt.Target.String()
+	evt.ReceiverAddr = eth_evt.Receiver.String()
 
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
@@ -235,7 +236,7 @@ func proc_shares_minted(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_aa_shares_minted_event(&evt)
 }
-func proc_complete_sets_burned(log *types.Log,elog *EthereumEventLog) {
+func proc_shares_burned(log *types.Log,elog *EthereumEventLog) {
 
 	var evt AA_SharesBurned
 	var eth_evt SharesBurned
@@ -259,7 +260,7 @@ func proc_complete_sets_burned(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 
 	Info.Printf("SharesBurned{\n")
-	Info.Printf("\tId: %v\n",evt.TurboId)
+	Info.Printf("\tId: %v\n",evt.MarketId)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("\tReceiver: %v\n",evt.ReceiverAddr)
 	Info.Printf("}\n")
@@ -269,7 +270,7 @@ func proc_complete_sets_burned(log *types.Log,elog *EthereumEventLog) {
 func proc_winnings_claimed(log *types.Log,elog *EthereumEventLog) {
 
 	var evt AA_WinningsClaimed
-	var eth_evt WinningsClamed
+	var eth_evt WinningsClaimed
 
 	err := aa_abi.Unpack(&eth_evt,"WinningsClaimed",log.Data)
 	if err != nil {
@@ -280,7 +281,7 @@ func proc_winnings_claimed(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("Processing WinningsClaimed event, txhash %v\n",elog.TxHash)
 	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
 	evt.MarketId = eth_evt.Id.Int64()
-	evt.Amount=eth_evt.Amount.Int64()
+	evt.Amount=eth_evt.Amount.String()
 	evt.ReceiverAddr=eth_evt.Receiver.String()
 
 	evt.EvtId=elog.EvtId
@@ -295,7 +296,7 @@ func proc_winnings_claimed(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tReceiver: %v\n",evt.ReceiverAddr)
 	Info.Printf("}\n")
 
-	storage.Insert_aa_claim_event(&evt)
+	storage.Insert_aa_winnings_claimed_event(&evt)
 }
 func proc_erc20_transfer(log *types.Log,elog *EthereumEventLog) {
 	var evt AA_FeePotTransfer
@@ -354,20 +355,23 @@ func process_arbitrum_augur_event(evt_id int64) error {
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_pool_created) {
 			proc_pool_created(&log,&evtlog)
 		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_new_hatchery) {
-			proc_new_hatchery(&log,&evtlog)
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_price_market_created) {
+			proc_price_market(&log,&evtlog)
 		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_turbo_created) {
-			proc_turbo_created(&log,&evtlog)
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_sports_market_created) {
+			proc_sports_market(&log,&evtlog)
 		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_complete_sets_minted) {
-			proc_complete_sets_minted(&log,&evtlog)
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_trusted_market_created) {
+			proc_trusted_market(&log,&evtlog)
 		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_complete_sets_burned) {
-			proc_complete_sets_burned(&log,&evtlog)
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_shares_minted) {
+			proc_shares_minted(&log,&evtlog)
 		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_claim) {
-			proc_claim(&log,&evtlog)
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_shares_burned) {
+			proc_shares_burned(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_winnings_claimed) {
+			proc_winnings_claimed(&log,&evtlog)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_transfer) {
 			proc_erc20_transfer(&log,&evtlog)

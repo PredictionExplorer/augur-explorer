@@ -131,20 +131,24 @@ func (ss *SQLStorage) Insert_aa_price_market_event(evt *p.AA_PriceMarket) {
 			evt.SpotPrice,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_new_hatchery table: %v; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_price_market table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
 }
 func (ss *SQLStorage) Insert_aa_sports_market_event(evt *p.AA_SportsMarket) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	creator_aid:=ss.Lookup_or_create_address(evt.CreatorAddr,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO aa_sports_market (" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"market_id,start_time,end_time,market_type,event_id,home_team_id,away_team_id,score" +
-				") VALUES ("+
-					"$1,$2,$3,$4,TO_TIMESTAMP($5),$6,TO_TIMESTAMP($7),TO_TIMESTAMP()$8,"+
-					"$9,$10,$11,$12,$13)"
+				"market_id,start_time,end_time,market_type,creator_aid,"+
+				"event_id,home_team_id,away_team_id,score" +
+			") VALUES ("+
+				"$1,$2,$3,$4,TO_TIMESTAMP($5)"+
+				",$6,TO_TIMESTAMP($7),TO_TIMESTAMP($8),$9,$10,"+
+				"$11,$12,$13,$14"+
+			")"
 
 	_,err := ss.db.Exec(query,
 			evt.EvtId,
@@ -156,13 +160,14 @@ func (ss *SQLStorage) Insert_aa_sports_market_event(evt *p.AA_SportsMarket) {
 			evt.EstimatedStarTime,
 			evt.EndTime,
 			evt.MarketType,
+			creator_aid,
 			evt.EventId,
 			evt.HomeTeamId,
 			evt.AwayTeamId,
 			evt.Score,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_turbo_created table: %v; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_sports_market table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
 }
@@ -190,7 +195,7 @@ func (ss *SQLStorage) Insert_aa_trusted_market_event(evt *p.AA_TrustedMarket) {
 			evt.Outcomes,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_turbo_created table: %v; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_trusted_market table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
 }
@@ -199,7 +204,7 @@ func (ss *SQLStorage) Insert_aa_shares_minted_event(evt *p.AA_SharesMinted) {
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	aid:=ss.Lookup_or_create_address(evt.ReceiverAddr,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO aa_sets_minted (" +
+	query = "INSERT INTO aa_shares_minted (" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
 				"aid,market_id,amount" +
 			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8::DECIMAL/1e+18)"
@@ -224,7 +229,7 @@ func (ss *SQLStorage) Insert_aa_shares_burned_event(evt *p.AA_SharesBurned) {
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	aid:=ss.Lookup_or_create_address(evt.ReceiverAddr,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO aa_sets_burned(" +
+	query = "INSERT INTO aa_shares_burned(" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
 				"aid,market_id,amount" +
 			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8::DECIMAL/1e+18)"
@@ -277,12 +282,12 @@ func (ss *SQLStorage) Get_arbitrum_augur_pools() []p.AA_Pool {
 				"p.block_num, " +
 				"tx.tx_hash," +
 				"pa.addr," +
-				"ha.addr," +
+				"fa.addr," +
 				"ca.addr," +
-				"turbo_id " +
+				"market_id " +
 			"FROM aa_pool_created AS p " +
 				"LEFT JOIN address pa ON p.pool_aid=pa.address_id " +
-				"LEFT JOIN address ha ON p.hatchery_aid=ha.address_id " +
+				"LEFT JOIN address fa ON p.factory_aid=fa.address_id " +
 				"LEFT JOIN address ca ON p.creator_aid=ca.address_id " +
 				"JOIN transaction tx ON p.tx_id=tx.id " +
 			"ORDER BY p.time_stamp"
@@ -303,9 +308,9 @@ func (ss *SQLStorage) Get_arbitrum_augur_pools() []p.AA_Pool {
 			&rec.BlockNum,
 			&rec.TxHash,
 			&rec.PoolAddr,
-			&rec.HatcheryAddr,
+			&rec.FactoryAddr,
 			&rec.CreatorAddr,
-			&rec.TurboId,
+			&rec.MarketId,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
@@ -362,7 +367,7 @@ func (ss *SQLStorage) Is_feepot(addr string) bool {
 	_=null_id
 	return true
 }
-func (ss *SQLStorage) Get_turbos() {
+func (ss *SQLStorage) Get_markets() {
 
 
 }

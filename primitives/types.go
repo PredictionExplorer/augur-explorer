@@ -1920,6 +1920,7 @@ type AA_PriceMarket struct {// Arbitrum Augur PriceMarket event
 	TxId					int64
 	TimeStamp				int64
 	EndTime					int64
+	MarketId				int64
 	Contract				string
 	CreatorAddr				string
 	SpotPrice				string
@@ -2001,11 +2002,11 @@ type AA_Pool struct {// Arbitrum Augur Pool
 	BlockNum				int64
 	TimeStamp				int64
 	PoolAid					int64
-	HatcheryAid				int64
-	TurboId					int64
+	FactoryAid				int64
+	MarketId				int64
 	DateTime				string
 	PoolAddr				string
-	HatcheryAddr			string
+	FactoryAddr				string
 	CreatorAddr				string
 	TxHash					string
 }
