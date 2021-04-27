@@ -1,7 +1,7 @@
 // Code generated - DO NOT EDIT.
 // This file is a generated binding and any manual changes will be lost.
 
-package main
+package contracts
 
 import (
 	"math/big"
@@ -28,13 +28,14 @@ var (
 )
 
 // AbstractMarketFactoryMarket is an auto generated low-level Go binding around an user-defined struct.
+/*
 type AbstractMarketFactoryMarket struct {
 	Creator     common.Address
 	ShareTokens []common.Address
 	EndTime     *big.Int
 	Winner      common.Address
 	CreatorFee  *big.Int
-}
+}*/
 
 // SportsLinkMarketFactoryMarketDetails is an auto generated low-level Go binding around an user-defined struct.
 type SportsLinkMarketFactoryMarketDetails struct {
