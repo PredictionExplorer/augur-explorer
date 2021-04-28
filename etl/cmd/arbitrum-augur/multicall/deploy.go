@@ -23,7 +23,7 @@ var (
 
 func main() {
 
-	RPC_URL = os.Getenv("RPC_URL")
+	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 	eclient, err := ethclient.Dial(RPC_URL)
 	if err!=nil {
 		fmt.Printf("Error: %v\n",err)

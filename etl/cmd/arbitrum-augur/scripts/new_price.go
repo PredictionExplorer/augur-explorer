@@ -40,9 +40,9 @@ func main() {
 	outcome_names := [3]string{"Invalid","One","Two"}
 	outcome_symbols := [3]string{"I","1","2"}
 
-	tm_factory,err := NewTrustedMarketFactory(factory_addr,eclient)
+	tm_factory,err := NewPrieMarketFactory(factory_addr,eclient)
 
-	var acct_nonce int64 = 8
+	var acct_nonce int64 = 9
 	from_PrivateKey, err := crypto.HexToECDSA(PKEY_HEX)
 	if err!=nil{
 		fmt.Printf("Error : %v\n",err)
@@ -61,10 +61,12 @@ func main() {
 	auth.Value = big.NewInt(0)
 	auth.GasLimit = uint64(9500000)
 	auth.GasPrice = big.NewInt(1000000000)
-	market_id,err:=tm_factory.CreateMarket(auth,from_address,ts,description,outcome_names[:],outcome_symbols[:])
+	fmt.Printf("Waiting for output..\n")
+	tx,err:=tm_factory.CreateMarket(auth,from_address,ts,description,outcome_names[:],outcome_symbols[:])
 	if err!=nil {
 		fmt.Printf("Error on Deploy: %v\n",err)
 		os.Exit(1)
 	}
-	fmt.Printf("market_id=%v\n",market_id)
+	_ = tx
+	fmt.Printf("Done\n")
 }
