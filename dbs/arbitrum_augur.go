@@ -56,11 +56,13 @@ func (ss *SQLStorage) Insert_aa_pool_created_event(evt *p.AA_PoolCreated) {
 	pool_aid:=ss.Lookup_or_create_address(evt.PoolAddr,evt.BlockNum,evt.TxId)
 	factory_aid:=ss.Lookup_or_create_address(evt.FactoryAddr,evt.BlockNum,evt.TxId)
 	creator_aid:=ss.Lookup_or_create_address(evt.CreatorAddr,evt.BlockNum,evt.TxId)
+	tokrcpt_aid:=ss.Lookup_or_create_address(evt.TokenRecipientAddr,evt.BlockNum,evt.TxId)
+
 	var query string
 	query = "INSERT INTO aa_pool_created(" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"pool_aid,factory_aid,creator_aid,market_id" +
-			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9)"
+				"pool_aid,factory_aid,creator_aid,market_id,token_rcpt_aid" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9,$10)"
 
 	_,err := ss.db.Exec(query,
 			evt.EvtId,
@@ -72,9 +74,40 @@ func (ss *SQLStorage) Insert_aa_pool_created_event(evt *p.AA_PoolCreated) {
 			factory_aid,
 			creator_aid,
 			evt.MarketId,
+			tokrcpt_aid,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_pool_created table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_aa_liquidity_changed_event(evt *p.AA_LiquidityChanged) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	factory_aid:=ss.Lookup_or_create_address(evt.MarketFactoryAddr,evt.BlockNum,evt.TxId)
+	user_aid:=ss.Lookup_or_create_address(evt.UserAddr,evt.BlockNum,evt.TxId)
+	recipient_aid:=ss.Lookup_or_create_address(evt.RecipientAddr,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO aa_shares_swapped (" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
+				"market_id,factory_aid,user_aid,recipient_aid,collateral,lp_tokens" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9,$10:DECIMAL/e1+18,$11::DECIMAL/1e+18)"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			evt.MarketId,
+			factory_aid,
+			user_aid,
+			recipient_aid,
+			evt.Collateral,
+			evt.LpTokens,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_liquidity_changed table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
 }
@@ -246,6 +279,34 @@ func (ss *SQLStorage) Insert_aa_shares_burned_event(evt *p.AA_SharesBurned) {
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_shares_burned table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_aa_shares_swapped_event(evt *p.AA_SharesSwapped) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	user_aid:=ss.Lookup_or_create_address(evt.UserAddr,evt.BlockNum,evt.TxId)
+	factory_aid:=ss.Lookup_or_create_address(evt.MarketFactoryAddr,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO aa_shares_swapped (" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
+				"market_id,factory_aid,user_aid,collateral_aid,shares" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9::DECIMAL/1e+18,$10::DECIMAL/1e+18)"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			evt.MarketId,
+			factory_aid,
+			user_aid,
+			evt.Collateral,
+			evt.Shares,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_shares_swapped table: %v; q=%v",err,query))
 		os.Exit(1)
 	}
 }

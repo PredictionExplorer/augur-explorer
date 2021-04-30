@@ -23,7 +23,8 @@ import (
 const (
 	DEFAULT_DB_LOG				= "db.log"
 
-	POOL_CREATED = "0537d3e5d88810bbfb16874b28bc0f95856d7bb24c8f29511fe463c5b1d27c6b"
+	// OLD: POOL_CREATED = "0537d3e5d88810bbfb16874b28bc0f95856d7bb24c8f29511fe463c5b1d27c6b"
+	POOL_CREATED = "fb27591822deac7913ea973cf845992f243e2ba5634ef8fbe0b6554aca37a428"
 	SPORTS_MARKET_CREATED = "afad6545e5200f9fdf4db34dfca61a9e7d72518593fd5155d11fd69c20e1555f"
 	PRICE_MARKET_CREATED = "28c8de42a10b7bcc4a65ea3618bc8ada3e24cd7394886eae1b4f5f7440477080"
 	TRUSTED_MARKET_CREATED = "a1bb41461c32765a0cc838c35ce6b8e28985bb6a069dfe2af0873796438670d4"
@@ -31,6 +32,8 @@ const (
 	SHARES_BURNED = "b6fdb729b2ed801daf629f0ab713e4a7a73619505790f6f27fd92d6f2c9688d7"
 	MARKET_RESOLVED = "c68d106ea6e4bec784925cfd91767212c71ced92adbac107dc364435321113f6"
 	WINNINGS_CLAIMED = "2bdd7a5109193ce6270ec3b4afcf4ccd4a06c27742ba11f660498cb41433bb00"
+	LIQUIDITY_CHANGED = "5350d1a36c6961230b66338bb028ba0d9edc3aa8bdfa8aef0bb0b5db9af4289f"
+	SHARES_SWAPPED = "aca8a5cb15c73c995b7689a3fdd0e536ffc8d458bdf0b00bf4dbe55b973d1542"
 
 	ERC20_TRANSFER = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 	//																		(used by FeePot)
@@ -43,37 +46,11 @@ var (
 	//	address indexed marketFactory,
 	//	uint256 indexed marketId,
 	//	address indexed creator
+	//	address lpTokenRecipient
 	//);
-							// DISCONTINUED
-							//event PoolCreated(
-							//	address _pool,
-							//	address indexed _hatchery,
-							//	uint256 indexed _turboId,
-							//	address indexed _creator
-							//);
 
-/*DISCONTINUED							
-	evt_new_hatchery,_ = hex.DecodeString(NEW_HATCHERY)
-	//event NewHatchery(
-	//	address id,
-	//	address indexed collateral,
-	//	address shareTokenFactory,
-	//	address feePot
-	//);
-*/
-/* DISCONTINUED
-	evt_turbo_created,_ = hex.DecodeString(TURBO_CREATED)
-	//    event TurboCreated(
-	//        uint256 id,
-	//	        uint256 creatorFee,
-	//        string[] outcomeSymbols,
-	//        bytes32[] outcomeNames,
-	//        uint256 numTicks,
-	//        IArbiter arbiter,
-	//        bytes arbiterConfiguration,
-	//        uint256 indexed index
-	//    );
-*/
+
+
 	// Price Market
 	evt_price_market_created,_ = hex.DecodeString(PRICE_MARKET_CREATED)
 	//event MarketCreated(
@@ -106,21 +83,36 @@ var (
 	//	string[] outcomes
 	//);
 
+	evt_liquidity_changed,_ = hex.DecodeString(LIQUIDITY_CHANGED)
+	// LiquidityChanged 
+	// event LiquidityChanged(
+	//	address indexed marketFactory,
+	//  uint256 indexed marketId,
+	//	address indexed user,
+	//	address recipient,
+	//    // from the perspective of the user. e.g. collateral is negative when adding liquidity
+	//	int256 collateral,
+	//	int256 lpTokens
+	//	);
+
+	evt_shares_swapped,_ = hex.DecodeString(SHARES_SWAPPED)
+	// SharesSwapped
+	//event SharesSwapped(
+	//	address indexed marketFactory,
+	//	uint256 indexed marketId,
+	//	address indexed user,
+	//	uint256 outcome,
+		//        // from the perspective of the user. e.g. collateral is negative when buying
+	//	int256 collateral,
+	//	int256 shares
+	//);
+
 	// MarketResolved
-	evt_market_resolved,_= hex.DecodeString(MARKET_RESOLVED)
+	//evt_market_resolved,_= hex.DecodeString(MARKET_RESOLVED)
 	//event MarketResolved(
 	//	uint256 id,
 	//	address winner
 	//);
-
-
-	/* DISCONTINUED
-	//event CompleteSetsMinted(
-	//	uint256 turboId,
-	//	uint256 amount,
-	//	address target
-	//);
-	*/
 
 	evt_shares_minted,_ = hex.DecodeString(SHARES_MINTED)
 	//event SharesMinted(
@@ -129,13 +121,6 @@ var (
 	//	address receiver
 	//);
 
-	/*DISCONTINUED
-	//event CompleteSetsBurned(
-	//	uint256 turboId,
-	//	uint256 amount,
-	//	address target
-	//);
-	*/
 	evt_shares_burned,_ = hex.DecodeString(SHARES_BURNED)
 	//event SharesBurned(
 	//	uint256 id,
@@ -143,8 +128,6 @@ var (
 	//	address receiver
 	//);
 
-
-	// DISCONTINUED //event Claim(uint256 turboId);
 	evt_winnings_claimed,_ = hex.DecodeString(WINNINGS_CLAIMED)
 	//event WinningsClaimed(
 	//	uint256 id,

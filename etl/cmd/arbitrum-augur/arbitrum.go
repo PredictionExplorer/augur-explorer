@@ -23,6 +23,10 @@ func build_list_of_inspected_events() []InspectedEvent {
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature:	hex.EncodeToString(evt_liquidity_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_sports_market_created[:4]),
 			ContractAid: 0,
 		},
@@ -43,6 +47,10 @@ func build_list_of_inspected_events() []InspectedEvent {
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_shares_swapped[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_winnings_claimed[:4]),
 			ContractAid: 0,
 		},
@@ -56,32 +64,78 @@ func build_list_of_inspected_events() []InspectedEvent {
 func proc_pool_created(log *types.Log,elog *EthereumEventLog) {
 
 	var evt AA_PoolCreated
-	factory_addr := common.BytesToAddress(log.Topics[1][12:])
-	creator_addr := common.BytesToAddress(log.Topics[3][12:])
-	market_id:= log.Topics[2].Big()
+	var eth_evt AMMFactoryPoolCreated
+
+	eth_evt.MarketFactory = common.BytesToAddress(log.Topics[1][12:])
+	eth_evt.MarketId = log.Topics[2].Big()
+	eth_evt.Creator = common.BytesToAddress(log.Topics[3][12:])
+
 	Info.Printf("Processing PoolCreated event, txhash %v\n",elog.TxHash)
-	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
-	Info.Printf("topics[2] = %v\n",hex.EncodeToString(log.Topics[2][:]))
-	pool_addr := common.BytesToAddress(log.Data[12:])
+
+	err := aa_abi.Unpack(&eth_evt,"PoolCreated",log.Data)
+	if err != nil {
+		Error.Printf("Event PoolCreated decode error: %v",err)
+		os.Exit(1)
+	}
 
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.PoolAddr = pool_addr.String()
-	evt.MarketId = market_id.Int64()
-	evt.CreatorAddr = creator_addr.String()
-	evt.FactoryAddr = factory_addr.String()
+	evt.PoolAddr = eth_evt.Pool.String()
+	evt.TokenRecipientAddr = eth_evt.LpTokenRecipient.String()
+	evt.MarketId = eth_evt.MarketId.Int64()
+	evt.CreatorAddr = eth_evt.Creator.String()
+	evt.FactoryAddr = eth_evt.MarketFactory.String()
 
 	Info.Printf("PoolCreated {\n")
-	Info.Printf("\tPoolAddr: %v\n",pool_addr.String())
-	Info.Printf("\tMarketFactory: %v\n",factory_addr.String())
-	Info.Printf("\tCreator: %v\n",creator_addr.String())
+	Info.Printf("\tPoolAddr: %v\n",evt.PoolAddr)
+	Info.Printf("\tMarketFactory: %v\n",evt.FactoryAddr)
+	Info.Printf("\tCreator: %v\n",evt.CreatorAddr)
 	Info.Printf("\tMarket Id: %v\n",evt.MarketId)
+	Info.Printf("\tlpTokenRecipient: %v\n",evt.TokenRecipientAddr)
 	Info.Printf("}\n")
 
 	storage.Insert_aa_pool_created_event(&evt)
+}
+func proc_liquidity_changed(log *types.Log,elog *EthereumEventLog) {
+
+	var evt AA_LiquidityChanged
+	var eth_evt LiquidityChanged
+
+	err := aa_abi.Unpack(&eth_evt,"LiquidityChanged",log.Data)
+	if err != nil {
+		Error.Printf("Error unpacking LiquidityChanged event: %v\n",err)
+		os.Exit(1)
+	}
+	eth_evt.MarketFactory = common.BytesToAddress(log.Topics[1][12:])
+	eth_evt.MarketId = log.Topics[2].Big()
+	eth_evt.User = common.BytesToAddress(log.Topics[3][12:])
+
+	Info.Printf("Processing LiquidityChanged event, txhash %v\n",elog.TxHash)
+	evt.MarketId = eth_evt.MarketId.Int64()
+	evt.RecipientAddr = eth_evt.Recipient.String()
+	evt.UserAddr = eth_evt.User.String()
+	evt.MarketFactoryAddr = eth_evt.MarketFactory.String()
+	evt.Collateral = eth_evt.Collateral.String()
+	evt.LpTokens = eth_evt.LpTokens.String()
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+
+	Info.Printf("LiquidityChanged {\n")
+	Info.Printf("\tMarketId: %v\n",evt.MarketId)
+	Info.Printf("\tMarketFactory: %v\n",evt.MarketFactoryAddr)
+	Info.Printf("\tRecipientAddr: %v\n",evt.RecipientAddr)
+	Info.Printf("\tCollateral: %v\n",evt.Collateral)
+	Info.Printf("\tLpTokens: %v\n",evt.LpTokens)
+	Info.Printf("}\n")
+
+	storage.Insert_aa_liquidity_changed_event(&evt)
 }
 func proc_price_market(log *types.Log,elog *EthereumEventLog) {
 
@@ -267,6 +321,45 @@ func proc_shares_burned(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_aa_shares_burned_event(&evt)
 }
+func proc_shares_swapped(log *types.Log,elog *EthereumEventLog) {
+
+	var evt AA_SharesSwapped
+	var eth_evt SharesSwapped
+
+	err := aa_abi.Unpack(&eth_evt,"SharesSwapped",log.Data)
+	if err != nil {
+		Error.Printf("Error unpacking SharesSwapped event: %v\n",err)
+		os.Exit(1)
+	}
+
+	eth_evt.MarketFactory = common.BytesToAddress(log.Topics[1][12:])
+	eth_evt.MarketId = log.Topics[2].Big()
+	eth_evt.User = common.BytesToAddress(log.Topics[3][12:])
+
+	Info.Printf("Processing SharesSwapped event, txhash %v\n",elog.TxHash)
+	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+	evt.MarketId = eth_evt.MarketId.Int64()
+	evt.UserAddr = eth_evt.User.String()
+	evt.MarketFactoryAddr = eth_evt.MarketFactory.String()
+	evt.Collateral = eth_evt.Collateral.String()
+	evt.Shares = eth_evt.Shares.String()
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+
+	Info.Printf("SharesBurned{\n")
+	Info.Printf("\tMarketId: %v\n",evt.MarketId)
+	Info.Printf("\tMarketFactory: %v\n",evt.MarketFactoryAddr)
+	Info.Printf("\tUserAddr: %v\n",evt.UserAddr)
+	Info.Printf("\tCollateral: %v\n",evt.Collateral)
+	Info.Printf("\tShares: %v\n",evt.Shares)
+	Info.Printf("}\n")
+
+	storage.Insert_aa_shares_swapped_event(&evt)
+}
 func proc_winnings_claimed(log *types.Log,elog *EthereumEventLog) {
 
 	var evt AA_WinningsClaimed
@@ -355,6 +448,9 @@ func process_arbitrum_augur_event(evt_id int64) error {
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_pool_created) {
 			proc_pool_created(&log,&evtlog)
 		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_liquidity_changed) {
+			proc_liquidity_changed(&log,&evtlog)
+		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_price_market_created) {
 			proc_price_market(&log,&evtlog)
 		}
@@ -369,6 +465,9 @@ func process_arbitrum_augur_event(evt_id int64) error {
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_shares_burned) {
 			proc_shares_burned(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_shares_swapped) {
+			proc_shares_swapped(&log,&evtlog)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_winnings_claimed) {
 			proc_winnings_claimed(&log,&evtlog)

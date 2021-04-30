@@ -1913,6 +1913,7 @@ type AA_PoolCreated struct {// Arbitrum Augur PoolCreated event
 	PoolAddr				string
 	FactoryAddr				string
 	CreatorAddr				string
+	TokenRecipientAddr		string
 }
 type AA_PriceMarket struct {// Arbitrum Augur PriceMarket event
 	EvtId					int64
@@ -1988,6 +1989,19 @@ type AA_SharesBurned struct {// Arbitrum Augur SharesBurned event
 	Amount					string
 	ReceiverAddr			string
 }
+type AA_SharesSwapped struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	MarketId				int64
+	Outcome					int64
+	Contract				string
+	MarketFactoryAddr		string
+	UserAddr				string
+	Collateral				string
+	Shares					string
+}
 type AA_WinningsClaimed struct {// Arbitrum Augur Winnnings Claimed
 	EvtId					int64
 	BlockNum				int64
@@ -2027,6 +2041,17 @@ type AA_Turbo struct {
 	ArbiterAid				int64
 	NumTicks				int
 	ArbiterAddr				string
-
-
+}
+type AA_LiquidityChanged struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	MarketId				int64
+	Contract				string
+	MarketFactoryAddr		string
+	UserAddr				string
+	RecipientAddr			string
+	LpTokens				string
+	Collateral				string
 }

@@ -12,6 +12,8 @@ rm ./etl/cmd/ensscan/tools/namehash
 rm ./etl/cmd/ensscan/tools/lookup
 rm ./etl/cmd/ensscan/tools/pk
 rm ./etl/cmd/ensscan/tools/check_ens
+rm ./etl/cmd/arbitrum/arbitrum
+rm ./etl/cmd/arbitrum-augur/arbitrum-augur
 rm ./etl/dmesh/dmesh
 rm ./etl/tools/augur_blocks
 rm ./etl/tools/dai_balances
@@ -26,3 +28,6 @@ rm ./etl/tests/verif_cash_flow
 rm ./etl/ens/scanpropnames
 rm ./etl/ens/scantlds
 rm ./server/server
+rm ./etl/cmd/arbitrum-augur/scripts/cash_faucet
+rm ./etl/cmd/arbitrum-augur/scripts/new_sports
+rm ./etl/cmd/arbitrum-augur/scripts/new_trusted

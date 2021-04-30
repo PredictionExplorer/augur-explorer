@@ -18,6 +18,23 @@ CREATE TABLE aa_pool_created (
 	factory_aid			BIGINT NOT NULL,-- Market Factory
 	creator_aid			BIGINT NOT NULL,
 	market_id			BIGINT NOT NULL,
+	token_rcpt_aid		BIGINT NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE aa_liquidity_changed (-- LiquidityChanged event 
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	market_id			BIGINT NOT NULL,
+	factory_aid			BIGINT NOT NULL,
+	user_aid			BIGINT NOT NULL,
+	receiver_aid		BIGINT NOT NULL,
+	collateral			DECIMAL(64,18) NOT NULL,
+	lp_tokens			DECIMAL(64,18) NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );
@@ -91,6 +108,21 @@ CREATE TABLE aa_shares_burned (-- SharesBurned
 	aid					BIGINT NOT NULL,
 	market_id			TEXT NOT NULL,
 	amount				DECIMAL(64,18),
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE aa_shares_swapped (-- SharesSwapped
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	market_id			BIGINT NOT NULL,
+	factory_aid			BIGINT NOT NULL,
+	user_aid			BIGINT NOT NULL,
+	collateral			DECIMAL(64,18) NOT NULL,
+	shares				DECIMAL(64,18) NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );

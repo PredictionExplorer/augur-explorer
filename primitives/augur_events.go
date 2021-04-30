@@ -411,11 +411,12 @@ type EReportingFeeChanged struct {//0xadddfaec4505d90a6a211907536944e6e1af7ff5cf
 
 /////////// (AUGUR) ARBITRUM EVENTS
 type AMMFactoryPoolCreated struct {
-	Pool          common.Address
-	MarketFactory common.Address
-	MarketId      *big.Int
-	Creator       common.Address
-	Raw           types.Log // Blockchain specific contextual infos
+	Pool             common.Address
+	MarketFactory    common.Address
+	MarketId         *big.Int
+	Creator          common.Address
+	LpTokenRecipient common.Address
+	Raw              types.Log // Blockchain specific contextual infos
 }
 type TurboCreated struct {
 	Id                   *big.Int
@@ -428,20 +429,6 @@ type TurboCreated struct {
 	Index                *big.Int
 	Raw                  types.Log // Blockchain specific contextual infos
 }
-/* DISCONTINUED
-type CompleteSetsBurned struct {
-	TurboId *big.Int
-	Amount  *big.Int
-	Target  common.Address
-	Raw     types.Log // Blockchain specific contextual infos
-}
-type CompleteSetsMinted struct {
-	TurboId *big.Int
-	Amount  *big.Int
-	Target  common.Address
-	Raw     types.Log // Blockchain specific contextual infos
-}
-*/
 type WinningsClaimed struct {
 	Id       *big.Int
 	Amount   *big.Int
@@ -492,5 +479,22 @@ type SharesBurned struct {
 	Receiver common.Address
 	Raw      types.Log // Blockchain specific contextual infos
 }
-
+type SharesSwapped struct {
+	MarketFactory common.Address
+	MarketId      *big.Int
+	User          common.Address
+	Outcome       *big.Int
+	Collateral    *big.Int
+	Shares        *big.Int
+	Raw           types.Log // Blockchain specific contextual infos
+}
+type LiquidityChanged struct {
+	MarketFactory common.Address
+	MarketId      *big.Int
+	User          common.Address
+	Recipient     common.Address
+	Collateral    *big.Int
+	LpTokens      *big.Int
+	Raw           types.Log // Blockchain specific contextual infos
+}
 
