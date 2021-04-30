@@ -88,10 +88,10 @@ func (ss *SQLStorage) Insert_aa_liquidity_changed_event(evt *p.AA_LiquidityChang
 	user_aid:=ss.Lookup_or_create_address(evt.UserAddr,evt.BlockNum,evt.TxId)
 	recipient_aid:=ss.Lookup_or_create_address(evt.RecipientAddr,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO aa_shares_swapped (" +
+	query = "INSERT INTO aa_liquidity_changed (" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
 				"market_id,factory_aid,user_aid,recipient_aid,collateral,lp_tokens" +
-			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9,$10:DECIMAL/e1+18,$11::DECIMAL/1e+18)"
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9,$10::DECIMAL/1e+6,$11::DECIMAL/1e+18)"
 
 	_,err := ss.db.Exec(query,
 			evt.EvtId,
@@ -290,8 +290,8 @@ func (ss *SQLStorage) Insert_aa_shares_swapped_event(evt *p.AA_SharesSwapped) {
 	var query string
 	query = "INSERT INTO aa_shares_swapped (" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"market_id,factory_aid,user_aid,collateral_aid,shares" +
-			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9::DECIMAL/1e+18,$10::DECIMAL/1e+18)"
+				"market_id,factory_aid,user_aid,collateral,shares" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9::DECIMAL/1e+6,$10::DECIMAL/1e+18)"
 
 	_,err := ss.db.Exec(query,
 			evt.EvtId,

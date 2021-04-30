@@ -32,7 +32,7 @@ CREATE TABLE aa_liquidity_changed (-- LiquidityChanged event
 	market_id			BIGINT NOT NULL,
 	factory_aid			BIGINT NOT NULL,
 	user_aid			BIGINT NOT NULL,
-	receiver_aid		BIGINT NOT NULL,
+	recipient_aid		BIGINT NOT NULL,
 	collateral			DECIMAL(64,18) NOT NULL,
 	lp_tokens			DECIMAL(64,18) NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
