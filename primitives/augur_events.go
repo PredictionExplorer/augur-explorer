@@ -418,6 +418,7 @@ type AMMFactoryPoolCreated struct {
 	LpTokenRecipient common.Address
 	Raw              types.Log // Blockchain specific contextual infos
 }
+/*DELETE PENDING
 type TurboCreated struct {
 	Id                   *big.Int
 	CreatorFee           *big.Int
@@ -428,7 +429,7 @@ type TurboCreated struct {
 	ArbiterConfiguration []byte
 	Index                *big.Int
 	Raw                  types.Log // Blockchain specific contextual infos
-}
+}*/
 type WinningsClaimed struct {
 	Id       *big.Int
 	Amount   *big.Int
@@ -497,4 +498,30 @@ type LiquidityChanged struct {
 	LpTokens      *big.Int
 	Raw           types.Log // Blockchain specific contextual infos
 }
-
+type SettlementFeeClaimed struct {
+	SettlementAddress common.Address
+	Amount            *big.Int
+	Receiver          common.Address
+	Raw               types.Log // Blockchain specific contextual infos
+}
+type ProtocolFeeClaimed struct {
+	Protocol common.Address
+	Amount   *big.Int
+	Raw      types.Log // Blockchain specific contextual infos
+}
+type ProtocolChanged struct {
+	Protocol common.Address
+	Raw      types.Log // Blockchain specific contextual infos
+}
+type ProtocolFeeChanged struct {
+	Fee *big.Int
+	Raw types.Log // Blockchain specific contextual infos
+}
+type SettlementFeeChanged struct {
+	Fee *big.Int
+	Raw types.Log // Blockchain specific contextual infos
+}
+type StakerFeeChanged struct {
+	Fee *big.Int
+	Raw types.Log // Blockchain specific contextual infos
+}

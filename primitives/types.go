@@ -2055,3 +2055,54 @@ type AA_LiquidityChanged struct {
 	LpTokens				string
 	Collateral				string
 }
+type AA_SettlementFeeClaimed struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Contract				string
+	SettlementAddr			string
+	Amount					string
+	ReceiverAddr			string
+}
+type AA_ProtocolFeeClaimed struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Contract				string
+	ProtocolAddr			string
+	Amount					string
+}
+type AA_ProtocolChanged struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Contract				string
+	ProtocolAddr			string
+}
+type AA_ProtocolFeeChanged struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Contract				string
+	Fee						string
+}
+type AA_SettlementFeeChanged struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Contract				string
+	Fee						string
+}
+type AA_StakerFeeChanged struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	Contract				string
+	Fee						string
+}

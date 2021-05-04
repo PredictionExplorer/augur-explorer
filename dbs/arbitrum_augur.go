@@ -310,6 +310,56 @@ func (ss *SQLStorage) Insert_aa_shares_swapped_event(evt *p.AA_SharesSwapped) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Insert_aa_settlement_fee_claimed_event(evt *p.AA_SettlementFeeClaimed) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	settlement_aid:=ss.Lookup_or_create_address(evt.SettlementAddr,evt.BlockNum,evt.TxId)
+	receiver_aid:=ss.Lookup_or_create_address(evt.ReceiverAddr,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO aa_sfee_claimed (" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
+				"settlement_aid,receiver_aid,amount" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8::DECIMAL/1e+6)"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			settlement_aid,
+			receiver_aid,
+			evt.Amount,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_sfee_claimed table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_aa_protocol_fee_claimed_event(evt *p.AA_ProtocolFeeClaimed) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	protocol_aid:=ss.Lookup_or_create_address(evt.ProtocolAddr,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO aa_pfee_claimed (" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
+				"protocol_aid,amount" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7::DECIMAL/1e+6)"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			protocol_aid,
+			evt.Amount,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_pfee_claimed table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Insert_aa_winnings_claimed_event(evt *p.AA_WinningsClaimed) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)

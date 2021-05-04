@@ -126,6 +126,75 @@ CREATE TABLE aa_shares_swapped (-- SharesSwapped
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE aa_sfee_claimed (-- Settlement Fee Claimed event
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	settlement_aid		BIGINT NOT NULL,
+	receiver_aid		BIGINT NOT NULL,
+	amount				DECIMAL(64,18) NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE aa_pfee_claimed (-- Protocol Fee Claimed event
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	protocol_aid		BIGINT NOT NULL,
+	amount				DECIMAL(64,18) NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE aa_proto_chg(-- Protocol Changed
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	protocol_aid		BIGINT NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE aa_pfee_chg(-- Protocol Fee Changed
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	protocol_fee		DECIMAL(64,18) NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE aa_sfee_chg(-- Settlement Fee Changed
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	settlement_fee		DECIMAL(64,18) NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE aa_stk_fee_chg(-- StakerFee Changed
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	settlement_fee		DECIMAL(64,18) NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE aa_winclaim (-- WinningsClaimed
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT,
@@ -152,3 +221,5 @@ CREATE TABLE aa_feepot_trsf (-- FeePot transfer event
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );
+
+

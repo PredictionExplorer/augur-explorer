@@ -28,10 +28,20 @@ const (
 	SPORTS_MARKET_CREATED = "afad6545e5200f9fdf4db34dfca61a9e7d72518593fd5155d11fd69c20e1555f"
 	PRICE_MARKET_CREATED = "28c8de42a10b7bcc4a65ea3618bc8ada3e24cd7394886eae1b4f5f7440477080"
 	TRUSTED_MARKET_CREATED = "a1bb41461c32765a0cc838c35ce6b8e28985bb6a069dfe2af0873796438670d4"
+
 	SHARES_MINTED = "d81c0442e10068a9818f3aa093c9ccb804584690df572d7df3da2d892a6973f2"
 	SHARES_BURNED = "b6fdb729b2ed801daf629f0ab713e4a7a73619505790f6f27fd92d6f2c9688d7"
-	MARKET_RESOLVED = "c68d106ea6e4bec784925cfd91767212c71ced92adbac107dc364435321113f6"
 	WINNINGS_CLAIMED = "2bdd7a5109193ce6270ec3b4afcf4ccd4a06c27742ba11f660498cb41433bb00"
+
+	PROTOCOL_FEE_CLAIMED = "0f7f5b155b0b0ac6890709a2c7bf1b8bb3f675fff1e7840b4dd3c9acde59048b"
+	SETTLEMENT_FEE_CLAIMED = "c9985ad824d943d66367ce5feea26e18979b3e1c9273742926d87e2b0d747387"
+
+	PROTOCOL_CHANGED = "15b84596b3c567ae2998116949ae5f2d47f3055c12d9053db4d6e50f4c794dd9"
+	PROTOCOL_FEE_CHANGED = "ada2cde3c4a561f5c23e2fdbfb223e1f0d1ec7109b9811b32644e6e974d6631f"
+	SETTLEMENT_FEE_CHANGED = "92d395c429898992f8532ee7145901513e524c2085fd7fd1da39b8badcd6df31"
+	STAKER_FEE_CHANGED = "cc4df50442ac32f0142ba4853f617661e0823be0e92148e7e5f36ce56c139825"
+
+	MARKET_RESOLVED = "c68d106ea6e4bec784925cfd91767212c71ced92adbac107dc364435321113f6"
 	LIQUIDITY_CHANGED = "5350d1a36c6961230b66338bb028ba0d9edc3aa8bdfa8aef0bb0b5db9af4289f"
 	SHARES_SWAPPED = "aca8a5cb15c73c995b7689a3fdd0e536ffc8d458bdf0b00bf4dbe55b973d1542"
 
@@ -136,6 +146,39 @@ var (
 	//);
 
 	evt_erc20_transfer,_ = hex.DecodeString(ERC20_TRANSFER)
+
+	evt_settlement_fee_claimed,_ = hex.DecodeString(SETTLEMENT_FEE_CLAIMED)
+	//event SettlementFeeClaimed(
+	//	address settlementAddress,
+	//	uint256 amount,
+	//	address indexed receiver
+	//);
+
+	evt_protocol_fee_claimed,_ = hex.DecodeString(PROTOCOL_FEE_CLAIMED)
+	//event ProtocolFeeClaimed(
+	//	address protocol,
+	//	uint256 amount
+	//);
+
+	evt_protocol_changed,_ = hex.DecodeString(PROTOCOL_CHANGED)
+	//event ProtocolChanged(
+	//	address protocol
+	//);
+
+	evt_protocol_fee_changed,_ = hex.DecodeString(PROTOCOL_FEE_CHANGED)
+	//event ProtocolFeeChanged(
+	//	uint256 fee
+	//);
+
+	evt_settlement_fee_changed,_ = hex.DecodeString(SETTLEMENT_FEE_CHANGED)
+	//event SettlementFeeChanged(
+	//	uint256 fee
+	//);
+
+	evt_staker_fee_changed,_ = hex.DecodeString(STAKER_FEE_CHANGED)
+	//event StakerFeeChanged(
+	//	uint256 fee
+	//);
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")

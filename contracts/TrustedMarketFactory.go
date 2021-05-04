@@ -29,11 +29,13 @@ var (
 
 // AbstractMarketFactoryMarket is an auto generated low-level Go binding around an user-defined struct.
 type AbstractMarketFactoryMarket struct {
-	Creator     common.Address
-	ShareTokens []common.Address
-	EndTime     *big.Int
-	Winner      common.Address
-	CreatorFee  *big.Int
+	SettlementAddress common.Address
+	ShareTokens       []common.Address
+	EndTime           *big.Int
+	Winner            common.Address
+	SettlementFee     *big.Int
+	ProtocolFee       *big.Int
+	StakerFee         *big.Int
 }
 
 // TrustedMarketFactoryMarketDetails is an auto generated low-level Go binding around an user-defined struct.
@@ -42,7 +44,7 @@ type TrustedMarketFactoryMarketDetails struct {
 }
 
 // TrustedMarketFactoryABI is the input ABI used to generate the binding from.
-const TrustedMarketFactoryABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_owner\",\"type\":\"address\"},{\"internalType\":\"contractIERC20Full\",\"name\":\"_collateral\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_shareFactor\",\"type\":\"uint256\"},{\"internalType\":\"contractFeePot\",\"name\":\"_feePot\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_stakerFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_creatorFee\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"_endTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"description\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"string[]\",\"name\":\"outcomes\",\"type\":\"string[]\"}],\"name\":\"MarketCreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"}],\"name\":\"MarketResolved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SharesBurned\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SharesMinted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"WinningsClaimed\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_sharesToBurn\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"burnShares\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_shares\",\"type\":\"uint256\"}],\"name\":\"calcCost\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_collateralIn\",\"type\":\"uint256\"}],\"name\":\"calcShares\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"_ids\",\"type\":\"uint256[]\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimManyWinnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimWinnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"collateral\",\"outputs\":[{\"internalType\":\"contractIERC20Full\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_creator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_endTime\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"_description\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"_names\",\"type\":\"string[]\"},{\"internalType\":\"string[]\",\"name\":\"_symbols\",\"type\":\"string[]\"}],\"name\":\"createMarket\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"creatorFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"feePot\",\"outputs\":[{\"internalType\":\"contractFeePot\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"}],\"name\":\"getMarket\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"},{\"internalType\":\"contractOwnedERC20[]\",\"name\":\"shareTokens\",\"type\":\"address[]\"},{\"internalType\":\"uint256\",\"name\":\"endTime\",\"type\":\"uint256\"},{\"internalType\":\"contractOwnedERC20\",\"name\":\"winner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"creatorFee\",\"type\":\"uint256\"}],\"internalType\":\"structAbstractMarketFactory.Market\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"}],\"name\":\"getMarketDetails\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"description\",\"type\":\"string\"}],\"internalType\":\"structTrustedMarketFactory.MarketDetails\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getOwner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"marketCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_shareToMint\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"mintShares\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"resolveMarket\",\"outputs\":[],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"shareFactor\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakerFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_winningOutcome\",\"type\":\"uint256\"}],\"name\":\"trustedResolveMarket\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+const TrustedMarketFactoryABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_owner\",\"type\":\"address\"},{\"internalType\":\"contractIERC20Full\",\"name\":\"_collateral\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_shareFactor\",\"type\":\"uint256\"},{\"internalType\":\"contractFeePot\",\"name\":\"_feePot\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_stakerFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_settlementFee\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_protocol\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_protocolFee\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"_endTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"description\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"string[]\",\"name\":\"outcomes\",\"type\":\"string[]\"}],\"name\":\"MarketCreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"}],\"name\":\"MarketResolved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"protocol\",\"type\":\"address\"}],\"name\":\"ProtocolChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"ProtocolFeeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"protocol\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ProtocolFeeClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"SettlementFeeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"settlementAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SettlementFeeClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SharesBurned\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SharesMinted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"StakerFeeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"WinningsClaimed\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"accumulatedProtocolFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"accumulatedSettlementFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_sharesToBurn\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"burnShares\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_shares\",\"type\":\"uint256\"}],\"name\":\"calcCost\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_collateralIn\",\"type\":\"uint256\"}],\"name\":\"calcShares\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"_ids\",\"type\":\"uint256[]\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimManyWinnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claimProtocolFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimSettlementFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimWinnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"collateral\",\"outputs\":[{\"internalType\":\"contractIERC20Full\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_creator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_endTime\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"_description\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"_names\",\"type\":\"string[]\"},{\"internalType\":\"string[]\",\"name\":\"_symbols\",\"type\":\"string[]\"}],\"name\":\"createMarket\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"feePot\",\"outputs\":[{\"internalType\":\"contractFeePot\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"}],\"name\":\"getMarket\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"settlementAddress\",\"type\":\"address\"},{\"internalType\":\"contractOwnedERC20[]\",\"name\":\"shareTokens\",\"type\":\"address[]\"},{\"internalType\":\"uint256\",\"name\":\"endTime\",\"type\":\"uint256\"},{\"internalType\":\"contractOwnedERC20\",\"name\":\"winner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"settlementFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"protocolFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"stakerFee\",\"type\":\"uint256\"}],\"internalType\":\"structAbstractMarketFactory.Market\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"}],\"name\":\"getMarketDetails\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"description\",\"type\":\"string\"}],\"internalType\":\"structTrustedMarketFactory.MarketDetails\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getOwner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"}],\"name\":\"isMarketResolved\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"marketCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_shareToMint\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"mintShares\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"protocol\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"protocolFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"resolveMarket\",\"outputs\":[],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newProtocol\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"_claimFirst\",\"type\":\"bool\"}],\"name\":\"setProtocol\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_newFee\",\"type\":\"uint256\"}],\"name\":\"setProtocolFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_newFee\",\"type\":\"uint256\"}],\"name\":\"setSettlementFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_newFee\",\"type\":\"uint256\"}],\"name\":\"setStakerFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"settlementFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"shareFactor\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakerFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_winningOutcome\",\"type\":\"uint256\"}],\"name\":\"trustedResolveMarket\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
 // TrustedMarketFactory is an auto generated Go binding around an Ethereum contract.
 type TrustedMarketFactory struct {
@@ -186,6 +188,58 @@ func (_TrustedMarketFactory *TrustedMarketFactoryTransactorRaw) Transact(opts *b
 	return _TrustedMarketFactory.Contract.contract.Transact(opts, method, params...)
 }
 
+// AccumulatedProtocolFee is a free data retrieval call binding the contract method 0xa544a62c.
+//
+// Solidity: function accumulatedProtocolFee() view returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactoryCaller) AccumulatedProtocolFee(opts *bind.CallOpts) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _TrustedMarketFactory.contract.Call(opts, out, "accumulatedProtocolFee")
+	return *ret0, err
+}
+
+// AccumulatedProtocolFee is a free data retrieval call binding the contract method 0xa544a62c.
+//
+// Solidity: function accumulatedProtocolFee() view returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactorySession) AccumulatedProtocolFee() (*big.Int, error) {
+	return _TrustedMarketFactory.Contract.AccumulatedProtocolFee(&_TrustedMarketFactory.CallOpts)
+}
+
+// AccumulatedProtocolFee is a free data retrieval call binding the contract method 0xa544a62c.
+//
+// Solidity: function accumulatedProtocolFee() view returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) AccumulatedProtocolFee() (*big.Int, error) {
+	return _TrustedMarketFactory.Contract.AccumulatedProtocolFee(&_TrustedMarketFactory.CallOpts)
+}
+
+// AccumulatedSettlementFees is a free data retrieval call binding the contract method 0x49a4d934.
+//
+// Solidity: function accumulatedSettlementFees(address ) view returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactoryCaller) AccumulatedSettlementFees(opts *bind.CallOpts, arg0 common.Address) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _TrustedMarketFactory.contract.Call(opts, out, "accumulatedSettlementFees", arg0)
+	return *ret0, err
+}
+
+// AccumulatedSettlementFees is a free data retrieval call binding the contract method 0x49a4d934.
+//
+// Solidity: function accumulatedSettlementFees(address ) view returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactorySession) AccumulatedSettlementFees(arg0 common.Address) (*big.Int, error) {
+	return _TrustedMarketFactory.Contract.AccumulatedSettlementFees(&_TrustedMarketFactory.CallOpts, arg0)
+}
+
+// AccumulatedSettlementFees is a free data retrieval call binding the contract method 0x49a4d934.
+//
+// Solidity: function accumulatedSettlementFees(address ) view returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) AccumulatedSettlementFees(arg0 common.Address) (*big.Int, error) {
+	return _TrustedMarketFactory.Contract.AccumulatedSettlementFees(&_TrustedMarketFactory.CallOpts, arg0)
+}
+
 // CalcCost is a free data retrieval call binding the contract method 0x473a6d52.
 //
 // Solidity: function calcCost(uint256 _shares) view returns(uint256)
@@ -262,32 +316,6 @@ func (_TrustedMarketFactory *TrustedMarketFactorySession) Collateral() (common.A
 // Solidity: function collateral() view returns(address)
 func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) Collateral() (common.Address, error) {
 	return _TrustedMarketFactory.Contract.Collateral(&_TrustedMarketFactory.CallOpts)
-}
-
-// CreatorFee is a free data retrieval call binding the contract method 0xe88958dc.
-//
-// Solidity: function creatorFee() view returns(uint256)
-func (_TrustedMarketFactory *TrustedMarketFactoryCaller) CreatorFee(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "creatorFee")
-	return *ret0, err
-}
-
-// CreatorFee is a free data retrieval call binding the contract method 0xe88958dc.
-//
-// Solidity: function creatorFee() view returns(uint256)
-func (_TrustedMarketFactory *TrustedMarketFactorySession) CreatorFee() (*big.Int, error) {
-	return _TrustedMarketFactory.Contract.CreatorFee(&_TrustedMarketFactory.CallOpts)
-}
-
-// CreatorFee is a free data retrieval call binding the contract method 0xe88958dc.
-//
-// Solidity: function creatorFee() view returns(uint256)
-func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) CreatorFee() (*big.Int, error) {
-	return _TrustedMarketFactory.Contract.CreatorFee(&_TrustedMarketFactory.CallOpts)
 }
 
 // FeePot is a free data retrieval call binding the contract method 0x4c9f66c7.
@@ -394,6 +422,32 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) GetOwner() (comm
 	return _TrustedMarketFactory.Contract.GetOwner(&_TrustedMarketFactory.CallOpts)
 }
 
+// IsMarketResolved is a free data retrieval call binding the contract method 0x53ac55f5.
+//
+// Solidity: function isMarketResolved(uint256 _id) view returns(bool)
+func (_TrustedMarketFactory *TrustedMarketFactoryCaller) IsMarketResolved(opts *bind.CallOpts, _id *big.Int) (bool, error) {
+	var (
+		ret0 = new(bool)
+	)
+	out := ret0
+	err := _TrustedMarketFactory.contract.Call(opts, out, "isMarketResolved", _id)
+	return *ret0, err
+}
+
+// IsMarketResolved is a free data retrieval call binding the contract method 0x53ac55f5.
+//
+// Solidity: function isMarketResolved(uint256 _id) view returns(bool)
+func (_TrustedMarketFactory *TrustedMarketFactorySession) IsMarketResolved(_id *big.Int) (bool, error) {
+	return _TrustedMarketFactory.Contract.IsMarketResolved(&_TrustedMarketFactory.CallOpts, _id)
+}
+
+// IsMarketResolved is a free data retrieval call binding the contract method 0x53ac55f5.
+//
+// Solidity: function isMarketResolved(uint256 _id) view returns(bool)
+func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) IsMarketResolved(_id *big.Int) (bool, error) {
+	return _TrustedMarketFactory.Contract.IsMarketResolved(&_TrustedMarketFactory.CallOpts, _id)
+}
+
 // MarketCount is a free data retrieval call binding the contract method 0xec979082.
 //
 // Solidity: function marketCount() view returns(uint256)
@@ -420,6 +474,58 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) MarketCount() (*
 	return _TrustedMarketFactory.Contract.MarketCount(&_TrustedMarketFactory.CallOpts)
 }
 
+// Protocol is a free data retrieval call binding the contract method 0x8ce74426.
+//
+// Solidity: function protocol() view returns(address)
+func (_TrustedMarketFactory *TrustedMarketFactoryCaller) Protocol(opts *bind.CallOpts) (common.Address, error) {
+	var (
+		ret0 = new(common.Address)
+	)
+	out := ret0
+	err := _TrustedMarketFactory.contract.Call(opts, out, "protocol")
+	return *ret0, err
+}
+
+// Protocol is a free data retrieval call binding the contract method 0x8ce74426.
+//
+// Solidity: function protocol() view returns(address)
+func (_TrustedMarketFactory *TrustedMarketFactorySession) Protocol() (common.Address, error) {
+	return _TrustedMarketFactory.Contract.Protocol(&_TrustedMarketFactory.CallOpts)
+}
+
+// Protocol is a free data retrieval call binding the contract method 0x8ce74426.
+//
+// Solidity: function protocol() view returns(address)
+func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) Protocol() (common.Address, error) {
+	return _TrustedMarketFactory.Contract.Protocol(&_TrustedMarketFactory.CallOpts)
+}
+
+// ProtocolFee is a free data retrieval call binding the contract method 0xb0e21e8a.
+//
+// Solidity: function protocolFee() view returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactoryCaller) ProtocolFee(opts *bind.CallOpts) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _TrustedMarketFactory.contract.Call(opts, out, "protocolFee")
+	return *ret0, err
+}
+
+// ProtocolFee is a free data retrieval call binding the contract method 0xb0e21e8a.
+//
+// Solidity: function protocolFee() view returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactorySession) ProtocolFee() (*big.Int, error) {
+	return _TrustedMarketFactory.Contract.ProtocolFee(&_TrustedMarketFactory.CallOpts)
+}
+
+// ProtocolFee is a free data retrieval call binding the contract method 0xb0e21e8a.
+//
+// Solidity: function protocolFee() view returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) ProtocolFee() (*big.Int, error) {
+	return _TrustedMarketFactory.Contract.ProtocolFee(&_TrustedMarketFactory.CallOpts)
+}
+
 // ResolveMarket is a free data retrieval call binding the contract method 0x6399d03d.
 //
 // Solidity: function resolveMarket(uint256 ) pure returns()
@@ -442,6 +548,32 @@ func (_TrustedMarketFactory *TrustedMarketFactorySession) ResolveMarket(arg0 *bi
 // Solidity: function resolveMarket(uint256 ) pure returns()
 func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) ResolveMarket(arg0 *big.Int) error {
 	return _TrustedMarketFactory.Contract.ResolveMarket(&_TrustedMarketFactory.CallOpts, arg0)
+}
+
+// SettlementFee is a free data retrieval call binding the contract method 0x7d1d7fb8.
+//
+// Solidity: function settlementFee() view returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactoryCaller) SettlementFee(opts *bind.CallOpts) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _TrustedMarketFactory.contract.Call(opts, out, "settlementFee")
+	return *ret0, err
+}
+
+// SettlementFee is a free data retrieval call binding the contract method 0x7d1d7fb8.
+//
+// Solidity: function settlementFee() view returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactorySession) SettlementFee() (*big.Int, error) {
+	return _TrustedMarketFactory.Contract.SettlementFee(&_TrustedMarketFactory.CallOpts)
+}
+
+// SettlementFee is a free data retrieval call binding the contract method 0x7d1d7fb8.
+//
+// Solidity: function settlementFee() view returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) SettlementFee() (*big.Int, error) {
+	return _TrustedMarketFactory.Contract.SettlementFee(&_TrustedMarketFactory.CallOpts)
 }
 
 // ShareFactor is a free data retrieval call binding the contract method 0x7641ab01.
@@ -538,6 +670,48 @@ func (_TrustedMarketFactory *TrustedMarketFactoryTransactorSession) ClaimManyWin
 	return _TrustedMarketFactory.Contract.ClaimManyWinnings(&_TrustedMarketFactory.TransactOpts, _ids, _receiver)
 }
 
+// ClaimProtocolFees is a paid mutator transaction binding the contract method 0x4a7d0369.
+//
+// Solidity: function claimProtocolFees() returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactoryTransactor) ClaimProtocolFees(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _TrustedMarketFactory.contract.Transact(opts, "claimProtocolFees")
+}
+
+// ClaimProtocolFees is a paid mutator transaction binding the contract method 0x4a7d0369.
+//
+// Solidity: function claimProtocolFees() returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactorySession) ClaimProtocolFees() (*types.Transaction, error) {
+	return _TrustedMarketFactory.Contract.ClaimProtocolFees(&_TrustedMarketFactory.TransactOpts)
+}
+
+// ClaimProtocolFees is a paid mutator transaction binding the contract method 0x4a7d0369.
+//
+// Solidity: function claimProtocolFees() returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactoryTransactorSession) ClaimProtocolFees() (*types.Transaction, error) {
+	return _TrustedMarketFactory.Contract.ClaimProtocolFees(&_TrustedMarketFactory.TransactOpts)
+}
+
+// ClaimSettlementFees is a paid mutator transaction binding the contract method 0x8e0ed193.
+//
+// Solidity: function claimSettlementFees(address _receiver) returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactoryTransactor) ClaimSettlementFees(opts *bind.TransactOpts, _receiver common.Address) (*types.Transaction, error) {
+	return _TrustedMarketFactory.contract.Transact(opts, "claimSettlementFees", _receiver)
+}
+
+// ClaimSettlementFees is a paid mutator transaction binding the contract method 0x8e0ed193.
+//
+// Solidity: function claimSettlementFees(address _receiver) returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactorySession) ClaimSettlementFees(_receiver common.Address) (*types.Transaction, error) {
+	return _TrustedMarketFactory.Contract.ClaimSettlementFees(&_TrustedMarketFactory.TransactOpts, _receiver)
+}
+
+// ClaimSettlementFees is a paid mutator transaction binding the contract method 0x8e0ed193.
+//
+// Solidity: function claimSettlementFees(address _receiver) returns(uint256)
+func (_TrustedMarketFactory *TrustedMarketFactoryTransactorSession) ClaimSettlementFees(_receiver common.Address) (*types.Transaction, error) {
+	return _TrustedMarketFactory.Contract.ClaimSettlementFees(&_TrustedMarketFactory.TransactOpts, _receiver)
+}
+
 // ClaimWinnings is a paid mutator transaction binding the contract method 0x992c9079.
 //
 // Solidity: function claimWinnings(uint256 _id, address _receiver) returns(uint256)
@@ -599,6 +773,90 @@ func (_TrustedMarketFactory *TrustedMarketFactorySession) MintShares(_id *big.In
 // Solidity: function mintShares(uint256 _id, uint256 _shareToMint, address _receiver) returns()
 func (_TrustedMarketFactory *TrustedMarketFactoryTransactorSession) MintShares(_id *big.Int, _shareToMint *big.Int, _receiver common.Address) (*types.Transaction, error) {
 	return _TrustedMarketFactory.Contract.MintShares(&_TrustedMarketFactory.TransactOpts, _id, _shareToMint, _receiver)
+}
+
+// SetProtocol is a paid mutator transaction binding the contract method 0x32ecabe9.
+//
+// Solidity: function setProtocol(address _newProtocol, bool _claimFirst) returns()
+func (_TrustedMarketFactory *TrustedMarketFactoryTransactor) SetProtocol(opts *bind.TransactOpts, _newProtocol common.Address, _claimFirst bool) (*types.Transaction, error) {
+	return _TrustedMarketFactory.contract.Transact(opts, "setProtocol", _newProtocol, _claimFirst)
+}
+
+// SetProtocol is a paid mutator transaction binding the contract method 0x32ecabe9.
+//
+// Solidity: function setProtocol(address _newProtocol, bool _claimFirst) returns()
+func (_TrustedMarketFactory *TrustedMarketFactorySession) SetProtocol(_newProtocol common.Address, _claimFirst bool) (*types.Transaction, error) {
+	return _TrustedMarketFactory.Contract.SetProtocol(&_TrustedMarketFactory.TransactOpts, _newProtocol, _claimFirst)
+}
+
+// SetProtocol is a paid mutator transaction binding the contract method 0x32ecabe9.
+//
+// Solidity: function setProtocol(address _newProtocol, bool _claimFirst) returns()
+func (_TrustedMarketFactory *TrustedMarketFactoryTransactorSession) SetProtocol(_newProtocol common.Address, _claimFirst bool) (*types.Transaction, error) {
+	return _TrustedMarketFactory.Contract.SetProtocol(&_TrustedMarketFactory.TransactOpts, _newProtocol, _claimFirst)
+}
+
+// SetProtocolFee is a paid mutator transaction binding the contract method 0x787dce3d.
+//
+// Solidity: function setProtocolFee(uint256 _newFee) returns()
+func (_TrustedMarketFactory *TrustedMarketFactoryTransactor) SetProtocolFee(opts *bind.TransactOpts, _newFee *big.Int) (*types.Transaction, error) {
+	return _TrustedMarketFactory.contract.Transact(opts, "setProtocolFee", _newFee)
+}
+
+// SetProtocolFee is a paid mutator transaction binding the contract method 0x787dce3d.
+//
+// Solidity: function setProtocolFee(uint256 _newFee) returns()
+func (_TrustedMarketFactory *TrustedMarketFactorySession) SetProtocolFee(_newFee *big.Int) (*types.Transaction, error) {
+	return _TrustedMarketFactory.Contract.SetProtocolFee(&_TrustedMarketFactory.TransactOpts, _newFee)
+}
+
+// SetProtocolFee is a paid mutator transaction binding the contract method 0x787dce3d.
+//
+// Solidity: function setProtocolFee(uint256 _newFee) returns()
+func (_TrustedMarketFactory *TrustedMarketFactoryTransactorSession) SetProtocolFee(_newFee *big.Int) (*types.Transaction, error) {
+	return _TrustedMarketFactory.Contract.SetProtocolFee(&_TrustedMarketFactory.TransactOpts, _newFee)
+}
+
+// SetSettlementFee is a paid mutator transaction binding the contract method 0xd5da4f1d.
+//
+// Solidity: function setSettlementFee(uint256 _newFee) returns()
+func (_TrustedMarketFactory *TrustedMarketFactoryTransactor) SetSettlementFee(opts *bind.TransactOpts, _newFee *big.Int) (*types.Transaction, error) {
+	return _TrustedMarketFactory.contract.Transact(opts, "setSettlementFee", _newFee)
+}
+
+// SetSettlementFee is a paid mutator transaction binding the contract method 0xd5da4f1d.
+//
+// Solidity: function setSettlementFee(uint256 _newFee) returns()
+func (_TrustedMarketFactory *TrustedMarketFactorySession) SetSettlementFee(_newFee *big.Int) (*types.Transaction, error) {
+	return _TrustedMarketFactory.Contract.SetSettlementFee(&_TrustedMarketFactory.TransactOpts, _newFee)
+}
+
+// SetSettlementFee is a paid mutator transaction binding the contract method 0xd5da4f1d.
+//
+// Solidity: function setSettlementFee(uint256 _newFee) returns()
+func (_TrustedMarketFactory *TrustedMarketFactoryTransactorSession) SetSettlementFee(_newFee *big.Int) (*types.Transaction, error) {
+	return _TrustedMarketFactory.Contract.SetSettlementFee(&_TrustedMarketFactory.TransactOpts, _newFee)
+}
+
+// SetStakerFee is a paid mutator transaction binding the contract method 0x97eef187.
+//
+// Solidity: function setStakerFee(uint256 _newFee) returns()
+func (_TrustedMarketFactory *TrustedMarketFactoryTransactor) SetStakerFee(opts *bind.TransactOpts, _newFee *big.Int) (*types.Transaction, error) {
+	return _TrustedMarketFactory.contract.Transact(opts, "setStakerFee", _newFee)
+}
+
+// SetStakerFee is a paid mutator transaction binding the contract method 0x97eef187.
+//
+// Solidity: function setStakerFee(uint256 _newFee) returns()
+func (_TrustedMarketFactory *TrustedMarketFactorySession) SetStakerFee(_newFee *big.Int) (*types.Transaction, error) {
+	return _TrustedMarketFactory.Contract.SetStakerFee(&_TrustedMarketFactory.TransactOpts, _newFee)
+}
+
+// SetStakerFee is a paid mutator transaction binding the contract method 0x97eef187.
+//
+// Solidity: function setStakerFee(uint256 _newFee) returns()
+func (_TrustedMarketFactory *TrustedMarketFactoryTransactorSession) SetStakerFee(_newFee *big.Int) (*types.Transaction, error) {
+	return _TrustedMarketFactory.Contract.SetStakerFee(&_TrustedMarketFactory.TransactOpts, _newFee)
 }
 
 // TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
@@ -914,6 +1172,684 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseMarketResolved(l
 	return event, nil
 }
 
+// TrustedMarketFactoryProtocolChangedIterator is returned from FilterProtocolChanged and is used to iterate over the raw logs and unpacked data for ProtocolChanged events raised by the TrustedMarketFactory contract.
+type TrustedMarketFactoryProtocolChangedIterator struct {
+	Event *TrustedMarketFactoryProtocolChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TrustedMarketFactoryProtocolChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TrustedMarketFactoryProtocolChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TrustedMarketFactoryProtocolChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TrustedMarketFactoryProtocolChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TrustedMarketFactoryProtocolChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TrustedMarketFactoryProtocolChanged represents a ProtocolChanged event raised by the TrustedMarketFactory contract.
+type TrustedMarketFactoryProtocolChanged struct {
+	Protocol common.Address
+	Raw      types.Log // Blockchain specific contextual infos
+}
+
+// FilterProtocolChanged is a free log retrieval operation binding the contract event 0x15b84596b3c567ae2998116949ae5f2d47f3055c12d9053db4d6e50f4c794dd9.
+//
+// Solidity: event ProtocolChanged(address protocol)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) FilterProtocolChanged(opts *bind.FilterOpts) (*TrustedMarketFactoryProtocolChangedIterator, error) {
+
+	logs, sub, err := _TrustedMarketFactory.contract.FilterLogs(opts, "ProtocolChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &TrustedMarketFactoryProtocolChangedIterator{contract: _TrustedMarketFactory.contract, event: "ProtocolChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchProtocolChanged is a free log subscription operation binding the contract event 0x15b84596b3c567ae2998116949ae5f2d47f3055c12d9053db4d6e50f4c794dd9.
+//
+// Solidity: event ProtocolChanged(address protocol)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) WatchProtocolChanged(opts *bind.WatchOpts, sink chan<- *TrustedMarketFactoryProtocolChanged) (event.Subscription, error) {
+
+	logs, sub, err := _TrustedMarketFactory.contract.WatchLogs(opts, "ProtocolChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TrustedMarketFactoryProtocolChanged)
+				if err := _TrustedMarketFactory.contract.UnpackLog(event, "ProtocolChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseProtocolChanged is a log parse operation binding the contract event 0x15b84596b3c567ae2998116949ae5f2d47f3055c12d9053db4d6e50f4c794dd9.
+//
+// Solidity: event ProtocolChanged(address protocol)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseProtocolChanged(log types.Log) (*TrustedMarketFactoryProtocolChanged, error) {
+	event := new(TrustedMarketFactoryProtocolChanged)
+	if err := _TrustedMarketFactory.contract.UnpackLog(event, "ProtocolChanged", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
+// TrustedMarketFactoryProtocolFeeChangedIterator is returned from FilterProtocolFeeChanged and is used to iterate over the raw logs and unpacked data for ProtocolFeeChanged events raised by the TrustedMarketFactory contract.
+type TrustedMarketFactoryProtocolFeeChangedIterator struct {
+	Event *TrustedMarketFactoryProtocolFeeChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TrustedMarketFactoryProtocolFeeChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TrustedMarketFactoryProtocolFeeChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TrustedMarketFactoryProtocolFeeChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TrustedMarketFactoryProtocolFeeChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TrustedMarketFactoryProtocolFeeChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TrustedMarketFactoryProtocolFeeChanged represents a ProtocolFeeChanged event raised by the TrustedMarketFactory contract.
+type TrustedMarketFactoryProtocolFeeChanged struct {
+	Fee *big.Int
+	Raw types.Log // Blockchain specific contextual infos
+}
+
+// FilterProtocolFeeChanged is a free log retrieval operation binding the contract event 0xada2cde3c4a561f5c23e2fdbfb223e1f0d1ec7109b9811b32644e6e974d6631f.
+//
+// Solidity: event ProtocolFeeChanged(uint256 fee)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) FilterProtocolFeeChanged(opts *bind.FilterOpts) (*TrustedMarketFactoryProtocolFeeChangedIterator, error) {
+
+	logs, sub, err := _TrustedMarketFactory.contract.FilterLogs(opts, "ProtocolFeeChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &TrustedMarketFactoryProtocolFeeChangedIterator{contract: _TrustedMarketFactory.contract, event: "ProtocolFeeChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchProtocolFeeChanged is a free log subscription operation binding the contract event 0xada2cde3c4a561f5c23e2fdbfb223e1f0d1ec7109b9811b32644e6e974d6631f.
+//
+// Solidity: event ProtocolFeeChanged(uint256 fee)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) WatchProtocolFeeChanged(opts *bind.WatchOpts, sink chan<- *TrustedMarketFactoryProtocolFeeChanged) (event.Subscription, error) {
+
+	logs, sub, err := _TrustedMarketFactory.contract.WatchLogs(opts, "ProtocolFeeChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TrustedMarketFactoryProtocolFeeChanged)
+				if err := _TrustedMarketFactory.contract.UnpackLog(event, "ProtocolFeeChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseProtocolFeeChanged is a log parse operation binding the contract event 0xada2cde3c4a561f5c23e2fdbfb223e1f0d1ec7109b9811b32644e6e974d6631f.
+//
+// Solidity: event ProtocolFeeChanged(uint256 fee)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseProtocolFeeChanged(log types.Log) (*TrustedMarketFactoryProtocolFeeChanged, error) {
+	event := new(TrustedMarketFactoryProtocolFeeChanged)
+	if err := _TrustedMarketFactory.contract.UnpackLog(event, "ProtocolFeeChanged", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
+// TrustedMarketFactoryProtocolFeeClaimedIterator is returned from FilterProtocolFeeClaimed and is used to iterate over the raw logs and unpacked data for ProtocolFeeClaimed events raised by the TrustedMarketFactory contract.
+type TrustedMarketFactoryProtocolFeeClaimedIterator struct {
+	Event *TrustedMarketFactoryProtocolFeeClaimed // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TrustedMarketFactoryProtocolFeeClaimedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TrustedMarketFactoryProtocolFeeClaimed)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TrustedMarketFactoryProtocolFeeClaimed)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TrustedMarketFactoryProtocolFeeClaimedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TrustedMarketFactoryProtocolFeeClaimedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TrustedMarketFactoryProtocolFeeClaimed represents a ProtocolFeeClaimed event raised by the TrustedMarketFactory contract.
+type TrustedMarketFactoryProtocolFeeClaimed struct {
+	Protocol common.Address
+	Amount   *big.Int
+	Raw      types.Log // Blockchain specific contextual infos
+}
+
+// FilterProtocolFeeClaimed is a free log retrieval operation binding the contract event 0x0f7f5b155b0b0ac6890709a2c7bf1b8bb3f675fff1e7840b4dd3c9acde59048b.
+//
+// Solidity: event ProtocolFeeClaimed(address protocol, uint256 amount)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) FilterProtocolFeeClaimed(opts *bind.FilterOpts) (*TrustedMarketFactoryProtocolFeeClaimedIterator, error) {
+
+	logs, sub, err := _TrustedMarketFactory.contract.FilterLogs(opts, "ProtocolFeeClaimed")
+	if err != nil {
+		return nil, err
+	}
+	return &TrustedMarketFactoryProtocolFeeClaimedIterator{contract: _TrustedMarketFactory.contract, event: "ProtocolFeeClaimed", logs: logs, sub: sub}, nil
+}
+
+// WatchProtocolFeeClaimed is a free log subscription operation binding the contract event 0x0f7f5b155b0b0ac6890709a2c7bf1b8bb3f675fff1e7840b4dd3c9acde59048b.
+//
+// Solidity: event ProtocolFeeClaimed(address protocol, uint256 amount)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) WatchProtocolFeeClaimed(opts *bind.WatchOpts, sink chan<- *TrustedMarketFactoryProtocolFeeClaimed) (event.Subscription, error) {
+
+	logs, sub, err := _TrustedMarketFactory.contract.WatchLogs(opts, "ProtocolFeeClaimed")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TrustedMarketFactoryProtocolFeeClaimed)
+				if err := _TrustedMarketFactory.contract.UnpackLog(event, "ProtocolFeeClaimed", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseProtocolFeeClaimed is a log parse operation binding the contract event 0x0f7f5b155b0b0ac6890709a2c7bf1b8bb3f675fff1e7840b4dd3c9acde59048b.
+//
+// Solidity: event ProtocolFeeClaimed(address protocol, uint256 amount)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseProtocolFeeClaimed(log types.Log) (*TrustedMarketFactoryProtocolFeeClaimed, error) {
+	event := new(TrustedMarketFactoryProtocolFeeClaimed)
+	if err := _TrustedMarketFactory.contract.UnpackLog(event, "ProtocolFeeClaimed", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
+// TrustedMarketFactorySettlementFeeChangedIterator is returned from FilterSettlementFeeChanged and is used to iterate over the raw logs and unpacked data for SettlementFeeChanged events raised by the TrustedMarketFactory contract.
+type TrustedMarketFactorySettlementFeeChangedIterator struct {
+	Event *TrustedMarketFactorySettlementFeeChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TrustedMarketFactorySettlementFeeChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TrustedMarketFactorySettlementFeeChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TrustedMarketFactorySettlementFeeChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TrustedMarketFactorySettlementFeeChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TrustedMarketFactorySettlementFeeChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TrustedMarketFactorySettlementFeeChanged represents a SettlementFeeChanged event raised by the TrustedMarketFactory contract.
+type TrustedMarketFactorySettlementFeeChanged struct {
+	Fee *big.Int
+	Raw types.Log // Blockchain specific contextual infos
+}
+
+// FilterSettlementFeeChanged is a free log retrieval operation binding the contract event 0x92d395c429898992f8532ee7145901513e524c2085fd7fd1da39b8badcd6df31.
+//
+// Solidity: event SettlementFeeChanged(uint256 fee)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) FilterSettlementFeeChanged(opts *bind.FilterOpts) (*TrustedMarketFactorySettlementFeeChangedIterator, error) {
+
+	logs, sub, err := _TrustedMarketFactory.contract.FilterLogs(opts, "SettlementFeeChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &TrustedMarketFactorySettlementFeeChangedIterator{contract: _TrustedMarketFactory.contract, event: "SettlementFeeChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchSettlementFeeChanged is a free log subscription operation binding the contract event 0x92d395c429898992f8532ee7145901513e524c2085fd7fd1da39b8badcd6df31.
+//
+// Solidity: event SettlementFeeChanged(uint256 fee)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) WatchSettlementFeeChanged(opts *bind.WatchOpts, sink chan<- *TrustedMarketFactorySettlementFeeChanged) (event.Subscription, error) {
+
+	logs, sub, err := _TrustedMarketFactory.contract.WatchLogs(opts, "SettlementFeeChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TrustedMarketFactorySettlementFeeChanged)
+				if err := _TrustedMarketFactory.contract.UnpackLog(event, "SettlementFeeChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseSettlementFeeChanged is a log parse operation binding the contract event 0x92d395c429898992f8532ee7145901513e524c2085fd7fd1da39b8badcd6df31.
+//
+// Solidity: event SettlementFeeChanged(uint256 fee)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseSettlementFeeChanged(log types.Log) (*TrustedMarketFactorySettlementFeeChanged, error) {
+	event := new(TrustedMarketFactorySettlementFeeChanged)
+	if err := _TrustedMarketFactory.contract.UnpackLog(event, "SettlementFeeChanged", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
+// TrustedMarketFactorySettlementFeeClaimedIterator is returned from FilterSettlementFeeClaimed and is used to iterate over the raw logs and unpacked data for SettlementFeeClaimed events raised by the TrustedMarketFactory contract.
+type TrustedMarketFactorySettlementFeeClaimedIterator struct {
+	Event *TrustedMarketFactorySettlementFeeClaimed // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TrustedMarketFactorySettlementFeeClaimedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TrustedMarketFactorySettlementFeeClaimed)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TrustedMarketFactorySettlementFeeClaimed)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TrustedMarketFactorySettlementFeeClaimedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TrustedMarketFactorySettlementFeeClaimedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TrustedMarketFactorySettlementFeeClaimed represents a SettlementFeeClaimed event raised by the TrustedMarketFactory contract.
+type TrustedMarketFactorySettlementFeeClaimed struct {
+	SettlementAddress common.Address
+	Amount            *big.Int
+	Receiver          common.Address
+	Raw               types.Log // Blockchain specific contextual infos
+}
+
+// FilterSettlementFeeClaimed is a free log retrieval operation binding the contract event 0xc9985ad824d943d66367ce5feea26e18979b3e1c9273742926d87e2b0d747387.
+//
+// Solidity: event SettlementFeeClaimed(address settlementAddress, uint256 amount, address indexed receiver)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) FilterSettlementFeeClaimed(opts *bind.FilterOpts, receiver []common.Address) (*TrustedMarketFactorySettlementFeeClaimedIterator, error) {
+
+	var receiverRule []interface{}
+	for _, receiverItem := range receiver {
+		receiverRule = append(receiverRule, receiverItem)
+	}
+
+	logs, sub, err := _TrustedMarketFactory.contract.FilterLogs(opts, "SettlementFeeClaimed", receiverRule)
+	if err != nil {
+		return nil, err
+	}
+	return &TrustedMarketFactorySettlementFeeClaimedIterator{contract: _TrustedMarketFactory.contract, event: "SettlementFeeClaimed", logs: logs, sub: sub}, nil
+}
+
+// WatchSettlementFeeClaimed is a free log subscription operation binding the contract event 0xc9985ad824d943d66367ce5feea26e18979b3e1c9273742926d87e2b0d747387.
+//
+// Solidity: event SettlementFeeClaimed(address settlementAddress, uint256 amount, address indexed receiver)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) WatchSettlementFeeClaimed(opts *bind.WatchOpts, sink chan<- *TrustedMarketFactorySettlementFeeClaimed, receiver []common.Address) (event.Subscription, error) {
+
+	var receiverRule []interface{}
+	for _, receiverItem := range receiver {
+		receiverRule = append(receiverRule, receiverItem)
+	}
+
+	logs, sub, err := _TrustedMarketFactory.contract.WatchLogs(opts, "SettlementFeeClaimed", receiverRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TrustedMarketFactorySettlementFeeClaimed)
+				if err := _TrustedMarketFactory.contract.UnpackLog(event, "SettlementFeeClaimed", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseSettlementFeeClaimed is a log parse operation binding the contract event 0xc9985ad824d943d66367ce5feea26e18979b3e1c9273742926d87e2b0d747387.
+//
+// Solidity: event SettlementFeeClaimed(address settlementAddress, uint256 amount, address indexed receiver)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseSettlementFeeClaimed(log types.Log) (*TrustedMarketFactorySettlementFeeClaimed, error) {
+	event := new(TrustedMarketFactorySettlementFeeClaimed)
+	if err := _TrustedMarketFactory.contract.UnpackLog(event, "SettlementFeeClaimed", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
 // TrustedMarketFactorySharesBurnedIterator is returned from FilterSharesBurned and is used to iterate over the raw logs and unpacked data for SharesBurned events raised by the TrustedMarketFactory contract.
 type TrustedMarketFactorySharesBurnedIterator struct {
 	Event *TrustedMarketFactorySharesBurned // Event containing the contract specifics and raw log
@@ -1184,6 +2120,139 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseSharesMinted(log
 	return event, nil
 }
 
+// TrustedMarketFactoryStakerFeeChangedIterator is returned from FilterStakerFeeChanged and is used to iterate over the raw logs and unpacked data for StakerFeeChanged events raised by the TrustedMarketFactory contract.
+type TrustedMarketFactoryStakerFeeChangedIterator struct {
+	Event *TrustedMarketFactoryStakerFeeChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TrustedMarketFactoryStakerFeeChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TrustedMarketFactoryStakerFeeChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TrustedMarketFactoryStakerFeeChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TrustedMarketFactoryStakerFeeChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TrustedMarketFactoryStakerFeeChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TrustedMarketFactoryStakerFeeChanged represents a StakerFeeChanged event raised by the TrustedMarketFactory contract.
+type TrustedMarketFactoryStakerFeeChanged struct {
+	Fee *big.Int
+	Raw types.Log // Blockchain specific contextual infos
+}
+
+// FilterStakerFeeChanged is a free log retrieval operation binding the contract event 0xcc4df50442ac32f0142ba4853f617661e0823be0e92148e7e5f36ce56c139825.
+//
+// Solidity: event StakerFeeChanged(uint256 fee)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) FilterStakerFeeChanged(opts *bind.FilterOpts) (*TrustedMarketFactoryStakerFeeChangedIterator, error) {
+
+	logs, sub, err := _TrustedMarketFactory.contract.FilterLogs(opts, "StakerFeeChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &TrustedMarketFactoryStakerFeeChangedIterator{contract: _TrustedMarketFactory.contract, event: "StakerFeeChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchStakerFeeChanged is a free log subscription operation binding the contract event 0xcc4df50442ac32f0142ba4853f617661e0823be0e92148e7e5f36ce56c139825.
+//
+// Solidity: event StakerFeeChanged(uint256 fee)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) WatchStakerFeeChanged(opts *bind.WatchOpts, sink chan<- *TrustedMarketFactoryStakerFeeChanged) (event.Subscription, error) {
+
+	logs, sub, err := _TrustedMarketFactory.contract.WatchLogs(opts, "StakerFeeChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TrustedMarketFactoryStakerFeeChanged)
+				if err := _TrustedMarketFactory.contract.UnpackLog(event, "StakerFeeChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseStakerFeeChanged is a log parse operation binding the contract event 0xcc4df50442ac32f0142ba4853f617661e0823be0e92148e7e5f36ce56c139825.
+//
+// Solidity: event StakerFeeChanged(uint256 fee)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseStakerFeeChanged(log types.Log) (*TrustedMarketFactoryStakerFeeChanged, error) {
+	event := new(TrustedMarketFactoryStakerFeeChanged)
+	if err := _TrustedMarketFactory.contract.UnpackLog(event, "StakerFeeChanged", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
 // TrustedMarketFactoryWinningsClaimedIterator is returned from FilterWinningsClaimed and is used to iterate over the raw logs and unpacked data for WinningsClaimed events raised by the TrustedMarketFactory contract.
 type TrustedMarketFactoryWinningsClaimedIterator struct {
 	Event *TrustedMarketFactoryWinningsClaimed // Event containing the contract specifics and raw log
@@ -1261,10 +2330,15 @@ type TrustedMarketFactoryWinningsClaimed struct {
 
 // FilterWinningsClaimed is a free log retrieval operation binding the contract event 0x2bdd7a5109193ce6270ec3b4afcf4ccd4a06c27742ba11f660498cb41433bb00.
 //
-// Solidity: event WinningsClaimed(uint256 id, uint256 amount, address receiver)
-func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) FilterWinningsClaimed(opts *bind.FilterOpts) (*TrustedMarketFactoryWinningsClaimedIterator, error) {
+// Solidity: event WinningsClaimed(uint256 id, uint256 amount, address indexed receiver)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) FilterWinningsClaimed(opts *bind.FilterOpts, receiver []common.Address) (*TrustedMarketFactoryWinningsClaimedIterator, error) {
 
-	logs, sub, err := _TrustedMarketFactory.contract.FilterLogs(opts, "WinningsClaimed")
+	var receiverRule []interface{}
+	for _, receiverItem := range receiver {
+		receiverRule = append(receiverRule, receiverItem)
+	}
+
+	logs, sub, err := _TrustedMarketFactory.contract.FilterLogs(opts, "WinningsClaimed", receiverRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1273,10 +2347,15 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) FilterWinningsClaimed
 
 // WatchWinningsClaimed is a free log subscription operation binding the contract event 0x2bdd7a5109193ce6270ec3b4afcf4ccd4a06c27742ba11f660498cb41433bb00.
 //
-// Solidity: event WinningsClaimed(uint256 id, uint256 amount, address receiver)
-func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) WatchWinningsClaimed(opts *bind.WatchOpts, sink chan<- *TrustedMarketFactoryWinningsClaimed) (event.Subscription, error) {
+// Solidity: event WinningsClaimed(uint256 id, uint256 amount, address indexed receiver)
+func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) WatchWinningsClaimed(opts *bind.WatchOpts, sink chan<- *TrustedMarketFactoryWinningsClaimed, receiver []common.Address) (event.Subscription, error) {
 
-	logs, sub, err := _TrustedMarketFactory.contract.WatchLogs(opts, "WinningsClaimed")
+	var receiverRule []interface{}
+	for _, receiverItem := range receiver {
+		receiverRule = append(receiverRule, receiverItem)
+	}
+
+	logs, sub, err := _TrustedMarketFactory.contract.WatchLogs(opts, "WinningsClaimed", receiverRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1310,7 +2389,7 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) WatchWinningsClaimed(
 
 // ParseWinningsClaimed is a log parse operation binding the contract event 0x2bdd7a5109193ce6270ec3b4afcf4ccd4a06c27742ba11f660498cb41433bb00.
 //
-// Solidity: event WinningsClaimed(uint256 id, uint256 amount, address receiver)
+// Solidity: event WinningsClaimed(uint256 id, uint256 amount, address indexed receiver)
 func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseWinningsClaimed(log types.Log) (*TrustedMarketFactoryWinningsClaimed, error) {
 	event := new(TrustedMarketFactoryWinningsClaimed)
 	if err := _TrustedMarketFactory.contract.UnpackLog(event, "WinningsClaimed", log); err != nil {

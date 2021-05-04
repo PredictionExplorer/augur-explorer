@@ -51,6 +51,14 @@ func build_list_of_inspected_events() []InspectedEvent {
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_settlement_fee_claimed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_protocol_fee_claimed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_winnings_claimed[:4]),
 			ContractAid: 0,
 		},
@@ -360,6 +368,69 @@ func proc_shares_swapped(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_aa_shares_swapped_event(&evt)
 }
+func proc_settlement_fee_claimed(log *types.Log,elog *EthereumEventLog) {
+
+	var evt AA_SettlementFeeClaimed
+	var eth_evt SettlementFeeClaimed
+
+	err := aa_abi.Unpack(&eth_evt,"SettlementFeeClaimed",log.Data)
+	if err != nil {
+		Error.Printf("Error unpacking SettlementFeeClaimed event: %v\n",err)
+		os.Exit(1)
+	}
+
+	eth_evt.Receiver = common.BytesToAddress(log.Topics[1][12:])
+
+	Info.Printf("Processing SettlementFeeClaimed event, txhash %v\n",elog.TxHash)
+	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+	evt.SettlementAddr = eth_evt.SettlementAddress.String()
+	evt.ReceiverAddr= eth_evt.Receiver.String()
+	evt.Amount = eth_evt.Amount.String()
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+
+	Info.Printf("SettlementFeeClaimed {\n")
+	Info.Printf("\tSettlementAddress: %v\n",evt.SettlementAddr)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tReceiver: %v\n",evt.ReceiverAddr)
+	Info.Printf("}\n")
+
+	storage.Insert_aa_settlement_fee_claimed_event(&evt)
+}
+func proc_protocol_fee_claimed(log *types.Log,elog *EthereumEventLog) {
+
+	var evt AA_ProtocolFeeClaimed
+	var eth_evt ProtocolFeeClaimed
+
+	err := aa_abi.Unpack(&eth_evt,"ProtocolFeeClaimed",log.Data)
+	if err != nil {
+		Error.Printf("Error unpacking SettlementFeeClaimed event: %v\n",err)
+		os.Exit(1)
+	}
+
+
+	Info.Printf("Processing ProtocolFeeClaimed event, txhash %v\n",elog.TxHash)
+	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+	evt.ProtocolAddr = eth_evt.Protocol.String()
+	evt.Amount = eth_evt.Amount.String()
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+
+	Info.Printf("ProtocolFeeClaimed {\n")
+	Info.Printf("\tProtocol: %v\n",evt.ProtocolAddr)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("}\n")
+
+	storage.Insert_aa_protocol_fee_claimed_event(&evt)
+}
 func proc_winnings_claimed(log *types.Log,elog *EthereumEventLog) {
 
 	var evt AA_WinningsClaimed
@@ -467,6 +538,12 @@ func process_arbitrum_augur_event(evt_id int64) error {
 			proc_shares_burned(&log,&evtlog)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_shares_swapped) {
+			proc_shares_swapped(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_settlement_fee_claimed) {
+			proc_shares_swapped(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_protocol_fee_claimed) {
 			proc_shares_swapped(&log,&evtlog)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_winnings_claimed) {
