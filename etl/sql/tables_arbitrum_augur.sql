@@ -191,7 +191,7 @@ CREATE TABLE aa_stk_fee_chg(-- StakerFee Changed
 	tx_id				BIGINT,
 	contract_aid		BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
-	settlement_fee		DECIMAL(64,18) NOT NULL,
+	staker_fee			DECIMAL(64,18) NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );

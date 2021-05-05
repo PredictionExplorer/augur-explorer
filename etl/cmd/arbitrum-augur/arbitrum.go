@@ -431,6 +431,114 @@ func proc_protocol_fee_claimed(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_aa_protocol_fee_claimed_event(&evt)
 }
+func proc_protocol_changed(log *types.Log,elog *EthereumEventLog) {
+
+	var evt AA_ProtocolChanged
+	var eth_evt ProtocolChanged
+
+	err := aa_abi.Unpack(&eth_evt,"ProtocolChanged",log.Data)
+	if err != nil {
+		Error.Printf("Error unpacking ProtocolChanged event: %v\n",err)
+		os.Exit(1)
+	}
+
+	Info.Printf("Processing ProtocolChanged event, txhash %v\n",elog.TxHash)
+	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+	evt.ProtocolAddr = eth_evt.Protocol.String()
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+
+	Info.Printf("ProtocolChanged {\n")
+	Info.Printf("\tProtocol: %v\n",evt.ProtocolAddr)
+	Info.Printf("}\n")
+
+	storage.Insert_aa_protocol_changed_event(&evt)
+}
+func proc_protocol_fee_changed(log *types.Log,elog *EthereumEventLog) {
+
+	var evt AA_ProtocolFeeChanged
+	var eth_evt ProtocolFeeChanged
+
+	err := aa_abi.Unpack(&eth_evt,"ProtocolFeeChanged",log.Data)
+	if err != nil {
+		Error.Printf("Error unpacking ProtocolFeeChanged event: %v\n",err)
+		os.Exit(1)
+	}
+
+	Info.Printf("Processing ProtocolFeeChanged event, txhash %v\n",elog.TxHash)
+	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+	evt.Fee = eth_evt.Fee.String()
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+
+	Info.Printf("ProtocolFeeChanged {\n")
+	Info.Printf("\tFee: %v\n",evt.Fee)
+	Info.Printf("}\n")
+
+	storage.Insert_aa_protocol_fee_changed_event(&evt)
+}
+func proc_settlement_fee_changed(log *types.Log,elog *EthereumEventLog) {
+
+	var evt AA_SettlementFeeChanged
+	var eth_evt SettlementFeeChanged
+
+	err := aa_abi.Unpack(&eth_evt,"SettlementFeeChanged",log.Data)
+	if err != nil {
+		Error.Printf("Error unpacking SettlementFeeChanged event: %v\n",err)
+		os.Exit(1)
+	}
+
+	Info.Printf("Processing SettlementFeeChanged event, txhash %v\n",elog.TxHash)
+	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+	evt.Fee = eth_evt.Fee.String()
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+
+	Info.Printf("SettlementFeeChanged {\n")
+	Info.Printf("\tFee: %v\n",evt.Fee)
+	Info.Printf("}\n")
+
+	storage.Insert_aa_settlement_fee_changed_event(&evt)
+}
+func proc_staker_fee_changed(log *types.Log,elog *EthereumEventLog) {
+
+	var evt AA_StakerFeeChanged
+	var eth_evt StakerFeeChanged
+
+	err := aa_abi.Unpack(&eth_evt,"StakerFeeChanged",log.Data)
+	if err != nil {
+		Error.Printf("Error unpacking StakerFeeChanged event: %v\n",err)
+		os.Exit(1)
+	}
+
+	Info.Printf("Processing StakerFeeChanged event, txhash %v\n",elog.TxHash)
+	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+	evt.Fee = eth_evt.Fee.String()
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+
+	Info.Printf("StakerFeeChanged {\n")
+	Info.Printf("\tFee: %v\n",evt.Fee)
+	Info.Printf("}\n")
+
+	storage.Insert_aa_staker_fee_changed_event(&evt)
+}
 func proc_winnings_claimed(log *types.Log,elog *EthereumEventLog) {
 
 	var evt AA_WinningsClaimed
@@ -545,6 +653,18 @@ func process_arbitrum_augur_event(evt_id int64) error {
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_protocol_fee_claimed) {
 			proc_shares_swapped(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_protocol_changed) {
+			proc_protocol_changed(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_protocol_fee_changed) {
+			proc_protocol_fee_changed(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_settlement_fee_changed) {
+			proc_settlement_fee_changed(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_staker_fee_changed) {
+			proc_staker_fee_changed(&log,&evtlog)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_winnings_claimed) {
 			proc_winnings_claimed(&log,&evtlog)

@@ -360,6 +360,95 @@ func (ss *SQLStorage) Insert_aa_protocol_fee_claimed_event(evt *p.AA_ProtocolFee
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Insert_aa_protocol_changed_event(evt *p.AA_ProtocolChanged) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	protocol_aid:=ss.Lookup_or_create_address(evt.ProtocolAddr,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO aa_proto_chg (" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
+				"protocol_aid" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6)"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			protocol_aid,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_protocol table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_aa_protocol_fee_changed_event(evt *p.AA_ProtocolFeeChanged) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO aa_pfee_chg (" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
+				"protocol_fee" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6::DECIMAL/1e+18)"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			evt.Fee,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_pfee_chg table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_aa_settlement_fee_changed_event(evt *p.AA_SettlementFeeChanged) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO aa_sfee_chg (" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
+				"settlement_fee" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6::DECIMAL/1e+18)"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			evt.Fee,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_pfee_chg table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_aa_staker_fee_changed_event(evt *p.AA_StakerFeeChanged) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO aa_stk_fee_chg (" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
+				"settlement_fee" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6::DECIMAL/1e+18)"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			evt.Fee,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_stk_fee_chg table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Insert_aa_winnings_claimed_event(evt *p.AA_WinningsClaimed) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
