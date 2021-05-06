@@ -192,6 +192,7 @@ func proc_sports_market(log *types.Log,elog *EthereumEventLog) {
 	evt.EventId = event_id.Int64()
 	evt.CreatorAddr = eth_evt.Creator.String()
 	evt.EndTime = eth_evt.EndTime.Int64()
+	evt.MarketId = eth_evt.Id.Int64()
 	evt.MarketType = int(eth_evt.MarketType)
 	evt.HomeTeamId = eth_evt.HomeTeamId.Int64()
 	evt.AwayTeamId = eth_evt.AwayTeamId.Int64()
@@ -544,6 +545,7 @@ func proc_winnings_claimed(log *types.Log,elog *EthereumEventLog) {
 	var evt AA_WinningsClaimed
 	var eth_evt WinningsClaimed
 
+	eth_evt.Receiver = common.BytesToAddress(log.Topics[1][12:])
 	err := aa_abi.Unpack(&eth_evt,"WinningsClaimed",log.Data)
 	if err != nil {
 		Error.Printf("Error unpacking WinningsClaimed event: %v\n",err)
@@ -553,7 +555,10 @@ func proc_winnings_claimed(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("Processing WinningsClaimed event, txhash %v\n",elog.TxHash)
 	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
 	evt.MarketId = eth_evt.Id.Int64()
+	evt.WinningOutcomeAddr = eth_evt.WinningOutcome.String()
 	evt.Amount=eth_evt.Amount.String()
+	evt.SettlementFee = eth_evt.SettlementFee.String()
+	evt.Payout = eth_evt.Payout.String()
 	evt.ReceiverAddr=eth_evt.Receiver.String()
 
 	evt.EvtId=elog.EvtId
@@ -564,7 +569,10 @@ func proc_winnings_claimed(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("WinningsClaimed {\n")
 	Info.Printf("\tId: %v\n",evt.MarketId)
+	Info.Printf("\tWinningOutcome: %v\n",evt.WinningOutcomeAddr)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tSettlementFee: %v\n",evt.SettlementFee)
+	Info.Printf("\tPayout: %v\n",evt.Payout)
 	Info.Printf("\tReceiver: %v\n",evt.ReceiverAddr)
 	Info.Printf("}\n")
 

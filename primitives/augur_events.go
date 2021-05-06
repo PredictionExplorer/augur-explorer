@@ -418,23 +418,14 @@ type AMMFactoryPoolCreated struct {
 	LpTokenRecipient common.Address
 	Raw              types.Log // Blockchain specific contextual infos
 }
-/*DELETE PENDING
-type TurboCreated struct {
-	Id                   *big.Int
-	CreatorFee           *big.Int
-	OutcomeSymbols       []string
-	OutcomeNames         [][32]byte
-	NumTicks             *big.Int
-	Arbiter              common.Address
-	ArbiterConfiguration []byte
-	Index                *big.Int
-	Raw                  types.Log // Blockchain specific contextual infos
-}*/
 type WinningsClaimed struct {
-	Id       *big.Int
-	Amount   *big.Int
-	Receiver common.Address
-	Raw      types.Log // Blockchain specific contextual infos
+	Id             *big.Int
+	WinningOutcome common.Address
+	Amount         *big.Int
+	SettlementFee  *big.Int
+	Payout         *big.Int
+	Receiver       common.Address
+	Raw            types.Log // Blockchain specific contextual infos
 }
 type PriceMarketCreated struct {
 	Id        *big.Int

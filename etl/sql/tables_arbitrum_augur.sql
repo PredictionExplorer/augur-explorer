@@ -1,8 +1,9 @@
 -- Tables with information about Augur events at Arbitrum chain
 CREATE TABLE aa_caddrs ( -- Addresses of contracts for Arbitrum Augur
 	chain_id			BIGINT DEFAULT 0,
-	amm_factory			TEXT DEFAULT '0xa513E6E4b8f2a923D98304ec87F64353C4D5C853',
-	hatchery_reg		TEXT DEFAULT '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9'
+	amm_factory			TEXT DEFAULT '0x87798DB53Deb245a762f801Ac6BCa4A7831B2aE0',
+	sports_factory		TEXT DEFAULT '0xFDE7135E882CF7c078e2c1100154712aCd40145c',
+	trusted_factory		TEXT DEFAULT '0xFE48D94B3Ae76aaC4D8538A9E571921718867298'
 );
 CREATE TABLE aa_proc_status (-- Arbitrum Augur process status
 	last_evt_id			BIGINT DEFAULT 0
@@ -203,8 +204,11 @@ CREATE TABLE aa_winclaim (-- WinningsClaimed
 	contract_aid		BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
 	market_id			BIGINT NOT NULL,
+	win_outc_aid		BIGINT NOT NULL, -- winning outcome addr
 	receiver_aid		BIGINT NOT NULL,
 	amount				DECIMAL(64,18),
+	settlement_fee		DECIMAL(64,18),
+	payout				DECIMAL(64,18),
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );

@@ -1898,7 +1898,8 @@ type ENSResolver struct {
 }
 type AA_ContractAddrs struct {// Arbitrum-Augur contract addresses
 	AMM_Factory				common.Address
-	HatcheryRegistry		common.Address
+	SportsFactory			common.Address
+	TrustedFactory			common.Address
 }
 type ArbitrumAugurProcessStatus struct {
 	LastEvtId				int64
@@ -2010,6 +2011,9 @@ type AA_WinningsClaimed struct {// Arbitrum Augur Winnnings Claimed
 	MarketId				int64
 	Contract				string
 	Amount					string
+	WinningOutcomeAddr		string
+	SettlementFee			string
+	Payout					string
 	ReceiverAddr			string
 }
 type AA_Pool struct {// Arbitrum Augur Pool 

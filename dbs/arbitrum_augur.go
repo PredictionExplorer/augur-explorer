@@ -14,17 +14,18 @@ func (ss *SQLStorage) Get_arbitrum_augur_contract_addresses() (p.AA_ContractAddr
 
 	var query string
 	query="SELECT " +
-				"amm_factory,hatchery_reg "+
+				"amm_factory,sports_factory,trusted_factory "+
 			"FROM aa_caddrs";
 	row := ss.db.QueryRow(query)
 	var c_addrs p.AA_ContractAddrs
 	var err error
 	var (
 		amm_factory string
-		hatchery_reg string
+		sports_factory string
+		trusted_factory string
 	)
 	err=row.Scan(
-		&amm_factory,&hatchery_reg,
+		&amm_factory,&sports_factory,&trusted_factory,
 	);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -35,7 +36,8 @@ func (ss *SQLStorage) Get_arbitrum_augur_contract_addresses() (p.AA_ContractAddr
 		return c_addrs,err
 	}
 	c_addrs.AMM_Factory=common.HexToAddress(amm_factory)
-	c_addrs.HatcheryRegistry=common.HexToAddress(hatchery_reg)
+	c_addrs.SportsFactory=common.HexToAddress(sports_factory)
+	c_addrs.TrustedFactory=common.HexToAddress(trusted_factory)
 	return c_addrs,nil
 }
 func (ss *SQLStorage) Update_arbitrum_augur_process_status(status *p.ArbitrumAugurProcessStatus) {
@@ -452,11 +454,16 @@ func (ss *SQLStorage) Insert_aa_staker_fee_changed_event(evt *p.AA_StakerFeeChan
 func (ss *SQLStorage) Insert_aa_winnings_claimed_event(evt *p.AA_WinningsClaimed) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	win_outc_aid:=ss.Lookup_or_create_address(evt.WinningOutcomeAddr,evt.BlockNum,evt.TxId)
 	receiver_aid:=ss.Lookup_or_create_address(evt.ReceiverAddr,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO aa_winclaim(" +
-				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,market_id,receiver_aid,amount" +
-			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8)"
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
+				"market_id,win_outc_aid,receiver_aid,amount,settlement_fee,payout" +
+			") VALUES (" +
+				"$1,$2,$3,$4,TO_TIMESTAMP($5),"+
+				"$6,$7,$8,$9::DECIMAL/1e+18,$10::DECIMAL/1e+18,$11::DECIMAL/1e+18"+
+			")"
 
 	_,err := ss.db.Exec(query,
 			evt.EvtId,
@@ -465,8 +472,11 @@ func (ss *SQLStorage) Insert_aa_winnings_claimed_event(evt *p.AA_WinningsClaimed
 			contract_aid,
 			evt.TimeStamp,
 			evt.MarketId,
+			win_outc_aid,
 			receiver_aid,
 			evt.Amount,
+			evt.SettlementFee,
+			evt.Payout,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_winclaim table: %v; q=%v",err,query))

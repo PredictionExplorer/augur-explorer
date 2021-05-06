@@ -9,6 +9,12 @@ DROP TABLE IF EXISTS
 	aa_shares_minted,
 	aa_shares_burned,
 	aa_shares_swapped,
+	aa_sfee_claimed,
+	aa_pfee_claimed,
+	aa_proto_chg,
+	aa_pfee_chg,
+	aa_sfee_chg,
+	aa_stk_fee_chg,
 	aa_winclaim,
 	aa_feepot_trsf
 CASCADE;
