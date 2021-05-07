@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/amm"
 )
 var (
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -35,6 +36,8 @@ var (
 
 	Error   *log.Logger
 	Info    *log.Logger
+
+	amm_constants		AMM_Constants
 )
 func initialize() {
 
@@ -44,6 +47,9 @@ func initialize() {
 	}
 	caddrs=&caddrs_obj
 
+	amm_constants = Load_amm_constants("./amm_constants")
+	fmt.Printf("amm constants = %v\n",amm_constants)
+	os.Exit(0)
 }
 func secure_https(r http.Handler) {
 	autotls.Run(r, "localhost")
@@ -177,6 +183,7 @@ func main() {
 	r.GET("/black/validity_bond",augur_validity_bond_prices)
 	r.GET("/black/ens_name_info/:fqdn",ens_name_info)
 	r.GET("/black/aa/pools",arbitrum_augur_pools)
+	r.GET("/black/arbitrum/markets/sports/:status/:sort",arbitrum_markets_sports)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -245,6 +252,7 @@ func main() {
 	r.GET("/api/ens_name_info/:fqdn",a1_ens_name_info)
 	r.GET("/api/ens_lookup/:user",a1_ens_name_lookup)
 	r.GET("/api/aa/pools",a1_arbitrum_augur_pools)
+	r.GET("/api/arbitrum/markets/sports",a1_arbitrum_markets_sports)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

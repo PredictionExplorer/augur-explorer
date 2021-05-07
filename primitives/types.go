@@ -2112,3 +2112,22 @@ type AA_StakerFeeChanged struct {
 	Contract				string
 	Fee						string
 }
+type AMM_CatSport struct {
+	SportId					int64
+	Name					string
+	Categories				[]string
+}
+type AMM_CatEntries = map[int64]AMM_CatSport
+type AMM_Team struct {
+	TeamId					int64
+	SportId					int64
+	Name					string
+	Mascot					string
+	Abbreviation			string
+	Record					string
+}
+type AMM_TeamEntries = map[int64]AMM_Team
+type AMM_Constants struct {
+	Categories				AMM_CatEntries
+	Teams					AMM_TeamEntries
+}

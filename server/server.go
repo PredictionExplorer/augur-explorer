@@ -2722,3 +2722,93 @@ func arbitrum_augur_pools(c *gin.Context) {
 		"ArbitrumAugurPools" : pools,
 	})
 }
+func arbitrum_markets_sports(c *gin.Context) {
+
+	pools := augur_srv.storage.Get_arbitrum_augur_pools()
+	p_pair_aid := c.Param("pair_aid")
+	var pair_aid int64
+	if len(p_pair_aid) > 0 {
+		var success bool
+		pair_aid,success = parse_int_from_remote_or_error(c,false,&p_pair_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"Pair ID is not set")
+		return
+	}
+	p_inverse := c.Param("inverse")
+	var inverse int64
+	if len(p_inverse) > 0 {
+		var success bool
+		inverse,success = parse_int_from_remote_or_error(c,false,&p_inverse)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'inverse' parameter is not set")
+		return
+	}
+	var err error
+	p_init_ts := c.Param("init_ts")
+	var init_ts int
+	if len(p_init_ts) > 0 {
+		init_ts, err = strconv.Atoi(p_init_ts)
+		if err != nil {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": "Can't parse init_ts",
+			})
+			return
+		}
+	}
+	p_fin_ts := c.Param("fin_ts")
+	var fin_ts int
+	if len(p_fin_ts) > 0 {
+		fin_ts, err = strconv.Atoi(p_fin_ts)
+		if err != nil {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": "Can't parse fin_ts",
+			})
+			return
+		}
+	}
+	if fin_ts == 0 {
+		fin_ts = 2147483647
+	}
+
+	p_interval_secs := c.Param("interval_secs")
+	var interval_secs int = 0
+	if len(p_interval_secs) > 0 {
+		interval_secs, err = strconv.Atoi(p_interval_secs)
+		if err != nil {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": "Can't parse 'interval_secs' param",
+			})
+			return
+		}
+	}
+	if interval_secs == 0 {
+		interval_secs = 60*60
+	}
+
+	bool_inverse := false
+	if inverse > 0 {
+		bool_inverse = true
+	}
+	pair_info,_:= augur_srv.storage.Get_uniswap_pair_info(pair_aid)
+	prices := augur_srv.storage.Get_uniswap_token_prices(pair_aid,bool_inverse,init_ts,fin_ts,interval_secs)
+	js_prices := build_js_upair_swap_prices(&prices)
+	c.HTML(http.StatusOK, "upair_prices.html", gin.H{
+			"PairInfo" : pair_info,
+			"Prices" : prices,
+			"JSPriceData" :js_prices,
+			"InitTimeStamp": init_ts,
+			"FinTimeSTamp": fin_ts,
+	})
+	c.HTML(http.StatusOK, "arbitrum_sports_markets.html", gin.H{
+		"Markets" : pools,
+	})
+}

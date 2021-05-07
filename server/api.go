@@ -1837,3 +1837,16 @@ func a1_arbitrum_augur_pools(c *gin.Context) {
 		"AMMPools" : pools,
 	})
 }
+func a1_arbitrum_markets_sports(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	pools := augur_srv.storage.Get_arbitrum_augur_pools()
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": status,
+		"error" : err_str,
+		"AMMPools" : pools,
+	})
+}
