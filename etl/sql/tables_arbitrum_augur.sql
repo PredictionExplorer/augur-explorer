@@ -36,6 +36,7 @@ CREATE TABLE aa_liquidity_changed (-- LiquidityChanged event
 	recipient_aid		BIGINT NOT NULL,
 	collateral			DECIMAL(64,18) NOT NULL,
 	lp_tokens			DECIMAL(64,18) NOT NULL,
+	shares_returned		TEXT,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );
@@ -124,6 +125,7 @@ CREATE TABLE aa_shares_swapped (-- SharesSwapped
 	user_aid			BIGINT NOT NULL,
 	collateral			DECIMAL(64,18) NOT NULL,
 	shares				DECIMAL(64,18) NOT NULL,
+	inout_ratio			TEXT,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );

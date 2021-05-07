@@ -92,8 +92,8 @@ func (ss *SQLStorage) Insert_aa_liquidity_changed_event(evt *p.AA_LiquidityChang
 	var query string
 	query = "INSERT INTO aa_liquidity_changed (" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"market_id,factory_aid,user_aid,recipient_aid,collateral,lp_tokens" +
-			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9,$10::DECIMAL/1e+6,$11::DECIMAL/1e+18)"
+				"market_id,factory_aid,user_aid,recipient_aid,collateral,lp_tokens,shares_returned" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9,$10::DECIMAL/1e+6,$11::DECIMAL/1e+18,$12)"
 
 	_,err := ss.db.Exec(query,
 			evt.EvtId,
@@ -107,6 +107,7 @@ func (ss *SQLStorage) Insert_aa_liquidity_changed_event(evt *p.AA_LiquidityChang
 			recipient_aid,
 			evt.Collateral,
 			evt.LpTokens,
+			evt.SharesReturned,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_liquidity_changed table: %v; q=%v",err,query))
@@ -292,8 +293,8 @@ func (ss *SQLStorage) Insert_aa_shares_swapped_event(evt *p.AA_SharesSwapped) {
 	var query string
 	query = "INSERT INTO aa_shares_swapped (" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"market_id,factory_aid,user_aid,collateral,shares" +
-			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9::DECIMAL/1e+6,$10::DECIMAL/1e+18)"
+				"market_id,factory_aid,user_aid,collateral,shares,inout_ratio" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9::DECIMAL/1e+6,$10::DECIMAL/1e+18,$11)"
 
 	_,err := ss.db.Exec(query,
 			evt.EvtId,
@@ -306,6 +307,7 @@ func (ss *SQLStorage) Insert_aa_shares_swapped_event(evt *p.AA_SharesSwapped) {
 			user_aid,
 			evt.Collateral,
 			evt.Shares,
+			evt.InOutRatio,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_shares_swapped table: %v; q=%v",err,query))

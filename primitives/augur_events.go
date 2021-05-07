@@ -478,16 +478,19 @@ type SharesSwapped struct {
 	Outcome       *big.Int
 	Collateral    *big.Int
 	Shares        *big.Int
+	InOutRatio    []*big.Int
+	Price         *big.Int
 	Raw           types.Log // Blockchain specific contextual infos
 }
 type LiquidityChanged struct {
-	MarketFactory common.Address
-	MarketId      *big.Int
-	User          common.Address
-	Recipient     common.Address
-	Collateral    *big.Int
-	LpTokens      *big.Int
-	Raw           types.Log // Blockchain specific contextual infos
+	MarketFactory  common.Address
+	MarketId       *big.Int
+	User           common.Address
+	Recipient      common.Address
+	Collateral     *big.Int
+	LpTokens       *big.Int
+	SharesReturned []*big.Int
+	Raw            types.Log // Blockchain specific contextual infos
 }
 type SettlementFeeClaimed struct {
 	SettlementAddress common.Address

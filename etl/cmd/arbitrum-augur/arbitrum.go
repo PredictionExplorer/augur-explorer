@@ -128,6 +128,7 @@ func proc_liquidity_changed(log *types.Log,elog *EthereumEventLog) {
 	evt.MarketFactoryAddr = eth_evt.MarketFactory.String()
 	evt.Collateral = eth_evt.Collateral.String()
 	evt.LpTokens = eth_evt.LpTokens.String()
+	evt.SharesReturned = Bigint_ptr_slice_to_str(&eth_evt.SharesReturned,",")
 
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
@@ -141,6 +142,7 @@ func proc_liquidity_changed(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tRecipientAddr: %v\n",evt.RecipientAddr)
 	Info.Printf("\tCollateral: %v\n",evt.Collateral)
 	Info.Printf("\tLpTokens: %v\n",evt.LpTokens)
+	Info.Printf("\tSharesReturned: %v\n",evt.SharesReturned)
 	Info.Printf("}\n")
 
 	storage.Insert_aa_liquidity_changed_event(&evt)
@@ -352,6 +354,7 @@ func proc_shares_swapped(log *types.Log,elog *EthereumEventLog) {
 	evt.MarketFactoryAddr = eth_evt.MarketFactory.String()
 	evt.Collateral = eth_evt.Collateral.String()
 	evt.Shares = eth_evt.Shares.String()
+	evt.InOutRatio= Bigint_ptr_slice_to_str(&eth_evt.InOutRatio,",")
 
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
@@ -359,12 +362,13 @@ func proc_shares_swapped(log *types.Log,elog *EthereumEventLog) {
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 
-	Info.Printf("SharesBurned{\n")
+	Info.Printf("SharesSwapped{\n")
 	Info.Printf("\tMarketId: %v\n",evt.MarketId)
 	Info.Printf("\tMarketFactory: %v\n",evt.MarketFactoryAddr)
 	Info.Printf("\tUserAddr: %v\n",evt.UserAddr)
 	Info.Printf("\tCollateral: %v\n",evt.Collateral)
 	Info.Printf("\tShares: %v\n",evt.Shares)
+	Info.Printf("\tInOutRatio: %v\n",evt.InOutRatio)
 	Info.Printf("}\n")
 
 	storage.Insert_aa_shares_swapped_event(&evt)

@@ -2002,6 +2002,7 @@ type AA_SharesSwapped struct {
 	UserAddr				string
 	Collateral				string
 	Shares					string
+	InOutRatio				string
 }
 type AA_WinningsClaimed struct {// Arbitrum Augur Winnnings Claimed
 	EvtId					int64
@@ -2058,6 +2059,7 @@ type AA_LiquidityChanged struct {
 	RecipientAddr			string
 	LpTokens				string
 	Collateral				string
+	SharesReturned			string
 }
 type AA_SettlementFeeClaimed struct {
 	EvtId					int64

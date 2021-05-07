@@ -41,8 +41,8 @@ const (
 	STAKER_FEE_CHANGED = "cc4df50442ac32f0142ba4853f617661e0823be0e92148e7e5f36ce56c139825"
 
 	MARKET_RESOLVED = "c68d106ea6e4bec784925cfd91767212c71ced92adbac107dc364435321113f6"
-	LIQUIDITY_CHANGED = "5350d1a36c6961230b66338bb028ba0d9edc3aa8bdfa8aef0bb0b5db9af4289f"
-	SHARES_SWAPPED = "aca8a5cb15c73c995b7689a3fdd0e536ffc8d458bdf0b00bf4dbe55b973d1542"
+	LIQUIDITY_CHANGED = "9a1dccf45b5053e827f262e45fbb5211c2bd99497d340eecaebbd245eb48f4bc"
+	SHARES_SWAPPED = "9a8518831e2d9c2ea12fd8df17781e97121a2d578e17a7c0ddf4462f89fdd5a0"
 
 	ERC20_TRANSFER = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 	//																		(used by FeePot)
@@ -214,7 +214,7 @@ func get_event_ids(from_evt_id,to_evt_id int64) []int64 {
 }
 func process_arbitrum_augur_events(exit_chan chan bool) {
 
-	var max_batch_size int64 = 1024*5
+	var max_batch_size int64 = 1024*100
 	for {
 		status := storage.Get_arbitrum_augur_processing_status()
 		select {
