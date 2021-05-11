@@ -2131,3 +2131,23 @@ type AMM_Constants struct {
 	Categories				AMM_CatEntries
 	Teams					AMM_TeamEntries
 }
+type AMM_SportMarket struct {
+	BlockNum				int64
+	CreatedTs				int64
+	MarketId				int64
+	StartTimeTs				int64
+	EndTimeTs				int64
+	Score					int64
+	MarketType				int64
+	HomeTeamId				int64
+	AwayTeamId				int64
+	EventId					int64
+	CreatedDate				string
+	TxHash					string
+	CreatorAddr				string
+	FactoryAddr				string
+	StartTime				string
+	EndTime					string
+	HomeTeam				string
+	AwayTeam				string
+}

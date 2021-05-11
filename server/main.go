@@ -48,8 +48,6 @@ func initialize() {
 	caddrs=&caddrs_obj
 
 	amm_constants = Load_amm_constants("./amm_constants")
-	fmt.Printf("amm constants = %v\n",amm_constants)
-	os.Exit(0)
 }
 func secure_https(r http.Handler) {
 	autotls.Run(r, "localhost")

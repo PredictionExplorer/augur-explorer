@@ -12,11 +12,11 @@
 <div class="market_info">
 <table class="market_trades">
     <tr class="market_trades">
-        <td class="mkt_trade_hdr" style="text-align: center" >Created</td>
         <td class="mkt_trade_hdr" style="text-align: center" >Block</td>
-        <td class="mkt_trade_hdr" style="text-align: center">Pool</td>
-        <td class="mkt_trade_hdr" style="text-align: center">Factory</td>
+        <td class="mkt_trade_hdr" style="text-align: center" >Start Time</td>
+        <td class="mkt_trade_hdr" style="text-align: center">End Time</td>
         <td class="mkt_trade_hdr" style="text-align: center">Creator</td>
+        <td class="mkt_trade_hdr" style="text-align: center"></td>
         <td class="mkt_trade_hdr" style="text-align: center">Market ID</td>
     </tr>
 	{{- range $i, $rpt := .Markets}}
@@ -25,10 +25,10 @@
 		<td class="mkt_trade_field">{{.StartTime}}</td>
 		<td class="mkt_trade_field">{{.EndTime}}</td>
 		<td class="mkt_trade_field">{{.CreatorAddr}}</td>
-		<td class="mkt_trade_field">{{.FactoryAddr}}</td>
 		<td class="mkt_trade_field">{{.MarketType}}</td>
 		<td class="mkt_trade_field">{{.HomeTeam}}</td>
 		<td class="mkt_trade_field">{{.AwayTeam}}</td>
+		<td class="mkt_trade_field">{{.Score}}</td>
 	</tr>
 	{{- end }}
 </table>

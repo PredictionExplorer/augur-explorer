@@ -583,3 +583,66 @@ func (ss *SQLStorage) Get_markets() {
 
 
 }
+func (ss *SQLStorage) Get_sport_markets(status,sort int64,constants *AMM_Constants) []p.AMM_SportMarket {
+
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT AS created_ts, " +
+				"time_stamp," +
+				"m.block_num, " +
+				"tx.tx_hash," +
+				"m.market_id," +
+				"ca.addr," +
+				"fa.addr," +
+				"EXTRACT(EPOCH FROM m.start_time)::BIGINT AS start_time_ts, " +
+				"EXTRACT(EPOCH FROM m.end_time)::BIGINT AS end_time_ts, " +
+				"m.start_time," +
+				"m.end_time," +
+				"m.event_id," +
+				"m.home_team_id," +
+				"m.away_team_id," +
+				"m.score," +
+				"m.market_type " +
+			"FROM aa_sports_market AS m " +
+				"LEFT JOIN address ca ON m.creator_aid=ca.address_id " +
+				"LEFT JOIN address fa ON m.contract_aid=fa.address_id " +
+				"JOIN transaction tx ON m.tx_id=tx.id " +
+			"ORDER BY m.time_stamp"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.AMM_SportMarket,0,32)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.AMM_SportMarket
+		err=rows.Scan(
+			&rec.CreatedTs,
+			&rec.CreatedDate,
+			&rec.BlockNum,
+			&rec.TxHash,
+			&rec.MarketId,
+			&rec.CreatorAddr,
+			&rec.FactoryAddr,
+			&rec.StartTimeTs,
+			&rec.EndTimeTs,
+			&rec.StartTime,
+			&rec.EndTime,
+			&rec.EventId,
+			&rec.HomeTeamId,
+			&rec.AwayTeamId,
+			&rec.Score,
+			&rec.MarketType,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+
+}
