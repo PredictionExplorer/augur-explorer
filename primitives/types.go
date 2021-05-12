@@ -2138,7 +2138,7 @@ type AMM_SportMarket struct {
 	StartTimeTs				int64
 	EndTimeTs				int64
 	Score					int64
-	MarketType				int64
+	MarketTypeCode			int64
 	HomeTeamId				int64
 	AwayTeamId				int64
 	EventId					int64

@@ -2748,7 +2748,7 @@ func arbitrum_markets_sports(c *gin.Context) {
 		respond_error(c,"'sort' parameter is not set")
 		return
 	}
-	markets := augur_srv.storage.Get_sport_markets(status,sort)
+	markets := augur_srv.storage.Get_sport_markets(status,sort,&amm_constants,&amm_contracts)
 	c.HTML(http.StatusOK, "arbitrum_markets_sports.html", gin.H{
 		"Markets" : markets,
 	})

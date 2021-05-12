@@ -38,6 +38,7 @@ var (
 	Info    *log.Logger
 
 	amm_constants		AMM_Constants
+	amm_contracts		AA_ContractAddrs
 )
 func initialize() {
 
@@ -48,6 +49,7 @@ func initialize() {
 	caddrs=&caddrs_obj
 
 	amm_constants = Load_amm_constants("./amm_constants")
+	amm_contracts = augur_srv.storage.Get_arbitrum_augur_contract_addresses()
 }
 func secure_https(r http.Handler) {
 	autotls.Run(r, "localhost")

@@ -10,7 +10,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Get_arbitrum_augur_contract_addresses() (p.AA_ContractAddrs,error) {
+func (ss *SQLStorage) Get_arbitrum_augur_contract_addresses() (p.AA_ContractAddrs) {
 
 	var query string
 	query="SELECT " +
@@ -29,16 +29,17 @@ func (ss *SQLStorage) Get_arbitrum_augur_contract_addresses() (p.AA_ContractAddr
 	);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("No contract addresses in AMM contracts table %v"))
+			os.Exit(1)
 		} else {
 			ss.Log_msg(fmt.Sprintf("Error in Get_arbitrum_augur_contract_addresses(): %v",err))
 			os.Exit(1)
 		}
-		return c_addrs,err
 	}
 	c_addrs.AMM_Factory=common.HexToAddress(amm_factory)
 	c_addrs.SportsFactory=common.HexToAddress(sports_factory)
 	c_addrs.TrustedFactory=common.HexToAddress(trusted_factory)
-	return c_addrs,nil
+	return c_addrs
 }
 func (ss *SQLStorage) Update_arbitrum_augur_process_status(status *p.ArbitrumAugurProcessStatus) {
 
@@ -568,7 +569,7 @@ func (ss *SQLStorage) Is_feepot(addr string) bool {
 			"LIMIT 1"
 	row := ss.db.QueryRow(query,addr)
 	var null_id sql.NullInt64
-	err := row.Scan(&addr)
+	err := row.Scan(&null_id)
 	if (err!=nil) {
 		if err==sql.ErrNoRows {
 			return false
@@ -583,9 +584,23 @@ func (ss *SQLStorage) Get_markets() {
 
 
 }
-func (ss *SQLStorage) Get_sport_markets(status,sort int64,constants *AMM_Constants) []p.AMM_SportMarket {
+func (ss *SQLStorage) Get_sport_markets(status,sort int64,constants *p.AMM_Constants,contracts *p.AA_ContractAddrs) []p.AMM_SportMarket {
 
 	var query string
+
+	query = "SELECT address_id FROM address WHERE addr=$1"
+	row := ss.db.QueryRow(query,contracts.SportsFactory.String())
+	var null_id sql.NullInt64
+	err := row.Scan(&null_id)
+	if (err != nil) {
+		if err == sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Can't find AMM module contract addresses"))
+			os.Exit(1)
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Is_feepot(): %v",err))
+		os.Exit(1)
+	}
+	amm_factory_aid := null_id.Int64
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM time_stamp)::BIGINT AS created_ts, " +
 				"time_stamp," +
@@ -607,9 +622,10 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,constants *AMM_Constan
 				"LEFT JOIN address ca ON m.creator_aid=ca.address_id " +
 				"LEFT JOIN address fa ON m.contract_aid=fa.address_id " +
 				"JOIN transaction tx ON m.tx_id=tx.id " +
+			"WHERE m.contract_aid=$1" +
 			"ORDER BY m.time_stamp"
 
-	rows,err := ss.db.Query(query)
+	rows,err := ss.db.Query(query,amm_factory_aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -635,11 +651,19 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,constants *AMM_Constan
 			&rec.HomeTeamId,
 			&rec.AwayTeamId,
 			&rec.Score,
-			&rec.MarketType,
+			&rec.MarketTypeCode,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
+		}
+		team,exists := constants.Teams[rec.HomeTeamId]
+		if exists {
+			rec.HomeTeam = team.Name
+		}
+		team,exists = constants.Teams[rec.AwayTeamId]
+		if exists {
+			rec.AwayTeam = team.Name
 		}
 		records = append(records,rec)
 	}
