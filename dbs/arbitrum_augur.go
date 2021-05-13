@@ -9,6 +9,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
+	a "github.com/PredictionExplorer/augur-explorer/amm"
+
 )
 func (ss *SQLStorage) Get_arbitrum_augur_contract_addresses() (p.AA_ContractAddrs) {
 
@@ -584,7 +586,7 @@ func (ss *SQLStorage) Get_markets() {
 
 
 }
-func (ss *SQLStorage) Get_sport_markets(status,sort int64,constants *p.AMM_Constants,contracts *p.AA_ContractAddrs) []p.AMM_SportMarket {
+func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,constants *p.AMM_Constants,contracts *p.AA_ContractAddrs) (int64,[]p.AMM_SportMarket) {
 
 	var query string
 
@@ -600,6 +602,22 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,constants *p.AMM_Const
 		ss.Log_msg(fmt.Sprintf("Error in Is_feepot(): %v",err))
 		os.Exit(1)
 	}
+
+	query = "SELECT count(*) AS total " +
+			"FROM aa_sports_market AS m " +
+			"WHERE m.contract_aid=$1"
+	row = ss.db.QueryRow(query,null_id.Int64)
+	var null_counter sql.NullInt64
+	err = row.Scan(&null_counter)
+	if (err!=nil) {
+		if err==sql.ErrNoRows {
+
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Is_feepot(): %v",err))
+		os.Exit(1)
+	}
+	total_rows := null_counter.Int64
+
 	amm_factory_aid := null_id.Int64
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM time_stamp)::BIGINT AS created_ts, " +
@@ -623,9 +641,10 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,constants *p.AMM_Const
 				"LEFT JOIN address fa ON m.contract_aid=fa.address_id " +
 				"JOIN transaction tx ON m.tx_id=tx.id " +
 			"WHERE m.contract_aid=$1" +
-			"ORDER BY m.time_stamp"
+			"ORDER BY m.time_stamp " +
+			"OFFSET $2 LIMIT $3"
 
-	rows,err := ss.db.Query(query,amm_factory_aid)
+	rows,err := ss.db.Query(query,amm_factory_aid,offset,limit)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -665,8 +684,16 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,constants *p.AMM_Const
 		if exists {
 			rec.AwayTeam = team.Name
 		}
+		sport_id := a.Get_sport_id_from_team(constants,rec.HomeTeamId)
+		title,description := a.Get_market_title(sport_id,rec.HomeTeam,rec.AwayTeam,rec.MarketTypeCode,1)
+		/*fmt.Printf(
+			"sport_id=%v, Home(id=%v)=%v, Away(id=%v)=%v, title=%v, descr=%v\n",
+			sport_id,rec.HomeTeamId,rec.HomeTeam,rec.AwayTeamId,rec.AwayTeam,title,description,
+		)*/
+		rec.Title = title
+		rec.Description = description
 		records = append(records,rec)
 	}
-	return records
+	return total_rows,records
 
 }

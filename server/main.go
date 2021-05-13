@@ -252,7 +252,7 @@ func main() {
 	r.GET("/api/ens_name_info/:fqdn",a1_ens_name_info)
 	r.GET("/api/ens_lookup/:user",a1_ens_name_lookup)
 	r.GET("/api/aa/pools",a1_arbitrum_augur_pools)
-	r.GET("/api/arbitrum/markets/sports",a1_arbitrum_markets_sports)
+	r.GET("/api/arbitrum/markets/sports/:status/:sort/:offset/:limit",a1_arbitrum_markets_sports)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

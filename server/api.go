@@ -1841,12 +1841,43 @@ func a1_arbitrum_markets_sports(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
-	pools := augur_srv.storage.Get_arbitrum_augur_pools()
-	var status int = 1
+	p_status := c.Param("status")
+	var status int64
+	if len(p_status) > 0 {
+		var success bool
+		status,success = parse_int_from_remote_or_error(c,false,&p_status)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'status' parameter is not set")
+		return
+	}
+	p_sort := c.Param("sort")
+	var sort int64
+	if len(p_sort) > 0 {
+		var success bool
+		sort ,success = parse_int_from_remote_or_error(c,false,&p_sort)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'sort' parameter is not set")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+	total_rows,markets := augur_srv.storage.Get_sport_markets(status,sort,offset,limit,&amm_constants,&amm_contracts)
+	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
-		"status": status,
+		"status": req_status,
 		"error" : err_str,
-		"AMMPools" : pools,
+		"Markets" : markets,
+		"Offset" : offset,
+		"Limit" : limit,
+		"TotalRows" : total_rows,
 	})
 }

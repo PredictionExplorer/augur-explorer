@@ -18,7 +18,12 @@
         <td class="mkt_trade_hdr" style="text-align: center">Creator</td>
         <td class="mkt_trade_hdr" style="text-align: center">Mkt Type</td>
         <td class="mkt_trade_hdr" style="text-align: center">Market ID</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Home Team</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Away Team</td>
         <td class="mkt_trade_hdr" style="text-align: center">Score</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Title</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Description</td>
+
     </tr>
 	{{- range $i, $rpt := .Markets}}
 	<tr class="market_trades">
@@ -27,9 +32,13 @@
 		<td class="mkt_trade_field">{{.EndTime}}</td>
 		<td class="mkt_trade_field">{{.CreatorAddr}}</td>
 		<td class="mkt_trade_field">{{.MarketTypeCode}}</td>
+		<td class="mkt_trade_field">{{.MarketId}}</td>
+
 		<td class="mkt_trade_field">{{.HomeTeam}}</td>
 		<td class="mkt_trade_field">{{.AwayTeam}}</td>
 		<td class="mkt_trade_field">{{.Score}}</td>
+		<td class="mkt_trade_field">{{.Title}}</td>
+		<td class="mkt_trade_field">{{.Description}}</td>
 	</tr>
 	{{- end }}
 </table>

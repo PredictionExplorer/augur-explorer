@@ -2118,15 +2118,23 @@ type AMM_CatSport struct {
 	Categories				[]string
 }
 type AMM_CatEntries = map[int64]AMM_CatSport
-type AMM_Team struct {
-	TeamId					int64
-	SportId					int64
-	Name					string
-	Mascot					string
-	Abbreviation			string
-	Record					string
+type AMM_TeamJSON struct {
+	TeamId					int64 	`json:"team_id" `
+	SportId					string  `json:"sport_id", string`
+	Name					string	`json:"name", string`
+	Mascot					string	`json:"mascot", string`
+	Abbreviation			string	`json:"abbreviation", string`
+	Record					string	`json:"record", string`
 }
-type AMM_TeamEntries = map[int64]AMM_Team
+type AMM_Team struct {
+	TeamId					int64	`json:"team_id" `
+	SportId					int64	`json:"sport_id"`
+	Name					string	`json:"name", string`
+	Mascot					string	`json:"mascot", string`
+	Abbreviation			string	`json:"abbreviation", string`
+	Record					string	`json:"record", string`
+}
+type AMM_TeamEntries = map[int64]AMM_TeamJSON
 type AMM_Constants struct {
 	Categories				AMM_CatEntries
 	Teams					AMM_TeamEntries
@@ -2150,4 +2158,6 @@ type AMM_SportMarket struct {
 	EndTime					string
 	HomeTeam				string
 	AwayTeam				string
+	Title					string
+	Description				string
 }
