@@ -602,6 +602,7 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 		ss.Log_msg(fmt.Sprintf("Error in Is_feepot(): %v",err))
 		os.Exit(1)
 	}
+	amm_factory_aid := null_id.Int64
 
 	query = "SELECT count(*) AS total " +
 			"FROM aa_sports_market AS m " +
@@ -618,7 +619,6 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 	}
 	total_rows := null_counter.Int64
 
-	amm_factory_aid := null_id.Int64
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM time_stamp)::BIGINT AS created_ts, " +
 				"time_stamp," +
@@ -696,4 +696,102 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 	}
 	return total_rows,records
 
+}
+func (ss *SQLStorage) Get_liquidity_change_events(factory_addr string,market_id int64,offset,limit int) (int64,[]p.AMM_LiquidityChangedInfo) {
+
+	var query string
+
+	query = "SELECT address_id FROM address WHERE addr=$1"
+	row := ss.db.QueryRow(query,factory_addr)
+	var null_id sql.NullInt64
+	err := row.Scan(&null_id)
+	if (err != nil) {
+		if err == sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Can't find AMM module contract addresses"))
+			os.Exit(1)
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Is_feepot(): %v",err))
+		os.Exit(1)
+	}
+	amm_factory_aid := null_id.Int64
+
+	query = "SELECT count(*) AS total " +
+			"FROM aa_liquidity_changed AS l " +
+			"WHERE l.market_id=$1 AND contract_aid=$2"
+	row = ss.db.QueryRow(query,market_id,null_id.Int64)
+	var null_counter sql.NullInt64
+	err = row.Scan(&null_counter)
+	if (err!=nil) {
+		if err==sql.ErrNoRows {
+
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Is_feepot(): %v",err))
+		os.Exit(1)
+	}
+	total_rows := null_counter.Int64
+
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM l.time_stamp)::BIGINT AS created_ts, " +
+				"l.time_stamp,"+
+				"l.block_num,"+
+				"tx.tx_hash," +
+				"l.user_aid,"+
+				"ua.addr," +
+				"ra.addr,"+
+				"l.collateral," +
+				"l.lp_tokens "+
+			"FROM aa_liquidity_changed l "+
+				"JOIN address ua ON l.user_aid=ua.address_id " +
+				"JOIN address ra ON l.recipient_aid=ra.address_id " +
+				"JOIN transaction tx ON l.tx_id=tx.id "+
+			"WHERE l.market_id=$3 AND contract_aid=$4 "+
+			"ORDER BY l.id DESC "+
+			"OFFSET $1 LIMIT $2"
+
+	d_query := fmt.Sprintf("SELECT " +
+				"EXTRACT(EPOCH FROM l.time_stamp)::BIGINT AS created_ts, " +
+				"l.time_stamp,"+
+				"l.block_num,"+
+				"tx.tx_hash," +
+				"l.user_aid,"+
+				"ua.addr," +
+				"ra.addr,"+
+				"l.collateral," +
+				"l.lp_tokens "+
+			"FROM aa_liquidity_changed l "+
+				"JOIN address ua ON l.user_aid=ua.address_id " +
+				"JOIN address ra ON l.recipient_aid=ra.address_id " +
+				"JOIN transaction tx ON l.tx_id=tx.id "+
+			"WHERE l.market_id=%v AND contract_aid=%v "+
+			"ORDER BY l.id DESC ",market_id,amm_factory_aid)
+	fmt.Printf("query = %v\n",d_query)
+	rows,err := ss.db.Query(query,offset,limit,market_id,amm_factory_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.AMM_LiquidityChangedInfo,0,32)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.AMM_LiquidityChangedInfo
+		err=rows.Scan(
+			&rec.CreatedTs,
+			&rec.CreatedDate,
+			&rec.BlockNum,
+			&rec.TxHash,
+			&rec.UserAid,
+			&rec.UserAddr,
+			&rec.RecipientAddr,
+			&rec.Collateral,
+			&rec.Tokens,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.MarketId = market_id
+		records = append(records,rec)
+	}
+	return total_rows,records
 }

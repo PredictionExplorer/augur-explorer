@@ -2061,6 +2061,18 @@ type AA_LiquidityChanged struct {
 	Collateral				string
 	SharesReturned			string
 }
+type AMM_LiquidityChangedInfo struct {// struct for the API
+	CreatedTs				int64
+	BlockNum				int64
+	MarketId				int64
+	UserAid					int64
+	Collateral				float64
+	Tokens					float64
+	CreatedDate				string
+	TxHash					string
+	UserAddr				string
+	RecipientAddr			string
+}
 type AA_SettlementFeeClaimed struct {
 	EvtId					int64
 	BlockNum				int64

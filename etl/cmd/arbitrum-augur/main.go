@@ -44,6 +44,7 @@ const (
 	LIQUIDITY_CHANGED = "9a1dccf45b5053e827f262e45fbb5211c2bd99497d340eecaebbd245eb48f4bc"
 	SHARES_SWAPPED = "9a8518831e2d9c2ea12fd8df17781e97121a2d578e17a7c0ddf4462f89fdd5a0"
 
+	LINK_NODE_CHANGED = "6b7517523482c8d89ffbc530829d5decd506cf6dc60874b11fa26c8a53bb9fa9"
 	ERC20_TRANSFER = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 	//																		(used by FeePot)
 
@@ -179,6 +180,9 @@ var (
 	//	uint256 fee
 	//);
 
+	eth_link_node_changed,_ = hex.DecodeString(LINK_NODE_CHANGED)
+	//event LinkNodeChanged(address newLinkNode)
+
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 	Error   *log.Logger
@@ -311,10 +315,7 @@ func main() {
 		exit_chan <- true
 	}()
 
-	caddrs_obj,err := storage.Get_arbitrum_augur_contract_addresses()
-	if err!=nil {
-		Fatalf("Can't find contract addresses in 'contract_addresses' table")
-	}
+	caddrs_obj:= storage.Get_arbitrum_augur_contract_addresses()
 	caddrs = &caddrs_obj
 
 	inspected_events = build_list_of_inspected_events()

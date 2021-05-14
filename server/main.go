@@ -184,6 +184,7 @@ func main() {
 	r.GET("/black/ens_name_info/:fqdn",ens_name_info)
 	r.GET("/black/aa/pools",arbitrum_augur_pools)
 	r.GET("/black/arbitrum/markets/sports/:status/:sort",arbitrum_markets_sports)
+	r.GET("/black/arbitrum/liquidity/:market_id/:offset/:limit",arbitrum_liquidity_changed)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)

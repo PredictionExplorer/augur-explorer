@@ -1,0 +1,43 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Changes in Pool's Liquidity</title>
+</head>
+<body>
+<h3 class="page_title">Changes in Pool's Liquidity<h3>
+<h4 class="page_title">
+</h4>
+<br/>
+<div id="arbitrum_augur_pools"></div>
+<div class="market_info">
+<table class="market_trades">
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: center" >Block</td>
+		<td class="mkt_trade_hdr" style="text-align: center" >CreatedTime</td>
+		<td class="mkt_trade_hdr" style="text-align: center">User Addr</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Recipient Addr</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Collateral</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Tokens</td>
+	</tr>
+	{{- range $i, $rpt := .LiquidityChanges}}
+	<tr class="market_trades">
+		<td class="mkt_trade_field">{{.BlockNum}}</td>
+		<td class="mkt_trade_field">{{.CreatedDate}}</td>
+		<td class="mkt_trade_field">{{.UserAddr}}</td>
+		<td class="mkt_trade_field">{{.RecipientAddr}}</td>
+		<td class="mkt_trade_field">{{.Collateral}}</td>
+		<td class="mkt_trade_field">{{.Tokens}}</td>
+	</tr>
+	{{- end }}
+</table>
+<br/><br/>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="/black/index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

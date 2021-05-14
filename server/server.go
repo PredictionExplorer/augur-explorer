@@ -2754,3 +2754,25 @@ func arbitrum_markets_sports(c *gin.Context) {
 		"TotalRows" : total_rows,
 	})
 }
+func arbitrum_liquidity_changed(c *gin.Context) {
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	total_rows,lchanges := augur_srv.storage.Get_liquidity_change_events(
+		amm_contracts.AMM_Factory.String(),market_id,0,10000000,
+	)
+	c.HTML(http.StatusOK, "amm_liquidity_changed.html", gin.H{
+		"LiquidityChanges" : lchanges,
+		"TotalRows" : total_rows,
+	})
+}

@@ -519,3 +519,8 @@ type StakerFeeChanged struct {
 	Fee *big.Int
 	Raw types.Log // Blockchain specific contextual infos
 }
+type LinkNodeChanged struct {
+	NewLinkNode common.Address
+	Raw         types.Log // Blockchain specific contextual infos
+}
+
