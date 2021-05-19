@@ -1881,3 +1881,38 @@ func a1_arbitrum_markets_sports(c *gin.Context) {
 		"TotalRows" : total_rows,
 	})
 }
+func a1_arbitrum_liquidity_changed(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+	total_rows,lchanges := augur_srv.storage.Get_liquidity_change_events(
+		amm_contracts.AMM_Factory.String(),market_id,offset,limit,
+	)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"LiquidityChanges" : lchanges,
+		"Offset" : offset,
+		"Limit" : limit,
+		"TotalRows" : total_rows,
+	})
+}

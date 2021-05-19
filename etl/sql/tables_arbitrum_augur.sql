@@ -1,9 +1,9 @@
 -- Tables with information about Augur events at Arbitrum chain
 CREATE TABLE aa_caddrs ( -- Addresses of contracts for Arbitrum Augur
 	chain_id			BIGINT DEFAULT 0,
-	amm_factory			TEXT DEFAULT '0x959fd7834847D9A133ce530bDe21CdA50A2E7d31',
-	sports_factory		TEXT DEFAULT '0xFDE7135E882CF7c078e2c1100154712aCd40145c',
-	trusted_factory		TEXT DEFAULT '0xFE48D94B3Ae76aaC4D8538A9E571921718867298'
+	amm_factory			TEXT DEFAULT '0x9381D4B5e7bEB89899da34dA60Ed5170D91E032A',
+	sports_factory		TEXT DEFAULT '0x43D9f2d22f1306D012251d032a5B67553FE4aA82',
+	trusted_factory		TEXT DEFAULT '0x4117A1F75Dfe784F315AabF7dB8caf86Fc10653b'
 );
 CREATE TABLE aa_proc_status (-- Arbitrum Augur process status
 	last_evt_id			BIGINT DEFAULT 0

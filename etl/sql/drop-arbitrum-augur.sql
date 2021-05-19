@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS
-	 aa_caddrs,
+	aa_caddrs,
 	aa_proc_status,
 	aa_pool_created,
 	aa_liquidity_changed,
