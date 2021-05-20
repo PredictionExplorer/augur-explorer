@@ -1,0 +1,43 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Shares Swapped</title>
+</head>
+<body>
+	<h3 class="page_title">Shares Swaps for Market {{.MarketId}}<h3>
+<h4 class="page_title">
+</h4>
+<br/>
+<div id="arbitrum_augur_pools"></div>
+<div class="market_info">
+<table class="market_trades">
+	<tr class="market_trades">
+		<td class="mkt_trade_hdr" style="text-align: center">Block</td>
+		<td class="mkt_trade_hdr" style="text-align: center">CreatedTime</td>
+		<td class="mkt_trade_hdr" style="text-align: center">User Addr</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Collateral</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Shares</td>
+		<td class="mkt_trade_hdr" style="text-align: center">InOut Ratio</td>
+	</tr>
+	{{- range $i, $rpt := .Swaps }}
+	<tr class="market_trades">
+		<td class="mkt_trade_field">{{.BlockNum}}</td>
+		<td class="mkt_trade_field">{{.CreatedDate}}</td>
+		<td class="mkt_trade_field">{{.UserAddr}}</td>
+		<td class="mkt_trade_field">{{.Collateral}}</td>
+		<td class="mkt_trade_field">{{.Shares}}</td>
+		<td class="mkt_trade_field">{{.InOutRatio}}</td>
+	</tr>
+	{{- end }}
+</table>
+<br/><br/>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="/black/index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

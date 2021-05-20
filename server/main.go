@@ -185,6 +185,7 @@ func main() {
 	r.GET("/black/aa/pools",arbitrum_augur_pools)
 	r.GET("/black/arbitrum/markets/sports/:status/:sort",arbitrum_markets_sports)
 	r.GET("/black/arbitrum/liquidity/:market_id/:offset/:limit",arbitrum_liquidity_changed)
+	r.GET("/black/arbitrum/swaps/:market_id/:offset/:limit",arbitrum_shares_swapped)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -255,6 +256,7 @@ func main() {
 	r.GET("/api/aa/pools",a1_arbitrum_augur_pools)
 	r.GET("/api/arbitrum/markets/sports/:status/:sort/:offset/:limit",a1_arbitrum_markets_sports)
 	r.GET("/api/arbitrum/liquidity/:market_id/:offset/:limit",a1_arbitrum_liquidity_changed)
+	r.GET("/api/arbitrum/swaps/:market_id/:offset/:limit",a1_arbitrum_shares_swapped)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

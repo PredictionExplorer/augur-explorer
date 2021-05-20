@@ -2004,6 +2004,23 @@ type AA_SharesSwapped struct {
 	Shares					string
 	InOutRatio				string
 }
+type AA_SharesSwappedInfo struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	CreatedTs				int64
+	MarketId				int64
+	Outcome					int64
+	UserAid					int64
+	Contract				string
+	MarketFactoryAddr		string
+	UserAddr				string
+	Collateral				string
+	Shares					string
+	InOutRatio				string
+	CreatedDate				string
+	TxHash					string
+}
 type AA_WinningsClaimed struct {// Arbitrum Augur Winnnings Claimed
 	EvtId					int64
 	BlockNum				int64

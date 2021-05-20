@@ -614,7 +614,7 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 		if err==sql.ErrNoRows {
 
 		}
-		ss.Log_msg(fmt.Sprintf("Error in Is_feepot(): %v",err))
+		ss.Log_msg(fmt.Sprintf("Error in Get_sport_markets(): %v",err))
 		os.Exit(1)
 	}
 	total_rows := null_counter.Int64
@@ -710,7 +710,7 @@ func (ss *SQLStorage) Get_liquidity_change_events(factory_addr string,market_id 
 			ss.Log_msg(fmt.Sprintf("Can't find AMM module contract addresses"))
 			os.Exit(1)
 		}
-		ss.Log_msg(fmt.Sprintf("Error in Is_feepot(): %v",err))
+		ss.Log_msg(fmt.Sprintf("Error in Get_liquidity_change_events(): %v",err))
 		os.Exit(1)
 	}
 	amm_factory_aid := null_id.Int64
@@ -791,6 +791,104 @@ func (ss *SQLStorage) Get_liquidity_change_events(factory_addr string,market_id 
 			os.Exit(1)
 		}
 		rec.MarketId = market_id
+		records = append(records,rec)
+	}
+	return total_rows,records
+}
+func (ss *SQLStorage) Get_shares_swapped(factory_addr string,market_id int64,offset,limit int) (int64,[]p.AA_SharesSwappedInfo) {
+
+	var query string
+
+	query = "SELECT address_id FROM address WHERE addr=$1"
+	row := ss.db.QueryRow(query,factory_addr)
+	var null_id sql.NullInt64
+	err := row.Scan(&null_id)
+	if (err != nil) {
+		if err == sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Can't find AMM module contract addresses"))
+			os.Exit(1)
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Is_feepot(): %v",err))
+		os.Exit(1)
+	}
+	amm_factory_aid := null_id.Int64
+
+	query = "SELECT count(*) AS total " +
+			"FROM aa_shares_swapped AS l " +
+			"WHERE l.market_id=$1 AND factory_aid=$2"
+	row = ss.db.QueryRow(query,market_id,null_id.Int64)
+	var null_counter sql.NullInt64
+	err = row.Scan(&null_counter)
+	if (err!=nil) {
+		if err==sql.ErrNoRows {
+
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Get_shares_swapped(): %v",err))
+		os.Exit(1)
+	}
+	total_rows := null_counter.Int64
+
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT AS created_ts, " +
+				"s.time_stamp,"+
+				"s.block_num,"+
+				"tx.tx_hash," +
+				"s.user_aid,"+
+				"ua.addr," +
+				"s.collateral," +
+				"s.shares, " +
+				"s.inout_ratio " +
+			"FROM aa_shares_swapped s "+
+				"JOIN address ua ON s.user_aid=ua.address_id " +
+				"JOIN transaction tx ON s.tx_id=tx.id "+
+			"WHERE s.market_id=$3 AND factory_aid=$4 "+
+			"ORDER BY s.id DESC "+
+			"OFFSET $1 LIMIT $2"
+		d_query := fmt.Sprintf("SELECT " +
+				"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT AS created_ts, " +
+				"s.time_stamp,"+
+				"s.block_num,"+
+				"tx.tx_hash," +
+				"s.user_aid,"+
+				"ua.addr," +
+				"s.collateral," +
+				"s.shares, " +
+				"s.inout_ratio " +
+			"FROM aa_shares_swapped s "+
+				"JOIN address ua ON s.user_aid=ua.address_id " +
+				"JOIN transaction tx ON s.tx_id=tx.id "+
+			"WHERE s.market_id=%v AND factory_aid=%v "+
+			"ORDER BY s.id DESC "+
+			"OFFSET %v LIMIT %v",
+			market_id,amm_factory_aid,offset,limit)
+		fmt.Printf("q = %v\n",d_query)
+	rows,err := ss.db.Query(query,offset,limit,market_id,amm_factory_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.AA_SharesSwappedInfo,0,32)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.AA_SharesSwappedInfo
+		err=rows.Scan(
+			&rec.CreatedTs,
+			&rec.CreatedDate,
+			&rec.BlockNum,
+			&rec.TxHash,
+			&rec.UserAid,
+			&rec.UserAddr,
+			&rec.Collateral,
+			&rec.Shares,
+			&rec.InOutRatio,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.MarketId = market_id
+		fmt.Printf("rec = %v\n",rec)
 		records = append(records,rec)
 	}
 	return total_rows,records
