@@ -354,7 +354,6 @@ func proc_shares_swapped(log *types.Log,elog *EthereumEventLog) {
 	evt.MarketFactoryAddr = eth_evt.MarketFactory.String()
 	evt.Collateral = eth_evt.Collateral.String()
 	evt.Shares = eth_evt.Shares.String()
-	evt.InOutRatio= Bigint_ptr_slice_to_str(&eth_evt.InOutRatio,",")
 
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
@@ -368,7 +367,6 @@ func proc_shares_swapped(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tUserAddr: %v\n",evt.UserAddr)
 	Info.Printf("\tCollateral: %v\n",evt.Collateral)
 	Info.Printf("\tShares: %v\n",evt.Shares)
-	Info.Printf("\tInOutRatio: %v\n",evt.InOutRatio)
 	Info.Printf("}\n")
 
 	storage.Insert_aa_shares_swapped_event(&evt)

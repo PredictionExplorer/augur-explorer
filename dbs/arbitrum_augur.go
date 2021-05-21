@@ -296,8 +296,8 @@ func (ss *SQLStorage) Insert_aa_shares_swapped_event(evt *p.AA_SharesSwapped) {
 	var query string
 	query = "INSERT INTO aa_shares_swapped (" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"market_id,factory_aid,user_aid,collateral,shares,inout_ratio" +
-			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9::DECIMAL/1e+6,$10::DECIMAL/1e+18,$11)"
+				"market_id,factory_aid,user_aid,outcome_idx,collateral,shares" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9,$10::DECIMAL/1e+6,$11::DECIMAL/1e+18)"
 
 	_,err := ss.db.Exec(query,
 			evt.EvtId,
@@ -308,9 +308,9 @@ func (ss *SQLStorage) Insert_aa_shares_swapped_event(evt *p.AA_SharesSwapped) {
 			evt.MarketId,
 			factory_aid,
 			user_aid,
+			evt.Outcome,
 			evt.Collateral,
 			evt.Shares,
-			evt.InOutRatio,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_shares_swapped table: %v; q=%v",err,query))
@@ -836,8 +836,7 @@ func (ss *SQLStorage) Get_shares_swapped(factory_addr string,market_id int64,off
 				"s.user_aid,"+
 				"ua.addr," +
 				"s.collateral," +
-				"s.shares, " +
-				"s.inout_ratio " +
+				"s.shares " +
 			"FROM aa_shares_swapped s "+
 				"JOIN address ua ON s.user_aid=ua.address_id " +
 				"JOIN transaction tx ON s.tx_id=tx.id "+
@@ -851,9 +850,9 @@ func (ss *SQLStorage) Get_shares_swapped(factory_addr string,market_id int64,off
 				"tx.tx_hash," +
 				"s.user_aid,"+
 				"ua.addr," +
+				"s.outcome_idx," +
 				"s.collateral," +
-				"s.shares, " +
-				"s.inout_ratio " +
+				"s.shares " +
 			"FROM aa_shares_swapped s "+
 				"JOIN address ua ON s.user_aid=ua.address_id " +
 				"JOIN transaction tx ON s.tx_id=tx.id "+
@@ -879,9 +878,9 @@ func (ss *SQLStorage) Get_shares_swapped(factory_addr string,market_id int64,off
 			&rec.TxHash,
 			&rec.UserAid,
 			&rec.UserAddr,
+			&rec.Outcome,
 			&rec.Collateral,
 			&rec.Shares,
-			&rec.InOutRatio,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))

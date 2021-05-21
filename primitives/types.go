@@ -2002,7 +2002,6 @@ type AA_SharesSwapped struct {
 	UserAddr				string
 	Collateral				string
 	Shares					string
-	InOutRatio				string
 }
 type AA_SharesSwappedInfo struct {
 	EvtId					int64

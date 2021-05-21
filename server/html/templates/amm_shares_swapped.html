@@ -15,18 +15,18 @@
 		<td class="mkt_trade_hdr" style="text-align: center">Block</td>
 		<td class="mkt_trade_hdr" style="text-align: center">CreatedTime</td>
 		<td class="mkt_trade_hdr" style="text-align: center">User Addr</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Outcome</td>
 		<td class="mkt_trade_hdr" style="text-align: center">Collateral</td>
 		<td class="mkt_trade_hdr" style="text-align: center">Shares</td>
-		<td class="mkt_trade_hdr" style="text-align: center">InOut Ratio</td>
 	</tr>
 	{{- range $i, $rpt := .Swaps }}
 	<tr class="market_trades">
 		<td class="mkt_trade_field">{{.BlockNum}}</td>
 		<td class="mkt_trade_field">{{.CreatedDate}}</td>
 		<td class="mkt_trade_field">{{.UserAddr}}</td>
+		<td class="mkt_trade_field">{{.Outcome}}</td>
 		<td class="mkt_trade_field">{{.Collateral}}</td>
 		<td class="mkt_trade_field">{{.Shares}}</td>
-		<td class="mkt_trade_field">{{.InOutRatio}}</td>
 	</tr>
 	{{- end }}
 </table>

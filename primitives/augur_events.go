@@ -478,7 +478,6 @@ type SharesSwapped struct {
 	Outcome       *big.Int
 	Collateral    *big.Int
 	Shares        *big.Int
-	InOutRatio    []*big.Int
 	Price         *big.Int
 	Raw           types.Log // Blockchain specific contextual infos
 }

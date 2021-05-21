@@ -142,12 +142,6 @@
       },
       {
         "indexed": false,
-        "internalType": "uint256[]",
-        "name": "inOutRatio",
-        "type": "uint256[]"
-      },
-      {
-        "indexed": false,
         "internalType": "uint256",
         "name": "price",
         "type": "uint256"
@@ -723,13 +717,13 @@
         "type": "uint256"
       },
       {
-        "internalType": "uint256",
+        "internalType": "uint256[]",
         "name": "_shareTokensIn",
-        "type": "uint256"
+        "type": "uint256[]"
       },
       {
         "internalType": "uint256",
-        "name": "_setsOut",
+        "name": "_minSetsOut",
         "type": "uint256"
       }
     ],

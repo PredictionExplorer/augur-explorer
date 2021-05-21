@@ -1,7 +1,7 @@
 -- Tables with information about Augur events at Arbitrum chain
 CREATE TABLE aa_caddrs ( -- Addresses of contracts for Arbitrum Augur
 	chain_id			BIGINT DEFAULT 0,
-	amm_factory			TEXT DEFAULT '0x9381D4B5e7bEB89899da34dA60Ed5170D91E032A',
+	amm_factory			TEXT DEFAULT '0x8860542771F787dD8B2c8f9134662751DE2F664f',
 	sports_factory		TEXT DEFAULT '0x43D9f2d22f1306D012251d032a5B67553FE4aA82',
 	trusted_factory		TEXT DEFAULT '0x4117A1F75Dfe784F315AabF7dB8caf86Fc10653b'
 );
@@ -20,6 +20,7 @@ CREATE TABLE aa_pool_created (
 	creator_aid			BIGINT NOT NULL,
 	market_id			BIGINT NOT NULL,
 	token_rcpt_aid		BIGINT NOT NULL,
+	balances			TEXT,			-- balances of sharetokens, updated on liquidity/swap events
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );
@@ -123,9 +124,9 @@ CREATE TABLE aa_shares_swapped (-- SharesSwapped
 	market_id			BIGINT NOT NULL,
 	factory_aid			BIGINT NOT NULL,
 	user_aid			BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
 	collateral			DECIMAL(64,18) NOT NULL,
 	shares				DECIMAL(64,18) NOT NULL,
-	inout_ratio			TEXT,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );

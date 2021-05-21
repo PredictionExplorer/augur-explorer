@@ -24,6 +24,7 @@
         <td class="mkt_trade_hdr" style="text-align: center">Title</td>
         <td class="mkt_trade_hdr" style="text-align: center">Description</td>
         <td class="mkt_trade_hdr" style="text-align: center">Liquidity</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Swaps</td>
     </tr>
 	{{- range $i, $rpt := .Markets}}
 	<tr class="market_trades">
@@ -41,6 +42,9 @@
 		<td class="mkt_trade_field">{{.Description}}</td>
 		<td class="mkt_trade_field">
 			<a href="/black/arbitrum/liquidity/{{.MarketId}}/0/100000">Liquidity</a>
+		</td>
+		<td class="mkt_trade_field">
+			<a href="/black/arbitrum/swaps/{{.MarketId}}/0/100000">Swaps</a>
 		</td>
 	</tr>
 	{{- end }}

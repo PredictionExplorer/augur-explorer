@@ -14,6 +14,7 @@ import (
 	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/ethclient"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/rpc"
 
@@ -42,7 +43,7 @@ const (
 
 	MARKET_RESOLVED = "c68d106ea6e4bec784925cfd91767212c71ced92adbac107dc364435321113f6"
 	LIQUIDITY_CHANGED = "9a1dccf45b5053e827f262e45fbb5211c2bd99497d340eecaebbd245eb48f4bc"
-	SHARES_SWAPPED = "9a8518831e2d9c2ea12fd8df17781e97121a2d578e17a7c0ddf4462f89fdd5a0"
+	SHARES_SWAPPED = "ec2a60d57293d00dfe68ab5f1d18738c4600ce39c0c0c623fc086814615f33fa"
 
 	LINK_NODE_CHANGED = "6b7517523482c8d89ffbc530829d5decd506cf6dc60874b11fa26c8a53bb9fa9"
 	ERC20_TRANSFER = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
