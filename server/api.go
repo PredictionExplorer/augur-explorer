@@ -1938,7 +1938,7 @@ func a1_arbitrum_shares_swapped(c *gin.Context) {
 		return
 	}
 	total_rows,swaps:= augur_srv.storage.Get_shares_swapped(
-		amm_contracts.SportsFactory.String(),market_id,offset,limit,
+		&amm_constants,amm_contracts.SportsFactory.String(),market_id,offset,limit,
 	)
 	var req_status int = 1
 	var err_str string = ""

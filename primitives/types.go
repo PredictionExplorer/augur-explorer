@@ -2019,6 +2019,7 @@ type AA_SharesSwappedInfo struct {
 	InOutRatio				string
 	CreatedDate				string
 	TxHash					string
+	OutcomeStr				string
 }
 type AA_WinningsClaimed struct {// Arbitrum Augur Winnnings Claimed
 	EvtId					int64

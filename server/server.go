@@ -2791,7 +2791,7 @@ func arbitrum_shares_swapped(c *gin.Context) {
 		return
 	}
 	total_rows,swaps:= augur_srv.storage.Get_shares_swapped(
-		amm_contracts.SportsFactory.String(),market_id,0,10000000,
+		&amm_constants,amm_contracts.SportsFactory.String(),market_id,0,10000000,
 	)
 	c.HTML(http.StatusOK, "amm_shares_swapped.html", gin.H{
 		"MarketId":market_id,

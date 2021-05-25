@@ -43,6 +43,7 @@ const NO_CONTEST = "No Contest";
 const NO_CONTEST_TIE = "Tie/No Contest";
 const HOME_TEAM_OUTCOME = 1;
 const AWAY_TEAM_OUTCOME = 2;
+const NO_CONTEST_OUTCOME_ID = 0;
 func Load_amm_constants(path string) p.AMM_Constants {
 
 	var constants p.AMM_Constants
@@ -100,7 +101,7 @@ func Get_sport_id_from_team(constants *p.AMM_Constants,team_id int64) int64 {
 	}
 	return sid
 }
-func get_market_outcome(sport_id int64, sports_market_type int64, outcome_id int64) string {
+func Get_market_outcome(sport_id int64, sports_market_type int64, outcome_id int64) string {
 
 	sdata,exists:=sportsData[sport_id]
 	if (!exists) {
@@ -129,35 +130,47 @@ func get_sports_titles (sport_id int64, sports_market_type int64) (SportsDataEnt
 	return sdata.Types[sports_market_type],true;
 };
 
-/*
-func get_outcome_name( outcome_id int64,sport_id int64,home_team string,away_team string,sports_market_type int64,line string) []string {
-	market_outcome := get_market_outcome(sport_id, sports_market_type, outcome_id);
+func Get_outcome_name( outcome_id int64,sport_id int64,home_team string,away_team string,sports_market_type int64,line string) string {
+	market_outcome := Get_market_outcome(sport_id, sports_market_type, outcome_id);
 	// create outcome name using market type and line
-	if (outcome_id === NO_CONTEST_OUTCOME_ID) return market_outcome;
-
-	if (sports_market_type === SPORTS_MARKET_TYPE_MONEY_LINE) {
-		return populate_home_away(market_outcome, home_team, away_team);
+	if outcome_id == NO_CONTEST_OUTCOME_ID {
+		return market_outcome
 	}
 
-	if (sports_market_type === SPORTS_MARKET_TYPE_SPREAD) {
-    // spread
-    let pLine = Number(line) > 0 ? `+${line}` : line;
-    if (outcomeId === AWAY_TEAM_OUTCOME) {
-      const newLine = Number(line) * -1; // invert for away team
-      pLine = newLine > 0 ? `+${newLine}` : `${newLine}`;
-    }
-    const outcomes = populateHomeAway(marketOutcome, homeTeam, awayTeam).replace(NAMING_LINE.SPREAD_LINE, pLine);
-    return outcomes;
-  }
+	if sports_market_type == SPORTS_MARKET_TYPE_MONEY_LINE {
+		return populate_home_away(market_outcome, home_team, away_team)
+	}
 
-  if (sportsMarketType === SPORTS_MARKET_TYPE.OVER_UNDER) {
-    // over/under
-    return marketOutcome.replace(NAMING_LINE.OVER_UNDER_LINE, line);
-  }
+	if sports_market_type == SPORTS_MARKET_TYPE_SPREAD {
+		// spread
+		var p_line string
+		line_no,err := strconv.Atoi(line)
+		if err == nil {
+			p_line = fmt.Sprintf("+%v",line_no)
+		} else {
+			p_line = line
+		}
+		if outcome_id == AWAY_TEAM_OUTCOME {
+			new_line := line_no * -1; // invert for away team
+			if new_line > 0  {
+				p_line = fmt.Sprintf("+%v",new_line)
+			} else {
+				p_line = fmt.Sprintf("%v",new_line)
+			}
+		}
+		outcomes := populate_home_away(market_outcome, home_team, away_team)
+		outcomes = strings.ReplaceAll(outcomes,NAMING_LINE_SPREAD_LINE, p_line)
+		return outcomes
+	}
 
-  return `Outcome ${outcomeId}`;
-};
-*/
+	if sports_market_type == SPORTS_MARKET_TYPE_OVER_UNDER {
+		// over/under
+		market_outcome = strings.ReplaceAll(market_outcome,NAMING_LINE_OVER_UNDER_LINE, line)
+		return market_outcome
+	}
+
+	return fmt.Sprintf("Outcome %v",outcome_id)
+}
 func Get_market_title(sport_id int64, home_team string,away_team string,sports_market_type int64,line int64) (title string, description string) {
 	market_titles,exists := get_sports_titles(sport_id, sports_market_type);
 	if (!exists) {

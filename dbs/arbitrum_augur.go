@@ -795,7 +795,7 @@ func (ss *SQLStorage) Get_liquidity_change_events(factory_addr string,market_id 
 	}
 	return total_rows,records
 }
-func (ss *SQLStorage) Get_shares_swapped(factory_addr string,market_id int64,offset,limit int) (int64,[]p.AA_SharesSwappedInfo) {
+func (ss *SQLStorage) Get_shares_swapped(constants *p.AMM_Constants,factory_addr string,market_id int64,offset,limit int) (int64,[]p.AA_SharesSwappedInfo) {
 
 	var query string
 
@@ -835,11 +835,16 @@ func (ss *SQLStorage) Get_shares_swapped(factory_addr string,market_id int64,off
 				"tx.tx_hash," +
 				"s.user_aid,"+
 				"ua.addr," +
+				"s.outcome_idx," +
 				"s.collateral," +
-				"s.shares " +
+				"s.shares, " +
+				"sm.home_team_id," +
+				"sm.away_team_id," +
+				"sm.market_type " +
 			"FROM aa_shares_swapped s "+
 				"JOIN address ua ON s.user_aid=ua.address_id " +
 				"JOIN transaction tx ON s.tx_id=tx.id "+
+				"LEFT JOIN aa_sports_market sm ON (sm.contract_id=$4) AND (sm.market_id=s.market_id) "+
 			"WHERE s.market_id=$3 AND factory_aid=$4 "+
 			"ORDER BY s.id DESC "+
 			"OFFSET $1 LIMIT $2"
@@ -871,6 +876,7 @@ func (ss *SQLStorage) Get_shares_swapped(factory_addr string,market_id int64,off
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.AA_SharesSwappedInfo
+		var home_id,away_id,mkt_type sql.NullInt64
 		err=rows.Scan(
 			&rec.CreatedTs,
 			&rec.CreatedDate,
@@ -881,10 +887,23 @@ func (ss *SQLStorage) Get_shares_swapped(factory_addr string,market_id int64,off
 			&rec.Outcome,
 			&rec.Collateral,
 			&rec.Shares,
+			&home_id,
+			&away_id,
+			&mkt_type,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
+		}
+		if home_id.Valid {
+			h_team,h_exists := constants.Teams[home_id.Int64]
+			if h_exists {
+				a_team,a_exists := constants.Teams[away_id.Int64]
+				if a_exists {
+					sport_id := a.Get_sport_id_from_team(constants,home_id.Int64)
+					rec.OutcomeStr = a.Get_outcome_name(rec.Outcome,sport_id,h_team.Name,a_team.Name,mkt_type.Int64,"1")
+				}
+			}
 		}
 		rec.MarketId = market_id
 		fmt.Printf("rec = %v\n",rec)

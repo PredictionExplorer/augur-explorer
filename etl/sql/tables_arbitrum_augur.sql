@@ -2,7 +2,8 @@
 CREATE TABLE aa_caddrs ( -- Addresses of contracts for Arbitrum Augur
 	chain_id			BIGINT DEFAULT 0,
 	amm_factory			TEXT DEFAULT '0x8860542771F787dD8B2c8f9134662751DE2F664f',
-	sports_factory		TEXT DEFAULT '0x43D9f2d22f1306D012251d032a5B67553FE4aA82',
+	--sports_factory		TEXT DEFAULT '0x43D9f2d22f1306D012251d032a5B67553FE4aA82',
+	sports_factory		TEXT DEFAULT '0xBC8C695dd045FBfe81C353Fd88E3bedE45C2855D',
 	trusted_factory		TEXT DEFAULT '0x4117A1F75Dfe784F315AabF7dB8caf86Fc10653b'
 );
 CREATE TABLE aa_proc_status (-- Arbitrum Augur process status
