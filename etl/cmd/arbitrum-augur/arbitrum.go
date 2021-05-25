@@ -352,6 +352,7 @@ func proc_shares_swapped(log *types.Log,elog *EthereumEventLog) {
 	evt.MarketId = eth_evt.MarketId.Int64()
 	evt.UserAddr = eth_evt.User.String()
 	evt.MarketFactoryAddr = eth_evt.MarketFactory.String()
+	evt.Outcome = eth_evt.Outcome.Int64()
 	evt.Collateral = eth_evt.Collateral.String()
 	evt.Shares = eth_evt.Shares.String()
 
@@ -365,6 +366,7 @@ func proc_shares_swapped(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tMarketId: %v\n",evt.MarketId)
 	Info.Printf("\tMarketFactory: %v\n",evt.MarketFactoryAddr)
 	Info.Printf("\tUserAddr: %v\n",evt.UserAddr)
+	Info.Printf("\tOutcome: %v\n",evt.Outcome)
 	Info.Printf("\tCollateral: %v\n",evt.Collateral)
 	Info.Printf("\tShares: %v\n",evt.Shares)
 	Info.Printf("}\n")

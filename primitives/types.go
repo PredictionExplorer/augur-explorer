@@ -2011,11 +2011,12 @@ type AA_SharesSwappedInfo struct {
 	MarketId				int64
 	Outcome					int64
 	UserAid					int64
+	Collateral				float64
+	Shares					float64
+	Buy						bool
 	Contract				string
 	MarketFactoryAddr		string
 	UserAddr				string
-	Collateral				string
-	Shares					string
 	InOutRatio				string
 	CreatedDate				string
 	TxHash					string
@@ -2085,6 +2086,7 @@ type AMM_LiquidityChangedInfo struct {// struct for the API
 	UserAid					int64
 	Collateral				float64
 	Tokens					float64
+	In						bool	/// In - true, Out - false
 	CreatedDate				string
 	TxHash					string
 	UserAddr				string

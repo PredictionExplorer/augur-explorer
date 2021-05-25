@@ -791,6 +791,13 @@ func (ss *SQLStorage) Get_liquidity_change_events(factory_addr string,market_id 
 			os.Exit(1)
 		}
 		rec.MarketId = market_id
+		if rec.Collateral < 0 {
+			rec.In = true
+			rec.Collateral = -rec.Collateral
+		}
+		if rec.Tokens < 0 {
+			rec.Tokens = - rec.Tokens
+		}
 		records = append(records,rec)
 	}
 	return total_rows,records
@@ -844,7 +851,7 @@ func (ss *SQLStorage) Get_shares_swapped(constants *p.AMM_Constants,factory_addr
 			"FROM aa_shares_swapped s "+
 				"JOIN address ua ON s.user_aid=ua.address_id " +
 				"JOIN transaction tx ON s.tx_id=tx.id "+
-				"LEFT JOIN aa_sports_market sm ON (sm.contract_id=$4) AND (sm.market_id=s.market_id) "+
+				"LEFT JOIN aa_sports_market sm ON (sm.contract_aid=$4) AND (sm.market_id=s.market_id) "+
 			"WHERE s.market_id=$3 AND factory_aid=$4 "+
 			"ORDER BY s.id DESC "+
 			"OFFSET $1 LIMIT $2"
@@ -895,17 +902,29 @@ func (ss *SQLStorage) Get_shares_swapped(constants *p.AMM_Constants,factory_addr
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		fmt.Printf("home_id.Valid=%v mkt_type=%v\n",home_id.Valid,mkt_type.Int64)
 		if home_id.Valid {
 			h_team,h_exists := constants.Teams[home_id.Int64]
 			if h_exists {
 				a_team,a_exists := constants.Teams[away_id.Int64]
 				if a_exists {
 					sport_id := a.Get_sport_id_from_team(constants,home_id.Int64)
+					fmt.Printf("sport_id=%v home: %v , away: %v rec.Outcome=%v\n",sport_id,h_team.Name,a_team.Name,rec.Outcome)
+
 					rec.OutcomeStr = a.Get_outcome_name(rec.Outcome,sport_id,h_team.Name,a_team.Name,mkt_type.Int64,"1")
+					fmt.Printf("OutcomeStr: %v\n",rec.OutcomeStr)
 				}
 			}
 		}
 		rec.MarketId = market_id
+		if rec.Collateral > 0 {
+			rec.Buy = true
+		} else {
+			rec.Collateral = -rec.Collateral
+		}
+		if rec.Shares < 0 {
+			rec.Shares = -rec.Shares
+		}
 		fmt.Printf("rec = %v\n",rec)
 		records = append(records,rec)
 	}

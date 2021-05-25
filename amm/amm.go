@@ -114,6 +114,7 @@ func Get_market_outcome(sport_id int64, sports_market_type int64, outcome_id int
 	if len( rec.Outcomes) == 0 {
 		return "?!!"
 	}
+	fmt.Printf("Get_market_outcome(): outcome_id=%v, sport_id=%v rec.Outcomes=%v",outcome_id,sport_id,rec.Outcomes)
 	return rec.Outcomes[outcome_id];
 };
 
@@ -237,7 +238,7 @@ var	sportsData map[int64]SportsTypes = map[int64]SportsTypes{
 				SPORTS_MARKET_TYPE_MONEY_LINE: SportsDataEntry {
 					Title: `Which team will win?`,
 					Description: NAMING_TEAM_AWAY_TEAM+` vs `+NAMING_TEAM_HOME_TEAM+`?`,
-					Outcomes: []string{NO_CONTEST, NAMING_TEAM_AWAY_TEAM+`, `+NAMING_TEAM_HOME_TEAM},
+					Outcomes: []string{NO_CONTEST, NAMING_TEAM_AWAY_TEAM,NAMING_TEAM_HOME_TEAM},
 				},
 				SPORTS_MARKET_TYPE_SPREAD: SportsDataEntry {
 					Title: `Will the `+NAMING_TEAM_FAV_TEAM+` defeat the `+NAMING_TEAM_UNDERDOG_TEAM+` by more than `+NAMING_LINE_SPREAD_LINE+`.5 runs?`,
@@ -277,7 +278,7 @@ var	sportsData map[int64]SportsTypes = map[int64]SportsTypes{
 				SPORTS_MARKET_TYPE_MONEY_LINE: SportsDataEntry {
 					Title: `Which team will win?`,
 					Description: NAMING_TEAM_AWAY_TEAM+` vs `+NAMING_TEAM_HOME_TEAM+`?`,
-					Outcomes: []string{NO_CONTEST, NAMING_TEAM_AWAY_TEAM+`, `+NAMING_TEAM_HOME_TEAM+`]`},
+					Outcomes: []string{NO_CONTEST, NAMING_TEAM_AWAY_TEAM,NAMING_TEAM_HOME_TEAM},
 				},
 				SPORTS_MARKET_TYPE_SPREAD: SportsDataEntry {
 					Title: `Will the `+NAMING_TEAM_FAV_TEAM+` defeat the `+NAMING_TEAM_UNDERDOG_TEAM+` by more than `+NAMING_LINE_SPREAD_LINE+`.5 goals?`,

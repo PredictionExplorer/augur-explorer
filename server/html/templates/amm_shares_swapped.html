@@ -16,6 +16,7 @@
 		<td class="mkt_trade_hdr" style="text-align: center">CreatedTime</td>
 		<td class="mkt_trade_hdr" style="text-align: center">User Addr</td>
 		<td class="mkt_trade_hdr" style="text-align: center">Outcome</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Operation Type</td>
 		<td class="mkt_trade_hdr" style="text-align: center">Collateral</td>
 		<td class="mkt_trade_hdr" style="text-align: center">Shares</td>
 	</tr>
@@ -24,9 +25,10 @@
 		<td class="mkt_trade_field">{{.BlockNum}}</td>
 		<td class="mkt_trade_field">{{.CreatedDate}}</td>
 		<td class="mkt_trade_field">{{.UserAddr}}</td>
-		<td class="mkt_trade_field">{{.Outcome}}</td>
-		<td class="mkt_trade_field">{{.Collateral}}</td>
-		<td class="mkt_trade_field">{{.Shares}}</td>
+		<td class="mkt_trade_field">{{.Outcome}} ({{.OutcomeStr}})</td>
+		<td class="mkt_trade_field">{{ if eq false .Buy}} BUY {{ else }} SELL {{end}}</td>
+		<td class="mkt_trade_field">{{ printf "%.2f" .Collateral}}</td>
+		<td class="mkt_trade_field">{{ printf "%.2f" .Shares}}</td>
 	</tr>
 	{{- end }}
 </table>

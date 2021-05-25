@@ -16,8 +16,9 @@
 		<td class="mkt_trade_hdr" style="text-align: center" >CreatedTime</td>
 		<td class="mkt_trade_hdr" style="text-align: center">User Addr</td>
 		<td class="mkt_trade_hdr" style="text-align: center">Recipient Addr</td>
-		<td class="mkt_trade_hdr" style="text-align: center">Collateral</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Collateral (USDC)</td>
 		<td class="mkt_trade_hdr" style="text-align: center">Tokens</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Operation</td>
 	</tr>
 	{{- range $i, $rpt := .LiquidityChanges}}
 	<tr class="market_trades">
@@ -25,8 +26,9 @@
 		<td class="mkt_trade_field">{{.CreatedDate}}</td>
 		<td class="mkt_trade_field">{{.UserAddr}}</td>
 		<td class="mkt_trade_field">{{.RecipientAddr}}</td>
-		<td class="mkt_trade_field">{{.Collateral}}</td>
-		<td class="mkt_trade_field">{{.Tokens}}</td>
+		<td class="mkt_trade_field">{{printf "%.2f"  .Collateral}}</td>
+		<td class="mkt_trade_field">{{printf "%.2f"  .Tokens}}</td>
+		<td class="mkt_trade_field">{{ if eq true .In}} IN{{ else }} OUT{{end}}</td>
 	</tr>
 	{{- end }}
 </table>
