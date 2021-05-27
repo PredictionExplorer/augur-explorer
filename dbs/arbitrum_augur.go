@@ -697,6 +697,97 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 	return total_rows,records
 
 }
+func (ss *SQLStorage) Get_sport_market_info(constants *p.AMM_Constants,contracts *p.AA_ContractAddrs,market_id int64) (p.AMM_SportMarket,error) {
+
+	var query string
+	query = "SELECT address_id FROM address WHERE addr=$1"
+	row := ss.db.QueryRow(query,contracts.SportsFactory.String())
+	var null_id sql.NullInt64
+	err := row.Scan(&null_id)
+	if (err != nil) {
+		if err == sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Can't find AMM module contract addresses"))
+			os.Exit(1)
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Is_feepot(): %v",err))
+		os.Exit(1)
+	}
+	amm_factory_aid := null_id.Int64
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT AS created_ts, " +
+				"time_stamp," +
+				"m.block_num, " +
+				"tx.tx_hash," +
+				"m.market_id," +
+				"ca.addr," +
+				"fa.addr," +
+				"EXTRACT(EPOCH FROM m.start_time)::BIGINT AS start_time_ts, " +
+				"EXTRACT(EPOCH FROM m.end_time)::BIGINT AS end_time_ts, " +
+				"m.start_time," +
+				"m.end_time," +
+				"m.event_id," +
+				"m.home_team_id," +
+				"m.away_team_id," +
+				"m.score," +
+				"m.market_type " +
+			"FROM aa_sports_market AS m " +
+				"LEFT JOIN address ca ON m.creator_aid=ca.address_id " +
+				"LEFT JOIN address fa ON m.contract_aid=fa.address_id " +
+				"JOIN transaction tx ON m.tx_id=tx.id " +
+			"WHERE m.market_id=$1 AND contract_aid=$2"
+
+	row = ss.db.QueryRow(query,market_id,amm_factory_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	var rec p.AMM_SportMarket
+	err=row.Scan(
+			&rec.CreatedTs,
+			&rec.CreatedDate,
+			&rec.BlockNum,
+			&rec.TxHash,
+			&rec.MarketId,
+			&rec.CreatorAddr,
+			&rec.FactoryAddr,
+			&rec.StartTimeTs,
+			&rec.EndTimeTs,
+			&rec.StartTime,
+			&rec.EndTime,
+			&rec.EventId,
+			&rec.HomeTeamId,
+			&rec.AwayTeamId,
+			&rec.Score,
+			&rec.MarketTypeCode,
+	)
+	if err == sql.ErrNoRows {
+		return rec,err
+	}
+	if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+	}
+	team,exists := constants.Teams[rec.HomeTeamId]
+	if exists {
+		rec.HomeTeam = team.Name
+	}
+	team,exists = constants.Teams[rec.AwayTeamId]
+	if exists {
+		rec.AwayTeam = team.Name
+	}
+	sport_id := a.Get_sport_id_from_team(constants,rec.HomeTeamId)
+	title,description := a.Get_market_title(sport_id,rec.HomeTeam,rec.AwayTeam,rec.MarketTypeCode,1)
+	/*fmt.Printf(
+		"sport_id=%v, Home(id=%v)=%v, Away(id=%v)=%v, title=%v, descr=%v\n",
+		sport_id,rec.HomeTeamId,rec.HomeTeam,rec.AwayTeamId,rec.AwayTeam,title,description,
+	)*/
+	rec.Title = title
+	rec.Description = description
+	rec.MarketRules = a.Get_sports_resolution_rules(sport_id,rec.MarketTypeCode)
+	return rec,nil
+
+}
 func (ss *SQLStorage) Get_liquidity_change_events(factory_addr string,market_id int64,offset,limit int) (int64,[]p.AMM_LiquidityChangedInfo) {
 
 	var query string

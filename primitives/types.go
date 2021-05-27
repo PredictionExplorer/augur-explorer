@@ -2191,4 +2191,5 @@ type AMM_SportMarket struct {
 	AwayTeam				string
 	Title					string
 	Description				string
+	MarketRules				[]string
 }

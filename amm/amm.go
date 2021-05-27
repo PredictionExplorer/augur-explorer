@@ -211,6 +211,22 @@ func Get_market_title(sport_id int64, home_team string,away_team string,sports_m
 	}
 	return title, description
 };
+func Get_sports_resolution_rules(sports_id int64,mkt_type int64) []string {
+
+	sdata,exists := sportsResolutionRules[sports_id]
+	if !exists {
+		var output []string = []string{"No rules defined"}
+		return output
+	}
+
+	entry,exists := sdata.Types[mkt_type]
+	if !exists {
+		var output []string = []string{"No market type defined"}
+		return output
+	}
+	
+	return entry
+}
 var	sportsData map[int64]SportsTypes = map[int64]SportsTypes{
 		2: SportsTypes {
 			Name: "NFL",

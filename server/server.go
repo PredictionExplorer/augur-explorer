@@ -2768,10 +2768,17 @@ func arbitrum_liquidity_changed(c *gin.Context) {
 		respond_error(c,"'market_id' parameter is not set")
 		return
 	}
+	market,err := augur_srv.storage.Get_sport_market_info(&amm_constants,&amm_contracts,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",err))
+		return
+	}
 	total_rows,lchanges := augur_srv.storage.Get_liquidity_change_events(
 		amm_contracts.AMM_Factory.String(),market_id,0,10000000,
 	)
 	c.HTML(http.StatusOK, "amm_liquidity_changed.html", gin.H{
+		"MarketId":market_id,
+		"MarketInfo" : market,
 		"LiquidityChanges" : lchanges,
 		"TotalRows" : total_rows,
 	})
@@ -2790,11 +2797,18 @@ func arbitrum_shares_swapped(c *gin.Context) {
 		respond_error(c,"'market_id' parameter is not set")
 		return
 	}
+	market,err := augur_srv.storage.Get_sport_market_info(&amm_constants,&amm_contracts,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",err))
+		return
+	}
+
 	total_rows,swaps:= augur_srv.storage.Get_shares_swapped(
 		&amm_constants,amm_contracts.SportsFactory.String(),market_id,0,10000000,
 	)
 	c.HTML(http.StatusOK, "amm_shares_swapped.html", gin.H{
 		"MarketId":market_id,
+		"MarketInfo" : market,
 		"Swaps" : swaps,
 		"TotalRows" : total_rows,
 	})

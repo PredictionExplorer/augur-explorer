@@ -1902,6 +1902,11 @@ func a1_arbitrum_liquidity_changed(c *gin.Context) {
 	if !success {
 		return
 	}
+	market,err := augur_srv.storage.Get_sport_market_info(&amm_constants,&amm_contracts,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",err))
+		return
+	}
 	total_rows,lchanges := augur_srv.storage.Get_liquidity_change_events(
 		amm_contracts.AMM_Factory.String(),market_id,offset,limit,
 	)
@@ -1910,6 +1915,8 @@ func a1_arbitrum_liquidity_changed(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
+		"MarketId":market_id,
+		"MarketInfo" : market,
 		"LiquidityChanges" : lchanges,
 		"Offset" : offset,
 		"Limit" : limit,
