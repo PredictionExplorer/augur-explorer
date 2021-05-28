@@ -42,41 +42,24 @@ var (
 )
 func initialize() {
 
-	caddrs_obj,err := augur_srv.storage.Get_contract_addresses()
+	caddrs_obj,err := augur_srv.db_augur.Get_contract_addresses()
 	if err!=nil {
 		Fatalf("Can't find contract addresses in 'contract_addresses' table")
 	}
 	caddrs=&caddrs_obj
 
 	amm_constants = Load_amm_constants("./amm_constants")
-	amm_contracts = augur_srv.storage.Get_arbitrum_augur_contract_addresses()
+	if augur_srv.db_matic != nil {
+		amm_contracts = augur_srv.db_matic.Get_arbitrum_augur_contract_addresses()
+	}
 }
 func secure_https(r http.Handler) {
 	autotls.Run(r, "localhost")
 }
 func main() {
 
-	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
-	os.MkdirAll(log_dir, os.ModePerm)
-	db_log_file:=fmt.Sprintf("%v/%v",log_dir,"webserver-db.log")
 
-	fname:=fmt.Sprintf("%v/webserver_info.log",log_dir)
-	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err!=nil {
-		fmt.Printf("Can't start: %v\n",err)
-		os.Exit(1)
-	}
-	Info = log.New(logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
-
-	fname=fmt.Sprintf("%v/webserver_error.log",log_dir)
-	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err!=nil {
-		fmt.Printf("Can't start: %v\n",err)
-		os.Exit(1)
-	}
-	Error = log.New(logfile,"ERROR: ",log.Ldate|log.Ltime|log.Lshortfile)
-
-	augur_srv = create_augur_server(&market_order_id,db_log_file,Info)
+	augur_srv = create_augur_server()
 
 	initialize()
 
