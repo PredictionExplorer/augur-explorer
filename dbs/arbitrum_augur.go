@@ -3,6 +3,7 @@ package dbs
 import (
 	"fmt"
 	"os"
+	//"errors"
 	"database/sql"
 	_  "github.com/lib/pq"
 
@@ -16,18 +17,20 @@ func (ss *SQLStorage) Get_arbitrum_augur_contract_addresses() (p.AA_ContractAddr
 
 	var query string
 	query="SELECT " +
-				"amm_factory,sports_factory,trusted_factory "+
+				"amm_factory,sportsball1,sportsball2,mma,trusted_factory "+
 			"FROM aa_caddrs";
 	row := ss.db.QueryRow(query)
 	var c_addrs p.AA_ContractAddrs
 	var err error
 	var (
 		amm_factory string
-		sports_factory string
+		sportsball1 string
+		sportsball2 string
+		mma string
 		trusted_factory string
 	)
 	err=row.Scan(
-		&amm_factory,&sports_factory,&trusted_factory,
+		&amm_factory,&sportsball1,&sportsball2,&mma,&trusted_factory,
 	);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -39,9 +42,38 @@ func (ss *SQLStorage) Get_arbitrum_augur_contract_addresses() (p.AA_ContractAddr
 		}
 	}
 	c_addrs.AMM_Factory=common.HexToAddress(amm_factory)
-	c_addrs.SportsFactory=common.HexToAddress(sports_factory)
+	c_addrs.SportsBall1=common.HexToAddress(sportsball1)
+	c_addrs.SportsBall2=common.HexToAddress(sportsball2)
+	c_addrs.MMA=common.HexToAddress(mma)
 	c_addrs.TrustedFactory=common.HexToAddress(trusted_factory)
 	return c_addrs
+}
+func (ss *SQLStorage) Get_arbitrum_augur_factory_aids(caddrs *p.AA_ContractAddrs) []int64 {
+
+	addresses := "'" + caddrs.AMM_Factory.String() + "'," +
+				"'" + caddrs.SportsBall1.String() + "'," +
+				"'" + caddrs.SportsBall2.String() + "'," +
+				"'" + caddrs.MMA.String() + "'"
+	var query string
+	query = "SELECT address_id from address WHERE addr in ("+addresses+")"
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]int64,0,32)
+
+	defer rows.Close()
+	for rows.Next() {
+		var aid int64
+		err=rows.Scan(&aid)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,aid)
+	}
+	return records
 }
 func (ss *SQLStorage) Update_arbitrum_augur_process_status(status *p.ArbitrumAugurProcessStatus) {
 
@@ -586,10 +618,19 @@ func (ss *SQLStorage) Get_markets() {
 
 
 }
-func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,constants *p.AMM_Constants,contracts *p.AA_ContractAddrs) (int64,[]p.AMM_SportMarket) {
+func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,constants *p.AMM_Constants,contract_aids []int64) (int64,[]p.AMM_SportMarket) {
+
+	records := make([]p.AMM_SportMarket,0,32)
+	if len(contract_aids)==0 {
+		return 0,records
+	}
+	var contract_aids_str string = fmt.Sprintf("%v",contract_aids[0])
+	for i:=1 ; i<len(contract_aids); i++ {
+		contract_aids_str = contract_aids_str + fmt.Sprintf(",%v",contract_aids[i])
+	}
 
 	var query string
-
+/*DISCONTINUED, removal pending
 	query = "SELECT address_id FROM address WHERE addr=$1"
 	row := ss.db.QueryRow(query,contracts.SportsFactory.String())
 	var null_id sql.NullInt64
@@ -603,13 +644,14 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 		os.Exit(1)
 	}
 	amm_factory_aid := null_id.Int64
+*/
 
 	query = "SELECT count(*) AS total " +
 			"FROM aa_sports_market AS m " +
-			"WHERE m.contract_aid=$1"
-	row = ss.db.QueryRow(query,null_id.Int64)
+			"WHERE m.contract_aid IN ("+contract_aids_str+")"
+	row := ss.db.QueryRow(query)
 	var null_counter sql.NullInt64
-	err = row.Scan(&null_counter)
+	err := row.Scan(&null_counter)
 	if (err!=nil) {
 		if err==sql.ErrNoRows {
 
@@ -625,6 +667,8 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 				"m.block_num, " +
 				"tx.tx_hash," +
 				"m.market_id," +
+				"m.contract_aid," +
+				"m.factory_aid," +
 				"ca.addr," +
 				"fa.addr," +
 				"EXTRACT(EPOCH FROM m.start_time)::BIGINT AS start_time_ts, " +
@@ -640,16 +684,15 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 				"LEFT JOIN address ca ON m.creator_aid=ca.address_id " +
 				"LEFT JOIN address fa ON m.contract_aid=fa.address_id " +
 				"JOIN transaction tx ON m.tx_id=tx.id " +
-			"WHERE m.contract_aid=$1" +
+			"WHERE m.contract_aid IN(" + contract_aids_str + ") "+
 			"ORDER BY m.time_stamp " +
-			"OFFSET $2 LIMIT $3"
-
-	rows,err := ss.db.Query(query,amm_factory_aid,offset,limit)
+			"OFFSET $1 LIMIT $2"
+	fmt.Printf("query = %v\n",query)
+	rows,err := ss.db.Query(query,offset,limit)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.AMM_SportMarket,0,32)
 
 	defer rows.Close()
 	for rows.Next() {
@@ -660,6 +703,8 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 			&rec.BlockNum,
 			&rec.TxHash,
 			&rec.MarketId,
+			&rec.ContractAid,
+			&rec.FactoryAid,
 			&rec.CreatorAddr,
 			&rec.FactoryAddr,
 			&rec.StartTimeTs,
@@ -697,22 +742,10 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 	return total_rows,records
 
 }
-func (ss *SQLStorage) Get_sport_market_info(constants *p.AMM_Constants,contracts *p.AA_ContractAddrs,market_id int64) (p.AMM_SportMarket,error) {
+func (ss *SQLStorage) Get_sport_market_info(constants *p.AMM_Constants,contract_aid,market_id int64) (p.AMM_SportMarket,error) {
 
+	var rec p.AMM_SportMarket
 	var query string
-	query = "SELECT address_id FROM address WHERE addr=$1"
-	row := ss.db.QueryRow(query,contracts.SportsFactory.String())
-	var null_id sql.NullInt64
-	err := row.Scan(&null_id)
-	if (err != nil) {
-		if err == sql.ErrNoRows {
-			ss.Log_msg(fmt.Sprintf("Can't find AMM module contract addresses"))
-			os.Exit(1)
-		}
-		ss.Log_msg(fmt.Sprintf("Error in Is_feepot(): %v",err))
-		os.Exit(1)
-	}
-	amm_factory_aid := null_id.Int64
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM time_stamp)::BIGINT AS created_ts, " +
 				"time_stamp," +
@@ -736,14 +769,8 @@ func (ss *SQLStorage) Get_sport_market_info(constants *p.AMM_Constants,contracts
 				"JOIN transaction tx ON m.tx_id=tx.id " +
 			"WHERE m.market_id=$1 AND contract_aid=$2"
 
-	row = ss.db.QueryRow(query,market_id,amm_factory_aid)
-	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-		os.Exit(1)
-	}
-
-	var rec p.AMM_SportMarket
-	err=row.Scan(
+	row := ss.db.QueryRow(query,market_id,contract_aid)
+	err := row.Scan(
 			&rec.CreatedTs,
 			&rec.CreatedDate,
 			&rec.BlockNum,
@@ -788,10 +815,10 @@ func (ss *SQLStorage) Get_sport_market_info(constants *p.AMM_Constants,contracts
 	return rec,nil
 
 }
-func (ss *SQLStorage) Get_liquidity_change_events(factory_addr string,market_id int64,offset,limit int) (int64,[]p.AMM_LiquidityChangedInfo) {
+func (ss *SQLStorage) Get_liquidity_change_events(factory_aid,market_id int64,offset,limit int) (int64,[]p.AMM_LiquidityChangedInfo) {
 
 	var query string
-
+/*DISCONTINUED, removal pending
 	query = "SELECT address_id FROM address WHERE addr=$1"
 	row := ss.db.QueryRow(query,factory_addr)
 	var null_id sql.NullInt64
@@ -805,13 +832,13 @@ func (ss *SQLStorage) Get_liquidity_change_events(factory_addr string,market_id 
 		os.Exit(1)
 	}
 	amm_factory_aid := null_id.Int64
-
+*/
 	query = "SELECT count(*) AS total " +
 			"FROM aa_liquidity_changed AS l " +
-			"WHERE l.market_id=$1 AND contract_aid=$2"
-	row = ss.db.QueryRow(query,market_id,null_id.Int64)
+			"WHERE l.market_id=$1 AND factory_aid=$2"
+			row := ss.db.QueryRow(query,market_id,factory_aid)
 	var null_counter sql.NullInt64
-	err = row.Scan(&null_counter)
+	err := row.Scan(&null_counter)
 	if (err!=nil) {
 		if err==sql.ErrNoRows {
 
@@ -835,7 +862,7 @@ func (ss *SQLStorage) Get_liquidity_change_events(factory_addr string,market_id 
 				"JOIN address ua ON l.user_aid=ua.address_id " +
 				"JOIN address ra ON l.recipient_aid=ra.address_id " +
 				"JOIN transaction tx ON l.tx_id=tx.id "+
-			"WHERE l.market_id=$3 AND contract_aid=$4 "+
+			"WHERE l.market_id=$3 AND factory_aid=$4 "+
 			"ORDER BY l.id DESC "+
 			"OFFSET $1 LIMIT $2"
 
@@ -853,10 +880,10 @@ func (ss *SQLStorage) Get_liquidity_change_events(factory_addr string,market_id 
 				"JOIN address ua ON l.user_aid=ua.address_id " +
 				"JOIN address ra ON l.recipient_aid=ra.address_id " +
 				"JOIN transaction tx ON l.tx_id=tx.id "+
-			"WHERE l.market_id=%v AND contract_aid=%v "+
-			"ORDER BY l.id DESC ",market_id,amm_factory_aid)
+			"WHERE l.market_id=%v AND factory_aid=%v "+
+			"ORDER BY l.id DESC ",market_id,factory_aid)
 	fmt.Printf("query = %v\n",d_query)
-	rows,err := ss.db.Query(query,offset,limit,market_id,amm_factory_aid)
+	rows,err := ss.db.Query(query,offset,limit,market_id,factory_aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -893,10 +920,10 @@ func (ss *SQLStorage) Get_liquidity_change_events(factory_addr string,market_id 
 	}
 	return total_rows,records
 }
-func (ss *SQLStorage) Get_shares_swapped(constants *p.AMM_Constants,factory_addr string,market_id int64,offset,limit int) (int64,[]p.AA_SharesSwappedInfo) {
+func (ss *SQLStorage) Get_shares_swapped(constants *p.AMM_Constants,contract_aid,market_id int64,offset,limit int) (int64,[]p.AA_SharesSwappedInfo) {
 
 	var query string
-
+/* DISCONTINUED, removal pending
 	query = "SELECT address_id FROM address WHERE addr=$1"
 	row := ss.db.QueryRow(query,factory_addr)
 	var null_id sql.NullInt64
@@ -910,13 +937,14 @@ func (ss *SQLStorage) Get_shares_swapped(constants *p.AMM_Constants,factory_addr
 		os.Exit(1)
 	}
 	amm_factory_aid := null_id.Int64
+*/
 
 	query = "SELECT count(*) AS total " +
 			"FROM aa_shares_swapped AS l " +
 			"WHERE l.market_id=$1 AND factory_aid=$2"
-	row = ss.db.QueryRow(query,market_id,null_id.Int64)
+	row := ss.db.QueryRow(query,market_id,contract_aid)
 	var null_counter sql.NullInt64
-	err = row.Scan(&null_counter)
+	err := row.Scan(&null_counter)
 	if (err!=nil) {
 		if err==sql.ErrNoRows {
 
@@ -962,9 +990,9 @@ func (ss *SQLStorage) Get_shares_swapped(constants *p.AMM_Constants,factory_addr
 			"WHERE s.market_id=%v AND factory_aid=%v "+
 			"ORDER BY s.id DESC "+
 			"OFFSET %v LIMIT %v",
-			market_id,amm_factory_aid,offset,limit)
+			market_id,contract_aid,offset,limit)
 		fmt.Printf("q = %v\n",d_query)
-	rows,err := ss.db.Query(query,offset,limit,market_id,amm_factory_aid)
+	rows,err := ss.db.Query(query,offset,limit,market_id,contract_aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)

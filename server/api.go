@@ -1869,7 +1869,8 @@ func a1_arbitrum_markets_sports(c *gin.Context) {
 	if !success {
 		return
 	}
-	total_rows,markets := augur_srv.db_matic.Get_sport_markets(status,sort,offset,limit,&amm_constants,&amm_contracts)
+	contract_addrs := augur_srv.db_matic.Get_arbitrum_augur_factory_aids(&amm_contracts)
+	total_rows,markets := augur_srv.db_matic.Get_sport_markets(status,sort,offset,limit,&amm_constants,contract_addrs)
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -1897,18 +1898,30 @@ func a1_arbitrum_liquidity_changed(c *gin.Context) {
 		respond_error_json(c,"'market_id' parameter is not set")
 		return
 	}
+	p_contract_aid := c.Param("contract_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'contract_aid' parameter is not set")
+		return
+	}
 
 	success,offset,limit := parse_offset_limit_params(c)
 	if !success {
 		return
 	}
-	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,&amm_contracts,market_id)
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
 	if err!=nil {
 		respond_error_json(c,fmt.Sprintf("Market with market_id=%v has error: %v",err))
 		return
 	}
 	total_rows,lchanges := augur_srv.db_matic.Get_liquidity_change_events(
-		amm_contracts.AMM_Factory.String(),market_id,offset,limit,
+		contract_aid,market_id,offset,limit,
 	)
 	var req_status int = 1
 	var err_str string = ""
@@ -1939,13 +1952,25 @@ func a1_arbitrum_shares_swapped(c *gin.Context) {
 		respond_error_json(c,"'market_id' parameter is not set")
 		return
 	}
+	p_contract_aid := c.Param("contract_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'contract_aid' parameter is not set")
+		return
+	}
 
 	success,offset,limit := parse_offset_limit_params(c)
 	if !success {
 		return
 	}
 	total_rows,swaps:= augur_srv.db_matic.Get_shares_swapped(
-		&amm_constants,amm_contracts.SportsFactory.String(),market_id,offset,limit,
+		&amm_constants,contract_aid,market_id,offset,limit,
 	)
 	var req_status int = 1
 	var err_str string = ""

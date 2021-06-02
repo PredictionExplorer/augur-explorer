@@ -167,8 +167,8 @@ func main() {
 	r.GET("/black/ens_name_info/:fqdn",ens_name_info)
 	r.GET("/black/aa/pools",arbitrum_augur_pools)
 	r.GET("/black/arbitrum/markets/sports/:status/:sort",arbitrum_markets_sports)
-	r.GET("/black/arbitrum/liquidity/:market_id/:offset/:limit",arbitrum_liquidity_changed)
-	r.GET("/black/arbitrum/swaps/:market_id/:offset/:limit",arbitrum_shares_swapped)
+	r.GET("/black/arbitrum/liquidity/:factory_aid/:market_id/:offset/:limit",arbitrum_liquidity_changed)
+	r.GET("/black/arbitrum/swaps/:contract_aid/:market_id/:offset/:limit",arbitrum_shares_swapped)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -238,8 +238,8 @@ func main() {
 	r.GET("/api/ens_lookup/:user",a1_ens_name_lookup)
 	r.GET("/api/aa/pools",a1_arbitrum_augur_pools)
 	r.GET("/api/arbitrum/markets/sports/:status/:sort/:offset/:limit",a1_arbitrum_markets_sports)
-	r.GET("/api/arbitrum/liquidity/:market_id/:offset/:limit",a1_arbitrum_liquidity_changed)
-	r.GET("/api/arbitrum/swaps/:market_id/:offset/:limit",a1_arbitrum_shares_swapped)
+	r.GET("/api/arbitrum/liquidity/:factory_aid/:market_id/:offset/:limit",a1_arbitrum_liquidity_changed)
+	r.GET("/api/arbitrum/swaps/:contract_aid/:market_id/:offset/:limit",a1_arbitrum_shares_swapped)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

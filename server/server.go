@@ -2818,7 +2818,8 @@ func arbitrum_markets_sports(c *gin.Context) {
 		respond_error(c,"'sort' parameter is not set")
 		return
 	}
-	total_rows,markets := augur_srv.db_matic.Get_sport_markets(status,sort,0,10000000,&amm_constants,&amm_contracts)
+	contract_addrs := augur_srv.db_matic.Get_arbitrum_augur_factory_aids(&amm_contracts)
+	total_rows,markets := augur_srv.db_matic.Get_sport_markets(status,sort,0,10000000,&amm_constants,contract_addrs)
 	c.HTML(http.StatusOK, "arbitrum_markets_sports.html", gin.H{
 		"Markets" : markets,
 		"TotalRows" : total_rows,
@@ -2842,13 +2843,25 @@ func arbitrum_liquidity_changed(c *gin.Context) {
 		respond_error(c,"'market_id' parameter is not set")
 		return
 	}
-	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,&amm_contracts,market_id)
+	p_factory_aid:= c.Param("factory_aid")
+	var factory_aid int64
+	if len(p_factory_aid) > 0 {
+		var success bool
+		factory_aid,success = parse_int_from_remote_or_error(c,false,&p_factory_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'factory_aid' parameter is not set")
+		return
+	}
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,factory_aid,market_id)
 	if err!=nil {
 		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",err))
 		return
 	}
 	total_rows,lchanges := augur_srv.db_matic.Get_liquidity_change_events(
-		amm_contracts.AMM_Factory.String(),market_id,0,10000000,
+		factory_aid,market_id,0,10000000,
 	)
 	c.HTML(http.StatusOK, "amm_liquidity_changed.html", gin.H{
 		"MarketId":market_id,
@@ -2875,14 +2888,26 @@ func arbitrum_shares_swapped(c *gin.Context) {
 		respond_error(c,"'market_id' parameter is not set")
 		return
 	}
-	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,&amm_contracts,market_id)
+	p_contract_aid := c.Param("contract_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'contract_aid' parameter is not set")
+		return
+	}
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
 	if err!=nil {
 		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",err))
 		return
 	}
 
 	total_rows,swaps:= augur_srv.db_matic.Get_shares_swapped(
-		&amm_constants,amm_contracts.SportsFactory.String(),market_id,0,10000000,
+		&amm_constants,contract_aid,market_id,0,10000000,
 	)
 	c.HTML(http.StatusOK, "amm_shares_swapped.html", gin.H{
 		"MarketId":market_id,

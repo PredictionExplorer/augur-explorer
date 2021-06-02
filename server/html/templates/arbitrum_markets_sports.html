@@ -41,10 +41,10 @@
 		<td class="mkt_trade_field">{{.Title}}</td>
 		<td class="mkt_trade_field">{{.Description}}</td>
 		<td class="mkt_trade_field">
-			<a href="/black/arbitrum/liquidity/{{.MarketId}}/0/100000">Liquidity</a>
+			<a href="/black/arbitrum/liquidity/{{.ContractAid}}/{{.MarketId}}/0/100000">Liquidity</a>
 		</td>
 		<td class="mkt_trade_field">
-			<a href="/black/arbitrum/swaps/{{.MarketId}}/0/100000">Swaps</a>
+			<a href="/black/arbitrum/swaps/{{.ContractAid}}/{{.MarketId}}/0/100000">Swaps</a>
 		</td>
 	</tr>
 	{{- end }}

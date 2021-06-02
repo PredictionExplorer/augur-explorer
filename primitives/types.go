@@ -1898,7 +1898,9 @@ type ENSResolver struct {
 }
 type AA_ContractAddrs struct {// Arbitrum-Augur contract addresses
 	AMM_Factory				common.Address
-	SportsFactory			common.Address
+	SportsBall1				common.Address
+	SportsBall2				common.Address
+	MMA						common.Address
 	TrustedFactory			common.Address
 }
 type ArbitrumAugurProcessStatus struct {
@@ -2174,6 +2176,8 @@ type AMM_SportMarket struct {
 	BlockNum				int64
 	CreatedTs				int64
 	MarketId				int64
+	ContractAid				int64
+	FactoryAid				int64
 	StartTimeTs				int64
 	EndTimeTs				int64
 	Score					int64
