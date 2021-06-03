@@ -169,6 +169,8 @@ func main() {
 	r.GET("/black/arbitrum/markets/sports/:status/:sort",arbitrum_markets_sports)
 	r.GET("/black/arbitrum/liquidity/:factory_aid/:market_id/:offset/:limit",arbitrum_liquidity_changed)
 	r.GET("/black/arbitrum/swaps/:contract_aid/:market_id/:offset/:limit",arbitrum_shares_swapped)
+	r.GET("/black/arbitrum/user/swaps/:user/:offset/:limit",amm_user_swaps)
+	r.GET("/black/arbitrum/user/liquidity/:user/:offset/:limit",amm_user_liquidity)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -240,6 +242,8 @@ func main() {
 	r.GET("/api/arbitrum/markets/sports/:status/:sort/:offset/:limit",a1_arbitrum_markets_sports)
 	r.GET("/api/arbitrum/liquidity/:factory_aid/:market_id/:offset/:limit",a1_arbitrum_liquidity_changed)
 	r.GET("/api/arbitrum/swaps/:contract_aid/:market_id/:offset/:limit",a1_arbitrum_shares_swapped)
+	r.GET("/api/arbitrum/user/swaps/:user/:offset/:limit",a1_amm_user_swaps)
+	r.GET("/api/arbitrum/user/liquidity/:user/:offset/:limit",a1_amm_user_liquidity)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

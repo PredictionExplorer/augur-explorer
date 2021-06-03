@@ -668,7 +668,7 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 				"tx.tx_hash," +
 				"m.market_id," +
 				"m.contract_aid," +
-				"m.factory_aid," +
+				"m.contract_aid," +
 				"ca.addr," +
 				"fa.addr," +
 				"EXTRACT(EPOCH FROM m.start_time)::BIGINT AS start_time_ts, " +
@@ -1021,17 +1021,14 @@ func (ss *SQLStorage) Get_shares_swapped(constants *p.AMM_Constants,contract_aid
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		fmt.Printf("home_id.Valid=%v mkt_type=%v\n",home_id.Valid,mkt_type.Int64)
 		if home_id.Valid {
 			h_team,h_exists := constants.Teams[home_id.Int64]
 			if h_exists {
 				a_team,a_exists := constants.Teams[away_id.Int64]
 				if a_exists {
 					sport_id := a.Get_sport_id_from_team(constants,home_id.Int64)
-					fmt.Printf("sport_id=%v home: %v , away: %v rec.Outcome=%v\n",sport_id,h_team.Name,a_team.Name,rec.Outcome)
 
 					rec.OutcomeStr = a.Get_outcome_name(rec.Outcome,sport_id,h_team.Name,a_team.Name,mkt_type.Int64,"1")
-					fmt.Printf("OutcomeStr: %v\n",rec.OutcomeStr)
 				}
 			}
 		}
@@ -1044,7 +1041,173 @@ func (ss *SQLStorage) Get_shares_swapped(constants *p.AMM_Constants,contract_aid
 		if rec.Shares < 0 {
 			rec.Shares = -rec.Shares
 		}
-		fmt.Printf("rec = %v\n",rec)
+		records = append(records,rec)
+	}
+	return total_rows,records
+}
+func (ss *SQLStorage) Get_amm_user_swaps(constants *p.AMM_Constants,user_aid int64,offset,limit int) (int64,[]p.AA_SharesSwappedInfo) {
+
+	var query string
+
+	query = "SELECT count(*) AS total " +
+			"FROM aa_shares_swapped AS l " +
+			"WHERE l.user_aid=$1"
+	row := ss.db.QueryRow(query,user_aid)
+	var null_counter sql.NullInt64
+	err := row.Scan(&null_counter)
+	if (err!=nil) {
+		if err==sql.ErrNoRows {
+
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Get_amm_user_swaps(): %v",err))
+		os.Exit(1)
+	}
+	total_rows := null_counter.Int64
+
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT AS created_ts, " +
+				"s.time_stamp,"+
+				"s.block_num,"+
+				"tx.tx_hash," +
+				"s.user_aid,"+
+				"s.market_id,"+
+				"ua.addr," +
+				"s.outcome_idx," +
+				"s.collateral," +
+				"s.shares, " +
+				"sm.home_team_id," +
+				"sm.away_team_id," +
+				"sm.market_type " +
+			"FROM aa_shares_swapped s "+
+				"JOIN address ua ON s.user_aid=ua.address_id " +
+				"JOIN transaction tx ON s.tx_id=tx.id "+
+				"LEFT JOIN aa_sports_market sm ON (sm.contract_aid=s.factory_aid) AND (sm.market_id=s.market_id) "+
+			"WHERE s.user_aid=$3 "+
+			"ORDER BY s.id DESC "+
+			"OFFSET $1 LIMIT $2"
+	rows,err := ss.db.Query(query,offset,limit,user_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.AA_SharesSwappedInfo,0,32)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.AA_SharesSwappedInfo
+		var home_id,away_id,mkt_type sql.NullInt64
+		err=rows.Scan(
+			&rec.CreatedTs,
+			&rec.CreatedDate,
+			&rec.BlockNum,
+			&rec.TxHash,
+			&rec.UserAid,
+			&rec.MarketId,
+			&rec.UserAddr,
+			&rec.Outcome,
+			&rec.Collateral,
+			&rec.Shares,
+			&home_id,
+			&away_id,
+			&mkt_type,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		if home_id.Valid {
+			h_team,h_exists := constants.Teams[home_id.Int64]
+			if h_exists {
+				a_team,a_exists := constants.Teams[away_id.Int64]
+				if a_exists {
+					sport_id := a.Get_sport_id_from_team(constants,home_id.Int64)
+
+					rec.OutcomeStr = a.Get_outcome_name(rec.Outcome,sport_id,h_team.Name,a_team.Name,mkt_type.Int64,"1")
+				}
+			}
+		}
+		if rec.Collateral > 0 {
+			rec.Buy = true
+		} else {
+			rec.Collateral = -rec.Collateral
+		}
+		if rec.Shares < 0 {
+			rec.Shares = -rec.Shares
+		}
+		records = append(records,rec)
+	}
+	return total_rows,records
+}
+func (ss *SQLStorage) Get_amm_user_liquidity(constants *p.AMM_Constants,user_aid int64,offset,limit int) (int64,[]p.AMM_LiquidityChangedInfo) {
+
+	var query string
+	query = "SELECT count(*) AS total " +
+			"FROM aa_liquidity_changed AS l " +
+			"WHERE l.user_aid=$1"
+			row := ss.db.QueryRow(query,user_aid)
+	var null_counter sql.NullInt64
+	err := row.Scan(&null_counter)
+	if (err!=nil) {
+		if err==sql.ErrNoRows {
+
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Get_amm_user_liquidity(): %v",err))
+		os.Exit(1)
+	}
+	total_rows := null_counter.Int64
+
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM l.time_stamp)::BIGINT AS created_ts, " +
+				"l.time_stamp,"+
+				"l.block_num,"+
+				"tx.tx_hash," +
+				"l.user_aid,"+
+				"l.market_id,"+
+				"ua.addr," +
+				"ra.addr,"+
+				"l.collateral," +
+				"l.lp_tokens "+
+			"FROM aa_liquidity_changed l "+
+				"JOIN address ua ON l.user_aid=ua.address_id " +
+				"JOIN address ra ON l.recipient_aid=ra.address_id " +
+				"JOIN transaction tx ON l.tx_id=tx.id "+
+			"WHERE l.user_aid=$3 "+
+			"ORDER BY l.id DESC "+
+			"OFFSET $1 LIMIT $2"
+	fmt.Printf("quuery (user_aid=%v) : %v\n",user_aid,query)
+	rows,err := ss.db.Query(query,offset,limit,user_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.AMM_LiquidityChangedInfo,0,32)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.AMM_LiquidityChangedInfo
+		err=rows.Scan(
+			&rec.CreatedTs,
+			&rec.CreatedDate,
+			&rec.BlockNum,
+			&rec.TxHash,
+			&rec.UserAid,
+			&rec.MarketId,
+			&rec.UserAddr,
+			&rec.RecipientAddr,
+			&rec.Collateral,
+			&rec.Tokens,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		if rec.Collateral < 0 {
+			rec.In = true
+			rec.Collateral = -rec.Collateral
+		}
+		if rec.Tokens < 0 {
+			rec.Tokens = - rec.Tokens
+		}
 		records = append(records,rec)
 	}
 	return total_rows,records

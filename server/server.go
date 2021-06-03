@@ -2783,7 +2783,7 @@ func arbitrum_augur_pools(c *gin.Context) {
 		respond_error(c,"Database link wasn't configured")
 		return 
 	}
-	pools := augur_srv.db_augur.Get_arbitrum_augur_pools()
+	pools := augur_srv.db_matic.Get_arbitrum_augur_pools()
 	c.HTML(http.StatusOK, "arbitrum_augur_pools.html", gin.H{
 		"ArbitrumAugurPools" : pools,
 	})
@@ -2914,5 +2914,90 @@ func arbitrum_shares_swapped(c *gin.Context) {
 		"MarketInfo" : market,
 		"Swaps" : swaps,
 		"TotalRows" : total_rows,
+	})
+}
+/*
+func arbitrum_user_swaps(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user := c.Param("user")
+	user_addr,valid := is_address_valid(c,false,p_user)
+	if !valid {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+	aid,err := augur_srv.db_matic.Nonfatal_lookup_address_id(user_addr)
+	if err != nil {
+		aid = 0
+	}
+	total_rows,swaps := augur_srv.db_matic.Get_amm_user_swaps(&amm_constants,aid,offset,limit)
+
+	c.HTML(http.StatusOK, "amm_shares_swapped.html", gin.H{
+		"Swaps" : swaps,
+		"TotalRows" : total_rows,
+		"User":p_user,
+		"UserAid":aid,
+	})
+}*/
+func amm_user_swaps(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user := c.Param("user")
+	user_addr,valid := is_address_valid(c,false,p_user)
+	if !valid {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+	aid,err := augur_srv.db_matic.Nonfatal_lookup_address_id(user_addr)
+	if err != nil {
+		aid = 0
+	}
+	total_rows,swaps := augur_srv.db_matic.Get_amm_user_swaps(&amm_constants,aid,offset,limit)
+
+	c.HTML(http.StatusOK, "amm_user_swaps.html", gin.H{
+		"Swaps" : swaps,
+		"TotalRows" : total_rows,
+		"User":p_user,
+		"UserAid":aid,
+	})
+}
+func amm_user_liquidity(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user := c.Param("user")
+	user_addr,valid := is_address_valid(c,false,p_user)
+	if !valid {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+	aid,err := augur_srv.db_matic.Nonfatal_lookup_address_id(user_addr)
+	if err != nil {
+		aid = 0
+	}
+	total_rows,liquidity := augur_srv.db_matic.Get_amm_user_liquidity(&amm_constants,aid,offset,limit)
+
+	c.HTML(http.StatusOK, "amm_user_liquidity.html", gin.H{
+		"Liquidity" : liquidity,
+		"TotalRows" : total_rows,
+		"User": p_user,
+		"UserAid": aid,
 	})
 }
