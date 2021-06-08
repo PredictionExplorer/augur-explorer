@@ -520,6 +520,33 @@ func (ss *SQLStorage) Insert_aa_winnings_claimed_event(evt *p.AA_WinningsClaimed
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Insert_aa_market_resolved_event(evt *p.AA_MarketResolved) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	winner_aid:=ss.Lookup_or_create_address(evt.WinnerAddr,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO aa_mkt_resolved (" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
+				"market_id,winner_aid" +
+			") VALUES (" +
+				"$1,$2,$3,$4,TO_TIMESTAMP($5),"+
+				"$6,$7"+
+			")"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			evt.MarketId,
+			winner_aid,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_mkt_resolved table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Get_arbitrum_augur_pools() []p.AA_Pool {
 
 	var query string

@@ -2037,6 +2037,15 @@ type AA_WinningsClaimed struct {// Arbitrum Augur Winnnings Claimed
 	Payout					string
 	ReceiverAddr			string
 }
+type AA_MarketResolved struct {// Arbitrum Augur Market Reolved event
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	MarketId				int64
+	Contract				string
+	WinnerAddr				string
+}
 type AA_Pool struct {// Arbitrum Augur Pool 
 	BlockNum				int64
 	TimeStamp				int64

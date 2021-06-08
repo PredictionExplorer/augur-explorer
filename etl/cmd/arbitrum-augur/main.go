@@ -119,7 +119,7 @@ var (
 	//);
 
 	// MarketResolved
-	//evt_market_resolved,_= hex.DecodeString(MARKET_RESOLVED)
+	evt_market_resolved,_= hex.DecodeString(MARKET_RESOLVED)
 	//event MarketResolved(
 	//	uint256 id,
 	//	address winner

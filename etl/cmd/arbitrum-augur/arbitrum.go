@@ -62,6 +62,10 @@ func build_list_of_inspected_events() []InspectedEvent {
 			Signature: hex.EncodeToString(evt_winnings_claimed[:4]),
 			ContractAid: 0,
 		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_market_resolved[:4]),
+			ContractAid: 0,
+		},
 /*		InspectedEvent {
 			Signature: hex.EncodeToString(evt_erc20_transfer[:4]),
 			ContractAid: 0,
@@ -582,6 +586,35 @@ func proc_winnings_claimed(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_aa_winnings_claimed_event(&evt)
 }
+func proc_market_resolved(log *types.Log,elog *EthereumEventLog) {
+
+	var evt AA_MarketResolved
+	var eth_evt MarketResolved
+
+	err := aa_abi.Unpack(&eth_evt,"MarketResolved",log.Data)
+	if err != nil {
+		Error.Printf("Error unpacking MarketResolved event: %v\n",err)
+		os.Exit(1)
+	}
+
+	Info.Printf("Processing MarketResolved event, txhash %v\n",elog.TxHash)
+	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+	evt.MarketId = eth_evt.Id.Int64()
+	evt.WinnerAddr = eth_evt.Winner.String()
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+
+	Info.Printf("MarketResolved{\n")
+	Info.Printf("\tId: %v\n",evt.MarketId)
+	Info.Printf("\tWinnnerAddr: %v\n",evt.WinnerAddr)
+	Info.Printf("}\n")
+
+	storage.Insert_aa_market_resolved_event(&evt)
+}
 func proc_erc20_transfer(log *types.Log,elog *EthereumEventLog) {
 	var evt AA_FeePotTransfer
 	var eth_evt ETransfer
@@ -680,6 +713,9 @@ func process_arbitrum_augur_event(evt_id int64) error {
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_winnings_claimed) {
 			proc_winnings_claimed(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_market_resolved) {
+			proc_market_resolved(&log,&evtlog)
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_transfer) {
 			proc_erc20_transfer(&log,&evtlog)

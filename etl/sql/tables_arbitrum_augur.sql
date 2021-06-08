@@ -218,6 +218,18 @@ CREATE TABLE aa_winclaim (-- WinningsClaimed
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE aa_mkt_resolved (-- MarketResolved
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	market_id			BIGINT NOT NULL,
+	winner_aid			BIGINT NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE aa_feepot_trsf (-- FeePot transfer event
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT,
