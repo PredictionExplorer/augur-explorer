@@ -655,23 +655,12 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 	for i:=1 ; i<len(contract_aids); i++ {
 		contract_aids_str = contract_aids_str + fmt.Sprintf(",%v",contract_aids[i])
 	}
+	where_condition := " AND r.id IS NULL " // Open market
+	if status == 1 {
+		where_condition = " AND r.id IS NOT NULL " //Resolved market
+	}
 
 	var query string
-/*DISCONTINUED, removal pending
-	query = "SELECT address_id FROM address WHERE addr=$1"
-	row := ss.db.QueryRow(query,contracts.SportsFactory.String())
-	var null_id sql.NullInt64
-	err := row.Scan(&null_id)
-	if (err != nil) {
-		if err == sql.ErrNoRows {
-			ss.Log_msg(fmt.Sprintf("Can't find AMM module contract addresses"))
-			os.Exit(1)
-		}
-		ss.Log_msg(fmt.Sprintf("Error in Is_feepot(): %v",err))
-		os.Exit(1)
-	}
-	amm_factory_aid := null_id.Int64
-*/
 
 	query = "SELECT count(*) AS total " +
 			"FROM aa_sports_market AS m " +
@@ -689,8 +678,8 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 	total_rows := null_counter.Int64
 
 	query = "SELECT " +
-				"EXTRACT(EPOCH FROM time_stamp)::BIGINT AS created_ts, " +
-				"time_stamp," +
+				"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT AS created_ts, " +
+				"m.time_stamp," +
 				"m.block_num, " +
 				"tx.tx_hash," +
 				"m.market_id," +
@@ -706,12 +695,19 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 				"m.home_team_id," +
 				"m.away_team_id," +
 				"m.score," +
-				"m.market_type " +
+				"m.market_type, " +
+				"r.id resolved_id, "+
+				"r.winner_aid, " +
+				"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT AS resolved_ts, " +
+				"r.time_stamp resolved_date, " +
+				"m.liquidity "+
 			"FROM aa_sports_market AS m " +
 				"LEFT JOIN address ca ON m.creator_aid=ca.address_id " +
 				"LEFT JOIN address fa ON m.contract_aid=fa.address_id " +
+				"LEFT JOIN aa_mkt_resolved r ON (m.contract_aid=r.contract_aid AND m.market_id=r.market_id) "+
 				"JOIN transaction tx ON m.tx_id=tx.id " +
 			"WHERE m.contract_aid IN(" + contract_aids_str + ") "+
+			where_condition +
 			"ORDER BY m.time_stamp " +
 			"OFFSET $1 LIMIT $2"
 	fmt.Printf("query = %v\n",query)
@@ -724,6 +720,8 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.AMM_SportMarket
+		var null_resolved_id,null_resolved_ts,null_winner_aid sql.NullInt64
+		var null_resolved_date sql.NullString
 		err=rows.Scan(
 			&rec.CreatedTs,
 			&rec.CreatedDate,
@@ -743,6 +741,11 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 			&rec.AwayTeamId,
 			&rec.Score,
 			&rec.MarketTypeCode,
+			&null_resolved_id,
+			&null_winner_aid,
+			&null_resolved_ts,
+			&null_resolved_date,
+			&rec.Liquidity,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
@@ -750,11 +753,11 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 		}
 		team,exists := constants.Teams[rec.HomeTeamId]
 		if exists {
-			rec.HomeTeam = team.Name
+			rec.HomeTeam = team.Name + " " +team.Mascot
 		}
 		team,exists = constants.Teams[rec.AwayTeamId]
 		if exists {
-			rec.AwayTeam = team.Name
+			rec.AwayTeam = team.Name + " " + team.Mascot
 		}
 		sport_id := a.Get_sport_id_from_team(constants,rec.HomeTeamId)
 		title,description := a.Get_market_title(sport_id,rec.HomeTeam,rec.AwayTeam,rec.MarketTypeCode,1)
@@ -764,6 +767,11 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 		)*/
 		rec.Title = title
 		rec.Description = description
+
+		if null_resolved_id.Valid {
+			rec.ResolvedTs = null_resolved_ts.Int64
+			rec.ResolvedDate = null_resolved_date.String
+		}
 		records = append(records,rec)
 	}
 	return total_rows,records
@@ -789,7 +797,8 @@ func (ss *SQLStorage) Get_sport_market_info(constants *p.AMM_Constants,contract_
 				"m.home_team_id," +
 				"m.away_team_id," +
 				"m.score," +
-				"m.market_type " +
+				"m.market_type, " +
+				"m.liquidity " +
 			"FROM aa_sports_market AS m " +
 				"LEFT JOIN address ca ON m.creator_aid=ca.address_id " +
 				"LEFT JOIN address fa ON m.contract_aid=fa.address_id " +
@@ -814,6 +823,7 @@ func (ss *SQLStorage) Get_sport_market_info(constants *p.AMM_Constants,contract_
 			&rec.AwayTeamId,
 			&rec.Score,
 			&rec.MarketTypeCode,
+			&rec.Liquidity,
 	)
 	if err == sql.ErrNoRows {
 		return rec,err
@@ -824,11 +834,11 @@ func (ss *SQLStorage) Get_sport_market_info(constants *p.AMM_Constants,contract_
 	}
 	team,exists := constants.Teams[rec.HomeTeamId]
 	if exists {
-		rec.HomeTeam = team.Name
+		rec.HomeTeam = team.Name + " " + team.Mascot
 	}
 	team,exists = constants.Teams[rec.AwayTeamId]
 	if exists {
-		rec.AwayTeam = team.Name
+		rec.AwayTeam = team.Name + " " + team.Mascot
 	}
 	sport_id := a.Get_sport_id_from_team(constants,rec.HomeTeamId)
 	title,description := a.Get_market_title(sport_id,rec.HomeTeam,rec.AwayTeam,rec.MarketTypeCode,1)
@@ -845,21 +855,6 @@ func (ss *SQLStorage) Get_sport_market_info(constants *p.AMM_Constants,contract_
 func (ss *SQLStorage) Get_liquidity_change_events(factory_aid,market_id int64,offset,limit int) (int64,[]p.AMM_LiquidityChangedInfo) {
 
 	var query string
-/*DISCONTINUED, removal pending
-	query = "SELECT address_id FROM address WHERE addr=$1"
-	row := ss.db.QueryRow(query,factory_addr)
-	var null_id sql.NullInt64
-	err := row.Scan(&null_id)
-	if (err != nil) {
-		if err == sql.ErrNoRows {
-			ss.Log_msg(fmt.Sprintf("Can't find AMM module contract addresses"))
-			os.Exit(1)
-		}
-		ss.Log_msg(fmt.Sprintf("Error in Get_liquidity_change_events(): %v",err))
-		os.Exit(1)
-	}
-	amm_factory_aid := null_id.Int64
-*/
 	query = "SELECT count(*) AS total " +
 			"FROM aa_liquidity_changed AS l " +
 			"WHERE l.market_id=$1 AND factory_aid=$2"
@@ -950,21 +945,6 @@ func (ss *SQLStorage) Get_liquidity_change_events(factory_aid,market_id int64,of
 func (ss *SQLStorage) Get_shares_swapped(constants *p.AMM_Constants,contract_aid,market_id int64,offset,limit int) (int64,[]p.AA_SharesSwappedInfo) {
 
 	var query string
-/* DISCONTINUED, removal pending
-	query = "SELECT address_id FROM address WHERE addr=$1"
-	row := ss.db.QueryRow(query,factory_addr)
-	var null_id sql.NullInt64
-	err := row.Scan(&null_id)
-	if (err != nil) {
-		if err == sql.ErrNoRows {
-			ss.Log_msg(fmt.Sprintf("Can't find AMM module contract addresses"))
-			os.Exit(1)
-		}
-		ss.Log_msg(fmt.Sprintf("Error in Is_feepot(): %v",err))
-		os.Exit(1)
-	}
-	amm_factory_aid := null_id.Int64
-*/
 
 	query = "SELECT count(*) AS total " +
 			"FROM aa_shares_swapped AS l " +
@@ -1055,7 +1035,7 @@ func (ss *SQLStorage) Get_shares_swapped(constants *p.AMM_Constants,contract_aid
 				if a_exists {
 					sport_id := a.Get_sport_id_from_team(constants,home_id.Int64)
 
-					rec.OutcomeStr = a.Get_outcome_name(rec.Outcome,sport_id,h_team.Name,a_team.Name,mkt_type.Int64,"1")
+					rec.OutcomeStr = a.Get_outcome_name(rec.Outcome,sport_id,h_team.Name + " " + h_team.Mascot,a_team.Name + " " + a_team.Mascot,mkt_type.Int64,"1")
 				}
 			}
 		}
@@ -1149,7 +1129,7 @@ func (ss *SQLStorage) Get_amm_user_swaps(constants *p.AMM_Constants,user_aid int
 				if a_exists {
 					sport_id := a.Get_sport_id_from_team(constants,home_id.Int64)
 
-					rec.OutcomeStr = a.Get_outcome_name(rec.Outcome,sport_id,h_team.Name,a_team.Name,mkt_type.Int64,"1")
+					rec.OutcomeStr = a.Get_outcome_name(rec.Outcome,sport_id,h_team.Name + " " +h_team.Mascot,a_team.Name + " " +a_team.Mascot,mkt_type.Int64,"1")
 				}
 			}
 		}

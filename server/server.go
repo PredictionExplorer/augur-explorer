@@ -2821,6 +2821,7 @@ func arbitrum_markets_sports(c *gin.Context) {
 	contract_addrs := augur_srv.db_matic.Get_arbitrum_augur_factory_aids(&amm_contracts)
 	total_rows,markets := augur_srv.db_matic.Get_sport_markets(status,sort,0,10000000,&amm_constants,contract_addrs)
 	c.HTML(http.StatusOK, "arbitrum_markets_sports.html", gin.H{
+		"Status" : status,
 		"Markets" : markets,
 		"TotalRows" : total_rows,
 	})
@@ -2916,35 +2917,6 @@ func arbitrum_shares_swapped(c *gin.Context) {
 		"TotalRows" : total_rows,
 	})
 }
-/*
-func arbitrum_user_swaps(c *gin.Context) {
-
-	if  !augur_srv.matic_initialized() {
-		respond_error(c,"Database link wasn't configured")
-		return
-	}
-	p_user := c.Param("user")
-	user_addr,valid := is_address_valid(c,false,p_user)
-	if !valid {
-		return
-	}
-	success,offset,limit := parse_offset_limit_params(c)
-	if !success {
-		return
-	}
-	aid,err := augur_srv.db_matic.Nonfatal_lookup_address_id(user_addr)
-	if err != nil {
-		aid = 0
-	}
-	total_rows,swaps := augur_srv.db_matic.Get_amm_user_swaps(&amm_constants,aid,offset,limit)
-
-	c.HTML(http.StatusOK, "amm_shares_swapped.html", gin.H{
-		"Swaps" : swaps,
-		"TotalRows" : total_rows,
-		"User":p_user,
-		"UserAid":aid,
-	})
-}*/
 func amm_user_swaps(c *gin.Context) {
 
 	if  !augur_srv.matic_initialized() {

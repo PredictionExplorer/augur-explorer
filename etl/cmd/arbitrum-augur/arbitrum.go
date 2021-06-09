@@ -101,6 +101,7 @@ func proc_pool_created(log *types.Log,elog *EthereumEventLog) {
 	evt.CreatorAddr = eth_evt.Creator.String()
 	evt.FactoryAddr = eth_evt.MarketFactory.String()
 
+	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("PoolCreated {\n")
 	Info.Printf("\tPoolAddr: %v\n",evt.PoolAddr)
 	Info.Printf("\tMarketFactory: %v\n",evt.FactoryAddr)
@@ -126,6 +127,7 @@ func proc_liquidity_changed(log *types.Log,elog *EthereumEventLog) {
 	eth_evt.User = common.BytesToAddress(log.Topics[3][12:])
 
 	Info.Printf("Processing LiquidityChanged event, txhash %v\n",elog.TxHash)
+	Info.Printf("Contract: %v\n",log.Address.String())
 	evt.MarketId = eth_evt.MarketId.Int64()
 	evt.RecipientAddr = eth_evt.Recipient.String()
 	evt.UserAddr = eth_evt.User.String()
@@ -206,7 +208,7 @@ func proc_sports_market(log *types.Log,elog *EthereumEventLog) {
 	evt.Score = eth_evt.Score.Int64()
 
 	Info.Printf("Processing SportsMarketCreated event, txhash %v\n",elog.TxHash)
-	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+	Info.Printf("Contract = %v\n",log.Address.String())
 
 //	err := cash_abi.Unpack(&mevt,"Approval",log.Data)
 //	if err != nil {
@@ -598,7 +600,7 @@ func proc_market_resolved(log *types.Log,elog *EthereumEventLog) {
 	}
 
 	Info.Printf("Processing MarketResolved event, txhash %v\n",elog.TxHash)
-	Info.Printf("log.Data = %v\n",hex.EncodeToString(log.Data[:]))
+	Info.Printf("Contract: %v\n",log.Address.String())
 	evt.MarketId = eth_evt.Id.Int64()
 	evt.WinnerAddr = eth_evt.Winner.String()
 

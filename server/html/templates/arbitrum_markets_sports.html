@@ -6,6 +6,8 @@
 <body>
 <h3 class="page_title">Sports<h3>
 <h4 class="page_title">
+<a href="/black/arbitrum/markets/sports/0/0">Open Markets</a>&nbsp;&nbsp;
+<a href="/black/arbitrum/markets/sports/1/0">Resolved Markets</a>&nbsp;&nbsp;
 </h4>
 <br/>
 <div id="arbitrum_augur_pools"></div>
@@ -15,6 +17,7 @@
         <td class="mkt_trade_hdr" style="text-align: center" >Block</td>
         <td class="mkt_trade_hdr" style="text-align: center" >Start Time</td>
         <td class="mkt_trade_hdr" style="text-align: center">End Time</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Liquidity</td>
         <td class="mkt_trade_hdr" style="text-align: center">Creator</td>
         <td class="mkt_trade_hdr" style="text-align: center">Mkt Type</td>
         <td class="mkt_trade_hdr" style="text-align: center">Market ID</td>
@@ -31,9 +34,10 @@
 		<td class="mkt_trade_field">{{.BlockNum}}</td>
 		<td class="mkt_trade_field">{{.StartTime}}</td>
 		<td class="mkt_trade_field">{{.EndTime}}</td>
+		<td class="mkt_trade_field">{{.Liquidity}}</td>
 		<td class="mkt_trade_field">{{.CreatorAddr}}</td>
 		<td class="mkt_trade_field">{{.MarketTypeCode}}</td>
-		<td class="mkt_trade_field">{{.MarketId}}</td>
+		<td class="mkt_trade_field" title="{{.FactoryAddr}}">{{.MarketId}}</td>
 
 		<td class="mkt_trade_field">{{.HomeTeam}}</td>
 		<td class="mkt_trade_field">{{.AwayTeam}}</td>

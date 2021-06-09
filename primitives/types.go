@@ -2189,11 +2189,13 @@ type AMM_SportMarket struct {
 	FactoryAid				int64
 	StartTimeTs				int64
 	EndTimeTs				int64
+	ResolvedTs				int64
 	Score					int64
 	MarketTypeCode			int64
 	HomeTeamId				int64
 	AwayTeamId				int64
 	EventId					int64
+	Liquidity				float64
 	CreatedDate				string
 	TxHash					string
 	CreatorAddr				string
@@ -2204,5 +2206,6 @@ type AMM_SportMarket struct {
 	AwayTeam				string
 	Title					string
 	Description				string
+	ResolvedDate			string
 	MarketRules				[]string
 }

@@ -1884,6 +1884,7 @@ func a1_arbitrum_markets_sports(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
+		"MStatus" : status,
 		"Markets" : markets,
 		"Offset" : offset,
 		"Limit" : limit,

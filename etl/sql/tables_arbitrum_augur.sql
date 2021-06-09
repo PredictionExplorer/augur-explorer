@@ -73,6 +73,7 @@ CREATE TABLE aa_sports_market (
 	away_team_id		BIGINT NOT NULL,
 	score				BIGINT NOT NULL,
 	market_type			INT NOT NULL,
+	liquidity			DECIMAL(64,18) DEFAULT 0.0,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );
