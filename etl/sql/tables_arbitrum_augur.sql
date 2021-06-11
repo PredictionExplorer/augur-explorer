@@ -77,6 +77,16 @@ CREATE TABLE aa_sports_market (
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE aa_sports_prices (--populated using swap events from Balancer contracts
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	.
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	outc_in				DECIMAL(64,18) DEFAULT 0.0, -- Outcome 
+);
 CREATE TABLE aa_trusted_market (
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT,

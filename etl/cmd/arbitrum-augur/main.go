@@ -65,7 +65,8 @@ var (
 	// Price Market
 	evt_price_market_created,_ = hex.DecodeString(PRICE_MARKET_CREATED)
 	//event MarketCreated(
-	//	uint256 id, address creator,
+	//	uint256 id,
+	//	address creator,
 	//	uint256 endTime,
 	//	uint256 spotPrice
 	//);

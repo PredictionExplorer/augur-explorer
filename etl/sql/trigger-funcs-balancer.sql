@@ -62,14 +62,6 @@ BEGIN
 				token1_aid=NEW.token1_aid AND
 				token2_aid=NEW.token2_aid AND
 				last_price_block < NEW.block_num;
-	SELECT wrapper_aid,market_aid FROM af_wrapper
-		WHERE wrapper_aid IN(NEW.token_in_aid,NEW.token_out_aid) LIMIT 1
-		INTO v_wrapper_aid,v_market_aid;
-	IF v_wrapper_aid IS NOT NULL THEN
-		PERFORM insert_agtx_event(
-			NEW.tx_id,NEW.evtlog_id,NEW.block_num,NEW.caller_aid,v_market_aid,2,1
-		);
-	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -81,7 +73,6 @@ BEGIN
 		WHERE pool_aid=OLD.pool_aid;
 	UPDATE b_swaps_per_pair SET num_swaps = num_swaps - 1
 		WHERE pool_aid=OLD.pool_aid AND token1_aid=OLD.token1_aid AND token2_aid=OLD.token2_aid;
-	PERFORM delete_agtx_event(OLD.tx_id,OLD.evtlog_id);
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

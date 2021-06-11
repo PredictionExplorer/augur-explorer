@@ -92,7 +92,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		hash := common.HexToHash(tx.TxHash)
 		go get_receipt_async(i,hash,&receipt_calls)
 	}
-	err = storage.Insert_block(block_hash_str,header,no_chainsplit_check)
+	err = storage.Insert_block(block_hash_str,header,num_transactions,no_chainsplit_check)
 	if err != nil {
 		err = roll_back_blocks(header)
 		return err
