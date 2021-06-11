@@ -522,4 +522,3 @@ type LinkNodeChanged struct {
 	NewLinkNode common.Address
 	Raw         types.Log // Blockchain specific contextual infos
 }
-

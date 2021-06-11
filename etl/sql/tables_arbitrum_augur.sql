@@ -53,9 +53,34 @@ CREATE TABLE aa_price_market (-- PriceMarketCreated event
 	time_stamp			TIMESTAMPTZ,
 	end_time			TIMESTAMPTZ,
 	creator_aid			BIGINT NOT NULL,
+	aa_mkt_id			BIGINT NOT NULL REFERENCES aa_market(id),
 	spot_price			DECIMAL(64,18) NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
+);
+CREATE TABLE aa_market ( -- AbstractMarketFactory object type , parent of Sports,Trusted,Price markets
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	market_id			BIGINT NOT NULL,
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE aa_outcome ( --Outcome object, links Token contract
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	market_id			BIGINT NOT NULL, -- copied for simplicity
+	aa_mkt_id			BIGINT NOT NULL REFERENCES aa_market(id),
+	token_aid			BIGINT NOT NULL, -- address of ERC20 token for this outcome
+	symbol				TEXT DEFAULT '',
+	name				TEXT DEFAULT ''
 );
 CREATE TABLE aa_sports_market (
 	id					BIGSERIAL PRIMARY KEY,
@@ -67,6 +92,7 @@ CREATE TABLE aa_sports_market (
 	end_time			TIMESTAMPTZ,
 	start_time			TIMESTAMPTZ,	-- estimatedStartTime
 	market_id			BIGINT NOT NULL,
+	aa_mkt_id			BIGINT NOT NULL REFERENCES aa_market(id),
 	creator_aid			BIGINT NOT NULL,
 	event_id			BIGINT NOT NULL,
 	home_team_id		BIGINT NOT NULL,
@@ -77,15 +103,17 @@ CREATE TABLE aa_sports_market (
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE aa_sports_prices (--populated using swap events from Balancer contracts
+CREATE TABLE aa_last_price (--populated using swap events from Balancer contracts
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT,
 	block_num			BIGINT,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT,
-	.
 	contract_aid		BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
-	outc_in				DECIMAL(64,18) DEFAULT 0.0, -- Outcome 
+	in_aid				BIGINT NOT NULL, -- address id of token contract for swapping IN
+	out_aid				BIGINT NOT NULL, -- address id of token contract for swapping OUT
+	outc_in				DECIMAL(64,18) DEFAULT 0.0, -- Outcome in (token1 amount)
+	outc_out			DECIMAL(64,18) DEFAULT 0.0, -- Outcome out (token2 amount)
 );
 CREATE TABLE aa_trusted_market (
 	id					BIGSERIAL PRIMARY KEY,
@@ -96,6 +124,7 @@ CREATE TABLE aa_trusted_market (
 	time_stamp			TIMESTAMPTZ,
 	end_time			TIMESTAMPTZ,
 	market_id			BIGINT NOT NULL,
+	aa_mkt_id			BIGINT NOT NULL REFERENCES aa_market(id),
 	creator_aid			BIGINT NOT NULL,
 	descr				TEXT NOT NULL,
 	outcomes			TEXT NOT NULL,

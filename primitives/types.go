@@ -926,6 +926,9 @@ type AugurProcessStatus struct {
 type AugurFoundryStatus struct {
 	LastEvtId				int64
 }
+type ERC20ProcessStatus struct {
+	LastEvtId				int64
+}
 type ERC20ShTokContract struct {
 	TimeStamp               int64
 	WrapperAid              int64

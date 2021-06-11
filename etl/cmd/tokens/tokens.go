@@ -28,7 +28,7 @@ import (
 const (
 	DEFAULT_DB_LOG				= "db.log"
 	ERC20_TRANSFER = "ddf252ad"
-	BALANCER_SWAP = "908fb5ee"
+	//BALANCER_SWAP = "908fb5ee"
 	AUGUR_FOUNDRY_WRAPPER_CREATED = "7dcd5c80"
 )
 var (
@@ -76,22 +76,44 @@ func proc_erc20_transfer(log *types.Log,agtx *AugurTx,evtlog_id int64) {
 		}
 	}
 }
-func process_erc20_tokens(contract_aids string) {
+func process_erc20_tokens(exit_chan chan bool,contract_aids string) {
 
+	var max_batch_size int64 = 256
 	for {
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.")
+					os.Exit(0)
+				}
+			default:
+		}
+
 		status := storage.Get_tok_process_status()
-		start1 := time.Now()
-		tok_events := storage.Get_evt_log_ids_by_signature(ERC20_TRANSFER,contract_aids,status.LastEvtId,256)
-		duration1 := time.Since(start1)
-		Info.Printf("BENCH Get_token_transfers_batch() took %v milliseconds\n",duration1.Milliseconds())
+		id_upper_limit := status.LastEvtId + max_batch_size
+		last_evt_id,err := storage.Get_last_evtlog_id()
+		if err != nil {
+			Error.Printf("Error: %v. Possibly 'evt_log' table is empty, aborting",err)
+			os.Exit(1)
+		}
+		if  id_upper_limit > last_evt_id {
+			id_upper_limit = last_evt_id
+		}
+
+		tok_events := storage.Get_evt_log_ids_by_signature_in_range(
+			ERC20_TRANSFER,
+			contract_aids,
+			status.LastEvtId,
+			id_upper_limit,
+		)
 		for _,evt := range tok_events {
-			Info.Printf("event = %+v\n",evt)
 			evtlog := storage.Get_event_log(evt.EvtId)
 			var log types.Log
 			rlp.DecodeBytes(evtlog.RlpLog,&log)
 			log.Address.SetBytes(caddrs.Dai.Bytes())
 			agtx := storage.Get_augur_transaction(evt.TxId)
 			proc_erc20_transfer(&log,agtx,evt.EvtId)
+			if 
 			status.LastEvtId = evt.EvtId
 			storage.Update_tok_process_status(&status)
 		}
