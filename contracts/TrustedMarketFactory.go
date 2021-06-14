@@ -28,7 +28,7 @@ var (
 )
 
 // AbstractMarketFactoryMarket is an auto generated low-level Go binding around an user-defined struct.
-type AbstractMarketFactoryMarket struct {
+/*type AbstractMarketFactoryMarket struct {
 	SettlementAddress common.Address
 	ShareTokens       []common.Address
 	EndTime           *big.Int
@@ -36,7 +36,7 @@ type AbstractMarketFactoryMarket struct {
 	SettlementFee     *big.Int
 	ProtocolFee       *big.Int
 	StakerFee         *big.Int
-}
+}*/
 
 // TrustedMarketFactoryMarketDetails is an auto generated low-level Go binding around an user-defined struct.
 type TrustedMarketFactoryMarketDetails struct {

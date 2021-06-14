@@ -647,6 +647,10 @@ func (ss *SQLStorage) Get_markets() {
 }
 func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,constants *p.AMM_Constants,contract_aids []int64) (int64,[]p.AMM_SportMarket) {
 
+	where_condition := " AND r.id IS NULL " // Open market
+	if status == 1 {
+		where_condition = " AND r.id IS NOT NULL " //Resolved market
+	}
 	records := make([]p.AMM_SportMarket,0,32)
 	if len(contract_aids)==0 {
 		return 0,records
@@ -655,22 +659,19 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 	for i:=1 ; i<len(contract_aids); i++ {
 		contract_aids_str = contract_aids_str + fmt.Sprintf(",%v",contract_aids[i])
 	}
-	where_condition := " AND r.id IS NULL " // Open market
-	if status == 1 {
-		where_condition = " AND r.id IS NOT NULL " //Resolved market
-	}
 
 	var query string
 
 	query = "SELECT count(*) AS total " +
 			"FROM aa_sports_market AS m " +
-			"WHERE m.contract_aid IN ("+contract_aids_str+")"
+			"LEFT JOIN aa_mkt_resolved r ON (m.contract_aid=r.contract_aid AND m.market_id=r.market_id) "+
+			"WHERE m.contract_aid IN ("+contract_aids_str+") " + where_condition
 	row := ss.db.QueryRow(query)
 	var null_counter sql.NullInt64
 	err := row.Scan(&null_counter)
 	if (err!=nil) {
 		if err==sql.ErrNoRows {
-
+			return 0,records
 		}
 		ss.Log_msg(fmt.Sprintf("Error in Get_sport_markets(): %v",err))
 		os.Exit(1)

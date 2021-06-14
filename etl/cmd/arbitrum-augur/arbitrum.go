@@ -76,7 +76,7 @@ func build_list_of_inspected_events() []InspectedEvent {
 func proc_pool_created(log *types.Log,elog *EthereumEventLog) {
 
 	var evt AA_PoolCreated
-	var eth_evt AMMFactoryPoolCreated
+	var eth_evt EAMMFactoryPoolCreated
 
 	eth_evt.MarketFactory = common.BytesToAddress(log.Topics[1][12:])
 	eth_evt.MarketId = log.Topics[2].Big()

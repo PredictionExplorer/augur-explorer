@@ -410,7 +410,7 @@ type EReportingFeeChanged struct {//0xadddfaec4505d90a6a211907536944e6e1af7ff5cf
 
 
 /////////// (AUGUR) ARBITRUM EVENTS
-type AMMFactoryPoolCreated struct {
+type EAMMFactoryPoolCreated struct {
 	Pool             common.Address
 	MarketFactory    common.Address
 	MarketId         *big.Int

@@ -1911,7 +1911,7 @@ func a1_arbitrum_liquidity_changed(c *gin.Context) {
 		respond_error_json(c,"'market_id' parameter is not set")
 		return
 	}
-	p_contract_aid := c.Param("contract_aid")
+	p_contract_aid := c.Param("factory_aid")
 	var contract_aid int64
 	if len(p_contract_aid) > 0 {
 		var success bool
