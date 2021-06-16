@@ -100,20 +100,19 @@ func process_erc20_tokens(exit_chan chan bool,contract_aids string) {
 			id_upper_limit = last_evt_id
 		}
 
-		tok_events := storage.Get_evt_log_ids_by_signature_in_range(
+		tok_events := storage.Get_evtlogs_by_signature_in_range(
 			ERC20_TRANSFER,
 			contract_aids,
 			status.LastEvtId,
 			id_upper_limit,
 		)
-		for _,evt := range tok_events {
-			evtlog := storage.Get_event_log(evt.EvtId)
+		for _,evt_id := range tok_events {
+			evt := storage.Get_event_log(evt_id)
 			var log types.Log
-			rlp.DecodeBytes(evtlog.RlpLog,&log)
+			rlp.DecodeBytes(evt.RlpLog,&log)
 			log.Address.SetBytes(caddrs.Dai.Bytes())
 			agtx := storage.Get_augur_transaction(evt.TxId)
 			proc_erc20_transfer(&log,agtx,evt.EvtId)
-			if 
 			status.LastEvtId = evt.EvtId
 			storage.Update_tok_process_status(&status)
 		}

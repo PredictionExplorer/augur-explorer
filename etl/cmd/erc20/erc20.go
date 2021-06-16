@@ -41,8 +41,48 @@ var (
 	af_abi abi.ABI
 	all_contracts map[string]interface{}
 	caddrs *ContractAddresses
+
+	inspected_events []InspectedEvent
 )
-func proc_erc20_transfer(log *types.Log,block_num,tx_id,evtlog_id int64) {
+var (
+	evt_erc20_transfer,_ = hex.DecodeString(ERC20_TRANSFER)
+
+)
+func build_list_of_inspected_events() []InspectedEvent {
+
+	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)
+
+	inspected_events= make([]InspectedEvent,0,32)
+	inspected_events = append(inspected_events,
+		InspectedEvent {
+			Signature:	hex.EncodeToString(evt_erc20_transfer[:4]),
+			ContractAid: 0,
+		},
+	)
+	return inspected_events
+}
+func get_event_ids(from_evt_id,to_evt_id int64) []int64 {
+	output := make([]int64 ,0,1024)
+	for _,e := range inspected_events {
+		event_list := storage.Get_evtlogs_by_signature_only_in_range(
+			e.Signature,from_evt_id,to_evt_id,
+		)
+		output = append(output,event_list...)
+	}
+	sort.Slice(output, func(i, j int) bool { return output[i] < output[j] })
+	num_elts:=Remove_duplicates_int64(output)
+	return output[0:num_elts]
+}
+func proc_erc20_transfer(evt_id int64) error {
+	evtlog := storage.Get_event_log(evt_id)
+	var log types.Log
+	err := rlp.DecodeBytes(evtlog.RlpLog,&log)
+	if err!= nil {
+		panic(fmt.Sprintf("RLP Decode error: %v",err))
+	}
+	log.BlockNumber=uint64(evtlog.BlockNum)
+	log.TxHash.SetBytes(common.HexToHash(evtlog.TxHash).Bytes())
+	log.Address.SetBytes(common.HexToHash(evtlog.ContractAddress).Bytes())
 	var mevt ETransfer
 	if len(log.Topics)!=3 {
 		Info.Printf("ERC20 transfer event is not compliant log.Topics!=3. Tx hash=%v\n",log.TxHash.String())
@@ -65,7 +105,7 @@ func proc_erc20_transfer(log *types.Log,block_num,tx_id,evtlog_id int64) {
 		storage.Process_ERC_token_transfer(&mevt,block_num,tx_id,evtlog_id)
 	}
 }
-func process_erc20_tokens(exit_chan chan bool,contract_aids string) {
+func process_erc20_tokens(exit_chan chan bool) {
 
 	var max_batch_size int64 = 256
 	for {
@@ -89,18 +129,9 @@ func process_erc20_tokens(exit_chan chan bool,contract_aids string) {
 			id_upper_limit = last_evt_id
 		}
 
-		tok_events := storage.Get_evt_log_ids_by_signature_in_range(
-			ERC20_TRANSFER,
-			contract_aids,
-			status.LastEvtId,
-			id_upper_limit,
-		)
-		for _,evt := range tok_events {
+		tok_events := get_event_ids(status.LastEvtId,id_upper_limit)
+		for _,evt_id := range tok_events {
 			evtlog := storage.Get_event_log(evt.EvtId)
-			var log types.Log
-			rlp.DecodeBytes(evtlog.RlpLog,&log)
-			log.Address.SetBytes(caddrs.Dai.Bytes())
-			agtx := storage.Get_augur_transaction(evt.TxId)
 			proc_erc20_transfer(&log,agtx,evt.EvtId)
 			status.LastEvtId = evt.EvtId
 			storage.Update_tok_process_status(&status)
@@ -202,6 +233,6 @@ func main() {
 		Info.Printf("Can't parse Augur Foundry ABI: %v\n",err)
 		os.Exit(1)
 	}
-
+	build_list_of_inspected_events()
 	process_tokens(exit_chan,&caddrs_obj)
 }
