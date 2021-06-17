@@ -4,13 +4,13 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"bytes"
+	"errors"
 	"time"
 	"fmt"
 	"log"
 	"strings"
-	"math/big"
 	"context"
+	"sort"
 	"encoding/hex"
 	//"encoding/json"
 
@@ -21,8 +21,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/contracts"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 )
 const (
@@ -36,12 +36,13 @@ var (
 	rpcclient *rpc.Client
 	Error   *log.Logger
 	Info	*log.Logger
+	BalancesLog	*log.Logger
 	market_order_id int64 = 0
-	cash_abi *abi.ABI
-	af_abi abi.ABI
+	erc20_abi abi.ABI
 	all_contracts map[string]interface{}
 	caddrs *ContractAddresses
 
+	err_invalid_erc20_format error = errors.New("Invalid ERC20 event structure (num topics != 3)")
 	inspected_events []InspectedEvent
 )
 var (
@@ -86,12 +87,11 @@ func proc_erc20_transfer(evt_id int64) error {
 	var mevt ETransfer
 	if len(log.Topics)!=3 {
 		Info.Printf("ERC20 transfer event is not compliant log.Topics!=3. Tx hash=%v\n",log.TxHash.String())
-		return
+		return err_invalid_erc20_format
 	}
 	mevt.From= common.BytesToAddress(log.Topics[1][12:])
 	mevt.To= common.BytesToAddress(log.Topics[2][12:])
-	start := time.Now()
-	err := cash_abi.Unpack(&mevt,"Transfer",log.Data)
+	err = erc20_abi.Unpack(&mevt,"Transfer",log.Data)
 	if err != nil {
 		Error.Printf("signature=%v\n",log.Topics[0].String())
 		Error.Printf("address=%v\n",log.Address.String())
@@ -102,8 +102,9 @@ func proc_erc20_transfer(evt_id int64) error {
 		Info.Printf("ERC20_Transfer event, contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump(Info)
-		storage.Process_ERC_token_transfer(&mevt,block_num,tx_id,evtlog_id)
+		storage.Insert_ERC20_token_transfer(log.Address.String(),&mevt,evtlog.BlockNum,evtlog.TxId,evt_id)
 	}
+	return nil
 }
 func process_erc20_tokens(exit_chan chan bool) {
 
@@ -118,7 +119,7 @@ func process_erc20_tokens(exit_chan chan bool) {
 			default:
 		}
 
-		status := storage.Get_tok_process_status()
+		status := storage.Get_erc20_process_status()
 		id_upper_limit := status.LastEvtId + max_batch_size
 		last_evt_id,err := storage.Get_last_evtlog_id()
 		if err != nil {
@@ -131,10 +132,15 @@ func process_erc20_tokens(exit_chan chan bool) {
 
 		tok_events := get_event_ids(status.LastEvtId,id_upper_limit)
 		for _,evt_id := range tok_events {
-			evtlog := storage.Get_event_log(evt.EvtId)
-			proc_erc20_transfer(&log,agtx,evt.EvtId)
-			status.LastEvtId = evt.EvtId
-			storage.Update_tok_process_status(&status)
+			err := proc_erc20_transfer(evt_id)
+			if err != nil {
+				if err != err_invalid_erc20_format {
+					fmt.Printf("Exiting on error: %v\n",err)
+					os.Exit(1)
+				}
+			}
+			status.LastEvtId = evt_id
+			storage.Update_erc20_process_status(&status)
 		}
 		Info.Printf("processed %v events\n",len(tok_events))
 		if len(tok_events) == 0 {
@@ -146,7 +152,7 @@ func process_erc20_tokens(exit_chan chan bool) {
 			if last_evt_log_id_on_chain > id_upper_limit {
 				// only advance upper range if events within the range have filled id value space
 				status.LastEvtId = id_upper_limit
-				storage.Update_ens_proc_status(&status)
+				storage.Update_erc20_process_status(&status)
 			}
 			time.Sleep(1 * time.Second) // sleep only if there is no data
 			return
@@ -163,14 +169,7 @@ func process_tokens(exit_chan chan bool,caddrs *ContractAddresses) {
 				}
 			default:
 		}
-		dai_contract_aid:= storage.Lookup_or_create_address(caddrs.Dai.String(),0,0)
-		rep_contract_aid := storage.Lookup_or_create_address(caddrs.Reputation.String(),0,0)
-		_=dai_contract_aid
-		_=rep_contract_aid
-	//	process_erc20_tokens(fmt.Sprintf("%v,%v",dai_contract_aid,rep_contract_aid))
-		process_afoundry_wrapper_created_events()
-		process_erc20wrapped_sharetokens()
-		process_ethusd_price_events(exit_chan)
+		process_erc20_tokens(exit_chan)
 		time.Sleep(1 * time.Second)
 	}
 }
@@ -178,9 +177,9 @@ func main() {
 
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 	os.MkdirAll(log_dir, os.ModePerm)
-	db_log_file:=fmt.Sprintf("%v/tokens_%v",log_dir,DEFAULT_DB_LOG)
+	db_log_file:=fmt.Sprintf("%v/erc20_%v",log_dir,DEFAULT_DB_LOG)
 
-	fname:=fmt.Sprintf("%v/tokens_info.log",log_dir)
+	fname:=fmt.Sprintf("%v/erc20_info.log",log_dir)
 	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err!=nil {
 		fmt.Printf("Can't start: %v\n",err)
@@ -188,13 +187,21 @@ func main() {
 	}
 	Info = log.New(logfile,"INFO: ",log.Ltime|log.Lshortfile)
 
-	fname=fmt.Sprintf("%v/tokens_error.log",log_dir)
+	fname=fmt.Sprintf("%v/erc20_error.log",log_dir)
 	if err!=nil {
 		fmt.Printf("Can't start: %v\n",err)
 		os.Exit(1)
 	}
 	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	Error = log.New(logfile,"ERROR: ",log.Ltime|log.Lshortfile)
+
+	fname=fmt.Sprintf("%v/erc20_balance_update.log",log_dir)
+	if err!=nil {
+		fmt.Printf("Can't start: %v\n",err)
+		os.Exit(1)
+	}
+	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	BalancesLog = log.New(logfile,"ERROR: ",log.Ltime|log.Lshortfile)
 
 	storage = Connect_to_storage(&market_order_id,Info)
 	storage.Init_log(db_log_file)
@@ -223,16 +230,14 @@ func main() {
 	}
 	caddrs = &caddrs_obj
 
-	all_contracts = Load_all_artifacts("./abis/augur-artifacts-abi.json")
-
-	cash_abi = Abi_from_artifacts(&all_contracts,"Cash")
-
-	abi_parsed := strings.NewReader(AugurFoundryABI)
-	af_abi,err = abi.JSON(abi_parsed)
-	if err!= nil {
-		Info.Printf("Can't parse Augur Foundry ABI: %v\n",err)
+	abi_parsed := strings.NewReader(OwnedERC20ABI)
+	erc20_abi,err = abi.JSON(abi_parsed)
+	if err != nil {
+		Info.Printf("Can't parse ERC20 token ABI")
 		os.Exit(1)
 	}
+
 	build_list_of_inspected_events()
+	go balance_updater(BalancesLog)
 	process_tokens(exit_chan,&caddrs_obj)
 }

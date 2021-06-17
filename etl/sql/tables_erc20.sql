@@ -4,6 +4,7 @@ CREATE table erc20_transf (	-- transfers of ERC20 tokens
 	evtlog_id			BIGINT NOT NULL,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
+	contract_aid		BIGINT NOT NULL,
 	from_aid			BIGINT DEFAULT 0,
 	to_aid				BIGINT DEFAULT 0,
 	amount				DECIMAL(64,18) DEFAULT 0.0,
@@ -15,6 +16,8 @@ CREATE table erc20_bal (	-- token balance
 	block_num			BIGINT NOT NULL,
 	tx_id				BIGINT NOT NULL,
 	aid					BIGINT NOT NULL,
+	contract_aid		BIGINT NOT NULL,
+	parent_id			BIGINT NOT NULL REFERENCES erc20_transf(id) ON DELETE CASCADE,
 	processed			BOOLEAN DEFAULT false,	-- true if balances have been calculated
 	balance				DECIMAL(64,18) DEFAULT 0.0,
 	amount				DECIMAL(64,18) DEFAULT 0.0

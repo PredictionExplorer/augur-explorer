@@ -565,6 +565,19 @@ type DaiOp struct {
 	FromAddr			string
 	ToAddr				string
 }
+type ERC20B struct {
+	Id					int64
+	Aid					int64
+	ParentId			int64
+	BlockNum			int64
+	ContractAid			int64
+	Processed			bool
+	Address				string
+	ContractAddr		string
+	Amount				string
+	Balance				string
+	BlockHash			string
+}
 type BlockCash struct {
 	BlockNum			int64
 	Ts					int64

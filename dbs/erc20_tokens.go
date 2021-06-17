@@ -23,7 +23,7 @@ func (ss *SQLStorage) Get_erc20_process_status() p.ERC20ProcessStatus {
 		err := res.Scan(&null_last_evtid)
 		if (err!=nil) {
 			if err == sql.ErrNoRows {
-				query = "INSERT INTO erc20+proc_status DEFAULT VALUES"
+				query = "INSERT INTO erc20_proc_status DEFAULT VALUES"
 				_,err := ss.db.Exec(query)
 				if (err!=nil) {
 					ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -61,7 +61,7 @@ func (ss *SQLStorage) Update_erc20_token_balances_backwards(last_block_num int64
 	var updated_rows  int =0
 	var query string
 
-	query = "SELECT id FROM dai_bal WHERE aid=$1 AND processed=FALSE ORDER BY id DESC LIMIT 1"
+	query = "SELECT id FROM erc20_bal WHERE aid=$1 AND processed=FALSE ORDER BY id DESC LIMIT 1"
 	row:=ss.db.QueryRow(query,aid)
 	var null_id sql.NullInt64
 	var stopping_id int64 = 0
@@ -80,7 +80,7 @@ func (ss *SQLStorage) Update_erc20_token_balances_backwards(last_block_num int64
 				"ROUND(amount*1e+18)::text as amount," +
 				"processed, " +
 				"b.block_hash " +
-			"FROM dai_bal AS db " +
+			"FROM erc20_bal AS db " +
 				"JOIN block AS b on db.block_num = b.block_num " +
 			"WHERE " +
 				"(db.aid = $1) AND " +
@@ -93,7 +93,7 @@ func (ss *SQLStorage) Update_erc20_token_balances_backwards(last_block_num int64
 	}
 	correct_balance := new(big.Int)
 	correct_balance.Set(eth_balance)
-	ss.Info.Printf("balance_updater(): Entering update_dai_token_balances() with eth_balance=%v correct_balace=%v\n",eth_balance.String(),correct_balance.String())
+	ss.Info.Printf("balance_updater(): Entering update_erc20_token_balances_backwards() with eth_balance=%v correct_balace=%v\n",eth_balance.String(),correct_balance.String())
 	var row_count = 0;
 	defer rows.Close()
 	for rows.Next() {
@@ -120,7 +120,7 @@ func (ss *SQLStorage) Update_erc20_token_balances_backwards(last_block_num int64
 		if cmp_res != 0 {	// incorrect balance, update it
 			ss.Info.Printf("balance_updater(): incorrect balance, setting correct balance to %v for id=%v\n",
 				correct_balance.String(),id)
-			query = "UPDATE dai_bal AS db " +
+			query = "UPDATE erc20_bal AS db " +
 					"SET balance=("+correct_balance.String()+"/1e+18)," +
 						"processed = true " +
 					"FROM block AS b " +
@@ -134,7 +134,7 @@ func (ss *SQLStorage) Update_erc20_token_balances_backwards(last_block_num int64
 			updated_rows++
 		} else {
 			if !processed {
-				query = "UPDATE dai_bal AS db " +
+				query = "UPDATE erc20_bal AS db " +
 						"SET processed = true " +
 						"FROM block AS b " +
 						"WHERE db.block_num=b.block_num AND b.block_hash=$2 AND db.id=$1"
@@ -168,20 +168,100 @@ func (ss *SQLStorage) Set_erc20_balance(id int64,block_hash string,balance strin
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Process_ERC20_token_transfer(evt *p.ETransfer,block_num,tx_id int64,evtlog_id int64) {
+func (ss *SQLStorage) Insert_ERC20_token_transfer(contract_addr string,evt *p.ETransfer,block_num,tx_id int64,evtlog_id int64) {
 
+
+	contract_aid := ss.Lookup_or_create_address(contract_addr,block_num,tx_id)
 	from_aid := ss.Lookup_or_create_address(evt.From.String(),block_num,tx_id)
 	to_aid := ss.Lookup_or_create_address(evt.To.String(),block_num,tx_id)
 	amount := evt.Value.String()
 
 	var query string
 	query = "INSERT INTO erc20_transf("+
-				"evtlog_id,block_num,tx_id,from_aid,to_aid,amount" +
+				"evtlog_id,block_num,tx_id,contract_aid,from_aid,to_aid,amount" +
 			") " +
-			"VALUES($1,$2,$3,$4,$5,(" + amount +"/1e+18))"
-	_,err := ss.db.Exec(query,evtlog_id,block_num,tx_id,from_aid,to_aid)
+			"VALUES($1,$2,$3,$4,$5,$6,(" + amount +"/1e+18))"
+	_,err := ss.db.Exec(query,evtlog_id,block_num,tx_id,contract_aid,from_aid,to_aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
+}
+func (ss *SQLStorage) Get_unprocessed_erc20_balances(below_id int64) []p.ERC20B {
+
+	var id_condition string
+	if below_id > 0 {
+		id_condition = fmt.Sprintf(" AND (db.id > %v) ",below_id)
+	}
+	records := make([]p.ERC20B,0,8)
+	var query string
+	query = "SELECT " +
+				"db.id," +
+				"db.aid," +
+				"db.parent_id," +
+				"db.contract_aid,"+
+				"a.addr," +
+				"ROUND(amount*1e+18) as amount," +
+				"ROUND(balance*1e+18) as balance," +
+				"db.block_num, " +
+				"b.block_hash, " +
+				"ca.addr " +
+			"FROM erc20_bal db " +
+				"JOIN block AS b ON db.block_num = b.block_num " +
+				"LEFT JOIN address a ON db.aid=a.address_id " +
+				"LEFT JOIN address ca ON db.contract_aid=ca.address_id " +
+			"WHERE (processed = false) " + id_condition +
+			"ORDER by db.id " +
+			"LIMIT 10"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.ERC20B
+		err=rows.Scan(
+			&rec.Id,
+			&rec.Aid,
+			&rec.ParentId,
+			&rec.ContractAid,
+			&rec.Address,
+			&rec.Amount,
+			&rec.Balance,
+			&rec.BlockNum,
+			&rec.BlockHash,
+			&rec.ContractAddr,
+		)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("Error at Scan: %v\n",err))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_previous_erc20_balance_from_DB(id int64,aid int64) (string,error) {
+
+	var query string
+	query = "SELECT ROUND(balance*1e+18)::text,processed FROM erc20_bal " +
+			"WHERE (aid=$1) and (id<$2) ORDER BY id DESC LIMIT 1"
+
+	res := ss.db.QueryRow(query,aid,id)
+	var balance string
+	var processed bool
+	err := res.Scan(&balance,&processed)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		return balance,err
+	}
+	if !processed {
+		return "",ErrUnprocessedBalances
+	}
+	return balance,err
 }
