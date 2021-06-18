@@ -43,11 +43,11 @@ func update_erc20_balances_backwards(lgr *log.Logger,contract_addr_str string,la
 	balance,err := erc20_token.BalanceOf(copts,*addr)
 	if err != nil {
 		lgr.Printf(
-			"Failure to update DAI token balances backwards for eoa_aid=%v,last_block_num=%v contract %v",
+			"Failure to update ERC20  token balances backwards for eoa_aid=%v,last_block_num=%v contract %v",
 			aid,last_block_num,contract_addr_str,
 		)
 		lgr.Printf(
-			"Failure to update DAI token balances backwards for eoa_aid=%v,last_block_num=%v contract %v",
+			"Failure to update ERC20 token balances backwards for eoa_aid=%v,last_block_num=%v contract %v",
 			aid,last_block_num,contract_addr_str,
 		)
 		return 0,err
@@ -60,7 +60,7 @@ func update_erc20_balances_backwards(lgr *log.Logger,contract_addr_str string,la
 		"balance_updater(): got last balance = %v for block = %v contract %v\n",
 		balance.String(),last_block_num,
 	)
-	return storage.Update_dai_token_balances_backwards(last_block_num,aid,balance),nil
+	return storage.Update_erc20_token_balances_backwards(last_block_num,aid,balance),nil
 }
 func erc20_bal_sleep() {
 	time.Sleep(14 * time.Second)	// Ethereum block time

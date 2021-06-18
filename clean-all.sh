@@ -14,6 +14,7 @@ rm ./etl/cmd/ensscan/tools/pk
 rm ./etl/cmd/ensscan/tools/check_ens
 rm ./etl/cmd/arbitrum/arbitrum
 rm ./etl/cmd/arbitrum-augur/arbitrum-augur
+rm ./etl/cmd/erc20/erc20
 rm ./etl/dmesh/dmesh
 rm ./etl/tools/augur_blocks
 rm ./etl/tools/dai_balances
@@ -23,6 +24,8 @@ rm ./etl/tools/gas_usage
 rm ./etl/tools/stbalance
 rm ./etl/tools/check_owner
 rm ./etl/tools/check_wallet
+rm ./etl/tools/load_abi
+rm ./etl/tools/load_abi_artifacts
 rm ./etl/tests/verif_dai_balances
 rm ./etl/tests/verif_cash_flow
 rm ./etl/ens/scanpropnames
@@ -31,3 +34,8 @@ rm ./server/server
 rm ./etl/cmd/arbitrum-augur/scripts/cash_faucet
 rm ./etl/cmd/arbitrum-augur/scripts/new_sports
 rm ./etl/cmd/arbitrum-augur/scripts/new_trusted
+rm ./etl/cmd/arbitrum-augur/multicall/deploy
+rm ./etl/cmd/arbitrum-augur/tools/balswap
+rm ./etl/cmd/arbitrum-augur/tools/erc20bal
+rm ./etl/cmd/arbitrum-augur/tools/getmarket
+rm ./etl/cmd/arbitrum-augur/tools/poolinfo
