@@ -240,6 +240,7 @@ func main() {
 	r.GET("/api/ens_lookup/:user",a1_ens_name_lookup)
 	r.GET("/api/aa/pools",a1_arbitrum_augur_pools)
 	r.GET("/api/arbitrum/markets/sports/:status/:sort/:offset/:limit",a1_arbitrum_markets_sports)
+	r.GET("/api/arbitrum/markets/info/sports/:factory_aid/:market_id",a1_arbitrum_market_info_sports)
 	r.GET("/api/arbitrum/liquidity/:factory_aid/:market_id/:offset/:limit",a1_arbitrum_liquidity_changed)
 	r.GET("/api/arbitrum/swaps/:contract_aid/:market_id/:offset/:limit",a1_arbitrum_shares_swapped)
 	r.GET("/api/arbitrum/user/swaps/:user/:offset/:limit",a1_amm_user_swaps)
