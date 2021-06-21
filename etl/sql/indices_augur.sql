@@ -86,3 +86,8 @@ CREATE INDEX oichg_bnum_idx			ON oi_chg			(block_num);
 CREATE INDEX pl_bnum_idx			ON profit_loss		(block_num);
 CREATE INDEX rep_bnum_idx			ON report			(block_num);
 CREATE INDEX mkt_bnum_idx			ON market			(block_num);
+CREATE INDEX stbc_bnum_idx			ON stbc				(block_num);
+CREATE INDEX stbc_market_aid		ON stbc				(market_aid);
+CREATE INDEX stbc_account_aid		ON stbc				(account_aid);
+CREATE INDEX stbc_outagr_idx        ON stbc             (outside_augur_ui,market_aid) WHERE outside_augur_ui=TRUE;
+

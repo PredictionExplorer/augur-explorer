@@ -219,8 +219,9 @@ func main() {
 	txopts := bind.NewKeyedTransactor(from_PrivateKey)
 	txopts.Nonce = big.NewInt(int64(from_nonce))
 	txopts.Value = big.NewInt(0)     // in wei
-	txopts.GasLimit = uint64(3000000) // in units
+	txopts.GasLimit = uint64(10000000) // in units
 	txopts.GasPrice = gasPrice
+	fmt.Printf("Gas price = %v\n",gasPrice.String())
 
 	signfunc := func(signer_disabled types.Signer, address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 		signer := types.NewEIP155Signer(big_chain_id)

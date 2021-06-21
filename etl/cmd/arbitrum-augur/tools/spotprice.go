@@ -32,7 +32,7 @@ func main() {
 	}
 
 	if len(os.Args) < 5 {
-		fmt.Printf("Usage: \n\t\t%v [amm_factory_addr] [market_factory] [market_id] [outcome1] [outcome2]\n\n\t\tShows spot price for swapping outcomes",os.Args[0])
+		fmt.Printf("Usage: \n\t\t%v [amm_factory_addr] [market_factory] [market_id] [outcome1] [outcome2]\n\n\t\tShows spot price for swapping outcomes\n\n",os.Args[0])
 		os.Exit(1)
 	}
 	var copts = new(bind.CallOpts)
