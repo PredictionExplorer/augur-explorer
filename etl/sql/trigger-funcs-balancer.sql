@@ -319,7 +319,7 @@ BEGIN
 	UPDATE bpool
 		SET
 			was_finalized = 0,
-			finalized_ts = 0
+			finalized_ts = TO_TIMESTAMP(0)
 		WHERE pool_aid = OLD.pool_aid;
 	RETURN OLD;
 END;

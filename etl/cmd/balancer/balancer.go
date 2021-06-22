@@ -77,11 +77,12 @@ func  update_balancer_slippage_if_applicable(block_num int64,pool_addr string) {
 	if err != nil {
 		return
 	}
+/*
 	num_augur_tokens,err := storage.Get_pool_augur_tokens(pool_aid)
 	if num_augur_tokens == 0 {
 		return		// we aren't interested in Non-Augur pools
 	}
-
+*/
 	amount_to_trade := "100";
 	tokens := storage.Get_balancer_pool_tokens_for_slippage(pool_aid)
 	Produce_pool_slippages(eclient,amount_to_trade,tokens)
