@@ -41,7 +41,7 @@ func main() {
 	market_factory_addr := common.HexToAddress(os.Args[2])
 	market_id,err := strconv.ParseInt(os.Args[3],10,64)
 	if err != nil {
-		fmt.Printf("Error parsing outcome1 field: %v\n",err)
+		fmt.Printf("Error parsing market_id field: %v\n",err)
 		os.Exit(1)
 	}
 	outc1,err := strconv.ParseInt(os.Args[4],10,64)

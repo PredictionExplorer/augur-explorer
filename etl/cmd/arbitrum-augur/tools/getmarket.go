@@ -50,7 +50,20 @@ func main() {
 	market_obj,err:=factory.GetMarket(copts,big_market_id)
 	if err!=nil {
 		fmt.Printf("Error during call: %v\n",err)
+		os.Exit(1)
 	}
+
+	is_resolved,err:=factory.IsMarketResolved(copts,big_market_id)
+	if err!=nil {
+		fmt.Printf("Error during IsResolved() call: %v\n",err)
+		os.Exit(1)
+	}
+	sharefactor,err:=factory.ShareFactor(copts)
+	if err!=nil {
+		fmt.Printf("Error during ShareFactor() call: %v\n",err)
+		os.Exit(1)
+	}
+
 	fmt.Printf("Market {\n")
 	fmt.Printf("\tSettlement Address: %v\n",market_obj.SettlementAddress.String())
 	fmt.Printf("\tShareTokens:\n")
@@ -63,5 +76,8 @@ func main() {
 	fmt.Printf("\tProtocol Fee: %v\n",market_obj.ProtocolFee.String())
 	fmt.Printf("\tStakerFee: %v\n",market_obj.StakerFee.String())
 	fmt.Printf("\tCreation Timestamp: %v\n",market_obj.CreationTimestamp.String())
+	fmt.Printf("\tIsResolved: %v\n",is_resolved)
+	fmt.Printf("\tShareFactor: %v\n",sharefactor)
+
 	fmt.Printf("}\n")
 }
