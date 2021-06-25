@@ -8,6 +8,11 @@ CREATE TABLE aa_caddrs ( -- Addresses of contracts for Arbitrum Augur
 	mma					TEXT DEFAULT '0xb2a568C444C6B74D10f7cf66bEcfeAF88a94808a',
 	trusted_factory		TEXT DEFAULT '0x4117A1F75Dfe784F315AabF7dB8caf86Fc10653b'
 );
+CREATE TABLE aa_factory (
+	factory_aid			BIGINT PRIMARY KEY,
+	market_type			TINYINT DEFAULT 0, -- market types to be defined (pending)
+	factory_addr		TEXT -- copy to facilitate testing
+);
 CREATE TABLE aa_proc_status (-- Arbitrum Augur process status
 	last_evt_id			BIGINT DEFAULT 0
 );
@@ -63,10 +68,19 @@ CREATE TABLE aa_market ( -- AbstractMarketFactory object type , parent of Sports
 	evtlog_id			BIGINT,
 	block_num			BIGINT,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT,
-	contract_aid		BIGINT NOT NULL,
+	contract_aid		BIGINT NOT NULL,-- this is factory_aid
 	time_stamp			TIMESTAMPTZ,
+	created_time		TIMESTAMPTZ,
+	end_time			TIMESTAMPTZ,
 	market_id			BIGINT NOT NULL,
 	collateral_aid		BIGINT NOT NULL,	-- usually USDC contract (Cash)
+	protocol_aid		BIGINT NOT NULL,
+	settlement_aid		BIGINT NOT NULL,
+	winner_aid			BIGINT DEFAULT 0,
+	sharefactor			DECIMAL NOT NULL,
+	settlement_fee		DECIMAL NOT NULL,
+	protocol_fee		DECIMAL NOT NULL,
+	liquidity			DECIMAL(64,18) DEFAULT 0.0,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );
@@ -76,19 +90,6 @@ CREATE TABLE aa_shtok ( -- Market ShareToken (OwnedShareToken.sol)
 	token_aid			BIGSERIAL NOT NULL,	-- this  should match a record in erc20_info
 	FOREIGN KEY(parent_id) REFERENCES aa_market(id) ON DELETE CASCADE,
 }
-CREATE TABLE aa_outcome ( --Outcome object, links Token contract
-	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT,
-	block_num			BIGINT,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT,
-	contract_aid		BIGINT NOT NULL,
-	time_stamp			TIMESTAMPTZ,
-	market_id			BIGINT NOT NULL, -- copied for simplicity
-	aa_mkt_id			BIGINT NOT NULL REFERENCES aa_market(id),
-	token_aid			BIGINT NOT NULL, -- address of ERC20 token for this outcome
-	symbol				TEXT DEFAULT '',
-	name				TEXT DEFAULT ''
-);
 CREATE TABLE aa_sports_market (
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT,
@@ -104,11 +105,23 @@ CREATE TABLE aa_sports_market (
 	event_id			BIGINT NOT NULL,
 	home_team_id		BIGINT NOT NULL,
 	away_team_id		BIGINT NOT NULL,
-	score				BIGINT NOT NULL,
 	market_type			INT NOT NULL,
-	liquidity			DECIMAL(64,18) DEFAULT 0.0,
+	value0				DECIMAL NOT NULL, -- SportsLinkMarketFactory.sol::MarketDetail::value0
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
+);
+CREATE TABLE aa_outcome ( --Outcome object, links Token contract
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	market_id			BIGINT NOT NULL, -- copied for simplicity
+	aa_mkt_id			BIGINT NOT NULL REFERENCES aa_market(id),
+	token_aid			BIGINT NOT NULL, -- address of ERC20 token for this outcome
+	symbol				TEXT DEFAULT '',
+	name				TEXT DEFAULT ''
 );
 CREATE TABLE aa_last_price (--populated using swap events from Balancer contracts
 	id					BIGSERIAL PRIMARY KEY,

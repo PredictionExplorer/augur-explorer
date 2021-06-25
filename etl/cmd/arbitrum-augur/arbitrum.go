@@ -219,6 +219,41 @@ func proc_sports_market(log *types.Log,elog *EthereumEventLog) {
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 
+	factory,err := NewSportsLinkMarketFactory(factory_addr,eclient)
+	if err != nil {
+		Error.Printf("Failed to instantiate Factory contract: %v\n",err)
+		os.Exit(1)
+	}
+	var copts = new(bind.CallOpts)
+	market_obj,err:=factory.GetMarket(copts,eth_evt.Id)
+	if err  != nil {
+		Error.Printf("Failed to execute GetMarket(): %v\n",err)
+		os.Exit(1)
+	}
+	var sharetokens string
+	for i:=0; i<len(market_obj.ShareTokens); i++ {
+		if len(sharetokens) > 0 {
+			sharetokens = sharetokens + ","
+		}
+		sharetokens = sharetokens + market_obj.ShareTokens.String()
+	}
+	evt.ShareTokens = shartokens
+
+	collateral,err:=factory.Collateral(copts)
+	if err != nil {
+		Error.Printf("Failed to execute Collateral(): %v\n",err)
+		os.Exit(1)
+	}
+	evt.CollateralAddr = collateral.String()
+
+	sharefactor,err:=factory.ShareFactor(copts)
+	if err != nil {
+		Error.Printf("Failed to execute ShareFactor(): %v",err)
+		os.Exit(1)
+	}
+	evt.ShareFactor = sharefactor.String()
+
+
 	Info.Printf("SportsMarketCreated{\n")
 	Info.Printf("\tId: %v\n",evt.MarketId)
 	Info.Printf("\tCreator: %v\n",evt.CreatorAddr)

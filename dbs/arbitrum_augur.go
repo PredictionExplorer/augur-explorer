@@ -298,12 +298,13 @@ func (ss *SQLStorage) Insert_aa_shares_minted_event(evt *p.AA_SharesMinted) {
 func (ss *SQLStorage) Insert_aa_shares_burned_event(evt *p.AA_SharesBurned) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	collateral_aid :=ss.Lookup_or_create_address(evt.CollateralAid,evt.BlockNum,evt.TxId)
 	aid:=ss.Lookup_or_create_address(evt.ReceiverAddr,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO aa_shares_burned(" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"aid,market_id,amount" +
-			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8::DECIMAL/1e+18)"
+				"collateral_aid,aid,market_id,amount,sharetokens" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9::DECIMAL/1e+18,$10)"
 
 	_,err := ss.db.Exec(query,
 			evt.EvtId,
@@ -311,9 +312,11 @@ func (ss *SQLStorage) Insert_aa_shares_burned_event(evt *p.AA_SharesBurned) {
 			evt.TxId,
 			contract_aid,
 			evt.TimeStamp,
+			collateral_aid,
 			aid,
 			evt.MarketId,
 			evt.Amount,
+			evt.ShareTokens,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_shares_burned table: %v; q=%v",err,query))
