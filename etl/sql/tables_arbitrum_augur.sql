@@ -66,9 +66,16 @@ CREATE TABLE aa_market ( -- AbstractMarketFactory object type , parent of Sports
 	contract_aid		BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
 	market_id			BIGINT NOT NULL,
+	collateral_aid		BIGINT NOT NULL,	-- usually USDC contract (Cash)
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE aa_shtok ( -- Market ShareToken (OwnedShareToken.sol)
+	id					BIGSERIAL PRIMARY KEY,
+	parent_id			BIGSERIAL NOT NULL,
+	token_aid			BIGSERIAL NOT NULL,	-- this  should match a record in erc20_info
+	FOREIGN KEY(parent_id) REFERENCES aa_market(id) ON DELETE CASCADE,
+}
 CREATE TABLE aa_outcome ( --Outcome object, links Token contract
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT,

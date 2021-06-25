@@ -7,7 +7,7 @@ CREATE table erc20_transf (	-- transfers of ERC20 tokens
 	contract_aid		BIGINT NOT NULL,
 	from_aid			BIGINT DEFAULT 0,
 	to_aid				BIGINT DEFAULT 0,
-	amount				DECIMAL(78,18) DEFAULT 0.0,
+	amount				DECIMAL DEFAULT 0.0,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );
@@ -19,8 +19,8 @@ CREATE table erc20_bal (	-- token balance
 	contract_aid		BIGINT NOT NULL,
 	parent_id			BIGINT NOT NULL REFERENCES erc20_transf(id) ON DELETE CASCADE,
 	processed			BOOLEAN DEFAULT false,	-- true if balances have been calculated
-	balance				DECIMAL(78,18) DEFAULT 0.0,
-	amount				DECIMAL(78,18) DEFAULT 0.0
+	balance				DECIMAL DEFAULT 0.0,
+	amount				DECIMAL DEFAULT 0.0
 );
 CREATE TABLE erc20_proc_status (-- DAI processing status
 	last_evt_id			BIGINT DEFAULT 0 --id of last event log processed

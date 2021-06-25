@@ -143,7 +143,7 @@ func main() {
 
 	latestBlock, err := eclient.BlockByNumber(ctx, nil)
 	if err != nil {
-		log.Fatal("oops:", err)
+		Error.Printf("Error in eclient.BlockByNumber(nil):", err)
 	}
 
 	bnum,exists := storage.Get_last_block_num()
@@ -160,7 +160,9 @@ func main() {
   main_loop:
 	latestBlock, err = eclient.BlockByNumber(ctx, nil)
 	if err != nil {
-		log.Fatal("oops:", err)
+		Error.Printf("Error in eclient.BlockByNumber(nil): %v\n",err)
+		time.Sleep(10 * time.Second)	// wait, possibly networking issue
+		goto main_loop
 	}
 
 	bnum,exists = storage.Get_last_block_num()

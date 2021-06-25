@@ -15,3 +15,11 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION amm_insert_abstract_market(
+	p_evtlog_id BIGINT,p_block_num BIGINT,p_tx_id BIGINT,p_contract_aid BIGINT,
+	p_market_id BIGINT,p_timestamp TIMESTAMPTZ,p_sharetoken_ids TEXT
+) RETURNS void AS  $$
+DECLARE
+BEGIN
+	
+END;

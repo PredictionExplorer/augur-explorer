@@ -63,6 +63,17 @@ func main() {
 		fmt.Printf("Error during ShareFactor() call: %v\n",err)
 		os.Exit(1)
 	}
+	feepot,err:=factory.FeePot(copts)
+	if err!=nil {
+		fmt.Printf("Error during FeePot() call: %v\n",err)
+		os.Exit(1)
+	}
+	collateral,err:=factory.Collateral(copts)
+	if err!=nil {
+		fmt.Printf("Error during Collateral() call: %v\n",err)
+		os.Exit(1)
+	}
+
 
 	fmt.Printf("Market {\n")
 	fmt.Printf("\tSettlement Address: %v\n",market_obj.SettlementAddress.String())
@@ -78,6 +89,8 @@ func main() {
 	fmt.Printf("\tCreation Timestamp: %v\n",market_obj.CreationTimestamp.String())
 	fmt.Printf("\tIsResolved: %v\n",is_resolved)
 	fmt.Printf("\tShareFactor: %v\n",sharefactor)
+	fmt.Printf("\tFeePot: %v\n",feepot.String())
+	fmt.Printf("\tCollateral: %v\n",collateral.String())
 
 	fmt.Printf("}\n")
 }

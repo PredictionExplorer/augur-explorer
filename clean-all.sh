@@ -38,4 +38,11 @@ rm ./etl/cmd/arbitrum-augur/multicall/deploy
 rm ./etl/cmd/arbitrum-augur/tools/balswap
 rm ./etl/cmd/arbitrum-augur/tools/erc20bal
 rm ./etl/cmd/arbitrum-augur/tools/getmarket
-rm ./etl/cmd/arbitrum-augur/tools/poolinfo
+rm ./etl/cmd/arbitrum-augur/tools/approve
+rm ./etl/cmd/arbitrum-augur/tools/burnshares
+rm ./etl/cmd/arbitrum-augur/tools/dump-vm-trace
+rm ./etl/cmd/arbitrum-augur/tools/getcode
+rm ./etl/cmd/arbitrum-augur/tools/spotprice
+rm ./etl/cmd/arbitrum-augur/tools/trade2price
+rm ./etl/cmd/arbitrum-augur/tools/usershares
+rm ./etl/cmd/arbitrum-augur/tools/allowance

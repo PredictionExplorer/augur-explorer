@@ -2225,3 +2225,18 @@ type AMM_SportMarket struct {
 	ResolvedDate			string
 	MarketRules				[]string
 }
+type AMM_ERC20_Op struct {
+	EvtId					int64
+	BlockNum				int64
+	TxId					int64
+	TimeStamp				int64
+	FromAid					int64
+	ToAid					int64
+	Amount					float64
+	Balance					float64
+	Contract				string
+	FromAddr				string
+	ToAddr					string
+	AmountStr				string
+	BalanceStr				string
+}
