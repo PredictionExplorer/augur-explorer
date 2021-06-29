@@ -210,7 +210,12 @@ func (ss *SQLStorage) Insert_aa_sports_market_event(evt *p.AA_SportsMarket) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	creator_aid:=ss.Lookup_or_create_address(evt.CreatorAddr,evt.BlockNum,evt.TxId)
+	collateral_aid:=ss.Lookup_or_create_address(evt.CollateralAddr,evt.BlockNum,evt.TxId)
+	settlement_aid:=ss.Lookup_or_create_address(evt.SettlementAddr,evt.BlockNum,evt.TxId)
+	feepot_aid:=ss.Lookup_or_create_address(evt.FeePotAddr,evt.BlockNum,evt.TxId)
+	protocol_aid:=ss.Lookup_or_create_address(evt.ProtocolAddr,evt.BlockNum,evt.TxId)
 	var query string
+	/* DISCONTINUED
 	query = "INSERT INTO aa_sports_market (" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
 				"market_id,start_time,end_time,market_type,creator_aid,"+
@@ -220,6 +225,33 @@ func (ss *SQLStorage) Insert_aa_sports_market_event(evt *p.AA_SportsMarket) {
 				",$6,TO_TIMESTAMP($7),TO_TIMESTAMP($8),$9,$10,"+
 				"$11,$12,$13,$14"+
 			")"
+	*/
+	query = "SELECT amm_insert_sports_market("+
+				"$1::BIGINT," + // evtlog_id
+				"$2::BIGINT," + // block_num
+				"$3::BIGINT," + // tx_id
+				"$4::BIGINT," + // contract_aid
+				"TO_TIMESTAMP($5)," + // time_stamp
+				"$6::BIGINT," + // market_id
+				"$7::BIGINT," + // creator_aid
+				"TO_TIMESTAMP($8)," + // created_time
+				"TO_TIMESTAMP($9)," + // end_time
+				"$10::DECIMAL," + // settlement_fee
+				"$11::DECIMAL,"+ // staker_fee
+				"$12::DECIMAL,"+ // protocol fee
+				"$13::BIGINT,"+ // settlement_aid
+				"$14::BIGINT,"+ // feepot_aid
+				"$15::BIGINT,"+ // protocol_aid
+				"$16::BIGINT,"+ // collateral_aid
+				"$17::DECIMAL,"+// sharefactor
+				"$18::TEXT,"+ // sharetokens (comma separated)
+				"$19::BIGINT,"+ // event_id (MMA event code)
+				"$20::BIGINT,"+ // home_team_id
+				"$21::BIGINT,"+ // away_team_id
+				"TO_TIMESTAMP($22),"+ // estimated_start
+				"$23::INT,"+ // market_type
+				"$24::DECIMAL"+ // value0 (score)
+			")"
 
 	_,err := ss.db.Exec(query,
 			evt.EvtId,
@@ -228,13 +260,23 @@ func (ss *SQLStorage) Insert_aa_sports_market_event(evt *p.AA_SportsMarket) {
 			contract_aid,
 			evt.TimeStamp,
 			evt.MarketId,
+			creator_aid,
 			evt.EstimatedStarTime,
 			evt.EndTime,
-			evt.MarketType,
-			creator_aid,
+			evt.SettlementFee,
+			evt.StakerFee,
+			evt.ProtocolFee,
+			settlement_aid,
+			feepot_aid,
+			protocol_aid,
+			collateral_aid,
+			evt.ShareFactor,
+			evt.ShareTokens,
 			evt.EventId,
 			evt.HomeTeamId,
 			evt.AwayTeamId,
+			evt.EstimatedStarTime,
+			evt.MarketType,
 			evt.Score,
 	)
 	if err != nil {
@@ -298,13 +340,12 @@ func (ss *SQLStorage) Insert_aa_shares_minted_event(evt *p.AA_SharesMinted) {
 func (ss *SQLStorage) Insert_aa_shares_burned_event(evt *p.AA_SharesBurned) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
-	collateral_aid :=ss.Lookup_or_create_address(evt.CollateralAid,evt.BlockNum,evt.TxId)
 	aid:=ss.Lookup_or_create_address(evt.ReceiverAddr,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO aa_shares_burned(" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"collateral_aid,aid,market_id,amount,sharetokens" +
-			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8,$9::DECIMAL/1e+18,$10)"
+				"aid,market_id,amount" +
+			") VALUES ($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8::DECIMAL/1e+18)"
 
 	_,err := ss.db.Exec(query,
 			evt.EvtId,
@@ -312,11 +353,9 @@ func (ss *SQLStorage) Insert_aa_shares_burned_event(evt *p.AA_SharesBurned) {
 			evt.TxId,
 			contract_aid,
 			evt.TimeStamp,
-			collateral_aid,
 			aid,
 			evt.MarketId,
 			evt.Amount,
-			evt.ShareTokens,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_shares_burned table: %v; q=%v",err,query))

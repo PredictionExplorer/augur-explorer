@@ -264,9 +264,26 @@ func (ss *SQLStorage) Get_previous_erc20_balance_from_DB(id int64,aid int64) (st
 	}
 	return balance,err
 }
-func (ss *SQLStorage) Get_erc20_operations(factory_aid,market_id int64,offset,limit int) []p.AMM_ERC20_op {
+func (ss *SQLStorage) Get_erc20_operations(factory_aid,market_id int64,offset,limit int) []p.AMM_ERC20_Op {
 
+	records := make([]p.AMM_ERC20_Op,0,128)
 	var query string
 
 	query = "SELECT count(*) AS total FROM erc20_transf WHERE "
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.AMM_ERC20_Op
+		err=rows.Scan(&rec.FromAddr)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("Error on Scan() at Get_erc20_operations(): %v\n",err))
+			os.Exit(1)
+		}
+	}
+	return records
 }

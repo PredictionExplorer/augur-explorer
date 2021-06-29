@@ -1964,6 +1964,11 @@ type AA_SportsMarket struct {// Arbitrum Augur Sports Market Created event
 	CollateralAddr			string
 	ProtocolAddr			string
 	SettlementAddr			string
+	SettlementFee			string
+	FeePotAddr				string
+	StakerFee				string
+	ProtocolFee				string
+	ShareFactor				string
 }
 type AA_TrustedMarket struct {// Arbitrum Augur TrustedMarket Created event
 	EvtId					int64

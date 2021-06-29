@@ -192,7 +192,6 @@ var (
 	market_order_id int64 = 0
 	inspected_events []InspectedEvent
 
-	caddrs *AA_ContractAddrs
 	augur_abi *abi.ABI
 	aa_abi abi.ABI
 
@@ -317,8 +316,6 @@ func main() {
 		exit_chan <- true
 	}()
 
-	caddrs_obj:= storage.Get_arbitrum_augur_contract_addresses()
-	caddrs = &caddrs_obj
 
 	inspected_events = build_list_of_inspected_events()
 	process_arbitrum_augur_events(exit_chan)

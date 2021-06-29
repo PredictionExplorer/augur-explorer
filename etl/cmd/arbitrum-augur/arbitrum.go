@@ -9,9 +9,10 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-//	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 func build_list_of_inspected_events() []InspectedEvent {
 
@@ -219,7 +220,7 @@ func proc_sports_market(log *types.Log,elog *EthereumEventLog) {
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 
-	factory,err := NewSportsLinkMarketFactory(factory_addr,eclient)
+	factory,err := NewSportsLinkMarketFactory(log.Address,eclient)
 	if err != nil {
 		Error.Printf("Failed to instantiate Factory contract: %v\n",err)
 		os.Exit(1)
@@ -235,9 +236,9 @@ func proc_sports_market(log *types.Log,elog *EthereumEventLog) {
 		if len(sharetokens) > 0 {
 			sharetokens = sharetokens + ","
 		}
-		sharetokens = sharetokens + market_obj.ShareTokens.String()
+		sharetokens = sharetokens + market_obj.ShareTokens[i].String()
 	}
-	evt.ShareTokens = shartokens
+	evt.ShareTokens = sharetokens
 
 	collateral,err:=factory.Collateral(copts)
 	if err != nil {
@@ -253,6 +254,29 @@ func proc_sports_market(log *types.Log,elog *EthereumEventLog) {
 	}
 	evt.ShareFactor = sharefactor.String()
 
+	feepot,err:=factory.FeePot(copts)
+	if err != nil {
+		Error.Printf("Failed to execute FeePot(): %v",err)
+		os.Exit(1)
+	}
+	evt.FeePotAddr=feepot.String()
+	staker_fee,err:=factory.StakerFee(copts)
+	if err != nil {
+		Error.Printf("Failed to execute StakerFee(): %v",err)
+		os.Exit(1)
+	}
+	evt.StakerFee=staker_fee.String()
+
+	protocol,err:=factory.Protocol(copts)
+	if err != nil {
+		Error.Printf("Failed to execute Protocol(): %v",err)
+		os.Exit(1)
+	}
+	evt.ProtocolAddr=protocol.String()
+	evt.ProtocolFee = market_obj.ProtocolFee.String()
+
+	evt.SettlementAddr = market_obj.SettlementAddress.String()
+	evt.SettlementFee = market_obj.SettlementFee.String()
 
 	Info.Printf("SportsMarketCreated{\n")
 	Info.Printf("\tId: %v\n",evt.MarketId)
@@ -264,6 +288,17 @@ func proc_sports_market(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tAwayTeamId: %v\n",evt.AwayTeamId)
 	Info.Printf("\tEstimatedStarTime: %v\n",evt.EstimatedStarTime)
 	Info.Printf("\tScore: %v\n",evt.Score)
+	Info.Printf("}\n")
+	Info.Printf("Additional info {\n")
+	Info.Printf("\tSettlement Addr: %v\n",evt.SettlementAddr)
+	Info.Printf("\tSettlement Fee: %v\n",evt.SettlementFee)
+	Info.Printf("\tProtocol Addr: %v\n",evt.ProtocolAddr)
+	Info.Printf("\tProtocol Fee: %v\n",evt.ProtocolFee)
+	Info.Printf("\tStaker Fee: %v\n",evt.StakerFee)
+	Info.Printf("\tFeePotAddr: %v\n",evt.FeePotAddr)
+	Info.Printf("\tShareFactor: %v\n",evt.ShareFactor)
+	Info.Printf("\tCollateralAddr: %v\n",evt.CollateralAddr)
+	Info.Printf("\tShareTokensList: %v\n",evt.ShareTokens)
 	Info.Printf("}\n")
 
 	storage.Insert_aa_sports_market_event(&evt)

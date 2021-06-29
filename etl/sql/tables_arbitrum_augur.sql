@@ -10,7 +10,7 @@ CREATE TABLE aa_caddrs ( -- Addresses of contracts for Arbitrum Augur
 );
 CREATE TABLE aa_factory (
 	factory_aid			BIGINT PRIMARY KEY,
-	market_type			TINYINT DEFAULT 0, -- market types to be defined (pending)
+	market_type			INT DEFAULT 0, -- market types to be defined (pending)
 	factory_addr		TEXT -- copy to facilitate testing
 );
 CREATE TABLE aa_proc_status (-- Arbitrum Augur process status
@@ -49,20 +49,6 @@ CREATE TABLE aa_liquidity_changed (-- LiquidityChanged event
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE aa_price_market (-- PriceMarketCreated event
-	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT,
-	block_num			BIGINT,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT,
-	contract_aid		BIGINT NOT NULL,
-	time_stamp			TIMESTAMPTZ,
-	end_time			TIMESTAMPTZ,
-	creator_aid			BIGINT NOT NULL,
-	aa_mkt_id			BIGINT NOT NULL REFERENCES aa_market(id),
-	spot_price			DECIMAL(64,18) NOT NULL,
-	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
-	UNIQUE(evtlog_id)
-);
 CREATE TABLE aa_market ( -- AbstractMarketFactory object type , parent of Sports,Trusted,Price markets
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT,
@@ -73,13 +59,16 @@ CREATE TABLE aa_market ( -- AbstractMarketFactory object type , parent of Sports
 	created_time		TIMESTAMPTZ,
 	end_time			TIMESTAMPTZ,
 	market_id			BIGINT NOT NULL,
+	factory_aid			BIGINT NOT NULL,
 	collateral_aid		BIGINT NOT NULL,	-- usually USDC contract (Cash)
 	protocol_aid		BIGINT NOT NULL,
 	settlement_aid		BIGINT NOT NULL,
+	feepot_aid			BIGINT NOT NULL,
 	winner_aid			BIGINT DEFAULT 0,
 	sharefactor			DECIMAL NOT NULL,
 	settlement_fee		DECIMAL NOT NULL,
 	protocol_fee		DECIMAL NOT NULL,
+	staker_fee			DECIMAL NOT NULL,
 	liquidity			DECIMAL(64,18) DEFAULT 0.0,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
@@ -88,8 +77,8 @@ CREATE TABLE aa_shtok ( -- Market ShareToken (OwnedShareToken.sol)
 	id					BIGSERIAL PRIMARY KEY,
 	parent_id			BIGSERIAL NOT NULL,
 	token_aid			BIGSERIAL NOT NULL,	-- this  should match a record in erc20_info
-	FOREIGN KEY(parent_id) REFERENCES aa_market(id) ON DELETE CASCADE,
-}
+	FOREIGN KEY(parent_id) REFERENCES aa_market(id) ON DELETE CASCADE
+);
 CREATE TABLE aa_sports_market (
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT,
@@ -107,6 +96,20 @@ CREATE TABLE aa_sports_market (
 	away_team_id		BIGINT NOT NULL,
 	market_type			INT NOT NULL,
 	value0				DECIMAL NOT NULL, -- SportsLinkMarketFactory.sol::MarketDetail::value0
+	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE aa_price_market (-- PriceMarketCreated event
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	block_num			BIGINT,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT,
+	contract_aid		BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ,
+	end_time			TIMESTAMPTZ,
+	creator_aid			BIGINT NOT NULL,
+	aa_mkt_id			BIGINT NOT NULL REFERENCES aa_market(id),
+	spot_price			DECIMAL(64,18) NOT NULL,
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );
@@ -133,7 +136,7 @@ CREATE TABLE aa_last_price (--populated using swap events from Balancer contract
 	in_aid				BIGINT NOT NULL, -- address id of token contract for swapping IN
 	out_aid				BIGINT NOT NULL, -- address id of token contract for swapping OUT
 	outc_in				DECIMAL(64,18) DEFAULT 0.0, -- Outcome in (token1 amount)
-	outc_out			DECIMAL(64,18) DEFAULT 0.0, -- Outcome out (token2 amount)
+	outc_out			DECIMAL(64,18) DEFAULT 0.0 -- Outcome out (token2 amount)
 );
 CREATE TABLE aa_trusted_market (
 	id					BIGSERIAL PRIMARY KEY,
@@ -159,7 +162,7 @@ CREATE TABLE aa_shares_minted (-- SharesMinted
 	contract_aid		BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
 	aid					BIGINT NOT NULL,
-	market_id			TEXT NOT NULL,
+	market_id			BIGINT NOT NULL,
 	amount				DECIMAL(64,18),
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
@@ -172,7 +175,7 @@ CREATE TABLE aa_shares_burned (-- SharesBurned
 	contract_aid		BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
 	aid					BIGINT NOT NULL,
-	market_id			TEXT NOT NULL,
+	market_id			BIGINT NOT NULL,
 	amount				DECIMAL(64,18),
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
