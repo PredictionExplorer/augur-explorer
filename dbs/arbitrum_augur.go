@@ -215,17 +215,6 @@ func (ss *SQLStorage) Insert_aa_sports_market_event(evt *p.AA_SportsMarket) {
 	feepot_aid:=ss.Lookup_or_create_address(evt.FeePotAddr,evt.BlockNum,evt.TxId)
 	protocol_aid:=ss.Lookup_or_create_address(evt.ProtocolAddr,evt.BlockNum,evt.TxId)
 	var query string
-	/* DISCONTINUED
-	query = "INSERT INTO aa_sports_market (" +
-				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"market_id,start_time,end_time,market_type,creator_aid,"+
-				"event_id,home_team_id,away_team_id,score" +
-			") VALUES ("+
-				"$1,$2,$3,$4,TO_TIMESTAMP($5)"+
-				",$6,TO_TIMESTAMP($7),TO_TIMESTAMP($8),$9,$10,"+
-				"$11,$12,$13,$14"+
-			")"
-	*/
 	query = "SELECT amm_insert_sports_market("+
 				"$1::BIGINT," + // evtlog_id
 				"$2::BIGINT," + // block_num
@@ -820,54 +809,114 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 	return total_rows,records
 
 }
-func (ss *SQLStorage) Get_sport_market_info(constants *p.AMM_Constants,contract_aid,market_id int64) (p.AMM_SportMarket,error) {
+func (ss *SQLStorage) Get_sport_market_info(constants *p.AMM_Constants,contract_aid,market_id int64) (p.API_AMM_SportsMarket,error) {
 
-	var rec p.AMM_SportMarket
+	var rec p.API_AMM_SportsMarket
 	var query string
 	query = "SELECT " +
-				"EXTRACT(EPOCH FROM time_stamp)::BIGINT AS created_ts, " +
-				"time_stamp," +
+				"m.block_ts, " +
+				"m.block_datetime," +
 				"m.block_num, " +
-				"tx.tx_hash," +
-				"m.market_id," +
-				"ca.addr," +
+				"tx.tx_hash,"+
+				"s.contract_aid,"+
+				"m.factory_aid,"+
 				"fa.addr," +
-				"EXTRACT(EPOCH FROM m.start_time)::BIGINT AS start_time_ts, " +
-				"EXTRACT(EPOCH FROM m.end_time)::BIGINT AS end_time_ts, " +
-				"m.start_time," +
+				"m.created_ts, "+
+				"m.created_time_date," +
+				"m.end_time_ts,"+
 				"m.end_time," +
-				"m.event_id," +
-				"m.home_team_id," +
-				"m.away_team_id," +
-				"m.score," +
-				"m.market_type, " +
-				"m.liquidity " +
-			"FROM aa_sports_market AS m " +
-				"LEFT JOIN address ca ON m.creator_aid=ca.address_id " +
-				"LEFT JOIN address fa ON m.contract_aid=fa.address_id " +
-				"JOIN transaction tx ON m.tx_id=tx.id " +
-			"WHERE m.market_id=$1 AND contract_aid=$2"
+				"m.market_id," +
+				"m.sharefactor," +
+				"m.settlement_fee,"+
+				"m.staker_fee,"+
+				"m.protocol_fee,"+
+				"m.settl_addr,"+
+				"m.proto_addr,"+
+				"m.feepot_addr,"+
+				"s.creator_aid,"+
+				"EXTRACT(EPOCH FROM s.est_start_time)::BIGINT AS est_start_time_ts, " +
+				"s.est_start_time," +
+				"s.event_id," +
+				"s.home_team_id," +
+				"s.away_team_id," +
+				"s.value0," +
+				"s.market_type, " +
+				"m.liquidity, " +
+				"coll_addr, " +
+				"win_addr, " +
+				"ca.addr " +
+			"FROM aa_sports_market AS s " +
+				"LEFT JOIN LATERAL (" +
+					"SELECT " +
+						"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT AS block_ts, " +
+						"m.time_stamp as block_datetime," +
+						"m.block_num, " +
+						"EXTRACT(EPOCH FROM m.created_time)::BIGINT AS created_ts, "+
+						"m.created_time as created_time_date," +
+						"EXTRACT(EPOCH FROM m.end_time)::BIGINT AS end_time_ts,"+
+						"m.end_time," +
+						"m.market_id," +
+						"m.factory_aid,"+
+						"m.sharefactor," +
+						"m.settlement_fee/1e+18 AS settlement_fee,"+
+						"m.staker_fee/1e+18 AS staker_fee,"+
+						"m.protocol_fee/1e+18 AS protocol_fee,"+
+						"settl_addr.addr settl_addr,"+
+						"proto_addr.addr proto_addr,"+
+						"feepot_addr.addr feepot_addr,"+
+						"coll_addr.addr coll_addr," +
+						"win_addr.addr win_addr, " +
+						"liquidity " +
+					"FROM aa_market m "+
+						"LEFT JOIN address AS settl_addr ON settl_addr.address_id=m.settlement_aid " +
+						"LEFT JOIN address AS proto_addr ON proto_addr.address_id=m.protocol_aid " +
+						"LEFT JOIN address AS feepot_addr ON feepot_addr.address_id=m.feepot_aid " +
+						"LEFT JOIN address AS coll_addr ON coll_addr.address_id=m.collateral_aid " +
+						"LEFT JOIN address AS win_addr ON win_addr.address_id=m.winner_aid " +
+				") AS m ON m.market_id=s.market_id AND m.factory_aid=s.contract_aid " +
+				"LEFT JOIN address ca ON s.creator_aid=ca.address_id " +
+				"LEFT JOIN address fa ON s.contract_aid=fa.address_id " +
+				"JOIN transaction tx ON s.tx_id=tx.id " +
+			"WHERE s.market_id=$1 AND s.contract_aid=$2"
 
 	row := ss.db.QueryRow(query,market_id,contract_aid)
+	var win_addr sql.NullString
 	err := row.Scan(
-			&rec.CreatedTs,
-			&rec.CreatedDate,
-			&rec.BlockNum,
-			&rec.TxHash,
-			&rec.MarketId,
-			&rec.CreatorAddr,
-			&rec.FactoryAddr,
-			&rec.StartTimeTs,
-			&rec.EndTimeTs,
-			&rec.StartTime,
-			&rec.EndTime,
+			&rec.AbstractMarketInfo.BlockTimeStamp,
+			&rec.AbstractMarketInfo.BlockDateTime,
+			&rec.AbstractMarketInfo.BlockNum,
+			&rec.AbstractMarketInfo.TxHash,
+			&rec.AbstractMarketInfo.ContractAid,
+			&rec.AbstractMarketInfo.FactoryAid,
+			&rec.AbstractMarketInfo.FactoryAddr,
+			&rec.AbstractMarketInfo.MarketCreatedTs,
+			&rec.AbstractMarketInfo.MarketCreatedDate,
+			&rec.AbstractMarketInfo.MarketEndTimeTs,
+			&rec.AbstractMarketInfo.MarketEndDate,
+			&rec.AbstractMarketInfo.MarketId,
+			&rec.AbstractMarketInfo.ShareFactor,
+			&rec.AbstractMarketInfo.SettlementFee,
+			&rec.AbstractMarketInfo.StakerFee,
+			&rec.AbstractMarketInfo.ProtocolFee,
+			&rec.AbstractMarketInfo.SettlementAddr,
+			&rec.AbstractMarketInfo.ProtocolAddr,
+			&rec.AbstractMarketInfo.FeePotAddr,
+			&rec.CreatorAid,
+			&rec.EstimatedStartTs,
+			&rec.EstimatedStartDate,
 			&rec.EventId,
 			&rec.HomeTeamId,
 			&rec.AwayTeamId,
 			&rec.Score,
 			&rec.MarketTypeCode,
 			&rec.Liquidity,
+			&rec.AbstractMarketInfo.CollateralAddr,
+			&win_addr,
+			&rec.AbstractMarketInfo.ContractAddr,
 	)
+	if win_addr.Valid {
+		rec.AbstractMarketInfo.WinnerAddr = win_addr.String
+	}
 	if err == sql.ErrNoRows {
 		return rec,err
 	}

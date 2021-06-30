@@ -87,7 +87,7 @@ CREATE TABLE aa_sports_market (
 	contract_aid		BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ,
 	end_time			TIMESTAMPTZ,
-	start_time			TIMESTAMPTZ,	-- estimatedStartTime
+	est_start_time		TIMESTAMPTZ,	-- estimatedStartTime
 	market_id			BIGINT NOT NULL,
 	aa_mkt_id			BIGINT NOT NULL REFERENCES aa_market(id),
 	creator_aid			BIGINT NOT NULL,

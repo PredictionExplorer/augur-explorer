@@ -50,7 +50,7 @@ func initialize() {
 
 	amm_constants = Load_amm_constants("./amm_constants")
 	if augur_srv.db_matic != nil {
-		amm_contracts = augur_srv.db_matic.Get_arbitrum_augur_contract_addresses()
+//		amm_contracts = augur_srv.db_matic.Get_arbitrum_augur_contract_addresses()
 	}
 }
 func secure_https(r http.Handler) {
@@ -171,6 +171,7 @@ func main() {
 	r.GET("/black/arbitrum/swaps/:contract_aid/:market_id/:offset/:limit",arbitrum_shares_swapped)
 	r.GET("/black/arbitrum/user/swaps/:user/:offset/:limit",amm_user_swaps)
 	r.GET("/black/arbitrum/user/liquidity/:user/:offset/:limit",amm_user_liquidity)
+	r.GET("/black/arbitrum/markets/info/:contract_aid/:market_id",arbitrum_market_info)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)

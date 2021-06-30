@@ -2973,3 +2973,44 @@ func amm_user_liquidity(c *gin.Context) {
 		"UserAid": aid,
 	})
 }
+func arbitrum_market_info(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return 
+	}
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	p_contract_aid := c.Param("contract_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'contract_aid' parameter is not set")
+		return
+	}
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",err))
+		return
+	}
+
+	c.HTML(http.StatusOK, "amm_market_info.html", gin.H{
+		"MarketId":market_id,
+		"MarketInfo" : market,
+	})
+}

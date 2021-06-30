@@ -97,7 +97,7 @@ BEGIN
 
 	INSERT INTO aa_sports_market (
 		evtlog_id,block_num,tx_id,contract_aid,time_stamp,
-		end_time,start_time,
+		end_time,est_start_time,
 		market_id,creator_aid,aa_mkt_id,event_id,home_team_id,away_team_id,market_type,value0
 	) VALUES (
 		p_evtlog_id,p_block_num,p_tx_id,p_contract_aid,p_time_stamp,
