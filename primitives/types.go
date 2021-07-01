@@ -993,6 +993,7 @@ type BalancerPoolInfo struct {
 	CreatedDate				string
 	ControllerAddr			string
 	MktAddr					string
+	ContractAddr			string
 	Tokens					[]BalancerToken
 }
 type BalancerToken struct {
@@ -2248,4 +2249,9 @@ type AMM_ERC20_Op struct {
 	ToAddr					string
 	AmountStr				string
 	BalanceStr				string
+}
+type BalancerTokenHolder struct {
+	HolderAddr				string
+	Balance					float64
+	Percentage				float64
 }

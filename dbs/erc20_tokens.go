@@ -56,13 +56,15 @@ func (ss *SQLStorage) Update_erc20_process_status(status *p.ERC20ProcessStatus) 
 	}
 }
 
-func (ss *SQLStorage) Update_erc20_token_balances_backwards(last_block_num int64,aid int64,eth_balance *big.Int) int {
+func (ss *SQLStorage) Update_erc20_token_balances_backwards(last_block_num int64,contract_aid,acct_aid int64,eth_balance *big.Int) int {
 	// Note: we are using block_hash in WHERE conditions to prevent balance corruption during chain split
 	var updated_rows  int =0
 	var query string
 
-	query = "SELECT id FROM erc20_bal WHERE aid=$1 AND processed=FALSE ORDER BY id DESC LIMIT 1"
-	row:=ss.db.QueryRow(query,aid)
+	query = "SELECT id FROM erc20_bal "+
+				"WHERE (contract_aid=$1) AND (aid=$2) AND (processed=FALSE) "+
+				"ORDER BY id DESC LIMIT 1"
+	row:=ss.db.QueryRow(query,contract_aid,acct_aid)
 	var null_id sql.NullInt64
 	var stopping_id int64 = 0
 	var block_hash string
@@ -84,9 +86,10 @@ func (ss *SQLStorage) Update_erc20_token_balances_backwards(last_block_num int64
 				"JOIN block AS b on db.block_num = b.block_num " +
 			"WHERE " +
 				"(db.aid = $1) AND " +
-				"(db.block_num <= $2) " +
+				"(db.contract_aid=$2) AND "+
+				"(db.block_num <= $3) " +
 			"ORDER BY db.id DESC"
-	rows,err := ss.db.Query(query,aid,last_block_num)
+	rows,err := ss.db.Query(query,acct_aid,contract_aid,last_block_num)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -116,7 +119,7 @@ func (ss *SQLStorage) Update_erc20_token_balances_backwards(last_block_num int64
 		correct_balance.Sub(tmp_int,amount)	// inverse operation to Add()
 		cmp_res := correct_balance.Cmp(db_balance)
 		ss.Info.Printf("balance_updater(): aid=%v,id=%v,correct=%v,db=%v,amount=%v,cmp_res=%v\n",
-					aid,id,correct_balance.String(),db_balance.String(),amount.String(),cmp_res)
+					acct_aid,id,correct_balance.String(),db_balance.String(),amount.String(),cmp_res)
 		if cmp_res != 0 {	// incorrect balance, update it
 			ss.Info.Printf("balance_updater(): incorrect balance, setting correct balance to %v for id=%v\n",
 				correct_balance.String(),id)
@@ -242,13 +245,13 @@ func (ss *SQLStorage) Get_unprocessed_erc20_balances(below_id int64) []p.ERC20B 
 	}
 	return records
 }
-func (ss *SQLStorage) Get_previous_erc20_balance_from_DB(id int64,aid int64) (string,error) {
+func (ss *SQLStorage) Get_previous_erc20_balance_from_DB(id int64,contract_aid,acct_aid int64) (string,error) {
 
 	var query string
 	query = "SELECT balance::text,processed FROM erc20_bal " +
-			"WHERE (aid=$1) and (id<$2) ORDER BY id DESC LIMIT 1"
+			"WHERE (contract_aid=$1) AND (aid=$2) AND (id<$3) ORDER BY id DESC LIMIT 1"
 
-	res := ss.db.QueryRow(query,aid,id)
+	res := ss.db.QueryRow(query,contract_aid,acct_aid,id)
 	var balance string
 	var processed bool
 	err := res.Scan(&balance,&processed)

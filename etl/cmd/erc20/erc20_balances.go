@@ -31,7 +31,7 @@ var (
 )
 )
 */
-func update_erc20_balances_backwards(lgr *log.Logger,contract_addr_str string,last_block_num int64,aid int64,addr *common.Address) (int,error) {
+func update_erc20_balances_backwards(lgr *log.Logger,contract_addr_str string,last_block_num int64,contract_aid,acct_aid int64,addr *common.Address) (int,error) {
 
 	contract_addr := common.HexToAddress(contract_addr_str)
 	var copts = new(bind.CallOpts)
@@ -43,24 +43,27 @@ func update_erc20_balances_backwards(lgr *log.Logger,contract_addr_str string,la
 	balance,err := erc20_token.BalanceOf(copts,*addr)
 	if err != nil {
 		lgr.Printf(
-			"Failure to update ERC20  token balances backwards for eoa_aid=%v,last_block_num=%v contract %v",
-			aid,last_block_num,contract_addr_str,
+			"XX %v XX %v XX: Failure to update ERC20  token balances backwards. " +
+			"last_block_num=%v contract %v",
+			contract_aid,acct_aid,last_block_num,contract_addr_str,
 		)
 		lgr.Printf(
-			"Failure to update ERC20 token balances backwards for eoa_aid=%v,last_block_num=%v contract %v",
-			aid,last_block_num,contract_addr_str,
+			"XX %v XX %v XX: Failure to update ERC20 token balances backwards. " +
+			"last_block_num=%v contract %v",
+			contract_aid,acct_aid,last_block_num,contract_addr_str,
 		)
 		return 0,err
 	}
 	lgr.Printf(
-		"balance_updater(): updating balances backwards from block %v , addr %v (aid=%v) contract %v\n",
-		last_block_num,addr.String(),aid,contract_addr_str,
+		"XX %v XX %v XX: Updating balances backwards from block %v. " +
+		" addr %v contract %v\n",
+		contract_aid,acct_aid,last_block_num,addr.String(),contract_addr_str,
 	)
 	lgr.Printf(
-		"balance_updater(): got last balance = %v for block = %v contract %v\n",
-		balance.String(),last_block_num,
+		"XX %v XX %v XX: Geth node RPC: got last balance = %v for block = %v contract %v\n",
+		contract_aid,acct_aid,balance.String(),last_block_num,contract_addr_str,
 	)
-	return storage.Update_erc20_token_balances_backwards(last_block_num,aid,balance),nil
+	return storage.Update_erc20_token_balances_backwards(last_block_num,contract_aid,acct_aid,balance),nil
 }
 func erc20_bal_sleep() {
 	time.Sleep(14 * time.Second)	// Ethereum block time
@@ -81,30 +84,41 @@ func balance_updater(lgr *log.Logger) {
 		var last_id int64 = 0
 		num_changes = 0
 		for {	// while we do have dai_balances available
-			lgr.Printf("balance_updater() running. last_id=%v\n",last_id)
 			operations := storage.Get_unprocessed_erc20_balances(last_id)
 			if len(operations) > 0 {
 				last_id = operations[len(operations)-1].Id
 			}
-			lgr.Printf("balance_updater(): got %v operations\n",len(operations))
+			lgr.Printf("loop begins, got %v operations\n",len(operations))
 			for i := 0 ; i<len(operations) ; i++ {
 				erc20_bal := &operations[i]
-				lgr.Printf("erc20_bal = %+v\n",erc20_bal)
-				prev_balance_db,err := storage.Get_previous_erc20_balance_from_DB(erc20_bal.Id,erc20_bal.Aid)
-				lgr.Printf("balance_updater(): acct %v: prev_balance=%v, err=%v\n",erc20_bal.Address,prev_balance_db,err)
+				lgr.Printf("XX %v XX %v XX: balance object: %+v\n",erc20_bal.ContractAid,erc20_bal.Aid,erc20_bal)
+				prev_balance_db,err := storage.Get_previous_erc20_balance_from_DB(
+					erc20_bal.Id,
+					erc20_bal.ContractAid,
+					erc20_bal.Aid,
+				)
+				lgr.Printf(
+					"XX %v XX %v XX: prev balance from DB = %v, err=%v\n",
+					erc20_bal.ContractAid,erc20_bal.Aid,erc20_bal.Address,prev_balance_db,err,
+				)
 				if err != nil {
 					if err == ErrUnprocessedBalances {
 						last_block_num,success := storage.Get_last_block_num()
 						if success {
 							addr := common.HexToAddress(erc20_bal.Address)
-							affected_rows,err:=update_erc20_balances_backwards(lgr,erc20_bal.ContractAddr,last_block_num,erc20_bal.Aid,&addr)
-							if err!=nil {
-							//	dai_bal_sleep() // RPC service error, go to sleep
-							//	break;
-							}
+							affected_rows,_:=update_erc20_balances_backwards(
+								lgr,erc20_bal.ContractAddr,
+								last_block_num,
+								erc20_bal.ContractAid,
+								erc20_bal.Aid,
+								&addr,
+							)
 							if affected_rows>0 {
 								num_changes++
-								lgr.Printf("balance_updater(): restarting loop() affected rows=%v on addr %v\n",num_changes,addr.String())
+								lgr.Printf(
+									"XX %v XX %v XX: restarting loop() do to data invalidation, " +
+									"count of rows updated=%v\n",
+									erc20_bal.ContractAid,erc20_bal.Aid,num_changes)
 								break		// update backards invalidates the 'operations' array
 							}
 						}
@@ -117,24 +131,41 @@ func balance_updater(lgr *log.Logger) {
 					addr := common.HexToAddress(erc20_bal.Address)
 					erc20_token,err := NewOwnedERC20(contract_addr,eclient)
 					if err != nil {
-						lgr.Printf("Can't instantiate ERC20 token contract: %v\n",err)
+						lgr.Printf(
+							"XX %v XX %v XX: Can't instantiate ERC20 token contract: %v\n",
+							erc20_bal.ContractAid,erc20_bal.Aid,err,
+						)
 						break
 					}
 					prev_bal,err := erc20_token.BalanceOf(copts,addr)
 					if err != nil {
-						lgr.Printf("Error on GetBalance call (addr=%v addr=%v): %v\n",addr.String(),erc20_bal.Address,err)
+						lgr.Printf(
+							"XX %v XX %v XX: Error on GetBalance call (addr=%v addr=%v): %v\n",
+							erc20_bal.ContractAid,erc20_bal.Aid,addr.String(),erc20_bal.Address,err,
+						)
 						// if error occurs, it probably means the Node has already deleted the State for this block
 						// therefore the only way to update balances of this account is calculate changes backwards,
 						last_block_num,success := storage.Get_last_block_num()
 						if success {
-							affected_rows,err:=update_erc20_balances_backwards(BalancesLog,erc20_bal.ContractAddr,last_block_num,erc20_bal.Aid,&addr)
+							affected_rows,err:=update_erc20_balances_backwards(
+								BalancesLog,
+								erc20_bal.ContractAddr,
+								last_block_num,
+								erc20_bal.ContractAid,
+								erc20_bal.Aid,
+								&addr,
+							)
 							if err!=nil {
 								//dai_bal_sleep() // RPC service error, go to sleep
 								//break;
 							}
 							if affected_rows>0 {
 								num_changes++
-								lgr.Printf("balance_updater(): restarting loop() affected rows=%v on addr %v\n",num_changes,addr.String())
+								lgr.Printf(
+									"XX %v XX %v XX: restarting loop() due to data invalidation, "+
+									"affected rows=%v on addr %v\n",
+									erc20_bal.ContractAid,erc20_bal.Aid,num_changes,addr.String(),
+								)
 								break		// update backards invalidates the 'operations' array
 							}
 						}
@@ -143,8 +174,12 @@ func balance_updater(lgr *log.Logger) {
 						amount.SetString(erc20_bal.Amount,10)
 						new_bal := new(big.Int)
 						new_bal.Add(prev_bal,amount)
-						lgr.Printf("balance_updater(): setting balance of acct %v (id=%v) to %v (prev_bal=%v, amount=%v\n",
-									addr.String(),erc20_bal.Aid,new_bal,prev_bal.String(),amount.String())
+						lgr.Printf(
+							"XX %v XX %v XX: setting balance of acct %v to %v " +
+							"(prev_bal=%v, amount=%v)\n",
+							erc20_bal.ContractAid,erc20_bal.Aid,
+							addr.String(),new_bal,prev_bal.String(),amount.String(),
+						)
 						storage.Set_erc20_balance(erc20_bal.Id,erc20_bal.BlockHash,new_bal.String())
 						num_changes++
 					}
@@ -155,8 +190,12 @@ func balance_updater(lgr *log.Logger) {
 					amount.SetString(erc20_bal.Amount,10)
 					new_bal := new(big.Int)
 					new_bal.Add(prev_bal,amount)
-					lgr.Printf("balance_updater(): got balance from db of acct %v (id=%v) to %v (prev_bal=%v, amount=%v\n",
-									erc20_bal.Address,erc20_bal.Aid,new_bal,prev_bal.String(),amount.String())
+					lgr.Printf(
+						"XX %v XX %v XX: setting balance from db of acct %v to %v "+
+						"(prev_bal=%v, amount=%v)\n",
+						erc20_bal.ContractAid,erc20_bal.Aid,
+						erc20_bal.Address,new_bal,prev_bal.String(),amount.String(),
+					)
 					storage.Set_erc20_balance(erc20_bal.Id,erc20_bal.BlockHash,new_bal.String())
 					num_changes++
 				}
@@ -173,42 +212,3 @@ func balance_updater(lgr *log.Logger) {
 		}
 	}
 }
-/*
-func main() {
-	//client, err := ethclient.Dial("http://:::8545")
-
-	if len(RPC_URL) == 0 {
-		Fatalf("Configuration error: RPC URL of Ethereum node is not set."+
-				" Please set AUGUR_ETH_NODE_RPC_URL environment variable")
-	}
-
-	Info = log.New(os.Stdout,"INFO: ",log.Ltime)		//|log.Lshortfile)
-	Error = log.New(os.Stderr,"ERROR: ",log.Ltime)		//|log.Lshortfile)
-
-	storage = Connect_to_storage(&market_order_id,Info)
-	storage.Log_msg("Log initialized\n")
-
-	//client, err := ethclient.Dial("http://192.168.1.102:18545")
-	var err error
-	rpcclient, err=rpc.DialContext(context.Background(), RPC_URL)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	Info.Printf("Connected to ETH node: %v\n",RPC_URL)
-	eclient = ethclient.NewClient(rpcclient)
-//	eclient, err = ethclient.Dial(RPC_URL)
-
-	caddrs_obj,err := storage.Get_contract_addresses()
-	if err!=nil {
-		Fatalf("Can't find contract addresses in 'contract_addresses' table")
-	}
-	caddrs=&caddrs_obj
-	ctrct_dai_token,err = NewDAICash(caddrs.Dai,eclient)
-	if err != nil {
-		Fatalf("Couldn't initialize DAI Cash contract: %v\n",err)
-	}
-
-	balance_updater()	// updates DAI token balances very 10 seconds
-}
-*/

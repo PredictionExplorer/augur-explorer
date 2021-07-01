@@ -56,9 +56,10 @@ func (ss *SQLStorage) Insert_balancer_pool_created_evt(evt *p.BalancerPoolInfo) 
 
 	pool_aid := ss.Lookup_or_create_address(evt.PoolAddr,evt.BlockNum,evt.TxId)
 	caller_aid := ss.Lookup_or_create_address(evt.CallerAddr,evt.BlockNum,evt.TxId)
+	contract_aid := ss.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO bpool (" +
-				"evtlog_id,block_num,tx_id,time_stamp,pool_aid,caller_aid,controller_aid" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid,pool_aid,caller_aid,controller_aid" +
 			") VALUES ($1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7)"
 
 	_,err := ss.db.Exec(query,
@@ -66,6 +67,7 @@ func (ss *SQLStorage) Insert_balancer_pool_created_evt(evt *p.BalancerPoolInfo) 
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
+		contract_aid,
 		pool_aid,
 		caller_aid,
 		caller_aid,
@@ -1502,5 +1504,50 @@ func (ss *SQLStorage) Get_balancer_latest_slippages(pool_aid int64) []p.TokenSli
 		}
 		records = append(records,rec)
 	}
+	return records
+}
+func (ss *SQLStorage) Get_pool_holder_distribution(pool_aid int64) []p.BalancerTokenHolder {
+
+	records := make([]p.BalancerTokenHolder,0,128)
+	var query string
+	query = "WITH uniq_accts AS (" +
+				"SELECT MAX(id) id,aid " +
+				"FROM erc20_bal " +
+				"WHERE (contract_aid=$1) AND (processed=TRUE) " +
+				"GROUP BY aid" +
+			") SELECT " +
+				"ha.addr, " +
+				"b.balance/1e+18 "+
+			"FROM erc20_bal b " +
+				"JOIN uniq_accts AS u ON u.id=b.id " +
+				"JOIN address AS ha ON u.aid=ha.address_id " +
+				"WHERE (b.balance > 0) " +
+				"ORDER BY b.balance DESC"
+
+	rows,err := ss.db.Query(query,pool_aid)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return records
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	var sum float64
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BalancerTokenHolder
+		err=rows.Scan(&rec.HolderAddr,&rec.Balance)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		fmt.Printf("holder %v , balance %v\n",rec.HolderAddr,rec.Balance)
+		sum = sum + rec.Balance
+		records = append(records,rec)
+	}
+	for i:=0; i<len(records) ; i++ {
+		records[i].Percentage = 100*(records[i].Balance/sum)
+	}
+
 	return records
 }

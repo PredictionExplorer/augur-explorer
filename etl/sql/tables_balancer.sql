@@ -3,6 +3,7 @@ CREATE TABLE bpool ( -- Balancer Pool creation event
 	evtlog_id			BIGINT NOT NULL UNIQUE REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
+	contract_aid		BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	pool_aid			BIGINT NOT NULL UNIQUE,
 	caller_aid			BIGINT NOT NULL,
@@ -130,7 +131,7 @@ CREATE TABLE b_bind (-- Balancer bind() function calls
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,	-- duplicated events occur due to additional call to rebind()
 	time_stamp			TIMESTAMPTZ NOT NULL,
-	pool_aid			BIGINT NOT NULL,
+	pool_aid			BIGINT NOT NULL,	-- this is also `contract_aid'
 	token_aid			BIGINT NOT NULL, -- token address linked to this pool
 	denorm				DECIMAL(32,18) NOT NULL,
 	balance				DECIMAL(64,18) NOT NULL,

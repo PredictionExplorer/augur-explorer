@@ -237,6 +237,7 @@ func execute_event(e *EthereumEventLog,log *types.Log) error {
 		evt.TimeStamp = timestamp
 		evt.PoolAddr = pool.String()
 		evt.CallerAddr = caller.String()
+		evt.ContractAddr = log.Address.String()
 		Info.Printf("Insertint NEW_POOL with address %v\n",pool.String())
 		storage.Delete_balancer_pool_created_evt(evt.EvtId)
 		storage.Insert_balancer_pool_created_evt(&evt)

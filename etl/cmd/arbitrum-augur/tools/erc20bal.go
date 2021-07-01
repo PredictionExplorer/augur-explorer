@@ -30,7 +30,7 @@ func main() {
 	}
 
 	if len(os.Args) < 3 {
-		fmt.Printf("Usage: \n\t\t%v [contract_addr] [user_addr]\n\n\t\tShows amount of tokens for an ERC20 tokens of [user_addr] account",os.Args[0])
+		fmt.Printf("Usage: \n\t\t%v [contract_addr] [user_addr]\n\n\t\tShows amount of tokens for an ERC20 tokens of [user_addr] account\n\n",os.Args[0])
 		os.Exit(1)
 	}
 	contract_addr := common.HexToAddress(os.Args[1])

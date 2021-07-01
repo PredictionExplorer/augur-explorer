@@ -1311,3 +1311,21 @@ func (ss *SQLStorage) Get_amm_user_liquidity(constants *p.AMM_Constants,user_aid
 	}
 	return total_rows,records
 }
+func (ss *SQLStorage) Get_market_pool_aid(factory_aid,market_id int64) (int64,error) {
+
+	var query string
+	query = "SELECT pool_aid FROM aa_pool_created WHERE factory_aid=$1 AND market_id=$2"
+
+	var null_id sql.NullInt64
+	res := ss.db.QueryRow(query,factory_aid,market_id)
+	err := res.Scan(&null_id)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return null_id.Int64,nil
+}

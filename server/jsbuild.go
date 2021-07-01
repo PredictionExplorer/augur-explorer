@@ -350,3 +350,23 @@ func build_js_validity_bond_price_history(prices* []ValidityBondPrice) template.
 	data_str = data_str + "]"
 	return template.JS(data_str)
 }
+func build_js_token_holder_distribution(holders* []BalancerTokenHolder) template.JS {
+	var data_str string = "["
+
+	for i:=0 ; i < len(*holders) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		var e = &(*holders)[i];
+		var entry string
+		entry = "{" +
+				"x:" + fmt.Sprintf("'%v'",i)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.Balance) + "," +
+				"address: " + fmt.Sprintf("%v",e.HolderAddr) + "," +
+				"balance: " + fmt.Sprintf("%v",e.Balance)+ "," +
+				"}"
+		data_str= data_str + entry
+	}
+	data_str = data_str + "]"
+	return template.JS(data_str)
+}
