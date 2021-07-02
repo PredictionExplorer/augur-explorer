@@ -316,7 +316,8 @@ func main() {
 		exit_chan <- true
 	}()
 
-
 	inspected_events = build_list_of_inspected_events()
-	process_arbitrum_augur_events(exit_chan)
+
+	update_non_augur_flag_manager(exit_chan)
+	//process_arbitrum_augur_events(exit_chan)
 }

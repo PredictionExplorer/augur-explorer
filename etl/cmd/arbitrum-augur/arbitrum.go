@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"os"
 	"fmt"
+	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/common"
@@ -810,29 +811,59 @@ func update_non_augur_flag() {
 
 
 	last_block_chain,last_block_processed := storage.Get_status_not_augur_block_num()
-
 	from_block := last_block_processed + 1
+	/*diff := last_block_chain - from_block
+	if diff > 10000 {
+		diff = 10000
+	}*/
 	to_block := last_block_chain - 1
+	//to_block := from_block + diff
+	Info.Printf("status: from_block=%v, to_block=%v\n",from_block,to_block)
 	records := storage.Get_shares_minted_burned_in_block_range("aa_shares_minted",from_block,to_block)
 	for i:=0; i<len(records) ; i++ {
 		rec := records[i]
-		if (rec.SharesSwappedId == 0) && (rec.LiquidityId==0) {
+		Info.Printf("status: sharesburned rec = %+v\n",rec)
+		if (rec.SharesSwappedId == 0) && (rec.LiquidityId==0) && (rec.BalancerId==0) {
+			Info.Printf("Detected SharesMinted event_id=%v as non-augur\n",rec.RecordId)
 			storage.Insert_not_augur_mark(rec.RecordId,RecTypeMint)
 		}
 	}
+	Info.Printf("status: finished SharesMinted\n")
 	records = storage.Get_shares_minted_burned_in_block_range("aa_shares_burned",from_block,to_block)
 	for i:=0; i<len(records) ; i++ {
 		rec := records[i]
-		if (rec.SharesSwappedId == 0) && (rec.LiquidityId==0) {
+		Info.Printf("status: sharesminted rec = %+v\n",rec)
+		if (rec.SharesSwappedId == 0) && (rec.LiquidityId==0) && (rec.BalancerId==0)  {
+			Info.Printf("Detected SharesBurned event_id=%v as non-augur\n",rec.RecordId)
 			storage.Insert_not_augur_mark(rec.RecordId,RecTypeBurn)
 		}
 	}
+	Info.Printf("status: finished SharesBurned\n")
 	records_swap := storage.Get_balancer_swaps_for_augur_markets(from_block,to_block)
 	for i:=0; i<len(records_swap); i++ {
 		rec := records_swap[i]
+		Info.Printf("status: balancer rec = %+v\n",rec)
 		if (rec.SharesSwappedId == 0) && (rec.LiquidityId==0) {
-			storage.Insert_not_augur_mark(rec.RecordId,RecTypeBurn)
+			Info.Printf("Detected Balancer swap event_id=%v as non-augur\n",rec.RecordId)
+			storage.Insert_not_augur_mark(rec.RecordId,RecTypeBalancer)
 		}
 	}
-	storage.Uddate_status_not_augur_block_num(to_block)
+	Info.Printf("status: finished Balancer swaps\n")
+	Info.Printf("status: updating last block to %v\n",to_block)
+	storage.Update_status_not_augur_block_num(to_block)
+}
+func update_non_augur_flag_manager(exit_chan chan bool) {
+
+	for {
+		update_non_augur_flag()
+		time.Sleep(10 * time.Second)
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.")
+					os.Exit(0)
+				}
+			default:
+		}
+	}
 }

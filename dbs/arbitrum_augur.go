@@ -1367,11 +1367,12 @@ func (ss *SQLStorage) Get_shares_minted_burned_in_block_range(table string,from_
 
 	var query string
 	query = "SELECT " +
-				"id,tx_id,ss.id as shares_swapped_id, " +
+				"t.id,t.tx_id,ss.id AS shares_swapped_id,liq.id AS liqquidity_id,bs.id as balancer_id " +
 			"FROM "+table+" t " +
 			"LEFT JOIN aa_shares_swapped ss ON t.tx_id = ss.tx_id " +
-			"LEFT JOIN aa_liquidity_changed liq ON t.tx_id=liq.tx_id" +
-			"WHERE (block_num >= $1) AND (block_num<=$1) ORDER BY block_num"
+			"LEFT JOIN aa_liquidity_changed liq ON t.tx_id=liq.tx_id " +
+			"LEFT JOIN bswap bs ON t.tx_id=bs.tx_id " +
+			"WHERE (t.block_num >= $1) AND (t.block_num<=$2) ORDER BY t.block_num"
 
 	rows,err := ss.db.Query(query,from_block,to_block)
 	if (err!=nil) {
@@ -1383,14 +1384,15 @@ func (ss *SQLStorage) Get_shares_minted_burned_in_block_range(table string,from_
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.AMM_TxId_Rec
-		var null_ss_id,null_liq_id sql.NullInt64
-		err=rows.Scan(&rec.RecordId,&rec.TxId,&null_ss_id,&null_liq_id)
+		var null_ss_id,null_liq_id,null_bal_id sql.NullInt64
+		err=rows.Scan(&rec.RecordId,&rec.TxId,&null_ss_id,&null_liq_id,&null_bal_id)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
 		if null_ss_id.Valid { rec.SharesSwappedId = null_ss_id.Int64; }
 		if null_liq_id.Valid { rec.LiquidityId = null_liq_id.Int64; }
+		if null_bal_id.Valid { rec.BalancerId = null_bal_id.Int64 }
 		records = append(records,rec)
 	}
 
@@ -1401,13 +1403,14 @@ func (ss *SQLStorage) Get_balancer_swaps_for_augur_markets(from_block,to_block i
 	records := make([]p.AMM_TxBalSwaps,0,32)
 	var query string
 	query = "SELECT " +
-				"tx_id, " +
+				"bs.id,"+
+				"bs.tx_id, " +
 				"ss.id AS shares_swapped_id, " +
 				"liq.id AS liquidity_id " +
 			"FROM bswap bs " +
 			"LEFT JOIN aa_shares_swapped ss ON ss.tx_id=bs.tx_id " +
 			"LEFT JOIN aa_liquidity_changed liq ON liq.tx_id=bs.tx_id "+
-			"WHERE (block_num >= $1) AND (block_num<=$1) ORDER BY block_num"
+			"WHERE (bs.block_num >= $1) AND (bs.block_num<=$2) ORDER BY bs.block_num"
 
 	rows,err := ss.db.Query(query,from_block,to_block)
 	if (err!=nil) {
@@ -1439,7 +1442,12 @@ func (ss *SQLStorage) Insert_not_augur_mark(record_id int64,rec_type int) {
 
 	_,err := ss.db.Exec(query,record_id,rec_type)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into 'aa_not_augur' table: %v; q=%v",err,query))
+		ss.Log_msg(
+			fmt.Sprintf(
+				"DB error: can't insert into 'aa_not_augur' table (record_id=%v,type=%v): %v; q=%v",
+				record_id,rec_type,err,query,
+			),
+		)
 		os.Exit(1)
 	}
 }

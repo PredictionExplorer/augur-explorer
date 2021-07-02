@@ -309,7 +309,7 @@ CREATE TABLE aa_feepot_trsf (-- FeePot transfer event
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE aa_not_augur ( -- marks operations made outside Augur GUI (Simplified Turbo)
-	rec_id				BIGINT PRIMARY KEY,
+	rec_id				BIGINT,
 	obj_type			INT DEFAULT 0, -- 0 - Balancer Swap, 1-Shares Swapped, 2 Liquidity
-
+	PRIMARY KEY(rec_id,obj_type)
 );

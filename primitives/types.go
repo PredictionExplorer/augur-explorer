@@ -2265,6 +2265,7 @@ type AMM_TxId_Rec struct { // shares minted entry (short)
 	TxId					int64
 	SharesSwappedId			int64
 	LiquidityId				int64
+	BalancerId				int64
 }
 type AMM_TxBalSwaps struct { // Tx ids for balancer swaps
 	RecordId				int64
