@@ -1329,3 +1329,117 @@ func (ss *SQLStorage) Get_market_pool_aid(factory_aid,market_id int64) (int64,er
 	}
 	return null_id.Int64,nil
 }
+func (ss *SQLStorage) Update_status_not_augur_block_num(block_num int64) {
+
+	var query string
+	query = "UPDATE aa_proc_status SET last_block_outgui = $1"
+
+	_,err := ss.db.Exec(query,block_num)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Get_status_not_augur_block_num() (int64,int64) {
+
+	var query string
+	query = "SELECT " +
+				"e.block_num AS last_block_on_chain," +
+				"s.last_block_outgui "+
+			"FROM aa_proc_status s " +
+				"JOIN evt_log e ON s.last_evt_id=e.id "
+
+	var last_block_chain,last_block_processed sql.NullInt64
+	res := ss.db.QueryRow(query)
+	err := res.Scan(&last_block_chain,&last_block_processed)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("aa_proc_status' table is empty, insert a record"))
+			os.Exit(1)
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return last_block_chain.Int64,last_block_processed.Int64
+}
+func (ss *SQLStorage) Get_shares_minted_burned_in_block_range(table string,from_block,to_block int64) []p.AMM_TxId_Rec  {
+
+	var query string
+	query = "SELECT " +
+				"id,tx_id,ss.id as shares_swapped_id, " +
+			"FROM "+table+" t " +
+			"LEFT JOIN aa_shares_swapped ss ON t.tx_id = ss.tx_id " +
+			"LEFT JOIN aa_liquidity_changed liq ON t.tx_id=liq.tx_id" +
+			"WHERE (block_num >= $1) AND (block_num<=$1) ORDER BY block_num"
+
+	rows,err := ss.db.Query(query,from_block,to_block)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.AMM_TxId_Rec,0,32)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.AMM_TxId_Rec
+		var null_ss_id,null_liq_id sql.NullInt64
+		err=rows.Scan(&rec.RecordId,&rec.TxId,&null_ss_id,&null_liq_id)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		if null_ss_id.Valid { rec.SharesSwappedId = null_ss_id.Int64; }
+		if null_liq_id.Valid { rec.LiquidityId = null_liq_id.Int64; }
+		records = append(records,rec)
+	}
+
+	return records
+}
+func (ss *SQLStorage) Get_balancer_swaps_for_augur_markets(from_block,to_block int64) []p.AMM_TxBalSwaps  {
+
+	records := make([]p.AMM_TxBalSwaps,0,32)
+	var query string
+	query = "SELECT " +
+				"tx_id, " +
+				"ss.id AS shares_swapped_id, " +
+				"liq.id AS liquidity_id " +
+			"FROM bswap bs " +
+			"LEFT JOIN aa_shares_swapped ss ON ss.tx_id=bs.tx_id " +
+			"LEFT JOIN aa_liquidity_changed liq ON liq.tx_id=bs.tx_id "+
+			"WHERE (block_num >= $1) AND (block_num<=$1) ORDER BY block_num"
+
+	rows,err := ss.db.Query(query,from_block,to_block)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.AMM_TxBalSwaps
+		var null_ss_id,null_liq_id sql.NullInt64
+		err=rows.Scan(&rec.RecordId,&rec.TxId,&null_ss_id,&null_liq_id)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		if null_ss_id.Valid { rec.SharesSwappedId = null_ss_id.Int64 }
+		if null_liq_id.Valid { rec.LiquidityId = null_liq_id.Int64 }
+		records = append(records,rec)
+	}
+
+	return records
+}
+func (ss *SQLStorage) Insert_not_augur_mark(record_id int64,rec_type int) {
+
+	var query string
+	query = "INSERT INTO aa_not_augur (rec_id,obj_type)" +
+			"VALUES ($1,$2)"
+
+	_,err := ss.db.Exec(query,record_id,rec_type)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into 'aa_not_augur' table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+}

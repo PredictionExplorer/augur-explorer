@@ -14,7 +14,8 @@ CREATE TABLE aa_factory (
 	factory_addr		TEXT -- copy to facilitate testing
 );
 CREATE TABLE aa_proc_status (-- Arbitrum Augur process status
-	last_evt_id			BIGINT DEFAULT 0
+	last_evt_id			BIGINT DEFAULT 0,
+	last_block_outgui	BIGINT DEFAULT 0, -- related to marking the flag 'outside_augur'
 );
 CREATE TABLE aa_pool_created (
 	id					BIGSERIAL PRIMARY KEY,
@@ -163,6 +164,7 @@ CREATE TABLE aa_shares_minted (-- SharesMinted
 	time_stamp			TIMESTAMPTZ,
 	aid					BIGINT NOT NULL,
 	market_id			BIGINT NOT NULL,
+	outside_augur		BOOLEAN DEFAULT FALSE,
 	amount				DECIMAL(64,18),
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
@@ -306,5 +308,8 @@ CREATE TABLE aa_feepot_trsf (-- FeePot transfer event
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE aa_not_augur ( -- marks operations made outside Augur GUI (Simplified Turbo)
+	rec_id				BIGINT PRIMARY KEY,
+	obj_type			INT DEFAULT 0, -- 0 - Balancer Swap, 1-Shares Swapped, 2 Liquidity
 
-
+);

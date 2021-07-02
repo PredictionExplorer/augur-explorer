@@ -80,6 +80,11 @@ const (
 	WNA_1Week					// 5
 	WNA_2Weeks					// 6
 )
+const (
+	RecTypeBalancer = iota
+	RecTypeMint
+	RecTypeBurn
+)
 var (
 	ErrChainSplit error = errors.New("Chainsplit detected")
 )
@@ -2254,4 +2259,16 @@ type BalancerTokenHolder struct {
 	HolderAddr				string
 	Balance					float64
 	Percentage				float64
+}
+type AMM_TxId_Rec struct { // shares minted entry (short)
+	RecordId				int64
+	TxId					int64
+	SharesSwappedId			int64
+	LiquidityId				int64
+}
+type AMM_TxBalSwaps struct { // Tx ids for balancer swaps
+	RecordId				int64
+	TxId					int64
+	SharesSwappedId			int64
+	LiquidityId				int64
 }

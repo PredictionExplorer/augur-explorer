@@ -806,3 +806,33 @@ func tx_lookup_if_needed(agtx *AugurTx) {
 		}
 	}
 }
+func update_non_augur_flag() {
+
+
+	last_block_chain,last_block_processed := storage.Get_status_not_augur_block_num()
+
+	from_block := last_block_processed + 1
+	to_block := last_block_chain - 1
+	records := storage.Get_shares_minted_burned_in_block_range("aa_shares_minted",from_block,to_block)
+	for i:=0; i<len(records) ; i++ {
+		rec := records[i]
+		if (rec.SharesSwappedId == 0) && (rec.LiquidityId==0) {
+			storage.Insert_not_augur_mark(rec.RecordId,RecTypeMint)
+		}
+	}
+	records = storage.Get_shares_minted_burned_in_block_range("aa_shares_burned",from_block,to_block)
+	for i:=0; i<len(records) ; i++ {
+		rec := records[i]
+		if (rec.SharesSwappedId == 0) && (rec.LiquidityId==0) {
+			storage.Insert_not_augur_mark(rec.RecordId,RecTypeBurn)
+		}
+	}
+	records_swap := storage.Get_balancer_swaps_for_augur_markets(from_block,to_block)
+	for i:=0; i<len(records_swap); i++ {
+		rec := records_swap[i]
+		if (rec.SharesSwappedId == 0) && (rec.LiquidityId==0) {
+			storage.Insert_not_augur_mark(rec.RecordId,RecTypeBurn)
+		}
+	}
+	storage.Uddate_status_not_augur_block_num(to_block)
+}
