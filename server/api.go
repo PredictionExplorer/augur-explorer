@@ -2003,6 +2003,8 @@ func a1_arbitrum_shares_swapped(c *gin.Context) {
 }
 func a1_amm_user_swaps(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
 	if  !augur_srv.matic_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return
@@ -2034,6 +2036,8 @@ func a1_amm_user_swaps(c *gin.Context) {
 	})
 }
 func a1_amm_user_liquidity(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	if  !augur_srv.matic_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
