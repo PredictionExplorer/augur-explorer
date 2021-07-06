@@ -173,6 +173,7 @@ func main() {
 	r.GET("/black/arbitrum/user/liquidity/:user/:offset/:limit",amm_user_liquidity)
 	r.GET("/black/arbitrum/markets/info/:contract_aid/:market_id",arbitrum_market_info)
 	r.GET("/black/arbitrum/market/liquidity/providers/:contract_aid/:market_id",arbitrum_market_liquidity_providers)
+	r.GET("/black/arbitrum/market/outside/shares_burned/:contract_aid/:market_id/:offset/:limit",arbitrum_market_outside_augur_shares_burned)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)

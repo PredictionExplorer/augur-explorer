@@ -49,3 +49,15 @@ type API_AMM_SportsMarket struct {
 	MarketRules				[]string
 	AbstractMarketInfo		API_AMM_AbstractMarketInfo
 }
+type API_AMM_Out_SharesBurned struct {// Arbitrum Augur SharesBurned event
+	BlockNum				int64
+	TimeStamp				int64
+	MarketId				int64
+	FactoryAid				int64
+	CallerAid				int64
+	Amount					float64
+	FactoryAddr				string
+	CallerAddr				string
+	DateTime				string
+	TxHash					string
+}

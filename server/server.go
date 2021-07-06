@@ -2858,7 +2858,7 @@ func arbitrum_liquidity_changed(c *gin.Context) {
 	}
 	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,factory_aid,market_id)
 	if err!=nil {
-		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",err))
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
 		return
 	}
 	total_rows,lchanges := augur_srv.db_matic.Get_liquidity_change_events(
@@ -2903,7 +2903,7 @@ func arbitrum_shares_swapped(c *gin.Context) {
 	}
 	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
 	if err!=nil {
-		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",err))
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
 		return
 	}
 
@@ -3005,7 +3005,7 @@ func arbitrum_market_info(c *gin.Context) {
 	}
 	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
 	if err!=nil {
-		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",err))
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
 		return
 	}
 
@@ -3046,7 +3046,7 @@ func arbitrum_market_liquidity_providers(c *gin.Context) {
 	}
 	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
 	if err!=nil {
-		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",err))
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
 		return
 	}
 	pool_aid,err := augur_srv.db_matic.Get_market_pool_aid(contract_aid,market_id)
@@ -3056,7 +3056,7 @@ func arbitrum_market_liquidity_providers(c *gin.Context) {
 	}
 	providers:= augur_srv.db_matic.Get_pool_holder_distribution(pool_aid)
 	if err!=nil {
-		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",err))
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
 		return
 	}
 	js_tok_distr := build_js_token_holder_distribution(&providers)
@@ -3067,4 +3067,49 @@ func arbitrum_market_liquidity_providers(c *gin.Context) {
 		"PoolTokenHolderDistribution" : providers,
 		"JSTokenHolderDistribution" : js_tok_distr,
 	})
+}
+func arbitrum_market_outside_augur_shares_burned(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return 
+	}
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	p_contract_aid := c.Param("contract_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'contract_aid' parameter is not set")
+		return
+	}
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
+		return
+	}
+	offset := int(0) ; limit:= int(100000)
+	operations := augur_srv.db_matic.Get_outside_augur_shares_burned(contract_aid,market_id,offset,limit)
+
+	c.HTML(http.StatusOK, "amm_outside_augur_shares_bruned.html", gin.H{
+		"MarketId":market_id,
+		"MarketInfo" : market,
+		"SharesBurnedOperations" : operations,
+	})
+
 }

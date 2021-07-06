@@ -274,13 +274,13 @@ func (ss *SQLStorage) Insert_aa_sports_market_event(evt *p.AA_SportsMarket) {
 	}
 }
 func (ss *SQLStorage) Insert_aa_trusted_market_event(evt *p.AA_TrustedMarket) {
-
+/*
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	creator_aid:=ss.Lookup_or_create_address(evt.CreatorAddr,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO aa_trusted_market (" +
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"market_id,end_time,creator_aid,description,outcomes" +
+				"market_id,end_time,creator_aid,descr,outcomes" +
 				") VALUES ("+
 					"$1,$2,$3,$4,TO_TIMESTAMP($5),$6,TO_TIMESTAMP($7),$8,$9,$10)"
 
@@ -293,6 +293,63 @@ func (ss *SQLStorage) Insert_aa_trusted_market_event(evt *p.AA_TrustedMarket) {
 			evt.MarketId,
 			evt.EndTime,
 			creator_aid,
+			evt.Description,
+			evt.Outcomes,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_trusted_market table: %v; q=%v",err,query))
+		os.Exit(1)
+	}
+*/
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	creator_aid:=ss.Lookup_or_create_address(evt.CreatorAddr,evt.BlockNum,evt.TxId)
+	collateral_aid:=ss.Lookup_or_create_address(evt.CollateralAddr,evt.BlockNum,evt.TxId)
+	settlement_aid:=ss.Lookup_or_create_address(evt.SettlementAddr,evt.BlockNum,evt.TxId)
+	feepot_aid:=ss.Lookup_or_create_address(evt.FeePotAddr,evt.BlockNum,evt.TxId)
+	protocol_aid:=ss.Lookup_or_create_address(evt.ProtocolAddr,evt.BlockNum,evt.TxId)
+	var query string
+	query = "SELECT amm_insert_trusted_market("+
+				"$1::BIGINT," + // evtlog_id
+				"$2::BIGINT," + // block_num
+				"$3::BIGINT," + // tx_id
+				"$4::BIGINT," + // contract_aid
+				"TO_TIMESTAMP($5)," + // time_stamp
+				"$6::BIGINT," + // market_id
+				"$7::BIGINT," + // creator_aid
+				"TO_TIMESTAMP($8)," + // created_time
+				"TO_TIMESTAMP($9)," + // end_time
+				"$10::DECIMAL," + // settlement_fee
+				"$11::DECIMAL,"+ // staker_fee
+				"$12::DECIMAL,"+ // protocol fee
+				"$13::BIGINT,"+ // settlement_aid
+				"$14::BIGINT,"+ // feepot_aid
+				"$15::BIGINT,"+ // protocol_aid
+				"$16::BIGINT,"+ // collateral_aid
+				"$17::DECIMAL,"+// sharefactor
+				"$18::TEXT,"+ // sharetokens (comma separated)
+				"$19::TEXT,"+ // description
+				"$20::TEXT"+ // outcomes
+			")"
+
+	_,err := ss.db.Exec(query,
+			evt.EvtId,
+			evt.BlockNum,
+			evt.TxId,
+			contract_aid,
+			evt.TimeStamp,
+			evt.MarketId,
+			creator_aid,
+			evt.TimeStamp,
+			evt.EndTime,
+			evt.SettlementFee,
+			evt.StakerFee,
+			evt.ProtocolFee,
+			settlement_aid,
+			feepot_aid,
+			protocol_aid,
+			collateral_aid,
+			evt.ShareFactor,
+			evt.ShareTokens,
 			evt.Description,
 			evt.Outcomes,
 	)
@@ -322,7 +379,7 @@ func (ss *SQLStorage) Insert_aa_shares_minted_event(evt *p.AA_SharesMinted) {
 			evt.Amount,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_shares_minted table: %v; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_shares_minted table (evt_id=%v): %v; q=%v",evt.EvtId,err,query))
 		os.Exit(1)
 	}
 }
@@ -347,7 +404,7 @@ func (ss *SQLStorage) Insert_aa_shares_burned_event(evt *p.AA_SharesBurned) {
 			evt.Amount,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_shares_burned table: %v; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_shares_burned table (event_id=%v): %v; q=%v",evt.EvtId,err,query))
 		os.Exit(1)
 	}
 }
@@ -376,7 +433,7 @@ func (ss *SQLStorage) Insert_aa_shares_swapped_event(evt *p.AA_SharesSwapped) {
 			evt.Shares,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_shares_swapped table: %v; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_shares_swapped table (evt_id=%v): %v; q=%v",evt.EvtId,err,query))
 		os.Exit(1)
 	}
 }
@@ -402,7 +459,7 @@ func (ss *SQLStorage) Insert_aa_settlement_fee_claimed_event(evt *p.AA_Settlemen
 			evt.Amount,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_sfee_claimed table: %v; q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_sfee_claimed table (evt_id=%v): %v; q=%v",evt.EvtId,err,query))
 		os.Exit(1)
 	}
 }
@@ -1451,3 +1508,110 @@ func (ss *SQLStorage) Insert_not_augur_mark(record_id int64,rec_type int) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Get_outside_augur_shares_burned(factory_aid,market_id int64,offset,limit int) []p.API_AMM_Out_SharesBurned {
+
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM sb.time_stamp)::BIGINT AS created_ts, " +
+				"sb.time_stamp,"+
+				"sb.block_num,"+
+				"tx.tx_hash," +
+				"sb.contract_aid," +
+				"ca.addr," +
+				"sb.aid," +
+				"ua.addr," +
+				"sb.market_id," +
+				"sb.amount " +
+			"FROM aa_shares_burned sb " +
+				"JOIN aa_not_augur na ON (na.rec_id=sb.id) AND (na.obj_type=2) " +
+				"LEFT JOIN address ca ON sb.contract_aid = ca.address_id " +
+				"LEFT JOIN address ua ON sb.aid = ua.address_id " +
+				"LEFT JOIN transaction tx ON sb.tx_id=tx.id " +
+			"WHERE contract_aid=$1 AND market_id=$2 " +
+			"ORDER BY sb.time_stamp DESC "+
+			"OFFSET $3 LIMIT $4"
+
+	rows,err := ss.db.Query(query,factory_aid,market_id,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.API_AMM_Out_SharesBurned,0,32)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_AMM_Out_SharesBurned
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.TxHash,
+			&rec.FactoryAid,
+			&rec.FactoryAddr,
+			&rec.CallerAid,
+			&rec.CallerAddr,
+			&rec.MarketId,
+			&rec.Amount,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_outside_augur_shares_minted(factory_aid,market_id int64,offset,limit int) []p.API_AMM_Out_SharesBurned {
+
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM sb.time_stamp)::BIGINT AS created_ts, " +
+				"sb.time_stamp,"+
+				"sb.block_num,"+
+				"tx.tx_hash," +
+				"sb.contract_aid," +
+				"ca.addr," +
+				"sb.aid," +
+				"ua.addr," +
+				"sb.market_id," +
+				"sb.amount " +
+			"FROM aa_shares_burned sb " +
+				"JOIN aa_not_augur na ON (na.rec_id=sb.id) AND (na.obj_type=2) " +
+				"LEFT JOIN address ca ON sb.contract_aid = ca.address_id " +
+				"LEFT JOIN address ua ON sb.aid = ua.address_id " +
+				"LEFT JOIN transaction tx ON sb.tx_id=tx.id " +
+			"WHERE contract_aid=$1 AND market_id=$2 " +
+			"ORDER BY sb.time_stamp DESC "+
+			"OFFSET $3 LIMIT $4"
+
+	rows,err := ss.db.Query(query,factory_aid,market_id,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.API_AMM_Out_SharesBurned,0,32)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_AMM_Out_SharesBurned
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.TxHash,
+			&rec.FactoryAid,
+			&rec.FactoryAddr,
+			&rec.CallerAid,
+			&rec.CallerAddr,
+			&rec.MarketId,
+			&rec.Amount,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+

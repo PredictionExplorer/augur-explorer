@@ -223,7 +223,7 @@ func proc_sports_market(log *types.Log,elog *EthereumEventLog) {
 
 	factory,err := NewSportsLinkMarketFactory(log.Address,eclient)
 	if err != nil {
-		Error.Printf("Failed to instantiate Factory contract: %v\n",err)
+		Error.Printf("Failed to instantiate (Sports market) Factory contract: %v\n",err)
 		os.Exit(1)
 	}
 	var copts = new(bind.CallOpts)
@@ -337,13 +337,84 @@ func proc_trusted_market(log *types.Log,elog *EthereumEventLog) {
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 
-	Info.Printf("TrustedMarketreated{\n")
+	factory,err := NewTrustedMarketFactory(log.Address,eclient)
+	if err != nil {
+		Error.Printf("Failed to instantiate (Trusted market) Factory contract: %v\n",err)
+		os.Exit(1)
+	}
+	var copts = new(bind.CallOpts)
+	market_obj,err:=factory.GetMarket(copts,eth_evt.Id)
+	if err  != nil {
+		Error.Printf("Failed to execute GetMarket(): %v\n",err)
+		os.Exit(1)
+	}
+	var sharetokens string
+	for i:=0; i<len(market_obj.ShareTokens); i++ {
+		if len(sharetokens) > 0 {
+			sharetokens = sharetokens + ","
+		}
+		sharetokens = sharetokens + market_obj.ShareTokens[i].String()
+	}
+	evt.ShareTokens = sharetokens
+
+	collateral,err:=factory.Collateral(copts)
+	if err != nil {
+		Error.Printf("Failed to execute Collateral(): %v\n",err)
+		os.Exit(1)
+	}
+	evt.CollateralAddr = collateral.String()
+
+	sharefactor,err:=factory.ShareFactor(copts)
+	if err != nil {
+		Error.Printf("Failed to execute ShareFactor(): %v",err)
+		os.Exit(1)
+	}
+	evt.ShareFactor = sharefactor.String()
+
+	feepot,err:=factory.FeePot(copts)
+	if err != nil {
+		Error.Printf("Failed to execute FeePot(): %v",err)
+		os.Exit(1)
+	}
+	evt.FeePotAddr=feepot.String()
+	staker_fee,err:=factory.StakerFee(copts)
+	if err != nil {
+		Error.Printf("Failed to execute StakerFee(): %v",err)
+		os.Exit(1)
+	}
+	evt.StakerFee=staker_fee.String()
+
+	protocol,err:=factory.Protocol(copts)
+	if err != nil {
+		Error.Printf("Failed to execute Protocol(): %v",err)
+		os.Exit(1)
+	}
+	evt.ProtocolAddr=protocol.String()
+	evt.ProtocolFee = market_obj.ProtocolFee.String()
+
+	evt.SettlementAddr = market_obj.SettlementAddress.String()
+	evt.SettlementFee = market_obj.SettlementFee.String()
+
+	Info.Printf("TrustedMarketCreated{\n")
 	Info.Printf("\tId: %v\n",evt.MarketId)
 	Info.Printf("\tCreator: %v\n",evt.CreatorAddr)
 	Info.Printf("\tEndTime: %v\n",evt.EndTime)
 	Info.Printf("\tDescription: %v\n",evt.Description)
 	Info.Printf("\tOutcomes: %v\n",evt.Outcomes)
 	Info.Printf("}\n")
+	Info.Printf("Additional info {\n")
+	Info.Printf("\tSettlement Addr: %v\n",evt.SettlementAddr)
+	Info.Printf("\tSettlement Fee: %v\n",evt.SettlementFee)
+	Info.Printf("\tProtocol Addr: %v\n",evt.ProtocolAddr)
+	Info.Printf("\tProtocol Fee: %v\n",evt.ProtocolFee)
+	Info.Printf("\tStaker Fee: %v\n",evt.StakerFee)
+	Info.Printf("\tFeePotAddr: %v\n",evt.FeePotAddr)
+	Info.Printf("\tShareFactor: %v\n",evt.ShareFactor)
+	Info.Printf("\tCollateralAddr: %v\n",evt.CollateralAddr)
+	Info.Printf("\tShareTokensList: %v\n",evt.ShareTokens)
+	Info.Printf("}\n")
+
+
 
 	storage.Insert_aa_trusted_market_event(&evt)
 }
@@ -856,7 +927,6 @@ func update_non_augur_flag_manager(exit_chan chan bool) {
 
 	for {
 		update_non_augur_flag()
-		time.Sleep(10 * time.Second)
 		select {
 			case exit_flag := <-exit_chan:
 				if exit_flag {
@@ -865,5 +935,6 @@ func update_non_augur_flag_manager(exit_chan chan bool) {
 				}
 			default:
 		}
+		time.Sleep(10 * time.Second)
 	}
 }
