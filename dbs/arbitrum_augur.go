@@ -1397,7 +1397,7 @@ func (ss *SQLStorage) Update_status_not_augur_block_num(block_num int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Get_status_not_augur_block_num() (int64,int64) {
+func (ss *SQLStorage) Get_status_not_augur_block_num() (int64,int64,error) {
 
 	var query string
 	query = "SELECT " +
@@ -1411,14 +1411,13 @@ func (ss *SQLStorage) Get_status_not_augur_block_num() (int64,int64) {
 	err := res.Scan(&last_block_chain,&last_block_processed)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			ss.Log_msg(fmt.Sprintf("aa_proc_status' table is empty, insert a record"))
-			os.Exit(1)
+			return 0,0,err
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 			os.Exit(1)
 		}
 	}
-	return last_block_chain.Int64,last_block_processed.Int64
+	return last_block_chain.Int64,last_block_processed.Int64,nil
 }
 func (ss *SQLStorage) Get_shares_minted_burned_in_block_range(table string,from_block,to_block int64) []p.AMM_TxId_Rec  {
 
@@ -1465,6 +1464,7 @@ func (ss *SQLStorage) Get_balancer_swaps_for_augur_markets(from_block,to_block i
 				"ss.id AS shares_swapped_id, " +
 				"liq.id AS liquidity_id " +
 			"FROM bswap bs " +
+			"JOIN aa_pool_created p ON p.pool_aid=bs.pool_aid " +
 			"LEFT JOIN aa_shares_swapped ss ON ss.tx_id=bs.tx_id " +
 			"LEFT JOIN aa_liquidity_changed liq ON liq.tx_id=bs.tx_id "+
 			"WHERE (bs.block_num >= $1) AND (bs.block_num<=$2) ORDER BY bs.block_num"
@@ -1561,7 +1561,7 @@ func (ss *SQLStorage) Get_outside_augur_shares_burned(factory_aid,market_id int6
 	}
 	return records
 }
-func (ss *SQLStorage) Get_outside_augur_shares_minted(factory_aid,market_id int64,offset,limit int) []p.API_AMM_Out_SharesBurned {
+func (ss *SQLStorage) Get_outside_augur_shares_minted(factory_aid,market_id int64,offset,limit int) []p.API_AMM_Out_SharesMinted {
 
 	var query string
 	query = "SELECT " +
@@ -1575,8 +1575,8 @@ func (ss *SQLStorage) Get_outside_augur_shares_minted(factory_aid,market_id int6
 				"ua.addr," +
 				"sb.market_id," +
 				"sb.amount " +
-			"FROM aa_shares_burned sb " +
-				"JOIN aa_not_augur na ON (na.rec_id=sb.id) AND (na.obj_type=2) " +
+			"FROM aa_shares_minted sb " +
+				"JOIN aa_not_augur na ON (na.rec_id=sb.id) AND (na.obj_type=1) " +
 				"LEFT JOIN address ca ON sb.contract_aid = ca.address_id " +
 				"LEFT JOIN address ua ON sb.aid = ua.address_id " +
 				"LEFT JOIN transaction tx ON sb.tx_id=tx.id " +
@@ -1589,11 +1589,11 @@ func (ss *SQLStorage) Get_outside_augur_shares_minted(factory_aid,market_id int6
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.API_AMM_Out_SharesBurned,0,32)
+	records := make([]p.API_AMM_Out_SharesMinted,0,32)
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.API_AMM_Out_SharesBurned
+		var rec p.API_AMM_Out_SharesMinted
 		err=rows.Scan(
 			&rec.TimeStamp,
 			&rec.DateTime,
@@ -1605,6 +1605,74 @@ func (ss *SQLStorage) Get_outside_augur_shares_minted(factory_aid,market_id int6
 			&rec.CallerAddr,
 			&rec.MarketId,
 			&rec.Amount,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_outside_augur_balancer_swaps(pool_aid int64,offset,limit int) []p.API_AMM_Out_BalancerSwap {
+
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM swp.time_stamp)::BIGINT AS created_ts, " +
+				"swp.time_stamp,"+
+				"swp.block_num,"+
+				"tx.tx_hash," +
+				"swp.caller_aid,"+
+				"ca.addr," +
+				"swp.token_in_aid," +
+				"ta_in.addr," +
+				"swp.token_out_aid," +
+				"ta_out.addr," +
+				"swp.amount_in, " +
+				"swp.amount_out, " +
+				"erc_in.symbol," +
+				"erc_in.name," +
+				"erc_out.symbol," +
+				"erc_out.name " +
+			"FROM bswap swp " +
+				"JOIN aa_not_augur na ON (na.rec_id=swp.id) AND (na.obj_type=0) " +
+				"LEFT JOIN address ca ON swp.caller_aid = ca.address_id " +
+				"LEFT JOIN address ta_in ON swp.token_in_aid = ta_in.address_id " +
+				"LEFT JOIN address ta_out ON swp.token_out_aid = ta_out.address_id " +
+				"LEFT JOIN transaction tx ON swp.tx_id=tx.id " +
+				"LEFT JOIN erc20_info erc_in ON erc_in.aid=swp.token_in_aid " +
+				"LEFT JOIN erc20_info erc_out ON erc_out.aid=swp.token_out_aid " +
+			"WHERE swp.pool_aid=$1" +
+			"ORDER BY swp.time_stamp DESC "+
+			"OFFSET $2 LIMIT $3"
+
+	rows,err := ss.db.Query(query,pool_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.API_AMM_Out_BalancerSwap,0,32)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_AMM_Out_BalancerSwap
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.TxHash,
+			&rec.CallerAid,
+			&rec.CallerAddr,
+			&rec.TokenInAid,
+			&rec.TokenInAddr,
+			&rec.TokenOutAid,
+			&rec.TokenOutAddr,
+			&rec.AmountIn,
+			&rec.AmountOut,
+			&rec.TokenInSymbol,
+			&rec.TokenInName,
+			&rec.TokenOutSymbol,
+			&rec.TokenOutName,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))

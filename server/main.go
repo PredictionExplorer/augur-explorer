@@ -174,6 +174,8 @@ func main() {
 	r.GET("/black/arbitrum/markets/info/:contract_aid/:market_id",arbitrum_market_info)
 	r.GET("/black/arbitrum/market/liquidity/providers/:contract_aid/:market_id",arbitrum_market_liquidity_providers)
 	r.GET("/black/arbitrum/market/outside/shares_burned/:contract_aid/:market_id/:offset/:limit",arbitrum_market_outside_augur_shares_burned)
+	r.GET("/black/arbitrum/market/outside/shares_minted/:contract_aid/:market_id/:offset/:limit",arbitrum_market_outside_augur_shares_minted)
+	r.GET("/black/arbitrum/market/outside/balancer_swaps/:contract_aid/:market_id/:offset/:limit",arbitrum_market_outside_augur_balancer_swaps)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -249,6 +251,8 @@ func main() {
 	r.GET("/api/arbitrum/user/swaps/:user/:offset/:limit",a1_amm_user_swaps)
 	r.GET("/api/arbitrum/user/liquidity/:user/:offset/:limit",a1_amm_user_liquidity)
 	r.GET("/api/arbitrum/market/liquidity/providers/:factory_aid/:market_id",a1_arbitrum_market_liquidity_providers)
+	r.GET("/api/arbitrum/market/outside/shares_burned/:contract_aid/:market_id/:offset/:limit",a1_arbitrum_market_outside_augur_shares_burned)
+	r.GET("/api/arbitrum/market/outside/shares_minted/:contract_aid/:market_id/:offset/:limit",a1_arbitrum_market_outside_augur_shares_minted)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

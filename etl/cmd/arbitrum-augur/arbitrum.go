@@ -881,7 +881,11 @@ func tx_lookup_if_needed(agtx *AugurTx) {
 func update_non_augur_flag() {
 
 
-	last_block_chain,last_block_processed := storage.Get_status_not_augur_block_num()
+	last_block_chain,last_block_processed,err := storage.Get_status_not_augur_block_num()
+	if err != nil {
+		Info.Printf("No records in status table, aborting update non-augur flag process\n")
+		return
+	}
 	from_block := last_block_processed + 1
 	/*diff := last_block_chain - from_block
 	if diff > 10000 {

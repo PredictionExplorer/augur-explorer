@@ -2176,3 +2176,115 @@ func a1_arbitrum_market_liquidity_providers(c *gin.Context) {
 		"PoolTokenHolderDistribution" : providers,
 	})
 }
+func a1_arbitrum_market_outside_augur_shares_burned(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.matic_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'market_id' parameter is not set")
+		return
+	}
+	p_contract_aid := c.Param("factory_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'factory_aid' parameter is not set")
+		return
+	}
+
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
+	if err!=nil {
+		respond_error_json(c,fmt.Sprintf("Market with market_id=%v has error: %v",err))
+		return
+	}
+	operations := augur_srv.db_matic.Get_outside_augur_shares_burned(contract_aid,market_id,offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MarketId":market_id,
+		"MarketInfo" : market,
+		"SharesBurnedOperations" : operations,
+	})
+}
+func a1_arbitrum_market_outside_augur_shares_minted(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.matic_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'market_id' parameter is not set")
+		return
+	}
+	p_contract_aid := c.Param("factory_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'factory_aid' parameter is not set")
+		return
+	}
+
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
+	if err!=nil {
+		respond_error_json(c,fmt.Sprintf("Market with market_id=%v has error: %v",err))
+		return
+	}
+	operations := augur_srv.db_matic.Get_outside_augur_shares_minted(contract_aid,market_id,offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MarketId":market_id,
+		"MarketInfo" : market,
+		"SharesBurnedOperations" : operations,
+	})
+}

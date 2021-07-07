@@ -15,7 +15,7 @@ CREATE TABLE aa_factory (
 );
 CREATE TABLE aa_proc_status (-- Arbitrum Augur process status
 	last_evt_id			BIGINT DEFAULT 0,
-	last_block_outgui	BIGINT DEFAULT 0, -- related to marking the flag 'outside_augur'
+	last_block_outgui	BIGINT DEFAULT 0 -- related to marking the flag 'outside_augur'
 );
 CREATE TABLE aa_pool_created (
 	id					BIGSERIAL PRIMARY KEY,
@@ -76,7 +76,7 @@ CREATE TABLE aa_market ( -- AbstractMarketFactory object type , parent of Sports
 );
 CREATE TABLE aa_shtok ( -- Market ShareToken (OwnedShareToken.sol)
 	id					BIGSERIAL PRIMARY KEY,
-	parent_id			BIGSERIAL NOT NULL,
+	parent_id			BIGSERIAL NOT NULL,-- references aa_market.id
 	token_aid			BIGSERIAL NOT NULL,	-- this  should match a record in erc20_info
 	FOREIGN KEY(parent_id) REFERENCES aa_market(id) ON DELETE CASCADE
 );
@@ -164,7 +164,6 @@ CREATE TABLE aa_shares_minted (-- SharesMinted
 	time_stamp			TIMESTAMPTZ,
 	aid					BIGINT NOT NULL,
 	market_id			BIGINT NOT NULL,
-	outside_augur		BOOLEAN DEFAULT FALSE,
 	amount				DECIMAL(64,18),
 	FOREIGN KEY(evtlog_id) REFERENCES evt_log(id) ON DELETE CASCADE,
 	UNIQUE(evtlog_id)

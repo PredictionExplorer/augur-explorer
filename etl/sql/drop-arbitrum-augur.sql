@@ -22,5 +22,6 @@ DROP TABLE IF EXISTS
 	aa_stk_fee_chg,
 	aa_winclaim,
 	aa_mkt_resolved,
-	aa_feepot_trsf
+	aa_feepot_trsf,
+	aa_not_augur
 CASCADE;

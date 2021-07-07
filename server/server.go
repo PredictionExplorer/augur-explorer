@@ -3113,3 +3113,101 @@ func arbitrum_market_outside_augur_shares_burned(c *gin.Context) {
 	})
 
 }
+func arbitrum_market_outside_augur_shares_minted(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return 
+	}
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	p_contract_aid := c.Param("contract_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'contract_aid' parameter is not set")
+		return
+	}
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
+		return
+	}
+	offset := int(0) ; limit:= int(100000)
+	operations := augur_srv.db_matic.Get_outside_augur_shares_minted(contract_aid,market_id,offset,limit)
+
+	c.HTML(http.StatusOK, "amm_outside_augur_shares_minted.html", gin.H{
+		"MarketId":market_id,
+		"MarketInfo" : market,
+		"SharesMintedOperations" : operations,
+	})
+
+}
+func arbitrum_market_outside_augur_balancer_swaps(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return 
+	}
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	p_contract_aid := c.Param("contract_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'contract_aid' parameter is not set")
+		return
+	}
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
+		return
+	}
+	pool_aid,err := augur_srv.db_matic.Get_market_pool_aid(contract_aid,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Pool wasn't found in the database for this market: %v",err))
+		return
+	}
+	pool_addr,_ := augur_srv.db_matic.Lookup_address(pool_aid)
+	offset:=int(0);limit:=int(1000000000)
+	balancer_swaps := augur_srv.db_matic.Get_outside_augur_balancer_swaps(pool_aid,offset,limit)
+
+	c.HTML(http.StatusOK, "amm_balancer_swaps_outside_augur.html", gin.H{
+		"MarketId":market_id,
+		"MarketInfo" : market,
+		"PoolAid": pool_aid,
+		"PoolAddr" : pool_addr,
+		"BalancerSwaps" : balancer_swaps,
+	})
+
+}

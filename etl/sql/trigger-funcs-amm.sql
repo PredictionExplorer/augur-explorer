@@ -51,6 +51,7 @@ BEGIN
 					RAISE EXCEPTION 'can''t find address % in address table and INSERT failed',v_token_addr;
 				END IF;
 			END IF;
+			INSERT INTO aa_shtok(parent_id,token_aid) VALUES(v_aa_mkt_id,v_token_aid);
 		END LOOP;
 
 	RETURN v_aa_mkt_id;

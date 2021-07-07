@@ -61,3 +61,33 @@ type API_AMM_Out_SharesBurned struct {// Arbitrum Augur SharesBurned event
 	DateTime				string
 	TxHash					string
 }
+type API_AMM_Out_SharesMinted struct {// Arbitrum Augur SharesMinted event
+	BlockNum				int64
+	TimeStamp				int64
+	MarketId				int64
+	FactoryAid				int64
+	CallerAid				int64
+	Amount					float64
+	FactoryAddr				string
+	CallerAddr				string
+	DateTime				string
+	TxHash					string
+}
+type API_AMM_Out_BalancerSwap struct {// Arbitrum Augur Balancer Swap of ShareTokens
+	BlockNum				int64
+	TimeStamp				int64
+	CallerAid				int64
+	TokenInAid				int64
+	TokenOutAid				int64
+	AmountIn				float64
+	AmountOut				float64
+	DateTime				string
+	TxHash					string
+	TokenOutAddr			string
+	TokenInAddr				string
+	CallerAddr				string
+	TokenInSymbol			string
+	TokenOutSymbol			string
+	TokenInName				string
+	TokenOutName			string
+}
