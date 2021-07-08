@@ -4,11 +4,11 @@ DECLARE
 	v_cnt numeric;
 BEGIN
 
-	INSERT INTO erc20_bal(block_num,tx_id,parent_id,contract_aid,aid,amount)
-			VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.contract_aid,NEW.from_aid,-NEW.amount);
+	INSERT INTO erc20_bal(block_num,tx_id,parent_id,contract_aid,time_stamp,aid,amount)
+			VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.contract_aid,NEW.time_stamp,NEW.from_aid,-NEW.amount);
 
-	INSERT INTO erc20_bal(block_num,tx_id,parent_id,contract_aid,aid,amount)
-			VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.contract_aid,NEW.to_aid,NEW.amount);
+	INSERT INTO erc20_bal(block_num,tx_id,parent_id,contract_aid,time_stamp,aid,amount)
+			VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.contract_aid,NEW.time_stamp,NEW.to_aid,NEW.amount);
 
 	RETURN NEW;
 END;

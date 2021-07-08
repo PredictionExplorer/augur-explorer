@@ -91,3 +91,22 @@ type API_AMM_Out_BalancerSwap struct {// Arbitrum Augur Balancer Swap of ShareTo
 	TokenInName				string
 	TokenOutName			string
 }
+type API_AMM_Out_ERC20_Transfer struct {// Arbitrum Augur Balancer Swap of ShareTokens
+	BlockNum				int64
+	TimeStamp				int64
+	CallerAid				int64
+	TokenAid				int64
+	MktFactoryAid			int64
+	MarketId				int64
+	Amount					float64
+	DateTime				string
+	TxHash					string
+	CallerAddr				string
+	TokenAddr				string
+	TokenSymbol				string
+	TokenName				string
+	MktFactoryAddr			string
+	TransferFromAddr		string
+	TransferToAddr			string
+	
+}

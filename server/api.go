@@ -2288,3 +2288,123 @@ func a1_arbitrum_market_outside_augur_shares_minted(c *gin.Context) {
 		"SharesBurnedOperations" : operations,
 	})
 }
+func a1_arbitrum_market_outside_augur_balancer_swaps(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.matic_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'market_id' parameter is not set")
+		return
+	}
+	p_contract_aid := c.Param("factory_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'factory_aid' parameter is not set")
+		return
+	}
+
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
+	if err!=nil {
+		respond_error_json(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
+		return
+	}
+	pool_aid,err := augur_srv.db_matic.Get_market_pool_aid(contract_aid,market_id)
+	if err!=nil {
+		respond_error_json(c,fmt.Sprintf("Pool wasn't found in the database for this market: %v",err))
+		return
+	}
+	pool_addr,_ := augur_srv.db_matic.Lookup_address(pool_aid)
+	balancer_swaps := augur_srv.db_matic.Get_outside_augur_balancer_swaps(pool_aid,offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MarketId":market_id,
+		"MarketInfo" : market,
+		"PoolAid": pool_aid,
+		"PoolAddr" : pool_addr,
+		"BalancerSwaps" : balancer_swaps,
+	})
+
+}
+func a1_arbitrum_market_outside_augur_erc20_transfers(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.matic_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'market_id' parameter is not set")
+		return
+	}
+	p_contract_aid := c.Param("factory_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'factory_aid' parameter is not set")
+		return
+	}
+
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
+	if err!=nil {
+		respond_error_json(c,fmt.Sprintf("Market with market_id=%v couldn't be located, error: %v",market_id,err))
+		return
+	}
+	transfers := augur_srv.db_matic.Get_erc20_transfers_outside_augur(contract_aid,market_id,offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MarketId":market_id,
+		"MarketInfo" : market,
+		"ERC20Transfers" : transfers,
+	})
+}

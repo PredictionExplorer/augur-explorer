@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Balancer Swaps Outside Augur GUI</title>
+	<title>ERC20 Transfers Outside Augur GUI</title>
 </head>
 <body>
-<h3 class="page_title">Balancer Swaps made outside Augur GUI</h3>
+<h3 class="page_title">ERC20 transfers outside Augur GUI</h3>
 <h4 class="page_title">
 </h4>
 <br/>
@@ -44,27 +44,31 @@
 </table>
 <br/>
 <div id="arbitrum_augur_pools"></div>
-<h3>List of 'Balancer Swap' operations on this market:</h3>
+<h3>List of 'ERC20' operations on this market:</h3>
 <div class="market_info">
 <table class="market_trades">
 	<tr class="market_trades">
 		<td class="mkt_trade_hdr" style="text-align: center" >Block</td>
 		<td class="mkt_trade_hdr" style="text-align: center" >Created</td>
 		<td class="mkt_trade_hdr" style="text-align: center">Caller</td>
-		<td class="mkt_trade_hdr" style="text-align: center">Token In</td>
-		<td class="mkt_trade_hdr" style="text-align: center">Amount In</td>
-		<td class="mkt_trade_hdr" style="text-align: center">Token Out</td>
-		<td class="mkt_trade_hdr" style="text-align: center">Amount Out</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Token Addr</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Symbol</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Name</td>
+		<td class="mkt_trade_hdr" style="text-align: center">From Addr</td>
+		<td class="mkt_trade_hdr" style="text-align: center">To Addr</td>
+		<td class="mkt_trade_hdr" style="text-align: center">Amount</td>
 	</tr>
-	{{- range $i, $rpt := .BalancerSwaps}}
+	{{- range $i, $rpt := .ERC20Transfers}}
 	<tr class="market_trades">
 		<td class="mkt_trade_field">{{.BlockNum}}</td>
 		<td class="mkt_trade_field">{{.DateTime}}</td>
 		<td class="mkt_trade_field">{{.CallerAddr}}</td>
-		<td class="mkt_trade_field">{{.TokenInSymbol}}</td>
-		<td class="mkt_trade_field" style="text-align: right">{{ printf "%.2f"  .AmountIn }}</td>
-		<td class="mkt_trade_field">{{.TokenOutSymbol}}</td>
-		<td class="mkt_trade_field" style="text-align: right">{{ printf "%.2f"  .AmountOut }}</td>
+		<td class="mkt_trade_field">{{.TokenAddr}}</td>
+		<td class="mkt_trade_field">{{.TokenSymbol}}</td>
+		<td class="mkt_trade_field">{{.TokenName}}</td>
+		<td class="mkt_trade_field">{{.TransferFromAddr}}</td>
+		<td class="mkt_trade_field">{{.TransferToAddr}}</td>
+		<td class="mkt_trade_field" style="text-align: right">{{ printf "%.2f"  .Amount }}</td>
 	</tr>
 	{{- end }}
 </table>

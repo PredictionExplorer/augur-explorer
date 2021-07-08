@@ -170,7 +170,7 @@ func (ss *SQLStorage) Set_erc20_balance(id int64,block_hash string,balance strin
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Insert_ERC20_token_transfer(contract_addr string,evt *p.ETransfer,block_num,tx_id int64,evtlog_id int64) {
+func (ss *SQLStorage) Insert_ERC20_token_transfer(contract_addr string,evt *p.ETransfer,block_num,tx_id int64,evtlog_id int64,timestamp int64) {
 
 
 	contract_aid := ss.Lookup_or_create_address(contract_addr,block_num,tx_id)
@@ -180,10 +180,10 @@ func (ss *SQLStorage) Insert_ERC20_token_transfer(contract_addr string,evt *p.ET
 
 	var query string
 	query = "INSERT INTO erc20_transf("+
-				"evtlog_id,block_num,tx_id,contract_aid,from_aid,to_aid,amount" +
+				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,from_aid,to_aid,amount" +
 			") " +
 			"VALUES($1,$2,$3,$4,$5,$6,$7::DECIMAL)"
-	_,err := ss.db.Exec(query,evtlog_id,block_num,tx_id,contract_aid,from_aid,to_aid,amount)
+	_,err := ss.db.Exec(query,evtlog_id,block_num,tx_id,contract_aid,timestamp,from_aid,to_aid,amount)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)

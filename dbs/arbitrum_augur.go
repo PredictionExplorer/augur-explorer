@@ -1802,4 +1802,80 @@ func (ss *SQLStorage) Get_outside_augur_balancer_swaps(pool_aid int64,offset,lim
 	}
 	return records
 }
+func (ss *SQLStorage) Get_erc20_transfers_outside_augur(factory_aid, market_id int64,offset,limit int) []p.API_AMM_Out_ERC20_Transfer {
+	
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT AS created_ts, " +
+				"b.time_stamp,"+
+				"b.block_num,"+
+				"tx.tx_hash," +
+				"mkt.factory_aid,"+
+				"mkt.factory_addr," +
+				"mkt.market_id,"+
+				"b.aid,"+
+				"a.addr," +
+				"ta.addr," +
+				"(b.amount/1e+18)," +
+				"e.symbol," +
+				"e.name, " +
+				"from_addr," +
+				"to_addr " +
+			"FROM erc20_bal AS b " +
+				"JOIN aa_not_augur na ON (na.rec_id=b.id) AND (na.obj_type=3) " +
+				"JOIN LATERAL (" +
+					"SELECT m.factory_aid,m.market_id,fa.addr factory_addr,shtk.token_aid " +
+						"FROM aa_market m " +
+							"JOIN aa_shtok shtk ON shtk.parent_id=m.id " +
+							"LEFT JOIN address fa ON m.factory_aid=fa.address_id " +
+				") AS mkt ON b.contract_aid=mkt.token_aid " +
+				"JOIN LATERAL ( "+
+					"SELECT t.id,fa.addr AS from_addr,ta.addr AS to_addr " +
+						"FROM erc20_transf AS t "+
+						"LEFT JOIN address fa ON t.from_aid=fa.address_id "+
+						"LEFT JOIN address ta ON t.to_aid=ta.address_id " +
+				") AS tr ON b.parent_id=tr.id " +
+				"JOIN transaction tx ON b.tx_id=tx.id " +
+				"JOIN erc20_info e ON b.contract_aid=e.aid " +
+				"JOIN address ta ON b.contract_aid=ta.address_id " +
+				"JOIN address a ON b.aid=a.address_id "+
+			"WHERE factory_aid=$1 AND market_id=$2 " +
+			"ORDER BY b.time_stamp " +
+			"OFFSET $3 LIMIT $4"
 
+	ss.Info.Printf("factory_aid=%v, market_aid=%v, q=%v\n",factory_aid,market_id,query)
+	rows,err := ss.db.Query(query,factory_aid,market_id,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.API_AMM_Out_ERC20_Transfer ,0,32)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_AMM_Out_ERC20_Transfer
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.TxHash,
+			&rec.MktFactoryAid,
+			&rec.MktFactoryAddr,
+			&rec.MarketId,
+			&rec.CallerAid,
+			&rec.CallerAddr,
+			&rec.TokenAddr,
+			&rec.Amount,
+			&rec.TokenSymbol,
+			&rec.TokenName,
+			&rec.TransferFromAddr,
+			&rec.TransferToAddr,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
