@@ -1397,18 +1397,65 @@ func (ss *SQLStorage) Update_status_not_augur_block_num(block_num int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Get_status_not_augur_block_num() (int64,int64,error) {
+func (ss *SQLStorage) Update_status_erc20_not_augur_block_num(block_num int64) {
 
 	var query string
-	query = "SELECT " +
-				"e.block_num AS last_block_on_chain," +
-				"s.last_block_outgui "+
-			"FROM aa_proc_status s " +
-				"JOIN evt_log e ON s.last_evt_id=e.id "
+	query = "UPDATE aa_proc_status SET last_erc20_block = $1"
+
+	_,err := ss.db.Exec(query,block_num)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Get_status_not_augur_block_num() (int64,int64,error) {
 
 	var last_block_chain,last_block_processed sql.NullInt64
+
+	var query string
+	query = "SELECT s.last_block_outgui FROM aa_proc_status s"
 	res := ss.db.QueryRow(query)
-	err := res.Scan(&last_block_chain,&last_block_processed)
+	err := res.Scan(&last_block_processed)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,0,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	query = "SELECT block_num FROM last_block"
+	res = ss.db.QueryRow(query)
+	err = res.Scan(&last_block_chain)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,0,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return last_block_chain.Int64,last_block_processed.Int64,nil
+}
+func (ss *SQLStorage) Get_status_erc20_transf_not_augur_block_num() (int64,int64,error) {
+
+	var last_block_chain,last_block_processed sql.NullInt64
+
+	var query string
+	query = "SELECT s.last_erc20_block FROM aa_proc_status s"
+	res := ss.db.QueryRow(query)
+	err := res.Scan(&last_block_processed)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,0,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	query = "SELECT block_num FROM last_block"
+	res = ss.db.QueryRow(query)
+	err = res.Scan(&last_block_chain)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			return 0,0,err
@@ -1490,6 +1537,79 @@ func (ss *SQLStorage) Get_balancer_swaps_for_augur_markets(from_block,to_block i
 	}
 
 	return records
+}
+func (ss *SQLStorage) Get_erc20transfers_for_augur_markets(from_block,to_block int64) []p.AMM_ERC20Transfers {
+
+	records := make([]p.AMM_ERC20Transfers ,0,32)
+	var query string
+	query = "SELECT " +
+				"eb.id,"+
+				"eb.tx_id, " +
+				"ss.id AS shares_swapped_id, " +
+				"liq.id AS liquidity_id, " +
+				"sb.id," +
+				"sm.id," +
+				"bsw.id, " +
+				"win.id," +
+				"exit.id " +
+			"FROM erc20_bal eb " +
+			"JOIN aa_shtok atok ON atok.token_aid=eb.contract_aid " +
+			"LEFT JOIN aa_shares_swapped ss ON ss.tx_id=eb.tx_id " +
+			"LEFT JOIN aa_liquidity_changed liq ON liq.tx_id=eb.tx_id "+
+			"LEFT JOIN aa_shares_burned sb ON sb.tx_id=eb.tx_id " +
+			"LEFT JOIN aa_shares_minted sm ON sm.tx_id=eb.tx_id " +
+			"LEFT JOIN bswap bsw ON bsw.tx_id=eb.tx_id " +
+			"LEFT JOIN bexit exit ON exit.tx_id=eb.tx_id " +
+			"LEFT JOIN aa_winclaim win ON win.tx_id=eb.tx_id " +
+			"WHERE (eb.block_num >= $1) AND (eb.block_num<=$2) ORDER BY eb.block_num"
+	ss.Info.Printf("from_block=%v, to_block=%v, q=%v\n",from_block,to_block,query)
+	rows,err := ss.db.Query(query,from_block,to_block)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.AMM_ERC20Transfers
+		var null_ss_id,null_liq_id,null_burn_id,null_mint_id,
+			null_bswap_id,null_win_id,null_exit_id sql.NullInt64
+		err=rows.Scan(
+			&rec.RecordId,&rec.TxId,&null_ss_id,&null_liq_id,&null_burn_id,&null_mint_id,
+			&null_bswap_id,&null_exit_id,&null_win_id,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		if null_ss_id.Valid { rec.SharesSwappedId = null_ss_id.Int64 }
+		if null_liq_id.Valid { rec.LiquidityId = null_liq_id.Int64 }
+		if null_burn_id.Valid { rec.SharesBurnedId = null_burn_id.Int64 }
+		if null_mint_id.Valid { rec.SharesMintedId = null_mint_id.Int64 }
+		if null_bswap_id.Valid { rec.BalancerId = null_bswap_id.Int64 }
+		if null_win_id.Valid { rec.WinningsClaimedId = null_win_id.Int64 }
+		if null_exit_id.Valid { rec.BalExitId = null_exit_id.Int64 }
+		records = append(records,rec)
+	}
+
+	return records
+}
+func (ss *SQLStorage) Get_last_erc20_evt_id() int64 {
+
+	var query string
+	query = "SELECT evtlog_id FROM erc20_transf ORDER by id DESC LIMIT 1"
+	row := ss.db.QueryRow(query)
+	var null_id sql.NullInt64
+	err := row.Scan(&null_id)
+	if (err!=nil) {
+		if err==sql.ErrNoRows {
+			return 0
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Get_last_erc20_evt_id(): %v",err))
+		os.Exit(1)
+	}
+	return null_id.Int64
+
 }
 func (ss *SQLStorage) Insert_not_augur_mark(record_id int64,rec_type int) {
 

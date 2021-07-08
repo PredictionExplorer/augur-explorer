@@ -31,7 +31,7 @@ const (
 
 	SHARES_MINTED = "d81c0442e10068a9818f3aa093c9ccb804584690df572d7df3da2d892a6973f2"
 	SHARES_BURNED = "b6fdb729b2ed801daf629f0ab713e4a7a73619505790f6f27fd92d6f2c9688d7"
-	WINNINGS_CLAIMED = "2bdd7a5109193ce6270ec3b4afcf4ccd4a06c27742ba11f660498cb41433bb00"
+	WINNINGS_CLAIMED = "e67bd0100cd3289557430d36098901ba18161e6279c9711d8650b8af10552104"
 
 	PROTOCOL_FEE_CLAIMED = "0f7f5b155b0b0ac6890709a2c7bf1b8bb3f675fff1e7840b4dd3c9acde59048b"
 	SETTLEMENT_FEE_CLAIMED = "c9985ad824d943d66367ce5feea26e18979b3e1c9273742926d87e2b0d747387"
@@ -318,6 +318,7 @@ func main() {
 
 	inspected_events = build_list_of_inspected_events()
 
-	go update_non_augur_flag_manager(exit_chan)
-	process_arbitrum_augur_events(exit_chan)
+//	go update_non_augur_flag_manager(exit_chan)
+	update_erc20_non_augur_flag_manager(exit_chan)
+//	process_arbitrum_augur_events(exit_chan)
 }

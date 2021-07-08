@@ -16,6 +16,17 @@ type AMM_TxBalSwaps struct { // Tx ids for balancer swaps
 	SharesSwappedId			int64
 	LiquidityId				int64
 }
+type AMM_ERC20Transfers struct {
+	RecordId				int64
+	TxId					int64
+	SharesSwappedId			int64
+	LiquidityId				int64
+	SharesBurnedId			int64
+	SharesMintedId			int64
+	BalancerId				int64
+	WinningsClaimedId		int64
+	BalExitId				int64
+}
 type AMM_CatSport struct {
 	SportId					int64
 	Name					string

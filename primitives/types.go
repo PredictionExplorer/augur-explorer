@@ -84,6 +84,7 @@ const (
 	RecTypeBalancer = iota
 	RecTypeMint
 	RecTypeBurn
+	RecTypeERC20
 )
 var (
 	ErrChainSplit error = errors.New("Chainsplit detected")

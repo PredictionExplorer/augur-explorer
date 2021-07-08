@@ -15,7 +15,8 @@ CREATE TABLE aa_factory (
 );
 CREATE TABLE aa_proc_status (-- Arbitrum Augur process status
 	last_evt_id			BIGINT DEFAULT 0,
-	last_block_outgui	BIGINT DEFAULT 0 -- related to marking the flag 'outside_augur'
+	last_block_outgui	BIGINT DEFAULT 0, -- related to marking the flag 'outside_augur'
+	last_erc20_block	BIGINT DEFAULT 0, -- last block we scanned erc20 transfs outside augur
 );
 CREATE TABLE aa_pool_created (
 	id					BIGSERIAL PRIMARY KEY,
