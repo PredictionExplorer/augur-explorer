@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 	"os"
 	"fmt"
 	"net/http"
@@ -9,6 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/autotls"
 	"github.com/ethereum/go-ethereum/ethclient"
+
+	"github.com/getsentry/sentry-go"
 
 	"golang.org/x/crypto/acme/autocert"
 
@@ -49,6 +52,15 @@ func secure_https(r http.Handler) {
 	autotls.Run(r, "localhost")
 }
 func main() {
+
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn: "https://d3726b61fcee467ca076fed09c40ecff@o526251.ingest.sentry.io/5641576",
+	})
+	if err != nil {
+		log.Fatalf("sentry.Init: %s", err)
+	}
+	defer sentry.Flush(2 * time.Second)
+
 
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 	os.MkdirAll(log_dir, os.ModePerm)
