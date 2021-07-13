@@ -63,7 +63,7 @@ CREATE TABLE pol_uri ( -- URI, event of ConditionalToken (Gnosis)
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	contract_aid		BIGINT NOT NULL,
 	value				TEXT,
-	id					DECIMAL,
+	uri_id				DECIMAL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE poly_proc_status (

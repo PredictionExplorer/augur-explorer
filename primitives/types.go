@@ -872,7 +872,9 @@ type EthereumEventLog struct {
 	BlockNum				int64
 	TxId					int64
 	ContractAid				int64
-//	ContractAddress			string
+	TimeStamp				int64
+	TxHash					string
+	ContractAddress			string
 	Topic0_Sig				string
 	RlpLog					[]byte
 }

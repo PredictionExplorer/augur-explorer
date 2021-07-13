@@ -20,6 +20,7 @@ var (
 	_ = big.NewInt
 	_ = strings.NewReader
 	_ = ethereum.NotFound
+	_ = abi.U256
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
@@ -137,7 +138,7 @@ func bindConditionalToken(address common.Address, caller bind.ContractCaller, tr
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_ConditionalToken *ConditionalTokenRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
+func (_ConditionalToken *ConditionalTokenRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
 	return _ConditionalToken.Contract.ConditionalTokenCaller.contract.Call(opts, result, method, params...)
 }
 
@@ -156,7 +157,7 @@ func (_ConditionalToken *ConditionalTokenRaw) Transact(opts *bind.TransactOpts, 
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_ConditionalToken *ConditionalTokenCallerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
+func (_ConditionalToken *ConditionalTokenCallerRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
 	return _ConditionalToken.Contract.contract.Call(opts, result, method, params...)
 }
 
@@ -175,17 +176,12 @@ func (_ConditionalToken *ConditionalTokenTransactorRaw) Transact(opts *bind.Tran
 //
 // Solidity: function balanceOf(address owner, uint256 id) view returns(uint256)
 func (_ConditionalToken *ConditionalTokenCaller) BalanceOf(opts *bind.CallOpts, owner common.Address, id *big.Int) (*big.Int, error) {
-	var out []interface{}
-	err := _ConditionalToken.contract.Call(opts, &out, "balanceOf", owner, id)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _ConditionalToken.contract.Call(opts, out, "balanceOf", owner, id)
+	return *ret0, err
 }
 
 // BalanceOf is a free data retrieval call binding the contract method 0x00fdd58e.
@@ -206,17 +202,12 @@ func (_ConditionalToken *ConditionalTokenCallerSession) BalanceOf(owner common.A
 //
 // Solidity: function balanceOfBatch(address[] owners, uint256[] ids) view returns(uint256[])
 func (_ConditionalToken *ConditionalTokenCaller) BalanceOfBatch(opts *bind.CallOpts, owners []common.Address, ids []*big.Int) ([]*big.Int, error) {
-	var out []interface{}
-	err := _ConditionalToken.contract.Call(opts, &out, "balanceOfBatch", owners, ids)
-
-	if err != nil {
-		return *new([]*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([]*big.Int)).(*[]*big.Int)
-
-	return out0, err
-
+	var (
+		ret0 = new([]*big.Int)
+	)
+	out := ret0
+	err := _ConditionalToken.contract.Call(opts, out, "balanceOfBatch", owners, ids)
+	return *ret0, err
 }
 
 // BalanceOfBatch is a free data retrieval call binding the contract method 0x4e1273f4.
@@ -237,17 +228,12 @@ func (_ConditionalToken *ConditionalTokenCallerSession) BalanceOfBatch(owners []
 //
 // Solidity: function getCollectionId(bytes32 parentCollectionId, bytes32 conditionId, uint256 indexSet) view returns(bytes32)
 func (_ConditionalToken *ConditionalTokenCaller) GetCollectionId(opts *bind.CallOpts, parentCollectionId [32]byte, conditionId [32]byte, indexSet *big.Int) ([32]byte, error) {
-	var out []interface{}
-	err := _ConditionalToken.contract.Call(opts, &out, "getCollectionId", parentCollectionId, conditionId, indexSet)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
+	var (
+		ret0 = new([32]byte)
+	)
+	out := ret0
+	err := _ConditionalToken.contract.Call(opts, out, "getCollectionId", parentCollectionId, conditionId, indexSet)
+	return *ret0, err
 }
 
 // GetCollectionId is a free data retrieval call binding the contract method 0x856296f7.
@@ -268,17 +254,12 @@ func (_ConditionalToken *ConditionalTokenCallerSession) GetCollectionId(parentCo
 //
 // Solidity: function getConditionId(address oracle, bytes32 questionId, uint256 outcomeSlotCount) pure returns(bytes32)
 func (_ConditionalToken *ConditionalTokenCaller) GetConditionId(opts *bind.CallOpts, oracle common.Address, questionId [32]byte, outcomeSlotCount *big.Int) ([32]byte, error) {
-	var out []interface{}
-	err := _ConditionalToken.contract.Call(opts, &out, "getConditionId", oracle, questionId, outcomeSlotCount)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
+	var (
+		ret0 = new([32]byte)
+	)
+	out := ret0
+	err := _ConditionalToken.contract.Call(opts, out, "getConditionId", oracle, questionId, outcomeSlotCount)
+	return *ret0, err
 }
 
 // GetConditionId is a free data retrieval call binding the contract method 0x852c6ae2.
@@ -299,17 +280,12 @@ func (_ConditionalToken *ConditionalTokenCallerSession) GetConditionId(oracle co
 //
 // Solidity: function getOutcomeSlotCount(bytes32 conditionId) view returns(uint256)
 func (_ConditionalToken *ConditionalTokenCaller) GetOutcomeSlotCount(opts *bind.CallOpts, conditionId [32]byte) (*big.Int, error) {
-	var out []interface{}
-	err := _ConditionalToken.contract.Call(opts, &out, "getOutcomeSlotCount", conditionId)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _ConditionalToken.contract.Call(opts, out, "getOutcomeSlotCount", conditionId)
+	return *ret0, err
 }
 
 // GetOutcomeSlotCount is a free data retrieval call binding the contract method 0xd42dc0c2.
@@ -330,17 +306,12 @@ func (_ConditionalToken *ConditionalTokenCallerSession) GetOutcomeSlotCount(cond
 //
 // Solidity: function getPositionId(address collateralToken, bytes32 collectionId) pure returns(uint256)
 func (_ConditionalToken *ConditionalTokenCaller) GetPositionId(opts *bind.CallOpts, collateralToken common.Address, collectionId [32]byte) (*big.Int, error) {
-	var out []interface{}
-	err := _ConditionalToken.contract.Call(opts, &out, "getPositionId", collateralToken, collectionId)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _ConditionalToken.contract.Call(opts, out, "getPositionId", collateralToken, collectionId)
+	return *ret0, err
 }
 
 // GetPositionId is a free data retrieval call binding the contract method 0x39dd7530.
@@ -361,17 +332,12 @@ func (_ConditionalToken *ConditionalTokenCallerSession) GetPositionId(collateral
 //
 // Solidity: function isApprovedForAll(address owner, address operator) view returns(bool)
 func (_ConditionalToken *ConditionalTokenCaller) IsApprovedForAll(opts *bind.CallOpts, owner common.Address, operator common.Address) (bool, error) {
-	var out []interface{}
-	err := _ConditionalToken.contract.Call(opts, &out, "isApprovedForAll", owner, operator)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
+	var (
+		ret0 = new(bool)
+	)
+	out := ret0
+	err := _ConditionalToken.contract.Call(opts, out, "isApprovedForAll", owner, operator)
+	return *ret0, err
 }
 
 // IsApprovedForAll is a free data retrieval call binding the contract method 0xe985e9c5.
@@ -392,17 +358,12 @@ func (_ConditionalToken *ConditionalTokenCallerSession) IsApprovedForAll(owner c
 //
 // Solidity: function payoutDenominator(bytes32 ) view returns(uint256)
 func (_ConditionalToken *ConditionalTokenCaller) PayoutDenominator(opts *bind.CallOpts, arg0 [32]byte) (*big.Int, error) {
-	var out []interface{}
-	err := _ConditionalToken.contract.Call(opts, &out, "payoutDenominator", arg0)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _ConditionalToken.contract.Call(opts, out, "payoutDenominator", arg0)
+	return *ret0, err
 }
 
 // PayoutDenominator is a free data retrieval call binding the contract method 0xdd34de67.
@@ -423,17 +384,12 @@ func (_ConditionalToken *ConditionalTokenCallerSession) PayoutDenominator(arg0 [
 //
 // Solidity: function payoutNumerators(bytes32 , uint256 ) view returns(uint256)
 func (_ConditionalToken *ConditionalTokenCaller) PayoutNumerators(opts *bind.CallOpts, arg0 [32]byte, arg1 *big.Int) (*big.Int, error) {
-	var out []interface{}
-	err := _ConditionalToken.contract.Call(opts, &out, "payoutNumerators", arg0, arg1)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _ConditionalToken.contract.Call(opts, out, "payoutNumerators", arg0, arg1)
+	return *ret0, err
 }
 
 // PayoutNumerators is a free data retrieval call binding the contract method 0x0504c814.
@@ -454,17 +410,12 @@ func (_ConditionalToken *ConditionalTokenCallerSession) PayoutNumerators(arg0 [3
 //
 // Solidity: function supportsInterface(bytes4 interfaceId) view returns(bool)
 func (_ConditionalToken *ConditionalTokenCaller) SupportsInterface(opts *bind.CallOpts, interfaceId [4]byte) (bool, error) {
-	var out []interface{}
-	err := _ConditionalToken.contract.Call(opts, &out, "supportsInterface", interfaceId)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
+	var (
+		ret0 = new(bool)
+	)
+	out := ret0
+	err := _ConditionalToken.contract.Call(opts, out, "supportsInterface", interfaceId)
+	return *ret0, err
 }
 
 // SupportsInterface is a free data retrieval call binding the contract method 0x01ffc9a7.
@@ -799,7 +750,6 @@ func (_ConditionalToken *ConditionalTokenFilterer) ParseApprovalForAll(log types
 	if err := _ConditionalToken.contract.UnpackLog(event, "ApprovalForAll", log); err != nil {
 		return nil, err
 	}
-	event.Raw = log
 	return event, nil
 }
 
@@ -962,7 +912,6 @@ func (_ConditionalToken *ConditionalTokenFilterer) ParseConditionPreparation(log
 	if err := _ConditionalToken.contract.UnpackLog(event, "ConditionPreparation", log); err != nil {
 		return nil, err
 	}
-	event.Raw = log
 	return event, nil
 }
 
@@ -1126,7 +1075,6 @@ func (_ConditionalToken *ConditionalTokenFilterer) ParseConditionResolution(log 
 	if err := _ConditionalToken.contract.UnpackLog(event, "ConditionResolution", log); err != nil {
 		return nil, err
 	}
-	event.Raw = log
 	return event, nil
 }
 
@@ -1291,7 +1239,6 @@ func (_ConditionalToken *ConditionalTokenFilterer) ParsePayoutRedemption(log typ
 	if err := _ConditionalToken.contract.UnpackLog(event, "PayoutRedemption", log); err != nil {
 		return nil, err
 	}
-	event.Raw = log
 	return event, nil
 }
 
@@ -1458,7 +1405,6 @@ func (_ConditionalToken *ConditionalTokenFilterer) ParsePositionSplit(log types.
 	if err := _ConditionalToken.contract.UnpackLog(event, "PositionSplit", log); err != nil {
 		return nil, err
 	}
-	event.Raw = log
 	return event, nil
 }
 
@@ -1625,7 +1571,6 @@ func (_ConditionalToken *ConditionalTokenFilterer) ParsePositionsMerge(log types
 	if err := _ConditionalToken.contract.UnpackLog(event, "PositionsMerge", log); err != nil {
 		return nil, err
 	}
-	event.Raw = log
 	return event, nil
 }
 
@@ -1789,7 +1734,6 @@ func (_ConditionalToken *ConditionalTokenFilterer) ParseTransferBatch(log types.
 	if err := _ConditionalToken.contract.UnpackLog(event, "TransferBatch", log); err != nil {
 		return nil, err
 	}
-	event.Raw = log
 	return event, nil
 }
 
@@ -1953,7 +1897,6 @@ func (_ConditionalToken *ConditionalTokenFilterer) ParseTransferSingle(log types
 	if err := _ConditionalToken.contract.UnpackLog(event, "TransferSingle", log); err != nil {
 		return nil, err
 	}
-	event.Raw = log
 	return event, nil
 }
 
@@ -2098,6 +2041,5 @@ func (_ConditionalToken *ConditionalTokenFilterer) ParseURI(log types.Log) (*Con
 	if err := _ConditionalToken.contract.UnpackLog(event, "URI", log); err != nil {
 		return nil, err
 	}
-	event.Raw = log
 	return event, nil
 }

@@ -20,6 +20,7 @@ import (
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
+	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
 	DEFAULT_DB_LOG				= "db.log"
@@ -85,8 +86,8 @@ func process_conditional_token_events(exit_chan chan bool) {
 				}
 			default:
 		}
-		Info.Printf("scanning event range from %v to %v\n",status.LastEvtId,status.LastEvtId+max_batch_size)
-		id_upper_limit := status.LastEvtId + max_batch_size
+		Info.Printf("scanning event range from %v to %v\n",status.LastIdProcessed,status.LastIdProcessed+max_batch_size)
+		id_upper_limit := status.LastIdProcessed + max_batch_size
 		last_evt_id,err := storage.Get_last_evtlog_id()
 		if err != nil {
 			Error.Printf("Error: %v. Possibly 'evt_log' table is empty, aborting",err)
@@ -95,16 +96,16 @@ func process_conditional_token_events(exit_chan chan bool) {
 		if  id_upper_limit > last_evt_id {
 			id_upper_limit = last_evt_id
 		}
-		events := get_event_ids(status.LastEvtId,id_upper_limit)
+		events := get_event_ids(status.LastIdProcessed,id_upper_limit)
 		for _,evt_id := range events {
-			err := process_arbitrum_augur_event(evt_id)
+			err := process_polymarket_event(evt_id)
 			if err != nil {
 				Error.Printf("Pausing event processing loop for 5 sec due to error")
 				time.Sleep(5 * time.Second)
 				break
 			}
-			status.LastEvtId=evt_id
-			storage.Update_polymarket_process_status(&status)
+			status.LastIdProcessed=evt_id
+			storage.Update_polymarkets_process_status(&status)
 		}
 		if len(events) == 0 {
 			last_evt_log_id_on_chain,err := storage.Get_last_evtlog_id()
@@ -114,8 +115,8 @@ func process_conditional_token_events(exit_chan chan bool) {
 			}
 			if last_evt_log_id_on_chain > id_upper_limit {
 				// only advance upper range if events within the range have filled id value space
-				status.LastEvtId = id_upper_limit
-				storage.Update_polymarket_process_status(&status)
+				status.LastIdProcessed = id_upper_limit
+				storage.Update_polymarkets_process_status(&status)
 			}
 			time.Sleep(1 * time.Second) // sleep only if there is no data
 		}
@@ -154,7 +155,7 @@ func main() {
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
 
-	abi_parsed := strings.NewReader(ConditionalToken_ABI)
+	abi_parsed := strings.NewReader(ConditionalTokenABI)
 	aa_abi,err = abi.JSON(abi_parsed)
 	if err!= nil {
 		Info.Printf("Can't parse Polymarkets ABI: %v\n",err)
@@ -173,5 +174,5 @@ func main() {
 
 	inspected_events = build_list_of_inspected_events()
 
-	process_polymarket_events(exit_chan)
+	process_conditional_token_events(exit_chan)
 }

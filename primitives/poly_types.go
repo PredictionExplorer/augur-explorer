@@ -1,7 +1,10 @@
 package primitives
 
 import (
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 
 )
 type EConditionPreparation struct {// Eevent of ConditionalToken (Gnosis)
@@ -62,3 +65,62 @@ type PolymarketProcStatus struct {
 	LastIdProcessed			int64
 }
 
+type Pol_ConditionPreparation struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	SlotCount				int64
+	Contract                string
+	ConditionId				string
+	OracleAddr				string
+	QuestionId				string
+	OutcomeSlotCount		string
+}
+type Pol_ConditionResolution struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	ConditionId				string
+	OracleAddr				string
+	QuestionId				string
+	OutcomeSlotCount		string
+	PayoutNumerators		string
+}
+type Pol_PositionSplit struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	ConditionId				string
+	StakeHolderAddr			string
+	CollateralToken			string
+	ParentCollectionId		string
+	Partition				string
+	Amount					string
+}
+type Pol_PositionMerge struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	ConditionId				string
+	StakeHolderAddr			string
+	CollateralToken			string
+	ParentCollectionId		string
+	Partition				string
+	Amount					string
+}
+type Pol_URI struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	Value					string
+	Id						string
+}
