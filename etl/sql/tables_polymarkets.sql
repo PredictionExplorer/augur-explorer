@@ -35,8 +35,8 @@ CREATE TABLE pol_pos_split ( -- PositionSplit, event of ConditionalToken (Gnosis
 	stakeholder_aid		BIGINT NOT NULL,
 	collateral_aid		BIGINT NOT NULL,
 	parent_coll_id		BIGINT NOT NULL, -- parent collection id
-	condition_id		BIGINT NOT NULL,
-	partition			DECIMAL NOT NULL,
+	condition_id		TEXt NOT NULL,
+	partition			TEXT NOT NULL,
 	amount				DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
@@ -50,8 +50,8 @@ CREATE TABLE pol_pos_merge ( -- PositionMerge, event of ConditionalToken (Gnosis
 	stakeholder_aid		BIGINT NOT NULL,
 	collateral_aid		BIGINT NOT NULL,
 	parent_coll_id		BIGINT NOT NULL, -- parent collection id
-	condition_id		BIGINT NOT NULL,
-	partition			DECIMAL NOT NULL,
+	condition_id		TEXT NOT NULL,
+	partition			TEXT NOT NULL,
 	amount				DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
@@ -67,5 +67,5 @@ CREATE TABLE pol_uri ( -- URI, event of ConditionalToken (Gnosis)
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE poly_proc_status (
-	last_evt_id			BIGINT DEFAULT 0,
+	last_evt_id			BIGINT DEFAULT 0
 );

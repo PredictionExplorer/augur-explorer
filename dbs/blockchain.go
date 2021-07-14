@@ -1180,40 +1180,40 @@ func (ss *SQLStorage) Insert_chain_reorg_event(co *p.ChainReorg) {
 }
 func (ss *SQLStorage) Get_event_log(evtlog_id int64) p.EthereumEventLog {
 
-    var evtlog p.EthereumEventLog
-    evtlog.EvtId = evtlog_id
-    var query string
-    query = "SELECT " +
-                "e.block_num," +
-                "EXTRACT(EPOCH FROM b.ts)::BIGINT AS ts, "+
-                "e.tx_id," +
-                "tx.tx_hash," +
-                "e.contract_aid," +
-                "ca.addr, " +
-                "e.topic0_sig," +
-                "e.log_rlp " +
-            "FROM evt_log e " +
-                "JOIN block b ON e.block_num=b.block_num " +
-                "JOIN transaction tx ON e.tx_id=tx.id " +
-                "JOIN address ca ON e.contract_aid=ca.address_id " +
-            "WHERE e.id=$1"
-    res := ss.db.QueryRow(query,evtlog_id)
-    err := res.Scan(
-        &evtlog.BlockNum,
-        &evtlog.TimeStamp,
-        &evtlog.TxId,
-        &evtlog.TxHash,
-        &evtlog.ContractAid,
-        &evtlog.ContractAddress,
-        &evtlog.Topic0_Sig,
-        &evtlog.RlpLog,
-    )
-    if (err!=nil) {
-        ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
-        os.Exit(1)
-    }
+	var evtlog p.EthereumEventLog
+	evtlog.EvtId = evtlog_id
+	var query string
+	query = "SELECT " +
+				"e.block_num," +
+				"EXTRACT(EPOCH FROM b.ts)::BIGINT AS ts, "+
+				"e.tx_id," +
+				"tx.tx_hash," +
+				"e.contract_aid," +
+				"ca.addr, " +
+				"e.topic0_sig," +
+				"e.log_rlp " +
+			"FROM evt_log e " +
+				"JOIN block b ON e.block_num=b.block_num " +
+				"JOIN transaction tx ON e.tx_id=tx.id " +
+				"JOIN address ca ON e.contract_aid=ca.address_id " +
+			"WHERE e.id=$1"
+	res := ss.db.QueryRow(query,evtlog_id)
+	err := res.Scan(
+		&evtlog.BlockNum,
+		&evtlog.TimeStamp,
+		&evtlog.TxId,
+		&evtlog.TxHash,
+		&evtlog.ContractAid,
+		&evtlog.ContractAddress,
+		&evtlog.Topic0_Sig,
+		&evtlog.RlpLog,
+	)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
 
-    return evtlog
+	return evtlog
 }
 
 func (ss *SQLStorage) Get_augur_transaction(tx_id int64) *p.AugurTx {

@@ -53,9 +53,9 @@ func proc_condition_preparation(log *types.Log,elog *EthereumEventLog) {
 	eth_evt.Oracle = common.BytesToAddress(log.Topics[2][12:])
 	eth_evt.QuestionId = log.Topics[3]
 
-	Info.Printf("Processing ConditionPreparation event, txhash %v\n",elog.TxHash)
+	Info.Printf("Processing ConditionPreparation event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := aa_abi.Unpack(&eth_evt,"ConditionPreparation",log.Data)
+	err := condtoken_abi.Unpack(&eth_evt,"ConditionPreparation",log.Data)
 	if err != nil {
 		Error.Printf("Event ConditionPreparation decode error: %v",err)
 		os.Exit(1)
@@ -90,9 +90,9 @@ func proc_condition_resolution(log *types.Log,elog *EthereumEventLog) {
 	eth_evt.Oracle = common.BytesToAddress(log.Topics[2][12:])
 	eth_evt.QuestionId = log.Topics[3]
 
-	Info.Printf("Processing ConditionResolution event, txhash %v\n",elog.TxHash)
+	Info.Printf("Processing ConditionResolution event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := aa_abi.Unpack(&eth_evt,"ConditionResolution ",log.Data)
+	err := condtoken_abi.Unpack(&eth_evt,"ConditionResolution",log.Data)
 	if err != nil {
 		Error.Printf("Event ConditionResolution decode error: %v",err)
 		os.Exit(1)
@@ -127,11 +127,11 @@ func proc_position_split(log *types.Log,elog *EthereumEventLog) {
 	eth_evt.ParentCollectionId = log.Topics[2]
 	eth_evt.ConditionId = log.Topics[3]
 
-	Info.Printf("Processing PositionSplit event, txhash %v\n",elog.TxHash)
+	Info.Printf("Processing PositionSplit event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := aa_abi.Unpack(&eth_evt,"PositionSplit",log.Data)
+	err := condtoken_abi.Unpack(&eth_evt,"PositionSplit",log.Data)
 	if err != nil {
-		Error.Printf("Event PositionMerge decode error: %v",err)
+		Error.Printf("Event PositionSplit decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -168,9 +168,9 @@ func proc_position_merge(log *types.Log,elog *EthereumEventLog) {
 	eth_evt.ParentCollectionId = log.Topics[2]
 	eth_evt.ConditionId = log.Topics[3]
 
-	Info.Printf("Processing PositionMerge event, txhash %v\n",elog.TxHash)
+	Info.Printf("Processing PositionMerge event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := aa_abi.Unpack(&eth_evt,"PositionMerge",log.Data)
+	err := condtoken_abi.Unpack(&eth_evt,"PositionMerge",log.Data)
 	if err != nil {
 		Error.Printf("Event PositionMerge decode error: %v",err)
 		os.Exit(1)
@@ -207,9 +207,9 @@ func proc_uri(log *types.Log,elog *EthereumEventLog) {
 
 	eth_evt.Id = common.BytesToHash(log.Topics[1][:]).Big()
 
-	Info.Printf("Processing URI event, txhash %v\n",elog.TxHash)
+	Info.Printf("Processing URI event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := aa_abi.Unpack(&eth_evt,"URI",log.Data)
+	err := condtoken_abi.Unpack(&eth_evt,"URI",log.Data)
 	if err != nil {
 		Error.Printf("Event URI decode error: %v",err)
 		os.Exit(1)

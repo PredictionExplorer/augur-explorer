@@ -48,8 +48,7 @@ var (
 	market_order_id int64 = 0
 	inspected_events []InspectedEvent
 
-	augur_abi *abi.ABI
-	aa_abi abi.ABI
+	condtoken_abi *abi.ABI
 
 	ctrct_wallet_registry *AugurWalletRegistry
 
@@ -156,11 +155,12 @@ func main() {
 	storage.Log_msg("Log initialized\n")
 
 	abi_parsed := strings.NewReader(ConditionalTokenABI)
-	aa_abi,err = abi.JSON(abi_parsed)
+	abi,err := abi.JSON(abi_parsed)
 	if err!= nil {
 		Info.Printf("Can't parse Polymarkets ABI: %v\n",err)
 		os.Exit(1)
 	}
+	condtoken_abi = &abi
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)
