@@ -5,6 +5,8 @@ rm ./etl/cmd/tokens/tokens
 rm ./etl/cmd/layer1/layer1
 rm ./etl/cmd/balancer/balancer
 rm ./etl/cmd/uniswap/uniswap
+rm ./etl/cmd/polysync/polysync
+rm ./etl/cmd/polymarkets/polymarkets
 rm ./etl/dmesh/dmesh
 rm ./etl/tools/augur_blocks
 rm ./etl/tools/dai_balances

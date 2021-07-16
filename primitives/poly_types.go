@@ -115,6 +115,19 @@ type Pol_PositionMerge struct {
 	Partition				string
 	Amount					string
 }
+type Pol_PayoutRedemption struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	Redeemer				string
+	CollateralToken			string
+	ParentCollectionId		string
+	ConditionId				string
+	IndexSets				string
+	Payout					string
+}
 type Pol_URI struct {
 	EvtId                   int64
 	BlockNum                int64

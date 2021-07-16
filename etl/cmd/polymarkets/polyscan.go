@@ -200,6 +200,47 @@ func proc_position_merge(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_position_merge(&evt)
 }
+func proc_payout_redemption(log *types.Log,elog *EthereumEventLog) {
+
+	var evt Pol_PayoutRedemption
+	var eth_evt EPayoutRedemption
+
+	eth_evt.Redeemer = common.BytesToAddress(log.Topics[1][12:])
+	eth_evt.CollateralToken = common.BytesToAddress(log.Topics[3][12:])
+	eth_evt.ParentCollectionId = log.Topics[3]
+
+	Info.Printf("Processing PayoutRedemption event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	err := condtoken_abi.Unpack(&eth_evt,"PayoutRedemption",log.Data)
+	if err != nil {
+		Error.Printf("Event PayoutRedemption decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.ConditionId = hex.EncodeToString(eth_evt.ConditionId[:])
+	evt.Redeemer = eth_evt.Redeemer.String()
+	evt.CollateralToken = eth_evt.CollateralToken.String()
+	evt.ParentCollectionId = hex.EncodeToString(eth_evt.ParentCollectionId[:])
+	evt.IndexSets = Bigint_ptr_slice_to_str(&eth_evt.IndexSets,",")
+	evt.Payout = eth_evt.Payout.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("PayoutRedemption{\n")
+	Info.Printf("\tRedemer: %v\n",evt.Redeemer)
+	Info.Printf("\tConditionId: %v\n",evt.ConditionId)
+	Info.Printf("\tCollateralToken: %v\n",evt.CollateralToken)
+	Info.Printf("\tParentCollectionId: %v\n",evt.ParentCollectionId)
+	Info.Printf("\tIndexSets: %v\n",evt.IndexSets)
+	Info.Printf("\tPayout: %v\n",evt.Payout)
+	Info.Printf("}\n")
+
+	storage.Insert_payout_redemption(&evt)
+}
 func proc_uri(log *types.Log,elog *EthereumEventLog) {
 
 	var evt Pol_URI

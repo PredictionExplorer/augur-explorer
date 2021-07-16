@@ -55,6 +55,21 @@ CREATE TABLE pol_pos_merge ( -- PositionMerge, event of ConditionalToken (Gnosis
 	amount				DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE pol_pay_redem (-- PayoutRedemption, event of ConditionalToken (Gnosis)
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	contract_aid		BIGINT NOT NULL,
+	redeemer_aid		BIGINT NOT NULL,
+	collateral_aid		TEXT NOT NULL,
+	parent_coll_id		TEXT NOT NULL,
+	condition_id		TEXT NOT NULL,
+	index_sets			TEXT NOT NULL,
+	payout				DECIMAL,
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE pol_uri ( -- URI, event of ConditionalToken (Gnosis)
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,

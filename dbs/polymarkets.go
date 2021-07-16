@@ -167,6 +167,37 @@ func (ss *SQLStorage) Insert_position_merge(evt *p.Pol_PositionMerge) {
 	}
 
 }
+func (ss *SQLStorage) Insert_payout_redemption(evt *p.Pol_PayoutRedemption) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	redeemer_aid:=ss.Lookup_or_create_address(evt.Redeemer,evt.BlockNum,evt.TxId)
+	collateral_aid :=ss.Lookup_or_create_address(evt.CollateralToken,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO pol_pay_redem (" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"redeemer_aid,collateral_aid,parent_coll_id,index_sets,payout" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,"+
+				"$6,$7,$8,$9,$10"+
+			")"
+	_,err := ss.db.Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		redeemer_aid,
+		collateral_aid,
+		evt.ParentCollectionId,
+		evt.ConditionId,
+		evt.IndexSets,
+		evt.Payout,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pol_cond_res table: %v\n",err))
+		os.Exit(1)
+	}
+}
 func (ss *SQLStorage) Insert_URI(evt *p.Pol_URI) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
