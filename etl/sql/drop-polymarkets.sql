@@ -1,4 +1,5 @@
 DROP TABLE IF EXISTS 
+	pol_market,
 	pol_cond_prep,
 	pol_cond_res,
 	pol_pos_split,

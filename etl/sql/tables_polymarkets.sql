@@ -96,12 +96,13 @@ CREATE table pol_market ( -- As received from https://strapi-matic.poly.market/m
 	outcome_prices				TEXT NOT NULL,
 	volume						DECIMAL NOT NULL,
 	active						BOOLEAN DEFAULT TRUE,
-	market_type					SMALL INT NOT NULL,
+	market_type					TEXT NOT NULL,
+	market_type_code			SMALLINT NOT NULL,
 	format_type					TEXT DEFAULT '',
 	lower_bound_date			TEXT NOT NULL,
 	lower_bound_ts				TIMESTAMPTZ NOT NULL,
 	upper_bound_date			TEXT NOT NULL,
-	upper_bound_ts				TIEMSTAMPTZ NOT NULL,
+	upper_bound_ts				TIMESTAMPTZ NOT NULL,
 	closed						BOOLEAN DEFAULT FALSE,
 	mkt_mkr_aid					BIGINT NOT NULL,-- Market Maker Address
 	created_at_date				TEXT NOT NULL,
@@ -119,7 +120,7 @@ CREATE table pol_market ( -- As received from https://strapi-matic.poly.market/m
 	subcategory					TEXT DEFAULT '',
 	category_mailchimp_tag		TEXT DEFAULT '',
 	use_cases					TEXT DEFAULT '',
-	seo							TEXT DEFAULT '',
+	liquidity					DECIMAL DEFAULT 0,
 
 	UNIQUE(market_id)
 );

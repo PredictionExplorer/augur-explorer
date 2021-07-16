@@ -128,6 +128,33 @@ type Pol_Market_API_Response_JSON struct {
 	records					[]Pol_Market_API_Record_JSON
 
 }
+type Pol_Market_API_UseCase_JSON struct {
+	Id				int64		`json:"id"`
+	Title			string		`json:"title"`
+	Content			string		`json:"content"`
+}
+type Pol_Market_API_SEO_MetaImage_Obj_JSON struct {
+	Ext				string		`json:"ext"`
+	Url				string		`json:"url"`
+	Hash			string		`json:"hash"`
+	Mime			string		`json:"mime"`
+	Name			string		`json:"name"`
+	Path			string		`json:"path"`
+	Size			float64		`json:"size"`
+	Width			int64		`json:"width"`
+	Height			int64		`json:"height"`
+}
+type Pol_Market_API_SEO_MetaImage_JSON struct {
+	Large				Pol_Market_API_SEO_MetaImage_Obj_JSON
+	Small				Pol_Market_API_SEO_MetaImage_Obj_JSON
+}
+type Pol_Market_API_SEO_JSON struct {
+	Id				int64		`json:"id"`
+	MetaTitle		string		`json:"meta_title"`
+	MetaDescription	string		`json:"meta_description"`
+	MetaImage		Pol_Market_API_SEO_MetaImage_JSON `json:"meta_image"`
+
+}
 type Pol_Market_API_Record_JSON struct {
 	// source: https://strapi-matic.poly.market/markets
 	MarketId				int64		`json:"id"`
@@ -174,8 +201,8 @@ type Pol_Market_API_Record_JSON struct {
 	SubmittedBy				string		`json:"submitted_by"`
 	Subcategory				string		`json:"subcategory"`
 	CategoryMailChimpTag	string		`json:"category_mailchimp_tag"`
-	UseCases				[]string	`json:"use_cases"`
-	SEO						string		`json:"seo"`
+	UseCases				[]Pol_Market_API_UseCase_JSON	`json:"use_cases"`
+	SEO						Pol_Market_API_SEO_JSON 	`json:"seo"`
 }
 type Pol_Market_API_Record_Complementary struct {
 	EndDateTs				int64
@@ -185,4 +212,5 @@ type Pol_Market_API_Record_Complementary struct {
 	CreatedAtDateTs			int64
 	UpdatedAtTs				int64
 	ClosedTimeDateTs		int64
+	MarketTypeCode			int64
 }
