@@ -32,6 +32,9 @@ const (
 	POSITION_MERGE = "f13ca62553fcc2bcd2372180a43949c1e4cebba603901ede2f4e14f36b282ca"
 	URI = "6bb7ff708619ba0610cba295a58592e0451dee2622938c8755667688daf3529b"
 
+	// FixedProductMarketMaker (CPMM Automated Market Maker)
+	FUNDING_ADDED = "ec2dc3e5a3bb9aa0a1deb905d2bd23640d07f107e6ceb484024501aad964a951."
+	FUNDING_REMOVED = "8b4b2c8ebd04c47fc8bce136a85df9b93fcb1f47c8aa296457d4391519d190e7"
 )
 var (
 	evt_condition_preparation,_ = hex.DecodeString(CONDITION_PREPARATION)

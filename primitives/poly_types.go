@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 )
+//------------ ConditionalTokens contract events
 type EConditionPreparation struct {// Eevent of ConditionalToken (Gnosis)
 	//Signature: ab3760c3bd2bb38b5bcf54dc79802ed67338b4cf29f3054ded67ed24661e4177
 	ConditionId      [32]byte
@@ -60,11 +61,47 @@ type EURI struct {// Event of ConditionalToken (Gnosis)
 	Id    *big.Int
 	Raw   types.Log // Blockchain specific contextual infos
 }
+//------------------------------ FixedPriceMarketMaker contract events
+type EFPMMFundingAdded struct {
+	//Signature: ec2dc3e5a3bb9aa0a1deb905d2bd23640d07f107e6ceb484024501aad964a951.
+	Funder       common.Address
+	AmountsAdded []*big.Int
+	SharesMinted *big.Int
+	Raw          types.Log // Blockchain specific contextual infos
+}
+type EFundingRemoved struct {
+	//Signature: 8b4b2c8ebd04c47fc8bce136a85df9b93fcb1f47c8aa296457d4391519d190e7
+	Funder                       common.Address
+	AmountsRemoved               []*big.Int
+	CollateralRemovedFromFeePool *big.Int
+	SharesBurnt                  *big.Int
+	Raw                          types.Log // Blockchain specific contextual infos
+}
+type EBuy struct {
+	//Signature: 4f62630f51608fc8a7603a9391a5101e58bd7c276139366fc107dc3b67c3dcf8
+	Buyer               common.Address
+	InvestmentAmount    *big.Int
+	FeeAmount           *big.Int
+	OutcomeIndex        *big.Int
+	OutcomeTokensBought *big.Int
+	Raw                 types.Log // Blockchain specific contextual infos
+}
+type ESell struct {
+	//Signature: adcf2a240ed9300d681d9a3f5382b6c1beed1b7e46643e0c7b42cbe6e2d766b4
+	Seller            common.Address
+	ReturnAmount      *big.Int
+	FeeAmount         *big.Int
+	OutcomeIndex      *big.Int
+	OutcomeTokensSold *big.Int
+	Raw               types.Log // Blockchain specific contextual infos
+}
 
+
+
+//-------------- other types
 type PolymarketProcStatus struct {
 	LastIdProcessed			int64
 }
-
 type Pol_ConditionPreparation struct {
 	EvtId                   int64
 	BlockNum                int64
