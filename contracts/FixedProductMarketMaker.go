@@ -20,6 +20,7 @@ var (
 	_ = big.NewInt
 	_ = strings.NewReader
 	_ = ethereum.NotFound
+	_ = abi.U256
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
@@ -137,7 +138,7 @@ func bindFixedProductMarketMaker(address common.Address, caller bind.ContractCal
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_FixedProductMarketMaker *FixedProductMarketMakerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
+func (_FixedProductMarketMaker *FixedProductMarketMakerRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
 	return _FixedProductMarketMaker.Contract.FixedProductMarketMakerCaller.contract.Call(opts, result, method, params...)
 }
 
@@ -156,7 +157,7 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerRaw) Transact(opts *bind.
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_FixedProductMarketMaker *FixedProductMarketMakerCallerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
+func (_FixedProductMarketMaker *FixedProductMarketMakerCallerRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
 	return _FixedProductMarketMaker.Contract.contract.Call(opts, result, method, params...)
 }
 
@@ -175,17 +176,12 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerTransactorRaw) Transact(o
 //
 // Solidity: function allowance(address owner, address spender) view returns(uint256)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) Allowance(opts *bind.CallOpts, owner common.Address, spender common.Address) (*big.Int, error) {
-	var out []interface{}
-	err := _FixedProductMarketMaker.contract.Call(opts, &out, "allowance", owner, spender)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _FixedProductMarketMaker.contract.Call(opts, out, "allowance", owner, spender)
+	return *ret0, err
 }
 
 // Allowance is a free data retrieval call binding the contract method 0xdd62ed3e.
@@ -206,17 +202,12 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) Allowance(
 //
 // Solidity: function balanceOf(address account) view returns(uint256)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) BalanceOf(opts *bind.CallOpts, account common.Address) (*big.Int, error) {
-	var out []interface{}
-	err := _FixedProductMarketMaker.contract.Call(opts, &out, "balanceOf", account)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _FixedProductMarketMaker.contract.Call(opts, out, "balanceOf", account)
+	return *ret0, err
 }
 
 // BalanceOf is a free data retrieval call binding the contract method 0x70a08231.
@@ -237,17 +228,12 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) BalanceOf(
 //
 // Solidity: function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns(uint256)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) CalcBuyAmount(opts *bind.CallOpts, investmentAmount *big.Int, outcomeIndex *big.Int) (*big.Int, error) {
-	var out []interface{}
-	err := _FixedProductMarketMaker.contract.Call(opts, &out, "calcBuyAmount", investmentAmount, outcomeIndex)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _FixedProductMarketMaker.contract.Call(opts, out, "calcBuyAmount", investmentAmount, outcomeIndex)
+	return *ret0, err
 }
 
 // CalcBuyAmount is a free data retrieval call binding the contract method 0xf55c79d0.
@@ -268,17 +254,12 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) CalcBuyAmo
 //
 // Solidity: function calcSellAmount(uint256 returnAmount, uint256 outcomeIndex) view returns(uint256 outcomeTokenSellAmount)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) CalcSellAmount(opts *bind.CallOpts, returnAmount *big.Int, outcomeIndex *big.Int) (*big.Int, error) {
-	var out []interface{}
-	err := _FixedProductMarketMaker.contract.Call(opts, &out, "calcSellAmount", returnAmount, outcomeIndex)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _FixedProductMarketMaker.contract.Call(opts, out, "calcSellAmount", returnAmount, outcomeIndex)
+	return *ret0, err
 }
 
 // CalcSellAmount is a free data retrieval call binding the contract method 0x4343116a.
@@ -299,17 +280,12 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) CalcSellAm
 //
 // Solidity: function collateralToken() view returns(address)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) CollateralToken(opts *bind.CallOpts) (common.Address, error) {
-	var out []interface{}
-	err := _FixedProductMarketMaker.contract.Call(opts, &out, "collateralToken")
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
+	var (
+		ret0 = new(common.Address)
+	)
+	out := ret0
+	err := _FixedProductMarketMaker.contract.Call(opts, out, "collateralToken")
+	return *ret0, err
 }
 
 // CollateralToken is a free data retrieval call binding the contract method 0xb2016bd4.
@@ -330,17 +306,12 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) Collateral
 //
 // Solidity: function collectedFees() view returns(uint256)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) CollectedFees(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _FixedProductMarketMaker.contract.Call(opts, &out, "collectedFees")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _FixedProductMarketMaker.contract.Call(opts, out, "collectedFees")
+	return *ret0, err
 }
 
 // CollectedFees is a free data retrieval call binding the contract method 0x9003adfe.
@@ -361,17 +332,12 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) CollectedF
 //
 // Solidity: function conditionIds(uint256 ) view returns(bytes32)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) ConditionIds(opts *bind.CallOpts, arg0 *big.Int) ([32]byte, error) {
-	var out []interface{}
-	err := _FixedProductMarketMaker.contract.Call(opts, &out, "conditionIds", arg0)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
+	var (
+		ret0 = new([32]byte)
+	)
+	out := ret0
+	err := _FixedProductMarketMaker.contract.Call(opts, out, "conditionIds", arg0)
+	return *ret0, err
 }
 
 // ConditionIds is a free data retrieval call binding the contract method 0xd8c55af7.
@@ -392,17 +358,12 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) ConditionI
 //
 // Solidity: function conditionalTokens() view returns(address)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) ConditionalTokens(opts *bind.CallOpts) (common.Address, error) {
-	var out []interface{}
-	err := _FixedProductMarketMaker.contract.Call(opts, &out, "conditionalTokens")
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
+	var (
+		ret0 = new(common.Address)
+	)
+	out := ret0
+	err := _FixedProductMarketMaker.contract.Call(opts, out, "conditionalTokens")
+	return *ret0, err
 }
 
 // ConditionalTokens is a free data retrieval call binding the contract method 0x5bd9e299.
@@ -423,17 +384,12 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) Conditiona
 //
 // Solidity: function fee() view returns(uint256)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) Fee(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _FixedProductMarketMaker.contract.Call(opts, &out, "fee")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _FixedProductMarketMaker.contract.Call(opts, out, "fee")
+	return *ret0, err
 }
 
 // Fee is a free data retrieval call binding the contract method 0xddca3f43.
@@ -454,17 +410,12 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) Fee() (*bi
 //
 // Solidity: function feesWithdrawableBy(address account) view returns(uint256)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) FeesWithdrawableBy(opts *bind.CallOpts, account common.Address) (*big.Int, error) {
-	var out []interface{}
-	err := _FixedProductMarketMaker.contract.Call(opts, &out, "feesWithdrawableBy", account)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _FixedProductMarketMaker.contract.Call(opts, out, "feesWithdrawableBy", account)
+	return *ret0, err
 }
 
 // FeesWithdrawableBy is a free data retrieval call binding the contract method 0x16dbd776.
@@ -485,17 +436,12 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) FeesWithdr
 //
 // Solidity: function supportsInterface(bytes4 interfaceId) view returns(bool)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) SupportsInterface(opts *bind.CallOpts, interfaceId [4]byte) (bool, error) {
-	var out []interface{}
-	err := _FixedProductMarketMaker.contract.Call(opts, &out, "supportsInterface", interfaceId)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
+	var (
+		ret0 = new(bool)
+	)
+	out := ret0
+	err := _FixedProductMarketMaker.contract.Call(opts, out, "supportsInterface", interfaceId)
+	return *ret0, err
 }
 
 // SupportsInterface is a free data retrieval call binding the contract method 0x01ffc9a7.
@@ -516,17 +462,12 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) SupportsIn
 //
 // Solidity: function totalSupply() view returns(uint256)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) TotalSupply(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _FixedProductMarketMaker.contract.Call(opts, &out, "totalSupply")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _FixedProductMarketMaker.contract.Call(opts, out, "totalSupply")
+	return *ret0, err
 }
 
 // TotalSupply is a free data retrieval call binding the contract method 0x18160ddd.
@@ -945,7 +886,6 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerFilterer) ParseApproval(l
 	if err := _FixedProductMarketMaker.contract.UnpackLog(event, "Approval", log); err != nil {
 		return nil, err
 	}
-	event.Raw = log
 	return event, nil
 }
 
@@ -1103,7 +1043,6 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerFilterer) ParseFPMMBuy(lo
 	if err := _FixedProductMarketMaker.contract.UnpackLog(event, "FPMMBuy", log); err != nil {
 		return nil, err
 	}
-	event.Raw = log
 	return event, nil
 }
 
@@ -1249,7 +1188,6 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerFilterer) ParseFPMMFundin
 	if err := _FixedProductMarketMaker.contract.UnpackLog(event, "FPMMFundingAdded", log); err != nil {
 		return nil, err
 	}
-	event.Raw = log
 	return event, nil
 }
 
@@ -1396,7 +1334,6 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerFilterer) ParseFPMMFundin
 	if err := _FixedProductMarketMaker.contract.UnpackLog(event, "FPMMFundingRemoved", log); err != nil {
 		return nil, err
 	}
-	event.Raw = log
 	return event, nil
 }
 
@@ -1554,7 +1491,6 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerFilterer) ParseFPMMSell(l
 	if err := _FixedProductMarketMaker.contract.UnpackLog(event, "FPMMSell", log); err != nil {
 		return nil, err
 	}
-	event.Raw = log
 	return event, nil
 }
 
@@ -1708,6 +1644,5 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerFilterer) ParseTransfer(l
 	if err := _FixedProductMarketMaker.contract.UnpackLog(event, "Transfer", log); err != nil {
 		return nil, err
 	}
-	event.Raw = log
 	return event, nil
 }

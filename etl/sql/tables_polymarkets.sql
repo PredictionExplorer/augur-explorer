@@ -81,6 +81,59 @@ CREATE TABLE pol_uri ( -- URI, event of ConditionalToken (Gnosis)
 	uri_id				DECIMAL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE pol_fund_add ( -- FPMMFundAdded event of contract FixedProductMarketMaker
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	contract_aid		BIGINT NOT NULL,
+	funder_aid			BIGINT NOT NULL,
+	amounts_added		TEXT NOT NULL,
+	shares_minted		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE pol_fund_rem ( -- FPMMFundRemoved event of contract FixedProductMarketMaker
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	contract_aid		BIGINT NOT NULL,
+	funder_aid			BIGINT NOT NULL,
+	amounts_removed		TEXT NOT NULL,
+	shares_burnt		DECIMAL NOT NULL,
+	collateral_removed	DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE pol_buy ( -- FPMMBuy event of contract FixedProductMarketMaker
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	contract_aid		BIGINT NOT NULL,
+	buyer_aid			BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	investment_amount	DECIMAL NOT NULL,
+	fee_amount			DECIMAL NOT NULL,
+	tokens_bought		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE pol_sell ( -- FPMMSell event of contract FixedProductMarketMaker
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
+	tx_id				BIGINT NOT NULL,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	contract_aid		BIGINT NOT NULL,
+	seller_aid			BIGINT NOT NULL,
+	outcome_idx			SMALLINT NOT NULL,
+	return_amount		DECIMAL NOT NULL,
+	fee_amount			DECIMAL NOT NULL,
+	tokens_sold			DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
 CREATE table pol_market ( -- As received from https://strapi-matic.poly.market/markets
 	id							BIGSERIAL PRIMARY KEY,
 	market_id					BIGINT NOT NULL,

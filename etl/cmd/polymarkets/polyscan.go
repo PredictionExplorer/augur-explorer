@@ -41,6 +41,22 @@ func build_list_of_inspected_events() []InspectedEvent {
 			Signature: hex.EncodeToString(evt_uri[:4]),
 			ContractAid: 0,
 		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_funding_added[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_funding_removed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_fpmm_buy[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_fpmm_sell[:4]),
+			ContractAid: 0,
+		},
 	)
 	return inspected_events
 }
@@ -241,6 +257,148 @@ func proc_payout_redemption(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_payout_redemption(&evt)
 }
+func proc_funding_added(log *types.Log,elog *EthereumEventLog) {
+
+	var evt Pol_FundingAdded
+	var eth_evt EFundingAdded
+
+	eth_evt.Funder = common.BytesToAddress(log.Topics[1][12:])
+
+	Info.Printf("Processing FundingAdded event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	err := fpmm_abi.Unpack(&eth_evt,"FPMMFundingAdded",log.Data)
+	if err != nil {
+		Error.Printf("Event FPMMFundingAdded decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.Funder = eth_evt.Funder.String()
+	evt.AmountsAdded = Bigint_ptr_slice_to_str(&eth_evt.AmountsAdded,",")
+	evt.SharesMinted = eth_evt.SharesMinted.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("FPMMFundingAdded{\n")
+	Info.Printf("\tFunder: %v\n",evt.Funder)
+	Info.Printf("\tAmountsAdded: %v\n",evt.AmountsAdded)
+	Info.Printf("\tSharesMinted: %v\n",evt.SharesMinted)
+	Info.Printf("}\n")
+
+	storage.Insert_funding_added(&evt)
+}
+func proc_funding_removed(log *types.Log,elog *EthereumEventLog) {
+
+	var evt Pol_FundingRemoved
+	var eth_evt EFundingRemoved
+
+	eth_evt.Funder = common.BytesToAddress(log.Topics[1][12:])
+
+	Info.Printf("Processing FundingRemoved event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	err := fpmm_abi.Unpack(&eth_evt,"FPMMFundingAdded",log.Data)
+	if err != nil {
+		Error.Printf("Event FPMMFundingAdded decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.Funder = eth_evt.Funder.String()
+	evt.AmountsRemoved = Bigint_ptr_slice_to_str(&eth_evt.AmountsRemoved,",")
+	evt.SharesBurnt = eth_evt.SharesBurnt.String()
+	evt.CollateralRemoved = eth_evt.CollateralRemovedFromFeePool.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("FPMMFundingRemoved {\n")
+	Info.Printf("\tFunder: %v\n",evt.Funder)
+	Info.Printf("\tAmountsRemoved: %v\n",evt.AmountsRemoved)
+	Info.Printf("\tSharesBurnt: %v\n",evt.SharesBurnt)
+	Info.Printf("\tCollateralRemovedFromFeePool: %v\n",evt.CollateralRemoved)
+	Info.Printf("}\n")
+
+	storage.Insert_funding_removed(&evt)
+}
+func proc_fpmm_buy(log *types.Log,elog *EthereumEventLog) {
+
+	var evt Pol_Buy
+	var eth_evt EBuy
+
+	eth_evt.Buyer = common.BytesToAddress(log.Topics[1][12:])
+
+	Info.Printf("Processing FPMMBuy event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	err := fpmm_abi.Unpack(&eth_evt,"FPMMBuy",log.Data)
+	if err != nil {
+		Error.Printf("Event FPMMBuy decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.Buyer= eth_evt.Buyer.String()
+	evt.InvestmentAmount = eth_evt.InvestmentAmount.String()
+	evt.FeeAmount = eth_evt.FeeAmount.String()
+	evt.OutcomeIdx = eth_evt.OutcomeIndex.Int64()
+	evt.TokensBought = eth_evt.OutcomeTokensBought.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("FPMMBuy{\n")
+	Info.Printf("\tBuyer: %v\n",evt.Buyer)
+	Info.Printf("\tInvestmentAmount: %v\n",evt.InvestmentAmount)
+	Info.Printf("\tFeeAmount: %v\n",evt.FeeAmount)
+	Info.Printf("\tOutcomeIdx: %v\n",evt.OutcomeIdx)
+	Info.Printf("\tTokensBought: %v\n",evt.TokensBought)
+	Info.Printf("}\n")
+
+	storage.Insert_fpmm_buy(&evt)
+}
+func proc_fpmm_sell(log *types.Log,elog *EthereumEventLog) {
+
+	var evt Pol_Sell
+	var eth_evt ESell
+
+	eth_evt.Seller = common.BytesToAddress(log.Topics[1][12:])
+
+	Info.Printf("Processing FPMMBuy event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	err := fpmm_abi.Unpack(&eth_evt,"FPMMBuy",log.Data)
+	if err != nil {
+		Error.Printf("Event FPMMBuy decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.Seller= eth_evt.Seller.String()
+	evt.ReturnAmount = eth_evt.ReturnAmount.String()
+	evt.FeeAmount = eth_evt.FeeAmount.String()
+	evt.OutcomeIdx = eth_evt.OutcomeIndex.Int64()
+	evt.TokensSold = eth_evt.OutcomeTokensSold.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("FPMMSell {\n")
+	Info.Printf("\tSeller: %v\n",evt.Seller)
+	Info.Printf("\tReturnAmount: %v\n",evt.ReturnAmount)
+	Info.Printf("\tFeeAmount: %v\n",evt.FeeAmount)
+	Info.Printf("\tOutcomeIdx: %v\n",evt.OutcomeIdx)
+	Info.Printf("\tTokensSold: %v\n",evt.TokensSold)
+	Info.Printf("}\n")
+
+	storage.Insert_fpmm_sell(&evt)
+}
 func proc_uri(log *types.Log,elog *EthereumEventLog) {
 
 	var evt Pol_URI
@@ -303,6 +461,18 @@ func process_polymarket_event(evt_id int64) error {
 		}
 		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_uri) {
 			proc_uri(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_funding_added) {
+			proc_funding_added(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_funding_removed) {
+			proc_funding_removed(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_fpmm_buy) {
+			proc_fpmm_buy(&log,&evtlog)
+		}
+		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_fpmm_sell) {
+			proc_fpmm_sell(&log,&evtlog)
 		}
 	}
 	return nil

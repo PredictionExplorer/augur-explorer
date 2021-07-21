@@ -223,4 +223,116 @@ func (ss *SQLStorage) Insert_URI(evt *p.Pol_URI) {
 	}
 
 }
+func (ss *SQLStorage) Insert_funding_added(evt *p.Pol_FundingAdded) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	funder_aid:=ss.Lookup_or_create_address(evt.Funder,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO pol_fund_add (" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"funder_aid,amounts_added,shares_minted" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,"+
+				"$6,$7,$8"+
+			")"
+	_,err := ss.db.Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		funder_aid,
+		evt.AmountsAdded,
+		evt.SharesMinted,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pol_fund_add table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_funding_removed(evt *p.Pol_FundingRemoved) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	funder_aid:=ss.Lookup_or_create_address(evt.Funder,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO pol_fund_rem (" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"funder_aid,amounts_removed,shares_burnt,collateral_removed" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,"+
+				"$6,$7,$8"+
+			")"
+	_,err := ss.db.Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		funder_aid,
+		evt.AmountsRemoved,
+		evt.SharesBurnt,
+		evt.CollateralRemoved,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pol_fund_rem table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_fpmm_buy(evt *p.Pol_Buy) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	buyer_aid:=ss.Lookup_or_create_address(evt.Buyer,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO pol_buy (" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"buyer_aid,outcome_idx,investment_amount,fee_amount,tokens_bought" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,"+
+				"$6,$7,$8,$9,$10"+
+			")"
+	_,err := ss.db.Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		buyer_aid,
+		evt.OutcomeIdx,
+		evt.InvestmentAmount,
+		evt.FeeAmount,
+		evt.TokensBought,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pol_buy table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_fpmm_sell(evt *p.Pol_Sell) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	seller_aid:=ss.Lookup_or_create_address(evt.Seller,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO pol_sell (" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"seller_aid,outcome_idx,return_amount,fee_amount,tokens_sold" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,"+
+				"$6,$7,$8,$9,$10"+
+			")"
+	_,err := ss.db.Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		seller_aid,
+		evt.OutcomeIdx,
+		evt.ReturnAmount,
+		evt.TokensSold,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pol_fund_rem table: %v\n",err))
+		os.Exit(1)
+	}
+}
 

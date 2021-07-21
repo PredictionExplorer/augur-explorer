@@ -35,6 +35,8 @@ const (
 	// FixedProductMarketMaker (CPMM Automated Market Maker)
 	FUNDING_ADDED = "ec2dc3e5a3bb9aa0a1deb905d2bd23640d07f107e6ceb484024501aad964a951."
 	FUNDING_REMOVED = "8b4b2c8ebd04c47fc8bce136a85df9b93fcb1f47c8aa296457d4391519d190e7"
+	FPMM_BUY = "4f62630f51608fc8a7603a9391a5101e58bd7c276139366fc107dc3b67c3dcf8"
+	FPMM_SELL = "adcf2a240ed9300d681d9a3f5382b6c1beed1b7e46643e0c7b42cbe6e2d766b4"
 )
 var (
 	evt_condition_preparation,_ = hex.DecodeString(CONDITION_PREPARATION)
@@ -43,6 +45,10 @@ var (
 	evt_position_split,_ = hex.DecodeString(POSITION_SPLIT)
 	evt_position_merge,_ = hex.DecodeString(POSITION_MERGE)
 	evt_uri,_ = hex.DecodeString(URI)
+	evt_funding_added,_ = hex.DecodeString(FUNDING_ADDED)
+	evt_funding_removed,_ = hex.DecodeString(FUNDING_REMOVED)
+	evt_fpmm_buy,_ = hex.DecodeString(FPMM_BUY)
+	evt_fpmm_sell,_ = hex.DecodeString(FPMM_SELL)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -52,6 +58,7 @@ var (
 	inspected_events []InspectedEvent
 
 	condtoken_abi *abi.ABI
+	fpmm_abi *abi.ABI
 
 	ctrct_wallet_registry *AugurWalletRegistry
 
@@ -158,12 +165,19 @@ func main() {
 	storage.Log_msg("Log initialized\n")
 
 	abi_parsed := strings.NewReader(ConditionalTokenABI)
-	abi,err := abi.JSON(abi_parsed)
+	ab,err := abi.JSON(abi_parsed)
 	if err!= nil {
 		Info.Printf("Can't parse Polymarkets ABI: %v\n",err)
 		os.Exit(1)
 	}
-	condtoken_abi = &abi
+	condtoken_abi = &ab
+	abi_parsed = strings.NewReader(FixedProductMarketMakerABI)
+	ab,err = abi.JSON(abi_parsed)
+	if err!= nil {
+		Info.Printf("Can't parse FixedPriceMarketMaker  ABI: %v\n",err)
+		os.Exit(1)
+	}
+	fpmm_abi = &ab
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)

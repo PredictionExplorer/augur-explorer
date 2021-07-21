@@ -62,7 +62,7 @@ type EURI struct {// Event of ConditionalToken (Gnosis)
 	Raw   types.Log // Blockchain specific contextual infos
 }
 //------------------------------ FixedPriceMarketMaker contract events
-type EFPMMFundingAdded struct {
+type EFundingAdded struct {
 	//Signature: ec2dc3e5a3bb9aa0a1deb905d2bd23640d07f107e6ceb484024501aad964a951.
 	Funder       common.Address
 	AmountsAdded []*big.Int
@@ -263,4 +263,49 @@ type Pol_Market_API_Record_Complementary struct {
 	UpdatedAtTs				int64
 	ClosedTimeDateTs		int64
 	MarketTypeCode			int64
+}
+type Pol_FundingAdded struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	Funder					string
+	AmountsAdded			string
+	SharesMinted			string
+}
+type Pol_FundingRemoved struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	Funder					string
+	AmountsRemoved			string
+	SharesBurnt				string
+	CollateralRemoved		string
+}
+type Pol_Buy struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	Buyer					string
+	InvestmentAmount		string
+	FeeAmount				string
+	OutcomeIdx				int64
+	TokensBought			string
+}
+type Pol_Sell struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	Seller					string
+	ReturnAmount			string
+	FeeAmount				string
+	OutcomeIdx				int64
+	TokensSold				string
 }
