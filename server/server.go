@@ -42,6 +42,13 @@ func respond_error(c *gin.Context,error_text string) {
 		"ErrDescr": error_text,
 	})
 }
+func respond_error_json(c *gin.Context,error_text string) {
+
+	c.JSON(http.StatusBadRequest, gin.H{
+		"status": 0,
+		"error": error_text,
+	})
+}
 func parse_int_from_remote_or_error(c *gin.Context,json_output bool,ascii_int *string) (int64,bool) {
 	p, err := strconv.ParseInt(*ascii_int,10,64)
 	if err != nil {
@@ -2577,3 +2584,26 @@ func show_augur_foundry_contracts(c *gin.Context) {
 		"ERC20MarketOutcomeWrappers" : wrappers,
 	})
 }
+func poly_buysell_operations(c *gin.Context) {
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+
+	operations := augur_srv.storage.Get_buysell_operations(market_id,0,1000000)
+
+	c.HTML(http.StatusOK, "polymarkets_buysell_ops.html", gin.H{
+		"BuySellOperations" : operations,
+		"MarketId" : market_id,
+	})
+}
+

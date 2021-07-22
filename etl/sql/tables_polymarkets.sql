@@ -106,20 +106,22 @@ CREATE TABLE pol_fund_rem ( -- FPMMFundRemoved event of contract FixedProductMar
 	collateral_removed	DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE pol_buy ( -- FPMMBuy event of contract FixedProductMarketMaker
+CREATE TABLE pol_buysell ( -- FPMMBuy/FPMMSell event of contract FixedProductMarketMaker
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	contract_aid		BIGINT NOT NULL,
-	buyer_aid			BIGINT NOT NULL,
+	user_aid			BIGINT NOT NULL,
+	op_type				SMALLINT NOT NULL,	-- 0- buy, 1 - sell
 	outcome_idx			SMALLINT NOT NULL,
-	investment_amount	DECIMAL NOT NULL,
+	collateral_amount	DECIMAL NOT NULL,
 	fee_amount			DECIMAL NOT NULL,
-	tokens_bought		DECIMAL NOT NULL,
+	token_amount		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
+/* DISCONTINUED
 CREATE TABLE pol_sell ( -- FPMMSell event of contract FixedProductMarketMaker
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
@@ -133,6 +135,18 @@ CREATE TABLE pol_sell ( -- FPMMSell event of contract FixedProductMarketMaker
 	fee_amount			DECIMAL NOT NULL,
 	tokens_sold			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
+);
+*/
+CREATE TABLE pol_mkt_stats ( -- market statistics
+	market_id				BIGINT PRIMARY KEY,
+	open_interest			DECIMAL,
+	num_liquidity_ops		INT DEFAULT 0, -- number of liquidity addition/deletions
+	num_trades				INT DEFAULT 0,
+	total_volume			DECIMAL,
+	total_fees				DECIMAL		-- sums amount of fees paid for this market
+);
+CREATE TABLE update_needed (	-- used to flag the market fetching process (polysync) to update markets
+	market_update		BOOLEAN DEFAULT FALSE
 );
 CREATE table pol_market ( -- As received from https://strapi-matic.poly.market/markets
 	id							BIGSERIAL PRIMARY KEY,

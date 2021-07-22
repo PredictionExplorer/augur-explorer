@@ -5,5 +5,6 @@ DROP TABLE IF EXISTS
 	pol_pos_split,
 	pol_pos_merge,
 	poly_proc_status,
+	pol_mkt_stats,
 	pol_uri
 CASCADE;

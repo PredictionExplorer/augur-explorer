@@ -1673,3 +1673,34 @@ func a1_block_info(c *gin.Context) {
 		"BlockInfo" : block_info,
 	})
 }
+func a1_poly_buysell_operations(c *gin.Context) {
+
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'market_id' parameter is not set")
+		return
+	}
+
+	operations := augur_srv.storage.Get_buysell_operations(market_id,offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"BuySellOperations" : operations,
+		"MarketId" : market_id,
+	})
+}

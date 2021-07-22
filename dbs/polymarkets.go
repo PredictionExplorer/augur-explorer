@@ -283,9 +283,9 @@ func (ss *SQLStorage) Insert_fpmm_buy(evt *p.Pol_Buy) {
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	buyer_aid:=ss.Lookup_or_create_address(evt.Buyer,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO pol_buy (" +
+	query = "INSERT INTO pol_buysell (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"buyer_aid,outcome_idx,investment_amount,fee_amount,tokens_bought" +
+				"user_aid,outcome_idx,collateral_amount,fee_amount,token_amount,op_type" +
 			") VALUES (" +
 				"$1,$2,$3,TO_TIMESTAMP($4),$5,"+
 				"$6,$7,$8,$9,$10"+
@@ -301,9 +301,10 @@ func (ss *SQLStorage) Insert_fpmm_buy(evt *p.Pol_Buy) {
 		evt.InvestmentAmount,
 		evt.FeeAmount,
 		evt.TokensBought,
+		0,	// BUY
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pol_buy table: %v\n",err))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert BUY into pol_buysell table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -312,9 +313,9 @@ func (ss *SQLStorage) Insert_fpmm_sell(evt *p.Pol_Sell) {
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	seller_aid:=ss.Lookup_or_create_address(evt.Seller,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO pol_sell (" +
+	query = "INSERT INTO pol_buysell (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"seller_aid,outcome_idx,return_amount,fee_amount,tokens_sold" +
+				"user_aid,outcome_idx,collateral_amount,fee_amount,token_amount,op_type" +
 			") VALUES (" +
 				"$1,$2,$3,TO_TIMESTAMP($4),$5,"+
 				"$6,$7,$8,$9,$10"+
@@ -329,10 +330,61 @@ func (ss *SQLStorage) Insert_fpmm_sell(evt *p.Pol_Sell) {
 		evt.OutcomeIdx,
 		evt.ReturnAmount,
 		evt.TokensSold,
+		1,	// SELL
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pol_fund_rem table: %v\n",err))
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Get_buysell_operations(market_id int64,offset,limit int) []p.API_Pol_BuySell_Op {
 
+	records := make([]p.API_Pol_BuySell_Op,0,64)
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT as ts," +
+				"bs.time_stamp,"+
+				"bs.block_num," +
+				"bs.op_type," +
+				"bs.outcome_idx," +
+				"bs.collateral_amount,"+
+				"bs.fee_amount,"+
+				"bs.token_amount,"+
+				"bs.user_aid, " +
+				"ba.addr " +
+			"FROM pol_buysell bs " +
+				"JOIN pol_market mkt ON p.contract_aid=mkt.mkt_mkr_aid " +
+				"JOIN address ba ON bs.buyer_aid=ba.address_id " +
+				"wHERE mkt.market_id = $1 "+
+			"ORDER BY bs.time_stamp DESC "+
+			"OFFSET $1 LIMIT $2"
+
+	rows,err := ss.db.Query(query,market_id,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_BuySell_Op
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.OperationType,
+			&rec.OutcomeIdx,
+			&rec.CollateralAmount,
+			&rec.FeeAmount,
+			&rec.TokenAmount,
+			&rec.UserAid,
+			&rec.UserAddr,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
