@@ -12,13 +12,13 @@ func (ss *SQLStorage) Get_polymarkets_processing_status() p.PolymarketProcStatus
 
 	var query string
 	for {
-		query = "SELECT last_evt_id FROM poly_proc_status"
+		query = "SELECT last_evt_id FROM pol_proc_status"
 
 		res := ss.db.QueryRow(query)
 		err := res.Scan(&null_id)
 		if (err!=nil) {
 			if err == sql.ErrNoRows {
-				query = "INSERT INTO poly_proc_status DEFAULT VALUES"
+				query = "INSERT INTO pol_proc_status DEFAULT VALUES"
 				_,err := ss.db.Exec(query)
 				if (err!=nil) {
 					ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -336,6 +336,30 @@ func (ss *SQLStorage) Insert_fpmm_sell(evt *p.Pol_Sell) {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pol_fund_rem table: %v\n",err))
 		os.Exit(1)
 	}
+}
+func (ss *SQLStorage) Get_erc1155_transfers(tx_id,contract_aid int64,signature string) []string {
+
+	records := make([]string,0,4)
+	var query string 
+	query = "SELECT log_rlp FROM evt_log WHERE contract_aid=$1 AND tx_id=$2 AND signature=$3  ORDER BY id"
+
+	rows,err := ss.db.Query(query,tx_id,contract_aid,signature)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec rlp_encoded_log
+		err=rows.Scan(&rlp_encoded_log)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rlp_encoded_log)
+	}
+	return records
 }
 func (ss *SQLStorage) Get_buysell_operations(market_id int64,offset,limit int) []p.API_Pol_BuySell_Op {
 

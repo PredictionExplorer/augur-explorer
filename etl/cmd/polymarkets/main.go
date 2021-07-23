@@ -37,6 +37,8 @@ const (
 	FUNDING_REMOVED = "8b4b2c8ebd04c47fc8bce136a85df9b93fcb1f47c8aa296457d4391519d190e7"
 	FPMM_BUY = "4f62630f51608fc8a7603a9391a5101e58bd7c276139366fc107dc3b67c3dcf8"
 	FPMM_SELL = "adcf2a240ed9300d681d9a3f5382b6c1beed1b7e46643e0c7b42cbe6e2d766b4"
+
+	ERC1155_TRANSFER_SINGLE = "c3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62"
 )
 var (
 	evt_condition_preparation,_ = hex.DecodeString(CONDITION_PREPARATION)
@@ -59,6 +61,7 @@ var (
 
 	condtoken_abi *abi.ABI
 	fpmm_abi *abi.ABI
+	erc1155_abi *abi.ABI
 
 	ctrct_wallet_registry *AugurWalletRegistry
 
@@ -178,6 +181,13 @@ func main() {
 		os.Exit(1)
 	}
 	fpmm_abi = &ab
+	abi_parsed := strings.NewReader(ERC1155ABI)
+	ab,err := abi.JSON(abi_parsed)
+	if err!= nil {
+		Info.Printf("Can't parse ERC1155 ABI: %v\n",err)
+		os.Exit(1)
+	}
+	erc1155_abi = &ab
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)

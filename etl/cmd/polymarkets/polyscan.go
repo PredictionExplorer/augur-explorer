@@ -134,6 +134,19 @@ func proc_condition_resolution(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_condition_resolution(&evt)
 }
+func build_erc1155_transfers_for_transaction(tx_id int64,Address,contract_aid int64,sender_aid int64,signature []byte) {
+
+	logs := storage.Get_erc1155_transfers(tx_id,contract_aid,signature)
+	for i:=0; i<len(logs); i++ {
+		var log types.Log
+		err := rlp.DecodeBytes(evtlog.RlpLog,&log)
+		if err != nil {
+			Error.Printf("Error decoding RLP of event id=%v: %v\n",evtlog.EvtId)
+			os.Exit(1)
+		}
+
+	}
+}
 func proc_position_split(log *types.Log,elog *EthereumEventLog) {
 
 	var evt Pol_PositionSplit

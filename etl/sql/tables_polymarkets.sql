@@ -121,6 +121,22 @@ CREATE TABLE pol_buysell ( -- FPMMBuy/FPMMSell event of contract FixedProductMar
 	token_amount		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE pol_position ( -- User's position of outcomes of a market (ERC1155 transfer)
+	user_aid			BIGINT NOT NULL,
+	market_id			INT NOT NULL,
+	outcome_idx			INT NOT NULL,
+	tot_amount			DECIMAL NOT NULL,
+	condition_id		TEXT NOT NULL,	-- this is TokenId in ERC1155 lingo
+	PRIMARY KEY(user_aid,market_id,condition_id)
+);
+CREATE TABLE pol_active_pos ( -- User's active positions
+	user_aid			BIGINT NOT NULL,
+	market_id			INT NOT NULL,
+	outcome_idx			INT NOT NULL,
+	amount				DECIMAL NOT NULL,
+	condition_id		TEXT NOT NULL,
+	PRIMARY KEY(user_aid,market_aid,condition_id)
+);
 /* DISCONTINUED
 CREATE TABLE pol_sell ( -- FPMMSell event of contract FixedProductMarketMaker
 	id					BIGSERIAL PRIMARY KEY,
@@ -138,7 +154,7 @@ CREATE TABLE pol_sell ( -- FPMMSell event of contract FixedProductMarketMaker
 );
 */
 CREATE TABLE pol_mkt_stats ( -- market statistics
-	market_id				BIGINT PRIMARY KEY,
+	market_id				INT PRIMARY KEY,
 	open_interest			DECIMAL,
 	num_liquidity_ops		INT DEFAULT 0, -- number of liquidity addition/deletions
 	num_trades				INT DEFAULT 0,
@@ -150,7 +166,7 @@ CREATE TABLE update_needed (	-- used to flag the market fetching process (polysy
 );
 CREATE table pol_market ( -- As received from https://strapi-matic.poly.market/markets
 	id							BIGSERIAL PRIMARY KEY,
-	market_id					BIGINT NOT NULL,
+	market_id					INT NOT NULL,
 	question					TEXT NOT NULL,
 	condition_id				TEXT NOT NULL,
 	slug						TEXT NOT NULL,
@@ -206,6 +222,21 @@ CREATE table pol_market ( -- As received from https://strapi-matic.poly.market/m
 
 	UNIQUE(market_id)
 );
-CREATE TABLE poly_proc_status (
+CREATE TABLE pol_proc_status (
 	last_evt_id			BIGINT DEFAULT 0
+);
+CREATE TABLE pol_ustats ( -- user statistics
+	user_aid				BIGINT PRIMARY KEY,
+	total_ops				INT DEFAULT 0, -- total amount of buy/sell operations
+	total_liq_ops			INT DEFAULT 0, -- total amount of liquidity add/remove operations
+	total_volume			DECIMAL DEFAULT 0, -- total trading volume for this user
+	markets_count			INT DEFAULT 0, -- total count of markets traded
+	profit_collateral		DECIMAL DEFAULT 0,	-- profit of the user made in collateral
+);
+CREATE TABLE pol_ustats_mkt (-- user statistics per specific market
+	user_aid			BIGINT NOT NULL,
+	market_id			INT,
+	tot_trades			INT DEFAULT 0,
+	tot_volume			DECIMAL DEFAULT 0,
+	profit_collateral	DECIMAL DEFAULT 0, -- profits made by the user in terms of collateral token
 );
