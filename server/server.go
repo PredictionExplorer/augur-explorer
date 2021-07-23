@@ -2606,4 +2606,47 @@ func poly_buysell_operations(c *gin.Context) {
 		"MarketId" : market_id,
 	})
 }
+func poly_market_info(c *gin.Context) {
 
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	info,err := augur_srv.storage.Get_poly_market_info(market_id)
+	if err != nil {
+		respond_error(c,"Market not found")
+		return
+	}
+	c.HTML(http.StatusOK, "polymarkets_market_info.html", gin.H{
+		"MarketInfo" : info,
+		"MarketId" : market_id,
+	})
+}
+func poly_market_stats(c *gin.Context) {
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	stats,_:= augur_srv.storage.Get_poly_market_stats(market_id)
+	c.HTML(http.StatusOK, "polymarkets_market_stats.html", gin.H{
+		"MarketStats" : stats,
+		"MarketId" : market_id,
+	})
+}

@@ -388,3 +388,89 @@ func (ss *SQLStorage) Get_buysell_operations(market_id int64,offset,limit int) [
 	}
 	return records
 }
+func (ss *SQLStorage) Get_poly_market_stats(market_id int64) (p.API_Pol_MarketStats,error) {
+
+	var output p.API_Pol_MarketStats
+	var query string
+	query = "SELECT " +
+				"open_interest/1e+18," +
+				"num_liquidity_ops," +
+				"num_trades," +
+				"total_volume/1e+18," +
+				"total_fees/1e+18 " +
+			"FROM pol_mkt_stats " +
+			"WHERE market_id = $1"
+
+	res := ss.db.QueryRow(query,market_id)
+	err := res.Scan(
+		&output.OpenInterest,
+		&output.NumLiquidityOps,
+		&output.NumTrades,
+		&output.TotalVolume,
+		&output.TotalFeesCollected,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return output,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return output,nil
+}
+func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInfo,error) {
+
+	var output p.API_Pol_MarketInfo
+	var query string
+	query = "SELECT " +
+				"question," +
+				"condition_id," +
+				"slug," +
+				"resolution_source,"+
+				"EXTRACT(EPOCH FROM created_at_ts)::BIGINT,"+
+				"created_at_date," +
+				"EXTRACT(EPOCH FROM end_date_ts)::BIGINT," +
+				"end_date," +
+				"category," +
+				"fee/1e+18," +
+				"market_type,"+
+				"image," +
+				"icon," +
+				"description," +
+				"outcomes,"+
+				"ma.addr " +
+			"FROM pol_market pm " +
+				"JOIN address ma ON pm.mkt_mkr_aid=ma.address_id " +
+			"WHERE pm.market_id=$1"
+
+	res := ss.db.QueryRow(query,market_id)
+	err := res.Scan(
+		&output.Question,
+		&output.ConditionId,
+		&output.Slug,
+		&output.ResolutionSource,
+		&output.CreatedAtTs,
+		&output.CreatedAtDate,
+		&output.EndDateTs,
+		&output.EndDate,
+		&output.Category,
+		&output.Fee,
+		&output.MarketType,
+		&output.Image,
+		&output.Icon,
+		&output.Description,
+		&output.Outcomes,
+		&output.MarketMakerAddr,
+	)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return output,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	output.MarketId = market_id
+	return output,nil
+}

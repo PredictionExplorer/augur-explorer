@@ -1704,3 +1704,59 @@ func a1_poly_buysell_operations(c *gin.Context) {
 		"MarketId" : market_id,
 	})
 }
+func a1_poly_market_info(c *gin.Context) {
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'market_id' parameter is not set")
+		return
+	}
+
+	info,err := augur_srv.storage.Get_poly_market_info(market_id)
+	if err != nil {
+		respond_error_json(c,"Market not found")
+		return
+	}
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MarketInfo" : info,
+		"MarketId" : market_id,
+	})
+}
+func a1_poly_market_stats(c *gin.Context) {
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'market_id' parameter is not set")
+		return
+	}
+
+	stats,_:= augur_srv.storage.Get_poly_market_stats(market_id)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MarketStats" : stats,
+		"MarketId" : market_id,
+	})
+}

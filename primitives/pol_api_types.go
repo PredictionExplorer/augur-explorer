@@ -15,5 +15,30 @@ type API_Pol_BuySell_Op struct {
 	DateTime			string
 	MarketMakerAddr		string
 }
+type API_Pol_MarketInfo struct {
+	MarketId			int64
+	Question			string
+	ConditionId			string
+	Slug				string
+	ResolutionSource	string
+	CreatedAtTs			int64
+	CreatedAtDate		string
+	EndDateTs			int64
+	EndDate				string
+	Category			string
+	Fee					string
+	MarketType			string
+	Image				string
+	Icon				string
+	Description			string
+	Outcomes			string
+	MarketMakerAddr		string
 
-
+}
+type API_Pol_MarketStats struct {
+	OpenInterest		float64
+	NumLiquidityOps		int64	// total number of add/remove liquidity
+	NumTrades			int64	// total number of buy/sell operations
+	TotalVolume			float64
+	TotalFeesCollected	float64
+}

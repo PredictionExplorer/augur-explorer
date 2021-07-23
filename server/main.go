@@ -172,6 +172,8 @@ func main() {
 	r.GET("/black/node_text_data/:node",show_node_text_data)
 	r.GET("/black/augur_foundry",show_augur_foundry_contracts)
 	r.GET("/black/poly/markets/buysell/:market_id/:offset/:limit",poly_buysell_operations)
+	r.GET("/black/poly/markets/info/:market_id",poly_market_info)
+	r.GET("/black/poly/markets/statistics/:market_id",poly_market_stats)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -233,7 +235,9 @@ func main() {
 	r.GET("/api/augur_foundry",a1_augur_foundry_contracts)
 	r.GET("/api/tx/:hash",a1_transaction_info)
 	r.GET("/api/block/:block_num",a1_block_info)
-	r.GET("/apy/poly/markets/buysell/:market_id/:offset/:limit",poly_buysell_operations)
+	r.GET("/api/poly/markets/buysell/:market_id/:offset/:limit",a1_poly_buysell_operations)
+	r.GET("/api/poly/markets/info/:market_id",a1_poly_market_info)
+	r.GET("/api/poly/markets/statistics/:market_id",a1_poly_market_stats)
 
 
 	m := autocert.Manager{
