@@ -8,14 +8,14 @@ import (
 func (ss *SQLStorage) Get_polymarkets_processing_status() p.PolymarketProcStatus {
 
 	var output p.PolymarketProcStatus
-	var null_id sql.NullInt64
+	var null_id,null_block sql.NullInt64
 
 	var query string
 	for {
-		query = "SELECT last_evt_id FROM pol_proc_status"
+		query = "SELECT last_evt_id,last_block FROM pol_proc_status"
 
 		res := ss.db.QueryRow(query)
-		err := res.Scan(&null_id)
+		err := res.Scan(&null_id,&null_block)
 		if (err!=nil) {
 			if err == sql.ErrNoRows {
 				query = "INSERT INTO pol_proc_status DEFAULT VALUES"
@@ -35,14 +35,17 @@ func (ss *SQLStorage) Get_polymarkets_processing_status() p.PolymarketProcStatus
 	if null_id.Valid {
 		output.LastIdProcessed = null_id.Int64
 	}
+	if null_block.Valid {
+		output.LastBlockNum = null_block.Int64
+	}
 	return output
 }
 func (ss *SQLStorage) Update_polymarkets_process_status(status *p.PolymarketProcStatus) {
 
 	var query string
-	query = "UPDATE poly_proc_status SET last_evt_id = $1"
+	query = "UPDATE pol_proc_status SET last_evt_id = $1,last_block=$2"
 
-	_,err := ss.db.Exec(query,status.LastIdProcessed)
+	_,err := ss.db.Exec(query,status.LastIdProcessed,status.LastBlockNum)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
@@ -50,18 +53,22 @@ func (ss *SQLStorage) Update_polymarkets_process_status(status *p.PolymarketProc
 }
 func (ss *SQLStorage) Insert_condition_preparation(evt *p.Pol_ConditionPreparation) {
 
-
+	evt_log_field := "evtlog_id,"
+	evt_log_value := fmt.Sprintf("%v,",evt.EvtId)
+	if evt.EvtId == 0 {
+		evt_log_field = ""
+		evt_log_value = ""
+	}
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	oracle_aid:=ss.Lookup_or_create_address(evt.OracleAddr,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO pol_cond_prep (" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				evt_log_field+"block_num,tx_id,time_stamp,contract_aid, "+
 				"oracle_aid,condition_id,question_id,outcome_slot_count" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
+				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8"+
 			")"
 	_,err := ss.db.Exec(query,
-		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
@@ -79,17 +86,22 @@ func (ss *SQLStorage) Insert_condition_preparation(evt *p.Pol_ConditionPreparati
 }
 func (ss *SQLStorage) Insert_condition_resolution(evt *p.Pol_ConditionResolution) {
 
+	evt_log_field := "evtlog_id,"
+	evt_log_value := fmt.Sprintf("%v,",evt.EvtId)
+	if evt.EvtId == 0 {
+		evt_log_field = ""
+		evt_log_value = ""
+	}
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	oracle_aid :=ss.Lookup_or_create_address(evt.OracleAddr,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO pol_cond_res (" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				evt_log_field+"block_num,tx_id,time_stamp,contract_aid, "+
 				"oracle_aid,condition_id,question_id,outcome_slot_count,payout_numerators" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10"+
+				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9"+
 			")"
 	_,err := ss.db.Exec(query,
-		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
@@ -107,18 +119,23 @@ func (ss *SQLStorage) Insert_condition_resolution(evt *p.Pol_ConditionResolution
 }
 func (ss *SQLStorage) Insert_position_split(evt *p.Pol_PositionSplit) {
 
+	evt_log_field := "evtlog_id,"
+	evt_log_value := fmt.Sprintf("%v,",evt.EvtId)
+	if evt.EvtId == 0 {
+		evt_log_field = ""
+		evt_log_value = ""
+	}
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	stakeholder_aid:=ss.Lookup_or_create_address(evt.StakeHolderAddr,evt.BlockNum,evt.TxId)
 	collateral_aid:=ss.Lookup_or_create_address(evt.CollateralToken,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO pol_pos_split (" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				evt_log_field+"block_num,tx_id,time_stamp,contract_aid, "+
 				"stakeholder_aid,collateral_aid,parent_coll_id,condition_id,partition,amount" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11"+
+				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10"+
 			")"
 	_,err := ss.db.Exec(query,
-		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
@@ -138,18 +155,23 @@ func (ss *SQLStorage) Insert_position_split(evt *p.Pol_PositionSplit) {
 }
 func (ss *SQLStorage) Insert_position_merge(evt *p.Pol_PositionMerge) {
 
+	evt_log_field := "evtlog_id,"
+	evt_log_value := fmt.Sprintf("%v,",evt.EvtId)
+	if evt.EvtId == 0 {
+		evt_log_field = ""
+		evt_log_value = ""
+	}
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	stakeholder_aid:=ss.Lookup_or_create_address(evt.StakeHolderAddr,evt.BlockNum,evt.TxId)
 	collateral_aid:=ss.Lookup_or_create_address(evt.CollateralToken,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO pol_pos_merge ("+
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				evt_log_field+"block_num,tx_id,time_stamp,contract_aid, "+
 				"stakeholder_aid,collateral_aid,parent_coll_id,condition_id,partition,amount" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11"+
+				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10"+
 			")"
 	_,err := ss.db.Exec(query,
-		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
@@ -169,19 +191,24 @@ func (ss *SQLStorage) Insert_position_merge(evt *p.Pol_PositionMerge) {
 }
 func (ss *SQLStorage) Insert_payout_redemption(evt *p.Pol_PayoutRedemption) {
 
+	evt_log_field := "evtlog_id,"
+	evt_log_value := fmt.Sprintf("%v,",evt.EvtId)
+	if evt.EvtId == 0 {
+		evt_log_field = ""
+		evt_log_value = ""
+	}
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	redeemer_aid:=ss.Lookup_or_create_address(evt.Redeemer,evt.BlockNum,evt.TxId)
 	collateral_aid :=ss.Lookup_or_create_address(evt.CollateralToken,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO pol_pay_redem (" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				evt_log_field + "block_num,tx_id,time_stamp,contract_aid, "+
 				"redeemer_aid,collateral_aid,parent_coll_id,index_sets,payout" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,"+
-				"$6,$7,$8,$9,$10"+
+				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,"+
+				"$5,$6,$7,$8,$9"+
 			")"
 	_,err := ss.db.Exec(query,
-		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
@@ -200,16 +227,21 @@ func (ss *SQLStorage) Insert_payout_redemption(evt *p.Pol_PayoutRedemption) {
 }
 func (ss *SQLStorage) Insert_URI(evt *p.Pol_URI) {
 
+	evt_log_field := "evtlog_id,"
+	evt_log_value := fmt.Sprintf("%v,",evt.EvtId)
+	if evt.EvtId == 0 {
+		evt_log_field = ""
+		evt_log_value = ""
+	}
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO pol_uri ("+
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				evt_log_field + "block_num,tx_id,time_stamp,contract_aid, "+
 				"uri_id,value" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7"+
+				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,$5,$6"+
 			")"
 	_,err := ss.db.Exec(query,
-		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
@@ -225,18 +257,23 @@ func (ss *SQLStorage) Insert_URI(evt *p.Pol_URI) {
 }
 func (ss *SQLStorage) Insert_funding_added(evt *p.Pol_FundingAdded) {
 
+	evt_log_field := "evtlog_id,"
+	evt_log_value := fmt.Sprintf("%v,",evt.EvtId)
+	if evt.EvtId == 0 {
+		evt_log_field = ""
+		evt_log_value = ""
+	}
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	funder_aid:=ss.Lookup_or_create_address(evt.Funder,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO pol_fund_add (" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				evt_log_field+"block_num,tx_id,time_stamp,contract_aid, "+
 				"funder_aid,amounts_added,shares_minted" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,"+
-				"$6,$7,$8"+
+				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,"+
+				"$5,$6,$7"+
 			")"
 	_,err := ss.db.Exec(query,
-		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
@@ -252,18 +289,23 @@ func (ss *SQLStorage) Insert_funding_added(evt *p.Pol_FundingAdded) {
 }
 func (ss *SQLStorage) Insert_funding_removed(evt *p.Pol_FundingRemoved) {
 
+	evt_log_field := "evtlog_id,"
+	evt_log_value := fmt.Sprintf("%v,",evt.EvtId)
+	if evt.EvtId == 0 {
+		evt_log_field = ""
+		evt_log_value = ""
+	}
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	funder_aid:=ss.Lookup_or_create_address(evt.Funder,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO pol_fund_rem (" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				evt_log_field+"block_num,tx_id,time_stamp,contract_aid, "+
 				"funder_aid,amounts_removed,shares_burnt,collateral_removed" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,"+
-				"$6,$7,$8"+
+				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,"+
+				"$5,$6,$7,$8"+
 			")"
 	_,err := ss.db.Exec(query,
-		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
@@ -280,18 +322,23 @@ func (ss *SQLStorage) Insert_funding_removed(evt *p.Pol_FundingRemoved) {
 }
 func (ss *SQLStorage) Insert_fpmm_buy(evt *p.Pol_Buy) {
 
+	evt_log_field := "evtlog_id,"
+	evt_log_value := fmt.Sprintf("%v,",evt.EvtId)
+	if evt.EvtId == 0 {
+		evt_log_field = ""
+		evt_log_value = ""
+	}
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	buyer_aid:=ss.Lookup_or_create_address(evt.Buyer,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO pol_buysell (" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				evt_log_field+"block_num,tx_id,time_stamp,contract_aid, "+
 				"user_aid,outcome_idx,collateral_amount,fee_amount,token_amount,op_type" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,"+
-				"$6,$7,$8,$9,$10"+
+				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,"+
+				"$5,$6,$7,$8,$9,$10"+
 			")"
 	_,err := ss.db.Exec(query,
-		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
@@ -304,24 +351,29 @@ func (ss *SQLStorage) Insert_fpmm_buy(evt *p.Pol_Buy) {
 		0,	// BUY
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert BUY into pol_buysell table: %v\n",err))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert BUY op into pol_buysell table: %v\n",err))
 		os.Exit(1)
 	}
 }
 func (ss *SQLStorage) Insert_fpmm_sell(evt *p.Pol_Sell) {
 
+	evt_log_field := "evtlog_id,"
+	evt_log_value := fmt.Sprintf("%v,",evt.EvtId)
+	if evt.EvtId == 0 {
+		evt_log_field = ""
+		evt_log_value = ""
+	}
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	seller_aid:=ss.Lookup_or_create_address(evt.Seller,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO pol_buysell (" +
-				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				evt_log_field+"block_num,tx_id,time_stamp,contract_aid, "+
 				"user_aid,outcome_idx,collateral_amount,fee_amount,token_amount,op_type" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,"+
-				"$6,$7,$8,$9,$10"+
+				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,"+
+				"$5,$6,$7,$8,$9,$10"+
 			")"
 	_,err := ss.db.Exec(query,
-		evt.EvtId,
 		evt.BlockNum,
 		evt.TxId,
 		evt.TimeStamp,
@@ -329,11 +381,12 @@ func (ss *SQLStorage) Insert_fpmm_sell(evt *p.Pol_Sell) {
 		seller_aid,
 		evt.OutcomeIdx,
 		evt.ReturnAmount,
+		evt.FeeAmount,
 		evt.TokensSold,
 		1,	// SELL
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pol_fund_rem table: %v\n",err))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert SELL op into pol_buysell table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -351,7 +404,7 @@ func (ss *SQLStorage) Get_erc1155_transfers(tx_id,contract_aid int64,signature s
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec rlp_encoded_log
+		var rlp_encoded_log string
 		err=rows.Scan(&rlp_encoded_log)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))

@@ -101,6 +101,7 @@ type ESell struct {
 //-------------- other types
 type PolymarketProcStatus struct {
 	LastIdProcessed			int64
+	LastBlockNum			int64
 }
 type Pol_ConditionPreparation struct {
 	EvtId                   int64

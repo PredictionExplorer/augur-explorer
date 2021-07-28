@@ -3,16 +3,20 @@ package main
 import (
 	"os"
 	"fmt"
+	"time"
 	"bytes"
+	"math/big"
+	"context"
 	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/common"
 
+	ethereum "github.com/ethereum/go-ethereum"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func build_list_of_inspected_events() []InspectedEvent {
+func build_list_of_inspected_events_layer1() []InspectedEvent {
 
 	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)
 	inspected_events= make([]InspectedEvent,0,32)
@@ -59,6 +63,75 @@ func build_list_of_inspected_events() []InspectedEvent {
 		},
 	)
 	return inspected_events
+}
+func build_list_of_inspected_events_filter_logs() []InspectedEvent {
+
+	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)
+	inspected_events= make([]InspectedEvent,0,32)
+	inspected_events = append(inspected_events,
+		InspectedEvent {
+			Signature:	hex.EncodeToString(evt_condition_preparation),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature:	hex.EncodeToString(evt_condition_resolution),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_payout_redemption),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_position_split),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_position_merge),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_uri),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_funding_added),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_funding_removed),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_fpmm_buy),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_fpmm_sell),
+			ContractAid: 0,
+		},
+	)
+	return inspected_events
+}
+func filter_log_query(p_signature []byte,block_num_from,block_num_to int64) ([]types.Log,error){
+
+	filter := ethereum.FilterQuery{}
+	filter.FromBlock = big.NewInt(block_num_from)
+	filter.ToBlock = big.NewInt(block_num_to)
+	topics := make([]common.Hash,0,1)
+	sig := common.BytesToHash(p_signature)
+	topics = append(topics,sig)
+	filter.Topics= append(filter.Topics,topics)
+	filter.Addresses = nil
+	Info.Printf("Submitting filter logs query with signature %v\n",hex.EncodeToString(sig.Bytes()))
+	Info.Printf("filter query = %+v\n",filter)
+	Info.Printf("block range: %v - %v\n",block_num_from,block_num_to)
+	logs,err := eclient.FilterLogs(context.Background(),filter)
+	if err!= nil {
+		Error.Printf("Error: %v\n",err)
+		Info.Printf("Error: %v\n",err)
+		os.Exit(1)
+	}
+	return logs,err
 }
 func proc_condition_preparation(log *types.Log,elog *EthereumEventLog) {
 
@@ -135,7 +208,7 @@ func proc_condition_resolution(log *types.Log,elog *EthereumEventLog) {
 	storage.Insert_condition_resolution(&evt)
 }
 func build_erc1155_transfers_for_transaction(tx_id int64,Address,contract_aid int64,sender_aid int64,signature []byte) {
-
+/*
 	logs := storage.Get_erc1155_transfers(tx_id,contract_aid,signature)
 	for i:=0; i<len(logs); i++ {
 		var log types.Log
@@ -146,6 +219,7 @@ func build_erc1155_transfers_for_transaction(tx_id int64,Address,contract_aid in
 		}
 
 	}
+	*/
 }
 func proc_position_split(log *types.Log,elog *EthereumEventLog) {
 
@@ -312,7 +386,7 @@ func proc_funding_removed(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Processing FundingRemoved event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := fpmm_abi.Unpack(&eth_evt,"FPMMFundingAdded",log.Data)
+	err := fpmm_abi.Unpack(&eth_evt,"FPMMFundingRemoved",log.Data)
 	if err != nil {
 		Error.Printf("Event FPMMFundingAdded decode error: %v",err)
 		os.Exit(1)
@@ -343,7 +417,6 @@ func proc_fpmm_buy(log *types.Log,elog *EthereumEventLog) {
 	var evt Pol_Buy
 	var eth_evt EBuy
 
-	eth_evt.Buyer = common.BytesToAddress(log.Topics[1][12:])
 
 	Info.Printf("Processing FPMMBuy event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -352,6 +425,8 @@ func proc_fpmm_buy(log *types.Log,elog *EthereumEventLog) {
 		Error.Printf("Event FPMMBuy decode error: %v",err)
 		os.Exit(1)
 	}
+	eth_evt.Buyer = common.BytesToAddress(log.Topics[1][12:])
+	eth_evt.OutcomeIndex = log.Topics[2].Big()
 
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
@@ -361,7 +436,6 @@ func proc_fpmm_buy(log *types.Log,elog *EthereumEventLog) {
 	evt.Buyer= eth_evt.Buyer.String()
 	evt.InvestmentAmount = eth_evt.InvestmentAmount.String()
 	evt.FeeAmount = eth_evt.FeeAmount.String()
-	evt.OutcomeIdx = eth_evt.OutcomeIndex.Int64()
 	evt.TokensBought = eth_evt.OutcomeTokensBought.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
@@ -380,15 +454,16 @@ func proc_fpmm_sell(log *types.Log,elog *EthereumEventLog) {
 	var evt Pol_Sell
 	var eth_evt ESell
 
-	eth_evt.Seller = common.BytesToAddress(log.Topics[1][12:])
 
 	Info.Printf("Processing FPMMBuy event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := fpmm_abi.Unpack(&eth_evt,"FPMMBuy",log.Data)
+	err := fpmm_abi.Unpack(&eth_evt,"FPMMSell",log.Data)
 	if err != nil {
 		Error.Printf("Event FPMMBuy decode error: %v",err)
 		os.Exit(1)
 	}
+	eth_evt.Seller = common.BytesToAddress(log.Topics[1][12:])
+	eth_evt.OutcomeIndex = log.Topics[2].Big()
 
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
@@ -443,6 +518,40 @@ func proc_uri(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_URI(&evt)
 }
+func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
+
+	Info.Printf("processing event with sig = %v\n",log.Topics[0].String())
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_condition_preparation) {
+		proc_condition_preparation(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_condition_resolution) {
+		proc_condition_resolution(log,evtlog)
+	}
+	/*if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_payout_redemption) {
+		proc_payout_redemption(&log,&evtlog)
+	}*/
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_position_split) {
+		proc_position_split(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_position_merge) {
+		proc_position_merge(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_uri) {
+		proc_uri(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_funding_added) {
+		proc_funding_added(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_funding_removed) {
+		proc_funding_removed(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_fpmm_buy) {
+		proc_fpmm_buy(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_fpmm_sell) {
+		proc_fpmm_sell(log,evtlog)
+	}
+}
 func process_polymarket_event(evt_id int64) error {
 
 	evtlog := storage.Get_event_log(evt_id)
@@ -456,37 +565,54 @@ func process_polymarket_event(evt_id int64) error {
 	log.Address.SetBytes(common.HexToHash(evtlog.ContractAddress).Bytes())
 	num_topics := len(log.Topics)
 	if num_topics > 0 {
-		Info.Printf("found event with sig = %v\n",log.Topics[0].String())
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_condition_preparation) {
-			proc_condition_preparation(&log,&evtlog)
-		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_condition_resolution) {
-			proc_condition_resolution(&log,&evtlog)
-		}
-		/*if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_payout_redemption) {
-			proc_payout_redemption(&log,&evtlog)
-		}*/
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_position_split) {
-			proc_position_split(&log,&evtlog)
-		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_position_merge) {
-			proc_position_merge(&log,&evtlog)
-		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_uri) {
-			proc_uri(&log,&evtlog)
-		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_funding_added) {
-			proc_funding_added(&log,&evtlog)
-		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_funding_removed) {
-			proc_funding_removed(&log,&evtlog)
-		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_fpmm_buy) {
-			proc_fpmm_buy(&log,&evtlog)
-		}
-		if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_fpmm_sell) {
-			proc_fpmm_sell(&log,&evtlog)
-		}
+		select_event_and_process(&log,&evtlog)
 	}
 	return nil
+}
+func fetch_and_process_filtered_events(exit_chan chan bool) {
+
+	block_range := int64(100000 - 1)
+	for {
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.")
+					os.Exit(0)
+				}
+			default:
+		}
+		status := storage.Get_polymarkets_processing_status()
+		latestBlock, err := eclient.BlockByNumber(context.Background(), nil)
+		if err != nil {
+			Error.Printf("Error getting last block number from Geth: %v\n",err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		bnum_high := latestBlock.Number().Int64()
+		from_block := status.LastBlockNum + 1
+		to_block := from_block + block_range
+		if to_block > bnum_high {
+			to_block = bnum_high
+		}
+		for i:=0; i<len(inspected_events); i++ {
+			esig := inspected_events[i].Signature
+			esig_bytes,_ := hex.DecodeString(esig)
+			logs,err := filter_log_query(esig_bytes,from_block,to_block)
+			if err != nil {
+				Error.Printf("Error getting logs: %v\n",err)
+			} else {
+				for _,log := range logs {
+					if log.Removed {
+						continue
+					}
+					var eth_evt	EthereumEventLog
+					eth_evt.BlockNum = int64(log.BlockNumber)
+					eth_evt.ContractAddress = log.Address.String()
+					select_event_and_process(&log,&eth_evt)
+				}
+			}
+		}
+		status.LastBlockNum = to_block
+		storage.Update_polymarkets_process_status(&status)
+	}
 }

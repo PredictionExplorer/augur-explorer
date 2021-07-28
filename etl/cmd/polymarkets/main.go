@@ -2,14 +2,15 @@ package main
 
 
 import (
+	"fmt"
+	"flag"
+	"time"
 	"os"
 	"os/signal"
 	"syscall"
-	"sort"
-	"time"
-	"fmt"
 	"strings"
 	"context"
+	"sort"
 	"log"
 	"encoding/hex"
 
@@ -134,7 +135,61 @@ func process_conditional_token_events(exit_chan chan bool) {
 		}
 	}
 }
+func process_events_using_log_filtering(exit_chan chan bool) {
+
+	var max_batch_size int64 = 1024*100
+	for {
+		status := storage.Get_polymarkets_processing_status()
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.")
+					os.Exit(0)
+				}
+			default:
+		}
+		Info.Printf("scanning event range from %v to %v\n",status.LastIdProcessed,status.LastIdProcessed+max_batch_size)
+		id_upper_limit := status.LastIdProcessed + max_batch_size
+		last_evt_id,err := storage.Get_last_evtlog_id()
+		if err != nil {
+			Error.Printf("Error: %v. Possibly 'evt_log' table is empty, aborting",err)
+			os.Exit(1)
+		}
+		if  id_upper_limit > last_evt_id {
+			id_upper_limit = last_evt_id
+		}
+		events := get_event_ids(status.LastIdProcessed,id_upper_limit)
+		for _,evt_id := range events {
+			err := process_polymarket_event(evt_id)
+			if err != nil {
+				Error.Printf("Pausing event processing loop for 5 sec due to error")
+				time.Sleep(5 * time.Second)
+				break
+			}
+			status.LastIdProcessed=evt_id
+			storage.Update_polymarkets_process_status(&status)
+		}
+		if len(events) == 0 {
+			last_evt_log_id_on_chain,err := storage.Get_last_evtlog_id()
+			if err != nil {
+				Info.Printf("Error getting last event log id: %v\n",err)
+				os.Exit(1)
+			}
+			if last_evt_log_id_on_chain > id_upper_limit {
+				// only advance upper range if events within the range have filled id value space
+				status.LastIdProcessed = id_upper_limit
+				storage.Update_polymarkets_process_status(&status)
+			}
+			time.Sleep(1 * time.Second) // sleep only if there is no data
+		}
+	}
+}
 func main() {
+
+	event_filter := flag.Bool("use-filter", false, "Use geth's event filtering to fetch events")
+	layer1 := flag.Bool("use-layer1", false, "Use Layer1 database (all events of evt_log table)")
+	flag.Parse()
+	fmt.Printf("event_filter = %v\n",*event_filter)
 
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 	os.MkdirAll(log_dir, os.ModePerm)
@@ -167,27 +222,27 @@ func main() {
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
 
-	abi_parsed := strings.NewReader(ConditionalTokenABI)
-	ab,err := abi.JSON(abi_parsed)
+	abi_parsed1 := strings.NewReader(ConditionalTokenABI)
+	ab1,err := abi.JSON(abi_parsed1)
 	if err!= nil {
 		Info.Printf("Can't parse Polymarkets ABI: %v\n",err)
 		os.Exit(1)
 	}
-	condtoken_abi = &ab
-	abi_parsed = strings.NewReader(FixedProductMarketMakerABI)
-	ab,err = abi.JSON(abi_parsed)
+	condtoken_abi = &ab1
+	abi_parsed2 := strings.NewReader(FixedProductMarketMakerABI)
+	ab2,err := abi.JSON(abi_parsed2)
 	if err!= nil {
 		Info.Printf("Can't parse FixedPriceMarketMaker  ABI: %v\n",err)
 		os.Exit(1)
 	}
-	fpmm_abi = &ab
-	abi_parsed := strings.NewReader(ERC1155ABI)
-	ab,err := abi.JSON(abi_parsed)
+	fpmm_abi = &ab2
+	abi_parsed3 := strings.NewReader(ERC1155ABI)
+	ab3,err := abi.JSON(abi_parsed3)
 	if err!= nil {
 		Info.Printf("Can't parse ERC1155 ABI: %v\n",err)
 		os.Exit(1)
 	}
-	erc1155_abi = &ab
+	erc1155_abi = &ab3
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)
@@ -199,7 +254,17 @@ func main() {
 		exit_chan <- true
 	}()
 
-	inspected_events = build_list_of_inspected_events()
 
-	process_conditional_token_events(exit_chan)
+	if *layer1 {
+		inspected_events = build_list_of_inspected_events_layer1()
+		process_conditional_token_events(exit_chan)
+	} else {
+		if *event_filter {
+			inspected_events = build_list_of_inspected_events_filter_logs()
+			fetch_and_process_filtered_events(exit_chan)
+		} else {
+			fmt.Printf("No command has been given, don't know what to process\n")
+			fmt.Printf("Usage : %v --use-filter --use-layer1\n",os.Args[0])
+		}
+	}
 }

@@ -1,6 +1,6 @@
 CREATE TABLE pol_cond_prep (	-- table to store ConditionPreparation event of conditional token (Gnosis)
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	evtlog_id			BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE pol_cond_prep (	-- table to store ConditionPreparation event of con
 );
 CREATE TABLE pol_cond_res (-- ConditionResolution, event of ConditionalToken (Gnosis)
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	evtlog_id			BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE pol_cond_res (-- ConditionResolution, event of ConditionalToken (Gn
 );
 CREATE TABLE pol_pos_split ( -- PositionSplit, event of ConditionalToken (Gnosis)
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	evtlog_id			BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE pol_pos_split ( -- PositionSplit, event of ConditionalToken (Gnosis
 );
 CREATE TABLE pol_pos_merge ( -- PositionMerge, event of ConditionalToken (Gnosis)
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	evtlog_id			BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ NOT NULL,
@@ -57,7 +57,7 @@ CREATE TABLE pol_pos_merge ( -- PositionMerge, event of ConditionalToken (Gnosis
 );
 CREATE TABLE pol_pay_redem (-- PayoutRedemption, event of ConditionalToken (Gnosis)
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	evtlog_id			BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ NOT NULL,
@@ -72,7 +72,7 @@ CREATE TABLE pol_pay_redem (-- PayoutRedemption, event of ConditionalToken (Gnos
 );
 CREATE TABLE pol_uri ( -- URI, event of ConditionalToken (Gnosis)
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	evtlog_id			BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ NOT NULL,
@@ -83,7 +83,7 @@ CREATE TABLE pol_uri ( -- URI, event of ConditionalToken (Gnosis)
 );
 CREATE TABLE pol_fund_add ( -- FPMMFundAdded event of contract FixedProductMarketMaker
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	evtlog_id			BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ NOT NULL,
@@ -95,7 +95,7 @@ CREATE TABLE pol_fund_add ( -- FPMMFundAdded event of contract FixedProductMarke
 );
 CREATE TABLE pol_fund_rem ( -- FPMMFundRemoved event of contract FixedProductMarketMaker
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	evtlog_id			BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ NOT NULL,
@@ -108,7 +108,7 @@ CREATE TABLE pol_fund_rem ( -- FPMMFundRemoved event of contract FixedProductMar
 );
 CREATE TABLE pol_buysell ( -- FPMMBuy/FPMMSell event of contract FixedProductMarketMaker
 	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
+	evtlog_id			BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	tx_id				BIGINT NOT NULL,
 	time_stamp			TIMESTAMPTZ NOT NULL,
@@ -124,18 +124,10 @@ CREATE TABLE pol_buysell ( -- FPMMBuy/FPMMSell event of contract FixedProductMar
 CREATE TABLE pol_position ( -- User's position of outcomes of a market (ERC1155 transfer)
 	user_aid			BIGINT NOT NULL,
 	market_id			INT NOT NULL,
-	outcome_idx			INT NOT NULL,
+	partition			INT NOT NULL,
 	tot_amount			DECIMAL NOT NULL,
 	condition_id		TEXT NOT NULL,	-- this is TokenId in ERC1155 lingo
 	PRIMARY KEY(user_aid,market_id,condition_id)
-);
-CREATE TABLE pol_active_pos ( -- User's active positions
-	user_aid			BIGINT NOT NULL,
-	market_id			INT NOT NULL,
-	outcome_idx			INT NOT NULL,
-	amount				DECIMAL NOT NULL,
-	condition_id		TEXT NOT NULL,
-	PRIMARY KEY(user_aid,market_aid,condition_id)
 );
 /* DISCONTINUED
 CREATE TABLE pol_sell ( -- FPMMSell event of contract FixedProductMarketMaker
@@ -154,12 +146,12 @@ CREATE TABLE pol_sell ( -- FPMMSell event of contract FixedProductMarketMaker
 );
 */
 CREATE TABLE pol_mkt_stats ( -- market statistics
-	market_id				INT PRIMARY KEY,
+	contract_aid			BIGINT PRIMARY KEY,
 	open_interest			DECIMAL,
 	num_liquidity_ops		INT DEFAULT 0, -- number of liquidity addition/deletions
 	num_trades				INT DEFAULT 0,
-	total_volume			DECIMAL,
-	total_fees				DECIMAL		-- sums amount of fees paid for this market
+	total_volume			DECIMAL DEFAULT 0,
+	total_fees				DECIMAL DEFAULT 0		-- sums amount of fees paid for this market
 );
 CREATE TABLE update_needed (	-- used to flag the market fetching process (polysync) to update markets
 	market_update		BOOLEAN DEFAULT FALSE
@@ -223,7 +215,8 @@ CREATE table pol_market ( -- As received from https://strapi-matic.poly.market/m
 	UNIQUE(market_id)
 );
 CREATE TABLE pol_proc_status (
-	last_evt_id			BIGINT DEFAULT 0
+	last_evt_id			BIGINT DEFAULT 0,
+	last_block			BIGINT DEFAULT 0 -- used when getting event logs via ethclient.FilterLogs
 );
 CREATE TABLE pol_ustats ( -- user statistics
 	user_aid				BIGINT PRIMARY KEY,
@@ -231,12 +224,12 @@ CREATE TABLE pol_ustats ( -- user statistics
 	total_liq_ops			INT DEFAULT 0, -- total amount of liquidity add/remove operations
 	total_volume			DECIMAL DEFAULT 0, -- total trading volume for this user
 	markets_count			INT DEFAULT 0, -- total count of markets traded
-	profit_collateral		DECIMAL DEFAULT 0,	-- profit of the user made in collateral
+	profit_collateral		DECIMAL DEFAULT 0	-- profit of the user made in collateral
 );
 CREATE TABLE pol_ustats_mkt (-- user statistics per specific market
 	user_aid			BIGINT NOT NULL,
 	market_id			INT,
 	tot_trades			INT DEFAULT 0,
 	tot_volume			DECIMAL DEFAULT 0,
-	profit_collateral	DECIMAL DEFAULT 0, -- profits made by the user in terms of collateral token
+	profit_collateral	DECIMAL DEFAULT 0 -- profits made by the user in terms of collateral token
 );
