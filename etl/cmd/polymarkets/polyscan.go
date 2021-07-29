@@ -366,12 +366,18 @@ func proc_funding_added(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.Funder = eth_evt.Funder.String()
 	evt.AmountsAdded = Bigint_ptr_slice_to_str(&eth_evt.AmountsAdded,",")
+	sum_amounts := big.NewInt(0)
+	for i:=0; i<len(eth_evt.AmountsAdded) ; i++ {
+		sum_amounts.Add(sum_amounts,eth_evt.AmountsAdded[i])
+	}
+	evt.AllAmountsSummed = sum_amounts.String()
 	evt.SharesMinted = eth_evt.SharesMinted.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("FPMMFundingAdded{\n")
 	Info.Printf("\tFunder: %v\n",evt.Funder)
 	Info.Printf("\tAmountsAdded: %v\n",evt.AmountsAdded)
+	Info.Printf("\tAllAmountsSummed: %v\n",evt.AllAmountsSummed)
 	Info.Printf("\tSharesMinted: %v\n",evt.SharesMinted)
 	Info.Printf("}\n")
 
@@ -399,6 +405,11 @@ func proc_funding_removed(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.Funder = eth_evt.Funder.String()
 	evt.AmountsRemoved = Bigint_ptr_slice_to_str(&eth_evt.AmountsRemoved,",")
+	sum_amounts := big.NewInt(0)
+	for i:=0; i<len(eth_evt.AmountsRemoved); i++ {
+		sum_amounts.Add(sum_amounts,eth_evt.AmountsRemoved[i])
+	}
+	evt.AllAmountsSummed = sum_amounts.String()
 	evt.SharesBurnt = eth_evt.SharesBurnt.String()
 	evt.CollateralRemoved = eth_evt.CollateralRemovedFromFeePool.String()
 
@@ -406,6 +417,7 @@ func proc_funding_removed(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("FPMMFundingRemoved {\n")
 	Info.Printf("\tFunder: %v\n",evt.Funder)
 	Info.Printf("\tAmountsRemoved: %v\n",evt.AmountsRemoved)
+	Info.Printf("\tAllAmountsSummed: %v\n",evt.AllAmountsSummed)
 	Info.Printf("\tSharesBurnt: %v\n",evt.SharesBurnt)
 	Info.Printf("\tCollateralRemovedFromFeePool: %v\n",evt.CollateralRemoved)
 	Info.Printf("}\n")

@@ -268,10 +268,10 @@ func (ss *SQLStorage) Insert_funding_added(evt *p.Pol_FundingAdded) {
 	var query string
 	query = "INSERT INTO pol_fund_add (" +
 				evt_log_field+"block_num,tx_id,time_stamp,contract_aid, "+
-				"funder_aid,amounts_added,shares_minted" +
+				"funder_aid,op_type,amounts,sum_amounts,shares_minted" +
 			") VALUES (" +
 				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,"+
-				"$5,$6,$7"+
+				"$5,$6,$7,$8"+
 			")"
 	_,err := ss.db.Exec(query,
 		evt.BlockNum,
@@ -279,11 +279,13 @@ func (ss *SQLStorage) Insert_funding_added(evt *p.Pol_FundingAdded) {
 		evt.TimeStamp,
 		contract_aid,
 		funder_aid,
+		0,
 		evt.AmountsAdded,
+		evt.AllAmountsSummed,
 		evt.SharesMinted,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pol_fund_add table: %v\n",err))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert Liquidity Added event: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -298,12 +300,12 @@ func (ss *SQLStorage) Insert_funding_removed(evt *p.Pol_FundingRemoved) {
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	funder_aid:=ss.Lookup_or_create_address(evt.Funder,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO pol_fund_rem (" +
+	query = "INSERT INTO pol_fund_addrem (" +
 				evt_log_field+"block_num,tx_id,time_stamp,contract_aid, "+
-				"funder_aid,amounts_removed,shares_burnt,collateral_removed" +
+				"funder_aid,op_type,amounts,sum_amounts,shares,collateral_removed" +
 			") VALUES (" +
 				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,"+
-				"$5,$6,$7,$8"+
+				"$5,$6,$7,$8,$9,$10"+
 			")"
 	_,err := ss.db.Exec(query,
 		evt.BlockNum,
@@ -311,12 +313,14 @@ func (ss *SQLStorage) Insert_funding_removed(evt *p.Pol_FundingRemoved) {
 		evt.TimeStamp,
 		contract_aid,
 		funder_aid,
+		1,
 		evt.AmountsRemoved,
+		evt.AllAmountsSummed,
 		evt.SharesBurnt,
 		evt.CollateralRemoved,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pol_fund_rem table: %v\n",err))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert Liquidity Removed event: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -550,4 +554,74 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 	}
 	output.MarketId = market_id
 	return output,nil
+}
+func (ss *SQLStorage) Get_polymarket_global_liquidity_history(init_ts int,fin_ts int,interval int) []p.API_Pol_GlobalLiquidityHistoryEntry {
+
+	var query string
+	query = "WITH periods AS (" +
+				"SELECT * FROM (" +
+					"SELECT " +
+						"generate_series AS start_ts,"+
+						"TO_TIMESTAMP(EXTRACT(EPOCH FROM generate_series) + $3) AS end_ts "+
+					"FROM (" +
+						"SELECT * " +
+							"FROM generate_series(" +
+								"TO_TIMESTAMP($1)," +
+								"TO_TIMESTAMP($2)," +
+								"TO_TIMESTAMP($3)-TO_TIMESTAMP(0)) " +
+					") AS i" +
+				") AS data " +
+			") " +
+			"SELECT " +
+				"COALESCE(COUNT(pr.id),0) as num_rows, " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
+				"SUM(sumamounts) AS sum_amounts," +
+				"SUM(shares) AS sum_shares," +
+				"SUM(collateral_removed) as collateral_removed "+
+			"FROM periods AS p " +
+				"LEFT JOIN pol_addrem_AS liq ON (" +
+					"p.start_ts <= liq.time_stamp AND "+
+					"liq.time_stamp < p.end_ts AND " +
+			") " +
+			"GROUP BY start_ts " +
+			"ORDER BY start_ts"
+
+	rows,err := ss.db.Query(query,init_ts,fin_ts,interval)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.API_Pol_GlobalLiquidityHistoryEntry,0,8)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_GlobalLiquidityHistoryEntry
+		var sum_amounts,sum_shares,sum_collateral_removed sql.NullFloat64
+		var num_rows int
+		err=rows.Scan(
+			&num_rows,
+			&rec.StartTs,
+			&sum_amounts,
+			&sum_shares,
+			&sum_collateral_removed,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
+			os.Exit(1)
+		}
+		if sum_amounts.Valid {
+			rec.SumAmounts = sum_amounts.Float64
+		}
+		if sum_shares.Valid {
+			rec.SumShares = sum_shares.Float64
+		}
+		if sum_collateral_removed.Valid {
+			rec.SumCollateralRemoved = sum_collateral_removed.Float64
+		}
+		records = append(records,rec)
+	}
+	return records
+
+}
+func (ss *SQLStorage) Get_market_liquidity_history() {
+
 }

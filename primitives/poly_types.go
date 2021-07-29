@@ -273,6 +273,7 @@ type Pol_FundingAdded struct {
 	Contract                string
 	Funder					string
 	AmountsAdded			string
+	AllAmountsSummed		string
 	SharesMinted			string
 }
 type Pol_FundingRemoved struct {
@@ -283,6 +284,7 @@ type Pol_FundingRemoved struct {
 	Contract                string
 	Funder					string
 	AmountsRemoved			string
+	AllAmountsSummed		string
 	SharesBurnt				string
 	CollateralRemoved		string
 }

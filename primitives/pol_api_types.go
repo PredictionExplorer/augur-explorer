@@ -42,3 +42,13 @@ type API_Pol_MarketStats struct {
 	TotalVolume			float64
 	TotalFeesCollected	float64
 }
+type API_Pol_CondPrepInfo struct {
+
+}
+type API_Pol_GlobalLiquidityHistoryEntry struct {
+	NumRowsInPeriod			int64
+	StartTs					int64
+	SumAmounts				float64
+	SumShares				float64
+	SumCollateralRemoved	float64
+}
