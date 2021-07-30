@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Buy/Sell operations for Polymarkets Market {{.MarketId}}</title>
+	<title>Liquidity Addition/Removal operations for Polymarkets Market {{.MarketId}}</title>
 </head>
 <body>
-	<h3 class="page_title">Buy/Sell operations of market id = {{.MarketId}}</h3>
+	<h3 class="page_title">Liquidity Addition/Removal of MarketID = {{.MarketId}}</h3>
 <table class="market_detail">
 </table>
 <h3>Operations</h3>
@@ -13,25 +13,21 @@
 		<th class="market_reports">Date </th>
 		<th class="market_reports">Block</th>
 		<td class="market_reports">Type</th>
-		<td class="market_reports">Outcome</th>
 		<td class="market_reports">Collateral (in/out)</th>
-		<td class="market_reports">Fee</th>
-		<td class="market_reports">Tokens (in/out)</th>
+		<td class="market_reports">Funder</th>
 	</tr>
-	{{- range $i, $change := .BuySellOperations}}
+	{{- range $i, $change := .LiquidityOperations}}
 		<tr class="market_reports">
 			<td class="market_reports_field">
 				{{.DateTime}}
 			</td>
 			<td class="market_reports_field">{{.BlockNum}}</td>
 			<td class="market_reports_field">
-				{{ if  eq 0 .OperationType}} Buy
+				{{ if eq 0 .OperationType}} Buy
 				{{ else }} Sell {{end }}
 			</td>
-			<td class="market_reports_field">{{.OutcomeIdx}}</td>
-			<td class="market_reports_field">{{printf "%.4f" .CollateralAmount}}</td>
-			<td class="market_reports_field">{{.FeeAmount}}</td>
-			<td class="market_reports_field">{{.TokenAmount}}</td>
+			<td class="market_reports_field">{{ printf "%.4f" .CollateralAmount}}</td>
+			<td class="market_reports_field">{{.FunderAddr}}</td>
 		</tr>
 	{{- end}}
 </table>

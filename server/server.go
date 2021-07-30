@@ -2599,11 +2599,47 @@ func poly_buysell_operations(c *gin.Context) {
 		return
 	}
 
-	operations := augur_srv.storage.Get_buysell_operations(market_id,0,1000000)
+	fpmm_aid := augur_srv.storage.Get_fpmm_contract_aid(market_id)
+	if fpmm_aid == 0 {
+		respond_error(c,"Polymarket with this ID wasn't found")
+		return
+	}
+
+	operations := augur_srv.storage.Get_polymarkets_buysell_operations(fpmm_aid,0,1000000)
 
 	c.HTML(http.StatusOK, "polymarkets_buysell_ops.html", gin.H{
 		"BuySellOperations" : operations,
 		"MarketId" : market_id,
+		"ContractAid" : fpmm_aid,
+	})
+}
+func poly_liquidity_operations(c *gin.Context) {
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+
+	fpmm_aid := augur_srv.storage.Get_fpmm_contract_aid(market_id)
+	if fpmm_aid == 0 {
+		respond_error(c,"Polymarket with this ID wasn't found")
+		return
+	}
+
+	operations := augur_srv.storage.Get_polymarkets_liquidity_operations(fpmm_aid,0,1000000)
+
+	c.HTML(http.StatusOK, "polymarkets_liquidity_ops.html", gin.H{
+		"LiquidityOperations" : operations,
+		"MarketId" : market_id,
+		"ContractAid" : fpmm_aid,
 	})
 }
 func poly_market_info(c *gin.Context) {

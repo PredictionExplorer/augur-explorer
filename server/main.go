@@ -172,6 +172,7 @@ func main() {
 	r.GET("/black/node_text_data/:node",show_node_text_data)
 	r.GET("/black/augur_foundry",show_augur_foundry_contracts)
 	r.GET("/black/poly/markets/buysell/:market_id/:offset/:limit",poly_buysell_operations)
+	r.GET("/black/poly/markets/liquidity/:market_id/:offset/:limit",poly_liquidity_operations)
 	r.GET("/black/poly/markets/info/:market_id",poly_market_info)
 	r.GET("/black/poly/markets/statistics/:market_id",poly_market_stats)
 

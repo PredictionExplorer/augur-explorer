@@ -91,26 +91,12 @@ CREATE TABLE pol_fund_addrem ( -- FPMMFundAdded event of contract FixedProductMa
 	funder_aid			BIGINT NOT NULL,
 	op_type				SMALLINT NOT NULL, -- 0 - Add, 1 - Remove
 	amounts				TEXT NOT NULL,		-- amounts added or removed, comma separated
-	sum_amounts			DECIAML NOT NULL,	-- all the amounts summed
+	sum_amounts			DECIMAL NOT NULL,	-- all the amounts summed
 	collateral_removed	DECIMAL DEFAULT 0,
+	norm_collateral		DECIMAL DEFAULT 0,	-- normalized collateral amount (negative for puts, positive for gets)
 	shares				DECIMAL NOT NULL,	-- shares minted or burned
 	UNIQUE(evtlog_id)
 );
-/* DISCONTINUED
-CREATE TABLE pol_fund_rem ( -- FPMMFundRemoved event of contract FixedProductMarketMaker
-	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL,
-	time_stamp			TIMESTAMPTZ NOT NULL,
-	contract_aid		BIGINT NOT NULL,
-	funder_aid			BIGINT NOT NULL,
-	amounts_removed		TEXT NOT NULL,
-	shares_burnt		DECIMAL NOT NULL,
-	collateral_removed	DECIMAL NOT NULL,
-	UNIQUE(evtlog_id)
-);
-*/
 CREATE TABLE pol_buysell ( -- FPMMBuy/FPMMSell event of contract FixedProductMarketMaker
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
@@ -121,12 +107,11 @@ CREATE TABLE pol_buysell ( -- FPMMBuy/FPMMSell event of contract FixedProductMar
 	user_aid			BIGINT NOT NULL,
 	op_type				SMALLINT NOT NULL,	-- 0- buy, 1 - sell
 	outcome_idx			SMALLINT NOT NULL,
-	collateral_amount	DECIMAL NOT NULL,
+	collateral_amount	DECIMAL NOT NULL,	-- amount as it comes from the event log (types.Log)
+	normalized_amount	DECIMAL DEFAULT 0,	-- negative for deposits, positive for withdrawals
 	fee_amount			DECIMAL NOT NULL,
 	token_amount		DECIMAL NOT NULL,
 	accum_collateral	DECIMAL DEFAULT 0,
-	profit_loss			DECIMAL DEFAULT 0,
-	accum_profit_loss	DECIMAL DEFAULT 0,	-- accum_profit_loss = previous accum_profit_loss + collateral_amount
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE pol_position ( -- User's position of outcomes of a market (ERC1155 transfer)
@@ -136,31 +121,6 @@ CREATE TABLE pol_position ( -- User's position of outcomes of a market (ERC1155 
 	tot_amount			DECIMAL NOT NULL,
 	condition_id		TEXT NOT NULL,	-- this is TokenId in ERC1155 lingo
 	PRIMARY KEY(user_aid,market_id,condition_id)
-);
-/* DISCONTINUED
-CREATE TABLE pol_sell ( -- FPMMSell event of contract FixedProductMarketMaker
-	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT NOT NULL REFERENCES evt_log(id) ON DELETE CASCADE,
-	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
-	tx_id				BIGINT NOT NULL,
-	time_stamp			TIMESTAMPTZ NOT NULL,
-	contract_aid		BIGINT NOT NULL,
-	seller_aid			BIGINT NOT NULL,
-	outcome_idx			SMALLINT NOT NULL,
-	return_amount		DECIMAL NOT NULL,
-	fee_amount			DECIMAL NOT NULL,
-	tokens_sold			DECIMAL NOT NULL,
-	UNIQUE(evtlog_id)
-);
-*/
-CREATE TABLE pol_mkt_stats ( -- market statistics
-	contract_aid			BIGINT PRIMARY KEY,
-	open_interest			DECIMAL DEFAULT 0,
-	total_collateral		DECIMAL DEFAULT 0,
-	num_liquidity_ops		INT DEFAULT 0, -- number of liquidity addition/deletions
-	num_trades				INT DEFAULT 0,
-	total_volume			DECIMAL DEFAULT 0,
-	total_fees				DECIMAL DEFAULT 0		-- sums amount of fees paid for this market
 );
 CREATE TABLE update_needed (	-- used to flag the market fetching process (polysync) to update markets
 	market_update		BOOLEAN DEFAULT FALSE
@@ -224,22 +184,35 @@ CREATE table pol_market ( -- As received from https://strapi-matic.poly.market/m
 	UNIQUE(market_id)
 );
 CREATE TABLE pol_proc_status (
-	last_evt_id			BIGINT DEFAULT 0,
-	last_block			BIGINT DEFAULT 0 -- used when getting event logs via ethclient.FilterLogs
+	last_evt_id				BIGINT DEFAULT 0,
+	last_block				BIGINT DEFAULT 0 -- used when getting event logs via ethclient.FilterLogs
+);
+CREATE TABLE pol_mkt_stats ( -- market statistics
+	contract_aid			BIGINT PRIMARY KEY,
+	num_liq_ops				INT DEFAULT 0, -- number of liquidity addition/deletions
+	num_trades				INT DEFAULT 0,
+	open_interest			DECIMAL DEFAULT 0,
+	total_volume			DECIMAL DEFAULT 0,
+	total_fees				DECIMAL DEFAULT 0		-- sums amount of fees paid for this market
 );
 CREATE TABLE pol_ustats ( -- user statistics
 	user_aid				BIGINT PRIMARY KEY,
-	total_buysell_ops		INT DEFAULT 0, -- total amount of buy/sell operations
-	total_liq_ops			INT DEFAULT 0, -- total amount of liquidity add/remove operations
-	total_volume			DECIMAL DEFAULT 0, -- total trading volume for this user
 	markets_count			INT DEFAULT 0, -- total count of markets traded
-	profit_collateral		DECIMAL DEFAULT 0	-- profit of the user made in collateral
+	tot_trades				INT DEFAULT 0, -- total amount of buy/sell operations
+	tot_liq_ops				INT DEFAULT 0, -- total amount of liquidity add/remove operations
+	tot_volume				DECIMAL DEFAULT 0, -- total trading volume for this user in collateral
+	tot_liq_given			DECIMAL DEFAULT 0, -- total of invested liequidity
+	tot_fees				DECIMAL DEFAULT 0, -- total fees paid
+	profit					DECIMAL DEFAULT 0,	-- profit of the user made in collateral
+	UNIQUE(user_aid)
 );
 CREATE TABLE pol_ustats_mkt (-- user statistics per specific market
-	user_aid			BIGINT NOT NULL,
-	market_id			INT,
-	tot_trades			INT DEFAULT 0,
-	tot_volume			DECIMAL DEFAULT 0,
-	profit_collateral	DECIMAL DEFAULT 0, -- profits made by the user in terms of collateral token
-	fees_paid			DECIMAL DEFAULT 0  -- accumulated amount of fees paid by this user
+	user_aid				BIGINT NOT NULL,
+	contract_aid			INT,	-- Fixed Product Market Maker
+	tot_trades				INT DEFAULT 0,
+	tot_liq_ops				INT DEFAULT 0,
+	tot_volume				DECIMAL DEFAULT 0,
+	tot_liq_given			DECIMAL DEFAULT 0, -- total of invested liequidity
+	tot_fees				DECIMAL DEFAULT 0,  -- accumulated amount of fees paid by this user
+	profit					DECIMAL DEFAULT 0 -- profits made by the user in terms of collateral token
 );

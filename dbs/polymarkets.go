@@ -266,12 +266,12 @@ func (ss *SQLStorage) Insert_funding_added(evt *p.Pol_FundingAdded) {
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	funder_aid:=ss.Lookup_or_create_address(evt.Funder,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO pol_fund_add (" +
+	query = "INSERT INTO pol_fund_addrem (" +
 				evt_log_field+"block_num,tx_id,time_stamp,contract_aid, "+
-				"funder_aid,op_type,amounts,sum_amounts,shares_minted" +
+				"funder_aid,op_type,amounts,sum_amounts,shares" +
 			") VALUES (" +
 				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,"+
-				"$5,$6,$7,$8"+
+				"$5,$6,$7,$8,$9"+
 			")"
 	_,err := ss.db.Exec(query,
 		evt.BlockNum,
@@ -393,6 +393,118 @@ func (ss *SQLStorage) Insert_fpmm_sell(evt *p.Pol_Sell) {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert SELL op into pol_buysell table: %v\n",err))
 		os.Exit(1)
 	}
+}
+func (ss *SQLStorage) Get_fpmm_contract_aid(poly_market_id int64) int64 {
+
+	var query string
+	query = "SELECT mkt_mkr_aid FROM pol_market WHERE market_id=$1"
+
+	var contract_aid int64
+	res := ss.db.QueryRow(query,poly_market_id)
+	err := res.Scan(&contract_aid)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			contract_aid = 0
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return contract_aid
+}
+func (ss *SQLStorage) Get_polymarkets_buysell_operations(contract_aid int64,offset,limit int) []p.API_Pol_BuySell_Op {
+
+	records := make([]p.API_Pol_BuySell_Op,0,64)
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT as ts," +
+				"bs.time_stamp,"+
+				"bs.block_num," +
+				"bs.op_type," +
+				"bs.outcome_idx," +
+				"bs.collateral_amount,"+
+				"bs.fee_amount,"+
+				"bs.token_amount/1e+9,"+
+				"bs.user_aid," +
+				"ba.addr " +
+			"FROM pol_buysell bs " +
+				"JOIN address ba ON bs.user_aid=ba.address_id " +
+				"wHERE bs.contract_aid = $1 "+
+			"ORDER BY bs.time_stamp DESC "+
+			"OFFSET $2 LIMIT $3"
+
+	rows,err := ss.db.Query(query,contract_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_BuySell_Op
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.OperationType,
+			&rec.OutcomeIdx,
+			&rec.CollateralAmount,
+			&rec.FeeAmount,
+			&rec.TokenAmount,
+			&rec.UserAid,
+			&rec.UserAddr,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_polymarkets_liquidity_operations(contract_aid int64,offset,limit int) []p.API_Pol_Liquidity_Op {
+
+	records := make([]p.API_Pol_Liquidity_Op,0,64)
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM liq.time_stamp)::BIGINT as ts," +
+				"liq.time_stamp,"+
+				"liq.block_num," +
+				"liq.op_type," +
+				"liq.shares,"+
+				"liq.funder_aid, " +
+				"la.addr " +
+			"FROM pol_fund_addrem liq " +
+				"JOIN address la ON liq.funder_aid=la.address_id " +
+				"wHERE contract_aid = $1 "+
+			"ORDER BY liq.time_stamp DESC "+
+			"OFFSET $2 LIMIT $3"
+
+	rows,err := ss.db.Query(query,contract_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_Liquidity_Op
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.OperationType,
+			&rec.CollateralAmount,
+			&rec.FunderAid,
+			&rec.FunderAddr,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
 }
 func (ss *SQLStorage) Get_erc1155_transfers(tx_id,contract_aid int64,signature string) []string {
 

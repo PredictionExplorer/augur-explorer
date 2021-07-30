@@ -15,6 +15,17 @@ type API_Pol_BuySell_Op struct {
 	DateTime			string
 	MarketMakerAddr		string
 }
+type API_Pol_Liquidity_Op struct {
+	BlockNum			int64
+	TimeStamp			int64
+	MarketId			int64
+	MarketMakerAid		int64
+	OperationType		int		// 0: ADD 1: REMOVE
+	CollateralAmount	float64		// How many cash were swapped for tokens
+	FunderAid			int64
+	FunderAddr			string
+	DateTime			string
+}
 type API_Pol_MarketInfo struct {
 	MarketId			int64
 	Question			string
