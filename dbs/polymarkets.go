@@ -737,3 +737,121 @@ func (ss *SQLStorage) Get_polymarket_global_liquidity_history(init_ts int,fin_ts
 func (ss *SQLStorage) Get_market_liquidity_history() {
 
 }
+func (ss *SQLStorage) Update_polymarkets_unique_addresses(ts int64,num_addrs,num_funders,num_traders int64) {
+	var query string
+	query = "UPDATE pol_unique_addrs "+
+				"SET "+
+					"num_addrs = $2,"+
+					"num_funders = $3,"+
+					"num_traders = $4 "+ 
+				"WHERE day=to_timestamp($1)"
+	res,err:=ss.db.Exec(query,ts,num_addrs,num_funders,num_traders)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Update_polymarket_unique_addresses_entry() failed: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	affected_rows,err:=res.RowsAffected()
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf(
+			"Error getting RowsAffected in Update_polymarket_unique_addresses_entry(): %v",err,
+		))
+		os.Exit(1)
+	}
+	if affected_rows == 0 {
+		query = "INSERT INTO pol_unique_addrs(day,num_addrs,num_funders,num_traders) "+
+					"VALUES(to_timestamp($1),$2,$3,$4)"
+		_,err := ss.db.Exec(query,ts,num_addrs,num_funders,num_traders)
+		if (err!=nil) {
+			ss.Log_msg(
+				fmt.Sprintf(
+					"DB Error on INSERT in Update_polymarket_unique_addresses_entry(): %v q=%v",
+					err,query,
+				),
+			);
+			os.Exit(1)
+		}
+	}
+}
+func (ss *SQLStorage) Calc_polymarkets_unique_addresses(ts_from int64,ts_to int64) (int64,int64,int64,bool) {
+
+	var no_rows bool = true
+	var query string
+	query = "SELECT count(*) FROM ( " +
+				"SELECT "+
+						"DISTINCT bs.user_aid "+
+					"FROM pol_buysell bs " +
+						"JOIN pol_market pm ON pm.mkt_mkr_aid=bs.contract_aid " +
+					"WHERE "+
+						"bs.time_stamp >= TO_TIMESTAMP($1) AND "+
+						"bs.time_stamp < TO_TIMESTAMP($2) "+
+			") data"
+
+	var num_traders sql.NullInt64
+	err := ss.db.QueryRow(query,ts_from,ts_to).Scan(&num_traders)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Error in Calc_polymarkets_unique_addresses(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		no_rows = false
+	}
+
+	query = "SELECT count(*) FROM ( " +
+				"SELECT "+
+						"DISTINCT liq.funder_aid AS user_aid "+
+					"FROM pol_fund_addrem liq " +
+						"JOIN pol_market pm ON pm.mkt_mkr_aid=liq.contract_aid " +
+					"WHERE "+
+						"liq.time_stamp >= TO_TIMESTAMP($1) AND "+
+						"liq.time_stamp < TO_TIMESTAMP($2) "+
+			") data"
+
+	var num_funders sql.NullInt64
+	err = ss.db.QueryRow(query,ts_from,ts_to).Scan(&num_funders)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Error in Calc_polymarkets_unique_addresses(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		no_rows = false
+	}
+
+	query = "SELECT count(*) FROM ( " +
+				"SELECT "+
+						"DISTINCT user_aid "+
+					"FROM ( "+
+						"(SELECT " +
+							"DISTINCT funder_aid AS user_aid "+
+							"FROM pol_fund_addrem liq "+
+								"JOIN pol_market pm ON pm.mkt_mkr_aid=liq.contract_aid " +
+								"WHERE "+
+									"liq.time_stamp >= TO_TIMESTAMP($1) AND "+
+									"liq.time_stamp < TO_TIMESTAMP($2) "+
+						") " +
+						" UNION ALL " +
+						"(SELECT " +
+							"DISTINCT user_aid "+
+							"FROM pol_buysell bs "+
+								"JOIN pol_market pm ON pm.mkt_mkr_aid=bs.contract_aid " +
+								"WHERE "+
+									"bs.time_stamp >= TO_TIMESTAMP($1) AND "+
+									"bs.time_stamp < TO_TIMESTAMP($2) "+
+						") " +
+					") data" +
+			") result"
+
+	var num_addrs sql.NullInt64
+	err = ss.db.QueryRow(query,ts_from,ts_to).Scan(&num_addrs)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Error in Calc_polymarkets_unique_addresses(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		no_rows = false
+	}
+
+	return num_addrs.Int64,num_funders.Int64,num_traders.Int64,no_rows
+}

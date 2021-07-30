@@ -31,8 +31,8 @@ BEGIN
 		WHERE user_aid = NEW.funder_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO pol_ustats(user_aid,tot_liq_ops,tot_liq_given)
-			VALUES(NEW.funder_aid,1,v_normalized_collateral);
+		INSERT INTO pol_ustats(user_aid,reg_time_stamp,tot_liq_ops,tot_liq_given)
+			VALUES(NEW.funder_aid,NEW.time_stamp,1,v_normalized_collateral);
 	END IF;
 
 	-- user statistics for this market in particular
@@ -124,8 +124,8 @@ BEGIN
 		WHERE user_aid = NEW.user_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO pol_ustats(user_aid,tot_trades,tot_volume,tot_fees,profit)
-			VALUES(NEW.user_aid,1,NEW.collateral_amount,NEW.fee_amount,v_normalized_amount);
+		INSERT INTO pol_ustats(user_aid,reg_time_stamp,tot_trades,tot_volume,tot_fees,profit)
+			VALUES(NEW.user_aid,NEW.time_stamp,1,NEW.collateral_amount,NEW.fee_amount,v_normalized_amount);
 	END IF;
 	UPDATE pol_ustats_mkt
 		SET

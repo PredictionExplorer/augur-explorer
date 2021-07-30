@@ -34,7 +34,7 @@ CREATE TABLE pol_pos_split ( -- PositionSplit, event of ConditionalToken (Gnosis
 	contract_aid		BIGINT NOT NULL,
 	stakeholder_aid		BIGINT NOT NULL,
 	collateral_aid		BIGINT NOT NULL,
-	parent_coll_id		BIGINT NOT NULL, -- parent collection id
+	parent_coll_id		TEXT NOT NULL, -- parent collection id
 	condition_id		TEXt NOT NULL,
 	partition			TEXT NOT NULL,
 	amount				DECIMAL NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE pol_pos_merge ( -- PositionMerge, event of ConditionalToken (Gnosis
 	contract_aid		BIGINT NOT NULL,
 	stakeholder_aid		BIGINT NOT NULL,
 	collateral_aid		BIGINT NOT NULL,
-	parent_coll_id		BIGINT NOT NULL, -- parent collection id
+	parent_coll_id		TEXT NOT NULL, -- parent collection id
 	condition_id		TEXT NOT NULL,
 	partition			TEXT NOT NULL,
 	amount				DECIMAL NOT NULL,
@@ -197,6 +197,7 @@ CREATE TABLE pol_mkt_stats ( -- market statistics
 );
 CREATE TABLE pol_ustats ( -- user statistics
 	user_aid				BIGINT PRIMARY KEY,
+	reg_time_stamp			TIMESTAMPTZ NOT NULL,
 	markets_count			INT DEFAULT 0, -- total count of markets traded
 	tot_trades				INT DEFAULT 0, -- total amount of buy/sell operations
 	tot_liq_ops				INT DEFAULT 0, -- total amount of liquidity add/remove operations
@@ -215,4 +216,10 @@ CREATE TABLE pol_ustats_mkt (-- user statistics per specific market
 	tot_liq_given			DECIMAL DEFAULT 0, -- total of invested liequidity
 	tot_fees				DECIMAL DEFAULT 0,  -- accumulated amount of fees paid by this user
 	profit					DECIMAL DEFAULT 0 -- profits made by the user in terms of collateral token
+);
+CREATE TABLE pol_unique_addrs (	-- Unique addresses per day, statistics
+	day					DATE PRIMARY KEY,
+	num_addrs			INT DEFAULT 0,	-- Total number of uinique users (traders + liquidity providers)
+	num_funders			INT DEFAULT 0,	-- Number of unique liquidity providers (pol_addrem table)
+	num_traders			INT DEFAULT 0	-- Number of unique traders (pol_buysell table)
 );

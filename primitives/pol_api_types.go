@@ -63,3 +63,8 @@ type API_Pol_GlobalLiquidityHistoryEntry struct {
 	SumShares				float64
 	SumCollateralRemoved	float64
 }
+type API_Unique_Users struct {
+	TimeStamp				int64
+	NumLiquidityProviders	int64
+	NumTraders				int64
+}
