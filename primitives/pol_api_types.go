@@ -57,14 +57,35 @@ type API_Pol_CondPrepInfo struct {
 
 }
 type API_Pol_GlobalLiquidityHistoryEntry struct {
-	NumRowsInPeriod			int64
 	StartTs					int64
-	SumAmounts				float64
-	SumShares				float64
-	SumCollateralRemoved	float64
+	NumOperations			int64
+	//SumAmounts				float64
+	//SumShares				float64
+	//SumCollateralRemoved	float64
+	Liquidity				float64
+	LiquidityAccum			float64
 }
-type API_Unique_Users struct {
+type API_Pol_MarketLiquidityHistoryEntry struct {
+	StartTs					int64
+	NumOperations			int64
+	Liquidity				float64
+	LiquidityAccum			float64
+}
+type API_Pol_GlobalTradingHistoryEntry struct {
+	StartTs					int64
+	NumOperations			int64
+	TradingVol				float64
+	TradingVolAccum			float64
+}
+type API_Pol_MarketTradingHistoryEntry struct {
+	StartTs					int64
+	NumOperations			int64
+	TradingVol				float64
+	TradingVolAccum			float64
+}
+type API_Pol_Unique_Users struct {
 	TimeStamp				int64
-	NumLiquidityProviders	int64
+	NumFunders				int64
 	NumTraders				int64
+	NumTotal				int64
 }

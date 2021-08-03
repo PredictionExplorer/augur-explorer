@@ -1684,7 +1684,7 @@ func a1_poly_buysell_operations(c *gin.Context) {
 	var market_id int64
 	if len(p_market_id) > 0 {
 		var success bool
-		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		market_id,success = parse_int_from_remote_or_error(c,true,&p_market_id)
 		if !success {
 			return
 		}
@@ -1710,7 +1710,7 @@ func a1_poly_market_info(c *gin.Context) {
 	var market_id int64
 	if len(p_market_id) > 0 {
 		var success bool
-		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		market_id,success = parse_int_from_remote_or_error(c,true,&p_market_id)
 		if !success {
 			return
 		}
@@ -1740,7 +1740,7 @@ func a1_poly_market_stats(c *gin.Context) {
 	var market_id int64
 	if len(p_market_id) > 0 {
 		var success bool
-		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		market_id,success = parse_int_from_remote_or_error(c,true,&p_market_id)
 		if !success {
 			return
 		}
@@ -1758,5 +1758,103 @@ func a1_poly_market_stats(c *gin.Context) {
 		"error" : err_str,
 		"MarketStats" : stats,
 		"MarketId" : market_id,
+	})
+}
+func a1_poly_unique_users(c *gin.Context) {
+
+	success,init_ts,fin_ts := parse_timeframe_ini_fin(c)
+	if !success {
+		return
+	}
+
+	stats := augur_srv.storage.Get_polymarkets_unique_users_stats(init_ts,fin_ts)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UniquePolymarketPlatformUsers" : stats,
+		"InitTs" : init_ts,
+		"FinTs" : fin_ts,
+	})
+
+}
+func a1_poly_liq_hist_global(c *gin.Context) {
+
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+
+	liq_hist := augur_srv.storage.Get_polymarket_global_liquidity_history(init_ts,fin_ts,interval_secs)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"GlobalLiquidityHistory" : liq_hist,
+		"InitTs" : init_ts,
+		"FinTs" : fin_ts,
+		"Interval" : interval_secs,
+	})
+}
+func a1_poly_market_liquidity_periods(c *gin.Context) {
+
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,true,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+
+	fpmm_aid := augur_srv.storage.Get_fpmm_contract_aid(market_id)
+	if fpmm_aid == 0 {
+		respond_error(c,"Polymarket with this ID wasn't found")
+		return
+	}
+
+	liq_hist := augur_srv.storage.Get_polymarket_market_liquidity_history(fpmm_aid,init_ts,fin_ts,interval_secs)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MarketId" : market_id,
+		"ContractAid" : fpmm_aid,
+		"MarketLiquidityHistory" : liq_hist,
+		"InitTs" : init_ts,
+		"FinTs" : fin_ts,
+		"Interval" : interval_secs,
+	})
+}
+func a1_poly_trade_hist_global(c *gin.Context) {
+
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+
+	trade_hist := augur_srv.storage.Get_polymarket_global_trading_history(init_ts,fin_ts,interval_secs)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"GlobalTradeHistory" : trade_hist,
+		"InitTs" : init_ts,
+		"FinTs" : fin_ts,
+		"Interval" : interval_secs,
 	})
 }

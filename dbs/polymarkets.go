@@ -670,6 +670,18 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 func (ss *SQLStorage) Get_polymarket_global_liquidity_history(init_ts int,fin_ts int,interval int) []p.API_Pol_GlobalLiquidityHistoryEntry {
 
 	var query string
+	query = "SELECT sum(norm_collateral) AS accum_liq FROM pol_fund_addrem liq " +
+				"JOIN pol_market pm ON liq.contract_aid=pm.mkt_mkr_aid " +
+				"WHERE liq.time_stamp < TO_TIMESTAMP($1)"
+	var initial_accum_collateral sql.NullFloat64
+	err := ss.db.QueryRow(query,init_ts).Scan(&initial_accum_collateral)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Error in Get_polymarket_global_liquidity_history(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+
 	query = "WITH periods AS (" +
 				"SELECT * FROM (" +
 					"SELECT " +
@@ -685,16 +697,19 @@ func (ss *SQLStorage) Get_polymarket_global_liquidity_history(init_ts int,fin_ts
 				") AS data " +
 			") " +
 			"SELECT " +
-				"COALESCE(COUNT(pr.id),0) as num_rows, " +
+				"COALESCE(COUNT(liq.id),0) as num_rows, " +
 				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
-				"SUM(sumamounts) AS sum_amounts," +
-				"SUM(shares) AS sum_shares," +
-				"SUM(collateral_removed) as collateral_removed "+
+				//"SUM(sumamounts) AS sum_amounts," +
+				//"SUM(shares) AS sum_shares," +
+				"SUM(norm_collateral) as collateral "+
 			"FROM periods AS p " +
-				"LEFT JOIN pol_addrem_AS liq ON (" +
-					"p.start_ts <= liq.time_stamp AND "+
-					"liq.time_stamp < p.end_ts AND " +
-			") " +
+				"LEFT JOIN LATERAL ( "+
+					"SELECT liq.id,liq.time_stamp,liq.norm_collateral "+
+						"FROM  pol_fund_addrem liq "+
+						"JOIN pol_market pm ON liq.contract_aid=pm.mkt_mkr_aid "+
+				") liq ON " +
+					"(p.start_ts <= liq.time_stamp) AND "+
+					"(liq.time_stamp < p.end_ts) " +
 			"GROUP BY start_ts " +
 			"ORDER BY start_ts"
 
@@ -704,37 +719,123 @@ func (ss *SQLStorage) Get_polymarket_global_liquidity_history(init_ts int,fin_ts
 		os.Exit(1)
 	}
 	records := make([]p.API_Pol_GlobalLiquidityHistoryEntry,0,8)
+	var accum_liq float64 = 0.0
+	if initial_accum_collateral.Valid {
+		accum_liq = initial_accum_collateral.Float64
+	}
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.API_Pol_GlobalLiquidityHistoryEntry
-		var sum_amounts,sum_shares,sum_collateral_removed sql.NullFloat64
+		var /*sum_amounts,sum_shares,*/sum_collateral sql.NullFloat64
 		var num_rows int
 		err=rows.Scan(
 			&num_rows,
 			&rec.StartTs,
-			&sum_amounts,
-			&sum_shares,
-			&sum_collateral_removed,
+			//&sum_amounts,
+			//&sum_shares,
+			&sum_collateral,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
 			os.Exit(1)
 		}
-		if sum_amounts.Valid {
+		/*if sum_amounts.Valid {
 			rec.SumAmounts = sum_amounts.Float64
-		}
-		if sum_shares.Valid {
+		}*/
+		/*if sum_shares.Valid {
 			rec.SumShares = sum_shares.Float64
+		}*/
+		if sum_collateral.Valid {
+			rec.Liquidity= sum_collateral.Float64
+			accum_liq = accum_liq + rec.Liquidity
+			rec.LiquidityAccum = accum_liq
 		}
-		if sum_collateral_removed.Valid {
-			rec.SumCollateralRemoved = sum_collateral_removed.Float64
-		}
+
 		records = append(records,rec)
 	}
 	return records
 
 }
-func (ss *SQLStorage) Get_market_liquidity_history() {
+func (ss *SQLStorage) Get_polymarket_market_liquidity_history(contract_aid int64,init_ts int,fin_ts int,interval int) []p.API_Pol_MarketLiquidityHistoryEntry {
+
+	var query string
+	query = "SELECT sum(norm_collateral) AS accum_liq FROM pol_fund_addrem liq " +
+				"JOIN pol_market pm ON liq.contract_aid=pm.mkt_mkr_aid " +
+				"WHERE (pm.mkt_mkr_aid=$1) AND (liq.time_stamp < TO_TIMESTAMP($2))"
+	var initial_accum_collateral sql.NullFloat64
+	err := ss.db.QueryRow(query,contract_aid,init_ts).Scan(&initial_accum_collateral)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+
+	query = "WITH periods AS (" +
+				"SELECT * FROM (" +
+					"SELECT " +
+						"generate_series AS start_ts,"+
+						"TO_TIMESTAMP(EXTRACT(EPOCH FROM generate_series) + $3) AS end_ts "+
+					"FROM (" +
+						"SELECT * " +
+							"FROM generate_series(" +
+								"TO_TIMESTAMP($1)," +
+								"TO_TIMESTAMP($2)," +
+								"TO_TIMESTAMP($3)-TO_TIMESTAMP(0)) " +
+					") AS i" +
+				") AS data " +
+			") " +
+			"SELECT " +
+				"COALESCE(COUNT(liq.id),0) as num_rows, " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
+				//"SUM(sumamounts) AS sum_amounts," +
+				//"SUM(shares) AS sum_shares," +
+				"SUM(norm_collateral) as collateral "+
+			"FROM periods AS p " +
+				"LEFT JOIN LATERAL ( "+
+					"SELECT liq.id,liq.time_stamp,liq.norm_collateral "+
+						"FROM pol_fund_addrem liq "+
+						"JOIN pol_market pm ON liq.contract_aid=pm.mkt_mkr_aid "+
+						"WHERE (pm.mkt_mkr_aid=$4) " +
+				") liq ON " +
+					"(p.start_ts <= liq.time_stamp) AND "+
+					"(liq.time_stamp < p.end_ts) " +
+			"GROUP BY start_ts " +
+			"ORDER BY start_ts"
+
+	rows,err := ss.db.Query(query,init_ts,fin_ts,interval,contract_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.API_Pol_MarketLiquidityHistoryEntry,0,8)
+	var accum_liq float64 = 0.0
+	if initial_accum_collateral.Valid {
+		accum_liq = initial_accum_collateral.Float64
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_MarketLiquidityHistoryEntry
+		var sum_collateral sql.NullFloat64
+		var num_rows int
+		err=rows.Scan(
+			&num_rows,
+			&rec.StartTs,
+			&sum_collateral,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
+			os.Exit(1)
+		}
+		if sum_collateral.Valid {
+			rec.Liquidity= sum_collateral.Float64
+			accum_liq = accum_liq + rec.Liquidity
+			rec.LiquidityAccum = accum_liq
+		}
+
+		records = append(records,rec)
+	}
+	return records
 
 }
 func (ss *SQLStorage) Update_polymarkets_unique_addresses(ts int64,num_addrs,num_funders,num_traders int64) {
@@ -854,4 +955,83 @@ func (ss *SQLStorage) Calc_polymarkets_unique_addresses(ts_from int64,ts_to int6
 	}
 
 	return num_addrs.Int64,num_funders.Int64,num_traders.Int64,no_rows
+}
+func (ss *SQLStorage) Get_polymarket_global_trading_history(init_ts int,fin_ts int,interval int) []p.API_Pol_GlobalTradingHistoryEntry {
+
+	var query string
+	query = "SELECT sum(normalized_amount) AS accum_trading FROM pol_buysell tr " +
+				"JOIN pol_market pm ON tr.contract_aid=pm.mkt_mkr_aid " +
+				"WHERE tr.time_stamp < TO_TIMESTAMP($1)"
+	var initial_accum_collateral sql.NullFloat64
+	err := ss.db.QueryRow(query,init_ts).Scan(&initial_accum_collateral)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+
+	query = "WITH periods AS (" +
+				"SELECT * FROM (" +
+					"SELECT " +
+						"generate_series AS start_ts,"+
+						"TO_TIMESTAMP(EXTRACT(EPOCH FROM generate_series) + $3) AS end_ts "+
+					"FROM (" +
+						"SELECT * " +
+							"FROM generate_series(" +
+								"TO_TIMESTAMP($1)," +
+								"TO_TIMESTAMP($2)," +
+								"TO_TIMESTAMP($3)-TO_TIMESTAMP(0)) " +
+					") AS i" +
+				") AS data " +
+			") " +
+			"SELECT " +
+				"COALESCE(COUNT(tr.id),0) as num_rows, " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
+				"SUM(normalized_amount) as collateral "+
+			"FROM periods AS p " +
+				"LEFT JOIN LATERAL ( "+
+					"SELECT tr.id,tr.time_stamp,tr.normalized_amount "+
+						"FROM  pol_buysell tr "+
+						"JOIN pol_market pm ON tr.contract_aid=pm.mkt_mkr_aid "+
+				") tr ON " +
+					"(p.start_ts <= tr.time_stamp) AND "+
+					"(tr.time_stamp < p.end_ts) " +
+			"GROUP BY start_ts " +
+			"ORDER BY start_ts"
+
+	rows,err := ss.db.Query(query,init_ts,fin_ts,interval)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.API_Pol_GlobalTradingHistoryEntry,0,8)
+	var accum_volume float64 = 0.0
+	if initial_accum_collateral.Valid {
+		accum_volume = initial_accum_collateral.Float64
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_GlobalTradingHistoryEntry
+		var sum_collateral sql.NullFloat64
+		var num_rows int
+		err=rows.Scan(
+			&num_rows,
+			&rec.StartTs,
+			&sum_collateral,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
+			os.Exit(1)
+		}
+		if sum_collateral.Valid {
+			rec.TradingVol= sum_collateral.Float64
+			accum_volume = accum_volume + rec.TradingVol
+			rec.TradingVolAccum = accum_volume
+		}
+
+		records = append(records,rec)
+	}
+	return records
+
 }

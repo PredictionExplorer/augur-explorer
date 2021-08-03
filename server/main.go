@@ -174,7 +174,9 @@ func main() {
 	r.GET("/black/poly/markets/buysell/:market_id/:offset/:limit",poly_buysell_operations)
 	r.GET("/black/poly/markets/liquidity/:market_id/:offset/:limit",poly_liquidity_operations)
 	r.GET("/black/poly/markets/info/:market_id",poly_market_info)
+	r.GET("/black/poly/markets/volume/liquidity/:market_id/:init_ts/:fin_ts/:interval_secs",poly_market_liquidity_periods)
 	r.GET("/black/poly/markets/statistics/:market_id",poly_market_stats)
+	r.GET("/black/poly/stats/global_liquidity/:init_ts/:fin_ts/:interval_secs",poly_liq_hist_global)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -239,6 +241,10 @@ func main() {
 	r.GET("/api/poly/markets/buysell/:market_id/:offset/:limit",a1_poly_buysell_operations)
 	r.GET("/api/poly/markets/info/:market_id",a1_poly_market_info)
 	r.GET("/api/poly/markets/statistics/:market_id",a1_poly_market_stats)
+	r.GET("/api/poly/markets/volume/liquidity/:market_id/:init_ts/:fin_ts/:interval_secs",a1_poly_market_liquidity_periods)
+	r.GET("/api/poly/unique_users/:init_ts/:fin_ts",a1_poly_unique_users)
+	r.GET("/api/poly/stats/global_liquidity/:init_ts/:fin_ts/:interval_secs",a1_poly_liq_hist_global)
+	r.GET("/api/poly/stats/global_trading/:init_ts/:fin_ts/:interval_secs",a1_poly_trade_hist_global)
 
 
 	m := autocert.Manager{
