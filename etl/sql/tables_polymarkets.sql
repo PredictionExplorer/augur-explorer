@@ -223,3 +223,6 @@ CREATE TABLE pol_unique_addrs (	-- Unique addresses per day, statistics
 	num_funders			INT DEFAULT 0,	-- Number of unique liquidity providers (pol_addrem table)
 	num_traders			INT DEFAULT 0	-- Number of unique traders (pol_buysell table)
 );
+CREATE TABLE pol_data_feed (
+	last_evt_id			BIGINT DEFAULT 0	-- stores last event ID returned by data feed
+);

@@ -547,7 +547,7 @@ func (ss *SQLStorage) Get_buysell_operations(market_id int64,offset,limit int) [
 				"ba.addr " +
 			"FROM pol_buysell bs " +
 				"JOIN pol_market mkt ON p.contract_aid=mkt.mkt_mkr_aid " +
-				"JOIN address ba ON bs.buyer_aid=ba.address_id " +
+				"JOIN address ba ON bs.user_aid=ba.address_id " +
 				"wHERE mkt.market_id = $1 "+
 			"ORDER BY bs.time_stamp DESC "+
 			"OFFSET $1 LIMIT $2"
@@ -1014,7 +1014,7 @@ func (ss *SQLStorage) Get_polymarket_global_trading_history(init_ts int,fin_ts i
 	for rows.Next() {
 		var rec p.API_Pol_GlobalTradingHistoryEntry
 		var sum_collateral sql.NullFloat64
-		var num_rows int
+		var num_rows sql.NullInt64
 		err=rows.Scan(
 			&num_rows,
 			&rec.StartTs,
@@ -1023,6 +1023,9 @@ func (ss *SQLStorage) Get_polymarket_global_trading_history(init_ts int,fin_ts i
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
 			os.Exit(1)
+		}
+		if num_rows.Valid {
+			rec.NumOperations = num_rows.Int64
 		}
 		if sum_collateral.Valid {
 			rec.TradingVol= sum_collateral.Float64
@@ -1035,3 +1038,197 @@ func (ss *SQLStorage) Get_polymarket_global_trading_history(init_ts int,fin_ts i
 	return records
 
 }
+func (ss *SQLStorage) Get_polymarket_market_trading_history(contract_aid int64,init_ts int,fin_ts int,interval int) []p.API_Pol_MarketTradingHistoryEntry {
+
+	var query string
+	query = "SELECT sum(normalized_amount) AS accum_vol FROM pol_buysell tr " +
+				"JOIN pol_market pm ON tr.contract_aid=pm.mkt_mkr_aid " +
+				"WHERE (pm.mkt_mkr_aid=$1) AND (tr.time_stamp < TO_TIMESTAMP($2))"
+	var initial_accum_collateral sql.NullFloat64
+	err := ss.db.QueryRow(query,contract_aid,init_ts).Scan(&initial_accum_collateral)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+
+	query = "WITH periods AS (" +
+				"SELECT * FROM (" +
+					"SELECT " +
+						"generate_series AS start_ts,"+
+						"TO_TIMESTAMP(EXTRACT(EPOCH FROM generate_series) + $3) AS end_ts "+
+					"FROM (" +
+						"SELECT * " +
+							"FROM generate_series(" +
+								"TO_TIMESTAMP($1)," +
+								"TO_TIMESTAMP($2)," +
+								"TO_TIMESTAMP($3)-TO_TIMESTAMP(0)) " +
+					") AS i" +
+				") AS data " +
+			") " +
+			"SELECT " +
+				"COALESCE(COUNT(tr.id),0) as num_rows, " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
+				"SUM(normalized_amount) as collateral "+
+			"FROM periods AS p " +
+				"LEFT JOIN LATERAL ( "+
+					"SELECT tr.id,tr.time_stamp,tr.normalized_amount "+
+						"FROM pol_buysell tr "+
+						"JOIN pol_market pm ON tr.contract_aid=pm.mkt_mkr_aid "+
+						"WHERE (pm.mkt_mkr_aid=$4) " +
+				") tr ON " +
+					"(p.start_ts <= tr.time_stamp) AND "+
+					"(tr.time_stamp < p.end_ts) " +
+			"GROUP BY start_ts " +
+			"ORDER BY start_ts"
+
+	rows,err := ss.db.Query(query,init_ts,fin_ts,interval,contract_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.API_Pol_MarketTradingHistoryEntry,0,8)
+	var accum_vol float64 = 0.0
+	if initial_accum_collateral.Valid {
+		accum_vol = initial_accum_collateral.Float64
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_MarketTradingHistoryEntry
+		var sum_collateral sql.NullFloat64
+		var num_rows sql.NullInt64
+		err=rows.Scan(
+			&num_rows,
+			&rec.StartTs,
+			&sum_collateral,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
+			os.Exit(1)
+		}
+		if num_rows.Valid {
+			rec.NumOperations = num_rows.Int64
+		}
+		if sum_collateral.Valid {
+			rec.TradingVol = sum_collateral.Float64
+			accum_vol = accum_vol + rec.TradingVol
+			rec.TradingVolAccum = accum_vol
+		}
+
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Polymarkets_data_feed(evtlog_id int64) (int64,[]p.API_Pol_DataFeed) {
+
+	var query string
+	query = "SELECT " +
+				"bs.evtlog_id,"+
+				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT as ts," +
+				"bs.time_stamp,"+
+				"bs.op_type," +
+				"bs.outcome_idx," +
+				"bs.collateral_amount,"+
+				"bs.fee_amount,"+
+				"bs.user_aid,"+
+				"mkt.market_id," +
+				"mkt.mkt_mkr_aid," +
+				"ua.addr,"+
+				"mkt.question, "+
+				"mkt_mkr_addr " +
+			"FROM pol_buysell bs " +
+				"JOIN LATERAL ( "+ 
+					"SELECT " +
+						"pm.mkt_mkr_aid," +
+						"ma.addr mkt_mkr_addr," +
+						"pm.market_id,"+
+						"pm.question " +
+					"FROM pol_market pm " +
+					"JOIN address ma ON pm.mkt_mkr_aid=ma.address_id " +
+				") AS mkt ON bs.contract_aid=mkt.mkt_mkr_aid " +
+				"JOIN address ua ON bs.user_aid=ua.address_id " +
+			"WHERE bs.evtlog_id > $1 " +
+			"ORDER BY bs.time_stamp DESC LIMIT 5"
+
+	rows,err := ss.db.Query(query,evtlog_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.API_Pol_DataFeed,0,8)
+	var data_evtlog_id int64 = 0
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_DataFeed
+		err=rows.Scan(
+			&rec.EvtlogId,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.OperationType,
+			&rec.OutcomeIdx,
+			&rec.Collateral,
+			&rec.Fee,
+			&rec.UserAid,
+			&rec.MarketId,
+			&rec.MarketMakerAid,
+			&rec.UserAddr,
+			&rec.MarketQuestion,
+			&rec.MarketMakerAddr,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
+			os.Exit(1)
+		}
+		if data_evtlog_id < rec.EvtlogId {
+			data_evtlog_id = rec.EvtlogId
+		}
+
+
+		records = append(records,rec)
+	}
+	new_evtlog_id := evtlog_id
+	if data_evtlog_id > new_evtlog_id {
+		new_evtlog_id = data_evtlog_id
+	}
+	return new_evtlog_id,records
+
+}
+func (ss *SQLStorage) Update_data_feed_status(last_evt_id int64) {
+	// sets event id to the latest id that was fed to the client
+	var query string
+	query = "UPDATE pol_data_feed " +
+			"SET last_evt_id = $1 "
+
+	result,err := ss.db.Exec(query,last_evt_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+	rows_affected,err:=result.RowsAffected()
+	if rows_affected == 0 {
+		query = "INSERT INTO pol_data_feed(last_evt_id) VALUES($1)"
+		_,err := ss.db.Exec(query,last_evt_id)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+}
+func (ss *SQLStorage) Get_data_feed_status() int64 {
+
+	var query string
+	query = "SELECT last_evt_id FROM pol_data_feed "
+	var null_id sql.NullInt64
+	res := ss.db.QueryRow(query)
+	err := res.Scan(&null_id)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return null_id.Int64
+}
+

@@ -242,9 +242,11 @@ func main() {
 	r.GET("/api/poly/markets/info/:market_id",a1_poly_market_info)
 	r.GET("/api/poly/markets/statistics/:market_id",a1_poly_market_stats)
 	r.GET("/api/poly/markets/volume/liquidity/:market_id/:init_ts/:fin_ts/:interval_secs",a1_poly_market_liquidity_periods)
+	r.GET("/api/poly/markets/volume/trading/:market_id/:init_ts/:fin_ts/:interval_secs",a1_poly_market_trading_periods)
 	r.GET("/api/poly/unique_users/:init_ts/:fin_ts",a1_poly_unique_users)
 	r.GET("/api/poly/stats/global_liquidity/:init_ts/:fin_ts/:interval_secs",a1_poly_liq_hist_global)
 	r.GET("/api/poly/stats/global_trading/:init_ts/:fin_ts/:interval_secs",a1_poly_trade_hist_global)
+	r.GET("/api/poly/datafeed",a1_poly_datafeed)
 
 
 	m := autocert.Manager{

@@ -89,3 +89,19 @@ type API_Pol_Unique_Users struct {
 	NumTraders				int64
 	NumTotal				int64
 }
+type API_Pol_DataFeed struct {
+	EvtlogId				int64
+	TimeStamp				int64
+	OperationType			int		// 0: ADD 1: REMOVE
+	OutcomeIdx				int
+	Collateral				float64
+	Fee						float64
+	UserAid					int64
+	MarketId				int64
+	MarketMakerAid			int64
+	MarketMakerAddr			string
+	UserAddr				string
+	DateTime				string
+	MarketQuestion			string
+
+}

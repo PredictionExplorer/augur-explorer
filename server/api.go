@@ -1858,3 +1858,59 @@ func a1_poly_trade_hist_global(c *gin.Context) {
 		"Interval" : interval_secs,
 	})
 }
+func a1_poly_market_trading_periods(c *gin.Context) {
+
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,true,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+
+	fpmm_aid := augur_srv.storage.Get_fpmm_contract_aid(market_id)
+	if fpmm_aid == 0 {
+		respond_error(c,"Polymarket with this ID wasn't found")
+		return
+	}
+
+	trade_hist := augur_srv.storage.Get_polymarket_market_trading_history(fpmm_aid,init_ts,fin_ts,interval_secs)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MarketId" : market_id,
+		"ContractAid" : fpmm_aid,
+		"MarketTradingHistory" : trade_hist,
+		"InitTs" : init_ts,
+		"FinTs" : fin_ts,
+		"Interval" : interval_secs,
+	})
+}
+func a1_poly_datafeed(c *gin.Context) {
+
+	evtlog_id := augur_srv.storage.Get_data_feed_status()
+	new_evtlog_id,data_feed := augur_srv.storage.Polymarkets_data_feed(evtlog_id)
+	augur_srv.storage.Update_data_feed_status(new_evtlog_id)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"DataFeed" : data_feed,
+		"LastEvtId" : new_evtlog_id,
+	})
+}
