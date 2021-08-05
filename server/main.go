@@ -50,7 +50,7 @@ func initialize() {
 
 	amm_constants = Load_amm_constants("./amm_constants")
 	if augur_srv.db_matic != nil {
-//		amm_contracts = augur_srv.db_matic.Get_arbitrum_augur_contract_addresses()
+		amm_contracts = augur_srv.db_matic.Get_arbitrum_augur_contract_addresses()
 	}
 }
 func secure_https(r http.Handler) {

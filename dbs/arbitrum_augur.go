@@ -776,20 +776,20 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 				"m.contract_aid," +
 				"ca.addr," +
 				"fa.addr," +
-				"EXTRACT(EPOCH FROM m.start_time)::BIGINT AS start_time_ts, " +
+				"EXTRACT(EPOCH FROM m.est_start_time)::BIGINT AS start_time_ts, " +
 				"EXTRACT(EPOCH FROM m.end_time)::BIGINT AS end_time_ts, " +
-				"m.start_time," +
+				"m.est_start_time," +
 				"m.end_time," +
 				"m.event_id," +
 				"m.home_team_id," +
 				"m.away_team_id," +
-				"m.score," +
+				"m.value0," +
 				"m.market_type, " +
 				"r.id resolved_id, "+
 				"r.winner_aid, " +
 				"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT AS resolved_ts, " +
 				"r.time_stamp resolved_date, " +
-				"m.liquidity "+
+				"0 "+
 			"FROM aa_sports_market AS m " +
 				"LEFT JOIN address ca ON m.creator_aid=ca.address_id " +
 				"LEFT JOIN address fa ON m.contract_aid=fa.address_id " +

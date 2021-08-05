@@ -85,8 +85,8 @@ func proc_erc20_transfer(evt_id int64) error {
 	log.TxHash.SetBytes(common.HexToHash(evtlog.TxHash).Bytes())
 	log.Address.SetBytes(common.HexToHash(evtlog.ContractAddress).Bytes())
 	var mevt ETransfer
-	if len(log.Topics)!=3 {
-		Info.Printf("ERC20 transfer event is not compliant log.Topics!=3. Tx hash=%v\n",log.TxHash.String())
+	if len(log.Topics) < 3 {
+		Info.Printf("ERC20 transfer event is not compliant log.Topics < 3. Tx hash=%v\n",log.TxHash.String())
 		return err_invalid_erc20_format
 	}
 	mevt.From= common.BytesToAddress(log.Topics[1][12:])
@@ -102,7 +102,7 @@ func proc_erc20_transfer(evt_id int64) error {
 		Info.Printf("ERC20_Transfer event, contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump(Info)
-		storage.Insert_ERC20_token_transfer(log.Address.String(),&mevt,evtlog.BlockNum,evtlog.TxId,evt_id)
+		storage.Insert_ERC20_token_transfer(log.Address.String(),&mevt,evtlog.BlockNum,evtlog.TxId,evt_id,evtlog.TimeStamp)
 	}
 	return nil
 }

@@ -2819,6 +2819,7 @@ func arbitrum_markets_sports(c *gin.Context) {
 		return
 	}
 	contract_addrs := augur_srv.db_matic.Get_arbitrum_augur_factory_aids(&amm_contracts)
+	fmt.Printf("contract_addrs = %+v\n",contract_addrs)
 	total_rows,markets := augur_srv.db_matic.Get_sport_markets(status,sort,0,10000000,&amm_constants,contract_addrs)
 	c.HTML(http.StatusOK, "arbitrum_markets_sports.html", gin.H{
 		"Status" : status,

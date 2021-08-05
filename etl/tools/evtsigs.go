@@ -4,6 +4,7 @@
 package main
 import (
 	"os"
+	"encoding/hex"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"io/ioutil"
 	"fmt"
@@ -22,9 +23,14 @@ func dump_event_signatures(file_name string) {
 	check(err)
 	abi_rdr := bytes.NewReader(abi_data)
 	contract_abi,err:=abi.JSON(abi_rdr)
-
+	
+	fmt.Printf("Events:\n")
 	for evt:=range contract_abi.Events {
 		fmt.Println(contract_abi.Events[evt].ID().String(),"\t",evt)
+	}
+	fmt.Printf("Methods:\n")
+	for meth := range contract_abi.Methods {
+		fmt.Println(hex.EncodeToString(contract_abi.Methods[meth].ID()),"\t",meth)
 	}
 }
 func main() {
@@ -33,4 +39,5 @@ func main() {
 		os.Exit(1)
 	}
 	dump_event_signatures(os.Args[1])
+
 }

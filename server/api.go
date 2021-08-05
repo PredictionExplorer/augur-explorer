@@ -2285,7 +2285,7 @@ func a1_arbitrum_market_outside_augur_shares_minted(c *gin.Context) {
 		"error" : err_str,
 		"MarketId":market_id,
 		"MarketInfo" : market,
-		"SharesBurnedOperations" : operations,
+		"SharesMintedOperations" : operations,
 	})
 }
 func a1_arbitrum_market_outside_augur_balancer_swaps(c *gin.Context) {

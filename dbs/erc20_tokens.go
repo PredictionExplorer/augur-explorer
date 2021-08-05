@@ -182,7 +182,7 @@ func (ss *SQLStorage) Insert_ERC20_token_transfer(contract_addr string,evt *p.ET
 	query = "INSERT INTO erc20_transf("+
 				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,from_aid,to_aid,amount" +
 			") " +
-			"VALUES($1,$2,$3,$4,$5,$6,$7::DECIMAL)"
+			"VALUES($1,$2,$3,$4,TO_TIMESTAMP($5),$6,$7,$8::DECIMAL)"
 	_,err := ss.db.Exec(query,evtlog_id,block_num,tx_id,contract_aid,timestamp,from_aid,to_aid,amount)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))

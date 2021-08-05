@@ -7,6 +7,7 @@ import (
 	"context"
 	"math/big"
 
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -115,7 +116,26 @@ func get_receipt_async(idx int,tx_hash common.Hash,receipt_results *[]*receiptCa
 	// this func is launched as go-routine
 	ctx := context.Background()
 	result := new(receiptCallResult)
-	result.receipt,result.err = eclient.TransactionReceipt(ctx,tx_hash)
+	//result.receipt,result.err = eclient.TransactionReceipt(ctx,tx_hash)
+	result.receipt,result.err = get_bor_receipt(ctx,tx_hash)
 	result.idx = idx
 	(*receipt_results)[idx]=result
+}
+func get_bor_receipt(ctx context.Context, hash common.Hash) (*types.Receipt, error) {
+
+	var receipt *types.Receipt
+	err := rpcclient.CallContext(ctx, &receipt,"eth_getBorBlockReceipt",hash )
+	if err == nil && receipt == nil {
+		return nil, ethereum.NotFound
+	}
+	return receipt,err
+}
+func get_bor_receipt(ctx context.Context, hash common.Hash) (*types.Receipt, error) {
+
+	var receipt *types.Receipt
+	err := rpcclient.CallContext(ctx, &receipt,"eth_",hash )
+	if err == nil && receipt == nil {
+		return nil, ethereum.NotFound
+	}
+	return receipt,err
 }

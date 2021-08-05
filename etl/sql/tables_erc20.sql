@@ -1,6 +1,5 @@
 CREATE table erc20_transf (	-- transfers of ERC20 tokens
 	id					BIGSERIAL PRIMARY KEY,
---	dai_proc_id			BIGINT NOT NULL REFERENCES dai_proc(id) ON DELETE CASCADE,
 	evtlog_id			BIGINT NOT NULL,
 	block_num			BIGINT NOT NULL,			-- this is just a copy (for easy data management)
 	time_stamp			TIMESTAMPTZ,
