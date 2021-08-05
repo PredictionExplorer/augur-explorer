@@ -177,6 +177,10 @@ func main() {
 	r.GET("/black/poly/markets/volume/liquidity/:market_id/:init_ts/:fin_ts/:interval_secs",poly_market_liquidity_periods)
 	r.GET("/black/poly/markets/statistics/:market_id",poly_market_stats)
 	r.GET("/black/poly/stats/global_liquidity/:init_ts/:fin_ts/:interval_secs",poly_liq_hist_global)
+	r.GET("/black/poly/markets/traderlist/:market_id",poly_trader_list)
+	r.GET("/black/poly/markets/funderlist/:market_id",poly_funder_list)
+	r.GET("/black/poly/markets/traderops/:market_id/:user_aid/:offset/:limit",poly_trader_operations)
+	r.GET("/black/poly/markets/funderops/:market_id/:funder_aid/:offset/:limit",poly_funder_operations)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -247,6 +251,10 @@ func main() {
 	r.GET("/api/poly/stats/global_liquidity/:init_ts/:fin_ts/:interval_secs",a1_poly_liq_hist_global)
 	r.GET("/api/poly/stats/global_trading/:init_ts/:fin_ts/:interval_secs",a1_poly_trade_hist_global)
 	r.GET("/api/poly/datafeed",a1_poly_datafeed)
+	r.GET("/api/poly/markets/traderlist/:market_id",a1_poly_trader_list)
+	r.GET("/api/poly/markets/funderlist/:market_id",a1_poly_funder_list)
+	r.GET("/api/poly/markets/traderops/:market_id/:user_aid/:offset/:limit",a1_poly_trader_operations)
+	r.GET("/api/poly/markets/funderops/:market_id/:funder_aid/:offset/:limit",a1_poly_funder_operations)
 
 
 	m := autocert.Manager{

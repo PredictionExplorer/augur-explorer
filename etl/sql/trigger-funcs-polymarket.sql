@@ -41,7 +41,7 @@ BEGIN
 			tot_liq_ops = (tot_liq_ops + 1),
 			tot_liq_given = (tot_liq_given + v_normalized_collateral),
 			tot_volume = (tot_volume + NEW.shares)
-		WHERE user_aid = NEW.funder_aid;
+		WHERE (user_aid = NEW.funder_aid) AND (contract_aid=NEW.contract_aid);
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		INSERT INTO pol_ustats_mkt(user_aid,tot_liq_ops,tot_liq_given,tot_volume)
@@ -71,7 +71,7 @@ BEGIN
 			tot_liq_ops = (tot_liq_ops - 1),
 			tot_liq_given = (tot_liq_given - v_normalized_collateral),
 			tot_volume = (tot_volume - OLD.shares)
-		WHERE user_aid = OLD.funder_aid;
+		WHERE (user_aid = OLD.funder_aid) AND (contract_aid=OLD.contract_aid);
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -89,8 +89,10 @@ BEGIN
 		v_normalized_amount := NEW.collateral_amount;
 	END IF;
 
-	SELECT accum_collateral FROM pol_buysell WHERE user_aid = NEW.user_aid
-		ORDER BY evtlog_id DESC LIMIT 1 INTO v_accum_collateral;
+	SELECT accum_collateral
+		FROM pol_buysell
+		WHERE (contract_aid = NEW.contract_aid) AND (id<NEW.id)
+		ORDER BY id DESC LIMIT 1 INTO v_accum_collateral;
 	IF v_accum_collateral IS NULL THEN
 		v_accum_collateral := 0;
 	END IF;

@@ -550,7 +550,7 @@ func (ss *SQLStorage) Get_buysell_operations(market_id int64,offset,limit int) [
 				"JOIN address ba ON bs.user_aid=ba.address_id " +
 				"wHERE mkt.market_id = $1 "+
 			"ORDER BY bs.time_stamp DESC "+
-			"OFFSET $1 LIMIT $2"
+			"OFFSET $2 LIMIT $3"
 
 	rows,err := ss.db.Query(query,market_id,offset,limit)
 	if (err!=nil) {
@@ -1231,4 +1231,109 @@ func (ss *SQLStorage) Get_data_feed_status() int64 {
 	}
 	return null_id.Int64
 }
+func (ss *SQLStorage) Get_poly_trader_operations(contract_aid,user_aid int64,offset,limit int) []p.API_Pol_TraderOp{
 
+	records := make([]p.API_Pol_TraderOp,0,64)
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT as ts," +
+				"bs.time_stamp,"+
+				"bs.block_num," +
+				"bs.op_type," +
+				"bs.outcome_idx," +
+				"bs.collateral_amount/1e+6,"+
+				"bs.fee_amount/1e_6,"+
+				"bs.token_amount/1e+6 "+
+			"FROM pol_buysell bs " +
+				"JOIN pol_market mkt ON bs.contract_aid=mkt.mkt_mkr_aid " +
+				"JOIN address ba ON bs.user_aid=ba.address_id " +
+				"wHERE (bs.contract_aid = $1) AND (user_aid=$2) "+
+			"ORDER BY bs.id "+
+			"OFFSET $3 LIMIT $4"
+	fmt.Printf("q=%v\n",query)
+	fmt.Printf("contract_aid=%v, user_aid=%v\n",contract_aid,user_aid)
+	rows,err := ss.db.Query(query,contract_aid,user_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	var accum_pl float64 = 0.0
+	var accum_collateral float64 = 0.0
+	var profit_loss float64 = 0.0
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_TraderOp
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.OperationType,
+			&rec.OutcomeIdx,
+			&rec.CollateralAmount,
+			&rec.FeeAmount,
+			&rec.TokenAmount,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		var prev_accum_collateral = accum_collateral
+		if rec.OperationType == 0 { // buy
+			accum_collateral = accum_collateral - rec.CollateralAmount
+		} else {
+			accum_collateral = accum_collateral + rec.CollateralAmount
+		}
+		profit_loss = accum_collateral - prev_accum_collateral
+		accum_pl = accum_pl + profit_loss
+		rec.ProfitLoss = profit_loss
+		rec.AccumProfitLoss = accum_pl
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_polymarkets_trader_list(contract_aid int64) []p.API_Pol_TraderListEntry {
+
+	records := make([]p.API_Pol_TraderListEntry,0,512)
+	var query string
+	query = "SELECT " +
+				"ums.user_aid,"+
+				"ua.addr,"+
+				"ums.tot_trades," +
+				"ums.tot_liq_ops," +
+				"ums.tot_volume/1e+6,"+
+				"ums.tot_liq_given/1e+6,"+
+				"ums.tot_fees/1e+6,"+
+				"ums.profit/1e+6 "+
+			"FROM pol_ustats_mkt ums " +
+				"JOIN address ua ON ums.user_aid=ua.address_id "+
+			"wHERE ums.contract_aid = $1 " +
+			"ORDER BY ums.tot_trades DESC"
+
+	rows,err := ss.db.Query(query,contract_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_TraderListEntry
+		err=rows.Scan(
+			&rec.UserAid,
+			&rec.UserAddr,
+			&rec.NumTrades,
+			&rec.NumLiquidityOps,
+			&rec.TotalTradeVolume,
+			&rec.TotalLiquidityVol,
+			&rec.TotalFeesPaid,
+			&rec.TotalProfitLoss,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+
+}

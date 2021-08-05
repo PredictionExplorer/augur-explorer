@@ -1,0 +1,38 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>List of Traders for Poly-market id = {{.MarketId}}</title>
+</head>
+<body>
+	<h3 class="page_title">List of Traders for Poly-market id = {{.MarketId}}</h3>
+<table class="market_detail">
+</table>
+<h3>Trader list </h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Address</th>
+		<th class="market_reports">Total trades</th>
+		<td class="market_reports">Total Liquidity Operations</th>
+		<td class="market_reports">Total trade volume</th>
+		<td class="market_reports">Total liquidity moved</th>
+		<td class="market_reports">Total fees paid</th>
+		<td class="market_reports">Current profit/loss</th>
+	</tr>
+	{{- range $i, $change := .Traders}}
+		<tr class="market_reports">
+			<td class="market_reports_field">
+				<a href="/black/poly/markets/traderops/{{$.MarketId}}/{{.UserAid}}/0/1000000">
+					{{.UserAddr}}
+				</a>
+			</td>
+			<td class="market_reports_field">{{.NumTrades}}</td>
+			<td class="market_reports_field">{{.NumLiquidityOps}}</td>
+			<td class="market_reports_field" style="text-align: right">{{printf "%.4f" .TotalTradeVolume}}</td>
+			<td class="market_reports_field" style="text-align: right">{{printf "%.2f" .TotalLiquidityVol}}</td>
+			<td class="market_reports_field" style="text-align: right">{{printf "%.2f" .TotalFeesPaid}}</td>
+			<td class="market_reports_field" style="text-align: right">{{printf "%.2f" .TotalProfitLoss}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>

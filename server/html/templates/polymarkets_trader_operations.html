@@ -1,0 +1,43 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Buy/Sell operations for Trader {{.UserAid}} in Polymarkets Market {{.MarketId}}</title>
+</head>
+<body>
+	<h3 class="page_title">Buy/Sell operations for Trader {{.UserAddr}} of market id = {{.MarketId}}</h3>
+<table class="market_detail">
+</table>
+<h3>Operations</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Date </th>
+		<th class="market_reports">Block</th>
+		<td class="market_reports">Type</th>
+		<td class="market_reports">Outcome</th>
+		<td class="market_reports">Collateral (in/out)</th>
+		<td class="market_reports">Fee</th>
+		<td class="market_reports">Tokens (in/out)</th>
+		<td class="market_reports">FrozenFunds/ProfitLoss (USDC)</th>
+		<td class="market_reports">Profit Loss accumulated(USDC)</th>
+	</tr>
+	{{- range $i, $change := .TraderOperations}}
+		<tr class="market_reports">
+			<td class="market_reports_field">
+				{{.DateTime}}
+			</td>
+			<td class="market_reports_field">{{.BlockNum}}</td>
+			<td class="market_reports_field">
+				{{ if  eq 0 .OperationType}} Buy
+				{{ else }} Sell {{end }}
+			</td>
+			<td class="market_reports_field">{{.OutcomeIdx}}</td>
+			<td class="market_reports_field">{{printf "%.2f" .CollateralAmount}}</td>
+			<td class="market_reports_field">{{printf "%.2f" .FeeAmount}}</td>
+			<td class="market_reports_field">{{printf "%.2f" .TokenAmount}}</td>
+			<td class="market_reports_field">{{printf "%.2f" .ProfitLoss}}</td>
+			<td class="market_reports_field">{{printf "%.2f" .AccumProfitLoss}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>

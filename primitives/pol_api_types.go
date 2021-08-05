@@ -105,3 +105,25 @@ type API_Pol_DataFeed struct {
 	MarketQuestion			string
 
 }
+type API_Pol_TraderOp struct {
+	BlockNum			int64
+	TimeStamp			int64
+	OperationType		int		// 0: BUY	1: SELL
+	OutcomeIdx			int		// Outcome index
+	CollateralAmount	float64		// How many cash were swapped for tokens
+	FeeAmount			float64		// commission
+	TokenAmount			float64		// How many tokens were received for cash
+	ProfitLoss			float64
+	AccumProfitLoss		float64
+	DateTime			string
+}
+type API_Pol_TraderListEntry struct {
+	UserAid					int64
+	NumTrades				int64
+	NumLiquidityOps			int64
+	TotalTradeVolume		float64
+	TotalLiquidityVol		float64
+	TotalFeesPaid			float64
+	TotalProfitLoss			float64
+	UserAddr				string
+}
