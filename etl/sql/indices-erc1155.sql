@@ -1,7 +1,6 @@
 
 CREATE INDEX erc1155_bal_aid_idx				ON	erc1155_bal			(aid);
 CREATE INDEX erc1155_bal_ctrct_idx				ON	erc1155_bal			(contract_aid);
-CREATE INDEX erc1155_bal_oper_idx				ON	erc1155_bal			(operator_aid);
 CREATE INDEX erc1155_transf_from_idx			ON	erc1155_transf		(from_aid);
 CREATE INDEX erc1155_transf_to_idx				ON	erc1155_transf		(to_aid);
 CREATE INDEX erc1155_tx_idx						ON	erc1155_transf		(tx_id);

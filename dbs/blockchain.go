@@ -198,7 +198,7 @@ func (ss *SQLStorage) Insert_transaction(agtx *p.AugurTx) int64 {
 	var query string
 	var tx_id int64
 
-	ss.Info.Printf("Insert_transaction: from: %v, to: %v\n",agtx.From,agtx.To)
+	//ss.Info.Printf("Insert_transaction: from: %v, to: %v\n",agtx.From,agtx.To)
 
 	query = "INSERT INTO transaction ("+
 				"block_num,value,tx_hash,ctrct_create,gas_used,gas_price,tx_index,input_sig,num_logs" +

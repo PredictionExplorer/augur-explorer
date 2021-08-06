@@ -74,6 +74,14 @@ func read_block_numbers(fname string)  []int64 {
 }
 func main() {
 	//client, err := ethclient.Dial("http://:::8545")
+	var rLimit syscall.Rlimit
+	rLimit.Max = 999999
+	rLimit.Cur = 999999
+	err = syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+	if err != nil {
+		fmt.Println("Error Setting Rlimit ", err)
+		os.Exit(1)
+	}
 
 	if len(RPC_URL) == 0 {
 		Fatalf("Configuration error: RPC URL of Ethereum node is not set."+

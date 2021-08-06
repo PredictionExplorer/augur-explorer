@@ -3,7 +3,6 @@ package dbs
 import (
 	"fmt"
 	"os"
-	"math/big"
 	"bytes"
 	"encoding/hex"
 	"database/sql"
@@ -13,7 +12,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Get_erc20_process_status() p.ERC1155ProcStatus {
+func (ss *SQLStorage) Get_erc1155_process_status() p.ERC1155ProcStatus {
 
 	var output p.ERC1155ProcStatus
 	var null_last_evtid sql.NullInt64
@@ -47,7 +46,7 @@ func (ss *SQLStorage) Get_erc20_process_status() p.ERC1155ProcStatus {
 	}
 	return output
 }
-func (ss *SQLStorage) Update_erc1155_process_status(status *p.ERC20ProcessStatus) {
+func (ss *SQLStorage) Update_erc1155_process_status(status *p.ERC1155ProcStatus) {
 
 	var query string
 	query = "UPDATE erc1155_proc_status SET last_evt_id = $1"
@@ -58,7 +57,7 @@ func (ss *SQLStorage) Update_erc1155_process_status(status *p.ERC20ProcessStatus
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Lookup_or_insert_token_id(contract_aid,token_id_hex string) int64 {
+func (ss *SQLStorage) Lookup_or_insert_token_id(contract_aid int64,token_id_hex string) int64 {
 
 	var query string
 	query = "SELECT token_id FROM erc1155_tok WHERE contract_aid=$1 AND token_id_hex=$2"
@@ -81,7 +80,7 @@ func (ss *SQLStorage) Lookup_or_insert_token_id(contract_aid,token_id_hex string
 	return null_id.Int64
 }
 func (ss *SQLStorage) Insert_ERC1155_transfer_single(
-	evt *p.ERC115TransferSingle,
+	evt *p.Evt_ERC1155TransferSingle,
 	contract_addr string,
 	block_num,
 	tx_id int64,
@@ -97,7 +96,7 @@ func (ss *SQLStorage) Insert_ERC1155_transfer_single(
 	token_id := ss.Lookup_or_insert_token_id(contract_aid,token_id_hex)
 	amount := evt.Value.String()
 	op_type := int(0)
-	var zero_addr common.Address{}
+	var zero_addr common.Address
 	if bytes.Equal(zero_addr.Bytes(),evt.From.Bytes()) {
 		op_type = 1 // mint
 	}
@@ -111,7 +110,7 @@ func (ss *SQLStorage) Insert_ERC1155_transfer_single(
 				"operator_aid,token_id,from_aid,to_aid,op_type,amount" +
 			") VALUES("+
 				"$1,TO_TIMESTAMP($2),$3,$4,$5,"+
-				"$6,$7,$9,$9,$10,$11::DECIMAL"+
+				"$6,$7,$8,$9,$10,$11::DECIMAL"+
 			")"
 	_,err := ss.db.Exec(query,
 		evtlog_id,
@@ -132,7 +131,7 @@ func (ss *SQLStorage) Insert_ERC1155_transfer_single(
 	}
 }
 func (ss *SQLStorage) Insert_ERC1155_transfer_batch (
-	evt *p.ERC115TransferBatch,
+	evt *p.Evt_ERC1155TransferBatch,
 	contract_addr string,
 	block_num,
 	tx_id int64,
@@ -153,9 +152,9 @@ func (ss *SQLStorage) Insert_ERC1155_transfer_batch (
 		}
 		token_ids = token_ids + fmt.Sprintf("%v",token_id)
 	}
-	amounts := Bigint_ptr_slice_to_str(evt.Values,",")
+	amounts := p.Bigint_ptr_slice_to_str(&evt.Values,",")
 	op_type := int(0)
-	var zero_addr common.Address{}
+	var zero_addr common.Address
 	if bytes.Equal(zero_addr.Bytes(),evt.From.Bytes()) {
 		op_type = 1 // mint
 	}
@@ -169,7 +168,7 @@ func (ss *SQLStorage) Insert_ERC1155_transfer_batch (
 				"operator_aid,token_ids,from_aid,to_aid,op_type,amounts" +
 			") VALUES("+
 				"$1,TO_TIMESTAMP($2),$3,$4,$5,"+
-				"$6,$7,$9,$9,$10,$11"+
+				"$6,$7,$8,$9,$10,$11"+
 			")"
 	_,err := ss.db.Exec(query,
 		evtlog_id,
@@ -183,6 +182,39 @@ func (ss *SQLStorage) Insert_ERC1155_transfer_batch (
 		to_aid,
 		op_type,
 		amounts,
+	)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_ERC1155_URI(
+	evt *p.Evt_ERC1155URI,
+	contract_addr string,
+	block_num,
+	tx_id int64,
+	evtlog_id int64,
+	timestamp int64,
+) {
+
+	token_type_id_hex := hex.EncodeToString(common.BigToHash(evt.Id).Bytes())
+	contract_aid := ss.Lookup_or_create_address(contract_addr,block_num,tx_id)
+	var query string
+	query = "INSERT INTO erc1155_uri("+
+				"evtlog_id,time_stamp,block_num,tx_id,contract_aid,"+
+				"token_type_id,value" +
+			") VALUES("+
+				"$1,TO_TIMESTAMP($2),$3,$4,$5,"+
+				"$6,$7" +
+			")"
+	_,err := ss.db.Exec(query,
+		evtlog_id,
+		timestamp,
+		block_num,
+		tx_id,
+		contract_aid,
+		token_type_id_hex,
+		evt.Value,
 	)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))

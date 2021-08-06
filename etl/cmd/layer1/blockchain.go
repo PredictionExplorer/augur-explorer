@@ -123,12 +123,12 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 			return receipt_calls[tnum].err
 		}
 		rcpt := receipt_calls[tnum].receipt
-		Info.Printf("\ttx: %v of %v : %v at blockNum=%v\n",tnum,num_transactions,agtx.TxHash,bnum)
-		Info.Printf("\t from=%v\n",agtx.From)
-		Info.Printf("\t to=%v for $%v (%v bytes data)\n",
-						agtx.To,agtx.Value,len(agtx.Input))
+		//Info.Printf("\ttx: %v of %v : %v at blockNum=%v\n",tnum,num_transactions,agtx.TxHash,bnum)
+		//Info.Printf("\t from=%v\n",agtx.From)
+		//Info.Printf("\t to=%v for $%v (%v bytes data)\n",
+		//				agtx.To,agtx.Value,len(agtx.Input))
 		if rcpt.Status == types.ReceiptStatusFailed {
-			Info.Printf("\t Status: Failed. Skipping this transaciton.\n")
+			//Info.Printf("\t Status: Failed. Skipping this transaciton.\n")
 			continue	// transaction failed (i.e. Out of Gas, etc)
 		}
 		if rcpt.BlockNumber.Int64() != bnum {

@@ -158,7 +158,7 @@ func (ss *SQLStorage) create_address(addr string,block_num int64,tx_id int64) in
 		ss.Log_msg(fmt.Sprintf("DB error, addr_id after INSERT is 0"))
 		os.Exit(1)
 	}
-	ss.Info.Printf("create_address: %v    aid=%v\n",addr,addr_id)
+	//ss.Info.Printf("create_address: %v    aid=%v\n",addr,addr_id)
 
 	return addr_id
 }
