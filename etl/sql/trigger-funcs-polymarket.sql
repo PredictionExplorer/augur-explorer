@@ -69,7 +69,7 @@ BEGIN
 	UPDATE pol_ustats_mkt
 		SET
 			tot_liq_ops = (tot_liq_ops - 1),
-			tot_liq_given = (tot_liq_given - v_normalized_collateral),
+			tot_liq_given = (tot_liq_given - OLD.norm_collateral),
 			tot_volume = (tot_volume - OLD.shares)
 		WHERE (user_aid = OLD.funder_aid) AND (contract_aid=OLD.contract_aid);
 	RETURN OLD;
@@ -159,14 +159,14 @@ BEGIN
 			tot_trades = (tot_trades - 1),
 			tot_volume = (tot_volume - OLD.collateral_amount),
 			tot_fees = (tot_fees - OLD.fee_amount),
-			profit = (profit - v_normalized_amount)
+			profit = (profit - OLD.normalized_amount)
 		WHERE user_aid = OLD.user_aid;
 	UPDATE pol_ustats_mkt
 		SET
 			tot_trades = (tot_trades - 1),
 			tot_volume = (tot_volume - OLD.collateral_amount),
 			tot_fees = (tot_fees - OLD.fee_amount),
-			profit = (profit - v_normalized_amount)
+			profit = (profit - OLD.normalized_amount)
 		WHERE user_aid=OLD.user_aid AND contract_aid = OLD.contract_aid;
 	RETURN OLD;
 END;

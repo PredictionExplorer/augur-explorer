@@ -36,15 +36,20 @@ type API_Pol_MarketInfo struct {
 	CreatedAtDate		string
 	EndDateTs			int64
 	EndDate				string
+	StartDateTs			int64
+	StartDate			string
 	Category			string
-	Fee					string
-	MarketType			string
 	Image				string
 	Icon				string
 	Description			string
+	Tags				string
 	Outcomes			string
+	Active				bool
+	MarketType			string
+	MarketTypeCode		int
+	Closed				bool
+	MarketMakerAid		int64
 	MarketMakerAddr		string
-
 }
 type API_Pol_MarketStats struct {
 	OpenInterest		float64
@@ -126,4 +131,7 @@ type API_Pol_TraderListEntry struct {
 	TotalFeesPaid			float64
 	TotalProfitLoss			float64
 	UserAddr				string
+}
+type API_Pol_MarketInfoEntry struct {
+
 }

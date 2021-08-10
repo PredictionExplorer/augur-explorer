@@ -255,7 +255,8 @@ func main() {
 	r.GET("/api/poly/markets/funderlist/:market_id",a1_poly_funder_list)
 	r.GET("/api/poly/markets/traderops/:market_id/:user_aid/:offset/:limit",a1_poly_trader_operations)
 	r.GET("/api/poly/markets/funderops/:market_id/:funder_aid/:offset/:limit",a1_poly_funder_operations)
-
+	r.GET("/api/poly/markets/list/:status",a1_poly_markets_listing)
+	r.GET("/api/poly/markets/list",a1_poly_markets_listing)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

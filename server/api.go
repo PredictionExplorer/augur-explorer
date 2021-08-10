@@ -1999,3 +1999,28 @@ func a1_poly_trader_operations(c *gin.Context) {
 func a1_poly_funder_operations(c *gin.Context) {
 
 }
+func a1_poly_markets_listing(c *gin.Context) {
+
+	p_status := c.Param("status")
+	var status int64
+	if len(p_status) > 0 {
+		var success bool
+		status,success = parse_int_from_remote_or_error(c,true,&p_status)
+		if !success {
+			return
+		}
+	} else {
+		// the default is status = 0
+	}
+	markets_listing := augur_srv.storage.Get_polymarkets_markets(int(status))
+	num_elts := len(markets_listing)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Markets" : markets_listing,
+		"QueryingStatus" : status,
+		"NumElts" : num_elts,
+	})
+}

@@ -30,8 +30,8 @@
 			</td>
 			<td class="market_reports_field">{{.OutcomeIdx}}</td>
 			<td class="market_reports_field">{{printf "%.4f" .CollateralAmount}}</td>
-			<td class="market_reports_field">{{.FeeAmount}}</td>
-			<td class="market_reports_field">{{.TokenAmount}}</td>
+			<td class="market_reports_field">{{printf "%.4f" .FeeAmount}}</td>
+			<td class="market_reports_field">{{printf "%.4f" .TokenAmount}}</td>
 		</tr>
 	{{- end}}
 </table>

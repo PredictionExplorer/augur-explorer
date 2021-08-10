@@ -422,9 +422,9 @@ func (ss *SQLStorage) Get_polymarkets_buysell_operations(contract_aid int64,offs
 				"bs.block_num," +
 				"bs.op_type," +
 				"bs.outcome_idx," +
-				"bs.collateral_amount,"+
-				"bs.fee_amount,"+
-				"bs.token_amount/1e+9,"+
+				"bs.collateral_amount/1e+6,"+
+				"bs.fee_amount/1e+6,"+
+				"bs.token_amount/1e+6,"+
 				"bs.user_aid," +
 				"ba.addr " +
 			"FROM pol_buysell bs " +
@@ -540,13 +540,13 @@ func (ss *SQLStorage) Get_buysell_operations(market_id int64,offset,limit int) [
 				"bs.block_num," +
 				"bs.op_type," +
 				"bs.outcome_idx," +
-				"bs.collateral_amount,"+
-				"bs.fee_amount,"+
-				"bs.token_amount,"+
+				"bs.collateral_amount/1e+6,"+
+				"bs.fee_amount/1e+6,"+
+				"bs.token_amount/1e+6,"+
 				"bs.user_aid, " +
 				"ba.addr " +
 			"FROM pol_buysell bs " +
-				"JOIN pol_market mkt ON p.contract_aid=mkt.mkt_mkr_aid " +
+				"JOIN pol_market mkt ON bs.contract_aid=mkt.mkt_mkr_aid " +
 				"JOIN address ba ON bs.user_aid=ba.address_id " +
 				"wHERE mkt.market_id = $1 "+
 			"ORDER BY bs.time_stamp DESC "+
@@ -581,20 +581,20 @@ func (ss *SQLStorage) Get_buysell_operations(market_id int64,offset,limit int) [
 	}
 	return records
 }
-func (ss *SQLStorage) Get_poly_market_stats(market_id int64) (p.API_Pol_MarketStats,error) {
+func (ss *SQLStorage) Get_poly_market_stats(contract_aid int64) (p.API_Pol_MarketStats,error) {
 
 	var output p.API_Pol_MarketStats
 	var query string
 	query = "SELECT " +
-				"open_interest/1e+18," +
-				"num_liquidity_ops," +
+				"open_interest/1e+6," +
+				"num_liq_ops," +
 				"num_trades," +
-				"total_volume/1e+18," +
-				"total_fees/1e+18 " +
+				"total_volume/1e+6," +
+				"total_fees/1e+6 " +
 			"FROM pol_mkt_stats " +
-			"WHERE market_id = $1"
+			"WHERE contract_aid = $1"
 
-	res := ss.db.QueryRow(query,market_id)
+	res := ss.db.QueryRow(query,contract_aid)
 	err := res.Scan(
 		&output.OpenInterest,
 		&output.NumLiquidityOps,
@@ -612,65 +612,10 @@ func (ss *SQLStorage) Get_poly_market_stats(market_id int64) (p.API_Pol_MarketSt
 	}
 	return output,nil
 }
-func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInfo,error) {
-
-	var output p.API_Pol_MarketInfo
-	var query string
-	query = "SELECT " +
-				"question," +
-				"condition_id," +
-				"slug," +
-				"resolution_source,"+
-				"EXTRACT(EPOCH FROM created_at_ts)::BIGINT,"+
-				"created_at_date," +
-				"EXTRACT(EPOCH FROM end_date_ts)::BIGINT," +
-				"end_date," +
-				"category," +
-				"fee/1e+18," +
-				"market_type,"+
-				"image," +
-				"icon," +
-				"description," +
-				"outcomes,"+
-				"ma.addr " +
-			"FROM pol_market pm " +
-				"JOIN address ma ON pm.mkt_mkr_aid=ma.address_id " +
-			"WHERE pm.market_id=$1"
-
-	res := ss.db.QueryRow(query,market_id)
-	err := res.Scan(
-		&output.Question,
-		&output.ConditionId,
-		&output.Slug,
-		&output.ResolutionSource,
-		&output.CreatedAtTs,
-		&output.CreatedAtDate,
-		&output.EndDateTs,
-		&output.EndDate,
-		&output.Category,
-		&output.Fee,
-		&output.MarketType,
-		&output.Image,
-		&output.Icon,
-		&output.Description,
-		&output.Outcomes,
-		&output.MarketMakerAddr,
-	)
-	if (err!=nil) {
-		if err == sql.ErrNoRows {
-			return output,err
-		} else {
-			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
-			os.Exit(1)
-		}
-	}
-	output.MarketId = market_id
-	return output,nil
-}
 func (ss *SQLStorage) Get_polymarket_global_liquidity_history(init_ts int,fin_ts int,interval int) []p.API_Pol_GlobalLiquidityHistoryEntry {
 
 	var query string
-	query = "SELECT sum(norm_collateral) AS accum_liq FROM pol_fund_addrem liq " +
+	query = "SELECT sum(norm_collateral)/1e+6 AS accum_liq FROM pol_fund_addrem liq " +
 				"JOIN pol_market pm ON liq.contract_aid=pm.mkt_mkr_aid " +
 				"WHERE liq.time_stamp < TO_TIMESTAMP($1)"
 	var initial_accum_collateral sql.NullFloat64
@@ -701,7 +646,7 @@ func (ss *SQLStorage) Get_polymarket_global_liquidity_history(init_ts int,fin_ts
 				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
 				//"SUM(sumamounts) AS sum_amounts," +
 				//"SUM(shares) AS sum_shares," +
-				"SUM(norm_collateral) as collateral "+
+				"SUM(norm_collateral)/1e+6 as collateral "+
 			"FROM periods AS p " +
 				"LEFT JOIN LATERAL ( "+
 					"SELECT liq.id,liq.time_stamp,liq.norm_collateral "+
@@ -759,7 +704,7 @@ func (ss *SQLStorage) Get_polymarket_global_liquidity_history(init_ts int,fin_ts
 func (ss *SQLStorage) Get_polymarket_market_liquidity_history(contract_aid int64,init_ts int,fin_ts int,interval int) []p.API_Pol_MarketLiquidityHistoryEntry {
 
 	var query string
-	query = "SELECT sum(norm_collateral) AS accum_liq FROM pol_fund_addrem liq " +
+	query = "SELECT sum(norm_collateral/1e+6) AS accum_liq FROM pol_fund_addrem liq " +
 				"JOIN pol_market pm ON liq.contract_aid=pm.mkt_mkr_aid " +
 				"WHERE (pm.mkt_mkr_aid=$1) AND (liq.time_stamp < TO_TIMESTAMP($2))"
 	var initial_accum_collateral sql.NullFloat64
@@ -790,7 +735,7 @@ func (ss *SQLStorage) Get_polymarket_market_liquidity_history(contract_aid int64
 				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
 				//"SUM(sumamounts) AS sum_amounts," +
 				//"SUM(shares) AS sum_shares," +
-				"SUM(norm_collateral) as collateral "+
+				"SUM(norm_collateral)/1e+6 as collateral "+
 			"FROM periods AS p " +
 				"LEFT JOIN LATERAL ( "+
 					"SELECT liq.id,liq.time_stamp,liq.norm_collateral "+
@@ -959,7 +904,7 @@ func (ss *SQLStorage) Calc_polymarkets_unique_addresses(ts_from int64,ts_to int6
 func (ss *SQLStorage) Get_polymarket_global_trading_history(init_ts int,fin_ts int,interval int) []p.API_Pol_GlobalTradingHistoryEntry {
 
 	var query string
-	query = "SELECT sum(normalized_amount) AS accum_trading FROM pol_buysell tr " +
+	query = "SELECT sum(normalized_amount)/1e+6 AS accum_trading FROM pol_buysell tr " +
 				"JOIN pol_market pm ON tr.contract_aid=pm.mkt_mkr_aid " +
 				"WHERE tr.time_stamp < TO_TIMESTAMP($1)"
 	var initial_accum_collateral sql.NullFloat64
@@ -988,7 +933,7 @@ func (ss *SQLStorage) Get_polymarket_global_trading_history(init_ts int,fin_ts i
 			"SELECT " +
 				"COALESCE(COUNT(tr.id),0) as num_rows, " +
 				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
-				"SUM(normalized_amount) as collateral "+
+				"SUM(normalized_amount)/1e+6 as collateral "+
 			"FROM periods AS p " +
 				"LEFT JOIN LATERAL ( "+
 					"SELECT tr.id,tr.time_stamp,tr.normalized_amount "+
@@ -1041,7 +986,7 @@ func (ss *SQLStorage) Get_polymarket_global_trading_history(init_ts int,fin_ts i
 func (ss *SQLStorage) Get_polymarket_market_trading_history(contract_aid int64,init_ts int,fin_ts int,interval int) []p.API_Pol_MarketTradingHistoryEntry {
 
 	var query string
-	query = "SELECT sum(normalized_amount) AS accum_vol FROM pol_buysell tr " +
+	query = "SELECT sum(normalized_amount)/1e+6 AS accum_vol FROM pol_buysell tr " +
 				"JOIN pol_market pm ON tr.contract_aid=pm.mkt_mkr_aid " +
 				"WHERE (pm.mkt_mkr_aid=$1) AND (tr.time_stamp < TO_TIMESTAMP($2))"
 	var initial_accum_collateral sql.NullFloat64
@@ -1070,7 +1015,7 @@ func (ss *SQLStorage) Get_polymarket_market_trading_history(contract_aid int64,i
 			"SELECT " +
 				"COALESCE(COUNT(tr.id),0) as num_rows, " +
 				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
-				"SUM(normalized_amount) as collateral "+
+				"SUM(normalized_amount)/1e+6 as collateral "+
 			"FROM periods AS p " +
 				"LEFT JOIN LATERAL ( "+
 					"SELECT tr.id,tr.time_stamp,tr.normalized_amount "+
@@ -1122,6 +1067,7 @@ func (ss *SQLStorage) Get_polymarket_market_trading_history(contract_aid int64,i
 }
 func (ss *SQLStorage) Polymarkets_data_feed(evtlog_id int64) (int64,[]p.API_Pol_DataFeed) {
 
+	evtlog_id = 0 // for Development purposes (should be removed upon production release)
 	var query string
 	query = "SELECT " +
 				"bs.evtlog_id,"+
@@ -1129,8 +1075,8 @@ func (ss *SQLStorage) Polymarkets_data_feed(evtlog_id int64) (int64,[]p.API_Pol_
 				"bs.time_stamp,"+
 				"bs.op_type," +
 				"bs.outcome_idx," +
-				"bs.collateral_amount,"+
-				"bs.fee_amount,"+
+				"bs.collateral_amount/1e+6,"+
+				"bs.fee_amount/1e+6,"+
 				"bs.user_aid,"+
 				"mkt.market_id," +
 				"mkt.mkt_mkr_aid," +
@@ -1148,7 +1094,7 @@ func (ss *SQLStorage) Polymarkets_data_feed(evtlog_id int64) (int64,[]p.API_Pol_
 					"JOIN address ma ON pm.mkt_mkr_aid=ma.address_id " +
 				") AS mkt ON bs.contract_aid=mkt.mkt_mkr_aid " +
 				"JOIN address ua ON bs.user_aid=ua.address_id " +
-			"WHERE bs.evtlog_id > $1 " +
+				"WHERE bs.evtlog_id > $1 " +
 			"ORDER BY bs.time_stamp DESC LIMIT 5"
 
 	rows,err := ss.db.Query(query,evtlog_id)
