@@ -1,0 +1,33 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Add/Remove liquidity operations for Funder {{.UserAid}} in Polymarkets Market {{.MarketId}}</title>
+</head>
+<body>
+	<h3 class="page_title">Add/Remove liquidity operations for Funder {{.UserAid}} of market id = {{.MarketId}}</h3>
+<table class="market_detail">
+</table>
+<h3>Funding Operations</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Date </th>
+		<th class="market_reports">Block</th>
+		<td class="market_reports">Type</th>
+		<td class="market_reports">Collateral (in/out)</th>
+	</tr>
+	{{- range $i, $change := .FunderOperations}}
+		<tr class="market_reports">
+			<td class="market_reports_field">
+				{{.DateTime}}
+			</td>
+			<td class="market_reports_field">{{.BlockNum}}</td>
+			<td class="market_reports_field">
+				{{ if  eq 0 .OperationType}} Add
+				{{ else }} Remove{{end }}
+			</td>
+			<td class="market_reports_field">{{printf "%.2f" .CollateralAmount}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>

@@ -12,8 +12,8 @@
 	<td class="addr" >{{.MarketId}}</td>
 </tr>
 <tr class="market_detail">
-	<td>Open Interest</td>
-	<td>{{printf "%.4f"  .MarketStats.OpenInterest}}</td>
+	<td>Open Interest (amount of liquidity)</td>
+	<td>{{printf "%.4f"  .MarketStats.OpenInterest}} USDC</td>
 </tr>
 <tr class="market_detail">
 	<td>Total number of liquidity operations</td>
@@ -24,14 +24,18 @@
 	<td>{{.MarketStats.NumTrades}}</td>
 </tr>
 <tr class="market_detail">
-	<td>Total Volume</td>
-	<td>{{printf "%.4f" .MarketStats.TotalVolume}}</td>
+	<td>Total Volume registeredf for all time</td>
+	<td>{{printf "%.4f" .MarketStats.TotalVolume}} USDC</td>
 </tr>
 <tr class="market_detail">
 	<td>Total Fees Collected</td>
-	<td>{{printf "%.4f" .MarketStats.TotalFeesCollected}}</td>
+	<td>{{printf "%.4f" .MarketStats.TotalFeesCollected}} USDC</td>
 </tr>
 </table>
+<br>
+<p>
+Notes: Open Interest is the amount of liquidity deposited by funders + amount of share tokens bought by traders.
+</p>
 <br/><br/>
 <br/><br/>
 <br/><br/>

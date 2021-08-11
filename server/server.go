@@ -2680,10 +2680,16 @@ func poly_market_stats(c *gin.Context) {
 		respond_error(c,"'market_id' parameter is not set")
 		return
 	}
-	stats,_:= augur_srv.storage.Get_poly_market_stats(market_id)
+	fpmm_aid := augur_srv.storage.Get_fpmm_contract_aid(market_id)
+	if fpmm_aid == 0 {
+		respond_error(c,"Polymarket with this ID wasn't found")
+		return
+	}
+	stats,_:= augur_srv.storage.Get_poly_market_stats(fpmm_aid)
 	c.HTML(http.StatusOK, "polymarkets_market_stats.html", gin.H{
 		"MarketStats" : stats,
 		"MarketId" : market_id,
+		"ContractAid" : fpmm_aid,
 	})
 }
 func poly_liq_hist_global(c *gin.Context) {
@@ -2739,7 +2745,7 @@ func poly_market_liquidity_periods(c *gin.Context) {
 		"Interval" : interval_secs,
 	})
 }
-func poly_trader_list(c *gin.Context) {
+func poly_user_list(c *gin.Context) {
 
 	p_market_id := c.Param("market_id")
 	var market_id int64
@@ -2760,19 +2766,16 @@ func poly_trader_list(c *gin.Context) {
 		return
 	}
 
-	users_list := augur_srv.storage.Get_polymarkets_trader_list(fpmm_aid)
+	users_list := augur_srv.storage.Get_polymarkets_market_user_list(fpmm_aid)
 
-	c.HTML(http.StatusOK, "polymarkets_trader_list.html", gin.H{
+	c.HTML(http.StatusOK, "polymarkets_market_userlist.html", gin.H{
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,
-		"Traders" : users_list,
+		"Users" : users_list,
 	})
 
 }
-func poly_funder_list(c *gin.Context) {
-
-}
-func poly_trader_operations(c *gin.Context) {
+func poly_market_trader_operations(c *gin.Context) {
 
 	p_market_id := c.Param("market_id")
 	var market_id int64
@@ -2809,15 +2812,58 @@ func poly_trader_operations(c *gin.Context) {
 		return
 	}
 
-	trade_list := augur_srv.storage.Get_poly_trader_operations(fpmm_aid,user_aid,offset,limit)
+	trade_list := augur_srv.storage.Get_poly_market_trader_operations(fpmm_aid,user_aid,offset,limit)
 
-	c.HTML(http.StatusOK, "polymarkets_trader_operations.html", gin.H{
+	c.HTML(http.StatusOK, "polymarkets_market_trader_operations.html", gin.H{
 		"MarketId" : market_id,
 		"UserAid" : user_aid,
 		"ContractAid" : fpmm_aid,
 		"TraderOperations" : trade_list,
 	})
 }
-func poly_funder_operations(c *gin.Context) {
+func poly_market_funder_operations(c *gin.Context) {
 
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	p_user_aid := c.Param("user_aid")
+	var user_aid int64
+	if len(p_user_aid) > 0 {
+		var success bool
+		user_aid,success = parse_int_from_remote_or_error(c,false,&p_user_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'user_aid' parameter is not set")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	fpmm_aid := augur_srv.storage.Get_fpmm_contract_aid(market_id)
+	if fpmm_aid == 0 {
+		respond_error(c,"Polymarket with this ID wasn't found")
+		return
+	}
+
+	liq_operation_list := augur_srv.storage.Get_poly_market_funder_operations(fpmm_aid,user_aid,offset,limit)
+
+	c.HTML(http.StatusOK, "polymarkets_market_funder_operations.html", gin.H{
+		"MarketId" : market_id,
+		"UserAid" : user_aid,
+		"ContractAid" : fpmm_aid,
+		"FunderOperations" : liq_operation_list,
+	})
 }

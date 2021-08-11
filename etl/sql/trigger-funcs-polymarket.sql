@@ -109,7 +109,8 @@ BEGIN
 		SET
 			num_trades = (num_trades + 1),
 			total_volume = (total_volume + NEW.collateral_amount),
-			total_fees = (total_fees + NEW.fee_amount)
+			total_fees = (total_fees + NEW.fee_amount),
+			open_interest = (open_interest + v_normalized_amount)
 		WHERE contract_aid = NEW.contract_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
@@ -152,7 +153,8 @@ BEGIN
 		SET
 			num_trades = (num_trades - 1),
 			total_volume = (total_volume - OLD.collateral_amount),
-			total_fees = (total_fees - OLD.fee_amount)
+			total_fees = (total_fees - OLD.fee_amount),
+			open_interest = (open_interest - OLD.normalized_amount)
 		WHERE contract_aid = OLD.contract_aid;
 	UPDATE pol_ustats
 		SET

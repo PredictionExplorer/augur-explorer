@@ -12,11 +12,12 @@
 	<tr class="market_reports">
 		<th class="market_reports">Date </th>
 		<th class="market_reports">Block</th>
-		<td class="market_reports">Type</th>
-		<td class="market_reports">Outcome</th>
-		<td class="market_reports">Collateral (in/out)</th>
-		<td class="market_reports">Fee</th>
-		<td class="market_reports">Tokens (in/out)</th>
+		<th class="market_reports">Type</th>
+		<th class="market_reports">Outcome</th>
+		<th class="market_reports">Collateral (in/out)</th>
+		<th class="market_reports">Fee</th>
+		<th class="market_reports">Tokens (in/out)</th>
+		<th class="market_reports">User</th>
 	</tr>
 	{{- range $i, $change := .BuySellOperations}}
 		<tr class="market_reports">
@@ -32,6 +33,7 @@
 			<td class="market_reports_field">{{printf "%.4f" .CollateralAmount}}</td>
 			<td class="market_reports_field">{{printf "%.4f" .FeeAmount}}</td>
 			<td class="market_reports_field">{{printf "%.4f" .TokenAmount}}</td>
+			<td class="market_reports_field">{{.UserAddr}}</td>
 		</tr>
 	{{- end}}
 </table>

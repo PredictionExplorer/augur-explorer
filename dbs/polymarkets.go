@@ -530,63 +530,13 @@ func (ss *SQLStorage) Get_erc1155_transfers(tx_id,contract_aid int64,signature s
 	}
 	return records
 }
-func (ss *SQLStorage) Get_buysell_operations(market_id int64,offset,limit int) []p.API_Pol_BuySell_Op {
-
-	records := make([]p.API_Pol_BuySell_Op,0,64)
-	var query string
-	query = "SELECT " +
-				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT as ts," +
-				"bs.time_stamp,"+
-				"bs.block_num," +
-				"bs.op_type," +
-				"bs.outcome_idx," +
-				"bs.collateral_amount/1e+6,"+
-				"bs.fee_amount/1e+6,"+
-				"bs.token_amount/1e+6,"+
-				"bs.user_aid, " +
-				"ba.addr " +
-			"FROM pol_buysell bs " +
-				"JOIN pol_market mkt ON bs.contract_aid=mkt.mkt_mkr_aid " +
-				"JOIN address ba ON bs.user_aid=ba.address_id " +
-				"wHERE mkt.market_id = $1 "+
-			"ORDER BY bs.time_stamp DESC "+
-			"OFFSET $2 LIMIT $3"
-
-	rows,err := ss.db.Query(query,market_id,offset,limit)
-	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-		os.Exit(1)
-	}
-
-	defer rows.Close()
-	for rows.Next() {
-		var rec p.API_Pol_BuySell_Op
-		err=rows.Scan(
-			&rec.TimeStamp,
-			&rec.DateTime,
-			&rec.BlockNum,
-			&rec.OperationType,
-			&rec.OutcomeIdx,
-			&rec.CollateralAmount,
-			&rec.FeeAmount,
-			&rec.TokenAmount,
-			&rec.UserAid,
-			&rec.UserAddr,
-		)
-		if err!=nil {
-			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
-			os.Exit(1)
-		}
-		records = append(records,rec)
-	}
-	return records
-}
 func (ss *SQLStorage) Get_poly_market_stats(contract_aid int64) (p.API_Pol_MarketStats,error) {
 
 	var output p.API_Pol_MarketStats
 	var query string
 	query = "SELECT " +
-				"open_interest/1e+6," +
+				"ABS(open_interest/1e+6) as open_interest," +
+					// negative value for OI represents user deposits, so it will always be negative
 				"num_liq_ops," +
 				"num_trades," +
 				"total_volume/1e+6," +
@@ -691,10 +641,11 @@ func (ss *SQLStorage) Get_polymarket_global_liquidity_history(init_ts int,fin_ts
 			rec.SumShares = sum_shares.Float64
 		}*/
 		if sum_collateral.Valid {
-			rec.Liquidity= sum_collateral.Float64
+			// revert the sign because negative liquidity is an expense for the user
+			rec.Liquidity= -sum_collateral.Float64
 			accum_liq = accum_liq + rec.Liquidity
-			rec.LiquidityAccum = accum_liq
 		}
+		rec.LiquidityAccum = accum_liq
 
 		records = append(records,rec)
 	}
@@ -762,7 +713,7 @@ func (ss *SQLStorage) Get_polymarket_market_liquidity_history(contract_aid int64
 	for rows.Next() {
 		var rec p.API_Pol_MarketLiquidityHistoryEntry
 		var sum_collateral sql.NullFloat64
-		var num_rows int
+		var num_rows int64
 		err=rows.Scan(
 			&num_rows,
 			&rec.StartTs,
@@ -772,11 +723,12 @@ func (ss *SQLStorage) Get_polymarket_market_liquidity_history(contract_aid int64
 			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
 			os.Exit(1)
 		}
+		rec.NumOperations = num_rows
 		if sum_collateral.Valid {
-			rec.Liquidity= sum_collateral.Float64
+			rec.Liquidity= -sum_collateral.Float64
 			accum_liq = accum_liq + rec.Liquidity
-			rec.LiquidityAccum = accum_liq
 		}
+		rec.LiquidityAccum = accum_liq
 
 		records = append(records,rec)
 	}
@@ -973,10 +925,10 @@ func (ss *SQLStorage) Get_polymarket_global_trading_history(init_ts int,fin_ts i
 			rec.NumOperations = num_rows.Int64
 		}
 		if sum_collateral.Valid {
-			rec.TradingVol= sum_collateral.Float64
+			rec.TradingVol= -sum_collateral.Float64
 			accum_volume = accum_volume + rec.TradingVol
-			rec.TradingVolAccum = accum_volume
 		}
+		rec.TradingVolAccum = accum_volume
 
 		records = append(records,rec)
 	}
@@ -1056,10 +1008,10 @@ func (ss *SQLStorage) Get_polymarket_market_trading_history(contract_aid int64,i
 			rec.NumOperations = num_rows.Int64
 		}
 		if sum_collateral.Valid {
-			rec.TradingVol = sum_collateral.Float64
+			rec.TradingVol = -sum_collateral.Float64
 			accum_vol = accum_vol + rec.TradingVol
-			rec.TradingVolAccum = accum_vol
 		}
+		rec.TradingVolAccum = accum_vol
 
 		records = append(records,rec)
 	}
@@ -1177,7 +1129,7 @@ func (ss *SQLStorage) Get_data_feed_status() int64 {
 	}
 	return null_id.Int64
 }
-func (ss *SQLStorage) Get_poly_trader_operations(contract_aid,user_aid int64,offset,limit int) []p.API_Pol_TraderOp{
+func (ss *SQLStorage) Get_poly_market_trader_operations(contract_aid,user_aid int64,offset,limit int) []p.API_Pol_TraderOp{
 
 	records := make([]p.API_Pol_TraderOp,0,64)
 	var query string
@@ -1196,8 +1148,6 @@ func (ss *SQLStorage) Get_poly_trader_operations(contract_aid,user_aid int64,off
 				"wHERE (bs.contract_aid = $1) AND (user_aid=$2) "+
 			"ORDER BY bs.id "+
 			"OFFSET $3 LIMIT $4"
-	fmt.Printf("q=%v\n",query)
-	fmt.Printf("contract_aid=%v, user_aid=%v\n",contract_aid,user_aid)
 	rows,err := ss.db.Query(query,contract_aid,user_aid,offset,limit)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -1238,7 +1188,48 @@ func (ss *SQLStorage) Get_poly_trader_operations(contract_aid,user_aid int64,off
 	}
 	return records
 }
-func (ss *SQLStorage) Get_polymarkets_trader_list(contract_aid int64) []p.API_Pol_TraderListEntry {
+func (ss *SQLStorage) Get_poly_market_funder_operations(contract_aid,user_aid int64,offset,limit int) []p.API_Pol_Liquidity_Op {
+
+	records := make([]p.API_Pol_Liquidity_Op,0,64)
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM liq.time_stamp)::BIGINT as ts," +
+				"liq.time_stamp,"+
+				"liq.block_num," +
+				"liq.op_type," +
+				"liq.norm_collateral/1e+6 "+
+			"FROM pol_fund_addrem liq  " +
+				"JOIN pol_market mkt ON liq.contract_aid=mkt.mkt_mkr_aid " +
+				"JOIN address ba ON liq.funder_aid=ba.address_id " +
+				"wHERE (liq.contract_aid = $1) AND (liq.funder_aid=$2) "+
+			"ORDER BY liq.id "+
+			"OFFSET $3 LIMIT $4"
+	rows,err := ss.db.Query(query,contract_aid,user_aid,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_Liquidity_Op
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.OperationType,
+			&rec.CollateralAmount,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.CollateralAmount = - rec.CollateralAmount
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_polymarkets_market_user_list(contract_aid int64) []p.API_Pol_TraderListEntry {
 
 	records := make([]p.API_Pol_TraderListEntry,0,512)
 	var query string
@@ -1278,6 +1269,8 @@ func (ss *SQLStorage) Get_polymarkets_trader_list(contract_aid int64) []p.API_Po
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		rec.TotalLiquidityVol = -rec.TotalLiquidityVol
+
 		records = append(records,rec)
 	}
 	return records

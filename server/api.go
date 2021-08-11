@@ -1675,6 +1675,7 @@ func a1_block_info(c *gin.Context) {
 }
 func a1_poly_buysell_operations(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	success,offset,limit := parse_offset_limit_params(c)
 	if !success {
 		return
@@ -1693,19 +1694,66 @@ func a1_poly_buysell_operations(c *gin.Context) {
 		return
 	}
 
-	operations := augur_srv.storage.Get_buysell_operations(market_id,offset,limit)
+	fpmm_aid := augur_srv.storage.Get_fpmm_contract_aid(market_id)
+	if fpmm_aid == 0 {
+		respond_error(c,"Polymarket with this ID wasn't found")
+		return
+	}
+
+	operations := augur_srv.storage.Get_polymarkets_buysell_operations(fpmm_aid,offset,limit)
 
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
-		"BuySellOperations" : operations,
+		"TradingOperations" : operations,
 		"MarketId" : market_id,
+		"ContractAid" : fpmm_aid,
+	})
+}
+func a1_poly_liquidity_operations(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,true,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'market_id' parameter is not set")
+		return
+	}
+
+	fpmm_aid := augur_srv.storage.Get_fpmm_contract_aid(market_id)
+	if fpmm_aid == 0 {
+		respond_error(c,"Polymarket with this ID wasn't found")
+		return
+	}
+
+	operations := augur_srv.storage.Get_polymarkets_liquidity_operations(fpmm_aid,offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"LiquidityOperations" : operations,
+		"MarketId" : market_id,
+		"ContractAid" : fpmm_aid,
 	})
 }
 func a1_poly_market_info(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	p_market_id := c.Param("market_id")
 	var market_id int64
 	if len(p_market_id) > 0 {
@@ -1736,6 +1784,7 @@ func a1_poly_market_info(c *gin.Context) {
 }
 func a1_poly_market_stats(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	p_market_id := c.Param("market_id")
 	var market_id int64
 	if len(p_market_id) > 0 {
@@ -1762,6 +1811,7 @@ func a1_poly_market_stats(c *gin.Context) {
 }
 func a1_poly_unique_users(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	success,init_ts,fin_ts := parse_timeframe_ini_fin(c)
 	if !success {
 		return
@@ -1781,6 +1831,7 @@ func a1_poly_unique_users(c *gin.Context) {
 }
 func a1_poly_liq_hist_global(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
 	if !success {
 		return
@@ -1800,6 +1851,7 @@ func a1_poly_liq_hist_global(c *gin.Context) {
 }
 func a1_poly_market_liquidity_periods(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
 	if !success {
 		return
@@ -1841,6 +1893,7 @@ func a1_poly_market_liquidity_periods(c *gin.Context) {
 }
 func a1_poly_trade_hist_global(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
 	if !success {
 		return
@@ -1860,6 +1913,7 @@ func a1_poly_trade_hist_global(c *gin.Context) {
 }
 func a1_poly_market_trading_periods(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
 	if !success {
 		return
@@ -1901,6 +1955,7 @@ func a1_poly_market_trading_periods(c *gin.Context) {
 }
 func a1_poly_datafeed(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	evtlog_id := augur_srv.storage.Get_data_feed_status()
 	new_evtlog_id,data_feed := augur_srv.storage.Polymarkets_data_feed(evtlog_id)
 	augur_srv.storage.Update_data_feed_status(new_evtlog_id)
@@ -1914,8 +1969,9 @@ func a1_poly_datafeed(c *gin.Context) {
 		"LastEvtId" : new_evtlog_id,
 	})
 }
-func a1_poly_trader_list(c *gin.Context) {
+func a1_poly_user_list(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	p_market_id := c.Param("market_id")
 	var market_id int64
 	if len(p_market_id) > 0 {
@@ -1935,7 +1991,7 @@ func a1_poly_trader_list(c *gin.Context) {
 		return
 	}
 
-	users_list := augur_srv.storage.Get_polymarkets_trader_list(fpmm_aid)
+	users_list := augur_srv.storage.Get_polymarkets_market_user_list(fpmm_aid)
 
 	var req_status int = 1
 	var err_str string = ""
@@ -1944,14 +2000,12 @@ func a1_poly_trader_list(c *gin.Context) {
 		"error" : err_str,
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,
-		"Traders" : users_list,
+		"Users" : users_list,
 	})
-}
-func a1_poly_funder_list(c *gin.Context) {
-
 }
 func a1_poly_trader_operations(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	p_market_id := c.Param("market_id")
 	var market_id int64
 	if len(p_market_id) > 0 {
@@ -1987,9 +2041,13 @@ func a1_poly_trader_operations(c *gin.Context) {
 		return
 	}
 
-	trade_list := augur_srv.storage.Get_poly_trader_operations(fpmm_aid,user_aid,offset,limit)
+	trade_list := augur_srv.storage.Get_poly_market_trader_operations(fpmm_aid,user_aid,offset,limit)
 
+	var req_status int = 1
+	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
 		"MarketId" : market_id,
 		"UserAid" : user_aid,
 		"ContractAid" : fpmm_aid,
@@ -1998,9 +2056,58 @@ func a1_poly_trader_operations(c *gin.Context) {
 }
 func a1_poly_funder_operations(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,true,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'market_id' parameter is not set")
+		return
+	}
+	p_user_aid := c.Param("user_aid")
+	var user_aid int64
+	if len(p_user_aid) > 0 {
+		var success bool
+		user_aid,success = parse_int_from_remote_or_error(c,true,&p_user_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'user_aid' parameter is not set")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	fpmm_aid := augur_srv.storage.Get_fpmm_contract_aid(market_id)
+	if fpmm_aid == 0 {
+		respond_error_json(c,"Polymarket with this ID wasn't found")
+		return
+	}
+
+	liq_operation_list := augur_srv.storage.Get_poly_market_funder_operations(fpmm_aid,user_aid,offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MarketId" : market_id,
+		"UserAid" : user_aid,
+		"ContractAid" : fpmm_aid,
+		"FunderOperations" : liq_operation_list,
+	})
 }
 func a1_poly_markets_listing(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	p_status := c.Param("status")
 	var status int64
 	if len(p_status) > 0 {
