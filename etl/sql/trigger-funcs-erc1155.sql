@@ -51,7 +51,7 @@ BEGIN
 		RETURNING cur_balance INTO v_cur_balance;
 	UPDATE erc1155_bal SET balance = v_cur_balance WHERE id=NEW.id;
 	IF v_cur_balance = 0 THEN
-		UPDATE erc1155_tok SET num_holders = (num_holders - 1) 
+		UPDATE erc1155_tok SET num_holders = (num_holders - 1)
 			WHERE contract_aid=NEW.contract_aid AND token_id = NEW.token_id;
 	END IF;
 	IF v_cur_balance > 0 THEN -- address 0x0 is excluded here
@@ -92,12 +92,14 @@ DECLARE
 	v_counter BIGINT;
 BEGIN
 
-	v_counter := 0;
+	v_counter := 1;
 	v_amounts := STRING_TO_ARRAY(NEW.amounts,',');
 	FOREACH v_token_id_str IN ARRAY STRING_TO_ARRAY(NEW.token_ids,',')
 		LOOP
 			v_token_id := v_token_id_str::BIGINT;
 			v_amount := v_amounts[v_counter]::DECIMAL;
+	--		RAISE NOTICE 'v_amounts = %',v_amounts;
+	--		RAISE NOTICE 'v_amount = %',v_amount;
 			INSERT INTO erc1155_bal(block_num,tx_id,parent_id,contract_aid,token_id,time_stamp,aid,amount)
 					VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.contract_aid,v_token_id,NEW.time_stamp,NEW.from_aid,-v_amount);
 
@@ -125,12 +127,12 @@ DECLARE
 	v_counter BIGINT;
 BEGIN
 
-	v_counter := 0;
-	v_amounts := STRING_TO_ARRAY(OLD.amounts);
+	v_counter := 1;
+	v_amounts := STRING_TO_ARRAY(OLD.amounts,',');
 	FOREACH v_token_id_str IN ARRAY STRING_TO_ARRAY(OLD.token_ids,',')
 		LOOP
 			v_token_id := v_token_id_str::BIGINT;
-			v_amount := v_amounts[v_counter]::BIGINT;
+			v_amount := v_amounts[v_counter]::DECIMAL;
 			IF OLD.op_type = 1 THEN -- mint
 				UPDATE erc1155_tok SET total_supply=(total_supply - v_amount)
 					WHERE contract_aid=OLD.contract_aid AND token_id=v_token_id;

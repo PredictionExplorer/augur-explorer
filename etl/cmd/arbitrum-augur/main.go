@@ -319,6 +319,6 @@ func main() {
 	inspected_events = build_list_of_inspected_events()
 
 //	go update_non_augur_flag_manager(exit_chan)
-	update_erc20_non_augur_flag_manager(exit_chan)
-//	process_arbitrum_augur_events(exit_chan)
+//	update_erc20_non_augur_flag_manager(exit_chan)
+	process_arbitrum_augur_events(exit_chan)
 }
