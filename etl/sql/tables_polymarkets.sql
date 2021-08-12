@@ -209,13 +209,14 @@ CREATE TABLE pol_ustats ( -- user statistics
 );
 CREATE TABLE pol_ustats_mkt (-- user statistics per specific market
 	user_aid				BIGINT NOT NULL,
-	contract_aid			INT,	-- Fixed Product Market Maker
+	contract_aid			INT NOT NULL,	-- Fixed Product Market Maker
 	tot_trades				INT DEFAULT 0,
 	tot_liq_ops				INT DEFAULT 0,
 	tot_volume				DECIMAL DEFAULT 0,
 	tot_liq_given			DECIMAL DEFAULT 0, -- total of invested liequidity
 	tot_fees				DECIMAL DEFAULT 0,  -- accumulated amount of fees paid by this user
-	profit					DECIMAL DEFAULT 0 -- profits made by the user in terms of collateral token
+	profit					DECIMAL DEFAULT 0, -- profits made by the user in terms of collateral token
+	UNIQUE(contract_aid,user_aid)
 );
 CREATE TABLE pol_unique_addrs (	-- Unique addresses per day, statistics
 	day					DATE PRIMARY KEY,

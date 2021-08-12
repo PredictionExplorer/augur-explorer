@@ -30,7 +30,7 @@ const (
 	CONDITION_RESOLUTION = "b44d84d3289691f71497564b85d4233648d9dbae8cbdbb4329f301c3a0185894"
 	PAYOUT_REDEMPTION = "2682012a4a4f1973119f1c9b90745d1bd91fa2bab387344f044cb3586864d18d"
 	POSITION_SPLIT = "2e6bb91f8cbcda0c93623c54d0403a43514fabc40084ec96b6d5379a74786298"
-	POSITION_MERGE = "f13ca62553fcc2bcd2372180a43949c1e4cebba603901ede2f4e14f36b282ca"
+	POSITIONS_MERGE = "6f13ca62553fcc2bcd2372180a43949c1e4cebba603901ede2f4e14f36b282ca."
 	URI = "6bb7ff708619ba0610cba295a58592e0451dee2622938c8755667688daf3529b"
 
 	// FixedProductMarketMaker (CPMM Automated Market Maker)
@@ -47,7 +47,7 @@ var (
 	evt_condition_resolution,_ = hex.DecodeString(CONDITION_RESOLUTION)
 	evt_payout_redemption,_ = hex.DecodeString(PAYOUT_REDEMPTION)
 	evt_position_split,_ = hex.DecodeString(POSITION_SPLIT)
-	evt_position_merge,_ = hex.DecodeString(POSITION_MERGE)
+	evt_positions_merge,_ = hex.DecodeString(POSITIONS_MERGE)
 	evt_uri,_ = hex.DecodeString(URI)
 	evt_funding_added,_ = hex.DecodeString(FUNDING_ADDED)
 	evt_funding_removed,_ = hex.DecodeString(FUNDING_REMOVED)

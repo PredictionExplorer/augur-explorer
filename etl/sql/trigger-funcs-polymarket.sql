@@ -44,8 +44,8 @@ BEGIN
 		WHERE (user_aid = NEW.funder_aid) AND (contract_aid=NEW.contract_aid);
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO pol_ustats_mkt(user_aid,tot_liq_ops,tot_liq_given,tot_volume)
-			VALUES(NEW.funder_aid,1,v_normalized_collateral,NEW.shares);
+		INSERT INTO pol_ustats_mkt(user_aid,contract_aid,tot_liq_ops,tot_liq_given,tot_volume)
+			VALUES(NEW.funder_aid,NEW.contract_aid,1,v_normalized_collateral,NEW.shares);
 	END IF;
 
 	RETURN NEW;

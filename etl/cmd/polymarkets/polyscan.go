@@ -38,7 +38,7 @@ func build_list_of_inspected_events_layer1() []InspectedEvent {
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_position_merge[:4]),
+			Signature: hex.EncodeToString(evt_positions_merge[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -86,7 +86,7 @@ func build_list_of_inspected_events_filter_logs() []InspectedEvent {
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_position_merge),
+			Signature: hex.EncodeToString(evt_positions_merge),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -262,7 +262,7 @@ func proc_position_split(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_position_split(&evt)
 }
-func proc_position_merge(log *types.Log,elog *EthereumEventLog) {
+func proc_positions_merge(log *types.Log,elog *EthereumEventLog) {
 
 	var evt Pol_PositionMerge
 	var eth_evt EPositionsMerge
@@ -292,7 +292,7 @@ func proc_position_merge(log *types.Log,elog *EthereumEventLog) {
 	evt.Amount = eth_evt.Amount.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("PositionMerge {\n")
+	Info.Printf("PositionsMerge {\n")
 	Info.Printf("\tStakeholder: %v\n",evt.StakeHolderAddr)
 	Info.Printf("\tConditionId: %v\n",evt.ConditionId)
 	Info.Printf("\tCollateralToken: %v\n",evt.CollateralToken)
@@ -545,8 +545,8 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_position_split) {
 		proc_position_split(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_position_merge) {
-		proc_position_merge(log,evtlog)
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_positions_merge) {
+		proc_positions_merge(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_uri) {
 		proc_uri(log,evtlog)
