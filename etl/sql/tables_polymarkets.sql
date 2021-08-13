@@ -37,11 +37,12 @@ CREATE TABLE pol_pos_split ( -- PositionSplit, event of ConditionalToken (Gnosis
 	parent_coll_id		TEXT NOT NULL, -- parent collection id
 	condition_id		TEXt NOT NULL,
 	partition			TEXT NOT NULL,
-	burned_tok_ids		TEXT NOT NULL,
-	burned_tok_amounts	TEXT NOT NULL,
-	minted_tok_ids		TEXT NOT NULL,
-	minted_tok_amounts	TEXT NOT NULL,
 	amount				DECIMAL NOT NULL,
+	-- The following are linked ERC1155 transfers
+	tok_ids				TEXT NOT NULL,	-- transferred token IDs (comma separated)
+	tok_froms			TEXT NOT NULL,  -- the From field (comma separated)
+	tok_tos				TEXT NOT NULL,	-- the To fields (comma separated)
+	tok_amounts			TEXT NOT NULL,	-- Amount fileds (comma separated)
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE pol_pos_merge ( -- PositionMerge, event of ConditionalToken (Gnosis)
@@ -56,17 +57,21 @@ CREATE TABLE pol_pos_merge ( -- PositionMerge, event of ConditionalToken (Gnosis
 	parent_coll_id		TEXT NOT NULL, -- parent collection id
 	condition_id		TEXT NOT NULL,
 	partition			TEXT NOT NULL,
-	burned_tok_ids		TEXT NOT NULL,
-	burned_tok_amounts	TEXT NOT NULL,
-	minted_tok_ids		TEXT NOT NULL,
-	minted_tok_amounts	TEXT NOT NULL,
 	amount				DECIMAL NOT NULL,
+	-- The following are linked ERC1155 transfers
+	tok_ids				TEXT NOT NULL,	-- transferred token IDs (comma separated)
+	tok_froms			TEXT NOT NULL,  -- the From field (comma separated)
+	tok_tos				TEXT NOT NULL,	-- the To fields (comma separated)
+	tok_amounts			TEXT NOT NULL,	-- Amount fileds (comma separated)
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE pol_pos_tok_ids ( -- Token IDs that correspond to position merge or position split
 	parent_split_id		BIGINT REFERENCES pol_pos_split(id) ON DELETE CASCADE,
 	parent_merge_id		BIGINT REFERENCES pol_pos_merge(id) ON DELETE CASCADE,
+	contract_aid		BIGINT NOT NULL,
 	token_id_hex		TEXT NOT NULL,
+	token_from			TEXT NOT NULL,
+	token_to			TEXT NOT NULL,
 	token_amount		DECIMAL NOT NULL
 );
 CREATE TABLE pol_tok_ids (	-- table that collects only unique token_IDs per market

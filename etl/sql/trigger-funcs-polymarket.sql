@@ -195,40 +195,30 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_pol_pos_split_insert() RETURNS trigger AS  $$
 DECLARE
 	v_counter				BIGINT;
+	v_froms					TEXT[];
+	v_tos					TEXT[]; -- the To fields of ERC1155 transfer events
 	v_amounts_str			TEXT[];
 	v_token_id_hex			TEXT;
 	v_amount				DECIMAL;
 BEGIN
 
-	IF LENGTH(NEW.burned_tok_ids) > 0 THEN
+	IF LENGTH(NEW.tok_ids) > 0 THEN
 		v_counter := 1;
-		v_amounts_str := STRING_TO_ARRAY(NEW.burned_tok_amounts,',');
-		FOREACH v_token_id_hex IN ARRAY STRING_TO_ARRAY(NEW.burned_tok_ids,',')
+		v_amounts_str := STRING_TO_ARRAY(NEW.tok_amounts,',');
+		FOREACH v_token_id_hex IN ARRAY STRING_TO_ARRAY(NEW.tok_ids,',')
 		LOOP
 			v_amount := v_amounts_str[v_counter]::DECIMAL;
-			INSERT INTO pol_pos_tok_ids(parent_split_id,token_id_hex,token_amount)
-				VALUES(NEW.id,v_token_id_hex,v_amount);
+			v_froms := STRING_TO_ARRAY(NEW.tok_froms,',');
+			v_tos := STRING_TO_ARRAY(NEW.tok_tos,',');
+			INSERT INTO pol_pos_tok_ids(parent_split_id,contract_aid,token_id_hex,token_from,token_to,token_amount)
+				VALUES(NEW.id,NEW.stakeholder_aid,v_token_id_hex,v_froms[v_counter],v_tos[v_counter],v_amount);
 			INSERT INTO pol_tok_ids(contract_aid,token_id_hex)
-				VALUES(NEW.contract_aid,v_token_id_hex)
+				VALUES(NEW.stakeholder_aid,v_token_id_hex)
 				ON CONFLICT DO NOTHING;
 			v_counter := (v_counter + 1);
 		END LOOP;
 	END IF;
 
-	IF LENGTH(NEW.minted_tok_ids) > 0 THEN
-		v_counter := 1;
-		v_amounts_str := STRING_TO_ARRAY(NEW.minted_tok_amounts,',');
-		FOREACH v_token_id_hex IN ARRAY STRING_TO_ARRAY(NEW.minted_tok_ids,',')
-		LOOP
-			v_amount := v_amounts_str[v_counter]::DECIMAL;
-			INSERT INTO pol_pos_tok_ids(parent_split_id,token_id_hex,token_amount)
-				VALUES(NEW.id,v_token_id_hex,v_amount);
-			INSERT INTO pol_tok_ids(contract_aid,token_id_hex)
-				VALUES(NEW.contract_aid,v_token_id_hex)
-				ON CONFLICT DO NOTHING;
-			v_counter := (v_counter + 1);
-		END LOOP;
-	END IF;
 
 	RETURN NEW;
 END;
@@ -244,36 +234,25 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_pol_pos_merge_insert() RETURNS trigger AS  $$
 DECLARE
 	v_counter				BIGINT;
+	v_froms					TEXT[];
+	v_tos					TEXT[]; -- the To fields of ERC1155 transfer events
 	v_amounts_str			TEXT[];
 	v_token_id_hex			TEXT;
 	v_amount				DECIMAL;
 BEGIN
 
-	IF LENGTH(NEW.burned_tok_ids) > 0 THEN
+	IF LENGTH(NEW.tok_ids) > 0 THEN
 		v_counter := 1;
-		v_amounts_str := STRING_TO_ARRAY(NEW.burned_tok_amounts,',');
-		FOREACH v_token_id_hex IN ARRAY STRING_TO_ARRAY(NEW.burned_tok_ids,',')
+		v_amounts_str := STRING_TO_ARRAY(NEW.tok_amounts,',');
+		v_froms := STRING_TO_ARRAY(NEW.tok_froms,',');
+		v_tos := STRING_TO_ARRAY(NEW.tok_tos,',');
+		FOREACH v_token_id_hex IN ARRAY STRING_TO_ARRAY(NEW.tok_ids,',')
 		LOOP
 			v_amount := v_amounts_str[v_counter]::DECIMAL;
-			INSERT INTO pol_pos_tok_ids(parent_merge_id,token_id_hex,token_amount)
-				VALUES(NEW.id,v_token_id_hex,v_amount);
+			INSERT INTO pol_pos_tok_ids(parent_merge_id,contract_aid,token_id_hex,token_from,token_to,token_amount)
+				VALUES(NEW.id,NEW.stakeholder_aid,v_token_id_hex,v_froms[v_counter],v_tos[v_counter],v_amount);
 			INSERT INTO pol_tok_ids(contract_aid,token_id_hex)
-				VALUES(NEW.contract_aid,v_token_id_hex)
-				ON CONFLICT DO NOTHING;
-			v_counter := (v_counter + 1);
-		END LOOP;
-	END IF;
-
-	IF LENGTH(NEW.minted_tok_ids) > 0 THEN
-		v_counter := 1;
-		v_amounts_str := STRING_TO_ARRAY(NEW.minted_tok_amounts,',');
-		FOREACH v_token_id_hex IN ARRAY STRING_TO_ARRAY(NEW.minted_tok_ids,',')
-		LOOP
-			v_amount := v_amounts_str[v_counter]::DECIMAL;
-			INSERT INTO pol_pos_tok_ids(parent_merge_id,token_id_hex,token_amount)
-				VALUES(NEW.id,v_token_id_hex,v_amount);
-			INSERT INTO pol_tok_ids(contract_aid,token_id_hex)
-				VALUES(NEW.contract_aid,v_token_id_hex)
+				VALUES(NEW.stakeholder_aid,v_token_id_hex)
 				ON CONFLICT DO NOTHING;
 			v_counter := (v_counter + 1);
 		END LOOP;

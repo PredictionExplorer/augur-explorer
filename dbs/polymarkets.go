@@ -132,7 +132,7 @@ func (ss *SQLStorage) Insert_position_split(evt *p.Pol_PositionSplit) {
 	query = "INSERT INTO pol_pos_split (" +
 				evt_log_field+"block_num,tx_id,time_stamp,contract_aid, "+
 				"stakeholder_aid,collateral_aid,parent_coll_id,condition_id,partition,amount," +
-				"burned_tok_ids,burned_tok_amounts,minted_tok_ids,minted_tok_amounts"+
+				"tok_ids,tok_froms,tok_tos,tok_amounts"+
 			") VALUES (" +
 				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,"+
 				"$11,$12,$13,$14"+
@@ -148,10 +148,10 @@ func (ss *SQLStorage) Insert_position_split(evt *p.Pol_PositionSplit) {
 		evt.ConditionId,
 		evt.Partition,
 		evt.Amount,
-		evt.BurnedTokenIds,
-		evt.BurnedTokenAmounts,
-		evt.MintedTokenIds,
-		evt.MintedTokenAmounts,
+		evt.TokenIds,
+		evt.TokenFroms,
+		evt.TokenTos,
+		evt.TokenAmounts,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pol_pos_split table: %v\n",err))
@@ -173,7 +173,8 @@ func (ss *SQLStorage) Insert_position_merge(evt *p.Pol_PositionMerge) {
 	var query string
 	query = "INSERT INTO pol_pos_merge ("+
 				evt_log_field+"block_num,tx_id,time_stamp,contract_aid, "+
-				"stakeholder_aid,collateral_aid,parent_coll_id,condition_id,partition,amount" +
+				"stakeholder_aid,collateral_aid,parent_coll_id,condition_id,partition,amount," +
+				"tok_ids,tok_froms,tok_tos,tok_amounts"+
 			") VALUES (" +
 				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,"+
 				"$11,$12,$13,$14"+
@@ -189,10 +190,10 @@ func (ss *SQLStorage) Insert_position_merge(evt *p.Pol_PositionMerge) {
 		evt.ConditionId,
 		evt.Partition,
 		evt.Amount,
-		evt.BurnedTokenIds,
-		evt.BurnedTokenAmounts,
-		evt.MintedTokenIds,
-		evt.MintedTokenAmounts,
+		evt.TokenIds,
+		evt.TokenFroms,
+		evt.TokenTos,
+		evt.TokenAmounts,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pol_pos_merge table: %v\n",err))
@@ -1292,7 +1293,7 @@ func (ss *SQLStorage) Get_gnosis_erc1155_transfer_events(tx_id int64,topping_evt
 	records := make([]p.EthereumEventLog,0,16)
 	var query string
 	query = "SELECT " +
-				"id,topic0_sig,log_rlp " +
+				"id,contract_aid,topic0_sig,log_rlp " +
 			"FROM evt_log " +
 			"WHERE " +
 				"(tx_id=$1) AND " +
@@ -1309,6 +1310,7 @@ func (ss *SQLStorage) Get_gnosis_erc1155_transfer_events(tx_id int64,topping_evt
 		var rec p.EthereumEventLog
 		err=rows.Scan(
 			&rec.EvtId,
+			&rec.ContractAid,
 			&rec.Topic0_Sig,
 			&rec.RlpLog,
 		)
