@@ -10,3 +10,4 @@ CREATE INDEX erc1155_uri_ttid_idx				ON	erc1155_uri			(token_type_id);
 CREATE INDEX erc1155_ctrct_user_idx				ON	erc1155_bal			(contract_aid,aid);
 CREATE INDEX erc1155_tokidhex_idx				ON	erc1155_tok			(token_id_hex);
 CREATE INDEX erc1155_bal_parid_idx				ON	erc1155_bal			(parent_id);
+CREATE INDEX erc1155_bal_batchid_idx			ON	erc1155_bal			(batch_id);

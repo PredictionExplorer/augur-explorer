@@ -54,7 +54,7 @@ CREATE table erc1155_bal (	-- token balance
 	contract_aid		BIGINT NOT NULL,
 	token_id			BIGINT NOT NULL,
 	parent_id			BIGINT REFERENCES erc1155_transf(id) ON DELETE CASCADE,
-	batch_id			BIGINT REFERENCES erc1155_(id) ON DELETE CASCADE,
+	batch_id			BIGINT REFERENCES erc1155_batch(id) ON DELETE CASCADE,
 	processed			BOOLEAN DEFAULT false,	-- true if balances have been calculated
 	balance				DECIMAL NOT NULL DEFAULT 0.0,
 	amount				DECIMAL NOT NULL DEFAULT 0.0

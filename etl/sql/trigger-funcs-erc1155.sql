@@ -47,7 +47,7 @@ BEGIN
 		VALUES(NEW.contract_aid,NEW.token_id,NEW.aid)
 		ON CONFLICT DO NOTHING;
 	UPDATE erc1155_holder SET cur_balance = (cur_balance + NEW.amount)
-		WHERE contract_aid=NEW.contract_aid AND aid=NEw.aid AND token_id=NEW.token_id
+		WHERE contract_aid=NEW.contract_aid AND aid=NEW.aid AND token_id=NEW.token_id
 		RETURNING cur_balance INTO v_cur_balance;
 	UPDATE erc1155_bal SET balance = v_cur_balance WHERE id=NEW.id;
 	IF v_cur_balance = 0 THEN
@@ -100,10 +100,10 @@ BEGIN
 			v_amount := v_amounts[v_counter]::DECIMAL;
 	--		RAISE NOTICE 'v_amounts = %',v_amounts;
 	--		RAISE NOTICE 'v_amount = %',v_amount;
-			INSERT INTO erc1155_bal(block_num,tx_id,parent_id,contract_aid,token_id,time_stamp,aid,amount)
+			INSERT INTO erc1155_bal(block_num,tx_id,batch_id,contract_aid,token_id,time_stamp,aid,amount)
 					VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.contract_aid,v_token_id,NEW.time_stamp,NEW.from_aid,-v_amount);
 
-			INSERT INTO erc1155_bal(block_num,tx_id,parent_id,contract_aid,token_id,time_stamp,aid,amount)
+			INSERT INTO erc1155_bal(block_num,tx_id,batch_id,contract_aid,token_id,time_stamp,aid,amount)
 					VALUES(NEW.block_num,NEW.tx_id,NEW.id,NEW.contract_aid,v_token_id,NEW.time_stamp,NEW.to_aid,v_amount);
 			IF NEW.op_type = 1 THEN -- mint
 				UPDATE erc1155_tok SET total_supply=(total_supply + v_amount)
@@ -143,7 +143,7 @@ BEGIN
 			END IF;
 			v_counter := (v_counter + 1);
 		END LOOP;
-	DELETE FROM erc1155_bal WHERE parent_id = OLD.id;
+	DELETE FROM erc1155_bal WHERE batch_id = OLD.id;
 	RETURN OLD;
 
 END;
