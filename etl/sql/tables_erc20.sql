@@ -23,6 +23,20 @@ CREATE table erc20_bal (	-- token balance
 	balance				DECIMAL DEFAULT 0.0,
 	amount				DECIMAL DEFAULT 0.0
 );
+CREATE TABLE erc20_holder (
+	contract_aid		BIGINT NOT NULL,
+	aid					BIGINT NOT NULL,
+	cur_balance			DECIMAL NOT NULL DEFAULT 0,
+	PRIMARY KEY(contract_aid,aid)
+);
+CREATE TABLE erc20_tok (
+	contract_aid		BIGINT PRIMARY KEY,
+	num_holders			INT NOT NULL DEFAULT 0,
+	total_supply		DECIMAL NOT NULL DEFAULT 0,
+	decimals			INT NOT NULL,
+	name				TEXT NOT NULL DEFAULT '',
+	symbol				TEXT NOT NULL DEFAULT ''
+);
 CREATE TABLE erc20_proc_status (-- DAI processing status
 	last_evt_id			BIGINT DEFAULT 0 --id of last event log processed
 );

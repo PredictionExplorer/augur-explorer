@@ -26,12 +26,37 @@ CREATE OR REPLACE FUNCTION on_erc20_bal_insert() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
+	INSERT INTO erc20_holder(contract_aid,aid)
+		VALUES(NEW.contract_aid,NEW.aid)
+		ON CONFLICT DO NOTHING;
+	UPDATE erc20_holder SET cur_balance = (cur_balance + NEW.amount)
+		WHERE contract_aid=NEW.contract_aid AND aid=NEW.aid
+		RETURNING cur_balance INTO v_cur_balance;
+	UPDATE erc20_bal SET balance = v_cur_balance WHERE id=NEW.id;
+	IF v_cur_balance = 0 THEN
+		UPDATE erc1155_tok SET num_holders = (num_holders - 1)
+			WHERE contract_aid=NEW.contract_aid ;
+	ELSE
+		UPDATE erc1155_tok SET num_holders = (num_holders + 1)
+			WHERE contract_aid=NEW.contract_aid;
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_erc20_bal_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
+
+	UPDATE erc20_holder SET cur_balance = (cur_balance - OLD.amount)
+		WHERE contract_aid=OLD.contract_aid AND aid=OLD.aid
+		RETURNING cur_balance INTO v_cur_balance;
+	IF v_cur_balance = 0 THEN
+		UPDATE erc20_tok SET num_holders = (num_holders - 1)
+			WHERE contract_aid=OLD.contract_aid;
+	ELSE
+		UPDATE erc20_tok SET num_holders = (num_holders + 1)
+			WHERE contract_aid=OLD.contract_aid;
+	END IF;
 
 	RETURN OLD;
 END;
