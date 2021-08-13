@@ -139,6 +139,10 @@ type Pol_PositionSplit struct {
 	ParentCollectionId		string
 	Partition				string
 	Amount					string
+	BurnedTokenIds			string
+	BurnedTokenAmounts		string
+	MintedTokenIds			string
+	MintedTokenAmounts		string
 }
 type Pol_PositionMerge struct {
 	EvtId                   int64
@@ -152,6 +156,10 @@ type Pol_PositionMerge struct {
 	ParentCollectionId		string
 	Partition				string
 	Amount					string
+	BurnedTokenIds			string
+	BurnedTokenAmounts		string
+	MintedTokenIds			string
+	MintedTokenAmounts		string
 }
 type Pol_PayoutRedemption struct {
 	EvtId                   int64

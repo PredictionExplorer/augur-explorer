@@ -23,6 +23,9 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
+// Notes:
+//		conditional_token_address = '0x4D97DCd97eC945f40cF65F87097ACe5EA0476045' (Polygon)
+//		usdc_address = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'	(Polygon)
 const (
 	DEFAULT_DB_LOG				= "db.log"
 
@@ -190,7 +193,6 @@ func main() {
 	event_filter := flag.Bool("use-filter", false, "Use geth's event filtering to fetch events")
 	layer1 := flag.Bool("use-layer1", false, "Use Layer1 database (all events of evt_log table)")
 	flag.Parse()
-	fmt.Printf("event_filter = %v\n",*event_filter)
 
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 	os.MkdirAll(log_dir, os.ModePerm)

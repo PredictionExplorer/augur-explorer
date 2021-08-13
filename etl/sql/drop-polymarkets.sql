@@ -13,5 +13,9 @@ DROP TABLE IF EXISTS
 	update_needed,
 	pol_proc_status,
 	pol_mkt_stats,
-	pol_uri
+	pol_uri,
+	pol_data_feed,
+	pol_unique_addrs,
+	pol_pos_tok_ids,
+	pol_tok_ids 
 CASCADE;

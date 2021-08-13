@@ -4,3 +4,7 @@ CREATE TRIGGER fpmm_buysell_insert AFTER INSERT ON pol_buysell FOR EACH ROW EXEC
 CREATE TRIGGER fpmm_buysell_delete AFTER DELETE ON pol_buysell FOR EACH ROW EXECUTE PROCEDURE on_fpmm_buysell_delete();
 CREATE TRIGGER ustats_mkt_insert AFTER INSERT ON pol_ustats_mkt FOR EACH ROW EXECUTE PROCEDURE on_ustats_mkt_insert();
 CREATE TRIGGER ustats_mkt_delete AFTER DELETE ON pol_ustats_mkt FOR EACH ROW EXECUTE PROCEDURE on_ustats_mkt_delete();
+CREATE TRIGGER cond_split_insert AFTER INSERT ON pol_pos_split FOR EACH ROW EXECUTE PROCEDURE on_pol_pos_split_insert();
+CREATE TRIGGER cond_split_delete AFTER DELETE ON pol_pos_split FOR EACH ROW EXECUTE PROCEDURE on_pol_pos_split_delete();
+CREATE TRIGGER cond_merge_insert AFTER INSERT ON pol_pos_merge FOR EACH ROW EXECUTE PROCEDURE on_pol_pos_merge_insert();
+CREATE TRIGGER cond_merge_delete AFTER DELETE ON pol_pos_merge FOR EACH ROW EXECUTE PROCEDURE on_pol_pos_merge_delete();

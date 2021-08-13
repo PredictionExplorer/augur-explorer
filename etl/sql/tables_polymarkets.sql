@@ -37,6 +37,10 @@ CREATE TABLE pol_pos_split ( -- PositionSplit, event of ConditionalToken (Gnosis
 	parent_coll_id		TEXT NOT NULL, -- parent collection id
 	condition_id		TEXt NOT NULL,
 	partition			TEXT NOT NULL,
+	burned_tok_ids		TEXT NOT NULL,
+	burned_tok_amounts	TEXT NOT NULL,
+	minted_tok_ids		TEXT NOT NULL,
+	minted_tok_amounts	TEXT NOT NULL,
 	amount				DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
@@ -52,8 +56,22 @@ CREATE TABLE pol_pos_merge ( -- PositionMerge, event of ConditionalToken (Gnosis
 	parent_coll_id		TEXT NOT NULL, -- parent collection id
 	condition_id		TEXT NOT NULL,
 	partition			TEXT NOT NULL,
+	burned_tok_ids		TEXT NOT NULL,
+	burned_tok_amounts	TEXT NOT NULL,
+	minted_tok_ids		TEXT NOT NULL,
+	minted_tok_amounts	TEXT NOT NULL,
 	amount				DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
+);
+CREATE TABLE pol_pos_tok_ids ( -- Token IDs that correspond to position merge or position split
+	parent_split_id		BIGINT REFERENCES pol_pos_split(id) ON DELETE CASCADE,
+	parent_merge_id		BIGINT REFERENCES pol_pos_merge(id) ON DELETE CASCADE,
+	token_id_hex		TEXT NOT NULL,
+	token_amount		DECIMAL NOT NULL
+);
+CREATE TABLE pol_tok_ids (	-- table that collects only unique token_IDs per market
+	contract_aid		BIGINT NOT NULL,
+	token_id_hex		TEXT PRIMARY KEY
 );
 CREATE TABLE pol_pay_redem (-- PayoutRedemption, event of ConditionalToken (Gnosis)
 	id					BIGSERIAL PRIMARY KEY,

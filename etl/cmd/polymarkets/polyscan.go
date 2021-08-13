@@ -16,6 +16,14 @@ import (
 	ethereum "github.com/ethereum/go-ethereum"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
+type GnosisTransferEntry struct {
+	TokenId				string
+	Amount				string
+}
+type GnosisTransfers struct {
+	BurnTransfers		[]GnosisTransferEntry
+	MintTransfers		[]GnosisTransferEntry
+}
 func build_list_of_inspected_events_layer1() []InspectedEvent {
 
 	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)
@@ -196,6 +204,7 @@ func proc_condition_resolution(log *types.Log,elog *EthereumEventLog) {
 	evt.OracleAddr = eth_evt.Oracle.String()
 	evt.QuestionId = hex.EncodeToString(eth_evt.QuestionId[:])
 	evt.OutcomeSlotCount = eth_evt.OutcomeSlotCount.String()
+	evt.PayoutNumerators = Bigint_ptr_slice_to_str(&eth_evt.PayoutNumerators,",")
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("ConditionResolution{\n")
@@ -203,23 +212,115 @@ func proc_condition_resolution(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tOracle: %v\n",evt.OracleAddr)
 	Info.Printf("\tQuestionId: %v\n",evt.QuestionId)
 	Info.Printf("\tOutcomeSlotCount: %v\n",evt.OutcomeSlotCount)
+	Info.Printf("\tNumerators: %v\n",evt.PayoutNumerators)
 	Info.Printf("}\n")
 
 	storage.Insert_condition_resolution(&evt)
 }
-func build_erc1155_transfers_for_transaction(tx_id int64,Address,contract_aid int64,sender_aid int64,signature []byte) {
-/*
-	logs := storage.Get_erc1155_transfers(tx_id,contract_aid,signature)
-	for i:=0; i<len(logs); i++ {
+func locate_token_transfers_pos_split_or_merge(contract_aid,tx_id,topping_evtlog_id int64) GnosisTransfers {
+	// this method of identifying Gnosis Token IDs without calling `getPositionId() / getCollectionId()
+	//	to the contract works because PositionSplit or PositionsMerge events are inserted in the DB
+	//	only after TransferSingle and TransferBatch events were already processed, therefore the
+	//	`evtlog_id` of ERC1155 transfers will be always lower than the `evtlog_id` of PositionSplit/Merge
+	//	there is also Approve event just before burn/mint transfers start, so the transfers of Gnosis
+	//	tokens are clearly delimited (nothing is undefined)
+	//	We do not use erc115_transfer/batch tables though because these tables are created with another
+	//	process that may have its own synchronization time and we don't want to rely on that process
+	//	so we rlp.Decode tokens on our own
+	var approval_found bool = false
+	bts :=  make([]GnosisTransferEntry,0,16)
+	mts :=  make([]GnosisTransferEntry,0,16)
+	var output GnosisTransfers = GnosisTransfers {
+		BurnTransfers:			bts,
+		MintTransfers:			mts,
+	}
+	var zero_addr common.Address
+	events := storage.Get_gnosis_erc1155_transfer_events(tx_id,topping_evtlog_id)
+	for i:=0 ; i<len(events) ; i++ {
+		e := events[i]
+		Info.Printf("topic0_sig = %v\n",e.Topic0_Sig)
+		if (e.Topic0_Sig == "8c5be1e5") || (e.Topic0_Sig == "17307eab") {
+			approval_found = true
+			break
+		}
+		if e.Topic0_Sig == "ddf252ad" {
+			continue	// we skip transfer of the collateral in between mints/burns
+		}
 		var log types.Log
-		err := rlp.DecodeBytes(evtlog.RlpLog,&log)
+		err := rlp.DecodeBytes(e.RlpLog,&log)
 		if err != nil {
-			Error.Printf("Error decoding RLP of event id=%v: %v\n",evtlog.EvtId)
+			Info.Printf("Invalid event RLP (tx_id=%v): %v\n",tx_id,err)
 			os.Exit(1)
 		}
-
+		if e.Topic0_Sig == "c3d58168" { // TransferSingle
+			from := common.BytesToAddress(log.Topics[2][12:])
+			to := common.BytesToAddress(log.Topics[3][12:])
+			Info.Printf("Transfer single, %v -> %v\n",from.String(),to.String())
+			var eth_evt ETransferSingle
+			err = erc1155_abi.Unpack(&eth_evt,"TransferSingle",log.Data)
+			if err != nil {
+				Info.Printf("Can't unpack TransferSingle for tx_id=%v: %v\n",tx_id,err)
+				os.Exit(1)
+			}
+			var entry GnosisTransferEntry
+			entry.TokenId = hex.EncodeToString(common.BigToHash(eth_evt.Id).Bytes())
+			entry.Amount = eth_evt.Value.String()
+			Info.Printf("\tToken Id: %v\n",entry.TokenId)
+			Info.Printf("\tAmount: %v\n",entry.Amount)
+			if bytes.Equal(zero_addr.Bytes(),from.Bytes()) { //from = 0x0, its a Mint
+				output.MintTransfers = append(output.MintTransfers,entry)
+			} else {
+				if bytes.Equal(zero_addr.Bytes(),to.Bytes()) {
+					output.BurnTransfers = append(output.BurnTransfers,entry)
+				} else {
+					Info.Printf(
+						"TransferSingle doesn't contain zero address for Burn/Mint, tx_id=%v evt=%v\n",
+						tx_id,e.EvtId,
+					)
+					os.Exit(1)
+				}
+			}
+		}
+		if e.Topic0_Sig == "4a39dc06" { // TransferBatch
+			from := common.BytesToAddress(log.Topics[2][12:])
+			to := common.BytesToAddress(log.Topics[3][12:])
+			Info.Printf("Transfer batch, %v -> %v\n",from.String(),to.String())
+			var eth_evt ETransferBatch
+			err = erc1155_abi.Unpack(&eth_evt,"TransferBatch",log.Data)
+			if err != nil {
+				Info.Printf("Can't unpack TransferBatch for tx_id=%v: %v\n",tx_id,err)
+				os.Exit(1)
+			}
+			for j:=0 ; j<len(eth_evt.Ids) ; j++ {
+				var entry GnosisTransferEntry
+				entry.TokenId = hex.EncodeToString(common.BigToHash(eth_evt.Ids[j]).Bytes())
+				entry.Amount = eth_evt.Values[j].String()
+				Info.Printf("\tToken Id: %v\n",entry.TokenId)
+				Info.Printf("\tAmount: %v\n",entry.Amount)
+				if bytes.Equal(zero_addr.Bytes(),from.Bytes()) { //from = 0x0, its a Mint
+					output.MintTransfers = append(output.MintTransfers,entry)
+				} else {
+					if bytes.Equal(zero_addr.Bytes(),to.Bytes()) {
+						output.BurnTransfers = append(output.BurnTransfers,entry)
+					} else {
+						Info.Printf(
+							"TransferBatch doesn't contain zero address for Burn/Mint, tx_id=%v, evt %v\n",
+							tx_id,e.EvtId,
+						)
+						os.Exit(1)
+					}
+				}
+			}
+		}
 	}
-	*/
+	if !approval_found {
+		// there must be an Approve after all Mint/Burn events
+		Info.Printf("tx_id=%v , approval event not found, please debug\n",tx_id)
+		os.Exit(1)
+	}
+	Info.Printf("returning output.BurnTransfers len = %v\n",len(output.BurnTransfers))
+	Info.Printf("returning output.MintTransfers len = %v\n",len(output.MintTransfers))
+	return output
 }
 func proc_position_split(log *types.Log,elog *EthereumEventLog) {
 
@@ -250,6 +351,24 @@ func proc_position_split(log *types.Log,elog *EthereumEventLog) {
 	evt.Partition = Bigint_ptr_slice_to_str(&eth_evt.Partition,",")
 	evt.Amount = eth_evt.Amount.String()
 
+	contract_aid := storage.Lookup_address_id(evt.Contract)
+	gnosis_transfers := locate_token_transfers_pos_split_or_merge(contract_aid,evt.TxId,evt.EvtId)
+	for i:=0;i<len(gnosis_transfers.BurnTransfers);i++ {
+		if len(evt.BurnedTokenIds) > 0 { evt.BurnedTokenIds += "," }
+		evt.BurnedTokenIds = evt.BurnedTokenIds + gnosis_transfers.BurnTransfers[i].TokenId
+		if len(evt.BurnedTokenAmounts) > 0 { evt.BurnedTokenAmounts += "," }
+		evt.BurnedTokenAmounts = evt.BurnedTokenAmounts + gnosis_transfers.BurnTransfers[i].Amount
+	}
+	for i:=0;i<len(gnosis_transfers.MintTransfers);i++ {
+		if len(evt.MintedTokenIds) > 0 { evt.MintedTokenIds = evt.MintedTokenIds + "," }
+		evt.MintedTokenIds = evt.MintedTokenIds + gnosis_transfers.MintTransfers[i].TokenId
+		if len(evt.MintedTokenAmounts) > 0 { evt.MintedTokenAmounts += "," }
+		evt.MintedTokenAmounts = evt.MintedTokenAmounts + gnosis_transfers.MintTransfers[i].Amount
+	}
+	if (len(evt.BurnedTokenIds) == 0 ) && (len(evt.MintedTokenIds) == 0 ) {
+		Error.Printf("Invalid length (length=0) for Minted/Burned ERC1155 transfers), tx_id %v\n",evt.TxId)
+		os.Exit(1)
+	}
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("PositionSplit {\n")
 	Info.Printf("\tStakeholder: %v\n",evt.StakeHolderAddr)
@@ -258,6 +377,10 @@ func proc_position_split(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tParentCollectionId: %v\n",evt.ParentCollectionId)
 	Info.Printf("\tPartition: %v\n",evt.Partition)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tERC1155 BurnedTokenIds: %v\n",evt.BurnedTokenIds)
+	Info.Printf("\tERC1155 BurnedAmounts: %v\n",evt.BurnedTokenAmounts)
+	Info.Printf("\tERC1155 MintedTokenIds: %v\n",evt.MintedTokenIds)
+	Info.Printf("\tERC1155 MintedTokenAmounts: %v\n",evt.MintedTokenAmounts)
 	Info.Printf("}\n")
 
 	storage.Insert_position_split(&evt)
@@ -273,7 +396,7 @@ func proc_positions_merge(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Processing PositionMerge event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := condtoken_abi.Unpack(&eth_evt,"PositionMerge",log.Data)
+	err := condtoken_abi.Unpack(&eth_evt,"PositionsMerge",log.Data)
 	if err != nil {
 		Error.Printf("Event PositionMerge decode error: %v",err)
 		os.Exit(1)
@@ -291,6 +414,24 @@ func proc_positions_merge(log *types.Log,elog *EthereumEventLog) {
 	evt.Partition = Bigint_ptr_slice_to_str(&eth_evt.Partition,",")
 	evt.Amount = eth_evt.Amount.String()
 
+	contract_aid := storage.Lookup_address_id(evt.Contract)
+	gnosis_transfers := locate_token_transfers_pos_split_or_merge(contract_aid,evt.TxId,evt.EvtId)
+	for i:=0;i<len(gnosis_transfers.BurnTransfers);i++ {
+		if len(evt.BurnedTokenIds) > 0 { evt.BurnedTokenIds += "," }
+		evt.BurnedTokenIds = evt.BurnedTokenIds + gnosis_transfers.BurnTransfers[i].TokenId
+		if len(evt.BurnedTokenAmounts) > 0 { evt.BurnedTokenAmounts += "," }
+		evt.BurnedTokenAmounts = evt.BurnedTokenAmounts + gnosis_transfers.BurnTransfers[i].Amount
+	}
+	for i:=0;i<len(gnosis_transfers.MintTransfers);i++ {
+		if len(evt.MintedTokenIds) > 0 { evt.MintedTokenIds = evt.MintedTokenIds + "," }
+		evt.MintedTokenIds = evt.MintedTokenIds + gnosis_transfers.MintTransfers[i].TokenId
+		if len(evt.MintedTokenAmounts) > 0 { evt.MintedTokenAmounts += "," }
+		evt.MintedTokenAmounts = evt.MintedTokenAmounts + gnosis_transfers.MintTransfers[i].Amount
+	}
+	if (len(evt.BurnedTokenIds) == 0 ) && (len(evt.MintedTokenIds) == 0 ) {
+		Error.Printf("Invalid length (length=0) for Minted/Burned ERC1155 transfers), tx_id %v\n",evt.TxId)
+		os.Exit(1)
+	}
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("PositionsMerge {\n")
 	Info.Printf("\tStakeholder: %v\n",evt.StakeHolderAddr)
@@ -299,6 +440,10 @@ func proc_positions_merge(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tParentCollectionId: %v\n",evt.ParentCollectionId)
 	Info.Printf("\tPartition: %v\n",evt.Partition)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tERC1155 BurnedTokenIds: %v\n",evt.BurnedTokenIds)
+	Info.Printf("\tERC1155 BurnedAmounts: %v\n",evt.BurnedTokenAmounts)
+	Info.Printf("\tERC1155 MintedTokenIds: %v\n",evt.MintedTokenIds)
+	Info.Printf("\tERC1155 MintedTokenAmounts: %v\n",evt.MintedTokenAmounts)
 	Info.Printf("}\n")
 
 	storage.Insert_position_merge(&evt)
@@ -539,9 +684,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_condition_resolution) {
 		proc_condition_resolution(log,evtlog)
 	}
-	/*if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_payout_redemption) {
-		proc_payout_redemption(&log,&evtlog)
-	}*/
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_payout_redemption) {
+		proc_payout_redemption(log,evtlog)
+	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_position_split) {
 		proc_position_split(log,evtlog)
 	}
