@@ -210,10 +210,10 @@ BEGIN
 			v_amount := v_amounts_str[v_counter]::DECIMAL;
 			v_froms := STRING_TO_ARRAY(NEW.tok_froms,',');
 			v_tos := STRING_TO_ARRAY(NEW.tok_tos,',');
-			INSERT INTO pol_pos_tok_ids(parent_split_id,contract_aid,token_id_hex,token_from,token_to,token_amount)
-				VALUES(NEW.id,NEW.stakeholder_aid,v_token_id_hex,v_froms[v_counter],v_tos[v_counter],v_amount);
-			INSERT INTO pol_tok_ids(contract_aid,token_id_hex)
-				VALUES(NEW.stakeholder_aid,v_token_id_hex)
+			INSERT INTO pol_pos_tok_ids(parent_split_id,contract_aid,token_id_hex,outcome_idx,token_from,token_to,token_amount)
+				VALUES(NEW.id,NEW.stakeholder_aid,v_token_id_hex,v_counter-1,v_froms[v_counter],v_tos[v_counter],v_amount);
+			INSERT INTO pol_tok_ids(contract_aid,token_id_hex,outcome_idx)
+				VALUES(NEW.stakeholder_aid,v_token_id_hex,v_counter-1)
 				ON CONFLICT DO NOTHING;
 			v_counter := (v_counter + 1);
 		END LOOP;
@@ -249,10 +249,10 @@ BEGIN
 		FOREACH v_token_id_hex IN ARRAY STRING_TO_ARRAY(NEW.tok_ids,',')
 		LOOP
 			v_amount := v_amounts_str[v_counter]::DECIMAL;
-			INSERT INTO pol_pos_tok_ids(parent_merge_id,contract_aid,token_id_hex,token_from,token_to,token_amount)
-				VALUES(NEW.id,NEW.stakeholder_aid,v_token_id_hex,v_froms[v_counter],v_tos[v_counter],v_amount);
-			INSERT INTO pol_tok_ids(contract_aid,token_id_hex)
-				VALUES(NEW.stakeholder_aid,v_token_id_hex)
+			INSERT INTO pol_pos_tok_ids(parent_merge_id,contract_aid,token_id_hex,outcome_idx,token_from,token_to,token_amount)
+				VALUES(NEW.id,NEW.stakeholder_aid,v_token_id_hex,v_counter-1,v_froms[v_counter],v_tos[v_counter],v_amount);
+			INSERT INTO pol_tok_ids(contract_aid,token_id_hex,outcome_idx)
+				VALUES(NEW.stakeholder_aid,v_token_id_hex,v_counter-1)
 				ON CONFLICT DO NOTHING;
 			v_counter := (v_counter + 1);
 		END LOOP;

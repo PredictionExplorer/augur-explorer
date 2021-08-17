@@ -1,0 +1,56 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Open positions of User {{.UserAid}}</title>
+</head>
+<body>
+	<h3 class="page_title">All the open positions of {{.UserAid}} in all Polymarket markets</h3>
+<table class="market_detail">
+</table>
+<h3>Current Open Positions</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports" rowspan=2>OutcomeIdx</th>
+		<th class="market_reports" rowspan=2>Balance (USDC)</th>
+		<th class="market_reports" rowspan=2>Share TokenId (ERC1155)</th>
+		<th class="market_reports" rowspan=2>Market</th>
+		<th class="market_reports" rowspan=2>Market Question</th>
+		<th class="market_reports" rowspan=2></th>
+		<th class="market_reports" colspan=5 style="background-color: #666666">Extended Trading Information</th>
+	</tr>
+	<tr class="market_reports">
+		<th class="market_reports" style="background-color: #666666">Num Trades(in/out)</th>
+		<th class="market_reports" style="background-color: #666666">Total Volume</th>
+		<th class="market_reports" style="background-color: #666666">Liquidity Operations</th>
+		<th class="market_reports" style="background-color: #666666">(Total) Fees Paid</th>
+		<th class="market_reports" style="background-color: #666666">Accum. Profit</th>
+	</tr>
+
+	{{- range $i, $change := .UserOpenPositions}}
+		<tr class="market_reports">
+			<td class="addr">
+				<a href="/black/poly/markets/traderops/{{$.MarketId}}/{{.UserAid}}/0/10000">
+					{{.UserAddr}}
+				</a>
+			</td>
+			<td class="market_reports_field" style="text-align: center;">{{.OutcomeIdx}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{ printf "%.2f" .CollateralInvested}}</td>
+			<td class="addr">{{.TokenId}}</td>
+			<td class="addr">{{.MarketId}}</td>
+			<td class="addr">{{.MarketQuestion}}</td>
+			<td class="addr"><strong>&nbsp;&nbsp;&nbsp;&nbsp;</strong></td>
+			</td>
+			<td class="market_reports_field" style="text-align: right;">{{.NumTrades}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.2f" .TotalVolume}}</td>
+			<td class="market_reports_field" style="text-align: center;">
+				<a href="/black/poly/markets/funderops/{$.MarketId}}/{{.UserAid}}/0/10000">
+					{{.NumLiquidityOps}}
+				</a>
+			</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.2f" .TotalFeesPaid}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.2f" .TotalProfit}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>

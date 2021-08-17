@@ -135,3 +135,27 @@ type API_Pol_TraderListEntry struct {
 type API_Pol_MarketInfoEntry struct {
 
 }
+type API_Pol_MarketOpenPosition struct {
+	CurrentBalance			float64
+	OutcomeIdx				int32
+	TokenId					string
+	UserAid					int64
+	UserAddr				string
+	NumTrades				int64
+	TotalVolume				float64
+	NumLiquidityOps			int64
+	TotalFeesPaid			float64
+	TotalProfit				float64
+}
+type API_Pol_MarketUserOpenPosition struct {
+	CollateralInvested		float64
+	OutcomeIdx				int32
+	TokenId					string
+	MarketId				int64
+	MarketQuestion			string
+	NumTrades				int64
+	TotalVolume				float64
+	NumLiquidityOps			int64
+	TotalFeesPaid			float64
+	TotalProfit				float64
+}

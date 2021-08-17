@@ -180,6 +180,8 @@ func main() {
 	r.GET("/black/poly/markets/userlist/:market_id",poly_user_list)
 	r.GET("/black/poly/markets/traderops/:market_id/:user_aid/:offset/:limit",poly_market_trader_operations)
 	r.GET("/black/poly/markets/funderops/:market_id/:user_aid/:offset/:limit",poly_market_funder_operations)
+	r.GET("/black/poly/markets/open_positions/:market_id",poly_market_open_positions)
+	r.GET("/black/poly/user/open_positions/:user_aid",poly_market_user_open_positions)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -256,6 +258,8 @@ func main() {
 	r.GET("/api/poly/markets/funderops/:market_id/:user_aid/:offset/:limit",a1_poly_funder_operations)
 	r.GET("/api/poly/markets/list/:status",a1_poly_markets_listing)
 	r.GET("/api/poly/markets/list",a1_poly_markets_listing)
+	r.GET("/apipoly/markets/open_positions/:market_id",a1_poly_market_open_positions)
+	r.GET("/api/poly/user/open_positions/:user_aid",a1_poly_market_user_open_positions)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

@@ -191,3 +191,109 @@ func (ss *SQLStorage) Get_polymarkets_markets(status int) []p.API_Pol_MarketInfo
 	}
 	return records
 }
+func (ss *SQLStorage) Get_poly_market_open_positions(contract_aid int64) []p.API_Pol_MarketOpenPosition {
+
+	records := make([]p.API_Pol_MarketOpenPosition,0,1024)
+	var query string
+	query = "SELECT "+
+				"eh.cur_balance/1e+6," +
+				"ptk.outcome_idx," +
+				"ptk.token_id_hex," +
+				"user_aid," +
+				"ua.addr,"+
+				"ms.tot_trades,"+
+				"ms.tot_volume/1e+6,"+
+				"ms.tot_liq_ops,"+
+				"ms.tot_fees/1e+6,"+
+				"ms.profit/1e+6 " +
+			"FROM pol_tok_ids ptk " +
+				"JOIN erc1155_tok et ON ptk.token_id_hex = et.token_id_hex "+
+				"JOIN erc1155_holder eh ON et.token_id=eh.token_id " +
+				"JOIN pol_ustats_mkt ms ON (eh.aid=ms.user_aid) AND (ms.contract_aid=ptk.contract_aid) " +
+				"JOIN address ua ON eh.aid=ua.address_id "+
+			"WHERE (ptk.contract_aid = $1) AND (ROUND(eh.cur_balance/1e+4)>0) " +
+			"ORDER BY ms.tot_volume DESC"
+
+	rows,err := ss.db.Query(query,contract_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_MarketOpenPosition
+		err=rows.Scan(
+			&rec.CurrentBalance,
+			&rec.OutcomeIdx,
+			&rec.TokenId,
+			&rec.UserAid,
+			&rec.UserAddr,
+			&rec.NumTrades,
+			&rec.TotalVolume,
+			&rec.NumLiquidityOps,
+			&rec.TotalFeesPaid,
+			&rec.TotalProfit,
+		)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("Error in Get_polymarkets_markets(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_poly_market_user_open_positions(user_aid int64) []p.API_Pol_MarketUserOpenPosition {
+
+	records := make([]p.API_Pol_MarketUserOpenPosition,0,1024)
+	var query string
+	query = "SELECT "+
+				"eh.cur_balance/1e+6," +
+				"ptk.outcome_idx," +
+				"ptk.token_id_hex," +
+				"pm.market_id," +
+				"pm.question," +
+				"ms.tot_trades,"+
+				"ms.tot_volume/1e+6,"+
+				"ms.tot_liq_ops,"+
+				"ms.tot_fees/1e+6,"+
+				"ms.profit/1e+6 " +
+			"FROM pol_tok_ids ptk " +
+				"JOIN erc1155_tok et ON ptk.token_id_hex = et.token_id_hex "+
+				"JOIN erc1155_holder eh ON et.token_id=eh.token_id " +
+				"JOIN pol_ustats_mkt ms ON (eh.aid=ms.user_aid) AND (ms.contract_aid=ptk.contract_aid) " +
+				"JOIN pol_market pm ON ptk.contract_aid = pm.mkt_mkr_aid " +
+				"JOIN address ua ON eh.aid=ua.address_id "+
+			"WHERE (ms.user_aid=$1) AND (eh.cur_balance>0) " +
+			"ORDER BY ms.tot_volume DESC"
+	fmt.Printf("q = %v \n",query)
+	fmt.Printf("user_aid=%v\n",user_aid)
+	rows,err := ss.db.Query(query,user_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_MarketUserOpenPosition
+		err=rows.Scan(
+			&rec.CollateralInvested,
+			&rec.OutcomeIdx,
+			&rec.TokenId,
+			&rec.MarketId,
+			&rec.MarketQuestion,
+			&rec.NumTrades,
+			&rec.TotalVolume,
+			&rec.NumLiquidityOps,
+			&rec.TotalFeesPaid,
+			&rec.TotalProfit,
+		)
+		fmt.Printf("Adding market %v : %v\n",rec.MarketId,rec.MarketQuestion)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("Error in Get_poly_market_user_open_positions (): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+	return nil
+}
