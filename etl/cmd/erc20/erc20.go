@@ -41,6 +41,9 @@ var (
 	erc20_abi abi.ABI
 	all_contracts map[string]interface{}
 	caddrs *ContractAddresses
+	bad_erc20_token map[common.Address]struct{}
+	bad_for_decode map[common.Address]struct{}
+	info_checked map[common.Address]struct{}
 
 	err_invalid_erc20_format error = errors.New("Invalid ERC20 event structure (num topics != 3)")
 	inspected_events []InspectedEvent
@@ -49,6 +52,33 @@ var (
 	evt_erc20_transfer,_ = hex.DecodeString(ERC20_TRANSFER)
 
 )
+func fetch_and_store_erc20_info(token_addr common.Address) (int,error) {
+	// note: this func is called as goroutine for speed. however duplicate calls can occur,
+	//      which are prevented with DO NOTHING on conflict in the INSERT query
+	_,already_checked := info_checked[token_addr]
+	if already_checked {
+		return 0,nil
+	}
+	info_checked[token_addr] = struct{}{}
+	_,is_bad := bad_erc20_token[token_addr]
+	if is_bad {
+		return 0,nil
+	}
+	found,info := storage.Get_ERC20Info_v2(token_addr.String())
+	if found {
+		return info.Decimals,nil
+	}
+	erc20_info,err := Fetch_erc20_info(eclient,&token_addr)
+	if err != nil {
+		Error.Printf("Couldn't fetch ERC20 token info for addr %v : %v\n",token_addr.String(),err)
+		bad_erc20_token[token_addr]=struct{}{}
+		return 0,err
+	}
+	erc20_info.Address = token_addr.String()
+	storage.Update_ERC20Info_v2(&erc20_info)
+	return erc20_info.Decimals,nil
+}
+
 func build_list_of_inspected_events() []InspectedEvent {
 
 	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)
@@ -81,6 +111,10 @@ func proc_erc20_transfer(evt_id int64) error {
 	if err!= nil {
 		panic(fmt.Sprintf("RLP Decode error: %v",err))
 	}
+	_,bad_token := bad_for_decode[log.Address]
+	if bad_token {
+		return nil
+	}
 	log.BlockNumber=uint64(evtlog.BlockNum)
 	log.TxHash.SetBytes(common.HexToHash(evtlog.TxHash).Bytes())
 	log.Address.SetBytes(common.HexToHash(evtlog.ContractAddress).Bytes())
@@ -93,16 +127,20 @@ func proc_erc20_transfer(evt_id int64) error {
 	mevt.To= common.BytesToAddress(log.Topics[2][12:])
 	err = erc20_abi.Unpack(&mevt,"Transfer",log.Data)
 	if err != nil {
+
 		Error.Printf("signature=%v\n",log.Topics[0].String())
 		Error.Printf("address=%v\n",log.Address.String())
 		Error.Printf("tx hash = %v\n",log.TxHash.String())
 		Error.Printf("log.Data=%v, data len=%v\n",hex.EncodeToString(log.Data[:]),len(log.Data[:]))
 		Error.Printf("Event ERC20_Transfer, decode error: %v",err)
+		bad_for_decode[log.Address]=struct{}{}
 	} else {
 		Info.Printf("ERC20_Transfer event, contract %v (block=%v) :\n",
 									log.Address.String(),log.BlockNumber)
 		mevt.Dump(Info)
 		storage.Insert_ERC20_token_transfer(log.Address.String(),&mevt,evtlog.BlockNum,evtlog.TxId,evt_id,evtlog.TimeStamp)
+
+		go fetch_and_store_erc20_info(log.Address)
 	}
 	return nil
 }
@@ -237,7 +275,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	bad_erc20_token = make(map[common.Address]struct{})
+	bad_for_decode = make(map[common.Address]struct{})
+	info_checked = make(map[common.Address]struct{})
 	build_list_of_inspected_events()
-	go balance_updater(BalancesLog)
+	//go balance_updater(BalancesLog)
 	process_tokens(exit_chan,&caddrs_obj)
 }

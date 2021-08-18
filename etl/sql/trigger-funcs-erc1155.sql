@@ -50,13 +50,15 @@ BEGIN
 		WHERE contract_aid=NEW.contract_aid AND aid=NEW.aid AND token_id=NEW.token_id
 		RETURNING cur_balance INTO v_cur_balance;
 	UPDATE erc1155_bal SET balance = v_cur_balance WHERE id=NEW.id;
-	IF v_cur_balance = 0 THEN
-		UPDATE erc1155_tok SET num_holders = (num_holders - 1)
-			WHERE contract_aid=NEW.contract_aid AND token_id = NEW.token_id;
-	END IF;
-	IF v_cur_balance > 0 THEN -- address 0x0 is excluded here
-		UPDATE erc1155_tok SET num_holders = (num_holders + 1)
-			WHERE contract_aid=NEW.contract_aid AND token_id=NEW.token_id;
+	IF NEW.amount != 0 THEN
+		IF v_cur_balance = 0 THEN
+			UPDATE erc1155_tok SET num_holders = (num_holders - 1)
+				WHERE contract_aid=NEW.contract_aid AND token_id = NEW.token_id;
+		END IF;
+		IF v_cur_balance > 0 THEN -- address 0x0 is excluded here
+			UPDATE erc1155_tok SET num_holders = (num_holders + 1)
+				WHERE contract_aid=NEW.contract_aid AND token_id=NEW.token_id;
+		END IF;
 	END IF;
 
 	RETURN NEW;
@@ -70,13 +72,15 @@ BEGIN
 	UPDATE erc1155_holder SET cur_balance = (cur_balance - OLD.amount)
 		WHERE contract_aid=OLD.contract_aid AND aid=OLD.aid AND token_id=OLD.token_id
 		RETURNING cur_balance INTO v_cur_balance;
-	IF v_cur_balance = 0 THEN
-		UPDATE erc1155_tok SET num_holders = (num_holders - 1)
-			WHERE contract_aid=OLD.contract_aid AND token_id = OLD.token_id;
-	END IF;
-	IF v_cur_balance > 0 THEN -- address 0x0 is excluded here
-		UPDATE erc1155_tok SET num_holders = (num_holders + 1)
-			WHERE contract_aid=OLD.contract_aid AND token_id=OLD.token_id;
+	IF OLD.amount != 0 THEN
+		IF v_cur_balance = 0 THEN
+			UPDATE erc1155_tok SET num_holders = (num_holders - 1)
+				WHERE contract_aid=OLD.contract_aid AND token_id = OLD.token_id;
+		END IF;
+		IF v_cur_balance > 0 THEN -- address 0x0 is excluded here
+			UPDATE erc1155_tok SET num_holders = (num_holders + 1)
+				WHERE contract_aid=OLD.contract_aid AND token_id=OLD.token_id;
+		END IF;
 	END IF;
 	RETURN OLD;
 END;

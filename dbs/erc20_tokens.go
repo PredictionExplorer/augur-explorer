@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"math/big"
+	"strings"
+	"bytes"
 	"database/sql"
 	_  "github.com/lib/pq"
 
@@ -289,4 +291,67 @@ func (ss *SQLStorage) Get_erc20_operations(factory_aid,market_id int64,offset,li
 		}
 	}
 	return records
+}
+func (ss *SQLStorage) Get_ERC20Info_v2(addr string) (bool,p.ERC20Info) {
+
+	var query string
+	query = "SELECT contract_aid,a.addr,decimals,total_supply,name,symbol " +
+			"FROM erc20_tok AS e,address AS a " +
+			"WHERE e.contract_aid=a.address_id AND a.addr=$1"
+
+	res := ss.db.QueryRow(query,addr)
+	var info p.ERC20Info
+	var null_decimals sql.NullInt64
+	var null_name,null_symbol sql.NullString
+	var null_total_supply sql.NullFloat64
+	err := res.Scan(
+		&info.Aid,
+		&info.Address,
+		&null_decimals,
+		&null_total_supply,
+		&null_name,
+		&null_symbol,
+	)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		} else {
+			return false,info
+		}
+	}
+	var missing_info bool = false
+	if (!null_decimals.Valid) && (!null_total_supply.Valid) && (!null_name.Valid) && (!null_symbol.Valid) {
+		missing_info = false
+	}
+	info.Decimals = int(null_decimals.Int64)
+	info.TotalSupplyF = null_total_supply.Float64
+	info.Name = null_name.String
+	info.Symbol = null_symbol.String
+	return missing_info,info
+}
+func (ss *SQLStorage) Update_ERC20Info_v2(info *p.ERC20Info) {
+
+	aid := ss.Lookup_or_create_address(info.Address,0,0)
+	var query string
+	query = "UPDATE erc20_tok SET "+
+				"decimals = $2, " +
+				"total_supply = $3," +
+				"name = $4, "+
+				"symbol = $5 " +
+			"WHERE contract_aid=$1"
+
+	info.Name = strings.ToValidUTF8(info.Name," ")
+	info.Name = string(bytes.Trim([]byte(info.Name),"\x00"))
+	_,err := ss.db.Exec(query,
+		aid,
+		info.Decimals,
+		info.TotalSupply,
+		info.Name,
+		info.Symbol,
+	)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
 }

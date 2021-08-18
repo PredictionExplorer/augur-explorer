@@ -33,9 +33,9 @@ CREATE TABLE erc20_tok (
 	contract_aid		BIGINT PRIMARY KEY,
 	num_holders			INT NOT NULL DEFAULT 0,
 	total_supply		DECIMAL NOT NULL DEFAULT 0,
-	decimals			INT NOT NULL,
-	name				TEXT NOT NULL DEFAULT '',
-	symbol				TEXT NOT NULL DEFAULT ''
+	decimals			INT DEFAULT NULL,
+	name				TEXT DEFAULT NULL,
+	symbol				TEXT DEFAULT NULL
 );
 CREATE TABLE erc20_proc_status (-- DAI processing status
 	last_evt_id			BIGINT DEFAULT 0 --id of last event log processed
