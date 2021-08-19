@@ -145,7 +145,11 @@ type API_Pol_MarketOpenPosition struct {
 	TotalVolume				float64
 	NumLiquidityOps			int64
 	TotalFeesPaid			float64
+	RealizedProfit			float64
+	UnrealizedProfit		float64
 	TotalProfit				float64
+	CurrentPrice			float64
+	PositionValue			float64 // Price * amount
 }
 type API_Pol_MarketUserOpenPosition struct {
 	CollateralInvested		float64
@@ -158,4 +162,11 @@ type API_Pol_MarketUserOpenPosition struct {
 	NumLiquidityOps			int64
 	TotalFeesPaid			float64
 	TotalProfit				float64
+}
+type API_Pol_LiquidityShareRatio struct {
+	FunderAid				int64
+	TotalLiquidityOps		int64		// total number of liquidity addition/removal operations
+	Balance					float64
+	FunderAddr				string
+	ShareRatio				float64
 }

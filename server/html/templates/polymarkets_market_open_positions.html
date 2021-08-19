@@ -13,6 +13,10 @@
 		<th class="market_reports" rowspan=2>User</th>
 		<th class="market_reports" rowspan=2>OutcomeIdx</th>
 		<th class="market_reports" rowspan=2>Balance (USDC)</th>
+		<th class="market_reports" rowspan=2>Current Price (USDC)</th>
+		<th class="market_reports" rowspan=2>Realized Profit/Losss (USDC)</th>
+		<th class="market_reports" rowspan=2>Unrealized Profit/Losss (USDC)</th>
+		<th class="market_reports" rowspan=2>Total Profit/Losss (USDC)</th>
 		<th class="market_reports" rowspan=2>Share TokenId (ERC1155)</th>
 		<th class="market_reports" rowspan=2></th>
 		<th class="market_reports" colspan=5 style="background-color: #666666">Extended User Trading Information</th>
@@ -33,19 +37,23 @@
 				</a>
 			</td>
 			<td class="market_reports_field" style="text-align: center;">{{.OutcomeIdx}}</td>
-			<td class="market_reports_field" style="text-align: right;">{{ printf "%.2f" .CurrentBalance}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{ printf "%.6f" .CurrentBalance}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{ printf "%.6f" .CurrentPrice}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{ printf "%.6f" .RealizedProfit}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{ printf "%.6f" .UnrealizedProfit}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{ printf "%.6f" .TotalProfit}}</td>
 			<td class="addr">{{.TokenId}}</td>
 			<td class="addr"><strong>&nbsp;&nbsp;&nbsp;&nbsp;</strong></td>
 			</td>
 			<td class="market_reports_field" style="text-align: right;">{{.NumTrades}}</td>
-			<td class="market_reports_field" style="text-align: right;">{{printf "%.2f" .TotalVolume}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .TotalVolume}}</td>
 			<td class="market_reports_field" style="text-align: center;">
-				<a href="/black/poly/markets/funderops/{$.MarketId}}/{{.UserAid}}/0/10000">
+				<a href="/black/poly/markets/funderops/{{$.MarketId}}/{{.UserAid}}/0/10000">
 					{{.NumLiquidityOps}}
 				</a>
 			</td>
-			<td class="market_reports_field" style="text-align: right;">{{printf "%.2f" .TotalFeesPaid}}</td>
-			<td class="market_reports_field" style="text-align: right;">{{printf "%.2f" .TotalProfit}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .TotalFeesPaid}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .TotalProfit}}</td>
 		</tr>
 	{{- end}}
 </table>

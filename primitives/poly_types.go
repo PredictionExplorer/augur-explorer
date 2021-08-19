@@ -320,3 +320,10 @@ type Pol_Sell struct {
 	OutcomeIdx				int64
 	TokensSold				string
 }
+type Pol_CondTokPrices struct {// conditional token balance (Gnosis)
+	TokenBalanceStr			string
+	TokenBalance			float64
+	TokenPrice				float64
+	OutcomeIdx				int32
+	TokenIdHex				string
+}

@@ -2153,7 +2153,7 @@ func a1_poly_market_open_positions(c *gin.Context) {
 		return
 	}
 
-	open_positions := augur_srv.storage.Get_poly_market_open_positions(fpmm_aid)
+	open_positions,prices := augur_srv.storage.Get_poly_market_open_positions(fpmm_aid)
 
 	var req_status int = 1
 	var err_str string = ""
@@ -2163,6 +2163,7 @@ func a1_poly_market_open_positions(c *gin.Context) {
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,
 		"OpenPositions" : open_positions,
+		"Prices" : prices,
 	})
 }
 func a1_poly_market_user_open_positions(c *gin.Context) {
@@ -2190,5 +2191,39 @@ func a1_poly_market_user_open_positions(c *gin.Context) {
 		"error" : err_str,
 		"UserAid": user_aid,
 		"UserOpenPositions" :user_open_positions,
+	})
+}
+func a1_poly_market_funder_share_ratio(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,true,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'market_id' parameter is not set")
+		return
+	}
+
+	fpmm_aid := augur_srv.storage.Get_fpmm_contract_aid(market_id)
+	if fpmm_aid == 0 {
+		respond_error_json(c,"Polymarket with this ID wasn't found")
+		return
+	}
+
+	share_ratios := augur_srv.storage.Get_poly_liquidity_provider_share_ratio(fpmm_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MarketId" : market_id,
+		"ContractAid" : fpmm_aid,
+		"ShareRatios" : share_ratios,
 	})
 }

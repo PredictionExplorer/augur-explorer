@@ -2,6 +2,8 @@ package dbs
 import (
 	"os"
 	"fmt"
+	"strconv"
+	"math/big"
 	"database/sql"
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
@@ -191,7 +193,7 @@ func (ss *SQLStorage) Get_polymarkets_markets(status int) []p.API_Pol_MarketInfo
 	}
 	return records
 }
-func (ss *SQLStorage) Get_poly_market_open_positions(contract_aid int64) []p.API_Pol_MarketOpenPosition {
+func (ss *SQLStorage) Get_poly_market_open_positions(contract_aid int64) ([]p.API_Pol_MarketOpenPosition,[]p.Pol_CondTokPrices) {
 
 	records := make([]p.API_Pol_MarketOpenPosition,0,1024)
 	var query string
@@ -211,7 +213,7 @@ func (ss *SQLStorage) Get_poly_market_open_positions(contract_aid int64) []p.API
 				"JOIN erc1155_holder eh ON et.token_id=eh.token_id " +
 				"JOIN pol_ustats_mkt ms ON (eh.aid=ms.user_aid) AND (ms.contract_aid=ptk.contract_aid) " +
 				"JOIN address ua ON eh.aid=ua.address_id "+
-			"WHERE (ptk.contract_aid = $1) AND (ROUND(eh.cur_balance/1e+4)>0) " +
+			"WHERE (ptk.contract_aid = $1) AND (eh.cur_balance>0) " +
 			"ORDER BY ms.tot_volume DESC"
 
 	rows,err := ss.db.Query(query,contract_aid)
@@ -232,7 +234,7 @@ func (ss *SQLStorage) Get_poly_market_open_positions(contract_aid int64) []p.API
 			&rec.TotalVolume,
 			&rec.NumLiquidityOps,
 			&rec.TotalFeesPaid,
-			&rec.TotalProfit,
+			&rec.RealizedProfit,
 		)
 		if err != nil {
 			ss.Log_msg(fmt.Sprintf("Error in Get_polymarkets_markets(): %v, q=%v",err,query))
@@ -240,9 +242,22 @@ func (ss *SQLStorage) Get_poly_market_open_positions(contract_aid int64) []p.API
 		}
 		records = append(records,rec)
 	}
-	return records
+	prices := ss.Calculate_prices(contract_aid)
+	for i:=0; i<len(records); i++ {
+		if int(records[i].OutcomeIdx) < len(prices) {
+			records[i].CurrentPrice = prices[records[i].OutcomeIdx].TokenPrice
+			fmt.Printf("Adjusting prices, addr %v, Current Price=%v\n",records[i].UserAddr,records[i].CurrentPrice)
+			pos_value := records[i].CurrentPrice * records[i].CurrentBalance
+			fmt.Printf("position value = %v realized profit = %v\n",pos_value,records[i].RealizedProfit)
+			profit := pos_value + records[i].TotalProfit // it is a + because User's deposits are negative
+			fmt.Printf("Profit = %v\n",profit)
+			records[i].UnrealizedProfit = profit
+			records[i].TotalProfit = records[i].RealizedProfit + records[i].UnrealizedProfit
+		}
+	}
+	return records,prices
 }
-func (ss *SQLStorage) Get_poly_market_user_open_positions(user_aid int64) []p.API_Pol_MarketUserOpenPosition {
+func (ss *SQLStorage) Get_poly_market_user_open_positions(user_aid int64) ([]p.API_Pol_MarketUserOpenPosition) {
 
 	records := make([]p.API_Pol_MarketUserOpenPosition,0,1024)
 	var query string
@@ -295,5 +310,136 @@ func (ss *SQLStorage) Get_poly_market_user_open_positions(user_aid int64) []p.AP
 		records = append(records,rec)
 	}
 	return records
-	return nil
+}
+func (ss *SQLStorage) Calculate_prices(contract_aid int64) []p.Pol_CondTokPrices {
+
+	var query string
+	query = "SELECT " +
+				"ptk.outcome_idx,"+
+				"ptk.token_id_hex,"+
+				"eh.cur_balance::TEXT " +
+			"FROM pol_tok_ids ptk "+
+				"JOIN erc1155_tok et ON ptk.token_id_hex=et.token_id_hex " +
+				"JOIN erc1155_holder eh ON (et.token_id=eh.token_id AND eh.aid=ptk.contract_aid) " +
+			"WHERE "+
+				"ptk.contract_aid=$1"
+
+	fmt.Printf("Query = %v (contract=%v)\n",query,contract_aid)
+
+	rows,err := ss.db.Query(query,contract_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	records := make([]p.Pol_CondTokPrices,0,8)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.Pol_CondTokPrices
+		err=rows.Scan(
+			&rec.OutcomeIdx,
+			&rec.TokenIdHex,
+			&rec.TokenBalanceStr,
+		)
+		fmt.Printf("Adding outcome %v token hex %v and balance %v\n",rec.OutcomeIdx,rec.TokenIdHex,rec.TokenBalanceStr)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("Error in Calculate_prices(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	odds_weight_for_outcome_func :=  func(outc int,b []*big.Int) *big.Int {
+		odds := big.NewInt(1)
+		rec_len :=len(b)
+		for j:=0; j< rec_len; j++ {
+			if outc==j { continue; }
+			odds.Mul(odds,b[j])
+		}
+		return odds
+	}
+	rec_len :=len(records)
+	balances := make([]*big.Int,0,rec_len)
+	for i:=0; i< rec_len; i++ {
+		bal := big.NewInt(0)
+		_,valid := bal.SetString(records[i].TokenBalanceStr,10)
+		if !valid {
+			ss.Log_msg(fmt.Sprintf("Error calculating gnosis token prices: bad decimal value for token %v: %v\n",records[i].TokenIdHex,records[i].TokenBalance))
+			os.Exit(1)
+		}
+		balances = append(balances,bal)
+	}
+	fmt.Printf("rec_len = %v\n",rec_len)
+	prices := make([]*big.Float,0,rec_len)
+	for i:=0; i<rec_len ; i++ {
+		numerator := odds_weight_for_outcome_func(i,balances)
+		fmt.Printf("Numerator = %v\n",numerator.String())
+		denominator := big.NewInt(0)
+		for j:=0; j<rec_len; j++ {
+			odds_outcome := odds_weight_for_outcome_func(j,balances)
+			fmt.Printf("Adding %v to denominator\n",odds_outcome.String())
+			denominator.Add(denominator,odds_outcome)
+		}
+		fmt.Printf("Denominator = %v\n",denominator.String())
+		p := new(big.Float)
+		numerator_float := new(big.Float)
+		denominator_float := new(big.Float)
+		numerator_float.SetInt(numerator)
+		denominator_float.SetInt(denominator)
+		p.Quo(numerator_float,denominator_float)
+		fmt.Printf("Price for outcome %v = %v\n",i,p.String())
+		prices = append(prices,p)
+	}
+	for i:=0; i<rec_len; i++ {
+		f,_ := prices[i].Float64()
+		records[i].TokenPrice = f
+		fmt.Printf("Adjusted token price = %v\n",records[i].TokenPrice)
+		f,_= strconv.ParseFloat(records[i].TokenBalanceStr,64)
+		records[i].TokenBalance = f
+		fmt.Printf("Price converted to float = %v\n",f)
+	}
+	fmt.Printf("exciting Calculate_prices()\n")
+	return records
+
+}
+func (ss *SQLStorage) Get_poly_liquidity_provider_share_ratio(contract_aid int64) []p.API_Pol_LiquidityShareRatio {
+	var query string
+	query = "SELECT " +
+				"eh.cur_balance, "+
+				"eh.aid AS funder_aid," +
+				"ua.addr," +
+				"s.tot_liq_ops " +
+			"FROM erc20_holder eh "+
+				"JOIN pol_ustats_mkt s ON (eh.contract_aid=s.contract_aid AND eh.aid=s.user_aid) " +
+				"JOIN address ua ON eh.aid=ua.address_id " +
+			"WHERE eh.contract_aid=$1 " +
+			"ORDER BY eh.cur_balance DESC"
+
+	rows,err := ss.db.Query(query,contract_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	records := make([]p.API_Pol_LiquidityShareRatio,0,128)
+	defer rows.Close()
+	var total_supply float64
+	for rows.Next() {
+		var rec p.API_Pol_LiquidityShareRatio
+		err=rows.Scan(
+			&rec.Balance,
+			&rec.FunderAid,
+			&rec.FunderAddr,
+			&rec.TotalLiquidityOps,
+		)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("Error in Get_liquidity_provider_share_ratio(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		total_supply = total_supply + rec.Balance
+		records = append(records,rec)
+	}
+	for i:=0; i< len(records); i++ {
+		records[i].ShareRatio = 100*records[i].Balance/total_supply
+	}
+	return records
 }
