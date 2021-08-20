@@ -5,15 +5,66 @@
 	<meta name="description" content="{{.MarketInfo.Description}}">
 </head>
 <body>
+<script language=javascript>
+	function show_market_description() {
+		var elt = document.getElementById('mkt_desc')
+		elt.style.display = "block"
+	}
+</script>
 <h3 class="page_title">Market Details (Basic)</h3>
 <table class="market_detail">
 <tr class="market_detail">
 	<td nowrap>Market ID:</td>
 	<td class="addr" >{{.MarketId}}</td>
 </tr>
+<tr>
+	<td></td>
+	<td>
+		<table>
+			<tr>
+				<td>
+					<nav><ul><li>
+						<a class="btn_link" href="javascript: show_market_description();void(0)">TRADING</a>
+						<span></span><span></span><span></span><span></span>
+					</li></ul></nav>
+				</td>
+				<td>
+					<nav><ul><li>
+						<a class="btn_link" href="javascript: show_market_description();void(0)">LIQUIDITY</a>
+						<span></span><span></span><span></span><span></span>
+					</li></ul></nav>
+				</td>
+				<td>
+					<nav><ul><li>
+						<a class="btn_link" href="javascript: show_market_description();void(0)">USER LIST</a>
+						<span></span><span></span><span></span><span></span>
+					</li></ul></nav>
+				</td>
+				<td>
+					<nav><ul><li>
+					<a class="btn_link" href="javascript: show_market_description();void(0)">OPEN POSITIONS</a>
+					<span></span><span></span><span></span><span></span>
+					</li></ul></nav>
+				</td>
+			</tr>
+		</table>
+	</td>
+</tr>
 <tr class="market_detail">
 	<td>Description</td>
-	<td>{{.MarketInfo.Description}}</td>
+	<td>
+			<nav>
+				<ul>
+					<li>
+						<a class="btn_link" href="javascript: show_market_description();void(0)">SHOW DESCRIPTION</a>
+						<span></span><span></span><span></span><span></span>
+					</li>
+				</ul>
+			</nav>
+		<span id="mkt_desc" style="display:none;">
+			{{.MarketInfo.Description}}
+		</span>
+	</td>
 </tr>
 <tr class="market_detail">
 	<td>Outcomes</td>
@@ -37,7 +88,7 @@
 </tr>
 <tr class="market_detail">
 	<td>Created</td>
-	<td>{{.MarketInfo.CreatedAtTs}}</td>
+	<td>{{.MarketInfo.CreatedAtDate}}</td>
 </tr>
 <tr class="market_detail">
 	<td>End Date</td>
@@ -63,12 +114,16 @@
 	<td>{{.MarketInfo.MarketMakerAddr}}</td>
 </td>
 <tr>
+	<td>Question ID</td>
+	<td>{{.MarketInfo.QuestionId}}</td>
+</tr>
+<tr>
 	<td>Condition Preparation transaction</td>
-	<td><a class="addr" href="">xxxxxx</a></td>
+	<td><a class="addr" href="https://polygonscan.com/tx/{{.MarketInfo.CondPrepTxHash}}">{{.MarketInfo.CondPrepTxHash}}</a></td>
 </td>
 <tr>
 	<td>Condition Preparation Date</td>
-	<td></td>
+	<td>{{.MarketInfo.CreatedAtDate}}</td>
 </td>
 </table>
 <br/><br/>

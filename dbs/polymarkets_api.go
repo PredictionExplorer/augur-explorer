@@ -65,24 +65,30 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 				"description," +
 				"tags," +
 				"outcomes," +
-				"active," +
 				"market_type," +
 				"market_type_code," +
 				"mkt_mkr_aid," +
-				"ma.addr AS mkt_mkr_addr " +
+				"ma.addr AS mkt_mkr_addr, " +
 				"mst.total_volume,"+
 				"mst.open_interest," +
 				"mst.total_liquidity,"+
 				"mst.total_fees," +
 				"mst.num_trades, " +
-				"mst.num_liq_ops" +
+				"mst.num_liq_ops," +
 				"res.id, " +
-				"prep.question_id "+
+				"prep.question_id, "+
+				"prep.outcome_slot_count, " +
+				"prep.tx_hash " +
 			"FROM pol_market pm " +
 				"JOIN address ma ON pm.mkt_mkr_aid=ma.address_id " +
 				"JOIN pol_mkt_stats mst ON pm.mkt_mkr_aid=mst.contract_aid " +
-				"LEFT JOIN pol_cond_prep AS prep ON pm.condition_id=CONCAT('0x',prep.condition_id) " +
+				"LEFT JOIN LATERAL ("+
+					"SELECT prep.question_id,prep.outcome_slot_count,tx_hash,prep.condition_id,prep.time_stamp " +
+					"FROM pol_cond_prep AS prep "+
+						"JOIN transaction tx ON prep.tx_id=tx.id " +
+				") AS prep ON pm.condition_id=CONCAT('0x',prep.condition_id) " +
 				"LEFT JOIN pol_cond_res AS res ON pm.condition_id=CONCAT('0x',res.condition_id) " +
+
 			"WHERE pm.market_id=$1"
 
 	var n_created_ts,n_resolved_ts sql.NullInt64
@@ -92,6 +98,7 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 	var n_resolution_id sql.NullInt64
 	var n_question_id sql.NullString
 	var n_outcome_slot_count sql.NullInt64
+	var n_cond_prep_tx_hash sql.NullString
 	res := ss.db.QueryRow(query,market_id)
 	err := res.Scan(
 			&rec.Question,
@@ -123,6 +130,7 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 			&n_resolution_id,
 			&n_question_id,
 			&n_outcome_slot_count,
+			&n_cond_prep_tx_hash,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -146,6 +154,7 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 	if n_resolution_id.Valid {rec.WasResolved = true }
 	if n_question_id.Valid {rec.QuestionId = n_question_id.String }
 	if n_outcome_slot_count.Valid { rec.OutcomeSlotCount = n_outcome_slot_count.Int64 }
+	if n_cond_prep_tx_hash.Valid { rec.CondPrepTxHash = n_cond_prep_tx_hash.String }
 	return rec,nil
 }
 func (ss *SQLStorage) Get_polymarkets_markets(status,sort int) []p.API_Pol_MarketInfo {
@@ -163,13 +172,13 @@ func (ss *SQLStorage) Get_polymarkets_markets(status,sort int) []p.API_Pol_Marke
 		sort_condition = "ORDER BY mst.open_interest ASC NULLS LAST" // ASC because we have OI negative
 	}
 	if sort == 2 {
-		sort_condition = "ORDER BY prep.time_stamp DESC "
+		sort_condition = "ORDER BY prep.time_stamp DESC NULLS LAST"
 	}
 	if sort == 3 {
-		sort_condition = "ORDER BY res.time_stamp DESC "
+		sort_condition = "ORDER BY res.time_stamp DESC NULLS LAST"
 	}
 	if sort == 4 {
-		sort_condition = "ORDER BY mst.total_fees DESC "
+		sort_condition = "ORDER BY mst.total_fees DESC NULLS LAST"
 	}
 
 	records := make([]p.API_Pol_MarketInfo,0,32)
@@ -212,7 +221,7 @@ func (ss *SQLStorage) Get_polymarkets_markets(status,sort int) []p.API_Pol_Marke
 				"LEFT JOIN pol_cond_res AS res ON pm.condition_id=CONCAT('0x',res.condition_id) " +
 			where_condition +
 			sort_condition
-	
+
 	fmt.Printf("query = %v\n",query)
 	rows,err := ss.db.Query(query)
 	if (err!=nil) {
@@ -265,6 +274,7 @@ func (ss *SQLStorage) Get_polymarkets_markets(status,sort int) []p.API_Pol_Marke
 			ss.Log_msg(fmt.Sprintf("Error in Get_polymarkets_markets(): %v, q=%v",err,query))
 			os.Exit(1)
 		}
+	//	fmt.Printf("n.created_ts.Int64 = %v (%v), created date=%v\n",n_created_ts.Int64,n_created_ts.Valid,n_created_date.String)
 		if n_created_ts.Valid { rec.CreatedAtTs = n_created_ts.Int64 }
 		if n_created_date.Valid {rec.CreatedAtDate = n_created_date.String }
 		if n_resolved_ts.Valid { rec.ResolvedTs = n_resolved_ts.Int64 }
@@ -278,6 +288,7 @@ func (ss *SQLStorage) Get_polymarkets_markets(status,sort int) []p.API_Pol_Marke
 		if n_resolution_id.Valid {rec.WasResolved = true }
 		if n_question_id.Valid { rec.QuestionId = n_question_id.String }
 		if n_outcome_slot_count.Valid { rec.OutcomeSlotCount = n_outcome_slot_count.Int64 }
+//		fmt.Printf("before append n.created_ts.Int64 = %v , created date=%v\n",rec.CreatedAtTs,rec.CreatedAtDate)
 		records = append(records,rec)
 	}
 	return records

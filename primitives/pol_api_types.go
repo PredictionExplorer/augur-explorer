@@ -58,6 +58,8 @@ type API_Pol_MarketInfo struct {
 	TotalFeesCollected	float64	// Fees collected. Fees are not part of liquidity total (they are just held temporarily)
 	NumTrades			int64	// total number of buy/sell operations
 	NumLiquidityOps		int64
+	QuestionIdHashValid		bool
+	CondPrepTxHash		string	// Condition preparation transaction hash
 }
 type API_Pol_MarketStats struct {
 	OpenInterest		float64

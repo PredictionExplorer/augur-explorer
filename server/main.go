@@ -263,7 +263,7 @@ func main() {
 	r.GET("/api/poly/markets/list/:status/:sort",a1_poly_markets_listing)
 	r.GET("/api/poly/markets/list/:status",a1_poly_markets_listing)
 	r.GET("/api/poly/markets/list",a1_poly_markets_listing)
-	r.GET("/apipoly/markets/open_positions/:market_id",a1_poly_market_open_positions)
+	r.GET("/api/poly/markets/open_positions/:market_id",a1_poly_market_open_positions)
 	r.GET("/api/poly/user/open_positions/:user_aid",a1_poly_market_user_open_positions)
 	r.GET("/api/poly/markets/funder/share_ratio/:market_id",a1_poly_market_funder_share_ratio)
 
