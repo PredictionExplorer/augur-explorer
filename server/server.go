@@ -2948,3 +2948,35 @@ func poly_market_funder_share_ratio(c *gin.Context) {
 		"ShareRatios" : share_ratios,
 	})
 }
+func poly_markets_listing(c *gin.Context) {
+
+	p_status := c.Param("status")
+	var status int64
+	if len(p_status) > 0 {
+		var success bool
+		status,success = parse_int_from_remote_or_error(c,true,&p_status)
+		if !success {
+			return
+		}
+	} else {
+		// the default is status = 0
+	}
+	p_sort:= c.Param("sort")
+	var sort int64
+	if len(p_sort) > 0 {
+		var success bool
+		sort,success = parse_int_from_remote_or_error(c,true,&p_sort)
+		if !success {
+			return
+		}
+	} else {
+		// the default is sort = 0
+	}
+	markets_listing := augur_srv.storage.Get_polymarkets_markets(int(status),int(sort))
+	num_elts := len(markets_listing)
+	c.HTML(http.StatusOK, "polymarkets_market_listing.html", gin.H{
+		"Markets" : markets_listing,
+		"QueryingStatus" : status,
+		"NumElts" : num_elts,
+	})
+}

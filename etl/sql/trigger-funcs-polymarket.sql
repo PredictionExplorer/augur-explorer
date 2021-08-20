@@ -15,7 +15,8 @@ BEGIN
 		SET
 			num_liq_ops = (num_liq_ops + 1),
 			open_interest = (open_interest + v_normalized_collateral),
-			total_volume = (total_volume + NEW.shares)
+			total_volume = (total_volume + NEW.shares),
+			total_liquidity = (total_liquidity + v_normalized_collateral)
 		WHERE contract_aid = NEW.contract_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
@@ -44,8 +45,8 @@ BEGIN
 		WHERE (user_aid = NEW.funder_aid) AND (contract_aid=NEW.contract_aid);
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO pol_ustats_mkt(user_aid,contract_aid,tot_liq_ops,tot_liq_given,tot_volume)
-			VALUES(NEW.funder_aid,NEW.contract_aid,1,v_normalized_collateral,NEW.shares);
+		INSERT INTO pol_ustats_mkt(user_aid,contract_aid,tot_liq_ops,tot_liq_given,tot_volume,total_liquidity)
+			VALUES(NEW.funder_aid,NEW.contract_aid,1,v_normalized_collateral,NEW.shares,v_normalized_collateral);
 	END IF;
 
 	RETURN NEW;
@@ -59,7 +60,8 @@ BEGIN
 		SET
 			num_liq_ops = (num_liq_ops - 1),
 			open_interest = (open_interest - OLD.norm_collateral),
-			total_volume = (total_volume - OLD.shares)
+			total_volume = (total_volume - OLD.shares),
+			total_liquidity = (total_liquidity - OLD.norm_collateral)
 		WHERE contract_aid = OLD.contract_aid;
 	UPDATE pol_ustats
 		SET

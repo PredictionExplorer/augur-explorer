@@ -216,9 +216,10 @@ CREATE TABLE pol_mkt_stats ( -- market statistics
 	contract_aid			BIGINT PRIMARY KEY,
 	num_liq_ops				INT DEFAULT 0, -- number of liquidity addition/deletions
 	num_trades				INT DEFAULT 0,
-	open_interest			DECIMAL DEFAULT 0,
+	open_interest			DECIMAL DEFAULT 0,	-- BUYs + Add of liquidity totalled
 	total_volume			DECIMAL DEFAULT 0,
-	total_fees				DECIMAL DEFAULT 0		-- sums amount of fees paid for this market
+	total_fees				DECIMAL DEFAULT 0,		-- sums amount of fees paid for this market
+	total_liquidity			DECIMAL DEFAULT 0,		-- amount of USDC held (without fees) (without BUYs)
 );
 CREATE TABLE pol_ustats ( -- user statistics
 	user_aid				BIGINT PRIMARY KEY,

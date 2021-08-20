@@ -2119,7 +2119,18 @@ func a1_poly_markets_listing(c *gin.Context) {
 	} else {
 		// the default is status = 0
 	}
-	markets_listing := augur_srv.storage.Get_polymarkets_markets(int(status))
+	p_sort:= c.Param("sort")
+	var sort int64
+	if len(p_sort) > 0 {
+		var success bool
+		sort,success = parse_int_from_remote_or_error(c,true,&p_sort)
+		if !success {
+			return
+		}
+	} else {
+		// the default is status = 0
+	}
+	markets_listing := augur_srv.storage.Get_polymarkets_markets(int(status),int(sort))
 	num_elts := len(markets_listing)
 	var req_status int = 1
 	var err_str string = ""
@@ -2128,6 +2139,7 @@ func a1_poly_markets_listing(c *gin.Context) {
 		"error" : err_str,
 		"Markets" : markets_listing,
 		"QueryingStatus" : status,
+		"Sort" : sort,
 		"NumElts" : num_elts,
 	})
 }

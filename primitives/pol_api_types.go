@@ -29,6 +29,7 @@ type API_Pol_Liquidity_Op struct {
 type API_Pol_MarketInfo struct {
 	MarketId			int64
 	Question			string
+	QuestionId			string
 	ConditionId			string
 	Slug				string
 	ResolutionSource	string
@@ -36,20 +37,27 @@ type API_Pol_MarketInfo struct {
 	CreatedAtDate		string
 	EndDateTs			int64
 	EndDate				string
-	StartDateTs			int64
-	StartDate			string
+	ResolvedTs			int64
+	ResolvedDate		string
 	Category			string
 	Image				string
 	Icon				string
 	Description			string
 	Tags				string
 	Outcomes			string
-	Active				bool
 	MarketType			string
 	MarketTypeCode		int
-	Closed				bool
 	MarketMakerAid		int64
 	MarketMakerAddr		string
+	OutcomeSlotCount	int64	// number of outcomes as reported by Prepare Condition event
+	WasResolved			bool	// true if there is a ConditionResolution event
+	Volume				float64
+	OpenInterest		float64	// Liquidity Added + BUY operations - Fees
+	Liquidity			float64	// Only the amount deposited by investors
+	TotalTrades			int64
+	TotalFeesCollected	float64	// Fees collected. Fees are not part of liquidity total (they are just held temporarily)
+	NumTrades			int64	// total number of buy/sell operations
+	NumLiquidityOps		int64
 }
 type API_Pol_MarketStats struct {
 	OpenInterest		float64

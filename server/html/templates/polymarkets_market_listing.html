@@ -1,0 +1,83 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Markets at Polymarket</title>
+</head>
+<body>
+	<h3 class="page_title">Markets at Polymarket platform<h3>
+<table class="market_detail">
+	<tr>
+		<td>
+			<nav>
+				<ul>
+					<li>
+						<a class="btn_link" href="/black/poly/markets/list/0/">ALL</a>
+						<span></span><span></span><span></span><span></span>
+					</li>
+				</ul>
+			</nav>
+		</td>
+		<td>
+			<nav>
+				<ul>
+					<li>
+						<a class="btn_link" href="/black/poly/markets/list/1/">Active Only</a>
+						<span></span><span></span><span></span><span></span>
+					</li>
+				</ul>
+			</nav>
+		</td>
+		<td>
+			<nav>
+				<ul>
+					<li>
+						<a class="btn_link" href="/black/poly/markets/list/2/">Resolved Only</a>
+						<span></span><span></span><span></span><span></span>
+					</li>
+				</ul>
+			</nav>
+		</td>
+	</tr>
+</table>
+<h3>Market list</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Market ID</th>
+		<th class="market_reports">Type</th>
+		<th class="market_reports">Num. Outcomes</th>
+		<th class="market_reports">Question</th>
+		<th class="market_reports">Created</th>
+		<th class="market_reports">End Date</th>
+		<th class="market_reports">Status</th>
+		<th class="market_reports">Open Interest (USDC)</th>
+		<th class="market_reports">Volume (USDC)</th>
+		<th class="market_reports">Cur. Liquidity (USDC)</th>
+		<th class="market_reports">Total Trades</th>
+		<th class="market_reports"></th>
+	</tr>
+	{{- range $i, $change := .Markets}}
+		<tr class="market_reports">
+			<td class="addr">
+				<a href="/black/poly/markets/info/{{$.MarketId}}">
+					{{.MarketId}}
+				</a>
+			</td>
+			<td class="market_reports_field" style="text-align: center;">{{.MarketType}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{.OutcomeSlotCount}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{.Question}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{.CreatedAtDate}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{.EndDate}}</td>
+			<td class="market_reports_field" style="text-align: right;">
+				{{ if .WasResolved }}Resolved
+				{{ else }}Active
+				{{ end }}
+			</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.0f" .OpenInterest}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.0f" .Volume}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.0f" .Liquidity}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{.TotalTrades}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>

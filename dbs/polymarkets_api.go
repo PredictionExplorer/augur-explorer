@@ -50,15 +50,15 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 	var query string
 	query = "SELECT " +
 				"question," +
-				"condition_id," +
+				"pm.condition_id," +
 				"slug," +
 				"resolution_source,"+
-				"EXTRACT(EPOCH FROM created_at_ts)::BIGINT AS created_at_ts,"+
-				"created_at_date, " +
+				"EXTRACT(EPOCH FROM prep.time_stamp)::BIGINT AS created_at_ts,"+
+				"prep.time_stamp, " +
 				"EXTRACT(EPOCH FROM end_date_ts)::BIGINT AS ts_end," +
 				"end_date," +
-				"EXTRACT(EPOCH FROM start_date_ts)::BIGINT AS ts_start," +
-				"start_date," +
+				"EXTRACT(EPOCH FROM res.time_stamp)::BIGINT as resolution_ts," +
+				"res.time_stamp,"+
 				"category," +
 				"image," +
 				"icon," +
@@ -68,37 +68,61 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 				"active," +
 				"market_type," +
 				"market_type_code," +
-				"closed," +
 				"mkt_mkr_aid," +
 				"ma.addr AS mkt_mkr_addr " +
+				"mst.total_volume,"+
+				"mst.open_interest," +
+				"mst.total_liquidity,"+
+				"mst.total_fees," +
+				"mst.num_trades, " +
+				"mst.num_liq_ops" +
+				"res.id, " +
+				"prep.question_id "+
 			"FROM pol_market pm " +
 				"JOIN address ma ON pm.mkt_mkr_aid=ma.address_id " +
+				"JOIN pol_mkt_stats mst ON pm.mkt_mkr_aid=mst.contract_aid " +
+				"LEFT JOIN pol_cond_prep AS prep ON pm.condition_id=CONCAT('0x',prep.condition_id) " +
+				"LEFT JOIN pol_cond_res AS res ON pm.condition_id=CONCAT('0x',res.condition_id) " +
 			"WHERE pm.market_id=$1"
 
+	var n_created_ts,n_resolved_ts sql.NullInt64
+	var n_created_date,n_resolved_date sql.NullString
+	var n_volume,n_open_interest,n_liquidity,n_fees sql.NullFloat64
+	var n_num_trades,n_num_liq_ops sql.NullInt64
+	var n_resolution_id sql.NullInt64
+	var n_question_id sql.NullString
+	var n_outcome_slot_count sql.NullInt64
 	res := ss.db.QueryRow(query,market_id)
 	err := res.Scan(
 			&rec.Question,
 			&rec.ConditionId,
 			&rec.Slug,
 			&rec.ResolutionSource,
-			&rec.CreatedAtTs,
-			&rec.CreatedAtDate,
+			&n_created_ts,
+			&n_created_date,
 			&rec.EndDateTs,
 			&rec.EndDate,
-			&rec.StartDateTs,
-			&rec.StartDate,
+			&n_resolved_ts,
+			&n_resolved_date,
 			&rec.Category,
 			&rec.Image,
 			&rec.Icon,
 			&rec.Description,
 			&rec.Tags,
 			&rec.Outcomes,
-			&rec.Active,
 			&rec.MarketType,
 			&rec.MarketTypeCode,
-			&rec.Closed,
 			&rec.MarketMakerAid,
 			&rec.MarketMakerAddr,
+			&n_volume,
+			&n_open_interest,
+			&n_liquidity,
+			&n_fees,
+			&n_num_trades,
+			&n_num_liq_ops,
+			&n_resolution_id,
+			&n_question_id,
+			&n_outcome_slot_count,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -109,49 +133,87 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 		}
 	}
 	rec.MarketId = market_id
+	if n_created_ts.Valid { rec.CreatedAtTs = n_created_ts.Int64 }
+	if n_created_date.Valid {rec.CreatedAtDate = n_created_date.String }
+	if n_resolved_ts.Valid { rec.ResolvedTs = n_resolved_ts.Int64 }
+	if n_resolved_date.Valid { rec.ResolvedDate = n_resolved_date.String }
+	if n_volume.Valid { rec.Volume = n_volume.Float64 }
+	if n_open_interest.Valid { rec.OpenInterest = n_open_interest.Float64 }
+	if n_liquidity.Valid { rec.Liquidity = n_liquidity.Float64 }
+	if n_fees.Valid { rec.TotalFeesCollected = n_fees.Float64 }
+	if n_num_trades.Valid { rec.NumTrades = n_num_trades.Int64 }
+	if n_num_liq_ops.Valid { rec.NumLiquidityOps = n_num_liq_ops.Int64 }
+	if n_resolution_id.Valid {rec.WasResolved = true }
+	if n_question_id.Valid {rec.QuestionId = n_question_id.String }
+	if n_outcome_slot_count.Valid { rec.OutcomeSlotCount = n_outcome_slot_count.Int64 }
 	return rec,nil
 }
-func (ss *SQLStorage) Get_polymarkets_markets(status int) []p.API_Pol_MarketInfo {
+func (ss *SQLStorage) Get_polymarkets_markets(status,sort int) []p.API_Pol_MarketInfo {
 	// status: 0 - all markets, 1 - not finalized, 2 - finalized
-
+	// sort : 0 - by trading volume, 1 - by liquidity invested, 2-by creation date, 3-by resolution date, 4 - fees collected
 	var where_condition string
 	if status == 1 {
-		where_condition = "WHERE closed=FALSE "
+		where_condition = "WHERE res.id IS NULL "
 	}
 	if status == 2 {
-		where_condition = "WHERE closed=TRUE "
+		where_condition = "WHERE res.id IS NOT NULL "
 	}
+	var sort_condition string = "ORDER BY mst.total_volume DESC NULLS LAST "
+	if sort == 1 {
+		sort_condition = "ORDER BY mst.open_interest ASC NULLS LAST" // ASC because we have OI negative
+	}
+	if sort == 2 {
+		sort_condition = "ORDER BY prep.time_stamp DESC "
+	}
+	if sort == 3 {
+		sort_condition = "ORDER BY res.time_stamp DESC "
+	}
+	if sort == 4 {
+		sort_condition = "ORDER BY mst.total_fees DESC "
+	}
+
 	records := make([]p.API_Pol_MarketInfo,0,32)
 	var query string
 	query = "SELECT " +
 				"market_id," +
 				"question," +
-				"condition_id," +
+				"pm.condition_id," +
 				"slug," +
 				"resolution_source,"+
-				"EXTRACT(EPOCH FROM created_at_ts)::BIGINT AS created_at_ts,"+
-				"created_at_date, " +
+				"EXTRACT(EPOCH FROM prep.time_stamp)::BIGINT AS created_at_ts,"+
+				"prep.time_stamp, " +
 				"EXTRACT(EPOCH FROM end_date_ts)::BIGINT AS ts_end," +
 				"end_date," +
-				"EXTRACT(EPOCH FROM start_date_ts)::BIGINT AS ts_start," +
-				"start_date," +
+				"EXTRACT(EPOCH FROM res.time_stamp)::BIGINT as resolution_ts," +
+				"res.time_stamp,"+
 				"category," +
 				"image," +
 				"icon," +
 				"description," +
 				"tags," +
 				"outcomes," +
-				"active," +
 				"market_type," +
-				"market_type_code," +
-				"closed," +
+				"market_type_code,"+
 				"mkt_mkr_aid," +
-				"ma.addr AS mkt_mkr_addr " +
+				"ma.addr AS mkt_mkr_addr," +
+				"mst.total_volume/1e+6,"+
+				"mst.open_interest/1e+6,"+
+				"mst.total_liquidity,"+
+				"mst.total_fees/1e+6," +
+				"mst.num_trades, " +
+				"mst.num_liq_ops, " +
+				"res.id resolution_id, " +
+				"prep.question_id, " +
+				"prep.outcome_slot_count " +
 			"FROM pol_market pm " +
 				"JOIN address ma ON pm.mkt_mkr_aid=ma.address_id " +
+				"LEFT JOIN pol_mkt_stats mst ON pm.mkt_mkr_aid=mst.contract_aid " +
+				"LEFT JOIN pol_cond_prep AS prep ON pm.condition_id=CONCAT('0x',prep.condition_id) " +
+				"LEFT JOIN pol_cond_res AS res ON pm.condition_id=CONCAT('0x',res.condition_id) " +
 			where_condition +
-			"ORDER BY market_id DESC"
-
+			sort_condition
+	
+	fmt.Printf("query = %v\n",query)
 	rows,err := ss.db.Query(query)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -159,6 +221,13 @@ func (ss *SQLStorage) Get_polymarkets_markets(status int) []p.API_Pol_MarketInfo
 	}
 	defer rows.Close()
 	for rows.Next() {
+		var n_created_ts,n_resolved_ts sql.NullInt64
+		var n_created_date,n_resolved_date sql.NullString
+		var n_volume,n_open_interest,n_liquidity,n_fees sql.NullFloat64
+		var n_num_trades,n_num_liq_ops sql.NullInt64
+		var n_resolution_id sql.NullInt64
+		var n_question_id sql.NullString
+		var n_outcome_slot_count sql.NullInt64
 		var rec p.API_Pol_MarketInfo
 		err=rows.Scan(
 			&rec.MarketId,
@@ -166,29 +235,49 @@ func (ss *SQLStorage) Get_polymarkets_markets(status int) []p.API_Pol_MarketInfo
 			&rec.ConditionId,
 			&rec.Slug,
 			&rec.ResolutionSource,
-			&rec.CreatedAtTs,
-			&rec.CreatedAtDate,
+			&n_created_ts,
+			&n_created_date,
 			&rec.EndDateTs,
 			&rec.EndDate,
-			&rec.StartDateTs,
-			&rec.StartDate,
+			&n_resolved_ts,
+			&n_resolved_date,
 			&rec.Category,
 			&rec.Image,
 			&rec.Icon,
 			&rec.Description,
 			&rec.Tags,
 			&rec.Outcomes,
-			&rec.Active,
 			&rec.MarketType,
 			&rec.MarketTypeCode,
-			&rec.Closed,
 			&rec.MarketMakerAid,
 			&rec.MarketMakerAddr,
+			&n_volume,
+			&n_open_interest,
+			&n_liquidity,
+			&n_fees,
+			&n_num_trades,
+			&n_num_liq_ops,
+			&n_resolution_id,
+			&n_question_id,
+			&n_outcome_slot_count,
 		)
 		if err != nil {
 			ss.Log_msg(fmt.Sprintf("Error in Get_polymarkets_markets(): %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		if n_created_ts.Valid { rec.CreatedAtTs = n_created_ts.Int64 }
+		if n_created_date.Valid {rec.CreatedAtDate = n_created_date.String }
+		if n_resolved_ts.Valid { rec.ResolvedTs = n_resolved_ts.Int64 }
+		if n_resolved_date.Valid { rec.ResolvedDate = n_resolved_date.String }
+		if n_volume.Valid { rec.Volume = n_volume.Float64 }
+		if n_open_interest.Valid { rec.OpenInterest = -n_open_interest.Float64 }
+		if n_liquidity.Valid { rec.Liquidity = n_liquidity.Float64 }
+		if n_fees.Valid { rec.TotalFeesCollected = n_fees.Float64 }
+		if n_num_trades.Valid { rec.NumTrades = n_num_trades.Int64 }
+		if n_num_liq_ops.Valid { rec.NumLiquidityOps = n_num_liq_ops.Int64 }
+		if n_resolution_id.Valid {rec.WasResolved = true }
+		if n_question_id.Valid { rec.QuestionId = n_question_id.String }
+		if n_outcome_slot_count.Valid { rec.OutcomeSlotCount = n_outcome_slot_count.Int64 }
 		records = append(records,rec)
 	}
 	return records
