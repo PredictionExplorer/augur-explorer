@@ -2605,12 +2605,31 @@ func poly_buysell_operations(c *gin.Context) {
 		return
 	}
 
+	market_info,err := augur_srv.storage.Get_poly_market_info(market_id)
+	if err != nil {
+		respond_error(c,"Market not found")
+		return
+	}
 	operations := augur_srv.storage.Get_polymarkets_buysell_operations(fpmm_aid,0,1000000)
+
+	var js_outcomes_history JSOutcomes
+	for outc:=0; outc<int(market_info.OutcomeSlotCount); outc++ {
+		prices:= augur_srv.storage.Get_poly_market_outcome_price_history(fpmm_aid,int32(outc))
+		js_prices := build_js_polymarkets_outcome_price_history(&prices)
+		js_outcomes_history.OutcomesDataJS  = append(js_outcomes_history.OutcomesDataJS,js_prices)
+	}
+	prices:= augur_srv.storage.Get_poly_market_outcome_price_history(fpmm_aid,0)
+	price0 := build_js_polymarkets_outcome_price_history(&prices)
+	prices= augur_srv.storage.Get_poly_market_outcome_price_history(fpmm_aid,1)
+	price1 := build_js_polymarkets_outcome_price_history(&prices)
 
 	c.HTML(http.StatusOK, "polymarkets_buysell_ops.html", gin.H{
 		"BuySellOperations" : operations,
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,
+		"Prices" : js_outcomes_history,
+		"Price0" : price0,
+		"Price1" : price1,
 	})
 }
 func poly_liquidity_operations(c *gin.Context) {

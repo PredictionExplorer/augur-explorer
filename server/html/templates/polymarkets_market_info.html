@@ -20,34 +20,32 @@
 <tr>
 	<td></td>
 	<td>
-		<table>
-			<tr>
-				<td>
-					<nav><ul><li>
-						<a class="btn_link" href="javascript: show_market_description();void(0)">TRADING</a>
-						<span></span><span></span><span></span><span></span>
-					</li></ul></nav>
-				</td>
-				<td>
-					<nav><ul><li>
-						<a class="btn_link" href="javascript: show_market_description();void(0)">LIQUIDITY</a>
-						<span></span><span></span><span></span><span></span>
-					</li></ul></nav>
-				</td>
-				<td>
-					<nav><ul><li>
-						<a class="btn_link" href="javascript: show_market_description();void(0)">USER LIST</a>
-						<span></span><span></span><span></span><span></span>
-					</li></ul></nav>
-				</td>
-				<td>
-					<nav><ul><li>
-					<a class="btn_link" href="javascript: show_market_description();void(0)">OPEN POSITIONS</a>
-					<span></span><span></span><span></span><span></span>
-					</li></ul></nav>
-				</td>
-			</tr>
-		</table>
+		<table><tr>
+		<td>
+			<nav><ul><li>
+				<a class="btn_link" href="/black/poly/markets/buysell/{{.MarketId}}/0/10000">TRADING</a>
+				<span></span><span></span><span></span><span></span>
+			</li></ul></nav>
+		</td>
+		<td>
+			<nav><ul><li>
+				<a class="btn_link" href="/black/poly/markets/liquidity/{{.MarketId}}/0//10000">LIQUIDITY</a>
+				<span></span><span></span><span></span><span></span>
+			</li></ul></nav>
+		</td>
+		<td>
+			<nav><ul><li>
+				<a class="btn_link" href="/black/poly/markets/userlist/{{.MarketId}}">USER LIST</a>
+				<span></span><span></span><span></span><span></span>
+			</li></ul></nav>
+		</td>
+		<td>
+			<nav><ul><li>
+				<a class="btn_link" href="/black/poly/markets/open_positions/{{.MarketId}}">OPEN POSITIONS</a>
+				<span></span><span></span><span></span><span></span>
+			</li></ul></nav>
+		</td>
+		<tr></table>
 	</td>
 </tr>
 <tr class="market_detail">

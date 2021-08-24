@@ -429,6 +429,7 @@ func (ss *SQLStorage) Get_polymarkets_buysell_operations(contract_aid int64,offs
 	records := make([]p.API_Pol_BuySell_Op,0,64)
 	var query string
 	query = "SELECT " +
+				"bs.id," +
 				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT as ts," +
 				"bs.time_stamp,"+
 				"bs.block_num," +
@@ -436,7 +437,9 @@ func (ss *SQLStorage) Get_polymarkets_buysell_operations(contract_aid int64,offs
 				"bs.outcome_idx," +
 				"bs.collateral_amount/1e+6,"+
 				"bs.fee_amount/1e+6,"+
+				"(bs.fee_amount/1e+6)*(bs.collateral_amount/COALESCE(NULLIF(bs.token_amount,0), 1)) fee_col," +
 				"bs.token_amount/1e+6,"+
+				"bs.collateral_amount/COALESCE(NULLIF(bs.token_amount,0), 1) as price,"+
 				"bs.user_aid," +
 				"ba.addr " +
 			"FROM pol_buysell bs " +
@@ -455,6 +458,7 @@ func (ss *SQLStorage) Get_polymarkets_buysell_operations(contract_aid int64,offs
 	for rows.Next() {
 		var rec p.API_Pol_BuySell_Op
 		err=rows.Scan(
+			&rec.Id,
 			&rec.TimeStamp,
 			&rec.DateTime,
 			&rec.BlockNum,
@@ -462,7 +466,9 @@ func (ss *SQLStorage) Get_polymarkets_buysell_operations(contract_aid int64,offs
 			&rec.OutcomeIdx,
 			&rec.CollateralAmount,
 			&rec.FeeAmount,
+			&rec.FeeInCollateral,
 			&rec.TokenAmount,
+			&rec.Price,
 			&rec.UserAid,
 			&rec.UserAddr,
 		)
@@ -1321,5 +1327,41 @@ func (ss *SQLStorage) Get_gnosis_erc1155_transfer_events(tx_id int64,topping_evt
 		records = append(records,rec)
 	}
 
+	return records
+}
+func (ss *SQLStorage) Get_poly_market_outcome_price_history(contract_aid int64,outcome_idx int32) []p.API_Pol_OutcomePriceHistoryEntry {
+
+	var query string
+	query = "SELECT " +
+				"bs.id, "+
+				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT," +
+				"op_type,"+
+				"bs.collateral_amount/COALESCE(NULLIF(bs.token_amount,0), 1) as price "+
+			"FROM pol_buysell bs "+
+			"WHERE bs.contract_aid=$1 AND outcome_idx=$2 " +
+			"ORDER BY bs.time_stamp"
+
+	rows,err := ss.db.Query(query,contract_aid,outcome_idx)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	records := make([]p.API_Pol_OutcomePriceHistoryEntry,0,256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_OutcomePriceHistoryEntry
+		err=rows.Scan(
+			&rec.OperationId,
+			&rec.TimeStamp,
+			&rec.OperationType,
+			&rec.Price,
+		)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("Error in Get_poly_market_outcome_price_history(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
 	return records
 }

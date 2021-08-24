@@ -8,6 +8,9 @@ import (
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
+type JSOutcomes struct {
+	OutcomesDataJS			[]template.JS
+}
 func build_js_data_obj(mdepth *MarketDepth) (template.JS,template.JS) {
 	var asks_str string = "["
 	var bids_str string = "["
@@ -300,6 +303,29 @@ func build_js_ethusd_price_history(prices* []EthUsdPrice) template.JS {
 				"y:"  + fmt.Sprintf("%v",e.Price) + "," +
 				"price: " + fmt.Sprintf("%v",e.Price) + "," +
 				"date_str: \"" + date_str + "\"," +
+				"}"
+		data_str= data_str + entry
+	}
+	data_str = data_str + "]"
+	return template.JS(data_str)
+}
+func build_js_polymarkets_outcome_price_history(prices* []API_Pol_OutcomePriceHistoryEntry) template.JS {
+	var data_str string = "["
+
+	for i:=0 ; i < len(*prices) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		var e = &(*prices)[i];
+		var entry string
+		ts := time.Unix(int64(e.TimeStamp),0)
+		date_str := fmt.Sprintf("%v",ts)
+		entry = "{" +
+				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.TimeStamp)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.Price) + "," +
+				"price: " + fmt.Sprintf("%.6f",e.Price) + "," +
+				"optype: " + fmt.Sprintf("%v",e.OperationType) + "," +
+				"date_str: \"" + date_str + "\"" +
 				"}"
 		data_str= data_str + entry
 	}

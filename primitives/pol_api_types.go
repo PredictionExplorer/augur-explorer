@@ -1,6 +1,7 @@
 package primitives
 
 type API_Pol_BuySell_Op struct {
+	Id					int64
 	BlockNum			int64
 	TimeStamp			int64
 	MarketId			int64
@@ -9,11 +10,22 @@ type API_Pol_BuySell_Op struct {
 	OutcomeIdx			int		// Outcome index
 	CollateralAmount	float64		// How many cash were swapped for tokens
 	FeeAmount			float64		// commission
+	FeeInCollateral		float64		// fee convert to USDC units
 	TokenAmount			float64		// How many tokens were received for cash
+	Price				float64		// price in collateral units (i.e. in USDC)
 	UserAid				int64
 	UserAddr			string
 	DateTime			string
 	MarketMakerAddr		string
+}
+type API_Pol_OutcomePriceHistoryEntry struct {
+	OperationId			int64
+	TimeStamp			int64
+	OperationType		int32
+	Price				float64
+}
+type API_OutcomePriceHistory struct {
+	OutcomePriceHistory		[]API_Pol_OutcomePriceHistoryEntry
 }
 type API_Pol_Liquidity_Op struct {
 	BlockNum			int64
