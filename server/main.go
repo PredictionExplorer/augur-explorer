@@ -269,6 +269,7 @@ func main() {
 	r.GET("/api/poly/user/open_positions/:user_aid",a1_poly_market_user_open_positions)
 	r.GET("/api/poly/markets/funder/share_ratio/:market_id",a1_poly_market_funder_share_ratio)
 	r.GET("/api/poly/markets/price_history/:market_id/:outcome",a1_poly_market_price_history)
+	r.GET("/api/poly/top_users",  a1_poly_top_users)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

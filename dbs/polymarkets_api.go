@@ -610,8 +610,8 @@ func (ss *SQLStorage) Get_polymarket_user_ranks(sort int,order int) []p.UserRank
 
 	query = "SELECT " +
 				"r.aid,a.addr,r.profit,r.total_trades,r.volume " +
-				"FROM poly_uranks AS r " +
-					"JOIN  pol_ustats AS s ON r.aid=s.aid " +
+				"FROM pol_uranks AS r " +
+					"JOIN  pol_ustats AS s ON r.aid=s.user_aid " +
 			"LEFT JOIN address AS a ON r.aid = a.address_id " +
 			"ORDER BY "+order_field+" "+order_dir
 

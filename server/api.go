@@ -2325,7 +2325,7 @@ func a1_poly_market_buysell_info(c*gin.Context) {
 		"NotFound" : false,
 	})
 }
-func a1_polymarket_top_users(c *gin.Context) {
+func a1_poly_top_users(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
