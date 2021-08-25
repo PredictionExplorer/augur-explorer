@@ -200,17 +200,19 @@ func (ss *SQLStorage) Insert_transaction(agtx *p.AugurTx) int64 {
 
 	//ss.Info.Printf("Insert_transaction: from: %v, to: %v\n",agtx.From,agtx.To)
 
+	from_aid := ss.Lookup_or_create_address(agtx.From,agtx.BlockNum,0)
+	to_aid := ss.Lookup_or_create_address(agtx.To,agtx.BlockNum,0)
 	query = "INSERT INTO transaction ("+
-				"block_num,value,tx_hash,ctrct_create,gas_used,gas_price,tx_index,input_sig,num_logs" +
+				"block_num,from_aid,to_aid,value,tx_hash,ctrct_create,gas_used,gas_price,tx_index,input_sig,num_logs" +
 			") " +
-			"VALUES ($1,("+agtx.Value+"/1e+18),$2,$3,$4,"+agtx.GasPrice+"/1e+18,$5,$6,$7) " +
+			"VALUES ($1,$2,$3,("+agtx.Value+"/1e+18),$4,$5,$6,"+agtx.GasPrice+"/1e+18,$7,$8,$9) " +
 			"RETURNING id"
 
 	var sig string
 	if len(agtx.Input) >=4 {
 		sig = hex.EncodeToString(agtx.Input[:4])
 	}
-	row := ss.db.QueryRow(query,agtx.BlockNum,agtx.TxHash,agtx.CtrctCreate,agtx.GasUsed,agtx.TxIndex,sig,agtx.NumLogs)
+	row := ss.db.QueryRow(query,agtx.BlockNum,from_aid,to_aid,agtx.TxHash,agtx.CtrctCreate,agtx.GasUsed,agtx.TxIndex,sig,agtx.NumLogs)
 	err := row.Scan(&tx_id)
 	if err != nil {
 		if !strings.Contains(
@@ -230,16 +232,6 @@ func (ss *SQLStorage) Insert_transaction(agtx *p.AugurTx) int64 {
 				agtx.TxHash,err,query,
 			),
 		)
-		os.Exit(1)
-	}
-
-	from_aid := ss.Lookup_or_create_address(agtx.From,agtx.BlockNum,tx_id)
-	to_aid := ss.Lookup_or_create_address(agtx.To,agtx.BlockNum,tx_id)
-	// this update is needed because 'address' table holds tx_id of account creation
-	query = "UPDATE transaction set from_aid=$2 , to_aid=$3 where id = $1"
-	_,err = ss.db.Exec(query,tx_id,from_aid,to_aid)
-	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error on tx_hash=%v; %v, q=%v\n",agtx.TxHash,err,query))
 		os.Exit(1)
 	}
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"time"
+	"bytes"
 	"encoding/hex"
 	"math/big"
 	"os"
@@ -106,12 +107,12 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 			// receipts were fetched using eth_getBlockReceipts, we only need to reference the receipt
 			rcpt = block_receipts[tnum]
 		}
-		Info.Printf("\ttx: %v of %v : %v at blockNum=%v\n",tnum,len(transactions),agtx.TxHash,bnum)
-		Info.Printf("\t from=%v\n",agtx.From)
-		Info.Printf("\t to=%v for $%v (%v bytes data)\n",
-						agtx.To,agtx.Value,len(agtx.Input))
+		//Info.Printf("\ttx: %v of %v : %v at blockNum=%v\n",tnum,len(transactions),agtx.TxHash,bnum)
+		//Info.Printf("\t from=%v\n",agtx.From)
+		//Info.Printf("\t to=%v for $%v (%v bytes data)\n",
+		//				agtx.To,agtx.Value,len(agtx.Input))
 		if rcpt.Status == types.ReceiptStatusFailed {
-			//Info.Printf("\t Status: Failed. Skipping this transaciton.\n")
+			//Info.Printf("Tx (index %v) %v . Status: Failed. Skipping this transaciton.\n",tnum,agtx.TxHash)
 			continue	// transaction failed (i.e. Out of Gas, etc)
 		}
 		if rcpt.BlockNumber.Int64() != bnum {
@@ -121,6 +122,11 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 				bnum,rcpt.BlockNumber.Int64(),
 			)
 			return errors.New("Block changed during processing")
+		}
+		transaction_hash := common.HexToHash(agtx.TxHash)
+		if !bytes.Equal(rcpt.TxHash.Bytes(),transaction_hash.Bytes()) { // can be removed later
+			Error.Printf("Receipt's hash doesn't match Tx hash, aborting (tx_hash=%v)",agtx.TxHash)
+			os.Exit(1)
 		}
 		agtx.TxId = 0
 		if agtx.CtrctCreate == true {
@@ -149,25 +155,27 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		return err
 	}
 	num_transactions := len(transactions)
-	Info.Printf("block %v hash = %v, num_tx=%v\n",bnum,block_hash_str,num_transactions)
+	//Info.Printf("block %v hash = %v, num_tx=%v\n",bnum,block_hash_str,num_transactions)
 	if bnum!=header.Number.Int64() {
 		Info.Printf("Retrieved block number %v but Block object contains another number (%v)",bnum,header.Number.Int64())
 		Error.Printf("Retrieved block number %v but Block object contains another number (%v)",bnum,header.Number.Int64())
 		return errors.New("Block object inconsistency")
 	}
-	Info.Printf("delete with everything starts\n")
 	storage.Block_delete_with_everything(big_bnum.Int64())
-	Info.Printf("delete with evertying ends\n")
 	var receipt_calls []*receiptCallResult = nil
 	var block_receipts types.Receipts = nil
 	if USE_BLOCK_RECEIPTS_RPC_CALL {
+		block_receipts,err = get_block_receipts(block_hash)
+		if err != nil {
+			Error.Printf("Error getting receipts of the block: %v\n",err)
+			return err
+		}
+	} else {
 		receipt_calls = make([]*receiptCallResult,num_transactions,num_transactions)
 		for i,tx := range transactions {
 			hash := common.HexToHash(tx.TxHash)
 			go get_receipt_async(i,hash,&receipt_calls)
 		}
-	} else {
-		block_receipts,err = get_block_receipts(block_hash)
 	}
 	err = storage.Insert_block(block_hash_str,header,num_transactions,no_chainsplit_check)
 	if err != nil {

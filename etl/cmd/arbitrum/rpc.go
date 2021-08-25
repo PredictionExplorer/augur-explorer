@@ -130,12 +130,3 @@ func get_bor_receipt(ctx context.Context, hash common.Hash) (*types.Receipt, err
 	}
 	return receipt,err
 }
-func get_bor_receipt(ctx context.Context, hash common.Hash) (*types.Receipt, error) {
-
-	var receipt *types.Receipt
-	err := rpcclient.CallContext(ctx, &receipt,"eth_",hash )
-	if err == nil && receipt == nil {
-		return nil, ethereum.NotFound
-	}
-	return receipt,err
-}
