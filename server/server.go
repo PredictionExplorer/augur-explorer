@@ -2999,3 +2999,15 @@ func poly_markets_listing(c *gin.Context) {
 		"NumElts" : num_elts,
 	})
 }
+func poly_top_users(c *gin.Context) {
+
+	top_profit_makers := augur_srv.storage.Get_polymarket_top_profit_makers()
+	top_trade_makers := augur_srv.storage.Get_polymarket_top_trade_makers()
+	top_volume_makers := augur_srv.storage.Get_polymarket_top_volume_makers()
+	c.HTML(http.StatusOK, "poly_top_users.html", gin.H{
+			"title": "Top 100 Users of Polymarket Markets",
+			"ProfitMakers" : top_profit_makers,
+			"TradeMakers" : top_trade_makers,
+			"VolumeMakers" : top_volume_makers,
+	})
+}

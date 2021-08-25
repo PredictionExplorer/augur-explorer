@@ -28,7 +28,8 @@ BEGIN
 	UPDATE pol_ustats
 		SET
 			tot_liq_ops = (tot_liq_ops + 1),
-			tot_liq_given = (tot_liq_given + v_normalized_collateral)
+			tot_liq_given = (tot_liq_given + v_normalized_collateral),
+			profit = (profit + v_normalized_collateral)
 		WHERE user_aid = NEW.funder_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
@@ -41,7 +42,8 @@ BEGIN
 		SET
 			tot_liq_ops = (tot_liq_ops + 1),
 			tot_liq_given = (tot_liq_given + v_normalized_collateral),
-			tot_volume = (tot_volume + NEW.shares)
+			tot_volume = (tot_volume + NEW.shares),
+			profit = (profit + v_normalized_collateral)
 		WHERE (user_aid = NEW.funder_aid) AND (contract_aid=NEW.contract_aid);
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
@@ -66,13 +68,15 @@ BEGIN
 	UPDATE pol_ustats
 		SET
 			tot_liq_ops = (tot_liq_ops - 1),
-			tot_liq_given = (tot_liq_given - OLD.norm_collateral)
+			tot_liq_given = (tot_liq_given - OLD.norm_collateral),
+			profit = (profit - OLD.normalized_amount)
 		WHERE user_aid = OLD.funder_aid;
 	UPDATE pol_ustats_mkt
 		SET
 			tot_liq_ops = (tot_liq_ops - 1),
 			tot_liq_given = (tot_liq_given - OLD.norm_collateral),
-			tot_volume = (tot_volume - OLD.shares)
+			tot_volume = (tot_volume - OLD.shares),
+			profit = (profit - OLD.normalized_amount)
 		WHERE (user_aid = OLD.funder_aid) AND (contract_aid=OLD.contract_aid);
 	RETURN OLD;
 END;

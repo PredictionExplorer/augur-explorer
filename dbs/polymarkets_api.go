@@ -543,3 +543,94 @@ func (ss *SQLStorage) Get_poly_liquidity_provider_share_ratio(contract_aid int64
 	}
 	return records
 }
+func (ss *SQLStorage) Get_buysell_operation_info(id int64) (p.API_Pol_BuySell_Op,error) {
+
+	var query string
+	query = "SELECT " +
+				"bs.id," +
+				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT as ts," +
+				"bs.time_stamp,"+
+				"bs.block_num," +
+				"bs.op_type," +
+				"bs.outcome_idx," +
+				"bs.collateral_amount/1e+6,"+
+				"bs.fee_amount/1e+6,"+
+				"(bs.fee_amount/1e+6)*(bs.collateral_amount/COALESCE(NULLIF(bs.token_amount,0), 1)) fee_col," +
+				"bs.token_amount/1e+6,"+
+				"bs.collateral_amount/COALESCE(NULLIF(bs.token_amount,0), 1) as price,"+
+				"bs.user_aid," +
+				"ba.addr " +
+			"FROM pol_buysell bs " +
+				"JOIN address ba ON bs.user_aid=ba.address_id " +
+				"wHERE bs.id = $1"
+
+	res := ss.db.QueryRow(query,id)
+	var rec p.API_Pol_BuySell_Op
+	err := res.Scan(
+			&rec.Id,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.OperationType,
+			&rec.OutcomeIdx,
+			&rec.CollateralAmount,
+			&rec.FeeAmount,
+			&rec.FeeInCollateral,
+			&rec.TokenAmount,
+			&rec.Price,
+			&rec.UserAid,
+			&rec.UserAddr,
+	)
+	if err!=nil {
+		if err == sql.ErrNoRows {
+			return rec,err
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return rec,nil
+}
+func (ss *SQLStorage) Get_polymarket_user_ranks(sort int,order int) []p.UserRank {
+
+	records := make([]p.UserRank,0,256)
+	var query string
+	var order_field string
+	var order_dir string = "DESC"
+
+	switch (sort) {
+	case 0: order_field = "r.profit"
+	case 1: order_field = "r.volume"
+	case 2: order_field = "r.total_trades"
+	default:
+		return records
+	}
+	if order!=0 {
+		order_dir="ASC"
+	}
+
+	query = "SELECT " +
+				"r.aid,a.addr,r.profit,r.total_trades,r.volume " +
+				"FROM poly_uranks AS r " +
+					"JOIN  pol_ustats AS s ON r.aid=s.aid " +
+			"LEFT JOIN address AS a ON r.aid = a.address_id " +
+			"ORDER BY "+order_field+" "+order_dir
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.UserRank
+		err=rows.Scan(
+			&rec.Aid,
+			&rec.Addr,
+			&rec.ProfitLoss,
+			&rec.TotalTrades,
+			&rec.VolumeTraded,
+		)
+		records = append(records,rec)
+	}
+	return records
+}

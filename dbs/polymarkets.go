@@ -1365,3 +1365,167 @@ func (ss *SQLStorage) Get_poly_market_outcome_price_history(contract_aid int64,o
 	}
 	return records
 }
+func (ss *SQLStorage) Get_polymarket_top_profit_makers() []p.ProfitMaker {
+
+	var query string
+	query = "SELECT "+
+				"a.addr,"+
+				"r.top_profit,"+
+				"r.profit/1e+6 " +
+			"FROM pol_uranks AS r " +
+				"LEFT JOIN address AS a ON r.aid = a.address_id " +
+			"ORDER BY r.top_profit ASC,r.profit DESC LIMIT 100"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.ProfitMaker,0,101)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.ProfitMaker
+		err=rows.Scan(&rec.Addr,&rec.Percentage,&rec.ProfitLoss)
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_polymarket_top_trade_makers() []p.TradeMaker {
+
+	var query string
+	query = "SELECT " +
+				"a.addr," +
+				"r.top_trades,"+
+				"r.total_trades " +
+			"FROM pol_uranks AS r " +
+				"LEFT JOIN address AS a ON r.aid = a.address_id " +
+			"ORDER BY r.top_trades ASC,r.total_trades DESC LIMIT 100"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.TradeMaker,0,101)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.TradeMaker
+		err=rows.Scan(&rec.Addr,&rec.Percentage,&rec.TotalTrades)
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_polymarket_top_volume_makers() []p.VolumeMaker {
+
+	var query string
+	query = "SELECT "+
+				"a.addr," +
+				"r.top_volume,"+
+				"r.volume/1e+6 "+
+			"FROM pol_uranks AS r " +
+				"LEFT JOIN address AS a ON r.aid = a.address_id " +
+			"ORDER BY r.top_volume ASC,r.volume DESC LIMIT 100"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.VolumeMaker,0,101)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.VolumeMaker
+		err=rows.Scan(&rec.Addr,&rec.Percentage,&rec.Volume)
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Update_polymarket_top_profit_rank(aid int64,value float64,profit float64) int64 {
+
+	var query string
+	query = "UPDATE pol_uranks SET top_profit = $2,profit=$3 WHERE aid = $1"
+	res,err:=ss.db.Exec(query,aid,value,profit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Update_polymarket_top_profit_rank() failed: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	affected_rows,err:=res.RowsAffected()
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in update_top_profit_rank(): %v",err))
+	}
+	if affected_rows == 0 {
+		query = "INSERT INTO pol_uranks(aid,top_profit,profit) VALUES($1,$2,$3)"
+		_,err:=ss.db.Exec(query,aid,value,profit)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("Update_polymarket_top_profit_rank() failed: %v, q=%v",err,query))
+		}
+	}
+	return affected_rows
+}
+func (ss *SQLStorage) Update_polymarket_top_total_trades_rank(aid int64,value float64,total_trades int64) int64 {
+
+	var query string
+	query = "UPDATE pol_uranks SET top_trades = $2,total_trades=$3 WHERE aid = $1"
+	res,err:=ss.db.Exec(query,aid,value,total_trades)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Uppdate_polymarket_top_total_trades_rank() failed: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	affected_rows,err:=res.RowsAffected()
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in update_top_total_trades_rank(): %v",err))
+	}
+	if affected_rows == 0 {
+		query = "INSERT INTO pol_uranks(aid,top_trades,total_trades) VALUES($1,$2,$3)"
+		_,err:=ss.db.Exec(query,aid,value,total_trades)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("Update_polymarket_top_total_trades_rank() failed: value=%v, err: %v, q=%v",value,err,query))
+			os.Exit(1)
+		}
+
+	}
+	return affected_rows
+}
+func (ss *SQLStorage) Update_polymarket_top_volume_rank(aid int64,value float64,volume float64) int64 {
+
+	var query string
+	query = "UPDATE pol_uranks SET top_volume = $2,volume=$3 WHERE aid = $1"
+	res,err:=ss.db.Exec(query,aid,value,volume)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Update_polymarket_top_volume_rank() failed: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	affected_rows,err:=res.RowsAffected()
+	if err!=nil {
+		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in Update_polymarket_top_volume_rank(): %v",err))
+	}
+	if affected_rows == 0 {
+		query = "INSERT INTO pol_uranks(aid,top_volume,volume) VALUES($1,$2,$3)"
+		_,err:=ss.db.Exec(query,aid,value,volume)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("Update_polymarket_top_volume_rank() failed: value=%v, err: %v, q=%v",value,err,query))
+			os.Exit(1)
+		}
+
+	}
+	return affected_rows
+}
+func (ss *SQLStorage) Get_polymarket_ranking_data_for_all_users() []p.RankStats {
+
+	var query string
+	query = "SELECT user_aid,tot_trades,profit,tot_volume FROM pol_ustats"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.RankStats,0,8)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RankStats
+		err=rows.Scan(&rec.Aid,&rec.TotalTrades,&rec.ProfitLoss,&rec.VolumeTraded)
+		records = append(records,rec)
+	}
+	return records
+}

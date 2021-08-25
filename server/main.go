@@ -186,6 +186,7 @@ func main() {
 	r.GET("/black/poly/markets/list/:status",poly_markets_listing)
 	r.GET("/black/poly/markets/list/:status/:sort",poly_markets_listing)
 	r.GET("/black/poly/markets/list",poly_markets_listing)
+	r.GET("/black/poly/topusers.html",poly_top_users)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -247,7 +248,8 @@ func main() {
 	r.GET("/api/augur_foundry",a1_augur_foundry_contracts)
 	r.GET("/api/tx/:hash",a1_transaction_info)
 	r.GET("/api/block/:block_num",a1_block_info)
-	r.GET("/api/poly/markets/buysell/:market_id/:offset/:limit",a1_poly_buysell_operations)
+	r.GET("/api/poly/markets/buysell/list/:market_id/:offset/:limit",a1_poly_buysell_operations)
+	r.GET("/api/poly/markets/buysell/info/:id",a1_poly_market_buysell_info)
 	r.GET("/api/poly/markets/liquidity/:market_id/:offset/:limit",a1_poly_liquidity_operations)
 	r.GET("/api/poly/markets/info/:market_id",a1_poly_market_info)
 	r.GET("/api/poly/markets/statistics/:market_id",a1_poly_market_stats)
@@ -266,6 +268,7 @@ func main() {
 	r.GET("/api/poly/markets/open_positions/:market_id",a1_poly_market_open_positions)
 	r.GET("/api/poly/user/open_positions/:user_aid",a1_poly_market_user_open_positions)
 	r.GET("/api/poly/markets/funder/share_ratio/:market_id",a1_poly_market_funder_share_ratio)
+	r.GET("/api/poly/markets/price_history/:market_id/:outcome",a1_poly_market_price_history)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

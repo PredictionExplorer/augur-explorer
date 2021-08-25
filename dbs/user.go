@@ -207,7 +207,6 @@ func (ss *SQLStorage) Update_top_profit_rank(aid int64,value float64,profit floa
 		if (err!=nil) {
 			ss.Log_msg(fmt.Sprintf("update_top_profit_rank() failed: %v, q=%v",err,query))
 		}
-
 	}
 	return affected_rows
 }

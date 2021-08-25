@@ -1772,6 +1772,8 @@ func a1_poly_market_info(c *gin.Context) {
 		respond_error_json(c,"Market not found")
 		return
 	}
+	fpmm_aid := augur_srv.storage.Get_fpmm_contract_aid(market_id)
+	prices := augur_srv.storage.Calculate_prices(fpmm_aid)
 
 	var req_status int = 1
 	var err_str string = ""
@@ -1779,6 +1781,7 @@ func a1_poly_market_info(c *gin.Context) {
 		"status": req_status,
 		"error" : err_str,
 		"MarketInfo" : info,
+		"Prices" : prices,
 		"MarketId" : market_id,
 	})
 }
@@ -2237,5 +2240,130 @@ func a1_poly_market_funder_share_ratio(c *gin.Context) {
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,
 		"ShareRatios" : share_ratios,
+	})
+}
+func a1_poly_market_price_history(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,true,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'market_id' parameter is not set")
+		return
+	}
+	p_outcome := c.Param("outcome")
+	var outcome int64
+	if len(p_outcome) > 0 {
+		var success bool
+		outcome,success = parse_int_from_remote_or_error(c,true,&p_outcome)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'outcome' parameter is not set")
+	}
+
+	fpmm_aid := augur_srv.storage.Get_fpmm_contract_aid(market_id)
+	if fpmm_aid == 0 {
+		respond_error_json(c,"Polymarket with this ID wasn't found")
+		return
+	}
+
+	prices:= augur_srv.storage.Get_poly_market_outcome_price_history(fpmm_aid,int32(outcome))
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MarketId" : market_id,
+		"ContractAid" : fpmm_aid,
+		"PriceHistory" : prices,
+		"OutcomeIdx" : outcome,
+	})
+}
+func a1_poly_market_buysell_info(c*gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	p_id:= c.Param("id")
+	var id int64
+	if len(p_id) > 0 {
+		var success bool
+		id,success = parse_int_from_remote_or_error(c,true,&p_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'id' parameter is not set")
+		return
+	}
+
+	var req_status int = 1
+	var err_str string = ""
+
+	op_info,err := augur_srv.storage.Get_buysell_operation_info(id)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"status": req_status,
+			"error" : err_str,
+			"NotFound" : true,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"OperationId" : id,
+		"OperationInfo" : op_info,
+		"NotFound" : false,
+	})
+}
+func a1_polymarket_top_users(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	var err error
+	p_sort := c.Query("sort")
+	var sort int = 0
+	if len(p_sort) > 0 {
+		sort, err = strconv.Atoi(p_sort)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"MarketIDs": make([]int64,0,0),
+				"status":0,
+				"error":fmt.Sprintf("Bad 'sort' parameter: %v",err),
+			})
+			return
+		}
+	}
+	ord_str := c.Query("ord")
+	var ord int = 0
+	if len(ord_str) > 0 {
+		ord, err = strconv.Atoi(ord_str)
+		if err != nil {
+			c.JSON(http.StatusBadRequest,gin.H{
+				"UserRanks": make([]int64,0,0),
+				"status":0,
+				"error":fmt.Sprintf("Bad 'order' parameter: %v",err),
+			})
+			return
+		}
+	}
+
+	user_ranks := augur_srv.storage.Get_polymarket_user_ranks(sort,ord)
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+			"UserRanks" : user_ranks,
+			"status": status,
+			"error": err_str,
 	})
 }
