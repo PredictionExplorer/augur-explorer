@@ -3011,3 +3011,31 @@ func poly_top_users(c *gin.Context) {
 			"VolumeMakers" : top_volume_makers,
 	})
 }
+func poly_market_payout_redemptions(c *gin.Context) {
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+
+	condition_id := augur_srv.storage.Get_condition_id(market_id)
+	if len(condition_id) == 0 {
+		respond_error(c,"Polymarket with this ID wasn't found")
+		return
+	}
+
+	payout_redemptions := augur_srv.storage.Get_polymarket_market_redemptions(condition_id,0,1000000)
+
+	c.HTML(http.StatusOK, "polymarkets_market_redemptions.html", gin.H{
+		"MarketId" : market_id,
+		"PayoutRedemptions" : payout_redemptions,
+	})
+}

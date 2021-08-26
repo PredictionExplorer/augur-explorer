@@ -634,3 +634,49 @@ func (ss *SQLStorage) Get_polymarket_user_ranks(sort int,order int) []p.UserRank
 	}
 	return records
 }
+func (ss *SQLStorage) Get_polymarket_market_redemptions(condition_id string,offset,limit int) []p.API_Pol_MarketRedemption {
+
+	records := make([]p.API_Pol_MarketRedemption,0,256)
+	var query string
+	query = "SELECT " +
+				"r.id," +
+				"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT as ts," +
+				"r.time_stamp,"+
+				"r.block_num," +
+				"r.redeemer_aid," +
+				"ra.addr," +
+				"r.index_sets," +
+				"r.payout/1e+6 " +
+			"FROM pol_pay_redem r " +
+				"LEFT JOIN address ra ON r.redeemer_aid = ra.address_id " +
+			"WHERE r.condition_id=$1::TEXT " +
+			"OFFSET $2 LIMIT $3"
+	fmt.Printf("q= %v\n",query)
+	fmt.Printf("condition_id= %v\n",condition_id)
+	rows,err := ss.db.Query(query,condition_id,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_MarketRedemption
+		err=rows.Scan(
+			&rec.Id,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.RedeemerAid,
+			&rec.RedeemerAddr,
+			&rec.Outcomes,
+			&rec.Payout,
+		)
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_polymarket_user_redemptions(user_aid int64) {
+
+
+}
+

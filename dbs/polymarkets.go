@@ -424,6 +424,26 @@ func (ss *SQLStorage) Get_fpmm_contract_aid(poly_market_id int64) int64 {
 	}
 	return contract_aid
 }
+func (ss *SQLStorage) Get_condition_id(poly_market_id int64) string {
+
+	var query string
+	query = "SELECT condition_id FROM pol_market WHERE market_id=$1"
+
+	var condition_id string
+	res := ss.db.QueryRow(query,poly_market_id)
+	err := res.Scan(&condition_id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	if len(condition_id)>2 {
+		condition_id = condition_id[2:] // strip 0x
+	}
+	return condition_id
+}
 func (ss *SQLStorage) Get_polymarkets_buysell_operations(contract_aid int64,offset,limit int) []p.API_Pol_BuySell_Op {
 
 	records := make([]p.API_Pol_BuySell_Op,0,64)

@@ -17,5 +17,6 @@ DROP TABLE IF EXISTS
 	pol_data_feed,
 	pol_unique_addrs,
 	pol_pos_tok_ids,
-	pol_tok_ids 
+	pol_tok_ids,
+	pol_uranks
 CASCADE;

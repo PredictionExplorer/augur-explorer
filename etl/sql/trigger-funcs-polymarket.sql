@@ -47,8 +47,8 @@ BEGIN
 		WHERE (user_aid = NEW.funder_aid) AND (contract_aid=NEW.contract_aid);
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO pol_ustats_mkt(user_aid,contract_aid,tot_liq_ops,tot_liq_given,tot_volume,total_liquidity)
-			VALUES(NEW.funder_aid,NEW.contract_aid,1,v_normalized_collateral,NEW.shares,v_normalized_collateral);
+		INSERT INTO pol_ustats_mkt(user_aid,contract_aid,tot_liq_ops,tot_liq_given,tot_volume)
+			VALUES(NEW.funder_aid,NEW.contract_aid,1,v_normalized_collateral,NEW.shares);
 	END IF;
 
 	RETURN NEW;
@@ -272,6 +272,74 @@ DECLARE
 BEGIN
 
 	-- nothing to do, all deletes are made via 'CASCADE'
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_pol_pay_redem_insert() RETURNS trigger AS  $$
+DECLARE
+	v_mkt_mkr_aid			BIGINT;
+BEGIN
+	-- we need to extract contract_aid because Conditional Token
+	--	is the contract that emits these events (not market maker contract)
+	SELECT
+			mkt_mkr_aid
+		FROM pol_market
+		WHERE condition_id=CONCAT('0x',NEW.condition_id)
+		LIMIT 1
+		INTO v_mkt_mkr_aid;
+	IF v_mkt_mkr_aid IS NULL THEN
+		RAISE EXCEPTION 'Market not registered for condition  %, update pol_markets table',NEW.condition_id;
+		RETURN NEW;
+	END IF;
+
+	UPDATE pol_mkt_stats
+		SET
+			open_interest = (open_interest + NEW.payout)	-- since OI is negative we use +
+		WHERE contract_aid = v_mkt_mkr_aid;
+
+	UPDATE pol_ustats
+		SET
+			profit = (profit + NEW.payout)
+		WHERE user_aid = NEW.redeemer_aid;
+	UPDATE pol_ustats_mkt
+		SET
+			profit = (profit + NEW.payout)
+		WHERE user_aid=NEW.redeemer_aid AND contract_aid = v_mkt_mkr_aid;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_pol_pay_redem_delete() RETURNS trigger AS  $$
+DECLARE
+	v_mkt_mkr_aid			BIGINT;
+BEGIN
+	SELECT
+			mkt_mkr_aid
+		FROM pol_market
+		WHERE condition_id=CONCAT('0x',NEW.condition_id)
+		LIMIT 1
+		INTO v_mkt_mkr_aid;
+	IF v_mkt_mkr_aid IS NULL THEN
+		RAISE EXCEPTION 'Market not registered for condition  %, update pol_markets table',NEW.condition_id;
+		RETURN NEW;
+	END IF;
+	IF v_contract_aid IS NULL THEN
+		RAISE EXCEPTION 'Condition preparation for % not found (DELETE)',OLD.condition_id;
+		RETURN OLD;
+	END IF;
+	UPDATE pol_mkt_stats
+		SET
+			open_interest = (open_interest - OLD.payout)	-- since OI is negative we use +
+		WHERE contract_aid = v_mkt_mkr_aid;
+
+	UPDATE pol_ustats
+		SET
+			profit = (profit - OLD.payout)
+		WHERE user_aid = OLD.redeemer_aid;
+	UPDATE pol_ustats_mkt
+		SET
+			profit = (profit - OLD.payout)
+		WHERE user_aid=OLD.redeemer_aid AND contract_aid = v_mkt_mkr_aid;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

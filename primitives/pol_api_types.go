@@ -192,3 +192,22 @@ type API_Pol_LiquidityShareRatio struct {
 	FunderAddr				string
 	ShareRatio				float64
 }
+type API_Pol_MarketRedemption struct {
+	Id					int64
+	BlockNum			int64
+	TimeStamp			int64
+	DateTime			string
+	RedeemerAid			int64
+	RedeemerAddr		string
+	Outcomes			string
+	Payout				float64
+}
+type API_Pol_UserRedemption struct {
+	Id					int64
+	BlockNum			int64
+	TimeStamp			int64
+	DateTime			string
+	MarketId			int64
+	Outcomes			string
+	Payout				float64
+}

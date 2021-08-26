@@ -219,7 +219,7 @@ CREATE TABLE pol_mkt_stats ( -- market statistics
 	open_interest			DECIMAL DEFAULT 0,	-- BUYs + Add of liquidity totalled
 	total_volume			DECIMAL DEFAULT 0,
 	total_fees				DECIMAL DEFAULT 0,		-- sums amount of fees paid for this market
-	total_liquidity			DECIMAL DEFAULT 0,		-- amount of USDC held (without fees) (without BUYs)
+	total_liquidity			DECIMAL DEFAULT 0		-- amount of USDC held (without fees) (without BUYs)
 );
 CREATE TABLE pol_ustats ( -- user statistics
 	user_aid				BIGINT PRIMARY KEY,

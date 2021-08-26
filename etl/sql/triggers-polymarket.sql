@@ -8,3 +8,5 @@ CREATE TRIGGER cond_split_insert AFTER INSERT ON pol_pos_split FOR EACH ROW EXEC
 CREATE TRIGGER cond_split_delete AFTER DELETE ON pol_pos_split FOR EACH ROW EXECUTE PROCEDURE on_pol_pos_split_delete();
 CREATE TRIGGER cond_merge_insert AFTER INSERT ON pol_pos_merge FOR EACH ROW EXECUTE PROCEDURE on_pol_pos_merge_insert();
 CREATE TRIGGER cond_merge_delete AFTER DELETE ON pol_pos_merge FOR EACH ROW EXECUTE PROCEDURE on_pol_pos_merge_delete();
+CREATE TRIGGER pay_redem_insert AFTER INSERT ON pol_pay_redem FOR EACH ROW EXECUTE PROCEDURE on_pol_pay_redem_insert();
+CREATE TRIGGER pay_redem_delete AFTER DELETE ON pol_pay_redem FOR EACH ROW EXECUTE PROCEDURE on_pol_pay_redem_delete();
