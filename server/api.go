@@ -2136,7 +2136,8 @@ func a1_poly_markets_listing(c *gin.Context) {
 	} else {
 		// the default is status = 0
 	}
-	markets_listing := augur_srv.storage.Get_polymarkets_markets(int(status),int(sort))
+	category := c.Query("c")
+	markets_listing := augur_srv.storage.Get_polymarkets_markets(int(status),int(sort),category)
 	num_elts := len(markets_listing)
 	var req_status int = 1
 	var err_str string = ""
@@ -2407,4 +2408,17 @@ func a1_poly_market_payout_redemptions(c *gin.Context) {
 		"MarketId" : market_id,
 		"PayoutRedemptions" : payout_redemptions,
 	})
+}
+func a1_poly_categories(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	categories := augur_srv.storage.Get_polymarket_categories()
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+		"status": status,
+		"error": err_str,
+		"Categories" : categories,
+	})
+
 }

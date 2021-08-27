@@ -13,3 +13,4 @@ CREATE INDEX pol_buysell_outc_idx		ON	pol_buysell			(contract_aid,outcome_idx);
 CREATE INDEX pol_buysell_tx_idx			ON	pol_buysell			(tx_id);
 CREATE INDEX pol_fund_tx_idx			ON	pol_fund_addrem		(tx_id);
 CREATE INDEX pol_redem_cond_idx			ON	pol_pay_redem		(condition_id);
+CREATE INDEX pol_market_categ_idx		ON	pol_market			(category);

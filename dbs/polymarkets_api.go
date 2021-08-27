@@ -157,15 +157,23 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 	if n_cond_prep_tx_hash.Valid { rec.CondPrepTxHash = n_cond_prep_tx_hash.String }
 	return rec,nil
 }
-func (ss *SQLStorage) Get_polymarkets_markets(status,sort int) []p.API_Pol_MarketInfo {
+func (ss *SQLStorage) Get_polymarkets_markets(status,sort int,category string) []p.API_Pol_MarketInfo {
 	// status: 0 - all markets, 1 - not finalized, 2 - finalized
 	// sort : 0 - by trading volume, 1 - by liquidity invested, 2-by creation date, 3-by resolution date, 4 - fees collected
 	var where_condition string
 	if status == 1 {
-		where_condition = "WHERE res.id IS NULL "
+		where_condition = "WHERE (res.id IS NULL) "
 	}
 	if status == 2 {
-		where_condition = "WHERE res.id IS NOT NULL "
+		where_condition = "WHERE (res.id IS NOT NULL) "
+	}
+	if len(category) > 0 {
+		if len(where_condition)==0 {
+			where_condition += "WHERE "
+		} else {
+			where_condition += " AND "
+		}
+		where_condition += "(pm.category=$1) "
 	}
 	var sort_condition string = "ORDER BY mst.total_volume DESC NULLS LAST "
 	if sort == 1 {
@@ -223,7 +231,13 @@ func (ss *SQLStorage) Get_polymarkets_markets(status,sort int) []p.API_Pol_Marke
 			sort_condition
 
 	fmt.Printf("query = %v\n",query)
-	rows,err := ss.db.Query(query)
+	var err error
+	var rows *sql.Rows
+	if len(category) > 0 {
+		rows,err = ss.db.Query(query,category)
+	} else {
+		rows,err = ss.db.Query(query)
+	}
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -280,8 +294,8 @@ func (ss *SQLStorage) Get_polymarkets_markets(status,sort int) []p.API_Pol_Marke
 		if n_resolved_ts.Valid { rec.ResolvedTs = n_resolved_ts.Int64 }
 		if n_resolved_date.Valid { rec.ResolvedDate = n_resolved_date.String }
 		if n_volume.Valid { rec.Volume = n_volume.Float64 }
-		if n_open_interest.Valid { rec.OpenInterest = -n_open_interest.Float64 }
-		if n_liquidity.Valid { rec.Liquidity = n_liquidity.Float64 }
+		if n_open_interest.Valid { rec.OpenInterest = n_open_interest.Float64 }
+		if n_liquidity.Valid { rec.Liquidity = -n_liquidity.Float64 }
 		if n_fees.Valid { rec.TotalFeesCollected = n_fees.Float64 }
 		if n_num_trades.Valid { rec.NumTrades = n_num_trades.Int64 }
 		if n_num_liq_ops.Valid { rec.NumLiquidityOps = n_num_liq_ops.Int64 }
@@ -679,4 +693,25 @@ func (ss *SQLStorage) Get_polymarket_user_redemptions(user_aid int64) {
 
 
 }
+func (ss *SQLStorage) Get_polymarket_categories() []p.API_Pol_MarketCategory {
 
+	records := make([]p.API_Pol_MarketCategory,0,128)
+	var query string
+	query = "SELECT " +
+				"category,count(*) as total " +
+			"FROM pol_market " +
+			"GROUP BY category"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_MarketCategory
+		err=rows.Scan(&rec.Category,&rec.NumMarkets)
+		records = append(records,rec)
+	}
+	return records
+}

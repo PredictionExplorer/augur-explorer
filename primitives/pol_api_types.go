@@ -211,3 +211,7 @@ type API_Pol_UserRedemption struct {
 	Outcomes			string
 	Payout				float64
 }
+type API_Pol_MarketCategory struct {
+	Category			string
+	NumMarkets			int64
+}

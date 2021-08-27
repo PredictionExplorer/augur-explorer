@@ -2973,7 +2973,7 @@ func poly_markets_listing(c *gin.Context) {
 	var status int64
 	if len(p_status) > 0 {
 		var success bool
-		status,success = parse_int_from_remote_or_error(c,true,&p_status)
+		status,success = parse_int_from_remote_or_error(c,HTTP,&p_status)
 		if !success {
 			return
 		}
@@ -2984,14 +2984,17 @@ func poly_markets_listing(c *gin.Context) {
 	var sort int64
 	if len(p_sort) > 0 {
 		var success bool
-		sort,success = parse_int_from_remote_or_error(c,true,&p_sort)
+		sort,success = parse_int_from_remote_or_error(c,HTTP,&p_sort)
 		if !success {
 			return
 		}
 	} else {
 		// the default is sort = 0
 	}
-	markets_listing := augur_srv.storage.Get_polymarkets_markets(int(status),int(sort))
+
+	category := c.Query("c")
+
+	markets_listing := augur_srv.storage.Get_polymarkets_markets(int(status),int(sort),category)
 	num_elts := len(markets_listing)
 	c.HTML(http.StatusOK, "polymarkets_market_listing.html", gin.H{
 		"Markets" : markets_listing,
@@ -3037,5 +3040,12 @@ func poly_market_payout_redemptions(c *gin.Context) {
 	c.HTML(http.StatusOK, "polymarkets_market_redemptions.html", gin.H{
 		"MarketId" : market_id,
 		"PayoutRedemptions" : payout_redemptions,
+	})
+}
+func poly_market_categories(c *gin.Context) {
+
+	categories := augur_srv.storage.Get_polymarket_categories()
+	c.HTML(http.StatusOK, "polymarkets_categories.html", gin.H{
+		"MarketCategories" : categories,
 	})
 }

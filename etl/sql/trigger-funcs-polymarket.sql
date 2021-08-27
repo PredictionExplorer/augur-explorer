@@ -288,8 +288,17 @@ BEGIN
 		LIMIT 1
 		INTO v_mkt_mkr_aid;
 	IF v_mkt_mkr_aid IS NULL THEN
-		RAISE EXCEPTION 'Market not registered for condition  %, update pol_markets table',NEW.condition_id;
-		RETURN NEW;
+		SELECT stakeholder_aid
+			FROM pol_pos_split
+			WHERE condition_id=NEW.condition_id
+			LIMIT 1
+			INTO v_mkt_mkr_aid;
+			IF v_mkt_mkr_aid IS NULL THEN
+				RAISE EXCEPTION
+					'Market not registered for condition  % (block %), update pol_markets table',
+					NEW.condition_id,NEW.block_num;
+				RETURN NEW;
+			END IF;
 	END IF;
 
 	UPDATE pol_mkt_stats

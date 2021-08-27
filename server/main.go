@@ -188,6 +188,7 @@ func main() {
 	r.GET("/black/poly/markets/list/:status/:sort",poly_markets_listing)
 	r.GET("/black/poly/markets/list",poly_markets_listing)
 	r.GET("/black/poly/topusers.html",poly_top_users)
+	r.GET("/black/poly/categories/list",poly_market_categories)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -272,6 +273,7 @@ func main() {
 	r.GET("/api/poly/markets/funder/share_ratio/:market_id",a1_poly_market_funder_share_ratio)
 	r.GET("/api/poly/markets/price_history/:market_id/:outcome",a1_poly_market_price_history)
 	r.GET("/api/poly/top_users",  a1_poly_top_users)
+	r.GET("/api/poly/categories",a1_poly_categories)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
