@@ -325,5 +325,6 @@ type Pol_CondTokPrices struct {// conditional token balance (Gnosis)
 	TokenBalance			float64
 	TokenPrice				float64
 	OutcomeIdx				int32
+	TokenId					int64
 	TokenIdHex				string
 }

@@ -2422,3 +2422,40 @@ func a1_poly_categories(c *gin.Context) {
 	})
 
 }
+func a1_poly_market_erc1155_transfers(c *gin.Context) {
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,JSON,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'market_id' parameter is not set")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	fpmm_aid := augur_srv.storage.Get_fpmm_contract_aid(market_id)
+	if fpmm_aid == 0 {
+		respond_error(c,"Polymarket with this ID wasn't found")
+		return
+	}
+
+	erc1155_transfers := augur_srv.storage.Get_polymarket_erc1155_transfers(fpmm_aid,offset,limit)
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+		"status": status,
+		"error": err_str,
+		"MarketId" : market_id,
+		"ContractAid" : fpmm_aid,
+		"ERC1155Transfers" : erc1155_transfers,
+	})
+}

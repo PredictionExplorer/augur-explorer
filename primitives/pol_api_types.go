@@ -215,3 +215,28 @@ type API_Pol_MarketCategory struct {
 	Category			string
 	NumMarkets			int64
 }
+type API_Pol_MarketERC1155Transfer struct {
+	BalOpId				int64
+	TokenId				int64
+	TokenIdHex			string
+	TimeStamp			int64
+	DateTime			string
+	ParentId			int64
+	BatchId				int64
+	IsBatch				bool
+	BuySellOpType		int32
+	FundOpType			int32
+	Amount				float64
+	Balance				float64
+	BalChgAid			int64	// Address id of the account that changes balance
+	BalChgAddr			string
+	BuySellAid			int64	// Address id of the user who is doing Buy/Sell operation
+	BuySellAddr			string
+	BuySellAmount		float64
+	FunderAid			int64	// Address id of the funder who is doing Fund Add/Remove operation
+	FunderAddr			string
+	FunderAmount		float64
+	TxHash				string
+
+	
+}

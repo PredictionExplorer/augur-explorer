@@ -360,11 +360,8 @@ func (ss *SQLStorage) Get_poly_market_open_positions(contract_aid int64) ([]p.AP
 	for i:=0; i<len(records); i++ {
 		if int(records[i].OutcomeIdx) < len(prices) {
 			records[i].CurrentPrice = prices[records[i].OutcomeIdx].TokenPrice
-			fmt.Printf("Adjusting prices, addr %v, Current Price=%v\n",records[i].UserAddr,records[i].CurrentPrice)
 			pos_value := records[i].CurrentPrice * records[i].CurrentBalance
-			fmt.Printf("position value = %v realized profit = %v\n",pos_value,records[i].RealizedProfit)
 			profit := pos_value + records[i].TotalProfit // it is a + because User's deposits are negative
-			fmt.Printf("Profit = %v\n",profit)
 			records[i].UnrealizedProfit = profit
 			records[i].TotalProfit = records[i].RealizedProfit + records[i].UnrealizedProfit
 		}
@@ -430,6 +427,7 @@ func (ss *SQLStorage) Calculate_prices(contract_aid int64) []p.Pol_CondTokPrices
 	var query string
 	query = "SELECT " +
 				"ptk.outcome_idx,"+
+				"et.token_id,"+
 				"ptk.token_id_hex,"+
 				"eh.cur_balance::TEXT " +
 			"FROM pol_tok_ids ptk "+
@@ -437,8 +435,6 @@ func (ss *SQLStorage) Calculate_prices(contract_aid int64) []p.Pol_CondTokPrices
 				"JOIN erc1155_holder eh ON (et.token_id=eh.token_id AND eh.aid=ptk.contract_aid) " +
 			"WHERE "+
 				"ptk.contract_aid=$1"
-
-	fmt.Printf("Query = %v (contract=%v)\n",query,contract_aid)
 
 	rows,err := ss.db.Query(query,contract_aid)
 	if (err!=nil) {
@@ -452,10 +448,10 @@ func (ss *SQLStorage) Calculate_prices(contract_aid int64) []p.Pol_CondTokPrices
 		var rec p.Pol_CondTokPrices
 		err=rows.Scan(
 			&rec.OutcomeIdx,
+			&rec.TokenId,
 			&rec.TokenIdHex,
 			&rec.TokenBalanceStr,
 		)
-		fmt.Printf("Adding outcome %v token hex %v and balance %v\n",rec.OutcomeIdx,rec.TokenIdHex,rec.TokenBalanceStr)
 		if err != nil {
 			ss.Log_msg(fmt.Sprintf("Error in Calculate_prices(): %v, q=%v",err,query))
 			os.Exit(1)
@@ -482,36 +478,28 @@ func (ss *SQLStorage) Calculate_prices(contract_aid int64) []p.Pol_CondTokPrices
 		}
 		balances = append(balances,bal)
 	}
-	fmt.Printf("rec_len = %v\n",rec_len)
 	prices := make([]*big.Float,0,rec_len)
 	for i:=0; i<rec_len ; i++ {
 		numerator := odds_weight_for_outcome_func(i,balances)
-		fmt.Printf("Numerator = %v\n",numerator.String())
 		denominator := big.NewInt(0)
 		for j:=0; j<rec_len; j++ {
 			odds_outcome := odds_weight_for_outcome_func(j,balances)
-			fmt.Printf("Adding %v to denominator\n",odds_outcome.String())
 			denominator.Add(denominator,odds_outcome)
 		}
-		fmt.Printf("Denominator = %v\n",denominator.String())
 		p := new(big.Float)
 		numerator_float := new(big.Float)
 		denominator_float := new(big.Float)
 		numerator_float.SetInt(numerator)
 		denominator_float.SetInt(denominator)
 		p.Quo(numerator_float,denominator_float)
-		fmt.Printf("Price for outcome %v = %v\n",i,p.String())
 		prices = append(prices,p)
 	}
 	for i:=0; i<rec_len; i++ {
 		f,_ := prices[i].Float64()
 		records[i].TokenPrice = f
-		fmt.Printf("Adjusted token price = %v\n",records[i].TokenPrice)
 		f,_= strconv.ParseFloat(records[i].TokenBalanceStr,64)
 		records[i].TokenBalance = f
-		fmt.Printf("Price converted to float = %v\n",f)
 	}
-	fmt.Printf("exciting Calculate_prices()\n")
 	return records
 
 }
@@ -713,5 +701,110 @@ func (ss *SQLStorage) Get_polymarket_categories() []p.API_Pol_MarketCategory {
 		err=rows.Scan(&rec.Category,&rec.NumMarkets)
 		records = append(records,rec)
 	}
+	return records
+}
+func (ss *SQLStorage) Get_polymarket_erc1155_transfers(contract_aid int64,offset,limit int) []p.API_Pol_MarketERC1155Transfer {
+
+	prices := ss.Calculate_prices(contract_aid)
+	var token_ids string
+	for i:=0; i<len(prices); i++ {
+		if len(token_ids) >0 { token_ids = token_ids + "," }
+		token_ids = token_ids + fmt.Sprintf("%v",prices[i].TokenId)
+	}
+	records := make([]p.API_Pol_MarketERC1155Transfer,0,512)
+	var query string
+	query = "SELECT " +
+				"eb.id,"+
+				"eb.token_id,"+
+				"et.token_id_hex,"+
+				"EXTRACT(EPOCH FROM eb.time_stamp)::BIGINT AS created_at_ts,"+
+				"eb.time_stamp,"+
+				"eb.parent_id,"+
+				"eb.batch_id," +
+				"eb.amount/1e+6,"+
+				"eb.balance/1e+6,"+
+				"eb.aid, "+
+				"ea.addr," +
+				"bs.user_aid,"+
+				"bs.addr," +
+				"bs.op_type," +
+				"bs.amount, " +
+				"f.funder_aid," +
+				"f.addr, "+
+				"f.op_type,"+
+				"f.amount, " +
+				"tx.tx_hash " +
+			"FROM erc1155_bal eb " +
+				"JOIN address ea ON eb.aid = ea.address_id " +
+				"JOIN erc1155_tok et ON eb.token_id=et.token_id " +
+				"LEFT JOIN LATERAL ("+
+					"SELECT "+
+						"bs.tx_id,bs.user_aid,bs.op_type,"+
+						"bsa.addr,bs.collateral_amount amount " +
+					"FROM pol_buysell bs "+
+						"JOIN address bsa ON bs.user_aid=bsa.address_id "+
+				") AS bs ON eb.tx_id=bs.tx_id " +
+				"LEFT JOIN LATERAL (" +
+					"SELECT f.tx_id,f.funder_aid,op_type,fa.addr,f.shares/1e+6 amount "+
+					"FROM pol_fund_addrem f "+
+						"JOIN address fa ON f.funder_aid=fa.address_id "+
+				") AS f ON eb.tx_id=f.tx_id " +
+				"JOIN transaction tx ON eb.tx_id=tx.id " +
+			"WHERE eb.token_id IN("+token_ids+") " +
+			"ORDER by eb.id "
+	ss.Info.Printf("token_ids= %v\n",token_ids)
+	ss.Info.Printf("query : %v\n",query)
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_MarketERC1155Transfer
+		var n_bs_addr,n_f_addr sql.NullString
+		var n_batch_id,n_parent_id,n_bs_user_aid,n_f_funder_aid sql.NullInt64
+		var n_buysell_op_type,n_fund_op_type sql.NullInt32
+		var n_b_amount,n_f_amount sql.NullFloat64
+		err=rows.Scan(
+			&rec.BalOpId,
+			&rec.TokenId,
+			&rec.TokenIdHex,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&n_parent_id,
+			&n_batch_id,
+			&rec.Amount,
+			&rec.Balance,
+			&rec.BalChgAid,
+			&rec.BalChgAddr,
+			&n_bs_user_aid,
+			&n_bs_addr,
+			&n_buysell_op_type,
+			&n_b_amount,
+			&n_f_funder_aid,
+			&n_f_addr,
+			&n_fund_op_type,
+			&n_f_amount,
+			&rec.TxHash,
+		)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		if n_parent_id.Valid { rec.ParentId = n_parent_id.Int64 }
+		if n_batch_id.Valid { rec.IsBatch = true; rec.BatchId=n_batch_id.Int64 }
+		if n_bs_user_aid.Valid { rec.BuySellAid = n_bs_user_aid.Int64 }
+		if n_bs_addr.Valid { rec.BuySellAddr = n_bs_addr.String }
+		if n_buysell_op_type.Valid { rec.BuySellOpType = n_buysell_op_type.Int32 }
+		if n_b_amount.Valid { rec.BuySellAmount = n_b_amount.Float64 }
+		if n_f_funder_aid.Valid { rec.FunderAid = n_f_funder_aid.Int64 }
+		if n_f_addr.Valid { rec.FunderAddr = n_f_addr.String }
+		if n_fund_op_type.Valid { rec.FundOpType = n_fund_op_type.Int32 }
+		if n_f_amount.Valid { rec.FunderAmount = n_f_amount.Float64 }
+
+		records = append(records,rec)
+	}
+	ss.Info.Printf("rows returned = %v\n",len(records))
 	return records
 }
