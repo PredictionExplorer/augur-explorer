@@ -237,6 +237,26 @@ type API_Pol_MarketERC1155Transfer struct {
 	FunderAddr			string
 	FunderAmount		float64
 	TxHash				string
-
-	
+}
+type API_Pol_OpenInterestHistory struct {
+	TimeStamp				int64
+	DateTime				string
+	TxId					int64
+	TxHash					string
+	FromAid					int64
+	FromAddr				string
+	ToAid					int64
+	ToAddr					string
+	BalChgId				int64		// id of erc20 balance transfer
+	BuySellOpId				int64		// id for buy/sell operation
+	BuySellOpType			int32
+	FundOpId				int64		// id for fund add/remove operation
+	FundOpType				int32
+	Amount					float64
+	Balance					float64
+	OpenInterest			float64
+	Fee						float64
+	FeeAccum				float64
+	ContractBalance			float64
+	ContractBalanceAccum	float64
 }

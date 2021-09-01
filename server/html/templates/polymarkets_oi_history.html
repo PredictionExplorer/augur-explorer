@@ -1,0 +1,77 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Open Interest history for Polymarkets Market {{.MarketId}}</title>
+</head>
+<body>
+	<h3 class="page_title">Open Interest history for market id = {{.MarketId}}</h3>
+<table class="market_detail">
+</table>
+<div id="price_history_graph"></div>
+<h3>Collateral Transfers</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Date </th>
+		<th class="market_reports">From Address</th>
+		<th class="market_reports">To Address</th>
+		<th class="market_reports">Amount</th>
+		<th class="market_reports">Fee</th>
+		<th class="market_reports">Fees</th>
+		<th class="market_reports">Open Interest</th>
+		<th class="market_reports">Contract Balance</th>
+		<th class="market_reports">Notes</th>
+
+	</tr>
+	{{- range $i, $change := .OIHistory}}
+		<tr class="market_reports">
+			<td class="market_reports_field" title="{{.BalChgId}}">
+				{{.DateTime}}
+			</td>
+			<td title="" class="addr">
+				{{ if eq .FromAid $.CondTokAid }}Conditional Tokens
+				{{ else }}
+					{{ if eq .FromAid $.USDCAid }}
+						USDC
+					{{ else }}
+						{{ if eq .FromAid $.ContractAid }}
+							Market Maker
+						{{ else }}
+							{{.FromAddr}}
+						{{end}}
+					{{ end }}
+				{{end}}
+			</td>
+			<td class="addr">
+				{{ if eq .ToAid $.CondTokAid }}
+					Conditional Tokens
+				{{else}}
+					{{if eq .ToAid $.USDCAid }}
+						USDC
+					{{else}}
+						{{ if eq .ToAid $.ContractAid }}
+							Market Maker
+						{{ else }}
+							{{.ToAddr}}
+						{{ end }}
+					{{end}}
+				{{end}}
+			</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .Amount}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .Fee}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .FeeAccum}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .OpenInterest}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .Balance}}</td>
+			<td class="market_reports_field">
+				{{ if gt .BuySellOpId 0 }}
+					{{ if eq .BuySellOpType 0 }} Buy {{ else }} Sell {{end}}
+				{{ end }}
+				{{ if gt .FundOpId 0 }}
+					{{ if eq .FundOpType 0 }} Add Funds {{ else }} Remove Funds {{end}}
+				{{ end }}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>
+</html>

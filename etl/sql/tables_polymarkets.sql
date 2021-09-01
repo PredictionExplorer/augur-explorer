@@ -262,3 +262,7 @@ CREATE TABLE pol_uranks (   -- User Rankings (how this user ranks against each o
 	profit				DECIMAL(32,18) DEFAULT 0.0,
 	volume				DECIMAL(32,18) DEFAULT 0.0
 );
+CREATE TABLE pol_contracts (
+	cond_tok_addr		TEXT DEFAULT '0x4D97DCd97eC945f40cF65F87097ACe5EA0476045',
+	usdc_addr			TEXT DEFAULT '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'
+);

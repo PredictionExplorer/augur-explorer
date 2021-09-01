@@ -1549,3 +1549,30 @@ func (ss *SQLStorage) Get_polymarket_ranking_data_for_all_users() []p.RankStats 
 	}
 	return records
 }
+func (ss *SQLStorage) Get_polymarket_contract_addresses() p.Pol_ContractAddresses {
+
+	var output p.Pol_ContractAddresses
+	var query string
+	query = "SELECT "+
+				"cond_tok_addr,usdc_addr," +
+				"ct_a.address_id,usd_a.address_id "+
+			"FROM pol_contracts ca " +
+				"JOIN address ct_a ON ca.cond_tok_addr=ct_a.addr " +
+				"JOIN address usd_a ON ca.usdc_addr=usd_a.addr "
+
+	res := ss.db.QueryRow(query)
+	err := res.Scan(
+		&output.ConditionalToken,
+		&output.USDC,
+		&output.CondTokAid,
+		&output.USDCAid,
+	)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return output
+		}
+		ss.Log_msg(fmt.Sprintf("Update_polymarket_top_volume_rank() failed: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return output
+}

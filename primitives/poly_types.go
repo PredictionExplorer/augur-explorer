@@ -328,3 +328,9 @@ type Pol_CondTokPrices struct {// conditional token balance (Gnosis)
 	TokenId					int64
 	TokenIdHex				string
 }
+type Pol_ContractAddresses struct {
+	ConditionalToken		string
+	USDC					string
+	CondTokAid				int64
+	USDCAid					int64
+}

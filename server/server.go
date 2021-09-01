@@ -3082,3 +3082,44 @@ func poly_market_erc1155_transfers(c *gin.Context) {
 		"ERC1155Transfers" : erc1155_transfers,
 	})
 }
+func poly_market_open_interest_history(c *gin.Context) {
+
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,HTTP,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+
+	fpmm_aid := augur_srv.storage.Get_fpmm_contract_aid(market_id)
+	if fpmm_aid == 0 {
+		respond_error(c,"Polymarket with this ID wasn't found")
+		return
+	}
+	caddrs := augur_srv.storage.Get_polymarket_contract_addresses()
+	oi_hist := augur_srv.storage.Get_polymarket_open_interst_history(
+		caddrs.USDCAid,
+		caddrs.CondTokAid,
+		fpmm_aid,
+		offset,
+		limit,
+	)
+
+	c.HTML(http.StatusOK, "polymarkets_oi_history.html", gin.H{
+		"MarketId" : market_id,
+		"ContractAid" : fpmm_aid,
+		"OIHistory" : oi_hist,
+		"CondTokAid" : caddrs.CondTokAid,
+		"USDCAid" : caddrs.USDCAid,
+	})
+}

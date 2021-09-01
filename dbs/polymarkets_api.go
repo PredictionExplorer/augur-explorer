@@ -808,3 +808,112 @@ func (ss *SQLStorage) Get_polymarket_erc1155_transfers(contract_aid int64,offset
 	ss.Info.Printf("rows returned = %v\n",len(records))
 	return records
 }
+func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,contract_aid int64,offset,limit int) []p.API_Pol_OpenInterestHistory {
+
+	records := make([]p.API_Pol_OpenInterestHistory,0,512)
+	var query string
+	query = "WITH usdc AS ("+
+				"SELECT "+
+					"EXTRACT(EPOCH FROM e20b.time_stamp)::BIGINT AS created_at_ts,"+
+					"e20b.time_stamp datetime,"+
+					"e20t.from_aid,"+
+					"e20t.to_aid," +
+					"e20b.id bal_id,"+
+					"e20b.tx_id,"+
+					"e20b.amount/1e+6 amount," +
+					"balance/1e+6 as bal_usd "+
+				"FROM erc20_bal e20b "+
+					"JOIN erc20_transf e20t ON e20b.parent_id=e20t.id " +
+				"WHERE "+
+					"e20b.contract_aid=$1 AND "+
+					"e20b.aid=$2" +
+			") "+
+			"SELECT "+
+				"usdc.created_at_ts," +
+				"usdc.datetime,"+
+				"usdc.from_aid,"+
+				"usdc.to_aid," +
+				"usdc.tx_id,"+
+				"tx.tx_hash,"+
+				"fa.addr from_addr,"+
+				"ta.addr, " +
+				"usdc.bal_id,"+
+				"bs.id,"+
+				"bs.op_type,"+
+				"f.id," +
+				"f.op_type,"+
+				"usdc.amount,"+
+				"usdc.bal_usd "+
+			"FROM usdc "+
+				"JOIN transaction tx ON usdc.tx_id=tx.id "+
+				"JOIN address fa ON usdc.from_aid=fa.address_id "+
+				"JOIN address ta ON usdc.to_aid=ta.address_id "+
+				"LEFT JOIN pol_buysell bs ON usdc.tx_id=bs.tx_id "+
+				"LEFT JOIN pol_fund_addrem f ON usdc.tx_id=f.tx_id "+
+			"ORDER by bal_id"
+
+	ss.Info.Printf("query : %v\n",query)
+	rows,err := ss.db.Query(query,usdc_aid,contract_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	var prev_trf_to_aid int64 = -1
+	var prev_trf_amount float64 = -1.0
+	var fee_accum float64 = 0.0
+	var open_interest float64 = 0.0
+	for rows.Next() {
+		var rec p.API_Pol_OpenInterestHistory
+		var n_bs_id,n_far_id sql.NullInt64
+		var n_bs_optype,n_far_optype sql.NullInt32
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.FromAid,
+			&rec.ToAid,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.FromAddr,
+			&rec.ToAddr,
+			&rec.BalChgId,
+			&n_bs_id,
+			&n_bs_optype,
+			&n_far_id,
+			&n_far_optype,
+			&rec.Amount,
+			&rec.Balance,
+		)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		if n_bs_id.Valid { rec.BuySellOpId = n_bs_id.Int64 } else { rec.BuySellOpId = -1 }
+		if n_bs_optype.Valid { rec.BuySellOpType  = n_bs_optype.Int32 } else {rec.BuySellOpType = -1 }
+		if n_far_id.Valid { rec.FundOpId = n_far_id.Int64 } else { rec.FundOpId = -1 }
+		if n_far_optype.Valid { rec.FundOpType = n_far_optype.Int32 } else { rec.FundOpType = -1 }
+		if n_bs_id.Valid {
+			if (rec.ToAid == condtok_aid) && (rec.FromAid == contract_aid) {
+				rec.Fee = prev_trf_amount - (-rec.Amount)
+				fee_accum = fee_accum + rec.Fee
+				open_interest = open_interest +  (-rec.Amount)
+			}
+		}
+		if n_far_id.Valid {
+			if (rec.ToAid == condtok_aid) && (rec.FromAid == contract_aid) {
+				open_interest = open_interest + (-rec.Amount)
+			}
+			if (rec.ToAid == contract_aid) && (rec.FromAid == condtok_aid) {
+				open_interest = open_interest - (-rec.Amount)
+			}
+		}
+		rec.FeeAccum = fee_accum
+		rec.OpenInterest = open_interest
+		prev_trf_to_aid = rec.ToAid
+		prev_trf_amount = rec.Amount
+		_ = prev_trf_to_aid
+		records = append(records,rec)
+	}
+	ss.Info.Printf("rows returned = %v\n",len(records))
+	return records
+}
