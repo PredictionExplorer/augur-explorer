@@ -68,6 +68,7 @@
 				{{ if gt .FundOpId 0 }}
 					{{ if eq .FundOpType 0 }} Add Funds {{ else }} Remove Funds {{end}}
 				{{ end }}
+				{{ if gt .RedeemId 0 }}Payout redemption{{end}}
 			</td>
 		</tr>
 	{{- end}}

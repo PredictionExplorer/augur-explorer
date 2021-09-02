@@ -509,7 +509,7 @@ func (ss *SQLStorage) Get_polymarkets_liquidity_operations(contract_aid int64,of
 				"liq.time_stamp,"+
 				"liq.block_num," +
 				"liq.op_type," +
-				"liq.shares,"+
+				"liq.shares/1e+6,"+
 				"liq.funder_aid, " +
 				"la.addr " +
 			"FROM pol_fund_addrem liq " +

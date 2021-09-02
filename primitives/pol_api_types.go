@@ -252,6 +252,7 @@ type API_Pol_OpenInterestHistory struct {
 	BuySellOpType			int32
 	FundOpId				int64		// id for fund add/remove operation
 	FundOpType				int32
+	RedeemId				int64		// id for Payout Redeemed event
 	Amount					float64
 	Balance					float64
 	OpenInterest			float64

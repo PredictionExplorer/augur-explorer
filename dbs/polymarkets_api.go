@@ -842,6 +842,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 				"bs.op_type,"+
 				"f.id," +
 				"f.op_type,"+
+				"red.id,"+
 				"usdc.amount,"+
 				"usdc.bal_usd "+
 			"FROM usdc "+
@@ -850,6 +851,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 				"JOIN address ta ON usdc.to_aid=ta.address_id "+
 				"LEFT JOIN pol_buysell bs ON usdc.tx_id=bs.tx_id "+
 				"LEFT JOIN pol_fund_addrem f ON usdc.tx_id=f.tx_id "+
+				"LEFT JOIN pol_pay_redem red ON usdc.tx_id=red.tx_id "+
 			"ORDER by bal_id"
 
 	ss.Info.Printf("query : %v\n",query)
@@ -865,7 +867,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 	var open_interest float64 = 0.0
 	for rows.Next() {
 		var rec p.API_Pol_OpenInterestHistory
-		var n_bs_id,n_far_id sql.NullInt64
+		var n_bs_id,n_far_id,n_red_id sql.NullInt64
 		var n_bs_optype,n_far_optype sql.NullInt32
 		err=rows.Scan(
 			&rec.TimeStamp,
@@ -881,6 +883,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 			&n_bs_optype,
 			&n_far_id,
 			&n_far_optype,
+			&n_red_id,
 			&rec.Amount,
 			&rec.Balance,
 		)
@@ -892,26 +895,46 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 		if n_bs_optype.Valid { rec.BuySellOpType  = n_bs_optype.Int32 } else {rec.BuySellOpType = -1 }
 		if n_far_id.Valid { rec.FundOpId = n_far_id.Int64 } else { rec.FundOpId = -1 }
 		if n_far_optype.Valid { rec.FundOpType = n_far_optype.Int32 } else { rec.FundOpType = -1 }
+		if n_red_id.Valid { rec.RedeemId = n_red_id.Int64} else { rec.RedeemId = -1 }
 		if n_bs_id.Valid {
-			if (rec.ToAid == condtok_aid) && (rec.FromAid == contract_aid) {
-				rec.Fee = prev_trf_amount - (-rec.Amount)
-				fee_accum = fee_accum + rec.Fee
-				open_interest = open_interest +  (-rec.Amount)
+			if (rec.ToAid == condtok_aid) && (rec.FromAid == contract_aid) && (rec.BuySellOpType == 0){
+				// buy op
+				if prev_trf_to_aid == contract_aid {
+					rec.Fee = prev_trf_amount - (-rec.Amount)
+					fee_accum = fee_accum + rec.Fee
+					open_interest = open_interest +  (-rec.Amount)
+				}
+			}
+			if (rec.FromAid == contract_aid) && (rec.FromAid != condtok_aid) && (rec.BuySellOpType == 1) {
+				// sell op
+				if prev_trf_to_aid == contract_aid {
+					rec.Fee = prev_trf_amount - (-rec.Amount)
+					fee_accum = fee_accum + rec.Fee
+					open_interest = open_interest - (-rec.Amount) - rec.Fee
+				}
 			}
 		}
+		ss.Info.Printf("Amount %v: fundtype %v , rec.ToAid = %v , recFromAid = %v\n",
+			rec.Amount,rec.FundOpType,rec.ToAid,rec.FromAid)
 		if n_far_id.Valid {
-			if (rec.ToAid == condtok_aid) && (rec.FromAid == contract_aid) {
-				open_interest = open_interest + (-rec.Amount)
+			if rec.FundOpType == 0 { // add funds
+				if (rec.ToAid == condtok_aid) && (rec.FromAid == contract_aid) {
+					open_interest = open_interest + (-rec.Amount)
+				}
 			}
-			if (rec.ToAid == contract_aid) && (rec.FromAid == condtok_aid) {
-				open_interest = open_interest - (-rec.Amount)
+			if rec.FundOpType == 1 { //withdraw funds
+				if (rec.FromAid == contract_aid) && (rec.ToAid != condtok_aid) {
+					open_interest = open_interest - (-rec.Amount)
+					ss.Info.Printf("new open interest is %v\n",open_interest)
+				} else {
+					ss.Info.Printf("condition to withdraw funds isn't met\n")
+				}
 			}
 		}
 		rec.FeeAccum = fee_accum
 		rec.OpenInterest = open_interest
 		prev_trf_to_aid = rec.ToAid
 		prev_trf_amount = rec.Amount
-		_ = prev_trf_to_aid
 		records = append(records,rec)
 	}
 	ss.Info.Printf("rows returned = %v\n",len(records))
