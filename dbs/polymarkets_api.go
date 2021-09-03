@@ -808,7 +808,7 @@ func (ss *SQLStorage) Get_polymarket_erc1155_transfers(contract_aid int64,offset
 	ss.Info.Printf("rows returned = %v\n",len(records))
 	return records
 }
-func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,contract_aid int64,offset,limit int) []p.API_Pol_OpenInterestHistory {
+func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,contract_aid int64,condition_id string,offset,limit int) []p.API_Pol_OpenInterestHistory {
 
 	records := make([]p.API_Pol_OpenInterestHistory,0,512)
 	var query string
@@ -853,6 +853,8 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 				"LEFT JOIN pol_fund_addrem f ON usdc.tx_id=f.tx_id "+
 				"LEFT JOIN pol_pay_redem red ON usdc.tx_id=red.tx_id "+
 			"ORDER by bal_id"
+			$1 = usdc
+			$2 = contract_aid
 */
 	query = "WITH b AS (" +
 				"SELECT "+
@@ -863,9 +865,9 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 					"e20b.id bal_id,"+
 					"EXTRACT(EPOCH FROM e20b.time_stamp)::BIGINT AS ts,"+
 					"e20b.time_stamp datetime,"+
-					"e20b.amount,"+
+					"e20b.amount/1e+6 amount,"+
 					"e20b.balance,"+
-					"e20b.balance/1e+6 as bal_usd "+
+					"e20b.balance/1e+6 as bal_usd, "+
 					"e20b.parent_id,"+
 					"e20b.aid user_aid,"+
 					"e20b.contract_aid, "+
@@ -874,16 +876,70 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 				"FROM pol_tok_id_ops tops "+
 				"CROSS JOIN erc20_bal e20b "+
 				"CROSS JOIN erc20_transf e20t "+
-				"WHERE tops.tx_id=e20b.tx_id AND "+
+//				"JOIN erc20_bal e20b ON tops.tx_id=e20b.tx_id "+
+//				"JOIN erc20_transf e20t ON e20t.id=e20b.parent_id "+
+				"WHERE "+
+					"tops.tx_id=e20b.tx_id AND "+
 					"e20t.id=e20b.parent_id AND "+
-					"tops.condition_id = $1" +
-				"ORDER BY tops.id" +
+					"tops.condition_id = $1 " +
+//					"e20b.aid != $2 " +
+//					"((e20b.contract_aid=$1 AND e20b.aid=$2)) " +
+				"ORDER BY bal_id" +
 			") " +
 			"SELECT " +
+				"DISTINCT b.bal_id bal_id,"+
 				"b.ts," +
 				"b.datetime,"+
 				"b.from_aid,"+
 				"b.to_aid," +
+				"b.tx_id,"+
+				"tx.tx_hash,"+
+				"fa.addr from_addr,"+
+				"ta.addr, " +
+				"bs.id,"+
+				"bs.op_type,"+
+				"f.id," +
+				"f.op_type,"+
+				"red.id,"+
+				"b.amount,"+
+				"b.bal_usd "+
+			"FROM b "+
+				"JOIN transaction tx ON b.tx_id=tx.id "+
+				"JOIN address fa ON b.from_aid=fa.address_id "+
+				"JOIN address ta ON b.to_aid=ta.address_id "+
+				"LEFT JOIN pol_buysell bs ON b.tx_id=bs.tx_id "+
+				"LEFT JOIN pol_fund_addrem f ON b.tx_id=f.tx_id "+
+				"LEFT JOIN pol_pay_redem red ON b.tx_id=red.tx_id " +
+			"ORDER BY bal_id"
+/*
+	query = "WITH b AS (" +
+				"SELECT "+
+					"DISTINCT e20b.id bal_id, "+
+					"e20b.parent_id, "+
+					"e20b.tx_id, "+
+					"e20b.contract_aid, "+
+					"e20b.aid user_aid,"+
+					"EXTRACT(EPOCH FROM e20b.time_stamp)::BIGINT AS ts,"+
+					"e20b.time_stamp datetime,"+
+					"e20b.amount,"+
+					"e20b.balance,"+
+					"e20b.balance/1e+6 as bal_usd, "+
+					"tops.parent_split_id,"+
+					"tops.parent_merge_id,"+
+					"tops.parent_redeem_id "+
+				"FROM pol_tok_id_ops tops "+
+				"CROSS JOIN erc20_bal e20b "+
+				"CROSS JOIN erc20_transf e20t "+
+				"WHERE "+
+					"tops.tx_id=e20b.tx_id AND "+
+					"tops.condition_id = $1 " +
+				"ORDER BY e20b.id" +
+			") " +
+			"SELECT " +
+				"e20t.from_aid,"+
+				"e20t.to_aid, "+
+				"b.ts," +
+				"b.datetime,"+
 				"b.tx_id,"+
 				"tx.tx_hash,"+
 				"fa.addr from_addr,"+
@@ -897,16 +953,17 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 				"b.amount,"+
 				"b.bal_usd "+
 			"FROM b "+
-				"JOIN transaction tx ON usdc.tx_id=tx.id "+
-				"JOIN address fa ON usdc.from_aid=fa.address_id "+
-				"JOIN address ta ON usdc.to_aid=ta.address_id "+
-				"LEFT JOIN pol_buysell bs ON usdc.tx_id=bs.tx_id "+
-				"LEFT JOIN pol_fund_addrem f ON usdc.tx_id=f.tx_id "+
-				"LEFT JOIN pol_pay_redem red ON usdc.tx_id=red.tx_id "+
-			"ORDER by bal_id"
-
+				"JOIN transaction tx ON b.tx_id=tx.id "+
+				"JOIN erc20_transf e20t ON b.parent_id=e20t.id "+
+				"JOIN address fa ON e20t.from_aid=fa.address_id "+
+				"JOIN address ta ON e20t.to_aid=ta.address_id "+
+				"LEFT JOIN pol_buysell bs ON b.tx_id=bs.tx_id "+
+				"LEFT JOIN pol_fund_addrem f ON b.tx_id=f.tx_id "+
+				"LEFT JOIN pol_pay_redem red ON b.tx_id=red.tx_id "
+*/
 	ss.Info.Printf("query : %v\n",query)
-	rows,err := ss.db.Query(query,usdc_aid,contract_aid)
+	rows,err := ss.db.Query(query,condition_id)
+//	rows,err := ss.db.Query(query,usdc_aid,contract_aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -921,6 +978,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 		var n_bs_id,n_far_id,n_red_id sql.NullInt64
 		var n_bs_optype,n_far_optype sql.NullInt32
 		err=rows.Scan(
+			&rec.BalChgId,
 			&rec.TimeStamp,
 			&rec.DateTime,
 			&rec.FromAid,
@@ -929,7 +987,6 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 			&rec.TxHash,
 			&rec.FromAddr,
 			&rec.ToAddr,
-			&rec.BalChgId,
 			&n_bs_id,
 			&n_bs_optype,
 			&n_far_id,
@@ -947,21 +1004,26 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 		if n_far_id.Valid { rec.FundOpId = n_far_id.Int64 } else { rec.FundOpId = -1 }
 		if n_far_optype.Valid { rec.FundOpType = n_far_optype.Int32 } else { rec.FundOpType = -1 }
 		if n_red_id.Valid { rec.RedeemId = n_red_id.Int64} else { rec.RedeemId = -1 }
+		/// filter for duplicates begin
+		if (rec.ToAid == contract_aid) && (rec.Amount<0.0) { continue }
+		if (rec.FromAid == contract_aid) && (rec.ToAid==condtok_aid) && (rec.Amount<0.0) { continue }
+		if rec.FromAddr == "0x0000000000000000000000000000000000000000" { continue }
+		/// filter for duplicate ends
 		if n_bs_id.Valid {
 			if (rec.ToAid == condtok_aid) && (rec.FromAid == contract_aid) && (rec.BuySellOpType == 0){
 				// buy op
 				if prev_trf_to_aid == contract_aid {
-					rec.Fee = prev_trf_amount - (-rec.Amount)
+					rec.Fee = prev_trf_amount - (rec.Amount)
 					fee_accum = fee_accum + rec.Fee
-					open_interest = open_interest +  (-rec.Amount)
+					open_interest = open_interest +  (rec.Amount)
 				}
 			}
 			if (rec.FromAid == contract_aid) && (rec.FromAid != condtok_aid) && (rec.BuySellOpType == 1) {
 				// sell op
 				if prev_trf_to_aid == contract_aid {
-					rec.Fee = prev_trf_amount - (-rec.Amount)
+					rec.Fee = prev_trf_amount - (rec.Amount)
 					fee_accum = fee_accum + rec.Fee
-					open_interest = open_interest - (-rec.Amount) - rec.Fee
+					open_interest = open_interest - (rec.Amount) - rec.Fee
 				}
 			}
 		}
@@ -970,12 +1032,12 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 		if n_far_id.Valid {
 			if rec.FundOpType == 0 { // add funds
 				if (rec.ToAid == condtok_aid) && (rec.FromAid == contract_aid) {
-					open_interest = open_interest + (-rec.Amount)
+					open_interest = open_interest + (rec.Amount)
 				}
 			}
 			if rec.FundOpType == 1 { //withdraw funds
 				if (rec.FromAid == contract_aid) && (rec.ToAid != condtok_aid) {
-					open_interest = open_interest - (-rec.Amount)
+					open_interest = open_interest - (rec.Amount)
 					ss.Info.Printf("new open interest is %v\n",open_interest)
 				} else {
 					ss.Info.Printf("condition to withdraw funds isn't met\n")

@@ -338,3 +338,9 @@ type Pol_ContractAddresses struct {
 	CondTokAid				int64
 	USDCAid					int64
 }
+type Pol_TokIdRec struct {
+	TxId					int64
+	ParentSplitId			int64
+	ParentMergeId			int64
+	ParentRedeemId			int64
+}

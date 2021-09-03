@@ -2483,11 +2483,13 @@ func a1_market_open_interest_history(c *gin.Context) {
 		respond_error_json(c,"Polymarket with this ID wasn't found")
 		return
 	}
+	condition_id := augur_srv.storage.Get_condition_id(market_id)
 	caddrs := augur_srv.storage.Get_polymarket_contract_addresses()
 	oi_hist := augur_srv.storage.Get_polymarket_open_interst_history(
 		caddrs.USDCAid,
 		caddrs.CondTokAid,
 		fpmm_aid,
+		condition_id,
 		offset,
 		limit,
 	)
