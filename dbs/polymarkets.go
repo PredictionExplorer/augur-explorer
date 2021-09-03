@@ -215,10 +215,12 @@ func (ss *SQLStorage) Insert_payout_redemption(evt *p.Pol_PayoutRedemption) {
 	var query string
 	query = "INSERT INTO pol_pay_redem (" +
 				evt_log_field + "block_num,tx_id,time_stamp,contract_aid, "+
-				"redeemer_aid,collateral_aid,parent_coll_id,condition_id,index_sets,payout" +
+				"redeemer_aid,collateral_aid,parent_coll_id,condition_id,index_sets,payout," +
+				"tok_ids,tok_froms,tok_tos,tok_amounts"+
 			") VALUES (" +
 				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,"+
-				"$5,$6,$7,$8,$9,$10"+
+				"$5,$6,$7,$8,$9,$10,"+
+				"$11,$12,$13,$14"+
 			")"
 	_,err := ss.db.Exec(query,
 		evt.BlockNum,
@@ -231,6 +233,10 @@ func (ss *SQLStorage) Insert_payout_redemption(evt *p.Pol_PayoutRedemption) {
 		evt.ConditionId,
 		evt.IndexSets,
 		evt.Payout,
+		evt.TokenIds,
+		evt.TokenFroms,
+		evt.TokenTos,
+		evt.TokenAmounts,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pol_pay_redem table: %v\n",err))

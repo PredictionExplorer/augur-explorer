@@ -216,8 +216,13 @@ BEGIN
 			v_amount := v_amounts_str[v_counter]::DECIMAL;
 			v_froms := STRING_TO_ARRAY(NEW.tok_froms,',');
 			v_tos := STRING_TO_ARRAY(NEW.tok_tos,',');
-			INSERT INTO pol_pos_tok_ids(parent_split_id,contract_aid,token_id_hex,outcome_idx,token_from,token_to,token_amount)
-				VALUES(NEW.id,NEW.stakeholder_aid,v_token_id_hex,v_counter-1,v_froms[v_counter],v_tos[v_counter],v_amount);
+			INSERT INTO pol_tok_id_ops(
+				tx_id,evtlog_id,parent_split_id,contract_aid,token_id_hex,condition_id,
+				outcome_idx,token_from,token_to,token_amount
+			) VALUES(
+				NEW.tx_id,NEW.evtlog_id,NEW.id,NEW.stakeholder_aid,v_token_id_hex,NEW.condition_id,
+				v_counter-1,v_froms[v_counter],v_tos[v_counter],v_amount
+			);
 			INSERT INTO pol_tok_ids(contract_aid,token_id_hex,outcome_idx)
 				VALUES(NEW.stakeholder_aid,v_token_id_hex,v_counter-1)
 				ON CONFLICT DO NOTHING;
@@ -255,8 +260,13 @@ BEGIN
 		FOREACH v_token_id_hex IN ARRAY STRING_TO_ARRAY(NEW.tok_ids,',')
 		LOOP
 			v_amount := v_amounts_str[v_counter]::DECIMAL;
-			INSERT INTO pol_pos_tok_ids(parent_merge_id,contract_aid,token_id_hex,outcome_idx,token_from,token_to,token_amount)
-				VALUES(NEW.id,NEW.stakeholder_aid,v_token_id_hex,v_counter-1,v_froms[v_counter],v_tos[v_counter],v_amount);
+			INSERT INTO pol_tok_id_ops(
+				tx_id,evtlog_id,parent_merge_id,contract_aid,token_id_hex,condition_id,
+				outcome_idx,token_from,token_to,token_amount
+			) VALUES(
+				NEW.evtlog_id,NEW.tx_id,NEW.id,NEW.stakeholder_aid,v_token_id_hex,NEW.condition_id,
+				v_counter-1,v_froms[v_counter],v_tos[v_counter],v_amount
+			);
 			INSERT INTO pol_tok_ids(contract_aid,token_id_hex,outcome_idx)
 				VALUES(NEW.stakeholder_aid,v_token_id_hex,v_counter-1)
 				ON CONFLICT DO NOTHING;
@@ -278,6 +288,12 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_pol_pay_redem_insert() RETURNS trigger AS  $$
 DECLARE
 	v_mkt_mkr_aid			BIGINT;
+	v_counter				BIGINT;
+	v_froms					TEXT[];
+	v_tos					TEXT[]; -- the To fields of ERC1155 transfer events
+	v_amounts_str			TEXT[];
+	v_token_id_hex			TEXT;
+	v_amount				DECIMAL;
 BEGIN
 	-- we need to extract contract_aid because Conditional Token
 	--	is the contract that emits these events (not market maker contract)
@@ -299,6 +315,26 @@ BEGIN
 					NEW.condition_id,NEW.block_num;
 				RETURN NEW;
 			END IF;
+	END IF;
+
+	IF LENGTH(NEW.tok_ids) > 0 THEN
+		v_counter := 1;
+		v_amounts_str := STRING_TO_ARRAY(NEW.tok_amounts,',');
+		FOREACH v_token_id_hex IN ARRAY STRING_TO_ARRAY(NEW.tok_ids,',')
+		LOOP
+			v_amount := v_amounts_str[v_counter]::DECIMAL;
+			v_froms := STRING_TO_ARRAY(NEW.tok_froms,',');
+			v_tos := STRING_TO_ARRAY(NEW.tok_tos,',');
+			-- Noote: here we do not insert 'contract_aid' field because we don't have it
+			INSERT INTO pol_tok_id_ops(
+				tx_id,evtlog_id,parent_split_id,token_id_hex,condition_id,
+				outcome_idx,token_from,token_to,token_amount
+			) VALUES(
+				NEW.tx_id,NEW.evtlog_id,NEW.id,v_token_id_hex,NEW.condition_id,
+				v_counter-1,v_froms[v_counter],v_tos[v_counter],v_amount
+			);
+			v_counter := (v_counter + 1);
+		END LOOP;
 	END IF;
 
 	UPDATE pol_mkt_stats

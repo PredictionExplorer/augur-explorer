@@ -812,7 +812,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 
 	records := make([]p.API_Pol_OpenInterestHistory,0,512)
 	var query string
-	query = "WITH usdc AS ("+
+/*	query = "WITH usdc AS ("+
 				"SELECT "+
 					"EXTRACT(EPOCH FROM e20b.time_stamp)::BIGINT AS created_at_ts,"+
 					"e20b.time_stamp datetime,"+
@@ -846,6 +846,57 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 				"usdc.amount,"+
 				"usdc.bal_usd "+
 			"FROM usdc "+
+				"JOIN transaction tx ON usdc.tx_id=tx.id "+
+				"JOIN address fa ON usdc.from_aid=fa.address_id "+
+				"JOIN address ta ON usdc.to_aid=ta.address_id "+
+				"LEFT JOIN pol_buysell bs ON usdc.tx_id=bs.tx_id "+
+				"LEFT JOIN pol_fund_addrem f ON usdc.tx_id=f.tx_id "+
+				"LEFT JOIN pol_pay_redem red ON usdc.tx_id=red.tx_id "+
+			"ORDER by bal_id"
+*/
+	query = "WITH b AS (" +
+				"SELECT "+
+					"tops.tx_id, "+
+					"tops.parent_split_id,"+
+					"tops.parent_merge_id,"+
+					"tops.parent_redeem_id,"+
+					"e20b.id bal_id,"+
+					"EXTRACT(EPOCH FROM e20b.time_stamp)::BIGINT AS ts,"+
+					"e20b.time_stamp datetime,"+
+					"e20b.amount,"+
+					"e20b.balance,"+
+					"e20b.balance/1e+6 as bal_usd "+
+					"e20b.parent_id,"+
+					"e20b.aid user_aid,"+
+					"e20b.contract_aid, "+
+					"e20t.from_aid,"+
+					"e20t.to_aid "+
+				"FROM pol_tok_id_ops tops "+
+				"CROSS JOIN erc20_bal e20b "+
+				"CROSS JOIN erc20_transf e20t "+
+				"WHERE tops.tx_id=e20b.tx_id AND "+
+					"e20t.id=e20b.parent_id AND "+
+					"tops.condition_id = $1" +
+				"ORDER BY tops.id" +
+			") " +
+			"SELECT " +
+				"b.ts," +
+				"b.datetime,"+
+				"b.from_aid,"+
+				"b.to_aid," +
+				"b.tx_id,"+
+				"tx.tx_hash,"+
+				"fa.addr from_addr,"+
+				"ta.addr, " +
+				"b.bal_id,"+
+				"bs.id,"+
+				"bs.op_type,"+
+				"f.id," +
+				"f.op_type,"+
+				"red.id,"+
+				"b.amount,"+
+				"b.bal_usd "+
+			"FROM b "+
 				"JOIN transaction tx ON usdc.tx_id=tx.id "+
 				"JOIN address fa ON usdc.from_aid=fa.address_id "+
 				"JOIN address ta ON usdc.to_aid=ta.address_id "+

@@ -65,11 +65,16 @@ CREATE TABLE pol_pos_merge ( -- PositionMerge, event of ConditionalToken (Gnosis
 	tok_amounts			TEXT NOT NULL,	-- Amount fileds (comma separated)
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE pol_pos_tok_ids ( -- Token IDs that correspond to position merge or position split
+CREATE TABLE pol_tok_id_ops ( -- Token IDs that correspond to position merge/position split/payout redeem
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	tx_id				BIGINT,
 	parent_split_id		BIGINT REFERENCES pol_pos_split(id) ON DELETE CASCADE,
 	parent_merge_id		BIGINT REFERENCES pol_pos_merge(id) ON DELETE CASCADE,
-	contract_aid		BIGINT NOT NULL,
+	parent_redeem_id	BIGINT REFERENCES pol_pos_merge(id) ON DELETE CASCADE,
+	contract_aid		BIGINT,
 	outcome_idx			INT NOT NULL,
+	condition_id		TEXT NOT NULL, -- will be null for FixedProductMarkeMaker, and non-null for cond. token
 	token_id_hex		TEXT NOT NULL,
 	token_from			TEXT NOT NULL,
 	token_to			TEXT NOT NULL,
@@ -93,6 +98,11 @@ CREATE TABLE pol_pay_redem (-- PayoutRedemption, event of ConditionalToken (Gnos
 	condition_id		TEXT NOT NULL,
 	index_sets			TEXT NOT NULL,
 	payout				DECIMAL,
+	-- The following are linked ERC1155 transfers
+	tok_ids				TEXT NOT NULL,	-- transferred token IDs (comma separated)
+	tok_froms			TEXT NOT NULL,  -- the From field (comma separated)
+	tok_tos				TEXT NOT NULL,	-- the To fields (comma separated)
+	tok_amounts			TEXT NOT NULL,	-- Amount fileds (comma separated)
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE pol_uri ( -- URI, event of ConditionalToken (Gnosis)
@@ -139,14 +149,15 @@ CREATE TABLE pol_buysell ( -- FPMMBuy/FPMMSell event of contract FixedProductMar
 	accum_collateral	DECIMAL DEFAULT 0,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE pol_position ( -- User's position of outcomes of a market (ERC1155 transfer)
+/*
+CREATE TABLE pol_oi_hist ( -- Open interest change history
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	user_aid			BIGINT NOT NULL,
 	market_id			INT NOT NULL,
-	partition			INT NOT NULL,
-	tot_amount			DECIMAL NOT NULL,
-	condition_id		TEXT NOT NULL,	-- this is TokenId in ERC1155 lingo
+	
 	PRIMARY KEY(user_aid,market_id,condition_id)
-);
+);*/
 CREATE TABLE update_needed (	-- used to flag the market fetching process (polysync) to update markets
 	market_update		BOOLEAN DEFAULT FALSE
 );

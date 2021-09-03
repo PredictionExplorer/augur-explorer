@@ -215,7 +215,7 @@ func proc_condition_resolution(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_condition_resolution(&evt)
 }
-func locate_token_transfers_pos_split_or_merge(contract_aid,tx_id,topping_evtlog_id int64) []GnosisTransfer {
+func locate_token_transfers_pos_split_or_merge(contract_aid,tx_id,topping_evtlog_id int64,ignore_null_transfers bool) []GnosisTransfer {
 	// this method of identifying Gnosis Token IDs without calling `getPositionId() / getCollectionId()
 	//	to the contract works because PositionSplit or PositionsMerge events are inserted in the DB
 	//	only after TransferSingle and TransferBatch events were already processed, therefore the
@@ -231,14 +231,19 @@ func locate_token_transfers_pos_split_or_merge(contract_aid,tx_id,topping_evtlog
 	for i:=0 ; i<len(events) ; i++ {
 		e := events[i]
 		Info.Printf("topic0_sig = %v\n",e.Topic0_Sig)
-		if (e.Topic0_Sig == "8c5be1e5") || (e.Topic0_Sig == "17307eab") {
+		if (e.Topic0_Sig == "8c5be1e5") || (e.Topic0_Sig == "17307eab") { // Approvel & ApprovalForall
 			end_of_function_found = true
 			break
 		}
-		if (e.Topic0_Sig == "2e6bb91f") || (e.Topic0_Sig == "6f13ca62") {
+		if (e.Topic0_Sig == "2e6bb91f") || (e.Topic0_Sig == "6f13ca62") { // PositionSplit & PositionMerge
 			end_of_function_found = true	// Next condition split/merge found (they can run in a batch)
 		}
-		if e.Topic0_Sig == "ddf252ad" {
+		if e.Topic0_Sig == "2682012a" { // PayoutRedemption event
+			// this will only trigger if a transaction makes multiple calls to
+								//ConditionalToken::redeemPositions() function
+			end_of_function_found = true
+		}
+		if e.Topic0_Sig == "ddf252ad" { // ERC20::Transfer event
 			continue	// we skip transfer of the collateral in between mints/burns
 		}
 		var log types.Log
@@ -290,8 +295,10 @@ func locate_token_transfers_pos_split_or_merge(contract_aid,tx_id,topping_evtlog
 	}
 	if !end_of_function_found {
 		if len(output) == 0 {
-			Info.Printf("tx_id=%v , end of function marker not found, please debug\n",tx_id)
-			os.Exit(1)
+			if !ignore_null_transfers {
+				Info.Printf("tx_id=%v , end of function marker not found, please debug\n",tx_id)
+				os.Exit(1)
+			}
 		}
 	}
 	Info.Printf("returning output len = %v\n",len(output))
@@ -327,7 +334,7 @@ func proc_position_split(log *types.Log,elog *EthereumEventLog) {
 	evt.Amount = eth_evt.Amount.String()
 
 	contract_aid := storage.Lookup_address_id(evt.Contract)
-	gnosis_transfers := locate_token_transfers_pos_split_or_merge(contract_aid,evt.TxId,evt.EvtId)
+	gnosis_transfers := locate_token_transfers_pos_split_or_merge(contract_aid,evt.TxId,evt.EvtId,false)
 	for i:=0;i<len(gnosis_transfers);i++ {
 		if len(evt.TokenIds) > 0 { evt.TokenIds += "," }
 		evt.TokenIds = evt.TokenIds + gnosis_transfers[i].TokenId
@@ -388,7 +395,7 @@ func proc_positions_merge(log *types.Log,elog *EthereumEventLog) {
 	evt.Amount = eth_evt.Amount.String()
 
 	contract_aid := storage.Lookup_address_id(evt.Contract)
-	gnosis_transfers := locate_token_transfers_pos_split_or_merge(contract_aid,evt.TxId,evt.EvtId)
+	gnosis_transfers := locate_token_transfers_pos_split_or_merge(contract_aid,evt.TxId,evt.EvtId,false)
 	for i:=0;i<len(gnosis_transfers);i++ {
 		if len(evt.TokenIds) > 0 { evt.TokenIds += "," }
 		evt.TokenIds = evt.TokenIds + gnosis_transfers[i].TokenId
@@ -448,6 +455,19 @@ func proc_payout_redemption(log *types.Log,elog *EthereumEventLog) {
 	evt.IndexSets = Bigint_ptr_slice_to_str(&eth_evt.IndexSets,",")
 	evt.Payout = eth_evt.Payout.String()
 
+	contract_aid := storage.Lookup_address_id(evt.Contract)
+	gnosis_transfers := locate_token_transfers_pos_split_or_merge(contract_aid,evt.TxId,evt.EvtId,true)
+	for i:=0;i<len(gnosis_transfers);i++ {
+		if len(evt.TokenIds) > 0 { evt.TokenIds += "," }
+		evt.TokenIds = evt.TokenIds + gnosis_transfers[i].TokenId
+		if len(evt.TokenFroms) > 0 { evt.TokenFroms += "," }
+		evt.TokenFroms= evt.TokenFroms + gnosis_transfers[i].From
+		if len(evt.TokenTos) > 0 { evt.TokenTos+= "," }
+		evt.TokenTos = evt.TokenTos + gnosis_transfers[i].To
+		if len(evt.TokenAmounts) > 0 { evt.TokenAmounts+= "," }
+		evt.TokenAmounts = evt.TokenAmounts + gnosis_transfers[i].Amount
+	}
+
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("PayoutRedemption{\n")
 	Info.Printf("\tRedemer: %v\n",evt.Redeemer)
@@ -456,7 +476,18 @@ func proc_payout_redemption(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tParentCollectionId: %v\n",evt.ParentCollectionId)
 	Info.Printf("\tIndexSets: %v\n",evt.IndexSets)
 	Info.Printf("\tPayout: %v\n",evt.Payout)
+	Info.Printf("\tERC1155 TokenIds: %v\n",evt.TokenIds)
+	Info.Printf("\tERC1155 Froms: %v\n",evt.TokenFroms)
+	Info.Printf("\tERC1155 Tos: %v\n",evt.TokenTos)
+	Info.Printf("\tERC1155 Amounts: %v\n",evt.TokenAmounts)
 	Info.Printf("}\n")
+
+	if (len(evt.TokenIds) == 0 ) {
+		if evt.Payout != "0" {
+			Error.Printf("Invalid length (length=0) for ERC1155 transfers), tx_id %v\n",evt.TxId)
+			os.Exit(1)
+		}
+	}
 
 	storage.Insert_payout_redemption(&evt)
 }

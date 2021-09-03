@@ -173,6 +173,10 @@ type Pol_PayoutRedemption struct {
 	ConditionId				string
 	IndexSets				string
 	Payout					string
+	TokenIds				string
+	TokenFroms				string
+	TokenTos				string
+	TokenAmounts			string
 }
 type Pol_URI struct {
 	EvtId                   int64
