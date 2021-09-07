@@ -69,6 +69,7 @@
 					{{ if eq .FundOpType 0 }} Add Funds {{ else }} Remove Funds {{end}}
 				{{ end }}
 				{{ if gt .RedeemId 0 }}Payout redemption{{end}}
+				<b>Ids:</b> BySellId: {{.BuySellOpId}} &nbsp; AddRemId: {{.FundOpId}} &nbsp; BuySellOpType: {{.BuySellOpType}}
 			</td>
 		</tr>
 	{{- end}}

@@ -16,5 +16,6 @@ CREATE INDEX pol_redem_cond_idx			ON	pol_pay_redem		(condition_id);
 CREATE INDEX pol_market_categ_idx		ON	pol_market			(category);
 CREATE INDEX pol_tokidops_tx_idx		ON	pol_tok_id_ops		(tx_id);
 CREATE INDEX pol_tokidops_cond_idx		ON	pol_tok_id_ops		(condition_id);
-CREATE INDEX pol_tokidops_condtx_idx	ON	pol_tok_id_ops		(condition_id,tx_id);
-CREATE INDEX pol_tokidops_condtx_idx2	ON	pol_tok_id_ops		(tx_id,condition_id);
+CREATE INDEX pol_tokidops_split_idx		ON	pol_tok_id_ops		(parent_split_id);
+CREATE INDEX pol_tokidops_merge_idx		ON	pol_tok_id_ops		(parent_merge_id);
+CREATE INDEX pol_tokidops_redeem_idx	ON	pol_tok_id_ops		(parent_redeem_id);

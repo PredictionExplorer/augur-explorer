@@ -481,7 +481,7 @@ func (ss *SQLStorage) Calculate_prices(contract_aid int64) []p.Pol_CondTokPrices
 	prices := make([]*big.Float,0,rec_len)
 	for i:=0; i<rec_len ; i++ {
 		numerator := odds_weight_for_outcome_func(i,balances)
-		denominator := big.NewInt(0)
+		denominator := big.NewInt(1)
 		for j:=0; j<rec_len; j++ {
 			odds_outcome := odds_weight_for_outcome_func(j,balances)
 			denominator.Add(denominator,odds_outcome)

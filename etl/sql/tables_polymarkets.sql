@@ -71,14 +71,16 @@ CREATE TABLE pol_tok_id_ops ( -- Token IDs that correspond to position merge/pos
 	tx_id				BIGINT,
 	parent_split_id		BIGINT REFERENCES pol_pos_split(id) ON DELETE CASCADE,
 	parent_merge_id		BIGINT REFERENCES pol_pos_merge(id) ON DELETE CASCADE,
-	parent_redeem_id	BIGINT REFERENCES pol_pos_merge(id) ON DELETE CASCADE,
+	parent_redeem_id	BIGINT REFERENCES pol_pay_redeem(id) ON DELETE CASCADE,
 	contract_aid		BIGINT,
 	outcome_idx			INT NOT NULL,
 	condition_id		TEXT NOT NULL, -- will be null for FixedProductMarkeMaker, and non-null for cond. token
 	token_id_hex		TEXT NOT NULL,
 	token_from			TEXT NOT NULL,
 	token_to			TEXT NOT NULL,
-	token_amount		DECIMAL NOT NULL
+	token_amount		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id,outcome_idx)
+
 );
 CREATE TABLE pol_tok_ids (	-- table that collects only unique token_IDs per market
 	contract_aid		BIGINT NOT NULL,
