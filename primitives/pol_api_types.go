@@ -261,3 +261,12 @@ type API_Pol_OpenInterestHistory struct {
 	ContractBalance			float64
 	ContractBalanceAccum	float64
 }
+type PolTextSearchResult struct {
+	ObjType					int
+	MarketId				int64
+	ContractAid				int64
+	Volume					float64
+	ContractAddr			string	// aka Market Maker address
+	Description				string
+	Title					string
+}

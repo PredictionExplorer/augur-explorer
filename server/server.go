@@ -3125,3 +3125,18 @@ func poly_market_open_interest_history(c *gin.Context) {
 		"USDCAid" : caddrs.USDCAid,
 	})
 }
+func poly_market_search(c *gin.Context) {
+
+	p_keyword:= c.Query("q")
+	if len(p_keyword) == 0 {
+		respond_error(c,"'q' parameter is not set")
+		return
+	}
+
+	results := augur_srv.storage.Search_polymarket_keywords(p_keyword)
+
+	c.HTML(http.StatusOK, "polymarkets_search_results.html", gin.H{
+		"Keywords" : p_keyword,
+		"SearchResults" : results,
+	})
+}

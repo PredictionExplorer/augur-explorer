@@ -2424,6 +2424,7 @@ func a1_poly_categories(c *gin.Context) {
 }
 func a1_poly_market_erc1155_transfers(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	p_market_id := c.Param("market_id")
 	var market_id int64
 	if len(p_market_id) > 0 {
@@ -2461,6 +2462,7 @@ func a1_poly_market_erc1155_transfers(c *gin.Context) {
 }
 func a1_market_open_interest_history(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	p_market_id := c.Param("market_id")
 	var market_id int64
 	if len(p_market_id) > 0 {
@@ -2504,5 +2506,24 @@ func a1_market_open_interest_history(c *gin.Context) {
 		"OIHistory" : oi_hist,
 		"CondTokAid" : caddrs.CondTokAid,
 		"USDCAid" : caddrs.USDCAid,
+	})
+}
+func a1_poly_market_search(c *gin.Context) {
+
+	p_keyword:= c.Query("q")
+	if len(p_keyword) == 0 {
+		respond_error_json(c,"'q' parameter is not set")
+		return
+	}
+
+	results := augur_srv.storage.Search_polymarket_keywords(p_keyword)
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+		"status": status,
+		"error": err_str,
+		"Keywords" : p_keyword,
+		"SearchResults" : results,
 	})
 }

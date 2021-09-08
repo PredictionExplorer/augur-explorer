@@ -10,3 +10,5 @@ CREATE TRIGGER cond_merge_insert AFTER INSERT ON pol_pos_merge FOR EACH ROW EXEC
 CREATE TRIGGER cond_merge_delete AFTER DELETE ON pol_pos_merge FOR EACH ROW EXECUTE PROCEDURE on_pol_pos_merge_delete();
 CREATE TRIGGER pay_redem_insert AFTER INSERT ON pol_pay_redem FOR EACH ROW EXECUTE PROCEDURE on_pol_pay_redem_insert();
 CREATE TRIGGER pay_redem_delete AFTER DELETE ON pol_pay_redem FOR EACH ROW EXECUTE PROCEDURE on_pol_pay_redem_delete();
+CREATE TRIGGER pol_market_insert AFTER INSERT ON pol_market FOR EACH ROW EXECUTE PROCEDURE on_pol_market_insert();
+CREATE TRIGGER pol_market_delete AFTER DELETE ON pol_market FOR EACH ROW EXECUTE PROCEDURE on_pol_market_delete();

@@ -65,28 +65,6 @@ CREATE TABLE pol_pos_merge ( -- PositionMerge, event of ConditionalToken (Gnosis
 	tok_amounts			TEXT NOT NULL,	-- Amount fileds (comma separated)
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE pol_tok_id_ops ( -- Token IDs that correspond to position merge/position split/payout redeem
-	id					BIGSERIAL PRIMARY KEY,
-	evtlog_id			BIGINT,
-	tx_id				BIGINT,
-	parent_split_id		BIGINT REFERENCES pol_pos_split(id) ON DELETE CASCADE,
-	parent_merge_id		BIGINT REFERENCES pol_pos_merge(id) ON DELETE CASCADE,
-	parent_redeem_id	BIGINT REFERENCES pol_pay_redeem(id) ON DELETE CASCADE,
-	contract_aid		BIGINT,
-	outcome_idx			INT NOT NULL,
-	condition_id		TEXT NOT NULL, -- will be null for FixedProductMarkeMaker, and non-null for cond. token
-	token_id_hex		TEXT NOT NULL,
-	token_from			TEXT NOT NULL,
-	token_to			TEXT NOT NULL,
-	token_amount		DECIMAL NOT NULL,
-	UNIQUE(evtlog_id,outcome_idx)
-
-);
-CREATE TABLE pol_tok_ids (	-- table that collects only unique token_IDs per market
-	contract_aid		BIGINT NOT NULL,
-	outcome_idx			INT NOT NULL,
-	token_id_hex		TEXT PRIMARY KEY
-);
 CREATE TABLE pol_pay_redem (-- PayoutRedemption, event of ConditionalToken (Gnosis)
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
@@ -106,6 +84,28 @@ CREATE TABLE pol_pay_redem (-- PayoutRedemption, event of ConditionalToken (Gnos
 	tok_tos				TEXT NOT NULL,	-- the To fields (comma separated)
 	tok_amounts			TEXT NOT NULL,	-- Amount fileds (comma separated)
 	UNIQUE(evtlog_id)
+);
+CREATE TABLE pol_tok_id_ops ( -- Token IDs that correspond to position merge/position split/payout redeem
+	id					BIGSERIAL PRIMARY KEY,
+	evtlog_id			BIGINT,
+	tx_id				BIGINT,
+	parent_split_id		BIGINT REFERENCES pol_pos_split(id) ON DELETE CASCADE,
+	parent_merge_id		BIGINT REFERENCES pol_pos_merge(id) ON DELETE CASCADE,
+	parent_redeem_id	BIGINT REFERENCES pol_pay_redem(id) ON DELETE CASCADE,
+	contract_aid		BIGINT,
+	outcome_idx			INT NOT NULL,
+	condition_id		TEXT NOT NULL, -- will be null for FixedProductMarkeMaker, and non-null for cond. token
+	token_id_hex		TEXT NOT NULL,
+	token_from			TEXT NOT NULL,
+	token_to			TEXT NOT NULL,
+	token_amount		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id,token_id_hex)
+
+);
+CREATE TABLE pol_tok_ids (	-- table that collects only unique token_IDs per market
+	contract_aid		BIGINT NOT NULL,
+	outcome_idx			INT NOT NULL,
+	token_id_hex		TEXT PRIMARY KEY
 );
 CREATE TABLE pol_uri ( -- URI, event of ConditionalToken (Gnosis)
 	id					BIGSERIAL PRIMARY KEY,
@@ -220,6 +220,13 @@ CREATE table pol_market ( -- As received from https://strapi-matic.poly.market/m
 	liquidity					DECIMAL DEFAULT 0,
 
 	UNIQUE(market_id)
+);
+CREATE TABLE pol_mkt_words(-- search tokens for searching markets by description/title
+	id					BIGSERIAL PRIMARY KEY,
+	market_id			BIGINT NOT NULL,
+	contract_aid		BIGINT NOT NULL,
+	tok_type			SMALLINT DEFAULT 0,				-- 0-description 1 - title
+	tokens				TSVECTOR
 );
 CREATE TABLE pol_proc_status (
 	last_evt_id				BIGINT DEFAULT 0,

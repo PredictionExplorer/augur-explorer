@@ -1582,3 +1582,59 @@ func (ss *SQLStorage) Get_polymarket_contract_addresses() p.Pol_ContractAddresse
 	}
 	return output
 }
+func (ss *SQLStorage) Search_polymarket_keywords(keywords string) []p.PolTextSearchResult {
+
+	var query string
+	query = "WITH search_tokens AS (" +
+				"SELECT market_id,contract_aid,tok_type "+
+				"FROM pol_mkt_words,plainto_tsquery($1) AS q " +
+				"WHERE tokens @@ q" +
+			") " +
+			"SELECT " +
+				"st.market_id," +
+				"st.contract_aid,"+
+				"st.tok_type, " +
+				"ca.addr," +
+				"pm.question," +
+				"pm.description," +
+				"stat.total_volume " +
+			"FROM search_tokens AS st " +
+			"LEFT JOIN pol_market AS pm ON st.market_id=pm.market_id " +
+			"LEFT JOIN address AS ca ON pm.mkt_mkr_aid=ca.address_id " +
+			"LEFT JOIN pol_mkt_stats stat ON pm.mkt_mkr_aid=stat.contract_aid " +
+			"ORDER BY st.tok_type DESC,total_volume DESC"
+
+	rows,err := ss.db.Query(query,keywords)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.PolTextSearchResult,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var description,title sql.NullString
+		var contract_addr sql.NullString
+		var tot_vol sql.NullFloat64
+		var rec p.PolTextSearchResult
+		err=rows.Scan(
+			&rec.MarketId,
+			&rec.ContractAid,
+			&rec.ObjType,
+			&contract_addr,
+			&title,
+			&description,
+			&tot_vol,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		if contract_addr.Valid { rec.ContractAddr = contract_addr.String }
+		if tot_vol.Valid { rec.Volume = tot_vol.Float64 }
+		if title.Valid { rec.Title = title.String }
+		if description.Valid { rec.Description = description.String }
+		records = append(records,rec)
+	}
+	return records
+}

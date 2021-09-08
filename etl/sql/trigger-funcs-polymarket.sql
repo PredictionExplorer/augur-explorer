@@ -388,3 +388,39 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION pol_insert_search_tokens(p_market_id BIGINT,p_contract_aid BIGINT,p_desc TEXT,p_title TEXT) RETURNS void AS  $$
+DECLARE
+BEGIN
+
+
+	INSERT INTO pol_mkt_words(market_id,contract_aid,tok_type,tokens)
+		VALUES(p_market_id,p_contract_aid,1,setweight(to_tsvector(coalesce(p_title,'')),'A'))
+		ON CONFLICT DO NOTHING;
+	INSERT INTO pol_mkt_words(market_id,contract_aid,tok_type,tokens)
+		VALUES(p_market_id,p_contract_aid,0,setweight(to_tsvector(coalesce(p_desc,'')),'D'))
+		ON CONFLICT DO NOTHING;
+
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION pol_delete_search_tokens(p_market_id bigint,p_contract_aid BIGINT) RETURNS VOID AS  $$
+DECLARE
+BEGIN
+
+	DELETE from pol_mkt_words WHERE market_id=p_market_id;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_pol_market_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	PERFORM pol_insert_search_tokens(NEW.market_id,NEW.mkt_mkr_aid,NEW.question,NEW.description);
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_pol_market_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+	PERFORM delete_search_tokens(OLD.market_id);
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;

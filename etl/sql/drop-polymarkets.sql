@@ -1,5 +1,6 @@
 DROP TABLE IF EXISTS 
 	pol_market,
+	pol_mkt_words,
 	pol_cond_prep,
 	pol_cond_res,
 	pol_pos_split,
@@ -7,7 +8,6 @@ DROP TABLE IF EXISTS
 	pol_fund_addrem,
 	pol_buysell,
 	pol_pay_redem,
-	pol_position,
 	pol_ustats,
 	pol_ustats_mkt,
 	update_needed,
@@ -18,5 +18,6 @@ DROP TABLE IF EXISTS
 	pol_unique_addrs,
 	pol_tok_id_ops,
 	pol_tok_ids,
-	pol_uranks
+	pol_uranks,
+	pol_contracts
 CASCADE;
