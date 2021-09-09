@@ -856,6 +856,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 			$1 = usdc
 			$2 = contract_aid
 */
+/*
 	query = "WITH b AS (" +
 				"SELECT "+
 					"tops.tx_id, "+
@@ -911,7 +912,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 				"LEFT JOIN pol_fund_addrem f ON b.tx_id=f.tx_id "+
 				"LEFT JOIN pol_pay_redem red ON b.tx_id=red.tx_id " +
 			"ORDER BY bal_id"
-/*
+*/
 	query = "WITH b AS (" +
 				"SELECT "+
 					"DISTINCT e20b.id bal_id, "+
@@ -929,7 +930,6 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 					"tops.parent_redeem_id "+
 				"FROM pol_tok_id_ops tops "+
 				"CROSS JOIN erc20_bal e20b "+
-				"CROSS JOIN erc20_transf e20t "+
 				"WHERE "+
 					"tops.tx_id=e20b.tx_id AND "+
 					"tops.condition_id = $1 " +
@@ -960,7 +960,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 				"LEFT JOIN pol_buysell bs ON b.tx_id=bs.tx_id "+
 				"LEFT JOIN pol_fund_addrem f ON b.tx_id=f.tx_id "+
 				"LEFT JOIN pol_pay_redem red ON b.tx_id=red.tx_id "
-*/
+
 	ss.Info.Printf("query : %v\n",query)
 	rows,err := ss.db.Query(query,condition_id)
 //	rows,err := ss.db.Query(query,usdc_aid,contract_aid)

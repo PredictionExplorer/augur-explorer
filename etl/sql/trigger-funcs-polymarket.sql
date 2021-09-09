@@ -217,10 +217,10 @@ BEGIN
 			v_froms := STRING_TO_ARRAY(NEW.tok_froms,',');
 			v_tos := STRING_TO_ARRAY(NEW.tok_tos,',');
 			INSERT INTO pol_tok_id_ops(
-				tx_id,evtlog_id,parent_split_id,contract_aid,token_id_hex,condition_id,
+				evtlog_id,tx_id,parent_split_id,contract_aid,token_id_hex,condition_id,
 				outcome_idx,token_from,token_to,token_amount
 			) VALUES(
-				NEW.tx_id,NEW.evtlog_id,NEW.id,NEW.stakeholder_aid,v_token_id_hex,NEW.condition_id,
+				NEW.evtlog_id,NEW.tx_id,NEW.id,NEW.stakeholder_aid,v_token_id_hex,NEW.condition_id,
 				v_counter-1,v_froms[v_counter],v_tos[v_counter],v_amount
 			);
 			INSERT INTO pol_tok_ids(contract_aid,token_id_hex,outcome_idx)
@@ -250,8 +250,9 @@ DECLARE
 	v_amounts_str			TEXT[];
 	v_token_id_hex			TEXT;
 	v_amount				DECIMAL;
+	v_id_ins				BIGINT;
 BEGIN
-
+	
 	IF LENGTH(NEW.tok_ids) > 0 THEN
 		v_counter := 1;
 		v_amounts_str := STRING_TO_ARRAY(NEW.tok_amounts,',');
@@ -261,12 +262,12 @@ BEGIN
 		LOOP
 			v_amount := v_amounts_str[v_counter]::DECIMAL;
 			INSERT INTO pol_tok_id_ops(
-				tx_id,evtlog_id,parent_merge_id,contract_aid,token_id_hex,condition_id,
+				evtlog_id,tx_id,parent_merge_id,contract_aid,token_id_hex,condition_id,
 				outcome_idx,token_from,token_to,token_amount
-			) VALUES(
+			) VALUES (
 				NEW.evtlog_id,NEW.tx_id,NEW.id,NEW.stakeholder_aid,v_token_id_hex,NEW.condition_id,
 				v_counter-1,v_froms[v_counter],v_tos[v_counter],v_amount
-			);
+			) RETURNING id INTO v_id_ins;
 			INSERT INTO pol_tok_ids(contract_aid,token_id_hex,outcome_idx)
 				VALUES(NEW.stakeholder_aid,v_token_id_hex,v_counter-1)
 				ON CONFLICT DO NOTHING;

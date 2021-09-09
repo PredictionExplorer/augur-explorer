@@ -98,8 +98,7 @@ CREATE TABLE pol_tok_id_ops ( -- Token IDs that correspond to position merge/pos
 	token_id_hex		TEXT NOT NULL,
 	token_from			TEXT NOT NULL,
 	token_to			TEXT NOT NULL,
-	token_amount		DECIMAL NOT NULL,
-	UNIQUE(evtlog_id,token_id_hex)
+	token_amount		DECIMAL NOT NULL
 
 );
 CREATE TABLE pol_tok_ids (	-- table that collects only unique token_IDs per market
