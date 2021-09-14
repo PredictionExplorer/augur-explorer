@@ -2,6 +2,7 @@ package dbs
 import (
 	"os"
 	"fmt"
+	"strings"
 	"strconv"
 	"math/big"
 	"database/sql"
@@ -76,12 +77,13 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 				"mst.num_trades, " +
 				"mst.num_liq_ops," +
 				"res.id, " +
+				"res.payout_numerators,"+
 				"prep.question_id, "+
 				"prep.outcome_slot_count, " +
 				"prep.tx_hash " +
 			"FROM pol_market pm " +
 				"JOIN address ma ON pm.mkt_mkr_aid=ma.address_id " +
-				"JOIN pol_mkt_stats mst ON pm.mkt_mkr_aid=mst.contract_aid " +
+				"LEFT JOIN pol_mkt_stats mst ON pm.mkt_mkr_aid=mst.contract_aid " +
 				"LEFT JOIN LATERAL ("+
 					"SELECT prep.question_id,prep.outcome_slot_count,tx_hash,prep.condition_id,prep.time_stamp " +
 					"FROM pol_cond_prep AS prep "+
@@ -99,6 +101,7 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 	var n_question_id sql.NullString
 	var n_outcome_slot_count sql.NullInt64
 	var n_cond_prep_tx_hash sql.NullString
+	var n_numerators sql.NullString
 	res := ss.db.QueryRow(query,market_id)
 	err := res.Scan(
 			&rec.Question,
@@ -128,6 +131,7 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 			&n_num_trades,
 			&n_num_liq_ops,
 			&n_resolution_id,
+			&n_numerators,
 			&n_question_id,
 			&n_outcome_slot_count,
 			&n_cond_prep_tx_hash,
@@ -155,6 +159,27 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 	if n_question_id.Valid {rec.QuestionId = n_question_id.String }
 	if n_outcome_slot_count.Valid { rec.OutcomeSlotCount = n_outcome_slot_count.Int64 }
 	if n_cond_prep_tx_hash.Valid { rec.CondPrepTxHash = n_cond_prep_tx_hash.String }
+	if n_numerators.Valid {
+		numerators_list := strings.Split(n_numerators.String,",")
+		var fsum float64
+		for n :=0 ; n < len(numerators_list) ; n ++ {
+			if len(numerators_list[n])>0 {
+				f,_:= strconv.ParseFloat(numerators_list[n], 64)
+				fsum = fsum + f
+			}
+		}
+		for n :=0 ; n < len(numerators_list) ; n ++ {
+			if len(numerators_list[n])>0 {
+				f,_:= strconv.ParseFloat(numerators_list[n], 64)
+				rec.PayoutNumerators = append(rec.PayoutNumerators,f)
+				if len(rec.PayoutNumeratorsStr) > 0 {
+					rec.PayoutNumeratorsStr += ","
+				}
+				f = 100*f/fsum
+				rec.PayoutNumeratorsStr += fmt.Sprintf("%.1f",f)+"%"
+			}
+		}
+	}
 	return rec,nil
 }
 func (ss *SQLStorage) Get_polymarkets_markets(status,sort int,category string) []p.API_Pol_MarketInfo {

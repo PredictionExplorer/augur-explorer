@@ -96,6 +96,16 @@
 	<td>ResolutionSource</td>
 	<td><a class="addr" href="{{.MarketInfo.ResolutionSource}}">{{.MarketInfo.ResolutionSource}}</a></td>
 </tr>
+{{ if .MarketInfo.WasResolved }}
+<tr class="market_detail">
+	<td>Resolved at </td>
+	<td>{{.MarketInfo.ResolvedDate}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Payout numerators </td>
+	<td>{{.MarketInfo.PayoutNumeratorsStr}}</td>
+</tr>
+{{ end }}
 <tr class="market_detail">
 	<td>Created</td>
 	<td>{{.MarketInfo.CreatedAtDate}}</td>

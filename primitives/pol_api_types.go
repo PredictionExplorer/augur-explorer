@@ -72,6 +72,8 @@ type API_Pol_MarketInfo struct {
 	NumLiquidityOps		int64
 	QuestionIdHashValid		bool
 	CondPrepTxHash		string	// Condition preparation transaction hash
+	PayoutNumerators	[]float64 // Percentages
+	PayoutNumeratorsStr string
 }
 type API_Pol_MarketStats struct {
 	OpenInterest		float64
