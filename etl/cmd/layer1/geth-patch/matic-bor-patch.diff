@@ -1,0 +1,17 @@
+diff -Naur bor/eth/api_backend.go bor-mine/eth/api_backend.go
+--- bor/eth/api_backend.go	2021-06-12 09:33:29.540795430 -0500
++++ bor-mine/eth/api_backend.go	2021-08-25 14:00:59.564022384 -0500
+@@ -173,7 +173,12 @@
+ }
+ 
+ func (b *EthAPIBackend) GetReceipts(ctx context.Context, hash common.Hash) (types.Receipts, error) {
+-	return b.eth.blockchain.GetReceiptsByHash(hash), nil
++	eth_receipts := b.eth.blockchain.GetReceiptsByHash(hash)
++	bor_receipt := b.eth.blockchain.GetBorReceiptByHash(hash)
++	if bor_receipt != nil {
++		eth_receipts = append(eth_receipts,bor_receipt)
++	}
++	return eth_receipts,nil
+ }
+ 
+ func (b *EthAPIBackend) GetLogs(ctx context.Context, hash common.Hash) ([][]*types.Log, error) {

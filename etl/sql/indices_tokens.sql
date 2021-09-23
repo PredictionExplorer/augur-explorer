@@ -17,3 +17,4 @@ CREATE INDEX ethusd_last_price_idx	ON ethusd_price		(block_num DESC,tx_id DESC,e
 
 CREATE INDEX af_wrap_evtid_idx		ON af_wrapper		(evtlog_id);
 CREATE INDEX wstransf_evtid_idx		ON wstok_transf		(evtlog_id);
+

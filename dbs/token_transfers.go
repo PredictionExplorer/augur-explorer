@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"errors"
+	"strings"
 	"bytes"
 	"math/big"
 	"database/sql"
@@ -814,7 +815,8 @@ func (ss *SQLStorage) Insert_ERC20Info(info *p.ERC20Info) {
 			"VALUES(%v,%v,%v::DECIMAL/1e+18,'%v','%v') ON CONFLICT DO NOTHING",
 			aid,info.Decimals,info.TotalSupply,info.Name,info.Symbol,
 	)
-
+	info.Name = strings.ToValidUTF8(info.Name," ")
+	info.Name = string(bytes.Trim([]byte(info.Name),"\x00"))
 	_,err := ss.db.Exec(query,
 		aid,
 		info.Decimals,

@@ -409,3 +409,116 @@ type EReportingFeeChanged struct {//0xadddfaec4505d90a6a211907536944e6e1af7ff5cf
 }
 
 
+/////////// (AUGUR) ARBITRUM EVENTS
+type EAMMFactoryPoolCreated struct {
+	Pool             common.Address
+	MarketFactory    common.Address
+	MarketId         *big.Int
+	Creator          common.Address
+	LpTokenRecipient common.Address
+	Raw              types.Log // Blockchain specific contextual infos
+}
+type WinningsClaimed struct {
+	Id             *big.Int
+	WinningOutcome common.Address
+	Amount         *big.Int
+	SettlementFee  *big.Int
+	Payout         *big.Int
+	Receiver       common.Address
+	Raw            types.Log // Blockchain specific contextual infos
+}
+type PriceMarketCreated struct {
+	Id        *big.Int
+	Creator   common.Address
+	EndTime   *big.Int
+	SpotPrice *big.Int
+	Raw       types.Log // Blockchain specific contextual infos
+}
+type SportsLinkMarketCreated struct {
+	Id                *big.Int
+	Creator           common.Address
+	EndTime           *big.Int
+	MarketType        uint8
+	EventId           *big.Int
+	HomeTeamId        *big.Int
+	AwayTeamId        *big.Int
+	EstimatedStarTime *big.Int
+	Score             *big.Int
+	Raw               types.Log // Blockchain specific contextual infos
+}
+type TrustedMarketCreated struct {
+	Id          *big.Int
+	Creator     common.Address
+	EndTime     *big.Int
+	Description string
+	Outcomes    []string
+	Raw         types.Log // Blockchain specific contextual infos
+}
+type MarketResolved struct {
+	Id     *big.Int
+	Winner common.Address
+	Raw    types.Log // Blockchain specific contextual infos
+}
+type SharesMinted struct {
+	Id       *big.Int
+	Amount   *big.Int
+	Receiver common.Address
+	Raw      types.Log // Blockchain specific contextual infos
+}
+type SharesBurned struct {
+	Id       *big.Int
+	Amount   *big.Int
+	Receiver common.Address
+	Raw      types.Log // Blockchain specific contextual infos
+}
+type SharesSwapped struct {
+	MarketFactory common.Address
+	MarketId      *big.Int
+	User          common.Address
+	Outcome       *big.Int
+	Collateral    *big.Int
+	Shares        *big.Int
+	Price         *big.Int
+	Raw           types.Log // Blockchain specific contextual infos
+}
+type LiquidityChanged struct {
+	MarketFactory  common.Address
+	MarketId       *big.Int
+	User           common.Address
+	Recipient      common.Address
+	Collateral     *big.Int
+	LpTokens       *big.Int
+	SharesReturned []*big.Int
+	Raw            types.Log // Blockchain specific contextual infos
+}
+type SettlementFeeClaimed struct {
+	SettlementAddress common.Address
+	Amount            *big.Int
+	Receiver          common.Address
+	Raw               types.Log // Blockchain specific contextual infos
+}
+type ProtocolFeeClaimed struct {
+	Protocol common.Address
+	Amount   *big.Int
+	Raw      types.Log // Blockchain specific contextual infos
+}
+type ProtocolChanged struct {
+	Protocol common.Address
+	Raw      types.Log // Blockchain specific contextual infos
+}
+type ProtocolFeeChanged struct {
+	Fee *big.Int
+	Raw types.Log // Blockchain specific contextual infos
+}
+type SettlementFeeChanged struct {
+	Fee *big.Int
+	Raw types.Log // Blockchain specific contextual infos
+}
+type StakerFeeChanged struct {
+	Fee *big.Int
+	Raw types.Log // Blockchain specific contextual infos
+}
+type LinkNodeChanged struct {
+	NewLinkNode common.Address
+	Raw         types.Log // Blockchain specific contextual infos
+}

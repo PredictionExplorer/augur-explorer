@@ -34,3 +34,5 @@ CREATE INDEX enshash_idx			ON	ens_hash(evtlog_id);
 CREATE INDEX ctrladd_idx			ON	ens_ctrl_add(evtlog_id);
 CREATE INDEX enshashchg_idx			ON	ens_hash_chg(evtlog_id);
 CREATE INDEX nmigr_idx				ON	ens_name_migrated(evtlog_id);
+
+CREATE INDEX node_node_idx			ON	ens_node(node);

@@ -28,6 +28,7 @@ const (
 	//DEFAULT_LOG_DIR				= "ae_logs"
 	MAX_APPROVAL_BASE10 string = "115792089237316195423570985008687907853269984665640564039457584007913129639935"
 	NUM_AUGUR_CONTRACTS int = 35
+	USE_BLOCK_RECEIPTS_RPC_CALL bool = true		// flag for using patch in ./geth-patch/README.txt
 )
 var (
 	storage *SQLStorage
@@ -74,6 +75,14 @@ func read_block_numbers(fname string)  []int64 {
 }
 func main() {
 	//client, err := ethclient.Dial("http://:::8545")
+	var rLimit syscall.Rlimit
+	rLimit.Max = 999999
+	rLimit.Cur = 999999
+	err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+	if err != nil {
+		fmt.Println("Error Setting Rlimit ", err)
+		os.Exit(1)
+	}
 
 	if len(RPC_URL) == 0 {
 		Fatalf("Configuration error: RPC URL of Ethereum node is not set."+

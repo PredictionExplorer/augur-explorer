@@ -1,0 +1,66 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Sports Markets</title>
+</head>
+<body>
+<h3 class="page_title">Sports<h3>
+<h4 class="page_title">
+<a href="/black/arbitrum/markets/sports/0/0">Open Markets</a>&nbsp;&nbsp;
+<a href="/black/arbitrum/markets/sports/1/0">Resolved Markets</a>&nbsp;&nbsp;
+</h4>
+<br/>
+<div id="arbitrum_augur_pools"></div>
+<div class="market_info">
+<table class="market_trades">
+    <tr class="market_trades">
+        <td class="mkt_trade_hdr" style="text-align: center" >Block</td>
+        <td class="mkt_trade_hdr" style="text-align: center" >Start Time</td>
+        <td class="mkt_trade_hdr" style="text-align: center">End Time</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Liquidity</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Creator</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Mkt Type</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Market ID</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Home Team</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Away Team</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Score</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Title</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Description</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Liquidity</td>
+        <td class="mkt_trade_hdr" style="text-align: center">Swaps</td>
+    </tr>
+	{{- range $i, $rpt := .Markets}}
+	<tr class="market_trades">
+		<td class="mkt_trade_field">{{.BlockNum}}</td>
+		<td class="mkt_trade_field">{{.StartTime}}</td>
+		<td class="mkt_trade_field">{{.EndTime}}</td>
+		<td class="mkt_trade_field">{{.Liquidity}}</td>
+		<td class="mkt_trade_field">{{.CreatorAddr}}</td>
+		<td class="mkt_trade_field">{{.MarketTypeCode}}</td>
+		<td class="mkt_trade_field" title="{{.FactoryAddr}}">{{.MarketId}}</td>
+
+		<td class="mkt_trade_field">{{.HomeTeam}}</td>
+		<td class="mkt_trade_field">{{.AwayTeam}}</td>
+		<td class="mkt_trade_field">{{.Score}}</td>
+		<td class="mkt_trade_field">{{.Title}}</td>
+		<td class="mkt_trade_field">{{.Description}}</td>
+		<td class="mkt_trade_field">
+			<a href="/black/arbitrum/liquidity/{{.ContractAid}}/{{.MarketId}}/0/100000">Liquidity</a>
+		</td>
+		<td class="mkt_trade_field">
+			<a href="/black/arbitrum/swaps/{{.ContractAid}}/{{.MarketId}}/0/100000">Swaps</a>
+		</td>
+	</tr>
+	{{- end }}
+</table>
+<br/><br/>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="/black/index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

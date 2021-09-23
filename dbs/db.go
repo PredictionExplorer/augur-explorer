@@ -59,7 +59,7 @@ func New_sql_storage(mkt_order_ptr *int64,info_log *log.Logger,db_log *log.Logge
 func show_connect_error() {
 	fmt.Printf(`AugurExtractor: can't connect to PostgreSQL database.
 				Check that you have set AUGUR_EXTRACTOR_USERNAME,AUGUR_EXTRACTOR_PASSWORD,AUGUR_EXTRACTOR_DATABASE
-				and AUGUR_EXTRACTOR_HOST environment variables`);
+				AUGUR_EXTRACTOR_HOST environment variables`);
 }
 func Connect_to_storage(mkt_order_ptr *int64,info_log *log.Logger) *SQLStorage {
 	var err error

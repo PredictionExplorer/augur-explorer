@@ -119,3 +119,17 @@ func get_receipt_async(idx int,tx_hash common.Hash,receipt_results *[]*receiptCa
 	result.idx = idx
 	(*receipt_results)[idx]=result
 }
+func get_block_receipts(block_hash common.Hash) (types.Receipts,error) {
+
+	ctx := context.Background()
+	var raw json.RawMessage
+	err := rpcclient.CallContext(ctx, &raw,"eth_getBlockReceipts", block_hash)
+	var receipts types.Receipts
+	err = json.Unmarshal(raw,&receipts)
+	if err!= nil {
+		Error.Printf("Error unmarshalling receipts after eth-getBlockReceipts: %v\n",err)
+		return nil,err
+	} else {
+		return receipts,nil
+	}
+}

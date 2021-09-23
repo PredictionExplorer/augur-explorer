@@ -97,7 +97,7 @@ func (ss *SQLStorage) Set_last_block_num(block_num int64) {
 		}
 	}
 }
-func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header,no_chainsplit_check bool) error {
+func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header,num_tx int,no_chainsplit_check bool) error {
 
 	var query string
 	var parent_block_num int64
@@ -161,14 +161,17 @@ func (ss *SQLStorage) Insert_block(hash_str string,block *types.Header,no_chains
 			block_num,
 			block_hash,
 			ts,
-			parent_hash
-		) VALUES ($1,$2,TO_TIMESTAMP($3),$4)`
+			parent_hash,
+			num_tx
+		) VALUES ($1,$2,TO_TIMESTAMP($3),$4,$5)`
 
 	result,err := ss.db.Exec(query,
 			block_num,
 			hash_str,
 			block.Time,
-			parent_hash)
+			parent_hash,
+			num_tx,
+	)
 	if err != nil {
 		ss.Log_msg(
 			fmt.Sprintf(
@@ -195,19 +198,21 @@ func (ss *SQLStorage) Insert_transaction(agtx *p.AugurTx) int64 {
 	var query string
 	var tx_id int64
 
-	ss.Info.Printf("Insert_transaction: from: %v, to: %v\n",agtx.From,agtx.To)
+	//ss.Info.Printf("Insert_transaction: from: %v, to: %v\n",agtx.From,agtx.To)
 
+	from_aid := ss.Lookup_or_create_address(agtx.From,agtx.BlockNum,0)
+	to_aid := ss.Lookup_or_create_address(agtx.To,agtx.BlockNum,0)
 	query = "INSERT INTO transaction ("+
-				"block_num,value,tx_hash,ctrct_create,gas_used,gas_price,tx_index,input_sig,num_logs" +
+				"block_num,from_aid,to_aid,value,tx_hash,ctrct_create,gas_used,gas_price,tx_index,input_sig,num_logs" +
 			") " +
-			"VALUES ($1,("+agtx.Value+"/1e+18),$2,$3,$4,"+agtx.GasPrice+"/1e+18,$5,$6,$7) " +
+			"VALUES ($1,$2,$3,("+agtx.Value+"/1e+18),$4,$5,$6,"+agtx.GasPrice+"/1e+18,$7,$8,$9) " +
 			"RETURNING id"
 
 	var sig string
 	if len(agtx.Input) >=4 {
 		sig = hex.EncodeToString(agtx.Input[:4])
 	}
-	row := ss.db.QueryRow(query,agtx.BlockNum,agtx.TxHash,agtx.CtrctCreate,agtx.GasUsed,agtx.TxIndex,sig,agtx.NumLogs)
+	row := ss.db.QueryRow(query,agtx.BlockNum,from_aid,to_aid,agtx.TxHash,agtx.CtrctCreate,agtx.GasUsed,agtx.TxIndex,sig,agtx.NumLogs)
 	err := row.Scan(&tx_id)
 	if err != nil {
 		if !strings.Contains(
@@ -227,16 +232,6 @@ func (ss *SQLStorage) Insert_transaction(agtx *p.AugurTx) int64 {
 				agtx.TxHash,err,query,
 			),
 		)
-		os.Exit(1)
-	}
-
-	from_aid := ss.Lookup_or_create_address(agtx.From,agtx.BlockNum,tx_id)
-	to_aid := ss.Lookup_or_create_address(agtx.To,agtx.BlockNum,tx_id)
-	// this update is needed because 'address' table holds tx_id of account creation
-	query = "UPDATE transaction set from_aid=$2 , to_aid=$3 where id = $1"
-	_,err = ss.db.Exec(query,tx_id,from_aid,to_aid)
-	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error on tx_hash=%v; %v, q=%v\n",agtx.TxHash,err,query))
 		os.Exit(1)
 	}
 

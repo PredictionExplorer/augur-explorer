@@ -1,5 +1,6 @@
 package main
 import (
+	"os"
 	"fmt"
 	"log"
 	"time"
@@ -21,19 +22,73 @@ import (
 )
 const (
 	DEFAULT_DB_LOG_FILE_NAME = "/var/tmp/backend-db.log"
+	DEFAULT_AMM_LOG_FILE_NAME = ""
 	DEFAULT_MARKET_ROWS_LIMIT int	= 500
 	DEFAILT_MARKET_TRADES_LIMIT int = 20
 	DEFAULT_USER_REPORTS_LIMIT int = 30
 	DEFAULT_MARKET_REPORTS_LIMIT int = 40
 )
 type AugurServer struct {
-	storage		*SQLStorage
+	db_augur		*SQLStorage
+	db_matic		*SQLStorage
 }
-func create_augur_server(mkt_order_id_ptr *int64,dblog_fname string,info_log *log.Logger) *AugurServer {
+func (self *AugurServer) matic_initialized() bool {
 
+	if self.db_matic == nil {
+		return false
+	}
+	return true
+}
+func create_augur_server() *AugurServer {
+
+	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
+	os.MkdirAll(log_dir, os.ModePerm)
+	db_log_file:=fmt.Sprintf("%v/%v",log_dir,"webserver-db.log")
+
+	fname:=fmt.Sprintf("%v/webserver_info.log",log_dir)
+	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err!=nil {
+		fmt.Printf("Can't start: %v\n",err)
+		os.Exit(1)
+	}
+	Info = log.New(logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
+
+	fname=fmt.Sprintf("%v/webserver_error.log",log_dir)
+	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err!=nil {
+		fmt.Printf("Can't start: %v\n",err)
+		os.Exit(1)
+	}
+	Error = log.New(logfile,"ERROR: ",log.Ldate|log.Ltime|log.Lshortfile)
 	srv := new(AugurServer)
-	srv.storage = Connect_to_storage(mkt_order_id_ptr,info_log)
-	srv.storage.Init_log(dblog_fname)
+	srv.db_augur= Connect_to_storage(&market_order_id,Info)
+	srv.db_augur.Init_log(db_log_file)
+	amm_user := os.Getenv("AMM_USERNAME")
+	amm_passwd := os.Getenv("AMM_PASSWORD")
+	amm_db_name := os.Getenv("AMM_DATABASE")
+	amm_host_port := os.Getenv("AMM_HOST")
+	if len(amm_user) > 0 {
+		srv.db_augur.Init_log(db_log_file)
+
+		db_log_file:=fmt.Sprintf("%v/%v",log_dir,"amm-db.log")
+		amm_db_logfile, err := os.OpenFile(db_log_file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			fmt.Printf("Can't start: %v\n",err)
+			os.Exit(1)
+		}
+		AMM_DB := log.New(amm_db_logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
+
+		srv.db_matic = New_sql_storage(
+			&market_order_id,
+			Info,
+			AMM_DB,
+			amm_host_port,
+			amm_db_name,
+			amm_user,
+			amm_passwd,
+		)
+	}
+
 	return srv
 }
 func respond_error(c *gin.Context,error_text string) {
@@ -41,6 +96,13 @@ func respond_error(c *gin.Context,error_text string) {
 	c.HTML(http.StatusBadRequest, "error.html", gin.H{
 		"title": "Augur Markets: Error",
 		"ErrDescr": error_text,
+	})
+}
+func respond_error_json(c *gin.Context,error_text string) {
+
+	c.JSON(http.StatusBadRequest, gin.H{
+		"status": 0,
+		"error": error_text,
 	})
 }
 func parse_int_from_remote_or_error(c *gin.Context,json_output bool,ascii_int *string) (int64,bool) {
@@ -88,9 +150,9 @@ func mkt_depth_entry_to_js_obj(de *DepthEntry) string {
 	return output
 }
 func main_page(c *gin.Context) {
-	blknum,_:= augur_srv.storage.Get_last_block_num()
+	blknum,_:= augur_srv.db_augur.Get_last_block_num()
 	blknum_thousand_separated := ThousandsFormat(int64(blknum))
-	stats := augur_srv.storage.Get_front_page_stats()
+	stats := augur_srv.db_augur.Get_front_page_stats()
 	c.HTML(http.StatusOK, "index.html", gin.H{
 			"title": "Augur Prediction Markets",
 			"block_num" : blknum_thousand_separated,
@@ -111,15 +173,15 @@ func markets(c *gin.Context) {
 			return
 		}
 	}
-	markets := augur_srv.storage.Get_active_market_list(off,DEFAULT_MARKET_ROWS_LIMIT)
+	markets := augur_srv.db_augur.Get_active_market_list(off,DEFAULT_MARKET_ROWS_LIMIT)
 	c.HTML(http.StatusOK, "markets.html", gin.H{
 			"title": "Augur Markets",
 			"Markets" : markets,
 	})
 }
 func categories(c *gin.Context) {
-	blknum,_ := augur_srv.storage.Get_last_block_num()
-	categories := augur_srv.storage.Get_categories()
+	blknum,_ := augur_srv.db_augur.Get_last_block_num()
+	categories := augur_srv.db_augur.Get_categories()
 	c.HTML(http.StatusOK, "categories.html", gin.H{
 			"title": "Augur Market Categories",
 			"block_num" : blknum,
@@ -128,10 +190,10 @@ func categories(c *gin.Context) {
 }
 func statistics(c *gin.Context) {
 
-	stats := augur_srv.storage.Get_main_stats()
-	cash_flow_entries := augur_srv.storage.Get_cash_flow()
-	gas_usage := augur_srv.storage.Get_gas_usage_global()
-	uniq_addr_entries := augur_srv.storage.Get_unique_addresses()
+	stats := augur_srv.db_augur.Get_main_stats()
+	cash_flow_entries := augur_srv.db_augur.Get_cash_flow()
+	gas_usage := augur_srv.db_augur.Get_gas_usage_global()
+	uniq_addr_entries := augur_srv.db_augur.Get_unique_addresses()
 	cash_flow_data := build_js_cash_flow_data(&cash_flow_entries)
 	uniq_addrs_data := build_js_uniq_addrs(&uniq_addr_entries)
 	// Gas Used
@@ -161,7 +223,7 @@ func statistics(c *gin.Context) {
 	})
 }
 func explorer(c *gin.Context) {
-	blknum,res := augur_srv.storage.Get_last_block_num()
+	blknum,res := augur_srv.db_augur.Get_last_block_num()
 	_ = res
 	c.HTML(http.StatusOK, "explorer.html", gin.H{
 			"title": "Augur Event Explorer",
@@ -169,14 +231,14 @@ func explorer(c *gin.Context) {
 	})
 }
 func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoMarket) {
-	trades := augur_srv.storage.Get_mkt_trades(minfo.MktAddr,10000000)
-	outcome_vols,_ := augur_srv.storage.Get_outcome_volumes(minfo.MktAddr,minfo.MktAid,0,minfo.LowPriceLimit)
-	price_estimates := augur_srv.storage.Get_price_estimates(minfo.MktAid,outcome_vols,minfo.LowPriceLimit)
-	reports := augur_srv.storage.Get_market_reports(minfo.MktAid,0)
-	price_history := augur_srv.storage.Get_full_price_history(minfo.MktAddr,minfo.MktAid,minfo.LowPriceLimit)
-	balancer_pools := augur_srv.storage.Get_market_balancer_pools(minfo.MktAid)
-	uniswap_pairs := augur_srv.storage.Get_market_uniswap_pairs(minfo.MktAid)
-	wrappers := augur_srv.storage.Get_wrapped_tokens_for_market(minfo.MktAid)
+	trades := augur_srv.db_augur.Get_mkt_trades(minfo.MktAddr,10000000)
+	outcome_vols,_ := augur_srv.db_augur.Get_outcome_volumes(minfo.MktAddr,minfo.MktAid,0,minfo.LowPriceLimit)
+	price_estimates := augur_srv.db_augur.Get_price_estimates(minfo.MktAid,outcome_vols,minfo.LowPriceLimit)
+	reports := augur_srv.db_augur.Get_market_reports(minfo.MktAid,0)
+	price_history := augur_srv.db_augur.Get_full_price_history(minfo.MktAddr,minfo.MktAid,minfo.LowPriceLimit)
+	balancer_pools := augur_srv.db_augur.Get_market_balancer_pools(minfo.MktAid)
+	uniswap_pairs := augur_srv.db_augur.Get_market_uniswap_pairs(minfo.MktAid)
+	wrappers := augur_srv.db_augur.Get_wrapped_tokens_for_market(minfo.MktAid)
 
 	if json_output {
 		c.JSON(http.StatusOK,gin.H{
@@ -266,7 +328,7 @@ func json_validate_and_lookup_address_or_aid(c *gin.Context,p_addr *string) (str
 		aid, err := strconv.ParseInt(*p_addr,10,64)
 		if err == nil {
 			var addr string
-			addr,err = augur_srv.storage.Lookup_address(aid)
+			addr,err = augur_srv.db_augur.Lookup_address(aid)
 			if err!=nil {
 				c.JSON(http.StatusBadRequest,gin.H{
 					"status":0,
@@ -289,7 +351,7 @@ func json_validate_and_lookup_address_or_aid(c *gin.Context,p_addr *string) (str
 	if !valid {
 		return "",0,false
 	}
-	aid,err := augur_srv.storage.Nonfatal_lookup_address_id(address)
+	aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(address)
 	if err != nil {
 		c.JSON(http.StatusBadRequest,gin.H{
 			"status":0,
@@ -320,7 +382,7 @@ func market_info(c *gin.Context) {
 	if !valid {
 		return
 	}
-	market_info,err := augur_srv.storage.Get_market_info(market_addr,0,false)
+	market_info,err := augur_srv.db_augur.Get_market_info(market_addr,0,false)
 	if err != nil {
 		show_market_not_found_error(c,false,&market_addr)
 		return
@@ -334,12 +396,12 @@ func full_trade_list(c *gin.Context) {
 	if !valid {
 		return
 	}
-	market_info,err := augur_srv.storage.Get_market_info(market_addr,0,false)
+	market_info,err := augur_srv.db_augur.Get_market_info(market_addr,0,false)
 	if err != nil {
 		show_market_not_found_error(c,false,&market_addr)
 		return
 	}
-	trades := augur_srv.storage.Get_mkt_trades(market_addr,0)
+	trades := augur_srv.db_augur.Get_mkt_trades(market_addr,0)
 	c.HTML(http.StatusOK, "full_trade_list.html", gin.H{
 			"title": "Trades for market",
 			"Trades" : trades,
@@ -374,12 +436,12 @@ func market_depth(c *gin.Context) {
 		return
 	}
 
-	market_info,err := augur_srv.storage.Get_market_info(market_addr,outcome,true)
+	market_info,err := augur_srv.db_augur.Get_market_info(market_addr,outcome,true)
 	if err != nil {
 		show_market_not_found_error(c,false,&market_addr)
 		return
 	}
-	mdepth,last_oo_id := augur_srv.storage.Get_mkt_depth(market_info.MktAid,outcome)
+	mdepth,last_oo_id := augur_srv.db_augur.Get_mkt_depth(market_info.MktAid,outcome)
 	num_orders:=len(mdepth.Bids) + len(mdepth.Asks)
 	js_bid_data,js_ask_data := build_js_data_obj(mdepth)
 	c.HTML(http.StatusOK, "market_depth.html", gin.H{
@@ -421,7 +483,7 @@ func market_depth_ajax(c *gin.Context) {
 		respond_error(c,"No outcome provided")
 		return
 	}
-	mdepth,last_oo_id := augur_srv.storage.Get_mkt_depth(market_aid,int(outcome))
+	mdepth,last_oo_id := augur_srv.db_augur.Get_mkt_depth(market_aid,int(outcome))
 	js_bid_data,js_ask_data := build_js_data_obj(mdepth)
 	c.JSON(http.StatusOK,gin.H{
 		"bids":js_bid_data,
@@ -456,12 +518,12 @@ func market_price_history(c *gin.Context) {
 		return
 	}
 
-	market_info,err := augur_srv.storage.Get_market_info(market_addr,outcome,true)
+	market_info,err := augur_srv.db_augur.Get_market_info(market_addr,outcome,true)
 	if err != nil {
 		show_market_not_found_error(c,false,&market_addr)
 		return
 	}
-	mkt_price_hist := augur_srv.storage.Get_price_history_for_outcome(market_info.MktAid,outcome,market_info.LowPriceLimit)
+	mkt_price_hist := augur_srv.db_augur.Get_price_history_for_outcome(market_info.MktAid,outcome,market_info.LowPriceLimit)
 	js_price_history := build_js_price_history(&mkt_price_hist)
 	fmt.Printf("js price history = %v\n",js_price_history)
 	c.HTML(http.StatusOK, "price_history.html", gin.H{
@@ -473,25 +535,25 @@ func market_price_history(c *gin.Context) {
 }
 func serve_user_info_page(c *gin.Context,addr string) {
 
-	eoa_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(addr)
+	eoa_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(addr)
 	if err == nil {
-		user_info,err := augur_srv.storage.Get_user_info(eoa_aid)
+		user_info,err := augur_srv.db_augur.Get_user_info(eoa_aid)
 		if err == nil {
-			pl_entries := augur_srv.storage.Get_profit_loss(eoa_aid)
-			open_pos_entries := augur_srv.storage.Get_open_positions(eoa_aid)
+			pl_entries := augur_srv.db_augur.Get_profit_loss(eoa_aid)
+			open_pos_entries := augur_srv.db_augur.Get_open_positions(eoa_aid)
 			js_pl_data := build_js_profit_loss_history(&pl_entries)
 			js_open_pos_data := build_js_open_positions(&open_pos_entries)
-			user_reports := augur_srv.storage.Get_user_reports(eoa_aid,DEFAULT_USER_REPORTS_LIMIT)
-			user_active_markets := augur_srv.storage.Get_traded_markets_for_user(eoa_aid,1)
+			user_reports := augur_srv.db_augur.Get_user_reports(eoa_aid,DEFAULT_USER_REPORTS_LIMIT)
+			user_active_markets := augur_srv.db_augur.Get_traded_markets_for_user(eoa_aid,1)
 			var has_active_markets bool = false
 			if len(user_active_markets) > 0 {
 				has_active_markets = true
 			}
-			open_orders := augur_srv.storage.Get_user_open_orders(user_info.Aid)
-			gas_spent,_ := augur_srv.storage.Get_gas_spent_for_user(eoa_aid)
-			shtoken_balances := augur_srv.storage.Get_wrapped_shtoken_balances(eoa_aid)
-			active_names,active_total_rows := augur_srv.storage.Get_user_ens_names_active(eoa_aid,0,1000000)
-			inactive_names,inactive_total_rows := augur_srv.storage.Get_user_ens_names_inactive(eoa_aid,0,1000000)
+			open_orders := augur_srv.db_augur.Get_user_open_orders(user_info.Aid)
+			gas_spent,_ := augur_srv.db_augur.Get_gas_spent_for_user(eoa_aid)
+			shtoken_balances := augur_srv.db_augur.Get_wrapped_shtoken_balances(eoa_aid)
+			active_names,active_total_rows := augur_srv.db_augur.Get_user_ens_names_active(eoa_aid,0,1000000)
+			inactive_names,inactive_total_rows := augur_srv.db_augur.Get_user_ens_names_inactive(eoa_aid,0,1000000)
 
 			c.HTML(http.StatusOK, "user_info.html", gin.H{
 				"title": "User "+addr,
@@ -526,7 +588,7 @@ func serve_user_info_page(c *gin.Context,addr string) {
 }
 func serve_tx_info_page(c *gin.Context,tx_hash string) {
 
-	tx_info,err := augur_srv.storage.Get_transaction(tx_hash)
+	tx_info,err := augur_srv.db_augur.Get_transaction(tx_hash)
 	if err == nil {
 		c.HTML(http.StatusOK, "tx_info.html", gin.H{
 			"title": "Transaction " + tx_hash,
@@ -628,7 +690,7 @@ func serve_user_funds_v2(c *gin.Context,addr *string) {
 	var status_code int = 0
 	var error_text  string = ""
 	var total_usd float64 = 0
-	eoa_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(*addr)
+	eoa_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(*addr)
 	if err != nil {
 		error_text = "Address lookup failed"
 	}
@@ -642,7 +704,7 @@ func serve_user_funds_v2(c *gin.Context,addr *string) {
 
 	rep_in_eth,err :=get_REP_token_price_in_ETH()
 	if err == nil {
-		ethusd,err := augur_srv.storage.Get_last_ethusd_price()
+		ethusd,err := augur_srv.db_augur.Get_last_ethusd_price()
 		if err == nil {
 			rep_balance_usd = rep_balance / rep_in_eth * ethusd
 			total_usd = dai_balance + eth_balance * ethusd + rep_balance_usd
@@ -671,9 +733,9 @@ func serve_user_funds_v1(c *gin.Context,addr common.Address) {
 	// Note: this request is becoming obsolete, and will be removed later
 
 	var wallet_aid int64 = 0
-	eoa_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(addr.String())
+	eoa_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(addr.String())
 	if err == nil {
-		wallet_aid,_ = augur_srv.storage.Lookup_wallet_aid(eoa_aid)
+		wallet_aid,_ = augur_srv.db_augur.Lookup_wallet_aid(eoa_aid)
 	} else {
 		c.JSON(http.StatusOK,gin.H{
 			"eoa_eth":0,"wallet_eth":0,"eoa_dai":0,"wallet_dai":0,"eoa_rep":0,"wallet_rep":0,
@@ -689,7 +751,7 @@ func serve_user_funds_v1(c *gin.Context,addr common.Address) {
 	var wallet_eth_balance float64 = 0.0
 
 	if wallet_aid != 0 {
-		wallet_addr,err := augur_srv.storage.Lookup_address(wallet_aid)
+		wallet_addr,err := augur_srv.db_augur.Lookup_address(wallet_aid)
 		if err == nil {
 			waddr := common.HexToAddress(wallet_addr)
 			wallet_dai_balance = get_token_balance(0,&waddr)
@@ -720,9 +782,9 @@ func search(c *gin.Context) {
 		if err == nil {
 			addr := common.BytesToAddress(addr_bytes)
 			addr_str := addr.String()
-			_,err:=augur_srv.storage.Nonfatal_lookup_address_id(addr_str)
+			_,err:=augur_srv.db_augur.Nonfatal_lookup_address_id(addr_str)
 			if err==nil {
-				market_info,err := augur_srv.storage.Get_market_info(addr_str,0,false)
+				market_info,err := augur_srv.db_augur.Get_market_info(addr_str,0,false)
 				if err == nil {
 					complete_and_output_market_info(c,false,market_info)
 					return
@@ -760,11 +822,11 @@ func search(c *gin.Context) {
 			})
 			return
 		}
-		if augur_srv.storage.Tx_exists(hash) {
+		if augur_srv.db_augur.Tx_exists(hash) {
 			serve_tx_info_page(c,hash)
 			return
 		}
-		orders := augur_srv.storage.Get_filling_orders_by_hash(hash)
+		orders := augur_srv.db_augur.Get_filling_orders_by_hash(hash)
 		if len(orders) > 0 {
 			output_filling_orders(c,hash,orders)
 			return
@@ -837,8 +899,8 @@ func search_v2(c *gin.Context) {
 		return
 	case SR_BalancerPool:
 		pool_obj := sr.Object.(*BalancerPoolInfo)
-		pool_info,_ := augur_srv.storage.Get_pool_info(pool_obj.PoolAid)
-		swaps := augur_srv.storage.Get_pool_swaps(pool_info.PoolAid,0,200)
+		pool_info,_ := augur_srv.db_augur.Get_pool_info(pool_obj.PoolAid)
+		swaps := augur_srv.db_augur.Get_pool_swaps(pool_info.PoolAid,0,200)
 		c.HTML(http.StatusOK, "pool_swaps.html", gin.H{
 				"PoolInfo" : pool_info,
 				"PoolSwaps" : swaps,
@@ -847,7 +909,7 @@ func search_v2(c *gin.Context) {
 		now_ts := time.Now().Unix()
 		past_ts := now_ts - 100 * 3600 * 24
 		pair_info := sr.Object.(*MarketUPair)//.storage.Get_uniswap_pair_info(aid)
-		swaps := augur_srv.storage.Get_uniswap_swaps(pair_info.PairAid,0,200)
+		swaps := augur_srv.db_augur.Get_uniswap_swaps(pair_info.PairAid,0,200)
 		c.HTML(http.StatusOK, "uniswap_swaps.html", gin.H{
 				"PairInfo" : pair_info,
 				"PairSwaps" : swaps,
@@ -912,7 +974,7 @@ func execute_search(keyword string) SearchResultObject {
 				Object:		iface,
 			}
 		}
-		block_info,err := augur_srv.storage.Get_block_info(int64(block_num_from),int64(block_num_to))
+		block_info,err := augur_srv.db_augur.Get_block_info(int64(block_num_from),int64(block_num_to))
 		if err != nil {
 			var iface interface{}
 			return SearchResultObject {
@@ -947,7 +1009,7 @@ func execute_search(keyword string) SearchResultObject {
 			if (len(keyword) == 40) || (len(keyword) == 42) { // Address
 				addr := common.BytesToAddress(hex_data) // corrects any lower-case input
 				addr_str := addr.String()
-				aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(addr_str)
+				aid,err:=augur_srv.db_augur.Nonfatal_lookup_address_id(addr_str)
 				if err != nil {
 					var iface interface{}
 					iface = &addr
@@ -959,7 +1021,7 @@ func execute_search(keyword string) SearchResultObject {
 						Object:		iface,
 					}
 				}
-				market_info,err := augur_srv.storage.Get_market_info(addr_str,0,false)
+				market_info,err := augur_srv.db_augur.Get_market_info(addr_str,0,false)
 				if err == nil {
 					var iface interface{}
 					iface = &market_info
@@ -971,7 +1033,7 @@ func execute_search(keyword string) SearchResultObject {
 						Object:		iface,
 					}
 				}
-				pool_info,err := augur_srv.storage.Get_pool_info(aid)
+				pool_info,err := augur_srv.db_augur.Get_pool_info(aid)
 				if err == nil {
 					var iface interface{}
 					iface = &pool_info
@@ -983,7 +1045,7 @@ func execute_search(keyword string) SearchResultObject {
 						Object:		iface,
 					}
 				}
-				uniswap_info,err := augur_srv.storage.Get_uniswap_pair_info(aid)
+				uniswap_info,err := augur_srv.db_augur.Get_uniswap_pair_info(aid)
 				if err == nil {
 					var iface interface{}
 					iface = &uniswap_info
@@ -995,7 +1057,7 @@ func execute_search(keyword string) SearchResultObject {
 						Object:		iface,
 					}
 				}
-				af_wrapper,err := augur_srv.storage.Get_wrapped_token_info(aid)
+				af_wrapper,err := augur_srv.db_augur.Get_wrapped_token_info(aid)
 				if err == nil {
 					var iface interface{}
 					iface = &af_wrapper
@@ -1006,7 +1068,7 @@ func execute_search(keyword string) SearchResultObject {
 						Object:		iface,
 					}
 				}
-				user_info,err := augur_srv.storage.Get_user_info(aid)
+				user_info,err := augur_srv.db_augur.Get_user_info(aid)
 				if err == nil {
 					var iface interface{}
 					iface= &user_info
@@ -1030,7 +1092,7 @@ func execute_search(keyword string) SearchResultObject {
 			if (len(keyword) == 64) || (len(keyword) == 66) { // Hash (Tx hash)
 				hash := common.BytesToHash(hex_data)	// corrects any lower-case input
 				hash_str := hash.String()
-				tx_info,err := augur_srv.storage.Get_transaction(hash_str)
+				tx_info,err := augur_srv.db_augur.Get_transaction(hash_str)
 				if err == nil {
 					var iface interface{}
 					iface = &tx_info
@@ -1042,7 +1104,7 @@ func execute_search(keyword string) SearchResultObject {
 						Object:		iface,
 					}
 				}
-				orders := augur_srv.storage.Get_filling_orders_by_hash(hash_str)
+				orders := augur_srv.db_augur.Get_filling_orders_by_hash(hash_str)
 				if len(orders) > 0 {
 					var iface interface{}
 					iface = &orders
@@ -1054,9 +1116,9 @@ func execute_search(keyword string) SearchResultObject {
 						Object:		iface,
 					}
 				}
-				block_num,err := augur_srv.storage.Get_block_num_by_hash(hash_str)
+				block_num,err := augur_srv.db_augur.Get_block_num_by_hash(hash_str)
 				if err == nil {
-					block_info,err := augur_srv.storage.Get_block_info(block_num,block_num)
+					block_info,err := augur_srv.db_augur.Get_block_info(block_num,block_num)
 					if err != nil {
 						var iface interface{}
 						return SearchResultObject {
@@ -1099,7 +1161,7 @@ func execute_search(keyword string) SearchResultObject {
 					Object:		iface,
 				}
 			}
-			block_info,err := augur_srv.storage.Get_block_info(int64(block_num),int64(block_num))
+			block_info,err := augur_srv.db_augur.Get_block_info(int64(block_num),int64(block_num))
 			if err != nil {
 				var iface interface{}
 				return SearchResultObject {
@@ -1122,7 +1184,7 @@ func execute_search(keyword string) SearchResultObject {
 		}
 	}
 
-	search_results := augur_srv.storage.Search_keywords_in_markets(keyword)
+	search_results := augur_srv.db_augur.Search_keywords_in_markets(keyword)
 	var iface interface{}
 	iface = &search_results
 	return SearchResultObject {
@@ -1176,7 +1238,7 @@ func order(c *gin.Context) {
 	// Case 1 : query by orderId
 	order_id, err := strconv.ParseInt(p_order,10,64)
 	if err == nil {
-		order,err := augur_srv.storage.Get_order_info_by_id(order_id)
+		order,err := augur_srv.db_augur.Get_order_info_by_id(order_id)
 		if err != nil {
 			c.HTML(http.StatusBadRequest, "error.html", gin.H{
 				"title": "Augur Markets: Error",
@@ -1192,7 +1254,7 @@ func order(c *gin.Context) {
 	}
 	// Case 2 : query by OrderHash
 	order_hash := p_order
-	orders := augur_srv.storage.Get_filling_orders_by_hash(order_hash)
+	orders := augur_srv.db_augur.Get_filling_orders_by_hash(order_hash)
 	output_filling_orders(c,order_hash,orders)
 }
 func category(c *gin.Context) {
@@ -1203,7 +1265,7 @@ func category(c *gin.Context) {
 	if !success {
 		return
 	}
-	cat_markets := augur_srv.storage.Get_category_markets(int64(cat_id))
+	cat_markets := augur_srv.db_augur.Get_category_markets(int64(cat_id))
 	c.HTML(http.StatusOK, "category_markets.html", gin.H{
 			"title": "Category Markets",
 			"Markets": cat_markets,
@@ -1250,16 +1312,16 @@ func full_reports(c *gin.Context) {
 	if err == nil {
 		addr := common.BytesToAddress(addr_bytes)
 		addr_str := addr.String()
-		aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(addr_str)
+		aid,err:=augur_srv.db_augur.Nonfatal_lookup_address_id(addr_str)
 		if err==nil {
-			user_info,err := augur_srv.storage.Get_user_info(aid)
+			user_info,err := augur_srv.db_augur.Get_user_info(aid)
 			if err!= nil {
 				c.HTML(http.StatusBadRequest, "error.html", gin.H{
 					"title": "Augur Markets: Error",
 					"ErrDescr": fmt.Sprintf("No records found for address: %v",addr_str),
 				})
 			} else {
-				user_reports := augur_srv.storage.Get_user_reports(aid,0)
+				user_reports := augur_srv.db_augur.Get_user_reports(aid,0)
 				c.HTML(http.StatusOK, "full_user_reports.html", gin.H{
 					"title": fmt.Sprintf("User Reports %v",addr),
 					"UserInfo" : user_info,
@@ -1296,16 +1358,16 @@ func user_markets(c *gin.Context) {
 	if err == nil {
 		addr := common.BytesToAddress(addr_bytes)
 		addr_str := addr.String()
-		aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(addr_str)
+		aid,err:=augur_srv.db_augur.Nonfatal_lookup_address_id(addr_str)
 		if err==nil {
-			user_info,err := augur_srv.storage.Get_user_info(aid)
+			user_info,err := augur_srv.db_augur.Get_user_info(aid)
 			if err!= nil {
 				c.HTML(http.StatusBadRequest, "error.html", gin.H{
 					"title": "Augur Markets: Error",
 					"ErrDescr": fmt.Sprintf("No records found for address: %v",addr_str),
 				})
 			} else {
-				user_reports := augur_srv.storage.Get_user_markets(aid)
+				user_reports := augur_srv.db_augur.Get_user_markets(aid)
 				c.HTML(http.StatusOK, "user_markets.html", gin.H{
 					"title": fmt.Sprintf("User Markets %v",addr),
 					"UserInfo" : user_info,
@@ -1342,18 +1404,18 @@ func user_deposits_withdrawals(c *gin.Context) {
 	if err == nil {
 		addr := common.BytesToAddress(addr_bytes)
 		addr_str := addr.String()
-		aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(addr_str)
+		aid,err:=augur_srv.db_augur.Nonfatal_lookup_address_id(addr_str)
 		if err==nil {
-			user_info,err := augur_srv.storage.Get_user_info(aid)
+			user_info,err := augur_srv.db_augur.Get_user_info(aid)
 			if err!= nil {
 				c.HTML(http.StatusBadRequest, "error.html", gin.H{
 					"title": "Augur Markets: Error",
 					"ErrDescr": fmt.Sprintf("No records found for address: %v",addr_str),
 				})
 			} else {
-				wallet_aid,err := augur_srv.storage.Lookup_wallet_aid(aid)
+				wallet_aid,err := augur_srv.db_augur.Lookup_wallet_aid(aid)
 				if err == nil {
-					user_deposits_withdrawals := augur_srv.storage.Get_deposits_withdrawals(wallet_aid)
+					user_deposits_withdrawals := augur_srv.db_augur.Get_deposits_withdrawals(wallet_aid)
 					c.HTML(http.StatusOK, "user_deposits_withdrawals.html", gin.H{
 						"title": fmt.Sprintf("User %v Deposits/Withdrawals",addr),
 						"UserInfo" : user_info,
@@ -1394,7 +1456,7 @@ func serve_block_info(p_block_num string,c *gin.Context) {
 			return
 		}
 	}
-	block_info,err := augur_srv.storage.Get_block_info(block_num,block_num)
+	block_info,err := augur_srv.db_augur.Get_block_info(block_num,block_num)
 	if err == nil {
 		c.HTML(http.StatusOK, "block_info.html", gin.H{
 			"title": fmt.Sprintf("Block Number %v",block_num),
@@ -1409,9 +1471,9 @@ func serve_block_info(p_block_num string,c *gin.Context) {
 }
 func top_users(c *gin.Context) {
 
-	top_profit_makers := augur_srv.storage.Get_top_profit_makers()
-	top_trade_makers := augur_srv.storage.Get_top_trade_makers()
-	top_volume_makers := augur_srv.storage.Get_top_volume_makers()
+	top_profit_makers := augur_srv.db_augur.Get_top_profit_makers()
+	top_trade_makers := augur_srv.db_augur.Get_top_trade_makers()
+	top_volume_makers := augur_srv.db_augur.Get_top_volume_makers()
 	c.HTML(http.StatusOK, "top_users.html", gin.H{
 			"title": "Top 100 Users of Augur Markets",
 			"ProfitMakers" : top_profit_makers,
@@ -1460,7 +1522,7 @@ func market_depth_status(c *gin.Context) {
 		return
 	}
 
-	status,err := augur_srv.storage.Get_mdepth_status(market_aid,int(outcome_idx),last_oo_id)
+	status,err := augur_srv.db_augur.Get_mdepth_status(market_aid,int(outcome_idx),last_oo_id)
 	if err!=nil {
 		respond_error(c,fmt.Sprintf("Error: %v",err))
 		return
@@ -1484,7 +1546,7 @@ func user_trades_for_market(c *gin.Context) {
 		return
 	}
 
-	aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(user_addr_str)
+	aid,err:=augur_srv.db_augur.Nonfatal_lookup_address_id(user_addr_str)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -1492,7 +1554,7 @@ func user_trades_for_market(c *gin.Context) {
 		})
 		return
 	}
-	user_info,err := augur_srv.storage.Get_user_info(aid)
+	user_info,err := augur_srv.db_augur.Get_user_info(aid)
 	if err!= nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -1501,12 +1563,12 @@ func user_trades_for_market(c *gin.Context) {
 		return
 	}
 
-	market_info,err := augur_srv.storage.Get_market_info(mkt_addr_str,0,false)
+	market_info,err := augur_srv.db_augur.Get_market_info(mkt_addr_str,0,false)
 	if err!= nil {
 		show_market_not_found_error(c,false,&mkt_addr_str)
 		return
 	}
-	trades := augur_srv.storage.Get_user_trades_for_market(aid,market_info.MktAid)
+	trades := augur_srv.db_augur.Get_user_trades_for_market(aid,market_info.MktAid)
 	c.HTML(http.StatusOK, "user_trades.html", gin.H{
 		"title": fmt.Sprintf("Trades for User %v",user_addr_str),
 		"UTrades" : trades,
@@ -1521,7 +1583,7 @@ func account_statement(c *gin.Context) {
 	if !valid {
 		return
 	}
-	aid,err := augur_srv.storage.Nonfatal_lookup_address_id(addr)
+	aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(addr)
 	if err!= nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -1529,7 +1591,7 @@ func account_statement(c *gin.Context) {
 		})
 		return
 	}
-	transfers := augur_srv.storage.Get_account_statement(aid)
+	transfers := augur_srv.db_augur.Get_account_statement(aid)
 	c.HTML(http.StatusOK, "account_statement.html", gin.H{
 			"Address" : addr,
 			"Transfers": transfers,
@@ -1542,7 +1604,7 @@ func open_order_history(c *gin.Context) {
 	if !valid {
 		return
 	}
-	aid,err:=augur_srv.storage.Nonfatal_lookup_address_id(user_addr_str)
+	aid,err:=augur_srv.db_augur.Nonfatal_lookup_address_id(user_addr_str)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -1550,7 +1612,7 @@ func open_order_history(c *gin.Context) {
 		})
 		return
 	}
-	user_info,err := augur_srv.storage.Get_user_info(aid)
+	user_info,err := augur_srv.db_augur.Get_user_info(aid)
 	if err!= nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -1558,7 +1620,7 @@ func open_order_history(c *gin.Context) {
 		})
 		return
 	}
-	oo_history := augur_srv.storage.Get_user_oo_history(aid)
+	oo_history := augur_srv.db_augur.Get_user_oo_history(aid)
 	c.HTML(http.StatusOK, "user_oo_history.html", gin.H{
 		"UserInfo" : user_info,
 		"OOHistory" : oo_history,
@@ -1591,12 +1653,12 @@ func price_estimate_history(c *gin.Context) {
 		})
 		return
 	}
-	market_info,err := augur_srv.storage.Get_market_info(market_addr,outcome,true)
+	market_info,err := augur_srv.db_augur.Get_market_info(market_addr,outcome,true)
 	if err != nil {
 		show_market_not_found_error(c,false,&market_addr)
 		return
 	}
-	price_estimates := augur_srv.storage.Get_price_estimate_history(market_info.MktAid,outcome)
+	price_estimates := augur_srv.db_augur.Get_price_estimate_history(market_info.MktAid,outcome)
 	js_price_estimate_data := build_js_price_estimate_history(&price_estimates)
 	js_weighted_price_data := build_js_weighted_price_history(&price_estimates)
 	c.HTML(http.StatusOK, "price_estimate.html", gin.H{
@@ -1614,12 +1676,12 @@ func wrapped_tokens(c *gin.Context) {
 	if !valid {
 		return
 	}
-	market_info,err := augur_srv.storage.Get_market_info(market_addr,0,false)
+	market_info,err := augur_srv.db_augur.Get_market_info(market_addr,0,false)
 	if err != nil {
 		show_market_not_found_error(c,false,&market_addr)
 		return
 	}
-	wrappers := augur_srv.storage.Get_wrapped_tokens_for_market(market_info.MktAid)
+	wrappers := augur_srv.db_augur.Get_wrapped_tokens_for_market(market_info.MktAid)
 	c.HTML(http.StatusOK, "wrapper_contracts.html", gin.H{
 			"WrapperContracts" : wrappers,
 			"Market": market_info,
@@ -1632,7 +1694,7 @@ func wrapped_token_transfers(c *gin.Context) {
 	if !valid {
 		return
 	}
-	aid,err := augur_srv.storage.Nonfatal_lookup_address_id(addr)
+	aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(addr)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -1640,9 +1702,9 @@ func wrapped_token_transfers(c *gin.Context) {
 		})
 		return
 	}
-	wrapper_info,_ := augur_srv.storage.Get_wrapped_token_info(aid)
-	market_info,err := augur_srv.storage.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
-	transfers,total_rows := augur_srv.storage.Get_wrapped_token_transfers(aid,0,500)
+	wrapper_info,_ := augur_srv.db_augur.Get_wrapped_token_info(aid)
+	market_info,err := augur_srv.db_augur.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
+	transfers,total_rows := augur_srv.db_augur.Get_wrapped_token_transfers(aid,0,500)
 	c.HTML(http.StatusOK, "wrapped_transfers.html", gin.H{
 			"MarketInfo" : market_info,
 			"TokenInfo" : wrapper_info,
@@ -1662,7 +1724,7 @@ func user_wrapped_token_transfers(c *gin.Context) {
 	if !valid {
 		return
 	}
-	user_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(user_addr)
+	user_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(user_addr)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -1670,7 +1732,7 @@ func user_wrapped_token_transfers(c *gin.Context) {
 		})
 		return
 	}
-	wrapper_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(wrapper_addr)
+	wrapper_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(wrapper_addr)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -1678,9 +1740,9 @@ func user_wrapped_token_transfers(c *gin.Context) {
 		})
 		return
 	}
-	wrapper_info,_ := augur_srv.storage.Get_wrapped_token_info(wrapper_aid)
-	market_info,err := augur_srv.storage.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
-	total_rows,transfers:= augur_srv.storage.Get_user_wrapped_shtoken_transfers(user_aid,wrapper_aid,0,10000)
+	wrapper_info,_ := augur_srv.db_augur.Get_wrapped_token_info(wrapper_aid)
+	market_info,err := augur_srv.db_augur.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
+	total_rows,transfers:= augur_srv.db_augur.Get_user_wrapped_shtoken_transfers(user_aid,wrapper_aid,0,10000)
 	c.HTML(http.StatusOK, "user_wrapped_transfers.html", gin.H{
 			"UserAddr" : user_addr,
 			"MarketInfo" : market_info,
@@ -1696,7 +1758,7 @@ func pool_swaps(c *gin.Context) {
 	if !valid {
 		return
 	}
-	aid,err := augur_srv.storage.Nonfatal_lookup_address_id(addr)
+	aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(addr)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -1704,8 +1766,8 @@ func pool_swaps(c *gin.Context) {
 		})
 		return
 	}
-	pool_info,_ := augur_srv.storage.Get_pool_info(aid)
-	swaps := augur_srv.storage.Get_pool_swaps(aid,0,200)
+	pool_info,_ := augur_srv.db_augur.Get_pool_info(aid)
+	swaps := augur_srv.db_augur.Get_pool_swaps(aid,0,200)
 	c.HTML(http.StatusOK, "pool_swaps.html", gin.H{
 			"PoolInfo" : pool_info,
 			"PoolSwaps" : swaps,
@@ -1718,13 +1780,13 @@ func sharetoken_balance_changes(c *gin.Context) {
 	if !valid {
 		return
 	}
-	minfo,err := augur_srv.storage.Get_market_info(market_addr,0,false)
+	minfo,err := augur_srv.db_augur.Get_market_info(market_addr,0,false)
 	if err != nil {
 		show_market_not_found_error(c,false,&market_addr)
 		return
 	}
 
-	outag_sh_bal_chgs,total_rows := augur_srv.storage.Outside_augur_share_balance_changes(minfo.MktAid,0,500)
+	outag_sh_bal_chgs,total_rows := augur_srv.db_augur.Outside_augur_share_balance_changes(minfo.MktAid,0,500)
 	c.HTML(http.StatusOK, "sharetoken_balance_changes.html", gin.H{
 			"MarketInfo" : minfo,
 			"TotalRows" : total_rows,
@@ -1738,12 +1800,12 @@ func market_uniswap_pairs(c *gin.Context) {
 	if !valid {
 		return
 	}
-	minfo,err := augur_srv.storage.Get_market_info(market_addr,0,false)
+	minfo,err := augur_srv.db_augur.Get_market_info(market_addr,0,false)
 	if err != nil {
 		show_market_not_found_error(c,false,&market_addr)
 		return
 	}
-	pairs := augur_srv.storage.Get_market_uniswap_pairs(minfo.MktAid)
+	pairs := augur_srv.db_augur.Get_market_uniswap_pairs(minfo.MktAid)
 	c.HTML(http.StatusOK, "market_upairs.html", gin.H{
 			"Market" : minfo,
 			"MarketUniswapPairs": pairs,
@@ -1757,7 +1819,7 @@ func uniswap_swaps(c *gin.Context) {
 	if !valid {
 		return
 	}
-	aid,err := augur_srv.storage.Nonfatal_lookup_address_id(addr)
+	aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(addr)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -1767,8 +1829,8 @@ func uniswap_swaps(c *gin.Context) {
 	}
 	now_ts := time.Now().Unix()
 	past_ts := now_ts - 100 * 3600 * 24
-	pair_info,_:= augur_srv.storage.Get_uniswap_pair_info(aid)
-	swaps := augur_srv.storage.Get_uniswap_swaps(aid,0,200)
+	pair_info,_:= augur_srv.db_augur.Get_uniswap_pair_info(aid)
+	swaps := augur_srv.db_augur.Get_uniswap_swaps(aid,0,200)
 	c.HTML(http.StatusOK, "uniswap_swaps.html", gin.H{
 			"PairInfo" : pair_info,
 			"PairSwaps" : swaps,
@@ -1786,7 +1848,7 @@ func do_text_search(c *gin.Context) {
 		})
 		return
 	}
-	search_results := augur_srv.storage.Search_keywords_in_markets(keywords)
+	search_results := augur_srv.db_augur.Search_keywords_in_markets(keywords)
 	c.HTML(http.StatusOK, "text_search_results.html", gin.H{
 			"SearchResults" : search_results,
 	})
@@ -1878,10 +1940,10 @@ func show_pool_swap_prices(c *gin.Context) {
 		interval_secs = 60*60
 	}
 
-	pool_info,_ := augur_srv.storage.Get_pool_info(pool_aid)
-	token1_info,_ := augur_srv.storage.Get_bpool_token_info(pool_aid,token1_aid)
-	token2_info,_ := augur_srv.storage.Get_bpool_token_info(pool_aid,token2_aid)
-	prices := augur_srv.storage.Get_balancer_token_prices(pool_aid,token1_aid,token2_aid,init_ts,fin_ts,interval_secs)
+	pool_info,_ := augur_srv.db_augur.Get_pool_info(pool_aid)
+	token1_info,_ := augur_srv.db_augur.Get_bpool_token_info(pool_aid,token1_aid)
+	token2_info,_ := augur_srv.db_augur.Get_bpool_token_info(pool_aid,token2_aid)
+	prices := augur_srv.db_augur.Get_balancer_token_prices(pool_aid,token1_aid,token2_aid,init_ts,fin_ts,interval_secs)
 	js_prices := build_js_bpool_swap_prices(&prices)
 	c.HTML(http.StatusOK, "bswap_prices.html", gin.H{
 			"PoolInfo" : pool_info,
@@ -1969,8 +2031,8 @@ func show_upair_swap_prices(c *gin.Context) {
 	if inverse > 0 {
 		bool_inverse = true
 	}
-	pair_info,_:= augur_srv.storage.Get_uniswap_pair_info(pair_aid)
-	prices := augur_srv.storage.Get_uniswap_token_prices(pair_aid,bool_inverse,init_ts,fin_ts,interval_secs)
+	pair_info,_:= augur_srv.db_augur.Get_uniswap_pair_info(pair_aid)
+	prices := augur_srv.db_augur.Get_uniswap_token_prices(pair_aid,bool_inverse,init_ts,fin_ts,interval_secs)
 	js_prices := build_js_upair_swap_prices(&prices)
 	c.HTML(http.StatusOK, "upair_prices.html", gin.H{
 			"PairInfo" : pair_info,
@@ -1995,7 +2057,7 @@ func show_single_uniswap_swap(c *gin.Context) {
 		return
 	}
 
-	swap,err := augur_srv.storage.Get_uniswap_swap_by_id(id)
+	swap,err := augur_srv.db_augur.Get_uniswap_swap_by_id(id)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -2024,7 +2086,7 @@ func show_single_balancer_swap(c *gin.Context) {
 		return
 	}
 
-	swap,err := augur_srv.storage.Get_balancer_swap_by_id(id)
+	swap,err := augur_srv.db_augur.Get_balancer_swap_by_id(id)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -2045,12 +2107,12 @@ func wrapped_token_info(c *gin.Context) {
 	if !valid {
 		return
 	}
-	wrapper_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(wrapper_addr)
+	wrapper_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(wrapper_addr)
 	if err == nil {
 		respond_error(c,fmt.Sprintf("Address %v not found",p_address))
 		return
 	}
-	winfo,err := augur_srv.storage.Get_wrapped_token_info(wrapper_aid)
+	winfo,err := augur_srv.db_augur.Get_wrapped_token_info(wrapper_aid)
 	if err != nil {
 		respond_error(c,fmt.Sprintf("ShareToken wrapper with address %v not found",p_address))
 		return
@@ -2118,7 +2180,7 @@ func balancer_calc_slippage(addr_str string,token_in_str string,token_out_str st
 }
 func produce_pool_slippages(amount_to_trade string,pool_aid int64) []TokenSlippage {
 
-	tokens := augur_srv.storage.Get_balancer_pool_tokens_for_slippage(pool_aid)
+	tokens := augur_srv.db_augur.Get_balancer_pool_tokens_for_slippage(pool_aid)
 	for i:=0; i < len(tokens) ; i++ {
 		t := &tokens[i]
 		amount := fmt.Sprintf("%v%0*d",amount_to_trade,t.Decimals1, 0)
@@ -2159,15 +2221,15 @@ func show_pool_slippage(c *gin.Context) {
 	if !valid {
 		return
 	}
-	pool_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(pool_addr)
+	pool_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(pool_addr)
 	if err != nil {
 		respond_error(c,fmt.Sprintf("Address %v not found",))
 		return
 	}
-	pool_info,_ := augur_srv.storage.Get_pool_info(pool_aid)
+	pool_info,_ := augur_srv.db_augur.Get_pool_info(pool_aid)
 	//amount_to_trade := "100";
 	//tokens := produce_pool_slippages(amount_to_trade,pool_aid)
-	tokens := augur_srv.storage.Get_balancer_latest_slippages(pool_aid)
+	tokens := augur_srv.db_augur.Get_balancer_latest_slippages(pool_aid)
 	var amount_to_trade float64 = 0.0
 	if len(tokens) > 0 {
 		amount_to_trade = tokens[0].AmountIn
@@ -2231,7 +2293,7 @@ func uniswap_calc_slippage(pair_addr_str string,token_str string,amount_str stri
 		r1=reserves.Reserve1
 		r2=reserves.Reserve0
 	}
-	_,_,router02_addr_str := augur_srv.storage.Get_uniswap_contracts()
+	_,_,router02_addr_str := augur_srv.db_augur.Get_uniswap_contracts()
 	router02_addr := common.HexToAddress(router02_addr_str)
 	ctrct_router,err := NewUniswapV2Router02(router02_addr,rpcclient)
 	amount := big.NewInt(0)
@@ -2343,18 +2405,18 @@ func show_uniswap_slippage(c *gin.Context) {
 	if !valid {
 		return
 	}
-	pair_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(pair_addr)
+	pair_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(pair_addr)
 	if err != nil {
 		respond_error(c,fmt.Sprintf("Address %v not found",))
 		return
 	}
-	pair_info,err := augur_srv.storage.Get_uniswap_pair_info(pair_aid)
+	pair_info,err := augur_srv.db_augur.Get_uniswap_pair_info(pair_aid)
 	if err != nil {
 		respond_error(c,err.Error())
 		return
 	}
 	//slippages,err := produce_uniswap_slippages(&pair_info,amount_to_trade)
-	slippages := augur_srv.storage.Get_uniswap_latest_slippages(pair_aid)
+	slippages := augur_srv.db_augur.Get_uniswap_latest_slippages(pair_aid)
 	//amount_to_trade := "100";
 	var amount_to_trade float64 = 0.0
 	if len(slippages) > 0 {
@@ -2381,12 +2443,12 @@ func rt_show_uniswap_slippage(c *gin.Context) {
 	if !valid {
 		return
 	}
-	pair_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(pair_addr)
+	pair_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(pair_addr)
 	if err != nil {
 		respond_error(c,fmt.Sprintf("Address %v not found",))
 		return
 	}
-	pair_info,err := augur_srv.storage.Get_uniswap_pair_info(pair_aid)
+	pair_info,err := augur_srv.db_augur.Get_uniswap_pair_info(pair_aid)
 	if err != nil {
 		respond_error(c,err.Error())
 		return
@@ -2441,7 +2503,7 @@ func show_ethusd_price(c *gin.Context) {
 	if fin_ts == 0 {
 		fin_ts = 2147483647
 	}
-	ini,fin,prices:= augur_srv.storage.Get_ethusd_price_history(init_ts,fin_ts)
+	ini,fin,prices:= augur_srv.db_augur.Get_ethusd_price_history(init_ts,fin_ts)
 	ts := time.Unix(int64(ini),0)
 	start_date := ts.String()
 	ts = time.Unix(int64(fin),0)
@@ -2475,7 +2537,7 @@ func whats_new_in_augur(c *gin.Context) {
 			return
 		}
 	}
-	block_num_from,block_num_to,err := augur_srv.storage.Get_block_range_for_whats_new(WhatsNewAugurCode(code))
+	block_num_from,block_num_to,err := augur_srv.db_augur.Get_block_range_for_whats_new(WhatsNewAugurCode(code))
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -2483,7 +2545,7 @@ func whats_new_in_augur(c *gin.Context) {
 		})
 		return
 	}
-	block_info,err := augur_srv.storage.Get_block_info(int64(block_num_from),int64(block_num_to))
+	block_info,err := augur_srv.db_augur.Get_block_info(int64(block_num_from),int64(block_num_to))
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -2502,7 +2564,7 @@ func user_uniswap_swaps(c *gin.Context) {
 	if !valid {
 		return
 	}
-	user_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(user_addr)
+	user_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(user_addr)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -2510,8 +2572,8 @@ func user_uniswap_swaps(c *gin.Context) {
 		})
 		return
 	}
-	user_info,err := augur_srv.storage.Get_user_info(user_aid)
-	swaps,total_rows := augur_srv.storage.Get_user_uniswap_swaps(user_aid,0,200)
+	user_info,err := augur_srv.db_augur.Get_user_info(user_aid)
+	swaps,total_rows := augur_srv.db_augur.Get_user_uniswap_swaps(user_aid,0,200)
 	c.HTML(http.StatusOK, "user_uniswap_swaps.html", gin.H{
 		"UserInfo" : user_info,
 		"UserSwaps" : swaps,
@@ -2525,7 +2587,7 @@ func user_balancer_swaps(c *gin.Context) {
 	if !valid {
 		return
 	}
-	user_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(user_addr)
+	user_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(user_addr)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -2533,8 +2595,8 @@ func user_balancer_swaps(c *gin.Context) {
 		})
 		return
 	}
-	user_info,err := augur_srv.storage.Get_user_info(user_aid)
-	swaps,total_rows := augur_srv.storage.Get_user_balancer_swaps(user_aid,0,200)
+	user_info,err := augur_srv.db_augur.Get_user_info(user_aid)
+	swaps,total_rows := augur_srv.db_augur.Get_user_balancer_swaps(user_aid,0,200)
 	c.HTML(http.StatusOK, "user_balancer_swaps.html", gin.H{
 		"UserInfo" : user_info,
 		"UserSwaps" : swaps,
@@ -2548,7 +2610,7 @@ func user_ens_names(c *gin.Context) {
 	if !valid {
 		return
 	}
-	user_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(user_addr)
+	user_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(user_addr)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -2556,11 +2618,11 @@ func user_ens_names(c *gin.Context) {
 		})
 		return
 	}
-	user_info,err := augur_srv.storage.Get_user_info(user_aid)
-	active_names,active_total_rows := augur_srv.storage.Get_user_ens_names_active(user_aid,0,1000000)
-	inactive_names,inactive_total_rows := augur_srv.storage.Get_user_ens_names_inactive(user_aid,0,1000000)
-	addr_changes,achanges_total_rows := augur_srv.storage.Get_user_address_change_history(user_aid,0,1000000)
-	ownership_changes,own_changes_total_rows := augur_srv.storage.Get_user_ownership_change_history(user_aid,0,1000000)
+	user_info,err := augur_srv.db_augur.Get_user_info(user_aid)
+	active_names,active_total_rows := augur_srv.db_augur.Get_user_ens_names_active(user_aid,0,1000000)
+	inactive_names,inactive_total_rows := augur_srv.db_augur.Get_user_ens_names_inactive(user_aid,0,1000000)
+	addr_changes,achanges_total_rows := augur_srv.db_augur.Get_user_address_change_history(user_aid,0,1000000)
+	ownership_changes,own_changes_total_rows := augur_srv.db_augur.Get_user_ownership_change_history(user_aid,0,1000000)
 	c.HTML(http.StatusOK, "user_ens_names.html", gin.H{
 		"UserInfo" : user_info,
 		"ENS_Names_Active" : active_names,
@@ -2576,7 +2638,7 @@ func user_ens_names(c *gin.Context) {
 func show_node_text_data(c *gin.Context) {
 
 	node := c.Param("node")
-	fqdn,key_value_pairs:= augur_srv.storage.Get_node_text_key_values(node)
+	fqdn,key_value_pairs:= augur_srv.db_augur.Get_node_text_key_values(node)
 	c.HTML(http.StatusOK, "user_text_kv_pairs.html", gin.H{
 		"Node" : node,
 		"FullName" : fqdn,
@@ -2585,7 +2647,7 @@ func show_node_text_data(c *gin.Context) {
 }
 func show_augur_foundry_contracts(c *gin.Context) {
 
-	wrappers:= augur_srv.storage.Get_augur_foundry_wrapper_list()
+	wrappers:= augur_srv.db_augur.Get_augur_foundry_wrapper_list()
 	c.HTML(http.StatusOK, "augur_foundry_wrappers.html", gin.H{
 		"ERC20MarketOutcomeWrappers" : wrappers,
 	})
@@ -2597,7 +2659,7 @@ func show_reporting_table(c *gin.Context) {
 	if !valid {
 		return
 	}
-	market_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(market_addr)
+	market_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(market_addr)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -2605,12 +2667,12 @@ func show_reporting_table(c *gin.Context) {
 		})
 		return
 	}
-	market_info,err := augur_srv.storage.Get_market_info(market_addr,0,false)
+	market_info,err := augur_srv.db_augur.Get_market_info(market_addr,0,false)
 	if err != nil {
 		show_market_not_found_error(c,false,&market_addr)
 		return
 	}
-	reporting_status,err := augur_srv.storage.Get_reporting_table(market_aid)
+	reporting_status,err := augur_srv.db_augur.Get_reporting_table(market_aid)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -2618,11 +2680,11 @@ func show_reporting_table(c *gin.Context) {
 		})
 		return
 	}
-	round_table,num_outcomes,outcomes,scalar_vals := augur_srv.storage.Get_round_table(market_aid)
+	round_table,num_outcomes,outcomes,scalar_vals := augur_srv.db_augur.Get_round_table(market_aid)
 	outcomes_split := strings.Split(outcomes,",")
-	initial_report_redemption := augur_srv.storage.Get_initial_report_redeemed_record(market_aid)
-	redeemed_participants := augur_srv.storage.Get_redeemed_participants(market_aid)
-	losing_reports := augur_srv.storage.Get_losing_rep_participants(market_aid)
+	initial_report_redemption := augur_srv.db_augur.Get_initial_report_redeemed_record(market_aid)
+	redeemed_participants := augur_srv.db_augur.Get_redeemed_participants(market_aid)
+	losing_reports := augur_srv.db_augur.Get_losing_rep_participants(market_aid)
 
 	c.HTML(http.StatusOK, "reporting_table.html", gin.H{
 		"MarketInfo" : market_info,
@@ -2644,7 +2706,7 @@ func user_rep_profit_loss(c *gin.Context) {
 	if !valid {
 		return
 	}
-	user_aid,err := augur_srv.storage.Nonfatal_lookup_address_id(user_addr)
+	user_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(user_addr)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -2652,7 +2714,7 @@ func user_rep_profit_loss(c *gin.Context) {
 		})
 		return
 	}
-	user_info,err := augur_srv.storage.Get_user_info(user_aid)
+	user_info,err := augur_srv.db_augur.Get_user_info(user_aid)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -2660,7 +2722,7 @@ func user_rep_profit_loss(c *gin.Context) {
 		})
 		return
 	}
-	rep_profits := augur_srv.storage.Get_user_report_profits(user_aid)
+	rep_profits := augur_srv.db_augur.Get_user_report_profits(user_aid)
 	c.HTML(http.StatusOK, "user_rep_pl.html", gin.H{
 		"UserInfo" : user_info,
 		"RepProfits" : rep_profits,
@@ -2668,7 +2730,7 @@ func user_rep_profit_loss(c *gin.Context) {
 }
 func augur_noshow_bond_prices(c *gin.Context) {
 
-	bond_prices := augur_srv.storage.Get_noshow_bond_price_history()
+	bond_prices := augur_srv.db_augur.Get_noshow_bond_price_history()
 	js_prices := build_js_noshow_bond_price_history(&bond_prices)
 	c.HTML(http.StatusOK, "noshow_bond_prices.html", gin.H{
 		"Prices" : bond_prices,
@@ -2677,7 +2739,7 @@ func augur_noshow_bond_prices(c *gin.Context) {
 }
 func augur_validity_bond_prices(c *gin.Context) {
 
-	bond_prices := augur_srv.storage.Get_validity_bond_price_history()
+	bond_prices := augur_srv.db_augur.Get_validity_bond_price_history()
 	js_prices := build_js_validity_bond_price_history(&bond_prices)
 	c.HTML(http.StatusOK, "validity_bond_prices.html", gin.H{
 		"Prices" : bond_prices,
@@ -2687,7 +2749,7 @@ func augur_validity_bond_prices(c *gin.Context) {
 func ens_name_info(c *gin.Context) {
 
 	fqdn := c.Param("fqdn")
-	ens_info,err := augur_srv.storage.Get_ens_record_info(fqdn)
+	ens_info,err := augur_srv.db_augur.Get_ens_record_info(fqdn)
 	if err!=nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Augur Markets: Error",
@@ -2713,5 +2775,484 @@ func ens_name_info(c *gin.Context) {
 	}
 	c.HTML(http.StatusOK, "ens_info.html", gin.H{
 		"ENSInfo" : ens_info,
+	})
+}
+func arbitrum_augur_pools(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return 
+	}
+	pools := augur_srv.db_matic.Get_arbitrum_augur_pools()
+	c.HTML(http.StatusOK, "arbitrum_augur_pools.html", gin.H{
+		"ArbitrumAugurPools" : pools,
+	})
+}
+func arbitrum_markets_sports(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return 
+	}
+	p_status := c.Param("status")
+	var status int64
+	if len(p_status) > 0 {
+		var success bool
+		status,success = parse_int_from_remote_or_error(c,false,&p_status)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'status' parameter is not set")
+		return
+	}
+	p_sort := c.Param("sort")
+	var sort int64
+	if len(p_sort) > 0 {
+		var success bool
+		sort ,success = parse_int_from_remote_or_error(c,false,&p_sort)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'sort' parameter is not set")
+		return
+	}
+	contract_addrs := augur_srv.db_matic.Get_arbitrum_augur_factory_aids(&amm_contracts)
+	fmt.Printf("contract_addrs = %+v\n",contract_addrs)
+	total_rows,markets := augur_srv.db_matic.Get_sport_markets(status,sort,0,10000000,&amm_constants,contract_addrs)
+	c.HTML(http.StatusOK, "arbitrum_markets_sports.html", gin.H{
+		"Status" : status,
+		"Markets" : markets,
+		"TotalRows" : total_rows,
+	})
+}
+func arbitrum_liquidity_changed(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return 
+	}
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	p_factory_aid:= c.Param("factory_aid")
+	var factory_aid int64
+	if len(p_factory_aid) > 0 {
+		var success bool
+		factory_aid,success = parse_int_from_remote_or_error(c,false,&p_factory_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'factory_aid' parameter is not set")
+		return
+	}
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,factory_aid,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
+		return
+	}
+	total_rows,lchanges := augur_srv.db_matic.Get_liquidity_change_events(
+		factory_aid,market_id,0,10000000,
+	)
+	c.HTML(http.StatusOK, "amm_liquidity_changed.html", gin.H{
+		"MarketId":market_id,
+		"MarketInfo" : market,
+		"LiquidityChanges" : lchanges,
+		"TotalRows" : total_rows,
+	})
+}
+func arbitrum_shares_swapped(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return 
+	}
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	p_contract_aid := c.Param("contract_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'contract_aid' parameter is not set")
+		return
+	}
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
+		return
+	}
+
+	total_rows,swaps:= augur_srv.db_matic.Get_shares_swapped(
+		&amm_constants,contract_aid,market_id,0,10000000,
+	)
+	c.HTML(http.StatusOK, "amm_shares_swapped.html", gin.H{
+		"MarketId":market_id,
+		"MarketInfo" : market,
+		"Swaps" : swaps,
+		"TotalRows" : total_rows,
+	})
+}
+func amm_user_swaps(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user := c.Param("user")
+	user_addr,valid := is_address_valid(c,false,p_user)
+	if !valid {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+	aid,err := augur_srv.db_matic.Nonfatal_lookup_address_id(user_addr)
+	if err != nil {
+		aid = 0
+	}
+	total_rows,swaps := augur_srv.db_matic.Get_amm_user_swaps(&amm_constants,aid,offset,limit)
+
+	c.HTML(http.StatusOK, "amm_user_swaps.html", gin.H{
+		"Swaps" : swaps,
+		"TotalRows" : total_rows,
+		"User":p_user,
+		"UserAid":aid,
+	})
+}
+func amm_user_liquidity(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user := c.Param("user")
+	user_addr,valid := is_address_valid(c,false,p_user)
+	if !valid {
+		return
+	}
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+	aid,err := augur_srv.db_matic.Nonfatal_lookup_address_id(user_addr)
+	if err != nil {
+		aid = 0
+	}
+	total_rows,liquidity := augur_srv.db_matic.Get_amm_user_liquidity(&amm_constants,aid,offset,limit)
+
+	c.HTML(http.StatusOK, "amm_user_liquidity.html", gin.H{
+		"Liquidity" : liquidity,
+		"TotalRows" : total_rows,
+		"User": p_user,
+		"UserAid": aid,
+	})
+}
+func arbitrum_market_info(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return 
+	}
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	p_contract_aid := c.Param("contract_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'contract_aid' parameter is not set")
+		return
+	}
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
+		return
+	}
+
+	c.HTML(http.StatusOK, "amm_market_info.html", gin.H{
+		"MarketId":market_id,
+		"MarketInfo" : market,
+	})
+}
+func arbitrum_market_liquidity_providers(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return 
+	}
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	p_contract_aid := c.Param("contract_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'contract_aid' parameter is not set")
+		return
+	}
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
+		return
+	}
+	pool_aid,err := augur_srv.db_matic.Get_market_pool_aid(contract_aid,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Pool wasn't found in the database for this market: %v",err))
+		return
+	}
+	providers:= augur_srv.db_matic.Get_pool_holder_distribution(pool_aid)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
+		return
+	}
+	js_tok_distr := build_js_token_holder_distribution(&providers)
+
+	c.HTML(http.StatusOK, "amm_liquidity_providers_distrib.html", gin.H{
+		"MarketId":market_id,
+		"MarketInfo" : market,
+		"PoolTokenHolderDistribution" : providers,
+		"JSTokenHolderDistribution" : js_tok_distr,
+	})
+}
+func arbitrum_market_outside_augur_shares_burned(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return 
+	}
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	p_contract_aid := c.Param("contract_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'contract_aid' parameter is not set")
+		return
+	}
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
+		return
+	}
+	offset := int(0) ; limit:= int(100000)
+	operations := augur_srv.db_matic.Get_outside_augur_shares_burned(contract_aid,market_id,offset,limit)
+
+	c.HTML(http.StatusOK, "amm_outside_augur_shares_bruned.html", gin.H{
+		"MarketId":market_id,
+		"MarketInfo" : market,
+		"SharesBurnedOperations" : operations,
+	})
+
+}
+func arbitrum_market_outside_augur_shares_minted(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return 
+	}
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	p_contract_aid := c.Param("contract_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'contract_aid' parameter is not set")
+		return
+	}
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
+		return
+	}
+	offset := int(0) ; limit:= int(100000)
+	operations := augur_srv.db_matic.Get_outside_augur_shares_minted(contract_aid,market_id,offset,limit)
+
+	c.HTML(http.StatusOK, "amm_outside_augur_shares_minted.html", gin.H{
+		"MarketId":market_id,
+		"MarketInfo" : market,
+		"SharesMintedOperations" : operations,
+	})
+
+}
+func arbitrum_market_outside_augur_balancer_swaps(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return 
+	}
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	p_contract_aid := c.Param("contract_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'contract_aid' parameter is not set")
+		return
+	}
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v has error: %v",market_id,err))
+		return
+	}
+	pool_aid,err := augur_srv.db_matic.Get_market_pool_aid(contract_aid,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Pool wasn't found in the database for this market: %v",err))
+		return
+	}
+	pool_addr,_ := augur_srv.db_matic.Lookup_address(pool_aid)
+	offset:=int(0);limit:=int(1000000000)
+	balancer_swaps := augur_srv.db_matic.Get_outside_augur_balancer_swaps(pool_aid,offset,limit)
+
+	c.HTML(http.StatusOK, "amm_balancer_swaps_outside_augur.html", gin.H{
+		"MarketId":market_id,
+		"MarketInfo" : market,
+		"PoolAid": pool_aid,
+		"PoolAddr" : pool_addr,
+		"BalancerSwaps" : balancer_swaps,
+	})
+
+}
+func arbitrum_market_outside_augur_erc20_transfers(c *gin.Context) {
+
+	if  !augur_srv.matic_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return 
+	}
+	p_market_id := c.Param("market_id")
+	var market_id int64
+	if len(p_market_id) > 0 {
+		var success bool
+		market_id,success = parse_int_from_remote_or_error(c,false,&p_market_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'market_id' parameter is not set")
+		return
+	}
+	p_contract_aid := c.Param("contract_aid")
+	var contract_aid int64
+	if len(p_contract_aid) > 0 {
+		var success bool
+		contract_aid,success = parse_int_from_remote_or_error(c,false,&p_contract_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'contract_aid' parameter is not set")
+		return
+	}
+	market,err := augur_srv.db_matic.Get_sport_market_info(&amm_constants,contract_aid,market_id)
+	if err!=nil {
+		respond_error(c,fmt.Sprintf("Market with market_id=%v couldn't be located, error: %v",market_id,err))
+		return
+	}
+	offset:=int(0);limit:=int(1000000000)
+	transfers := augur_srv.db_matic.Get_erc20_transfers_outside_augur(contract_aid,market_id,offset,limit)
+
+	c.HTML(http.StatusOK, "amm_erc20_transfers_outside_augur.html", gin.H{
+		"MarketId":market_id,
+		"MarketInfo" : market,
+		"ERC20Transfers" : transfers,
 	})
 }

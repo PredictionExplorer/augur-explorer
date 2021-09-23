@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS
+	erc20_transf,
+	erc20_bal,
+	erc20_proc_status,
+	erc20_holder,
+	erc20_tok
+CASCADE;

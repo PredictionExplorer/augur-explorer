@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/amm"
 )
 var (
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -35,42 +36,30 @@ var (
 
 	Error   *log.Logger
 	Info    *log.Logger
+
+	amm_constants		AMM_Constants
+	amm_contracts		AA_ContractAddrs
 )
 func initialize() {
 
-	caddrs_obj,err := augur_srv.storage.Get_contract_addresses()
+	caddrs_obj,err := augur_srv.db_augur.Get_contract_addresses()
 	if err!=nil {
 		Fatalf("Can't find contract addresses in 'contract_addresses' table")
 	}
 	caddrs=&caddrs_obj
 
+	amm_constants = Load_amm_constants("./amm_constants")
+	if augur_srv.db_matic != nil {
+		amm_contracts = augur_srv.db_matic.Get_arbitrum_augur_contract_addresses()
+	}
 }
 func secure_https(r http.Handler) {
 	autotls.Run(r, "localhost")
 }
 func main() {
 
-	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
-	os.MkdirAll(log_dir, os.ModePerm)
-	db_log_file:=fmt.Sprintf("%v/%v",log_dir,"webserver-db.log")
 
-	fname:=fmt.Sprintf("%v/webserver_info.log",log_dir)
-	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err!=nil {
-		fmt.Printf("Can't start: %v\n",err)
-		os.Exit(1)
-	}
-	Info = log.New(logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
-
-	fname=fmt.Sprintf("%v/webserver_error.log",log_dir)
-	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err!=nil {
-		fmt.Printf("Can't start: %v\n",err)
-		os.Exit(1)
-	}
-	Error = log.New(logfile,"ERROR: ",log.Ldate|log.Ltime|log.Lshortfile)
-
-	augur_srv = create_augur_server(&market_order_id,db_log_file,Info)
+	augur_srv = create_augur_server()
 
 	initialize()
 
@@ -176,6 +165,18 @@ func main() {
 	r.GET("/black/noshow_bond",augur_noshow_bond_prices)
 	r.GET("/black/validity_bond",augur_validity_bond_prices)
 	r.GET("/black/ens_name_info/:fqdn",ens_name_info)
+	r.GET("/black/aa/pools",arbitrum_augur_pools)
+	r.GET("/black/arbitrum/markets/sports/:status/:sort",arbitrum_markets_sports)
+	r.GET("/black/arbitrum/liquidity/:factory_aid/:market_id/:offset/:limit",arbitrum_liquidity_changed)
+	r.GET("/black/arbitrum/swaps/:contract_aid/:market_id/:offset/:limit",arbitrum_shares_swapped)
+	r.GET("/black/arbitrum/user/swaps/:user/:offset/:limit",amm_user_swaps)
+	r.GET("/black/arbitrum/user/liquidity/:user/:offset/:limit",amm_user_liquidity)
+	r.GET("/black/arbitrum/markets/info/:contract_aid/:market_id",arbitrum_market_info)
+	r.GET("/black/arbitrum/market/liquidity/providers/:contract_aid/:market_id",arbitrum_market_liquidity_providers)
+	r.GET("/black/arbitrum/market/outside/shares_burned/:contract_aid/:market_id/:offset/:limit",arbitrum_market_outside_augur_shares_burned)
+	r.GET("/black/arbitrum/market/outside/shares_minted/:contract_aid/:market_id/:offset/:limit",arbitrum_market_outside_augur_shares_minted)
+	r.GET("/black/arbitrum/market/outside/balancer_swaps/:contract_aid/:market_id/:offset/:limit",arbitrum_market_outside_augur_balancer_swaps)
+	r.GET("/black/arbitrum/market/outside/erc20_transfers/:contract_aid/:market_id/:offset/:limit",arbitrum_market_outside_augur_erc20_transfers)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)
@@ -243,6 +244,18 @@ func main() {
 	r.GET("/api/validity_bond",a1_validity_bond_prices)
 	r.GET("/api/ens_name_info/:fqdn",a1_ens_name_info)
 	r.GET("/api/ens_lookup/:user",a1_ens_name_lookup)
+	r.GET("/api/aa/pools",a1_arbitrum_augur_pools)
+	r.GET("/api/arbitrum/markets/sports/:status/:sort/:offset/:limit",a1_arbitrum_markets_sports)
+	r.GET("/api/arbitrum/markets/info/sports/:factory_aid/:market_id",a1_arbitrum_market_info_sports)
+	r.GET("/api/arbitrum/liquidity/:factory_aid/:market_id/:offset/:limit",a1_arbitrum_liquidity_changed)
+	r.GET("/api/arbitrum/swaps/:contract_aid/:market_id/:offset/:limit",a1_arbitrum_shares_swapped)
+	r.GET("/api/arbitrum/user/swaps/:user/:offset/:limit",a1_amm_user_swaps)
+	r.GET("/api/arbitrum/user/liquidity/:user/:offset/:limit",a1_amm_user_liquidity)
+	r.GET("/api/arbitrum/market/liquidity/providers/:factory_aid/:market_id",a1_arbitrum_market_liquidity_providers)
+	r.GET("/api/arbitrum/market/outside/shares_burned/:factory_aid/:market_id/:offset/:limit",a1_arbitrum_market_outside_augur_shares_burned)
+	r.GET("/api/arbitrum/market/outside/shares_minted/:factory_aid/:market_id/:offset/:limit",a1_arbitrum_market_outside_augur_shares_minted)
+	r.GET("/api/arbitrum/market/outside/balancer_swaps/:factory_aid/:market_id/:offset/:limit",a1_arbitrum_market_outside_augur_balancer_swaps)
+	r.GET("/api/arbitrum/market/outside/erc20_transfers/:factory_aid/:market_id/:offset/:limit",a1_arbitrum_market_outside_augur_erc20_transfers)
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

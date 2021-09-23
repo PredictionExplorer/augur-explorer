@@ -8,6 +8,9 @@ import (
 	_  "github.com/lib/pq"
 
 )
+var (
+	amap map[string]int64 = make(map[string]int64)
+)
 func (ss *SQLStorage) lookup_universe_id(addr string) (int64,error) {
 
 	return ss.Nonfatal_lookup_address_id(addr)
@@ -46,10 +49,14 @@ func (ss *SQLStorage) Lookup_wallet_aid(eoa_aid int64) (int64,error) {
 }
 func (ss *SQLStorage) Nonfatal_lookup_address_id(addr string) (int64,error) {
 
-	var addr_id int64;
+	aid,exists := amap[addr]
+	if exists {
+		return aid,nil
+	}
+
 	var query string
 	query="SELECT address_id FROM address WHERE addr=$1"
-	err:=ss.db.QueryRow(query,addr).Scan(&addr_id);
+	err:=ss.db.QueryRow(query,addr).Scan(&aid);
 	if (err!=nil) {
 		if err!=sql.ErrNoRows {
 			ss.Log_msg(fmt.Sprintf("DB error: %v ,q=%v",query))
@@ -57,8 +64,8 @@ func (ss *SQLStorage) Nonfatal_lookup_address_id(addr string) (int64,error) {
 		}
 		return 0,err
 	}
-
-	return addr_id,nil
+	amap[addr]=aid
+	return aid,nil
 }
 func (ss *SQLStorage) Lookup_market_by_addr_str(addr string) (int64,error) {
 
@@ -124,20 +131,24 @@ func (ss *SQLStorage) lookup_market_id(addr string) (int64,int) {
 }
 func (ss *SQLStorage) Lookup_or_create_address(addr string,block_num int64,tx_id int64) int64 {
 
-	var addr_id int64;
+	aid,exists := amap[addr]
+	if exists {
+		return aid
+	}
 	var query string
 	query="SELECT address_id FROM address WHERE addr=$1"
-	err:=ss.db.QueryRow(query,addr).Scan(&addr_id);
+	err:=ss.db.QueryRow(query,addr).Scan(&aid);
 	if (err!=nil) {
 		if (err==sql.ErrNoRows) {
-			addr_id = ss.create_address(addr,block_num,tx_id)
-			return addr_id
+			aid = ss.create_address(addr,block_num,tx_id)
+			amap[addr]=aid
+			return aid
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error in getting address id : %v",err))
 		}
 	}
-
-	return addr_id
+	amap[addr]=aid
+	return aid
 }
 func (ss *SQLStorage) create_address(addr string,block_num int64,tx_id int64) int64 {
 
@@ -158,7 +169,7 @@ func (ss *SQLStorage) create_address(addr string,block_num int64,tx_id int64) in
 		ss.Log_msg(fmt.Sprintf("DB error, addr_id after INSERT is 0"))
 		os.Exit(1)
 	}
-	ss.Info.Printf("create_address: %v    aid=%v\n",addr,addr_id)
+	//ss.Info.Printf("create_address: %v    aid=%v\n",addr,addr_id)
 
 	return addr_id
 }
