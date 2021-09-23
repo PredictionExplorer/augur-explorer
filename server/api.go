@@ -1804,7 +1804,12 @@ func a1_poly_market_stats(c *gin.Context) {
 		return
 	}
 
-	stats,_:= augur_srv.storage.Get_poly_market_stats(market_id)
+	fpmm_aid := augur_srv.storage.Get_fpmm_contract_aid(market_id)
+	if fpmm_aid == 0 {
+		respond_error_json(c,"Polymarket with this ID wasn't found")
+		return
+	}
+	stats,_:= augur_srv.storage.Get_poly_market_stats(fpmm_aid)
 
 	var req_status int = 1
 	var err_str string = ""
