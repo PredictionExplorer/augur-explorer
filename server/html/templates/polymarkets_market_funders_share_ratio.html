@@ -1,0 +1,32 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Liquidity Provider Share ratio of Market {{.MarketId}}</title>
+</head>
+<body>
+	<h3 class="page_title">Liquidity Provider share ratio of market id = {{.MarketId}}</h3>
+<table class="market_detail">
+</table>
+<h3>Current Open Positions</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Funder</th>
+		<th class="market_reports">Total operations</th>
+		<th class="market_reports">Balance (USDC)</th>
+		<th class="market_reports">Share Ratio (%)</th>
+	</tr>
+	{{- range $i, $change := .ShareRatios}}
+		<tr class="market_reports">
+			<td class="addr">
+				<a href="/black/poly/markets/funderops/{{$.MarketId}}/{{.FunderAid}}/0/10000">
+					{{.FunderAddr}}
+				</a>
+			</td>
+			<td class="market_reports_field" style="text-align: right;">{{.TotalLiquidityOps}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{ printf "%.6f" .Balance}}</td>
+			<td class="market_reports_field" style="text-align: center;">{{ printf "%.2f" .ShareRatio}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>

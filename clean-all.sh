@@ -16,6 +16,8 @@ rm ./etl/cmd/arbitrum/arbitrum
 rm ./etl/cmd/arbitrum-augur/arbitrum-augur
 rm ./etl/cmd/erc20/erc20
 rm ./etl/cmd/erc1155/erc1155
+rm ./etl/cmd/polysync/polysync
+rm ./etl/cmd/polymarkets/polymarkets
 rm ./etl/dmesh/dmesh
 rm ./etl/tools/augur_blocks
 rm ./etl/tools/dai_balances

@@ -1,0 +1,33 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Search Results for query {{.Keywords}}</title>
+</head>
+<body>
+	<h3 class="page_title">Search results for query  = {{.Keywords}}</h3>
+<table class="market_detail">
+</table>
+<div id="price_history_graph"></div>
+<h3>Search results:</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Market Id</th>
+		<th class="market_reports">Question</th>
+		<th class="market_reports">Description</th>
+		<th class="market_reports">volume</th>
+
+	</tr>
+	{{- range $i, $change := .SearchResults}}
+		<tr class="market_reports">
+			<td class="market_reports_field">
+				{{.MarketId}}
+			</td>
+			<td title="" class="addr">{{.Title}}</td>
+			<td class="addr">{{.Description}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .Volume}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>
+</html>

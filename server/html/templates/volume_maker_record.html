@@ -4,6 +4,6 @@
 	<td>
 		<a class="addr" href="search?q={{.Addr}}">{{.Addr}}</a>
 	</td>
-	<td class="right">{{.Volume}}</td>
+	<td class="right">{{ printf "%9.2f" .Volume}}</td>
 </tr>
 {{end}}

@@ -1,0 +1,49 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Liquidity Addition/Removal for market {{.MarketId}} by period </title>
+</head>
+<body>
+	<h3 class="page_title">Liquidity Addition/Removal for Polymarket Market ID={{.MarketId}}<h3>
+	<table>
+		<tr>
+			<td>Starting Timestamp</td>
+			<td>{{.InitTs}}</td>
+		</tr>
+		<tr>
+			<td>Ending Timestamp</td>
+			<td>{{.FinTs}}</td>
+		</tr>
+		<tr>
+			<td>Interval</td>
+			<td>{{.Interval}}</td>
+		</tr>
+		<tr>
+			<td>Market ID </td>
+			<td>{{.MarketId }}</td>
+		</tr>
+	</table>
+
+<table class="market_detail">
+</table>
+<h3>Liquidity Operations by period for Market {{.MarketId}}</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Interval</th>
+		<th class="market_reports">Num operations</th>
+		<th class="market_reports">Liquidity</th>
+		<th class="market_reports">Liquidity Accumulated</th>
+	</tr>
+	{{- range $i, $change := .MarketLiquidityHistory}}
+		<tr class="market_reports">
+			<td class="market_reports_field">
+				{{.StartTs}}
+			</td>
+			<td class="market_reports_field">{{.NumOperations}}</td>
+			<td class="market_reports_field">{{ printf "%.4f" .Liquidity}}</td>
+			<td class="market_reports_field">{{ printf "%.4f" .LiquidityAccum}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>

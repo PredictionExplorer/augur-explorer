@@ -1,0 +1,59 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>ERC1155 transfers for Polymarkets Market {{.MarketId}}</title>
+</head>
+<body>
+	<h3 class="page_title">ERC1155 transfers for market id = {{.MarketId}}</h3>
+<table class="market_detail">
+</table>
+<div id="price_history_graph"></div>
+<h3>Operations</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Date </th>
+		<th class="market_reports">Token Info</th>
+		<th class="market_reports">Token Amount</th>
+		<th class="market_reports">Token Balance</th>
+		<th class="market_reports">Operation Type</th>
+		<th class="market_reports">Collateral</th>
+	</tr>
+	{{- range $i, $change := .ERC1155Transfers}}
+		<tr class="market_reports">
+			<td class="market_reports_field" title="{{.BalOpId}}">
+				{{.DateTime}}
+			</td>
+			<td title="{{.BalOpId}}" class="addr">
+				{{.TokenIdHex}}<br/>
+				Transfer type :
+				{{ if gt .ParentId 0 }}
+					Single Transfer
+				{{ else }}
+					{{ if gt .BatchId 0 }}Batch Transfer
+					{{ else }} Unknown Operation{{end}}
+				{{ end }}
+				<br/>
+				TxHash: {{.TxHash}}
+			</td>
+			<td class="market_reports_field">{{printf "%.8f" .Amount}}</td>
+			<td class="market_reports_field">{{printf "%.8f" .Balance}}</td>
+			<td class="market_reports_field">
+				{{ if gt .BuySellAid 0 }}
+					{{ if eq .BuySellOpType 0 }} Buy {{ else }} Sell {{end}}
+				{{ end }}
+				{{ if gt .FunderAid 0 }}
+					{{ if eq .FundOpType 0 }} Add Funds {{ else }} Remove Funds {{end}}
+				{{ end }}
+			</td>
+			<td class="market_reports_field">
+				{{ if gt .BuySellAid 0 }}
+				{{ printf "%.4f" .BuySellAmount }}
+				{{ end}}
+				{{ if gt .FunderAid 0 }}{{printf "%.4f" .FunderAmount}}{{ end}}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>
+</html>

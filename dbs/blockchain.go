@@ -1210,6 +1210,7 @@ func (ss *SQLStorage) Get_event_log(evtlog_id int64) p.EthereumEventLog {
 
 	return evtlog
 }
+
 func (ss *SQLStorage) Get_augur_transaction(tx_id int64) *p.AugurTx {
 
 	agtx := new(p.AugurTx)
