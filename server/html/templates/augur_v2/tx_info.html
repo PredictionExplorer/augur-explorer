@@ -83,7 +83,7 @@
 		<th class="mkt_trade_hdr" style="text-align: center">Amount Out</th>
 	</tr>
 		{{- range $i, $swap:= .TxInfo.BalancerSwaps}}
-			{{template "pool_swap" $swap }}
+			{{template "balancer/pool_swap" $swap }}
 		{{- end}}
 </table>
 {{ end }}

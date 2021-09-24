@@ -277,6 +277,8 @@ func main() {
 	r.GET("/api/arbitrum/market/outside/shares_minted/:factory_aid/:market_id/:offset/:limit",a1_arbitrum_market_outside_augur_shares_minted)
 	r.GET("/api/arbitrum/market/outside/balancer_swaps/:factory_aid/:market_id/:offset/:limit",a1_arbitrum_market_outside_augur_balancer_swaps)
 	r.GET("/api/arbitrum/market/outside/erc20_transfers/:factory_aid/:market_id/:offset/:limit",a1_arbitrum_market_outside_augur_erc20_transfers)
+
+	// Polymarket API requests
 	r.GET("/api/poly/markets/buysell/list/:market_id/:offset/:limit",a1_poly_buysell_operations)
 	r.GET("/api/poly/markets/buysell/info/:id",a1_poly_market_buysell_info)
 	r.GET("/api/poly/markets/liquidity/:market_id/:offset/:limit",a1_poly_liquidity_operations)
