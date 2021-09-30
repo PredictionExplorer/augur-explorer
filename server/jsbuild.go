@@ -11,6 +11,32 @@ import (
 type JSOutcomes struct {
 	OutcomesDataJS			[]template.JS
 }
+func mkt_depth_entry_to_js_obj(de *DepthEntry) string {
+
+	var output string
+	output = "{" +
+				"x:" + fmt.Sprintf("%v",de.Price)  + "," +
+				"y:"  + fmt.Sprintf("%v",de.AccumVol) + "," +
+				"price: " + fmt.Sprintf("%v",de.Price) + "," +
+				"addr: \"" + de.AddrSh + "\"," +
+				"expires: \"" + de.Expires + "\"," +
+				"volume: " + fmt.Sprintf("%v",de.Volume) + "," +
+				"click: function() {load_order_data(\"" +
+					de.AddrSh +"\"," +
+					fmt.Sprintf("%v,%v,%v,%v,%v,%v,\"%v\",\"%v\"",
+										de.MktAid,
+										de.OutcomeIdx,
+										de.Volume,
+										de.TotalBids,
+										de.TotalAsks,
+										de.TotalCancel,
+										de.DateCreated,
+										de.Expires,
+					) +
+				")}" +
+				"}"
+	return output
+}
 func build_js_data_obj(mdepth *MarketDepth) (template.JS,template.JS) {
 	var asks_str string = "["
 	var bids_str string = "["

@@ -1,25 +1,47 @@
 package main
 import (
-	"os"
 	"fmt"
-	"log"
 	"time"
-	"bytes"
 	"strconv"
 	"net/http"
 	"encoding/hex"
 	"github.com/gin-gonic/gin"
-	"math/big"
-	"context"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/wealdtech/go-ens/v3"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
-	. "github.com/PredictionExplorer/augur-explorer/dbs"
 )
+func main_page(c *gin.Context) {
+	blknum,_:= augur_srv.db_augur.Get_last_block_num()
+	blknum_thousand_separated := ThousandsFormat(int64(blknum))
+	stats := augur_srv.db_augur.Get_front_page_stats()
+	c.HTML(http.StatusOK, "augur_v2/index.html", gin.H{
+			"title": "Augur Prediction Markets",
+			"block_num" : blknum_thousand_separated,
+			"Stats" : stats,
+	})
+}
+func markets(c *gin.Context) {
+	off_str := c.Query("off")
+	var off int = 0
+	var err error
+	if len(off_str) > 0 {
+		off, err = strconv.Atoi(off_str)
+		if err != nil {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": "Can't parse offset",
+			})
+			return
+		}
+	}
+	markets := augur_srv.db_augur.Get_active_market_list(off,DEFAULT_MARKET_ROWS_LIMIT)
+	c.HTML(http.StatusOK, "markets.html", gin.H{
+			"title": "Augur Markets",
+			"Markets" : markets,
+	})
+}
 func categories(c *gin.Context) {
 	blknum,_ := augur_srv.db_augur.Get_last_block_num()
 	categories := augur_srv.db_augur.Get_categories()
@@ -1293,5 +1315,178 @@ func price_estimate_history(c *gin.Context) {
 		"PriceHistory" : price_estimates ,
 		"JSPriceEst" : js_price_estimate_data,
 		"JSWeightedPrice" : js_weighted_price_data,
+	})
+}
+func sharetoken_balance_changes(c *gin.Context) {
+
+	market := c.Param("market")
+	market_addr,valid:=is_address_valid(c,false,market)
+	if !valid {
+		return
+	}
+	minfo,err := augur_srv.db_augur.Get_market_info(market_addr,0,false)
+	if err != nil {
+		show_market_not_found_error(c,false,&market_addr)
+		return
+	}
+
+	outag_sh_bal_chgs,total_rows := augur_srv.db_augur.Outside_augur_share_balance_changes(minfo.MktAid,0,500)
+	c.HTML(http.StatusOK, "sharetoken_balance_changes.html", gin.H{
+			"MarketInfo" : minfo,
+			"TotalRows" : total_rows,
+			"OutsideAugurBalanceChanges": outag_sh_bal_chgs,
+	})
+}
+func do_text_search(c *gin.Context) {
+
+	keywords := c.Query("keywords")
+	if len(keywords) == 0 {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Empty search query"),
+		})
+		return
+	}
+	search_results := augur_srv.db_augur.Search_keywords_in_markets(keywords)
+	c.HTML(http.StatusOK, "text_search_results.html", gin.H{
+			"SearchResults" : search_results,
+	})
+}
+func show_text_search_form(c *gin.Context) {
+
+	c.HTML(http.StatusOK, "text_search_form.html", gin.H{
+	})
+}
+func whats_new_in_augur(c *gin.Context) {
+
+	var err error
+	var p_code string
+	p_code = c.Param("code")
+	if len(c.Query("code"))>0 {
+		p_code = c.Query("code")
+	}
+	var code int = 0
+	if len(p_code) > 0 {
+		code , err = strconv.Atoi(p_code)
+		if err != nil {
+			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+				"title": "Augur Markets: Error",
+				"ErrDescr": "Can't parse code",
+			})
+			return
+		}
+	}
+	block_num_from,block_num_to,err := augur_srv.db_augur.Get_block_range_for_whats_new(WhatsNewAugurCode(code))
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("%v",err.Error()),
+		})
+		return
+	}
+	block_info,err := augur_srv.db_augur.Get_block_info(int64(block_num_from),int64(block_num_to))
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("%v",err.Error()),
+		})
+		return
+	}
+	c.HTML(http.StatusOK, "block_info.html", gin.H{
+		"BlockInfo" : block_info,
+	})
+}
+func show_reporting_table(c *gin.Context) {
+
+	market := c.Param("market")
+	market_addr,valid := is_address_valid(c,false,market)
+	if !valid {
+		return
+	}
+	market_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(market_addr)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Such address wasn't found: %v",market_addr),
+		})
+		return
+	}
+	market_info,err := augur_srv.db_augur.Get_market_info(market_addr,0,false)
+	if err != nil {
+		show_market_not_found_error(c,false,&market_addr)
+		return
+	}
+	reporting_status,err := augur_srv.db_augur.Get_reporting_table(market_aid)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Error: %v",err.Error()),
+		})
+		return
+	}
+	round_table,num_outcomes,outcomes,scalar_vals := augur_srv.db_augur.Get_round_table(market_aid)
+	outcomes_split := strings.Split(outcomes,",")
+	initial_report_redemption := augur_srv.db_augur.Get_initial_report_redeemed_record(market_aid)
+	redeemed_participants := augur_srv.db_augur.Get_redeemed_participants(market_aid)
+	losing_reports := augur_srv.db_augur.Get_losing_rep_participants(market_aid)
+
+	c.HTML(http.StatusOK, "reporting_table.html", gin.H{
+		"MarketInfo" : market_info,
+		"ReportingTable" : reporting_status,
+		"RoundTable" : round_table,
+		"NumOutcomes" : num_outcomes,
+		"Outcomes" : outcomes,
+		"OutcomesSplit" : outcomes_split,
+		"ScalarValues" : scalar_vals,
+		"RedeemIniReporter" : initial_report_redemption,
+		"WinningReports" : redeemed_participants,
+		"LosingReports" : losing_reports,
+	})
+}
+func user_rep_profit_loss(c *gin.Context) {
+
+	user := c.Param("user")
+	user_addr,valid := is_address_valid(c,false,user)
+	if !valid {
+		return
+	}
+	user_aid,err := augur_srv.db_augur.Nonfatal_lookup_address_id(user_addr)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Such address wasn't found: %v",user_addr),
+		})
+		return
+	}
+	user_info,err := augur_srv.db_augur.Get_user_info(user_aid)
+	if err!=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Such address wasn't found: %v",user_addr),
+		})
+		return
+	}
+	rep_profits := augur_srv.db_augur.Get_user_report_profits(user_aid)
+	c.HTML(http.StatusOK, "user_rep_pl.html", gin.H{
+		"UserInfo" : user_info,
+		"RepProfits" : rep_profits,
+	})
+}
+func augur_noshow_bond_prices(c *gin.Context) {
+
+	bond_prices := augur_srv.db_augur.Get_noshow_bond_price_history()
+	js_prices := build_js_noshow_bond_price_history(&bond_prices)
+	c.HTML(http.StatusOK, "noshow_bond_prices.html", gin.H{
+		"Prices" : bond_prices,
+		"JSPriceData" :js_prices,
+	})
+}
+func augur_validity_bond_prices(c *gin.Context) {
+
+	bond_prices := augur_srv.db_augur.Get_validity_bond_price_history()
+	js_prices := build_js_validity_bond_price_history(&bond_prices)
+	c.HTML(http.StatusOK, "validity_bond_prices.html", gin.H{
+		"Prices" : bond_prices,
+		"JSPriceData" :js_prices,
 	})
 }
