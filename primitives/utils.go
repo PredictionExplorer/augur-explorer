@@ -4,11 +4,15 @@ import (
 	"log"
 	"encoding/hex"
 	"bytes"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/0xProject/0x-mesh/common/types"
 )
+type CallerZxUnpackTokenId interface {
+	UnpackTokenId(opts *bind.CallOpts, _tokenId *big.Int) (ZxMeshOrderSpec, error)
+}
 func (evt *EMarketCreated) Dump(l *log.Logger) {	// dumps struct to stdout for debugging
 	l.Printf("MarketCreated {\n")
 	l.Printf("\tUniverse: %v\n",evt.Universe.String())
@@ -162,7 +166,8 @@ func (evt *ECancelZeroXOrder) Dump(l *log.Logger) {
 	l.Printf("\tOrderHash: %v\n",hex.EncodeToString(evt.OrderHash[:]))
 	l.Printf("}\n")
 }
-func (evt *ETransferBatch) Dump(zc *ZeroX,l *log.Logger) {
+//func (evt *ETransferBatch) Dump(zc *ZeroX,l *log.Logger) {
+func (evt *ETransferBatch) Dump(zc CallerZxUnpackTokenId,l *log.Logger) {
 	l.Printf("TransferBatch {\n")
 	l.Printf("\tOperator: %v\n",evt.Operator.String())
 	l.Printf("\tFrom: %v\n",evt.From.String())

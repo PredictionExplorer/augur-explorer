@@ -16,6 +16,7 @@ import (
 	ztypes "github.com/0xProject/0x-mesh/common/types"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 type ExecWalletTxInputStruct struct {
 	To common.Address `abi:"_to"`

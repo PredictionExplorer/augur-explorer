@@ -15,6 +15,7 @@ import (
 
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 var (
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")

@@ -11,6 +11,7 @@ import (
 
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
 	// WalletRegistry contract address in MainNet

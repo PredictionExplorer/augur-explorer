@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/contracts"
 	. "github.com/PredictionExplorer/augur-explorer/amm"
 )
 var (

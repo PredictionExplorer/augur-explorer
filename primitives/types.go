@@ -2,119 +2,9 @@
 package primitives
 import (
 	"math/big"
-	"errors"
 
 	"github.com/ethereum/go-ethereum/common"
 	//"github.com/ethereum/go-ethereum/core/types"
-)
-const (
-	MAX_BLOCKS_CHAIN_SPLIT = 128
-	OWNER_FIELD_OFFSET int = 2	// offset to the 'owner' field in WalletContract in EVM (contract storage)
-	CATEGORICAL_MULTIPLIER int = 1000
-//	SCALAR_MULTIPLIER int = 10
-	ENS_NOT_PUBLIC			= "ENS Name is not public"
-)
-const (
-	MktTypeYesNo		= iota
-	MktTypeCategorical
-	MktTypeScalar
-)
-const (
-	COINTYPE_ETHEREUM   int = 60
-	COINTYPE_BITCOIN		=  0
-	COINTYPE_LITECOIN		=  2
-	COINTYPE_DOGECOIN		=  3
-	COINTYPE_MONACOIN		= 22
-	COINTYPE_ETHEREUM_CLASSIC = 61
-	COINTYPE_ROOTSTOCK		= 137
-	COINTYPE_RIPPLE			= 144
-	COINTYPE_BITCOIN_CASH	= 145
-	COINTYPE_BINANCE		= 714
-)
-const (
-	OOOpCodeNone= iota
-	OOOpCodeCreated
-	OOOpCodeFill
-	OOOpCodeCancelledByUser
-	OOOpCodeExpired
-	OOOpCodeSyncProcess		// when no other reason exist, this one is used (this is a kind of a bugfix)
-)
-type MeshEvtCode int
-const (
-	MeshEvtGetOrders MeshEvtCode = iota
-	MeshEvtInvalid
-	MeshEvtAdded				// 2
-	MeshEvtFilled				// 3
-	MeshEvtFullyFilled			// 4
-	MeshEvtCancelled			// 5
-	MeshEvtExpired				// 6
-	MeshEvtUnexpired			// 7
-	MeshEvtBecameUnfunded		// 8
-	MeshEvtFillabilityIncreased
-	MeshEvtStoppedWatching
-)
-type SearchResultType int
-const (
-	SR_Unknown SearchResultType = iota
-	SR_MarketOrders				// 1
-	SR_Address					// 2
-	SR_Hash						// 3
-	SR_Transaction				// 4
-	SR_Block					// 5
-	SR_UserInfo					// 6
-	SR_WalletContractInfo		// 7
-	SR_AugurMarketInfo			// 8
-	SR_AugurUniverseInfo		// 9
-	SR_ShareTokenWrapper		// 10
-	SR_BalancerPool				// 11
-	SR_UniswapPair				// 12
-	SR_TextSearchResults		// 13
-)
-type WhatsNewAugurCode int 
-const (
-	WNA_6Hours WhatsNewAugurCode = iota
-	WNA_12Hours					// 1
-	WNA_1Day					// 2
-	WNA_2Days					// 3
-	WNA_3Days					// 4
-	WNA_1Week					// 5
-	WNA_2Weeks					// 6
-)
-const (
-	RecTypeBalancer = iota
-	RecTypeMint
-	RecTypeBurn
-	RecTypeERC20
-)
-var (
-	ErrChainSplit error = errors.New("Chainsplit detected")
-)
-
-type OrderType uint8
-const (
-	OrderTypeBid		OrderType = 0
-	OrderTypeAsk		OrderType = 1
-)
-type OrderAction uint8
-const(
-	OrderActionCreate	OrderAction = 0
-	OrderActionCancel	OrderAction = 1
-	OrderActionFill		OrderAction = 2
-)
-type TokenType uint8
-const(
-	ReputationToken		TokenType = 0
-	DisputeCrowdsourcer TokenType = 1
-	ParticipationToken	TokenType = 2
-)
-type MarketStatus uint8
-const (
-	MktStatusTraded		MarketStatus = 0
-	MktStatusReporting	MarketStatus = 1
-	MktStatusReported	MarketStatus = 2
-	MktStatusDisputing	MarketStatus = 3
-	MktStatusFinalized	MarketStatus = 4
-	MktStatusFinInvalid	MarketStatus = 5
 )
 //type BlockNumber int64	// -1 is used to mark 'block not set' for the database DISCONTINUED: 
 type AugurTx struct {	// just a wrapper for Ethereum Transaction object, but in our own format
@@ -424,165 +314,14 @@ type OrderInfo struct {		// this is a full order information, to show in dedicat
 	MarketAddrSh		string
 	Direction			string
 }
-type Report struct {
-	MktAid				int64
-	TimeStamp			int64
-	RepStake			float64
-	Round				int
-	OutcomeIdx			int
-	MktType				int
-	RType				int		// Report Type : 0-Initial, 1-Contribution
-	IsInitial			bool
-	IsDesignated		bool
-	Reporter			string
-	MktAddr				string
-	MktAddrSh			string
-	MktDescription		string
-	OutcomeStr			string
-	Date				string
-	ReportType			string
-	WinStart			string
-	WinEnd				string
-}
-type AgtxInBlock struct {
-	TxId				int64
-	BlockNum			int64
-	ContextAid			int64
-	MarketAid			int64
-	PoolAid				int64
-	PairAid				int64
-	TimeStamp			int64
-	TxType				int
-	ContextAddr			string		// Address related to transaction type
-	MarketAddr			string		// Market address related to tx
-	TxHash				string
-	OrderHash			string		// if available, hash of the Order
-	PoolAddr			string
-	PairAddr			string
-}
 type MarketVeryShortInfo struct {
 	MktAddr				string
 	MktDesc				string
-}
-type BlockInfo struct {
-	BlockNumFrom		int64
-	BlockNumTo			int64
-	FromTimeStamp		int64
-	ToTimeStamp			int64
-	NumBlocks			int64
-	NumAugurTx			int64		// Only Augur-related transaction counter
-	NumEvents			int64
-	NumAugurEvents		int64
-	NumDefiEvents		int64
-	NumOtherEvents		int64
-	NumBalSwaps			int64		// Num swaps at Balancer
-	NumUniSwaps			int64		// Num swaps at Uniswap
-	NumMarketsTraded	int64
-	NumMarketsCreated	int64
-	NumUniqueAddresses	int64
-	NumUniqueOrders		int64
-	GasUsed				int64
-	TxCostEth			float64
-	FromDate			string
-	ToDate				string
-	ActiveAddresses		[]string	//list of addresses participated in this block
-	Transactions		[]string
-	Orders				[]string
-	MarketsTraded		[]MarketVeryShortInfo // list of market addresses created at this block
-	MarketsCreated		[]MarketVeryShortInfo
-//	BlockTransactions	[]AgtxInBlock	DISCONTINUED
-
-}
-type PoolVeryShortInfo struct {
-	PoolAid				int64
-	NumSwaps			int64
-	NumHolders			int64
-	PoolAddr			string
-}
-type PairVeryShortInfo struct {
-	PairAid				int64
-	TotalSwaps			int64
-	PairAddr			string
-}
-type TokenVeryShortInfo struct {
-	TokenAid			int64
-	TokenAddr			string
-	Name				string
-	Symbol				string
-}
-type AgtxEvent struct {
-	EvtType				int
-	DeFiPlatformCode	int
-	ReferenceId			int64	// Could be Market Order ID, or Event Log id
-	Aid					int64
-	MktAid				int64
-	DeFiSwapId			int64
-	Addr				string
-	MktAddr				string
-	OrderHash			string
-	MktDescr			string
-}
-type TxInfo struct {
-	TotalEvents			int
-	NumAugurEvents		int
-	NumDeFiEvents		int
-	NumOtherEvents		int
-	NumBalancerSwaps	int
-	NumUniswapSwaps		int
-	TxId				int64
-	GasUsed				int64
-	BlockNum			int64
-	FromAid				int64
-	ToAid				int64
-	Value				float64
-	TxFeeEth			float64
-	Hash				string
-	From				string
-	To					string
-	BalancerSwaps		[]BalancerSwap
-	UniswapSwaps		[]UniswapSwap
-	BalancerPools		[]PoolVeryShortInfo
-	UniswapPairs		[]PairVeryShortInfo
-	TokensTraded		[]TokenVeryShortInfo
-	MarketsTraded		[]MarketVeryShortInfo
-	FullEventList		[]AgtxEvent
 }
 type FrontPageStats struct {
 	MoneyAtStake		float64
 	MarketsCreated		float64
 	TradesCount			int64
-}
-type DaiB struct {
-	Id					int64
-	Aid					int64
-	DaiTransfId			int64
-	BlockNum			int64
-	Processed			bool
-	Address				string
-	Amount				string
-	Balance				string
-	BlockHash			string
-}
-type DaiOp struct {
-	BlockNum			int64
-	Date				string
-	Deposit				string
-	Withdrawal			string
-	FromAddr			string
-	ToAddr				string
-}
-type ERC20B struct {
-	Id					int64
-	Aid					int64
-	ParentId			int64
-	BlockNum			int64
-	ContractAid			int64
-	Processed			bool
-	Address				string
-	ContractAddr		string
-	Amount				string
-	Balance				string
-	BlockHash			string
 }
 type BlockCash struct {
 	BlockNum			int64
@@ -718,12 +457,6 @@ type GasCounter struct {
 	GasUsed				int64
 	TxCost				float64
 	NumRecs				int64
-}
-func (obj *GasSpent) Has_rows() bool {
-	if (obj.Num_trading==0) && (obj.Num_reporting==0) && (obj.Num_markets==0) && (obj.Num_total==0) {
-		return false
-	}
-	return true
 }
 type PriceHistory struct {
 	OutcomeIdx			int
@@ -912,16 +645,6 @@ type EthereumEventLog struct {
 	Topic0_Sig				string
 	RlpLog					[]byte
 }
-type ChainReorg struct {
-	BlockNum				int64
-	Hash					string
-}
-type EvtLogEntry struct { // Layer1 entry (event)
-	BlockNum				int64
-	TxId					int64
-	EvtId					int64
-//	TxHash					*string
-}
 type ETLTokenConfig struct {
 	LastIdDAI				int64
 	LastIdREP				int64
@@ -936,32 +659,11 @@ type ShortEvtLog struct {
 	EvtId					int64
 	TxId					int64
 }
-type TokProcessStatus struct {
-	LastEvtId				int64
-}
 type AugurProcessStatus struct {
 	LastTxId				int64
 }
 type AugurFoundryStatus struct {
 	LastEvtId				int64
-}
-type ERC20ProcessStatus struct {
-	LastEvtId				int64
-}
-type ERC20ShTokContract struct {
-	TimeStamp               int64
-	WrapperAid              int64
-	LastEvtId               int64
-	MarketAid               int64
-	OutcomeIdx              int
-	Decimals                int
-	Address                 string
-	Symbol                  string
-	Name                    string
-	MktAddr                 string
-	MktDescr                string
-	DateTime                string
-	Outcome                 string
 }
 type WShTokTransfer struct { // (ERC20) Wrapped ShareToken Transfer
 	TimeStamp				int64
@@ -978,204 +680,6 @@ type WShTokTransfer struct { // (ERC20) Wrapped ShareToken Transfer
 	AmountStr				string
 	From					string
 	To						string
-}
-type BalancerStatus struct {
-	LastEvtId				int64
-}
-type BalancerPoolInfo struct {
-	EvtId					int64
-	BlockNum				int64
-	TxId					int64
-	TimeStamp				int64
-	PoolAid					int64
-	CallerAid				int64
-	NumSwaps				int64
-	NumHolders				int64
-	NumTokens				int64
-	NumAugurTokens			int64
-	SwapFee					float64
-	PoolAddr				string
-	CallerAddr				string
-	CreatedDate				string
-	ControllerAddr			string
-	MktAddr					string
-	ContractAddr			string
-	Tokens					[]BalancerToken
-}
-type BalancerToken struct {
-	TimeStampAdded			int64
-	TokenAid				int64
-	Denorm					float64
-	Weight					float64
-	Balance					float64
-	TokenAddr				string
-	DateAdded				string
-	WrappingContract		ERC20ShTokContract
-}
-type BalancerJoin struct {
-	EvtId					int64
-	BlockNum				int64
-	TxId					int64
-	TimeStamp				int64
-	PoolAid					int64
-	CallerAid				int64
-	TokenAid				int64
-	PoolAddr				string
-	CallerAddr				string
-	TokenInAddr				string
-	AmountIn				string
-}
-type BalancerExit struct {
-	EvtId					int64
-	BlockNum				int64
-	TxId					int64
-	TimeStamp				int64
-	PoolAid					int64
-	CallerAid				int64
-	TokenAid				int64
-	PoolAddr				string
-	CallerAddr				string
-	TokenOutAddr			string
-	AmountOut				string
-}
-type BalancerSwap struct {
-	Id						int64
-	EvtId					int64
-	BlockNum				int64
-	TxId					int64
-	TimeStamp				int64
-	PoolAid					int64
-	CallerAid				int64
-	TokenInAid				int64
-	TokenOutAid				int64
-	AmountInF				float64
-	AmountOutF				float64
-	DecimalsIn				int
-	DecimalsOut				int
-	PoolAddr				string
-	CallerAddr				string
-	TokenInAddr				string
-	TokenOutAddr			string
-	SymbolIn				string
-	SymbolOut				string
-	AmountIn				string
-	AmountOut				string
-	Date					string
-}
-type UserBalancerSwap struct {
-	Id						int64
-	EvtId					int64
-	BlockNum				int64
-	TxId					int64
-	TimeStamp				int64
-	PoolAid					int64
-	CallerAid				int64
-	TokenInAid				int64
-	TokenOutAid				int64
-	MktAid					int64
-	AmountInF				float64
-	AmountOutF				float64
-	DecimalsIn				int
-	DecimalsOut				int
-	OutcomeIdx				int
-	PoolAddr				string
-	CallerAddr				string
-	TokenInAddr				string
-	TokenOutAddr			string
-	SymbolIn				string
-	SymbolOut				string
-	NameIn					string
-	NameOut					string
-	AmountIn				string
-	AmountOut				string
-	Date					string
-	MktAddr					string
-	MktDescription			string
-	Outcome					string
-}
-type SetSwapFee struct {
-	Id						int64
-	EvtId					int64
-	BlockNum				int64
-	TxId					int64
-	TimeStamp				int64
-	PoolAid					int64
-	PoolAddr				string
-	FeeStr					string
-}
-type SetController struct {
-	Id						int64
-	EvtId					int64
-	BlockNum				int64
-	TxId					int64
-	TimeStamp				int64
-	PoolAid					int64
-	PoolAddr				string
-	ControllerAddr			string
-}
-type SetPublic struct {
-	Id						int64
-	EvtId					int64
-	BlockNum				int64
-	TxId					int64
-	TimeStamp				int64
-	PoolAid					int64
-	PoolAddr				string
-	Public					bool
-}
-type Finalize struct {
-	Id						int64
-	EvtId					int64
-	BlockNum				int64
-	TxId					int64
-	TimeStamp				int64
-	PoolAid					int64
-	PoolAddr				string
-}
-type PoolBind struct {
-	Id						int64
-	EvtId					int64
-	BlockNum				int64
-	TxId					int64
-	TimeStamp				int64
-	PoolAid					int64
-	Denorm					string
-	PoolAddr				string
-	TokenAddr				string
-	Balance					string
-}
-type PoolUnBind struct {
-	Id						int64
-	EvtId					int64
-	BlockNum				int64
-	TxId					int64
-	TimeStamp				int64
-	PoolAid					int64
-	PoolAddr				string
-	TokenAddr				string
-}
-type PoolReBind struct {
-	Id						int64
-	EvtId					int64
-	BlockNum				int64
-	TxId					int64
-	TimeStamp				int64
-	PoolAid					int64
-	Denorm					string
-	PoolAddr				string
-	TokenAddr				string
-	Balance					string
-}
-type PoolGulp struct {
-	Id						int64
-	EvtId					int64
-	BlockNum				int64
-	TxId					int64
-	TimeStamp				int64
-	PoolAid					int64
-	PoolAddr				string
-	TokenAddr				string
-	AbsorbedBalance			string
 }
 type AugurAcctFlags struct { // indicates if Account is Augur - enabled or not (by approvals)
 	BlockNum				int64
@@ -1204,110 +708,10 @@ type OutsideAugurSBChg struct {
 	TxHash					string
 	TxHashSh				string
 }
-type PoolInfo struct {
-	PoolAid					int64
-	NumHolders				int64
-	NumSwaps				int64
-	CreatedBlockNum			int64
-	WentPublicTs			int64
-	CreatedTs				int64
-	FinalizedTs				int64
-	NumTokens				int
-	IsPublic				bool
-	WasFinalized			bool
-	UsdLiquidity			float64
-	SwapFee					float64
-	PoolAddr				string
-}
-type MarketPool struct {
-	OutcomeIdx				int
-	OutcomeStr				string
-	MktAddress				string
-}
 type TradingVolume struct {
 	TimeStamp				int64
 	NumRecords				int64
 	Amount					float64
-}
-type ERC20Info struct {
-	Id						int64
-	Aid						int64
-	TotalSupplyF			float64
-	Decimals				int
-	TotalSupply				string
-	Address					string
-	Name					string
-	Symbol					string
-}
-type UniswapStatus struct {
-	LastEvtId				int64
-}
-type BasicChainInfo struct { // piece of common information for storing in tables
-	BlockNum				int64
-	TxId					int64
-	EvtId					int64
-	TimeStamp				int64
-}
-type MarketUPair struct { // Uniswap Pair where the Market can be traded
-	MktAid					int64
-	OutcomeIdx				int64
-	PairAid					int64
-	Token0Aid				int64
-	Token1Aid				int64
-	TotalSwaps				int64
-	CreatedTs				int64
-	NumAugurTokens			int64
-	Token0Decimals			int
-	Token1Decimals			int
-	Outcome					string
-	MktAddr					string
-	CreatedDate				string
-	PairAddr				string
-	Token0Addr				string
-	Token1Addr				string
-	Token0Name				string
-	Token1Name				string
-	Token0Symbol			string
-	Token1Symbol			string
-}
-type UniswapSwap struct {
-	Id						int64
-	PairAid					int64
-	BlockNum				int64
-	RequesterAid			int64
-	CreatedTs				int64
-	Amount0_In				float64
-	Amount1_In				float64
-	Amount0_Out				float64
-	Amount1_Out				float64
-	CreatedDate				string
-	RequesterAddr			string
-	PairAddr				string
-	Symbol0					string
-	Symbol1					string
-}
-type UserUniswapSwap struct {
-	Id                      int64
-	PairAid                 int64
-	BlockNum                int64
-	RequesterAid            int64
-	CreatedTs               int64
-	MktAid                  int64
-	Amount0_In              float64
-	Amount1_In              float64
-	Amount0_Out             float64
-	Amount1_Out             float64
-	OutcomeIdx              int
-	CreatedDate             string
-	RequesterAddr           string
-	PairAddr                string
-	Symbol0                 string
-	Symbol1                 string
-	Name0                   string
-	Name1                   string
-	MktAddr                 string
-	MktDescription			string
-	Outcome                 string
 }
 type TextSearchResult struct {
 	ObjType					int
@@ -1319,36 +723,12 @@ type TextSearchResult struct {
 	MktDescription			string
 	Category				string
 }
-type UPairTokens struct {
-	Decimals0				int
-	Decimals1				int
-	Token0Addr				common.Address
-	Token1Addr				common.Address
-}
 type SearchResultObject struct {
 	SRType					SearchResultType
 	Found					bool
 	ErrStr					string
 	Query					string
 	Object					interface{}
-}
-type BSwapPrice struct {
-	Id						int64
-	TimeStamp				int64
-	NumRecords				int64
-	Price					float64
-	Date					string
-}
-type UPairPrice struct {
-	Id						int64
-	TimeStamp				int64
-	NumRecords				int64
-	Price					float64
-	Date					string
-}
-type AddressInfo struct {
-	Aid						int64
-	Addr					string
 }
 type TokenSlippage struct {
 	Token1Addr				string
@@ -1364,17 +744,6 @@ type TokenSlippage struct {
 	Slippage				float64
 	AmountIn				float64
 	AmountOut				float64
-}
-type UserShTokens struct {
-	WrapperAid				int64
-	NumTransfers			int64
-	MarketAid				int64
-	Balance					float64
-	OutcomeIdx				int
-	Symbol					string
-	Name					string
-	WrapperAddr				string
-	MarketAddr				string
 }
 type EthUsdPriceEvt struct {
 	EvtId					int64
@@ -1394,221 +763,13 @@ type EthUsdPrice struct {
 	TimeStamp				int64
 	Price					float64
 }
-type UserShtokTransfer struct {
-	TimeStamp				int64
-	Amount					float64
-	Balance					float64
-	FromAid					int64
-	ToAid					int64
-	From					string
-	To						string
-	Date					string
-}
 type PayoutNumerator struct {
 	IsInvalid				bool
 	WinningOutcomeYesNo		int		// 0-reserved 1- No, 2-Yes
 	WinningValueScalar	float64		// the value that has won
 }
-type InitialReportInfo struct {
-	InitialReporterAid		int64
-	ActualReporterAid		int64
-	TimeStamp				int64
-	WinStartTs				int64
-	WinEndTs				int64
-	ScalarValue				float64
-	AmountStaked			float64
-	MktType					int
-	OutcomeIdx				int
-	IsDesignated			bool
-	OutcomeStr				string
-	InitialReporterAddr		string
-	ActualReporterAddr		string	// in case someone has to do the job of InitialReporter
-	TxHash					string
-	TxHashSh				string
-	DateTime				string
-	WinStartDate			string
-	WinEndDate				string
-}
-type CrowdsourcerInfo struct {
-	CrowdsourcerAid			int64
-	Size					float64
-	Round					int
-	OutcomeIdx				int
-	OutcomeStr				string
-	CrowdsourcerAddr		string
-	TxHash					string
-	TxHashSh				string
-}
-type DisputeContribution struct {
-	TimeStamp				int64
-	ReporterAid				int64
-	AmountStaked			float64
-	CurrentStake			float64
-	StakeRemaining			float64
-	ScalarValue				float64
-	MktType					int
-	OutcomeIdx				int
-	DisputeRound			int
-	CrowdsourcerAddr		string
-	ReporterAddr			string
-	ReporterAddrSh			string
-	OutcomeStr				string
-	TxHash					string
-	TxHashSh				string
-	DateTime				string
-}
-type DisputeInfo struct{	
-	// A dispute can be created, but not yet completed
-	CrowdsourcerAid				int64
-	CreatedTs					int64	// Dispute created timetamp
-	CompletedTs					int64	// Dispute completed timestamp
-	ReporterAid					int64
-	DisputeWindowAid			int64
-	WindowStartTs				int64
-	WindowEndTs					int64
-	MinDisputeSize				float64
-	TotalRepPayout				float64
-	RepInMarket					float64
-	ScalarValue					float64
-	MktType						int
-	OutcomeIdx					int
-	DisputeRoundStart			int
-	DisputeRoundEnd				int
-	PacingOn					bool	// temporal halt on all reporting (if true)
-	Completed					bool
-	CrowdsourcerAddr			string
-	ReporterAddr				string
-	OutcomeStr					string
-	CreatedTxHash				string
-	CreatedTxHashSh				string
-	CompletedTxHash				string
-	CompletedTxHashSh			string
-	CreatedDate					string
-	CompletedDate				string
-	WindowStartDate				string
-	WindowEndDate				string
-	Contributions				[]DisputeContribution
-}
-type ReportingStatus struct {
-	TentativeWinningOutcome			string
-	InitialReport					InitialReportInfo
-	Disputes						[]DisputeInfo
-
-}
-type DisputeRound struct {
-	TimeStamp				int64
-	WindowStartTs			int64
-	WindowEndTs				int64
-	DisputeWinAid			int64
-	CompletedTs				int64
-	RepPayout				float64 // collected REP (sum of all contributions) for this round
-	MarketRep				float64	// accumulated REP amount
-	MinDisputeSize			float64
-	ScalarValue				float64
-	MktType					int
-	OutcomeIdx				int
-	RoundNum				int
-	Completed				bool
-	PacingOn				bool	// temporal halt on all reporting (if true)
-	Color					bool	// true if highlite the row
-	DateTime				string
-	OutcomeStr				string
-	WindowStartDate			string
-	WindowEndDate			string
-	CompletedDate			string
-}
-type OutcomeRounds struct {
-	MarketRep				float64
-	TimeStamp				int64
-	WindowStartTs			int64
-	WindowEndTs				int64
-	CompletedTs				int64
-	ScalarValue				float64
-	MktType					int
-	WindowNum				int		// consecutive window number (local to current report)
-	WindowSpan				int		// how many rounds does the window span
-	RoundNum				int
-	Completed				bool
-	DateTime				string
-	WindowStartDate			string
-	WindowEndDate			string
-	CompletedDate			string
-	ORounds					[]DisputeRound
-}
-type RoundsRow struct {
-	Rounds					OutcomeRounds
-}
-type IniRepRedeemed struct {
-	ReporterAid				int64
-	InitialReporterAid		int64
-	TimeStamp				int64
-	Amount					float64
-	RepReceived				float64
-	ScalarValue				float64
-	MktType					int
-	OutcomeIdx				int
-	OutcomeStr				string
-	DateTime				string
-	ReporterAddr			string
-	InitialReporterAddr		string
-	TxHash					string
-	TxHashSh				string
-}
-type RedeemedParticipant struct {
-	ReporterAid				int64
-	TimeStamp				int64
-	MktType					int
-	OutcomeIdx				int
-	RepInvested				float64
-	RepReturned				float64
-	Profit					float64
-	ScalarValue				float64
-	OutcomeStr				string
-	DateTime				string
-	ReporterAddr			string
-	TxHash					string
-	TxHashSh				string
-}
-type UserRepProfit struct {
-	TimeStamp				int64
-	MarketAid				int64
-	OutcomeIdx				int
-	RType					int		// report type : 0-Initial, 1-Contribution
-	RepInvested				float64
-	RepReturned				float64
-	Profit					float64
-	ROI						float64
-	MarketAddr				string
-	MarketDescr				string
-	OutcomeStr				string
-	DateTime				string
-	ReporterAddr			string
-	TxHash					string
-	TxHashSh				string
-}
-type RepLosingParticipant struct {
-	ReporterAid				int64
-	TimeStamp				int64
-	OutcomeIdx				int
-	RepLost					float64
-	OutcomeStr				string
-	DateTime				string
-	ReporterAddr			string
-	TxHash					string
-	TxHashSh				string
-}
-type NoShowBondPrice struct {
-	TimeStamp				int64
-	Price					float64
-	DateTime				string
-}
 type ValidityBondPrice struct {
 	TimeStamp				int64
 	Price					float64
 	DateTime				string
-}
-type BalancerTokenHolder struct {
-	HolderAddr				string
-	Balance					float64
-	Percentage				float64
 }

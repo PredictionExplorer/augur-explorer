@@ -18,6 +18,7 @@ import (
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
+	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
 	DEFAULT_DB_LOG				= "db.log"
