@@ -43,7 +43,7 @@ func poly_buysell_operations(c *gin.Context) {
 	prices= augur_srv.db_matic.Get_poly_market_outcome_price_history(fpmm_aid,1)
 	price1 := build_js_polymarkets_outcome_price_history(&prices)
 
-	c.HTML(http.StatusOK, "polymarket/buysell_operations.html", gin.H{
+	c.HTML(http.StatusOK, "buysell_operations.html", gin.H{
 		"BuySellOperations" : operations,
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,
@@ -75,7 +75,7 @@ func poly_liquidity_operations(c *gin.Context) {
 
 	operations := augur_srv.db_matic.Get_polymarkets_liquidity_operations(fpmm_aid,0,1000000)
 
-	c.HTML(http.StatusOK, "polymarket/liquidity_operations.html", gin.H{
+	c.HTML(http.StatusOK, "liquidity_operations.html", gin.H{
 		"LiquidityOperations" : operations,
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,
@@ -100,7 +100,7 @@ func poly_market_info(c *gin.Context) {
 		respond_error(c,"Market not found")
 		return
 	}
-	c.HTML(http.StatusOK, "polymarket/market_info.html", gin.H{
+	c.HTML(http.StatusOK, "market_info.html", gin.H{
 		"MarketInfo" : info,
 		"MarketId" : market_id,
 	})
@@ -125,7 +125,7 @@ func poly_market_stats(c *gin.Context) {
 		return
 	}
 	stats,_:= augur_srv.db_matic.Get_poly_market_stats(fpmm_aid)
-	c.HTML(http.StatusOK, "polymarket/market_stats.html", gin.H{
+	c.HTML(http.StatusOK, "market_stats.html", gin.H{
 		"MarketStats" : stats,
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,
@@ -140,7 +140,7 @@ func poly_liq_hist_global(c *gin.Context) {
 
 	liq_hist := augur_srv.db_matic.Get_polymarket_global_liquidity_history(init_ts,fin_ts,interval_secs)
 
-	c.HTML(http.StatusOK, "polymarket/global_liquidity.html", gin.H{
+	c.HTML(http.StatusOK, "global_liquidity.html", gin.H{
 		"GlobalLiquidityHistory" : liq_hist,
 		"InitTs" : init_ts,
 		"FinTs" : fin_ts,
@@ -175,7 +175,7 @@ func poly_market_liquidity_periods(c *gin.Context) {
 
 	liq_hist := augur_srv.db_matic.Get_polymarket_market_liquidity_history(fpmm_aid,init_ts,fin_ts,interval_secs)
 
-	c.HTML(http.StatusOK, "polymarket/market_liquidity_by_periods.html", gin.H{
+	c.HTML(http.StatusOK, "market_liquidity_by_periods.html", gin.H{
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,
 		"MarketLiquidityHistory" : liq_hist,
@@ -207,7 +207,7 @@ func poly_user_list(c *gin.Context) {
 
 	users_list := augur_srv.db_matic.Get_polymarkets_market_user_list(fpmm_aid)
 
-	c.HTML(http.StatusOK, "polymarket/market_userlist.html", gin.H{
+	c.HTML(http.StatusOK, "market_userlist.html", gin.H{
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,
 		"Users" : users_list,
@@ -253,7 +253,7 @@ func poly_market_trader_operations(c *gin.Context) {
 
 	trade_list := augur_srv.db_matic.Get_poly_market_trader_operations(fpmm_aid,user_aid,offset,limit)
 
-	c.HTML(http.StatusOK, "polymarket/market_trader_operations.html", gin.H{
+	c.HTML(http.StatusOK, "market_trader_operations.html", gin.H{
 		"MarketId" : market_id,
 		"UserAid" : user_aid,
 		"ContractAid" : fpmm_aid,
@@ -299,7 +299,7 @@ func poly_market_funder_operations(c *gin.Context) {
 
 	liq_operation_list := augur_srv.db_matic.Get_poly_market_funder_operations(fpmm_aid,user_aid,offset,limit)
 
-	c.HTML(http.StatusOK, "polymarket/market_funder_operations.html", gin.H{
+	c.HTML(http.StatusOK, "market_funder_operations.html", gin.H{
 		"MarketId" : market_id,
 		"UserAid" : user_aid,
 		"ContractAid" : fpmm_aid,
@@ -329,7 +329,7 @@ func poly_market_open_positions(c *gin.Context) {
 
 	open_positions,prices := augur_srv.db_matic.Get_poly_market_open_positions(fpmm_aid)
 
-	c.HTML(http.StatusOK, "polymarket/market_open_positions.html", gin.H{
+	c.HTML(http.StatusOK, "market_open_positions.html", gin.H{
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,
 		"OpenPositions" : open_positions,
@@ -353,7 +353,7 @@ func poly_market_user_open_positions(c *gin.Context) {
 
 	user_open_positions := augur_srv.db_matic.Get_poly_market_user_open_positions(user_aid)
 
-	c.HTML(http.StatusOK, "polymarket/market_user_open_positions.html", gin.H{
+	c.HTML(http.StatusOK, "market_user_open_positions.html", gin.H{
 		"UserAid": user_aid,
 		"UserOpenPositions" :user_open_positions,
 	})
@@ -381,7 +381,7 @@ func poly_market_funder_share_ratio(c *gin.Context) {
 
 	share_ratios := augur_srv.db_matic.Get_poly_liquidity_provider_share_ratio(fpmm_aid)
 
-	c.HTML(http.StatusOK, "polymarket/market_funders_share_ratio.html", gin.H{
+	c.HTML(http.StatusOK, "market_funders_share_ratio.html", gin.H{
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,
 		"ShareRatios" : share_ratios,
@@ -416,7 +416,7 @@ func poly_markets_listing(c *gin.Context) {
 
 	markets_listing := augur_srv.db_matic.Get_polymarkets_markets(int(status),int(sort),category)
 	num_elts := len(markets_listing)
-	c.HTML(http.StatusOK, "polymarket/market_listing.html", gin.H{
+	c.HTML(http.StatusOK, "market_listing.html", gin.H{
 		"Markets" : markets_listing,
 		"QueryingStatus" : status,
 		"NumElts" : num_elts,
@@ -457,7 +457,7 @@ func poly_market_payout_redemptions(c *gin.Context) {
 
 	payout_redemptions := augur_srv.db_matic.Get_polymarket_market_redemptions(condition_id,0,1000000)
 
-	c.HTML(http.StatusOK, "polymarket/market_redemptions.html", gin.H{
+	c.HTML(http.StatusOK, "market_redemptions.html", gin.H{
 		"MarketId" : market_id,
 		"PayoutRedemptions" : payout_redemptions,
 	})
@@ -465,7 +465,7 @@ func poly_market_payout_redemptions(c *gin.Context) {
 func poly_market_categories(c *gin.Context) {
 
 	categories := augur_srv.db_matic.Get_polymarket_categories()
-	c.HTML(http.StatusOK, "polymarket/categories.html", gin.H{
+	c.HTML(http.StatusOK, "categories.html", gin.H{
 		"MarketCategories" : categories,
 	})
 }
@@ -496,7 +496,7 @@ func poly_market_erc1155_transfers(c *gin.Context) {
 
 	erc1155_transfers := augur_srv.db_matic.Get_polymarket_erc1155_transfers(fpmm_aid,offset,limit)
 
-	c.HTML(http.StatusOK, "polymarket/erc1155_transfers.html", gin.H{
+	c.HTML(http.StatusOK, "erc1155_transfers.html", gin.H{
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,
 		"ERC1155Transfers" : erc1155_transfers,
@@ -537,7 +537,7 @@ func poly_market_open_interest_history(c *gin.Context) {
 		limit,
 	)
 
-	c.HTML(http.StatusOK, "polymarket/open_interest_history.html", gin.H{
+	c.HTML(http.StatusOK, "open_interest_history.html", gin.H{
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,
 		"OIHistory" : oi_hist,
@@ -555,7 +555,7 @@ func poly_market_search(c *gin.Context) {
 
 	results := augur_srv.db_matic.Search_polymarket_keywords(p_keyword)
 
-	c.HTML(http.StatusOK, "polymarket/search_results.html", gin.H{
+	c.HTML(http.StatusOK, "search_results.html", gin.H{
 		"Keywords" : p_keyword,
 		"SearchResults" : results,
 	})

@@ -22,7 +22,7 @@ func wrapped_token_info(c *gin.Context) {
 		respond_error(c,fmt.Sprintf("ShareToken wrapper with address %v not found",p_address))
 		return
 	}
-	c.HTML(http.StatusOK, "wrapped_sharetokens/token_info.html", gin.H{
+	c.HTML(http.StatusOK, "token_info.html", gin.H{
 		"WrapperInfo" : winfo,
 	})
 }
@@ -101,7 +101,7 @@ func wrapped_token_transfers(c *gin.Context) {
 	wrapper_info,_ := augur_srv.db_augur.Get_wrapped_token_info(aid)
 	market_info,err := augur_srv.db_augur.Get_market_info(wrapper_info.MktAddr,wrapper_info.OutcomeIdx,true)
 	transfers,total_rows := augur_srv.db_augur.Get_wrapped_token_transfers(aid,0,500)
-	c.HTML(http.StatusOK, "wrapped_sharetokens/transfers.html", gin.H{
+	c.HTML(http.StatusOK, "transfers.html", gin.H{
 			"MarketInfo" : market_info,
 			"TokenInfo" : wrapper_info,
 			"TotalRows" : total_rows,

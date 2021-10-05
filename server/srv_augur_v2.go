@@ -16,7 +16,7 @@ func main_page(c *gin.Context) {
 	blknum,_:= augur_srv.db_augur.Get_last_block_num()
 	blknum_thousand_separated := ThousandsFormat(int64(blknum))
 	stats := augur_srv.db_augur.Get_front_page_stats()
-	c.HTML(http.StatusOK, "augur_v2/index.html", gin.H{
+	c.HTML(http.StatusOK, "augur_v2_index.html", gin.H{
 			"title": "Augur Prediction Markets",
 			"block_num" : blknum_thousand_separated,
 			"Stats" : stats,
@@ -70,7 +70,7 @@ func statistics(c *gin.Context) {
 	tx_fees_markets := build_js_global_gas_usage_data(&gas_usage,6)
 	tx_fees_total := build_js_global_gas_usage_data(&gas_usage,7)
 
-	c.HTML(http.StatusOK, "augur_v2/statistics.html", gin.H{
+	c.HTML(http.StatusOK, "statistics.html", gin.H{
 			"title": "Augur Market Statistics",
 			"MainStats" : stats,
 			"CashFlowData" : cash_flow_data,
@@ -108,7 +108,7 @@ func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoM
 			"WrappedContracts": wrappers,
 		})
 	} else {
-		c.HTML(http.StatusOK, "augur_v2/market_info.html", gin.H{
+		c.HTML(http.StatusOK, "market_info.html", gin.H{
 			"title": "DISCONTINUED",
 			"Trades" : trades,
 			"Reports" : reports,
@@ -124,7 +124,7 @@ func complete_and_output_market_info(c *gin.Context,json_output bool,minfo InfoM
 func explorer(c *gin.Context) {
 	blknum,res := augur_srv.db_augur.Get_last_block_num()
 	_ = res
-	c.HTML(http.StatusOK, "augur_v2/explorer.html", gin.H{
+	c.HTML(http.StatusOK, "explorer.html", gin.H{
 			"title": "Augur Event Explorer",
 			"block_num" : blknum,
 	})
@@ -156,7 +156,7 @@ func full_trade_list(c *gin.Context) {
 		return
 	}
 	trades := augur_srv.db_augur.Get_mkt_trades(market_addr,0)
-	c.HTML(http.StatusOK, "augur_v2/full_trade_list.html", gin.H{
+	c.HTML(http.StatusOK, "full_trade_list.html", gin.H{
 			"title": "Trades for market",
 			"Trades" : trades,
 			"Market": market_info,
@@ -198,7 +198,7 @@ func market_depth(c *gin.Context) {
 	mdepth,last_oo_id := augur_srv.db_augur.Get_mkt_depth(market_info.MktAid,outcome)
 	num_orders:=len(mdepth.Bids) + len(mdepth.Asks)
 	js_bid_data,js_ask_data := build_js_data_obj(mdepth)
-	c.HTML(http.StatusOK, "augur_v2/market_depth.html", gin.H{
+	c.HTML(http.StatusOK, "market_depth.html", gin.H{
 			"title": "Market Depth",
 			"Market": market_info,
 			"LastOOID": last_oo_id,
@@ -280,7 +280,7 @@ func market_price_history(c *gin.Context) {
 	mkt_price_hist := augur_srv.db_augur.Get_price_history_for_outcome(market_info.MktAid,outcome,market_info.LowPriceLimit)
 	js_price_history := build_js_price_history(&mkt_price_hist)
 	fmt.Printf("js price history = %v\n",js_price_history)
-	c.HTML(http.StatusOK, "augur_v2/price_history.html", gin.H{
+	c.HTML(http.StatusOK, "price_history.html", gin.H{
 			"title": "Market Price History",
 			"Market": market_info,
 			"Prices": mkt_price_hist,
@@ -309,7 +309,7 @@ func serve_user_info_page(c *gin.Context,addr string) {
 			active_names,active_total_rows := augur_srv.db_augur.Get_user_ens_names_active(eoa_aid,0,1000000)
 			inactive_names,inactive_total_rows := augur_srv.db_augur.Get_user_ens_names_inactive(eoa_aid,0,1000000)
 
-			c.HTML(http.StatusOK, "augur_v2/user_info.html", gin.H{
+			c.HTML(http.StatusOK, "user_info.html", gin.H{
 				"title": "User "+addr,
 				"user_addr": addr,
 				"UserInfo" : user_info,
@@ -344,12 +344,12 @@ func serve_tx_info_page(c *gin.Context,tx_hash string) {
 
 	tx_info,err := augur_srv.db_augur.Get_transaction(tx_hash)
 	if err == nil {
-		c.HTML(http.StatusOK, "augur_v2/tx_info.html", gin.H{
+		c.HTML(http.StatusOK, "tx_info.html", gin.H{
 			"title": "Transaction " + tx_hash,
 			"TxInfo" : tx_info,
 		})
 	} else {
-		c.HTML(http.StatusOK, "augur_v2/tx_not_found.html", gin.H{
+		c.HTML(http.StatusOK, "tx_not_found.html", gin.H{
 			"title": "Transaction "+tx_hash,
 			"tx_hash": tx_hash,
 		})

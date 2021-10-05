@@ -82,7 +82,7 @@ func arbitrum_liquidity_changed(c *gin.Context) {
 	total_rows,lchanges := augur_srv.db_matic.Get_liquidity_change_events(
 		factory_aid,market_id,0,10000000,
 	)
-	c.HTML(http.StatusOK, "augur_amm/liquidity_changed.html", gin.H{
+	c.HTML(http.StatusOK, "liquidity_changed.html", gin.H{
 		"MarketId":market_id,
 		"MarketInfo" : market,
 		"LiquidityChanges" : lchanges,
@@ -128,7 +128,7 @@ func arbitrum_shares_swapped(c *gin.Context) {
 	total_rows,swaps:= augur_srv.db_matic.Get_shares_swapped(
 		&amm_constants,contract_aid,market_id,0,10000000,
 	)
-	c.HTML(http.StatusOK, "augur_amm/shares_swapped.html", gin.H{
+	c.HTML(http.StatusOK, "shares_swapped.html", gin.H{
 		"MarketId":market_id,
 		"MarketInfo" : market,
 		"Swaps" : swaps,
@@ -156,7 +156,7 @@ func amm_user_swaps(c *gin.Context) {
 	}
 	total_rows,swaps := augur_srv.db_matic.Get_amm_user_swaps(&amm_constants,aid,offset,limit)
 
-	c.HTML(http.StatusOK, "augur_amm/user_swaps.html", gin.H{
+	c.HTML(http.StatusOK, "user_swaps.html", gin.H{
 		"Swaps" : swaps,
 		"TotalRows" : total_rows,
 		"User":p_user,
@@ -184,7 +184,7 @@ func amm_user_liquidity(c *gin.Context) {
 	}
 	total_rows,liquidity := augur_srv.db_matic.Get_amm_user_liquidity(&amm_constants,aid,offset,limit)
 
-	c.HTML(http.StatusOK, "augur_amm/user_liquidity.html", gin.H{
+	c.HTML(http.StatusOK, "user_liquidity.html", gin.H{
 		"Liquidity" : liquidity,
 		"TotalRows" : total_rows,
 		"User": p_user,
@@ -227,7 +227,7 @@ func arbitrum_market_info(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "augur_amm/market_info.html", gin.H{
+	c.HTML(http.StatusOK, "market_info.html", gin.H{
 		"MarketId":market_id,
 		"MarketInfo" : market,
 	})
@@ -279,7 +279,7 @@ func arbitrum_market_liquidity_providers(c *gin.Context) {
 	}
 	js_tok_distr := build_js_token_holder_distribution(&providers)
 
-	c.HTML(http.StatusOK, "augur_amm/liquidity_providers_distrib.html", gin.H{
+	c.HTML(http.StatusOK, "liquidity_providers_distrib.html", gin.H{
 		"MarketId":market_id,
 		"MarketInfo" : market,
 		"PoolTokenHolderDistribution" : providers,
@@ -324,7 +324,7 @@ func arbitrum_market_outside_augur_shares_burned(c *gin.Context) {
 	offset := int(0) ; limit:= int(100000)
 	operations := augur_srv.db_matic.Get_outside_augur_shares_burned(contract_aid,market_id,offset,limit)
 
-	c.HTML(http.StatusOK, "augur_amm/outside_augur_shares_bruned.html", gin.H{
+	c.HTML(http.StatusOK, "outside_augur_shares_bruned.html", gin.H{
 		"MarketId":market_id,
 		"MarketInfo" : market,
 		"SharesBurnedOperations" : operations,
@@ -369,7 +369,7 @@ func arbitrum_market_outside_augur_shares_minted(c *gin.Context) {
 	offset := int(0) ; limit:= int(100000)
 	operations := augur_srv.db_matic.Get_outside_augur_shares_minted(contract_aid,market_id,offset,limit)
 
-	c.HTML(http.StatusOK, "augur_amm/outside_augur_shares_minted.html", gin.H{
+	c.HTML(http.StatusOK, "outside_augur_shares_minted.html", gin.H{
 		"MarketId":market_id,
 		"MarketInfo" : market,
 		"SharesMintedOperations" : operations,
@@ -420,7 +420,7 @@ func arbitrum_market_outside_augur_balancer_swaps(c *gin.Context) {
 	offset:=int(0);limit:=int(1000000000)
 	balancer_swaps := augur_srv.db_matic.Get_outside_augur_balancer_swaps(pool_aid,offset,limit)
 
-	c.HTML(http.StatusOK, "augur_amm/balancer_swaps_outside_augur.html", gin.H{
+	c.HTML(http.StatusOK, "balancer_swaps_outside_augur.html", gin.H{
 		"MarketId":market_id,
 		"MarketInfo" : market,
 		"PoolAid": pool_aid,
@@ -467,7 +467,7 @@ func arbitrum_market_outside_augur_erc20_transfers(c *gin.Context) {
 	offset:=int(0);limit:=int(1000000000)
 	transfers := augur_srv.db_matic.Get_erc20_transfers_outside_augur(contract_aid,market_id,offset,limit)
 
-	c.HTML(http.StatusOK, "augur_amm/erc20_transfers_outside_augur.html", gin.H{
+	c.HTML(http.StatusOK, "erc20_transfers_outside_augur.html", gin.H{
 		"MarketId":market_id,
 		"MarketInfo" : market,
 		"ERC20Transfers" : transfers,

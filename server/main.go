@@ -94,7 +94,7 @@ func main() {
 	r := gin.New()
 	//r.RedirectTrailingSlash=false
 	//r.RedirectFixedPath = false
-	r.LoadHTMLGlob("html/templates/*html")
+	r.LoadHTMLGlob("html/templates/*/*html")
 
 	r.Use(gin.Logger())
 
@@ -114,6 +114,7 @@ func main() {
 	r.GET("/black/INDEX.HTM", main_page)
 
 	set_routing_black_templates(r)
+	set_routing_api(r)
 
 	r.Static("/black/imgs", "./html/imgs")
 	r.Static("/black/res", "./html/res")			// resources (static)

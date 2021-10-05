@@ -179,9 +179,13 @@ func proc_erc1155_uri(evtlog *EthereumEventLog) {
 	}
 	var eth_evt Evt_ERC1155URI
 
-	eth_evt.Id = common.BytesToHash(log.Topics[1][:]).Big()
-
 	Info.Printf("Processing URI event id=%v, txhash %v\n",evtlog.EvtId,evtlog.TxHash)
+
+	if len(log.Topics) < 2 {
+		Error.Printf("URI in tx hash %v doesn't have indexed 'ID' field\n",evtlog.TxHash)
+		return
+	}
+	eth_evt.Id = common.BytesToHash(log.Topics[1][:]).Big()
 
 	err = erc1155_abi.Unpack(&eth_evt,"URI",log.Data)
 	if err != nil {
