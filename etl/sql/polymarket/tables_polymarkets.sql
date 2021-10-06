@@ -275,11 +275,11 @@ CREATE TABLE pol_data_feed (
 CREATE TABLE pol_uranks (   -- User Rankings (how this user ranks against each other, ex: Top 13% in profit made
 	aid		            BIGINT PRIMARY KEY,
 	total_trades		BIGINT DEFAULT 0,
-	top_profit          DECIMAL(5,2) DEFAULT 100.0,    -- position of the user in profits accumulated over lifetime
-	top_trades          DECIMAL(5,2) DEFAULT 100.0,    -- position of the user in number of accumulated trades
-	top_volume			DECIMAL(5,2) DEFAULT 100.0,	   -- position of the user in accumulated trading volume
-	profit				DECIMAL(32,18) DEFAULT 0.0,
-	volume				DECIMAL(32,18) DEFAULT 0.0
+	top_profit          DECIMAL(24,2) DEFAULT 100.0,    -- position of the user in profits accumulated over lifetime
+	top_trades          DECIMAL(24,2) DEFAULT 100.0,    -- position of the user in number of accumulated trades
+	top_volume			DECIMAL(24,2) DEFAULT 100.0,	   -- position of the user in accumulated trading volume
+	profit				DECIMAL(64,18) DEFAULT 0.0,
+	volume				DECIMAL(64,18) DEFAULT 0.0
 );
 CREATE TABLE pol_contracts (
 	cond_tok_addr		TEXT DEFAULT '0x4D97DCd97eC945f40cF65F87097ACe5EA0476045',

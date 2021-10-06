@@ -13,6 +13,7 @@ import (
 	"sort"
 	"bytes"
 	"encoding/hex"
+	"unicode/utf8"
 	//"encoding/json"
 
 	"github.com/ethereum/go-ethereum/rlp"
@@ -192,7 +193,18 @@ func proc_erc1155_uri(evtlog *EthereumEventLog) {
 		Error.Printf("Event URI decode error: %v",err)
 		os.Exit(1)
 	}
-
+	var empty_array [32]byte
+	//Info.Printf("Valu=%v\n",hex.EncodeToString([]byte(eth_evt.Value)))
+	if bytes.Equal([]byte(eth_evt.Value),empty_array[:]) {
+		eth_evt.Value = ""
+	}
+	if !utf8.ValidString(eth_evt.Value) {
+		Error.Printf(
+			"Invalid 'Value' field for Uri event: Value=%v, setting to '', tx_hash=%v\n",
+			eth_evt.Value,evtlog.TxHash,
+		)
+		eth_evt.Value = ""
+	}
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("URI {\n")
 	Info.Printf("\tId: %v\n",eth_evt.Id)
