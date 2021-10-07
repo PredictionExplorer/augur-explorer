@@ -1003,15 +1003,15 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 		var n_bs_id,n_far_id,n_red_id sql.NullInt64
 		var n_bs_optype,n_far_optype sql.NullInt32
 		err=rows.Scan(
-			&rec.BalChgId,
-			&rec.TimeStamp,
-			&rec.DateTime,
 			&rec.FromAid,
 			&rec.ToAid,
+			&rec.TimeStamp,
+			&rec.DateTime,
 			&rec.TxId,
 			&rec.TxHash,
 			&rec.FromAddr,
 			&rec.ToAddr,
+			&rec.BalChgId,
 			&n_bs_id,
 			&n_bs_optype,
 			&n_far_id,
@@ -1052,8 +1052,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 				}
 			}
 		}
-		ss.Info.Printf("Amount %v: fundtype %v , rec.ToAid = %v , recFromAid = %v\n",
-			rec.Amount,rec.FundOpType,rec.ToAid,rec.FromAid)
+		ss.Info.Printf("n_far_id=%v contract_aid=%v\n",n_far_id.Int64,contract_aid)
 		if n_far_id.Valid {
 			if rec.FundOpType == 0 { // add funds
 				if (rec.ToAid == condtok_aid) && (rec.FromAid == contract_aid) {
@@ -1073,6 +1072,8 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 		rec.OpenInterest = open_interest
 		prev_trf_to_aid = rec.ToAid
 		prev_trf_amount = rec.Amount
+		ss.Info.Printf("Amount %v: fundtype %v , bs_id=%v, rec.ToAid = %v , recFromAid = %v, OI=%v\n",
+			rec.Amount,rec.FundOpType,rec.BuySellOpId,rec.ToAid,rec.FromAid,open_interest)
 		records = append(records,rec)
 	}
 	ss.Info.Printf("rows returned = %v\n",len(records))

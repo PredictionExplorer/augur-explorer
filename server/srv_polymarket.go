@@ -528,6 +528,10 @@ func poly_market_open_interest_history(c *gin.Context) {
 	}
 	condition_id := augur_srv.db_matic.Get_condition_id(market_id)
 	caddrs := augur_srv.db_matic.Get_polymarket_contract_addresses()
+	if caddrs.CondTokAid == 0 {
+		respond_error(c,"Conditional token Aid is zero")
+		return
+	}
 	oi_hist := augur_srv.db_matic.Get_polymarket_open_interst_history(
 		caddrs.USDCAid,
 		caddrs.CondTokAid,

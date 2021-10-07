@@ -27,7 +27,8 @@
 			<td class="market_reports_field" title="{{.BalChgId}}">
 				{{.DateTime}}
 			</td>
-			<td title="" class="addr">
+			<td class="addr" title="{{.FromAid}}">
+				CondTokAid={{$.CondTokAid}}, ContractAid={{$.ContractAid}}, FromAid={{.FromAid}}
 				{{ if eq .FromAid $.CondTokAid }}Conditional Tokens
 				{{ else }}
 					{{ if eq .FromAid $.USDCAid }}
@@ -41,7 +42,7 @@
 					{{ end }}
 				{{end}}
 			</td>
-			<td class="addr">
+			<td class="addr" title="{{.ToAid}}">
 				{{ if eq .ToAid $.CondTokAid }}
 					Conditional Tokens
 				{{else}}
@@ -61,7 +62,7 @@
 			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .FeeAccum}}</td>
 			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .OpenInterest}}</td>
 			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .Balance}}</td>
-			<td class="market_reports_field">
+			<td nowrap class="market_reports_field">
 				{{ if gt .BuySellOpId 0 }}
 					{{ if eq .BuySellOpType 0 }} Buy {{ else }} Sell {{end}}
 				{{ end }}
