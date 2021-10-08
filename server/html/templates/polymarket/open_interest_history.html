@@ -71,7 +71,7 @@
 			<td class="market_reports_field" style="text-align: right;">{{printf "%.0f" .IntegerFeeAccum}}</td>
 			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .OpenInterest}}</td>
 			<td class="market_reports_field" style="text-align: right;">
-				{{ if eq .ToAid $.MktMkrAid }}
+				{{ if eq .UserAid $.MktMkrAid }}
 					{{printf "%.6f" .Balance}}
 				{{ else }}
 					N/A

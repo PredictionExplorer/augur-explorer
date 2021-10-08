@@ -425,3 +425,28 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION oi_history_transactions(p_condition_id TEXT,p_usdc_aid BIGINT,p_fpmm_aid BIGINT)
+	RETURNS TABLE(bal_id BIGINT) AS $$
+DECLARE
+BEGIN
+	RETURN QUERY 
+		SELECT DISTINCT data.bal_id AS bal_id FROM (
+			(
+				SELECT DISTINCT e20b.id bal_id
+				FROM pol_tok_id_ops tops
+					CROSS JOIN erc20_bal e20b
+				WHERE
+					tops.tx_id=e20b.tx_id AND
+					tops.condition_id = p_condition_id
+			)
+			UNION ALL
+			(
+				SELECT DISTINCT e20b.id bal_id
+				FROM erc20_bal e20b
+				WHERE
+					contract_aid=p_usdc_aid AND aid=p_fpmm_aid
+			)
+		) AS data
+		ORDER BY bal_id;
+END;
+$$ LANGUAGE plpgsql;

@@ -651,6 +651,10 @@ func proc_uri(log *types.Log,elog *EthereumEventLog) {
 	var evt Pol_URI
 	var eth_evt EURI
 
+	if len(log.Topics) <2 {
+		Error.Printf("URI for transaction %v has log.Topics length < 2\n",elog.TxHash)
+		return
+	}
 	eth_evt.Id = common.BytesToHash(log.Topics[1][:]).Big()
 
 	Info.Printf("Processing URI event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)

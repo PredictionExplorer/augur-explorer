@@ -248,6 +248,7 @@ type API_Pol_OpenInterestHistory struct {
 	FromAid					int64
 	FromAddr				string
 	ToAid					int64
+	UserAid					int64
 	ToAddr					string
 	BalChgId				int64		// id of erc20 balance transfer
 	BuySellOpId				int64		// id for buy/sell operation
