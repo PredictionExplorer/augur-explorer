@@ -543,7 +543,7 @@ func poly_market_open_interest_history(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "open_interest_history.html", gin.H{
 		"MarketId" : market_id,
-		"ContractAid" : fpmm_aid,
+		"MktMkrAid" : fpmm_aid,
 		"OIHistory" : oi_hist,
 		"CondTokAid" : caddrs.CondTokAid,
 		"USDCAid" : caddrs.USDCAid,

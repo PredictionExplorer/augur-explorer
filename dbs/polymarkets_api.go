@@ -958,7 +958,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 				"WHERE "+
 					"tops.tx_id=e20b.tx_id AND "+
 					"tops.condition_id = $1 " +
-				"ORDER BY e20b.id" +
+				"ORDER BY bal_id" +
 			") " +
 			"SELECT " +
 				"e20t.from_aid,"+
@@ -975,8 +975,10 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 				"f.id," +
 				"f.op_type,"+
 				"red.id,"+
-				"b.amount,"+
-				"b.bal_usd "+
+				"b.amount/1e+6,"+
+				"b.amount," +
+				"b.bal_usd, "+
+				"b.balance "+
 			"FROM b "+
 				"JOIN transaction tx ON b.tx_id=tx.id "+
 				"JOIN erc20_transf e20t ON b.parent_id=e20t.id "+
@@ -984,7 +986,8 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 				"JOIN address ta ON e20t.to_aid=ta.address_id "+
 				"LEFT JOIN pol_buysell bs ON b.tx_id=bs.tx_id "+
 				"LEFT JOIN pol_fund_addrem f ON b.tx_id=f.tx_id "+
-				"LEFT JOIN pol_pay_redem red ON b.tx_id=red.tx_id "
+				"LEFT JOIN pol_pay_redem red ON b.tx_id=red.tx_id " +
+			"ORDER BY bal_id "
 
 	ss.Info.Printf("query : %v\n",query)
 	rows,err := ss.db.Query(query,condition_id)
@@ -1018,7 +1021,9 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 			&n_far_optype,
 			&n_red_id,
 			&rec.Amount,
+			&rec.IntegerAmount,
 			&rec.Balance,
+			&rec.IntegerBalance,
 		)
 		if (err!=nil) {
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -1038,42 +1043,47 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 			if (rec.ToAid == condtok_aid) && (rec.FromAid == contract_aid) && (rec.BuySellOpType == 0){
 				// buy op
 				if prev_trf_to_aid == contract_aid {
-					rec.Fee = prev_trf_amount - (rec.Amount)
-					fee_accum = fee_accum + rec.Fee
-					open_interest = open_interest +  (rec.Amount)
+					rec.IntegerFee = prev_trf_amount - (rec.IntegerAmount)
+					rec.Fee = rec.IntegerFee/1000000.0
+					fee_accum = fee_accum + rec.IntegerFee
+					open_interest = open_interest +  (rec.IntegerAmount)
 				}
 			}
 			if (rec.FromAid == contract_aid) && (rec.FromAid != condtok_aid) && (rec.BuySellOpType == 1) {
 				// sell op
 				if prev_trf_to_aid == contract_aid {
-					rec.Fee = prev_trf_amount - (rec.Amount)
-					fee_accum = fee_accum + rec.Fee
-					open_interest = open_interest - (rec.Amount) - rec.Fee
+					rec.IntegerFee = prev_trf_amount - (-rec.IntegerAmount)
+					rec.Fee = rec.IntegerFee / 1000000.0
+					fee_accum = fee_accum + rec.IntegerFee
+					open_interest = open_interest - (rec.IntegerAmount) - rec.IntegerFee
 				}
 			}
 		}
-		ss.Info.Printf("n_far_id=%v contract_aid=%v\n",n_far_id.Int64,contract_aid)
+		//ss.Info.Printf("n_far_id=%v contract_aid=%v\n",n_far_id.Int64,contract_aid)
 		if n_far_id.Valid {
 			if rec.FundOpType == 0 { // add funds
 				if (rec.ToAid == condtok_aid) && (rec.FromAid == contract_aid) {
-					open_interest = open_interest + (rec.Amount)
+					open_interest = open_interest + (rec.IntegerAmount)
 				}
 			}
 			if rec.FundOpType == 1 { //withdraw funds
 				if (rec.FromAid == contract_aid) && (rec.ToAid != condtok_aid) {
-					open_interest = open_interest - (rec.Amount)
+					open_interest = open_interest - (rec.IntegerAmount)
 					ss.Info.Printf("new open interest is %v\n",open_interest)
 				} else {
 					ss.Info.Printf("condition to withdraw funds isn't met\n")
 				}
 			}
 		}
-		rec.FeeAccum = fee_accum
-		rec.OpenInterest = open_interest
+		rec.AdjustedBalance = (rec.IntegerBalance - rec.IntegerAmount)/1000000.0
+		rec.FeeAccum = fee_accum / 1000000.0
+		rec.IntegerFeeAccum = fee_accum
+		rec.OpenInterest = open_interest / 1000000.0
 		prev_trf_to_aid = rec.ToAid
-		prev_trf_amount = rec.Amount
-		ss.Info.Printf("Amount %v: fundtype %v , bs_id=%v, rec.ToAid = %v , recFromAid = %v, OI=%v\n",
-			rec.Amount,rec.FundOpType,rec.BuySellOpId,rec.ToAid,rec.FromAid,open_interest)
+		prev_trf_amount = rec.IntegerAmount
+		//ss.Info.Printf("Amount %v: fundtype %v , bs_id=%v, rec.ToAid = %v , recFromAid = %v, OI=%v\n",
+		//	rec.Amount,rec.FundOpType,rec.BuySellOpId,rec.ToAid,rec.FromAid,open_interest)
+		ss.Info.Printf("bal_id=%v\n",rec.BalChgId)
 		records = append(records,rec)
 	}
 	ss.Info.Printf("rows returned = %v\n",len(records))

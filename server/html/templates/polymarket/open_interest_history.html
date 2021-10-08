@@ -11,30 +11,37 @@
 <h3>Collateral Transfers</h3>
 <table>
 	<tr class="market_reports">
+		<th class="market_reports">TxId</th>
 		<th class="market_reports">Date </th>
 		<th class="market_reports">From Address</th>
 		<th class="market_reports">To Address</th>
-		<th class="market_reports">Amount</th>
-		<th class="market_reports">Fee</th>
-		<th class="market_reports">Fees</th>
-		<th class="market_reports">Open Interest</th>
+		<th class="market_reports">Amount (USDC)</th>
+		<th class="market_reports">Fee <br>(USDC)</th>
+		<th class="market_reports">Int Fee <br>(USDC)</th>
+		<th class="market_reports">Fees <br>(USDC)</th>
+		<th class="market_reports">Int Fees <br>(USDC)</th>
+		<th class="market_reports">Open Interest<br>(UDSC)</th>
 		<th class="market_reports">Contract Balance</th>
+		<th class="market_reports">Adj. Balance</th>
 		<th class="market_reports">Notes</th>
 
 	</tr>
 	{{- range $i, $change := .OIHistory}}
 		<tr class="market_reports">
+			<td class="market_reports_field">
+				{{.TxId}}
+			</td>
 			<td class="market_reports_field" title="{{.BalChgId}}">
 				{{.DateTime}}
 			</td>
 			<td class="addr" title="{{.FromAid}}">
-				CondTokAid={{$.CondTokAid}}, ContractAid={{$.ContractAid}}, FromAid={{.FromAid}}
+				<!-- CondTokAid={{$.CondTokAid}}, ContractAid={{$.ContractAid}}, FromAid={{.FromAid}}  (FromAddr={{.FromAddr}} ) -->
 				{{ if eq .FromAid $.CondTokAid }}Conditional Tokens
 				{{ else }}
 					{{ if eq .FromAid $.USDCAid }}
 						USDC
 					{{ else }}
-						{{ if eq .FromAid $.ContractAid }}
+						{{ if eq .FromAid $.MktMkrAid }}
 							Market Maker
 						{{ else }}
 							{{.FromAddr}}
@@ -49,7 +56,7 @@
 					{{if eq .ToAid $.USDCAid }}
 						USDC
 					{{else}}
-						{{ if eq .ToAid $.ContractAid }}
+						{{ if eq .ToAid $.MktMkrAid }}
 							Market Maker
 						{{ else }}
 							{{.ToAddr}}
@@ -59,9 +66,22 @@
 			</td>
 			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .Amount}}</td>
 			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .Fee}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.0f" .IntegerFee}}</td>
 			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .FeeAccum}}</td>
+			<td class="market_reports_field" style="text-align: right;">{{printf "%.0f" .IntegerFeeAccum}}</td>
 			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .OpenInterest}}</td>
-			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .Balance}}</td>
+			<td class="market_reports_field" style="text-align: right;">
+				{{ if eq .ToAid $.MktMkrAid }}
+					{{printf "%.6f" .Balance}}
+				{{ else }}
+					N/A
+				{{ end }}
+			</td>
+			<td class="market_reports_field" style="text-align: right;">
+				{{ if eq .ToAid $.MktMkrAid }}
+					{{printf "%.6f" .AdjustedBalance}}
+				{{ end }}
+			</td>
 			<td nowrap class="market_reports_field">
 				{{ if gt .BuySellOpId 0 }}
 					{{ if eq .BuySellOpType 0 }} Buy {{ else }} Sell {{end}}

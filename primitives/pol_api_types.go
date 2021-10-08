@@ -256,10 +256,15 @@ type API_Pol_OpenInterestHistory struct {
 	FundOpType				int32
 	RedeemId				int64		// id for Payout Redeemed event
 	Amount					float64
+	IntegerAmount			float64
 	Balance					float64
+	AdjustedBalance			float64
+	IntegerBalance			float64
 	OpenInterest			float64
+	IntegerFee				float64
 	Fee						float64
 	FeeAccum				float64
+	IntegerFeeAccum			float64
 	ContractBalance			float64
 	ContractBalanceAccum	float64
 }
