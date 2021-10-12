@@ -928,7 +928,6 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		ss.Info.Printf("bal_id=%v\n",rec.BalChgId)
 		if n_bs_id.Valid { rec.BuySellOpId = n_bs_id.Int64 } else { rec.BuySellOpId = -1 }
 		if n_bs_optype.Valid { rec.BuySellOpType  = n_bs_optype.Int32 } else {rec.BuySellOpType = -1 }
 		if n_far_id.Valid { rec.FundOpId = n_far_id.Int64 } else { rec.FundOpId = -1 }
@@ -947,7 +946,6 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 			ss.Info.Printf("Skipping tx_id=%v (rule 3)\n",rec.TxId)
 			continue
 		}
-		ss.Info.Printf("filtering bal_id=%v\n",rec.BalChgId)
 		/// filter for duplicate ends
 		if n_bs_id.Valid {
 			if (rec.ToAid == condtok_aid) && (rec.FromAid == contract_aid) && (rec.BuySellOpType == 0){
@@ -979,9 +977,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 			if rec.FundOpType == 1 { //withdraw funds
 				if (rec.FromAid == contract_aid) && (rec.ToAid != condtok_aid) {
 					open_interest = open_interest - (rec.IntegerAmount)
-					ss.Info.Printf("new open interest is %v\n",open_interest)
 				} else {
-					ss.Info.Printf("condition to withdraw funds isn't met\n")
 				}
 			}
 		}
@@ -991,8 +987,8 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 		rec.OpenInterest = open_interest / 1000000.0
 		prev_trf_to_aid = rec.ToAid
 		prev_trf_amount = rec.IntegerAmount
-		ss.Info.Printf("Amount %v: fundtype %v , bs_id=%v, rec.ToAid = %v , recFromAid = %v, OI=%v\n",
-			rec.Amount,rec.FundOpType,rec.BuySellOpId,rec.ToAid,rec.FromAid,open_interest)
+//		ss.Info.Printf("Amount %v: fundtype %v , bs_id=%v, rec.ToAid = %v , recFromAid = %v, OI=%v\n",
+//			rec.Amount,rec.FundOpType,rec.BuySellOpId,rec.ToAid,rec.FromAid,open_interest)
 		records = append(records,rec)
 	}
 	ss.Info.Printf("rows returned = %v\n",len(records))
@@ -1003,6 +999,28 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 
 	records := make([]p.API_Pol_OpenInterestHistory,0,512)
 	var query string
+
+	var resolution_evtlog_id int64
+	var payout_numerators string
+	var resolution_date string
+	query = "SELECT evtlog_id,payout_numerators,time_stamp "+
+			"FROM pol_cond_res WHERE condition_id=$1"
+	res := ss.db.QueryRow(query,condition_id)
+	var n_elog_id sql.NullInt64
+	var n_resolution_date,n_numerators sql.NullString
+	err := res.Scan(&n_elog_id,&n_numerators,&n_resolution_date)
+	if err != nil {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		resolution_evtlog_id=n_elog_id.Int64
+		payout_numerators=n_numerators.String
+		resolution_date= n_resolution_date.String
+	}
+
 	query = "WITH b AS (" +
 				"SELECT "+
 					"e20b.id bal_id, "+
@@ -1019,6 +1037,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 				"WHERE e20b.id IN( SELECT * FROM oi_history_transactions($1,$2,$3)) " +
 			") " +
 			"SELECT " +
+				"e20t.evtlog_id,"+
 				"e20t.from_aid,"+
 				"e20t.to_aid, "+
 				"b.user_aid," +
@@ -1058,7 +1077,9 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 		os.Exit(1)
 	}
 	defer rows.Close()
+	var separator_was_added bool
 	var prev_trf_to_aid int64 = -1
+	var prev_trf_from_aid int64 = -1
 	var prev_trf_amount float64 = -1.0
 	var fee_accum float64 = 0.0
 	var open_interest float64 = 0.0
@@ -1066,7 +1087,9 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 		var rec p.API_Pol_OpenInterestHistory
 		var n_bs_id,n_far_id,n_red_id sql.NullInt64
 		var n_bs_optype,n_far_optype sql.NullInt32
+		var evtlog_id int64
 		err=rows.Scan(
+			&evtlog_id,
 			&rec.FromAid,
 			&rec.ToAid,
 			&rec.UserAid,
@@ -1091,7 +1114,17 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		ss.Info.Printf("bal_id=%v\n",rec.BalChgId)
+		if (resolution_evtlog_id>0) && (evtlog_id>resolution_evtlog_id) {
+			if !separator_was_added {
+				var resolution_rec p.API_Pol_OpenInterestHistory
+				resolution_rec.TxId = -1
+				resolution_rec.PayoutNumerators = payout_numerators
+				resolution_rec.DateTime = resolution_date
+				records = append(records,resolution_rec)
+				separator_was_added=true
+				ss.Info.Printf("\t appending separator\n")
+			}
+		}
 		if n_bs_id.Valid { rec.BuySellOpId = n_bs_id.Int64 } else { rec.BuySellOpId = -1 }
 		if n_bs_optype.Valid { rec.BuySellOpType  = n_bs_optype.Int32 } else {rec.BuySellOpType = -1 }
 		if n_far_id.Valid { rec.FundOpId = n_far_id.Int64 } else { rec.FundOpId = -1 }
@@ -1106,11 +1139,16 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 			ss.Info.Printf("Skipping tx_id=%v (rule 2)\n",rec.TxId)
 			continue
 		}
-		if rec.FromAddr == "0x0000000000000000000000000000000000000000" { 
+		if (rec.FromAid == contract_aid) && (rec.UserAid == contract_aid) {
+			//prev_trf_to_aid = rec.ToAid
+			//prev_trf_from_aid = rec.FromAid
+			//prev_trf_amount = rec.IntegerAmount
+			continue
+		}
+		if rec.FromAddr == "0x0000000000000000000000000000000000000000" {
 			ss.Info.Printf("Skipping tx_id=%v (rule 3)\n",rec.TxId)
 			continue
 		}
-		ss.Info.Printf("filtering bal_id=%v\n",rec.BalChgId)
 		/// filter for duplicate ends
 		if n_bs_id.Valid {
 			if (rec.ToAid == condtok_aid) && (rec.FromAid == contract_aid) && (rec.BuySellOpType == 0){
@@ -1124,8 +1162,10 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 			}
 			if (rec.FromAid == contract_aid) && (rec.FromAid != condtok_aid) && (rec.BuySellOpType == 1) {
 				// sell op
-				if prev_trf_to_aid == contract_aid {
-					rec.IntegerFee = prev_trf_amount - (-rec.IntegerAmount)
+				ss.Info.Printf("Entering sell op, bal_id=%v tx_id=%v prev_trf_from_aid=%v\n",rec.BalChgId,rec.TxId,prev_trf_from_aid)
+				if prev_trf_from_aid == condtok_aid {
+					ss.Info.Printf("Condition passed, calculating fees now prev_trf_amount=%v, IntegerAmount=%v\n",prev_trf_amount,rec.IntegerAmount)
+					rec.IntegerFee = prev_trf_amount - rec.IntegerAmount
 					rec.Fee = rec.IntegerFee / 1000000.0
 					fee_accum = fee_accum + rec.IntegerFee
 					open_interest = open_interest - (rec.IntegerAmount) - rec.IntegerFee
@@ -1142,20 +1182,25 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 			if rec.FundOpType == 1 { //withdraw funds
 				if (rec.FromAid == contract_aid) && (rec.ToAid != condtok_aid) {
 					open_interest = open_interest - (rec.IntegerAmount)
-					ss.Info.Printf("new open interest is %v\n",open_interest)
 				} else {
-					ss.Info.Printf("condition to withdraw funds isn't met\n")
 				}
+			}
+		}
+		if n_red_id.Valid {// Payout redemption
+			if (rec.UserAid != condtok_aid) && (rec.UserAid != contract_aid) {
+				open_interest = open_interest - rec.IntegerAmount
 			}
 		}
 		rec.AdjustedBalance = (rec.IntegerBalance - rec.IntegerAmount)/1000000.0
 		rec.FeeAccum = fee_accum / 1000000.0
 		rec.IntegerFeeAccum = fee_accum
 		rec.OpenInterest = open_interest / 1000000.0
+		rec.OIVerif = rec.OpenInterest + rec.FeeAccum
 		prev_trf_to_aid = rec.ToAid
+		prev_trf_from_aid = rec.FromAid
 		prev_trf_amount = rec.IntegerAmount
-		ss.Info.Printf("Amount %v: fundtype %v , bs_id=%v, rec.ToAid = %v , recFromAid = %v, OI=%v\n",
-			rec.Amount,rec.FundOpType,rec.BuySellOpId,rec.ToAid,rec.FromAid,open_interest)
+//		ss.Info.Printf("Amount %v: fundtype %v , bs_id=%v, rec.ToAid = %v , recFromAid = %v, OI=%v\n",
+//			rec.Amount,rec.FundOpType,rec.BuySellOpId,rec.ToAid,rec.FromAid,open_interest)
 		records = append(records,rec)
 	}
 	ss.Info.Printf("rows returned = %v\n",len(records))

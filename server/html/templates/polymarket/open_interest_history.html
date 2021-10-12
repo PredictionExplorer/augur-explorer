@@ -21,6 +21,7 @@
 		<th class="market_reports">Fees <br>(USDC)</th>
 		<th class="market_reports">Int Fees <br>(USDC)</th>
 		<th class="market_reports">Open Interest<br>(UDSC)</th>
+		<th class="market_reports">Calculated OI<br>(UDSC)</th>
 		<th class="market_reports">Contract Balance</th>
 		<th class="market_reports">Adj. Balance</th>
 		<th class="market_reports">Notes</th>
@@ -29,25 +30,30 @@
 	{{- range $i, $change := .OIHistory}}
 		<tr class="market_reports">
 			<td class="market_reports_field">
-				{{.TxId}}
+				{{ if gt .TxId 0 }}
+					{{.TxId}}
+				{{ end }}
 			</td>
 			<td class="market_reports_field" title="{{.BalChgId}}">
 				{{.DateTime}}
 			</td>
 			<td class="addr" title="{{.FromAid}}">
-				<!-- CondTokAid={{$.CondTokAid}}, ContractAid={{$.ContractAid}}, FromAid={{.FromAid}}  (FromAddr={{.FromAddr}} ) -->
-				{{ if eq .FromAid $.CondTokAid }}Conditional Tokens
-				{{ else }}
-					{{ if eq .FromAid $.USDCAid }}
-						USDC
+				{{ if gt .TxId 0 }}
+					{{ if eq .FromAid $.CondTokAid }}Conditional Tokens
 					{{ else }}
-						{{ if eq .FromAid $.MktMkrAid }}
-							Market Maker
+						{{ if eq .FromAid $.USDCAid }}
+							USDC
 						{{ else }}
-							{{.FromAddr}}
-						{{end}}
-					{{ end }}
-				{{end}}
+							{{ if eq .FromAid $.MktMkrAid }}
+								Market Maker
+							{{ else }}
+								{{.FromAddr}}
+							{{end}}
+						{{ end }}
+					{{end}}
+				{{ else }}
+					<b>Market resolved</b>
+				{{ end }}
 			</td>
 			<td class="addr" title="{{.ToAid}}">
 				{{ if eq .ToAid $.CondTokAid }}
@@ -64,17 +70,34 @@
 					{{end}}
 				{{end}}
 			</td>
-			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .Amount}}</td>
-			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .Fee}}</td>
-			<td class="market_reports_field" style="text-align: right;">{{printf "%.0f" .IntegerFee}}</td>
-			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .FeeAccum}}</td>
-			<td class="market_reports_field" style="text-align: right;">{{printf "%.0f" .IntegerFeeAccum}}</td>
-			<td class="market_reports_field" style="text-align: right;">{{printf "%.6f" .OpenInterest}}</td>
 			<td class="market_reports_field" style="text-align: right;">
-				{{ if eq .UserAid $.MktMkrAid }}
-					{{printf "%.6f" .Balance}}
-				{{ else }}
-					N/A
+				{{ if gt .TxId 0 }}{{printf "%.6f" .Amount}}{{end}}
+			</td>
+			<td class="market_reports_field" style="text-align: right;">
+				{{ if gt .TxId 0 }}{{printf "%.6f" .Fee}}{{end}}
+			</td>
+			<td class="market_reports_field" style="text-align: right;">
+				{{ if gt .TxId 0 }}{{printf "%.0f" .IntegerFee}}{{end}}
+			</td>
+			<td class="market_reports_field" style="text-align: right;">
+				{{ if gt .TxId 0 }}{{printf "%.6f" .FeeAccum}}{{end}}
+			</td>
+			<td class="market_reports_field" style="text-align: right;">
+				{{ if gt .TxId 0 }}{{printf "%.0f" .IntegerFeeAccum}}{{end}}
+			</td>
+			<td class="market_reports_field" style="text-align: right;">
+				{{ if gt .TxId 0 }}{{printf "%.6f" .OpenInterest}}{{end}}
+			</td>
+			<td class="market_reports_field" style="text-align: right;">
+				{{ if gt .TxId 0 }}{{printf "%.6f" .OIVerif}}{{end}}
+			</td>
+			<td class="market_reports_field" style="text-align: right;">
+				{{ if gt .TxId 0 }}
+					{{ if eq .UserAid $.MktMkrAid }}
+						{{printf "%.6f" .Balance}}
+					{{ else }}
+						N/A
+					{{ end }}
 				{{ end }}
 			</td>
 			<td class="market_reports_field" style="text-align: right;">
@@ -83,14 +106,18 @@
 				{{ end }}
 			</td>
 			<td nowrap class="market_reports_field">
-				{{ if gt .BuySellOpId 0 }}
-					{{ if eq .BuySellOpType 0 }} Buy {{ else }} Sell {{end}}
-				{{ end }}
-				{{ if gt .FundOpId 0 }}
-					{{ if eq .FundOpType 0 }} Add Funds {{ else }} Remove Funds {{end}}
-				{{ end }}
-				{{ if gt .RedeemId 0 }}Payout redemption{{end}}
+				{{ if gt .TxId 0 }}
+					{{ if gt .BuySellOpId 0 }}
+						{{ if eq .BuySellOpType 0 }} Buy {{ else }} Sell {{end}}
+					{{ end }}
+					{{ if gt .FundOpId 0 }}
+						{{ if eq .FundOpType 0 }} Add Funds {{ else }} Remove Funds {{end}}
+					{{ end }}
+					{{ if gt .RedeemId 0 }}Payout redemption{{end}}
 				<b>Ids:</b> BySellId: {{.BuySellOpId}} &nbsp; AddRemId: {{.FundOpId}} &nbsp; BuySellOpType: {{.BuySellOpType}}
+				{{ else }}
+					payout numerators are: {{.PayoutNumerators}}
+				{{ end}}
 			</td>
 		</tr>
 	{{- end}}

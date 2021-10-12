@@ -243,13 +243,14 @@ type API_Pol_MarketERC1155Transfer struct {
 type API_Pol_OpenInterestHistory struct {
 	TimeStamp				int64
 	DateTime				string
-	TxId					int64
+	TxId					int64	// if -1 then it means we have condition resolution record
 	TxHash					string
 	FromAid					int64
 	FromAddr				string
 	ToAid					int64
 	UserAid					int64
 	ToAddr					string
+	PayoutNumerators		string
 	BalChgId				int64		// id of erc20 balance transfer
 	BuySellOpId				int64		// id for buy/sell operation
 	BuySellOpType			int32
@@ -262,6 +263,7 @@ type API_Pol_OpenInterestHistory struct {
 	AdjustedBalance			float64
 	IntegerBalance			float64
 	OpenInterest			float64
+	OIVerif					float64	// OI calculated copy for verification
 	IntegerFee				float64
 	Fee						float64
 	FeeAccum				float64
