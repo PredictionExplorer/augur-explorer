@@ -271,6 +271,10 @@ type API_Pol_OpenInterestHistory struct {
 	ContractBalance			float64
 	ContractBalanceAccum	float64
 }
+type API_Pol_OI_HistoryTotals struct {
+	FinalOpenInterest		float64
+	FinalFees				float64
+}
 type PolTextSearchResult struct {
 	ObjType					int
 	MarketId				int64

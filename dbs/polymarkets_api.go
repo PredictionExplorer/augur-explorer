@@ -994,9 +994,10 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,c
 	ss.Info.Printf("rows returned = %v\n",len(records))
 	return records
 }
-func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_aid,contract_aid int64,condition_id string,offset,limit int) []p.API_Pol_OpenInterestHistory {
+func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_aid,contract_aid int64,condition_id string,offset,limit int) (p.API_Pol_OI_HistoryTotals,[]p.API_Pol_OpenInterestHistory) {
 	// another version of history for testing
 
+	var totals p.API_Pol_OI_HistoryTotals
 	records := make([]p.API_Pol_OpenInterestHistory,0,512)
 	var query string
 
@@ -1168,7 +1169,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 					rec.IntegerFee = prev_trf_amount - rec.IntegerAmount
 					rec.Fee = rec.IntegerFee / 1000000.0
 					fee_accum = fee_accum + rec.IntegerFee
-					open_interest = open_interest - (rec.IntegerAmount) - rec.IntegerFee
+					open_interest = open_interest - (rec.IntegerAmount) 
 				}
 			}
 		}
@@ -1189,6 +1190,8 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 		if n_red_id.Valid {// Payout redemption
 			if (rec.UserAid != condtok_aid) && (rec.UserAid != contract_aid) {
 				open_interest = open_interest - rec.IntegerAmount
+			} else {
+				continue
 			}
 		}
 		rec.AdjustedBalance = (rec.IntegerBalance - rec.IntegerAmount)/1000000.0
@@ -1196,6 +1199,8 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 		rec.IntegerFeeAccum = fee_accum
 		rec.OpenInterest = open_interest / 1000000.0
 		rec.OIVerif = rec.OpenInterest + rec.FeeAccum
+		totals.FinalOpenInterest = rec.OpenInterest
+		totals.FinalFees = rec.FeeAccum
 		prev_trf_to_aid = rec.ToAid
 		prev_trf_from_aid = rec.FromAid
 		prev_trf_amount = rec.IntegerAmount
@@ -1204,5 +1209,5 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 		records = append(records,rec)
 	}
 	ss.Info.Printf("rows returned = %v\n",len(records))
-	return records
+	return totals,records
 }

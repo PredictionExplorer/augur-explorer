@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS
 	pol_pay_redem,
 	pol_ustats,
 	pol_ustats_mkt,
+	pol_oi_hist,
 	update_needed,
 	pol_proc_status,
 	pol_mkt_stats,

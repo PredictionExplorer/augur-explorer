@@ -123,5 +123,17 @@
 	{{- end}}
 </table>
 <br/><br/>
+<h4>Totals</h4>
+<table>
+	<tr>
+		<td>Final Open Interest</td>
+		<td>{{printf "%.6f" .Totals.FinalOpenInterest }}</td>
+	</tr>
+	<tr>
+		<td>Final Fees</td>
+		<td>{{printf "%.6f" .Totals.FinalFees }}</td>
+	</tr>
+</table>
+<br/><br/><br/>
 </body>
 </html>

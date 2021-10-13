@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"context"
 	"encoding/hex"
+	"unicode/utf8"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -664,7 +665,6 @@ func proc_uri(log *types.Log,elog *EthereumEventLog) {
 		Error.Printf("Event URI decode error: %v",err)
 		os.Exit(1)
 	}
-
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -672,6 +672,18 @@ func proc_uri(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.Id = eth_evt.Id.String()
 	evt.Value = eth_evt.Value
+
+	var empty_array [32]byte
+	if bytes.Equal([]byte(eth_evt.Value),empty_array[:]) {
+		evt.Value = ""
+	}
+	if !utf8.ValidString(eth_evt.Value) {
+		Error.Printf(
+			"Invalid 'Value' field for Uri event: Value=%v, setting to '', tx_hash=%v\n",
+			evt.Value,elog.TxHash,
+		)
+		evt.Value = ""
+	}
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("URI {\n")

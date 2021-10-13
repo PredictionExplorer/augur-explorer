@@ -150,15 +150,17 @@ CREATE TABLE pol_buysell ( -- FPMMBuy/FPMMSell event of contract FixedProductMar
 	accum_collateral	DECIMAL DEFAULT 0,
 	UNIQUE(evtlog_id)
 );
-/*
 CREATE TABLE pol_oi_hist ( -- Open interest change history
 	id					BIGSERIAL PRIMARY KEY,
 	evtlog_id			BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	tx_id				BIGINT NOT NULL,
 	user_aid			BIGINT NOT NULL,
-	market_id			INT NOT NULL,
-	
-	PRIMARY KEY(user_aid,market_id,condition_id)
-);*/
+	parent_id			BIGINT NOT NULL, -- pol_buysell/pol_fund_addrem or pol_pay_redem record id
+	contract_aid		INT NOT NULL,
+	op_type				INT NOT NULL, -- 1-Add funds,2-Remove funds,3-Buy,4-Sell,5-Payout redemption
+	amount				DECIMAL NOT NULL,
+	accum				DECIMAL NOT NULL
+);
 CREATE TABLE update_needed (	-- used to flag the market fetching process (polysync) to update markets
 	market_update		BOOLEAN DEFAULT FALSE
 );

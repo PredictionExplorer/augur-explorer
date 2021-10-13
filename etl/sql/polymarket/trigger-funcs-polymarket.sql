@@ -2,6 +2,7 @@ CREATE OR REPLACE FUNCTION on_fpmm_fund_addrem_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt					NUMERIC;
 	v_normalized_collateral DECIMAL;
+	v_accumulated_oi		DECIMAL;
 BEGIN
 
 	IF NEW.op_type = 0 THEN
@@ -17,11 +18,13 @@ BEGIN
 			open_interest = (open_interest + v_normalized_collateral),
 			total_volume = (total_volume + NEW.shares),
 			total_liquidity = (total_liquidity + v_normalized_collateral)
-		WHERE contract_aid = NEW.contract_aid;
+		WHERE contract_aid = NEW.contract_aid
+		RETURNING open_interest INTO v_accumulated_oi;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		INSERT INTO pol_mkt_stats(contract_aid,num_liq_ops,open_interest,total_volume)
 			VALUES(NEW.contract_aid,1,v_normalized_collateral,NEW.shares);
+		v_accumulated_oi := v_normalized_collateral;
 	END IF;
 
 	-- global user statistics
@@ -50,6 +53,11 @@ BEGIN
 		INSERT INTO pol_ustats_mkt(user_aid,contract_aid,tot_liq_ops,tot_liq_given,tot_volume)
 			VALUES(NEW.funder_aid,NEW.contract_aid,1,v_normalized_collateral,NEW.shares);
 	END IF;
+	INSERT INTO pol_oi_hist(evtlog_id,tx_id,user_aid,parent_id,contract_aid,op_type,amount,accum)
+		VALUES(
+			NEW.evtlog_id,NEW.tx_id,NEW.funder_aid,NEW.id,NEW.contract_aid,
+			(NEW.op_type+1),v_normalized_collateral,v_accumulated_oi
+		);
 
 	RETURN NEW;
 END;
@@ -86,11 +94,12 @@ DECLARE
 	v_cnt					NUMERIC;
 	v_accum_collateral		DECIMAL;
 	v_normalized_amount		DECIMAL;
+	v_accumulated_oi		DECIMAL;
 BEGIN
 
 	-- first calculate accumulated collateral (which is the same as profit/loss on this market)
 	IF NEW.op_type = 0 THEN
-		v_normalized_amount := -NEW.collateral_amount;
+		v_normalized_amount := -(NEW.collateral_amount-NEW.fee_amount);
 	ELSE 
 		v_normalized_amount := NEW.collateral_amount;
 	END IF;
@@ -114,20 +123,22 @@ BEGIN
 	UPDATE pol_mkt_stats
 		SET
 			num_trades = (num_trades + 1),
-			total_volume = (total_volume + NEW.collateral_amount),
+			total_volume = (total_volume + (NEW.collateral_amount-NEW.fee_amount)),
 			total_fees = (total_fees + NEW.fee_amount),
 			open_interest = (open_interest + v_normalized_amount)
-		WHERE contract_aid = NEW.contract_aid;
+		WHERE contract_aid = NEW.contract_aid
+		RETURNING open_interest INTO v_accumulated_oi;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		INSERT INTO pol_mkt_stats(contract_aid,open_interest,num_trades,total_volume,total_fees)
 			VALUES(NEW.contract_aid,v_normalized_amount,1,NEW.collateral_amount,NEW.fee_amount);
+		v_accumulated_oi := (NEW.collateral_amount-NEW.fee_amount);
 	END IF;
 	-- user statistics
 	UPDATE pol_ustats
 		SET
 			tot_trades = (tot_trades + 1),
-			tot_volume = (tot_volume + NEW.collateral_amount),
+			tot_volume = (tot_volume + (NEW.collateral_amount-NEW.fee_amount)),
 			tot_fees = (tot_fees + NEW.fee_amount),
 			profit = (profit + v_normalized_amount)
 		WHERE user_aid = NEW.user_aid;
@@ -139,7 +150,7 @@ BEGIN
 	UPDATE pol_ustats_mkt
 		SET
 			tot_trades = (tot_trades + 1),
-			tot_volume = (tot_volume + NEW.collateral_amount),
+			tot_volume = (tot_volume + (NEW.collateral_amount-NEW.fee_amount)),
 			tot_fees = (tot_fees + NEW.fee_amount),
 			profit = (profit + v_normalized_amount)
 		WHERE user_aid=NEW.user_aid AND contract_aid = NEW.contract_aid;
@@ -148,6 +159,12 @@ BEGIN
 		INSERT INTO pol_ustats_mkt(user_aid,contract_aid,tot_trades,tot_volume,tot_fees,profit)
 			VALUES(NEW.user_aid,NEW.contract_aid,1,NEW.collateral_amount,NEW.fee_amount,v_normalized_amount);
 	END IF;
+
+	INSERT INTO pol_oi_hist(evtlog_id,tx_id,user_aid,parent_id,contract_aid,op_type,amount,accum)
+		VALUES(
+			NEW.evtlog_id,NEW.tx_id,NEW.user_aid,NEW.id,NEW.contract_aid,
+			(NEW.op_type+3),v_normalized_amount,v_accumulated_oi
+		);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -158,21 +175,21 @@ BEGIN
 	UPDATE pol_mkt_stats
 		SET
 			num_trades = (num_trades - 1),
-			total_volume = (total_volume - OLD.collateral_amount),
+			total_volume = (total_volume - (OLD.collateral_amount-OLD.fee_amount)),
 			total_fees = (total_fees - OLD.fee_amount),
 			open_interest = (open_interest - OLD.normalized_amount)
 		WHERE contract_aid = OLD.contract_aid;
 	UPDATE pol_ustats
 		SET
 			tot_trades = (tot_trades - 1),
-			tot_volume = (tot_volume - OLD.collateral_amount),
+			tot_volume = (tot_volume - (OLD.collateral_amount-OLD.fee_amount)),
 			tot_fees = (tot_fees - OLD.fee_amount),
-			profit = (profit - OLD.normalized_amount)
+			profit = (profit - (OLD.normalized_amount-OLD.fee_amount))
 		WHERE user_aid = OLD.user_aid;
 	UPDATE pol_ustats_mkt
 		SET
 			tot_trades = (tot_trades - 1),
-			tot_volume = (tot_volume - OLD.collateral_amount),
+			tot_volume = (tot_volume - (OLD.collateral_amount-OLD.fee_amount)),
 			tot_fees = (tot_fees - OLD.fee_amount),
 			profit = (profit - OLD.normalized_amount)
 		WHERE user_aid=OLD.user_aid AND contract_aid = OLD.contract_aid;
@@ -295,6 +312,7 @@ DECLARE
 	v_amounts_str			TEXT[];
 	v_token_id_hex			TEXT;
 	v_amount				DECIMAL;
+	v_accumulated_oi		DECIMAL;
 BEGIN
 	-- we need to extract contract_aid because Conditional Token
 	--	is the contract that emits these events (not market maker contract)
@@ -341,8 +359,11 @@ BEGIN
 	UPDATE pol_mkt_stats
 		SET
 			open_interest = (open_interest + NEW.payout)	-- since OI is negative we use +
-		WHERE contract_aid = v_mkt_mkr_aid;
-
+		WHERE contract_aid = v_mkt_mkr_aid
+		RETURNING open_interest INTO v_accumulated_oi;
+	IF v_accumulated_oi IS NULL THEN
+		v_accumulated_oi := 0;
+	END IF;
 	UPDATE pol_ustats
 		SET
 			profit = (profit + NEW.payout)
@@ -351,6 +372,12 @@ BEGIN
 		SET
 			profit = (profit + NEW.payout)
 		WHERE user_aid=NEW.redeemer_aid AND contract_aid = v_mkt_mkr_aid;
+
+	INSERT INTO pol_oi_hist(evtlog_id,tx_id,user_aid,parent_id,contract_aid,op_type,amount,accum)
+		VALUES(
+			NEW.evtlog_id,NEW.tx_id,NEW.redeemer_aid,NEW.id,v_mkt_mkr_aid,
+			5,NEW.payout,v_accumulated_oi
+		);
 
 	RETURN NEW;
 END;
