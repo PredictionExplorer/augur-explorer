@@ -287,6 +287,7 @@ type Pol_FundingAdded struct {
 	AmountsAdded			string
 	AllAmountsSummed		string
 	SharesMinted			string
+	ERC20Value				string
 }
 type Pol_FundingRemoved struct {
 	EvtId                   int64
@@ -299,6 +300,7 @@ type Pol_FundingRemoved struct {
 	AllAmountsSummed		string
 	SharesBurnt				string
 	CollateralRemoved		string
+	ERC20Value				string
 }
 type Pol_Buy struct {
 	EvtId                   int64

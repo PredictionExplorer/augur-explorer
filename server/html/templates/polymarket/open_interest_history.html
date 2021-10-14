@@ -9,6 +9,7 @@
 </table>
 <div id="price_history_graph"></div>
 <h3>Collateral Transfers</h3>
+This table shows all the flow of Collateral from source to destination, covering all the intermediate steps
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">TxId</th>
@@ -17,13 +18,8 @@
 		<th class="market_reports">To Address</th>
 		<th class="market_reports">Amount (USDC)</th>
 		<th class="market_reports">Fee <br>(USDC)</th>
-		<th class="market_reports">Int Fee <br>(USDC)</th>
-		<th class="market_reports">Fees <br>(USDC)</th>
-		<th class="market_reports">Int Fees <br>(USDC)</th>
+		<th class="market_reports">Accum. Fees <br>(USDC)</th>
 		<th class="market_reports">Open Interest<br>(UDSC)</th>
-		<th class="market_reports">Calculated OI<br>(UDSC)</th>
-		<th class="market_reports">Contract Balance</th>
-		<th class="market_reports">Adj. Balance</th>
 		<th class="market_reports">Notes</th>
 
 	</tr>
@@ -77,44 +73,25 @@
 				{{ if gt .TxId 0 }}{{printf "%.6f" .Fee}}{{end}}
 			</td>
 			<td class="market_reports_field" style="text-align: right;">
-				{{ if gt .TxId 0 }}{{printf "%.0f" .IntegerFee}}{{end}}
-			</td>
-			<td class="market_reports_field" style="text-align: right;">
 				{{ if gt .TxId 0 }}{{printf "%.6f" .FeeAccum}}{{end}}
 			</td>
 			<td class="market_reports_field" style="text-align: right;">
-				{{ if gt .TxId 0 }}{{printf "%.0f" .IntegerFeeAccum}}{{end}}
-			</td>
-			<td class="market_reports_field" style="text-align: right;">
 				{{ if gt .TxId 0 }}{{printf "%.6f" .OpenInterest}}{{end}}
-			</td>
-			<td class="market_reports_field" style="text-align: right;">
-				{{ if gt .TxId 0 }}{{printf "%.6f" .OIVerif}}{{end}}
-			</td>
-			<td class="market_reports_field" style="text-align: right;">
-				{{ if gt .TxId 0 }}
-					{{ if eq .UserAid $.MktMkrAid }}
-						{{printf "%.6f" .Balance}}
-					{{ else }}
-						N/A
-					{{ end }}
-				{{ end }}
-			</td>
-			<td class="market_reports_field" style="text-align: right;">
-				{{ if eq .ToAid $.MktMkrAid }}
-					{{printf "%.6f" .AdjustedBalance}}
-				{{ end }}
 			</td>
 			<td nowrap class="market_reports_field">
 				{{ if gt .TxId 0 }}
 					{{ if gt .BuySellOpId 0 }}
 						{{ if eq .BuySellOpType 0 }} Buy {{ else }} Sell {{end}}
+						{{ if eq .FromAid $.MktMkrAid }} (Market Maker contract sends funds to Conditional Tokens contract)
+						{{ else }} (User sends funds to Market Maker contract ) {{ end }}
 					{{ end }}
 					{{ if gt .FundOpId 0 }}
 						{{ if eq .FundOpType 0 }} Add Funds {{ else }} Remove Funds {{end}}
+						{{ if eq .FromAid $.MktMkrAid }} (Market Maker contract sends funds to Conditional Tokens contract) 
+						{{ else }} (Funder sends funds to Market Maket maker contract){{ end }}
 					{{ end }}
-					{{ if gt .RedeemId 0 }}Payout redemption{{end}}
-				<b>Ids:</b> BySellId: {{.BuySellOpId}} &nbsp; AddRemId: {{.FundOpId}} &nbsp; BuySellOpType: {{.BuySellOpType}}
+					{{ if gt .RedeemId 0 }}Payout redemption (Conditional Tokens contract sends funds to the User){{end}}
+					{{ if and (eq .BuySellOpId -1) (eq .FundOpId -1) (eq .RedeemId -1)}} User sends operation to Conditional Tokens contract bypassing Market Maker (probably to avoid paying fees) {{ end }}
 				{{ else }}
 					payout numerators are: {{.PayoutNumerators}}
 				{{ end}}

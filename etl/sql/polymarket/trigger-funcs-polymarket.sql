@@ -6,9 +6,9 @@ DECLARE
 BEGIN
 
 	IF NEW.op_type = 0 THEN
-		v_normalized_collateral := -NEW.shares;--SharesAdded (this is the collateral put into pool)
+		v_normalized_collateral := -NEW.transfer_amount;--SharesAdded (this is the collateral put into pool)
 	ELSE 
-		v_normalized_collateral := NEW.shares;	-- collateral taken out of the pool
+		v_normalized_collateral := NEW.transfer_amount;	-- collateral taken out of the pool
 	END IF;
 	UPDATE pol_fund_addrem SET norm_collateral = v_normalized_collateral WHERE id=NEW.id;
 	-- market statistics
@@ -16,14 +16,14 @@ BEGIN
 		SET
 			num_liq_ops = (num_liq_ops + 1),
 			open_interest = (open_interest + v_normalized_collateral),
-			total_volume = (total_volume + NEW.shares),
+			total_volume = (total_volume + NEW.transfer_amount),
 			total_liquidity = (total_liquidity + v_normalized_collateral)
 		WHERE contract_aid = NEW.contract_aid
 		RETURNING open_interest INTO v_accumulated_oi;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		INSERT INTO pol_mkt_stats(contract_aid,num_liq_ops,open_interest,total_volume)
-			VALUES(NEW.contract_aid,1,v_normalized_collateral,NEW.shares);
+			VALUES(NEW.contract_aid,1,v_normalized_collateral,NEW.transfer_amount);
 		v_accumulated_oi := v_normalized_collateral;
 	END IF;
 
@@ -45,13 +45,13 @@ BEGIN
 		SET
 			tot_liq_ops = (tot_liq_ops + 1),
 			tot_liq_given = (tot_liq_given + v_normalized_collateral),
-			tot_volume = (tot_volume + NEW.shares),
+			tot_volume = (tot_volume + NEW.transfer_amount),
 			profit = (profit + v_normalized_collateral)
 		WHERE (user_aid = NEW.funder_aid) AND (contract_aid=NEW.contract_aid);
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		INSERT INTO pol_ustats_mkt(user_aid,contract_aid,tot_liq_ops,tot_liq_given,tot_volume)
-			VALUES(NEW.funder_aid,NEW.contract_aid,1,v_normalized_collateral,NEW.shares);
+			VALUES(NEW.funder_aid,NEW.contract_aid,1,v_normalized_collateral,NEW.transfer_amount);
 	END IF;
 	INSERT INTO pol_oi_hist(evtlog_id,tx_id,user_aid,parent_id,contract_aid,op_type,amount,accum)
 		VALUES(
@@ -70,21 +70,21 @@ BEGIN
 		SET
 			num_liq_ops = (num_liq_ops - 1),
 			open_interest = (open_interest - OLD.norm_collateral),
-			total_volume = (total_volume - OLD.shares),
+			total_volume = (total_volume - OLD.transfer_amount),
 			total_liquidity = (total_liquidity - OLD.norm_collateral)
 		WHERE contract_aid = OLD.contract_aid;
 	UPDATE pol_ustats
 		SET
 			tot_liq_ops = (tot_liq_ops - 1),
 			tot_liq_given = (tot_liq_given - OLD.norm_collateral),
-			profit = (profit - OLD.normalized_amount)
+			profit = (profit - OLD.norm_collateral)
 		WHERE user_aid = OLD.funder_aid;
 	UPDATE pol_ustats_mkt
 		SET
 			tot_liq_ops = (tot_liq_ops - 1),
 			tot_liq_given = (tot_liq_given - OLD.norm_collateral),
-			tot_volume = (tot_volume - OLD.shares),
-			profit = (profit - OLD.normalized_amount)
+			tot_volume = (tot_volume - OLD.transfer_amount),
+			profit = (profit - OLD.norm_collateral)
 		WHERE (user_aid = OLD.funder_aid) AND (contract_aid=OLD.contract_aid);
 	RETURN OLD;
 END;

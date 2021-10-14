@@ -131,6 +131,7 @@ CREATE TABLE pol_fund_addrem ( -- FPMMFundAdded event of contract FixedProductMa
 	collateral_removed	DECIMAL DEFAULT 0,
 	norm_collateral		DECIMAL DEFAULT 0,	-- normalized collateral amount (negative for puts, positive for gets)
 	shares				DECIMAL NOT NULL,	-- shares minted or burned
+	transfer_amount		DECIMAL NOT NULL,	-- transfered USDC amount
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE pol_buysell ( -- FPMMBuy/FPMMSell event of contract FixedProductMarketMaker

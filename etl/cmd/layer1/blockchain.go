@@ -7,7 +7,7 @@ import (
 	"math/big"
 	"os"
 	"errors"
-	"context"
+	//"context"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/rlp"
@@ -16,17 +16,22 @@ import (
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func roll_back_blocks(starting_block_num int64,diverging_block *types.Header) error {
+func roll_back_blocks(diverging_block *types.Header) error {
 	// Finds the block from which the fork started
 	var err error
-	ctx := context.Background()
-	diverging_block, err = eclient.HeaderByHash(ctx, diverging_block.ParentHash)
+	var bhash common.Hash
+	//ctx := context.Background()
+	bhash,diverging_block,_, err = get_full_block(diverging_block.Number.Int64())
+		//eclient.HeaderByNumber(ctx, diverging_block.Number)
 	if err != nil {
 		return errors.New(fmt.Sprintf("During chainsplit an error getting HeaderByHash happened: %v\n",err))
 	}
-	block_num:=diverging_block.Number.Int64()
+	starting_block_num := diverging_block.Number.Int64()
+	block_num:=starting_block_num
+	block_hash:=bhash.String()
+	Info.Printf("roll_back_blocks(): block_num = %v , block_hash %v",block_num,block_hash)
+	Info.Printf("\t\t\tparent_hash %v\n",diverging_block.ParentHash.String())
 	for {
-		block_hash:=diverging_block.Hash().String()
 		my_block_num,err := storage.Get_block_num_by_hash(block_hash)
 		Info.Printf("Chainsplit fix: diverging hash %v, my_block_num=%v err=%v\n",block_hash,my_block_num,err)
 		if err == nil {
@@ -51,16 +56,16 @@ func roll_back_blocks(starting_block_num int64,diverging_block *types.Header) er
 			chain_reorg_event.Hash = block_hash
 			storage.Insert_chain_reorg_event(&chain_reorg_event)
 			return errors.New(fmt.Sprintf(
-				"Chainsplit occurred at block %v and was fixedx at block %v",starting_block_num,my_block_num,
+				"Chainsplit occurred at block %v and was fixed at block %v",starting_block_num,my_block_num,
 			))
 		} else {
 			Info.Printf(
-				"Chainsplit fix: block %v donesn't fit, block_hash=%v not found in my DB. Trying more...\n",
+				"Chainsplit fix: block %v doesn't fit, block_hash=%v not found in my DB. Trying more...\n",
 				block_num,block_hash,
 			)
 		}
-		total_blocks := block_num - my_block_num
-		if total_blocks < 0 { total_blocks = -total_blocks }
+		total_blocks := starting_block_num - block_num
+		if total_blocks < 0 { total_blocks = -total_blocks }//just an extra safety against any bug before
 		if total_blocks > MAX_BLOCKS_CHAIN_SPLIT {
 			Info.Printf(
 				"Chainsplit fix: Chain split is longer than reasonal length, aborting. " +
@@ -70,11 +75,14 @@ func roll_back_blocks(starting_block_num int64,diverging_block *types.Header) er
 			return errors.New("Chain split max size overflow")
 		}
 		// keep trying by following parent hash
-		diverging_block, err = eclient.HeaderByHash(ctx, diverging_block.ParentHash)
+		bhash,diverging_block,_, err = get_full_block(diverging_block.Number.Int64()-1)
+		//diverging_block, err = eclient.HeaderByHash(ctx, diverging_block.ParentHash)
 		if err != nil {
 			return errors.New(fmt.Sprintf("During chainsplit an error getting BlockByNumber happened: %v\n",err))
 		}
 		block_num = diverging_block.Number.Int64()
+		block_hash = bhash.String()
+		Info.Printf("Current block has been set to number %v , hash = %v\n",block_num,diverging_block.Hash().String())
 	}
 	return errors.New("Chainsplit fix: Undefined behaviour")
 }
@@ -179,7 +187,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 	}
 	err = storage.Insert_block(block_hash_str,header,num_transactions,no_chainsplit_check)
 	if err != nil {
-		err = roll_back_blocks(bnum,header)
+		err = roll_back_blocks(header)
 		return err
 	}
 	if num_transactions == 0 {

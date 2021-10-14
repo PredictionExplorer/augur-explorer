@@ -286,10 +286,10 @@ func (ss *SQLStorage) Insert_funding_added(evt *p.Pol_FundingAdded) {
 	var query string
 	query = "INSERT INTO pol_fund_addrem (" +
 				evt_log_field+"block_num,tx_id,time_stamp,contract_aid, "+
-				"funder_aid,op_type,amounts,sum_amounts,shares" +
+				"funder_aid,op_type,amounts,sum_amounts,shares,transfer_amount" +
 			") VALUES (" +
 				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,"+
-				"$5,$6,$7,$8,$9"+
+				"$5,$6,$7,$8,$9,$10"+
 			")"
 	_,err := ss.db.Exec(query,
 		evt.BlockNum,
@@ -301,6 +301,7 @@ func (ss *SQLStorage) Insert_funding_added(evt *p.Pol_FundingAdded) {
 		evt.AmountsAdded,
 		evt.AllAmountsSummed,
 		evt.SharesMinted,
+		evt.ERC20Value,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert Liquidity Added event: %v\n",err))
@@ -320,10 +321,10 @@ func (ss *SQLStorage) Insert_funding_removed(evt *p.Pol_FundingRemoved) {
 	var query string
 	query = "INSERT INTO pol_fund_addrem (" +
 				evt_log_field+"block_num,tx_id,time_stamp,contract_aid, "+
-				"funder_aid,op_type,amounts,sum_amounts,shares,collateral_removed" +
+				"funder_aid,op_type,amounts,sum_amounts,shares,collateral_removed,transfer_amount" +
 			") VALUES (" +
 				evt_log_value+"$1,$2,TO_TIMESTAMP($3),$4,"+
-				"$5,$6,$7,$8,$9,$10"+
+				"$5,$6,$7,$8,$9,$10,$11"+
 			")"
 	_,err := ss.db.Exec(query,
 		evt.BlockNum,
@@ -336,6 +337,7 @@ func (ss *SQLStorage) Insert_funding_removed(evt *p.Pol_FundingRemoved) {
 		evt.AllAmountsSummed,
 		evt.SharesBurnt,
 		evt.CollateralRemoved,
+		evt.ERC20Value,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert Liquidity Removed event: %v\n",err))
@@ -547,30 +549,6 @@ func (ss *SQLStorage) Get_polymarkets_liquidity_operations(contract_aid int64,of
 			os.Exit(1)
 		}
 		records = append(records,rec)
-	}
-	return records
-}
-func (ss *SQLStorage) Get_erc1155_transfers(tx_id,contract_aid int64,signature string) []string {
-
-	records := make([]string,0,4)
-	var query string 
-	query = "SELECT log_rlp FROM evt_log WHERE contract_aid=$1 AND tx_id=$2 AND signature=$3  ORDER BY id"
-
-	rows,err := ss.db.Query(query,tx_id,contract_aid,signature)
-	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-		os.Exit(1)
-	}
-
-	defer rows.Close()
-	for rows.Next() {
-		var rlp_encoded_log string
-		err=rows.Scan(&rlp_encoded_log)
-		if err!=nil {
-			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
-			os.Exit(1)
-		}
-		records = append(records,rlp_encoded_log)
 	}
 	return records
 }

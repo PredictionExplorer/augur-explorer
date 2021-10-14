@@ -1115,6 +1115,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
+		ss.Info.Printf("tx_id=%v\n",rec.TxId)
 		if (resolution_evtlog_id>0) && (evtlog_id>resolution_evtlog_id) {
 			if !separator_was_added {
 				var resolution_rec p.API_Pol_OpenInterestHistory
@@ -1140,14 +1141,15 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 			ss.Info.Printf("Skipping tx_id=%v (rule 2)\n",rec.TxId)
 			continue
 		}
-		if (rec.FromAid == contract_aid) && (rec.UserAid == contract_aid) {
+		if (rec.FromAid == contract_aid) && (rec.UserAid == contract_aid) && (rec.FundOpType!=1) {
 			//prev_trf_to_aid = rec.ToAid
 			//prev_trf_from_aid = rec.FromAid
 			//prev_trf_amount = rec.IntegerAmount
+			ss.Info.Printf("Skipping tx_id=%v (rule 3)\n",rec.TxId)
 			continue
 		}
 		if rec.FromAddr == "0x0000000000000000000000000000000000000000" {
-			ss.Info.Printf("Skipping tx_id=%v (rule 3)\n",rec.TxId)
+			ss.Info.Printf("Skipping tx_id=%v (rule 4)\n",rec.TxId)
 			continue
 		}
 		/// filter for duplicate ends
@@ -1182,7 +1184,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 			}
 			if rec.FundOpType == 1 { //withdraw funds
 				if (rec.FromAid == contract_aid) && (rec.ToAid != condtok_aid) {
-					open_interest = open_interest - (rec.IntegerAmount)
+					open_interest = open_interest - (-rec.IntegerAmount)
 				} else {
 				}
 			}
@@ -1191,6 +1193,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 			if (rec.UserAid != condtok_aid) && (rec.UserAid != contract_aid) {
 				open_interest = open_interest - rec.IntegerAmount
 			} else {
+				ss.Info.Printf("Skipping unnecesary payout redemption record, tx_id=%v\n",rec.TxId)
 				continue
 			}
 		}

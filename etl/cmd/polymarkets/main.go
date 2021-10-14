@@ -67,11 +67,14 @@ var (
 	condtoken_abi *abi.ABI
 	fpmm_abi *abi.ABI
 	erc1155_abi *abi.ABI
+	erc20_abi *abi.ABI
 
 	ctrct_wallet_registry *AugurWalletRegistry
 
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
+
+	poly_contracts Pol_ContractAddresses
 
 )
 func get_event_ids(from_evt_id,to_evt_id int64) []int64 {
@@ -246,6 +249,16 @@ func main() {
 		os.Exit(1)
 	}
 	erc1155_abi = &ab3
+
+	abi_parsed4 := strings.NewReader(OwnedERC20ABI)
+	ab4,err := abi.JSON(abi_parsed4)
+	if err != nil {
+		Info.Printf("Can't parse ERC20 token ABI")
+		os.Exit(1)
+	}
+	erc20_abi = &ab4
+
+	poly_contracts = storage.Get_polymarket_contract_addresses()
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)

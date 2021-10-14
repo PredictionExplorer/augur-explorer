@@ -492,6 +492,50 @@ func proc_payout_redemption(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_payout_redemption(&evt)
 }
+func locate_erc20_usdc_amount(tx_id,contract_aid int64,is_to bool,addr common.Address) string {
+
+	Info.Printf("locate_erc20_usdc_amount() tx_id=%v, contract_aid=%v\n",tx_id,contract_aid)
+	rlp_logs := storage.Get_specific_event_logs(tx_id,contract_aid,"ddf252ad")
+	for i:=0; i<len(rlp_logs);i++ {
+		var log types.Log
+		/*rlp_bytes,err:=hex.DecodeString(rlp_logs[i])
+		if err != nil {
+			Error.Printf("locate_erc20_usdc_amount(): can't decode RLP string: %v\n",err)
+			os.Exit(1)
+		}*/
+		rlp_bytes:=rlp_logs[i]
+		err := rlp.DecodeBytes(rlp_bytes,&log)
+		if err!= nil {
+			panic(fmt.Sprintf("RLP Decode error: %v",err))
+		}
+		var mevt ETransfer
+		if len(log.Topics) < 3 {
+			Info.Printf(
+				"locate_erc20_used_amount(): ERC20 transfer event is not compliant log.Topics < 3."+
+				"Tx hash=%v\n",log.TxHash.String(),
+			)
+			os.Exit(1)
+		}
+		mevt.From= common.BytesToAddress(log.Topics[1][12:])
+		mevt.To= common.BytesToAddress(log.Topics[2][12:])
+		err = erc20_abi.Unpack(&mevt,"Transfer",log.Data)
+		if err != nil {
+			Error.Printf("locate_erc20_usdc_amount(): Event ERC20_Transfer, decode error: %v",err)
+			os.Exit(1)
+		}
+		if is_to {
+			if bytes.Equal(addr.Bytes(),mevt.To.Bytes()) {
+				return mevt.Value.String()
+			}
+		} else {
+			if bytes.Equal(addr.Bytes(),mevt.From.Bytes()) {
+				return mevt.Value.String()
+			}
+		}
+	}
+	Info.Printf("locate_erc20_usdc_amount(): length of rlp_logs is %v\n",len(rlp_logs))
+	return "0"
+}
 func proc_funding_added(log *types.Log,elog *EthereumEventLog) {
 
 	var evt Pol_FundingAdded
@@ -521,12 +565,21 @@ func proc_funding_added(log *types.Log,elog *EthereumEventLog) {
 	evt.AllAmountsSummed = sum_amounts.String()
 	evt.SharesMinted = eth_evt.SharesMinted.String()
 
+	evt.ERC20Value = locate_erc20_usdc_amount(evt.TxId,poly_contracts.USDCAid,false,eth_evt.Funder)
+	if len(evt.ERC20Value)==0 {
+		Error.Printf(
+			"Couldn't locate ERC20 transfer corresponding to AddFunds event (tx_hash=%v)\n",
+			elog.TxHash,
+		)
+	}
+
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("FPMMFundingAdded{\n")
 	Info.Printf("\tFunder: %v\n",evt.Funder)
 	Info.Printf("\tAmountsAdded: %v\n",evt.AmountsAdded)
 	Info.Printf("\tAllAmountsSummed: %v\n",evt.AllAmountsSummed)
 	Info.Printf("\tSharesMinted: %v\n",evt.SharesMinted)
+	Info.Printf("\tERC20 Value: %v\n",evt.ERC20Value)
 	Info.Printf("}\n")
 
 	storage.Insert_funding_added(&evt)
@@ -561,6 +614,14 @@ func proc_funding_removed(log *types.Log,elog *EthereumEventLog) {
 	evt.SharesBurnt = eth_evt.SharesBurnt.String()
 	evt.CollateralRemoved = eth_evt.CollateralRemovedFromFeePool.String()
 
+	evt.ERC20Value = locate_erc20_usdc_amount(evt.TxId,poly_contracts.USDCAid,true,eth_evt.Funder)
+	if len(evt.ERC20Value)==0 {
+		Error.Printf(
+			"Couldn't locate ERC20 transfer corresponding to AddFunds event (tx_hash=%v)\n",
+			elog.TxHash,
+		)
+	}
+
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("FPMMFundingRemoved {\n")
 	Info.Printf("\tFunder: %v\n",evt.Funder)
@@ -568,6 +629,7 @@ func proc_funding_removed(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tAllAmountsSummed: %v\n",evt.AllAmountsSummed)
 	Info.Printf("\tSharesBurnt: %v\n",evt.SharesBurnt)
 	Info.Printf("\tCollateralRemovedFromFeePool: %v\n",evt.CollateralRemoved)
+	Info.Printf("\tERC20 Value: %v\n",evt.ERC20Value)
 	Info.Printf("}\n")
 
 	storage.Insert_funding_removed(&evt)

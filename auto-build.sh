@@ -20,6 +20,21 @@ cd ../..
 cd cmd/ensscan
 go build ./
 cd ../..
+cd cmd/erc1155
+go build ./
+cd ../..
+cd cmd/erc20
+go build ./
+cd ../..
+cd cmd/arbitrum-augur
+go build ./
+cd ../..
+cd cmd/polymarkets
+go build ./
+cd ../..
+cd cmd/polysync
+go build .
+cd ../..
 echo Building 0x Mesh order listener
 cd dmesh
 go build ./
