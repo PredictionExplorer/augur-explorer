@@ -28,7 +28,7 @@ var (
 )
 
 // RWMarketABI is the input ABI used to generate the binding from.
-const RWMarketABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"nftAddr\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"ItemBought\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"NewOffer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"OfferCanceled\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"acceptBuyOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"acceptSellOffer\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"cancelBuyOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"cancelSellOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"getBuyOffers\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"buyer\",\"type\":\"address\"}],\"name\":\"getBuyOffersBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"buyer\",\"type\":\"address\"}],\"name\":\"getBuyTokensBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"getSellOffers\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"seller\",\"type\":\"address\"}],\"name\":\"getSellOffersBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"seller\",\"type\":\"address\"}],\"name\":\"getSellTokenBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"makeBuyOffer\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"}],\"name\":\"makeSellOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numOffers\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"offers\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"seller\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"buyer\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"active\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"onERC721Received\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}]"
+const RWMarketABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"nftAddr\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"ItemBought\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"seller\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"buyer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"}],\"name\":\"NewOffer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"OfferCanceled\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"acceptBuyOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"acceptSellOffer\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"cancelBuyOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"cancelSellOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"getBuyOffers\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"buyer\",\"type\":\"address\"}],\"name\":\"getBuyOffersBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"buyer\",\"type\":\"address\"}],\"name\":\"getBuyTokensBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"getSellOffers\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"seller\",\"type\":\"address\"}],\"name\":\"getSellOffersBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"seller\",\"type\":\"address\"}],\"name\":\"getSellTokenBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"makeBuyOffer\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"}],\"name\":\"makeSellOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numOffers\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"offers\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"seller\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"buyer\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"active\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"onERC721Received\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}]"
 
 // RWMarket is an auto generated Go binding around an Ethereum contract.
 type RWMarket struct {
@@ -629,10 +629,15 @@ type RWMarketItemBought struct {
 
 // FilterItemBought is a free log retrieval operation binding the contract event 0x7f7e375fbeaef0d6ebfc53af15b7aeed1d704e3424f34ef67e914b1f68f8c8ef.
 //
-// Solidity: event ItemBought(uint256 offerId)
-func (_RWMarket *RWMarketFilterer) FilterItemBought(opts *bind.FilterOpts) (*RWMarketItemBoughtIterator, error) {
+// Solidity: event ItemBought(uint256 indexed offerId)
+func (_RWMarket *RWMarketFilterer) FilterItemBought(opts *bind.FilterOpts, offerId []*big.Int) (*RWMarketItemBoughtIterator, error) {
 
-	logs, sub, err := _RWMarket.contract.FilterLogs(opts, "ItemBought")
+	var offerIdRule []interface{}
+	for _, offerIdItem := range offerId {
+		offerIdRule = append(offerIdRule, offerIdItem)
+	}
+
+	logs, sub, err := _RWMarket.contract.FilterLogs(opts, "ItemBought", offerIdRule)
 	if err != nil {
 		return nil, err
 	}
@@ -641,10 +646,15 @@ func (_RWMarket *RWMarketFilterer) FilterItemBought(opts *bind.FilterOpts) (*RWM
 
 // WatchItemBought is a free log subscription operation binding the contract event 0x7f7e375fbeaef0d6ebfc53af15b7aeed1d704e3424f34ef67e914b1f68f8c8ef.
 //
-// Solidity: event ItemBought(uint256 offerId)
-func (_RWMarket *RWMarketFilterer) WatchItemBought(opts *bind.WatchOpts, sink chan<- *RWMarketItemBought) (event.Subscription, error) {
+// Solidity: event ItemBought(uint256 indexed offerId)
+func (_RWMarket *RWMarketFilterer) WatchItemBought(opts *bind.WatchOpts, sink chan<- *RWMarketItemBought, offerId []*big.Int) (event.Subscription, error) {
 
-	logs, sub, err := _RWMarket.contract.WatchLogs(opts, "ItemBought")
+	var offerIdRule []interface{}
+	for _, offerIdItem := range offerId {
+		offerIdRule = append(offerIdRule, offerIdItem)
+	}
+
+	logs, sub, err := _RWMarket.contract.WatchLogs(opts, "ItemBought", offerIdRule)
 	if err != nil {
 		return nil, err
 	}
@@ -678,7 +688,7 @@ func (_RWMarket *RWMarketFilterer) WatchItemBought(opts *bind.WatchOpts, sink ch
 
 // ParseItemBought is a log parse operation binding the contract event 0x7f7e375fbeaef0d6ebfc53af15b7aeed1d704e3424f34ef67e914b1f68f8c8ef.
 //
-// Solidity: event ItemBought(uint256 offerId)
+// Solidity: event ItemBought(uint256 indexed offerId)
 func (_RWMarket *RWMarketFilterer) ParseItemBought(log types.Log) (*RWMarketItemBought, error) {
 	event := new(RWMarketItemBought)
 	if err := _RWMarket.contract.UnpackLog(event, "ItemBought", log); err != nil {
@@ -757,27 +767,49 @@ func (it *RWMarketNewOfferIterator) Close() error {
 // RWMarketNewOffer represents a NewOffer event raised by the RWMarket contract.
 type RWMarketNewOffer struct {
 	OfferId *big.Int
+	TokenId *big.Int
+	Seller  common.Address
+	Buyer   common.Address
+	Price   *big.Int
 	Raw     types.Log // Blockchain specific contextual infos
 }
 
-// FilterNewOffer is a free log retrieval operation binding the contract event 0xc3e96d1275e81254d707531f5025b9b6d01f2bec370e5ff07979d37afbd3ee41.
+// FilterNewOffer is a free log retrieval operation binding the contract event 0x8b4d06c200b17b9c1150172953ceb6fa3e7ace7623f6f933707badfa52c354cf.
 //
-// Solidity: event NewOffer(uint256 offerId)
-func (_RWMarket *RWMarketFilterer) FilterNewOffer(opts *bind.FilterOpts) (*RWMarketNewOfferIterator, error) {
+// Solidity: event NewOffer(uint256 indexed offerId, uint256 indexed tokenId, address seller, address buyer, uint256 price)
+func (_RWMarket *RWMarketFilterer) FilterNewOffer(opts *bind.FilterOpts, offerId []*big.Int, tokenId []*big.Int) (*RWMarketNewOfferIterator, error) {
 
-	logs, sub, err := _RWMarket.contract.FilterLogs(opts, "NewOffer")
+	var offerIdRule []interface{}
+	for _, offerIdItem := range offerId {
+		offerIdRule = append(offerIdRule, offerIdItem)
+	}
+	var tokenIdRule []interface{}
+	for _, tokenIdItem := range tokenId {
+		tokenIdRule = append(tokenIdRule, tokenIdItem)
+	}
+
+	logs, sub, err := _RWMarket.contract.FilterLogs(opts, "NewOffer", offerIdRule, tokenIdRule)
 	if err != nil {
 		return nil, err
 	}
 	return &RWMarketNewOfferIterator{contract: _RWMarket.contract, event: "NewOffer", logs: logs, sub: sub}, nil
 }
 
-// WatchNewOffer is a free log subscription operation binding the contract event 0xc3e96d1275e81254d707531f5025b9b6d01f2bec370e5ff07979d37afbd3ee41.
+// WatchNewOffer is a free log subscription operation binding the contract event 0x8b4d06c200b17b9c1150172953ceb6fa3e7ace7623f6f933707badfa52c354cf.
 //
-// Solidity: event NewOffer(uint256 offerId)
-func (_RWMarket *RWMarketFilterer) WatchNewOffer(opts *bind.WatchOpts, sink chan<- *RWMarketNewOffer) (event.Subscription, error) {
+// Solidity: event NewOffer(uint256 indexed offerId, uint256 indexed tokenId, address seller, address buyer, uint256 price)
+func (_RWMarket *RWMarketFilterer) WatchNewOffer(opts *bind.WatchOpts, sink chan<- *RWMarketNewOffer, offerId []*big.Int, tokenId []*big.Int) (event.Subscription, error) {
 
-	logs, sub, err := _RWMarket.contract.WatchLogs(opts, "NewOffer")
+	var offerIdRule []interface{}
+	for _, offerIdItem := range offerId {
+		offerIdRule = append(offerIdRule, offerIdItem)
+	}
+	var tokenIdRule []interface{}
+	for _, tokenIdItem := range tokenId {
+		tokenIdRule = append(tokenIdRule, tokenIdItem)
+	}
+
+	logs, sub, err := _RWMarket.contract.WatchLogs(opts, "NewOffer", offerIdRule, tokenIdRule)
 	if err != nil {
 		return nil, err
 	}
@@ -809,9 +841,9 @@ func (_RWMarket *RWMarketFilterer) WatchNewOffer(opts *bind.WatchOpts, sink chan
 	}), nil
 }
 
-// ParseNewOffer is a log parse operation binding the contract event 0xc3e96d1275e81254d707531f5025b9b6d01f2bec370e5ff07979d37afbd3ee41.
+// ParseNewOffer is a log parse operation binding the contract event 0x8b4d06c200b17b9c1150172953ceb6fa3e7ace7623f6f933707badfa52c354cf.
 //
-// Solidity: event NewOffer(uint256 offerId)
+// Solidity: event NewOffer(uint256 indexed offerId, uint256 indexed tokenId, address seller, address buyer, uint256 price)
 func (_RWMarket *RWMarketFilterer) ParseNewOffer(log types.Log) (*RWMarketNewOffer, error) {
 	event := new(RWMarketNewOffer)
 	if err := _RWMarket.contract.UnpackLog(event, "NewOffer", log); err != nil {
@@ -895,10 +927,15 @@ type RWMarketOfferCanceled struct {
 
 // FilterOfferCanceled is a free log retrieval operation binding the contract event 0x0ff09947dd7d2583091e8cbfb427fecacb697bf895187b243fd0072c0ee9b951.
 //
-// Solidity: event OfferCanceled(uint256 offerId)
-func (_RWMarket *RWMarketFilterer) FilterOfferCanceled(opts *bind.FilterOpts) (*RWMarketOfferCanceledIterator, error) {
+// Solidity: event OfferCanceled(uint256 indexed offerId)
+func (_RWMarket *RWMarketFilterer) FilterOfferCanceled(opts *bind.FilterOpts, offerId []*big.Int) (*RWMarketOfferCanceledIterator, error) {
 
-	logs, sub, err := _RWMarket.contract.FilterLogs(opts, "OfferCanceled")
+	var offerIdRule []interface{}
+	for _, offerIdItem := range offerId {
+		offerIdRule = append(offerIdRule, offerIdItem)
+	}
+
+	logs, sub, err := _RWMarket.contract.FilterLogs(opts, "OfferCanceled", offerIdRule)
 	if err != nil {
 		return nil, err
 	}
@@ -907,10 +944,15 @@ func (_RWMarket *RWMarketFilterer) FilterOfferCanceled(opts *bind.FilterOpts) (*
 
 // WatchOfferCanceled is a free log subscription operation binding the contract event 0x0ff09947dd7d2583091e8cbfb427fecacb697bf895187b243fd0072c0ee9b951.
 //
-// Solidity: event OfferCanceled(uint256 offerId)
-func (_RWMarket *RWMarketFilterer) WatchOfferCanceled(opts *bind.WatchOpts, sink chan<- *RWMarketOfferCanceled) (event.Subscription, error) {
+// Solidity: event OfferCanceled(uint256 indexed offerId)
+func (_RWMarket *RWMarketFilterer) WatchOfferCanceled(opts *bind.WatchOpts, sink chan<- *RWMarketOfferCanceled, offerId []*big.Int) (event.Subscription, error) {
 
-	logs, sub, err := _RWMarket.contract.WatchLogs(opts, "OfferCanceled")
+	var offerIdRule []interface{}
+	for _, offerIdItem := range offerId {
+		offerIdRule = append(offerIdRule, offerIdItem)
+	}
+
+	logs, sub, err := _RWMarket.contract.WatchLogs(opts, "OfferCanceled", offerIdRule)
 	if err != nil {
 		return nil, err
 	}
@@ -944,7 +986,7 @@ func (_RWMarket *RWMarketFilterer) WatchOfferCanceled(opts *bind.WatchOpts, sink
 
 // ParseOfferCanceled is a log parse operation binding the contract event 0x0ff09947dd7d2583091e8cbfb427fecacb697bf895187b243fd0072c0ee9b951.
 //
-// Solidity: event OfferCanceled(uint256 offerId)
+// Solidity: event OfferCanceled(uint256 indexed offerId)
 func (_RWMarket *RWMarketFilterer) ParseOfferCanceled(log types.Log) (*RWMarketOfferCanceled, error) {
 	event := new(RWMarketOfferCanceled)
 	if err := _RWMarket.contract.UnpackLog(event, "OfferCanceled", log); err != nil {

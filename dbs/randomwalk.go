@@ -78,3 +78,81 @@ func (ss *SQLStorage) Get_randomwalk_contract_addresses() p.RW_ContractAddresses
 	}
 	return output
 }
+func (ss *SQLStorage) Insert_new_offer(evt *p.RW_NewOffer) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	buyer_aid:=ss.Lookup_or_create_address(evt.Buyer,evt.BlockNum,evt.TxId)
+	seller_aid:=ss.Lookup_or_create_address(evt.Seller,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO rw_new_offer(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"buyer_aid,seller_id,token_id,active,price" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
+			")"
+	_,err := ss.db.Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		buyer_aid,
+		seller_aid,
+		evt.TokenId,
+		true,
+		evt.Price,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into new_offer table: %v\n",err))
+		os.Exit(1)
+	}
+
+}
+func (ss *SQLStorage) Insert_item_bought(evt *p.RW_ItemBought) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO rw_item_bought(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"offer_id" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := ss.db.Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.OfferId,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into item_bought table: %v\n",err))
+		os.Exit(1)
+	}
+
+}
+func (ss *SQLStorage) Insert_offer_canceled(evt *p.RW_OfferCanceled) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO rw_offer_canceled(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"offer_id" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := ss.db.Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.OfferId,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into offer_canceled table: %v\n",err))
+		os.Exit(1)
+	}
+
+}
