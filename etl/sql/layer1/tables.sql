@@ -23,8 +23,8 @@ CREATE TABLE transaction (	-- we're only storing transactions related to Augur p
 	tx_index			INT DEFAULT 0,
 	num_logs			INT DEFAULT 0,
 	ctrct_create		BOOLEAN DEFAULT FALSE,	-- true if To = nil
-	value				DECIMAL(64,18) DEFAULT 0.0,
-	gas_price			DECIMAL(64,18) DEFAULT 0.0,
+	value				DECIMAL(80,18) DEFAULT 0.0,
+	gas_price			DECIMAL(80,18) DEFAULT 0.0,
 	tx_hash				CHAR(66) NOT NULL UNIQUE,
 	input_sig			CHAR(10)	-- input signature (first 4 bytes of Transaction::Data(), hex encoded)
 );

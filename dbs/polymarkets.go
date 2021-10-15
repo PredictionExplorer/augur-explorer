@@ -1555,7 +1555,7 @@ func (ss *SQLStorage) Get_polymarket_contract_addresses() p.Pol_ContractAddresse
 		if err == sql.ErrNoRows {
 			return output
 		}
-		ss.Log_msg(fmt.Sprintf("Update_polymarket_top_volume_rank() failed: %v, q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("Get_polymarket_contract_addresses() failed: %v, q=%v",err,query))
 		os.Exit(1)
 	}
 	return output
