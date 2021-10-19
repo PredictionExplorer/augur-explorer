@@ -17,6 +17,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/common"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
@@ -25,11 +26,11 @@ import (
 const (
 	DEFAULT_DB_LOG				= "db.log"
 
-	NEW_OFFER =		"0xc3e96d1275e81254d707531f5025b9b6d01f2bec370e5ff07979d37afbd3ee41"
-	ITEM_BOUGHT=	"0x7f7e375fbeaef0d6ebfc53af15b7aeed1d704e3424f34ef67e914b1f68f8c8ef"
-	OFFER_CANCELED=	"0x0ff09947dd7d2583091e8cbfb427fecacb697bf895187b243fd0072c0ee9b951"
-	WITHDRAWAL_EVT=	"0xa11b556ace4b11a5cae8675a293b51e8cde3a06387d34010861789dfd9e9abc7"
-	TOKEN_NAME_EVT=	"0x8ad5e159ff95649c8a9f323ac5a457e741897cf44ce07dfce0e98b84ef9d5f12"
+	NEW_OFFER =		"8b4d06c200b17b9c1150172953ceb6fa3e7ace7623f6f933707badfa52c354cf"
+	ITEM_BOUGHT=	"7f7e375fbeaef0d6ebfc53af15b7aeed1d704e3424f34ef67e914b1f68f8c8ef"
+	OFFER_CANCELED=	"0ff09947dd7d2583091e8cbfb427fecacb697bf895187b243fd0072c0ee9b951"
+	WITHDRAWAL_EVT=	"a11b556ace4b11a5cae8675a293b51e8cde3a06387d34010861789dfd9e9abc7"
+	TOKEN_NAME_EVT=	"8ad5e159ff95649c8a9f323ac5a457e741897cf44ce07dfce0e98b84ef9d5f12"
 )
 var (
 	evt_new_offer ,_ = hex.DecodeString(NEW_OFFER)
@@ -52,6 +53,8 @@ var (
 	randomwalk_abi *abi.ABI
 
 	rw_contracts RW_ContractAddresses
+	market_addr common.Address
+	rwalk_addr common.Address
 )
 func get_event_ids(from_evt_id,to_evt_id int64) []int64 {
 	output := make([]int64 ,0,1024)
@@ -163,6 +166,8 @@ func main() {
 	randomwalk_abi = &ab2
 
 	rw_contracts = storage.Get_randomwalk_contract_addresses()
+	rwalk_addr = common.HexToAddress(rw_contracts.RandomWalk)
+	market_addr = common.HexToAddress(rw_contracts.MarketPlace)
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)

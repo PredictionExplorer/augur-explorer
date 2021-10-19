@@ -55,8 +55,9 @@ type RW_NewOffer struct {
 	BlockNum                int64
 	TxId                    int64
 	TimeStamp               int64
+	OfferId					int64
+	TokenId					int64
 	Contract                string
-	TokenId					string
 	Buyer					string
 	Seller					string
 	Price					string
@@ -77,3 +78,23 @@ type RW_OfferCanceled struct {
 	Contract                string
 	OfferId					int64
 }
+type RW_Withdrawal struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	TokenId					int64
+	Destination				string
+	Amount					string
+}
+type RW_TokenName struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	TokenId					int64
+	NewName					string
+}
+

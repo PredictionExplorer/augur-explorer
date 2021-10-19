@@ -29,6 +29,7 @@ const (
 type AugurServer struct {
 	db_augur		*SQLStorage
 	db_matic		*SQLStorage
+	db_arbitrum		*SQLStorage
 }
 func (self *AugurServer) matic_initialized() bool {
 
@@ -37,37 +38,13 @@ func (self *AugurServer) matic_initialized() bool {
 	}
 	return true
 }
-func create_augur_server() *AugurServer {
-
-	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
-	os.MkdirAll(log_dir, os.ModePerm)
-	db_log_file:=fmt.Sprintf("%v/%v",log_dir,"webserver-db.log")
-
-	fname:=fmt.Sprintf("%v/webserver_info.log",log_dir)
-	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err!=nil {
-		fmt.Printf("Can't start: %v\n",err)
-		os.Exit(1)
-	}
-	Info = log.New(logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
-
-	fname=fmt.Sprintf("%v/webserver_error.log",log_dir)
-	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err!=nil {
-		fmt.Printf("Can't start: %v\n",err)
-		os.Exit(1)
-	}
-	Error = log.New(logfile,"ERROR: ",log.Ldate|log.Ltime|log.Lshortfile)
-	srv := new(AugurServer)
-	srv.db_augur= Connect_to_storage(&market_order_id,Info)
-	srv.db_augur.Init_log(db_log_file)
+func connect_to_amm(srv *AugurServer) {
 	amm_user := os.Getenv("AMM_USERNAME")
 	amm_passwd := os.Getenv("AMM_PASSWORD")
 	amm_db_name := os.Getenv("AMM_DATABASE")
 	amm_host_port := os.Getenv("AMM_HOST")
 	if len(amm_user) > 0 {
-		srv.db_augur.Init_log(db_log_file)
-
+		log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 		db_log_file:=fmt.Sprintf("%v/%v",log_dir,"amm-db.log")
 		amm_db_logfile, err := os.OpenFile(db_log_file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err != nil {
@@ -86,6 +63,60 @@ func create_augur_server() *AugurServer {
 			amm_passwd,
 		)
 	}
+}
+func connect_to_arbitrum(srv *AugurServer ) {
+
+	arb_user := os.Getenv("ARB_USERNAME")
+	arb_passwd := os.Getenv("ARB_PASSWORD")
+	arb_db_name := os.Getenv("ARB_DATABASE")
+	arb_host_port := os.Getenv("ARB_HOST")
+	if len(arb_user) > 0 {
+		log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
+		db_log_file:=fmt.Sprintf("%v/%v",log_dir,"arbitrum-db.log")
+		arbitrum_db_logfile, err := os.OpenFile(db_log_file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			fmt.Printf("Can't start: %v\n",err)
+			os.Exit(1)
+		}
+		arb_DB := log.New(arbitrum_db_logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
+
+		srv.db_matic = New_sql_storage(
+			&market_order_id,
+			Info,
+			arb_DB,
+			arb_host_port,
+			arb_db_name,
+			arb_user,
+			arb_passwd,
+		)
+	}
+}
+func create_augur_server() *AugurServer {
+
+	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
+	os.MkdirAll(log_dir, os.ModePerm)
+	web_db_log_file:=fmt.Sprintf("%v/%v",log_dir,"webserver-db.log")
+
+	fname:=fmt.Sprintf("%v/webserver_info.log",log_dir)
+	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err!=nil {
+		fmt.Printf("Can't start: %v\n",err)
+		os.Exit(1)
+	}
+	Info = log.New(logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
+
+	fname=fmt.Sprintf("%v/webserver_error.log",log_dir)
+	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err!=nil {
+		fmt.Printf("Can't start: %v\n",err)
+		os.Exit(1)
+	}
+	Error = log.New(logfile,"ERROR: ",log.Ldate|log.Ltime|log.Lshortfile)
+	srv := new(AugurServer)
+	srv.db_augur= Connect_to_storage(&market_order_id,Info)
+	srv.db_augur.Init_log(web_db_log_file)
+	connect_to_amm(srv)
+	connect_to_arbitrum(srv)
 
 	return srv
 }

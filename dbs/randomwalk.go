@@ -58,9 +58,9 @@ func (ss *SQLStorage) Get_randomwalk_contract_addresses() p.RW_ContractAddresses
 	query = "SELECT "+
 				"marketplace_addr,randomwalk_addr," +
 				"mp_a.address_id,rw_a.address_id "+
-			"FROM rw_contracts ca " +
-				"JOIN address mp_a ON mp.marketplace_addr=mp_a.addr " +
-				"JOIN address rw_a ON rw.ransomwalk_addr=rw_a.addr "
+			"FROM rw_contracts rw " +
+				"JOIN address mp_a ON rw.marketplace_addr=mp_a.addr " +
+				"JOIN address rw_a ON rw.randomwalk_addr=rw_a.addr "
 
 	res := ss.db.QueryRow(query)
 	err := res.Scan(
@@ -86,9 +86,9 @@ func (ss *SQLStorage) Insert_new_offer(evt *p.RW_NewOffer) {
 	var query string
 	query = "INSERT INTO rw_new_offer(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"buyer_aid,seller_id,token_id,active,price" +
+				"offer_id,token_id,buyer_aid,seller_aid,active,price" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11"+
 			")"
 	_,err := ss.db.Exec(query,
 		evt.EvtId,
@@ -96,9 +96,10 @@ func (ss *SQLStorage) Insert_new_offer(evt *p.RW_NewOffer) {
 		evt.TxId,
 		evt.TimeStamp,
 		contract_aid,
+		evt.OfferId,
+		evt.TokenId,
 		buyer_aid,
 		seller_aid,
-		evt.TokenId,
 		true,
 		evt.Price,
 	)
@@ -152,6 +153,58 @@ func (ss *SQLStorage) Insert_offer_canceled(evt *p.RW_OfferCanceled) {
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into offer_canceled table: %v\n",err))
+		os.Exit(1)
+	}
+
+}
+func (ss *SQLStorage) Insert_withdrawal(evt *p.RW_Withdrawal) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	aid:=ss.Lookup_or_create_address(evt.Destination,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO rw_withdrawal(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"aid,token_id,amount" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8"+
+			")"
+	_,err := ss.db.Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		aid,
+		evt.TokenId,
+		evt.Amount,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into rw_withdrawal table: %v\n",err))
+		os.Exit(1)
+	}
+
+}
+func (ss *SQLStorage) Insert_token_name(evt *p.RW_TokenName) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO rw_token_name(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"token_id,new_name" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7"+
+			")"
+	_,err := ss.db.Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.TokenId,
+		evt.NewName,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into rw_token_name table: %v\n",err))
 		os.Exit(1)
 	}
 

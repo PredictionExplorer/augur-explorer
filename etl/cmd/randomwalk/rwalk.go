@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"fmt"
 	"bytes"
 	//"context"
@@ -42,19 +43,19 @@ func build_list_of_inspected_events_layer1() []InspectedEvent {
 	return inspected_events
 }
 func proc_new_offer(log *types.Log,elog *EthereumEventLog) {
-/*
-	var evt Pol_ConditionPreparation
-	var eth_evt EConditionPreparation
 
-	eth_evt.ConditionId = log.Topics[1]
-	eth_evt.Oracle = common.BytesToAddress(log.Topics[2][12:])
-	eth_evt.QuestionId = log.Topics[3]
+	var evt RW_NewOffer
+	var eth_evt ERandomWalk_NewOffer
 
-	Info.Printf("Processing ConditionPreparation event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
+		Info.Printf("Skipping another instance of MarketPlace contract %v\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing NewOffer event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := condtoken_abi.Unpack(&eth_evt,"ConditionPreparation",log.Data)
+	err := marketplace_abi.Unpack(&eth_evt,"NewOffer",log.Data)
 	if err != nil {
-		Error.Printf("Event ConditionPreparation decode error: %v",err)
+		Error.Printf("Event NewOffer decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -63,27 +64,136 @@ func proc_new_offer(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.ConditionId = hex.EncodeToString(eth_evt.ConditionId[:])
-	evt.OracleAddr = eth_evt.Oracle.String()
-	evt.QuestionId = hex.EncodeToString(eth_evt.QuestionId[:])
-	evt.OutcomeSlotCount = eth_evt.OutcomeSlotCount.String()
+	evt.Seller = eth_evt.Seller.String()
+	evt.Buyer = eth_evt.Buyer.String()
+	evt.Price = eth_evt.Price.String()
+	evt.OfferId = log.Topics[1].Big().Int64()
+	evt.TokenId = log.Topics[2].Big().Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("ConditionPreparation{\n")
-	Info.Printf("\tConditionId: %v\n",evt.ConditionId)
-	Info.Printf("\tOracle: %v\n",evt.OracleAddr)
-	Info.Printf("\tQuestionId: %v\n",evt.QuestionId)
-	Info.Printf("\tOutcomeSlotCount: %v\n",evt.OutcomeSlotCount)
+	Info.Printf("NewOffer {\n")
+	Info.Printf("\tOfferId: %v\n",evt.OfferId)
+	Info.Printf("\tTokenId: %v\n",evt.TokenId)
+	Info.Printf("\tSeller: %v\n",evt.Seller)
+	Info.Printf("\tBuyer: %v\n",evt.Buyer)
 	Info.Printf("}\n")
 
-	storage.Insert_condition_preparation(&evt)
-	*/
+	storage.Insert_new_offer(&evt)
+
 }
 func proc_item_bought(log *types.Log,elog *EthereumEventLog) {
 
+	var evt RW_ItemBought
+
+	if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
+		Info.Printf("Skipping another instance of MarketPlace contract %v\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing ItemBought id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.OfferId = log.Topics[1].Big().Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("ItemBought {\n")
+	Info.Printf("\tOfferId: %v\n",evt.OfferId)
+	Info.Printf("}\n")
+
+	storage.Insert_item_bought(&evt)
 }
 func proc_offer_cancelled(log *types.Log,elog *EthereumEventLog) {
 
+	var evt RW_OfferCanceled
+
+	if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
+		Info.Printf("Skipping another instance of MarketPlace contract %v\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing OfferCanceled id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.OfferId = log.Topics[1].Big().Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("OfferCanceled {\n")
+	Info.Printf("\tOfferId: %v\n",evt.OfferId)
+	Info.Printf("}\n")
+
+	storage.Insert_offer_canceled(&evt)
+}
+func proc_withdrawal(log *types.Log,elog *EthereumEventLog) {
+
+	var evt RW_Withdrawal
+	var eth_evt ERandomWalk_WithdrawalEvent
+
+	if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
+		Info.Printf("Skipping another instance of RandomWalk contract %v\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing WithdrawalEvent id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := randomwalk_abi.Unpack(&eth_evt,"WithdrawalEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event WithdrawalEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.TokenId = eth_evt.TokenId.Int64()
+	evt.Destination = eth_evt.Destination.String()
+	evt.Amount = eth_evt.Amount.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("Withdrawal {\n")
+	Info.Printf("\tTokenId: %v\n",evt.TokenId)
+	Info.Printf("\tDestination: %v\n",evt.Destination)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("}\n")
+
+	storage.Insert_withdrawal(&evt)
+}
+func proc_token_name(log *types.Log,elog *EthereumEventLog) {
+
+	var evt RW_TokenName
+	var eth_evt ERandomWalk_TokenNameEvent
+
+	if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
+		Info.Printf("Skipping another instance of RandomWalk contract %v\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing TokenName id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := randomwalk_abi.Unpack(&eth_evt,"TokenNameEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event TokenName decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.TokenId = eth_evt.TokenId.Int64()
+	evt.NewName= eth_evt.NewName
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("TokenName {\n")
+	Info.Printf("\tTokenId: %v\n",evt.TokenId)
+	Info.Printf("\tNewName: %v\n",evt.NewName)
+	Info.Printf("}\n")
+
+	storage.Insert_token_name(&evt)
 }
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
@@ -96,6 +206,12 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_offer_canceled) {
 		proc_offer_cancelled(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_withdrawal) {
+		proc_withdrawal(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_token_name) {
+		proc_token_name(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {
