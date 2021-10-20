@@ -13,7 +13,7 @@ import (
 	a "github.com/PredictionExplorer/augur-explorer/amm"
 
 )
-func (ss *SQLStorage) Get_arbitrum_augur_contract_addresses() (p.AA_ContractAddrs) {
+func (ss *SQLStorage) Get_augur_amm_contract_addresses() (p.AA_ContractAddrs) {
 
 	var query string
 	query="SELECT " +
@@ -37,7 +37,7 @@ func (ss *SQLStorage) Get_arbitrum_augur_contract_addresses() (p.AA_ContractAddr
 			ss.Log_msg(fmt.Sprintf("No contract addresses in AMM contracts table %v"))
 			os.Exit(1)
 		} else {
-			ss.Log_msg(fmt.Sprintf("Error in Get_arbitrum_augur_contract_addresses(): %v",err))
+			ss.Log_msg(fmt.Sprintf("Error in Get_augur_amm_contract_addresses(): %v",err))
 			os.Exit(1)
 		}
 	}

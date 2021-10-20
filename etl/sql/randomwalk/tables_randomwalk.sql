@@ -8,6 +8,7 @@ CREATE TABLE rw_new_offer(
 	offer_id		BIGINT NOT NULL,
 	seller_aid		BIGINT NOT NULL,
 	buyer_aid		BIGINT NOT NULL,
+	otype			SMALLINT NOT NULL, --0-buy offer,1-sell offer
 	token_id		TEXT NOT NULL,
 	active			BOOLEAN,
 	price			DECIMAL,
@@ -39,7 +40,7 @@ CREATE TABLE rw_withdrawal (
 	time_stamp		TIMESTAMPTZ NOT NULL,
 	contract_aid	BIGINT NOT NULL,
 	aid				BIGINT NOT NULL,
-	token_id		TEXT NOT NULL,
+	token_id		BIGINT NOT NULL,
 	amount			DECIMAL
 );
 CREATE TABLE rw_token_name(
@@ -49,8 +50,20 @@ CREATE TABLE rw_token_name(
 	tx_id			BIGINT NOT NULL,
 	time_stamp		TIMESTAMPTZ NOT NULL,
 	contract_aid	BIGINT NOT NULL,
-	token_id		TEXT NOT NULL,
+	token_id		BIGINT NOT NULL,
 	new_name		TEXT
+);
+CREATE TABLE rw_transfer(
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	token_id		BIGINT NOT NULL,
+	from_aid		BIGINT NOT NULL,
+	to_aid			BIGINT NOT NULL,
+	otype			SMALLINT NOT NULL-- 0-regular transfer,1-Mint,2-Burn
 );
 CREATE TABLE rw_proc_status (
 	last_evt_id             BIGINT DEFAULT 0,

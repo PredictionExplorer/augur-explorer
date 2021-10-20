@@ -49,6 +49,13 @@ type ERandomWalk_TokenNameEvent struct {
 	NewName string
 	Raw     types.Log // Blockchain specific contextual infos
 }
+type ERandomWalkTransfer struct {
+	//signature: 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+	From    common.Address
+	To      common.Address
+	TokenId *big.Int
+	Raw     types.Log // Blockchain specific contextual infos
+}
 
 type RW_NewOffer struct {
 	EvtId                   int64
@@ -97,4 +104,13 @@ type RW_TokenName struct {
 	TokenId					int64
 	NewName					string
 }
-
+type RW_Transfer struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	From					string
+	To						string
+	TokenId					int64
+}

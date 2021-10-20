@@ -43,7 +43,9 @@ func connect_to_amm(srv *AugurServer) {
 	amm_passwd := os.Getenv("AMM_PASSWORD")
 	amm_db_name := os.Getenv("AMM_DATABASE")
 	amm_host_port := os.Getenv("AMM_HOST")
+	fmt.Printf("connecting to amm\n")
 	if len(amm_user) > 0 {
+		fmt.Printf("Amm=%v\n",amm_user)
 		log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 		db_log_file:=fmt.Sprintf("%v/%v",log_dir,"amm-db.log")
 		amm_db_logfile, err := os.OpenFile(db_log_file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
@@ -80,7 +82,7 @@ func connect_to_arbitrum(srv *AugurServer ) {
 		}
 		arb_DB := log.New(arbitrum_db_logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 
-		srv.db_matic = New_sql_storage(
+		srv.db_arbitrum= New_sql_storage(
 			&market_order_id,
 			Info,
 			arb_DB,

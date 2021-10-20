@@ -114,6 +114,9 @@ func set_routing_polymarket(r *gin.Engine) {
 	r.GET("/black/poly/categories/list",poly_market_categories)
 	r.GET("/black/poly/search",poly_market_search)
 }
+func set_routing_randomwalk(r *gin.Engine) {
+	r.GET("/black/rwalk/current_offers",rwalk_current_offers)
+}
 func set_routing_black_templates(r *gin.Engine) {
 
 	set_routing_augur_v2(r)
@@ -123,6 +126,7 @@ func set_routing_black_templates(r *gin.Engine) {
 	set_routing_ens(r)
 	set_routing_augur_amm(r)
 	set_routing_polymarket(r)
+	set_routing_randomwalk(r)
 
 	r.GET("/black/ethusd/",show_ethusd_price)
 

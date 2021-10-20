@@ -393,7 +393,7 @@ BEGIN
 		LIMIT 1
 		INTO v_mkt_mkr_aid;
 	IF v_mkt_mkr_aid IS NULL THEN
-		RAISE EXCEPTION 'Market not registered for condition  %, update pol_markets table',NEW.condition_id;
+		--RAISE EXCEPTION 'Market not registered for condition  %, update pol_markets table',NEW.condition_id;
 		RETURN NEW;
 	END IF;
 	IF v_contract_aid IS NULL THEN

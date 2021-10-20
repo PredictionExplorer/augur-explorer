@@ -1,10 +1,10 @@
 package primitives
 
 import (
-	"math/big"
+	//"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	//"github.com/ethereum/go-ethereum/common"
+	//"github.com/ethereum/go-ethereum/core/types"
 
 )
 type RW_API_Offer struct {
@@ -12,9 +12,12 @@ type RW_API_Offer struct {
 	EvtLogId		int64
 	BlockNum		int64
 	TxId			int64
-	TimeStamp		string
+	TxHash			string
+	TimeStamp		int64
+	DateTime		string
 	ContractAid		int64
 	OfferId			int64
+	OfferType		int
 	SellerAid		int64
 	SellerAddr		string
 	BuyerAid		int64

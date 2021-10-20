@@ -31,6 +31,7 @@ const (
 	OFFER_CANCELED=	"0ff09947dd7d2583091e8cbfb427fecacb697bf895187b243fd0072c0ee9b951"
 	WITHDRAWAL_EVT=	"a11b556ace4b11a5cae8675a293b51e8cde3a06387d34010861789dfd9e9abc7"
 	TOKEN_NAME_EVT=	"8ad5e159ff95649c8a9f323ac5a457e741897cf44ce07dfce0e98b84ef9d5f12"
+	TRANSFER_EVT=	"ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 )
 var (
 	evt_new_offer ,_ = hex.DecodeString(NEW_OFFER)
@@ -38,6 +39,7 @@ var (
 	evt_offer_canceled,_ = hex.DecodeString(OFFER_CANCELED)
 	evt_withdrawal,_ = hex.DecodeString(WITHDRAWAL_EVT)
 	evt_token_name,_ = hex.DecodeString(TOKEN_NAME_EVT)
+	evt_transfer,_	 = hex.DecodeString(TRANSFER_EVT)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -59,9 +61,18 @@ var (
 func get_event_ids(from_evt_id,to_evt_id int64) []int64 {
 	output := make([]int64 ,0,1024)
 	for _,e := range inspected_events {
-		event_list := storage.Get_evtlogs_by_signature_only_in_range(
-			e.Signature,from_evt_id,to_evt_id,
-		)
+		var event_list []int64
+		if hex.EncodeToString(evt_transfer[:4]) == e.Signature {
+			// Transfer event is filtered by contract address for speed
+			event_list = storage.Get_evtlogs_by_signature_in_range(
+				e.Signature,fmt.Sprintf("%v",e.ContractAid),from_evt_id,to_evt_id,
+			)
+		} else {
+			// all other events are fetched without filtering by Contract address
+			event_list = storage.Get_evtlogs_by_signature_only_in_range(
+				e.Signature,from_evt_id,to_evt_id,
+			)
+		}
 		output = append(output,event_list...)
 	}
 	sort.Slice(output, func(i, j int) bool { return output[i] < output[j] })
@@ -159,7 +170,7 @@ func main() {
 	marketplace_abi = &ab1
 	abi_parsed2 := strings.NewReader(RWalkABI)
 	ab2,err := abi.JSON(abi_parsed2)
-	if err!= nil {
+	if err != nil {
 		Info.Printf("Can't parse RandomWalk ABI: %v\n",err)
 		os.Exit(1)
 	}
@@ -180,6 +191,6 @@ func main() {
 	}()
 
 
-	inspected_events = build_list_of_inspected_events_layer1()
+	inspected_events = build_list_of_inspected_events_layer1(rw_contracts.RandomWalkAid)
 	process_events(exit_chan)
 }
