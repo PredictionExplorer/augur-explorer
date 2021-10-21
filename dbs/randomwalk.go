@@ -81,6 +81,7 @@ func (ss *SQLStorage) Get_randomwalk_contract_addresses() p.RW_ContractAddresses
 func (ss *SQLStorage) Insert_new_offer(evt *p.RW_NewOffer) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	rwalk_aid:=ss.Lookup_or_create_address(evt.RWalkAddr,evt.BlockNum,evt.TxId)
 	buyer_aid:=ss.Lookup_or_create_address(evt.Buyer,evt.BlockNum,evt.TxId)
 	seller_aid:=ss.Lookup_or_create_address(evt.Seller,evt.BlockNum,evt.TxId)
 	otype:=int(1)
@@ -90,9 +91,9 @@ func (ss *SQLStorage) Insert_new_offer(evt *p.RW_NewOffer) {
 	var query string
 	query = "INSERT INTO rw_new_offer(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"offer_id,otype,token_id,buyer_aid,seller_aid,active,price" +
+				"rwalk_aid,offer_id,otype,token_id,buyer_aid,seller_aid,active,price" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11,$12"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11,$12,$13"+
 			")"
 	_,err := ss.db.Exec(query,
 		evt.EvtId,
@@ -100,6 +101,7 @@ func (ss *SQLStorage) Insert_new_offer(evt *p.RW_NewOffer) {
 		evt.TxId,
 		evt.TimeStamp,
 		contract_aid,
+		rwalk_aid,
 		evt.OfferId,
 		otype,
 		evt.TokenId,
@@ -112,7 +114,6 @@ func (ss *SQLStorage) Insert_new_offer(evt *p.RW_NewOffer) {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into new_offer table: %v\n",err))
 		os.Exit(1)
 	}
-
 }
 func (ss *SQLStorage) Insert_item_bought(evt *p.RW_ItemBought) {
 
@@ -213,6 +214,33 @@ func (ss *SQLStorage) Insert_token_name(evt *p.RW_TokenName) {
 		os.Exit(1)
 	}
 
+}
+func (ss *SQLStorage) Insert_mint_event(evt *p.RW_MintEvent) {
+
+	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	owner_aid:=ss.Lookup_or_create_address(evt.Owner,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO rw_(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"token_id,owner_aid,seed,price" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
+			")"
+	_,err := ss.db.Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.TokenId,
+		owner_aid,
+		evt.Seed,
+		evt.Price,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into rw_mint_evt table: %v\n",err))
+		os.Exit(1)
+	}
 }
 func (ss *SQLStorage) Insert_token_transfer_event(evt *p.RW_Transfer) {
 

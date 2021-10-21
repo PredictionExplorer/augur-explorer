@@ -199,6 +199,44 @@ func proc_token_name(log *types.Log,elog *EthereumEventLog) {
 
 	storage.Insert_token_name(&evt)
 }
+func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt RW_MintEvent
+	var eth_evt ERandomWalk_MintEvent
+
+	if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
+		Info.Printf("Skipping another instance of RandomWalk contract %v\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing MintEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	err := randomwalk_abi.Unpack(&eth_evt,"MintEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event MintEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.TokenId= log.Topics[1].Big().Int64()
+	evt.Owner= common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.Seed= hex.EncodeToString(eth_evt.Seed[:])
+	evt.Price = eth_evt.Price.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("MintEvent {\n")
+	Info.Printf("\tTokenId: %v\n",evt.TokenId)
+	Info.Printf("\tOwner %v\n",evt.Owner)
+	Info.Printf("\tSeed: %v\n",evt.Seed)
+	Info.Printf("\tPrice: %v\n",evt.Price)
+	Info.Printf("}\n")
+
+	storage.Insert_mint_event(&evt)
+
+}
 func proc_transfer_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt RW_Transfer
@@ -247,6 +285,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_transfer) {
 		proc_transfer_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_mint_event) {
+		proc_mint_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {

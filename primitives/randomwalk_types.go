@@ -18,7 +18,8 @@ type RW_ContractAddresses struct {
 	RandomWalkAid			int64
 }
 type ERandomWalk_NewOffer struct {
-	//signature: 0x8b4d06c200b17b9c1150172953ceb6fa3e7ace7623f6f933707badfa52c354cf
+	//signature: 55076e90b6b34a2569ffb2e1e34ee0da92d30ca423f0d6cfb317d252ade9a56a
+	NftAddress common.Address
 	OfferId *big.Int
 	TokenId *big.Int
 	Seller  common.Address
@@ -49,6 +50,14 @@ type ERandomWalk_TokenNameEvent struct {
 	NewName string
 	Raw     types.Log // Blockchain specific contextual infos
 }
+type ERandomWalk_MintEvent struct {
+	//signature: 0xad2bc79f659de022c64ef55c71f16d0cf125452ed5fc5757b2edc331f58565ec
+	TokenId *big.Int
+	Owner   common.Address
+	Seed    [32]byte
+	Price   *big.Int
+	Raw     types.Log // Blockchain specific contextual infos
+}
 type ERandomWalkTransfer struct {
 	//signature: 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
 	From    common.Address
@@ -65,6 +74,7 @@ type RW_NewOffer struct {
 	OfferId					int64
 	TokenId					int64
 	Contract                string
+	RWalkAddr				string
 	Buyer					string
 	Seller					string
 	Price					string
@@ -113,4 +123,15 @@ type RW_Transfer struct {
 	From					string
 	To						string
 	TokenId					int64
+}
+type RW_MintEvent struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	TokenId					int64
+	Owner					string
+	Seed					string
+	Price					string
 }

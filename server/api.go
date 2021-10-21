@@ -13,10 +13,6 @@ import (
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-const (
-	JSON				bool = true
-	HTTP				bool = false
-)
 func a1_active_market_ids(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")

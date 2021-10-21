@@ -115,7 +115,7 @@ func set_routing_polymarket(r *gin.Engine) {
 	r.GET("/black/poly/search",poly_market_search)
 }
 func set_routing_randomwalk(r *gin.Engine) {
-	r.GET("/black/rwalk/current_offers",rwalk_current_offers)
+	r.GET("/black/rwalk/current_offers/:order_by",rwalk_current_offers)
 }
 func set_routing_black_templates(r *gin.Engine) {
 

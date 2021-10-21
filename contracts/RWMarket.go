@@ -28,7 +28,7 @@ var (
 )
 
 // RWMarketABI is the input ABI used to generate the binding from.
-const RWMarketABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"nftAddr\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"ItemBought\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"seller\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"buyer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"}],\"name\":\"NewOffer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"OfferCanceled\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"acceptBuyOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"acceptSellOffer\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"cancelBuyOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"cancelSellOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"getBuyOffers\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"buyer\",\"type\":\"address\"}],\"name\":\"getBuyOffersBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"buyer\",\"type\":\"address\"}],\"name\":\"getBuyTokensBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"getSellOffers\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"seller\",\"type\":\"address\"}],\"name\":\"getSellOffersBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"seller\",\"type\":\"address\"}],\"name\":\"getSellTokenBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"makeBuyOffer\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"}],\"name\":\"makeSellOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numOffers\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"offers\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"seller\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"buyer\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"active\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"onERC721Received\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}]"
+const RWMarketABI = "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"ItemBought\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"seller\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"buyer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"}],\"name\":\"NewOffer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"OfferCanceled\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"acceptBuyOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"acceptSellOffer\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"cancelBuyOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"offerId\",\"type\":\"uint256\"}],\"name\":\"cancelSellOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC721\",\"name\":\"_nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"getBuyOffers\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC721\",\"name\":\"_nftAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"buyer\",\"type\":\"address\"}],\"name\":\"getBuyOffersBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC721\",\"name\":\"_nftAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"buyer\",\"type\":\"address\"}],\"name\":\"getBuyTokensBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC721\",\"name\":\"_nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"getSellOffers\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC721\",\"name\":\"_nftAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"seller\",\"type\":\"address\"}],\"name\":\"getSellOffersBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC721\",\"name\":\"_nftAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"seller\",\"type\":\"address\"}],\"name\":\"getSellTokenBy\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC721\",\"name\":\"_nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"makeBuyOffer\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC721\",\"name\":\"_nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"}],\"name\":\"makeSellOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numOffers\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"offers\",\"outputs\":[{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"seller\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"buyer\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"active\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"onERC721Received\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}]"
 
 // RWMarket is an auto generated Go binding around an Ethereum contract.
 type RWMarket struct {
@@ -172,160 +172,160 @@ func (_RWMarket *RWMarketTransactorRaw) Transact(opts *bind.TransactOpts, method
 	return _RWMarket.Contract.contract.Transact(opts, method, params...)
 }
 
-// GetBuyOffers is a free data retrieval call binding the contract method 0xdbea17f2.
+// GetBuyOffers is a free data retrieval call binding the contract method 0xaefa195d.
 //
-// Solidity: function getBuyOffers(uint256 tokenId) view returns(uint256[])
-func (_RWMarket *RWMarketCaller) GetBuyOffers(opts *bind.CallOpts, tokenId *big.Int) ([]*big.Int, error) {
+// Solidity: function getBuyOffers(address _nftAddress, uint256 tokenId) view returns(uint256[])
+func (_RWMarket *RWMarketCaller) GetBuyOffers(opts *bind.CallOpts, _nftAddress common.Address, tokenId *big.Int) ([]*big.Int, error) {
 	var (
 		ret0 = new([]*big.Int)
 	)
 	out := ret0
-	err := _RWMarket.contract.Call(opts, out, "getBuyOffers", tokenId)
+	err := _RWMarket.contract.Call(opts, out, "getBuyOffers", _nftAddress, tokenId)
 	return *ret0, err
 }
 
-// GetBuyOffers is a free data retrieval call binding the contract method 0xdbea17f2.
+// GetBuyOffers is a free data retrieval call binding the contract method 0xaefa195d.
 //
-// Solidity: function getBuyOffers(uint256 tokenId) view returns(uint256[])
-func (_RWMarket *RWMarketSession) GetBuyOffers(tokenId *big.Int) ([]*big.Int, error) {
-	return _RWMarket.Contract.GetBuyOffers(&_RWMarket.CallOpts, tokenId)
+// Solidity: function getBuyOffers(address _nftAddress, uint256 tokenId) view returns(uint256[])
+func (_RWMarket *RWMarketSession) GetBuyOffers(_nftAddress common.Address, tokenId *big.Int) ([]*big.Int, error) {
+	return _RWMarket.Contract.GetBuyOffers(&_RWMarket.CallOpts, _nftAddress, tokenId)
 }
 
-// GetBuyOffers is a free data retrieval call binding the contract method 0xdbea17f2.
+// GetBuyOffers is a free data retrieval call binding the contract method 0xaefa195d.
 //
-// Solidity: function getBuyOffers(uint256 tokenId) view returns(uint256[])
-func (_RWMarket *RWMarketCallerSession) GetBuyOffers(tokenId *big.Int) ([]*big.Int, error) {
-	return _RWMarket.Contract.GetBuyOffers(&_RWMarket.CallOpts, tokenId)
+// Solidity: function getBuyOffers(address _nftAddress, uint256 tokenId) view returns(uint256[])
+func (_RWMarket *RWMarketCallerSession) GetBuyOffers(_nftAddress common.Address, tokenId *big.Int) ([]*big.Int, error) {
+	return _RWMarket.Contract.GetBuyOffers(&_RWMarket.CallOpts, _nftAddress, tokenId)
 }
 
-// GetBuyOffersBy is a free data retrieval call binding the contract method 0xfd5820eb.
+// GetBuyOffersBy is a free data retrieval call binding the contract method 0x2a9a59ca.
 //
-// Solidity: function getBuyOffersBy(address buyer) view returns(uint256[])
-func (_RWMarket *RWMarketCaller) GetBuyOffersBy(opts *bind.CallOpts, buyer common.Address) ([]*big.Int, error) {
+// Solidity: function getBuyOffersBy(address _nftAddress, address buyer) view returns(uint256[])
+func (_RWMarket *RWMarketCaller) GetBuyOffersBy(opts *bind.CallOpts, _nftAddress common.Address, buyer common.Address) ([]*big.Int, error) {
 	var (
 		ret0 = new([]*big.Int)
 	)
 	out := ret0
-	err := _RWMarket.contract.Call(opts, out, "getBuyOffersBy", buyer)
+	err := _RWMarket.contract.Call(opts, out, "getBuyOffersBy", _nftAddress, buyer)
 	return *ret0, err
 }
 
-// GetBuyOffersBy is a free data retrieval call binding the contract method 0xfd5820eb.
+// GetBuyOffersBy is a free data retrieval call binding the contract method 0x2a9a59ca.
 //
-// Solidity: function getBuyOffersBy(address buyer) view returns(uint256[])
-func (_RWMarket *RWMarketSession) GetBuyOffersBy(buyer common.Address) ([]*big.Int, error) {
-	return _RWMarket.Contract.GetBuyOffersBy(&_RWMarket.CallOpts, buyer)
+// Solidity: function getBuyOffersBy(address _nftAddress, address buyer) view returns(uint256[])
+func (_RWMarket *RWMarketSession) GetBuyOffersBy(_nftAddress common.Address, buyer common.Address) ([]*big.Int, error) {
+	return _RWMarket.Contract.GetBuyOffersBy(&_RWMarket.CallOpts, _nftAddress, buyer)
 }
 
-// GetBuyOffersBy is a free data retrieval call binding the contract method 0xfd5820eb.
+// GetBuyOffersBy is a free data retrieval call binding the contract method 0x2a9a59ca.
 //
-// Solidity: function getBuyOffersBy(address buyer) view returns(uint256[])
-func (_RWMarket *RWMarketCallerSession) GetBuyOffersBy(buyer common.Address) ([]*big.Int, error) {
-	return _RWMarket.Contract.GetBuyOffersBy(&_RWMarket.CallOpts, buyer)
+// Solidity: function getBuyOffersBy(address _nftAddress, address buyer) view returns(uint256[])
+func (_RWMarket *RWMarketCallerSession) GetBuyOffersBy(_nftAddress common.Address, buyer common.Address) ([]*big.Int, error) {
+	return _RWMarket.Contract.GetBuyOffersBy(&_RWMarket.CallOpts, _nftAddress, buyer)
 }
 
-// GetBuyTokensBy is a free data retrieval call binding the contract method 0x78d2c9f1.
+// GetBuyTokensBy is a free data retrieval call binding the contract method 0xc39365b7.
 //
-// Solidity: function getBuyTokensBy(address buyer) view returns(uint256[])
-func (_RWMarket *RWMarketCaller) GetBuyTokensBy(opts *bind.CallOpts, buyer common.Address) ([]*big.Int, error) {
+// Solidity: function getBuyTokensBy(address _nftAddress, address buyer) view returns(uint256[])
+func (_RWMarket *RWMarketCaller) GetBuyTokensBy(opts *bind.CallOpts, _nftAddress common.Address, buyer common.Address) ([]*big.Int, error) {
 	var (
 		ret0 = new([]*big.Int)
 	)
 	out := ret0
-	err := _RWMarket.contract.Call(opts, out, "getBuyTokensBy", buyer)
+	err := _RWMarket.contract.Call(opts, out, "getBuyTokensBy", _nftAddress, buyer)
 	return *ret0, err
 }
 
-// GetBuyTokensBy is a free data retrieval call binding the contract method 0x78d2c9f1.
+// GetBuyTokensBy is a free data retrieval call binding the contract method 0xc39365b7.
 //
-// Solidity: function getBuyTokensBy(address buyer) view returns(uint256[])
-func (_RWMarket *RWMarketSession) GetBuyTokensBy(buyer common.Address) ([]*big.Int, error) {
-	return _RWMarket.Contract.GetBuyTokensBy(&_RWMarket.CallOpts, buyer)
+// Solidity: function getBuyTokensBy(address _nftAddress, address buyer) view returns(uint256[])
+func (_RWMarket *RWMarketSession) GetBuyTokensBy(_nftAddress common.Address, buyer common.Address) ([]*big.Int, error) {
+	return _RWMarket.Contract.GetBuyTokensBy(&_RWMarket.CallOpts, _nftAddress, buyer)
 }
 
-// GetBuyTokensBy is a free data retrieval call binding the contract method 0x78d2c9f1.
+// GetBuyTokensBy is a free data retrieval call binding the contract method 0xc39365b7.
 //
-// Solidity: function getBuyTokensBy(address buyer) view returns(uint256[])
-func (_RWMarket *RWMarketCallerSession) GetBuyTokensBy(buyer common.Address) ([]*big.Int, error) {
-	return _RWMarket.Contract.GetBuyTokensBy(&_RWMarket.CallOpts, buyer)
+// Solidity: function getBuyTokensBy(address _nftAddress, address buyer) view returns(uint256[])
+func (_RWMarket *RWMarketCallerSession) GetBuyTokensBy(_nftAddress common.Address, buyer common.Address) ([]*big.Int, error) {
+	return _RWMarket.Contract.GetBuyTokensBy(&_RWMarket.CallOpts, _nftAddress, buyer)
 }
 
-// GetSellOffers is a free data retrieval call binding the contract method 0x5507f91c.
+// GetSellOffers is a free data retrieval call binding the contract method 0x6ac94a62.
 //
-// Solidity: function getSellOffers(uint256 tokenId) view returns(uint256[])
-func (_RWMarket *RWMarketCaller) GetSellOffers(opts *bind.CallOpts, tokenId *big.Int) ([]*big.Int, error) {
+// Solidity: function getSellOffers(address _nftAddress, uint256 tokenId) view returns(uint256[])
+func (_RWMarket *RWMarketCaller) GetSellOffers(opts *bind.CallOpts, _nftAddress common.Address, tokenId *big.Int) ([]*big.Int, error) {
 	var (
 		ret0 = new([]*big.Int)
 	)
 	out := ret0
-	err := _RWMarket.contract.Call(opts, out, "getSellOffers", tokenId)
+	err := _RWMarket.contract.Call(opts, out, "getSellOffers", _nftAddress, tokenId)
 	return *ret0, err
 }
 
-// GetSellOffers is a free data retrieval call binding the contract method 0x5507f91c.
+// GetSellOffers is a free data retrieval call binding the contract method 0x6ac94a62.
 //
-// Solidity: function getSellOffers(uint256 tokenId) view returns(uint256[])
-func (_RWMarket *RWMarketSession) GetSellOffers(tokenId *big.Int) ([]*big.Int, error) {
-	return _RWMarket.Contract.GetSellOffers(&_RWMarket.CallOpts, tokenId)
+// Solidity: function getSellOffers(address _nftAddress, uint256 tokenId) view returns(uint256[])
+func (_RWMarket *RWMarketSession) GetSellOffers(_nftAddress common.Address, tokenId *big.Int) ([]*big.Int, error) {
+	return _RWMarket.Contract.GetSellOffers(&_RWMarket.CallOpts, _nftAddress, tokenId)
 }
 
-// GetSellOffers is a free data retrieval call binding the contract method 0x5507f91c.
+// GetSellOffers is a free data retrieval call binding the contract method 0x6ac94a62.
 //
-// Solidity: function getSellOffers(uint256 tokenId) view returns(uint256[])
-func (_RWMarket *RWMarketCallerSession) GetSellOffers(tokenId *big.Int) ([]*big.Int, error) {
-	return _RWMarket.Contract.GetSellOffers(&_RWMarket.CallOpts, tokenId)
+// Solidity: function getSellOffers(address _nftAddress, uint256 tokenId) view returns(uint256[])
+func (_RWMarket *RWMarketCallerSession) GetSellOffers(_nftAddress common.Address, tokenId *big.Int) ([]*big.Int, error) {
+	return _RWMarket.Contract.GetSellOffers(&_RWMarket.CallOpts, _nftAddress, tokenId)
 }
 
-// GetSellOffersBy is a free data retrieval call binding the contract method 0x883332e2.
+// GetSellOffersBy is a free data retrieval call binding the contract method 0xa374c7a1.
 //
-// Solidity: function getSellOffersBy(address seller) view returns(uint256[])
-func (_RWMarket *RWMarketCaller) GetSellOffersBy(opts *bind.CallOpts, seller common.Address) ([]*big.Int, error) {
+// Solidity: function getSellOffersBy(address _nftAddress, address seller) view returns(uint256[])
+func (_RWMarket *RWMarketCaller) GetSellOffersBy(opts *bind.CallOpts, _nftAddress common.Address, seller common.Address) ([]*big.Int, error) {
 	var (
 		ret0 = new([]*big.Int)
 	)
 	out := ret0
-	err := _RWMarket.contract.Call(opts, out, "getSellOffersBy", seller)
+	err := _RWMarket.contract.Call(opts, out, "getSellOffersBy", _nftAddress, seller)
 	return *ret0, err
 }
 
-// GetSellOffersBy is a free data retrieval call binding the contract method 0x883332e2.
+// GetSellOffersBy is a free data retrieval call binding the contract method 0xa374c7a1.
 //
-// Solidity: function getSellOffersBy(address seller) view returns(uint256[])
-func (_RWMarket *RWMarketSession) GetSellOffersBy(seller common.Address) ([]*big.Int, error) {
-	return _RWMarket.Contract.GetSellOffersBy(&_RWMarket.CallOpts, seller)
+// Solidity: function getSellOffersBy(address _nftAddress, address seller) view returns(uint256[])
+func (_RWMarket *RWMarketSession) GetSellOffersBy(_nftAddress common.Address, seller common.Address) ([]*big.Int, error) {
+	return _RWMarket.Contract.GetSellOffersBy(&_RWMarket.CallOpts, _nftAddress, seller)
 }
 
-// GetSellOffersBy is a free data retrieval call binding the contract method 0x883332e2.
+// GetSellOffersBy is a free data retrieval call binding the contract method 0xa374c7a1.
 //
-// Solidity: function getSellOffersBy(address seller) view returns(uint256[])
-func (_RWMarket *RWMarketCallerSession) GetSellOffersBy(seller common.Address) ([]*big.Int, error) {
-	return _RWMarket.Contract.GetSellOffersBy(&_RWMarket.CallOpts, seller)
+// Solidity: function getSellOffersBy(address _nftAddress, address seller) view returns(uint256[])
+func (_RWMarket *RWMarketCallerSession) GetSellOffersBy(_nftAddress common.Address, seller common.Address) ([]*big.Int, error) {
+	return _RWMarket.Contract.GetSellOffersBy(&_RWMarket.CallOpts, _nftAddress, seller)
 }
 
-// GetSellTokenBy is a free data retrieval call binding the contract method 0x55479649.
+// GetSellTokenBy is a free data retrieval call binding the contract method 0x5f4364ae.
 //
-// Solidity: function getSellTokenBy(address seller) view returns(uint256[])
-func (_RWMarket *RWMarketCaller) GetSellTokenBy(opts *bind.CallOpts, seller common.Address) ([]*big.Int, error) {
+// Solidity: function getSellTokenBy(address _nftAddress, address seller) view returns(uint256[])
+func (_RWMarket *RWMarketCaller) GetSellTokenBy(opts *bind.CallOpts, _nftAddress common.Address, seller common.Address) ([]*big.Int, error) {
 	var (
 		ret0 = new([]*big.Int)
 	)
 	out := ret0
-	err := _RWMarket.contract.Call(opts, out, "getSellTokenBy", seller)
+	err := _RWMarket.contract.Call(opts, out, "getSellTokenBy", _nftAddress, seller)
 	return *ret0, err
 }
 
-// GetSellTokenBy is a free data retrieval call binding the contract method 0x55479649.
+// GetSellTokenBy is a free data retrieval call binding the contract method 0x5f4364ae.
 //
-// Solidity: function getSellTokenBy(address seller) view returns(uint256[])
-func (_RWMarket *RWMarketSession) GetSellTokenBy(seller common.Address) ([]*big.Int, error) {
-	return _RWMarket.Contract.GetSellTokenBy(&_RWMarket.CallOpts, seller)
+// Solidity: function getSellTokenBy(address _nftAddress, address seller) view returns(uint256[])
+func (_RWMarket *RWMarketSession) GetSellTokenBy(_nftAddress common.Address, seller common.Address) ([]*big.Int, error) {
+	return _RWMarket.Contract.GetSellTokenBy(&_RWMarket.CallOpts, _nftAddress, seller)
 }
 
-// GetSellTokenBy is a free data retrieval call binding the contract method 0x55479649.
+// GetSellTokenBy is a free data retrieval call binding the contract method 0x5f4364ae.
 //
-// Solidity: function getSellTokenBy(address seller) view returns(uint256[])
-func (_RWMarket *RWMarketCallerSession) GetSellTokenBy(seller common.Address) ([]*big.Int, error) {
-	return _RWMarket.Contract.GetSellTokenBy(&_RWMarket.CallOpts, seller)
+// Solidity: function getSellTokenBy(address _nftAddress, address seller) view returns(uint256[])
+func (_RWMarket *RWMarketCallerSession) GetSellTokenBy(_nftAddress common.Address, seller common.Address) ([]*big.Int, error) {
+	return _RWMarket.Contract.GetSellTokenBy(&_RWMarket.CallOpts, _nftAddress, seller)
 }
 
 // NumOffers is a free data retrieval call binding the contract method 0xcc6bee54.
@@ -356,20 +356,22 @@ func (_RWMarket *RWMarketCallerSession) NumOffers() (*big.Int, error) {
 
 // Offers is a free data retrieval call binding the contract method 0x8a72ea6a.
 //
-// Solidity: function offers(uint256 ) view returns(uint256 tokenId, uint256 price, address seller, address buyer, bool active)
+// Solidity: function offers(uint256 ) view returns(address nftAddress, uint256 tokenId, uint256 price, address seller, address buyer, bool active)
 func (_RWMarket *RWMarketCaller) Offers(opts *bind.CallOpts, arg0 *big.Int) (struct {
-	TokenId *big.Int
-	Price   *big.Int
-	Seller  common.Address
-	Buyer   common.Address
-	Active  bool
+	NftAddress common.Address
+	TokenId    *big.Int
+	Price      *big.Int
+	Seller     common.Address
+	Buyer      common.Address
+	Active     bool
 }, error) {
 	ret := new(struct {
-		TokenId *big.Int
-		Price   *big.Int
-		Seller  common.Address
-		Buyer   common.Address
-		Active  bool
+		NftAddress common.Address
+		TokenId    *big.Int
+		Price      *big.Int
+		Seller     common.Address
+		Buyer      common.Address
+		Active     bool
 	})
 	out := ret
 	err := _RWMarket.contract.Call(opts, out, "offers", arg0)
@@ -378,26 +380,28 @@ func (_RWMarket *RWMarketCaller) Offers(opts *bind.CallOpts, arg0 *big.Int) (str
 
 // Offers is a free data retrieval call binding the contract method 0x8a72ea6a.
 //
-// Solidity: function offers(uint256 ) view returns(uint256 tokenId, uint256 price, address seller, address buyer, bool active)
+// Solidity: function offers(uint256 ) view returns(address nftAddress, uint256 tokenId, uint256 price, address seller, address buyer, bool active)
 func (_RWMarket *RWMarketSession) Offers(arg0 *big.Int) (struct {
-	TokenId *big.Int
-	Price   *big.Int
-	Seller  common.Address
-	Buyer   common.Address
-	Active  bool
+	NftAddress common.Address
+	TokenId    *big.Int
+	Price      *big.Int
+	Seller     common.Address
+	Buyer      common.Address
+	Active     bool
 }, error) {
 	return _RWMarket.Contract.Offers(&_RWMarket.CallOpts, arg0)
 }
 
 // Offers is a free data retrieval call binding the contract method 0x8a72ea6a.
 //
-// Solidity: function offers(uint256 ) view returns(uint256 tokenId, uint256 price, address seller, address buyer, bool active)
+// Solidity: function offers(uint256 ) view returns(address nftAddress, uint256 tokenId, uint256 price, address seller, address buyer, bool active)
 func (_RWMarket *RWMarketCallerSession) Offers(arg0 *big.Int) (struct {
-	TokenId *big.Int
-	Price   *big.Int
-	Seller  common.Address
-	Buyer   common.Address
-	Active  bool
+	NftAddress common.Address
+	TokenId    *big.Int
+	Price      *big.Int
+	Seller     common.Address
+	Buyer      common.Address
+	Active     bool
 }, error) {
 	return _RWMarket.Contract.Offers(&_RWMarket.CallOpts, arg0)
 }
@@ -512,46 +516,46 @@ func (_RWMarket *RWMarketTransactorSession) CancelSellOffer(offerId *big.Int) (*
 	return _RWMarket.Contract.CancelSellOffer(&_RWMarket.TransactOpts, offerId)
 }
 
-// MakeBuyOffer is a paid mutator transaction binding the contract method 0x48bf7c6a.
+// MakeBuyOffer is a paid mutator transaction binding the contract method 0x26af03d6.
 //
-// Solidity: function makeBuyOffer(uint256 tokenId) payable returns()
-func (_RWMarket *RWMarketTransactor) MakeBuyOffer(opts *bind.TransactOpts, tokenId *big.Int) (*types.Transaction, error) {
-	return _RWMarket.contract.Transact(opts, "makeBuyOffer", tokenId)
+// Solidity: function makeBuyOffer(address _nftAddress, uint256 tokenId) payable returns()
+func (_RWMarket *RWMarketTransactor) MakeBuyOffer(opts *bind.TransactOpts, _nftAddress common.Address, tokenId *big.Int) (*types.Transaction, error) {
+	return _RWMarket.contract.Transact(opts, "makeBuyOffer", _nftAddress, tokenId)
 }
 
-// MakeBuyOffer is a paid mutator transaction binding the contract method 0x48bf7c6a.
+// MakeBuyOffer is a paid mutator transaction binding the contract method 0x26af03d6.
 //
-// Solidity: function makeBuyOffer(uint256 tokenId) payable returns()
-func (_RWMarket *RWMarketSession) MakeBuyOffer(tokenId *big.Int) (*types.Transaction, error) {
-	return _RWMarket.Contract.MakeBuyOffer(&_RWMarket.TransactOpts, tokenId)
+// Solidity: function makeBuyOffer(address _nftAddress, uint256 tokenId) payable returns()
+func (_RWMarket *RWMarketSession) MakeBuyOffer(_nftAddress common.Address, tokenId *big.Int) (*types.Transaction, error) {
+	return _RWMarket.Contract.MakeBuyOffer(&_RWMarket.TransactOpts, _nftAddress, tokenId)
 }
 
-// MakeBuyOffer is a paid mutator transaction binding the contract method 0x48bf7c6a.
+// MakeBuyOffer is a paid mutator transaction binding the contract method 0x26af03d6.
 //
-// Solidity: function makeBuyOffer(uint256 tokenId) payable returns()
-func (_RWMarket *RWMarketTransactorSession) MakeBuyOffer(tokenId *big.Int) (*types.Transaction, error) {
-	return _RWMarket.Contract.MakeBuyOffer(&_RWMarket.TransactOpts, tokenId)
+// Solidity: function makeBuyOffer(address _nftAddress, uint256 tokenId) payable returns()
+func (_RWMarket *RWMarketTransactorSession) MakeBuyOffer(_nftAddress common.Address, tokenId *big.Int) (*types.Transaction, error) {
+	return _RWMarket.Contract.MakeBuyOffer(&_RWMarket.TransactOpts, _nftAddress, tokenId)
 }
 
-// MakeSellOffer is a paid mutator transaction binding the contract method 0xc728c75e.
+// MakeSellOffer is a paid mutator transaction binding the contract method 0xa97f5590.
 //
-// Solidity: function makeSellOffer(uint256 tokenId, uint256 price) returns()
-func (_RWMarket *RWMarketTransactor) MakeSellOffer(opts *bind.TransactOpts, tokenId *big.Int, price *big.Int) (*types.Transaction, error) {
-	return _RWMarket.contract.Transact(opts, "makeSellOffer", tokenId, price)
+// Solidity: function makeSellOffer(address _nftAddress, uint256 tokenId, uint256 price) returns()
+func (_RWMarket *RWMarketTransactor) MakeSellOffer(opts *bind.TransactOpts, _nftAddress common.Address, tokenId *big.Int, price *big.Int) (*types.Transaction, error) {
+	return _RWMarket.contract.Transact(opts, "makeSellOffer", _nftAddress, tokenId, price)
 }
 
-// MakeSellOffer is a paid mutator transaction binding the contract method 0xc728c75e.
+// MakeSellOffer is a paid mutator transaction binding the contract method 0xa97f5590.
 //
-// Solidity: function makeSellOffer(uint256 tokenId, uint256 price) returns()
-func (_RWMarket *RWMarketSession) MakeSellOffer(tokenId *big.Int, price *big.Int) (*types.Transaction, error) {
-	return _RWMarket.Contract.MakeSellOffer(&_RWMarket.TransactOpts, tokenId, price)
+// Solidity: function makeSellOffer(address _nftAddress, uint256 tokenId, uint256 price) returns()
+func (_RWMarket *RWMarketSession) MakeSellOffer(_nftAddress common.Address, tokenId *big.Int, price *big.Int) (*types.Transaction, error) {
+	return _RWMarket.Contract.MakeSellOffer(&_RWMarket.TransactOpts, _nftAddress, tokenId, price)
 }
 
-// MakeSellOffer is a paid mutator transaction binding the contract method 0xc728c75e.
+// MakeSellOffer is a paid mutator transaction binding the contract method 0xa97f5590.
 //
-// Solidity: function makeSellOffer(uint256 tokenId, uint256 price) returns()
-func (_RWMarket *RWMarketTransactorSession) MakeSellOffer(tokenId *big.Int, price *big.Int) (*types.Transaction, error) {
-	return _RWMarket.Contract.MakeSellOffer(&_RWMarket.TransactOpts, tokenId, price)
+// Solidity: function makeSellOffer(address _nftAddress, uint256 tokenId, uint256 price) returns()
+func (_RWMarket *RWMarketTransactorSession) MakeSellOffer(_nftAddress common.Address, tokenId *big.Int, price *big.Int) (*types.Transaction, error) {
+	return _RWMarket.Contract.MakeSellOffer(&_RWMarket.TransactOpts, _nftAddress, tokenId, price)
 }
 
 // RWMarketItemBoughtIterator is returned from FilterItemBought and is used to iterate over the raw logs and unpacked data for ItemBought events raised by the RWMarket contract.
@@ -766,19 +770,24 @@ func (it *RWMarketNewOfferIterator) Close() error {
 
 // RWMarketNewOffer represents a NewOffer event raised by the RWMarket contract.
 type RWMarketNewOffer struct {
-	OfferId *big.Int
-	TokenId *big.Int
-	Seller  common.Address
-	Buyer   common.Address
-	Price   *big.Int
-	Raw     types.Log // Blockchain specific contextual infos
+	NftAddress common.Address
+	OfferId    *big.Int
+	TokenId    *big.Int
+	Seller     common.Address
+	Buyer      common.Address
+	Price      *big.Int
+	Raw        types.Log // Blockchain specific contextual infos
 }
 
-// FilterNewOffer is a free log retrieval operation binding the contract event 0x8b4d06c200b17b9c1150172953ceb6fa3e7ace7623f6f933707badfa52c354cf.
+// FilterNewOffer is a free log retrieval operation binding the contract event 0x55076e90b6b34a2569ffb2e1e34ee0da92d30ca423f0d6cfb317d252ade9a56a.
 //
-// Solidity: event NewOffer(uint256 indexed offerId, uint256 indexed tokenId, address seller, address buyer, uint256 price)
-func (_RWMarket *RWMarketFilterer) FilterNewOffer(opts *bind.FilterOpts, offerId []*big.Int, tokenId []*big.Int) (*RWMarketNewOfferIterator, error) {
+// Solidity: event NewOffer(address indexed nftAddress, uint256 indexed offerId, uint256 indexed tokenId, address seller, address buyer, uint256 price)
+func (_RWMarket *RWMarketFilterer) FilterNewOffer(opts *bind.FilterOpts, nftAddress []common.Address, offerId []*big.Int, tokenId []*big.Int) (*RWMarketNewOfferIterator, error) {
 
+	var nftAddressRule []interface{}
+	for _, nftAddressItem := range nftAddress {
+		nftAddressRule = append(nftAddressRule, nftAddressItem)
+	}
 	var offerIdRule []interface{}
 	for _, offerIdItem := range offerId {
 		offerIdRule = append(offerIdRule, offerIdItem)
@@ -788,18 +797,22 @@ func (_RWMarket *RWMarketFilterer) FilterNewOffer(opts *bind.FilterOpts, offerId
 		tokenIdRule = append(tokenIdRule, tokenIdItem)
 	}
 
-	logs, sub, err := _RWMarket.contract.FilterLogs(opts, "NewOffer", offerIdRule, tokenIdRule)
+	logs, sub, err := _RWMarket.contract.FilterLogs(opts, "NewOffer", nftAddressRule, offerIdRule, tokenIdRule)
 	if err != nil {
 		return nil, err
 	}
 	return &RWMarketNewOfferIterator{contract: _RWMarket.contract, event: "NewOffer", logs: logs, sub: sub}, nil
 }
 
-// WatchNewOffer is a free log subscription operation binding the contract event 0x8b4d06c200b17b9c1150172953ceb6fa3e7ace7623f6f933707badfa52c354cf.
+// WatchNewOffer is a free log subscription operation binding the contract event 0x55076e90b6b34a2569ffb2e1e34ee0da92d30ca423f0d6cfb317d252ade9a56a.
 //
-// Solidity: event NewOffer(uint256 indexed offerId, uint256 indexed tokenId, address seller, address buyer, uint256 price)
-func (_RWMarket *RWMarketFilterer) WatchNewOffer(opts *bind.WatchOpts, sink chan<- *RWMarketNewOffer, offerId []*big.Int, tokenId []*big.Int) (event.Subscription, error) {
+// Solidity: event NewOffer(address indexed nftAddress, uint256 indexed offerId, uint256 indexed tokenId, address seller, address buyer, uint256 price)
+func (_RWMarket *RWMarketFilterer) WatchNewOffer(opts *bind.WatchOpts, sink chan<- *RWMarketNewOffer, nftAddress []common.Address, offerId []*big.Int, tokenId []*big.Int) (event.Subscription, error) {
 
+	var nftAddressRule []interface{}
+	for _, nftAddressItem := range nftAddress {
+		nftAddressRule = append(nftAddressRule, nftAddressItem)
+	}
 	var offerIdRule []interface{}
 	for _, offerIdItem := range offerId {
 		offerIdRule = append(offerIdRule, offerIdItem)
@@ -809,7 +822,7 @@ func (_RWMarket *RWMarketFilterer) WatchNewOffer(opts *bind.WatchOpts, sink chan
 		tokenIdRule = append(tokenIdRule, tokenIdItem)
 	}
 
-	logs, sub, err := _RWMarket.contract.WatchLogs(opts, "NewOffer", offerIdRule, tokenIdRule)
+	logs, sub, err := _RWMarket.contract.WatchLogs(opts, "NewOffer", nftAddressRule, offerIdRule, tokenIdRule)
 	if err != nil {
 		return nil, err
 	}
@@ -841,9 +854,9 @@ func (_RWMarket *RWMarketFilterer) WatchNewOffer(opts *bind.WatchOpts, sink chan
 	}), nil
 }
 
-// ParseNewOffer is a log parse operation binding the contract event 0x8b4d06c200b17b9c1150172953ceb6fa3e7ace7623f6f933707badfa52c354cf.
+// ParseNewOffer is a log parse operation binding the contract event 0x55076e90b6b34a2569ffb2e1e34ee0da92d30ca423f0d6cfb317d252ade9a56a.
 //
-// Solidity: event NewOffer(uint256 indexed offerId, uint256 indexed tokenId, address seller, address buyer, uint256 price)
+// Solidity: event NewOffer(address indexed nftAddress, uint256 indexed offerId, uint256 indexed tokenId, address seller, address buyer, uint256 price)
 func (_RWMarket *RWMarketFilterer) ParseNewOffer(log types.Log) (*RWMarketNewOffer, error) {
 	event := new(RWMarketNewOffer)
 	if err := _RWMarket.contract.UnpackLog(event, "NewOffer", log); err != nil {

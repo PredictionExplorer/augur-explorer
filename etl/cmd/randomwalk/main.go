@@ -26,11 +26,13 @@ import (
 const (
 	DEFAULT_DB_LOG				= "db.log"
 
+	//NEW_OFFER =		"55076e90b6b34a2569ffb2e1e34ee0da92d30ca423f0d6cfb317d252ade9a56a"
 	NEW_OFFER =		"8b4d06c200b17b9c1150172953ceb6fa3e7ace7623f6f933707badfa52c354cf"
 	ITEM_BOUGHT=	"7f7e375fbeaef0d6ebfc53af15b7aeed1d704e3424f34ef67e914b1f68f8c8ef"
 	OFFER_CANCELED=	"0ff09947dd7d2583091e8cbfb427fecacb697bf895187b243fd0072c0ee9b951"
 	WITHDRAWAL_EVT=	"a11b556ace4b11a5cae8675a293b51e8cde3a06387d34010861789dfd9e9abc7"
 	TOKEN_NAME_EVT=	"8ad5e159ff95649c8a9f323ac5a457e741897cf44ce07dfce0e98b84ef9d5f12"
+	MINT_EVENT =	"ad2bc79f659de022c64ef55c71f16d0cf125452ed5fc5757b2edc331f58565ec"
 	TRANSFER_EVT=	"ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 )
 var (
@@ -40,6 +42,7 @@ var (
 	evt_withdrawal,_ = hex.DecodeString(WITHDRAWAL_EVT)
 	evt_token_name,_ = hex.DecodeString(TOKEN_NAME_EVT)
 	evt_transfer,_	 = hex.DecodeString(TRANSFER_EVT)
+	evt_mint_event,_ = hex.DecodeString(MINT_EVENT)
 
 	storage *SQLStorage
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")

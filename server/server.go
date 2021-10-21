@@ -25,6 +25,9 @@ const (
 	DEFAILT_MARKET_TRADES_LIMIT int = 20
 	DEFAULT_USER_REPORTS_LIMIT int = 30
 	DEFAULT_MARKET_REPORTS_LIMIT int = 40
+
+	JSON				bool = true
+	HTTP				bool = false
 )
 type AugurServer struct {
 	db_augur		*SQLStorage
