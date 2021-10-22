@@ -84,7 +84,7 @@ func get_event_ids(from_evt_id,to_evt_id int64) []int64 {
 }
 func process_events(exit_chan chan bool) {
 
-	var max_batch_size int64 = 1024*100
+	var max_batch_size int64 = 1024*200
 	for {
 		status := storage.Get_randomwalk_processing_status()
 		select {

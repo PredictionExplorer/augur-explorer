@@ -1,0 +1,42 @@
+<html>
+<head>
+	<title>Random Walk Statistics</title>
+	<link href="res/main.css" rel="stylesheet">
+</head>
+
+<body>
+<h3>Random Walk Token Statistics
+<div class="main_info">
+<table>
+	<tr>
+		<td>Total Trading Volume</td>
+		<td>{{.GlobalStats.TradingVol}}</td>
+	</tr>
+	<tr>
+		<td>Total Trades</td>
+		<td>{{.GlobalStats.NumTrades}}</td>
+	</tr>
+	<tr>
+		<td>Tokens Minted</td>
+		<td>{{.GlobalStats.TokensMinted}}</td>
+	</tr>
+	<tr>
+		<td>Unique Users</td>
+		<td>{{.GlobalStats.UniqueUsers}}</td>
+	</tr>
+	<tr>
+		<td>Total Withdrawals</td>
+		<td>{{.GlobalStats.NumWithdrawals}}</td>
+	</tr>
+	<tr>
+		<td>Last Minted Price</td>
+		<td>{{.GlobalStats.LastMintedPrice}}</td>
+	</tr>
+	<tr>
+		<td>Maximum Traded Price</td>
+		<td>{{.GlobalStats.MaximumTradedPrice}}</td>
+	</tr>
+</table>
+</div>
+</body>
+</html>

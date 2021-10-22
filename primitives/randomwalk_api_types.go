@@ -40,3 +40,12 @@ type RW_API_Token struct {
 	Price			float64
 	TxHash			string
 }
+type RW_API_GlobalStats struct {
+	TradingVol			float64
+	NumTrades			int64
+	TokensMinted		int64
+	UniqueUsers			int64
+	NumWithdrawals		int64
+	LastMintedPrice		float64
+	MaximumTradedPrice	float64
+}

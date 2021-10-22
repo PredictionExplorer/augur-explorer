@@ -67,4 +67,21 @@ func api_rwalk_token_list_period(c *gin.Context) {
 		"FinTs":fin,
 	})
 }
+func api_rwalk_sale_history(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}
+	sales := augur_srv.db_arbitrum.Get_sale_history(offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Sales" : sales,
+	})
+}

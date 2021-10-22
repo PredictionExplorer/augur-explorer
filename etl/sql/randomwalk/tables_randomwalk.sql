@@ -1,3 +1,13 @@
+CREATE TABLE rw_token(
+	token_id		BIGINT PRIMARY KEY,
+	seed_hex		TEXT,
+	seed_num		DECIMAL,
+	last_name		TEXT,
+	last_price		DECIMAL,
+	num_trades		BIGINT,
+	total_vol		DECIMAL,	-- total trading volume
+	UNIQUE(seed_hex)
+);
 CREATE TABLE rw_new_offer(
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
@@ -86,10 +96,20 @@ CREATE TABLE rw_transfer(
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE rw_stats(
-	rwalk_aid		BIGINT PRIMARY KEY,
-	total_vol		DECIMAL DEFAULT 0,		-- total volume
-	total_num_ops	BIGINT DEFAULT 0,		-- total count of operations made
-	total_num_toks	BIGINT DEFAULT 0		-- total count of tokens registered
+	rwalk_aid				BIGINT PRIMARY KEY,
+	total_vol				DECIMAL DEFAULT 0,		-- total volume
+	total_num_trades		BIGINT DEFAULT 0,		-- total count of trade operations made
+	total_num_toks			BIGINT DEFAULT 0,		-- total count of tokens registered
+	total_withdrawals		BIGINT DEFAULT 0
+);
+CREATE TABLE rw_user_stats (
+	rwalk_aid				BIGINT PRIMARY KEY,
+	user_aid				BIGINT NOT NULL,
+	total_vol				DECIMAL DEFAULT 0,		-- total volume
+	total_num_trades		BIGINT DEFAULT 0,		-- total count of tokens traded by user
+	total_num_toks			BIGINT DEFAULT 0,		-- total count of tokens minted by user
+	total_withdrawals		BIGINT DEFAULT 0,
+	UNIQUE(rwalk_aid,user_aid)
 );
 CREATE TABLE rw_proc_status (
 	last_evt_id             BIGINT DEFAULT 0,
