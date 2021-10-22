@@ -75,3 +75,114 @@ func (ss *SQLStorage) Get_active_offers(order_by int) []p.RW_API_Offer {
 
 	return records
 }
+func (ss *SQLStorage) Get_minted_tokens_by_period(ini_ts,fin_ts int) []p.RW_API_Token {
+
+	records := make([]p.RW_API_Token,0,32)
+	var query string
+	query = "SELECT "+
+				"t.block_num,"+
+				"EXTRACT(EPOCH FROM t.time_stamp)::BIGINT as ts,"+
+				"t.time_stamp," +
+				"t.contract_aid,"+
+				"ca.addr,"+
+				"t.token_id,"+
+				"t.owner_aid,"+
+				"oa.addr minter_addr,"+
+				"seed seed_hex,"+
+				"seed_num,"+
+				"price/1e+18,"+
+				"tx.tx_hash "+
+			"FROM rw_mint_evt t "+
+				"LEFT JOIN address ca ON t.contract_aid=ca.address_id "+
+				"LEFT JOIN address oa ON t.owner_aid=oa.address_id "+
+				"LEFT JOIN transaction tx ON t.tx_id=tx.id "+
+			"WHERE (t.time_stamp >= TO_TIMESTAMP($1)) AND (t.time_stamp<TO_TIMESTAMP($2))"
+	ss.Info.Printf("ini=%v,fin=%v, q=%v\n",ini_ts,fin_ts,query)
+	rows,err := ss.db.Query(query,ini_ts,fin_ts)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_API_Token
+		err=rows.Scan(
+			&rec.BlockNum,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.ContractAid,
+			&rec.ContractAddr,
+			&rec.TokenId,
+			&rec.MinterAid,
+			&rec.MinterAddr,
+			&rec.Seed,
+			&rec.SeedNum,
+			&rec.Price,
+			&rec.TxHash,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+
+	return records
+}
+func (ss *SQLStorage) Get_minted_tokens_sequentially(offset,limit int) []p.RW_API_Token {
+
+	records := make([]p.RW_API_Token,0,32)
+	var query string
+	query = "SELECT "+
+				"t.block_num,"+
+				"EXTRACT(EPOCH FROM t.time_stamp)::BIGINT as ts,"+
+				"t.time_stamp," +
+				"t.contract_aid,"+
+				"ca.addr,"+
+				"t.token_id,"+
+				"t.owner_aid,"+
+				"oa.addr minter_addr,"+
+				"seed seed_hex,"+
+				"seed_num,"+
+				"price/1e+18,"+
+				"tx.tx_hash "+
+			"FROM rw_mint_evt t "+
+				"LEFT JOIN address ca ON t.contract_aid=ca.address_id "+
+				"LEFT JOIN address oa ON t.owner_aid=oa.address_id "+
+				"LEFT JOIN transaction tx ON t.tx_id=tx.id "+
+			"ORDER by t.id DESC "+
+			"OFFSET $1 LIMIT $2"
+
+	rows,err := ss.db.Query(query,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_API_Token
+		err=rows.Scan(
+			&rec.BlockNum,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.ContractAid,
+			&rec.ContractAddr,
+			&rec.TokenId,
+			&rec.MinterAid,
+			&rec.MinterAddr,
+			&rec.Seed,
+			&rec.SeedNum,
+			&rec.Price,
+			&rec.TxHash,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+
+	return records
+}

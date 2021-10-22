@@ -26,3 +26,17 @@ type RW_API_Offer struct {
 	Active			bool
 	Price			float64
 }
+type RW_API_Token struct {
+	TokenId			int64
+	BlockNum		int64
+	TimeStamp		int64
+	DateTime		string
+	ContractAid		int64
+	ContractAddr	string
+	MinterAid		int64
+	MinterAddr		string
+	Seed			string
+	SeedNum			string
+	Price			float64
+	TxHash			string
+}

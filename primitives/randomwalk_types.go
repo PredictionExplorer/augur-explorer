@@ -133,5 +133,6 @@ type RW_MintEvent struct {
 	TokenId					int64
 	Owner					string
 	Seed					string
+	SeedNum					string
 	Price					string
 }

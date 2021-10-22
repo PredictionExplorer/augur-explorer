@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS
 	rw_token_name,
 	rw_mint_evt,
 	rw_transfer,
+	rw_stats,
 	rw_proc_status,
 	rw_contracts
 CASCADE;

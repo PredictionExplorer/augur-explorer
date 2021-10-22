@@ -598,7 +598,7 @@ func a1_stats_gasused(c *gin.Context) {
 func a1_stats_txcost(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	success,init_ts,fin_ts := parse_timeframe_ini_fin(c)
+	success,init_ts,fin_ts := parse_timeframe_ini_fin(c,JSON)
 	if !success {
 		return
 	}

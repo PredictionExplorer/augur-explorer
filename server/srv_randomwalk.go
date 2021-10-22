@@ -24,4 +24,27 @@ func rwalk_current_offers(c *gin.Context) {
 		"Offers" : offers,
 	})
 }
+func rwalk_token_list_seq(c *gin.Context) {
+
+	tokens:= augur_srv.db_arbitrum.Get_minted_tokens_sequentially(0,10000000000)
+
+	c.HTML(http.StatusOK, "tokens_minted.html", gin.H{
+		"MintedTokens" : tokens,
+	})
+}
+func rwalk_token_list_period(c *gin.Context) {
+
+	success,ini,fin := parse_timeframe_ini_fin(c,HTTP)
+	if !success {
+		return
+	}
+	tokens := augur_srv.db_arbitrum.Get_minted_tokens_by_period(ini,fin)
+
+	c.HTML(http.StatusOK, "tokens_minted.html", gin.H{
+		"MintedTokens" : tokens,
+		"InitTs": ini,
+		"FinTs":fin,
+	})
+}
+
 

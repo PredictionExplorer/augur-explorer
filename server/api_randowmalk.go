@@ -35,4 +35,36 @@ func api_rwalk_current_offers(c *gin.Context) {
 		"Offers" : offers,
 	})
 }
+func api_rwalk_token_list_seq(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	tokens := augur_srv.db_arbitrum.Get_minted_tokens_sequentially(0,10000000000)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MintedTokens" : tokens ,
+	})
+}
+func api_rwalk_token_list_period(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	success,ini,fin := parse_timeframe_ini_fin(c,JSON)
+	if !success {
+		return
+	}
+	tokens := augur_srv.db_arbitrum.Get_minted_tokens_by_period(ini,fin)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MintedTokens" : tokens,
+		"InitTs": ini,
+		"FinTs":fin,
+	})
+}
 

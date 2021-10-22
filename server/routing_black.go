@@ -116,6 +116,9 @@ func set_routing_polymarket(r *gin.Engine) {
 }
 func set_routing_randomwalk(r *gin.Engine) {
 	r.GET("/black/rwalk/current_offers/:order_by",rwalk_current_offers)
+	r.GET("/black/rwalk/tokens/list/sequential",rwalk_token_list_seq)
+	r.GET("/black/rwalk/tokens/list/sequential/:offset/:limit",rwalk_token_list_seq)
+	r.GET("/black/rwalk/tokens/list/by_period/:init_ts/:fin_ts",rwalk_token_list_period)
 }
 func set_routing_black_templates(r *gin.Engine) {
 

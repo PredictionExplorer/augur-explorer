@@ -43,6 +43,10 @@ func build_list_of_inspected_events_layer1(rwalk_aid int64) []InspectedEvent {
 			Signature: hex.EncodeToString(evt_transfer[:4]),
 			ContractAid: rwalk_aid,
 		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_mint_event[:4]),
+			ContractAid: 0,
+		},
 	)
 	return inspected_events
 }
@@ -71,11 +75,13 @@ func proc_new_offer(log *types.Log,elog *EthereumEventLog) {
 	evt.Seller = eth_evt.Seller.String()
 	evt.Buyer = eth_evt.Buyer.String()
 	evt.Price = eth_evt.Price.String()
-	evt.OfferId = log.Topics[1].Big().Int64()
-	evt.TokenId = log.Topics[2].Big().Int64()
+	evt.RWalkAddr = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.OfferId = log.Topics[2].Big().Int64()
+	evt.TokenId = log.Topics[3].Big().Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("NewOffer {\n")
+	Info.Printf("\tNFT addr: %v\n",evt.RWalkAddr)
 	Info.Printf("\tOfferId: %v\n",evt.OfferId)
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
 	Info.Printf("\tSeller: %v\n",evt.Seller)
@@ -224,6 +230,7 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TokenId= log.Topics[1].Big().Int64()
 	evt.Owner= common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.Seed= hex.EncodeToString(eth_evt.Seed[:])
+	evt.SeedNum = common.BytesToHash(eth_evt.Seed[:]).Big().String()
 	evt.Price = eth_evt.Price.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
@@ -231,6 +238,7 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
 	Info.Printf("\tOwner %v\n",evt.Owner)
 	Info.Printf("\tSeed: %v\n",evt.Seed)
+	Info.Printf("\tSeed Numeric: %v\n",evt.SeedNum)
 	Info.Printf("\tPrice: %v\n",evt.Price)
 	Info.Printf("}\n")
 

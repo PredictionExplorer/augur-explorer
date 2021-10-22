@@ -130,6 +130,9 @@ func set_api_routing_polymarket(r *gin.Engine) {
 }
 func set_api_routing_randomwalk(r *gin.Engine) {
 	r.GET("/api/rwalk/current_offers/:order_by",api_rwalk_current_offers)
+	r.GET("/api/rwalk/tokens/list/sequential",api_rwalk_token_list_seq)
+	r.GET("/api/rwalk/tokens/list/sequential/:offset/:limit",api_rwalk_token_list_seq)
+	r.GET("/api/rwalk/tokens/list/by_period/:init_ts/:fin_ts",api_rwalk_token_list_period)
 }
 func set_routing_api(r *gin.Engine) {
 	set_api_routing_augur_v2(r)

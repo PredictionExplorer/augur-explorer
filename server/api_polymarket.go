@@ -155,7 +155,7 @@ func a1_poly_market_stats(c *gin.Context) {
 func a1_poly_unique_users(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	success,init_ts,fin_ts := parse_timeframe_ini_fin(c)
+	success,init_ts,fin_ts := parse_timeframe_ini_fin(c,JSON)
 	if !success {
 		return
 	}

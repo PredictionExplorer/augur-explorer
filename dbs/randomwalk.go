@@ -71,7 +71,8 @@ func (ss *SQLStorage) Get_randomwalk_contract_addresses() p.RW_ContractAddresses
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			return output
+			ss.Log_msg("Can't find record in rw_contracts table for contract addresses")
+			os.Exit(1)
 		}
 		ss.Log_msg(fmt.Sprintf("Get_randomwalk_contract_addresses() failed: %v, q=%v",err,query))
 		os.Exit(1)
@@ -220,11 +221,11 @@ func (ss *SQLStorage) Insert_mint_event(evt *p.RW_MintEvent) {
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	owner_aid:=ss.Lookup_or_create_address(evt.Owner,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO rw_(" +
+	query = "INSERT INTO rw_mint_evt(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"token_id,owner_aid,seed,price" +
+				"token_id,owner_aid,seed,seed_num,price" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10"+
 			")"
 	_,err := ss.db.Exec(query,
 		evt.EvtId,
@@ -235,6 +236,7 @@ func (ss *SQLStorage) Insert_mint_event(evt *p.RW_MintEvent) {
 		evt.TokenId,
 		owner_aid,
 		evt.Seed,
+		evt.SeedNum,
 		evt.Price,
 	)
 	if err != nil {

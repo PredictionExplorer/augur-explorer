@@ -26,8 +26,8 @@ import (
 const (
 	DEFAULT_DB_LOG				= "db.log"
 
-	//NEW_OFFER =		"55076e90b6b34a2569ffb2e1e34ee0da92d30ca423f0d6cfb317d252ade9a56a"
-	NEW_OFFER =		"8b4d06c200b17b9c1150172953ceb6fa3e7ace7623f6f933707badfa52c354cf"
+	NEW_OFFER =		"55076e90b6b34a2569ffb2e1e34ee0da92d30ca423f0d6cfb317d252ade9a56a"
+	//NEW_OFFER =		"8b4d06c200b17b9c1150172953ceb6fa3e7ace7623f6f933707badfa52c354cf"
 	ITEM_BOUGHT=	"7f7e375fbeaef0d6ebfc53af15b7aeed1d704e3424f34ef67e914b1f68f8c8ef"
 	OFFER_CANCELED=	"0ff09947dd7d2583091e8cbfb427fecacb697bf895187b243fd0072c0ee9b951"
 	WITHDRAWAL_EVT=	"a11b556ace4b11a5cae8675a293b51e8cde3a06387d34010861789dfd9e9abc7"
@@ -117,16 +117,8 @@ func process_events(exit_chan chan bool) {
 			storage.Update_randomwalk_process_status(&status)
 		}
 		if len(events) == 0 {
-			last_evt_log_id_on_chain,err := storage.Get_last_evtlog_id()
-			if err != nil {
-				Info.Printf("Error getting last event log id: %v\n",err)
-				os.Exit(1)
-			}
-			if last_evt_log_id_on_chain > id_upper_limit {
-				// only advance upper range if events within the range have filled id value space
-				status.LastIdProcessed = id_upper_limit
-				storage.Update_randomwalk_process_status(&status)
-			}
+			status.LastIdProcessed = id_upper_limit
+			storage.Update_randomwalk_process_status(&status)
 			time.Sleep(1 * time.Second) // sleep only if there is no data
 		}
 	}
@@ -182,6 +174,8 @@ func main() {
 	rw_contracts = storage.Get_randomwalk_contract_addresses()
 	rwalk_addr = common.HexToAddress(rw_contracts.RandomWalk)
 	market_addr = common.HexToAddress(rw_contracts.MarketPlace)
+	Info.Printf("RandomWalk contract %v\n",rwalk_addr.String())
+	Info.Printf("MarketPlace contract %v\n",market_addr.String())
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)

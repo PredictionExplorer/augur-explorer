@@ -69,6 +69,7 @@ CREATE TABLE rw_mint_evt(
 	token_id		BIGINT NOT NULL,
 	owner_aid		BIGINT NOT NULL,
 	seed			TEXT NOT NULL,
+	seed_num		DECIMAL,		-- seed as numeric 256 bit integer
 	price			DECIMAL
 );
 CREATE TABLE rw_transfer(
@@ -95,8 +96,8 @@ CREATE TABLE rw_proc_status (
 	last_block              BIGINT DEFAULT 0 -- used when getting event logs via ethclient.FilterLogs
 );
 CREATE TABLE rw_contracts (
-	--marketplace_addr		TEXT DEFAULT '0x70cf513E1fE1C481144f7FF967036eb05A6bc045',
-	--randomwalk_addr			TEXT DEFAULT '0x332E5e3dE89cDe8131aCCdd09ecbd51Ea4B9b0E3'
-	marketplace_addr		TEXT DEFAULT '0x728A419D264532442ea9CF639ec6a766f64840d6',
-	randomwalk_addr			TEXT DEFAULT '0x27fAFD053dD7e4E5349F90bd32c8233D3d3c0235'
+	marketplace_addr		TEXT DEFAULT '0x70cf513E1fE1C481144f7FF967036eb05A6bc045',
+	randomwalk_addr			TEXT DEFAULT '0x332E5e3dE89cDe8131aCCdd09ecbd51Ea4B9b0E3'
+	--marketplace_addr		TEXT DEFAULT '0x728A419D264532442ea9CF639ec6a766f64840d6',
+	--randomwalk_addr			TEXT DEFAULT '0x27fAFD053dD7e4E5349F90bd32c8233D3d3c0235'
 );
