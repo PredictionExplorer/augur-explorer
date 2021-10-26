@@ -1,0 +1,77 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>History for Token ID {{.TokenID}}</title>
+</head>
+<body>
+	<h3 class="page_title">Token History<h3>
+	<h3>Actions made on Token {{.TokenId}}</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Block</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">TokenId</th>
+		<th class="market_reports">Op Type</th>
+		<th class="market_reports">Price</th>
+		<th class="market_reports">Operation Info</th>
+	</tr>
+	{{- range $i, $change := .TokenHistory}}
+		<tr class="market_reports">
+			<td class="">
+				{{ if eq .RecordType 1 }}
+					{{.Record.BlockNum}}
+				{{ end }}
+				{{ if eq .RecordType 2 }}
+					{{.Record.BlockNum}}
+				{{ end }}
+			</td>
+			<td class="">
+				{{ if eq .RecordType 1 }}
+					{{.Record.DateTime}}
+				{{ end }}
+				{{ if eq .RecordType 2 }}
+					{{.Record.DateTime}}
+				{{ end }}
+			</td>
+			<td class="" style="text-align:center;">
+				{{ if eq .RecordType 1 }}
+					{{.Record.TokenId}}
+				{{ end }}
+				{{ if eq .RecordType 2 }}
+					{{.Record.TokenId}}
+				{{ end }}
+			</td>
+			<td class="">
+				{{ if eq .RecordType 1 }}
+					Mint
+				{{ end }}
+				{{ if eq .RecordType 2 }}
+					New Offer (
+					{{ if eq .Record.OfferType 0 }}BUY{{end}}
+					{{ if eq .Record.OfferType 1 }}SELL{{end}}
+					)
+				{{ end }}
+			</td>
+			<td class="market_reports_field" style="text-align: center;">
+				{{ if eq .RecordType 1 }}
+					{{ printf "%.6f" .Record.Price}}
+				{{ end }}
+				{{ if eq .RecordType 2 }}
+					{{ printf "%.6f" .Record.Price}}
+				{{ end }}
+			</td>
+			<td class="">
+				{{ if eq .RecordType 1 }}
+					New token was minted with seed {{.Record.SeedNum }}
+				{{ end }}
+				{{ if eq .RecordType 2 }}
+					{{ if eq .Record.OfferType 0 }}BUY{{end}}
+					{{ if eq .Record.OfferType 1 }}SELL{{end}}
+					offer at {{ printf "%.9f" .Record.Price }} ETH
+				{{ end }}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>

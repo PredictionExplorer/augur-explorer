@@ -71,4 +71,30 @@ func rwalk_global_stats(c *gin.Context) {
 		"GlobalStats" : stats,
 	})
 }
+func rwalk_token_history(c *gin.Context) {
+
+	p_token_id := c.Param("token_id")
+	var token_id int64
+	if len(p_token_id) > 0 {
+		var success bool
+		token_id,success = parse_int_from_remote_or_error(c,HTTP,&p_token_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'token_id' parameter is not set")
+		return
+	}
+	offset := int(0) ; limit:= int(100000)
+	/*success,offset,limit := parse_offset_limit_params(c)
+	if !success {
+		return
+	}*/
+	history := augur_srv.db_arbitrum.Get_token_full_history(token_id,offset,limit)
+
+	c.HTML(http.StatusOK, "rw_token_history.html", gin.H{
+		"TokenId" : token_id,
+		"TokenHistory" : history,
+	})
+}
 

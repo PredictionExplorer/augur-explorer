@@ -282,3 +282,169 @@ func (ss *SQLStorage) Get_global_stats() p.RW_API_GlobalStats {
 	}
 	return output
 }
+func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []p.RW_API_FullHistoryEntry {
+
+	records := make([]p.RW_API_FullHistoryEntry,0,32)
+
+	var query string
+	query = "SELECT " +
+				"block_num," +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT as ts,"+
+				"time_stamp," +
+				"contract_aid,"+
+				"contract_addr," +
+				//--------Mint
+				"token_id,"+
+				"seed,"+
+				"seed_num::TEXT,"+
+				"price, " +
+				//--------NewOffer
+				"seller_aid,"+
+				"seller_addr,"+
+				"buyer_aid,"+
+				"buyer_addr,"+
+				"otype,"+
+				"active "+
+			"FROM (" +
+				"(" +
+					"SELECT " +
+						"t.block_num," +
+						"EXTRACT(EPOCH FROM time_stamp)::BIGINT as ts,"+
+						"time_stamp," +
+						"contract_aid,"+
+						//---------Mint
+						"ca.addr contract_addr," +
+						"token_id,"+
+						"seed,"+
+						"seed_num,"+
+						//--------NewOffer
+						"NULL AS seller_aid,"+
+						"NULL AS seller_addr,"+
+						"NULL AS buyer_aid,"+
+						"NULL AS buyer_addr,"+
+						"NULL as otype,"+
+						"NULL AS active,"+
+						"price/1e+18 AS price " +
+					"FROM rw_mint_evt t " +
+						"LEFT JOIN address ca ON contract_aid=ca.address_id "+
+					"WHERE token_id=$1 "+
+					"ORDER BY id"+
+				")" +
+				"UNION ALL" +
+				"(" +
+					"SELECT "+
+						"t.block_num," +
+						"EXTRACT(EPOCH FROM time_stamp)::BIGINT as ts,"+
+						"time_stamp," +
+						"contract_aid,"+
+						"ca.addr contract_addr," +
+						//---------Mint
+						"token_id,"+
+						"NULL AS seed,"+
+						"NULL AS seed_num,"+
+						//---------NewOffer
+						"seller_aid," +
+						"sa.addr seller_addr,"+
+						"buyer_aid,"+
+						"ba.addr buyer_addr,"+
+						"otype," +
+						"active,"+
+						"price/1e+18 price "+
+					"FROM rw_new_offer t " +
+						"LEFT JOIN address ca ON contract_aid=ca.address_id "+
+						"LEFT JOIN address sa ON seller_aid=sa.address_id "+
+						"LEFT JOIN address ba ON buyer_aid=ba.address_id "+
+					"WHERE token_id=$1 " +
+					"ORDER BY id" +
+				")"+
+			") AS data " +		// FROM
+		"ORDER BY ts " +
+		"OFFSET $2 LIMIT $3"
+
+	ss.Info.Printf("token_id=%v, query = %v\n",token_id,query)
+	rows,err := ss.db.Query(query,token_id,offset,limit)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var (
+			block_num			sql.NullInt64
+			timestamp			sql.NullInt64
+			datetime			sql.NullString
+			contract_aid		sql.NullInt64
+			contract_addr		sql.NullString
+			token_id			sql.NullInt64
+			seed				sql.NullString
+			seed_num			sql.NullString
+			price				sql.NullFloat64
+			seller_aid			sql.NullInt64
+			seller_addr			sql.NullString
+			buyer_aid			sql.NullInt64
+			buyer_addr			sql.NullString
+			otype				sql.NullInt64
+			active				sql.NullBool
+		)
+		err=rows.Scan(
+			&block_num,
+			&timestamp,
+			&datetime,
+			&contract_aid,
+			&contract_addr,
+			&token_id,
+			&seed,
+			&seed_num,
+			&price,
+			&seller_aid,
+			&seller_addr,
+			&buyer_aid,
+			&buyer_addr,
+			&otype,
+			&active,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		var rec p.RW_API_FullHistoryEntry
+		if seed.Valid {
+			iface := p.RW_API_HistEntry_Mint{
+				BlockNum:			block_num.Int64,
+				TimeStamp:			timestamp.Int64,
+				DateTime:			datetime.String,
+				ContractAid:		contract_aid.Int64,
+				ContractAddr:		contract_addr.String,
+				TokenId:			token_id.Int64,
+				SeedHex:			seed.String,
+				SeedNum:			seed_num.String,
+				Price:				price.Float64,
+			}
+			rec.Record = iface
+			rec.RecordType = 1
+		}
+		if otype.Valid {
+			iface := p.RW_API_HistEntry_Offer{
+				BlockNum:			block_num.Int64,
+				TimeStamp:			timestamp.Int64,
+				DateTime:			datetime.String,
+				ContractAid:		contract_aid.Int64,
+				ContractAddr:		contract_addr.String,
+				TokenId:			token_id.Int64,
+				SellerAid:			seller_aid.Int64,
+				SellerAddr:			seller_addr.String,
+				BuyerAid:			buyer_aid.Int64,
+				BuyerAddr:			buyer_addr.String,
+				OfferType:			int(otype.Int64),
+				Active:				active.Bool,
+				Price:				price.Float64,
+			}
+			rec.Record = iface
+			rec.RecordType = 2
+		}
+		records = append(records,rec)
+	}
+
+	return records
+}

@@ -28,8 +28,11 @@ type ERandomWalk_NewOffer struct {
 	Raw     types.Log // Blockchain specific contextual infos
 }
 type ERandomWalk_ItemBought struct {
-	//signature: 0x7f7e375fbeaef0d6ebfc53af15b7aeed1d704e3424f34ef67e914b1f68f8c8ef
+	//signature: 0xcaacc56f18ca259dc5175dae29eb0ca81407703a4819958c6885acbb7d4f3af3
+	//OLD//signature: 0x7f7e375fbeaef0d6ebfc53af15b7aeed1d704e3424f34ef67e914b1f68f8c8ef
 	OfferId *big.Int
+	Seller  common.Address
+	Buyer   common.Address
 	Raw     types.Log // Blockchain specific contextual infos
 }
 type ERandomWalk_OfferCanceled struct {
@@ -86,6 +89,8 @@ type RW_ItemBought struct {
 	TimeStamp               int64
 	Contract                string
 	OfferId					int64
+	SellerAddr				string
+	BuyerAddr				string
 }
 type RW_OfferCanceled struct {
 	EvtId                   int64

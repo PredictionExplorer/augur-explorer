@@ -49,3 +49,33 @@ type RW_API_GlobalStats struct {
 	LastMintedPrice		float64
 	MaximumTradedPrice	float64
 }
+type RW_API_HistEntry_Mint struct {
+	BlockNum		int64
+	TimeStamp		int64
+	DateTime		string
+	ContractAid		int64
+	ContractAddr	string
+	TokenId			int64
+	SeedHex			string
+	SeedNum			string
+	Price			float64
+}
+type RW_API_HistEntry_Offer struct {
+	BlockNum		int64
+	TimeStamp		int64
+	DateTime		string
+	ContractAid		int64
+	ContractAddr	string
+	TokenId			int64
+	BuyerAid		int64
+	BuyerAddr		string
+	SellerAid		int64
+	SellerAddr		string
+	OfferType		int
+	Active			bool
+	Price			float64
+}
+type RW_API_FullHistoryEntry struct {
+	RecordType			int		// Mint,or any other event starting with RW_API_HistEntry_*
+	Record				interface{}
+}

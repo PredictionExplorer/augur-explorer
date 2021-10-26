@@ -119,12 +119,14 @@ func (ss *SQLStorage) Insert_new_offer(evt *p.RW_NewOffer) {
 func (ss *SQLStorage) Insert_item_bought(evt *p.RW_ItemBought) {
 
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	seller_aid:=ss.Lookup_or_create_address(evt.SellerAddr,evt.BlockNum,evt.TxId)
+	buyer_aid:=ss.Lookup_or_create_address(evt.BuyerAddr,evt.BlockNum,evt.TxId)
 	var query string
 	query = "INSERT INTO rw_item_bought(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"offer_id" +
+				"offer_id,seller_aid,buyer_aid" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8"+
 			")"
 	_,err := ss.db.Exec(query,
 		evt.EvtId,
@@ -133,6 +135,8 @@ func (ss *SQLStorage) Insert_item_bought(evt *p.RW_ItemBought) {
 		evt.TimeStamp,
 		contract_aid,
 		evt.OfferId,
+		seller_aid,
+		buyer_aid,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into item_bought table: %v\n",err))

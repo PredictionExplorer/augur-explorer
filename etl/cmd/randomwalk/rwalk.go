@@ -107,10 +107,14 @@ func proc_item_bought(log *types.Log,elog *EthereumEventLog) {
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.OfferId = log.Topics[1].Big().Int64()
+	evt.SellerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.BuyerAddr = common.BytesToAddress(log.Topics[3][12:]).String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("ItemBought {\n")
 	Info.Printf("\tOfferId: %v\n",evt.OfferId)
+	Info.Printf("\tSeller: %v\n",evt.SellerAddr)
+	Info.Printf("\tBuyer: %v\n",evt.BuyerAddr)
 	Info.Printf("}\n")
 
 	storage.Insert_item_bought(&evt)
