@@ -119,6 +119,7 @@ func set_api_routing_polymarket(r *gin.Engine) {
 	r.GET("/api/poly/market/erc1155/:market_id/:offset/:limit",a1_poly_market_erc1155_transfers)
 	r.GET("/api/poly/markets/funder/share_ratio/:market_id",a1_poly_market_funder_share_ratio)
 	r.GET("/api/poly/markets/price_history/:market_id/:outcome",a1_poly_market_price_history)
+	r.GET("/api/poly/markets/open_interest_history/:market_id/:offset/:limit",a1_market_open_interest_history)
 	r.GET("/api/poly/user/open_positions/:user_aid",a1_poly_market_user_open_positions)
 	r.GET("/api/poly/top_users",  a1_poly_top_users)
 	r.GET("/api/poly/categories",a1_poly_categories)
@@ -134,6 +135,7 @@ func set_api_routing_randomwalk(r *gin.Engine) {
 	r.GET("/api/rwalk/tokens/list/sequential/:offset/:limit",api_rwalk_token_list_seq)
 	r.GET("/api/rwalk/tokens/list/by_period/:init_ts/:fin_ts",api_rwalk_token_list_period)
 	r.GET("/api/rwalk/sales/:offset/:limit",api_rwalk_sale_history)
+	r.GET("/api/rwalk/tokens/history/:token_id/:offset/:limit",api_rwalk_token_history)
 }
 func set_routing_api(r *gin.Engine) {
 	set_api_routing_augur_v2(r)

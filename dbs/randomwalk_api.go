@@ -295,16 +295,27 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 				"contract_addr," +
 				//--------Mint
 				"token_id,"+
+				"owner_aid,"+
+				"owner_addr,"+
 				"seed,"+
 				"seed_num::TEXT,"+
-				"price, " +
 				//--------NewOffer
 				"seller_aid,"+
 				"seller_addr,"+
 				"buyer_aid,"+
 				"buyer_addr,"+
 				"otype,"+
-				"active "+
+				"offer_id,"+
+				"active, "+
+				"price, " +
+				//--------Offer Canceled
+				"offer_canceled_id,"+
+				//--------Item Bought
+				"item_bought_id," +
+				//--------Token Name
+				"token_name, "+
+				//--------Transfer
+				"transfer_id " +
 			"FROM (" +
 				"(" +
 					"SELECT " +
@@ -315,6 +326,8 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 						//---------Mint
 						"ca.addr contract_addr," +
 						"token_id,"+
+						"owner_aid,"+
+						"oa.addr owner_addr,"+
 						"seed,"+
 						"seed_num,"+
 						//--------NewOffer
@@ -323,13 +336,23 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 						"NULL AS buyer_aid,"+
 						"NULL AS buyer_addr,"+
 						"NULL as otype,"+
+						"CAST(NULL AS BIGINT) AS offer_id,"+
 						"NULL AS active,"+
-						"price/1e+18 AS price " +
+						"price/1e+18 AS price, " +
+						//---------Offer Canceled
+						"CAST(NULL AS BIGINT) AS offer_canceled_id,"+
+						//---------Item Bought
+						"CAST(NULL AS BIGINT) AS item_bought_id,"+
+						//---------Token Name
+						"CAST(NULL AS TEXT ) as token_name,"+
+						//---------TransferId
+						"CAST(NULL AS BIGINT) as transfer_id "+
 					"FROM rw_mint_evt t " +
 						"LEFT JOIN address ca ON contract_aid=ca.address_id "+
+						"LEFT JOIN address oa ON owner_aid=oa.address_id "+
 					"WHERE token_id=$1 "+
 					"ORDER BY id"+
-				")" +
+				") " +
 				"UNION ALL" +
 				"(" +
 					"SELECT "+
@@ -340,6 +363,8 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 						"ca.addr contract_addr," +
 						//---------Mint
 						"token_id,"+
+						"NULL AS owner_aid,"+
+						"NULL AS owner_addr,"+
 						"NULL AS seed,"+
 						"NULL AS seed_num,"+
 						//---------NewOffer
@@ -348,14 +373,185 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 						"buyer_aid,"+
 						"ba.addr buyer_addr,"+
 						"otype," +
+						"t.offer_id,"+
 						"active,"+
-						"price/1e+18 price "+
+						"price/1e+18 price, "+
+						//---------Offer Canceled
+						"CAST(NULL AS BIGINT) AS offer_canceled_id,"+
+						//---------Item Bought
+						"CAST(NULL AS BIGINT) AS item_bought_id,"+
+						//---------Token Name
+						"CAST(NULL AS TEXT) as token_name,"+
+						//---------Transfer
+						"CAST(NULL AS BIGINT) as transfer_id " +
 					"FROM rw_new_offer t " +
 						"LEFT JOIN address ca ON contract_aid=ca.address_id "+
 						"LEFT JOIN address sa ON seller_aid=sa.address_id "+
 						"LEFT JOIN address ba ON buyer_aid=ba.address_id "+
 					"WHERE token_id=$1 " +
 					"ORDER BY id" +
+				")"+
+				"UNION ALL" +
+				"(" +
+					"SELECT "+
+						"c.block_num," +
+						"EXTRACT(EPOCH FROM c.time_stamp)::BIGINT as ts,"+
+						"c.time_stamp," +
+						"c.contract_aid,"+
+						"ca.addr contract_addr," +
+						//---------Mint
+						"token_id,"+
+						"NULL AS owner_aid,"+
+						"NULL AS owner_addr,"+
+						"NULL AS seed,"+
+						"NULL AS seed_num,"+
+						//---------NewOffer
+						"seller_aid," +
+						"sa.addr seller_addr,"+
+						"buyer_aid,"+
+						"ba.addr buyer_addr,"+
+						"o.otype as otype,"+
+						"o.offer_id,"+
+						"NULL AS active,"+
+						"o.price/1e+18 AS price,"+
+						//---------Offer Canceled
+						"c.id offer_canceled_id,"+
+						//---------Item Bought
+						"CAST(NULL AS BIGINT) AS item_bought_id,"+
+						//---------Token Name
+						"CAST(NULL AS TEXT) as token_name,"+
+						//---------Transfer
+						"CAST(NULL AS BIGINT) as transfer_id "+
+					"FROM rw_offer_canceled c "+
+						"JOIN rw_new_offer o ON c.offer_id=o.offer_id "+
+						"LEFT JOIN address ca ON c.contract_aid=ca.address_id " +
+						"LEFT JOIN address sa ON o.seller_aid=sa.address_id "+
+						"LEFT JOIN address ba ON o.buyer_aid=ba.address_id " +
+					"WHERE o.token_id=$1 "+
+					"ORDER BY c.id " +
+				")"+
+				"UNION ALL" +
+				"(" +
+					"SELECT "+
+						"b.block_num," +
+						"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT as ts,"+
+						"b.time_stamp," +
+						"b.contract_aid,"+
+						"ca.addr contract_addr," +
+						//---------Mint
+						"token_id,"+
+						"NULL AS owner_aid,"+
+						"NULL AS owner_addr,"+
+						"NULL AS seed,"+
+						"NULL AS seed_num,"+
+						//---------NewOffer
+						"b.seller_aid," +
+						"sa.addr seller_addr,"+
+						"b.buyer_aid,"+
+						"ba.addr buyer_addr,"+
+						"o.otype as otype,"+
+						"o.offer_id,"+
+						"NULL AS active,"+
+						"o.price/1e+18 AS price,"+
+						//---------Offer Canceled
+						"CAST(NULL AS BIGINT) offer_canceled_id,"+
+						//---------Item Bought
+						"b.id AS item_bought_id,"+
+						//---------Token Name
+						"CAST(NULL AS TEXT) as token_name,"+
+						//---------Transfer
+						"CAST(NULL AS BIGINT) as transfer_id "+
+					"FROM rw_item_bought b "+
+						"JOIN rw_new_offer o ON b.offer_id=o.offer_id "+
+						"LEFT JOIN address ca ON b.contract_aid=ca.address_id " +
+						"LEFT JOIN address sa ON b.seller_aid=sa.address_id "+
+						"LEFT JOIN address ba ON b.buyer_aid=ba.address_id " +
+					"WHERE o.token_id=$1 "+
+					"ORDER BY b.id " +
+				")"+
+				"UNION ALL" +
+				"(" +
+					"SELECT "+
+						"n.block_num," +
+						"EXTRACT(EPOCH FROM n.time_stamp)::BIGINT as ts,"+
+						"n.time_stamp," +
+						"n.contract_aid,"+
+						"ca.addr contract_addr," +
+						//---------Mint
+						"token_id,"+
+						"NULL AS owner_aid,"+
+						"NULL AS owner_addr,"+
+						"NULL AS seed,"+
+						"NULL AS seed_num,"+
+						//---------NewOffer
+						"CAST(NULL AS BIGINT) AS seller_aid," +
+						"NULL AS seller_addr,"+
+						"CAST(NULL AS BIGINT) AS buyer_aid,"+
+						"NULL AS buyer_addr,"+
+						"NULL AS otype,"+
+						"NULL AS offer_id,"+
+						"NULL AS active,"+
+						"NULL AS price,"+
+						//---------Offer Canceled
+						"CAST(NULL AS BIGINT) offer_canceled_id,"+
+						//---------Item Bought
+						"NULL AS item_bought_id,"+
+						//---------Token Name
+						"n.new_name token_name,"+
+						//---------TransferID
+						"CAST(NULL AS BIGINT) transfer_id " +
+					"FROM rw_token_name n "+
+						"LEFT JOIN address ca ON n.contract_aid=ca.address_id " +
+					"WHERE n.token_id=$1 "+
+					"ORDER BY n.id " +
+				")"+
+				"UNION ALL" +
+				"(" +
+					"SELECT "+
+						"tr.block_num," +
+						"EXTRACT(EPOCH FROM tr.time_stamp)::BIGINT as ts,"+
+						"tr.time_stamp," +
+						"tr.contract_aid,"+
+						"ca.addr contract_addr," +
+						//---------Mint
+						"tr.token_id,"+
+						"NULL AS owner_aid,"+
+						"NULL AS owner_addr,"+
+						"NULL AS seed,"+
+						"NULL AS seed_num,"+
+						//---------NewOffer
+						"tr.from_aid AS seller_aid," +
+						"fa.addr AS seller_addr,"+
+						"tr.to_aid AS buyer_aid,"+
+						"ta.addr AS buyer_addr,"+
+						"NULL AS otype,"+
+						"NULL AS offer_id,"+
+						"NULL AS active,"+
+						"NULL AS price,"+
+						//---------Offer Canceled
+						"CAST(NULL AS BIGINT) offer_canceled_id,"+
+						//---------Item Bought
+						"NULL AS item_bought_id,"+
+						//---------Token Name
+						"NULL as token_name,"+
+						//---------Transfer
+						"tr.id AS transfer_id "+
+					"FROM rw_transfer tr "+
+						"LEFT JOIN address ca ON tr.contract_aid=ca.address_id " +
+						"LEFT JOIN address fa ON tr.from_aid=fa.address_id " +
+						"LEFT JOIN address ta ON tr.to_aid=ta.address_id " +
+						"LEFT JOIN rw_new_offer off ON tr.tx_id=off.tx_id "+
+						"LEFT JOIN rw_mint_evt mint ON tr.tx_id=mint.tx_id " +
+						"LEFT JOIN rw_item_bought item ON tr.tx_id=item.tx_id " +
+						"LEFT JOIN rw_offer_canceled cancel ON tr.tx_id=cancel.tx_id "+
+						"LEFT JOIN rw_token_name name ON tr.tx_id=name.tx_id "+
+					"WHERE tr.token_id=$1 "+
+						"AND (off.id IS NULL) "+
+						"AND (mint.id IS NULL) " +
+						"AND (item.id IS NULL) " +
+						"AND (cancel.id IS NULL) "+
+						"AND (name.id IS NULL) "+
+					"ORDER BY tr.id " +
 				")"+
 			") AS data " +		// FROM
 		"ORDER BY ts " +
@@ -377,6 +573,8 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 			contract_aid		sql.NullInt64
 			contract_addr		sql.NullString
 			token_id			sql.NullInt64
+			owner_aid			sql.NullInt64
+			owner_addr			sql.NullString
 			seed				sql.NullString
 			seed_num			sql.NullString
 			price				sql.NullFloat64
@@ -385,7 +583,12 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 			buyer_aid			sql.NullInt64
 			buyer_addr			sql.NullString
 			otype				sql.NullInt64
+			offer_id			sql.NullInt64
 			active				sql.NullBool
+			offer_canceled_id	sql.NullInt64
+			item_bought_id		sql.NullInt64
+			token_name			sql.NullString
+			transfer_id			sql.NullInt64
 		)
 		err=rows.Scan(
 			&block_num,
@@ -394,15 +597,22 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 			&contract_aid,
 			&contract_addr,
 			&token_id,
+			&owner_aid,
+			&owner_addr,
 			&seed,
 			&seed_num,
-			&price,
 			&seller_aid,
 			&seller_addr,
 			&buyer_aid,
 			&buyer_addr,
 			&otype,
+			&offer_id,
 			&active,
+			&price,
+			&offer_canceled_id,
+			&item_bought_id,
+			&token_name,
+			&transfer_id,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
@@ -416,6 +626,8 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 				DateTime:			datetime.String,
 				ContractAid:		contract_aid.Int64,
 				ContractAddr:		contract_addr.String,
+				OwnerAid:			owner_aid.Int64,
+				OwnerAddr:			owner_addr.String,
 				TokenId:			token_id.Int64,
 				SeedHex:			seed.String,
 				SeedNum:			seed_num.String,
@@ -437,11 +649,96 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 				BuyerAid:			buyer_aid.Int64,
 				BuyerAddr:			buyer_addr.String,
 				OfferType:			int(otype.Int64),
+				OfferId:			offer_id.Int64,
 				Active:				active.Bool,
 				Price:				price.Float64,
 			}
 			rec.Record = iface
 			rec.RecordType = 2
+		}
+		if offer_canceled_id.Valid {
+			iface := p.RW_API_HistEntry_OfferCanceled{
+				BlockNum:			block_num.Int64,
+				TimeStamp:			timestamp.Int64,
+				DateTime:			datetime.String,
+				ContractAid:		contract_aid.Int64,
+				ContractAddr:		contract_addr.String,
+				TokenId:			token_id.Int64,
+				OfferCanceledId:	offer_canceled_id.Int64,
+				OfferType:			int(otype.Int64),
+				OfferId:			offer_id.Int64,
+				SellerAid:			seller_aid.Int64,
+				SellerAddr:			seller_addr.String,
+				BuyerAid:			buyer_aid.Int64,
+				BuyerAddr:			buyer_addr.String,
+				Price:				price.Float64,
+			};
+			if iface.OfferType == 0 { // BUY
+				iface.Aid = seller_aid.Int64
+				iface.Address = seller_addr.String
+			} else {
+				iface.Aid = buyer_aid.Int64
+				iface.Address = buyer_addr.String
+			}
+			rec.Record = iface
+			rec.RecordType = 3
+		}
+		if item_bought_id.Valid {
+			iface := p.RW_API_HistEntry_ItemBought{
+				BlockNum:			block_num.Int64,
+				TimeStamp:			timestamp.Int64,
+				DateTime:			datetime.String,
+				ContractAid:		contract_aid.Int64,
+				ContractAddr:		contract_addr.String,
+				TokenId:			token_id.Int64,
+				ItemBoughtId:		item_bought_id.Int64,
+				OfferType:			int(otype.Int64),
+				OfferId:			offer_id.Int64,
+				SellerAid:			seller_aid.Int64,
+				SellerAddr:			seller_addr.String,
+				BuyerAid:			buyer_aid.Int64,
+				BuyerAddr:			buyer_addr.String,
+				Price:				price.Float64,
+			};
+			if iface.OfferType == 0 { // BUY
+				iface.Aid = seller_aid.Int64
+				iface.Address = seller_addr.String
+			} else {
+				iface.Aid = buyer_aid.Int64
+				iface.Address = buyer_addr.String
+			}
+			rec.Record = iface
+			rec.RecordType = 4
+		}
+		if token_name.Valid {
+			iface := p.RW_API_HistEntry_TokenName {
+				BlockNum:			block_num.Int64,
+				TimeStamp:			timestamp.Int64,
+				DateTime:			datetime.String,
+				ContractAid:		contract_aid.Int64,
+				ContractAddr:		contract_addr.String,
+				TokenId:			token_id.Int64,
+				TokenName:			token_name.String,
+			}
+			rec.Record = iface
+			rec.RecordType = 5
+		}
+		if transfer_id.Valid {
+			iface := p.RW_API_HistEntry_Transfer {
+				BlockNum:			block_num.Int64,
+				TimeStamp:			timestamp.Int64,
+				DateTime:			datetime.String,
+				ContractAid:		contract_aid.Int64,
+				ContractAddr:		contract_addr.String,
+				TokenId:			token_id.Int64,
+				TransferId:			transfer_id.Int64,
+				FromAid:			seller_aid.Int64,
+				FromAddr:			seller_addr.String,
+				ToAid:				buyer_aid.Int64,
+				ToAddr:				buyer_addr.String,
+			}
+			rec.Record = iface
+			rec.RecordType = 6
 		}
 		records = append(records,rec)
 	}

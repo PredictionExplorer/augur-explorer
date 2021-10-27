@@ -49,3 +49,11 @@ rm ./etl/cmd/arbitrum-augur/tools/spotprice
 rm ./etl/cmd/arbitrum-augur/tools/trade2price
 rm ./etl/cmd/arbitrum-augur/tools/usershares
 rm ./etl/cmd/arbitrum-augur/tools/allowance
+rm ./etl/cmd/randomwalk/randomwalk
+rm ./etl/cmd/randomwalk/scripts/accept_offer
+rm ./etl/cmd/randomwalk/scripts/approve
+rm ./etl/cmd/randomwalk/scripts/cancel_offer
+rm ./etl/cmd/randomwalk/scripts/mint
+rm ./etl/cmd/randomwalk/scripts/new_offer
+rm ./etl/cmd/randomwalk/scripts/setname
+rm ./etl/cmd/randomwalk/scripts/transfer

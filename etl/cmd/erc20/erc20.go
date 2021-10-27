@@ -146,7 +146,7 @@ func proc_erc20_transfer(evt_id int64) error {
 }
 func process_erc20_tokens(exit_chan chan bool) {
 
-	var max_batch_size int64 = 256
+	var max_batch_size int64 = 1024*8
 	for {
 		select {
 			case exit_flag := <-exit_chan:

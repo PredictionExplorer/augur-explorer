@@ -10,6 +10,7 @@
 	<tr class="market_reports">
 		<th class="market_reports">Block</th>
 		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Address</th>
 		<th class="market_reports">TokenId</th>
 		<th class="market_reports">Op Type</th>
 		<th class="market_reports">Price</th>
@@ -24,6 +25,18 @@
 				{{ if eq .RecordType 2 }}
 					{{.Record.BlockNum}}
 				{{ end }}
+				{{ if eq .RecordType 3 }}
+					{{.Record.BlockNum}}
+				{{ end }}
+				{{ if eq .RecordType 4 }}
+					{{.Record.BlockNum}}
+				{{ end }}
+				{{ if eq .RecordType 5 }}
+					{{.Record.BlockNum}}
+				{{ end }}
+				{{ if eq .RecordType 6 }}
+					{{.Record.BlockNum}}
+				{{ end }}
 			</td>
 			<td class="">
 				{{ if eq .RecordType 1 }}
@@ -31,6 +44,39 @@
 				{{ end }}
 				{{ if eq .RecordType 2 }}
 					{{.Record.DateTime}}
+				{{ end }}
+				{{ if eq .RecordType 3 }}
+					{{.Record.DateTime}}
+				{{ end }}
+				{{ if eq .RecordType 4 }}
+					{{.Record.DateTime}}
+				{{ end }}
+				{{ if eq .RecordType 5 }}
+					{{.Record.DateTime}}
+				{{ end }}
+				{{ if eq .RecordType 6 }}
+					{{.Record.DateTime}}
+				{{ end }}
+			</td>
+			<td class="">
+				{{ if eq .RecordType 1 }}
+					{{.Record.OwnerAddr}}
+				{{ end }}
+				{{ if eq .RecordType 2 }}
+					{{ if eq .Record.OfferType 1 }}{{.Record.SellerAddr }}{{end}}
+					{{ if eq .Record.OfferType 0 }}{{.Record.BuyerAddr}}{{end}}
+				{{ end }}
+				{{ if eq .RecordType 3 }}
+					Token Owner
+				{{ end }}
+				{{ if eq .RecordType 4 }}
+					{{.Record.Address }}
+				{{ end }}
+				{{ if eq .RecordType 5 }}
+					Token Owner
+				{{ end }}
+				{{ if eq .RecordType 6 }}
+					{{.Record.FromAddr}}
 				{{ end }}
 			</td>
 			<td class="" style="text-align:center;">
@@ -40,24 +86,59 @@
 				{{ if eq .RecordType 2 }}
 					{{.Record.TokenId}}
 				{{ end }}
+				{{ if eq .RecordType 3 }}
+					{{.Record.TokenId }}
+				{{ end }}
+				{{ if eq .RecordType 4 }}
+					{{.Record.TokenId }}
+				{{ end }}
+				{{ if eq .RecordType 5 }}
+					{{.Record.TokenId }}
+				{{ end }}
+				{{ if eq .RecordType 6 }}
+					{{.Record.TokenId }}
+				{{ end }}
 			</td>
-			<td class="">
+			<td nowrap class="">
 				{{ if eq .RecordType 1 }}
 					Mint
 				{{ end }}
 				{{ if eq .RecordType 2 }}
-					New Offer (
-					{{ if eq .Record.OfferType 0 }}BUY{{end}}
-					{{ if eq .Record.OfferType 1 }}SELL{{end}}
-					)
+					New Offer
+					{{ if eq .Record.OfferType 0 }}<!--BUY-->{{end}}
+					{{ if eq .Record.OfferType 1 }}<!--SELL-->{{end}}
+				{{ end }}
+				{{ if eq .RecordType 3 }}
+					Cancel Offer
+				{{ end }}
+				{{ if eq .RecordType 4 }}
+					Item Bought
+				{{ end }}
+				{{ if eq .RecordType 5 }}
+					Token Name
+				{{ end }}
+				{{ if eq .RecordType 6 }}
+					Transfer
 				{{ end }}
 			</td>
 			<td class="market_reports_field" style="text-align: center;">
 				{{ if eq .RecordType 1 }}
-					{{ printf "%.6f" .Record.Price}}
+					{{ printf "%.18f" .Record.Price}}
 				{{ end }}
 				{{ if eq .RecordType 2 }}
-					{{ printf "%.6f" .Record.Price}}
+					{{ printf "%.18f" .Record.Price}}
+				{{ end }}
+				{{ if eq .RecordType 3 }}
+					{{ printf "%.18f" .Record.Price}}
+				{{ end }}
+				{{ if eq .RecordType 4 }}
+					{{ printf "%.18f" .Record.Price}}
+				{{ end }}
+				{{ if eq .RecordType 5 }}
+						N/A
+				{{ end }}
+				{{ if eq .RecordType 6 }}
+						N/A
 				{{ end }}
 			</td>
 			<td class="">
@@ -67,7 +148,19 @@
 				{{ if eq .RecordType 2 }}
 					{{ if eq .Record.OfferType 0 }}BUY{{end}}
 					{{ if eq .Record.OfferType 1 }}SELL{{end}}
-					offer at {{ printf "%.9f" .Record.Price }} ETH
+					offer with ID={{.Record.OfferId }} created
+				{{ end }}
+				{{ if eq .RecordType 3 }}
+					Offer with ID={{.Record.OfferId}} was canceled by creator
+				{{ end }}
+				{{ if eq .RecordType 4 }}
+					Offer with ID={{.Record.OfferId}} was bought by {{.Record.Address}}
+				{{ end }}
+				{{ if eq .RecordType 5 }}
+					Owner has set Token Name to <font color=yellow><i>{{.Record.TokenName}}</i></font>
+				{{ end }}
+				{{ if eq .RecordType 6 }}
+				Owner transferred token to a new owner {{.Record.ToAddr}}
 				{{ end }}
 			</td>
 		</tr>
