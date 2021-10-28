@@ -12,6 +12,11 @@ func api_rwalk_current_offers(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
 	p_order_by := c.Param("order_by")
 	var order_by int64
 	if len(p_order_by) > 0 {
@@ -38,6 +43,12 @@ func api_rwalk_current_offers(c *gin.Context) {
 func api_rwalk_token_list_seq(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
 	tokens := augur_srv.db_arbitrum.Get_minted_tokens_sequentially(0,10000000000)
 
 	var req_status int = 1
@@ -51,6 +62,12 @@ func api_rwalk_token_list_seq(c *gin.Context) {
 func api_rwalk_token_list_period(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
 	success,ini,fin := parse_timeframe_ini_fin(c,JSON)
 	if !success {
 		return
@@ -71,6 +88,11 @@ func api_rwalk_sale_history(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
 	success,offset,limit := parse_offset_limit_params(c)
 	if !success {
 		return
@@ -88,6 +110,12 @@ func api_rwalk_sale_history(c *gin.Context) {
 func api_rwalk_token_history(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
 	p_token_id := c.Param("token_id")
 	var token_id int64
 	if len(p_token_id) > 0 {
@@ -115,4 +143,28 @@ func api_rwalk_token_history(c *gin.Context) {
 		"TokenHistory" : history,
 	})
 }
+func api_rwalk_trading_volume_by_period(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+
+	vol_hist := augur_srv.db_arbitrum.Get_randomwalk_trading_volume_by_period(init_ts,fin_ts,interval_secs)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"VolumeHistory" : vol_hist,
+		"InitTs" : init_ts,
+		"FinTs" : fin_ts,
+		"Interval" : interval_secs,
+	})
+}

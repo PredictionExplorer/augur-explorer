@@ -125,6 +125,7 @@ func set_routing_randomwalk(r *gin.Engine) {
 	r.GET("/black/rwalk/sales/:offset/:limit",rwalk_sale_history)
 	r.GET("/black/rwalk/sales",rwalk_sale_history)
 	r.GET("/black/rwalk/statistics",rwalk_global_stats)
+	r.GET("/black/rwalk/statistics/trading_volume/:init_ts/:fin_ts/:interval_secs",rwalk_trading_volume_by_period)
 }
 func set_routing_black_templates(r *gin.Engine) {
 

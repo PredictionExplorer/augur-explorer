@@ -6,11 +6,19 @@ import (
 )
 func rwalk_index_page(c *gin.Context) {
 
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
 	c.HTML(http.StatusOK, "rw_index.html", gin.H{
 	})
 }
 func rwalk_current_offers(c *gin.Context) {
 
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
 	p_order_by := c.Param("order_by")
 	var order_by int64
 	if len(p_order_by) > 0 {
@@ -31,6 +39,10 @@ func rwalk_current_offers(c *gin.Context) {
 }
 func rwalk_token_list_seq(c *gin.Context) {
 
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
 	tokens:= augur_srv.db_arbitrum.Get_minted_tokens_sequentially(0,10000000000)
 
 	c.HTML(http.StatusOK, "rw_tokens_minted.html", gin.H{
@@ -39,6 +51,10 @@ func rwalk_token_list_seq(c *gin.Context) {
 }
 func rwalk_token_list_period(c *gin.Context) {
 
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
 	success,ini,fin := parse_timeframe_ini_fin(c,HTTP)
 	if !success {
 		return
@@ -53,6 +69,10 @@ func rwalk_token_list_period(c *gin.Context) {
 }
 func rwalk_sale_history(c *gin.Context) {
 
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
 	success,offset,limit := parse_offset_limit_params(c)
 	if !success {
 		return
@@ -65,6 +85,10 @@ func rwalk_sale_history(c *gin.Context) {
 }
 func rwalk_global_stats(c *gin.Context) {
 
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
 	stats := augur_srv.db_arbitrum.Get_global_stats()
 
 	c.HTML(http.StatusOK, "rw_global_stats.html", gin.H{
@@ -73,6 +97,10 @@ func rwalk_global_stats(c *gin.Context) {
 }
 func rwalk_token_history(c *gin.Context) {
 
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
 	p_token_id := c.Param("token_id")
 	var token_id int64
 	if len(p_token_id) > 0 {
@@ -97,4 +125,20 @@ func rwalk_token_history(c *gin.Context) {
 		"TokenHistory" : history,
 	})
 }
+func rwalk_trading_volume_by_period(c *gin.Context) {
 
+	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+
+	vol_hist := augur_srv.db_arbitrum.Get_randomwalk_trading_volume_by_period(init_ts,fin_ts,interval_secs)
+	volume_data := build_js_randomwalk_volume_history(&vol_hist)
+	c.HTML(http.StatusOK, "rw_volume_history.html", gin.H{
+		"VolumeHistory" : vol_hist,
+		"VolumeData" : volume_data,
+		"InitTs" : init_ts,
+		"FinTs" : fin_ts,
+		"Interval" : interval_secs,
+	})
+}

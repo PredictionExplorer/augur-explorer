@@ -88,9 +88,6 @@ type API_Pol_CondPrepInfo struct {
 type API_Pol_GlobalLiquidityHistoryEntry struct {
 	StartTs					int64
 	NumOperations			int64
-	//SumAmounts				float64
-	//SumShares				float64
-	//SumCollateralRemoved	float64
 	Liquidity				float64
 	LiquidityAccum			float64
 }

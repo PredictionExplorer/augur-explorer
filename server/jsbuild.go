@@ -422,3 +422,25 @@ func build_js_polymarkets_outcome_price_history(prices* []API_Pol_OutcomePriceHi
 	data_str = data_str + "]"
 	return template.JS(data_str)
 }
+func build_js_randomwalk_volume_history(prices* []RW_API_RandomWalkVolumeHistory) template.JS {
+	var data_str string = "["
+
+	for i:=0 ; i < len(*prices) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		var e = &(*prices)[i];
+		var entry string
+		ts := time.Unix(int64(e.StartTs),0)
+		date_str := fmt.Sprintf("%v",ts)
+		entry = "{" +
+				"x:" + fmt.Sprintf("new Date(%v * 1000)",e.StartTs)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.VolumeAccum) + "," +
+				"volume: " + fmt.Sprintf("%.18f",e.VolumeAccum) + "," +
+				"date_str: \"" + date_str + "\"" +
+				"}"
+		data_str= data_str + entry
+	}
+	data_str = data_str + "]"
+	return template.JS(data_str)
+}

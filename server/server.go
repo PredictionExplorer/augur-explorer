@@ -41,6 +41,13 @@ func (self *AugurServer) matic_initialized() bool {
 	}
 	return true
 }
+func (self *AugurServer) arbitrum_initialized() bool {
+
+	if self.db_arbitrum == nil {
+		return false
+	}
+	return true
+}
 func connect_to_amm(srv *AugurServer) {
 	amm_user := os.Getenv("AMM_USERNAME")
 	amm_passwd := os.Getenv("AMM_PASSWORD")

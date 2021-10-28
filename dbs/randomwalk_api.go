@@ -745,3 +745,87 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 
 	return records
 }
+func (ss *SQLStorage) Get_randomwalk_trading_volume_by_period(init_ts int,fin_ts int,interval int) []p.RW_API_RandomWalkVolumeHistory {
+
+	var query string
+	query = "SELECT sum(price)/1e+18 AS accum_vol FROM rw_item_bought b " +
+				"JOIN rw_new_offer o ON o.offer_id=b.offer_id " +
+				"WHERE b.time_stamp < TO_TIMESTAMP($1)"
+	var initial_volume sql.NullFloat64
+	err := ss.db.QueryRow(query,init_ts).Scan(&initial_volume)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("Error in Get_randomwalk_trading_volume_by_period(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	query = "WITH periods AS (" +
+				"SELECT * FROM (" +
+					"SELECT " +
+						"generate_series AS start_ts,"+
+						"TO_TIMESTAMP(EXTRACT(EPOCH FROM generate_series) + $3) AS end_ts "+
+					"FROM (" +
+						"SELECT * " +
+							"FROM generate_series(" +
+								"TO_TIMESTAMP($1)," +
+								"TO_TIMESTAMP($2)," +
+								"TO_TIMESTAMP($3)-TO_TIMESTAMP(0)) " +
+					") AS i" +
+				") AS data " +
+			") " +
+			"SELECT " +
+				"COALESCE(COUNT(b.id),0) as num_rows, " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
+				"SUM(b.price)/1e+18 as volume "+
+			"FROM periods AS p " +
+				"LEFT JOIN LATERAL ( "+
+					"SELECT b.id,b.time_stamp,o.price "+
+						"FROM rw_item_bought b "+
+						"JOIN rw_new_offer o ON b.offer_id=o.offer_id"+
+				") b ON " +
+					"(p.start_ts <= b.time_stamp) AND "+
+					"(b.time_stamp < p.end_ts) " +
+			"GROUP BY start_ts " +
+			"ORDER BY start_ts"
+
+	ss.Info.Printf("init_ts= %v , fin_ts= %v , interval = %v\n",init_ts,fin_ts,interval)
+	ss.Info.Printf("query = %v\n",query)
+	rows,err := ss.db.Query(query,init_ts,fin_ts,interval)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.RW_API_RandomWalkVolumeHistory,0,8)
+	var accum_vol float64 = 0.0
+	if initial_volume.Valid {
+		accum_vol = initial_volume.Float64
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_API_RandomWalkVolumeHistory
+		var sum_volume sql.NullFloat64
+		var num_rows int
+		err=rows.Scan(
+			&num_rows,
+			&rec.StartTs,
+			&sum_volume,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
+			os.Exit(1)
+		}
+		if sum_volume.Valid {
+			rec.Volume= sum_volume.Float64
+			rec.NumOperations = int64(num_rows)
+			accum_vol = accum_vol + rec.Volume
+		}
+		rec.VolumeAccum = accum_vol
+//		fmt.Printf("rec.Vol = %v Accum=%v\n",rec.Volume,rec.VolumeAccum)
+
+		records = append(records,rec)
+	}
+	return records
+
+
+
+}

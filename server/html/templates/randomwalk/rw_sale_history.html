@@ -1,11 +1,13 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Active Offers</title>
+	<title>Token Sales</title>
 </head>
 <body>
-	<h3 class="page_title">Active Offers<h3>
-<h3>Active Offers</h3>
+	<h3 class="page_title">Token Sales<h3>
+<div id="volume_history_graph"></div>
+<h3>Token sales by date</h3>
+<a href="Trading Volume Charta
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">Block</th>
@@ -29,7 +31,7 @@
 			</td>
 			<td class="" style="text-align: center;">{{.TokenId}}</td>
 			<td class="market_reports_field" style="text-align: center;">
-				{{ printf "%.6f" .Price}}
+				{{ printf "%.18f" .Price}}
 			</td>
 		</tr>
 	{{- end}}

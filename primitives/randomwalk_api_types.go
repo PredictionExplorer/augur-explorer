@@ -140,3 +140,9 @@ type RW_API_FullHistoryEntry struct {
 	RecordType			int		// Mint,or any other event starting with RW_API_HistEntry_*
 	Record				interface{}
 }
+type RW_API_RandomWalkVolumeHistory struct {
+	StartTs					int64
+	NumOperations			int64
+	Volume					float64
+	VolumeAccum				float64
+}
