@@ -123,6 +123,7 @@ func set_routing_randomwalk(r *gin.Engine) {
 	r.GET("/black/rwalk/tokens/history/:token_id",rwalk_token_history)
 	r.GET("/black/rwalk/tokens/history/:token_id/:offest/:limit",rwalk_token_history)
 	r.GET("/black/rwalk/tokens/name_changes/:token_id",rwalk_token_name_history)
+	r.GET("/black/rwalk/tokens/by_user/:user_aid",rwalk_tokens_by_user)
 	r.GET("/black/rwalk/sales/:offset/:limit",rwalk_sale_history)
 	r.GET("/black/rwalk/sales",rwalk_sale_history)
 	r.GET("/black/rwalk/statistics",rwalk_global_stats)

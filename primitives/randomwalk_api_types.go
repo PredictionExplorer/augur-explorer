@@ -40,6 +40,14 @@ type RW_API_Token struct {
 	Price			float64
 	TxHash			string
 }
+type RW_API_UserToken struct {
+	TokenId			int64
+	ContractAid		int64
+	ContractAddr	string
+	Seed			string
+	SeedNum			string
+	Price			float64
+}
 type RW_API_GlobalStats struct {
 	TradingVol			float64
 	NumTrades			int64

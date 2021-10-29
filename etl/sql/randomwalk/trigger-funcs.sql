@@ -130,8 +130,15 @@ DECLARE
 	v_cnt                   NUMERIC;
 BEGIN
 
-	INSERT INTO rw_token(token_id,seed_hex,seed_num)
-		VALUES(NEW.token_id,NEW.seed,NEW.seed_num);
+	UPDATE rw_token SET	-- UPDATE is used because the record is inserted during Transfer event
+			seed_hex=NEW.seed,
+			seed_num=NEW.seed_num
+		WHERE token_id=NEW.token_id;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO rw_token(token_id,seed_hex,seed_num)
+			VALUES(NEW.token_id,NEW.seed,NEW.seed_num);
+	END IF;
 
 	RETURN NEW;
 END;
@@ -160,6 +167,32 @@ CREATE OR REPLACE FUNCTION on_offer_canceled_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_rw_transfer_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt                   NUMERIC;
+BEGIN
+
+	UPDATE rw_token SET
+			cur_owner_aid = NEW.to_aid
+		WHERE token_id=NEW.token_id;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO rw_token(token_id,cur_owner_aid)
+			VALUES(NEW.token_id,NEW.to_aid);
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_rw_transfer_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+	
+	-- we do not restore previous token because there will be an INSERT anyway
+	-- since the transaction was already signed and will be processed in the future
+	-- and any possible failure of this transaction will be an extremely rare event
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

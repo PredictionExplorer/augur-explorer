@@ -166,3 +166,34 @@ func rwalk_token_name_history(c *gin.Context) {
 		"TokenNameChanges" : name_changes,
 	})
 }
+func rwalk_tokens_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_aid := c.Param("user_aid")
+	var user_aid int64
+	if len(p_user_aid) > 0 {
+		var success bool
+		user_aid,success = parse_int_from_remote_or_error(c,HTTP,&p_user_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'user_aid' parameter is not set")
+		return
+	}
+	user_addr,err := augur_srv.db_arbitrum.Lookup_address(user_aid)
+	if err != nil {
+		respond_error(c,"Address lookup on user_aid failed")
+		return
+	}
+	user_tokens := augur_srv.db_arbitrum.Get_random_walk_tokens_by_user(user_aid)
+
+	c.HTML(http.StatusOK, "rw_tokens_by_user.html", gin.H{
+		"UserTokens" : user_tokens,
+		"UserAid" : user_aid,
+		"UserAddr" : user_addr,
+	})
+}
