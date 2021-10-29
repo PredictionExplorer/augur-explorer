@@ -5,6 +5,7 @@ import (
 	"os"
 	"fmt"
 	"net/http"
+	"crypto/tls"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/autotls"
@@ -89,7 +90,9 @@ func main() {
 		}
 	}
 
+
 	port_plain := os.Getenv("AUGUR_HTTP_PORT")
+	host_secure := os.Getenv("AUGUR_HTTPS_HOSTNAME")
 
 	r := gin.New()
 	//r.RedirectTrailingSlash=false
@@ -122,7 +125,8 @@ func main() {
 
 	m := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
-		HostPolicy: autocert.HostWhitelist("api.predictionexplorer.com"),
+		//HostPolicy: autocert.HostWhitelist("api.predictionexplorer.com"),
+		HostPolicy: autocert.HostWhitelist(host_secure),
 		Cache:      autocert.DirCache(os.Getenv("HOME")+".tls-autocert-cache"),
 	}
 	_ = m
@@ -130,7 +134,23 @@ func main() {
 	log.Printf("Listening on port %s", port_plain)
 
 	go func() {
-		log.Printf("%v",autotls.Run(r, "api.predictionexplorer.com"))
+		log.Printf("Listening for TLS on interface %v\n",host_secure)
+		cer, err := tls.LoadX509KeyPair(
+				os.Getenv("HOME")+"/configs/server.crt",
+				os.Getenv("HOME")+"/configs/server.key",
+		)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		tlsConfig := &tls.Config{Certificates: []tls.Certificate{cer}}
+		server := http.Server{
+			Addr:      host_secure,
+			Handler:   r,
+			TLSConfig: tlsConfig,
+		}
+		err = server.ListenAndServeTLS("", "")
+		log.Printf("%v",err)
 	}()
 	if len(port_plain) > 0 {
 		go func() {

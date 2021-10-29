@@ -825,7 +825,56 @@ func (ss *SQLStorage) Get_randomwalk_trading_volume_by_period(init_ts int,fin_ts
 		records = append(records,rec)
 	}
 	return records
+}
+func (ss *SQLStorage) Get_name_changes_for_token(token_id int64) []p.RW_API_TokenName{
 
+	records := make([]p.RW_API_TokenName,0,32)
+	var query string
+	query = "SELECT "+
+				"t.block_num,"+
+				"EXTRACT(EPOCH FROM t.time_stamp)::BIGINT as ts,"+
+				"t.time_stamp," +
+				"t.contract_aid,"+
+				"ca.addr,"+
+				"t.new_name,"+
+				"tx.tx_hash,"+
+				"oa.address_id,"+
+				"oa.addr "+
+			"FROM rw_token_name t "+
+				"LEFT JOIN address ca ON t.contract_aid=ca.address_id "+
+				"LEFT JOIN transaction tx ON t.tx_id=tx.id "+
+				"LEFT JOIN address oa ON tx.from_aid=oa.address_id "+
+			"WHERE token_id = $1 " +
+			"ORDER by t.id DESC "
 
+	rows,err := ss.db.Query(query,token_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_API_TokenName
+		err=rows.Scan(
+			&rec.BlockNum,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.ContractAid,
+			&rec.ContractAddr,
+			&rec.TokenName,
+			&rec.TxHash,
+			&rec.OwnerAid,
+			&rec.OwnerAddr,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.TokenId= token_id
+		records = append(records,rec)
+	}
+
+	return records
 
 }

@@ -146,3 +146,15 @@ type RW_API_RandomWalkVolumeHistory struct {
 	Volume					float64
 	VolumeAccum				float64
 }
+type RW_API_TokenName struct {
+	BlockNum		int64
+	TimeStamp		int64
+	DateTime		string
+	ContractAid		int64
+	ContractAddr	string
+	TokenId			int64
+	TokenName		string
+	TxHash			string
+	OwnerAid		int64
+	OwnerAddr		string
+}

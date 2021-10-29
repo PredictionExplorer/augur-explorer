@@ -142,3 +142,27 @@ func rwalk_trading_volume_by_period(c *gin.Context) {
 		"Interval" : interval_secs,
 	})
 }
+func rwalk_token_name_history(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_token_id := c.Param("token_id")
+	var token_id int64
+	if len(p_token_id) > 0 {
+		var success bool
+		token_id,success = parse_int_from_remote_or_error(c,HTTP,&p_token_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'token_id' parameter is not set")
+		return
+	}
+	name_changes := augur_srv.db_arbitrum.Get_name_changes_for_token(token_id)
+
+	c.HTML(http.StatusOK, "rw_token_names.html", gin.H{
+		"TokenNameChanges" : name_changes,
+	})
+}
