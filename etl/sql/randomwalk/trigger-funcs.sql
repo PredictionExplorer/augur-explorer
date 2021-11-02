@@ -132,12 +132,13 @@ BEGIN
 
 	UPDATE rw_token SET	-- UPDATE is used because the record is inserted during Transfer event
 			seed_hex=NEW.seed,
-			seed_num=NEW.seed_num
+			seed_num=NEW.seed_num,
+			last_price=NEW.price
 		WHERE token_id=NEW.token_id;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO rw_token(token_id,seed_hex,seed_num)
-			VALUES(NEW.token_id,NEW.seed,NEW.seed_num);
+		INSERT INTO rw_token(token_id,seed_hex,seed_num,last_price)
+			VALUES(NEW.token_id,NEW.seed,NEW.seed_num,NEW.price);
 	END IF;
 
 	RETURN NEW;

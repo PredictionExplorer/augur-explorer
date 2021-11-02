@@ -130,7 +130,8 @@ func set_api_routing_polymarket(r *gin.Engine) {
 	r.GET("/api/poly/stats/global_trading/:init_ts/:fin_ts/:interval_secs",a1_poly_trade_hist_global)
 }
 func set_api_routing_randomwalk(r *gin.Engine) {
-	r.GET("/api/rwalk/current_offers/:order_by",api_rwalk_current_offers)
+	r.GET("/api/rwalk/current_offers/:rwalk_addr/:market_addr/:order_by",api_rwalk_current_offers)
+	r.GET("/api/rwalk/floor_price/:rwalk_addr/:market_addr",api_rwalk_floor_price)
 	r.GET("/api/rwalk/tokens/list/sequential",api_rwalk_token_list_seq)
 	r.GET("/api/rwalk/tokens/list/sequential/:offset/:limit",api_rwalk_token_list_seq)
 	r.GET("/api/rwalk/tokens/list/by_period/:init_ts/:fin_ts",api_rwalk_token_list_period)

@@ -17,6 +17,17 @@ func api_rwalk_current_offers(c *gin.Context) {
 		return
 	}
 
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		rwalk_aid = 0
+	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		market_aid = 0
+	}
+
 	p_order_by := c.Param("order_by")
 	var order_by int64
 	if len(p_order_by) > 0 {
@@ -30,7 +41,7 @@ func api_rwalk_current_offers(c *gin.Context) {
 		return
 	}
 
-	offers := augur_srv.db_arbitrum.Get_active_offers(int(order_by))
+	offers := augur_srv.db_arbitrum.Get_active_offers(rwalk_aid,market_aid,int(order_by))
 
 	var req_status int = 1
 	var err_str string = ""
@@ -38,6 +49,42 @@ func api_rwalk_current_offers(c *gin.Context) {
 		"status": req_status,
 		"error" : err_str,
 		"Offers" : offers,
+		"RWalkAid": rwalk_aid,
+		"MarketAid": market_aid,
+	})
+}
+func api_rwalk_floor_price(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		rwalk_aid = -1
+	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		market_aid = -1
+	}
+
+	floor_price,err := augur_srv.db_arbitrum.Get_floor_price(rwalk_aid,market_aid)
+	var db_err string
+	if err != nil { db_err = err.Error() }
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"FloorPrice" : floor_price,
+		"DBError": db_err,
+		"MarketAddr":p_market_addr,
+		"RWalkAddr":p_rwalk_addr,
+		"RWalkAid": rwalk_aid,
+		"MarketAid": market_aid,
 	})
 }
 func api_rwalk_token_list_seq(c *gin.Context) {

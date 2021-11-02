@@ -19,6 +19,17 @@ func rwalk_current_offers(c *gin.Context) {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		rwalk_aid = -1
+	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		market_aid = -1
+	}
+
 	p_order_by := c.Param("order_by")
 	var order_by int64
 	if len(p_order_by) > 0 {
@@ -31,10 +42,41 @@ func rwalk_current_offers(c *gin.Context) {
 		respond_error(c,"'order_by' parameter is not set")
 		return
 	}
-	offers := augur_srv.db_arbitrum.Get_active_offers(int(order_by))
+	offers := augur_srv.db_arbitrum.Get_active_offers(rwalk_aid,market_aid,int(order_by))
 
 	c.HTML(http.StatusOK, "rw_current_offers.html", gin.H{
 		"Offers" : offers,
+		"RWalkAid": rwalk_aid,
+		"MarketAid": market_aid,
+	})
+}
+func rwalk_floor_price(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		rwalk_aid = -1
+	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		market_aid = -1
+	}
+
+	floor_price,err := augur_srv.db_arbitrum.Get_floor_price(rwalk_aid,market_aid)
+	var db_err string
+	if err != nil { db_err = err.Error() }
+	c.HTML(http.StatusOK, "rw_floor_price.html", gin.H{
+		"FloorPrice" : floor_price,
+		"DBError": db_err,
+		"MarketAddr":p_market_addr,
+		"RWalkAddr":p_rwalk_addr,
+		"RWalkAid": rwalk_aid,
+		"MarketAid": market_aid,
 	})
 }
 func rwalk_token_list_seq(c *gin.Context) {

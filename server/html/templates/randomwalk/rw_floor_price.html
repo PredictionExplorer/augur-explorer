@@ -1,0 +1,31 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Price Floor</title>
+</head>
+<body>
+	<h3 class="page_title">Price Floor<h3>
+<table>
+	<tr class="market_reports">
+		<td>Market Address</td>
+		<td>{{.MarketAddr}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td>Market Addr ID</td>
+		<td>{{.MarketAid}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td>NFT Address</td>
+		<td>{{.RWalkAddr}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td>NFT Addr ID</td>
+		<td>{{.RWalkAid}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td>Floor Price</td>
+		<td>{{printf "%.18f" .FloorPrice}}</td>
+	</tr>
+</table>
+<br/><br/>
+</body>

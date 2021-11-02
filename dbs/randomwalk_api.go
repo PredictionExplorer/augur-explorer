@@ -5,14 +5,20 @@ import (
 	"database/sql"
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Get_active_offers(order_by int) []p.RW_API_Offer {
+func (ss *SQLStorage) Get_active_offers(rwalk_aid int64,market_aid int64, order_by int) []p.RW_API_Offer {
 
 	records := make([]p.RW_API_Offer,0,16)
 
-	var order_by_mod string ="ORDER BY o.id"
+	var order_by_mod string =" ORDER BY o.id"
 	if order_by == 1 {
-		order_by_mod = "ORDER BY o.price DESC"
+		order_by_mod = " ORDER BY o.price DESC"
 	}
+	if order_by == 2 {
+		order_by_mod = " ORDER BY o.price ASC"
+	}
+	var where_cond string =""
+	where_cond = fmt.Sprintf(" AND (o.rwalk_aid=%v) ",rwalk_aid)
+	where_cond += fmt.Sprintf(" AND (o.contract_aid=%v) ",market_aid)
 	var query string
 	query = "SELECT " +
 				"o.id,"+
@@ -30,16 +36,17 @@ func (ss *SQLStorage) Get_active_offers(order_by int) []p.RW_API_Offer {
 				"ba.addr buyer_addr,"+
 				"o.token_id,"+
 				"o.active,"+
-				"o.price/1e+18 price "+
+				"o.price/1e+18 price, "+
+				"o.rwalk_aid " +
 			"FROM "+
 				"rw_new_offer o "+
 				"JOIN transaction tx ON o.tx_id=tx.id "+
 				"JOIN address sa ON o.seller_aid=sa.address_id "+
 				"JOIN address ba ON o.buyer_aid=ba.address_id "+
-			"WHERE active = 't' " +
+			"WHERE (active = 't')" + where_cond +
 			order_by_mod
 
-	rows,err := ss.db.Query(query)
+	rows,err := ss.db.Query(query,)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -65,6 +72,7 @@ func (ss *SQLStorage) Get_active_offers(order_by int) []p.RW_API_Offer {
 			&rec.TokenId,
 			&rec.Active,
 			&rec.Price,
+			&rec.RWalkAid,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
@@ -877,4 +885,67 @@ func (ss *SQLStorage) Get_name_changes_for_token(token_id int64) []p.RW_API_Toke
 
 	return records
 
+}
+func (ss *SQLStorage) Get_random_walk_tokens_by_user(user_aid int64) []p.RW_API_UserToken {
+
+	records := make([]p.RW_API_UserToken,0,32)
+	var query string
+	query = "SELECT "+
+				"t.token_id,"+
+				"seed_hex,"+
+				"seed_num,"+
+				"last_price/1e+18 "+
+			"FROM rw_token t "+
+			"WHERE cur_owner_aid=$1 "+
+			"ORDER BY token_id"
+	rows,err := ss.db.Query(query,user_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_API_UserToken
+		err=rows.Scan(
+			&rec.TokenId,
+			&rec.Seed,
+			&rec.SeedNum,
+			&rec.Price,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+
+	return records
+}
+func (ss *SQLStorage) Get_floor_price(rwalk_aid int64,market_aid int64) (float64,error) {
+
+	var output sql.NullFloat64
+	var where_cond string =""
+	where_cond = fmt.Sprintf(" AND (o.rwalk_aid=%v) ",rwalk_aid)
+	where_cond += fmt.Sprintf(" AND (o.contract_aid=%v) ",market_aid)
+	var query string
+	query = "SELECT " +
+				"o.price/1e+18 price "+
+			"FROM "+
+				"rw_new_offer o "+
+			"WHERE (active = 't')" + where_cond +
+			"ORDER BY o.price ASC "+
+			"LIMIT 1"
+
+	res := ss.db.QueryRow(query)
+	err := res.Scan(&output)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return output.Float64,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return output.Float64,nil
 }
