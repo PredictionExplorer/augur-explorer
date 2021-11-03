@@ -38,6 +38,15 @@ BEGIN
 		INSERT INTO rw_stats(rwalk_aid,total_vol,total_num_trades)
 			VALUES(v_rwalk_aid,v_price,1);
 	END IF;
+	UPDATE rw_mkt_stats
+		SET		total_vol = (total_vol +1),
+				total_num_trades = (total_num_trades +1)
+		WHERE contract_aid = NEW.contract_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO rw_mkt_stats(contract_aid,total_vol,total_num_trades)
+			VALUES(NEW.contract_aid,v_price,1);
+	END IF;
 	UPDATE rw_token SET
 			last_price=v_price,
 			num_trades=(num_trades+1),
@@ -86,6 +95,11 @@ BEGIN
 		SET		total_vol = (total_vol -1),
 				total_num_trades = (total_num_trades -1)
 		WHERE rwalk_aid = v_rwalk_aid;
+	UPDATE rw_mkt_stats
+		SET		total_vol = (total_vol -1),
+				total_num_trades = (total_num_trades -1)
+		WHERE contract_aid = NEW.contract_aid;
+
 	UPDATE rw_new_offer SET active=TRUE WHERE offer_id=OLD.offer_id;
 	UPDATE rw_token SET
 			num_trades=(num_trades - 1),

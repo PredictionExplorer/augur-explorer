@@ -95,8 +95,14 @@ func api_rwalk_token_list_seq(c *gin.Context) {
 		respond_error_json(c,"Database link wasn't configured")
 		return
 	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"NTF address wasn't found in the 'address' table")
+		return
+	}
 
-	tokens := augur_srv.db_arbitrum.Get_minted_tokens_sequentially(0,10000000000)
+	tokens := augur_srv.db_arbitrum.Get_minted_tokens_sequentially(rwalk_aid,0,10000000000)
 
 	var req_status int = 1
 	var err_str string = ""
@@ -115,11 +121,18 @@ func api_rwalk_token_list_period(c *gin.Context) {
 		return
 	}
 
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"NTF address wasn't found in the 'address' table")
+		return
+	}
+
 	success,ini,fin := parse_timeframe_ini_fin(c,JSON)
 	if !success {
 		return
 	}
-	tokens := augur_srv.db_arbitrum.Get_minted_tokens_by_period(ini,fin)
+	tokens := augur_srv.db_arbitrum.Get_minted_tokens_by_period(rwalk_aid,ini,fin)
 
 	var req_status int = 1
 	var err_str string = ""
@@ -129,6 +142,7 @@ func api_rwalk_token_list_period(c *gin.Context) {
 		"MintedTokens" : tokens,
 		"InitTs": ini,
 		"FinTs":fin,
+		"RWalkAid":rwalk_aid,
 	})
 }
 func api_rwalk_sale_history(c *gin.Context) {
@@ -139,12 +153,18 @@ func api_rwalk_sale_history(c *gin.Context) {
 		respond_error_json(c,"Database link wasn't configured")
 		return
 	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		respond_error(c,"Market address doesn't exist in the database")
+		return
+	}
 
 	success,offset,limit := parse_offset_limit_params(c)
 	if !success {
 		return
 	}
-	sales := augur_srv.db_arbitrum.Get_sale_history(offset,limit)
+	sales := augur_srv.db_arbitrum.Get_sale_history(market_aid,offset,limit)
 
 	var req_status int = 1
 	var err_str string = ""
@@ -152,6 +172,8 @@ func api_rwalk_sale_history(c *gin.Context) {
 		"status": req_status,
 		"error" : err_str,
 		"Sales" : sales,
+		"MarketAid" : market_aid,
+		"MarketAddr" : p_market_addr,
 	})
 }
 func api_rwalk_token_history(c *gin.Context) {
@@ -198,12 +220,18 @@ func api_rwalk_trading_volume_by_period(c *gin.Context) {
 		respond_error_json(c,"Database link wasn't configured")
 		return
 	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		respond_error_json(c,"Market address doesn't exist in the database")
+		return
+	}
 	success,init_ts,fin_ts,interval_secs := parse_timeframe_params(c)
 	if !success {
 		return
 	}
 
-	vol_hist := augur_srv.db_arbitrum.Get_randomwalk_trading_volume_by_period(init_ts,fin_ts,interval_secs)
+	vol_hist := augur_srv.db_arbitrum.Get_market_trading_volume_by_period(market_aid,init_ts,fin_ts,interval_secs)
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -246,21 +274,54 @@ func api_rwalk_token_name_history(c *gin.Context) {
 		"TokenNameChanges" : name_changes,
 	})
 }
-func api_rwalk_global_stats(c *gin.Context) {
+func api_rwalk_token_stats(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
-	stats := augur_srv.db_arbitrum.Get_global_stats()
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"Lookup of NFT token address in the Db has failed")
+		return
+	}
+	stats := augur_srv.db_arbitrum.Get_random_walk_stats(rwalk_aid)
 
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
-		"GlobalStats" : stats,
+		"TokenStats" : stats,
+		"RWalkAid": rwalk_aid,
+		"RWalkAddr" : p_rwalk_addr,
+	})
+}
+func api_rwalk_market_stats(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		respond_error_json(c,"Lookup of Market address in the DB has failed")
+		return
+	}
+	stats := augur_srv.db_arbitrum.Get_market_stats(market_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MarketStats" : stats,
+		"MarketAid": market_aid,
+		"MarketAddr" : p_market_addr,
 	})
 }
 func api_rwalk_tokens_by_user(c *gin.Context) {

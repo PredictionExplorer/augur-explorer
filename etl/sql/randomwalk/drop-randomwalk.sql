@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS
 	rw_mint_evt,
 	rw_transfer,
 	rw_stats,
+	rw_mkt_stats,
 	rw_user_stats,
 	rw_proc_status,
 	rw_contracts

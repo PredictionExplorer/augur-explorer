@@ -10,7 +10,9 @@ func rwalk_index_page(c *gin.Context) {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
+	caddrs := augur_srv.db_arbitrum.Get_randomwalk_contract_addresses()
 	c.HTML(http.StatusOK, "rw_index.html", gin.H{
+		"ContractAddresses":caddrs,
 	})
 }
 func rwalk_current_offers(c *gin.Context) {
@@ -85,7 +87,13 @@ func rwalk_token_list_seq(c *gin.Context) {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
-	tokens:= augur_srv.db_arbitrum.Get_minted_tokens_sequentially(0,10000000000)
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error(c,"NTF address wasn't found in the 'address' table")
+		return
+	}
+	tokens:= augur_srv.db_arbitrum.Get_minted_tokens_sequentially(rwalk_aid,0,10000000000)
 
 	c.HTML(http.StatusOK, "rw_tokens_minted.html", gin.H{
 		"MintedTokens" : tokens,
@@ -97,11 +105,17 @@ func rwalk_token_list_period(c *gin.Context) {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error(c,"NTF address wasn't found in the 'address' table")
+		return
+	}
 	success,ini,fin := parse_timeframe_ini_fin(c,HTTP)
 	if !success {
 		return
 	}
-	tokens := augur_srv.db_arbitrum.Get_minted_tokens_by_period(ini,fin)
+	tokens := augur_srv.db_arbitrum.Get_minted_tokens_by_period(rwalk_aid,ini,fin)
 
 	c.HTML(http.StatusOK, "rw_tokens_minted.html", gin.H{
 		"MintedTokens" : tokens,
@@ -115,26 +129,60 @@ func rwalk_sale_history(c *gin.Context) {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		respond_error(c,"Market address doesn't exist in the database")
+		return
+	}
 	success,offset,limit := parse_offset_limit_params(c)
 	if !success {
 		return
 	}
-	sales := augur_srv.db_arbitrum.Get_sale_history(offset,limit)
+	sales := augur_srv.db_arbitrum.Get_sale_history(market_aid,offset,limit)
 
 	c.HTML(http.StatusOK, "rw_sale_history.html", gin.H{
 		"Sales" : sales,
 	})
 }
-func rwalk_global_stats(c *gin.Context) {
+func rwalk_token_stats(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
-	stats := augur_srv.db_arbitrum.Get_global_stats()
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error(c,"Lookup of NFT token address in the Db has failed")
+		return
+	}
+	stats := augur_srv.db_arbitrum.Get_random_walk_stats(rwalk_aid)
 
-	c.HTML(http.StatusOK, "rw_global_stats.html", gin.H{
-		"GlobalStats" : stats,
+	c.HTML(http.StatusOK, "rw_token_stats.html", gin.H{
+		"TokenStats" : stats,
+		"RWalkAid": rwalk_aid,
+		"RWalkAddr" : p_rwalk_addr,
+	})
+}
+func rwalk_market_stats(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		respond_error(c,"Market address doesn't exist in the database")
+		return
+	}
+	stats := augur_srv.db_arbitrum.Get_market_stats(market_aid)
+
+	c.HTML(http.StatusOK, "rw_market_stats.html", gin.H{
+		"MarketStats" : stats,
+		"MarketAid": market_aid,
+		"MarketAddr" : p_market_addr,
 	})
 }
 func rwalk_token_history(c *gin.Context) {
@@ -173,8 +221,14 @@ func rwalk_trading_volume_by_period(c *gin.Context) {
 	if !success {
 		return
 	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		respond_error(c,"Market address doesn't exist in the database")
+		return
+	}
 
-	vol_hist := augur_srv.db_arbitrum.Get_randomwalk_trading_volume_by_period(init_ts,fin_ts,interval_secs)
+	vol_hist := augur_srv.db_arbitrum.Get_market_trading_volume_by_period(market_aid,init_ts,fin_ts,interval_secs)
 	volume_data := build_js_randomwalk_volume_history(&vol_hist)
 	c.HTML(http.StatusOK, "rw_volume_history.html", gin.H{
 		"VolumeHistory" : vol_hist,
@@ -182,6 +236,8 @@ func rwalk_trading_volume_by_period(c *gin.Context) {
 		"InitTs" : init_ts,
 		"FinTs" : fin_ts,
 		"Interval" : interval_secs,
+		"MarketAddr" : p_market_addr,
+		"MarketAid" : market_aid,
 	})
 }
 func rwalk_token_name_history(c *gin.Context) {

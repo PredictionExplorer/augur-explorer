@@ -8,19 +8,23 @@
 <nav>
 	<ul>
 	<li>
-		<a class="btn_link" href="/black/rwalk/tokens/list/sequential">Token Mints</a>
+		<a class="btn_link" href="/black/rwalk/tokens/list/sequential/{{.ContractAddresses.RandomWalk}}">Token Mints</a>
 		<span></span><span></span><span></span><span></span>
 	</li>
 	<li>
-		<a class="btn_link" href="/black/rwalk/current_offers/0">Active Offers</a>
+		<a class="btn_link" href="/black/rwalk/current_offers/{{.ContractAddresses.RandomWalk}}/{{.ContractAddresses.MarketPlace}}/0">Active Offers</a>
 		<span></span><span></span><span></span><span></span>
 	</li>
 	<li>
-		<a class="btn_link" href="/black/rwalk/sales/0/1000000">Sale History</a>
+		<a class="btn_link" href="/black/rwalk/sales/{{.ContractAddresses.MarketPlace}}/0/1000000">Sale History</a>
 		<span></span><span></span><span></span><span></span>
 	</li>
 	<li>
-		<a class="btn_link" href="/black/rwalk/statistics">Statistics</a>
+		<a class="btn_link" href="/black/rwalk/statistics/by_token/{{.ContractAddresses.RandomWalk}}">Token Stats</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="/black/rwalk/statistics/by_market/{{.ContractAddresses.MarketPlace}}">Market Stats</a>
 		<span></span><span></span><span></span><span></span>
 	</li>
 </ul>

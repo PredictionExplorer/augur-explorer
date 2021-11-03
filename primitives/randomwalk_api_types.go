@@ -49,7 +49,7 @@ type RW_API_UserToken struct {
 	SeedNum			string
 	Price			float64
 }
-type RW_API_GlobalStats struct {
+type RW_API_RWalkStats struct {
 	TradingVol			float64
 	NumTrades			int64
 	TokensMinted		int64
@@ -57,6 +57,10 @@ type RW_API_GlobalStats struct {
 	NumWithdrawals		int64
 	LastMintedPrice		float64
 	MaximumTradedPrice	float64
+}
+type RW_API_MarketStats struct {
+	TradingVol			float64
+	NumTrades			int64
 }
 type RW_API_HistEntry_Mint struct {
 	BlockNum		int64

@@ -103,7 +103,16 @@ CREATE TABLE rw_stats(
 	total_vol				DECIMAL DEFAULT 0,		-- total volume
 	total_num_trades		BIGINT DEFAULT 0,		-- total count of trade operations made
 	total_num_toks			BIGINT DEFAULT 0,		-- total count of tokens registered
-	total_withdrawals		BIGINT DEFAULT 0
+	total_withdrawals		BIGINT DEFAULT 0,
+	UNIQUE(rwalk_aid)
+);
+CREATE TABLE rw_mkt_stats( -- statistis per market (can include many token contracts)
+	contract_aid			BIGINT PRIMARY KEY,
+	total_vol				DECIMAL DEFAULT 0,		-- total volume
+	total_num_trades		BIGINT DEFAULT 0,		-- total count of trade operations made
+	total_buy_orders		BIGINT DEFAULT 0,
+	total_sell_orders		BIGINT DEFAULT 0,
+	UNIQUE(contract_aid)
 );
 CREATE TABLE rw_user_stats (
 	rwalk_aid				BIGINT,

@@ -1,0 +1,24 @@
+<html>
+<head>
+	<title>Market Statistics</title>
+	<link href="/black/res/main.css" rel="stylesheet">
+</head>
+
+<body>
+<h3>Market Statistics
+<table>
+	<tr class="market_reports">
+		<td class="market_reports_field" >Total Trading Volume</td>
+		<td class="market_reports_field" >{{.MarketStats.TradingVol}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports_field" >Total Trades</td>
+		<td>{{.MarketStats.NumTrades}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td>Maximum Traded Price</td>
+		<td>{{.MarketStats.MaximumTradedPrice}}</td>
+	</tr>
+</table>
+</body>
+</html>

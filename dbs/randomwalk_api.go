@@ -83,7 +83,7 @@ func (ss *SQLStorage) Get_active_offers(rwalk_aid int64,market_aid int64, order_
 
 	return records
 }
-func (ss *SQLStorage) Get_minted_tokens_by_period(ini_ts,fin_ts int) []p.RW_API_Token {
+func (ss *SQLStorage) Get_minted_tokens_by_period(rwalk_aid int64,ini_ts,fin_ts int) []p.RW_API_Token {
 
 	records := make([]p.RW_API_Token,0,32)
 	var query string
@@ -104,9 +104,10 @@ func (ss *SQLStorage) Get_minted_tokens_by_period(ini_ts,fin_ts int) []p.RW_API_
 				"LEFT JOIN address ca ON t.contract_aid=ca.address_id "+
 				"LEFT JOIN address oa ON t.owner_aid=oa.address_id "+
 				"LEFT JOIN transaction tx ON t.tx_id=tx.id "+
-			"WHERE (t.time_stamp >= TO_TIMESTAMP($1)) AND (t.time_stamp<TO_TIMESTAMP($2))"
-	ss.Info.Printf("ini=%v,fin=%v, q=%v\n",ini_ts,fin_ts,query)
-	rows,err := ss.db.Query(query,ini_ts,fin_ts)
+			"WHERE (t.time_stamp >= TO_TIMESTAMP($1)) AND (t.time_stamp<TO_TIMESTAMP($2)) " +
+				"AND t.contract_aid=$3"
+	ss.Info.Printf("rwalk_aid=%v ini=%v,fin=%v, q=%v\n",rwalk_aid,ini_ts,fin_ts,query)
+	rows,err := ss.db.Query(query,ini_ts,fin_ts,rwalk_aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -138,7 +139,7 @@ func (ss *SQLStorage) Get_minted_tokens_by_period(ini_ts,fin_ts int) []p.RW_API_
 
 	return records
 }
-func (ss *SQLStorage) Get_minted_tokens_sequentially(offset,limit int) []p.RW_API_Token {
+func (ss *SQLStorage) Get_minted_tokens_sequentially(rwalk_aid int64,offset,limit int) []p.RW_API_Token {
 
 	records := make([]p.RW_API_Token,0,32)
 	var query string
@@ -159,10 +160,11 @@ func (ss *SQLStorage) Get_minted_tokens_sequentially(offset,limit int) []p.RW_AP
 				"LEFT JOIN address ca ON t.contract_aid=ca.address_id "+
 				"LEFT JOIN address oa ON t.owner_aid=oa.address_id "+
 				"LEFT JOIN transaction tx ON t.tx_id=tx.id "+
+			"WHERE contract_aid=$1 "+
 			"ORDER by t.id DESC "+
-			"OFFSET $1 LIMIT $2"
+			"OFFSET $2 LIMIT $3"
 
-	rows,err := ss.db.Query(query,offset,limit)
+	rows,err := ss.db.Query(query,rwalk_aid,offset,limit)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -194,7 +196,7 @@ func (ss *SQLStorage) Get_minted_tokens_sequentially(offset,limit int) []p.RW_AP
 
 	return records
 }
-func (ss *SQLStorage) Get_sale_history(offset,limit int) []p.RW_API_Offer {
+func (ss *SQLStorage) Get_sale_history(contract_aid int64,offset,limit int) []p.RW_API_Offer {
 
 	records := make([]p.RW_API_Offer,0,16)
 
@@ -221,11 +223,11 @@ func (ss *SQLStorage) Get_sale_history(offset,limit int) []p.RW_API_Offer {
 				"JOIN transaction tx ON o.tx_id=tx.id "+
 				"JOIN address sa ON o.seller_aid=sa.address_id "+
 				"JOIN address ba ON o.buyer_aid=ba.address_id "+
-			"WHERE active = 'f' " +
+			"WHERE (active = 'f') AND (contract_aid=$3) " +
 			"ORDER BY o.id " +
 			"OFFSET $1 LIMIT $2"
 
-	rows,err := ss.db.Query(query,offset,limit)
+	rows,err := ss.db.Query(query,offset,limit,contract_aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -261,9 +263,9 @@ func (ss *SQLStorage) Get_sale_history(offset,limit int) []p.RW_API_Offer {
 
 	return records
 }
-func (ss *SQLStorage) Get_global_stats() p.RW_API_GlobalStats {
+func (ss *SQLStorage) Get_random_walk_stats(rwalk_aid int64) p.RW_API_RWalkStats {
 
-	var output p.RW_API_GlobalStats
+	var output p.RW_API_RWalkStats
 	var query string
 	query = "SELECT " +
 				"total_vol/1e+18,"+
@@ -271,14 +273,41 @@ func (ss *SQLStorage) Get_global_stats() p.RW_API_GlobalStats {
 				"total_num_toks,"+
 				"total_withdrawals "+
 			"FROM "+
-				"rw_stats "
+				"rw_stats " +
+			"WHERE rwalk_aid = $1"
 
-	res := ss.db.QueryRow(query)
+	res := ss.db.QueryRow(query,rwalk_aid)
 	err := res.Scan(
 		&output.TradingVol,
 		&output.NumTrades,
 		&output.TokensMinted,
 		&output.NumWithdrawals,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return output
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return output
+}
+func (ss *SQLStorage) Get_market_stats(market_aid int64) p.RW_API_MarketStats {
+
+	var output p.RW_API_MarketStats
+	var query string
+	query = "SELECT " +
+				"total_vol/1e+18,"+
+				"total_num_trades "+
+			"FROM "+
+				"rw_mkt_stats " +
+			"WHERE contract_aid = $1"
+
+	res := ss.db.QueryRow(query,market_aid)
+	err := res.Scan(
+		&output.TradingVol,
+		&output.NumTrades,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -753,14 +782,14 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 
 	return records
 }
-func (ss *SQLStorage) Get_randomwalk_trading_volume_by_period(init_ts int,fin_ts int,interval int) []p.RW_API_RandomWalkVolumeHistory {
+func (ss *SQLStorage) Get_market_trading_volume_by_period(contract_aid int64,init_ts int,fin_ts int,interval int) []p.RW_API_RandomWalkVolumeHistory {
 
 	var query string
 	query = "SELECT sum(price)/1e+18 AS accum_vol FROM rw_item_bought b " +
 				"JOIN rw_new_offer o ON o.offer_id=b.offer_id " +
-				"WHERE b.time_stamp < TO_TIMESTAMP($1)"
+				"WHERE (b.time_stamp < TO_TIMESTAMP($1)i) AND (o.contract_aid=$2)"
 	var initial_volume sql.NullFloat64
-	err := ss.db.QueryRow(query,init_ts).Scan(&initial_volume)
+	err := ss.db.QueryRow(query,init_ts,contract_aid).Scan(&initial_volume)
 	if (err!=nil) {
 		if err != sql.ErrNoRows {
 			ss.Log_msg(fmt.Sprintf("Error in Get_randomwalk_trading_volume_by_period(): %v, q=%v",err,query))
@@ -789,16 +818,17 @@ func (ss *SQLStorage) Get_randomwalk_trading_volume_by_period(init_ts int,fin_ts
 				"LEFT JOIN LATERAL ( "+
 					"SELECT b.id,b.time_stamp,o.price "+
 						"FROM rw_item_bought b "+
-						"JOIN rw_new_offer o ON b.offer_id=o.offer_id"+
+						"JOIN rw_new_offer o ON b.offer_id=o.offer_id "+
+						"WHERE b.contract_aid=$4" +
 				") b ON " +
 					"(p.start_ts <= b.time_stamp) AND "+
 					"(b.time_stamp < p.end_ts) " +
 			"GROUP BY start_ts " +
 			"ORDER BY start_ts"
 
-	ss.Info.Printf("init_ts= %v , fin_ts= %v , interval = %v\n",init_ts,fin_ts,interval)
+	ss.Info.Printf("contract_aid=%v init_ts= %v , fin_ts= %v , interval = %v\n",contract_aid,init_ts,fin_ts,interval)
 	ss.Info.Printf("query = %v\n",query)
-	rows,err := ss.db.Query(query,init_ts,fin_ts,interval)
+	rows,err := ss.db.Query(query,init_ts,fin_ts,interval,contract_aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
