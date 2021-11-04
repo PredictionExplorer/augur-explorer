@@ -196,7 +196,7 @@ func (ss *SQLStorage) Get_minted_tokens_sequentially(rwalk_aid int64,offset,limi
 
 	return records
 }
-func (ss *SQLStorage) Get_sale_history(contract_aid int64,offset,limit int) []p.RW_API_Offer {
+func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) []p.RW_API_Offer {
 
 	records := make([]p.RW_API_Offer,0,16)
 
@@ -978,4 +978,76 @@ func (ss *SQLStorage) Get_floor_price(rwalk_aid int64,market_aid int64) (float64
 		}
 	}
 	return output.Float64,nil
+}
+func (ss *SQLStorage) Get_trading_history_by_user(user_aid int64) []p.RW_API_Offer {
+
+	records := make([]p.RW_API_Offer,0,16)
+
+	var query string
+	query = "SELECT " +
+				"o.id,"+
+				"o.evtlog_id,"+
+				"o.block_num,"+
+				"o.tx_id, "+
+				"tx.tx_hash,"+
+				"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,"+
+				"o.time_stamp," +
+				"o.offer_id,"+
+				"o.otype,"+
+				"o.seller_aid,"+
+				"sa.addr seller_addr,"+
+				"o.buyer_aid,"+
+				"ba.addr buyer_addr,"+
+				"o.token_id,"+
+				"o.active,"+
+				"o.price/1e+18 price,"+
+				"o.contract_aid,"+
+				"ca.addr " +
+			"FROM "+
+				"rw_new_offer o "+
+				"JOIN transaction tx ON o.tx_id=tx.id "+
+				"JOIN address sa ON o.seller_aid=sa.address_id "+
+				"JOIN address ba ON o.buyer_aid=ba.address_id "+
+				"JOIN address ca ON o.contract_aid=ca.address_id "+
+			"WHERE (active = 'f') AND ((o.buyer_aid=$1) OR (o.seller_aid=$1)) " +
+			"ORDER BY o.id "
+	
+	ss.Info.Printf("user_aid=%v q=%v\n",user_aid,query)
+	rows,err := ss.db.Query(query,user_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_API_Offer
+		err=rows.Scan(
+			&rec.Id,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.OfferId,
+			&rec.OfferType,
+			&rec.SellerAid,
+			&rec.SellerAddr,
+			&rec.BuyerAid,
+			&rec.BuyerAddr,
+			&rec.TokenId,
+			&rec.Active,
+			&rec.Price,
+			&rec.ContractAid,
+			&rec.ContractAddr,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+
+	return records
 }

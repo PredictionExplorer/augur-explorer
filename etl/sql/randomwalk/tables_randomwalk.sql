@@ -24,7 +24,7 @@ CREATE TABLE rw_new_offer(
 	token_id		BIGINT NOT NULL,
 	active			BOOLEAN,
 	price			DECIMAL,
-	UNIQUE(offer_id),
+	UNIQUE(contract_aid,offer_id),
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE rw_item_bought(

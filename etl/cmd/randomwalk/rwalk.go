@@ -55,10 +55,10 @@ func proc_new_offer(log *types.Log,elog *EthereumEventLog) {
 	var evt RW_NewOffer
 	var eth_evt ERandomWalk_NewOffer
 
-	if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
+	/*if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
 		Info.Printf("Skipping another instance of MarketPlace contract %v\n",log.Address.String())
 		return
-	}
+	}*/
 	Info.Printf("Processing NewOffer event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
 	err := marketplace_abi.Unpack(&eth_evt,"NewOffer",log.Data)
@@ -95,10 +95,10 @@ func proc_item_bought(log *types.Log,elog *EthereumEventLog) {
 
 	var evt RW_ItemBought
 
-	if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
+	/*if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
 		Info.Printf("Skipping another instance of MarketPlace contract %v\n",log.Address.String())
 		return
-	}
+	}*/
 	Info.Printf("Processing ItemBought id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
 	evt.EvtId=elog.EvtId
@@ -123,18 +123,22 @@ func proc_offer_cancelled(log *types.Log,elog *EthereumEventLog) {
 
 	var evt RW_OfferCanceled
 
-	if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
+	/*if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
 		Info.Printf("Skipping another instance of MarketPlace contract %v\n",log.Address.String())
 		return
-	}
-	Info.Printf("Processing OfferCanceled id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-
+	}*/
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.OfferId = log.Topics[1].Big().Int64()
+
+	Info.Printf("Processing OfferCanceled id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	if !storage.Offer_exists(log.Address.String(),evt.OfferId) {
+		Info.Printf("Skipping OfferCanceled : offer for contract %v does not exist, skipping\n",log.Address.String())
+		return
+	}
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("OfferCanceled {\n")
@@ -148,10 +152,10 @@ func proc_withdrawal(log *types.Log,elog *EthereumEventLog) {
 	var evt RW_Withdrawal
 	var eth_evt ERandomWalk_WithdrawalEvent
 
-	if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
+	/*if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
 		Info.Printf("Skipping another instance of RandomWalk contract %v\n",log.Address.String())
 		return
-	}
+	}*/
 	Info.Printf("Processing WithdrawalEvent id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 	err := randomwalk_abi.Unpack(&eth_evt,"WithdrawalEvent",log.Data)
 	if err != nil {
@@ -182,10 +186,10 @@ func proc_token_name(log *types.Log,elog *EthereumEventLog) {
 	var evt RW_TokenName
 	var eth_evt ERandomWalk_TokenNameEvent
 
-	if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
+	/*if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
 		Info.Printf("Skipping another instance of RandomWalk contract %v\n",log.Address.String())
 		return
-	}
+	}*/
 	Info.Printf("Processing TokenName id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 	err := randomwalk_abi.Unpack(&eth_evt,"TokenNameEvent",log.Data)
 	if err != nil {
@@ -201,6 +205,11 @@ func proc_token_name(log *types.Log,elog *EthereumEventLog) {
 	evt.TokenId = eth_evt.TokenId.Int64()
 	evt.NewName= eth_evt.NewName
 
+	if !storage.RWalk_token_exists(log.Address.String(),evt.TokenId) {
+		Info.Printf("Token name event skipped, token contract %v is not registered\n",log.Address.String())
+		return
+	}
+
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("TokenName {\n")
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
@@ -214,10 +223,10 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 	var evt RW_MintEvent
 	var eth_evt ERandomWalk_MintEvent
 
-	if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
+/*	if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
 		Info.Printf("Skipping another instance of RandomWalk contract %v\n",log.Address.String())
 		return
-	}
+	}*/
 	Info.Printf("Processing MintEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
 	err := randomwalk_abi.Unpack(&eth_evt,"MintEvent",log.Data)

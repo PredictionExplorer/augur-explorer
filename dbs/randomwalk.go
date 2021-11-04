@@ -283,3 +283,45 @@ func (ss *SQLStorage) Insert_token_transfer_event(evt *p.RW_Transfer) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Offer_exists(contract_addr string,offer_id int64) bool {
+
+	contract_aid,err := ss.Nonfatal_lookup_address_id(contract_addr)
+	if err != nil {
+		return false
+	}
+	var query string
+	query = "SELECT id FROM rw_new_offer WHERE contract_aid=$1 AND offer_id=$2"
+	var null_offer_id sql.NullInt64
+	res := ss.db.QueryRow(query,contract_aid,null_offer_id)
+	err = res.Scan(&null_offer_id)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return false
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return true
+}
+func (ss *SQLStorage) RWalk_token_exists(contract_addr string,token_id int64) bool {
+
+	contract_aid,err := ss.Nonfatal_lookup_address_id(contract_addr)
+	if err != nil {
+		return false
+	}
+	var query string
+	query = "SELECT id FROM rw_mint_evt WHERE contract_aid=$1 AND token_id=$2"
+	var null_token_id sql.NullInt64
+	res := ss.db.QueryRow(query,contract_aid,null_token_id)
+	err = res.Scan(&null_token_id)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return false
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return true
+}

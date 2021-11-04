@@ -123,7 +123,7 @@ func rwalk_token_list_period(c *gin.Context) {
 		"FinTs":fin,
 	})
 }
-func rwalk_sale_history(c *gin.Context) {
+func rwalk_trading_history(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -139,9 +139,9 @@ func rwalk_sale_history(c *gin.Context) {
 	if !success {
 		return
 	}
-	sales := augur_srv.db_arbitrum.Get_sale_history(market_aid,offset,limit)
+	sales := augur_srv.db_arbitrum.Get_trading_history(market_aid,offset,limit)
 
-	c.HTML(http.StatusOK, "rw_sale_history.html", gin.H{
+	c.HTML(http.StatusOK, "rw_trading_history.html", gin.H{
 		"Sales" : sales,
 	})
 }
@@ -291,6 +291,37 @@ func rwalk_tokens_by_user(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "rw_tokens_by_user.html", gin.H{
 		"UserTokens" : user_tokens,
+		"UserAid" : user_aid,
+		"UserAddr" : user_addr,
+	})
+}
+func rwalk_trading_history_by_user(c *gin.Context) {
+
+	if !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_aid := c.Param("user_aid")
+	var user_aid int64
+	if len(p_user_aid) > 0 {
+		var success bool
+		user_aid,success = parse_int_from_remote_or_error(c,HTTP,&p_user_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'user_aid' parameter is not set")
+		return
+	}
+	user_addr,err := augur_srv.db_arbitrum.Lookup_address(user_aid)
+	if err != nil {
+		respond_error(c,"Address lookup on user_aid failed")
+		return
+	}
+	user_trading := augur_srv.db_arbitrum.Get_trading_history_by_user(user_aid)
+
+	c.HTML(http.StatusOK, "rw_trading_by_user.html", gin.H{
+		"UserTrading" : user_trading,
 		"UserAid" : user_aid,
 		"UserAddr" : user_addr,
 	})

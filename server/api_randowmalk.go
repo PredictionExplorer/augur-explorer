@@ -149,7 +149,7 @@ func api_rwalk_sale_history(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
-	if  !augur_srv.arbitrum_initialized() {
+	if !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return
 	}
@@ -164,7 +164,7 @@ func api_rwalk_sale_history(c *gin.Context) {
 	if !success {
 		return
 	}
-	sales := augur_srv.db_arbitrum.Get_sale_history(market_aid,offset,limit)
+	sales := augur_srv.db_arbitrum.Get_trading_history(market_aid,offset,limit)
 
 	var req_status int = 1
 	var err_str string = ""
@@ -355,6 +355,41 @@ func api_rwalk_tokens_by_user(c *gin.Context) {
 		"status": req_status,
 		"error" : err_str,
 		"UserTokens" : user_tokens,
+		"UserAid" : user_aid,
+		"UserAddr" : user_addr,
+	})
+}
+func api_rwalk_trading_history_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_aid := c.Param("user_aid")
+	var user_aid int64
+	if len(p_user_aid) > 0 {
+		var success bool
+		user_aid,success = parse_int_from_remote_or_error(c,HTTP,&p_user_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'user_aid' parameter is not set")
+		return
+	}
+	user_addr,err := augur_srv.db_arbitrum.Lookup_address(user_aid)
+	if err != nil {
+		respond_error_json(c,"Address lookup on user_aid failed")
+		return
+	}
+	user_trading := augur_srv.db_arbitrum.Get_trading_history_by_user(user_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserTrading" : user_trading,
 		"UserAid" : user_aid,
 		"UserAddr" : user_addr,
 	})

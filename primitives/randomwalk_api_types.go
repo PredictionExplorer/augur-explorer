@@ -16,6 +16,7 @@ type RW_API_Offer struct {
 	TimeStamp		int64
 	DateTime		string
 	ContractAid		int64
+	ContractAddr	string	// market addr
 	OfferId			int64
 	OfferType		int
 	SellerAid		int64
