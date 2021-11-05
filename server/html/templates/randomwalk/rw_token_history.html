@@ -7,6 +7,38 @@
 	<h3 class="page_title">Token History<h3>
 	<h3>Actions made on Token {{.TokenId}}</h3>
 <table>
+	<tr>
+		<td>Token ID</td>
+		<td>{{.TokenInfo.TokenId}}
+	</tr>
+	<tr>
+		<td>Seed Hex</td>
+		<td>{{.TokenInfo.SeedHex}}</td>
+	</tr>
+	<tr>
+		<td>Seed Numeric</td>
+		<td>{{.TokenInfo.SeedNum}}</td>
+	</tr>
+	<tr>
+		<td>Last Price</td>
+		<td>{{.TokenInfo.LastPrice}}</td>
+	</td>
+	<tr>
+		<td>Current Name</td>
+		<td>
+			{{.TokenInfo.CurName}}
+			{{ if eq .TokenInfo.CurName "" }}
+			{{ else }}
+				(updated at {{.TokenInfo.LastNameUpdateDate}})
+			{{ end }}
+		</td>
+	</tr>
+	<tr>
+		<td>Current Owner</td>
+		<td><a class="addr" href="/black/rwalk/user/info/{{.TokenInfo.CurOwnerAid}}/{{.RWalkAddr}}">{{.TokenInfo.CurOwnerAddr}}</a></td>
+	</tr>
+</table>
+<table>
 	<tr class="market_reports">
 		<th class="market_reports">Block</th>
 		<th class="market_reports">Datetime</th>

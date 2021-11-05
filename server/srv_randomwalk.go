@@ -229,13 +229,18 @@ func rwalk_token_history(c *gin.Context) {
 	if !success {
 		return
 	}*/
-	history := augur_srv.db_arbitrum.Get_token_full_history(token_id,offset,limit)
+	history := augur_srv.db_arbitrum.Get_token_full_history(rwalk_aid,token_id,offset,limit)
+	token_info,err := augur_srv.db_arbitrum.Get_rwalk_token_info(rwalk_aid,token_id)
+	if err != nil {
+		fmt.Printf("Error getting token info for token_id=%v, rwalk_aid=%v : %v\n",token_id,rwalk_aid,err)
+	}
 
 	c.HTML(http.StatusOK, "rw_token_history.html", gin.H{
 		"TokenId" : token_id,
 		"TokenHistory" : history,
 		"RWalkAddr" : p_rwalk_addr,
 		"RWalkAid" : rwalk_aid,
+		"TokenInfo" : token_info,
 	})
 }
 func rwalk_trading_volume_by_period(c *gin.Context) {
@@ -338,7 +343,7 @@ func rwalk_trading_history_by_user(c *gin.Context) {
 	}
 	user_addr,err := augur_srv.db_arbitrum.Lookup_address(user_aid)
 	if err != nil {
-		respond_error(c,"Address lookup on user_aid failed")
+		respond_error(c,fmt.Sprintf("Address lookup on user_aid %v failed: %v",user_aid,err))
 		return
 	}
 	user_trading := augur_srv.db_arbitrum.Get_trading_history_by_user(user_aid)

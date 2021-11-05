@@ -83,9 +83,9 @@ func (ss *SQLStorage) Get_active_offers(rwalk_aid int64,market_aid int64, order_
 
 	return records
 }
-func (ss *SQLStorage) Get_minted_tokens_by_period(rwalk_aid int64,ini_ts,fin_ts int) []p.RW_API_Token {
+func (ss *SQLStorage) Get_minted_tokens_by_period(rwalk_aid int64,ini_ts,fin_ts int) []p.RW_API_TokenMint {
 
-	records := make([]p.RW_API_Token,0,32)
+	records := make([]p.RW_API_TokenMint,0,32)
 	var query string
 	query = "SELECT "+
 				"t.block_num,"+
@@ -115,7 +115,7 @@ func (ss *SQLStorage) Get_minted_tokens_by_period(rwalk_aid int64,ini_ts,fin_ts 
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_Token
+		var rec p.RW_API_TokenMint
 		err=rows.Scan(
 			&rec.BlockNum,
 			&rec.TimeStamp,
@@ -139,9 +139,9 @@ func (ss *SQLStorage) Get_minted_tokens_by_period(rwalk_aid int64,ini_ts,fin_ts 
 
 	return records
 }
-func (ss *SQLStorage) Get_minted_tokens_sequentially(rwalk_aid int64,offset,limit int) []p.RW_API_Token {
+func (ss *SQLStorage) Get_minted_tokens_sequentially(rwalk_aid int64,offset,limit int) []p.RW_API_TokenMint {
 
-	records := make([]p.RW_API_Token,0,32)
+	records := make([]p.RW_API_TokenMint,0,32)
 	var query string
 	query = "SELECT "+
 				"t.block_num,"+
@@ -172,7 +172,7 @@ func (ss *SQLStorage) Get_minted_tokens_sequentially(rwalk_aid int64,offset,limi
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_Token
+		var rec p.RW_API_TokenMint
 		err=rows.Scan(
 			&rec.BlockNum,
 			&rec.TimeStamp,
@@ -329,7 +329,7 @@ func (ss *SQLStorage) Get_market_stats(market_aid int64) p.RW_API_MarketStats {
 	}
 	return output
 }
-func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []p.RW_API_FullHistoryEntry {
+func (ss *SQLStorage) Get_token_full_history(rwalk_aid,token_id int64,offset,limit int) []p.RW_API_FullHistoryEntry {
 
 	records := make([]p.RW_API_FullHistoryEntry,0,32)
 
@@ -397,7 +397,7 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 					"FROM rw_mint_evt t " +
 						"LEFT JOIN address ca ON contract_aid=ca.address_id "+
 						"LEFT JOIN address oa ON owner_aid=oa.address_id "+
-					"WHERE token_id=$1 "+
+					"WHERE (token_id=$1) AND (contract_aid=$2) "+
 					"ORDER BY id"+
 				") " +
 				"UNION ALL" +
@@ -435,7 +435,7 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 						"LEFT JOIN address ca ON contract_aid=ca.address_id "+
 						"LEFT JOIN address sa ON seller_aid=sa.address_id "+
 						"LEFT JOIN address ba ON buyer_aid=ba.address_id "+
-					"WHERE token_id=$1 " +
+					"WHERE (token_id=$1) AND (rwalk_aid=$2) " +
 					"ORDER BY id" +
 				")"+
 				"UNION ALL" +
@@ -474,7 +474,7 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 						"LEFT JOIN address ca ON c.contract_aid=ca.address_id " +
 						"LEFT JOIN address sa ON o.seller_aid=sa.address_id "+
 						"LEFT JOIN address ba ON o.buyer_aid=ba.address_id " +
-					"WHERE o.token_id=$1 "+
+					"WHERE (o.token_id=$1) AND (o.rwalk_aid=$2) "+
 					"ORDER BY c.id " +
 				")"+
 				"UNION ALL" +
@@ -513,7 +513,7 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 						"LEFT JOIN address ca ON b.contract_aid=ca.address_id " +
 						"LEFT JOIN address sa ON b.seller_aid=sa.address_id "+
 						"LEFT JOIN address ba ON b.buyer_aid=ba.address_id " +
-					"WHERE o.token_id=$1 "+
+					"WHERE (o.token_id=$1) AND (o.rwalk_aid=$2) "+
 					"ORDER BY b.id " +
 				")"+
 				"UNION ALL" +
@@ -549,7 +549,7 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 						"CAST(NULL AS BIGINT) transfer_id " +
 					"FROM rw_token_name n "+
 						"LEFT JOIN address ca ON n.contract_aid=ca.address_id " +
-					"WHERE n.token_id=$1 "+
+					"WHERE (n.token_id=$1) AND (n.contract_aid=$2) "+
 					"ORDER BY n.id " +
 				")"+
 				"UNION ALL" +
@@ -592,7 +592,7 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 						"LEFT JOIN rw_item_bought item ON tr.tx_id=item.tx_id " +
 						"LEFT JOIN rw_offer_canceled cancel ON tr.tx_id=cancel.tx_id "+
 						"LEFT JOIN rw_token_name name ON tr.tx_id=name.tx_id "+
-					"WHERE tr.token_id=$1 "+
+					"WHERE (tr.token_id=$1) AND (tr.contract_aid=$2) "+
 						"AND (off.id IS NULL) "+
 						"AND (mint.id IS NULL) " +
 						"AND (item.id IS NULL) " +
@@ -602,10 +602,10 @@ func (ss *SQLStorage) Get_token_full_history(token_id int64,offset,limit int) []
 				")"+
 			") AS data " +		// FROM
 		"ORDER BY ts " +
-		"OFFSET $2 LIMIT $3"
+		"OFFSET $3 LIMIT $4"
 
-	ss.Info.Printf("token_id=%v, query = %v\n",token_id,query)
-	rows,err := ss.db.Query(query,token_id,offset,limit)
+	ss.Info.Printf("rwalk_aid=%v token_id=%v, query = %v\n",rwalk_aid,token_id,query)
+	rows,err := ss.db.Query(query,token_id,rwalk_aid,offset,limit)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -1132,4 +1132,60 @@ func (ss *SQLStorage) Get_top5_traded_tokens() []p.RW_API_Top5Toks {
 	}
 
 	return records
+}
+func (ss *SQLStorage) Get_rwalk_token_info(rwalk_aid int64,token_id int64) (p.RW_API_TokenInfo,error) {
+
+	var query string
+	query = "SELECT " +
+				"t.cur_owner_aid,"+
+				"oa.addr,"+
+				"seed_hex,"+
+				"seed_num,"+
+				"last_name,"+
+				"last_price/1e+18,"+
+				"t.total_vol/1e+18, "+
+				"t.num_trades "+
+			"FROM "+
+				"rw_token t "+
+				"LEFT JOIN address oa ON oa.address_id=t.cur_owner_aid "+
+			"WHERE t.rwalk_aid=$1 AND token_id=$2"
+
+	var output p.RW_API_TokenInfo
+	output.TokenId=token_id
+	res := ss.db.QueryRow(query,rwalk_aid,token_id)
+	err := res.Scan(
+			&output.CurOwnerAid,
+			&output.CurOwnerAddr,
+			&output.SeedHex,
+			&output.SeedNum,
+			&output.CurName,
+			&output.LastPrice,
+			&output.TotalVolume,
+			&output.NumTrades,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return output,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT as ts,"+
+				"time_stamp " +
+			"FROM rw_token_name "+
+			"WHERE contract_aid=$1 AND token_id=$2 " +
+			"ORDER BY id DESC "+
+			"LIMIT 1"
+	res = ss.db.QueryRow(query,rwalk_aid,token_id)
+	err = res.Scan(&output.LastNameUpdateTs,&output.LastNameUpdateDate)
+	if err != nil {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return output,nil
 }

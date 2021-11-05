@@ -29,7 +29,7 @@ type RW_API_Offer struct {
 	RWalkAid		int64
 	RWalkAddr		string
 }
-type RW_API_Token struct {
+type RW_API_TokenMint struct {
 	TokenId			int64
 	BlockNum		int64
 	TimeStamp		int64
@@ -59,6 +59,8 @@ type RW_API_RWalkStats struct {
 	NumWithdrawals		int64
 	LastMintedPrice		float64
 	MaximumTradedPrice	float64
+	CurOwnerAid			int64
+	CurOwnerAddr		string
 }
 type RW_API_MarketStats struct {
 	TradingVol			float64
@@ -185,4 +187,17 @@ type RW_API_Top5Toks struct {
 	TokenId				int64
 	TotalTrades			int64
 	SeedHex				string
+}
+type RW_API_TokenInfo struct {
+	TokenId				int64
+	CurOwnerAid			int64
+	CurOwnerAddr		string
+	SeedHex				string
+	SeedNum				string
+	LastPrice			float64
+	TotalVolume			float64
+	NumTrades			int64
+	CurName				string
+	LastNameUpdateTs	int64
+	LastNameUpdateDate	string
 }

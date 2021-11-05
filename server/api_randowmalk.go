@@ -206,7 +206,7 @@ func api_rwalk_token_history(c *gin.Context) {
 	if !success {
 		return
 	}
-	history := augur_srv.db_arbitrum.Get_token_full_history(token_id,offset,limit)
+	history := augur_srv.db_arbitrum.Get_token_full_history(rwalk_aid,token_id,offset,limit)
 
 	var req_status int = 1
 	var err_str string = ""
