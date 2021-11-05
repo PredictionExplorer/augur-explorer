@@ -27,6 +27,7 @@ type RW_API_Offer struct {
 	Active			bool
 	Price			float64
 	RWalkAid		int64
+	RWalkAddr		string
 }
 type RW_API_Token struct {
 	TokenId			int64
@@ -171,4 +172,17 @@ type RW_API_TokenName struct {
 	TxHash			string
 	OwnerAid		int64
 	OwnerAddr		string
+}
+type RW_API_UserInfo struct {
+	UserAid				int64
+	UserAddr			string
+	TotalVolume			float64
+	TotalNumTrades		int64
+	TotalMintedToks		int64
+	TotalNumWithdrawals	int64
+}
+type RW_API_Top5Toks struct {
+	TokenId				int64
+	TotalTrades			int64
+	SeedHex				string
 }

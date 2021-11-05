@@ -1,7 +1,7 @@
 /// API v1
 package main
 import (
-	//"fmt"
+	"fmt"
 	//"strconv"
 
 	"net/http"
@@ -197,6 +197,11 @@ func api_rwalk_token_history(c *gin.Context) {
 		respond_error_json(c,"'token_id' parameter is not set")
 		return
 	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"Lookup of 'rwalk_addr' failed, address doesn't exist")
+	}
 	success,offset,limit := parse_offset_limit_params(c)
 	if !success {
 		return
@@ -210,6 +215,8 @@ func api_rwalk_token_history(c *gin.Context) {
 		"error" : err_str,
 		"TokenId" : token_id,
 		"TokenHistory" : history,
+		"RWalkAddr" : p_rwalk_addr,
+		"RWalkAid" : rwalk_aid,
 	})
 }
 func api_rwalk_trading_volume_by_period(c *gin.Context) {
@@ -392,5 +399,68 @@ func api_rwalk_trading_history_by_user(c *gin.Context) {
 		"UserTrading" : user_trading,
 		"UserAid" : user_aid,
 		"UserAddr" : user_addr,
+	})
+}
+func api_rwalk_user_info(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"Lookup of NFT token failed")
+		return
+	}
+	p_user_aid := c.Param("user_aid")
+	var user_aid int64
+	if len(p_user_aid) > 0 {
+		var success bool
+		user_aid,success = parse_int_from_remote_or_error(c,JSON,&p_user_aid)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'user_aid' parameter is not set")
+		return
+	}
+	user_addr,err := augur_srv.db_arbitrum.Lookup_address(user_aid)
+	if err != nil {
+		respond_error_json(c,"Address lookup on user_aid failed")
+		return
+	}
+	user_info,err := augur_srv.db_arbitrum.Get_rwalk_user_info(user_aid,rwalk_aid)
+	if err != nil {
+		respond_error_json(c,fmt.Sprintf("Statistics record for this user in token %v wasn't found",p_rwalk_addr))
+		return
+	}
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserInfo" : user_info,
+		"UserAid" : user_aid,
+		"UserAddr" : user_addr,
+		"RWalkAddr" : p_rwalk_addr,
+		"RWalkAid" : rwalk_aid,
+	})
+}
+func api_rwalk_top5_traded_tokens(c *gin.Context) {
+
+	if !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	top5toks := augur_srv.db_arbitrum.Get_top5_traded_tokens()
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Top5TradedTokens" : top5toks,
 	})
 }

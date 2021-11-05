@@ -51,7 +51,7 @@ BEGIN
 			last_price=v_price,
 			num_trades=(num_trades+1),
 			total_vol=(total_vol+v_price)
-		WHERE token_id=v_token_id;
+		WHERE token_id=v_token_id AND rwalk_aid=v_rwalk_aid;
 	UPDATE rw_user_stats SET
 			total_num_trades = (total_num_trades+1),
 			total_vol = (total_vol+v_price)
@@ -72,6 +72,15 @@ BEGIN
 				VALUES(v_rwalk_aid,NEW.seller_aid,1,v_price);
 		END IF;
 	END IF;
+	IF v_offer_type = 1 THEN
+		UPDATE rw_mkt_stats SET
+				total_sell_orders = (total_sell_orders - 1)
+			WHERE contract_aid=NEW.contract_aid;
+	ELSE
+		UPDATE rw_mkt_stats SET
+				total_buy_orders = (total_buy_orders - 1)
+			WHERE contract_aid=NEW.contract_aid;
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -82,12 +91,13 @@ DECLARE
 	v_buyer_aid				BIGINT;
 	v_seller_aid			BIGINT;
 	v_price					DECIMAL;
+	v_offer_type			SMALLINT;
 BEGIN
 
-	SELECT rwalk_aid,token_id,buyer_aid,seller_aid,price
+	SELECT rwalk_aid,token_id,buyer_aid,seller_aid,price,otype
 		FROM rw_new_offer
 		WHERE offer_id=OLD.offer_id
-		INTO v_rwalk_aid,v_token_id,v_buyer_aid,v_seller_aid,v_price;
+		INTO v_rwalk_aid,v_token_id,v_buyer_aid,v_seller_aid,v_price,v_offer_type;
 	IF v_rwalk_aid IS NULL THEN
 		RETURN OLD;
 	END IF;
@@ -104,7 +114,7 @@ BEGIN
 	UPDATE rw_token SET
 			num_trades=(num_trades - 1),
 			total_vol=(total_vol-v_price)
-		WHERE token_id=v_token_id;
+		WHERE token_id=v_token_id AND rwalk_aid=v_rwalk_aid;
 	UPDATE rw_user_stats SET
 			total_num_trades = (total_num_trades-1),
 			total_vol = (total_vol-v_price)
@@ -115,6 +125,15 @@ BEGIN
 				total_vol = (total_vol-v_price)
 			WHERE user_aid=v_seller_aid AND rwalk_aid=v_rwalk_aid;
 	END IF;
+	IF v_offer_type = 1 THEN
+		UPDATE rw_mkt_stats SET
+				total_sell_orders = (total_sell_orders + 1)
+			WHERE contract_aid=OLD.contract_aid;
+	ELSE
+		UPDATE rw_mkt_stats SET
+				total_buy_orders = (total_buy_orders + 1)
+			WHERE contract_aid=OLD.contract_aid;
+	END IF;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -123,7 +142,8 @@ DECLARE
 	v_cnt                   NUMERIC;
 BEGIN
 
-	UPDATE rw_token SET last_name=NEW.new_name WHERE token_id=NEW.token_id;
+	UPDATE rw_token SET last_name=NEW.new_name
+		WHERE token_id=NEW.token_id AND rwalk_aid=NEW.contract_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		RAISE EXCEPTION 'Token ID % not found',NEW.token_id;
@@ -148,12 +168,15 @@ BEGIN
 			seed_hex=NEW.seed,
 			seed_num=NEW.seed_num,
 			last_price=NEW.price
-		WHERE token_id=NEW.token_id;
+		WHERE token_id=NEW.token_id AND rwalk_aid=NEW.contract_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO rw_token(token_id,seed_hex,seed_num,last_price)
-			VALUES(NEW.token_id,NEW.seed,NEW.seed_num,NEW.price);
+		INSERT INTO rw_token(rwalk_aid,token_id,cur_owner_aid,seed_hex,seed_num,last_price)
+			VALUES(NEW.contract_aid,NEW.token_id,NEW.owner_aid,NEW.seed,NEW.seed_num,NEW.price);
 	END IF;
+	UPDATE rw_user_stats
+		SET total_num_toks = (total_num_toks + 1)
+		WHERE rwalk_aid=NEW.contract_aid AND user_aid=NEW.owner_aid;
 
 	RETURN NEW;
 END;
@@ -162,6 +185,9 @@ CREATE OR REPLACE FUNCTION on_mint_event_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
+	UPDATE rw_user_stats
+		SET total_num_toks = (total_num_toks - 1)
+		WHERE rwalk_aid=NEW.contract_aid AND user_aid=NEW.owner_aid;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -175,6 +201,15 @@ BEGIN
 	IF v_cnt = 0 THEN
 		RAISE EXCEPTION 'Offer % not found',NEW.offer_id;
 	END IF;
+	IF OLD.otype = 1 THEN
+		UPDATE rw_mkt_stats SET
+				total_sell_orders = (total_sell_orders - 1)
+			WHERE contract_aid=NEW.contract_aid;
+	ELSE
+		UPDATE rw_mkt_stats SET
+				total_buy_orders = (total_buy_orders - 1)
+			WHERE contract_aid=NEW.contract_aid;
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -182,6 +217,15 @@ CREATE OR REPLACE FUNCTION on_offer_canceled_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
+	IF OLD.otype = 1 THEN
+		UPDATE rw_mkt_stats SET 
+				total_sell_orders = (total_sell_orders + 1)
+			WHERE contract_aid=OLD.contract_aid;
+	ELSE
+		UPDATE rw_mkt_stats SET 
+				total_buy_orders = (total_buy_orders + 1)
+			WHERE contract_aid=OLD.contract_aid;
+	END IF;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -192,11 +236,11 @@ BEGIN
 
 	UPDATE rw_token SET
 			cur_owner_aid = NEW.to_aid
-		WHERE token_id=NEW.token_id;
+		WHERE token_id=NEW.token_id AND rwalk_aid=NEW.contract_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO rw_token(token_id,cur_owner_aid)
-			VALUES(NEW.token_id,NEW.to_aid);
+		INSERT INTO rw_token(rwalk_aid,token_id,cur_owner_aid)
+			VALUES(NEW.contract_aid,NEW.token_id,NEW.to_aid);
 	END IF;
 	RETURN NEW;
 END;
@@ -208,6 +252,39 @@ BEGIN
 	-- we do not restore previous token because there will be an INSERT anyway
 	-- since the transaction was already signed and will be processed in the future
 	-- and any possible failure of this transaction will be an extremely rare event
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_new_offer_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt                   NUMERIC;
+BEGIN
+
+	IF NEW.otype = 1 THEN
+		UPDATE rw_mkt_stats SET 
+				total_sell_orders = (total_sell_orders + 1)
+			WHERE contract_aid=NEW.contract_aid;
+	ELSE
+		UPDATE rw_mkt_stats SET 
+				total_buy_orders = (total_buy_orders + 1)
+			WHERE contract_aid=NEW.contract_aid;
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_new_offer_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	IF OLD.otype = 1 THEN
+		UPDATE rw_mkt_stats SET 
+				total_sell_orders = (total_sell_orders - 1)
+			WHERE contract_aid=OLD.contract_aid;
+	ELSE
+		UPDATE rw_mkt_stats SET 
+				total_buy_orders = (total_buy_orders - 1)
+			WHERE contract_aid=OLD.contract_aid;
+	END IF;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

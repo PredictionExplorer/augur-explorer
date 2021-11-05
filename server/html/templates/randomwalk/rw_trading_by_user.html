@@ -28,10 +28,10 @@
 				{{ if eq .OfferType 0 }}BUY{{else}}SELL{{end}}
 			</td>
 			<td class="addr">
-				<a href="/black/poly/markets/list/?c={{.SellerAddr}}">{{.BuyerAddr}}</a>
+				<a href="/black/rwalk/user/info/{{.SellerAddr}}/{{.RWalkAddr}}">{{.BuyerAddr}}</a>
 			</td>
 			<td class="addr">
-				<a href="/black/poly/markets/list/?c={{.SellerAddr}}">{{.SellerAddr}}</a>
+				<a href="/black/rwalk/user/info/{{.SellerAddr}}/{{.RWalkAddr}}">{{.SellerAddr}}</a>
 			</td>
 			<td class="" style="text-align: center;">{{.TokenId}}</td>
 			<td class="market_reports_field" style="text-align: center;">
@@ -41,4 +41,9 @@
 	{{- end}}
 </table>
 <br/><br/>
+<code>
+	API: /api/rwalk/trading/by_user/[user_aid]/[offset]/[limit]<br/>
+
+	Example: /api/rwalk/trading/by_user/{{.UserAid}}/0/1000
+</code>
 </body>

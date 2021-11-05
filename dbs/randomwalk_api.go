@@ -217,12 +217,18 @@ func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) [
 				"ba.addr buyer_addr,"+
 				"o.token_id,"+
 				"o.active,"+
-				"o.price/1e+18 price "+
+				"o.price/1e+18 price, "+
+				"o.contract_aid," +
+				"ca.addr," +
+				"o.rwalk_aid,"+
+				"rwa.addr "+
 			"FROM "+
 				"rw_new_offer o "+
 				"JOIN transaction tx ON o.tx_id=tx.id "+
 				"JOIN address sa ON o.seller_aid=sa.address_id "+
 				"JOIN address ba ON o.buyer_aid=ba.address_id "+
+				"JOIN address ca ON o.contract_aid=ca.address_id "+
+				"JOIN address rwa ON o.rwalk_aid=rwa.address_id "+
 			"WHERE (active = 'f') AND (contract_aid=$3) " +
 			"ORDER BY o.id " +
 			"OFFSET $1 LIMIT $2"
@@ -253,6 +259,10 @@ func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) [
 			&rec.TokenId,
 			&rec.Active,
 			&rec.Price,
+			&rec.ContractAid,
+			&rec.ContractAddr,
+			&rec.RWalkAid,
+			&rec.RWalkAddr,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
@@ -1002,13 +1012,16 @@ func (ss *SQLStorage) Get_trading_history_by_user(user_aid int64) []p.RW_API_Off
 				"o.active,"+
 				"o.price/1e+18 price,"+
 				"o.contract_aid,"+
-				"ca.addr " +
+				"ca.addr, " +
+				"o.rwalk_aid,"+
+				"rwa.addr "+
 			"FROM "+
 				"rw_new_offer o "+
 				"JOIN transaction tx ON o.tx_id=tx.id "+
 				"JOIN address sa ON o.seller_aid=sa.address_id "+
 				"JOIN address ba ON o.buyer_aid=ba.address_id "+
 				"JOIN address ca ON o.contract_aid=ca.address_id "+
+				"JOIN address rwa ON o.rwalk_aid=rwa.address_id "+
 			"WHERE (active = 'f') AND ((o.buyer_aid=$1) OR (o.seller_aid=$1)) " +
 			"ORDER BY o.id "
 	
@@ -1041,6 +1054,75 @@ func (ss *SQLStorage) Get_trading_history_by_user(user_aid int64) []p.RW_API_Off
 			&rec.Price,
 			&rec.ContractAid,
 			&rec.ContractAddr,
+			&rec.RWalkAid,
+			&rec.RWalkAddr,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+
+	return records
+}
+func (ss *SQLStorage) Get_rwalk_user_info(user_aid int64,rwalk_aid int64) (p.RW_API_UserInfo,error) {
+
+	var query string
+	query = "SELECT " +
+				"us.total_vol/1e+18, "+
+				"us.total_num_trades,"+
+				"us.total_num_toks,"+
+				"us.total_withdrawals "+
+			"FROM "+
+				"rw_user_stats us "+
+			"WHERE user_aid=$1 AND rwalk_aid=$2"
+
+	var output p.RW_API_UserInfo
+	res := ss.db.QueryRow(query,user_aid,rwalk_aid)
+	err := res.Scan(
+			&output.TotalVolume,
+			&output.TotalNumTrades,
+			&output.TotalMintedToks,
+			&output.TotalNumWithdrawals,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return output,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return output,nil
+}
+func (ss *SQLStorage) Get_top5_traded_tokens() []p.RW_API_Top5Toks {
+
+	records := make([]p.RW_API_Top5Toks,0,16)
+
+	var query string
+	query = "SELECT " +
+				"token_id, "+
+				"num_trades,"+
+				"seed_hex "+
+			"FROM "+
+				"rw_token t "+
+			"ORDER BY num_trades DESC " +
+			"LIMIT 5"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_API_Top5Toks
+		err=rows.Scan(
+			&rec.TokenId,
+			&rec.TotalTrades,
+			&rec.SeedHex,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))

@@ -121,8 +121,8 @@ func set_routing_randomwalk(r *gin.Engine) {
 	r.GET("/black/rwalk/tokens/list/sequential/:rwalk_addr",rwalk_token_list_seq)
 	r.GET("/black/rwalk/tokens/list/sequential/:rwalk_addr/:offset/:limit",rwalk_token_list_seq)
 	r.GET("/black/rwalk/tokens/list/by_period/:rwalk_addr/:init_ts/:fin_ts",rwalk_token_list_period)
-	r.GET("/black/rwalk/tokens/history/:token_id",rwalk_token_history)
-	r.GET("/black/rwalk/tokens/history/:token_id/:offest/:limit",rwalk_token_history)
+	r.GET("/black/rwalk/tokens/history/:token_id/:rwalk_addr",rwalk_token_history)
+	r.GET("/black/rwalk/tokens/history/:token_id/:rwalk_addr/:offest/:limit",rwalk_token_history)
 	r.GET("/black/rwalk/tokens/name_changes/:token_id",rwalk_token_name_history)
 	r.GET("/black/rwalk/tokens/by_user/:user_aid",rwalk_tokens_by_user)
 	r.GET("/black/rwalk/trading/history/:market_addr/:offset/:limit",rwalk_trading_history)
@@ -131,6 +131,7 @@ func set_routing_randomwalk(r *gin.Engine) {
 	r.GET("/black/rwalk/statistics/by_token/:rwalk_addr",rwalk_token_stats)
 	r.GET("/black/rwalk/statistics/by_market/:market_addr",rwalk_market_stats)
 	r.GET("/black/rwalk/statistics/trading_volume/:market_addr/:init_ts/:fin_ts/:interval_secs",rwalk_trading_volume_by_period)
+	r.GET("/black/rwalk/user/info/:user_aid/:rwalk_addr",rwalk_user_info)
 }
 func set_routing_black_templates(r *gin.Engine) {
 

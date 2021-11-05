@@ -102,6 +102,14 @@ func main() {
 	txopts.Value = big.NewInt(0)     // in wei
 	txopts.GasLimit = uint64(10000000) // in units
 	txopts.GasPrice = gasPrice
+	is_sell_offer := false
+	var zero_addr common.Address
+	if bytes.Equal(zero_addr.Bytes(),offer.Buyer.Bytes()) {
+		is_sell_offer = true
+	}
+	if is_sell_offer {
+		txopts.Value.Set(amount)
+	}
 	fmt.Printf("Gas price = %v\n",gasPrice.String())
 
 	signfunc := func(signer_disabled types.Signer, address common.Address, tx *types.Transaction) (*types.Transaction, error) {
@@ -115,17 +123,13 @@ func main() {
 		return tx.WithSignature(signer, signature)
 	}
 	txopts.Signer = signfunc
-	txopts.Value.Set(amount)
-	is_sell_offer := false
-	var zero_addr common.Address
-	if bytes.Equal(zero_addr.Bytes(),offer.Buyer.Bytes()) {
-		is_sell_offer = true
-	}
 	var tx *types.Transaction
 	if is_sell_offer {
-		fmt.Printf("Setting msg.value to %v\n",txopts.Value.String())
+		fmt.Printf("Sending tx with msg.value = %v\n",txopts.Value.String())
+		fmt.Printf("Executing accept SELL offer\n")
 		tx,err = market_ctrct.AcceptSellOffer(txopts,big.NewInt(offer_id))
 	} else {
+		fmt.Printf("Executing accept BUY offer\n")
 		tx,err = market_ctrct.AcceptBuyOffer(txopts,big.NewInt(offer_id))
 	}
 

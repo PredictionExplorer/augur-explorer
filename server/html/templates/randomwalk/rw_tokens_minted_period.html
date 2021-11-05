@@ -1,21 +1,18 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Tokens Minted</title>
+	<title>Tokens Minted from {{.InitDate}} to {{.FinDate}}</title>
 </head>
 <body>
-	<h3 class="page_title">Tokens Minted<h3>
-
-<nav>
-	<ul>
-	<li>
-		<a class="btn_link" href="/black/rwalk/tokens/list/by_period/{{.RWalkAddr}}/{{.InitTs}}/{{.FinTs}}">
-			Last 2 Days 
-		</a>
-		<span></span><span></span><span></span><span></span>
-	</li>
-	</ul>
-</nav>
+	<h3 class="page_title">Tokens Minted in range <h3>
+<table>
+	<tr>
+		<td><b>From</b></td><td>{{.InitDate}}</td>
+	</tr>
+	<tr>
+		<td><b>To</b></td><td>{{.FinDate}}</td>
+	</tr>
+</table>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">Block</th>
@@ -44,8 +41,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/rwalk/tokens/list/sequential/[nft_contract_addr]/[offset]/[limit]</br/>
+	API: /api/rwalk/tokens/list/by_period/[nft_contract_addr]/[from_ts]/[to_ts]<br/>
 
-	Example: /api/rwalk/tokens/list/sequential/{{.RWalkAddr}}/0/1000
+	Example: /api/rwalk/tokens/list/by_period/{{.RWalkAddr}}/{{.InitTs}}/{{.FinTs}}
 </code>
 </body>

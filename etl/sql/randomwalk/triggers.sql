@@ -8,3 +8,5 @@ CREATE TRIGGER rw_offer_canceled_insert AFTER INSERT ON rw_offer_canceled FOR EA
 CREATE TRIGGER rw_offer_canceled_delete AFTER DELETE ON rw_offer_canceled FOR EACH ROW EXECUTE PROCEDURE on_offer_canceled_delete();
 CREATE TRIGGER rw_transfer_insert AFTER INSERT ON rw_transfer FOR EACH ROW EXECUTE PROCEDURE on_rw_transfer_insert();
 CREATE TRIGGER rw_transfer_delete AFTER DELETE ON rw_transfer FOR EACH ROW EXECUTE PROCEDURE on_rw_transfer_delete();
+CREATE TRIGGER rw_new_offer_insert AFTER INSERT ON rw_new_offer FOR EACH ROW EXECUTE PROCEDURE on_new_offer_insert();
+CREATE TRIGGER rw_new_offer_delete AFTER DELETE ON rw_new_offer FOR EACH ROW EXECUTE PROCEDURE on_new_offer_delete();

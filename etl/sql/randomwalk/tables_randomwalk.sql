@@ -1,5 +1,6 @@
 CREATE TABLE rw_token(
-	token_id		BIGINT PRIMARY KEY,
+	token_id		BIGINT NOT NULL,
+	rwalk_aid		BIGINT NOT NULL,
 	cur_owner_aid	BIGINT NOT NULL,
 	seed_hex		TEXT DEFAULT '',
 	seed_num		DECIMAL DEFAULT 0,
@@ -7,6 +8,7 @@ CREATE TABLE rw_token(
 	last_price		DECIMAL DEFAULT 0,
 	num_trades		BIGINT DEFAULT 0,
 	total_vol		DECIMAL DEFAULT 0,	-- total trading volume
+	PRIMARY KEY(rwalk_aid,token_id),
 	UNIQUE(seed_hex)
 );
 CREATE TABLE rw_new_offer(
