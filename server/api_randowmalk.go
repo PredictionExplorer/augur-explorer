@@ -1,7 +1,7 @@
 /// API v1
 package main
 import (
-	"fmt"
+	//"fmt"
 	//"strconv"
 
 	"net/http"
@@ -430,12 +430,12 @@ func api_rwalk_user_info(c *gin.Context) {
 		respond_error_json(c,"Address lookup on user_aid failed")
 		return
 	}
-	user_info,err := augur_srv.db_arbitrum.Get_rwalk_user_info(user_aid,rwalk_aid)
-	if err != nil {
-		respond_error_json(c,fmt.Sprintf("Statistics record for this user in token %v wasn't found",p_rwalk_addr))
-		return
-	}
+	user_info,dberr := augur_srv.db_arbitrum.Get_rwalk_user_info(user_aid,rwalk_aid)
 
+	var dberr_str string
+	if dberr != nil {
+		dberr_str = dberr.Error()
+	}
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -446,6 +446,7 @@ func api_rwalk_user_info(c *gin.Context) {
 		"UserAddr" : user_addr,
 		"RWalkAddr" : p_rwalk_addr,
 		"RWalkAid" : rwalk_aid,
+		"DBError" : dberr_str,
 	})
 }
 func api_rwalk_top5_traded_tokens(c *gin.Context) {

@@ -66,7 +66,7 @@ type RW_API_MarketStats struct {
 	TradingVol			float64
 	NumTrades			int64
 }
-type RW_API_HistEntry_Mint struct {
+type RW_API_HistEntry_Mint struct { // type = 1
 	BlockNum		int64
 	TimeStamp		int64
 	DateTime		string
@@ -79,7 +79,7 @@ type RW_API_HistEntry_Mint struct {
 	SeedNum			string
 	Price			float64
 }
-type RW_API_HistEntry_Offer struct {
+type RW_API_HistEntry_Offer struct { // type = 2
 	BlockNum		int64
 	TimeStamp		int64
 	DateTime		string
@@ -95,7 +95,7 @@ type RW_API_HistEntry_Offer struct {
 	Active			bool
 	Price			float64
 }
-type RW_API_HistEntry_OfferCanceled struct {
+type RW_API_HistEntry_OfferCanceled struct { // type = 3
 	BlockNum		int64
 	TimeStamp		int64
 	DateTime		string
@@ -113,7 +113,7 @@ type RW_API_HistEntry_OfferCanceled struct {
 	Aid				int64
 	Address			string
 }
-type RW_API_HistEntry_ItemBought struct {
+type RW_API_HistEntry_ItemBought struct { // type = 4
 	BlockNum		int64
 	TimeStamp		int64
 	DateTime		string
@@ -131,7 +131,7 @@ type RW_API_HistEntry_ItemBought struct {
 	Aid				int64
 	Address			string
 }
-type RW_API_HistEntry_TokenName struct {
+type RW_API_HistEntry_TokenName struct {	// type = 5
 	BlockNum		int64
 	TimeStamp		int64
 	DateTime		string
@@ -140,7 +140,7 @@ type RW_API_HistEntry_TokenName struct {
 	TokenId			int64
 	TokenName		string
 }
-type RW_API_HistEntry_Transfer struct {
+type RW_API_HistEntry_Transfer struct {	// type = 6
 	BlockNum		int64
 	TimeStamp		int64
 	DateTime		string
@@ -176,12 +176,13 @@ type RW_API_TokenName struct {
 	OwnerAddr		string
 }
 type RW_API_UserInfo struct {
-	UserAid				int64
-	UserAddr			string
-	TotalVolume			float64
-	TotalNumTrades		int64
-	TotalMintedToks		int64
-	TotalNumWithdrawals	int64
+	UserAid					int64
+	UserAddr				string
+	TotalVolume				float64
+	TotalNumTrades			int64
+	TotalMintedToks			int64
+	TotalNumWithdrawals		int64
+	IsMarketPlaceContract	bool	// true if the User is not really a user, but is a marketplace contract
 }
 type RW_API_Top5Toks struct {
 	TokenId				int64

@@ -92,23 +92,37 @@
 			</td>
 			<td class="">
 				{{ if eq .RecordType 1 }}
+				<a class="link" href="/black/rwalk/user/info/{{.Record.OwnerAid}}/{{$.RWalkAddr}}">
 					{{.Record.OwnerAddr}}
+				</a>
 				{{ end }}
 				{{ if eq .RecordType 2 }}
-					{{ if eq .Record.OfferType 1 }}{{.Record.SellerAddr }}{{end}}
-					{{ if eq .Record.OfferType 0 }}{{.Record.BuyerAddr}}{{end}}
+					{{ if eq .Record.OfferType 1 }}
+						<a class="link" href="/black/rwalk/user/info/{{.Record.SellerAid}}/{{$.RWalkAddr}}">
+						{{.Record.SellerAddr }}
+						</a>
+					{{end}}
+					{{ if eq .Record.OfferType 0 }}
+						<a class="link" href="/black/rwalk/user/info/{{.Record.BuyerAid}}/{{$.RWalkAddr}}">
+						{{.Record.BuyerAddr}}
+						</a>
+					{{end}}
 				{{ end }}
 				{{ if eq .RecordType 3 }}
 					Token Owner
 				{{ end }}
 				{{ if eq .RecordType 4 }}
+					<a class="link" href="/black/rwalk/user/info/{{.Record.Aid}}/{{$.RWalkAddr}}">
 					{{.Record.Address }}
+					</a>
 				{{ end }}
 				{{ if eq .RecordType 5 }}
 					Token Owner
 				{{ end }}
 				{{ if eq .RecordType 6 }}
+					<a class="link" href="/black/rwalk/user/info/{{.Record.FromAid}}/{{$.RWalkAddr}}">
 					{{.Record.FromAddr}}
+					</a>
 				{{ end }}
 			</td>
 			<td class="" style="text-align:center;">
@@ -183,9 +197,13 @@
 					offer with ID={{.Record.OfferId }} created
 				{{ end }}
 				{{ if eq .RecordType 3 }}
+					{{ if eq .Record.OfferType 0 }}BUY{{end}}
+					{{ if eq .Record.OfferType 1 }}SELL{{end}}
 					Offer with ID={{.Record.OfferId}} was canceled by creator
 				{{ end }}
 				{{ if eq .RecordType 4 }}
+					{{ if eq .Record.OfferType 0 }}BUY{{end}}
+					{{ if eq .Record.OfferType 1 }}SELL{{end}}
 					Offer with ID={{.Record.OfferId}} was bought by {{.Record.Address}}
 				{{ end }}
 				{{ if eq .RecordType 5 }}
@@ -199,4 +217,9 @@
 	{{- end}}
 </table>
 <br/><br/>
+<code>
+	API: /api/rwalk/tokens/history/[token_id]/[rwalk_addr]/[offset]/[limit] <br/>
+
+	Example: /api/rwalk/tokens/history/{{.TokenInfo.TokenId}}/{{.RWalkAddr}}/0/1000
+</code>
 </body>

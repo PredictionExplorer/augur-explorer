@@ -470,7 +470,7 @@ func (ss *SQLStorage) Get_token_full_history(rwalk_aid,token_id int64,offset,lim
 						//---------Transfer
 						"CAST(NULL AS BIGINT) as transfer_id "+
 					"FROM rw_offer_canceled c "+
-						"JOIN rw_new_offer o ON c.offer_id=o.offer_id "+
+						"JOIN rw_new_offer o ON (c.offer_id=o.offer_id AND c.contract_aid=o.contract_aid) "+
 						"LEFT JOIN address ca ON c.contract_aid=ca.address_id " +
 						"LEFT JOIN address sa ON o.seller_aid=sa.address_id "+
 						"LEFT JOIN address ba ON o.buyer_aid=ba.address_id " +
@@ -509,7 +509,7 @@ func (ss *SQLStorage) Get_token_full_history(rwalk_aid,token_id int64,offset,lim
 						//---------Transfer
 						"CAST(NULL AS BIGINT) as transfer_id "+
 					"FROM rw_item_bought b "+
-						"JOIN rw_new_offer o ON b.offer_id=o.offer_id "+
+						"JOIN rw_new_offer o ON (b.offer_id=o.offer_id AND b.contract_aid=o.contract_aid) "+
 						"LEFT JOIN address ca ON b.contract_aid=ca.address_id " +
 						"LEFT JOIN address sa ON b.seller_aid=sa.address_id "+
 						"LEFT JOIN address ba ON b.buyer_aid=ba.address_id " +
@@ -592,12 +592,24 @@ func (ss *SQLStorage) Get_token_full_history(rwalk_aid,token_id int64,offset,lim
 						"LEFT JOIN rw_item_bought item ON tr.tx_id=item.tx_id " +
 						"LEFT JOIN rw_offer_canceled cancel ON tr.tx_id=cancel.tx_id "+
 						"LEFT JOIN rw_token_name name ON tr.tx_id=name.tx_id "+
+						"LEFT JOIN evt_log elog ON ((tr.tx_id=elog.tx_id) AND ("+
+							"elog.topic0_sig='55076e90' OR "+	// new offer
+							"elog.topic0_sig='caacc56f' OR "+	// item bought
+							"elog.topic0_sig='0ff09947' OR "+	// offer canceled
+							"elog.topic0_sig='8ad5e159' OR "+	// token name
+							"elog.topic0_sig='ad2bc79f' "+	// mint event
+						"))"+
+/*					"FROM rw_transfer tr "+
+						"LEFT JOIN evt_log l ON (tr.tx_id=l.tx_id) AND "+
+							"(l.topic0_sig=
+*/
 					"WHERE (tr.token_id=$1) AND (tr.contract_aid=$2) "+
 						"AND (off.id IS NULL) "+
 						"AND (mint.id IS NULL) " +
 						"AND (item.id IS NULL) " +
 						"AND (cancel.id IS NULL) "+
 						"AND (name.id IS NULL) "+
+						"AND (elog.id IS NULL) " +
 					"ORDER BY tr.id " +
 				")"+
 			") AS data " +		// FROM
@@ -1068,7 +1080,15 @@ func (ss *SQLStorage) Get_trading_history_by_user(user_aid int64) []p.RW_API_Off
 }
 func (ss *SQLStorage) Get_rwalk_user_info(user_aid int64,rwalk_aid int64) (p.RW_API_UserInfo,error) {
 
+	var output p.RW_API_UserInfo
 	var query string
+	query = "SELECT contract_aid FROM rw_new_offer WHERE contract_aid=$1 LIMIT 1"
+	var null_aid sql.NullInt64
+	res := ss.db.QueryRow(query,user_aid)
+	err := res.Scan(&null_aid)
+	if err == nil {
+		output.IsMarketPlaceContract = true
+	}
 	query = "SELECT " +
 				"us.total_vol/1e+18, "+
 				"us.total_num_trades,"+
@@ -1078,9 +1098,9 @@ func (ss *SQLStorage) Get_rwalk_user_info(user_aid int64,rwalk_aid int64) (p.RW_
 				"rw_user_stats us "+
 			"WHERE user_aid=$1 AND rwalk_aid=$2"
 
-	var output p.RW_API_UserInfo
-	res := ss.db.QueryRow(query,user_aid,rwalk_aid)
-	err := res.Scan(
+	output.UserAid=user_aid
+	res = ss.db.QueryRow(query,user_aid,rwalk_aid)
+	err = res.Scan(
 			&output.TotalVolume,
 			&output.TotalNumTrades,
 			&output.TotalMintedToks,

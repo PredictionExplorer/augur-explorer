@@ -383,15 +383,15 @@ func rwalk_user_info(c *gin.Context) {
 		respond_error(c,"Address lookup on user_aid failed")
 		return
 	}
-	user_info,err := augur_srv.db_arbitrum.Get_rwalk_user_info(user_aid,rwalk_aid)
-	if err != nil {
-		respond_error(c,fmt.Sprintf("Statistics record for this user in token %v wasn't found",p_rwalk_addr))
-		return
+	user_info,dberr := augur_srv.db_arbitrum.Get_rwalk_user_info(user_aid,rwalk_aid)
+	var dberr_string string
+	if dberr != nil {
+		dberr_string = dberr.Error()
 	}
-
 	c.HTML(http.StatusOK, "rw_user_info.html", gin.H{
 		"UserInfo" : user_info,
 		"UserAid" : user_aid,
 		"UserAddr" : user_addr,
+		"DBError" : dberr_string,
 	})
 }

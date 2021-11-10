@@ -136,7 +136,10 @@ func proc_offer_cancelled(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Processing OfferCanceled id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 	if !storage.Offer_exists(log.Address.String(),evt.OfferId) {
-		Info.Printf("Skipping OfferCanceled : offer for contract %v does not exist, skipping\n",log.Address.String())
+		Info.Printf(
+			"Skipping OfferCanceled : offer %v for contract %v does not exist, skipping\n",
+			evt.OfferId,log.Address.String(),
+		)
 		return
 	}
 

@@ -116,6 +116,7 @@ func set_routing_polymarket(r *gin.Engine) {
 }
 func set_routing_randomwalk(r *gin.Engine) {
 	r.GET("/black/rwalk",rwalk_index_page)
+	r.GET("/black/rwalk/",rwalk_index_page)
 	r.GET("/black/rwalk/current_offers/:rwalk_addr/:market_addr/:order_by",rwalk_current_offers)
 	r.GET("/black/rwalk/floor_price/:rwalk_addr/:market_addr",rwalk_floor_price)
 	r.GET("/black/rwalk/tokens/list/sequential/:rwalk_addr",rwalk_token_list_seq)

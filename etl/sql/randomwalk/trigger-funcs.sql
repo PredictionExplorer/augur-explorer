@@ -30,7 +30,7 @@ BEGIN
 			WHERE offer_id=NEW.offer_id AND contract_aid=NEW.contract_aid;
 	END IF;
 	UPDATE rw_stats
-		SET		total_vol = (total_vol +1),
+		SET		total_vol = (total_vol + v_price),
 				total_num_trades = (total_num_trades +1)
 		WHERE rwalk_aid = v_rwalk_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
@@ -39,7 +39,7 @@ BEGIN
 			VALUES(v_rwalk_aid,v_price,1);
 	END IF;
 	UPDATE rw_mkt_stats
-		SET		total_vol = (total_vol +1),
+		SET		total_vol = (total_vol + v_price),
 				total_num_trades = (total_num_trades +1)
 		WHERE contract_aid = NEW.contract_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
@@ -102,11 +102,11 @@ BEGIN
 		RETURN OLD;
 	END IF;
 	UPDATE rw_stats
-		SET		total_vol = (total_vol -1),
+		SET		total_vol = (total_vol - v_price),
 				total_num_trades = (total_num_trades -1)
 		WHERE rwalk_aid = v_rwalk_aid;
 	UPDATE rw_mkt_stats
-		SET		total_vol = (total_vol -1),
+		SET		total_vol = (total_vol - v_price),
 				total_num_trades = (total_num_trades -1)
 		WHERE contract_aid = NEW.contract_aid;
 
@@ -174,6 +174,12 @@ BEGIN
 		INSERT INTO rw_token(rwalk_aid,token_id,cur_owner_aid,seed_hex,seed_num,last_price)
 			VALUES(NEW.contract_aid,NEW.token_id,NEW.owner_aid,NEW.seed,NEW.seed_num,NEW.price);
 	END IF;
+	UPDATE rw_stats SET total_num_toks = (total_num_toks +  1) WHERE rwalk_aid=NEW.contract_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO rw_stats(rwalk_aid,total_num_toks)
+			VALUES(NEW.contract_aid,1);
+	END IF;
 	UPDATE rw_user_stats
 		SET total_num_toks = (total_num_toks + 1)
 		WHERE rwalk_aid=NEW.contract_aid AND user_aid=NEW.owner_aid;
@@ -188,20 +194,23 @@ BEGIN
 	UPDATE rw_user_stats
 		SET total_num_toks = (total_num_toks - 1)
 		WHERE rwalk_aid=NEW.contract_aid AND user_aid=NEW.owner_aid;
+	UPDATE rw_stats SET total_num_toks = (total_num_toks - 1 ) WHERE rwalk_aid=OLD.contract_aid;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_offer_canceled_insert() RETURNS trigger AS  $$
 DECLARE
+	v_offer_type			SMALLINT;
 	v_cnt                   NUMERIC;
 BEGIN
 
+	SELECT otype FROM rw_new_offer WHERE offer_id=NEW.offer_id INTO v_offer_type;
 	UPDATE rw_new_offer SET active=FALSE WHERE offer_id=NEW.offer_id;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		RAISE EXCEPTION 'Offer % not found',NEW.offer_id;
 	END IF;
-	IF OLD.otype = 1 THEN
+	IF v_offer_type = 1 THEN
 		UPDATE rw_mkt_stats SET
 				total_sell_orders = (total_sell_orders - 1)
 			WHERE contract_aid=NEW.contract_aid;
@@ -215,9 +224,11 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_offer_canceled_delete() RETURNS trigger AS  $$
 DECLARE
+	v_offer_type			SMALLINT;
 BEGIN
 
-	IF OLD.otype = 1 THEN
+	SELECT otype FROM rw_new_offer WHERE offer_id=OLD.offer_id INTO v_offer_type;
+	IF v_offer_Type = 1 THEN
 		UPDATE rw_mkt_stats SET 
 				total_sell_orders = (total_sell_orders + 1)
 			WHERE contract_aid=OLD.contract_aid;

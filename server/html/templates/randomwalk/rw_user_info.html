@@ -7,6 +7,12 @@
 <body>
 	<h3>User info for {{.UserAddr}}</h3>
 <table>
+	{{ if .UserInfo.IsMarketPlaceContract }}
+	<tr class="market_reports">
+		<td class="market_reports_field" ><font color=yellow>Note:</font></td>
+		<td class="market_reports_field" >This user is MarketPlace contract</td>
+	</tr>
+	{{ end }}
 	<tr class="market_reports">
 		<td class="market_reports_field" >Address</td>
 		<td class="market_reports_field" >{{.UserAddr}}</td>

@@ -9,7 +9,7 @@
 <table>
 	<tr>
 		<td>Total Trading Volume</td>
-		<td>{{.TokenStats.TradingVol}}</td>
+		<td>{{ printf "%0.18f" .TokenStats.TradingVol}}</td>
 	</tr>
 	<tr>
 		<td>Total Trades</td>
@@ -36,5 +36,11 @@
 		<td>{{.TokenStats.MaximumTradedPrice}}</td>
 	</tr>
 </table>
+<br/><br/>
+<code>
+	API: /api/rwalk/statistics/by_token/[rwalk_addr]</br/>
+
+	Example: /api/rwalk/statistics/by_token/{{.RWalkAddr}}
+</code>
 </body>
 </html>
