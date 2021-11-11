@@ -10,3 +10,4 @@ CREATE TRIGGER rw_transfer_insert AFTER INSERT ON rw_transfer FOR EACH ROW EXECU
 CREATE TRIGGER rw_transfer_delete AFTER DELETE ON rw_transfer FOR EACH ROW EXECUTE PROCEDURE on_rw_transfer_delete();
 CREATE TRIGGER rw_new_offer_insert AFTER INSERT ON rw_new_offer FOR EACH ROW EXECUTE PROCEDURE on_new_offer_insert();
 CREATE TRIGGER rw_new_offer_delete AFTER DELETE ON rw_new_offer FOR EACH ROW EXECUTE PROCEDURE on_new_offer_delete();
+CREATE TRIGGER rw_new_offer_update AFTER UPDATE on rw_new_offer FOR EACH ROW EXECUTE PROCEDURE on_new_offer_update();

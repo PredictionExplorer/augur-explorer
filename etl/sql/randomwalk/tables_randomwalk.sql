@@ -26,6 +26,7 @@ CREATE TABLE rw_new_offer(
 	token_id		BIGINT NOT NULL,
 	active			BOOLEAN,
 	price			DECIMAL,
+	profit			DECIMAL,		-- profit the seller made (if used MarketPlace contract for buy and sell operation)
 	UNIQUE(contract_aid,offer_id),
 	UNIQUE(evtlog_id)
 );
@@ -123,7 +124,26 @@ CREATE TABLE rw_user_stats (
 	total_num_trades		BIGINT DEFAULT 0,		-- total count of tokens traded by user
 	total_num_toks			BIGINT DEFAULT 0,		-- total count of tokens minted by user
 	total_withdrawals		BIGINT DEFAULT 0,
+	total_profit			DECIMAL DEFAULT 0,
 	PRIMARY KEY(rwalk_aid,user_aid)
+);
+CREATE TABLE rw_user_rwtok (	-- hold info of User-Token relation (to calculate profit)
+									-- this profit is only available for trades made at MarketPlace
+	rwalk_aid				BIGINT NOT NULL,
+	user_aid                BIGINT NOT NULL,
+	token_id                BIGINT NOT NULL,
+	price_bought            DECIMAL NULL,   -- NOT NULL - position opened (price of the token when BUY order was executed)
+											---NULL	 - no position for this token
+	PRIMARY KEY(rwalk_aid,user_aid,token_id)
+);
+CREATE TABLE rw_uranks (   -- User Rankings (how this user ranks against each other, ex: Top 13% in profit made
+	aid		            BIGINT PRIMARY KEY,
+	total_trades		BIGINT DEFAULT 0,
+	top_profit          DECIMAL(24,2) DEFAULT 100.0,    -- position of the user in profits accumulated over lifetime
+	top_trades          DECIMAL(24,2) DEFAULT 100.0,    -- position of the user in number of accumulated trades
+	top_volume			DECIMAL(24,2) DEFAULT 100.0,	   -- position of the user in accumulated trading volume
+	profit				DECIMAL(64,18) DEFAULT 0.0,
+	volume				DECIMAL(64,18) DEFAULT 0.0
 );
 CREATE TABLE rw_proc_status (
 	last_evt_id             BIGINT DEFAULT 0,

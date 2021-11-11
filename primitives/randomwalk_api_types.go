@@ -26,6 +26,7 @@ type RW_API_Offer struct {
 	TokenId			int64
 	Active			bool
 	Price			float64
+	Profit			float64
 	RWalkAid		int64
 	RWalkAddr		string
 }

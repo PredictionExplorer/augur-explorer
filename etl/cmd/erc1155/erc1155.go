@@ -158,8 +158,18 @@ func proc_erc1155_transfer_batch(evtlog *EthereumEventLog) error {
 		}
 		token_ids = token_ids + token_id_hex
 	}
+	if len(mevt.Values) != len(mevt.Ids) {
+		err_str := fmt.Sprintf(
+			"Invalid ERC1155 TransferBatch Event for evt_id=%v, tx %v , "+
+													"values and token ids of different length",
+			evtlog.EvtId,evtlog.TxHash,
+		)
+		Error.Printf("%v",err_str)
+		Info.Printf("%v",err_str)
+		return errors.New(err_str)
+	}
 	amounts := Bigint_ptr_slice_to_str(&mevt.Values,",")
-	Info.Printf("ERC1155_Transfer event, contract %v (block=%v) :\n",
+	Info.Printf("ERC1155_TransferBatch event, contract %v (block=%v) :\n",
 								log.Address.String(),log.BlockNumber)
 	Info.Printf("ERC1155:TransferBatch {\n")
 	Info.Printf("\tOperator: %v\n",mevt.Operator.String())

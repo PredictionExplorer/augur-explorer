@@ -2,6 +2,7 @@ package dbs
 import (
 	"os"
 	"fmt"
+	"math"
 	"database/sql"
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
@@ -218,6 +219,7 @@ func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) [
 				"o.token_id,"+
 				"o.active,"+
 				"o.price/1e+18 price, "+
+				"o.profit/1e+18 profit, "+
 				"o.contract_aid," +
 				"ca.addr," +
 				"o.rwalk_aid,"+
@@ -242,6 +244,7 @@ func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) [
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.RW_API_Offer
+		var null_profit sql.NullFloat64
 		err=rows.Scan(
 			&rec.Id,
 			&rec.EvtLogId,
@@ -259,6 +262,7 @@ func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) [
 			&rec.TokenId,
 			&rec.Active,
 			&rec.Price,
+			&null_profit,
 			&rec.ContractAid,
 			&rec.ContractAddr,
 			&rec.RWalkAid,
@@ -267,6 +271,11 @@ func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) [
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
+		}
+		if null_profit.Valid {
+			rec.Profit = null_profit.Float64
+		} else {
+			rec.Profit = math.NaN()
 		}
 		records = append(records,rec)
 	}
