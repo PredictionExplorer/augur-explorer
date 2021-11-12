@@ -200,6 +200,11 @@ func (ss *SQLStorage) Get_minted_tokens_sequentially(rwalk_aid int64,offset,limi
 func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) []p.RW_API_Offer {
 
 	records := make([]p.RW_API_Offer,0,16)
+	var where_condition string
+	where_condition =  fmt.Sprintf(" AND (contract_aid=%v) ",contract_aid)
+	if contract_aid != 0 {
+		where_condition = ""
+	}
 
 	var query string
 	query = "SELECT " +
@@ -231,11 +236,11 @@ func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) [
 				"JOIN address ba ON o.buyer_aid=ba.address_id "+
 				"JOIN address ca ON o.contract_aid=ca.address_id "+
 				"JOIN address rwa ON o.rwalk_aid=rwa.address_id "+
-			"WHERE (active = 'f') AND (contract_aid=$3) " +
+			"WHERE (active = 'f')" + where_condition +
 			"ORDER BY o.id " +
 			"OFFSET $1 LIMIT $2"
 
-	rows,err := ss.db.Query(query,offset,limit,contract_aid)
+	rows,err := ss.db.Query(query,offset,limit)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -994,7 +999,7 @@ func (ss *SQLStorage) Get_floor_price(rwalk_aid int64,market_aid int64) (float64
 				"o.price/1e+18 price "+
 			"FROM "+
 				"rw_new_offer o "+
-			"WHERE (active = 't')" + where_cond +
+			"WHERE (active = 't') AND (otype=1) " + where_cond +
 			"ORDER BY o.price ASC "+
 			"LIMIT 1"
 
@@ -1031,7 +1036,9 @@ func (ss *SQLStorage) Get_trading_history_by_user(user_aid int64) []p.RW_API_Off
 				"ba.addr buyer_addr,"+
 				"o.token_id,"+
 				"o.active,"+
+				"can.id,"+
 				"o.price/1e+18 price,"+
+				"o.profit/1e+18 profit,"+
 				"o.contract_aid,"+
 				"ca.addr, " +
 				"o.rwalk_aid,"+
@@ -1043,9 +1050,10 @@ func (ss *SQLStorage) Get_trading_history_by_user(user_aid int64) []p.RW_API_Off
 				"JOIN address ba ON o.buyer_aid=ba.address_id "+
 				"JOIN address ca ON o.contract_aid=ca.address_id "+
 				"JOIN address rwa ON o.rwalk_aid=rwa.address_id "+
+				"LEFT JOIN rw_offer_canceled can ON (can.contract_aid=o.contract_aid) AND (can.offer_id=o.offer_id) "+
 			"WHERE (active = 'f') AND ((o.buyer_aid=$1) OR (o.seller_aid=$1)) " +
 			"ORDER BY o.id "
-	
+
 	ss.Info.Printf("user_aid=%v q=%v\n",user_aid,query)
 	rows,err := ss.db.Query(query,user_aid)
 	if (err!=nil) {
@@ -1056,6 +1064,8 @@ func (ss *SQLStorage) Get_trading_history_by_user(user_aid int64) []p.RW_API_Off
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.RW_API_Offer
+		var null_profit sql.NullFloat64
+		var null_can_id sql.NullInt64
 		err=rows.Scan(
 			&rec.Id,
 			&rec.EvtLogId,
@@ -1072,7 +1082,9 @@ func (ss *SQLStorage) Get_trading_history_by_user(user_aid int64) []p.RW_API_Off
 			&rec.BuyerAddr,
 			&rec.TokenId,
 			&rec.Active,
+			&null_can_id,
 			&rec.Price,
+			&null_profit,
 			&rec.ContractAid,
 			&rec.ContractAddr,
 			&rec.RWalkAid,
@@ -1081,6 +1093,14 @@ func (ss *SQLStorage) Get_trading_history_by_user(user_aid int64) []p.RW_API_Off
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
+		}
+		if null_profit.Valid {
+			rec.Profit = null_profit.Float64
+		} else {
+			rec.Profit = math.NaN()
+		}
+		if null_can_id.Valid {
+			rec.WasCanceled = true
 		}
 		records = append(records,rec)
 	}

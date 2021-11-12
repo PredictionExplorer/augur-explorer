@@ -85,12 +85,19 @@ BEGIN
 			WHERE contract_aid=NEW.contract_aid;
 	END IF;
 
-	SELECT price_bought FROM rw_user_rwtok 
+	SELECT price_bought FROM rw_user_rwtok
 		WHERE rwalk_aid=v_rwalk_aid AND user_aid=NEW.seller_aid AND token_id=v_token_id
 		INTO v_price_bought;
 	IF v_price_bought IS NOT NULL THEN
 		UPDATE rw_new_offer SET profit = (v_price - v_price_bought)
 		WHERE contract_aid=NEW.contract_aid AND offer_id=NEW.offer_id;
+		UPDATE rw_user_stats SET total_profit = (total_profit + (v_price - v_price_bought))
+			WHERE user_aid=NEW.seller_aid AND rwalk_aid=v_rwalk_aid;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		IF v_cnt = 0 THEN
+			INSERT INTO rw_user_stats(rwalk_aid,user_aid,total_profit)
+				VALUES(v_rwalk_aid,NEW.seller_aid,v_price - v_price_bought);
+		END IF;
 	END IF;
 	UPDATE rw_user_rwtok
 		SET price_bought = NULL
@@ -355,13 +362,6 @@ DECLARE
 	v_cnt                   NUMERIC;
 BEGIN
 	IF OLD.profit != NEW.profit THEN
-		UPDATE rw_user_stats SET total_profit = (total_profit + (NEW.profit - COALESCE(OLD.profit,0)))
-		WHERE user_aid=NEW.seller_aid AND rwalk_aid=NEW.rwalk_aid;
-		GET DIAGNOSTICS v_cnt = ROW_COUNT;
-		IF v_cnt = 0 THEN
-			INSERT INTO rw_user_stats(rwalk_aid,user_aid,total_profit)
-				VALUES(NEW.rwalk_aid,NEW.seller_aid,(NEW.profit - COALESCE(OLD.profit,0)));
-		END IF;
 	END IF;
 	RETURN NEW;
 END;

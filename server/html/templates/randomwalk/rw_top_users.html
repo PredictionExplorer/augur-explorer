@@ -1,0 +1,63 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="/black/res/main.css" rel="stylesheet">
+</head>
+<body>
+<h1 class="page_title" style="width: 100%; text-align: center">The Top 100 Users of Random Walk Token</h1>
+<table>
+	<tr>
+		<td style="text-align: center">
+			<h3>Top 100 Profit Makers</h3>
+			<table class="profit_makers">
+			<tr class="profit_makers">
+				<th>Percentage</th>
+				<th>Address</th>
+				<th>Profit</th>
+			</tr>
+			{{- range .ProfitMakers}}
+				{{template "rw_profit_maker_record" .}}
+			{{- end}}
+			</table>
+		</td>
+		<td style="text-align: center">
+			<h3>Top 100 Volume Makers </h3>
+			<table class="volume_makers">
+			<tr class="volume_makers">
+				<th>Percentage</th>
+				<th>Address</th>
+				<th>Volume</th>
+			</tr>
+			{{- range .VolumeMakers}}
+				{{template "rw_volume_maker_record" .}}
+			{{- end}}
+			</table>
+
+		</td>
+		<td style="text-align: center">
+			<h3>Top 100 Frequent Traders</h3>
+			<table class="trade_makers">
+			<tr class="trade_makers">
+				<th>Percentage</th>
+				<th>Address</th>
+				<th nowrap>Total Trades</th>
+			</tr>
+			{{- range .TradeMakers}}
+				{{template "rw_trade_maker_record" .}}
+			{{- end}}
+			</table>
+
+		</td>
+	</tr>
+</table>
+<br/><br/><br/>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="index.html">Back</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+</body>
+</html>

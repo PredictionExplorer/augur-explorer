@@ -2,7 +2,7 @@
 package main
 import (
 	//"fmt"
-	//"strconv"
+	"strconv"
 
 	"net/http"
 	"github.com/gin-gonic/gin"
@@ -145,7 +145,7 @@ func api_rwalk_token_list_period(c *gin.Context) {
 		"RWalkAid":rwalk_aid,
 	})
 }
-func api_rwalk_sale_history(c *gin.Context) {
+func api_rwalk_trading_history(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -154,10 +154,14 @@ func api_rwalk_sale_history(c *gin.Context) {
 		return
 	}
 	p_market_addr := c.Param("market_addr")
-	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
-	if err != nil {
-		respond_error(c,"Market address doesn't exist in the database")
-		return
+	var market_aid int64 = 0
+	if p_market_addr != "0x0000000000000000000000000000000000000000" {
+		var err error
+		market_aid,err = augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+		if err != nil {
+			respond_error_json(c,"Market address doesn't exist in the database")
+			return
+		}
 	}
 
 	success,offset,limit := parse_offset_limit_params(c)
@@ -337,18 +341,29 @@ func api_rwalk_tokens_by_user(c *gin.Context) {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
+
 	p_user_aid := c.Param("user_aid")
 	var user_aid int64
 	if len(p_user_aid) > 0 {
-		var success bool
-		user_aid,success = parse_int_from_remote_or_error(c,JSON,&p_user_aid)
-		if !success {
-			return
+		var err error
+		user_aid, err = strconv.ParseInt(p_user_aid,10,64)
+		if err != nil {
+			if (len(p_user_aid) != 40) && (len(p_user_aid)!=42) {
+				respond_error_json(c,"Can't resolve user identifier to valid address ID or address hex")
+				return
+			} else {
+				user_aid,err = augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_user_aid)
+				if err != nil {
+					respond_error_json(c,"Cant find provided user")
+					return
+				}
+			}
 		}
 	} else {
 		respond_error_json(c,"'user_aid' parameter is not set")
 		return
 	}
+
 	user_addr,err := augur_srv.db_arbitrum.Lookup_address(user_aid)
 	if err != nil {
 		respond_error_json(c,"Address lookup on user_aid failed")

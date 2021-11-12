@@ -1,0 +1,9 @@
+{{define "rw_volume_maker_record"}}
+<tr class="volume_makers">
+	<td>{{.Percentage}}%</td>
+	<td>
+		<a class="addr" href="/black/rwalk/trading/by_user/{{.Addr}}">{{.Addr}}</a>
+	</td>
+	<td class="right">{{ printf "%9.2f" .Volume}}</td>
+</tr>
+{{end}}

@@ -2,6 +2,7 @@ package main
 import (
 	"fmt"
 	"time"
+	"strconv"
 	"net/http"
 	"github.com/gin-gonic/gin"
 
@@ -146,10 +147,14 @@ func rwalk_trading_history(c *gin.Context) {
 		return
 	}
 	p_market_addr := c.Param("market_addr")
-	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
-	if err != nil {
-		respond_error(c,"Market address doesn't exist in the database")
-		return
+	var market_aid int64 = 0
+	if p_market_addr != "0x0000000000000000000000000000000000000000" {
+		var err error
+		market_aid,err = augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+		if err != nil {
+			respond_error(c,"Market address doesn't exist in the database")
+			return
+		}
 	}
 	success,offset,limit := parse_offset_limit_params(c)
 	if !success {
@@ -158,7 +163,7 @@ func rwalk_trading_history(c *gin.Context) {
 	sales := augur_srv.db_arbitrum.Get_trading_history(market_aid,offset,limit)
 
 	c.HTML(http.StatusOK, "rw_trading_history.html", gin.H{
-		"Sales" : sales,
+		"Trading" : sales,
 	})
 }
 func rwalk_token_stats(c *gin.Context) {
@@ -301,11 +306,17 @@ func rwalk_tokens_by_user(c *gin.Context) {
 	p_user_aid := c.Param("user_aid")
 	var user_aid int64
 	if len(p_user_aid) > 0 {
-		var success bool
-		user_aid,success = parse_int_from_remote_or_error(c,HTTP,&p_user_aid)
-		if !success {
-			return
+		var err error
+		user_aid, err = strconv.ParseInt(p_user_aid,10,64)
+		if err != nil {
+			if (len(p_user_aid) != 40) && (len(p_user_aid)!=42) {
+				respond_error(c,"Can't resolve user identifier to valid address ID or address hex")
+				return
+			} else {
+				user_aid,err = augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_user_aid)
+			}
 		}
+
 	} else {
 		respond_error(c,"'user_aid' parameter is not set")
 		return
@@ -329,18 +340,29 @@ func rwalk_trading_history_by_user(c *gin.Context) {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
+
 	p_user_aid := c.Param("user_aid")
 	var user_aid int64
 	if len(p_user_aid) > 0 {
-		var success bool
-		user_aid,success = parse_int_from_remote_or_error(c,HTTP,&p_user_aid)
-		if !success {
-			return
+		var err error
+		user_aid, err = strconv.ParseInt(p_user_aid,10,64)
+		if err != nil {
+			if (len(p_user_aid) != 40) && (len(p_user_aid)!=42) {
+				respond_error(c,"Can't resolve user identifier to valid address ID or address hex")
+				return
+			} else {
+				user_aid,err = augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_user_aid)
+				if err != nil {
+					respond_error(c,"Cant find provided user")
+					return
+				}
+			}
 		}
 	} else {
 		respond_error(c,"'user_aid' parameter is not set")
 		return
 	}
+
 	user_addr,err := augur_srv.db_arbitrum.Lookup_address(user_aid)
 	if err != nil {
 		respond_error(c,fmt.Sprintf("Address lookup on user_aid %v failed: %v",user_aid,err))
@@ -393,5 +415,17 @@ func rwalk_user_info(c *gin.Context) {
 		"UserAid" : user_aid,
 		"UserAddr" : user_addr,
 		"DBError" : dberr_string,
+	})
+}
+func rwalk_top_users(c *gin.Context) {
+
+	top_profit_makers := augur_srv.db_arbitrum.Get_randomwalk_top_profit_makers()
+	top_trade_makers := augur_srv.db_arbitrum.Get_randomwalk_top_trade_makers()
+	top_volume_makers := augur_srv.db_arbitrum.Get_randomwalk_top_volume_makers()
+	c.HTML(http.StatusOK, "rw_top_users.html", gin.H{
+			"title": "Top 100 Users of RandomWalk Token",
+			"ProfitMakers" : top_profit_makers,
+			"TradeMakers" : top_trade_makers,
+			"VolumeMakers" : top_volume_makers,
 	})
 }

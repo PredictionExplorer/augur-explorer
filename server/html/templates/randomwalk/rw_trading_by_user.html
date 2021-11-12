@@ -4,7 +4,7 @@
 	<title>User trading history</title>
 </head>
 <body>
-	<h3 class="page_title">Trading History for {{.UserInfo.Addr}}<h3>
+	<h3 class="page_title">Trading History for {{.UserAddr}}<h3>
 <div id="volume_history_graph"></div>
 <h3>Token sales by date</h3>
 <a href="/black/rwalk/statistics/trading_volume/1634858540/1635776941/86400">Trading Volume Chart</a>
@@ -18,10 +18,11 @@
 		<th class="market_reports">Seller</th>
 		<th class="market_reports">TokenId</th>
 		<th class="market_reports">Price</th>
+		<th class="market_reports">Profit</th>
 	</tr>
 	{{- range $i, $change := .UserTrading}}
 		<tr class="market_reports">
-			<td class="">{{.BlockNum}}</td>
+			<td class="" title="{{.Id}}">{{.BlockNum}}</td>
 			<td class="">{{.DateTime}}</td>
 			<td class="" style="text-align:center;">{{.OfferId}}</td>
 			<td class="">
@@ -36,6 +37,12 @@
 			<td class="" style="text-align: center;">{{.TokenId}}</td>
 			<td class="market_reports_field" style="text-align: center;">
 				{{ printf "%.18f" .Price}}
+			</td>
+			<td class="market_reports_field" style="text-align: center;">
+				{{if .WasCanceled }} CANCELED 
+				{{ else }}
+					{{ printf "%.18f" .Profit}}
+				{{ end }}
 			</td>
 		</tr>
 	{{- end}}

@@ -29,6 +29,7 @@ type RW_API_Offer struct {
 	Profit			float64
 	RWalkAid		int64
 	RWalkAddr		string
+	WasCanceled		bool
 }
 type RW_API_TokenMint struct {
 	TokenId			int64
