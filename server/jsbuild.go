@@ -444,3 +444,27 @@ func build_js_randomwalk_volume_history(prices* []RW_API_RandomWalkVolumeHistory
 	data_str = data_str + "]"
 	return template.JS(data_str)
 }
+func build_js_randomwalk_mint_intervals(intervals* []RW_API_MintInterval) template.JS {
+	var data_str string = "["
+
+	for i:=0 ; i < len(*intervals) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		var e = &(*intervals)[i];
+		var entry string
+		ts := time.Unix(int64(e.TimeStamp),0)
+		date_str := fmt.Sprintf("%v",ts)
+		entry = "{" +
+				"x:" + fmt.Sprintf("%v",e.TokenId)  + "," +
+				"y:"  + fmt.Sprintf("%v",e.Interval) + "," +
+				"interval: " + fmt.Sprintf("%v",e.Interval) + "," +
+				"tokenid: " + fmt.Sprintf("%v",e.TokenId) + "," +
+				"date_str: \"" + date_str + "\"," +
+				"timestamp:" + fmt.Sprintf("%v",e.TimeStamp) + ""+
+				"}"
+		data_str= data_str + entry
+	}
+	data_str = data_str + "]"
+	return template.JS(data_str)
+}

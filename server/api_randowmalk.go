@@ -480,3 +480,27 @@ func api_rwalk_top5_traded_tokens(c *gin.Context) {
 		"Top5TradedTokens" : top5toks,
 	})
 }
+func api_rwalk_mint_intervals(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"Lookup of NFT token failed")
+		return
+	}
+	mint_intervals := augur_srv.db_arbitrum.Get_rwalk_mint_intervals(rwalk_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"MintIntervals" : mint_intervals,
+		"RWalkAid" : rwalk_aid,
+		"RWalkAddr" : p_rwalk_addr,
+	})
+}

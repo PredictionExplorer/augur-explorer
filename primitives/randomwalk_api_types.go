@@ -204,3 +204,9 @@ type RW_API_TokenInfo struct {
 	LastNameUpdateTs	int64
 	LastNameUpdateDate	string
 }
+type RW_API_MintInterval struct {
+	MintNumber			int64		// sequential number of mint (same as token_id)
+	TimeStamp			int64
+	Interval			int64		// Duration from previous mint
+	TokenId				int64
+}

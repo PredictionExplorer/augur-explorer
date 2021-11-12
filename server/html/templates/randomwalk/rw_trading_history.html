@@ -35,7 +35,10 @@
 				{{ printf "%.18f" .Price}}
 			</td>
 			<td class="market_reports_field" style="text-align: center;">
-				{{ printf "%.18f" .Profit}}
+				{{if .WasCanceled }} CANCELED
+				{{ else }}
+					{{ printf "%.18f" .Profit}}
+				{{ end }}
 			</td>
 		</tr>
 	{{- end}}

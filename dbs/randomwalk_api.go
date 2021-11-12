@@ -223,6 +223,7 @@ func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) [
 				"ba.addr buyer_addr,"+
 				"o.token_id,"+
 				"o.active,"+
+				"can.id,"+
 				"o.price/1e+18 price, "+
 				"o.profit/1e+18 profit, "+
 				"o.contract_aid," +
@@ -236,6 +237,7 @@ func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) [
 				"JOIN address ba ON o.buyer_aid=ba.address_id "+
 				"JOIN address ca ON o.contract_aid=ca.address_id "+
 				"JOIN address rwa ON o.rwalk_aid=rwa.address_id "+
+				"LEFT JOIN rw_offer_canceled can ON (can.contract_aid=o.contract_aid) AND (can.offer_id=o.offer_id) "+
 			"WHERE (active = 'f')" + where_condition +
 			"ORDER BY o.id " +
 			"OFFSET $1 LIMIT $2"
@@ -250,6 +252,7 @@ func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) [
 	for rows.Next() {
 		var rec p.RW_API_Offer
 		var null_profit sql.NullFloat64
+		var null_can_id sql.NullInt64
 		err=rows.Scan(
 			&rec.Id,
 			&rec.EvtLogId,
@@ -266,6 +269,7 @@ func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) [
 			&rec.BuyerAddr,
 			&rec.TokenId,
 			&rec.Active,
+			&null_can_id,
 			&rec.Price,
 			&null_profit,
 			&rec.ContractAid,
@@ -281,6 +285,9 @@ func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) [
 			rec.Profit = null_profit.Float64
 		} else {
 			rec.Profit = math.NaN()
+		}
+		if null_can_id.Valid {
+			rec.WasCanceled = true
 		}
 		records = append(records,rec)
 	}
@@ -1237,4 +1244,48 @@ func (ss *SQLStorage) Get_rwalk_token_info(rwalk_aid int64,token_id int64) (p.RW
 		}
 	}
 	return output,nil
+}
+func (ss *SQLStorage) Get_rwalk_mint_intervals(rwalk_aid int64) []p.RW_API_MintInterval {
+	// gets mint number and time elapsed between mints (for scatter plot)
+
+	records := make([]p.RW_API_MintInterval,0,256)
+
+	var query string
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts,"+
+				"token_id " +
+			"FROM rw_mint_evt m " +
+				"WHERE contract_aid = $1 "+
+			"ORDER BY token_id"
+
+	rows,err := ss.db.Query(query,rwalk_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_API_MintInterval
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.TokenId,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.MintNumber = rec.TokenId // because tokenID is sequential also
+		records = append(records,rec)
+	}
+
+	var prev_ts int64 = 0
+	for i:=0; i<len(records); i++ {
+		rec := &records[i]
+		if prev_ts > 0 {
+			rec.Interval = rec.TimeStamp - prev_ts
+		}
+		prev_ts = rec.TimeStamp
+	}
+	return records
 }

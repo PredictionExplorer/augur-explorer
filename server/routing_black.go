@@ -133,6 +133,7 @@ func set_routing_randomwalk(r *gin.Engine) {
 	r.GET("/black/rwalk/statistics/by_market/:market_addr",rwalk_market_stats)
 	r.GET("/black/rwalk/statistics/trading_volume/:market_addr/:init_ts/:fin_ts/:interval_secs",rwalk_trading_volume_by_period)
 	r.GET("/black/rwalk/statistics/top_users",rwalk_top_users)
+	r.GET("/black/rwalk/statistics/mint_intervals/:rwalk_addr",rwalk_mint_intervals)
 	r.GET("/black/rwalk/user/info/:user_aid/:rwalk_addr",rwalk_user_info)
 }
 func set_routing_black_templates(r *gin.Engine) {

@@ -429,3 +429,25 @@ func rwalk_top_users(c *gin.Context) {
 			"VolumeMakers" : top_volume_makers,
 	})
 }
+func rwalk_mint_intervals(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error(c,"Lookup of NFT token failed")
+		return
+	}
+	mint_intervals := augur_srv.db_arbitrum.Get_rwalk_mint_intervals(rwalk_aid)
+	mint_data := build_js_randomwalk_mint_intervals(&mint_intervals)
+
+	c.HTML(http.StatusOK, "rw_mint_intervals.html", gin.H{
+			"MintIntervals" : mint_intervals,
+			"MintIntervalData" : mint_data,
+			"RWalkAid" : rwalk_aid,
+			"RWalkAddr" : p_rwalk_addr,
+	})
+}

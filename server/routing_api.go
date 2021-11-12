@@ -143,6 +143,7 @@ func set_api_routing_randomwalk(r *gin.Engine) {
 	r.GET("/api/rwalk/statistics/by_token/:rwalk_addr",api_rwalk_token_stats)
 	r.GET("/api/rwalk/statistics/by_market/:market_addr",api_rwalk_market_stats)
 	r.GET("/api/rwalk/statistics/trading_volume/:market_addr/:init_ts/:fin_ts/:interval_secs",api_rwalk_trading_volume_by_period)
+	r.GET("/api/rwalk/statistics/mint_intervals/:rwalk_addr",api_rwalk_mint_intervals)
 	r.GET("/api/rwalk/user/info/:user_aid/:rwalk_addr",api_rwalk_user_info)
 	r.GET("/api/rwalk/top5tokens",api_rwalk_top5_traded_tokens)
 }
