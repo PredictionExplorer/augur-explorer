@@ -107,6 +107,7 @@ CREATE TABLE rw_stats(
 	total_num_trades		BIGINT DEFAULT 0,		-- total count of trade operations made
 	total_num_toks			BIGINT DEFAULT 0,		-- total count of tokens registered
 	total_withdrawals		BIGINT DEFAULT 0,
+	money_accumulated		DECIMAL DEFAULT 0,		-- sum of all the mints (by price)
 	UNIQUE(rwalk_aid)
 );
 CREATE TABLE rw_mkt_stats( -- statistis per market (can include many token contracts)

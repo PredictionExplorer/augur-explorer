@@ -7,28 +7,26 @@
 	<script src="https://code.highcharts.com/highcharts.js"></script>
 	<script src="https://code.highcharts.com/modules/data.js"></script>
 	<script>
-		var mint_intervals = {{.MintIntervalData}}
+		var withdrawal_entries = {{.WithdrawalData}}
 	</script>
-	<h3 class="page_title">Mint Intervals</h3>
+	<h3 class="page_title">Withdrawal Amount over Time</h3>
 	<table>
 		<tr>
 			<td>Random Walk Token Address</td>
 			<td>{{.RWalkAddr}}</td>
 		</tr>
 		<tr>
-			<td>X-axis</td>
-			<td>Token ID</td>
-		</tr>
-		<tr>
-			<td>Y-axis</td>
-			<td>Time to mint , in seconds</td>
+			<td>Latest withdrawal amount:</td>
+			<td>{{.ContractStatistics.WithdrawalAmount}}</td>
 		</tr>
 	</table>
 	<br/>
 	<br/>
 <table class="market_detail">
 </table>
-<div id="mint_intervals_graph"></div>
+This chart shows the amount to withdraw which is the balance of the contract divided by 2:
+<br/><br/>
+<div id="withdrawal_chart_graph"></div>
 <br/><br/>
 <script>
 // font loading begins
@@ -252,21 +250,21 @@ Highcharts.setOptions(Highcharts.theme);
 // Dark theme setup ends
 
 // begin of chart container setup
-Highcharts.chart('mint_intervals_graph', {
+Highcharts.chart('withdrawal_chart_graph', {
 
     title: {
-		text: 'Mint Time'
+		text: 'Withdrawal Amount'
     },
 
     subtitle: {
-		text: 'Higher points for larger mint time (secs)'
+		text: 'Amount to withdraw growing over time (ETH)'
     },
 
     yAxis: {
 		/*max: 1.0,*/
 		min: 0,
         title: {
-            text: 'Mint Time'
+            text: 'ETH'
         }
     },
 
@@ -274,7 +272,7 @@ Highcharts.chart('mint_intervals_graph', {
 //		max: 1.0,
 //		min: 0,
         accessibility: {
-            rangeDescription: 'Mint Time (sec)'
+            rangeDescription: 'Date'
         }
 	/*	,
 		type: "datetime",
@@ -302,13 +300,13 @@ Highcharts.chart('mint_intervals_graph', {
 
     series: [
 		{
-			name: 'Mint Time',
+			name: 'Withdrawal Amount',
 			point: {
 				events: {
 					click: function() {this.click.call()}
 				}
 			},
-			data:mint_intervals 
+			data: withdrawal_entries
 		}
 	],
 
@@ -328,17 +326,17 @@ Highcharts.chart('mint_intervals_graph', {
     },
     tooltip: {
       formatter: function() {
-		  tooltip ="<div>Mint Duration:" + this.point.interval+" sec<br/>Date: "+this.point.date_str+"</br>Unix Timstamp: "+this.point.timestamp+"<br/>TokenID: "+this.point.tokenid+"</div>"
+		  tooltip ="<div>Withdrawal amount:" + this.point.amount+" sec<br/>Date: "+this.point.date_str+"</br>Unix Timstamp: "+this.point.timestamp+"</div>"
         return tooltip;
       }
     },
 });
 </script>
-<code>
-	API: /api/rwalk/statistics/mint_intervals/:rwalk_addr</br/>
-	<br/>
-	Example: /api/rwalk/statistics/mint_intervals/{{.RWalkAddr}}</br/>
-</code>
-<br/>
 
+<br/>
+<code>
+	API: /api/rwalk/statistics/withdrawal_chart/:rwalk_addr</br/>
+	<br/>
+	Example: /api/rwalk/statistics/withdrawal_chart/{{.RWalkAddr}}</br/>
+</code>
 </body>

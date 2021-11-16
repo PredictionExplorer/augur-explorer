@@ -313,6 +313,7 @@ func api_rwalk_token_stats(c *gin.Context) {
 func api_rwalk_market_stats(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
 		return
@@ -336,6 +337,8 @@ func api_rwalk_market_stats(c *gin.Context) {
 	})
 }
 func api_rwalk_tokens_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -383,6 +386,8 @@ func api_rwalk_tokens_by_user(c *gin.Context) {
 }
 func api_rwalk_trading_history_by_user(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
 		return
@@ -417,6 +422,8 @@ func api_rwalk_trading_history_by_user(c *gin.Context) {
 	})
 }
 func api_rwalk_user_info(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -466,6 +473,8 @@ func api_rwalk_user_info(c *gin.Context) {
 }
 func api_rwalk_top5_traded_tokens(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
 	if !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
 		return
@@ -481,6 +490,8 @@ func api_rwalk_top5_traded_tokens(c *gin.Context) {
 	})
 }
 func api_rwalk_mint_intervals(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -500,6 +511,36 @@ func api_rwalk_mint_intervals(c *gin.Context) {
 		"status": req_status,
 		"error" : err_str,
 		"MintIntervals" : mint_intervals,
+		"RWalkAid" : rwalk_aid,
+		"RWalkAddr" : p_rwalk_addr,
+	})
+}
+func api_rwalk_withdrawal_chart(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error(c,"Lookup of NFT token failed")
+		return
+	}
+	withdrawal_entries := augur_srv.db_arbitrum.Get_rwalk_withdrawal_chart(rwalk_aid)
+	withdrawal_data := build_js_randomwalk_withdrawal_chart(&withdrawal_entries)
+	rwalk_stats := augur_srv.db_arbitrum.Get_random_walk_stats(rwalk_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"WithdrawalEntries" : withdrawal_entries,
+		"WithdrawalData" : withdrawal_data,
+		"ContractStatistics": rwalk_stats,
 		"RWalkAid" : rwalk_aid,
 		"RWalkAddr" : p_rwalk_addr,
 	})

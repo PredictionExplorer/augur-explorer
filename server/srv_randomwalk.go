@@ -54,7 +54,9 @@ func rwalk_current_offers(c *gin.Context) {
 	c.HTML(http.StatusOK, "rw_current_offers.html", gin.H{
 		"Offers" : offers,
 		"RWalkAid": rwalk_aid,
+		"RWalkAddr" : p_rwalk_addr,
 		"MarketAid": market_aid,
+		"MarketAddr" : p_market_addr,
 	})
 }
 func rwalk_floor_price(c *gin.Context) {
@@ -447,6 +449,30 @@ func rwalk_mint_intervals(c *gin.Context) {
 	c.HTML(http.StatusOK, "rw_mint_intervals.html", gin.H{
 			"MintIntervals" : mint_intervals,
 			"MintIntervalData" : mint_data,
+			"RWalkAid" : rwalk_aid,
+			"RWalkAddr" : p_rwalk_addr,
+	})
+}
+func rwalk_withdrawal_chart(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error(c,"Lookup of NFT token failed")
+		return
+	}
+	withdrawal_entries := augur_srv.db_arbitrum.Get_rwalk_withdrawal_chart(rwalk_aid)
+	withdrawal_data := build_js_randomwalk_withdrawal_chart(&withdrawal_entries)
+	rwalk_stats := augur_srv.db_arbitrum.Get_random_walk_stats(rwalk_aid)
+
+	c.HTML(http.StatusOK, "rw_withdrawal_chart.html", gin.H{
+			"WithdrawalEntries" : withdrawal_entries,
+			"WithdrawalData" : withdrawal_data,
+			"ContractStatistics": rwalk_stats,
 			"RWalkAid" : rwalk_aid,
 			"RWalkAddr" : p_rwalk_addr,
 	})

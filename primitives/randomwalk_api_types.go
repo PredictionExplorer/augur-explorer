@@ -63,6 +63,7 @@ type RW_API_RWalkStats struct {
 	MaximumTradedPrice	float64
 	CurOwnerAid			int64
 	CurOwnerAddr		string
+	WithdrawalAmount	float64	// the latest amount
 }
 type RW_API_MarketStats struct {
 	TradingVol			float64
@@ -209,4 +210,9 @@ type RW_API_MintInterval struct {
 	TimeStamp			int64
 	Interval			int64		// Duration from previous mint
 	TokenId				int64
+}
+type RW_API_WithdrawalChartEntry struct {
+	TimeStamp			int64
+	DateTime			string
+	WithdrawalAmount	float64
 }

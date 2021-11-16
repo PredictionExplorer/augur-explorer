@@ -215,7 +215,10 @@ BEGIN
 		INSERT INTO rw_token(rwalk_aid,token_id,cur_owner_aid,seed_hex,seed_num,last_price)
 			VALUES(NEW.contract_aid,NEW.token_id,NEW.owner_aid,NEW.seed,NEW.seed_num,NEW.price);
 	END IF;
-	UPDATE rw_stats SET total_num_toks = (total_num_toks +  1) WHERE rwalk_aid=NEW.contract_aid;
+	UPDATE rw_stats SET 
+			total_num_toks = (total_num_toks +  1),
+			money_accumulated = (money_accumulated + NEW.price)
+		WHERE rwalk_aid=NEW.contract_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		INSERT INTO rw_stats(rwalk_aid,total_num_toks)
@@ -232,7 +235,6 @@ BEGIN
 		INSERT INTO rw_user_rwtok(rwalk_aid,user_aid,token_id,price_bought)
 			VALUES(NEW.contract_aid,NEW.owner_aid,NEW.token_id,NEW.price);
 	END IF;
-			
 
 	RETURN NEW;
 END;
@@ -244,7 +246,10 @@ BEGIN
 	UPDATE rw_user_stats
 		SET total_num_toks = (total_num_toks - 1)
 		WHERE rwalk_aid=OLD.contract_aid AND user_aid=OLD.owner_aid;
-	UPDATE rw_stats SET total_num_toks = (total_num_toks - 1 ) WHERE rwalk_aid=OLD.contract_aid;
+	UPDATE rw_stats SET
+			total_num_toks = (total_num_toks - 1 ),
+			money_accumulated = (money_accumulated - OLD.price)
+		WHERE rwalk_aid=OLD.contract_aid;
 	UPDATE rw_user_rwtok
 		SET price_bought=NULL
 		WHERE rwalk_aid=OLD.contract_aid AND user_aid=OLD.owner_aid AND token_id=OLD.token_id;

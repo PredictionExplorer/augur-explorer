@@ -302,7 +302,8 @@ func (ss *SQLStorage) Get_random_walk_stats(rwalk_aid int64) p.RW_API_RWalkStats
 				"total_vol/1e+18,"+
 				"total_num_trades,"+
 				"total_num_toks,"+
-				"total_withdrawals "+
+				"total_withdrawals, "+
+				"money_accumulated/2e+18 withdrawal_amount "+
 			"FROM "+
 				"rw_stats " +
 			"WHERE rwalk_aid = $1"
@@ -313,6 +314,7 @@ func (ss *SQLStorage) Get_random_walk_stats(rwalk_aid int64) p.RW_API_RWalkStats
 		&output.NumTrades,
 		&output.TokensMinted,
 		&output.NumWithdrawals,
+		&output.WithdrawalAmount,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -1287,5 +1289,43 @@ func (ss *SQLStorage) Get_rwalk_mint_intervals(rwalk_aid int64) []p.RW_API_MintI
 		}
 		prev_ts = rec.TimeStamp
 	}
+	return records
+}
+func (ss *SQLStorage) Get_rwalk_withdrawal_chart(rwalk_aid int64) []p.RW_API_WithdrawalChartEntry {
+
+	records := make([]p.RW_API_WithdrawalChartEntry,0,256)
+	var query string
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts,"+
+				"time_stamp," +
+				"price/2e+18 price "+	// we use 2e+18 because we divide by 2
+			"FROM rw_mint_evt m "+
+			"WHERE contract_aid=$1"
+
+
+	rows,err := ss.db.Query(query,rwalk_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	var withdrawal_amount float64
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_API_WithdrawalChartEntry
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.WithdrawalAmount,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		withdrawal_amount += rec.WithdrawalAmount
+		rec.WithdrawalAmount = withdrawal_amount
+		records = append(records,rec)
+	}
+
 	return records
 }
