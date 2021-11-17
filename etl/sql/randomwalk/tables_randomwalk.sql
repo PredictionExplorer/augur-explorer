@@ -146,6 +146,11 @@ CREATE TABLE rw_uranks (   -- User Rankings (how this user ranks against each ot
 	profit				DECIMAL(64,18) DEFAULT 0.0,
 	volume				DECIMAL(64,18) DEFAULT 0.0
 );
+CREATE TABLE rw_notif_status ( -- Status of Tweeter/Discord notifications
+	last_token_id_tweeter		BIGINT DEFAULT 0,
+	last_token_id_discord		BIGINT DEFAULT 0,
+	msg_text					TEXT DEFALT 'New token '
+);
 CREATE TABLE rw_proc_status (
 	last_evt_id             BIGINT DEFAULT 0,
 	last_block              BIGINT DEFAULT 0 -- used when getting event logs via ethclient.FilterLogs

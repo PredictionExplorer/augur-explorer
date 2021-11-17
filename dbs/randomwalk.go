@@ -495,3 +495,43 @@ func (ss *SQLStorage) Get_randomwalk_top_volume_makers() []p.VolumeMaker {
 	}
 	return records
 }
+func (ss *SQLStorage) Get_mint_events_for_notification(rwalk_aid int64,start_ts int64) []p.RW_NotificationEvent {
+
+	records := make([]p.RW_NotificationEvent,0,101)
+	var query string
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts,"+
+				"token_id,"+
+				"price/1e+18 AS price "+
+			"FROM rw_mint_evt m " +
+			"WHERE (contract_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))  "
+	rows,err := ss.db.Query(query,rwalk_aid,start_ts)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_NotificationEvent
+		err=rows.Scan(
+			&rec.TimeStampMinted,
+			&rec.TokenId,
+			&rec.Price,
+		)
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_server_timestamp() int64 {
+
+	var query string
+	query = "SELECT EXTRACT(EPOCH FROM now())::BIGINT AS ts"
+	res := ss.db.QueryRow(query)
+	var null_ts sql.NullInt64
+	err := res.Scan(&null_ts)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+	return null_ts.Int64
+}
