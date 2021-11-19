@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 
 //	"github.com/dghubble/go-twitter"
-	"github.com/gomodule/oauth1/oauth"
+//	"github.com/gomodule/oauth1/oauth"
 )
 const (
 	//URL				string = "http://api.twitter.com/2/tweets"
@@ -33,11 +33,14 @@ func main() {
 	}
 	access_token := os.Args[1]
 	token_secret := os.Args[2]
-	nonce := os.ARgs[3]
+	session_nonce := os.Args[3]
 
-	var client oauth.Client
+	var client Client
 	client.Credentials.Token = access_token // app key
 	client.Credentials.Secret = token_secret // app secret
+	client.APIKey="oXfsAOL95UHTlt6CvFzTTq593"
+	client.Nonce=session_nonce
+	//client.APIKey=access_token
 
 	form := url.Values{"status": {"hello"}}
 	resp, err := client.Post(nil, &client.Credentials, URL, form)
