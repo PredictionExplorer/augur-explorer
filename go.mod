@@ -16,6 +16,7 @@ require (
 	github.com/ethereum/go-ethereum v1.9.23
 	github.com/gin-gonic/autotls v0.0.0-20200518075542-45033372a9ad
 	github.com/gin-gonic/gin v1.6.3
+	github.com/gomodule/oauth1 v0.1.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/lib/pq v1.7.1
 	github.com/libp2p/go-libp2p-peer v0.2.0 // indirect

@@ -833,7 +833,7 @@ func (ss *SQLStorage) Get_polymarket_erc1155_transfers(contract_aid int64,offset
 	ss.Info.Printf("rows returned = %v\n",len(records))
 	return records
 }
-func (ss *SQLStorage) Get_polymarket_open_interst_history(usdc_aid,condtok_aid,contract_aid int64,condition_id string,offset,limit int) []p.API_Pol_OpenInterestHistory {
+func (ss *SQLStorage) Get_polymarket_open_interest_history(usdc_aid,condtok_aid,contract_aid int64,condition_id string,offset,limit int) []p.API_Pol_OpenInterestHistory {
 
 	records := make([]p.API_Pol_OpenInterestHistory,0,512)
 	var query string
