@@ -71,6 +71,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"bytes"
 	"context"
 	"crypto"
@@ -282,6 +283,9 @@ type Credentials struct {
 type Client struct {
 	APIKey		string	// twitter api key
 	Nonce		string	// nonce set in previous session
+	Ts			int64		// timestamp
+	ClientToken	string
+
 
 	// Credentials specifies the client key and secret.
 	// Also known as the consumer key and secret
@@ -339,7 +343,20 @@ type request struct {
 }
 
 var testHook = func(map[string]string) {}
+func dump_oauth_params(p map[string]string) {
 
+	fmt.Printf("OAuth Params:\n")
+	fmt.Printf("\toauth_consumer_key : %v\n",p["oauth_consumer_key"])
+	fmt.Printf("\toauth_signature_method : %v\n",p["oauth_signature_method"])
+	fmt.Printf("\toauth_version : %v\n",p["oauth_version"])
+	fmt.Printf("\toauth_timestamp : %v\n",p["oauth_timestamp"])
+	fmt.Printf("\toauth_nonce : %v\n",p["oauth_nonce"])
+	fmt.Printf("\toauth_token : %v\n",p["oauth_token"])
+	fmt.Printf("\toauth_verifier : %v\n",p["oauth_verifier"])
+	fmt.Printf("\toauth_session_handle : %v\n",p["oauth_session_handle"])
+	fmt.Printf("\toauth_callback : %v\n",p["oauth_callback"])
+	fmt.Printf("\toauth_signature : %v\n\n",p["oauth_signature"])
+}
 // oauthParams returns the OAuth request parameters for the given credentials,
 // method, URL and application params. See
 // http://tools.ietf.org/html/rfc5849#section-3.4 for more information about
@@ -353,12 +370,20 @@ func (c *Client) oauthParams(r *request) (map[string]string, error) {
 	}
 
 	if c.SignatureMethod != PLAINTEXT {
-		oauthParams["oauth_timestamp"] = strconv.FormatInt(time.Now().Unix(), 10)
+		if c.Ts == 0 {
+			oauthParams["oauth_timestamp"] = strconv.FormatInt(time.Now().Unix(), 10)
+		} else {
+			oauthParams["oauth_timestamp"] = strconv.FormatInt(c.Ts, 10)
+		}
 		oauthParams["oauth_nonce"] = nonce()
 	}
 
 	if r.credentials != nil {
-		oauthParams["oauth_token"] = r.credentials.Token
+		if len(c.ClientToken) > 0 {
+			oauthParams["oauth_token"] = c.ClientToken
+		} else {
+			oauthParams["oauth_token"] = r.credentials.Token
+		}
 	}
 
 	if r.verifier != "" {
@@ -382,6 +407,7 @@ func (c *Client) oauthParams(r *request) (map[string]string, error) {
 		signature string
 		err       error
 	)
+	fmt.Printf("Params just before running c.hmacSignature(): \n%+v\n",oauthParams)
 	switch c.SignatureMethod {
 	case HMACSHA1:
 		signature = c.hmacSignature(r, sha1.New, oauthParams)
@@ -401,6 +427,7 @@ func (c *Client) oauthParams(r *request) (map[string]string, error) {
 	}
 
 	oauthParams["oauth_signature"] = signature
+	dump_oauth_params(oauthParams)
 	return oauthParams, nil
 }
 
@@ -414,13 +441,19 @@ func (c *Client) plainTextSignature(r *request) string {
 }
 
 func (c *Client) hmacSignature(r *request, h func() hash.Hash, oauthParams map[string]string) string {
+	fmt.Printf("hmacSignature: token=%v, secret=%v\n",c.Credentials.Token,c.Credentials.Secret)
 	key := encode(c.Credentials.Secret, false)
 	key = append(key, '&')
 	if r.credentials != nil {
+		fmt.Printf("hmacSignature: appending secret key: %v\n",r.credentials.Secret)
 		key = append(key, encode(r.credentials.Secret, false)...)
 	}
 	hm := hmac.New(h, key)
 	writeBaseString(hm, r.method, r.u, r.form, oauthParams)
+
+	fmt.Printf("after hmacSignature:\n")
+	dump_oauth_params(oauthParams)
+	fmt.Printf("key hex = %v\n",hex.EncodeToString(key[:]))
 	return base64.StdEncoding.EncodeToString(hm.Sum(key[:0]))
 }
 
@@ -464,12 +497,15 @@ func (c *Client) SignForm(credentials *Credentials, method, urlStr string, form 
 
 // SignParam is deprecated. Use SignForm instead.
 func (c *Client) SignParam(credentials *Credentials, method, urlStr string, params url.Values) {
+	fmt.Printf("SignParams: credentials.Token=%v, credentials.Secret=%v\n",credentials.Token,credentials.Secret)
 	u, _ := url.Parse(urlStr)
 	u.RawQuery = ""
 	p, _ := c.oauthParams(&request{credentials: credentials, method: method, u: u, form: params})
 	for k, v := range p {
 		params.Set(k, v)
 	}
+	fmt.Printf("After SignParam: \n")
+	dump_oauth_params(p)
 }
 
 var oauthKeys = []string{
@@ -505,6 +541,8 @@ func (c *Client) authorizationHeader(r *request) (string, error) {
 			h = append(h, '"')
 		}
 	}
+	fmt.Printf("inside authorizationHeader:\n")
+	dump_oauth_params(p)
 	return string(h), nil
 }
 

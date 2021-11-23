@@ -2,6 +2,7 @@ package main
 import (
 	"os"
 	"fmt"
+	"strconv"
 	"net/url"
 	"net/http"
 	"io/ioutil"
@@ -22,28 +23,49 @@ func decode_response(resp *http.Response, data interface{}) error {
 	}
 	return json.NewDecoder(resp.Body).Decode(data)
 }
+func format_nonce(nonce_int uint64) string {
+	return strconv.FormatUint(nonce_int, 16)
+}
 func main() {
 
-	if len(os.Args) < 4 {
+	if len(os.Args) < 6 {
 		fmt.Printf(
-			"Usage: \n\t\t%v [access_token] [token_secret] [nonce]\n\t\t"+
-			"Requests a twitter user to authorize the access token to send twits on his behalf\n\n",os.Args[0],
+			"Usage: \n\t\t%v [api_key] [api_secret] [access_token] [token_secret] [nonce]\n\t\t"+
+			"Sends a tweet on behalf of a user\n\n",os.Args[0],
 		)
 		os.Exit(1)
 	}
-	access_token := os.Args[1]
-	token_secret := os.Args[2]
-	session_nonce := os.Args[3]
+	api_key := os.Args[1]
+	api_secret := os.Args[2]
+	access_token := os.Args[3]
+	token_secret := os.Args[4]
+	session_nonce,err := strconv.ParseUint(os.Args[5],16,64)
+	if err != nil {
+		fmt.Printf("Parsing nonce error: %v\n",err)
+		os.Exit(1)
+	}
+	session_nonce++
 
 	var client Client
-	client.Credentials.Token = access_token // app key
+	var signing_credentials Credentials
+	signing_credentials.Token = api_key
+	signing_credentials.Secret = api_secret
+	client.Credentials.Token = api_key // user-generated token
 	client.Credentials.Secret = token_secret // app secret
-	client.APIKey="oXfsAOL95UHTlt6CvFzTTq593"
-	client.Nonce=session_nonce
+	client.APIKey=api_key
+	client.ClientToken = access_token
+	client.Nonce=format_nonce(session_nonce)
+	client.Ts = 1637630811
+	fmt.Printf("Using nonce integer = %v (hex %v)\n",session_nonce,client.Nonce)
 	//client.APIKey=access_token
 
-	form := url.Values{"status": {"hello"}}
-	resp, err := client.Post(nil, &client.Credentials, URL, form)
+	//form := url.Values{"status": {"hello"}}
+	form := url.Values{"status": {"got authorization from account owner"}}
+	var token_credentials Credentials
+	token_credentials.Token = access_token
+	token_credentials.Secret = token_secret
+	client.SignForm(&token_credentials,"POST",URL,form)
+	resp, err := client.Post(nil, &signing_credentials, URL, form)
 	if err != nil {
 		fmt.Printf("Post error: %v\n",err)
 		os.Exit(1)

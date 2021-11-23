@@ -85,4 +85,22 @@ func main() {
 	b, err := io.ReadAll(resp.Body)
 	fmt.Printf("dump body:\n")
 	fmt.Println(string(b))
+/*
+	fmt.Printf("Second request...\n\n")
+	form = url.Values{"status": {"second test tweet"}}
+	resp, err = oauthClient.Post(nil, tokenCred,
+		"https://api.twitter.com/1.1/statuses/update.json", form)
+	if err != nil {
+		fmt.Printf("Get error: %v\n",err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+	if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("body = %+v\n",resp.Body)
+	b, err = io.ReadAll(resp.Body)
+	fmt.Printf("dump body:\n")
+	fmt.Println(string(b))
+*/
 }
