@@ -502,7 +502,8 @@ func (ss *SQLStorage) Get_mint_events_for_notification(rwalk_aid int64,start_ts 
 	query = "SELECT "+
 				"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts,"+
 				"token_id,"+
-				"price/1e+18 AS price "+
+				"price/1e+18 AS price, "+
+				"seed "+
 			"FROM rw_mint_evt m " +
 			"WHERE (contract_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))  "
 	rows,err := ss.db.Query(query,rwalk_aid,start_ts)
@@ -517,6 +518,7 @@ func (ss *SQLStorage) Get_mint_events_for_notification(rwalk_aid int64,start_ts 
 			&rec.TimeStampMinted,
 			&rec.TokenId,
 			&rec.Price,
+			&rec.SeedHex,
 		)
 		records = append(records,rec)
 	}

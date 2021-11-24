@@ -2,6 +2,7 @@ package main
 import (
 	"os"
 	"fmt"
+	"io"
 	"strconv"
 	"net/url"
 	"net/http"
@@ -51,28 +52,30 @@ func main() {
 	signing_credentials.Token = api_key
 	signing_credentials.Secret = api_secret
 	client.Credentials.Token = api_key // user-generated token
-	client.Credentials.Secret = token_secret // app secret
+	client.Credentials.Secret = api_secret // app secret
 	client.APIKey=api_key
 	client.ClientToken = access_token
 	client.Nonce=format_nonce(session_nonce)
-	client.Ts = 1637630811
-	fmt.Printf("Using nonce integer = %v (hex %v)\n",session_nonce,client.Nonce)
-	//client.APIKey=access_token
 
-	//form := url.Values{"status": {"hello"}}
-	form := url.Values{"status": {"got authorization from account owner"}}
+	form := url.Values{"status": {"finally works"}}
 	var token_credentials Credentials
 	token_credentials.Token = access_token
 	token_credentials.Secret = token_secret
-	client.SignForm(&token_credentials,"POST",URL,form)
-	resp, err := client.Post(nil, &signing_credentials, URL, form)
+	resp, err := client.Post(nil, &token_credentials, URL, form)
 	if err != nil {
 		fmt.Printf("Post error: %v\n",err)
 		os.Exit(1)
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		fmt.Printf("Error occured: Status = %v\n",resp.Status)
+	} else {
+		fmt.Printf("Successfuly sent\n")
+	}
+	b, err := io.ReadAll(resp.Body)
 	var data struct {
 		d struct {
+			created_at string
 			id	string
 			text string
 		}
@@ -82,4 +85,7 @@ func main() {
 		fmt.Printf("Decode error: %v\n",err)
 	}
 	fmt.Printf("Data: %+v\n",data)
+	fmt.Printf("body = %+v\n",resp.Body)
+	fmt.Printf("dump body:\n")
+	fmt.Println(string(b))
 }

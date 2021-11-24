@@ -145,4 +145,5 @@ type RW_NotificationEvent struct {	// for Twitter/
 	TokenId					int64
 	TimeStampMinted			int64
 	Price					float64
+	SeedHex					string
 }

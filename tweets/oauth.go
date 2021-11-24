@@ -68,10 +68,15 @@
 //     c := oauth.Client{ /* Any settings */ }
 //     resp, err := c.GetContext(ctx, &oauth.Credentials{}, rawurl, nil)
 //package oauth // import "github.com/gomodule/oauth1/oauth"
-package main
+package tweets
+
+// PredictionExplorer note:
+//		The original oauth code has to be modified to send correct 'oauth_consumer_key' field
+//		which is Twitter's API key, because the default package doesn't send it, instead it
+//		sends the token the User authorized
 
 import (
-	"encoding/hex"
+	//"encoding/hex"
 	"bytes"
 	"context"
 	"crypto"
@@ -407,7 +412,6 @@ func (c *Client) oauthParams(r *request) (map[string]string, error) {
 		signature string
 		err       error
 	)
-	fmt.Printf("Params just before running c.hmacSignature(): \n%+v\n",oauthParams)
 	switch c.SignatureMethod {
 	case HMACSHA1:
 		signature = c.hmacSignature(r, sha1.New, oauthParams)
@@ -427,7 +431,6 @@ func (c *Client) oauthParams(r *request) (map[string]string, error) {
 	}
 
 	oauthParams["oauth_signature"] = signature
-	dump_oauth_params(oauthParams)
 	return oauthParams, nil
 }
 
@@ -441,24 +444,14 @@ func (c *Client) plainTextSignature(r *request) string {
 }
 
 func (c *Client) hmacSignature(r *request, h func() hash.Hash, oauthParams map[string]string) string {
-	fmt.Printf("hmacSignature: token=%v, secret=%v\n",c.Credentials.Token,c.Credentials.Secret)
-	if r.credentials != nil {
-		fmt.Printf("\trequest Token = %v, request Secret = %v\n",r.credentials.Token,r.credentials.Secret)
-	} else {
-		fmt.Printf("\trequest credentals is null\n")
-	}
 	key := encode(c.Credentials.Secret, false)
 	key = append(key, '&')
 	if r.credentials != nil {
-		fmt.Printf("hmacSignature: appending secret key: %v\n",r.credentials.Secret)
 		key = append(key, encode(r.credentials.Secret, false)...)
 	}
 	hm := hmac.New(h, key)
 	writeBaseString(hm, r.method, r.u, r.form, oauthParams)
 
-	fmt.Printf("after hmacSignature:\n")
-	dump_oauth_params(oauthParams)
-	fmt.Printf("key hex = %v\n",hex.EncodeToString(key[:]))
 	return base64.StdEncoding.EncodeToString(hm.Sum(key[:0]))
 }
 
@@ -502,15 +495,12 @@ func (c *Client) SignForm(credentials *Credentials, method, urlStr string, form 
 
 // SignParam is deprecated. Use SignForm instead.
 func (c *Client) SignParam(credentials *Credentials, method, urlStr string, params url.Values) {
-	fmt.Printf("SignParams: credentials.Token=%v, credentials.Secret=%v\n",credentials.Token,credentials.Secret)
 	u, _ := url.Parse(urlStr)
 	u.RawQuery = ""
 	p, _ := c.oauthParams(&request{credentials: credentials, method: method, u: u, form: params})
 	for k, v := range p {
 		params.Set(k, v)
 	}
-	fmt.Printf("After SignParam: \n")
-	dump_oauth_params(p)
 }
 
 var oauthKeys = []string{
@@ -546,8 +536,6 @@ func (c *Client) authorizationHeader(r *request) (string, error) {
 			h = append(h, '"')
 		}
 	}
-	fmt.Printf("inside authorizationHeader:\n")
-	dump_oauth_params(p)
 	return string(h), nil
 }
 
@@ -601,12 +589,6 @@ func (c *Client) SetAuthorizationHeader(header http.Header, credentials *Credent
 }
 
 func (c *Client) do(ctx context.Context, urlStr string, r *request) (*http.Response, error) {
-	if (r.credentials==nil) {
-		fmt.Printf("do(): request.Credentials is null\n")
-	} else {
-		fmt.Printf("do(): request.Credentials.Token=%v (secret = %v)\n",r.credentials.Token,r.credentials.Secret)
-	}
-
 	var body io.Reader
 	if r.method != http.MethodGet {
 		body = strings.NewReader(r.form.Encode())
@@ -633,7 +615,6 @@ func (c *Client) do(ctx context.Context, urlStr string, r *request) (*http.Respo
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
 	req = req.WithContext(ctx)
-	fmt.Printf("req:\n%v\n",formatRequest(req))
 	client := contextClient(ctx)
 	return client.Do(req)
 }

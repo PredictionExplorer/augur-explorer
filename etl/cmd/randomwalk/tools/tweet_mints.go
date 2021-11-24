@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 	"os"
+	"io/ioutil"
+	"encoding/json"
 	"os/signal"
 	"syscall"
 	"net/http"
@@ -14,11 +16,13 @@ import (
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
+	. "github.com/PredictionExplorer/augur-explorer/tweets"
 )
 const (
-	API_KEY_TWEETER				string = ""
 )
 var (
+	TWITTER_KEYS_FILE = os.Getenv("TWITTER_KEYS_FILE")
+
 	market_order_id int64 = 0
 	Error   *log.Logger
 	Info	*log.Logger
@@ -26,7 +30,24 @@ var (
 	rw_contracts RW_ContractAddresses
 	market_addr common.Address
 	rwalk_addr common.Address
+	twkeys TwitterKeys
+	twitter_nonce	uint64 = uint64(time.Now().UnixNano())
 )
+type TwitterKeys struct {
+	ApiKey			string
+	ApiSecret		string
+	TokenKey		string
+	TokenSecret		string
+}
+func read_twitter_keys() error {
+	file_name := fmt.Sprintf("%v/configs/%v",os.Getenv("HOME"),TWITTER_KEYS_FILE)
+	b, err := ioutil.ReadFile(file_name)
+	if err != nil {
+		fmt.Printf("Can't read configuration file with twitter account keys in %v: %v\n",file_name,err)
+		os.Exit(1)
+	}
+	return json.Unmarshal(b, &twkeys)
+}
 func notify_twitter(rec *RW_NotificationEvent) {
 
 	url_twitter := fmt.Sprintf(
@@ -49,6 +70,25 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 			rec := &records[i]
 			notify_twitter(rec)
 			ts = rec.TimeStampMinted
+			tweet_msg := fmt.Sprintf(
+					"Token %v minted. Price %v ETH. Seed %v.",
+					rec.TokenId,
+					rec.Price,
+					rec.SeedHex,
+			)
+			twitter_nonce++
+			status_code,body,err := SendTweet(
+				twkeys.ApiKey,
+				twkeys.ApiSecret,
+				twkeys.TokenKey,
+				twkeys.TokenSecret,
+				tweet_msg,
+				twitter_nonce,
+			)
+			if err != nil {
+				Info.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
+			}
+
 			Info.Printf("Notified mint of token id=%v to Twitter (price= %v)\n",rec.TokenId,rec.Price)
 		}
 		select {
@@ -62,8 +102,24 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 		if len(records) == 0 {
 			time.Sleep(1 * time.Second) // sleep only if there is no data
 		}
+		E
+		E
+		E
+		E
+		E
+		E
+		E
+		E
+		E
+		E
+		E
+		E
+		E
+		E
+		E
 	}
 }
+
 func main() {
 
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
@@ -97,6 +153,11 @@ func main() {
 	Info.Printf("RandomWalk contract %v\n",rwalk_addr.String())
 	Info.Printf("MarketPlace contract %v\n",market_addr.String())
 
+	err = read_twitter_keys()
+	if err != nil {
+		fmt.Printf("Error: %v\n",err)
+		os.Exit(1)
+	}
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -106,6 +167,23 @@ func main() {
 					" To interrupt abruptly send SIGKILL (9) to the kernel.\n")
 		exit_chan <- true
 	}()
-
+/*
+			tweet_msg := fmt.Sprintf(
+					"Token %v minted. Price %v. Seed %v.",
+					1,1.45,"adfadsfas",
+			)
+			status_code,body,err := SendTweet(
+				twkeys.ApiKey,
+				twkeys.ApiSecret,
+				twkeys.TokenKey,
+				twkeys.TokenSecret,
+				tweet_msg,
+				twitter_nonce,
+			)
+			if err != nil {
+				Info.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
+			}
+			os.Exit(1)
+*/
 	monitor_events(exit_chan,rwalk_addr)
 }
