@@ -166,6 +166,34 @@ func rwalk_trading_history(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "rw_trading_history.html", gin.H{
 		"Trading" : sales,
+		"MarketPlaceAddr": p_market_addr,
+		"MarketPlaceAid" : market_aid,
+	})
+}
+func rwalk_sale_history(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_market_addr := c.Param("market_addr")
+	var market_aid int64 = 0
+	if p_market_addr != "0x0000000000000000000000000000000000000000" {
+		var err error
+		market_aid,err = augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+		if err != nil {
+			respond_error(c,"Market address doesn't exist in the database")
+			return
+		}
+	}
+	offset:=int(0)
+	limit:= int(100000)
+	sales := augur_srv.db_arbitrum.Get_sale_history(market_aid,offset,limit)
+
+	c.HTML(http.StatusOK, "rw_sale_history.html", gin.H{
+		"Trading" : sales,
+		"MarketPlaceAddr": p_market_addr,
+		"MarketPlaceAid" : market_aid,
 	})
 }
 func rwalk_token_stats(c *gin.Context) {

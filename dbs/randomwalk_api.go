@@ -2,6 +2,7 @@ package dbs
 import (
 	"os"
 	"fmt"
+	"time"
 	"math"
 	"database/sql"
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
@@ -197,52 +198,91 @@ func (ss *SQLStorage) Get_minted_tokens_sequentially(rwalk_aid int64,offset,limi
 
 	return records
 }
-func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) []p.RW_API_Offer {
+func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) []p.RW_API_TradingHistoryLog {
 
-	records := make([]p.RW_API_Offer,0,16)
-	var where_condition string
-	where_condition =  fmt.Sprintf(" AND (contract_aid=%v) ",contract_aid)
+	records := make([]p.RW_API_TradingHistoryLog,0,16)
+	/*var where_condition string
+	where_condition =  fmt.Sprintf(" WHERE contract_aid=%v ",contract_aid)
 	if contract_aid != 0 {
 		where_condition = ""
-	}
+	}*/
 
 	var query string
 	query = "SELECT " +
-				"o.id,"+
-				"o.evtlog_id,"+
-				"o.block_num,"+
-				"o.tx_id, "+
-				"tx.tx_hash,"+
-				"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,"+
-				"o.time_stamp," +
-				"o.offer_id,"+
-				"o.otype,"+
-				"o.seller_aid,"+
-				"sa.addr seller_addr,"+
-				"o.buyer_aid,"+
-				"ba.addr buyer_addr,"+
-				"o.token_id,"+
-				"o.active,"+
-				"can.id,"+
-				"o.price/1e+18 price, "+
-				"o.profit/1e+18 profit, "+
-				"o.contract_aid," +
-				"ca.addr," +
-				"o.rwalk_aid,"+
-				"rwa.addr "+
-			"FROM "+
-				"rw_new_offer o "+
-				"JOIN transaction tx ON o.tx_id=tx.id "+
-				"JOIN address sa ON o.seller_aid=sa.address_id "+
-				"JOIN address ba ON o.buyer_aid=ba.address_id "+
-				"JOIN address ca ON o.contract_aid=ca.address_id "+
-				"JOIN address rwa ON o.rwalk_aid=rwa.address_id "+
-				"LEFT JOIN rw_offer_canceled can ON (can.contract_aid=o.contract_aid) AND (can.offer_id=o.offer_id) "+
-			"WHERE (active = 'f')" + where_condition +
-			"ORDER BY o.id " +
+				"record_id,"+"evtlog_id,"+"block_num,"+"tx_id, "+"offer_ts,"+"offer_date," +
+				"offer_id,"+"otype,"+"seller_aid,"+"seller_addr,"+"buyer_aid,"+"buyer_addr,"+
+				"token_id,"+"active,"+"cancel_id,"+"price, "+"profit, "+"contract_aid," +"contract_addr," +
+				"rwalk_aid,"+"rwalk_addr, "+"itembought_ts,"+"itembought_date, "+
+				"canceled_ts,"+	"canceled_date, "+	"real_ts, "+"real_date "+
+			"FROM (" +
+				"(" +
+					"SELECT " +
+						"o.id AS record_id,"+
+						"o.evtlog_id AS evtlog_id,"+
+						"o.block_num AS block_num,"+
+						"o.tx_id AS tx_id, "+
+						"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as offer_ts,"+
+						"o.time_stamp offer_date," +"o.offer_id offer_id,"+	"o.otype,"+
+						"o.seller_aid,"+"sa.addr seller_addr,"+	"o.buyer_aid,"+	"ba.addr buyer_addr,"+
+						"o.token_id,"+"o.active,"+"NULL AS cancel_id,"+"o.price/1e+18 price, "+
+						"o.profit/1e+18 profit, "+	"o.contract_aid," +	"ca.addr contract_addr," +
+						"o.rwalk_aid,"+	"rwa.addr rwalk_addr, "+
+						"NULL AS itembought_ts,"+
+						"NULL AS itembought_date, "+
+						"NULL AS canceled_ts,"+
+						"NULL AS canceled_date, "+
+						"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT  AS real_ts, "+
+						"o.time_stamp AS real_date "+
+					"FROM "+
+						"rw_new_offer o "+
+						"JOIN transaction tx ON o.tx_id=tx.id "+
+						"JOIN address sa ON o.seller_aid=sa.address_id "+
+						"JOIN address ba ON o.buyer_aid=ba.address_id "+
+						"JOIN address ca ON o.contract_aid=ca.address_id "+
+						"JOIN address rwa ON o.rwalk_aid=rwa.address_id "+
+					"WHERE o.contract_aid=$3 "+
+				") UNION ALL ("+
+					"SELECT " +
+						"COALESCE(ib.id,can.id,o.id) AS record_id,"+
+						"COALESCE(ib.evtlog_id,can.evtlog_id,o.evtlog_id) AS evtlog_id,"+
+						"COALESCE(ib.block_num,can.block_num,o.block_num) AS block_num,"+
+						"COALESCE(ib.tx_id,can.tx_id,o.tx_id) AS tx_id, "+
+						"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as offer_ts,"+
+						"o.time_stamp offer_date," +"o.offer_id offer_id,"+	"o.otype,"+
+						"o.seller_aid,"+"sa.addr seller_addr,"+	"o.buyer_aid,"+	"ba.addr buyer_addr,"+
+						"o.token_id,"+"o.active,"+	"can.id cancel_id,"+"o.price/1e+18 price, "+
+						"o.profit/1e+18 profit, "+"o.contract_aid," +"ca.addr contract_addr," +
+						"o.rwalk_aid,"+	"rwa.addr rwalk_addr, "+
+						"EXTRACT(EPOCH FROM ib.time_stamp)::BIGINT as itembought_ts,"+
+						"ib.time_stamp itembought_date, "+
+						"EXTRACT(EPOCH FROM can.time_stamp)::BIGINT as canceled_ts,"+
+						"can.time_stamp canceled_date, "+
+						"COALESCE(" +
+							"EXTRACT(EPOCH FROM ib.time_stamp)::BIGINT,"+
+							"EXTRACT(EPOCH FROM can.time_stamp)::BIGINT,"+
+							"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT"+
+						") AS real_ts, "+
+						"COALESCE(" +
+							"ib.time_stamp,"+
+							"can.time_stamp,"+
+							"o.time_stamp"+
+						") AS real_date "+
+					"FROM "+
+						"rw_new_offer o "+
+						"JOIN transaction tx ON o.tx_id=tx.id "+
+						"JOIN address sa ON o.seller_aid=sa.address_id "+
+						"JOIN address ba ON o.buyer_aid=ba.address_id "+
+						"JOIN address ca ON o.contract_aid=ca.address_id "+
+						"JOIN address rwa ON o.rwalk_aid=rwa.address_id "+
+						"LEFT JOIN rw_offer_canceled can ON (can.contract_aid=o.contract_aid) AND (can.offer_id=o.offer_id) "+
+						"LEFT JOIN rw_item_bought ib ON (ib.contract_aid=o.contract_aid) AND (ib.offer_id=o.offer_id) "+
+					 "WHERE o.contract_aid=$3 AND ((can.id IS NOT NULL) OR (ib.id IS NOT NULL)) "+
+				")" +
+			") recs "+
+			"ORDER BY real_ts " +
 			"OFFSET $1 LIMIT $2"
 
-	rows,err := ss.db.Query(query,offset,limit)
+	rows,err := ss.db.Query(query,offset,limit,contract_aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -250,15 +290,16 @@ func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) [
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.RW_API_Offer
+		var rec p.RW_API_TradingHistoryLog
 		var null_profit sql.NullFloat64
 		var null_can_id sql.NullInt64
+		var null_bought_ts,null_cancel_ts sql.NullInt64
+		var null_bought_date,null_cancel_date sql.NullString
 		err=rows.Scan(
 			&rec.Id,
 			&rec.EvtLogId,
 			&rec.BlockNum,
 			&rec.TxId,
-			&rec.TxHash,
 			&rec.TimeStamp,
 			&rec.DateTime,
 			&rec.OfferId,
@@ -276,6 +317,12 @@ func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) [
 			&rec.ContractAddr,
 			&rec.RWalkAid,
 			&rec.RWalkAddr,
+			&null_bought_ts,
+			&null_bought_date,
+			&null_cancel_ts,
+			&null_cancel_date,
+			&rec.RealTs,
+			&rec.RealDate,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
@@ -286,9 +333,30 @@ func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) [
 		} else {
 			rec.Profit = math.NaN()
 		}
-		if null_can_id.Valid {
-			rec.WasCanceled = true
+		if null_can_id.Valid {rec.WasCanceled = true}
+		if null_cancel_ts.Valid {
+			rec.CanceledTs = null_cancel_ts.Int64
+			time_canceled := time.Unix(int64(rec.CanceledTs),0)
+			time_offered := time.Unix(int64(rec.TimeStamp),0)
+			rec.CanceledDuration = p.DurationToString(p.TimeDifference(time_offered,time_canceled))
+			fmt.Printf(
+				"id=%v: offer_id=%v , canceled ts = %v , offered_Ts=%v rec.CanceledDuration=%v\n",
+				rec.Id,rec.OfferId,rec.CanceledTs,rec.TimeStamp,rec.CanceledDuration,
+			)
 		}
+		if null_cancel_date.Valid { rec.CanceledDate = null_cancel_date.String }
+		if null_bought_ts.Valid {
+			rec.WasBought = true
+			rec.ItemBoughtTs = null_bought_ts.Int64
+			time_bought := time.Unix(int64(rec.ItemBoughtTs),0)
+			time_offered := time.Unix(int64(rec.TimeStamp),0)
+			rec.BoughtDuration = p.DurationToString(p.TimeDifference(time_offered,time_bought))
+			fmt.Printf(
+				"id=%v: offer_id=%v , bought_ts = %v , offered_Ts=%v rec.BoughtDuration=%v\n",
+				rec.Id,rec.OfferId,rec.ItemBoughtTs,rec.TimeStamp,rec.BoughtDuration,
+			)
+		}
+		if null_bought_date.Valid { rec.ItemBoughtDate = null_bought_date.String }
 		records = append(records,rec)
 	}
 
@@ -1324,6 +1392,98 @@ func (ss *SQLStorage) Get_rwalk_withdrawal_chart(rwalk_aid int64) []p.RW_API_Wit
 		}
 		withdrawal_amount += rec.WithdrawalAmount
 		rec.WithdrawalAmount = withdrawal_amount
+		records = append(records,rec)
+	}
+
+	return records
+}
+func (ss *SQLStorage) Get_sale_history(contract_aid int64,offset,limit int) []p.RW_API_Offer {
+
+	records := make([]p.RW_API_Offer,0,16)
+
+	var query string
+	query = "SELECT " +
+				"o.id,"+
+				"o.evtlog_id,"+
+				"o.block_num,"+
+				"o.tx_id, "+
+				"tx.tx_hash,"+
+				"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,"+
+				"o.time_stamp," +
+				"o.offer_id,"+
+				"o.otype,"+
+				"o.seller_aid,"+
+				"sa.addr seller_addr,"+
+				"o.buyer_aid,"+
+				"ba.addr buyer_addr,"+
+				"o.token_id,"+
+				"o.active,"+
+				"can.id,"+
+				"o.price/1e+18 price, "+
+				"o.profit/1e+18 profit, "+
+				"o.contract_aid," +
+				"ca.addr," +
+				"o.rwalk_aid,"+
+				"rwa.addr "+
+			"FROM "+
+				"rw_new_offer o "+
+				"JOIN transaction tx ON o.tx_id=tx.id "+
+				"JOIN address sa ON o.seller_aid=sa.address_id "+
+				"JOIN address ba ON o.buyer_aid=ba.address_id "+
+				"JOIN address ca ON o.contract_aid=ca.address_id "+
+				"JOIN address rwa ON o.rwalk_aid=rwa.address_id "+
+				"LEFT JOIN rw_offer_canceled can ON (can.contract_aid=o.contract_aid) AND (can.offer_id=o.offer_id) "+
+			"WHERE (active = 'f') AND (o.contract_aid=$3) AND (can.id IS NULL) "+
+			"ORDER BY o.id " +
+			"OFFSET $1 LIMIT $2"
+
+	rows,err := ss.db.Query(query,offset,limit,contract_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_API_Offer
+		var null_profit sql.NullFloat64
+		var null_can_id sql.NullInt64
+		err=rows.Scan(
+			&rec.Id,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.OfferId,
+			&rec.OfferType,
+			&rec.SellerAid,
+			&rec.SellerAddr,
+			&rec.BuyerAid,
+			&rec.BuyerAddr,
+			&rec.TokenId,
+			&rec.Active,
+			&null_can_id,
+			&rec.Price,
+			&null_profit,
+			&rec.ContractAid,
+			&rec.ContractAddr,
+			&rec.RWalkAid,
+			&rec.RWalkAddr,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		if null_profit.Valid {
+			rec.Profit = null_profit.Float64
+		} else {
+			rec.Profit = math.NaN()
+		}
+		if null_can_id.Valid {
+			rec.WasCanceled = true
+		}
 		records = append(records,rec)
 	}
 

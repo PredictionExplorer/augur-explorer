@@ -140,7 +140,7 @@ func proc_erc20_transfer(evt_id int64) error {
 		mevt.Dump(Info)
 		storage.Insert_ERC20_token_transfer(log.Address.String(),&mevt,evtlog.BlockNum,evtlog.TxId,evt_id,evtlog.TimeStamp)
 
-		go fetch_and_store_erc20_info(log.Address)
+		fetch_and_store_erc20_info(log.Address)
 	}
 	return nil
 }

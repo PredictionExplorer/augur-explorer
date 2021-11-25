@@ -216,3 +216,35 @@ type RW_API_WithdrawalChartEntry struct {
 	DateTime			string
 	WithdrawalAmount	float64
 }
+type RW_API_TradingHistoryLog struct {
+	Id				int64
+	EvtLogId		int64
+	BlockNum		int64
+	TxId			int64
+	TimeStamp		int64
+	DateTime		string
+	ContractAid		int64
+	ContractAddr	string	// market addr
+	OfferId			int64
+	OfferType		int
+	SellerAid		int64
+	SellerAddr		string
+	BuyerAid		int64
+	BuyerAddr		string
+	TokenId			int64
+	Active			bool
+	Price			float64
+	Profit			float64
+	RWalkAid		int64
+	RWalkAddr		string
+	WasCanceled		bool
+	WasBought		bool
+	ItemBoughtTs	int64
+	ItemBoughtDate	string
+	BoughtDuration	string // how quickly the item as bought
+	CanceledTs		int64
+	CanceledDate	string
+	CanceledDuration	string
+	RealDate		string	// date corresponding to the event (newoffer/itembought/canceled)
+	RealTs			int64
+}

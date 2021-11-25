@@ -71,7 +71,7 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 			notify_twitter(rec)
 			ts = rec.TimeStampMinted
 			tweet_msg := fmt.Sprintf(
-					"Token %v minted. Price %v ETH. Seed %v.",
+					"Token %v minted. Price %.5f ETH. Seed %v.",
 					rec.TokenId,
 					rec.Price,
 					rec.SeedHex,
@@ -102,21 +102,6 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 		if len(records) == 0 {
 			time.Sleep(1 * time.Second) // sleep only if there is no data
 		}
-		E
-		E
-		E
-		E
-		E
-		E
-		E
-		E
-		E
-		E
-		E
-		E
-		E
-		E
-		E
 	}
 }
 
