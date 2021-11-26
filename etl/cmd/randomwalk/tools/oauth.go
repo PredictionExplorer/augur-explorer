@@ -340,6 +340,7 @@ type request struct {
 	verifier      string
 	sessionHandle string
 	callbackURL   string
+	file_data		[]byte
 }
 
 var testHook = func(map[string]string) {}
@@ -600,6 +601,44 @@ func (c *Client) SetAuthorizationHeader(header http.Header, credentials *Credent
 	return nil
 }
 
+func (c *Client) do_upload(ctx context.Context, urlStr string, r *request) (*http.Response, error) {
+	if (r.credentials==nil) {
+		fmt.Printf("do(): request.Credentials is null\n")
+	} else {
+		fmt.Printf("do(): request.Credentials.Token=%v (secret = %v)\n",r.credentials.Token,r.credentials.Secret)
+	}
+
+	var body io.Reader
+/*	if r.method != http.MethodGet {
+		body = strings.NewReader(r.form.Encode())
+	}*/
+	body = bytes.NewReader(request.file_data)
+	req, err := http.NewRequest(r.method, urlStr, body)
+	if err != nil {
+		return nil, err
+	}
+	if req.URL.RawQuery != "" {
+		return nil, errors.New("oauth: url must not contain a query string")
+	}
+	for k, v := range c.Header {
+		req.Header[k] = v
+	}
+	r.u = req.URL
+	auth, err := c.authorizationHeader(r)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", auth)
+	if r.method == http.MethodGet {
+		req.URL.RawQuery = r.form.Encode()
+	} else {
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	}
+	req = req.WithContext(ctx)
+	fmt.Printf("req:\n%v\n",formatRequest(req))
+	client := contextClient(ctx)
+	return client.Do(req)
+}
 func (c *Client) do(ctx context.Context, urlStr string, r *request) (*http.Response, error) {
 	if (r.credentials==nil) {
 		fmt.Printf("do(): request.Credentials is null\n")
@@ -649,12 +688,21 @@ func (c *Client) GetContext(ctx context.Context, credentials *Credentials, urlSt
 	return c.do(ctx, urlStr, &request{method: http.MethodGet, credentials: credentials, form: form})
 }
 
+func (c *Client) PostAttachment(client *http.Client, credentials *Credentials, urlStr string, form url.Values,file_data []byte) (*http.Response, error) {
+	ctx := context.WithValue(context.Background(), HTTPClient, client)
+	return c.PostContext(ctx, credentials, urlStr, form,file_data)
+}
+
+
 // Post issues a POST with the specified form.
 func (c *Client) Post(client *http.Client, credentials *Credentials, urlStr string, form url.Values) (*http.Response, error) {
 	ctx := context.WithValue(context.Background(), HTTPClient, client)
 	return c.PostContext(ctx, credentials, urlStr, form)
 }
 
+func (c *Client) PostContextAttachment(ctx context.Context, credentials *Credentials, urlStr string, form url.Values,file_data []byte) (*http.Response, error) {
+	return c.do(ctx, urlStr, &request{method: http.MethodPost, credentials: credentials, form: form,file_data})
+}
 // PostContext uses Context to perform Post.
 func (c *Client) PostContext(ctx context.Context, credentials *Credentials, urlStr string, form url.Values) (*http.Response, error) {
 	return c.do(ctx, urlStr, &request{method: http.MethodPost, credentials: credentials, form: form})
