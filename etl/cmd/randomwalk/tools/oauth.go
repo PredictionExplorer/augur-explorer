@@ -600,7 +600,7 @@ func (c *Client) SetAuthorizationHeader(header http.Header, credentials *Credent
 	header.Set("Authorization", v)
 	return nil
 }
-
+/*PENDING FOR REMOVAL
 func (c *Client) do_upload(ctx context.Context, urlStr string, r *request) (*http.Response, error) {
 	if (r.credentials==nil) {
 		fmt.Printf("do(): request.Credentials is null\n")
@@ -609,9 +609,6 @@ func (c *Client) do_upload(ctx context.Context, urlStr string, r *request) (*htt
 	}
 
 	var body io.Reader
-/*	if r.method != http.MethodGet {
-		body = strings.NewReader(r.form.Encode())
-	}*/
 	body = bytes.NewReader(request.file_data)
 	req, err := http.NewRequest(r.method, urlStr, body)
 	if err != nil {
@@ -639,6 +636,7 @@ func (c *Client) do_upload(ctx context.Context, urlStr string, r *request) (*htt
 	client := contextClient(ctx)
 	return client.Do(req)
 }
+*/
 func (c *Client) do(ctx context.Context, urlStr string, r *request) (*http.Response, error) {
 	if (r.credentials==nil) {
 		fmt.Printf("do(): request.Credentials is null\n")
@@ -676,7 +674,6 @@ func (c *Client) do(ctx context.Context, urlStr string, r *request) (*http.Respo
 	client := contextClient(ctx)
 	return client.Do(req)
 }
-
 // Get issues a GET to the specified URL with form added as a query string.
 func (c *Client) Get(client *http.Client, credentials *Credentials, urlStr string, form url.Values) (*http.Response, error) {
 	ctx := context.WithValue(context.Background(), HTTPClient, client)
@@ -687,22 +684,23 @@ func (c *Client) Get(client *http.Client, credentials *Credentials, urlStr strin
 func (c *Client) GetContext(ctx context.Context, credentials *Credentials, urlStr string, form url.Values) (*http.Response, error) {
 	return c.do(ctx, urlStr, &request{method: http.MethodGet, credentials: credentials, form: form})
 }
-
+/*PENDING FOR REMOVAL
 func (c *Client) PostAttachment(client *http.Client, credentials *Credentials, urlStr string, form url.Values,file_data []byte) (*http.Response, error) {
 	ctx := context.WithValue(context.Background(), HTTPClient, client)
 	return c.PostContext(ctx, credentials, urlStr, form,file_data)
 }
-
+*/
 
 // Post issues a POST with the specified form.
 func (c *Client) Post(client *http.Client, credentials *Credentials, urlStr string, form url.Values) (*http.Response, error) {
 	ctx := context.WithValue(context.Background(), HTTPClient, client)
 	return c.PostContext(ctx, credentials, urlStr, form)
 }
-
+/*PENDING FORE REMOVAL
 func (c *Client) PostContextAttachment(ctx context.Context, credentials *Credentials, urlStr string, form url.Values,file_data []byte) (*http.Response, error) {
 	return c.do(ctx, urlStr, &request{method: http.MethodPost, credentials: credentials, form: form,file_data})
 }
+*/
 // PostContext uses Context to perform Post.
 func (c *Client) PostContext(ctx context.Context, credentials *Credentials, urlStr string, form url.Values) (*http.Response, error) {
 	return c.do(ctx, urlStr, &request{method: http.MethodPost, credentials: credentials, form: form})

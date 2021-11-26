@@ -3,6 +3,8 @@ import (
 	"os"
 	"fmt"
 	"io"
+	"time"
+	"encoding/base64"
 	"strconv"
 	"net/url"
 	"net/http"
@@ -17,17 +19,17 @@ const (
 	MEDIA_URL	string = "https://upload.twitter.com/1.1/media/upload.json"
 )
 type MediaImage struct {
-	Image_type		string
-	W				int64
-	H				int64
+	Image_type		string		`json:"image_type"`
+	W				int64		`json:"w"`
+	H				int64		`json:"h"`
 }
 type ImageResponse struct {
-	Media_id			int64
-	Media_id_string		string
-	Media_key			string
-	Size				int64
-	Expires_after_secs	int64
-	Image				MediaImage
+	Media_id			int64		`json:"media_id"`
+	Media_id_string		string		`json:"media_id_string"`
+	Media_key			string		`json:"media_key"`
+	Size				int64		`json:"size"`
+	Expires_after_secs	int64		`json:"expires_after_secs"`
+	Image				MediaImage	`json:"image"`
 }
 func decode_response(resp *http.Response, data interface{}) error {
 	if resp.StatusCode != 200 {
@@ -35,7 +37,7 @@ func decode_response(resp *http.Response, data interface{}) error {
 		return fmt.Errorf("get %s returned status %d, %s", resp.Request.URL, resp.StatusCode, p)
 	} else {
 		fmt.Printf("Body:\n")
-		io.Copy(os.Stdout, resp.Body);
+	//	io.Copy(os.Stdout, resp.Body);
 	}
 	return json.NewDecoder(resp.Body).Decode(data)
 }
@@ -76,16 +78,20 @@ func main() {
 	client.Credentials.Secret = api_secret // app secret
 	client.APIKey=api_key
 	client.ClientToken = access_token
+
+	nonce_counter := uint64(time.Now().UnixNano())
+	session_nonce = nonce_counter
 	client.Nonce=format_nonce(session_nonce)
 
-
+	encoded_image_data := base64.StdEncoding.EncodeToString([]byte(image_data))
 	form := url.Values{
-		"media": {image_data},
+		"status" : {"upload test"},
+		"media_data": {encoded_image_data},
 	}
 	var token_credentials Credentials
 	token_credentials.Token = access_token
 	token_credentials.Secret = token_secret
-	resp, err := client.PostAttachment(nil, &token_credentials, URL, form,image_data)
+	resp, err := client.Post(nil, &token_credentials, MEDIA_URL, form)
 	if err != nil {
 		fmt.Printf("Post error: %v\n",err)
 		os.Exit(1)
@@ -101,27 +107,15 @@ func main() {
 	if err != nil {
 		fmt.Printf("Decode error: %v\n",err)
 	}
-	fmt.Printf("Media id= %v\n".image_response.Media_id_string)
+	fmt.Printf("Media id= %v\n",image_response.Media_id_string)
 	fmt.Printf("Image Response: %+v\n",image_response)
-	fmt.Printf("Data: %+v\n",data)
-	fmt.Printf("body = %+v\n",resp.Body)
-	fmt.Printf("dump body:\n")
-	fmt.Println(string(b))
 
-
-/*
-
-
-
-
-	form := url.Values{
-		"status": {"finally works "+"https://randomwalknft.s3.us-east-2.amazonaws.com/003246_black.png"},
-//		"attachment_url":{"https://randomwalknft.s3.us-east-2.amazonaws.com/003246_black.png"},
+	//now submit attachment
+	form = url.Values{
+		"status": {"random walk tokens"},
+		"media_ids": {image_response.Media_id_string},
 	}
-	var token_credentials Credentials
-	token_credentials.Token = access_token
-	token_credentials.Secret = token_secret
-	resp, err := client.Post(nil, &token_credentials, URL, form)
+	resp, err = client.Post(nil, &token_credentials, URL, form)
 	if err != nil {
 		fmt.Printf("Post error: %v\n",err)
 		os.Exit(1)
@@ -148,5 +142,4 @@ func main() {
 	fmt.Printf("body = %+v\n",resp.Body)
 	fmt.Printf("dump body:\n")
 	fmt.Println(string(b))
-	*/
 }

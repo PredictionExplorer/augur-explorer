@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 	"os"
+	"io"
+	"errors"
 	"io/ioutil"
 	"encoding/json"
 	"os/signal"
@@ -22,6 +24,11 @@ const (
 )
 var (
 	TWITTER_KEYS_FILE = os.Getenv("TWITTER_KEYS_FILE")
+
+	//Sample URL: https://randomwalknft.s3.us-east-2.amazonaws.com/003246_black.png
+	IMAGES_URL			string = "https://randomwalknft.s3.us-east-2.amazonaws.com"
+	TMP_IMAGE_FILE		string = "randomwalk_tmp.png"
+	MAX_TIMEOUT_COUNTER		int = 1000
 
 	market_order_id int64 = 0
 	Error   *log.Logger
@@ -47,6 +54,68 @@ func read_twitter_keys() error {
 		os.Exit(1)
 	}
 	return json.Unmarshal(b, &twkeys)
+}
+func tmp_img_filename() string {
+	return fmt.Sprintf("%v/%v",os.TempDir(),TMP_IMAGE_FILE)
+}
+func fetch_image(url string) (int,error) {
+
+	response, err := http.Get(url)
+	defer response.Body.Close()
+	if err != nil {
+		Error.Printf("Can't fetch image %v : %v\n",url,err)
+		Info.Printf("Can't fetch image %v : %v\n",url,err)
+		return 0,err
+	}
+	if response.StatusCode == 200 {
+		img_file_name := tmp_img_filename()
+		os.Remove(img_file_name)
+		file, err := os.Create(img_file_name)
+		if err != nil {
+			Error.Printf("Can't create temporal image file %v : %v\n",img_file_name,err)
+			Info.Printf("Can't create temporal image file %v : %v\n",img_file_name,err)
+			return 0,err
+		}
+		defer file.Close()
+		_, err = io.Copy(file, response.Body)
+		if err != nil {
+			Error.Printf("Can't copy image data to tmp file: %v\n",err)
+			Info.Printf("Can't copy image data to tmp file: %v\n",err)
+			return 0,err
+		}
+		return response.StatusCode,nil
+	} else {
+		err_str := fmt.Sprintf("HTTP response was not 'Ok' : %v\n",response.StatusCode)
+		Error.Printf("%v\n",err_str)
+		Info.Printf("%v\n",err_str)
+		return response.StatusCode,errors.New(err_str)
+	}
+}
+func get_image_file_from_net_until_success(token_id int64) bool {
+	
+	time_out_counter := int(0)
+	url := fmt.Sprintf("%v/%06d_black.png",IMAGES_URL,token_id)
+	Info.Printf("Fetching image for token %v: %v\n",token_id,url)
+	for {
+		status,err := fetch_image(url)
+		if status == 404 {	// image wasn't generated yet
+			Info.Printf("Image for token %v is not yet ready (%v status), waiting...\n",token_id,status)
+			time.Sleep(60 * time.Second)
+		} else {
+			if err != nil {
+				Info.Printf("Aborting due to errors\n")
+				return false
+			} else {
+				return true
+			}
+		}
+		time_out_counter++
+		if time_out_counter > MAX_TIMEOUT_COUNTER {
+			Info.Printf("Aborted by timeout at %v iterations\n",time_out_counter)
+			return false
+		}
+	}
+	return false
 }
 func notify_twitter(rec *RW_NotificationEvent) {
 
@@ -170,5 +239,9 @@ func main() {
 			}
 			os.Exit(1)
 */
+	res := get_image_file_from_net_until_success(3437)
+	fmt.Printf("result = %v\n",res)
+	os.Exit(1)
 	monitor_events(exit_chan,rwalk_addr)
+
 }
