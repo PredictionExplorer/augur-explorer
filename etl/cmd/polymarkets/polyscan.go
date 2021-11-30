@@ -48,10 +48,10 @@ func build_list_of_inspected_events_layer1() []InspectedEvent {
 			Signature: hex.EncodeToString(evt_positions_merge[:4]),
 			ContractAid: 0,
 		},
-		InspectedEvent {
+/*		InspectedEvent {  DISABLED BECAUSE OF CONFLICTING ETL IN cmd/etl1155 directory
 			Signature: hex.EncodeToString(evt_uri[:4]),
 			ContractAid: 0,
-		},
+		},*/
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_funding_added[:4]),
 			ContractAid: 0,

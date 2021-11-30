@@ -28,6 +28,7 @@ var (
 	//Sample URL: https://randomwalknft.s3.us-east-2.amazonaws.com/003246_black.png
 	IMAGES_URL			string = "https://randomwalknft.s3.us-east-2.amazonaws.com"
 	TMP_IMAGE_FILE		string = "randomwalk_tmp.png"
+	DETAIL_URL			string = "https://randomwalknft.com/detail/"
 	MAX_TIMEOUT_COUNTER		int = 1000
 
 	market_order_id int64 = 0
@@ -46,6 +47,19 @@ type TwitterKeys struct {
 	TokenKey		string
 	TokenSecret		string
 }
+type MediaImage struct {
+	Image_type		string		`json:"image_type"`
+	W				int64		`json:"w"`
+	H				int64		`json:"h"`
+}
+type ImageResponse struct {
+	Media_id			int64		`json:"media_id"`
+	Media_id_string		string		`json:"media_id_string"`
+	Media_key			string		`json:"media_key"`
+	Size				int64		`json:"size"`
+	Expires_after_secs	int64		`json:"expires_after_secs"`
+	Image				MediaImage	`json:"image"`
+}
 func read_twitter_keys() error {
 	file_name := fmt.Sprintf("%v/configs/%v",os.Getenv("HOME"),TWITTER_KEYS_FILE)
 	b, err := ioutil.ReadFile(file_name)
@@ -54,6 +68,16 @@ func read_twitter_keys() error {
 		os.Exit(1)
 	}
 	return json.Unmarshal(b, &twkeys)
+}
+func decode_response(resp *http.Response, data interface{}) error {
+	if resp.StatusCode != 200 {
+		p, _ := ioutil.ReadAll(resp.Body)
+		return fmt.Errorf("get %s returned status %d, %s", resp.Request.URL, resp.StatusCode, p)
+	} else {
+		fmt.Printf("Body:\n")
+	//	io.Copy(os.Stdout, resp.Body);
+	}
+	return json.NewDecoder(resp.Body).Decode(data)
 }
 func tmp_img_filename() string {
 	return fmt.Sprintf("%v/%v",os.TempDir(),TMP_IMAGE_FILE)
@@ -92,7 +116,7 @@ func fetch_image(url string) (int,error) {
 	}
 }
 func get_image_file_from_net_until_success(token_id int64) bool {
-	
+
 	time_out_counter := int(0)
 	url := fmt.Sprintf("%v/%06d_black.png",IMAGES_URL,token_id)
 	Info.Printf("Fetching image for token %v: %v\n",token_id,url)
@@ -133,26 +157,59 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 
 	rwalk_aid := storage.Lookup_address_id(addr.String())
 	ts := storage.Get_server_timestamp()
+	ts = ts-5*24*60*60 /// for testing only
 	for {
-		records := storage.Get_mint_events_for_notification(rwalk_aid,ts)
+		Info.Printf("Timestamp for query is %v\n",time.Unix(ts,0))
+		records := storage.Get_all_events_for_notification(rwalk_aid,ts)
 		for i:=0; i<len(records); i++ {
 			rec := &records[i]
-			notify_twitter(rec)
+			success := get_image_file_from_net_until_success(rec.TokenId)
+			if !success {
+				Error.Printf("Couldn't get image file, aborting.")
+				time.Sleep(10 * time.Second)
+				break
+			}
+			image_filename := tmp_img_filename()
+			image_data, err := os.ReadFile(image_filename)
+			if err != nil {
+				fmt.Printf("Can't read image at %v : %v\n",image_filename)
+				os.Exit(1)
+			}
 			ts = rec.TimeStampMinted
-			tweet_msg := fmt.Sprintf(
-					"Token %v minted. Price %.5f ETH. Seed %v.",
-					rec.TokenId,
-					rec.Price,
-					rec.SeedHex,
-			)
+			var tweet_msg string
+			switch rec.EvtType {
+				case 1:
+					tweet_msg = fmt.Sprintf(
+						"Token %v minted. Price %.4fΞ  %v ",
+						rec.TokenId,
+						rec.Price,
+						fmt.Sprintf("%v/%v",DETAIL_URL,rec.TokenId),
+					)
+				case 2:
+					tweet_msg = fmt.Sprintf(
+						"New offer for token %v . Price %.4fΞ ",
+						rec.TokenId,
+						rec.Price,
+						fmt.Sprintf("%v/%v",DETAIL_URL,rec.TokenId),
+					)
+				case 3:
+					tweet_msg = fmt.Sprintf(
+						"Token %v bought. Price %.4fΞ ",
+						rec.TokenId,
+						rec.Price,
+						fmt.Sprintf("%v/%v",DETAIL_URL,rec.TokenId),
+					)
+			}
+			Info.Printf("evt type = %v, msg=%v, ts=%v\n",rec.EvtType,tweet_msg,ts)
 			twitter_nonce++
-			status_code,body,err := SendTweet(
+			status_code,body,err := SendTweetWithImage(
 				twkeys.ApiKey,
 				twkeys.ApiSecret,
 				twkeys.TokenKey,
 				twkeys.TokenSecret,
 				tweet_msg,
 				twitter_nonce,
+				image_data,
 			)
 			if err != nil {
 				Info.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
@@ -168,8 +225,10 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 				}
 			default:
 		}
+		Info.Printf("Loop ended\n")
 		if len(records) == 0 {
-			time.Sleep(1 * time.Second) // sleep only if there is no data
+			Info.Printf("Sleeping 5 sec\n")
+			time.Sleep(5 * time.Second) // sleep only if there is no data
 		}
 	}
 }
@@ -239,9 +298,6 @@ func main() {
 			}
 			os.Exit(1)
 */
-	res := get_image_file_from_net_until_success(3437)
-	fmt.Printf("result = %v\n",res)
-	os.Exit(1)
 	monitor_events(exit_chan,rwalk_addr)
 
 }

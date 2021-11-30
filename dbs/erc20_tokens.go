@@ -343,6 +343,8 @@ func (ss *SQLStorage) Update_ERC20Info_v2(info *p.ERC20Info) {
 
 	info.Name = strings.ToValidUTF8(info.Name," ")
 	info.Name = string(bytes.Trim([]byte(info.Name),"\x00"))
+	info.Symbol = strings.ToValidUTF8(info.Symbol," ")
+	info.Symbol= string(bytes.Trim([]byte(info.Symbol),"\x00"))
 	_,err := ss.db.Exec(query,
 		aid,
 		info.Decimals,
