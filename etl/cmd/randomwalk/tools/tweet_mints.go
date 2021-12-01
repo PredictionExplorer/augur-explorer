@@ -28,7 +28,7 @@ var (
 	//Sample URL: https://randomwalknft.s3.us-east-2.amazonaws.com/003246_black.png
 	IMAGES_URL			string = "https://randomwalknft.s3.us-east-2.amazonaws.com"
 	TMP_IMAGE_FILE		string = "randomwalk_tmp.png"
-	DETAIL_URL			string = "https://randomwalknft.com/detail/"
+	DETAIL_URL			string = "https://randomwalknft.com/detail"
 	MAX_TIMEOUT_COUNTER		int = 1000
 
 	market_order_id int64 = 0
@@ -46,19 +46,6 @@ type TwitterKeys struct {
 	ApiSecret		string
 	TokenKey		string
 	TokenSecret		string
-}
-type MediaImage struct {
-	Image_type		string		`json:"image_type"`
-	W				int64		`json:"w"`
-	H				int64		`json:"h"`
-}
-type ImageResponse struct {
-	Media_id			int64		`json:"media_id"`
-	Media_id_string		string		`json:"media_id_string"`
-	Media_key			string		`json:"media_key"`
-	Size				int64		`json:"size"`
-	Expires_after_secs	int64		`json:"expires_after_secs"`
-	Image				MediaImage	`json:"image"`
 }
 func read_twitter_keys() error {
 	file_name := fmt.Sprintf("%v/configs/%v",os.Getenv("HOME"),TWITTER_KEYS_FILE)
@@ -157,11 +144,26 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 
 	rwalk_aid := storage.Lookup_address_id(addr.String())
 	ts := storage.Get_server_timestamp()
-	ts = ts-5*24*60*60 /// for testing only
+	//ts = ts-5*24*60*60 /// for testing only
 	for {
-		Info.Printf("Timestamp for query is %v\n",time.Unix(ts,0))
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting by user request.")
+					os.Exit(0)
+				}
+			default:
+		}
 		records := storage.Get_all_events_for_notification(rwalk_aid,ts)
 		for i:=0; i<len(records); i++ {
+			select {
+				case exit_flag := <-exit_chan:
+					if exit_flag {
+						Info.Println("Exiting by user request.")
+						os.Exit(0)
+					}
+				default:
+			}
 			rec := &records[i]
 			success := get_image_file_from_net_until_success(rec.TokenId)
 			if !success {
@@ -180,27 +182,26 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 			switch rec.EvtType {
 				case 1:
 					tweet_msg = fmt.Sprintf(
-						"Token %v minted. Price %.4fΞ  %v ",
+						"#%v Minted for %.4fΞ\n\n%v ",
 						rec.TokenId,
 						rec.Price,
 						fmt.Sprintf("%v/%v",DETAIL_URL,rec.TokenId),
 					)
 				case 2:
 					tweet_msg = fmt.Sprintf(
-						"New offer for token %v . Price %.4fΞ ",
+						"#%v On sale for %.4fΞ\n\n%v",
 						rec.TokenId,
 						rec.Price,
 						fmt.Sprintf("%v/%v",DETAIL_URL,rec.TokenId),
 					)
 				case 3:
 					tweet_msg = fmt.Sprintf(
-						"Token %v bought. Price %.4fΞ ",
+						"#%v Bought for %.4fΞ\n\n%v",
 						rec.TokenId,
 						rec.Price,
 						fmt.Sprintf("%v/%v",DETAIL_URL,rec.TokenId),
 					)
 			}
-			Info.Printf("evt type = %v, msg=%v, ts=%v\n",rec.EvtType,tweet_msg,ts)
 			twitter_nonce++
 			status_code,body,err := SendTweetWithImage(
 				twkeys.ApiKey,
@@ -217,17 +218,7 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 
 			Info.Printf("Notified mint of token id=%v to Twitter (price= %v)\n",rec.TokenId,rec.Price)
 		}
-		select {
-			case exit_flag := <-exit_chan:
-				if exit_flag {
-					Info.Println("Exiting by user request.")
-					os.Exit(0)
-				}
-			default:
-		}
-		Info.Printf("Loop ended\n")
 		if len(records) == 0 {
-			Info.Printf("Sleeping 5 sec\n")
 			time.Sleep(5 * time.Second) // sleep only if there is no data
 		}
 	}

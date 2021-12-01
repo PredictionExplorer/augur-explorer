@@ -545,3 +545,57 @@ func api_rwalk_withdrawal_chart(c *gin.Context) {
 		"RWalkAddr" : p_rwalk_addr,
 	})
 }
+func api_rwalk_floor_price_over_time(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"Lookup of NFT token failed")
+		return
+	}
+	p_market_addr := c.Param("market_addr")
+	market_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_market_addr)
+	if err != nil {
+		respond_error_json(c,"Market address doesn't exist in the database")
+		return
+	}
+	success,ini,fin,interval := parse_timeframe_params(c)
+	if !success {
+		return
+	}
+	if ini == 0 {
+		ini = 1636676049
+	}
+	if fin == 0 {
+		fin = int(time.Now().Unix()) 
+	}
+	if interval == 0 || interval == 2147483647 {
+		interval = 24*60*60
+	}
+	price_entries := augur_srv.db_arbitrum.Get_rwalk_floor_price_for_periods(rwalk_aid,market_aid,ini,fin,interval)
+	price_data := build_js_floor_price_data(&price_entries)
+	rwalk_stats := augur_srv.db_arbitrum.Get_random_walk_stats(rwalk_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"PriceEntries" : price_entries,
+		"PriceData" : price_data,
+		"ContractStatistics": rwalk_stats,
+		"RWalkAid" : rwalk_aid,
+		"RWalkAddr" : p_rwalk_addr,
+		"MarketAid":market_aid,
+		"MarketAddr":p_market_addr,
+		"InitTs" : ini,
+		"FinTs": fin,
+		"Interval": interval,
+	})
+}

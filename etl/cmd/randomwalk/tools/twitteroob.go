@@ -47,7 +47,7 @@ func main() {
 	if err := readCredentials(); err != nil {
 		log.Fatal(err)
 	}
-	oauthClient.APIKey="oXfsAOL95UHTlt6CvFzTTq593"	// the client
+	oauthClient.APIKey="GfCPjysetCkHJhujwodYsOQyl"	// the client
 	tempCred, err := oauthClient.RequestTemporaryCredentials(nil, "oob", nil)
 	if err != nil {
 		log.Fatal("RequestTemporaryCredentials:", err)

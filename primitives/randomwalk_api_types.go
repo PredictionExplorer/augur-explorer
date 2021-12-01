@@ -248,3 +248,7 @@ type RW_API_TradingHistoryLog struct {
 	RealDate		string	// date corresponding to the event (newoffer/itembought/canceled)
 	RealTs			int64
 }
+type RW_API_RWalkFloorPrice struct {
+	TimeStamp		int64
+	Price			float64
+}

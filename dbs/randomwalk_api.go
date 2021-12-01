@@ -1489,3 +1489,65 @@ func (ss *SQLStorage) Get_sale_history(contract_aid int64,offset,limit int) []p.
 
 	return records
 }
+func (ss *SQLStorage) Get_rwalk_floor_price_for_periods(rwalk_aid,market_aid int64,init_ts int,fin_ts int,interval int) []p.RW_API_RWalkFloorPrice {
+
+	var query string
+	query = "WITH periods AS (" +
+				"SELECT * FROM (" +
+					"SELECT " +
+						"generate_series AS start_ts,"+
+						"TO_TIMESTAMP(EXTRACT(EPOCH FROM generate_series) + $3) AS end_ts "+
+					"FROM (" +
+						"SELECT * " +
+							"FROM generate_series(" +
+								"TO_TIMESTAMP($1)," +
+								"TO_TIMESTAMP($2)," +
+								"TO_TIMESTAMP($3)-TO_TIMESTAMP(0)) " +
+					") AS i" +
+				") AS data " +
+			") " +
+			"SELECT " +
+			//	"COALESCE(MIN(o.id),0) as num_rows, " +
+				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
+				"MIN(o.price)/1e+18 as floor_price "+
+			"FROM periods AS p " +
+				"LEFT JOIN LATERAL ( "+
+					"SELECT o.id,o.time_stamp,o.price "+
+						"FROM rw_new_offer o "+
+						"WHERE o.contract_aid=$4 AND o.rwalk_aid=$5 " +
+							"AND otype = 1 "+
+				") o ON " +
+					"(p.start_ts <= o.time_stamp) AND "+
+					"(o.time_stamp < p.end_ts) " +
+			"GROUP BY start_ts " +
+			"ORDER BY start_ts"
+
+	ss.Info.Printf("market_aid=%v rwalk_aid=%v init_ts= %v , fin_ts= %v , interval = %v\n",market_aid,rwalk_aid,init_ts,fin_ts,interval)
+	ss.Info.Printf("query = %v\n",query)
+	rows,err := ss.db.Query(query,init_ts,fin_ts,interval,market_aid,rwalk_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.RW_API_RWalkFloorPrice,0,8)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_API_RWalkFloorPrice
+		var null_float sql.NullFloat64
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&null_float,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
+			os.Exit(1)
+		}
+		if null_float.Valid {
+			rec.Price = null_float.Float64
+		} else {
+			continue
+		}
+		records = append(records,rec)
+	}
+	return records
+}

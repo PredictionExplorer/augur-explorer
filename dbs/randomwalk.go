@@ -542,7 +542,6 @@ func (ss *SQLStorage) Get_all_events_for_notification(rwalk_aid int64,start_ts i
 						"1 AS evt_type " +
 					"FROM rw_mint_evt m " +
 						"WHERE (contract_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))  "+
-	/*
 				") UNION ALL( "+
 					"SELECT "+
 						"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,"+
@@ -551,8 +550,6 @@ func (ss *SQLStorage) Get_all_events_for_notification(rwalk_aid int64,start_ts i
 						"2 AS evt_type "+
 					"FROM rw_new_offer o " +
 						"WHERE (rwalk_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))  " +
-*/
-						/*
 				") UNION ALL ( "+
 					"SELECT "+
 						"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT as ts,"+
@@ -562,11 +559,9 @@ func (ss *SQLStorage) Get_all_events_for_notification(rwalk_aid int64,start_ts i
 					"FROM rw_item_bought b " +
 						"JOIN rw_new_offer o ON (b.contract_aid=o.contract_aid) AND (b.offer_id=o.offer_id) " +
 					"WHERE (o.rwalk_aid=$1) AND (b.time_stamp > TO_TIMESTAMP($2))  " +
-				*/
 				") " +
 			") data " +
 			"ORDER BY ts"
-	ss.Info.Printf("q= %v\n(rwalk_aid=%v , start_ts=%v\n",query,rwalk_aid,start_ts)
 	rows,err := ss.db.Query(query,rwalk_aid,start_ts)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
