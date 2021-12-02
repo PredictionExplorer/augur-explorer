@@ -6,6 +6,7 @@ import (
 	"time"
 	"os"
 	"io"
+	"math/big"
 	"errors"
 	"io/ioutil"
 	"encoding/json"
@@ -13,12 +14,17 @@ import (
 	"syscall"
 	"net/http"
 	"log"
+	"context"
 
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 	. "github.com/PredictionExplorer/augur-explorer/tweets"
+	contracts "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
 )
@@ -30,6 +36,7 @@ var (
 	TMP_IMAGE_FILE		string = "randomwalk_tmp.png"
 	DETAIL_URL			string = "https://randomwalknft.com/detail"
 	MAX_TIMEOUT_COUNTER		int = 1000
+	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 
 	market_order_id int64 = 0
 	Error   *log.Logger
@@ -38,8 +45,14 @@ var (
 	rw_contracts RW_ContractAddresses
 	market_addr common.Address
 	rwalk_addr common.Address
+	rwalk_ctrct *contracts.RWalk
+	eclient *ethclient.Client
+	rpcclient *rpc.Client
 	twkeys TwitterKeys
 	twitter_nonce	uint64 = uint64(time.Now().UnixNano())
+	cur_floor_price			float64
+	rwalk_ctrct_aid			int64
+	market_ctrct_aid			int64
 )
 type TwitterKeys struct {
 	ApiKey			string
@@ -122,11 +135,37 @@ func get_image_file_from_net_until_success(token_id int64) bool {
 		}
 		time_out_counter++
 		if time_out_counter > MAX_TIMEOUT_COUNTER {
-			Info.Printf("Aborted by timeout at %v iterations\n",time_out_counter)
+			Info.Printf("get_image_file...: aborted by timeout at %v iterations\n",time_out_counter)
 			return false
 		}
 	}
 	return false
+}
+func get_withdrawal_amount() (float64,bool) {
+
+	time_out_counter := int(0)
+	for {
+		var copts bind.CallOpts
+		amount,err := rwalk_ctrct.WithdrawalAmount(&copts)
+		if err != nil {
+			Info.Printf("Error getting withdrawal amount: %v\n",err)
+			Error.Printf("Error getting withdrawal amount: %v\n",err)
+			time.Sleep(1 * time.Second)
+		} else {
+			f := big.NewFloat(0.0)
+			f.SetInt(amount)
+			div := big.NewFloat(1e+18)
+			f=f.Quo(f,div)
+			output,_ := f.Float64()
+			return output,true
+		}
+		time_out_counter++
+		if time_out_counter > MAX_TIMEOUT_COUNTER {
+			Info.Printf("get_withdrawal_amount(): aborted by timeout at %v iterations\n",time_out_counter)
+			return 0.0,false
+		}
+	}
+	return 0.0,false
 }
 func notify_twitter(rec *RW_NotificationEvent) {
 
@@ -140,11 +179,61 @@ func notify_twitter(rec *RW_NotificationEvent) {
 		Error.Printf("Error accesing Twitter :%v  (url = %v)\n",err,url_twitter)
 	}
 }
+func check_floor_price_change_and_emit() {
+
+	no_offers,db_floor_price,offer_id,token_id,err := storage.Get_floor_price(rwalk_ctrct_aid,market_ctrct_aid)
+	if no_offers {
+		return
+	}
+	if err != nil {
+		Error.Printf("Can't get floor price: %v\n",err)
+		Error.Printf("Can't get floor price: %v\n",err)
+		return
+	}
+	if db_floor_price == cur_floor_price {
+		return
+	}
+	cur_floor_price = db_floor_price
+
+	var success bool
+	success = get_image_file_from_net_until_success(token_id)
+	if !success {
+		Error.Printf("Couldn't get image file in check_floor_price(), aborting.")
+		return
+	}
+	image_filename := tmp_img_filename()
+	image_data, err := os.ReadFile(image_filename)
+	if err != nil {
+		fmt.Printf("Can't read image at %v : %v\n",image_filename)
+		os.Exit(1)
+	}
+	var tweet_msg string
+	tweet_msg = fmt.Sprintf(
+		"Floor price changed to %.4fΞ. Offer %v for token %v.\n\n%v",
+		cur_floor_price,
+		offer_id,
+		token_id,
+		fmt.Sprintf("%v/%v",DETAIL_URL,token_id),
+	)
+	twitter_nonce++
+	status_code,body,err := SendTweetWithImage(
+		twkeys.ApiKey,
+		twkeys.ApiSecret,
+		twkeys.TokenKey,
+		twkeys.TokenSecret,
+		tweet_msg,
+		twitter_nonce,
+		image_data,
+	)
+	if err != nil {
+		Info.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
+	}
+}
 func monitor_events(exit_chan chan bool,addr common.Address) {
 
 	rwalk_aid := storage.Lookup_address_id(addr.String())
 	ts := storage.Get_server_timestamp()
-	//ts = ts-5*24*60*60 /// for testing only
+	//ts = ts-12*60*60 /// for testing only
 	for {
 		select {
 			case exit_flag := <-exit_chan:
@@ -154,6 +243,7 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 				}
 			default:
 		}
+		check_floor_price_change_and_emit()
 		records := storage.Get_all_events_for_notification(rwalk_aid,ts)
 		for i:=0; i<len(records); i++ {
 			select {
@@ -164,10 +254,20 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 					}
 				default:
 			}
+
 			rec := &records[i]
-			success := get_image_file_from_net_until_success(rec.TokenId)
+			var withdrawal_amount float64
+			var success bool
+			if rec.EvtType == 1 {
+				withdrawal_amount,success = get_withdrawal_amount()
+				if !success {
+					Error.Printf("Couldn't get withdrawal amount, aborting.")
+					break;
+				}
+			}
+			success = get_image_file_from_net_until_success(rec.TokenId)
 			if !success {
-				Error.Printf("Couldn't get image file, aborting.")
+				Error.Printf("Couldn't get image file for token %v, aborting.",rec.TokenId)
 				time.Sleep(10 * time.Second)
 				break
 			}
@@ -182,9 +282,10 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 			switch rec.EvtType {
 				case 1:
 					tweet_msg = fmt.Sprintf(
-						"#%v Minted for %.4fΞ\n\n%v ",
+						"#%v Minted for %.4fΞ.\nLast minter would get %.2fΞ if there is no other mint for 30 days.\n\n%v",
 						rec.TokenId,
 						rec.Price,
+						withdrawal_amount,
 						fmt.Sprintf("%v/%v",DETAIL_URL,rec.TokenId),
 					)
 				case 2:
@@ -246,6 +347,12 @@ func main() {
 	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	Error = log.New(logfile,"ERROR: ",log.Ltime|log.Lshortfile)
 
+	rpcclient, err=rpc.DialContext(context.Background(), RPC_URL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	Info.Printf("Connected to ETH node: %v\n",RPC_URL)
+	eclient = ethclient.NewClient(rpcclient)
 
 	storage = Connect_to_storage(&market_order_id,Info)
 	storage.Init_log(db_log_file)
@@ -271,6 +378,14 @@ func main() {
 					" To interrupt abruptly send SIGKILL (9) to the kernel.\n")
 		exit_chan <- true
 	}()
+
+
+	rwalk_ctrct,err = contracts.NewRWalk(rwalk_addr,eclient)
+	if err != nil {
+		Info.Printf("Can't instantiate RandomWalk contract %v : %v\n",rwalk_addr.String(),err)
+		Error.Printf("Can't instantiate RandomWalk contract %v : %v\n",rwalk_addr.String(),err)
+		os.Exit(1)
+	}
 /*
 			tweet_msg := fmt.Sprintf(
 					"Token %v minted. Price %v. Seed %v.",
@@ -289,6 +404,10 @@ func main() {
 			}
 			os.Exit(1)
 */
+	rwalk_ctrct_aid=storage.Lookup_address_id(rwalk_addr.String())
+	market_ctrct_aid=storage.Lookup_address_id(market_addr.String())
+	_,cur_floor_price,_,_,err = storage.Get_floor_price(rwalk_ctrct_aid,market_ctrct_aid)
+	cur_floor_price = 0.0;
 	monitor_events(exit_chan,rwalk_addr)
 
 }

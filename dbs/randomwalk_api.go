@@ -1065,15 +1065,25 @@ func (ss *SQLStorage) Get_random_walk_tokens_by_user(user_aid int64) []p.RW_API_
 
 	return records
 }
-func (ss *SQLStorage) Get_floor_price(rwalk_aid int64,market_aid int64) (float64,error) {
+func (ss *SQLStorage) Get_floor_price(rwalk_aid int64,market_aid int64) (
+	no_offers bool,
+	floor_price float64,
+	offer_id int64,
+	token_id int64,
+	err error,
+) {
 
-	var output sql.NullFloat64
+	no_offers = false
+	var n_floor_price sql.NullFloat64
+	var n_offer_id,n_token_id sql.NullInt64
 	var where_cond string =""
 	where_cond = fmt.Sprintf(" AND (o.rwalk_aid=%v) ",rwalk_aid)
 	where_cond += fmt.Sprintf(" AND (o.contract_aid=%v) ",market_aid)
 	var query string
 	query = "SELECT " +
-				"o.price/1e+18 price "+
+				"o.price/1e+18 price, "+
+				"o.offer_id,"+
+				"o.token_id "+
 			"FROM "+
 				"rw_new_offer o "+
 			"WHERE (active = 't') AND (otype=1) " + where_cond +
@@ -1081,16 +1091,24 @@ func (ss *SQLStorage) Get_floor_price(rwalk_aid int64,market_aid int64) (float64
 			"LIMIT 1"
 
 	res := ss.db.QueryRow(query)
-	err := res.Scan(&output)
+	err = res.Scan(
+		&n_floor_price,
+		&n_offer_id,
+		&n_token_id,
+	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return output.Float64,err
+			no_offers = true
+			return
 		} else {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
 	}
-	return output.Float64,nil
+	floor_price = n_floor_price.Float64
+	offer_id = n_offer_id.Int64
+	token_id = n_token_id.Int64
+	return
 }
 func (ss *SQLStorage) Get_trading_history_by_user(user_aid int64) []p.RW_API_Offer {
 
