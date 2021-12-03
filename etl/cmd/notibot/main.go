@@ -25,11 +25,14 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 	. "github.com/PredictionExplorer/augur-explorer/tweets"
 	contracts "github.com/PredictionExplorer/augur-explorer/contracts"
+
+	"github.com/andersfylling/disgord"
 )
 const (
 )
 var (
 	TWITTER_KEYS_FILE = os.Getenv("TWITTER_KEYS_FILE")
+	DISCORD_KEYS_FILE = os.Getenv("DISCORD_LEYS_FILE")
 
 	//Sample URL: https://randomwalknft.s3.us-east-2.amazonaws.com/003246_black.png
 	IMAGES_URL			string = "https://randomwalknft.s3.us-east-2.amazonaws.com"
@@ -38,21 +41,23 @@ var (
 	MAX_TIMEOUT_COUNTER		int = 1000
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 
-	market_order_id int64 = 0
-	Error   *log.Logger
-	Info	*log.Logger
-	storage *SQLStorage
-	rw_contracts RW_ContractAddresses
-	market_addr common.Address
+	market_order_id			int64 = 0
+	Error					*log.Logger
+	Info					*log.Logger
+	storage					*SQLStorage
+	rw_contracts			RW_ContractAddresses
+	market_addr				common.Address
 	rwalk_addr common.Address
 	rwalk_ctrct *contracts.RWalk
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
-	twkeys TwitterKeys
+	twitter_keys TwitterKeys
 	twitter_nonce	uint64 = uint64(time.Now().UnixNano())
 	cur_floor_price			float64
 	rwalk_ctrct_aid			int64
 	market_ctrct_aid			int64
+	discord_keys			DiscordKeys
+	disc_client				disgord.Client
 )
 type TwitterKeys struct {
 	ApiKey			string
@@ -60,14 +65,27 @@ type TwitterKeys struct {
 	TokenKey		string
 	TokenSecret		string
 }
+type DiscordKeys struct {
+	TokenKey		string
+	ChannelId		uint64
+}
 func read_twitter_keys() error {
 	file_name := fmt.Sprintf("%v/configs/%v",os.Getenv("HOME"),TWITTER_KEYS_FILE)
 	b, err := ioutil.ReadFile(file_name)
 	if err != nil {
-		fmt.Printf("Can't read configuration file with twitter account keys in %v: %v\n",file_name,err)
+		fmt.Printf("Can't read configuration file with Twitter account keys in %v: %v\n",file_name,err)
 		os.Exit(1)
 	}
-	return json.Unmarshal(b, &twkeys)
+	return json.Unmarshal(b, &twtter_keys)
+}
+func read_discord_keys() error {
+	file_name := fmt.Sprintf("%v/configs/%v",os.Getenv("HOME"),DISCORD_KEYS_FILE)
+	b, err := ioutil.ReadFile(file_name)
+	if err != nil {
+		fmt.Printf("Can't read configuration file with Discord account keys in %v: %v\n",file_name,err)
+		os.Exit(1)
+	}
+	return json.Unmarshal(b, &discord_keys)
 }
 func decode_response(resp *http.Response, data interface{}) error {
 	if resp.StatusCode != 200 {
@@ -141,6 +159,20 @@ func get_image_file_from_net_until_success(token_id int64) bool {
 	}
 	return false
 }
+func get_image(token_id int64) ([]byte,bool) {
+
+	success := get_image_file_from_net_until_success(token_id)
+	if !success {
+		return nil,false
+	}
+	image_filename := tmp_img_filename()
+	image_data, err := os.ReadFile(image_filename)
+	if err != nil {
+		fmt.Printf("Can't read image at %v : %v\n",image_filename)
+		os.Exit(1)
+	}
+	return image_data,true
+}
 func get_withdrawal_amount() (float64,bool) {
 
 	time_out_counter := int(0)
@@ -167,7 +199,8 @@ func get_withdrawal_amount() (float64,bool) {
 	}
 	return 0.0,false
 }
-func notify_twitter(rec *RW_NotificationEvent) {
+/*
+func (rec *RW_NotificationEvent) {
 
 	url_twitter := fmt.Sprintf(
 		"http://%v",
@@ -179,34 +212,9 @@ func notify_twitter(rec *RW_NotificationEvent) {
 		Error.Printf("Error accesing Twitter :%v  (url = %v)\n",err,url_twitter)
 	}
 }
-func check_floor_price_change_and_emit() {
+*/
+func notify_tweeter_floor_price_event(token_id int64) {
 
-	no_offers,db_floor_price,_,token_id,err := storage.Get_floor_price(rwalk_ctrct_aid,market_ctrct_aid)
-	if no_offers {
-		return
-	}
-	if err != nil {
-		Error.Printf("Can't get floor price: %v\n",err)
-		Error.Printf("Can't get floor price: %v\n",err)
-		return
-	}
-	if db_floor_price == cur_floor_price {
-		return
-	}
-	cur_floor_price = db_floor_price
-
-	var success bool
-	success = get_image_file_from_net_until_success(token_id)
-	if !success {
-		Error.Printf("Couldn't get image file in check_floor_price(), aborting.")
-		return
-	}
-	image_filename := tmp_img_filename()
-	image_data, err := os.ReadFile(image_filename)
-	if err != nil {
-		fmt.Printf("Can't read image at %v : %v\n",image_filename)
-		os.Exit(1)
-	}
 	var tweet_msg string
 	tweet_msg = fmt.Sprintf(
 		"Floor price changed to %.4fΞ.\n\n%v",
@@ -226,6 +234,63 @@ func check_floor_price_change_and_emit() {
 	if err != nil {
 		Info.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
 	}
+}
+func format_notification_message(event_type int64,token_id int64,price,withdrawal_amount float64) string {
+	var output string
+	switch event_type {
+		case 1:
+			output = fmt.Sprintf(
+				"#%v Minted for %.4fΞ.\nLast minter would get %.2fΞ if there is no other mint for 30 days.\n\n%v",
+				token_id,
+				price,
+				withdrawal_amount,
+				fmt.Sprintf("%v/%v",DETAIL_URL,token_id),
+			)
+		case 2:
+			output = fmt.Sprintf(
+				"#%v On sale for %.4fΞ\n\n%v",
+				rec.TokenId,
+				rec.Price,
+				fmt.Sprintf("%v/%v",DETAIL_URL,rec.TokenId),
+			)
+		case 3:
+			output = fmt.Sprintf(
+				"#%v Bought for %.4fΞ\n\n%v",
+				rec.TokenId,
+				rec.Price,
+				fmt.Sprintf("%v/%v",DETAIL_URL,rec.TokenId),
+			)
+	}
+	return output
+}
+func notify_discord(token_id,msg string) {
+
+}
+func check_floor_price_change_and_emit() {
+
+	no_offers,db_floor_price,_,token_id,err := storage.Get_floor_price(rwalk_ctrct_aid,market_ctrct_aid)
+	if no_offers {
+		return
+	}
+	if err != nil {
+		Error.Printf("Can't get floor price: %v\n",err)
+		Info.Printf("Can't get floor price: %v\n",err)
+		return
+	}
+	if db_floor_price == cur_floor_price {
+		return
+	}
+	cur_floor_price = db_floor_price
+
+	var success bool
+	var image_data []byte
+
+	success,image_data = get_image(token_id)
+	if !success {
+		Error.Printf("Couldn't get image file in check_floor_price(), aborting.")
+		return
+	}
+
 }
 func monitor_events(exit_chan chan bool,addr common.Address) {
 
@@ -276,38 +341,16 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 				os.Exit(1)
 			}
 			ts = rec.TimeStampMinted
-			var tweet_msg string
-			switch rec.EvtType {
-				case 1:
-					tweet_msg = fmt.Sprintf(
-						"#%v Minted for %.4fΞ.\nLast minter would get %.2fΞ if there is no other mint for 30 days.\n\n%v",
-						rec.TokenId,
-						rec.Price,
-						withdrawal_amount,
-						fmt.Sprintf("%v/%v",DETAIL_URL,rec.TokenId),
-					)
-				case 2:
-					tweet_msg = fmt.Sprintf(
-						"#%v On sale for %.4fΞ\n\n%v",
-						rec.TokenId,
-						rec.Price,
-						fmt.Sprintf("%v/%v",DETAIL_URL,rec.TokenId),
-					)
-				case 3:
-					tweet_msg = fmt.Sprintf(
-						"#%v Bought for %.4fΞ\n\n%v",
-						rec.TokenId,
-						rec.Price,
-						fmt.Sprintf("%v/%v",DETAIL_URL,rec.TokenId),
-					)
-			}
+
+			var notif_msg string
+			notif_msg = format_notification_message(rec.EvtType,rec.Token_id,rec.Price,withdrawal_amount)
 			twitter_nonce++
 			status_code,body,err := SendTweetWithImage(
 				twkeys.ApiKey,
 				twkeys.ApiSecret,
 				twkeys.TokenKey,
 				twkeys.TokenSecret,
-				tweet_msg,
+				notif_msg,
 				twitter_nonce,
 				image_data,
 			)
@@ -325,11 +368,13 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 
 func main() {
 
+	flag_twitter := flag.Bool("twitter", false, "Send messages to Twitter)")
+	flag_discord := flag.Bool("discord", false, "Send messages to Discord)")
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 	os.MkdirAll(log_dir, os.ModePerm)
-	db_log_file:=fmt.Sprintf("%v/tweet_notifs_db.log",log_dir)
+	db_log_file:=fmt.Sprintf("%v/notibot_db.log",log_dir)
 
-	fname:=fmt.Sprintf("%v/tweet_notifs_info.log",log_dir)
+	fname:=fmt.Sprintf("%v/notibot_info.log",log_dir)
 	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err!=nil {
 		fmt.Printf("Can't start: %v\n",err)
@@ -337,7 +382,7 @@ func main() {
 	}
 	Info = log.New(logfile,"INFO: ",log.Ltime|log.Lshortfile)
 
-	fname=fmt.Sprintf("%v/tweet_notifs_error.log",log_dir)
+	fname=fmt.Sprintf("%v/notibot_error.log",log_dir)
 	if err!=nil {
 		fmt.Printf("Can't start: %v\n",err)
 		os.Exit(1)
@@ -362,10 +407,24 @@ func main() {
 	Info.Printf("RandomWalk contract %v\n",rwalk_addr.String())
 	Info.Printf("MarketPlace contract %v\n",market_addr.String())
 
-	err = read_twitter_keys()
-	if err != nil {
-		fmt.Printf("Error: %v\n",err)
-		os.Exit(1)
+	if flag_twitter {
+		err = read_twitter_keys()
+		if err != nil {
+			fmt.Printf("Error: %v\n",err)
+			os.Exit(1)
+		}
+	}
+	if flag_discord {
+		err = read_discord_keys()
+		if err != nil {
+			fmt.Printf("Error: %v\n",err)
+			os.Exit(1)
+		}
+		disc_client = disgord.New(
+			disgord.Config{
+				BotToken: dicord_keys.TokenKey,
+			},
+		)
 	}
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)
