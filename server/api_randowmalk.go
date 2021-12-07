@@ -71,7 +71,7 @@ func api_rwalk_floor_price(c *gin.Context) {
 		market_aid = -1
 	}
 
-	floor_price,err := augur_srv.db_arbitrum.Get_floor_price(rwalk_aid,market_aid)
+	_,floor_price,_,_,err := augur_srv.db_arbitrum.Get_floor_price(rwalk_aid,market_aid)
 	var db_err string
 	if err != nil { db_err = err.Error() }
 

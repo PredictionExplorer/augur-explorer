@@ -96,7 +96,7 @@ func decode_response(resp *http.Response, data interface{}) error {
 		p, _ := ioutil.ReadAll(resp.Body)
 		return fmt.Errorf("get %s returned status %d, %s", resp.Request.URL, resp.StatusCode, p)
 	} else {
-		fmt.Printf("Body:\n")
+	//	fmt.Printf("Body:\n")
 	//	io.Copy(os.Stdout, resp.Body);
 	}
 	return json.NewDecoder(resp.Body).Decode(data)
@@ -260,7 +260,7 @@ func notify_tweeter(token_id int64,msg string,image_data []byte) {
 		Info.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
 	}
 }
-func notify_discord(token_id int64,msg string,image_data []byte,image_url string) {
+func notify_discord(token_id int64,msg string,image_data []byte,image_url string) error {
 
 	rdr := bytes.NewReader(image_data)
 	var err error
@@ -276,11 +276,7 @@ func notify_discord(token_id int64,msg string,image_data []byte,image_url string
 				},
 			},
 	)
-	if err != nil {
-		Error.Printf("Error on Discord notification: %v\n",err)
-	} else {
-		Info.Printf("Notified event (token_id=%v) to Discord channel\n",token_id)
-	}
+	return err
 }
 func check_floor_price_change_and_emit() {
 
@@ -332,8 +328,9 @@ func check_floor_price_change_and_emit() {
 func monitor_events(exit_chan chan bool,addr common.Address) {
 
 	rwalk_aid := storage.Lookup_address_id(addr.String())
-	ts := storage.Get_server_timestamp()
-	ts = ts-1*24*60*60 /// for testing only
+	ts := storage.Get_last_block_timestamp()
+	Info.Printf("monitor_events() starts with timestamp %v (%v)\n",ts,time.Unix(ts,0).Format("2006-01-02T15:04:05"))
+	//ts = ts-3*24*60*60 /// for testing only
 	for {
 		select {
 			case exit_flag := <-exit_chan:
@@ -345,6 +342,12 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 		}
 		check_floor_price_change_and_emit()
 		records := storage.Get_all_events_for_notification(rwalk_aid,ts)
+		if len(records) > 0 {
+			Info.Printf(
+				"Got %v records for timestamp %v (%v)\n",
+				ts,time.Unix(ts,0).Format("2006-01-02T15:04:05"),
+			)
+		}
 		for i:=0; i<len(records); i++ {
 			select {
 				case exit_flag := <-exit_chan:
@@ -356,6 +359,10 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 			}
 
 			rec := &records[i]
+			Info.Printf(
+				"Processing evt type=%v of token id=%v to Twitter (price= %v)\n",
+				rec.EvtType,rec.TokenId,rec.Price,
+			)
 			var withdrawal_amount float64
 			var success bool
 			if rec.EvtType == 1 {
@@ -374,10 +381,15 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 			image_filename := tmp_img_filename()
 			image_data, err := os.ReadFile(image_filename)
 			if err != nil {
-				fmt.Printf("Can't read image at %v : %v\n",image_filename)
+				Info.Printf("Can't read image at %v : %v\n",image_filename)
+				Error.Printf("Can't read image at %v : %v\n",image_filename)
 				os.Exit(1)
 			}
 			ts = rec.TimeStampMinted
+			Info.Printf(
+				"Setting timestamp to %v (%v) (token_id=%v)\n",
+				ts,time.Unix(ts,0).Format("2006-01-02T15:04:05"),rec.TokenId,
+			)
 
 			if *flag_twitter {
 				notif_msg := format_notification_message(rec.EvtType,rec.TokenId,rec.Price,withdrawal_amount,true)
@@ -394,16 +406,24 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 				if err != nil {
 					Info.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
 				}
-				Info.Printf("Notified mint of token id=%v to Twitter (price= %v)\n",rec.TokenId,rec.Price)
+				Info.Printf(
+					"Notification for evt type=%v of token id=%v to Twitter successful\n",
+					rec.EvtType,rec.TokenId,
+				)
 			}
 			if *flag_discord {
 				notif_msg := format_notification_message(rec.EvtType,rec.TokenId,rec.Price,withdrawal_amount,false)
 				msg_url := format_url(rec.TokenId)
-				notify_discord(rec.TokenId,notif_msg,image_data,msg_url)
+				err := notify_discord(rec.TokenId,notif_msg,image_data,msg_url)
+				if err != nil {
+					Error.Printf("Error on Discord notification: %v\n",err)
+				} else {
+					Info.Printf("Notification of event (token_id=%v) to Discord successful\n",rec.TokenId)
+				}
 			}
 		}
 		if len(records) == 0 {
-			time.Sleep(5 * time.Second) // sleep only if there is no data
+			time.Sleep(30 * time.Second) // sleep only if there is no data
 		}
 	}
 }
@@ -494,7 +514,7 @@ func main() {
 	rwalk_ctrct_aid=storage.Lookup_address_id(rwalk_addr.String())
 	market_ctrct_aid=storage.Lookup_address_id(market_addr.String())
 	_,cur_floor_price,_,_,err = storage.Get_floor_price(rwalk_ctrct_aid,market_ctrct_aid)
-	cur_floor_price = 0.0;
+	//cur_floor_price = 0.0;
 	monitor_events(exit_chan,rwalk_addr)
 
 }

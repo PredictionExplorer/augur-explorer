@@ -392,6 +392,37 @@ func (ss *SQLStorage) Get_random_walk_stats(rwalk_aid int64) p.RW_API_RWalkStats
 			os.Exit(1)
 		}
 	}
+	query = "SELECT count(*) AS total FROM rw_uranks"
+	var n_uniq_users sql.NullInt64
+	res = ss.db.QueryRow(query)
+	err = res.Scan(&n_uniq_users)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return output
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	if n_uniq_users.Valid {
+		output.UniqueUsers = n_uniq_users.Int64
+	}
+	query = "SELECT price/1e+18 price FROM rw_mint_evt ORDER BY id DESC LIMIT 1"
+	var n_last_price sql.NullFloat64
+	res = ss.db.QueryRow(query)
+	err = res.Scan(&n_last_price)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return output
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	if n_last_price.Valid {
+		output.LastMintedPrice= n_last_price.Float64
+	}
+
 	return output
 }
 func (ss *SQLStorage) Get_market_stats(market_aid int64) p.RW_API_MarketStats {

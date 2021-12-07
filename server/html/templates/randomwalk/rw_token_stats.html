@@ -9,7 +9,7 @@
 <table>
 	<tr>
 		<td>Total Trading Volume</td>
-		<td>{{ printf "%0.18f" .TokenStats.TradingVol}}</td>
+		<td>{{ printf "%0.5f" .TokenStats.TradingVol}} ETH</td>
 	</tr>
 	<tr>
 		<td>Total Trades</td>
@@ -29,11 +29,7 @@
 	</tr>
 	<tr>
 		<td>Last Minted Price</td>
-		<td>{{.TokenStats.LastMintedPrice}}</td>
-	</tr>
-	<tr>
-		<td>Maximum Traded Price</td>
-		<td>{{.TokenStats.MaximumTradedPrice}}</td>
+		<td>{{ printf "%.5f" .TokenStats.LastMintedPrice}} ETH</td>
 	</tr>
 </table>
 <br/><br/>
