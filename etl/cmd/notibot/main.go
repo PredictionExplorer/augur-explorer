@@ -302,7 +302,7 @@ func check_floor_price_change_and_emit() {
 		Error.Printf("Couldn't get image file in check_floor_price(), aborting.")
 		return
 	}
-
+	Info.Printf("Floor price change detected (new price=%v)\n",cur_floor_price)
 	if *flag_twitter {
 		notif_msg := format_notification_message(4,token_id,cur_floor_price,0.0,true)
 		twitter_nonce++
@@ -317,12 +317,19 @@ func check_floor_price_change_and_emit() {
 		)
 		if err != nil {
 			Info.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
+		} else {
+			Info.Printf("Notified about floor price change to Twitter (new price = %v)\n",cur_floor_price)
 		}
 	}
 	if *flag_discord {
 		notif_msg := format_notification_message(4,token_id,cur_floor_price,0.0,false)
 		msg_url := format_url(token_id)
-		notify_discord(token_id,notif_msg,image_data,msg_url)
+		err := notify_discord(token_id,notif_msg,image_data,msg_url)
+		if err != nil {
+			Info.Printf("Error sending msg to Discord: %v\n",err)
+		} else {
+			Info.Printf("Notified about floor price change to Discord (new price = %v)\n",cur_floor_price)
+		}
 	}
 }
 func monitor_events(exit_chan chan bool,addr common.Address) {
@@ -514,7 +521,7 @@ func main() {
 	rwalk_ctrct_aid=storage.Lookup_address_id(rwalk_addr.String())
 	market_ctrct_aid=storage.Lookup_address_id(market_addr.String())
 	_,cur_floor_price,_,_,err = storage.Get_floor_price(rwalk_ctrct_aid,market_ctrct_aid)
-	//cur_floor_price = 0.0;
+	cur_floor_price = 0.0;
 	monitor_events(exit_chan,rwalk_addr)
 
 }
