@@ -64,6 +64,14 @@ func Bytes32_to_string(data []byte) string {
 	}
 	return string(data[:length])
 }
+func Bytes_to_string(data []byte) string {
+
+	length := bytes.Index(data, []byte{0})
+	if length == -1 {
+		length = len(data)
+	}
+	return string(data[:length])
+}
 func Augur_UI_price_adjustments(price *float64,amount *float64,mkt_type int,decimals int) {
 
 	// Price and amount are fixed floating points of 18 precision

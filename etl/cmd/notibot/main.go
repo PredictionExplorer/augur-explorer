@@ -71,7 +71,8 @@ type TwitterKeys struct {
 }
 type DiscordKeys struct {
 	TokenKey		string
-	ChannelId		uint64
+	ChannelId		uint64	// Notifications Channel
+	MainChannelId	uint64	// Main chat Channel
 }
 func read_twitter_keys() error {
 	file_name := fmt.Sprintf("%v/configs/%v",os.Getenv("HOME"),TWITTER_KEYS_FILE)
@@ -262,8 +263,11 @@ func notify_tweeter(token_id int64,msg string,image_data []byte) {
 }
 func notify_discord(token_id int64,msg string,image_data []byte,image_url string) error {
 
+	image_copy := make([]byte,len(image_data))
+	copy(image_copy,image_data)
 	rdr := bytes.NewReader(image_data)
 	var err error
+	// this is the Notification channel
 	_, err = disc_client.Channel(disgord.Snowflake(discord_keys.ChannelId)).CreateMessage(
 			&disgord.CreateMessageParams{
 				Content: msg,
@@ -276,6 +280,25 @@ func notify_discord(token_id int64,msg string,image_data []byte,image_url string
 				},
 			},
 	)
+	if err != nil {
+		return err
+	}
+
+	// this is the Main chat channel
+	rdr2 := bytes.NewReader(image_copy)
+	_, err = disc_client.Channel(disgord.Snowflake(discord_keys.MainChannelId)).CreateMessage(
+			&disgord.CreateMessageParams{
+				Content: msg,
+				Files: []disgord.CreateMessageFileParams{
+					{rdr2, "token.png", false},
+				},
+				Embed: &disgord.Embed{
+					Description: image_url,
+					URL: image_url,
+				},
+			},
+	)
+
 	return err
 }
 func check_floor_price_change_and_emit() {
@@ -499,7 +522,7 @@ func main() {
 				BotToken: discord_keys.TokenKey,
 			},
 		)
-		Info.Printf("Loaded discord keys\\n")
+		Info.Printf("Loaded discord keys\n")
 	}
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)
@@ -521,7 +544,7 @@ func main() {
 	rwalk_ctrct_aid=storage.Lookup_address_id(rwalk_addr.String())
 	market_ctrct_aid=storage.Lookup_address_id(market_addr.String())
 	_,cur_floor_price,_,_,err = storage.Get_floor_price(rwalk_ctrct_aid,market_ctrct_aid)
-	cur_floor_price = 0.0;
+	//cur_floor_price = 0.0;
 	monitor_events(exit_chan,rwalk_addr)
 
 }
