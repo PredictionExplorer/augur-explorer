@@ -6,7 +6,9 @@ import (
 	"time"
 	"os"
 	"io"
+	"regexp"
 	"flag"
+	"strconv"
 	"math/big"
 	"errors"
 	"io/ioutil"
@@ -31,6 +33,15 @@ import (
 	"github.com/andersfylling/disgord"
 )
 const (
+	MintChannelID_Uint			uint64 = 918642461314785290
+	MintChannelID				= disgord.Snowflake(MintChannelID_Uint)
+	PriceChannelID_Uint			uint64 = 918643820734869525
+	PriceChannelID				= disgord.Snowflake(PriceChannelID_Uint)
+	LastDateChannelID_Uint		uint = 918653298813313044
+	LastDateChannelID			= disgord.Snowflake(LastDateChannelID_Uint)
+	NumMintsUnicodeChar			string = "🪙 "
+	LastPriceUnicodeChar		string = "💲"
+	EthSign						string = "Ξ"
 )
 var (
 	TWITTER_KEYS_FILE = os.Getenv("TWITTER_KEYS_FILE")
@@ -108,12 +119,12 @@ func tmp_img_filename() string {
 func fetch_image(url string) (int,error) {
 
 	response, err := http.Get(url)
-	defer response.Body.Close()
 	if err != nil {
 		Error.Printf("Can't fetch image %v : %v\n",url,err)
 		Info.Printf("Can't fetch image %v : %v\n",url,err)
 		return 0,err
 	}
+	defer response.Body.Close()
 	if response.StatusCode == 200 {
 		img_file_name := tmp_img_filename()
 		os.Remove(img_file_name)
@@ -245,6 +256,31 @@ func format_notification_message(event_type int64,token_id int64,price,withdrawa
 	}
 	return output
 }
+func set_channel_name(new_name string,channel_id disgord.Snowflake) {
+	_,err := disc_client.Channel(channel_id).UpdateBuilder().SetName(new_name).Execute()
+	if err != nil {
+		Info.Printf("Couldn't change channel name to %v (channel id = %v) : %v\n",new_name,channel_id,err)
+		Error.Printf("Couldn't change channel name to %v (channel id = %v) : %v\n",new_name,channel_id,err)
+		pattern := "retry_after\":\\s+(\\d+)\\.\\d"
+		re := regexp.MustCompile(pattern)
+		matchall := re.FindStringSubmatch(err.Error())
+		if len(matchall)==2 {
+			delay_sec,err := strconv.ParseInt(matchall[1],10,64)
+			if err != nil {
+				Error.Printf("Unable to parse delay value (%v) : %v\n",matchall[1],err)
+				return
+			}
+			Info.Printf("Retrying channel name update in %v ms\n",delay_sec)
+			time.Sleep(time.Duration(delay_sec) * time.Second)
+			time.Sleep(1 * time.Second) // just extra for safety
+			_,err = disc_client.Channel(channel_id).UpdateBuilder().SetName(new_name).Execute()
+			if err != nil {
+				Info.Printf("Couldn't change channel (second time) name to %v (channel id = %v) : %v\n",new_name,channel_id,err)
+				Error.Printf("Couldn't change channel (second time) name to %v (channel id = %v) : %v\n",new_name,channel_id,err)
+			}
+		}
+	}
+}
 func notify_tweeter(token_id int64,msg string,image_data []byte) {
 
 	twitter_nonce++
@@ -360,7 +396,7 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 	rwalk_aid := storage.Lookup_address_id(addr.String())
 	ts := storage.Get_last_block_timestamp()
 	Info.Printf("monitor_events() starts with timestamp %v (%v)\n",ts,time.Unix(ts,0).Format("2006-01-02T15:04:05"))
-	//ts = ts-3*24*60*60 /// for testing only
+	ts = ts-1*24*60*60 /// for testing only
 	for {
 		select {
 			case exit_flag := <-exit_chan:
@@ -395,12 +431,32 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 			)
 			var withdrawal_amount float64
 			var success bool
-			if rec.EvtType == 1 {
+			if rec.EvtType == 1 { // Mint
 				withdrawal_amount,success = get_withdrawal_amount()
 				if !success {
 					Error.Printf("Couldn't get withdrawal amount, aborting.")
 					break;
 				}
+				new_channel_name := fmt.Sprintf(
+					"Cur. price %v : %.4f",
+					LastPriceUnicodeChar,
+					rec.Price,
+				)
+				set_channel_name(new_channel_name,PriceChannelID)
+				new_channel_name = fmt.Sprintf(
+					"Num. mints %v : %d",
+					NumMintsUnicodeChar,
+					rec.TokenId+1,
+				)
+				//set_channel_name(new_channel_name,MintChannelID)
+				cur_time := time.Now()
+				minted_time := time.Unix(rec.TimeStampMinted,0)
+				duration := DurationToString(TimeDifference(minted_time,cur_time))
+				new_channel_name = fmt.Sprintf(
+					"Last mint: %v ago",
+					duration,
+				)
+				set_channel_name(new_channel_name,LastDateChannelID)
 			}
 			success = get_image_file_from_net_until_success(rec.TokenId)
 			if !success {
