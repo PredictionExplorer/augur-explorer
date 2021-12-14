@@ -33,17 +33,18 @@ import (
 	"github.com/andersfylling/disgord"
 )
 const (
-	MintChannelID_Uint			uint64 = 918642461314785290
-	MintChannelID				= disgord.Snowflake(MintChannelID_Uint)
-	PriceChannelID_Uint			uint64 = 918643820734869525
-	PriceChannelID				= disgord.Snowflake(PriceChannelID_Uint)
-	LastDateChannelID_Uint		uint = 918653298813313044
-	LastDateChannelID			= disgord.Snowflake(LastDateChannelID_Uint)
 	NumMintsUnicodeChar			string = "🪙 "
 	LastPriceUnicodeChar		string = "💲"
 	EthSign						string = "Ξ"
 )
 var (
+	MintChannelID_Uint			uint64 = 0 //918642461314785290
+	MintChannelID				= disgord.Snowflake(MintChannelID_Uint)
+	PriceChannelID_Uint			uint64 = 0 //918643820734869525
+	PriceChannelID				= disgord.Snowflake(PriceChannelID_Uint)
+	LastDateChannelID_Uint		uint64 = 0 // 918653298813313044
+	LastDateChannelID			= disgord.Snowflake(LastDateChannelID_Uint)
+
 	TWITTER_KEYS_FILE = os.Getenv("TWITTER_KEYS_FILE")
 	DISCORD_KEYS_FILE = os.Getenv("DISCORD_KEYS_FILE")
 
@@ -81,9 +82,12 @@ type TwitterKeys struct {
 	TokenSecret		string
 }
 type DiscordKeys struct {
-	TokenKey		string
-	ChannelId		uint64	// Notifications Channel
-	MainChannelId	uint64	// Main chat Channel
+	TokenKey			string
+	ChannelId			uint64	// Notifications Channel
+	MainChannelId		uint64	// Main chat Channel
+	MintStatsChanId		uint64
+	PriceStatsChanId	uint64
+	DateStatsChanId		uint64
 }
 func read_twitter_keys() error {
 	file_name := fmt.Sprintf("%v/configs/%v",os.Getenv("HOME"),TWITTER_KEYS_FILE)
@@ -101,7 +105,22 @@ func read_discord_keys() error {
 		fmt.Printf("Can't read configuration file with Discord account keys in %v: %v\n",file_name,err)
 		os.Exit(1)
 	}
-	return json.Unmarshal(b, &discord_keys)
+	err = json.Unmarshal(b, &discord_keys)
+	if err != nil {
+		return err
+	}
+	Info.Printf("Main channel ID=%v\n",discord_keys.MainChannelId)
+	MintChannelID_Uint = discord_keys.MintStatsChanId
+	Info.Printf("Channel ID for Mint statistics: %v\n",MintChannelID_Uint)
+	MintChannelID = disgord.Snowflake(MintChannelID_Uint)
+	PriceChannelID_Uint	= discord_keys.PriceStatsChanId 
+	Info.Printf("Channel ID for Price statistics: %v\n",PriceChannelID_Uint)
+	PriceChannelID = disgord.Snowflake(PriceChannelID_Uint)
+	LastDateChannelID_Uint = discord_keys.DateStatsChanId
+	Info.Printf("Channel ID for Date statistics: %v\n",LastDateChannelID_Uint)
+	LastDateChannelID = disgord.Snowflake(LastDateChannelID_Uint)
+
+	return err
 }
 func decode_response(resp *http.Response, data interface{}) error {
 	if resp.StatusCode != 200 {
@@ -268,9 +287,10 @@ func set_channel_name(new_name string,channel_id disgord.Snowflake) {
 			delay_sec,err := strconv.ParseInt(matchall[1],10,64)
 			if err != nil {
 				Error.Printf("Unable to parse delay value (%v) : %v\n",matchall[1],err)
+				Info.Printf("Unable to parse delay value (%v) : %v\n",matchall[1],err)
 				return
 			}
-			Info.Printf("Retrying channel name update in %v ms\n",delay_sec)
+			Info.Printf("Retrying channel name update in %v sec\n",delay_sec)
 			time.Sleep(time.Duration(delay_sec) * time.Second)
 			time.Sleep(1 * time.Second) // just extra for safety
 			_,err = disc_client.Channel(channel_id).UpdateBuilder().SetName(new_name).Execute()
@@ -278,6 +298,8 @@ func set_channel_name(new_name string,channel_id disgord.Snowflake) {
 				Info.Printf("Couldn't change channel (second time) name to %v (channel id = %v) : %v\n",new_name,channel_id,err)
 				Error.Printf("Couldn't change channel (second time) name to %v (channel id = %v) : %v\n",new_name,channel_id,err)
 			}
+		} else {
+			Info.Printf("Retry skipped, len of matchall = %v\n",len(matchall))
 		}
 	}
 }
@@ -411,7 +433,7 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 		if len(records) > 0 {
 			Info.Printf(
 				"Got %v records for timestamp %v (%v)\n",
-				ts,time.Unix(ts,0).Format("2006-01-02T15:04:05"),
+				len(records),ts,time.Unix(ts,0).Format("2006-01-02T15:04:05"),
 			)
 		}
 		for i:=0; i<len(records); i++ {
@@ -448,7 +470,7 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 					NumMintsUnicodeChar,
 					rec.TokenId+1,
 				)
-				//set_channel_name(new_channel_name,MintChannelID)
+				set_channel_name(new_channel_name,MintChannelID)
 				cur_time := time.Now()
 				minted_time := time.Unix(rec.TimeStampMinted,0)
 				duration := DurationToString(TimeDifference(minted_time,cur_time))
@@ -589,7 +611,6 @@ func main() {
 					" To interrupt abruptly send SIGKILL (9) to the kernel.\n")
 		exit_chan <- true
 	}()
-
 
 	rwalk_ctrct,err = contracts.NewRWalk(rwalk_addr,eclient)
 	if err != nil {

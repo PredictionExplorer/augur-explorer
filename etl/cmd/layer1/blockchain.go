@@ -90,6 +90,9 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 	//	if receipt_calls is not nil then the old slow getTrasnactionReceipt call is used
 	//	if block_receipts is not nil then we are using new getBlockReceipts RPC call
 	for tnum,agtx := range transactions {
+		if agtx.From == "0x0000000000000000000000000000000000000000" {
+			continue // this is Polygon's automatic transaction
+		}
 		var rcpt *types.Receipt
 		if receipt_calls != nil {
 			// wait for receipt to arrive
@@ -178,6 +181,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 			Error.Printf("Error getting receipts of the block: %v\n",err)
 			return err
 		}
+
 	} else {
 		receipt_calls = make([]*receiptCallResult,num_transactions,num_transactions)
 		for i,tx := range transactions {
