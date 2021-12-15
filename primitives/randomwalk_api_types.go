@@ -45,6 +45,25 @@ type RW_API_TokenMint struct {
 	Price			float64
 	TxHash			string
 }
+type RW_API_TokenMint_CSV struct {
+	TokenId			int64
+	BlockNum		int64
+	TimeStamp		int64
+	DateTime		string
+	ContractAid		int64
+	ContractAddr	string
+	MinterAid		int64
+	MinterAddr		string
+	Seed			string
+	SeedNum			string
+	Price			float64
+	TxHash			string
+	NumTrades		int64
+	TotalVolume		float64
+	LastPrice		float64
+	LastName		string
+	LastOwner		string
+}
 type RW_API_UserToken struct {
 	TokenId			int64
 	ContractAid		int64

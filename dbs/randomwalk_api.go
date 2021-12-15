@@ -1096,13 +1096,7 @@ func (ss *SQLStorage) Get_random_walk_tokens_by_user(user_aid int64) []p.RW_API_
 
 	return records
 }
-func (ss *SQLStorage) Get_floor_price(rwalk_aid int64,market_aid int64) (
-	no_offers bool,
-	floor_price float64,
-	offer_id int64,
-	token_id int64,
-	err error,
-) {
+func (ss *SQLStorage) Get_floor_price(rwalk_aid int64,market_aid int64) (no_offers bool,floor_price float64,offer_id int64,token_id int64,err error) {
 
 	no_offers = false
 	var n_floor_price sql.NullFloat64
@@ -1598,5 +1592,82 @@ func (ss *SQLStorage) Get_rwalk_floor_price_for_periods(rwalk_aid,market_aid int
 		}
 		records = append(records,rec)
 	}
+	return records
+}
+func (ss *SQLStorage) Get_minted_tokens_for_CSV(rwalk_aid int64) []p.RW_API_TokenMint_CSV {
+
+	records := make([]p.RW_API_TokenMint_CSV,0,32)
+	var query string
+	query = "SELECT "+
+				"t.block_num,"+
+				"EXTRACT(EPOCH FROM t.time_stamp)::BIGINT as ts,"+
+				"t.time_stamp," +
+				"t.contract_aid,"+
+				"ca.addr,"+
+				"t.token_id,"+
+				"t.owner_aid,"+
+				"oa.addr minter_addr,"+
+				"t.seed seed_hex,"+
+				"t.seed_num,"+
+				"price/1e+18,"+
+				"tx.tx_hash,"+
+				"tk.num_trades,"+
+				"tk.total_vol/1e+18 total_vol,"+
+				"tk.last_price/1e+18 last_price,"+
+				"tk.last_name,"+
+				"loa.addr " +
+			"FROM rw_mint_evt t "+
+				"LEFT JOIN address ca ON t.contract_aid=ca.address_id "+
+				"LEFT JOIN address oa ON t.owner_aid=oa.address_id "+
+				"LEFT JOIN transaction tx ON t.tx_id=tx.id "+
+				"LEFT JOIN rw_token tk ON (t.token_id=tk.token_id AND t.contract_aid=tk.rwalk_aid) "+
+				"LEFT JOIN address loa ON (tk.cur_owner_aid=loa.address_id) "+
+			"WHERE contract_aid=$1 "+
+			"ORDER by t.token_id"
+
+	rows,err := ss.db.Query(query,rwalk_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_API_TokenMint_CSV
+		var n_num_trades sql.NullInt64
+		var n_last_owner_addr,n_last_name sql.NullString
+		var n_total_vol,n_last_price sql.NullFloat64
+		err=rows.Scan(
+			&rec.BlockNum,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.ContractAid,
+			&rec.ContractAddr,
+			&rec.TokenId,
+			&rec.MinterAid,
+			&rec.MinterAddr,
+			&rec.Seed,
+			&rec.SeedNum,
+			&rec.Price,
+			&rec.TxHash,
+			&n_num_trades,
+			&n_total_vol,
+			&n_last_price,
+			&n_last_name,
+			&n_last_owner_addr,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		if n_num_trades.Valid { rec.NumTrades = n_num_trades.Int64 }
+		if n_total_vol.Valid { rec.TotalVolume = n_total_vol.Float64 }
+		if n_last_price.Valid { rec.LastPrice = n_last_price.Float64 }
+		if n_last_name.Valid { rec.LastName = n_last_name.String }
+		if n_last_owner_addr.Valid { rec.LastOwner = n_last_owner_addr.String }
+
+		records = append(records,rec)
+	}
+
 	return records
 }

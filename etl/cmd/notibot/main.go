@@ -1,5 +1,11 @@
 package main
-
+// Permission required for Discord Bot to update statistics channels:
+//		Manage Channel
+//		Connect
+// Permissions required for other users to avoid joining statistical channels:
+//		View Channel			Yes
+//		Manage channel			No
+//		Connect					No
 
 import (
 	"fmt"
@@ -418,7 +424,7 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 	rwalk_aid := storage.Lookup_address_id(addr.String())
 	ts := storage.Get_last_block_timestamp()
 	Info.Printf("monitor_events() starts with timestamp %v (%v)\n",ts,time.Unix(ts,0).Format("2006-01-02T15:04:05"))
-	ts = ts-1*24*60*60 /// for testing only
+	//ts = ts-1*24*60*60 /// for testing only
 	for {
 		select {
 			case exit_flag := <-exit_chan:

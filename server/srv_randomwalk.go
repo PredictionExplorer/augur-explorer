@@ -2,7 +2,9 @@ package main
 import (
 	"fmt"
 	"time"
+	"os"
 	"strconv"
+	"encoding/csv"
 	"net/http"
 	"github.com/gin-gonic/gin"
 
@@ -552,4 +554,81 @@ func rwalk_floor_price_over_time(c *gin.Context) {
 			"FinTs": fin,
 			"Interval": interval,
 	})
+}
+func rwalk_token_csv_export(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	c.Writer.Header().Set("Cache-Control", "must-revalidate")
+	c.Writer.Header().Set("Pragma","must-revalidate")
+	c.Writer.Header().Set("Content-type","application/vnd.ms-excel")
+	c.Writer.Header().Set("Content-disposition","attachment; filename=mints.csv")
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error(c,"NTF address wasn't found in the 'address' table")
+		return
+	}
+	data := augur_srv.db_arbitrum.Get_minted_tokens_for_CSV(rwalk_aid)
+
+	// convert the data to golang-way to store csv
+	header:= []string {	// header
+			"BlockNum",
+			"TimeStamp",
+			"DateTime",
+			"ContractAddr",
+			"TokenId",
+			"MinterAddr",
+			"SeedHex",
+			"SeedNum",
+			"PriceMinted",
+			"TxHash",
+			"NumTrades",
+			"TotalVolume",
+			"LastPrice",
+			"TokenName",
+			"CurOwner",
+		}
+	fname := "/tmp/mints.csv"
+	f, err := os.Create(fname)
+	if err != nil {
+		respond_error(c,fmt.Sprintf("Cant create file: %v\n",err.Error()))
+		return
+	}
+	w := csv.NewWriter(f)
+	err = w.Write(header);
+	if err != nil {
+		respond_error(c,fmt.Sprintf("Error during header write to csv: %v\n",err.Error()))
+		return
+	}
+	for i:=0; i<len(data); i++ {
+		rec := &data[i]
+		row := []string {
+			fmt.Sprintf("%d",rec.BlockNum),
+			fmt.Sprintf("%d",rec.TimeStamp),
+			rec.DateTime,
+			rec.ContractAddr,
+			fmt.Sprintf("%v",rec.TokenId),
+			rec.MinterAddr,
+			rec.Seed,
+			fmt.Sprintf("%s",rec.SeedNum),
+			fmt.Sprintf("%f",rec.Price),
+			rec.TxHash,
+			fmt.Sprintf("%d",rec.NumTrades),
+			fmt.Sprintf("%f",rec.TotalVolume),
+			fmt.Sprintf("%f",rec.LastPrice),
+			rec.LastName,
+			rec.LastOwner,
+		}
+		err = w.Write(row);
+		if err != nil {
+			respond_error(c,fmt.Sprintf("Error during write to csv: %v\n",err.Error()))
+			return
+		}
+	}
+	w.Flush()
+	f.Close()
+	c.File(fname)
 }

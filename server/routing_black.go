@@ -138,6 +138,7 @@ func set_routing_randomwalk(r *gin.Engine) {
 	r.GET("/black/rwalk/statistics/withdrawal_chart/:rwalk_addr",rwalk_withdrawal_chart)
 	r.GET("/black/rwalk/statistics/floor_price/:market_addr/:rwalk_addr/:init_ts/:fin_ts/:interval_secs",rwalk_floor_price_over_time)
 	r.GET("/black/rwalk/user/info/:user_aid/:rwalk_addr",rwalk_user_info)
+	r.GET("/black/rwalk/download_mints/:rwalk_addr",rwalk_token_csv_export)
 }
 func set_routing_black_templates(r *gin.Engine) {
 
