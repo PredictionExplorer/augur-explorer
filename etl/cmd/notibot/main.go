@@ -42,6 +42,7 @@ const (
 	NumMintsUnicodeChar			string = "🪙 "
 	LastPriceUnicodeChar		string = "💲"
 	EthSign						string = "Ξ"
+	DEFAULT_LAST_MINTED_INTERVAL	time.Duration = 60*9	//Discord resource limit time is about 6 min
 )
 var (
 	MintChannelID_Uint			uint64 = 0 //918642461314785290
@@ -80,6 +81,7 @@ var (
 	disc_client				*disgord.Client
 	flag_twitter			*bool
 	flag_discord			*bool
+	last_mint_ts			int64 = 0
 )
 type TwitterKeys struct {
 	ApiKey			string
@@ -309,7 +311,7 @@ func set_channel_name(new_name string,channel_id disgord.Snowflake) {
 		}
 	}
 }
-func notify_tweeter(token_id int64,msg string,image_data []byte) {
+func notify_twitter(token_id int64,msg string,image_data []byte) {
 
 	twitter_nonce++
 	status_code,body,err := SendTweetWithImage(
@@ -419,12 +421,29 @@ func check_floor_price_change_and_emit() {
 		}
 	}
 }
+func update_last_minted_time() {
+	// go-routine, updates last timed time ervery X amount of time
+	for {
+		if last_mint_ts > 0 {
+			cur_time := time.Now()
+			minted_time := time.Unix(last_mint_ts,0)
+			duration := DurationToString(TimeDifference(minted_time,cur_time))
+			new_channel_name := fmt.Sprintf(
+				"Last mint: %v ago",
+				duration,
+			)
+			set_channel_name(new_channel_name,LastDateChannelID)
+			Info.Printf("Set last mint time to : %v",new_channel_name)
+		}
+		time.Sleep(DEFAULT_LAST_MINTED_INTERVAL*time.Second)
+	}
+}
 func monitor_events(exit_chan chan bool,addr common.Address) {
 
 	rwalk_aid := storage.Lookup_address_id(addr.String())
 	ts := storage.Get_last_block_timestamp()
 	Info.Printf("monitor_events() starts with timestamp %v (%v)\n",ts,time.Unix(ts,0).Format("2006-01-02T15:04:05"))
-	//ts = ts-1*24*60*60 /// for testing only
+	ts = ts-1*24*60*60 /// for testing only
 	for {
 		select {
 			case exit_flag := <-exit_chan:
@@ -477,14 +496,7 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 					rec.TokenId+1,
 				)
 				set_channel_name(new_channel_name,MintChannelID)
-				cur_time := time.Now()
-				minted_time := time.Unix(rec.TimeStampMinted,0)
-				duration := DurationToString(TimeDifference(minted_time,cur_time))
-				new_channel_name = fmt.Sprintf(
-					"Last mint: %v ago",
-					duration,
-				)
-				set_channel_name(new_channel_name,LastDateChannelID)
+				last_mint_ts = rec.TimeStampMinted
 			}
 			success = get_image_file_from_net_until_success(rec.TokenId)
 			if !success {
@@ -628,6 +640,7 @@ func main() {
 	market_ctrct_aid=storage.Lookup_address_id(market_addr.String())
 	_,cur_floor_price,_,_,err = storage.Get_floor_price(rwalk_ctrct_aid,market_ctrct_aid)
 	//cur_floor_price = 0.0;
+	go update_last_minted_time()
 	monitor_events(exit_chan,rwalk_addr)
 
 }

@@ -658,6 +658,7 @@ func proc_fpmm_buy(log *types.Log,elog *EthereumEventLog) {
 	evt.Buyer= eth_evt.Buyer.String()
 	evt.InvestmentAmount = eth_evt.InvestmentAmount.String()
 	evt.FeeAmount = eth_evt.FeeAmount.String()
+	evt.OutcomeIdx = eth_evt.OutcomeIndex.Int64()
 	evt.TokensBought = eth_evt.OutcomeTokensBought.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
