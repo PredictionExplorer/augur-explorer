@@ -12,7 +12,7 @@
 	<tr class="market_reports">
 		<th class="market_reports" rowspan=2>User</th>
 		<th class="market_reports" rowspan=2>OutcomeIdx</th>
-		<th class="market_reports" rowspan=2>Balance (USDC)</th>
+		<th class="market_reports" rowspan=2>Balance (Token)</th>
 		<th class="market_reports" rowspan=2>Current Price (USDC)</th>
 		<th class="market_reports" rowspan=2>Realized Profit/Losss (USDC)</th>
 		<th class="market_reports" rowspan=2>Unrealized Profit/Losss (USDC)</th>
@@ -32,7 +32,7 @@
 	{{- range $i, $change := .OpenPositions}}
 		<tr class="market_reports">
 			<td class="addr">
-				<a href="/black/poly/markets/traderops/{{$.MarketId}}/{{.UserAid}}/0/10000">
+				<a href="/black/poly/user/info/{{.UserAid}}">
 					{{.UserAddr}}
 				</a>
 			</td>

@@ -351,7 +351,7 @@ func poly_market_user_open_positions(c *gin.Context) {
 		return
 	}
 
-	user_open_positions := augur_srv.db_matic.Get_poly_market_user_open_positions(user_aid)
+	user_open_positions := augur_srv.db_matic.Get_poly_user_open_positions(user_aid)
 
 	c.HTML(http.StatusOK, "market_user_open_positions.html", gin.H{
 		"UserAid": user_aid,

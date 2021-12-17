@@ -393,7 +393,7 @@ func (ss *SQLStorage) Get_poly_market_open_positions(contract_aid int64) ([]p.AP
 	}
 	return records,prices
 }
-func (ss *SQLStorage) Get_poly_market_user_open_positions(user_aid int64) ([]p.API_Pol_MarketUserOpenPosition) {
+func (ss *SQLStorage) Get_poly_user_open_positions(user_aid int64) ([]p.API_Pol_MarketUserOpenPosition) {
 
 	records := make([]p.API_Pol_MarketUserOpenPosition,0,1024)
 	var query string

@@ -25,11 +25,19 @@
 </tr>
 <tr class="market_detail">
 	<td>Total liquidity add/remove operations</td>
-	<td>{{.UserInfo.TotalLiquidityOps}}</td>
+	<td>
+		<a class="link" href="/black/poly/markets/funderops/0/{{.UserInfo.Aid}}/0/10000">
+		{{.UserInfo.TotalLiquidityOps}}
+		</a>
+	</td>
 </tr>
 <tr class="market_detail">
 	<td>Total trading volume (USDC)</td>
-	<td>{{ printf "%.2f" .UserInfo.TotalVolume}}</td>
+	<td>
+		<a class="link" href="/black/poly/markets/traderops/0/{{.UserInfo.Aid}}/0/10000">
+		{{ printf "%.2f" .UserInfo.TotalVolume}}
+		</a>
+	</td>
 </tr>
 <tr class="market_detail">
 	<td>Total amount of liquidity funded into markets</td>

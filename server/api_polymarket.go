@@ -538,7 +538,7 @@ func a1_poly_market_user_open_positions(c *gin.Context) {
 		return
 	}
 
-	user_open_positions := augur_srv.db_augur.Get_poly_market_user_open_positions(user_aid)
+	user_open_positions := augur_srv.db_augur.Get_poly_user_open_positions(user_aid)
 
 	var req_status int = 1
 	var err_str string = ""

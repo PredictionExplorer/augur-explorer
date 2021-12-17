@@ -403,10 +403,13 @@ func build_js_polymarkets_outcome_price_history(prices* []API_Pol_OutcomePriceHi
 	var data_str string = "["
 
 	for i:=0 ; i < len(*prices) ; i++ {
+		var e = &(*prices)[i];
+		if e.Price == 0.0 {
+			continue	// skip zero prices
+		}
 		if len(data_str) > 1 {
 			data_str = data_str + ","
 		}
-		var e = &(*prices)[i];
 		var entry string
 		ts := time.Unix(int64(e.TimeStamp),0)
 		date_str := fmt.Sprintf("%v",ts)
@@ -418,6 +421,7 @@ func build_js_polymarkets_outcome_price_history(prices* []API_Pol_OutcomePriceHi
 				"date_str: \"" + date_str + "\"" +
 				"}"
 		data_str= data_str + entry
+		fmt.Printf("Id: %v, ts=%v date=%v price=%v\n",e.OperationId,ts,date_str,e.Price)
 	}
 	data_str = data_str + "]"
 	return template.JS(data_str)
