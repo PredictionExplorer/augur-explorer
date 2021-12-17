@@ -1214,3 +1214,58 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 	ss.Info.Printf("rows returned = %v\n",len(records))
 	return totals,records
 }
+func (ss *SQLStorage) Get_polymarket_user_info(user_aid int64) (p.API_Pol_UserInfo,error){
+
+	var query string
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM reg_time_stamp)::BIGINT AS reg_ts,"+
+				"s.reg_time_stamp reg_datetime, " +
+				"s.markets_count," +
+				"s.tot_trades,"+
+				"s.tot_liq_ops,"+
+				"s.tot_volume/1e+6,"+
+				"s.tot_liq_given/1e+6,"+
+				"s.tot_fees/1e+6,"+
+				"s.profit/1e+6, "+
+				"ua.addr "+
+			"FROM pol_ustats s "+
+				"LEFT JOIN address ua ON s.user_aid=ua.address_id "+
+			"WHERE user_aid=$1"
+
+	res := ss.db.QueryRow(query,user_aid)
+	var rec p.API_Pol_UserInfo
+	var n_tot_mkt_count,n_tot_trades, n_tot_liq_ops,n_timestamp sql.NullInt64
+	var n_volume,n_liq_given,n_fees,n_profit sql.NullFloat64
+	var n_datetime sql.NullString
+	err := res.Scan(
+		&n_timestamp,
+		&n_datetime,
+		&n_tot_mkt_count,
+		&n_tot_trades,
+		&n_tot_liq_ops,
+		&n_volume,
+		&n_liq_given,
+		&n_fees,
+		&n_profit,
+		&rec.Address,
+	)
+	rec.Aid= user_aid
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return rec,err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	if n_timestamp.Valid { rec.TimeStampRegistered = n_timestamp.Int64 }
+	if n_datetime.Valid { rec.DateTimeRegistered = n_datetime.String }
+	if n_tot_mkt_count.Valid { rec.TotalMarketsTraded = n_tot_mkt_count.Int64 }
+	if n_tot_trades.Valid { rec.TotalTrades = n_tot_trades.Int64 }
+	if n_tot_liq_ops.Valid { rec.TotalLiquidityOps  = n_tot_liq_ops.Int64 }
+	if n_volume.Valid { rec.TotalVolume = n_volume.Float64 }
+	if n_liq_given.Valid { rec.TotalLiquidityFunded = n_liq_given.Float64 }
+	if n_fees.Valid { rec.TotalFees = n_fees.Float64 }
+	if n_profit.Valid { rec.TotalProfit = n_profit.Float64 }
+	return rec,nil
+}

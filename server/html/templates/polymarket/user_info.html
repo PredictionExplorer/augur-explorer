@@ -1,0 +1,49 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>User {{.UserInfo.Address}} in Polymarkets</title>
+	<meta name="description" content="{{.MarketInfo.Description}}">
+</head>
+<body>
+<h3 class="page_title">User Info</h3>
+<table class="market_detail">
+<tr class="market_detail">
+	<td nowrap>User:</td>
+	<td class="addr" >{{.UserInfo.Address}}</td>
+</tr>
+<tr class="market_detail">
+	<td>User registered in Polymarket</td>
+	<td>{{.UserInfo.DateTimeRegistered}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Amount of markets traded</td>
+	<td>{{.UserInfo.TotalMarketsTraded }}</td>
+</tr>
+<tr class="market_detail">
+	<td nowrap>Total trades in all markets</td>
+	<td>{{.UserInfo.TotalTrades}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Total liquidity add/remove operations</td>
+	<td>{{.UserInfo.TotalLiquidityOps}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Total trading volume (USDC)</td>
+	<td>{{ printf "%.2f" .UserInfo.TotalVolume}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Total amount of liquidity funded into markets</td>
+	<td>{{ printf "%.2f" .UserInfo.TotalLiquidityFunded}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Total fees paide </td>
+	<td>{{ printf "%.2f" .UserInfo.TotalFees}}</td>
+</tr>
+<tr class="market_detail">
+	<td>Total profit made</td>
+	<td>{{ printf "%.2f" .UserInfo.TotalProfit}}</td>
+</tr>
+</table>
+
+</body>
+</html>

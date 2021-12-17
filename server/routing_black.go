@@ -106,6 +106,7 @@ func set_routing_polymarket(r *gin.Engine) {
 	r.GET("/black/poly/markets/open_positions/:market_id",poly_market_open_positions)
 	r.GET("/black/poly/markets/open_interest_history/:market_id/:offset/:limit",poly_market_open_interest_history)
 	r.GET("/black/poly/user/open_positions/:user_aid",poly_market_user_open_positions)
+	r.GET("/black/poly/user/info/:user",poly_user_info)
 	r.GET("/black/poly/markets/funder/share_ratio/:market_id",poly_market_funder_share_ratio)
 	r.GET("/black/poly/markets/list/:status",poly_markets_listing)
 	r.GET("/black/poly/markets/list/:status/:sort",poly_markets_listing)

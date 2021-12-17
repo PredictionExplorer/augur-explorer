@@ -281,3 +281,16 @@ type PolTextSearchResult struct {
 	Description				string
 	Title					string
 }
+type API_Pol_UserInfo struct {
+	Address					string
+	Aid						int64
+	TimeStampRegistered		int64
+	DateTimeRegistered		string
+	TotalMarketsTraded		int64
+	TotalTrades				int64
+	TotalLiquidityOps		int64
+	TotalVolume				float64
+	TotalLiquidityFunded	float64
+	TotalFees				float64
+	TotalProfit				float64
+}

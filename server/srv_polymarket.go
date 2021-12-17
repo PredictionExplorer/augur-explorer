@@ -565,3 +565,18 @@ func poly_market_search(c *gin.Context) {
 		"SearchResults" : results,
 	})
 }
+func poly_user_info(c *gin.Context) {
+
+	p_user := c.Param("user")
+	_,user_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+
+	user_info,_ := augur_srv.db_matic.Get_polymarket_user_info(user_aid)
+
+	c.HTML(http.StatusOK, "user_info.html", gin.H{
+		"User": p_user,
+		"UserInfo" :user_info,
+	})
+}
