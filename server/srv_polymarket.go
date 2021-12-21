@@ -580,3 +580,20 @@ func poly_user_info(c *gin.Context) {
 		"UserInfo" :user_info,
 	})
 }
+func poly_user_traded_markets(c *gin.Context) {
+
+	p_user := c.Param("user")
+	_,user_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+
+	user_info,_ := augur_srv.db_matic.Get_polymarket_user_info(user_aid)
+	markets := augur_srv.db_matic.Get_polymarket_markets_by_user(user_aid)
+
+	c.HTML(http.StatusOK, "user_traded_markets.html", gin.H{
+		"User": p_user,
+		"UserInfo" :user_info,
+		"MarketList":markets,
+	})
+}

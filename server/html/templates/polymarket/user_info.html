@@ -17,7 +17,11 @@
 </tr>
 <tr class="market_detail">
 	<td>Amount of markets traded</td>
-	<td>{{.UserInfo.TotalMarketsTraded }}</td>
+	<td>
+		<a class="link" href="/black/poly/user/traded_markets/{{.UserInfo.Aid}}">
+		{{.UserInfo.TotalMarketsTraded }}
+		</a>
+	</td>
 </tr>
 <tr class="market_detail">
 	<td nowrap>Total trades in all markets</td>
@@ -26,17 +30,13 @@
 <tr class="market_detail">
 	<td>Total liquidity add/remove operations</td>
 	<td>
-		<a class="link" href="/black/poly/markets/funderops/0/{{.UserInfo.Aid}}/0/10000">
 		{{.UserInfo.TotalLiquidityOps}}
-		</a>
 	</td>
 </tr>
 <tr class="market_detail">
 	<td>Total trading volume (USDC)</td>
 	<td>
-		<a class="link" href="/black/poly/markets/traderops/0/{{.UserInfo.Aid}}/0/10000">
 		{{ printf "%.2f" .UserInfo.TotalVolume}}
-		</a>
 	</td>
 </tr>
 <tr class="market_detail">
@@ -44,7 +44,7 @@
 	<td>{{ printf "%.2f" .UserInfo.TotalLiquidityFunded}}</td>
 </tr>
 <tr class="market_detail">
-	<td>Total fees paide </td>
+	<td>Total fees paid </td>
 	<td>{{ printf "%.2f" .UserInfo.TotalFees}}</td>
 </tr>
 <tr class="market_detail">

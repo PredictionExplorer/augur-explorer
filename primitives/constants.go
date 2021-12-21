@@ -3,7 +3,7 @@ import (
 	"errors"
 )
 const (
-	MAX_BLOCKS_CHAIN_SPLIT = 128
+	MAX_BLOCKS_CHAIN_SPLIT = 1025	//(1024 is the default checkpoint interval in Polygon Matic)
 	OWNER_FIELD_OFFSET int = 2	// offset to the 'owner' field in WalletContract in EVM (contract storage)
 	CATEGORICAL_MULTIPLIER int = 1000
 //	SCALAR_MULTIPLIER int = 10

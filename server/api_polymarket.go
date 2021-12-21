@@ -890,3 +890,25 @@ func a1_poly_user_info(c *gin.Context) {
 		"UserInfo" :user_info,
 	})
 }
+func a1_poly_user_traded_markets(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	p_user := c.Param("user")
+	_,user_aid,success := json_validate_and_lookup_address_or_aid(c,&p_user)
+	if !success {
+		return
+	}
+
+	user_info,_ := augur_srv.db_matic.Get_polymarket_user_info(user_aid)
+	markets := augur_srv.db_matic.Get_polymarket_markets_by_user(user_aid)
+
+	var status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK,gin.H{
+		"status": status,
+		"error": err_str,
+		"User": p_user,
+		"UserInfo" :user_info,
+		"MarketList":markets,
+	})
+}

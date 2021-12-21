@@ -1269,3 +1269,44 @@ func (ss *SQLStorage) Get_polymarket_user_info(user_aid int64) (p.API_Pol_UserIn
 	if n_profit.Valid { rec.TotalProfit = n_profit.Float64 }
 	return rec,nil
 }
+func (ss *SQLStorage) Get_polymarket_markets_by_user(user_aid int64) []p.API_Pol_MarketsByUser {
+
+	records := make([]p.API_Pol_MarketsByUser,0,32)
+	var query string
+	query = "SELECT "+
+				"s.contract_aid, " +
+				"m.market_id," +
+				"m.question," +
+				"EXTRACT(EPOCH FROM start_date_ts)::BIGINT AS start_date_ts," +
+				"m.start_date," +
+				"s.tot_volume/1e+6 vol, " +
+				"s.tot_trades, "+
+				"s.tot_liq_ops "+
+			"FROM pol_ustats_mkt s " +
+				"JOIN pol_market m ON s.contract_aid=m.mkt_mkr_aid " +
+			"WHERE s.user_aid=$1 " +
+			"ORDER BY contract_aid"
+
+	rows,err := ss.db.Query(query,user_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.API_Pol_MarketsByUser
+		err=rows.Scan(
+			&rec.MarketMakerAid,
+			&rec.MarketId,
+			&rec.Question,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.TotalVolume,
+			&rec.TotalTrades,
+			&rec.TotalLiquidityOperations,
+		)
+		records = append(records,rec)
+	}
+	return records
+
+}

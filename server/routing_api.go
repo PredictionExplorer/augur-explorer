@@ -122,6 +122,7 @@ func set_api_routing_polymarket(r *gin.Engine) {
 	r.GET("/api/poly/markets/open_interest_history/:market_id/:offset/:limit",a1_market_open_interest_history)
 	r.GET("/api/poly/user/open_positions/:user_aid",a1_poly_market_user_open_positions)
 	r.GET("/api/poly/user/info/:user",a1_poly_user_info)
+	r.GET("/api/poly/user/traded_markets/:user",a1_poly_user_traded_markets)
 	r.GET("/api/poly/top_users",  a1_poly_top_users)
 	r.GET("/api/poly/categories",a1_poly_categories)
 	r.GET("/api/poly/search",a1_poly_market_search)

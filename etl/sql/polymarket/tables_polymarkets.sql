@@ -145,8 +145,7 @@ CREATE TABLE pol_buysell ( -- FPMMBuy/FPMMSell event of contract FixedProductMar
 	outcome_idx			SMALLINT NOT NULL,
 	collateral_amount	DECIMAL NOT NULL,	-- amount as it comes from the event log (types.Log)
 	normalized_amount	DECIMAL DEFAULT 0,	-- negative for deposits, positive for withdrawals
-	fee_amount			DECIMAL NOT NULL,	-- fee in Token denomination
-	fee_collat			DECIMAL NOT NULL,	-- fee in collateral (USDC) denomination (i.e divided by price of collateral)
+	fee_amount			DECIMAL NOT NULL,	-- fee in USDC (collatral)
 	token_amount		DECIMAL NOT NULL,
 	accum_collateral	DECIMAL DEFAULT 0,
 	UNIQUE(evtlog_id)

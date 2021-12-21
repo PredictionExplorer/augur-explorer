@@ -294,3 +294,13 @@ type API_Pol_UserInfo struct {
 	TotalFees				float64
 	TotalProfit				float64
 }
+type API_Pol_MarketsByUser struct {
+	MarketMakerAid			int64
+	MarketId				int64
+	Question				string
+	TimeStamp				int64
+	DateTime				string
+	TotalVolume				float64
+	TotalTrades				int64
+	TotalLiquidityOperations	int64
+}

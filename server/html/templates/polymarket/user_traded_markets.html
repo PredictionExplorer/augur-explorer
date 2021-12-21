@@ -1,0 +1,43 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Markets traded by user {{.UserInfo.Address}}</title>
+</head>
+<body>
+	<h3 class="page_title">Markets traded by User {{.UserInfo.Address}}</h3>
+<table class="market_detail">
+</table>
+<h3>Markets list</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Market Created</th>
+		<th class="market_reports">Question</th>
+		<th class="market_reports">Volume Traded</th>
+		<th class="market_reports">Numer of trades</th>
+		<th class="market_reports">Liquidity operations</th>
+	</tr>
+	{{- range $i, $change := .MarketList}}
+		<tr class="market_reports">
+			<td class="market_reports_field" title="{{$.UserInfo.Aid}}">
+				{{.DateTime}}
+			</td>
+			<td class="market_reports_field">
+				{{.Question}}
+			</td>
+			<td class="market_reports_field">{{printf "%.4f" .TotalVolume}}</td>
+			<td class="market_reports_field">
+				<a href="/black/poly/markets/traderops/{{.MarketId}}/{{$.UserInfo.Aid}}/0/100000">
+					{{printf "%d" .TotalTrades}}
+				</a>
+			</td>
+			<td class="market_reports_field">
+				<a href="/black/poly/markets/funderops/{{.MarketId}}/{{$.UserInfo.Aid}}/0/100000">
+				{{printf "%d" .TotalLiquidityOperations}}
+				</a>
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+</body>
+</html>
