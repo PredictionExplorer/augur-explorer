@@ -74,6 +74,8 @@ type API_Pol_MarketInfo struct {
 	CondPrepTxHash		string	// Condition preparation transaction hash
 	PayoutNumerators	[]float64 // Percentages
 	PayoutNumeratorsStr string
+	MktGroupQuestion	string
+	IsGroupMarket		bool	// true if this market is part of a group market
 }
 type API_Pol_MarketStats struct {
 	OpenInterest		float64

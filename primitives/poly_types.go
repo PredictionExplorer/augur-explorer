@@ -218,6 +218,91 @@ type Pol_Market_API_SEO_JSON struct {
 	MetaImage		Pol_Market_API_SEO_MetaImage_JSON `json:"meta_image"`
 
 }
+type Pol_Market_MarketGroup_MarketsItem struct {
+	// almost the same fields like in the parent JSON,
+	// but SEO field and other stuff is missing here
+	Id							int64		`json:"id"`
+	Question					string		`json:"question"`
+	ConditionId					string		`json:"conditionId"`
+	Slug						string		`json:"slug"`
+	TwitterCardImage			string		`json:"twitter_card_image"`
+	ResolutionSource			string		`json:"resolution_source"`
+	EndDate						string		`json:"end_date"`
+	Category					string		`json:"category"`
+	AMMType						string		`json:"amm_type"`
+	Liquidity					string		`json:"liquidity"`
+	SponsorName					string		`json:"sponsor_name"`
+	SponsorImage				string		`json:"sponsor_image"`
+	StartDate					string		`json:"start_date"`
+	XAxisValue					int64		`json:"x_axis_value"`
+	YAxisValue					int64		`json:"y_axis_value"`
+	DenominationToken			string		`json:"denomination_token"`
+	Fee							string		`json:"fee"`
+	Image						string		`json:"image"`
+	Icon						string		`json:"icon"`
+	LowerBound					string		`json:"lower_bound"`
+	UpperBound					string		`json:"upper_bound"`
+	Description					string		`json:"description"`
+	Tags						[]string	`json:"tags"`
+	Outcomes					[]string	`json:"outcomes"`
+	OutcomePrices				[]string	`json:"outcomePrices"`
+	Volume						string		`json:"volume"`
+	Active						bool		`json:"active"`
+	MarketType					string		`json:"market_type"`
+	FormatType					string		`json:"format_type"`
+	LowerBoundDate				string		`json:"lower_bound_date"`
+	UpperBoundDate				string		`json:"upper_bound_date"`
+	Closed						bool		`json:"closed"`
+	MarketMakerAddr				string		`json:"marketMakerAddress"`
+	CreatedAtDate				string		`json:"created_at"`
+	UpdatedAt					string		`json:"updated_at"`
+	ClosedTimeDate				string		`json:"closed_time"`
+	WideFormat					bool		`json:"wide_format"`
+	New							bool		`json:"new"`
+	SentDiscord					bool		`json:"sent_discord"`
+	MailChimpTag				string		`json:"mailchimp_tag"`
+	Featured					bool		`json:"featured"`
+	SubmittedBy					string		`json:"submitted_by"`
+	Subcategory					string		`json:"subcategory"`
+	CategoryMailChimpTag		string		`json:"category_mailchimp_tag"`
+	TwitterCardLocation			string		`json:"twitter_card_location"`
+	TwitterCardLastRefreshedr	string		`json:"twitter_card_last_refreshed"`
+	TwitterCardLastValidated	string		`json:"twitter_card_last_validated"`
+	Archived					bool		`json:"archived"`
+	ResolvedBy					string		`json:"resolved_by"`
+	Restricted					bool		`json:"restricted"`
+	MarketGroup					int			`json:"market_group"`
+	GroupItemTitle				string		`json:"group_item_title"`
+	GroupItemThreshold			string		`json:"group_item_threshold"`
+}
+type Pol_Market_API_MarketGroup struct {
+	Id					int64		`json:"id"`
+	Question			string		`json:"question"`
+	Slug				string		`json:"slug"`
+	Category			string		`json:"category"`
+	Description			string		`json:"description"`
+	EndDate				string		`json:"end_date"`
+	StartDate			string		`json:"start_date"`
+	Image				string		`json:"image"`
+	Icon				string		`json:"icon"`
+	Active				bool		`json:"active"`
+	Closed				bool		`json:"closed"`
+	Archived			bool		`json:"archived"`
+	New					bool		`json:"new"`
+	Featured			bool		`json:"featured"`
+	Restricted			bool		`json:"restricted"`
+	Liquidity			string		`json:"liquidity"`
+	Volume				string		`json:"volume"`
+	ResolutionSource	string		`json:"resolution_source"`
+	SortBy				string		`json:"sort_by"`
+	MarketType			string		`json:"market_type"`
+	Subcategory			string		`json:"subcategory"`
+	GroupType			string		`json:"group_type"`
+	PublishedAt			string		`json:"published_at"`
+	CreatedAt			string		`json:"created_at"`
+	UpdatedAt			string		`json:"updated_at"`
+	Markets				[]Pol_Market_MarketGroup_MarketsItem `"json:markets"`
+}
 type Pol_Market_API_Record_JSON struct {
 	// source: https://strapi-matic.poly.market/markets
 	MarketId				int64		`json:"id"`
@@ -264,6 +349,62 @@ type Pol_Market_API_Record_JSON struct {
 	SubmittedBy				string		`json:"submitted_by"`
 	Subcategory				string		`json:"subcategory"`
 	CategoryMailChimpTag	string		`json:"category_mailchimp_tag"`
+	UseCases				[]Pol_Market_API_UseCase_JSON	`json:"use_cases"`
+	SEO						Pol_Market_API_SEO_JSON 	`json:"seo"`
+}
+type Pol_Market_API_Record_JSON_v2 struct {
+	// source: https://strapi-matic.poly.market/markets
+	MarketId				int64		`json:"id"`
+	Question				string		`json:"question"`
+	ConditionId				string		`json:"conditionId"`
+	Slug					string		`json:"slug"`
+	TwitterCardImage		string		`json:"twitter_card_image"`
+	ResolutionSource		string		`json:"resolution_source"`
+	EndDate					string		`json:"end_date"`
+	Category				string		`json:"category"`
+	AmmType					string		`json:"amm_type"`
+	Liquidity				string		`json:"liquidity"`
+	SponsorName				string		`json:"sponsor_name"`
+	SponsorImage			string		`json:"sponsor_image"`
+	StartDate				string		`json:"start_date"`
+	XAxisValue				int64		`json:"x_axis_value"`
+	YAxisValue				int64		`json:"y_axis_value"`
+	DenominationToken		string		`json:"denomination_token"`
+	Fee						string		`json:"fee"`
+	Image					string		`json:"image"`
+	Icon					string		`json:"icon"`
+	LowerBound				string		`json:"lower_bound"`
+	UpperBound				string		`json:"upper_bound"`
+	Description				string		`json:"description"`
+	Tags					[]string	`json:"tags"`
+	Outcomes				[]string	`json:"outcomes"`
+	OutcomePrices			[]string	`json:"outcomePrices"`
+	Volume					string		`json:"volume"`
+	Active					bool		`json:"active"`
+	MarketType				string		`json:"market_type"`
+	FormatType				string		`json:"format_type"`
+	LowerBoundDate			string		`json:"lower_bound_date"`
+	UpperBoundDate			string		`json:"upper_bound_date"`
+	Closed					bool		`json:"closed"`
+	MarketMakerAddr			string		`json:"marketMakerAddress"`
+	CreatedAtDate			string		`json:"created_at"`
+	UpdatedAt				string		`json:"updated_at"`
+	ClosedTimeDate			string		`json:"closed_time"`
+	WideFormat				bool		`json:"wide_format"`
+	New						bool		`json:"new"`
+	SentDiscord				bool		`json:"sent_discord"`
+	MailChimpTag			string		`json:"mailchimp_tag"`
+	Featured				bool		`json:"featured"`
+	SubmittedBy				string		`json:"submitted_by"`
+	Subcategory				string		`json:"subcategory"`
+	CategoryMailChimpTag	string		`json:"category_mailchimp_tag"`
+	TwitterCardLocation			string		`json:"twitter_card_location"`
+	TwitterCardLastRefreshedr	string		`json:"twitter_card_last_refreshed"`
+	TwitterCardLastValidated	string		`json:"twitter_card_last_validated"`
+	Archived					bool		`json:"archived"`
+	ResolvedBy				string		`json:"resolved_by"`
+	Restricted				bool		`json:"restricted"`
+	MarketGroup				Pol_Market_API_MarketGroup	`json:"market_group"`
 	UseCases				[]Pol_Market_API_UseCase_JSON	`json:"use_cases"`
 	SEO						Pol_Market_API_SEO_JSON 	`json:"seo"`
 }

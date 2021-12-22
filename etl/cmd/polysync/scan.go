@@ -11,7 +11,7 @@ import (
 const (
 	layoutUS = "January 2, 2006"
 )
-func process_single_market(rec *Pol_Market_API_Record_JSON) {
+func process_single_market(rec *Pol_Market_API_Record_JSON_v2) {
 
 	if storage.Market_exists(rec.MarketId) {
 		return	// we alredy have this market
@@ -48,7 +48,7 @@ func process_single_market(rec *Pol_Market_API_Record_JSON) {
 func scan_markets(req_body []byte) {
 
 	//var records Pol_Market_API_Response_JSON
-	records := make([]Pol_Market_API_Record_JSON,0,1024)
+	records := make([]Pol_Market_API_Record_JSON_v2,0,1024)
 	err := json.Unmarshal(req_body,&records)
 	if err != nil {
 		Error.Printf("Can't unmarshal JSON: %v\n",err)

@@ -76,6 +76,14 @@
 		</span>
 	</td>
 </tr>
+{{ if .MarketInfo.IsGroupMarket }}
+<tr class="market_detail">
+	<td>Is part of group?</td>
+	<td>Yes<br/>
+		Group question: {{.MarketInfo.MktGroupQuestion }}
+	</td>
+</tr>
+{{ end }}
 <tr class="market_detail">
 	<td>Outcomes</td>
 	<td>{{.MarketInfo.Outcomes}}</td>

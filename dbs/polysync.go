@@ -7,7 +7,7 @@ import (
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 func (ss *SQLStorage) Insert_polymarket_from_web_api(
-	evt *p.Pol_Market_API_Record_JSON,
+	evt *p.Pol_Market_API_Record_JSON_v2,
 	evt_comp *p.Pol_Market_API_Record_Complementary,
 	block_num int64,
 	tx_id int64,
@@ -36,6 +36,15 @@ func (ss *SQLStorage) Insert_polymarket_from_web_api(
 			evt.UseCases[i].Title+","+
 			evt.UseCases[i].Content + 
 		"}"
+	}
+	var group_item_title string
+	var group_item_threshold string
+	for i:=0;i<len(evt.MarketGroup.Markets);i++ {
+		market := evt.MarketGroup.Markets[i]
+		if market.Id == evt.MarketId {
+			group_item_title = market.GroupItemTitle
+			group_item_threshold = market.GroupItemThreshold
+		}
 	}
 	market_maker_aid:=ss.Lookup_or_create_address(evt.MarketMakerAddr,block_num,tx_id)
 	var query string
@@ -92,7 +101,10 @@ func (ss *SQLStorage) Insert_polymarket_from_web_api(
 				"subcategory,"+
 				"category_mailchimp_tag,"+
 				"use_cases,"+
-				"liquidity" +
+				"liquidity," +
+				"mkt_group_question,"+
+				"group_item_title,"+
+				"group_item_threshold"+
 			") VALUES (" +
 				"$1,$2,$3,$4,$5,$6,$7,"+
 				"TO_TIMESTAMP($8)," + // end_date_ts
@@ -116,7 +128,8 @@ func (ss *SQLStorage) Insert_polymarket_from_web_api(
 				"$42," +
 				"TO_TIMESTAMP($43),"+ // closed_time_ts
 				"$44,$45,$46,$47,$48,$49,$50,$51,$52,"+
-				"CAST(COALESCE(NULLIF($53,''),'0') AS DECIMAL)"+	// liquidity
+				"CAST(COALESCE(NULLIF($53,''),'0') AS DECIMAL),"+	// liquidity
+				"$54,$55,$56"+
 			")"
 	_,err := ss.db.Exec(query,
 		evt.MarketId,
@@ -172,6 +185,9 @@ func (ss *SQLStorage) Insert_polymarket_from_web_api(
 		evt.CategoryMailChimpTag,
 		use_cases,
 		evt.Liquidity,
+		evt.MarketGroup.Question,
+		group_item_title,
+		group_item_threshold,
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into 'pol_market' table: %v\n",err))

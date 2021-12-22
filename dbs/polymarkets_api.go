@@ -51,6 +51,7 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 	var query string
 	query = "SELECT " +
 				"question," +
+				"mkt_group_question,"+
 				"pm.condition_id," +
 				"slug," +
 				"resolution_source,"+
@@ -105,6 +106,7 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 	res := ss.db.QueryRow(query,market_id)
 	err := res.Scan(
 			&rec.Question,
+			&rec.MktGroupQuestion,
 			&rec.ConditionId,
 			&rec.Slug,
 			&rec.ResolutionSource,
@@ -145,6 +147,7 @@ func (ss *SQLStorage) Get_poly_market_info(market_id int64) (p.API_Pol_MarketInf
 		}
 	}
 	rec.MarketId = market_id
+	if len(rec.MktGroupQuestion)>0 { rec.IsGroupMarket = true }
 	if n_created_ts.Valid { rec.CreatedAtTs = n_created_ts.Int64 }
 	if n_created_date.Valid {rec.CreatedAtDate = n_created_date.String }
 	if n_resolved_ts.Valid { rec.ResolvedTs = n_resolved_ts.Int64 }

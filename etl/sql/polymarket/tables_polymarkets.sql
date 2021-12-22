@@ -219,6 +219,9 @@ CREATE table pol_market ( -- As received from https://strapi-matic.poly.market/m
 	category_mailchimp_tag		TEXT DEFAULT '',
 	use_cases					TEXT DEFAULT '',
 	liquidity					DECIMAL DEFAULT 0,
+	mkt_group_question			TEXT DEFAULT '',
+	group_item_title			TEXT DEFAULT '',
+	group_item_threshold		TEXT DEFAULT '',
 
 	UNIQUE(market_id)
 );

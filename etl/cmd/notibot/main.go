@@ -329,8 +329,8 @@ func notify_twitter(token_id int64,msg string,image_data []byte) {
 }
 func notify_discord(token_id int64,msg string,image_data []byte,image_url string) error {
 
-	image_copy := make([]byte,len(image_data))
-	copy(image_copy,image_data)
+	//image_copy := make([]byte,len(image_data))
+	//copy(image_copy,image_data)		// disabled upon the request of the User
 	rdr := bytes.NewReader(image_data)
 	var err error
 	// this is the Notification channel
@@ -351,6 +351,7 @@ func notify_discord(token_id int64,msg string,image_data []byte,image_url string
 	}
 
 	// this is the Main chat channel
+	/* Currently disabled (upon the request of the User)
 	rdr2 := bytes.NewReader(image_copy)
 	_, err = disc_client.Channel(disgord.Snowflake(discord_keys.MainChannelId)).CreateMessage(
 			&disgord.CreateMessageParams{
@@ -363,7 +364,7 @@ func notify_discord(token_id int64,msg string,image_data []byte,image_url string
 					URL: image_url,
 				},
 			},
-	)
+	)*/
 
 	return err
 }
@@ -443,7 +444,7 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 	rwalk_aid := storage.Lookup_address_id(addr.String())
 	ts := storage.Get_last_block_timestamp()
 	Info.Printf("monitor_events() starts with timestamp %v (%v)\n",ts,time.Unix(ts,0).Format("2006-01-02T15:04:05"))
-	ts = ts-1*24*60*60 /// for testing only
+	//ts = ts-1*24*60*60 /// for testing only
 	for {
 		select {
 			case exit_flag := <-exit_chan:
