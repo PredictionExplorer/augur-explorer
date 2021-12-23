@@ -1,5 +1,6 @@
 package main
 import (
+	"strings"
 	"net/http"
 	"github.com/gin-gonic/gin"
 
@@ -30,7 +31,7 @@ func poly_buysell_operations(c *gin.Context) {
 		respond_error(c,"Market not found")
 		return
 	}
-	operations := augur_srv.db_matic.Get_polymarkets_buysell_operations(fpmm_aid,0,1000000)
+	operations := augur_srv.db_matic.Get_polymarkets_buysell_operations(&market_info,fpmm_aid,0,1000000)
 
 	var js_outcomes_history JSOutcomes
 	for outc:=0; outc<int(market_info.OutcomeSlotCount); outc++ {
@@ -43,13 +44,21 @@ func poly_buysell_operations(c *gin.Context) {
 	prices= augur_srv.db_matic.Get_poly_market_outcome_price_history(fpmm_aid,1)
 	price1 := build_js_polymarkets_outcome_price_history(&prices)
 
+	outcomes := strings.Split(market_info.Outcomes,",")
+	var outcome0,outcome1 string
+	if 0<len(outcomes) { outcome0 = outcomes[0] }
+	if 1<len(outcomes) { outcome1 = outcomes[1] }
+
 	c.HTML(http.StatusOK, "buysell_operations.html", gin.H{
+		"MarketInfo": market_info,
 		"BuySellOperations" : operations,
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,
 		"Prices" : js_outcomes_history,
 		"Price0" : price0,
 		"Price1" : price1,
+		"Outcome0" : outcome0,
+		"Outcome1" : outcome1,
 	})
 }
 func poly_liquidity_operations(c *gin.Context) {
@@ -72,10 +81,16 @@ func poly_liquidity_operations(c *gin.Context) {
 		respond_error(c,"Polymarket with this ID wasn't found")
 		return
 	}
+	market_info,err := augur_srv.db_matic.Get_poly_market_info(market_id)
+	if err != nil {
+		respond_error(c,"Market not found")
+		return
+	}
 
 	operations := augur_srv.db_matic.Get_polymarkets_liquidity_operations(fpmm_aid,0,1000000)
 
 	c.HTML(http.StatusOK, "liquidity_operations.html", gin.H{
+		"MarketInfo" : market_info,
 		"LiquidityOperations" : operations,
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,

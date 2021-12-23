@@ -45,6 +45,7 @@
 				<span></span><span></span><span></span><span></span>
 			</li></ul></nav>
 		</td>
+		</tr><tr>
 		<td>
 			<nav><ul><li>
 				<a class="btn_link" href="/black/poly/markets/redemptions/{{.MarketId}}">REDEMPTIONS</a>
@@ -57,9 +58,34 @@
 				<span></span><span></span><span></span><span></span>
 			</li></ul></nav>
 		</td>
-		<tr></table>
+		<td>
+			<nav><ul><li>
+						<a class="btn_link" href="/black/poly/markets/open_interest_history/{{.MarketId}}/0/10000000">OI</a>
+				<span></span><span></span><span></span><span></span>
+			</li></ul></nav>
+		</td>
+		<td>
+			<nav><ul><li>
+				<a class="btn_link" href="/black/poly/markets/statistics/{{.MarketId}}">Stats</a>
+				<span></span><span></span><span></span><span></span>
+			</li></ul></nav>
+		</td>
+		<tr>
+		</table>
 	</td>
 </tr>
+<tr class="market_detail">
+	<td>Question</td>
+	<td>{{.MarketInfo.Question }}</td>
+</tr>
+{{ if .MarketInfo.IsGroupMarket }}
+<tr class="market_detail">
+	<td>Is part of group?</td>
+	<td>Yes<br/>
+		Group question: {{.MarketInfo.MktGroupQuestion }}
+	</td>
+</tr>
+{{ end }}
 <tr class="market_detail">
 	<td>Description</td>
 	<td>
@@ -76,14 +102,6 @@
 		</span>
 	</td>
 </tr>
-{{ if .MarketInfo.IsGroupMarket }}
-<tr class="market_detail">
-	<td>Is part of group?</td>
-	<td>Yes<br/>
-		Group question: {{.MarketInfo.MktGroupQuestion }}
-	</td>
-</tr>
-{{ end }}
 <tr class="market_detail">
 	<td>Outcomes</td>
 	<td>{{.MarketInfo.Outcomes}}</td>

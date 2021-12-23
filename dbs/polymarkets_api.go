@@ -258,7 +258,6 @@ func (ss *SQLStorage) Get_polymarkets_markets(status,sort int,category string) [
 			where_condition +
 			sort_condition
 
-	fmt.Printf("query = %v\n",query)
 	var err error
 	var rows *sql.Rows
 	if len(category) > 0 {
@@ -316,7 +315,6 @@ func (ss *SQLStorage) Get_polymarkets_markets(status,sort int,category string) [
 			ss.Log_msg(fmt.Sprintf("Error in Get_polymarkets_markets(): %v, q=%v",err,query))
 			os.Exit(1)
 		}
-	//	fmt.Printf("n.created_ts.Int64 = %v (%v), created date=%v\n",n_created_ts.Int64,n_created_ts.Valid,n_created_date.String)
 		if n_created_ts.Valid { rec.CreatedAtTs = n_created_ts.Int64 }
 		if n_created_date.Valid {rec.CreatedAtDate = n_created_date.String }
 		if n_resolved_ts.Valid { rec.ResolvedTs = n_resolved_ts.Int64 }
@@ -330,7 +328,6 @@ func (ss *SQLStorage) Get_polymarkets_markets(status,sort int,category string) [
 		if n_resolution_id.Valid {rec.WasResolved = true }
 		if n_question_id.Valid { rec.QuestionId = n_question_id.String }
 		if n_outcome_slot_count.Valid { rec.OutcomeSlotCount = n_outcome_slot_count.Int64 }
-//		fmt.Printf("before append n.created_ts.Int64 = %v , created date=%v\n",rec.CreatedAtTs,rec.CreatedAtDate)
 		records = append(records,rec)
 	}
 	return records
@@ -419,8 +416,6 @@ func (ss *SQLStorage) Get_poly_user_open_positions(user_aid int64) ([]p.API_Pol_
 				"JOIN address ua ON eh.aid=ua.address_id "+
 			"WHERE (ms.user_aid=$1) AND (eh.cur_balance>0) " +
 			"ORDER BY ms.tot_volume DESC"
-	fmt.Printf("q = %v \n",query)
-	fmt.Printf("user_aid=%v\n",user_aid)
 	rows,err := ss.db.Query(query,user_aid)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -441,7 +436,6 @@ func (ss *SQLStorage) Get_poly_user_open_positions(user_aid int64) ([]p.API_Pol_
 			&rec.TotalFeesPaid,
 			&rec.TotalProfit,
 		)
-		fmt.Printf("Adding market %v : %v\n",rec.MarketId,rec.MarketQuestion)
 		if err != nil {
 			ss.Log_msg(fmt.Sprintf("Error in Get_poly_market_user_open_positions (): %v, q=%v",err,query))
 			os.Exit(1)
@@ -585,7 +579,6 @@ func (ss *SQLStorage) Get_buysell_operation_info(id int64) (p.API_Pol_BuySell_Op
 				"bs.outcome_idx," +
 				"bs.collateral_amount/1e+6,"+
 				"bs.fee_amount/1e+6,"+
-				"(bs.fee_amount/1e+6)*(bs.collateral_amount/COALESCE(NULLIF(bs.token_amount,0), 1)) fee_col," +
 				"bs.token_amount/1e+6,"+
 				"bs.collateral_amount/COALESCE(NULLIF(bs.token_amount,0), 1) as price,"+
 				"bs.user_aid," +
@@ -605,7 +598,6 @@ func (ss *SQLStorage) Get_buysell_operation_info(id int64) (p.API_Pol_BuySell_Op
 			&rec.OutcomeIdx,
 			&rec.CollateralAmount,
 			&rec.FeeAmount,
-			&rec.FeeInCollateral,
 			&rec.TokenAmount,
 			&rec.Price,
 			&rec.UserAid,
@@ -681,8 +673,6 @@ func (ss *SQLStorage) Get_polymarket_market_redemptions(condition_id string,offs
 				"LEFT JOIN address ra ON r.redeemer_aid = ra.address_id " +
 			"WHERE r.condition_id=$1::TEXT " +
 			"OFFSET $2 LIMIT $3"
-	fmt.Printf("q= %v\n",query)
-	fmt.Printf("condition_id= %v\n",condition_id)
 	rows,err := ss.db.Query(query,condition_id,offset,limit)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

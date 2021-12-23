@@ -6,45 +6,56 @@
 <body>
 	<script src="https://code.highcharts.com/highcharts.js"></script>
 	<script src="https://code.highcharts.com/modules/data.js"></script>
-	<h3 class="page_title">Buy/Sell operations of market id = {{.MarketId}}</h3>
+	<h3 class="page_title">Buy/Sell operations</h3>
 	<script>
 		var price_history_data0 = {{.Price0}}
 		var price_history_data1 = {{.Price1}}
 	</script>
-<table class="market_detail">
+<table class="generic">
+	<tr class="generic">
+		<td>Market ID</td>
+		<td>{{.MarketId}}</td>
+	</tr>
+	<tr class="generic">
+		<td>Question</td>
+		<td>{{.MarketInfo.Question}}</td>
+	</tr>
 </table>
+<br/><br/>
 <div id="price_history_graph"></div>
 <h3>Operations</h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">Date </th>
-		<th class="market_reports">Block</th>
-		<th class="market_reports">Type</th>
-		<th class="market_reports">Outcome</th>
-		<th class="market_reports">Collateral (in/out)</th>
-		<th class="market_reports">Fee (in Tokens)</th>
-		<th class="market_reports">Fee (in USDC)</th>
-		<th class="market_reports">Tokens (in/out)</th>
-		<th class="market_reports">Token Price</th>
-		<th class="market_reports">User</th>
+<table class=generic>
+	<tr class="generic">
+		<th class="generic">Date </th>
+		<th class="generic">Block</th>
+		<th class="generic">Type</th>
+		<th class="generic">Outcome</th>
+		<th class="generic">Collateral (USDC)</th>
+		<th class="generic">Fee (USDC)</th>
+		<th class="generic">Tokens (in/out)</th>
+		<th class="generic">Token Price</th>
+		<th class="generic">User</th>
 	</tr>
 	{{- range $i, $change := .BuySellOperations}}
-		<tr class="market_reports">
-			<td class="market_reports_field" title="{{.Id}}">
+		<tr class="generic">
+			<td class="generic" title="{{.Id}}" nowrap>
 				{{.DateTime}}
 			</td>
-			<td class="market_reports_field">{{.BlockNum}}</td>
-			<td class="market_reports_field">
+			<td class="generic">{{.BlockNum}}</td>
+			<td class="generic ctr">
 				{{ if  eq 0 .OperationType}} Buy
 				{{ else }} Sell {{ end }}
 			</td>
-			<td class="market_reports_field">{{.OutcomeIdx}}</td>
-			<td class="market_reports_field">{{printf "%.4f" .CollateralAmount}}</td>
-			<td class="market_reports_field">{{printf "%.8f" .FeeAmount}}</td>
-			<td class="market_reports_field">{{printf "%.10f" .FeeInCollateral}}</td>
-			<td class="market_reports_field">{{printf "%.4f" .TokenAmount}}</td>
-			<td class="market_reports_field">{{printf "%.8f" .Price}}</td>
-			<td class="market_reports_field">{{.UserAddr}}</td>
+			<td class="generic ctr" title="Outcome Idx={{.OutcomeIdx}}">{{.OutcomeStr}}</td>
+			<td class="generic right">{{printf "%.4f" .CollateralAmount}}</td>
+			<td class="generic right">{{printf "%.8f" .FeeAmount}}</td>
+			<td class="generic right">{{printf "%.0f" .TokenAmount}}</td>
+			<td class="generic right">{{printf "%.8f" .Price}}</td>
+			<td class="generic addr">
+				<a href="/black/poly/user/info/{{.UserAddr}}">
+				{{.UserAddr}}
+				</a>
+			</td>
 		</tr>
 	{{- end}}
 </table>
@@ -318,7 +329,7 @@ Highcharts.chart('price_history_graph', {
 
     series: [
 		{
-			name: 'Outcome 0',
+			name: '{{.Outcome0}}',
 			point: {
 				events: {
 					click: function() {this.click.call()}
@@ -327,7 +338,7 @@ Highcharts.chart('price_history_graph', {
 			data: price_history_data0
 		},
 		{
-			name: 'Outcome 1',
+			name: '{{.Outcome1}}',
 			point: {
 				events: {
 					click: function() {this.click.call()}

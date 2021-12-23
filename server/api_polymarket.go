@@ -31,17 +31,23 @@ func a1_poly_buysell_operations(c *gin.Context) {
 
 	fpmm_aid := augur_srv.db_matic.Get_fpmm_contract_aid(market_id)
 	if fpmm_aid == 0 {
-		respond_error(c,"Polymarket with this ID wasn't found")
+		respond_error_json(c,"Polymarket with this ID wasn't found")
+		return
+	}
+	market_info,err := augur_srv.db_matic.Get_poly_market_info(market_id)
+	if err != nil {
+		respond_error_json(c,"Market not found")
 		return
 	}
 
-	operations := augur_srv.db_matic.Get_polymarkets_buysell_operations(fpmm_aid,offset,limit)
+	operations := augur_srv.db_matic.Get_polymarkets_buysell_operations(&market_info,fpmm_aid,offset,limit)
 
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
+		"MarketInfo": market_info,
 		"TradingOperations" : operations,
 		"MarketId" : market_id,
 		"ContractAid" : fpmm_aid,

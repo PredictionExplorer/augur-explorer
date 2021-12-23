@@ -4,30 +4,44 @@
 	<title>Liquidity Addition/Removal operations for Polymarkets Market {{.MarketId}}</title>
 </head>
 <body>
-	<h3 class="page_title">Liquidity Addition/Removal of MarketID = {{.MarketId}}</h3>
+	<h3 class="page_title">Liquidity Addition/Removal</h3>
 <table class="market_detail">
 </table>
+<table class="generic">
+	<tr class="generic">
+		<td>Market ID</td>
+		<td>{{.MarketId}}</td>
+	</tr>
+	<tr class="generic">
+		<td>Question</td>
+		<td>{{.MarketInfo.Question}}</td>
+	</tr>
+</table>
 <h3>Operations</h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">Date </th>
-		<th class="market_reports">Block</th>
-		<th class="market_reports">Type</th>
-		<th class="market_reports">Collateral (in/out)</th>
-		<th class="market_reports">Funder</th>
+<table class="generic">
+	<tr class="generic">
+		<th class="generic">Date </th>
+		<th class="generic">Block</th>
+		<th class="generic">Type</th>
+		<th class="generic">Collateral (USDC)</th>
+		<th class="generic">Funder</th>
 	</tr>
 	{{- range $i, $change := .LiquidityOperations}}
-		<tr class="market_reports">
-			<td class="market_reports_field">
+		<tr class="generic">
+			<td class="generic">
 				{{.DateTime}}
 			</td>
-			<td class="market_reports_field">{{.BlockNum}}</td>
-			<td class="market_reports_field">
+			<td class="generic">{{.BlockNum}}</td>
+			<td class="generic ctr">
 				{{ if eq 0 .OperationType}} Addition
 				{{ else }} Removal {{end }}
 			</td>
-			<td class="market_reports_field">{{ printf "%.4f" .CollateralAmount}}</td>
-			<td class="market_reports_field">{{.FunderAddr}}</td>
+			<td class="generic right">{{ printf "%.4f" .CollateralAmount}}</td>
+			<td class="generic addr">
+				<a href="/black/poly/user/info/{{.FunderAddr}}">
+				{{.FunderAddr}}
+				</a>
+			</td>
 		</tr>
 	{{- end}}
 </table>

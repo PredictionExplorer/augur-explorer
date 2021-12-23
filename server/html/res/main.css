@@ -323,6 +323,9 @@ tr.deposits_withdrawals_record {
 .right {
 	text-align:						right;
 }
+.ctr {
+	text-align:						center;
+}
 table.open_pos_info {
 	border-collapse:				separate;
 	border-spacing:					3px;
@@ -406,4 +409,17 @@ table.report_rounds {
 	border-collapse: separate;
 	padding:						1em;
 	font-weight:                    bold;
+}
+table.generic {
+	border-collapse:				separate;
+	border-spacing:					6px 2px;
+}
+tr.generic {
+	background-color: #161616;
+}
+td.generic {
+
+}
+th.generic {
+
 }

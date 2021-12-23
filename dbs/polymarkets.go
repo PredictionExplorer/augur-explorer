@@ -2,6 +2,7 @@ package dbs
 import (
 	"os"
 	"fmt"
+	"strings"
 	"database/sql"
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
@@ -452,20 +453,19 @@ func (ss *SQLStorage) Get_condition_id(poly_market_id int64) string {
 	}
 	return condition_id
 }
-func (ss *SQLStorage) Get_polymarkets_buysell_operations(contract_aid int64,offset,limit int) []p.API_Pol_BuySell_Op {
+func (ss *SQLStorage) Get_polymarkets_buysell_operations(market_info *p.API_Pol_MarketInfo,contract_aid int64,offset,limit int) []p.API_Pol_BuySell_Op {
 
 	records := make([]p.API_Pol_BuySell_Op,0,64)
 	var query string
 	query = "SELECT " +
 				"bs.id," +
-				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT as ts," +
-				"bs.time_stamp,"+
+				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT ts," +
+				"TO_CHAR(bs.time_stamp,'DD-MM-YYYY HH::MM') date,"+
 				"bs.block_num," +
 				"bs.op_type," +
 				"bs.outcome_idx," +
 				"bs.collateral_amount/1e+6,"+
 				"bs.fee_amount/1e+6,"+
-				"(bs.fee_amount/1e+6)*(bs.collateral_amount/COALESCE(NULLIF(bs.token_amount,0), 1)) fee_col," +
 				"bs.token_amount/1e+6,"+
 				"bs.collateral_amount/COALESCE(NULLIF(bs.token_amount,0), 1) as price,"+
 				"bs.user_aid," +
@@ -482,6 +482,8 @@ func (ss *SQLStorage) Get_polymarkets_buysell_operations(contract_aid int64,offs
 		os.Exit(1)
 	}
 
+	outcomes := strings.Split(market_info.Outcomes,",")
+
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.API_Pol_BuySell_Op
@@ -494,7 +496,6 @@ func (ss *SQLStorage) Get_polymarkets_buysell_operations(contract_aid int64,offs
 			&rec.OutcomeIdx,
 			&rec.CollateralAmount,
 			&rec.FeeAmount,
-			&rec.FeeInCollateral,
 			&rec.TokenAmount,
 			&rec.Price,
 			&rec.UserAid,
@@ -503,6 +504,9 @@ func (ss *SQLStorage) Get_polymarkets_buysell_operations(contract_aid int64,offs
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
+		}
+		if rec.OutcomeIdx < len(outcomes) {
+			rec.OutcomeStr = outcomes[rec.OutcomeIdx]
 		}
 		records = append(records,rec)
 	}
@@ -514,7 +518,7 @@ func (ss *SQLStorage) Get_polymarkets_liquidity_operations(contract_aid int64,of
 	var query string
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM liq.time_stamp)::BIGINT as ts," +
-				"liq.time_stamp,"+
+				"TO_CHAR(liq.time_stamp,'DD-MM-YYYY HH::MM') date,"+
 				"liq.block_num," +
 				"liq.op_type," +
 				"liq.shares/1e+6,"+

@@ -8,9 +8,9 @@ type API_Pol_BuySell_Op struct {
 	MarketMakerAid		int64
 	OperationType		int		// 0: BUY	1: SELL
 	OutcomeIdx			int		// Outcome index
+	OutcomeStr			string
 	CollateralAmount	float64		// How many cash were swapped for tokens
 	FeeAmount			float64		// commission
-	FeeInCollateral		float64		// fee convert to USDC units
 	TokenAmount			float64		// How many tokens were received for cash
 	Price				float64		// price in collateral units (i.e. in USDC)
 	UserAid				int64
