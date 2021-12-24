@@ -334,6 +334,11 @@ func a1_poly_user_list(c *gin.Context) {
 		return
 	}
 
+	market_info,err := augur_srv.db_matic.Get_poly_market_info(market_id)
+	if err != nil {
+		respond_error_json(c,"Market not found")
+		return
+	}
 	fpmm_aid := augur_srv.db_matic.Get_fpmm_contract_aid(market_id)
 	if fpmm_aid == 0 {
 		respond_error_json(c,"Polymarket with this ID wasn't found")
@@ -348,6 +353,7 @@ func a1_poly_user_list(c *gin.Context) {
 		"status": req_status,
 		"error" : err_str,
 		"MarketId" : market_id,
+		"MarketInfo" : market_info,
 		"ContractAid" : fpmm_aid,
 		"Users" : users_list,
 	})
@@ -389,8 +395,13 @@ func a1_poly_trader_operations(c *gin.Context) {
 		respond_error_json(c,"Polymarket with this ID wasn't found")
 		return
 	}
+	market_info,err := augur_srv.db_matic.Get_poly_market_info(market_id)
+	if err != nil {
+		respond_error_json(c,"Market not found")
+		return
+	}
 
-	trade_list := augur_srv.db_augur.Get_poly_market_trader_operations(fpmm_aid,user_aid,offset,limit)
+	trade_list := augur_srv.db_augur.Get_poly_market_trader_operations(&market_info,fpmm_aid,user_aid,offset,limit)
 
 	var req_status int = 1
 	var err_str string = ""
@@ -398,6 +409,7 @@ func a1_poly_trader_operations(c *gin.Context) {
 		"status": req_status,
 		"error" : err_str,
 		"MarketId" : market_id,
+		"MarketInfo" : market_info,
 		"UserAid" : user_aid,
 		"ContractAid" : fpmm_aid,
 		"TraderOperations" : trade_list,

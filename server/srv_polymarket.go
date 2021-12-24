@@ -214,6 +214,12 @@ func poly_user_list(c *gin.Context) {
 		return
 	}
 
+	market_info,err := augur_srv.db_matic.Get_poly_market_info(market_id)
+	if err != nil {
+		respond_error(c,"Market not found")
+		return
+	}
+
 	fpmm_aid := augur_srv.db_matic.Get_fpmm_contract_aid(market_id)
 	if fpmm_aid == 0 {
 		respond_error(c,"Polymarket with this ID wasn't found")
@@ -224,6 +230,7 @@ func poly_user_list(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "market_userlist.html", gin.H{
 		"MarketId" : market_id,
+		"MarketInfo" : market_info,
 		"ContractAid" : fpmm_aid,
 		"Users" : users_list,
 	})
@@ -255,6 +262,8 @@ func poly_market_trader_operations(c *gin.Context) {
 		respond_error(c,"'user_aid' parameter is not set")
 		return
 	}
+	user_addr,_ := augur_srv.db_matic.Lookup_address(user_aid)
+
 	success,offset,limit := parse_offset_limit_params(c)
 	if !success {
 		return
@@ -265,12 +274,19 @@ func poly_market_trader_operations(c *gin.Context) {
 		respond_error(c,"Polymarket with this ID wasn't found")
 		return
 	}
+	market_info,err := augur_srv.db_matic.Get_poly_market_info(market_id)
+	if err != nil {
+		respond_error(c,"Market not found")
+		return
+	}
 
-	trade_list := augur_srv.db_matic.Get_poly_market_trader_operations(fpmm_aid,user_aid,offset,limit)
+	trade_list := augur_srv.db_matic.Get_poly_market_trader_operations(&market_info,fpmm_aid,user_aid,offset,limit)
 
 	c.HTML(http.StatusOK, "market_trader_operations.html", gin.H{
 		"MarketId" : market_id,
+		"MarketInfo" : market_info,
 		"UserAid" : user_aid,
+		"UserAddr" : user_addr,
 		"ContractAid" : fpmm_aid,
 		"TraderOperations" : trade_list,
 	})

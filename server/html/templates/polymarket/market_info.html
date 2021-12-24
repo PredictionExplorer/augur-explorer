@@ -131,6 +131,11 @@
 	<td>Payout numerators </td>
 	<td>{{.MarketInfo.PayoutNumeratorsStr}}</td>
 </tr>
+{{ else }}
+<tr class="generic">
+	<td class="generic">Resolved?</td>
+	<td class="generic">No</td>
+</tr>
 {{ end }}
 <tr class="market_detail">
 	<td>Created</td>

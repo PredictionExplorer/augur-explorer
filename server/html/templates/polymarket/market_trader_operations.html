@@ -1,41 +1,53 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Buy/Sell operations for Trader {{.UserAid}} in Polymarkets Market {{.MarketId}}</title>
+	<title>Buy/Sell operations for Trader</title>
 </head>
 <body>
-	<h3 class="page_title">Buy/Sell operations for Trader {{.UserAid}} of market id = {{.MarketId}}</h3>
-<table class="market_detail">
+	<h3 class="page_title">Buy/Sell operations for Trader</h3>
+<table class="generic">
+	<tr>
+		<td class="generic">Market ID</td>
+		<td class="generic">{{.MarketId}}</td>
+	</tr>
+	<tr>
+		<td class="generic">User Addr</td>
+		<td class="generic">{{.UserAddr}}</td>
+	</tr>
+	<tr>
+		<td class="generic">Market Question</td>
+		<td class="generic">{{.MarketInfo.Question}}</td>
+	</tr>
 </table>
-<h3>Buy/Sell Operations</h3>
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">Date </th>
-		<th class="market_reports">Block</th>
-		<td class="market_reports">Type</th>
-		<td class="market_reports">Outcome</th>
-		<td class="market_reports">Collateral (in/out)</th>
-		<td class="market_reports">Fee</th>
-		<td class="market_reports">Tokens (in/out)</th>
-		<td class="market_reports">FrozenFunds/ProfitLoss (USDC)</th>
-		<td class="market_reports">Profit Loss accumulated(USDC)</th>
+<br/><br/>
+<table class="generic">
+	<tr class="generic">
+		<th class="generic">Date </th>
+		<th class="generic">Block</th>
+		<th class="generic">Type</th>
+		<th class="generic">Outcome</th>
+		<th class="generic">Collateral</th>
+		<th class="generic">Fee</th>
+		<th class="generic">Tokens</th>
+		<th class="generic">ProfitLoss</th>
+		<th class="generic">Profit/Loss accum</th>
 	</tr>
 	{{- range $i, $change := .TraderOperations}}
-		<tr class="market_reports">
-			<td class="market_reports_field">
+		<tr class="generic">
+			<td class="generic">
 				{{.DateTime}}
 			</td>
-			<td class="market_reports_field">{{.BlockNum}}</td>
-			<td class="market_reports_field">
+			<td class="generic">{{.BlockNum}}</td>
+			<td class="generic ctr">
 				{{ if  eq 0 .OperationType}} Buy
 				{{ else }} Sell {{end }}
 			</td>
-			<td class="market_reports_field">{{.OutcomeIdx}}</td>
-			<td class="market_reports_field">{{printf "%.2f" .CollateralAmount}}</td>
-			<td class="market_reports_field">{{printf "%.2f" .FeeAmount}}</td>
-			<td class="market_reports_field">{{printf "%.2f" .TokenAmount}}</td>
-			<td class="market_reports_field">{{printf "%.2f" .ProfitLoss}}</td>
-			<td class="market_reports_field">{{printf "%.2f" .AccumProfitLoss}}</td>
+			<td class="generic ctr" title="OutcomeIdx={{.OutcomeIdx}}">{{.OutcomeStr}}</td>
+			<td class="generic right">{{printf "%.2f" .CollateralAmount}}</td>
+			<td class="generic right">{{printf "%.2f" .FeeAmount}}</td>
+			<td class="generic right">{{printf "%.2f" .TokenAmount}}</td>
+			<td class="generic right">{{printf "%.2f" .ProfitLoss}}</td>
+			<td class="generic right">{{printf "%.2f" .AccumProfitLoss}}</td>
 		</tr>
 	{{- end}}
 </table>

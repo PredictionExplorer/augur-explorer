@@ -10,30 +10,30 @@
 <div id="price_history_graph"></div>
 <h3>Collateral Transfers</h3>
 This table shows all the flow of Collateral from source to destination, covering all the intermediate steps
-<table>
-	<tr class="market_reports">
-		<th class="market_reports">TxId</th>
-		<th class="market_reports">Date </th>
-		<th class="market_reports">From Address</th>
-		<th class="market_reports">To Address</th>
-		<th class="market_reports">Amount (USDC)</th>
-		<th class="market_reports">Fee <br>(USDC)</th>
-		<th class="market_reports">Accum. Fees <br>(USDC)</th>
-		<th class="market_reports">Open Interest<br>(UDSC)</th>
-		<th class="market_reports">Notes</th>
+<table class="generic">
+	<tr class="generic">
+		<th class="generic">TxId</th>
+		<th class="generic">Date </th>
+		<th class="generic">From Address</th>
+		<th class="generic">To Address</th>
+		<th class="generic">Amount (USDC)</th>
+		<th class="generic">Fee <br>(USDC)</th>
+		<th class="generic">Accum. Fees <br>(USDC)</th>
+		<th class="generic">Open Interest<br>(UDSC)</th>
+		<th class="generic">Notes</th>
 
 	</tr>
 	{{- range $i, $change := .OIHistory}}
-		<tr class="market_reports">
-			<td class="market_reports_field">
+		<tr class="generic">
+			<td class="generic">
 				{{ if gt .TxId 0 }}
 					{{.TxId}}
 				{{ end }}
 			</td>
-			<td class="market_reports_field" title="{{.BalChgId}}">
+			<td class="generic" title="{{.BalChgId}}" nowrap>
 				{{.DateTime}}
 			</td>
-			<td class="addr" title="{{.FromAid}}">
+			<td class="generic addr" title="{{.FromAid}}">
 				{{ if gt .TxId 0 }}
 					{{ if eq .FromAid $.CondTokAid }}Conditional Tokens
 					{{ else }}
@@ -51,7 +51,7 @@ This table shows all the flow of Collateral from source to destination, covering
 					<b>Market resolved</b>
 				{{ end }}
 			</td>
-			<td class="addr" title="{{.ToAid}}">
+			<td class="generic addr" title="{{.ToAid}}">
 				{{ if eq .ToAid $.CondTokAid }}
 					Conditional Tokens
 				{{else}}
@@ -66,19 +66,19 @@ This table shows all the flow of Collateral from source to destination, covering
 					{{end}}
 				{{end}}
 			</td>
-			<td class="market_reports_field" style="text-align: right;">
+			<td class="generic" style="text-align: right;">
 				{{ if gt .TxId 0 }}{{printf "%.6f" .Amount}}{{end}}
 			</td>
-			<td class="market_reports_field" style="text-align: right;">
+			<td class="generic" style="text-align: right;">
 				{{ if gt .TxId 0 }}{{printf "%.6f" .Fee}}{{end}}
 			</td>
-			<td class="market_reports_field" style="text-align: right;">
+			<td class="generic" style="text-align: right;">
 				{{ if gt .TxId 0 }}{{printf "%.6f" .FeeAccum}}{{end}}
 			</td>
-			<td class="market_reports_field" style="text-align: right;">
+			<td class="generic" style="text-align: right;">
 				{{ if gt .TxId 0 }}{{printf "%.6f" .OpenInterest}}{{end}}
 			</td>
-			<td nowrap class="market_reports_field">
+			<td nowrap class="generic">
 				{{ if gt .TxId 0 }}
 					{{ if gt .BuySellOpId 0 }}
 						{{ if eq .BuySellOpType 0 }} Buy {{ else }} Sell {{end}}

@@ -138,6 +138,7 @@ type API_Pol_TraderOp struct {
 	TimeStamp			int64
 	OperationType		int		// 0: BUY	1: SELL
 	OutcomeIdx			int		// Outcome index
+	OutcomeStr			string
 	CollateralAmount	float64		// How many cash were swapped for tokens
 	FeeAmount			float64		// commission
 	TokenAmount			float64		// How many tokens were received for cash

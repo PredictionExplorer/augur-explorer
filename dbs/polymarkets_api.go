@@ -826,6 +826,8 @@ func (ss *SQLStorage) Get_polymarket_erc1155_transfers(contract_aid int64,offset
 	ss.Info.Printf("rows returned = %v\n",len(records))
 	return records
 }
+/*
+DISCONTINUED, to be deleted
 func (ss *SQLStorage) Get_polymarket_open_interest_history(usdc_aid,condtok_aid,contract_aid int64,condition_id string,offset,limit int) []p.API_Pol_OpenInterestHistory {
 
 	records := make([]p.API_Pol_OpenInterestHistory,0,512)
@@ -838,7 +840,8 @@ func (ss *SQLStorage) Get_polymarket_open_interest_history(usdc_aid,condtok_aid,
 					"e20b.contract_aid, "+
 					"e20b.aid user_aid,"+
 					"EXTRACT(EPOCH FROM e20b.time_stamp)::BIGINT AS ts,"+
-					"e20b.time_stamp datetime,"+
+					"TO_CHAR(e20b.time_stamp,'DD-MM-YYYY HH::MM') datetime,"+
+					//"e20b.time_stamp datetime,"+
 					"e20b.amount,"+
 					"e20b.balance,"+
 					"e20b.balance/1e+6 as bal_usd, "+
@@ -987,6 +990,7 @@ func (ss *SQLStorage) Get_polymarket_open_interest_history(usdc_aid,condtok_aid,
 	ss.Info.Printf("rows returned = %v\n",len(records))
 	return records
 }
+*/
 func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_aid,contract_aid int64,condition_id string,offset,limit int) (p.API_Pol_OI_HistoryTotals,[]p.API_Pol_OpenInterestHistory) {
 	// another version of history for testing
 
@@ -1023,7 +1027,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 					"e20b.contract_aid, "+
 					"e20b.aid user_aid,"+
 					"EXTRACT(EPOCH FROM e20b.time_stamp)::BIGINT AS ts,"+
-					"e20b.time_stamp datetime,"+
+					"TO_CHAR(e20b.time_stamp,'DD-MM-YYYY HH::MM') datetime,"+
 					"e20b.amount,"+
 					"e20b.balance,"+
 					"e20b.balance/1e+6 as bal_usd "+
@@ -1144,6 +1148,15 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 		if rec.FromAddr == "0x0000000000000000000000000000000000000000" {
 			ss.Info.Printf("Skipping tx_id=%v (rule 4)\n",rec.TxId)
 			continue
+		}
+		if (rec.BuySellOpType == -1) && (rec.FundOpType == -1) && (rec.RedeemId == -1) {
+			if rec.IntegerAmount < 0 {
+				ss.Info.Printf("Skipping out-of Polymarket transaction to save fees txid=%v",rec.TxId)
+				continue
+			} else {
+				// user is making transaction outside of FPMM contract (to avoid paying fees)
+				open_interest = open_interest + rec.IntegerAmount
+			}
 		}
 		/// filter for duplicate ends
 		if n_bs_id.Valid {

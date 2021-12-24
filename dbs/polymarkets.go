@@ -1155,18 +1155,18 @@ func (ss *SQLStorage) Get_data_feed_status() int64 {
 	}
 	return null_id.Int64
 }
-func (ss *SQLStorage) Get_poly_market_trader_operations(contract_aid,user_aid int64,offset,limit int) []p.API_Pol_TraderOp{
+func (ss *SQLStorage) Get_poly_market_trader_operations(market_info *p.API_Pol_MarketInfo,contract_aid,user_aid int64,offset,limit int) []p.API_Pol_TraderOp{
 
 	records := make([]p.API_Pol_TraderOp,0,64)
 	var query string
 	query = "SELECT " +
 				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT as ts," +
-				"bs.time_stamp,"+
+				"TO_CHAR(bs.time_stamp,'DD-MM-YYYY HH::MM') date,"+
 				"bs.block_num," +
 				"bs.op_type," +
 				"bs.outcome_idx," +
 				"bs.collateral_amount/1e+6,"+
-				"bs.fee_amount/1e_6,"+
+				"bs.fee_amount/1e+6,"+
 				"bs.token_amount/1e+6 "+
 			"FROM pol_buysell bs " +
 				"JOIN pol_market mkt ON bs.contract_aid=mkt.mkt_mkr_aid " +
@@ -1180,6 +1180,7 @@ func (ss *SQLStorage) Get_poly_market_trader_operations(contract_aid,user_aid in
 		os.Exit(1)
 	}
 
+	outcomes := strings.Split(market_info.Outcomes,",")
 	var accum_pl float64 = 0.0
 	var accum_collateral float64 = 0.0
 	var profit_loss float64 = 0.0
@@ -1199,6 +1200,9 @@ func (ss *SQLStorage) Get_poly_market_trader_operations(contract_aid,user_aid in
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
+		}
+		if rec.OutcomeIdx < len(outcomes) {
+			rec.OutcomeStr = outcomes[rec.OutcomeIdx]
 		}
 		var prev_accum_collateral = accum_collateral
 		if rec.OperationType == 0 { // buy
