@@ -28,7 +28,7 @@ func (ss *SQLStorage) Get_polymarkets_unique_users_stats(ts_day_from int ,ts_day
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.API_Pol_Unique_Users
-		err=rows.Scan(
+		err = rows.Scan(
 			&rec.TimeStamp,
 			&rec.NumFunders,
 			&rec.NumTraders,
@@ -1062,7 +1062,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 				"JOIN address ta ON e20t.to_aid=ta.address_id "+
 				"LEFT JOIN pol_buysell bs ON b.tx_id=bs.tx_id "+
 				"LEFT JOIN pol_fund_addrem f ON b.tx_id=f.tx_id "+
-				"LEFT JOIN pol_pay_redem red ON b.tx_id=red.tx_id " +
+				"LEFT JOIN pol_pay_redem red ON ((b.tx_id=red.tx_id) AND ((e20t.evtlog_id+1)=red.evtlog_id))" +
 			"ORDER BY bal_id "
 
 	ss.Info.Printf("usdc=%v, contract_aid=%v\n",usdc_aid,contract_aid)
@@ -1157,6 +1157,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 				// user is making transaction outside of FPMM contract (to avoid paying fees)
 				open_interest = open_interest + rec.IntegerAmount
 			}
+			open_interest = open_interest + rec.IntegerAmount
 		}
 		/// filter for duplicate ends
 		if n_bs_id.Valid {
@@ -1202,6 +1203,252 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v2(usdc_aid,condtok_ai
 				ss.Info.Printf("Skipping unnecesary payout redemption record, tx_id=%v\n",rec.TxId)
 				continue
 			}
+		}
+		rec.AdjustedBalance = (rec.IntegerBalance - rec.IntegerAmount)/1000000.0
+		rec.FeeAccum = fee_accum / 1000000.0
+		rec.IntegerFeeAccum = fee_accum
+		rec.OpenInterest = open_interest / 1000000.0
+		rec.OIVerif = rec.OpenInterest + rec.FeeAccum
+		totals.FinalOpenInterest = rec.OpenInterest
+		totals.FinalFees = rec.FeeAccum
+		prev_trf_to_aid = rec.ToAid
+		prev_trf_from_aid = rec.FromAid
+		prev_trf_amount = rec.IntegerAmount
+//		ss.Info.Printf("Amount %v: fundtype %v , bs_id=%v, rec.ToAid = %v , recFromAid = %v, OI=%v\n",
+//			rec.Amount,rec.FundOpType,rec.BuySellOpId,rec.ToAid,rec.FromAid,open_interest)
+		records = append(records,rec)
+	}
+	ss.Info.Printf("rows returned = %v\n",len(records))
+	return totals,records
+}
+func (ss *SQLStorage) Get_polymarket_open_interst_history_v3(usdc_aid,condtok_aid,contract_aid int64,condition_id string,offset,limit int) (p.API_Pol_OI_HistoryTotals,[]p.API_Pol_OpenInterestHistory) {
+	// another version of history for testing
+
+	var totals p.API_Pol_OI_HistoryTotals
+	records := make([]p.API_Pol_OpenInterestHistory,0,512)
+	red_buysell := make(map[int64]struct{},0)
+
+	var query string
+
+	var resolution_evtlog_id int64
+	var payout_numerators string
+	var resolution_date string
+	query = "SELECT evtlog_id,payout_numerators,time_stamp "+
+			"FROM pol_cond_res WHERE condition_id=$1"
+	res := ss.db.QueryRow(query,condition_id)
+	var n_elog_id sql.NullInt64
+	var n_resolution_date,n_numerators sql.NullString
+	err := res.Scan(&n_elog_id,&n_numerators,&n_resolution_date)
+	if err != nil {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		resolution_evtlog_id=n_elog_id.Int64
+		payout_numerators=n_numerators.String
+		resolution_date= n_resolution_date.String
+	}
+
+	query = "WITH b AS (" +
+				"SELECT "+
+					"e20b.id bal_id, "+
+					"e20b.parent_id, "+
+					"e20b.tx_id, "+
+					"e20b.contract_aid, "+
+					"e20b.aid user_aid,"+
+					"EXTRACT(EPOCH FROM e20b.time_stamp)::BIGINT AS ts,"+
+					"TO_CHAR(e20b.time_stamp,'DD-MM-YYYY HH::MM') datetime,"+
+					"e20b.amount,"+
+					"e20b.balance,"+
+					"e20b.balance/1e+6 as bal_usd "+
+				"FROM erc20_bal e20b "+
+				"WHERE e20b.id IN( SELECT * FROM oi_history_transactions($1,$2,$3)) " +
+			") " +
+			"SELECT " +
+				"e20t.evtlog_id,"+
+				"e20t.from_aid,"+
+				"e20t.to_aid, "+
+				"b.user_aid," +
+				"b.ts," +
+				"b.datetime,"+
+				"b.tx_id,"+
+				"tx.tx_hash,"+
+				"fa.addr from_addr,"+
+				"ta.addr, " +
+				"b.bal_id,"+
+				"bs.id,"+
+				"bs.op_type,"+
+				"f.id," +
+				"f.op_type,"+
+				"red.id red_id,"+
+				"b.amount/1e+6,"+
+				"b.amount," +
+				"b.bal_usd, "+
+				"b.balance "+
+			"FROM b "+
+				"JOIN transaction tx ON b.tx_id=tx.id "+
+				"JOIN erc20_transf e20t ON b.parent_id=e20t.id "+
+				"JOIN address fa ON e20t.from_aid=fa.address_id "+
+				"JOIN address ta ON e20t.to_aid=ta.address_id "+
+			//	"LEFT JOIN pol_pos_split spl ON "+
+				"LEFT JOIN pol_buysell bs ON b.tx_id=bs.tx_id "+
+				"LEFT JOIN pol_fund_addrem f ON b.tx_id=f.tx_id "+
+//				"LEFT JOIN pol_pay_redem red ON ((b.tx_id=red.tx_id) AND ((e20t.evtlog_id+1)=red.evtlog_id))" +
+				"LEFT JOIN pol_pay_redem red ON (b.tx_id=red.tx_id) "+
+			"ORDER BY bal_id,red_id "
+
+	ss.Info.Printf("usdc=%v, contract_aid=%v\n",usdc_aid,contract_aid)
+	ss.Info.Printf("query : %v\n",query)
+	rows,err := ss.db.Query(query,condition_id,usdc_aid,contract_aid)
+//	rows,err := ss.db.Query(query,condition_id)
+//	rows,err := ss.db.Query(query,usdc_aid,contract_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	var separator_was_added bool
+	var prev_trf_to_aid int64 = -1
+	var prev_trf_from_aid int64 = -1
+	var prev_trf_amount float64 = -1.0
+	var fee_accum float64 = 0.0
+	var open_interest float64 = 0.0
+	for rows.Next() {
+		var rec p.API_Pol_OpenInterestHistory
+		var n_bs_id,n_far_id,n_red_id sql.NullInt64
+		var n_bs_optype,n_far_optype sql.NullInt32
+		var evtlog_id int64
+		err=rows.Scan(
+			&evtlog_id,
+			&rec.FromAid,
+			&rec.ToAid,
+			&rec.UserAid,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.FromAddr,
+			&rec.ToAddr,
+			&rec.BalChgId,
+			&n_bs_id,
+			&n_bs_optype,
+			&n_far_id,
+			&n_far_optype,
+			&n_red_id,
+			&rec.Amount,
+			&rec.IntegerAmount,
+			&rec.Balance,
+			&rec.IntegerBalance,
+		)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		ss.Info.Printf("tx_id=%v\n",rec.TxId)
+		if (resolution_evtlog_id>0) && (evtlog_id>resolution_evtlog_id) {
+			if !separator_was_added {
+				var resolution_rec p.API_Pol_OpenInterestHistory
+				resolution_rec.TxId = -1
+				resolution_rec.PayoutNumerators = payout_numerators
+				resolution_rec.DateTime = resolution_date
+				records = append(records,resolution_rec)
+				separator_was_added=true
+				ss.Info.Printf("\t appending separator\n")
+			}
+		}
+		if n_bs_id.Valid { rec.BuySellOpId = n_bs_id.Int64 } else { rec.BuySellOpId = -1 }
+		if n_bs_optype.Valid { rec.BuySellOpType  = n_bs_optype.Int32 } else {rec.BuySellOpType = -1 }
+		if n_far_id.Valid { rec.FundOpId = n_far_id.Int64 } else { rec.FundOpId = -1 }
+		if n_far_optype.Valid { rec.FundOpType = n_far_optype.Int32 } else { rec.FundOpType = -1 }
+		if n_red_id.Valid { rec.RedeemId = n_red_id.Int64} else { rec.RedeemId = -1 }
+		/// filter for duplicates begin
+		if rec.RedeemId == -1 { // non Redeem type transactions
+			if (rec.ToAid == contract_aid) && (rec.Amount<0.0) { 
+				ss.Info.Printf("Skipping tx_id=%v (rule 1)\n",rec.TxId)
+				continue
+			}
+			if (rec.FromAid == contract_aid) && (rec.ToAid==condtok_aid) && (rec.Amount<0.0) { 
+				ss.Info.Printf("Skipping tx_id=%v (rule 2)\n",rec.TxId)
+				continue
+			}
+			if (rec.FromAid == contract_aid) && (rec.UserAid == contract_aid) && (rec.FundOpType!=1) {
+				//prev_trf_to_aid = rec.ToAid
+				//prev_trf_from_aid = rec.FromAid
+				//prev_trf_amount = rec.IntegerAmount
+				ss.Info.Printf("Skipping tx_id=%v (rule 3)\n",rec.TxId)
+				continue
+			}
+			if rec.FromAddr == "0x0000000000000000000000000000000000000000" {
+				ss.Info.Printf("Skipping tx_id=%v (rule 4)\n",rec.TxId)
+				continue
+			}
+			if (rec.BuySellOpType == -1) && (rec.FundOpType == -1) {
+				if rec.IntegerAmount < 0 {
+					ss.Info.Printf("Skipping out-of Polymarket transaction to save fees txid=%v",rec.TxId)
+					continue
+				} else {
+					// user is making transaction outside of FPMM contract (to avoid paying fees)
+					open_interest = open_interest + rec.IntegerAmount
+				}
+			}
+			/// filter for duplicate ends
+			if n_bs_id.Valid {
+				if (rec.ToAid == condtok_aid) && (rec.FromAid == contract_aid) && (rec.BuySellOpType == 0){
+					// buy op
+					if prev_trf_to_aid == contract_aid {
+						rec.IntegerFee = prev_trf_amount - (rec.IntegerAmount)
+						rec.Fee = rec.IntegerFee/1000000.0
+						fee_accum = fee_accum + rec.IntegerFee
+						open_interest = open_interest +  (rec.IntegerAmount)
+					}
+				}
+				if (rec.FromAid == contract_aid) && (rec.FromAid != condtok_aid) && (rec.BuySellOpType == 1) {
+					// sell op
+					ss.Info.Printf("Entering sell op, bal_id=%v tx_id=%v prev_trf_from_aid=%v\n",rec.BalChgId,rec.TxId,prev_trf_from_aid)
+					if prev_trf_from_aid == condtok_aid {
+						ss.Info.Printf("Condition passed, calculating fees now prev_trf_amount=%v, IntegerAmount=%v\n",prev_trf_amount,rec.IntegerAmount)
+						rec.IntegerFee = prev_trf_amount - rec.IntegerAmount
+						rec.Fee = rec.IntegerFee / 1000000.0
+						fee_accum = fee_accum + rec.IntegerFee
+						open_interest = open_interest - (rec.IntegerAmount) 
+					}
+				}
+			}
+			//ss.Info.Printf("n_far_id=%v contract_aid=%v\n",n_far_id.Int64,contract_aid)
+			if n_far_id.Valid {
+				if rec.FundOpType == 0 { // add funds
+					if (rec.ToAid == condtok_aid) && (rec.FromAid == contract_aid) {
+						open_interest = open_interest + (rec.IntegerAmount)
+					}
+				}
+				if rec.FundOpType == 1 { //withdraw funds
+					if (rec.FromAid == contract_aid) && (rec.ToAid != condtok_aid) {
+						open_interest = open_interest - (-rec.IntegerAmount)
+					} else {
+					}
+				}
+			}
+		} else { // rec.ReddemId > -1	// redeem type transactions
+	/*		if (rec.ToAid== condtok_aid) && (rec.IntegerAmount<0) {
+				ss.Info.Printf("Skipping duplicated transfer to condtok in redemption transfer (red_id=%v)\n",rec.RedeemId)
+				continue
+			}*/
+			_,exists := red_buysell[rec.BuySellOpId]
+			if !exists {
+				red_buysell[rec.BuySellOpId]=struct{}{}
+				open_interest = open_interest - rec.IntegerAmount
+			} else {
+				ss.Info.Printf("Skipping duplicated transfer to condtok (with buysell) in redemption transfer (red_id=%v)\n",rec.RedeemId)
+				continue
+			}
+			/*if (rec.UserAid != condtok_aid) && (rec.UserAid != contract_aid) {
+				open_interest = open_interest - rec.IntegerAmount
+			} else {
+				ss.Info.Printf("Skipping unnecesary payout redemption record, tx_id=%v\n",rec.TxId)
+				continue
+			}*/
 		}
 		rec.AdjustedBalance = (rec.IntegerBalance - rec.IntegerAmount)/1000000.0
 		rec.FeeAccum = fee_accum / 1000000.0

@@ -25,10 +25,11 @@ This table shows all the flow of Collateral from source to destination, covering
 	</tr>
 	{{- range $i, $change := .OIHistory}}
 		<tr class="generic">
-			<td class="generic">
+			<td class="generic" title="BalID={{.BalChgId}} RedeemId={{.RedeemId}}" nowrap>
 				{{ if gt .TxId 0 }}
 					{{.TxId}}
 				{{ end }}
+				==	{{.IntegerAmount}} == [{{.UserAid }}] : {{.ToAid}}
 			</td>
 			<td class="generic" title="{{.BalChgId}}" nowrap>
 				{{.DateTime}}
