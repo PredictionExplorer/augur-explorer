@@ -241,6 +241,7 @@ type API_Pol_MarketERC1155Transfer struct {
 	TxHash				string
 }
 type API_Pol_OpenInterestHistory struct {
+	EvtlogId				int64
 	TimeStamp				int64
 	DateTime				string
 	TxId					int64	// if -1 then it means we have condition resolution record
@@ -257,6 +258,8 @@ type API_Pol_OpenInterestHistory struct {
 	FundOpId				int64		// id for fund add/remove operation
 	FundOpType				int32
 	RedeemId				int64		// id for Payout Redeemed event
+	RedeemIntegerPayout		float64
+	RedeemPayout			float64
 	Amount					float64
 	IntegerAmount			float64
 	Balance					float64
