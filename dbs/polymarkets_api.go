@@ -1552,7 +1552,7 @@ func (ss *SQLStorage)  build_redeem_operations(condition_id string,usdc_aid,cont
 				"red.payout,"+
 				"red.payout/1e+6 "+
 			"FROM pol_pay_redem red " +
-				"WHERE red.tx_id IN( SELECT * FROM oi_history_transaction_ids($1,$2,$3)) " 
+				"WHERE red.tx_id IN( SELECT * FROM oi_history_transaction_ids($1,$2,$3)) "
 
 	rows_redeem_ops,err := ss.db.Query(query,condition_id,usdc_aid,contract_aid)
 	if (err!=nil) {
@@ -1571,6 +1571,80 @@ func (ss *SQLStorage)  build_redeem_operations(condition_id string,usdc_aid,cont
 		redeem_ops[rec.EvtLogId] = rec
 	}
 	return redeem_ops
+}
+type TmpSplitOp struct {
+	EvtLogId		int64
+	SplitOpId		int64
+	IntegerAmount	float64
+	Amount			float64
+}
+func (ss *SQLStorage)  build_pos_split_operations(condition_id string,usdc_aid,contract_aid int64) map[int64]TmpSplitOp {
+	var query string
+	/// build buysell operations
+	// later this map is used to lookup for buysell operation 
+	split_ops := make(map[int64]TmpSplitOp)
+	query = "SELECT "+
+				"s.evtlog_id,"+
+				"s.id split_id,"+
+				"s.amount,"+
+				"s.amount/1e+6 "+
+			"FROM pol_pos_split s " +
+				"WHERE s.tx_id IN( SELECT * FROM oi_history_transaction_ids($1,$2,$3)) "
+
+	rows_split_ops,err := ss.db.Query(query,condition_id,usdc_aid,contract_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows_split_ops.Close()
+	for rows_split_ops.Next() {
+		var rec TmpSplitOp
+		err=rows_split_ops.Scan(
+			&rec.EvtLogId,
+			&rec.SplitOpId,
+			&rec.IntegerAmount,
+			&rec.Amount,
+		)
+		split_ops[rec.EvtLogId] = rec
+	}
+	return split_ops
+}
+type TmpMergeOp struct {
+	EvtLogId		int64
+	MergeOpId		int64
+	IntegerAmount	float64
+	Amount			float64
+}
+func (ss *SQLStorage)  build_pos_merge_operations(condition_id string,usdc_aid,contract_aid int64) map[int64]TmpMergeOp {
+	var query string
+	/// build buysell operations
+	// later this map is used to lookup for buysell operation 
+	merge_ops := make(map[int64]TmpMergeOp)
+	query = "SELECT "+
+				"m.evtlog_id,"+
+				"m.id split_id,"+
+				"m.amount,"+
+				"m.amount/1e+6 "+
+			"FROM pol_pos_merge m " +
+				"WHERE m.tx_id IN( SELECT * FROM oi_history_transaction_ids($1,$2,$3)) "
+
+	rows_merge_ops,err := ss.db.Query(query,condition_id,usdc_aid,contract_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows_merge_ops.Close()
+	for rows_merge_ops.Next() {
+		var rec TmpMergeOp
+		err=rows_merge_ops.Scan(
+			&rec.EvtLogId,
+			&rec.MergeOpId,
+			&rec.IntegerAmount,
+			&rec.Amount,
+		)
+		merge_ops[rec.EvtLogId] = rec
+	}
+	return merge_ops
 }
 func (ss *SQLStorage) Get_polymarket_open_interst_history_v4(usdc_aid,condtok_aid,contract_aid int64,condition_id string,offset,limit int) (p.API_Pol_OI_HistoryTotals,[]p.API_Pol_OpenInterestHistory) {
 	// another version of history for testing
@@ -1604,6 +1678,10 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v4(usdc_aid,condtok_ai
 	buysell_ops := ss.build_buysell_operations(condition_id,usdc_aid,contract_aid)
 	fund_ops := ss.build_fund_operations(condition_id,usdc_aid,contract_aid)
 	redeem_ops := ss.build_redeem_operations(condition_id,usdc_aid,contract_aid)
+	split_ops := ss.build_pos_split_operations(condition_id,usdc_aid,contract_aid)
+	merge_ops := ss.build_pos_merge_operations(condition_id,usdc_aid,contract_aid)
+	_=split_ops
+	_=merge_ops
 
 	query = "WITH b AS (" +
 				"SELECT "+
@@ -1856,6 +1934,346 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v4(usdc_aid,condtok_ai
 	}
 	ss.Info.Printf("rows returned = %v\n",len(records))
 	return totals,records
+}
+func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_aid,contract_aid int64,condition_id string,offset,limit int) (p.API_Pol_OI_HistoryTotals,[]p.API_Pol_OpenInterestHistory) {
+	// another version of history for testing
+
+	var totals p.API_Pol_OI_HistoryTotals
+	records := make([]p.API_Pol_OpenInterestHistory,0,512)
+
+	var query string
+
+	var resolution_evtlog_id int64
+	var payout_numerators string
+	var resolution_date string
+	query = "SELECT evtlog_id,payout_numerators,time_stamp "+
+			"FROM pol_cond_res WHERE condition_id=$1"
+	res := ss.db.QueryRow(query,condition_id)
+	var n_elog_id sql.NullInt64
+	var n_resolution_date,n_numerators sql.NullString
+	err := res.Scan(&n_elog_id,&n_numerators,&n_resolution_date)
+	if err != nil {
+		if err == sql.ErrNoRows {
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		resolution_evtlog_id=n_elog_id.Int64
+		payout_numerators=n_numerators.String
+		resolution_date= n_resolution_date.String
+	}
+
+	buysell_ops := ss.build_buysell_operations(condition_id,usdc_aid,contract_aid)
+	fund_ops := ss.build_fund_operations(condition_id,usdc_aid,contract_aid)
+	redeem_ops := ss.build_redeem_operations(condition_id,usdc_aid,contract_aid)
+	split_ops := ss.build_pos_split_operations(condition_id,usdc_aid,contract_aid)
+	merge_ops := ss.build_pos_merge_operations(condition_id,usdc_aid,contract_aid)
+	_=split_ops
+	_=merge_ops
+
+	query = "WITH b AS (" +
+				"SELECT "+
+					"e20b.id bal_id, "+
+					"e20b.parent_id, "+
+					"e20b.tx_id, "+
+					"e20b.contract_aid, "+
+					"e20b.aid user_aid,"+
+					"EXTRACT(EPOCH FROM e20b.time_stamp)::BIGINT AS ts,"+
+					"TO_CHAR(e20b.time_stamp,'DD-MM-YYYY HH::MM') datetime,"+
+					"e20b.amount,"+
+					"e20b.balance,"+
+					"e20b.balance/1e+6 as bal_usd "+
+				"FROM erc20_bal e20b "+
+				"WHERE e20b.id IN( SELECT * FROM oi_history_transactions($1,$2,$3)) " +
+			") " +
+			"SELECT " +
+				"e20t.evtlog_id,"+
+				"e20t.from_aid,"+
+				"e20t.to_aid, "+
+				"b.user_aid," +
+				"b.ts," +
+				"b.datetime,"+
+				"b.tx_id,"+
+				"tx.tx_hash,"+
+				"fa.addr from_addr,"+
+				"ta.addr, " +
+				"b.bal_id,"+
+				"b.amount/1e+6,"+
+				"b.amount," +
+				"b.bal_usd, "+
+				"b.balance "+
+			"FROM b "+
+				"JOIN transaction tx ON b.tx_id=tx.id "+
+				"JOIN erc20_transf e20t ON b.parent_id=e20t.id "+
+				"JOIN address fa ON e20t.from_aid=fa.address_id "+
+				"JOIN address ta ON e20t.to_aid=ta.address_id "+
+			"ORDER BY bal_id"
+
+	ss.Info.Printf("usdc=%v, contract_aid=%v\n",usdc_aid,contract_aid)
+	ss.Info.Printf("query : %v\n",query)
+	rows,err := ss.db.Query(query,condition_id,usdc_aid,contract_aid)
+//	rows,err := ss.db.Query(query,condition_id)
+//	rows,err := ss.db.Query(query,usdc_aid,contract_aid)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	var separator_was_added bool
+	var prev_trf_to_aid int64 = -1
+	var prev_trf_from_aid int64 = -1
+	var prev_trf_amount float64 = -1.0
+	var fee_accum float64 = 0.0
+	var open_interest float64 = 0.0
+	type Boundary struct {
+		OpType			int32 //0-undefined,1-PosSplit,2-PosMerge,3-BuySell,4-Fund,5-Redeem,6-Resolved
+		Offset			int32 // offset to the main array of records
+		Len				int32 // length (how many records follow after the Offset)
+	}
+	boundaries := make([]Boundary,0,256)
+	counter := int32(0)
+	var b Boundary
+	for rows.Next() {
+		var rec p.API_Pol_OpenInterestHistory
+		var evtlog_id int64
+		err=rows.Scan(
+			&evtlog_id,
+			&rec.FromAid,
+			&rec.ToAid,
+			&rec.UserAid,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.FromAddr,
+			&rec.ToAddr,
+			&rec.BalChgId,
+			&rec.Amount,
+			&rec.IntegerAmount,
+			&rec.Balance,
+			&rec.IntegerBalance,
+		)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		rec.EvtlogId=evtlog_id
+		counter++
+		_,split_exists := split_ops[evtlog_id]
+		if split_exists {
+			b.OpType = 1		// Split
+			b.Len = b.Offset - counter
+			boundaries = append(boundaries,b)
+			b.Offset = counter; b.Len = 0; b.OpType = 0;
+			continue
+		}
+		_,merge_exists := merge_ops[evtlog_id]
+		if merge_exists {
+			b.OpType = 2		// Merge
+			b.Len = b.Offset - counter
+			boundaries = append(boundaries,b)
+			b.Offset = counter; b.Len = 0; b.OpType = 0;
+		}
+		_,buysell_exists := buysell_ops[evtlog_id]
+		if buysell_exists {
+			b.OpType = 3		// Buy/Sell operation
+			b.Len = b.Offset - counter
+			boundaries = append(boundaries,b)
+			b.Offset = counter; b.Len = 0; b.OpType = 0;
+		}
+		_,fundop_exists := fund_ops[evtlog_id]
+		if fundop_exists {
+			b.OpType = 4		// Fund Add/Remove operation
+			b.Len = b.Offset - counter
+			boundaries = append(boundaries,b)
+			b.Offset = counter; b.Len = 0; b.OpType = 0;
+		}
+		_,redeem_exists := redeem_ops[evtlog_id]
+		if redeem_exists {
+			b.OpType = 5		// Redeem operation
+			b.Len = b.Offset - counter
+			boundaries = append(boundaries,b)
+			b.Offset = counter; b.Len = 0; b.OpType = 0;
+		}
+		if (resolution_evtlog_id>0) && (evtlog_id>resolution_evtlog_id) {
+			if !separator_was_added {
+				b.OpType = 6		// Market Resolution
+				b.Len = b.Offset - counter
+				boundaries = append(boundaries,b)
+				b.Offset = counter; b.Len = 0; b.OpType = 0;
+				separator_was_added = true
+			}
+		}
+		records = append(records,rec)
+	}
+
+	output := make([]p.API_Pol_OpenInterestHistory,0,512)
+	num_boundaries := int32(len(boundaries))
+	counter = 0
+	for {
+		if counter>=num_boundaries {
+			break;
+		}
+		b := &boundaries[counter]
+		counter++
+		ss.Info.Printf("boundary type = %v\n",b.OpType)
+		switch b.OpType {
+			case 1:		// Split
+				for i:=int32(0); i<b.Len; i++ {
+					idx := b.Offset + i
+					in_rec := &records[idx]
+					if (in_rec.ToAid == contract_aid) && (in_rec.Amount<0.0) {
+						ss.Info.Printf("Skipping tx_id=%v (rule 1)\n",in_rec.TxId)
+						continue
+					}
+					if (in_rec.FromAid == contract_aid) && (in_rec.ToAid==condtok_aid) &&
+						(in_rec.Amount<0.0) {
+						ss.Info.Printf("Skipping tx_id=%v (rule 2)\n",in_rec.TxId)
+						continue
+					}
+					if in_rec.FromAddr == "0x0000000000000000000000000000000000000000" {
+						ss.Info.Printf("Skipping tx_id=%v (rule 4)\n",in_rec.TxId)
+						continue
+					}
+					var out_rec p.API_Pol_OpenInterestHistory
+					copy_all_fields(&out_rec,in_rec)
+					out_rec.AdjustedBalance = (out_rec.IntegerBalance - out_rec.IntegerAmount)/1000000.0
+					out_rec.FeeAccum = fee_accum / 1000000.0
+					out_rec.IntegerFeeAccum = fee_accum
+					out_rec.OpenInterest = open_interest / 1000000.0
+					out_rec.OIVerif = out_rec.OpenInterest + out_rec.FeeAccum
+					totals.FinalOpenInterest = out_rec.OpenInterest
+					totals.FinalFees = out_rec.FeeAccum
+					prev_trf_to_aid = out_rec.ToAid
+					prev_trf_from_aid = out_rec.FromAid
+					prev_trf_amount = out_rec.IntegerAmount
+					output = append(output,out_rec)
+				}
+			case 2:		// Merge
+			case 3:		// Buy/Sell
+				for i:=int32(0); i<b.Len; i++ {
+					idx := b.Offset + i
+					in_rec := &records[idx]
+					var out_rec p.API_Pol_OpenInterestHistory
+					copy_all_fields(&out_rec,in_rec)
+					if (out_rec.ToAid == condtok_aid) && 
+							(out_rec.FromAid == contract_aid) && (out_rec.BuySellOpType == 0) {
+						// buy op
+						if prev_trf_to_aid == contract_aid {
+							out_rec.IntegerFee = prev_trf_amount - (out_rec.IntegerAmount)
+							out_rec.Fee = out_rec.IntegerFee/1000000.0
+							fee_accum = fee_accum + out_rec.IntegerFee
+							open_interest = open_interest +  (out_rec.IntegerAmount)
+						}
+					}
+					if (out_rec.FromAid == contract_aid) &&
+							(out_rec.FromAid != condtok_aid) && (out_rec.BuySellOpType == 1) {
+						// sell op
+						ss.Info.Printf("Entering sell op, bal_id=%v tx_id=%v prev_trf_from_aid=%v\n",out_rec.BalChgId,out_rec.TxId,prev_trf_from_aid)
+						if prev_trf_from_aid == condtok_aid {
+							ss.Info.Printf("Condition passed, calculating fees now prev_trf_amount=%v, IntegerAmount=%v\n",prev_trf_amount,out_rec.IntegerAmount)
+							out_rec.IntegerFee = prev_trf_amount - out_rec.IntegerAmount
+							out_rec.Fee = out_rec.IntegerFee / 1000000.0
+							fee_accum = fee_accum + out_rec.IntegerFee
+							open_interest = open_interest - (out_rec.IntegerAmount)
+						}
+					}
+					out_rec.AdjustedBalance = (out_rec.IntegerBalance - out_rec.IntegerAmount)/1000000.0
+					out_rec.FeeAccum = fee_accum / 1000000.0
+					out_rec.IntegerFeeAccum = fee_accum
+					out_rec.OpenInterest = open_interest / 1000000.0
+					out_rec.OIVerif = out_rec.OpenInterest + out_rec.FeeAccum
+					totals.FinalOpenInterest = out_rec.OpenInterest
+					totals.FinalFees = out_rec.FeeAccum
+					prev_trf_to_aid = out_rec.ToAid
+					prev_trf_from_aid = out_rec.FromAid
+					prev_trf_amount = out_rec.IntegerAmount
+					output = append(output,out_rec)
+				}
+			case 4:		// Fund Add/Remove
+				for i:=int32(0); i<b.Len; i++ {
+					idx := b.Offset + i
+					in_rec := &records[idx]
+					var out_rec p.API_Pol_OpenInterestHistory
+					copy_all_fields(&out_rec,in_rec)
+					if (out_rec.FromAid == contract_aid) &&
+							(out_rec.UserAid == contract_aid) && (out_rec.FundOpType!=1) {
+						ss.Info.Printf("Skipping tx_id=%v (rule 3)\n",out_rec.TxId)
+						continue
+					}
+					if out_rec.FundOpType == 0 { // add funds
+						if (out_rec.ToAid == condtok_aid) && (out_rec.FromAid == contract_aid) {
+							open_interest = open_interest + (out_rec.IntegerAmount)
+						}
+					}
+					if out_rec.FundOpType == 1 { //withdraw funds
+						if (out_rec.FromAid == contract_aid) && (out_rec.ToAid != condtok_aid) {
+							open_interest = open_interest - (-out_rec.IntegerAmount)
+						} else {
+						}
+					}
+					output = append(output,out_rec)
+				}
+			case 5:		// Redeem
+			case 6:
+				idx := b.Offset
+				in_rec := &records[idx]
+				var out_rec p.API_Pol_OpenInterestHistory
+				copy_all_fields(&out_rec,in_rec)
+				var resolution_rec p.API_Pol_OpenInterestHistory
+				resolution_rec.TxId = -1
+				resolution_rec.PayoutNumerators = payout_numerators
+				resolution_rec.DateTime = resolution_date
+				records = append(records,resolution_rec)
+				separator_was_added=true
+				ss.Info.Printf("\t appending separator\n")
+				output = append(output,out_rec)
+			default:
+				ss.Info.Printf("Unkown boundary operation type %v\n",b.OpType)
+		}
+//		ss.Info.Printf("Amount %v: fundtype %v , bs_id=%v, rec.ToAid = %v , recFromAid = %v, OI=%v\n",
+//			rec.Amount,rec.FundOpType,rec.BuySellOpId,rec.ToAid,rec.FromAid,open_interest)
+	}
+	return totals,output
+}
+func copy_all_fields(out_rec,in_rec *p.API_Pol_OpenInterestHistory) {
+
+	out_rec.EvtlogId =				in_rec.EvtlogId
+	out_rec.TimeStamp =				in_rec.TimeStamp
+	out_rec.DateTime =				in_rec.DateTime
+	out_rec.TxId =					in_rec.TxId
+	out_rec.TxHash =				in_rec.TxHash
+	out_rec.FromAid =				in_rec.FromAid
+	out_rec.FromAddr =				in_rec.FromAddr
+	out_rec.ToAid =					in_rec.ToAid
+	out_rec.UserAid =				in_rec.UserAid
+	out_rec.ToAddr =				in_rec.ToAddr
+	out_rec.PayoutNumerators =		in_rec.PayoutNumerators
+	out_rec.BalChgId =				in_rec.BalChgId
+	out_rec.BuySellOpId =			in_rec.BuySellOpId
+	out_rec.BuySellOpType =			in_rec.BuySellOpType
+	out_rec.FundOpId =				in_rec.FundOpId
+	out_rec.FundOpType =			in_rec.FundOpType
+	out_rec.RedeemId =				in_rec.RedeemId
+	out_rec.RedeemIntegerPayout =	in_rec.RedeemIntegerPayout
+	out_rec.RedeemPayout =			in_rec.RedeemPayout
+	out_rec.Amount =				in_rec.Amount
+	out_rec.IntegerAmount =			in_rec.IntegerAmount
+	out_rec.Balance =				in_rec.Balance
+	out_rec.AdjustedBalance =		in_rec.AdjustedBalance
+	out_rec.IntegerBalance =		in_rec.IntegerBalance
+	out_rec.OpenInterest =			in_rec.OpenInterest
+	out_rec.OIVerif =				in_rec.OIVerif
+	out_rec.IntegerFee =			in_rec.IntegerFee
+	out_rec.Fee =					in_rec.Fee
+	out_rec.FeeAccum =				in_rec.FeeAccum
+	out_rec.IntegerFeeAccum =		in_rec.IntegerFeeAccum
+	out_rec.ContractBalance =		in_rec.ContractBalance
+	out_rec.ContractBalanceAccum =	in_rec.ContractBalanceAccum
+}
+func update_fields(rec *p.API_Pol_OpenInterestHistory,op_type int32) {
+
 }
 func (ss *SQLStorage) Get_polymarket_user_info(user_aid int64) (p.API_Pol_UserInfo,error){
 

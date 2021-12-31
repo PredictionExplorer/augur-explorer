@@ -563,7 +563,7 @@ func poly_market_open_interest_history(c *gin.Context) {
 		respond_error(c,"Conditional token Aid is zero")
 		return
 	}
-	totals,oi_hist := augur_srv.db_matic.Get_polymarket_open_interst_history_v4(
+	totals,oi_hist := augur_srv.db_matic.Get_polymarket_open_interst_history_v5(
 		caddrs.USDCAid,
 		caddrs.CondTokAid,
 		fpmm_aid,
