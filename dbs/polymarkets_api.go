@@ -1972,46 +1972,49 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 	_=split_ops
 	_=merge_ops
 
-	query = "WITH b AS (" +
+	query = "WITH txs AS (" +
 				"SELECT "+
-					"e20b.id bal_id, "+
-					"e20b.parent_id, "+
-					"e20b.tx_id, "+
-					"e20b.contract_aid, "+
-					"e20b.aid user_aid,"+
-					"EXTRACT(EPOCH FROM e20b.time_stamp)::BIGINT AS ts,"+
-					"TO_CHAR(e20b.time_stamp,'DD-MM-YYYY HH::MM') datetime,"+
-					"e20b.amount,"+
-					"e20b.balance,"+
-					"e20b.balance/1e+6 as bal_usd "+
-				"FROM erc20_bal e20b "+
-				"WHERE e20b.id IN( SELECT * FROM oi_history_transactions($1,$2,$3)) " +
+					"tx_id "+
+				"FROM oi_history_transaction_ids($1,$2,$3) data " +
 			") " +
 			"SELECT " +
+				"e20b.id,"+
 				"e20t.evtlog_id,"+
 				"e20t.from_aid,"+
 				"e20t.to_aid, "+
-				"b.user_aid," +
-				"b.ts," +
-				"b.datetime,"+
-				"b.tx_id,"+
+				"e20b.aid user_aid," +
+				"EXTRACT(EPOCH FROM e20b.time_stamp)::BIGINT AS ts,"+
+				"TO_CHAR(e20b.time_stamp,'DD-MM-YYYY HH::MM') datetime,"+
+				"txs.tx_id,"+
 				"tx.tx_hash,"+
 				"fa.addr from_addr,"+
 				"ta.addr, " +
-				"b.bal_id,"+
-				"b.amount/1e+6,"+
-				"b.amount," +
-				"b.bal_usd, "+
-				"b.balance "+
-			"FROM b "+
-				"JOIN transaction tx ON b.tx_id=tx.id "+
-				"JOIN erc20_transf e20t ON b.parent_id=e20t.id "+
+				"e20b.amount/1e+6,"+
+				"e20b.amount," +
+				"e20b.balance/1e+6 as bal_usd,"+
+				"e20b.balance, "+
+				"bs.id bs_id, "+
+				"f.id fund_id," +
+				"f.op_type,"+
+				"red.id red_id, "+
+				"red.payout " +
+			"FROM evt_log e "+
+				"JOIN txs ON txs.tx_id=e.tx_id "+
+				"JOIN transaction tx ON txs.tx_id=tx.id "+
+				"LEFT JOIN erc20_transf e20t ON e.id=e20t.evtlog_id "+
+				"LEFT JOIN erc20_bal e20b ON e20b.parent_id=e20t.id "+
 				"JOIN address fa ON e20t.from_aid=fa.address_id "+
 				"JOIN address ta ON e20t.to_aid=ta.address_id "+
-			"ORDER BY bal_id"
+				"LEFT JOIN pol_buysell bs ON e.id=bs.evtlog_id "+
+				"LEFT JOIN pol_fund_addrem f ON e.id=f.evtlog_id "+
+				"LEFT JOIN pol_pay_redem red ON e.id=red.evtlog_id " +
+			"ORDER BY e.id"
 
 	ss.Info.Printf("usdc=%v, contract_aid=%v\n",usdc_aid,contract_aid)
-	ss.Info.Printf("query : %v\n",query)
+	d_query := strings.ReplaceAll(query,"$1",fmt.Sprintf("'%v'",condition_id))
+	d_query = strings.ReplaceAll(d_query,"$2",fmt.Sprintf("%d",usdc_aid))
+	d_query = strings.ReplaceAll(d_query,"$3",fmt.Sprintf("%d",contract_aid))
+	ss.Info.Printf("query : %v\n",d_query)
 	rows,err := ss.db.Query(query,condition_id,usdc_aid,contract_aid)
 //	rows,err := ss.db.Query(query,condition_id)
 //	rows,err := ss.db.Query(query,usdc_aid,contract_aid)
@@ -2037,22 +2040,32 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 	for rows.Next() {
 		var rec p.API_Pol_OpenInterestHistory
 		var evtlog_id int64
+		var n_bal_id,n_from_aid,n_to_aid,n_user_aid,n_timestamp sql.NullInt64
+		var n_tx_id sql.NullInt64
+		var n_datetime,n_txhash,n_from,n_to sql.NullString
+		var n_amount,n_int_amount,n_bal_usd,n_balance,n_red_payout sql.NullFloat64
+		var n_bs_id,n_fund_id,n_red_id sql.NullInt64
+		var n_bs_op_type,n_fund_op_type sql.NullInt32
 		err=rows.Scan(
+			&n_bal_id,
 			&evtlog_id,
-			&rec.FromAid,
-			&rec.ToAid,
-			&rec.UserAid,
-			&rec.TimeStamp,
-			&rec.DateTime,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.FromAddr,
-			&rec.ToAddr,
-			&rec.BalChgId,
-			&rec.Amount,
-			&rec.IntegerAmount,
-			&rec.Balance,
-			&rec.IntegerBalance,
+			&n_from_aid,
+			&n_to_aid,
+			&n_user_aid,
+			&n_timestamp,
+			&n_datetime,
+			&n_tx_id,
+			&n_txhash,
+			&n_from,
+			&n_to,
+			&n_amount,
+			&n_int_amount,
+			&n_bal_usd,
+			&n_balance,
+			&n_bs_id,
+			&n_fund_id,
+			&n_red_id,
+			&n_red_payout,
 		)
 		if (err!=nil) {
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -2060,13 +2073,32 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 		}
 		rec.EvtlogId=evtlog_id
 		counter++
+		if n_bal_id.Valid { rec.BalChgId = n_bal_id.Int64 }
+		if n_from_aid.Valid { rec.FromAid = n_from_aid.Int64 }
+		if n_to_aid.Valid { rec.ToAid = n_to_aid.Int64 }
+		if n_user_aid.Valid { rec.UserAid = n_user_aid.Int64 }
+		if n_timestamp.Valid { rec.TimeStamp = n_timestamp.Int64 }
+		if n_datetime.Valid { rec.DateTime = n_datetime.String }
+		if n_tx_id.Valid { rec.TxId = n_tx_id.Int64 }
+		if n_txhash.Valid { rec.TxHash = n_txhash.String }
+		if n_from.Valid { rec.FromAddr = n_from.String }
+		if n_to.Valid { rec.ToAddr = n_to.String }
+		if n_amount.Valid { rec.Amount = n_amount.Float64 }
+		if n_int_amount.Valid { rec.IntegerAmount = n_int_amount.Float64 }
+		if n_bal_usd.Valid { rec.Balance = n_bal_usd.Float64 }
+		if n_balance.Valid { rec.IntegerBalance = n_balance.Float64 }
+		if n_bs_id.Valid { rec.BuySellOpId = n_bs_id.Int64 }
+		if n_bs_op_type.Valid { rec.BuySellOpType = n_bs_op_type.Int32 }
+		if n_fund_id.Valid { rec.FundOpId = n_fund_id.Int64 }
+		if n_fund_op_type.Valid { rec.FundOpType = n_fund_op_type.Int32 }
+		if n_red_id.Valid { rec.RedeemId = n_red_id.Int64 }
+		if n_red_payout.Valid { rec.RedeemPayout = n_red_payout.Float64 }
 		_,split_exists := split_ops[evtlog_id]
 		if split_exists {
 			b.OpType = 1		// Split
 			b.Len = b.Offset - counter
 			boundaries = append(boundaries,b)
 			b.Offset = counter; b.Len = 0; b.OpType = 0;
-			continue
 		}
 		_,merge_exists := merge_ops[evtlog_id]
 		if merge_exists {
@@ -2110,6 +2142,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 
 	output := make([]p.API_Pol_OpenInterestHistory,0,512)
 	num_boundaries := int32(len(boundaries))
+	ss.Info.Printf("Num boundaries=%v\n",num_boundaries)
 	counter = 0
 	for {
 		if counter>=num_boundaries {

@@ -478,7 +478,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION oi_history_transaction_ids(p_condition_id TEXT,p_usdc_aid BIGINT,p_fpmm_aid BIGINT)
-	RETURNS TABLE(bal_id BIGINT) AS $$
+	RETURNS TABLE(tx_id BIGINT) AS $$
 DECLARE
 BEGIN
 	RETURN QUERY 
