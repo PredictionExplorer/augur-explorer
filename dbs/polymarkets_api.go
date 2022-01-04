@@ -1971,24 +1971,19 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 	merge_ops := ss.build_pos_merge_operations(condition_id,usdc_aid,contract_aid)
 	_=split_ops
 	_=merge_ops
+	ss.Info.Printf("buysell_ops = %v elts\nfund_ops = %v elts\nredeem_ops = %v elts\nsplit_ops = %v elts\nmerge_ops = %v elts\n",len(buysell_ops),len(fund_ops),len(redeem_ops),len(split_ops),len(merge_ops))
 
-	query = "WITH txs AS (" +
-				"SELECT "+
-					"tx_id "+
-				"FROM oi_history_transaction_ids($1,$2,$3) data " +
-			") " +
+	query =
 			"SELECT " +
 				"e20b.id,"+
-				"e20t.evtlog_id,"+
+				"e.id,"+
 				"e20t.from_aid,"+
 				"e20t.to_aid, "+
 				"e20b.aid user_aid," +
 				"EXTRACT(EPOCH FROM e20b.time_stamp)::BIGINT AS ts,"+
 				"TO_CHAR(e20b.time_stamp,'DD-MM-YYYY HH::MM') datetime,"+
-				"txs.tx_id,"+
+				"tx.id,"+
 				"tx.tx_hash,"+
-				"fa.addr from_addr,"+
-				"ta.addr, " +
 				"e20b.amount/1e+6,"+
 				"e20b.amount," +
 				"e20b.balance/1e+6 as bal_usd,"+
@@ -1998,16 +1993,18 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 				"f.op_type,"+
 				"red.id red_id, "+
 				"red.payout " +
-			"FROM evt_log e "+
-				"JOIN txs ON txs.tx_id=e.tx_id "+
-				"JOIN transaction tx ON txs.tx_id=tx.id "+
+			"FROM transaction tx "+
+				"JOIN evt_log e ON tx.id=e.tx_id "+
 				"LEFT JOIN erc20_transf e20t ON e.id=e20t.evtlog_id "+
 				"LEFT JOIN erc20_bal e20b ON e20b.parent_id=e20t.id "+
-				"JOIN address fa ON e20t.from_aid=fa.address_id "+
-				"JOIN address ta ON e20t.to_aid=ta.address_id "+
+		//		"JOIN address fa ON e20t.from_aid=fa.address_id "+
+		//		"JOIN address ta ON e20t.to_aid=ta.address_id "+
 				"LEFT JOIN pol_buysell bs ON e.id=bs.evtlog_id "+
 				"LEFT JOIN pol_fund_addrem f ON e.id=f.evtlog_id "+
 				"LEFT JOIN pol_pay_redem red ON e.id=red.evtlog_id " +
+			"WHERE tx.id IN ("+
+				"SELECT tx_id FROM oi_history_transaction_ids($1,$2,$3) data " +
+			")"+
 			"ORDER BY e.id"
 
 	ss.Info.Printf("usdc=%v, contract_aid=%v\n",usdc_aid,contract_aid)
@@ -2036,19 +2033,20 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 	}
 	boundaries := make([]Boundary,0,256)
 	counter := int32(0)
+	addresses := make(map[int64]string)
 	var b Boundary
 	for rows.Next() {
 		var rec p.API_Pol_OpenInterestHistory
-		var evtlog_id int64
-		var n_bal_id,n_from_aid,n_to_aid,n_user_aid,n_timestamp sql.NullInt64
+		//var evtlog_id int64
+		var n_evtlog_id,n_bal_id,n_from_aid,n_to_aid,n_user_aid,n_timestamp sql.NullInt64
 		var n_tx_id sql.NullInt64
-		var n_datetime,n_txhash,n_from,n_to sql.NullString
+		var n_datetime,n_txhash sql.NullString
 		var n_amount,n_int_amount,n_bal_usd,n_balance,n_red_payout sql.NullFloat64
 		var n_bs_id,n_fund_id,n_red_id sql.NullInt64
 		var n_bs_op_type,n_fund_op_type sql.NullInt32
 		err=rows.Scan(
 			&n_bal_id,
-			&evtlog_id,
+			&n_evtlog_id,
 			&n_from_aid,
 			&n_to_aid,
 			&n_user_aid,
@@ -2056,14 +2054,13 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 			&n_datetime,
 			&n_tx_id,
 			&n_txhash,
-			&n_from,
-			&n_to,
 			&n_amount,
 			&n_int_amount,
 			&n_bal_usd,
 			&n_balance,
 			&n_bs_id,
 			&n_fund_id,
+			&n_fund_op_type,
 			&n_red_id,
 			&n_red_payout,
 		)
@@ -2071,7 +2068,9 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		rec.EvtlogId=evtlog_id
+
+		rec.EvtlogId=n_evtlog_id.Int64
+		ss.Info.Printf("evtlog_id %v, bal id=%v fund_id=%v, bs_id=%v\n",n_evtlog_id.Int64,n_bal_id.Int64,n_fund_id.Int64,n_bs_id.Int64)
 		counter++
 		if n_bal_id.Valid { rec.BalChgId = n_bal_id.Int64 }
 		if n_from_aid.Valid { rec.FromAid = n_from_aid.Int64 }
@@ -2081,8 +2080,6 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 		if n_datetime.Valid { rec.DateTime = n_datetime.String }
 		if n_tx_id.Valid { rec.TxId = n_tx_id.Int64 }
 		if n_txhash.Valid { rec.TxHash = n_txhash.String }
-		if n_from.Valid { rec.FromAddr = n_from.String }
-		if n_to.Valid { rec.ToAddr = n_to.String }
 		if n_amount.Valid { rec.Amount = n_amount.Float64 }
 		if n_int_amount.Valid { rec.IntegerAmount = n_int_amount.Float64 }
 		if n_bal_usd.Valid { rec.Balance = n_bal_usd.Float64 }
@@ -2093,42 +2090,43 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 		if n_fund_op_type.Valid { rec.FundOpType = n_fund_op_type.Int32 }
 		if n_red_id.Valid { rec.RedeemId = n_red_id.Int64 }
 		if n_red_payout.Valid { rec.RedeemPayout = n_red_payout.Float64 }
-		_,split_exists := split_ops[evtlog_id]
+		_,split_exists := split_ops[n_evtlog_id.Int64]
 		if split_exists {
 			b.OpType = 1		// Split
 			b.Len = b.Offset - counter
 			boundaries = append(boundaries,b)
 			b.Offset = counter; b.Len = 0; b.OpType = 0;
 		}
-		_,merge_exists := merge_ops[evtlog_id]
+		_,merge_exists := merge_ops[n_evtlog_id.Int64]
 		if merge_exists {
 			b.OpType = 2		// Merge
 			b.Len = b.Offset - counter
 			boundaries = append(boundaries,b)
 			b.Offset = counter; b.Len = 0; b.OpType = 0;
 		}
-		_,buysell_exists := buysell_ops[evtlog_id]
+		_,buysell_exists := buysell_ops[n_evtlog_id.Int64]
 		if buysell_exists {
 			b.OpType = 3		// Buy/Sell operation
 			b.Len = b.Offset - counter
 			boundaries = append(boundaries,b)
 			b.Offset = counter; b.Len = 0; b.OpType = 0;
 		}
-		_,fundop_exists := fund_ops[evtlog_id]
+		_,fundop_exists := fund_ops[n_evtlog_id.Int64]
 		if fundop_exists {
 			b.OpType = 4		// Fund Add/Remove operation
 			b.Len = b.Offset - counter
 			boundaries = append(boundaries,b)
 			b.Offset = counter; b.Len = 0; b.OpType = 0;
+			ss.Info.Printf("Appending boundary for fund (evtlog_id=%v): %+v\n",n_evtlog_id.Int64,b)
 		}
-		_,redeem_exists := redeem_ops[evtlog_id]
+		_,redeem_exists := redeem_ops[n_evtlog_id.Int64]
 		if redeem_exists {
 			b.OpType = 5		// Redeem operation
 			b.Len = b.Offset - counter
 			boundaries = append(boundaries,b)
 			b.Offset = counter; b.Len = 0; b.OpType = 0;
 		}
-		if (resolution_evtlog_id>0) && (evtlog_id>resolution_evtlog_id) {
+		if (resolution_evtlog_id>0) && (n_evtlog_id.Int64>resolution_evtlog_id) {
 			if !separator_was_added {
 				b.OpType = 6		// Market Resolution
 				b.Len = b.Offset - counter
@@ -2137,7 +2135,40 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 				separator_was_added = true
 			}
 		}
+		if n_from_aid.Valid { addresses[n_from_aid.Int64] = "" }
+		if n_to_aid.Valid { addresses[n_to_aid.Int64] = "" }
 		records = append(records,rec)
+	}
+
+	// We query addresses separately because doing this in the main
+	// query makes it run into infinity due to sequential scans
+	// (bad postgres query optimization is the cause)
+	var keys string
+	for k,_ := range addresses {
+		if len(keys) > 0 { keys = keys + "," }
+		keys = keys + fmt.Sprintf("%v",k)
+	}
+	query_addrs := "SELECT address_id,addr FROM address WHERE address_id IN("+keys+")"
+	rows_addrs,err := ss.db.Query(query_addrs)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query_addrs))
+		os.Exit(1)
+	}
+	defer rows_addrs.Close()
+	for rows_addrs.Next() {
+		var addr string
+		var aid int64
+		err=rows_addrs.Scan(&aid,&addr)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query_addrs))
+			os.Exit(1)
+		}
+		addresses[aid]=addr
+	}
+	for i:=0; i<len(records); i++ {
+		rec := records[i]
+		rec.FromAddr = addresses[rec.FromAid]
+		rec.ToAddr = addresses[rec.ToAid]
 	}
 
 	output := make([]p.API_Pol_OpenInterestHistory,0,512)
