@@ -273,6 +273,7 @@ type API_Pol_OpenInterestHistory struct {
 	IntegerFeeAccum			float64
 	ContractBalance			float64
 	ContractBalanceAccum	float64
+	Note					string	// explanation about what does this entry mean in human-readable text
 }
 type API_Pol_OI_HistoryTotals struct {
 	FinalOpenInterest		float64

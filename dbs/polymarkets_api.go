@@ -1575,6 +1575,9 @@ func (ss *SQLStorage)  build_redeem_operations(condition_id string,usdc_aid,cont
 type TmpSplitOp struct {
 	EvtLogId		int64
 	SplitOpId		int64
+	TxId			int64
+	ReferenceId		int64
+	AddressId		int64
 	IntegerAmount	float64
 	Amount			float64
 }
@@ -1586,6 +1589,8 @@ func (ss *SQLStorage)  build_pos_split_operations(condition_id string,usdc_aid,c
 	query = "SELECT "+
 				"s.evtlog_id,"+
 				"s.id split_id,"+
+				"s.tx_id,"+
+				"s.stakeholder_aid,"+
 				"s.amount,"+
 				"s.amount/1e+6 "+
 			"FROM pol_pos_split s " +
@@ -1602,6 +1607,8 @@ func (ss *SQLStorage)  build_pos_split_operations(condition_id string,usdc_aid,c
 		err=rows_split_ops.Scan(
 			&rec.EvtLogId,
 			&rec.SplitOpId,
+			&rec.TxId,
+			&rec.AddressId,
 			&rec.IntegerAmount,
 			&rec.Amount,
 		)
@@ -1612,6 +1619,9 @@ func (ss *SQLStorage)  build_pos_split_operations(condition_id string,usdc_aid,c
 type TmpMergeOp struct {
 	EvtLogId		int64
 	MergeOpId		int64
+	TxId			int64
+	ReferenceId		int64
+	AddressId		int64
 	IntegerAmount	float64
 	Amount			float64
 }
@@ -1623,6 +1633,8 @@ func (ss *SQLStorage)  build_pos_merge_operations(condition_id string,usdc_aid,c
 	query = "SELECT "+
 				"m.evtlog_id,"+
 				"m.id split_id,"+
+				"m.tx_id,"+
+				"m.stakeholder_aid,"+
 				"m.amount,"+
 				"m.amount/1e+6 "+
 			"FROM pol_pos_merge m " +
@@ -1639,6 +1651,8 @@ func (ss *SQLStorage)  build_pos_merge_operations(condition_id string,usdc_aid,c
 		err=rows_merge_ops.Scan(
 			&rec.EvtLogId,
 			&rec.MergeOpId,
+			&rec.TxId,
+			&rec.AddressId,
 			&rec.IntegerAmount,
 			&rec.Amount,
 		)
@@ -1935,6 +1949,41 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v4(usdc_aid,condtok_ai
 	ss.Info.Printf("rows returned = %v\n",len(records))
 	return totals,records
 }
+func make_note(tx_id int64,buysell_id int64,buysell_op_type int32,fund_id int64,fund_type int32,redeem_id int64,from_aid,mkt_mkr_aid int64,payout_numerators string) string {
+
+	var output string
+
+	if tx_id > 0 {
+		if buysell_id > 0 {
+			if buysell_op_type == 0 {
+				output = "Buy"
+			} else {
+				output = "Sell"
+			}
+		}
+		if fund_id > 0 {
+			if fund_type == 0 {
+				output = "Add Funds"
+			} else {
+				output = "Remove funds"
+			}
+		}
+		if from_aid == mkt_mkr_aid {
+			output = fmt.Sprintf("%v (Market Maker contract sends funds to conditional token contract)",output)
+		} else {
+			output = fmt.Sprintf("%v (Funder sends funds to Market Maker contract)",output)
+		}
+		if redeem_id > 0 {
+			output = "Payout redemption (Conditional Token contract sends funds to the User"
+		}
+		if (buysell_id == -1) && (fund_id==-1) && (redeem_id==-1) {
+			output = "User sends operation to Conditional Tokens buypassing Market Maker (probably to avoid paying fees)"
+		}
+	} else {
+		output = fmt.Sprintf("Payout numerators are: %v",payout_numerators)
+	}
+	return output
+}
 func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_aid,contract_aid int64,condition_id string,offset,limit int) (p.API_Pol_OI_HistoryTotals,[]p.API_Pol_OpenInterestHistory) {
 	// another version of history for testing
 
@@ -1989,8 +2038,10 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 				"e20b.balance/1e+6 as bal_usd,"+
 				"e20b.balance, "+
 				"bs.id bs_id, "+
+				"bs.user_aid,"+
 				"f.id fund_id," +
 				"f.op_type,"+
+				"f.funder_aid,"+
 				"red.id red_id, "+
 				"red.payout " +
 			"FROM transaction tx "+
@@ -2035,6 +2086,10 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 	counter := int32(0)
 	addresses := make(map[int64]string)
 	var b Boundary
+	var last_split_op TmpSplitOp
+	var last_merge_op TmpMergeOp
+	var split_exists,merge_exists bool
+	
 	for rows.Next() {
 		var rec p.API_Pol_OpenInterestHistory
 		//var evtlog_id int64
@@ -2042,7 +2097,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 		var n_tx_id sql.NullInt64
 		var n_datetime,n_txhash sql.NullString
 		var n_amount,n_int_amount,n_bal_usd,n_balance,n_red_payout sql.NullFloat64
-		var n_bs_id,n_fund_id,n_red_id sql.NullInt64
+		var n_bs_id,n_fund_id,n_red_id,n_bs_user_aid,n_funder_aid sql.NullInt64
 		var n_bs_op_type,n_fund_op_type sql.NullInt32
 		err=rows.Scan(
 			&n_bal_id,
@@ -2059,14 +2114,16 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 			&n_bal_usd,
 			&n_balance,
 			&n_bs_id,
+			&n_bs_user_aid,
 			&n_fund_id,
 			&n_fund_op_type,
+			&n_funder_aid,
 			&n_red_id,
 			&n_red_payout,
 		)
 		if (err!=nil) {
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-			os.Exit(1)
+			os.Exit(1)  
 		}
 
 		rec.EvtlogId=n_evtlog_id.Int64
@@ -2090,46 +2147,65 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 		if n_fund_op_type.Valid { rec.FundOpType = n_fund_op_type.Int32 }
 		if n_red_id.Valid { rec.RedeemId = n_red_id.Int64 }
 		if n_red_payout.Valid { rec.RedeemPayout = n_red_payout.Float64 }
-		_,split_exists := split_ops[n_evtlog_id.Int64]
+		last_split_op,split_exists = split_ops[n_evtlog_id.Int64]
 		if split_exists {
 			b.OpType = 1		// Split
-			b.Len = b.Offset - counter
+			b.Len = counter - b.Offset
 			boundaries = append(boundaries,b)
 			b.Offset = counter; b.Len = 0; b.OpType = 0;
 		}
-		_,merge_exists := merge_ops[n_evtlog_id.Int64]
+		last_merge_op,merge_exists = merge_ops[n_evtlog_id.Int64]
 		if merge_exists {
 			b.OpType = 2		// Merge
-			b.Len = b.Offset - counter
+			b.Len = counter - b.Offset
 			boundaries = append(boundaries,b)
 			b.Offset = counter; b.Len = 0; b.OpType = 0;
 		}
-		_,buysell_exists := buysell_ops[n_evtlog_id.Int64]
+		bs_op,buysell_exists := buysell_ops[n_evtlog_id.Int64]
 		if buysell_exists {
 			b.OpType = 3		// Buy/Sell operation
-			b.Len = b.Offset - counter
+			b.Len = counter - b.Offset
 			boundaries = append(boundaries,b)
 			b.Offset = counter; b.Len = 0; b.OpType = 0;
+			if (last_split_op.AddressId==n_user_aid.Int64) && (last_split_op.TxId==n_tx_id.Int64) {
+				tmp_entry,_ := split_ops[last_split_op.EvtLogId]
+				tmp_entry.ReferenceId=bs_op.EvtLogId
+				split_ops[last_split_op.EvtLogId]=tmp_entry
+			}
+			if (last_merge_op.AddressId==n_user_aid.Int64) && (last_merge_op.TxId==n_tx_id.Int64) {
+				tmp_entry,_ := merge_ops[last_merge_op.EvtLogId]
+				tmp_entry.ReferenceId=bs_op.EvtLogId
+				merge_ops[last_merge_op.EvtLogId]=tmp_entry
+			}
 		}
-		_,fundop_exists := fund_ops[n_evtlog_id.Int64]
+		fund_op,fundop_exists := fund_ops[n_evtlog_id.Int64]
 		if fundop_exists {
 			b.OpType = 4		// Fund Add/Remove operation
-			b.Len = b.Offset - counter
+			b.Len = counter - b.Offset
 			boundaries = append(boundaries,b)
 			b.Offset = counter; b.Len = 0; b.OpType = 0;
-			ss.Info.Printf("Appending boundary for fund (evtlog_id=%v): %+v\n",n_evtlog_id.Int64,b)
+			if (last_split_op.AddressId==n_funder_aid.Int64) && (last_split_op.TxId==n_tx_id.Int64) {
+				tmp_entry,_ := split_ops[last_split_op.EvtLogId]
+				tmp_entry.ReferenceId=fund_op.EvtLogId
+				split_ops[last_split_op.EvtLogId]=tmp_entry
+			}
+			if (last_merge_op.AddressId==n_funder_aid.Int64) && (last_merge_op.TxId==n_tx_id.Int64) {
+				tmp_entry,_ := merge_ops[last_merge_op.EvtLogId]
+				tmp_entry.ReferenceId=fund_op.EvtLogId
+				merge_ops[last_merge_op.EvtLogId]=tmp_entry
+			}
 		}
 		_,redeem_exists := redeem_ops[n_evtlog_id.Int64]
 		if redeem_exists {
 			b.OpType = 5		// Redeem operation
-			b.Len = b.Offset - counter
+			b.Len = counter - b.Offset
 			boundaries = append(boundaries,b)
 			b.Offset = counter; b.Len = 0; b.OpType = 0;
 		}
 		if (resolution_evtlog_id>0) && (n_evtlog_id.Int64>resolution_evtlog_id) {
 			if !separator_was_added {
 				b.OpType = 6		// Market Resolution
-				b.Len = b.Offset - counter
+				b.Len = counter - b.Offset
 				boundaries = append(boundaries,b)
 				b.Offset = counter; b.Len = 0; b.OpType = 0;
 				separator_was_added = true
@@ -2181,7 +2257,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 		}
 		b := &boundaries[counter]
 		counter++
-		ss.Info.Printf("boundary type = %v\n",b.OpType)
+		ss.Info.Printf("boundary type = %v, counter=%v offset=%v, len=%v\n",b.OpType,counter,b.Len,b.Offset)
 		switch b.OpType {
 			case 1:		// Split
 				for i:=int32(0); i<b.Len; i++ {
@@ -2200,6 +2276,9 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 						ss.Info.Printf("Skipping tx_id=%v (rule 4)\n",in_rec.TxId)
 						continue
 					}
+					if in_rec.BalChgId == 0 {
+						continue
+					}
 					var out_rec p.API_Pol_OpenInterestHistory
 					copy_all_fields(&out_rec,in_rec)
 					out_rec.AdjustedBalance = (out_rec.IntegerBalance - out_rec.IntegerAmount)/1000000.0
@@ -2212,10 +2291,30 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 					prev_trf_to_aid = out_rec.ToAid
 					prev_trf_from_aid = out_rec.FromAid
 					prev_trf_amount = out_rec.IntegerAmount
+					out_rec.Note = make_note(out_rec.TxId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,contract_aid,out_rec.PayoutNumerators)
 					output = append(output,out_rec)
 				}
 			case 2:		// Merge
+				for i:=int32(0); i<b.Len; i++ {
+					idx := b.Offset + i
+					in_rec := &records[idx]
+					var out_rec p.API_Pol_OpenInterestHistory
+					copy_all_fields(&out_rec,in_rec)
+					out_rec.AdjustedBalance = (out_rec.IntegerBalance - out_rec.IntegerAmount)/1000000.0
+					out_rec.FeeAccum = fee_accum / 1000000.0
+					out_rec.IntegerFeeAccum = fee_accum
+					out_rec.OpenInterest = open_interest / 1000000.0
+					out_rec.OIVerif = out_rec.OpenInterest + out_rec.FeeAccum
+					totals.FinalOpenInterest = out_rec.OpenInterest
+					totals.FinalFees = out_rec.FeeAccum
+					prev_trf_to_aid = out_rec.ToAid
+					prev_trf_from_aid = out_rec.FromAid
+					prev_trf_amount = out_rec.IntegerAmount
+					out_rec.Note = make_note(out_rec.TxId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,contract_aid,out_rec.PayoutNumerators)
+					output = append(output,out_rec)
+				}
 			case 3:		// Buy/Sell
+				ss.Info.Printf("processing bysell op, b=%+v\n",*b)
 				for i:=int32(0); i<b.Len; i++ {
 					idx := b.Offset + i
 					in_rec := &records[idx]
@@ -2253,6 +2352,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 					prev_trf_to_aid = out_rec.ToAid
 					prev_trf_from_aid = out_rec.FromAid
 					prev_trf_amount = out_rec.IntegerAmount
+					out_rec.Note = make_note(out_rec.TxId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,contract_aid,out_rec.PayoutNumerators)
 					output = append(output,out_rec)
 				}
 			case 4:		// Fund Add/Remove
@@ -2277,10 +2377,11 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 						} else {
 						}
 					}
+					out_rec.Note = make_note(out_rec.TxId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,contract_aid,out_rec.PayoutNumerators)
 					output = append(output,out_rec)
 				}
 			case 5:		// Redeem
-			case 6:
+			case 6:		// Separator (market resolved event)
 				idx := b.Offset
 				in_rec := &records[idx]
 				var out_rec p.API_Pol_OpenInterestHistory
@@ -2291,14 +2392,14 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 				resolution_rec.DateTime = resolution_date
 				records = append(records,resolution_rec)
 				separator_was_added=true
+				out_rec.Note = make_note(out_rec.TxId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,contract_aid,out_rec.PayoutNumerators)
 				ss.Info.Printf("\t appending separator\n")
 				output = append(output,out_rec)
 			default:
 				ss.Info.Printf("Unkown boundary operation type %v\n",b.OpType)
 		}
-//		ss.Info.Printf("Amount %v: fundtype %v , bs_id=%v, rec.ToAid = %v , recFromAid = %v, OI=%v\n",
-//			rec.Amount,rec.FundOpType,rec.BuySellOpId,rec.ToAid,rec.FromAid,open_interest)
 	}
+	ss.Info.Printf("len(output)=%v\n",len(output))
 	return totals,output
 }
 func copy_all_fields(out_rec,in_rec *p.API_Pol_OpenInterestHistory) {

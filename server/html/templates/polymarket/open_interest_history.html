@@ -80,22 +80,7 @@ This table shows all the flow of Collateral from source to destination, covering
 				{{ if gt .TxId 0 }}{{printf "%.6f" .OpenInterest}}{{end}}
 			</td>
 			<td nowrap class="generic">
-				{{ if gt .TxId 0 }}
-					{{ if gt .BuySellOpId 0 }}
-						{{ if eq .BuySellOpType 0 }} Buy {{ else }} Sell {{end}}
-						{{ if eq .FromAid $.MktMkrAid }} (Market Maker contract sends funds to Conditional Tokens contract)
-						{{ else }} (User sends funds to Market Maker contract ) {{ end }}
-					{{ end }}
-					{{ if gt .FundOpId 0 }}
-						{{ if eq .FundOpType 0 }} Add Funds {{ else }} Remove Funds {{end}}
-						{{ if eq .FromAid $.MktMkrAid }} (Market Maker contract sends funds to Conditional Tokens contract) 
-						{{ else }} (Funder sends funds to Market Maket maker contract){{ end }}
-					{{ end }}
-					{{ if gt .RedeemId 0 }}Payout redemption (Conditional Tokens contract sends funds to the User){{end}}
-					{{ if and (eq .BuySellOpId -1) (eq .FundOpId -1) (eq .RedeemId -1)}} User sends operation to Conditional Tokens contract bypassing Market Maker (probably to avoid paying fees) {{ end }}
-				{{ else }}
-					payout numerators are: {{.PayoutNumerators}}
-				{{ end}}
+				{{ .Note }}
 			</td>
 		</tr>
 	{{- end}}
