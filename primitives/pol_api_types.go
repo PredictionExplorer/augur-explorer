@@ -242,6 +242,7 @@ type API_Pol_MarketERC1155Transfer struct {
 }
 type API_Pol_OpenInterestHistory struct {
 	EvtlogId				int64
+	ContractAid				int64
 	TimeStamp				int64
 	DateTime				string
 	TxId					int64	// if -1 then it means we have condition resolution record

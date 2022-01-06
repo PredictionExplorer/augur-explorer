@@ -32,7 +32,7 @@ This table shows all the flow of Collateral from source to destination, covering
 				Evt {{.EvtlogId}}
 			</td>
 			<td class="generic" title="{{.BalChgId}}" nowrap>
-				{{.DateTime}}
+				{{.DateTime}} / {{.UserAid}}
 			</td>
 			<td class="generic addr" title="{{.FromAid}}">
 				{{ if gt .TxId 0 }}
