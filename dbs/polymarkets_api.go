@@ -1471,6 +1471,7 @@ type TmpBuySellOp struct {
 	EvtLogId		int64
 	BuySellId		int64
 	BuySellType		int32
+	IntegerFee		float64
 }
 func (ss *SQLStorage)  build_buysell_operations(condition_id string,usdc_aid,contract_aid int64) map[int64]TmpBuySellOp {
 	var query string
@@ -1480,7 +1481,8 @@ func (ss *SQLStorage)  build_buysell_operations(condition_id string,usdc_aid,con
 	query = "SELECT "+
 				"bs.evtlog_id,"+
 				"bs.id,"+
-				"bs.op_type "+
+				"bs.op_type, "+
+				"bs.fee_amount " +
 			"FROM pol_buysell bs " +
 				"WHERE bs.tx_id IN( SELECT * FROM oi_history_transaction_ids($1,$2,$3)) "
 
@@ -1496,7 +1498,12 @@ func (ss *SQLStorage)  build_buysell_operations(condition_id string,usdc_aid,con
 			&rec.EvtLogId,
 			&rec.BuySellId,
 			&rec.BuySellType,
+			&rec.IntegerFee,
 		)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
 		buysell_ops[rec.EvtLogId] = rec
 	}
 	return buysell_ops
@@ -1531,6 +1538,10 @@ func (ss *SQLStorage)  build_fund_operations(condition_id string,usdc_aid,contra
 			&rec.FundOpId,
 			&rec.FundType,
 		)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
 		fund_ops[rec.EvtLogId] = rec
 	}
 	return fund_ops
@@ -1568,6 +1579,10 @@ func (ss *SQLStorage)  build_redeem_operations(condition_id string,usdc_aid,cont
 			&rec.IntegerAmount,
 			&rec.Amount,
 		)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
 		redeem_ops[rec.EvtLogId] = rec
 	}
 	return redeem_ops
@@ -1613,6 +1628,10 @@ func (ss *SQLStorage)  build_pos_split_operations(condition_id string,usdc_aid,c
 			&rec.IntegerAmount,
 			&rec.Amount,
 		)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
 		split_ops[rec.EvtLogId] = rec
 	}
 	return split_ops
@@ -1658,6 +1677,10 @@ func (ss *SQLStorage)  build_pos_merge_operations(condition_id string,usdc_aid,c
 			&rec.IntegerAmount,
 			&rec.Amount,
 		)
+		if (err!=nil) {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
 		merge_ops[rec.EvtLogId] = rec
 	}
 	return merge_ops
@@ -1951,35 +1974,40 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v4(usdc_aid,condtok_ai
 	ss.Info.Printf("rows returned = %v\n",len(records))
 	return totals,records
 }
-func make_note(tx_id int64,buysell_id int64,buysell_op_type int32,fund_id int64,fund_type int32,redeem_id int64,from_aid,mkt_mkr_aid int64,payout_numerators string) string {
+func make_note(tx_id int64,buysell_id int64,buysell_op_type int32,fund_id int64,fund_type int32,redeem_id int64,from_aid,to_aid,mkt_mkr_aid int64,payout_numerators string) string {
 
 	var output string
 
 	if tx_id > 0 {
 		if buysell_id > 0 {
 			if buysell_op_type == 0 {
-				output = "Buy"
+				output = "Buy. "
+				if from_aid == mkt_mkr_aid {
+					output = fmt.Sprintf("%v Market Maker contract sends funds to conditional token contract",output)
+				} else {
+					output = fmt.Sprintf("%v User sends funds to Market Maker contract",output)
+				}
 			} else {
-				output = "Sell"
+				output = "Sell. "
+				if to_aid == mkt_mkr_aid {
+					output = fmt.Sprintf("%v Conditional Token contract sends funds to Market Maker contract",output)
+				} else {
+					output = fmt.Sprintf("%v Market maker contract sends funds to the User",output)
+				}
 			}
 		}
 		if fund_id > 0 {
 			if fund_type == 0 {
-				output = "Add Funds"
+				output = "Add Funds. "
 			} else {
-				output = "Remove funds"
+				output = "Remove funds. "
 			}
-		}
-		if from_aid == mkt_mkr_aid {
-			output = fmt.Sprintf("%v (Market Maker contract sends funds to conditional token contract)",output)
-		} else {
-			output = fmt.Sprintf("%v (User sends funds to Market Maker contract)",output)
-		}
-		if redeem_id > 0 {
-			output = "Payout redemption (Conditional Token contract sends funds to the User"
-		}
-		if (buysell_id == -1) && (fund_id==-1) && (redeem_id==-1) {
-			output = "User sends operation to Conditional Tokens buypassing Market Maker (probably to avoid paying fees)"
+			if redeem_id > 0 {
+				output = "Payout redemption (Conditional Token contract sends funds to the User"
+			}
+			if (buysell_id == -1) && (fund_id==-1) && (redeem_id==-1) {
+				output = "User sends operation to Conditional Tokens buypassing Market Maker (probably to avoid paying fees)"
+			}
 		}
 	} else {
 		output = fmt.Sprintf("Payout numerators are: %v",payout_numerators)
@@ -2339,7 +2367,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 						ss.Info.Printf("op.BuySellType = %v\n",op.BuySellType)
 						if op.BuySellType == 0 {//Buy
 							ss.Info.Printf("it is a Buy\n")
-							if out_rec.FromAid == condtok_aid {
+							if out_rec.FromAid == contract_aid {
 								out_rec.BuySellOpId = op.BuySellId
 								out_rec.BuySellOpType = op.BuySellType
 								ss.Info.Printf("Set buysell id %v\n",op.BuySellId)
@@ -2413,7 +2441,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 					prev_trf_to_aid = out_rec.ToAid
 					prev_trf_from_aid = out_rec.FromAid
 					prev_trf_amount = out_rec.IntegerAmount
-					out_rec.Note = make_note(out_rec.TxId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,contract_aid,out_rec.PayoutNumerators)
+					out_rec.Note = make_note(out_rec.TxId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,out_rec.PayoutNumerators)
 					output = append(output,out_rec)
 				}
 				ss.Info.Printf("Split boundary ended\n\n")
@@ -2517,9 +2545,9 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 					totals.FinalOpenInterest = out_rec.OpenInterest
 					totals.FinalFees = out_rec.FeeAccum
 					//prev_trf_to_aid = out_rec.ToAid
-					prev_trf_from_aid = out_rec.FromAid
+					prevtrf_from_aid = out_rec.FromAid
 					prev_trf_amount = out_rec.IntegerAmount
-					out_rec.Note = make_note(out_rec.TxId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,contract_aid,out_rec.PayoutNumerators)
+					out_rec.Note = make_note(out_rec.TxId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,out_rec.PayoutNumerators)
 					output = append(output,out_rec)
 				}
 				ss.Info.Printf("Merge boundary ended\n\n")
@@ -2547,6 +2575,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 						ss.Info.Printf("Skipping evtlog_id %v (negative balance)\n",in_rec.EvtlogId)
 						prev_trf_to_aid = in_rec.ToAid
 						prev_trf_amount = -in_rec.IntegerAmount // cancel sign
+						ss.Info.Printf("Setting previous amount to %v\n",prev_trf_amount)
 						continue
 					}
 					var out_rec p.API_Pol_OpenInterestHistory
@@ -2565,7 +2594,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 						// sell op
 						ss.Info.Printf("Entering sell op, bal_id=%v tx_id=%v prev_trf_to_aid=%v\n",out_rec.BalChgId,out_rec.TxId,prev_trf_to_aid)
 						ss.Info.Printf("Condition passed, calculating fees now prev_trf_amount=%v, IntegerAmount=%v\n",prev_trf_amount,out_rec.IntegerAmount)
-						out_rec.IntegerFee = out_rec.IntegerAmount
+						out_rec.IntegerFee = buysell_op.IntegerFee
 						out_rec.Fee = out_rec.IntegerFee / 1000000.0
 						fee_accum = fee_accum + out_rec.IntegerFee
 						open_interest = open_interest - (out_rec.IntegerAmount)
@@ -2580,7 +2609,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 					//prev_trf_to_aid = out_rec.ToAid
 					prev_trf_to_aid = out_rec.ToAid
 					prev_trf_amount = out_rec.IntegerAmount
-					out_rec.Note = make_note(out_rec.TxId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,contract_aid,out_rec.PayoutNumerators)
+					out_rec.Note = make_note(out_rec.TxId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,out_rec.PayoutNumerators)
 					output = append(output,out_rec)
 				}
 				ss.Info.Printf("Buy/Sell boundary ended\n\n")
@@ -2612,7 +2641,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 						} else {
 						}
 					}
-					out_rec.Note = make_note(out_rec.TxId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,contract_aid,out_rec.PayoutNumerators)
+					out_rec.Note = make_note(out_rec.TxId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,out_rec.PayoutNumerators)
 					output = append(output,out_rec)
 				}
 				ss.Info.Printf("Fund Add/Remove boundary ended\n\n")
@@ -2628,7 +2657,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 				resolution_rec.DateTime = resolution_date
 				records = append(records,resolution_rec)
 				separator_was_added=true
-				out_rec.Note = make_note(out_rec.TxId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,contract_aid,out_rec.PayoutNumerators)
+				out_rec.Note = make_note(out_rec.TxId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,out_rec.PayoutNumerators)
 				ss.Info.Printf("\t appending separator\n")
 				output = append(output,out_rec)
 			default:
