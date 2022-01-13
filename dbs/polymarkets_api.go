@@ -1974,7 +1974,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v4(usdc_aid,condtok_ai
 	ss.Info.Printf("rows returned = %v\n",len(records))
 	return totals,records
 }
-func make_note(tx_id int64,split_id,merge_id int64,buysell_id int64,buysell_op_type int32,fund_id int64,fund_type int32,redeem_id int64,from_aid,to_aid,mkt_mkr_aid int64,payout_numerators string) string {
+func make_note(tx_id int64,split_id,merge_id int64,buysell_id int64,buysell_op_type int32,fund_id int64,fund_type int32,redeem_id int64,from_aid,to_aid,mkt_mkr_aid int64,condtok_aid int64,payout_numerators string) string {
 
 	var output string
 
@@ -1992,7 +1992,7 @@ func make_note(tx_id int64,split_id,merge_id int64,buysell_id int64,buysell_op_t
 				if to_aid == mkt_mkr_aid {
 					output = fmt.Sprintf("%v Conditional Token contract sends funds to Market Maker contract",output)
 				} else {
-					output = fmt.Sprintf("%v Market maker contract sends funds to the User",output)
+					output = fmt.Sprintf("%v Market Maker contract sends funds to the User",output)
 				}
 			}
 		}
@@ -2002,8 +2002,17 @@ func make_note(tx_id int64,split_id,merge_id int64,buysell_id int64,buysell_op_t
 			} else {
 				output = "Remove funds. "
 			}
-			if redeem_id > 0 {
-				output = "Payout redemption (Conditional Token contract sends funds to the User"
+			if from_aid == condtok_aid {
+				output = fmt.Sprintf("%v Conditional Token contract sends funds to the User",output)
+			}
+			if to_aid == mkt_mkr_aid {
+				output = fmt.Sprintf("%v User sends funds to Market Maker contract",output)
+			}
+			if (to_aid != condtok_aid) && (to_aid != mkt_mkr_aid) {
+				output = fmt.Sprintf("%v Market Maker sends funds to the User",output)
+			}
+			if to_aid == condtok_aid {
+				output = fmt.Sprintf("%v Market Maker sends Funds to Conditional Token contract",output)
 			}
 		}
 		if (buysell_id == 0) && (fund_id==0) && (redeem_id==0) {
@@ -2121,6 +2130,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 	var b Boundary
 	var last_split_op TmpSplitOp
 	var last_merge_op TmpMergeOp
+	var boundary_tx int64 = 0
 
 	for rows.Next() {
 		var rec p.API_Pol_OpenInterestHistory
@@ -2161,6 +2171,15 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 		}
 
 		rec.EvtlogId=n_evtlog_id.Int64
+		if n_tx_id.Int64 != boundary_tx {
+			// reset current boundary on transaction change
+			b.EvtLogId = 0
+			b.OpType = 0
+			b.Offset = counter
+			b.Len = 0
+			boundary_tx = n_tx_id.Int64
+			ss.Info.Printf("Event boundary was reset at TxId %v\n",n_tx_id.Int64)
+		}
 		counter++
 		if n_bal_id.Valid { rec.BalChgId = n_bal_id.Int64 }
 		if n_from_aid.Valid { rec.FromAid = n_from_aid.Int64 }
@@ -2183,7 +2202,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 		// push key of the address for subsequent fetch of the address itself
 		if n_from_aid.Valid { addresses[n_from_aid.Int64] = "" }
 		if n_to_aid.Valid { addresses[n_to_aid.Int64] = "" }
-		ss.Info.Printf("evtlog_id %v, bal id=%v fund_id=%v, bs_id=%v bs_type=%v\n",n_evtlog_id.Int64,n_bal_id.Int64,n_fund_id.Int64,n_bs_id.Int64,n_bs_op_type.Int32)
+		ss.Info.Printf("tx_id %v (boundary tx_id=%v), evtlog_id %v, bal id=%v fund_id=%v, bs_id=%v bs_type=%v\n",n_tx_id.Int64,boundary_tx,n_evtlog_id.Int64,n_bal_id.Int64,n_fund_id.Int64,n_bs_id.Int64,n_bs_op_type.Int32)
 
 		tmp_split_op,split_exists := split_ops[n_evtlog_id.Int64]
 		if split_exists {
@@ -2345,14 +2364,13 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 		ss.Info.Printf("boundary type = %v, counter=%v offset=%v, len=%v\n",b.OpType,counter,b.Len,b.Offset)
 		switch b.OpType {
 			case 1:		// Split
-				var prev_trf_to_aid int64 = -1
-				var prev_trf_from_aid int64 = -1
-				var prev_trf_amount float64 = -1.0
+				ss.Info.Printf("Processing Split\n")
 				split_op := split_ops[b.EvtLogId]
 				ss.Info.Printf("Ref for split evtlog_id=%v is %v\n",b.EvtLogId,split_op.ReferenceId)
 				for i:=int32(0); i<b.Len; i++ {
 					idx := b.Offset + i
 					in_rec := &records[idx]
+					ss.Info.Printf("Processing evtlog_id %v (i=%v, balChgId=%v, tx_id=%v)\n",in_rec.EvtlogId,i,in_rec.BalChgId,in_rec.TxId)
 					if in_rec.Amount<0.0 {
 						ss.Info.Printf("Skipping evtlog_id %v (rule 1)\n",in_rec.EvtlogId)
 						continue
@@ -2381,43 +2399,35 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 					ss.Info.Printf("split_op.ReferenceType = %v\n",split_op.ReferenceType)
 					if split_op.ReferenceType == 1 { //Buy/Sell
 						op,_ := buysell_ops[split_op.ReferenceId]
+						out_rec.BuySellOpId = op.BuySellId
+						out_rec.BuySellOpType = op.BuySellType
 						ss.Info.Printf("op.BuySellType = %v\n",op.BuySellType)
-						if op.BuySellType == 0 {//Buy
-							ss.Info.Printf("it is a Buy\n")
-							if out_rec.FromAid == contract_aid {
-								out_rec.BuySellOpId = op.BuySellId
-								out_rec.BuySellOpType = op.BuySellType
-								ss.Info.Printf("Set buysell id %v\n",op.BuySellId)
-							}
-						}
-						if op.BuySellType == 1 {//Sell
-							ss.Info.Printf("it is a Sell\n")
-							if out_rec.ToAid == condtok_aid {
-								out_rec.BuySellOpId = op.BuySellId
-								out_rec.BuySellOpType = op.BuySellType
-								ss.Info.Printf("Set buysell id %v\n",op.BuySellId)
-							}
-						}
-						if (out_rec.ToAid == condtok_aid) && 
-								(out_rec.FromAid == contract_aid) && (out_rec.BuySellOpType == 0) {
-							// buy op
-							if prev_trf_to_aid == contract_aid {
-								out_rec.IntegerFee = prev_trf_amount - (out_rec.IntegerAmount)
+						if op.BuySellType == 0 { // Buy
+							ss.Info.Printf("Detected referenced buysell op\n")
+							if (out_rec.ToAid == condtok_aid ) &&
+									(out_rec.FromAid == contract_aid) && (op.BuySellType == 0) {
+								// buy op
+								out_rec.IntegerFee = op.IntegerFee
 								out_rec.Fee = out_rec.IntegerFee/1000000.0
 								fee_accum = fee_accum + out_rec.IntegerFee
-								open_interest = open_interest +  (out_rec.IntegerAmount)
+								open_interest = open_interest +  out_rec.IntegerAmount
+							} else {
+								ss.Info.Printf("Condition #1 for identifying transfer wasn't met\n")
 							}
 						}
-						if (out_rec.FromAid == contract_aid) &&
-								(out_rec.FromAid != condtok_aid) && (out_rec.BuySellOpType == 1) {
-							// sell op
-							ss.Info.Printf("Entering sell op, bal_id=%v tx_id=%v prev_trf_from_aid=%v\n",out_rec.BalChgId,out_rec.TxId,prev_trf_from_aid)
-							if prev_trf_from_aid == condtok_aid {
-								ss.Info.Printf("Condition passed, calculating fees now prev_trf_amount=%v, IntegerAmount=%v\n",prev_trf_amount,out_rec.IntegerAmount)
-								out_rec.IntegerFee = prev_trf_amount - out_rec.IntegerAmount
+						if op.BuySellType == 1 {
+							ss.Info.Printf("Detected referenced buysell op\n")
+							if (out_rec.ToAid == contract_aid) &&
+									(out_rec.FromAid == condtok_aid) && (op.BuySellType == 1) {
+								// sell op
+								ss.Info.Printf("Entering sell op, bal_id=%v tx_id=%v\n",out_rec.BalChgId,out_rec.TxId)
+								ss.Info.Printf("Condition passed, calculating fees now IntegerAmount=%v\n",out_rec.IntegerAmount)
+								out_rec.IntegerFee = op.IntegerFee
 								out_rec.Fee = out_rec.IntegerFee / 1000000.0
 								fee_accum = fee_accum + out_rec.IntegerFee
 								open_interest = open_interest - (out_rec.IntegerAmount)
+							} else {
+								ss.Info.Printf("Condition for identifying transfer wasn't met\n")
 							}
 						}
 					}
@@ -2426,9 +2436,9 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 						ss.Info.Printf("op.FundType=%v\n",op.FundType)
 						if op.FundType == 0 {// Add
 							ss.Info.Printf("It is an add, ToAid=%v, condtok_aid=%v\n",out_rec.ToAid,condtok_aid)
+							out_rec.FundOpId = op.FundOpId
+							out_rec.FundOpType = op.FundType
 							if out_rec.ToAid == condtok_aid {
-								out_rec.FundOpId = op.FundOpId
-								out_rec.FundOpType = op.FundType
 								ss.Info.Printf("Set fund add id %v\n",op.FundOpId)
 							}
 							if (out_rec.ToAid == condtok_aid) && (out_rec.FromAid == contract_aid) {
@@ -2437,9 +2447,9 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 						}
 						if op.FundType == 1 {// Remove
 							ss.Info.Printf("Its an Remove, FromAid=%v, condtok_aid=%v\n",out_rec.FromAid,condtok_aid)
+							out_rec.FundOpId = op.FundOpId
+							out_rec.FundOpType = op.FundType
 							if out_rec.FromAid == condtok_aid {
-								out_rec.FundOpId = op.FundOpId
-								out_rec.FundOpType = op.FundType
 								ss.Info.Printf("Set fund remove id %v\n",op.FundOpId)
 							}
 							if (out_rec.FromAid == contract_aid) && (out_rec.ToAid != condtok_aid) {
@@ -2465,14 +2475,12 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 					out_rec.OIVerif = out_rec.OpenInterest + out_rec.FeeAccum
 					totals.FinalOpenInterest = out_rec.OpenInterest
 					totals.FinalFees = out_rec.FeeAccum
-					prev_trf_to_aid = out_rec.ToAid
-					prev_trf_from_aid = out_rec.FromAid
-					prev_trf_amount = out_rec.IntegerAmount
-					out_rec.Note = make_note(out_rec.TxId,split_op.EvtLogId,0,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,out_rec.PayoutNumerators)
+					out_rec.Note = make_note(out_rec.TxId,split_op.EvtLogId,0,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,condtok_aid,out_rec.PayoutNumerators)
 					output = append(output,out_rec)
 				}
 				ss.Info.Printf("Split boundary ended\n\n")
 			case 2:		// Merge
+				ss.Info.Printf("Processing merge\n")
 				merge_op := merge_ops[b.EvtLogId]
 				ss.Info.Printf("Ref for merge evtlog_id=%v is %v\n",b.EvtLogId,merge_op.ReferenceId)
 				//var prev_trf_to_aid int64 = -1
@@ -2481,7 +2489,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 				for i:=int32(0); i<b.Len; i++ {
 					idx := b.Offset + i
 					in_rec := &records[idx]
-					ss.Info.Printf("Processing evtlog_id %v (i=%v, balChgId=%v)\n",in_rec.EvtlogId,i,in_rec.BalChgId)
+					ss.Info.Printf("Processing evtlog_id %v (i=%v, balChgId=%v, tx_id=%v)\n",in_rec.EvtlogId,i,in_rec.BalChgId,in_rec.TxId)
 					if in_rec.BalChgId == 0 {
 						ss.Info.Printf("Skipping evtlog_id %v BalChgId=0\n",in_rec.EvtlogId)
 						continue
@@ -2502,25 +2510,11 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 					if merge_op.ReferenceType == 1 { //Buy/Sell
 						op,_ := buysell_ops[merge_op.ReferenceId]
 						ss.Info.Printf("op.BuySellType = %v\n",op.BuySellType)
-						if op.BuySellType == 0 {//Buy
-							ss.Info.Printf("it is a Buy\n")
-							if out_rec.ToAid == condtok_aid {
-								out_rec.BuySellOpId = op.BuySellId
-								out_rec.BuySellOpType = op.BuySellType
-								ss.Info.Printf("Set buysell id %v\n",op.BuySellId)
-							}
-						}
-						if op.BuySellType == 1 {//Sell
-							ss.Info.Printf("it is a Sell\n")
-							if out_rec.FromAid == condtok_aid {
-								out_rec.BuySellOpId = op.BuySellId
-								out_rec.BuySellOpType = op.BuySellType
-								ss.Info.Printf("Set buysell id %v\n",op.BuySellId)
-							}
-						}
 						if (out_rec.FromAid == condtok_aid) && 
 								(out_rec.ToAid == contract_aid) && (out_rec.BuySellOpType == 0) {
 							// buy op
+							out_rec.BuySellOpId = op.BuySellId
+							out_rec.BuySellOpType = op.BuySellType
 							out_rec.IntegerFee = prev_trf_amount - (out_rec.IntegerAmount)
 							out_rec.Fee = out_rec.IntegerFee/1000000.0
 							fee_accum = fee_accum + out_rec.IntegerFee
@@ -2529,6 +2523,8 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 						if (out_rec.ToAid == contract_aid) &&
 								(out_rec.FromAid == condtok_aid) && (out_rec.BuySellOpType == 1) {
 							// sell op
+							out_rec.BuySellOpId = op.BuySellId
+							out_rec.BuySellOpType = op.BuySellType
 							ss.Info.Printf("Entering sell op, bal_id=%v tx_id=%v prev_trf_from_aid=%v\n",out_rec.BalChgId,out_rec.TxId,prev_trf_from_aid)
 							ss.Info.Printf("Condition passed, calculating fees now prev_trf_amount=%v, IntegerAmount=%v\n",prev_trf_amount,out_rec.IntegerAmount)
 							//out_rec.IntegerFee = prev_trf_amount - out_rec.IntegerAmount
@@ -2583,8 +2579,8 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 					//prev_trf_to_aid = out_rec.ToAid
 					//prevtrf_from_aid = out_rec.FromAid
 					prev_trf_amount = out_rec.IntegerAmount
-					ss.Info.Printf("EvtlogId=%v ids: buysell_op_id=%v, fund_op_id=%v, redeem_id=%v, split_id=%v, merge_id=%v\n",out_rec.BuySellOpId,out_rec.FundOpId,out_rec.RedeemId,0,merge_op.EvtLogId)
-					out_rec.Note = make_note(out_rec.TxId,0,merge_op.EvtLogId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,out_rec.PayoutNumerators)
+					ss.Info.Printf("EvtlogId=%v ids: buysell_op_id=%v, fund_op_id=%v, redeem_id=%v, split_id=%v, merge_id=%v\n",out_rec.EvtlogId,out_rec.BuySellOpId,out_rec.FundOpId,out_rec.RedeemId,0,merge_op.EvtLogId)
+					out_rec.Note = make_note(out_rec.TxId,0,merge_op.EvtLogId,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,condtok_aid,out_rec.PayoutNumerators)
 					output = append(output,out_rec)
 				}
 				ss.Info.Printf("Merge boundary ended\n\n")
@@ -2599,7 +2595,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 					idx := b.Offset + i
 					in_rec := &records[idx]
 					ss.Info.Printf("Processing evtlog_id %v (i=%v, balChgId=%v)\n",in_rec.EvtlogId,i,in_rec.BalChgId)
-					ss.Info.Printf("BuySellOpType = %v\n",in_rec.BuySellOpType)
+					ss.Info.Printf("iteration %v, BuySellOpType = %v\n",(i+1),in_rec.BuySellOpType)
 					if in_rec.BalChgId == 0 {
 						ss.Info.Printf("Skipping evtlog_id %v BalChgId=0\n",in_rec.EvtlogId)
 						continue
@@ -2621,6 +2617,8 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 					if (out_rec.ToAid == condtok_aid) && 
 						(out_rec.FromAid == contract_aid) && (buysell_op.BuySellType  == 0) {
 						// buy op
+						out_rec.BuySellOpId = buysell_op.BuySellId
+						out_rec.BuySellOpType = buysell_op.BuySellType
 						out_rec.IntegerFee = prev_trf_amount - (out_rec.IntegerAmount)
 						out_rec.Fee = out_rec.IntegerFee/1000000.0
 						fee_accum = fee_accum + out_rec.IntegerFee
@@ -2629,6 +2627,8 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 					if (out_rec.FromAid == contract_aid) &&
 							(out_rec.ToAid != condtok_aid) && (buysell_op.BuySellType == 1) {
 						// sell op
+						out_rec.BuySellOpId = buysell_op.BuySellId
+						out_rec.BuySellOpType = buysell_op.BuySellType
 						ss.Info.Printf("Entering sell op, bal_id=%v tx_id=%v prev_trf_to_aid=%v\n",out_rec.BalChgId,out_rec.TxId,prev_trf_to_aid)
 						ss.Info.Printf("Condition passed, calculating fees now prev_trf_amount=%v, IntegerAmount=%v\n",prev_trf_amount,out_rec.IntegerAmount)
 						out_rec.IntegerFee = buysell_op.IntegerFee
@@ -2646,39 +2646,64 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 					//prev_trf_to_aid = out_rec.ToAid
 					prev_trf_to_aid = out_rec.ToAid
 					prev_trf_amount = out_rec.IntegerAmount
-					out_rec.Note = make_note(out_rec.TxId,0,0,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,out_rec.PayoutNumerators)
+					ss.Info.Printf("EvtlogId=%v ids: buysell_op_id=%v, fund_op_id=%v, redeem_id=%v, split_id=%v, sellop_id=%v\n",out_rec.EvtlogId,out_rec.BuySellOpId,out_rec.FundOpId,out_rec.RedeemId,0,buysell_op.EvtLogId)
+					out_rec.Note = make_note(out_rec.TxId,0,0,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,condtok_aid,out_rec.PayoutNumerators)
 					output = append(output,out_rec)
 				}
 				ss.Info.Printf("Buy/Sell boundary ended\n\n")
 			case 4:		// Fund Add/Remove
+				ss.Info.Printf("Entering Fund Add/Remove\n")
+				fund_op := fund_ops[b.EvtLogId]
 				for i:=int32(0); i<b.Len; i++ {
 					idx := b.Offset + i
 					in_rec := &records[idx]
+					ss.Info.Printf("Processing evtlog_id %v (i=%v, balChgId=%v)\n",in_rec.EvtlogId,i,in_rec.BalChgId)
 					if in_rec.BalChgId == 0 {
 						continue
 					}
 					if in_rec.ContractAid != usdc_aid {
 						continue
 					}
+					if (in_rec.Amount<0.0) {
+						ss.Info.Printf("Skipping evtlog_id %v (negative balance)\n",in_rec.EvtlogId)
+						continue
+					}
 					var out_rec p.API_Pol_OpenInterestHistory
 					copy_all_fields(&out_rec,in_rec)
 					if (out_rec.FromAid == contract_aid) &&
-							(out_rec.UserAid == contract_aid) && (out_rec.FundOpType!=1) {
+							(out_rec.UserAid == contract_aid) && (fund_op.FundType!=1) {
 						ss.Info.Printf("Skipping tx_id=%v (rule 3)\n",out_rec.TxId)
 						continue
 					}
-					if out_rec.FundOpType == 0 { // add funds
+					out_rec.FundOpId = fund_op.FundOpId
+					out_rec.FundOpType = fund_op.FundType
+					if fund_op.FundType == 0 { // add funds
+						ss.Info.Printf("Add funds operation (IntegerAmount=%v)\n",out_rec.IntegerAmount)
 						if (out_rec.ToAid == condtok_aid) && (out_rec.FromAid == contract_aid) {
-							open_interest = open_interest + (out_rec.IntegerAmount)
-						}
-					}
-					if out_rec.FundOpType == 1 { //withdraw funds
-						if (out_rec.FromAid == contract_aid) && (out_rec.ToAid != condtok_aid) {
-							open_interest = open_interest - (-out_rec.IntegerAmount)
+							open_interest = open_interest + out_rec.IntegerAmount
+							ss.Info.Printf("Open Interest updated (addition)\n")
 						} else {
+							ss.Info.Printf("Condition to update open interest unmet\n")
+						}
+
+					}
+					if fund_op.FundType == 1 { //withdraw funds
+						ss.Info.Printf("Remove funds operation (IntegerAmount=%v)\n",out_rec.IntegerAmount)
+						if (out_rec.FromAid == contract_aid) && (out_rec.ToAid != condtok_aid) {
+							open_interest = open_interest - out_rec.IntegerAmount
+							ss.Info.Printf("Open interest updated (subtraction)\n")
+						} else {
+							ss.Info.Printf("Condition to update open interest unmet\n")
 						}
 					}
-					out_rec.Note = make_note(out_rec.TxId,0,0,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,out_rec.PayoutNumerators)
+					out_rec.AdjustedBalance = (out_rec.IntegerBalance - out_rec.IntegerAmount)/1000000.0
+					out_rec.FeeAccum = fee_accum / 1000000.0
+					out_rec.IntegerFeeAccum = fee_accum
+					out_rec.OpenInterest = open_interest / 1000000.0
+					out_rec.OIVerif = out_rec.OpenInterest + out_rec.FeeAccum
+					totals.FinalOpenInterest = out_rec.OpenInterest
+					totals.FinalFees = out_rec.FeeAccum
+					out_rec.Note = make_note(out_rec.TxId,0,0,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,condtok_aid,out_rec.PayoutNumerators)
 					output = append(output,out_rec)
 				}
 				ss.Info.Printf("Fund Add/Remove boundary ended\n\n")
@@ -2694,7 +2719,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 				resolution_rec.DateTime = resolution_date
 				records = append(records,resolution_rec)
 				separator_was_added=true
-				out_rec.Note = make_note(out_rec.TxId,0,0,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,out_rec.PayoutNumerators)
+				out_rec.Note = make_note(out_rec.TxId,0,0,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,condtok_aid,out_rec.PayoutNumerators)
 				ss.Info.Printf("\t appending separator\n")
 				output = append(output,out_rec)
 			default:
