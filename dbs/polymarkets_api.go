@@ -2330,22 +2330,24 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 		if len(keys) > 0 { keys = keys + "," }
 		keys = keys + fmt.Sprintf("%v",k)
 	}
-	query_addrs := "SELECT address_id,addr FROM address WHERE address_id IN("+keys+")"
-	rows_addrs,err := ss.db.Query(query_addrs)
-	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query_addrs))
-		os.Exit(1)
-	}
-	defer rows_addrs.Close()
-	for rows_addrs.Next() {
-		var addr string
-		var aid int64
-		err=rows_addrs.Scan(&aid,&addr)
-		if err != nil {
+	if len(keys) >0 {
+		query_addrs := "SELECT address_id,addr FROM address WHERE address_id IN("+keys+")"
+		rows_addrs,err := ss.db.Query(query_addrs)
+		if (err!=nil) {
 			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query_addrs))
 			os.Exit(1)
 		}
-		addresses[aid]=addr
+		defer rows_addrs.Close()
+		for rows_addrs.Next() {
+			var addr string
+			var aid int64
+			err=rows_addrs.Scan(&aid,&addr)
+			if err != nil {
+				ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query_addrs))
+				os.Exit(1)
+			}
+			addresses[aid]=addr
+		}
 	}
 	for i:=0; i<len(records); i++ {
 		rec := records[i]

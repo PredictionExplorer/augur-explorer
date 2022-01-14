@@ -1522,7 +1522,7 @@ func (ss *SQLStorage) Get_sale_history(contract_aid int64,offset,limit int) []p.
 		if null_profit.Valid {
 			rec.Profit = null_profit.Float64
 		} else {
-			rec.Profit = math.NaN()
+			rec.Profit = 0
 		}
 		if null_can_id.Valid {
 			rec.WasCanceled = true

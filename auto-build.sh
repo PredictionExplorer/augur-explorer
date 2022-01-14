@@ -35,6 +35,12 @@ cd ../..
 cd cmd/polysync
 go build .
 cd ../..
+cd cmd/randomwalk
+go build .
+cd ../..
+cd cmd/notibot
+go build .
+cd ../..
 echo Building 0x Mesh order listener
 cd dmesh
 go build ./
