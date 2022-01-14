@@ -1983,16 +1983,16 @@ func make_note(tx_id int64,split_id,merge_id int64,buysell_id int64,buysell_op_t
 			if buysell_op_type == 0 {
 				output = "Buy. "
 				if from_aid == mkt_mkr_aid {
-					output = fmt.Sprintf("%v Market Maker contract sends funds to conditional token contract",output)
+					output = fmt.Sprintf("%v Market Maker contract is sending funds to conditional token contract",output)
 				} else {
-					output = fmt.Sprintf("%v User sends funds to Market Maker contract",output)
+					output = fmt.Sprintf("%v User is sending funds to Market Maker contract",output)
 				}
 			} else {
 				output = "Sell. "
 				if to_aid == mkt_mkr_aid {
-					output = fmt.Sprintf("%v Conditional Token contract sends funds to Market Maker contract",output)
+					output = fmt.Sprintf("%v Conditional Token contract is sending funds to Market Maker contract",output)
 				} else {
-					output = fmt.Sprintf("%v Market Maker contract sends funds to the User",output)
+					output = fmt.Sprintf("%v Market Maker contract is sending funds to the User",output)
 				}
 			}
 		}
@@ -2003,16 +2003,16 @@ func make_note(tx_id int64,split_id,merge_id int64,buysell_id int64,buysell_op_t
 				output = "Remove funds. "
 			}
 			if from_aid == condtok_aid {
-				output = fmt.Sprintf("%v Conditional Token contract sends funds to the User",output)
+				output = fmt.Sprintf("%v Conditional Token contract is sending funds to the User",output)
 			}
 			if to_aid == mkt_mkr_aid {
-				output = fmt.Sprintf("%v User sends funds to Market Maker contract",output)
+				output = fmt.Sprintf("%v User is sending funds to Market Maker contract",output)
 			}
 			if (to_aid != condtok_aid) && (to_aid != mkt_mkr_aid) {
-				output = fmt.Sprintf("%v Market Maker sends funds to the User",output)
+				output = fmt.Sprintf("%v Market Maker is sending funds to the User",output)
 			}
 			if to_aid == condtok_aid {
-				output = fmt.Sprintf("%v Market Maker sends Funds to Conditional Token contract",output)
+				output = fmt.Sprintf("%v Market Maker is sending Funds to Conditional Token contract",output)
 			}
 		}
 		if (buysell_id == 0) && (fund_id==0) && (redeem_id==0) {
@@ -2021,7 +2021,10 @@ func make_note(tx_id int64,split_id,merge_id int64,buysell_id int64,buysell_op_t
 			} else {
 				output = "Merge. "
 			}
-			output = fmt.Sprintf("%v User sends operation to Conditional Tokens buypassing Market Maker (probably to avoid paying fees)",output)
+			output = fmt.Sprintf("%v User is sending the operation to Conditional Tokens contract, buypassing Market Maker (probably to avoid paying fees)",output)
+		}
+		if redeem_id > 0 {
+			output = fmt.Sprintf("Payout Redemption. Conditional Token contract is sending funds to the User")
 		}
 	} else {
 		output = fmt.Sprintf("Payout numerators are: %v",payout_numerators)
@@ -2659,9 +2662,11 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 					in_rec := &records[idx]
 					ss.Info.Printf("Processing evtlog_id %v (i=%v, balChgId=%v)\n",in_rec.EvtlogId,i,in_rec.BalChgId)
 					if in_rec.BalChgId == 0 {
+						ss.Info.Printf("Skipping evtlog_id %v BalChgId=0\n",in_rec.EvtlogId)
 						continue
 					}
 					if in_rec.ContractAid != usdc_aid {
+						ss.Info.Printf("Skipping evtlkog_id %v ContractAid is not USDC\n",in_rec.EvtlogId)
 						continue
 					}
 					if (in_rec.Amount<0.0) {
@@ -2708,6 +2713,40 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 				}
 				ss.Info.Printf("Fund Add/Remove boundary ended\n\n")
 			case 5:		// Redeem
+				ss.Info.Printf("Entering Redeem operation\n")
+				redeem_op := redeem_ops[b.EvtLogId]
+				for i:=int32(0); i<b.Len; i++ {
+					idx := b.Offset + i
+					in_rec := &records[idx]
+					ss.Info.Printf("Processing evtlog_id %v (i=%v, balChgId=%v)\n",in_rec.EvtlogId,i,in_rec.BalChgId)
+					if in_rec.BalChgId == 0 {
+						ss.Info.Printf("Skipping evtlog_id %v BalChgId=0\n",in_rec.EvtlogId)
+						continue
+					}
+					if in_rec.ContractAid != usdc_aid {
+						ss.Info.Printf("Skipping evtlkog_id %v ContractAid is not USDC\n",in_rec.EvtlogId)
+						continue
+					}
+					if (in_rec.Amount<0.0) {
+						ss.Info.Printf("Skipping evtlog_id %v (negative balance)\n",in_rec.EvtlogId)
+						continue
+					}
+					var out_rec p.API_Pol_OpenInterestHistory
+					copy_all_fields(&out_rec,in_rec)
+
+					open_interest = open_interest - out_rec.IntegerAmount
+					out_rec.RedeemId = redeem_op.RedeemOpId
+
+					out_rec.AdjustedBalance = (out_rec.IntegerBalance - out_rec.IntegerAmount)/1000000.0
+					out_rec.FeeAccum = fee_accum / 1000000.0
+					out_rec.IntegerFeeAccum = fee_accum
+					out_rec.OpenInterest = open_interest / 1000000.0
+					out_rec.OIVerif = out_rec.OpenInterest + out_rec.FeeAccum
+					totals.FinalOpenInterest = out_rec.OpenInterest
+					totals.FinalFees = out_rec.FeeAccum
+					out_rec.Note = make_note(out_rec.TxId,0,0,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,condtok_aid,out_rec.PayoutNumerators)
+					output = append(output,out_rec)
+				}
 			case 6:		// Separator (market resolved event)
 				idx := b.Offset
 				in_rec := &records[idx]
@@ -2717,11 +2756,9 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 				resolution_rec.TxId = -1
 				resolution_rec.PayoutNumerators = payout_numerators
 				resolution_rec.DateTime = resolution_date
-				records = append(records,resolution_rec)
+				resolution_rec.Note = make_note(-1,0,0,resolution_rec.BuySellOpId,resolution_rec.BuySellOpType,resolution_rec.FundOpId,resolution_rec.FundOpType,resolution_rec.RedeemId,resolution_rec.FromAid,resolution_rec.ToAid,contract_aid,condtok_aid,resolution_rec.PayoutNumerators)
+				output = append(output,resolution_rec)
 				separator_was_added=true
-				out_rec.Note = make_note(out_rec.TxId,0,0,out_rec.BuySellOpId,out_rec.BuySellOpType,out_rec.FundOpId,out_rec.FundOpType,out_rec.RedeemId,out_rec.FromAid,out_rec.ToAid,contract_aid,condtok_aid,out_rec.PayoutNumerators)
-				ss.Info.Printf("\t appending separator\n")
-				output = append(output,out_rec)
 			default:
 				ss.Info.Printf("Unkown boundary operation type %v\n",b.OpType)
 		}
