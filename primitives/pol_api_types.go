@@ -28,6 +28,7 @@ type API_OutcomePriceHistory struct {
 	OutcomePriceHistory		[]API_Pol_OutcomePriceHistoryEntry
 }
 type API_Pol_Liquidity_Op struct {
+	TxId				int64
 	BlockNum			int64
 	TimeStamp			int64
 	MarketId			int64

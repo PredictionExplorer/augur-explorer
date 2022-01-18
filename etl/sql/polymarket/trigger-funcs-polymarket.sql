@@ -100,7 +100,7 @@ BEGIN
 	-- first calculate accumulated collateral (which is the same as profit/loss on this market)
 	IF NEW.op_type = 0 THEN
 		v_normalized_amount := -(NEW.collateral_amount-NEW.fee_amount);
-	ELSE 
+	ELSE
 		v_normalized_amount := NEW.collateral_amount;
 	END IF;
 

@@ -2560,7 +2560,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 								ss.Info.Printf("Set fund remove id %v\n",op.FundOpId)
 							}
 							if (out_rec.FromAid == contract_aid) && (out_rec.ToAid != condtok_aid) {
-								open_interest = open_interest - (-out_rec.IntegerAmount)
+								//open_interest = open_interest - (-out_rec.IntegerAmount)
 							} else {
 							}
 						}
@@ -2697,7 +2697,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 					if fund_op.FundType == 1 { //withdraw funds
 						ss.Info.Printf("Remove funds operation (IntegerAmount=%v)\n",out_rec.IntegerAmount)
 						if (out_rec.FromAid == contract_aid) && (out_rec.ToAid != condtok_aid) {
-							open_interest = open_interest - out_rec.IntegerAmount
+							//open_interest = open_interest - out_rec.IntegerAmount
 							ss.Info.Printf("Open interest updated (subtraction)\n")
 						} else {
 							ss.Info.Printf("Condition to update open interest unmet\n")

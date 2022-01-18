@@ -22,6 +22,7 @@
 	<tr class="generic">
 		<th class="generic">Date </th>
 		<th class="generic">Block</th>
+		<th class="generic">Tx</th>
 		<th class="generic">Type</th>
 		<th class="generic">Collateral (USDC)</th>
 		<th class="generic">Funder</th>
@@ -32,6 +33,7 @@
 				{{.DateTime}}
 			</td>
 			<td class="generic">{{.BlockNum}}</td>
+			<td class="generic">{{.TxId}}</td>
 			<td class="generic ctr">
 				{{ if eq 0 .OperationType}} Addition
 				{{ else }} Removal {{end }}

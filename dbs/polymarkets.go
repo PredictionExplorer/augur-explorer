@@ -520,8 +520,9 @@ func (ss *SQLStorage) Get_polymarkets_liquidity_operations(contract_aid int64,of
 				"EXTRACT(EPOCH FROM liq.time_stamp)::BIGINT as ts," +
 				"TO_CHAR(liq.time_stamp,'DD-MM-YYYY HH::MM') date,"+
 				"liq.block_num," +
+				"liq.tx_id,"+
 				"liq.op_type," +
-				"liq.shares/1e+6,"+
+				"-liq.norm_collateral/1e+6 collateral,"+
 				"liq.funder_aid, " +
 				"la.addr " +
 			"FROM pol_fund_addrem liq " +
@@ -543,6 +544,7 @@ func (ss *SQLStorage) Get_polymarkets_liquidity_operations(contract_aid int64,of
 			&rec.TimeStamp,
 			&rec.DateTime,
 			&rec.BlockNum,
+			&rec.TxId,
 			&rec.OperationType,
 			&rec.CollateralAmount,
 			&rec.FunderAid,
