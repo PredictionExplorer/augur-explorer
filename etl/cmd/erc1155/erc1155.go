@@ -67,10 +67,10 @@ func build_list_of_inspected_events() []InspectedEvent {
 			Signature:	hex.EncodeToString(evt_erc1155_transfer_batch[:4]),
 			ContractAid: 0,
 		},
-		InspectedEvent {
+/*		InspectedEvent {
 			Signature:	hex.EncodeToString(evt_erc1155_uri[:4]),
 			ContractAid: 0,
-		},
+		},*/
 	)
 	return inspected_events
 }

@@ -25,6 +25,7 @@ type SQLStorage struct {
 	db					*sql.DB
 	db_logger			*log.Logger
 	Info				*log.Logger
+	schema_name			string
 	mkt_order_id_ptr	*int64		// global var indicating we have an OrderEvent going on in event chain
 }
 func (ss *SQLStorage) Db() *sql.DB {
