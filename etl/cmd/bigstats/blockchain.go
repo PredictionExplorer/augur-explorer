@@ -188,6 +188,15 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 			)
 			return total_eth,errors.New("Block changed during processing")
 		}
+		tx_fee := big.NewInt(agtx.GasUsed)
+		gas_price := big.NewInt(0)
+		gas_price.SetString(agtx.GasPrice,10)
+		tx_fee.Mul(tx_fee,gas_price)
+		var tx_short TxShort
+		tx_short.BlockNum = bnum
+		tx_short.TxIndex = int64(agtx.TxIndex)
+		tx_short.TxFee = tx_fee.String()
+		storage.Bigstats_insert_transaction(&tx_short)	// at this point we are sure Tx is without error
 		transaction_hash := common.HexToHash(agtx.TxHash)
 		if !bytes.Equal(rcpt.TxHash.Bytes(),transaction_hash.Bytes()) { // can be removed later
 			Error.Printf("Receipt's hash doesn't match Tx hash, aborting (tx_hash=%v)",agtx.TxHash)

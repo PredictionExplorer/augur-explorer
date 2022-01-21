@@ -321,7 +321,7 @@ func (ss *SQLStorage) Insert_all_addr_stat_logs(entries []p.AddrStatsLog) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Get_unique_accounts_counter_by_type(ts,duration int64,is_contract bool) {
+func (ss *SQLStorage) Get_unique_accounts_counter_by_type(ts,duration int64,is_contract bool) int64 {
 
 	var query string
 	query = "WITH data AS ("+
@@ -344,23 +344,40 @@ func (ss *SQLStorage) Get_unique_accounts_counter_by_type(ts,duration int64,is_c
 	}
 	return num_rows
 }
+func (ss *SQLStorage) Get_total_eth_transferred(ts,duration int64) float64 {
+
+	var query string
+	query = "SELECT " +
+				"SUM(total_eth)/1e+18"+
+			"FROM bs_block "+
+			"WHERE (b.ts <= TO_TIMESTAMP($1)) AND (b.ts < TO_TIMESTAMP($2)"
+
+	ts_end := ts + duration
+	var sum float64
+	err:=ss.db.QueryRow(query,ts,ts_end).Scan(&sum);
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error in getting address id : %v",err))
+		os.Exit(1)
+	}
+	return sum
+}
 func (ss *SQLStorage) Close_period(ts,duration int64) {
 
 
 	human_account_count := ss.Get_unique_accounts_counter_by_type(ts,duration,false)
 	contract_account_count := ss.Get_unique_accounts_counter_by_type(ts,duration,true)
+	total_eth := ss.Get_total_eth_transferred(ts,duration)
 
 	var query string
 	query = "INSERT INTO bs_period("+
 					"time_stamp,unique_addrs_eoa,unique_addrs_code,eth_transferred"+
-			") VALUES ($1,$2,$3,$4)"+
+			") VALUES (TO_TIMESTAMP($1),$2,$3,$4)"
 
 	result,err := ss.db.Exec(query,
-			block_num,
-			hash_str,
-			block.Time,
-			parent_hash,
-			num_tx,
+			ts,
+			human_account_count,
+			contract_account_count,
+			total_eth,
 	)
 	if err != nil {
 		ss.Log_msg(
