@@ -3,14 +3,12 @@ package main
 import (
 	"time"
 	"bytes"
-	"encoding/hex"
 	"math/big"
 	"os"
 	"errors"
-	//"context"
+	"context"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
@@ -20,8 +18,9 @@ var (
 	contract_addrs map[common.Address]int64 = make(map[common.Address]int64)
 	human_addrs map[common.Address]int64 = make(map[common.Address]int64)
 )
-func lookup_or_insert_addr(addr comon.Address) (exists bool,aid int64,is_contract bool) {
+func lookup_or_insert_addr(addr common.Address) (aid int64,is_contract bool) {
 
+	var exists bool
 	aid,exists = contract_addrs[addr]
 	if exists {
 		is_contract = true
@@ -30,25 +29,30 @@ func lookup_or_insert_addr(addr comon.Address) (exists bool,aid int64,is_contrac
 		if exists {
 			is_contract = false
 		} else {
-			code,err := eclient.CodeAt(addr)
+			var err error
+			aid,is_contract,err = storage.Bigstats_lookup_address_id(addr.String())
 			if err != nil {
-				Error.Printf("Error at calling CodeAt(): %v\n",err)
-				Info.Printf("Error at calling CodeAt(): %v\n",err)
-				os.Exit(1)
-			}
-			if len(code)>0 {
-				is_contract = true
-			} else {
-				is_contract = false
-			}
-			aid = storage.Bigstats_insert_address(addr.String(),is_contract)
-			if is_contract {
-				contract_addrs[addr]=aid
-			} else {
-				human_addrs[addr]=aid
+				code,err := eclient.CodeAt(context.Background(),addr,nil)
+				if err != nil {
+					Error.Printf("Error at calling CodeAt(): %v\n",err)
+					Info.Printf("Error at calling CodeAt(): %v\n",err)
+					os.Exit(1)
+				}
+				if len(code)>0 {
+					is_contract = true
+				} else {
+					is_contract = false
+				}
+				aid = storage.Bigstats_insert_address(addr.String(),is_contract)
+				if is_contract {
+					contract_addrs[addr]=aid
+				} else {
+					human_addrs[addr]=aid
+				}
 			}
 		}
 	}
+	return aid,is_contract
 }
 func roll_back_blocks(diverging_block *types.Header) error {
 	// Finds the block from which the fork started
@@ -66,7 +70,7 @@ func roll_back_blocks(diverging_block *types.Header) error {
 	Info.Printf("roll_back_blocks(): block_num = %v , block_hash %v",block_num,block_hash)
 	Info.Printf("\t\t\tparent_hash %v\n",diverging_block.ParentHash.String())
 	for {
-		my_block_num,err := storage.Big_stats_get_block_num_by_hash(block_hash)
+		my_block_num,err := storage.Bigstats_get_block_num_by_hash(block_hash)
 		Info.Printf("Chainsplit fix: diverging hash %v, my_block_num=%v err=%v\n",block_hash,my_block_num,err)
 		if err == nil {
 			total_blocks := block_num - my_block_num
@@ -83,7 +87,7 @@ func roll_back_blocks(diverging_block *types.Header) error {
 				"Chainsplit fix: deleting blocks higher than %v ; good block hash = %v\n",
 				my_block_num,block_hash,
 			)
-			storage.Bistats_chainsplit_delete_blocks(my_block_num)
+			storage.Bigstats_chainsplit_delete_blocks(my_block_num)
 			storage.Bigstats_set_last_block_num(my_block_num)
 			return errors.New(fmt.Sprintf(
 				"Chainsplit occurred at block %v and was fixed at block %v",starting_block_num,my_block_num,
@@ -116,17 +120,33 @@ func roll_back_blocks(diverging_block *types.Header) error {
 	}
 	return errors.New("Chainsplit fix: Undefined behaviour")
 }
-func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*receiptCallResult,block_receipts types.Receipts) error {
+func add_address_stat_entry(addr_stats_log []AddrStatsLog,block_num,tx_index,aid int64) []AddrStatsLog {
+
+	var entry AddrStatsLog
+	entry.BlockNum = block_num
+	entry.TxIndex = tx_index
+	entry.Aid = aid
+	addr_stats_log = append(addr_stats_log,entry)
+	return addr_stats_log
+}
+func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*receiptCallResult,block_receipts types.Receipts) (*big.Int,error) {
 	//	if receipt_calls is not nil then the old slow getTrasnactionReceipt call is used
 	//	if block_receipts is not nil then we are using new getBlockReceipts RPC call
+
+	total_eth := big.NewInt(0)
 	for tnum,agtx := range transactions {
 		if agtx.From == "0x0000000000000000000000000000000000000000" {
 			continue // this is Polygon's automatic transaction
 		}
-		from_addr:= common.HexToAddress(agtx.From)
-		from_aid := lookup_or_insert_addr(from_addr)
+		tmp_log_slice := make([]AddrStatsLog,0,2)
+		from_addr := common.HexToAddress(agtx.From)
+		from_aid,_:= lookup_or_insert_addr(from_addr)
+		tmp_log_slice = add_address_stat_entry(tmp_log_slice,agtx.BlockNum,int64(agtx.TxIndex),from_aid)
 		to_addr := common.HexToAddress(agtx.To)
-		to_aid := lookup_or_insert_addr(to_addr)
+		to_aid,_:= lookup_or_insert_addr(to_addr)
+		tmp_log_slice = add_address_stat_entry(tmp_log_slice,agtx.BlockNum,int64(agtx.TxIndex),to_aid)
+
+		storage.Insert_all_addr_stat_logs(tmp_log_slice)
 		var rcpt *types.Receipt
 		if receipt_calls != nil {
 			// wait for receipt to arrive
@@ -145,7 +165,7 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 					"Failed to get Tx Receipt for %v, block num=%v. Aborting block processing: %v\n",
 					agtx.TxHash,bnum,receipt_calls[tnum].err,
 				)
-				return receipt_calls[tnum].err
+				return total_eth,receipt_calls[tnum].err
 			}
 			rcpt = receipt_calls[tnum].receipt
 		} else {
@@ -166,7 +186,7 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 				" cur_block_num=%v, receipt.block_num=%v\n",
 				bnum,rcpt.BlockNumber.Int64(),
 			)
-			return errors.New("Block changed during processing")
+			return total_eth,errors.New("Block changed during processing")
 		}
 		transaction_hash := common.HexToHash(agtx.TxHash)
 		if !bytes.Equal(rcpt.TxHash.Bytes(),transaction_hash.Bytes()) { // can be removed later
@@ -177,15 +197,18 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 		if agtx.CtrctCreate == true {
 			agtx.To = rcpt.ContractAddress.String()
 		}
+		big_value := big.NewInt(0)
+		big_value.SetString(agtx.Value,10)
+		total_eth.Add(total_eth,big_value)
 		agtx.GasUsed = int64(rcpt.GasUsed)
 		agtx.TxIndex = int32(tnum)
 		agtx.NumLogs = int32(len(rcpt.Logs))
-		logs_to_insert := prepare_event_log_batch(agtx,rcpt.Logs)
+		logs_to_insert := extract_addresses_from_event_logs(agtx,rcpt.Logs)
 		if len(logs_to_insert) > 0 {
-			storage.Insert_all_tx_event_logs(logs_to_insert)
+			storage.Insert_all_addr_stat_logs(logs_to_insert)
 		}
 	}
-	return nil
+	return total_eth,nil
 }
 func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) error {
 
@@ -200,13 +223,13 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		return err
 	}
 	num_transactions := len(transactions)
-	//Info.Printf("block %v hash = %v, num_tx=%v\n",bnum,block_hash_str,num_transactions)
+	Info.Printf("block %v hash = %v, num_tx=%v\n",bnum,block_hash_str,num_transactions)
 	if bnum!=header.Number.Int64() {
 		Info.Printf("Retrieved block number %v but Block object contains another number (%v)",bnum,header.Number.Int64())
 		Error.Printf("Retrieved block number %v but Block object contains another number (%v)",bnum,header.Number.Int64())
 		return errors.New("Block object inconsistency")
 	}
-	storage.Block_delete_with_everything(big_bnum.Int64())
+	storage.Bigstats_block_delete_with_everything(big_bnum.Int64())
 	var receipt_calls []*receiptCallResult = nil
 	var block_receipts types.Receipts = nil
 	if USE_BLOCK_RECEIPTS_RPC_CALL {
@@ -234,30 +257,27 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		}
 		return nil
 	}
-	process_transactions(bnum,transactions,receipt_calls,block_receipts)
+	total_eth,err := process_transactions(bnum,transactions,receipt_calls,block_receipts)
+	storage.Update_block_eth_transferred(bnum,total_eth)
 	Info.Printf("block_proc: %v %v ; %v transactions\n",bnum,block_hash.String(),num_transactions)
 	if update_last_block {
-		storage.BitStats_set_last_block_num(bnum)
+		storage.Bigstats_set_last_block_num(bnum)
 	}
 	return nil
 }
-func extract_addresses_from_event_logs(agtx *AugurTx,logs []*types.Log) []AddrStatsLog
+func extract_addresses_from_event_logs(agtx *AugurTx,logs []*types.Log) []AddrStatsLog {
 
-	var err error
 	output := make([]AddrStatsLog,0,64)
 	num_logs := len(logs)
 	for i:=0 ; i < num_logs ; i++ {
 		log := logs[i]
-		if len(log.Topics) > 0 {
-			tx_insert_if_needed(agtx)
-			var astats AddrStatsLog
-			var exists,is_contract bool
-			astats.BlockNum = agtx.BlockNum
-			astats.TxIndex = agtx.TxIndex
-			exists,astats.ContractAid,is_contract = lookup_or_insert_addr(log.Address)
-			astats.Aid = storage.Bigstats_lookup_or_create_address(log.Address.String())
-			output = append(output,astats)
-		}
+		var astats AddrStatsLog
+		var is_contract bool
+		astats.BlockNum = agtx.BlockNum
+		astats.TxIndex = int64(agtx.TxIndex)
+		astats.Aid,is_contract = lookup_or_insert_addr(log.Address)
+		astats.Aid = storage.Bigstats_lookup_or_create_address(log.Address.String(),is_contract)
+		output = append(output,astats)
 	}
 
 	return output
