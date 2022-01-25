@@ -231,7 +231,7 @@ func (ss *SQLStorage) Update_block_eth_transferred(block_num int64,total_eth *bi
 	if err != nil {
 		ss.Log_msg(
 			fmt.Sprintf(
-				"DB error: can't update address metadata for block %v : %v: q=%v",
+				"DB error: can't update eth_transferred for block %v : %v: q=%v",
 				block_num,err,query,
 			),
 		)
@@ -394,6 +394,21 @@ func (ss *SQLStorage) Close_period(ts,duration int64) {
 	}
 	if rows_affected == 0 {
 		ss.Log_msg(fmt.Sprintf("Couldnt insert record in bs_period table"))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Bigstats_insert_transaction(tx *p.TxShort) {
+
+	var query string
+
+	query = "INSERT INTO "+ss.schema_name+".bs_tx_short ("+
+				"block_num,tx_index,tx_fee" +
+			") " +
+			"VALUES ($1,$2,$3)"
+
+	_,err:=ss.db.Exec(query,tx.BlockNum,tx.TxIndex,tx.TxFee)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Bigstats_insert_transaction() failed: %v",err))
 		os.Exit(1)
 	}
 }

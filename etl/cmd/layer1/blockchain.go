@@ -162,7 +162,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 	big_bnum:=big.NewInt(int64(bnum))
 	block_hash,header,transactions,err := get_full_block(bnum)
 	if err!=nil {
-		Info.Printf("Can't decode Block object received on RPC: %v. Aborting.\n",err)
+		Info.Printf("Can't decode Block object (num=%v) received on RPC: %v. Aborting.\n",bnum,err)
 		return err
 	}
 	num_transactions := len(transactions)
@@ -178,7 +178,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 	if USE_BLOCK_RECEIPTS_RPC_CALL {
 		block_receipts,err = get_block_receipts(block_hash)
 		if err != nil {
-			Error.Printf("Error getting receipts of the block: %v\n",err)
+			Error.Printf("Error getting receipts of the block %v: %v\n",bnum,err)
 			return err
 		}
 
@@ -195,6 +195,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		return err
 	}
 	if num_transactions == 0 {
+		Info.Printf("block_proc: %v - %v : no transactions\n",bnum,block_hash.String())
 		if update_last_block {
 			storage.Set_last_block_num(bnum)
 		}

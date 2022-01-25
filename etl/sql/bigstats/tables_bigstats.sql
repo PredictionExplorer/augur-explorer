@@ -34,13 +34,13 @@ CREATE TABLE bs_log(
 	aid					BIGINT NOT NULL,
 	PRIMARY KEY(block_num,tx_index,aid)
 );
-CREATE TABLE tx_short( -- short version of tx
+CREATE TABLE bs_tx_short( -- short version of tx
 	block_num			BIGINT NOT NULL REFERENCES bs_block(block_num) ON DELETE CASCADE,
 	tx_index			BIGINT NOT NULL,
 	tx_fee				DECIMAL NOT NULL,
 	PRIMARY KEY(block_num,tx_index)
 );
 CREATE TABLE bs_config(
-	chain_id			BIGINT DEFAULT 0,
+	chain_id			BIGINT DEFAULT 0, --Arbitrum: 42161
 	last_block			BIGINT DEFAULT 0
 );

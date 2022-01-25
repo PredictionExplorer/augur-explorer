@@ -1593,18 +1593,3 @@ func (ss *SQLStorage) Get_specific_event_logs(tx_id,contract_aid int64,signature
 	}
 	return records
 }
-func (ss *SQLStorage) Bigstats_insert_transaction(tx *p.TxShort) {
-
-	var query string
-
-	query = "INSERT INTO tx_short ("+
-				"block_num,tx_index,tx_fee" +
-			") " +
-			"VALUES ($1,$2,$3)"
-
-	_,err:=ss.db.Exec(query,tx.BlockNum,tx.TxIndex,tx.TxFee)
-	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("Set_chain_id() failed: %v",err))
-		os.Exit(1)
-	}
-}
