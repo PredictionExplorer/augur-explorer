@@ -4,6 +4,7 @@
 package contracts
 
 import (
+	"errors"
 	"math/big"
 	"strings"
 
@@ -17,19 +18,25 @@ import (
 
 // Reference imports to suppress errors if they are not otherwise used.
 var (
+	_ = errors.New
 	_ = big.NewInt
 	_ = strings.NewReader
 	_ = ethereum.NotFound
-	_ = abi.U256
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
 	_ = event.NewSubscription
 )
 
+// UniswapV2FactoryMetaData contains all meta data concerning the UniswapV2Factory contract.
+var UniswapV2FactoryMetaData = &bind.MetaData{
+	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_feeToSetter\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token0\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token1\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"pair\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"PairCreated\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"allPairs\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"allPairsLength\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenA\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"tokenB\",\"type\":\"address\"}],\"name\":\"createPair\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"pair\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"feeTo\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"feeToSetter\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"getPair\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_feeTo\",\"type\":\"address\"}],\"name\":\"setFeeTo\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_feeToSetter\",\"type\":\"address\"}],\"name\":\"setFeeToSetter\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+}
+
 // UniswapV2FactoryABI is the input ABI used to generate the binding from.
-const UniswapV2FactoryABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_feeToSetter\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token0\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token1\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"pair\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"PairCreated\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"allPairs\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"allPairsLength\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenA\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"tokenB\",\"type\":\"address\"}],\"name\":\"createPair\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"pair\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"feeTo\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"feeToSetter\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"getPair\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_feeTo\",\"type\":\"address\"}],\"name\":\"setFeeTo\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_feeToSetter\",\"type\":\"address\"}],\"name\":\"setFeeToSetter\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
-//"
+// Deprecated: Use UniswapV2FactoryMetaData.ABI instead.
+var UniswapV2FactoryABI = UniswapV2FactoryMetaData.ABI
+
 // UniswapV2Factory is an auto generated Go binding around an Ethereum contract.
 type UniswapV2Factory struct {
 	UniswapV2FactoryCaller     // Read-only binding to the contract
@@ -138,7 +145,7 @@ func bindUniswapV2Factory(address common.Address, caller bind.ContractCaller, tr
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_UniswapV2Factory *UniswapV2FactoryRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_UniswapV2Factory *UniswapV2FactoryRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _UniswapV2Factory.Contract.UniswapV2FactoryCaller.contract.Call(opts, result, method, params...)
 }
 
@@ -157,7 +164,7 @@ func (_UniswapV2Factory *UniswapV2FactoryRaw) Transact(opts *bind.TransactOpts, 
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_UniswapV2Factory *UniswapV2FactoryCallerRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_UniswapV2Factory *UniswapV2FactoryCallerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _UniswapV2Factory.Contract.contract.Call(opts, result, method, params...)
 }
 
@@ -176,12 +183,17 @@ func (_UniswapV2Factory *UniswapV2FactoryTransactorRaw) Transact(opts *bind.Tran
 //
 // Solidity: function allPairs(uint256 ) view returns(address)
 func (_UniswapV2Factory *UniswapV2FactoryCaller) AllPairs(opts *bind.CallOpts, arg0 *big.Int) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _UniswapV2Factory.contract.Call(opts, out, "allPairs", arg0)
-	return *ret0, err
+	var out []interface{}
+	err := _UniswapV2Factory.contract.Call(opts, &out, "allPairs", arg0)
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // AllPairs is a free data retrieval call binding the contract method 0x1e3dd18b.
@@ -202,12 +214,17 @@ func (_UniswapV2Factory *UniswapV2FactoryCallerSession) AllPairs(arg0 *big.Int) 
 //
 // Solidity: function allPairsLength() view returns(uint256)
 func (_UniswapV2Factory *UniswapV2FactoryCaller) AllPairsLength(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _UniswapV2Factory.contract.Call(opts, out, "allPairsLength")
-	return *ret0, err
+	var out []interface{}
+	err := _UniswapV2Factory.contract.Call(opts, &out, "allPairsLength")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // AllPairsLength is a free data retrieval call binding the contract method 0x574f2ba3.
@@ -228,12 +245,17 @@ func (_UniswapV2Factory *UniswapV2FactoryCallerSession) AllPairsLength() (*big.I
 //
 // Solidity: function feeTo() view returns(address)
 func (_UniswapV2Factory *UniswapV2FactoryCaller) FeeTo(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _UniswapV2Factory.contract.Call(opts, out, "feeTo")
-	return *ret0, err
+	var out []interface{}
+	err := _UniswapV2Factory.contract.Call(opts, &out, "feeTo")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // FeeTo is a free data retrieval call binding the contract method 0x017e7e58.
@@ -254,12 +276,17 @@ func (_UniswapV2Factory *UniswapV2FactoryCallerSession) FeeTo() (common.Address,
 //
 // Solidity: function feeToSetter() view returns(address)
 func (_UniswapV2Factory *UniswapV2FactoryCaller) FeeToSetter(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _UniswapV2Factory.contract.Call(opts, out, "feeToSetter")
-	return *ret0, err
+	var out []interface{}
+	err := _UniswapV2Factory.contract.Call(opts, &out, "feeToSetter")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // FeeToSetter is a free data retrieval call binding the contract method 0x094b7415.
@@ -280,12 +307,17 @@ func (_UniswapV2Factory *UniswapV2FactoryCallerSession) FeeToSetter() (common.Ad
 //
 // Solidity: function getPair(address , address ) view returns(address)
 func (_UniswapV2Factory *UniswapV2FactoryCaller) GetPair(opts *bind.CallOpts, arg0 common.Address, arg1 common.Address) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _UniswapV2Factory.contract.Call(opts, out, "getPair", arg0, arg1)
-	return *ret0, err
+	var out []interface{}
+	err := _UniswapV2Factory.contract.Call(opts, &out, "getPair", arg0, arg1)
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // GetPair is a free data retrieval call binding the contract method 0xe6a43905.
@@ -443,7 +475,7 @@ type UniswapV2FactoryPairCreated struct {
 
 // FilterPairCreated is a free log retrieval operation binding the contract event 0x0d3648bd0f6ba80134a33ba9275ac585d9d315f0ad8355cddefde31afa28d0e9.
 //
-// Solidity: event PairCreated(address indexed token0, address indexed token1, address pair, uint256 )
+// Solidity: event PairCreated(address indexed token0, address indexed token1, address pair, uint256 arg3)
 func (_UniswapV2Factory *UniswapV2FactoryFilterer) FilterPairCreated(opts *bind.FilterOpts, token0 []common.Address, token1 []common.Address) (*UniswapV2FactoryPairCreatedIterator, error) {
 
 	var token0Rule []interface{}
@@ -464,7 +496,7 @@ func (_UniswapV2Factory *UniswapV2FactoryFilterer) FilterPairCreated(opts *bind.
 
 // WatchPairCreated is a free log subscription operation binding the contract event 0x0d3648bd0f6ba80134a33ba9275ac585d9d315f0ad8355cddefde31afa28d0e9.
 //
-// Solidity: event PairCreated(address indexed token0, address indexed token1, address pair, uint256 )
+// Solidity: event PairCreated(address indexed token0, address indexed token1, address pair, uint256 arg3)
 func (_UniswapV2Factory *UniswapV2FactoryFilterer) WatchPairCreated(opts *bind.WatchOpts, sink chan<- *UniswapV2FactoryPairCreated, token0 []common.Address, token1 []common.Address) (event.Subscription, error) {
 
 	var token0Rule []interface{}
@@ -510,11 +542,12 @@ func (_UniswapV2Factory *UniswapV2FactoryFilterer) WatchPairCreated(opts *bind.W
 
 // ParsePairCreated is a log parse operation binding the contract event 0x0d3648bd0f6ba80134a33ba9275ac585d9d315f0ad8355cddefde31afa28d0e9.
 //
-// Solidity: event PairCreated(address indexed token0, address indexed token1, address pair, uint256 )
+// Solidity: event PairCreated(address indexed token0, address indexed token1, address pair, uint256 arg3)
 func (_UniswapV2Factory *UniswapV2FactoryFilterer) ParsePairCreated(log types.Log) (*UniswapV2FactoryPairCreated, error) {
 	event := new(UniswapV2FactoryPairCreated)
 	if err := _UniswapV2Factory.contract.UnpackLog(event, "PairCreated", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }

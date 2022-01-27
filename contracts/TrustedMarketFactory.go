@@ -4,6 +4,7 @@
 package contracts
 
 import (
+	"errors"
 	"math/big"
 	"strings"
 
@@ -17,34 +18,29 @@ import (
 
 // Reference imports to suppress errors if they are not otherwise used.
 var (
+	_ = errors.New
 	_ = big.NewInt
 	_ = strings.NewReader
 	_ = ethereum.NotFound
-	_ = abi.U256
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
 	_ = event.NewSubscription
 )
 
-// AbstractMarketFactoryMarket is an auto generated low-level Go binding around an user-defined struct.
-/*type AbstractMarketFactoryMarket struct {
-	SettlementAddress common.Address
-	ShareTokens       []common.Address
-	EndTime           *big.Int
-	Winner            common.Address
-	SettlementFee     *big.Int
-	ProtocolFee       *big.Int
-	StakerFee         *big.Int
-}*/
-
 // TrustedMarketFactoryMarketDetails is an auto generated low-level Go binding around an user-defined struct.
 type TrustedMarketFactoryMarketDetails struct {
 	Description string
 }
 
+// TrustedMarketFactoryMetaData contains all meta data concerning the TrustedMarketFactory contract.
+var TrustedMarketFactoryMetaData = &bind.MetaData{
+	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_owner\",\"type\":\"address\"},{\"internalType\":\"contractIERC20Full\",\"name\":\"_collateral\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_shareFactor\",\"type\":\"uint256\"},{\"internalType\":\"contractFeePot\",\"name\":\"_feePot\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_stakerFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_settlementFee\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_protocol\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_protocolFee\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"_endTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"description\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"string[]\",\"name\":\"outcomes\",\"type\":\"string[]\"}],\"name\":\"MarketCreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"}],\"name\":\"MarketResolved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"protocol\",\"type\":\"address\"}],\"name\":\"ProtocolChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"ProtocolFeeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"protocol\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ProtocolFeeClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"SettlementFeeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"settlementAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SettlementFeeClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SharesBurned\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SharesMinted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"StakerFeeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"winningOutcome\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"settlementFee\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"payout\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"WinningsClaimed\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"accumulatedProtocolFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"accumulatedSettlementFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_sharesToBurn\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"burnShares\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_shares\",\"type\":\"uint256\"}],\"name\":\"calcCost\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_collateralIn\",\"type\":\"uint256\"}],\"name\":\"calcShares\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"_ids\",\"type\":\"uint256[]\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimManyWinnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claimProtocolFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimSettlementFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimWinnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"collateral\",\"outputs\":[{\"internalType\":\"contractIERC20Full\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_creator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_endTime\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"_description\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"_names\",\"type\":\"string[]\"},{\"internalType\":\"string[]\",\"name\":\"_symbols\",\"type\":\"string[]\"}],\"name\":\"createMarket\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"feePot\",\"outputs\":[{\"internalType\":\"contractFeePot\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"}],\"name\":\"getMarket\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"settlementAddress\",\"type\":\"address\"},{\"internalType\":\"contractOwnedERC20[]\",\"name\":\"shareTokens\",\"type\":\"address[]\"},{\"internalType\":\"uint256\",\"name\":\"endTime\",\"type\":\"uint256\"},{\"internalType\":\"contractOwnedERC20\",\"name\":\"winner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"settlementFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"protocolFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"stakerFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"creationTimestamp\",\"type\":\"uint256\"}],\"internalType\":\"structAbstractMarketFactory.Market\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"}],\"name\":\"getMarketDetails\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"description\",\"type\":\"string\"}],\"internalType\":\"structTrustedMarketFactory.MarketDetails\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getOwner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"}],\"name\":\"isMarketResolved\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"listUnresolvedMarkets\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"marketCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_shareToMint\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"mintShares\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"protocol\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"protocolFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"resolveMarket\",\"outputs\":[],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newProtocol\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"_claimFirst\",\"type\":\"bool\"}],\"name\":\"setProtocol\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_newFee\",\"type\":\"uint256\"}],\"name\":\"setProtocolFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_newFee\",\"type\":\"uint256\"}],\"name\":\"setSettlementFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_newFee\",\"type\":\"uint256\"}],\"name\":\"setStakerFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"settlementFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"shareFactor\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakerFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_winningOutcome\",\"type\":\"uint256\"}],\"name\":\"trustedResolveMarket\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+}
+
 // TrustedMarketFactoryABI is the input ABI used to generate the binding from.
-const TrustedMarketFactoryABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_owner\",\"type\":\"address\"},{\"internalType\":\"contractIERC20Full\",\"name\":\"_collateral\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_shareFactor\",\"type\":\"uint256\"},{\"internalType\":\"contractFeePot\",\"name\":\"_feePot\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_stakerFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_settlementFee\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_protocol\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_protocolFee\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"_endTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"description\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"string[]\",\"name\":\"outcomes\",\"type\":\"string[]\"}],\"name\":\"MarketCreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"}],\"name\":\"MarketResolved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"protocol\",\"type\":\"address\"}],\"name\":\"ProtocolChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"ProtocolFeeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"protocol\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ProtocolFeeClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"SettlementFeeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"settlementAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SettlementFeeClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SharesBurned\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SharesMinted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"StakerFeeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"WinningsClaimed\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"accumulatedProtocolFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"accumulatedSettlementFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_sharesToBurn\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"burnShares\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_shares\",\"type\":\"uint256\"}],\"name\":\"calcCost\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_collateralIn\",\"type\":\"uint256\"}],\"name\":\"calcShares\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"_ids\",\"type\":\"uint256[]\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimManyWinnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claimProtocolFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimSettlementFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimWinnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"collateral\",\"outputs\":[{\"internalType\":\"contractIERC20Full\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_creator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_endTime\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"_description\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"_names\",\"type\":\"string[]\"},{\"internalType\":\"string[]\",\"name\":\"_symbols\",\"type\":\"string[]\"}],\"name\":\"createMarket\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"feePot\",\"outputs\":[{\"internalType\":\"contractFeePot\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"}],\"name\":\"getMarket\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"settlementAddress\",\"type\":\"address\"},{\"internalType\":\"contractOwnedERC20[]\",\"name\":\"shareTokens\",\"type\":\"address[]\"},{\"internalType\":\"uint256\",\"name\":\"endTime\",\"type\":\"uint256\"},{\"internalType\":\"contractOwnedERC20\",\"name\":\"winner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"settlementFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"protocolFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"stakerFee\",\"type\":\"uint256\"}],\"internalType\":\"structAbstractMarketFactory.Market\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"}],\"name\":\"getMarketDetails\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"description\",\"type\":\"string\"}],\"internalType\":\"structTrustedMarketFactory.MarketDetails\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getOwner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"}],\"name\":\"isMarketResolved\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"marketCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_shareToMint\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"mintShares\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"protocol\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"protocolFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"resolveMarket\",\"outputs\":[],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newProtocol\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"_claimFirst\",\"type\":\"bool\"}],\"name\":\"setProtocol\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_newFee\",\"type\":\"uint256\"}],\"name\":\"setProtocolFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_newFee\",\"type\":\"uint256\"}],\"name\":\"setSettlementFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_newFee\",\"type\":\"uint256\"}],\"name\":\"setStakerFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"settlementFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"shareFactor\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakerFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_winningOutcome\",\"type\":\"uint256\"}],\"name\":\"trustedResolveMarket\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+// Deprecated: Use TrustedMarketFactoryMetaData.ABI instead.
+var TrustedMarketFactoryABI = TrustedMarketFactoryMetaData.ABI
 
 // TrustedMarketFactory is an auto generated Go binding around an Ethereum contract.
 type TrustedMarketFactory struct {
@@ -154,7 +150,7 @@ func bindTrustedMarketFactory(address common.Address, caller bind.ContractCaller
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_TrustedMarketFactory *TrustedMarketFactoryRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_TrustedMarketFactory *TrustedMarketFactoryRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _TrustedMarketFactory.Contract.TrustedMarketFactoryCaller.contract.Call(opts, result, method, params...)
 }
 
@@ -173,7 +169,7 @@ func (_TrustedMarketFactory *TrustedMarketFactoryRaw) Transact(opts *bind.Transa
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_TrustedMarketFactory *TrustedMarketFactoryCallerRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_TrustedMarketFactory *TrustedMarketFactoryCallerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _TrustedMarketFactory.Contract.contract.Call(opts, result, method, params...)
 }
 
@@ -192,12 +188,17 @@ func (_TrustedMarketFactory *TrustedMarketFactoryTransactorRaw) Transact(opts *b
 //
 // Solidity: function accumulatedProtocolFee() view returns(uint256)
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) AccumulatedProtocolFee(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "accumulatedProtocolFee")
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "accumulatedProtocolFee")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // AccumulatedProtocolFee is a free data retrieval call binding the contract method 0xa544a62c.
@@ -218,12 +219,17 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) AccumulatedProto
 //
 // Solidity: function accumulatedSettlementFees(address ) view returns(uint256)
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) AccumulatedSettlementFees(opts *bind.CallOpts, arg0 common.Address) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "accumulatedSettlementFees", arg0)
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "accumulatedSettlementFees", arg0)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // AccumulatedSettlementFees is a free data retrieval call binding the contract method 0x49a4d934.
@@ -244,12 +250,17 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) AccumulatedSettl
 //
 // Solidity: function calcCost(uint256 _shares) view returns(uint256)
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) CalcCost(opts *bind.CallOpts, _shares *big.Int) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "calcCost", _shares)
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "calcCost", _shares)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // CalcCost is a free data retrieval call binding the contract method 0x473a6d52.
@@ -270,12 +281,17 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) CalcCost(_shares
 //
 // Solidity: function calcShares(uint256 _collateralIn) view returns(uint256)
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) CalcShares(opts *bind.CallOpts, _collateralIn *big.Int) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "calcShares", _collateralIn)
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "calcShares", _collateralIn)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // CalcShares is a free data retrieval call binding the contract method 0xcc87adea.
@@ -296,12 +312,17 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) CalcShares(_coll
 //
 // Solidity: function collateral() view returns(address)
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) Collateral(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "collateral")
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "collateral")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // Collateral is a free data retrieval call binding the contract method 0xd8dfeb45.
@@ -322,12 +343,17 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) Collateral() (co
 //
 // Solidity: function feePot() view returns(address)
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) FeePot(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "feePot")
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "feePot")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // FeePot is a free data retrieval call binding the contract method 0x4c9f66c7.
@@ -346,52 +372,62 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) FeePot() (common
 
 // GetMarket is a free data retrieval call binding the contract method 0xeb44fdd3.
 //
-// Solidity: function getMarket(uint256 _id) view returns(AbstractMarketFactoryMarket)
+// Solidity: function getMarket(uint256 _id) view returns((address,address[],uint256,address,uint256,uint256,uint256,uint256))
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) GetMarket(opts *bind.CallOpts, _id *big.Int) (AbstractMarketFactoryMarket, error) {
-	var (
-		ret0 = new(AbstractMarketFactoryMarket)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "getMarket", _id)
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "getMarket", _id)
+
+	if err != nil {
+		return *new(AbstractMarketFactoryMarket), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(AbstractMarketFactoryMarket)).(*AbstractMarketFactoryMarket)
+
+	return out0, err
+
 }
 
 // GetMarket is a free data retrieval call binding the contract method 0xeb44fdd3.
 //
-// Solidity: function getMarket(uint256 _id) view returns(AbstractMarketFactoryMarket)
+// Solidity: function getMarket(uint256 _id) view returns((address,address[],uint256,address,uint256,uint256,uint256,uint256))
 func (_TrustedMarketFactory *TrustedMarketFactorySession) GetMarket(_id *big.Int) (AbstractMarketFactoryMarket, error) {
 	return _TrustedMarketFactory.Contract.GetMarket(&_TrustedMarketFactory.CallOpts, _id)
 }
 
 // GetMarket is a free data retrieval call binding the contract method 0xeb44fdd3.
 //
-// Solidity: function getMarket(uint256 _id) view returns(AbstractMarketFactoryMarket)
+// Solidity: function getMarket(uint256 _id) view returns((address,address[],uint256,address,uint256,uint256,uint256,uint256))
 func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) GetMarket(_id *big.Int) (AbstractMarketFactoryMarket, error) {
 	return _TrustedMarketFactory.Contract.GetMarket(&_TrustedMarketFactory.CallOpts, _id)
 }
 
 // GetMarketDetails is a free data retrieval call binding the contract method 0xb06c1ba3.
 //
-// Solidity: function getMarketDetails(uint256 _id) view returns(TrustedMarketFactoryMarketDetails)
+// Solidity: function getMarketDetails(uint256 _id) view returns((string))
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) GetMarketDetails(opts *bind.CallOpts, _id *big.Int) (TrustedMarketFactoryMarketDetails, error) {
-	var (
-		ret0 = new(TrustedMarketFactoryMarketDetails)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "getMarketDetails", _id)
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "getMarketDetails", _id)
+
+	if err != nil {
+		return *new(TrustedMarketFactoryMarketDetails), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(TrustedMarketFactoryMarketDetails)).(*TrustedMarketFactoryMarketDetails)
+
+	return out0, err
+
 }
 
 // GetMarketDetails is a free data retrieval call binding the contract method 0xb06c1ba3.
 //
-// Solidity: function getMarketDetails(uint256 _id) view returns(TrustedMarketFactoryMarketDetails)
+// Solidity: function getMarketDetails(uint256 _id) view returns((string))
 func (_TrustedMarketFactory *TrustedMarketFactorySession) GetMarketDetails(_id *big.Int) (TrustedMarketFactoryMarketDetails, error) {
 	return _TrustedMarketFactory.Contract.GetMarketDetails(&_TrustedMarketFactory.CallOpts, _id)
 }
 
 // GetMarketDetails is a free data retrieval call binding the contract method 0xb06c1ba3.
 //
-// Solidity: function getMarketDetails(uint256 _id) view returns(TrustedMarketFactoryMarketDetails)
+// Solidity: function getMarketDetails(uint256 _id) view returns((string))
 func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) GetMarketDetails(_id *big.Int) (TrustedMarketFactoryMarketDetails, error) {
 	return _TrustedMarketFactory.Contract.GetMarketDetails(&_TrustedMarketFactory.CallOpts, _id)
 }
@@ -400,12 +436,17 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) GetMarketDetails
 //
 // Solidity: function getOwner() view returns(address)
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) GetOwner(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "getOwner")
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "getOwner")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // GetOwner is a free data retrieval call binding the contract method 0x893d20e8.
@@ -426,12 +467,17 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) GetOwner() (comm
 //
 // Solidity: function isMarketResolved(uint256 _id) view returns(bool)
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) IsMarketResolved(opts *bind.CallOpts, _id *big.Int) (bool, error) {
-	var (
-		ret0 = new(bool)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "isMarketResolved", _id)
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "isMarketResolved", _id)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
 }
 
 // IsMarketResolved is a free data retrieval call binding the contract method 0x53ac55f5.
@@ -448,16 +494,52 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) IsMarketResolved
 	return _TrustedMarketFactory.Contract.IsMarketResolved(&_TrustedMarketFactory.CallOpts, _id)
 }
 
+// ListUnresolvedMarkets is a free data retrieval call binding the contract method 0xd9113f0d.
+//
+// Solidity: function listUnresolvedMarkets() view returns(uint256[])
+func (_TrustedMarketFactory *TrustedMarketFactoryCaller) ListUnresolvedMarkets(opts *bind.CallOpts) ([]*big.Int, error) {
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "listUnresolvedMarkets")
+
+	if err != nil {
+		return *new([]*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]*big.Int)).(*[]*big.Int)
+
+	return out0, err
+
+}
+
+// ListUnresolvedMarkets is a free data retrieval call binding the contract method 0xd9113f0d.
+//
+// Solidity: function listUnresolvedMarkets() view returns(uint256[])
+func (_TrustedMarketFactory *TrustedMarketFactorySession) ListUnresolvedMarkets() ([]*big.Int, error) {
+	return _TrustedMarketFactory.Contract.ListUnresolvedMarkets(&_TrustedMarketFactory.CallOpts)
+}
+
+// ListUnresolvedMarkets is a free data retrieval call binding the contract method 0xd9113f0d.
+//
+// Solidity: function listUnresolvedMarkets() view returns(uint256[])
+func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) ListUnresolvedMarkets() ([]*big.Int, error) {
+	return _TrustedMarketFactory.Contract.ListUnresolvedMarkets(&_TrustedMarketFactory.CallOpts)
+}
+
 // MarketCount is a free data retrieval call binding the contract method 0xec979082.
 //
 // Solidity: function marketCount() view returns(uint256)
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) MarketCount(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "marketCount")
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "marketCount")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // MarketCount is a free data retrieval call binding the contract method 0xec979082.
@@ -478,12 +560,17 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) MarketCount() (*
 //
 // Solidity: function protocol() view returns(address)
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) Protocol(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "protocol")
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "protocol")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // Protocol is a free data retrieval call binding the contract method 0x8ce74426.
@@ -504,12 +591,17 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) Protocol() (comm
 //
 // Solidity: function protocolFee() view returns(uint256)
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) ProtocolFee(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "protocolFee")
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "protocolFee")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // ProtocolFee is a free data retrieval call binding the contract method 0xb0e21e8a.
@@ -530,10 +622,15 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) ProtocolFee() (*
 //
 // Solidity: function resolveMarket(uint256 ) pure returns()
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) ResolveMarket(opts *bind.CallOpts, arg0 *big.Int) error {
-	var ()
-	out := &[]interface{}{}
-	err := _TrustedMarketFactory.contract.Call(opts, out, "resolveMarket", arg0)
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "resolveMarket", arg0)
+
+	if err != nil {
+		return err
+	}
+
 	return err
+
 }
 
 // ResolveMarket is a free data retrieval call binding the contract method 0x6399d03d.
@@ -554,12 +651,17 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) ResolveMarket(ar
 //
 // Solidity: function settlementFee() view returns(uint256)
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) SettlementFee(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "settlementFee")
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "settlementFee")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // SettlementFee is a free data retrieval call binding the contract method 0x7d1d7fb8.
@@ -580,12 +682,17 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) SettlementFee() 
 //
 // Solidity: function shareFactor() view returns(uint256)
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) ShareFactor(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "shareFactor")
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "shareFactor")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // ShareFactor is a free data retrieval call binding the contract method 0x7641ab01.
@@ -606,12 +713,17 @@ func (_TrustedMarketFactory *TrustedMarketFactoryCallerSession) ShareFactor() (*
 //
 // Solidity: function stakerFee() view returns(uint256)
 func (_TrustedMarketFactory *TrustedMarketFactoryCaller) StakerFee(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _TrustedMarketFactory.contract.Call(opts, out, "stakerFee")
-	return *ret0, err
+	var out []interface{}
+	err := _TrustedMarketFactory.contract.Call(opts, &out, "stakerFee")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // StakerFee is a free data retrieval call binding the contract method 0x4b2d9ffc.
@@ -1035,6 +1147,7 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseMarketCreated(lo
 	if err := _TrustedMarketFactory.contract.UnpackLog(event, "MarketCreated", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1169,6 +1282,7 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseMarketResolved(l
 	if err := _TrustedMarketFactory.contract.UnpackLog(event, "MarketResolved", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1302,6 +1416,7 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseProtocolChanged(
 	if err := _TrustedMarketFactory.contract.UnpackLog(event, "ProtocolChanged", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1435,6 +1550,7 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseProtocolFeeChang
 	if err := _TrustedMarketFactory.contract.UnpackLog(event, "ProtocolFeeChanged", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1569,6 +1685,7 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseProtocolFeeClaim
 	if err := _TrustedMarketFactory.contract.UnpackLog(event, "ProtocolFeeClaimed", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1702,6 +1819,7 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseSettlementFeeCha
 	if err := _TrustedMarketFactory.contract.UnpackLog(event, "SettlementFeeChanged", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1847,6 +1965,7 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseSettlementFeeCla
 	if err := _TrustedMarketFactory.contract.UnpackLog(event, "SettlementFeeClaimed", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1982,6 +2101,7 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseSharesBurned(log
 	if err := _TrustedMarketFactory.contract.UnpackLog(event, "SharesBurned", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -2117,6 +2237,7 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseSharesMinted(log
 	if err := _TrustedMarketFactory.contract.UnpackLog(event, "SharesMinted", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -2250,6 +2371,7 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseStakerFeeChanged
 	if err := _TrustedMarketFactory.contract.UnpackLog(event, "StakerFeeChanged", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -2322,15 +2444,18 @@ func (it *TrustedMarketFactoryWinningsClaimedIterator) Close() error {
 
 // TrustedMarketFactoryWinningsClaimed represents a WinningsClaimed event raised by the TrustedMarketFactory contract.
 type TrustedMarketFactoryWinningsClaimed struct {
-	Id       *big.Int
-	Amount   *big.Int
-	Receiver common.Address
-	Raw      types.Log // Blockchain specific contextual infos
+	Id             *big.Int
+	WinningOutcome common.Address
+	Amount         *big.Int
+	SettlementFee  *big.Int
+	Payout         *big.Int
+	Receiver       common.Address
+	Raw            types.Log // Blockchain specific contextual infos
 }
 
-// FilterWinningsClaimed is a free log retrieval operation binding the contract event 0x2bdd7a5109193ce6270ec3b4afcf4ccd4a06c27742ba11f660498cb41433bb00.
+// FilterWinningsClaimed is a free log retrieval operation binding the contract event 0xe67bd0100cd3289557430d36098901ba18161e6279c9711d8650b8af10552104.
 //
-// Solidity: event WinningsClaimed(uint256 id, uint256 amount, address indexed receiver)
+// Solidity: event WinningsClaimed(uint256 id, address winningOutcome, uint256 amount, uint256 settlementFee, uint256 payout, address indexed receiver)
 func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) FilterWinningsClaimed(opts *bind.FilterOpts, receiver []common.Address) (*TrustedMarketFactoryWinningsClaimedIterator, error) {
 
 	var receiverRule []interface{}
@@ -2345,9 +2470,9 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) FilterWinningsClaimed
 	return &TrustedMarketFactoryWinningsClaimedIterator{contract: _TrustedMarketFactory.contract, event: "WinningsClaimed", logs: logs, sub: sub}, nil
 }
 
-// WatchWinningsClaimed is a free log subscription operation binding the contract event 0x2bdd7a5109193ce6270ec3b4afcf4ccd4a06c27742ba11f660498cb41433bb00.
+// WatchWinningsClaimed is a free log subscription operation binding the contract event 0xe67bd0100cd3289557430d36098901ba18161e6279c9711d8650b8af10552104.
 //
-// Solidity: event WinningsClaimed(uint256 id, uint256 amount, address indexed receiver)
+// Solidity: event WinningsClaimed(uint256 id, address winningOutcome, uint256 amount, uint256 settlementFee, uint256 payout, address indexed receiver)
 func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) WatchWinningsClaimed(opts *bind.WatchOpts, sink chan<- *TrustedMarketFactoryWinningsClaimed, receiver []common.Address) (event.Subscription, error) {
 
 	var receiverRule []interface{}
@@ -2387,13 +2512,14 @@ func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) WatchWinningsClaimed(
 	}), nil
 }
 
-// ParseWinningsClaimed is a log parse operation binding the contract event 0x2bdd7a5109193ce6270ec3b4afcf4ccd4a06c27742ba11f660498cb41433bb00.
+// ParseWinningsClaimed is a log parse operation binding the contract event 0xe67bd0100cd3289557430d36098901ba18161e6279c9711d8650b8af10552104.
 //
-// Solidity: event WinningsClaimed(uint256 id, uint256 amount, address indexed receiver)
+// Solidity: event WinningsClaimed(uint256 id, address winningOutcome, uint256 amount, uint256 settlementFee, uint256 payout, address indexed receiver)
 func (_TrustedMarketFactory *TrustedMarketFactoryFilterer) ParseWinningsClaimed(log types.Log) (*TrustedMarketFactoryWinningsClaimed, error) {
 	event := new(TrustedMarketFactoryWinningsClaimed)
 	if err := _TrustedMarketFactory.contract.UnpackLog(event, "WinningsClaimed", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }

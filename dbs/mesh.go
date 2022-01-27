@@ -12,13 +12,12 @@ import (
 	"database/sql"
 	pq  "github.com/lib/pq"
 
-//	"github.com/0xProject/0x-mesh/zeroex"
-	ztypes "github.com/0xProject/0x-mesh/common/types"
+	//ztypes "github.com/0xProject/0x-mesh/common/types"
 	"github.com/ethereum/go-ethereum/common"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Try_insert_0x_mesh_order_event(aid int64,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) bool {
+func (ss *SQLStorage) Try_insert_0x_mesh_order_event(aid int64,timestamp int64,oi *p.OrderInfo0x,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) bool {
 
 	_,err := ss.Lookup_market_by_addr_str(ospec.Market.String())
 	if err != nil {
@@ -47,7 +46,7 @@ func (ss *SQLStorage) Is_ADD_event_missing(order_hash string) bool {
 	}
 	return false
 }
-func (ss *SQLStorage) Insert_0x_mesh_order_event(mktord_id int64,aid int64,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) bool {
+func (ss *SQLStorage) Insert_0x_mesh_order_event(mktord_id int64,aid int64,timestamp int64,oi *p.OrderInfo0x,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) bool {
 
 	ss.Info.Printf("Inserting 0x mesh event, order %v\n",oi.OrderHash.String())
 	if ospec == nil {
@@ -68,7 +67,7 @@ func (ss *SQLStorage) Insert_0x_mesh_order_event(mktord_id int64,aid int64,times
 		if (err!=nil) {
 			if (err==sql.ErrNoRows) {
 				// ADD event is missing, INSERT
-				ts := int64(oi.SignedOrder.Order.Salt.Int64()/1000)
+				ts := int64(oi.SignedOrder.Salt.Int64()/1000)
 				ss.do_insert_0x_mesh_order_event(0,aid,ts,oi,ospec,nil,p.MeshEvtAdded)
 			} else {
 				ss.Log_msg(fmt.Sprintf("DB error : %v, q=%v",err,query))
@@ -122,7 +121,7 @@ func (ss *SQLStorage) Update_future_price_estimates(market_aid int64,outcome_idx
 		}
 	}
 }
-func (ss *SQLStorage) do_insert_0x_mesh_order_event(mktord_id int64,aid int64,timestamp int64,oi *ztypes.OrderInfo,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) (int64,error) {
+func (ss *SQLStorage) do_insert_0x_mesh_order_event(mktord_id int64,aid int64,timestamp int64,oi *p.OrderInfo0x,ospec *p.ZxMeshOrderSpec,amount_fill *big.Int,event_code p.MeshEvtCode) (int64,error) {
 
 	market_aid := ss.Lookup_or_create_address(ospec.Market.String(),0,0)// block and tx_id will be updated on market creation event
 	amount_fill_str := "0"
@@ -198,24 +197,24 @@ func (ss *SQLStorage) do_insert_0x_mesh_order_event(mktord_id int64,aid int64,ti
 			aid,
 			timestamp,oi.FillableTakerAssetAmount.String(),event_code,
 			mktord_value,market_aid,ospec.Outcome,ospec.Type,ospec.Price.String(),
-			oi.OrderHash.String(),oi.SignedOrder.Order.ChainID.Int64(),oi.SignedOrder.Order.ExchangeAddress.String(),
-			oi.SignedOrder.Order.MakerAddress.String(),hex.EncodeToString(oi.SignedOrder.Order.MakerAssetData),hex.EncodeToString(oi.SignedOrder.Order.MakerFeeAssetData),
-			oi.SignedOrder.Order.MakerAssetAmount.String(),oi.SignedOrder.Order.MakerFee.String(),
-			oi.SignedOrder.Order.TakerAddress.String(),hex.EncodeToString(oi.SignedOrder.Order.TakerAssetData),hex.EncodeToString(oi.SignedOrder.Order.TakerFeeAssetData),
-			oi.SignedOrder.Order.TakerAssetAmount.String(),oi.SignedOrder.Order.TakerFee.String(),
-			oi.SignedOrder.Order.SenderAddress.String(),oi.SignedOrder.Order.FeeRecipientAddress.String(),oi.SignedOrder.Order.ExpirationTimeSeconds.Int64(),oi.SignedOrder.Order.Salt.String(),hex.EncodeToString(oi.SignedOrder.Signature),amount_fill_str,
+			oi.OrderHash.String(),oi.SignedOrder.ChainID.Int64(),oi.SignedOrder.ExchangeAddress.String(),
+			oi.SignedOrder.MakerAddress.String(),hex.EncodeToString(oi.SignedOrder.MakerAssetData),hex.EncodeToString(oi.SignedOrder.MakerFeeAssetData),
+			oi.SignedOrder.MakerAssetAmount.String(),oi.SignedOrder.MakerFee.String(),
+			oi.SignedOrder.TakerAddress.String(),hex.EncodeToString(oi.SignedOrder.TakerAssetData),hex.EncodeToString(oi.SignedOrder.TakerFeeAssetData),
+			oi.SignedOrder.TakerAssetAmount.String(),oi.SignedOrder.TakerFee.String(),
+			oi.SignedOrder.SenderAddress.String(),oi.SignedOrder.FeeRecipientAddress.String(),oi.SignedOrder.ExpirationTimeSeconds.Int64(),oi.SignedOrder.Salt.String(),hex.EncodeToString(oi.SignedOrder.Signature),amount_fill_str,
 	)
 	ss.Info.Printf("q=%v\n",d_query)
 	_,err = ss.db.Exec(query,
 		aid,
 		timestamp,oi.FillableTakerAssetAmount.String(),event_code,
 		market_aid,ospec.Outcome,ospec.Type,ospec.Price.String(),
-		oi.OrderHash.String(),oi.SignedOrder.Order.ChainID.Int64(),oi.SignedOrder.Order.ExchangeAddress.String(),
-		oi.SignedOrder.Order.MakerAddress.String(),hex.EncodeToString(oi.SignedOrder.Order.MakerAssetData),hex.EncodeToString(oi.SignedOrder.Order.MakerFeeAssetData),
-		oi.SignedOrder.Order.MakerAssetAmount.String(),oi.SignedOrder.Order.MakerFee.String(),
-		oi.SignedOrder.Order.TakerAddress.String(),hex.EncodeToString(oi.SignedOrder.Order.TakerAssetData),hex.EncodeToString(oi.SignedOrder.Order.TakerFeeAssetData),
-		oi.SignedOrder.Order.TakerAssetAmount.String(),oi.SignedOrder.Order.TakerFee.String(),
-		oi.SignedOrder.Order.SenderAddress.String(),oi.SignedOrder.Order.FeeRecipientAddress.String(),oi.SignedOrder.Order.ExpirationTimeSeconds.Int64(),oi.SignedOrder.Order.Salt.String(),hex.EncodeToString(oi.SignedOrder.Signature),amount_fill_str,
+		oi.OrderHash.String(),oi.SignedOrder.ChainID.Int64(),oi.SignedOrder.ExchangeAddress.String(),
+		oi.SignedOrder.MakerAddress.String(),hex.EncodeToString(oi.SignedOrder.MakerAssetData),hex.EncodeToString(oi.SignedOrder.MakerFeeAssetData),
+		oi.SignedOrder.MakerAssetAmount.String(),oi.SignedOrder.MakerFee.String(),
+		oi.SignedOrder.TakerAddress.String(),hex.EncodeToString(oi.SignedOrder.TakerAssetData),hex.EncodeToString(oi.SignedOrder.TakerFeeAssetData),
+		oi.SignedOrder.TakerAssetAmount.String(),oi.SignedOrder.TakerFee.String(),
+		oi.SignedOrder.SenderAddress.String(),oi.SignedOrder.FeeRecipientAddress.String(),oi.SignedOrder.ExpirationTimeSeconds.Int64(),oi.SignedOrder.Salt.String(),hex.EncodeToString(oi.SignedOrder.Signature),amount_fill_str,
 	)
 	ss.Info.Printf("err=%v\n",err)
 	if (err!=nil) {

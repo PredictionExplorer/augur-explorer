@@ -188,9 +188,10 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 			)
 			return total_eth,errors.New("Block changed during processing")
 		}
-		tx_fee := big.NewInt(agtx.GasUsed)
+		tx_fee := big.NewInt(int64(rcpt.GasUsed))
 		gas_price := big.NewInt(0)
 		gas_price.SetString(agtx.GasPrice,10)
+		Info.Printf("Multiplying gas used %v by gas price %v\n",tx_fee.String(),gas_price.String())
 		tx_fee.Mul(tx_fee,gas_price)
 		var tx_short TxShort
 		tx_short.BlockNum = bnum

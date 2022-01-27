@@ -65,7 +65,7 @@ func uniswap_calc_slippage(eclient *ethclient.Client,router02_addr_str string,pa
 		r2=reserves.Reserve0
 	}
 	router02_addr := common.HexToAddress(router02_addr_str)
-	ctrct_router,err := NewUniswapV2Router02(router02_addr,eclient)
+	ctrct_router,err := NewUniswapV2Router(router02_addr,eclient)
 	amount := big.NewInt(0)
 	amount.SetString(amount_str,10)
 	token_amount_out,err := ctrct_router.GetAmountOut(copts,amount,r1,r2)

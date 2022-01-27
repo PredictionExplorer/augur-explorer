@@ -16,22 +16,23 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	//ztypes "github.com/0xProject/0x-mesh/common/types"
-	"github.com/0xProject/0x-mesh/zeroex"
+	//"github.com/0xProject/0x-mesh/zeroex"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
+
 func dump_abi_events(a *abi.ABI) {
 
 	fmt.Printf("Events:\n")
 	for evt:=range a.Events {
-		fmt.Printf("\t%v\t%v\n",a.Events[evt].ID().String(),evt)
+		fmt.Printf("\t%v\t%v\n",a.Events[evt].ID.String(),evt)
 	}
 
 }
 func dump_abi_methods(a *abi.ABI) {
 	fmt.Printf("Methods:\n")
 	for meth := range a.Methods {
-		fmt.Printf("\t%v\t%v\n",hex.EncodeToString(a.Methods[meth].ID()),meth)
+		fmt.Printf("\t%v\t%v\n",hex.EncodeToString(a.Methods[meth].ID),meth)
 	}
 }
 func dump_all_artifacts(contracts *map[string]interface{}) {
@@ -518,9 +519,9 @@ func Contract_addresses_match(ca1 *ContractAddresses,ca2 *ContractAddresses) (in
 	}
 	return num_mismatches,errors.New(all_errors)
 }
-func Copy_iexchange_order_to_zeroxorder(in *IExchangeOrder) zeroex.Order {
+func Copy_iexchange_order_to_zeroxorder(in *IExchangeOrder) Order0x {
 	// copies the data between compatible types
-	var out zeroex.Order
+	var out Order0x
 
 	out.MakerAddress.SetBytes(in.MakerAddress.Bytes())
 	out.TakerAddress.SetBytes(in.TakerAddress.Bytes())
@@ -553,7 +554,7 @@ func Copy_iexchange_order_to_zeroxorder(in *IExchangeOrder) zeroex.Order {
 
 	return out
 }
-func Copy_zerox_order_to_iexchange_order(in *zeroex.Order ) IExchangeOrder {
+func Copy_zerox_order_to_iexchange_order(in *Order0x ) IExchangeOrder {
 	// copies the data between compatible types
 	var out IExchangeOrder
 
@@ -619,7 +620,7 @@ func Fetch_erc20_info(client *ethclient.Client,contract_address *common.Address)
 
 	symbol,err := contract.Symbol(copts)
 	if err != nil {
-		old_contract,err := NewOldERC20Token(*contract_address,client)
+	/*	old_contract,err := NewOldERC20Token(*contract_address,client)
 		if err != nil {
 			return erc20Info,errors.New(fmt.Sprintf("OldERC20Token instantiation error: %v",err))
 		}
@@ -632,14 +633,14 @@ func Fetch_erc20_info(client *ethclient.Client,contract_address *common.Address)
 				length = 32
 			}
 			erc20Info.Symbol = string(byte_symbol[:length])
-		}
+		}*/
 	} else {
 		erc20Info.Symbol = symbol
 	}
 
 	name,err := contract.Name(copts)
 	if err != nil {
-		old_contract,err := NewOldERC20Token(*contract_address,client)
+		/*old_contract,err := NewOldERC20Token(*contract_address,client)
 		if err != nil {
 			return erc20Info,errors.New(fmt.Sprintf("OldERC20Token instantiation error: %v",err))
 		}
@@ -652,7 +653,7 @@ func Fetch_erc20_info(client *ethclient.Client,contract_address *common.Address)
 				length = 32
 			}
 			erc20Info.Name = string(byte_name[:length])
-		}
+		}*/
 	} else {
 		erc20Info.Name = name
 	}

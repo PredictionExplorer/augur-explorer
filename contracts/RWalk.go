@@ -4,6 +4,7 @@
 package contracts
 
 import (
+	"errors"
 	"math/big"
 	"strings"
 
@@ -17,18 +18,24 @@ import (
 
 // Reference imports to suppress errors if they are not otherwise used.
 var (
+	_ = errors.New
 	_ = big.NewInt
 	_ = strings.NewReader
 	_ = ethereum.NotFound
-	_ = abi.U256
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
 	_ = event.NewSubscription
 )
 
+// RWalkMetaData contains all meta data concerning the RWalk contract.
+var RWalkMetaData = &bind.MetaData{
+	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"approved\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"approved\",\"type\":\"bool\"}],\"name\":\"ApprovalForAll\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"seed\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"}],\"name\":\"MintEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"newName\",\"type\":\"string\"}],\"name\":\"TokenNameEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"WithdrawalEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"entropy\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"getApproved\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getMintPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"}],\"name\":\"isApprovedForAll\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastMintTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastMinter\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"mint\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nextTokenId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numWithdrawals\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"ownerOf\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"price\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"safeTransferFrom\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_data\",\"type\":\"bytes\"}],\"name\":\"safeTransferFrom\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"saleTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"seeds\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"seedsOfOwner\",\"outputs\":[{\"internalType\":\"bytes32[]\",\"name\":\"\",\"type\":\"bytes32[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"approved\",\"type\":\"bool\"}],\"name\":\"setApprovalForAll\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"baseURI\",\"type\":\"string\"}],\"name\":\"setBaseURI\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"}],\"name\":\"setTokenName\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeUntilSale\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeUntilWithdrawal\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"tokenByIndex\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"tokenGenerationScript\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"tokenNames\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"tokenOfOwnerByIndex\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"tokenURI\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"walletOfOwner\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdrawalAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"withdrawalAmounts\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"withdrawalNums\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdrawalWaitSeconds\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+}
+
 // RWalkABI is the input ABI used to generate the binding from.
-const RWalkABI = "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"approved\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"approved\",\"type\":\"bool\"}],\"name\":\"ApprovalForAll\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"seed\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"}],\"name\":\"MintEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"newName\",\"type\":\"string\"}],\"name\":\"TokenNameEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"WithdrawalEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"entropy\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"getApproved\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getMintPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"}],\"name\":\"isApprovedForAll\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastMintTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastMinter\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"mint\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nextTokenId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numWithdrawals\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"ownerOf\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"price\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"safeTransferFrom\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_data\",\"type\":\"bytes\"}],\"name\":\"safeTransferFrom\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"saleTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"seeds\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"seedsOfOwner\",\"outputs\":[{\"internalType\":\"bytes32[]\",\"name\":\"\",\"type\":\"bytes32[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"approved\",\"type\":\"bool\"}],\"name\":\"setApprovalForAll\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"baseURI\",\"type\":\"string\"}],\"name\":\"setBaseURI\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newSaleTime\",\"type\":\"uint256\"}],\"name\":\"setSaleTime\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"}],\"name\":\"setTokenName\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newTime\",\"type\":\"uint256\"}],\"name\":\"setWithdrawalWait\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeUntilSale\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeUntilWithdrawal\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"tokenByIndex\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"tokenGenerationScript\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"tokenNames\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"tokenOfOwnerByIndex\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"tokenURI\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"walletOfOwner\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdrawalAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"withdrawalAmounts\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"withdrawalNums\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdrawalWaitSeconds\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"
+// Deprecated: Use RWalkMetaData.ABI instead.
+var RWalkABI = RWalkMetaData.ABI
 
 // RWalk is an auto generated Go binding around an Ethereum contract.
 type RWalk struct {
@@ -138,7 +145,7 @@ func bindRWalk(address common.Address, caller bind.ContractCaller, transactor bi
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_RWalk *RWalkRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_RWalk *RWalkRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _RWalk.Contract.RWalkCaller.contract.Call(opts, result, method, params...)
 }
 
@@ -157,7 +164,7 @@ func (_RWalk *RWalkRaw) Transact(opts *bind.TransactOpts, method string, params 
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_RWalk *RWalkCallerRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_RWalk *RWalkCallerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _RWalk.Contract.contract.Call(opts, result, method, params...)
 }
 
@@ -176,12 +183,17 @@ func (_RWalk *RWalkTransactorRaw) Transact(opts *bind.TransactOpts, method strin
 //
 // Solidity: function balanceOf(address owner) view returns(uint256)
 func (_RWalk *RWalkCaller) BalanceOf(opts *bind.CallOpts, owner common.Address) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "balanceOf", owner)
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "balanceOf", owner)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // BalanceOf is a free data retrieval call binding the contract method 0x70a08231.
@@ -202,12 +214,17 @@ func (_RWalk *RWalkCallerSession) BalanceOf(owner common.Address) (*big.Int, err
 //
 // Solidity: function entropy() view returns(bytes32)
 func (_RWalk *RWalkCaller) Entropy(opts *bind.CallOpts) ([32]byte, error) {
-	var (
-		ret0 = new([32]byte)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "entropy")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "entropy")
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
 }
 
 // Entropy is a free data retrieval call binding the contract method 0x47ce07cc.
@@ -228,12 +245,17 @@ func (_RWalk *RWalkCallerSession) Entropy() ([32]byte, error) {
 //
 // Solidity: function getApproved(uint256 tokenId) view returns(address)
 func (_RWalk *RWalkCaller) GetApproved(opts *bind.CallOpts, tokenId *big.Int) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "getApproved", tokenId)
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "getApproved", tokenId)
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // GetApproved is a free data retrieval call binding the contract method 0x081812fc.
@@ -254,12 +276,17 @@ func (_RWalk *RWalkCallerSession) GetApproved(tokenId *big.Int) (common.Address,
 //
 // Solidity: function getMintPrice() view returns(uint256)
 func (_RWalk *RWalkCaller) GetMintPrice(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "getMintPrice")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "getMintPrice")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // GetMintPrice is a free data retrieval call binding the contract method 0xa7f93ebd.
@@ -280,12 +307,17 @@ func (_RWalk *RWalkCallerSession) GetMintPrice() (*big.Int, error) {
 //
 // Solidity: function isApprovedForAll(address owner, address operator) view returns(bool)
 func (_RWalk *RWalkCaller) IsApprovedForAll(opts *bind.CallOpts, owner common.Address, operator common.Address) (bool, error) {
-	var (
-		ret0 = new(bool)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "isApprovedForAll", owner, operator)
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "isApprovedForAll", owner, operator)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
 }
 
 // IsApprovedForAll is a free data retrieval call binding the contract method 0xe985e9c5.
@@ -306,12 +338,17 @@ func (_RWalk *RWalkCallerSession) IsApprovedForAll(owner common.Address, operato
 //
 // Solidity: function lastMintTime() view returns(uint256)
 func (_RWalk *RWalkCaller) LastMintTime(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "lastMintTime")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "lastMintTime")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // LastMintTime is a free data retrieval call binding the contract method 0x9d463520.
@@ -332,12 +369,17 @@ func (_RWalk *RWalkCallerSession) LastMintTime() (*big.Int, error) {
 //
 // Solidity: function lastMinter() view returns(address)
 func (_RWalk *RWalkCaller) LastMinter(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "lastMinter")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "lastMinter")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // LastMinter is a free data retrieval call binding the contract method 0x4cd609bc.
@@ -358,12 +400,17 @@ func (_RWalk *RWalkCallerSession) LastMinter() (common.Address, error) {
 //
 // Solidity: function name() view returns(string)
 func (_RWalk *RWalkCaller) Name(opts *bind.CallOpts) (string, error) {
-	var (
-		ret0 = new(string)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "name")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "name")
+
+	if err != nil {
+		return *new(string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+
+	return out0, err
+
 }
 
 // Name is a free data retrieval call binding the contract method 0x06fdde03.
@@ -384,12 +431,17 @@ func (_RWalk *RWalkCallerSession) Name() (string, error) {
 //
 // Solidity: function nextTokenId() view returns(uint256)
 func (_RWalk *RWalkCaller) NextTokenId(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "nextTokenId")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "nextTokenId")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // NextTokenId is a free data retrieval call binding the contract method 0x75794a3c.
@@ -410,12 +462,17 @@ func (_RWalk *RWalkCallerSession) NextTokenId() (*big.Int, error) {
 //
 // Solidity: function numWithdrawals() view returns(uint256)
 func (_RWalk *RWalkCaller) NumWithdrawals(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "numWithdrawals")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "numWithdrawals")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // NumWithdrawals is a free data retrieval call binding the contract method 0x157e3945.
@@ -436,12 +493,17 @@ func (_RWalk *RWalkCallerSession) NumWithdrawals() (*big.Int, error) {
 //
 // Solidity: function owner() view returns(address)
 func (_RWalk *RWalkCaller) Owner(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "owner")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "owner")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
@@ -462,12 +524,17 @@ func (_RWalk *RWalkCallerSession) Owner() (common.Address, error) {
 //
 // Solidity: function ownerOf(uint256 tokenId) view returns(address)
 func (_RWalk *RWalkCaller) OwnerOf(opts *bind.CallOpts, tokenId *big.Int) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "ownerOf", tokenId)
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "ownerOf", tokenId)
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // OwnerOf is a free data retrieval call binding the contract method 0x6352211e.
@@ -488,12 +555,17 @@ func (_RWalk *RWalkCallerSession) OwnerOf(tokenId *big.Int) (common.Address, err
 //
 // Solidity: function price() view returns(uint256)
 func (_RWalk *RWalkCaller) Price(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "price")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "price")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // Price is a free data retrieval call binding the contract method 0xa035b1fe.
@@ -514,12 +586,17 @@ func (_RWalk *RWalkCallerSession) Price() (*big.Int, error) {
 //
 // Solidity: function saleTime() view returns(uint256)
 func (_RWalk *RWalkCaller) SaleTime(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "saleTime")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "saleTime")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // SaleTime is a free data retrieval call binding the contract method 0x1596facb.
@@ -540,12 +617,17 @@ func (_RWalk *RWalkCallerSession) SaleTime() (*big.Int, error) {
 //
 // Solidity: function seeds(uint256 ) view returns(bytes32)
 func (_RWalk *RWalkCaller) Seeds(opts *bind.CallOpts, arg0 *big.Int) ([32]byte, error) {
-	var (
-		ret0 = new([32]byte)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "seeds", arg0)
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "seeds", arg0)
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
 }
 
 // Seeds is a free data retrieval call binding the contract method 0xf0503e80.
@@ -566,12 +648,17 @@ func (_RWalk *RWalkCallerSession) Seeds(arg0 *big.Int) ([32]byte, error) {
 //
 // Solidity: function seedsOfOwner(address _owner) view returns(bytes32[])
 func (_RWalk *RWalkCaller) SeedsOfOwner(opts *bind.CallOpts, _owner common.Address) ([][32]byte, error) {
-	var (
-		ret0 = new([][32]byte)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "seedsOfOwner", _owner)
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "seedsOfOwner", _owner)
+
+	if err != nil {
+		return *new([][32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([][32]byte)).(*[][32]byte)
+
+	return out0, err
+
 }
 
 // SeedsOfOwner is a free data retrieval call binding the contract method 0xcb8efe95.
@@ -592,12 +679,17 @@ func (_RWalk *RWalkCallerSession) SeedsOfOwner(_owner common.Address) ([][32]byt
 //
 // Solidity: function supportsInterface(bytes4 interfaceId) view returns(bool)
 func (_RWalk *RWalkCaller) SupportsInterface(opts *bind.CallOpts, interfaceId [4]byte) (bool, error) {
-	var (
-		ret0 = new(bool)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "supportsInterface", interfaceId)
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "supportsInterface", interfaceId)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
 }
 
 // SupportsInterface is a free data retrieval call binding the contract method 0x01ffc9a7.
@@ -618,12 +710,17 @@ func (_RWalk *RWalkCallerSession) SupportsInterface(interfaceId [4]byte) (bool, 
 //
 // Solidity: function symbol() view returns(string)
 func (_RWalk *RWalkCaller) Symbol(opts *bind.CallOpts) (string, error) {
-	var (
-		ret0 = new(string)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "symbol")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "symbol")
+
+	if err != nil {
+		return *new(string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+
+	return out0, err
+
 }
 
 // Symbol is a free data retrieval call binding the contract method 0x95d89b41.
@@ -644,12 +741,17 @@ func (_RWalk *RWalkCallerSession) Symbol() (string, error) {
 //
 // Solidity: function timeUntilSale() view returns(uint256)
 func (_RWalk *RWalkCaller) TimeUntilSale(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "timeUntilSale")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "timeUntilSale")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // TimeUntilSale is a free data retrieval call binding the contract method 0x661a1cfe.
@@ -670,12 +772,17 @@ func (_RWalk *RWalkCallerSession) TimeUntilSale() (*big.Int, error) {
 //
 // Solidity: function timeUntilWithdrawal() view returns(uint256)
 func (_RWalk *RWalkCaller) TimeUntilWithdrawal(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "timeUntilWithdrawal")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "timeUntilWithdrawal")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // TimeUntilWithdrawal is a free data retrieval call binding the contract method 0x3e8af4da.
@@ -696,12 +803,17 @@ func (_RWalk *RWalkCallerSession) TimeUntilWithdrawal() (*big.Int, error) {
 //
 // Solidity: function tokenByIndex(uint256 index) view returns(uint256)
 func (_RWalk *RWalkCaller) TokenByIndex(opts *bind.CallOpts, index *big.Int) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "tokenByIndex", index)
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "tokenByIndex", index)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // TokenByIndex is a free data retrieval call binding the contract method 0x4f6ccce7.
@@ -722,12 +834,17 @@ func (_RWalk *RWalkCallerSession) TokenByIndex(index *big.Int) (*big.Int, error)
 //
 // Solidity: function tokenGenerationScript() view returns(string)
 func (_RWalk *RWalkCaller) TokenGenerationScript(opts *bind.CallOpts) (string, error) {
-	var (
-		ret0 = new(string)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "tokenGenerationScript")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "tokenGenerationScript")
+
+	if err != nil {
+		return *new(string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+
+	return out0, err
+
 }
 
 // TokenGenerationScript is a free data retrieval call binding the contract method 0xee67d6a0.
@@ -748,12 +865,17 @@ func (_RWalk *RWalkCallerSession) TokenGenerationScript() (string, error) {
 //
 // Solidity: function tokenNames(uint256 ) view returns(string)
 func (_RWalk *RWalkCaller) TokenNames(opts *bind.CallOpts, arg0 *big.Int) (string, error) {
-	var (
-		ret0 = new(string)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "tokenNames", arg0)
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "tokenNames", arg0)
+
+	if err != nil {
+		return *new(string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+
+	return out0, err
+
 }
 
 // TokenNames is a free data retrieval call binding the contract method 0x310495ab.
@@ -774,12 +896,17 @@ func (_RWalk *RWalkCallerSession) TokenNames(arg0 *big.Int) (string, error) {
 //
 // Solidity: function tokenOfOwnerByIndex(address owner, uint256 index) view returns(uint256)
 func (_RWalk *RWalkCaller) TokenOfOwnerByIndex(opts *bind.CallOpts, owner common.Address, index *big.Int) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "tokenOfOwnerByIndex", owner, index)
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "tokenOfOwnerByIndex", owner, index)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // TokenOfOwnerByIndex is a free data retrieval call binding the contract method 0x2f745c59.
@@ -800,12 +927,17 @@ func (_RWalk *RWalkCallerSession) TokenOfOwnerByIndex(owner common.Address, inde
 //
 // Solidity: function tokenURI(uint256 tokenId) view returns(string)
 func (_RWalk *RWalkCaller) TokenURI(opts *bind.CallOpts, tokenId *big.Int) (string, error) {
-	var (
-		ret0 = new(string)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "tokenURI", tokenId)
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "tokenURI", tokenId)
+
+	if err != nil {
+		return *new(string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+
+	return out0, err
+
 }
 
 // TokenURI is a free data retrieval call binding the contract method 0xc87b56dd.
@@ -826,12 +958,17 @@ func (_RWalk *RWalkCallerSession) TokenURI(tokenId *big.Int) (string, error) {
 //
 // Solidity: function totalSupply() view returns(uint256)
 func (_RWalk *RWalkCaller) TotalSupply(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "totalSupply")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "totalSupply")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // TotalSupply is a free data retrieval call binding the contract method 0x18160ddd.
@@ -852,12 +989,17 @@ func (_RWalk *RWalkCallerSession) TotalSupply() (*big.Int, error) {
 //
 // Solidity: function walletOfOwner(address _owner) view returns(uint256[])
 func (_RWalk *RWalkCaller) WalletOfOwner(opts *bind.CallOpts, _owner common.Address) ([]*big.Int, error) {
-	var (
-		ret0 = new([]*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "walletOfOwner", _owner)
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "walletOfOwner", _owner)
+
+	if err != nil {
+		return *new([]*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]*big.Int)).(*[]*big.Int)
+
+	return out0, err
+
 }
 
 // WalletOfOwner is a free data retrieval call binding the contract method 0x438b6300.
@@ -878,12 +1020,17 @@ func (_RWalk *RWalkCallerSession) WalletOfOwner(_owner common.Address) ([]*big.I
 //
 // Solidity: function withdrawalAmount() view returns(uint256)
 func (_RWalk *RWalkCaller) WithdrawalAmount(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "withdrawalAmount")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "withdrawalAmount")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // WithdrawalAmount is a free data retrieval call binding the contract method 0xe6e268f4.
@@ -904,12 +1051,17 @@ func (_RWalk *RWalkCallerSession) WithdrawalAmount() (*big.Int, error) {
 //
 // Solidity: function withdrawalAmounts(uint256 ) view returns(uint256)
 func (_RWalk *RWalkCaller) WithdrawalAmounts(opts *bind.CallOpts, arg0 *big.Int) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "withdrawalAmounts", arg0)
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "withdrawalAmounts", arg0)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // WithdrawalAmounts is a free data retrieval call binding the contract method 0xf454aae1.
@@ -930,12 +1082,17 @@ func (_RWalk *RWalkCallerSession) WithdrawalAmounts(arg0 *big.Int) (*big.Int, er
 //
 // Solidity: function withdrawalNums(uint256 ) view returns(uint256)
 func (_RWalk *RWalkCaller) WithdrawalNums(opts *bind.CallOpts, arg0 *big.Int) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "withdrawalNums", arg0)
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "withdrawalNums", arg0)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // WithdrawalNums is a free data retrieval call binding the contract method 0x6e56f6f9.
@@ -956,12 +1113,17 @@ func (_RWalk *RWalkCallerSession) WithdrawalNums(arg0 *big.Int) (*big.Int, error
 //
 // Solidity: function withdrawalWaitSeconds() view returns(uint256)
 func (_RWalk *RWalkCaller) WithdrawalWaitSeconds(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _RWalk.contract.Call(opts, out, "withdrawalWaitSeconds")
-	return *ret0, err
+	var out []interface{}
+	err := _RWalk.contract.Call(opts, &out, "withdrawalWaitSeconds")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // WithdrawalWaitSeconds is a free data retrieval call binding the contract method 0x17d209ab.
@@ -1125,27 +1287,6 @@ func (_RWalk *RWalkTransactorSession) SetBaseURI(baseURI string) (*types.Transac
 	return _RWalk.Contract.SetBaseURI(&_RWalk.TransactOpts, baseURI)
 }
 
-// SetSaleTime is a paid mutator transaction binding the contract method 0x3bd2b67d.
-//
-// Solidity: function setSaleTime(uint256 newSaleTime) returns()
-func (_RWalk *RWalkTransactor) SetSaleTime(opts *bind.TransactOpts, newSaleTime *big.Int) (*types.Transaction, error) {
-	return _RWalk.contract.Transact(opts, "setSaleTime", newSaleTime)
-}
-
-// SetSaleTime is a paid mutator transaction binding the contract method 0x3bd2b67d.
-//
-// Solidity: function setSaleTime(uint256 newSaleTime) returns()
-func (_RWalk *RWalkSession) SetSaleTime(newSaleTime *big.Int) (*types.Transaction, error) {
-	return _RWalk.Contract.SetSaleTime(&_RWalk.TransactOpts, newSaleTime)
-}
-
-// SetSaleTime is a paid mutator transaction binding the contract method 0x3bd2b67d.
-//
-// Solidity: function setSaleTime(uint256 newSaleTime) returns()
-func (_RWalk *RWalkTransactorSession) SetSaleTime(newSaleTime *big.Int) (*types.Transaction, error) {
-	return _RWalk.Contract.SetSaleTime(&_RWalk.TransactOpts, newSaleTime)
-}
-
 // SetTokenName is a paid mutator transaction binding the contract method 0xcdb0e89e.
 //
 // Solidity: function setTokenName(uint256 tokenId, string name) returns()
@@ -1165,27 +1306,6 @@ func (_RWalk *RWalkSession) SetTokenName(tokenId *big.Int, name string) (*types.
 // Solidity: function setTokenName(uint256 tokenId, string name) returns()
 func (_RWalk *RWalkTransactorSession) SetTokenName(tokenId *big.Int, name string) (*types.Transaction, error) {
 	return _RWalk.Contract.SetTokenName(&_RWalk.TransactOpts, tokenId, name)
-}
-
-// SetWithdrawalWait is a paid mutator transaction binding the contract method 0xe853a557.
-//
-// Solidity: function setWithdrawalWait(uint256 newTime) returns()
-func (_RWalk *RWalkTransactor) SetWithdrawalWait(opts *bind.TransactOpts, newTime *big.Int) (*types.Transaction, error) {
-	return _RWalk.contract.Transact(opts, "setWithdrawalWait", newTime)
-}
-
-// SetWithdrawalWait is a paid mutator transaction binding the contract method 0xe853a557.
-//
-// Solidity: function setWithdrawalWait(uint256 newTime) returns()
-func (_RWalk *RWalkSession) SetWithdrawalWait(newTime *big.Int) (*types.Transaction, error) {
-	return _RWalk.Contract.SetWithdrawalWait(&_RWalk.TransactOpts, newTime)
-}
-
-// SetWithdrawalWait is a paid mutator transaction binding the contract method 0xe853a557.
-//
-// Solidity: function setWithdrawalWait(uint256 newTime) returns()
-func (_RWalk *RWalkTransactorSession) SetWithdrawalWait(newTime *big.Int) (*types.Transaction, error) {
-	return _RWalk.Contract.SetWithdrawalWait(&_RWalk.TransactOpts, newTime)
 }
 
 // TransferFrom is a paid mutator transaction binding the contract method 0x23b872dd.
@@ -1409,6 +1529,7 @@ func (_RWalk *RWalkFilterer) ParseApproval(log types.Log) (*RWalkApproval, error
 	if err := _RWalk.contract.UnpackLog(event, "Approval", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1562,6 +1683,7 @@ func (_RWalk *RWalkFilterer) ParseApprovalForAll(log types.Log) (*RWalkApprovalF
 	if err := _RWalk.contract.UnpackLog(event, "ApprovalForAll", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1716,6 +1838,7 @@ func (_RWalk *RWalkFilterer) ParseMintEvent(log types.Log) (*RWalkMintEvent, err
 	if err := _RWalk.contract.UnpackLog(event, "MintEvent", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1868,6 +1991,7 @@ func (_RWalk *RWalkFilterer) ParseOwnershipTransferred(log types.Log) (*RWalkOwn
 	if err := _RWalk.contract.UnpackLog(event, "OwnershipTransferred", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -2002,6 +2126,7 @@ func (_RWalk *RWalkFilterer) ParseTokenNameEvent(log types.Log) (*RWalkTokenName
 	if err := _RWalk.contract.UnpackLog(event, "TokenNameEvent", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -2163,6 +2288,7 @@ func (_RWalk *RWalkFilterer) ParseTransfer(log types.Log) (*RWalkTransfer, error
 	if err := _RWalk.contract.UnpackLog(event, "Transfer", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -2243,10 +2369,15 @@ type RWalkWithdrawalEvent struct {
 
 // FilterWithdrawalEvent is a free log retrieval operation binding the contract event 0xa11b556ace4b11a5cae8675a293b51e8cde3a06387d34010861789dfd9e9abc7.
 //
-// Solidity: event WithdrawalEvent(uint256 tokenId, address destination, uint256 amount)
-func (_RWalk *RWalkFilterer) FilterWithdrawalEvent(opts *bind.FilterOpts) (*RWalkWithdrawalEventIterator, error) {
+// Solidity: event WithdrawalEvent(uint256 indexed tokenId, address destination, uint256 amount)
+func (_RWalk *RWalkFilterer) FilterWithdrawalEvent(opts *bind.FilterOpts, tokenId []*big.Int) (*RWalkWithdrawalEventIterator, error) {
 
-	logs, sub, err := _RWalk.contract.FilterLogs(opts, "WithdrawalEvent")
+	var tokenIdRule []interface{}
+	for _, tokenIdItem := range tokenId {
+		tokenIdRule = append(tokenIdRule, tokenIdItem)
+	}
+
+	logs, sub, err := _RWalk.contract.FilterLogs(opts, "WithdrawalEvent", tokenIdRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2255,10 +2386,15 @@ func (_RWalk *RWalkFilterer) FilterWithdrawalEvent(opts *bind.FilterOpts) (*RWal
 
 // WatchWithdrawalEvent is a free log subscription operation binding the contract event 0xa11b556ace4b11a5cae8675a293b51e8cde3a06387d34010861789dfd9e9abc7.
 //
-// Solidity: event WithdrawalEvent(uint256 tokenId, address destination, uint256 amount)
-func (_RWalk *RWalkFilterer) WatchWithdrawalEvent(opts *bind.WatchOpts, sink chan<- *RWalkWithdrawalEvent) (event.Subscription, error) {
+// Solidity: event WithdrawalEvent(uint256 indexed tokenId, address destination, uint256 amount)
+func (_RWalk *RWalkFilterer) WatchWithdrawalEvent(opts *bind.WatchOpts, sink chan<- *RWalkWithdrawalEvent, tokenId []*big.Int) (event.Subscription, error) {
 
-	logs, sub, err := _RWalk.contract.WatchLogs(opts, "WithdrawalEvent")
+	var tokenIdRule []interface{}
+	for _, tokenIdItem := range tokenId {
+		tokenIdRule = append(tokenIdRule, tokenIdItem)
+	}
+
+	logs, sub, err := _RWalk.contract.WatchLogs(opts, "WithdrawalEvent", tokenIdRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2292,11 +2428,12 @@ func (_RWalk *RWalkFilterer) WatchWithdrawalEvent(opts *bind.WatchOpts, sink cha
 
 // ParseWithdrawalEvent is a log parse operation binding the contract event 0xa11b556ace4b11a5cae8675a293b51e8cde3a06387d34010861789dfd9e9abc7.
 //
-// Solidity: event WithdrawalEvent(uint256 tokenId, address destination, uint256 amount)
+// Solidity: event WithdrawalEvent(uint256 indexed tokenId, address destination, uint256 amount)
 func (_RWalk *RWalkFilterer) ParseWithdrawalEvent(log types.Log) (*RWalkWithdrawalEvent, error) {
 	event := new(RWalkWithdrawalEvent)
 	if err := _RWalk.contract.UnpackLog(event, "WithdrawalEvent", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }

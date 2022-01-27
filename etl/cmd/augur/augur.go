@@ -11,9 +11,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/0xProject/0x-mesh/zeroex"
+	//"github.com/0xProject/0x-mesh/zeroex"
 
-	ztypes "github.com/0xProject/0x-mesh/common/types"
+	//ztypes "github.com/0xProject/0x-mesh/common/types"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
@@ -301,7 +301,7 @@ func proc_approval(log *types.Log,agtx_ptr **AugurTx) {
 	var mevt EApproval
 	mevt.Owner= common.BytesToAddress(log.Topics[1][12:])
 	mevt.Spender = common.BytesToAddress(log.Topics[2][12:])
-	err := cash_abi.Unpack(&mevt,"Approval",log.Data)
+	err := cash_abi.UnpackIntoInterface(&mevt,"Approval",log.Data)
 	if err != nil {
 		Fatalf("Event ERC20_Approval Cash decode error: %v",err)
 	} else {
@@ -333,7 +333,7 @@ func proc_approval_for_all(log *types.Log,agtx_ptr **AugurTx) {
 	var mevt EApprovalForAll
 	mevt.Owner= common.BytesToAddress(log.Topics[1][12:])
 	mevt.Operator= common.BytesToAddress(log.Topics[2][12:])
-	err := zerox_trade_abi.Unpack(&mevt,"ApprovalForAll",log.Data)
+	err := zerox_trade_abi.UnpackIntoInterface(&mevt,"ApprovalForAll",log.Data)
 	if err != nil {
 		Fatalf("Event ApprovalForAll decode error: %v",err)
 	} else {
@@ -354,7 +354,7 @@ func proc_trading_proceeds_claimed(agtx *AugurTx,timestamp int64,log *types.Log)
 	var mevt ETradingProceedsClaimed
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])
 	mevt.Shareholder = common.BytesToAddress(log.Topics[2][12:])
-	err := augur_abi.Unpack(&mevt,"TradingProceedsClaimed",log.Data)
+	err := augur_abi.UnpackIntoInterface(&mevt,"TradingProceedsClaimed",log.Data)
 	if err != nil {
 		Fatalf("EventTradingProceedsClaimed error: %v",err)
 		return
@@ -374,7 +374,7 @@ func proc_fill_evt(log *types.Log) {
 	mevt.MakerAddress= common.BytesToAddress(log.Topics[1][12:])
 	mevt.FeeRecipientAddress= common.BytesToAddress(log.Topics[2][12:])
 	mevt.OrderHash= log.Topics[3]
-	err := exchange_abi.Unpack(&mevt,"Fill",log.Data)
+	err := exchange_abi.UnpackIntoInterface(&mevt,"Fill",log.Data)
 	if err != nil {
 		Fatalf("Event Fill for 0x decode error: %v",err)
 		return
@@ -393,7 +393,7 @@ func proc_erc20_transfer(log *types.Log,agtx *AugurTx) {
 	}
 	mevt.From= common.BytesToAddress(log.Topics[1][12:])
 	mevt.To= common.BytesToAddress(log.Topics[2][12:])
-	err := cash_abi.Unpack(&mevt,"Transfer",log.Data)
+	err := cash_abi.UnpackIntoInterface(&mevt,"Transfer",log.Data)
 	if err != nil {
 		Error.Printf("signature=%v\n",log.Topics[0].String())
 		Error.Printf("address=%v\n",log.Address.String())
@@ -412,7 +412,7 @@ func proc_profit_loss_changed(agtx *AugurTx,log *types.Log) int64  {
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Market = common.BytesToAddress(log.Topics[2][12:])
 	mevt.Account= common.BytesToAddress(log.Topics[3][12:])
-	err := trading_abi.Unpack(&mevt,"ProfitLossChanged",log.Data)
+	err := trading_abi.UnpackIntoInterface(&mevt,"ProfitLossChanged",log.Data)
 	if err != nil {
 		Fatalf("Event ProfitLossChanged decode error: %v",err)
 		return 0
@@ -431,7 +431,7 @@ func proc_transfer_single(log *types.Log) {
 	mevt.Operator= common.BytesToAddress(log.Topics[1][12:])
 	mevt.From= common.BytesToAddress(log.Topics[2][12:])
 	mevt.To= common.BytesToAddress(log.Topics[3][12:])
-	err := zerox_trade_abi.Unpack(&mevt,"TransferSingle",log.Data)
+	err := zerox_trade_abi.UnpackIntoInterface(&mevt,"TransferSingle",log.Data)
 	if err != nil {
 		Fatalf("Event TransferSingle decode error: %v",err)
 	} else {
@@ -444,12 +444,12 @@ func proc_transfer_batch(log *types.Log) {
 	mevt.Operator= common.BytesToAddress(log.Topics[1][12:])
 	mevt.From= common.BytesToAddress(log.Topics[2][12:])
 	mevt.To= common.BytesToAddress(log.Topics[3][12:])
-	err := zerox_trade_abi.Unpack(&mevt,"TransferBatch",log.Data)
+	err := zerox_trade_abi.UnpackIntoInterface(&mevt,"TransferBatch",log.Data)
 	if err != nil {
 		Fatalf("Event TransferBatch decode error: %v",err)
 	} else {
 		Info.Printf("TransferBatch event found (block=%v) :\n",log.BlockNumber)
-		mevt.Dump(ctrct_zerox_trade,Info)
+		DumpETransferBatch(&mevt,ctrct_zerox_trade,Info)
 	}
 }
 func proc_tokens_transferred(agtx *AugurTx, log *types.Log) {
@@ -457,7 +457,7 @@ func proc_tokens_transferred(agtx *AugurTx, log *types.Log) {
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.From= common.BytesToAddress(log.Topics[2][12:])	// extract From
 	mevt.To= common.BytesToAddress(log.Topics[3][12:])	// extract To
-	err := augur_abi.Unpack(&mevt,"TokensTransferred",log.Data)
+	err := augur_abi.UnpackIntoInterface(&mevt,"TokensTransferred",log.Data)
 	if err != nil {
 		Fatalf("Event TokensTransferred decode error: %v",err)
 		return
@@ -480,7 +480,7 @@ func proc_token_balance_changed(agtx *AugurTx,log *types.Log) {
 	var mevt ETokenBalanceChanged
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Owner= common.BytesToAddress(log.Topics[2][12:])
-	err := augur_abi.Unpack(&mevt,"TokenBalanceChanged",log.Data)
+	err := augur_abi.UnpackIntoInterface(&mevt,"TokenBalanceChanged",log.Data)
 	if err != nil {
 		Fatalf("Event TokenBalanceChanged decode error: %v",err)
 		return
@@ -504,7 +504,7 @@ func proc_share_token_balance_changed(agtx *AugurTx,log *types.Log) {
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Account= common.BytesToAddress(log.Topics[2][12:])
 	mevt.Market = common.BytesToAddress(log.Topics[3][12:])
-	err := augur_abi.Unpack(&mevt,"ShareTokenBalanceChanged",log.Data)
+	err := augur_abi.UnpackIntoInterface(&mevt,"ShareTokenBalanceChanged",log.Data)
 	if err != nil {
 		Fatalf("Event ShareTokenBalanceChanged decode error: %v\n",err)
 		return
@@ -534,7 +534,7 @@ func proc_market_order_event(agtx *AugurTx,log *types.Log,timestamp int64) {
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Market = common.BytesToAddress(log.Topics[2][12:])
 	mevt.EventType = log.Topics[3][31];	// EventType (uint8) which we label as OrderAction
-	err := trading_abi.Unpack(&mevt,"OrderEvent",log.Data)
+	err := trading_abi.UnpackIntoInterface(&mevt,"OrderEvent",log.Data)
 	if err != nil {
 		Fatalf("Event OrderEvent decode error: %v",err)
 		return
@@ -560,7 +560,7 @@ func proc_cancel_zerox_order(agtx *AugurTx,log *types.Log,timestamp int64) {
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.Market = common.BytesToAddress(log.Topics[2][12:])
 	mevt.Account = common.BytesToAddress(log.Topics[3][12:]);
-	err := trading_abi.Unpack(&mevt,"CancelZeroXOrder",log.Data)
+	err := trading_abi.UnpackIntoInterface(&mevt,"CancelZeroXOrder",log.Data)
 	if err != nil {
 		Fatalf("Event CancelZeroXOrder decode error: %v",err)
 		return
@@ -590,7 +590,7 @@ func proc_cancel_zerox_order(agtx *AugurTx,log *types.Log,timestamp int64) {
 }
 func proc_market_oi_changed(timestamp int64, agtx *AugurTx, log *types.Log) {
 	var mevt EMarketOIChanged
-	err := augur_abi.Unpack(&mevt,"MarketOIChanged",log.Data)
+	err := augur_abi.UnpackIntoInterface(&mevt,"MarketOIChanged",log.Data)
 	if err != nil {
 		Fatalf("Event decode error: %v",err)
 		return
@@ -607,7 +607,7 @@ func proc_market_oi_changed(timestamp int64, agtx *AugurTx, log *types.Log) {
 func is_warp_sync_event(log *types.Log) bool {
 
 	var mevt EMarketFinalized
-	err := augur_abi.Unpack(&mevt,"MarketFinalized",log.Data)
+	err := augur_abi.UnpackIntoInterface(&mevt,"MarketFinalized",log.Data)
 	if err != nil {
 		Fatalf("Event MktFinalizedEvt decode error: %v\n",err)
 		return false
@@ -624,7 +624,7 @@ func is_warp_sync_event(log *types.Log) bool {
 }
 func proc_market_finalized_evt(agtx *AugurTx,timestamp int64,log *types.Log) {
 	var mevt EMarketFinalized
-	err := augur_abi.Unpack(&mevt,"MarketFinalized",log.Data)
+	err := augur_abi.UnpackIntoInterface(&mevt,"MarketFinalized",log.Data)
 	if err != nil {
 		Fatalf("Event MktFinalizedEvt decode error: %v\n",err)
 		return
@@ -640,7 +640,7 @@ func proc_market_finalized_evt(agtx *AugurTx,timestamp int64,log *types.Log) {
 }
 func proc_initial_report_submitted(agtx *AugurTx, log *types.Log) {
 	var mevt EInitialReportSubmitted
-	err := augur_abi.Unpack(&mevt,"InitialReportSubmitted",log.Data)
+	err := augur_abi.UnpackIntoInterface(&mevt,"InitialReportSubmitted",log.Data)
 	if err != nil {
 		Fatalf("Event InitialReportSubmittedEvt decode error: %v\n",err)
 		return
@@ -658,7 +658,7 @@ func proc_initial_report_submitted(agtx *AugurTx, log *types.Log) {
 }
 func proc_dispute_crowdsourcerer_contribution(agtx *AugurTx,log *types.Log) {
 	var mevt EDisputeCrowdsourcerContribution
-	err := augur_abi.Unpack(&mevt,"DisputeCrowdsourcerContribution",log.Data)
+	err := augur_abi.UnpackIntoInterface(&mevt,"DisputeCrowdsourcerContribution",log.Data)
 	if err != nil {
 		Fatalf("Event DisputeCrowdsourcerContribution decode error: %v\n",err)
 		return
@@ -677,7 +677,7 @@ func proc_dispute_crowdsourcerer_contribution(agtx *AugurTx,log *types.Log) {
 func proc_market_volume_changed_v1(agtx *AugurTx, log *types.Log) {
 	var mevt EMarketVolumeChanged_v1
 	// Note: the ./abis/augur-artifacts-abi-26jun.json file was altered to add this (old version of) event
-	err := trading_abi.Unpack(&mevt,"MarketVolumeChanged_v1",log.Data)
+	err := trading_abi.UnpackIntoInterface(&mevt,"MarketVolumeChanged_v1",log.Data)
 	if err != nil {
 		Fatalf("Event MarketVolumeChanged_v1 decode error: %v\n",err)
 		return
@@ -693,7 +693,7 @@ func proc_market_volume_changed_v1(agtx *AugurTx, log *types.Log) {
 }
 func proc_market_volume_changed_v2(agtx *AugurTx, log *types.Log) {
 	var mevt EMarketVolumeChanged_v2
-	err := trading_abi.Unpack(&mevt,"MarketVolumeChanged",log.Data)
+	err := trading_abi.UnpackIntoInterface(&mevt,"MarketVolumeChanged",log.Data)
 	if err != nil {
 		Fatalf("Event MarketVolumeChanged_v2 decode error: %v\n",err)
 		return
@@ -712,7 +712,7 @@ func show_market_created_evt(agtx *AugurTx,log *types.Log) {
 	var mevt EMarketCreated
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])   // extract universe addr
 	mevt.MarketCreator = common.BytesToAddress(log.Topics[2][12:])  // extract crator addr
-	err := augur_abi.Unpack(&mevt,"MarketCreated",log.Data)
+	err := augur_abi.UnpackIntoInterface(&mevt,"MarketCreated",log.Data)
 	if err != nil {
 		Fatalf("Event MarketCreated decode error: %v",err)
 		return
@@ -733,7 +733,7 @@ func proc_market_created(agtx *AugurTx,log *types.Log,validity_bond string) {
 	var mevt EMarketCreated
 	mevt.Universe = common.BytesToAddress(log.Topics[1][12:])	// extract universe addr
 	mevt.MarketCreator = common.BytesToAddress(log.Topics[2][12:])	// extract crator addr
-	err := augur_abi.Unpack(&mevt,"MarketCreated",log.Data)
+	err := augur_abi.UnpackIntoInterface(&mevt,"MarketCreated",log.Data)
 	if err != nil {
 		Fatalf("Event MarketCreated decode error: %v",err)
 		return
@@ -753,7 +753,7 @@ func proc_market_created(agtx *AugurTx,log *types.Log,validity_bond string) {
 }
 func proc_transaction_status(agtx *AugurTx, log *types.Log,relayed_from_addr *common.Address) {
 	var evt EExecuteTransactionStatus
-	err := wallet_abi.Unpack(&evt,"ExecuteTransactionStatus",log.Data)
+	err := wallet_abi.UnpackIntoInterface(&evt,"ExecuteTransactionStatus",log.Data)
 	if err != nil {
 		Fatalf("Event decode error: %v",err)
 		return
@@ -792,7 +792,7 @@ func proc_transaction_status(agtx *AugurTx, log *types.Log,relayed_from_addr *co
 }
 func proc_register_contract(agtx *AugurTx,log *types.Log) {
 	var evt ERegisterContract
-	err := augur_abi.Unpack(&evt,"RegisterContract",log.Data)
+	err := augur_abi.UnpackIntoInterface(&evt,"RegisterContract",log.Data)
 	if err != nil {
 		Fatalf("Event Register contract decode error: %v",err)
 		return
@@ -815,7 +815,7 @@ func proc_universe_created(agtx *AugurTx,log *types.Log) {
 	var evt EUniverseCreated
 	evt.ParentUniverse = common.BytesToAddress(log.Topics[1][12:])
 	evt.ChildUniverse= common.BytesToAddress(log.Topics[2][12:])
-	err := augur_abi.Unpack(&evt,"UniverseCreated",log.Data)
+	err := augur_abi.UnpackIntoInterface(&evt,"UniverseCreated",log.Data)
 	if err != nil {
 		Fatalf("Event UniverseCreated decode error: %v",err)
 		return
@@ -837,7 +837,7 @@ func proc_universe_created(agtx *AugurTx,log *types.Log) {
 }
 func proc_validity_bond_changed(agtx *AugurTx,log *types.Log) {
 	var evt EValidityBondChanged
-	err := augur_abi.Unpack(&evt,"ValidityBondChanged",log.Data)
+	err := augur_abi.UnpackIntoInterface(&evt,"ValidityBondChanged",log.Data)
 	if err != nil {
 		Fatalf("Event ValidityBondChanged decode error: %v",err)
 		return
@@ -859,7 +859,7 @@ func proc_validity_bond_changed(agtx *AugurTx,log *types.Log) {
 }
 func proc_noshow_bond_changed(agtx *AugurTx,log *types.Log) {
 	var evt ENoShowBondChanged
-	err := augur_abi.Unpack(&evt,"NoShowBondChanged",log.Data)
+	err := augur_abi.UnpackIntoInterface(&evt,"NoShowBondChanged",log.Data)
 	if err != nil {
 		Fatalf("Event NoShowBondChanged decode error: %v",err)
 		return
@@ -881,7 +881,7 @@ func proc_noshow_bond_changed(agtx *AugurTx,log *types.Log) {
 }
 func proc_dispute_crowdsourcer_created(agtx *AugurTx,timestamp int64,log *types.Log) {
 	var evt EDisputeCrowdsourcerCreated
-	err := augur_abi.Unpack(&evt,"DisputeCrowdsourcerCreated",log.Data)
+	err := augur_abi.UnpackIntoInterface(&evt,"DisputeCrowdsourcerCreated",log.Data)
 	if err != nil {
 		Fatalf("Event DisputeCrowdsourcerCreated decode error: %v",err)
 		return
@@ -904,7 +904,7 @@ func proc_dispute_crowdsourcer_created(agtx *AugurTx,timestamp int64,log *types.
 }
 func proc_dispute_window_created(agtx *AugurTx,log *types.Log) {
 	var evt EDisputeWindowCreated
-	err := augur_abi.Unpack(&evt,"DisputeWindowCreated",log.Data)
+	err := augur_abi.UnpackIntoInterface(&evt,"DisputeWindowCreated",log.Data)
 	if err != nil {
 		Fatalf("Event DisputeWindowCreated decode error: %v",err)
 		return
@@ -926,7 +926,7 @@ func proc_dispute_window_created(agtx *AugurTx,log *types.Log) {
 }
 func proc_designated_report_stake_changed(agtx *AugurTx,log *types.Log) {
 	var evt EDesignatedReportStakeChanged
-	err := augur_abi.Unpack(&evt,"DesignatedReportStakeChanged",log.Data)
+	err := augur_abi.UnpackIntoInterface(&evt,"DesignatedReportStakeChanged",log.Data)
 	if err != nil {
 		Fatalf("Event DesignatedReportStakeChanged decode error: %v",err)
 		return
@@ -948,7 +948,7 @@ func proc_designated_report_stake_changed(agtx *AugurTx,log *types.Log) {
 }
 func proc_complete_sets_purchased(agtx *AugurTx,log *types.Log) {
 	var evt ECompleteSetsPurchased
-	err := augur_abi.Unpack(&evt,"CompleteSetsPurchased",log.Data)
+	err := augur_abi.UnpackIntoInterface(&evt,"CompleteSetsPurchased",log.Data)
 	if err != nil {
 		Fatalf("Event CompleteSetsPurchased decode error: %v",err)
 		return
@@ -972,7 +972,7 @@ func proc_complete_sets_purchased(agtx *AugurTx,log *types.Log) {
 }
 func proc_complete_sets_sold(agtx *AugurTx,log *types.Log) {
 	var evt ECompleteSetsSold
-	err := augur_abi.Unpack(&evt,"CompleteSetsSold",log.Data)
+	err := augur_abi.UnpackIntoInterface(&evt,"CompleteSetsSold",log.Data)
 	if err != nil {
 		Fatalf("Event CompleteSetsSold decode error: %v",err)
 		return
@@ -996,7 +996,7 @@ func proc_complete_sets_sold(agtx *AugurTx,log *types.Log) {
 }
 func proc_initial_reporter_redeemed(agtx *AugurTx,log *types.Log) {
 	var evt EInitialReporterRedeemed
-	err := augur_abi.Unpack(&evt,"InitialReporterRedeemed",log.Data)
+	err := augur_abi.UnpackIntoInterface(&evt,"InitialReporterRedeemed",log.Data)
 	if err != nil {
 		Fatalf("Event InitialReporterRedeemed decode error: %v",err)
 		return
@@ -1020,7 +1020,7 @@ func proc_initial_reporter_redeemed(agtx *AugurTx,log *types.Log) {
 }
 func proc_dispute_crowdsourcer_redeemed(agtx *AugurTx,log *types.Log) {
 	var evt EDisputeCrowdsourcerRedeemed
-	err := augur_abi.Unpack(&evt,"DisputeCrowdsourcerRedeemed",log.Data)
+	err := augur_abi.UnpackIntoInterface(&evt,"DisputeCrowdsourcerRedeemed",log.Data)
 	if err != nil {
 		Fatalf("Event DisputeCrowdsourcerRedeemed decode error: %v",err)
 		return
@@ -1044,7 +1044,7 @@ func proc_dispute_crowdsourcer_redeemed(agtx *AugurTx,log *types.Log) {
 }
 func proc_dispute_crowdsourcer_completed(agtx *AugurTx,log *types.Log) {
 	var evt EDisputeCrowdsourcerCompleted
-	err := augur_abi.Unpack(&evt,"DisputeCrowdsourcerCompleted",log.Data)
+	err := augur_abi.UnpackIntoInterface(&evt,"DisputeCrowdsourcerCompleted",log.Data)
 	if err != nil {
 		Fatalf("Event DisputeCrowdsourcerCompleted decode error: %v",err)
 		return
@@ -1067,7 +1067,7 @@ func proc_dispute_crowdsourcer_completed(agtx *AugurTx,log *types.Log) {
 }
 func proc_reporting_participant_disavowed(agtx *AugurTx,timestamp int64,log *types.Log) {
 	var evt EReportingParticipantDisavowed
-	err := augur_abi.Unpack(&evt,"ReportingParticipantDisavowed",log.Data)
+	err := augur_abi.UnpackIntoInterface(&evt,"ReportingParticipantDisavowed",log.Data)
 	if err != nil {
 		Fatalf("Event ReportingParticipantDisavowed decode error: %v",err)
 		return
@@ -1090,7 +1090,7 @@ func proc_reporting_participant_disavowed(agtx *AugurTx,timestamp int64,log *typ
 }
 func proc_reporting_fee_changed(agtx *AugurTx,timestamp int64,log *types.Log) {
 	var evt EReportingFeeChanged
-	err := augur_abi.Unpack(&evt,"ReportingFeeChanged",log.Data)
+	err := augur_abi.UnpackIntoInterface(&evt,"ReportingFeeChanged",log.Data)
 	if err != nil {
 		Fatalf("Event ReportingFeeChanged decode error: %v",err)
 		return
@@ -1112,7 +1112,7 @@ func proc_reporting_fee_changed(agtx *AugurTx,timestamp int64,log *types.Log) {
 }
 func proc_participation_tokens_redeemed(agtx *AugurTx,log *types.Log) {
 	var evt EParticipationTokensRedeemed
-	err := augur_abi.Unpack(&evt,"ParticipationTokensRedeemed",log.Data)
+	err := augur_abi.UnpackIntoInterface(&evt,"ParticipationTokensRedeemed",log.Data)
 	if err != nil {
 		Fatalf("Event ParticipationTokensRedeemed decode error: %v",err)
 		return
@@ -1215,7 +1215,7 @@ func process_event(timestamp int64,agtx *AugurTx,logs *[]*types.Log,lidx int) in
 			var validity_bond string
 			var transf_evt ETransfer
 			tr_idx := lidx - 1	// the offset to ERC20 event (as they fired by contracts)
-			err := cash_abi.Unpack(&transf_evt,"Transfer",(*logs)[tr_idx].Data)
+			err := cash_abi.UnpackIntoInterface(&transf_evt,"Transfer",(*logs)[tr_idx].Data)
 			if err == nil {
 				validity_bond = transf_evt.Value.String()
 				Info.Printf("extracted validity bond = %v\n",validity_bond)
@@ -1442,9 +1442,9 @@ func process_transaction(tx_id int64) error {
 	}
 	return nil
 }
-func get_order_data(o *IExchangeOrder) (zeroex.Order,common.Hash) {
+func get_order_data(o *IExchangeOrder) (Order0x,common.Hash) {
 
-	var zero_order zeroex.Order
+	var zero_order Order0x
 	zero_order.ChainID=big.NewInt(caddrs.ChainId)
 	zero_order.ExchangeAddress.SetBytes(caddrs.ZeroxXchg.Bytes())
 	zero_order.MakerAddress.SetBytes(o.MakerAddress.Bytes())
@@ -1480,19 +1480,31 @@ func get_order_data(o *IExchangeOrder) (zeroex.Order,common.Hash) {
 }
 func decode_original_fill_amount(input_data []byte,method_sig []byte) map[string]*big.Int {
 	output := make(map[string]*big.Int,0)
-	var input_data_decoded TradeInputStruct
+	//var input_data_decoded TradeInputStruct
+	var input_data_decoded map[string]interface{}
 	method, err := zerox_trade_abi.MethodById(method_sig)
 	if err != nil {
 		Fatalf("Method not found")
 	}
-	err = method.Inputs.Unpack(&input_data_decoded, input_data)
+	err = method.Inputs.UnpackIntoMap(input_data_decoded, input_data)
 	if err != nil {
 		Fatalf("Couldn't decode input of tx: %v",err)
 	}
-	if len(input_data_decoded.Orders) > 0 {
-		Info.Printf("Requested fill amount = %v\n",input_data_decoded.RequestedFillAmount.String())
-		Info.Printf("num orders=%v\n",len(input_data_decoded.Orders))
-		for i,order := range input_data_decoded.Orders {
+/*
+type TradeInputStruct struct {
+	RequestedFillAmount		*big.Int `abi:"_requestedFillAmount"`
+	Fingerprint				[32]byte `abi:"_fingerprint"`
+	TradeGroupId			[32]byte `abi:"_tradeGroupId"`
+	MaxProtocolFeeDai		*big.Int `abi:"_maxProtocolFeeDai"`
+	MaxTrades				*big.Int `abi:"_maxTrades"`
+	Orders					[]IExchangeOrder `abi:"_orders"`
+	Signatures				[][]byte `abi:"_signatures"`
+}
+*/
+	if len(input_data_decoded["Orders"].([]IExchangeOrder)) > 0 {
+		Info.Printf("Requested fill amount = %v\n",input_data_decoded["RequestedFillAmount"].(*big.Int).String())
+		Info.Printf("num orders=%v\n",len(input_data_decoded["Orders"].([]IExchangeOrder)))
+		for i,order := range input_data_decoded["Orders"].([]IExchangeOrder) {
 			_,h := get_order_data(&order)
 			hash_str := h.String()
 			Info.Printf(
@@ -1510,13 +1522,15 @@ func decode_original_fill_amount(input_data []byte,method_sig []byte) map[string
 
 	return output
 }
-func decode_0x_orders(input_data []byte,method_sig []byte) (map[string]*ztypes.OrderInfo,map[string]*ZxMeshOrderSpec) {
+func decode_0x_orders(input_data []byte,method_sig []byte) (map[string]*OrderInfo0x,map[string]*ZxMeshOrderSpec) {
 
-	output1 := make(map[string]*ztypes.OrderInfo,0)
+	output1 := make(map[string]*OrderInfo0x,0)
 	output2 := make(map[string]*ZxMeshOrderSpec,0)
 
-	var trade_input_data_decoded TradeInputStruct
-	var cancel_order_input_data_decoded CancelPrdersInputStruct
+	//var trade_input_data_decoded TradeInputStruct
+	var trade_input_data_decoded map[string]interface{}
+	//var cancel_order_input_data_decoded CancelPrdersInputStruct
+	var cancel_order_input_data_decoded map[string]interface{}
 	var decoded_orders []IExchangeOrder
 	var decoded_signatures [][]byte
 
@@ -1526,12 +1540,12 @@ func decode_0x_orders(input_data []byte,method_sig []byte) (map[string]*ztypes.O
 		if err != nil {
 			Fatalf("Method not found")
 		}
-		err = method.Inputs.Unpack(&trade_input_data_decoded, input_data)
+		err = method.Inputs.UnpackIntoMap(trade_input_data_decoded, input_data)
 		if err != nil {
 			Fatalf("Couldn't decode input of tx: %v",err)
 		}
-		decoded_orders = trade_input_data_decoded.Orders
-		decoded_signatures = trade_input_data_decoded.Signatures
+		decoded_orders = trade_input_data_decoded["Orders"].([]IExchangeOrder)
+		decoded_signatures = trade_input_data_decoded["Signatures"].([][]byte)
 	}
 	zeroex_cancel_sig,_ := hex.DecodeString("4ea96c30")
 	if 0 == bytes.Compare(method_sig,zeroex_cancel_sig) {
@@ -1539,12 +1553,12 @@ func decode_0x_orders(input_data []byte,method_sig []byte) (map[string]*ztypes.O
 		if err != nil {
 			Fatalf("Method not found")
 		}
-		err = method.Inputs.Unpack(&cancel_order_input_data_decoded, input_data)
+		err = method.Inputs.UnpackIntoMap(cancel_order_input_data_decoded, input_data)
 		if err != nil {
 			Fatalf("Couldn't decode input of tx: %v",err)
 		}
-		decoded_orders=cancel_order_input_data_decoded.Orders
-		decoded_signatures=cancel_order_input_data_decoded.Signatures
+		decoded_orders=cancel_order_input_data_decoded["Orders"].([]IExchangeOrder)
+		decoded_signatures=cancel_order_input_data_decoded["Signatures"].([][]byte)
 	}
 	if len(decoded_orders) > 0 {
 		for i,order := range decoded_orders {
@@ -1554,9 +1568,9 @@ func decode_0x_orders(input_data []byte,method_sig []byte) (map[string]*ztypes.O
 				"Order %v (%v), maker amount = %v, taker amount=%v\n",
 				i,hash_str,order.MakerAssetAmount,order.TakerAssetAmount,
 			)
-			order_info := new(ztypes.OrderInfo)
+			order_info := new(OrderInfo0x)
 			order_info.OrderHash.SetBytes(h.Bytes())
-			order_info.SignedOrder=new(zeroex.SignedOrder)
+			order_info.SignedOrder=new(SignedOrder)
 			order_info.SignedOrder.Signature=make([]byte,len(decoded_signatures[i]))
 			order_info.SignedOrder.Order = ord
 			order_info.FillableTakerAssetAmount = big.NewInt(0) // this value is incorrect, but we don't have the correct one
@@ -1859,10 +1873,10 @@ func contains_execute_wallet_transaction_call(tx_data []byte) *ExecuteWalletTx {
 	}
 	return nil
 }
-func extract_orders_from_input(tx_data []byte) (map[string]*ztypes.OrderInfo,map[string]*ZxMeshOrderSpec) {
+func extract_orders_from_input(tx_data []byte) (map[string]*OrderInfo0x,map[string]*ZxMeshOrderSpec) {
 	// returns orders in one map and initial amounts in another map
 	if len(tx_data) < 32 {
-		return make(map[string]*ztypes.OrderInfo,0),make(map[string]*ZxMeshOrderSpec,0)
+		return make(map[string]*OrderInfo0x,0),make(map[string]*ZxMeshOrderSpec,0)
 
 	}
 	input_sig := tx_data[:4]
@@ -1907,7 +1921,7 @@ func extract_orders_from_input(tx_data []byte) (map[string]*ztypes.OrderInfo,map
 			}
 		}
 	}
-	return make(map[string]*ztypes.OrderInfo,0),make(map[string]*ZxMeshOrderSpec,0)
+	return make(map[string]*OrderInfo0x,0),make(map[string]*ZxMeshOrderSpec,0)
 }
 func get_ospec(maker_asset_data []byte,order_hash *string) *ZxMeshOrderSpec {
 

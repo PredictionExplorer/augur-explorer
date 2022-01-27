@@ -7,16 +7,16 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
-	"github.com/0xProject/0x-mesh/zeroex"
-	ztypes "github.com/0xProject/0x-mesh/common/types"
+	//"github.com/0xProject/0x-mesh/zeroex"
+	//ztypes "github.com/0xProject/0x-mesh/common/types"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func convert_db_event_to_mesh_order(evt *MeshEvent) *ztypes.OrderInfo {
+func convert_db_event_to_mesh_order(evt *MeshEvent) *OrderInfo0x {
 	//Note we are using this convertion routine because we want to keep the other
 	//		functions in dbs package dependant on 0x Mesh types, and not our custom types
 	//		for a possible reuse in case of design change
-	oinfo := new(ztypes.OrderInfo)
+	oinfo := new(OrderInfo0x)
 	oinfo.OrderHash = common.HexToHash(evt.OrderHash)
 	oinfo.FillableTakerAssetAmount = new(big.Int)
 	oinfo.FillableTakerAssetAmount.SetString(evt.FillableAmount,10)

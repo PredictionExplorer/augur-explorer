@@ -1,9 +1,10 @@
 package primitives
 
 import (
-	"github.com/0xProject/0x-mesh/zeroex"
+	//"github.com/0xProject/0x-mesh/zeroex"
 )
-
+/* DISCONTINUED. Removal pending.
+0x Mesh protocol was deprecated
 func Get_mesh_event_code(mesh_code zeroex.OrderEventEndState) MeshEvtCode {
 
 	switch mesh_code {
@@ -31,4 +32,4 @@ func Get_mesh_event_code(mesh_code zeroex.OrderEventEndState) MeshEvtCode {
 
 	return 0		// Order is obtained with GetOrders() RPC call
 }
-
+*/

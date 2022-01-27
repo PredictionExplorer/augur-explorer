@@ -4,6 +4,7 @@
 package contracts
 
 import (
+	"errors"
 	"math/big"
 	"strings"
 
@@ -17,27 +18,15 @@ import (
 
 // Reference imports to suppress errors if they are not otherwise used.
 var (
+	_ = errors.New
 	_ = big.NewInt
 	_ = strings.NewReader
 	_ = ethereum.NotFound
-	_ = abi.U256
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
 	_ = event.NewSubscription
 )
-
-// AbstractMarketFactoryMarket is an auto generated low-level Go binding around an user-defined struct.
-type AbstractMarketFactoryMarket struct {
-	SettlementAddress common.Address
-	ShareTokens       []common.Address
-	EndTime           *big.Int
-	Winner            common.Address
-	SettlementFee     *big.Int
-	ProtocolFee       *big.Int
-	StakerFee         *big.Int
-	CreationTimestamp *big.Int
-}
 
 // SportsLinkMarketFactoryMarketDetails is an auto generated low-level Go binding around an user-defined struct.
 type SportsLinkMarketFactoryMarketDetails struct {
@@ -50,8 +39,14 @@ type SportsLinkMarketFactoryMarketDetails struct {
 	Value0             *big.Int
 }
 
+// SportsLinkMarketFactoryMetaData contains all meta data concerning the SportsLinkMarketFactory contract.
+var SportsLinkMarketFactoryMetaData = &bind.MetaData{
+	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_owner\",\"type\":\"address\"},{\"internalType\":\"contractIERC20Full\",\"name\":\"_collateral\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_shareFactor\",\"type\":\"uint256\"},{\"internalType\":\"contractFeePot\",\"name\":\"_feePot\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_stakerFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_settlementFee\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_protocol\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_protocolFee\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_linkNode\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_sportId\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newLinkNode\",\"type\":\"address\"}],\"name\":\"LinkNodeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"endTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"enumSportsLinkMarketFactory.MarketType\",\"name\":\"marketType\",\"type\":\"uint8\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"eventId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"homeTeamId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"awayTeamId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"estimatedStartTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"score\",\"type\":\"int256\"}],\"name\":\"MarketCreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"}],\"name\":\"MarketResolved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"protocol\",\"type\":\"address\"}],\"name\":\"ProtocolChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"ProtocolFeeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"protocol\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ProtocolFeeClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"SettlementFeeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"settlementAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SettlementFeeClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SharesBurned\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SharesMinted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"StakerFeeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"winningOutcome\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"settlementFee\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"payout\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"WinningsClaimed\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"accumulatedProtocolFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"accumulatedSettlementFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_sharesToBurn\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"burnShares\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_shares\",\"type\":\"uint256\"}],\"name\":\"calcCost\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_collateralIn\",\"type\":\"uint256\"}],\"name\":\"calcShares\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"_ids\",\"type\":\"uint256[]\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimManyWinnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claimProtocolFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimSettlementFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimWinnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"collateral\",\"outputs\":[{\"internalType\":\"contractIERC20Full\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_payload\",\"type\":\"bytes32\"}],\"name\":\"createMarket\",\"outputs\":[{\"internalType\":\"uint256[3]\",\"name\":\"_ids\",\"type\":\"uint256[3]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_payload\",\"type\":\"bytes32\"}],\"name\":\"decodeCreation\",\"outputs\":[{\"internalType\":\"uint128\",\"name\":\"_eventId\",\"type\":\"uint128\"},{\"internalType\":\"uint16\",\"name\":\"_homeTeamId\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"_awayTeamId\",\"type\":\"uint16\"},{\"internalType\":\"uint32\",\"name\":\"_startTimestamp\",\"type\":\"uint32\"},{\"internalType\":\"int16\",\"name\":\"_homeSpread\",\"type\":\"int16\"},{\"internalType\":\"uint16\",\"name\":\"_totalScore\",\"type\":\"uint16\"},{\"internalType\":\"bool\",\"name\":\"_createSpread\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"_createTotal\",\"type\":\"bool\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_payload\",\"type\":\"bytes32\"}],\"name\":\"decodeResolution\",\"outputs\":[{\"internalType\":\"uint128\",\"name\":\"_eventId\",\"type\":\"uint128\"},{\"internalType\":\"uint8\",\"name\":\"_eventStatus\",\"type\":\"uint8\"},{\"internalType\":\"uint16\",\"name\":\"_homeScore\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"_awayScore\",\"type\":\"uint16\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint128\",\"name\":\"_eventId\",\"type\":\"uint128\"},{\"internalType\":\"uint16\",\"name\":\"_homeTeamId\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"_awayTeamId\",\"type\":\"uint16\"},{\"internalType\":\"uint32\",\"name\":\"_startTimestamp\",\"type\":\"uint32\"},{\"internalType\":\"int16\",\"name\":\"_homeSpread\",\"type\":\"int16\"},{\"internalType\":\"uint16\",\"name\":\"_totalScore\",\"type\":\"uint16\"},{\"internalType\":\"bool\",\"name\":\"_createSpread\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"_createTotal\",\"type\":\"bool\"}],\"name\":\"encodeCreation\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"_payload\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint128\",\"name\":\"_eventId\",\"type\":\"uint128\"},{\"internalType\":\"uint8\",\"name\":\"_eventStatus\",\"type\":\"uint8\"},{\"internalType\":\"uint16\",\"name\":\"_homeScore\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"_awayScore\",\"type\":\"uint16\"}],\"name\":\"encodeResolution\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"_payload\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"events\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"startTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"homeScore\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"awayScore\",\"type\":\"uint256\"},{\"internalType\":\"enumSportsLinkMarketFactory.EventStatus\",\"name\":\"status\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"resolutionTime\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"finalized\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"feePot\",\"outputs\":[{\"internalType\":\"contractFeePot\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_eventId\",\"type\":\"uint256\"}],\"name\":\"getEventMarkets\",\"outputs\":[{\"internalType\":\"uint256[3]\",\"name\":\"\",\"type\":\"uint256[3]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"}],\"name\":\"getMarket\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"settlementAddress\",\"type\":\"address\"},{\"internalType\":\"contractOwnedERC20[]\",\"name\":\"shareTokens\",\"type\":\"address[]\"},{\"internalType\":\"uint256\",\"name\":\"endTime\",\"type\":\"uint256\"},{\"internalType\":\"contractOwnedERC20\",\"name\":\"winner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"settlementFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"protocolFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"stakerFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"creationTimestamp\",\"type\":\"uint256\"}],\"internalType\":\"structAbstractMarketFactory.Market\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"getMarketDetails\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"eventId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"homeTeamId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"awayTeamId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"estimatedStartTime\",\"type\":\"uint256\"},{\"internalType\":\"enumSportsLinkMarketFactory.MarketType\",\"name\":\"marketType\",\"type\":\"uint8\"},{\"internalType\":\"enumSportsLinkMarketFactory.EventStatus\",\"name\":\"eventStatus\",\"type\":\"uint8\"},{\"internalType\":\"int256\",\"name\":\"value0\",\"type\":\"int256\"}],\"internalType\":\"structSportsLinkMarketFactory.MarketDetails\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getOwner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_eventId\",\"type\":\"uint256\"}],\"name\":\"isEventRegistered\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_eventId\",\"type\":\"uint256\"}],\"name\":\"isEventResolved\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"}],\"name\":\"isMarketResolved\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"linkNode\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"listOfEvents\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"listResolvableEvents\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"listUnresolvedMarkets\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"marketCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_shareToMint\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"mintShares\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"protocol\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"protocolFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"resolveMarket\",\"outputs\":[],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newLinkNode\",\"type\":\"address\"}],\"name\":\"setLinkNode\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newProtocol\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"_claimFirst\",\"type\":\"bool\"}],\"name\":\"setProtocol\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_newFee\",\"type\":\"uint256\"}],\"name\":\"setProtocolFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_newFee\",\"type\":\"uint256\"}],\"name\":\"setSettlementFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_newFee\",\"type\":\"uint256\"}],\"name\":\"setStakerFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"settlementFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"shareFactor\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"sportId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakerFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_payload\",\"type\":\"bytes32\"}],\"name\":\"trustedResolveMarkets\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+}
+
 // SportsLinkMarketFactoryABI is the input ABI used to generate the binding from.
-const SportsLinkMarketFactoryABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_owner\",\"type\":\"address\"},{\"internalType\":\"contractIERC20Full\",\"name\":\"_collateral\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_shareFactor\",\"type\":\"uint256\"},{\"internalType\":\"contractFeePot\",\"name\":\"_feePot\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_stakerFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_settlementFee\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_protocol\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_protocolFee\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_linkNode\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_sportId\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newLinkNode\",\"type\":\"address\"}],\"name\":\"LinkNodeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"endTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"enumSportsLinkMarketFactory.MarketType\",\"name\":\"marketType\",\"type\":\"uint8\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"eventId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"homeTeamId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"awayTeamId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"estimatedStarTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"score\",\"type\":\"int256\"}],\"name\":\"MarketCreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"}],\"name\":\"MarketResolved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"protocol\",\"type\":\"address\"}],\"name\":\"ProtocolChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"ProtocolFeeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"protocol\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ProtocolFeeClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"SettlementFeeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"settlementAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SettlementFeeClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SharesBurned\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"SharesMinted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"StakerFeeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"winningOutcome\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"settlementFee\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"payout\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"WinningsClaimed\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"accumulatedProtocolFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"accumulatedSettlementFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_sharesToBurn\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"burnShares\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_shares\",\"type\":\"uint256\"}],\"name\":\"calcCost\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_collateralIn\",\"type\":\"uint256\"}],\"name\":\"calcShares\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newLinkNode\",\"type\":\"address\"}],\"name\":\"changeLinkNode\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"_ids\",\"type\":\"uint256[]\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimManyWinnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claimProtocolFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimSettlementFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"claimWinnings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"collateral\",\"outputs\":[{\"internalType\":\"contractIERC20Full\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_payload\",\"type\":\"bytes32\"}],\"name\":\"createMarket\",\"outputs\":[{\"internalType\":\"uint256[3]\",\"name\":\"_ids\",\"type\":\"uint256[3]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_payload\",\"type\":\"bytes32\"}],\"name\":\"decodeCreation\",\"outputs\":[{\"internalType\":\"uint128\",\"name\":\"_eventId\",\"type\":\"uint128\"},{\"internalType\":\"uint16\",\"name\":\"_homeTeamId\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"_awayTeamId\",\"type\":\"uint16\"},{\"internalType\":\"uint32\",\"name\":\"_startTimestamp\",\"type\":\"uint32\"},{\"internalType\":\"int16\",\"name\":\"_homeSpread\",\"type\":\"int16\"},{\"internalType\":\"uint16\",\"name\":\"_totalScore\",\"type\":\"uint16\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_payload\",\"type\":\"bytes32\"}],\"name\":\"decodeResolution\",\"outputs\":[{\"internalType\":\"uint128\",\"name\":\"_eventId\",\"type\":\"uint128\"},{\"internalType\":\"uint8\",\"name\":\"_eventStatus\",\"type\":\"uint8\"},{\"internalType\":\"uint16\",\"name\":\"_homeScore\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"_awayScore\",\"type\":\"uint16\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint128\",\"name\":\"_eventId\",\"type\":\"uint128\"},{\"internalType\":\"uint16\",\"name\":\"_homeTeamId\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"_awayTeamId\",\"type\":\"uint16\"},{\"internalType\":\"uint32\",\"name\":\"_startTimestamp\",\"type\":\"uint32\"},{\"internalType\":\"int16\",\"name\":\"_homeSpread\",\"type\":\"int16\"},{\"internalType\":\"uint16\",\"name\":\"_totalScore\",\"type\":\"uint16\"}],\"name\":\"encodeCreation\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"_payload\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint128\",\"name\":\"_eventId\",\"type\":\"uint128\"},{\"internalType\":\"uint8\",\"name\":\"_eventStatus\",\"type\":\"uint8\"},{\"internalType\":\"uint16\",\"name\":\"_homeScore\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"_awayScore\",\"type\":\"uint16\"}],\"name\":\"encodeResolution\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"_payload\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"feePot\",\"outputs\":[{\"internalType\":\"contractFeePot\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"}],\"name\":\"getMarket\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"settlementAddress\",\"type\":\"address\"},{\"internalType\":\"contractOwnedERC20[]\",\"name\":\"shareTokens\",\"type\":\"address[]\"},{\"internalType\":\"uint256\",\"name\":\"endTime\",\"type\":\"uint256\"},{\"internalType\":\"contractOwnedERC20\",\"name\":\"winner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"settlementFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"protocolFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"stakerFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"creationTimestamp\",\"type\":\"uint256\"}],\"internalType\":\"structAbstractMarketFactory.Market\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"getMarketDetails\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"eventId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"homeTeamId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"awayTeamId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"estimatedStartTime\",\"type\":\"uint256\"},{\"internalType\":\"enumSportsLinkMarketFactory.MarketType\",\"name\":\"marketType\",\"type\":\"uint8\"},{\"internalType\":\"enumSportsLinkMarketFactory.EventStatus\",\"name\":\"eventStatus\",\"type\":\"uint8\"},{\"internalType\":\"int256\",\"name\":\"value0\",\"type\":\"int256\"}],\"internalType\":\"structSportsLinkMarketFactory.MarketDetails\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getOwner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_eventId\",\"type\":\"uint256\"}],\"name\":\"isEventRegistered\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_eventId\",\"type\":\"uint256\"}],\"name\":\"isEventResolved\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"}],\"name\":\"isMarketResolved\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"listUnresolvedMarkets\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"marketCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_shareToMint\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"mintShares\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"protocol\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"protocolFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"resolveMarket\",\"outputs\":[],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newProtocol\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"_claimFirst\",\"type\":\"bool\"}],\"name\":\"setProtocol\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_newFee\",\"type\":\"uint256\"}],\"name\":\"setProtocolFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_newFee\",\"type\":\"uint256\"}],\"name\":\"setSettlementFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_newFee\",\"type\":\"uint256\"}],\"name\":\"setStakerFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"settlementFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"shareFactor\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"sportId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakerFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_payload\",\"type\":\"bytes32\"}],\"name\":\"trustedResolveMarkets\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+// Deprecated: Use SportsLinkMarketFactoryMetaData.ABI instead.
+var SportsLinkMarketFactoryABI = SportsLinkMarketFactoryMetaData.ABI
 
 // SportsLinkMarketFactory is an auto generated Go binding around an Ethereum contract.
 type SportsLinkMarketFactory struct {
@@ -161,7 +156,7 @@ func bindSportsLinkMarketFactory(address common.Address, caller bind.ContractCal
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_SportsLinkMarketFactory *SportsLinkMarketFactoryRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _SportsLinkMarketFactory.Contract.SportsLinkMarketFactoryCaller.contract.Call(opts, result, method, params...)
 }
 
@@ -180,7 +175,7 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryRaw) Transact(opts *bind.
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _SportsLinkMarketFactory.Contract.contract.Call(opts, result, method, params...)
 }
 
@@ -199,12 +194,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryTransactorRaw) Transact(o
 //
 // Solidity: function accumulatedProtocolFee() view returns(uint256)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) AccumulatedProtocolFee(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "accumulatedProtocolFee")
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "accumulatedProtocolFee")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // AccumulatedProtocolFee is a free data retrieval call binding the contract method 0xa544a62c.
@@ -225,12 +225,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) Accumulate
 //
 // Solidity: function accumulatedSettlementFees(address ) view returns(uint256)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) AccumulatedSettlementFees(opts *bind.CallOpts, arg0 common.Address) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "accumulatedSettlementFees", arg0)
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "accumulatedSettlementFees", arg0)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // AccumulatedSettlementFees is a free data retrieval call binding the contract method 0x49a4d934.
@@ -251,12 +256,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) Accumulate
 //
 // Solidity: function calcCost(uint256 _shares) view returns(uint256)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) CalcCost(opts *bind.CallOpts, _shares *big.Int) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "calcCost", _shares)
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "calcCost", _shares)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // CalcCost is a free data retrieval call binding the contract method 0x473a6d52.
@@ -277,12 +287,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) CalcCost(_
 //
 // Solidity: function calcShares(uint256 _collateralIn) view returns(uint256)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) CalcShares(opts *bind.CallOpts, _collateralIn *big.Int) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "calcShares", _collateralIn)
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "calcShares", _collateralIn)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // CalcShares is a free data retrieval call binding the contract method 0xcc87adea.
@@ -303,12 +318,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) CalcShares
 //
 // Solidity: function collateral() view returns(address)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) Collateral(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "collateral")
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "collateral")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // Collateral is a free data retrieval call binding the contract method 0xd8dfeb45.
@@ -327,7 +347,7 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) Collateral
 
 // DecodeCreation is a free data retrieval call binding the contract method 0xdb747ac9.
 //
-// Solidity: function decodeCreation(bytes32 _payload) pure returns(uint128 _eventId, uint16 _homeTeamId, uint16 _awayTeamId, uint32 _startTimestamp, int16 _homeSpread, uint16 _totalScore)
+// Solidity: function decodeCreation(bytes32 _payload) pure returns(uint128 _eventId, uint16 _homeTeamId, uint16 _awayTeamId, uint32 _startTimestamp, int16 _homeSpread, uint16 _totalScore, bool _createSpread, bool _createTotal)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) DecodeCreation(opts *bind.CallOpts, _payload [32]byte) (struct {
 	EventId        *big.Int
 	HomeTeamId     uint16
@@ -335,23 +355,42 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) DecodeCreation(op
 	StartTimestamp uint32
 	HomeSpread     int16
 	TotalScore     uint16
+	CreateSpread   bool
+	CreateTotal    bool
 }, error) {
-	ret := new(struct {
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "decodeCreation", _payload)
+
+	outstruct := new(struct {
 		EventId        *big.Int
 		HomeTeamId     uint16
 		AwayTeamId     uint16
 		StartTimestamp uint32
 		HomeSpread     int16
 		TotalScore     uint16
+		CreateSpread   bool
+		CreateTotal    bool
 	})
-	out := ret
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "decodeCreation", _payload)
-	return *ret, err
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.EventId = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	outstruct.HomeTeamId = *abi.ConvertType(out[1], new(uint16)).(*uint16)
+	outstruct.AwayTeamId = *abi.ConvertType(out[2], new(uint16)).(*uint16)
+	outstruct.StartTimestamp = *abi.ConvertType(out[3], new(uint32)).(*uint32)
+	outstruct.HomeSpread = *abi.ConvertType(out[4], new(int16)).(*int16)
+	outstruct.TotalScore = *abi.ConvertType(out[5], new(uint16)).(*uint16)
+	outstruct.CreateSpread = *abi.ConvertType(out[6], new(bool)).(*bool)
+	outstruct.CreateTotal = *abi.ConvertType(out[7], new(bool)).(*bool)
+
+	return *outstruct, err
+
 }
 
 // DecodeCreation is a free data retrieval call binding the contract method 0xdb747ac9.
 //
-// Solidity: function decodeCreation(bytes32 _payload) pure returns(uint128 _eventId, uint16 _homeTeamId, uint16 _awayTeamId, uint32 _startTimestamp, int16 _homeSpread, uint16 _totalScore)
+// Solidity: function decodeCreation(bytes32 _payload) pure returns(uint128 _eventId, uint16 _homeTeamId, uint16 _awayTeamId, uint32 _startTimestamp, int16 _homeSpread, uint16 _totalScore, bool _createSpread, bool _createTotal)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactorySession) DecodeCreation(_payload [32]byte) (struct {
 	EventId        *big.Int
 	HomeTeamId     uint16
@@ -359,13 +398,15 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactorySession) DecodeCreation(_
 	StartTimestamp uint32
 	HomeSpread     int16
 	TotalScore     uint16
+	CreateSpread   bool
+	CreateTotal    bool
 }, error) {
 	return _SportsLinkMarketFactory.Contract.DecodeCreation(&_SportsLinkMarketFactory.CallOpts, _payload)
 }
 
 // DecodeCreation is a free data retrieval call binding the contract method 0xdb747ac9.
 //
-// Solidity: function decodeCreation(bytes32 _payload) pure returns(uint128 _eventId, uint16 _homeTeamId, uint16 _awayTeamId, uint32 _startTimestamp, int16 _homeSpread, uint16 _totalScore)
+// Solidity: function decodeCreation(bytes32 _payload) pure returns(uint128 _eventId, uint16 _homeTeamId, uint16 _awayTeamId, uint32 _startTimestamp, int16 _homeSpread, uint16 _totalScore, bool _createSpread, bool _createTotal)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) DecodeCreation(_payload [32]byte) (struct {
 	EventId        *big.Int
 	HomeTeamId     uint16
@@ -373,6 +414,8 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) DecodeCrea
 	StartTimestamp uint32
 	HomeSpread     int16
 	TotalScore     uint16
+	CreateSpread   bool
+	CreateTotal    bool
 }, error) {
 	return _SportsLinkMarketFactory.Contract.DecodeCreation(&_SportsLinkMarketFactory.CallOpts, _payload)
 }
@@ -386,15 +429,26 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) DecodeResolution(
 	HomeScore   uint16
 	AwayScore   uint16
 }, error) {
-	ret := new(struct {
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "decodeResolution", _payload)
+
+	outstruct := new(struct {
 		EventId     *big.Int
 		EventStatus uint8
 		HomeScore   uint16
 		AwayScore   uint16
 	})
-	out := ret
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "decodeResolution", _payload)
-	return *ret, err
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.EventId = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	outstruct.EventStatus = *abi.ConvertType(out[1], new(uint8)).(*uint8)
+	outstruct.HomeScore = *abi.ConvertType(out[2], new(uint16)).(*uint16)
+	outstruct.AwayScore = *abi.ConvertType(out[3], new(uint16)).(*uint16)
+
+	return *outstruct, err
+
 }
 
 // DecodeResolution is a free data retrieval call binding the contract method 0x27459179.
@@ -421,42 +475,52 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) DecodeReso
 	return _SportsLinkMarketFactory.Contract.DecodeResolution(&_SportsLinkMarketFactory.CallOpts, _payload)
 }
 
-// EncodeCreation is a free data retrieval call binding the contract method 0xe8766d76.
+// EncodeCreation is a free data retrieval call binding the contract method 0x91e22112.
 //
-// Solidity: function encodeCreation(uint128 _eventId, uint16 _homeTeamId, uint16 _awayTeamId, uint32 _startTimestamp, int16 _homeSpread, uint16 _totalScore) pure returns(bytes32 _payload)
-func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) EncodeCreation(opts *bind.CallOpts, _eventId *big.Int, _homeTeamId uint16, _awayTeamId uint16, _startTimestamp uint32, _homeSpread int16, _totalScore uint16) ([32]byte, error) {
-	var (
-		ret0 = new([32]byte)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "encodeCreation", _eventId, _homeTeamId, _awayTeamId, _startTimestamp, _homeSpread, _totalScore)
-	return *ret0, err
+// Solidity: function encodeCreation(uint128 _eventId, uint16 _homeTeamId, uint16 _awayTeamId, uint32 _startTimestamp, int16 _homeSpread, uint16 _totalScore, bool _createSpread, bool _createTotal) pure returns(bytes32 _payload)
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) EncodeCreation(opts *bind.CallOpts, _eventId *big.Int, _homeTeamId uint16, _awayTeamId uint16, _startTimestamp uint32, _homeSpread int16, _totalScore uint16, _createSpread bool, _createTotal bool) ([32]byte, error) {
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "encodeCreation", _eventId, _homeTeamId, _awayTeamId, _startTimestamp, _homeSpread, _totalScore, _createSpread, _createTotal)
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
 }
 
-// EncodeCreation is a free data retrieval call binding the contract method 0xe8766d76.
+// EncodeCreation is a free data retrieval call binding the contract method 0x91e22112.
 //
-// Solidity: function encodeCreation(uint128 _eventId, uint16 _homeTeamId, uint16 _awayTeamId, uint32 _startTimestamp, int16 _homeSpread, uint16 _totalScore) pure returns(bytes32 _payload)
-func (_SportsLinkMarketFactory *SportsLinkMarketFactorySession) EncodeCreation(_eventId *big.Int, _homeTeamId uint16, _awayTeamId uint16, _startTimestamp uint32, _homeSpread int16, _totalScore uint16) ([32]byte, error) {
-	return _SportsLinkMarketFactory.Contract.EncodeCreation(&_SportsLinkMarketFactory.CallOpts, _eventId, _homeTeamId, _awayTeamId, _startTimestamp, _homeSpread, _totalScore)
+// Solidity: function encodeCreation(uint128 _eventId, uint16 _homeTeamId, uint16 _awayTeamId, uint32 _startTimestamp, int16 _homeSpread, uint16 _totalScore, bool _createSpread, bool _createTotal) pure returns(bytes32 _payload)
+func (_SportsLinkMarketFactory *SportsLinkMarketFactorySession) EncodeCreation(_eventId *big.Int, _homeTeamId uint16, _awayTeamId uint16, _startTimestamp uint32, _homeSpread int16, _totalScore uint16, _createSpread bool, _createTotal bool) ([32]byte, error) {
+	return _SportsLinkMarketFactory.Contract.EncodeCreation(&_SportsLinkMarketFactory.CallOpts, _eventId, _homeTeamId, _awayTeamId, _startTimestamp, _homeSpread, _totalScore, _createSpread, _createTotal)
 }
 
-// EncodeCreation is a free data retrieval call binding the contract method 0xe8766d76.
+// EncodeCreation is a free data retrieval call binding the contract method 0x91e22112.
 //
-// Solidity: function encodeCreation(uint128 _eventId, uint16 _homeTeamId, uint16 _awayTeamId, uint32 _startTimestamp, int16 _homeSpread, uint16 _totalScore) pure returns(bytes32 _payload)
-func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) EncodeCreation(_eventId *big.Int, _homeTeamId uint16, _awayTeamId uint16, _startTimestamp uint32, _homeSpread int16, _totalScore uint16) ([32]byte, error) {
-	return _SportsLinkMarketFactory.Contract.EncodeCreation(&_SportsLinkMarketFactory.CallOpts, _eventId, _homeTeamId, _awayTeamId, _startTimestamp, _homeSpread, _totalScore)
+// Solidity: function encodeCreation(uint128 _eventId, uint16 _homeTeamId, uint16 _awayTeamId, uint32 _startTimestamp, int16 _homeSpread, uint16 _totalScore, bool _createSpread, bool _createTotal) pure returns(bytes32 _payload)
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) EncodeCreation(_eventId *big.Int, _homeTeamId uint16, _awayTeamId uint16, _startTimestamp uint32, _homeSpread int16, _totalScore uint16, _createSpread bool, _createTotal bool) ([32]byte, error) {
+	return _SportsLinkMarketFactory.Contract.EncodeCreation(&_SportsLinkMarketFactory.CallOpts, _eventId, _homeTeamId, _awayTeamId, _startTimestamp, _homeSpread, _totalScore, _createSpread, _createTotal)
 }
 
 // EncodeResolution is a free data retrieval call binding the contract method 0x8580c504.
 //
 // Solidity: function encodeResolution(uint128 _eventId, uint8 _eventStatus, uint16 _homeScore, uint16 _awayScore) pure returns(bytes32 _payload)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) EncodeResolution(opts *bind.CallOpts, _eventId *big.Int, _eventStatus uint8, _homeScore uint16, _awayScore uint16) ([32]byte, error) {
-	var (
-		ret0 = new([32]byte)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "encodeResolution", _eventId, _eventStatus, _homeScore, _awayScore)
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "encodeResolution", _eventId, _eventStatus, _homeScore, _awayScore)
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
 }
 
 // EncodeResolution is a free data retrieval call binding the contract method 0x8580c504.
@@ -473,16 +537,86 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) EncodeReso
 	return _SportsLinkMarketFactory.Contract.EncodeResolution(&_SportsLinkMarketFactory.CallOpts, _eventId, _eventStatus, _homeScore, _awayScore)
 }
 
+// Events is a free data retrieval call binding the contract method 0x0b791430.
+//
+// Solidity: function events(uint256 ) view returns(uint256 startTime, uint256 homeScore, uint256 awayScore, uint8 status, uint256 resolutionTime, bool finalized)
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) Events(opts *bind.CallOpts, arg0 *big.Int) (struct {
+	StartTime      *big.Int
+	HomeScore      *big.Int
+	AwayScore      *big.Int
+	Status         uint8
+	ResolutionTime *big.Int
+	Finalized      bool
+}, error) {
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "events", arg0)
+
+	outstruct := new(struct {
+		StartTime      *big.Int
+		HomeScore      *big.Int
+		AwayScore      *big.Int
+		Status         uint8
+		ResolutionTime *big.Int
+		Finalized      bool
+	})
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.StartTime = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	outstruct.HomeScore = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+	outstruct.AwayScore = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
+	outstruct.Status = *abi.ConvertType(out[3], new(uint8)).(*uint8)
+	outstruct.ResolutionTime = *abi.ConvertType(out[4], new(*big.Int)).(**big.Int)
+	outstruct.Finalized = *abi.ConvertType(out[5], new(bool)).(*bool)
+
+	return *outstruct, err
+
+}
+
+// Events is a free data retrieval call binding the contract method 0x0b791430.
+//
+// Solidity: function events(uint256 ) view returns(uint256 startTime, uint256 homeScore, uint256 awayScore, uint8 status, uint256 resolutionTime, bool finalized)
+func (_SportsLinkMarketFactory *SportsLinkMarketFactorySession) Events(arg0 *big.Int) (struct {
+	StartTime      *big.Int
+	HomeScore      *big.Int
+	AwayScore      *big.Int
+	Status         uint8
+	ResolutionTime *big.Int
+	Finalized      bool
+}, error) {
+	return _SportsLinkMarketFactory.Contract.Events(&_SportsLinkMarketFactory.CallOpts, arg0)
+}
+
+// Events is a free data retrieval call binding the contract method 0x0b791430.
+//
+// Solidity: function events(uint256 ) view returns(uint256 startTime, uint256 homeScore, uint256 awayScore, uint8 status, uint256 resolutionTime, bool finalized)
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) Events(arg0 *big.Int) (struct {
+	StartTime      *big.Int
+	HomeScore      *big.Int
+	AwayScore      *big.Int
+	Status         uint8
+	ResolutionTime *big.Int
+	Finalized      bool
+}, error) {
+	return _SportsLinkMarketFactory.Contract.Events(&_SportsLinkMarketFactory.CallOpts, arg0)
+}
+
 // FeePot is a free data retrieval call binding the contract method 0x4c9f66c7.
 //
 // Solidity: function feePot() view returns(address)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) FeePot(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "feePot")
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "feePot")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // FeePot is a free data retrieval call binding the contract method 0x4c9f66c7.
@@ -499,54 +633,95 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) FeePot() (
 	return _SportsLinkMarketFactory.Contract.FeePot(&_SportsLinkMarketFactory.CallOpts)
 }
 
-// GetMarket is a free data retrieval call binding the contract method 0xeb44fdd3.
+// GetEventMarkets is a free data retrieval call binding the contract method 0xcdaac862.
 //
-// Solidity: function getMarket(uint256 _id) view returns(AbstractMarketFactoryMarket)
-func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) GetMarket(opts *bind.CallOpts, _id *big.Int) (AbstractMarketFactoryMarket, error) {
-	var (
-		ret0 = new(AbstractMarketFactoryMarket)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "getMarket", _id)
-	return *ret0, err
+// Solidity: function getEventMarkets(uint256 _eventId) view returns(uint256[3])
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) GetEventMarkets(opts *bind.CallOpts, _eventId *big.Int) ([3]*big.Int, error) {
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "getEventMarkets", _eventId)
+
+	if err != nil {
+		return *new([3]*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([3]*big.Int)).(*[3]*big.Int)
+
+	return out0, err
+
+}
+
+// GetEventMarkets is a free data retrieval call binding the contract method 0xcdaac862.
+//
+// Solidity: function getEventMarkets(uint256 _eventId) view returns(uint256[3])
+func (_SportsLinkMarketFactory *SportsLinkMarketFactorySession) GetEventMarkets(_eventId *big.Int) ([3]*big.Int, error) {
+	return _SportsLinkMarketFactory.Contract.GetEventMarkets(&_SportsLinkMarketFactory.CallOpts, _eventId)
+}
+
+// GetEventMarkets is a free data retrieval call binding the contract method 0xcdaac862.
+//
+// Solidity: function getEventMarkets(uint256 _eventId) view returns(uint256[3])
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) GetEventMarkets(_eventId *big.Int) ([3]*big.Int, error) {
+	return _SportsLinkMarketFactory.Contract.GetEventMarkets(&_SportsLinkMarketFactory.CallOpts, _eventId)
 }
 
 // GetMarket is a free data retrieval call binding the contract method 0xeb44fdd3.
 //
-// Solidity: function getMarket(uint256 _id) view returns(AbstractMarketFactoryMarket)
+// Solidity: function getMarket(uint256 _id) view returns((address,address[],uint256,address,uint256,uint256,uint256,uint256))
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) GetMarket(opts *bind.CallOpts, _id *big.Int) (AbstractMarketFactoryMarket, error) {
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "getMarket", _id)
+
+	if err != nil {
+		return *new(AbstractMarketFactoryMarket), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(AbstractMarketFactoryMarket)).(*AbstractMarketFactoryMarket)
+
+	return out0, err
+
+}
+
+// GetMarket is a free data retrieval call binding the contract method 0xeb44fdd3.
+//
+// Solidity: function getMarket(uint256 _id) view returns((address,address[],uint256,address,uint256,uint256,uint256,uint256))
 func (_SportsLinkMarketFactory *SportsLinkMarketFactorySession) GetMarket(_id *big.Int) (AbstractMarketFactoryMarket, error) {
 	return _SportsLinkMarketFactory.Contract.GetMarket(&_SportsLinkMarketFactory.CallOpts, _id)
 }
 
 // GetMarket is a free data retrieval call binding the contract method 0xeb44fdd3.
 //
-// Solidity: function getMarket(uint256 _id) view returns(AbstractMarketFactoryMarket)
+// Solidity: function getMarket(uint256 _id) view returns((address,address[],uint256,address,uint256,uint256,uint256,uint256))
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) GetMarket(_id *big.Int) (AbstractMarketFactoryMarket, error) {
 	return _SportsLinkMarketFactory.Contract.GetMarket(&_SportsLinkMarketFactory.CallOpts, _id)
 }
 
 // GetMarketDetails is a free data retrieval call binding the contract method 0xb06c1ba3.
 //
-// Solidity: function getMarketDetails(uint256 _marketId) view returns(SportsLinkMarketFactoryMarketDetails)
+// Solidity: function getMarketDetails(uint256 _marketId) view returns((uint256,uint256,uint256,uint256,uint8,uint8,int256))
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) GetMarketDetails(opts *bind.CallOpts, _marketId *big.Int) (SportsLinkMarketFactoryMarketDetails, error) {
-	var (
-		ret0 = new(SportsLinkMarketFactoryMarketDetails)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "getMarketDetails", _marketId)
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "getMarketDetails", _marketId)
+
+	if err != nil {
+		return *new(SportsLinkMarketFactoryMarketDetails), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(SportsLinkMarketFactoryMarketDetails)).(*SportsLinkMarketFactoryMarketDetails)
+
+	return out0, err
+
 }
 
 // GetMarketDetails is a free data retrieval call binding the contract method 0xb06c1ba3.
 //
-// Solidity: function getMarketDetails(uint256 _marketId) view returns(SportsLinkMarketFactoryMarketDetails)
+// Solidity: function getMarketDetails(uint256 _marketId) view returns((uint256,uint256,uint256,uint256,uint8,uint8,int256))
 func (_SportsLinkMarketFactory *SportsLinkMarketFactorySession) GetMarketDetails(_marketId *big.Int) (SportsLinkMarketFactoryMarketDetails, error) {
 	return _SportsLinkMarketFactory.Contract.GetMarketDetails(&_SportsLinkMarketFactory.CallOpts, _marketId)
 }
 
 // GetMarketDetails is a free data retrieval call binding the contract method 0xb06c1ba3.
 //
-// Solidity: function getMarketDetails(uint256 _marketId) view returns(SportsLinkMarketFactoryMarketDetails)
+// Solidity: function getMarketDetails(uint256 _marketId) view returns((uint256,uint256,uint256,uint256,uint8,uint8,int256))
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) GetMarketDetails(_marketId *big.Int) (SportsLinkMarketFactoryMarketDetails, error) {
 	return _SportsLinkMarketFactory.Contract.GetMarketDetails(&_SportsLinkMarketFactory.CallOpts, _marketId)
 }
@@ -555,12 +730,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) GetMarketD
 //
 // Solidity: function getOwner() view returns(address)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) GetOwner(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "getOwner")
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "getOwner")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // GetOwner is a free data retrieval call binding the contract method 0x893d20e8.
@@ -581,12 +761,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) GetOwner()
 //
 // Solidity: function isEventRegistered(uint256 _eventId) view returns(bool)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) IsEventRegistered(opts *bind.CallOpts, _eventId *big.Int) (bool, error) {
-	var (
-		ret0 = new(bool)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "isEventRegistered", _eventId)
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "isEventRegistered", _eventId)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
 }
 
 // IsEventRegistered is a free data retrieval call binding the contract method 0xb65ad5fd.
@@ -607,12 +792,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) IsEventReg
 //
 // Solidity: function isEventResolved(uint256 _eventId) view returns(bool)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) IsEventResolved(opts *bind.CallOpts, _eventId *big.Int) (bool, error) {
-	var (
-		ret0 = new(bool)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "isEventResolved", _eventId)
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "isEventResolved", _eventId)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
 }
 
 // IsEventResolved is a free data retrieval call binding the contract method 0xa1794496.
@@ -633,12 +823,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) IsEventRes
 //
 // Solidity: function isMarketResolved(uint256 _id) view returns(bool)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) IsMarketResolved(opts *bind.CallOpts, _id *big.Int) (bool, error) {
-	var (
-		ret0 = new(bool)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "isMarketResolved", _id)
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "isMarketResolved", _id)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
 }
 
 // IsMarketResolved is a free data retrieval call binding the contract method 0x53ac55f5.
@@ -655,16 +850,114 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) IsMarketRe
 	return _SportsLinkMarketFactory.Contract.IsMarketResolved(&_SportsLinkMarketFactory.CallOpts, _id)
 }
 
+// LinkNode is a free data retrieval call binding the contract method 0xd4b6838e.
+//
+// Solidity: function linkNode() view returns(address)
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) LinkNode(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "linkNode")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// LinkNode is a free data retrieval call binding the contract method 0xd4b6838e.
+//
+// Solidity: function linkNode() view returns(address)
+func (_SportsLinkMarketFactory *SportsLinkMarketFactorySession) LinkNode() (common.Address, error) {
+	return _SportsLinkMarketFactory.Contract.LinkNode(&_SportsLinkMarketFactory.CallOpts)
+}
+
+// LinkNode is a free data retrieval call binding the contract method 0xd4b6838e.
+//
+// Solidity: function linkNode() view returns(address)
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) LinkNode() (common.Address, error) {
+	return _SportsLinkMarketFactory.Contract.LinkNode(&_SportsLinkMarketFactory.CallOpts)
+}
+
+// ListOfEvents is a free data retrieval call binding the contract method 0x71ba2696.
+//
+// Solidity: function listOfEvents(uint256 ) view returns(uint256)
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) ListOfEvents(opts *bind.CallOpts, arg0 *big.Int) (*big.Int, error) {
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "listOfEvents", arg0)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// ListOfEvents is a free data retrieval call binding the contract method 0x71ba2696.
+//
+// Solidity: function listOfEvents(uint256 ) view returns(uint256)
+func (_SportsLinkMarketFactory *SportsLinkMarketFactorySession) ListOfEvents(arg0 *big.Int) (*big.Int, error) {
+	return _SportsLinkMarketFactory.Contract.ListOfEvents(&_SportsLinkMarketFactory.CallOpts, arg0)
+}
+
+// ListOfEvents is a free data retrieval call binding the contract method 0x71ba2696.
+//
+// Solidity: function listOfEvents(uint256 ) view returns(uint256)
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) ListOfEvents(arg0 *big.Int) (*big.Int, error) {
+	return _SportsLinkMarketFactory.Contract.ListOfEvents(&_SportsLinkMarketFactory.CallOpts, arg0)
+}
+
+// ListResolvableEvents is a free data retrieval call binding the contract method 0x4a875e0b.
+//
+// Solidity: function listResolvableEvents() view returns(uint256[])
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) ListResolvableEvents(opts *bind.CallOpts) ([]*big.Int, error) {
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "listResolvableEvents")
+
+	if err != nil {
+		return *new([]*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]*big.Int)).(*[]*big.Int)
+
+	return out0, err
+
+}
+
+// ListResolvableEvents is a free data retrieval call binding the contract method 0x4a875e0b.
+//
+// Solidity: function listResolvableEvents() view returns(uint256[])
+func (_SportsLinkMarketFactory *SportsLinkMarketFactorySession) ListResolvableEvents() ([]*big.Int, error) {
+	return _SportsLinkMarketFactory.Contract.ListResolvableEvents(&_SportsLinkMarketFactory.CallOpts)
+}
+
+// ListResolvableEvents is a free data retrieval call binding the contract method 0x4a875e0b.
+//
+// Solidity: function listResolvableEvents() view returns(uint256[])
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) ListResolvableEvents() ([]*big.Int, error) {
+	return _SportsLinkMarketFactory.Contract.ListResolvableEvents(&_SportsLinkMarketFactory.CallOpts)
+}
+
 // ListUnresolvedMarkets is a free data retrieval call binding the contract method 0xd9113f0d.
 //
 // Solidity: function listUnresolvedMarkets() view returns(uint256[])
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) ListUnresolvedMarkets(opts *bind.CallOpts) ([]*big.Int, error) {
-	var (
-		ret0 = new([]*big.Int)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "listUnresolvedMarkets")
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "listUnresolvedMarkets")
+
+	if err != nil {
+		return *new([]*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]*big.Int)).(*[]*big.Int)
+
+	return out0, err
+
 }
 
 // ListUnresolvedMarkets is a free data retrieval call binding the contract method 0xd9113f0d.
@@ -685,12 +978,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) ListUnreso
 //
 // Solidity: function marketCount() view returns(uint256)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) MarketCount(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "marketCount")
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "marketCount")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // MarketCount is a free data retrieval call binding the contract method 0xec979082.
@@ -711,12 +1009,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) MarketCoun
 //
 // Solidity: function protocol() view returns(address)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) Protocol(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "protocol")
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "protocol")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // Protocol is a free data retrieval call binding the contract method 0x8ce74426.
@@ -737,12 +1040,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) Protocol()
 //
 // Solidity: function protocolFee() view returns(uint256)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) ProtocolFee(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "protocolFee")
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "protocolFee")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // ProtocolFee is a free data retrieval call binding the contract method 0xb0e21e8a.
@@ -763,10 +1071,15 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) ProtocolFe
 //
 // Solidity: function resolveMarket(uint256 ) pure returns()
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) ResolveMarket(opts *bind.CallOpts, arg0 *big.Int) error {
-	var ()
-	out := &[]interface{}{}
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "resolveMarket", arg0)
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "resolveMarket", arg0)
+
+	if err != nil {
+		return err
+	}
+
 	return err
+
 }
 
 // ResolveMarket is a free data retrieval call binding the contract method 0x6399d03d.
@@ -787,12 +1100,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) ResolveMar
 //
 // Solidity: function settlementFee() view returns(uint256)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) SettlementFee(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "settlementFee")
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "settlementFee")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // SettlementFee is a free data retrieval call binding the contract method 0x7d1d7fb8.
@@ -813,12 +1131,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) Settlement
 //
 // Solidity: function shareFactor() view returns(uint256)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) ShareFactor(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "shareFactor")
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "shareFactor")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // ShareFactor is a free data retrieval call binding the contract method 0x7641ab01.
@@ -839,12 +1162,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) ShareFacto
 //
 // Solidity: function sportId() view returns(uint256)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) SportId(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "sportId")
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "sportId")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // SportId is a free data retrieval call binding the contract method 0xd5db3efb.
@@ -865,12 +1193,17 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCallerSession) SportId() 
 //
 // Solidity: function stakerFee() view returns(uint256)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryCaller) StakerFee(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _SportsLinkMarketFactory.contract.Call(opts, out, "stakerFee")
-	return *ret0, err
+	var out []interface{}
+	err := _SportsLinkMarketFactory.contract.Call(opts, &out, "stakerFee")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // StakerFee is a free data retrieval call binding the contract method 0x4b2d9ffc.
@@ -906,27 +1239,6 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactorySession) BurnShares(_id *
 // Solidity: function burnShares(uint256 _id, uint256 _sharesToBurn, address _receiver) returns(uint256)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryTransactorSession) BurnShares(_id *big.Int, _sharesToBurn *big.Int, _receiver common.Address) (*types.Transaction, error) {
 	return _SportsLinkMarketFactory.Contract.BurnShares(&_SportsLinkMarketFactory.TransactOpts, _id, _sharesToBurn, _receiver)
-}
-
-// ChangeLinkNode is a paid mutator transaction binding the contract method 0xbff838bf.
-//
-// Solidity: function changeLinkNode(address _newLinkNode) returns()
-func (_SportsLinkMarketFactory *SportsLinkMarketFactoryTransactor) ChangeLinkNode(opts *bind.TransactOpts, _newLinkNode common.Address) (*types.Transaction, error) {
-	return _SportsLinkMarketFactory.contract.Transact(opts, "changeLinkNode", _newLinkNode)
-}
-
-// ChangeLinkNode is a paid mutator transaction binding the contract method 0xbff838bf.
-//
-// Solidity: function changeLinkNode(address _newLinkNode) returns()
-func (_SportsLinkMarketFactory *SportsLinkMarketFactorySession) ChangeLinkNode(_newLinkNode common.Address) (*types.Transaction, error) {
-	return _SportsLinkMarketFactory.Contract.ChangeLinkNode(&_SportsLinkMarketFactory.TransactOpts, _newLinkNode)
-}
-
-// ChangeLinkNode is a paid mutator transaction binding the contract method 0xbff838bf.
-//
-// Solidity: function changeLinkNode(address _newLinkNode) returns()
-func (_SportsLinkMarketFactory *SportsLinkMarketFactoryTransactorSession) ChangeLinkNode(_newLinkNode common.Address) (*types.Transaction, error) {
-	return _SportsLinkMarketFactory.Contract.ChangeLinkNode(&_SportsLinkMarketFactory.TransactOpts, _newLinkNode)
 }
 
 // ClaimManyWinnings is a paid mutator transaction binding the contract method 0xe5678dfa.
@@ -1053,6 +1365,27 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactorySession) MintShares(_id *
 // Solidity: function mintShares(uint256 _id, uint256 _shareToMint, address _receiver) returns()
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryTransactorSession) MintShares(_id *big.Int, _shareToMint *big.Int, _receiver common.Address) (*types.Transaction, error) {
 	return _SportsLinkMarketFactory.Contract.MintShares(&_SportsLinkMarketFactory.TransactOpts, _id, _shareToMint, _receiver)
+}
+
+// SetLinkNode is a paid mutator transaction binding the contract method 0xe2c30b15.
+//
+// Solidity: function setLinkNode(address _newLinkNode) returns()
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryTransactor) SetLinkNode(opts *bind.TransactOpts, _newLinkNode common.Address) (*types.Transaction, error) {
+	return _SportsLinkMarketFactory.contract.Transact(opts, "setLinkNode", _newLinkNode)
+}
+
+// SetLinkNode is a paid mutator transaction binding the contract method 0xe2c30b15.
+//
+// Solidity: function setLinkNode(address _newLinkNode) returns()
+func (_SportsLinkMarketFactory *SportsLinkMarketFactorySession) SetLinkNode(_newLinkNode common.Address) (*types.Transaction, error) {
+	return _SportsLinkMarketFactory.Contract.SetLinkNode(&_SportsLinkMarketFactory.TransactOpts, _newLinkNode)
+}
+
+// SetLinkNode is a paid mutator transaction binding the contract method 0xe2c30b15.
+//
+// Solidity: function setLinkNode(address _newLinkNode) returns()
+func (_SportsLinkMarketFactory *SportsLinkMarketFactoryTransactorSession) SetLinkNode(_newLinkNode common.Address) (*types.Transaction, error) {
+	return _SportsLinkMarketFactory.Contract.SetLinkNode(&_SportsLinkMarketFactory.TransactOpts, _newLinkNode)
 }
 
 // SetProtocol is a paid mutator transaction binding the contract method 0x32ecabe9.
@@ -1311,6 +1644,7 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) ParseLinkNodeCh
 	if err := _SportsLinkMarketFactory.contract.UnpackLog(event, "LinkNodeChanged", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1383,21 +1717,21 @@ func (it *SportsLinkMarketFactoryMarketCreatedIterator) Close() error {
 
 // SportsLinkMarketFactoryMarketCreated represents a MarketCreated event raised by the SportsLinkMarketFactory contract.
 type SportsLinkMarketFactoryMarketCreated struct {
-	Id                *big.Int
-	Creator           common.Address
-	EndTime           *big.Int
-	MarketType        uint8
-	EventId           *big.Int
-	HomeTeamId        *big.Int
-	AwayTeamId        *big.Int
-	EstimatedStarTime *big.Int
-	Score             *big.Int
-	Raw               types.Log // Blockchain specific contextual infos
+	Id                 *big.Int
+	Creator            common.Address
+	EndTime            *big.Int
+	MarketType         uint8
+	EventId            *big.Int
+	HomeTeamId         *big.Int
+	AwayTeamId         *big.Int
+	EstimatedStartTime *big.Int
+	Score              *big.Int
+	Raw                types.Log // Blockchain specific contextual infos
 }
 
 // FilterMarketCreated is a free log retrieval operation binding the contract event 0xafad6545e5200f9fdf4db34dfca61a9e7d72518593fd5155d11fd69c20e1555f.
 //
-// Solidity: event MarketCreated(uint256 id, address creator, uint256 endTime, uint8 marketType, uint256 indexed eventId, uint256 homeTeamId, uint256 awayTeamId, uint256 estimatedStarTime, int256 score)
+// Solidity: event MarketCreated(uint256 id, address creator, uint256 endTime, uint8 marketType, uint256 indexed eventId, uint256 homeTeamId, uint256 awayTeamId, uint256 estimatedStartTime, int256 score)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) FilterMarketCreated(opts *bind.FilterOpts, eventId []*big.Int) (*SportsLinkMarketFactoryMarketCreatedIterator, error) {
 
 	var eventIdRule []interface{}
@@ -1414,7 +1748,7 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) FilterMarketCre
 
 // WatchMarketCreated is a free log subscription operation binding the contract event 0xafad6545e5200f9fdf4db34dfca61a9e7d72518593fd5155d11fd69c20e1555f.
 //
-// Solidity: event MarketCreated(uint256 id, address creator, uint256 endTime, uint8 marketType, uint256 indexed eventId, uint256 homeTeamId, uint256 awayTeamId, uint256 estimatedStarTime, int256 score)
+// Solidity: event MarketCreated(uint256 id, address creator, uint256 endTime, uint8 marketType, uint256 indexed eventId, uint256 homeTeamId, uint256 awayTeamId, uint256 estimatedStartTime, int256 score)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) WatchMarketCreated(opts *bind.WatchOpts, sink chan<- *SportsLinkMarketFactoryMarketCreated, eventId []*big.Int) (event.Subscription, error) {
 
 	var eventIdRule []interface{}
@@ -1456,12 +1790,13 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) WatchMarketCrea
 
 // ParseMarketCreated is a log parse operation binding the contract event 0xafad6545e5200f9fdf4db34dfca61a9e7d72518593fd5155d11fd69c20e1555f.
 //
-// Solidity: event MarketCreated(uint256 id, address creator, uint256 endTime, uint8 marketType, uint256 indexed eventId, uint256 homeTeamId, uint256 awayTeamId, uint256 estimatedStarTime, int256 score)
+// Solidity: event MarketCreated(uint256 id, address creator, uint256 endTime, uint8 marketType, uint256 indexed eventId, uint256 homeTeamId, uint256 awayTeamId, uint256 estimatedStartTime, int256 score)
 func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) ParseMarketCreated(log types.Log) (*SportsLinkMarketFactoryMarketCreated, error) {
 	event := new(SportsLinkMarketFactoryMarketCreated)
 	if err := _SportsLinkMarketFactory.contract.UnpackLog(event, "MarketCreated", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1596,6 +1931,7 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) ParseMarketReso
 	if err := _SportsLinkMarketFactory.contract.UnpackLog(event, "MarketResolved", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1729,6 +2065,7 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) ParseProtocolCh
 	if err := _SportsLinkMarketFactory.contract.UnpackLog(event, "ProtocolChanged", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1862,6 +2199,7 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) ParseProtocolFe
 	if err := _SportsLinkMarketFactory.contract.UnpackLog(event, "ProtocolFeeChanged", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1996,6 +2334,7 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) ParseProtocolFe
 	if err := _SportsLinkMarketFactory.contract.UnpackLog(event, "ProtocolFeeClaimed", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -2129,6 +2468,7 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) ParseSettlement
 	if err := _SportsLinkMarketFactory.contract.UnpackLog(event, "SettlementFeeChanged", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -2274,6 +2614,7 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) ParseSettlement
 	if err := _SportsLinkMarketFactory.contract.UnpackLog(event, "SettlementFeeClaimed", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -2409,6 +2750,7 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) ParseSharesBurn
 	if err := _SportsLinkMarketFactory.contract.UnpackLog(event, "SharesBurned", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -2544,6 +2886,7 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) ParseSharesMint
 	if err := _SportsLinkMarketFactory.contract.UnpackLog(event, "SharesMinted", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -2677,6 +3020,7 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) ParseStakerFeeC
 	if err := _SportsLinkMarketFactory.contract.UnpackLog(event, "StakerFeeChanged", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -2825,5 +3169,6 @@ func (_SportsLinkMarketFactory *SportsLinkMarketFactoryFilterer) ParseWinningsCl
 	if err := _SportsLinkMarketFactory.contract.UnpackLog(event, "WinningsClaimed", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }

@@ -8,7 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/0xProject/0x-mesh/common/types"
+	//"github.com/0xProject/0x-mesh/common/types"
 )
 type CallerZxUnpackTokenId interface {
 	UnpackTokenId(opts *bind.CallOpts, _tokenId *big.Int) (ZxMeshOrderSpec, error)
@@ -167,35 +167,6 @@ func (evt *ECancelZeroXOrder) Dump(l *log.Logger) {
 	l.Printf("}\n")
 }
 //func (evt *ETransferBatch) Dump(zc *ZeroX,l *log.Logger) {
-func (evt *ETransferBatch) Dump(zc CallerZxUnpackTokenId,l *log.Logger) {
-	l.Printf("TransferBatch {\n")
-	l.Printf("\tOperator: %v\n",evt.Operator.String())
-	l.Printf("\tFrom: %v\n",evt.From.String())
-	l.Printf("\tTo: %v\n",evt.To.String())
-	ids := Bigint_ptr_slice_to_str(&evt.Ids,",")
-	l.Printf("\tIds: %v\n",ids)
-	l.Printf("\tDecoded token IDs:\n")
-	var copts = new(bind.CallOpts)
-	copts.Pending = true
-	for i:=0 ; i<len(evt.Ids); i++ {
-		if false {
-			l.Printf("\t\tcan't decode token info hex string: \n")
-		} else {
-			tok_info,err := zc.UnpackTokenId(copts,evt.Ids[i])
-			if err == nil {
-				l.Printf("\t\tMarket: %v\n",tok_info.Market.String())
-				l.Printf("\t\tPrice: %v\n",tok_info.Price)
-				l.Printf("\t\tOutcome: %v\n",tok_info.Outcome)
-				l.Printf("\t\tType: %v\n",tok_info.Type)
-			} else {
-				l.Printf("\t\ttoken decode error: %v\n",err)
-			}
-		}
-	}
-	values := Bigint_ptr_slice_to_str(&evt.Values,",")
-	l.Printf("\tValues: %v\n",values)
-	l.Printf("}\n")
-}
 func (evt *ETransferSingle) Dump(l *log.Logger) {
 	l.Printf("TransferSingle {\n")
 	l.Printf("\tOperator: %v\n",evt.Operator.String())
@@ -372,10 +343,10 @@ func (evt *EUniverseCreated) Dump(l *log.Logger) {
 	l.Printf("\tCreationTimestamp: %v\n",evt.CreationTimestamp.Int64())
 	l.Printf("}\n")
 }
-func Dump_0x_mesh_order(l *log.Logger,o *types.OrderInfo) {
+func Dump_0x_mesh_order(l *log.Logger,o *OrderInfo0x) {
 	l.Printf("0x Mesh Order {\n")
-	l.Printf("\tOrderHash: %v\n",o.OrderHash.String())
-	l.Printf("\tSignature: %v\n",hex.EncodeToString(o.SignedOrder.Signature))
+	//l.Printf("\tOrderHash: %v\n",o.OrderHash.String())
+	//l.Printf("\tSignature: %v\n",hex.EncodeToString(o.SignedOrder.Signature))
 	l.Printf("\tFillableTakerAssetAmount: %v\n",o.FillableTakerAssetAmount.String())
 	l.Printf("\tChainId: %v\n",o.SignedOrder.ChainID.String())
 	l.Printf("\tExchangeAddress: %v\n",o.SignedOrder.ExchangeAddress.String())

@@ -4,6 +4,7 @@
 package contracts
 
 import (
+	"errors"
 	"math/big"
 	"strings"
 
@@ -17,18 +18,24 @@ import (
 
 // Reference imports to suppress errors if they are not otherwise used.
 var (
+	_ = errors.New
 	_ = big.NewInt
 	_ = strings.NewReader
 	_ = ethereum.NotFound
-	_ = abi.U256
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
 	_ = event.NewSubscription
 )
 
+// AMMFactoryMetaData contains all meta data concerning the AMMFactory contract.
+var AMMFactoryMetaData = &bind.MetaData{
+	ABI: "[{\"inputs\":[{\"internalType\":\"contractBFactory\",\"name\":\"_bFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_fee\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"marketFactory\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"marketId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"collateral\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"lpTokens\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"uint256[]\",\"name\":\"sharesReturned\",\"type\":\"uint256[]\"}],\"name\":\"LiquidityChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"pool\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"marketFactory\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"marketId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"lpTokenRecipient\",\"type\":\"address\"}],\"name\":\"PoolCreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"marketFactory\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"marketId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"outcome\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"collateral\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"shares\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"}],\"name\":\"SharesSwapped\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"BONE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"BPOW_PRECISION\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"EXIT_FEE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"INIT_POOL_SUPPLY\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_BOUND_TOKENS\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_BPOW_BASE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_FEE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_IN_RATIO\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_OUT_RATIO\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_TOTAL_WEIGHT\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_WEIGHT\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_BALANCE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_BOUND_TOKENS\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_BPOW_BASE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_FEE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_WEIGHT\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_collateralIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_minLPTokensOut\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_lpTokenRecipient\",\"type\":\"address\"}],\"name\":\"addLiquidity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"_poolAmountOut\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"_balances\",\"type\":\"uint256[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bFactory\",\"outputs\":[{\"internalType\":\"contractBFactory\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_collateralIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_minTokensOut\",\"type\":\"uint256\"}],\"name\":\"buy\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_initialLiquidity\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"_weights\",\"type\":\"uint256[]\"},{\"internalType\":\"address\",\"name\":\"_lpTokenRecipient\",\"type\":\"address\"}],\"name\":\"createPool\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getColor\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"getPool\",\"outputs\":[{\"internalType\":\"contractBPool\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"getPoolBalances\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"whom\",\"type\":\"address\"}],\"name\":\"getPoolTokenBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"getPoolWeights\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"getSwapFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"pools\",\"outputs\":[{\"internalType\":\"contractBPool\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_lpTokensIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_minCollateralOut\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_collateralRecipient\",\"type\":\"address\"}],\"name\":\"removeLiquidity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"_collateralOut\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"_balances\",\"type\":\"uint256[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"_shareTokensIn\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256\",\"name\":\"_minSetsOut\",\"type\":\"uint256\"}],\"name\":\"sellForCollateral\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"tokenRatios\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+}
+
 // AMMFactoryABI is the input ABI used to generate the binding from.
-const AMMFactoryABI = "[{\"inputs\":[{\"internalType\":\"contractBFactory\",\"name\":\"_bFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_fee\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"marketFactory\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"marketId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"collateral\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"lpTokens\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"uint256[]\",\"name\":\"sharesReturned\",\"type\":\"uint256[]\"}],\"name\":\"LiquidityChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"pool\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"marketFactory\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"marketId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"lpTokenRecipient\",\"type\":\"address\"}],\"name\":\"PoolCreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"marketFactory\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"marketId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"outcome\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"collateral\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"shares\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"}],\"name\":\"SharesSwapped\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"BONE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"BPOW_PRECISION\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"EXIT_FEE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"INIT_POOL_SUPPLY\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_BOUND_TOKENS\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_BPOW_BASE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_FEE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_IN_RATIO\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_OUT_RATIO\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_TOTAL_WEIGHT\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_WEIGHT\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_BALANCE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_BOUND_TOKENS\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_BPOW_BASE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_FEE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_WEIGHT\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_collateralIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_minLPTokensOut\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_lpTokenRecipient\",\"type\":\"address\"}],\"name\":\"addLiquidity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"_poolAmountOut\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"_balances\",\"type\":\"uint256[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bFactory\",\"outputs\":[{\"internalType\":\"contractBFactory\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_collateralIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_minTokensOut\",\"type\":\"uint256\"}],\"name\":\"buy\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_initialLiquidity\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"_weights\",\"type\":\"uint256[]\"},{\"internalType\":\"address\",\"name\":\"_lpTokenRecipient\",\"type\":\"address\"}],\"name\":\"createPool\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getColor\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"getPool\",\"outputs\":[{\"internalType\":\"contractBPool\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"getPoolBalances\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"whom\",\"type\":\"address\"}],\"name\":\"getPoolTokenBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"getPoolWeights\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"getSwapFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"pools\",\"outputs\":[{\"internalType\":\"contractBPool\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_lpTokensIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_minCollateralOut\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_collateralRecipient\",\"type\":\"address\"}],\"name\":\"removeLiquidity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"_collateralOut\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"_balances\",\"type\":\"uint256[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"_shareTokensIn\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256\",\"name\":\"_minSetsOut\",\"type\":\"uint256\"}],\"name\":\"sellForCollateral\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractAbstractMarketFactory\",\"name\":\"_marketFactory\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_marketId\",\"type\":\"uint256\"}],\"name\":\"tokenRatios\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"
+// Deprecated: Use AMMFactoryMetaData.ABI instead.
+var AMMFactoryABI = AMMFactoryMetaData.ABI
 
 // AMMFactory is an auto generated Go binding around an Ethereum contract.
 type AMMFactory struct {
@@ -138,7 +145,7 @@ func bindAMMFactory(address common.Address, caller bind.ContractCaller, transact
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_AMMFactory *AMMFactoryRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_AMMFactory *AMMFactoryRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _AMMFactory.Contract.AMMFactoryCaller.contract.Call(opts, result, method, params...)
 }
 
@@ -157,7 +164,7 @@ func (_AMMFactory *AMMFactoryRaw) Transact(opts *bind.TransactOpts, method strin
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_AMMFactory *AMMFactoryCallerRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_AMMFactory *AMMFactoryCallerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _AMMFactory.Contract.contract.Call(opts, result, method, params...)
 }
 
@@ -176,12 +183,17 @@ func (_AMMFactory *AMMFactoryTransactorRaw) Transact(opts *bind.TransactOpts, me
 //
 // Solidity: function BONE() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) BONE(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "BONE")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "BONE")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // BONE is a free data retrieval call binding the contract method 0xc36596a6.
@@ -202,12 +214,17 @@ func (_AMMFactory *AMMFactoryCallerSession) BONE() (*big.Int, error) {
 //
 // Solidity: function BPOW_PRECISION() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) BPOWPRECISION(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "BPOW_PRECISION")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "BPOW_PRECISION")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // BPOWPRECISION is a free data retrieval call binding the contract method 0x189d00ca.
@@ -228,12 +245,17 @@ func (_AMMFactory *AMMFactoryCallerSession) BPOWPRECISION() (*big.Int, error) {
 //
 // Solidity: function EXIT_FEE() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) EXITFEE(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "EXIT_FEE")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "EXIT_FEE")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // EXITFEE is a free data retrieval call binding the contract method 0xc6580d12.
@@ -254,12 +276,17 @@ func (_AMMFactory *AMMFactoryCallerSession) EXITFEE() (*big.Int, error) {
 //
 // Solidity: function INIT_POOL_SUPPLY() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) INITPOOLSUPPLY(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "INIT_POOL_SUPPLY")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "INIT_POOL_SUPPLY")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // INITPOOLSUPPLY is a free data retrieval call binding the contract method 0x9381cd2b.
@@ -280,12 +307,17 @@ func (_AMMFactory *AMMFactoryCallerSession) INITPOOLSUPPLY() (*big.Int, error) {
 //
 // Solidity: function MAX_BOUND_TOKENS() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) MAXBOUNDTOKENS(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "MAX_BOUND_TOKENS")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "MAX_BOUND_TOKENS")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // MAXBOUNDTOKENS is a free data retrieval call binding the contract method 0xb0e0d136.
@@ -306,12 +338,17 @@ func (_AMMFactory *AMMFactoryCallerSession) MAXBOUNDTOKENS() (*big.Int, error) {
 //
 // Solidity: function MAX_BPOW_BASE() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) MAXBPOWBASE(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "MAX_BPOW_BASE")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "MAX_BPOW_BASE")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // MAXBPOWBASE is a free data retrieval call binding the contract method 0xbc694ea2.
@@ -332,12 +369,17 @@ func (_AMMFactory *AMMFactoryCallerSession) MAXBPOWBASE() (*big.Int, error) {
 //
 // Solidity: function MAX_FEE() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) MAXFEE(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "MAX_FEE")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "MAX_FEE")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // MAXFEE is a free data retrieval call binding the contract method 0xbc063e1a.
@@ -358,12 +400,17 @@ func (_AMMFactory *AMMFactoryCallerSession) MAXFEE() (*big.Int, error) {
 //
 // Solidity: function MAX_IN_RATIO() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) MAXINRATIO(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "MAX_IN_RATIO")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "MAX_IN_RATIO")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // MAXINRATIO is a free data retrieval call binding the contract method 0xec093021.
@@ -384,12 +431,17 @@ func (_AMMFactory *AMMFactoryCallerSession) MAXINRATIO() (*big.Int, error) {
 //
 // Solidity: function MAX_OUT_RATIO() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) MAXOUTRATIO(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "MAX_OUT_RATIO")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "MAX_OUT_RATIO")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // MAXOUTRATIO is a free data retrieval call binding the contract method 0x992e2a92.
@@ -410,12 +462,17 @@ func (_AMMFactory *AMMFactoryCallerSession) MAXOUTRATIO() (*big.Int, error) {
 //
 // Solidity: function MAX_TOTAL_WEIGHT() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) MAXTOTALWEIGHT(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "MAX_TOTAL_WEIGHT")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "MAX_TOTAL_WEIGHT")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // MAXTOTALWEIGHT is a free data retrieval call binding the contract method 0x09a3bbe4.
@@ -436,12 +493,17 @@ func (_AMMFactory *AMMFactoryCallerSession) MAXTOTALWEIGHT() (*big.Int, error) {
 //
 // Solidity: function MAX_WEIGHT() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) MAXWEIGHT(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "MAX_WEIGHT")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "MAX_WEIGHT")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // MAXWEIGHT is a free data retrieval call binding the contract method 0xe4a28a52.
@@ -462,12 +524,17 @@ func (_AMMFactory *AMMFactoryCallerSession) MAXWEIGHT() (*big.Int, error) {
 //
 // Solidity: function MIN_BALANCE() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) MINBALANCE(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "MIN_BALANCE")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "MIN_BALANCE")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // MINBALANCE is a free data retrieval call binding the contract method 0x867378c5.
@@ -488,12 +555,17 @@ func (_AMMFactory *AMMFactoryCallerSession) MINBALANCE() (*big.Int, error) {
 //
 // Solidity: function MIN_BOUND_TOKENS() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) MINBOUNDTOKENS(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "MIN_BOUND_TOKENS")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "MIN_BOUND_TOKENS")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // MINBOUNDTOKENS is a free data retrieval call binding the contract method 0xb7b800a4.
@@ -514,12 +586,17 @@ func (_AMMFactory *AMMFactoryCallerSession) MINBOUNDTOKENS() (*big.Int, error) {
 //
 // Solidity: function MIN_BPOW_BASE() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) MINBPOWBASE(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "MIN_BPOW_BASE")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "MIN_BPOW_BASE")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // MINBPOWBASE is a free data retrieval call binding the contract method 0xba019dab.
@@ -540,12 +617,17 @@ func (_AMMFactory *AMMFactoryCallerSession) MINBPOWBASE() (*big.Int, error) {
 //
 // Solidity: function MIN_FEE() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) MINFEE(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "MIN_FEE")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "MIN_FEE")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // MINFEE is a free data retrieval call binding the contract method 0x76c7a3c7.
@@ -566,12 +648,17 @@ func (_AMMFactory *AMMFactoryCallerSession) MINFEE() (*big.Int, error) {
 //
 // Solidity: function MIN_WEIGHT() view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) MINWEIGHT(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "MIN_WEIGHT")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "MIN_WEIGHT")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // MINWEIGHT is a free data retrieval call binding the contract method 0x218b5382.
@@ -592,12 +679,17 @@ func (_AMMFactory *AMMFactoryCallerSession) MINWEIGHT() (*big.Int, error) {
 //
 // Solidity: function bFactory() view returns(address)
 func (_AMMFactory *AMMFactoryCaller) BFactory(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "bFactory")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "bFactory")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // BFactory is a free data retrieval call binding the contract method 0x0a165940.
@@ -618,12 +710,17 @@ func (_AMMFactory *AMMFactoryCallerSession) BFactory() (common.Address, error) {
 //
 // Solidity: function getColor() pure returns(bytes32)
 func (_AMMFactory *AMMFactoryCaller) GetColor(opts *bind.CallOpts) ([32]byte, error) {
-	var (
-		ret0 = new([32]byte)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "getColor")
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "getColor")
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
 }
 
 // GetColor is a free data retrieval call binding the contract method 0x9a86139b.
@@ -644,12 +741,17 @@ func (_AMMFactory *AMMFactoryCallerSession) GetColor() ([32]byte, error) {
 //
 // Solidity: function getPool(address _marketFactory, uint256 _marketId) view returns(address)
 func (_AMMFactory *AMMFactoryCaller) GetPool(opts *bind.CallOpts, _marketFactory common.Address, _marketId *big.Int) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "getPool", _marketFactory, _marketId)
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "getPool", _marketFactory, _marketId)
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // GetPool is a free data retrieval call binding the contract method 0x5b5b9ea2.
@@ -670,12 +772,17 @@ func (_AMMFactory *AMMFactoryCallerSession) GetPool(_marketFactory common.Addres
 //
 // Solidity: function getPoolBalances(address _marketFactory, uint256 _marketId) view returns(uint256[])
 func (_AMMFactory *AMMFactoryCaller) GetPoolBalances(opts *bind.CallOpts, _marketFactory common.Address, _marketId *big.Int) ([]*big.Int, error) {
-	var (
-		ret0 = new([]*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "getPoolBalances", _marketFactory, _marketId)
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "getPoolBalances", _marketFactory, _marketId)
+
+	if err != nil {
+		return *new([]*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]*big.Int)).(*[]*big.Int)
+
+	return out0, err
+
 }
 
 // GetPoolBalances is a free data retrieval call binding the contract method 0xd2364bf3.
@@ -696,12 +803,17 @@ func (_AMMFactory *AMMFactoryCallerSession) GetPoolBalances(_marketFactory commo
 //
 // Solidity: function getPoolTokenBalance(address _marketFactory, uint256 _marketId, address whom) view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) GetPoolTokenBalance(opts *bind.CallOpts, _marketFactory common.Address, _marketId *big.Int, whom common.Address) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "getPoolTokenBalance", _marketFactory, _marketId, whom)
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "getPoolTokenBalance", _marketFactory, _marketId, whom)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // GetPoolTokenBalance is a free data retrieval call binding the contract method 0xa0147aa1.
@@ -722,12 +834,17 @@ func (_AMMFactory *AMMFactoryCallerSession) GetPoolTokenBalance(_marketFactory c
 //
 // Solidity: function getPoolWeights(address _marketFactory, uint256 _marketId) view returns(uint256[])
 func (_AMMFactory *AMMFactoryCaller) GetPoolWeights(opts *bind.CallOpts, _marketFactory common.Address, _marketId *big.Int) ([]*big.Int, error) {
-	var (
-		ret0 = new([]*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "getPoolWeights", _marketFactory, _marketId)
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "getPoolWeights", _marketFactory, _marketId)
+
+	if err != nil {
+		return *new([]*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]*big.Int)).(*[]*big.Int)
+
+	return out0, err
+
 }
 
 // GetPoolWeights is a free data retrieval call binding the contract method 0xd055da71.
@@ -748,12 +865,17 @@ func (_AMMFactory *AMMFactoryCallerSession) GetPoolWeights(_marketFactory common
 //
 // Solidity: function getSwapFee(address _marketFactory, uint256 _marketId) view returns(uint256)
 func (_AMMFactory *AMMFactoryCaller) GetSwapFee(opts *bind.CallOpts, _marketFactory common.Address, _marketId *big.Int) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "getSwapFee", _marketFactory, _marketId)
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "getSwapFee", _marketFactory, _marketId)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // GetSwapFee is a free data retrieval call binding the contract method 0xfa0de359.
@@ -774,12 +896,17 @@ func (_AMMFactory *AMMFactoryCallerSession) GetSwapFee(_marketFactory common.Add
 //
 // Solidity: function pools(address , uint256 ) view returns(address)
 func (_AMMFactory *AMMFactoryCaller) Pools(opts *bind.CallOpts, arg0 common.Address, arg1 *big.Int) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "pools", arg0, arg1)
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "pools", arg0, arg1)
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // Pools is a free data retrieval call binding the contract method 0x8f38a555.
@@ -800,12 +927,17 @@ func (_AMMFactory *AMMFactoryCallerSession) Pools(arg0 common.Address, arg1 *big
 //
 // Solidity: function tokenRatios(address _marketFactory, uint256 _marketId) view returns(uint256[])
 func (_AMMFactory *AMMFactoryCaller) TokenRatios(opts *bind.CallOpts, _marketFactory common.Address, _marketId *big.Int) ([]*big.Int, error) {
-	var (
-		ret0 = new([]*big.Int)
-	)
-	out := ret0
-	err := _AMMFactory.contract.Call(opts, out, "tokenRatios", _marketFactory, _marketId)
-	return *ret0, err
+	var out []interface{}
+	err := _AMMFactory.contract.Call(opts, &out, "tokenRatios", _marketFactory, _marketId)
+
+	if err != nil {
+		return *new([]*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]*big.Int)).(*[]*big.Int)
+
+	return out0, err
+
 }
 
 // TokenRatios is a free data retrieval call binding the contract method 0xc7b4b6dd.
@@ -1089,6 +1221,7 @@ func (_AMMFactory *AMMFactoryFilterer) ParseLiquidityChanged(log types.Log) (*AM
 	if err := _AMMFactory.contract.UnpackLog(event, "LiquidityChanged", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1252,6 +1385,7 @@ func (_AMMFactory *AMMFactoryFilterer) ParsePoolCreated(log types.Log) (*AMMFact
 	if err := _AMMFactory.contract.UnpackLog(event, "PoolCreated", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1417,5 +1551,6 @@ func (_AMMFactory *AMMFactoryFilterer) ParseSharesSwapped(log types.Log) (*AMMFa
 	if err := _AMMFactory.contract.UnpackLog(event, "SharesSwapped", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }

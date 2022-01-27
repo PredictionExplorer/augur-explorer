@@ -4,6 +4,7 @@
 package contracts
 
 import (
+	"errors"
 	"math/big"
 	"strings"
 
@@ -17,18 +18,24 @@ import (
 
 // Reference imports to suppress errors if they are not otherwise used.
 var (
+	_ = errors.New
 	_ = big.NewInt
 	_ = strings.NewReader
 	_ = ethereum.NotFound
-	_ = abi.U256
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
 	_ = event.NewSubscription
 )
 
+// FixedProductMarketMakerMetaData contains all meta data concerning the FixedProductMarketMaker contract.
+var FixedProductMarketMakerMetaData = &bind.MetaData{
+	ABI: "[{\"constant\":true,\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"sender\",\"type\":\"address\"},{\"name\":\"recipient\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"addedValue\",\"type\":\"uint256\"}],\"name\":\"increaseAllowance\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"conditionalTokens\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"account\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"subtractedValue\",\"type\":\"uint256\"}],\"name\":\"decreaseAllowance\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"recipient\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"collateralToken\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"conditionIds\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"owner\",\"type\":\"address\"},{\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"fee\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"funder\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amountsAdded\",\"type\":\"uint256[]\"},{\"indexed\":false,\"name\":\"sharesMinted\",\"type\":\"uint256\"}],\"name\":\"FPMMFundingAdded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"funder\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amountsRemoved\",\"type\":\"uint256[]\"},{\"indexed\":false,\"name\":\"collateralRemovedFromFeePool\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"sharesBurnt\",\"type\":\"uint256\"}],\"name\":\"FPMMFundingRemoved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"buyer\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"investmentAmount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"feeAmount\",\"type\":\"uint256\"},{\"indexed\":true,\"name\":\"outcomeIndex\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"outcomeTokensBought\",\"type\":\"uint256\"}],\"name\":\"FPMMBuy\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"seller\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"returnAmount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"feeAmount\",\"type\":\"uint256\"},{\"indexed\":true,\"name\":\"outcomeIndex\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"outcomeTokensSold\",\"type\":\"uint256\"}],\"name\":\"FPMMSell\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[],\"name\":\"collectedFees\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"account\",\"type\":\"address\"}],\"name\":\"feesWithdrawableBy\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"account\",\"type\":\"address\"}],\"name\":\"withdrawFees\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"addedFunds\",\"type\":\"uint256\"},{\"name\":\"distributionHint\",\"type\":\"uint256[]\"}],\"name\":\"addFunding\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"sharesToBurn\",\"type\":\"uint256\"}],\"name\":\"removeFunding\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"operator\",\"type\":\"address\"},{\"name\":\"from\",\"type\":\"address\"},{\"name\":\"id\",\"type\":\"uint256\"},{\"name\":\"value\",\"type\":\"uint256\"},{\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"onERC1155Received\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes4\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"operator\",\"type\":\"address\"},{\"name\":\"from\",\"type\":\"address\"},{\"name\":\"ids\",\"type\":\"uint256[]\"},{\"name\":\"values\",\"type\":\"uint256[]\"},{\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"onERC1155BatchReceived\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes4\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"investmentAmount\",\"type\":\"uint256\"},{\"name\":\"outcomeIndex\",\"type\":\"uint256\"}],\"name\":\"calcBuyAmount\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"returnAmount\",\"type\":\"uint256\"},{\"name\":\"outcomeIndex\",\"type\":\"uint256\"}],\"name\":\"calcSellAmount\",\"outputs\":[{\"name\":\"outcomeTokenSellAmount\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"investmentAmount\",\"type\":\"uint256\"},{\"name\":\"outcomeIndex\",\"type\":\"uint256\"},{\"name\":\"minOutcomeTokensToBuy\",\"type\":\"uint256\"}],\"name\":\"buy\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"returnAmount\",\"type\":\"uint256\"},{\"name\":\"outcomeIndex\",\"type\":\"uint256\"},{\"name\":\"maxOutcomeTokensToSell\",\"type\":\"uint256\"}],\"name\":\"sell\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+}
+
 // FixedProductMarketMakerABI is the input ABI used to generate the binding from.
-const FixedProductMarketMakerABI = "[{\"constant\":true,\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"sender\",\"type\":\"address\"},{\"name\":\"recipient\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"addedValue\",\"type\":\"uint256\"}],\"name\":\"increaseAllowance\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"conditionalTokens\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"account\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"subtractedValue\",\"type\":\"uint256\"}],\"name\":\"decreaseAllowance\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"recipient\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"collateralToken\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"conditionIds\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"owner\",\"type\":\"address\"},{\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"fee\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"funder\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amountsAdded\",\"type\":\"uint256[]\"},{\"indexed\":false,\"name\":\"sharesMinted\",\"type\":\"uint256\"}],\"name\":\"FPMMFundingAdded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"funder\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amountsRemoved\",\"type\":\"uint256[]\"},{\"indexed\":false,\"name\":\"collateralRemovedFromFeePool\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"sharesBurnt\",\"type\":\"uint256\"}],\"name\":\"FPMMFundingRemoved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"buyer\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"investmentAmount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"feeAmount\",\"type\":\"uint256\"},{\"indexed\":true,\"name\":\"outcomeIndex\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"outcomeTokensBought\",\"type\":\"uint256\"}],\"name\":\"FPMMBuy\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"seller\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"returnAmount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"feeAmount\",\"type\":\"uint256\"},{\"indexed\":true,\"name\":\"outcomeIndex\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"outcomeTokensSold\",\"type\":\"uint256\"}],\"name\":\"FPMMSell\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[],\"name\":\"collectedFees\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"account\",\"type\":\"address\"}],\"name\":\"feesWithdrawableBy\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"account\",\"type\":\"address\"}],\"name\":\"withdrawFees\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"addedFunds\",\"type\":\"uint256\"},{\"name\":\"distributionHint\",\"type\":\"uint256[]\"}],\"name\":\"addFunding\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"sharesToBurn\",\"type\":\"uint256\"}],\"name\":\"removeFunding\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"operator\",\"type\":\"address\"},{\"name\":\"from\",\"type\":\"address\"},{\"name\":\"id\",\"type\":\"uint256\"},{\"name\":\"value\",\"type\":\"uint256\"},{\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"onERC1155Received\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes4\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"operator\",\"type\":\"address\"},{\"name\":\"from\",\"type\":\"address\"},{\"name\":\"ids\",\"type\":\"uint256[]\"},{\"name\":\"values\",\"type\":\"uint256[]\"},{\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"onERC1155BatchReceived\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes4\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"investmentAmount\",\"type\":\"uint256\"},{\"name\":\"outcomeIndex\",\"type\":\"uint256\"}],\"name\":\"calcBuyAmount\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"returnAmount\",\"type\":\"uint256\"},{\"name\":\"outcomeIndex\",\"type\":\"uint256\"}],\"name\":\"calcSellAmount\",\"outputs\":[{\"name\":\"outcomeTokenSellAmount\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"investmentAmount\",\"type\":\"uint256\"},{\"name\":\"outcomeIndex\",\"type\":\"uint256\"},{\"name\":\"minOutcomeTokensToBuy\",\"type\":\"uint256\"}],\"name\":\"buy\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"returnAmount\",\"type\":\"uint256\"},{\"name\":\"outcomeIndex\",\"type\":\"uint256\"},{\"name\":\"maxOutcomeTokensToSell\",\"type\":\"uint256\"}],\"name\":\"sell\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+// Deprecated: Use FixedProductMarketMakerMetaData.ABI instead.
+var FixedProductMarketMakerABI = FixedProductMarketMakerMetaData.ABI
 
 // FixedProductMarketMaker is an auto generated Go binding around an Ethereum contract.
 type FixedProductMarketMaker struct {
@@ -138,7 +145,7 @@ func bindFixedProductMarketMaker(address common.Address, caller bind.ContractCal
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_FixedProductMarketMaker *FixedProductMarketMakerRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_FixedProductMarketMaker *FixedProductMarketMakerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _FixedProductMarketMaker.Contract.FixedProductMarketMakerCaller.contract.Call(opts, result, method, params...)
 }
 
@@ -157,7 +164,7 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerRaw) Transact(opts *bind.
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_FixedProductMarketMaker *FixedProductMarketMakerCallerRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_FixedProductMarketMaker *FixedProductMarketMakerCallerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _FixedProductMarketMaker.Contract.contract.Call(opts, result, method, params...)
 }
 
@@ -176,12 +183,17 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerTransactorRaw) Transact(o
 //
 // Solidity: function allowance(address owner, address spender) view returns(uint256)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) Allowance(opts *bind.CallOpts, owner common.Address, spender common.Address) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _FixedProductMarketMaker.contract.Call(opts, out, "allowance", owner, spender)
-	return *ret0, err
+	var out []interface{}
+	err := _FixedProductMarketMaker.contract.Call(opts, &out, "allowance", owner, spender)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // Allowance is a free data retrieval call binding the contract method 0xdd62ed3e.
@@ -202,12 +214,17 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) Allowance(
 //
 // Solidity: function balanceOf(address account) view returns(uint256)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) BalanceOf(opts *bind.CallOpts, account common.Address) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _FixedProductMarketMaker.contract.Call(opts, out, "balanceOf", account)
-	return *ret0, err
+	var out []interface{}
+	err := _FixedProductMarketMaker.contract.Call(opts, &out, "balanceOf", account)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // BalanceOf is a free data retrieval call binding the contract method 0x70a08231.
@@ -228,12 +245,17 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) BalanceOf(
 //
 // Solidity: function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex) view returns(uint256)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) CalcBuyAmount(opts *bind.CallOpts, investmentAmount *big.Int, outcomeIndex *big.Int) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _FixedProductMarketMaker.contract.Call(opts, out, "calcBuyAmount", investmentAmount, outcomeIndex)
-	return *ret0, err
+	var out []interface{}
+	err := _FixedProductMarketMaker.contract.Call(opts, &out, "calcBuyAmount", investmentAmount, outcomeIndex)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // CalcBuyAmount is a free data retrieval call binding the contract method 0xf55c79d0.
@@ -254,12 +276,17 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) CalcBuyAmo
 //
 // Solidity: function calcSellAmount(uint256 returnAmount, uint256 outcomeIndex) view returns(uint256 outcomeTokenSellAmount)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) CalcSellAmount(opts *bind.CallOpts, returnAmount *big.Int, outcomeIndex *big.Int) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _FixedProductMarketMaker.contract.Call(opts, out, "calcSellAmount", returnAmount, outcomeIndex)
-	return *ret0, err
+	var out []interface{}
+	err := _FixedProductMarketMaker.contract.Call(opts, &out, "calcSellAmount", returnAmount, outcomeIndex)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // CalcSellAmount is a free data retrieval call binding the contract method 0x4343116a.
@@ -280,12 +307,17 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) CalcSellAm
 //
 // Solidity: function collateralToken() view returns(address)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) CollateralToken(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _FixedProductMarketMaker.contract.Call(opts, out, "collateralToken")
-	return *ret0, err
+	var out []interface{}
+	err := _FixedProductMarketMaker.contract.Call(opts, &out, "collateralToken")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // CollateralToken is a free data retrieval call binding the contract method 0xb2016bd4.
@@ -306,12 +338,17 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) Collateral
 //
 // Solidity: function collectedFees() view returns(uint256)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) CollectedFees(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _FixedProductMarketMaker.contract.Call(opts, out, "collectedFees")
-	return *ret0, err
+	var out []interface{}
+	err := _FixedProductMarketMaker.contract.Call(opts, &out, "collectedFees")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // CollectedFees is a free data retrieval call binding the contract method 0x9003adfe.
@@ -332,12 +369,17 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) CollectedF
 //
 // Solidity: function conditionIds(uint256 ) view returns(bytes32)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) ConditionIds(opts *bind.CallOpts, arg0 *big.Int) ([32]byte, error) {
-	var (
-		ret0 = new([32]byte)
-	)
-	out := ret0
-	err := _FixedProductMarketMaker.contract.Call(opts, out, "conditionIds", arg0)
-	return *ret0, err
+	var out []interface{}
+	err := _FixedProductMarketMaker.contract.Call(opts, &out, "conditionIds", arg0)
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
 }
 
 // ConditionIds is a free data retrieval call binding the contract method 0xd8c55af7.
@@ -358,12 +400,17 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) ConditionI
 //
 // Solidity: function conditionalTokens() view returns(address)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) ConditionalTokens(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _FixedProductMarketMaker.contract.Call(opts, out, "conditionalTokens")
-	return *ret0, err
+	var out []interface{}
+	err := _FixedProductMarketMaker.contract.Call(opts, &out, "conditionalTokens")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // ConditionalTokens is a free data retrieval call binding the contract method 0x5bd9e299.
@@ -384,12 +431,17 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) Conditiona
 //
 // Solidity: function fee() view returns(uint256)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) Fee(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _FixedProductMarketMaker.contract.Call(opts, out, "fee")
-	return *ret0, err
+	var out []interface{}
+	err := _FixedProductMarketMaker.contract.Call(opts, &out, "fee")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // Fee is a free data retrieval call binding the contract method 0xddca3f43.
@@ -410,12 +462,17 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) Fee() (*bi
 //
 // Solidity: function feesWithdrawableBy(address account) view returns(uint256)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) FeesWithdrawableBy(opts *bind.CallOpts, account common.Address) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _FixedProductMarketMaker.contract.Call(opts, out, "feesWithdrawableBy", account)
-	return *ret0, err
+	var out []interface{}
+	err := _FixedProductMarketMaker.contract.Call(opts, &out, "feesWithdrawableBy", account)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // FeesWithdrawableBy is a free data retrieval call binding the contract method 0x16dbd776.
@@ -436,12 +493,17 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) FeesWithdr
 //
 // Solidity: function supportsInterface(bytes4 interfaceId) view returns(bool)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) SupportsInterface(opts *bind.CallOpts, interfaceId [4]byte) (bool, error) {
-	var (
-		ret0 = new(bool)
-	)
-	out := ret0
-	err := _FixedProductMarketMaker.contract.Call(opts, out, "supportsInterface", interfaceId)
-	return *ret0, err
+	var out []interface{}
+	err := _FixedProductMarketMaker.contract.Call(opts, &out, "supportsInterface", interfaceId)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
 }
 
 // SupportsInterface is a free data retrieval call binding the contract method 0x01ffc9a7.
@@ -462,12 +524,17 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerCallerSession) SupportsIn
 //
 // Solidity: function totalSupply() view returns(uint256)
 func (_FixedProductMarketMaker *FixedProductMarketMakerCaller) TotalSupply(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _FixedProductMarketMaker.contract.Call(opts, out, "totalSupply")
-	return *ret0, err
+	var out []interface{}
+	err := _FixedProductMarketMaker.contract.Call(opts, &out, "totalSupply")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // TotalSupply is a free data retrieval call binding the contract method 0x18160ddd.
@@ -886,6 +953,7 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerFilterer) ParseApproval(l
 	if err := _FixedProductMarketMaker.contract.UnpackLog(event, "Approval", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1043,6 +1111,7 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerFilterer) ParseFPMMBuy(lo
 	if err := _FixedProductMarketMaker.contract.UnpackLog(event, "FPMMBuy", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1188,6 +1257,7 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerFilterer) ParseFPMMFundin
 	if err := _FixedProductMarketMaker.contract.UnpackLog(event, "FPMMFundingAdded", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1334,6 +1404,7 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerFilterer) ParseFPMMFundin
 	if err := _FixedProductMarketMaker.contract.UnpackLog(event, "FPMMFundingRemoved", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1491,6 +1562,7 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerFilterer) ParseFPMMSell(l
 	if err := _FixedProductMarketMaker.contract.UnpackLog(event, "FPMMSell", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1644,5 +1716,6 @@ func (_FixedProductMarketMaker *FixedProductMarketMakerFilterer) ParseTransfer(l
 	if err := _FixedProductMarketMaker.contract.UnpackLog(event, "Transfer", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }

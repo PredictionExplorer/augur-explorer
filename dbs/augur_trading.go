@@ -11,13 +11,13 @@ import (
 	"encoding/hex"
 	_  "github.com/lib/pq"
 
-	ztypes "github.com/0xProject/0x-mesh/common/types"
-	"github.com/0xProject/0x-mesh/zeroex"
+	//ztypes "github.com/0xProject/0x-mesh/common/types"
+	//"github.com/0xProject/0x-mesh/zeroex"
 	"github.com/ethereum/go-ethereum/common"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,evt *p.EOrderEvent,submitted_orders map[string]*ztypes.OrderInfo,order_specs map[string]*p.ZxMeshOrderSpec) {
+func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,evt *p.EOrderEvent,submitted_orders map[string]*p.OrderInfo0x,order_specs map[string]*p.ZxMeshOrderSpec) {
 
 	// depending on the order action (Create/Cancel/Fill) different table is used for storage
 	//		Create/Cancel order actions go to 'oorders' (Open Orders) table because these orders
@@ -186,7 +186,7 @@ func (ss *SQLStorage) Delete_market_order_evt(tx_id int64) {
 }
 func (ss *SQLStorage) Update_open_order_history(mktord_id int64,order_hash string,timestamp int64,amount_filled string,opcode int) {
 }
-func (ss *SQLStorage) Insert_open_order(ohash *string,order *zeroex.SignedOrder,fillable_amount *big.Int,acct_addr *common.Address,ospec *p.ZxMeshOrderSpec,opcode int,evt_timestamp int64) error {
+func (ss *SQLStorage) Insert_open_order(ohash *string,order *p.SignedOrder,fillable_amount *big.Int,acct_addr *common.Address,ospec *p.ZxMeshOrderSpec,opcode int,evt_timestamp int64) error {
 	// Insert an open order, this order needs to be Filled by another market participant
 	// It also can be canceled by its creator (with another transaction)
 	var err error
@@ -317,7 +317,7 @@ func (ss *SQLStorage) Delete_cancel_open_order_evt(tx_id int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Cancel_open_order(aid int64,orders map[string]*ztypes.OrderInfo,order_specs map[string]*p.ZxMeshOrderSpec,order_hash string,timestamp int64) {
+func (ss *SQLStorage) Cancel_open_order(aid int64,orders map[string]*p.OrderInfo0x,order_specs map[string]*p.ZxMeshOrderSpec,order_hash string,timestamp int64) {
 
 	oinfo := orders[order_hash]
 	if oinfo == nil {
@@ -372,7 +372,7 @@ func (ss *SQLStorage) Delete_open_0x_order(order_hash string,timestamp int64,opc
 		ss.Info.Printf(fmt.Sprintf("DB error: couldn't delete open order with order_hash = %v (not found)\n",order_hash))
 	}
 }
-func (ss *SQLStorage) Update_0x_order_on_partial_fill(oinfo *ztypes.OrderInfo) {
+func (ss *SQLStorage) Update_0x_order_on_partial_fill(oinfo *p.OrderInfo0x) {
 
 	order_hash := oinfo.OrderHash.String()
 	amount := oinfo.FillableTakerAssetAmount.String()
@@ -1390,7 +1390,7 @@ func (ss *SQLStorage) Get_mdepth_status(market_aid int64,outcome_idx int,last_oo
 	ss.Info.Printf("num_orders=%v, last_oo_id=%v\n",status.NumOrders,status.LastOOID)
 	return status,nil
 }
-func (ss *SQLStorage) Update_oo_fillable_amount(order_hash string,order *zeroex.SignedOrder) {
+func (ss *SQLStorage) Update_oo_fillable_amount(order_hash string,order *p.SignedOrder) {
 	// Return value: 0 - no need to update, 1 - updated incorrect amount, 2 - order doesn't exist
 	var order_amount string
 	var query string
