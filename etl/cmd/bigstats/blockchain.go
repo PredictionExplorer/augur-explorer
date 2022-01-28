@@ -138,6 +138,7 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 		if agtx.From == "0x0000000000000000000000000000000000000000" {
 			continue // this is Polygon's automatic transaction
 		}
+		agtx.TxIndex = int32(tnum)
 		tmp_log_slice := make([]AddrStatsLog,0,2)
 		from_addr := common.HexToAddress(agtx.From)
 		from_aid,_:= lookup_or_insert_addr(from_addr)
@@ -188,6 +189,7 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 			)
 			return total_eth,errors.New("Block changed during processing")
 		}
+		Info.Printf("Tx index = %v\n",agtx.TxIndex)
 		tx_fee := big.NewInt(int64(rcpt.GasUsed))
 		gas_price := big.NewInt(0)
 		gas_price.SetString(agtx.GasPrice,10)
@@ -211,7 +213,6 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 		big_value.SetString(agtx.Value,10)
 		total_eth.Add(total_eth,big_value)
 		agtx.GasUsed = int64(rcpt.GasUsed)
-		agtx.TxIndex = int32(tnum)
 		agtx.NumLogs = int32(len(rcpt.Logs))
 		logs_to_insert := extract_addresses_from_event_logs(agtx,rcpt.Logs)
 		if len(logs_to_insert) > 0 {
@@ -253,7 +254,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		receipt_calls = make([]*receiptCallResult,num_transactions,num_transactions)
 		for i,tx := range transactions {
 			hash := common.HexToHash(tx.TxHash)
-			go get_receipt_async(i,hash,&receipt_calls)
+			go get_receipt_async_custom_rpc(i,hash,&receipt_calls)
 		}
 	}
 	err = storage.Bigstats_insert_block(block_hash_str,header,num_transactions,no_chainsplit_check)

@@ -29,7 +29,7 @@ CREATE TABLE bs_period(
 	UNIQUE(time_stamp)
 );
 CREATE TABLE bs_log(
-	block_num			BIGINT NOT NULL,
+	block_num			BIGINT NOT NULL REFERENCES bs_block(block_num) ON DELETE CASCADE,
 	tx_index			BIGINT NOT NULL,
 	aid					BIGINT NOT NULL,
 	PRIMARY KEY(block_num,tx_index,aid)

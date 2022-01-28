@@ -36,11 +36,20 @@ type rpcBlock struct {
 }
 type receiptCallResult struct {
 	receipt		*types.Receipt
+	extra		*ReceiptExtraInfo
 	err			error
 	idx			int
 }
+type rcptExtraInfo struct {
+	EffectiveGasPrice string	`json: effectiveGasPrice,omitempty`
+	CumulativeGasUsed string	`json: "cumulativeGasUsed,omitempty"`
+}
+type ReceiptExtraInfo struct {
+	EffectiveGasPrice			*big.Int
+	CumulativeGasUsed			uint64
+}
 /*
-// senderFromServer is a types.Signer that remembers the sender address returned by the RPC
+// senderFromServer is a types.Signer that remembers the sender address returned by the RPCng.
 // server. It is stored in the transaction's sender address cache to avoid an additional
 // request in TransactionSender.
 type senderFromServer struct {
@@ -76,6 +85,11 @@ func get_full_block(bnum int64) (common.Hash,*types.Header,[]*AugurTx,error) {
 		/*if tx.From != nil {
 			setSenderFromServer(tx.tx, *tx.From, body.Hash)
 		}*/
+		Info.Printf("block %v, index %v, hash = %v\n",bnum,i,tx.tx.Hash().String())
+		Info.Printf("gasPrice=%v\n",tx.tx.GasPrice().String())
+		Info.Printf("gasTipCap=%v\n",tx.tx.GasTipCap().String())
+		Info.Printf("gasFeeCap=%v\n",tx.tx.GasFeeCap().String())
+		Info.Printf("Value=%v\n",tx.tx.Value().String())
 		agtx := new(AugurTx)
 		agtx.BlockNum = bnum
 		agtx.TxHash = tx.txExtraInfo.Hash.String()
@@ -117,6 +131,44 @@ func get_receipt_async(idx int,tx_hash common.Hash,receipt_results *[]*receiptCa
 	result := new(receiptCallResult)
 	result.receipt,result.err = eclient.TransactionReceipt(ctx,tx_hash)
 	result.idx = idx
+	(*receipt_results)[idx]=result
+}
+func get_receipt_async_custom_rpc(idx int,tx_hash common.Hash,receipt_results *[]*receiptCallResult) {
+	ctx := context.Background()
+	result := new(receiptCallResult)
+	var raw json.RawMessage
+	err := rpcclient.CallContext(ctx, &raw,"eth_getTransactionReceipt", tx_hash)
+	result.idx = idx
+	if err != nil {
+		result.err = err
+	} else {
+		extra := new(ReceiptExtraInfo)
+		rcpt := new(types.Receipt)
+		err = json.Unmarshal(raw, &rcpt);
+		if err != nil {
+			Error.Printf("Error unmarshalling receipt object : %v\n",err)
+		}
+		var rcpt_extra rcptExtraInfo
+		err = json.Unmarshal(raw, rcpt_extra)
+		if err != nil {
+			Error.Printf("Error unmarshalling receipt extra data : %v\n",err)
+			result.err=err
+		}
+		cum_gas,err := hexutil.DecodeUint64(rcpt_extra.CumulativeGasUsed)
+		if err != nil {
+			Error.Printf("Error parsing CumulativeGas %v: %v\n",rcpt_extra.CumulativeGasUsed,err)
+		}
+		extra.CumulativeGasUsed = cum_gas
+		egasp,err := hexutil.DecodeBig(rcpt_extra.EffectiveGasPrice)
+		if err != nil {
+			Error.Printf("Error parsing EffectiveGasPrice %v : %v\n",rcpt_extra.EffectiveGasPrice,err)
+			result.err=err
+		}
+		extra.EffectiveGasPrice = egasp
+		Info.Printf("CumulativeGas=%v, EffectiveGasPrice=%v\n",extra.CumulativeGasUsed,extra.EffectiveGasPrice)
+		result.receipt = rcpt
+		result.extra = extra
+	}
 	(*receipt_results)[idx]=result
 }
 func get_block_receipts(block_hash common.Hash) (types.Receipts,error) {
