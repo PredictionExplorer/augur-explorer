@@ -26,7 +26,7 @@ cd ../..
 cd cmd/erc20
 go build ./
 cd ../..
-cd cmd/arbitrum-augur
+cd cmd/augur-turbo
 go build ./
 cd ../..
 cd cmd/polymarkets

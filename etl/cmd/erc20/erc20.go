@@ -125,7 +125,7 @@ func proc_erc20_transfer(evt_id int64) error {
 	}
 	mevt.From= common.BytesToAddress(log.Topics[1][12:])
 	mevt.To= common.BytesToAddress(log.Topics[2][12:])
-	err = erc20_abi.Unpack(&mevt,"Transfer",log.Data)
+	err = erc20_abi.UnpackIntoInterface(&mevt,"Transfer",log.Data)
 	if err != nil {
 
 		Error.Printf("signature=%v\n",log.Topics[0].String())
@@ -268,7 +268,7 @@ func main() {
 	}
 	caddrs = &caddrs_obj
 
-	abi_parsed := strings.NewReader(OwnedERC20ABI)
+	abi_parsed := strings.NewReader(ERC20ABI)
 	erc20_abi,err = abi.JSON(abi_parsed)
 	if err != nil {
 		Info.Printf("Can't parse ERC20 token ABI")

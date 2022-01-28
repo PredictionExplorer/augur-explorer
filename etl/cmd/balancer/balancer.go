@@ -252,7 +252,7 @@ func execute_event(e *EthereumEventLog,log *types.Log) error {
 		token_in := common.BytesToAddress(log.Topics[2][12:])
 
 		var joinevt ELOG_JOIN
-		err := bpool_abi.Unpack(&joinevt,"LOG_JOIN",log.Data)
+		err := bpool_abi.UnpackIntoInterface(&joinevt,"LOG_JOIN",log.Data)
 		if err != nil {
 			Error.Printf("Event LOG_JOIN, decode error: %v",err)
 			os.Exit(1)
@@ -279,7 +279,7 @@ func execute_event(e *EthereumEventLog,log *types.Log) error {
 		token_out := common.BytesToAddress(log.Topics[2][12:])
 
 		var exitevt ELOG_EXIT
-		err := bpool_abi.Unpack(&exitevt,"LOG_EXIT",log.Data)
+		err := bpool_abi.UnpackIntoInterface(&exitevt,"LOG_EXIT",log.Data)
 		if err != nil {
 			Error.Printf("Event LOG_EXIT, decode error: %v",err)
 			os.Exit(1)
@@ -305,7 +305,7 @@ func execute_event(e *EthereumEventLog,log *types.Log) error {
 		}
 
 		var swapevt ELOG_SWAP
-		err := bpool_abi.Unpack(&swapevt,"LOG_SWAP",log.Data)
+		err := bpool_abi.UnpackIntoInterface(&swapevt,"LOG_SWAP",log.Data)
 		if err != nil {
 			Error.Printf("Event LOG_SWAP, decode error: %v",err)
 			os.Exit(1)

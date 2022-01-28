@@ -103,7 +103,7 @@ func proc_erc1155_transfer_single(evtlog *EthereumEventLog) error {
 	mevt.Operator = common.BytesToAddress(log.Topics[1][12:])
 	mevt.From = common.BytesToAddress(log.Topics[2][12:])
 	mevt.To= common.BytesToAddress(log.Topics[3][12:])
-	err = erc1155_abi.Unpack(&mevt,"TransferSingle",log.Data)
+	err = erc1155_abi.UnpackIntoInterface(&mevt,"TransferSingle",log.Data)
 	if err != nil {
 		Error.Printf("signature=%v\n",log.Topics[0].String())
 		Error.Printf("address=%v\n",log.Address.String())
@@ -141,7 +141,7 @@ func proc_erc1155_transfer_batch(evtlog *EthereumEventLog) error {
 	mevt.Operator = common.BytesToAddress(log.Topics[1][12:])
 	mevt.From = common.BytesToAddress(log.Topics[2][12:])
 	mevt.To= common.BytesToAddress(log.Topics[3][12:])
-	err = erc1155_abi.Unpack(&mevt,"TransferBatch",log.Data)
+	err = erc1155_abi.UnpackIntoInterface(&mevt,"TransferBatch",log.Data)
 	if err != nil {
 		Error.Printf("signature=%v\n",log.Topics[0].String())
 		Error.Printf("address=%v\n",log.Address.String())
@@ -198,7 +198,7 @@ func proc_erc1155_uri(evtlog *EthereumEventLog) {
 	}
 	eth_evt.Id = common.BytesToHash(log.Topics[1][:]).Big()
 
-	err = erc1155_abi.Unpack(&eth_evt,"URI",log.Data)
+	err = erc1155_abi.UnpackIntoInterface(&eth_evt,"URI",log.Data)
 	if err != nil {
 		Error.Printf("Event URI decode error: %v",err)
 		os.Exit(1)

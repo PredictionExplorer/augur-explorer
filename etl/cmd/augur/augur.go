@@ -1572,7 +1572,7 @@ func decode_0x_orders(input_data []byte,method_sig []byte) (map[string]*OrderInf
 			order_info.OrderHash.SetBytes(h.Bytes())
 			order_info.SignedOrder=new(SignedOrder)
 			order_info.SignedOrder.Signature=make([]byte,len(decoded_signatures[i]))
-			order_info.SignedOrder.Order = ord
+			order_info.SignedOrder.Order0x = ord
 			order_info.FillableTakerAssetAmount = big.NewInt(0) // this value is incorrect, but we don't have the correct one
 			copy(order_info.SignedOrder.Signature,decoded_signatures[i])
 			output1[hash_str]=order_info
@@ -1601,30 +1601,45 @@ func dump_tx_input_if_known(tx_data []byte) {
 	decoded_sig ,_ := hex.DecodeString("78dc0eed")
 	if 0 == bytes.Compare(input_sig,decoded_sig) {
 		input_data_raw:= tx_data[4:]
-		var input_data ExecWalletTxInputStruct
+		//var input_data ExecWalletTxInputStruct
+		var input_data map[string]interface{}
+		/*type ExecWalletTxInputStruct struct {
+			To common.Address `abi:"_to"`
+			Data []byte `abi:"_data"`
+			Value *big.Int `abi:"_value"`
+			Payment *big.Int `abi:"_payment"`
+			ReferralAddress common.Address `abi:"_referralAddress"`
+			Fingerprint [32]byte `abi:"_fingerprint"`
+			DesiredSignerBalance *big.Int `abi:"_desiredSignerBalance"`
+			MaxExchangeRateInDai *big.Int `abi:"_maxExchangeRateInDai"`
+			RevertOnFailure bool `abi:"_revertOnFailure"`
+		}*/
+
 		method, err := wallet_abi.MethodById(decoded_sig)
 		if err != nil {
 			Fatalf("Method not found")
 		}
-		err = method.Inputs.Unpack(&input_data, input_data_raw)
+		err = method.Inputs.UnpackIntoMap(input_data, input_data_raw)
 		if err != nil {
 			Fatalf("Couldn't decode input of tx %v",err)
 		}
 		Info.Printf("ExecuteWalletTransaction {\n")
-		Info.Printf("\tto: %v\n",input_data.To.String())
-		Info.Printf("\tdata: %v\n",hex.EncodeToString(input_data.Data[:]))
-		Info.Printf("\tvalue: %v\n",input_data.Value.String())
-		Info.Printf("\tpayment: %v\n",input_data.Payment.String())
-		Info.Printf("\treferralAddress:  %v\n",input_data.ReferralAddress.String())
-		Info.Printf("\tfingerprint: %v\n",hex.EncodeToString(input_data.Fingerprint[:]))
-		Info.Printf("\tdesiredSignerBalance: %v\n",input_data.DesiredSignerBalance.String())
-		Info.Printf("\tmaxExchangeRateInDai: %v\n",input_data.MaxExchangeRateInDai.String())
-		Info.Printf("\trevertOnFaliure: %v\n",input_data.RevertOnFailure)
+		Info.Printf("\tto: %v\n",input_data["To"].(common.Address).String())
+		Info.Printf("\tdata: %v\n",hex.EncodeToString(input_data["Data"].([]byte)[:]))
+		Info.Printf("\tvalue: %v\n",input_data["Value"].(*big.Int).String())
+		Info.Printf("\tpayment: %v\n",input_data["Payment"].(*big.Int).String())
+		Info.Printf("\treferralAddress:  %v\n",input_data["ReferralAddress"].(common.Address).String())
+		fp := input_data["Fingerprint"].([32]byte)
+		Info.Printf("\tfingerprint: %v\n",hex.EncodeToString(fp[:]))
+		Info.Printf("\tdesiredSignerBalance: %v\n",input_data["DesiredSignerBalance"].(*big.Int).String())
+		Info.Printf("\tmaxExchangeRateInDai: %v\n",input_data["MaxExchangeRateInDai"].(*big.Int).String())
+		Info.Printf("\trevertOnFaliure: %v\n",input_data["RevertOnFailure"].(bool))
 		Info.Printf("}\n")
 
 		// check for internal transactions for the Wallet Registry contract
-		if len(input_data.Data) >= 4 {
-			input_sig := input_data.Data[:4]
+		d := input_data["Data"].([]byte)
+		if len(d) >= 4 {
+			input_sig := d[:4]
 			market_proceeds_sig ,_ := hex.DecodeString("db754422")
 			if 0 == bytes.Compare(input_sig,market_proceeds_sig) {
 				Info.Printf("augur_wallet_call: claimMarketProceeds()\n")
@@ -1638,7 +1653,7 @@ func dump_tx_input_if_known(tx_data []byte) {
 			zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
 			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
 				Info.Printf("augur_wallet_call: ZeroEx::trade()\n")
-				amounts := decode_original_fill_amount(input_data.Data[4:],zeroex_trade_sig)
+				amounts := decode_original_fill_amount(d[4:],zeroex_trade_sig)
 				for h,a := range amounts {
 					if a == nil {
 						Fatalf("amounts map contains null initial_order bigint")
@@ -1847,28 +1862,41 @@ func contains_execute_wallet_transaction_call(tx_data []byte) *ExecuteWalletTx {
 	input_sig := tx_data[:4]
 	if 0 == bytes.Compare(input_sig,exec_wtx_sig) {
 		input_data_raw:= tx_data[4:]
-		var input_data ExecWalletTxInputStruct
+		//var input_data ExecWalletTxInputStruct
+		var input_data map[string]interface{}
+		/*type ExecWalletTxInputStruct struct {
+			To common.Address `abi:"_to"`
+			Data []byte `abi:"_data"`
+			Value *big.Int `abi:"_value"`
+			Payment *big.Int `abi:"_payment"`
+			ReferralAddress common.Address `abi:"_referralAddress"`
+			Fingerprint [32]byte `abi:"_fingerprint"`
+			DesiredSignerBalance *big.Int `abi:"_desiredSignerBalance"`
+			MaxExchangeRateInDai *big.Int `abi:"_maxExchangeRateInDai"`
+			RevertOnFailure bool `abi:"_revertOnFailure"`
+		}*/
 		method, err := wallet_abi.MethodById(exec_wtx_sig)
 		if err != nil {
 			Fatalf("Method not found")
 		}
-		err = method.Inputs.Unpack(&input_data, input_data_raw)
+		err = method.Inputs.UnpackIntoMap(input_data, input_data_raw)
 		if err != nil {
 			Fatalf("Couldn't decode input of tx %v",err)
 		}
 		exec_wtx:=new(ExecuteWalletTx)
-		exec_wtx.To=input_data.To.String()
-		exec_wtx.CallData=hex.EncodeToString(input_data.Data[:])
-		if len(input_data.Data)>=4 {
-			exec_wtx.InputSig=hex.EncodeToString(input_data.Data[:4])
+		exec_wtx.To=input_data["To"].(common.Address).String()
+		exec_wtx.CallData=hex.EncodeToString(input_data["Data"].([]byte)[:])
+		if len(input_data["Data"].([]byte))>=4 {
+			exec_wtx.InputSig=hex.EncodeToString(input_data["Data"].([]byte)[:4])
 		}
-		exec_wtx.Value=input_data.Value.String()
-		exec_wtx.Payment=input_data.Payment.String()
-		exec_wtx.ReferralAddress=input_data.ReferralAddress.String()
-		exec_wtx.Fingerprint=hex.EncodeToString(input_data.Fingerprint[:])
-		exec_wtx.DesiredSignerBalance=input_data.DesiredSignerBalance.String()
-		exec_wtx.MaxExchangeRateInDAI=input_data.MaxExchangeRateInDai.String()
-		exec_wtx.RevertOnFailure=input_data.RevertOnFailure
+		exec_wtx.Value=input_data["Value"].(*big.Int).String()
+		exec_wtx.Payment=input_data["Payment"].(*big.Int).String()
+		exec_wtx.ReferralAddress=input_data["ReferralAddress"].(common.Address).String()
+		fp := input_data["Fingerprint"].([32]byte)
+		exec_wtx.Fingerprint=hex.EncodeToString(fp[:])
+		exec_wtx.DesiredSignerBalance=input_data["DesiredSignerBalance"].(*big.Int).String()
+		exec_wtx.MaxExchangeRateInDAI=input_data["MaxExchangeRateInDai"].(*big.Int).String()
+		exec_wtx.RevertOnFailure=input_data["RevertOnFailure"].(bool)
 		return exec_wtx
 	}
 	return nil
@@ -1883,28 +1911,40 @@ func extract_orders_from_input(tx_data []byte) (map[string]*OrderInfo0x,map[stri
 	decoded_sig ,_ := hex.DecodeString("78dc0eed")
 	if 0 == bytes.Compare(input_sig,decoded_sig) {
 		input_data_raw:= tx_data[4:]
-		var input_data ExecWalletTxInputStruct
+		//var input_data ExecWalletTxInputStruct
+		var input_data map[string]interface{}
+		/*type ExecWalletTxInputStruct struct {
+			To common.Address `abi:"_to"`
+			Data []byte `abi:"_data"`
+			Value *big.Int `abi:"_value"`
+			Payment *big.Int `abi:"_payment"`
+			ReferralAddress common.Address `abi:"_referralAddress"`
+			Fingerprint [32]byte `abi:"_fingerprint"`
+			DesiredSignerBalance *big.Int `abi:"_desiredSignerBalance"`
+			MaxExchangeRateInDai *big.Int `abi:"_maxExchangeRateInDai"`
+			RevertOnFailure bool `abi:"_revertOnFailure"`
+		}*/
 		method, err := wallet_abi.MethodById(decoded_sig)
 		if err != nil {
 			Fatalf("Method not found")
 		}
-		err = method.Inputs.Unpack(&input_data, input_data_raw)
+		err = method.Inputs.UnpackIntoMap(input_data, input_data_raw)
 		if err != nil {
 			Fatalf("Couldn't decode input of tx %v",err)
 		}
 
 		// check for internal transactions for the Wallet Registry contract
-		if len(input_data.Data) >= 4 {
-			input_sig := input_data.Data[:4]
+		if len(input_data["Data"].([]byte)) >= 4 {
+			input_sig := input_data["Data"].([]byte)[:4]
 			zeroex_trade_sig ,_ := hex.DecodeString("2f562016")
 			if 0 == bytes.Compare(input_sig,zeroex_trade_sig) {
 				Info.Printf("augur_wallet_call: ZeroEx::trade()\n")
-				return decode_0x_orders(input_data.Data[4:],zeroex_trade_sig)
+				return decode_0x_orders(input_data["Data"].([]byte)[4:],zeroex_trade_sig)
 			}
 			zeroex_cancel_sig,_ := hex.DecodeString("4ea96c30")
 			if 0 == bytes.Compare(input_sig,zeroex_cancel_sig) {
 				Info.Printf("augur_wallet_call: ZeroEx::cancelOrder()\n")
-				return decode_0x_orders(input_data.Data[4:],zeroex_cancel_sig)
+				return decode_0x_orders(input_data["Data"].([]byte)[4:],zeroex_cancel_sig)
 			}
 		}
 	} else {

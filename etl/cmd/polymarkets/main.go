@@ -250,7 +250,7 @@ func main() {
 	}
 	erc1155_abi = &ab3
 
-	abi_parsed4 := strings.NewReader(OwnedERC20ABI)
+	abi_parsed4 := strings.NewReader(ERC20ABI)
 	ab4,err := abi.JSON(abi_parsed4)
 	if err != nil {
 		Info.Printf("Can't parse ERC20 token ABI")

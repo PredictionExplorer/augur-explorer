@@ -212,7 +212,7 @@ func find_requester(tx_id int64,amount *big.Int) *common.Address {
 		var log types.Log
 		rlp.DecodeBytes(rlog,&log)
 		var transf ETransfer
-		err := pair_abi.Unpack(&transf,"Transfer",log.Data)
+		err := pair_abi.UnpackIntoInterface(&transf,"Transfer",log.Data)
 		if err != nil {
 			Error.Printf("Error unpacking Transfer event to find swap requester: %v\n",err)
 			os.Exit(1)
@@ -278,7 +278,7 @@ func execute_event(e *EthereumEventLog,log *types.Log) error {
 		var evt UPairSwap
 		evt.Sender = common.BytesToAddress(log.Topics[1][12:])
 		evt.To = common.BytesToAddress(log.Topics[2][12:])
-		err := pair_abi.Unpack(&evt,"Swap",log.Data)
+		err := pair_abi.UnpackIntoInterface(&evt,"Swap",log.Data)
 		if err != nil {
 			Error.Printf("Can't decode uniswap Swap event: %v\n",err)
 			os.Exit(1)

@@ -214,7 +214,7 @@ func proc_name_registered1(log *types.Log,evt_id,tx_id,timestamp int64) {
 	}
 	evt.TxHash = log.TxHash.String()
 	var eth_event NameRegistered_v1
-	err := ens_abi.Unpack(&eth_event,"NameRegistered1",log.Data)
+	err := ens_abi.UnpackIntoInterface(&eth_event,"NameRegistered1",log.Data)
 	if err != nil {
 		Error.Printf("Error upacking NameRegistered1: %v\n",err)
 		Info.Printf("Error upacking NameRegistered1: %v\n",err)
@@ -337,7 +337,7 @@ func proc_name_renewed(log *types.Log,evt_id,tx_id,timestamp int64) {
 	}
 	evt.TxHash = log.TxHash.String()
 	var eth_event NameRenewed
-	err := ens_abi.Unpack(&eth_event,"NameRenewed",log.Data)
+	err := ens_abi.UnpackIntoInterface(&eth_event,"NameRenewed",log.Data)
 	if err != nil {
 		Error.Printf("Error upacking NameRenewed: %v\n",err)
 		Info.Printf("Error upacking NameRenewed: %v\n",err)
@@ -391,7 +391,7 @@ func proc_name_migrated(log *types.Log,evt_id,tx_id,timestamp int64) {
 	}
 	evt.TxHash = log.TxHash.String()
 	var eth_event NameMigrated
-	err := ens_abi.Unpack(&eth_event,"NameMigrated",log.Data)
+	err := ens_abi.UnpackIntoInterface(&eth_event,"NameMigrated",log.Data)
 	if err != nil {
 		Error.Printf("Error upacking NameMigrated: %v\n",err)
 		Info.Printf("Error upacking NameMigrated: %v\n",err)
@@ -533,7 +533,7 @@ func proc_address_changed2(log *types.Log,evt_id,tx_id,timestamp int64) {
 	Info.Printf("AddressChanged(2) (addr= %v ) (node: %v ) (coin: %v) \n",evt.Address,evt.FQDN,evt.CoinType)
 	evt.Contract = log.Address.String()
 	var eth_event AddressChanged
-	err := ens_abi.Unpack(&eth_event,"AddressChanged",log.Data)
+	err := ens_abi.UnpackIntoInterface(&eth_event,"AddressChanged",log.Data)
 	if err != nil {
 		Error.Printf("Error upacking AddressChanged: %v\n",err)
 		Info.Printf("Error upacking AddressChanged: %v\n",err)
@@ -571,7 +571,7 @@ func proc_name_registered3(log *types.Log,evt_id,tx_id,timestamp int64) {
 	}
 
 	var eth_event NameRegistered_v3
-	err := ens_abi.Unpack(&eth_event,"NameRegistered3",log.Data)
+	err := ens_abi.UnpackIntoInterface(&eth_event,"NameRegistered3",log.Data)
 	if err != nil {
 		Error.Printf("Error upacking NameRegistered3: %v\n",err)
 		Info.Printf("Error upacking NameRegistered3: %v\n",err)
@@ -641,7 +641,7 @@ func proc_name_changed(log *types.Log,evt_id,tx_id,timestamp int64) {
 	Info.Printf("NameChanged (name= %v ) (coin: %v) \n",evt.Name,evt.Node)
 	evt.Contract = log.Address.String()
 	var eth_event NameChanged
-	err := ens_abi.Unpack(&eth_event,"NameChanged",log.Data)
+	err := ens_abi.UnpackIntoInterface(&eth_event,"NameChanged",log.Data)
 	if err != nil {
 		Error.Printf("Error upacking NameChanged: %v\n",err)
 		Info.Printf("Error upacking NameChanged: %v\n",err)
@@ -672,7 +672,7 @@ func proc_hash_invalidated(log *types.Log,evt_id,tx_id,timestamp int64) {
 	}
 
 	var eth_event HashInvalidated
-	err := ens_abi.Unpack(&eth_event,"HashInvalidated",log.Data)
+	err := ens_abi.UnpackIntoInterface(&eth_event,"HashInvalidated",log.Data)
 	if err != nil {
 		Error.Printf("Error upacking HashInvalidated: %v\n",err)
 		Info.Printf("Error upacking HashInvalidated: %v\n",err)
@@ -972,7 +972,7 @@ func proc_hash_registered(log *types.Log,evt_id,tx_id,timestamp int64) {
 	}
 
 	var eth_event HashRegistered
-	err := ens_abi.Unpack(&eth_event,"HashRegistered",log.Data)
+	err := ens_abi.UnpackIntoInterface(&eth_event,"HashRegistered",log.Data)
 	if err != nil {
 		Error.Printf("Error upacking HashRegistered: %v\n",err)
 		Info.Printf("Error upacking HashRegistered: %v\n",err)
@@ -1061,7 +1061,7 @@ func proc_pubkey_changed(log *types.Log,evt_id,tx_id,timestamp int64) {
 	}
 
 	var eth_event PubkeyChanged
-	err := ens_abi.Unpack(&eth_event,"PubkeyChanged",log.Data)
+	err := ens_abi.UnpackIntoInterface(&eth_event,"PubkeyChanged",log.Data)
 	if err != nil {
 		Error.Printf("Error upacking PubkeyChanged: %v\n",err)
 		Info.Printf("Error upacking PubkeyChanged: %v\n",err)
@@ -1115,7 +1115,7 @@ func proc_contenthash_changed(log *types.Log,evt_id,tx_id,timestamp int64) {
 	}
 
 	var eth_event ContenthashChanged
-	err := ens_abi.Unpack(&eth_event,"ContenthashChanged",log.Data)
+	err := ens_abi.UnpackIntoInterface(&eth_event,"ContenthashChanged",log.Data)
 	if err != nil {
 		Error.Printf("Error upacking ContentHashChanged: %v\n",err)
 		Info.Printf("Error upacking ContentHashChanged: %v\n",err)

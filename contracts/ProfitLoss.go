@@ -30,7 +30,7 @@ var (
 
 // ProfitLossMetaData contains all meta data concerning the ProfitLoss contract.
 var ProfitLossMetaData = &bind.MetaData{
-	ABI: "[{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_trader\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_fees\",\"type\":\"uint256\"}],\"name\":\"adjustTraderProfitForFees\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIAugur\",\"name\":\"_augur\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256[]\",\"name\":\"_outcomeFees\",\"type\":\"uint256[]\"}],\"name\":\"recordClaim\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIUniverse\",\"name\":\"_universe\",\"type\":\"address\"},{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"int256\",\"name\":\"_frozenFundDelta\",\"type\":\"int256\"}],\"name\":\"recordFrozenFundChange\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIUniverse\",\"name\":\"_universe\",\"type\":\"address\"},{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_longAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_shortAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"int256\",\"name\":\"_amount\",\"type\":\"int256\"},{\"internalType\":\"int256\",\"name\":\"_price\",\"type\":\"int256\"},{\"internalType\":\"uint256\",\"name\":\"_numLongTokens\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_numShortTokens\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_numLongShares\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_numShortShares\",\"type\":\"uint256\"}],\"name\":\"recordTrade\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_trader\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_fees\",\"type\":\"uint256\"}],\"name\":\"adjustTraderProfitForFees\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"augur\",\"outputs\":[{\"internalType\":\"contractIAugur\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"augurTrading\",\"outputs\":[{\"internalType\":\"contractIAugurTrading\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"cancelOrder\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"createOrder\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"fillOrder\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"}],\"name\":\"getAvgPrice\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"}],\"name\":\"getFrozenFunds\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"getInitialized\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"}],\"name\":\"getNetPosition\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"}],\"name\":\"getRealizedCost\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"}],\"name\":\"getRealizedProfit\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIAugur\",\"name\":\"_augur\",\"type\":\"address\"},{\"internalType\":\"contractIAugurTrading\",\"name\":\"_augurTrading\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"orders\",\"outputs\":[{\"internalType\":\"contractIOrders\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256[]\",\"name\":\"_outcomeFees\",\"type\":\"uint256[]\"}],\"name\":\"recordClaim\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIUniverse\",\"name\":\"_universe\",\"type\":\"address\"},{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"int256\",\"name\":\"_frozenFundDelta\",\"type\":\"int256\"}],\"name\":\"recordFrozenFundChange\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contractIUniverse\",\"name\":\"_universe\",\"type\":\"address\"},{\"internalType\":\"contractIMarket\",\"name\":\"_market\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_longAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_shortAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_outcome\",\"type\":\"uint256\"},{\"internalType\":\"int256\",\"name\":\"_amount\",\"type\":\"int256\"},{\"internalType\":\"int256\",\"name\":\"_price\",\"type\":\"int256\"},{\"internalType\":\"uint256\",\"name\":\"_numLongTokens\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_numShortTokens\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_numLongShares\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_numShortShares\",\"type\":\"uint256\"}],\"name\":\"recordTrade\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"shareToken\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
 // ProfitLossABI is the input ABI used to generate the binding from.
@@ -179,6 +179,409 @@ func (_ProfitLoss *ProfitLossTransactorRaw) Transact(opts *bind.TransactOpts, me
 	return _ProfitLoss.Contract.contract.Transact(opts, method, params...)
 }
 
+// Augur is a free data retrieval call binding the contract method 0x7a0d8f8a.
+//
+// Solidity: function augur() view returns(address)
+func (_ProfitLoss *ProfitLossCaller) Augur(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _ProfitLoss.contract.Call(opts, &out, "augur")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// Augur is a free data retrieval call binding the contract method 0x7a0d8f8a.
+//
+// Solidity: function augur() view returns(address)
+func (_ProfitLoss *ProfitLossSession) Augur() (common.Address, error) {
+	return _ProfitLoss.Contract.Augur(&_ProfitLoss.CallOpts)
+}
+
+// Augur is a free data retrieval call binding the contract method 0x7a0d8f8a.
+//
+// Solidity: function augur() view returns(address)
+func (_ProfitLoss *ProfitLossCallerSession) Augur() (common.Address, error) {
+	return _ProfitLoss.Contract.Augur(&_ProfitLoss.CallOpts)
+}
+
+// AugurTrading is a free data retrieval call binding the contract method 0x8e1bfa73.
+//
+// Solidity: function augurTrading() view returns(address)
+func (_ProfitLoss *ProfitLossCaller) AugurTrading(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _ProfitLoss.contract.Call(opts, &out, "augurTrading")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// AugurTrading is a free data retrieval call binding the contract method 0x8e1bfa73.
+//
+// Solidity: function augurTrading() view returns(address)
+func (_ProfitLoss *ProfitLossSession) AugurTrading() (common.Address, error) {
+	return _ProfitLoss.Contract.AugurTrading(&_ProfitLoss.CallOpts)
+}
+
+// AugurTrading is a free data retrieval call binding the contract method 0x8e1bfa73.
+//
+// Solidity: function augurTrading() view returns(address)
+func (_ProfitLoss *ProfitLossCallerSession) AugurTrading() (common.Address, error) {
+	return _ProfitLoss.Contract.AugurTrading(&_ProfitLoss.CallOpts)
+}
+
+// CancelOrder is a free data retrieval call binding the contract method 0x6a816548.
+//
+// Solidity: function cancelOrder() view returns(address)
+func (_ProfitLoss *ProfitLossCaller) CancelOrder(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _ProfitLoss.contract.Call(opts, &out, "cancelOrder")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// CancelOrder is a free data retrieval call binding the contract method 0x6a816548.
+//
+// Solidity: function cancelOrder() view returns(address)
+func (_ProfitLoss *ProfitLossSession) CancelOrder() (common.Address, error) {
+	return _ProfitLoss.Contract.CancelOrder(&_ProfitLoss.CallOpts)
+}
+
+// CancelOrder is a free data retrieval call binding the contract method 0x6a816548.
+//
+// Solidity: function cancelOrder() view returns(address)
+func (_ProfitLoss *ProfitLossCallerSession) CancelOrder() (common.Address, error) {
+	return _ProfitLoss.Contract.CancelOrder(&_ProfitLoss.CallOpts)
+}
+
+// CreateOrder is a free data retrieval call binding the contract method 0x6512e6ec.
+//
+// Solidity: function createOrder() view returns(address)
+func (_ProfitLoss *ProfitLossCaller) CreateOrder(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _ProfitLoss.contract.Call(opts, &out, "createOrder")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// CreateOrder is a free data retrieval call binding the contract method 0x6512e6ec.
+//
+// Solidity: function createOrder() view returns(address)
+func (_ProfitLoss *ProfitLossSession) CreateOrder() (common.Address, error) {
+	return _ProfitLoss.Contract.CreateOrder(&_ProfitLoss.CallOpts)
+}
+
+// CreateOrder is a free data retrieval call binding the contract method 0x6512e6ec.
+//
+// Solidity: function createOrder() view returns(address)
+func (_ProfitLoss *ProfitLossCallerSession) CreateOrder() (common.Address, error) {
+	return _ProfitLoss.Contract.CreateOrder(&_ProfitLoss.CallOpts)
+}
+
+// FillOrder is a free data retrieval call binding the contract method 0x5c1ad844.
+//
+// Solidity: function fillOrder() view returns(address)
+func (_ProfitLoss *ProfitLossCaller) FillOrder(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _ProfitLoss.contract.Call(opts, &out, "fillOrder")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// FillOrder is a free data retrieval call binding the contract method 0x5c1ad844.
+//
+// Solidity: function fillOrder() view returns(address)
+func (_ProfitLoss *ProfitLossSession) FillOrder() (common.Address, error) {
+	return _ProfitLoss.Contract.FillOrder(&_ProfitLoss.CallOpts)
+}
+
+// FillOrder is a free data retrieval call binding the contract method 0x5c1ad844.
+//
+// Solidity: function fillOrder() view returns(address)
+func (_ProfitLoss *ProfitLossCallerSession) FillOrder() (common.Address, error) {
+	return _ProfitLoss.Contract.FillOrder(&_ProfitLoss.CallOpts)
+}
+
+// GetAvgPrice is a free data retrieval call binding the contract method 0x60f6e77e.
+//
+// Solidity: function getAvgPrice(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossCaller) GetAvgPrice(opts *bind.CallOpts, _market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	var out []interface{}
+	err := _ProfitLoss.contract.Call(opts, &out, "getAvgPrice", _market, _account, _outcome)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// GetAvgPrice is a free data retrieval call binding the contract method 0x60f6e77e.
+//
+// Solidity: function getAvgPrice(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossSession) GetAvgPrice(_market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ProfitLoss.Contract.GetAvgPrice(&_ProfitLoss.CallOpts, _market, _account, _outcome)
+}
+
+// GetAvgPrice is a free data retrieval call binding the contract method 0x60f6e77e.
+//
+// Solidity: function getAvgPrice(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossCallerSession) GetAvgPrice(_market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ProfitLoss.Contract.GetAvgPrice(&_ProfitLoss.CallOpts, _market, _account, _outcome)
+}
+
+// GetFrozenFunds is a free data retrieval call binding the contract method 0x7b459892.
+//
+// Solidity: function getFrozenFunds(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossCaller) GetFrozenFunds(opts *bind.CallOpts, _market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	var out []interface{}
+	err := _ProfitLoss.contract.Call(opts, &out, "getFrozenFunds", _market, _account, _outcome)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// GetFrozenFunds is a free data retrieval call binding the contract method 0x7b459892.
+//
+// Solidity: function getFrozenFunds(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossSession) GetFrozenFunds(_market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ProfitLoss.Contract.GetFrozenFunds(&_ProfitLoss.CallOpts, _market, _account, _outcome)
+}
+
+// GetFrozenFunds is a free data retrieval call binding the contract method 0x7b459892.
+//
+// Solidity: function getFrozenFunds(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossCallerSession) GetFrozenFunds(_market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ProfitLoss.Contract.GetFrozenFunds(&_ProfitLoss.CallOpts, _market, _account, _outcome)
+}
+
+// GetInitialized is a free data retrieval call binding the contract method 0xee89dab4.
+//
+// Solidity: function getInitialized() view returns(bool)
+func (_ProfitLoss *ProfitLossCaller) GetInitialized(opts *bind.CallOpts) (bool, error) {
+	var out []interface{}
+	err := _ProfitLoss.contract.Call(opts, &out, "getInitialized")
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// GetInitialized is a free data retrieval call binding the contract method 0xee89dab4.
+//
+// Solidity: function getInitialized() view returns(bool)
+func (_ProfitLoss *ProfitLossSession) GetInitialized() (bool, error) {
+	return _ProfitLoss.Contract.GetInitialized(&_ProfitLoss.CallOpts)
+}
+
+// GetInitialized is a free data retrieval call binding the contract method 0xee89dab4.
+//
+// Solidity: function getInitialized() view returns(bool)
+func (_ProfitLoss *ProfitLossCallerSession) GetInitialized() (bool, error) {
+	return _ProfitLoss.Contract.GetInitialized(&_ProfitLoss.CallOpts)
+}
+
+// GetNetPosition is a free data retrieval call binding the contract method 0xc908ffa7.
+//
+// Solidity: function getNetPosition(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossCaller) GetNetPosition(opts *bind.CallOpts, _market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	var out []interface{}
+	err := _ProfitLoss.contract.Call(opts, &out, "getNetPosition", _market, _account, _outcome)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// GetNetPosition is a free data retrieval call binding the contract method 0xc908ffa7.
+//
+// Solidity: function getNetPosition(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossSession) GetNetPosition(_market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ProfitLoss.Contract.GetNetPosition(&_ProfitLoss.CallOpts, _market, _account, _outcome)
+}
+
+// GetNetPosition is a free data retrieval call binding the contract method 0xc908ffa7.
+//
+// Solidity: function getNetPosition(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossCallerSession) GetNetPosition(_market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ProfitLoss.Contract.GetNetPosition(&_ProfitLoss.CallOpts, _market, _account, _outcome)
+}
+
+// GetRealizedCost is a free data retrieval call binding the contract method 0x714e9eb4.
+//
+// Solidity: function getRealizedCost(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossCaller) GetRealizedCost(opts *bind.CallOpts, _market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	var out []interface{}
+	err := _ProfitLoss.contract.Call(opts, &out, "getRealizedCost", _market, _account, _outcome)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// GetRealizedCost is a free data retrieval call binding the contract method 0x714e9eb4.
+//
+// Solidity: function getRealizedCost(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossSession) GetRealizedCost(_market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ProfitLoss.Contract.GetRealizedCost(&_ProfitLoss.CallOpts, _market, _account, _outcome)
+}
+
+// GetRealizedCost is a free data retrieval call binding the contract method 0x714e9eb4.
+//
+// Solidity: function getRealizedCost(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossCallerSession) GetRealizedCost(_market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ProfitLoss.Contract.GetRealizedCost(&_ProfitLoss.CallOpts, _market, _account, _outcome)
+}
+
+// GetRealizedProfit is a free data retrieval call binding the contract method 0x994ad2e1.
+//
+// Solidity: function getRealizedProfit(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossCaller) GetRealizedProfit(opts *bind.CallOpts, _market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	var out []interface{}
+	err := _ProfitLoss.contract.Call(opts, &out, "getRealizedProfit", _market, _account, _outcome)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// GetRealizedProfit is a free data retrieval call binding the contract method 0x994ad2e1.
+//
+// Solidity: function getRealizedProfit(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossSession) GetRealizedProfit(_market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ProfitLoss.Contract.GetRealizedProfit(&_ProfitLoss.CallOpts, _market, _account, _outcome)
+}
+
+// GetRealizedProfit is a free data retrieval call binding the contract method 0x994ad2e1.
+//
+// Solidity: function getRealizedProfit(address _market, address _account, uint256 _outcome) view returns(int256)
+func (_ProfitLoss *ProfitLossCallerSession) GetRealizedProfit(_market common.Address, _account common.Address, _outcome *big.Int) (*big.Int, error) {
+	return _ProfitLoss.Contract.GetRealizedProfit(&_ProfitLoss.CallOpts, _market, _account, _outcome)
+}
+
+// Orders is a free data retrieval call binding the contract method 0x4fb764c9.
+//
+// Solidity: function orders() view returns(address)
+func (_ProfitLoss *ProfitLossCaller) Orders(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _ProfitLoss.contract.Call(opts, &out, "orders")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// Orders is a free data retrieval call binding the contract method 0x4fb764c9.
+//
+// Solidity: function orders() view returns(address)
+func (_ProfitLoss *ProfitLossSession) Orders() (common.Address, error) {
+	return _ProfitLoss.Contract.Orders(&_ProfitLoss.CallOpts)
+}
+
+// Orders is a free data retrieval call binding the contract method 0x4fb764c9.
+//
+// Solidity: function orders() view returns(address)
+func (_ProfitLoss *ProfitLossCallerSession) Orders() (common.Address, error) {
+	return _ProfitLoss.Contract.Orders(&_ProfitLoss.CallOpts)
+}
+
+// ShareToken is a free data retrieval call binding the contract method 0x6c9fa59e.
+//
+// Solidity: function shareToken() view returns(address)
+func (_ProfitLoss *ProfitLossCaller) ShareToken(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _ProfitLoss.contract.Call(opts, &out, "shareToken")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// ShareToken is a free data retrieval call binding the contract method 0x6c9fa59e.
+//
+// Solidity: function shareToken() view returns(address)
+func (_ProfitLoss *ProfitLossSession) ShareToken() (common.Address, error) {
+	return _ProfitLoss.Contract.ShareToken(&_ProfitLoss.CallOpts)
+}
+
+// ShareToken is a free data retrieval call binding the contract method 0x6c9fa59e.
+//
+// Solidity: function shareToken() view returns(address)
+func (_ProfitLoss *ProfitLossCallerSession) ShareToken() (common.Address, error) {
+	return _ProfitLoss.Contract.ShareToken(&_ProfitLoss.CallOpts)
+}
+
 // AdjustTraderProfitForFees is a paid mutator transaction binding the contract method 0x5310dd31.
 //
 // Solidity: function adjustTraderProfitForFees(address _market, address _trader, uint256 _outcome, uint256 _fees) returns(bool)
@@ -200,25 +603,25 @@ func (_ProfitLoss *ProfitLossTransactorSession) AdjustTraderProfitForFees(_marke
 	return _ProfitLoss.Contract.AdjustTraderProfitForFees(&_ProfitLoss.TransactOpts, _market, _trader, _outcome, _fees)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xc4d66de8.
+// Initialize is a paid mutator transaction binding the contract method 0x485cc955.
 //
-// Solidity: function initialize(address _augur) returns()
-func (_ProfitLoss *ProfitLossTransactor) Initialize(opts *bind.TransactOpts, _augur common.Address) (*types.Transaction, error) {
-	return _ProfitLoss.contract.Transact(opts, "initialize", _augur)
+// Solidity: function initialize(address _augur, address _augurTrading) returns()
+func (_ProfitLoss *ProfitLossTransactor) Initialize(opts *bind.TransactOpts, _augur common.Address, _augurTrading common.Address) (*types.Transaction, error) {
+	return _ProfitLoss.contract.Transact(opts, "initialize", _augur, _augurTrading)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xc4d66de8.
+// Initialize is a paid mutator transaction binding the contract method 0x485cc955.
 //
-// Solidity: function initialize(address _augur) returns()
-func (_ProfitLoss *ProfitLossSession) Initialize(_augur common.Address) (*types.Transaction, error) {
-	return _ProfitLoss.Contract.Initialize(&_ProfitLoss.TransactOpts, _augur)
+// Solidity: function initialize(address _augur, address _augurTrading) returns()
+func (_ProfitLoss *ProfitLossSession) Initialize(_augur common.Address, _augurTrading common.Address) (*types.Transaction, error) {
+	return _ProfitLoss.Contract.Initialize(&_ProfitLoss.TransactOpts, _augur, _augurTrading)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xc4d66de8.
+// Initialize is a paid mutator transaction binding the contract method 0x485cc955.
 //
-// Solidity: function initialize(address _augur) returns()
-func (_ProfitLoss *ProfitLossTransactorSession) Initialize(_augur common.Address) (*types.Transaction, error) {
-	return _ProfitLoss.Contract.Initialize(&_ProfitLoss.TransactOpts, _augur)
+// Solidity: function initialize(address _augur, address _augurTrading) returns()
+func (_ProfitLoss *ProfitLossTransactorSession) Initialize(_augur common.Address, _augurTrading common.Address) (*types.Transaction, error) {
+	return _ProfitLoss.Contract.Initialize(&_ProfitLoss.TransactOpts, _augur, _augurTrading)
 }
 
 // RecordClaim is a paid mutator transaction binding the contract method 0x45a684bb.

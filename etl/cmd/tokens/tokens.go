@@ -54,7 +54,7 @@ func proc_erc20_transfer(log *types.Log,agtx *AugurTx,evtlog_id int64) {
 	mevt.From= common.BytesToAddress(log.Topics[1][12:])
 	mevt.To= common.BytesToAddress(log.Topics[2][12:])
 	start := time.Now()
-	err := cash_abi.Unpack(&mevt,"Transfer",log.Data)
+	err := cash_abi.UnpackIntoInterface(&mevt,"Transfer",log.Data)
 	duration := time.Since(start)
 	Info.Printf("BENCH cash_abi.Unpack() took %v micrsec\n",duration.Microseconds())
 	if err != nil {
@@ -142,7 +142,7 @@ func process_afoundry_wrapper_created_events() {
 		var evt EAugurFoundryWrapperCreated
 		evt.TokenId = big.NewInt(0)
 		evt.TokenId.SetBytes(log.Topics[1][:])
-		err := af_abi.Unpack(&evt,"WrapperCreated",log.Data)
+		err := af_abi.UnpackIntoInterface(&evt,"WrapperCreated",log.Data)
 		if err != nil {
 			Error.Printf("Error decoding WrapperCreated event: %v\n",err)
 			os.Exit(1)
@@ -200,7 +200,7 @@ func process_single_erc20wrapped_transfer_evt(wrapper_aid int64,decimals int,evt
 	}
 	transfer.From= common.BytesToAddress(log.Topics[1][12:])
 	transfer.To= common.BytesToAddress(log.Topics[2][12:])
-	err := cash_abi.Unpack(&transfer,"Transfer",log.Data)
+	err := cash_abi.UnpackIntoInterface(&transfer,"Transfer",log.Data)
 	if err !=  nil {
 		Error.Printf("Can't unpack Transfer event: %v\n",err)
 		os.Exit(1)

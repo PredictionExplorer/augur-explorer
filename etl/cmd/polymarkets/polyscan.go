@@ -151,7 +151,7 @@ func proc_condition_preparation(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Processing ConditionPreparation event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := condtoken_abi.Unpack(&eth_evt,"ConditionPreparation",log.Data)
+	err := condtoken_abi.UnpackIntoInterface(&eth_evt,"ConditionPreparation",log.Data)
 	if err != nil {
 		Error.Printf("Event ConditionPreparation decode error: %v",err)
 		os.Exit(1)
@@ -188,7 +188,7 @@ func proc_condition_resolution(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Processing ConditionResolution event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := condtoken_abi.Unpack(&eth_evt,"ConditionResolution",log.Data)
+	err := condtoken_abi.UnpackIntoInterface(&eth_evt,"ConditionResolution",log.Data)
 	if err != nil {
 		Error.Printf("Event ConditionResolution decode error: %v",err)
 		os.Exit(1)
@@ -258,7 +258,7 @@ func locate_token_transfers_pos_split_or_merge(contract_aid,tx_id,topping_evtlog
 			to := common.BytesToAddress(log.Topics[3][12:])
 			Info.Printf("Transfer single, %v -> %v\n",from.String(),to.String())
 			var eth_evt ETransferSingle
-			err = erc1155_abi.Unpack(&eth_evt,"TransferSingle",log.Data)
+			err = erc1155_abi.UnpackIntoInterface(&eth_evt,"TransferSingle",log.Data)
 			if err != nil {
 				Info.Printf("Can't unpack TransferSingle for tx_id=%v: %v\n",tx_id,err)
 				os.Exit(1)
@@ -277,7 +277,7 @@ func locate_token_transfers_pos_split_or_merge(contract_aid,tx_id,topping_evtlog
 			to := common.BytesToAddress(log.Topics[3][12:])
 			Info.Printf("Transfer batch, %v -> %v\n",from.String(),to.String())
 			var eth_evt ETransferBatch
-			err = erc1155_abi.Unpack(&eth_evt,"TransferBatch",log.Data)
+			err = erc1155_abi.UnpackIntoInterface(&eth_evt,"TransferBatch",log.Data)
 			if err != nil {
 				Info.Printf("Can't unpack TransferBatch for tx_id=%v: %v\n",tx_id,err)
 				os.Exit(1)
@@ -316,7 +316,7 @@ func proc_position_split(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Processing PositionSplit event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := condtoken_abi.Unpack(&eth_evt,"PositionSplit",log.Data)
+	err := condtoken_abi.UnpackIntoInterface(&eth_evt,"PositionSplit",log.Data)
 	if err != nil {
 		Error.Printf("Event PositionSplit decode error: %v",err)
 		os.Exit(1)
@@ -377,7 +377,7 @@ func proc_positions_merge(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Processing PositionMerge event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := condtoken_abi.Unpack(&eth_evt,"PositionsMerge",log.Data)
+	err := condtoken_abi.UnpackIntoInterface(&eth_evt,"PositionsMerge",log.Data)
 	if err != nil {
 		Error.Printf("Event PositionMerge decode error: %v",err)
 		os.Exit(1)
@@ -438,7 +438,7 @@ func proc_payout_redemption(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Processing PayoutRedemption event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := condtoken_abi.Unpack(&eth_evt,"PayoutRedemption",log.Data)
+	err := condtoken_abi.UnpackIntoInterface(&eth_evt,"PayoutRedemption",log.Data)
 	if err != nil {
 		Error.Printf("Event PayoutRedemption decode error: %v",err)
 		os.Exit(1)
@@ -518,7 +518,7 @@ func locate_erc20_usdc_amount(tx_id,contract_aid int64,is_to bool,addr common.Ad
 		}
 		mevt.From= common.BytesToAddress(log.Topics[1][12:])
 		mevt.To= common.BytesToAddress(log.Topics[2][12:])
-		err = erc20_abi.Unpack(&mevt,"Transfer",log.Data)
+		err = erc20_abi.UnpackIntoInterface(&mevt,"Transfer",log.Data)
 		if err != nil {
 			Error.Printf("locate_erc20_usdc_amount(): Event ERC20_Transfer, decode error: %v",err)
 			os.Exit(1)
@@ -545,7 +545,7 @@ func proc_funding_added(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Processing FundingAdded event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := fpmm_abi.Unpack(&eth_evt,"FPMMFundingAdded",log.Data)
+	err := fpmm_abi.UnpackIntoInterface(&eth_evt,"FPMMFundingAdded",log.Data)
 	if err != nil {
 		Error.Printf("Event FPMMFundingAdded decode error: %v",err)
 		os.Exit(1)
@@ -593,7 +593,7 @@ func proc_funding_removed(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Processing FundingRemoved event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := fpmm_abi.Unpack(&eth_evt,"FPMMFundingRemoved",log.Data)
+	err := fpmm_abi.UnpackIntoInterface(&eth_evt,"FPMMFundingRemoved",log.Data)
 	if err != nil {
 		Error.Printf("Event FPMMFundingAdded decode error: %v",err)
 		os.Exit(1)
@@ -642,7 +642,7 @@ func proc_fpmm_buy(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Processing FPMMBuy event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := fpmm_abi.Unpack(&eth_evt,"FPMMBuy",log.Data)
+	err := fpmm_abi.UnpackIntoInterface(&eth_evt,"FPMMBuy",log.Data)
 	if err != nil {
 		Error.Printf("Event FPMMBuy decode error: %v",err)
 		os.Exit(1)
@@ -680,7 +680,7 @@ func proc_fpmm_sell(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Processing FPMMBuy event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := fpmm_abi.Unpack(&eth_evt,"FPMMSell",log.Data)
+	err := fpmm_abi.UnpackIntoInterface(&eth_evt,"FPMMSell",log.Data)
 	if err != nil {
 		Error.Printf("Event FPMMBuy decode error: %v",err)
 		os.Exit(1)
@@ -723,7 +723,7 @@ func proc_uri(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Processing URI event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := condtoken_abi.Unpack(&eth_evt,"URI",log.Data)
+	err := condtoken_abi.UnpackIntoInterface(&eth_evt,"URI",log.Data)
 	if err != nil {
 		Error.Printf("Event URI decode error: %v",err)
 		os.Exit(1)

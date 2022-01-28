@@ -14,6 +14,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
+
+	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1362,7 +1364,7 @@ func (_ZeroX *ZeroXCallerSession) TotalSupply(id *big.Int) (*big.Int, error) {
 // UnpackTokenId is a free data retrieval call binding the contract method 0x26afd2e8.
 //
 // Solidity: function unpackTokenId(uint256 _tokenId) pure returns(address _market, uint256 _price, uint8 _outcome, uint8 _type)
-func (_ZeroX *ZeroXCaller) UnpackTokenId(opts *bind.CallOpts, _tokenId *big.Int) (struct {
+/*func (_ZeroX *ZeroXCaller) UnpackTokenId(opts *bind.CallOpts, _tokenId *big.Int) (struct {
 	Market  common.Address
 	Price   *big.Int
 	Outcome uint8
@@ -1388,8 +1390,24 @@ func (_ZeroX *ZeroXCaller) UnpackTokenId(opts *bind.CallOpts, _tokenId *big.Int)
 
 	return *outstruct, err
 
-}
+}*/
+func (_ZeroX *ZeroXCaller) UnpackTokenId(opts *bind.CallOpts, _tokenId *big.Int) (p.ZxMeshOrderSpec,error) {
+	var out []interface{}
+	err := _ZeroX.contract.Call(opts, &out, "unpackTokenId", _tokenId)
 
+	outstruct := new(p.ZxMeshOrderSpec)
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.Market = *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+	outstruct.Price = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+	outstruct.Outcome = *abi.ConvertType(out[2], new(uint8)).(*uint8)
+	outstruct.Type = *abi.ConvertType(out[3], new(uint8)).(*uint8)
+
+	return *outstruct, err
+
+}
 // UnpackTokenId is a free data retrieval call binding the contract method 0x26afd2e8.
 //
 // Solidity: function unpackTokenId(uint256 _tokenId) pure returns(address _market, uint256 _price, uint8 _outcome, uint8 _type)

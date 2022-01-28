@@ -36,7 +36,7 @@ func update_erc20_balances_backwards(lgr *log.Logger,contract_addr_str string,la
 	contract_addr := common.HexToAddress(contract_addr_str)
 	var copts = new(bind.CallOpts)
 	copts.BlockNumber = big.NewInt(int64(last_block_num))
-	erc20_token,err := NewOwnedERC20(contract_addr,eclient)
+	erc20_token,err := NewERC20(contract_addr,eclient)
 	if err != nil {
 		return 0,err
 	}
@@ -129,7 +129,7 @@ func balance_updater(lgr *log.Logger) {
 					copts.BlockNumber = big.NewInt(int64(erc20_bal.BlockNum)-1)	// previous block is used
 					contract_addr := common.HexToAddress(erc20_bal.ContractAddr)
 					addr := common.HexToAddress(erc20_bal.Address)
-					erc20_token,err := NewOwnedERC20(contract_addr,eclient)
+					erc20_token,err := NewERC20(contract_addr,eclient)
 					if err != nil {
 						lgr.Printf(
 							"XX %v XX %v XX: Can't instantiate ERC20 token contract: %v\n",

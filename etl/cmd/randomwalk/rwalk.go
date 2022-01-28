@@ -61,7 +61,7 @@ func proc_new_offer(log *types.Log,elog *EthereumEventLog) {
 	}*/
 	Info.Printf("Processing NewOffer event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := marketplace_abi.Unpack(&eth_evt,"NewOffer",log.Data)
+	err := marketplace_abi.UnpackIntoInterface(&eth_evt,"NewOffer",log.Data)
 	if err != nil {
 		Error.Printf("Event NewOffer decode error: %v",err)
 		os.Exit(1)
@@ -160,7 +160,7 @@ func proc_withdrawal(log *types.Log,elog *EthereumEventLog) {
 		return
 	}*/
 	Info.Printf("Processing WithdrawalEvent id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := randomwalk_abi.Unpack(&eth_evt,"WithdrawalEvent",log.Data)
+	err := randomwalk_abi.UnpackIntoInterface(&eth_evt,"WithdrawalEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event WithdrawalEvent decode error: %v",err)
 		os.Exit(1)
@@ -194,7 +194,7 @@ func proc_token_name(log *types.Log,elog *EthereumEventLog) {
 		return
 	}*/
 	Info.Printf("Processing TokenName id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := randomwalk_abi.Unpack(&eth_evt,"TokenNameEvent",log.Data)
+	err := randomwalk_abi.UnpackIntoInterface(&eth_evt,"TokenNameEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event TokenName decode error: %v",err)
 		os.Exit(1)
@@ -232,7 +232,7 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 	}*/
 	Info.Printf("Processing MintEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	err := randomwalk_abi.Unpack(&eth_evt,"MintEvent",log.Data)
+	err := randomwalk_abi.UnpackIntoInterface(&eth_evt,"MintEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event MintEvent decode error: %v",err)
 		os.Exit(1)

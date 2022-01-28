@@ -20,7 +20,7 @@ func convert_db_event_to_mesh_order(evt *MeshEvent) *OrderInfo0x {
 	oinfo.OrderHash = common.HexToHash(evt.OrderHash)
 	oinfo.FillableTakerAssetAmount = new(big.Int)
 	oinfo.FillableTakerAssetAmount.SetString(evt.FillableAmount,10)
-	oinfo.SignedOrder = new(zeroex.SignedOrder)
+	oinfo.SignedOrder = new(SignedOrder)
 	oinfo.SignedOrder.ChainID = new(big.Int)
 	oinfo.SignedOrder.ChainID.SetInt64(int64(evt.ChainId))
 	oinfo.SignedOrder.ExchangeAddress = common.HexToAddress(evt.ExchangeAddress)
@@ -47,7 +47,7 @@ func convert_db_event_to_mesh_order(evt *MeshEvent) *OrderInfo0x {
 
 	return oinfo
 }
-func oo_insert(order_hash *string,order *zeroex.SignedOrder,fillable_amount *big.Int,timestamp int64) error {
+func oo_insert(order_hash *string,order *SignedOrder,fillable_amount *big.Int,timestamp int64) error {
 
 	ctx := context.Background()
 	var copts = new(bind.CallOpts)
