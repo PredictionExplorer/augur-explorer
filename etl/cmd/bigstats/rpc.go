@@ -149,7 +149,7 @@ func get_receipt_async_custom_rpc(idx int,tx_hash common.Hash,receipt_results *[
 			Error.Printf("Error unmarshalling receipt object : %v\n",err)
 		}
 		var rcpt_extra rcptExtraInfo
-		err = json.Unmarshal(raw, rcpt_extra)
+		err = json.Unmarshal(raw, &rcpt_extra)
 		if err != nil {
 			Error.Printf("Error unmarshalling receipt extra data : %v\n",err)
 			result.err=err

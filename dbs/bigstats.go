@@ -62,6 +62,25 @@ func (ss *SQLStorage) Bigstats_get_last_block_num() (int64,bool) {
 		return -1,false
 	}
 }
+func (ss *SQLStorage) Bigstats_get_last_block_timestamp() int64 {
+
+	var query string
+	query = "SELECT EXTRACT(EPOCH FROM bs_block.ts)::BIGINT AS ts " +
+			"FROM "+ss.schema_name+".bs_block,"+ss.schema_name+".bs_config "+
+			"WHERE bs_config.last_block=bs_block.block_num"
+	row := ss.db.QueryRow(query)
+	var ts int64
+	var err error
+	err=row.Scan(&ts);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Bigstats_get_last_block_timestamp(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return ts
+}
 func (ss *SQLStorage) Bigstats_set_last_block_num(block_num int64) {
 
 	bnum := int64(block_num)
@@ -293,7 +312,7 @@ func (ss *SQLStorage) Bigstats_lookup_address_id(addr string) (int64,bool,error)
 	}
 	return aid,is_contract,nil
 }
-func (ss *SQLStorage) Insert_all_addr_stat_logs(entries []p.AddrStatsLog) {
+func (ss *SQLStorage) Bigstats_insert_all_addr_stat_logs(entries []p.AddrStatsLog) {
 
 	if len(entries) == 0 {
 		ss.Log_msg(fmt.Sprintf("Insert of address stats into log with empty array\n"))
@@ -321,13 +340,13 @@ func (ss *SQLStorage) Insert_all_addr_stat_logs(entries []p.AddrStatsLog) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Get_unique_accounts_counter_by_type(ts,duration int64,is_contract bool) int64 {
+func (ss *SQLStorage) Bigstats_get_unique_accounts_counter_by_type(ts,duration int64,is_contract bool) int64 {
 
 	var query string
 	query = "WITH data AS ("+
 					"SELECT " +
 						"DISTINCT aid aid "+
-					"FROM bs_log log "+
+					"FROM "+ss.schema_name+".bs_log log "+
 						"JOIN bs_block b ON log.block_num=bs.block_num " +
 						"JOIN bs_addr a ON log.aid=a.address_id "+
 					"WHERE (b.ts <= TO_TIMESTAMP($1)) AND (b.ts < TO_TIMESTAMP($2)" +
@@ -344,12 +363,12 @@ func (ss *SQLStorage) Get_unique_accounts_counter_by_type(ts,duration int64,is_c
 	}
 	return num_rows
 }
-func (ss *SQLStorage) Get_total_eth_transferred(ts,duration int64) float64 {
+func (ss *SQLStorage) Bigstats_get_total_eth_transferred(ts,duration int64) float64 {
 
 	var query string
 	query = "SELECT " +
 				"SUM(total_eth)/1e+18"+
-			"FROM bs_block "+
+			"FROM "+ss.schema_name+".bs_block "+
 			"WHERE (b.ts <= TO_TIMESTAMP($1)) AND (b.ts < TO_TIMESTAMP($2)"
 
 	ts_end := ts + duration
@@ -361,15 +380,15 @@ func (ss *SQLStorage) Get_total_eth_transferred(ts,duration int64) float64 {
 	}
 	return sum
 }
-func (ss *SQLStorage) Close_period(ts,duration int64) {
+func (ss *SQLStorage) Bigstats_close_period(ts,duration int64) {
 
 
-	human_account_count := ss.Get_unique_accounts_counter_by_type(ts,duration,false)
-	contract_account_count := ss.Get_unique_accounts_counter_by_type(ts,duration,true)
-	total_eth := ss.Get_total_eth_transferred(ts,duration)
+	human_account_count := ss.Bigstats_get_unique_accounts_counter_by_type(ts,duration,false)
+	contract_account_count := ss.Bigstats_get_unique_accounts_counter_by_type(ts,duration,true)
+	total_eth := ss.Bigstats_get_total_eth_transferred(ts,duration)
 
 	var query string
-	query = "INSERT INTO bs_period("+
+	query = "INSERT INTO "+ss.schema_name+".bs_period("+
 					"time_stamp,unique_addrs_eoa,unique_addrs_code,eth_transferred"+
 			") VALUES (TO_TIMESTAMP($1),$2,$3,$4)"
 
@@ -396,6 +415,29 @@ func (ss *SQLStorage) Close_period(ts,duration int64) {
 		ss.Log_msg(fmt.Sprintf("Couldnt insert record in bs_period table"))
 		os.Exit(1)
 	}
+}
+func (ss *SQLStorage) Bigstats_get_last_period() (int64,int64,error) {
+
+	var query string
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM time_stamp) AS ts,"+
+				"duration_sec "+
+			"FROM "+ss.schema_name+".bs_period "+
+			"ORDER BY time_stamp DESC "+
+			"LIMIT 1"
+	row := ss.db.QueryRow(query)
+	var null_time_stamp,null_duration sql.NullInt64
+	var err error
+	err=row.Scan(&null_time_stamp,&null_duration);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,0,nil
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Bigstats_get_last_period(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return null_time_stamp.Int64,null_duration.Int64,err
+
 }
 func (ss *SQLStorage) Bigstats_insert_transaction(tx *p.TxShort) {
 

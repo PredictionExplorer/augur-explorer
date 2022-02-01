@@ -147,8 +147,9 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 		to_aid,_:= lookup_or_insert_addr(to_addr)
 		tmp_log_slice = add_address_stat_entry(tmp_log_slice,agtx.BlockNum,int64(agtx.TxIndex),to_aid)
 
-		storage.Insert_all_addr_stat_logs(tmp_log_slice)
-		var rcpt *types.Receipt
+		storage.Bigstats_insert_all_addr_stat_logs(tmp_log_slice)
+		var rcpt *types.Receipt = nil
+		var rcpt_extra *ReceiptExtraInfo = nil
 		if receipt_calls != nil {
 			// wait for receipt to arrive
 			for {
@@ -169,6 +170,7 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 				return total_eth,receipt_calls[tnum].err
 			}
 			rcpt = receipt_calls[tnum].receipt
+			rcpt_extra = receipt_calls[tnum].extra
 		} else {
 			// receipts were fetched using eth_getBlockReceipts, we only need to reference the receipt
 			rcpt = block_receipts[tnum]
@@ -190,19 +192,25 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 			return total_eth,errors.New("Block changed during processing")
 		}
 		Info.Printf("Tx index = %v\n",agtx.TxIndex)
-		tx_fee := big.NewInt(int64(rcpt.GasUsed))
 		gas_price := big.NewInt(0)
 		gas_price.SetString(agtx.GasPrice,10)
-		Info.Printf("Multiplying gas used %v by gas price %v\n",tx_fee.String(),gas_price.String())
-		tx_fee.Mul(tx_fee,gas_price)
 		var tx_short TxShort
 		tx_short.BlockNum = bnum
 		tx_short.TxIndex = int64(agtx.TxIndex)
-		tx_short.TxFee = tx_fee.String()
+		if rcpt_extra == nil {
+			Info.Printf("Receipt Extra info struct is nil for tx %v\n",agtx.TxHash)
+			Error.Printf("Receipt Extra info struct is nil for tx %v\n",agtx.TxHash)
+			tx_short.TxFee = "0"
+		} else {
+			tx_fee := big.NewInt(int64(rcpt.GasUsed))
+			Info.Printf("Multiplying gas used %v by gas price %v\n",tx_fee.String(),rcpt_extra.EffectiveGasPrice.String())
+			tx_fee.Mul(tx_fee,rcpt_extra.EffectiveGasPrice)
+			tx_short.TxFee = tx_fee.String()
+		}
 		storage.Bigstats_insert_transaction(&tx_short)	// at this point we are sure Tx is without error
 		transaction_hash := common.HexToHash(agtx.TxHash)
 		if !bytes.Equal(rcpt.TxHash.Bytes(),transaction_hash.Bytes()) { // can be removed later
-			Error.Printf("Receipt's hash doesn't match Tx hash, aborting (tx_hash=%v)",agtx.TxHash)
+			Error.Printf("Receipt's hash doesn't match Tx hash, aborting (tx_hash=%v)\n",agtx.TxHash)
 			os.Exit(1)
 		}
 		agtx.TxId = 0
@@ -216,7 +224,7 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 		agtx.NumLogs = int32(len(rcpt.Logs))
 		logs_to_insert := extract_addresses_from_event_logs(agtx,rcpt.Logs)
 		if len(logs_to_insert) > 0 {
-			storage.Insert_all_addr_stat_logs(logs_to_insert)
+			storage.Bigstats_insert_all_addr_stat_logs(logs_to_insert)
 		}
 	}
 	return total_eth,nil
@@ -236,8 +244,8 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 	num_transactions := len(transactions)
 	Info.Printf("block %v hash = %v, num_tx=%v\n",bnum,block_hash_str,num_transactions)
 	if bnum!=header.Number.Int64() {
-		Info.Printf("Retrieved block number %v but Block object contains another number (%v)",bnum,header.Number.Int64())
-		Error.Printf("Retrieved block number %v but Block object contains another number (%v)",bnum,header.Number.Int64())
+		Info.Printf("Retrieved block number %v but Block object contains another number (%v)\n",bnum,header.Number.Int64())
+		Error.Printf("Retrieved block number %v but Block object contains another number (%v)\n",bnum,header.Number.Int64())
 		return errors.New("Block object inconsistency")
 	}
 	storage.Bigstats_block_delete_with_everything(big_bnum.Int64())
