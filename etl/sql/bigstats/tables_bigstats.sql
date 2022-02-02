@@ -2,7 +2,8 @@ CREATE TABLE bs_block (	-- bigstats block tracking table
 	block_num			BIGINT NOT NULL UNIQUE,
 	num_tx				BIGINT DEFAULT 0,
 	ts					TIMESTAMPTZ NOT NULL,
-	total_eth			DECIMAL(64,18) DEFAULT 0.0,
+	total_eth			DECIMAL DEFAULT 0,
+	total_fees			DECIMAL DEFAULT 0,
 	block_hash			CHAR(66) NOT NULL PRIMARY KEY,
 	parent_hash			CHAR(66) NOT NULL
 );
@@ -16,6 +17,7 @@ CREATE TABLE bs_stats(	-- statistics accumulator table (per block)
 	block_num			BIGINT NOT NULL REFERENCES bs_block(block_num) ON DELETE CASCADE,
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	total_eth			DECIMAL,
+	tx_fees				DECIMAL,
 	UNIQUE(block_num)
 );
 CREATE TABLE bs_period(
@@ -25,7 +27,8 @@ CREATE TABLE bs_period(
 	--- statistics
 	unique_addrs_eoa	BIGINT DEFAULT 0,
 	unique_addrs_code	BIGINT DEFAULT 0,-- contract accounts
-	eth_transferred		DECIMAL,
+	eth_transferred		DECIMAL DEFAULT 0,
+	tx_fees				DECIMAL DEFAULT 0,
 	UNIQUE(time_stamp)
 );
 CREATE TABLE bs_log(

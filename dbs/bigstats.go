@@ -81,6 +81,25 @@ func (ss *SQLStorage) Bigstats_get_last_block_timestamp() int64 {
 	}
 	return ts
 }
+func (ss *SQLStorage) Bigstats_get_first_block_timestamp() int64 {
+
+	var query string
+	query = "SELECT EXTRACT(EPOCH FROM bs_block.ts)::BIGINT AS ts " +
+			"FROM "+ss.schema_name+".bs_block "+
+			"ORDER BY ts LIMIT 1"
+	row := ss.db.QueryRow(query)
+	var ts int64
+	var err error
+	err=row.Scan(&ts);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Bigstats_get_last_block_timestamp(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return ts
+}
 func (ss *SQLStorage) Bigstats_set_last_block_num(block_num int64) {
 
 	bnum := int64(block_num)
@@ -242,15 +261,15 @@ func (ss *SQLStorage) Bigstats_insert_block(hash_str string,block *types.Header,
 	os.Exit(1)
 	return nil
 }
-func (ss *SQLStorage) Update_block_eth_transferred(block_num int64,total_eth *big.Int) {
+func (ss *SQLStorage) Update_block_stats(block_num int64,total_eth *big.Int,total_fees *big.Int) {
 
 	var query string
-	query = "UPDATE "+ss.schema_name+".bs_block SET total_eth=$2 WHERE block_num=$1"
-	_,err := ss.db.Exec(query,block_num,total_eth.String())
+	query = "UPDATE "+ss.schema_name+".bs_block SET total_eth=$2,total_fees=$3 WHERE block_num=$1"
+	_,err := ss.db.Exec(query,block_num,total_eth.String(),total_fees.String())
 	if err != nil {
 		ss.Log_msg(
 			fmt.Sprintf(
-				"DB error: can't update eth_transferred for block %v : %v: q=%v",
+				"DB error: can't update block stats for block %v : %v: q=%v",
 				block_num,err,query,
 			),
 		)
@@ -347,9 +366,9 @@ func (ss *SQLStorage) Bigstats_get_unique_accounts_counter_by_type(ts,duration i
 					"SELECT " +
 						"DISTINCT aid aid "+
 					"FROM "+ss.schema_name+".bs_log log "+
-						"JOIN bs_block b ON log.block_num=bs.block_num " +
-						"JOIN bs_addr a ON log.aid=a.address_id "+
-					"WHERE (b.ts <= TO_TIMESTAMP($1)) AND (b.ts < TO_TIMESTAMP($2)" +
+						"JOIN "+ss.schema_name+".bs_block b ON log.block_num=b.block_num " +
+						"JOIN "+ss.schema_name+".bs_addr a ON log.aid=a.address_id "+
+					"WHERE (TO_TIMESTAMP($1) <= b.ts) AND (b.ts < TO_TIMESTAMP($2))" +
 						"AND (a.is_contract = $3)"+
 				")"+
 			"SELECT COUNT(aid) FROM data"
@@ -358,7 +377,7 @@ func (ss *SQLStorage) Bigstats_get_unique_accounts_counter_by_type(ts,duration i
 	var num_rows int64
 	err:=ss.db.QueryRow(query,ts,ts_end,is_contract).Scan(&num_rows);
 	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error in getting address id : %v",err))
+		ss.Log_msg(fmt.Sprintf("DB error in Bigstats_get_unique_accounts_counter_by_type() : %v",err))
 		os.Exit(1)
 	}
 	return num_rows
@@ -368,17 +387,35 @@ func (ss *SQLStorage) Bigstats_get_total_eth_transferred(ts,duration int64) floa
 	var query string
 	query = "SELECT " +
 				"SUM(total_eth)/1e+18"+
-			"FROM "+ss.schema_name+".bs_block "+
-			"WHERE (b.ts <= TO_TIMESTAMP($1)) AND (b.ts < TO_TIMESTAMP($2)"
+			"FROM "+ss.schema_name+".bs_block b "+
+			"WHERE (TO_TIMESTAMP($1) <= b.ts) AND (b.ts < TO_TIMESTAMP($2))"
 
 	ts_end := ts + duration
-	var sum float64
+	var sum sql.NullFloat64
 	err:=ss.db.QueryRow(query,ts,ts_end).Scan(&sum);
 	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error in getting address id : %v",err))
+		ss.Log_msg(fmt.Sprintf("DB error in getting total ETH transferred : %v",err))
 		os.Exit(1)
 	}
-	return sum
+	return sum.Float64
+}
+func (ss *SQLStorage) Bigstats_get_tx_fees(ts,duration int64) float64 {
+
+	var query string
+	query = "SELECT " +
+				"SUM(tx_fee)/1e+18 fee "+
+			"FROM "+ss.schema_name+".bs_block b "+
+				"JOIN "+ss.schema_name+".bs_tx_short tx ON b.block_num=tx.block_num "+
+			"WHERE (TO_TIMESTAMP($1) <= b.ts) AND (b.ts < TO_TIMESTAMP($2))"
+
+	ts_end := ts + duration
+	var fees sql.NullFloat64
+	err:=ss.db.QueryRow(query,ts,ts_end).Scan(&fees);
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error in getting total tx fees : %v",err))
+		os.Exit(1)
+	}
+	return fees.Float64
 }
 func (ss *SQLStorage) Bigstats_close_period(ts,duration int64) {
 
@@ -386,17 +423,20 @@ func (ss *SQLStorage) Bigstats_close_period(ts,duration int64) {
 	human_account_count := ss.Bigstats_get_unique_accounts_counter_by_type(ts,duration,false)
 	contract_account_count := ss.Bigstats_get_unique_accounts_counter_by_type(ts,duration,true)
 	total_eth := ss.Bigstats_get_total_eth_transferred(ts,duration)
+	fees := ss.Bigstats_get_tx_fees(ts,duration)
 
 	var query string
 	query = "INSERT INTO "+ss.schema_name+".bs_period("+
-					"time_stamp,unique_addrs_eoa,unique_addrs_code,eth_transferred"+
-			") VALUES (TO_TIMESTAMP($1),$2,$3,$4)"
+					"time_stamp,duration_sec,unique_addrs_eoa,unique_addrs_code,eth_transferred,tx_fees"+
+			") VALUES (TO_TIMESTAMP($1),$2,$3,$4,$5,$6)"
 
 	result,err := ss.db.Exec(query,
 			ts,
+			duration,
 			human_account_count,
 			contract_account_count,
 			total_eth,
+			fees,
 	)
 	if err != nil {
 		ss.Log_msg(
@@ -420,7 +460,7 @@ func (ss *SQLStorage) Bigstats_get_last_period() (int64,int64,error) {
 
 	var query string
 	query = "SELECT "+
-				"EXTRACT(EPOCH FROM time_stamp) AS ts,"+
+			"EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ts,"+
 				"duration_sec "+
 			"FROM "+ss.schema_name+".bs_period "+
 			"ORDER BY time_stamp DESC "+

@@ -24,7 +24,7 @@ import (
 )
 const (
 
-	DEFAULT_STATISTICS_DURATION	int64 = 15*60	// in seconds
+	DEFAULT_STATISTICS_DURATION	int64 = 1*120	// in seconds
 	DEFAULT_WAIT_TIME = 2000	// 2 seconds
 	DEFAULT_DB_LOG				= "db.log"
 	//DEFAULT_LOG_DIR				= "ae_logs"
@@ -213,7 +213,7 @@ func main() {
 			Error.Printf("Block processing error: %v\n",err)
 			break
 		}
-		manage_stat_periods(DEFAULT_STATISTICS_DURATION)
+		manage_stat_periods(storage,DEFAULT_STATISTICS_DURATION)
 	}// for block_num
 	time.Sleep(DEFAULT_WAIT_TIME * time.Millisecond)
 	goto main_loop // infinite loop without loss of one indentation level

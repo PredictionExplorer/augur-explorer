@@ -129,11 +129,12 @@ func add_address_stat_entry(addr_stats_log []AddrStatsLog,block_num,tx_index,aid
 	addr_stats_log = append(addr_stats_log,entry)
 	return addr_stats_log
 }
-func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*receiptCallResult,block_receipts types.Receipts) (*big.Int,error) {
+func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*receiptCallResult,block_receipts types.Receipts) (*big.Int,*big.Int,error) {
 	//	if receipt_calls is not nil then the old slow getTrasnactionReceipt call is used
 	//	if block_receipts is not nil then we are using new getBlockReceipts RPC call
 
 	total_eth := big.NewInt(0)
+	total_fees := big.NewInt(0)
 	for tnum,agtx := range transactions {
 		if agtx.From == "0x0000000000000000000000000000000000000000" {
 			continue // this is Polygon's automatic transaction
@@ -167,7 +168,7 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 					"Failed to get Tx Receipt for %v, block num=%v. Aborting block processing: %v\n",
 					agtx.TxHash,bnum,receipt_calls[tnum].err,
 				)
-				return total_eth,receipt_calls[tnum].err
+				return total_eth,total_fees,receipt_calls[tnum].err
 			}
 			rcpt = receipt_calls[tnum].receipt
 			rcpt_extra = receipt_calls[tnum].extra
@@ -189,7 +190,7 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 				" cur_block_num=%v, receipt.block_num=%v\n",
 				bnum,rcpt.BlockNumber.Int64(),
 			)
-			return total_eth,errors.New("Block changed during processing")
+			return total_eth,total_fees,errors.New("Block changed during processing")
 		}
 		Info.Printf("Tx index = %v\n",agtx.TxIndex)
 		gas_price := big.NewInt(0)
@@ -206,6 +207,7 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 			Info.Printf("Multiplying gas used %v by gas price %v\n",tx_fee.String(),rcpt_extra.EffectiveGasPrice.String())
 			tx_fee.Mul(tx_fee,rcpt_extra.EffectiveGasPrice)
 			tx_short.TxFee = tx_fee.String()
+			total_fees.Add(total_fees,tx_fee)
 		}
 		storage.Bigstats_insert_transaction(&tx_short)	// at this point we are sure Tx is without error
 		transaction_hash := common.HexToHash(agtx.TxHash)
@@ -227,7 +229,7 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 			storage.Bigstats_insert_all_addr_stat_logs(logs_to_insert)
 		}
 	}
-	return total_eth,nil
+	return total_eth,total_fees,nil
 }
 func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) error {
 
@@ -276,8 +278,8 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		}
 		return nil
 	}
-	total_eth,err := process_transactions(bnum,transactions,receipt_calls,block_receipts)
-	storage.Update_block_eth_transferred(bnum,total_eth)
+	total_eth,total_fees,err := process_transactions(bnum,transactions,receipt_calls,block_receipts)
+	storage.Update_block_stats(bnum,total_eth,total_fees)
 	Info.Printf("block_proc: %v %v ; %v transactions\n",bnum,block_hash.String(),num_transactions)
 	if update_last_block {
 		storage.Bigstats_set_last_block_num(bnum)
