@@ -73,11 +73,6 @@ func (ss *SQLStorage) Get_contract_addresses() (p.ContractAddresses,error) {
 		&account_loader,
 	);
 	if (err!=nil) {
-		if err == sql.ErrNoRows {
-		} else {
-			ss.Log_msg(fmt.Sprintf("Error in Get_contract_addresses(): %v",err))
-			os.Exit(1)
-		}
 		return c_addresses,err
 	}
 	c_addresses.Augur=common.HexToAddress(augur)

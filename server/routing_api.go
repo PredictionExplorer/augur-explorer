@@ -152,6 +152,10 @@ func set_api_routing_randomwalk(r *gin.Engine) {
 	r.GET("/api/rwalk/user/info/:user_aid/:rwalk_addr",api_rwalk_user_info)
 	r.GET("/api/rwalk/top5tokens",api_rwalk_top5_traded_tokens)
 }
+func set_api_routing_statistics(r *gin.Engine) {
+
+	r.GET("/api/main_statistics/:init_ts/:fin_ts",api_stats_main_statistics)
+}
 func set_routing_api(r *gin.Engine) {
 	set_api_routing_augur_v2(r)
 	set_api_routing_uniswap(r)
@@ -161,4 +165,5 @@ func set_routing_api(r *gin.Engine) {
 	set_api_routing_augur_amm(r)
 	set_api_routing_polymarket(r)
 	set_api_routing_randomwalk(r)
+	set_api_routing_statistics(r)
 }

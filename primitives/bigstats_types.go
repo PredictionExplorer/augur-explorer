@@ -10,3 +10,11 @@ type TxShort struct {
 	TxIndex				int64
 	TxFee				string
 }
+type BigStatRec struct {
+	TimeStamp					int64
+	DateTime					string
+	NumUniqHumanAccts			int64
+	NumUniqContractAccts		int64
+	EthTransferred				float64
+	TxFeesEth					float64	// fees in ETH
+}

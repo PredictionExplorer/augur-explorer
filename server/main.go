@@ -46,7 +46,7 @@ func initialize() {
 
 	caddrs_obj,err := augur_srv.db_augur.Get_contract_addresses()
 	if err!=nil {
-		Fatalf("Can't find contract addresses in 'contract_addresses' table")
+		Info.Printf("Warning! Can't find contract addresses in 'contract_addresses' table, using null values: error text: %v",err)
 	}
 	caddrs=&caddrs_obj
 

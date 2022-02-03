@@ -142,6 +142,10 @@ func set_routing_randomwalk(r *gin.Engine) {
 	r.GET("/black/rwalk/user/info/:user_aid/:rwalk_addr",rwalk_user_info)
 	r.GET("/black/rwalk/download_mints/:rwalk_addr",rwalk_token_csv_export)
 }
+func set_routing_statistics(r *gin.Engine) {
+
+	r.GET("/black/main_statistics/:init_ts/:fin_ts",stats_main_statistics)
+}
 func set_routing_black_templates(r *gin.Engine) {
 
 	set_routing_augur_v2(r)
@@ -152,6 +156,7 @@ func set_routing_black_templates(r *gin.Engine) {
 	set_routing_augur_amm(r)
 	set_routing_polymarket(r)
 	set_routing_randomwalk(r)
+	set_routing_statistics(r)
 
 	r.GET("/black/ethusd/",show_ethusd_price)
 

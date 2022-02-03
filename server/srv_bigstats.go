@@ -1,10 +1,6 @@
 package main
 import (
-	"fmt"
 	"time"
-	"os"
-	"strconv"
-	"encoding/csv"
 	"net/http"
 	"github.com/gin-gonic/gin"
 
@@ -22,7 +18,7 @@ func stats_index_page(c *gin.Context) {
 		"Top5Tokens":top5tokens,
 	})
 }
-func rwalk_daily_stats_arbitrum(c *gin.Context) {
+func stats_main_statistics(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -34,11 +30,12 @@ func rwalk_daily_stats_arbitrum(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "rw_current_offers.html", gin.H{
-		"Offers" : offers,
-		"RWalkAid": rwalk_aid,
-		"RWalkAddr" : p_rwalk_addr,
-		"MarketAid": market_aid,
-		"MarketAddr" : p_market_addr,
+	records := augur_srv.db_arbitrum.Bigstats_get_statistics_by_period("st_arb",ini,fin)
+	c.HTML(http.StatusOK, "bigstats_statistics.html", gin.H{
+		"Statistics" : records,
+		"IniTs": ini,
+		"FinTs": fin,
+		"IniDate" : time.Unix(int64(ini),0).String(),
+		"FinDate":time.Unix(int64(fin),0).String(),
 	})
 }

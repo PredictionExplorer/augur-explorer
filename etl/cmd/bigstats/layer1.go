@@ -19,12 +19,13 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 
+	. "github.com/PredictionExplorer/augur-explorer/contracts"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 )
 const (
 
-	DEFAULT_STATISTICS_DURATION	int64 = 1*120	// in seconds
+	DEFAULT_STATISTICS_DURATION	int64 = 15*60 // in seconds
 	DEFAULT_WAIT_TIME = 2000	// 2 seconds
 	DEFAULT_DB_LOG				= "db.log"
 	//DEFAULT_LOG_DIR				= "ae_logs"

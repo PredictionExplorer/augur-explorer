@@ -14,7 +14,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Set_schema_name(name string) {
+func (ss *SQLStorage) Bigstats_set_schema_name(name string) {
 	ss.schema_name = name
 }
 func (ss *SQLStorage) Bigstats_get_stored_chain_id() int64 {
@@ -261,7 +261,7 @@ func (ss *SQLStorage) Bigstats_insert_block(hash_str string,block *types.Header,
 	os.Exit(1)
 	return nil
 }
-func (ss *SQLStorage) Update_block_stats(block_num int64,total_eth *big.Int,total_fees *big.Int) {
+func (ss *SQLStorage) Bigtsats_update_block_stats(block_num int64,total_eth *big.Int,total_fees *big.Int) {
 
 	var query string
 	query = "UPDATE "+ss.schema_name+".bs_block SET total_eth=$2,total_fees=$3 WHERE block_num=$1"
@@ -386,7 +386,7 @@ func (ss *SQLStorage) Bigstats_get_total_eth_transferred(ts,duration int64) floa
 
 	var query string
 	query = "SELECT " +
-				"SUM(total_eth)/1e+18"+
+				"SUM(total_eth)/1e+18 "+
 			"FROM "+ss.schema_name+".bs_block b "+
 			"WHERE (TO_TIMESTAMP($1) <= b.ts) AND (b.ts < TO_TIMESTAMP($2))"
 
@@ -403,18 +403,21 @@ func (ss *SQLStorage) Bigstats_get_tx_fees(ts,duration int64) float64 {
 
 	var query string
 	query = "SELECT " +
-				"SUM(tx_fee)/1e+18 fee "+
+				"SUM(tx_fee)/1e+18 fee, "+
+				"COUNT(b.block_num) "+
 			"FROM "+ss.schema_name+".bs_block b "+
 				"JOIN "+ss.schema_name+".bs_tx_short tx ON b.block_num=tx.block_num "+
 			"WHERE (TO_TIMESTAMP($1) <= b.ts) AND (b.ts < TO_TIMESTAMP($2))"
 
 	ts_end := ts + duration
 	var fees sql.NullFloat64
-	err:=ss.db.QueryRow(query,ts,ts_end).Scan(&fees);
+	var num_rows sql.NullInt64
+	err:=ss.db.QueryRow(query,ts,ts_end).Scan(&fees,&num_rows);
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error in getting total tx fees : %v",err))
 		os.Exit(1)
 	}
+	ss.Info.Printf("Bigstats_get_tx_fees(ts=%v), num_rows=%v, fees=%v\n",ts,num_rows.Int64,fees.Float64)
 	return fees.Float64
 }
 func (ss *SQLStorage) Bigstats_close_period(ts,duration int64) {
@@ -425,6 +428,7 @@ func (ss *SQLStorage) Bigstats_close_period(ts,duration int64) {
 	total_eth := ss.Bigstats_get_total_eth_transferred(ts,duration)
 	fees := ss.Bigstats_get_tx_fees(ts,duration)
 
+	ss.Info.Printf("Bigstats_close_period(ts=%v,duration=%v) fees: %v\n",ts,duration,fees)
 	var query string
 	query = "INSERT INTO "+ss.schema_name+".bs_period("+
 					"time_stamp,duration_sec,unique_addrs_eoa,unique_addrs_code,eth_transferred,tx_fees"+
@@ -493,4 +497,44 @@ func (ss *SQLStorage) Bigstats_insert_transaction(tx *p.TxShort) {
 		ss.Log_msg(fmt.Sprintf("Bigstats_insert_transaction() failed: %v",err))
 		os.Exit(1)
 	}
+}
+func (ss *SQLStorage) Bigstats_get_statistics_by_period(schemma string,ini_ts,fin_ts int) []p.BigStatRec {
+
+	var query string
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts,"+
+				"time_stamp,"+
+				"unique_addrs_eoa,"+
+				"unique_addrs_code,"+
+				"eth_transferred,"+
+				"tx_fees "+
+			"FROM "+schemma+".bs_period p "+
+			"WHERE (TO_TIMESTAMP($1) <= p.time_stamp) AND (p.time_stamp<TO_TIMESTAMP($2)) "+
+			"ORDER by time_stamp"
+
+	rows,err := ss.db.Query(query,ini_ts,fin_ts)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	records := make([]p.BigStatRec,0,256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BigStatRec
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.NumUniqHumanAccts,
+			&rec.NumUniqContractAccts,
+			&rec.EthTransferred,
+			&rec.TxFeesEth,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
 }
