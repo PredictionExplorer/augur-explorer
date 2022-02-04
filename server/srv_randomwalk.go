@@ -632,3 +632,39 @@ func rwalk_token_csv_export(c *gin.Context) {
 	f.Close()
 	c.File(fname)
 }
+func rwalk_token_info(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error(c,"Lookup of NFT token address in the Db has failed")
+		return
+	}
+	p_token_id := c.Param("token_id")
+	var token_id int64
+	if len(p_token_id) > 0 {
+		var success bool
+		token_id,success = parse_int_from_remote_or_error(c,HTTP,&p_token_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'token_id' parameter is not set")
+		return
+	}
+	token_info,err := augur_srv.db_arbitrum.Get_rwalk_token_info(rwalk_aid,token_id)
+	if err != nil {
+		respond_error(c,fmt.Sprintf("Error during query execution: %v",err))
+		return
+	}
+
+	c.HTML(http.StatusOK, "rw_token_info.html", gin.H{
+		"TokenInfo" : token_info,
+		"RWalkAddr": p_rwalk_addr,
+		"RWalkAid" : rwalk_aid,
+	})
+}

@@ -1,7 +1,7 @@
 /// API v1
 package main
 import (
-	//"fmt"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -631,5 +631,43 @@ func api_rwalk_floor_price_over_time(c *gin.Context) {
 		"InitTs" : ini,
 		"FinTs": fin,
 		"Interval": interval,
+	})
+}
+func api_rwalk_token_info(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_rwalk_addr := c.Param("rwalk_addr")
+	rwalk_aid,err := augur_srv.db_arbitrum.Nonfatal_lookup_address_id(p_rwalk_addr)
+	if err != nil {
+		respond_error_json(c,"Lookup of NFT token address in the Db has failed")
+		return
+	}
+	p_token_id := c.Param("token_id")
+	var token_id int64
+	if len(p_token_id) > 0 {
+		var success bool
+		token_id,success = parse_int_from_remote_or_error(c,HTTP,&p_token_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'token_id' parameter is not set")
+		return
+	}
+	token_info,err := augur_srv.db_arbitrum.Get_rwalk_token_info(rwalk_aid,token_id)
+	if err != nil {
+		respond_error_json(c,fmt.Sprintf("Error during query execution: %v",err))
+		return
+	}
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"TokenInfo" : token_info,
 	})
 }

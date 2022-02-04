@@ -13,7 +13,7 @@ rm ./etl/cmd/ensscan/tools/lookup
 rm ./etl/cmd/ensscan/tools/pk
 rm ./etl/cmd/ensscan/tools/check_ens
 rm ./etl/cmd/arbitrum/arbitrum
-rm ./etl/cmd/arbitrum-augur/arbitrum-augur
+rm ./etl/cmd/augur-turbo/augur-turbo
 rm ./etl/cmd/erc20/erc20
 rm ./etl/cmd/erc1155/erc1155
 rm ./etl/cmd/polysync/polysync
@@ -58,3 +58,15 @@ rm ./etl/cmd/randomwalk/scripts/mint
 rm ./etl/cmd/randomwalk/scripts/new_offer
 rm ./etl/cmd/randomwalk/scripts/setname
 rm ./etl/cmd/randomwalk/scripts/transfer
+rm ./etl/cmd/randomwalk/scripts/ownerof
+rm ./etl/cmd/randomwalk/scripts/price
+rm ./etl/cmd/randomwalk/tools/discord_bot
+rm ./etl/cmd/randomwalk/tools/discord_ch_name
+rm ./etl/cmd/randomwalk/tools/discord_user_limit
+rm ./etl/cmd/randomwalk/tools/rw_toprated
+rm ./etl/cmd/randomwalk/tools/twauthorize
+rm ./etl/cmd/randomwalk/tools/tweet_mints
+rm ./etl/cmd/randomwalk/tools/twitteroob
+rm ./etl/cmd/randomwalk/tools/twsend
+rm ./etl/cmd/randomwalk/tools/twsend_image
+rm ./etl/cmd/bigstats/bigstats
