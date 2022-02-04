@@ -154,7 +154,9 @@ func set_api_routing_randomwalk(r *gin.Engine) {
 }
 func set_api_routing_statistics(r *gin.Engine) {
 
-	r.GET("/api/main_statistics/:init_ts/:fin_ts",api_stats_main_statistics)
+	r.GET("/api/statistics/main_net/:init_ts/:fin_ts",api_stats_main_statistics_main_net)
+	r.GET("/api/statistics/arbitrum/:init_ts/:fin_ts",api_stats_main_statistics_arbitrum)
+	r.GET("/api/statistics/timeframe_ranges",api_stats_get_timeframe_ranges)
 }
 func set_routing_api(r *gin.Engine) {
 	set_api_routing_augur_v2(r)

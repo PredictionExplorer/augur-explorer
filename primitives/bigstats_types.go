@@ -18,3 +18,7 @@ type BigStatRec struct {
 	EthTransferred				float64
 	TxFeesEth					float64	// fees in ETH
 }
+type BigStatsTimeframeRange struct {
+	TsIni						int64
+	TsFin						int64
+}

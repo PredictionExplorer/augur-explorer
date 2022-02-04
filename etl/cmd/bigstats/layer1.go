@@ -19,7 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	. "github.com/PredictionExplorer/augur-explorer/contracts"
+	//. "github.com/PredictionExplorer/augur-explorer/contracts"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 )
@@ -56,7 +56,7 @@ var (
 type rpcBlockHash struct {
 	Hash		string
 }
-func read_block_numbers(fname string)  []int64 {
+func read_block_numbers(fname string) []int64 {
 	data,err := ioutil.ReadFile(fname)
 	if err != nil {
 		fmt.Printf("Can't open file %v containing comma-separated block numbers to be processed\n")
@@ -79,11 +79,19 @@ func read_block_numbers(fname string)  []int64 {
 func main() {
 
 	schema_name := flag.String("schema", "", "Schema name")
+	rpc_url := flag.String("rpc","","RPC URL")
 	flag.Parse()
 	if len(*schema_name) < 3 {
 		fmt.Printf("Schema name must be larger than 2 characters\n")
+		fmt.Printf("usage: %v --schema [schema_name] --rpc [rpc_url]\n",os.Args[0])
 		os.Exit(1)
 	}
+	if len(*rpc_url) < 1 {
+		fmt.Printf("RPC URL name must be non-empty\n")
+		fmt.Printf("usage: %v --schema [schema_name] --rpc [rpc_url]\n",os.Args[0])
+		os.Exit(1)
+	}
+
 
 	var rLimit syscall.Rlimit
 	rLimit.Max = 999999
@@ -93,12 +101,6 @@ func main() {
 		fmt.Println("Error Setting Rlimit ", err)
 		os.Exit(1)
 	}
-
-	if len(RPC_URL) == 0 {
-		Fatalf("Configuration error: RPC URL of Ethereum node is not set."+
-				" Please set AUGUR_ETH_NODE_RPC environment variable")
-	}
-
 
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 	os.MkdirAll(log_dir, os.ModePerm)
@@ -123,7 +125,7 @@ func main() {
 	max_approval.SetString(MAX_APPROVAL_BASE10,10)
 
 	Info.Printf("Selected schema name: %v\n",*schema_name)
-	rpcclient, err=rpc.DialContext(context.Background(), RPC_URL)
+	rpcclient, err=rpc.DialContext(context.Background(), *rpc_url)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -133,7 +135,7 @@ func main() {
 	storage = Connect_to_storage(&market_order_id,Info)
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
-	storage.Set_schema_name(*schema_name)
+	storage.Bigstats_set_schema_name(*schema_name)
 
 	ctx := context.Background()
 	stored_chain_id := storage.Bigstats_get_stored_chain_id()

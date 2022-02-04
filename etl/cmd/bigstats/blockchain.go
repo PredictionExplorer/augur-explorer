@@ -279,7 +279,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		return nil
 	}
 	total_eth,total_fees,err := process_transactions(bnum,transactions,receipt_calls,block_receipts)
-	storage.Update_block_stats(bnum,total_eth,total_fees)
+	storage.Bigstats_update_block_stats(bnum,total_eth,total_fees)
 	Info.Printf("block_proc: %v %v ; %v transactions\n",bnum,block_hash.String(),num_transactions)
 	if update_last_block {
 		storage.Bigstats_set_last_block_num(bnum)

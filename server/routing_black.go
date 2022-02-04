@@ -144,7 +144,9 @@ func set_routing_randomwalk(r *gin.Engine) {
 }
 func set_routing_statistics(r *gin.Engine) {
 
-	r.GET("/black/main_statistics/:init_ts/:fin_ts",stats_main_statistics)
+	r.GET("/black/statistics/main_net/:init_ts/:fin_ts",stats_main_statistics_main_net)
+	r.GET("/black/statistics/arbitrum/:init_ts/:fin_ts",stats_main_statistics_arbitrum)
+	r.GET("/black/statistics/",stats_index_page)
 }
 func set_routing_black_templates(r *gin.Engine) {
 

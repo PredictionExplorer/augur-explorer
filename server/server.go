@@ -33,6 +33,7 @@ type AugurServer struct {
 	db_augur		*SQLStorage
 	db_matic		*SQLStorage
 	db_arbitrum		*SQLStorage
+	db_main_net		*SQLStorage
 }
 func (self *AugurServer) matic_initialized() bool {
 
@@ -47,6 +48,40 @@ func (self *AugurServer) arbitrum_initialized() bool {
 		return false
 	}
 	return true
+}
+func (self *AugurServer) main_net_initialized() bool {
+
+	if self.db_main_net == nil {
+		return false
+	}
+	return true
+}
+func connect_to_main_net(srv *AugurServer) {
+	eth_user := os.Getenv("ETH_USERNAME")
+	eth_passwd := os.Getenv("ETH_PASSWORD")
+	eth_db_name := os.Getenv("ETH_DATABASE")
+	eth_host_port := os.Getenv("ETH_HOST")
+	fmt.Printf("connecting to eth main net\n")
+	if len(eth_user) > 0 {
+		log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
+		db_log_file:=fmt.Sprintf("%v/%v",log_dir,"mainnet-db.log")
+		eth_db_logfile, err := os.OpenFile(db_log_file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			fmt.Printf("Can't start: %v\n",err)
+			os.Exit(1)
+		}
+		ETH_DB := log.New(eth_db_logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
+
+		srv.db_main_net = New_sql_storage(
+			&market_order_id,
+			Info,
+			ETH_DB,
+			eth_host_port,
+			eth_db_name,
+			eth_user,
+			eth_passwd,
+		)
+	}
 }
 func connect_to_amm(srv *AugurServer) {
 	amm_user := os.Getenv("AMM_USERNAME")
@@ -129,6 +164,7 @@ func create_augur_server() *AugurServer {
 	srv.db_augur.Init_log(web_db_log_file)
 	connect_to_amm(srv)
 	connect_to_arbitrum(srv)
+	connect_to_main_net(srv)
 
 	return srv
 }

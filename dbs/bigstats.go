@@ -261,7 +261,7 @@ func (ss *SQLStorage) Bigstats_insert_block(hash_str string,block *types.Header,
 	os.Exit(1)
 	return nil
 }
-func (ss *SQLStorage) Bigtsats_update_block_stats(block_num int64,total_eth *big.Int,total_fees *big.Int) {
+func (ss *SQLStorage) Bigstats_update_block_stats(block_num int64,total_eth *big.Int,total_fees *big.Int) {
 
 	var query string
 	query = "UPDATE "+ss.schema_name+".bs_block SET total_eth=$2,total_fees=$3 WHERE block_num=$1"
@@ -537,4 +537,29 @@ func (ss *SQLStorage) Bigstats_get_statistics_by_period(schemma string,ini_ts,fi
 		records = append(records,rec)
 	}
 	return records
+}
+func (ss *SQLStorage) Bigstats_get_timeframe_range(schema_name string) p.BigStatsTimeframeRange {
+
+	var query string
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM MAX(time_stamp))::BIGINT,"+
+				"EXTRACT(EPOCH FROM MIN(time_stamp))::BIGINT "+
+			"FROM "+schema_name+".bs_period"
+	row := ss.db.QueryRow(query)
+	var null_min_ts,null_max_ts sql.NullInt64
+	var err error
+	err=row.Scan(&null_min_ts,&null_max_ts);
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Error in Bigstats_get_timeframe_range(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	var output p.BigStatsTimeframeRange
+	if null_min_ts.Valid {
+		output.TsIni = null_min_ts.Int64
+	}
+	if null_max_ts.Valid {
+		output.TsFin = null_max_ts.Int64
+	}
+
+	return output
 }
