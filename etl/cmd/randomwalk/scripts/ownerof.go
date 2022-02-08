@@ -13,7 +13,7 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
-	CONTRACT_ADDR string = "0xef33e68c8913e25586CaA0225c484ae39CAdFBd4"
+	CONTRACT_ADDR string = "0x895a6F444BE4ba9d124F61DF736605792B35D66b"
 )
 var (
 	RPC_URL string

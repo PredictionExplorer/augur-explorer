@@ -635,6 +635,7 @@ func api_rwalk_floor_price_over_time(c *gin.Context) {
 }
 func api_rwalk_token_info(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return

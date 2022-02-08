@@ -67,6 +67,11 @@ func proc_new_offer(log *types.Log,elog *EthereumEventLog) {
 		os.Exit(1)
 	}
 
+	if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to know address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -101,6 +106,10 @@ func proc_item_bought(log *types.Log,elog *EthereumEventLog) {
 	}*/
 	Info.Printf("Processing ItemBought id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
+	if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to know address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -123,10 +132,10 @@ func proc_offer_cancelled(log *types.Log,elog *EthereumEventLog) {
 
 	var evt RW_OfferCanceled
 
-	/*if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
-		Info.Printf("Skipping another instance of MarketPlace contract %v\n",log.Address.String())
+	if !bytes.Equal(log.Address.Bytes(),market_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to know address set (addr=%v), skipping\n",log.Address.String())
 		return
-	}*/
+	}
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -155,11 +164,11 @@ func proc_withdrawal(log *types.Log,elog *EthereumEventLog) {
 	var evt RW_Withdrawal
 	var eth_evt ERandomWalk_WithdrawalEvent
 
-	/*if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
-		Info.Printf("Skipping another instance of RandomWalk contract %v\n",log.Address.String())
-		return
-	}*/
 	Info.Printf("Processing WithdrawalEvent id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to know address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
 	err := randomwalk_abi.UnpackIntoInterface(&eth_evt,"WithdrawalEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event WithdrawalEvent decode error: %v",err)
@@ -189,11 +198,11 @@ func proc_token_name(log *types.Log,elog *EthereumEventLog) {
 	var evt RW_TokenName
 	var eth_evt ERandomWalk_TokenNameEvent
 
-	/*if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
-		Info.Printf("Skipping another instance of RandomWalk contract %v\n",log.Address.String())
-		return
-	}*/
 	Info.Printf("Processing TokenName id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
 	err := randomwalk_abi.UnpackIntoInterface(&eth_evt,"TokenNameEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event TokenName decode error: %v",err)
@@ -226,12 +235,12 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 	var evt RW_MintEvent
 	var eth_evt ERandomWalk_MintEvent
 
-/*	if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
-		Info.Printf("Skipping another instance of RandomWalk contract %v\n",log.Address.String())
-		return
-	}*/
 	Info.Printf("Processing MintEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
+	if !bytes.Equal(log.Address.Bytes(),rwalk_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
 	err := randomwalk_abi.UnpackIntoInterface(&eth_evt,"MintEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event MintEvent decode error: %v",err)
