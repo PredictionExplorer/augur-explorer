@@ -25,7 +25,7 @@ import (
 )
 const (
 
-	DEFAULT_STATISTICS_DURATION	int64 = 15*60 // in seconds
+	DEFAULT_STATISTICS_DURATION	int64 = 24*60*60 // in seconds
 	DEFAULT_WAIT_TIME = 2000	// 2 seconds
 	DEFAULT_DB_LOG				= "db.log"
 	//DEFAULT_LOG_DIR				= "ae_logs"
@@ -36,7 +36,7 @@ const (
 var (
 	storage *SQLStorage
 
-	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
+	//RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
@@ -129,7 +129,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	Info.Printf("Connected to ETH node: %v\n",RPC_URL)
+	Info.Printf("Connected to ETH node: %v\n",*rpc_url)
 	eclient = ethclient.NewClient(rpcclient)
 
 	storage = Connect_to_storage(&market_order_id,Info)

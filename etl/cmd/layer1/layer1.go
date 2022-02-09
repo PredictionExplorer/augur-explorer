@@ -28,7 +28,7 @@ const (
 	//DEFAULT_LOG_DIR				= "ae_logs"
 	MAX_APPROVAL_BASE10 string = "115792089237316195423570985008687907853269984665640564039457584007913129639935"
 	NUM_AUGUR_CONTRACTS int = 35
-	USE_BLOCK_RECEIPTS_RPC_CALL bool = true		// flag for using patch in ./geth-patch/README.txt
+	USE_BLOCK_RECEIPTS_RPC_CALL bool = false // flag for using patch in ./geth-patch/README.txt
 )
 var (
 	storage *SQLStorage
@@ -138,6 +138,25 @@ func main() {
 				network_chain_id.Int64(),stored_chain_id,
 			)
 		}
+	}
+
+	if len(os.Args) > 1 {
+		pnum,err := strconv.ParseInt(os.Args[1],10,64)
+		if err != nil {
+			fmt.Printf("Error parsing block num passed on the commandline: %v\n",err)
+			os.Exit(1)
+		}
+		if pnum < 1 {
+			fmt.Printf("Invalid block number , must be greater than 0\n")
+			os.Exit(1)
+		}
+		err = process_block(pnum,false,true) // false=do not update last block, true=no chainsplit check
+		if err!=nil {
+			fmt.Printf("Error occured during block processing: %v\n",err)
+			os.Exit(1)
+		}
+		fmt.Printf("Block %v was processed successfuly\n",pnum)
+		os.Exit(0)
 	}
 
 	c := make(chan os.Signal)

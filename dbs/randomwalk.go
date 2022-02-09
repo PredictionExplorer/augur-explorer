@@ -593,3 +593,28 @@ func (ss *SQLStorage) Get_server_timestamp() int64 {
 	}
 	return null_ts.Int64
 }
+func (ss *SQLStorage) Get_rw_token_transfers_by_tx_hash(tx_hash string) []p.RW_TransferEntry  {
+
+	var query string
+	query = "SELECT " +
+				"fa.addr,ta.addr,token_id "+
+			"FROM rw_transfer tr "+
+				"JOIN address fa ON tr.from_aid=fa.address_id "+
+				"JOIN address ta ON tr.to_aid=ta.address_id "+
+				"JOIN transaction tx ON tx.id=tr.tx_id "+
+			"WHERE tx.tx_hash=$1"
+
+	rows,err := ss.db.Query(query,tx_hash)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.RW_TransferEntry,0,8)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_TransferEntry
+		err=rows.Scan(&rec.From,&rec.To,&rec.TokenId)
+		records = append(records,rec)
+	}
+	return records
+}
