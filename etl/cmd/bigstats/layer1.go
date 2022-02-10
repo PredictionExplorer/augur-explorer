@@ -31,7 +31,7 @@ const (
 	//DEFAULT_LOG_DIR				= "ae_logs"
 	MAX_APPROVAL_BASE10 string = "115792089237316195423570985008687907853269984665640564039457584007913129639935"
 	NUM_AUGUR_CONTRACTS int = 35
-	USE_BLOCK_RECEIPTS_RPC_CALL bool = false // flag for using patch in ./geth-patch/README.txt
+	//USE_BLOCK_RECEIPTS_RPC_CALL bool = false // flag for using patch in ./geth-patch/README.txt
 )
 var (
 	storage *SQLStorage
@@ -51,6 +51,7 @@ var (
 	split_simulated bool = false
 
 	max_approval *big.Int = big.NewInt(0)
+	use_block_receipts_call	*bool = nil
 
 )
 type rpcBlockHash struct {
@@ -78,20 +79,28 @@ func read_block_numbers(fname string) []int64 {
 }
 func main() {
 
+	usage_str := fmt.Sprintf("usage: %v --schema [schema_name] --rpc [rpc_url] --blockrcpts [true|false]\n",os.Args[0])
+	if len(os.Args)<4 {
+		fmt.Printf("%v",usage_str)
+		os.Exit(1)
+	}
 	schema_name := flag.String("schema", "", "Schema name")
 	rpc_url := flag.String("rpc","","RPC URL")
+	block_rcpts := flag.Bool("blockrcpts",false,"Use block receipts rpc call")
+	block_num := flag.Int64("bnum",0,"Single block number to process")
 	flag.Parse()
+
 	if len(*schema_name) < 3 {
 		fmt.Printf("Schema name must be larger than 2 characters\n")
-		fmt.Printf("usage: %v --schema [schema_name] --rpc [rpc_url]\n",os.Args[0])
+		fmt.Printf("%v",usage_str)
 		os.Exit(1)
 	}
 	if len(*rpc_url) < 1 {
 		fmt.Printf("RPC URL name must be non-empty\n")
-		fmt.Printf("usage: %v --schema [schema_name] --rpc [rpc_url]\n",os.Args[0])
+		fmt.Printf("%v",usage_str)
 		os.Exit(1)
 	}
-
+	use_block_receipts_call	= block_rcpts
 
 	var rLimit syscall.Rlimit
 	rLimit.Max = 999999
@@ -125,6 +134,7 @@ func main() {
 	max_approval.SetString(MAX_APPROVAL_BASE10,10)
 
 	Info.Printf("Selected schema name: %v\n",*schema_name)
+	Info.Printf("Use our custom ethclient.GetBlockReceipts() call: %v\n",*use_block_receipts_call)
 	rpcclient, err=rpc.DialContext(context.Background(), *rpc_url)
 	if err != nil {
 		log.Fatal(err)
@@ -154,6 +164,13 @@ func main() {
 			)
 		}
 	}
+	Info.Printf("block_num param = %v\n",*block_num)
+	if *block_num > 0 {
+		Info.Printf("Processing single block %v\n",*block_num)
+		process_block(*block_num,false,true)
+		os.Exit(0)
+	}
+	fmt.Printf("Forced exit");	os.Exit(1);
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)
@@ -216,7 +233,10 @@ func main() {
 			Error.Printf("Block processing error: %v\n",err)
 			break
 		}
-		manage_stat_periods(storage,DEFAULT_STATISTICS_DURATION)
+		mod := bnum % 1000
+		if mod == 0 {
+			manage_stat_periods(storage,DEFAULT_STATISTICS_DURATION)
+		}
 	}// for block_num
 	time.Sleep(DEFAULT_WAIT_TIME * time.Millisecond)
 	goto main_loop // infinite loop without loss of one indentation level

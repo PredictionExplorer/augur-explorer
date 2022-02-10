@@ -85,11 +85,6 @@ func get_full_block(bnum int64) (common.Hash,*types.Header,[]*AugurTx,error) {
 		/*if tx.From != nil {
 			setSenderFromServer(tx.tx, *tx.From, body.Hash)
 		}*/
-		Info.Printf("block %v, index %v, hash = %v\n",bnum,i,tx.tx.Hash().String())
-		Info.Printf("gasPrice=%v\n",tx.tx.GasPrice().String())
-		Info.Printf("gasTipCap=%v\n",tx.tx.GasTipCap().String())
-		Info.Printf("gasFeeCap=%v\n",tx.tx.GasFeeCap().String())
-		Info.Printf("Value=%v\n",tx.tx.Value().String())
 		agtx := new(AugurTx)
 		agtx.BlockNum = bnum
 		agtx.TxHash = tx.txExtraInfo.Hash.String()
@@ -165,14 +160,14 @@ func get_receipt_async_custom_rpc(idx int,tx_hash common.Hash,receipt_results *[
 			result.err=err
 		}
 		extra.EffectiveGasPrice = egasp
-		Info.Printf("CumulativeGas=%v, EffectiveGasPrice=%v\n",extra.CumulativeGasUsed,extra.EffectiveGasPrice)
 		result.receipt = rcpt
 		result.extra = extra
 	}
 	(*receipt_results)[idx]=result
 }
-func get_block_receipts(block_hash common.Hash) (types.Receipts,error) {
+func get_block_receipts_v1(block_hash common.Hash) (types.Receipts,error) {
 
+	// this is version 1, doesn't have effectiveTxGasPrice field
 	ctx := context.Background()
 	var raw json.RawMessage
 	err := rpcclient.CallContext(ctx, &raw,"eth_getBlockReceipts", block_hash)
@@ -184,4 +179,44 @@ func get_block_receipts(block_hash common.Hash) (types.Receipts,error) {
 	} else {
 		return receipts,nil
 	}
+}
+type PackedReceipt map[string]interface{}
+type ReceiptsPackage struct {
+	Receipts		[]PackedReceipt
+}
+func get_block_receipts_v2(block_hash common.Hash) ([]types.Receipt,[]ReceiptExtraInfo ,error) {
+	// this is version 2, matches version 2 of the patch to Geth, which sends full transaction info
+	ctx := context.Background()
+	var raw json.RawMessage
+	err := rpcclient.CallContext(ctx, &raw,"eth_getBlockReceipts", block_hash)
+	var packed_receipts ReceiptsPackage
+	err = json.Unmarshal(raw,&packed_receipts)
+	if err!= nil {
+		Error.Printf("Error unmarshalling receipts after eth-getBlockReceipts: %v\n",err)
+		return nil,nil,err
+	}
+	output_receipts := make([]types.Receipt,0,256)
+	output_extra := make([]ReceiptExtraInfo,0,256)
+	for i:=0; i<len(packed_receipts.Receipts);i++ {
+		var r types.Receipt
+		receipt := packed_receipts.Receipts[i]
+		r.Type = receipt["type"].(uint8)
+		r.Status = receipt["status"].(uint64)
+		if receipt["logs"].([][]*types.Log) != nil {
+			r.Logs = receipt["logs"].([]*types.Log)
+		}
+		r.TxHash.SetBytes(receipt["transactionHash"].(common.Hash).Bytes())
+		if receipt["contractAddress"] != nil {
+			r.ContractAddress.SetBytes(receipt["contractAddress"].(common.Address).Bytes())
+		}
+		Info.Printf("Receipt for tx %v (%v)\n",i,r.TxHash.String())
+		r.GasUsed = uint64(receipt["gasUsed"].(uint64))
+		r.BlockHash.SetBytes(receipt["blockHash"].(common.Hash).Bytes())
+		var extra_fields ReceiptExtraInfo
+		extra_fields.EffectiveGasPrice = big.NewInt(0).SetUint64(receipt["effectiveGasPrice"].(uint64))
+		extra_fields.CumulativeGasUsed = receipt["cumulativeGasUsed"].(uint64)
+		output_receipts = append(output_receipts,r)
+		output_extra = append(output_extra,extra_fields)
+	}
+	return output_receipts,output_extra,nil
 }

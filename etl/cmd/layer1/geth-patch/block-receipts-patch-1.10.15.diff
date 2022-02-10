@@ -1,0 +1,38 @@
+--- orig-old/go-ethereum-1.10.15/ethclient/ethclient.go	2022-01-05 16:16:40.000000000 +0000
++++ go-ethereum-1.10.15/ethclient/ethclient.go	2022-01-25 19:48:06.022560391 +0000
+@@ -286,6 +286,18 @@
+ 	return r, err
+ }
+ 
++func (ec *Client) GetBlockReceipts(ctx context.Context, txHash common.Hash) (types.Receipts, error) {
++        var r types.Receipts
++        err := ec.c.CallContext(ctx, &r, "eth_getBlockReceipts", txHash)
++        if err == nil {
++                if r == nil {
++                        return nil, ethereum.NotFound
++                }
++        }
++        return r, err
++}
++
++
+ // SyncProgress retrieves the current progress of the sync algorithm. If there's
+ // no sync currently running, it returns nil.
+ func (ec *Client) SyncProgress(ctx context.Context) (*ethereum.SyncProgress, error) {
+--- orig-old/go-ethereum-1.10.15/internal/ethapi/api.go	2022-01-05 16:16:40.000000000 +0000
++++ go-ethereum-1.10.15/internal/ethapi/api.go	2022-01-25 19:46:57.922197915 +0000
+@@ -1666,6 +1666,14 @@
+ 	return fields, nil
+ }
+ 
++func (s *PublicTransactionPoolAPI) GetBlockReceipts(ctx context.Context, hash common.Hash) (types.Receipts, error) {
++	receipts, err := s.b.GetReceipts(ctx, hash )
++	if err != nil {
++		return nil, err
++	}
++	return receipts,nil
++}
++
+ // sign is a helper function that signs a transaction with the private key of the given address.
+ func (s *PublicTransactionPoolAPI) sign(addr common.Address, tx *types.Transaction) (*types.Transaction, error) {
+ 	// Look up the wallet containing the requested signer

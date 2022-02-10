@@ -129,7 +129,7 @@ func add_address_stat_entry(addr_stats_log []AddrStatsLog,block_num,tx_index,aid
 	addr_stats_log = append(addr_stats_log,entry)
 	return addr_stats_log
 }
-func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*receiptCallResult,block_receipts types.Receipts) (*big.Int,*big.Int,error) {
+func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*receiptCallResult,block_receipts []types.Receipt,extra_info []ReceiptExtraInfo) (*big.Int,*big.Int,error) {
 	//	if receipt_calls is not nil then the old slow getTrasnactionReceipt call is used
 	//	if block_receipts is not nil then we are using new getBlockReceipts RPC call
 
@@ -174,7 +174,8 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 			rcpt_extra = receipt_calls[tnum].extra
 		} else {
 			// receipts were fetched using eth_getBlockReceipts, we only need to reference the receipt
-			rcpt = block_receipts[tnum]
+			rcpt = &block_receipts[tnum]
+			rcpt_extra = &extra_info[tnum]
 		}
 		//Info.Printf("\ttx: %v of %v : %v at blockNum=%v\n",tnum,len(transactions),agtx.TxHash,bnum)
 		//Info.Printf("\t from=%v\n",agtx.From)
@@ -192,7 +193,6 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 			)
 			return total_eth,total_fees,errors.New("Block changed during processing")
 		}
-		Info.Printf("Tx index = %v\n",agtx.TxIndex)
 		gas_price := big.NewInt(0)
 		gas_price.SetString(agtx.GasPrice,10)
 		var tx_short TxShort
@@ -209,7 +209,7 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 			tx_short.TxFee = tx_fee.String()
 			total_fees.Add(total_fees,tx_fee)
 		}
-		storage.Bigstats_insert_transaction(&tx_short)	// at this point we are sure Tx is without error
+//		storage.Bigstats_insert_transaction(&tx_short)	// at this point we are sure Tx is without error
 		transaction_hash := common.HexToHash(agtx.TxHash)
 		if !bytes.Equal(rcpt.TxHash.Bytes(),transaction_hash.Bytes()) { // can be removed later
 			Error.Printf("Receipt's hash doesn't match Tx hash, aborting (tx_hash=%v)\n",agtx.TxHash)
@@ -226,7 +226,7 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 		agtx.NumLogs = int32(len(rcpt.Logs))
 		logs_to_insert := extract_addresses_from_event_logs(agtx,rcpt.Logs)
 		if len(logs_to_insert) > 0 {
-			storage.Bigstats_insert_all_addr_stat_logs(logs_to_insert)
+//			storage.Bigstats_insert_all_addr_stat_logs(logs_to_insert)
 		}
 	}
 	return total_eth,total_fees,nil
@@ -252,9 +252,10 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 	}
 	storage.Bigstats_block_delete_with_everything(big_bnum.Int64())
 	var receipt_calls []*receiptCallResult = nil
-	var block_receipts types.Receipts = nil
-	if USE_BLOCK_RECEIPTS_RPC_CALL {
-		block_receipts,err = get_block_receipts(block_hash)
+	var block_receipts []types.Receipt = nil
+	var extra_fields []ReceiptExtraInfo
+	if *use_block_receipts_call {
+		block_receipts,extra_fields,err = get_block_receipts_v2(block_hash)
 		if err != nil {
 			Error.Printf("Error getting receipts of the block: %v\n",err)
 			return err
@@ -267,7 +268,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 			go get_receipt_async_custom_rpc(i,hash,&receipt_calls)
 		}
 	}
-	err = storage.Bigstats_insert_block(block_hash_str,header,num_transactions,no_chainsplit_check)
+/*	err = storage.Bigstats_insert_block(block_hash_str,header,num_transactions,no_chainsplit_check)
 	if err != nil {
 		err = roll_back_blocks(header)
 		return err
@@ -277,9 +278,12 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 			storage.Bigstats_set_last_block_num(bnum)
 		}
 		return nil
-	}
-	total_eth,total_fees,err := process_transactions(bnum,transactions,receipt_calls,block_receipts)
-	storage.Bigstats_update_block_stats(bnum,total_eth,total_fees)
+	}*/
+	total_eth,total_fees,err := process_transactions(bnum,transactions,receipt_calls,block_receipts,extra_fields)
+	_=total_eth
+	_=total_fees
+	Info.Printf("Total eth=%v, total_fees=%v\n",total_eth.String(),total_fees.String())
+//	storage.Bigstats_update_block_stats(bnum,total_eth,total_fees)
 	Info.Printf("block_proc: %v %v ; %v transactions\n",bnum,block_hash.String(),num_transactions)
 	if update_last_block {
 		storage.Bigstats_set_last_block_num(bnum)

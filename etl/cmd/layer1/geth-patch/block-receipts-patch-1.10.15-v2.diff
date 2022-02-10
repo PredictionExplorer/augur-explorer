@@ -1,0 +1,109 @@
+--- go-ethereum-1.10.15/ethclient/ethclient.go	2022-01-05 10:16:40.000000000 -0600
++++ go-ethereum-1.10.15-custom-rpc/ethclient/ethclient.go	2022-02-09 12:47:31.117229375 -0600
+@@ -286,6 +286,18 @@
+ 	return r, err
+ }
+ 
++func (ec *Client) GetBlockReceipts(ctx context.Context, txHash common.Hash) (types.Receipts, error) {
++        var r types.Receipts
++        err := ec.c.CallContext(ctx, &r, "eth_getBlockReceipts", txHash)
++        if err == nil {
++                if r == nil {
++                        return nil, ethereum.NotFound
++                }
++        }
++        return r, err
++}
++
++
+ // SyncProgress retrieves the current progress of the sync algorithm. If there's
+ // no sync currently running, it returns nil.
+ func (ec *Client) SyncProgress(ctx context.Context) (*ethereum.SyncProgress, error) {
+--- go-ethereum-1.10.15/internal/ethapi/api.go	2022-01-05 10:16:40.000000000 -0600
++++ go-ethereum-1.10.15-custom-rpc/internal/ethapi/api.go	2022-02-09 13:16:34.737911097 -0600
+@@ -1666,6 +1666,71 @@
+ 	return fields, nil
+ }
+ 
++func (s *PublicTransactionPoolAPI) GetBlockReceipts(ctx context.Context, blocks_hash common.Hash) (types.ReceiptsPackage, error) {
++	var output types.ReceiptsPackage
++	receipts, err := s.b.GetReceipts(ctx, blocks_hash )
++	if err != nil {
++		return output, err
++	}
++	header, err := s.b.HeaderByHash(ctx, blocks_hash)
++	if err != nil {
++		return output, err
++	}
++	output.Receipts = make([]types.PackedReceipt,0,512)
++	for i:=0; i<len(receipts);i++ {
++		// note: the body of this loop was copied from GetTransactionReceipt() function
++		receipt := receipts[i]
++		tx, blockHash, blockNumber, index, err := s.b.GetTransaction(ctx, receipt.TxHash)
++		if err != nil {
++			return output,err
++		}
++		if uint(len(receipts)) <= receipt.TransactionIndex {
++			return output,errors.New(fmt.Sprintf("Transaction index overflow for receipt %v\n",i))
++		}
++		// Derive the sender.
++		bigblock := new(big.Int).SetUint64(blockNumber)
++		signer := types.MakeSigner(s.b.ChainConfig(), bigblock)
++		from, _ := types.Sender(signer, tx)
++
++		fields := map[string]interface{}{
++			"blockHash":         blockHash,
++			"blockNumber":       hexutil.Uint64(blockNumber),
++			"transactionHash":   receipt.TxHash,
++			"transactionIndex":  hexutil.Uint64(index),
++			"from":              from,
++			"to":                tx.To(),
++			"gasUsed":           hexutil.Uint64(receipt.GasUsed),
++			"cumulativeGasUsed": hexutil.Uint64(receipt.CumulativeGasUsed),
++			"contractAddress":   nil,
++			"logs":              receipt.Logs,
++			"logsBloom":         receipt.Bloom,
++			"type":              hexutil.Uint(tx.Type()),
++		}
++		// Assign the effective gas price paid
++		if !s.b.ChainConfig().IsLondon(bigblock) {
++			fields["effectiveGasPrice"] = hexutil.Uint64(tx.GasPrice().Uint64())
++		} else {
++			gasPrice := new(big.Int).Add(header.BaseFee, tx.EffectiveGasTipValue(header.BaseFee))
++			fields["effectiveGasPrice"] = hexutil.Uint64(gasPrice.Uint64())
++		}
++		// Assign receipt status or post state.
++		if len(receipt.PostState) > 0 {
++			fields["root"] = hexutil.Bytes(receipt.PostState)
++		} else {
++			fields["status"] = hexutil.Uint(receipt.Status)
++		}
++		if receipt.Logs == nil {
++			fields["logs"] = [][]*types.Log{}
++		}
++		// If the ContractAddress is 20 0x0 bytes, assume it is not a contract creation
++		if receipt.ContractAddress != (common.Address{}) {
++			fields["contractAddress"] = receipt.ContractAddress
++		}
++		output.Receipts = append(output.Receipts,fields)
++	}
++	return output,nil
++}
++
+ // sign is a helper function that signs a transaction with the private key of the given address.
+ func (s *PublicTransactionPoolAPI) sign(addr common.Address, tx *types.Transaction) (*types.Transaction, error) {
+ 	// Look up the wallet containing the requested signer
+--- go-ethereum-1.10.15/core/types/receipt.go	2022-01-05 10:16:40.000000000 -0600
++++ go-ethereum-1.10.15-custom-rpc/core/types/receipt.go	2022-02-09 13:13:53.500487245 -0600
+@@ -71,7 +71,10 @@
+ 	BlockNumber      *big.Int    `json:"blockNumber,omitempty"`
+ 	TransactionIndex uint        `json:"transactionIndex"`
+ }
+-
++type PackedReceipt map[string]interface{}
++type ReceiptsPackage struct {
++	Receipts		[]PackedReceipt
++}
+ type receiptMarshaling struct {
+ 	Type              hexutil.Uint64
+ 	PostState         hexutil.Bytes
