@@ -110,7 +110,6 @@ func (ss *SQLStorage) Bigstats_set_last_block_num(block_num int64) {
 		os.Exit(1)
 	}
 	affected_rows,err:=res.RowsAffected()
-	ss.Info.Printf("update_last_block: affected_rows=%v, err=%v\n",affected_rows,err)
 	if err!=nil {
 		ss.Log_msg(fmt.Sprintf("Error getting RowsAffected in set_last_block(): %v",err))
 		os.Exit(1)

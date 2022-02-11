@@ -58,9 +58,7 @@ func roll_back_blocks(diverging_block *types.Header) error {
 	// Finds the block from which the fork started
 	var err error
 	var bhash common.Hash
-	//ctx := context.Background()
 	bhash,diverging_block,_, err = get_full_block(diverging_block.Number.Int64())
-		//eclient.HeaderByNumber(ctx, diverging_block.Number)
 	if err != nil {
 		return errors.New(fmt.Sprintf("During chainsplit an error getting HeaderByHash happened: %v\n",err))
 	}
@@ -110,7 +108,6 @@ func roll_back_blocks(diverging_block *types.Header) error {
 		}
 		// keep trying by following parent hash
 		bhash,diverging_block,_, err = get_full_block(diverging_block.Number.Int64()-1)
-		//diverging_block, err = eclient.HeaderByHash(ctx, diverging_block.ParentHash)
 		if err != nil {
 			return errors.New(fmt.Sprintf("During chainsplit an error getting BlockByNumber happened: %v\n",err))
 		}
@@ -204,12 +201,12 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 			tx_short.TxFee = "0"
 		} else {
 			tx_fee := big.NewInt(int64(rcpt.GasUsed))
-			Info.Printf("Multiplying gas used %v by gas price %v\n",tx_fee.String(),rcpt_extra.EffectiveGasPrice.String())
+			//Info.Printf("tnum=%v: Multiplying gas used %v by gas price %v\n",tnum,tx_fee.String(),rcpt_extra.EffectiveGasPrice.String())
 			tx_fee.Mul(tx_fee,rcpt_extra.EffectiveGasPrice)
 			tx_short.TxFee = tx_fee.String()
 			total_fees.Add(total_fees,tx_fee)
 		}
-//		storage.Bigstats_insert_transaction(&tx_short)	// at this point we are sure Tx is without error
+		storage.Bigstats_insert_transaction(&tx_short)	// at this point we are sure Tx is without error
 		transaction_hash := common.HexToHash(agtx.TxHash)
 		if !bytes.Equal(rcpt.TxHash.Bytes(),transaction_hash.Bytes()) { // can be removed later
 			Error.Printf("Receipt's hash doesn't match Tx hash, aborting (tx_hash=%v)\n",agtx.TxHash)
@@ -226,7 +223,7 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 		agtx.NumLogs = int32(len(rcpt.Logs))
 		logs_to_insert := extract_addresses_from_event_logs(agtx,rcpt.Logs)
 		if len(logs_to_insert) > 0 {
-//			storage.Bigstats_insert_all_addr_stat_logs(logs_to_insert)
+			storage.Bigstats_insert_all_addr_stat_logs(logs_to_insert)
 		}
 	}
 	return total_eth,total_fees,nil
@@ -268,7 +265,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 			go get_receipt_async_custom_rpc(i,hash,&receipt_calls)
 		}
 	}
-/*	err = storage.Bigstats_insert_block(block_hash_str,header,num_transactions,no_chainsplit_check)
+	err = storage.Bigstats_insert_block(block_hash_str,header,num_transactions,no_chainsplit_check)
 	if err != nil {
 		err = roll_back_blocks(header)
 		return err
@@ -278,12 +275,12 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 			storage.Bigstats_set_last_block_num(bnum)
 		}
 		return nil
-	}*/
+	}
 	total_eth,total_fees,err := process_transactions(bnum,transactions,receipt_calls,block_receipts,extra_fields)
 	_=total_eth
 	_=total_fees
 	Info.Printf("Total eth=%v, total_fees=%v\n",total_eth.String(),total_fees.String())
-//	storage.Bigstats_update_block_stats(bnum,total_eth,total_fees)
+	storage.Bigstats_update_block_stats(bnum,total_eth,total_fees)
 	Info.Printf("block_proc: %v %v ; %v transactions\n",bnum,block_hash.String(),num_transactions)
 	if update_last_block {
 		storage.Bigstats_set_last_block_num(bnum)

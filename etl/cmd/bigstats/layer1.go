@@ -164,13 +164,12 @@ func main() {
 			)
 		}
 	}
-	Info.Printf("block_num param = %v\n",*block_num)
 	if *block_num > 0 {
 		Info.Printf("Processing single block %v\n",*block_num)
 		process_block(*block_num,false,true)
 		os.Exit(0)
 	}
-	fmt.Printf("Forced exit");	os.Exit(1);
+	//fmt.Printf("Forced exit");	os.Exit(1);
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)
