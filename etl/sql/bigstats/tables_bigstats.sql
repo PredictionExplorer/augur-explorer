@@ -45,5 +45,6 @@ CREATE TABLE bs_tx_short( -- short version of tx
 );
 CREATE TABLE bs_config(
 	chain_id			BIGINT DEFAULT 0, --Arbitrum: 42161
-	last_block			BIGINT DEFAULT 0
+	last_block			BIGINT DEFAULT 0,
+	starting_block		BIGINT DEFAULT 0
 );

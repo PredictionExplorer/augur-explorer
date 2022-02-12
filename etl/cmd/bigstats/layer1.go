@@ -15,6 +15,7 @@ import (
 	"log"
 	"math/big"
 	"flag"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -77,6 +78,91 @@ func read_block_numbers(fname string) []int64 {
 	}
 	return output
 }
+func multi_threaded_loop_routine(wg_ptr *sync.WaitGroup,num_threads,tid int64,stop_chan chan bool, bnum_low,bnum_high int64,no_rollback_blocks bool) {
+	// tid - thread id
+	// every go routine will attend a sharded block number
+	// shards are specified by 'block_num' on the commandline
+
+	// Notes: multithreaded routine is not calculating statistics, it is meant to 
+	//			accelerate initial load, until the point you reach the last block in the chain, and
+	//			then you switch to single threaded routine
+
+	bnum := bnum_low
+	Info.Printf("Thread %v , processing blocks from %v to %v\n",tid,bnum,bnum_high)
+
+	for ; bnum<bnum_high; bnum=bnum+num_threads{
+		select {
+			case exit_flag := <-stop_chan:
+				if exit_flag {
+					Info.Printf("Thread %v is exiting",tid)
+					wg_ptr.Done()
+					return
+				}
+			default:
+		}
+		Info.Printf("Thread %v : processing block %v\n",tid,bnum)
+		// note: we do not update last_block table in multithreaded run, we do it in main routine
+		update_last_block := false
+		no_chainsplit_check := true
+		err := process_block(bnum,update_last_block,no_chainsplit_check,no_rollback_blocks)
+		if err!=nil {
+			Error.Printf("Block processing error: %v. Aborting\n",err)
+			Error.Printf("Update last_block manually (irregular exit)\n")
+			os.Exit(1)
+		}
+	}// for block_num
+	// if the thread has ended, we just lock for 'read' operation and wait for main thread
+	//		to notify us to exit
+	exit_flag := <-stop_chan
+	_ = exit_flag
+	wg_ptr.Done()
+}
+func single_threaded_loop_routine(exit_chan chan bool, no_rollback_blocks bool) {
+  main_loop:
+
+	  latestBlock, err := eclient.BlockByNumber(context.Background(), nil)
+	if err != nil {
+		log.Fatal("oops:", err)
+	}
+	bnum_high := latestBlock.Number().Int64()
+
+	bnum,exists := storage.Bigstats_get_last_block_num()
+	if !exists {
+		bnum = 0
+	} else {
+		bnum = bnum + 1
+	}
+	bnum_high = latestBlock.Number().Int64()
+	Info.Printf("Latest block=%v, bnum=%v\n",latestBlock.Number().Int64(),bnum)
+	if bnum_high < bnum {
+		Info.Printf("Database has more blocks than the blockchain, aborting. Sleeping to wait\n")
+		time.Sleep(10 * time.Second)
+		goto main_loop
+	}
+	for ; bnum<bnum_high; bnum++ {
+		select {
+			case exit_flag := <-exit_chan:
+				if exit_flag {
+					Info.Println("Exiting")
+					os.Exit(0)
+				}
+			default:
+		}
+		err := process_block(bnum,true,false,no_rollback_blocks)
+		if err!=nil {
+			// this is probably happening due to RPC unavailability, so we use a delay
+			time.Sleep(1 * time.Second)
+			Error.Printf("Block processing error: %v\n",err)
+			break
+		}
+		mod := bnum % 1000
+		if mod == 0 {
+			manage_stat_periods(storage,DEFAULT_STATISTICS_DURATION)
+		}
+	}// for block_num
+	time.Sleep(DEFAULT_WAIT_TIME * time.Millisecond)
+	goto main_loop // infinite loop without loss of one indentation level
+}
 func main() {
 
 	usage_str := fmt.Sprintf("usage: %v --schema [schema_name] --rpc [rpc_url] --blockrcpts [true|false]\n",os.Args[0])
@@ -88,6 +174,7 @@ func main() {
 	rpc_url := flag.String("rpc","","RPC URL")
 	block_rcpts := flag.Bool("blockrcpts",false,"Use block receipts rpc call")
 	block_num := flag.Int64("bnum",0,"Single block number to process")
+	num_threads := flag.Int64("num_threads",1,"Number of parallel threads for block processing")
 	flag.Parse()
 
 	if len(*schema_name) < 3 {
@@ -166,7 +253,7 @@ func main() {
 	}
 	if *block_num > 0 {
 		Info.Printf("Processing single block %v\n",*block_num)
-		process_block(*block_num,false,true)
+		process_block(*block_num,false,true,true)
 		os.Exit(0)
 	}
 	//fmt.Printf("Forced exit");	os.Exit(1);
@@ -197,46 +284,54 @@ func main() {
 		Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
 		os.Exit(1)
 	}
-  main_loop:
-	latestBlock, err = eclient.BlockByNumber(ctx, nil)
-	if err != nil {
-		log.Fatal("oops:", err)
+	no_rollback_blocks := false
+	if *num_threads > 1 {
+		no_rollback_blocks = true // with multiple threds we can't recover from chainsplit
 	}
-
-	bnum,exists = storage.Bigstats_get_last_block_num()
-	if !exists {
-		bnum = 0
+	if *num_threads < 1 {
+		fmt.Printf("Error: num_threads variable must be greater than 1\n")
+		os.Exit(1)
+	}
+	if *num_threads == 1 {
+		single_threaded_loop_routine(exit_chan,no_rollback_blocks)
 	} else {
-		bnum = bnum + 1
+		latestBlock, err := eclient.BlockByNumber(context.Background(), nil)
+		if err != nil {
+			log.Fatal("oops:", err)
+		}
+		bnum_high := latestBlock.Number().Int64()
+		stop_chans := make([]chan bool,*num_threads)
+		for i:=int64(0);i<*num_threads;i++ {
+			// we need only 1 but we use 2 to have extra space for safety (to avoid deadlocks)
+			stop_chans[i]=make(chan bool,2)
+		}
+		// send child threads
+		var wg sync.WaitGroup
+		for tid:=int64(0);tid<*num_threads;tid++ {
+			wg.Add(1)
+			bnum_low := bnum + tid
+			go multi_threaded_loop_routine(&wg,*num_threads,tid,stop_chans[tid],bnum_low,bnum_high,no_rollback_blocks)
+		}
+		// this is the main routine (controller)
+		for {
+			time.Sleep(5*time.Second)	// reasonable delay
+			select {
+				case exit_flag := <-exit_chan:
+					if exit_flag {
+						Info.Printf("Sending 'exit' messages to all %v threads",*num_threads)
+						for i:=int64(0);i<*num_threads;i++ {
+							stop_chans[i] <- true
+						}
+					}
+					wg.Wait()
+					Info.Printf("All threads exited\n")
+					Info.Printf("Updating last block\n")
+					last_block := storage.Bigstats_get_highest_block_num()
+					storage.Set_last_block_num(last_block)
+					Info.Printf("Exiting main thread\nBye\n")
+					os.Exit(1)
+				default:
+			}
+		}
 	}
-	bnum_high = latestBlock.Number().Int64()
-	Info.Printf("Latest block=%v, bnum=%v\n",latestBlock.Number().Int64(),bnum)
-	if bnum_high < bnum {
-		Info.Printf("Database has more blocks than the blockchain, aborting. Sleeping to wait\n")
-		time.Sleep(10 * time.Second)
-		goto main_loop
-	}
-	for ; bnum<bnum_high; bnum++ {
-		select {
-			case exit_flag := <-exit_chan:
-				if exit_flag {
-					Info.Println("Exiting by user request.")
-					os.Exit(0)
-				}
-			default:
-		}
-		err := process_block(bnum,true,false)
-		if err!=nil {
-			// this is probably happening due to RPC unavailability, so we use a delay
-			time.Sleep(1 * time.Second)
-			Error.Printf("Block processing error: %v\n",err)
-			break
-		}
-		mod := bnum % 1000
-		if mod == 0 {
-			manage_stat_periods(storage,DEFAULT_STATISTICS_DURATION)
-		}
-	}// for block_num
-	time.Sleep(DEFAULT_WAIT_TIME * time.Millisecond)
-	goto main_loop // infinite loop without loss of one indentation level
 }

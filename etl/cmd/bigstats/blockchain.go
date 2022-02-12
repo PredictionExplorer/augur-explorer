@@ -8,6 +8,7 @@ import (
 	"errors"
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -15,19 +16,24 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 var (
-	contract_addrs map[common.Address]int64 = make(map[common.Address]int64)
-	human_addrs map[common.Address]int64 = make(map[common.Address]int64)
+	//contract_addrs map[common.Address]int64 = make(map[common.Address]int64)
+	//human_addrs map[common.Address]int64 = make(map[common.Address]int64)
+	contract_addrs sync.Map
+	human_addrs sync.Map
 )
 func lookup_or_insert_addr(addr common.Address) (aid int64,is_contract bool) {
 
 	var exists bool
-	aid,exists = contract_addrs[addr]
+	var result interface{}
+	result,exists = contract_addrs.Load(addr)
 	if exists {
 		is_contract = true
+		aid = result.(int64)
 	} else {
-		aid,exists = human_addrs[addr]
+		result,exists = human_addrs.Load(addr)
 		if exists {
 			is_contract = false
+			aid = result.(int64)
 		} else {
 			var err error
 			aid,is_contract,err = storage.Bigstats_lookup_address_id(addr.String())
@@ -45,9 +51,9 @@ func lookup_or_insert_addr(addr common.Address) (aid int64,is_contract bool) {
 				}
 				aid = storage.Bigstats_insert_address(addr.String(),is_contract)
 				if is_contract {
-					contract_addrs[addr]=aid
+					contract_addrs.Store(addr,aid)
 				} else {
-					human_addrs[addr]=aid
+					human_addrs.Store(addr,aid)
 				}
 			}
 		}
@@ -228,7 +234,7 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 	}
 	return total_eth,total_fees,nil
 }
-func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) error {
+func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool,norollback bool) error {
 
 	block_hash_str,err:=get_block_hash(bnum)
 	if err!=nil {
@@ -267,7 +273,9 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 	}
 	err = storage.Bigstats_insert_block(block_hash_str,header,num_transactions,no_chainsplit_check)
 	if err != nil {
-		err = roll_back_blocks(header)
+		if !norollback {
+			err = roll_back_blocks(header)
+		}
 		return err
 	}
 	if num_transactions == 0 {

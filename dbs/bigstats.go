@@ -100,6 +100,25 @@ func (ss *SQLStorage) Bigstats_get_first_block_timestamp() int64 {
 	}
 	return ts
 }
+func (ss *SQLStorage) Bigstats_get_highest_block_num() int64 {
+
+	var query string
+	query = "SELECT block_num " +
+			"FROM "+ss.schema_name+".bs_block "+
+			"ORDER BY block_num DESC LIMIT 1"
+	row := ss.db.QueryRow(query)
+	var block_num int64
+	var err error
+	err=row.Scan(&block_num);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Bigstats_get_highest_block_num(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return block_num
+}
 func (ss *SQLStorage) Bigstats_set_last_block_num(block_num int64) {
 
 	bnum := int64(block_num)
@@ -188,7 +207,7 @@ func (ss *SQLStorage) Bigstats_insert_block(hash_str string,block *types.Header,
 				os.Exit(1)
 			}
 			if block_count > 0 {
-				starting_block:=ss.Get_upload_block()
+				starting_block:=ss.Bigstats_get_starting_block_from_config()
 				if block.Number.Int64() == starting_block {
 					// this is the first block that will be processed (we aren't starting from block 0)
 					// allow
@@ -561,4 +580,18 @@ func (ss *SQLStorage) Bigstats_get_timeframe_range(schema_name string) p.BigStat
 	}
 
 	return output
+}
+func (ss *SQLStorage) Bigstats_get_starting_block_from_config() int64 {
+
+	var err error
+	var block_num int64
+	var query string
+	query="SELECT starting_block FROM "+ss.schema_name+".bs_config";
+	row := ss.db.QueryRow(query)
+	err=row.Scan(&block_num)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Error in Bigstats_get_starting_block_from_config(): %v",err))
+		os.Exit(1)
+	}
+	return block_num
 }
