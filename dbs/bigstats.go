@@ -323,8 +323,17 @@ func (ss *SQLStorage) Bigstats_insert_address(addr string,is_contract bool) int6
 	row:=ss.db.QueryRow(query,addr,is_contract);
 	err:=row.Scan(&addr_id)
 	if err!=nil {
-		ss.Log_msg(fmt.Sprintf("DB error in address insertion: %v : %v",query,err))
-		os.Exit(1)
+		if strings.Contains(err.Error(),"duplicate key value") {
+			query="SELECT address_id FROM "+ss.schema_name+".bs_addr WHERE addr=$1"
+			err:=ss.db.QueryRow(query,addr).Scan(&addr_id);
+			if (err!=nil) {
+				ss.Log_msg(fmt.Sprintf("DB error in address insertion on second attempt: %v : %v",query,err))
+				os.Exit(1)
+			}
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error in address insertion: %v : %v",query,err))
+			os.Exit(1)
+		}
 	}
 	if addr_id==0 {
 		ss.Log_msg(fmt.Sprintf("DB error, addr_id after INSERT is 0"))
@@ -341,6 +350,8 @@ func (ss *SQLStorage) Bigstats_lookup_address_id(addr string) (int64,bool,error)
 	query="SELECT address_id,is_contract FROM "+ss.schema_name+".bs_addr WHERE addr=$1"
 	err:=ss.db.QueryRow(query,addr).Scan(&aid,&is_contract);
 	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error in address insertion: %v : %v",query,err))
+		os.Exit(1)
 		if err!=sql.ErrNoRows {
 			ss.Log_msg(fmt.Sprintf("DB error: %v ,q=%v",query))
 			os.Exit(1)
@@ -522,6 +533,7 @@ func (ss *SQLStorage) Bigstats_get_statistics_by_period(schemma string,ini_ts,fi
 	query = "SELECT "+
 				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts,"+
 				"time_stamp,"+
+				"EXTRACT(EPOCH FROM (time_stamp+MAKE_INTERVAL(0,0,0,0,0,0,duration_sec)))::BIGINT ts_to,"+
 				"unique_addrs_eoa,"+
 				"unique_addrs_code,"+
 				"eth_transferred,"+
@@ -543,6 +555,7 @@ func (ss *SQLStorage) Bigstats_get_statistics_by_period(schemma string,ini_ts,fi
 		err=rows.Scan(
 			&rec.TimeStamp,
 			&rec.DateTime,
+			&rec.TimeStampTo,
 			&rec.NumUniqHumanAccts,
 			&rec.NumUniqContractAccts,
 			&rec.EthTransferred,

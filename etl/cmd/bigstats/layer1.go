@@ -78,7 +78,7 @@ func read_block_numbers(fname string) []int64 {
 	}
 	return output
 }
-func multi_threaded_loop_routine(wg_ptr *sync.WaitGroup,num_threads,tid int64,stop_chan chan bool, bnum_low,bnum_high int64,no_rollback_blocks bool) {
+func multi_threaded_loop_routine(retval *int64,wg_ptr *sync.WaitGroup,num_threads,tid int64,stop_chan chan bool, bnum_low,bnum_high int64,no_rollback_blocks bool) {
 	// tid - thread id
 	// every go routine will attend a sharded block number
 	// shards are specified by 'block_num' on the commandline
@@ -87,6 +87,7 @@ func multi_threaded_loop_routine(wg_ptr *sync.WaitGroup,num_threads,tid int64,st
 	//			accelerate initial load, until the point you reach the last block in the chain, and
 	//			then you switch to single threaded routine
 
+	last_block_num := int64(0)
 	bnum := bnum_low
 	Info.Printf("Thread %v , processing blocks from %v to %v\n",tid,bnum,bnum_high)
 
@@ -94,7 +95,8 @@ func multi_threaded_loop_routine(wg_ptr *sync.WaitGroup,num_threads,tid int64,st
 		select {
 			case exit_flag := <-stop_chan:
 				if exit_flag {
-					Info.Printf("Thread %v is exiting",tid)
+					Info.Printf("Thread %v is exiting (set last block to %v)",tid,last_block_num)
+					*retval=last_block_num
 					wg_ptr.Done()
 					return
 				}
@@ -109,10 +111,13 @@ func multi_threaded_loop_routine(wg_ptr *sync.WaitGroup,num_threads,tid int64,st
 			Error.Printf("Block processing error: %v. Aborting\n",err)
 			Error.Printf("Update last_block manually (irregular exit)\n")
 			os.Exit(1)
+		} else {
+			last_block_num = bnum
 		}
 	}// for block_num
 	// if the thread has ended, we just lock for 'read' operation and wait for main thread
 	//		to notify us to exit
+	*retval = last_block_num
 	exit_flag := <-stop_chan
 	_ = exit_flag
 	wg_ptr.Done()
@@ -301,6 +306,7 @@ func main() {
 		}
 		bnum_high := latestBlock.Number().Int64()
 		stop_chans := make([]chan bool,*num_threads)
+		return_values := make([]int64,*num_threads)
 		for i:=int64(0);i<*num_threads;i++ {
 			// we need only 1 but we use 2 to have extra space for safety (to avoid deadlocks)
 			stop_chans[i]=make(chan bool,2)
@@ -310,7 +316,16 @@ func main() {
 		for tid:=int64(0);tid<*num_threads;tid++ {
 			wg.Add(1)
 			bnum_low := bnum + tid
-			go multi_threaded_loop_routine(&wg,*num_threads,tid,stop_chans[tid],bnum_low,bnum_high,no_rollback_blocks)
+			go multi_threaded_loop_routine(
+				&return_values[tid],
+				&wg,
+				*num_threads,
+				tid,
+				stop_chans[tid],
+				bnum_low,
+				bnum_high,
+				no_rollback_blocks,
+			)
 		}
 		// this is the main routine (controller)
 		for {
@@ -326,8 +341,20 @@ func main() {
 					wg.Wait()
 					Info.Printf("All threads exited\n")
 					Info.Printf("Updating last block\n")
-					last_block := storage.Bigstats_get_highest_block_num()
-					storage.Set_last_block_num(last_block)
+					const min_block_const int64 = 1000000000000
+					var min_block int64 = min_block_const
+					for i:=int64(0);i<*num_threads;i++ {
+						Info.Printf("retval for %v is %v\n",i,return_values[i])
+						if min_block > return_values[i] {
+							min_block = return_values[i]
+							Info.Printf("set min_block to %v\n",min_block)
+						}
+					}
+					Info.Printf("loop exited, min_block=%v\n",min_block)
+					if min_block != min_block_const {
+						Info.Printf("Set last block number to %v\n",min_block)
+						storage.Bigstats_set_last_block_num(min_block)
+					}
 					Info.Printf("Exiting main thread\nBye\n")
 					os.Exit(1)
 				default:

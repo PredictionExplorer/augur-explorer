@@ -16,6 +16,8 @@
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">Datetime</th>
+		<th class="market_reports">From Timestamp</th>
+		<th class="market_reports">To Timestamp</th>
 		<th class="market_reports">Unique Human</th>
 		<th class="market_reports">Unique Contract</th>
 		<th class="market_reports">ETH Transferred</th>
@@ -24,6 +26,8 @@
 	{{- range $i, $change := .Statistics}}
 		<tr class="market_reports">
 			<td class="">{{.DateTime}}</td>
+			<td class="">{{.TimeStamp}}</td>
+			<td class="">{{.TimeStampTo}}</td>
 			<td class="" style="text-align:center;">{{.NumUniqHumanAccts}}</td>
 			<td class="" style="text-align:center;">{{.NumUniqContractAccts}}</td>
 			<td class="addr" style="text-align: right;">{{printf "%.6f" .EthTransferred}}</td>
