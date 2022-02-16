@@ -608,3 +608,20 @@ func (ss *SQLStorage) Bigstats_get_starting_block_from_config() int64 {
 	}
 	return block_num
 }
+func (ss *SQLStorage) Bigstats_get_tx_fee_by_index(block_num,tx_index int64) (string,error) {
+	// return value tx fee
+	var tx_fee string
+	var query string
+	query = "SELECT tx_fee::TEXT FROM "+ss.schema_name+".bs_tx_short WHERE block_num=$1 AND tx_index=$2"
+	row := ss.db.QueryRow(query,block_num,tx_index)
+	err := row.Scan(&tx_fee)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return "",err
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	return tx_fee,nil
+}

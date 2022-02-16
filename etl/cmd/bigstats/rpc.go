@@ -49,18 +49,6 @@ type ReceiptExtraInfo struct {
 	EffectiveGasPrice			*big.Int
 	CumulativeGasUsed			uint64
 }
-/*
-// senderFromServer is a types.Signer that remembers the sender address returned by the RPCng.
-// server. It is stored in the transaction's sender address cache to avoid an additional
-// request in TransactionSender.
-type senderFromServer struct {
-	addr      common.Address
-	blockhash common.Hash
-}
-func setSenderFromServer(tx *types.Transaction, addr common.Address, block common.Hash) {
-	// Use types.Sender for side-effect to store our signer into the cache.
-	types.Sender(&senderFromServer{addr, block}, tx)
-}*/
 func get_full_block(bnum int64) (common.Hash,*types.Header,[]*AugurTx,error) {
 
 	var head *types.Header
@@ -83,9 +71,6 @@ func get_full_block(bnum int64) (common.Hash,*types.Header,[]*AugurTx,error) {
 	}
 	txs := make([]*AugurTx, len(body.Transactions))
 	for i, tx := range body.Transactions {
-		/*if tx.From != nil {
-			setSenderFromServer(tx.tx, *tx.From, body.Hash)
-		}*/
 		agtx := new(AugurTx)
 		agtx.BlockNum = bnum
 		agtx.TxHash = tx.txExtraInfo.Hash.String()
@@ -100,7 +85,6 @@ func get_full_block(bnum int64) (common.Hash,*types.Header,[]*AugurTx,error) {
 		agtx.Input = tx.tx.Data()
 		agtx.GasPrice = tx.tx.GasPrice().String()
 		txs[i]=agtx
-		//txs[i] = tx.tx
 	}
 
 	return body.Hash,head,txs,nil
@@ -143,6 +127,7 @@ func get_receipt_async_custom_rpc(idx int,tx_hash common.Hash,receipt_results *[
 		err = json.Unmarshal(raw, &rcpt);
 		if err != nil {
 			Error.Printf("Error unmarshalling receipt object : %v\n",err)
+			result.err=err
 		}
 		var rcpt_extra rcptExtraInfo
 		err = json.Unmarshal(raw, &rcpt_extra)
@@ -153,6 +138,7 @@ func get_receipt_async_custom_rpc(idx int,tx_hash common.Hash,receipt_results *[
 		cum_gas,err := hexutil.DecodeUint64(rcpt_extra.CumulativeGasUsed)
 		if err != nil {
 			Error.Printf("Error parsing CumulativeGas %v: %v\n",rcpt_extra.CumulativeGasUsed,err)
+			result.err=err
 		}
 		extra.CumulativeGasUsed = cum_gas
 		egasp,err := hexutil.DecodeBig(rcpt_extra.EffectiveGasPrice)
@@ -201,44 +187,27 @@ func get_block_receipts_v2(block_hash common.Hash) ([]types.Receipt,[]ReceiptExt
 	for i:=0; i<len(packed_receipts.Receipts);i++ {
 		var r types.Receipt
 		receipt := packed_receipts.Receipts[i]
-/*		Info.Printf("(%v) type=%v\n",reflect.TypeOf(receipt["type"]),receipt["type"])
-		Info.Printf("(%v) status=%v\n",reflect.TypeOf(receipt["status"]),receipt["status"])
-		Info.Printf("(%v) contractAddress=%v\n",reflect.TypeOf(receipt["contractAddress"]),receipt["contractAddress"])
-		Info.Printf("(%v) logs=%v\n",reflect.TypeOf(receipt["logs"]),receipt["logs"])
-		Info.Printf("(%v) transactionHash=%v\n",reflect.TypeOf(receipt["transactionHash"]),receipt["transactionHash"])
-		Info.Printf("(%v) gasUsed=%v\n",reflect.TypeOf(receipt["gasUsed"]),receipt["gasUsed"])
-		Info.Printf("(%v) blockHash=%v\n",reflect.TypeOf(receipt["blockHash"]),receipt["blockHash"])
-		Info.Printf("(%v) effectiveGasPrice=%v\n",reflect.TypeOf(receipt["effectiveGasPrice"]),receipt["effectiveGasPrice"])
-		Info.Printf("(%v) cumulativeGasUsed=%v\n",reflect.TypeOf(receipt["cumulativeGasUsed"]),receipt["cumulativeGasUsed"])
-		Info.Printf("from=%v\n",receipt["from"])
-*/
-		//Info.Printf("\nnew receipt-----------\n")
 		tmp_val,err := hexutil.DecodeUint64(receipt["type"].(string))
 		if err != nil {
 			return nil,nil,errors.New(fmt.Sprintf("Error: receipt (i=%v) type (%v): %v",i,receipt["type"],err))
 		}
 		r.Type = uint8(tmp_val)
-		//Info.Printf("receipt.Type=%v\n",r.Type)
 		tmp_val,err = hexutil.DecodeUint64(receipt["status"].(string))
 		if err != nil {
 			return nil,nil,errors.New(fmt.Sprintf("Error: receipt (i=%v) status (%v): %v",i,receipt["status"],err))
 		}
 		r.Status = tmp_val
-		//Info.Printf("receipt.Status=%v\n",r.Status)
 		if receipt["logs"] != nil {
-			//logs_in := receipt["logs"].([]map[string]interface{})
 			logs_in := receipt["logs"].([]interface{})
 			var logs_out []*types.Log
 			if len(logs_in) >0 {
 				logs_out = make([]*types.Log,0,32)
-				//Info.Printf("There are %v logs\n",len(logs_in))
 			}
 			for j:=0;j<len(logs_in);j++ {
 				lin := logs_in[j].(map[string]interface{})
 				lout := &types.Log{}
 
 				lout.Address = common.HexToAddress(lin["address"].(string))
-				//Info.Printf("\t%v: log.Address=%v\n",j,lout.Address)
 				tmp_val, err := hexutil.DecodeUint64(lin["blockNumber"].(string))
 				if err != nil {
 					return nil,nil,errors.New(
@@ -249,10 +218,8 @@ func get_block_receipts_v2(block_hash common.Hash) ([]types.Receipt,[]ReceiptExt
 					)
 				}
 				lout.BlockNumber = tmp_val
-				//Info.Printf("\t%v : log.BlockNumber=%v\n",j,lout.BlockNumber)
 
 				lout.TxHash = common.HexToHash(lin["transactionHash"].(string))
-				//Info.Printf("\t%v : log.TxHash=%v\n",j,lout.TxHash.String())
 				tmp_val, err = hexutil.DecodeUint64(lin["transactionIndex"].(string))
 				if err != nil {
 					return nil,nil,errors.New(
@@ -263,10 +230,8 @@ func get_block_receipts_v2(block_hash common.Hash) ([]types.Receipt,[]ReceiptExt
 					)
 				}
 				lout.TxIndex = uint(tmp_val)
-				//Info.Printf("\t%v : log.TxIndex=%v\n",j,lout.TxIndex)
 
 				lout.BlockHash = common.HexToHash(lin["blockHash"].(string))
-				//Info.Printf("\t%v : log.BlockHash=%v\n",j,lout.BlockHash.String())
 
 				tmp_val, err = hexutil.DecodeUint64(lin["logIndex"].(string))
 				if err != nil {
@@ -278,10 +243,8 @@ func get_block_receipts_v2(block_hash common.Hash) ([]types.Receipt,[]ReceiptExt
 					)
 				}
 				lout.Index = uint(tmp_val)
-				//Info.Printf("\t%v : log.Index=%v\n",j,lout.Index)
 
 				lout.Removed = lin["removed"].(bool)
-				//Info.Printf("\t%v : log.Removed=%v\n",j,lout.Removed)
 
 				tmp_data,err := hexutil.Decode(lin["data"].(string))
 				if err != nil {
@@ -293,13 +256,11 @@ func get_block_receipts_v2(block_hash common.Hash) ([]types.Receipt,[]ReceiptExt
 					)
 				}
 				lout.Data = tmp_data
-				//Info.Printf("\t%v : log.Data length = %v\n",j,len(lout.Data))
 				topics_in := lin["topics"].([]interface{})
 				if len(topics_in) >0 {
 					lout.Topics = make([]common.Hash,0,3)
 					for k:=0;k<len(topics_in);k++ {
 						t := common.HexToHash(topics_in[k].(string))
-						//Info.Printf("\t\tTopic %v = %v\n",k,t.String())
 						lout.Topics = append(lout.Topics,t)
 					}
 				}
@@ -310,19 +271,15 @@ func get_block_receipts_v2(block_hash common.Hash) ([]types.Receipt,[]ReceiptExt
 			}
 		}
 		r.TxHash = common.HexToHash(receipt["transactionHash"].(string))
-		//Info.Printf("receipt.TxHash=%v",r.TxHash.String())
 		if receipt["contractAddress"] != nil {
 			r.ContractAddress = common.HexToAddress(receipt["contractAddress"].(string))
-			//Info.Printf("receipt.ContractAddress=%v\n",r.ContractAddress.String())
 		}
 		tmp_val,err = hexutil.DecodeUint64(receipt["gasUsed"].(string))
 		if err != nil {
 			return nil,nil,errors.New(fmt.Sprintf("Error: receipt (i=%v) gasUsed(%v): %v",i,receipt["gasUsed"].(string),err))
 		}
 		r.GasUsed = tmp_val
-		//Info.Printf("receipt.GasUsed=%v\n",r.GasUsed)
 		r.BlockHash = common.HexToHash(receipt["blockHash"].(string))
-		//Info.Printf("receipt.BlockHash=%v\n",r.BlockHash.String())
 		tmp_val,err = hexutil.DecodeUint64(receipt["blockNumber"].(string))
 		if err != nil {
 			return nil,nil,errors.New(fmt.Sprintf("Error: receipt (i=%v) blockNumber(%v): %v",i,receipt["blockNumber"].(string),err))
@@ -340,13 +297,11 @@ func get_block_receipts_v2(block_hash common.Hash) ([]types.Receipt,[]ReceiptExt
 			return nil,nil,errors.New(fmt.Sprintf("Error: receipt (i=%v) effectiveGasPrice(%v): %v",i,receipt["effectiveGasPrice"],err))
 		}
 		extra_fields.EffectiveGasPrice = big.NewInt(0).SetUint64(tmp_val)
-		//Info.Printf("receipt.EffectiveGasPrice=%v\n",extra_fields.EffectiveGasPrice.String())
 		tmp_val, err = hexutil.DecodeUint64(receipt["cumulativeGasUsed"].(string))
 		if err != nil {
 			return nil,nil,errors.New(fmt.Sprintf("Error: receipt (i=%v) cumulativeGasUsed(%v): %v",i,receipt["cumulativeGasUsed"],err))
 		}
 		extra_fields.CumulativeGasUsed = tmp_val
-		//Info.Printf("receipt.CumulativeGasUsed=%v\n",extra_fields.CumulativeGasUsed)
 		output_receipts = append(output_receipts,r)
 		output_extra = append(output_extra,extra_fields)
 	}

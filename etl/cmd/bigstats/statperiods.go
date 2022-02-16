@@ -8,6 +8,7 @@ const (
 )
 func manage_stat_periods(s *SQLStorage,default_duration int64) {
 
+  again:
 	last_period_ts,duration,_ :=s.Bigstats_get_last_period()
 	if last_period_ts == 0 {
 		duration = default_duration
@@ -30,6 +31,7 @@ func manage_stat_periods(s *SQLStorage,default_duration int64) {
 			)
 			storage.Bigstats_close_period(last_period_ts,duration)
 			Info.Printf("Statistics: new interval set to %v\n",new_interval_ts)
+			goto again
 		}
 	} else {
 		// no blocks in DB
