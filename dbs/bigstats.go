@@ -14,9 +14,6 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Bigstats_set_schema_name(name string) {
-	ss.schema_name = name
-}
 func (ss *SQLStorage) Bigstats_get_stored_chain_id() int64 {
 
 	var query string

@@ -114,3 +114,6 @@ func (ss *SQLStorage) Log_msg(msg string) {
 		ss.Info.Printf(msg)
 	}
 }
+func (ss *SQLStorage) Db_set_schema_name(name string) {
+	ss.schema_name = name
+}
