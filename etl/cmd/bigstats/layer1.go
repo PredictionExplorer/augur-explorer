@@ -237,7 +237,7 @@ func main() {
 	storage = Connect_to_storage(&market_order_id,Info)
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
-	storage.Bigstats_set_schema_name(*schema_name)
+	storage.Db_set_schema_name(*schema_name)
 
 	ctx := context.Background()
 	stored_chain_id := storage.Bigstats_get_stored_chain_id()

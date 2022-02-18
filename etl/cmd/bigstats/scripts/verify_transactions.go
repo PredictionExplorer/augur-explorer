@@ -135,9 +135,14 @@ func process_block(bnum int64) {
 			continue
 		}
 		db_tx_fee,err := storage.Bigstats_get_tx_fee_by_index(bnum,int64(tx_index))
-		if (err != nil) && (err != sql.ErrNoRows) {
-			Info.Printf("Error querying tx (block=%v,index=%v): %v, exiting.\n",bnum,tx_index,err)
-			os.Exit(1)
+		if err != nil {
+			if err != sql.ErrNoRows {
+				Info.Printf("Error querying tx (block=%v,index=%v): %v, exiting.\n",bnum,tx_index,err)
+				os.Exit(1)
+			} else {
+				Info.Printf("Reached the end of the data in the database, exiting\n")
+				os.Exit(0)
+			}
 		}
 		tx_fee := big.NewInt(0).SetUint64(receipt_result.receipt.GasUsed)
 		tx_fee.Mul(tx_fee,receipt_result.extra.EffectiveGasPrice)
@@ -169,7 +174,7 @@ func main() {
 	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 
 	storage = Connect_to_storage(&market_order_id,Info)
-	storage.Bigstats_set_schema_name(schema_name)
+	storage.Db_set_schema_name(schema_name)
 
 	rpcclient, err=rpc.DialContext(context.Background(), RPC_URL)
 	if err != nil {

@@ -14,6 +14,7 @@ type BigStatRec struct {
 	TimeStamp					int64
 	DateTime					string
 	TimeStampTo					int64
+	BlockNum					int64
 	NumUniqHumanAccts			int64
 	NumUniqContractAccts		int64
 	EthTransferred				float64
