@@ -28,7 +28,8 @@ CREATE TABLE bs_period(
 	unique_addrs_eoa	BIGINT DEFAULT 0,
 	unique_addrs_code	BIGINT DEFAULT 0,-- contract accounts
 	eth_transferred		DECIMAL DEFAULT 0,
-	tx_fees				DECIMAL DEFAULT 0,
+	tx_fees_eth			DECIMAL DEFAULT 0,
+	tx_fees_usd			DECIMAL DEFAULT 0,
 	UNIQUE(time_stamp)
 );
 CREATE TABLE bs_log(

@@ -425,8 +425,10 @@ func (ss *SQLStorage) Bigstats_get_total_eth_transferred(ts,duration int64) floa
 	}
 	return sum.Float64
 }
-func (ss *SQLStorage) Bigstats_get_tx_fees_with_ethusd(ts,duration int64) (float64,float64) {
-
+func (ss *SQLStorage) Bigstats_get_tx_fees_with_ethusd(schema_ethusd string,ts,duration int64) (float64,float64) {
+	// Return values: 
+	//		eth price in ETH
+	//		eth price in USD
 	var query string
 	query = "SELECT " +
 				"tx_fee/1e+18 fee, "+
@@ -437,26 +439,24 @@ func (ss *SQLStorage) Bigstats_get_tx_fees_with_ethusd(ts,duration int64) (float
 
 	var query_avg string
 	query_avg = "SELECT " +
-					"AVG(ethusd_price) avg_ethusd_price "+
+					"AVG(ethusd_price) avg_ethusd_price, "+
+					"COUNT(*) num_rows "+
 				"FROM "+schema_ethusd+".ep_swap "+
-				"WHERE ($1 < block_num) AND (block_num<=$2)" +
-				"ORDER BY block_num DESC "+
-				"LIMIT 5"
+				"WHERE ($1 < block_num) AND (block_num<=$2)"
 
 	ts_end := ts + duration
-	var fees sql.NullFloat64
-	var num_rows sql.NullInt64
+	//var n_fees sql.NullFloat64
+	//var n_num_rows sql.NullInt64
 
-	rows,err := ss.db.Query(query,ini_ts,fin_ts)
+	rows,err := ss.db.Query(query,ts,ts_end)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-
+	ss.Info.Printf("Bigstats_get_tx_fwees_with_ethusd() begins\n")
 	var sum_tx_fees_eth,sum_tx_fees_usd float64
 	var n_tx_fee sql.NullFloat64
-	var n_block_num sql.NullFloat64
-	var prev_ethusd_price float64
+	var n_block_num sql.NullInt64
 	var num_rows int64
 	defer rows.Close()
 	for rows.Next() {
@@ -469,9 +469,12 @@ func (ss *SQLStorage) Bigstats_get_tx_fees_with_ethusd(ts,duration int64) (float
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
-		err=ss.db.QueryRow(query,n_block_num.Int64,n_block_num.Int64-20).Scan(&n_ethusd);
+		var null_nr sql.NullInt64
+		block_from := n_block_num.Int64 - 20
+		block_to := n_block_num.Int64 +20
+		err=ss.db.QueryRow(query_avg,block_from,block_to).Scan(&n_ethusd,&null_nr);
 		if err != nil {
-			if err = sql.ErrNoRows {
+			if err == sql.ErrNoRows {
 				ss.Log_msg(fmt.Sprintf("Databse of ethusd_price is missing records"))
 				os.Exit(1)
 			} else {
@@ -479,13 +482,24 @@ func (ss *SQLStorage) Bigstats_get_tx_fees_with_ethusd(ts,duration int64) (float
 				os.Exit(1)
 			}
 		} else {
-			sum_tx_fees_eth += n_ethusd.Float64
-			sum_tx_fees_usd += n_tx_fee.Float64
+			if null_nr.Int64 == 0 {
+				ss.Log_msg(fmt.Sprintf(
+					"Couldn't fetch records from block %v to block %v in ethusd db. (no data in the DB)\n",
+					block_from,block_to,
+				))
+				os.Exit(1)
+			}
+			sum_tx_fees_usd += n_ethusd.Float64
+			sum_tx_fees_eth += n_tx_fee.Float64
 			num_rows++
 		}
+		ss.Info.Printf(
+			"Bigstats_get_tx_fees_with_ethusd() block=%v sum_tx_fees_eth=%v (usd=%v), %v rows\n",
+			n_block_num.Int64,sum_tx_fees_eth,sum_tx_fees_usd,num_rows,
+		)
 	}
-	sum_tx_fees_eth = sum_tx_fees_eth/num_rows
-	sum_tx_fees_usd = sum_tx_fees_usd/num_rows
+	sum_tx_fees_eth = sum_tx_fees_eth/float64(num_rows)
+	sum_tx_fees_usd = sum_tx_fees_usd/float64(num_rows)
 
 	return sum_tx_fees_eth,sum_tx_fees_usd
 }
@@ -510,19 +524,26 @@ func (ss *SQLStorage) Bigstats_get_tx_fees_no_ethusd(ts,duration int64) float64 
 	ss.Info.Printf("Bigstats_get_tx_fees(ts=%v), num_rows=%v, fees=%v\n",ts,num_rows.Int64,fees.Float64)
 	return fees.Float64
 }
-func (ss *SQLStorage) Bigstats_close_period(ts,duration int64) {
+func (ss *SQLStorage) Bigstats_close_period(schema_ethusd string,ts,duration int64) {
 
 
 	human_account_count := ss.Bigstats_get_unique_accounts_counter_by_type(ts,duration,false)
+	ss.Info.Printf("Bigstats_close_period(): human_account_count=%v\n",human_account_count)
 	contract_account_count := ss.Bigstats_get_unique_accounts_counter_by_type(ts,duration,true)
+	ss.Info.Printf("Bigstats_close_period(): contract_account_count=%v\n",contract_account_count)
 	total_eth := ss.Bigstats_get_total_eth_transferred(ts,duration)
-	fees := ss.Bigstats_get_tx_fees(ts,duration)
+	ss.Info.Printf("Bigstats_close_period(): totali eth=%v\n",total_eth)
+	fees_eth,fees_usd := ss.Bigstats_get_tx_fees_with_ethusd(schema_ethusd,ts,duration)
 
-	ss.Info.Printf("Bigstats_close_period(ts=%v,duration=%v) fees: %v\n",ts,duration,fees)
+	ss.Info.Printf(
+		"Bigstats_close_period(ts=%v,duration=%v) fees eth = %v,fees usd = %v\n",
+		ts,duration,fees_eth,fees_usd,
+	)
 	var query string
 	query = "INSERT INTO "+ss.schema_name+".bs_period("+
-					"time_stamp,duration_sec,unique_addrs_eoa,unique_addrs_code,eth_transferred,tx_fees"+
-			") VALUES (TO_TIMESTAMP($1),$2,$3,$4,$5,$6)"
+					"time_stamp,duration_sec,unique_addrs_eoa,unique_addrs_code,eth_transferred,"+
+					"tx_fees_eth,tx_fees_usd"+
+			") VALUES (TO_TIMESTAMP($1),$2,$3,$4,$5,$6,$7)"
 
 	result,err := ss.db.Exec(query,
 			ts,
@@ -530,7 +551,8 @@ func (ss *SQLStorage) Bigstats_close_period(ts,duration int64) {
 			human_account_count,
 			contract_account_count,
 			total_eth,
-			fees,
+			fees_eth,
+			fees_usd,
 	)
 	if err != nil {
 		ss.Log_msg(
@@ -609,8 +631,6 @@ func (ss *SQLStorage) Bigstats_get_statistics_by_period(schemma,schema_ethusd st
 		os.Exit(1)
 	}
 
-	count_missing_blocks := int64(0)
-	max_missing_blocks := int64(50) // 100 blocks can be missing in ethusd table, otherwise cancel
 	records := make([]p.BigStatRec,0,256)
 	defer rows.Close()
 	for rows.Next() {

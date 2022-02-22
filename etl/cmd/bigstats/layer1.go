@@ -162,7 +162,7 @@ func single_threaded_loop_routine(exit_chan chan bool, no_rollback_blocks bool) 
 		}
 		mod := bnum % 1000
 		if mod == 0 {
-			manage_stat_periods(storage,DEFAULT_STATISTICS_DURATION)
+			manage_stat_periods(storage,"ethprice",DEFAULT_STATISTICS_DURATION)
 		}
 	}// for block_num
 	time.Sleep(DEFAULT_WAIT_TIME * time.Millisecond)
@@ -180,6 +180,7 @@ func main() {
 	block_rcpts := flag.Bool("blockrcpts",false,"Use block receipts rpc call")
 	block_num := flag.Int64("bnum",0,"Single block number to process")
 	num_threads := flag.Int64("num_threads",1,"Number of parallel threads for block processing")
+	close_periods := flag.Bool("closeperiods",false,"Close periods and exit")
 	flag.Parse()
 
 	if len(*schema_name) < 3 {
@@ -255,6 +256,12 @@ func main() {
 				network_chain_id.Int64(),stored_chain_id,
 			)
 		}
+	}
+	if *close_periods {
+		Info.Printf("Closing periods only\n")
+		manage_stat_periods(storage,"ethprice",DEFAULT_STATISTICS_DURATION)
+		Info.Printf("Done closing periods, exiting\n")
+		os.Exit(0)
 	}
 	if *block_num > 0 {
 		Info.Printf("Processing single block %v\n",*block_num)
