@@ -63,7 +63,7 @@ func stats_get_network_statistics(c *gin.Context,schema_name string) {
 	}
 
 	fmt.Printf("schema_name=%v ini=%v fin=%v\n",schema_name,ini,fin)
-	records := augur_srv.db_arbitrum.Bigstats_get_statistics_by_period(schema_name,ini,fin)
+	records := augur_srv.db_arbitrum.Bigstats_get_statistics_by_period(schema_name,"ethprice",ini,fin)
 	c.HTML(http.StatusOK, "bigstats_statistics.html", gin.H{
 		"Statistics" : records,
 		"IniTs": ini,

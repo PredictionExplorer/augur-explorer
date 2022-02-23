@@ -3,6 +3,7 @@
 rm ./etl/cmd/augur/augur
 rm ./etl/cmd/tokens/tokens
 rm ./etl/cmd/layer1/layer1
+rm ./etl/cmd/layer1/scripts/verify_transactions
 rm ./etl/cmd/balancer/balancer
 rm ./etl/cmd/uniswap/uniswap
 rm ./etl/cmd/ensscan/ensscan
@@ -60,6 +61,9 @@ rm ./etl/cmd/randomwalk/scripts/setname
 rm ./etl/cmd/randomwalk/scripts/transfer
 rm ./etl/cmd/randomwalk/scripts/ownerof
 rm ./etl/cmd/randomwalk/scripts/price
+rm ./etl/cmd/randomwalk/scripts/scan_transfers
+rm ./etl/cmd/randomwalk/scripts/verify_erc20_transfers
+rm ./etl/cmd/randomwalk/scripts/verify_owner
 rm ./etl/cmd/randomwalk/tools/discord_bot
 rm ./etl/cmd/randomwalk/tools/discord_ch_name
 rm ./etl/cmd/randomwalk/tools/discord_user_limit
@@ -70,3 +74,5 @@ rm ./etl/cmd/randomwalk/tools/twitteroob
 rm ./etl/cmd/randomwalk/tools/twsend
 rm ./etl/cmd/randomwalk/tools/twsend_image
 rm ./etl/cmd/bigstats/bigstats
+rm ./etl/cmd/bigstats/scripts/verify_transactions
+rm ./etl/cmd/ethprice/ethprice

@@ -17,7 +17,7 @@ func api_stats_main_statistics_arbitrum(c *gin.Context) {
 func api_stats_main_statistics_main_net(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	api_get_network_statistics(c,"st_arb")
+	api_get_network_statistics(c,"st_eth")
 }
 func api_get_network_statistics(c *gin.Context,schema_name string) {
 
@@ -43,7 +43,7 @@ func api_get_network_statistics(c *gin.Context,schema_name string) {
 			return
 		}
 	}
-	records = augur_srv.db_arbitrum.Bigstats_get_statistics_by_period(schema_name,ini,fin)
+	records = augur_srv.db_arbitrum.Bigstats_get_statistics_by_period(schema_name,"ethprice",ini,fin)
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{

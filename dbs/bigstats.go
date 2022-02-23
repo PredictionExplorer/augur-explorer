@@ -347,8 +347,6 @@ func (ss *SQLStorage) Bigstats_lookup_address_id(addr string) (int64,bool,error)
 	query="SELECT address_id,is_contract FROM "+ss.schema_name+".bs_addr WHERE addr=$1"
 	err:=ss.db.QueryRow(query,addr).Scan(&aid,&is_contract);
 	if (err!=nil) {
-		ss.Log_msg(fmt.Sprintf("DB error in address insertion: %v : %v",query,err))
-		os.Exit(1)
 		if err!=sql.ErrNoRows {
 			ss.Log_msg(fmt.Sprintf("DB error: %v ,q=%v",query))
 			os.Exit(1)
@@ -432,7 +430,7 @@ func (ss *SQLStorage) Bigstats_get_tx_fees_with_ethusd(schema_ethusd string,ts,d
 	var query string
 	query = "SELECT " +
 				"tx_fee/1e+18 fee, "+
-				"b.block_num "+
+				"EXTRACT(EPOCH FROM b.ts)::BIGINT "+
 			"FROM "+ss.schema_name+".bs_block b "+
 				"JOIN "+ss.schema_name+".bs_tx_short tx ON b.block_num=tx.block_num "+
 			"WHERE (TO_TIMESTAMP($1) <= b.ts) AND (b.ts < TO_TIMESTAMP($2))"
@@ -442,7 +440,7 @@ func (ss *SQLStorage) Bigstats_get_tx_fees_with_ethusd(schema_ethusd string,ts,d
 					"AVG(ethusd_price) avg_ethusd_price, "+
 					"COUNT(*) num_rows "+
 				"FROM "+schema_ethusd+".ep_swap "+
-				"WHERE ($1 < block_num) AND (block_num<=$2)"
+				"WHERE (TO_TIMESTAMP($1) <= time_stamp) AND (time_stamp<=TO_TIMESTAMP($2))"
 
 	ts_end := ts + duration
 	//var n_fees sql.NullFloat64
@@ -456,23 +454,23 @@ func (ss *SQLStorage) Bigstats_get_tx_fees_with_ethusd(schema_ethusd string,ts,d
 	ss.Info.Printf("Bigstats_get_tx_fwees_with_ethusd() begins\n")
 	var sum_tx_fees_eth,sum_tx_fees_usd float64
 	var n_tx_fee sql.NullFloat64
-	var n_block_num sql.NullInt64
+	var n_ts sql.NullInt64
 	var num_rows int64
 	defer rows.Close()
 	for rows.Next() {
 		var n_ethusd sql.NullFloat64
 		err=rows.Scan(
 			&n_tx_fee,
-			&n_block_num,
+			&n_ts,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
 		var null_nr sql.NullInt64
-		block_from := n_block_num.Int64 - 20
-		block_to := n_block_num.Int64 +20
-		err=ss.db.QueryRow(query_avg,block_from,block_to).Scan(&n_ethusd,&null_nr);
+		ts_from := n_ts.Int64 - 60*5	// 5 min interval (for price average)
+		ts_to := n_ts.Int64 + 60*5
+		err=ss.db.QueryRow(query_avg,ts_from,ts_to).Scan(&n_ethusd,&null_nr);
 		if err != nil {
 			if err == sql.ErrNoRows {
 				ss.Log_msg(fmt.Sprintf("Databse of ethusd_price is missing records"))
@@ -485,22 +483,19 @@ func (ss *SQLStorage) Bigstats_get_tx_fees_with_ethusd(schema_ethusd string,ts,d
 			if null_nr.Int64 == 0 {
 				ss.Log_msg(fmt.Sprintf(
 					"Couldn't fetch records from block %v to block %v in ethusd db. (no data in the DB)\n",
-					block_from,block_to,
+					ts_from,ts_to,
 				))
 				os.Exit(1)
 			}
-			sum_tx_fees_usd += n_ethusd.Float64
+			sum_tx_fees_usd += n_ethusd.Float64 * n_tx_fee.Float64
 			sum_tx_fees_eth += n_tx_fee.Float64
 			num_rows++
 		}
 		ss.Info.Printf(
-			"Bigstats_get_tx_fees_with_ethusd() block=%v sum_tx_fees_eth=%v (usd=%v), %v rows\n",
-			n_block_num.Int64,sum_tx_fees_eth,sum_tx_fees_usd,num_rows,
+			"Bigstats_get_tx_fees_with_ethusd() (timestamps: %v - %v) sum_tx_fees_eth=%v (usd=%v), %v rows\n",
+			ts_from,ts_to,sum_tx_fees_eth,sum_tx_fees_usd,num_rows,
 		)
 	}
-	sum_tx_fees_eth = sum_tx_fees_eth/float64(num_rows)
-	sum_tx_fees_usd = sum_tx_fees_usd/float64(num_rows)
-
 	return sum_tx_fees_eth,sum_tx_fees_usd
 }
 func (ss *SQLStorage) Bigstats_get_tx_fees_no_ethusd(ts,duration int64) float64 {
@@ -620,7 +615,8 @@ func (ss *SQLStorage) Bigstats_get_statistics_by_period(schemma,schema_ethusd st
 				"unique_addrs_eoa,"+
 				"unique_addrs_code,"+
 				"eth_transferred,"+
-				"tx_fees "+
+				"tx_fees_eth, "+
+				"tx_fees_usd "+
 			"FROM "+schemma+".bs_period p "+
 			"WHERE (TO_TIMESTAMP($1) <= p.time_stamp) AND (p.time_stamp<TO_TIMESTAMP($2)) "+
 			"ORDER by time_stamp"
@@ -643,6 +639,7 @@ func (ss *SQLStorage) Bigstats_get_statistics_by_period(schemma,schema_ethusd st
 			&rec.NumUniqContractAccts,
 			&rec.EthTransferred,
 			&rec.TxFeesEth,
+			&rec.TxFeesUsd,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
@@ -657,8 +654,8 @@ func (ss *SQLStorage) Bigstats_get_timeframe_range(schema_name string) p.BigStat
 
 	var query string
 	query = "SELECT "+
-				"EXTRACT(EPOCH FROM MAX(time_stamp))::BIGINT,"+
-				"EXTRACT(EPOCH FROM MIN(time_stamp))::BIGINT "+
+				"EXTRACT(EPOCH FROM MIN(time_stamp))::BIGINT, "+
+				"EXTRACT(EPOCH FROM MAX(time_stamp))::BIGINT "+
 			"FROM "+schema_name+".bs_period"
 	row := ss.db.QueryRow(query)
 	var null_min_ts,null_max_ts sql.NullInt64

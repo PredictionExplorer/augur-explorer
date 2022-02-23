@@ -19,6 +19,7 @@ type BigStatRec struct {
 	NumUniqContractAccts		int64
 	EthTransferred				float64
 	TxFeesEth					float64	// fees in ETH
+	TxFeesUsd					float64
 }
 type BigStatsTimeframeRange struct {
 	TsIni						int64

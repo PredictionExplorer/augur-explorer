@@ -53,6 +53,7 @@ var (
 
 	max_approval *big.Int = big.NewInt(0)
 	use_block_receipts_call	*bool = nil
+	disable_stats *bool = nil
 
 )
 type rpcBlockHash struct {
@@ -181,6 +182,7 @@ func main() {
 	block_num := flag.Int64("bnum",0,"Single block number to process")
 	num_threads := flag.Int64("num_threads",1,"Number of parallel threads for block processing")
 	close_periods := flag.Bool("closeperiods",false,"Close periods and exit")
+	disable_stats = flag.Bool("disablestats",false,"Disable generation of statistics")
 	flag.Parse()
 
 	if len(*schema_name) < 3 {

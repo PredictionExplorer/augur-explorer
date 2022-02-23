@@ -8,6 +8,7 @@ const (
 )
 func manage_stat_periods(s *SQLStorage,ethusd_schema string,default_duration int64) {
 
+	if *disable_stats { return }
   again:
 	last_period_ts,duration,_ :=s.Bigstats_get_last_period()
 	if last_period_ts == 0 {
