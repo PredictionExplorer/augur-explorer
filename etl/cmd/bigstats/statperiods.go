@@ -1,5 +1,7 @@
 package main
 import (
+	"fmt"
+	"os"
 	//"time"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 )
@@ -13,7 +15,21 @@ func manage_stat_periods(s *SQLStorage,ethusd_schema string,default_duration int
 	last_period_ts,duration,_ :=s.Bigstats_get_last_period()
 	if last_period_ts == 0 {
 		duration = default_duration
-		last_period_ts = s.Bigstats_get_first_block_timestamp()
+		if *starting_block_close_periods == 0 {
+			last_period_ts = s.Bigstats_get_first_block_timestamp()
+		} else {
+			ts,err := s.Bigstats_get_block_timestamp(*starting_block_close_periods)
+			if err != nil {
+				str := fmt.Sprintf(
+					"Error getting block's timestamp for block num = %v : %v\n",
+					*starting_block_close_periods,err,
+				)
+				fmt.Printf("%v\n",str)
+				Error.Printf("%v\n",str)
+				os.Exit(1)
+			}
+			last_period_ts = ts
+		}
 		last_period_ts = last_period_ts / duration
 		last_period_ts = last_period_ts * duration
 	} else {

@@ -306,7 +306,7 @@ func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,evt *p.EProfitLossC
 			market_aid,
 			aid,
 			outcome_idx,
-			*ss.mkt_order_id_ptr,// note, this contains meaningful value only because we reverse event processing order
+			0,
 			time_stamp,
 	)
 	err=row.Scan(&null_pl_id,&null_profit,&null_rcost,&null_volume);
@@ -317,9 +317,9 @@ func (ss *SQLStorage) Insert_profit_loss_evt(agtx *p.AugurTx,evt *p.EProfitLossC
 			ss.Log_msg(
 				fmt.Sprintf(
 					"DB error @block %v : %v; q=%v VALUES: block_num=%v,tx_id=%v,mkt_aid=%v, aid=%v, "+
-					" outcome_idx=%v, order_id=%v, time_stamp=%v",
+					" outcome_idx=%v, time_stamp=%v",
 					agtx.BlockNum,err,query,agtx.BlockNum,agtx.TxId,market_aid,aid,
-					outcome_idx,*ss.mkt_order_id_ptr,time_stamp,
+					outcome_idx,time_stamp,
 				),
 			)
 			os.Exit(1)

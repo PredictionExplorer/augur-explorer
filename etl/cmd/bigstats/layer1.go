@@ -1,5 +1,7 @@
 // Augur ETL: Converts Augur Data to SQL database
-
+// Notes:
+//		Arbitrum starting block: 217636
+//		MainNet starting block: 13000000
 package main
 
 import (
@@ -42,7 +44,6 @@ var (
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
 
-	market_order_id int64 = 0
 	owner_fld_offset int64 = int64(OWNER_FIELD_OFFSET)	// offset to AugurContract::owner field obtained with eth_getStorage()
 
 	Error   *log.Logger
@@ -54,6 +55,8 @@ var (
 	max_approval *big.Int = big.NewInt(0)
 	use_block_receipts_call	*bool = nil
 	disable_stats *bool = nil
+
+	starting_block_close_periods *int64 = nil
 
 )
 type rpcBlockHash struct {
@@ -182,6 +185,7 @@ func main() {
 	block_num := flag.Int64("bnum",0,"Single block number to process")
 	num_threads := flag.Int64("num_threads",1,"Number of parallel threads for block processing")
 	close_periods := flag.Bool("closeperiods",false,"Close periods and exit")
+	starting_block_close_periods = flag.Int64("startingblock",0,"Starting block for period closing")
 	disable_stats = flag.Bool("disablestats",false,"Disable generation of statistics")
 	flag.Parse()
 
@@ -237,7 +241,7 @@ func main() {
 	Info.Printf("Connected to ETH node: %v\n",*rpc_url)
 	eclient = ethclient.NewClient(rpcclient)
 
-	storage = Connect_to_storage(&market_order_id,Info)
+	storage = Connect_to_storage(Info)
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
 	storage.Db_set_schema_name(*schema_name)

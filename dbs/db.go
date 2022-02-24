@@ -26,7 +26,7 @@ type SQLStorage struct {
 	db_logger			*log.Logger
 	Info				*log.Logger
 	schema_name			string
-	mkt_order_id_ptr	*int64		// global var indicating we have an OrderEvent going on in event chain
+	//TO BE DELETED mkt_order_id_ptr	*int64		// global var indicating we have an OrderEvent going on in event chain
 }
 func (ss *SQLStorage) Db() *sql.DB {
 	return ss.db
@@ -51,7 +51,6 @@ func New_sql_storage(mkt_order_ptr *int64,info_log *log.Logger,db_log *log.Logge
 
 	ss := new(SQLStorage)
 	ss.db = db
-	ss.mkt_order_id_ptr = mkt_order_ptr
 	ss.db_logger = db_log
 	ss.Info = info_log
 	ss.Info.Printf("DB: connected to %v:%v",host,port)
@@ -62,7 +61,7 @@ func show_connect_error() {
 				Check that you have set AUGUR_EXTRACTOR_USERNAME,AUGUR_EXTRACTOR_PASSWORD,AUGUR_EXTRACTOR_DATABASE
 				AUGUR_EXTRACTOR_HOST environment variables`);
 }
-func Connect_to_storage(mkt_order_ptr *int64,info_log *log.Logger) *SQLStorage {
+func Connect_to_storage(info_log *log.Logger) *SQLStorage {
 	var err error
 	host,port,err:=net.SplitHostPort(os.Getenv("AUGUR_EXTRACTOR_HOST"))
 	if (err!=nil) {
@@ -93,7 +92,6 @@ func Connect_to_storage(mkt_order_ptr *int64,info_log *log.Logger) *SQLStorage {
 
 	ss := new(SQLStorage)
 	ss.db = db
-	ss.mkt_order_id_ptr = mkt_order_ptr
 	ss.Info = info_log
 	ss.Info.Printf("DB: connected to %v:%v",host,port)
 	return ss

@@ -1423,8 +1423,6 @@ func process_transaction(tx_id int64) error {
 	delete_augur_transaction_related_data(agtx.TxId)
 	num_logs = len(ordered_list)
 	pl_entries := make([]int64,0,2);// profit loss entries
-	// before processing events we need to reset these global vars as they accumulate some data
-	market_order_id = 0
 	//
 	// Step 3: Execute events using ordered list prepared in previous step
 	for i:=0 ; i < num_logs ; i++ {

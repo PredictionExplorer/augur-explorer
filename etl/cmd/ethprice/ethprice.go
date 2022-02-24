@@ -37,7 +37,6 @@ var (
 	Error	*log.Logger
 	RPC_URL string
 	evt_swap,_   = hex.DecodeString(SWAP_EVT)
-	market_order_id int64 = 0
 
 	rpcclient *rpc.Client
 	eclient *ethclient.Client
@@ -139,7 +138,7 @@ func main() {
 	}
 	Error = log.New(logfile,"ERROR: ",log.Ltime)
 
-	storage = Connect_to_storage(&market_order_id,Info)
+	storage = Connect_to_storage(Info)
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
 	storage.Db_set_schema_name(schema_name)

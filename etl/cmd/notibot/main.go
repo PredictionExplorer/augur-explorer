@@ -62,7 +62,6 @@ var (
 	MAX_TIMEOUT_COUNTER		int = 1000
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 
-	market_order_id			int64 = 0
 	Error					*log.Logger
 	Info					*log.Logger
 	storage					*SQLStorage
@@ -590,7 +589,7 @@ func main() {
 	Info.Printf("Connected to ETH node: %v\n",RPC_URL)
 	eclient = ethclient.NewClient(rpcclient)
 
-	storage = Connect_to_storage(&market_order_id,Info)
+	storage = Connect_to_storage(Info)
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
 

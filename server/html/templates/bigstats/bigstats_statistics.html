@@ -44,4 +44,12 @@
 
 	Example: /api/statistics/main_net/{{.IniTs}}/{{.FinTs}}
 </code>
+<h4>Legend</h4>
+<ul>
+	<li type=disc>Unique Human - unique active addresses (addresses that made at least 1 transaction) sent by human accounts (EOA type account) within 24 hours
+	<li type=disc>Unique Contract - unique active addresses (addresses that were involved in at least 1 transaction) that belong to a contract account (single transaction can make accesss to few of such contract accounts) within 24 hours
+	<li type=disc>Transferred - amount in ETH that was transferred in 24 hours between accounts of different types (contract or human)
+	<li type=disc>Tx Fees in ETH - the transaction fee in ETH 
+	<li type=disc>Tx Fees in US Dollars, calculated per individual transaction using price of ETH averaged within interval of 30 minutes
+</ul>
 </body>

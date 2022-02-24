@@ -20,7 +20,6 @@ var (
 	Error   *log.Logger
 	Info	*log.Logger
 	storage *SQLStorage
-	market_order_id int64 = 0
 )
 func main() {
 
@@ -52,7 +51,7 @@ func main() {
 	Info.Printf("Connected to ETH node: %v\n",RPC_URL)
 	eclient = ethclient.NewClient(rpcclient)
 */
-	storage = Connect_to_storage(&market_order_id,Info)
+	storage = Connect_to_storage(Info)
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
 

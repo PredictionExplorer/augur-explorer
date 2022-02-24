@@ -37,7 +37,6 @@ var (
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
 
-	market_order_id int64 = 0
 	owner_fld_offset int64 = int64(OWNER_FIELD_OFFSET)	// offset to AugurContract::owner field obtained with eth_getStorage()
 
 	Error   *log.Logger
@@ -109,7 +108,7 @@ func main() {
 	Info.Printf("Connected to ETH node: %v\n",RPC_URL)
 	eclient = ethclient.NewClient(rpcclient)
 
-	storage = Connect_to_storage(&market_order_id,Info)
+	storage = Connect_to_storage(Info)
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
 

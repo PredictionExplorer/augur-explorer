@@ -157,11 +157,6 @@ func (ss *SQLStorage) Insert_market_order_evt(agtx *p.AugurTx,timestamp int64,ev
 		)
 		os.Exit(1)
 	}
-	if null_id.Valid {
-		*(ss.mkt_order_id_ptr) = null_id.Int64
-	} else {
-		*(ss.mkt_order_id_ptr) = 0
-	}
 	ss.Insert_0x_mesh_order_event(null_id.Int64,fill_aid,timestamp,zorder,order_specs[order_hash],amount_filled,mesh_evt_code)
 	query = "UPDATE outcome_vol " +
 			"SET " +

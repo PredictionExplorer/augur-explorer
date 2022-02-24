@@ -37,7 +37,6 @@ var (
 	Error   *log.Logger
 	Info	*log.Logger
 	BalancesLog	*log.Logger
-	market_order_id int64 = 0
 	erc20_abi abi.ABI
 	all_contracts map[string]interface{}
 	caddrs *ContractAddresses
@@ -241,7 +240,7 @@ func main() {
 	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	BalancesLog = log.New(logfile,"ERROR: ",log.Ltime|log.Lshortfile)
 
-	storage = Connect_to_storage(&market_order_id,Info)
+	storage = Connect_to_storage(Info)
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
 

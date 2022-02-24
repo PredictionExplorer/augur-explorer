@@ -92,10 +92,29 @@ func (ss *SQLStorage) Bigstats_get_first_block_timestamp() int64 {
 		if err == sql.ErrNoRows {
 			return 0
 		}
-		ss.Log_msg(fmt.Sprintf("Error in Bigstats_get_last_block_timestamp(): %v, q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf("Error in Bigstats_get_first_block_timestamp(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
 	return ts
+}
+func (ss *SQLStorage) Bigstats_get_block_timestamp(block_num int64) (int64,error) {
+
+	var query string
+	query = "SELECT EXTRACT(EPOCH FROM bs_block.ts)::BIGINT AS ts " +
+			"FROM "+ss.schema_name+".bs_block "+
+			"WHERE block_num = $1"
+	row := ss.db.QueryRow(query,block_num)
+	var ts int64
+	var err error
+	err=row.Scan(&ts);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,err
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Bigstats_get_block_timestamp(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return ts,nil
 }
 func (ss *SQLStorage) Bigstats_get_highest_block_num() int64 {
 
@@ -468,8 +487,8 @@ func (ss *SQLStorage) Bigstats_get_tx_fees_with_ethusd(schema_ethusd string,ts,d
 			os.Exit(1)
 		}
 		var null_nr sql.NullInt64
-		ts_from := n_ts.Int64 - 60*5	// 5 min interval (for price average)
-		ts_to := n_ts.Int64 + 60*5
+		ts_from := n_ts.Int64 - 60*15	// 5 min interval (for price average)
+		ts_to := n_ts.Int64 + 60*15
 		err=ss.db.QueryRow(query_avg,ts_from,ts_to).Scan(&n_ethusd,&null_nr);
 		if err != nil {
 			if err == sql.ErrNoRows {
@@ -482,7 +501,7 @@ func (ss *SQLStorage) Bigstats_get_tx_fees_with_ethusd(schema_ethusd string,ts,d
 		} else {
 			if null_nr.Int64 == 0 {
 				ss.Log_msg(fmt.Sprintf(
-					"Couldn't fetch records from block %v to block %v in ethusd db. (no data in the DB)\n",
+					"Couldn't fetch records from ts %v to ts %v in ethusd db. (no data in the DB)\n",
 					ts_from,ts_to,
 				))
 				os.Exit(1)
