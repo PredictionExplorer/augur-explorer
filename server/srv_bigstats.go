@@ -1,6 +1,6 @@
 package main
 import (
-	"fmt"
+	//"fmt"
 	"time"
 	"net/http"
 	"github.com/gin-gonic/gin"
@@ -62,9 +62,9 @@ func stats_get_network_statistics(c *gin.Context,schema_name string) {
 		return
 	}
 
-	fmt.Printf("schema_name=%v ini=%v fin=%v\n",schema_name,ini,fin)
 	records := augur_srv.db_arbitrum.Bigstats_get_statistics_by_period(schema_name,"ethprice",ini,fin)
 	c.HTML(http.StatusOK, "bigstats_statistics.html", gin.H{
+		"SchemaName": schema_name,
 		"Statistics" : records,
 		"IniTs": ini,
 		"FinTs": fin,

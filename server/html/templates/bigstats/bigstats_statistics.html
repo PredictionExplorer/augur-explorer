@@ -42,7 +42,7 @@
 	API Ethereum: /api/statistics/main_net/[from_ts]/[to_ts]<br/>
 	API Arbitrum: /api/statistics/arbitrum/[from_ts]/[to_ts]<br/>
 
-	Example: /api/statistics/main_net/{{.IniTs}}/{{.FinTs}}
+	Example: /api/statistics/{{ if eq .SchemaName "st_eth" }}main_net{{ end }}{{ if eq .SchemaName "st_arb" }}arbitrum{{end}}/{{.IniTs}}/{{.FinTs}}
 </code>
 <h4>Legend</h4>
 <ul>

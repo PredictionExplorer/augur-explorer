@@ -73,7 +73,6 @@ func connect_to_main_net(srv *AugurServer) {
 		ETH_DB := log.New(eth_db_logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 
 		srv.db_main_net = New_sql_storage(
-			&market_order_id,
 			Info,
 			ETH_DB,
 			eth_host_port,
@@ -101,7 +100,6 @@ func connect_to_amm(srv *AugurServer) {
 		AMM_DB := log.New(amm_db_logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 
 		srv.db_matic = New_sql_storage(
-			&market_order_id,
 			Info,
 			AMM_DB,
 			amm_host_port,
@@ -128,7 +126,6 @@ func connect_to_arbitrum(srv *AugurServer ) {
 		arb_DB := log.New(arbitrum_db_logfile,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 
 		srv.db_arbitrum= New_sql_storage(
-			&market_order_id,
 			Info,
 			arb_DB,
 			arb_host_port,
@@ -160,7 +157,7 @@ func create_augur_server() *AugurServer {
 	}
 	Error = log.New(logfile,"ERROR: ",log.Ldate|log.Ltime|log.Lshortfile)
 	srv := new(AugurServer)
-	srv.db_augur= Connect_to_storage(&market_order_id,Info)
+	srv.db_augur= Connect_to_storage(Info)
 	srv.db_augur.Init_log(web_db_log_file)
 	connect_to_amm(srv)
 	connect_to_arbitrum(srv)

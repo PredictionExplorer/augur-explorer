@@ -49,6 +49,7 @@ func api_get_network_statistics(c *gin.Context,schema_name string) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
+		"SchemaName" : schema_name,
 		"Statistics" : records,
 		"IniTs": ini,
 		"FinTs": fin,
