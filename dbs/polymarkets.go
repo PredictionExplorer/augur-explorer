@@ -1626,3 +1626,117 @@ func (ss *SQLStorage) Search_polymarket_keywords(keywords string) []p.PolTextSea
 	}
 	return records
 }
+func (ss *SQLStorage) Get_tokens_by_condition_id(condition_id string) ([]string,[]int64) {
+
+
+	query = "SELECT "+
+				"t.token_id, "+
+				"ti.token_id_hex "+
+			"FROM pol_tok_ids ti "+
+				"JOIN erc1155_tok t ON ti.token_id_hex=t.token_id_hex "+
+			"WHERE ti.token_id_hex=$1"
+
+	rows,err := ss.db.Query(query,condition_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records1 := make([]p.int64,0,4)
+	records2 := make([]p.string,0,4)
+
+	defer rows.Close()
+	for rows.Next() {
+		var token_id int64
+		var token_id_hex string
+		err=rows.Scan(
+			&token_id,
+			&token_id_hex,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records1 = append(records1,token_id)
+		records2 = append(records2,token_id)
+	}
+	return records1,records2
+
+}
+func (ss *SQLStorage) Get_token_erc115_single_transfers(token_id itn64) []Pol_ERC1155_Transfers {
+
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM et.time_stamp)::BIGINT AS ts," +
+				"et.time_stamp,"+
+				"et.amount,"+
+				"et.amount/1e+6,"+
+				"et.from_aid,"+
+				"et.to_aid,"+
+			"FROM erc1155_transf et "+
+			"WHERE token_id=$1"
+
+	rows,err := ss.db.Query(query,token_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.Pol_ERC1155_Transfers,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.Pol_ERC1155_Transfers
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.AmountInt,
+			&rec.Amount,
+			&rec.FromAid,
+			&rec.ToAid,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_token_erc115_batch_transfers(token_id itn64) []Pol_ERC1155_Transfers {
+
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM t.time_stamp)::BIGINT AS ts," +
+				"t.time_stamp,"+
+				"t.amount,"+
+				"t.amount/1e+6,"+
+				"t.from_aid,"+
+				"t.to_aid,"+
+			"FROM erc1155_batch t "+
+			"WHERE token_id=$1"
+
+	rows,err := ss.db.Query(query,token_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.Pol_ERC1155_Transfers,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.Pol_ERC1155_Transfers
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.AmountInt,
+			&rec.Amount,
+			&rec.FromAid,
+			&rec.ToAid,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}

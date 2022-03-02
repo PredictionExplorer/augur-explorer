@@ -487,3 +487,12 @@ type Pol_TokIdRec struct {
 	ParentMergeId			int64
 	ParentRedeemId			int64
 }
+type Pol_ERC1155_Transfers struct {
+	AmountInt				string
+	Amount					float64
+	TimeStamp				int64
+	DateTime				string
+	FromAid					int64
+	ToAid					int64
+
+}
