@@ -1662,17 +1662,62 @@ func (ss *SQLStorage) Get_tokens_by_condition_id(condition_id string) ([]string,
 	return records1,records2
 
 }
-func (ss *SQLStorage) Get_token_erc115_single_transfers(token_id itn64) []Pol_ERC1155_Transfers {
+func (ss *SQLStorage) Get_token_erc1155_single_transfers(token_id itn64) []p.Pol_ERC_Transfer {
 
 	var query string
 	query = "SELECT " +
+				"et.id,"+
+				"et.evtlog_id,"+
 				"EXTRACT(EPOCH FROM et.time_stamp)::BIGINT AS ts," +
 				"et.time_stamp,"+
 				"et.amount,"+
 				"et.amount/1e+6,"+
 				"et.from_aid,"+
-				"et.to_aid,"+
+				"et.to_aid "+
 			"FROM erc1155_transf et "+
+			"WHERE token_id=$1"
+
+	rows,err := ss.db.Query(query,token_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.Pol_ERC1155_Transfers,0,8)
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.Pol_ERC_Transfer
+		err=rows.Scan(
+			&rec.Id,
+			&rec.EvtLogId,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.AmountInt,
+			&rec.Amount,
+			&rec.FromAid,
+			&rec.ToAid,
+		)
+		if err != nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_token_erc115_batch_transfers(token_id itn64) []p.Pol_ERC_Transfer {
+
+	var query string
+	query = "SELECT " +
+				"t.id,"+
+				"t.evtlog_id,"+
+				"EXTRACT(EPOCH FROM t.time_stamp)::BIGINT AS ts," +
+				"t.time_stamp,"+
+				"t.amount,"+
+				"t.amount/1e+6,"+
+				"t.from_aid,"+
+				"t.to_aid "+
+			"FROM erc1155_batch t "+
 			"WHERE token_id=$1"
 
 	rows,err := ss.db.Query(query,token_id)
@@ -1686,6 +1731,8 @@ func (ss *SQLStorage) Get_token_erc115_single_transfers(token_id itn64) []Pol_ER
 	for rows.Next() {
 		var rec p.Pol_ERC1155_Transfers
 		err=rows.Scan(
+			&rec.Id,
+			&rec.EvtLogId,
 			&rec.TimeStamp,
 			&rec.DateTime,
 			&rec.AmountInt,
@@ -1701,36 +1748,44 @@ func (ss *SQLStorage) Get_token_erc115_single_transfers(token_id itn64) []Pol_ER
 	}
 	return records
 }
-func (ss *SQLStorage) Get_token_erc115_batch_transfers(token_id itn64) []Pol_ERC1155_Transfers {
+func (ss *SQLStorage) Get_poly_get_usdc_transfers(tx_id,usdc_contract_aid int64) []p.Pol_ERC_Transfer {
+
+	records := make([]p.Pol_ERC_Transfer,0,8)
 
 	var query string
-	query = "SELECT " +
-				"EXTRACT(EPOCH FROM t.time_stamp)::BIGINT AS ts," +
-				"t.time_stamp,"+
-				"t.amount,"+
-				"t.amount/1e+6,"+
+	query = "SELECT "+
+				"b.id,"+
+				"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT AS ts," +
+				"b.time_stamp,"+
+				"b.aid," +
 				"t.from_aid,"+
 				"t.to_aid,"+
-			"FROM erc1155_batch t "+
-			"WHERE token_id=$1"
+				"t.amount,"+
+				"t.amount/1e+6 "+
+			"FROM erc20_bal b "+
+				"JOIN erc20_transf t ON b.parent_id=t.id "+
+			"WHERE b.tx_id=$1 AND b.contract_aid=$2 "+
+			"ORDE#R by b.id"
 
-	rows,err := ss.db.Query(query,token_id)
+	rows,err := ss.db.Query(query,tx_id)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.Pol_ERC1155_Transfers,0,8)
+	records := make([]p.Pol_ERC_Transfer,0,8)
 
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.Pol_ERC1155_Transfers
 		err=rows.Scan(
+			&rec.Id,
 			&rec.TimeStamp,
 			&rec.DateTime,
-			&rec.AmountInt,
-			&rec.Amount,
+			&rec.Aid,
 			&rec.FromAid,
 			&rec.ToAid,
+			&rec.AmountInt,
+			&rec.Amount,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
