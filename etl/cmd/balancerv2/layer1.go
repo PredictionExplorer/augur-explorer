@@ -8,14 +8,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"io/ioutil"
-	"strings"
 	"time"
 	"strconv"
 	"fmt"
 	"context"
 	"log"
-	"math/big"
 	"flag"
 	"sync"
 
@@ -28,6 +25,14 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/layer1"
 )
 const (
+	POOL_CREATED				= "83a48fbcfc991335314e74d0496aab6a1987e992ddc85dddbcc4d6dd6ef2e9fc"
+	POOL_BALANCE_CHANGED		= "e5ce249087ce04f05a957192435400fd97868dba0e6a4b4c049abf8af80dae78"
+	POOL_REGISTERED				= "3c13bc30b8e878c53fd2a36b679409c073afd75950be43d8858768e956fbc20e"
+	EXTERNAL_BALANCE_TRANSFER	= "540a1a3f28340caec336c81d8d7b3df139ee5cdc1839a4f283d7ebb7eaae2d5c"
+	INTERNAL_BALANCE_CHANGED	= "18e1ea4139e68413d7d08aa752e71568e36b2c5bf940893314c2c5b01eaa0c42"
+	TOKEN_DEREGISTERED			= "7dcdc6d02ef40c7c1a7046a011b058bd7f988fa14e20a66344f9d4e60657d610"
+	TOKEN_REGISTERED			= "f5847d3f2197b16cdcd2098ec95d0905cd1abdaf415f07bb7cef2bba8ac5dec4"
+	SWAP						= "2170c741c41531aec20e7c107c24eecfdd15e69c9bb0a8dd37b1840b9e0b207b"
 
 	DEFAULT_STATISTICS_DURATION	int64 = 24*60*60 // in seconds
 	DEFAULT_WAIT_TIME = 2000	// 2 seconds
@@ -38,6 +43,15 @@ const (
 	//USE_BLOCK_RECEIPTS_RPC_CALL bool = false // flag for using patch in ./geth-patch/README.txt
 )
 var (
+	evt_pool_created,_ = hex.DecodeString(POOL_CREATED)
+	evt_pool_balance_changed,_ = hex.DecodeString(POOL_BALANCE_CHANGED)
+	evt_pool_registered,_ = hex.DecodeString(POOL_REGISTERED)
+	evt_external_balance_transfer,_ = hex.DecodeString(EXTERNAL_BALANCE_TRANSFER)
+	evt_internal_balance_changed,_ = hex.DecodeString(INTERNAL_BALANCE_CHANGED)
+	evt_token_deregistered,_ = hex.DecodeString(TOKEN_DEREGISTERED)
+	evt_token_registered,_ = hex.DecodeString(TOKEN_REGISTERED)
+	evt_swap,_ = hex.DecodeString(SWAP)
+
 	storage *SQLStorage
 
 	eclient *ethclient.Client
@@ -46,6 +60,8 @@ var (
 	Error   *log.Logger
 	Info	*log.Logger
 
+	Manager	ETL_Manager
+	pool_factory_abi *abi.ABI
 )
 func main() {
 
@@ -131,6 +147,22 @@ func main() {
 	if err != nil {
 		log.Fatal("oops:", err)
 	}
+
+	abi_parsed1 := strings.NewReader(BalancerV2WeightedPoolFactoryABI)
+	ab1,err := abi.JSON(abi_parsed1)
+	if err!= nil {
+		Info.Printf("Can't parse PoolFactory ABI: %v\n",err)
+		os.Exit(1)
+	}
+	pool_factory_abi = &abi1
+
+	abi_parsed2 := strings.NewReader(BalancerV2VaultABI)
+	ab1,err := abi.JSON(abi_parsed1)
+	if err!= nil {
+		Info.Printf("Can't parse Vault ABI: %v\n",err)
+		os.Exit(1)
+	}
+	vault_abi = &abi1
 
 	bnum,exists := storage.Bigstats_get_last_block_num()
 	if !exists {
