@@ -181,7 +181,7 @@ func (ss *SQLStorage) Bigstats_chainsplit_delete_blocks(starting_block_num int64
 	// Note: We must delete in reverse order of block creation because the triggers
 	//			in the DB have made cumulative operations
 	query = "DELETE FROM "+ss.schema_name+".bs_block WHERE block_num IN (" +
-				"SELECT block_num FROM "+ss.schema_name+".block WHERE block_num>$1 ORDER BY block_num DESC" +
+				"SELECT block_num FROM "+ss.schema_name+".bs_block WHERE block_num>$1 ORDER BY block_num DESC" +
 			")"
 	_,err = ss.db.Exec(query,starting_block_num)
 	if (err!=nil) {

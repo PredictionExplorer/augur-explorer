@@ -14,6 +14,9 @@ import (
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
+type rpcBlockHash struct {
+	Hash		string
+}
 type rpcTransaction struct {
 	tx *types.Transaction
 	txExtraInfo

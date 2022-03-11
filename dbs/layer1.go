@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"math/big"
 
 	"database/sql"
 	_  "github.com/lib/pq"
@@ -14,21 +13,20 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
-func (ss *SQLStorage) Layer1_lookup_address_id(addr string) (int64,bool,error) {
+func (ss *SQLStorage) Layer1_lookup_address_id(addr string) (int64,error) {
 
 	var query string
 	var aid int64
-	var is_contract bool
-	query="SELECT address_id,is_contract FROM "+ss.schema_name+".addr WHERE addr=$1"
-	err:=ss.db.QueryRow(query,addr).Scan(&aid,&is_contract);
+	query="SELECT address_id FROM "+ss.schema_name+".addr WHERE addr=$1"
+	err:=ss.db.QueryRow(query,addr).Scan(&aid);
 	if (err!=nil) {
 		if err!=sql.ErrNoRows {
 			ss.Log_msg(fmt.Sprintf("DB error: %v ,q=%v",query))
 			os.Exit(1)
 		}
-		return 0,false,err
+		return 0,err
 	}
-	return aid,is_contract,nil
+	return aid,nil
 }
 func (ss *SQLStorage) Layer1_insert_address(addr string) int64 {
 
@@ -115,4 +113,110 @@ func (ss *SQLStorage) Layer1_get_block_num_by_hash(block_hash string) (int64,err
 		return 0,err
 	}
 	return block_num,nil
+}
+func (ss *SQLStorage) Layer1_block_delete_with_everything(block_num int64) {
+
+	// deletes block table and all the dependent tables receieve cascaded DELETEs also
+	var query string
+	query = "DELETE FROM "+ss.schema_name+".block WHERE block_num = $1"
+	_,err := ss.db.Exec(query,block_num)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (block_num=%v, %v)",err,block_num,query))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Layer1_insert_block(hash_str string,block *types.Header,num_tx int,no_chainsplit_check bool) error {
+
+	var query string
+	var parent_block_num int64
+	parent_hash := block.ParentHash.String()
+
+	query="SELECT block_num FROM "+ss.schema_name+".block WHERE block_hash=$1"
+	err:=ss.db.QueryRow(query,parent_hash).Scan(&parent_block_num);
+	if no_chainsplit_check {
+		err = nil // clear error as we don't need to validate the chain
+		parent_block_num = block.Number.Int64()-1
+	}
+	if (err!=nil) {
+		if (err==sql.ErrNoRows) {
+			query = "SELECT count(*) FROM "+ss.schema_name+".block"
+			row := ss.db.QueryRow(query)
+			var block_count int64
+			err := row.Scan(&block_count)
+			if (err!=nil) {
+				ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+				os.Exit(1)
+			}
+			if block_count > 0 {
+				starting_block:=ss.Bigstats_get_starting_block_from_config()
+				if block.Number.Int64() == starting_block {
+					// this is the first block that will be processed (we aren't starting from block 0)
+					// allow
+				} else {
+					ss.Info.Printf(
+						fmt.Sprintf(
+							"Insert_block() Can't insert block (block_num=%v, block_hash=%v, parent_hash=%v"+
+							"), parent not found. Chain split, need recovery procedure. (CHAIN_SPLIT)",
+							block.Number.Int64(),hash_str,parent_hash,
+						),
+					);
+					return p.ErrChainSplit // chain split occured (parent block wasn't found)
+				}
+			} else {
+				// database is empty, continue
+			}
+		} else {
+			ss.Log_msg(fmt.Sprintf("DB Error: %v; query=%v",err,query));
+			os.Exit(1)
+		}
+	} else {
+		if (parent_block_num + 1) != block.Number.Int64() {
+			ss.Info.Printf(
+				fmt.Sprintf(
+					"Insert_block() Can't insert block (block_num=%v, block_hash=%v, parent_hash=%v"+
+					"), block found as parent has non-consecutive number (parent_block_num=%v). " +
+					"Chain split, need recovery procedure. (CHAIN_SPLIT)",
+					parent_block_num,block.Number.Int64(),hash_str,parent_hash,
+				),
+			);
+			return p.ErrChainSplit // chain split occurred (parent's block num isn't consecutive)
+		}
+	}
+
+	block_num := int64(block.Number.Uint64())
+	query = `
+		INSERT INTO `+ss.schema_name+`.block(
+			block_num,
+			block_hash,
+			ts,
+			parent_hash,
+			num_tx
+		) VALUES ($1,$2,TO_TIMESTAMP($3),$4,$5)`
+
+	result,err := ss.db.Exec(query,
+			block_num,
+			hash_str,
+			block.Time,
+			parent_hash,
+			num_tx,
+	)
+	if err != nil {
+		ss.Log_msg(
+			fmt.Sprintf(
+				"DB error: can't insert into block table block_num=%v: %v, q=%v",
+				block.Number.Int64(),err,query,
+			),
+		)
+		os.Exit(1)
+	}
+	rows_affected,err:=result.RowsAffected()
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+	}
+	if rows_affected > 0 {
+		return nil
+	}
+	ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into block table. Rows affeced = 0"))
+	os.Exit(1)
+	return nil
 }

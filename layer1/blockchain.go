@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"os"
 	"errors"
-	"context"
+	//"context"
 	"fmt"
 	"sync"
 
@@ -14,12 +14,12 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
-	. "github.com/PredictionExplorer/augur-explorer/dbs"
+	//. "github.com/PredictionExplorer/augur-explorer/dbs"
 )
 var (
 	addrs sync.Map
 )
-func lookup_or_insert_addr(addr common.Address) int64 {
+func lookup_or_insert_addr(etl *ETL_Layer1,addr common.Address) int64 {
 
 	var aid int64
 	var exists bool
@@ -29,15 +29,15 @@ func lookup_or_insert_addr(addr common.Address) int64 {
 		aid = result.(int64)
 	} else {
 		var err error
-		aid,is_contract,err = storage.Layer1_lookup_address_id(addr.String())
+		aid,err = etl.Storage.Layer1_lookup_address_id(addr.String())
 		if err != nil {
-			aid = storage.Layer1_insert_address(addr.String(),is_contract)
+			aid = etl.Storage.Layer1_insert_address(addr.String())
 			addrs.Store(addr,aid)
 		}
 	}
 	return aid
 }
-func roll_back_blocks(diverging_block *types.Header) error {
+func roll_back_blocks(etl *ETL_Layer1,diverging_block *types.Header) error {
 	// Finds the block from which the fork started
 	var err error
 	var bhash common.Hash
@@ -51,7 +51,7 @@ func roll_back_blocks(diverging_block *types.Header) error {
 	Info.Printf("roll_back_blocks(): block_num = %v , block_hash %v",block_num,block_hash)
 	Info.Printf("\t\t\tparent_hash %v\n",diverging_block.ParentHash.String())
 	for {
-		my_block_num,err := storage.Layer1_get_block_num_by_hash(block_hash)
+		my_block_num,err := etl.Storage.Layer1_get_block_num_by_hash(block_hash)
 		Info.Printf("Chainsplit fix: diverging hash %v, my_block_num=%v err=%v\n",block_hash,my_block_num,err)
 		if err == nil {
 			total_blocks := block_num - my_block_num
@@ -68,8 +68,8 @@ func roll_back_blocks(diverging_block *types.Header) error {
 				"Chainsplit fix: deleting blocks higher than %v ; good block hash = %v\n",
 				my_block_num,block_hash,
 			)
-			storage.Layer1_chainsplit_delete_blocks(my_block_num)
-			storage.Layer1_set_last_block_num(my_block_num)
+			etl.Storage.Layer1_chainsplit_delete_blocks(my_block_num)
+			etl.Storage.Layer1_set_last_block_num(my_block_num)
 			return errors.New(fmt.Sprintf(
 				"Chainsplit occurred at block %v and was fixed at block %v",starting_block_num,my_block_num,
 			))
@@ -109,7 +109,7 @@ func add_address_stat_entry(addr_stats_log []AddrStatsLog,block_num,tx_index,aid
 	addr_stats_log = append(addr_stats_log,entry)
 	return addr_stats_log
 }
-func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*receiptCallResult,block_receipts []types.Receipt,extra_info []ReceiptExtraInfo) (*big.Int,*big.Int,error) {
+func process_transactions(etl *ETL_Layer1,bnum int64,transactions []*AugurTx,receipt_calls []*receiptCallResult,block_receipts []types.Receipt,extra_info []ReceiptExtraInfo) (*big.Int,*big.Int,error) {
 	//	if receipt_calls is not nil then the old slow getTrasnactionReceipt call is used
 	//	if block_receipts is not nil then we are using new getBlockReceipts RPC call
 
@@ -122,13 +122,12 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 		agtx.TxIndex = int32(tnum)
 		tmp_log_slice := make([]AddrStatsLog,0,2)
 		from_addr := common.HexToAddress(agtx.From)
-		from_aid,_:= lookup_or_insert_addr(from_addr)
+		from_aid:= lookup_or_insert_addr(etl,from_addr)
 		tmp_log_slice = add_address_stat_entry(tmp_log_slice,agtx.BlockNum,int64(agtx.TxIndex),from_aid)
 		to_addr := common.HexToAddress(agtx.To)
-		to_aid,_:= lookup_or_insert_addr(to_addr)
+		to_aid := lookup_or_insert_addr(etl,to_addr)
 		tmp_log_slice = add_address_stat_entry(tmp_log_slice,agtx.BlockNum,int64(agtx.TxIndex),to_aid)
 
-		storage.Bigstats_insert_all_addr_stat_logs(tmp_log_slice)
 		var rcpt *types.Receipt = nil
 		var rcpt_extra *ReceiptExtraInfo = nil
 		if receipt_calls != nil {
@@ -189,7 +188,7 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 			tx_short.TxFee = tx_fee.String()
 			total_fees.Add(total_fees,tx_fee)
 		}
-		storage.Bigstats_insert_transaction(&tx_short)	// at this point we are sure Tx is without error
+		//storage.Bigstats_insert_transaction(&tx_short)	// at this point we are sure Tx is without error
 		transaction_hash := common.HexToHash(agtx.TxHash)
 		if !bytes.Equal(rcpt.TxHash.Bytes(),transaction_hash.Bytes()) { // can be removed later
 			Error.Printf("Receipt's hash doesn't match Tx hash, aborting (tx_hash=%v)\n",agtx.TxHash)
@@ -204,14 +203,17 @@ func process_transactions(bnum int64,transactions []*AugurTx,receipt_calls []*re
 		total_eth.Add(total_eth,big_value)
 		agtx.GasUsed = int64(rcpt.GasUsed)
 		agtx.NumLogs = int32(len(rcpt.Logs))
+		etl.Manager.Process_transaction(etl.Storage,agtx,rcpt)
+		/*
 		logs_to_insert := extract_addresses_from_event_logs(agtx,rcpt.Logs)
 		if len(logs_to_insert) > 0 {
 			storage.Bigstats_insert_all_addr_stat_logs(logs_to_insert)
 		}
+		*/
 	}
 	return total_eth,total_fees,nil
 }
-func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool,norollback bool) error {
+func process_block(etl *ETL_Layer1,bnum int64,update_last_block bool,no_chainsplit_check bool,norollback bool) error {
 
 	block_hash_str,err:=get_block_hash(bnum)
 	if err!=nil {
@@ -230,17 +232,16 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool,no
 		Error.Printf("Retrieved block number %v but Block object contains another number (%v)\n",bnum,header.Number.Int64())
 		return errors.New("Block object inconsistency")
 	}
-	storage.Bigstats_block_delete_with_everything(big_bnum.Int64())
+	etl.Storage.Layer1_block_delete_with_everything(big_bnum.Int64())
 	var receipt_calls []*receiptCallResult = nil
 	var block_receipts []types.Receipt = nil
 	var extra_fields []ReceiptExtraInfo
-	if *use_block_receipts_call {
+	if etl.UseBlockReceiptsCall {
 		block_receipts,extra_fields,err = get_block_receipts_v2(block_hash)
 		if err != nil {
 			Error.Printf("Error getting receipts of the block: %v\n",err)
 			return err
 		}
-
 	} else {
 		receipt_calls = make([]*receiptCallResult,num_transactions,num_transactions)
 		for i,tx := range transactions {
@@ -248,39 +249,22 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool,no
 			go get_receipt_async_custom_rpc(i,hash,&receipt_calls)
 		}
 	}
-	err = storage.Bigstats_insert_block(block_hash_str,header,num_transactions,no_chainsplit_check)
+	err = etl.Storage.Layer1_insert_block(block_hash_str,header,num_transactions,no_chainsplit_check)
 	if err != nil {
 		if !norollback {
-			err = roll_back_blocks(header)
+			err = roll_back_blocks(etl,header)
 		}
 		return err
 	}
 	if num_transactions == 0 {
 		if update_last_block {
-			storage.Bigstats_set_last_block_num(bnum)
+			etl.Storage.Layer1_set_last_block_num(bnum)
 		}
 		return nil
 	}
-	err := process_transactions(bnum,transactions,receipt_calls,block_receipts,extra_fields)
+	_,_,err = process_transactions(etl,bnum,transactions,receipt_calls,block_receipts,extra_fields)
 	if update_last_block {
-		storage.Bigstats_set_last_block_num(bnum)
+		etl.Storage.Layer1_set_last_block_num(bnum)
 	}
 	return nil
-}
-func extract_addresses_from_event_logs(agtx *AugurTx,logs []*types.Log) []AddrStatsLog {
-
-	output := make([]AddrStatsLog,0,64)
-	num_logs := len(logs)
-	for i:=0 ; i < num_logs ; i++ {
-		log := logs[i]
-		var astats AddrStatsLog
-		var is_contract bool
-		astats.BlockNum = agtx.BlockNum
-		astats.TxIndex = int64(agtx.TxIndex)
-		astats.Aid,is_contract = lookup_or_insert_addr(log.Address)
-		astats.Aid = storage.Bigstats_lookup_or_create_address(log.Address.String(),is_contract)
-		output = append(output,astats)
-	}
-
-	return output
 }

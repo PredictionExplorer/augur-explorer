@@ -1628,7 +1628,7 @@ func (ss *SQLStorage) Search_polymarket_keywords(keywords string) []p.PolTextSea
 }
 func (ss *SQLStorage) Get_tokens_by_condition_id(condition_id string) ([]string,[]int64) {
 
-
+	var query string
 	query = "SELECT "+
 				"t.token_id, "+
 				"ti.token_id_hex "+
@@ -1641,8 +1641,8 @@ func (ss *SQLStorage) Get_tokens_by_condition_id(condition_id string) ([]string,
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records1 := make([]p.int64,0,4)
-	records2 := make([]p.string,0,4)
+	records1 := make([]int64,0,4)
+	records2 := make([]string,0,4)
 
 	defer rows.Close()
 	for rows.Next() {
@@ -1657,12 +1657,12 @@ func (ss *SQLStorage) Get_tokens_by_condition_id(condition_id string) ([]string,
 			os.Exit(1)
 		}
 		records1 = append(records1,token_id)
-		records2 = append(records2,token_id)
+		records2 = append(records2,token_id_hex)
 	}
-	return records1,records2
+	return records2,records1
 
 }
-func (ss *SQLStorage) Get_token_erc1155_single_transfers(token_id itn64) []p.Pol_ERC_Transfer {
+func (ss *SQLStorage) Get_token_erc1155_single_transfers(token_id int64) []p.Pol_ERC_Transfer {
 
 	var query string
 	query = "SELECT " +
@@ -1682,7 +1682,7 @@ func (ss *SQLStorage) Get_token_erc1155_single_transfers(token_id itn64) []p.Pol
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.Pol_ERC1155_Transfers,0,8)
+	records := make([]p.Pol_ERC_Transfer,0,8)
 
 	defer rows.Close()
 	for rows.Next() {
@@ -1705,7 +1705,7 @@ func (ss *SQLStorage) Get_token_erc1155_single_transfers(token_id itn64) []p.Pol
 	}
 	return records
 }
-func (ss *SQLStorage) Get_token_erc115_batch_transfers(token_id itn64) []p.Pol_ERC_Transfer {
+func (ss *SQLStorage) Get_token_erc115_batch_transfers(token_id int64) []p.Pol_ERC_Transfer {
 
 	var query string
 	query = "SELECT " +
@@ -1725,11 +1725,11 @@ func (ss *SQLStorage) Get_token_erc115_batch_transfers(token_id itn64) []p.Pol_E
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.Pol_ERC1155_Transfers,0,8)
+	records := make([]p.Pol_ERC_Transfer,0,8)
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.Pol_ERC1155_Transfers
+		var rec p.Pol_ERC_Transfer
 		err=rows.Scan(
 			&rec.Id,
 			&rec.EvtLogId,
@@ -1772,11 +1772,10 @@ func (ss *SQLStorage) Get_poly_get_usdc_transfers(tx_id,usdc_contract_aid int64)
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.Pol_ERC_Transfer,0,8)
 
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.Pol_ERC1155_Transfers
+		var rec p.Pol_ERC_Transfer
 		err=rows.Scan(
 			&rec.Id,
 			&rec.TimeStamp,
@@ -1794,4 +1793,26 @@ func (ss *SQLStorage) Get_poly_get_usdc_transfers(tx_id,usdc_contract_aid int64)
 		records = append(records,rec)
 	}
 	return records
+}
+func (ss *SQLStorage) Layer1_get_last_block_num() (int64,bool) {
+
+	var query string
+	query="SELECT last_block FROM "+ss.schema_name+".bs_config LIMIT 1";
+	row := ss.db.QueryRow(query)
+	var null_block_num sql.NullInt64
+	var err error
+	err=row.Scan(&null_block_num);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return -1,false
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error in get_last_block_num(): %v",err))
+			os.Exit(1)
+		}
+	}
+	if (null_block_num.Valid) {
+		return null_block_num.Int64,true
+	} else {
+		return -1,false
+	}
 }

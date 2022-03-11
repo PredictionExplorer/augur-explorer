@@ -25,6 +25,7 @@ import (
 	//. "github.com/PredictionExplorer/augur-explorer/contracts"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
+	. "github.com/PredictionExplorer/augur-explorer/layer1"
 )
 const (
 
@@ -39,140 +40,13 @@ const (
 var (
 	storage *SQLStorage
 
-	//RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
-
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
-
-	owner_fld_offset int64 = int64(OWNER_FIELD_OFFSET)	// offset to AugurContract::owner field obtained with eth_getStorage()
 
 	Error   *log.Logger
 	Info	*log.Logger
 
-	//DISCONTINUED ErrChainSplit error = errors.New("Chainsplit detected")
-	split_simulated bool = false
-
-	max_approval *big.Int = big.NewInt(0)
-	use_block_receipts_call	*bool = nil
-	disable_stats *bool = nil
-
-	starting_block_close_periods *int64 = nil
-
 )
-type rpcBlockHash struct {
-	Hash		string
-}
-func read_block_numbers(fname string) []int64 {
-	data,err := ioutil.ReadFile(fname)
-	if err != nil {
-		fmt.Printf("Can't open file %v containing comma-separated block numbers to be processed\n")
-		os.Exit(1)
-	}
-	blocks_str := string(data)
-	numbers := strings.Split(blocks_str,",")
-	output := make([]int64,0,512)
-	for i:=0 ; i<len(numbers); i++ {
-		trimmed:=strings.ReplaceAll(numbers[i],"\n","")
-		bnum,err:=strconv.Atoi(trimmed)
-		if err!=nil {
-			fmt.Printf("Can't convert block %v to number: %v . Aborting\n",numbers[i],err)
-			os.Exit(1)
-		}
-		output = append(output,int64(bnum))
-	}
-	return output
- 34     //DEFAULT_LOG_DIR               = "ae_logs"
-}
-func multi_threaded_loop_routine(retval *int64,wg_ptr *sync.WaitGroup,num_threads,tid int64,stop_chan chan bool, bnum_low,bnum_high int64,no_rollback_blocks bool) {
-	// tid - thread id
-	// every go routine will attend a sharded block number
-	// shards are specified by 'block_num' on the commandline
-
-	// Notes: multithreaded routine is not calculating statistics, it is meant to 
-	//			accelerate initial load, until the point you reach the last block in the chain, and
-	//			then you switch to single threaded routine
-
-	last_block_num := int64(0)
-	bnum := bnum_low
-	Info.Printf("Thread %v , processing blocks from %v to %v\n",tid,bnum,bnum_high)
-
-	for ; bnum<bnum_high; bnum=bnum+num_threads{
-		select {
-			case exit_flag := <-stop_chan:
-				if exit_flag {
-					Info.Printf("Thread %v is exiting (set last block to %v)",tid,last_block_num)
-					*retval=last_block_num
-					wg_ptr.Done()
-					return
-				}
-			default:
-		}
-		Info.Printf("Thread %v : processing block %v\n",tid,bnum)
-		// note: we do not update last_block table in multithreaded run, we do it in main routine
-		update_last_block := false
-		no_chainsplit_check := true
-		err := process_block(bnum,update_last_block,no_chainsplit_check,no_rollback_blocks)
-		if err!=nil {
-			Error.Printf("Block processing error: %v. Aborting\n",err)
-			Error.Printf("Update last_block manually (irregular exit)\n")
-			os.Exit(1)
-		} else {
-			last_block_num = bnum
-		}
-	}// for block_num
-	// if the thread has ended, we just lock for 'read' operation and wait for main thread
-	//		to notify us to exit
-	*retval = last_block_num
-	exit_flag := <-stop_chan
-	_ = exit_flag
-	wg_ptr.Done()
-}
-func single_threaded_loop_routine(exit_chan chan bool, no_rollback_blocks bool) {
-  main_loop:
-
-	  latestBlock, err := eclient.BlockByNumber(context.Background(), nil)
-	if err != nil {
-		log.Fatal("oops:", err)
-	}
-	bnum_high := latestBlock.Number().Int64()
-
-	bnum,exists := storage.Bigstats_get_last_block_num()
-	if !exists {
-		bnum = 0
-	} else {
-		bnum = bnum + 1
-	}
-	bnum_high = latestBlock.Number().Int64()
-	Info.Printf("Latest block=%v, bnum=%v\n",latestBlock.Number().Int64(),bnum)
-	if bnum_high < bnum {
-		Info.Printf("Database has more blocks than the blockchain, aborting. Sleeping to wait\n")
-		time.Sleep(10 * time.Second)
-		goto main_loop
-	}
-	for ; bnum<bnum_high; bnum++ {
-		select {
-			case exit_flag := <-exit_chan:
-				if exit_flag {
-					Info.Println("Exiting")
-					os.Exit(0)
-				}
-			default:
-		}
-		err := process_block(bnum,true,false,no_rollback_blocks)
-		if err!=nil {
-			// this is probably happening due to RPC unavailability, so we use a delay
-			time.Sleep(1 * time.Second)
-			Error.Printf("Block processing error: %v\n",err)
-			break
-		}
-		mod := bnum % 1000
-		if mod == 0 {
-			manage_stat_periods(storage,"ethprice",DEFAULT_STATISTICS_DURATION)
-		}
-	}// for block_num
-	time.Sleep(DEFAULT_WAIT_TIME * time.Millisecond)
-	goto main_loop // infinite loop without loss of one indentation level
-}
 func main() {
 
 	usage_str := fmt.Sprintf("usage: %v --schema [schema_name] --rpc [rpc_url] --blockrcpts [true|false]\n",os.Args[0])
@@ -185,9 +59,6 @@ func main() {
 	block_rcpts := flag.Bool("blockrcpts",false,"Use block receipts rpc call")
 	block_num := flag.Int64("bnum",0,"Single block number to process")
 	num_threads := flag.Int64("num_threads",1,"Number of parallel threads for block processing")
-	close_periods := flag.Bool("closeperiods",false,"Close periods and exit")
-	starting_block_close_periods = flag.Int64("startingblock",0,"Starting block for period closing")
-	disable_stats = flag.Bool("disablestats",false,"Disable generation of statistics")
 	flag.Parse()
 
 	if len(*schema_name) < 3 {
@@ -201,37 +72,6 @@ func main() {
 		os.Exit(1)
 	}
 	use_block_receipts_call	= block_rcpts
-
-	var rLimit syscall.Rlimit
-	rLimit.Max = 999999
-	rLimit.Cur = 999999
-	err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
-	if err != nil {
-		fmt.Println("Error Setting Rlimit ", err)
-		os.Exit(1)
-	}
-
-	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
-	os.MkdirAll(log_dir, os.ModePerm)
-	db_log_file:=fmt.Sprintf("%v/bigstats_%v_%v",log_dir,*schema_name,DEFAULT_DB_LOG)
-
-	fname:=fmt.Sprintf("%v/bigstats_%v_info.log",log_dir,*schema_name)
-	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err!=nil {
-		fmt.Printf("Can't start: %v\n",err)
-		os.Exit(1)
-	}
-	Info = log.New(logfile,"INFO: ",log.Ltime|log.Lshortfile)
-
-	fname=fmt.Sprintf("%v/bigstats_%v_error.log",log_dir,*schema_name)
-	if err!=nil {
-		fmt.Printf("Can't start: %v\n",err)
-		os.Exit(1)
-	}
-	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	Error = log.New(logfile,"ERROR: ",log.Ltime|log.Lshortfile)
-
-	max_approval.SetString(MAX_APPROVAL_BASE10,10)
 
 	Info.Printf("Selected schema name: %v\n",*schema_name)
 	Info.Printf("Use our custom ethclient.GetBlockReceipts() call: %v\n",*use_block_receipts_call)
