@@ -13,6 +13,22 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
+func (ss *SQLStorage) Layer1_lookup_or_insert_address_id(addr string) int64 {
+
+	var query string
+	var aid int64
+	query="SELECT address_id FROM "+ss.schema_name+".addr WHERE addr=$1"
+	err:=ss.db.QueryRow(query,addr).Scan(&aid);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			aid = ss.Layer1_insert_address(addr)
+			return aid
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v ,q=%v",query))
+		os.Exit(1)
+	}
+	return aid
+}
 func (ss *SQLStorage) Layer1_lookup_address_id(addr string) (int64,error) {
 
 	var query string

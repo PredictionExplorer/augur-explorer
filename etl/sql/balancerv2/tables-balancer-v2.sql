@@ -57,7 +57,7 @@ CREATE TABLE tokens_reg (	-- TokensRegistered event
 	managers			TEXT NOT NULL,
 	PRIMARY KEY(block_num,tx_index,log_index)
 );
-CREATE TABLE tokens_unreg (	-- TokensUnregistered event
+CREATE TABLE tokens_dereg (	-- TokensDeregistered event
 	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	tx_index			INT NOT NULL,

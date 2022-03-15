@@ -147,7 +147,7 @@ func Process_single_block(etl *ETL_Layer1) {
 	Validate_params(etl)
 	Init(etl)
 	Info.Printf("Processing single block %v\n")
-	process_block(etl,etl.SingleBlockNum,false,true,true)
+	process_block(etl,etl.SingleBlockNum,etl.UpdateLastBlock,etl.NoChainSplitCheck,etl.NoRollbackBlocks)
 }
 func Main_event_loop_single_thread(etl *ETL_Layer1,exit_chan chan bool) {
 

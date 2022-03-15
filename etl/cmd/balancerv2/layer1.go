@@ -2,27 +2,31 @@
 // Notes:
 //		Arbitrum starting block: 217636
 //		MainNet starting block: 13000000
-package layer1
+package main
 
 import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
-	"strconv"
+	//"time"
+	"encoding/hex"
+	"strings"
+	//"strconv"
 	"fmt"
 	"context"
 	"log"
 	"flag"
-	"sync"
+	//"sync"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 
 	//. "github.com/PredictionExplorer/augur-explorer/contracts"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 	. "github.com/PredictionExplorer/augur-explorer/layer1"
+	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
 	POOL_CREATED				= "83a48fbcfc991335314e74d0496aab6a1987e992ddc85dddbcc4d6dd6ef2e9fc"
@@ -60,8 +64,10 @@ var (
 	Error   *log.Logger
 	Info	*log.Logger
 
-	Manager	ETL_Manager
+	manager	ETL_Manager
+	layer1 ETL_Layer1
 	pool_factory_abi *abi.ABI
+	vault_abi *abi.ABI
 )
 func main() {
 
@@ -87,10 +93,13 @@ func main() {
 		fmt.Printf("%v",usage_str)
 		os.Exit(1)
 	}
-	use_block_receipts_call	= block_rcpts
+	layer1.UseBlockReceiptsCall = *block_rcpts
+	layer1.SchemaName = *schema_name
+	layer1.RPC_Url = *rpc_url
 
 	Info.Printf("Selected schema name: %v\n",*schema_name)
-	Info.Printf("Use our custom ethclient.GetBlockReceipts() call: %v\n",*use_block_receipts_call)
+	Info.Printf("Use our custom ethclient.GetBlockReceipts() call: %v\n",layer1.UseBlockReceiptsCall)
+	var err error
 	rpcclient, err=rpc.DialContext(context.Background(), *rpc_url)
 	if err != nil {
 		log.Fatal(err)
@@ -98,7 +107,11 @@ func main() {
 	Info.Printf("Connected to ETH node: %v\n",*rpc_url)
 	eclient = ethclient.NewClient(rpcclient)
 
+	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
+	os.MkdirAll(log_dir, os.ModePerm)
+	db_log_file:=fmt.Sprintf("%v/%v_%v_%v",log_dir,layer1.AppName,layer1.SchemaName,DEFAULT_DB_LOG)
 	storage = Connect_to_storage(Info)
+
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
 	storage.Db_set_schema_name(*schema_name)
@@ -120,15 +133,13 @@ func main() {
 			)
 		}
 	}
-	if *close_periods {
-		Info.Printf("Closing periods only\n")
-		manage_stat_periods(storage,"ethprice",DEFAULT_STATISTICS_DURATION)
-		Info.Printf("Done closing periods, exiting\n")
-		os.Exit(0)
-	}
 	if *block_num > 0 {
 		Info.Printf("Processing single block %v\n",*block_num)
-		process_block(*block_num,false,true,true)
+		layer1.SingleBlockNum = *block_num
+		layer1.UpdateLastBlock = false
+		layer1.NoChainSplitCheck = true
+		layer1.NoRollbackBlocks = true
+		Process_single_block(&layer1)
 		os.Exit(0)
 	}
 	//fmt.Printf("Forced exit");	os.Exit(1);
@@ -149,7 +160,7 @@ func main() {
 	}
 
 	abi_parsed1 := strings.NewReader(BalancerV2WeightedPoolFactoryABI)
-	ab1,err := abi.JSON(abi_parsed1)
+	abi1,err := abi.JSON(abi_parsed1)
 	if err!= nil {
 		Info.Printf("Can't parse PoolFactory ABI: %v\n",err)
 		os.Exit(1)
@@ -157,12 +168,12 @@ func main() {
 	pool_factory_abi = &abi1
 
 	abi_parsed2 := strings.NewReader(BalancerV2VaultABI)
-	ab1,err := abi.JSON(abi_parsed1)
+	abi2,err := abi.JSON(abi_parsed2)
 	if err!= nil {
 		Info.Printf("Can't parse Vault ABI: %v\n",err)
 		os.Exit(1)
 	}
-	vault_abi = &abi1
+	vault_abi = &abi2
 
 	bnum,exists := storage.Bigstats_get_last_block_num()
 	if !exists {
@@ -175,76 +186,10 @@ func main() {
 		Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
 		os.Exit(1)
 	}
-	no_rollback_blocks := false
-	if *num_threads > 1 {
-		no_rollback_blocks = true // with multiple threds we can't recover from chainsplit
-	}
-	if *num_threads < 1 {
-		fmt.Printf("Error: num_threads variable must be greater than 1\n")
-		os.Exit(1)
-	}
+	layer1.NumThreads = *num_threads
 	if *num_threads == 1 {
-		single_threaded_loop_routine(exit_chan,no_rollback_blocks)
+		Main_event_loop_single_thread(&layer1,exit_chan)
 	} else {
-		latestBlock, err := eclient.BlockByNumber(context.Background(), nil)
-		if err != nil {
-			log.Fatal("oops:", err)
-		}
-		bnum_high := latestBlock.Number().Int64()
-		stop_chans := make([]chan bool,*num_threads)
-		return_values := make([]int64,*num_threads)
-		for i:=int64(0);i<*num_threads;i++ {
-			// we need only 1 but we use 2 to have extra space for safety (to avoid deadlocks)
-			stop_chans[i]=make(chan bool,2)
-		}
-		// send child threads
-		var wg sync.WaitGroup
-		for tid:=int64(0);tid<*num_threads;tid++ {
-			wg.Add(1)
-			bnum_low := bnum + tid
-			go multi_threaded_loop_routine(
-				&return_values[tid],
-				&wg,
-				*num_threads,
-				tid,
-				stop_chans[tid],
-				bnum_low,
-				bnum_high,
-				no_rollback_blocks,
-			)
-		}
-		// this is the main routine (controller)
-		for {
-			time.Sleep(5*time.Second)	// reasonable delay
-			select {
-				case exit_flag := <-exit_chan:
-					if exit_flag {
-						Info.Printf("Sending 'exit' messages to all %v threads",*num_threads)
-						for i:=int64(0);i<*num_threads;i++ {
-							stop_chans[i] <- true
-						}
-					}
-					wg.Wait()
-					Info.Printf("All threads exited\n")
-					Info.Printf("Updating last block\n")
-					const min_block_const int64 = 1000000000000
-					var min_block int64 = min_block_const
-					for i:=int64(0);i<*num_threads;i++ {
-						Info.Printf("retval for %v is %v\n",i,return_values[i])
-						if min_block > return_values[i] {
-							min_block = return_values[i]
-							Info.Printf("set min_block to %v\n",min_block)
-						}
-					}
-					Info.Printf("loop exited, min_block=%v\n",min_block)
-					if min_block != min_block_const {
-						Info.Printf("Set last block number to %v\n",min_block)
-						storage.Bigstats_set_last_block_num(min_block)
-					}
-					Info.Printf("Exiting main thread\nBye\n")
-					os.Exit(1)
-				default:
-			}
-		}
+		Main_event_loop_multithreaded(&layer1,exit_chan)
 	}
 }

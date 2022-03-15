@@ -14,6 +14,8 @@ type ETL_Layer1 struct {
 	Storage						*SQLStorage
 	UseBlockReceiptsCall		bool
 	NoRollbackBlocks			bool
+	UpdateLastBlock				bool
+	NoChainSplitCheck			bool
 	SingleBlockNum				int64
 	NumThreads					int64
 	SchemaName					string
