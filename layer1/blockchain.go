@@ -41,30 +41,30 @@ func roll_back_blocks(etl *ETL_Layer1,diverging_block *types.Header) error {
 	// Finds the block from which the fork started
 	var err error
 	var bhash common.Hash
-	bhash,diverging_block,_, err = get_full_block(diverging_block.Number.Int64())
+	bhash,diverging_block,_, err = get_full_block(etl,diverging_block.Number.Int64())
 	if err != nil {
 		return errors.New(fmt.Sprintf("During chainsplit an error getting HeaderByHash happened: %v\n",err))
 	}
 	starting_block_num := diverging_block.Number.Int64()
 	block_num:=starting_block_num
 	block_hash:=bhash.String()
-	Info.Printf("roll_back_blocks(): block_num = %v , block_hash %v",block_num,block_hash)
-	Info.Printf("\t\t\tparent_hash %v\n",diverging_block.ParentHash.String())
+	etl.Info.Printf("roll_back_blocks(): block_num = %v , block_hash %v",block_num,block_hash)
+	etl.Info.Printf("\t\t\tparent_hash %v\n",diverging_block.ParentHash.String())
 	for {
 		my_block_num,err := etl.Storage.Layer1_get_block_num_by_hash(block_hash)
-		Info.Printf("Chainsplit fix: diverging hash %v, my_block_num=%v err=%v\n",block_hash,my_block_num,err)
+		etl.Info.Printf("Chainsplit fix: diverging hash %v, my_block_num=%v err=%v\n",block_hash,my_block_num,err)
 		if err == nil {
 			total_blocks := block_num - my_block_num
 			if total_blocks < 0 { total_blocks = -total_blocks }
 			if total_blocks > MAX_BLOCKS_CHAIN_SPLIT {
-				Info.Printf(
+				etl.Info.Printf(
 					"Chainsplit fix: Chain split is longer than reasonal length, aborting. " +
 					"(starting_block_num=%v, cur_block_num=%v",
 					starting_block_num,block_num,
 				)
 				return errors.New("Chain split max size overflow")
 			}
-			Info.Printf(
+			etl.Info.Printf(
 				"Chainsplit fix: deleting blocks higher than %v ; good block hash = %v\n",
 				my_block_num,block_hash,
 			)
@@ -74,7 +74,7 @@ func roll_back_blocks(etl *ETL_Layer1,diverging_block *types.Header) error {
 				"Chainsplit occurred at block %v and was fixed at block %v",starting_block_num,my_block_num,
 			))
 		} else {
-			Info.Printf(
+			etl.Info.Printf(
 				"Chainsplit fix: block %v doesn't fit, block_hash=%v not found in my DB. Trying more...\n",
 				block_num,block_hash,
 			)
@@ -82,7 +82,7 @@ func roll_back_blocks(etl *ETL_Layer1,diverging_block *types.Header) error {
 		total_blocks := starting_block_num - block_num
 		if total_blocks < 0 { total_blocks = -total_blocks }//just an extra safety against any bug before
 		if total_blocks > MAX_BLOCKS_CHAIN_SPLIT {
-			Info.Printf(
+			etl.Info.Printf(
 				"Chainsplit fix: Chain split is longer than reasonal length, aborting. " +
 				"(starting_block_num=%v, cur_block_num=%v",
 				starting_block_num,block_num,
@@ -90,13 +90,13 @@ func roll_back_blocks(etl *ETL_Layer1,diverging_block *types.Header) error {
 			return errors.New("Chain split max size overflow")
 		}
 		// keep trying by following parent hash
-		bhash,diverging_block,_, err = get_full_block(diverging_block.Number.Int64()-1)
+		bhash,diverging_block,_, err = get_full_block(etl,diverging_block.Number.Int64()-1)
 		if err != nil {
 			return errors.New(fmt.Sprintf("During chainsplit an error getting BlockByNumber happened: %v\n",err))
 		}
 		block_num = diverging_block.Number.Int64()
 		block_hash = bhash.String()
-		Info.Printf("Current block has been set to number %v , hash = %v\n",block_num,diverging_block.Hash().String())
+		etl.Info.Printf("Current block has been set to number %v , hash = %v\n",block_num,diverging_block.Hash().String())
 	}
 	return errors.New("Chainsplit fix: Undefined behaviour")
 }
@@ -139,11 +139,11 @@ func process_transactions(etl *ETL_Layer1,bnum int64,transactions []*AugurTx,rec
 				time.Sleep(1 * time.Millisecond)
 			}
 			if receipt_calls[tnum].err != nil {
-				Info.Printf(
+				etl.Info.Printf(
 					"Failed to get Tx Receipt for %v, block num=%v. Aborting block processing: %v\n",
 					agtx.TxHash,bnum,receipt_calls[tnum].err,
 				)
-				Error.Printf(
+				etl.Error.Printf(
 					"Failed to get Tx Receipt for %v, block num=%v. Aborting block processing: %v\n",
 					agtx.TxHash,bnum,receipt_calls[tnum].err,
 				)
@@ -165,7 +165,7 @@ func process_transactions(etl *ETL_Layer1,bnum int64,transactions []*AugurTx,rec
 			continue	// transaction failed (i.e. Out of Gas, etc)
 		}
 		if rcpt.BlockNumber.Int64() != bnum {
-			Error.Printf(
+			etl.Error.Printf(
 				"Transaction's receipt doesn't match current block number. (block possibly changed)" +
 				" cur_block_num=%v, receipt.block_num=%v\n",
 				bnum,rcpt.BlockNumber.Int64(),
@@ -178,8 +178,8 @@ func process_transactions(etl *ETL_Layer1,bnum int64,transactions []*AugurTx,rec
 		tx_short.BlockNum = bnum
 		tx_short.TxIndex = int64(agtx.TxIndex)
 		if rcpt_extra == nil {
-			Info.Printf("Receipt Extra info struct is nil for tx %v\n",agtx.TxHash)
-			Error.Printf("Receipt Extra info struct is nil for tx %v\n",agtx.TxHash)
+			etl.Info.Printf("Receipt Extra info struct is nil for tx %v\n",agtx.TxHash)
+			etl.Error.Printf("Receipt Extra info struct is nil for tx %v\n",agtx.TxHash)
 			tx_short.TxFee = "0"
 		} else {
 			tx_fee := big.NewInt(int64(rcpt.GasUsed))
@@ -191,7 +191,7 @@ func process_transactions(etl *ETL_Layer1,bnum int64,transactions []*AugurTx,rec
 		//storage.Bigstats_insert_transaction(&tx_short)	// at this point we are sure Tx is without error
 		transaction_hash := common.HexToHash(agtx.TxHash)
 		if !bytes.Equal(rcpt.TxHash.Bytes(),transaction_hash.Bytes()) { // can be removed later
-			Error.Printf("Receipt's hash doesn't match Tx hash, aborting (tx_hash=%v)\n",agtx.TxHash)
+			etl.Error.Printf("Receipt's hash doesn't match Tx hash, aborting (tx_hash=%v)\n",agtx.TxHash)
 			os.Exit(1)
 		}
 		agtx.TxId = 0
@@ -215,21 +215,21 @@ func process_transactions(etl *ETL_Layer1,bnum int64,transactions []*AugurTx,rec
 }
 func process_block(etl *ETL_Layer1,bnum int64,update_last_block bool,no_chainsplit_check bool,norollback bool) error {
 
-	block_hash_str,err:=get_block_hash(bnum)
+	block_hash_str,err:=get_block_hash(etl,bnum)
 	if err!=nil {
 		return err
 	}
 	big_bnum:=big.NewInt(int64(bnum))
-	block_hash,header,transactions,err := get_full_block(bnum)
+	block_hash,header,transactions,err := get_full_block(etl,bnum)
 	if err!=nil {
-		Info.Printf("Can't decode Block object received on RPC: %v. Aborting.\n",err)
+		etl.Info.Printf("Can't decode Block object received on RPC: %v. Aborting.\n",err)
 		return err
 	}
 	num_transactions := len(transactions)
-	Info.Printf("block %v hash = %v, num_tx=%v\n",bnum,block_hash_str,num_transactions)
+	etl.Info.Printf("block %v hash = %v, num_tx=%v\n",bnum,block_hash_str,num_transactions)
 	if bnum!=header.Number.Int64() {
-		Info.Printf("Retrieved block number %v but Block object contains another number (%v)\n",bnum,header.Number.Int64())
-		Error.Printf("Retrieved block number %v but Block object contains another number (%v)\n",bnum,header.Number.Int64())
+		etl.Info.Printf("Retrieved block number %v but Block object contains another number (%v)\n",bnum,header.Number.Int64())
+		etl.Error.Printf("Retrieved block number %v but Block object contains another number (%v)\n",bnum,header.Number.Int64())
 		return errors.New("Block object inconsistency")
 	}
 	etl.Storage.Layer1_block_delete_with_everything(big_bnum.Int64())
@@ -237,16 +237,16 @@ func process_block(etl *ETL_Layer1,bnum int64,update_last_block bool,no_chainspl
 	var block_receipts []types.Receipt = nil
 	var extra_fields []ReceiptExtraInfo
 	if etl.UseBlockReceiptsCall {
-		block_receipts,extra_fields,err = get_block_receipts_v2(block_hash)
+		block_receipts,extra_fields,err = get_block_receipts_v2(etl,block_hash)
 		if err != nil {
-			Error.Printf("Error getting receipts of the block: %v\n",err)
+			etl.Error.Printf("Error getting receipts of the block: %v\n",err)
 			return err
 		}
 	} else {
 		receipt_calls = make([]*receiptCallResult,num_transactions,num_transactions)
 		for i,tx := range transactions {
 			hash := common.HexToHash(tx.TxHash)
-			go get_receipt_async_custom_rpc(i,hash,&receipt_calls)
+			go get_receipt_async_custom_rpc(etl,i,hash,&receipt_calls)
 		}
 	}
 	err = etl.Storage.Layer1_insert_block(block_hash_str,header,num_transactions,no_chainsplit_check)

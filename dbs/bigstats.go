@@ -37,7 +37,7 @@ func (ss *SQLStorage) Bigstats_set_chain_id(chain_id int64) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Bigstats_get_last_block_num() (int64,bool) {
+func (ss *SQLStorage) Bigstats_gget_last_block_num() (int64,bool) {
 
 	var query string
 	query="SELECT last_block FROM "+ss.schema_name+".bs_config LIMIT 1";
@@ -135,7 +135,7 @@ func (ss *SQLStorage) Bigstats_get_highest_block_num() int64 {
 	}
 	return block_num
 }
-func (ss *SQLStorage) Bigstats_set_last_block_num(block_num int64) {
+func (ss *SQLStorage) Bigstats_sset_last_block_num(block_num int64) {
 
 	bnum := int64(block_num)
 	var query string = "UPDATE "+ss.schema_name+".bs_config SET last_block=$1"

@@ -52,7 +52,7 @@ type ReceiptExtraInfo struct {
 	EffectiveGasPrice			*big.Int
 	CumulativeGasUsed			uint64
 }
-func get_full_block(bnum int64) (common.Hash,*types.Header,[]*AugurTx,error) {
+func get_full_block(etl *ETL_Layer1,bnum int64) (common.Hash,*types.Header,[]*AugurTx,error) {
 
 	var head *types.Header
 	ctx := context.Background()
@@ -64,12 +64,12 @@ func get_full_block(bnum int64) (common.Hash,*types.Header,[]*AugurTx,error) {
 	var body rpcBlock
 	err = json.Unmarshal(raw, &body);
 	if err != nil {
-		Error.Printf("Error unmarshalling transactions of the block: %v\n",err)
+		etl.Error.Printf("Error unmarshalling transactions of the block: %v\n",err)
 		return common.Hash{},head, make([]*AugurTx,0,0),err
 	}
 	err = json.Unmarshal(raw,&head)
 	if err!= nil {
-		Error.Printf("Error unmarshalling hash of the block: %v\n",err)
+		etl.Error.Printf("Error unmarshalling hash of the block: %v\n",err)
 		return body.Hash,head,make([]*AugurTx,0,0),err
 	}
 	txs := make([]*AugurTx, len(body.Transactions))
@@ -92,7 +92,7 @@ func get_full_block(bnum int64) (common.Hash,*types.Header,[]*AugurTx,error) {
 
 	return body.Hash,head,txs,nil
 }
-func get_block_hash(block_num int64) (string,error) {
+func get_block_hash(etl *ETL_Layer1,block_num int64) (string,error) {
 
 	// this function is needed because Parity doesn't return the correct block hash over RPC, the hash
 	// it returns is re-calculated while some fileds of the types.Header object are unset, giving wrong hash
@@ -102,7 +102,7 @@ func get_block_hash(block_num int64) (string,error) {
 	var blockHash rpcBlockHash
 	err = json.Unmarshal(raw,&blockHash)
 	if err!= nil {
-		Error.Printf("Error unmarshalling hash of the block: %v\n",err)
+		etl.Error.Printf("Error unmarshalling hash of the block: %v\n",err)
 		return "",err
 	} else {
 		return blockHash.Hash,nil
@@ -116,7 +116,7 @@ func get_receipt_async(idx int,tx_hash common.Hash,receipt_results *[]*receiptCa
 	result.idx = idx
 	(*receipt_results)[idx]=result
 }
-func get_receipt_async_custom_rpc(idx int,tx_hash common.Hash,receipt_results *[]*receiptCallResult) {
+func get_receipt_async_custom_rpc(etl *ETL_Layer1,idx int,tx_hash common.Hash,receipt_results *[]*receiptCallResult) {
 	ctx := context.Background()
 	result := new(receiptCallResult)
 	var raw json.RawMessage
@@ -129,24 +129,24 @@ func get_receipt_async_custom_rpc(idx int,tx_hash common.Hash,receipt_results *[
 		rcpt := new(types.Receipt)
 		err = json.Unmarshal(raw, &rcpt);
 		if err != nil {
-			Error.Printf("Error unmarshalling receipt object : %v\n",err)
+			etl.Error.Printf("Error unmarshalling receipt object : %v\n",err)
 			result.err=err
 		}
 		var rcpt_extra rcptExtraInfo
 		err = json.Unmarshal(raw, &rcpt_extra)
 		if err != nil {
-			Error.Printf("Error unmarshalling receipt extra data : %v\n",err)
+			etl.Error.Printf("Error unmarshalling receipt extra data : %v\n",err)
 			result.err=err
 		}
 		cum_gas,err := hexutil.DecodeUint64(rcpt_extra.CumulativeGasUsed)
 		if err != nil {
-			Error.Printf("Error parsing CumulativeGas %v: %v\n",rcpt_extra.CumulativeGasUsed,err)
+			etl.Error.Printf("Error parsing CumulativeGas %v: %v\n",rcpt_extra.CumulativeGasUsed,err)
 			result.err=err
 		}
 		extra.CumulativeGasUsed = cum_gas
 		egasp,err := hexutil.DecodeBig(rcpt_extra.EffectiveGasPrice)
 		if err != nil {
-			Error.Printf("Error parsing EffectiveGasPrice %v : %v\n",rcpt_extra.EffectiveGasPrice,err)
+			etl.Error.Printf("Error parsing EffectiveGasPrice %v : %v\n",rcpt_extra.EffectiveGasPrice,err)
 			result.err=err
 		}
 		extra.EffectiveGasPrice = egasp
@@ -155,7 +155,7 @@ func get_receipt_async_custom_rpc(idx int,tx_hash common.Hash,receipt_results *[
 	}
 	(*receipt_results)[idx]=result
 }
-func get_block_receipts_v1(block_hash common.Hash) (types.Receipts,error) {
+func get_block_receipts_v1(etl *ETL_Layer1,block_hash common.Hash) (types.Receipts,error) {
 
 	// this is version 1, doesn't have effectiveTxGasPrice field
 	ctx := context.Background()
@@ -164,7 +164,7 @@ func get_block_receipts_v1(block_hash common.Hash) (types.Receipts,error) {
 	var receipts types.Receipts
 	err = json.Unmarshal(raw,&receipts)
 	if err!= nil {
-		Error.Printf("Error unmarshalling receipts after eth-getBlockReceipts: %v\n",err)
+		etl.Error.Printf("Error unmarshalling receipts after eth-getBlockReceipts: %v\n",err)
 		return nil,err
 	} else {
 		return receipts,nil
@@ -174,7 +174,7 @@ type PackedReceipt map[string]interface{}
 type ReceiptsPackage struct {
 	Receipts		[]PackedReceipt
 }
-func get_block_receipts_v2(block_hash common.Hash) ([]types.Receipt,[]ReceiptExtraInfo ,error) {
+func get_block_receipts_v2(etl *ETL_Layer1,block_hash common.Hash) ([]types.Receipt,[]ReceiptExtraInfo ,error) {
 	// this is version 2, matches version 2 of the patch to Geth, which sends full transaction info
 	ctx := context.Background()
 	var raw json.RawMessage
@@ -182,7 +182,7 @@ func get_block_receipts_v2(block_hash common.Hash) ([]types.Receipt,[]ReceiptExt
 	var packed_receipts ReceiptsPackage
 	err = json.Unmarshal(raw,&packed_receipts)
 	if err!= nil {
-		Error.Printf("Error unmarshalling receipts after eth-getBlockReceipts: %v\n",err)
+		etl.Error.Printf("Error unmarshalling receipts after eth-getBlockReceipts: %v\n",err)
 		return nil,nil,err
 	}
 	output_receipts := make([]types.Receipt,0,256)

@@ -1,7 +1,5 @@
-// Augur ETL: Converts Augur Data to SQL database
-// Notes:
-//		Arbitrum starting block: 217636
-//		MainNet starting block: 13000000
+// MainNet Balancer v2 starting block: 12272146
+
 package main
 
 import (
@@ -93,31 +91,62 @@ func main() {
 		fmt.Printf("%v",usage_str)
 		os.Exit(1)
 	}
+	var rLimit syscall.Rlimit
+	rLimit.Max = 999999
+	rLimit.Cur = 999999
+	err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+	if err != nil {
+		fmt.Println("Error Setting Rlimit ", err)
+		os.Exit(1)
+	}
+	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
+	os.MkdirAll(log_dir, os.ModePerm)
+	//db_log_file:=fmt.Sprintf("%v/%v_%v_%v",log_dir,etl.AppName,etl.SchemaName,DEFAULT_DB_LOG)
+
 	layer1.UseBlockReceiptsCall = *block_rcpts
 	layer1.SchemaName = *schema_name
 	layer1.RPC_Url = *rpc_url
+	layer1.AppName = "balancerv2"
+	manager = func process_transaction(storage *SQLStorage,tx *AugurTx,rcpt *types.Receipt) {
+	layer1.Manager = manager
+
+	fname:=fmt.Sprintf("%v/%v_%v_info.log",log_dir,layer1.AppName,layer1.SchemaName)
+	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err!=nil {
+		fmt.Printf("Can't start: %v\n",err)
+		os.Exit(1)
+	}
+	Info = log.New(logfile,"INFO: ",log.Ltime|log.Lshortfile)
+
+	fname=fmt.Sprintf("%v/%v_%v_error.log",log_dir,layer1.AppName,layer1.SchemaName)
+	if err!=nil {
+		fmt.Printf("Can't start: %v\n",err)
+		os.Exit(1)
+	}
+	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	Error = log.New(logfile,"ERROR: ",log.Ltime|log.Lshortfile)
+	layer1.Info = Info
+	layer1.Error = Error
 
 	Info.Printf("Selected schema name: %v\n",*schema_name)
 	Info.Printf("Use our custom ethclient.GetBlockReceipts() call: %v\n",layer1.UseBlockReceiptsCall)
-	var err error
 	rpcclient, err=rpc.DialContext(context.Background(), *rpc_url)
 	if err != nil {
 		log.Fatal(err)
 	}
-	Info.Printf("Connected to ETH node: %v\n",*rpc_url)
+	layer1.Info.Printf("Connected to ETH node: %v\n",*rpc_url)
 	eclient = ethclient.NewClient(rpcclient)
 
-	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
-	os.MkdirAll(log_dir, os.ModePerm)
 	db_log_file:=fmt.Sprintf("%v/%v_%v_%v",log_dir,layer1.AppName,layer1.SchemaName,DEFAULT_DB_LOG)
 	storage = Connect_to_storage(Info)
 
 	storage.Init_log(db_log_file)
 	storage.Log_msg("Log initialized\n")
 	storage.Db_set_schema_name(*schema_name)
+	layer1.Storage = storage
 
 	ctx := context.Background()
-	stored_chain_id := storage.Bigstats_get_stored_chain_id()
+	stored_chain_id := storage.Layer1_get_stored_chain_id()
 	network_chain_id,err :=eclient.NetworkID(ctx)
 	if err != nil {
 		Fatalf("Can't get Network ID: %v\n",err)
@@ -125,7 +154,7 @@ func main() {
 	if stored_chain_id != network_chain_id.Int64() {
 		if stored_chain_id == 0 {
 			// not initialized yet
-			storage.Bigstats_set_chain_id(network_chain_id.Int64())
+			storage.Layer1_set_chain_id(network_chain_id.Int64())
 		} else {
 			Fatalf(
 				"Network chain_id = %v , my chain_id = %v. Mismatch, exiting",
@@ -175,7 +204,7 @@ func main() {
 	}
 	vault_abi = &abi2
 
-	bnum,exists := storage.Bigstats_get_last_block_num()
+	bnum,exists := storage.Layer1_get_last_block_num()
 	if !exists {
 		bnum = 0
 	} else {
@@ -187,6 +216,7 @@ func main() {
 		os.Exit(1)
 	}
 	layer1.NumThreads = *num_threads
+	Init(&layer1)
 	if *num_threads == 1 {
 		Main_event_loop_single_thread(&layer1,exit_chan)
 	} else {

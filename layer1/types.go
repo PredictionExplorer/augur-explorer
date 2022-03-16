@@ -1,6 +1,7 @@
 package layer1
 
 import (
+	"log"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
@@ -22,4 +23,6 @@ type ETL_Layer1 struct {
 	RPC_Url						string
 	AppName						string
 	Manager						ETL_Manager
+	Error						*log.Logger
+	Info						*log.Logger
 }

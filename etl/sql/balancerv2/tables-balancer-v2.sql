@@ -20,8 +20,8 @@ CREATE TABLE swap ( -- Swap() event
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
-	pool_aid			BIGINT NOT NULL,
-	pool_id				BIGINT NOT NULL,
+	contract_aid		BIGINT NOT NULL,
+	pool_id				TEXT NOT NULL,
 	token_in_aid		BIGINT NOT NULL,
 	token_out_aid		BIGINT NOT NULL,
 	amount_in			DECIMAL,
@@ -33,7 +33,7 @@ CREATE TABLE pool_reg (	-- PoolRegistered event
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
-	pool_id				BIGINT NOT NULL,
+	pool_id				TEXT NOT NULL,
 	pool_aid			BIGINT NOT NULL,
 	specialization		INT NOT NULL,
 	PRIMARY KEY(block_num,tx_index,log_index)
@@ -52,7 +52,7 @@ CREATE TABLE tokens_reg (	-- TokensRegistered event
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
 	pool_aid			BIGINT NOT NULL,
-	pool_id				BIGINT NOT NULL,
+	pool_id				TEXT NOT NULL,
 	tokens				TEXT NOT NULL,
 	managers			TEXT NOT NULL,
 	PRIMARY KEY(block_num,tx_index,log_index)
@@ -63,7 +63,7 @@ CREATE TABLE tokens_dereg (	-- TokensDeregistered event
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
 	pool_aid			BIGINT NOT NULL,
-	pool_id				BIGINT NOT NULL,
+	pool_id				TEXT NOT NULL,
 	tokens				TEXT NOT NULL,
 	PRIMARY KEY(block_num,tx_index,log_index)
 );
@@ -72,8 +72,7 @@ CREATE TABLE ibalance (	-- InternalBalanceChanged event
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
-	pool_aid			BIGINT NOT NULL,
-	aid					BIGINT NOT NULL,
+	user_aid			BIGINT NOT NULL,
 	token_aid			BIGINT NOT NULL,
 	delta				DECIMAL,
 	PRIMARY KEY(block_num,tx_index,log_index)
@@ -83,10 +82,11 @@ CREATE TABLE ebal_transf (	-- ExternalBalanceTransfer event
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
-	pool_aid			BIGINT NOT NULL,
-	aid					BIGINT NOT NULL,
+	contract_aid		BIGINT NOT NULL,
+	sender_aid			BIGINT NOT NULL,
+	recipient_aid		BIGINT NOT NULL,
 	token_aid			BIGINT NOT NULL,
-	delta				DECIMAL,
+	amount				DECIMAL,
 	PRIMARY KEY(block_num,tx_index,log_index)
 );
 CREATE TABLE pool_bal (	-- PoolBalanceChanged event
@@ -95,7 +95,7 @@ CREATE TABLE pool_bal (	-- PoolBalanceChanged event
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
 	pool_aid			BIGINT NOT NULL,
-	pool_id				BIGINT NOT NULL,
+	pool_id				TEXT NOT NULL,
 	tokens				TEXT,
 	deltas				TEXT,
 	fee_amounts			TEXT,

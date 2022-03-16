@@ -58,7 +58,7 @@ func (ss *SQLStorage) Layer1_insert_address(addr string) int64 {
 	err:=row.Scan(&addr_id)
 	if err!=nil {
 		if strings.Contains(err.Error(),"duplicate key value") {
-			query="SELECT address_id FROM "+ss.schema_name+".bs_addr WHERE addr=$1"
+			query="SELECT address_id FROM "+ss.schema_name+".addr WHERE addr=$1"
 			err:=ss.db.QueryRow(query,addr).Scan(&addr_id);
 			if (err!=nil) {
 				ss.Log_msg(fmt.Sprintf("DB error in address insertion on second attempt: %v : %v",query,err))
@@ -108,7 +108,7 @@ func (ss *SQLStorage) Layer1_set_last_block_num(block_num int64) {
 	if affected_rows>0 {
 		// break
 	} else {
-		ss.Log_msg(fmt.Sprintf("set_last_block_num() no default record in bs_config: %v",err));
+		ss.Log_msg(fmt.Sprintf("set_last_block_num() no default record in 'config': %v",err));
 		os.Exit(1)
 	}
 }
@@ -164,7 +164,7 @@ func (ss *SQLStorage) Layer1_insert_block(hash_str string,block *types.Header,nu
 				os.Exit(1)
 			}
 			if block_count > 0 {
-				starting_block:=ss.Bigstats_get_starting_block_from_config()
+				starting_block:=ss.Layer1_get_starting_block_from_config()
 				if block.Number.Int64() == starting_block {
 					// this is the first block that will be processed (we aren't starting from block 0)
 					// allow
@@ -204,7 +204,7 @@ func (ss *SQLStorage) Layer1_insert_block(hash_str string,block *types.Header,nu
 		INSERT INTO `+ss.schema_name+`.block(
 			block_num,
 			block_hash,
-			ts,
+			time_stamp,
 			parent_hash,
 			num_tx
 		) VALUES ($1,$2,TO_TIMESTAMP($3),$4,$5)`
@@ -235,4 +235,63 @@ func (ss *SQLStorage) Layer1_insert_block(hash_str string,block *types.Header,nu
 	ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into block table. Rows affeced = 0"))
 	os.Exit(1)
 	return nil
+}
+func (ss *SQLStorage) Layer1_get_stored_chain_id() int64 {
+
+	var query string
+	query = "SELECT chain_id FROM "+ss.schema_name+".config"
+	row := ss.db.QueryRow(query)
+	var null_chain_id sql.NullInt64
+	var err error
+	err=row.Scan(&null_chain_id);
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Error in get_stored_chain_id(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return null_chain_id.Int64
+}
+func (ss *SQLStorage) Layer1_set_chain_id(chain_id int64) {
+
+	var query string = "UPDATE "+ss.schema_name+".config SET chain_id=$1"
+	_,err:=ss.db.Exec(query,chain_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Set_chain_id() failed: %v",err))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Layer1_get_starting_block_from_config() int64 {
+
+	var err error
+	var block_num int64
+	var query string
+	query="SELECT starting_block FROM "+ss.schema_name+".config";
+	row := ss.db.QueryRow(query)
+	err=row.Scan(&block_num)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Error in get_starting_block_from_config(): %v",err))
+		os.Exit(1)
+	}
+	return block_num
+}
+func (ss *SQLStorage) Layer1_get_last_block_num() (int64,bool) {
+
+	var query string
+	query="SELECT last_block FROM "+ss.schema_name+".config LIMIT 1";
+	row := ss.db.QueryRow(query)
+	var null_block_num sql.NullInt64
+	var err error
+	err=row.Scan(&null_block_num);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return -1,false
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error in get_last_block_num(): %v",err))
+			os.Exit(1)
+		}
+	}
+	if (null_block_num.Valid) {
+		return null_block_num.Int64,true
+	} else {
+		return -1,false
+	}
 }

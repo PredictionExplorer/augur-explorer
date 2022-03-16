@@ -1794,6 +1794,8 @@ func (ss *SQLStorage) Get_poly_get_usdc_transfers(tx_id,usdc_contract_aid int64)
 	}
 	return records
 }
+/*
+TEMPORARILY DISABLED, CONFLICT FOUND, FIX PENDING
 func (ss *SQLStorage) Layer1_get_last_block_num() (int64,bool) {
 
 	var query string
@@ -1816,3 +1818,4 @@ func (ss *SQLStorage) Layer1_get_last_block_num() (int64,bool) {
 		return -1,false
 	}
 }
+*/

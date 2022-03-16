@@ -6,7 +6,7 @@ DROP TABLE IF EXISTS
 	pool_reg,
 	pool_created,
 	tokens_reg,
-	tokens_unreg,
+	tokens_dereg,
 	ibalance,
 	ebal_transf,
 	pool_bal

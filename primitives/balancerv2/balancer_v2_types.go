@@ -9,6 +9,7 @@ type BalV2PoolCreated struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
+	ContractAddr		string
 	PoolAid				int64
 	PoolAddr			string
 }
@@ -17,8 +18,9 @@ type BalV2PoolRegistered struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
+	ContractAddr		string
 	PoolAddr			string
-	PoolId				int64
+	PoolId				string
 	Specialization		int64
 }
 type BalV2TokensRegistered struct {
@@ -26,7 +28,8 @@ type BalV2TokensRegistered struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
-	PoolId				int64
+	ContractAddr		string
+	PoolId				string
 	Tokens				string
 	AssetManagers		string
 }
@@ -35,7 +38,8 @@ type BalV2TokensDeregistered struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
-	PoolId				int64
+	ContractAddr		string
+	PoolId				string
 	Tokens				string
 }
 type BalV2InternalBalanceChanged struct {
@@ -43,18 +47,20 @@ type BalV2InternalBalanceChanged struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
+	ContractAddr		string
 	UserAddr			string
 	TokenAddr			string
 	Delta				string
 }
-type BalV2ExternalBalanceTransf struct {
+type BalV2ExternalBalanceTransfer struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
+	ContractAddr		string
 	TokenAddr			string
 	SenderAddr			string
-	ReceipientAddr		string
+	RecipientAddr		string
 	Amount				string
 }
 type BalV2Swap struct {
@@ -62,9 +68,10 @@ type BalV2Swap struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
-	PollId				int64
+	PoolId				string
+	ContractAddr		string
 	TokenInAddr			string
 	TokenOutAddr		string
-	AmounIn				string
+	AmountIn			string
 	AmountOut			string
 }

@@ -32,8 +32,8 @@ var (
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
 
-	Error   *log.Logger
-	Info	*log.Logger
+//	Error   *log.Logger
+//	Info	*log.Logger
 
 )
 func read_block_numbers(fname string) []int64 {
@@ -67,27 +67,27 @@ func multi_threaded_loop_routine(etl *ETL_Layer1,retval *int64,wg_ptr *sync.Wait
 
 	last_block_num := int64(0)
 	bnum := bnum_low
-	Info.Printf("Thread %v , processing blocks from %v to %v\n",tid,bnum,bnum_high)
+	etl.Info.Printf("Thread %v , processing blocks from %v to %v\n",tid,bnum,bnum_high)
 
 	for ; bnum<bnum_high; bnum=bnum+num_threads{
 		select {
 			case exit_flag := <-stop_chan:
 				if exit_flag {
-					Info.Printf("Thread %v is exiting (set last block to %v)",tid,last_block_num)
+					etl.Info.Printf("Thread %v is exiting (set last block to %v)",tid,last_block_num)
 					*retval=last_block_num
 					wg_ptr.Done()
 					return
 				}
 			default:
 		}
-		Info.Printf("Thread %v : processing block %v\n",tid,bnum)
+		etl.Info.Printf("Thread %v : processing block %v\n",tid,bnum)
 		// note: we do not update last_block table in multithreaded run, we do it in main routine
 		update_last_block := false
 		no_chainsplit_check := true
 		err := process_block(etl,bnum,update_last_block,no_chainsplit_check,etl.NoRollbackBlocks)
 		if err!=nil {
-			Error.Printf("Block processing error: %v. Aborting\n",err)
-			Error.Printf("Update last_block manually (irregular exit)\n")
+			etl.Error.Printf("Block processing error: %v. Aborting\n",err)
+			etl.Error.Printf("Update last_block manually (irregular exit)\n")
 			os.Exit(1)
 		} else {
 			last_block_num = bnum
@@ -116,9 +116,9 @@ func single_threaded_loop_routine(etl *ETL_Layer1,exit_chan chan bool) {
 		bnum = bnum + 1
 	}
 	bnum_high = latestBlock.Number().Int64()
-	Info.Printf("Latest block=%v, bnum=%v\n",latestBlock.Number().Int64(),bnum)
+	etl.Info.Printf("Latest block=%v, bnum=%v\n",latestBlock.Number().Int64(),bnum)
 	if bnum_high < bnum {
-		Info.Printf("Database has more blocks than the blockchain, aborting. Sleeping to wait\n")
+		etl.Info.Printf("Database has more blocks than the blockchain, aborting. Sleeping to wait\n")
 		time.Sleep(10 * time.Second)
 		goto main_loop
 	}
@@ -126,7 +126,7 @@ func single_threaded_loop_routine(etl *ETL_Layer1,exit_chan chan bool) {
 		select {
 			case exit_flag := <-exit_chan:
 				if exit_flag {
-					Info.Println("Exiting")
+					etl.Info.Println("Exiting")
 					os.Exit(0)
 				}
 			default:
@@ -135,7 +135,7 @@ func single_threaded_loop_routine(etl *ETL_Layer1,exit_chan chan bool) {
 		if err!=nil {
 			// this is probably happening due to RPC unavailability, so we use a delay
 			time.Sleep(1 * time.Second)
-			Error.Printf("Block processing error: %v\n",err)
+			etl.Error.Printf("Block processing error: %v\n",err)
 			break
 		}
 	}// for block_num
@@ -146,7 +146,7 @@ func Process_single_block(etl *ETL_Layer1) {
 
 	Validate_params(etl)
 	Init(etl)
-	Info.Printf("Processing single block %v\n")
+	etl.Info.Printf("Processing single block %v\n")
 	process_block(etl,etl.SingleBlockNum,etl.UpdateLastBlock,etl.NoChainSplitCheck,etl.NoRollbackBlocks)
 }
 func Main_event_loop_single_thread(etl *ETL_Layer1,exit_chan chan bool) {
@@ -164,7 +164,7 @@ func Main_event_loop_single_thread(etl *ETL_Layer1,exit_chan chan bool) {
 	}
 	var bnum_high int64 = latestBlock.Number().Int64()
 	if bnum_high < bnum {
-		Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
+		etl.Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
 		os.Exit(1)
 	}
 
@@ -188,45 +188,19 @@ func Validate_params(etl *ETL_Layer1) {
 }
 func Init(etl *ETL_Layer1) {
 
-	var rLimit syscall.Rlimit
-	rLimit.Max = 999999
-	rLimit.Cur = 999999
-	err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
-	if err != nil {
-		fmt.Println("Error Setting Rlimit ", err)
-		os.Exit(1)
-	}
-	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
-	os.MkdirAll(log_dir, os.ModePerm)
-	//db_log_file:=fmt.Sprintf("%v/%v_%v_%v",log_dir,etl.AppName,etl.SchemaName,DEFAULT_DB_LOG)
 
-	fname:=fmt.Sprintf("%v/%v_%v_info.log",log_dir,etl.AppName,etl.SchemaName)
-	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err!=nil {
-		fmt.Printf("Can't start: %v\n",err)
-		os.Exit(1)
-	}
-	Info = log.New(logfile,"INFO: ",log.Ltime|log.Lshortfile)
-
-	fname=fmt.Sprintf("%v/%v_%v_error.log",log_dir,etl.AppName,etl.SchemaName)
-	if err!=nil {
-		fmt.Printf("Can't start: %v\n",err)
-		os.Exit(1)
-	}
-	logfile, err = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	Error = log.New(logfile,"ERROR: ",log.Ltime|log.Lshortfile)
-
-	Info.Printf("Selected schema name: %v\n",etl.SchemaName)
-	Info.Printf("Use our custom ethclient.GetBlockReceipts() call: %v\n",etl.UseBlockReceiptsCall)
+	etl.Info.Printf("Selected schema name: %v\n",etl.SchemaName)
+	etl.Info.Printf("Use our custom ethclient.GetBlockReceipts() call: %v\n",etl.UseBlockReceiptsCall)
+	var err error
 	rpcclient, err=rpc.DialContext(context.Background(), etl.RPC_Url)
 	if err != nil {
 		log.Fatal(err)
 	}
-	Info.Printf("Connected to ETH node: %v\n",etl.RPC_Url)
+	etl.Info.Printf("Connected to ETH node: %v\n",etl.RPC_Url)
 	eclient = ethclient.NewClient(rpcclient)
 
 	ctx := context.Background()
-	stored_chain_id := etl.Storage.Bigstats_get_stored_chain_id()
+	stored_chain_id := etl.Storage.Layer1_get_stored_chain_id()
 	network_chain_id,err :=eclient.NetworkID(ctx)
 	if err != nil {
 		Fatalf("Can't get Network ID: %v\n",err)
@@ -234,7 +208,7 @@ func Init(etl *ETL_Layer1) {
 	if stored_chain_id != network_chain_id.Int64() {
 		if stored_chain_id == 0 {
 			// not initialized yet
-			etl.Storage.Bigstats_set_chain_id(network_chain_id.Int64())
+			etl.Storage.Layer1_set_chain_id(network_chain_id.Int64())
 		} else {
 			Fatalf(
 				"Network chain_id = %v , my chain_id = %v. Mismatch, exiting",
@@ -256,7 +230,7 @@ func Init(etl *ETL_Layer1) {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		Info.Printf("Got SIGINT signal, will exit after block processing is over." +
+		etl.Info.Printf("Got SIGINT signal, will exit after block processing is over." +
 					" To interrupt abruptly send SIGKILL (9) to the kernel.\n")
 		exit_chan <- true
 	}()
@@ -270,7 +244,7 @@ func Main_event_loop_multithreaded(etl *ETL_Layer1,exit_chan chan bool) {
 	if err != nil {
 		log.Fatal("oops:", err)
 	}
-	bnum,exists := etl.Storage.Bigstats_get_last_block_num()
+	bnum,exists := etl.Storage.Layer1_get_last_block_num()
 	if !exists {
 		bnum = 0
 	} else {
@@ -278,7 +252,7 @@ func Main_event_loop_multithreaded(etl *ETL_Layer1,exit_chan chan bool) {
 	}
 	var bnum_high int64 = latestBlock.Number().Int64()
 	if bnum_high < bnum {
-		Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
+		etl.Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
 		os.Exit(1)
 	}
 	stop_chans := make([]chan bool,etl.NumThreads)
@@ -309,29 +283,29 @@ func Main_event_loop_multithreaded(etl *ETL_Layer1,exit_chan chan bool) {
 		select {
 			case exit_flag := <-exit_chan:
 				if exit_flag {
-					Info.Printf("Sending 'exit' messages to all %v threads",etl.NumThreads)
+					etl.Info.Printf("Sending 'exit' messages to all %v threads",etl.NumThreads)
 					for i:=int64(0);i<etl.NumThreads;i++ {
 						stop_chans[i] <- true
 					}
 				}
 				wg.Wait()
-				Info.Printf("All threads exited\n")
-				Info.Printf("Updating last block\n")
+				etl.Info.Printf("All threads exited\n")
+				etl.Info.Printf("Updating last block\n")
 				const min_block_const int64 = 1000000000000
 				var min_block int64 = min_block_const
 				for i:=int64(0);i<etl.NumThreads;i++ {
-					Info.Printf("retval for %v is %v\n",i,return_values[i])
+					etl.Info.Printf("retval for %v is %v\n",i,return_values[i])
 					if min_block > return_values[i] {
 						min_block = return_values[i]
-						Info.Printf("set min_block to %v\n",min_block)
+						etl.Info.Printf("set min_block to %v\n",min_block)
 					}
 				}
-				Info.Printf("loop exited, min_block=%v\n",min_block)
+				etl.Info.Printf("loop exited, min_block=%v\n",min_block)
 				if min_block != min_block_const {
-					Info.Printf("Set last block number to %v\n",min_block)
-					etl.Storage.Bigstats_set_last_block_num(min_block)
+					etl.Info.Printf("Set last block number to %v\n",min_block)
+					etl.Storage.Layer1_set_last_block_num(min_block)
 				}
-				Info.Printf("Exiting main thread\nBye\n")
+				etl.Info.Printf("Exiting main thread\nBye\n")
 				os.Exit(1)
 			default:
 		}
