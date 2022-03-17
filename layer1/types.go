@@ -9,7 +9,7 @@ import (
 )
 
 type ETL_Manager interface {
-	Process_transaction(storage *SQLStorage,tx *AugurTx,rcpt *types.Receipt)
+	Process_transaction(tx *AugurTx,rcpt *types.Receipt)
 }
 type ETL_Layer1 struct {
 	Storage						*SQLStorage

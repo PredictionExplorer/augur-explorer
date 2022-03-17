@@ -203,7 +203,7 @@ func process_transactions(etl *ETL_Layer1,bnum int64,transactions []*AugurTx,rec
 		total_eth.Add(total_eth,big_value)
 		agtx.GasUsed = int64(rcpt.GasUsed)
 		agtx.NumLogs = int32(len(rcpt.Logs))
-		etl.Manager.Process_transaction(etl.Storage,agtx,rcpt)
+		etl.Manager.Process_transaction(agtx,rcpt)
 		/*
 		logs_to_insert := extract_addresses_from_event_logs(agtx,rcpt.Logs)
 		if len(logs_to_insert) > 0 {

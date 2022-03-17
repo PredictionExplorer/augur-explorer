@@ -12,8 +12,11 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/primitives/balancerv2"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
+	. "github.com/PredictionExplorer/augur-explorer/layer1"
 )
-
+type ETL_Processor struct {
+	ETL				*ETL_Layer1
+}
 func address_array_to_string(addresses []common.Address) string {
 
 	var output string
@@ -23,17 +26,21 @@ func address_array_to_string(addresses []common.Address) string {
 	}
 	return output
 }
-func process_transaction(storage *SQLStorage,tx *AugurTx,rcpt *types.Receipt) {
+func (this *ETL_Processor) Process_transaction(tx *AugurTx,rcpt *types.Receipt) {
 
 
 	logs := rcpt.Logs
 	for i:=0; i<len(logs); i++ {
 		log := logs[i]
-		process_event_log(storage,tx,log)
+		process_event_log(this.ETL.Storage,tx,log)
 	}
 }
 func process_pool_created(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 
+	Info.Printf(
+		"EVENT: PoolCreated. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
 	var eth_evt BalancerV2WeightedPoolFactoryPoolCreated
 	err := pool_factory_abi.UnpackIntoInterface(&eth_evt,"PoolCreated",log.Data)
 	if err != nil {
@@ -57,6 +64,10 @@ func process_pool_balance_changed(storage *SQLStorage,tx *AugurTx,log *types.Log
 }
 func process_pool_registered(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 
+	Info.Printf(
+		"EVENT: PoolRegistered. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
 	var eth_evt BalancerV2VaultPoolRegistered
 	err := vault_abi.UnpackIntoInterface(&eth_evt,"PoolRegistered",log.Data)
 	if err != nil {
@@ -74,12 +85,24 @@ func process_pool_registered(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 	pool_addr := common.BytesToAddress(log.Topics[2][12:])
 	evt.PoolAddr = pool_addr.String()
 	evt.Specialization= int64(eth_evt.Specialization)
+	Info.Printf("PoolRegistered {\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tPoolAddr: %v\n",evt.PoolAddr)
+	Info.Printf("\tSpecialization: %v\n",evt.ContractAddr)
 	storage.Insert_pool_registered(&evt)
 }
 func process_internal_balance_changed(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 
+	Info.Printf(
+		"EVENT: InternalBalanceChanged. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
 	var eth_evt BalancerV2VaultInternalBalanceChanged
-	err := pool_factory_abi.UnpackIntoInterface(&eth_evt,"InternalBalanceChanged",log.Data)
+	err := vault_abi.UnpackIntoInterface(&eth_evt,"InternalBalanceChanged",log.Data)
 	if err != nil {
 		Error.Printf("Can't UnpackIntoInterface for InternalBalanceChanged : %v\n",err)
 		os.Exit(1)
@@ -100,8 +123,12 @@ func process_internal_balance_changed(storage *SQLStorage,tx *AugurTx,log *types
 }
 func process_external_balance_transfer(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 
+	Info.Printf(
+		"EVENT: ExternalBalanceTransfer. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
 	var eth_evt BalancerV2VaultExternalBalanceTransfer 
-	err := pool_factory_abi.UnpackIntoInterface(&eth_evt,"ExternalBalanceTransfer",log.Data)
+	err := vault_abi.UnpackIntoInterface(&eth_evt,"ExternalBalanceTransfer",log.Data)
 	if err != nil {
 		Error.Printf("Can't UnpackIntoInterface for ExternalBalanceTransfer: %v\n",err)
 		os.Exit(1)
@@ -124,8 +151,12 @@ func process_external_balance_transfer(storage *SQLStorage,tx *AugurTx,log *type
 }
 func process_swap(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 
+	Info.Printf(
+		"EVENT: Swap. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
 	var eth_evt BalancerV2VaultSwap
-	err := pool_factory_abi.UnpackIntoInterface(&eth_evt,"Swap",log.Data)
+	err := vault_abi.UnpackIntoInterface(&eth_evt,"Swap",log.Data)
 	if err != nil {
 		Error.Printf("Can't UnpackIntoInterface for Swap: %v\n",err)
 		os.Exit(1)
@@ -143,12 +174,29 @@ func process_swap(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 	tokenout_addr := common.BytesToAddress(log.Topics[3][12:])
 	evt.TokenInAddr = tokenin_addr.String()
 	evt.TokenOutAddr = tokenout_addr.String()
+	evt.AmountIn = eth_evt.AmountIn.String()
+	evt.AmountOut = eth_evt.AmountOut.String()
+	Info.Printf("Swap {\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tPoolId: %v\n",evt.PoolId)
+	Info.Printf("\tTokenIn: %v\n",evt.TokenInAddr)
+	Info.Printf("\tTokenOut: %v\n",evt.TokenOutAddr)
+	Info.Printf("\tAmountIn: %v\n",evt.AmountIn)
+	Info.Printf("\tAmountOut: %v\n",evt.AmountOut)
 	storage.Insert_swap(&evt)
 }
 func process_tokens_registered(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 
+	Info.Printf(
+		"EVENT: TokensRegistered. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
 	var eth_evt BalancerV2VaultTokensRegistered
-	err := pool_factory_abi.UnpackIntoInterface(&eth_evt,"TokensRegistered",log.Data)
+	err := vault_abi.UnpackIntoInterface(&eth_evt,"TokensRegistered",log.Data)
 	if err != nil {
 		Error.Printf("Can't UnpackIntoInterface for TokenRegistered: %v\n",err)
 		os.Exit(1)
@@ -169,8 +217,12 @@ func process_tokens_registered(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 }
 func process_tokens_deregistered(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 
+	Info.Printf(
+		"EVENT: TokensDeregistered. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
 	var eth_evt BalancerV2VaultTokensRegistered
-	err := pool_factory_abi.UnpackIntoInterface(&eth_evt,"TokensDeregistered",log.Data)
+	err := vault_abi.UnpackIntoInterface(&eth_evt,"TokensDeregistered",log.Data)
 	if err != nil {
 		Error.Printf("Can't UnpackIntoInterface for TokenDeegistered: %v\n",err)
 		os.Exit(1)
@@ -190,8 +242,9 @@ func process_tokens_deregistered(storage *SQLStorage,tx *AugurTx,log *types.Log)
 }
 func process_event_log(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 
-	if len(log.Topics) > 0 { return }
+	if len(log.Topics) == 0 { return }
 	topic0 := log.Topics[0].Bytes()
+	//Info.Printf("topic0=%v\n",hex.EncodeToString(topic0[:]))
 	if bytes.Equal(topic0,evt_pool_created) {
 		process_pool_created(storage,tx,log)
 	}

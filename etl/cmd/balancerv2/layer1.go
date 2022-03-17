@@ -66,6 +66,8 @@ var (
 	layer1 ETL_Layer1
 	pool_factory_abi *abi.ABI
 	vault_abi *abi.ABI
+
+	processor	ETL_Processor
 )
 func main() {
 
@@ -78,9 +80,9 @@ func main() {
 	rpc_url := flag.String("rpc","","RPC URL")
 	block_rcpts := flag.Bool("blockrcpts",false,"Use block receipts rpc call")
 	block_num := flag.Int64("bnum",0,"Single block number to process")
-	num_threads := flag.Int64("num_threads",1,"Number of parallel threads for block processing")
+	num_threads := flag.Int64("numthreads",1,"Number of parallel threads for block processing")
 	flag.Parse()
-
+	fmt.Printf("num_threads=%v\n",*num_threads)
 	if len(*schema_name) < 3 {
 		fmt.Printf("Schema name must be larger than 2 characters\n")
 		fmt.Printf("%v",usage_str)
@@ -107,8 +109,9 @@ func main() {
 	layer1.SchemaName = *schema_name
 	layer1.RPC_Url = *rpc_url
 	layer1.AppName = "balancerv2"
-	manager = func process_transaction(storage *SQLStorage,tx *AugurTx,rcpt *types.Receipt) {
-	layer1.Manager = manager
+	processor.ETL = &layer1
+	layer1.Manager = &processor
+
 
 	fname:=fmt.Sprintf("%v/%v_%v_info.log",log_dir,layer1.AppName,layer1.SchemaName)
 	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
@@ -216,6 +219,7 @@ func main() {
 		os.Exit(1)
 	}
 	layer1.NumThreads = *num_threads
+	Info.Printf("Num threads = %v\n",layer1.NumThreads)
 	Init(&layer1)
 	if *num_threads == 1 {
 		Main_event_loop_single_thread(&layer1,exit_chan)

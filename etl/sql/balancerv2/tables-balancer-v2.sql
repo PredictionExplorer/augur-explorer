@@ -33,9 +33,11 @@ CREATE TABLE pool_reg (	-- PoolRegistered event
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
+	contract_aid		BIGINT NOT NULL,
 	pool_id				TEXT NOT NULL,
 	pool_aid			BIGINT NOT NULL,
 	specialization		INT NOT NULL,
+	UNIQUE(pool_id,pool_aid),
 	PRIMARY KEY(block_num,tx_index,log_index)
 );
 CREATE TABLE pool_created (	-- PoolCreated event

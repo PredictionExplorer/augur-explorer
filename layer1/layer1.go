@@ -2,8 +2,8 @@ package layer1
 
 import (
 	"os"
-	"os/signal"
-	"syscall"
+	//"os/signal"
+	//"syscall"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -24,8 +24,8 @@ import (
 )
 const (
 
-	DEFAULT_WAIT_TIME = 2000	// 2 seconds
-	DEFAULT_DB_LOG				= "db.log"
+	WAIT_TIME = 2000	// 2 seconds
+	//DB_LOG				= "db.log"
 )
 var (
 
@@ -139,7 +139,7 @@ func single_threaded_loop_routine(etl *ETL_Layer1,exit_chan chan bool) {
 			break
 		}
 	}// for block_num
-	time.Sleep(DEFAULT_WAIT_TIME * time.Millisecond)
+	time.Sleep(WAIT_TIME * time.Millisecond)
 	goto main_loop // infinite loop without loss of one indentation level
 }
 func Process_single_block(etl *ETL_Layer1) {
@@ -151,6 +151,7 @@ func Process_single_block(etl *ETL_Layer1) {
 }
 func Main_event_loop_single_thread(etl *ETL_Layer1,exit_chan chan bool) {
 
+	etl.Info.Printf("Thread: single\n")
 	latestBlock, err := eclient.BlockByNumber(context.Background(), nil)
 	if err != nil {
 		log.Fatal("oops:", err)
@@ -224,7 +225,7 @@ func Init(etl *ETL_Layer1) {
 	if etl.SingleBlockNum > 0 {
 		etl.NoRollbackBlocks = true
 	}
-
+/*
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -234,12 +235,14 @@ func Init(etl *ETL_Layer1) {
 					" To interrupt abruptly send SIGKILL (9) to the kernel.\n")
 		exit_chan <- true
 	}()
+	*/
 }
 func Main_event_loop_multithreaded(etl *ETL_Layer1,exit_chan chan bool) {
 
 	Validate_params(etl)
 	Init(etl)
 
+	etl.Info.Printf("Thread: multithreaded, num_threads=%v\n",etl.NumThreads)
 	latestBlock, err := eclient.BlockByNumber(context.Background(), nil)
 	if err != nil {
 		log.Fatal("oops:", err)
