@@ -23,6 +23,18 @@ type BalV2PoolRegistered struct {
 	PoolId				string
 	Specialization		int64
 }
+type BalV2PoolBalanceChanged struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAddr		string
+	PoolId				string
+	LiqProvAddr			string
+	Tokens				string
+	Deltas				string
+	ProtocolFeeAmounts	string
+}
 type BalV2TokensRegistered struct {
 	BlockNum			int64
 	TimeStamp			int64
@@ -74,4 +86,13 @@ type BalV2Swap struct {
 	TokenOutAddr		string
 	AmountIn			string
 	AmountOut			string
+}
+type BalV2SwapFeePercentageChanged struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	PoolId				string
+	ContractAddr		string
+	SwapFeePercentage	string
 }

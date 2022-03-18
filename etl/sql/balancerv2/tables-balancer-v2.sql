@@ -28,6 +28,15 @@ CREATE TABLE swap ( -- Swap() event
 	amount_out			DECIMAL,
 	PRIMARY KEY(block_num,tx_index,log_index)
 );
+CREATE TABLE swap_fee ( -- SwapFeePercentageChanged() event
+	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	tx_index			INT NOT NULL,
+	log_index			INT NOT NULL,
+	contract_aid		BIGINT NOT NULL,
+	swap_fee			DECIMAL,
+	PRIMARY KEY(block_num,tx_index,log_index)
+);
 CREATE TABLE pool_reg (	-- PoolRegistered event
 	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
 	time_stamp			TIMESTAMPTZ NOT NULL,
@@ -45,6 +54,7 @@ CREATE TABLE pool_created (	-- PoolCreated event
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
+	contract_aid		BIGINT NOT NULL,
 	pool_aid			BIGINT NOT NULL,
 	PRIMARY KEY(block_num,tx_index,log_index)
 );
@@ -53,7 +63,7 @@ CREATE TABLE tokens_reg (	-- TokensRegistered event
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
-	pool_aid			BIGINT NOT NULL,
+	contract_aid		BIGINT NOT NULL,
 	pool_id				TEXT NOT NULL,
 	tokens				TEXT NOT NULL,
 	managers			TEXT NOT NULL,
@@ -64,7 +74,7 @@ CREATE TABLE tokens_dereg (	-- TokensDeregistered event
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
-	pool_aid			BIGINT NOT NULL,
+	contract_aid		BIGINT NOT NULL,
 	pool_id				TEXT NOT NULL,
 	tokens				TEXT NOT NULL,
 	PRIMARY KEY(block_num,tx_index,log_index)
@@ -96,8 +106,9 @@ CREATE TABLE pool_bal (	-- PoolBalanceChanged event
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
-	pool_aid			BIGINT NOT NULL,
+	contract_aid			BIGINT NOT NULL,
 	pool_id				TEXT NOT NULL,
+	liqprov_aid			BIGINT NOT NULL,
 	tokens				TEXT,
 	deltas				TEXT,
 	fee_amounts			TEXT,

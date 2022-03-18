@@ -41,12 +41,6 @@ func process_pool_created(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 		"EVENT: PoolCreated. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
-	var eth_evt BalancerV2WeightedPoolFactoryPoolCreated
-	err := pool_factory_abi.UnpackIntoInterface(&eth_evt,"PoolCreated",log.Data)
-	if err != nil {
-		Error.Printf("Can't UnpackIntoInterface for PoolCreated: %v\n",err)
-		os.Exit(1)
-	}
 
 	var evt BalV2PoolCreated
 	evt.BlockNum = tx.BlockNum
@@ -55,12 +49,49 @@ func process_pool_created(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 	evt.LogIndex = int64(log.Index)
 	evt.ContractAddr = log.Address.String()
 
-	pool_addr := common.BytesToAddress(log.Topics[2][12:])
+	pool_addr := common.BytesToAddress(log.Topics[1][12:])
 	evt.PoolAddr = pool_addr.String()
 	storage.Insert_pool_created(&evt)
 }
 func process_pool_balance_changed(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 
+	Info.Printf(
+		"EVENT: PoolBalanceChanged. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
+	var eth_evt BalancerV2VaultPoolBalanceChanged
+	err := vault_abi.UnpackIntoInterface(&eth_evt,"PoolBalanceChanged",log.Data)
+	if err != nil {
+		Error.Printf("Can't UnpackIntoInterface for PoolBalanceChanged: %v\n",err)
+		os.Exit(1)
+	}
+
+	var evt BalV2PoolBalanceChanged
+	evt.BlockNum = tx.BlockNum
+	evt.TimeStamp = tx.TimeStamp
+	evt.TxIndex = int64(tx.TxIndex)
+	evt.LogIndex = int64(log.Index)
+	evt.ContractAddr = log.Address.String()
+
+	evt.PoolId = hex.EncodeToString(log.Topics[1][:])
+	liqprov_addr := common.BytesToAddress(log.Topics[2][12:])
+	evt.LiqProvAddr = liqprov_addr.String()
+	evt.Tokens = address_array_to_string(eth_evt.Tokens)
+	evt.Deltas = Bigint_ptr_slice_to_str(&eth_evt.Deltas,",")
+	evt.ProtocolFeeAmounts = Bigint_ptr_slice_to_str(&eth_evt.ProtocolFeeAmounts,",")
+
+	Info.Printf("PoolRegistered {\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tLiquidityProviderAddr: %v\n",evt.LiqProvAddr)
+	Info.Printf("\tTokens: %v\n",evt.Tokens)
+	Info.Printf("\tDeltas: %v\n",evt.Deltas)
+	Info.Printf("\tProtocolFeeAmounts: %v\n",evt.ProtocolFeeAmounts)
+	Info.Printf("}\n")
+	storage.Insert_pool_balance_changed(&evt)
 }
 func process_pool_registered(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 
@@ -93,6 +124,7 @@ func process_pool_registered(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
 	Info.Printf("\tPoolAddr: %v\n",evt.PoolAddr)
 	Info.Printf("\tSpecialization: %v\n",evt.ContractAddr)
+	Info.Printf("}\n")
 	storage.Insert_pool_registered(&evt)
 }
 func process_internal_balance_changed(storage *SQLStorage,tx *AugurTx,log *types.Log) {
@@ -119,6 +151,7 @@ func process_internal_balance_changed(storage *SQLStorage,tx *AugurTx,log *types
 	token_addr := common.BytesToAddress(log.Topics[2][12:])
 	evt.UserAddr = user_addr.String()
 	evt.TokenAddr = token_addr.String()
+	evt.Delta = eth_evt.Delta.String()
 	storage.Insert_internal_balance_changed(&evt)
 }
 func process_external_balance_transfer(storage *SQLStorage,tx *AugurTx,log *types.Log) {
@@ -146,7 +179,18 @@ func process_external_balance_transfer(storage *SQLStorage,tx *AugurTx,log *type
 	evt.TokenAddr= token_addr.String()
 	evt.SenderAddr = sender_addr.String()
 	evt.RecipientAddr = eth_evt.Recipient.String()
+	evt.Amount = eth_evt.Amount.String()
 
+	Info.Printf("ExternalBalanceTransfer{\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tTokenAddr: %v\n",evt.TokenAddr)
+	Info.Printf("\tRecipientAddr: %v\n",evt.RecipientAddr)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("}\n")
 	storage.Insert_external_balance_transfer(&evt)
 }
 func process_swap(storage *SQLStorage,tx *AugurTx,log *types.Log) {
@@ -189,6 +233,37 @@ func process_swap(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 	Info.Printf("\tAmountOut: %v\n",evt.AmountOut)
 	storage.Insert_swap(&evt)
 }
+func process_swap_fee_changed(storage *SQLStorage,tx *AugurTx,log *types.Log) {
+
+	Info.Printf(
+		"EVENT: SwapFeePercentageChanged. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
+	var eth_evt BalancerV2SwapFeePercentageChangedSwapFeePercentageChanged
+	err := swapfee_abi.UnpackIntoInterface(&eth_evt,"SwapFeePercentageChanged",log.Data)
+	if err != nil {
+		Error.Printf("Can't UnpackIntoInterface for SwapFeePercentageChanged: %v\n",err)
+		os.Exit(1)
+	}
+
+	var evt BalV2SwapFeePercentageChanged
+	evt.BlockNum = tx.BlockNum
+	evt.TimeStamp = tx.TimeStamp
+	evt.TxIndex = int64(tx.TxIndex)
+	evt.LogIndex = int64(log.Index)
+	evt.ContractAddr = log.Address.String()
+	evt.SwapFeePercentage = eth_evt.SwapFeePercentage.String()
+
+	Info.Printf("SwapFeePercentageChanged {\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tSwapFeePercentage: %v\n",evt.SwapFeePercentage)
+	Info.Printf("\n")
+	storage.Insert_swap_fee_percentage_changed(&evt)
+}
 func process_tokens_registered(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 
 	Info.Printf(
@@ -224,7 +299,7 @@ func process_tokens_deregistered(storage *SQLStorage,tx *AugurTx,log *types.Log)
 	var eth_evt BalancerV2VaultTokensRegistered
 	err := vault_abi.UnpackIntoInterface(&eth_evt,"TokensDeregistered",log.Data)
 	if err != nil {
-		Error.Printf("Can't UnpackIntoInterface for TokenDeegistered: %v\n",err)
+		Error.Printf("Can't UnpackIntoInterface for TokenDeregistered: %v\n",err)
 		os.Exit(1)
 	}
 
@@ -268,5 +343,8 @@ func process_event_log(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 	}
 	if bytes.Equal(topic0,evt_swap) {
 		process_swap(storage,tx,log)
+	}
+	if bytes.Equal(topic0,evt_swap_fee_changed) {
+		process_swap_fee_changed(storage,tx,log)
 	}
 }

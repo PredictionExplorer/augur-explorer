@@ -35,6 +35,7 @@ const (
 	TOKEN_DEREGISTERED			= "7dcdc6d02ef40c7c1a7046a011b058bd7f988fa14e20a66344f9d4e60657d610"
 	TOKEN_REGISTERED			= "f5847d3f2197b16cdcd2098ec95d0905cd1abdaf415f07bb7cef2bba8ac5dec4"
 	SWAP						= "2170c741c41531aec20e7c107c24eecfdd15e69c9bb0a8dd37b1840b9e0b207b"
+	SWAP_FEE_CHANGED			= "a9ba3ffe0b6c366b81232caab38605a0699ad5398d6cce76f91ee809e322dafc"
 
 	DEFAULT_STATISTICS_DURATION	int64 = 24*60*60 // in seconds
 	DEFAULT_WAIT_TIME = 2000	// 2 seconds
@@ -53,6 +54,7 @@ var (
 	evt_token_deregistered,_ = hex.DecodeString(TOKEN_DEREGISTERED)
 	evt_token_registered,_ = hex.DecodeString(TOKEN_REGISTERED)
 	evt_swap,_ = hex.DecodeString(SWAP)
+	evt_swap_fee_changed,_ = hex.DecodeString(SWAP_FEE_CHANGED)
 
 	storage *SQLStorage
 
@@ -66,6 +68,7 @@ var (
 	layer1 ETL_Layer1
 	pool_factory_abi *abi.ABI
 	vault_abi *abi.ABI
+	swapfee_abi *abi.ABI
 
 	processor	ETL_Processor
 )
@@ -206,6 +209,14 @@ func main() {
 		os.Exit(1)
 	}
 	vault_abi = &abi2
+
+	abi_parsed3 := strings.NewReader(BalancerV2SwapFeePercentageChangedABI)
+	abi3,err := abi.JSON(abi_parsed3)
+	if err!= nil {
+		Info.Printf("Can't parse Vault ABI: %v\n",err)
+		os.Exit(1)
+	}
+	swapfee_abi = &abi3
 
 	bnum,exists := storage.Layer1_get_last_block_num()
 	if !exists {

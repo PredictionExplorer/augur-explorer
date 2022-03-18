@@ -54,13 +54,40 @@ func (ss *SQLStorage) Insert_pool_registered(evt *p.BalV2PoolRegistered) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Insert_pool_balance_changed(evt *p.BalV2PoolBalanceChanged) {
+
+	contract_aid := ss.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
+	liqprov_aid := ss.Layer1_lookup_or_insert_address_id(evt.LiqProvAddr)
+	var query string
+	query =  "INSERT INTO "+ss.schema_name+".pool_bal("+
+				"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+				"pool_id,liqprov_aid,tokens,deltas,fee_amounts"+
+			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10)"
+	_,err := ss.db.Exec(query,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxIndex,
+		evt.LogIndex,
+		contract_aid,
+		evt.PoolId,
+		liqprov_aid,
+		evt.Tokens,
+		evt.Deltas,
+		evt.ProtocolFeeAmounts,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pool_bal table: %v\n",err))
+		os.Exit(1)
+	}
+
+}
 func (ss *SQLStorage) Insert_tokens_registered(evt *p.BalV2TokensRegistered) {
 
 	contract_aid := ss.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
 	var query string
-	query =  "INSERT INTO "+ss.schema_name+".token_reg("+
-				"block_num,time_stamp,tx_index,log_index,pool_id,pool_aid,specialization"+
-			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
+	query =  "INSERT INTO "+ss.schema_name+".tokens_reg("+
+				"block_num,time_stamp,tx_index,log_index,contract_aid,pool_id,tokens,managers"+
+			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
 	_,err := ss.db.Exec(query,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -81,8 +108,8 @@ func (ss *SQLStorage) Insert_tokens_deregistered(evt *p.BalV2TokensDeregistered)
 
 	contract_aid := ss.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
 	var query string
-	query =  "INSERT INTO "+ss.schema_name+".token_dereg("+
-				"block_num,time_stamp,tx_index,log_index,contract_aid,pool_id,pool_aid,specialization"+
+	query =  "INSERT INTO "+ss.schema_name+".tokens_dereg("+
+				"block_num,time_stamp,tx_index,log_index,contract_aid,pool_id,tokens"+
 			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
 	_,err := ss.db.Exec(query,
 		evt.BlockNum,
@@ -94,7 +121,7 @@ func (ss *SQLStorage) Insert_tokens_deregistered(evt *p.BalV2TokensDeregistered)
 		evt.Tokens,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pool_deregistered table: %v\n",err))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into tokens_dereg table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -105,7 +132,7 @@ func (ss *SQLStorage) Insert_internal_balance_changed(evt *p.BalV2InternalBalanc
 	token_aid := ss.Layer1_lookup_or_insert_address_id(evt.TokenAddr)
 	var query string
 	query =  "INSERT INTO "+ss.schema_name+".ibalance("+
-				"block_num,time_stamp,tx_index,log_index,contract_aid,pool_aid,user_aid,token_aid,delta"+
+				"block_num,time_stamp,tx_index,log_index,contract_aid,user_aid,token_aid,delta"+
 			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
 	_,err := ss.db.Exec(query,
 		evt.BlockNum,
@@ -132,7 +159,7 @@ func (ss *SQLStorage) Insert_external_balance_transfer(evt *p.BalV2ExternalBalan
 	query =  "INSERT INTO "+ss.schema_name+".ebal_transf("+
 				"block_num,time_stamp,tx_index,log_index,contract_aid,"+
 				"sender_aid,recipient_aid,token_aid,amount"+
-			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
+			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9)"
 	_,err := ss.db.Exec(query,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -145,7 +172,7 @@ func (ss *SQLStorage) Insert_external_balance_transfer(evt *p.BalV2ExternalBalan
 		evt.Amount,
 	)
 	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into pool_deregistered table: %v\n",err))
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into ebal_transf table: %v\n",err))
 		os.Exit(1)
 	}
 
@@ -174,6 +201,28 @@ func (ss *SQLStorage) Insert_swap(evt *p.BalV2Swap) {
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into swap table: %v\n",err))
+		os.Exit(1)
+	}
+
+}
+func (ss *SQLStorage) Insert_swap_fee_percentage_changed(evt *p.BalV2SwapFeePercentageChanged) {
+
+	contract_aid := ss.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
+	var query string
+	query =  "INSERT INTO "+ss.schema_name+".swap_fee("+
+				"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+				"swap_fee"+
+			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6)"
+	_,err := ss.db.Exec(query,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxIndex,
+		evt.LogIndex,
+		contract_aid,
+		evt.SwapFeePercentage,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into swap_fee table: %v\n",err))
 		os.Exit(1)
 	}
 
