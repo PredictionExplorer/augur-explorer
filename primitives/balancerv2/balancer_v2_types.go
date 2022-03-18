@@ -96,3 +96,26 @@ type BalV2SwapFeePercentageChanged struct {
 	ContractAddr		string
 	SwapFeePercentage	string
 }
+type BalV2PoolBalanceManaged struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	PoolId				string
+	ContractAddr		string
+	AssetManagerAddr	string
+	TokenAddr			string
+	CashDelta			string
+	ManagedDelta		string
+}
+type BalV2FlashLoan struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAddr		string
+	RecipientAddr		string
+	TokenAddr			string
+	Amount				string
+	FeeAmount			string
+}

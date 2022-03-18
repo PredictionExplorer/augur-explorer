@@ -233,6 +233,46 @@ func process_swap(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 	Info.Printf("\tAmountOut: %v\n",evt.AmountOut)
 	storage.Insert_swap(&evt)
 }
+func process_pool_balance_managed(storage *SQLStorage,tx *AugurTx,log *types.Log) {
+
+	Info.Printf(
+		"EVENT: PoolBalanceManaged. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
+	var eth_evt BalancerV2VaultPoolBalanceManaged
+	err := vault_abi.UnpackIntoInterface(&eth_evt,"PoolBalanceManaged",log.Data)
+	if err != nil {
+		Error.Printf("Can't UnpackIntoInterface for PoolBalanceManaged: %v\n",err)
+		os.Exit(1)
+	}
+
+	var evt BalV2PoolBalanceManaged
+
+	evt.BlockNum = tx.BlockNum
+	evt.TimeStamp = tx.TimeStamp
+	evt.TxIndex = int64(tx.TxIndex)
+	evt.LogIndex = int64(log.Index)
+	evt.ContractAddr = log.Address.String()
+
+	evt.PoolId = hex.EncodeToString(log.Topics[1][:])
+	asset_manager_addr := common.BytesToAddress(log.Topics[2][12:])
+	evt.AssetManagerAddr = asset_manager_addr.String()
+	evt.TokenAddr = eth_evt.Token.String()
+	evt.CashDelta = eth_evt.CashDelta.String()
+	evt.ManagedDelta = eth_evt.ManagedDelta.String()
+	Info.Printf("PoolBalanceManaged{\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tPoolId: %v\n",evt.PoolId)
+	Info.Printf("\tAssetManagerAddr: %v\n",evt.AssetManagerAddr)
+	Info.Printf("\tTokenAddr: %v\n",evt.TokenAddr)
+	Info.Printf("\tCashDelta: %v\n",evt.CashDelta)
+	Info.Printf("\tManagedDelta: %v\n",evt.ManagedDelta)
+	storage.Insert_pool_balance_managed(&evt)
+}
 func process_swap_fee_changed(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 
 	Info.Printf(
@@ -315,6 +355,55 @@ func process_tokens_deregistered(storage *SQLStorage,tx *AugurTx,log *types.Log)
 	evt.PoolId = hex.EncodeToString(eth_evt.PoolId[:])
 	storage.Insert_tokens_deregistered(&evt)
 }
+func process_flash_loan(storage *SQLStorage,tx *AugurTx,log *types.Log) {
+
+	Info.Printf(
+		"EVENT: FlashLoan. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
+	var eth_evt BalancerV2VaultFlashLoan
+	err := vault_abi.UnpackIntoInterface(&eth_evt,"FlashLoan",log.Data)
+	if err != nil {
+		Error.Printf("Can't UnpackIntoInterface for FlashLoan: %v\n",err)
+		os.Exit(1)
+	}
+
+	var evt BalV2FlashLoan
+
+	evt.BlockNum = tx.BlockNum
+	evt.TimeStamp = tx.TimeStamp
+	evt.TxIndex = int64(tx.TxIndex)
+	evt.LogIndex = int64(log.Index)
+	evt.ContractAddr = log.Address.String()
+
+	//recipient_addr := common.BytesToAddress(log.Topics[1][12:])
+	//evt.RecipientAddr = recipient_addr.String()
+	evt.RecipientAddr = eth_evt.Recipient.String()
+	//token_addr := common.BytesToAddress(log.Topics[2][12:])
+	//evt.TokenAddr = token_addr.String()
+	evt.TokenAddr = eth_evt.Token.String()
+	evt.Amount= eth_evt.Amount.String()
+	evt.FeeAmount = eth_evt.FeeAmount.String()
+	Info.Printf("FlashLoan{\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tRecipientAddr: %v\n",evt.RecipientAddr)
+	Info.Printf("\tTokenAddr: %v\n",evt.TokenAddr)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tFeeAmount: %v\n",evt.FeeAmount)
+	if len(evt.TokenAddr) == 0 {
+		Error.Printf("Token address is empty\n")
+		os.Exit(1)
+	}
+	if len(evt.RecipientAddr) == 0 {
+		Error.Printf("Recipient address is empty\n")
+		os.Exit(1)
+	}
+	storage.Insert_flash_loan(&evt)
+}
 func process_event_log(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 
 	if len(log.Topics) == 0 { return }
@@ -344,7 +433,10 @@ func process_event_log(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 	if bytes.Equal(topic0,evt_swap) {
 		process_swap(storage,tx,log)
 	}
-	if bytes.Equal(topic0,evt_swap_fee_changed) {
-		process_swap_fee_changed(storage,tx,log)
+	if bytes.Equal(topic0,evt_pool_balance_managed) {
+		process_pool_balance_managed(storage,tx,log)
+	}
+	if bytes.Equal(topic0,evt_flash_loan) {
+		process_flash_loan(storage,tx,log)
 	}
 }

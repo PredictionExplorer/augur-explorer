@@ -9,5 +9,8 @@ DROP TABLE IF EXISTS
 	tokens_dereg,
 	ibalance,
 	ebal_transf,
-	pool_bal
+	pool_bal,
+	swap_fee,
+	pool_bm,
+	flash_loan
 CASCADE;

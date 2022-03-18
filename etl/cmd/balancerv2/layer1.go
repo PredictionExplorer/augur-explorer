@@ -36,6 +36,8 @@ const (
 	TOKEN_REGISTERED			= "f5847d3f2197b16cdcd2098ec95d0905cd1abdaf415f07bb7cef2bba8ac5dec4"
 	SWAP						= "2170c741c41531aec20e7c107c24eecfdd15e69c9bb0a8dd37b1840b9e0b207b"
 	SWAP_FEE_CHANGED			= "a9ba3ffe0b6c366b81232caab38605a0699ad5398d6cce76f91ee809e322dafc"
+	POOL_BALANCE_MANAGED		= "6edcaf6241105b4c94c2efdbf3a6b12458eb3d07be3a0e81d24b13c44045fe7a"
+	FLASH_LOAN					= "0d7d75e01ab95780d3cd1c8ec0dd6c2ce19e3a20427eec8bf53283b6fb8e95f0"
 
 	DEFAULT_STATISTICS_DURATION	int64 = 24*60*60 // in seconds
 	DEFAULT_WAIT_TIME = 2000	// 2 seconds
@@ -55,6 +57,8 @@ var (
 	evt_token_registered,_ = hex.DecodeString(TOKEN_REGISTERED)
 	evt_swap,_ = hex.DecodeString(SWAP)
 	evt_swap_fee_changed,_ = hex.DecodeString(SWAP_FEE_CHANGED)
+	evt_pool_balance_managed,_ = hex.DecodeString(POOL_BALANCE_MANAGED)
+	evt_flash_loan,_ = hex.DecodeString(FLASH_LOAN)
 
 	storage *SQLStorage
 
@@ -85,7 +89,6 @@ func main() {
 	block_num := flag.Int64("bnum",0,"Single block number to process")
 	num_threads := flag.Int64("numthreads",1,"Number of parallel threads for block processing")
 	flag.Parse()
-	fmt.Printf("num_threads=%v\n",*num_threads)
 	if len(*schema_name) < 3 {
 		fmt.Printf("Schema name must be larger than 2 characters\n")
 		fmt.Printf("%v",usage_str)

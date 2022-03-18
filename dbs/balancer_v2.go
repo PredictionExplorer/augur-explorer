@@ -227,3 +227,57 @@ func (ss *SQLStorage) Insert_swap_fee_percentage_changed(evt *p.BalV2SwapFeePerc
 	}
 
 }
+func (ss *SQLStorage) Insert_pool_balance_managed(evt *p.BalV2PoolBalanceManaged) {
+
+	contract_aid := ss.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
+	asset_manager_aid := ss.Layer1_lookup_or_insert_address_id(evt.AssetManagerAddr)
+	token_aid := ss.Layer1_lookup_or_insert_address_id(evt.TokenAddr)
+	var query string
+	query =  "INSERT INTO "+ss.schema_name+".pool_bm("+
+				"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+				"pool_id,asset_mgr_aid,token_aid,cash_delta,managed_delta"+
+			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10)"
+	_,err := ss.db.Exec(query,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxIndex,
+		evt.LogIndex,
+		contract_aid,
+		evt.PoolId,
+		asset_manager_aid,
+		token_aid,
+		evt.CashDelta,
+		evt.ManagedDelta,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into swap table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Insert_flash_loan(evt *p.BalV2FlashLoan) {
+
+	contract_aid := ss.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
+	token_aid := ss.Layer1_lookup_or_insert_address_id(evt.TokenAddr)
+	recipient_aid := ss.Layer1_lookup_or_insert_address_id(evt.RecipientAddr)
+	var query string
+	query =  "INSERT INTO "+ss.schema_name+".flash_loan("+
+				"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+				"recipient_aid,token_aid,amount,fee_amount"+
+			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9)"
+	_,err := ss.db.Exec(query,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxIndex,
+		evt.LogIndex,
+		contract_aid,
+		recipient_aid,
+		token_aid,
+		evt.Amount,
+		evt.FeeAmount,
+	)
+	if err != nil {
+		ss.Log_msg(fmt.Sprintf("DB error: can't insert into flash_loan table: %v\n",err))
+		os.Exit(1)
+	}
+
+}

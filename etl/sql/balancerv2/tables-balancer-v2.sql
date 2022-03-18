@@ -84,6 +84,7 @@ CREATE TABLE ibalance (	-- InternalBalanceChanged event
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
+	contract_aid		BIGINT NOT NULL,
 	user_aid			BIGINT NOT NULL,
 	token_aid			BIGINT NOT NULL,
 	delta				DECIMAL,
@@ -112,5 +113,30 @@ CREATE TABLE pool_bal (	-- PoolBalanceChanged event
 	tokens				TEXT,
 	deltas				TEXT,
 	fee_amounts			TEXT,
+	PRIMARY KEY(block_num,tx_index,log_index)
+);
+CREATE TABLE pool_bm (	-- PoolBalanceManaged event
+	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	tx_index			INT NOT NULL,
+	log_index			INT NOT NULL,
+	contract_aid		BIGINT NOT NULL,
+	pool_id				TEXT NOT NULL,
+	asset_mgr_aid		BIGINT NOT NULL,
+	token_aid			BIGINT NOT NULL,
+	cash_delta			DECIMAL,
+	managed_delta		DECIMAL,
+	PRIMARY KEY(block_num,tx_index,log_index)
+);
+CREATE TABLE flash_loan (	-- FlashLoan event
+	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	tx_index			INT NOT NULL,
+	log_index			INT NOT NULL,
+	contract_aid		BIGINT NOT NULL,
+	recipient_aid		BIGINT NOT NULL,
+	token_aid			BIGINT NOT NULL,
+	amount				DECIMAL,
+	fee_amount			DECIMAL,
 	PRIMARY KEY(block_num,tx_index,log_index)
 );
