@@ -1,7 +1,6 @@
 package balancerv2
 
 import (
-
 )
 
 type BalV2PoolCreated struct {
@@ -118,4 +117,8 @@ type BalV2FlashLoan struct {
 	TokenAddr			string
 	Amount				string
 	FeeAmount			string
+}
+type BalV2ContractAddrs struct {
+	VaultAddr			string
+	FactoryAddr			string
 }

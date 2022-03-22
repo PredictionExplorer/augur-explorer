@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 
 	//. "github.com/PredictionExplorer/augur-explorer/contracts"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
@@ -47,6 +48,7 @@ const (
 	NUM_AUGUR_CONTRACTS int = 35
 	//USE_BLOCK_RECEIPTS_RPC_CALL bool = false // flag for using patch in ./geth-patch/README.txt
 )
+
 var (
 	evt_pool_created,_ = hex.DecodeString(POOL_CREATED)
 	evt_pool_balance_changed,_ = hex.DecodeString(POOL_BALANCE_CHANGED)
@@ -73,6 +75,8 @@ var (
 	pool_factory_abi *abi.ABI
 	vault_abi *abi.ABI
 	swapfee_abi *abi.ABI
+
+	caddrs		BalancerV2Addrs
 
 	processor	ETL_Processor
 )
@@ -171,6 +175,11 @@ func main() {
 			)
 		}
 	}
+	tmp_caddrs := storage.Balancer_get_contract_addrs()
+	caddrs.VaultAddr = common.HexToAddress(tmp_caddrs.VaultAddr)
+	caddrs.FactoryAddr = common.HexToAddress(tmp_caddrs.FactoryAddr)
+
+
 	if *block_num > 0 {
 		Info.Printf("Processing single block %v\n",*block_num)
 		layer1.SingleBlockNum = *block_num

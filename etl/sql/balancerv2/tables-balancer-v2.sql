@@ -13,7 +13,9 @@ CREATE TABLE addr (
 CREATE TABLE config(
 	chain_id			BIGINT DEFAULT 0, --Arbitrum: 42161
 	last_block			BIGINT DEFAULT 0,
-	starting_block		BIGINT DEFAULT 0
+	starting_block		BIGINT DEFAULT 0,
+	factory_addr		TEXT DEFAULT '0x8E9aa87E45e92bad84D5F8DD1bff34Fb92637dE9',
+	vault_addr			TEXT DEFAULT '0xBA12222222228d8Ba445958a75a0704d566BF2C8'
 );
 CREATE TABLE swap ( -- Swap() event
 	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,

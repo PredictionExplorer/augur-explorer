@@ -281,3 +281,20 @@ func (ss *SQLStorage) Insert_flash_loan(evt *p.BalV2FlashLoan) {
 	}
 
 }
+func (ss *SQLStorage) Balancer_get_contract_addrs() p.BalV2ContractAddrs {
+
+	var query string
+	query = "SELECT factory_addr,vault_addr FROM "+ss.schema_name+".config"
+	row := ss.db.QueryRow(query)
+	var factory_addr,vault_addr string
+	var err error
+	err=row.Scan(&factory_addr,&vault_addr);
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("Error in Balancer_get_contract_addrs(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	var output p.BalV2ContractAddrs
+	output.FactoryAddr = factory_addr
+	output.VaultAddr = vault_addr
+	return output
+}

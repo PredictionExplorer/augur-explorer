@@ -41,6 +41,10 @@ func process_pool_created(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 		"EVENT: PoolCreated. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	if !bytes.Equal(log.Address.Bytes(),caddrs.FactoryAddr.Bytes()) {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 
 	var evt BalV2PoolCreated
 	evt.BlockNum = tx.BlockNum
@@ -51,6 +55,15 @@ func process_pool_created(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 
 	pool_addr := common.BytesToAddress(log.Topics[1][12:])
 	evt.PoolAddr = pool_addr.String()
+
+	Info.Printf("PoolCreated{\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tPoolAddr: %v\n",evt.PoolAddr)
+	Info.Printf("}\n")
 	storage.Insert_pool_created(&evt)
 }
 func process_pool_balance_changed(storage *SQLStorage,tx *AugurTx,log *types.Log) {
@@ -59,6 +72,10 @@ func process_pool_balance_changed(storage *SQLStorage,tx *AugurTx,log *types.Log
 		"EVENT: PoolBalanceChanged. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	if !bytes.Equal(log.Address.Bytes(),caddrs.VaultAddr.Bytes()) {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt BalancerV2VaultPoolBalanceChanged
 	err := vault_abi.UnpackIntoInterface(&eth_evt,"PoolBalanceChanged",log.Data)
 	if err != nil {
@@ -99,6 +116,10 @@ func process_pool_registered(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 		"EVENT: PoolRegistered. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	if !bytes.Equal(log.Address.Bytes(),caddrs.VaultAddr.Bytes()) {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt BalancerV2VaultPoolRegistered
 	err := vault_abi.UnpackIntoInterface(&eth_evt,"PoolRegistered",log.Data)
 	if err != nil {
@@ -133,6 +154,10 @@ func process_internal_balance_changed(storage *SQLStorage,tx *AugurTx,log *types
 		"EVENT: InternalBalanceChanged. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	if !bytes.Equal(log.Address.Bytes(),caddrs.VaultAddr.Bytes()) {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt BalancerV2VaultInternalBalanceChanged
 	err := vault_abi.UnpackIntoInterface(&eth_evt,"InternalBalanceChanged",log.Data)
 	if err != nil {
@@ -152,6 +177,17 @@ func process_internal_balance_changed(storage *SQLStorage,tx *AugurTx,log *types
 	evt.UserAddr = user_addr.String()
 	evt.TokenAddr = token_addr.String()
 	evt.Delta = eth_evt.Delta.String()
+
+	Info.Printf("InternalBalanceChanged {\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tUserAddr: %v\n",evt.UserAddr)
+	Info.Printf("\tTokenAddr: %v\n",evt.TokenAddr)
+	Info.Printf("\tDelta: %v\n",evt.Delta)
+	Info.Printf("}\n")
 	storage.Insert_internal_balance_changed(&evt)
 }
 func process_external_balance_transfer(storage *SQLStorage,tx *AugurTx,log *types.Log) {
@@ -160,6 +196,10 @@ func process_external_balance_transfer(storage *SQLStorage,tx *AugurTx,log *type
 		"EVENT: ExternalBalanceTransfer. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	if !bytes.Equal(log.Address.Bytes(),caddrs.VaultAddr.Bytes()) {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt BalancerV2VaultExternalBalanceTransfer 
 	err := vault_abi.UnpackIntoInterface(&eth_evt,"ExternalBalanceTransfer",log.Data)
 	if err != nil {
@@ -199,6 +239,10 @@ func process_swap(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 		"EVENT: Swap. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	if !bytes.Equal(log.Address.Bytes(),caddrs.VaultAddr.Bytes()) {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt BalancerV2VaultSwap
 	err := vault_abi.UnpackIntoInterface(&eth_evt,"Swap",log.Data)
 	if err != nil {
@@ -239,6 +283,10 @@ func process_pool_balance_managed(storage *SQLStorage,tx *AugurTx,log *types.Log
 		"EVENT: PoolBalanceManaged. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	if !bytes.Equal(log.Address.Bytes(),caddrs.VaultAddr.Bytes()) {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt BalancerV2VaultPoolBalanceManaged
 	err := vault_abi.UnpackIntoInterface(&eth_evt,"PoolBalanceManaged",log.Data)
 	if err != nil {
@@ -279,6 +327,10 @@ func process_swap_fee_changed(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 		"EVENT: SwapFeePercentageChanged. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	if !bytes.Equal(log.Address.Bytes(),caddrs.VaultAddr.Bytes()) {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt BalancerV2SwapFeePercentageChangedSwapFeePercentageChanged
 	err := swapfee_abi.UnpackIntoInterface(&eth_evt,"SwapFeePercentageChanged",log.Data)
 	if err != nil {
@@ -310,6 +362,10 @@ func process_tokens_registered(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 		"EVENT: TokensRegistered. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	if !bytes.Equal(log.Address.Bytes(),caddrs.VaultAddr.Bytes()) {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt BalancerV2VaultTokensRegistered
 	err := vault_abi.UnpackIntoInterface(&eth_evt,"TokensRegistered",log.Data)
 	if err != nil {
@@ -328,6 +384,17 @@ func process_tokens_registered(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 	evt.AssetManagers = address_array_to_string(eth_evt.AssetManagers)
 
 	evt.PoolId = hex.EncodeToString(eth_evt.PoolId[:])
+
+	Info.Printf("TokenRegistered{\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tTokens: %v\n",evt.Tokens)
+	Info.Printf("\tAssetManagers: %v\n",evt.AssetManagers)
+	Info.Printf("\tPoolId: %v\n",evt.PoolId)
+	Info.Printf("}\n")
 	storage.Insert_tokens_registered(&evt)
 }
 func process_tokens_deregistered(storage *SQLStorage,tx *AugurTx,log *types.Log) {
@@ -336,6 +403,10 @@ func process_tokens_deregistered(storage *SQLStorage,tx *AugurTx,log *types.Log)
 		"EVENT: TokensDeregistered. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	if !bytes.Equal(log.Address.Bytes(),caddrs.VaultAddr.Bytes()) {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt BalancerV2VaultTokensRegistered
 	err := vault_abi.UnpackIntoInterface(&eth_evt,"TokensDeregistered",log.Data)
 	if err != nil {
@@ -353,6 +424,16 @@ func process_tokens_deregistered(storage *SQLStorage,tx *AugurTx,log *types.Log)
 	evt.Tokens = address_array_to_string(eth_evt.Tokens)
 
 	evt.PoolId = hex.EncodeToString(eth_evt.PoolId[:])
+
+	Info.Printf("TokenDeregistered{\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tTokens: %v\n",evt.Tokens)
+	Info.Printf("\tPoolId: %v\n",evt.PoolId)
+	Info.Printf("}\n")
 	storage.Insert_tokens_deregistered(&evt)
 }
 func process_flash_loan(storage *SQLStorage,tx *AugurTx,log *types.Log) {
@@ -361,6 +442,10 @@ func process_flash_loan(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 		"EVENT: FlashLoan. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	if !bytes.Equal(log.Address.Bytes(),caddrs.VaultAddr.Bytes()) {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt BalancerV2VaultFlashLoan
 	err := vault_abi.UnpackIntoInterface(&eth_evt,"FlashLoan",log.Data)
 	if err != nil {
