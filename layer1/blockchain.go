@@ -109,7 +109,7 @@ func add_address_stat_entry(addr_stats_log []AddrStatsLog,block_num,tx_index,aid
 	addr_stats_log = append(addr_stats_log,entry)
 	return addr_stats_log
 }
-func process_transactions(etl *ETL_Layer1,bnum int64,transactions []*AugurTx,receipt_calls []*receiptCallResult,block_receipts []types.Receipt,extra_info []ReceiptExtraInfo) (*big.Int,*big.Int,error) {
+func process_transactions(etl *ETL_Layer1,bnum int64,timestamp uint64,transactions []*AugurTx,receipt_calls []*receiptCallResult,block_receipts []types.Receipt,extra_info []ReceiptExtraInfo) (*big.Int,*big.Int,error) {
 	//	if receipt_calls is not nil then the old slow getTrasnactionReceipt call is used
 	//	if block_receipts is not nil then we are using new getBlockReceipts RPC call
 
@@ -120,6 +120,7 @@ func process_transactions(etl *ETL_Layer1,bnum int64,transactions []*AugurTx,rec
 			continue // this is Polygon's automatic transaction
 		}
 		agtx.TxIndex = int32(tnum)
+		agtx.TimeStamp = int64(timestamp)
 		tmp_log_slice := make([]AddrStatsLog,0,2)
 		from_addr := common.HexToAddress(agtx.From)
 		from_aid:= lookup_or_insert_addr(etl,from_addr)
@@ -262,7 +263,7 @@ func process_block(etl *ETL_Layer1,bnum int64,update_last_block bool,no_chainspl
 		}
 		return nil
 	}
-	_,_,err = process_transactions(etl,bnum,transactions,receipt_calls,block_receipts,extra_fields)
+	_,_,err = process_transactions(etl,bnum,header.Time,transactions,receipt_calls,block_receipts,extra_fields)
 	if update_last_block {
 		etl.Storage.Layer1_set_last_block_num(bnum)
 	}
