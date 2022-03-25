@@ -97,7 +97,7 @@ func process_pool_balance_changed(storage *SQLStorage,tx *AugurTx,log *types.Log
 	evt.Deltas = Bigint_ptr_slice_to_str(&eth_evt.Deltas,",")
 	evt.ProtocolFeeAmounts = Bigint_ptr_slice_to_str(&eth_evt.ProtocolFeeAmounts,",")
 
-	Info.Printf("PoolRegistered {\n")
+	Info.Printf("PoolBalanceChanged{\n")
 	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
 	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
 	Info.Printf("\tTxId: %v\n",evt.TxIndex)
@@ -134,6 +134,7 @@ func process_pool_registered(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 	evt.LogIndex = int64(log.Index)
 	evt.ContractAddr = log.Address.String()
 
+	evt.PoolId = hex.EncodeToString(log.Topics[1][:])
 	pool_addr := common.BytesToAddress(log.Topics[2][12:])
 	evt.PoolAddr = pool_addr.String()
 	evt.Specialization= int64(eth_evt.Specialization)
@@ -143,6 +144,7 @@ func process_pool_registered(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 	Info.Printf("\tTxId: %v\n",evt.TxIndex)
 	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
 	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tPoolId: %v\n",evt.PoolId)
 	Info.Printf("\tPoolAddr: %v\n",evt.PoolAddr)
 	Info.Printf("\tSpecialization: %v\n",evt.ContractAddr)
 	Info.Printf("}\n")
@@ -327,10 +329,6 @@ func process_swap_fee_changed(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 		"EVENT: SwapFeePercentageChanged. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
-	if !bytes.Equal(log.Address.Bytes(),caddrs.VaultAddr.Bytes()) {
-		Info.Printf("Skipping event, address doesn't match our address\n")
-		return
-	}
 	var eth_evt BalancerV2SwapFeePercentageChangedSwapFeePercentageChanged
 	err := swapfee_abi.UnpackIntoInterface(&eth_evt,"SwapFeePercentageChanged",log.Data)
 	if err != nil {
@@ -382,8 +380,7 @@ func process_tokens_registered(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 
 	evt.Tokens = address_array_to_string(eth_evt.Tokens)
 	evt.AssetManagers = address_array_to_string(eth_evt.AssetManagers)
-
-	evt.PoolId = hex.EncodeToString(eth_evt.PoolId[:])
+	evt.PoolId = hex.EncodeToString(log.Topics[1][:])
 
 	Info.Printf("TokenRegistered{\n")
 	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
@@ -422,8 +419,7 @@ func process_tokens_deregistered(storage *SQLStorage,tx *AugurTx,log *types.Log)
 	evt.ContractAddr = log.Address.String()
 
 	evt.Tokens = address_array_to_string(eth_evt.Tokens)
-
-	evt.PoolId = hex.EncodeToString(eth_evt.PoolId[:])
+	evt.PoolId = hex.EncodeToString(log.Topics[1][:])
 
 	Info.Printf("TokenDeregistered{\n")
 	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
@@ -517,6 +513,9 @@ func process_event_log(storage *SQLStorage,tx *AugurTx,log *types.Log) {
 	}
 	if bytes.Equal(topic0,evt_swap) {
 		process_swap(storage,tx,log)
+	}
+	if bytes.Equal(topic0,evt_swap_fee_changed) {
+		process_swap_fee_changed(storage,tx,log)
 	}
 	if bytes.Equal(topic0,evt_pool_balance_managed) {
 		process_pool_balance_managed(storage,tx,log)

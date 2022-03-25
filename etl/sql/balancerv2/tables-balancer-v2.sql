@@ -142,3 +142,14 @@ CREATE TABLE flash_loan (	-- FlashLoan event
 	fee_amount			DECIMAL,
 	PRIMARY KEY(block_num,tx_index,log_index)
 );
+CREATE TABLE swf_hist ( -- Swap Fee history , calculated as next layer on top of 'block' table
+	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	tx_index			INT NOT NULL,
+	log_index			INT NOT NULL,
+	contract_aid		BIGINT NOT NULL,
+	swap_fee			DECIMAL DEFAULT 0,
+	protocol_fee		DECIMAL DEFAULT 0,
+	accum_swap_fee		DECIMAL DEFAULT 0,
+	accum_proto_fee		DECIMAL DEFAULT 0
+);
