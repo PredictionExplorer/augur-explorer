@@ -580,6 +580,64 @@ func (ss *SQLStorage) Get_all_events_for_notification(rwalk_aid int64,start_ts i
 	}
 	return records
 }
+func (ss *SQLStorage) Get_all_events_for_notification_test(rwalk_aid int64,start_ts int64) []p.RW_NotificationEvent {
+
+	records := make([]p.RW_NotificationEvent,0,101)
+	var query string
+	query = "SELECT "+
+				"ts,"+
+				"token_id,"+
+				"price, "+
+				"evt_type "+
+			"FROM (" +
+				"("+
+					"SELECT "+
+						"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts,"+
+						"token_id,"+
+						"price/1e+18 AS price, "+
+						"1 AS evt_type " +
+					"FROM rw_mint_evt m " +
+						"WHERE (contract_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))  "+
+				") "+
+				/*UNION ALL( "+
+					"SELECT "+
+						"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,"+
+						"token_id,"+
+						"price/1e+18 AS price, "+
+						"2 AS evt_type "+
+					"FROM rw_new_offer o " +
+						"WHERE (rwalk_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))  " +
+				") UNION ALL ( "+
+					"SELECT "+
+						"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT as ts,"+
+						"o.token_id,"+
+						"o.price/1e+18 AS price, "+
+						"3 AS evt_type " +
+					"FROM rw_item_bought b " +
+						"JOIN rw_new_offer o ON (b.contract_aid=o.contract_aid) AND (b.offer_id=o.offer_id) " +
+					"WHERE (o.rwalk_aid=$1) AND (b.time_stamp > TO_TIMESTAMP($2))  " +
+				") " +
+				*/
+			") data " +
+			"ORDER BY ts"
+	rows,err := ss.db.Query(query,rwalk_aid,start_ts)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_NotificationEvent
+		err=rows.Scan(
+			&rec.TimeStampMinted,
+			&rec.TokenId,
+			&rec.Price,
+			&rec.EvtType,
+		)
+		records = append(records,rec)
+	}
+	return records
+}
 func (ss *SQLStorage) Get_server_timestamp() int64 {
 
 	var query string

@@ -51,6 +51,9 @@ var (
 	PriceChannelID				= disgord.Snowflake(PriceChannelID_Uint)
 	LastDateChannelID_Uint		uint64 = 0 // 918653298813313044
 	LastDateChannelID			= disgord.Snowflake(LastDateChannelID_Uint)
+	LastRewardChannelID_Uint	uint64 = 0
+	LastRewardChannelID			= disgord.Snowflake(LastRewardChannelID_Uint)
+
 
 	TWITTER_KEYS_FILE = os.Getenv("TWITTER_KEYS_FILE")
 	DISCORD_KEYS_FILE = os.Getenv("DISCORD_KEYS_FILE")
@@ -89,12 +92,13 @@ type TwitterKeys struct {
 	TokenSecret		string
 }
 type DiscordKeys struct {
-	TokenKey			string
-	ChannelId			uint64	// Notifications Channel
-	MainChannelId		uint64	// Main chat Channel
-	MintStatsChanId		uint64
-	PriceStatsChanId	uint64
-	DateStatsChanId		uint64
+	TokenKey				string
+	ChannelId				uint64	// Notifications Channel
+	MainChannelId			uint64	// Main chat Channel
+	MintStatsChanId			uint64
+	PriceStatsChanId		uint64
+	DateStatsChanId			uint64
+	RewardStatsChanId		uint64
 }
 func read_twitter_keys() error {
 	file_name := fmt.Sprintf("%v/configs/%v",os.Getenv("HOME"),TWITTER_KEYS_FILE)
@@ -117,15 +121,22 @@ func read_discord_keys() error {
 		return err
 	}
 	Info.Printf("Main channel ID=%v\n",discord_keys.MainChannelId)
+
 	MintChannelID_Uint = discord_keys.MintStatsChanId
 	Info.Printf("Channel ID for Mint statistics: %v\n",MintChannelID_Uint)
 	MintChannelID = disgord.Snowflake(MintChannelID_Uint)
+
 	PriceChannelID_Uint	= discord_keys.PriceStatsChanId 
 	Info.Printf("Channel ID for Price statistics: %v\n",PriceChannelID_Uint)
 	PriceChannelID = disgord.Snowflake(PriceChannelID_Uint)
+
 	LastDateChannelID_Uint = discord_keys.DateStatsChanId
 	Info.Printf("Channel ID for Date statistics: %v\n",LastDateChannelID_Uint)
 	LastDateChannelID = disgord.Snowflake(LastDateChannelID_Uint)
+
+	LastRewardChannelID_Uint = discord_keys.RewardStatsChanId
+	Info.Printf("Channel ID for Last Reward statistics: %v\n",LastRewardChannelID_Uint)
+	LastRewardChannelID = disgord.Snowflake(LastRewardChannelID_Uint)
 
 	return err
 }
@@ -497,6 +508,8 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 				)
 				set_channel_name(new_channel_name,MintChannelID)
 				last_mint_ts = rec.TimeStampMinted
+				new_channel_name = fmt.Sprintf("Last reward: %.2f%v",withdrawal_amount,EthSign)
+				set_channel_name(new_channel_name,LastRewardChannelID)
 			}
 			success = get_image_file_from_net_until_success(rec.TokenId)
 			if !success {
