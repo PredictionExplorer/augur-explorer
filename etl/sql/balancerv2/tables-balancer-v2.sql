@@ -148,8 +148,15 @@ CREATE TABLE swf_hist ( -- Swap Fee history , calculated as next layer on top of
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
 	contract_aid		BIGINT NOT NULL,
+	pool_id				TEXT NOT NULL,
 	swap_fee			DECIMAL DEFAULT 0,
 	protocol_fee		DECIMAL DEFAULT 0,
 	accum_swap_fee		DECIMAL DEFAULT 0,
 	accum_proto_fee		DECIMAL DEFAULT 0
 );
+CREATE TABLE pool_hist ( -- Pool history to store swap history data
+	pool_id				TEXT NOT NULL PRIMARY KEY,
+	total_fees			DECIMAL DEFAULT 0,
+	total_swaps			DECIMAL DEFAULT 0,
+	total_proto_fees	DECIMAL DEFAULT 0
+)

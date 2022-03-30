@@ -122,3 +122,15 @@ type BalV2ContractAddrs struct {
 	VaultAddr			string
 	FactoryAddr			string
 }
+type BalV2SwapHist struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAid			int64
+	PoolId				string
+	SwapFee				string
+	ProtocolFee			string
+	AccumSwapFee		string
+	AccumProtoFee		string
+}

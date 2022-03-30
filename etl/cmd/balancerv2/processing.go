@@ -202,7 +202,7 @@ func process_external_balance_transfer(storage *SQLStorage,tx *AugurTx,log *type
 		Info.Printf("Skipping event, address doesn't match our address\n")
 		return
 	}
-	var eth_evt BalancerV2VaultExternalBalanceTransfer 
+	var eth_evt BalancerV2VaultExternalBalanceTransfer
 	err := vault_abi.UnpackIntoInterface(&eth_evt,"ExternalBalanceTransfer",log.Data)
 	if err != nil {
 		Error.Printf("Can't UnpackIntoInterface for ExternalBalanceTransfer: %v\n",err)
