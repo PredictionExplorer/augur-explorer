@@ -104,3 +104,74 @@ func (ss *SQLStorage) Insert_swap_fee_history(rec *BalV2SwapHist) {
 	}
 
 }
+func (ss *SQLStorage) Get_swaps_for_block(block_num int64,block_hash string) []BalV2Swap {
+
+	var query string
+	query = "SELECT "+
+				"pool_id," +
+				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT ts," +
+				"tx_index,"+
+				"log_index,"+
+				"token_in_aid,"+
+				"token_out_aid,"+
+				"amount_in,"+
+				"amount_out"+
+			"FROM "+ss.schema_name+".swap s " +
+				"JOIN block b ON s.block_num=b.block_num "+
+			"WHERE block_num = $1 AND b.block_hash=$2 "+
+			"ORDER BY tx_index,log_index"
+
+	rows,err := ss.db.Query(query,block_num,block_hash)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BalV2Swap
+		err=rows.Scan(
+			&rec.PoolId,
+			&rec.TimeStamp,
+			&rec.TxIndex,
+			&rec.LogIndex,
+			&rec.TokenInAid,
+			&rec.TokenOutAid,
+			&rec.AmountIn,
+			&rec.AmountOut,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (ss *SQLStorage) Get_pool_fee_in_timeframe(ts_ini,ts_fin int64) (string,int64,bool) {
+
+
+	var query string
+	query = "SELECT "+
+				"swap_fee,"+
+				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT ts " +
+			"FROM "+ss.schema_name+".swap_fee "+
+			"WHERE  (TO_TIMESTAMP($1) <time_stamp) AND "+
+						"time_satmp < (TO_TIMESTAMP($2) "+
+			"ORDER BY time_stamp DESC "+
+			"IMIT 1"
+
+	row := ss.db.QueryRow(query,ts_ini,ts_fin)
+	var err error
+	var fee string
+	var ts int64
+	err=row.Scan(&fee,&ts);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,0,false
+		}
+		ss.Log_msg(fmt.Sprintf("Error in Get_last_block_swf_hist(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return fee,ts,true
+}

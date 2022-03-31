@@ -79,6 +79,9 @@ type BalV2Swap struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
+	ContractAid			int64
+	TokenInAid			int64
+	TokenOutAid			int64
 	PoolId				string
 	ContractAddr		string
 	TokenInAddr			string
@@ -128,6 +131,7 @@ type BalV2SwapHist struct {
 	TxIndex				int64
 	LogIndex			int64
 	ContractAid			int64
+	TokenInAid
 	PoolId				string
 	SwapFee				string
 	ProtocolFee			string
