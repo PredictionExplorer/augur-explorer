@@ -26,8 +26,8 @@ type SQLStorage struct {
 	db_logger			*log.Logger
 	Info				*log.Logger
 	schema_name			string
-	//TO BE DELETED mkt_order_id_ptr	*int64		// global var indicating we have an OrderEvent going on in event chain
 }
+func (ss *SQLStorage) SchemaName() string { return ss.schema_name }
 func (ss *SQLStorage) Db() *sql.DB {
 	return ss.db
 }

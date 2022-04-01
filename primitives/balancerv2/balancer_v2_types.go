@@ -131,7 +131,6 @@ type BalV2SwapHist struct {
 	TxIndex				int64
 	LogIndex			int64
 	ContractAid			int64
-	TokenInAid
 	PoolId				string
 	SwapFee				string
 	ProtocolFee			string

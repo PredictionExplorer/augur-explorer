@@ -7,12 +7,13 @@ import (
 	"flag"
 	"math/big"
 
-	//. "github.com/PredictionExplorer/augur-explorer/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/primitives/balancerv2"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
+	. "github.com/PredictionExplorer/augur-explorer/dbs/balancerv2"
 )
 var (
 	Info				*log.Logger
-	storage 			*SQLStorage
+	storagew			SQLStorageWrapper
 )
 func process_block_swaps(swaps []BalV2Swap,last_fee_ts int64) {
 
@@ -21,7 +22,14 @@ func process_block_swaps(swaps []BalV2Swap,last_fee_ts int64) {
 	}
 	for i:=0; i<len(swaps); i++ {
 		s := swaps[i]
-		fee_str := storage.Get_pool_fee_in_timeframe(last_fee_ts,swap.TimeStamp)
+		fee_str,fee_ts,found := storagew.Get_pool_fee_in_timeframe(last_fee_ts,s.TimeStamp)
+		if !found {
+			Info.Printf(
+				"Fee not found for swap at block %v, tx_id=%v, log_idx=%v",
+				s.BlockNum,s.TxIndex,s.LogIndex,
+			)
+			os.Exit(0)
+		}
 		amount_in := big.NewInt(0)
 		amount_in.SetString(s.AmountIn,10)
 		fee := big.NewInt(0)
@@ -42,19 +50,19 @@ func main() {
 		os.Exit(1)
 	}
 	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
-	storage = Connect_to_storage(Info)
-	storage.Db_set_schema_name(*schema_name)
+	storagew.S = Connect_to_storage(Info)
+	storagew.S.Db_set_schema_name(*schema_name)
 	Info.Printf("Schema name: %v\n",schema_name)
 
-	block_num,block_hash,found := storage.Get_last_block_for_swap_history()
+	block_num,block_hash,found := storagew.Get_last_block_for_swap_history()
 	if !found {
-		block_num,block_hash,found = storage.Get_first_block_for_swap_history()
+		block_num,block_hash,found = storagew.Get_first_block_for_swap_history()
 	}
 
 	for {
-		swaps := storage.Get_swaps_for_block(block_num,block_hash)
+		swaps := storagew.Get_swaps_for_block(block_num,block_hash)
 		if len(swaps) == 0 {
-			bnum,err := storage.Get_block_num_by_hash(block_hash)
+			bnum,err := storagew.S.Get_block_num_by_hash(block_hash)
 			if err != nil {
 				Info.Printf(
 					"No more blocks in the DB, exiting at block_num=%v (hash=%v)\n",

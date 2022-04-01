@@ -114,7 +114,7 @@ CREATE TABLE pool_bal (	-- PoolBalanceChanged event
 	liqprov_aid			BIGINT NOT NULL,
 	tokens				TEXT,
 	deltas				TEXT,
-	fee_amounts			TEXT,
+	proto_fee_amounts	TEXT,	-- Protocol Fees
 	PRIMARY KEY(block_num,tx_index,log_index)
 );
 CREATE TABLE pool_bm (	-- PoolBalanceManaged event
