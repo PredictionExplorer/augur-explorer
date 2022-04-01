@@ -85,30 +85,6 @@ func (sw *SQLStorageWrapper) Get_last_block_for_swap_history() (int64,string,boo
 	}
 	return block_num,block_hash,true
 }
-func (sw *SQLStorageWrapper) Insert_swap_fee_history(rec *p.BalV2SwapHist) {
-
-	var query string
-	query = "INSERT INTO "+sw.S.SchemaName()+".swf_hist("+
-				"block_num,time_stamp,tx_index,log_index,contract_aid,"+
-				"pool_id,swap_fee,protocol_fee,accum_swap_fee,accum_proto_fee"+
-			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10)"
-	_,err := sw.S.Db().Exec(query,
-		rec.BlockNum,
-		rec.TimeStamp,
-		rec.TxIndex,
-		rec.LogIndex,
-		rec.ContractAid,
-		rec.PoolId,
-		rec.SwapFee,
-		rec.ProtocolFee,
-		rec.AccumSwapFee,
-		rec.AccumProtoFee,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into pool_created table: %v\n",err))
-		os.Exit(1)
-	}
-}
 func (sw *SQLStorageWrapper) Get_swaps_for_block(block_num int64,block_hash string) []p.BalV2Swap {
 
 	records := make([]p.BalV2Swap,0,8)
@@ -165,7 +141,7 @@ func (sw *SQLStorageWrapper) Get_pool_fee_in_timeframe(ts_ini,ts_fin int64) (str
 			"WHERE  (TO_TIMESTAMP($1) <time_stamp) AND "+
 						"time_satmp < (TO_TIMESTAMP($2) "+
 			"ORDER BY time_stamp DESC "+
-			"IMIT 1"
+			"LIMIT 1"
 
 	row := sw.S.Db().QueryRow(query,ts_ini,ts_fin)
 	var err error
@@ -176,10 +152,48 @@ func (sw *SQLStorageWrapper) Get_pool_fee_in_timeframe(ts_ini,ts_fin int64) (str
 		if err == sql.ErrNoRows {
 			return "",0,false
 		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_pool_fee_in_timeframe(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return fee,ts,true
+}
+func (sw *SQLStorageWrapper) Get_pool_fee_by_timestamp(p_contract_aid,p_ts,p_block_num,p_tx_index int64) (string,int64,bool) {
+
+	var query string
+	query = "SELECT "+
+				"swap_fee,"+
+				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT ts, " +
+				"block_num,"+
+				"tx_index "+
+			"FROM "+sw.S.SchemaName()+".swap_fee "+
+			"WHERE  "+
+					"(time_stamp <= TO_TIMESTAMP($1)) AND "+
+					"(contract_aid = $2) AND "+
+					"("+
+						// we must exclude fee record if it occurs whithin the same
+						// block as our transaction, in the case transaction index is higher
+						"NOT ("+
+							"(block_num=$3) AND "+
+							"(tx_index>$4)"+
+						")"+
+					") "+
+			"ORDER BY time_stamp DESC "+
+			"LIMIT 1"
+
+	row := sw.S.Db().QueryRow(query,p_ts,p_contract_aid,p_block_num,p_tx_index)
+	var err error
+	var fee string
+	var block_num,tx_index,ts int64
+	err=row.Scan(&fee,&ts,&ts,&block_num,&tx_index);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return "",0,false
+		}
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_last_block_swf_hist(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
 	return fee,ts,true
+
 }
 func (sw *SQLStorageWrapper) Balancer_get_contract_addrs() p.BalV2ContractAddrs {
 

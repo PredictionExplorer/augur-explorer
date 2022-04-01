@@ -280,3 +280,27 @@ func (sw *SQLStorageWrapper) Insert_flash_loan(evt *p.BalV2FlashLoan) {
 	}
 
 }
+func (sw *SQLStorageWrapper) Insert_swap_fee_history(rec *p.BalV2SwapHist) {
+
+	var query string
+	query = "INSERT INTO "+sw.S.SchemaName()+".swf_hist("+
+				"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+				"pool_id,swap_fee,protocol_fee,accum_swap_fee,accum_proto_fee"+
+			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10)"
+	_,err := sw.S.Db().Exec(query,
+		rec.BlockNum,
+		rec.TimeStamp,
+		rec.TxIndex,
+		rec.LogIndex,
+		rec.ContractAid,
+		rec.PoolId,
+		rec.SwapFee,
+		rec.ProtocolFee,
+		rec.AccumSwapFee,
+		rec.AccumProtoFee,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into pool_created table: %v\n",err))
+		os.Exit(1)
+	}
+}

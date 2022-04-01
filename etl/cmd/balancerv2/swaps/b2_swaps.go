@@ -15,14 +15,19 @@ var (
 	Info				*log.Logger
 	storagew			SQLStorageWrapper
 )
-func process_block_swaps(swaps []BalV2Swap,last_fee_ts int64) {
+func process_block_swaps(swaps []BalV2Swap) {
 
 	if len(swaps) == 0 {
 		return
 	}
 	for i:=0; i<len(swaps); i++ {
 		s := swaps[i]
-		fee_str,fee_ts,found := storagew.Get_pool_fee_in_timeframe(last_fee_ts,s.TimeStamp)
+		fee_percentage_str,fee_ts,found := storagew.Get_pool_fee_by_timestamp(
+			s.ContractAid,
+			s.TimeStamp,
+			s.BlockNum,
+			s.TxIndex,
+		)
 		if !found {
 			Info.Printf(
 				"Fee not found for swap at block %v, tx_id=%v, log_idx=%v",
@@ -30,9 +35,27 @@ func process_block_swaps(swaps []BalV2Swap,last_fee_ts int64) {
 			)
 			os.Exit(0)
 		}
+		one := big.NewInt(1e18)
 		amount_in := big.NewInt(0)
 		amount_in.SetString(s.AmountIn,10)
+		fee_percentage := big.NewInt(0)
+		fee_percentage.SetString(fee_percentage_str,10)
 		fee := big.NewInt(0)
+		product := big.NewInt(0)
+		product.Mul(fee_percentage,amount_in)
+		uno := big.NewInt(1)
+		product.Sub(product,uno)
+		product.Quo(product,one)
+		fee.Add(product,uno)
+		var rec BalV2SwapHist
+		rec.BlockNum = s.BlockNum
+		rec.TimeStamp = s.TimeStamp
+		rec.TxIndex = s.TxIndex
+		rec.LogIndex = s.LogIndex
+		rec.ContractAid = s.ContractAid
+		rec.PoolId = s.PoolId
+		rec.SwapFee = fee.String()
+		storagew.Insert_swap_fee_history(&rec)
 	}
 }
 func main() {
