@@ -167,7 +167,7 @@ func (ss *SQLStorage) Bigstats_get_block_num_by_hash(block_hash string) (int64,e
 	err=row.Scan(&block_num);
 	if (err!=nil) {
 		if err!=sql.ErrNoRows {
-			ss.Log_msg(fmt.Sprintf("Error in Get_block_num_by_hash(): %v, q=%v,h=%v",err,query,block_hash))
+			ss.Log_msg(fmt.Sprintf("Error in Bigstats_get_block_num_by_hash(): %v, q=%v,h=%v",err,query,block_hash))
 			os.Exit(1)
 		}
 		return 0,err

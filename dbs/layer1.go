@@ -295,3 +295,42 @@ func (ss *SQLStorage) Layer1_get_last_block_num() (int64,bool) {
 		return -1,false
 	}
 }
+func (ss *SQLStorage) Layer1_get_next_block_by_hash(parent_hash string) (int64,string,bool) {
+
+	var query string
+	query = "SELECT block_num,block_hash FROM "+ss.schema_name+".block WHERE parent_hash=$1"
+
+	row := ss.db.QueryRow(query,parent_hash)
+	var block_num int64
+	var block_hash string
+	var err error
+	err=row.Scan(&block_num,&block_hash);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,"",false
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error in Get_next_block_by_hash(): %v",err))
+			os.Exit(1)
+		}
+	}
+	return block_num,block_hash,true
+}
+func (ss *SQLStorage) Layer1_get_hash_by_block_num(block_num int64) (string,bool) {
+
+	var query string
+	query = "SELECT block_hash from "+ss.schema_name+".block WHERE block_num=$1"
+
+	row := ss.db.QueryRow(query,block_num)
+	var block_hash string
+	var err error
+	err=row.Scan(&block_hash);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return "",false
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error in Layer1_get_hash_by_block_num(): %v",err))
+			os.Exit(1)
+		}
+	}
+	return block_hash,true
+}

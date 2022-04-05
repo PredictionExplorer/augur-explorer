@@ -24,6 +24,7 @@ import (
 	//. "github.com/PredictionExplorer/augur-explorer/contracts"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
+	. "github.com/PredictionExplorer/augur-explorer/dbs/balancerv2"
 	. "github.com/PredictionExplorer/augur-explorer/layer1"
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
@@ -79,6 +80,7 @@ var (
 	caddrs		BalancerV2Addrs
 
 	processor	ETL_Processor
+	storagew            SQLStorageWrapper
 )
 func main() {
 
@@ -151,12 +153,12 @@ func main() {
 	eclient = ethclient.NewClient(rpcclient)
 
 	db_log_file:=fmt.Sprintf("%v/%v_%v_%v",log_dir,layer1.AppName,layer1.SchemaName,DEFAULT_DB_LOG)
-	storage = Connect_to_storage(Info)
+	storagew.S = Connect_to_storage(Info)
 
-	storage.Init_log(db_log_file)
-	storage.Log_msg("Log initialized\n")
-	storage.Db_set_schema_name(*schema_name)
-	layer1.Storage = storage
+	storagew.S.Init_log(db_log_file)
+	storagew.S.Log_msg("Log initialized\n")
+	storagew.S.Db_set_schema_name(*schema_name)
+	layer1.Storage = storagew.S
 
 	ctx := context.Background()
 	stored_chain_id := storage.Layer1_get_stored_chain_id()
@@ -175,10 +177,9 @@ func main() {
 			)
 		}
 	}
-	tmp_caddrs := storage.Balancer_get_contract_addrs()
+	tmp_caddrs := storagew.Balancer_get_contract_addrs()
 	caddrs.VaultAddr = common.HexToAddress(tmp_caddrs.VaultAddr)
 	caddrs.FactoryAddr = common.HexToAddress(tmp_caddrs.FactoryAddr)
-
 
 	if *block_num > 0 {
 		Info.Printf("Processing single block %v\n",*block_num)

@@ -67,7 +67,7 @@ func (sw *SQLStorageWrapper) Get_last_block_for_swap_history() (int64,string,boo
 				"h.block_num,"+
 				"b.block_hash "+
 			"FROM "+sw.S.SchemaName()+".swf_hist h "+
-				"JOIN block b ON h.block_num=b.block_num " +
+				"JOIN "+sw.S.SchemaName()+".block b ON h.block_num=b.block_num " +
 			"ORDER BY h.block_num DESC "+
 			"LIMIT 1"
 
@@ -91,16 +91,17 @@ func (sw *SQLStorageWrapper) Get_swaps_for_block(block_num int64,block_hash stri
 	var query string
 	query = "SELECT "+
 				"pool_id," +
-				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT ts," +
+				"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT ts," +
+				"s.block_num,"+
 				"tx_index,"+
 				"log_index,"+
 				"token_in_aid,"+
 				"token_out_aid,"+
 				"amount_in,"+
-				"amount_out"+
+				"amount_out "+
 			"FROM "+sw.S.SchemaName()+".swap s " +
-				"JOIN block b ON s.block_num=b.block_num "+
-			"WHERE block_num = $1 AND b.block_hash=$2 "+
+				"JOIN "+sw.S.SchemaName()+".block b ON s.block_num=b.block_num "+
+			"WHERE s.block_num = $1 AND b.block_hash=$2 "+
 			"ORDER BY tx_index,log_index"
 
 	rows,err := sw.S.Db().Query(query,block_num,block_hash)
@@ -115,6 +116,7 @@ func (sw *SQLStorageWrapper) Get_swaps_for_block(block_num int64,block_hash stri
 		err=rows.Scan(
 			&rec.PoolId,
 			&rec.TimeStamp,
+			&rec.BlockNum,
 			&rec.TxIndex,
 			&rec.LogIndex,
 			&rec.TokenInAid,
@@ -136,8 +138,8 @@ func (sw *SQLStorageWrapper) Get_pool_fee_in_timeframe(ts_ini,ts_fin int64) (str
 	var query string
 	query = "SELECT "+
 				"swap_fee,"+
-				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT ts " +
-			"FROM "+sw.S.SchemaName()+".swap_fee "+
+				"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT ts " +
+			"FROM "+sw.S.SchemaName()+".swap_fee s"+
 			"WHERE  (TO_TIMESTAMP($1) <time_stamp) AND "+
 						"time_satmp < (TO_TIMESTAMP($2) "+
 			"ORDER BY time_stamp DESC "+
@@ -162,10 +164,10 @@ func (sw *SQLStorageWrapper) Get_pool_fee_by_timestamp(p_contract_aid,p_ts,p_blo
 	var query string
 	query = "SELECT "+
 				"swap_fee,"+
-				"EXTRACT(EPOCH FROM bs.time_stamp)::BIGINT ts, " +
-				"block_num,"+
+				"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT ts, " +
+				"s.block_num,"+
 				"tx_index "+
-			"FROM "+sw.S.SchemaName()+".swap_fee "+
+			"FROM "+sw.S.SchemaName()+".swap_fee s "+
 			"WHERE  "+
 					"(time_stamp <= TO_TIMESTAMP($1)) AND "+
 					"(contract_aid = $2) AND "+
@@ -173,7 +175,7 @@ func (sw *SQLStorageWrapper) Get_pool_fee_by_timestamp(p_contract_aid,p_ts,p_blo
 						// we must exclude fee record if it occurs whithin the same
 						// block as our transaction, in the case transaction index is higher
 						"NOT ("+
-							"(block_num=$3) AND "+
+							"(s.block_num=$3) AND "+
 							"(tx_index>$4)"+
 						")"+
 					") "+
