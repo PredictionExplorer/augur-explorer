@@ -284,7 +284,7 @@ func (sw *SQLStorageWrapper) Insert_swap_fee_history(rec *p.BalV2SwapHist) {
 
 	var query string
 	query = "INSERT INTO "+sw.S.SchemaName()+".swf_hist("+
-				"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+				"block_num,time_stamp,tx_index,log_index,pool_aid,"+
 				"pool_id,swap_fee,protocol_fee,accum_swap_fee,accum_proto_fee"+
 			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10)"
 	_,err := sw.S.Db().Exec(query,
@@ -292,7 +292,7 @@ func (sw *SQLStorageWrapper) Insert_swap_fee_history(rec *p.BalV2SwapHist) {
 		rec.TimeStamp,
 		rec.TxIndex,
 		rec.LogIndex,
-		rec.ContractAid,
+		rec.PoolAid,
 		rec.PoolId,
 		rec.SwapFee,
 		rec.ProtocolFee,
@@ -300,7 +300,7 @@ func (sw *SQLStorageWrapper) Insert_swap_fee_history(rec *p.BalV2SwapHist) {
 		rec.AccumProtoFee,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into pool_created table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into swf_hist table: %v\n",err))
 		os.Exit(1)
 	}
 }

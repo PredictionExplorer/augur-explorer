@@ -11,9 +11,12 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 	. "github.com/PredictionExplorer/augur-explorer/dbs/balancerv2"
 )
+// Notes:
+//		first block with swaps on main net: 12293069
 var (
 	Info				*log.Logger
 	storagew			SQLStorageWrapper
+	pool_map			map[string]int64
 )
 func process_block_swaps(swaps []BalV2Swap) {
 
@@ -23,14 +26,23 @@ func process_block_swaps(swaps []BalV2Swap) {
 	for i:=0; i<len(swaps); i++ {
 		s := swaps[i]
 		Info.Printf(
-			"Swap: block %v , tx_index %v , logidx %v timestamp %v pool %v\n",
+			"Swap: block %v , tx_index %v , logidx %v timestamp %v\n",
 			s.BlockNum,s.TxIndex,s.LogIndex,s.TimeStamp,
 		)
-		Info.Printf("\tPool %v\n",s.PoolId)
+		pool_aid,exists := pool_map[s.PoolId]
+		if !exists {
+			pool_aid,_ = storagew.Lookup_pool_address_id(s.PoolId)
+			if pool_aid == 0 {
+				Info.Printf("Error looking up for pool id %v : not found\n",s.PoolId)
+				os.Exit(1)
+			}
+			pool_map[s.PoolId]=pool_aid
+		}
+		Info.Printf("\tPool %v  pool_aid = %v\n",s.PoolId,pool_aid)
 		Info.Printf("\tIn: %v \t Out: %v\n",s.AmountIn,s.AmountOut)
-		fee_percentage_str,_,found := storagew.Get_pool_fee_by_timestamp(
-			s.ContractAid,
-			s.TimeStamp,
+		Info.Printf("\tblock num = %v,contract_aid=%v\n",s.BlockNum,pool_aid)
+		fee_percentage_str,_,found := storagew.Get_pool_fee_by_block_num(
+			pool_aid,
 			s.BlockNum,
 			s.TxIndex,
 		)
@@ -58,9 +70,12 @@ func process_block_swaps(swaps []BalV2Swap) {
 		rec.TimeStamp = s.TimeStamp
 		rec.TxIndex = s.TxIndex
 		rec.LogIndex = s.LogIndex
-		rec.ContractAid = s.ContractAid
+		rec.PoolAid = pool_aid
 		rec.PoolId = s.PoolId
 		rec.SwapFee = fee.String()
+		rec.ProtocolFee = "0"
+		rec.AccumSwapFee = "0"
+		rec.AccumProtoFee = "0"
 		storagew.Insert_swap_fee_history(&rec)
 	}
 }
@@ -106,6 +121,7 @@ func main() {
 		Info.Printf("Second call: block_num=%v, hash = %v\n",block_num,block_hash)
 	}
 
+	pool_map = make(map[string]int64)
 	for {
 		swaps := storagew.Get_swaps_for_block(block_num,block_hash)
 		Info.Printf("block_num=%v hash %v , len(swaps) = %v\n",block_num,block_hash,len(swaps))

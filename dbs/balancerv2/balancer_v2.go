@@ -31,7 +31,7 @@ func (sw *SQLStorageWrapper) Get_first_block_for_swap_history() (int64,string,bo
 		if err == sql.ErrNoRows {
 			return 0,"",false
 		}
-		sw.S.Log_msg(fmt.Sprintf("Error in Get_next_block(): %v, q=%v",err,query))
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_first_block_for_swap_history(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
 
@@ -54,7 +54,7 @@ func (sw *SQLStorageWrapper) Get_next_block_for_swap_history(block_num int64,par
 		if err == sql.ErrNoRows {
 			return 0,"",false
 		}
-		sw.S.Log_msg(fmt.Sprintf("Error in Get_next_block(): %v, q=%v",err,query))
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_next_block_for_swap_history(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
 
@@ -90,11 +90,11 @@ func (sw *SQLStorageWrapper) Get_swaps_for_block(block_num int64,block_hash stri
 	records := make([]p.BalV2Swap,0,8)
 	var query string
 	query = "SELECT "+
-				"pool_id," +
+				"s.pool_id," +
 				"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT ts," +
 				"s.block_num,"+
-				"tx_index,"+
-				"log_index,"+
+				"s.tx_index,"+
+				"s.log_index,"+
 				"token_in_aid,"+
 				"token_out_aid,"+
 				"amount_in,"+
@@ -191,7 +191,45 @@ func (sw *SQLStorageWrapper) Get_pool_fee_by_timestamp(p_contract_aid,p_ts,p_blo
 		if err == sql.ErrNoRows {
 			return "",0,false
 		}
-		sw.S.Log_msg(fmt.Sprintf("Error in Get_last_block_swf_hist(): %v, q=%v",err,query))
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_pool_fee_by_timestamp(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return fee,ts,true
+
+}
+func (sw *SQLStorageWrapper) Get_pool_fee_by_block_num(p_contract_aid,p_block_num,p_tx_index int64) (string,int64,bool) {
+
+	var query string
+	query = "SELECT "+
+				"swap_fee,"+
+				"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT ts, " +
+				"s.block_num,"+
+				"tx_index "+
+			"FROM "+sw.S.SchemaName()+".swap_fee s "+
+			"WHERE  "+
+					"(block_num <= $1) AND "+
+					"(contract_aid = $2) AND "+
+					"("+
+						// we must exclude fee record if it occurs whithin the same
+						// block as our transaction, in the case transaction index is higher
+						"NOT ("+
+							"(s.block_num=$1) AND "+
+							"(tx_index>$3)"+
+						")"+
+					") "+
+			"ORDER BY block_num DESC "+
+			"LIMIT 1"
+
+	row := sw.S.Db().QueryRow(query,p_block_num,p_contract_aid,p_tx_index)
+	var err error
+	var fee string
+	var block_num,tx_index,ts int64
+	err=row.Scan(&fee,&ts,&block_num,&tx_index);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return "",0,false
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_pool_fee_by_block_num(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
 	return fee,ts,true
@@ -213,4 +251,21 @@ func (sw *SQLStorageWrapper) Balancer_get_contract_addrs() p.BalV2ContractAddrs 
 	output.FactoryAddr = factory_addr
 	output.VaultAddr = vault_addr
 	return output
+}
+func (sw *SQLStorageWrapper) Lookup_pool_address_id(pool_id string) (int64,error) {
+
+	var query string
+	query = "SELECT pool_aid FROM "+sw.S.SchemaName()+".pool_reg WHERE pool_id=$1"
+	row := sw.S.Db().QueryRow(query,pool_id)
+	var pool_aid int64
+	var err error
+	err=row.Scan(&pool_aid);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,nil
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Lookup_pool_address_id(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return pool_aid,nil
 }
