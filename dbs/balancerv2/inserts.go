@@ -284,11 +284,12 @@ func (sw *SQLStorageWrapper) Insert_swap_fee_history(rec *p.BalV2SwapHist) {
 
 	var query string
 	query = "INSERT INTO "+sw.S.SchemaName()+".swf_hist("+
-				"block_num,time_stamp,tx_index,log_index,pool_aid,"+
+				"block_num,block_hash,time_stamp,tx_index,log_index,pool_aid,"+
 				"pool_id,swap_fee,protocol_fee,accum_swap_fee,accum_proto_fee"+
-			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10)"
+			") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
 	_,err := sw.S.Db().Exec(query,
 		rec.BlockNum,
+		rec.BlockHash,
 		rec.TimeStamp,
 		rec.TxIndex,
 		rec.LogIndex,
@@ -301,6 +302,29 @@ func (sw *SQLStorageWrapper) Insert_swap_fee_history(rec *p.BalV2SwapHist) {
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into swf_hist table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_balance_change_history_record(rec *p.BalV2BalChg) {
+
+	var query string
+	query = "INSERT INTO "+sw.S.SchemaName()+".tok_bal("+
+				"block_num,block_hash,time_stamp,tx_index,log_index,pool_aid,"+
+				"pool_id,swf_hist_id,balance"+
+			") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
+	_,err := sw.S.Db().Exec(query,
+		rec.BlockNum,
+		rec.BlockHash,
+		rec.TimeStamp,
+		rec.TxIndex,
+		rec.LogIndex,
+		rec.PoolAid,
+		rec.PoolId,
+		rec.SwapHistId,
+		rec.Balance,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into tok_bal table: %v\n",err))
 		os.Exit(1)
 	}
 }

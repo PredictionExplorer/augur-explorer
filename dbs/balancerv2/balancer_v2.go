@@ -132,6 +132,53 @@ func (sw *SQLStorageWrapper) Get_swaps_for_block(block_num int64,block_hash stri
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_balance_changes_for_block(block_num int64,block_hash string) []p.BalV2PoolBalanceChanged {
+
+	records := make([]p.BalV2BalChg,0,8)
+	var query string
+	query = "SELECT "+
+				"b.pool_id," +
+				"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT ts," +
+				"b.block_num,"+
+				"b.tx_index,"+
+				"b.log_index,"+
+				"liqprov_aid,"+
+				"tokens,"+
+				"deltas, "+
+				"fee_amounts "+
+			"FROM "+sw.S.SchemaName()+".pool_bal b " +
+				"JOIN "+sw.S.SchemaName()+".block b ON s.block_num=b.block_num "+
+			"WHERE b.block_num = $1 AND b.block_hash=$2 "+
+			"ORDER BY tx_index,log_index"
+
+	rows,err := sw.S.Db().Query(query,block_num,block_hash)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BalV2PoolBalanceChanged
+		err=rows.Scan(
+			&rec.PoolId,
+			&rec.TimeStamp,
+			&rec.BlockNum,
+			&rec.TxIndex,
+			&rec.LogIndex,
+			&rec.LiqProvAid,
+			&rec.Tokens,
+			&rec.Deltas,
+			&rec.ProtocolFeeAmounts,
+		)
+		if err!=nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
 func (sw *SQLStorageWrapper) Get_pool_fee_in_timeframe(ts_ini,ts_fin int64) (string,int64,bool) {
 
 

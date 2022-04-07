@@ -27,6 +27,7 @@ type BalV2PoolBalanceChanged struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
+	LiqProvAid			int64
 	ContractAddr		string
 	PoolId				string
 	LiqProvAddr			string
@@ -131,10 +132,23 @@ type BalV2SwapHist struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
-	PoolAid			int64
+	PoolAid				int64
+	BlockHash			string
 	PoolId				string
 	SwapFee				string
 	ProtocolFee			string
 	AccumSwapFee		string
 	AccumProtoFee		string
+}
+type BalV2BalChg struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	PoolAid				int64
+	SwapHistId			int64
+	TokenAid			int64
+	BlockHash			string
+	PoolId				string
+	Balance				string
 }
