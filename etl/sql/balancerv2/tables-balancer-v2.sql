@@ -145,7 +145,7 @@ CREATE TABLE flash_loan (	-- FlashLoan event
 CREATE TABLE swf_hist ( -- Swap Fee history , calculated as next layer on top of 'block' table
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,
-	block_hash			REFERENCES block(block_hash) ON DELETE CASCADE,
+	block_hash			TEXT NOT NULL REFERENCES block(block_hash) ON DELETE CASCADE,
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
@@ -160,7 +160,7 @@ CREATE TABLE swf_hist ( -- Swap Fee history , calculated as next layer on top of
 CREATE TABLE tok_bal ( -- Token balance derived from pool balance changed and swap events
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,
-	block_hash			REFERENCES block(block_hash) ON DELETE CASCADE,
+	block_hash			TEXT NOT NULL REFERENCES block(block_hash) ON DELETE CASCADE,
 	time_stamp			TIMESTAMPTZ NOT NULL,
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
@@ -168,8 +168,9 @@ CREATE TABLE tok_bal ( -- Token balance derived from pool balance changed and sw
 	tok_aid				BIGINT NOT NULL,
 	swf_hist_id			BIGINT DEFAULT 0,-- either swap history table or 0 for Join/Exit
 	pool_id				TEXT NOT NULL,
-	balance				DECIMAL NOT NULL,
-	UNIQUE(block_num,tx_index,log_index)
+	balance				DECIMAL DEFAULT 0,
+	amount				DECIMAL NOT NULL,
+	UNIQUE(block_num,tx_index,log_index,tok_aid)
 );
 CREATE TABLE pool_hist ( -- Pool history to store swap history data
 	pool_id				TEXT NOT NULL PRIMARY KEY,

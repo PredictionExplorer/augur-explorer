@@ -134,21 +134,21 @@ func (sw *SQLStorageWrapper) Get_swaps_for_block(block_num int64,block_hash stri
 }
 func (sw *SQLStorageWrapper) Get_balance_changes_for_block(block_num int64,block_hash string) []p.BalV2PoolBalanceChanged {
 
-	records := make([]p.BalV2BalChg,0,8)
+	records := make([]p.BalV2PoolBalanceChanged,0,8)
 	var query string
 	query = "SELECT "+
-				"b.pool_id," +
-				"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT ts," +
-				"b.block_num,"+
-				"b.tx_index,"+
-				"b.log_index,"+
+				"c.pool_id," +
+				"EXTRACT(EPOCH FROM c.time_stamp)::BIGINT ts," +
+				"c.block_num,"+
+				"c.tx_index,"+
+				"c.log_index,"+
 				"liqprov_aid,"+
 				"tokens,"+
 				"deltas, "+
 				"fee_amounts "+
-			"FROM "+sw.S.SchemaName()+".pool_bal b " +
-				"JOIN "+sw.S.SchemaName()+".block b ON s.block_num=b.block_num "+
-			"WHERE b.block_num = $1 AND b.block_hash=$2 "+
+			"FROM "+sw.S.SchemaName()+".pool_bal c " +
+				"JOIN "+sw.S.SchemaName()+".block b ON c.block_num=b.block_num "+
+			"WHERE c.block_num = $1 AND b.block_hash=$2 "+
 			"ORDER BY tx_index,log_index"
 
 	rows,err := sw.S.Db().Query(query,block_num,block_hash)

@@ -84,6 +84,7 @@ type BalV2Swap struct {
 	PoolAid				int64
 	TokenInAid			int64
 	TokenOutAid			int64
+	BlockHash			string
 	PoolId				string
 	ContractAddr		string
 	TokenInAddr			string
@@ -150,5 +151,5 @@ type BalV2BalChg struct {
 	TokenAid			int64
 	BlockHash			string
 	PoolId				string
-	Balance				string
+	Amount				string
 }

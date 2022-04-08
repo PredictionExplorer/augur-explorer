@@ -115,3 +115,12 @@ func (ss *SQLStorage) Log_msg(msg string) {
 func (ss *SQLStorage) Db_set_schema_name(name string) {
 	ss.schema_name = name
 }
+func (ss *SQLStorage) Set_search_path_to_schema_name() {
+
+	_,err := ss.db.Exec("SET SEARCH_PATH TO "+ss.schema_name)
+	if (err!=nil) {
+		ss.Info.Printf("DB Error: %v",err);
+		os.Exit(1)
+	}
+
+}
