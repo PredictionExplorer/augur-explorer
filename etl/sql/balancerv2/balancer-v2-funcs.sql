@@ -82,11 +82,11 @@ BEGIN
 
 	SELECT balance
 		FROM tok_bal
-		WHERE tok_aid = NEW.tok_aid AND pool_aid=NEW.pool_aid
+		WHERE tok_aid = NEW.tok_aid AND pool_aid=NEW.pool_aid AND id<NEW.id
 		ORDER BY id DESC LIMIT 1
 		INTO v_prev_bal;
 
-	IF v_prev_bal IS NOT NULL THEN
+	IF v_prev_bal IS NULL THEN
 		v_prev_bal := 0;
 	END IF;
 	v_new_bal := v_prev_bal + NEW.amount;

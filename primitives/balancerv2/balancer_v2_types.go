@@ -76,6 +76,7 @@ type BalV2ExternalBalanceTransfer struct {
 	Amount				string
 }
 type BalV2Swap struct {
+	Id					int64
 	BlockNum			int64
 	TimeStamp			int64
 	TxIndex				int64

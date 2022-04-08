@@ -280,14 +280,16 @@ func (sw *SQLStorageWrapper) Insert_flash_loan(evt *p.BalV2FlashLoan) {
 	}
 
 }
-func (sw *SQLStorageWrapper) Insert_swap_fee_history(rec *p.BalV2SwapHist) {
+func (sw *SQLStorageWrapper) Insert_swap_fee_history(rec *p.BalV2SwapHist) int64 {
 
 	var query string
 	query = "INSERT INTO "+sw.S.SchemaName()+".swf_hist("+
 				"block_num,block_hash,time_stamp,tx_index,log_index,pool_aid,"+
 				"pool_id,swap_fee,protocol_fee,accum_swap_fee,accum_proto_fee"+
-			") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
-	_,err := sw.S.Db().Exec(query,
+			") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11) "+
+			"RETURNING id"
+
+	row := sw.S.Db().QueryRow(query,
 		rec.BlockNum,
 		rec.BlockHash,
 		rec.TimeStamp,
@@ -300,10 +302,15 @@ func (sw *SQLStorageWrapper) Insert_swap_fee_history(rec *p.BalV2SwapHist) {
 		rec.AccumSwapFee,
 		rec.AccumProtoFee,
 	)
+	var id int64
+	err := row.Scan(&id)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into swf_hist table: %v\n",err))
+		sw.S.Log_msg(
+			fmt.Sprintf("DB error: can't insert into swf_hist table: %v, q=%v",err,query),
+		)
 		os.Exit(1)
 	}
+	return id
 }
 func (sw *SQLStorageWrapper) Insert_balance_change_history_record(rec *p.BalV2BalChg) {
 

@@ -116,6 +116,9 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 		product.Sub(product,uno)
 		product.Quo(product,one)
 		fee.Add(product,uno)
+		in_plus_fee := big.NewInt(0)
+		in_plus_fee.Set(amount_in)
+		in_plus_fee.Add(in_plus_fee,fee)
 		var rec BalV2SwapHist
 		rec.BlockNum = s.BlockNum
 		rec.BlockHash = block_hash
@@ -128,7 +131,26 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 		rec.ProtocolFee = "0"
 		rec.AccumSwapFee = "0"
 		rec.AccumProtoFee = "0"
-		storagew.Insert_swap_fee_history(&rec)
+		id := storagew.Insert_swap_fee_history(&rec)
+
+		// Update token balance table
+		var rec_bal BalV2BalChg
+		rec_bal.SwapHistId = s.Id
+		rec_bal.BlockNum = rec.BlockNum
+		rec_bal.BlockHash = block_hash
+		rec_bal.TimeStamp = rec.TimeStamp
+		rec_bal.TxIndex = rec.TxIndex
+		rec_bal.LogIndex = rec.LogIndex
+		rec_bal.PoolAid = pool_aid
+		rec_bal.PoolId = rec.PoolId
+		rec_bal.SwapHistId = id
+		rec_bal.TokenAid = s.TokenInAid
+		rec_bal.Amount = in_plus_fee.String()
+		storagew.Insert_balance_change_history_record(&rec_bal) // incoming token
+
+		rec_bal.TokenAid = s.TokenOutAid
+		rec_bal.Amount = s.AmountOut
+		storagew.Insert_balance_change_history_record(&rec_bal) // outgoing token
 	}
 }
 func main() {
