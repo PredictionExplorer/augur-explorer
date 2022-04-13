@@ -3,6 +3,7 @@ DROP TABLE IF EXISTS
 	addr,
 	config,
 	swap,
+	swap_fee,
 	pool_reg,
 	pool_created,
 	tokens_reg,
@@ -10,7 +11,11 @@ DROP TABLE IF EXISTS
 	ibalance,
 	ebal_transf,
 	pool_bal,
-	swap_fee,
 	pool_bm,
-	flash_loan
+	flash_loan,
+	swf_hist,
+	tok_bal,
+	pool_hist,
+	bpt_transf,
+	bpt_bal
 CASCADE;

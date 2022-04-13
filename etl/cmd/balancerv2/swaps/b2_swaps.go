@@ -23,7 +23,6 @@ var (
 )
 func process_block_balance_changes(block_num int64,block_hash string,bchanges []BalV2PoolBalanceChanged) {
 
-	storagew.Delete_balance_changes(block_num)
 	if len(bchanges) == 0 {
 		return
 	}
@@ -70,7 +69,6 @@ func process_block_balance_changes(block_num int64,block_hash string,bchanges []
 }
 func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 
-	storagew.Delete_swap_history(block_num)
 	if len(swaps) == 0 {
 		return
 	}
@@ -132,10 +130,11 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 		rec.AccumSwapFee = "0"
 		rec.AccumProtoFee = "0"
 		id := storagew.Insert_swap_fee_history(&rec)
+		Info.Printf("After insert swap fee id=%v\n",id)
 
 		// Update token balance table
 		var rec_bal BalV2BalChg
-		rec_bal.SwapHistId = s.Id
+		rec_bal.SwapHistId = id
 		rec_bal.BlockNum = rec.BlockNum
 		rec_bal.BlockHash = block_hash
 		rec_bal.TimeStamp = rec.TimeStamp
@@ -143,7 +142,6 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 		rec_bal.LogIndex = rec.LogIndex
 		rec_bal.PoolAid = pool_aid
 		rec_bal.PoolId = rec.PoolId
-		rec_bal.SwapHistId = id
 		rec_bal.TokenAid = s.TokenInAid
 		rec_bal.Amount = in_plus_fee.String()
 		storagew.Insert_balance_change_history_record(&rec_bal) // incoming token
@@ -198,6 +196,8 @@ func main() {
 
 	pool_map = make(map[string]int64)
 	for {
+		storagew.Delete_balance_changes(block_num)
+		storagew.Delete_swap_history(block_num)
 		swaps := storagew.Get_swaps_for_block(block_num,block_hash)
 		Info.Printf("swaps: block_num=%v hash %v , len(swaps) = %v\n",block_num,block_hash,len(swaps))
 		if len(swaps) == 0 {

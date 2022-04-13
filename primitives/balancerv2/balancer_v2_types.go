@@ -154,3 +154,13 @@ type BalV2BalChg struct {
 	PoolId				string
 	Amount				string
 }
+type BalV2BPTTransfer struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	PoolAid				int64
+	From				string
+	To					string
+	Amount				string
+}

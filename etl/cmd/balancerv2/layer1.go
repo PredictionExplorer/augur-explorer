@@ -40,6 +40,7 @@ const (
 	SWAP_FEE_CHANGED			= "a9ba3ffe0b6c366b81232caab38605a0699ad5398d6cce76f91ee809e322dafc"
 	POOL_BALANCE_MANAGED		= "6edcaf6241105b4c94c2efdbf3a6b12458eb3d07be3a0e81d24b13c44045fe7a"
 	FLASH_LOAN					= "0d7d75e01ab95780d3cd1c8ec0dd6c2ce19e3a20427eec8bf53283b6fb8e95f0"
+	ERC20_TRANSFER				= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
 	DEFAULT_STATISTICS_DURATION	int64 = 24*60*60 // in seconds
 	DEFAULT_WAIT_TIME = 2000	// 2 seconds
@@ -62,8 +63,7 @@ var (
 	evt_swap_fee_changed,_ = hex.DecodeString(SWAP_FEE_CHANGED)
 	evt_pool_balance_managed,_ = hex.DecodeString(POOL_BALANCE_MANAGED)
 	evt_flash_loan,_ = hex.DecodeString(FLASH_LOAN)
-
-	storage *SQLStorage
+	evt_erc20_transf,_ = hex.DecodeString(ERC20_TRANSFER)
 
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
@@ -76,6 +76,7 @@ var (
 	pool_factory_abi *abi.ABI
 	vault_abi *abi.ABI
 	swapfee_abi *abi.ABI
+	erc20_abi *abi.ABI
 
 	caddrs		BalancerV2Addrs
 
@@ -161,7 +162,7 @@ func main() {
 	layer1.Storage = storagew.S
 
 	ctx := context.Background()
-	stored_chain_id := storage.Layer1_get_stored_chain_id()
+	stored_chain_id := storagew.S.Layer1_get_stored_chain_id()
 	network_chain_id,err :=eclient.NetworkID(ctx)
 	if err != nil {
 		Fatalf("Can't get Network ID: %v\n",err)
@@ -169,7 +170,7 @@ func main() {
 	if stored_chain_id != network_chain_id.Int64() {
 		if stored_chain_id == 0 {
 			// not initialized yet
-			storage.Layer1_set_chain_id(network_chain_id.Int64())
+			storagew.S.Layer1_set_chain_id(network_chain_id.Int64())
 		} else {
 			Fatalf(
 				"Network chain_id = %v , my chain_id = %v. Mismatch, exiting",
@@ -231,7 +232,15 @@ func main() {
 	}
 	swapfee_abi = &abi3
 
-	bnum,exists := storage.Layer1_get_last_block_num()
+	abi_parsed4 := strings.NewReader(ERC20ABI)
+	abi4,err := abi.JSON(abi_parsed4)
+	if err != nil {
+		Info.Printf("Can't parse ERC20 token ABI")
+		os.Exit(1)
+	}
+	erc20_abi = &abi4
+
+	bnum,exists := storagew.S.Layer1_get_last_block_num()
 	if !exists {
 		bnum = 0
 	} else {

@@ -60,7 +60,7 @@ func (sw *SQLStorageWrapper) Insert_pool_balance_changed(evt *p.BalV2PoolBalance
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".pool_bal("+
 				"block_num,time_stamp,tx_index,log_index,contract_aid,"+
-				"pool_id,liqprov_aid,tokens,deltas,fee_amounts"+
+				"pool_id,liqprov_aid,tokens,deltas,proto_fee_amounts"+
 			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10)"
 	_,err := sw.S.Db().Exec(query,
 		evt.BlockNum,
@@ -335,4 +335,29 @@ func (sw *SQLStorageWrapper) Insert_balance_change_history_record(rec *p.BalV2Ba
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into tok_bal table: %v\n",err))
 		os.Exit(1)
 	}
+}
+func (sw *SQLStorageWrapper) Insert_bpt_erc20_transfer(evt *p.BalV2BPTTransfer) {
+
+	from_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.From)
+	to_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.To)
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".bpt_transf("+
+				"block_num,time_stamp,tx_index,log_index,"+
+				"pool_aid,from_aid,to_aid,amount"+
+			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
+	_,err := sw.S.Db().Exec(query,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxIndex,
+		evt.LogIndex,
+		evt.PoolAid,
+		from_aid,
+		to_aid,
+		evt.Amount,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into flash_loan table: %v\n",err))
+		os.Exit(1)
+	}
+
 }

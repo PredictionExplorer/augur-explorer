@@ -24,32 +24,6 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_swf_hist_insert() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_swf_hist_delete() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-	-- if a record at some block-height is deleted, subsequent records become invalid
-	DELETE from swf_hist WHERE
-		(
-			block_num > OLD.block_num
-		) OR (
-			block_num = OLD.block_num AND
-			tx_index > OLD.tx_index
-		) OR (
-			block_num = OLD.block_num AND
-			tx_index = OLD.tx_index AND
-			log_index > OLD.log_index
-		)
-	;
-	RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_poolhist_insert() RETURNS trigger AS  $$
 DECLARE
 BEGIN
@@ -111,6 +85,39 @@ BEGIN
 			(log_index > OLD.log_index)
 		);
 
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_bpt_transf_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt numeric;
+BEGIN
+
+	UPDATE bpt_bal SET balance = (balance - NEW.amount)
+		WHERE pool_aid=NEW.pool_aid AND from_aid=NEW.from_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO bpt_bal(aid,pool_aid,balance)
+			VALUES(NEW.from_aid,NEW.pool_aid,-NEW.amount);
+	END IF;
+
+	UPDATE bpt_bal SET balance = (balance + NEW.amount)
+		WHERE pool_aid=NEW.pool_aid AND to_aid=NEW.to_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO bpt_bal(aid,pool_aid,balance)
+			VALUES(NEW.to_aid,NEW.pool_aid,NEW.amount);
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_bpt_transf_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+	UPDATE bpt_bal SET balance = (balance + NEW.amount)
+		WHERE pool_aid=NEW.pool_aid AND from_aid=NEW.from_aid;
+	UPDATE bpt_bal SET balance = (balance - NEW.amount)
+		WHERE pool_aid=NEW.pool_aid AND to_aid=NEW.to_aid;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

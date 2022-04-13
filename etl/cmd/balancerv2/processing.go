@@ -475,6 +475,7 @@ func process_flash_loan(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index
 	Info.Printf("\tTokenAddr: %v\n",evt.TokenAddr)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("\tFeeAmount: %v\n",evt.FeeAmount)
+	Info.Printf("}\n")
 	if len(evt.TokenAddr) == 0 {
 		Error.Printf("Token address is empty\n")
 		os.Exit(1)
@@ -484,6 +485,48 @@ func process_flash_loan(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index
 		os.Exit(1)
 	}
 	storagew.Insert_flash_loan(&evt)
+}
+func process_bpt_erc20_transfer(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
+	// Only processes BPT (Balancer Pool Token) events (the token indicating share of the funder)
+
+	pool_aid := storagew.Is_balancer_pool_address(log.Address.String())
+	if pool_aid == 0 {
+		return	// not a Pool contract
+	}
+	Info.Printf(
+		"EVENT: BPT ERC20 Transfer. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
+	var eth_evt ETransfer
+	eth_evt.From= common.BytesToAddress(log.Topics[1][12:])
+	eth_evt.To= common.BytesToAddress(log.Topics[2][12:])
+	err := erc20_abi.UnpackIntoInterface(&eth_evt,"Transfer",log.Data)
+	if err != nil {
+		Error.Printf("Can't UnpackIntoInterface for BPT ERC20 Transfer: %v\n",err)
+		os.Exit(1)
+	}
+
+	var evt BalV2BPTTransfer
+	evt.BlockNum = tx.BlockNum
+	evt.TimeStamp = tx.TimeStamp
+	evt.TxIndex = int64(tx.TxIndex)
+	evt.LogIndex = int64(log_index)
+	evt.PoolAid = pool_aid
+	evt.From = eth_evt.From.String()
+	evt.To = eth_evt.To.String()
+
+	Info.Printf("BPT ERC20 Transfer{\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",log.Address.String())
+	Info.Printf("\tPoolAid: %v\n",evt.PoolAid)
+	Info.Printf("\tFrom: %v\n",evt.From)
+	Info.Printf("\tTo: %v\n",evt.To)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("}\n")
+	storagew.Insert_bpt_erc20_transfer(&evt)
 }
 func process_event_log(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
 
@@ -522,5 +565,8 @@ func process_event_log(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 	}
 	if bytes.Equal(topic0,evt_flash_loan) {
 		process_flash_loan(storage,tx,log,log_index)
+	}
+	if bytes.Equal(topic0,evt_erc20_transf) {
+		process_bpt_erc20_transfer(storage,tx,log,log_index)
 	}
 }

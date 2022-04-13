@@ -145,7 +145,7 @@ func (sw *SQLStorageWrapper) Get_balance_changes_for_block(block_num int64,block
 				"liqprov_aid,"+
 				"tokens,"+
 				"deltas, "+
-				"fee_amounts "+
+				"proto_fee_amounts "+
 			"FROM "+sw.S.SchemaName()+".pool_bal c " +
 				"JOIN "+sw.S.SchemaName()+".block b ON c.block_num=b.block_num "+
 			"WHERE c.block_num = $1 AND b.block_hash=$2 "+
@@ -316,3 +316,26 @@ func (sw *SQLStorageWrapper) Lookup_pool_address_id(pool_id string) (int64,error
 	}
 	return pool_aid,nil
 }
+func (sw *SQLStorageWrapper) Is_balancer_pool_address(addr string) int64 {
+
+	var query string
+	query = "SELECT pool_aid " +
+			"FROM pool_reg p "+
+			"JOIN addr a ON p.pool_aid=a.address_id "+
+			"WHERE a.addr=$1"
+
+	row := sw.S.Db().QueryRow(query,addr)
+	var pool_aid int64
+	var err error
+	err=row.Scan(&pool_aid);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Is_balancer_pool_address(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return pool_aid
+
+}
+

@@ -76,6 +76,7 @@ func get_full_block(etl *ETL_Layer1,bnum int64) (common.Hash,*types.Header,[]*Au
 	for i, tx := range body.Transactions {
 		agtx := new(AugurTx)
 		agtx.BlockNum = bnum
+		agtx.BlockHash = tx.txExtraInfo.BlockHash.String()
 		agtx.TxHash = tx.txExtraInfo.Hash.String()
 		agtx.From = tx.txExtraInfo.From.String()
 		if tx.tx.To() != nil {

@@ -7,3 +7,6 @@ CREATE INDEX swap_bnum_idx				ON	swap						(block_num);
 CREATE INDEX tok_bal_pooltok_idx		ON	tok_bal						(pool_aid,tok_aid);
 CREATE INDEX tok_bal_block_num_idx		ON	tok_bal						(block_num);
 CREATE INDEX tok_bal_txindex_idx		ON	tok_bal						(tx_index);
+CREATE INDEX bpt_from_idx				ON	bpt_transf					(pool_aid,from_aid);
+CREATE INDEX bpt_to_idx					ON	bpt_transf					(pool_aid,to_aid);
+CREATE INDEX bpt_bal_aid_idx			ON	bpt_bal						(pool_aid,aid);

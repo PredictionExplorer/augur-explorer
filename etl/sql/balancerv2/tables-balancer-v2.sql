@@ -177,4 +177,20 @@ CREATE TABLE pool_hist ( -- Pool history to store swap history data
 	total_fees			DECIMAL DEFAULT 0,
 	total_swaps			DECIMAL DEFAULT 0,
 	total_proto_fees	DECIMAL DEFAULT 0
-)
+);
+CREATE TABLE bpt_transf (	-- ERC20 Transfer of BPT token
+	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	tx_index			INT NOT NULL,
+	log_index			INT NOT NULL,
+	pool_aid			BIGINT NOT NULL,
+	from_aid			BIGINT NOT NULL,
+	to_aid				BIGINT NOT NULL,
+	amount				DECIMAL,
+	PRIMARY KEY(block_num,tx_index,log_index)
+);
+CREATE TABLE bpt_bal ( -- Derived from bpt_transf, calculates current balance of a User
+	aid					BIGINT PRIMARY KEY,
+	pool_aid			BIGINT NOT NULL,
+	balance				DECIMAL
+);

@@ -18,6 +18,7 @@ type AugurTx struct {	// just a wrapper for Ethereum Transaction object, but in 
 	CumulativeGasUsed	uint64
 	EffectiveGasPrice	*big.Int
 //	TxMsg				*types.Message	Discontinued , to be deleted
+	BlockHash			string
 	GasPrice			string
 	TxHash				string
 	From				string
