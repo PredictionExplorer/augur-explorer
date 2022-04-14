@@ -24,6 +24,7 @@ type UniV3Initialize struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
+	PoolAid				int64
 	ContractAddr		string
 	SqrtPriceX96		string
 	Tick				string
@@ -33,6 +34,7 @@ type UniV3Mint struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
+	PoolAid				int64
 	ContractAddr		string
 	SenderAddr			string
 	OwnerAddr			string
@@ -47,6 +49,7 @@ type UniV3Collect struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
+	PoolAid				int64
 	ContractAddr		string
 	OwnerAddr			string
 	RecipientAddr		string
@@ -60,6 +63,7 @@ type UniV3Burn struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
+	PoolAid				int64
 	ContractAddr		string
 	OwnerAddr			string
 	TickLower			string
@@ -73,6 +77,7 @@ type UniV3Swap struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
+	PoolAid				int64
 	ContractAddr		string
 	SenderAddr			string
 	RecipientAddr		string
@@ -87,6 +92,7 @@ type UniV3Flash struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
+	PoolAid				int64
 	ContractAddr		string
 	SenderAddr			string
 	RecipientAddr		string
@@ -100,6 +106,7 @@ type UniV3IncObservCardinNext struct{
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
+	PoolAid				int64
 	ContractAddr		string
 	ObservationCardinalityNextOld		uint16
 	ObservationCardinalityNextNew		uint16
@@ -109,6 +116,7 @@ type UniV3SetFeeProtocol struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
+	PoolAid				int64
 	ContractAddr		string
 	FeeProtocol0Old		uint8
 	FeeProtocol0New		uint8
@@ -120,6 +128,7 @@ type UniV3CollectProtocol struct {
 	TimeStamp			int64
 	TxIndex				int64
 	LogIndex			int64
+	PoolAid				int64
 	ContractAddr		string
 	SenderAddr			string
 	RecipientAddr		string

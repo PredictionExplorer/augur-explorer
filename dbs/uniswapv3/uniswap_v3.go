@@ -5,7 +5,7 @@ import (
 	"os"
 	"fmt"
 
-//	"database/sql"
+	"database/sql"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 	_  "github.com/lib/pq"
 
@@ -29,4 +29,24 @@ func (sw *SQLStorageWrapper) Uniswap_get_contract_addrs() p.UniV3ContractAddrs {
 	var output p.UniV3ContractAddrs
 	output.FactoryAddr = factory_addr
 	return output
+}
+func (sw *SQLStorageWrapper) Get_uniswap_v3_pool_aid(pool_addr string) int64 {
+
+	var query string
+	query = "SELECT p.pool_aid FROM pool_created p "+
+				"JOIN addr a ON p.pool_aid=a.address_id "+
+				"WHERE a.addr=$1"
+
+	row := sw.S.Db().QueryRow(query,pool_addr)
+	var err error
+	var pool_aid int64
+	err=row.Scan(&pool_aid);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_uniswap_v3_pool_aid(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return pool_aid
 }

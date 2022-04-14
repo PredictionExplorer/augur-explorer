@@ -60,10 +60,10 @@ func process_pool_created(storage *SQLStorage,tx *AugurTx,log *types.Log,log_ind
 	evt.ContractAddr = log.Address.String()
 
 	token0_addr := common.BytesToAddress(log.Topics[1][12:])
-	token1_addr := common.BytesToAddress(log.Topics[1][12:])
+	token1_addr := common.BytesToAddress(log.Topics[2][12:])
 	evt.Token0Addr = token0_addr.String()
 	evt.Token1Addr = token1_addr.String()
-	evt.Fee = eth_evt.Fee.String()
+	evt.Fee = log.Topics[3].Big().String()
 	evt.TickSpacing = eth_evt.TickSpacing.String()
 	evt.PoolAddr = eth_evt.Pool.String()
 
@@ -87,6 +87,11 @@ func process_initialize(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index
 		"EVENT: Initialize. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	pool_aid := storagew.Get_uniswap_v3_pool_aid(log.Address.String())
+	if pool_aid == 0 {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 
 	var eth_evt UniswapV3PoolInitialize
 	err := pool_abi.UnpackIntoInterface(&eth_evt,"Initialize",log.Data)
@@ -100,6 +105,7 @@ func process_initialize(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index
 	evt.TxIndex = int64(tx.TxIndex)
 	evt.LogIndex = int64(log.Index)
 	evt.ContractAddr = log.Address.String()
+	evt.PoolAid = pool_aid
 
 	evt.SqrtPriceX96= eth_evt.SqrtPriceX96.String()
 	evt.Tick = eth_evt.Tick.String()
@@ -121,6 +127,11 @@ func process_pool_mint(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		"EVENT: Mint. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	pool_aid := storagew.Get_uniswap_v3_pool_aid(log.Address.String())
+	if pool_aid == 0 {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt UniswapV3PoolMint
 	err := pool_abi.UnpackIntoInterface(&eth_evt,"Mint",log.Data)
 	if err != nil {
@@ -134,6 +145,7 @@ func process_pool_mint(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 	evt.TxIndex = int64(tx.TxIndex)
 	evt.LogIndex = int64(log_index)
 	evt.ContractAddr = log.Address.String()
+	evt.PoolAid = pool_aid
 
 	owner_addr := common.BytesToAddress(log.Topics[1][12:])
 	evt.OwnerAddr= owner_addr.String()
@@ -166,6 +178,11 @@ func process_pool_collect(storage *SQLStorage,tx *AugurTx,log *types.Log,log_ind
 		"EVENT: Collect. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	pool_aid := storagew.Get_uniswap_v3_pool_aid(log.Address.String())
+	if pool_aid == 0 {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt UniswapV3PoolCollect
 	err := pool_abi.UnpackIntoInterface(&eth_evt,"Collect",log.Data)
 	if err != nil {
@@ -179,6 +196,7 @@ func process_pool_collect(storage *SQLStorage,tx *AugurTx,log *types.Log,log_ind
 	evt.TxIndex = int64(tx.TxIndex)
 	evt.LogIndex = int64(log_index)
 	evt.ContractAddr = log.Address.String()
+	evt.PoolAid = pool_aid
 
 	owner_addr := common.BytesToAddress(log.Topics[1][12:])
 	evt.OwnerAddr= owner_addr.String()
@@ -209,6 +227,11 @@ func process_pool_burn(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		"EVENT: Burn. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	pool_aid := storagew.Get_uniswap_v3_pool_aid(log.Address.String())
+	if pool_aid == 0 {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt UniswapV3PoolBurn
 	err := pool_abi.UnpackIntoInterface(&eth_evt,"Burn",log.Data)
 	if err != nil {
@@ -222,6 +245,7 @@ func process_pool_burn(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 	evt.TxIndex = int64(tx.TxIndex)
 	evt.LogIndex = int64(log_index)
 	evt.ContractAddr = log.Address.String()
+	evt.PoolAid = pool_aid
 
 	owner_addr := common.BytesToAddress(log.Topics[1][12:])
 	evt.OwnerAddr= owner_addr.String()
@@ -252,6 +276,11 @@ func process_pool_swap(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		"EVENT: Swap. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	pool_aid := storagew.Get_uniswap_v3_pool_aid(log.Address.String())
+	if pool_aid == 0 {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt UniswapV3PoolSwap
 	err := pool_abi.UnpackIntoInterface(&eth_evt,"Swap",log.Data)
 	if err != nil {
@@ -265,6 +294,7 @@ func process_pool_swap(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 	evt.TxIndex = int64(tx.TxIndex)
 	evt.LogIndex = int64(log_index)
 	evt.ContractAddr = log.Address.String()
+	evt.PoolAid = pool_aid
 
 	sender_addr := common.BytesToAddress(log.Topics[1][12:])
 	recipient_addr := common.BytesToAddress(log.Topics[2][12:])
@@ -298,6 +328,11 @@ func process_pool_flash(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index
 		"EVENT: Flash. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	pool_aid := storagew.Get_uniswap_v3_pool_aid(log.Address.String())
+	if pool_aid == 0 {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt UniswapV3PoolFlash
 	err := pool_abi.UnpackIntoInterface(&eth_evt,"Flash",log.Data)
 	if err != nil {
@@ -311,6 +346,7 @@ func process_pool_flash(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index
 	evt.TxIndex = int64(tx.TxIndex)
 	evt.LogIndex = int64(log_index)
 	evt.ContractAddr = log.Address.String()
+	evt.PoolAid = pool_aid
 
 	sender_addr := common.BytesToAddress(log.Topics[1][12:])
 	recipient_addr := common.BytesToAddress(log.Topics[2][12:])
@@ -342,8 +378,13 @@ func process_pool_increase_observation_cardinality_next(storage *SQLStorage,tx *
 		"EVENT: IncreaseObservationCardinalityNext. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	pool_aid := storagew.Get_uniswap_v3_pool_aid(log.Address.String())
+	if pool_aid == 0 {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt UniswapV3PoolIncreaseObservationCardinalityNext
-	err := pool_abi.UnpackIntoInterface(&eth_evt,"UniswapV3PoolIncreaseObservationCardinalityNext",log.Data)
+	err := pool_abi.UnpackIntoInterface(&eth_evt,"IncreaseObservationCardinalityNext",log.Data)
 	if err != nil {
 		Error.Printf("Can't UnpackIntoInterface for UniswapV3PoolIncreaseObservationCardinalityNext: %v\n",err)
 		os.Exit(1)
@@ -355,6 +396,7 @@ func process_pool_increase_observation_cardinality_next(storage *SQLStorage,tx *
 	evt.TxIndex = int64(tx.TxIndex)
 	evt.LogIndex = int64(log_index)
 	evt.ContractAddr = log.Address.String()
+	evt.PoolAid = pool_aid
 
 	evt.ObservationCardinalityNextOld=eth_evt.ObservationCardinalityNextOld
 	evt.ObservationCardinalityNextNew=eth_evt.ObservationCardinalityNextNew
@@ -377,6 +419,11 @@ func process_pool_set_fee_protocol(storage *SQLStorage,tx *AugurTx,log *types.Lo
 		"EVENT: SetFeeProtocol. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	pool_aid := storagew.Get_uniswap_v3_pool_aid(log.Address.String())
+	if pool_aid == 0 {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt UniswapV3PoolSetFeeProtocol
 	err := pool_abi.UnpackIntoInterface(&eth_evt,"SetFeeProtocol",log.Data)
 	if err != nil {
@@ -390,6 +437,7 @@ func process_pool_set_fee_protocol(storage *SQLStorage,tx *AugurTx,log *types.Lo
 	evt.TxIndex = int64(tx.TxIndex)
 	evt.LogIndex = int64(log_index)
 	evt.ContractAddr = log.Address.String()
+	evt.PoolAid = pool_aid
 
 	evt.FeeProtocol0Old = eth_evt.FeeProtocol0Old
 	evt.FeeProtocol1Old = eth_evt.FeeProtocol1Old
@@ -415,6 +463,11 @@ func process_pool_collect_protocol(storage *SQLStorage,tx *AugurTx,log *types.Lo
 		"EVENT: CollectProtocol. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	pool_aid := storagew.Get_uniswap_v3_pool_aid(log.Address.String())
+	if pool_aid == 0 {
+		Info.Printf("Skipping event, address doesn't match our address\n")
+		return
+	}
 	var eth_evt UniswapV3PoolCollectProtocol
 	err := pool_abi.UnpackIntoInterface(&eth_evt,"CollectProtocol",log.Data)
 	if err != nil {
@@ -428,6 +481,7 @@ func process_pool_collect_protocol(storage *SQLStorage,tx *AugurTx,log *types.Lo
 	evt.TxIndex = int64(tx.TxIndex)
 	evt.LogIndex = int64(log_index)
 	evt.ContractAddr = log.Address.String()
+	evt.PoolAid = pool_aid
 
 	sender_addr := common.BytesToAddress(log.Topics[1][12:])
 	recipient_addr := common.BytesToAddress(log.Topics[2][12:])

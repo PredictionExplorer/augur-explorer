@@ -44,14 +44,15 @@ func (sw *SQLStorageWrapper) Insert_initialize(evt *p.UniV3Initialize) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".initialize("+
 					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
-					"sqrt_pricex86,tick"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
+					"pool_aid,sqrt_pricex96,tick"+
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
 	_,err := sw.S.Db().Exec(query,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxIndex,
 		evt.LogIndex,
 		contract_aid,
+		evt.PoolAid,
 		evt.SqrtPriceX96,
 		evt.Tick,
 	)
@@ -60,29 +61,6 @@ func (sw *SQLStorageWrapper) Insert_initialize(evt *p.UniV3Initialize) {
 		os.Exit(1)
 	}
 }
-/* Remove
-func (sw *SQLStorageWrapper) Insert_initialize(evt *p.UniV3Initialize) {
-
-	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
-	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".initialize("+
-					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
-					"sqrt_pricex86,tick"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
-	_,err := sw.S.Db().Exec(query,
-		evt.BlockNum,
-		evt.TimeStamp,
-		evt.TxIndex,
-		evt.LogIndex,
-		contract_aid,
-		evt.SqrtPriceX86,
-		evt.Tick,
-	)
-	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into initialize table: %v\n",err))
-		os.Exit(1)
-	}
-}*/
 func (sw *SQLStorageWrapper) Insert_pool_mint(evt *p.UniV3Mint) {
 
 	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
@@ -91,15 +69,16 @@ func (sw *SQLStorageWrapper) Insert_pool_mint(evt *p.UniV3Mint) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".mint("+
 					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
-					"sender_aid,owner_aid,tick_lower,tick_upper,"+
+					"pool_aid,sender_aid,owner_aid,tick_lower,tick_upper,"+
 					"amount,amount0,amount1"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)"
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)"
 	_,err := sw.S.Db().Exec(query,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxIndex,
 		evt.LogIndex,
 		contract_aid,
+		evt.PoolAid,
 		sender_aid,
 		owner_aid,
 		evt.TickLower,
@@ -121,15 +100,16 @@ func (sw *SQLStorageWrapper) Insert_pool_collect(evt *p.UniV3Collect) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".collect("+
 					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
-					"recipient_aid,owner_aid,tick_lower,tick_upper,"+
+					"pool_aid,recipient_aid,owner_aid,tick_lower,tick_upper,"+
 					"amount0,amount1"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11)"
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)"
 	_,err := sw.S.Db().Exec(query,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxIndex,
 		evt.LogIndex,
 		contract_aid,
+		evt.PoolAid,
 		recipient_aid,
 		owner_aid,
 		evt.TickLower,
@@ -149,15 +129,16 @@ func (sw *SQLStorageWrapper) Insert_pool_burn(evt *p.UniV3Burn) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".burn("+
 					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
-					"owner_aid,tick_lower,tick_upper,"+
+					"pool_aid,owner_aid,tick_lower,tick_upper,"+
 					"amount,amount0,amount1"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11)"
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)"
 	_,err := sw.S.Db().Exec(query,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxIndex,
 		evt.LogIndex,
 		contract_aid,
+		evt.PoolAid,
 		owner_aid,
 		evt.TickLower,
 		evt.TickUpper,
@@ -178,16 +159,17 @@ func (sw *SQLStorageWrapper) Insert_pool_swap(evt *p.UniV3Swap) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".swap("+
 					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
-					"sender_aid,recipient_aid,"+
+					"pool_aid,sender_aid,recipient_aid,"+
 					"amount0,amount1,"+
 					"sqrt_pricex96,liquidity,tick"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)"
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)"
 	_,err := sw.S.Db().Exec(query,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxIndex,
 		evt.LogIndex,
 		contract_aid,
+		evt.PoolAid,
 		sender_aid,
 		recipient_aid,
 		evt.Amount0,
@@ -209,16 +191,17 @@ func (sw *SQLStorageWrapper) Insert_pool_flash(evt *p.UniV3Flash) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".flash("+
 					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
-					"sender_aid,recipient_aid,"+
+					"pool_aid,sender_aid,recipient_aid,"+
 					"amount0,amount1,"+
 					"paid0,paid1"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11)"
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)"
 	_,err := sw.S.Db().Exec(query,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxIndex,
 		evt.LogIndex,
 		contract_aid,
+		evt.PoolAid,
 		sender_aid,
 		recipient_aid,
 		evt.Amount0,
@@ -237,14 +220,15 @@ func (sw *SQLStorageWrapper) Insert_pool_increase_observation_cardinality_next(e
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".iocn("+
 					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
-					"next_old,next_new"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
+					"pool_aid,next_old,next_new"+
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
 	_,err := sw.S.Db().Exec(query,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxIndex,
 		evt.LogIndex,
 		contract_aid,
+		evt.PoolAid,
 		evt.ObservationCardinalityNextOld,
 		evt.ObservationCardinalityNextNew,
 	)
@@ -259,14 +243,15 @@ func (sw *SQLStorageWrapper) Insert_pool_set_fee_protocol(evt *p.UniV3SetFeeProt
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".set_fee_proto("+
 					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
-					"fee_protocol0_old,fee_protocol1_old,fee_protocol0_new,fee_protocol1_new"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9)"
+					"pool_aid,fee_protocol0_old,fee_protocol1_old,fee_protocol0_new,fee_protocol1_new"+
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10)"
 	_,err := sw.S.Db().Exec(query,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxIndex,
 		evt.LogIndex,
 		contract_aid,
+		evt.PoolAid,
 		evt.FeeProtocol0Old,
 		evt.FeeProtocol1Old,
 		evt.FeeProtocol0New,
@@ -285,15 +270,16 @@ func (sw *SQLStorageWrapper) Insert_pool_collect_protocol(evt *p.UniV3CollectPro
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".collect_proto("+
 					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
-					"sender_aid,recipient_aid,"+
+					"pool_aid,sender_aid,recipient_aid,"+
 					"amount0,amount1,"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9)"
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10)"
 	_,err := sw.S.Db().Exec(query,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxIndex,
 		evt.LogIndex,
 		contract_aid,
+		evt.PoolAid,
 		sender_aid,
 		recipient_aid,
 		evt.Amount0,
