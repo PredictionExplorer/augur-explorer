@@ -190,7 +190,8 @@ CREATE TABLE bpt_transf (	-- ERC20 Transfer of BPT token
 	PRIMARY KEY(block_num,tx_index,log_index)
 );
 CREATE TABLE bpt_bal ( -- Derived from bpt_transf, calculates current balance of a User
-	aid					BIGINT PRIMARY KEY,
+	aid					BIGINT NOT NULL,
 	pool_aid			BIGINT NOT NULL,
-	balance				DECIMAL
+	balance				DECIMAL,
+	PRIMARY KEY(pool_aid,aid)
 );

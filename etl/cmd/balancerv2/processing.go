@@ -514,6 +514,7 @@ func process_bpt_erc20_transfer(storage *SQLStorage,tx *AugurTx,log *types.Log,l
 	evt.PoolAid = pool_aid
 	evt.From = eth_evt.From.String()
 	evt.To = eth_evt.To.String()
+	evt.Amount = eth_evt.Value.String()
 
 	Info.Printf("BPT ERC20 Transfer{\n")
 	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)

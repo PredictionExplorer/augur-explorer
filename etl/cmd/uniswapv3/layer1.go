@@ -1,4 +1,3 @@
-// MainNet Balancer v2 starting block: 12272146
 
 package main
 
@@ -23,47 +22,48 @@ import (
 
 	//. "github.com/PredictionExplorer/augur-explorer/contracts"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
+	//. "github.com/PredictionExplorer/augur-explorer/primitives/uniswapv3"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
-	. "github.com/PredictionExplorer/augur-explorer/dbs/balancerv2"
+	. "github.com/PredictionExplorer/augur-explorer/dbs/uniswapv3"
 	. "github.com/PredictionExplorer/augur-explorer/layer1"
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
-	POOL_CREATED				= "83a48fbcfc991335314e74d0496aab6a1987e992ddc85dddbcc4d6dd6ef2e9fc"
-	POOL_BALANCE_CHANGED		= "e5ce249087ce04f05a957192435400fd97868dba0e6a4b4c049abf8af80dae78"
-	POOL_REGISTERED				= "3c13bc30b8e878c53fd2a36b679409c073afd75950be43d8858768e956fbc20e"
-	EXTERNAL_BALANCE_TRANSFER	= "540a1a3f28340caec336c81d8d7b3df139ee5cdc1839a4f283d7ebb7eaae2d5c"
-	INTERNAL_BALANCE_CHANGED	= "18e1ea4139e68413d7d08aa752e71568e36b2c5bf940893314c2c5b01eaa0c42"
-	TOKEN_DEREGISTERED			= "7dcdc6d02ef40c7c1a7046a011b058bd7f988fa14e20a66344f9d4e60657d610"
-	TOKEN_REGISTERED			= "f5847d3f2197b16cdcd2098ec95d0905cd1abdaf415f07bb7cef2bba8ac5dec4"
-	SWAP						= "2170c741c41531aec20e7c107c24eecfdd15e69c9bb0a8dd37b1840b9e0b207b"
-	SWAP_FEE_CHANGED			= "a9ba3ffe0b6c366b81232caab38605a0699ad5398d6cce76f91ee809e322dafc"
-	POOL_BALANCE_MANAGED		= "6edcaf6241105b4c94c2efdbf3a6b12458eb3d07be3a0e81d24b13c44045fe7a"
-	FLASH_LOAN					= "0d7d75e01ab95780d3cd1c8ec0dd6c2ce19e3a20427eec8bf53283b6fb8e95f0"
+	INITIALIZE					= "98636036cb66a9c19a37435efc1e90142190214e8abeb821bdba3f2990dd4c95"
+	MINT						= "7a53080ba414158be7ec69b987b5fb7d07dee101fe85488f0853ae16239d0bde"
+	COLLECT						= "70935338e69775456a85ddef226c395fb668b63fa0115f5f20610b388e6ca9c0"
+	BURN						= "0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c"
+	SWAP						= "c42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67"
+	FLASH						= "bdbdb71d7860376ba52b25a5028beea23581364a40522f6bcfb86bb1f2dca633"
+	INCREASE_OBSERV_CARDIN_NEXT = "ac49e518f90a358f652e4400164f05a5d8f7e35e7747279bc3a93dbf584e125a"
+	SET_FEE_PROTOCOL			= "973d8d92bb299f4af6ce49b52a8adb85ae46b9f214c4c4fc06ac77401237b133"
+	COLLECT_PROTOCOL			= "596b573906218d3411850b26a6b437d6c4522fdb43d2d2386263f86d50b8b151"
+	OWNER_CHANGED				= "b532073b38c83145e3e5135377a08bf9aab55bc0fd7c1179cd4fb995d2a5159c"
+	POOL_CREATED				= "783cca1c0412dd0d695e784568c96da2e9c22ff989357a2e8b1d9b2b4e6b7118"
+	FEE_AMOUNT_ENABLED			= "c66a3fdf07232cdd185febcc6579d408c241b47ae2f9907d84be655141eeaecc"
 	ERC20_TRANSFER				= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
 	DEFAULT_STATISTICS_DURATION	int64 = 24*60*60 // in seconds
 	DEFAULT_WAIT_TIME = 2000	// 2 seconds
 	DEFAULT_DB_LOG				= "db.log"
-	//DEFAULT_LOG_DIR				= "ae_logs"
 	MAX_APPROVAL_BASE10 string = "115792089237316195423570985008687907853269984665640564039457584007913129639935"
 	NUM_AUGUR_CONTRACTS int = 35
-	//USE_BLOCK_RECEIPTS_RPC_CALL bool = false // flag for using patch in ./geth-patch/README.txt
 )
 
 var (
-	evt_pool_created,_ = hex.DecodeString(POOL_CREATED)
-	evt_pool_balance_changed,_ = hex.DecodeString(POOL_BALANCE_CHANGED)
-	evt_pool_registered,_ = hex.DecodeString(POOL_REGISTERED)
-	evt_external_balance_transfer,_ = hex.DecodeString(EXTERNAL_BALANCE_TRANSFER)
-	evt_internal_balance_changed,_ = hex.DecodeString(INTERNAL_BALANCE_CHANGED)
-	evt_token_deregistered,_ = hex.DecodeString(TOKEN_DEREGISTERED)
-	evt_token_registered,_ = hex.DecodeString(TOKEN_REGISTERED)
+	evt_initialize,_ = hex.DecodeString(INITIALIZE)
+	evt_mint,_ = hex.DecodeString(MINT)
+	evt_collect,_ = hex.DecodeString(COLLECT)
+	evt_burn,_ = hex.DecodeString(BURN)
 	evt_swap,_ = hex.DecodeString(SWAP)
-	evt_swap_fee_changed,_ = hex.DecodeString(SWAP_FEE_CHANGED)
-	evt_pool_balance_managed,_ = hex.DecodeString(POOL_BALANCE_MANAGED)
-	evt_flash_loan,_ = hex.DecodeString(FLASH_LOAN)
-	evt_erc20_transf,_ = hex.DecodeString(ERC20_TRANSFER)
+	evt_flash,_ = hex.DecodeString(FLASH)
+	evt_inc_obs_cardin_next,_ = hex.DecodeString(INCREASE_OBSERV_CARDIN_NEXT)
+	evt_set_fee_protocol,_ = hex.DecodeString(SET_FEE_PROTOCOL)
+	evt_collect_protocol,_ = hex.DecodeString(COLLECT_PROTOCOL)
+	evt_owner_changed,_ = hex.DecodeString(OWNER_CHANGED)
+	evt_pool_created,_ = hex.DecodeString(POOL_CREATED)
+	evt_fee_amount_enabled,_ = hex.DecodeString(FEE_AMOUNT_ENABLED)
+	evt_erc20_transfer,_ = hex.DecodeString(ERC20_TRANSFER)
 
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
@@ -73,12 +73,11 @@ var (
 
 	manager	ETL_Manager
 	layer1 ETL_Layer1
-	pool_factory_abi *abi.ABI
-	vault_abi *abi.ABI
-	swapfee_abi *abi.ABI
+	factory_abi *abi.ABI
+	pool_abi *abi.ABI
 	erc20_abi *abi.ABI
 
-	caddrs		BalancerV2Addrs
+	caddrs		UniswapV3Addrs
 
 	processor	ETL_Processor
 	storagew            SQLStorageWrapper
@@ -121,7 +120,7 @@ func main() {
 	layer1.UseBlockReceiptsCall = *block_rcpts
 	layer1.SchemaName = *schema_name
 	layer1.RPC_Url = *rpc_url
-	layer1.AppName = "balancerv2"
+	layer1.AppName = "uniswapv3"
 	processor.ETL = &layer1
 	layer1.Manager = &processor
 
@@ -158,11 +157,8 @@ func main() {
 
 	storagew.S.Init_log(db_log_file)
 	storagew.S.Log_msg("Log initialized\n")
-	//storagew.S.Db_set_schema_name(*schema_name)
 	spath := storagew.S.Get_search_path()
 	Info.Printf("search path : %v\n",spath)
-	//storagew.S.Set_search_path_to_schema_name()
-	//Info.Printf("search path after: %v\n",spath)
 	layer1.Storage = storagew.S
 
 	ctx := context.Background()
@@ -182,8 +178,7 @@ func main() {
 			)
 		}
 	}
-	tmp_caddrs := storagew.Balancer_get_contract_addrs()
-	caddrs.VaultAddr = common.HexToAddress(tmp_caddrs.VaultAddr)
+	tmp_caddrs := storagew.Uniswap_get_contract_addrs()
 	caddrs.FactoryAddr = common.HexToAddress(tmp_caddrs.FactoryAddr)
 
 	if *block_num > 0 {
@@ -212,37 +207,29 @@ func main() {
 		log.Fatal("oops:", err)
 	}
 
-	abi_parsed1 := strings.NewReader(BalancerV2WeightedPoolFactoryABI)
+	abi_parsed1 := strings.NewReader(UniswapV3FactoryABI)
 	abi1,err := abi.JSON(abi_parsed1)
 	if err!= nil {
-		Info.Printf("Can't parse PoolFactory ABI: %v\n",err)
+		Info.Printf("Can't parse UniswapV2Factory ABI: %v\n",err)
 		os.Exit(1)
 	}
-	pool_factory_abi = &abi1
+	factory_abi = &abi1
 
-	abi_parsed2 := strings.NewReader(BalancerV2VaultABI)
+	abi_parsed2 := strings.NewReader(UniswapV3PoolABI)
 	abi2,err := abi.JSON(abi_parsed2)
 	if err!= nil {
-		Info.Printf("Can't parse Vault ABI: %v\n",err)
+		Info.Printf("Can't parse Uniswap Pool ABI: %v\n",err)
 		os.Exit(1)
 	}
-	vault_abi = &abi2
+	pool_abi = &abi2
 
-	abi_parsed3 := strings.NewReader(BalancerV2SwapFeePercentageChangedABI)
+	abi_parsed3 := strings.NewReader(ERC20ABI)
 	abi3,err := abi.JSON(abi_parsed3)
-	if err!= nil {
-		Info.Printf("Can't parse Vault ABI: %v\n",err)
-		os.Exit(1)
-	}
-	swapfee_abi = &abi3
-
-	abi_parsed4 := strings.NewReader(ERC20ABI)
-	abi4,err := abi.JSON(abi_parsed4)
 	if err != nil {
 		Info.Printf("Can't parse ERC20 token ABI")
 		os.Exit(1)
 	}
-	erc20_abi = &abi4
+	erc20_abi = &abi3
 
 	bnum,exists := storagew.S.Layer1_get_last_block_num()
 	if !exists {

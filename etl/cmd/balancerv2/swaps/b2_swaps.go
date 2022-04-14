@@ -167,10 +167,10 @@ func main() {
 		os.Exit(1)
 	}
 	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
-	storagew.S = Connect_to_storage(Info)
-	storagew.S.Db_set_schema_name(*schema_name)
+	storagew.S = Connect_to_storage_with_schema(Info)
+	//storagew.S.Db_set_schema_name(*schema_name)
 	Info.Printf("Schema name: %v\n",schema_name)
-	storagew.S.Set_search_path_to_schema_name()
+	//storagew.S.Set_search_path_to_schema_name()
 
 	var block_num int64
 	var block_hash string

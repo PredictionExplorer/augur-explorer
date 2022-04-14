@@ -142,10 +142,10 @@ func single_threaded_loop_routine(etl *ETL_Layer1,exit_chan chan bool) {
 	time.Sleep(WAIT_TIME * time.Millisecond)
 	goto main_loop // infinite loop without loss of one indentation level
 }
-func Process_single_block(etl *ETL_Layer1) {
+func Process_single_block(etl *ETL_Layer1,ec *ethclient.Client,	rc *rpc.Client) {
 
 	Validate_params(etl)
-	Init(etl)
+	Init(etl,ec,rc)
 	etl.Info.Printf("Processing single block %v\n")
 	process_block(etl,etl.SingleBlockNum,etl.UpdateLastBlock,etl.NoChainSplitCheck,etl.NoRollbackBlocks)
 }
@@ -187,18 +187,13 @@ func Validate_params(etl *ETL_Layer1) {
 		os.Exit(1)
 	}
 }
-func Init(etl *ETL_Layer1) {
+func Init(etl *ETL_Layer1,ec *ethclient.Client,	rc *rpc.Client) {
 
+	Validate_params(etl)
 
-	etl.Info.Printf("Selected schema name: %v\n",etl.SchemaName)
-	etl.Info.Printf("Use our custom ethclient.GetBlockReceipts() call: %v\n",etl.UseBlockReceiptsCall)
 	var err error
-	rpcclient, err=rpc.DialContext(context.Background(), etl.RPC_Url)
-	if err != nil {
-		log.Fatal(err)
-	}
-	etl.Info.Printf("Connected to ETH node: %v\n",etl.RPC_Url)
-	eclient = ethclient.NewClient(rpcclient)
+	rpcclient = rc
+	eclient = ec
 
 	ctx := context.Background()
 	stored_chain_id := etl.Storage.Layer1_get_stored_chain_id()
@@ -225,22 +220,8 @@ func Init(etl *ETL_Layer1) {
 	if etl.SingleBlockNum > 0 {
 		etl.NoRollbackBlocks = true
 	}
-/*
-	c := make(chan os.Signal)
-	exit_chan := make(chan bool)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		etl.Info.Printf("Got SIGINT signal, will exit after block processing is over." +
-					" To interrupt abruptly send SIGKILL (9) to the kernel.\n")
-		exit_chan <- true
-	}()
-	*/
 }
 func Main_event_loop_multithreaded(etl *ETL_Layer1,exit_chan chan bool) {
-
-	Validate_params(etl)
-	Init(etl)
 
 	etl.Info.Printf("Thread: multithreaded, num_threads=%v\n",etl.NumThreads)
 	latestBlock, err := eclient.BlockByNumber(context.Background(), nil)

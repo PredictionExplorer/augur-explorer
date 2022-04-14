@@ -94,7 +94,7 @@ DECLARE
 BEGIN
 
 	UPDATE bpt_bal SET balance = (balance - NEW.amount)
-		WHERE pool_aid=NEW.pool_aid AND from_aid=NEW.from_aid;
+		WHERE pool_aid=NEW.pool_aid AND aid=NEW.from_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		INSERT INTO bpt_bal(aid,pool_aid,balance)
@@ -102,7 +102,7 @@ BEGIN
 	END IF;
 
 	UPDATE bpt_bal SET balance = (balance + NEW.amount)
-		WHERE pool_aid=NEW.pool_aid AND to_aid=NEW.to_aid;
+		WHERE pool_aid=NEW.pool_aid AND aid=NEW.to_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
 		INSERT INTO bpt_bal(aid,pool_aid,balance)
@@ -115,9 +115,9 @@ CREATE OR REPLACE FUNCTION on_bpt_transf_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 	UPDATE bpt_bal SET balance = (balance + NEW.amount)
-		WHERE pool_aid=NEW.pool_aid AND from_aid=NEW.from_aid;
+		WHERE pool_aid=NEW.pool_aid AND aid=NEW.from_aid;
 	UPDATE bpt_bal SET balance = (balance - NEW.amount)
-		WHERE pool_aid=NEW.pool_aid AND to_aid=NEW.to_aid;
+		WHERE pool_aid=NEW.pool_aid AND aid=NEW.to_aid;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

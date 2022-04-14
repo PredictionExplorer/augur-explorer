@@ -96,6 +96,46 @@ func Connect_to_storage(info_log *log.Logger) *SQLStorage {
 	ss.Info.Printf("DB: connected to %v:%v",host,port)
 	return ss
 }
+func Connect_to_storage_with_schema(info_log *log.Logger,schema_name string) *SQLStorage {
+	var err error
+	host,port,err:=net.SplitHostPort(os.Getenv("AUGUR_EXTRACTOR_HOST"))
+	if (err!=nil) {
+		host=os.Getenv("AUGUR_EXTRACTOR_HOST")
+		port="5432"
+	}
+	conn_str := "user='"+
+				os.Getenv("AUGUR_EXTRACTOR_USERNAME") +
+				"' dbname='" +
+				os.Getenv("AUGUR_EXTRACTOR_DATABASE") +
+				"' password='" +
+				os.Getenv("AUGUR_EXTRACTOR_PASSWORD") +
+				"' host='" +
+				host +
+				"' port='" +
+				port +
+				"'" +
+				"search_path='"+
+				schema_name+
+				"'";
+	db,err := sql.Open("postgres",conn_str);
+	if (err!=nil) {
+		show_connect_error()
+	} else {
+
+	}
+	_,err = db.Exec("SET timezone TO 0")		// Setting timezone to UTC (which Augur uses)
+	if (err!=nil) {
+		p.Fatalf(fmt.Sprintf("DB Error: %v",err));
+	}
+
+	ss := new(SQLStorage)
+	ss.db = db
+	ss.Info = info_log
+	ss.Db_set_schema_name(schema_name)
+	spath:=ss.Get_search_path()
+	ss.Info.Printf("DB: connected to %v:%v (search_path=%v)",host,port,spath)
+	return ss
+}
 func (ss *SQLStorage) Init_log(fname string) {
 
 	f, err := os.OpenFile(fname,os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -117,10 +157,23 @@ func (ss *SQLStorage) Db_set_schema_name(name string) {
 }
 func (ss *SQLStorage) Set_search_path_to_schema_name() {
 
+	ss.Info.Printf("Setting search path to %v\n",ss.schema_name)
 	_,err := ss.db.Exec("SET SEARCH_PATH TO "+ss.schema_name)
 	if (err!=nil) {
 		ss.Info.Printf("DB Error: %v",err);
 		os.Exit(1)
 	}
 
+}
+func (ss *SQLStorage) Get_search_path() string {
+
+	var query string
+	query="SHOW search_path"
+	var spath string
+	err:=ss.db.QueryRow(query).Scan(&spath);
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v ,q=%v",query))
+		os.Exit(1)
+	}
+	return spath
 }

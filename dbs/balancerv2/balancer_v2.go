@@ -320,8 +320,8 @@ func (sw *SQLStorageWrapper) Is_balancer_pool_address(addr string) int64 {
 
 	var query string
 	query = "SELECT pool_aid " +
-			"FROM pool_reg p "+
-			"JOIN addr a ON p.pool_aid=a.address_id "+
+			"FROM "+sw.S.SchemaName()+".pool_reg p "+
+			"JOIN "+sw.S.SchemaName()+".addr a ON p.pool_aid=a.address_id "+
 			"WHERE a.addr=$1"
 
 	row := sw.S.Db().QueryRow(query,addr)

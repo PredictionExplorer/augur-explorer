@@ -1,0 +1,128 @@
+
+package balancerv2
+
+import (
+)
+
+type UniV3ContractAddrs struct {
+	FactoryAddr			string
+}
+type UniV3PoolCreated struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAddr		string
+	Token0Addr			string
+	Token1Addr			string
+	Fee					string
+	TickSpacing			string
+	PoolAddr			string
+}
+type UniV3Initialize struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAddr		string
+	SqrtPriceX96		string
+	Tick				string
+}
+type UniV3Mint struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAddr		string
+	SenderAddr			string
+	OwnerAddr			string
+	TickLower			string
+	TickUpper			string
+	Amount				string
+	Amount0				string
+	Amount1				string
+}
+type UniV3Collect struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAddr		string
+	OwnerAddr			string
+	RecipientAddr		string
+	TickLower			string
+	TickUpper			string
+	Amount0				string
+	Amount1				string
+}
+type UniV3Burn struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAddr		string
+	OwnerAddr			string
+	TickLower			string
+	TickUpper			string
+	Amount				string
+	Amount0				string
+	Amount1				string
+}
+type UniV3Swap struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAddr		string
+	SenderAddr			string
+	RecipientAddr		string
+	Amount0				string
+	Amount1				string
+	SqrtPriceX96		string
+	Liquidity			string
+	Tick				string
+}
+type UniV3Flash struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAddr		string
+	SenderAddr			string
+	RecipientAddr		string
+	Amount0				string
+	Amount1				string
+	Paid0				string
+	Paid1				string
+}
+type UniV3IncObservCardinNext struct{
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAddr		string
+	ObservationCardinalityNextOld		uint16
+	ObservationCardinalityNextNew		uint16
+}
+type UniV3SetFeeProtocol struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAddr		string
+	FeeProtocol0Old		uint8
+	FeeProtocol0New		uint8
+	FeeProtocol1Old		uint8
+	FeeProtocol1New		uint8
+}
+type UniV3CollectProtocol struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAddr		string
+	SenderAddr			string
+	RecipientAddr		string
+	Amount0				string
+	Amount1				string
+}
