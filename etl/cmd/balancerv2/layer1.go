@@ -41,6 +41,7 @@ const (
 	POOL_BALANCE_MANAGED		= "6edcaf6241105b4c94c2efdbf3a6b12458eb3d07be3a0e81d24b13c44045fe7a"
 	FLASH_LOAN					= "0d7d75e01ab95780d3cd1c8ec0dd6c2ce19e3a20427eec8bf53283b6fb8e95f0"
 	ERC20_TRANSFER				= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+	FEE_COLLECTION				= "9f878c349b0fc751f12168fdf539db8c1848b81c0751432f28626da5aa7024ee"
 
 	DEFAULT_STATISTICS_DURATION	int64 = 24*60*60 // in seconds
 	DEFAULT_WAIT_TIME = 2000	// 2 seconds
@@ -64,6 +65,7 @@ var (
 	evt_pool_balance_managed,_ = hex.DecodeString(POOL_BALANCE_MANAGED)
 	evt_flash_loan,_ = hex.DecodeString(FLASH_LOAN)
 	evt_erc20_transf,_ = hex.DecodeString(ERC20_TRANSFER)
+	evt_fee_collection,_ = hex.DecodeString(FEE_COLLECTION)
 
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
@@ -77,6 +79,7 @@ var (
 	vault_abi *abi.ABI
 	swapfee_abi *abi.ABI
 	erc20_abi *abi.ABI
+	fee_collection_abi *abi.ABI
 
 	caddrs		BalancerV2Addrs
 
@@ -243,6 +246,14 @@ func main() {
 		os.Exit(1)
 	}
 	erc20_abi = &abi4
+
+	abi_parsed5 := strings.NewReader(FeeCollectionABI)
+	abi5,err := abi.JSON(abi_parsed5)
+	if err != nil {
+		Info.Printf("Can't parse FeeCollection ABI")
+		os.Exit(1)
+	}
+	fee_collection_abi = &abi5
 
 	bnum,exists := storagew.S.Layer1_get_last_block_num()
 	if !exists {

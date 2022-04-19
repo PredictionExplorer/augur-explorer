@@ -142,6 +142,18 @@ CREATE TABLE flash_loan (	-- FlashLoan event
 	fee_amount			DECIMAL,
 	PRIMARY KEY(block_num,tx_index,log_index)
 );
+CREATE TABLE fee_collection (	-- FeeCollection event
+	block_num			BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
+	time_stamp			TIMESTAMPTZ NOT NULL,
+	tx_index			INT NOT NULL,
+	log_index			INT NOT NULL,
+	pool_aid			BIGINT NOT NULL,
+	col_base			DECIMAL NOT NULL,	-- CollectedBase
+	col_bond			DECIMAL NOT NULL,	-- CollectedBond
+	rem_base			DECIMAL NOT NULL,	-- RemainingBase
+	rem_bond			DECIMAL NOT NULL,	-- RemainingBond
+	PRIMARY KEY(block_num,tx_index,log_index)
+);
 CREATE TABLE swf_hist ( -- Swap Fee history , calculated as next layer on top of 'block' table
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,
@@ -195,3 +207,4 @@ CREATE TABLE bpt_bal ( -- Derived from bpt_transf, calculates current balance of
 	balance				DECIMAL,
 	PRIMARY KEY(pool_aid,aid)
 );
+

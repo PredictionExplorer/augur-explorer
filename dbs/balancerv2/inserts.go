@@ -280,6 +280,31 @@ func (sw *SQLStorageWrapper) Insert_flash_loan(evt *p.BalV2FlashLoan) {
 	}
 
 }
+func (sw *SQLStorageWrapper) Insert_fee_collection(evt *p.BalV2FeeCollection) {
+
+	pool_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".fee_collection("+
+				"block_num,time_stamp,tx_index,log_index,pool_aid,"+
+				"col_base,col_bond,rem_base,rem_bond"+
+			") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9)"
+	_,err := sw.S.Db().Exec(query,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxIndex,
+		evt.LogIndex,
+		pool_aid,
+		evt.CollectedBase,
+		evt.CollectedBond,
+		evt.RemainingBase,
+		evt.RemainingBond,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into fee_collection table: %v\n",err))
+		os.Exit(1)
+	}
+
+}
 func (sw *SQLStorageWrapper) Insert_swap_fee_history(rec *p.BalV2SwapHist) int64 {
 
 	var query string

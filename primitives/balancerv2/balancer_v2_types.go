@@ -164,3 +164,14 @@ type BalV2BPTTransfer struct {
 	To					string
 	Amount				string
 }
+type BalV2FeeCollection  struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAddr		string
+	CollectedBase		string
+	CollectedBond		string
+	RemainingBase		string
+	RemainingBond		string
+}

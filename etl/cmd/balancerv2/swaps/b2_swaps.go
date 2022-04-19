@@ -8,9 +8,15 @@ import (
 	"strings"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/common"
+
 	. "github.com/PredictionExplorer/augur-explorer/primitives/balancerv2"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 	. "github.com/PredictionExplorer/augur-explorer/dbs/balancerv2"
+	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 // Notes:
 //		first block with swaps on main net: 
@@ -20,6 +26,10 @@ var (
 	Info				*log.Logger
 	storagew			SQLStorageWrapper
 	pool_map			map[string]int64
+	RPC_URL string
+
+	eclient				 *ethclient.Client
+	getswapfee_abi		*abi.ABI
 )
 func process_block_balance_changes(block_num int64,block_hash string,bchanges []BalV2PoolBalanceChanged) {
 
@@ -100,7 +110,35 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 				"Fee not found for swap at block %v, tx_id=%v, log_idx=%v",
 				s.BlockNum,s.TxIndex,s.LogIndex,
 			)
-			os.Exit(0)
+			Info.Printf(
+				"Trying to fetch the fee from the chain, by direct call to contract of pool %v\n",
+				s.PoolId,
+			)
+			pool_aid,err := storagew.Lookup_pool_address_id(s.PoolId)
+			if err != nil {
+				Info.Printf("Can't find pool address id, exiting\n")
+				os.Exit(1)
+			}
+			pool_addr_str,err := storagew.S.Layer1_lookup_address(pool_aid)
+			if err != nil {
+				Info.Printf("Can't lookup address string: %v\n",err)
+				os.Exit(1)
+			}
+			var copts bind.CallOpts
+			pool_addr := common.HexToAddress(pool_addr_str)
+			Info.Printf("Calling GetSwapFeePercentage at %v\n",pool_addr.String())
+			pool_ctrct,err := NewGetSwapFee(pool_addr,eclient)
+			if err != nil {
+				Info.Printf("Can't instantiate pool contract:%v\n",err)
+				os.Exit(1)
+			}
+			result,err := pool_ctrct.GetSwapFeePercentage(&copts)
+			if err != nil {
+				Info.Printf("Call to GetSwapFeePercentage() failed: %v\n",err)
+				os.Exit(1)
+			}
+			fee_percentage_str = result.String()
+			Info.Printf("The fee for this pool (addr=%v) is %v, continuing...\n",pool_addr.String(),fee_percentage_str)
 		}
 		one := big.NewInt(1e18)
 		amount_in := big.NewInt(0)
@@ -166,11 +204,27 @@ func main() {
 		fmt.Printf("%v",usage_str)
 		os.Exit(1)
 	}
+	var err error
+	RPC_URL = os.Getenv("RPC_URL")
+	eclient, err = ethclient.Dial(RPC_URL)
+	if err!=nil {
+		fmt.Printf("Can't connect to ETH RPC: %v\n",err)
+		os.Exit(1)
+	}
+
 	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
-	storagew.S = Connect_to_storage_with_schema(Info)
+	storagew.S = Connect_to_storage_with_schema(Info,*schema_name)
 	//storagew.S.Db_set_schema_name(*schema_name)
 	Info.Printf("Schema name: %v\n",schema_name)
 	//storagew.S.Set_search_path_to_schema_name()
+
+	abi_parsed1 := strings.NewReader(GetSwapFeeABI)
+	abi1,err := abi.JSON(abi_parsed1)
+	if err!= nil {
+		Info.Printf("Can't parse PoolFactory ABI: %v\n",err)
+		os.Exit(1)
+	}
+	getswapfee_abi = &abi1
 
 	var block_num int64
 	var block_hash string

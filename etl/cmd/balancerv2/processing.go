@@ -457,11 +457,7 @@ func process_flash_loan(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index
 	evt.LogIndex = int64(log_index)
 	evt.ContractAddr = log.Address.String()
 
-	//recipient_addr := common.BytesToAddress(log.Topics[1][12:])
-	//evt.RecipientAddr = recipient_addr.String()
 	evt.RecipientAddr = eth_evt.Recipient.String()
-	//token_addr := common.BytesToAddress(log.Topics[2][12:])
-	//evt.TokenAddr = token_addr.String()
 	evt.TokenAddr = eth_evt.Token.String()
 	evt.Amount= eth_evt.Amount.String()
 	evt.FeeAmount = eth_evt.FeeAmount.String()
@@ -529,6 +525,49 @@ func process_bpt_erc20_transfer(storage *SQLStorage,tx *AugurTx,log *types.Log,l
 	Info.Printf("}\n")
 	storagew.Insert_bpt_erc20_transfer(&evt)
 }
+func process_fee_collection(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
+
+	pool_aid := storagew.Is_balancer_pool_address(log.Address.String())
+	if pool_aid == 0 {
+		return	// not a Pool contract
+	}
+	Info.Printf(
+		"EVENT: FeeCollection. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
+	var eth_evt FeeCollectionFeeCollection
+	err := fee_collection_abi.UnpackIntoInterface(&eth_evt,"FeeCollection",log.Data)
+	if err != nil {
+		Error.Printf("Can't UnpackIntoInterface for FeeCollection: %v\n",err)
+		os.Exit(1)
+	}
+
+	var evt BalV2FeeCollection
+
+	evt.BlockNum = tx.BlockNum
+	evt.TimeStamp = tx.TimeStamp
+	evt.TxIndex = int64(tx.TxIndex)
+	evt.LogIndex = int64(log_index)
+	evt.ContractAddr = log.Address.String()
+
+	evt.CollectedBase= eth_evt.CollectedBase.String()
+	evt.CollectedBond= eth_evt.CollectedBond.String()
+	evt.RemainingBase= eth_evt.RemainingBase.String()
+	evt.RemainingBond= eth_evt.RemainingBond.String()
+
+	Info.Printf("FeeCollection {\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tCollectedBase: %v\n",evt.CollectedBase)
+	Info.Printf("\tCollectedBond: %v\n",evt.CollectedBond)
+	Info.Printf("\tRemainingBase: %v\n",evt.RemainingBase)
+	Info.Printf("\tRemainingBond: %v\n",evt.RemainingBond)
+	Info.Printf("}\n")
+	storagew.Insert_fee_collection(&evt)
+}
 func process_event_log(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
 
 	if len(log.Topics) == 0 { return }
@@ -566,6 +605,9 @@ func process_event_log(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 	}
 	if bytes.Equal(topic0,evt_flash_loan) {
 		process_flash_loan(storage,tx,log,log_index)
+	}
+	if bytes.Equal(topic0,evt_fee_collection) {
+		process_fee_collection(storage,tx,log,log_index)
 	}
 	if bytes.Equal(topic0,evt_erc20_transf) {
 		process_bpt_erc20_transfer(storage,tx,log,log_index)

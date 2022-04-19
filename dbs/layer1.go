@@ -76,6 +76,21 @@ func (ss *SQLStorage) Layer1_insert_address(addr string) int64 {
 
 	return addr_id
 }
+func (ss *SQLStorage) Layer1_lookup_address(aid int64) (string,error) {
+
+	var addr string;
+	var query string
+	query="SELECT addr FROM "+ss.schema_name+".addr WHERE address_id=$1"
+	err:=ss.db.QueryRow(query,aid).Scan(&addr);
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "",err
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v",err))
+		os.Exit(1)
+	}
+	return addr,err
+}
 func (ss *SQLStorage) Layer1_chainsplit_delete_blocks(starting_block_num int64) {
 
 	var err error
