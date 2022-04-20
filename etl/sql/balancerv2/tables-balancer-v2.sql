@@ -207,4 +207,8 @@ CREATE TABLE bpt_bal ( -- Derived from bpt_transf, calculates current balance of
 	balance				DECIMAL,
 	PRIMARY KEY(pool_aid,aid)
 );
-
+CREATE TABLE unhandled ( -- Pools that have some problems with recognizing their Fees (out of swap pools)
+	pool_id				TEXT PRIMARY KEY,
+	pool_aid			BIGINT NOT NULL,
+	comments			TEXT DEFAULT ''
+);

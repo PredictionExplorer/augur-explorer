@@ -338,4 +338,20 @@ func (sw *SQLStorageWrapper) Is_balancer_pool_address(addr string) int64 {
 	return pool_aid
 
 }
+func (sw *SQLStorageWrapper) Is_pool_unhandled(pool_id string) bool {
 
+	var query string
+	query = "SELECT pool_aid FROM unhandled WHERE pool_id=$1"
+	row := sw.S.Db().QueryRow(query,pool_id)
+	var pool_aid int64
+	var err error
+	err=row.Scan(&pool_aid);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return false
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Is_pool_unhandled(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return true
+}

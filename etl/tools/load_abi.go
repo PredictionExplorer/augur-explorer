@@ -33,7 +33,7 @@ func insert_abi_events(contract_name string,a *abi.ABI) {
 
 	fmt.Printf("Events:\n")
 	for evt:=range a.Events {
-		sig:=a.Events[evt].ID().Bytes()
+		sig:=a.Events[evt].ID.Bytes()
 		fmt.Printf("\teee::%v::%v::%v\n",contract_name,hex.EncodeToString(sig[:4]),evt)
 		storage.Insert_event_signature(hex.EncodeToString(sig[:4]),evt,contract_name)
 	}
@@ -42,8 +42,8 @@ func insert_abi_events(contract_name string,a *abi.ABI) {
 func insert_abi_methods(contract_name string,a *abi.ABI) {
 	fmt.Printf("Methods:\n")
 	for meth := range a.Methods {
-		fmt.Printf("\tmmm::%v\t%v::%v\n",contract_name,hex.EncodeToString(a.Methods[meth].ID()),meth)
-		storage.Insert_function_signature(hex.EncodeToString(a.Methods[meth].ID()),meth,contract_name)
+		fmt.Printf("\tmmm::%v\t%v::%v\n",contract_name,hex.EncodeToString(a.Methods[meth].ID),meth)
+		storage.Insert_function_signature(hex.EncodeToString(a.Methods[meth].ID),meth,contract_name)
 	}
 }
 func insert_all_artifacts() {
@@ -102,7 +102,7 @@ func main() {
 	}
 
 	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
-	storage = Connect_to_storage(&market_order_id,Info)
+	storage = Connect_to_storage(Info)
 
 	contract_names := os.Args[2]
 	abi := load_abi(os.Args[1])

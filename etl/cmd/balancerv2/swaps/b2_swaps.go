@@ -110,6 +110,11 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 				"Fee not found for swap at block %v, tx_id=%v, log_idx=%v",
 				s.BlockNum,s.TxIndex,s.LogIndex,
 			)
+			unhandled := storagew.Is_pool_unhandled(s.PoolId)
+			if unhandled {
+				Info.Printf("Pool is not handled , skipping\n")
+				continue
+			}
 			Info.Printf(
 				"Trying to fetch the fee from the chain, by direct call to contract of pool %v\n",
 				s.PoolId,
@@ -135,8 +140,14 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 			result,err := pool_ctrct.GetSwapFeePercentage(&copts)
 			if err != nil {
 				Info.Printf("Call to GetSwapFeePercentage() failed: %v\n",err)
-				os.Exit(1)
+				Info.Printf("Marking pool as unhandled\n")
+				var rec BalV2UnhandledMark
+				rec.PoolId = s.PoolId
+				rec.Comments = fmt.Sprintf("Block %v, tx %v, cant find swap fee",s.BlockNum,s.TxIndex)
+				storagew.Mark_pool_as_unhandled(&rec)
+				continue
 			}
+
 			fee_percentage_str = result.String()
 			Info.Printf("The fee for this pool (addr=%v) is %v, continuing...\n",pool_addr.String(),fee_percentage_str)
 		}

@@ -1593,3 +1593,22 @@ func (ss *SQLStorage) Get_specific_event_logs(tx_id,contract_aid int64,signature
 	}
 	return records
 }
+func (ss *SQLStorage) Get_abi_event_name_by_signature(sig string) string {
+
+	var query string
+	query = "SELECT evt_name FROM abi_events WHERE signature=$1"
+
+	row := ss.db.QueryRow(query,sig)
+	var null_name sql.NullString
+	var err error
+	err=row.Scan(&null_name);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return ""
+		} else {
+			ss.Log_msg(fmt.Sprintf("Error in Get_abi_event_name_by_signature(): %v",err))
+			os.Exit(1)
+		}
+	}
+	return null_name.String
+}

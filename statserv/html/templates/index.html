@@ -1,0 +1,41 @@
+<html>
+<head>
+	<title>{{.title}}</title>
+	<link href="res/main.css" rel="stylesheet">
+</head>
+
+<body>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="">Balancer v2</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="">Uniswap v3</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="">Arbitrum</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="">Polygon</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="">Mainnet</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+<br/><br/>
+<p>
+Qquery Balancer Pool by ID:
+</p>
+<form action="/balancer/v2_poolinfo.html" type="GET">
+	<input type="text" name="pool_id">
+	<input type="submit" value="Query">
+</form>
+</body>
+</html>

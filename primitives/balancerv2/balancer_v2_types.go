@@ -175,3 +175,8 @@ type BalV2FeeCollection  struct {
 	RemainingBase		string
 	RemainingBond		string
 }
+type BalV2UnhandledMark struct {
+	PoolId				string
+	PoolAid				int64
+	Comments			string
+}

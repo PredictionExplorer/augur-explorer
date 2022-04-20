@@ -388,3 +388,24 @@ func (sw *SQLStorageWrapper) Insert_bpt_erc20_transfer(evt *p.BalV2BPTTransfer) 
 	}
 
 }
+func (sw *SQLStorageWrapper) Mark_pool_as_unhandled(rec *p.BalV2UnhandledMark) {
+
+	pool_aid,err := sw.Lookup_pool_address_id(rec.PoolId)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("Fatal error, can't lookup address for pool %v\n",rec.PoolId))
+		os.Exit(1)
+	}
+	var query string
+	query = "INSERT INTO "+sw.S.SchemaName()+".unhandled(pool_id,pool_aid,comments) "+
+			"VALUES($1,$2,$3)"
+	_,err = sw.S.Db().Exec(query,
+		rec.PoolId,
+		pool_aid,
+		rec.Comments,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into unhandled table: %v\n",err))
+		os.Exit(1)
+	}
+
+}
