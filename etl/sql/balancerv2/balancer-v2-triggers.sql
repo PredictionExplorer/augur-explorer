@@ -6,3 +6,5 @@ CREATE TRIGGER tokbal_insert AFTER INSERT ON tok_bal FOR EACH ROW EXECUTE PROCED
 CREATE TRIGGER tokbal_delete AFTER DELETE ON tok_bal FOR EACH ROW EXECUTE PROCEDURE on_tokbal_delete();
 CREATE TRIGGER bpt_transf_insert AFTER INSERT ON bpt_transf FOR EACH ROW EXECUTE PROCEDURE on_bpt_transf_insert();
 CREATE TRIGGER bpt_transf_delete AFTER DELETE ON bpt_transf FOR EACH ROW EXECUTE PROCEDURE on_bpt_transf_delete();
+CREATE TRIGGER bpt_tokens_reg_insert AFTER INSERT ON tokens_reg FOR EACH ROW EXECUTE PROCEDURE on_tokens_reg_insert();
+CREATE TRIGGER bpt_tokens_reg_delete AFTER DELETE ON tokens_reg FOR EACH ROW EXECUTE PROCEDURE on_tokens_reg_delete();

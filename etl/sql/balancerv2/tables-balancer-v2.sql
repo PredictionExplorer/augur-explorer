@@ -154,6 +154,13 @@ CREATE TABLE fee_collection (	-- FeeCollection event
 	rem_bond			DECIMAL NOT NULL,	-- RemainingBond
 	PRIMARY KEY(block_num,tx_index,log_index)
 );
+CREATE TABLE bptok ( -- Balancer Pool Token
+	pool_aid			BIGINT NOT NULL,
+	tok_aid				BIGINT NOT NULL,
+	block_num_reg		BIGINT NOT NULL,	-- when the token was registered (block)
+	tx_idx_reg			BIGINT NOT NULL,	-- when the token was registered (transaction)
+	PRIMARY KEY(pool_aid,tok_aid)
+);
 CREATE TABLE swf_hist ( -- Swap Fee history , calculated as next layer on top of 'block' table
 	id					BIGSERIAL PRIMARY KEY,
 	block_num			BIGINT NOT NULL,

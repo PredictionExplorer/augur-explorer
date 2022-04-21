@@ -121,3 +121,41 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_tokens_reg_insert() RETURNS trigger AS  $$
+DECLARE
+	v_token_addr		TEXT;
+	v_pool_aid			BIGINT;
+	v_tok_aid			BIGINT;
+BEGIN
+
+	IF LENGTH(NEW.tokens) > 0 THEN
+		FOREACH v_token_addr IN ARRAY STRING_TO_ARRAY(NEW.tokens,',')
+		LOOP
+			SELECT pool_aid FROM pool_reg WHERE pool_id=NEW.pool_id INTO v_pool_aid;
+			IF v_pool_aid IS NULL THEN
+				RAISE EXCEPTION 'Cant locate pool_aid from pool_reg table by pool_id';
+			END IF;
+			SELECT address_id FROM addr WHERE addr = v_token_addr INTO v_tok_aid;
+			IF v_tok_aid IS NULL THEN
+				INSERT INTO addr(addr) VALUES(v_token_addr) RETURNING v_tok_aid;
+				IF v_tok_aid IS NULL THEN
+					RAISE EXCEPTION 'Failed to insert addres in on_tokens_reg_insert trigger';
+				END IF;
+			END IF;
+			INSERT INTO bptok(pool_aid,tok_aid,block_num_reg,tx_id_reg)
+				VALUES(v_pool_aid,v_tok_aid,NEW.block_num,NEW.tx_id)
+				ON CONFLICT DO NOTHING;
+		END LOOP;
+	END IF;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_tokens_reg_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;

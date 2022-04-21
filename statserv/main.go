@@ -13,23 +13,42 @@ import (
 
 	"golang.org/x/crypto/acme/autocert"
 
+	. "github.com/PredictionExplorer/augur-explorer/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/dbs"
+	. "github.com/PredictionExplorer/augur-explorer/dbs/balancerv2"
+
 )
 var (
 	RPC_URL = os.Getenv("RPC_URL")
+	SCHEMA_NAME = os.Getenv("DB_SCHEMA")
 	rpcclient *ethclient.Client
 
 	Error   *log.Logger
 	Info    *log.Logger
 
+	storagew	SQLStorageWrapper
+
+)
+const (
+	DEFAULT_DB_LOG              = "db.log"
 )
 func initialize() {
+	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
+	os.MkdirAll(log_dir, os.ModePerm)
 
+	fname:=fmt.Sprintf("%v/%v_%v_db.log",log_dir,"webserv_stats",SCHEMA_NAME)
+	logfile, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err!=nil {
+		fmt.Printf("Can't start: %v\n",err)
+		os.Exit(1)
+	}
+	dblog := log.New(logfile,"DB: ",log.Ltime|log.Lshortfile)
+	storagew.S = Connect_to_storage_with_schema(dblog,SCHEMA_NAME)
 }
 func secure_https(r http.Handler) {
 	autotls.Run(r, "localhost")
 }
 func main() {
-
 
 	initialize()
 

@@ -18,3 +18,7 @@ For Polygon you have to apply additional patch because Polygon adds one transact
 
 	matic-bor-patch.diff
 
+Known bugs
+
+	This patch will not work (the RPC go-routine will crash) if the receipts are older than 1 year.
+	To query blocks older than 1 year set the 'txlookuplimit' parameter in Geth
