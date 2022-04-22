@@ -11,6 +11,8 @@ Pool ID: {{.PoolInfo.PoolId}}
 {{- if .PoolInfo.Unhandled }}
 <p>Swaps Unhandled: {{.PoolInfo.UnhandledComments}} </p>
 {{- end }}
+<p>
+<a href="/balancerv2/pool_profits/{{$.PoolInfo.PoolAid}}/{{$.PoolInfo.FirstSwapTs}}/{{$.PoolInfo.LastSwapTs}}">Swap Fee Profits</a>
 <h3>Registered Tokens</h3>
 <table>
 	<tr>

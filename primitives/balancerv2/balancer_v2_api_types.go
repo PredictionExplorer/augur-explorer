@@ -12,6 +12,8 @@ type BalV2PoolInfo struct {
 	PoolAddr			string
 	Unhandled			bool
 	UnhandledComments	string
+	FirstSwapTs			int64
+	LastSwapTs			int64
 }
 type BalV2PoolTokBalanceHistory struct {
 	BlockNum			int64

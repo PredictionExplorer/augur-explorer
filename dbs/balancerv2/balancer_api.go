@@ -11,6 +11,34 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives/balancerv2"
 )
+func (sw *SQLStorageWrapper) Get_first_last_swap_timestamp(pool_aid int64, is_last bool) int64 {
+
+	var query string
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts " +
+			"FROM swf_hist "+
+			"WHERE pool_aid=$1 "+
+			"ORDER BY time_stamp "
+	if is_last {
+		query = query +	"DESC "
+	} else {
+		query = query + "ASC "
+	}
+	query = query + "LIMIT 1"
+
+	row := sw.S.Db().QueryRow(query,pool_aid)
+	var err error
+	var ts int64
+	err=row.Scan(&ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_first_last_swap_timestamp(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return ts
+}
 func (sw *SQLStorageWrapper) Get_pool_info(pool_id string) p.BalV2PoolInfo {
 
 	var output p.BalV2PoolInfo
@@ -54,6 +82,8 @@ func (sw *SQLStorageWrapper) Get_pool_info(pool_id string) p.BalV2PoolInfo {
 		output.Unhandled = true
 		output.UnhandledComments = comments
 	}
+	output.FirstSwapTs = sw.Get_first_last_swap_timestamp(output.PoolAid,false)
+	output.LastSwapTs = sw.Get_first_last_swap_timestamp(output.PoolAid,true)
 	return output
 }
 func (sw *SQLStorageWrapper) Get_pool_total_swaps(pool_id string) int64 {
@@ -153,4 +183,25 @@ func (sw *SQLStorageWrapper) Get_pool_token_balance_history(pool_aid,token_aid i
 		records = append(records,rec)
 	}
 	return records
+}
+func (sw *SQLStorageWrapper) Get_pool_swap_fee_profits(pool_aid int64,ts_ini,ts_fin int64) float64 {
+
+	var query string
+	query = "SELECT sum(swap_fee) AS total "+
+			"FROM swf_hist "+
+			"WHERE (pool_aid=$1) AND "+
+				"(TO_TIMESTAMP($2)<=time_stamp) AND "+
+				"(time_stamp<TO_TIMESTAMP($3))"
+	row := sw.S.Db().QueryRow(query,pool_aid,ts_ini,ts_fin)
+	var err error
+	var total sql.NullFloat64
+	err=row.Scan(&total)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0.0
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_pool_swap_fee_profits(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return total.Float64
 }
