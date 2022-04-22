@@ -142,8 +142,8 @@ BEGIN
 					RAISE EXCEPTION 'Failed to insert addres in on_tokens_reg_insert trigger';
 				END IF;
 			END IF;
-			INSERT INTO bptok(pool_aid,tok_aid,block_num_reg,tx_id_reg)
-				VALUES(v_pool_aid,v_tok_aid,NEW.block_num,NEW.tx_id)
+			INSERT INTO bptok(pool_aid,tok_aid,block_num_reg,tx_idx_reg)
+				VALUES(v_pool_aid,v_tok_aid,NEW.block_num,NEW.tx_index)
 				ON CONFLICT DO NOTHING;
 		END LOOP;
 	END IF;

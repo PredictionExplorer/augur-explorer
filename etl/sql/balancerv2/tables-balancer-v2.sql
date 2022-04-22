@@ -154,7 +154,7 @@ CREATE TABLE fee_collection (	-- FeeCollection event
 	rem_bond			DECIMAL NOT NULL,	-- RemainingBond
 	PRIMARY KEY(block_num,tx_index,log_index)
 );
-CREATE TABLE bptok ( -- Balancer Pool Token
+CREATE TABLE bptok ( -- Balancer Pool (swappable) Token , not the share-in-the-pool token
 	pool_aid			BIGINT NOT NULL,
 	tok_aid				BIGINT NOT NULL,
 	block_num_reg		BIGINT NOT NULL,	-- when the token was registered (block)

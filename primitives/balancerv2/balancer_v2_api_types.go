@@ -7,19 +7,19 @@ import (
 type BalV2PoolInfo struct {
 	PoolId				string
 	BlockNum			int64
+	PoolAid				int64
 	Specialization		int
 	PoolAddr			string
+	Unhandled			bool
+	UnhandledComments	string
 }
 type BalV2PoolTokBalanceHistory struct {
 	BlockNum			int64
 	TimeStamp			int64
-	FromAid				int64
-	ToAid				int64
-	FromAddr			string
-	ToAddr				string
+	IsSwap				bool
 	DateTime			string
-	Amount				float64
-	Balance				float64
+	Amount				string
+	Balance				string
 }
 type BalV2TokenInfo		struct {
 	TokenAid			int64

@@ -363,8 +363,6 @@ func (sw *SQLStorageWrapper) Insert_balance_change_history_record(rec *p.BalV2Ba
 }
 func (sw *SQLStorageWrapper) Insert_bpt_erc20_transfer(evt *p.BalV2BPTTransfer) {
 
-	sname := sw.S.Get_search_path()
-	sw.S.Log_msg(fmt.Sprintf("Insert_bpt_erc20_transfer(): search path = %v\n",sname))
 	from_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.From)
 	to_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.To)
 	var query string

@@ -17,6 +17,7 @@ func (sw *SQLStorageWrapper) Get_pool_info(pool_id string) p.BalV2PoolInfo {
 	var query string
 	query = "SELECT " +
 				"block_num,"+
+				"p.pool_aid,"+
 				"pa.addr,"+
 				"specialization "+
 			"FROM "+sw.S.SchemaName()+".pool_reg p "+
@@ -28,15 +29,30 @@ func (sw *SQLStorageWrapper) Get_pool_info(pool_id string) p.BalV2PoolInfo {
 	var err error
 	err=row.Scan(
 		&output.BlockNum,
+		&output.PoolAid,
 		&output.PoolAddr,
 		&output.Specialization,
 	);
+	output.PoolId=pool_id
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			return output
 		}
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_pool_info(): %v, q=%v",err,query))
 		os.Exit(1)
+	}
+	query = "SELECT comments FROM unhandled WHERE pool_id=$1"
+	row = sw.S.Db().QueryRow(query,pool_id)
+	var comments string
+	err=row.Scan(&comments)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_pool_info(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		output.Unhandled = true
+		output.UnhandledComments = comments
 	}
 	return output
 }
@@ -69,9 +85,9 @@ func (sw *SQLStorageWrapper) Get_pool_registered_tokens(pool_aid int64) []p.BalV
 				"SELECT DISTINCT tok_aid FROM "+sw.S.SchemaName()+".tok_bal WHERE pool_aid=$1"+
 			") "+
 			"SELECT " +
-				"tb.aid,"+
+				"tb.tok_aid,"+
 				"ta.addr "+
-			"FROM toks tb"+
+			"FROM toks tb "+
 				"JOIN "+sw.S.SchemaName()+".addr ta ON tb.tok_aid=ta.address_id"
 
 	rows,err := sw.S.Db().Query(query,pool_aid)
@@ -101,22 +117,17 @@ func (sw *SQLStorageWrapper) Get_pool_token_balance_history(pool_aid,token_aid i
 
 	var query string
 	query = "SELECT "+
-				"block_num,"+
-				"EXTRACT(EPOCH FROM t.time_stamp)::BIGINT ts," +
-				"ts,"+
-				"from_aid,"+
-				"fa.addr,"+
-				"to_aid,"+
-				"ta.addr,"+
+				"b.block_num,"+
+				"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT ts," +
+				"b.time_stamp,"+
+				"b.swf_hist_id,"+
 				"amount, "+
 				"balance "+
 			"FROM "+sw.S.SchemaName()+". tok_bal b "+
-			"JOIN "+sw.S.SchemaName()+".addr fa ON t.from_aid=fa.address_id "+
-			"JOIN "+sw.S.SchemaName()+".addr ta ON t.to_aid=ta.address_id " +
-			"WHERE t.pool_aid=$1 AND tok_aid=$2 " +
+			"WHERE b.pool_aid=$1 AND b.tok_aid=$2 " +
 			"ORDER BY b.block_num,b.tx_index,b.log_index"
 
-	rows,err := sw.S.Db().Query(query,pool_aid)
+	rows,err := sw.S.Db().Query(query,pool_aid,token_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -125,14 +136,12 @@ func (sw *SQLStorageWrapper) Get_pool_token_balance_history(pool_aid,token_aid i
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.BalV2PoolTokBalanceHistory
+		var swaphist_id int64
 		err=rows.Scan(
 			&rec.BlockNum,
 			&rec.TimeStamp,
 			&rec.DateTime,
-			&rec.FromAid,
-			&rec.ToAid,
-			&rec.FromAddr,
-			&rec.ToAddr,
+			&swaphist_id,
 			&rec.Amount,
 			&rec.Balance,
 		)
@@ -140,6 +149,7 @@ func (sw *SQLStorageWrapper) Get_pool_token_balance_history(pool_aid,token_aid i
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		if swaphist_id > 0 { rec.IsSwap=true }
 		records = append(records,rec)
 	}
 	return records

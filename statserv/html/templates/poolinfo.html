@@ -6,7 +6,25 @@
 
 <body>
 <p>
-Pool ID: {{.PoolId}}
+Pool ID: {{.PoolInfo.PoolId}}
 </p>
+{{- if .PoolInfo.Unhandled }}
+<p>Swaps Unhandled: {{.PoolInfo.UnhandledComments}} </p>
+{{- end }}
+<h3>Registered Tokens</h3>
+<table>
+	<tr>
+		<th>Id</th>
+		<th>Address</th>
+		<th></th>
+	</tr>
+	{{- range $i, $change := .Tokens}}
+	<tr>
+		<td>{{.Token.TokenAid}}</td>
+		<td>{{.Token.TokenAddr}}</td>
+		<td><a href="/balancerv2/tokbalhistory/{{$.PoolInfo.PoolAid}}/{{.Token.TokenAid}}">Balance History</a></td>
+	</tr>
+	{{- end}}
+</table>
 </body>
 </html>

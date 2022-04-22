@@ -316,6 +316,24 @@ func (sw *SQLStorageWrapper) Lookup_pool_address_id(pool_id string) (int64,error
 	}
 	return pool_aid,nil
 }
+func (sw *SQLStorageWrapper) Lookup_pool_id_by_addr_id(pool_aid int64) (string,error) {
+
+	var query string
+	query = "SELECT pool_id FROM "+sw.S.SchemaName()+".pool_reg WHERE pool_aid=$1"
+
+	row := sw.S.Db().QueryRow(query,pool_aid)
+	var pool_id string
+	var err error
+	err=row.Scan(&pool_id);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return "",nil
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Lookup_pool_id_by_addr_id(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return pool_id,nil
+}
 func (sw *SQLStorageWrapper) Is_balancer_pool_address(addr string) int64 {
 
 	var query string
