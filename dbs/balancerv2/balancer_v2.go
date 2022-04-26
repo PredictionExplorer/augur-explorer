@@ -373,3 +373,126 @@ func (sw *SQLStorageWrapper) Is_pool_unhandled(pool_id string) bool {
 	}
 	return true
 }
+func (sw *SQLStorageWrapper) Get_lowest_pool_aid() int64 {
+	// Used for generating accumlated swap fees per timeframe
+	var query string
+	query = "SELECT pool_aid FROM pool_reg ORDER by pool_aid LIMIT 1"
+	row := sw.S.Db().QueryRow(query)
+	var pool_aid int64 = 0
+	var err error
+	err=row.Scan(&pool_aid);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_lowest_pool_aid(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return pool_aid
+
+}
+func (sw *SQLStorageWrapper) Get_greater_pool_aid(from_pool_aid int64) int64 {
+
+
+	// Used for generating accumlated swap fees per timeframe
+	var query string
+	query = "SELECT "+
+				"pool_aid "+
+			"FROM pool_reg "+
+			"WHERE pool_aid > $1 "+
+			"ORDER by pool_aid "+
+			"LIMIT 1"
+	row := sw.S.Db().QueryRow(query,from_pool_aid)
+	var pool_aid int64 = 0
+	var err error
+	err=row.Scan(&pool_aid);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_greater_pool_aid(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return pool_aid
+
+}
+func (sw *SQLStorageWrapper) Get_swaps_for_period(pool_aid,ini_ts,fin_ts int64) (string,int64,error) {
+
+	var query string
+	query = "SELECT "+
+				"SUM(swf_hist) swap_fees, "+
+				"MAX(id) id "+
+			"FROM swf_hist "+
+			"WHERE   (pool_aid=$1) AND "+
+					"(TO_TIMESTAMP(ini_ts)<=time_stamp) AND "+
+					"(time_stamp < TO_TIMESTAMP(fin_ts)) "
+
+	row := sw.S.Db().QueryRow(query,from_pool_aid)
+	var swap_fees string
+	var max_id int64
+	var err error
+	err=row.Scan(&swap_fees,&max_id);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return "",0,err
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_swaps_for_period(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	swap_fees,max_id,nil
+}
+func (sw *SQLStorageWrapper) Get_last_swap_accum_record(pool_aid,tf_code int64) (p.BalV2SwapAccumRec,error) {
+
+	var query string
+	query = "SELECT "+
+				"id,"+
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
+				"amount "+
+			"FROM swap_accum "+
+			"WHERE (pool_aid=$1) AND "+
+				"(tf_code=$2) "+
+			"ORDER BY time_stamp DESC "+
+			"LIMIT 1"
+
+	row := sw.S.Db().QueryRow(query,pool_aid,tf_code)
+	var id,ts int64
+	var swap_fees string
+	var err error
+	var output p.BalV2SwapAccumRec
+	output.PoolAid = pool_aid
+	output.TfCode = tf_code
+	err=row.Scan(&ts,&swap_fees);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return output,err
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_last_swap_accum_record(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	output.Id = id
+	output.Amount = swap_fees
+	output.TimeStamp = ts
+	return output,nil
+}
+func (sw *SQLStorageWrapper) Get_timestamp_of_first_swap_fee_hist_record(pool_aid int64) int64 {
+
+	var query string
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts " +
+			"FROM swf_hist "+
+			"WHERE pool_aid=$1 "+
+			"ORDER BY time_stamp "+
+			"LIMIT 1"
+	row := sw.S.Db().QueryRow(query,from_pool_aid)
+	var ts int64
+	var err error
+	err=row.Scan(&ts);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,err
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_timestamp_of_first_swap_fee_hist_rec(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	ts,nil
+}

@@ -180,3 +180,10 @@ type BalV2UnhandledMark struct {
 	PoolAid				int64
 	Comments			string
 }
+type BalV2SwapAccumRec struct {
+	Id					int64
+	TimeStamp			int64
+	PoolAid				int64
+	TfCode				int64		// Timeframe Code
+	Amount				string		// DECIMAL (units: Ethereum WEI)
+}

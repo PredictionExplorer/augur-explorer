@@ -49,7 +49,7 @@ func (sw *SQLStorageWrapper) Insert_pool_registered(evt *p.BalV2PoolRegistered) 
 		evt.Specialization,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into pool_created table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into pool_reg table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -98,7 +98,7 @@ func (sw *SQLStorageWrapper) Insert_tokens_registered(evt *p.BalV2TokensRegister
 		evt.AssetManagers,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into pool_registered table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into tokens_reg table: %v\n",err))
 		os.Exit(1)
 	}
 

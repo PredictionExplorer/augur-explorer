@@ -65,11 +65,7 @@ func process_block_balance_changes(block_num int64,block_hash string,bchanges []
 		amounts := strings.Split(rec_in.Deltas,",")
 		for i:=0; i<len(toks); i++ {
 			tok_addr := toks[i]
-			tok_aid,err := storagew.S.Layer1_lookup_address_id(tok_addr)
-			if err != nil {
-				Info.Printf("Error looking up token address: %v\n",err)
-				os.Exit(1)
-			}
+			tok_aid := storagew.S.Layer1_lookup_or_insert_address_id(tok_addr)
 			rec_out.TokenAid = tok_aid
 			amount := amounts[i]
 			rec_out.Amount = amount
