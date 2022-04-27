@@ -3,6 +3,7 @@ package balancerv2
 import (
 	"os"
 	"fmt"
+	"errors"
 
 	"database/sql"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
@@ -420,16 +421,16 @@ func (sw *SQLStorageWrapper) Get_swaps_for_period(pool_aid,ini_ts,fin_ts int64) 
 
 	var query string
 	query = "SELECT "+
-				"SUM(swf_hist) swap_fees, "+
-				"MAX(id) id "+
+				"SUM(swap_fee) AS swap_fees, "+
+				"MAX(id) AS id "+
 			"FROM swf_hist "+
 			"WHERE   (pool_aid=$1) AND "+
-					"(TO_TIMESTAMP(ini_ts)<=time_stamp) AND "+
-					"(time_stamp < TO_TIMESTAMP(fin_ts)) "
+					"(TO_TIMESTAMP($2)<=time_stamp) AND "+
+					"(time_stamp < TO_TIMESTAMP($3)) "
 
-	row := sw.S.Db().QueryRow(query,from_pool_aid)
-	var swap_fees string
-	var max_id int64
+	row := sw.S.Db().QueryRow(query,pool_aid,ini_ts,fin_ts)
+	var swap_fees sql.NullString
+	var max_id sql.NullInt64
 	var err error
 	err=row.Scan(&swap_fees,&max_id);
 	if (err!=nil) {
@@ -438,8 +439,37 @@ func (sw *SQLStorageWrapper) Get_swaps_for_period(pool_aid,ini_ts,fin_ts int64) 
 		}
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_swaps_for_period(): %v, q=%v",err,query))
 		os.Exit(1)
+	} else {
+		if !swap_fees.Valid {
+			return "",0,errors.New("No swap fees registered")
+		}
 	}
-	swap_fees,max_id,nil
+	return swap_fees.String,max_id.Int64,nil
+}
+func (sw *SQLStorageWrapper) Get_timestamp_of_latest_swap_record(pool_aid int64) int64 {
+
+	var query string
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts " +
+			"FROM swf_hist "+
+			"WHERE pool_aid=$1 "+
+			"ORDER BY time_stamp DESC "+
+			"LIMIT 1"
+
+	row := sw.S.Db().QueryRow(query,pool_aid)
+	var ts int64
+	var err error
+	err=row.Scan(&ts);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_timestamp_of_latest_swap_record(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return ts
+
+
 }
 func (sw *SQLStorageWrapper) Get_last_swap_accum_record(pool_aid,tf_code int64) (p.BalV2SwapAccumRec,error) {
 
@@ -461,7 +491,7 @@ func (sw *SQLStorageWrapper) Get_last_swap_accum_record(pool_aid,tf_code int64) 
 	var output p.BalV2SwapAccumRec
 	output.PoolAid = pool_aid
 	output.TfCode = tf_code
-	err=row.Scan(&ts,&swap_fees);
+	err=row.Scan(&id,&ts,&swap_fees);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			return output,err
@@ -483,16 +513,16 @@ func (sw *SQLStorageWrapper) Get_timestamp_of_first_swap_fee_hist_record(pool_ai
 			"WHERE pool_aid=$1 "+
 			"ORDER BY time_stamp "+
 			"LIMIT 1"
-	row := sw.S.Db().QueryRow(query,from_pool_aid)
+	row := sw.S.Db().QueryRow(query,pool_aid)
 	var ts int64
 	var err error
 	err=row.Scan(&ts);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			return 0,err
+			return 0
 		}
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_timestamp_of_first_swap_fee_hist_rec(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
-	ts,nil
+	return ts
 }

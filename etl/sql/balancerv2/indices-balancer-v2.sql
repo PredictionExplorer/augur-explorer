@@ -10,3 +10,5 @@ CREATE INDEX tok_bal_txindex_idx		ON	tok_bal						(tx_index);
 CREATE INDEX bpt_from_idx				ON	bpt_transf					(pool_aid,from_aid);
 CREATE INDEX bpt_to_idx					ON	bpt_transf					(pool_aid,to_aid);
 CREATE INDEX bpt_bal_aid_idx			ON	bpt_bal						(pool_aid,aid);
+CREATE INDEX swfh_pool_aid_idx			ON	swf_hist					(pool_aid);
+CREATE INDEX swfh_pool_aid_idx2			ON	swf_hist					(pool_aid,time_stamp);

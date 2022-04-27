@@ -222,7 +222,7 @@ func main() {
 	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 	storagew.S = Connect_to_storage_with_schema(Info,*schema_name)
 	//storagew.S.Db_set_schema_name(*schema_name)
-	Info.Printf("Schema name: %v\n",schema_name)
+	Info.Printf("Schema name: %v\n",*schema_name)
 	//storagew.S.Set_search_path_to_schema_name()
 
 	abi_parsed1 := strings.NewReader(GetSwapFeeABI)

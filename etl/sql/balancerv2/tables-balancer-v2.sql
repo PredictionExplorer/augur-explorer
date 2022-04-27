@@ -226,5 +226,5 @@ CREATE TABLE swap_accum ( -- accumulated swap fees, for reports
 	last_swf_hist_id	BIGINT NOT NULL REFERENCES swf_hist(id) ON DELETE CASCADE,
 	tf_code				INT NOT NULL,		-- timeframe code (0-1 hour,1-1day, 2-1 week, 3-1 month)
 	amount				DECIMAL NOT NULL,
-	UNIQUE(pool_aid_tf_code,time_stamp)
+	UNIQUE(pool_aid,tf_code,time_stamp)
 );
