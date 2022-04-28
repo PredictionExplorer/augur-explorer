@@ -39,7 +39,7 @@ func get_timestamp_interval_secs(tf_code int64) int64 {
 func main() {
 
 	usage_str := fmt.Sprintf("usage: %v --schema [schema_name]\n",os.Args[0])
-	if len(os.Args)<2 {
+	if len(os.Args)<3 {
 		fmt.Printf("%v",usage_str)
 		os.Exit(1)
 	}
@@ -65,7 +65,7 @@ func main() {
 	Info.Printf("Schema name: %v\n",*schema_name)
 
 	pool_aid := storagew.Get_lowest_pool_aid()
-	if pool_aid == 0 {
+	if 3ool_aid == 0 {
 		Info.Printf("No pools found in the database, aborting\n")
 		os.Exit(1)
 	}

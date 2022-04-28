@@ -187,4 +187,11 @@ type BalV2SwapAccumRec struct {
 	LastSwfId			int64
 	TfCode				int64		// Timeframe Code
 	Amount				string		// DECIMAL (units: Ethereum WEI)
+	AmountUSD			float64		// USD value, converted from Amount field
+}
+type BalV2PoolProfit struct {
+	PoolAid				int64
+	PoolId				string
+	PoolAddr			string
+	AmountUSD			float64
 }

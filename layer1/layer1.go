@@ -86,7 +86,10 @@ func multi_threaded_loop_routine(etl *ETL_Layer1,retval *int64,wg_ptr *sync.Wait
 		no_chainsplit_check := true
 		err := process_block(etl,bnum,update_last_block,no_chainsplit_check,etl.NoRollbackBlocks)
 		if err!=nil {
-			etl.Error.Printf("Block processing error: %v. Aborting\n",err)
+			etl.Error.Printf(
+				"Block processing error at block $v : %v. Aborting\n",
+				bnum,err,
+			)
 			etl.Error.Printf("Update last_block manually (irregular exit)\n")
 			os.Exit(1)
 		} else {

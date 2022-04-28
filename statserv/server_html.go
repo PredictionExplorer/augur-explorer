@@ -30,14 +30,14 @@ func bal_v2_poolinfo(c *gin.Context) {
 }
 func bal_v2_pool_token_history(c *gin.Context) {
 
-	pool_aid,success := parse_integer_param_or_error(c,"pool_aid",FMT_HTML)
+	pool_aid,success := parse_integer_param_or_error(c,"pool_aid",PARAM_FORCED,FMT_HTML)
 	if !success { return }
 	pool_id,err := storagew.Lookup_pool_id_by_addr_id(pool_aid)
 	if err != nil {
 		respond_error_html(c,"Can't find pool id for provided pool address id")
 		return
 	}
-	tok_aid,success := parse_integer_param_or_error(c,"tok_aid",FMT_HTML)
+	tok_aid,success := parse_integer_param_or_error(c,"tok_aid",PARAM_FORCED,FMT_HTML)
 	if !success { return }
 	tok_addr,err := storagew.S.Layer1_lookup_address(tok_aid)
 	if err!=nil {
@@ -57,12 +57,12 @@ func bal_v2_pool_token_history(c *gin.Context) {
 }
 func bal_v2_pool_profits_in_swaps(c *gin.Context) {
 
-	pool_aid,success := parse_integer_param_or_error(c,"pool_aid",FMT_HTML)
+	pool_aid,success := parse_integer_param_or_error(c,"pool_aid",PARAM_FORCED,FMT_HTML)
 	if !success { return }
 
-	ini_ts,success := parse_integer_param_or_error(c,"ini_ts",FMT_HTML)
+	ini_ts,success := parse_integer_param_or_error(c,"ini_ts",PARAM_FORCED,FMT_HTML)
 	if !success { return }
-	fin_ts,success := parse_integer_param_or_error(c,"fin_ts",FMT_HTML)
+	fin_ts,success := parse_integer_param_or_error(c,"fin_ts",PARAM_FORCED,FMT_HTML)
 	if !success { return }
 
 	ts := time.Unix(ini_ts,0)
@@ -79,4 +79,31 @@ func bal_v2_pool_profits_in_swaps(c *gin.Context) {
 		"StartDate" : start_date,
 		"EndDate" : end_date,
 	})
+}
+func bal_v2_top_pools(c *gin.Context) {
+
+	ini_ts,success := parse_integer_param_or_error(c,"ini_ts",PARAM_OPTIONAL,FMT_HTML)
+	if !success { return }
+	fin_ts,success := parse_integer_param_or_error(c,"fin_ts",PARAM_OPTIONAL,FMT_HTML)
+	if !success { return }
+	tf_code,success := parse_integer_param_or_error(c,"tf_code",PARAM_FORCED,FMT_HTML)
+	if !success { return }
+
+	ts := time.Unix(ini_ts,0)
+	start_date := ts.String()
+	ts = time.Unix(fin_ts,0)
+	end_date := ts.String()
+
+	top_pools := storagew.Get_top_profitable_pools(tf_code,ini_ts,fin_ts)
+
+	c.HTML(http.StatusOK, "top_pools.html", gin.H{
+		"title": "Balancer v2 Top most profitable Pools",
+		"TfCode" :tf_code,
+		"IniTs" : ini_ts,
+		"FinTs" : fin_ts,
+		"StartDate" : start_date,
+		"EndDate" : end_date,
+		"Pools" : top_pools,
+	})
+	
 }

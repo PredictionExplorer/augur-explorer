@@ -33,6 +33,8 @@ const (
 	DEFAULT_DB_LOG              = "db.log"
 	FMT_JSON					= true
 	FMT_HTML					= false
+	PARAM_FORCED				= false
+	PARAM_OPTIONAL				= true
 )
 func initialize() {
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)

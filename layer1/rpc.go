@@ -183,7 +183,8 @@ func get_block_receipts_v2(etl *ETL_Layer1,block_hash common.Hash) ([]types.Rece
 	var packed_receipts ReceiptsPackage
 	err = json.Unmarshal(raw,&packed_receipts)
 	if err!= nil {
-		etl.Error.Printf("Error unmarshalling receipts after eth-getBlockReceipts: %v\n",err)
+		etl.Error.Printf("Error unmarshalling receipts after eth-getBlockReceipts on block %v : %v\n",block_hash.String(),err)
+		etl.Error.Printf("Raw JSON msg:\n%v\n",string(raw))
 		return nil,nil,err
 	}
 	output_receipts := make([]types.Receipt,0,256)
