@@ -137,9 +137,9 @@ BEGIN
 			END IF;
 			SELECT address_id FROM addr WHERE addr = v_token_addr INTO v_tok_aid;
 			IF v_tok_aid IS NULL THEN
-				INSERT INTO addr(addr) VALUES(v_token_addr) RETURNING v_tok_aid INTO v_tok_aid;
+				INSERT INTO addr(addr) VALUES(v_token_addr) RETURNING address_id INTO v_tok_aid;
 				IF v_tok_aid IS NULL THEN
-					RAISE EXCEPTION 'Failed to insert addres in on_tokens_reg_insert trigger';
+					RAISE EXCEPTION 'Failed to insert addres % in on_tokens_reg_insert trigger ',v_token_addr;
 				END IF;
 			END IF;
 			INSERT INTO bptok(pool_aid,tok_aid,block_num_reg,tx_idx_reg)

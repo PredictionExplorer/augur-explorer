@@ -435,7 +435,6 @@ func (sw *SQLStorageWrapper) Insert_has_usd_mark(token_aid int64) {
 			"ON CONFLICT DO NOTHING"
 	_,err := sw.S.Db().Exec(query,token_aid)
 
-	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into has_usd table: %v\n",err))
 		os.Exit(1)

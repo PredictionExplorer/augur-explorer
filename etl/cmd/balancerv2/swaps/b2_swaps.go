@@ -25,11 +25,13 @@ import (
 var (
 	Info				*log.Logger
 	storagew			SQLStorageWrapper
+	ethpstor			*SQLStorage
 	pool_map			map[string]int64
 	RPC_URL string
 
 	eclient				 *ethclient.Client
 	getswapfee_abi		*abi.ABI
+	weth_aid			int64
 )
 func process_block_balance_changes(block_num int64,block_hash string,bchanges []BalV2PoolBalanceChanged) {
 
@@ -147,6 +149,8 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 			fee_percentage_str = result.String()
 			Info.Printf("The fee for this pool (addr=%v) is %v, continuing...\n",pool_addr.String(),fee_percentage_str)
 		}
+		var rec BalV2SwapHist
+		swap_price,swap_price_was_found:=storagew.Get_latest_eth_swap_price_for_token(s.TokenInAid,weth_aid)
 		one := big.NewInt(1e18)
 		amount_in := big.NewInt(0)
 		amount_in.SetString(s.AmountIn,10)
@@ -159,10 +163,17 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 		product.Sub(product,uno)
 		product.Quo(product,one)
 		fee.Add(product,uno)
+		if swap_price_was_found {
+			storagew.Insert_has_usd_mark(s.TokenInAid)
+			ethusd_price,got_price := ethpstor.Ethprice_get_ethusd_price_closest_to_timestamp(s.TimeStamp)
+			if got_price {
+				rec.SwapFeeUSD = swap_price * ethusd_price
+			}
+		}
+
 		in_plus_fee := big.NewInt(0)
 		in_plus_fee.Set(amount_in)
 		in_plus_fee.Add(in_plus_fee,fee)
-		var rec BalV2SwapHist
 		rec.BlockNum = s.BlockNum
 		rec.BlockHash = block_hash
 		rec.TimeStamp = s.TimeStamp
@@ -198,12 +209,13 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 }
 func main() {
 
-	usage_str := fmt.Sprintf("usage: %v --schema [schema_name]\n",os.Args[0])
-	if len(os.Args)<2 {
+	usage_str := fmt.Sprintf("usage: %v --schema [schema_name] --ethprice [schema_name]\n",os.Args[0])
+	if len(os.Args)<4 {
 		fmt.Printf("%v",usage_str)
 		os.Exit(1)
 	}
 	schema_name := flag.String("schema", "", "Schema name")
+	ethprice_schema := flag.String("ethprice", "ethprice", "Schema name")
 	starting_block := flag.Int64("startblock",0,"Single block number to process")
 	flag.Parse()
 	if len(*schema_name) < 3 {
@@ -224,6 +236,8 @@ func main() {
 	//storagew.S.Db_set_schema_name(*schema_name)
 	Info.Printf("Schema name: %v\n",*schema_name)
 	//storagew.S.Set_search_path_to_schema_name()
+	ethpstor = Connect_to_storage_with_schema(Info,*ethprice_schema)
+	ethpstor.Db_set_schema_name(*ethprice_schema)
 
 	abi_parsed1 := strings.NewReader(GetSwapFeeABI)
 	abi1,err := abi.JSON(abi_parsed1)
@@ -232,6 +246,14 @@ func main() {
 		os.Exit(1)
 	}
 	getswapfee_abi = &abi1
+
+	weth_aid,err = storagew.S.Layer1_lookup_address_id(
+		storagew.Get_wrapped_eth_contract_address(),
+	)
+	if err!=nil {
+		fmt.Printf("Can't lookup wrapped ETH contract address: %v\n",err)
+		os.Exit(1)
+	}
 
 	var block_num int64
 	var block_hash string

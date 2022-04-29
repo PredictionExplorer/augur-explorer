@@ -25,7 +25,6 @@ var (
 	Info					*log.Logger
 	storagew				SQLStorageWrapper
 	timeframe_code			int64 = -1
-	weth_aid				int64
 )
 func get_timestamp_interval_secs(tf_code int64) int64 {
 
@@ -65,13 +64,8 @@ func main() {
 	storagew.S = Connect_to_storage_with_schema(Info,*schema_name)
 	Info.Printf("Schema name: %v\n",*schema_name)
 
-	wheth_aid,err = storagew.S.Layer1_lookup_address_id(storagew.Get_wraped_eth_contract_adddress())
-	if err != nil {
-		Info.Printf("Can't find Wrapped ETH contract address in the DB: %v\n")
-		os.Exit(1)
-	}
 	pool_aid := storagew.Get_lowest_pool_aid()
-	if 3ool_aid == 0 {
+	if pool_aid == 0 {
 		Info.Printf("No pools found in the database, aborting\n")
 		os.Exit(1)
 	}
@@ -111,7 +105,6 @@ func main() {
 		if err == nil {
 			final_ts := storagew.Get_timestamp_of_latest_swap_record(pool_aid)
 			var rec BalV2SwapAccumRec
-			
 			rec.TimeStamp=cur_ts
 			rec.PoolAid=pool_aid
 			rec.TfCode=timeframe_code

@@ -37,7 +37,7 @@ CREATE TABLE swap_fee ( -- SwapFeePercentageChanged() event
 	tx_index			INT NOT NULL,
 	log_index			INT NOT NULL,
 	contract_aid		BIGINT NOT NULL,
-	swap_fee			DECIMAL,
+	swap_fee			DECIMAL
 	PRIMARY KEY(block_num,tx_index,log_index)
 );
 CREATE TABLE pool_reg (	-- PoolRegistered event
@@ -172,6 +172,7 @@ CREATE TABLE swf_hist ( -- Swap Fee history , calculated as next layer on top of
 	pool_aid			BIGINT NOT NULL,
 	pool_id				TEXT NOT NULL,
 	swap_fee			DECIMAL DEFAULT 0,
+	swap_fee_usd		DECIMAL DEFAULT 0.0,
 	protocol_fee		DECIMAL DEFAULT 0,
 	accum_swap_fee		DECIMAL DEFAULT 0,
 	accum_proto_fee		DECIMAL DEFAULT 0,
@@ -231,5 +232,5 @@ CREATE TABLE swap_accum ( -- accumulated swap fees, for reports
 	UNIQUE(pool_aid,tf_code,time_stamp)
 );
 CREATE TABLE has_usd ( -- holds flags for those tokens that have swaps in USD (for showing in profitability report)
-	token_aid			BIGINT PRIMARY KEY,
+	token_aid			BIGINT PRIMARY KEY
 );

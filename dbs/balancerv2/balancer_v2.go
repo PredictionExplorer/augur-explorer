@@ -417,9 +417,8 @@ func (sw *SQLStorageWrapper) Get_greater_pool_aid(from_pool_aid int64) int64 {
 	return pool_aid
 
 }
-func (sw *SQLStorageWrapper) Get_swaps_for_period(pool_aid,ini_ts,fin_ts int64) ([]p.BalV2PoolTokBalanceHistory,error) {
+func (sw *SQLStorageWrapper) Get_swaps_for_period(pool_aid,ini_ts,fin_ts int64) (string,int64,error) {
 
-	records := make([]p.BalV2PoolTokBalanceHistory,0,32)
 	var query string
 	query = "SELECT "+
 				"SUM(swap_fee) AS swap_fees, "+
@@ -540,7 +539,7 @@ func (sw *SQLStorageWrapper) Get_latest_eth_swap_price_for_token(token_aid,weth_
 		amount_in		float64
 		amount_out		float64
 		eth_price		float64
-	}
+	)
 
 	var query string
 	query = "SELECT " +
@@ -548,11 +547,11 @@ func (sw *SQLStorageWrapper) Get_latest_eth_swap_price_for_token(token_aid,weth_
 				"amount_in,"+
 				"amount_out "+
 			"FROM swap s "+
-			"WHERE token_in=$1 AND token_out=$2"
+			"WHERE token_in_aid=$1 AND token_out_aid=$2"
 
 	row := sw.S.Db().QueryRow(query,token_aid,weth_aid)
 	var err error
-	err=row.Scan(&ts_eth_outi,&amount_in,&amount_out);
+	err=row.Scan(&ts_eth_out,&amount_in,&amount_out)
 	if (err!=nil) {
 		if err != sql.ErrNoRows {
 			sw.S.Log_msg(fmt.Sprintf("Error in Get_latest_eth_swap_price_for_token(): %v, q=%v",err,query))
@@ -585,7 +584,7 @@ func (sw *SQLStorageWrapper) Get_latest_eth_swap_price_for_token(token_aid,weth_
 
 	return eth_price,true
 }
-func (sw *SQLStorageWrapper) Get_wraped_eth_contract_adddress() string {
+func (sw *SQLStorageWrapper) Get_wrapped_eth_contract_address() string {
 
 	var query string
 	query = "SELECT weth_addr FROM config"

@@ -138,6 +138,7 @@ type BalV2SwapHist struct {
 	BlockHash			string
 	PoolId				string
 	SwapFee				string
+	SwapFeeUSD			float64
 	ProtocolFee			string
 	AccumSwapFee		string
 	AccumProtoFee		string
