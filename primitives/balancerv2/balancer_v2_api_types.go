@@ -18,6 +18,7 @@ type BalV2PoolInfo struct {
 type BalV2PoolTokBalanceHistory struct {
 	BlockNum			int64
 	TimeStamp			int64
+	TokenInAid			int64
 	IsSwap				bool
 	DateTime			string
 	Amount				string

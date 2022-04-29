@@ -426,3 +426,18 @@ func (sw *SQLStorageWrapper) Insert_swap_accum_record(rec *p.BalV2SwapAccumRec) 
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_has_usd_mark(token_aid int64) {
+
+	var query string
+	query = "INSERT INTO "+sw.S.SchemaName()+".has_usd("+
+				"token_aid"+
+			") VALUES($1) "+
+			"ON CONFLICT DO NOTHING"
+	_,err := sw.S.Db().Exec(query,token_aid)
+
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into has_usd table: %v\n",err))
+		os.Exit(1)
+	}
+}

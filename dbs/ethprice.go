@@ -89,3 +89,73 @@ func (ss *SQLStorage) Ethprice_insert_swap_event(evt *p.EthpriceSwap) {
 		os.Exit(1)
 	}
 }
+func (ss *SQLStorage) Ethprice_get_ethusd_price_closest_to_timestamp(ts int64) (float64,bool) {
+
+	var (
+		price1		float64
+		price2		float64
+		ts1			int64
+		ts2			int64
+		have_first	bool = false
+		have_second	bool = false
+	)
+	var query string
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
+				"ethusd_price "+
+			"FROM "+ss.schema_name+".ep_swap "+
+			"WHERE ts<TO_TIMESTAMP($1) "+
+			"ORDER BY ts DESC "+
+			"LIMIT 1"
+
+
+	row = sw.S.Db().QueryRow(query,ts)
+	err=row.Scan(&ts1,&price1);
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Ethprice_get_ethusd_price_closest_to_timestamp(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		have_first = true
+	}
+
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
+				"ethusd_price "+
+			"FROM "+ss.schema_name+".ep_swap "+
+			"WHERE ts>TO_TIMESTAMP($1)"
+			"ORDER BY ts ASC "+
+			"LIMIT 1"
+
+	row = sw.S.Db().QueryRow(query,ts)
+	err=row.Scan(&ts2,&price2);
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Ethprice_get_ethusd_price_closest_to_timestamp(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		have_second = true
+	}
+	diff1 := ts - ts1
+	if diff1 < 0 { diff1 = -diff1 }
+	diff2 := ts - ts2
+	if diff2 < 0 { diff2 = -diff2 }
+
+	// we pick the record that is the closest to the timestamp asked
+	if have_first && have_second {
+		if diff1 < diff2 {
+			return price1,true
+		}
+		return price2
+	} else {
+		if have_first {
+			return price1
+		}
+		if have_second {
+			return price2
+		}
+	}
+	return 0.0,false
+}

@@ -417,8 +417,9 @@ func (sw *SQLStorageWrapper) Get_greater_pool_aid(from_pool_aid int64) int64 {
 	return pool_aid
 
 }
-func (sw *SQLStorageWrapper) Get_swaps_for_period(pool_aid,ini_ts,fin_ts int64) (string,int64,error) {
+func (sw *SQLStorageWrapper) Get_swaps_for_period(pool_aid,ini_ts,fin_ts int64) ([]p.BalV2PoolTokBalanceHistory,error) {
 
+	records := make([]p.BalV2PoolTokBalanceHistory,0,32)
 	var query string
 	query = "SELECT "+
 				"SUM(swap_fee) AS swap_fees, "+
@@ -525,4 +526,81 @@ func (sw *SQLStorageWrapper) Get_timestamp_of_first_swap_fee_hist_record(pool_ai
 		os.Exit(1)
 	}
 	return ts
+}
+func (sw *SQLStorageWrapper) Get_latest_eth_swap_price_for_token(token_aid,weth_aid int64) (float64,bool) {
+	// returns price in ETH
+	// Return values:
+	//		float64		- ETH price for token
+	//		bool		- true if swap record was found
+	var (
+		eth_out			bool = false
+		eth_in			bool = false
+		ts_eth_out		int64
+		ts_eth_in		int64
+		amount_in		float64
+		amount_out		float64
+		eth_price		float64
+	}
+
+	var query string
+	query = "SELECT " +
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
+				"amount_in,"+
+				"amount_out "+
+			"FROM swap s "+
+			"WHERE token_in=$1 AND token_out=$2"
+
+	row := sw.S.Db().QueryRow(query,token_aid,weth_aid)
+	var err error
+	err=row.Scan(&ts_eth_outi,&amount_in,&amount_out);
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_latest_eth_swap_price_for_token(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		eth_out = true
+	}
+
+	row = sw.S.Db().QueryRow(query,weth_aid,token_aid)
+	err=row.Scan(&ts_eth_in,&amount_in,&amount_out);
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_latest_eth_swap_price_for_token(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	} else {
+		eth_in = true
+	}
+
+	if !(eth_in && eth_out) {
+		return 0.0,false	// no record was found, no swap exist
+	}
+	if eth_in {
+		eth_price = amount_out/amount_in
+	}
+	if eth_out {
+		eth_price = amount_in/amount_out
+	}
+
+	return eth_price,true
+}
+func (sw *SQLStorageWrapper) Get_wraped_eth_contract_adddress() string {
+
+	var query string
+	query = "SELECT weth_addr FROM config"
+
+	var addr string
+	row := sw.S.Db().QueryRow(query)
+	var err error
+	err=row.Scan(&addr);
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_wrapped_eth_contract_address(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		return ""
+	}
+
+	return addr
 }

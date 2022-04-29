@@ -14,6 +14,7 @@ CREATE TABLE config(
 	chain_id			BIGINT DEFAULT 0, --Arbitrum: 42161
 	last_block			BIGINT DEFAULT 0,
 	starting_block		BIGINT DEFAULT 0,
+	weth_addr			TEXT DEFAULT '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
 	factory_addr		TEXT DEFAULT '0x8E9aa87E45e92bad84D5F8DD1bff34Fb92637dE9',
 	vault_addr			TEXT DEFAULT '0xBA12222222228d8Ba445958a75a0704d566BF2C8'
 );
@@ -228,4 +229,7 @@ CREATE TABLE swap_accum ( -- accumulated swap fees, for reports
 	amount				DECIMAL NOT NULL,
 	amount_usd			DECIMAL NOT NULL,	-- converted upon INSERT operation
 	UNIQUE(pool_aid,tf_code,time_stamp)
+);
+CREATE TABLE has_usd ( -- holds flags for those tokens that have swaps in USD (for showing in profitability report)
+	token_aid			BIGINT PRIMARY KEY,
 );
