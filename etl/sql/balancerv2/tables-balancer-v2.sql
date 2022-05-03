@@ -173,6 +173,8 @@ CREATE TABLE swf_hist ( -- Swap Fee history , calculated as next layer on top of
 	pool_id				TEXT NOT NULL,
 	swap_fee			DECIMAL DEFAULT 0,
 	swap_fee_usd		DECIMAL DEFAULT 0.0,
+	cur_ethusd_price	DECIMAL DEFAULT 0.0,	-- ETHUSD price (for debugging)
+	cur_swap_price_eth	DECIMAL DEFAULT 0.0,	-- ETH price (taken from a swap, for debugging, in ETH)
 	protocol_fee		DECIMAL DEFAULT 0,
 	accum_swap_fee		DECIMAL DEFAULT 0,
 	accum_proto_fee		DECIMAL DEFAULT 0,

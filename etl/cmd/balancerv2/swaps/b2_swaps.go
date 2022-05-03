@@ -168,6 +168,8 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 			ethusd_price,got_price := ethpstor.Ethprice_get_ethusd_price_closest_to_timestamp(s.TimeStamp)
 			if got_price {
 				rec.SwapFeeUSD = swap_price * ethusd_price
+				rec.CurEthUSDPrice = ethusd_price
+				rec.CurSwapPriceETH = swap_price
 			}
 		}
 

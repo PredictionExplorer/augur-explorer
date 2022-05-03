@@ -310,8 +310,10 @@ func (sw *SQLStorageWrapper) Insert_swap_fee_history(rec *p.BalV2SwapHist) int64
 	var query string
 	query = "INSERT INTO "+sw.S.SchemaName()+".swf_hist("+
 				"block_num,block_hash,time_stamp,tx_index,log_index,pool_aid,"+
-				"pool_id,swap_fee,protocol_fee,accum_swap_fee,accum_proto_fee"+
-			") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11) "+
+				"pool_id,swap_fee,swap_fee_usd,"+
+				"cur_ethusd_price,cur_swap_price_eth,"+
+				"protocol_fee,accum_swap_fee,accum_proto_fee"+
+			") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) "+
 			"RETURNING id"
 
 	row := sw.S.Db().QueryRow(query,
@@ -323,6 +325,9 @@ func (sw *SQLStorageWrapper) Insert_swap_fee_history(rec *p.BalV2SwapHist) int64
 		rec.PoolAid,
 		rec.PoolId,
 		rec.SwapFee,
+		rec.SwapFeeUSD,
+		rec.CurEthUSDPrice,
+		rec.CurSwapPriceETH,
 		rec.ProtocolFee,
 		rec.AccumSwapFee,
 		rec.AccumProtoFee,
