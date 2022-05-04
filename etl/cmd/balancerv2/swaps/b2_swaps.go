@@ -96,7 +96,7 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 			pool_map[s.PoolId]=pool_aid
 		}
 		Info.Printf("\tPool %v  pool_aid = %v\n",s.PoolId,pool_aid)
-		Info.Printf("\tIn: %v \t Out: %v\n",s.AmountIn,s.AmountOut)
+		Info.Printf("\tIn (aid=%v) : %v \t Out(aid=%v): %v\n",s.TokenInAid,s.AmountIn,s.TokenOutAid,s.AmountOut)
 		Info.Printf("\tblock num = %v,contract_aid=%v\n",s.BlockNum,pool_aid)
 		fee_percentage_str,_,found := storagew.Get_pool_fee_by_block_num(
 			pool_aid,
@@ -150,7 +150,7 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 			Info.Printf("The fee for this pool (addr=%v) is %v, continuing...\n",pool_addr.String(),fee_percentage_str)
 		}
 		var rec BalV2SwapHist
-		swap_price,swap_price_was_found:=storagew.Get_latest_eth_swap_price_for_token(s.TokenInAid,weth_aid)
+		swap_price,swap_price_was_found:=storagew.Get_latest_eth_swap_price_for_token(s.TokenInAid,weth_aid,s.TimeStamp)
 		one := big.NewInt(1e18)
 		amount_in := big.NewInt(0)
 		amount_in.SetString(s.AmountIn,10)
@@ -166,8 +166,15 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 		if swap_price_was_found {
 			storagew.Insert_has_usd_mark(s.TokenInAid)
 			ethusd_price,got_price := ethpstor.Ethprice_get_ethusd_price_closest_to_timestamp(s.TimeStamp)
+			Info.Printf("ethusd_price=%v, got_price=%v fee in wei=%v\n",ethusd_price,got_price,fee.String())
 			if got_price {
-				rec.SwapFeeUSD = swap_price * ethusd_price
+				fee_float := big.NewFloat(0.0)
+				fee_float.SetInt(fee)
+				one_float := big.NewFloat(1e18)
+				fee_float.Quo(fee_float,one_float)
+				fee_float64,_ := fee_float.Float64()
+				rec.SwapFeeUSD = swap_price * ethusd_price * fee_float64
+				Info.Printf("SwapFeeUSD = %v (swap_price) x %v (ethusd_price) x %v (swap fee amount)= %v\n",swap_price,ethusd_price,fee_float64,rec.SwapFeeUSD)
 				rec.CurEthUSDPrice = ethusd_price
 				rec.CurSwapPriceETH = swap_price
 			}

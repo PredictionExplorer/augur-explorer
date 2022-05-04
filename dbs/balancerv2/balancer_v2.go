@@ -526,7 +526,7 @@ func (sw *SQLStorageWrapper) Get_timestamp_of_first_swap_fee_hist_record(pool_ai
 	}
 	return ts
 }
-func (sw *SQLStorageWrapper) Get_latest_eth_swap_price_for_token(token_aid,weth_aid int64) (float64,bool) {
+func (sw *SQLStorageWrapper) Get_latest_eth_swap_price_for_token(token_aid,weth_aid int64,ts int64) (float64,bool) {
 	// returns price in ETH
 	// Return values:
 	//		float64		- ETH price for token
@@ -536,52 +536,85 @@ func (sw *SQLStorageWrapper) Get_latest_eth_swap_price_for_token(token_aid,weth_
 		eth_in			bool = false
 		ts_eth_out		int64
 		ts_eth_in		int64
-		amount_in		float64
-		amount_out		float64
+		amount_in1		float64
+		amount_out1		float64
+		amount_in2		float64
+		amount_out2		float64
 		eth_price		float64
+		block_num		int64
+		tx_index		int64
+		log_index		int64
 	)
 
 	var query string
 	query = "SELECT " +
+				"block_num,tx_index,log_index,"+
 				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
 				"amount_in,"+
 				"amount_out "+
 			"FROM swap s "+
-			"WHERE token_in_aid=$1 AND token_out_aid=$2"
+			"WHERE (token_in_aid=$1) AND (token_out_aid=$2) AND (time_stamp<=TO_TIMESTAMP($3)) "+
+			"ORDER BY time_stamp DESC "+
+			"LIMIT 1"
 
-	row := sw.S.Db().QueryRow(query,token_aid,weth_aid)
+	q1 := strings.Replace(query,"$1",fmt.Sprintf("%v",token_aid))
+	q1 = strings.Replace(q1,"$2",fmt.Sprintf("%v",weth_aid))
+	q1 = strings.Replace(q1,"$3",fmt.Sprintf("%v",ts))
+	Info.Printf("query1 = %v\n",q1)
+	q2 := strings.Replace(query,"$1",fmt.Sprintf("%v",weth_aid))
+	q2 = strings.Replace(q2,"$2",fmt.Sprintf("%v",token_aid))
+	q2 = strings.Replace(q2,"$3",fmt.Sprintf("%v",ts))
+	Info.Printf("query2 = %v\n",q1)
+	row := sw.S.Db().QueryRow(query,token_aid,weth_aid,ts)
 	var err error
-	err=row.Scan(&ts_eth_out,&amount_in,&amount_out)
+	err=row.Scan(&block_num,&tx_index,&log_index,&ts_eth_out,&amount_in1,&amount_out1)
 	if (err!=nil) {
 		if err != sql.ErrNoRows {
 			sw.S.Log_msg(fmt.Sprintf("Error in Get_latest_eth_swap_price_for_token(): %v, q=%v",err,query))
 			os.Exit(1)
 		}
 	} else {
-		eth_out = true
+		eth_out = true	// ETH is asked
 	}
-
-	row = sw.S.Db().QueryRow(query,weth_aid,token_aid)
-	err=row.Scan(&ts_eth_in,&amount_in,&amount_out);
+	sw.S.Info.Printf("Get_latest_eth_swap_price_for_token(): call1: block_num=%v,tx_index=%v,log_index=%v ts=%v: amount_in=%v amount_out=%v\n",block_num,tx_index,log_index,ts,amount_in1,amount_out1)
+	row = sw.S.Db().QueryRow(query,weth_aid,token_aid,ts)
+	err=row.Scan(&block_num,&tx_index,&log_index,&ts_eth_in,&amount_in2,&amount_out2);
 	if (err!=nil) {
 		if err != sql.ErrNoRows {
 			sw.S.Log_msg(fmt.Sprintf("Error in Get_latest_eth_swap_price_for_token(): %v, q=%v",err,query))
 			os.Exit(1)
 		}
 	} else {
-		eth_in = true
+		eth_in = true	// ETH is given
 	}
+	sw.S.Info.Printf("Get_latest_eth_swap_price_for_token(): call2: block_num=%v,tx_index=%v,log_index=%v : amount_in=%v amount_out=%v\n",block_num,tx_index,log_index,amount_in2,amount_out2)
 
-	if !(eth_in && eth_out) {
+	if !(eth_in || eth_out) {
+		sw.S.Info.Printf("Get_latest_eth_swap_price_for_token(): no record found, returning\n")
 		return 0.0,false	// no record was found, no swap exist
 	}
-	if eth_in {
-		eth_price = amount_out/amount_in
+	if eth_in && eth_out {
+		ts1_diff := ts_eth_out - ts
+		if ts1_diff < 0 { ts1_diff = -ts1_diff }
+		ts2_diff := ts_eth_in - ts
+		if ts2_diff < 0 { ts2_diff = -ts2_diff }
+		if ts2_diff < ts1_diff { // eth_in
+			eth_price = amount_in2/amount_out2
+			sw.S.Info.Printf("Get_latest_eth_swap_price_for_token(): amount_in=%v, amount_out=%v amount_out/amount_in = %v\n",amount_in2,amount_out2,eth_price)
+		} else {	// eth_out
+			eth_price = amount_out1/amount_in1
+			sw.S.Info.Printf("Get_latest_eth_swap_price_for_token(): amount_in=%v, amount_out=%v amount_out/amount_in = %v\n",amount_in1,amount_out1,eth_price)
+		}
+	} else {
+		if eth_in {
+			eth_price = amount_in2/amount_out2
+			sw.S.Info.Printf("Get_latest_eth_swap_price_for_token(): amount_in=%v, amount_out=%v amount_out/amount_in = %v\n",amount_in2,amount_out2,eth_price)
+		}
+		if eth_out {
+			eth_price = amount_out1/amount_in1
+			sw.S.Info.Printf("Get_latest_eth_swap_price_for_token(): amount_in=%v, amount_out=%v amount_out/amount_in = %v\n",amount_in1,amount_out1,eth_price)
+		}
 	}
-	if eth_out {
-		eth_price = amount_in/amount_out
-	}
-
 	return eth_price,true
 }
 func (sw *SQLStorageWrapper) Get_wrapped_eth_contract_address() string {
