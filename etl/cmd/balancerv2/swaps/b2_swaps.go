@@ -151,6 +151,11 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 		}
 		var rec BalV2SwapHist
 		swap_price,swap_price_was_found:=storagew.Get_latest_eth_swap_price_for_token(s.TokenInAid,weth_aid,s.TimeStamp)
+		if s.TokenInAid == weth_aid {
+			// if input token is ETH (and since we get fees in input token denomination), then price is 1.0
+			swap_price = 1.0
+			swap_price_was_found = true
+		}
 		one := big.NewInt(1e18)
 		amount_in := big.NewInt(0)
 		amount_in.SetString(s.AmountIn,10)
@@ -174,7 +179,7 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 				fee_float.Quo(fee_float,one_float)
 				fee_float64,_ := fee_float.Float64()
 				rec.SwapFeeUSD = swap_price * ethusd_price * fee_float64
-				Info.Printf("SwapFeeUSD = %v (swap_price) x %v (ethusd_price) x %v (swap fee amount)= %v\n",swap_price,ethusd_price,fee_float64,rec.SwapFeeUSD)
+				Info.Printf("SwapFeeUSD = %v (swap_price: ETH mult. factor) x %v (ethusd_price) x %v (swap fee amount)= %v\n",swap_price,ethusd_price,fee_float64,rec.SwapFeeUSD)
 				rec.CurEthUSDPrice = ethusd_price
 				rec.CurSwapPriceETH = swap_price
 			}

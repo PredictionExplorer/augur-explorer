@@ -21,7 +21,7 @@ func bal_v2_poolinfo(c *gin.Context) {
 		return
 	}
 	pool_info := storagew.Get_pool_info(pool_id)
-	pool_tokens := storagew.Get_pool_registered_tokens(pool_aid)
+	pool_tokens := storagew.Get_pool_registered_tokens(ethprice_storage,pool_aid,weth_aid)
 	c.HTML(http.StatusOK, "poolinfo.html", gin.H{
 			"title": "Balancer v2 Pool Info",
 			"PoolInfo" : pool_info,

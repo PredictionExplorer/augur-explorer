@@ -18,12 +18,14 @@ Pool ID: {{.PoolInfo.PoolId}}
 	<tr>
 		<th>Id</th>
 		<th>Address</th>
+		<th>Balance in USD</th>
 		<th></th>
 	</tr>
 	{{- range $i, $change := .Tokens}}
 	<tr>
 		<td>{{.Token.TokenAid}}</td>
 		<td>{{.Token.TokenAddr}}</td>
+		<td>{{ printf "%.2f" .Token.CurBalanceUSD}}</td>
 		<td><a href="/balancerv2/tokbalhistory/{{$.PoolInfo.PoolAid}}/{{.Token.TokenAid}}">Balance History</a></td>
 	</tr>
 	{{- end}}

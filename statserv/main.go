@@ -21,13 +21,15 @@ import (
 var (
 	RPC_URL = os.Getenv("RPC_URL")
 	SCHEMA_NAME = os.Getenv("DB_SCHEMA")
+	ETHPRICE_SCHEMA = os.Getenv("DB_ETHPRICE_SCHEMA")
 	rpcclient *ethclient.Client
 
 	Error   *log.Logger
 	Info    *log.Logger
 
-	storagew	SQLStorageWrapper
-
+	storagew					SQLStorageWrapper
+	ethprice_storage			*SQLStorage
+	weth_aid					int64
 )
 const (
 	DEFAULT_DB_LOG              = "db.log"
@@ -48,6 +50,11 @@ func initialize() {
 	}
 	dblog := log.New(logfile,"DB: ",log.Ltime|log.Lshortfile)
 	storagew.S = Connect_to_storage_with_schema(dblog,SCHEMA_NAME)
+
+	weth_aid,err = storagew.S.Layer1_lookup_address_id(
+		storagew.Get_wrapped_eth_contract_address(),
+	)
+	ethprice_storage = Connect_to_storage_with_schema(dblog,ETHPRICE_SCHEMA)
 }
 func secure_https(r http.Handler) {
 	autotls.Run(r, "localhost")

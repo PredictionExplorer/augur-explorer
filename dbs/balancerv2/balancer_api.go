@@ -4,9 +4,10 @@ package balancerv2
 import (
 	"os"
 	"fmt"
+	"time"
 
 	"database/sql"
-	//. "github.com/PredictionExplorer/augur-explorer/dbs"
+	. "github.com/PredictionExplorer/augur-explorer/dbs"
 	_  "github.com/lib/pq"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives/balancerv2"
@@ -107,7 +108,30 @@ func (sw *SQLStorageWrapper) Get_pool_total_swaps(pool_id string) int64 {
 	}
 	return total_swaps
 }
-func (sw *SQLStorageWrapper) Get_pool_registered_tokens(pool_aid int64) []p.BalV2PoolToken {
+func (sw *SQLStorageWrapper) Get_token_latest_balance(pool_aid,token_aid int64) float64 {
+
+	var query string
+	query = "SELECT "+
+				"balance "+
+			"FROM tok_bal "+
+			"WHERE pool_aid=$1 AND tok_aid=$2 "+
+			"ORDER BY time_stamp DESC,id DESC "+
+			"LIMIT 1"
+	row := sw.S.Db().QueryRow(query,pool_aid,token_aid)
+	var err error
+	var balance float64
+	err=row.Scan(&balance)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0.0
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_token_latest_balance(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return balance
+
+}
+func (sw *SQLStorageWrapper) Get_pool_registered_tokens(ethprice_storage *SQLStorage,pool_aid,weth_aid int64) []p.BalV2PoolToken {
 
 	records := make([]p.BalV2PoolToken,0,32)
 	var query string
@@ -125,7 +149,7 @@ func (sw *SQLStorageWrapper) Get_pool_registered_tokens(pool_aid int64) []p.BalV
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-
+ 	cur_ts :=  time.Now().Unix()
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.BalV2PoolToken
@@ -136,6 +160,22 @@ func (sw *SQLStorageWrapper) Get_pool_registered_tokens(pool_aid int64) []p.BalV
 		if err!=nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
+		}
+		swap_price_factor,found := sw.Get_latest_eth_swap_price_for_token(rec.Token.TokenAid,weth_aid,cur_ts)
+		if rec.Token.TokenAid == weth_aid {
+			swap_price_factor = 1.0
+			found = true
+		}
+		fmt.Printf("Pool %v, token_aid %v, swap_price_factor %v\n",pool_aid,rec.Token.TokenAid,swap_price_factor)
+		if found {
+			ethusd_price,got_price := ethprice_storage.Ethprice_get_ethusd_price_closest_to_timestamp(cur_ts)
+			if got_price {
+				fmt.Printf("ethusd_price = %v\n",ethusd_price)
+				cur_bal := sw.Get_token_latest_balance(pool_aid,rec.Token.TokenAid)
+				fmt.Printf("cur_bal = %v\n",cur_bal)
+				rec.Token.CurBalanceUSD = cur_bal * ethusd_price * swap_price_factor
+				rec.Token.USDBalanceAvailable = true
+			}
 		}
 		records = append(records,rec)
 	}
@@ -197,7 +237,7 @@ func (sw *SQLStorageWrapper) Get_pool_swap_fee_profits(pool_aid int64,ts_ini,ts_
 	var total sql.NullFloat64
 	err=row.Scan(&total)
 	if (err!=nil) {
-		if err == sql.ErrNoRows {
+		if err == sl.ErrNoRows {
 			return 0.0
 		}
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_pool_swap_fee_profits(): %v, q=%v",err,query))

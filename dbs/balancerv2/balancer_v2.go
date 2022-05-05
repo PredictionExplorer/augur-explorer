@@ -4,6 +4,7 @@ import (
 	"os"
 	"fmt"
 	"errors"
+	"strings"
 
 	"database/sql"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
@@ -557,14 +558,14 @@ func (sw *SQLStorageWrapper) Get_latest_eth_swap_price_for_token(token_aid,weth_
 			"ORDER BY time_stamp DESC "+
 			"LIMIT 1"
 
-	q1 := strings.Replace(query,"$1",fmt.Sprintf("%v",token_aid))
-	q1 = strings.Replace(q1,"$2",fmt.Sprintf("%v",weth_aid))
-	q1 = strings.Replace(q1,"$3",fmt.Sprintf("%v",ts))
-	Info.Printf("query1 = %v\n",q1)
-	q2 := strings.Replace(query,"$1",fmt.Sprintf("%v",weth_aid))
-	q2 = strings.Replace(q2,"$2",fmt.Sprintf("%v",token_aid))
-	q2 = strings.Replace(q2,"$3",fmt.Sprintf("%v",ts))
-	Info.Printf("query2 = %v\n",q1)
+	q1 := strings.ReplaceAll(query,"$1",fmt.Sprintf("%v",token_aid))
+	q1 = strings.ReplaceAll(q1,"$2",fmt.Sprintf("%v",weth_aid))
+	q1 = strings.ReplaceAll(q1,"$3",fmt.Sprintf("%v",ts))
+	sw.S.Info.Printf("query1 = %v\n",q1)
+	q2 := strings.ReplaceAll(query,"$1",fmt.Sprintf("%v",weth_aid))
+	q2 = strings.ReplaceAll(q2,"$2",fmt.Sprintf("%v",token_aid))
+	q2 = strings.ReplaceAll(q2,"$3",fmt.Sprintf("%v",ts))
+	sw.S.Info.Printf("query2 = %v\n",q1)
 	row := sw.S.Db().QueryRow(query,token_aid,weth_aid,ts)
 	var err error
 	err=row.Scan(&block_num,&tx_index,&log_index,&ts_eth_out,&amount_in1,&amount_out1)
@@ -600,19 +601,19 @@ func (sw *SQLStorageWrapper) Get_latest_eth_swap_price_for_token(token_aid,weth_
 		if ts2_diff < 0 { ts2_diff = -ts2_diff }
 		if ts2_diff < ts1_diff { // eth_in
 			eth_price = amount_in2/amount_out2
-			sw.S.Info.Printf("Get_latest_eth_swap_price_for_token(): amount_in=%v, amount_out=%v amount_out/amount_in = %v\n",amount_in2,amount_out2,eth_price)
+			sw.S.Info.Printf("Get_latest_eth_swap_price_for_token(): amount_in=%v, amount_out=%v amount_out/amount_in = %v (picking eth_in)\n",amount_in2,amount_out2,eth_price)
 		} else {	// eth_out
 			eth_price = amount_out1/amount_in1
-			sw.S.Info.Printf("Get_latest_eth_swap_price_for_token(): amount_in=%v, amount_out=%v amount_out/amount_in = %v\n",amount_in1,amount_out1,eth_price)
+			sw.S.Info.Printf("Get_latest_eth_swap_price_for_token(): amount_in=%v, amount_out=%v amount_out/amount_in = %v (picking eth_out)\n",amount_in1,amount_out1,eth_price)
 		}
 	} else {
 		if eth_in {
 			eth_price = amount_in2/amount_out2
-			sw.S.Info.Printf("Get_latest_eth_swap_price_for_token(): amount_in=%v, amount_out=%v amount_out/amount_in = %v\n",amount_in2,amount_out2,eth_price)
+			sw.S.Info.Printf("Get_latest_eth_swap_price_for_token(): amount_in=%v, amount_out=%v amount_out/amount_in = %v (picking eth_in)\n",amount_in2,amount_out2,eth_price)
 		}
 		if eth_out {
 			eth_price = amount_out1/amount_in1
-			sw.S.Info.Printf("Get_latest_eth_swap_price_for_token(): amount_in=%v, amount_out=%v amount_out/amount_in = %v\n",amount_in1,amount_out1,eth_price)
+			sw.S.Info.Printf("Get_latest_eth_swap_price_for_token(): amount_in=%v, amount_out=%v amount_out/amount_in = %v (picking eth_out)\n",amount_in1,amount_out1,eth_price)
 		}
 	}
 	return eth_price,true

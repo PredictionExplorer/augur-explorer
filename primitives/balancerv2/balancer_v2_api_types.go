@@ -28,6 +28,8 @@ type BalV2TokenInfo		struct {
 	TokenAid			int64
 	TokenAddr			string
 	CurBalance			float64
+	CurBalanceUSD		float64	// converted to USD using ethusd price and availableswap records
+	USDBalanceAvailable	bool
 }
 type BalV2PoolToken struct {
 	Token				BalV2TokenInfo
