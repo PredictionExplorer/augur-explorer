@@ -40,6 +40,33 @@ func (sw *SQLStorageWrapper) Get_first_last_swap_timestamp(pool_aid int64, is_la
 	}
 	return ts
 }
+func (sw *SQLStorageWrapper) Get_first_last_swap_timestamp_all_pools(is_last bool) int64 {
+
+	var query string
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts " +
+			"FROM swf_hist "+
+			"ORDER BY time_stamp "
+	if is_last {
+		query = query +	"DESC "
+	} else {
+		query = query + "ASC "
+	}
+	query = query + "LIMIT 1"
+
+	row := sw.S.Db().QueryRow(query)
+	var err error
+	var ts int64
+	err=row.Scan(&ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_first_last_swap_timestamp_all_pools(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return ts
+}
 func (sw *SQLStorageWrapper) Get_pool_info(pool_id string) p.BalV2PoolInfo {
 
 	var output p.BalV2PoolInfo
@@ -227,7 +254,7 @@ func (sw *SQLStorageWrapper) Get_pool_token_balance_history(pool_aid,token_aid i
 func (sw *SQLStorageWrapper) Get_pool_swap_fee_profits(pool_aid int64,ts_ini,ts_fin int64) float64 {
 
 	var query string
-	query = "SELECT sum(swap_fee) AS total "+
+	query = "SELECT sum(swap_fee_usd) AS total "+
 			"FROM "+sw.S.SchemaName()+".swf_hist "+
 			"WHERE (pool_aid=$1) AND "+
 				"(TO_TIMESTAMP($2)<=time_stamp) AND "+
@@ -237,7 +264,7 @@ func (sw *SQLStorageWrapper) Get_pool_swap_fee_profits(pool_aid int64,ts_ini,ts_
 	var total sql.NullFloat64
 	err=row.Scan(&total)
 	if (err!=nil) {
-		if err == sl.ErrNoRows {
+		if err == sql.ErrNoRows {
 			return 0.0
 		}
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_pool_swap_fee_profits(): %v, q=%v",err,query))
@@ -253,8 +280,8 @@ func (sw *SQLStorageWrapper) Get_top_profitable_pools(tf_code,ini_ts,fin_ts int6
 				"sa.pool_aid,"+
 				"pa.addr,"+
 				"p.pool_id,"+
-				//"amountUSD "+
-				"amount "+
+				"amount_usd "+
+				//"amount "+
 			"FROM "+sw.S.SchemaName()+".swap_accum sa "+
 				"JOIN "+sw.S.SchemaName()+".pool_reg p ON sa.pool_aid=p.pool_aid "+
 				"JOIN "+sw.S.SchemaName()+".addr pa ON sa.pool_aid=pa.address_id "+
@@ -265,8 +292,8 @@ func (sw *SQLStorageWrapper) Get_top_profitable_pools(tf_code,ini_ts,fin_ts int6
 		query = query + "AND sa.time_stamp<TO_TIMESTAMP($3) "
 		many_params = true
 	}
-	//query = query + "ORDER BY amountUSD DESC"
-	query = query + "ORDER BY amount DESC"
+	query = query + "ORDER BY amount_usd DESC"
+	//query = query + "ORDER BY amount DESC"
 
 	var err error
 	var rows *sql.Rows
@@ -275,6 +302,53 @@ func (sw *SQLStorageWrapper) Get_top_profitable_pools(tf_code,ini_ts,fin_ts int6
 	} else {
 		rows,err = sw.S.Db().Query(query,tf_code)
 	}
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BalV2PoolProfit
+		err=rows.Scan(
+			&rec.PoolAid,
+			&rec.PoolId,
+			&rec.PoolAddr,
+			&rec.AmountUSD,
+		)
+		if err!=nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_top_profitable_pools_v2(tf_code,ini_ts,fin_ts int64) []p.BalV2PoolProfit{
+
+	records := make([]p.BalV2PoolProfit,0,16)
+	var query string
+	query = "WITH maxes AS ("+
+				"SELECT MAX(amount_usd) max_usd,pool_aid "+
+				"FROM swap_accum "+
+				"WHERE tf_code=$1 AND "+
+						"time_stamp>=TO_TIMESTAMP($2) AND "+
+						"time_stamp<TO_TIMESTAMP($3) "+
+				"GROUP BY pool_aid "+
+			") "+
+			"SELECT "+
+				"p.pool_aid,"+
+				"pa.addr,"+
+				"p.pool_id,"+
+				"max_usd "+
+			"FROM maxes " +
+				"JOIN "+sw.S.SchemaName()+".pool_reg p ON maxes.pool_aid=p.pool_aid "+
+				"JOIN "+sw.S.SchemaName()+".addr pa ON maxes.pool_aid=pa.address_id "+
+			"ORDER BY max_usd DESC"
+
+	var err error
+	var rows *sql.Rows
+	rows,err = sw.S.Db().Query(query,tf_code,ini_ts,fin_ts)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)

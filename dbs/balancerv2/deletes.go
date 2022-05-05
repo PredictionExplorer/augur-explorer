@@ -29,3 +29,16 @@ func (sw *SQLStorageWrapper) Delete_swap_history(block_num int64) {
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Delete_swap_accum(pool_aid,tf_code,time_stamp int64) {
+
+	var err error
+	var query string
+	query = "DELETE "+
+				"FROM "+sw.S.SchemaName()+".swap_accum "+
+				"WHERE pool_aid=$1 AND tf_code=$2 AND time_stamp=TO_TIMESTAMP($3)"
+	_,err = sw.S.Db().Exec(query,pool_aid,tf_code,time_stamp)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v ",err,query))
+		os.Exit(1)
+	}
+}

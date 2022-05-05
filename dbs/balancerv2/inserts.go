@@ -417,7 +417,10 @@ func (sw *SQLStorageWrapper) Insert_swap_accum_record(rec *p.BalV2SwapAccumRec) 
 	var query string
 	query = "INSERT INTO "+sw.S.SchemaName()+".swap_accum("+
 				"time_stamp,pool_aid,last_swf_hist_id,tf_code,amount,amount_usd"+
-			") VALUES(TO_TIMESTAMP($1),$2,$3,$4,$5)"
+			") VALUES(TO_TIMESTAMP($1),$2,$3,$4,$5,$6)"
+	if rec.Amount == "" {
+		rec.Amount = "0"
+	}
 	_,err := sw.S.Db().Exec(query,
 		rec.TimeStamp,
 		rec.PoolAid,

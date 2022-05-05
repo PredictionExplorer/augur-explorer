@@ -4,6 +4,8 @@ CREATE INDEX swapfee_ctrct_idx			ON	swap_fee					(contract_aid);
 CREATE INDEX swapfee_block_num_idx		ON	swap_fee					(block_num);
 CREATE INDEX swapfee_txindex_idx		ON	swap_fee					(tx_index);
 CREATE INDEX swap_bnum_idx				ON	swap						(block_num);
+CREATE INDEX block_block_hash_idx		ON	block						(block_hash);
+CREATE INDEX swap_fees_idx				ON	swap						(token_in_aid,token_out_aid,time_stamp DESC);
 CREATE INDEX tok_bal_pooltok_idx		ON	tok_bal						(pool_aid,tok_aid);
 CREATE INDEX tok_bal_block_num_idx		ON	tok_bal						(block_num);
 CREATE INDEX tok_bal_txindex_idx		ON	tok_bal						(tx_index);

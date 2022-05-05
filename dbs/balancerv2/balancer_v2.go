@@ -54,7 +54,7 @@ func (sw *SQLStorageWrapper) Get_next_block_for_swap_history(block_num int64,par
 	err=row.Scan(&next_block_num,&block_hash);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			return 0,"",false
+		return 0,"",false
 		}
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_next_block_for_swap_history(): %v, q=%v",err,query))
 		os.Exit(1)
@@ -418,11 +418,11 @@ func (sw *SQLStorageWrapper) Get_greater_pool_aid(from_pool_aid int64) int64 {
 	return pool_aid
 
 }
-func (sw *SQLStorageWrapper) Get_swaps_for_period(pool_aid,ini_ts,fin_ts int64) (string,int64,error) {
+func (sw *SQLStorageWrapper) Get_swaps_for_period(pool_aid,ini_ts,fin_ts int64) (float64,int64,error) {
 
 	var query string
 	query = "SELECT "+
-				"SUM(swap_fee) AS swap_fees, "+
+				"SUM(swap_fee_usd) AS swap_fees, "+
 				"MAX(id) AS id "+
 			"FROM swf_hist "+
 			"WHERE   (pool_aid=$1) AND "+
@@ -430,22 +430,22 @@ func (sw *SQLStorageWrapper) Get_swaps_for_period(pool_aid,ini_ts,fin_ts int64) 
 					"(time_stamp < TO_TIMESTAMP($3)) "
 
 	row := sw.S.Db().QueryRow(query,pool_aid,ini_ts,fin_ts)
-	var swap_fees sql.NullString
+	var swap_fees sql.NullFloat64
 	var max_id sql.NullInt64
 	var err error
 	err=row.Scan(&swap_fees,&max_id);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
-			return "",0,err
+			return 0.0,0,err
 		}
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_swaps_for_period(): %v, q=%v",err,query))
 		os.Exit(1)
 	} else {
 		if !swap_fees.Valid {
-			return "",0,errors.New("No swap fees registered")
+			return 0.0,0,errors.New("No swap fees registered")
 		}
 	}
-	return swap_fees.String,max_id.Int64,nil
+	return swap_fees.Float64,max_id.Int64,nil
 }
 func (sw *SQLStorageWrapper) Get_timestamp_of_latest_swap_record(pool_aid int64) int64 {
 

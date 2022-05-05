@@ -12,6 +12,34 @@ func main_page(c *gin.Context) {
 			"title": "Index Page",
 	})
 }
+func bal_v2_pools_index_page(c *gin.Context) {
+
+	//ts := time.Now().Unix() TEMPORARILY DISABLED , to activate after population of the DB ends
+	ts := storagew.Get_first_last_swap_timestamp_all_pools(true)
+	fmt.Printf("ts=%v\n",ts)
+	ts = ts - 60*60*24*7	// discount a week, for demo purposes (to be removed)
+	fmt.Printf("discounted ts = %v\n",ts)
+	hourly_ts_ini := ts/(60*60)
+	hourly_ts_ini = hourly_ts_ini * 60*60
+	daily_ts_ini := ts/(60*60*24)
+	daily_ts_ini = daily_ts_ini * 60*60*24
+	weekly_ts_ini := ts/(60*60*24*7)
+	weekly_ts_ini = weekly_ts_ini * 60*60*24*7
+	hourly_ts_fin := hourly_ts_ini + 60*60
+	daily_ts_fin := daily_ts_ini + 60*60*24
+	weekly_ts_fin := weekly_ts_ini + 60*60*24*7
+
+
+	c.HTML(http.StatusOK, "balancer_index.html", gin.H{
+			"title": "Balancer Pools Home Page",
+			"HourlyTsIni" : hourly_ts_ini,
+			"HourlyTsFin" : hourly_ts_fin,
+			"DailyTsIni" : daily_ts_ini,
+			"DailyTsFin" : daily_ts_fin,
+			"WeeklyTsIni" : weekly_ts_ini,
+			"WeeklyTsFin" : weekly_ts_fin,
+	})
+}
 func bal_v2_poolinfo(c *gin.Context) {
 
 	pool_id := c.Query("pool_id")
@@ -89,12 +117,18 @@ func bal_v2_top_pools(c *gin.Context) {
 	tf_code,success := parse_integer_param_or_error(c,"tf_code",PARAM_FORCED,FMT_HTML)
 	if !success { return }
 
+	if ini_ts == 0 {
+		ini_ts = storagew.Get_first_last_swap_timestamp_all_pools(false)
+	}
+	if fin_ts == 0 {
+		fin_ts = storagew.Get_first_last_swap_timestamp_all_pools(true)
+	}
 	ts := time.Unix(ini_ts,0)
 	start_date := ts.String()
 	ts = time.Unix(fin_ts,0)
 	end_date := ts.String()
 
-	top_pools := storagew.Get_top_profitable_pools(tf_code,ini_ts,fin_ts)
+	top_pools := storagew.Get_top_profitable_pools_v2(tf_code,ini_ts,fin_ts)
 
 	c.HTML(http.StatusOK, "top_pools.html", gin.H{
 		"title": "Balancer v2 Top most profitable Pools",

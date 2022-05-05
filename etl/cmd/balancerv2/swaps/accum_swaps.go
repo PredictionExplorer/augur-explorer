@@ -90,12 +90,14 @@ func main() {
 		cur_ts = cur_ts / interv
 		cur_ts = cur_ts * interv	// make it divisible without reminder
 
-		// We always update the last record first, and then try the subsequent period.
+		// We always update the last record first, and then try the subsequent periods.
 		// This is needed because we aren't keeping track of chain reorg in the table,
 		//	so , data can change. Since each record of 'swap_accum' is linked by ID to
 		//	the latest record of swf_hist upon DELETE of the block it will disappear since
 		//	actions are CASCADEd. So, the update of latest record will update the data always
 		//	if the dat has changed
+		//	this method will work only if chainsplit is no longer than the duration of 1 hour,
+		//	which is our smallest duration of the period
 		fin_ts := cur_ts + interv
 		Info.Printf(
 			"Querying pool_aid = %v for timestamp range [%v] - [%v]\n",
@@ -109,10 +111,14 @@ func main() {
 			rec.PoolAid=pool_aid
 			rec.TfCode=timeframe_code
 			rec.LastSwfId=last_id
-			rec.Amount=swap_fee_total
+			rec.AmountUSD=swap_fee_total
+			storagew.Delete_swap_accum(rec.PoolAid,rec.TfCode,rec.TimeStamp)
 			storagew.Insert_swap_accum_record(&rec)
 			for {
 				cur_ts = cur_ts + interv
+				if cur_ts > final_ts {
+					break // we do not process the latest period because it is not yet complete
+				}
 				fin_ts := cur_ts + interv
 				swap_fee_total,last_id,err := storagew.Get_swaps_for_period(pool_aid,cur_ts,fin_ts)
 				if err == nil {
@@ -121,17 +127,15 @@ func main() {
 					rec.PoolAid=pool_aid
 					rec.TfCode=timeframe_code
 					rec.LastSwfId=last_id
-					rec.Amount=swap_fee_total
+					rec.AmountUSD=swap_fee_total
+					storagew.Delete_swap_accum(rec.PoolAid,rec.TfCode,rec.TimeStamp)
 					storagew.Insert_swap_accum_record(&rec)
 					Info.Printf(
 						"\tQuerying pool_aid = %v for timestamp range [%v] - [%v], amount: %v\n",
 						pool_aid,cur_ts,fin_ts,rec.Amount,
 					)
 				} else {
-					if cur_ts > final_ts {
-						// final ts is here to fill gaps with 0s
-						break // no more data, abort the process
-					}
+					// we could insert empty record (with 0s) but we won't do it to save on space
 				}
 			}
 			pool_aid = storagew.Get_greater_pool_aid(pool_aid)

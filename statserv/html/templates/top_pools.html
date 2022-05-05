@@ -28,8 +28,12 @@
 	</tr>
 	{{- range $i, $change := .Pools}}
 	<tr>
-		<td>{{.PoolAddr}}</td>
-		<td style="text-align:right;">{{ .AmountUSD }}</td>
+		<td>
+			<a href="/balancerv2/poolinfo.html?pool_id={{.PoolId}}">
+				{{.PoolAddr}}
+			</a>
+		</td>
+		<td style="text-align:right;">{{ printf "%.2f" .AmountUSD }}</td>
 	</tr>
 	{{- end}}
 </table>
