@@ -139,5 +139,20 @@ func bal_v2_top_pools(c *gin.Context) {
 		"EndDate" : end_date,
 		"Pools" : top_pools,
 	})
-	
+}
+func bal_v2_swap_history(c *gin.Context) {
+
+	pool_aid,success := parse_integer_param_or_error(c,"pool_aid",PARAM_FORCED,FMT_HTML)
+	if !success { return }
+	offset,success := parse_integer_param_or_error(c,"offset",PARAM_OPTIONAL,FMT_HTML)
+	if !success { return }
+	limit,success := parse_integer_param_or_error(c,"limit",PARAM_OPTIONAL,FMT_HTML)
+	if !success { return }
+
+	if limit == 0 { limit = 1000 }
+	swaps := storagew.Get_pool_swap_history_backwards(pool_aid,offset,limit)
+	c.HTML(http.StatusOK, "swap_history.html", gin.H{
+		"title": "Balancer v2 Swap History",
+		"Swaps" : swaps,
+	})
 }

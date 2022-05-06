@@ -27,6 +27,7 @@ Pool ID: {{.PoolInfo.PoolId}}
 		<td>{{.Token.TokenAddr}}</td>
 		<td>{{ printf "%.2f" .Token.CurBalanceUSD}}</td>
 		<td><a href="/balancerv2/tokbalhistory/{{$.PoolInfo.PoolAid}}/{{.Token.TokenAid}}">Balance History</a></td>
+		<td><a href="/balancerv2/swap_history/{{$.PoolInfo.PoolAid}}/0/0">Swap History</a></td>
 	</tr>
 	{{- end}}
 </table>

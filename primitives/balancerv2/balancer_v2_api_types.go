@@ -35,3 +35,19 @@ type BalV2PoolToken struct {
 	Token				BalV2TokenInfo
 	Balances			[]BalV2PoolTokBalanceHistory
 }
+type BalV2SwapRecordInfo struct {
+	BlockNum			int64
+	TimeStamp			int64
+	DateTime			string
+	TokenInAid			int64
+	TokenOutAid			int64
+	TokenInAddr			string
+	TokenInAddrShort	string
+	TokenOutAddr		string
+	TokenOutAddrShort	string
+	AmountIn			string
+	AmountOut			string
+	DecimalsTokIn		int64
+	DecimalsTokOut		int64
+	USDValue			float64	// profit from swap fees
+}

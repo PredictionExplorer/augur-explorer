@@ -11,6 +11,7 @@ import (
 	_  "github.com/lib/pq"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives/balancerv2"
+	pr "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 func (sw *SQLStorageWrapper) Get_first_last_swap_timestamp(pool_aid int64, is_last bool) int64 {
 
@@ -134,6 +135,62 @@ func (sw *SQLStorageWrapper) Get_pool_total_swaps(pool_id string) int64 {
 		os.Exit(1)
 	}
 	return total_swaps
+}
+func (sw *SQLStorageWrapper) Get_pool_swap_history_backwards(pool_aid,offset,limit int64) []p.BalV2SwapRecordInfo{
+
+	records := make([]p.BalV2SwapRecordInfo,0,32)
+	var query string
+	query = "SELECT "+
+				"sh.block_num,"+
+				"EXTRACT(EPOCH FROM sh.time_stamp)::BIGINT ts," +
+				"sh.time_stamp,"+
+				"s.token_in_aid,"+
+				"s.token_out_aid,"+
+				"ia.addr,"+
+				"oa.addr,"+
+				"s.amount_in,"+
+				"s.amount_out, "+
+				"sh.swap_fee_usd "+
+			"FROM "+sw.S.SchemaName()+".swf_hist sh "+
+				"JOIN "+sw.S.SchemaName()+".swap s ON (s.block_num=sh.block_num) AND (s.tx_index=sh.tx_index) AND (s.log_index=sh.log_index) "+
+				"JOIN "+sw.S.SchemaName()+".tok_bal tb ON (s.block_num=tb.block_num) AND (s.tx_index=tb.tx_index) AND (s.log_index=tb.log_index) AND (s.token_in_aid=tb.tok_aid) "+
+				"JOIN "+sw.S.SchemaName()+".addr ia ON s.token_in_aid=ia.address_id "+
+				"JOIN "+sw.S.SchemaName()+".addr oa ON s.token_out_aid=oa.address_id "+
+				""+
+			"WHERE sh.pool_aid=$1 "+
+			"ORDER BY sh.id DESC "+
+			"OFFSET $2 LIMIT $3"
+
+	rows,err := sw.S.Db().Query(query,pool_aid,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BalV2SwapRecordInfo
+		err=rows.Scan(
+			&rec.BlockNum,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.TokenInAid,
+			&rec.TokenOutAid,
+			&rec.TokenInAddr,
+			&rec.TokenOutAddr,
+			&rec.AmountIn,
+			&rec.AmountOut,
+			&rec.USDValue,
+		)
+		if err!=nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.TokenInAddrShort=pr.Short_address(rec.TokenInAddr)
+		rec.TokenOutAddrShort=pr.Short_address(rec.TokenOutAddr)
+		records = append(records,rec)
+	}
+	return records
 }
 func (sw *SQLStorageWrapper) Get_token_latest_balance(pool_aid,token_aid int64) float64 {
 
@@ -312,8 +369,8 @@ func (sw *SQLStorageWrapper) Get_top_profitable_pools(tf_code,ini_ts,fin_ts int6
 		var rec p.BalV2PoolProfit
 		err=rows.Scan(
 			&rec.PoolAid,
-			&rec.PoolId,
 			&rec.PoolAddr,
+			&rec.PoolId,
 			&rec.AmountUSD,
 		)
 		if err!=nil {
@@ -359,8 +416,8 @@ func (sw *SQLStorageWrapper) Get_top_profitable_pools_v2(tf_code,ini_ts,fin_ts i
 		var rec p.BalV2PoolProfit
 		err=rows.Scan(
 			&rec.PoolAid,
-			&rec.PoolId,
 			&rec.PoolAddr,
+			&rec.PoolId,
 			&rec.AmountUSD,
 		)
 		if err!=nil {
