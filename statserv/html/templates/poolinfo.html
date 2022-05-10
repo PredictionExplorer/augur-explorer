@@ -13,6 +13,7 @@ Pool ID: {{.PoolInfo.PoolId}}
 {{- end }}
 <p>
 <a href="/balancerv2/pool_profits/{{$.PoolInfo.PoolAid}}/{{$.PoolInfo.FirstSwapTs}}/{{$.PoolInfo.LastSwapTs}}">Swap Fee Profits</a>
+<a href="/balancerv2/swap_history/{{$.PoolInfo.PoolAid}}/0/0">Swap History</a>
 <h3>Registered Tokens</h3>
 <table>
 	<tr>
@@ -27,7 +28,6 @@ Pool ID: {{.PoolInfo.PoolId}}
 		<td>{{.Token.TokenAddr}}</td>
 		<td>{{ printf "%.2f" .Token.CurBalanceUSD}}</td>
 		<td><a href="/balancerv2/tokbalhistory/{{$.PoolInfo.PoolAid}}/{{.Token.TokenAid}}">Balance History</a></td>
-		<td><a href="/balancerv2/swap_history/{{$.PoolInfo.PoolAid}}/0/0">Swap History</a></td>
 	</tr>
 	{{- end}}
 </table>

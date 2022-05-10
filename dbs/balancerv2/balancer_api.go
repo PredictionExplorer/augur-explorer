@@ -170,6 +170,7 @@ func (sw *SQLStorageWrapper) Get_pool_swap_history_backwards(pool_aid,offset,lim
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.BalV2SwapRecordInfo
+		var amount_in_f64 float64
 		err=rows.Scan(
 			&rec.BlockNum,
 			&rec.TimeStamp,
@@ -179,12 +180,16 @@ func (sw *SQLStorageWrapper) Get_pool_swap_history_backwards(pool_aid,offset,lim
 			&rec.TokenInAddr,
 			&rec.TokenOutAddr,
 			&rec.AmountIn,
+			&amount_in_f64,
 			&rec.AmountOut,
 			&rec.USDValue,
 		)
 		if err!=nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
+		}
+		if amount_in_f64 == 0.0 {
+			continue // skip invalid swaps (and avoid division by 0)
 		}
 		rec.TokenInAddrShort=pr.Short_address(rec.TokenInAddr)
 		rec.TokenOutAddrShort=pr.Short_address(rec.TokenOutAddr)

@@ -448,3 +448,19 @@ func (sw *SQLStorageWrapper) Insert_has_usd_mark(token_aid int64) {
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_bad_erc20_token_mark(token_aid int64) {
+
+	var query string
+	query = "INSERT INTO "+sw.S.SchemaName()+".erc20_bad_token("+
+				"aid"+
+			") VALUES($1) "+
+			"ON CONFLICT DO NOTHING"
+	_,err := sw.S.Db().Exec(query,token_aid)
+
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into erc20_bad_token table: %v\n",err))
+		os.Exit(1)
+	}
+}
+
+

@@ -637,3 +637,76 @@ func (sw *SQLStorageWrapper) Get_wrapped_eth_contract_address() string {
 
 	return addr
 }
+func (sw *SQLStorageWrapper) Get_token_aids_from_swaps(staring_block_num int64) []int64,int64 {
+	// gets token ids from swaps (token_in_aid/token_out_aid) , for ERC20 info collector
+	const BLOCK_LOT int64 = 1000
+	records := make([]int64,0,0)
+	var query string
+	query = "SELECT block_num FROM "+sw.S.SchemaName()+".swap ORDER BY block_num DESC LIMIT 1"
+	row := sw.S.Db().QueryRow(query)
+	var err error
+	var high_block_num int64
+	err=row.Scan(&high_block_num);
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_wrapped_eth_contract_address(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		return records,0
+	}
+
+	query = "SELECT aid FROM ("+
+				"("+
+					"SELECT "+
+						"DISTINCT token_in_aid aid "
+					"FROM swap "+
+					"WHERE (block_num > $1) AND (block_num<=($1+"+fmt.Sprintf("%v",BLOCK_LOT)+"))"+
+				") "+
+				"UNION ALL "+
+				"("+
+					"SELECT DISTINCT token_out_aid aid "+
+					"FROM "+sw.S.SchemaName()+".swap "+
+					"WHERE (block_num > $1) AND (block_num<=($1+"+fmt.Sprintf("%v",BLOCK_LOT)"+)) "+
+				") "+
+			") AS address_ids "+
+
+	rows,err := sw.S.Db().Query(query,starting_block_num)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var aid int64
+		err=rows.Scan(&aid)
+		if err!=nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,aid)
+	}
+	next_block := starting_block + BLOCK_LOT
+	if next_block > high_block_num {
+		next_block = 0	// do not advance to the next interval until we get overflow
+	}
+	return records,next_block
+}
+func (sw *SQLStorageWrapper) Get_erc20_info_status_last_block() int64 {
+
+	var query string
+	query = "SELECT last_block FROM erc20info_status"
+
+	row := sw.S.Db().QueryRow(query)
+	var err error
+	var last_block int64
+	err=row.Scan(&last_block);
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_erc20_info_status_last_block(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		return ""
+	}
+	return last_block
+}

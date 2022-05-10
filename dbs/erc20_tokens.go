@@ -341,29 +341,46 @@ func (ss *SQLStorage) Update_ERC20Info_v2(info *p.ERC20Info) {
 				"symbol = $5 " +
 			"WHERE contract_aid=$1"
 
-	//info.Name = strings.ToValidUTF8(info.Name," ")
-	//info.Name = string(bytes.Trim([]byte(info.Name),"\x00"))
 	info.Name = p.Bytes_to_string([]byte(info.Name))
-	ss.Log_msg(fmt.Sprintf(
-		"name=%v , symbol=%v, decimals=%v, total supply=%v\n",
-		info.Name,info.Symbol,info.Decimals,info.TotalSupply,
-	))
-	ss.Log_msg(fmt.Sprintf(
-		"in hex: name=%v , symbol=%v \n",
-		hex.EncodeToString([]byte(info.Name)),hex.EncodeToString([]byte(info.Symbol)),
-	))
 	info.Name = strings.ToValidUTF8(info.Name," ")
-	//info.Symbol = strings.ToValidUTF8(info.Symbol," ")
-	//info.Symbol= string(bytes.Trim([]byte(info.Symbol),"\x00"))
 	info.Symbol = p.Bytes_to_string([]byte(info.Symbol))
-	ss.Log_msg(fmt.Sprintf(
-		"name=%v , symbol=%v, decimals=%v, total supply=%v\n",
-		info.Name,info.Symbol,info.Decimals,info.TotalSupply,
-	))
-	ss.Log_msg(fmt.Sprintf(
-		"in hex: name=%v , symbol=%v \n",
-		hex.EncodeToString([]byte(info.Name)),hex.EncodeToString([]byte(info.Symbol)),
-	))
+	info.Symbol = strings.ToValidUTF8(info.Symbol," ")
+
+	_,err := ss.db.Exec(query,
+		aid,
+		info.Decimals,
+		info.TotalSupply,
+		info.Name,
+		info.Symbol,
+	)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		ss.Log_msg(fmt.Sprintf(
+			"name=%v , symbol=%v, decimals=%v, total supply=%v\n",
+			info.Name,info.Symbol,info.Decimals,info.TotalSupply,
+		))
+		ss.Log_msg(fmt.Sprintf(
+			"in hex: name=%v , symbol=%v \n",
+			hex.EncodeToString([]byte(info.Name)),hex.EncodeToString([]byte(info.Symbol)),
+		))
+
+		os.Exit(1)
+	}
+}
+func (ss *SQLStorage) Update_ERC20Info_v3(table_name string,info *p.ERC20Info) {
+
+	aid := ss.Lookup_or_create_address(info.Address,0,0)
+	var query string
+	query = "UPDATE "+ss.SchemaName()+"."+tbale_name+" SET "+
+				"decimals = $2, " +
+				"total_supply = $3," +
+				"name = $4, "+
+				"symbol = $5 " +
+			"WHERE token_aid=$1"
+
+	info.Name = p.Bytes_to_string([]byte(info.Name))
+	info.Name = strings.ToValidUTF8(info.Name," ")
+	info.Symbol = p.Bytes_to_string([]byte(info.Symbol))
 	info.Symbol = strings.ToValidUTF8(info.Symbol," ")
 
 	_,err := ss.db.Exec(query,

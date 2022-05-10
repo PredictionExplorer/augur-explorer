@@ -236,3 +236,19 @@ CREATE TABLE swap_accum ( -- accumulated swap fees, for reports
 CREATE TABLE has_usd ( -- holds flags for those tokens that have swaps in USD (for showing in profitability report)
 	token_aid			BIGINT PRIMARY KEY
 );
+CREATE TABLE erc20info_status (
+	last_block			BIGINT DEFAULT 0
+);
+CREATE TABLE erc20_info (
+	id					BIGSERIAL PRIMARY KEY,
+	token_aid			BIGINT NOT NULL UNIQUE,
+	decimals			INT NOT NULL,
+	total_supply		DECIMAL(78,18),
+	name				TEXT NOT NULL,
+	symbol				TEXT NOT NULL
+);
+CREATE TABLE erc20_bad_token(	-- holds tokens that are bad, and needs to be reviewed for
+								-- improvements of the population process (maybe add some exceptions)
+	aid					BIGINT PRIMARY KEY
+)
+
