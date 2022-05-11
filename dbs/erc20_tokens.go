@@ -367,16 +367,15 @@ func (ss *SQLStorage) Update_ERC20Info_v2(info *p.ERC20Info) {
 		os.Exit(1)
 	}
 }
-func (ss *SQLStorage) Update_ERC20Info_v3(table_name string,info *p.ERC20Info) {
+func (ss *SQLStorage) Insert_ERC20Info_v3(table_name string,info *p.ERC20Info) {
 
-	aid := ss.Lookup_or_create_address(info.Address,0,0)
+	aid := ss.Layer1_lookup_or_insert_address_id(info.Address)
 	var query string
-	query = "UPDATE "+ss.SchemaName()+"."+tbale_name+" SET "+
-				"decimals = $2, " +
-				"total_supply = $3," +
-				"name = $4, "+
-				"symbol = $5 " +
-			"WHERE token_aid=$1"
+	query = "INSERT INTO "+ss.SchemaName()+"."+table_name+"("+
+				"token_aid,decimals,total_supply,name,symbol"+
+			") VALUES($1,$2,$3,$4,$5) "+
+			"ON CONFLICT DO NOTHING"
+
 
 	info.Name = p.Bytes_to_string([]byte(info.Name))
 	info.Name = strings.ToValidUTF8(info.Name," ")
@@ -400,7 +399,45 @@ func (ss *SQLStorage) Update_ERC20Info_v3(table_name string,info *p.ERC20Info) {
 			"in hex: name=%v , symbol=%v \n",
 			hex.EncodeToString([]byte(info.Name)),hex.EncodeToString([]byte(info.Symbol)),
 		))
-
 		os.Exit(1)
 	}
+}
+func (ss *SQLStorage) Get_ERC20Info_v3(addr string) (bool,p.ERC20Info) {
+
+	var query string
+	query = "SELECT token_aid,a.addr,decimals,total_supply,name,symbol " +
+			"FROM "+ss.SchemaName()+".erc20_info AS e,"+
+				ss.SchemaName()+".addr AS a " +
+			"WHERE e.token_aid=a.address_id AND a.addr=$1"
+
+	res := ss.db.QueryRow(query,addr)
+	var info p.ERC20Info
+	var null_decimals sql.NullInt64
+	var null_name,null_symbol sql.NullString
+	var null_total_supply sql.NullFloat64
+	err := res.Scan(
+		&info.Aid,
+		&info.Address,
+		&null_decimals,
+		&null_total_supply,
+		&null_name,
+		&null_symbol,
+	)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		} else {
+			return false,info
+		}
+	}
+	var missing_info bool = false
+	if (!null_decimals.Valid) && (!null_total_supply.Valid) && (!null_name.Valid) && (!null_symbol.Valid) {
+		missing_info = false
+	}
+	info.Decimals = int(null_decimals.Int64)
+	info.TotalSupplyF = null_total_supply.Float64
+	info.Name = null_name.String
+	info.Symbol = null_symbol.String
+	return missing_info,info
 }

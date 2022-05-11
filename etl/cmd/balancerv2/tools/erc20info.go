@@ -2,20 +2,14 @@ package main
 
 import (
 	"os"
-	"os/signal"
-	"syscall"
 	"errors"
 	"time"
 	"fmt"
 	"log"
-	"strings"
-	"context"
-	"sort"
 	"encoding/hex"
+	"flag"
 
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -23,13 +17,14 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
+	. "github.com/PredictionExplorer/augur-explorer/dbs/balancerv2"
 )
 const (
 	DEFAULT_DB_LOG				= "db.log"
 	ERC20_TRANSFER = "ddf252ad"
 )
 var (
-	storage *SQLStorage
+	storagew				SQLStorageWrapper
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
@@ -50,40 +45,43 @@ var (
 	evt_erc20_transfer,_ = hex.DecodeString(ERC20_TRANSFER)
 
 )
-func fetch_and_store_erc20_info(token_addr common.Address,token_aid int64) (int,error) {
+func fetch_and_store_erc20_info(token_addr common.Address,token_aid int64) error {
 	_,already_checked := info_checked[token_addr]
 	if already_checked {
-		return 0,nil
+		return nil
 	}
 	info_checked[token_addr] = struct{}{}
 	_,is_bad := bad_erc20_token[token_addr]
 	if is_bad {
 		storagew.Insert_bad_erc20_token_mark(token_aid)
-		return 0,nil
+		return nil
 	}
-	found,info := storage.Get_ERC20Info_v2(token_addr.String())
+	Info.Printf("Getting ERC20 info\n")
+	found,_ := storagew.S.Get_ERC20Info_v3(token_addr.String())
+	Info.Printf("found=%v\n",found)
 	if found {
-		return info.Decimals,nil
+		Info.Printf("Aid %v already exists\n",token_aid)
+		return nil
 	}
 	erc20_info,err := Fetch_erc20_info(eclient,&token_addr)
 	if err != nil {
 		Info.Printf("Couldn't fetch ERC20 token info for addr %v : %v\n",token_addr.String(),err)
 		bad_erc20_token[token_addr]=struct{}{}
-		return 0,err
+		return err
 	}
 	erc20_info.Address = token_addr.String()
-	storage.Update_ERC20Info_v2(&erc20_info)
-	return erc20_info.Decimals,nil
+	storagew.S.Insert_ERC20Info_v3("erc20_info",&erc20_info)
+	return nil
 }
 func process_token(tok_aid int64) {
 
-	addr_str,err := storagew.S.Lookup_address(tok_aid)
+	addr_str,err := storagew.S.Layer1_lookup_address(tok_aid)
 	if err != nil {
-		Info.Printf("Can't lookup address with aid=%v\n",tok_aid)
+		Info.Printf("Can't lookup address with aid=%v : %v\n",tok_aid,err)
 		os.Exit(1)
 	}
 
-	addr :== common.HexToAddress(addr_str)
+	addr := common.HexToAddress(addr_str)
 	fetch_and_store_erc20_info(addr,tok_aid)
 }
 func main() {
@@ -112,13 +110,26 @@ func main() {
 	storagew.S = Connect_to_storage_with_schema(Info,*schema_name)
 	Info.Printf("Schema name: %v\n",*schema_name)
 
+	bad_erc20_token = make(map[common.Address]struct{})
+	bad_for_decode = make(map[common.Address]struct{})
+	info_checked = make(map[common.Address]struct{})
+  next:
 	last_block := storagew.Get_erc20_info_status_last_block()
+	Info.Printf("Last block number = %v, starting scan\n",last_block)
 	tokens,next_block := storagew.Get_token_aids_from_swaps(last_block)
+	Info.Printf("Tokens fetched: %v , next_block=%v\n",len(tokens),next_block)
 	for i:=0;i<len(tokens);i++ {
 		aid := tokens[i]
+		Info.Printf("Processing token aid=%v\n",aid)
 		process_token(aid)
 	}
 	if next_block !=0 {
-		storagew.Update_last_block_erc20_info(next_block)
+		storagew.Update_erc20_status_last_block(next_block)
+		last_block=next_block
+		Info.Printf("Set next_block to %v\n",next_block)
+	} else {
+		Info.Printf("next block stays the same\n")
 	}
+	time.Sleep(1*time.Second)
+	goto next
 }

@@ -462,5 +462,3 @@ func (sw *SQLStorageWrapper) Insert_bad_erc20_token_mark(token_aid int64) {
 		os.Exit(1)
 	}
 }
-
-
