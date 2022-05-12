@@ -30,6 +30,8 @@ type BalV2TokenInfo		struct {
 	CurBalance			float64
 	CurBalanceUSD		float64	// converted to USD using ethusd price and availableswap records
 	USDBalanceAvailable	bool
+	Symbol				string
+	Name				string
 }
 type BalV2PoolToken struct {
 	Token				BalV2TokenInfo
@@ -49,5 +51,15 @@ type BalV2SwapRecordInfo struct {
 	AmountOut			string
 	DecimalsTokIn		int64
 	DecimalsTokOut		int64
+	AmountInFmt			string	// formatted for visualization (User)
+	AmountOutFmt		string
 	USDValue			float64	// profit from swap fees
+	SymbolIn			string
+	SymbolOut			string
+}
+type BalV2FeeReturns struct {
+	TimeStamp			int64
+	DateTime			string
+	FeeReturnsUSD		float64
+
 }

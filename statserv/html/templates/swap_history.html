@@ -27,7 +27,7 @@
 		<th>Token Out</th>
 		<th>Amount In</th>
 		<th>Amount Out</th>
-		<th>USD Value</th>
+		<th>Fee in USD</th>
 	</tr>
 	{{- range $i, $change := .Swaps}}
 	<tr>
@@ -35,9 +35,9 @@
 		<td>{{.DateTime}}</td>
 		<td>{{.TokenInAddrShort}}</td>
 		<td>{{.TokenOutAddrShort}}</td>
-		<td style="text-align:right;">{{ .AmountIn }}</td>
-		<td style="text-align:right;">{{ .AmountOut }}</td>
-		<td style="text-align:right;">{{ printf "%0.2f" .USDValue}}</td>
+		<td style="text-align:right;">{{ .AmountInFmt }} {{.SymbolIn}}</td>
+		<td style="text-align:right;">{{ .AmountOutFmt }} {{.SymbolOut}}</td>
+		<td style="text-align:right;">$ {{ printf "%0.2f" .USDValue}}</td>
 	</tr>
 	{{- end}}
 </table>

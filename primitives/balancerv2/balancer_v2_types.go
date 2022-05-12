@@ -198,3 +198,4 @@ type BalV2PoolProfit struct {
 	PoolAddr			string
 	AmountUSD			float64
 }
+

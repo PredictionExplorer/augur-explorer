@@ -156,3 +156,36 @@ func bal_v2_swap_history(c *gin.Context) {
 		"Swaps" : swaps,
 	})
 }
+func bal_v2_pool_fees_weekly(c *gin.Context) {
+
+	tf_code := int64(2)
+	bal_v2_pool_fee_returns_by_timeframe(c,tf_code)
+}
+func bal_v2_pool_fees_daily(c *gin.Context) {
+
+	tf_code := int64(1)
+	bal_v2_pool_fee_returns_by_timeframe(c,tf_code)
+}
+func bal_v2_pool_fees_hourly(c *gin.Context) {
+
+	tf_code := int64(0)
+	bal_v2_pool_fee_returns_by_timeframe(c,tf_code)
+}
+func bal_v2_pool_fee_returns_by_timeframe(c *gin.Context,tf_code int64) {
+	pool_aid,success := parse_integer_param_or_error(c,"pool_aid",PARAM_FORCED,FMT_HTML)
+	if !success { return }
+
+	offset,success := parse_integer_param_or_error(c,"offset",PARAM_OPTIONAL,FMT_HTML)
+	if !success { return }
+	limit,success := parse_integer_param_or_error(c,"limit",PARAM_OPTIONAL,FMT_HTML)
+	if !success { return }
+
+	if limit == 0 { limit = 100 }
+
+	fee_returns := storagew.Get_pool_swap_fee_returns_by_timeframe_code(pool_aid,tf_code,offset,limit)
+	c.HTML(http.StatusOK, "fee_returns.html", gin.H{
+		"title": "Balancer v2 Fee Returns",
+		"PoolAid" : pool_aid,
+		"FeeReturns" : fee_returns,
+	})
+}

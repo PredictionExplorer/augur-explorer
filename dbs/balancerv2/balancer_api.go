@@ -5,6 +5,7 @@ import (
 	"os"
 	"fmt"
 	"time"
+	"math"
 
 	"database/sql"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
@@ -149,14 +150,21 @@ func (sw *SQLStorageWrapper) Get_pool_swap_history_backwards(pool_aid,offset,lim
 				"ia.addr,"+
 				"oa.addr,"+
 				"s.amount_in,"+
+				"s.amount_in,"+
 				"s.amount_out, "+
-				"sh.swap_fee_usd "+
+				"s.amount_out, "+
+				"sh.swap_fee_usd, "+
+				"ii.decimals, "+
+				"io.decimals, "+
+				"ii.symbol,"+
+				"io.symbol "+
 			"FROM "+sw.S.SchemaName()+".swf_hist sh "+
 				"JOIN "+sw.S.SchemaName()+".swap s ON (s.block_num=sh.block_num) AND (s.tx_index=sh.tx_index) AND (s.log_index=sh.log_index) "+
 				"JOIN "+sw.S.SchemaName()+".tok_bal tb ON (s.block_num=tb.block_num) AND (s.tx_index=tb.tx_index) AND (s.log_index=tb.log_index) AND (s.token_in_aid=tb.tok_aid) "+
 				"JOIN "+sw.S.SchemaName()+".addr ia ON s.token_in_aid=ia.address_id "+
 				"JOIN "+sw.S.SchemaName()+".addr oa ON s.token_out_aid=oa.address_id "+
-				""+
+				"LEFT JOIN erc20_info ii ON ii.token_aid=s.token_in_aid "+
+				"LEFT JOIN erc20_info io ON io.token_aid=s.token_out_aid "+
 			"WHERE sh.pool_aid=$1 "+
 			"ORDER BY sh.id DESC "+
 			"OFFSET $2 LIMIT $3"
@@ -170,7 +178,9 @@ func (sw *SQLStorageWrapper) Get_pool_swap_history_backwards(pool_aid,offset,lim
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.BalV2SwapRecordInfo
-		var amount_in_f64 float64
+		var amount_in_f64,amount_out_f64 float64
+		var n_decimals_in,n_decimals_out sql.NullInt64
+		var n_sym_in,n_sym_out sql.NullString
 		err=rows.Scan(
 			&rec.BlockNum,
 			&rec.TimeStamp,
@@ -182,7 +192,12 @@ func (sw *SQLStorageWrapper) Get_pool_swap_history_backwards(pool_aid,offset,lim
 			&rec.AmountIn,
 			&amount_in_f64,
 			&rec.AmountOut,
+			&amount_out_f64,
 			&rec.USDValue,
+			&n_decimals_in,
+			&n_decimals_out,
+			&n_sym_in,
+			&n_sym_out,
 		)
 		if err!=nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
@@ -191,8 +206,22 @@ func (sw *SQLStorageWrapper) Get_pool_swap_history_backwards(pool_aid,offset,lim
 		if amount_in_f64 == 0.0 {
 			continue // skip invalid swaps (and avoid division by 0)
 		}
+		if n_decimals_in.Valid { rec.DecimalsTokIn = n_decimals_in.Int64 }
+		if n_decimals_out.Valid { rec.DecimalsTokOut = n_decimals_out.Int64 }
+		if n_sym_in.Valid { rec.SymbolIn = n_sym_in.String }
+		if n_sym_out.Valid { rec.SymbolOut = n_sym_out.String }
 		rec.TokenInAddrShort=pr.Short_address(rec.TokenInAddr)
 		rec.TokenOutAddrShort=pr.Short_address(rec.TokenOutAddr)
+		if rec.DecimalsTokIn > 0 {
+			var denominator float64 = math.Pow(10,float64(rec.DecimalsTokIn))
+			var result = amount_in_f64/denominator
+			rec.AmountInFmt = fmt.Sprintf("%.2f",result)
+		}
+		if rec.DecimalsTokOut > 0 {
+			var denominator float64 = math.Pow(10,float64(rec.DecimalsTokOut))
+			var result = amount_out_f64/denominator
+			rec.AmountOutFmt = fmt.Sprintf("%.2f",result)
+		}
 		records = append(records,rec)
 	}
 	return records
@@ -229,9 +258,13 @@ func (sw *SQLStorageWrapper) Get_pool_registered_tokens(ethprice_storage *SQLSto
 			") "+
 			"SELECT " +
 				"tb.tok_aid,"+
-				"ta.addr "+
+				"ta.addr, "+
+				"i.symbol,"+
+				"i.name, "+
+				"i.decimals "+
 			"FROM toks tb "+
-				"JOIN "+sw.S.SchemaName()+".addr ta ON tb.tok_aid=ta.address_id"
+				"JOIN "+sw.S.SchemaName()+".addr ta ON tb.tok_aid=ta.address_id " +
+				"LEFT JOIN erc20_info i ON tb.tok_aid=i.token_aid "
 
 	rows,err := sw.S.Db().Query(query,pool_aid)
 	if (err!=nil) {
@@ -242,14 +275,21 @@ func (sw *SQLStorageWrapper) Get_pool_registered_tokens(ethprice_storage *SQLSto
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.BalV2PoolToken
+		var n_name,n_sym sql.NullString
+		var n_decimals sql.NullInt64
 		err=rows.Scan(
 			&rec.Token.TokenAid,
 			&rec.Token.TokenAddr,
+			&n_name,
+			&n_sym,
+			&n_decimals,
 		)
 		if err!=nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 			os.Exit(1)
 		}
+		if n_name.Valid { rec.Token.Name = n_name.String }
+		if n_sym.Valid { rec.Token.Symbol = n_sym.String }
 		swap_price_factor,found := sw.Get_latest_eth_swap_price_for_token(rec.Token.TokenAid,weth_aid,cur_ts)
 		if rec.Token.TokenAid == weth_aid {
 			swap_price_factor = 1.0
@@ -424,6 +464,51 @@ func (sw *SQLStorageWrapper) Get_top_profitable_pools_v2(tf_code,ini_ts,fin_ts i
 			&rec.PoolAddr,
 			&rec.PoolId,
 			&rec.AmountUSD,
+		)
+		if err!=nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_pool_swap_fee_returns_by_timeframe_code(pool_aid,tf_code,offset,limit int64) []p.BalV2FeeReturns {
+
+
+	records := make([]p.BalV2FeeReturns,0,16)
+	var query string
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
+				"time_stamp," +
+				"amount_usd "+
+			"FROM "+sw.S.SchemaName()+".swap_accum sa "+
+			"WHERE sa.pool_aid=$1 AND sa.tf_code=$2 " +
+			"OFFSET $3 LIMIT $4"
+
+	d_query := "SELECT "+
+				"EXTRACT(EPOCH FROM time_stamp)::BIGINT ts," +
+				"time_stamp," +
+				"amount_usd "+
+			"FROM "+sw.S.SchemaName()+".swap_accum sa "+
+			"WHERE sa.pool_aid="+fmt.Sprintf("%v",pool_aid)+" AND sa.tf_code="+fmt.Sprintf("%v",tf_code)+
+			"OFFSET "+fmt.Sprintf("%v",offset)+" LIMIT "+fmt.Sprintf("%v",limit)
+	fmt.Printf("%v",d_query)
+	var err error
+	var rows *sql.Rows
+	rows,err = sw.S.Db().Query(query,pool_aid,tf_code,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BalV2FeeReturns
+		err=rows.Scan(
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.FeeReturnsUSD,
 		)
 		if err!=nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
