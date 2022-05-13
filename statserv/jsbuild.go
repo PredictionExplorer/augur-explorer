@@ -46,3 +46,25 @@ func build_js_fee_returns(report_type int64,records* []BalV2FeeReturns) ChartJSD
 	output.DataSet1 = template.JS(data_str)
 	return output
 }
+func build_js_liquidity_distrib(records* []BalV2LiqProvDistrib) ChartJSData {
+	var data_str string = "["
+	var label_str string = "["
+ 
+	for i:=0 ; i < len(*records) ; i++ {
+		if len(data_str) > 1 {
+			data_str = data_str + ","
+		}
+		if len(label_str) > 1 {
+			label_str = label_str + ","
+		}
+		var e = &(*records)[i];
+		data_str = data_str + fmt.Sprintf("%v",e.Percentage)
+		label_str = label_str + fmt.Sprintf("\"%v\"",e.FunderAddr)
+	}
+	data_str = data_str + "]"
+	label_str = label_str + "]"
+	var output ChartJSData
+	output.Labels = template.JS(label_str)
+	output.DataSet1 = template.JS(data_str)
+	return output
+}

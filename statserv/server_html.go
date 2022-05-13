@@ -194,3 +194,20 @@ func bal_v2_pool_fee_returns_by_timeframe(c *gin.Context,tf_code int64) {
 		"JSParams": chart_js_data,
 	})
 }
+func bal_v2_pool_liquidity_providers_distrib(c *gin.Context) {
+
+	pool_aid,success := parse_integer_param_or_error(c,"pool_aid",PARAM_FORCED,FMT_HTML)
+	if !success { return }
+
+	liquidity := storagew.Get_pool_liquidity_provider_distrib(pool_aid)
+
+	var chart_js_data ChartJSData
+	chart_js_data = build_js_liquidity_distrib(&liquidity)
+
+	c.HTML(http.StatusOK, "pool_fund_distribution.html", gin.H{
+		"title": "Balancer v2 Fee Returns",
+		"PoolAid" : pool_aid,
+		"Liquidity" : liquidity,
+		"JSParams": chart_js_data,
+	})
+}

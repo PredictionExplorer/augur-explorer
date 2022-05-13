@@ -518,3 +518,50 @@ func (sw *SQLStorageWrapper) Get_pool_swap_fee_returns_by_timeframe_code(pool_ai
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_pool_liquidity_provider_distrib(pool_aid int64) []p.BalV2LiqProvDistrib {
+
+	records := make([]p.BalV2LiqProvDistrib,0,16)
+	var query string
+	query = "SELECT "+
+				"b.aid,"+
+				"a.addr, "+
+				"b.balance "+
+			"FROM "+sw.S.SchemaName()+".bpt_bal b "+
+				"LEFT JOIN "+sw.S.SchemaName()+".addr a ON b.aid=a.address_id "+
+			"WHERE b.pool_aid=$1 AND b.balance>0 " +
+			"ORDER BY b.balance DESC "
+
+	rows,err := sw.S.Db().Query(query,pool_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	var total float64
+	for rows.Next() {
+		var rec p.BalV2LiqProvDistrib
+		err=rows.Scan(
+			&rec.FunderAid,
+			&rec.FunderAddr,
+			&rec.Balance,
+		)
+		if err!=nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		total = total + rec.Balance
+		records = append(records,rec)
+	}
+	fmt.Printf("total =%v\n",total)
+	for i:=0; i<len(records);i++ {
+		var rec p.BalV2LiqProvDistrib
+		rec = records[i]
+		var percent float64
+		percent = rec.Balance/total
+		percent = percent * 100
+		fmt.Printf("percent = %v\n",percent)
+		rec.Percentage = percent
+		records[i]=rec
+	}
+	return records
+}

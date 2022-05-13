@@ -63,3 +63,9 @@ type BalV2FeeReturns struct {
 	FeeReturnsUSD		float64
 
 }
+type BalV2LiqProvDistrib struct {	// Distribution of funds funded by liquidity providers into the pool
+	FunderAid			int64
+	FunderAddr			string
+	Balance				float64		// this balance is not money, but the share of the funder in the pool
+	Percentage			float64		// percent of the total liquidity funds
+}

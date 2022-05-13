@@ -16,6 +16,7 @@ func set_routing_html(r *gin.Engine) {
 	r.GET("/balancerv2/top_pools/:tf_code/:ini_ts/:fin_ts",bal_v2_top_pools)
 	r.GET("/balancerv2/balancer_index.html",bal_v2_pools_index_page)
 	r.GET("/balancerv2/swap_history/:pool_aid/:offset/:limit",bal_v2_swap_history)
+	r.GET("/balancerv2/pool_fund_holders/:pool_aid",bal_v2_pool_liquidity_providers_distrib)
 }
 func set_routing_api(r *gin.Engine) {
 
