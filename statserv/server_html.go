@@ -183,9 +183,14 @@ func bal_v2_pool_fee_returns_by_timeframe(c *gin.Context,tf_code int64) {
 	if limit == 0 { limit = 100 }
 
 	fee_returns := storagew.Get_pool_swap_fee_returns_by_timeframe_code(pool_aid,tf_code,offset,limit)
+
+	var chart_js_data ChartJSData
+	chart_js_data = build_js_fee_returns(tf_code,&fee_returns)
+
 	c.HTML(http.StatusOK, "fee_returns.html", gin.H{
 		"title": "Balancer v2 Fee Returns",
 		"PoolAid" : pool_aid,
 		"FeeReturns" : fee_returns,
+		"JSParams": chart_js_data,
 	})
 }

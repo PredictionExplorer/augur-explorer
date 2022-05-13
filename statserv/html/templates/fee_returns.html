@@ -2,11 +2,21 @@
 <head>
 	<title>{{.title}}</title>
 	<link href="res/main.css" rel="stylesheet">
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
 <p>
 </p>
+<script>
+	const ctx = document.getElementById('returnsChart');
+	const ctx = document.getElementById('returnsChart').getContext('2d');
+	const ctx = $('#returnsChart');
+	const ctx = 'returnsChart';
+</script>
+<div width="300" height="200">
+<canvas id="returnsChart" ></canvas>
+</div>
 <h3>Pool returns in swap fees</h3>
 <table>
 	<tr>
@@ -20,5 +30,42 @@
 	</tr>
 	{{- end}}
 </table>
+<script>
+const ctx = document.getElementById('returnsChart');
+const myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+		labels: {{.JSParams.Labels}},
+        datasets: [{
+            label: 'Returns from swap fees (USD)',
+			data: {{.JSParams.DataSet1}},
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.2)',
+                'rgba(54, 162, 235, 0.2)',
+                'rgba(255, 206, 86, 0.2)',
+                'rgba(75, 192, 192, 0.2)',
+                'rgba(153, 102, 255, 0.2)',
+                'rgba(255, 159, 64, 0.2)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
 </body>
 </html>
