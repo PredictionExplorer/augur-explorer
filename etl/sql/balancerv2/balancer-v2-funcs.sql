@@ -72,18 +72,6 @@ CREATE OR REPLACE FUNCTION on_tokbal_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	DELETE from tok_bal
-	WHERE
-		(
-			block_num > OLD.block_num
-		) OR (
-			(block_num = OLD.block_num) AND
-			(tx_index > OLD.tx_index)
-		) OR (
-			(block_num = OLD.block_num) AND
-			(tx_index = OLD.tx_index) AND
-			(log_index > OLD.log_index)
-		);
 
 	RETURN OLD;
 END;

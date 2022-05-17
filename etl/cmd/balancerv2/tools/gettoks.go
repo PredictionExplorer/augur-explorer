@@ -3,6 +3,8 @@ package main
 import (
 	"os"
 	"fmt"
+	"strconv"
+	"math/big"
 	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -16,6 +18,7 @@ const (
 )
 var (
 	RPC_URL string
+	block_num_to_query		int64 = 0
 )
 func main() {
 
@@ -28,8 +31,8 @@ func main() {
 
 	if len(os.Args) < 2 {
 		fmt.Printf(
-			"Usage: \n\t\t%v [pool_id]\n\t\t"+
-			"Gets token list and balances of tokens from Balancer v2 Vault contract\n\n",os.Args[0],
+			"Usage: \n\t\t%v [pool_id] [[block_num]]\n\t\t"+
+			"Gets token list and balances of tokens from Balancer v2 Vault contract (block number is optional)\n\n",os.Args[0],
 		)
 		os.Exit(1)
 	}
@@ -42,10 +45,23 @@ func main() {
 	for i:=0;i<32;i++ {
 		pool_id_32b[i] = pool_id_bytes[i]
 	}
-
+	if len(os.Args) == 3 {// block number is provided
+		var err error
+		block_num_to_query,err = strconv.ParseInt(os.Args[2],10,64)
+		if err != nil {
+			fmt.Sprintf("Error parsing block number: %v\n",err)
+			os.Exit(1)
+		}
+	}
+	var for_block string
 	var copts bind.CallOpts
+	if block_num_to_query > 0 {
+		copts.BlockNumber = big.NewInt(block_num_to_query)
+		for_block = fmt.Sprintf(" for block %v", block_num_to_query)
+	}
 	vault_addr := common.HexToAddress(CONTRACT_ADDR)
-	fmt.Printf("Calling Vault contract at %v\n",vault_addr.String())
+	
+	fmt.Printf("Calling Vault contract at %v%v\n",vault_addr.String(),for_block)
 
 	vault_ctrct,err := NewBalancerV2Vault(vault_addr,eclient)
 	if err!=nil {
