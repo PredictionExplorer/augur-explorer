@@ -347,8 +347,8 @@ func (sw *SQLStorageWrapper) Insert_balance_change_history_record(rec *p.BalV2Ba
 	var query string
 	query = "INSERT INTO "+sw.S.SchemaName()+".tok_bal("+
 				"block_num,block_hash,time_stamp,tx_index,log_index,pool_aid,"+
-				"pool_id,tok_aid,swf_hist_id,amount"+
-			") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
+				"pool_id,tok_aid,swf_hist_id,op_sign,amount"+
+			") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
 	_,err := sw.S.Db().Exec(query,
 		rec.BlockNum,
 		rec.BlockHash,
@@ -359,6 +359,7 @@ func (sw *SQLStorageWrapper) Insert_balance_change_history_record(rec *p.BalV2Ba
 		rec.PoolId,
 		rec.TokenAid,
 		rec.SwapHistId,
+		rec.OpSign,
 		rec.Amount,
 	)
 	if err != nil {

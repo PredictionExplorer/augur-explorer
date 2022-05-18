@@ -191,9 +191,13 @@ CREATE TABLE tok_bal ( -- Token balance derived from pool balance changed and sw
 	tok_aid				BIGINT NOT NULL,
 	swf_hist_id			BIGINT DEFAULT 0,-- either swap history table or 0 for Join/Exit
 	pool_id				TEXT NOT NULL,
+	op_sign				SMALL INT NOT NULL,	-- -operation sign: 1 if substracted, +1 if added
 	balance				DECIMAL DEFAULT 0,
 	amount				DECIMAL NOT NULL,
-	UNIQUE(block_num,tx_index,log_index,tok_aid)
+	UNIQUE(block_num,tx_index,log_index,tok_aid,op_sign)
+	-- op_sign is included in unique index to support two records withing the same transaction
+	-- when protocol fee is paid, protocol fee goes as second record with negative sign, this way
+	-- avoiding duplicate record
 );
 CREATE TABLE pool_hist ( -- Pool history to store swap history data
 	pool_id				TEXT NOT NULL PRIMARY KEY,

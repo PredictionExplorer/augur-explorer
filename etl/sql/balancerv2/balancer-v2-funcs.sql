@@ -63,7 +63,7 @@ BEGIN
 	IF v_prev_bal IS NULL THEN
 		v_prev_bal := 0;
 	END IF;
-	v_new_bal := v_prev_bal + NEW.amount;
+	v_new_bal := v_prev_bal + NEW.amount * NEW.op_sign;
 	UPDATE tok_bal SET balance = v_new_bal WHERE id=NEW.id;
 	RETURN NEW;
 END;

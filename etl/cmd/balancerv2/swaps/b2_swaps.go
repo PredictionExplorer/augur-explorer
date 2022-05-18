@@ -65,13 +65,21 @@ func process_block_balance_changes(block_num int64,block_hash string,bchanges []
 		rec_out.PoolId = rec_in.PoolId
 		toks := strings.Split(rec_in.Tokens,",")
 		amounts := strings.Split(rec_in.Deltas,",")
+		proto_fees := strings.Split(rec_in.ProtocolFeeAmounts,",")
 		for i:=0; i<len(toks); i++ {
 			tok_addr := toks[i]
 			tok_aid := storagew.S.Layer1_lookup_or_insert_address_id(tok_addr)
 			rec_out.TokenAid = tok_aid
 			amount := amounts[i]
 			rec_out.Amount = amount
+			proto_fee := proto_fees[i]
+			rec_out.OpSign = 1
 			storagew.Insert_balance_change_history_record(&rec_out)
+			if proto_fee != "0" {
+				rec_out.Amount = proto_fee
+				rec_out.OpSign = -1
+				storagew.Insert_balance_change_history_record(&rec_out)
+			}
 		}
 	}
 }
@@ -214,10 +222,12 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 		rec_bal.PoolId = rec.PoolId
 		rec_bal.TokenAid = s.TokenInAid
 		rec_bal.Amount = in_plus_fee.String()
+		rec_bal.OpSign = 1
 		storagew.Insert_balance_change_history_record(&rec_bal) // incoming token
 
 		rec_bal.TokenAid = s.TokenOutAid
 		rec_bal.Amount = s.AmountOut
+		rec_bal.OpSign = -1
 		storagew.Insert_balance_change_history_record(&rec_bal) // outgoing token
 	}
 }

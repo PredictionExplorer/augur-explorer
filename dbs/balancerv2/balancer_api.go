@@ -320,9 +320,13 @@ func (sw *SQLStorageWrapper) Get_pool_token_balance_history(pool_aid,token_aid i
 				"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT ts," +
 				"b.time_stamp,"+
 				"b.swf_hist_id,"+
-				"amount, "+
-				"balance "+
+				"s.token_in_aid,"+
+				"s.token_out_aid,"+
+				"b.amount, "+
+				"b.balance "+
 			"FROM "+sw.S.SchemaName()+". tok_bal b "+
+				"LEFT JOIN swf_hist h ON b.swf_hist_id=h.id "+
+				"LEFT JOIN swap s ON (h.block_num=s.block_num AND h.tx_index=s.tx_index AND h.log_index=s.log_index)" +
 			"WHERE b.pool_aid=$1 AND b.tok_aid=$2 " +
 			"ORDER BY b.block_num,b.tx_index,b.log_index"
 
@@ -336,11 +340,14 @@ func (sw *SQLStorageWrapper) Get_pool_token_balance_history(pool_aid,token_aid i
 	for rows.Next() {
 		var rec p.BalV2PoolTokBalanceHistory
 		var swaphist_id int64
+		var n_in_aid,n_out_aid sql.NullInt64
 		err=rows.Scan(
 			&rec.BlockNum,
 			&rec.TimeStamp,
 			&rec.DateTime,
 			&swaphist_id,
+			&n_in_aid,
+			&n_out_aid,
 			&rec.Amount,
 			&rec.Balance,
 		)
@@ -349,6 +356,8 @@ func (sw *SQLStorageWrapper) Get_pool_token_balance_history(pool_aid,token_aid i
 			os.Exit(1)
 		}
 		if swaphist_id > 0 { rec.IsSwap=true }
+		if n_in_aid.Valid { rec.TokenInAid = n_in_aid.Int64 }
+		if n_out_aid.Valid { rec.TokenOutAid = n_out_aid.Int64 }
 		records = append(records,rec)
 	}
 	return records

@@ -17,5 +17,13 @@ DROP TABLE IF EXISTS
 	tok_bal,
 	pool_hist,
 	bpt_transf,
-	bpt_bal
+	bpt_bal,
+	unhandled,
+	swap_accum,
+	fee_collection,
+	bptok,
+	has_usd,
+	erc20info_status,
+	erc20_info,
+	erc20_bad_token
 CASCADE;

@@ -153,6 +153,7 @@ type BalV2BalChg struct {
 	PoolAid				int64
 	SwapHistId			int64
 	TokenAid			int64
+	OpSign				int
 	BlockHash			string
 	PoolId				string
 	Amount				string
