@@ -221,7 +221,7 @@ func process_block_swaps(block_num int64,block_hash string,swaps []BalV2Swap) {
 		rec_bal.PoolAid = pool_aid
 		rec_bal.PoolId = rec.PoolId
 		rec_bal.TokenAid = s.TokenInAid
-		rec_bal.Amount = in_plus_fee.String()
+		rec_bal.Amount = s.AmountIn
 		rec_bal.OpSign = 1
 		storagew.Insert_balance_change_history_record(&rec_bal) // incoming token
 
