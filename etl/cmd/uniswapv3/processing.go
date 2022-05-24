@@ -503,6 +503,50 @@ func process_pool_collect_protocol(storage *SQLStorage,tx *AugurTx,log *types.Lo
 	Info.Printf("}\n")
 	storagew.Insert_pool_collect_protocol(&evt)
 }
+func process_pool_collect_periphery(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
+
+	Info.Printf(
+		"EVENT: Collect (Periphery0. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
+	if !bytes.Equal(caddrs.NFTPosMgrAddr.Bytes(),log.Address.Bytes()) {
+		Info.Printf("Skipping event, address doesn't match our address (%v)\n",caddrs.NFTPosMgrAddr.String())
+		return
+	}
+
+	var eth_evt NonfungiblePositionManagerCollect
+	err := nfpm_abi.UnpackIntoInterface(&eth_evt,"Collect",log.Data)
+	if err != nil {
+		Error.Printf("Can't UnpackIntoInterface for Collect (Periphery): %v\n",err)
+		os.Exit(1)
+	}
+
+	var evt UniV3Collect
+	evt.BlockNum = tx.BlockNum
+	evt.TimeStamp = tx.TimeStamp
+	evt.TxIndex = int64(tx.TxIndex)
+	evt.LogIndex = int64(log_index)
+	evt.ContractAddr = log.Address.String()
+
+	token_id := hex.EncodeToString(log.Topics[1][:])
+	evt.TokenId = token_id
+	evt.RecipientAddr = eth_evt.Recipient.String()
+	evt.Amount0 = eth_evt.Amount0.String()
+	evt.Amount1 = eth_evt.Amount1.String()
+
+	Info.Printf("Collect (Periphery) {\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tTokenID: %v\n",evt.TokenId)
+	Info.Printf("\tRecipient: %v\n",evt.RecipientAddr)
+	Info.Printf("\tAmount0: %v\n",evt.Amount0)
+	Info.Printf("\tAmount1: %v\n",evt.Amount1)
+	Info.Printf("}\n")
+	storagew.Insert_collect_periphery(&evt)
+}
 
 /* Possible removal pending
 func process_bpt_erc20_transfer(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {

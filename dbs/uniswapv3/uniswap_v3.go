@@ -17,17 +17,18 @@ type SQLStorageWrapper struct {
 func (sw *SQLStorageWrapper) Uniswap_get_contract_addrs() p.UniV3ContractAddrs {
 
 	var query string
-	query = "SELECT factory_addr FROM "+sw.S.SchemaName()+".config"
+	query = "SELECT factory_addr,nft_pos_mgr_addr FROM "+sw.S.SchemaName()+".config"
 	row := sw.S.Db().QueryRow(query)
-	var factory_addr string
+	var factory_addr,nft_pos_mgr_addr string
 	var err error
-	err=row.Scan(&factory_addr);
+	err=row.Scan(&factory_addr,&nft_pos_mgr_addr);
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("Error in Uniswap_get_contract_addrs(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
 	var output p.UniV3ContractAddrs
 	output.FactoryAddr = factory_addr
+	output.NFTPosMgrAddr=nft_pos_mgr_addr
 	return output
 }
 func (sw *SQLStorageWrapper) Get_uniswap_v3_pool_aid(pool_addr string) int64 {

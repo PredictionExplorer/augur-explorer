@@ -15,8 +15,9 @@ Token Id = {{.TokenAid}} , {{.TokenAddr}}
 	<tr>
 		<th>Block</th>
 		<th>DateTime</th>
-		<th>Token In Aid</th>
-		<th>Token Out Aid</th>
+		<th>In Aid</th>
+		<th>Out Aid</th>
+		<th>Sign</th>
 		<th>Amount</th>
 		<th>Balance</th>
 		<th></th>
@@ -27,6 +28,7 @@ Token Id = {{.TokenAid}} , {{.TokenAddr}}
 		<td>{{.DateTime}}</td>
 		<td style="text-align:center;">{{.TokenInAid}}</td>
 		<td style="text-align:center;">{{.TokenOutAid}}</td>
+		<td style="text-align:center;">{{.OpSign}}</td>
 		<td style="text-align:right;">{{ .Amount }}</td>
 		<td style="text-align:right;">{{ .Balance }}</td>
 		<td>{{- if .IsSwap }}&nbsp;&nbsp; Swap{{end}}</td>

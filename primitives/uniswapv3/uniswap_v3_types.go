@@ -6,6 +6,7 @@ import (
 
 type UniV3ContractAddrs struct {
 	FactoryAddr			string
+	NFTPosMgrAddr		string
 }
 type UniV3PoolCreated struct {
 	BlockNum			int64
@@ -55,6 +56,18 @@ type UniV3Collect struct {
 	RecipientAddr		string
 	TickLower			string
 	TickUpper			string
+	Amount0				string
+	Amount1				string
+}
+type UniV3CollectPeriphery struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	PoolAid				int64
+	ContractAddr		string
+	RecipientAddr		string
+	TokenId				string
 	Amount0				string
 	Amount1				string
 }

@@ -14,7 +14,8 @@ CREATE TABLE config(
 	chain_id            BIGINT DEFAULT 0, --Arbitrum: 42161
 	last_block          BIGINT DEFAULT 0,
 	starting_block      BIGINT DEFAULT 0,
-	factory_addr        TEXT DEFAULT '0x1F98431c8aD98523631AE4a59f267346ea31F984'
+	factory_addr        TEXT DEFAULT '0x1F98431c8aD98523631AE4a59f267346ea31F984',
+	nft_pos_mgr_addr	TEXT DEFAULT '0xC36442b4a4522E871399CD717aBDD847Ab11FE88'-- NonfungiblePositionManager
 );
 CREATE TABLE pool_created ( -- PoolCreated event
 	block_num           BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
@@ -67,6 +68,18 @@ CREATE TABLE collect( -- Collect event
 	recipient_aid		BIGINT NOT NULL,
 	tick_lower			DECIMAL NOT NULL,
 	tick_upper			DECIMAL NOT NULL,
+	amount0				DECIMAL NOT NULL,
+	amount1				DECIMAL NOT NULL,
+	PRIMARY KEY(block_num,tx_index,log_index)
+);
+CREATE TABLE collect_nfpm( -- Collect  (Periphery) event (from NonFungiblePositionManager contract)
+	block_num           BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
+	time_stamp          TIMESTAMPTZ NOT NULL,
+	tx_index            INT NOT NULL,
+	log_index           INT NOT NULL,
+	contract_aid        BIGINT NOT NULL,
+	recipient_aid		BIGINT NOT NULL,
+	token_id			TEXT NOT NULL,
 	amount0				DECIMAL NOT NULL,
 	amount1				DECIMAL NOT NULL,
 	PRIMARY KEY(block_num,tx_index,log_index)

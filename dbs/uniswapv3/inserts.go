@@ -122,6 +122,31 @@ func (sw *SQLStorageWrapper) Insert_pool_collect(evt *p.UniV3Collect) {
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_collect_periphery(evt *p.UniV3CollectPeriphery) {
+
+	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
+	recipient_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.RecipientAddr)
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".collect_nfpm("+
+					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+					"recipient_aid,token_id,amount0,amount1"+
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9)"
+	_,err := sw.S.Db().Exec(query,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxIndex,
+		evt.LogIndex,
+		contract_aid,
+		recipient_aid,
+		token_aid,
+		evt.Amount0,
+		evt.Amount1,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into collect_nfpm table: %v\n",err))
+		os.Exit(1)
+	}
+}
 func (sw *SQLStorageWrapper) Insert_pool_burn(evt *p.UniV3Burn) {
 
 	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)

@@ -322,6 +322,7 @@ func (sw *SQLStorageWrapper) Get_pool_token_balance_history(pool_aid,token_aid i
 				"b.swf_hist_id,"+
 				"s.token_in_aid,"+
 				"s.token_out_aid,"+
+				"b.op_sign,"+
 				"b.amount, "+
 				"b.balance "+
 			"FROM "+sw.S.SchemaName()+". tok_bal b "+
@@ -348,6 +349,7 @@ func (sw *SQLStorageWrapper) Get_pool_token_balance_history(pool_aid,token_aid i
 			&swaphist_id,
 			&n_in_aid,
 			&n_out_aid,
+			&rec.OpSign,
 			&rec.Amount,
 			&rec.Balance,
 		)

@@ -5,4 +5,5 @@ import (
 )
 type UniswapV3Addrs struct {
 	FactoryAddr			common.Address
+	NFTPosMgrAddr		common.Address
 }

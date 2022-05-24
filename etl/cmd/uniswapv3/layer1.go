@@ -42,6 +42,9 @@ const (
 	POOL_CREATED				= "783cca1c0412dd0d695e784568c96da2e9c22ff989357a2e8b1d9b2b4e6b7118"
 	FEE_AMOUNT_ENABLED			= "c66a3fdf07232cdd185febcc6579d408c241b47ae2f9907d84be655141eeaecc"
 	ERC20_TRANSFER				= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+	COLLECT_PERIFERY			= "40d0efd1a53d60ecbf40971b9daf7dc90178c3aadc7aab1765632738fa8b8f01"
+	INCREASE_LIQUIDITY			= "3067048beee31b25b2f1681f88dac838c8bba36af25bfb2b7cf7473a5847e35f"
+	DECREASE_LIQUIDITY			= "26f6a048ee9138f2c0ce266f322cb99228e8d619ae2bff30c67f8dcf9d2377b4"
 
 	DEFAULT_STATISTICS_DURATION	int64 = 24*60*60 // in seconds
 	DEFAULT_WAIT_TIME = 2000	// 2 seconds
@@ -64,6 +67,9 @@ var (
 	evt_pool_created,_ = hex.DecodeString(POOL_CREATED)
 	evt_fee_amount_enabled,_ = hex.DecodeString(FEE_AMOUNT_ENABLED)
 	evt_erc20_transfer,_ = hex.DecodeString(ERC20_TRANSFER)
+	evt_collect_perifery,_ = hex.DecodeString(COLLECT_PERIFERY)
+	evt_increase_liquidity,_ = hex.DecodeString(INCREASE_LIQUIDITY)
+	evt_decrease_liquidity,_ = hex.DecodeString(DECREASE_LIQUIDITY)
 
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
@@ -75,6 +81,7 @@ var (
 	layer1 ETL_Layer1
 	factory_abi *abi.ABI
 	pool_abi *abi.ABI
+	nfpm_abi *abi.ABI
 	erc20_abi *abi.ABI
 
 	caddrs		UniswapV3Addrs
@@ -180,6 +187,7 @@ func main() {
 	}
 	tmp_caddrs := storagew.Uniswap_get_contract_addrs()
 	caddrs.FactoryAddr = common.HexToAddress(tmp_caddrs.FactoryAddr)
+	caddrs.NFTPosMgrAddr = common.HexToAddress(tmp_caddrs.NFTPosMgrAddr)
 
 	if *block_num > 0 {
 		Info.Printf("Processing single block %v\n",*block_num)
@@ -230,6 +238,14 @@ func main() {
 		os.Exit(1)
 	}
 	erc20_abi = &abi3
+
+	abi_parsed4 := strings.NewReader(NonfungiblePositionManagerABI)
+	abi4,err := abi.JSON(abi_parsed4)
+	if err != nil {
+		Info.Printf("Can't parse NonFunbiglePositionManager contract ABI")
+		os.Exit(1)
+	}
+	nfpm_abi = &abi4
 
 	bnum,exists := storagew.S.Layer1_get_last_block_num()
 	if !exists {

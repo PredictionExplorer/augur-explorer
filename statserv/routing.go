@@ -6,7 +6,6 @@ import (
 )
 func set_routing_html(r *gin.Engine) {
 
-	//r.GET("/black/markets.html",markets)
 	r.GET("/balancerv2/poolinfo.html",bal_v2_poolinfo)
 	r.GET("/balancerv2/tokbalhistory/:pool_aid/:tok_aid",bal_v2_pool_token_history)
 	r.GET("/balancerv2/pool_profits/:pool_aid/:ini_ts/:fin_ts",bal_v2_pool_profits_in_swaps)
