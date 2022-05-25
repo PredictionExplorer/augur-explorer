@@ -651,6 +651,23 @@ func (ss *SQLStorage) Get_server_timestamp() int64 {
 	}
 	return null_ts.Int64
 }
+func (ss *SQLStorage) Get_last_mint_timestamp() int64 {
+
+	var query string
+	query = "SELECT EXTRACT(EPOCH FROM time_stamp)::BIGINT AS ts FROM rw_mint_evt "+
+			"ORDER BY id DESC LIMIT 1"
+	res := ss.db.QueryRow(query)
+	var null_ts sql.NullInt64
+	err := res.Scan(&null_ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		}
+		ss.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+	return null_ts.Int64
+}
 func (ss *SQLStorage) Get_rw_token_transfers_by_tx_hash(tx_hash string) []p.RW_TransferEntry  {
 
 	var query string

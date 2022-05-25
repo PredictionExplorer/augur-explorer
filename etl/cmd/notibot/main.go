@@ -653,6 +653,7 @@ func main() {
 	market_ctrct_aid=storage.Lookup_address_id(market_addr.String())
 	_,cur_floor_price,_,_,err = storage.Get_floor_price(rwalk_ctrct_aid,market_ctrct_aid)
 	//cur_floor_price = 0.0;
+	last_mint_ts = storage.Get_last_mint_timestamp()
 	go update_last_minted_time()
 	monitor_events(exit_chan,rwalk_addr)
 

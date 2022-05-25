@@ -85,7 +85,7 @@ func process_initialize(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index
 
 	Info.Printf(
 		"EVENT: Initialize. Tx %v TxIndex %v Log %v\n",
-		tx.TxHash,tx.TxIndex,log.Index,
+	tx.TxHash,tx.TxIndex,log.Index,
 	)
 	pool_aid := storagew.Get_uniswap_v3_pool_aid(log.Address.String())
 	if pool_aid == 0 {
