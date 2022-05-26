@@ -138,7 +138,7 @@ func (sw *SQLStorageWrapper) Insert_collect_periphery(evt *p.UniV3CollectPeriphe
 		evt.LogIndex,
 		contract_aid,
 		recipient_aid,
-		token_aid,
+		evt.TokenId,
 		evt.Amount0,
 		evt.Amount1,
 	)
@@ -287,7 +287,7 @@ func (sw *SQLStorageWrapper) Insert_pool_set_fee_protocol(evt *p.UniV3SetFeeProt
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_pool_collect_protocol(evt *p.UniV3CollectProtocol) {
+func (sw *SQLStorageWrapper) Insert_pool_collect_protocol(evt *p.UniV3PoolCollectProtocol) {
 
 	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
 	sender_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.SenderAddr)
@@ -312,6 +312,54 @@ func (sw *SQLStorageWrapper) Insert_pool_collect_protocol(evt *p.UniV3CollectPro
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into collect_proto table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_increase_liquidity(evt *p.UniV3IncreaseLiquidity) {
+
+	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".inc_liq("+
+					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+					"token_id,liquidity,amount0,amount1"+
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9)"
+	_,err := sw.S.Db().Exec(query,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxIndex,
+		evt.LogIndex,
+		contract_aid,
+		evt.TokenId,
+		evt.Liquidity,
+		evt.Amount0,
+		evt.Amount1,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into inc_liq table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_decrease_liquidity(evt *p.UniV3DecreaseLiquidity) {
+
+	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".dec_liq("+
+					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+					"token_id,liquidity,amount0,amount1"+
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9)"
+	_,err := sw.S.Db().Exec(query,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxIndex,
+		evt.LogIndex,
+		contract_aid,
+		evt.TokenId,
+		evt.Liquidity,
+		evt.Amount0,
+		evt.Amount1,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into dec_liq table: %v\n",err))
 		os.Exit(1)
 	}
 }

@@ -67,7 +67,7 @@ var (
 	evt_pool_created,_ = hex.DecodeString(POOL_CREATED)
 	evt_fee_amount_enabled,_ = hex.DecodeString(FEE_AMOUNT_ENABLED)
 	evt_erc20_transfer,_ = hex.DecodeString(ERC20_TRANSFER)
-	evt_collect_perifery,_ = hex.DecodeString(COLLECT_PERIFERY)
+	evt_collect_periphery,_ = hex.DecodeString(COLLECT_PERIFERY)
 	evt_increase_liquidity,_ = hex.DecodeString(INCREASE_LIQUIDITY)
 	evt_decrease_liquidity,_ = hex.DecodeString(DECREASE_LIQUIDITY)
 

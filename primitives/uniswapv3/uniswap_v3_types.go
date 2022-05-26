@@ -136,7 +136,7 @@ type UniV3SetFeeProtocol struct {
 	FeeProtocol1Old		uint8
 	FeeProtocol1New		uint8
 }
-type UniV3CollectProtocol struct {
+type UniV3PoolCollectProtocol struct {
 	BlockNum			int64
 	TimeStamp			int64
 	TxIndex				int64
@@ -145,6 +145,28 @@ type UniV3CollectProtocol struct {
 	ContractAddr		string
 	SenderAddr			string
 	RecipientAddr		string
+	Amount0				string
+	Amount1				string
+}
+type UniV3IncreaseLiquidity struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAddr		string
+	TokenId				string
+	Liquidity			string
+	Amount0				string
+	Amount1				string
+}
+type UniV3DecreaseLiquidity struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	ContractAddr		string
+	TokenId				string
+	Liquidity			string
 	Amount0				string
 	Amount1				string
 }

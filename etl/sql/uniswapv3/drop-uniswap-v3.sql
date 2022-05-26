@@ -11,5 +11,8 @@ DROP TABLE IF EXISTS
 	flash,
 	iocn,
 	set_fee_proto,
-	collect_prot
+	collect_prot,
+	collect_nfpm,
+	inc_liq,
+	dec_liq
 CASCADE;

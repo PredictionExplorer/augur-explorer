@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 	"bytes"
-	//"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -475,7 +474,7 @@ func process_pool_collect_protocol(storage *SQLStorage,tx *AugurTx,log *types.Lo
 		os.Exit(1)
 	}
 
-	var evt UniV3CollectProtocol
+	var evt UniV3PoolCollectProtocol
 	evt.BlockNum = tx.BlockNum
 	evt.TimeStamp = tx.TimeStamp
 	evt.TxIndex = int64(tx.TxIndex)
@@ -503,10 +502,10 @@ func process_pool_collect_protocol(storage *SQLStorage,tx *AugurTx,log *types.Lo
 	Info.Printf("}\n")
 	storagew.Insert_pool_collect_protocol(&evt)
 }
-func process_pool_collect_periphery(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
+func process_collect_periphery(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
 
 	Info.Printf(
-		"EVENT: Collect (Periphery0. Tx %v TxIndex %v Log %v\n",
+		"EVENT: Collect (Periphery). Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
 	if !bytes.Equal(caddrs.NFTPosMgrAddr.Bytes(),log.Address.Bytes()) {
@@ -521,19 +520,18 @@ func process_pool_collect_periphery(storage *SQLStorage,tx *AugurTx,log *types.L
 		os.Exit(1)
 	}
 
-	var evt UniV3Collect
+	var evt UniV3CollectPeriphery
 	evt.BlockNum = tx.BlockNum
 	evt.TimeStamp = tx.TimeStamp
 	evt.TxIndex = int64(tx.TxIndex)
 	evt.LogIndex = int64(log_index)
 	evt.ContractAddr = log.Address.String()
 
-	token_id := hex.EncodeToString(log.Topics[1][:])
+	token_id := log.Topics[1].Big().String()
 	evt.TokenId = token_id
 	evt.RecipientAddr = eth_evt.Recipient.String()
 	evt.Amount0 = eth_evt.Amount0.String()
 	evt.Amount1 = eth_evt.Amount1.String()
-
 	Info.Printf("Collect (Periphery) {\n")
 	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
 	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
@@ -546,6 +544,94 @@ func process_pool_collect_periphery(storage *SQLStorage,tx *AugurTx,log *types.L
 	Info.Printf("\tAmount1: %v\n",evt.Amount1)
 	Info.Printf("}\n")
 	storagew.Insert_collect_periphery(&evt)
+}
+func process_increase_liquidity(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
+
+	Info.Printf(
+		"EVENT: IncreaseLiquidity. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
+	if !bytes.Equal(caddrs.NFTPosMgrAddr.Bytes(),log.Address.Bytes()) {
+		Info.Printf("Skipping event, address doesn't match our address (%v)\n",caddrs.NFTPosMgrAddr.String())
+		return
+	}
+
+	var eth_evt NonfungiblePositionManagerIncreaseLiquidity
+	err := nfpm_abi.UnpackIntoInterface(&eth_evt,"IncreaseLiquidity",log.Data)
+	if err != nil {
+		Error.Printf("Can't UnpackIntoInterface for IncreaseLiquidity : %v\n",err)
+		os.Exit(1)
+	}
+
+	var evt UniV3IncreaseLiquidity
+	evt.BlockNum = tx.BlockNum
+	evt.TimeStamp = tx.TimeStamp
+	evt.TxIndex = int64(tx.TxIndex)
+	evt.LogIndex = int64(log_index)
+	evt.ContractAddr = log.Address.String()
+
+	token_id := log.Topics[1].Big().String()
+	evt.TokenId = token_id
+	evt.Liquidity = eth_evt.Liquidity.String()
+	evt.Amount0 = eth_evt.Amount0.String()
+	evt.Amount1 = eth_evt.Amount1.String()
+
+	Info.Printf("IncreaseLiquidity{\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tTokenID: %v\n",evt.TokenId)
+	Info.Printf("\tLiquidity: %v\n",evt.Liquidity)
+	Info.Printf("\tAmount0: %v\n",evt.Amount0)
+	Info.Printf("\tAmount1: %v\n",evt.Amount1)
+	Info.Printf("}\n")
+	storagew.Insert_increase_liquidity(&evt)
+}
+func process_decrease_liquidity(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
+
+	Info.Printf(
+		"EVENT: DecreaseLiquidity. Tx %v TxIndex %v Log %v\n",
+		tx.TxHash,tx.TxIndex,log.Index,
+	)
+	if !bytes.Equal(caddrs.NFTPosMgrAddr.Bytes(),log.Address.Bytes()) {
+		Info.Printf("Skipping event, address doesn't match our address (%v)\n",caddrs.NFTPosMgrAddr.String())
+		return
+	}
+
+	var eth_evt NonfungiblePositionManagerDecreaseLiquidity
+	err := nfpm_abi.UnpackIntoInterface(&eth_evt,"DecreaseLiquidity",log.Data)
+	if err != nil {
+		Error.Printf("Can't UnpackIntoInterface for DecreaseLiquidity : %v\n",err)
+		os.Exit(1)
+	}
+
+	var evt UniV3DecreaseLiquidity
+	evt.BlockNum = tx.BlockNum
+	evt.TimeStamp = tx.TimeStamp
+	evt.TxIndex = int64(tx.TxIndex)
+	evt.LogIndex = int64(log_index)
+	evt.ContractAddr = log.Address.String()
+
+	token_id := log.Topics[1].Big().String()
+	evt.TokenId = token_id
+	evt.Liquidity = eth_evt.Liquidity.String()
+	evt.Amount0 = eth_evt.Amount0.String()
+	evt.Amount1 = eth_evt.Amount1.String()
+
+	Info.Printf("DecreaseLiquidity{\n")
+	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
+	Info.Printf("\tTimeStamp: %v\n",evt.TimeStamp)
+	Info.Printf("\tTxId: %v\n",evt.TxIndex)
+	Info.Printf("\tLogIndex: %v\n",evt.LogIndex)
+	Info.Printf("\tContractAddr: %v\n",evt.ContractAddr)
+	Info.Printf("\tTokenID: %v\n",evt.TokenId)
+	Info.Printf("\tLiquidity: %v\n",evt.Liquidity)
+	Info.Printf("\tAmount0: %v\n",evt.Amount0)
+	Info.Printf("\tAmount1: %v\n",evt.Amount1)
+	Info.Printf("}\n")
+	storagew.Insert_decrease_liquidity(&evt)
 }
 
 /* Possible removal pending
@@ -610,6 +696,9 @@ func process_event_log(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 	if bytes.Equal(topic0,evt_collect) {
 		process_pool_collect(storage,tx,log,log_index)
 	}
+	if bytes.Equal(topic0,evt_collect_periphery) {
+		process_collect_periphery(storage,tx,log,log_index)
+	}
 	if bytes.Equal(topic0,evt_burn) {
 		process_pool_burn(storage,tx,log,log_index)
 	}
@@ -625,7 +714,10 @@ func process_event_log(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 	if bytes.Equal(topic0,evt_set_fee_protocol) {
 		process_pool_set_fee_protocol(storage,tx,log,log_index)
 	}
-	if bytes.Equal(topic0,evt_collect_protocol) {
-		process_pool_collect_protocol(storage,tx,log,log_index)
+	if bytes.Equal(topic0,evt_increase_liquidity) {
+		process_increase_liquidity(storage,tx,log,log_index)
+	}
+	if bytes.Equal(topic0,evt_decrease_liquidity) {
+		process_decrease_liquidity(storage,tx,log,log_index)
 	}
 }

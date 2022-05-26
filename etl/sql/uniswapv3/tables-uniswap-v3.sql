@@ -79,7 +79,7 @@ CREATE TABLE collect_nfpm( -- Collect  (Periphery) event (from NonFungiblePositi
 	log_index           INT NOT NULL,
 	contract_aid        BIGINT NOT NULL,
 	recipient_aid		BIGINT NOT NULL,
-	token_id			TEXT NOT NULL,
+	token_id			DECIMAL NOT NULL,
 	amount0				DECIMAL NOT NULL,
 	amount1				DECIMAL NOT NULL,
 	PRIMARY KEY(block_num,tx_index,log_index)
@@ -163,6 +163,30 @@ CREATE TABLE collect_prot ( -- CollectProtocol event
 	pool_aid			BIGINT NOT NULL,
 	sender_aid			BIGINT NOT NULL,
 	recipient_aid		BIGINT NOT NULL,
+	amount0				DECIMAL NOT NULL,
+	amount1				DECIMAL NOT NULL,
+	PRIMARY KEY(block_num,tx_index,log_index)
+);
+CREATE TABLE inc_liq( -- IncreaseLiquidity event (from Periphery contract)
+	block_num           BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
+	time_stamp          TIMESTAMPTZ NOT NULL,
+	tx_index            INT NOT NULL,
+	log_index           INT NOT NULL,
+	contract_aid        BIGINT NOT NULL,
+	token_id			DECIMAL NOT NULL,
+	liquidity			DECIMAL NOT NULL,
+	amount0				DECIMAL NOT NULL,
+	amount1				DECIMAL NOT NULL,
+	PRIMARY KEY(block_num,tx_index,log_index)
+);
+CREATE TABLE dec_liq( -- DecreaseLiquidity event (from Periphery contract)
+	block_num           BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
+	time_stamp          TIMESTAMPTZ NOT NULL,
+	tx_index            INT NOT NULL,
+	log_index           INT NOT NULL,
+	contract_aid        BIGINT NOT NULL,
+	token_id			DECIMAL NOT NULL,
+	liquidity			DECIMAL NOT NULL,
 	amount0				DECIMAL NOT NULL,
 	amount1				DECIMAL NOT NULL,
 	PRIMARY KEY(block_num,tx_index,log_index)
