@@ -51,3 +51,24 @@ func (sw *SQLStorageWrapper) Get_uniswap_v3_pool_aid(pool_addr string) int64 {
 	}
 	return pool_aid
 }
+func (sw *SQLStorageWrapper) Get_uniswap_v3_pool_aid_and_fee(pool_addr string) (int64,string) {
+
+	var query string
+	query = "SELECT p.pool_aid,fee FROM pool_created p "+
+				"JOIN addr a ON p.pool_aid=a.address_id "+
+				"WHERE a.addr=$1"
+
+	row := sw.S.Db().QueryRow(query,pool_addr)
+	var err error
+	var pool_aid int64
+	var fee string
+	err=row.Scan(&pool_aid,&fee);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0,""
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_uniswap_v3_pool_aid_and_fee(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return pool_aid,fee
+}

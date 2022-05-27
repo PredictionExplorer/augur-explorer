@@ -18,6 +18,12 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/dbs/balancerv2"
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
+// Important Note:
+//		The Layer1 ETL process can process blocks in parallel, therefore at layer1
+//		we can't calculate fees, since fees require order (because swap fee can change via
+//		SwapFeeChanged event). This is why we are using this process , which tracks block's hash
+//		to ensure the sequence of blocks doesn't break and is sequential with 100% certainty
+//		The fees are stored in the table 'swf_hist'
 // Notes:
 //		first block with swaps on main net: 
 //			swap				12293069

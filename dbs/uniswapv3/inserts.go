@@ -185,9 +185,9 @@ func (sw *SQLStorageWrapper) Insert_pool_swap(evt *p.UniV3Swap) {
 	query =  "INSERT INTO "+sw.S.SchemaName()+".swap("+
 					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
 					"pool_aid,sender_aid,recipient_aid,"+
-					"amount0,amount1,"+
+					"amount0,amount1,fee,"+
 					"sqrt_pricex96,liquidity,tick"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)"
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)"
 	_,err := sw.S.Db().Exec(query,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -199,6 +199,7 @@ func (sw *SQLStorageWrapper) Insert_pool_swap(evt *p.UniV3Swap) {
 		recipient_aid,
 		evt.Amount0,
 		evt.Amount1,
+		evt.Fee,
 		evt.SqrtPriceX96,
 		evt.Liquidity,
 		evt.Tick,

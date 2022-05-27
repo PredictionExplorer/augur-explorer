@@ -96,6 +96,7 @@ type UniV3Swap struct {
 	RecipientAddr		string
 	Amount0				string
 	Amount1				string
+	Fee					string
 	SqrtPriceX96		string
 	Liquidity			string
 	Tick				string

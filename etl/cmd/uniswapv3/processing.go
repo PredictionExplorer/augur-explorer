@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"bytes"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -275,7 +276,7 @@ func process_pool_swap(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		"EVENT: Swap. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
-	pool_aid := storagew.Get_uniswap_v3_pool_aid(log.Address.String())
+	pool_aid,fee_str := storagew.Get_uniswap_v3_pool_aid_and_fee(log.Address.String())
 	if pool_aid == 0 {
 		Info.Printf("Skipping event, address doesn't match our address\n")
 		return
@@ -304,6 +305,20 @@ func process_pool_swap(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 	evt.SqrtPriceX96= eth_evt.SqrtPriceX96.String()
 	evt.Liquidity=eth_evt.Liquidity.String()
 	evt.Tick=eth_evt.Tick.String()
+	a := big.NewInt(0)
+	if eth_evt.Amount0.Sign() < 0 {
+		a.Set(eth_evt.Amount0)
+	}
+	if eth_evt.Amount1.Sign() < 0 {
+		a.Set(eth_evt.Amount1)
+	}
+	fee_big := big.NewInt(0)
+	fee_big.SetString(fee_str,10)
+	result_fee := big.NewInt(0)
+	result_fee.Mul(a,fee_big)
+	result_fee.Quo(a,big.NewInt(1e6))
+	result_fee.Abs(result_fee)	// clear negative sign
+	evt.Fee = result_fee.String()
 
 	Info.Printf("Swap {\n")
 	Info.Printf("\tBlockNum: %v\n",evt.BlockNum)
@@ -315,6 +330,7 @@ func process_pool_swap(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 	Info.Printf("\tRecipient: %v\n",evt.RecipientAddr)
 	Info.Printf("\tAmount0: %v\n",evt.Amount0)
 	Info.Printf("\tAmount1: %v\n",evt.Amount1)
+	Info.Printf("\tFee: %v\n",evt.Fee)
 	Info.Printf("\tSqrtPriceX96: %v\n",evt.SqrtPriceX96)
 	Info.Printf("\tLiquidity: %v\n",evt.Liquidity)
 	Info.Printf("\tTick: %v\n",evt.Tick)
