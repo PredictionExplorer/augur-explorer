@@ -227,7 +227,7 @@ func DeployFixedPoint128(auth *bind.TransactOpts, backend bind.ContractBackend) 
 
 	address, tx, contract, err := bind.DeployContract(auth, *parsed, common.FromHex(FixedPoint128Bin), backend)
 	if err != nil {
-		turn common.Address{}, nil, nil, err
+		return common.Address{}, nil, nil, err
 	}
 	return address, tx, &FixedPoint128{FixedPoint128Caller: FixedPoint128Caller{contract: contract}, FixedPoint128Transactor: FixedPoint128Transactor{contract: contract}, FixedPoint128Filterer: FixedPoint128Filterer{contract: contract}}, nil
 }

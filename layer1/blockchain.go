@@ -237,6 +237,7 @@ func process_block(etl *ETL_Layer1,bnum int64,update_last_block bool,no_chainspl
 	var receipt_calls []*receiptCallResult = nil
 	var block_receipts []types.Receipt = nil
 	var extra_fields []ReceiptExtraInfo
+	etl.Info.Printf("BlockReceiptsCall = %v\n",etl.UseBlockReceiptsCall)
 	if etl.UseBlockReceiptsCall {
 		block_receipts,extra_fields,err = get_block_receipts_v2(etl,block_hash)
 		if err != nil {

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	//"strings"
+	"strconv"
 	"math/big"
 	//"encoding/hex"
 	"crypto/ecdsa"
@@ -25,10 +25,10 @@ var (
 
 func main() {
 
-	if len(os.Args) < 2 {
+	if len(os.Args) < 6 {
 		fmt.Printf(
-			"Usage: \n\t\t%v [private_key]\n\t\t"+
-			"Deploys WETH10 contract\n\n",os.Args[0],
+			"Usage: \n\t\t%v [private_key] [factory_addr] [token0_addr] [token1_addr] [fee]\n\t\t"+
+			"Creates a new pool\n\n",os.Args[0],
 		)
 		os.Exit(1)
 	}
@@ -37,7 +37,15 @@ func main() {
 		fmt.Printf("Sender's private key is not 64 characters long\n")
 		os.Exit(1)
 	}
+	factory_addr := common.HexToAddress(os.Args[2])
+	token0_addr := common.HexToAddress(os.Args[3])
+	token1_addr := common.HexToAddress(os.Args[4])
 
+	fee,err := strconv.ParseInt(os.Args[5],10,64)
+	if err != nil {
+		fmt.Printf("Error parsing fee field: %v\n",err)
+		os.Exit(1)
+	}
 	RPC_URL = os.Getenv("RPC_URL")
 	eclient, err := ethclient.Dial(RPC_URL)
 	if err!=nil {
@@ -57,7 +65,6 @@ func main() {
 		os.Exit(1)
 	}
 	from_address := crypto.PubkeyToAddress(*from_publicKeyECDSA)
-	fmt.Printf("Sending tx from %v\n",from_address.String())
 	from_nonce, err := eclient.PendingNonceAt(context.Background(), from_address)
 	if err != nil {
 		fmt.Printf("Error getting account's nonce: %v\n",err)
@@ -71,12 +78,10 @@ func main() {
 	big_chain_id := big.NewInt(CHAIN_ID)
 	auth := bind.NewKeyedTransactor(from_PrivateKey)
 	auth.Nonce = big.NewInt(int64(from_nonce))
-	fmt.Printf("Nonce: %v\n",from_nonce)
 	auth.Value = big.NewInt(0)
 	auth.GasLimit = uint64(9500000)
 	auth.GasPrice = gasPrice
 	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
-		fmt.Printf("chain_id=%v\n",big_chain_id.Int64())
 		signer := types.NewEIP155Signer(big_chain_id)
 		signature, err := crypto.Sign(signer.Hash(tx).Bytes(), from_PrivateKey)
 		if err != nil {
@@ -87,12 +92,18 @@ func main() {
 		return tx.WithSignature(signer, signature)
 	}
 	auth.Signer = signfunc
-	contract_addr,tx,contract_instance,err := DeployWETH10(auth,eclient)
-	if err!=nil {
-		fmt.Printf("Error on Deploy: %v\n",err)
+	factory,err := NewUniswapV3Factory(factory_addr, eclient)
+	if err != nil {
+		fmt.Printf("Error creating Uniswap Factory instance: %v\n",err)
 		os.Exit(1)
 	}
-	fmt.Printf("Contract address: %v\n",contract_addr.String())
+
+	tx,err:=factory.CreatePool(auth, token0_addr,token1_addr,big.NewInt(fee))
+	if err != nil {
+		fmt.Printf("Error submitting tx: %v\n",err)
+		os.Exit(1)
+	}
+	fmt.Printf("Transaction submitted, pool address will be provided in PoolCreated event\n")
+	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	_ = tx
-	_ = contract_instance
 }

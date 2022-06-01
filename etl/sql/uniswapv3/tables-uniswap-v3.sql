@@ -40,7 +40,7 @@ CREATE TABLE initialize( -- Initialize event
 	sqrt_pricex96		DECIMAL NOT NULL,
 	tick				DECIMAL NOT NULL,
 	PRIMARY KEY(block_num,tx_index,log_index)
-)
+);
 CREATE TABLE mint( -- Mint event
 	block_num           BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
 	time_stamp          TIMESTAMPTZ NOT NULL,

@@ -106,6 +106,14 @@ func multi_threaded_loop_routine(etl *ETL_Layer1,retval *int64,wg_ptr *sync.Wait
 func single_threaded_loop_routine(etl *ETL_Layer1,exit_chan chan bool) {
   main_loop:
 
+	select {
+		case exit_flag := <-exit_chan:
+			if exit_flag {
+				etl.Info.Println("Exiting")
+				os.Exit(0)
+			}
+		default:
+	}
 	  latestBlock, err := eclient.BlockByNumber(context.Background(), nil)
 	if err != nil {
 		log.Fatal("oops:", err)
