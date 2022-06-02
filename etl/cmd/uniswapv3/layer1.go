@@ -91,7 +91,7 @@ var (
 )
 func main() {
 
-	usage_str := fmt.Sprintf("usage: %v --schema [schema_name] --rpc [rpc_url] --blockrcpts [true|false]\n",os.Args[0])
+	usage_str := fmt.Sprintf("usage: %v --schema [schema_name] --rpc [rpc_url] [--blockrcpts]\n",os.Args[0])
 	if len(os.Args)<4 {
 		fmt.Printf("%v",usage_str)
 		os.Exit(1)

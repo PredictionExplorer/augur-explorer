@@ -87,7 +87,7 @@ func multi_threaded_loop_routine(etl *ETL_Layer1,retval *int64,wg_ptr *sync.Wait
 		err := process_block(etl,bnum,update_last_block,no_chainsplit_check,etl.NoRollbackBlocks)
 		if err!=nil {
 			etl.Error.Printf(
-				"Block processing error at block $v : %v. Aborting\n",
+				"Multithreaded block processing error at block $v : %v. Aborting\n",
 				bnum,err,
 			)
 			etl.Error.Printf("Update last_block manually (irregular exit)\n")
@@ -123,17 +123,18 @@ func single_threaded_loop_routine(etl *ETL_Layer1,exit_chan chan bool) {
 	bnum,exists := etl.Storage.Layer1_get_last_block_num()
 	if !exists {
 		bnum = 0
+		etl.Info.Printf("DB is empty, starting from block 0\n")
 	} else {
+		etl.Info.Printf("Latest block in chain=%v, latest in DB=%v\n",latestBlock.Number().Int64(),bnum)
 		bnum = bnum + 1
 	}
 	bnum_high = latestBlock.Number().Int64()
-	etl.Info.Printf("Latest block=%v, bnum=%v\n",latestBlock.Number().Int64(),bnum)
 	if bnum_high < bnum {
 		etl.Info.Printf("Database has more blocks than the blockchain, aborting. Sleeping to wait\n")
 		time.Sleep(10 * time.Second)
 		goto main_loop
 	}
-	for ; bnum<bnum_high; bnum++ {
+	for ; bnum<=bnum_high; bnum++ {
 		select {
 			case exit_flag := <-exit_chan:
 				if exit_flag {

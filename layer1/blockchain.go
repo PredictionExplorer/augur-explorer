@@ -241,7 +241,7 @@ func process_block(etl *ETL_Layer1,bnum int64,update_last_block bool,no_chainspl
 	if etl.UseBlockReceiptsCall {
 		block_receipts,extra_fields,err = get_block_receipts_v2(etl,block_hash)
 		if err != nil {
-			etl.Error.Printf("Error getting receipts of the block %v (hash %v ): %v\n",bnum,block_hash,err)
+			etl.Error.Printf("Error getting receipts (v2) of the block %v (hash %v ): %v\n",bnum,block_hash,err)
 			return err
 		}
 	} else {
