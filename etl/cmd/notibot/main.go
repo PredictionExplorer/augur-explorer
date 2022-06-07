@@ -290,6 +290,12 @@ func format_notification_message(event_type int64,token_id int64,price,withdrawa
 				cur_floor_price,
 				url,
 			)
+		case 5:
+			output = fmt.Sprintf(
+				"Buy offer for %.4fΞ.%v",
+				price,
+				url,
+			)
 	}
 	return output
 }
@@ -454,7 +460,7 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 	rwalk_aid := storage.Lookup_address_id(addr.String())
 	ts := storage.Get_last_block_timestamp()
 	Info.Printf("monitor_events() starts with timestamp %v (%v)\n",ts,time.Unix(ts,0).Format("2006-01-02T15:04:05"))
-	//ts = ts-1*24*60*60 /// for testing only
+	//ts = ts-3*24*60*60 /// for testing only
 	for {
 		select {
 			case exit_flag := <-exit_chan:

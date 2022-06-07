@@ -73,7 +73,7 @@ func main() {
 	auth.Nonce = big.NewInt(int64(from_nonce))
 	fmt.Printf("Nonce: %v\n",from_nonce)
 	auth.Value = big.NewInt(0)
-	auth.GasLimit = uint64(9500000)
+	auth.GasLimit = uint64(29500000)
 	auth.GasPrice = gasPrice
 	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 		fmt.Printf("chain_id=%v\n",big_chain_id.Int64())

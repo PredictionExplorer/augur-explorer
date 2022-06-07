@@ -146,7 +146,7 @@ type RW_NotificationEvent struct {	// for Twitter/
 	TimeStampMinted			int64
 	Price					float64
 	SeedHex					string
-	EvtType					int64	//0-undefined,1-Mint,2-NewOffer, 3-ItemBought
+	EvtType					int64	//0-undefined,1-Mint,2-NewOffer Sell, 3-ItemBought, 4 -FloorPriceChanged, 5 - NewOffer Buy
 }
 type RW_TransferEntry struct {
 	From					string

@@ -397,10 +397,12 @@ tr.user_open_orders {
 	background-color: #161616;
 }
 table.market_reports {
+	color:							white;
 	border-collapse:				separate;
 	border-spacing:					3px;
 }
 tr.market_reports {
+	color:							white;
 	background-color: #161616;
 }
 table.report_rounds {

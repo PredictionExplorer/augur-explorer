@@ -549,7 +549,15 @@ func (ss *SQLStorage) Get_all_events_for_notification(rwalk_aid int64,start_ts i
 						"price/1e+18 AS price, "+
 						"2 AS evt_type "+
 					"FROM rw_new_offer o " +
-						"WHERE (rwalk_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))  " +
+						"WHERE (rwalk_aid=$1) AND (time_stamp > TO_TIMESTAMP($2)) AND (otype=1) " +
+				") UNION ALL( "+
+					"SELECT "+
+						"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,"+
+						"token_id,"+
+						"price/1e+18 AS price, "+
+						"5 AS evt_type "+
+					"FROM rw_new_offer o " +
+						"WHERE (rwalk_aid=$1) AND (time_stamp > TO_TIMESTAMP($2)) AND (otype=0) " +
 				") UNION ALL ( "+
 					"SELECT "+
 						"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT as ts,"+
