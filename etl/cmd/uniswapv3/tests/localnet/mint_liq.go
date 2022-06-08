@@ -1,4 +1,4 @@
-// Makes a deposit to Wrapped ETH contract
+// 
 package main
 
 import (
@@ -32,8 +32,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(os.Args) != 4 {
-		fmt.Printf("Usage: \n\t\t%v [priv_key] [weth_addr] [amount]\n\n\t\tMakes deposit to WETH contract\n",os.Args[0])
+	if len(os.Args) != 6 {
+		fmt.Printf(
+			"Usage: \n\t\t%v [priv_key] [pool_addr] [tick_lower] [tick_upper] [amount(delta)]\n\n"+
+			"\t\tAdds liquidity to the pool\n",
+			os.Args[0],
+		)
 		os.Exit(1)
 	}
 
@@ -43,17 +47,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	weth_addr := common.HexToAddress(os.Args[2])
-	amount_str := os.Args[3]
+	pool_addr := common.HexToAddress(os.Args[2])
 
-	weth_amount := big.NewInt(0)
-	_,success := weth_amount.SetString(amount_str,10)
+	tick_lower_str := os.Args[3]
+	tick_lower:= big.NewInt(0)
+	_,success := tick_lower.SetString(tick_lower_str,10)
+	if !success {
+		fmt.Printf("Incorrect tick_lower number provided on the command line")
+		os.Exit(1)
+	}
+	tick_upper_str := os.Args[4]
+	tick_upper:= big.NewInt(0)
+	_,success = tick_upper.SetString(tick_upper_str,10)
+	if !success {
+		fmt.Printf("Incorrect tick_upper number provided on the command line")
+		os.Exit(1)
+	}
+
+	amount_str := os.Args[5]
+	delta_amount := big.NewInt(0)
+	_,success = delta_amount.SetString(amount_str,10)
 	if !success {
 		fmt.Printf("Incorrect amount provided on the command line")
 		os.Exit(1)
 	}
 
-	weth_ctrct,err := NewWETH10(weth_addr,eclient)
+	pool_ctrct,err := NewUniswapV3Pool(pool_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate Wrapped ETH contract: %v\n",err)
 		os.Exit(1)
@@ -86,7 +105,6 @@ func main() {
 	txopts := bind.NewKeyedTransactor(from_PrivateKey)
 	txopts.Nonce = big.NewInt(int64(from_nonce))
 	txopts.Value = big.NewInt(0)     // in weia
-	txopts.Value.Set(weth_amount)
 	txopts.GasLimit = uint64(10000000) // in units
 	txopts.GasPrice = gasPrice
 
@@ -104,7 +122,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := weth_ctrct.Deposit(txopts)
+	tx,err := pool_ctrct.Mint(txopts,from_address,tick_lower,tick_upper,delta_amount,nil)
 	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)
