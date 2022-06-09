@@ -24,7 +24,7 @@ import (
 )
 const (
 
-	WAIT_TIME = 2000	// 2 seconds
+	WAIT_TIME = 5000	// 2 seconds
 	//DB_LOG				= "db.log"
 )
 var (
@@ -121,15 +121,16 @@ func single_threaded_loop_routine(etl *ETL_Layer1,exit_chan chan bool) {
 	bnum_high := latestBlock.Number().Int64()
 
 	bnum,exists := etl.Storage.Layer1_get_last_block_num()
+	cur_bnum := bnum
 	if !exists {
 		bnum = 0
 		etl.Info.Printf("DB is empty, starting from block 0\n")
 	} else {
-		etl.Info.Printf("Latest block in chain=%v, latest in DB=%v\n",latestBlock.Number().Int64(),bnum)
+		//etl.Info.Printf("Latest block in chain=%v, latest in DB=%v\n",latestBlock.Number().Int64(),bnum)
 		bnum = bnum + 1
 	}
 	bnum_high = latestBlock.Number().Int64()
-	if bnum_high < bnum {
+	if bnum_high < cur_bnum {
 		etl.Info.Printf("Database has more blocks than the blockchain, aborting. Sleeping to wait\n")
 		time.Sleep(10 * time.Second)
 		goto main_loop
@@ -170,13 +171,14 @@ func Main_event_loop_single_thread(etl *ETL_Layer1,exit_chan chan bool) {
 	}
 
 	bnum,exists := etl.Storage.Layer1_get_last_block_num()
+	cur_bnum := bnum
 	if !exists {
 		bnum = 0
 	} else {
 		bnum = bnum + 1
 	}
 	var bnum_high int64 = latestBlock.Number().Int64()
-	if bnum_high < bnum {
+	if bnum_high < cur_bnum {
 		etl.Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
 		os.Exit(1)
 	}
@@ -241,13 +243,14 @@ func Main_event_loop_multithreaded(etl *ETL_Layer1,exit_chan chan bool) {
 		log.Fatal("oops:", err)
 	}
 	bnum,exists := etl.Storage.Layer1_get_last_block_num()
+	cur_bnum := bnum
 	if !exists {
 		bnum = 0
 	} else {
 		bnum = bnum + 1
 	}
 	var bnum_high int64 = latestBlock.Number().Int64()
-	if bnum_high < bnum {
+	if bnum_high < cur_bnum {
 		etl.Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
 		os.Exit(1)
 	}

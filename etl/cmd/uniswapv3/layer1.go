@@ -210,11 +210,6 @@ func main() {
 		exit_chan <- true
 	}()
 
-	latestBlock, err := eclient.BlockByNumber(ctx, nil)
-	if err != nil {
-		log.Fatal("oops:", err)
-	}
-
 	abi_parsed1 := strings.NewReader(UniswapV3FactoryABI)
 	abi1,err := abi.JSON(abi_parsed1)
 	if err!= nil {
@@ -247,17 +242,6 @@ func main() {
 	}
 	nfpm_abi = &abi4
 
-	bnum,exists := storagew.S.Layer1_get_last_block_num()
-	if !exists {
-		bnum = 0
-	} else {
-		bnum = bnum + 1
-	}
-	var bnum_high int64 = latestBlock.Number().Int64()
-	if bnum_high < bnum {
-		Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
-		os.Exit(1)
-	}
 	layer1.NumThreads = *num_threads
 	Info.Printf("Num threads = %v\n",layer1.NumThreads)
 	Init(&layer1,eclient,rpcclient)
