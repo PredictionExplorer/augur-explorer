@@ -33,10 +33,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(os.Args) != 6 {
+	if len(os.Args) != 7 {
 		fmt.Printf(
-			"Usage: \n\t\t%v [priv_key] [pool_addr] [tick_lower] [tick_upper] [amount(delta)]\n\n"+
-			"\t\tAdds liquidity to the pool\n",
+			"Usage: \n\t\t%v [priv_key] [pos_mgr_addr] [pool_addr] [tick_lower] [tick_upper] [amount(delta)]\n\n"+
+			"\t\tAdds liquidity to the pool through position manager contract (periphery)\n",
 			os.Args[0],
 		)
 		os.Exit(1)
@@ -48,16 +48,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	pool_addr := common.HexToAddress(os.Args[2])
+	pos_mgr_addr := common.HexToAddress(os.Args[2])
+	pool_addr := common.HexToAddress(os.Args[3])
 
-	tick_lower_str := os.Args[3]
+	tick_lower_str := os.Args[4]
 	tick_lower:= big.NewInt(0)
 	_,success := tick_lower.SetString(tick_lower_str,10)
 	if !success {
 		fmt.Printf("Incorrect tick_lower number provided on the command line")
 		os.Exit(1)
 	}
-	tick_upper_str := os.Args[4]
+	tick_upper_str := os.Args[5]
 	tick_upper:= big.NewInt(0)
 	_,success = tick_upper.SetString(tick_upper_str,10)
 	if !success {
@@ -65,9 +66,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	amount_str := os.Args[5]
-	delta_amount := big.NewInt(0)
-	_,success = delta_amount.SetString(amount_str,10)
+	amount_str := os.Args[6]
+	desired_amount := big.NewInt(0)
+	_,success = desired_amount.SetString(amount_str,10)
 	if !success {
 		fmt.Printf("Incorrect amount provided on the command line")
 		os.Exit(1)
@@ -76,6 +77,29 @@ func main() {
 	pool_ctrct,err := NewUniswapV3Pool(pool_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate Wrapped ETH contract: %v\n",err)
+		os.Exit(1)
+	}
+
+	var copts = new(bind.CallOpts)
+	token0_addr,err := pool_ctrct.Token0(copts)
+	if err != nil {
+		fmt.Printf("Error getting token0 address: %v\n",err)
+		os.Exit(1)
+	}
+	token1_addr,err := pool_ctrct.Token1(copts)
+	if err != nil {
+		fmt.Printf("Error getting token1 address: %v\n",err)
+		os.Exit(1)
+	}
+	fee,err := pool_ctrct.Fee(copts)
+	if err != nil {
+		fmt.Printf("Error getting fee: %v\n",err)
+		os.Exit(1)
+	}
+
+	pos_mgr,err := NewNonfungiblePositionManager(pos_mgr_addr,eclient)
+	if err !=  nil {
+		fmt.Printf("Error instantiating NonFungiblePositionManager: %v\n",err)
 		os.Exit(1)
 	}
 
@@ -91,6 +115,22 @@ func main() {
 		os.Exit(1)
 	}
 	from_address := crypto.PubkeyToAddress(*from_publicKeyECDSA)
+
+	var mint_params INonfungiblePositionManagerMintParams
+	mint_params.Token0 = token0_addr
+	mint_params.Token1 = token1_addr
+	mint_params.Fee = big.NewInt(0).Set(fee)
+	mint_params.TickLower = tick_lower
+	mint_params.TickUpper = tick_upper
+	mint_params.Amount0Desired = big.NewInt(0).Set(desired_amount)
+	mint_params.Amount1Desired = big.NewInt(0).Set(desired_amount)
+	mint_params.Amount0Min = big.NewInt(0).Set(desired_amount)
+	mint_params.Amount1Min = big.NewInt(0).Set(desired_amount)
+	mint_params.Recipient = from_address
+	ts := time.Now().Unix()
+	ts = ts + 60*60*24*5	// shift deadline 5 day ahead of current time
+	mint_params.Deadline = big.NewInt(ts)
+
 	from_nonce, err := eclient.PendingNonceAt(context.Background(), from_address)
 	if err != nil {
 		fmt.Printf("Error getting account's nonce: %v\n",err)
@@ -123,7 +163,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := pool_ctrct.Mint(txopts,from_address,tick_lower,tick_upper,delta_amount,nil)
+	tx,err := pos_mgr.Mint(txopts,mint_params)
 	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)
