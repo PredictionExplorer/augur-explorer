@@ -1,10 +1,9 @@
-// 
+// Initializes a pool using square root price value
 package main
 
 import (
 	"os"
 	"fmt"
-	"time"
 	"math/big"
 	"context"
 	"crypto/ecdsa"
@@ -33,10 +32,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(os.Args) != 6 {
+	if len(os.Args) != 4 {
 		fmt.Printf(
-			"Usage: \n\t\t%v [priv_key] [pool_addr] [tick_lower] [tick_upper] [amount(delta)]\n\n"+
-			"\t\tAdds liquidity to the pool\n",
+			"Usage: \n\t\t%v [priv_key] [pool_addr] [sqrtpricex96]\n\n"+
+			"\t\tInitializes pool's price for token0 in terms of token1\n",
 			os.Args[0],
 		)
 		os.Exit(1)
@@ -50,32 +49,17 @@ func main() {
 
 	pool_addr := common.HexToAddress(os.Args[2])
 
-	tick_lower_str := os.Args[3]
-	tick_lower:= big.NewInt(0)
-	_,success := tick_lower.SetString(tick_lower_str,10)
+	price_str := os.Args[3]
+	price := big.NewInt(0)
+	_,success := price.SetString(price_str,10)
 	if !success {
-		fmt.Printf("Incorrect tick_lower number provided on the command line")
-		os.Exit(1)
-	}
-	tick_upper_str := os.Args[4]
-	tick_upper:= big.NewInt(0)
-	_,success = tick_upper.SetString(tick_upper_str,10)
-	if !success {
-		fmt.Printf("Incorrect tick_upper number provided on the command line")
-		os.Exit(1)
-	}
-
-	amount_str := os.Args[5]
-	delta_amount := big.NewInt(0)
-	_,success = delta_amount.SetString(amount_str,10)
-	if !success {
-		fmt.Printf("Incorrect amount provided on the command line")
+		fmt.Printf("Incorrect square root of price in binary Q96 format provided on the command line")
 		os.Exit(1)
 	}
 
 	pool_ctrct,err := NewUniswapV3Pool(pool_addr,eclient)
 	if err!=nil {
-		fmt.Printf("Failed to instantiate Uniswap v3 Pool contract: %v\n",err)
+		fmt.Printf("Failed to instantiate Uniswap v3 pool contract: %v\n",err)
 		os.Exit(1)
 	}
 
@@ -123,7 +107,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := pool_ctrct.Mint(txopts,from_address,tick_lower,tick_upper,delta_amount,nil)
+	tx,err := pool_ctrct.Initialize(txopts,price)
 	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)
