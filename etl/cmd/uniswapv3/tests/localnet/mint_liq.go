@@ -4,7 +4,6 @@ package main
 import (
 	"os"
 	"fmt"
-	"time"
 	"math/big"
 	"context"
 	"crypto/ecdsa"
@@ -110,7 +109,10 @@ func main() {
 	txopts.GasPrice = gasPrice
 
 	fmt.Printf("Gas price = %v\n",gasPrice.String())
-
+	fmt.Printf("delta amount = %v\n",delta_amount.String())
+	fmt.Printf("tick_upper = %v\n",tick_upper.String())
+	fmt.Printf("tick lower = %v\n",tick_lower.String())
+	fmt.Printf("owner = %v\n",from_address.String())
 	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 		signer := types.NewEIP155Signer(big_chain_id)
 		signature, err := crypto.Sign(signer.Hash(tx).Bytes(), from_PrivateKey)

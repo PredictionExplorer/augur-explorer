@@ -124,8 +124,8 @@ func main() {
 	mint_params.TickUpper = tick_upper
 	mint_params.Amount0Desired = big.NewInt(0).Set(desired_amount)
 	mint_params.Amount1Desired = big.NewInt(0).Set(desired_amount)
-	mint_params.Amount0Min = big.NewInt(0).Set(desired_amount)
-	mint_params.Amount1Min = big.NewInt(0).Set(desired_amount)
+	mint_params.Amount0Min = big.NewInt(0)
+	mint_params.Amount1Min = big.NewInt(0)
 	mint_params.Recipient = from_address
 	ts := time.Now().Unix()
 	ts = ts + 60*60*24*5	// shift deadline 5 day ahead of current time
