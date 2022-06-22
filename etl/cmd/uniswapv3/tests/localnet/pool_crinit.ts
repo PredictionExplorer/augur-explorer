@@ -1,4 +1,3 @@
-//var math = require("/usr/local/lib/node_modules/mathjs")
 import { ethers } from 'ethers'
 import { BigNumber, BigNumberish, constants, Contract, ContractTransaction, utils, Wallet } from 'ethers'
 import { Pool } from '@uniswap/v3-sdk'
@@ -9,7 +8,7 @@ import bn from './bignumber.js'
 const pkey = process.env["PRIVATE_KEY"]
 const provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
 const signer = new ethers.Wallet(pkey, provider);
-const poolAddress = '0xAe9a1Df527E36DE6EBa251eA4FBAfC897e1D7E9A'
+const nftpmAddress = '0x7a8f8e48D4CC990BBD8E088FB027e850486e8e0C'
 const poolContract = new ethers.Contract(poolAddress, abi, signer)
 
 /*

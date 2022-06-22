@@ -97,6 +97,10 @@ func main() {
 	}
 	auth.Signer = signfunc
 	fmt.Printf("Nonce: %v, GasLimit: %v\n",auth.Nonce,auth.GasLimit)
+	fmt.Printf("token0: %v\n",token0.String())
+	fmt.Printf("token1: %v\n",token1.String())
+	fmt.Printf("fee: %v\n",fee.String())
+	fmt.Printf("sqrt_price\n",sqrt_price.String())
 	pinit_ctrct,err := NewPinit(pinit_addr,eclient)
 	if err != nil {
 		fmt.Printf("Error instantiating Pinit contract: %v\n",err)
