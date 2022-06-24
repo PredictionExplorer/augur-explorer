@@ -24,13 +24,13 @@ interface Immutables {
 	tickSpacing: number
 	maxLiquidityPerTick: ethers.BigNumber
 }
-const poolAddress = "0x0E12de19803D02Ba47f52d8BAf5600c0Cfaf1E52"
+const poolAddress = "0xAe9a1Df527E36DE6EBa251eA4FBAfC897e1D7E9A"
 const pkey = process.env["PRIVATE_KEY"]
 const provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
 const signer = new ethers.Wallet(pkey, provider);
 const poolContract = new ethers.Contract(poolAddress, poolabi, signer)
-const token0_addr = "0xb03cf72bC5a9A344AAC43534D664917927367487"
-const token1_addr = "0x6226649431c4180a390f810bfD604b50EB68d9c5"
+/*const token0_addr = "0xb03cf72bC5a9A344AAC43534D664917927367487"*/
+/*const token1_addr = "0x6226649431c4180a390f810bfD604b50EB68d9c5"*/
 //const pool_fee = 500
 //const price_str = "79228162514264337593543950336"
 //const liquidity_str "10000"
@@ -45,7 +45,10 @@ async function getPoolImmutables() {
     poolContract.tickSpacing(),
     poolContract.maxLiquidityPerTick(),
   ])
-
+  	console.log("token0:")
+	console.log(token0)
+	console.log("token1:")
+	console.log(token1)
   const immutables: Immutables = {
     factory,
     token0,
@@ -73,15 +76,16 @@ async function getPoolState() {
   return PoolState
 }
 async function main() {
- const [immutables, state] = await Promise.all([getPoolImmutables(), getPoolState()])
-
-	const Token0 = new Token(chain_id, token0_addr, 18, 'WETH', 'Wrapped Eth')
-	const Token1 = new Token(chain_id, token1_addr, 6, 'USDC', 'US Dollar')
+	const [immutables, state] = await Promise.all([getPoolImmutables(), getPoolState()])
+	const Token0 = new Token(chain_id, poolContract.token0.address, 18, 'WETH', 'Wrapped Eth')
+	const Token1 = new Token(chain_id, poolContract.token1.address, 6, 'USDC', 'US Dollar')
 
 	console.log("liquidity: ")
 	console.log(state.liquidity.toString())
 	console.log("tick: ")
 	console.log(state.tick)
+	console.log("Token0")
+	console.log(Token0)
 	const pool_ctrct = new Pool(
 		Token0,
 		Token1,
@@ -90,6 +94,8 @@ async function main() {
 		state.liquidity.toString(),
 		state.tick
 	)
+	console.log("pool.tickspacing:")
+	console.log(pool_ctrct.tickSpacing)
 	const position = new Position({
 		pool: pool_ctrct,
 		liquidity: 20000,

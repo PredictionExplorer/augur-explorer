@@ -46,14 +46,17 @@ func main() {
 	allowance,err:=erc20_token.Allowance(copts,owner_addr,spender_addr)
 	if err!=nil {
 		fmt.Printf("Error during call: %v\n",err)
+		os.Exit(1)
 	}
 	decimals,err:=erc20_token.Decimals(copts)
 	if err!=nil {
 		fmt.Printf("Error during call: %v\n",err)
+		os.Exit(1)
 	}
 	symbol,err:=erc20_token.Symbol(copts)
 	if err!=nil {
 		fmt.Printf("Error during call: %v\n",err)
+		os.Exit(1)
 	}
 	divisor:=big.NewInt(0)
 	if decimals == 0 {

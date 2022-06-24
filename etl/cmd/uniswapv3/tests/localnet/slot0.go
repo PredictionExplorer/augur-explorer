@@ -40,9 +40,30 @@ func main() {
 	var copts = new(bind.CallOpts)
 	slot0,err:=pool.Slot0(copts)
 	if err!=nil {
-		fmt.Printf("Error during call: %v\n",err)
+		fmt.Printf("Error during Slot0() call: %v\n",err)
+		os.Exit(1)
 	}
 	liquidity,err := pool.Liquidity(copts)
+	if err != nil {
+		fmt.Printf("Error during Liquidity() call: %v\n",err)
+		os.Exit(1)
+	}
+	feeGrowthGlobal0X128,err := pool.FeeGrowthGlobal0X128(copts)
+	if err != nil {
+		fmt.Printf("Error during feeGrowthGlobal0X128() call: %v\n",err)
+		os.Exit(1)
+	}
+	feeGrowthGlobal1X128,err := pool.FeeGrowthGlobal1X128(copts)
+	if err != nil {
+		fmt.Printf("Error during feeGrowthGlobal1X128() call: %v\n",err)
+		os.Exit(1)
+	}
+	tick_spacing,err := pool.TickSpacing(copts)
+	if err != nil {
+		fmt.Printf("Error during TickSpacing call: %v\n",err)
+		os.Exit(1)
+	}
+	fmt.Printf("Tick spacing:              \t%v\n",tick_spacing)
 	fmt.Printf("SqrtPriceX96:              \t%v\n",slot0.SqrtPriceX96.String())
 	fmt.Printf("Tick:                      \t%v\n",slot0.Tick.String())
 	fmt.Printf("ObservationIndex:          \t%v\n",slot0.ObservationIndex)
@@ -51,4 +72,6 @@ func main() {
 	fmt.Printf("Unlocked:                  \t%v\n",slot0.Unlocked)
 	fmt.Printf("\n")
 	fmt.Printf("Liquidity:                 \t%v\n",liquidity.String())
+	fmt.Printf("feeGrowthGlobal1X128:      \t%v\n",feeGrowthGlobal1X128)
+	fmt.Printf("feeGrowthGlobal0X128:      \t%v\n",feeGrowthGlobal0X128)
 }
