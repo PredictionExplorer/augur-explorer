@@ -63,6 +63,18 @@ func main() {
 		fmt.Printf("Error during TickSpacing call: %v\n",err)
 		os.Exit(1)
 	}
+	token0_addr,err := pool.Token0(copts)
+	if err != nil {
+		fmt.Printf("Error during Token0() call: %v\n",err)
+		os.Exit(1)
+	}
+	token1_addr,err := pool.Token1(copts)
+	if err != nil {
+		fmt.Printf("Error during Token0() call: %v\n",err)
+		os.Exit(1)
+	}
+	fmt.Printf("Token0:                    \t%v\n",token0_addr.String())
+	fmt.Printf("Token1:                    \t%v\n",token1_addr.String())
 	fmt.Printf("Tick spacing:              \t%v\n",tick_spacing)
 	fmt.Printf("SqrtPriceX96:              \t%v\n",slot0.SqrtPriceX96.String())
 	fmt.Printf("Tick:                      \t%v\n",slot0.Tick.String())
