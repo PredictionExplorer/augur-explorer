@@ -2,11 +2,14 @@ package main
 
 import (
 	"os"
+	//"fmt"
 	"bytes"
 	"math/big"
+	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/primitives/uniswapv3"
@@ -149,8 +152,13 @@ func process_pool_mint(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 
 	owner_addr := common.BytesToAddress(log.Topics[1][12:])
 	evt.OwnerAddr= owner_addr.String()
-	evt.TickLower = log.Topics[2].Big().String()
-	evt.TickUpper= log.Topics[3].Big().String()
+	var t abi.Type
+	t.T = abi.IntTy
+	t.Size = 256
+	lower := abi.ReadInteger(t,log.Topics[2][:]).(*big.Int)
+	upper := abi.ReadInteger(t,log.Topics[3][:]).(*big.Int)
+	evt.TickLower = lower.String()
+	evt.TickUpper = upper.String()
 	evt.SenderAddr = eth_evt.Sender.String()
 	evt.Amount = eth_evt.Amount.String()
 	evt.Amount0 = eth_evt.Amount0.String()
