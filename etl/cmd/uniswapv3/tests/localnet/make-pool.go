@@ -28,6 +28,7 @@ func main() {
 	if len(os.Args) < 6 {
 		fmt.Printf(
 			"Usage: \n\t\t%v [private_key] [factory_addr] [token0_addr] [token1_addr] [fee]\n\t\t"+
+			"\n\t\tFees can be: 500,3000,10000\n"+
 			"Creates a new pool\n\n",os.Args[0],
 		)
 		os.Exit(1)
