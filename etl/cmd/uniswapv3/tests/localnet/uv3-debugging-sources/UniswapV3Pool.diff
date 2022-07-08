@@ -1,6 +1,30 @@
 --- uniswap-v3-core/contracts/UniswapV3Pool.sol	2021-07-14 21:32:42.397745808 -0500
-+++ uniswap-v3-core-mine/contracts/UniswapV3Pool.sol	2022-07-07 21:06:15.647998250 -0500
-@@ -636,7 +636,7 @@
++++ uniswap-v3-core-mine/contracts/UniswapV3Pool.sol	2022-07-08 11:58:14.247102959 -0500
+@@ -369,6 +369,7 @@
+                 );
+             }
+         }
++		emit DBG_UPD_POS(params.owner,params.tickLower,params.tickUpper,_slot0.tick,params.liquidityDelta,liquidityBefore,amount0,amount1,_slot0.sqrtPriceX96)
+     }
+ 
+     /// @dev Gets and updates a position with the given liquidity delta
+@@ -450,6 +451,7 @@
+                 ticks.clear(tickUpper);
+             }
+         }
++		emit DBG_UPD_POS(owner,tickLower,tickUpper,tick,liquidityDelta,_feeGrowthGlobal0X128,_feeGrowthGlobal1X128,feeGrowthInside0X128,feeGrowthInside1X128,flippedLower,flippedUpper);
+     }
+ 
+     /// @inheritdoc IUniswapV3PoolActions
+@@ -482,7 +484,6 @@
+         IUniswapV3MintCallback(msg.sender).uniswapV3MintCallback(amount0, amount1, data);
+         if (amount0 > 0) require(balance0Before.add(amount0) <= balance0(), 'M0');
+         if (amount1 > 0) require(balance1Before.add(amount1) <= balance1(), 'M1');
+-
+         emit Mint(msg.sender, recipient, tickLower, tickUpper, amount, amount0, amount1);
+     }
+ 
+@@ -636,7 +637,7 @@
                  protocolFee: 0,
                  liquidity: cache.liquidityStart
              });
@@ -9,7 +33,7 @@
          // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
          while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != sqrtPriceLimitX96) {
              StepComputations memory step;
-@@ -658,7 +658,6 @@
+@@ -658,7 +659,6 @@
  
              // get the price for the next tick
              step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
@@ -17,7 +41,7 @@
              // compute values to swap to the target tick, price limit, or point where input/output amount is exhausted
              (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount) = SwapMath.computeSwapStep(
                  state.sqrtPriceX96,
-@@ -689,6 +688,7 @@
+@@ -689,6 +689,7 @@
              if (state.liquidity > 0)
                  state.feeGrowthGlobalX128 += FullMath.mulDiv(step.feeAmount, FixedPoint128.Q128, state.liquidity);
  
@@ -25,7 +49,7 @@
              // shift tick if we reached the next price
              if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
                  // if the tick is initialized, run the tick transition
-@@ -782,7 +782,7 @@
+@@ -782,7 +783,7 @@
              IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, data);
              require(balance1Before.add(uint256(amount1)) <= balance1(), 'IIA');
          }

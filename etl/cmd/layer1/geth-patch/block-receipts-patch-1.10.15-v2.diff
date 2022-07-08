@@ -35,6 +35,9 @@
 +	if err != nil {
 +		return output, err
 +	}
++	if header == nil {
++		return output,errors.New(fmt.Sprintf(("Header not found for provided block hash")))
++	}
 +	output.Receipts = make([]types.PackedReceipt,0,512)
 +	for i:=0; i<len(receipts);i++ {
 +		// note: the body of this loop was copied from GetTransactionReceipt() function
