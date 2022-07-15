@@ -1,0 +1,74 @@
+--- uniswap-v3-core/contracts/interfaces/pool/IUniswapV3PoolEvents.sol	2021-07-14 21:32:42.397745808 -0500
++++ uniswap-v3-core-mine/contracts/interfaces/pool/IUniswapV3PoolEvents.sol	2022-07-08 11:32:18.979990616 -0500
+@@ -118,4 +118,71 @@
+     /// @param amount0 The amount of token0 protocol fees that is withdrawn
+     /// @param amount0 The amount of token1 protocol fees that is withdrawn
+     event CollectProtocol(address indexed sender, address indexed recipient, uint128 amount0, uint128 amount1);
++
++	// Events for debugging purposes
++	event DBG_SWAP_HEAD(
++		address indexed pool,
++		bool zeroForOne,
++		int256 amount,
++		uint160 sqrtStartPrice,
++		uint160 sqrtPriceLimit,
++		uint160 slot0sqrtpricex96,
++		int24 tick,
++	);
++
++	event DBG_SWAP_LOOP(
++		address indexed pool,
++
++		// StepComputation:
++		uint160 sqrtPriceX96,
++		uint160 sqrtPriceStartX96,
++		uint160 sqrtPriceNextX96,
++		int24 tick,
++		int24 tickCumulative,
++		bool initialized,
++		uint256 stepAmountIn,
++		uint256 stepAmountOut,
++		uint256 amountProcessed,
++		uint256 feeAmount
++
++		// other variables
++		uint128 liquidity
++		bool exactInput
++		uint256 feeGrowthGlobalX128
++	);
++	event DBG_SWAP_TAIL(
++		address indexed pool,
++		uint256 feeGrowthGlobal0X128,
++		uint256 feeGrowthGlobal1X128,
++		int24 tick,
++		uint160 sqrtPriceX96,
++		uint128 liquidity,
++		uint128 liquidityDiff
++	);
++	event DBG_MOD_POS(
++		address owner,
++		int24 tickLower,
++		int24 tickUpper,
++		int24 slot0Tick,
++		uint128 liquidityDelta,
++		uint128 liquidityBefore,
++		int256 amount0,
++		int256 amount1,
++		uint160 sqrtPriceX96
++
++	);
++	event DBG_UPD_POS(
++		address owner,
++		int24 tickLower,
++		int24 tickUpper,
++		int24 tick,
++		int128 liquidityDelta,
++		uint256 feeGrowthGlobal0X128Before,
++		uint256 feeGrowthGlobal1X128Before,
++		uint256 feeGrowthInside0X128,
++		uint256 feeGrowthInside1X128,
++		bool flippedLower,
++		bool flippedUpper,
++
++	);
+ }
