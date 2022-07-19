@@ -5,7 +5,7 @@ import (
 	//"fmt"
 	"bytes"
 	"math/big"
-	"encoding/hex"
+	//"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/common"
