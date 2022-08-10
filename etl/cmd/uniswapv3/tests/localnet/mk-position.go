@@ -152,7 +152,9 @@ func main() {
 	txopts.GasPrice = gasPrice
 
 	fmt.Printf("Gas price = %v\n",gasPrice.String())
-
+	fmt.Printf("Addr0 %v\n",mint_params.Token0.String())
+	fmt.Printf("Addr1 %v\n",mint_params.Token1.String())
+	fmt.Printf("Fee %v\n",mint_params.Fee.String())
 	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 		signer := types.NewEIP155Signer(big_chain_id)
 		signature, err := crypto.Sign(signer.Hash(tx).Bytes(), from_PrivateKey)

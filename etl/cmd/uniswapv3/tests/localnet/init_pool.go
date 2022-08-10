@@ -57,7 +57,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	pool_ctrct,err := NewUniswapV3Pool(pool_addr,eclient)
+	pool_ctrct,err := NewUniswapV3Pool2(pool_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate Uniswap v3 pool contract: %v\n",err)
 		os.Exit(1)

@@ -71,7 +71,7 @@ func main() {
 	auth := bind.NewKeyedTransactor(from_PrivateKey)
 	auth.Nonce = big.NewInt(int64(from_nonce))
 	auth.Value = big.NewInt(0)
-	auth.GasLimit = uint64(9500000)
+	auth.GasLimit = uint64(95000000)
 	auth.GasPrice = gasPrice
 	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 		signer := types.NewEIP155Signer(big_chain_id)
@@ -84,7 +84,7 @@ func main() {
 		return tx.WithSignature(signer, signature)
 	}
 	auth.Signer = signfunc
-	contract_addr,tx,contract_instance,err := DeployUniswapV3Factory(auth,eclient)
+	contract_addr,tx,contract_instance,err := DeployUniswapV3Factory2(auth,eclient)
 	if err!=nil {
 		fmt.Printf("Error on Deploy: %v\n",err)
 		os.Exit(1)

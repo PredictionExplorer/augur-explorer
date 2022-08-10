@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"strconv"
+	//"strings"
 	"math/big"
 	//"encoding/hex"
 	"crypto/ecdsa"
@@ -25,11 +25,10 @@ var (
 
 func main() {
 
-	if len(os.Args) < 6 {
+	if len(os.Args) < 2 {
 		fmt.Printf(
-			"Usage: \n\t\t%v [private_key] [factory_addr] [token0_addr] [token1_addr] [fee]\n\t\t"+
-			"\n\t\tFees can be: 500,3000,10000\n"+
-			"Creates a new pool\n\n",os.Args[0],
+			"Usage: \n\t\t%v [private_key]\n\t\t"+
+			"Deploys GetAddr contract\n\n",os.Args[0],
 		)
 		os.Exit(1)
 	}
@@ -38,15 +37,7 @@ func main() {
 		fmt.Printf("Sender's private key is not 64 characters long\n")
 		os.Exit(1)
 	}
-	factory_addr := common.HexToAddress(os.Args[2])
-	token0_addr := common.HexToAddress(os.Args[3])
-	token1_addr := common.HexToAddress(os.Args[4])
 
-	fee,err := strconv.ParseInt(os.Args[5],10,64)
-	if err != nil {
-		fmt.Printf("Error parsing fee field: %v\n",err)
-		os.Exit(1)
-	}
 	RPC_URL = os.Getenv("RPC_URL")
 	eclient, err := ethclient.Dial(RPC_URL)
 	if err!=nil {
@@ -93,18 +84,12 @@ func main() {
 		return tx.WithSignature(signer, signature)
 	}
 	auth.Signer = signfunc
-	factory,err := NewUniswapV3FactoryDebugMine(factory_addr, eclient)
-	if err != nil {
-		fmt.Printf("Error creating Uniswap Factory instance: %v\n",err)
+	contract_addr,tx,contract_instance,err := DeployGetAddr(auth,eclient)
+	if err!=nil {
+		fmt.Printf("Error on Deploy: %v\n",err)
 		os.Exit(1)
 	}
-
-	tx,err:=factory.CreatePool(auth, token0_addr,token1_addr,big.NewInt(fee))
-	if err != nil {
-		fmt.Printf("Error submitting tx: %v\n",err)
-		os.Exit(1)
-	}
-	fmt.Printf("Transaction submitted, pool address will be provided in PoolCreated event\n")
-	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
+	fmt.Printf("Contract address: %v\n",contract_addr.String())
 	_ = tx
+	_ = contract_instance
 }
