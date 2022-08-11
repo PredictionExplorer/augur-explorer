@@ -72,9 +72,8 @@ func main() {
 	auth := bind.NewKeyedTransactor(from_PrivateKey)
 	auth.Nonce = big.NewInt(int64(from_nonce))
 	auth.Value = big.NewInt(0)
-	auth.GasLimit = uint64(12500000)
+	auth.GasLimit = uint64(192500000)
 	auth.GasPrice = gasPrice
-	fmt.Printf("Nonce=%v\n",auth.Nonce)
 	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 		signer := types.NewEIP155Signer(big_chain_id)
 		signature, err := crypto.Sign(signer.Hash(tx).Bytes(), from_PrivateKey)
@@ -85,13 +84,17 @@ func main() {
 		}
 		return tx.WithSignature(signer, signature)
 	}
+	var label [32]byte
+	label[0]='E'
 	auth.Signer = signfunc
-	contract_addr,tx,contract_instance,err := DeployNonfungibleTokenPositionDescriptor(auth,eclient,weth9_addr)
+	fmt.Printf("Nonce: %v, GasLimit: %v\n",auth.Nonce,auth.GasLimit)
+	contract_addr,tx,contract_instance,err := DeployNonfungibleTokenPositionDescriptor(auth,eclient,weth9_addr,label)
 	if err!=nil {
 		fmt.Printf("Error on Deploy: %v\n",err)
 		fmt.Printf("Contract address: %v\n",contract_addr.String())
 		os.Exit(1)
 	}
+	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	fmt.Printf("Contract address: %v\n",contract_addr.String())
 	_ = tx
 	_ = contract_instance

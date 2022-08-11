@@ -102,7 +102,7 @@ func main() {
 	one := big.NewInt(1)
 	sqrtPriceLimitX96 := big.NewInt(0)
 	sqrtPriceLimitX96.Set(slot0.SqrtPriceX96)
-	sqrtPriceLimitX96.Add(sqrtPriceLimitX96,one)
+	sqrtPriceLimitX96.Sub(sqrtPriceLimitX96,one)
 	zero_for_one := false
 	if bytes.Equal(token0_addr.Bytes(),token_in_addr.Bytes()) {
 		zero_for_one = true

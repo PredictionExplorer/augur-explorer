@@ -28,7 +28,7 @@ func main() {
 	if len(os.Args) < 5 {
 		fmt.Printf(
 			"Usage: \n\t\t%v [private_key] [factory_addr] [weth9_addr] [token_descriptor_addr]\n\t\t"+
-			"Deploys Uniswap v3 SwapRouter contract\n\n",os.Args[0],
+			"Deploys Uniswap v3 NonfungiblePositionManager contract\n\n",os.Args[0],
 		)
 		os.Exit(1)
 	}
