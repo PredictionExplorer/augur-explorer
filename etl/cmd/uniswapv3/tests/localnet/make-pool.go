@@ -93,7 +93,7 @@ func main() {
 		return tx.WithSignature(signer, signature)
 	}
 	auth.Signer = signfunc
-	factory,err := NewUniswapV3FactoryDebugMine(factory_addr, eclient)
+	factory,err := NewUniswapV3Factory(factory_addr, eclient)
 	if err != nil {
 		fmt.Printf("Error creating Uniswap Factory instance: %v\n",err)
 		os.Exit(1)

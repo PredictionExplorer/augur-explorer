@@ -18,7 +18,7 @@ var (
 )
 func main() {
 
-	code,err := hex.DecodeString(UniswapV3Pool2Bin[2:])
+	code,err := hex.DecodeString(UniswapV3PoolBin[2:])
 	if err != nil {
 		fmt.Printf("Error: %v\n",err)
 		os.Exit(1)

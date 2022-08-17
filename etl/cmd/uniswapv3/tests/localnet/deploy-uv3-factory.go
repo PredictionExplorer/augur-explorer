@@ -84,7 +84,7 @@ func main() {
 		return tx.WithSignature(signer, signature)
 	}
 	auth.Signer = signfunc
-	contract_addr,tx,contract_instance,err := DeployUniswapV3Factory2(auth,eclient)
+	contract_addr,tx,contract_instance,err := DeployUniswapV3Factory(auth,eclient)
 	if err!=nil {
 		fmt.Printf("Error on Deploy: %v\n",err)
 		os.Exit(1)

@@ -34,7 +34,7 @@ func main() {
 
 	if len(os.Args) != 8 {
 		fmt.Printf(
-			"Usage: \n\t\t%v [priv_key] [swaprouter_addr] [token_in_addr] [tokne_out_addr] [fee] [amount_in] [price_limit]\n\n"+
+			"Usage: \n\t\t%v [priv_key] [swaprouter_addr] [token_in_addr] [tokne_out_addr] [fee] [amount_out] [price_limit]\n\n"+
 			"\t\tSends exactInputSingle() function call to SwapRouter contract\n",
 			os.Args[0],
 		)
@@ -51,7 +51,7 @@ func main() {
 	token_in_addr := common.HexToAddress(os.Args[3])
 	token_out_addr := common.HexToAddress(os.Args[4])
 	fee_str := os.Args[5]
-	amount_in_str := os.Args[6]
+	amount_out_str := os.Args[6]
 	price_limit_str := os.Args[7]
 
 	fee := big.NewInt(0)
@@ -60,10 +60,10 @@ func main() {
 		fmt.Printf("Incorrect fee value")
 		os.Exit(1)
 	}
-	amount_in := big.NewInt(0)
-	_,success = amount_in.SetString(amount_in_str,10)
+	amount_out := big.NewInt(0)
+	_,success = amount_out.SetString(amount_out_str,10)
 	if !success {
-		fmt.Printf("Incorrect amount_in")
+		fmt.Printf("Incorrect amount_out")
 		os.Exit(1)
 	}
 	price_limit := big.NewInt(0)
@@ -78,7 +78,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	var params ISwapRouterExactInputSingleParams
+	var params ISwapRouterExactOutputSingleParams
 
 	from_PrivateKey, err := crypto.HexToECDSA(from_pkey_str)
 	if err != nil {
@@ -100,8 +100,9 @@ func main() {
 	params.TokenIn = token_in_addr
 	params.TokenOut = token_out_addr
 	params.Fee = big.NewInt(0).Set(fee)
-	params.AmountIn = big.NewInt(0).Set(amount_in)
-	params.AmountOutMinimum = big.NewInt(0)
+	params.AmountOut  = big.NewInt(0).Set(amount_out)
+	params.AmountInMaximum = big.NewInt(2147483647)
+	params.AmountInMaximum.Mul(params.AmountInMaximum,big.NewInt(65536))
 
 	sqrtPriceLimitX96 := big.NewInt(0)
 	sqrtPriceLimitX96.Set(price_limit)
@@ -127,8 +128,8 @@ func main() {
 	txopts.GasPrice = gasPrice
 
 	fmt.Printf("Gas price = %v\n",gasPrice.String())
-	fmt.Printf("Amount in = %v\n",params.AmountIn.String())
-	fmt.Printf("Amount min = %v\n",params.AmountOutMinimum.String())
+	fmt.Printf("Amount Out  = %v\n",params.AmountOut.String())
+	fmt.Printf("Amount in max = %v\n",params.AmountInMaximum.String())
 
 	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 		signer := types.NewEIP155Signer(big_chain_id)
@@ -142,7 +143,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := router_ctrct.ExactInputSingle(txopts,params)
+	tx,err := router_ctrct.ExactOutputSingle(txopts,params)
 	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)
