@@ -186,10 +186,30 @@ func fetch_image(url string) (int,error) {
 		return response.StatusCode,errors.New(err_str)
 	}
 }
+func fmt_url_addr(token_id int64) string {
+
+	url := fmt.Sprintf("%v/%06d_black.png",IMAGES_URL,token_id)
+	return url
+}
+func web_returns_403_code(token_id int64) bool {
+	//this is needed to recover from 403 code which the image server returns for 
+	//token ids from 1 to 269 (a bug at the Rwalk webserver)
+
+	url := fmt_url_addr(token_id)
+	status,err := fetch_image(url)
+	if err != nil {
+		return false
+	}
+	if status == 403 {
+		Info.Printf("Image server returns 403 code for token %v...\n",token_id)
+		return true
+	}
+	return false
+}
 func get_image_file_from_net_until_success(token_id int64) bool {
 
 	time_out_counter := int(0)
-	url := fmt.Sprintf("%v/%06d_black.png",IMAGES_URL,token_id)
+	url := fmt_url_addr(token_id)
 	Info.Printf("Fetching image for token %v: %v\n",token_id,url)
 	for {
 		status,err := fetch_image(url)
@@ -516,6 +536,11 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 				last_mint_ts = rec.TimeStampMinted
 				new_channel_name = fmt.Sprintf("Last reward: %.2f%v",withdrawal_amount,EthSign)
 				set_channel_name(new_channel_name,LastRewardChannelID)
+			}
+			is_403_code := web_returns_403_code(rec.TokenId)
+			if is_403_code {
+				Info.Printf("Skipping event for token %v due to 403 error\n",rec.TokenId)
+				continue	// 403 is not good for a perpetual fetch via HTTP, so we skip the event
 			}
 			success = get_image_file_from_net_until_success(rec.TokenId)
 			if !success {
