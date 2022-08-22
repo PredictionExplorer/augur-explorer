@@ -196,10 +196,7 @@ func web_returns_403_code(token_id int64) bool {
 	//token ids from 1 to 269 (a bug at the Rwalk webserver)
 
 	url := fmt_url_addr(token_id)
-	status,err := fetch_image(url)
-	if err != nil {
-		return false
-	}
+	status,_:= fetch_image(url)
 	if status == 403 {
 		Info.Printf("Image server returns 403 code for token %v...\n",token_id)
 		return true
