@@ -15,7 +15,7 @@ import (
 
 )
 const (
-	DBG_MOD_POS=	"b05d03afcde6cc3b7059da906a709c3e3c68c3c665a90c35ae0ade8d0903f666"
+	DBG_MOD_POS=	"d1067085947d0663c9eae886f8c165cbbccbc686928d7742d4241b4fb310228f"
 	DBG_UPD_POS=	"2e894cce336ea758e6f37d72cafa9ef74e237e6e488a2f6ad4148c3fbca85f24"
 )
 var (
@@ -56,15 +56,17 @@ func main() {
 				fmt.Printf("Error unpacking event DBG_MOD_POS: %v\n",err)
 				os.Exit(1)
 			}
-			fmt.Printf("Owner:                %v\n",eth_evt.Owner.String())
-			fmt.Printf("TickLower:            %v\n",eth_evt.TickLower)
-			fmt.Printf("TickUpper:            %v\n",eth_evt.TickUpper)
-			fmt.Printf("Slot0Tick:            %v\n",eth_evt.Slot0Tick.String())
-			fmt.Printf("LiquidityDelta:       %v\n",eth_evt.LiquidityDelta.String())
-			fmt.Printf("LiquidityBefore:      %v\n",eth_evt.LiquidityBefore.String())
-			fmt.Printf("Amount0:              %v\n",eth_evt.Amount0.String())
-			fmt.Printf("Amount1:              %v\n",eth_evt.Amount1.String())
-			fmt.Printf("SqrtPriceX96:         %v\n",eth_evt.SqrtPriceX96.String())
+			fmt.Printf("DBG_MOD_POS {\n")
+			fmt.Printf("\tOwner:                          %v\n",eth_evt.Owner.String())
+			fmt.Printf("\tTickLower:                      %v\n",eth_evt.TickLower)
+			fmt.Printf("\tTickUpper:                      %v\n",eth_evt.TickUpper)
+			fmt.Printf("\tSlot0Tick:                      %v\n",eth_evt.Slot0Tick.String())
+			fmt.Printf("\tLiquidityDelta:                 %v\n",eth_evt.LiquidityDelta.String())
+			fmt.Printf("\tLiquidityBefore:                %v\n",eth_evt.LiquidityBefore.String())
+			fmt.Printf("\tAmount0:                        %v\n",eth_evt.Amount0.String())
+			fmt.Printf("\tAmount1:                        %v\n",eth_evt.Amount1.String())
+			fmt.Printf("\tSqrtPriceX96:                   %v\n",eth_evt.SqrtPriceX96.String())
+			fmt.Printf("}\n")
 		}
 		if bytes.Equal(log.Topics[0].Bytes(),evt_upd_pos) {
 			var eth_evt IUniswapV3PoolEventsDBGUPDPOS
@@ -73,17 +75,19 @@ func main() {
 				fmt.Printf("Error unpacking event DBG_UPD_POS: %v\n",err)
 				os.Exit(1)
 			}
-			fmt.Printf("Owner:                          %v\n",eth_evt.Owner.String())
-			fmt.Printf("TickLower:                      %v\n",eth_evt.TickLower)
-			fmt.Printf("TickUpper:                      %v\n",eth_evt.TickUpper)
-			fmt.Printf("Tick:                           %v\n",eth_evt.Tick)
-			fmt.Printf("LiquidityDelta:                 %v\n",eth_evt.LiquidityDelta.String())
-			fmt.Printf("feeGrowthGlobal0X128Before:     %v\n",eth_evt.FeeGrowthGlobal0X128Before.String())
-			fmt.Printf("feeGrowthGlobal1X128Before:     %v\n",eth_evt.FeeGrowthGlobal1X128Before.String())
-			fmt.Printf("feeGrowthInside0X128:           %v\n",eth_evt.FeeGrowthInside0X128)
-			fmt.Printf("feeGrowthInside1X128:           %v\n",eth_evt.FeeGrowthInside1X128)
-			fmt.Printf("FlippedLower:                   %v\n",eth_evt.FlippedLower)
-			fmt.Printf("FlippedUpper:                   %v\n",eth_evt.FlippedUpper)
+			fmt.Printf("DBG_UPD_POS {\n")
+			fmt.Printf("\tOwner:                          %v\n",eth_evt.Owner.String())
+			fmt.Printf("\tTickLower:                      %v\n",eth_evt.TickLower)
+			fmt.Printf("\tTickUpper:                      %v\n",eth_evt.TickUpper)
+			fmt.Printf("\tTick:                           %v\n",eth_evt.Tick)
+			fmt.Printf("\tLiquidityDelta:                 %v\n",eth_evt.LiquidityDelta.String())
+			fmt.Printf("\tfeeGrowthGlobal0X128Before:     %v\n",eth_evt.FeeGrowthGlobal0X128Before.String())
+			fmt.Printf("\tfeeGrowthGlobal1X128Before:     %v\n",eth_evt.FeeGrowthGlobal1X128Before.String())
+			fmt.Printf("\tfeeGrowthInside0X128:           %v\n",eth_evt.FeeGrowthInside0X128)
+			fmt.Printf("\tfeeGrowthInside1X128:           %v\n",eth_evt.FeeGrowthInside1X128)
+			fmt.Printf("\tFlippedLower:                   %v\n",eth_evt.FlippedLower)
+			fmt.Printf("\tFlippedUpper:                   %v\n",eth_evt.FlippedUpper)
+			fmt.Printf("}\n")
 		}
 	}
 }

@@ -16,8 +16,9 @@ import (
 )
 const (
 	DBG_SWAP_HEAD =	"884bf0b67c5a7a033ec93aeab39846c4e697715e51811c8b9499b2666468c207"
-	DBG_SWAP_LOOP =	"5cdbca1f8631135a1302301500a65ffc83d0b7c1177e309dfc6a14e4ea6c58f3"
+	DBG_SWAP_LOOP =	"f5b431d95ff8c2e6f40d1ab0bdd3f039c0cec559bfbe2b354dcd8e90c52d5929"
 	DBG_SWAP_TAIL = "507cf18262378ccee2abf0e6b16ba3a87afe50f610f6d98fec691ae6ab12a584"
+
 )
 var (
 	RPC_URL string
@@ -59,12 +60,14 @@ func main() {
 				os.Exit(1)
 			}
 			eth_evt.Pool = common.BytesToAddress(log.Topics[1][12:])
-			fmt.Printf("Pool addr:            %v\n",eth_evt.Pool.String())
-			fmt.Printf("ZeroForOne:           %v\n",eth_evt.ZeroForOne)
-			fmt.Printf("Amount:               %v\n",eth_evt.Amount.String())
-			fmt.Printf("SqrtStartPrice:       %v\n",eth_evt.SqrtStartPrice.String())
-			fmt.Printf("SqrtPriceLimit:       %v\n",eth_evt.SqrtPriceLimit.String())
-			fmt.Printf("Slot0SqrtPriceX96:    %v\n",eth_evt.Slot0sqrtpricex96.String())
+			fmt.Printf("DBG_SWAP_HEAD {\n")
+			fmt.Printf("\tPool addr:            %v\n",eth_evt.Pool.String())
+			fmt.Printf("\tZeroForOne:           %v\n",eth_evt.ZeroForOne)
+			fmt.Printf("\tAmount:               %v\n",eth_evt.Amount.String())
+			fmt.Printf("\tSqrtStartPrice:       %v\n",eth_evt.SqrtStartPrice.String())
+			fmt.Printf("\tSqrtPriceLimit:       %v\n",eth_evt.SqrtPriceLimit.String())
+			fmt.Printf("\tSlot0SqrtPriceX96:    %v\n",eth_evt.Slot0sqrtpricex96.String())
+			fmt.Printf("}\n")
 		}
 		if bytes.Equal(log.Topics[0].Bytes(),evt_swap_loop) {
 			var eth_evt IUniswapV3PoolEventsDBGSWAPLOOP
@@ -74,20 +77,22 @@ func main() {
 				os.Exit(1)
 			}
 			eth_evt.Pool = common.BytesToAddress(log.Topics[1][12:])
-			fmt.Printf("Pool addr:            %v\n",eth_evt.Pool.String())
-			fmt.Printf("SqrtPriceX96:         %v\n",eth_evt.SqrtPriceX96.String())
-			fmt.Printf("SqrtPriceStartX96:    %v\n",eth_evt.SqrtPriceStartX96.String())
-			fmt.Printf("SqrtPriceNextX96:     %v\n",eth_evt.SqrtPriceNextX96.String())
-			fmt.Printf("Tick:                 %v\n",eth_evt.Tick)
-			fmt.Printf("TickCumulative:       %v\n",eth_evt.TickCumulative)
-			fmt.Printf("Initialized:          %v\n",eth_evt.Initialized)
-			fmt.Printf("StepAmountIn:         %v\n",eth_evt.StepAmountIn.String())
-			fmt.Printf("StepAmountOut:        %v\n",eth_evt.StepAmountOut.String())
-			fmt.Printf("AmountProcessed:      %v\n",eth_evt.AmountProcessed.String())
-			fmt.Printf("FeeAmount:            %v\n",eth_evt.FeeAmount.String())
-			fmt.Printf("Liquidity:            %v\n",eth_evt.Liquidity.String())
-			fmt.Printf("ExactInput:           %v\n",eth_evt.ExactInput)
-			fmt.Printf("FeeGrrowthGlobalX128: %v\n",eth_evt.FeeGrowthGlobalX128.String())
+			fmt.Printf("DBG_SWAP_LOOP {\n")
+			fmt.Printf("\tPool addr:            %v\n",eth_evt.Pool.String())
+			fmt.Printf("\tSqrtPriceX96:         %v\n",eth_evt.SqrtPriceX96.String())
+			fmt.Printf("\tSqrtPriceStartX96:    %v\n",eth_evt.SqrtPriceStartX96.String())
+			fmt.Printf("\tSqrtPriceNextX96:     %v\n",eth_evt.SqrtPriceNextX96.String())
+			fmt.Printf("\tTick:                 %v\n",eth_evt.Tick)
+			fmt.Printf("\tTickCumulative:       %v\n",eth_evt.TickCumulative)
+			fmt.Printf("\tInitialized:          %v\n",eth_evt.Initialized)
+			fmt.Printf("\tStepAmountIn:         %v\n",eth_evt.StepAmountIn.String())
+			fmt.Printf("\tStepAmountOut:        %v\n",eth_evt.StepAmountOut.String())
+			fmt.Printf("\tAmountProcessed:      %v\n",eth_evt.AmountProcessed.String())
+			fmt.Printf("\tFeeAmount:            %v\n",eth_evt.FeeAmount.String())
+			fmt.Printf("\tLiquidity:            %v\n",eth_evt.Liquidity.String())
+			fmt.Printf("\tExactInput:           %v\n",eth_evt.ExactInput)
+			fmt.Printf("\tFeeGrrowthGlobalX128: %v\n",eth_evt.FeeGrowthGlobalX128.String())
+			fmt.Printf("}\n")
 		}
 		if bytes.Equal(log.Topics[0].Bytes(),evt_swap_tail) {
 			var eth_evt IUniswapV3PoolEventsDBGSWAPTAIL
@@ -97,13 +102,15 @@ func main() {
 				os.Exit(1)
 			}
 			eth_evt.Pool = common.BytesToAddress(log.Topics[1][12:])
-			fmt.Printf("Pool addr:            %v\n",eth_evt.Pool.String())
-			fmt.Printf("FeeGrowthGlobal0X128: %v\n",eth_evt.FeeGrowthGlobal0X128.String())
-			fmt.Printf("FeeGrowthGlobal1X128: %v\n",eth_evt.FeeGrowthGlobal1X128.String())
-			fmt.Printf("Tick:                 %v\n",eth_evt.Tick)
-			fmt.Printf("SqrtPriceX96:         %v\n",eth_evt.SqrtPriceX96.String())
-			fmt.Printf("Liquidity:            %v\n",eth_evt.Liquidity.String())
-			fmt.Printf("LiquidityDiff:        %v\n",eth_evt.LiquidityDiff.String())
+			fmt.Printf("DBG_SWAP_TAIL {\n")
+			fmt.Printf("\tPool addr:            %v\n",eth_evt.Pool.String())
+			fmt.Printf("\tFeeGrowthGlobal0X128: %v\n",eth_evt.FeeGrowthGlobal0X128.String())
+			fmt.Printf("\tFeeGrowthGlobal1X128: %v\n",eth_evt.FeeGrowthGlobal1X128.String())
+			fmt.Printf("\tTick:                 %v\n",eth_evt.Tick)
+			fmt.Printf("\tSqrtPriceX96:         %v\n",eth_evt.SqrtPriceX96.String())
+			fmt.Printf("\tLiquidity:            %v\n",eth_evt.Liquidity.String())
+			fmt.Printf("\tLiquidityDiff:        %v\n",eth_evt.LiquidityDiff.String())
+			fmt.Printf("}\n")
 		}
 	}
 }
