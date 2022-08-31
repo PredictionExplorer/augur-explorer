@@ -346,6 +346,9 @@ func set_channel_name(new_name string,channel_id disgord.Snowflake) {
 }
 func notify_twitter(token_id int64,msg string,image_data []byte) {
 
+	Info.Printf("notify_twitter(token_id=%v)\n",token_id)
+	return
+
 	twitter_nonce++
 	status_code,body,err := SendTweetWithImage(
 		twitter_keys.ApiKey,
@@ -362,6 +365,8 @@ func notify_twitter(token_id int64,msg string,image_data []byte) {
 }
 func notify_discord(token_id int64,msg string,image_data []byte,image_url string) error {
 
+	Info.Printf("notify_discord(token_id=%v)\n",token_id)
+	return
 	//image_copy := make([]byte,len(image_data))
 	//copy(image_copy,image_data)		// disabled upon the request of the User
 	rdr := bytes.NewReader(image_data)
@@ -475,8 +480,13 @@ func update_last_minted_time() {
 func monitor_events(exit_chan chan bool,addr common.Address) {
 
 	rwalk_aid := storage.Lookup_address_id(addr.String())
-	ts := storage.Get_last_block_timestamp()
-	Info.Printf("monitor_events() starts with timestamp %v (%v)\n",ts,time.Unix(ts,0).Format("2006-01-02T15:04:05"))
+	msg_status := storage.Get_messaging_status()
+	cur_evtlog_id := msg_status.EvtLogId
+	//ts := storage.Get_last_block_timestamp()
+	Info.Printf(
+		"monitor_events() starts with evtlog_id=%v (timestamp %v) (%v)\n",
+		cur_evtlog_id,ts,time.Unix(ts,0).Format("2006-01-02T15:04:05"),
+	)
 	//ts = ts-3*24*60*60 /// for testing only
 	for {
 		select {
@@ -488,7 +498,7 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 			default:
 		}
 		check_floor_price_change_and_emit()
-		records := storage.Get_all_events_for_notification(rwalk_aid,ts)
+		records := storage.Get_all_events_for_notification2(rwalk_aid,cur_evtlog_id)
 		if len(records) > 0 {
 			Info.Printf(
 				"Got %v records for timestamp %v (%v)\n",

@@ -162,3 +162,9 @@ CREATE TABLE rw_contracts (
 	--marketplace_addr		TEXT DEFAULT '0x728A419D264532442ea9CF639ec6a766f64840d6',
 	--randomwalk_addr			TEXT DEFAULT '0x27fAFD053dD7e4E5349F90bd32c8233D3d3c0235'
 );
+CREATE TABLE rw_messaging_status (-- Status of the notification process
+	last_tx_id			BIGINT DEFAULT 0,	-- last tx_id for which notification was sent successfuly
+	last_evtlog_id		BIGINT DEFAULT 0,
+	last_block_num		BIGINT DEFAULT 0,
+	last_timestamp		BIGINT DEFAULT 0
+);
