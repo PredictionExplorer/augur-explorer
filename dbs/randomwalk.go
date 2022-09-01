@@ -530,7 +530,7 @@ func (ss *SQLStorage) Get_messaging_status() p.RW_MsgStatus  {
 	query = "SELECT last_tx_id,last_evtlog_id,last_block_num,last_timestamp "+
 				"FROM rw_messaging_status"
 	res := ss.db.QueryRow(query)
-	var output RW_MsgStatus
+	var output p.RW_MsgStatus
 	err := res.Scan(
 		&output.TxId,
 		&output.EvtLogId,
@@ -626,7 +626,7 @@ func (ss *SQLStorage) Get_all_events_for_notification(rwalk_aid int64,start_ts i
 	}
 	return records
 }
-func (ss *SQLStorage) Get_all_events_for_notification2(rwalk_aid int64,start_tx_id int64) []p.RW_NotificationEvent2 {
+func (ss *SQLStorage) Get_all_events_for_notification2(rwalk_aid int64,start_evtlog_id int64) []p.RW_NotificationEvent2 {
 
 	records := make([]p.RW_NotificationEvent2,0,101)
 	var query string
@@ -641,48 +641,48 @@ func (ss *SQLStorage) Get_all_events_for_notification2(rwalk_aid int64,start_tx_
 				"("+
 					"SELECT "+
 						"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT as ts,"+
-						"tx_id,"+
-						"evtlog_id,"+
+						"m.tx_id,"+
+						"m.evtlog_id,"+
 						"token_id,"+
 						"price/1e+18 AS price, "+
 						"1 AS evt_type " +
 					"FROM rw_mint_evt m " +
-						"WHERE (contract_aid=$1) AND (time_stamp > TO_TIMESTAMP($2))  "+
+						"WHERE (contract_aid=$1) AND (m.evtlog_id>$2)  "+
 				") UNION ALL( "+
 					"SELECT "+
 						"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,"+
-						"tx_id,"+
-						"evtlog_id,"+
+						"o.tx_id,"+
+						"o.evtlog_id,"+
 						"token_id,"+
 						"price/1e+18 AS price, "+
 						"2 AS evt_type "+
 					"FROM rw_new_offer o " +
-						"WHERE (rwalk_aid=$1) AND (time_stamp > TO_TIMESTAMP($2)) AND (otype=1) " +
+						"WHERE (rwalk_aid=$1) AND (o.evtlog_id>$2) AND (otype=1) " +
 				") UNION ALL( "+
 					"SELECT "+
 						"EXTRACT(EPOCH FROM o.time_stamp)::BIGINT as ts,"+
-						"tx_id,"+
-						"evtlog_id,"+
+						"o.tx_id,"+
+						"o.evtlog_id,"+
 						"token_id,"+
 						"price/1e+18 AS price, "+
 						"5 AS evt_type "+
 					"FROM rw_new_offer o " +
-						"WHERE (rwalk_aid=$1) AND (time_stamp > TO_TIMESTAMP($2)) AND (otype=0) " +
+						"WHERE (rwalk_aid=$1) AND (o.evtlog_id>$2) AND (otype=0) " +
 				") UNION ALL ( "+
 					"SELECT "+
 						"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT as ts,"+
-						"tx_id,"+
-						"evtlog_id,"+
+						"b.tx_id,"+
+						"b.evtlog_id,"+
 						"o.token_id,"+
 						"o.price/1e+18 AS price, "+
 						"3 AS evt_type " +
 					"FROM rw_item_bought b " +
 						"JOIN rw_new_offer o ON (b.contract_aid=o.contract_aid) AND (b.offer_id=o.offer_id) " +
-					"WHERE (o.rwalk_aid=$1) AND (b.time_stamp > TO_TIMESTAMP($2))  " +
+					"WHERE (o.rwalk_aid=$1) AND (b.evtlog_id>$2)  " +
 				") " +
 			") data " +
-			"ORDER BY ts"
-	rows,err := ss.db.Query(query,rwalk_aid,start_ts)
+			"ORDER BY evtlog_id"
+	rows,err := ss.db.Query(query,rwalk_aid,start_evtlog_id)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)

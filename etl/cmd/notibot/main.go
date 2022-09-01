@@ -366,7 +366,7 @@ func notify_twitter(token_id int64,msg string,image_data []byte) {
 func notify_discord(token_id int64,msg string,image_data []byte,image_url string) error {
 
 	Info.Printf("notify_discord(token_id=%v)\n",token_id)
-	return
+	return nil
 	//image_copy := make([]byte,len(image_data))
 	//copy(image_copy,image_data)		// disabled upon the request of the User
 	rdr := bytes.NewReader(image_data)
@@ -482,10 +482,11 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 	rwalk_aid := storage.Lookup_address_id(addr.String())
 	msg_status := storage.Get_messaging_status()
 	cur_evtlog_id := msg_status.EvtLogId
+	cur_ts := msg_status.TimeStamp
 	//ts := storage.Get_last_block_timestamp()
 	Info.Printf(
 		"monitor_events() starts with evtlog_id=%v (timestamp %v) (%v)\n",
-		cur_evtlog_id,ts,time.Unix(ts,0).Format("2006-01-02T15:04:05"),
+		cur_evtlog_id,cur_ts,time.Unix(cur_ts,0).Format("2006-01-02T15:04:05"),
 	)
 	//ts = ts-3*24*60*60 /// for testing only
 	for {
@@ -502,7 +503,7 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 		if len(records) > 0 {
 			Info.Printf(
 				"Got %v records for timestamp %v (%v)\n",
-				len(records),ts,time.Unix(ts,0).Format("2006-01-02T15:04:05"),
+				len(records),cur_ts,time.Unix(cur_ts,0).Format("2006-01-02T15:04:05"),
 			)
 		}
 		for i:=0; i<len(records); i++ {
@@ -562,10 +563,11 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 				Error.Printf("Can't read image at %v : %v\n",image_filename)
 				os.Exit(1)
 			}
-			ts = rec.TimeStampMinted
+			cur_evtlog_id=rec.EvtLogId
+			cur_ts = rec.TimeStampMinted
 			Info.Printf(
-				"Setting timestamp to %v (%v) (token_id=%v)\n",
-				ts,time.Unix(ts,0).Format("2006-01-02T15:04:05"),rec.TokenId,
+				"Setting evtlog_id to %v, timestamp to %v (%v) (token_id=%v, evt_type=%v)\n",
+				cur_evtlog_id,cur_ts,time.Unix(cur_ts,0).Format("2006-01-02T15:04:05"),rec.TokenId,rec.EvtType,
 			)
 
 			if *flag_twitter {
