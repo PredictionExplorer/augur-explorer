@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
+	layer1 "github.com/PredictionExplorer/augur-explorer/layer1"
 )
 func roll_back_blocks(diverging_block *types.Header) error {
 	// Finds the block from which the fork started
@@ -160,7 +161,8 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		return err
 	}
 	big_bnum:=big.NewInt(int64(bnum))
-	block_hash,header,transactions,err := get_full_block(bnum)
+	//block_hash,header,transactions,err := get_full_block(bnum)	//before Arbitrum Nitro
+	block_hash,header,transactions,err := layer1.GetBlockCustomRPCDecoding(rpcclient,bnum)		//supports Arbitrum Nitro
 	if err!=nil {
 		Info.Printf("Can't decode Block object (num=%v) received on RPC: %v. Aborting.\n",bnum,err)
 		return err

@@ -64,11 +64,13 @@ func get_full_block(bnum int64) (common.Hash,*types.Header,[]*AugurTx,error) {
 	err = json.Unmarshal(raw, &body);
 	if err != nil {
 		Error.Printf("Error unmarshalling transactions of the block: %v\n",err)
+		Error.Printf("Raw JSON message: \n%v\n",string(raw))
 		return common.Hash{},head, make([]*AugurTx,0,0),err
 	}
 	err = json.Unmarshal(raw,&head)
 	if err!= nil {
 		Error.Printf("Error unmarshalling hash of the block: %v\n",err)
+		Error.Printf("Raw JSON message: \n%v\n",string(raw))
 		return body.Hash,head,make([]*AugurTx,0,0),err
 	}
 	txs := make([]*AugurTx, len(body.Transactions))

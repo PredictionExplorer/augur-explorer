@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"errors"
 	//"reflect"
+	//"encoding/hex"
 	"encoding/json"
 	"context"
 	"math/big"
@@ -11,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/rpc"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 )
@@ -20,6 +22,32 @@ type rpcBlockHash struct {
 type rpcTransaction struct {
 	tx *types.Transaction
 	txExtraInfo
+}
+/*
+type rpcCustomTx struct {
+}
+type rpcTransactionCustom struct {
+	// our own TX struct, for JSON decoding
+	Gas						string	`json:"blockNumber,omitempty"`
+	GasPrice				string	`json:"blockNumber,omitempty"`
+	Input					string	`json:"blockNumber,omitempty"`
+	Nonce					string	`json:"blockNumber,omitempty"`
+	To						string	`json:"blockNumber,omitempty"`
+	TransactionIndex		string	`json:"blockNumber,omitempty"`
+	Value					string	`json:"blockNumber,omitempty"`
+	Type					string	`json:"blockNumber,omitempty"`
+	V						string	`json:"blockNumber,omitempty"`
+	R						string	`json:"blockNumber,omitempty"`
+	S						string	`json:"blockNumber,omitempty"`
+	BlockNumber				*string         `json:"blockNumber,omitempty"`
+	BlockHash				*common.Hash    `json:"blockHash,omitempty"`
+	From			        *common.Address `json:"from,omitempty"`
+	Hash					*common.Hash	`json:"hash,omitempty"`
+}
+*/
+type PackedTx map[string]interface{}
+type TransactionsPackage struct {
+	Transactions		[]PackedReceipt
 }
 func (tx *rpcTransaction) UnmarshalJSON(msg []byte) error {
 	if err := json.Unmarshal(msg, &tx.tx); err != nil {
@@ -311,4 +339,111 @@ func get_block_receipts_v2(etl *ETL_Layer1,block_hash common.Hash) ([]types.Rece
 		output_extra = append(output_extra,extra_fields)
 	}
 	return output_receipts,output_extra,nil
+}
+func GetBlockCustomRPCDecoding(rpcc *rpc.Client,bnum int64) (common.Hash,*types.Header,[]*AugurTx,error) {
+
+	var head *types.Header
+	ctx := context.Background()
+	var raw json.RawMessage
+	err := rpcc.CallContext(ctx, &raw,"eth_getBlockByNumber", hexutil.EncodeBig(big.NewInt(int64(bnum))),true)
+	if err != nil {
+		return common.Hash{},nil,make([]*AugurTx,0,0),err
+	}
+	err = json.Unmarshal(raw,&head)
+	if err!= nil {
+		err_out := errors.New(fmt.Sprintf("Error unmarshalling header of the block: %v\n",err))
+		return common.Hash{},head,make([]*AugurTx,0,0),err_out
+	}
+
+	var packed_transactions TransactionsPackage
+	err = json.Unmarshal(raw,&packed_transactions)
+	if err!= nil {
+		err_out := errors.New(fmt.Sprintf("Error unmarshalling receipts after eth-getBlockReceipts on block %v : %v\n",bnum,err))
+		return common.Hash{},nil,nil,err_out
+	}
+	ag_transactions:= make([]*AugurTx, len(packed_transactions.Transactions))
+	for i:=0; i< len(packed_transactions.Transactions); i++ {
+		tx_rpc := packed_transactions.Transactions[i]
+		var atx AugurTx
+
+		atx.BlockNum = bnum
+		atx.TimeStamp = int64(head.Time)
+		atx.TxIndex = int32(i)
+
+		tmp_val,err := hexutil.DecodeUint64(tx_rpc["gas"].(string))
+		if err != nil {
+			return common.Hash{},nil,nil,errors.New(fmt.Sprintf("Error: transaction (i=%v) gas(%v): %v",i,tx_rpc["gas"].(string),err))
+		}
+		atx.Gas = int64(tmp_val)
+
+		tmp_big,err := hexutil.DecodeBig(tx_rpc["gasPrice"].(string))
+		if err != nil {
+			return common.Hash{},nil,nil,errors.New(fmt.Sprintf("Error: transaction(i=%v) gasPrice(%v): %v",i,tx_rpc["gasPrice"].(string),err))
+		}
+		atx.GasPrice = tmp_big.String()
+
+		tmp_str,ok := tx_rpc["input"].(string)
+		if !ok {
+			return common.Hash{},nil,nil,errors.New(fmt.Sprintf("Error: transaction(i=%v) input(%v): %v",i,tx_rpc["input"].(string),"type conversion to (string) not ok"))
+		}
+		input_byte := common.FromHex(tmp_str)
+		atx.Input = input_byte
+
+		tmp_str,ok = tx_rpc["hash"].(string)
+		if !ok {
+			return common.Hash{},nil,nil,errors.New(fmt.Sprintf("Error: transaction(i=%v) hash(%v): %v",i,tx_rpc["hash"].(string),"type conversion to (string) not ok"))
+		}
+		atx.TxHash = common.HexToHash(tmp_str).String()
+
+		tmp_str,ok = tx_rpc["blockHash"].(string)
+		if !ok {
+			return common.Hash{},nil,nil,errors.New(fmt.Sprintf("Error: transaction(i=%v) blockhash(%v): %v",i,tx_rpc["blockhash"].(string),"type conversion to (string) not ok"))
+		}
+		atx.BlockHash = common.HexToHash(tmp_str).String()
+
+		tmp_str,ok = tx_rpc["from"].(string)
+		if !ok {
+			return common.Hash{},nil,nil,errors.New(fmt.Sprintf("Error: transaction(i=%v) from(%v): %v",i,tx_rpc["from"].(string),"type conversion to (string) not ok"))
+		}
+		atx.From = common.HexToAddress(tmp_str).String()
+
+		tmp_str,ok = tx_rpc["to"].(string)
+		if !ok {
+			return common.Hash{},nil,nil,errors.New(fmt.Sprintf("Error: transaction(i=%v) to(%v): %v",i,tx_rpc["to"].(string),"type conversion to (string) not ok"))
+		}
+		atx.To= common.HexToAddress(tmp_str).String()
+
+		tmp_big,err = hexutil.DecodeBig(tx_rpc["value"].(string))
+		if err != nil {
+			return common.Hash{},nil,nil,errors.New(fmt.Sprintf("Error: transaction(i=%v) value(%v): %v",i,tx_rpc["value"].(string),err))
+		}
+		atx.Value= tmp_big.String()
+
+
+
+/*
+	Gas						string	`json:"blockNumber,omitempty"`
+	GasPrice				string	`json:"blockNumber,omitempty"`
+	Input					string	`json:"blockNumber,omitempty"`
+	Nonce					string	`json:"blockNumber,omitempty"`
+	To						string	`json:"blockNumber,omitempty"`
+	TransactionIndex		string	`json:"blockNumber,omitempty"`
+	Value					string	`json:"blockNumber,omitempty"`
+	Type					string	`json:"blockNumber,omitempty"`
+	V						string	`json:"blockNumber,omitempty"`
+	R						string	`json:"blockNumber,omitempty"`
+	S						string	`json:"blockNumber,omitempty"`
+*/
+		fmt.Printf("Unmarshalled tx: %+v\n",tx_rpc)
+		fmt.Printf("AugurTx = %v\n",atx)
+		fmt.Printf("GasPrice = %v\n",atx.GasPrice)
+		fmt.Printf("TxHash= %v\n",atx.Input)
+		fmt.Printf("BlockHash = %v\n",atx.BlockHash)
+		fmt.Printf("From = %v\n",atx.From)
+		fmt.Printf("To = %v\n",atx.To)
+		fmt.Printf("Value = %v\n",atx.Value)
+
+	}
+
+	return head.Hash(),head,ag_transactions,errors.New("forced abort")
 }

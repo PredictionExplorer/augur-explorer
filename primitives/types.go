@@ -10,6 +10,7 @@ import (
 type AugurTx struct {	// just a wrapper for Ethereum Transaction object, but in our own format
 	TxId				int64		// once inserted tx_id is stored here
 	BlockNum			int64
+	Gas					int64
 	GasUsed				int64
 	TimeStamp			int64
 	TxIndex				int32
