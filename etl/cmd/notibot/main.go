@@ -479,6 +479,12 @@ func update_last_minted_time() {
 }
 func monitor_events(exit_chan chan bool,addr common.Address) {
 
+	// notification types:
+	//		1		Mint
+	//		2		New Offer Sell			(otype=1)
+	//		3		Item Bought
+	//		4		Flour Price Changed
+	//		5		New Offer Buy			(otype=0)
 	rwalk_aid := storage.Lookup_address_id(addr.String())
 	msg_status := storage.Get_messaging_status()
 	cur_evtlog_id := msg_status.EvtLogId

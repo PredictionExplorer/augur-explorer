@@ -361,11 +361,10 @@ func GetBlockCustomRPCDecoding(rpcc *rpc.Client,bnum int64) (common.Hash,*types.
 		err_out := errors.New(fmt.Sprintf("Error unmarshalling receipts after eth-getBlockReceipts on block %v : %v\n",bnum,err))
 		return common.Hash{},nil,nil,err_out
 	}
-	ag_transactions:= make([]*AugurTx, len(packed_transactions.Transactions))
+	ag_transactions:= make([]*AugurTx,0, len(packed_transactions.Transactions))
 	for i:=0; i< len(packed_transactions.Transactions); i++ {
 		tx_rpc := packed_transactions.Transactions[i]
-		var atx AugurTx
-
+		atx := &AugurTx{}
 		atx.BlockNum = bnum
 		atx.TimeStamp = int64(head.Time)
 		atx.TxIndex = int32(i)
@@ -408,18 +407,22 @@ func GetBlockCustomRPCDecoding(rpcc *rpc.Client,bnum int64) (common.Hash,*types.
 		atx.From = common.HexToAddress(tmp_str).String()
 
 		tmp_str,ok = tx_rpc["to"].(string)
-		if !ok {
-			return common.Hash{},nil,nil,errors.New(fmt.Sprintf("Error: transaction(i=%v) to(%v): %v",i,tx_rpc["to"].(string),"type conversion to (string) not ok"))
+		if ok {
+			atx.To= common.HexToAddress(tmp_str).String()
+		} else {
+			atx.CtrctCreate = true
+			atx.To = "0x0000000000000000000000000000000000000000"
 		}
-		atx.To= common.HexToAddress(tmp_str).String()
 
 		tmp_big,err = hexutil.DecodeBig(tx_rpc["value"].(string))
 		if err != nil {
 			return common.Hash{},nil,nil,errors.New(fmt.Sprintf("Error: transaction(i=%v) value(%v): %v",i,tx_rpc["value"].(string),err))
 		}
-		atx.Value= tmp_big.String()
-
-
+		atx.Value=tmp_big.String()
+		if atx==nil {
+			fmt.Printf("before dump at the end of loop, atx=null\n")
+		}
+		ag_transactions = append(ag_transactions,atx)
 
 /*
 	Gas						string	`json:"blockNumber,omitempty"`
@@ -434,6 +437,7 @@ func GetBlockCustomRPCDecoding(rpcc *rpc.Client,bnum int64) (common.Hash,*types.
 	R						string	`json:"blockNumber,omitempty"`
 	S						string	`json:"blockNumber,omitempty"`
 */
+/*
 		fmt.Printf("Unmarshalled tx: %+v\n",tx_rpc)
 		fmt.Printf("AugurTx = %v\n",atx)
 		fmt.Printf("GasPrice = %v\n",atx.GasPrice)
@@ -442,8 +446,8 @@ func GetBlockCustomRPCDecoding(rpcc *rpc.Client,bnum int64) (common.Hash,*types.
 		fmt.Printf("From = %v\n",atx.From)
 		fmt.Printf("To = %v\n",atx.To)
 		fmt.Printf("Value = %v\n",atx.Value)
-
+*/
 	}
-
-	return head.Hash(),head,ag_transactions,errors.New("forced abort")
+	return head.Hash(),head,ag_transactions,nil
+	//return head.Hash(),head,ag_transactions,errors.New("forced abort")
 }
