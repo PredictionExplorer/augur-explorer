@@ -168,7 +168,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 		return err
 	}
 	num_transactions := len(transactions)
-	//Info.Printf("block %v hash = %v, num_tx=%v\n",bnum,block_hash_str,num_transactions)
+	Info.Printf("block %v hash = %v, num_tx=%v\n",bnum,block_hash_str,num_transactions)
 	if bnum!=header.Number.Int64() {
 		Info.Printf("Retrieved block number %v but Block object contains another number (%v)",bnum,header.Number.Int64())
 		Error.Printf("Retrieved block number %v but Block object contains another number (%v)",bnum,header.Number.Int64())
@@ -183,7 +183,6 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 			Error.Printf("Error getting receipts of the block %v: %v\n",bnum,err)
 			return err
 		}
-
 	} else {
 		receipt_calls = make([]*receiptCallResult,num_transactions,num_transactions)
 		for i,tx := range transactions {
@@ -191,6 +190,7 @@ func process_block(bnum int64,update_last_block bool,no_chainsplit_check bool) e
 			go get_receipt_async(i,hash,&receipt_calls)
 		}
 	}
+	//no_chainsplit_check=true	/// DEV, remove before release into prod
 	err = storage.Insert_block(block_hash_str,header,num_transactions,no_chainsplit_check)
 	if err != nil {
 		err = roll_back_blocks(header)
