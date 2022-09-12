@@ -1,6 +1,6 @@
---- go-ethereum-1.10.15/ethclient/ethclient.go	2022-01-05 10:16:40.000000000 -0600
-+++ go-ethereum-1.10.15-custom-rpc/ethclient/ethclient.go	2022-02-09 12:47:31.117229375 -0600
-@@ -286,6 +286,18 @@
+--- orig-old/go-ethereum-1.10.23/ethclient/ethclient.go	2022-08-24 09:09:02.000000000 +0000
++++ go-ethereum-1.10.23/ethclient/ethclient.go	2022-09-08 17:25:38.096151543 +0000
+@@ -293,6 +293,18 @@
  	return r, err
  }
  
@@ -19,13 +19,13 @@
  // SyncProgress retrieves the current progress of the sync algorithm. If there's
  // no sync currently running, it returns nil.
  func (ec *Client) SyncProgress(ctx context.Context) (*ethereum.SyncProgress, error) {
---- go-ethereum-1.10.15/internal/ethapi/api.go	2022-01-05 10:16:40.000000000 -0600
-+++ go-ethereum-1.10.15-custom-rpc/internal/ethapi/api.go	2022-02-09 13:16:34.737911097 -0600
-@@ -1666,6 +1666,71 @@
+--- orig-old/go-ethereum-1.10.23/internal/ethapi/api.go	2022-08-24 09:09:02.000000000 +0000
++++ go-ethereum-1.10.23/internal/ethapi/api.go	2022-09-12 14:59:05.897582724 +0000
+@@ -1636,6 +1636,77 @@
  	return fields, nil
  }
  
-+func (s *PublicTransactionPoolAPI) GetBlockReceipts(ctx context.Context, blocks_hash common.Hash) (types.ReceiptsPackage, error) {
++func (s *TransactionAPI) GetBlockReceipts(ctx context.Context, blocks_hash common.Hash) (types.ReceiptsPackage, error) {
 +	var output types.ReceiptsPackage
 +	receipts, err := s.b.GetReceipts(ctx, blocks_hash )
 +	if err != nil {
@@ -45,6 +45,9 @@
 +		tx, blockHash, blockNumber, index, err := s.b.GetTransaction(ctx, receipt.TxHash)
 +		if err != nil {
 +			return output,err
++		}
++		if tx == nil {
++			return output,errors.New("Transaction not present in database")
 +		}
 +		if uint(len(receipts)) <= receipt.TransactionIndex {
 +			return output,errors.New(fmt.Sprintf("Transaction index overflow for receipt %v\n",i))
@@ -94,11 +97,11 @@
 +}
 +
  // sign is a helper function that signs a transaction with the private key of the given address.
- func (s *PublicTransactionPoolAPI) sign(addr common.Address, tx *types.Transaction) (*types.Transaction, error) {
+ func (s *TransactionAPI) sign(addr common.Address, tx *types.Transaction) (*types.Transaction, error) {
  	// Look up the wallet containing the requested signer
---- go-ethereum-1.10.15/core/types/receipt.go	2022-01-05 10:16:40.000000000 -0600
-+++ go-ethereum-1.10.15-custom-rpc/core/types/receipt.go	2022-02-09 13:13:53.500487245 -0600
-@@ -71,7 +71,10 @@
+--- orig-old/go-ethereum-1.10.23/core/types/receipt.go	2022-08-24 09:09:02.000000000 +0000
++++ go-ethereum-1.10.23/core/types/receipt.go	2022-09-08 17:25:38.096151543 +0000
+@@ -70,7 +70,10 @@
  	BlockNumber      *big.Int    `json:"blockNumber,omitempty"`
  	TransactionIndex uint        `json:"transactionIndex"`
  }
