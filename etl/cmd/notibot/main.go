@@ -259,6 +259,7 @@ func get_withdrawal_amount() (float64,bool) {
 			div := big.NewFloat(1e+18)
 			f=f.Quo(f,div)
 			output,_ := f.Float64()
+			Info.Printf("got withdrawal amount %v (rounded %v)\n",amount.String(),output)
 			return output,true
 		}
 		time_out_counter++
@@ -347,7 +348,6 @@ func set_channel_name(new_name string,channel_id disgord.Snowflake) {
 func notify_twitter(token_id int64,msg string,image_data []byte) {
 
 	Info.Printf("notify_twitter(token_id=%v)\n",token_id)
-	return
 
 	twitter_nonce++
 	status_code,body,err := SendTweetWithImage(
@@ -366,9 +366,6 @@ func notify_twitter(token_id int64,msg string,image_data []byte) {
 func notify_discord(token_id int64,msg string,image_data []byte,image_url string) error {
 
 	Info.Printf("notify_discord(token_id=%v)\n",token_id)
-	return nil
-	//image_copy := make([]byte,len(image_data))
-	//copy(image_copy,image_data)		// disabled upon the request of the User
 	rdr := bytes.NewReader(image_data)
 	var err error
 	// this is the Notification channel
@@ -387,22 +384,6 @@ func notify_discord(token_id int64,msg string,image_data []byte,image_url string
 	if err != nil {
 		return err
 	}
-
-	// this is the Main chat channel
-	/* Currently disabled (upon the request of the User)
-	rdr2 := bytes.NewReader(image_copy)
-	_, err = disc_client.Channel(disgord.Snowflake(discord_keys.MainChannelId)).CreateMessage(
-			&disgord.CreateMessageParams{
-				Content: msg,
-				Files: []disgord.CreateMessageFileParams{
-					{rdr2, "token.png", false},
-				},
-				Embed: &disgord.Embed{
-					Description: image_url,
-					URL: image_url,
-				},
-			},
-	)*/
 
 	return err
 }
@@ -477,6 +458,11 @@ func update_last_minted_time() {
 		time.Sleep(DEFAULT_LAST_MINTED_INTERVAL*time.Second)
 	}
 }
+func update_last_reward(wamount float64) {
+
+	new_channel_name := fmt.Sprintf("Last reward: %.2f%v",wamount,EthSign)
+	set_channel_name(new_channel_name,LastRewardChannelID)
+}
 func monitor_events(exit_chan chan bool,addr common.Address) {
 
 	// notification types:
@@ -548,8 +534,7 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 				)
 				set_channel_name(new_channel_name,MintChannelID)
 				last_mint_ts = rec.TimeStampMinted
-				new_channel_name = fmt.Sprintf("Last reward: %.2f%v",withdrawal_amount,EthSign)
-				set_channel_name(new_channel_name,LastRewardChannelID)
+				update_last_reward(withdrawal_amount)
 			}
 			is_403_code := web_returns_403_code(rec.TokenId)
 			if is_403_code {
@@ -606,6 +591,9 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 					Info.Printf("Notification of event (token_id=%v) to Discord successful\n",rec.TokenId)
 				}
 			}
+			msg_status.EvtLogId=cur_evtlog_id
+			msg_status.TimeStamp=cur_ts
+			storage.Update_messaging_status(&msg_status)
 		}
 		if len(records) == 0 {
 			time.Sleep(30 * time.Second) // sleep only if there is no data
@@ -701,6 +689,11 @@ func main() {
 	//cur_floor_price = 0.0;
 	last_mint_ts = storage.Get_last_mint_timestamp()
 	go update_last_minted_time()
+
+	wamount,success := get_withdrawal_amount()
+	if success {
+		update_last_reward(wamount)
+	}
 	monitor_events(exit_chan,rwalk_addr)
 
 }
