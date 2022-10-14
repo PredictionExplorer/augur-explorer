@@ -11,7 +11,7 @@ import (
 )
 const (
 	//API_URL string = "http://127.0.0.1:3500"
-	API_URL string ="https://checkpointz.pietjepuk.net"
+	API_URL string ="http://170.187.142.12:14343"
 	BLOCK_INCREMENT int = -1
 	REQUEST_DELAY int = 5
 )
