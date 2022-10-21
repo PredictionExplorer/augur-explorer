@@ -9,7 +9,7 @@ import (
 )
 func (ss *SQLStorage) Get_active_offers(rwalk_aid int64,market_aid int64, order_by int) []p.RW_API_Offer {
 
-	records := make([]p.RW_API_Offer,0,16)
+	records := make([]p.RW_API_Offer,0 ,16)
 
 	var order_by_mod string =" ORDER BY o.id"
 	if order_by == 1 {
@@ -1670,4 +1670,62 @@ func (ss *SQLStorage) Get_minted_tokens_for_CSV(rwalk_aid int64) []p.RW_API_Toke
 	}
 
 	return records
+}
+func (ss *SQLStorage) Get_mint_report() []p.RW_API_MintReportRec {
+
+	records := make([]p.RW_API_MintReportRec,0 ,32)
+	var query string
+	query = "WITH periods AS ("+
+				"SELECT "+
+					"s.m_start,"+
+					"date_trunc('month',s.m_start) + interval '1 month - 1 second' AS m_end," +
+					"extract(year from s.m_start)*100+extract(month from s.m_start) AS yearmonth. "+
+				"FROM generate_series('2021-11-01','2022-12-31',interval '1 month') AS s(m_start) "+
+			")"+
+			"SELECT "+
+				"yearmonth,"+
+				"count(m.id) total_minted,"+
+				"sum(m.price) total_wei,"+
+				"sum(m.price)/1e18 total_eth "+
+			"FROM periods p "+
+				"JOIN rw_mint_evt m ON "+
+					"p.yearmonth = extract(year from m.time_stamp)*100+extract(month from m.time_stamp) " +
+			"GROUP BY p.yearmonth"
+
+	rows,err := ss.db.Query(query)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	var sum_deposited float64 = 0.0
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.RW_API_MintReportRec
+		var n_total_minted sql.NullInt64
+		var n_total_wei sql.NullString
+		var n_total_eth sql.NullFloat64
+		var yearmonth int64
+		err=rows.Scan(
+			&yearmonth,
+			&n_total_minted,
+			&n_total_wei,
+			&n_total_eth,
+		)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		rec.Year = yearmonth/100
+		rec.Month = yearmonth % 100
+		if n_total_minted.Valid {
+			rec.TotalMinted = n_total_minted.Int64
+			sum_deposited = sum_deposited + rec.TotalMinted
+			rec.WithdrawalAmount = sum_deposited/2
+		}
+		if n_total_wei.Valid { rec.TotalWei = n_total_wei.String }
+		if n_total_eth.TotalEth { rec.LastPrice = n_total_eth.Float64 }
+
+		records = append(records,rec)
+	}
 }

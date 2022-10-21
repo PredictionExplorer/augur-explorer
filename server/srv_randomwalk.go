@@ -102,7 +102,7 @@ func rwalk_token_list_seq(c *gin.Context) {
 		respond_error(c,"NTF address wasn't found in the 'address' table")
 		return
 	}
-	tokens:= augur_srv.db_arbitrum.Get_minted_tokens_sequentially(rwalk_aid,0,10000000000)
+	tokens:= augur_srv.db_arbitrum.Get_minted_tokens_sequentially(rwalk_aid,0 ,10000000000)
 
 	fin_ts := int(time.Now().Unix())
 	interval := int(2 * 24 * 60* 60)

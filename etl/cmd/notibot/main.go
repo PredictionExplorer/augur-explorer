@@ -539,7 +539,8 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 			is_403_code := web_returns_403_code(rec.TokenId)
 			if is_403_code {
 				Info.Printf("Skipping event for token %v due to 403 error\n",rec.TokenId)
-				continue	// 403 is not good for a perpetual fetch via HTTP, so we skip the event
+				time.Sleep(1 * time.Second)
+				break // 403 is not good for a perpetual fetch via HTTP, so we skip the event
 			}
 			success = get_image_file_from_net_until_success(rec.TokenId)
 			if !success {

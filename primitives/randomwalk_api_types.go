@@ -271,3 +271,11 @@ type RW_API_RWalkFloorPrice struct {
 	TimeStamp		int64
 	Price			float64
 }
+type RW_API_MintReportRec
+	Year			int64
+	Month			int64
+	TotalMinted		int64	// number of tokens minted for the period
+	TotalWei		string
+	TotalEth		float64
+	RedeemAmount	float64	// sum of the price accumulated / 2 in ETH
+
