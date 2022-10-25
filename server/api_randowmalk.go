@@ -672,3 +672,19 @@ func api_rwalk_token_info(c *gin.Context) {
 		"TokenInfo" : token_info,
 	})
 }
+func api_rwalk_mint_report(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	records := augur_srv.db_arbitrum.Get_mint_report()
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Records" : records,
+	})
+}

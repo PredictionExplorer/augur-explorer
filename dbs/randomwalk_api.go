@@ -1671,6 +1671,24 @@ func (ss *SQLStorage) Get_minted_tokens_for_CSV(rwalk_aid int64) []p.RW_API_Toke
 
 	return records
 }
+func month_lookup(code int64) string {
+		switch(code) {
+			case 1: return "January"
+			case 2: return "February"
+			case 3: return "March"
+			case 4: return "April"
+			case 5: return "May"
+			case 6: return "June"
+			case 7: return "July"
+			case 8: return "August"
+			case 9: return "September"
+			case 10: return "October"
+			case 11: return "November"
+			case 12: return "December"
+			default: return "???"
+		}
+		return ""
+}
 func (ss *SQLStorage) Get_mint_report() []p.RW_API_MintReportRec {
 
 	records := make([]p.RW_API_MintReportRec,0 ,32)
@@ -1679,9 +1697,9 @@ func (ss *SQLStorage) Get_mint_report() []p.RW_API_MintReportRec {
 				"SELECT "+
 					"s.m_start,"+
 					"date_trunc('month',s.m_start) + interval '1 month - 1 second' AS m_end," +
-					"extract(year from s.m_start)*100+extract(month from s.m_start) AS yearmonth. "+
+					"extract(year from s.m_start)*100+extract(month from s.m_start) AS yearmonth "+
 				"FROM generate_series('2021-11-01','2022-12-31',interval '1 month') AS s(m_start) "+
-			")"+
+			") "+
 			"SELECT "+
 				"yearmonth,"+
 				"count(m.id) total_minted,"+
@@ -1718,14 +1736,17 @@ func (ss *SQLStorage) Get_mint_report() []p.RW_API_MintReportRec {
 		}
 		rec.Year = yearmonth/100
 		rec.Month = yearmonth % 100
+		rec.MonthStr = month_lookup(rec.Month) + fmt.Sprintf(" %v",rec.Year)
 		if n_total_minted.Valid {
 			rec.TotalMinted = n_total_minted.Int64
-			sum_deposited = sum_deposited + rec.TotalMinted
-			rec.WithdrawalAmount = sum_deposited/2
 		}
 		if n_total_wei.Valid { rec.TotalWei = n_total_wei.String }
-		if n_total_eth.TotalEth { rec.LastPrice = n_total_eth.Float64 }
-
+		if n_total_eth.Valid {
+			rec.TotalEth = n_total_eth.Float64
+			sum_deposited = sum_deposited + rec.TotalEth
+			rec.RedeemAmount = sum_deposited/2
+		}
 		records = append(records,rec)
 	}
+	return records
 }

@@ -668,3 +668,14 @@ func rwalk_token_info(c *gin.Context) {
 		"RWalkAid" : rwalk_aid,
 	})
 }
+func rwalk_mint_report(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	records := augur_srv.db_arbitrum.Get_mint_report()
+	c.HTML(http.StatusOK, "rw_mint_report.html", gin.H{
+		"Records" : records,
+	})
+}
