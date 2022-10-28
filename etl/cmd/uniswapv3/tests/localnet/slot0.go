@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 
 
-	. "github.com/PredictionExplorer/augur-explorer/contracts"
+//	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
 )
@@ -48,6 +48,11 @@ func main() {
 		fmt.Printf("Error during Liquidity() call: %v\n",err)
 		os.Exit(1)
 	}
+	fee,err := pool.Fee(copts)
+	if err != nil {
+		fmt.Printf("Error during Fee() call: %v\n",err)
+		os.Exit(1)
+	}
 	feeGrowthGlobal0X128,err := pool.FeeGrowthGlobal0X128(copts)
 	if err != nil {
 		fmt.Printf("Error during feeGrowthGlobal0X128() call: %v\n",err)
@@ -75,6 +80,7 @@ func main() {
 	}
 	fmt.Printf("Token0:                    \t%v\n",token0_addr.String())
 	fmt.Printf("Token1:                    \t%v\n",token1_addr.String())
+	fmt.Printf("Fee:                       \t%v\n",fee.String())
 	fmt.Printf("Tick spacing:              \t%v\n",tick_spacing)
 	fmt.Printf("SqrtPriceX96:              \t%v\n",slot0.SqrtPriceX96.String())
 	fmt.Printf("Tick:                      \t%v\n",slot0.Tick.String())

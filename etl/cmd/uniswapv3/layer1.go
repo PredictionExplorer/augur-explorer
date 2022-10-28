@@ -99,7 +99,7 @@ func main() {
 	schema_name := flag.String("schema", "", "Schema name")
 	rpc_url := flag.String("rpc","","RPC URL")
 	block_rcpts := flag.Bool("blockrcpts",false,"Use block receipts rpc call")
-	block_num := flag.Int64("bnum",0,"Single block number to process")
+	block_num := flag.Int64("bnum",0 ,"Single block number to process")
 	num_threads := flag.Int64("numthreads",1,"Number of parallel threads for block processing")
 	flag.Parse()
 	if len(*schema_name) < 3 {
