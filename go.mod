@@ -21,6 +21,7 @@ require (
 	github.com/libp2p/go-libp2p-peerstore v0.2.6 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/multiformats/go-multiaddr-dns v0.2.0 // indirect
+	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/oschwald/maxminddb-golang v1.3.1 // indirect
 	github.com/plaid/go-envvar v1.1.0
 	github.com/rjeczalik/notify v0.9.2 // indirect
