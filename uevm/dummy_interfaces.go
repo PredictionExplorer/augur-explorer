@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/core"
+	//"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/consensus"
@@ -19,7 +19,7 @@ import (
 */
 
 type DummyChainContext struct {
-	dummy_engine		DummyEngine
+	dummy_engine		*DummyEngine
 }
 func NewDummyChainContext() *DummyChainContext {
 
@@ -28,7 +28,8 @@ func NewDummyChainContext() *DummyChainContext {
 }
 func (this *DummyChainContext) Engine() consensus.Engine {
 
-	return this.dummy_engine.(consensus.Engine)
+	//return this.dummy_engine.(interface{})
+	return nil
 }
 
 type DummyEngine struct {
@@ -89,7 +90,7 @@ func NewDummyBlockContext(bnum,t *big.Int) *vm.BlockContext {
 	output.GasLimit = 10000000000
 	output.Difficulty = big.NewInt(1)
 	output.BaseFee = big.NewInt(1)
-	output.Random = new(common.Hash)
+	//output.Random = new(common.Hash)
 
 	output.CanTransfer = func(vm.StateDB, common.Address, *big.Int) bool { return true }
 	output.Transfer = func(db vm.StateDB, sender, recipient common.Address, amount *big.Int) {
@@ -100,8 +101,8 @@ func NewDummyBlockContext(bnum,t *big.Int) *vm.BlockContext {
 				panic(fmt.Sprintf("failed transferring amount %v from %v to %v , result is negative balance %v",amount.String(),sender.String(),recipient.String(),db.GetBalance(sender).String()))
 			}
 	}
-	output.GetHash = func(ref *types.Header, chain core.ChainContext) func(n uint64) common.Hash {
+	/*output.GetHash = func(ref *types.Header, chain core.ChainContext) func(n uint64) common.Hash {
 		return func(n uint64) common.Hash {return common.Hash{}}
-	}
+	}*/
 	return output
 }
