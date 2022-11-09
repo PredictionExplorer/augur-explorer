@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
-	//"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/consensus"
@@ -27,11 +27,8 @@ func NewDummyChainContext() *DummyChainContext {
 	return output
 }
 func (this *DummyChainContext) Engine() consensus.Engine {
-
-	//return this.dummy_engine.(interface{})
-	return nil
+	return this.dummy_engine
 }
-
 type DummyEngine struct {
 
 }
@@ -80,7 +77,13 @@ func (this *DummyEngine) APIs(chain consensus.ChainHeaderReader) []rpc.API {
 }
 func (this *DummyEngine) Close() error {
 	return nil
+} 
+func CustomGetHashFn(ref *types.Header, chain core.ChainContext) func(n uint64) common.Hash {
+	return func(n uint64) common.Hash {
+		return common.Hash{}
+	}
 }
+
 func NewDummyBlockContext(bnum,t *big.Int) *vm.BlockContext {
 
 	output := new(vm.BlockContext)
@@ -101,8 +104,6 @@ func NewDummyBlockContext(bnum,t *big.Int) *vm.BlockContext {
 				panic(fmt.Sprintf("failed transferring amount %v from %v to %v , result is negative balance %v",amount.String(),sender.String(),recipient.String(),db.GetBalance(sender).String()))
 			}
 	}
-	/*output.GetHash = func(ref *types.Header, chain core.ChainContext) func(n uint64) common.Hash {
-		return func(n uint64) common.Hash {return common.Hash{}}
-	}*/
+	output.GetHash = func (n uint64) common.Hash { return common.Hash{}}
 	return output
 }

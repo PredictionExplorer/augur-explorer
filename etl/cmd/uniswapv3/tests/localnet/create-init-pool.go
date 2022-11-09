@@ -32,8 +32,8 @@ func main() {
 		)
 		os.Exit(1)
 	}
-	pinit_addr := common.HexToAddress(os.Args[0])
-	from_pkey_str := os.Args[2]
+	pinit_addr := common.HexToAddress(os.Args[2])
+	from_pkey_str := os.Args[1]
 	if len(from_pkey_str) != 64 {
 		fmt.Printf("Sender's private key is not 64 characters long\n")
 		os.Exit(1)
