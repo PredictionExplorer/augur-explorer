@@ -2,6 +2,8 @@ module github.com/PredictionExplorer/augur-explorer
 
 go 1.14
 
+replace github.com/ethereum/go-ethereum => /home/niko/eth/local-geth/go-ethereum-1.10.26
+
 require (
 	github.com/andersfylling/disgord v0.32.3 // indirect
 	github.com/andersfylling/snowflake/v3 v3.0.2 // indirect
@@ -10,7 +12,7 @@ require (
 	github.com/aws/aws-sdk-go v1.25.48 // indirect
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/elastic/gosigar v0.10.5 // indirect
-	github.com/ethereum/go-ethereum v1.10.15
+	github.com/ethereum/go-ethereum v1.10.26
 	github.com/gin-gonic/autotls v0.0.3
 	github.com/gin-gonic/gin v1.7.7
 	github.com/gomodule/oauth1 v0.1.0 // indirect
@@ -36,6 +38,6 @@ require (
 	github.com/wsddn/go-ecdh v0.0.0-20161211032359-48726bab9208 // indirect
 	//	github.com/wealdtech/go-ens 2be8e3e5fa10e897e9957584302fae93d43d6cc1
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
-	golang.org/x/net v0.0.0-20220121210141-e204ce36a2ba
+	golang.org/x/net v0.0.0-20220607020251-c690dde0001d
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 )
