@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"math"
-	"encoding/hex"
+	//"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -38,6 +38,7 @@ func CallSwapFn() {	// calls swap() function
 }
 func UEVMDeploy(chain_id int64,from common.Address,nonce uint64,contract_code []byte,edb ethdb.Database,state_root common.Hash) (error,common.Address,common.Hash) {	// deploys contract code
 
+	/*
 	triedb := trie.NewDatabase(edb)
 	regenerate_snapshot := true
 	sshot,err := snapshot.New(edb,triedb,256,common.Hash{},false,regenerate_snapshot,false)
@@ -45,6 +46,9 @@ func UEVMDeploy(chain_id int64,from common.Address,nonce uint64,contract_code []
 		return err,common.Address{},common.Hash{}
 	}
 	state_db,err := state.New(state_root,state.NewDatabase(edb),sshot)
+	*/
+	fmt.Printf("from = %v\n",from.String())
+	state_db,err := state.New(state_root,state.NewDatabase(edb),nil)
 	if err != nil {
 		return err,common.Address{},common.Hash{}
 	}
@@ -68,16 +72,25 @@ func UEVMDeploy(chain_id int64,from common.Address,nonce uint64,contract_code []
 	sender := vm.AccountRef(from)
 	contract_addr := crypto.CreateAddress(sender.Address(), state_db.GetNonce(sender.Address()))
 	ret, _, _, vmerr := evm.Create(sender, contract_code, gas, value)
+	_=ret
 	fmt.Printf("Create() vmerr = %v\n",vmerr)
 	fmt.Printf("Create() contract addr = %v\n",contract_addr.String())
-	fmt.Printf("Create() output: %v\n",hex.EncodeToString(ret))
+	//fmt.Printf("Create() output: %v\n",hex.EncodeToString(ret))
 	delete_empty_objects := true
 	iroot_hash := state_db.IntermediateRoot(delete_empty_objects)
+	err = state_db.Database().TrieDB().Commit(iroot_hash, true, nil)
+	if err != nil {
+		return err,contract_addr,iroot_hash
+	}
 	out_state,err := state_db.Commit(delete_empty_objects)
 	if err!=nil {
 		return err,contract_addr,iroot_hash
 	}
 	fmt.Printf("state_hash after commit: %v\n",out_state.String())
+	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
+	if err != nil {
+		return err,contract_addr,iroot_hash
+	}
 
 	raw_dump := GetStateDump(state_db)
 	DumpStateDB(raw_dump)
@@ -135,6 +148,7 @@ func GetStateDump(s *state.StateDB) state.Dump {
 	return raw_dump
 }
 func DumpStateDB(raw_dump state.Dump) {
+	fmt.Printf("Dump of trie root = %v\n",raw_dump.Root)
 	fmt.Printf("Total objects: %v\n",len(raw_dump.Accounts))
 	fmt.Printf("Address\t\t\tBalance\n")
 	keys := make([]common.Address,len(raw_dump.Accounts))

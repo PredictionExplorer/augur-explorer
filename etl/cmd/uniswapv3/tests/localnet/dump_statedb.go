@@ -6,8 +6,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/state/snapshot"
-	"github.com/ethereum/go-ethereum/trie"
+	//"github.com/ethereum/go-ethereum/core/state/snapshot"
+	//"github.com/ethereum/go-ethereum/trie"
 
 	 . "github.com/PredictionExplorer/augur-explorer/uevm"
 )
@@ -24,8 +24,10 @@ func main() {
 	}
 	datadir := os.Args[1]
 	state_root := common.HexToHash(os.Args[2])
+	fmt.Printf("Trying to get state with hash %v\n",state_root.String())
 	edb := OpenDB(datadir)
-	triedb := trie.NewDatabase(edb)
+	//triedb := trie.NewDatabase(edb)
+	/*
 	regenerate_snapshot := true
 	sshot,err := snapshot.New(edb,triedb,256,common.Hash{},false,regenerate_snapshot,false)
 	if err != nil {
@@ -33,6 +35,8 @@ func main() {
 		os.Exit(1)
 	}
 	state_db,err := state.New(state_root,state.NewDatabase(edb),sshot)
+	*/
+	state_db,err := state.New(state_root,state.NewDatabase(edb),nil)
 	if err != nil {
 		fmt.Printf("Error creating StateDB object: %v\n",err)
 		os.Exit(1)

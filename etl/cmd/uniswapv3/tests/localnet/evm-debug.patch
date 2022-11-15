@@ -1,0 +1,211 @@
+--- go-ethereum-1.10.26-orig/core/evm.go	2022-11-03 04:59:33.000000000 -0600
++++ go-ethereum-1.10.26/core/evm.go	2022-11-10 11:08:06.715732912 -0600
+@@ -17,6 +17,7 @@
+ package core
+ 
+ import (
++	"fmt"
+ 	"math/big"
+ 
+ 	"github.com/ethereum/go-ethereum/common"
+@@ -119,11 +120,13 @@
+ // CanTransfer checks whether there are enough funds in the address' account to make a transfer.
+ // This does not take the necessary gas in to account to make the transfer valid.
+ func CanTransfer(db vm.StateDB, addr common.Address, amount *big.Int) bool {
++	fmt.Printf("CanTransfer(): addr %v balance %v amount %v can? = %v\n",addr.String(),db.GetBalance(addr).String(),amount.String(),db.GetBalance(addr).Cmp(amount) >= 0)
+ 	return db.GetBalance(addr).Cmp(amount) >= 0
+ }
+ 
+ // Transfer subtracts amount from sender and adds amount to recipient using the given Db
+ func Transfer(db vm.StateDB, sender, recipient common.Address, amount *big.Int) {
++	fmt.Printf("transferring %v from %v to %v\n",amount.String(),sender.String(),recipient.String())
+ 	db.SubBalance(sender, amount)
+ 	db.AddBalance(recipient, amount)
+ }
+--- go-ethereum-1.10.26-orig/core/vm/interpreter.go	2022-11-03 04:59:33.000000000 -0600
++++ go-ethereum-1.10.26/core/vm/interpreter.go	2022-11-09 12:00:40.692866407 -0600
+@@ -17,6 +17,7 @@
+ package vm
+ 
+ import (
++	"fmt"
+ 	"hash"
+ 
+ 	"github.com/ethereum/go-ethereum/common"
+@@ -185,6 +186,7 @@
+ 		// Get the operation from the jump table and validate the stack to ensure there are
+ 		// enough stack items available to perform the operation.
+ 		op = contract.GetOp(pc)
++		fmt.Printf("%v\t%v\n",pc,op)
+ 		operation := in.cfg.JumpTable[op]
+ 		cost = operation.constantGas // For tracing
+ 		// Validate stack
+--- go-ethereum-1.10.26-orig/core/vm/instructions.go	2022-11-03 04:59:33.000000000 -0600
++++ go-ethereum-1.10.26/core/vm/instructions.go	2022-11-09 15:43:13.575330899 -0600
+@@ -17,6 +17,7 @@
+ package vm
+ 
+ import (
++	"fmt"
+ 	"sync/atomic"
+ 
+ 	"github.com/ethereum/go-ethereum/common"
+@@ -88,6 +89,7 @@
+ 
+ func opLt(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+ 	x, y := scope.Stack.pop(), scope.Stack.peek()
++	fmt.Printf("\t\topLt x=%v, y=%v\n",x,y)
+ 	if x.Lt(y) {
+ 		y.SetOne()
+ 	} else {
+@@ -276,6 +278,7 @@
+ 
+ func opCallValue(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+ 	v, _ := uint256.FromBig(scope.Contract.value)
++	fmt.Printf("\t\topCallValue() pushing value %v to the stack\n",v.String())
+ 	scope.Stack.push(v)
+ 	return nil, nil
+ }
+@@ -540,6 +543,7 @@
+ 	if !scope.Contract.validJumpdest(&pos) {
+ 		return nil, ErrInvalidJump
+ 	}
++	fmt.Printf("\t\topJump() new pc = %v\n",pos)
+ 	*pc = pos.Uint64() - 1 // pc will be increased by the interpreter loop
+ 	return nil, nil
+ }
+@@ -549,6 +553,7 @@
+ 		return nil, errStopToken
+ 	}
+ 	pos, cond := scope.Stack.pop(), scope.Stack.pop()
++	fmt.Printf("\t\topJumpi() new pc = %v\n",pos)
+ 	if !cond.IsZero() {
+ 		if !scope.Contract.validJumpdest(&pos) {
+ 			return nil, ErrInvalidJump
+@@ -876,8 +881,10 @@
+ 	)
+ 	*pc += 1
+ 	if *pc < codeLen {
++		fmt.Printf("\t\topPush1() pushing code len %v\n",scope.Contract.Code[*pc])
+ 		scope.Stack.push(integer.SetUint64(uint64(scope.Contract.Code[*pc])))
+ 	} else {
++		fmt.Printf("\t\topPush1() pushing 0\n")
+ 		scope.Stack.push(integer.Clear())
+ 	}
+ 	return nil, nil
+@@ -899,8 +906,11 @@
+ 		}
+ 
+ 		integer := new(uint256.Int)
+-		scope.Stack.push(integer.SetBytes(common.RightPadBytes(
+-			scope.Contract.Code[startMin:endMin], pushByteSize)))
++		bytes_to_push := integer.SetBytes(common.RightPadBytes(scope.Contract.Code[startMin:endMin], pushByteSize))
++		fmt.Printf("\t\tpushN() integer = %v\n",integer)
++		fmt.Printf("\t\tstartMin=%v, endMin=%v , int64=%v\n",startMin,endMin,integer.Uint64())
++		fmt.Printf("\t\tpushN() bytes to push: %v\n",bytes_to_push.Hex())
++		scope.Stack.push(bytes_to_push)
+ 
+ 		*pc += size
+ 		return nil, nil
+--- go-ethereum-1.10.26-orig/core/state/statedb.go	2022-11-03 04:59:33.000000000 -0600
++++ go-ethereum-1.10.26/core/state/statedb.go	2022-11-14 17:13:18.577350380 -0600
+@@ -262,6 +262,7 @@
+ 
+ // GetBalance retrieves the balance from the given address or 0 if object not found
+ func (s *StateDB) GetBalance(addr common.Address) *big.Int {
++	fmt.Printf("statedb.GetBalance() addr %v\n",addr.String())
+ 	stateObject := s.getStateObject(addr)
+ 	if stateObject != nil {
+ 		return stateObject.Balance()
+@@ -309,6 +310,7 @@
+ 
+ // GetState retrieves a value from the given account's storage trie.
+ func (s *StateDB) GetState(addr common.Address, hash common.Hash) common.Hash {
++	fmt.Printf("statedb.GetState() addr %v hash %v\n",addr.String(),hash.String())
+ 	stateObject := s.getStateObject(addr)
+ 	if stateObject != nil {
+ 		return stateObject.GetState(s.db, hash)
+@@ -562,9 +564,13 @@
+ 
+ // GetOrNewStateObject retrieves a state object or create a new state object if nil.
+ func (s *StateDB) GetOrNewStateObject(addr common.Address) *stateObject {
++	fmt.Printf("statedb.GetOrNewStateObject() addr %v\n",addr.String())
+ 	stateObject := s.getStateObject(addr)
+ 	if stateObject == nil {
+ 		stateObject, _ = s.createObject(addr)
++		fmt.Printf("statedb.GetOrNewStateObject() object not existed but created\n")
++	} else {
++		fmt.Printf("statedb.GetOrNewStateObject() object already existed\n")
+ 	}
+ 	return stateObject
+ }
+@@ -572,6 +578,7 @@
+ // createObject creates a new state object. If there is an existing account with
+ // the given address, it is overwritten and returned as the second return value.
+ func (s *StateDB) createObject(addr common.Address) (newobj, prev *stateObject) {
++	fmt.Printf("statedb.createObject() addr %v\n",addr.String())
+ 	prev = s.getDeletedStateObject(addr) // Note, prev might have been deleted, we need that!
+ 
+ 	var prevdestruct bool
+@@ -989,6 +996,7 @@
+ 	if err := s.db.TrieDB().Update(nodes); err != nil {
+ 		return common.Hash{}, err
+ 	}
++	fmt.Printf("statedb.Commit(): root = %v\n",root.String())
+ 	s.originalRoot = root
+ 	return root, err
+ }
+--- go-ethereum-1.10.26-orig/core/state/state_object.go	2022-11-03 04:59:33.000000000 -0600
++++ go-ethereum-1.10.26/core/state/state_object.go	2022-11-10 10:11:24.749984323 -0600
+@@ -406,6 +406,7 @@
+ 		}
+ 		return
+ 	}
++	fmt.Printf("state.AddBalance() address=%v , balance %v , amount %v\n",s.address.String(),s.Balance().String(),amount.String())
+ 	s.SetBalance(new(big.Int).Add(s.Balance(), amount))
+ }
+ 
+--- go-ethereum-1.10.26-orig/core/state/dump.go	2022-11-03 04:59:33.000000000 -0600
++++ go-ethereum-1.10.26/core/state/dump.go	2022-11-14 18:42:16.745303784 -0600
+@@ -18,6 +18,7 @@
+ 
+ import (
+ 	"encoding/json"
++	"encoding/hex"
+ 	"fmt"
+ 	"time"
+ 
+@@ -136,7 +137,8 @@
+ 		start            = time.Now()
+ 		logged           = time.Now()
+ 	)
+-	log.Info("Trie dumping started", "root", s.trie.Hash())
++	fmt.Printf("Trie dumping started root=%v\n",s.trie.Hash().String())
++	log.Info("state.DumpToCollector(): Trie dumping started", "root", s.trie.Hash())
+ 	c.OnRoot(s.trie.Hash())
+ 
+ 	it := trie.NewIterator(s.trie.NodeIterator(conf.Start))
+@@ -154,6 +156,7 @@
+ 		}
+ 		addrBytes := s.trie.GetKey(it.Key)
+ 		if addrBytes == nil {
++			fmt.Printf("state.DumpToCollector(): addBytes is nil\n")
+ 			// Preimage missing
+ 			missingPreimages++
+ 			if conf.OnlyWithAddresses {
+@@ -162,6 +165,7 @@
+ 			account.SecureKey = it.Key
+ 		}
+ 		addr := common.BytesToAddress(addrBytes)
++		fmt.Printf("state.DumpToCollector(): account %v nonce %v balance %v root %v\n",addr.String(),data.Nonce,data.Balance.String(),hex.EncodeToString(data.Root[:]))
+ 		obj := newObject(s, addr, data)
+ 		if !conf.SkipCode {
+ 			account.Code = obj.Code(s.db)
+@@ -195,6 +199,7 @@
+ 	if missingPreimages > 0 {
+ 		log.Warn("Dump incomplete due to missing preimages", "missing", missingPreimages)
+ 	}
++	fmt.Printf("state.DumpToCollector() finished\n")
+ 	log.Info("Trie dumping complete", "accounts", accounts,
+ 		"elapsed", common.PrettyDuration(time.Since(start)))
+ 
