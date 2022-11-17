@@ -58,7 +58,9 @@ func main() {
 	}
 	fmt.Printf("code size=%v\n",len(code))
 	fmt.Printf("input size=%v\n",len(tx.Data()))
-	err,generated_addr,state_root := UEVMDeploy(chain_id,tx_msg.From(),tx.Nonce(),tx.Data(),db,common.Hash{})
+	err,generated_addr,state_root := UEVMDeploy2(chain_id,tx_msg.From(),tx.Nonce(),tx.Data(),db,common.Hash{})
+	//err,state_root := UEVMAcctCreate(chain_id,tx_msg.From(),tx.Nonce(),db,common.Hash{})
+	//generated_addr := common.Address{}
 	fmt.Printf("Deploy result: %v\n",err)
 	fmt.Printf("Contract address: %v\n",generated_addr.String())
 	fmt.Printf("Intermediate state hash: %v\n",state_root.String())
