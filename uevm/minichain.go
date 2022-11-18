@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/types"
 )
 // TechNotes:
 //		the file stores one record at one line, each line is terminated by '\n' character
@@ -113,11 +114,21 @@ func (self *MiniChain) ExecDeploy(chain_id int64,from common.Address,nonce uint6
 
 	err,addr,root := UEVMDeploy2(chain_id,from,nonce,contract_code,self.sdb,initial_state_root)
 	if err != nil {
-		return err,addr,root
+		return err,addr,common.Hash{}
 	}
 	r.StateRoot = root
 	err = self.AppendLine(r)
 	return err,addr,root
+}
+func (self *MiniChain) ExecCall(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,initial_state_root common.Hash,r *Record) (error,common.Hash) {
+
+	err,root := UEVMCall(chain_id,tx,block_num,time_stamp,initial_state_root,self.sdb)
+	if err != nil {
+		return err,common.Hash{}
+	}
+	r.StateRoot = root
+	err = self.AppendLine(r)
+	return err,root
 }
 func DumpRecord(r *Record) {
 	fmt.Printf("BlockNum\t%v\n",r.BlockNum)

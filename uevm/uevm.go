@@ -11,9 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/state/snapshot"
 	"github.com/ethereum/go-ethereum/trie"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -154,38 +152,57 @@ func UEVMDeploy2(chain_id int64,from common.Address,nonce uint64,contract_code [
 	DumpStateDB(raw_dump)
 	return vmerr,contract_addr,out_state
 }
-func UEVMCall(chain_id int64,tx *types.Transaction,state_root common.Hash,edb ethdb.Database) error {
+func UEVMCall(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,state_root common.Hash,sdb *state.Database) (error,common.Hash) {
 
-	sshot,err := snapshot.New(edb,trie.NewDatabase(edb),256,common.Hash{},false,false,false)
+	state_db,err := state.New(state_root,*sdb,nil)
 	if err != nil {
-		return err
+		return err,common.Hash{}
 	}
-	state_db,err := state.New(state_root,state.NewDatabase(edb),sshot)
-	if err != nil {
-		return err
-	}
-	block_ctx := new(vm.BlockContext)
+	state_db.Prepare(tx.Hash(),1)
+	block_ctx := NewDummyBlockContext(big.NewInt(block_num) ,big.NewInt(time_stamp))
 	tx_ctx := new(vm.TxContext)
 	chain_cfg := params.MainnetChainConfig
 	vm_cfg := vm.Config{}
 	evm := vm.NewEVM(*block_ctx,*tx_ctx,state_db,chain_cfg,vm_cfg)
 	gp := new(core.GasPool)
+	gas := uint64(99999999999)
 	tx_msg,err := tx.AsMessage(types.LatestSignerForChainID(big.NewInt(chain_id)),tx.GasPrice())
 	if err != nil {
-		return err
+		return err,common.Hash{}
 	}
-
+	from := tx_msg.From()
 	sender := vm.AccountRef(tx_msg.From())
+	tx_ctx.Origin = from
+	tx_ctx.GasPrice = big.NewInt(1111111111)
 	//st := core.NewStateTransition(evm,tx_msg,gp)
 	to := tx_msg.To()
 	if to == nil {
 		panic("call to nil contract address")
 	}
-	ret, gas, vmerr := evm.Call(sender, *to , tx_msg.Data(), tx_msg.Gas(), tx_msg.Value())
+	ret, gas, vmerr := evm.Call(sender, *to , tx_msg.Data(), gas, tx_msg.Value())
 	_=ret
 	_=gas
 	_=gp
-	return vmerr
+	delete_empty_objects := false
+	out_state,err := state_db.Commit(delete_empty_objects)
+	if err!=nil {
+		fmt.Printf("Error on state_db.Commit(): %v\n",err)
+		return err,common.Hash{}
+	}
+	fmt.Printf("state_hash after commit: %v\n",out_state.String())
+	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
+	if err != nil {
+		fmt.Printf("Error on TrieDB().Commit() for out_state: %v\n",err)
+		return err,common.Hash{}
+	}
+	err = state_db.Database().TrieDB().CommitPreimages()
+	if err != nil {
+		fmt.Printf("Error on TrieDB().CommitPreimages() for out_state: %v\n",err)
+		return err,common.Hash{}
+	}
+	raw_dump := GetStateDump(state_db)
+	DumpStateDB(raw_dump)
+	return vmerr,out_state
 }
 func UEVMAcctCreate(chain_id int64,from common.Address,nonce uint64,sdb state.Database,state_root common.Hash) (error,common.Hash) {	// deploys contract code
 
