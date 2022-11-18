@@ -36,17 +36,9 @@ func CallBurn() {
 func CallSwapFn() {	// calls swap() function
 
 }
+/* DISCONTINUED
 func UEVMDeploy(chain_id int64,from common.Address,nonce uint64,contract_code []byte,sdb state.Database,state_root common.Hash) (error,common.Address,common.Hash) {	// deploys contract code
 
-	/*
-	triedb := trie.NewDatabase(edb)
-	regenerate_snapshot := true
-	sshot,err := snapshot.New(edb,triedb,256,common.Hash{},false,regenerate_snapshot,false)
-	if err != nil {
-		return err,common.Address{},common.Hash{}
-	}
-	state_db,err := state.New(state_root,state.NewDatabase(edb),sshot)
-	*/
 	fmt.Printf("from = %v\n",from.String())
 	//state_db,err := state.New(state_root,state.NewDatabase(edb),nil)
 	state_db,err := state.New(state_root,sdb,nil)
@@ -104,10 +96,11 @@ func UEVMDeploy(chain_id int64,from common.Address,nonce uint64,contract_code []
 	DumpStateDB(raw_dump)
 	return vmerr,contract_addr,iroot_hash
 }
-func UEVMDeploy2(chain_id int64,from common.Address,nonce uint64,contract_code []byte,sdb state.Database,state_root common.Hash) (error,common.Address,common.Hash) {	// deploys contract code
+*/
+func UEVMDeploy2(chain_id int64,from common.Address,nonce uint64,contract_code []byte,sdb *state.Database,state_root common.Hash) (error,common.Address,common.Hash) {	// deploys contract code
 
 	fmt.Printf("from = %v\n",from.String())
-	state_db,err := state.New(state_root,sdb,nil)
+	state_db,err := state.New(state_root,*sdb,nil)
 	if err != nil {
 		return err,common.Address{},common.Hash{}
 	}
@@ -277,3 +270,12 @@ func DumpStateDB(raw_dump state.Dump) {
 		fmt.Printf("%v (%v)\t%v\t\t%v\n",keys[i].String(),astr,obj.Balance,obj.Nonce)
 	}
 }
+/*
+	triedb := trie.NewDatabase(edb)
+	regenerate_snapshot := true
+	sshot,err := snapshot.New(edb,triedb,256,common.Hash{},false,regenerate_snapshot,false)
+	if err != nil {
+		return err,common.Address{},common.Hash{}
+	}
+	state_db,err := state.New(state_root,state.NewDatabase(edb),sshot)
+*/

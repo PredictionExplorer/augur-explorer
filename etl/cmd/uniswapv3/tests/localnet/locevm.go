@@ -58,7 +58,21 @@ func main() {
 	}
 	fmt.Printf("code size=%v\n",len(code))
 	fmt.Printf("input size=%v\n",len(tx.Data()))
-	err,generated_addr,state_root := UEVMDeploy2(chain_id,tx_msg.From(),tx.Nonce(),tx.Data(),db,common.Hash{})
+
+	mchain,err := OpenMiniChain("/tmp/minichain.dat")
+	if err != nil {
+		fmt.Printf("Error opening minichain: %v\n",err)
+		os.Exit(1)
+	}
+	mchain.SetStateDB(&db)
+	var rec Record
+	rec.BlockNum = 111
+	rec.BlockHash = common.Hash{}
+	rec.TxIndex = 222
+	rec.TxHash = common.Hash{}
+	//err,generated_addr,state_root := UEVMDeploy2(chain_id,tx_msg.From(),tx.Nonce(),tx.Data(),db,common.Hash{})
+	err,generated_addr,state_root := mchain.ExecDeploy(chain_id,tx_msg.From(),tx.Nonce(),tx.Data(),common.Hash{},&rec)
+
 	//err,state_root := UEVMAcctCreate(chain_id,tx_msg.From(),tx.Nonce(),db,common.Hash{})
 	//generated_addr := common.Address{}
 	fmt.Printf("Deploy result: %v\n",err)
