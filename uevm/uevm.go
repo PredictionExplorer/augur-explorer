@@ -7,6 +7,7 @@ import (
 	//"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/core"
@@ -163,6 +164,8 @@ func UEVMCall(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,st
 	tx_ctx := new(vm.TxContext)
 	chain_cfg := params.MainnetChainConfig
 	vm_cfg := vm.Config{}
+	fmt.Printf("Block num = %v\n",block_num)
+	fmt.Printf("chain config: %+v\n",chain_cfg)
 	evm := vm.NewEVM(*block_ctx,*tx_ctx,state_db,chain_cfg,vm_cfg)
 	gp := new(core.GasPool)
 	gas := uint64(99999999999)
@@ -183,6 +186,9 @@ func UEVMCall(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,st
 	_=ret
 	_=gas
 	_=gp
+	logs := state_db.GetLogs(tx.Hash(),common.Hash{})
+	logs_bytes,err := rlp.EncodeToBytes(logs)
+	_=logs_bytes
 	delete_empty_objects := false
 	out_state,err := state_db.Commit(delete_empty_objects)
 	if err!=nil {

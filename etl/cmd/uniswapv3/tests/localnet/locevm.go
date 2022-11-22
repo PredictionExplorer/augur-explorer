@@ -26,7 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 	tx_hash := common.HexToHash(os.Args[1])
-	db := OpenDB("/tmp/evmdb")
+	db := OpenDB("/var/tmp/evmdb")
 	fmt.Printf("db = %+v\n",db)
 
 	RPC_URL = os.Getenv("RPC_URL")
@@ -59,7 +59,7 @@ func main() {
 	fmt.Printf("code size=%v\n",len(code))
 	fmt.Printf("input size=%v\n",len(tx.Data()))
 
-	mchain,err := OpenMiniChain("/tmp/minichain.dat")
+	mchain,err := OpenMiniChain("/var/tmp/minichain.dat")
 	if err != nil {
 		fmt.Printf("Error opening minichain: %v\n",err)
 		os.Exit(1)

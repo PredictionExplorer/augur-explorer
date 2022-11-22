@@ -26,7 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 	tx_hash := common.HexToHash(os.Args[1])
-	db := OpenDB("/tmp/evmdb")
+	db := OpenDB("/var/tmp/evmdb")
 	fmt.Printf("db = %+v\n",db)
 
 	RPC_URL = os.Getenv("RPC_URL")
@@ -51,7 +51,7 @@ func main() {
 		os.Exit(1)
 	}*/
 
-	mchain,err := OpenMiniChain("/tmp/minichain.dat")
+	mchain,err := OpenMiniChain("/var/tmp/minichain.dat")
 	if err != nil {
 		fmt.Printf("Error opening minichain: %v\n",err)
 		os.Exit(1)
@@ -66,10 +66,13 @@ func main() {
 	fmt.Printf("Executing call on state root %v\n",last_line_rec.StateRoot.String())
 	var rec Record
 	rec.BlockNum = r.BlockNumber.Int64()
+	rec.BlockNum = 12369621 // we have to hardcode this block because we are testing MainNet
+	time_stamp := int64(1620131220)
 	rec.BlockHash = r.BlockHash
 	rec.TxIndex = int64(r.TransactionIndex)
 	rec.TxHash = r.TxHash
-	err,state_root := mchain.ExecCall(chain_id,tx,rec.BlockNum,0 ,last_line_rec.StateRoot,&rec)
+	fmt.Printf("calling ExecCall with block %v\n",rec.BlockNum)
+	err,state_root := mchain.ExecCall(chain_id,tx,rec.BlockNum,time_stamp ,last_line_rec.StateRoot,&rec)
 
 	//err,state_root := UEVMAcctCreate(chain_id,tx_msg.From(),tx.Nonce(),db,common.Hash{})
 	//generated_addr := common.Address{}
