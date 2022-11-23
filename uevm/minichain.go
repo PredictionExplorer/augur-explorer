@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethdb/leveldb"
 )
 // TechNotes:
 //		the file stores one record at one line, each line is terminated by '\n' character
@@ -27,6 +28,7 @@ type (
 		StatesFileName		string		// name of the file which stores state root hashes
 		F					*os.File
 		sdb					*state.Database
+		receipts_db			*leveldb.Database
 	}
 	Record struct {
 		BlockNum			int64
@@ -36,12 +38,16 @@ type (
 		StateRoot			common.Hash
 	}
 )
-func OpenMiniChain(fname string) (MiniChain,error) {
+func OpenMiniChain(states_fname,receipts_datadir string) (MiniChain,error) {
 
 	var err error
 	var mc MiniChain
-	mc.StatesFileName = fname
-	mc.F,err = os.OpenFile(fname, os.O_RDWR|os.O_CREATE, 0755)
+	mc.StatesFileName = states_fname
+	mc.F,err = os.OpenFile(states_fname, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		return mc,err
+	}
+	mc.receipts_db,err = leveldb.New(receipts_datadir,0 ,0 ,"receipts",false)
 	return mc,err
 }
 func (self *MiniChain) CloseMiniChain() {
@@ -110,24 +116,26 @@ func (self *MiniChain) AppendLine(r *Record) error {
 	}
 	return err
 }
-func (self *MiniChain) ExecDeploy(chain_id int64,from common.Address,nonce uint64,contract_code []byte,initial_state_root common.Hash,r *Record) (error,common.Address,common.Hash) {
+func (self *MiniChain) ExecDeploy(chain_id int64,tx_hash common.Hash,from common.Address,nonce uint64,contract_code []byte,initial_state_root common.Hash,r *Record) (error,common.Address,common.Hash) {
 
-	err,addr,root := UEVMDeploy2(chain_id,from,nonce,contract_code,self.sdb,initial_state_root)
+	err,addr,root,encoded_logs := UEVMDeploy2(chain_id,tx_hash,from,nonce,contract_code,self.sdb,initial_state_root)
 	if err != nil {
 		return err,addr,common.Hash{}
 	}
 	r.StateRoot = root
 	err = self.AppendLine(r)
+	self.receipts_db.Put(tx_hash.Bytes(),encoded_logs)
 	return err,addr,root
 }
 func (self *MiniChain) ExecCall(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,initial_state_root common.Hash,r *Record) (error,common.Hash) {
 
-	err,root := UEVMCall(chain_id,tx,block_num,time_stamp,initial_state_root,self.sdb)
+	err,root,encoded_logs := UEVMCall(chain_id,tx,block_num,time_stamp,initial_state_root,self.sdb)
 	if err != nil {
 		return err,common.Hash{}
 	}
 	r.StateRoot = root
 	err = self.AppendLine(r)
+	self.receipts_db.Put(tx.Hash().Bytes(),encoded_logs)
 	return err,root
 }
 func DumpRecord(r *Record) {

@@ -96,12 +96,12 @@ func UEVMDeploy(chain_id int64,from common.Address,nonce uint64,contract_code []
 	return vmerr,contract_addr,iroot_hash
 }
 */
-func UEVMDeploy2(chain_id int64,from common.Address,nonce uint64,contract_code []byte,sdb *state.Database,state_root common.Hash) (error,common.Address,common.Hash) {	// deploys contract code
+func UEVMDeploy2(chain_id int64,tx_hash common.Hash,from common.Address,nonce uint64,contract_code []byte,sdb *state.Database,state_root common.Hash) (error,common.Address,common.Hash,[]byte) {	// deploys contract code
 
 	fmt.Printf("from = %v\n",from.String())
 	state_db,err := state.New(state_root,*sdb,nil)
 	if err != nil {
-		return err,common.Address{},common.Hash{}
+		return err,common.Address{},common.Hash{},nil
 	}
 	state_db.Prepare(common.Hash{},1)
 	sender_bal := state_db.GetBalance(from)
@@ -128,36 +128,38 @@ func UEVMDeploy2(chain_id int64,from common.Address,nonce uint64,contract_code [
 	contract_addr := crypto.CreateAddress(sender.Address(), state_db.GetNonce(sender.Address()))
 	ret, _, _, vmerr := evm.Create(sender, contract_code, gas, value)
 	_=ret
+	logs := state_db.GetLogs(tx_hash,common.Hash{})
+	logs_encoded_bytes,err := rlp.EncodeToBytes(logs)
 	fmt.Printf("Create() vmerr = %v\n",vmerr)
 	fmt.Printf("Create() contract addr = %v\n",contract_addr.String())
 	//fmt.Printf("Create() output: %v\n",hex.EncodeToString(ret))
 	delete_empty_objects := false
 	out_state,err := state_db.Commit(delete_empty_objects)
-	if err!=nil {
+	if err != nil {
 		fmt.Printf("Error on state_db.Commit(): %v\n",err)
-		return err,contract_addr,out_state
+		return err,contract_addr,out_state,nil
 	}
 	fmt.Printf("state_hash after commit: %v\n",out_state.String())
 	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
 	if err != nil {
 		fmt.Printf("Error on TrieDB().Commit() for out_state: %v\n",err)
-		return err,contract_addr,out_state
+		return err,contract_addr,out_state,nil
 	}
 	err = state_db.Database().TrieDB().CommitPreimages()
 	if err != nil {
 		fmt.Printf("Error on TrieDB().CommitPreimages() for out_state: %v\n",err)
-		return err,contract_addr,out_state
+		return err,contract_addr,out_state,nil
 	}
 
 	raw_dump = GetStateDump(state_db)
 	DumpStateDB(raw_dump)
-	return vmerr,contract_addr,out_state
+	return vmerr,contract_addr,out_state,logs_encoded_bytes
 }
-func UEVMCall(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,state_root common.Hash,sdb *state.Database) (error,common.Hash) {
+func UEVMCall(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,state_root common.Hash,sdb *state.Database) (error,common.Hash,[]byte) {
 
 	state_db,err := state.New(state_root,*sdb,nil)
 	if err != nil {
-		return err,common.Hash{}
+		return err,common.Hash{},nil
 	}
 	state_db.Prepare(tx.Hash(),1)
 	block_ctx := NewDummyBlockContext(big.NewInt(block_num) ,big.NewInt(time_stamp))
@@ -171,7 +173,7 @@ func UEVMCall(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,st
 	gas := uint64(99999999999)
 	tx_msg,err := tx.AsMessage(types.LatestSignerForChainID(big.NewInt(chain_id)),tx.GasPrice())
 	if err != nil {
-		return err,common.Hash{}
+		return err,common.Hash{},nil
 	}
 	from := tx_msg.From()
 	sender := vm.AccountRef(tx_msg.From())
@@ -187,28 +189,28 @@ func UEVMCall(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,st
 	_=gas
 	_=gp
 	logs := state_db.GetLogs(tx.Hash(),common.Hash{})
-	logs_bytes,err := rlp.EncodeToBytes(logs)
-	_=logs_bytes
+	fmt.Printf("num logs = %v\n",len(logs))
+	logs_encoded_bytes,err := rlp.EncodeToBytes(logs)
 	delete_empty_objects := false
 	out_state,err := state_db.Commit(delete_empty_objects)
 	if err!=nil {
 		fmt.Printf("Error on state_db.Commit(): %v\n",err)
-		return err,common.Hash{}
+		return err,common.Hash{},nil
 	}
 	fmt.Printf("state_hash after commit: %v\n",out_state.String())
 	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
 	if err != nil {
 		fmt.Printf("Error on TrieDB().Commit() for out_state: %v\n",err)
-		return err,common.Hash{}
+		return err,common.Hash{},nil
 	}
 	err = state_db.Database().TrieDB().CommitPreimages()
 	if err != nil {
 		fmt.Printf("Error on TrieDB().CommitPreimages() for out_state: %v\n",err)
-		return err,common.Hash{}
+		return err,common.Hash{},nil
 	}
 	raw_dump := GetStateDump(state_db)
 	DumpStateDB(raw_dump)
-	return vmerr,out_state
+	return vmerr,out_state,logs_encoded_bytes
 }
 func UEVMAcctCreate(chain_id int64,from common.Address,nonce uint64,sdb state.Database,state_root common.Hash) (error,common.Hash) {	// deploys contract code
 

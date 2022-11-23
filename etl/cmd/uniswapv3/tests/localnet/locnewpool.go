@@ -51,7 +51,7 @@ func main() {
 		os.Exit(1)
 	}*/
 
-	mchain,err := OpenMiniChain("/var/tmp/minichain.dat")
+	mchain,err := OpenMiniChain("/var/tmp/minichain.dat","/var/tmp/receipts")
 	if err != nil {
 		fmt.Printf("Error opening minichain: %v\n",err)
 		os.Exit(1)

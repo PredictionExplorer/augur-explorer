@@ -6,7 +6,7 @@ import (
 	 . "github.com/PredictionExplorer/augur-explorer/uevm"
 )
 func main() {
-	mchain,err := OpenMiniChain("/tmp/minichain.dat")
+	mchain,err := OpenMiniChain("/var/tmp/minichain.dat")
 	if err != nil {
 		fmt.Printf("Error opening minichain: %v\n",err)
 		os.Exit(1)
