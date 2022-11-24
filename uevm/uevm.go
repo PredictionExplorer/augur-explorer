@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"math"
-	//"encoding/hex"
+	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -16,6 +16,12 @@ import (
 	"github.com/ethereum/go-ethereum/trie"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/crypto"
+)
+var (
+	ChainID			int64	= 1234
+	MainNetBlockNum		int64 = 12369621
+	MainNetTimeStamp	int64 = 1620131220
+	TxDefaultGas		int64 = 1111111111
 )
 func DeployFactory() {
 
@@ -103,7 +109,7 @@ func UEVMDeploy2(chain_id int64,tx_hash common.Hash,from common.Address,nonce ui
 	if err != nil {
 		return err,common.Address{},common.Hash{},nil
 	}
-	state_db.Prepare(common.Hash{},1)
+	state_db.Prepare(tx_hash,1)
 	sender_bal := state_db.GetBalance(from)
 	min_bal := big.NewInt(math.MaxInt)
 	if sender_bal.Cmp(min_bal) < 0 {
@@ -130,6 +136,9 @@ func UEVMDeploy2(chain_id int64,tx_hash common.Hash,from common.Address,nonce ui
 	_=ret
 	logs := state_db.GetLogs(tx_hash,common.Hash{})
 	logs_encoded_bytes,err := rlp.EncodeToBytes(logs)
+	lenlogs := 0
+	if logs!=nil { lenlogs=len(logs) }
+	fmt.Printf("Deploy for tx_hash %v generated %v logs\n",tx_hash.String(),lenlogs)
 	fmt.Printf("Create() vmerr = %v\n",vmerr)
 	fmt.Printf("Create() contract addr = %v\n",contract_addr.String())
 	//fmt.Printf("Create() output: %v\n",hex.EncodeToString(ret))
@@ -154,6 +163,52 @@ func UEVMDeploy2(chain_id int64,tx_hash common.Hash,from common.Address,nonce ui
 	raw_dump = GetStateDump(state_db)
 	DumpStateDB(raw_dump)
 	return vmerr,contract_addr,out_state,logs_encoded_bytes
+}
+func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,to common.Address,state_root common.Hash,sdb *state.Database )	(error,common.Hash,[]byte) {
+	// Note: tx_hash has to be altered from original Mint tx hash by inserting 'dummy' string converted to bytes whithin the first 5 bytes of the transaction hash (so the hash doesn't collide with Mint's hash)
+	// (this is required because we have to insert token accounts before executing Mint call)
+	state_db,err := state.New(state_root,*sdb,nil)
+	if err != nil {
+		return err,common.Hash{},nil
+	}
+	state_db.Prepare(tx_hash,1)
+	sender_bal := state_db.GetBalance(tx_ctx.Origin)
+	min_bal := big.NewInt(math.MaxInt)
+	if sender_bal.Cmp(min_bal) < 0 {
+		state_db.AddBalance(tx_ctx.Origin,min_bal)	// fix the problem with balances on empty states
+	}
+	chain_cfg := params.MainnetChainConfig
+	vm_cfg := vm.Config{}
+	evm := vm.NewEVM(*block_ctx,*tx_ctx,state_db,chain_cfg,vm_cfg)
+	gas := uint64(99999999999)
+	value := big.NewInt(0)
+	sender := vm.AccountRef(tx_ctx.Origin)
+	contract_code,err := hex.DecodeString(DummyERC20CodeStr)
+	if err != nil {
+		return err,common.Hash{},nil
+	}
+	ret, _, _, vmerr := evm.Create3(sender, contract_code, gas, value,to)
+	_=ret
+	logs := state_db.GetLogs(tx_hash,common.Hash{})
+	logs_encoded_bytes,err := rlp.EncodeToBytes(logs)
+	delete_empty_objects := false
+	out_state,err := state_db.Commit(delete_empty_objects)
+	if err != nil {
+		return err,out_state,nil
+	}
+	fmt.Printf("state_hash after commit: %v\n",out_state.String())
+	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
+	if err != nil {
+		return err,out_state,nil
+	}
+	err = state_db.Database().TrieDB().CommitPreimages()
+	if err != nil {
+		return err,out_state,nil
+	}
+
+	raw_dump := GetStateDump(state_db)
+	DumpStateDB(raw_dump)
+	return vmerr,out_state,logs_encoded_bytes
 }
 func UEVMCall(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,state_root common.Hash,sdb *state.Database) (error,common.Hash,[]byte) {
 
@@ -252,6 +307,41 @@ func UEVMAcctCreate(chain_id int64,from common.Address,nonce uint64,sdb state.Da
 	raw_dump = GetStateDump(state_db)
 	DumpStateDB(raw_dump)
 	return err,out_state
+}
+func UEVMCall2(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,input []byte,value *big.Int,to common.Address,state_root common.Hash,sdb *state.Database) (error,common.Hash,[]byte) {
+
+	state_db,err := state.New(state_root,*sdb,nil)
+	if err != nil {
+		return err,common.Hash{},nil
+	}
+	state_db.Prepare(tx_hash,1)
+	chain_cfg := params.MainnetChainConfig
+	vm_cfg := vm.Config{}
+	evm := vm.NewEVM(*block_ctx,*tx_ctx,state_db,chain_cfg,vm_cfg)
+	gp := new(core.GasPool)
+	gas := uint64(99999999999)
+	sender := vm.AccountRef(tx_ctx.Origin)
+	ret, gas, vmerr := evm.Call(sender, to , input, gas,value) 
+	_=ret; _=gas;_=gp;
+	logs := state_db.GetLogs(tx_hash,common.Hash{})
+	logs_encoded_bytes,err := rlp.EncodeToBytes(logs)
+	delete_empty_objects := false
+	out_state,err := state_db.Commit(delete_empty_objects)
+	if err!=nil {
+		return err,common.Hash{},nil
+	}
+	fmt.Printf("state_hash after commit: %v\n",out_state.String())
+	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
+	if err != nil {
+		return err,common.Hash{},nil
+	}
+	err = state_db.Database().TrieDB().CommitPreimages()
+	if err != nil {
+		return err,common.Hash{},nil
+	}
+	raw_dump := GetStateDump(state_db)
+	DumpStateDB(raw_dump)
+	return vmerr,out_state,logs_encoded_bytes
 }
 //func OpenDB(file string) ethdb.Database {
 func OpenDB(file string) state.Database {

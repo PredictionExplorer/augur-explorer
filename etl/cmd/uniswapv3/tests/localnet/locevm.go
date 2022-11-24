@@ -69,7 +69,7 @@ func main() {
 	rec.BlockNum = 111
 	rec.BlockHash = common.Hash{}
 	rec.TxIndex = 222
-	rec.TxHash = common.Hash{}
+	rec.TxHash = tx_hash
 	//err,generated_addr,state_root := UEVMDeploy2(chain_id,tx_msg.From(),tx.Nonce(),tx.Data(),db,common.Hash{})
 	err,generated_addr,state_root := mchain.ExecDeploy(chain_id,tx_hash,tx_msg.From(),tx.Nonce(),tx.Data(),common.Hash{},&rec)
 

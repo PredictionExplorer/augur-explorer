@@ -118,12 +118,16 @@ func (self *MiniChain) AppendLine(r *Record) error {
 }
 func (self *MiniChain) ExecDeploy(chain_id int64,tx_hash common.Hash,from common.Address,nonce uint64,contract_code []byte,initial_state_root common.Hash,r *Record) (error,common.Address,common.Hash) {
 
+	fmt.Printf("ExecDeploy(): tx_hash=%v\n",tx_hash.String())
 	err,addr,root,encoded_logs := UEVMDeploy2(chain_id,tx_hash,from,nonce,contract_code,self.sdb,initial_state_root)
 	if err != nil {
 		return err,addr,common.Hash{}
 	}
 	r.StateRoot = root
 	err = self.AppendLine(r)
+	lenlogs := 0
+	if encoded_logs != nil { lenlogs=len(encoded_logs) }
+	fmt.Printf("Storing %v log bytes for tx hash %v\n",lenlogs,tx_hash.String())
 	self.receipts_db.Put(tx_hash.Bytes(),encoded_logs)
 	return err,addr,root
 }
@@ -138,10 +142,30 @@ func (self *MiniChain) ExecCall(chain_id int64,tx *types.Transaction,block_num,t
 	self.receipts_db.Put(tx.Hash().Bytes(),encoded_logs)
 	return err,root
 }
-func DumpRecord(r *Record) {
-	fmt.Printf("BlockNum\t%v\n",r.BlockNum)
-	fmt.Printf("BlockHash\t%v\n",r.BlockHash.String())
-	fmt.Printf("TxIndex\t%v\n",r.TxIndex)
-	fmt.Printf("TxHash\t%v\n",r.TxHash.String())
-	fmt.Printf("StateRoot\t%v\n",r.StateRoot)
+func (self *MiniChain) ExecMint(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,initial_state_root common.Hash,r *Record,token0_addr,token1_addr common.Address) error {
+
+	if !self.AccountExists(initial_state_root,token0_addr) {
+
+	}
+	if !self.AccountExists(initial_state_root,token1_addr) {
+
+	}
+	err,_ := self.ExecCall(chain_id,tx,block_num,time_stamp,initial_state_root,r)
+	if err != nil {
+		return err
+	}
+	return err
+}
+func (self *MiniChain) AddDummyTokens(state_root common.Hash,addr1,addr2 common.Address) (error,common.Hash){
+	// adds dummy ERC20 token contracts with addresses of real tokens
+	return nil,common.Hash{}
+}
+func (self *MiniChain) AccountExists(state_root common.Hash,addr common.Address) bool {
+
+	state_db,err := state.New(state_root,*self.sdb,nil)
+	if err != nil {
+		panic(fmt.Sprintf("Cant create new StateDB object: %v",err))
+	}
+
+	return state_db.Exist(addr)
 }
