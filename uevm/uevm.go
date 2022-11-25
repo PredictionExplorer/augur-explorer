@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"math"
-	"encoding/hex"
+	//"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -16,6 +16,8 @@ import (
 	"github.com/ethereum/go-ethereum/trie"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/crypto"
+
+	contracts "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 var (
 	ChainID			int64	= 1234
@@ -183,10 +185,11 @@ func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx 
 	gas := uint64(99999999999)
 	value := big.NewInt(0)
 	sender := vm.AccountRef(tx_ctx.Origin)
-	contract_code,err := hex.DecodeString(DummyERC20CodeStr)
-	if err != nil {
-		return err,common.Hash{},nil
-	}
+	contract_code := common.FromHex(contracts.ERC20UnlimitedMetaData.Bin)
+	//,err := hex.DecodeString(DummyERC20CodeStr)
+	//if err != nil {
+	//	return err,common.Hash{},nil
+	//}
 	ret, _, _, vmerr := evm.Create3(sender, contract_code, gas, value,to)
 	_=ret
 	logs := state_db.GetLogs(tx_hash,common.Hash{})
