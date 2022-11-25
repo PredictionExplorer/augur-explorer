@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"errors"
 	"strconv"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethdb/leveldb"
 )
@@ -142,23 +144,68 @@ func (self *MiniChain) ExecCall(chain_id int64,tx *types.Transaction,block_num,t
 	self.receipts_db.Put(tx.Hash().Bytes(),encoded_logs)
 	return err,root
 }
-func (self *MiniChain) ExecMint(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,initial_state_root common.Hash,r *Record,token0_addr,token1_addr common.Address) error {
+func (self *MiniChain) ExecCall2(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,input []byte,value *big.Int,contract_addr common.Address,initial_state_root common.Hash,r *Record) (error,common.Hash) {
 
-	if !self.AccountExists(initial_state_root,token0_addr) {
-
+	err,root,encoded_logs := UEVMCall2(block_ctx,tx_hash,tx_ctx,input,value,contract_addr,initial_state_root,self.sdb)
+	if err != nil {
+		return err,common.Hash{}
 	}
-	if !self.AccountExists(initial_state_root,token1_addr) {
+	r.StateRoot = root
+	err = self.AppendLine(r)
+	self.receipts_db.Put(tx_hash.Bytes(),encoded_logs)
+	return err,root
+}
+func (self *MiniChain) ExecMint(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,input []byte,value *big.Int,pool_addr common.Address,initial_state_root common.Hash,r *Record,token0_addr,token1_addr common.Address) error {
 
-	}
-	err,_ := self.ExecCall(chain_id,tx,block_num,time_stamp,initial_state_root,r)
+	err,tmp_state_hash := self.MaybeAddDummyTokens(block_ctx,tx_hash,tx_ctx,initial_state_root,token0_addr,token1_addr,r)
 	if err != nil {
 		return err
 	}
+	initial_state_root.SetBytes(tmp_state_hash.Bytes())
+	err,new_state_root := self.ExecCall2(block_ctx,tx_hash,tx_ctx,input,value,pool_addr,initial_state_root,r)
+	if err != nil {
+		return err
+	}
+	r.StateRoot=new_state_root
+	self.AppendLine(r)
 	return err
 }
-func (self *MiniChain) AddDummyTokens(state_root common.Hash,addr1,addr2 common.Address) (error,common.Hash){
+func (self *MiniChain) MaybeAddDummyTokens(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,state_root common.Hash,addr0,addr1 common.Address,r *Record) (error,common.Hash){
 	// adds dummy ERC20 token contracts with addresses of real tokens
-	return nil,common.Hash{}
+	var add_token0 bool = false
+	var add_token1 bool = false
+	clone_rec := *r
+	clone_rec.TxHash = common.BytesToHash(r.TxHash.Bytes())
+	new_root := state_root
+	if !self.AccountExists(state_root,addr0) {
+		add_token0 = true
+	}
+	if !self.AccountExists(state_root,addr1) {
+		add_token1 = true
+	}
+	if add_token0 {
+		hbytes := clone_rec.TxHash.Bytes()
+		hbytes[0]=116; hbytes[1]=111; hbytes[2]=107; hbytes[3]=101; hbytes[4]=110; hbytes[5]=48; // 'token0'
+		err,tmp_new_root,encoded_logs := UEVMDeployDummyToken(block_ctx,tx_hash,tx_ctx,addr1,new_root,self.sdb)
+		if err != nil {
+			return err,common.Hash{}
+		}
+		clone_rec.StateRoot.SetBytes(tmp_new_root.Bytes())
+		err = self.AppendLine(r)
+		self.receipts_db.Put(clone_rec.TxHash.Bytes(),encoded_logs)
+		new_root.SetBytes(tmp_new_root.Bytes())
+	}
+	if add_token1 {
+		err,tmp_new_root,encoded_logs := UEVMDeployDummyToken(block_ctx,tx_hash,tx_ctx,addr1,new_root,self.sdb)
+		if err != nil {
+			return err,common.Hash{}
+		}
+		clone_rec.StateRoot.SetBytes(tmp_new_root.Bytes())
+		err = self.AppendLine(r)
+		self.receipts_db.Put(clone_rec.TxHash.Bytes(),encoded_logs)
+		new_root.SetBytes(tmp_new_root.Bytes())
+	}
+	return nil,new_root
 }
 func (self *MiniChain) AccountExists(state_root common.Hash,addr common.Address) bool {
 

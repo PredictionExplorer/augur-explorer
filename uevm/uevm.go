@@ -165,7 +165,7 @@ func UEVMDeploy2(chain_id int64,tx_hash common.Hash,from common.Address,nonce ui
 	return vmerr,contract_addr,out_state,logs_encoded_bytes
 }
 func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,to common.Address,state_root common.Hash,sdb *state.Database )	(error,common.Hash,[]byte) {
-	// Note: tx_hash has to be altered from original Mint tx hash by inserting 'dummy' string converted to bytes whithin the first 5 bytes of the transaction hash (so the hash doesn't collide with Mint's hash)
+	// Note: tx_hash has to be altered from original Mint tx hash by inserting 'token0' or 'token1' string converted to bytes whithin the first 6 bytes of the transaction hash (so the hash doesn't collide with Mint's hash)
 	// (this is required because we have to insert token accounts before executing Mint call)
 	state_db,err := state.New(state_root,*sdb,nil)
 	if err != nil {
