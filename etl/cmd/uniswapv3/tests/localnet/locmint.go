@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"context"
 	"math/big"
+	"encoding/hex"
+	"bytes"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -42,6 +44,27 @@ func main() {
 		fmt.Printf("Error: %v\n",err)
 		os.Exit(1)
 	}
+	logs := rcpt.Logs
+	if len(logs) < 1 {
+		fmt.Printf("Transaction has no logs\n")
+		os.Exit(1)
+	}
+	var pool_addr common.Address
+	topic_sig , err := hex.DecodeString("7a53080ba414158be7ec69b987b5fb7d07dee101fe85488f0853ae16239d0bde")
+	found := bool(false)
+	for i:=0; i<len(logs); i++ {
+		elog := logs[i]
+		if len(elog.Topics) == 0 { continue }
+		if bytes.Equal(logs[i].Topics[0].Bytes(),topic_sig) {
+			pool_addr.SetBytes(elog.Address.Bytes())
+			found = true
+			break;
+		}
+	}
+	if !found {
+		fmt.Printf("Mint event log wasn't found in this transaction\n")
+		os.Exit(1)
+	}
 	tx,_,err := eclient.TransactionByHash(context.Background(),tx_hash)
 	if err != nil {
 		fmt.Printf("Error: %v\n",err)
@@ -52,7 +75,7 @@ func main() {
 		fmt.Printf("Error: %v\n",err)
 		os.Exit(1)
 	}
-	pool_addr := rcpt.ContractAddress
+	fmt.Printf("pool address: %v\n",pool_addr.String())
 	pool_ctrct,err := NewUniswapV3Pool(pool_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate Wrapped ETH contract: %v\n",err)

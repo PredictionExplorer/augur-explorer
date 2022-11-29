@@ -59,6 +59,18 @@ func (self *MiniChain) SetStateDB(state *state.Database) {
 
 	self.sdb = state
 }
+func (self *MiniChain) NumRecords() int64 {
+	fileinfo,err := os.Stat(self.StatesFileName)
+	if err != nil {
+		panic(fmt.Sprintf("NumRecords(): error on os.Stat() call: %v\n",err))
+	}
+	mod_flen := fileinfo.Size() % int64(RECORD_LENGTH) // safety check
+	if mod_flen != 0 {
+		panic(fmt.Sprintf("Size of minichain file is not divisible by RECORD_LEN (mod=%v)",mod_flen))
+	}
+	flen := fileinfo.Size() / int64(RECORD_LENGTH)
+	return flen
+}
 func (self *MiniChain) ReadLastLine() (Record,error) {
 
 	var r Record
@@ -118,10 +130,10 @@ func (self *MiniChain) AppendLine(r *Record) error {
 	}
 	return err
 }
-func (self *MiniChain) ExecDeploy(chain_id int64,tx_hash common.Hash,from common.Address,nonce uint64,contract_code []byte,initial_state_root common.Hash,r *Record) (error,common.Address,common.Hash) {
+func (self *MiniChain) ExecDeploy(chain_id int64,tx_hash common.Hash,from common.Address,nonce uint64,contract_code []byte,contract_addr common.Address,initial_state_root common.Hash,r *Record) (error,common.Address,common.Hash) {
 
 	fmt.Printf("ExecDeploy(): tx_hash=%v\n",tx_hash.String())
-	err,addr,root,encoded_logs := UEVMDeploy2(chain_id,tx_hash,from,nonce,contract_code,self.sdb,initial_state_root)
+	err,addr,root,encoded_logs := UEVMDeploy2(chain_id,tx_hash,from,nonce,contract_code,contract_addr,self.sdb,initial_state_root)
 	if err != nil {
 		return err,addr,common.Hash{}
 	}

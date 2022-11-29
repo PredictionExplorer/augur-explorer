@@ -65,16 +65,27 @@ func main() {
 		os.Exit(1)
 	}
 	mchain.SetStateDB(&db)
+	num_recs := mchain.NumRecords()
+	var state_hash common.Hash
+	fmt.Printf("Records in minichain database: %v recs\n",num_recs)
+	if num_recs != 0 {
+		last_line_rec,err := mchain.ReadLastLine()
+		if err != nil {
+			fmt.Printf("Error on ReadLastLine(): %v\n",err)
+			os.Exit(1)
+		}
+		state_hash = last_line_rec.StateRoot
+		fmt.Printf("Using state root %v\n",state_hash.String())
+	} else {
+		fmt.Printf("Creating first entry in minichain record with hash %v\n",state_hash.String())
+	}
 	var rec Record
 	rec.BlockNum = 111
 	rec.BlockHash = common.Hash{}
 	rec.TxIndex = 222
 	rec.TxHash = tx_hash
-	//err,generated_addr,state_root := UEVMDeploy2(chain_id,tx_msg.From(),tx.Nonce(),tx.Data(),db,common.Hash{})
-	err,generated_addr,state_root := mchain.ExecDeploy(chain_id,tx_hash,tx_msg.From(),tx.Nonce(),tx.Data(),common.Hash{},&rec)
+	err,generated_addr,state_root := mchain.ExecDeploy(chain_id,tx_hash,tx_msg.From(),tx.Nonce(),tx.Data(),contract_address,state_hash,&rec)
 
-	//err,state_root := UEVMAcctCreate(chain_id,tx_msg.From(),tx.Nonce(),db,common.Hash{})
-	//generated_addr := common.Address{}
 	fmt.Printf("Deploy result: %v\n",err)
 	fmt.Printf("Contract address: %v\n",generated_addr.String())
 	fmt.Printf("Intermediate state hash: %v\n",state_root.String())

@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/trie"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/crypto"
+	//"github.com/ethereum/go-ethereum/crypto"
 
 	contracts "github.com/PredictionExplorer/augur-explorer/contracts"
 )
@@ -104,7 +104,7 @@ func UEVMDeploy(chain_id int64,from common.Address,nonce uint64,contract_code []
 	return vmerr,contract_addr,iroot_hash
 }
 */
-func UEVMDeploy2(chain_id int64,tx_hash common.Hash,from common.Address,nonce uint64,contract_code []byte,sdb *state.Database,state_root common.Hash) (error,common.Address,common.Hash,[]byte) {	// deploys contract code
+func UEVMDeploy2(chain_id int64,tx_hash common.Hash,from common.Address,nonce uint64,contract_code []byte,contract_addr common.Address,sdb *state.Database,state_root common.Hash) (error,common.Address,common.Hash,[]byte) {	// deploys contract code
 
 	fmt.Printf("from = %v\n",from.String())
 	state_db,err := state.New(state_root,*sdb,nil)
@@ -133,8 +133,8 @@ func UEVMDeploy2(chain_id int64,tx_hash common.Hash,from common.Address,nonce ui
 	gas := uint64(99999999999)
 	value := big.NewInt(0)
 	sender := vm.AccountRef(from)
-	contract_addr := crypto.CreateAddress(sender.Address(), state_db.GetNonce(sender.Address()))
-	ret, _, _, vmerr := evm.Create(sender, contract_code, gas, value)
+	//contract_addr := crypto.CreateAddress(sender.Address(), state_db.GetNonce(sender.Address()))
+	ret, _, _, vmerr := evm.Create3(sender, contract_code, gas, value,contract_addr)
 	_=ret
 	logs := state_db.GetLogs(tx_hash,common.Hash{})
 	logs_encoded_bytes,err := rlp.EncodeToBytes(logs)
