@@ -22,14 +22,15 @@ var (
 )
 func main() {
 
-	if len(os.Args) < 2 {
+	if len(os.Args) < 3 {
 		fmt.Printf(
-			"Usage: \n\t\t%v [tx_hash]\n\t\t"+
+			"Usage: \n\t\t%v [tx_hash] [contract_addr]\n\t\t"+
 			"executes Mint() transaction on local db\n\n",os.Args[0],
 		)
 		os.Exit(1)
 	}
 	tx_hash := common.HexToHash(os.Args[1])
+	ctrct_addr := common.HexToAddress(os.Args[2])
 	db := OpenDB("/var/tmp/evmdb")
 	fmt.Printf("db = %+v\n",db)
 
@@ -107,19 +108,23 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Printf("Executing call on state root %v\n",last_line_rec.StateRoot.String())
+	fmt.Printf("Contract addr %v\n",ctrct_addr)
 	var rec Record
 	rec.BlockNum = rcpt.BlockNumber.Int64()
 	rec.BlockNum = MainNetBlockNum // we have to hardcode this block because we are testing MainNet
 	rec.BlockHash = rcpt.BlockHash
 	rec.TxIndex = int64(rcpt.TransactionIndex)
 	rec.TxHash = rcpt.TxHash
-	fmt.Printf("calling ExecCall with block %v\n",rec.BlockNum)
+	fmt.Printf("calling ExecMint with block %v\n",rec.BlockNum)
 	block_ctx := NewDummyBlockContext(big.NewInt(MainNetBlockNum) ,big.NewInt(MainNetTimeStamp))
 	tx_ctx := new(vm.TxContext)
 	tx_ctx.Origin = tx_msg.From()
 	tx_ctx.GasPrice = big.NewInt(TxDefaultGas)
 	input := tx_msg.Data()
-	err = mchain.ExecMint(block_ctx,tx_hash,tx_ctx,input,tx_msg.Value(),pool_addr,last_line_rec.StateRoot,&rec,token0_addr,token1_addr)
+	end := len(input)
+	if end > 64 { end = 64 }
+	fmt.Printf("Input: %v\n",hex.EncodeToString(input[0:end]))
+	err = mchain.ExecMint(block_ctx,tx_hash,tx_ctx,input,tx_msg.Value(),ctrct_addr,last_line_rec.StateRoot,&rec,token0_addr,token1_addr)
 	if err != nil {
 		fmt.Printf("Error executing ExecMint(): %v\n",err)
 		os.Exit(1)

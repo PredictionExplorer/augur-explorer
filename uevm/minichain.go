@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/core/types"
+	//"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethdb/leveldb"
 )
 // TechNotes:
@@ -145,9 +145,10 @@ func (self *MiniChain) ExecDeploy(chain_id int64,tx_hash common.Hash,from common
 	self.receipts_db.Put(tx_hash.Bytes(),encoded_logs)
 	return err,addr,root
 }
+/*DISCONTINUED
 func (self *MiniChain) ExecCall(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,initial_state_root common.Hash,r *Record) (error,common.Hash) {
 
-	err,root,encoded_logs := UEVMCall(chain_id,tx,block_num,time_stamp,initial_state_root,self.sdb)
+	err,root,encoded_logs := UEVMCall2(chain_id,tx,block_num,time_stamp,initial_state_root,self.sdb)
 	if err != nil {
 		return err,common.Hash{}
 	}
@@ -156,6 +157,7 @@ func (self *MiniChain) ExecCall(chain_id int64,tx *types.Transaction,block_num,t
 	self.receipts_db.Put(tx.Hash().Bytes(),encoded_logs)
 	return err,root
 }
+*/
 func (self *MiniChain) ExecCall2(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,input []byte,value *big.Int,contract_addr common.Address,initial_state_root common.Hash,r *Record) (error,common.Hash) {
 
 	err,root,encoded_logs := UEVMCall2(block_ctx,tx_hash,tx_ctx,input,value,contract_addr,initial_state_root,self.sdb)
@@ -167,14 +169,15 @@ func (self *MiniChain) ExecCall2(block_ctx *vm.BlockContext,tx_hash common.Hash,
 	self.receipts_db.Put(tx_hash.Bytes(),encoded_logs)
 	return err,root
 }
-func (self *MiniChain) ExecMint(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,input []byte,value *big.Int,pool_addr common.Address,initial_state_root common.Hash,r *Record,token0_addr,token1_addr common.Address) error {
+func (self *MiniChain) ExecMint(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,input []byte,value *big.Int,contract_addr common.Address,initial_state_root common.Hash,r *Record,token0_addr,token1_addr common.Address) error {
 
 	err,tmp_state_hash := self.MaybeAddDummyTokens(block_ctx,tx_hash,tx_ctx,initial_state_root,token0_addr,token1_addr,r)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("ExecMint() calling ExecCall2()\n")
 	initial_state_root.SetBytes(tmp_state_hash.Bytes())
-	err,new_state_root := self.ExecCall2(block_ctx,tx_hash,tx_ctx,input,value,pool_addr,initial_state_root,r)
+	err,new_state_root := self.ExecCall2(block_ctx,tx_hash,tx_ctx,input,value,contract_addr,initial_state_root,r)
 	if err != nil {
 		return err
 	}

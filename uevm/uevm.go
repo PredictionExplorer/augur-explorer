@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"math/big"
 	"math"
-	//"encoding/hex"
+	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/core/types"
+	//"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/rawdb"
@@ -213,6 +213,7 @@ func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx 
 	DumpStateDB(raw_dump)
 	return vmerr,out_state,logs_encoded_bytes
 }
+/* DISCONTINUED
 func UEVMCall(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,state_root common.Hash,sdb *state.Database) (error,common.Hash,[]byte) {
 
 	state_db,err := state.New(state_root,*sdb,nil)
@@ -270,6 +271,7 @@ func UEVMCall(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,st
 	DumpStateDB(raw_dump)
 	return vmerr,out_state,logs_encoded_bytes
 }
+*/
 func UEVMAcctCreate(chain_id int64,from common.Address,nonce uint64,sdb state.Database,state_root common.Hash) (error,common.Hash) {	// deploys contract code
 
 	fmt.Printf("from = %v\n",from.String())
@@ -313,6 +315,7 @@ func UEVMAcctCreate(chain_id int64,from common.Address,nonce uint64,sdb state.Da
 }
 func UEVMCall2(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,input []byte,value *big.Int,to common.Address,state_root common.Hash,sdb *state.Database) (error,common.Hash,[]byte) {
 
+	fmt.Printf("Executing call2()\n")
 	state_db,err := state.New(state_root,*sdb,nil)
 	if err != nil {
 		return err,common.Hash{},nil
@@ -325,7 +328,15 @@ func UEVMCall2(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxConte
 	gas := uint64(99999999999)
 	sender := vm.AccountRef(tx_ctx.Origin)
 	ret, gas, vmerr := evm.Call(sender, to , input, gas,value) 
+	fmt.Printf("Call() ended , return value length: %v bytes\n",len(ret))
 	_=ret; _=gas;_=gp;
+	if len(ret)>0 {
+		end := len(ret)
+		if end > 128 { end = 128 }
+		fmt.Printf("Call return value: %v\n",hex.EncodeToString(ret[0:end]))
+	} else {
+		fmt.Printf("Call retuen value is nil\n")
+	}
 	logs := state_db.GetLogs(tx_hash,common.Hash{})
 	logs_encoded_bytes,err := rlp.EncodeToBytes(logs)
 	delete_empty_objects := false
