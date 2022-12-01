@@ -40,6 +40,7 @@ func main() {
 		fmt.Printf("Error: %v\n",err)
 		os.Exit(1)
 	}
+	SetEClient(eclient)
 	rcpt,err := eclient.TransactionReceipt(context.Background(),tx_hash)
 	if err != nil {
 		fmt.Printf("Error: %v\n",err)

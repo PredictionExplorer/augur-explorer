@@ -5,7 +5,10 @@ import (
 	"math/big"
 	"math"
 	"encoding/hex"
+	"strings"
 
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
 	//"github.com/ethereum/go-ethereum/core/types"
@@ -24,24 +27,10 @@ var (
 	MainNetBlockNum		int64 = 12369621
 	MainNetTimeStamp	int64 = 1620131220
 	TxDefaultGas		int64 = 1111111111
+	eclient				*ethclient.Client
 )
-func DeployFactory() {
-
-}
-func DeployPool() {
-	
-}
-func CallInitialize() {
-
-}
-func CallMint() {
-
-}
-func CallBurn() {
-
-}
-func CallSwapFn() {	// calls swap() function
-
+func SetEClient(c *ethclient.Client) {
+	eclient = c
 }
 /* DISCONTINUED
 func UEVMDeploy(chain_id int64,from common.Address,nonce uint64,contract_code []byte,sdb state.Database,state_root common.Hash) (error,common.Address,common.Hash) {	// deploys contract code
@@ -166,9 +155,10 @@ func UEVMDeploy2(chain_id int64,tx_hash common.Hash,from common.Address,nonce ui
 	DumpStateDB(raw_dump)
 	return vmerr,contract_addr,out_state,logs_encoded_bytes
 }
-func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,to common.Address,state_root common.Hash,sdb *state.Database )	(error,common.Hash,[]byte) {
+func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,to common.Address,symbol,name string, decimals uint8,state_root common.Hash,sdb *state.Database )	(error,common.Hash,[]byte) {
 	// Note: tx_hash has to be altered from original Mint tx hash by inserting 'token0' or 'token1' string converted to bytes whithin the first 6 bytes of the transaction hash (so the hash doesn't collide with Mint's hash)
 	// (this is required because we have to insert token accounts before executing Mint call)
+	fmt.Printf("UEVMDEployDummyToken(): contract_addr %v , sym %v name %v decimals %v\n",to.String(),symbol,name,decimals)
 	state_db,err := state.New(state_root,*sdb,nil)
 	if err != nil {
 		return err,common.Hash{},nil
@@ -190,7 +180,12 @@ func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx 
 	//if err != nil {
 	//	return err,common.Hash{},nil
 	//}
-	ret, _, _, vmerr := evm.Create3(sender, contract_code, gas, value,to)
+	abi_parsed := strings.NewReader(contracts.IERC20UnlimitedMetaData.ABI)
+	dummyerc20_abi,err := abi.JSON(abi_parsed)
+	input, err := dummyerc20_abi.Pack("",name,symbol,decimals) // "" - means constructor args
+	input = append(contract_code, input...)
+	ret, _, _, vmerr := evm.Create3(sender, input, gas, value,to)
+	fmt.Printf("evm.Create3() returns %v\n",hex.EncodeToString(ret))
 	_=ret
 	logs := state_db.GetLogs(tx_hash,common.Hash{})
 	logs_encoded_bytes,err := rlp.EncodeToBytes(logs)

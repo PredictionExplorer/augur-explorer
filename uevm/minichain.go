@@ -6,11 +6,15 @@ import (
 	"strconv"
 	"math/big"
 
+	//"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/vm"
 	//"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/ethdb/leveldb"
+
+	contracts "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 // TechNotes:
 //		the file stores one record at one line, each line is terminated by '\n' character
@@ -38,6 +42,12 @@ type (
 		TxIndex				int64
 		TxHash				common.Hash
 		StateRoot			common.Hash
+	}
+	DummyERC_Spec struct {
+		Address				common.Address
+		Symbol				string
+		Name				string
+		Decimals			uint8
 	}
 )
 func OpenMiniChain(states_fname,receipts_datadir string) (MiniChain,error) {
@@ -185,25 +195,57 @@ func (self *MiniChain) ExecMint(block_ctx *vm.BlockContext,tx_hash common.Hash,t
 	self.AppendLine(r)
 	return err
 }
-func (self *MiniChain) MaybeAddDummyTokens(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,state_root common.Hash,addr0,addr1 common.Address,r *Record) (error,common.Hash){
+func get_erc20_specs(addr common.Address) (DummyERC_Spec,error) {
+
+	var ERC20Spec DummyERC_Spec
+	var copts = new(bind.CallOpts)
+
+	erc20_ctrct,err := contracts.NewERC20Unlimited(addr,eclient)
+	if err != nil {
+		return ERC20Spec,errors.New(fmt.Sprintf("Error creating ERC20 instance: %v",err.Error()))
+	}
+	symbol,err := erc20_ctrct.Symbol(copts)
+	if err != nil {
+		return ERC20Spec,errors.New(fmt.Sprintf("Error on Symbol(): %v",err.Error()))
+	}
+	name,err := erc20_ctrct.Name(copts)
+	if err != nil {
+		return ERC20Spec,errors.New(fmt.Sprintf("Error on Name(): %v",err.Error()))
+	}
+	decimals,err := erc20_ctrct.Decimals(copts)
+	if err != nil {
+		return ERC20Spec,errors.New(fmt.Sprintf("Error on Decimals(): %v",err.Error()))
+	}
+	ERC20Spec.Symbol = symbol
+	ERC20Spec.Name = name
+	ERC20Spec.Decimals = decimals
+	return ERC20Spec,nil
+}
+func (self *MiniChain) MaybeAddDummyTokens(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,state_root common.Hash,t0_addr,t1_addr common.Address,r *Record) (error,common.Hash){
 	// adds dummy ERC20 token contracts with addresses of real tokens
 	var add_token0 bool = false
 	var add_token1 bool = false
 	clone_rec := *r
 	clone_rec.TxHash = common.BytesToHash(r.TxHash.Bytes())
 	new_root := state_root
-	if !self.AccountExists(state_root,addr0) {
+	if !self.AccountExists(state_root,t0_addr) {
 		add_token0 = true
 	}
-	if !self.AccountExists(state_root,addr1) {
+	if !self.AccountExists(state_root,t1_addr) {
 		add_token1 = true
 	}
 	if add_token0 {
-		hbytes := clone_rec.TxHash.Bytes()
-		hbytes[0]=116; hbytes[1]=111; hbytes[2]=107; hbytes[3]=101; hbytes[4]=110; hbytes[5]=48; // 'token0'
-		err,tmp_new_root,encoded_logs := UEVMDeployDummyToken(block_ctx,tx_hash,tx_ctx,addr1,new_root,self.sdb)
+		erc20_specs,err := get_erc20_specs(t0_addr)
 		if err != nil {
 			return err,common.Hash{}
+		}
+		fmt.Printf("Deploying token0 contract (addr %v) (%v %v)\n",t1_addr.String(),erc20_specs.Symbol,erc20_specs.Name)
+		hbytes := clone_rec.TxHash.Bytes()
+		hbytes[0]=116; hbytes[1]=111; hbytes[2]=107; hbytes[3]=101; hbytes[4]=110; hbytes[5]=48; // 'token0'
+		err,tmp_new_root,encoded_logs := UEVMDeployDummyToken(block_ctx,tx_hash,tx_ctx,t0_addr,erc20_specs.Symbol,erc20_specs.Name,erc20_specs.Decimals,new_root,self.sdb)
+		if err != nil {
+			err_str := fmt.Sprintf("Deployment of ERC20 token1 failed: %v",err.Error())
+			return errors.New(err_str),common.Hash{}
 		}
 		clone_rec.StateRoot.SetBytes(tmp_new_root.Bytes())
 		err = self.AppendLine(r)
@@ -211,9 +253,15 @@ func (self *MiniChain) MaybeAddDummyTokens(block_ctx *vm.BlockContext,tx_hash co
 		new_root.SetBytes(tmp_new_root.Bytes())
 	}
 	if add_token1 {
-		err,tmp_new_root,encoded_logs := UEVMDeployDummyToken(block_ctx,tx_hash,tx_ctx,addr1,new_root,self.sdb)
+		erc20_specs,err := get_erc20_specs(t1_addr)
 		if err != nil {
 			return err,common.Hash{}
+		}
+		fmt.Printf("Deploying token0 contract (addr %v) (%v %v)\n",t1_addr.String(),erc20_specs.Symbol,erc20_specs.Name)
+		err,tmp_new_root,encoded_logs := UEVMDeployDummyToken(block_ctx,tx_hash,tx_ctx,t1_addr,erc20_specs.Symbol,erc20_specs.Name,erc20_specs.Decimals,new_root,self.sdb)
+		if err != nil {
+			err_str := fmt.Sprintf("Deployment of ERC20 token1 failed: %v",err.Error())
+			return errors.New(err_str),common.Hash{}
 		}
 		clone_rec.StateRoot.SetBytes(tmp_new_root.Bytes())
 		err = self.AppendLine(r)
