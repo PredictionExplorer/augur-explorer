@@ -6,6 +6,7 @@ import (
 	"math"
 	"encoding/hex"
 	"strings"
+	"errors"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -140,6 +141,10 @@ func UEVMDeploy2(chain_id int64,tx_hash common.Hash,from common.Address,nonce ui
 		return err,contract_addr,out_state,nil
 	}
 	fmt.Printf("state_hash after commit: %v\n",out_state.String())
+	_,err = (*sdb).OpenTrie(out_state)
+	if err == nil {
+		return errors.New(fmt.Sprintf("State %v already exists in the Trie DB, aborting",out_state.String())),common.Address{},common.Hash{},nil
+	}
 	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
 	if err != nil {
 		fmt.Printf("Error on TrieDB().Commit() for out_state: %v\n",err)
@@ -180,9 +185,18 @@ func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx 
 	//if err != nil {
 	//	return err,common.Hash{},nil
 	//}
-	abi_parsed := strings.NewReader(contracts.IERC20UnlimitedMetaData.ABI)
+	abi_parsed := strings.NewReader(contracts.ERC20UnlimitedMetaData.ABI)
 	dummyerc20_abi,err := abi.JSON(abi_parsed)
+	if err != nil {
+		fmt.Printf("Error parsing abi: %v\n",err)
+		return err,common.Hash{},nil
+	}
 	input, err := dummyerc20_abi.Pack("",name,symbol,decimals) // "" - means constructor args
+	if err != nil {
+		fmt.Printf("Error in packing input arguments of DummyERC token: %v\n",err)
+		return err,common.Hash{},nil
+	}
+	fmt.Printf("input hex %v\n",hex.EncodeToString(input))
 	input = append(contract_code, input...)
 	ret, _, _, vmerr := evm.Create3(sender, input, gas, value,to)
 	fmt.Printf("evm.Create3() returns %v\n",hex.EncodeToString(ret))
@@ -195,6 +209,10 @@ func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx 
 		return err,out_state,nil
 	}
 	fmt.Printf("state_hash after commit: %v\n",out_state.String())
+	_,err = (*sdb).OpenTrie(out_state)
+	if err == nil {
+		return errors.New(fmt.Sprintf("State %v already exists in the Trie DB, aborting",out_state.String())),common.Hash{},nil
+	}
 	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
 	if err != nil {
 		return err,out_state,nil
@@ -338,6 +356,11 @@ func UEVMCall2(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxConte
 	out_state,err := state_db.Commit(delete_empty_objects)
 	if err!=nil {
 		return err,common.Hash{},nil
+	}
+	fmt.Printf("state_hash after commit: %v\n",out_state.String())
+	_,err = (*sdb).OpenTrie(out_state)
+	if err == nil {
+		return errors.New(fmt.Sprintf("State %v already exists in the Trie DB, aborting",out_state.String())),common.Hash{},nil
 	}
 	fmt.Printf("state_hash after commit: %v\n",out_state.String())
 	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
