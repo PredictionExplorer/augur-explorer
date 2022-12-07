@@ -26,7 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 	tx_hash := common.HexToHash(os.Args[1])
-	db := OpenDB("/var/tmp/evmdb")
+	_,db := OpenDB("/var/tmp/evmdb")
 	fmt.Printf("db = %+v\n",db)
 
 	RPC_URL = os.Getenv("RPC_URL")
@@ -35,12 +35,12 @@ func main() {
 		fmt.Printf("Error: %v\n",err)
 		os.Exit(1)
 	}
-	r,err := eclient.TransactionReceipt(context.Background(),tx_hash)
+	rcpt,err := eclient.TransactionReceipt(context.Background(),tx_hash)
 	if err != nil {
 		fmt.Printf("Error: %v\n",err)
 		os.Exit(1)
 	}
-	contract_address := r.ContractAddress
+	contract_address := rcpt.ContractAddress
 	tx,_,err := eclient.TransactionByHash(context.Background(),tx_hash)
 	if err != nil {
 		fmt.Printf("Error: %v\n",err)
@@ -80,11 +80,12 @@ func main() {
 		fmt.Printf("Creating first entry in minichain record with hash %v\n",state_hash.String())
 	}
 	var rec Record
-	rec.BlockNum = 111
-	rec.BlockHash = common.Hash{}
-	rec.TxIndex = 222
-	rec.TxHash = tx_hash
-	err,generated_addr,state_root := mchain.ExecDeploy(chain_id,tx_hash,tx_msg.From(),tx.Nonce(),tx.Data(),contract_address,state_hash,&rec)
+	rec.BlockNum = MainNetBlockNum // we have to hardcode this block because we are testing MainNet
+	rec.BlockHash = rcpt.BlockHash
+	rec.TxIndex = int64(rcpt.TransactionIndex)
+	rec.TxHash = rcpt.TxHash
+	input := tx_msg.Data()
+	err,generated_addr,state_root := mchain.ExecDeploy(chain_id,tx_hash,tx_msg.From(),tx.Nonce(),input,contract_address,state_hash,&rec)
 
 	fmt.Printf("Deploy result: %v\n",err)
 	fmt.Printf("Contract address: %v\n",generated_addr.String())

@@ -6,6 +6,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+
 	//"github.com/ethereum/go-ethereum/core/state/snapshot"
 	//"github.com/ethereum/go-ethereum/trie"
 
@@ -25,7 +27,7 @@ func main() {
 	datadir := os.Args[1]
 	state_root := common.HexToHash(os.Args[2])
 	fmt.Printf("Trying to get state with hash %v\n",state_root.String())
-	edb := OpenDB(datadir)
+	rdb,edb := OpenDB(datadir)
 	_,err := state.New(state_root,edb,nil)
 	if err != nil {
 		fmt.Printf("Error. state doesn't exist: %v\n",err)
@@ -36,19 +38,19 @@ func main() {
 		fmt.Printf("Error opening trie: %v\n",err)
 		os.Exit(1)
 	}
+	_=trie
+	/*
 	err = trie.TryDelete(state_root.Bytes())
 	if err == nil {
 		fmt.Printf("object deleted\n")
 	} else {
 		fmt.Printf("Error: %v\n",err)
 	}
-	/*
 	err = edb.TrieDB().Commit(state_root, true, nil)
 	if err != nil {
 		fmt.Printf("Error at TrieDB()).Commit(): %v\n",err)
 		os.Exit(1)
 	}
-	*/
 	newhash,nodeset,err := trie.Commit(true)
 	if err != nil {
 		fmt.Printf("Error at Commit(): %v\n",err)
@@ -56,4 +58,7 @@ func main() {
 	}
 	fmt.Printf("Commit: new hash %v\n",newhash.String())
 	fmt.Printf("nodeset: %+v\n",nodeset)
+	*/
+	rawdb.DeleteTrieNode(rdb,state_root)
+	fmt.Printf("node deleted\n")
 }

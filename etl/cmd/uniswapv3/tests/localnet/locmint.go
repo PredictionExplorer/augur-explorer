@@ -31,7 +31,7 @@ func main() {
 	}
 	tx_hash := common.HexToHash(os.Args[1])
 	ctrct_addr := common.HexToAddress(os.Args[2])
-	db := OpenDB("/var/tmp/evmdb")
+	_,db := OpenDB("/var/tmp/evmdb")
 	fmt.Printf("db = %+v\n",db)
 
 	RPC_URL = os.Getenv("RPC_URL")

@@ -4,10 +4,11 @@ import (
 	"os"
 	"fmt"
 	"context"
-	//"math/big"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-	//"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	 . "github.com/PredictionExplorer/augur-explorer/uevm"
@@ -26,7 +27,7 @@ func main() {
 		os.Exit(1)
 	}
 	tx_hash := common.HexToHash(os.Args[1])
-	db := OpenDB("/var/tmp/evmdb")
+	_,db := OpenDB("/var/tmp/evmdb")
 	fmt.Printf("db = %+v\n",db)
 
 	RPC_URL = os.Getenv("RPC_URL")
@@ -45,11 +46,11 @@ func main() {
 		fmt.Printf("Error: %v\n",err)
 		os.Exit(1)
 	}
-	/*tx_msg,err := tx.AsMessage(types.LatestSignerForChainID(big.NewInt(chain_id)),tx.GasPrice())
+	tx_msg,err := tx.AsMessage(types.LatestSignerForChainID(big.NewInt(chain_id)),tx.GasPrice())
 	if err != nil {
 		fmt.Printf("Error: %v\n",err)
 		os.Exit(1)
-	}*/
+	}
 
 	mchain,err := OpenMiniChain("/var/tmp/minichain.dat","/var/tmp/receipts")
 	if err != nil {
@@ -67,15 +68,20 @@ func main() {
 	var rec Record
 	rec.BlockNum = r.BlockNumber.Int64()
 	rec.BlockNum = 12369621 // we have to hardcode this block because we are testing MainNet
-	time_stamp := int64(1620131220)
 	rec.BlockHash = r.BlockHash
 	rec.TxIndex = int64(r.TransactionIndex)
 	rec.TxHash = r.TxHash
-	fmt.Printf("calling ExecCall with block %v\n",rec.BlockNum)
-	err,state_root := mchain.ExecCall(chain_id,tx,rec.BlockNum,time_stamp ,last_line_rec.StateRoot,&rec)
 
-	//err,state_root := UEVMAcctCreate(chain_id,tx_msg.From(),tx.Nonce(),db,common.Hash{})
-	//generated_addr := common.Address{}
+	ctrct_addr := tx_msg.To()
+	block_ctx := NewDummyBlockContext(big.NewInt(MainNetBlockNum) ,big.NewInt(MainNetTimeStamp))
+	tx_ctx := new(vm.TxContext)
+	tx_ctx.Origin = tx_msg.From()
+	tx_ctx.GasPrice = big.NewInt(TxDefaultGas)
+	input := tx_msg.Data()
+
+	fmt.Printf("calling ExecCall with block %v\n",rec.BlockNum)
+	err,state_root := mchain.ExecCall2(block_ctx,tx_hash,tx_ctx,input,tx.Value(),*ctrct_addr,last_line_rec.StateRoot,&rec)
+
 	fmt.Printf("Deploy result: %v\n",err)
 	fmt.Printf("Intermediate state hash: %v\n",state_root.String())
 }

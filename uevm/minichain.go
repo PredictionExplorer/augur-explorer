@@ -149,10 +149,13 @@ func (self *MiniChain) ExecDeploy(chain_id int64,tx_hash common.Hash,from common
 	}
 	r.StateRoot = root
 	err = self.AppendLine(r)
+	if err != nil {
+		return err,common.Address{},common.Hash{}
+	}
 	lenlogs := 0
 	if encoded_logs != nil { lenlogs=len(encoded_logs) }
 	fmt.Printf("Storing %v log bytes for tx hash %v\n",lenlogs,tx_hash.String())
-	self.receipts_db.Put(tx_hash.Bytes(),encoded_logs)
+	err = self.receipts_db.Put(tx_hash.Bytes(),encoded_logs)
 	return err,addr,root
 }
 /*DISCONTINUED

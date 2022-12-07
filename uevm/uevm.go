@@ -8,6 +8,7 @@ import (
 	"strings"
 	"errors"
 
+	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -141,10 +142,11 @@ func UEVMDeploy2(chain_id int64,tx_hash common.Hash,from common.Address,nonce ui
 		return err,contract_addr,out_state,nil
 	}
 	fmt.Printf("state_hash after commit: %v\n",out_state.String())
-	_,err = (*sdb).OpenTrie(out_state)
+	/*
+	_,err = (*sdb).TrieDB().Node(out_state)
 	if err == nil {
 		return errors.New(fmt.Sprintf("State %v already exists in the Trie DB, aborting",out_state.String())),common.Address{},common.Hash{},nil
-	}
+	}*/
 	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
 	if err != nil {
 		fmt.Printf("Error on TrieDB().Commit() for out_state: %v\n",err)
@@ -358,10 +360,12 @@ func UEVMCall2(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxConte
 		return err,common.Hash{},nil
 	}
 	fmt.Printf("state_hash after commit: %v\n",out_state.String())
+	/*
 	_,err = (*sdb).OpenTrie(out_state)
 	if err == nil {
 		return errors.New(fmt.Sprintf("State %v already exists in the Trie DB, aborting",out_state.String())),common.Hash{},nil
 	}
+	*/
 	fmt.Printf("state_hash after commit: %v\n",out_state.String())
 	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
 	if err != nil {
@@ -376,7 +380,7 @@ func UEVMCall2(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxConte
 	return vmerr,out_state,logs_encoded_bytes
 }
 //func OpenDB(file string) ethdb.Database {
-func OpenDB(file string) state.Database {
+func OpenDB(file string) (ethdb.Database,state.Database) {
 	
 	rdb,err := rawdb.NewLevelDBDatabase(file,0 ,0 ,"uniswapcustom",false)
 	if err != nil {
@@ -385,7 +389,7 @@ func OpenDB(file string) state.Database {
 	var cfg trie.Config
 	cfg.Preimages = true
 	sdb := state.NewDatabaseWithConfig(rdb,&cfg)
-	return sdb
+	return rdb,sdb
 }
 func GetStateDump(s *state.StateDB) state.Dump {
 	dump_config := state.DumpConfig{
