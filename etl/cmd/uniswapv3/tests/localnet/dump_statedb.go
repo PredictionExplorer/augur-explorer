@@ -25,7 +25,7 @@ func main() {
 	datadir := os.Args[1]
 	state_root := common.HexToHash(os.Args[2])
 	fmt.Printf("Trying to get state with hash %v\n",state_root.String())
-	edb := OpenDB(datadir)
+	_,edb := OpenDB(datadir)
 	state_db,err := state.New(state_root,edb,nil)
 	if err != nil {
 		fmt.Printf("Error creating StateDB object: %v\n",err)

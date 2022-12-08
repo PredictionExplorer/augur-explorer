@@ -6,7 +6,7 @@ import (
 	"math"
 	"encoding/hex"
 	"strings"
-	"errors"
+	//"errors"
 
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -165,7 +165,7 @@ func UEVMDeploy2(chain_id int64,tx_hash common.Hash,from common.Address,nonce ui
 func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,to common.Address,symbol,name string, decimals uint8,state_root common.Hash,sdb *state.Database )	(error,common.Hash,[]byte) {
 	// Note: tx_hash has to be altered from original Mint tx hash by inserting 'token0' or 'token1' string converted to bytes whithin the first 6 bytes of the transaction hash (so the hash doesn't collide with Mint's hash)
 	// (this is required because we have to insert token accounts before executing Mint call)
-	fmt.Printf("UEVMDEployDummyToken(): contract_addr %v , sym %v name %v decimals %v\n",to.String(),symbol,name,decimals)
+	fmt.Printf("UEVMDEployDummyToken(): contract_addr %v , sym %v name %v decimals %v, state root hash is %v\n",to.String(),symbol,name,decimals,state_root.String())
 	state_db,err := state.New(state_root,*sdb,nil)
 	if err != nil {
 		return err,common.Hash{},nil
@@ -201,7 +201,9 @@ func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx 
 	fmt.Printf("input hex %v\n",hex.EncodeToString(input))
 	input = append(contract_code, input...)
 	ret, _, _, vmerr := evm.Create3(sender, input, gas, value,to)
-	fmt.Printf("evm.Create3() returns %v\n",hex.EncodeToString(ret))
+	maxlen := len(ret)
+	if maxlen > 128 { maxlen = 128}
+	fmt.Printf("evm.Create3() returns %v\n",hex.EncodeToString(ret[0:maxlen]))
 	_=ret
 	logs := state_db.GetLogs(tx_hash,common.Hash{})
 	logs_encoded_bytes,err := rlp.EncodeToBytes(logs)
@@ -211,10 +213,11 @@ func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx 
 		return err,out_state,nil
 	}
 	fmt.Printf("state_hash after commit: %v\n",out_state.String())
+	/*
 	_,err = (*sdb).OpenTrie(out_state)
 	if err == nil {
 		return errors.New(fmt.Sprintf("State %v already exists in the Trie DB, aborting",out_state.String())),common.Hash{},nil
-	}
+	}*/
 	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
 	if err != nil {
 		return err,out_state,nil
@@ -330,11 +333,14 @@ func UEVMAcctCreate(chain_id int64,from common.Address,nonce uint64,sdb state.Da
 }
 func UEVMCall2(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,input []byte,value *big.Int,to common.Address,state_root common.Hash,sdb *state.Database) (error,common.Hash,[]byte) {
 
-	fmt.Printf("Executing call2()\n")
+	fmt.Printf("Executing call2() to contract %v on state %v\n",to.String(),state_root.String())
 	state_db,err := state.New(state_root,*sdb,nil)
 	if err != nil {
 		return err,common.Hash{},nil
 	}
+	inputlen := len(input)
+	if inputlen>128 { inputlen=123 }
+	fmt.Printf("input: %v\n",hex.EncodeToString(input[0:inputlen]))
 	state_db.Prepare(tx_hash,1)
 	chain_cfg := params.MainnetChainConfig
 	vm_cfg := vm.Config{}
