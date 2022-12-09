@@ -87,6 +87,8 @@ var (
 
 	processor	ETL_Processor
 	storagew            SQLStorageWrapper
+
+	mchain			*MiniChain
 )
 func main() {
 
@@ -248,7 +250,7 @@ func main() {
 	}
 	pool_abi = &abi2
 
-	abi_parsed3 := strings.NewReader(ERC20ABI)
+	abiparsed3 := strings.NewReader(ERC20ABI)
 	abi3,err := abi.JSON(abi_parsed3)
 	if err != nil {
 		Info.Printf("Can't parse ERC20 token ABI")
@@ -268,11 +270,13 @@ func main() {
 	Init(&layer1,eclient,rpcclient)
 
 	_,db := OpenDB(*datadir)
-	mchain,err := OpenMiniChain(*minichaindir,*receiptsdir)
+	mc,err := OpenMiniChain(*minichaindir,*receiptsdir)
 	if err != nil {
 		fmt.Printf("Error opening minichain: %v\n",err)
 		os.Exit(1)
 	}
-	mchain.SetStateDB(&db)
+	mc.SetStateDB(&db)
+	mchain = &mc
+
 	Main_event_loop_single_thread(&layer1,exit_chan)
 }

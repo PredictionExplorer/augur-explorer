@@ -2,13 +2,14 @@ package main
 
 import (
 	"os"
-	//"fmt"
+	"fmt"
 	"bytes"
 	"math/big"
 	//"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
@@ -16,6 +17,7 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 	. "github.com/PredictionExplorer/augur-explorer/layer1"
+	"github.com/PredictionExplorer/augur-explorer/uevm"
 )
 type ETL_Processor struct {
 	ETL				*ETL_Layer1
@@ -83,6 +85,30 @@ func process_pool_created(storage *SQLStorage,tx *AugurTx,log *types.Log,log_ind
 	Info.Printf("\tTickSpacing: %v\n",evt.TickSpacing)
 	Info.Printf("}\n")
 	storagew.Insert_pool_created(&evt)
+
+	var rec uevm.Record
+	rec.BlockNum = tx.BlockNum 
+	rec.BlockHash = common.HexToHash(tx.BlockHash)
+	rec.TxIndex = int64(tx.TxIndex)
+	rec.TxHash = common.HexToHash(tx.TxHash)
+
+	ctrct_addr := common.HexToAddress(tx.To)
+	block_ctx := uevm.NewDummyBlockContext(big.NewInt(uevm.MainNetBlockNum) ,big.NewInt(uevm.MainNetTimeStamp))
+	tx_ctx := new(vm.TxContext)
+	tx_ctx.Origin = common.HexToAddress(tx.From) 
+	tx_ctx.GasPrice = big.NewInt(uevm.TxDefaultGas)
+	value := big.NewInt(0)
+	value.SetString(tx.Value,10)
+	input := tx.Input
+
+	last_line_rec,err := mchain.ReadLastLine()
+	if err != nil {
+		fmt.Printf("Error getting last record: %v\n",err)
+		os.Exit(1)
+	}
+
+	err,_ = mchain.ExecCall(block_ctx,rec.TxHash,tx_ctx,input,value,ctrct_addr,last_line_rec.StateRoot,&rec)
+
 }
 func process_initialize(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
 

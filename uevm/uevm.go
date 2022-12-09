@@ -34,68 +34,7 @@ var (
 func SetEClient(c *ethclient.Client) {
 	eclient = c
 }
-/* DISCONTINUED
-func UEVMDeploy(chain_id int64,from common.Address,nonce uint64,contract_code []byte,sdb state.Database,state_root common.Hash) (error,common.Address,common.Hash) {	// deploys contract code
-
-	fmt.Printf("from = %v\n",from.String())
-	//state_db,err := state.New(state_root,state.NewDatabase(edb),nil)
-	state_db,err := state.New(state_root,sdb,nil)
-	if err != nil {
-		return err,common.Address{},common.Hash{}
-	}
-	state_db.Prepare(common.Hash{},1)
-	sender_bal := state_db.GetBalance(from)
-	min_bal := big.NewInt(math.MaxInt)
-	if sender_bal.Cmp(min_bal) < 0 {
-		state_db.AddBalance(from,min_bal)	// fix the problem with balances on empty states
-	}
-	fmt.Printf("Dump after AddBalance\n")
-	raw_dump := GetStateDump(state_db)
-	DumpStateDB(raw_dump)
-
-	state_db.SetNonce(from,nonce)
-	chain_cfg := params.MainnetChainConfig
-	//fmt.Printf("chain cfg:\n%+v\n",chain_cfg)
-	vm_cfg := vm.Config{}
-	block_ctx := NewDummyBlockContext(big.NewInt(12369621) ,big.NewInt(1620131220))
-	tx_ctx := new(vm.TxContext)
-	tx_ctx.Origin = from
-	tx_ctx.GasPrice = big.NewInt(1111111111)
-	evm := vm.NewEVM(*block_ctx,*tx_ctx,state_db,chain_cfg,vm_cfg)
-	gas := uint64(99999999999)
-	value := big.NewInt(0)
-	sender := vm.AccountRef(from)
-	contract_addr := crypto.CreateAddress(sender.Address(), state_db.GetNonce(sender.Address()))
-	ret, _, _, vmerr := evm.Create(sender, contract_code, gas, value)
-	_=ret
-	fmt.Printf("Create() vmerr = %v\n",vmerr)
-	fmt.Printf("Create() contract addr = %v\n",contract_addr.String())
-	//fmt.Printf("Create() output: %v\n",hex.EncodeToString(ret))
-	delete_empty_objects := false
-	iroot_hash := state_db.Int0xb92c5707d43bca67c67a0bc59bdd267d318687f1b3b1cb3b5a852166649c7624ermediateRoot(delete_empty_objects)
-	err = state_db.Database().TrieDB().Commit(iroot_hash, true, nil)
-	if err != nil {
-		fmt.Printf("Error on TrieDB().Commit(): %v\n",err)
-		return err,contract_addr,iroot_hash
-	}
-	out_state,err := state_db.Commit(delete_empty_objects)
-	if err!=nil {
-		fmt.Printf("Error on state_db.Commit(): %v\n",err)
-		return err,contract_addr,iroot_hash
-	}
-	fmt.Printf("state_hash after commit: %v\n",out_state.String())
-	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
-	if err != nil {
-		fmt.Printf("Error on TrieDB().Commit() for out_state: %v\n",err)
-		return err,contract_addr,iroot_hash
-	}
-
-	raw_dump = GetStateDump(state_db)
-	DumpStateDB(raw_dump)
-	return vmerr,contract_addr,iroot_hash
-}
-*/
-func UEVMDeploy2(chain_id int64,tx_hash common.Hash,from common.Address,nonce uint64,contract_code []byte,contract_addr common.Address,sdb *state.Database,state_root common.Hash) (error,common.Address,common.Hash,[]byte) {	// deploys contract code
+func UEVMDeploy(chain_id int64,tx_hash common.Hash,from common.Address,nonce uint64,contract_code []byte,contract_addr common.Address,sdb *state.Database,state_root common.Hash) (error,common.Address,common.Hash,[]byte) {	// deploys contract code
 
 	fmt.Printf("from = %v\n",from.String())
 	state_db,err := state.New(state_root,*sdb,nil)
@@ -114,17 +53,15 @@ func UEVMDeploy2(chain_id int64,tx_hash common.Hash,from common.Address,nonce ui
 
 	state_db.SetNonce(from,nonce)
 	chain_cfg := params.MainnetChainConfig
-	//fmt.Printf("chain cfg:\n%+v\n",chain_cfg)
 	vm_cfg := vm.Config{}
-	block_ctx := NewDummyBlockContext(big.NewInt(12369621) ,big.NewInt(1620131220))
+	block_ctx := NewDummyBlockContext(big.NewInt(MainNetBlockNum) ,big.NewInt(MainNetTimeStamp))
 	tx_ctx := new(vm.TxContext)
 	tx_ctx.Origin = from
-	tx_ctx.GasPrice = big.NewInt(1111111111)
+	tx_ctx.GasPrice = big.NewInt(TxDefaultGas)
 	evm := vm.NewEVM(*block_ctx,*tx_ctx,state_db,chain_cfg,vm_cfg)
 	gas := uint64(99999999999)
 	value := big.NewInt(0)
 	sender := vm.AccountRef(from)
-	//contract_addr := crypto.CreateAddress(sender.Address(), state_db.GetNonce(sender.Address()))
 	ret, _, _, vmerr := evm.Create3(sender, contract_code, gas, value,contract_addr)
 	_=ret
 	logs := state_db.GetLogs(tx_hash,common.Hash{})
@@ -176,6 +113,8 @@ func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx 
 	if sender_bal.Cmp(min_bal) < 0 {
 		state_db.AddBalance(tx_ctx.Origin,min_bal)	// fix the problem with balances on empty states
 	}
+	block_ctx.BlockNumber.SetInt64(MainNetBlockNum)
+	block_ctx.Time.SetInt64(MainNetTimeStamp)
 	chain_cfg := params.MainnetChainConfig
 	vm_cfg := vm.Config{}
 	evm := vm.NewEVM(*block_ctx,*tx_ctx,state_db,chain_cfg,vm_cfg)
@@ -183,10 +122,6 @@ func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx 
 	value := big.NewInt(0)
 	sender := vm.AccountRef(tx_ctx.Origin)
 	contract_code := common.FromHex(contracts.ERC20UnlimitedMetaData.Bin)
-	//,err := hex.DecodeString(DummyERC20CodeStr)
-	//if err != nil {
-	//	return err,common.Hash{},nil
-	//}
 	abi_parsed := strings.NewReader(contracts.ERC20UnlimitedMetaData.ABI)
 	dummyerc20_abi,err := abi.JSON(abi_parsed)
 	if err != nil {
@@ -213,11 +148,6 @@ func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx 
 		return err,out_state,nil
 	}
 	fmt.Printf("state_hash after commit: %v\n",out_state.String())
-	/*
-	_,err = (*sdb).OpenTrie(out_state)
-	if err == nil {
-		return errors.New(fmt.Sprintf("State %v already exists in the Trie DB, aborting",out_state.String())),common.Hash{},nil
-	}*/
 	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
 	if err != nil {
 		return err,out_state,nil
@@ -231,65 +161,6 @@ func UEVMDeployDummyToken(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx 
 	DumpStateDB(raw_dump)
 	return vmerr,out_state,logs_encoded_bytes
 }
-/* DISCONTINUED
-func UEVMCall(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,state_root common.Hash,sdb *state.Database) (error,common.Hash,[]byte) {
-
-	state_db,err := state.New(state_root,*sdb,nil)
-	if err != nil {
-		return err,common.Hash{},nil
-	}
-	state_db.Prepare(tx.Hash(),1)
-	block_ctx := NewDummyBlockContext(big.NewInt(block_num) ,big.NewInt(time_stamp))
-	tx_ctx := new(vm.TxContext)
-	chain_cfg := params.MainnetChainConfig
-	vm_cfg := vm.Config{}
-	fmt.Printf("Block num = %v\n",block_num)
-	fmt.Printf("chain config: %+v\n",chain_cfg)
-	evm := vm.NewEVM(*block_ctx,*tx_ctx,state_db,chain_cfg,vm_cfg)
-	gp := new(core.GasPool)
-	gas := uint64(99999999999)
-	tx_msg,err := tx.AsMessage(types.LatestSignerForChainID(big.NewInt(chain_id)),tx.GasPrice())
-	if err != nil {
-		return err,common.Hash{},nil
-	}
-	from := tx_msg.From()
-	sender := vm.AccountRef(tx_msg.From())
-	tx_ctx.Origin = from
-	tx_ctx.GasPrice = big.NewInt(1111111111)
-	//st := core.NewStateTransition(evm,tx_msg,gp)
-	to := tx_msg.To()
-	if to == nil {
-		panic("call to nil contract address")
-	}
-	ret, gas, vmerr := evm.Call(sender, *to , tx_msg.Data(), gas, tx_msg.Value())
-	_=ret
-	_=gas
-	_=gp
-	logs := state_db.GetLogs(tx.Hash(),common.Hash{})
-	fmt.Printf("num logs = %v\n",len(logs))
-	logs_encoded_bytes,err := rlp.EncodeToBytes(logs)
-	delete_empty_objects := false
-	out_state,err := state_db.Commit(delete_empty_objects)
-	if err!=nil {
-		fmt.Printf("Error on state_db.Commit(): %v\n",err)
-		return err,common.Hash{},nil
-	}
-	fmt.Printf("state_hash after commit: %v\n",out_state.String())
-	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
-	if err != nil {
-		fmt.Printf("Error on TrieDB().Commit() for out_state: %v\n",err)
-		return err,common.Hash{},nil
-	}
-	err = state_db.Database().TrieDB().CommitPreimages()
-	if err != nil {
-		fmt.Printf("Error on TrieDB().CommitPreimages() for out_state: %v\n",err)
-		return err,common.Hash{},nil
-	}
-	raw_dump := GetStateDump(state_db)
-	DumpStateDB(raw_dump)
-	return vmerr,out_state,logs_encoded_bytes
-}
-*/
 func UEVMAcctCreate(chain_id int64,from common.Address,nonce uint64,sdb state.Database,state_root common.Hash) (error,common.Hash) {	// deploys contract code
 
 	fmt.Printf("from = %v\n",from.String())
@@ -308,13 +179,6 @@ func UEVMAcctCreate(chain_id int64,from common.Address,nonce uint64,sdb state.Da
 	DumpStateDB(raw_dump)
 
 	delete_empty_objects := true
-	/*
-	iroot_hash := state_db.IntermediateRoot(delete_empty_objects)
-	err = state_db.Database().TrieDB().Commit(iroot_hash, true, nil)
-	if err != nil {
-		fmt.Printf("Error on TrieDB().Commit(): %v\n",err)
-		return err,iroot_hash
-	}*/
 	out_state,err := state_db.Commit(delete_empty_objects)
 	if err!=nil {
 		fmt.Printf("Error on state_db.Commit(): %v\n",err)
@@ -331,7 +195,7 @@ func UEVMAcctCreate(chain_id int64,from common.Address,nonce uint64,sdb state.Da
 	DumpStateDB(raw_dump)
 	return err,out_state
 }
-func UEVMCall2(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,input []byte,value *big.Int,to common.Address,state_root common.Hash,sdb *state.Database) (error,common.Hash,[]byte) {
+func UEVMCall(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,input []byte,value *big.Int,to common.Address,state_root common.Hash,sdb *state.Database) (error,common.Hash,[]byte) {
 
 	fmt.Printf("Executing call2() to contract %v on state %v\n",to.String(),state_root.String())
 	state_db,err := state.New(state_root,*sdb,nil)
@@ -344,6 +208,8 @@ func UEVMCall2(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxConte
 	state_db.Prepare(tx_hash,1)
 	chain_cfg := params.MainnetChainConfig
 	vm_cfg := vm.Config{}
+	block_ctx.BlockNumber.SetInt64(MainNetBlockNum)
+	block_ctx.Time.SetInt64(MainNetTimeStamp)
 	evm := vm.NewEVM(*block_ctx,*tx_ctx,state_db,chain_cfg,vm_cfg)
 	gp := new(core.GasPool)
 	gas := uint64(99999999999)
@@ -366,12 +232,6 @@ func UEVMCall2(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxConte
 		return err,common.Hash{},nil
 	}
 	fmt.Printf("state_hash after commit: %v\n",out_state.String())
-	/*
-	_,err = (*sdb).OpenTrie(out_state)
-	if err == nil {
-		return errors.New(fmt.Sprintf("State %v already exists in the Trie DB, aborting",out_state.String())),common.Hash{},nil
-	}
-	*/
 	fmt.Printf("state_hash after commit: %v\n",out_state.String())
 	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
 	if err != nil {
@@ -427,12 +287,3 @@ func DumpStateDB(raw_dump state.Dump) {
 		fmt.Printf("%v (%v)\t%v\t\t%v\n",keys[i].String(),astr,obj.Balance,obj.Nonce)
 	}
 }
-/*
-	triedb := trie.NewDatabase(edb)
-	regenerate_snapshot := true
-	sshot,err := snapshot.New(edb,triedb,256,common.Hash{},false,regenerate_snapshot,false)
-	if err != nil {
-		return err,common.Address{},common.Hash{}
-	}
-	state_db,err := state.New(state_root,state.NewDatabase(edb),sshot)
-*/

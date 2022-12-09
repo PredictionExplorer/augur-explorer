@@ -85,11 +85,6 @@ func (self *MiniChain) NumRecords() int64 {
 func (self *MiniChain) ReadLastLine() (Record,error) {
 
 	var r Record
-	/*flen,err := os.Stat(self.StatesFileName)
-	if err != nil {
-		return r,err
-	}
-	flen = flen - RECORD_LENGTH*/
 	_,err := self.F.Seek(int64(-RECORD_LENGTH),2)
 	if err != nil {
 		return r,err
@@ -144,7 +139,7 @@ func (self *MiniChain) AppendLine(r *Record) error {
 func (self *MiniChain) ExecDeploy(chain_id int64,tx_hash common.Hash,from common.Address,nonce uint64,contract_code []byte,contract_addr common.Address,initial_state_root common.Hash,r *Record) (error,common.Address,common.Hash) {
 
 	fmt.Printf("ExecDeploy(): tx_hash=%v\n",tx_hash.String())
-	err,addr,root,encoded_logs := UEVMDeploy2(chain_id,tx_hash,from,nonce,contract_code,contract_addr,self.sdb,initial_state_root)
+	err,addr,root,encoded_logs := UEVMDeploy(chain_id,tx_hash,from,nonce,contract_code,contract_addr,self.sdb,initial_state_root)
 	if err != nil {
 		return err,addr,common.Hash{}
 	}
@@ -159,22 +154,9 @@ func (self *MiniChain) ExecDeploy(chain_id int64,tx_hash common.Hash,from common
 	err = self.receipts_db.Put(tx_hash.Bytes(),encoded_logs)
 	return err,addr,root
 }
-/*DISCONTINUED
-func (self *MiniChain) ExecCall(chain_id int64,tx *types.Transaction,block_num,time_stamp int64,initial_state_root common.Hash,r *Record) (error,common.Hash) {
+func (self *MiniChain) ExecCall(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,input []byte,value *big.Int,contract_addr common.Address,initial_state_root common.Hash,r *Record) (error,common.Hash) {
 
-	err,root,encoded_logs := UEVMCall2(chain_id,tx,block_num,time_stamp,initial_state_root,self.sdb)
-	if err != nil {
-		return err,common.Hash{}
-	}
-	r.StateRoot = root
-	err = self.AppendLine(r)
-	self.receipts_db.Put(tx.Hash().Bytes(),encoded_logs)
-	return err,root
-}
-*/
-func (self *MiniChain) ExecCall2(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,input []byte,value *big.Int,contract_addr common.Address,initial_state_root common.Hash,r *Record) (error,common.Hash) {
-
-	err,root,encoded_logs := UEVMCall2(block_ctx,tx_hash,tx_ctx,input,value,contract_addr,initial_state_root,self.sdb)
+	err,root,encoded_logs := UEVMCall(block_ctx,tx_hash,tx_ctx,input,value,contract_addr,initial_state_root,self.sdb)
 	if err != nil {
 		return err,common.Hash{}
 	}
@@ -189,9 +171,8 @@ func (self *MiniChain) ExecMint(block_ctx *vm.BlockContext,tx_hash common.Hash,t
 	if err != nil {
 		return err
 	}
-	fmt.Printf("ExecMint() calling ExecCall2()\n")
 	initial_state_root.SetBytes(tmp_state_hash.Bytes())
-	err,new_state_root := self.ExecCall2(block_ctx,tx_hash,tx_ctx,input,value,contract_addr,initial_state_root,r)
+	err,new_state_root := self.ExecCall(block_ctx,tx_hash,tx_ctx,input,value,contract_addr,initial_state_root,r)
 	if err != nil {
 		return err
 	}
