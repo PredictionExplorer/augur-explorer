@@ -19,6 +19,7 @@ type ETL_Layer1 struct {
 	NoChainSplitCheck			bool
 	SingleBlockNum				int64
 	NumThreads					int64
+	EndingBlock					int64
 	SchemaName					string
 	RPC_Url						string
 	AppName						string

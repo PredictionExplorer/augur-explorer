@@ -44,7 +44,7 @@ func read_block_numbers(fname string) []int64 {
 	}
 	blocks_str := string(data)
 	numbers := strings.Split(blocks_str,",")
-	output := make([]int64,0,512)
+	output := make([]int64,0, 512)
 	for i:=0 ; i<len(numbers); i++ {
 		trimmed:=strings.ReplaceAll(numbers[i],"\n","")
 		bnum,err:=strconv.Atoi(trimmed)
@@ -128,6 +128,10 @@ func single_threaded_loop_routine(etl *ETL_Layer1,exit_chan chan bool) {
 	} else {
 		//etl.Info.Printf("Latest block in chain=%v, latest in DB=%v\n",latestBlock.Number().Int64(),bnum)
 		bnum = bnum + 1
+	}
+	if (bnum > etl.EndingBlock) && (etl.EndingBlock > 0) {
+		etl.Info.Printf("Reached specified ending block (num=%v), finishing process\n",etl.EndingBlock)
+		os.Exit(0)
 	}
 	bnum_high = latestBlock.Number().Int64()
 	if bnum_high < cur_bnum {
