@@ -164,6 +164,7 @@ func process_pool_mint(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		Info.Printf("Skipping event, address doesn't match our address\n")
 		return
 	}
+	t0_addr_str,_,t1_addr_str,_ := storagew.Get_uniswap_v3_pool_token_addresses(pool_aid)
 	var eth_evt UniswapV3PoolMint
 	err := pool_abi.UnpackIntoInterface(&eth_evt,"Mint",log.Data)
 	if err != nil {
@@ -171,6 +172,8 @@ func process_pool_mint(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		os.Exit(1)
 	}
 
+	t0_addr := common.HexToAddress(t0_addr_str)
+	t1_addr := common.HexToAddress(t1_addr_str)
 	var evt UniV3Mint
 	evt.BlockNum = tx.BlockNum
 	evt.TimeStamp = tx.TimeStamp
@@ -227,7 +230,7 @@ func process_pool_mint(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 	value := big.NewInt(0)
 	value.SetString(tx.Value,10)
 	input := tx.Input
-	err = mchain.ExecMint(block_ctx,rec.TxHash,tx_ctx,input,value,ctrct_addr,last_line_rec.StateRoot,&rec,token0_addr,token1_addr)
+	err = mchain.ExecMint(block_ctx,rec.TxHash,tx_ctx,input,value,ctrct_addr,last_line_rec.StateRoot,&rec,t0_addr,t1_addr)
 	if err != nil {
 		Info.Printf("Error executing ExecMint(): %v\n",err)
 		os.Exit(1)
@@ -294,6 +297,7 @@ func process_pool_burn(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		Info.Printf("Skipping event, address doesn't match our address\n")
 		return
 	}
+
 	var eth_evt UniswapV3PoolBurn
 	err := pool_abi.UnpackIntoInterface(&eth_evt,"Burn",log.Data)
 	if err != nil {
@@ -331,6 +335,30 @@ func process_pool_burn(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 	Info.Printf("\tAmount1: %v\n",evt.Amount1)
 	Info.Printf("}\n")
 	storagew.Insert_pool_burn(&evt)
+
+	var rec uevm.Record
+	rec.BlockNum = tx.BlockNum 
+	rec.BlockHash = common.HexToHash(tx.BlockHash)
+	rec.TxIndex = int64(tx.TxIndex)
+	rec.TxHash = common.HexToHash(tx.TxHash)
+	ctrct_addr := common.HexToAddress(tx.To)
+	last_line_rec,err := mchain.ReadLastLine()
+	if err != nil {
+		Info.Printf("Error getting last record: %v\n",err)
+		os.Exit(1)
+	}
+	block_ctx := uevm.NewDummyBlockContext(big.NewInt(uevm.MainNetBlockNum) ,big.NewInt(uevm.MainNetTimeStamp))
+	tx_ctx := new(vm.TxContext)
+	tx_ctx.Origin = common.HexToAddress(tx.From) 
+	tx_ctx.GasPrice = big.NewInt(uevm.TxDefaultGas)
+	value := big.NewInt(0)
+	value.SetString(tx.Value,10)
+	input := tx.Input
+	err = mchain.ExecBurn(block_ctx,rec.TxHash,tx_ctx,input,value,ctrct_addr,last_line_rec.StateRoot,&rec)
+	if err != nil {
+		Info.Printf("Error executing ExecMint(): %v\n",err)
+		os.Exit(1)
+	}
 }
 func process_pool_swap(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
 

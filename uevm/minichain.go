@@ -180,6 +180,16 @@ func (self *MiniChain) ExecMint(block_ctx *vm.BlockContext,tx_hash common.Hash,t
 	self.AppendLine(r)
 	return err
 }
+func (self *MiniChain) ExecBurn(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,input []byte,value *big.Int,contract_addr common.Address,initial_state_root common.Hash,r *Record) error {
+
+	err,new_state_root := self.ExecCall(block_ctx,tx_hash,tx_ctx,input,value,contract_addr,initial_state_root,r)
+	if err != nil {
+		return err
+	}
+	r.StateRoot=new_state_root
+	self.AppendLine(r)
+	return err
+}
 func get_erc20_specs(addr common.Address) (DummyERC_Spec,error) {
 
 	var ERC20Spec DummyERC_Spec
