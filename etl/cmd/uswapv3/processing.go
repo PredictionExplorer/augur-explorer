@@ -426,6 +426,30 @@ func process_pool_swap(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 	Info.Printf("\tTick: %v\n",evt.Tick)
 	Info.Printf("}\n")
 	storagew.Insert_pool_swap(&evt)
+
+	var rec uevm.Record
+	rec.BlockNum = tx.BlockNum 
+	rec.BlockHash = common.HexToHash(tx.BlockHash)
+	rec.TxIndex = int64(tx.TxIndex)
+	rec.TxHash = common.HexToHash(tx.TxHash)
+	ctrct_addr := common.HexToAddress(tx.To)
+	last_line_rec,err := mchain.ReadLastLine()
+	if err != nil {
+		Info.Printf("Error getting last record: %v\n",err)
+		os.Exit(1)
+	}
+	block_ctx := uevm.NewDummyBlockContext(big.NewInt(uevm.MainNetBlockNum) ,big.NewInt(uevm.MainNetTimeStamp))
+	tx_ctx := new(vm.TxContext)
+	tx_ctx.Origin = common.HexToAddress(tx.From) 
+	tx_ctx.GasPrice = big.NewInt(uevm.TxDefaultGas)
+	value := big.NewInt(0)
+	value.SetString(tx.Value,10)
+	input := tx.Input
+	err,_ = mchain.ExecCall(block_ctx,rec.TxHash,tx_ctx,input,value,ctrct_addr,last_line_rec.StateRoot,&rec)
+	if err != nil {
+		Info.Printf("Error executing ExecCall() for swap tx: %v\n",err)
+		os.Exit(1)
+	}
 }
 func process_pool_flash(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
 
