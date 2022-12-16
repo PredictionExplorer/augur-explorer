@@ -99,7 +99,7 @@ func main() {
 	}
 	schema_name := flag.String("schema", "", "Schema name")
 	datadir := flag.String("datadir", "", "Datadir path (for local EVM state storage)")
-	minichaindir := flag.String("minichaindir", "", "Datadir path for minichain file")
+	minichainfile := flag.String("minichainfile", "", "Datadir path for minichain file")
 	receiptsdir := flag.String("receiptsdir", "", "Datadir path for receipts file")
 	rpc_url := flag.String("rpc","","RPC URL")
 	block_num := flag.Int64("bnum",0 ,"Single block number to process")
@@ -123,7 +123,7 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	if len(*minichaindir) == 0 {
+	if len(*minichainfile) == 0 {
 		fmt.Printf("minichain directory required\n")
 		os.Exit(1)
 	}
@@ -270,7 +270,7 @@ func main() {
 	Init(&layer1,eclient,rpcclient)
 
 	_,db := OpenDB(*datadir)
-	mc,err := OpenMiniChain(*minichaindir,*receiptsdir)
+	mc,err := OpenMiniChain(*minichainfile,*receiptsdir)
 	if err != nil {
 		fmt.Printf("Error opening minichain: %v\n",err)
 		os.Exit(1)
