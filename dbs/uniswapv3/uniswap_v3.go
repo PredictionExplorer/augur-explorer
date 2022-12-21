@@ -83,13 +83,13 @@ func (sw *SQLStorageWrapper) Get_uniswap_v3_pool_token_addresses(pool_aid int64)
 			"FROM pool_created p " +
 				"JOIN addr t0 ON p.token0_aid=t0.address_id "+
 				"JOIN addr t1 ON p.token1_aid=t1.address_id "+
-			"WHERE p.pool_aid=%1"
+			"WHERE p.pool_aid=$1"
 
 	row := sw.S.Db().QueryRow(query,pool_aid)
 	var err error
 	var t0_addr,t1_addr string
 	var t0_aid,t1_aid int64
-	err=row.Scan(&t0_addr,t0_aid,&t1_addr,&t1_aid);
+	err=row.Scan(&t0_addr,&t0_aid,&t1_addr,&t1_aid);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			sw.S.Log_msg(fmt.Sprintf("Error in Get_pool_token_addresses(), no record found: %v, q=%v",err,query))

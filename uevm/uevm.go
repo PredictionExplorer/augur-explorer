@@ -197,7 +197,7 @@ func UEVMAcctCreate(chain_id int64,from common.Address,nonce uint64,sdb state.Da
 }
 func UEVMCall(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContext,input []byte,value *big.Int,to common.Address,state_root common.Hash,sdb *state.Database) (error,common.Hash,[]byte) {
 
-	fmt.Printf("Executing call2() to contract %v on state %v\n",to.String(),state_root.String())
+	fmt.Printf("Executing call2(tx=%v) to contract %v on state %v\n",tx_hash.String(),to.String(),state_root.String())
 	state_db,err := state.New(state_root,*sdb,nil)
 	if err != nil {
 		return err,common.Hash{},nil
@@ -222,7 +222,7 @@ func UEVMCall(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContex
 		if end > 128 { end = 128 }
 		fmt.Printf("Call return value: %v\n",hex.EncodeToString(ret[0:end]))
 	} else {
-		fmt.Printf("Call retuen value is nil\n")
+		fmt.Printf("Call return value is nil\n")
 	}
 	logs := state_db.GetLogs(tx_hash,common.Hash{})
 	logs_encoded_bytes,err := rlp.EncodeToBytes(logs)
