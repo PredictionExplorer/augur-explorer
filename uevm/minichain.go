@@ -194,7 +194,9 @@ func get_erc20_specs(addr common.Address) (DummyERC_Spec,error) {
 
 	var ERC20Spec DummyERC_Spec
 	var copts = new(bind.CallOpts)
-
+	if eclient == nil {
+		return ERC20Spec,errors.New(fmt.Sprintf("ethclient object is nil, use SetEClient()"))
+	}
 	erc20_ctrct,err := contracts.NewERC20Unlimited(addr,eclient)
 	if err != nil {
 		return ERC20Spec,errors.New(fmt.Sprintf("Error creating ERC20 instance: %v",err.Error()))

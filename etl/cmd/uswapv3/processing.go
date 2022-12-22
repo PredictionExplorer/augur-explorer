@@ -112,6 +112,7 @@ func process_pool_created(storage *SQLStorage,tx *AugurTx,log *types.Log,log_ind
 		Info.Printf("Error in ExecCall(): %v\n",err)
 		os.Exit(1)
 	}
+	os.Exit(2)
 }
 func process_initialize(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
 

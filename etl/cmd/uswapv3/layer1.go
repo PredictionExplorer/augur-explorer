@@ -265,6 +265,7 @@ func main() {
 		os.Exit(1)
 	}
 	nfpm_abi = &abi4
+	SetEClient(eclient)
 
 	layer1.NumThreads = 1
 	Init(&layer1,eclient,rpcclient)
