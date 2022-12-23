@@ -232,7 +232,6 @@ func UEVMCall(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContex
 		return err,common.Hash{},nil
 	}
 	fmt.Printf("state_hash after commit: %v\n",out_state.String())
-	fmt.Printf("state_hash after commit: %v\n",out_state.String())
 	err = state_db.Database().TrieDB().Commit(out_state, true, nil)
 	if err != nil {
 		return err,common.Hash{},nil
@@ -248,6 +247,7 @@ func UEVMCall(block_ctx *vm.BlockContext,tx_hash common.Hash,tx_ctx *vm.TxContex
 //func OpenDB(file string) ethdb.Database {
 func OpenDB(file string) (ethdb.Database,state.Database) {
 	
+	fmt.Printf("OpenDB(file = %v)\n",file)
 	rdb,err := rawdb.NewLevelDBDatabase(file,0 ,0 ,"uniswapcustom",false)
 	if err != nil {
 		panic("can't open db")
