@@ -44,6 +44,7 @@ func process_pool_created(storage *SQLStorage,tx *AugurTx,log *types.Log,log_ind
 		"EVENT: PoolCreated. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	storagew.Delete_pool_created(tx.BlockNum,tx.TxIndex)
 	if !bytes.Equal(log.Address.Bytes(),caddrs.FactoryAddr.Bytes()) {
 		Info.Printf("Skipping event, address doesn't match our address\n")
 		return
@@ -88,8 +89,9 @@ func process_initialize(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index
 
 	Info.Printf(
 		"EVENT: Initialize. Tx %v TxIndex %v Log %v\n",
-	tx.TxHash,tx.TxIndex,log.Index,
+		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	storagew.Delete_pool_initialize(tx.BlockNum,tx.TxIndex)
 	pool_aid := storagew.Get_uniswap_v3_pool_aid(log.Address.String())
 	if pool_aid == 0 {
 		Info.Printf("Skipping event, address doesn't match our address\n")
@@ -130,6 +132,7 @@ func process_pool_mint(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		"EVENT: Mint. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	storagew.Delete_pool_mint(tx.BlockNum,tx.TxIndex)
 	pool_aid := storagew.Get_uniswap_v3_pool_aid(log.Address.String())
 	if pool_aid == 0 {
 		Info.Printf("Skipping event, address doesn't match our address\n")
@@ -235,6 +238,7 @@ func process_pool_burn(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		"EVENT: Burn. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	storagew.Delete_pool_burn(tx.BlockNum,tx.TxIndex)
 	pool_aid := storagew.Get_uniswap_v3_pool_aid(log.Address.String())
 	if pool_aid == 0 {
 		Info.Printf("Skipping event, address doesn't match our address\n")
@@ -284,6 +288,7 @@ func process_pool_swap(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		"EVENT: Swap. Tx %v TxIndex %v Log %v\n",
 		tx.TxHash,tx.TxIndex,log.Index,
 	)
+	storagew.Delete_pool_swap(tx.BlockNum,tx.TxIndex)
 	pool_aid,fee_str := storagew.Get_uniswap_v3_pool_aid_and_fee(log.Address.String())
 	if pool_aid == 0 {
 		Info.Printf("Skipping event, address doesn't match our address\n")
