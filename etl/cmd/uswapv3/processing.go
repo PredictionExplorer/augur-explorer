@@ -387,6 +387,46 @@ func process_pool_burn(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		os.Exit(1)
 	}
 }
+func process_pool_debug_swap_events(tx *AugurTx,tx_hash common.Hash,pool_aid int64) error {
+
+	encoded_logs,err := mchain.GetReceiptLogs(tx_hash)
+	if err != nil { return err }
+
+	var decoded_logs []*types.Log
+	err = rlp.DecodeBytes(encoded_logs,&decoded_logs)
+	if err != nil { return err }
+
+	count := len(encoded_logs)
+	for i:=0;i<count;i++ {
+		lg := decoded_logs[i]
+		if len(lg.Topics) > 0 {
+			topic0 := lg.Topics[0].Bytes()
+			if bytes.Equal(topic0,evt_dbg_swap_loop) {
+				var evt p.UniV3DbgSwapLoop
+				evt.BlockNum = tx.BlockNum
+				evt.TimeStamp = tx.TimeStamp
+				evt.TxIndex = tx.TxIndex
+				evt.LogIndex = i
+				evt.ContractAddress = lg.Address.String()
+				evt.PoolAid = pool_aid
+
+				var eth_evt IUniswapV3PoolEventsDBGSWAPLOOP
+				err := dbg_abi.UnpackIntoInterface(&eth_evt,"DBG_SWAP_LOOP",lg.Data)
+				if err != nil { return err }
+				eth_evt.Pool = common.BytesToAddress(log.Topics[1][12:])
+				evt.Tick = eth_evt.Tick
+				evt.SqrtPrice = eth_evt.SqrtPriceX96.String()
+				evt.Liquidity = eth_evt.Liquidity.String()
+				evt.StepAmountIn = eth_evt.StepAmountIn.String()
+				evt.StepAmountOut = eth_evt.StepAmountOut.String()
+				evt.FeeGrowthGlobal = eth_evt.FeeGrowthGlobalX128.String()
+				evt.FeeAmount = eth_evt.FeeAmount.String()
+
+				storagew.Insert_dbg_swap_loop(&evt)
+			}
+		}
+	}
+}
 func process_pool_swap(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
 
 	Info.Printf(
@@ -477,6 +517,14 @@ func process_pool_swap(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		Info.Printf("Error executing ExecCall() for swap tx: %v\n",err)
 		os.Exit(1)
 	}
+
+	err = process_pool_debug_swap_events(tx,rec.TxHash,pool_aid)
+	if err != nil {
+		Info.Printf("Error processing debug swap events: %v\n",err)
+		Error.Printf("Error processing debug swap events: %v\n",err)
+		os.Exit(1)
+	}
+
 }
 func process_pool_flash(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
 

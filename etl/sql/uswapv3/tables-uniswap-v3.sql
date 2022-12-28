@@ -192,5 +192,21 @@ CREATE TABLE dec_liq( -- DecreaseLiquidity event (from Periphery contract)
 	amount1				DECIMAL NOT NULL,
 	PRIMARY KEY(block_num,tx_index,log_index)
 );
-
+CREATE TABLE dbg_swap_loop(
+	block_num           BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
+	time_stamp          TIMESTAMPTZ NOT NULL,
+	tx_index            INT NOT NULL,
+	log_index           INT NOT NULL,	-- this will be changing when sliding through ticks
+										--	(it isnt log index of MainNet, but log index of local states)
+										--	(the block num and tx_index is of MainNet though)
+	contract_aid        BIGINT NOT NULL,
+	pool_aid			BIGINT NOT NULL,
+	tick				INT NOT NULL,
+	sqrt_price			DECIMAL,
+	liquidity			DECIMAL,
+	stepAmountIn		DECIMAL,
+	stepAmountOut		DECIMAL,
+	fee_amount			DECIMAL,
+	fee_growth			DECIMAL,	-- variable name in .sol files is FeeGrowthGlobalX128
+);
 

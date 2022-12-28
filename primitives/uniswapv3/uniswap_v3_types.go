@@ -171,3 +171,18 @@ type UniV3DecreaseLiquidity struct {
 	Amount0				string
 	Amount1				string
 }
+type UniV3DBGSwapLoop struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	PoolAid				int64
+	ContractAddr		string
+	Tick				int64
+	SqrtPrice			string
+	Liquidity			string
+	StepAmountIn		string
+	StepAmountOut		string
+	FeeGrowthGlobal		string
+	FeeAmount			string
+}

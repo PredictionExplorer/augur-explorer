@@ -291,3 +291,7 @@ func (self *MiniChain) AccountExists(state_root common.Hash,addr common.Address)
 
 	return state_db.Exist(addr)
 }
+func (self *MiniChain) GetReceiptLogs(tx_hash common.Hash) ([]byte,error)
+	encoded_logs,err := self.receipts_db.Get(tx_hash.Bytes(),encoded_logs)
+	return encoded_logs,err
+}
