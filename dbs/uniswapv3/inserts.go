@@ -363,15 +363,15 @@ func (sw *SQLStorageWrapper) Insert_decrease_liquidity(evt *p.UniV3DecreaseLiqui
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_dbg_swap_loop(evt *p.UniV3DbgSwapLoop) {
+func (sw *SQLStorageWrapper) Insert_dbg_swap_loop(evt *p.UniV3DBGSwapLoop) {
 
 	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".dbg_swap_loop("+
 					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
-					"pool_aid,tick,sqrt_price,liquidity,liquidity_diff,"+
-					"fee_grow_0,fee_grow_1"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)"
+					"pool_aid,tick,sqrt_price,liquidity,step_amount_in,step_amount_out,"+
+					"fee_amount,fee_growth"+
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)"
 	_,err := sw.S.Db().Exec(query,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -382,9 +382,10 @@ func (sw *SQLStorageWrapper) Insert_dbg_swap_loop(evt *p.UniV3DbgSwapLoop) {
 		evt.Tick,
 		evt.SqrtPrice,
 		evt.Liquidity,
-		evt.LiquidityDiff,
-		evt.FeeGrow0,
-		evt.FeeGrow1,
+		evt.StepAmountIn,
+		evt.StepAmountOut,
+		evt.FeeAmount,
+		evt.FeeGrowthGlobal,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into dbg_swap_loop table: %v\n",err))

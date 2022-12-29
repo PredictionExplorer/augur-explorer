@@ -84,6 +84,7 @@ var (
 	pool_abi *abi.ABI
 	nfpm_abi *abi.ABI
 	erc20_abi *abi.ABI
+	dbg_abi *abi.ABI
 
 	caddrs		UniswapV3Addrs
 
@@ -267,6 +268,15 @@ func main() {
 		os.Exit(1)
 	}
 	nfpm_abi = &abi4
+
+	abi_parsed5 := strings.NewReader(DBGABI)
+	abi5,err := abi.JSON(abi_parsed5)
+	if err != nil {
+		Info.Printf("Can't parse DBG events contract ABI")
+		os.Exit(1)
+	}
+	dbg_abi = &abi5
+
 	SetEClient(eclient)
 
 	layer1.NumThreads = 1

@@ -14,5 +14,6 @@ DROP TABLE IF EXISTS
 	collect_prot,
 	collect_nfpm,
 	inc_liq,
-	dec_liq
+	dec_liq,
+	dbg_swap_loop
 CASCADE;

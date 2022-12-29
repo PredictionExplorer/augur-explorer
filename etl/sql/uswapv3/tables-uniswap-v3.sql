@@ -204,9 +204,9 @@ CREATE TABLE dbg_swap_loop(
 	tick				INT NOT NULL,
 	sqrt_price			DECIMAL,
 	liquidity			DECIMAL,
-	stepAmountIn		DECIMAL,
-	stepAmountOut		DECIMAL,
+	step_amount_in		DECIMAL,
+	step_amount_out		DECIMAL,
 	fee_amount			DECIMAL,
-	fee_growth			DECIMAL,	-- variable name in .sol files is FeeGrowthGlobalX128
+	fee_growth			DECIMAL	-- variable name in .sol files is FeeGrowthGlobalX128
 );
 

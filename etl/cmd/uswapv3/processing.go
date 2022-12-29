@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/rlp"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/primitives/uniswapv3"
@@ -21,6 +22,23 @@ import (
 )
 type ETL_Processor struct {
 	ETL				*ETL_Layer1
+}
+type IUniswapV3PoolEventsDBGSWAPLOOP struct {
+	Pool                common.Address
+	SqrtPriceX96        *big.Int
+	SqrtPriceStartX96   *big.Int
+	SqrtPriceNextX96    *big.Int
+	Tick                *big.Int
+	TickCumulative      *big.Int
+	Initialized         bool
+	StepAmountIn        *big.Int
+	StepAmountOut       *big.Int
+	AmountProcessed     *big.Int
+	FeeAmount           *big.Int
+	Liquidity           *big.Int
+	ExactInput          bool
+	FeeGrowthGlobalX128 *big.Int
+	Raw                 types.Log // Blockchain specific contextual infos
 }
 func address_array_to_string(addresses []common.Address) string {
 
@@ -396,25 +414,25 @@ func process_pool_debug_swap_events(tx *AugurTx,tx_hash common.Hash,pool_aid int
 	err = rlp.DecodeBytes(encoded_logs,&decoded_logs)
 	if err != nil { return err }
 
-	count := len(encoded_logs)
+	count := len(decoded_logs)
 	for i:=0;i<count;i++ {
 		lg := decoded_logs[i]
 		if len(lg.Topics) > 0 {
 			topic0 := lg.Topics[0].Bytes()
 			if bytes.Equal(topic0,evt_dbg_swap_loop) {
-				var evt p.UniV3DbgSwapLoop
+				var evt UniV3DBGSwapLoop
 				evt.BlockNum = tx.BlockNum
 				evt.TimeStamp = tx.TimeStamp
-				evt.TxIndex = tx.TxIndex
-				evt.LogIndex = i
-				evt.ContractAddress = lg.Address.String()
+				evt.TxIndex = int64(tx.TxIndex)
+				evt.LogIndex = int64(i)
+				evt.ContractAddr = lg.Address.String()
 				evt.PoolAid = pool_aid
 
 				var eth_evt IUniswapV3PoolEventsDBGSWAPLOOP
 				err := dbg_abi.UnpackIntoInterface(&eth_evt,"DBG_SWAP_LOOP",lg.Data)
 				if err != nil { return err }
-				eth_evt.Pool = common.BytesToAddress(log.Topics[1][12:])
-				evt.Tick = eth_evt.Tick
+				eth_evt.Pool = common.BytesToAddress(lg.Topics[1][12:])
+				evt.Tick = eth_evt.Tick.Int64()
 				evt.SqrtPrice = eth_evt.SqrtPriceX96.String()
 				evt.Liquidity = eth_evt.Liquidity.String()
 				evt.StepAmountIn = eth_evt.StepAmountIn.String()
@@ -426,6 +444,8 @@ func process_pool_debug_swap_events(tx *AugurTx,tx_hash common.Hash,pool_aid int
 			}
 		}
 	}
+
+	return nil
 }
 func process_pool_swap(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
 
