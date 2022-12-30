@@ -434,12 +434,15 @@ func process_pool_debug_swap_events(tx *AugurTx,tx_hash common.Hash,pool_aid int
 				eth_evt.Pool = common.BytesToAddress(lg.Topics[1][12:])
 				evt.Tick = eth_evt.Tick.Int64()
 				evt.SqrtPrice = eth_evt.SqrtPriceX96.String()
+				float_price := uevm.BinaryFixedToBigFloat(96,evt.SqrtPrice)
+				evt.Price = float_price.String()
 				evt.Liquidity = eth_evt.Liquidity.String()
 				evt.StepAmountIn = eth_evt.StepAmountIn.String()
 				evt.StepAmountOut = eth_evt.StepAmountOut.String()
-				evt.FeeGrowthGlobal = eth_evt.FeeGrowthGlobalX128.String()
+				evt.FeeGrowthGlobalX128 = eth_evt.FeeGrowthGlobalX128.String()
 				evt.FeeAmount = eth_evt.FeeAmount.String()
-
+				float_fees := uevm.BinaryFixedToBigFloat(128,evt.FeeGrowthGlobalX128)
+				evt.FeeGrowthDecoded = float_fees.String()
 				storagew.Insert_dbg_swap_loop(&evt)
 			}
 		}
@@ -858,7 +861,6 @@ func process_decrease_liquidity(storage *SQLStorage,tx *AugurTx,log *types.Log,l
 	Info.Printf("}\n")
 	storagew.Insert_decrease_liquidity(&evt)
 }
-
 func process_event_log(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
 
 	if len(log.Topics) == 0 { return }

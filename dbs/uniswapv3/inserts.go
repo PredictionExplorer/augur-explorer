@@ -369,9 +369,9 @@ func (sw *SQLStorageWrapper) Insert_dbg_swap_loop(evt *p.UniV3DBGSwapLoop) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".dbg_swap_loop("+
 					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
-					"pool_aid,tick,sqrt_price,liquidity,step_amount_in,step_amount_out,"+
-					"fee_amount,fee_growth"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)"
+					"pool_aid,tick,sqrt_price,price,liquidity,step_amount_in,step_amount_out,"+
+					"fee_amount,fee_growthX128,fee_growth"+
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)"
 	_,err := sw.S.Db().Exec(query,
 		evt.BlockNum,
 		evt.TimeStamp,
@@ -381,11 +381,13 @@ func (sw *SQLStorageWrapper) Insert_dbg_swap_loop(evt *p.UniV3DBGSwapLoop) {
 		evt.PoolAid,
 		evt.Tick,
 		evt.SqrtPrice,
+		evt.Price,
 		evt.Liquidity,
 		evt.StepAmountIn,
 		evt.StepAmountOut,
 		evt.FeeAmount,
-		evt.FeeGrowthGlobal,
+		evt.FeeGrowthGlobalX128,
+		evt.FeeGrowthDecoded,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into dbg_swap_loop table: %v\n",err))

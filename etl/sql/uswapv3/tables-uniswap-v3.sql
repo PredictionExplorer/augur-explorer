@@ -203,10 +203,12 @@ CREATE TABLE dbg_swap_loop(
 	pool_aid			BIGINT NOT NULL,
 	tick				INT NOT NULL,
 	sqrt_price			DECIMAL,
+	price				DECIMAL,	-- decoded price (decoded from fixed point 96 binary format)
 	liquidity			DECIMAL,
 	step_amount_in		DECIMAL,
 	step_amount_out		DECIMAL,
 	fee_amount			DECIMAL,
-	fee_growth			DECIMAL	-- variable name in .sol files is FeeGrowthGlobalX128
+	fee_growthX128		DECIMAL,	-- variable name in .sol files is FeeGrowthGlobalX128
+	fee_growth			DECIMAL
 );
 

@@ -179,9 +179,11 @@ type UniV3DBGSwapLoop struct {
 	ContractAddr		string
 	Tick				int64
 	SqrtPrice			string
+	Price				string
 	Liquidity			string
 	StepAmountIn		string
 	StepAmountOut		string
-	FeeGrowthGlobal		string
+	FeeGrowthGlobalX128	string
+	FeeGrowthDecoded	string
 	FeeAmount			string
 }
