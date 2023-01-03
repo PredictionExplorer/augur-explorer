@@ -394,3 +394,37 @@ func (sw *SQLStorageWrapper) Insert_dbg_swap_loop(evt *p.UniV3DBGSwapLoop) {
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_dbg_upd_pos_event(evt *p.UniV3DBGUpdPos) {
+
+	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
+	owner_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.OwnerAddr)
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".dbg_upd_pos("+
+					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+					"pool_aid,owner_aid,tick,liquidity_delta,"+
+					"fee_growth0_before,fee_growth1_before,"+
+					"fee_growth0_inside,fee_growth1_insidem"+
+					"flipped_lower,flipped_upper"+
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)"
+	_,err := sw.S.Db().Exec(query,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxIndex,
+		evt.LogIndex,
+		contract_aid,
+		evt.PoolAid,
+		owner_aid,
+		evt.Tick,
+		evt.LiquidityDelta,
+		evt.FeeGrowth0Before,
+		evt.FeeGrowth1Before,
+		evt.FeeGrowth0Inside,
+		evt.FeeGrowth1Inside,
+		evt.FlippedLower,
+		evt.FlippedUpper,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into dbg_upd_pos table: %v\n",err))
+		os.Exit(1)
+	}
+}

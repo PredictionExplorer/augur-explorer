@@ -211,4 +211,24 @@ CREATE TABLE dbg_swap_loop(
 	fee_growthX128		DECIMAL,	-- variable name in .sol files is FeeGrowthGlobalX128
 	fee_growth			DECIMAL
 );
+CREATE TABLE dbg_upd_pos(
+	block_num           BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
+	time_stamp          TIMESTAMPTZ NOT NULL,
+	tx_index            INT NOT NULL,
+	log_index           INT NOT NULL,	-- this will be changing when sliding through ticks
+										--	(it isnt log index of MainNet, but log index of local states)
+										--	(the block num and tx_index is of MainNet though)
+	contract_aid        BIGINT NOT NULL,
+	pool_aid			BIGINT NOT NULL,
+	owner_aid			BIGINT NOT NULL,
+	tick				INT NOT NULL,
+	liquidity_delta		DECIMAL,
+	fee_growth0_before	DECIMAL,
+	fee_growth1_before	DECIMAL,
+	fee_growth0_inside	DECIMAL,
+	fee_growth1_inside	DECIMAL,
+	flipped_lower		BOOLEAN,
+	flipped_upper		BOOLEAN
+);
+
 

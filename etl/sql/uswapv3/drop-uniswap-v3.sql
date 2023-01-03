@@ -15,5 +15,6 @@ DROP TABLE IF EXISTS
 	collect_nfpm,
 	inc_liq,
 	dec_liq,
-	dbg_swap_loop
+	dbg_swap_loop,
+	dbg_upd_pos
 CASCADE;

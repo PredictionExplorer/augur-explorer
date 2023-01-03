@@ -40,6 +40,21 @@ type IUniswapV3PoolEventsDBGSWAPLOOP struct {
 	FeeGrowthGlobalX128 *big.Int
 	Raw                 types.Log // Blockchain specific contextual infos
 }
+type IUniswapV3PoolEventsDBGUPDPOS struct {
+	Owner                      common.Address
+	TickLower                  *big.Int
+	TickUpper                  *big.Int
+	Tick                       *big.Int
+	LiquidityDelta             *big.Int
+	FeeGrowthGlobal0X128Before *big.Int
+	FeeGrowthGlobal1X128Before *big.Int
+	FeeGrowthInside0X128       *big.Int
+	FeeGrowthInside1X128       *big.Int
+	FlippedLower               bool
+	FlippedUpper               bool
+	Raw                        types.Log // Blockchain specific contextual infos
+}
+
 func address_array_to_string(addresses []common.Address) string {
 
 	var output string
@@ -444,6 +459,47 @@ func process_pool_debug_swap_events(tx *AugurTx,tx_hash common.Hash,pool_aid int
 				float_fees := uevm.BinaryFixedToBigFloat(128,evt.FeeGrowthGlobalX128)
 				evt.FeeGrowthDecoded = float_fees.String()
 				storagew.Insert_dbg_swap_loop(&evt)
+			}
+		}
+	}
+
+	return nil
+}
+func process_pool_upd_pos_events(tx *AugurTx,tx_hash common.Hash,pool_aid int64) error {
+
+	encoded_logs,err := mchain.GetReceiptLogs(tx_hash)
+	if err != nil { return err }
+
+	var decoded_logs []*types.Log
+	err = rlp.DecodeBytes(encoded_logs,&decoded_logs)
+	if err != nil { return err }
+
+	count := len(decoded_logs)
+	for i:=0;i<count;i++ {
+		lg := decoded_logs[i]
+		if len(lg.Topics) > 0 {
+			topic0 := lg.Topics[0].Bytes()
+			if bytes.Equal(topic0,evt_dbg_swap_loop) {
+				var evt UniV3DBGUpdPos
+				evt.BlockNum = tx.BlockNum
+				evt.TimeStamp = tx.TimeStamp
+				evt.TxIndex = int64(tx.TxIndex)
+				evt.LogIndex = int64(i)
+				evt.ContractAddr = lg.Address.String()
+				evt.PoolAid = pool_aid
+
+				var eth_evt IUniswapV3PoolEventsDBGUPDPOS
+				err := dbg_abi.UnpackIntoInterface(&eth_evt,"DBG_UPD_POS",lg.Data)
+				if err != nil { return err }
+				evt.Tick = eth_evt.Tick.Int64()
+				evt.LiquidityDelta = eth_evt.LiquidityDelta.String()
+				evt.FeeGrowth0Before=uevm.BinaryFixedToBigFloat(128,eth_evt.FeeGrowthGlobal0X128Before.String()).String()
+				evt.FeeGrowth1Before=uevm.BinaryFixedToBigFloat(128,eth_evt.FeeGrowthGlobal1X128Before.String()).String()
+				evt.FeeGrowth0Inside=uevm.BinaryFixedToBigFloat(128,eth_evt.FeeGrowthInside0X128.String()).String()
+				evt.FeeGrowth1Inside=uevm.BinaryFixedToBigFloat(128,eth_evt.FeeGrowthInside1X128.String()).String()
+				evt.FlippedLower = eth_evt.FlippedLower
+				evt.FlippedUpper= eth_evt.FlippedUpper
+				storagew.Insert_dbg_upd_pos_event(&evt)
 			}
 		}
 	}

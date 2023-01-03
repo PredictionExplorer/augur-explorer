@@ -187,3 +187,20 @@ type UniV3DBGSwapLoop struct {
 	FeeGrowthDecoded	string
 	FeeAmount			string
 }
+type UniV3DBGUpdPos struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	PoolAid				int64
+	ContractAddr		string
+	Tick				int64
+	OwnerAddr			string
+	LiquidityDelta		string
+	FeeGrowth0Before	string
+	FeeGrowth1Before	string
+	FeeGrowth0Inside	string
+	FeeGrowth1Inside	string
+	FlippedLower		bool
+	FlippedUpper		bool
+}

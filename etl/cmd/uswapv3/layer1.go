@@ -46,6 +46,7 @@ const (
 	DECREASE_LIQUIDITY			= "26f6a048ee9138f2c0ce266f322cb99228e8d619ae2bff30c67f8dcf9d2377b4"
 
 	DBG_SWAP_LOOP				= "f5b431d95ff8c2e6f40d1ab0bdd3f039c0cec559bfbe2b354dcd8e90c52d5929"
+	DBG_UPD_POS					= "2e894cce336ea758e6f37d72cafa9ef74e237e6e488a2f6ad4148c3fbca85f24"
 
 	DEFAULT_STATISTICS_DURATION	int64 = 24*60*60 // in seconds
 	DEFAULT_WAIT_TIME = 2000	// 2 seconds
@@ -72,6 +73,7 @@ var (
 	evt_increase_liquidity,_ = hex.DecodeString(INCREASE_LIQUIDITY)
 	evt_decrease_liquidity,_ = hex.DecodeString(DECREASE_LIQUIDITY)
 	evt_dbg_swap_loop,_  = hex.DecodeString(DBG_SWAP_LOOP)
+	evt_dbg_upd_pos,_ = hex.DecodeString(DBG_UPD_POS)
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
 
