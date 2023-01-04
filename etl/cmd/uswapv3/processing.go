@@ -54,6 +54,19 @@ type IUniswapV3PoolEventsDBGUPDPOS struct {
 	FlippedUpper               bool
 	Raw                        types.Log // Blockchain specific contextual infos
 }
+type IUniswapV3PoolEventsDBGMODPOS struct {
+	Owner           common.Address
+	TickLower       *big.Int
+	TickUpper       *big.Int
+	Slot0Tick       *big.Int
+	LiquidityDelta  *big.Int
+	LiquidityBefore *big.Int
+	Amount0         *big.Int
+	Amount1         *big.Int
+	SqrtPriceX96    *big.Int
+	Raw             types.Log // Blockchain specific contextual infos
+}
+
 
 func address_array_to_string(addresses []common.Address) string {
 
@@ -506,6 +519,47 @@ func process_pool_upd_pos_events(tx *AugurTx,tx_hash common.Hash,pool_aid int64)
 
 	return nil
 }
+func process_pool_mod_pos_events(tx *AugurTx,tx_hash common.Hash,pool_aid int64) error {
+
+	encoded_logs,err := mchain.GetReceiptLogs(tx_hash)
+	if err != nil { return err }
+
+	var decoded_logs []*types.Log
+	err = rlp.DecodeBytes(encoded_logs,&decoded_logs)
+	if err != nil { return err }
+
+	count := len(decoded_logs)
+	for i:=0;i<count;i++ {
+		lg := decoded_logs[i]
+		if len(lg.Topics) > 0 {
+			topic0 := lg.Topics[0].Bytes()
+			if bytes.Equal(topic0,evt_dbg_swap_loop) {
+				var evt UniV3DBGModPos
+				evt.BlockNum = tx.BlockNum
+				evt.TimeStamp = tx.TimeStamp
+				evt.TxIndex = int64(tx.TxIndex)
+				evt.LogIndex = int64(i)
+				evt.ContractAddr = lg.Address.String()
+				evt.PoolAid = pool_aid
+
+				var eth_evt IUniswapV3PoolEventsDBGMODPOS
+				err := dbg_abi.UnpackIntoInterface(&eth_evt,"DBG_MOD_POS",lg.Data)
+				if err != nil { return err }
+				evt.TickLower = eth_evt.TickLower.Int64()
+				evt.TickUpper= eth_evt.TickUpper.Int64()
+				evt.Slot0Tick= eth_evt.Slot0Tick.Int64()
+				evt.LiquidityDelta = eth_evt.LiquidityDelta.String()
+				evt.LiquidityBefore = eth_evt.LiquidityBefore.String()
+				evt.Amount0 = eth_evt.Amount0.String()
+				evt.Amount1 = eth_evt.Amount1.String()
+				evt.SqrtPriceX96 =uevm.BinaryFixedToBigFloat(96,eth_evt.SqrtPriceX96.String()).String()
+				storagew.Insert_dbg_mod_pos_event(&evt)
+			}
+		}
+	}
+
+	return nil
+}
 func process_pool_swap(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
 
 	Info.Printf(
@@ -603,6 +657,20 @@ func process_pool_swap(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		Error.Printf("Error processing debug swap events: %v\n",err)
 		os.Exit(1)
 	}
+
+	err = process_pool_upd_pos_events(tx,rec.TxHash,pool_aid)
+	if err != nil {
+		Info.Printf("Error processing debug upd_pos events: %v\n",err)
+		Error.Printf("Error processing debug upd_pos events: %v\n",err)
+		os.Exit(1)
+	}
+	err = process_pool_mod_pos_events(tx,rec.TxHash,pool_aid)
+	if err != nil {
+		Info.Printf("Error processing debug mod_pos events: %v\n",err)
+		Error.Printf("Error processing debug mod_pos events: %v\n",err)
+		os.Exit(1)
+	}
+
 
 }
 func process_pool_flash(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {

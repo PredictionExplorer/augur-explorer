@@ -428,3 +428,36 @@ func (sw *SQLStorageWrapper) Insert_dbg_upd_pos_event(evt *p.UniV3DBGUpdPos) {
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_dbg_mod_pos_event(evt *p.UniV3DBGModPos) {
+
+	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
+	owner_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.OwnerAddr)
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".dbg_mod_pos("+
+					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+					"pool_aid,owner_aid,tick_lower,tick_upper,slot0tick,"+
+					"liquidity_delta,liquidity_before,"+
+					"amount0,amount1,sqrt_priceX96"+
+					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)"
+	_,err := sw.S.Db().Exec(query,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxIndex,
+		evt.LogIndex,
+		contract_aid,
+		evt.PoolAid,
+		owner_aid,
+		evt.TickLower,
+		evt.TickUpper,
+		evt.Slot0Tick,
+		evt.LiquidityDelta,
+		evt.LiquidityBefore,
+		evt.Amount0,
+		evt.Amount1,
+		evt.SqrtPriceX96,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into dbg_mod_pos table: %v\n",err))
+		os.Exit(1)
+	}
+}

@@ -204,3 +204,20 @@ type UniV3DBGUpdPos struct {
 	FlippedLower		bool
 	FlippedUpper		bool
 }
+type UniV3DBGModPos struct {
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	PoolAid				int64
+	ContractAddr		string
+	OwnerAddr			string
+	TickLower			int64
+	TickUpper			int64
+	Slot0Tick			int64
+	LiquidityDelta		string
+	LiquidityBefore		string
+	Amount0				string
+	Amount1				string
+	SqrtPriceX96		string
+}

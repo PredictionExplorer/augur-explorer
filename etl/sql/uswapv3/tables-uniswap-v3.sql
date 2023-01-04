@@ -230,5 +230,24 @@ CREATE TABLE dbg_upd_pos(
 	flipped_lower		BOOLEAN,
 	flipped_upper		BOOLEAN
 );
+CREATE TABLE dbg_mod_pos(
+	block_num           BIGINT NOT NULL REFERENCES block(block_num) ON DELETE CASCADE,
+	time_stamp          TIMESTAMPTZ NOT NULL,
+	tx_index            INT NOT NULL,
+	log_index           INT NOT NULL,	-- this will be changing when sliding through ticks
+										--	(it isnt log index of MainNet, but log index of local states)
+										--	(the block num and tx_index is of MainNet though)
+	contract_aid        BIGINT NOT NULL,
+	pool_aid			BIGINT NOT NULL,
+	owner_aid			BIGINT NOT NULL,
+	tick_lower			INT NOT NULL,
+	tick_upper			INT NOT NULL,
+	slot0tick			INT NOT NULL,
+	liquidity_delta		DECIMAL,
+	liquidity_before	DECIMAL,
+	amount0				DECIMAL,
+	amount1				DECIMAL,
+	sqrt_priceX96		DECIMAL
+);
 
 
