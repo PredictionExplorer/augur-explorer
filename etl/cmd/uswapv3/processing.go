@@ -309,6 +309,19 @@ func process_pool_mint(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		os.Exit(1)
 	}
 
+	err = process_pool_upd_pos_events(tx,rec.TxHash,pool_aid)
+	if err != nil {
+		Info.Printf("Error processing debug upd_pos events: %v\n",err)
+		Error.Printf("Error processing debug upd_pos events: %v\n",err)
+		os.Exit(1)
+	}
+	err = process_pool_mod_pos_events(tx,rec.TxHash,pool_aid)
+	if err != nil {
+		Info.Printf("Error processing debug mod_pos events: %v\n",err)
+		Error.Printf("Error processing debug mod_pos events: %v\n",err)
+		os.Exit(1)
+	}
+
 }
 func process_pool_collect(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index int) {
 
@@ -432,6 +445,19 @@ func process_pool_burn(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		Info.Printf("Error executing ExecMint(): %v\n",err)
 		os.Exit(1)
 	}
+
+	err = process_pool_upd_pos_events(tx,rec.TxHash,pool_aid)
+	if err != nil {
+		Info.Printf("Error processing debug upd_pos events: %v\n",err)
+		Error.Printf("Error processing debug upd_pos events: %v\n",err)
+		os.Exit(1)
+	}
+	err = process_pool_mod_pos_events(tx,rec.TxHash,pool_aid)
+	if err != nil {
+		Info.Printf("Error processing debug mod_pos events: %v\n",err)
+		Error.Printf("Error processing debug mod_pos events: %v\n",err)
+		os.Exit(1)
+	}
 }
 func process_pool_debug_swap_events(tx *AugurTx,tx_hash common.Hash,pool_aid int64) error {
 
@@ -492,7 +518,7 @@ func process_pool_upd_pos_events(tx *AugurTx,tx_hash common.Hash,pool_aid int64)
 		lg := decoded_logs[i]
 		if len(lg.Topics) > 0 {
 			topic0 := lg.Topics[0].Bytes()
-			if bytes.Equal(topic0,evt_dbg_swap_loop) {
+			if bytes.Equal(topic0,evt_dbg_upd_pos) {
 				var evt UniV3DBGUpdPos
 				evt.BlockNum = tx.BlockNum
 				evt.TimeStamp = tx.TimeStamp
@@ -504,6 +530,7 @@ func process_pool_upd_pos_events(tx *AugurTx,tx_hash common.Hash,pool_aid int64)
 				var eth_evt IUniswapV3PoolEventsDBGUPDPOS
 				err := dbg_abi.UnpackIntoInterface(&eth_evt,"DBG_UPD_POS",lg.Data)
 				if err != nil { return err }
+				evt.OwnerAddr = eth_evt.Owner.String()
 				evt.Tick = eth_evt.Tick.Int64()
 				evt.LiquidityDelta = eth_evt.LiquidityDelta.String()
 				evt.FeeGrowth0Before=uevm.BinaryFixedToBigFloat(128,eth_evt.FeeGrowthGlobal0X128Before.String()).String()
@@ -533,7 +560,7 @@ func process_pool_mod_pos_events(tx *AugurTx,tx_hash common.Hash,pool_aid int64)
 		lg := decoded_logs[i]
 		if len(lg.Topics) > 0 {
 			topic0 := lg.Topics[0].Bytes()
-			if bytes.Equal(topic0,evt_dbg_swap_loop) {
+			if bytes.Equal(topic0,evt_dbg_mod_pos) {
 				var evt UniV3DBGModPos
 				evt.BlockNum = tx.BlockNum
 				evt.TimeStamp = tx.TimeStamp
@@ -545,6 +572,7 @@ func process_pool_mod_pos_events(tx *AugurTx,tx_hash common.Hash,pool_aid int64)
 				var eth_evt IUniswapV3PoolEventsDBGMODPOS
 				err := dbg_abi.UnpackIntoInterface(&eth_evt,"DBG_MOD_POS",lg.Data)
 				if err != nil { return err }
+				evt.OwnerAddr = eth_evt.Owner.String()
 				evt.TickLower = eth_evt.TickLower.Int64()
 				evt.TickUpper= eth_evt.TickUpper.Int64()
 				evt.Slot0Tick= eth_evt.Slot0Tick.Int64()
@@ -658,18 +686,6 @@ func process_pool_swap(storage *SQLStorage,tx *AugurTx,log *types.Log,log_index 
 		os.Exit(1)
 	}
 
-	err = process_pool_upd_pos_events(tx,rec.TxHash,pool_aid)
-	if err != nil {
-		Info.Printf("Error processing debug upd_pos events: %v\n",err)
-		Error.Printf("Error processing debug upd_pos events: %v\n",err)
-		os.Exit(1)
-	}
-	err = process_pool_mod_pos_events(tx,rec.TxHash,pool_aid)
-	if err != nil {
-		Info.Printf("Error processing debug mod_pos events: %v\n",err)
-		Error.Printf("Error processing debug mod_pos events: %v\n",err)
-		os.Exit(1)
-	}
 
 
 }

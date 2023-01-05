@@ -403,7 +403,7 @@ func (sw *SQLStorageWrapper) Insert_dbg_upd_pos_event(evt *p.UniV3DBGUpdPos) {
 					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
 					"pool_aid,owner_aid,tick,liquidity_delta,"+
 					"fee_growth0_before,fee_growth1_before,"+
-					"fee_growth0_inside,fee_growth1_insidem"+
+					"fee_growth0_inside,fee_growth1_inside,"+
 					"flipped_lower,flipped_upper"+
 					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)"
 	_,err := sw.S.Db().Exec(query,
