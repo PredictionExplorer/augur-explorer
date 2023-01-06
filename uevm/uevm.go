@@ -75,7 +75,7 @@ func UEVMDeploy(chain_id int64,tx_hash common.Hash,from common.Address,nonce uin
 	delete_empty_objects := false
 	out_state,err := state_db.Commit(delete_empty_objects)
 	if err != nil {
-		fmt.Printf("Error on state_db.Commit(): %v\n",err)
+		fmt.Printf("Errr on state_db.Commit(): %v\n",err)
 		return err,contract_addr,out_state,nil
 	}
 	fmt.Printf("state_hash after commit: %v\n",out_state.String())

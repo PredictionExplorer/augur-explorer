@@ -28,12 +28,18 @@ func redeploy(mchain *MiniChain,tx_hash common.Hash,initial_state_hash common.Ha
 		fmt.Printf("Error: %v\n",err)
 		os.Exit(1)
 	}
+	network_chain_id_big,err := eclient.NetworkID(context.Background())
+	if err != nil {
+		fmt.Printf("Can't get Network ID: %v\n",err)
+		os.Exit(1)
+	}
+	network_chain_id := network_chain_id_big.Int64()
 	tx,_,err := eclient.TransactionByHash(context.Background(),tx_hash)
 	if err != nil { return common.Address{},err }
 	rcpt,err := eclient.TransactionReceipt(context.Background(),tx_hash)
 	if err != nil { return common.Address{},err }
 	contract_address := rcpt.ContractAddress
-	tx_msg,err := tx.AsMessage(types.LatestSignerForChainID(big.NewInt(chain_id)),tx.GasPrice())
+	tx_msg,err := tx.AsMessage(types.LatestSignerForChainID(big.NewInt(network_chain_id)),tx.GasPrice())
 	if err != nil { return common.Address{},err }
 	
 	var rec Record
