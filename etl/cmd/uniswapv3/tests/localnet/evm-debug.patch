@@ -41,16 +41,18 @@
  		cost = operation.constantGas // For tracing
  		// Validate stack
 --- go-ethereum-1.10.26-orig/core/vm/instructions.go	2022-11-03 04:59:33.000000000 -0600
-+++ go-ethereum-1.10.26/core/vm/instructions.go	2022-11-09 15:43:13.575330899 -0600
-@@ -17,6 +17,7 @@
++++ go-ethereum-1.10.26/core/vm/instructions.go	2022-11-29 17:03:33.890013018 -0600
+@@ -17,7 +17,9 @@
  package vm
  
  import (
 +	"fmt"
  	"sync/atomic"
++	"encoding/hex"
  
  	"github.com/ethereum/go-ethereum/common"
-@@ -88,6 +89,7 @@
+ 	"github.com/ethereum/go-ethereum/core/types"
+@@ -88,6 +90,7 @@
  
  func opLt(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
  	x, y := scope.Stack.pop(), scope.Stack.peek()
@@ -58,7 +60,7 @@
  	if x.Lt(y) {
  		y.SetOne()
  	} else {
-@@ -276,6 +278,7 @@
+@@ -276,6 +279,7 @@
  
  func opCallValue(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
  	v, _ := uint256.FromBig(scope.Contract.value)
@@ -66,34 +68,53 @@
  	scope.Stack.push(v)
  	return nil, nil
  }
-@@ -540,6 +543,7 @@
+@@ -343,7 +347,9 @@
+ 
+ func opExtCodeSize(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+ 	slot := scope.Stack.peek()
+-	slot.SetUint64(uint64(interpreter.evm.StateDB.GetCodeSize(slot.Bytes20())))
++	addr := slot.Bytes20()
++	fmt.Printf("\topExtCodeSize() on addr %v\n",hex.EncodeToString(addr[:]))
++	slot.SetUint64(uint64(interpreter.evm.StateDB.GetCodeSize(addr)))
+ 	return nil, nil
+ }
+ 
+@@ -503,6 +509,7 @@
+ func opMstore(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+ 	// pop value of the stack
+ 	mStart, val := scope.Stack.pop(), scope.Stack.pop()
++	fmt.Printf("\topMStore() setting value %v (integer %v) at offset %v\n",val.String(),val.Uint64(),mStart.String())
+ 	scope.Memory.Set32(mStart.Uint64(), &val)
+ 	return nil, nil
+ }
+@@ -540,6 +547,7 @@
  	if !scope.Contract.validJumpdest(&pos) {
  		return nil, ErrInvalidJump
  	}
-+	fmt.Printf("\t\topJump() new pc = %v\n",pos)
++	fmt.Printf("\t\topJump() new pc = %v (integer %v)\n",pos,pos.Uint64())
  	*pc = pos.Uint64() - 1 // pc will be increased by the interpreter loop
  	return nil, nil
  }
-@@ -549,6 +553,7 @@
+@@ -549,6 +557,7 @@
  		return nil, errStopToken
  	}
  	pos, cond := scope.Stack.pop(), scope.Stack.pop()
-+	fmt.Printf("\t\topJumpi() new pc = %v\n",pos)
++	fmt.Printf("\t\topJumpi() new pc = %v (integer %v)\n",pos,pos.Uint64())
  	if !cond.IsZero() {
  		if !scope.Contract.validJumpdest(&pos) {
  			return nil, ErrInvalidJump
-@@ -876,8 +881,10 @@
+@@ -876,8 +885,10 @@
  	)
  	*pc += 1
  	if *pc < codeLen {
-+		fmt.Printf("\t\topPush1() pushing code len %v\n",scope.Contract.Code[*pc])
++		fmt.Printf("\t\topPush1() pushing value %v\n",scope.Contract.Code[*pc])
  		scope.Stack.push(integer.SetUint64(uint64(scope.Contract.Code[*pc])))
  	} else {
 +		fmt.Printf("\t\topPush1() pushing 0\n")
  		scope.Stack.push(integer.Clear())
  	}
  	return nil, nil
-@@ -899,8 +906,11 @@
+@@ -899,8 +910,11 @@
  		}
  
  		integer := new(uint256.Int)
@@ -108,7 +129,7 @@
  		*pc += size
  		return nil, nil
 --- go-ethereum-1.10.26-orig/core/state/statedb.go	2022-11-03 04:59:33.000000000 -0600
-+++ go-ethereum-1.10.26/core/state/statedb.go	2022-11-14 17:13:18.577350380 -0600
++++ go-ethereum-1.10.26/core/state/statedb.go	2022-11-15 12:41:54.703083185 -0600
 @@ -262,6 +262,7 @@
  
  // GetBalance retrieves the balance from the given address or 0 if object not found
@@ -147,8 +168,47 @@
  	prev = s.getDeletedStateObject(addr) // Note, prev might have been deleted, we need that!
  
  	var prevdestruct bool
-@@ -989,6 +996,7 @@
+@@ -897,6 +904,7 @@
+ // Commit writes the state to the underlying in-memory trie database.
+ func (s *StateDB) Commit(deleteEmptyObjects bool) (common.Hash, error) {
+ 	if s.dbErr != nil {
++		fmt.Printf("statedb.Commit() returns on s.dbErr\n")
+ 		return common.Hash{}, fmt.Errorf("commit aborted due to earlier error: %v", s.dbErr)
+ 	}
+ 	// Finalize any pending changes and merge everything into the tries
+@@ -919,11 +927,13 @@
+ 			// Write any storage changes in the state object to its storage trie
+ 			set, err := obj.CommitTrie(s.db)
+ 			if err != nil {
++				fmt.Printf("statedb.Commit() returns on obj.CommitTrie()\n")
+ 				return common.Hash{}, err
+ 			}
+ 			// Merge the dirty nodes of storage trie into global set
+ 			if set != nil {
+ 				if err := nodes.Merge(set); err != nil {
++					fmt.Printf("statedb.Commit() returns on nodes.Merge()\n")
+ 					return common.Hash{}, err
+ 				}
+ 				storageTrieNodes += set.Len()
+@@ -945,11 +955,13 @@
+ 	}
+ 	root, set, err := s.trie.Commit(true)
+ 	if err != nil {
++		fmt.Printf("statedb.Commit() returns on error in trie.Commit()\n")
+ 		return common.Hash{}, err
+ 	}
+ 	// Merge the dirty nodes of account trie into global set
+ 	if set != nil {
+ 		if err := nodes.Merge(set); err != nil {
++			fmt.Printf("statedb.Commit() returns on nodes.Merge()\n")
+ 			return common.Hash{}, err
+ 		}
+ 		accountTrieNodes = set.Len()
+@@ -987,8 +999,10 @@
+ 		s.snap, s.snapDestructs, s.snapAccounts, s.snapStorage = nil, nil, nil, nil
+ 	}
  	if err := s.db.TrieDB().Update(nodes); err != nil {
++		fmt.Printf("Error on db.TrieDB().Update(): %v\n",err)
  		return common.Hash{}, err
  	}
 +	fmt.Printf("statedb.Commit(): root = %v\n",root.String())
@@ -166,7 +226,7 @@
  }
  
 --- go-ethereum-1.10.26-orig/core/state/dump.go	2022-11-03 04:59:33.000000000 -0600
-+++ go-ethereum-1.10.26/core/state/dump.go	2022-11-14 18:42:16.745303784 -0600
++++ go-ethereum-1.10.26/core/state/dump.go	2022-11-16 19:04:09.669843597 -0600
 @@ -18,6 +18,7 @@
  
  import (
@@ -175,7 +235,23 @@
  	"fmt"
  	"time"
  
-@@ -136,7 +137,8 @@
+@@ -73,6 +74,7 @@
+ 
+ // OnAccount implements DumpCollector interface
+ func (d *Dump) OnAccount(addr common.Address, account DumpAccount) {
++	fmt.Printf("Dump::OnAccount() addr=%v , dump.AccountAddress=%+v\n",hex.EncodeToString(addr.Bytes()),account.Address)
+ 	d.Accounts[addr] = account
+ }
+ 
+@@ -113,6 +115,7 @@
+ 	if addr != (common.Address{}) {
+ 		dumpAccount.Address = &addr
+ 	}
++	fmt.Printf("IterativeDump: OnAccount() addr=%v , dump.AccountAddress=%+v\n",hex.EncodeToString(addr.Bytes()))
+ 	d.Encode(dumpAccount)
+ }
+ 
+@@ -136,7 +139,8 @@
  		start            = time.Now()
  		logged           = time.Now()
  	)
@@ -185,7 +261,7 @@
  	c.OnRoot(s.trie.Hash())
  
  	it := trie.NewIterator(s.trie.NodeIterator(conf.Start))
-@@ -154,6 +156,7 @@
+@@ -154,14 +158,17 @@
  		}
  		addrBytes := s.trie.GetKey(it.Key)
  		if addrBytes == nil {
@@ -193,7 +269,9 @@
  			// Preimage missing
  			missingPreimages++
  			if conf.OnlyWithAddresses {
-@@ -162,6 +165,7 @@
++				fmt.Printf("onlyWithAddresses is set, 'continue'-ing")
+ 				continue
+ 			}
  			account.SecureKey = it.Key
  		}
  		addr := common.BytesToAddress(addrBytes)
@@ -201,7 +279,7 @@
  		obj := newObject(s, addr, data)
  		if !conf.SkipCode {
  			account.Code = obj.Code(s.db)
-@@ -195,6 +199,7 @@
+@@ -195,6 +202,7 @@
  	if missingPreimages > 0 {
  		log.Warn("Dump incomplete due to missing preimages", "missing", missingPreimages)
  	}
@@ -209,3 +287,367 @@
  	log.Info("Trie dumping complete", "accounts", accounts,
  		"elapsed", common.PrettyDuration(time.Since(start)))
  
+--- go-ethereum-1.10.26-orig/core/vm/evm.go	2022-11-03 04:59:33.000000000 -0600
++++ go-ethereum-1.10.26/core/vm/evm.go	2023-01-06 11:30:28.087037077 -0600
+@@ -20,6 +20,8 @@
+ 	"math/big"
+ 	"sync/atomic"
+ 	"time"
++	"fmt"
++	"encoding/hex"
+ 
+ 	"github.com/ethereum/go-ethereum/common"
+ 	"github.com/ethereum/go-ethereum/crypto"
+@@ -167,6 +169,10 @@
+ // execution error or failed value transfer.
+ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
+ 	// Fail if we're trying to execute above the call depth limit
++	fmt.Printf("executing evm.Call(addr=%v)\n",addr.String())
++	input_len := len(input)
++	if input_len > 64 { input_len = 64 }
++	fmt.Printf("first 64 bytes of input: %v\n",hex.EncodeToString(input[0:input_len]))
+ 	if evm.depth > int(params.CallCreateDepth) {
+ 		return nil, gas, ErrDepth
+ 	}
+@@ -217,6 +223,7 @@
+ 		// Initialise a new contract and set the code that is to be used by the EVM.
+ 		// The contract is a scoped environment for this execution context only.
+ 		code := evm.StateDB.GetCode(addr)
++		fmt.Printf("evm.Call() length of code to execute: %v bytes\n",len(code))
+ 		if len(code) == 0 {
+ 			ret, err = nil, nil // gas is unchanged
+ 		} else {
+@@ -241,6 +248,7 @@
+ 		//} else {
+ 		//	evm.StateDB.DiscardSnapshot(snapshot)
+ 	}
++	fmt.Printf("evm.Call() returns (err=%v)\n",err)
+ 	return ret, gas, err
+ }
+ 
+@@ -253,6 +261,10 @@
+ // code with the caller as context.
+ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
+ 	// Fail if we're trying to execute above the call depth limit
++	fmt.Printf("executing evm.CallCode(addr=%v)\n",addr.String())
++	input_len := len(input)
++	if input_len > 64 { input_len = 64 }
++	fmt.Printf("first 64 bytes of input: %v\n",hex.EncodeToString(input[0:input_len]))
+ 	if evm.depth > int(params.CallCreateDepth) {
+ 		return nil, gas, ErrDepth
+ 	}
+@@ -291,6 +303,7 @@
+ 			gas = 0
+ 		}
+ 	}
++	fmt.Printf("evm.CallCode() returns (err=%v)\n",err)
+ 	return ret, gas, err
+ }
+ 
+@@ -300,6 +313,10 @@
+ // DelegateCall differs from CallCode in the sense that it executes the given address'
+ // code with the caller as context and the caller is set to the caller of the caller.
+ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
++	fmt.Printf("executing evm.DelegateCall(addr=%v)\n",addr.String())
++	input_len := len(input)
++	if input_len > 64 { input_len = 64 }
++	fmt.Printf("first 64 bytes of input: %v\n",hex.EncodeToString(input[0:input_len]))
+ 	// Fail if we're trying to execute above the call depth limit
+ 	if evm.depth > int(params.CallCreateDepth) {
+ 		return nil, gas, ErrDepth
+@@ -331,6 +348,7 @@
+ 			gas = 0
+ 		}
+ 	}
++	fmt.Printf("evm.DelegateCall() returns (err=%v)\n",err)
+ 	return ret, gas, err
+ }
+ 
+@@ -340,6 +358,10 @@
+ // instead of performing the modifications.
+ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
+ 	// Fail if we're trying to execute above the call depth limit
++	fmt.Printf("executing evm.StaticCall(addr=%v)\n",addr.String())
++	input_len := len(input)
++	if input_len > 64 { input_len = 64 }
++	fmt.Printf("first 64 bytes of input: %v\n",hex.EncodeToString(input[0:input_len]))
+ 	if evm.depth > int(params.CallCreateDepth) {
+ 		return nil, gas, ErrDepth
+ 	}
+@@ -387,6 +409,7 @@
+ 			gas = 0
+ 		}
+ 	}
++	fmt.Printf("evm.StaticCall() returns (err=%v)\n",err)
+ 	return ret, gas, err
+ }
+ 
+@@ -508,8 +531,13 @@
+ func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *big.Int, salt *uint256.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
+ 	codeAndHash := &codeAndHash{code: code}
+ 	contractAddr = crypto.CreateAddress2(caller.Address(), salt.Bytes32(), codeAndHash.Hash().Bytes())
++	fmt.Printf("Create2() generated contract address: %v\n",contractAddr.String())
+ 	return evm.create(caller, codeAndHash, gas, endowment, contractAddr, CREATE2)
+ }
+ 
++func (evm *EVM) Create3(caller ContractRef, code []byte, gas uint64, value *big.Int,fixed_addr common.Address) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
++	contractAddr = fixed_addr
++	return evm.create(caller, &codeAndHash{code: code}, gas, value, contractAddr, CREATE)
++}
+ // ChainConfig returns the environment's chain configuration
+ func (evm *EVM) ChainConfig() *params.ChainConfig { return evm.chainConfig }
+--- go-ethereum-1.10.26-orig/params/protocol_params.go	2022-11-03 04:59:33.000000000 -0600
++++ go-ethereum-1.10.26/params/protocol_params.go	2022-11-09 13:22:45.468624571 -0600
+@@ -123,7 +123,7 @@
+ 	ElasticityMultiplier     = 2          // Bounds the maximum gas limit an EIP-1559 block may have.
+ 	InitialBaseFee           = 1000000000 // Initial base fee for EIP-1559 blocks.
+ 
+-	MaxCodeSize = 24576 // Maximum bytecode to permit for a contract
++	MaxCodeSize = 1924576 // Maximum bytecode to permit for a contract
+ 
+ 	// Precompiled contract gas prices
+ 
+--- go-ethereum-1.10.26-orig/trie/database.go	2022-11-03 04:59:33.000000000 -0600
++++ go-ethereum-1.10.26/trie/database.go	2022-11-16 18:47:04.965150967 -0600
+@@ -291,7 +291,10 @@
+ 	}
+ 	var preimage *preimageStore
+ 	if config != nil && config.Preimages {
++		fmt.Printf("trie.NewDatabaseWithConfig() preimages enabled\n")
+ 		preimage = newPreimageStore(diskdb)
++	} else {
++		fmt.Printf("trie.NewDatabaseWithConfig() preimages enabled\n")
+ 	}
+ 	db := &Database{
+ 		diskdb: diskdb,
+@@ -773,7 +776,7 @@
+ func (db *Database) Update(nodes *MergedNodeSet) error {
+ 	db.lock.Lock()
+ 	defer db.lock.Unlock()
+-
++	fmt.Printf("trie.Database.Update()\n")
+ 	// Insert dirty nodes into the database. In the same tree, it must be
+ 	// ensured that children are inserted first, then parent so that children
+ 	// can be linked with their parent correctly.
+--- go-ethereum-1.10.26-orig/trie/secure_trie.go	2022-11-03 04:59:33.000000000 -0600
++++ go-ethereum-1.10.26/trie/secure_trie.go	2022-11-16 18:48:23.447289362 -0600
+@@ -203,6 +203,7 @@
+ 		return key
+ 	}
+ 	if t.preimages == nil {
++		fmt.Printf("secure_trie.go:GetKey() preimages is nil\n")
+ 		return nil
+ 	}
+ 	return t.preimages.preimage(common.BytesToHash(shaKey))
+--- go-ethereum-1.10.26-orig/trie/trie.go	2022-11-03 04:59:33.000000000 -0600
++++ go-ethereum-1.10.26/trie/trie.go	2022-12-05 16:28:38.790381930 -0600
+@@ -18,9 +18,10 @@
+ package trie
+ 
+ import (
++	"fmt"
++	"encoding/hex"
+ 	"bytes"
+ 	"errors"
+-	"fmt"
+ 
+ 	"github.com/ethereum/go-ethereum/common"
+ 	"github.com/ethereum/go-ethereum/crypto"
+@@ -108,15 +109,18 @@
+ 	if root != (common.Hash{}) && root != emptyRoot {
+ 		rootnode, err := trie.resolveHash(root[:], nil)
+ 		if err != nil {
++			fmt.Printf("trie.New() could not resolve root hash %v\n",root.String())
+ 			return nil, err
+ 		}
+ 		trie.root = rootnode
+ 	}
++	fmt.Printf("trie.New() created trie with root = %v\n",root.String())
+ 	return trie, nil
+ }
+ 
+ // NewEmpty is a shortcut to create empty tree. It's mostly used in tests.
+ func NewEmpty(db *Database) *Trie {
++	fmt.Printf("trie.NewEmpty() called\n")
+ 	tr, _ := New(common.Hash{}, common.Hash{}, db)
+ 	return tr
+ }
+@@ -133,7 +137,9 @@
+ 	res, err := t.TryGet(key)
+ 	if err != nil {
+ 		log.Error(fmt.Sprintf("Unhandled trie error: %v", err))
++		fmt.Printf("trie.Get() returns error: %v\n",err)
+ 	}
++	fmt.Printf("trie.Get() returns key %v , value %v\n",hex.EncodeToString(key),hex.EncodeToString(res))
+ 	return res
+ }
+ 
+@@ -268,6 +274,7 @@
+ // The value bytes must not be modified by the caller while they are
+ // stored in the trie.
+ func (t *Trie) Update(key, value []byte) {
++	fmt.Printf("trie.Update() key %v , value %v\n",hex.EncodeToString(key),hex.EncodeToString(value))
+ 	if err := t.TryUpdate(key, value); err != nil {
+ 		log.Error(fmt.Sprintf("Unhandled trie error: %v", err))
+ 	}
+@@ -307,6 +314,7 @@
+ }
+ 
+ func (t *Trie) insert(n node, prefix, key []byte, value node) (bool, node, error) {
++	fmt.Printf("trie.insert() key %v , value %v\n",hex.EncodeToString(key),value.fstring("dump"))
+ 	if len(key) == 0 {
+ 		if v, ok := n.(valueNode); ok {
+ 			return !bytes.Equal(v, value.(valueNode)), value, nil
+@@ -388,6 +396,7 @@
+ // Delete removes any existing value for key from the trie.
+ func (t *Trie) Delete(key []byte) {
+ 	if err := t.TryDelete(key); err != nil {
++		fmt.Printf("Error during Delete(): %v\n",err)
+ 		log.Error(fmt.Sprintf("Unhandled trie error: %v", err))
+ 	}
+ }
+@@ -395,13 +404,17 @@
+ // TryDelete removes any existing value for key from the trie.
+ // If a node was not found in the database, a MissingNodeError is returned.
+ func (t *Trie) TryDelete(key []byte) error {
++	fmt.Printf("trie.TryDelete() begins\n")
+ 	t.unhashed++
+ 	k := keybytesToHex(key)
+-	_, n, err := t.delete(t.root, nil, k)
++	res, n, err := t.delete(t.root, nil, k)
++	fmt.Printf("TryDelete() result: %v , err = %v\n",res, err)
+ 	if err != nil {
++		fmt.Printf("trie.TryDelete() returns error: %v\n",err)
+ 		return err
+ 	}
+ 	t.root = n
++	fmt.Printf("trie.TryDelete() returns success")
+ 	return nil
+ }
+ 
+@@ -409,10 +422,12 @@
+ // It reduces the trie to minimal form by simplifying
+ // nodes on the way up after deleting recursively.
+ func (t *Trie) delete(n node, prefix, key []byte) (bool, node, error) {
++	fmt.Printf("trie.delete() key %v\n",hex.EncodeToString(key))
+ 	switch n := n.(type) {
+ 	case *shortNode:
+ 		matchlen := prefixLen(key, n.Key)
+ 		if matchlen < len(n.Key) {
++			fmt.Printf("trie.delete(): matchlen<len(key), returning false\n")
+ 			return false, n, nil // don't replace n on mismatch
+ 		}
+ 		if matchlen == len(key) {
+@@ -420,7 +435,7 @@
+ 			// it in the deletion set. The same the valueNode doesn't
+ 			// need to be tracked at all since it's always embedded.
+ 			t.tracer.onDelete(prefix)
+-
++			fmt.Printf("trie.delete() matchlen = len(key) returning true\n")
+ 			return true, nil, nil // remove n entirely for whole matches
+ 		}
+ 		// The key is longer than n.Key. Remove the remaining suffix
+@@ -429,6 +444,7 @@
+ 		// longer than n.Key.
+ 		dirty, child, err := t.delete(n.Val, append(prefix, key[:len(n.Key)]...), key[len(n.Key):])
+ 		if !dirty || err != nil {
++			fmt.Printf("trie.delete() case shortNode not dirty, returning false: dirty=%v err=%v\n",dirty,err)
+ 			return false, n, err
+ 		}
+ 		switch child := child.(type) {
+@@ -443,14 +459,16 @@
+ 			// always creates a new slice) instead of append to
+ 			// avoid modifying n.Key since it might be shared with
+ 			// other nodes.
++			fmt.Printf("trie.delete() child type case 'shortNode', return true\n")
+ 			return true, &shortNode{concat(n.Key, child.Key...), child.Val, t.newFlag()}, nil
+ 		default:
++			fmt.Printf("trie.delete() child type case 'default', return true\n")
+ 			return true, &shortNode{n.Key, child, t.newFlag()}, nil
+ 		}
+-
+ 	case *fullNode:
+ 		dirty, nn, err := t.delete(n.Children[key[0]], append(prefix, key[0]), key[1:])
+ 		if !dirty || err != nil {
++			fmt.Printf("trie.delete() case fullNode not dirty, returning false, err:=%v\n",err)
+ 			return false, n, err
+ 		}
+ 		n = n.copy()
+@@ -462,6 +480,7 @@
+ 		// has at least two children after the deletion, and cannot be reduced to
+ 		// a short node.
+ 		if nn != nil {
++			fmt.Printf("trie.delete() return true\n")
+ 			return true, n, nil
+ 		}
+ 		// Reduction:
+@@ -495,6 +514,7 @@
+ 				// check.
+ 				cnode, err := t.resolve(n.Children[pos], append(prefix, byte(pos)))
+ 				if err != nil {
++					fmt.Printf("trie.delete() resolve() failed\n")
+ 					return false, nil, err
+ 				}
+ 				if cnode, ok := cnode.(*shortNode); ok {
+@@ -504,20 +524,25 @@
+ 					t.tracer.onDelete(append(prefix, byte(pos)))
+ 
+ 					k := append([]byte{byte(pos)}, cnode.Key...)
++					fmt.Printf("trie.delete() return true\n")
+ 					return true, &shortNode{k, cnode.Val, t.newFlag()}, nil
+ 				}
+ 			}
+ 			// Otherwise, n is replaced by a one-nibble short node
+ 			// containing the child.
++			fmt.Printf("trie.delete() return true\n")
+ 			return true, &shortNode{[]byte{byte(pos)}, n.Children[pos], t.newFlag()}, nil
+ 		}
+ 		// n still contains at least two values and cannot be reduced.
++		fmt.Printf("trie.delete() return true\n")
+ 		return true, n, nil
+ 
+ 	case valueNode:
++		fmt.Printf("trie.delete() return true (valueNode)\n")
+ 		return true, nil, nil
+ 
+ 	case nil:
++		fmt.Printf("trie.delete() case 'nil', returning false\n")
+ 		return false, nil, nil
+ 
+ 	case hashNode:
+@@ -526,12 +551,15 @@
+ 		// the path to the value in the trie.
+ 		rn, err := t.resolveHash(n, prefix)
+ 		if err != nil {
++			fmt.Printf("trie.delete() resolveHash() failed, returning false\n")
+ 			return false, nil, err
+ 		}
+ 		dirty, nn, err := t.delete(rn, prefix, key)
+ 		if !dirty || err != nil {
++			fmt.Printf("trie.delete() case hashNode not dirty, returning false\n")
+ 			return false, rn, err
+ 		}
++		fmt.Printf("trie.delete() return true (hashNode)\n")
+ 		return true, nn, nil
+ 
+ 	default:
+@@ -579,7 +607,9 @@
+ func (t *Trie) Hash() common.Hash {
+ 	hash, cached, _ := t.hashRoot()
+ 	t.root = cached
+-	return common.BytesToHash(hash.(hashNode))
++	h:=common.BytesToHash(hash.(hashNode))
++	fmt.Printf("trie.Hash() returns %v\n",h.String())
++	return h
+ }
+ 
+ // Commit collects all dirty nodes in the trie and replace them with the
+@@ -597,7 +627,7 @@
+ 	// Derive the hash for all dirty nodes first. We hold the assumption
+ 	// in the following procedure that all nodes are hashed.
+ 	rootHash := t.Hash()
+-
++	fmt.Printf("trie.Commit() rootHash=%v\n",rootHash.String())
+ 	// Do a quick check if we really need to commit. This can happen e.g.
+ 	// if we load a trie for reading storage values, but don't write to it.
+ 	if hashedNode, dirty := t.root.cache(); !dirty {

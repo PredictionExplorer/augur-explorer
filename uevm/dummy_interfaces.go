@@ -1,7 +1,7 @@
 package uevm				// EVM for Uniswap (v3)
 
 import (
-	"fmt"
+	//"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/rpc"
@@ -101,7 +101,7 @@ func NewDummyBlockContext(bnum,t *big.Int) *vm.BlockContext {
 			db.AddBalance(recipient, amount)
 			negative := big.NewInt(0).Cmp(db.GetBalance(sender)) > 0
 			if negative {
-				panic(fmt.Sprintf("failed transferring amount %v from %v to %v , result is negative balance %v",amount.String(),sender.String(),recipient.String(),db.GetBalance(sender).String()))
+				//panic(fmt.Sprintf("failed transferring amount %v from %v to %v , result is negative balance %v",amount.String(),sender.String(),recipient.String(),db.GetBalance(sender).String()))
 			}
 	}
 	output.GetHash = func (n uint64) common.Hash { return common.Hash{}}
