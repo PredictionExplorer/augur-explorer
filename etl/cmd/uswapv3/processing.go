@@ -153,9 +153,24 @@ func process_pool_created(storage *SQLStorage,tx *AugurTx,log *types.Log,log_ind
 		os.Exit(1)
 	}
 
+	var new_state common.Hash
+	err,new_state = mchain.MaybeAddDummyTokens(block_ctx,rec.TxHash,tx_ctx,last_line_rec.StateRoot,token0_addr,token1_addr,&last_line_rec)
+	if err != nil {
+		Info.Printf("Error in dummy token registration: %v\n",err)
+		Error.Printf("Error in dummy token registration: %v\n",err)
+	}
+	last_line_rec.StateRoot = new_state
+	err,new_state = mchain.MaybeAddDummyTokens(block_ctx,rec.TxHash,tx_ctx,last_line_rec.StateRoot,token0_addr,token1_addr,&last_line_rec)
+	if err != nil {
+		Info.Printf("Error in dummy token registration: %v\n",err)
+		Error.Printf("Error in dummy token registration: %v\n",err)
+	}
+	last_line_rec.StateRoot  = new_state
+
 	err,_ = mchain.ExecCall(block_ctx,rec.TxHash,tx_ctx,input,value,ctrct_addr,last_line_rec.StateRoot,&rec)
 	if err != nil {
 		Info.Printf("Error in ExecCall(): %v\n",err)
+		Error.Printf("Error in ExecCall(): %v\n",err)
 		os.Exit(1)
 	}
 }
