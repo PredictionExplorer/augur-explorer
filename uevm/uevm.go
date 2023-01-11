@@ -39,6 +39,7 @@ func UEVMDeploy(chain_id int64,tx_hash common.Hash,from common.Address,nonce uin
 	fmt.Printf("from = %v\n",from.String())
 	state_db,err := state.New(state_root,*sdb,nil)
 	if err != nil {
+		fmt.Printf("Error at state.New(): %v\n",err)
 		return err,common.Address{},common.Hash{},nil
 	}
 	state_db.Prepare(tx_hash,1)

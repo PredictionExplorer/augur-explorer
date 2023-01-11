@@ -6,6 +6,7 @@ import (
 	"errors"
 	"context"
 	"math/big"
+	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -25,7 +26,7 @@ func redeploy(mchain *MiniChain,tx_hash common.Hash,initial_state_hash common.Ha
 	RPC_URL = os.Getenv("RPC_URL")
 	eclient, err := ethclient.Dial(RPC_URL)
 	if err!=nil {
-		fmt.Printf("Error: %v\n",err)
+		fmt.Printf("Error at ethclient.Dial(): %v\n",err)
 		os.Exit(1)
 	}
 	network_chain_id_big,err := eclient.NetworkID(context.Background())
@@ -35,12 +36,12 @@ func redeploy(mchain *MiniChain,tx_hash common.Hash,initial_state_hash common.Ha
 	}
 	network_chain_id := network_chain_id_big.Int64()
 	tx,_,err := eclient.TransactionByHash(context.Background(),tx_hash)
-	if err != nil { return common.Address{},err }
+	if err != nil { return common.Address{},errors.New(fmt.Sprintf("TransactionByHash: %v",err)) }
 	rcpt,err := eclient.TransactionReceipt(context.Background(),tx_hash)
-	if err != nil { return common.Address{},err }
+	if err != nil { return common.Address{},errors.New(fmt.Sprintf("TransactionReceipt: %v",err)) }
 	contract_address := rcpt.ContractAddress
 	tx_msg,err := tx.AsMessage(types.LatestSignerForChainID(big.NewInt(network_chain_id)),tx.GasPrice())
-	if err != nil { return common.Address{},err }
+	if err != nil { return common.Address{},errors.New(fmt.Sprintf("AsMessage(): %v",err)) }
 	
 	var rec Record
 	rec.BlockNum = MainNetBlockNum // we have to hardcode this block because we are testing MainNet
@@ -51,25 +52,35 @@ func redeploy(mchain *MiniChain,tx_hash common.Hash,initial_state_hash common.Ha
 	err,generated_addr,_ := mchain.ExecDeploy(chain_id,tx_hash,tx_msg.From(),tx.Nonce(),input,contract_address,initial_state_hash,&rec)
 	return generated_addr,err
 }
+func deploycode(mchain *MiniChain,code []byte,contract_address common.Address,tx_hash common.Hash,initial_state_hash common.Hash) (common.Address,error) {
+
+	var rec Record
+	rec.BlockNum = MainNetBlockNum // we have to hardcode this block because we are testing MainNet
+	rec.TxHash = tx_hash
+	err,generated_addr,_ := mchain.ExecDeploy(chain_id,tx_hash,common.Address{},0, code,contract_address,initial_state_hash,&rec)
+	return generated_addr,err
+}
 func main() {
 
-	if len(os.Args) < 2 {
+	if len(os.Args) < 7 {
 		fmt.Printf(
-			"Usage: \n\t\t%v [dir] [factory_tx] [nft_descriptor_tx] [nft_manager_tx] [swaprouter_tx]\n\t\t"+
-			"Creates required files/databases in [dir] using transaction hashes to main contract deployments (note: transaction hashes, not contract addresses)\"\n\n",os.Args[0],
+			"Usage: \n\t\t%v [dir] [weth_addr] [factory_tx] [nft_descriptor_tx] [nft_manager_tx] [swaprouter_tx]\n\t\t"+
+			"Creates required files/databases in [dir] using transaction hashes to main contract deployments (note: transaction hashes, not contract addresses)\n\"\t\tNote: default WETH addr at MainNet: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2\n\n",os.Args[0],
 		)
 		os.Exit(1)
 	}
+	defdir := os.Args[1]
 	minichain_fname := fmt.Sprintf("%v/%v",os.Args[1],DEFAULT_MCHAIN_NAME)
-	receipts_dir := fmt.Sprintf("%v/%v",os.Args[1],DEFAULT_RECEIPTS_NAME)
-	evm_dir := fmt.Sprintf("%v/%v",os.Args[1],DEFAULT_EVM_DB_NAME)
-	factory_hash := common.HexToHash(os.Args[2])
-	nft_descriptor_hash := common.HexToHash(os.Args[3])
-	nft_manager_hash := common.HexToHash(os.Args[4])
-	swaprouter_hash := common.HexToHash(os.Args[5])
+	receipts_name := fmt.Sprintf("%v/%v",defdir,DEFAULT_RECEIPTS_NAME)
+	evm_dir := fmt.Sprintf("%v/%v",defdir,DEFAULT_EVM_DB_NAME)
+	weth_addr := common.HexToAddress(os.Args[2])
+	factory_hash := common.HexToHash(os.Args[3])
+	nft_descriptor_hash := common.HexToHash(os.Args[4])
+	nft_manager_hash := common.HexToHash(os.Args[5])
+	swaprouter_hash := common.HexToHash(os.Args[6])
 
 	fmt.Printf("Using %v for EVM db\n",evm_dir)
-	fmt.Printf("Using %v for receipts\n",receipts_dir)
+	fmt.Printf("Using %v for receipts\n",receipts_name)
 	fmt.Printf("Using %v for storing minichain\n",minichain_fname)
 	_,db := OpenDB(evm_dir)
 	if _, err := os.Stat(minichain_fname); errors.Is(err, os.ErrNotExist) {
@@ -78,7 +89,7 @@ func main() {
 		fmt.Printf("File %v already exists, refusing to overwrite existing file\n",minichain_fname)
 		os.Exit(1)
 	}
-	mchain,err := OpenMiniChain(minichain_fname,receipts_dir)
+	mchain,err := OpenMiniChain(minichain_fname,receipts_name)
 	if err != nil {
 		fmt.Printf("Error opening minichain: %v\n",err)
 		os.Exit(1)
@@ -87,13 +98,28 @@ func main() {
 	var rec Record
 	err = mchain.AppendLine(&rec)
 	if err != nil {
-		fmt.Printf("Error: %v\n",err)
+		fmt.Printf("Error at AppendLine(): %v\n",err)
 		os.Exit(1)
 	}
+
+	weth_code,err := hex.DecodeString(WethBin)
+	if err != nil {
+		fmt.Printf("Error decoding WETH contract binary: %v\n",err)
+		os.Exit(1)
+	}
+	fmt.Printf("Deploying WETH at addr %v\n",weth_addr.String())
+	_,err = deploycode(&mchain,weth_code,weth_addr,common.Hash{},rec.StateRoot)
+	if err != nil {
+		fmt.Printf("Error deploying WETH to local state db : %v\n",err)
+		os.Exit(1)
+	}
+
 	var caddr common.Address
 
+	rec,err = mchain.ReadLastLine()
+	if err != nil { fmt.Printf("Error at ReadLastLine(): %v\n",err); os.Exit(1); }
 	caddr,err = redeploy(&mchain,factory_hash,rec.StateRoot)
-	if err != nil { fmt.Printf("Error: %v\n",err); os.Exit(1); }
+	if err != nil { fmt.Printf("Error after redeploy(): %v\n",err); os.Exit(1); }
 	fmt.Printf("Deployed Factory contract: %v\n",caddr.String())
 
 	rec,err = mchain.ReadLastLine()

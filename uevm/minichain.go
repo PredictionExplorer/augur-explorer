@@ -109,8 +109,8 @@ func (self *MiniChain) ReadLastLine() (Record,error) {
 	r.BlockHash = common.HexToHash(string(rec[10:10+66]))
 	r.TxHash= common.HexToHash(string(rec[83:83+66]))
 	r.StateRoot = common.HexToHash(string(rec[150:150+66]))
-	fmt.Printf("state root = %v\n",r.StateRoot.String())
-
+	fmt.Printf("ReadLastLine(): state root = %v\n",r.StateRoot.String())
+	fmt.Printf("ReadLastLine(): err=%v\n",err)
 	return r,err
 }
 func (self *MiniChain) AppendLine(r *Record) error {
@@ -141,11 +141,13 @@ func (self *MiniChain) ExecDeploy(chain_id int64,tx_hash common.Hash,from common
 	fmt.Printf("ExecDeploy(): tx_hash=%v\n",tx_hash.String())
 	err,addr,root,encoded_logs := UEVMDeploy(chain_id,tx_hash,from,nonce,contract_code,contract_addr,self.sdb,initial_state_root)
 	if err != nil {
+		fmt.Printf("Error at UEVMDeploy(): %v\n",err)
 		return err,addr,common.Hash{}
 	}
 	r.StateRoot = root
 	err = self.AppendLine(r)
 	if err != nil {
+		fmt.Printf("Error after AppendLine(): %v\n",err)
 		return err,common.Address{},common.Hash{}
 	}
 	lenlogs := 0
