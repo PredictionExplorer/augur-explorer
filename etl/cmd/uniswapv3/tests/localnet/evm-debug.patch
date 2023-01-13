@@ -41,7 +41,7 @@
  		cost = operation.constantGas // For tracing
  		// Validate stack
 --- go-ethereum-1.10.26-orig/core/vm/instructions.go	2022-11-03 04:59:33.000000000 -0600
-+++ go-ethereum-1.10.26/core/vm/instructions.go	2022-11-29 17:03:33.890013018 -0600
++++ go-ethereum-1.10.26/core/vm/instructions.go	2023-01-10 19:06:50.916465082 -0600
 @@ -17,7 +17,9 @@
  package vm
  
@@ -68,7 +68,14 @@
  	scope.Stack.push(v)
  	return nil, nil
  }
-@@ -343,7 +347,9 @@
+@@ -337,13 +341,16 @@
+ 	if overflow || uint64(len(interpreter.returnData)) < end64 {
+ 		return nil, ErrReturnDataOutOfBounds
+ 	}
++	fmt.Printf("\topReturnDataCopy() data: \n",interpreter.returnData[offset64:end64])
+ 	scope.Memory.Set(memOffset.Uint64(), length.Uint64(), interpreter.returnData[offset64:end64])
+ 	return nil, nil
+ }
  
  func opExtCodeSize(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
  	slot := scope.Stack.peek()
@@ -79,7 +86,7 @@
  	return nil, nil
  }
  
-@@ -503,6 +509,7 @@
+@@ -503,6 +510,7 @@
  func opMstore(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
  	// pop value of the stack
  	mStart, val := scope.Stack.pop(), scope.Stack.pop()
@@ -87,7 +94,7 @@
  	scope.Memory.Set32(mStart.Uint64(), &val)
  	return nil, nil
  }
-@@ -540,6 +547,7 @@
+@@ -540,6 +548,7 @@
  	if !scope.Contract.validJumpdest(&pos) {
  		return nil, ErrInvalidJump
  	}
@@ -95,7 +102,7 @@
  	*pc = pos.Uint64() - 1 // pc will be increased by the interpreter loop
  	return nil, nil
  }
-@@ -549,6 +557,7 @@
+@@ -549,6 +558,7 @@
  		return nil, errStopToken
  	}
  	pos, cond := scope.Stack.pop(), scope.Stack.pop()
@@ -103,7 +110,7 @@
  	if !cond.IsZero() {
  		if !scope.Contract.validJumpdest(&pos) {
  			return nil, ErrInvalidJump
-@@ -876,8 +885,10 @@
+@@ -876,8 +886,10 @@
  	)
  	*pc += 1
  	if *pc < codeLen {
@@ -114,7 +121,7 @@
  		scope.Stack.push(integer.Clear())
  	}
  	return nil, nil
-@@ -899,8 +910,11 @@
+@@ -899,8 +911,11 @@
  		}
  
  		integer := new(uint256.Int)
@@ -288,7 +295,7 @@
  		"elapsed", common.PrettyDuration(time.Since(start)))
  
 --- go-ethereum-1.10.26-orig/core/vm/evm.go	2022-11-03 04:59:33.000000000 -0600
-+++ go-ethereum-1.10.26/core/vm/evm.go	2023-01-06 11:30:28.087037077 -0600
++++ go-ethereum-1.10.26/core/vm/evm.go	2023-01-10 10:04:29.537095488 -0600
 @@ -20,6 +20,8 @@
  	"math/big"
  	"sync/atomic"
@@ -317,15 +324,18 @@
  		if len(code) == 0 {
  			ret, err = nil, nil // gas is unchanged
  		} else {
-@@ -241,6 +248,7 @@
+@@ -241,6 +248,10 @@
  		//} else {
  		//	evm.StateDB.DiscardSnapshot(snapshot)
  	}
++	lret := len(ret)
++	if lret > 64 { lret = 64 }
++	fmt.Printf("Call() returns output: %v\n",hex.EncodeToString(ret[0:lret]))
 +	fmt.Printf("evm.Call() returns (err=%v)\n",err)
  	return ret, gas, err
  }
  
-@@ -253,6 +261,10 @@
+@@ -253,6 +264,10 @@
  // code with the caller as context.
  func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
  	// Fail if we're trying to execute above the call depth limit
@@ -336,15 +346,18 @@
  	if evm.depth > int(params.CallCreateDepth) {
  		return nil, gas, ErrDepth
  	}
-@@ -291,6 +303,7 @@
+@@ -291,6 +306,10 @@
  			gas = 0
  		}
  	}
++	lret := len(ret)
++	if lret > 64 { lret = 64 }
++	fmt.Printf("CallCode() returns output: %v\n",hex.EncodeToString(ret[0:lret]))
 +	fmt.Printf("evm.CallCode() returns (err=%v)\n",err)
  	return ret, gas, err
  }
  
-@@ -300,6 +313,10 @@
+@@ -300,6 +319,10 @@
  // DelegateCall differs from CallCode in the sense that it executes the given address'
  // code with the caller as context and the caller is set to the caller of the caller.
  func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
@@ -355,15 +368,18 @@
  	// Fail if we're trying to execute above the call depth limit
  	if evm.depth > int(params.CallCreateDepth) {
  		return nil, gas, ErrDepth
-@@ -331,6 +348,7 @@
+@@ -331,6 +354,10 @@
  			gas = 0
  		}
  	}
++	lret := len(ret)
++	if lret > 64 { lret = 64 }
++	fmt.Printf("DelegateCall() returns output: %v\n",hex.EncodeToString(ret[0:lret]))
 +	fmt.Printf("evm.DelegateCall() returns (err=%v)\n",err)
  	return ret, gas, err
  }
  
-@@ -340,6 +358,10 @@
+@@ -340,6 +367,10 @@
  // instead of performing the modifications.
  func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
  	// Fail if we're trying to execute above the call depth limit
@@ -374,15 +390,28 @@
  	if evm.depth > int(params.CallCreateDepth) {
  		return nil, gas, ErrDepth
  	}
-@@ -387,6 +409,7 @@
+@@ -387,6 +418,10 @@
  			gas = 0
  		}
  	}
++	lret := len(ret)
++	if lret > 64 { lret = 64 }
++	fmt.Printf("StaticCall() returns output: %v\n",hex.EncodeToString(ret[0:lret]))
 +	fmt.Printf("evm.StaticCall() returns (err=%v)\n",err)
  	return ret, gas, err
  }
  
-@@ -508,8 +531,13 @@
+@@ -492,6 +527,9 @@
+ 			evm.Config.Tracer.CaptureExit(ret, gas-contract.Gas, err)
+ 		}
+ 	}
++	lret := len(ret)
++	if lret > 64 { lret = 64 }
++	fmt.Printf("Create() returns output: %v\n",hex.EncodeToString(ret[0:lret]))
+ 	return ret, address, contract.Gas, err
+ }
+ 
+@@ -508,8 +546,13 @@
  func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *big.Int, salt *uint256.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
  	codeAndHash := &codeAndHash{code: code}
  	contractAddr = crypto.CreateAddress2(caller.Address(), salt.Bytes32(), codeAndHash.Hash().Bytes())
