@@ -90,11 +90,12 @@ func main() {
 
 	factory_code,err := hexutil.Decode(DbgUniswapV3PoolMetaData.Bin)
 	if err != nil { fmt.Printf("Error at factory code decode: %v\n",err); os.Exit(1); }
-	_,err = deploycode(&mchain,weth_code,weth_addr,common.Hash{},rec.StateRoot)
+	_,err = deploycode(&mchain,factory_code,factory_addr,common.Hash{},rec.StateRoot)
 	if err != nil {
 		fmt.Printf("Error deploying WETH to local state db : %v\n",err)
 		os.Exit(1)
 	}
+
 
 	caddr,err = redeploy(&mchain,factory_hash,rec.StateRoot)
 	if err != nil { fmt.Printf("Error after redeploy(): %v\n",err); os.Exit(1); }
