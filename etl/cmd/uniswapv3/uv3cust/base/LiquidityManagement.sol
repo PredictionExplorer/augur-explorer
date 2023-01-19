@@ -5,6 +5,8 @@ pragma abicoder v2;
 import '../interfaces/IUniswapV3Factory.sol';
 import '../interfaces/callback/IUniswapV3MintCallback.sol';
 import '../libraries/TickMath.sol';
+import "../interfaces/pool/IUniswapV3PoolState.sol";
+import "../interfaces/pool/IUniswapV3PoolActions.sol";
 
 import '../libraries/PoolAddress.sol';
 import '../libraries/CallbackValidation.sol';
@@ -60,11 +62,14 @@ abstract contract LiquidityManagement is IUniswapV3MintCallback, PeripheryImmuta
         PoolAddress.PoolKey memory poolKey =
             PoolAddress.PoolKey({token0: params.token0, token1: params.token1, fee: params.fee});
 
-        pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
+		address a;
+		a = PoolAddress.computeAddress(factory, poolKey);
+        pool = IUniswapV3Pool(a);
 
         // compute the liquidity amount
         {
-            (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
+            //(uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
+            (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3PoolState(a).slot0();
             uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(params.tickLower);
             uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(params.tickUpper);
 
@@ -76,8 +81,7 @@ abstract contract LiquidityManagement is IUniswapV3MintCallback, PeripheryImmuta
                 params.amount1Desired
             );
         }
-
-        (amount0, amount1) = pool.mint(
+        (amount0, amount1) = IUniswapV3PoolActions(a).mint(
             params.recipient,
             params.tickLower,
             params.tickUpper,

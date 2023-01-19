@@ -3,6 +3,8 @@ pragma solidity =0.7.6;
 
 import '../interfaces/IUniswapV3Factory.sol';
 import '../interfaces/IUniswapV3Pool.sol';
+import "../interfaces/pool/IUniswapV3PoolActions.sol";
+import "../interfaces/pool/IUniswapV3PoolState.sol";
 
 import '../base/PeripheryImmutableState.sol';
 import '../interfaces/IPoolInitializer.sol';
@@ -18,14 +20,13 @@ abstract contract PoolInitializer is IPoolInitializer, PeripheryImmutableState {
     ) external payable override returns (address pool) {
         require(token0 < token1);
         pool = IUniswapV3Factory(factory).getPool(token0, token1, fee);
-
         if (pool == address(0)) {
             pool = IUniswapV3Factory(factory).createPool(token0, token1, fee);
-            IUniswapV3Pool(pool).initialize(sqrtPriceX96);
+            IUniswapV3PoolActions(pool).initialize(sqrtPriceX96);
         } else {
-            (uint160 sqrtPriceX96Existing, , , , , , ) = IUniswapV3Pool(pool).slot0();
+            (uint160 sqrtPriceX96Existing, , , , , , ) = IUniswapV3PoolState(pool).slot0();
             if (sqrtPriceX96Existing == 0) {
-                IUniswapV3Pool(pool).initialize(sqrtPriceX96);
+                IUniswapV3PoolActions(pool).initialize(sqrtPriceX96);
             }
         }
     }
