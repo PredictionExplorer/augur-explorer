@@ -4,13 +4,12 @@ import (
 	"os"
 	"fmt"
 	"errors"
-	"context"
-	"math/big"
+	//"context"
+	//"math/big"
 	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	 . "github.com/PredictionExplorer/augur-explorer/uevm"
 )
@@ -20,13 +19,15 @@ var (
 	DEFAULT_MCHAIN_NAME		string = "minichain.dat"
 	DEFAULT_RECEIPTS_NAME	string = "receipts"
 	DEFAULT_EVM_DB_NAME		string = "evmdb"
+	DEFAULT_FROM			string = "0x913dA4198E6bE1D5f5E4a40D0667f70C0B5430Eb"
 )
 func deploycode(mchain *MiniChain,code []byte,contract_address common.Address,tx_hash common.Hash,initial_state_hash common.Hash) (common.Address,error) {
 
 	var rec Record
 	rec.BlockNum = MainNetBlockNum // we have to hardcode this block because we are testing MainNet
 	rec.TxHash = tx_hash
-	err,generated_addr,_ := mchain.ExecDeploy(chain_id,tx_hash,common.Address{},0, code,contract_address,initial_state_hash,&rec)
+	default_from_addr := common.HexToAddress(DEFAULT_FROM)
+	err,generated_addr,_ := mchain.ExecDeploy(chain_id,tx_hash,default_from_addr,0, code,contract_address,initial_state_hash,&rec)
 	return generated_addr,err
 }
 func main() {
@@ -83,41 +84,45 @@ func main() {
 		os.Exit(1)
 	}
 
-	var caddr common.Address
-
 	rec,err = mchain.ReadLastLine()
 	if err != nil { fmt.Printf("Error at ReadLastLine(): %v\n",err); os.Exit(1); }
-
-	factory_code,err := hexutil.Decode(DbgUniswapV3PoolMetaData.Bin)
+	factory_code,err := hexutil.Decode(LocalUniswapV3PoolMetaData.Bin)
 	if err != nil { fmt.Printf("Error at factory code decode: %v\n",err); os.Exit(1); }
 	_,err = deploycode(&mchain,factory_code,factory_addr,common.Hash{},rec.StateRoot)
 	if err != nil {
-		fmt.Printf("Error deploying WETH to local state db : %v\n",err)
+		fmt.Printf("Error deploying UniswapV3Factory contract to local state db : %v\n",err)
 		os.Exit(1)
 	}
 
-
-	caddr,err = redeploy(&mchain,factory_hash,rec.StateRoot)
-	if err != nil { fmt.Printf("Error after redeploy(): %v\n",err); os.Exit(1); }
-	fmt.Printf("Deployed Factory contract: %v\n",caddr.String())
+	rec,err = mchain.ReadLastLine()
+	if err != nil { fmt.Printf("Error at ReadLastLine(): %v\n",err); os.Exit(1); }
+	descriptor_code,err := hexutil.Decode(LocalNFTDescriptorMetaData.Bin)
+	if err != nil { fmt.Printf("Error at NFTDescriptor code decode: %v\n",err); os.Exit(1); }
+	_,err = deploycode(&mchain,descriptor_code,nft_descriptor_addr,common.Hash{},rec.StateRoot)
+	if err != nil {
+		fmt.Printf("Error deploying NFTDescriptor contract to local state db : %v\n",err)
+		os.Exit(1)
+	}
 
 	rec,err = mchain.ReadLastLine()
 	if err != nil { fmt.Printf("Error: %v\n",err); os.Exit(1); }
-	caddr,err = redeploy(&mchain,nft_descriptor_hash,rec.StateRoot)
-	if err != nil { fmt.Printf("Error: %v\n",err); os.Exit(1); }
-	fmt.Printf("Deployed NFT descriptor contract: %v\n",caddr.String())
+	nft_manager_code,err := hexutil.Decode(LocalNonfungiblePositionManagerMetaData.Bin)
+	if err != nil { fmt.Printf("Error at NFT Manager code decode: %v\n",err); os.Exit(1); }
+	_,err = deploycode(&mchain,nft_manager_code,nft_manager_addr,common.Hash{},rec.StateRoot)
+	if err != nil {
+		fmt.Printf("Error deploying NFT Manager contract to local state db : %v\n",err)
+		os.Exit(1)
+	}
 
 	rec,err = mchain.ReadLastLine()
 	if err != nil { fmt.Printf("Error: %v\n",err); os.Exit(1); }
-	caddr,err = redeploy(&mchain,nft_manager_hash,rec.StateRoot)
-	if err != nil { fmt.Printf("Error: %v\n",err); os.Exit(1); }
-	fmt.Printf("Deployed NFT Manager contract: %v\n",caddr.String())
-
-	rec,err = mchain.ReadLastLine()
-	if err != nil { fmt.Printf("Error: %v\n",err); os.Exit(1); }
-	caddr,err = redeploy(&mchain,swaprouter_hash,rec.StateRoot)
-	if err != nil { fmt.Printf("Error: %v\n",err); os.Exit(1); }
-	fmt.Printf("Deployed SwapRouter contract: %v\n",caddr.String())
+	swaprouter_code,err := hexutil.Decode(LocalSwapRouterMetaData.Bin)
+	if err != nil { fmt.Printf("Error at SwapRouter code decode: %v\n",err); os.Exit(1); }
+	_,err = deploycode(&mchain,swaprouter_code,swaprouter_addr,common.Hash{},rec.StateRoot)
+	if err != nil {
+		fmt.Printf("Error deploying SwapRouter contract to local state db : %v\n",err)
+		os.Exit(1)
+	}
 
 	fmt.Printf("Done\n")
 }

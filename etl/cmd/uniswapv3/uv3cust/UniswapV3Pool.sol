@@ -295,8 +295,7 @@ contract UniswapV3Pool is IUniswapV3Pool {
 		address recipient,
 		int24 tickLower,
 		int24 tickUpper,
-		uint128 amount,
-		bytes calldata data
+		uint128 amount
 	) external returns (uint256 amount0, uint256 amount1) {
 		require(amount > 0);
 		(, int256 amount0Int, int256 amount1Int) =

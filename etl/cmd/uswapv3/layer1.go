@@ -241,7 +241,7 @@ func main() {
 		exit_chan <- true
 	}()
 
-	abi_parsed1 := strings.NewReader(UniswapV3FactoryABI)
+	abi_parsed1 := strings.NewReader(LocalUniswapV3FactoryABI)
 	abi1,err := abi.JSON(abi_parsed1)
 	if err!= nil {
 		Info.Printf("Can't parse UniswapV2Factory ABI: %v\n",err)
@@ -249,7 +249,7 @@ func main() {
 	}
 	factory_abi = &abi1
 
-	abi_parsed2 := strings.NewReader(UniswapV3PoolABI)
+	abi_parsed2 := strings.NewReader(LocalUniswapV3PoolABI)
 	abi2,err := abi.JSON(abi_parsed2)
 	if err!= nil {
 		Info.Printf("Can't parse Uniswap Pool ABI: %v\n",err)

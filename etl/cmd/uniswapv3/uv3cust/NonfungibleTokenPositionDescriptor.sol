@@ -9,6 +9,7 @@ import './libraries/ChainId.sol';
 import './interfaces/INonfungiblePositionManager.sol';
 import './interfaces/INonfungibleTokenPositionDescriptor.sol';
 import './interfaces/IERC20Metadata.sol';
+import './interfaces/pool/IUniswapV3PoolState.sol';
 import './libraries/PoolAddress.sol';
 import './libraries/NFTDescriptor.sol';
 import './libraries/TokenRatioSortOrder.sol';
@@ -65,7 +66,7 @@ contract NonfungibleTokenPositionDescriptor is INonfungibleTokenPositionDescript
         bool _flipRatio = flipRatio(token0, token1, ChainId.get());
         address quoteTokenAddress = !_flipRatio ? token1 : token0;
         address baseTokenAddress = !_flipRatio ? token0 : token1;
-        (, int24 tick, , , , , ) = pool.slot0();
+        (, int24 tick, , , , , ) = IUniswapV3PoolState(address(pool)).slot0();
 
         return
             NFTDescriptor.constructTokenURI(
