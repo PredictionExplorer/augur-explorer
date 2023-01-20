@@ -4,9 +4,6 @@ import (
 	"os"
 	"fmt"
 	"errors"
-	//"context"
-	//"math/big"
-	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -20,6 +17,7 @@ var (
 	DEFAULT_RECEIPTS_NAME	string = "receipts"
 	DEFAULT_EVM_DB_NAME		string = "evmdb"
 	DEFAULT_FROM			string = "0x913dA4198E6bE1D5f5E4a40D0667f70C0B5430Eb"
+	FACTORY_INPUT			string = ""
 )
 func deploycode(mchain *MiniChain,code []byte,contract_address common.Address,tx_hash common.Hash,initial_state_hash common.Hash) (common.Address,error) {
 
@@ -72,7 +70,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	weth_code,err := hex.DecodeString(WethBin)
+	weth_code,err := hexutil.Decode(LocalWETH10MetaData.Bin)
 	if err != nil {
 		fmt.Printf("Error decoding WETH contract binary: %v\n",err)
 		os.Exit(1)
