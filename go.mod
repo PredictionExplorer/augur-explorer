@@ -13,6 +13,7 @@ require (
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/elastic/gosigar v0.10.5 // indirect
 	github.com/ethereum/go-ethereum v1.10.26
+	github.com/febriliankr/whatsapp-cloud-api v1.0.8 // indirect
 	github.com/gin-gonic/autotls v0.0.3
 	github.com/gin-gonic/gin v1.7.7
 	github.com/gomodule/oauth1 v0.1.0 // indirect
