@@ -1,3 +1,5 @@
+// Copied from: github.com/febriliankr/whatsapp-cloud-api
+// (had to copy because the library has a bug (issue #2 at Github) wich I fixed in my copy)
 package main
 import (
 	"fmt"
@@ -22,7 +24,6 @@ var (
 		Code: "en",
 	}
 )
-var receiver_phone_num = "5578990272"
 func NewWhatsapp(token string, phoneNumberID string) *Whatsapp {
 	return &Whatsapp{
 		Language:      LanguageEnglish,
@@ -111,7 +112,7 @@ func main() {
 	fmt.Printf("token %v\n",token)
 	wa := NewWhatsapp(token,my_phone_id)
 	wa.APIVersion = "v15.0"
-	res, err := wa.SendText("525578990272", "your_message")
+	res, err := wa.SendText("any_number", "your_message")
 	if err != nil {
 		fmt.Printf("Error: %v\n",err)
 		os.Exit(1)
