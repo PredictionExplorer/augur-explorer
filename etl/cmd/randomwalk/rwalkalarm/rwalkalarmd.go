@@ -9,15 +9,21 @@ import (
 	"fmt"
 	"net/http"
 	"log"
+	"time"
 	"strings"
 	"syscall"
 	"os/signal"
 
 	"github.com/PredictionExplorer/augur-explorer/wanotif"
 )
+const (
+	NUM_TRIES				int = 5
+	DELAY_SECONDS			= 1
+)
 var (
-	UrlList			map[string]string		// list of urls to check
-	NotifiedPeople	map[string]string
+	UrlList					map[string]string		// list of urls to check
+	NotifiedPeople			map[string]string
+	UrlStatusNumFails		map[string]int
 
 	Info			*log.Logger
 	wa				*wanotif.Whatsapp
@@ -44,11 +50,19 @@ func check_single_url(url string,msg_header string) {
 		err_str = fmt.Sprintf("Networking error: %v",err.Error())
 	} else {
 		if resp.StatusCode == 200 {
+			UrlStatusNumFails[url]=0
 			return	// no problem with URL
 		}
 		err_str = fmt.Sprintf("%v. HTTP status: %v",msg_header,resp.StatusCode)
 	}
-	notify_failure(err_str)
+	num_fails := UrlStatusNumFails[url] + 1
+	UrlStatusNumFails[url]=num_fails
+	if num_fails >= NUM_TRIES {
+		notify_failure(err_str)
+		UrlStatusNumFails[url]=0
+	} else {
+		Info.Printf("Url %v , error: %v, num_fails=%v (%v < %v)\n",url,num_fails,num_fails,NUM_TRIES)
+	}
 }
 func check_urls() {
 	for k,v := range UrlList {
@@ -64,48 +78,69 @@ func read_urls(filename string) {
 	}
 	parsed := strings.Split(string(data),"\n")
 	if len(parsed)==0 {
-		fmt.Printf("URL list is empty, aborting.")
+		fmt.Printf("URL list is empty, aborting.\n")
 		os.Exit(1)
 	}
 	counter:=int(0)
 	for row_num,entry := range parsed {
-		counter=row_num+1
+		fmt.Printf("entry = %v\n",entry)
 		fields:=strings.Split(entry,"\t")
 		if len(fields) != 2 {
-			fmt.Printf("Missing tab separator at line %v (%v)",counter,entry)
-			os.Exit(1)
+			if len(entry) > 0 {
+				fmt.Printf("Missing tab separator at line %v (%v)\n",row_num,entry)
+				os.Exit(1)
+			} else {// empty line was found
+				continue
+			}
+		} else {
+			counter++
 		}
-		UrlList[fields[1]]=fields[0]
+		fmt.Printf("fields=%+v (len=%v)\n",fields,len(fields))
+		fmt.Printf("fields[0]=%v\n",fields[0])
+		fmt.Printf("fields[1]=%v\n",fields[1])
+		UrlList[fields[0]]=fields[1]
 	}
 	Info.Printf("Loaded %v URLs\n",counter)
 }
 func main() {
 
+	UrlList = make(map[string]string)
+	NotifiedPeople = make(map[string]string)
+	UrlStatusNumFails = make(map[string]int)
 	if len(os.Args) != 2 {
 		fmt.Printf("Usage: %v [url_list_file]\n",os.Args[0])
 		os.Exit(1)
 	}
-	read_urls(os.Args[1])
-
 	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
 
+	read_urls(os.Args[1])
+
+
+
 	phones := os.Getenv("PHONE_LIST")
+	if len(phones)==0 {
+		fmt.Printf("PHONE_LIST environment variable not set\n")
+		os.Exit(1)
+	}
 	counter := int(0)
 	for row_num,entry := range strings.Split(phones,",") {
-		counter = row_num+1
 		person_phone := strings.Split(entry,":")
 		if len(person_phone) != 2 {
-			fmt.Printf("Entry line %v has invalid format (read %v fields)",counter,len(person_phone))
+			fmt.Printf("person_phone=%v\n",person_phone)
+			fmt.Printf("Loading phones. Entry line %v has invalid format (read %v fields)\n",row_num,len(person_phone))
 			os.Exit(1)
+		} else {
+			counter++
 		}
 		person:=person_phone[0]
 		phone:=person_phone[1]
 		NotifiedPeople[person]=phone
 	}
 	if len(NotifiedPeople) == 0 {
-		fmt.Printf("After parsing phone list, the map is empty, aborting.")
+		fmt.Printf("Loading phones. After parsing phone list, the map is empty, aborting.\n")
 		os.Exit(1)
 	}
+	Info.Printf("Loaded %v phones for notification\n",counter)
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -132,8 +167,10 @@ func main() {
 			case exit_flag := <-exit_chan:
 				if exit_flag {
 					Info.Print("Exiting upon user request\n")
+					os.Exit(1)
 				}
 				default:
-			}
+		}
+		time.Sleep(DELAY_SECONDS * time.Second)
 	}
 }
