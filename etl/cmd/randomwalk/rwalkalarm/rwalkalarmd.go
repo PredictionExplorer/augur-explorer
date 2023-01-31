@@ -18,7 +18,7 @@ import (
 )
 const (
 	NUM_TRIES				int = 5
-	DELAY_SECONDS			= 1
+	DELAY_SECONDS			= 2
 )
 var (
 	UrlList					map[string]string		// list of urls to check
@@ -37,6 +37,7 @@ func notify_failure(notif_msg string) {
 				"Error sending whatsapp request to %v: %v (res=%+v,  phone=%v, msg=%v)",
 				person,err,res,phone,notif_msg,
 			)
+			Info.Printf("Res: %+v\n",res)
 		} else {
 			Info.Printf("Notified failure to %v (%v): %v",person,phone,notif_msg)
 		}
@@ -44,8 +45,10 @@ func notify_failure(notif_msg string) {
 }
 func check_single_url(url string,msg_header string) {
 
+	fmt.Printf("check_single_url(): %v\n",url)
 	var err_str string
 	resp,err := http.Get(url)
+	fmt.Printf("err=%v\n",err)
 	if err != nil {
 		err_str = fmt.Sprintf("Networking error: %v",err.Error())
 	} else {
@@ -60,8 +63,9 @@ func check_single_url(url string,msg_header string) {
 	if num_fails >= NUM_TRIES {
 		notify_failure(err_str)
 		UrlStatusNumFails[url]=0
+		Info.Printf("Notifying failure of url %v\n",url)
 	} else {
-		Info.Printf("Url %v , error: %v, num_fails=%v (%v < %v)\n",url,num_fails,num_fails,NUM_TRIES)
+		Info.Printf("Url %v , error: %v, num_fails=%v (%v < %v)\n",url,err,num_fails,num_fails,NUM_TRIES)
 	}
 }
 func check_urls() {
@@ -163,6 +167,7 @@ func main() {
 	}
 	wa = wanotif.NewWhatsapp(token,my_phone_id)
 	for {
+		check_urls()
 		select {
 			case exit_flag := <-exit_chan:
 				if exit_flag {

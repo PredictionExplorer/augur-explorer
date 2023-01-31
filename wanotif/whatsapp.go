@@ -58,6 +58,7 @@ func (wa *Whatsapp) sendMessage(request interface{}) (res map[string]interface{}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
+	fmt.Printf("Do(): resp=%v, err=%v\n",resp,err)
 	if err != nil {
 		return res, err
 	}
@@ -72,6 +73,7 @@ func (wa *Whatsapp) sendMessage(request interface{}) (res map[string]interface{}
 	if err != nil {
 		return res, err
 	}
+	fmt.Printf("body bytes=%+v\n",string(bodyBytes))
 	resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	err = json.Unmarshal(bodyBytes, &req)
 	if err != nil {
