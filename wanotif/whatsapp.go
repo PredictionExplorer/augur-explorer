@@ -91,6 +91,12 @@ func (wa *Whatsapp) sendMessage(request interface{}) (res map[string]interface{}
 
 	return res, err
 }
+func (wa *Whatsapp) SendWithTemplate(toPhoneNumber string, templateName string, components []Components) (res map[string]interface{}, err error) {
+
+	request := wa.createSendWithTemplateRequest(toPhoneNumber, templateName, wa.Language, components)
+
+	return wa.sendMessage(request)
+}
 func (wa *Whatsapp) SendText(toPhoneNumber string, text string) (res map[string]interface{}, err error) {
 
 	request := map[string]interface{}{
@@ -103,6 +109,33 @@ func (wa *Whatsapp) SendText(toPhoneNumber string, text string) (res map[string]
 	}
 	return wa.sendMessage(request)
 
+}
+func (wa *Whatsapp) createSendWithTemplateRequest(receiverPhoneNumber string, templateName string, language TemplateLanguage, components []Components) (res SendWithTemplateRequest) {
+	return SendWithTemplateRequest{
+		MessagingProduct: "whatsapp",
+		To:               receiverPhoneNumber,
+		Type:             "template",
+		Template: Template{
+			Name:     templateName,
+			Language: LanguageEnglish,
+			// Components can be empty if you don't want to send any parameters
+			Components: components,
+		},
+	}
+}
+func (wa *Whatsapp) GenerateTemplateParameters(parameterType string, args ...string) (res []TemplateParameters) {
+
+	if parameterType == "" {
+		parameterType = "text"
+	}
+
+	for _, arg := range args {
+		res = append(res, TemplateParameters{
+			Type: parameterType,
+			Text: arg,
+		})
+	}
+	return
 }
 /*
 	Sample use
