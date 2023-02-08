@@ -85,12 +85,13 @@ var (
 	flag_discord			*bool
 	last_mint_ts			int64 = 0
 )
+/* DISCONTINUED (moved to module)
 type TwitterKeys struct {
 	ApiKey			string
 	ApiSecret		string
 	TokenKey		string
 	TokenSecret		string
-}
+} */
 type DiscordKeys struct {
 	TokenKey				string
 	ChannelId				uint64	// Notifications Channel

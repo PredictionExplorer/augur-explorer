@@ -24,7 +24,7 @@ import (
 )
 const (
 
-	WAIT_TIME = 5000	// 2 seconds
+	WAIT_TIME = 2000	// 2 seconds
 	//DB_LOG				= "db.log"
 )
 var (

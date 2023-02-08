@@ -15,6 +15,12 @@ const (
 	URL			string = "https://api.twitter.com/1.1/statuses/update.json"
 	MEDIA_URL   string = "https://upload.twitter.com/1.1/media/upload.json"
 )
+type TwitterKeys struct {
+	ApiKey          string
+	ApiSecret       string
+	TokenKey        string
+	TokenSecret     string
+}
 type MediaImage struct {
 	Image_type      string      `json:"image_type"`
 	W               int64       `json:"w"`
@@ -27,6 +33,10 @@ type ImageResponse struct {
 	Size                int64       `json:"size"`
 	Expires_after_secs  int64       `json:"expires_after_secs"`
 	Image               MediaImage  `json:"image"`
+}
+type StatusUpdateResponse struct {
+	Id					int64		`json:"id"`
+	IdStr				string		`json:"id_str"`
 }
 func decode_response(resp *http.Response, data interface{}) error {
 	if resp.StatusCode != 200 {
@@ -65,7 +75,7 @@ func SendTweet(api_key,api_secret,access_token,token_secret,message string,sessi
 	resp, err := client.Post(nil, &token_credentials, URL, form)
 	if err != nil {
 		err_str := fmt.Sprintf("Post error: %v\n",err)
-		return 0,"",errors.New(err_str)
+		return 0, "",errors.New(err_str)
 	}
 	defer resp.Body.Close()
 
@@ -79,7 +89,7 @@ func SendTweet(api_key,api_secret,access_token,token_secret,message string,sessi
 	body_str := string(b)
 	return resp.StatusCode,body_str,err_out
 }
-func SendTweetWithImage(api_key,api_secret,access_token,token_secret,message string,session_nonce uint64,image_data []byte) (int,string,error) {
+func SendTweetWithImage(api_key,api_secret,access_token,token_secret,message string,session_nonce uint64,image_data []byte,reply_tweet string) (int,string,error) {
 	// Return values:
 	//		Status code
 	//		Body (converted to string)
@@ -124,11 +134,12 @@ func SendTweetWithImage(api_key,api_secret,access_token,token_secret,message str
 	form = url.Values {
 		"status": {message},
 		"media_ids": {image_response.Media_id_string},
+		"in_reply_to_status_id" : {reply_tweet},
 	}
 	resp, err = client.Post(nil, &token_credentials, URL, form)
 	if err != nil {
 		err_str := fmt.Sprintf("Post error: %v\n",err)
-		return 0,"",errors.New(err_str)
+		return 0, "",errors.New(err_str)
 	}
 	defer resp.Body.Close()
 

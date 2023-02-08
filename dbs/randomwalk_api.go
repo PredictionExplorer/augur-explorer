@@ -710,28 +710,33 @@ func (ss *SQLStorage) Get_token_full_history(rwalk_aid,token_id int64,offset,lim
 						"LEFT JOIN address fa ON tr.from_aid=fa.address_id " +
 						"LEFT JOIN address ta ON tr.to_aid=ta.address_id " +
 						"LEFT JOIN rw_new_offer off ON tr.tx_id=off.tx_id "+
-						"LEFT JOIN rw_mint_evt mint ON tr.tx_id=mint.tx_id " +
+						"LEFT JOIN rw_mint_evt mint ON (tr.tx_id=mint.tx_id AND mint.token_id=$1) " +
 						"LEFT JOIN rw_item_bought item ON tr.tx_id=item.tx_id " +
 						"LEFT JOIN rw_offer_canceled cancel ON tr.tx_id=cancel.tx_id "+
-						"LEFT JOIN rw_token_name name ON tr.tx_id=name.tx_id "+
+						"LEFT JOIN rw_token_name name ON (tr.tx_id=name.tx_id AND name.token_id=$1) "+
 						"LEFT JOIN evt_log elog ON ((tr.tx_id=elog.tx_id) AND ("+
 							"elog.topic0_sig='55076e90' OR "+	// new offer
 							"elog.topic0_sig='caacc56f' OR "+	// item bought
 							"elog.topic0_sig='0ff09947' OR "+	// offer canceled
 							"elog.topic0_sig='8ad5e159' OR "+	// token name
-							"elog.topic0_sig='ad2bc79f' "+	// mint event
-						"))"+
-/*					"FROM rw_transfer tr "+
-						"LEFT JOIN evt_log l ON (tr.tx_id=l.tx_id) AND "+
-							"(l.topic0_sig=
-*/
+							"elog.topic0_sig='ad2bc79f' OR "+	// mint event
+							"elog.topic0_sig='ddf252ad' "+	// transfer event
+						") AND (elog.id=tr.evtlog_id) AND "+
+						"(fa.addr!='0x0000000000000000000000000000000000000000')"+
+						"AND (mint.token_id=$1))"+
 					"WHERE (tr.token_id=$1) AND (tr.contract_aid=$2) "+
 						"AND (off.id IS NULL) "+
-						"AND (mint.id IS NULL) " +
+						"AND ("+
+							"(mint.id IS NULL) OR " +
+							"("+
+								"(mint.id IS NOT NULL) AND ("+
+									"(fa.addr!='0x0000000000000000000000000000000000000000')"+
+								")"+
+							")"+
+						")"+
 						"AND (item.id IS NULL) " +
 						"AND (cancel.id IS NULL) "+
 						"AND (name.id IS NULL) "+
-						"AND (elog.id IS NULL) " +
 					"ORDER BY tr.id " +
 				")"+
 			") AS data " +		// FROM
