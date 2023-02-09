@@ -56,12 +56,43 @@ func notify_twitter(token_id int64,msg string,image_data []byte,reply_tweet stri
 	fmt.Printf("status_resp.IdStr=%v\n",status_resp.IdStr)
 	return fmt.Sprintf("%v",status_resp.Id)
 }
+func notify_twitter_media(token_id int64,msg string,media_type string,media_data []byte,reply_id string) string {
+
+	fmt.Printf("notify_twitter(token_id=%v)\n",token_id)
+
+	twitter_nonce++
+	status_code,body,err := SendTweetWithMedia(
+		twitter_keys.ApiKey,
+		twitter_keys.ApiSecret,
+		twitter_keys.TokenKey,
+		twitter_keys.TokenSecret,
+		msg,
+		twitter_nonce,
+		media_type,
+		media_data,
+		reply_id,
+	)
+	if err != nil {
+		fmt.Printf("Error sending tweet with media: %v (status %v; body = %v)\n",err,status_code,body)
+		os.Exit(1)
+	}
+	fmt.Printf("body after send: %v\n",body)
+	var status_resp StatusUpdateResponse
+	err = json.NewDecoder(strings.NewReader(body)).Decode(&status_resp)
+	if err != nil {
+		fmt.Printf("Error at decode response: %v\n",err)
+		os.Exit(1)
+	}
+	fmt.Printf("status_resp.Id=%v\n",status_resp.Id)
+	fmt.Printf("status_resp.IdStr=%v\n",status_resp.IdStr)
+	return fmt.Sprintf("%v",status_resp.Id)
+}
 func main() {
 
-	if len(os.Args) < 3 {
+	if len(os.Args) < 4 {
 		fmt.Printf(
-			"Usage: \n\t\t%v [image1] [image2]\n\t\t"+
-			"Sends a tweet with image attached as reply-to\n\n",os.Args[0],
+			"Usage: \n\t\t%v [reply_to_id] [media_file] [message]\n\t\t"+
+			"Sends a tweet with media_file (image or video) attached as reply-to\n\n",os.Args[0],
 		)
 		os.Exit(1)
 	}
@@ -71,26 +102,27 @@ func main() {
 		os.Exit(1)
 	}
 
-	image_filename1 := os.Args[1]
-	image_data1, err := os.ReadFile(image_filename1)
+	reply_to_id := os.Args[1]
+	media_filename := os.Args[2]
+	message := os.Args[3]
+	fmt.Printf("Media file: %v\n",media_filename)
+	fmt.Printf("Reply to id: %v\n",reply_to_id)
+	media_data, err := os.ReadFile(media_filename)
 	if err != nil {
-		fmt.Printf("Can't read image1 at %v : %v\n",image_filename1)
-		os.Exit(1)
-	}
-	image_filename2 := os.Args[2]
-	image_data2, err := os.ReadFile(image_filename2)
-	if err != nil {
-		fmt.Printf("Can't read image2 at %v : %v\n",image_filename2)
+		fmt.Printf("Can't read media data at %v : %v\n",media_filename)
 		os.Exit(1)
 	}
 
 	nonce_counter := uint64(time.Now().UnixNano())
 	twitter_nonce = nonce_counter
 
-	msg_id := notify_twitter(11,"test message",image_data1,"")
-	fmt.Printf("msg id = %v\n",msg_id)
-	
+	/*
 	msg_id2 := notify_twitter(11,"test message",image_data2,msg_id)
 	fmt.Printf("msg id2 = %v\n",msg_id2)
-	_=image_data2
+	*/
+//	url := "https://randomwalknft.s3.us-east-2.amazonaws.com/003913_black_single.mp4"
+
+	//media_type := "image/png"
+	media_type := 	"video/mp4"
+	notify_twitter_media(11,message,media_type,media_data,reply_to_id)
 }
