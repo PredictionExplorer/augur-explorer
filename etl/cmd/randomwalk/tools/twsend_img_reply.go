@@ -61,14 +61,13 @@ func notify_twitter_media(token_id int64,msg string,media_type string,media_data
 	fmt.Printf("notify_twitter(token_id=%v)\n",token_id)
 
 	twitter_nonce++
-	status_code,body,err := SendTweetWithMedia(
+	status_code,body,err := SendTweetWithVideo(
 		twitter_keys.ApiKey,
 		twitter_keys.ApiSecret,
 		twitter_keys.TokenKey,
 		twitter_keys.TokenSecret,
 		msg,
 		twitter_nonce,
-		media_type,
 		media_data,
 		reply_id,
 	)
