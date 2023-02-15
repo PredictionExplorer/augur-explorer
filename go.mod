@@ -9,7 +9,6 @@ require (
 	github.com/andersfylling/snowflake/v3 v3.0.2 // indirect
 	github.com/apilayer/freegeoip v3.5.0+incompatible // indirect
 	github.com/aristanetworks/goarista v0.0.0-20200521140103-6c3304613b30 // indirect
-	github.com/aws/aws-sdk-go v1.25.48 // indirect
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/elastic/gosigar v0.10.5 // indirect
 	github.com/ethereum/go-ethereum v1.10.26
@@ -33,6 +32,7 @@ require (
 	github.com/sirupsen/logrus v1.6.0 // indirect
 	github.com/steakknife/bloomfilter v0.0.0-20180922174646-6819c0d2a570 // indirect
 	github.com/steakknife/hamming v0.0.0-20180906055917-c99c65617cd3 // indirect
+	github.com/u2takey/ffmpeg-go v0.4.1 // indirect
 	github.com/urfave/cli v1.22.1 // indirect
 	github.com/wealdtech/go-ens v1.0.0 // indirect
 	github.com/wealdtech/go-ens/v3 v3.5.1

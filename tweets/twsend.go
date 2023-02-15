@@ -277,6 +277,8 @@ func SendTweetWithVideo(api_key,api_secret,access_token,token_secret,message str
 	client.ClientToken = access_token
 	client.Nonce=format_nonce(session_nonce)
 	encoded_video_data := base64.StdEncoding.EncodeToString([]byte(video_data))
+	string_data := string(video_data)
+	fmt.Printf("length of video=%v, legth of string data=%v\n",len(video_data),len(string_data))
 	form := url.Values{
 		"command": {"INIT"},
 		"total_bytes" : {fmt.Sprintf("%v",len(video_data))},
@@ -320,9 +322,16 @@ func SendTweetWithVideo(api_key,api_secret,access_token,token_secret,message str
 	form = url.Values{
 		"command": {"APPEND"},
 		"media_id": {upload_id},
-		"media_data": {encoded_video_data},
+		"media_data": {encoded_video_data+fmt.Sprintf("\r\n")},
+		//"media": {string_data},
 		"segment_index":{fmt.Sprintf("%v",0)},
 	}
+	_=encoded_video_data
+	client.Header = make(map[string][]string)
+	hdrval:=client.Header.Get("Content-Type")
+	fmt.Printf("Before APPEND content type = %v\n",hdrval)
+	client.Header.Set("Content-Type","application/octet-stream")
+	client.Header.Set("Content-Transfer-Encoding","base64")
 	resp_append, err := client.Post(nil, &token_credentials, MEDIA_URL, form)
 	if err != nil {
 		err_str := fmt.Sprintf("Post error: %v\n",err)
@@ -353,6 +362,8 @@ func SendTweetWithVideo(api_key,api_secret,access_token,token_secret,message str
 			return 0, "",err
 		}
 	}
+	client.Header.Del("Content-Type")
+	client.Header.Del("Content-Transfer-Encoding")
 	//----------- FINALIZE
 	form = url.Values {
 		"command": {"FINALIZE"},
@@ -376,7 +387,7 @@ func SendTweetWithVideo(api_key,api_secret,access_token,token_secret,message str
 		fmt.Printf("Body of erroneous req: %v\n",body_str)
 		return 0, "",err
 	} else {
-		fmt.Printf("FINALZIE successfuly sent\n")
+		fmt.Printf("FINALZIE successfuly sent (code=%v)\n",resp_finalize.StatusCode)
 	}
 	if resp_finalize.StatusCode != 204 {
 		var img_response_finalize ImageResponse
