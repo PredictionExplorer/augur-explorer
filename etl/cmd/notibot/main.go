@@ -60,7 +60,8 @@ var (
 
 	//Sample URL: https://randomwalknft.s3.us-east-2.amazonaws.com/003246_black.png
 	IMAGES_URL			string = "https://randomwalknft.s3.us-east-2.amazonaws.com"
-	TMP_IMAGE_FILE		string = "randomwalk_tmp.png"
+	VIDEOS_URL			string = ""
+	TMP_DATA_FILE		string = "randomwalk_tmp.dat"	// could be an image or video
 	DETAIL_URL			string = "https://randomwalknft.com/detail"
 	MAX_TIMEOUT_COUNTER		int = 1000
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
@@ -151,33 +152,33 @@ func decode_response(resp *http.Response, data interface{}) error {
 	}
 	return json.NewDecoder(resp.Body).Decode(data)
 }
-func tmp_img_filename() string {
-	return fmt.Sprintf("%v/%v",os.TempDir(),TMP_IMAGE_FILE)
+func tmp_filename() string {
+	return fmt.Sprintf("%v/%v",os.TempDir(),TMP_DATA_FILE)
 }
-func fetch_image(url string) (int,error) {
+func fetch_remote_file(url string) (int,error) {
 
 	response, err := http.Get(url)
 	if err != nil {
 		Error.Printf("Can't fetch image %v : %v\n",url,err)
 		Info.Printf("Can't fetch image %v : %v\n",url,err)
-		return 0,err
+		return 0, err
 	}
 	defer response.Body.Close()
 	if response.StatusCode == 200 {
-		img_file_name := tmp_img_filename()
+		img_file_name := tmp_filename()
 		os.Remove(img_file_name)
 		file, err := os.Create(img_file_name)
 		if err != nil {
 			Error.Printf("Can't create temporal image file %v : %v\n",img_file_name,err)
 			Info.Printf("Can't create temporal image file %v : %v\n",img_file_name,err)
-			return 0,err
+			return 0, err
 		}
 		defer file.Close()
 		_, err = io.Copy(file, response.Body)
 		if err != nil {
-			Error.Printf("Can't copy image data to tmp file: %v\n",err)
-			Info.Printf("Can't copy image data to tmp file: %v\n",err)
-			return 0,err
+			Error.Printf("Can't copy file data to tmp file: %v\n",err)
+			Info.Printf("Can't copy file data to tmp file: %v\n",err)
+			return 0, err
 		}
 		return response.StatusCode,nil
 	} else {
@@ -187,16 +188,20 @@ func fetch_image(url string) (int,error) {
 		return response.StatusCode,errors.New(err_str)
 	}
 }
-func fmt_url_addr(token_id int64) string {
+func fmt_url_addr_for_image(token_id int64) string {
 
 	url := fmt.Sprintf("%v/%06d_black.png",IMAGES_URL,token_id)
 	return url
 }
-func web_returns_403_code(token_id int64) bool {
+func fmt_url_addr_for_video(token_id int64) string {
+	//	https://randomwalknft.s3.us-east-2.amazonaws.com/003968_black_single.mp4
+	url := fmt.Sprintf("%v/%06d_black.png",IMAGES_URL,token_id)
+	return url
+}
+func web_returns_403_code(token_id int64,url string) bool {
 	//this is needed to recover from 403 code which the image server returns for 
 	//token ids from 1 to 269 (a bug at the Rwalk webserver)
 
-	url := fmt_url_addr(token_id)
 	status,_:= fetch_image(url)
 	if status == 403 {
 		Info.Printf("Image server returns 403 code for token %v...\n",token_id)
@@ -204,13 +209,13 @@ func web_returns_403_code(token_id int64) bool {
 	}
 	return false
 }
-func get_image_file_from_net_until_success(token_id int64) bool {
+func get_file_from_net_until_success(token_id int64,url string) bool {
 
 	time_out_counter := int(0)
-	url := fmt_url_addr(token_id)
+//	url := fmt_url_addr(token_id)
 	Info.Printf("Fetching image for token %v: %v\n",token_id,url)
 	for {
-		status,err := fetch_image(url)
+		status,err := fetch_remote_file(url)
 		if status == 404 {	// image wasn't generated yet
 			Info.Printf("Image for token %v is not yet ready (%v status), waiting...\n",token_id,status)
 			time.Sleep(60 * time.Second)
@@ -230,7 +235,7 @@ func get_image_file_from_net_until_success(token_id int64) bool {
 	}
 	return false
 }
-func get_image(token_id int64) ([]byte,bool) {
+/*func get_image(token_id int64) ([]byte,bool) {
 
 	success := get_image_file_from_net_until_success(token_id)
 	if !success {
@@ -243,7 +248,7 @@ func get_image(token_id int64) ([]byte,bool) {
 		os.Exit(1)
 	}
 	return image_data,true
-}
+}*/
 func get_withdrawal_amount() (float64,bool) {
 
 	time_out_counter := int(0)
@@ -346,8 +351,8 @@ func set_channel_name(new_name string,channel_id disgord.Snowflake) {
 		}
 	}
 }
-func notify_twitter(token_id int64,msg string,image_data []byte) {
-
+func notify_twitter_one_message(token_id int64,msg string,image_data []byte) {
+	// only one message is sent, with image
 	Info.Printf("notify_twitter(token_id=%v)\n",token_id)
 
 	twitter_nonce++
@@ -362,6 +367,65 @@ func notify_twitter(token_id int64,msg string,image_data []byte) {
 	)
 	if err != nil {
 		Info.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
+		Error.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
+	} else {
+		Info.Printf(
+			"Notification for evt type=%v of token id=%v to Twitter successful\n",
+			rec.EvtType,rec.TokenId,
+		)
+	}
+}
+func notify_twitter_two_messages(token_id int64,msg string,image_data []byte,video_data []byte) {
+	// first the message with image is sent, after that second message with video is posted as reply to first
+	Info.Printf("notify_twitter_two_messages(token_id=%v)\n",token_id)
+
+	twitter_nonce++
+	status_code,body,err := SendTweetWithImage(
+		twitter_keys.ApiKey,
+		twitter_keys.ApiSecret,
+		twitter_keys.TokenKey,
+		twitter_keys.TokenSecret,
+		msg,
+		twitter_nonce,
+		image_data,
+	)
+	if err != nil {
+		Info.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
+		Error.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
+	} else {
+		if status_code != 200 {
+			Info.Printf("Notification of FIRST msg produced error: %v\n",err)
+			Error.Printf("Notification of FIRST msg produced error: %v\n",err)
+		} else {
+			Info.Printf(
+				"Notification of FIRST msg for evt type=%v of token id=%v to Twitter successful\n",
+				rec.EvtType,rec.TokenId,
+			)
+			var decoded_data interface{}
+			err := json.NewDecoder(bytes.NewReader([]byte(body))).Decode(decoded_data)
+			if err != nil {
+				Info.Printf("Could not decode response of FIRST msg, err: %v\n",err)
+				Error.Printf("Could not decode response of FIRST msg, err: %v\n",err)
+			} else {
+				// everything ok, now send second msg
+				msg_id_str := decoded_data["media_id_string"].(string)
+				twitter_nonce++
+				status_code2,_,err:=SendTweetWithVideo(
+					twitter_keys.ApiKey,
+					twitter_keys.ApiSecret,
+					twitter_keys.TokenKey,
+					twitter_keys.TokenSecret,
+					msg,
+					twitter_nonce,
+					video_data,
+					msg_id_str,
+				)
+				if err != nil {
+					Info.Printf("Error sending second message with video: %v\n",err)
+					Error.Printf("Error sending second message with video: %v\n",err)
+				}
+			}
+		}
 	}
 }
 func notify_discord(token_id int64,msg string,image_data []byte,image_url string) error {
@@ -537,24 +601,41 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 				last_mint_ts = rec.TimeStampMinted
 				update_last_reward(withdrawal_amount)
 			}
-			is_403_code := web_returns_403_code(rec.TokenId)
+			is_403_code := web_returns_403_code(rec.TokenId,fmt_url_addr_for_image(token_id))
 			if is_403_code {
 				Info.Printf("Skipping event for token %v due to 403 error\n",rec.TokenId)
 				time.Sleep(1 * time.Second)
 				break // 403 is not good for a perpetual fetch via HTTP, so we skip the event
 			}
-			success = get_image_file_from_net_until_success(rec.TokenId)
+			success = get_file_from_net_until_success(rec.TokenId,fmt_url_addr_for_image(token_id))	// image
 			if !success {
 				Error.Printf("Couldn't get image file for token %v, aborting.",rec.TokenId)
 				time.Sleep(10 * time.Second)
 				break
 			}
-			image_filename := tmp_img_filename()
+			image_filename := tmp_filename()
 			image_data, err := os.ReadFile(image_filename)
 			if err != nil {
 				Info.Printf("Can't read image at %v : %v\n",image_filename)
 				Error.Printf("Can't read image at %v : %v\n",image_filename)
 				os.Exit(1)
+			}
+			var video_data []byte
+			if rec.EvtType == 1 { // Mint
+				// we get the video file only for Mint type events
+				success = get_file_from_net_until_success(rec.TokenId,fmt_url_addr_for_video())	// video
+				if !success {
+					Error.Printf("Couldn't get image file for token %v, aborting.",rec.TokenId)
+					time.Sleep(10 * time.Second)
+					break
+				}
+				video_filename := tmp_filename()
+				video_data, err := os.ReadFile(video_filename)
+				if err != nil {
+					Info.Printf("Can't read video at %v : %v\n",video_filename)
+					Error.Printf("Can't read video at %v : %v\n",video_filename)
+					os.Exit(1)
+				}
 			}
 			cur_evtlog_id=rec.EvtLogId
 			cur_ts = rec.TimeStampMinted
@@ -565,23 +646,11 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 
 			if *flag_twitter {
 				notif_msg := format_notification_message(rec.EvtType,rec.TokenId,rec.Price,withdrawal_amount,true)
-				twitter_nonce++
-				status_code,body,err := SendTweetWithImage(
-					twitter_keys.ApiKey,
-					twitter_keys.ApiSecret,
-					twitter_keys.TokenKey,
-					twitter_keys.TokenSecret,
-					notif_msg,
-					twitter_nonce,
-					image_data,
-				)
-				if err != nil {
-					Info.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
+				if rev.EvtType == 1 { // Mint
+					notify_twitter_two_messages(rec.TokenId,notif_msg,image_data,video_data)
+				} else {
+					notify_twitter_one_message(rec.TokenId,notif_msg,image_data)
 				}
-				Info.Printf(
-					"Notification for evt type=%v of token id=%v to Twitter successful\n",
-					rec.EvtType,rec.TokenId,
-				)
 			}
 			if *flag_discord {
 				notif_msg := format_notification_message(rec.EvtType,rec.TokenId,rec.Price,withdrawal_amount,false)
