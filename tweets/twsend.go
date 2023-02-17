@@ -405,6 +405,8 @@ func SendTweetWithVideo(api_key,api_secret,access_token,token_secret,message str
 		"command": {"STATUS"},
 		"media_id": {upload_id},
 	}
+	const MAX_LOOP_LIMIT int = 8
+	var counter int = 0
 	for {
 		resp_media_status, err := client.Get(nil, &token_credentials, MEDIA_URL, form)
 		if err != nil {
@@ -436,6 +438,10 @@ func SendTweetWithVideo(api_key,api_secret,access_token,token_secret,message str
 			break
 		}
 		time.Sleep(2*time.Second)
+		counter++
+		if counter >= MAX_LOOP_LIMIT {
+			return 0,"", errors.New(fmt.Sprintf("Aborted due to infinite loop condition check"))
+		}
 	}
 	fmt.Printf("Upload of video successful, sending status update (message)\n")
 

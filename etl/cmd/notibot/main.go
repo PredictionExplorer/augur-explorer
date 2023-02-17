@@ -37,6 +37,7 @@ import (
 	contracts "github.com/PredictionExplorer/augur-explorer/contracts"
 
 	"github.com/andersfylling/disgord"
+	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 const (
 	NumMintsUnicodeChar			string = "🪙 "
@@ -61,10 +62,13 @@ var (
 	//Sample URL: https://randomwalknft.s3.us-east-2.amazonaws.com/003246_black.png
 	IMAGES_URL			string = "https://randomwalknft.s3.us-east-2.amazonaws.com"
 	VIDEOS_URL			string = ""
-	TMP_DATA_FILE		string = "randomwalk_tmp.dat"	// could be an image or video
+	TMP_IMG_DATA_FILE	string = "randomwalk_img.png"	// could be an image or video
+	TMP_VIDEO_DATA_FILE	string = "randomwalk_video.mp4"
+	RESAMPLED_TMP_FILE	string = "randomwalk_resampled.mp4"	// could be an image or video
 	DETAIL_URL			string = "https://randomwalknft.com/detail"
 	MAX_TIMEOUT_COUNTER		int = 1000
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
+	DEV_MODE				bool = true	// true for testing new features
 
 	Error					*log.Logger
 	Info					*log.Logger
@@ -86,13 +90,6 @@ var (
 	flag_discord			*bool
 	last_mint_ts			int64 = 0
 )
-/* DISCONTINUED (moved to module)
-type TwitterKeys struct {
-	ApiKey			string
-	ApiSecret		string
-	TokenKey		string
-	TokenSecret		string
-} */
 type DiscordKeys struct {
 	TokenKey				string
 	ChannelId				uint64	// Notifications Channel
@@ -152,10 +149,16 @@ func decode_response(resp *http.Response, data interface{}) error {
 	}
 	return json.NewDecoder(resp.Body).Decode(data)
 }
-func tmp_filename() string {
-	return fmt.Sprintf("%v/%v",os.TempDir(),TMP_DATA_FILE)
+func tmp_img_filename() string {
+	return fmt.Sprintf("%v/%v",os.TempDir(),TMP_IMG_DATA_FILE)
 }
-func fetch_remote_file(url string) (int,error) {
+func tmp_video_filename() string {
+	return fmt.Sprintf("%v/%v",os.TempDir(),TMP_VIDEO_DATA_FILE)
+}
+func tmp_video_filename_resampled() string {
+	return fmt.Sprintf("%v/%v",os.TempDir(),RESAMPLED_TMP_FILE)
+}
+func fetch_remote_file(url string,dst_file_name string) (int,error) {
 
 	response, err := http.Get(url)
 	if err != nil {
@@ -165,12 +168,12 @@ func fetch_remote_file(url string) (int,error) {
 	}
 	defer response.Body.Close()
 	if response.StatusCode == 200 {
-		img_file_name := tmp_filename()
-		os.Remove(img_file_name)
-		file, err := os.Create(img_file_name)
+		//img_file_name := tmp_filename()
+		os.Remove(dst_file_name)
+		file, err := os.Create(dst_file_name)
 		if err != nil {
-			Error.Printf("Can't create temporal image file %v : %v\n",img_file_name,err)
-			Info.Printf("Can't create temporal image file %v : %v\n",img_file_name,err)
+			Error.Printf("Can't create temporal image file %v : %v\n",dst_file_name,err)
+			Info.Printf("Can't create temporal image file %v : %v\n",dst_file_name,err)
 			return 0, err
 		}
 		defer file.Close()
@@ -198,24 +201,24 @@ func fmt_url_addr_for_video(token_id int64) string {
 	url := fmt.Sprintf("%v/%06d_black.png",IMAGES_URL,token_id)
 	return url
 }
-func web_returns_403_code(token_id int64,url string) bool {
+func web_returns_403_code(token_id int64,url string,dst_file_name string) bool {
 	//this is needed to recover from 403 code which the image server returns for 
 	//token ids from 1 to 269 (a bug at the Rwalk webserver)
 
-	status,_:= fetch_image(url)
+	status,_:= fetch_remote_file(url,dst_file_name)
 	if status == 403 {
 		Info.Printf("Image server returns 403 code for token %v...\n",token_id)
 		return true
 	}
 	return false
 }
-func get_file_from_net_until_success(token_id int64,url string) bool {
+func get_file_from_net_until_success(token_id int64,url string,dst_file string) bool {
 
 	time_out_counter := int(0)
 //	url := fmt_url_addr(token_id)
 	Info.Printf("Fetching image for token %v: %v\n",token_id,url)
 	for {
-		status,err := fetch_remote_file(url)
+		status,err := fetch_remote_file(url,dst_file)
 		if status == 404 {	// image wasn't generated yet
 			Info.Printf("Image for token %v is not yet ready (%v status), waiting...\n",token_id,status)
 			time.Sleep(60 * time.Second)
@@ -235,9 +238,10 @@ func get_file_from_net_until_success(token_id int64,url string) bool {
 	}
 	return false
 }
-/*func get_image(token_id int64) ([]byte,bool) {
+func get_image(token_id int64) ([]byte,bool) {
 
-	success := get_image_file_from_net_until_success(token_id)
+	img_file_name := tmp_img_filename()
+	success := get_file_from_net_until_success(token_id,fmt_url_addr_for_image(token_id),img_file_name)
 	if !success {
 		return nil,false
 	}
@@ -248,7 +252,35 @@ func get_file_from_net_until_success(token_id int64,url string) bool {
 		os.Exit(1)
 	}
 	return image_data,true
-}*/
+}
+func get_video(token_id int64) ([]byte,bool) {
+
+	in_video_file_name := tmp_video_filename()
+	success := get_file_from_net_until_success(token_id,fmt_url_addr_for_video(token_id),in_video_file_name)
+	if !success {
+		return nil,false
+	}
+	// now we have to convert the file to 640x480 because Twitter doesn't accept big resolution
+	out_filename := tmp_video_filename_resampled()
+	err := ffmpeg.Input(in_video_file_name).
+		Output(out_filename, ffmpeg.KwArgs{"s": "640x480"}).
+		OverWriteOutput().ErrorToStdOut().Run()
+	if err != nil {
+		err_str := fmt.Sprintf("Can't convert the video file with ffmpeg tools: %v\n",err)
+		Info.Printf("%v",err_str)
+		Error.Printf("%v",err_str)
+		Info.Printf("Exiting due to unrecoverable error\n")
+		os.Exit(1)
+	}
+	video_data, err := os.ReadFile(out_filename)
+	if err != nil {
+		err_str := fmt.Sprintf("Can't read video at %v : %v\n",out_filename)
+		Info.Printf("%v\n",err_str)
+		Error.Printf("%v\n",err_str)
+		os.Exit(1)
+	}
+	return video_data,true
+}
 func get_withdrawal_amount() (float64,bool) {
 
 	time_out_counter := int(0)
@@ -324,6 +356,7 @@ func format_notification_message(event_type int64,token_id int64,price,withdrawa
 	return output
 }
 func set_channel_name(new_name string,channel_id disgord.Snowflake) {
+	if !*flag_discord { return }
 	_,err := disc_client.Channel(channel_id).UpdateBuilder().SetName(new_name).Execute()
 	if err != nil {
 		Info.Printf("Couldn't change channel name to %v (channel id = %v) : %v\n",new_name,channel_id,err)
@@ -351,7 +384,7 @@ func set_channel_name(new_name string,channel_id disgord.Snowflake) {
 		}
 	}
 }
-func notify_twitter_one_message(token_id int64,msg string,image_data []byte) {
+func notify_twitter_one_message(token_id int64,evt_type int64,msg string,image_data []byte) {
 	// only one message is sent, with image
 	Info.Printf("notify_twitter(token_id=%v)\n",token_id)
 
@@ -364,6 +397,7 @@ func notify_twitter_one_message(token_id int64,msg string,image_data []byte) {
 		msg,
 		twitter_nonce,
 		image_data,
+		"",
 	)
 	if err != nil {
 		Info.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
@@ -371,11 +405,11 @@ func notify_twitter_one_message(token_id int64,msg string,image_data []byte) {
 	} else {
 		Info.Printf(
 			"Notification for evt type=%v of token id=%v to Twitter successful\n",
-			rec.EvtType,rec.TokenId,
+			evt_type,token_id,
 		)
 	}
 }
-func notify_twitter_two_messages(token_id int64,msg string,image_data []byte,video_data []byte) {
+func notify_twitter_two_messages(token_id int64,evt_type int64,msg string,image_data []byte,video_data []byte) {
 	// first the message with image is sent, after that second message with video is posted as reply to first
 	Info.Printf("notify_twitter_two_messages(token_id=%v)\n",token_id)
 
@@ -388,6 +422,7 @@ func notify_twitter_two_messages(token_id int64,msg string,image_data []byte,vid
 		msg,
 		twitter_nonce,
 		image_data,
+		"",
 	)
 	if err != nil {
 		Info.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
@@ -399,16 +434,16 @@ func notify_twitter_two_messages(token_id int64,msg string,image_data []byte,vid
 		} else {
 			Info.Printf(
 				"Notification of FIRST msg for evt type=%v of token id=%v to Twitter successful\n",
-				rec.EvtType,rec.TokenId,
+				evt_type,token_id,
 			)
-			var decoded_data interface{}
-			err := json.NewDecoder(bytes.NewReader([]byte(body))).Decode(decoded_data)
+			var st_upd StatusUpdateResponse
+			err := json.NewDecoder(bytes.NewReader([]byte(body))).Decode(&st_upd)
 			if err != nil {
 				Info.Printf("Could not decode response of FIRST msg, err: %v\n",err)
 				Error.Printf("Could not decode response of FIRST msg, err: %v\n",err)
 			} else {
 				// everything ok, now send second msg
-				msg_id_str := decoded_data["media_id_string"].(string)
+				msg_id_str := st_upd.IdStr
 				twitter_nonce++
 				status_code2,_,err:=SendTweetWithVideo(
 					twitter_keys.ApiKey,
@@ -423,13 +458,18 @@ func notify_twitter_two_messages(token_id int64,msg string,image_data []byte,vid
 				if err != nil {
 					Info.Printf("Error sending second message with video: %v\n",err)
 					Error.Printf("Error sending second message with video: %v\n",err)
+					time.Sleep(30*time.Second)	// sleep 30 sec to avoid spamming Twitter in case of error
 				}
+				Info.Printf("Status = %v for HTTP response of second tweet\n",status_code2)
 			}
 		}
 	}
 }
 func notify_discord(token_id int64,msg string,image_data []byte,image_url string) error {
 
+	if !*flag_discord {
+		return nil
+	}
 	Info.Printf("notify_discord(token_id=%v)\n",token_id)
 	rdr := bytes.NewReader(image_data)
 	var err error
@@ -488,6 +528,7 @@ func check_floor_price_change_and_emit() {
 			notif_msg,
 			twitter_nonce,
 			image_data,
+			"",
 		)
 		if err != nil {
 			Info.Printf("Error sending tweet: %v (status %v; body = %v)\n",err,status_code,body)
@@ -509,24 +550,28 @@ func check_floor_price_change_and_emit() {
 func update_last_minted_time() {
 	// go-routine, updates last timed time ervery X amount of time
 	for {
-		if last_mint_ts > 0 {
-			cur_time := time.Now()
-			minted_time := time.Unix(last_mint_ts,0)
-			duration := DurationToString(TimeDifference(minted_time,cur_time))
-			new_channel_name := fmt.Sprintf(
-				"Last mint: %v ago",
-				duration,
-			)
-			set_channel_name(new_channel_name,LastDateChannelID)
-			Info.Printf("Set last mint time to : %v",new_channel_name)
+		if *flag_discord {
+			if last_mint_ts > 0 {
+				cur_time := time.Now()
+				minted_time := time.Unix(last_mint_ts,0)
+				duration := DurationToString(TimeDifference(minted_time,cur_time))
+				new_channel_name := fmt.Sprintf(
+					"Last mint: %v ago",
+					duration,
+				)
+				set_channel_name(new_channel_name,LastDateChannelID)
+				Info.Printf("Set last mint time to : %v",new_channel_name)
+			}
 		}
 		time.Sleep(DEFAULT_LAST_MINTED_INTERVAL*time.Second)
 	}
 }
 func update_last_reward(wamount float64) {
 
-	new_channel_name := fmt.Sprintf("Last reward: %.2f%v",wamount,EthSign)
-	set_channel_name(new_channel_name,LastRewardChannelID)
+	if *flag_discord {
+		new_channel_name := fmt.Sprintf("Last reward: %.2f%v",wamount,EthSign)
+		set_channel_name(new_channel_name,LastRewardChannelID)
+	}
 }
 func monitor_events(exit_chan chan bool,addr common.Address) {
 
@@ -540,12 +585,16 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 	msg_status := storage.Get_messaging_status()
 	cur_evtlog_id := msg_status.EvtLogId
 	cur_ts := msg_status.TimeStamp
-	//ts := storage.Get_last_block_timestamp()
 	Info.Printf(
 		"monitor_events() starts with evtlog_id=%v (timestamp %v) (%v)\n",
 		cur_evtlog_id,cur_ts,time.Unix(cur_ts,0).Format("2006-01-02T15:04:05"),
 	)
-	//ts = ts-3*24*60*60 /// for testing only
+	if DEV_MODE {
+		// these are hardcoded values (for testing) obtained from the DB
+		cur_ts = 1676508454 -1
+		cur_evtlog_id=400625175 - 1
+		Info.Printf("DEVELOPMENT mode on, starting from ts=%v(%v)\n",cur_ts,time.Unix(cur_ts,0).Format("2006-01-02T15:04:05"))
+	}
 	for {
 		select {
 			case exit_flag := <-exit_chan:
@@ -601,12 +650,13 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 				last_mint_ts = rec.TimeStampMinted
 				update_last_reward(withdrawal_amount)
 			}
-			is_403_code := web_returns_403_code(rec.TokenId,fmt_url_addr_for_image(token_id))
+			is_403_code := web_returns_403_code(rec.TokenId,fmt_url_addr_for_image(rec.TokenId),tmp_img_filename())
 			if is_403_code {
 				Info.Printf("Skipping event for token %v due to 403 error\n",rec.TokenId)
 				time.Sleep(1 * time.Second)
 				break // 403 is not good for a perpetual fetch via HTTP, so we skip the event
 			}
+			/*
 			success = get_file_from_net_until_success(rec.TokenId,fmt_url_addr_for_image(token_id))	// image
 			if !success {
 				Error.Printf("Couldn't get image file for token %v, aborting.",rec.TokenId)
@@ -620,9 +670,12 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 				Error.Printf("Can't read image at %v : %v\n",image_filename)
 				os.Exit(1)
 			}
+			*/
+			image_data,success := get_image(rec.TokenId)
 			var video_data []byte
 			if rec.EvtType == 1 { // Mint
 				// we get the video file only for Mint type events
+				/*
 				success = get_file_from_net_until_success(rec.TokenId,fmt_url_addr_for_video())	// video
 				if !success {
 					Error.Printf("Couldn't get image file for token %v, aborting.",rec.TokenId)
@@ -635,7 +688,8 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 					Info.Printf("Can't read video at %v : %v\n",video_filename)
 					Error.Printf("Can't read video at %v : %v\n",video_filename)
 					os.Exit(1)
-				}
+				}*/
+				video_data,success = get_video(rec.TokenId)
 			}
 			cur_evtlog_id=rec.EvtLogId
 			cur_ts = rec.TimeStampMinted
@@ -646,10 +700,10 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 
 			if *flag_twitter {
 				notif_msg := format_notification_message(rec.EvtType,rec.TokenId,rec.Price,withdrawal_amount,true)
-				if rev.EvtType == 1 { // Mint
-					notify_twitter_two_messages(rec.TokenId,notif_msg,image_data,video_data)
+				if rec.EvtType == 1 { // Mint
+					notify_twitter_two_messages(rec.TokenId,rec.EvtType,notif_msg,image_data,video_data)
 				} else {
-					notify_twitter_one_message(rec.TokenId,notif_msg,image_data)
+					notify_twitter_one_message(rec.TokenId,rec.EvtType,notif_msg,image_data)
 				}
 			}
 			if *flag_discord {
@@ -665,6 +719,9 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 			msg_status.EvtLogId=cur_evtlog_id
 			msg_status.TimeStamp=cur_ts
 			storage.Update_messaging_status(&msg_status)
+		}
+		if DEV_MODE {
+			Info.Printf("cur ts=%v(%v), records=%v\n",cur_ts,time.Unix(cur_ts,0).Format("2006-01-02T15:04:05"),len(records))
 		}
 		if len(records) == 0 {
 			time.Sleep(30 * time.Second) // sleep only if there is no data
