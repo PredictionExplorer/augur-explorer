@@ -10,6 +10,7 @@ package main
 import (
 	"fmt"
 	"time"
+	"sync"
 	"os"
 	"io"
 	"regexp"
@@ -61,14 +62,14 @@ var (
 
 	//Sample URL: https://randomwalknft.s3.us-east-2.amazonaws.com/003246_black.png
 	IMAGES_URL			string = "https://randomwalknft.s3.us-east-2.amazonaws.com"
-	VIDEOS_URL			string = ""
+	VIDEOS_URL			string = "https://randomwalknft.s3.us-east-2.amazonaws.com"
 	TMP_IMG_DATA_FILE	string = "randomwalk_img.png"	// could be an image or video
 	TMP_VIDEO_DATA_FILE	string = "randomwalk_video.mp4"
 	RESAMPLED_TMP_FILE	string = "randomwalk_resampled.mp4"	// could be an image or video
 	DETAIL_URL			string = "https://randomwalknft.com/detail"
 	MAX_TIMEOUT_COUNTER		int = 1000
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
-	DEV_MODE				bool = true	// true for testing new features
+	DEV_MODE				bool = false // true for testing new features
 
 	Error					*log.Logger
 	Info					*log.Logger
@@ -168,7 +169,6 @@ func fetch_remote_file(url string,dst_file_name string) (int,error) {
 	}
 	defer response.Body.Close()
 	if response.StatusCode == 200 {
-		//img_file_name := tmp_filename()
 		os.Remove(dst_file_name)
 		file, err := os.Create(dst_file_name)
 		if err != nil {
@@ -198,7 +198,7 @@ func fmt_url_addr_for_image(token_id int64) string {
 }
 func fmt_url_addr_for_video(token_id int64) string {
 	//	https://randomwalknft.s3.us-east-2.amazonaws.com/003968_black_single.mp4
-	url := fmt.Sprintf("%v/%06d_black.png",IMAGES_URL,token_id)
+	url := fmt.Sprintf("%v/%06d_black_single.mp4",VIDEOS_URL,token_id)
 	return url
 }
 func web_returns_403_code(token_id int64,url string,dst_file_name string) bool {
@@ -215,12 +215,12 @@ func web_returns_403_code(token_id int64,url string,dst_file_name string) bool {
 func get_file_from_net_until_success(token_id int64,url string,dst_file string) bool {
 
 	time_out_counter := int(0)
-//	url := fmt_url_addr(token_id)
-	Info.Printf("Fetching image for token %v: %v\n",token_id,url)
+	Info.Printf("Fetching file for token %v: %v\n",token_id,url)
+	Info.Printf("Destination file: %v\n",dst_file)
 	for {
 		status,err := fetch_remote_file(url,dst_file)
 		if status == 404 {	// image wasn't generated yet
-			Info.Printf("Image for token %v is not yet ready (%v status), waiting...\n",token_id,status)
+			Info.Printf("File for token %v is not yet ready (%v status), waiting...\n",token_id,status)
 			time.Sleep(60 * time.Second)
 		} else {
 			if err != nil {
@@ -232,7 +232,7 @@ func get_file_from_net_until_success(token_id int64,url string,dst_file string) 
 		}
 		time_out_counter++
 		if time_out_counter > MAX_TIMEOUT_COUNTER {
-			Info.Printf("get_image_file...: aborted by timeout at %v iterations\n",time_out_counter)
+			Info.Printf("get_file_from_net...: aborted by timeout at %v iterations\n",time_out_counter)
 			return false
 		}
 	}
@@ -262,16 +262,24 @@ func get_video(token_id int64) ([]byte,bool) {
 	}
 	// now we have to convert the file to 640x480 because Twitter doesn't accept big resolution
 	out_filename := tmp_video_filename_resampled()
-	err := ffmpeg.Input(in_video_file_name).
-		Output(out_filename, ffmpeg.KwArgs{"s": "640x480"}).
-		OverWriteOutput().ErrorToStdOut().Run()
-	if err != nil {
-		err_str := fmt.Sprintf("Can't convert the video file with ffmpeg tools: %v\n",err)
-		Info.Printf("%v",err_str)
-		Error.Printf("%v",err_str)
-		Info.Printf("Exiting due to unrecoverable error\n")
-		os.Exit(1)
-	}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		err := ffmpeg.Input(in_video_file_name).
+			Output(out_filename, ffmpeg.KwArgs{"s": "640x480"}).
+			OverWriteOutput().ErrorToStdOut().Run()
+		if err != nil {
+			err_str := fmt.Sprintf("Can't convert the video file with ffmpeg tools: %v\n",err)
+			Info.Printf("%v",err_str)
+			Error.Printf("%v",err_str)
+			Info.Printf("Exiting due to unrecoverable error\n")
+			os.Exit(1)
+		}
+		Info.Printf("Video resampling finished\n")
+		syscall.Sync()
+		wg.Done()
+	}()
+	wg.Wait()
 	video_data, err := os.ReadFile(out_filename)
 	if err != nil {
 		err_str := fmt.Sprintf("Can't read video at %v : %v\n",out_filename)
@@ -444,6 +452,7 @@ func notify_twitter_two_messages(token_id int64,evt_type int64,msg string,image_
 			} else {
 				// everything ok, now send second msg
 				msg_id_str := st_upd.IdStr
+				msg := fmt.Sprintf("Video for token %v",token_id)
 				twitter_nonce++
 				status_code2,_,err:=SendTweetWithVideo(
 					twitter_keys.ApiKey,
@@ -608,10 +617,11 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 		records := storage.Get_all_events_for_notification2(rwalk_aid,cur_evtlog_id)
 		if len(records) > 0 {
 			Info.Printf(
-				"Got %v records for timestamp %v (%v)\n",
-				len(records),cur_ts,time.Unix(cur_ts,0).Format("2006-01-02T15:04:05"),
+				"Got %v records for timestamp %v (%v) (evtlog_id=%v)\n",
+				len(records),cur_ts,time.Unix(cur_ts,0).Format("2006-01-02T15:04:05"),cur_evtlog_id,
 			)
 		}
+		os.Exit(1)
 		for i:=0; i<len(records); i++ {
 			select {
 				case exit_flag := <-exit_chan:
@@ -656,40 +666,16 @@ func monitor_events(exit_chan chan bool,addr common.Address) {
 				time.Sleep(1 * time.Second)
 				break // 403 is not good for a perpetual fetch via HTTP, so we skip the event
 			}
-			/*
-			success = get_file_from_net_until_success(rec.TokenId,fmt_url_addr_for_image(token_id))	// image
-			if !success {
-				Error.Printf("Couldn't get image file for token %v, aborting.",rec.TokenId)
-				time.Sleep(10 * time.Second)
-				break
-			}
-			image_filename := tmp_filename()
-			image_data, err := os.ReadFile(image_filename)
-			if err != nil {
-				Info.Printf("Can't read image at %v : %v\n",image_filename)
-				Error.Printf("Can't read image at %v : %v\n",image_filename)
-				os.Exit(1)
-			}
-			*/
 			image_data,success := get_image(rec.TokenId)
 			var video_data []byte
 			if rec.EvtType == 1 { // Mint
 				// we get the video file only for Mint type events
-				/*
-				success = get_file_from_net_until_success(rec.TokenId,fmt_url_addr_for_video())	// video
+				video_data,success = get_video(rec.TokenId)
 				if !success {
-					Error.Printf("Couldn't get image file for token %v, aborting.",rec.TokenId)
+					Error.Printf("Couldn't get VIDEO file for token %v, aborting.",rec.TokenId)
 					time.Sleep(10 * time.Second)
 					break
 				}
-				video_filename := tmp_filename()
-				video_data, err := os.ReadFile(video_filename)
-				if err != nil {
-					Info.Printf("Can't read video at %v : %v\n",video_filename)
-					Error.Printf("Can't read video at %v : %v\n",video_filename)
-					os.Exit(1)
-				}*/
-				video_data,success = get_video(rec.TokenId)
 			}
 			cur_evtlog_id=rec.EvtLogId
 			cur_ts = rec.TimeStampMinted

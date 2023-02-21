@@ -608,6 +608,8 @@ func (ss *SQLStorage) Get_all_events_for_notification(rwalk_aid int64,start_ts i
 				") " +
 			") data " +
 			"ORDER BY ts"
+
+	ss.Info.Printf("rwalk_aid=%v start_ts=%v q=%v\n",rwalk_aid,start_ts,query)
 	rows,err := ss.db.Query(query,rwalk_aid,start_ts)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -682,6 +684,7 @@ func (ss *SQLStorage) Get_all_events_for_notification2(rwalk_aid int64,start_evt
 				") " +
 			") data " +
 			"ORDER BY evtlog_id"
+	ss.Info.Printf("rwalk_aid=%v start_evtlog_id=%v q=%v\n",rwalk_aid,start_evtlog_id,query)
 	rows,err := ss.db.Query(query,rwalk_aid,start_evtlog_id)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
