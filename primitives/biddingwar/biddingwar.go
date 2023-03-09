@@ -77,3 +77,13 @@ type BWTokenNameEvent struct {
 	TokenId				int64
 	TokenName			string
 }
+type BWMintEvent struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxIndex				int64
+	LogIndex			int64
+	TokenId				int64
+	Owner				string
+	Seed				string
+}

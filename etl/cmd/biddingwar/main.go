@@ -23,5 +23,15 @@ var (
 	evt_charity_updated,_	= hex.DecodeString(CHARITY_UPDATED)
 	evt_token_name_event,_	= hex.DecodeString(TOKEN_NAME_EVENT)
 	evt_mint_event,_		= hex.DecodeString(MINT_EVENT)
+
+	biddingwar_abi			*abi.ABI
+	cosmic_signature_abi	*abi.ABI
+	cosmic_token_abi		*abi.ABI
+	charity_wallet_abi		*abi.ABI
+
+	biddingwar_addr			common.Address
+	cosmic_signature_addr	common.Address
+	cosmic_token_addr		common.Address
+	charity_wallet_addr		common.Address
 )
 
