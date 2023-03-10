@@ -62,7 +62,7 @@ var (
 
 	bw_contracts			BiddingWarContractAddrs
 	storagew				SQLStorageWrapper
-	RPC_URL					 = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
+	RPC_URL					 = os.Getenv("RPC_URL")
 	Error					*log.Logger
 	Info					*log.Logger
 )
@@ -163,6 +163,7 @@ func main() {
 	eclient = ethclient.NewClient(rpcclient)
 
 	storagew.S = Connect_to_storage(Info)
+	storagew.S.Db_set_schema_name("public");
 	storagew.S.Init_log(db_log_file)
 	storagew.S.Log_msg("Log initialized\n")
 

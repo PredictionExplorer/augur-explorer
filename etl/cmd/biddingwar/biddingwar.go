@@ -152,7 +152,7 @@ func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("DonationEvent {\n")
 	Info.Printf("\tDonor: %v\n",evt.DonorAddr)
-	Info.Printf("\tAmount%v\n",evt.Amount)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("}\n")
 
 	storagew.Insert_donation(&evt)

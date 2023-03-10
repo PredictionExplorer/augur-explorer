@@ -8,13 +8,13 @@ import (
 )
 func (sw *SQLStorageWrapper) Insert_prize_claim_event(evt *p.BWPrizeClaimEvent) {
 
-	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
-	winner_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.WinnerAddr)
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".prize_claim("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_prize_claim("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"prize_num,winner_aid,amount"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -32,13 +32,13 @@ func (sw *SQLStorageWrapper) Insert_prize_claim_event(evt *p.BWPrizeClaimEvent) 
 }
 func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.BWBidEvent) {
 
-	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
-	bidder_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.LastBidderAddr)
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	bidder_aid := sw.S.Lookup_or_create_address(evt.LastBidderAddr,0, 0)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_bid("+
-					"evtlog_id,block_num,time_stamp,tx_id,log_index,contract_aid,"+
-					"bidder_aid,rwalk_nft_id,amount"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
+					"bidder_aid,rwalk_nft_id,bid_price"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -56,19 +56,18 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.BWBidEvent) {
 }
 func (sw *SQLStorageWrapper) Insert_donation(evt *p.BWDonationEvent ) {
 
-	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
-	donor_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.DonorAddr)
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	donor_aid := sw.S.Lookup_or_create_address(evt.DonorAddr,0, 0)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_donation("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"donor_aid,amount"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
-		evt.LogIndex,
 		contract_aid,
 		donor_aid,
 		evt.Amount,
@@ -80,13 +79,13 @@ func (sw *SQLStorageWrapper) Insert_donation(evt *p.BWDonationEvent ) {
 }
 func (sw *SQLStorageWrapper) Insert_donation_received(evt *p.BWDonationReceivedEvent ) {
 
-	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
-	donor_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.DonorAddr)
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	donor_aid := sw.S.Lookup_or_create_address(evt.DonorAddr,0, 0)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_donation_received("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"donor_aid,amount"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -103,13 +102,13 @@ func (sw *SQLStorageWrapper) Insert_donation_received(evt *p.BWDonationReceivedE
 }
 func (sw *SQLStorageWrapper) Insert_donation_sent(evt *p.BWDonationSentEvent ) {
 
-	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
-	charity_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.CharityAddr)
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	charity_aid := sw.S.Lookup_or_create_address(evt.CharityAddr,0, 0)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_donation_sent("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"charity_aid,amount"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -126,13 +125,13 @@ func (sw *SQLStorageWrapper) Insert_donation_sent(evt *p.BWDonationSentEvent ) {
 }
 func (sw *SQLStorageWrapper) Insert_charity_updated_event(evt *p.BWCharityUpdatedEvent) {
 
-	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
-	new_charity_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.NewCharityAddr)
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	new_charity_aid := sw.S.Lookup_or_create_address(evt.NewCharityAddr,0, 0)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_charity_updated("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"charity_aid"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6)"
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -148,12 +147,12 @@ func (sw *SQLStorageWrapper) Insert_charity_updated_event(evt *p.BWCharityUpdate
 }
 func (sw *SQLStorageWrapper) Insert_token_name_event(evt *p.BWTokenNameEvent) {
 
-	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_token_name("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"token_id,token_name"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6)"
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -170,14 +169,14 @@ func (sw *SQLStorageWrapper) Insert_token_name_event(evt *p.BWTokenNameEvent) {
 }
 func (sw *SQLStorageWrapper) Insert_mint_event(evt *p.BWMintEvent) {
 
-	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
-	owner_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.OwnerAddr)
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	owner_aid := sw.S.Lookup_or_create_address(evt.OwnerAddr,0, 0)
 
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_mint_event("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"owner_aid,token_id,seed"+
-					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,

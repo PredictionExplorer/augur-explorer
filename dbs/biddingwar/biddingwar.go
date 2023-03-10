@@ -56,7 +56,7 @@ func (sw *SQLStorageWrapper) Get_biddingwar_processing_status() p.BiddingWarProc
 		err := res.Scan(&null_id)
 		if (err!=nil) {
 			if err == sql.ErrNoRows {
-				query = "INSERT INTO "+sw.S.SchemaName()+".rw_proc_status DEFAULT VALUES"
+				query = "INSERT INTO "+sw.S.SchemaName()+".bw_proc_status DEFAULT VALUES"
 				_,err := sw.S.Db().Exec(query)
 				if (err!=nil) {
 					sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -78,7 +78,7 @@ func (sw *SQLStorageWrapper) Get_biddingwar_processing_status() p.BiddingWarProc
 func (sw *SQLStorageWrapper) Update_biddingwar_process_status(status *p.BiddingWarProcStatus) {
 
 	var query string
-	query = "UPDATE "+sw.S.SchemaName()+".rw_proc_status SET last_evt_id = $1"
+	query = "UPDATE "+sw.S.SchemaName()+".bw_proc_status SET last_evt_id = $1"
 
 	_,err := sw.S.Db().Exec(query,status.LastEvtIdProcessed)
 	if (err!=nil) {
