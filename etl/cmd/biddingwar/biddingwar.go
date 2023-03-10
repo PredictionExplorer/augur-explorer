@@ -11,8 +11,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
+	. "github.com/PredictionExplorer/augur-explorer/primitives/biddingwar"
+	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
-func build_list_of_inspected_events_layer1(rwalk_aid int64) []InspectedEvent {
+func build_list_of_inspected_events_layer1() []InspectedEvent {
 
 	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)
 	inspected_events= make([]InspectedEvent,0, 32)
@@ -39,10 +41,10 @@ func build_list_of_inspected_events_layer1(rwalk_aid int64) []InspectedEvent {
 		},
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_charity_updated[:4]),
-			ContractAid: rwalk_aid,
+			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_token_name[:4]),
+			Signature: hex.EncodeToString(evt_token_name_event[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -54,7 +56,7 @@ func build_list_of_inspected_events_layer1(rwalk_aid int64) []InspectedEvent {
 }
 func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BwPrizeClaimEvent
+	var evt BWPrizeClaimEvent
 	var eth_evt BiddingWarPrizeClaimEvent
 
 	Info.Printf("Processing PrizeClaim event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -72,7 +74,7 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
-	evt.Contract = log.Address.String()
+	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.PrizeNum= log.Topics[1].Big().Int64()
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
@@ -81,15 +83,15 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("PrizeClaimEvent {\n")
 	Info.Printf("\tPrizeNum: %v\n",evt.PrizeNum)
-	Info.Printf("\tWinner%v\n",evt.Address)
-	Info.Printf("\tAmount: %v\n",evt.Seed)
+	Info.Printf("\tWinner%v\n",evt.WinnerAddr)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("}\n")
 
-	storage.Insert_prize_claim_event(&evt)
+	storagew.Insert_prize_claim_event(&evt)
 }
 func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BwBidEvent
+	var evt BWBidEvent
 	var eth_evt BiddingWarBidEvent
 
 	Info.Printf("Processing Bid event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -107,7 +109,7 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
-	evt.Contract = log.Address.String()
+	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.LastBidderAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.BidPrice = eth_evt.BidPrice.String()
@@ -120,11 +122,11 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tRandomWalkTokenId: %v\n",evt.RandomWalkTokenId)
 	Info.Printf("}\n")
 
-	storage.Insert_mint_event(&evt)
+	storagew.Insert_bid_event(&evt)
 }
-func proc_donation_event_event(log *types.Log,elog *EthereumEventLog) {
+func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BwDonationEvent
+	var evt BWDonationEvent
 	var eth_evt BiddingWarDonationEvent
 
 	Info.Printf("Processing DonationEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -142,27 +144,27 @@ func proc_donation_event_event(log *types.Log,elog *EthereumEventLog) {
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
-	evt.Contract = log.Address.String()
+	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.Donor = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.Amount = eth_evt.Amount.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("DonationEvent {\n")
-	Info.Printf("\tDonor: %v\n",evt.Donor)
+	Info.Printf("\tDonor: %v\n",evt.DonorAddr)
 	Info.Printf("\tAmount%v\n",evt.Amount)
 	Info.Printf("}\n")
 
-	storage.Insert_donation(&evt)
+	storagew.Insert_donation(&evt)
 }
 func proc_donation_received_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BwDonationReceivedEvent
+	var evt BWDonationReceivedEvent
 	var eth_evt CharityWalletDonationReceivedEvent
 
 	Info.Printf("Processing DonationReceivedEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	if !bytes.Equal(log.Address.Bytes(),charitywallet_addr.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),charity_wallet_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
@@ -175,27 +177,27 @@ func proc_donation_received_event(log *types.Log,elog *EthereumEventLog) {
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
-	evt.Contract = log.Address.String()
+	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.Donor = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.Amount = eth_evt.Amount.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("DonationReceivedEvent {\n")
-	Info.Printf("\tDonor: %v\n",evt.Donor)
+	Info.Printf("\tDonor: %v\n",evt.DonorAddr)
 	Info.Printf("\tAmount%v\n",evt.Amount)
 	Info.Printf("}\n")
 
-	storage.Insert_donation_received(&evt)
+	storagew.Insert_donation_received(&evt)
 }
 func proc_donation_sent_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BwDonationSentEvent
+	var evt BWDonationSentEvent
 	var eth_evt CharityWalletDonationSentEvent
 
 	Info.Printf("Processing DonationSentEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	if !bytes.Equal(log.Address.Bytes(),charitywallet_addr.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),charity_wallet_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
@@ -208,7 +210,7 @@ func proc_donation_sent_event(log *types.Log,elog *EthereumEventLog) {
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
-	evt.Contract = log.Address.String()
+	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.CharityAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.Amount = eth_evt.Amount.String()
@@ -219,20 +221,20 @@ func proc_donation_sent_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tAmount%v\n",evt.Amount)
 	Info.Printf("}\n")
 
-	storage.Insert_donation_sent(&evt)
+	storagew.Insert_donation_sent(&evt)
 }
 func proc_charity_updated_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BwCharityUpdatedEvent
+	var evt BWCharityUpdatedEvent
 	var eth_evt CharityWalletCharityUpdatedEvent
 
 	Info.Printf("Processing CharityUpdatedEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	if !bytes.Equal(log.Address.Bytes(),charitywallet_addr.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),charity_wallet_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := charitywallet_abi.UnpackIntoInterface(&eth_evt,"CharityUpdatedEvent",log.Data)
+	err := charity_wallet_abi.UnpackIntoInterface(&eth_evt,"CharityUpdatedEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event CharityUpdatedEvent decode error: %v",err)
 		os.Exit(1)
@@ -241,21 +243,20 @@ func proc_charity_updated_event(log *types.Log,elog *EthereumEventLog) {
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
-	evt.Contract = log.Address.String()
+	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.NewCharityAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("CharityUpdatedEvent {\n")
-	Info.Printf("\tNewCharity: %v\n",evt.CharityAddr)
-	Info.Printf("\tAmount%v\n",evt.Amount)
+	Info.Printf("\tNewCharity: %v\n",evt.NewCharityAddr)
 	Info.Printf("}\n")
 
-	storage.Insert_charity_updated_event(&evt)
+	storagew.Insert_charity_updated_event(&evt)
 }
 func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BwTokenNameEvent
+	var evt BWTokenNameEvent
 	var eth_evt CosmicSignatureTokenNameEvent
 
 	Info.Printf("Processing TokenNameEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -273,7 +274,7 @@ func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
-	evt.Contract = log.Address.String()
+	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.TokenId = eth_evt.TokenId.Int64()
 	evt.TokenName = eth_evt.NewName
@@ -284,11 +285,11 @@ func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tTokenName%v\n",evt.TokenName)
 	Info.Printf("}\n")
 
-	storage.Insert_token_name_event(&evt)
+	storagew.Insert_token_name_event(&evt)
 }
 func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BwMintEvent
+	var evt BWMintEvent
 	var eth_evt CosmicSignatureMintEvent
 
 	Info.Printf("Processing MintEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -306,41 +307,41 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
-	evt.Contract = log.Address.String()
+	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.TokenID = log.Topics[1].Big().Int64()
-	evt.Owner = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.TokenId = log.Topics[1].Big().Int64()
+	evt.OwnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("MintEvent{\n")
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
-	Info.Printf("\tOwner:%v\n",evt.Owner)
+	Info.Printf("\tOwner:%v\n",evt.OwnerAddr)
 	Info.Printf("\tSeed: %v\n",evt.Seed)
 	Info.Printf("}\n")
 
-	storage.Insert_token_name_event(&evt)
+	storagew.Insert_mint_event(&evt)
 }
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_new_offer) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event) {
 		proc_prize_claim_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_item_bought) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_bid_event) {
 		proc_bid_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_offer_canceled) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donation_event) {
 		proc_donation_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_withdrawal) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donation_received_event) {
 		proc_donation_received_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_token_name) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donation_sent_event) {
 		proc_donation_sent_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_transfer) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_charity_updated) {
 		proc_charity_updated_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_token_name) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_token_name_event) {
 		proc_token_name_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_mint_event) {
@@ -349,7 +350,7 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 }
 func process_single_event(evt_id int64) error {
 
-	evtlog := storage.Get_event_log(evt_id)
+	evtlog := storagew.S.Get_event_log(evt_id)
 	var log types.Log
 	err := rlp.DecodeBytes(evtlog.RlpLog,&log)
 	if err!= nil {

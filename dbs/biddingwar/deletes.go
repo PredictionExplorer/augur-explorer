@@ -1,8 +1,10 @@
 package biddingwar
 
 import (
+	"os"
+	"fmt"
 
-	p "github.com/PredictionExplorer/augur-explorer/primitives/biddinwar"
+	//p "github.com/PredictionExplorer/augur-explorer/primitives/biddingwar"
 )
 // Note: these deletes are per transaction, therefore multiple records will be deleted
 //			if transaction contains more than one event of the same kind,

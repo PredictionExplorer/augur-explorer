@@ -1,23 +1,25 @@
 package biddingwar
 
 import (
+	"os"
+	"fmt"
 
-	p "github.com/PredictionExplorer/augur-explorer/primitives/biddinwar"
+	p "github.com/PredictionExplorer/augur-explorer/primitives/biddingwar"
 )
-func (sw *SQLStorageWrapper) Insert_prize_claim_event(evt *p.BWPRizeClaimEvent) {
+func (sw *SQLStorageWrapper) Insert_prize_claim_event(evt *p.BWPrizeClaimEvent) {
 
 	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
 	winner_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.WinnerAddr)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".prize_claim("+
-					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"prize_num,winner_aid,amount"+
 					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
 	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
-		evt.TxIndex,
-		evt.LogIndex,
+		evt.TxId,
 		contract_aid,
 		evt.PrizeNum,
 		winner_aid,
@@ -34,14 +36,14 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.BWBidEvent) {
 	bidder_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.LastBidderAddr)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_bid("+
-					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+					"evtlog_id,block_num,time_stamp,tx_id,log_index,contract_aid,"+
 					"bidder_aid,rwalk_nft_id,amount"+
 					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
 	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
-		evt.TxIndex,
-		evt.LogIndex,
+		evt.TxId,
 		contract_aid,
 		bidder_aid,
 		evt.RandomWalkTokenId,
@@ -58,13 +60,14 @@ func (sw *SQLStorageWrapper) Insert_donation(evt *p.BWDonationEvent ) {
 	donor_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.DonorAddr)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_donation("+
-					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"donor_aid,amount"+
 					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
 	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
-		evt.TxIndex,
+		evt.TxId,
 		evt.LogIndex,
 		contract_aid,
 		donor_aid,
@@ -81,14 +84,14 @@ func (sw *SQLStorageWrapper) Insert_donation_received(evt *p.BWDonationReceivedE
 	donor_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.DonorAddr)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_donation_received("+
-					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"donor_aid,amount"+
 					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
 	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
-		evt.TxIndex,
-		evt.LogIndex,
+		evt.TxId,
 		contract_aid,
 		donor_aid,
 		evt.Amount,
@@ -104,16 +107,16 @@ func (sw *SQLStorageWrapper) Insert_donation_sent(evt *p.BWDonationSentEvent ) {
 	charity_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.CharityAddr)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_donation_sent("+
-					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"charity_aid,amount"+
 					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7)"
 	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
-		evt.TxIndex,
-		evt.LogIndex,
+		evt.TxId,
 		contract_aid,
-		donor_aid,
+		charity_aid,
 		evt.Amount,
 	)
 	if err != nil {
@@ -127,14 +130,14 @@ func (sw *SQLStorageWrapper) Insert_charity_updated_event(evt *p.BWCharityUpdate
 	new_charity_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.NewCharityAddr)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_charity_updated("+
-					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"charity_aid"+
 					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6)"
 	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
-		evt.TxIndex,
-		evt.LogIndex,
+		evt.TxId,
 		contract_aid,
 		new_charity_aid,
 	)
@@ -148,14 +151,14 @@ func (sw *SQLStorageWrapper) Insert_token_name_event(evt *p.BWTokenNameEvent) {
 	contract_aid := sw.S.Layer1_lookup_or_insert_address_id(evt.ContractAddr)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_token_name("+
-					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"token_id,token_name"+
 					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6)"
 	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
-		evt.TxIndex,
-		evt.LogIndex,
+		evt.TxId,
 		contract_aid,
 		evt.TokenId,
 		evt.TokenName,
@@ -172,14 +175,14 @@ func (sw *SQLStorageWrapper) Insert_mint_event(evt *p.BWMintEvent) {
 
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_mint_event("+
-					"block_num,time_stamp,tx_index,log_index,contract_aid,"+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"owner_aid,token_id,seed"+
 					") VALUES($1,TO_TIMESTAMP($2),$3,$4,$5,$6,$7,$8)"
 	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
-		evt.TxIndex,
-		evt.LogIndex,
+		evt.TxId,
 		contract_aid,
 		owner_aid,
 		evt.TokenId,

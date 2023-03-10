@@ -94,3 +94,6 @@ CREATE TABLE bw_contracts (
 	cosmic_token_addr		TEXT,
 	charity_wallet_addr		TEXT
 );
+CREATE TABLE rw_proc_status (
+	last_evt_id             BIGINT DEFAULT 0
+);
