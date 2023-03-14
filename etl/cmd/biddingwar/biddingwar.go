@@ -282,7 +282,7 @@ func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("TokenNameEvent {\n")
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
-	Info.Printf("\tTokenName%v\n",evt.TokenName)
+	Info.Printf("\tTokenName: %v\n",evt.TokenName)
 	Info.Printf("}\n")
 
 	storagew.Insert_token_name_event(&evt)
