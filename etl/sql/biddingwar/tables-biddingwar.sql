@@ -88,6 +88,23 @@ CREATE TABLE bw_mint_event(
 	seed			TEXT NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE bw_bidder ( -- collects statistics per bidder
+	bidder_aid		BIGINT PRIMARY KEY,
+	num_bids		BIGINT DEFAULT 0,
+	max_bid			DECIMAL DEFAULT 0,
+	tokens_minted	DECIMAL DEFAULT 0 -- total tokens minted
+);
+CREATE TABLE bw_winner ( -- collects statistics per winer of prize
+	winner_aid		BIGINT PRIMARY KEY,
+	max_win_amount	DECIMAL DEFAULT 0,
+	prizes_count	BIGINT DEFAULT 0,
+	prizes_sum		DECIMAL DEFAULT 0
+);
+CREATE TABLE bw_glob_stats ( -- global statistics
+	num_vol_donations		BIGINT DEFAULT 0,		-- total number of voluntary donations
+	num_bids				BIGINT DEFAULT 0, 		-- total bids made
+	num_wins				BIGINT DEFAULT 0		-- total prizes given
+);
 CREATE TABLE bw_contracts (
 	bidding_war_addr		TEXT,
 	cosmic_signature_addr	TEXT,

@@ -375,3 +375,9 @@ func show_ethusd_price(c *gin.Context) {
 			"FinDate" : end_date,
 	})
 }
+func is_bidding_war_enabled() {
+	bw_enabled := os.Getenv("BIDDING_WAR_ENABLED")
+	if len(bw_enabled) > 0 {
+		biddingwar_init()
+	}
+}
