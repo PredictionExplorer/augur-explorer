@@ -154,6 +154,10 @@ func set_api_routing_randomwalk(r *gin.Engine) {
 	r.GET("/api/rwalk/top5tokens",api_rwalk_top5_traded_tokens)
 	r.GET("/api/rwalk/mint_report",api_rwalk_mint_report)
 }
+func set_api_routing_biddingwar(r *gin.Engine) {
+	r.GET("/api/biddingwar/dashboard",api_biddingwar_dashboard)
+
+}
 func set_api_routing_statistics(r *gin.Engine) {
 
 	r.GET("/api/statistics/main_net/:init_ts/:fin_ts",api_stats_main_statistics_main_net)
@@ -169,5 +173,6 @@ func set_routing_api(r *gin.Engine) {
 	set_api_routing_augur_amm(r)
 	set_api_routing_polymarket(r)
 	set_api_routing_randomwalk(r)
+	set_api_routing_biddingwar(r)
 	set_api_routing_statistics(r)
 }

@@ -54,28 +54,30 @@ func initialize() {
 	if augur_srv.db_matic != nil {
 		amm_contracts = augur_srv.db_matic.Get_augur_amm_contract_addresses()
 	}
+	biddingwar_init()
 }
 func secure_https(r http.Handler) {
 	autotls.Run(r, "localhost")
 }
 func main() {
 
-
-	augur_srv = create_augur_server()
-
-	initialize()
-
-
 	if len(RPC_URL) == 0 {
 		fmt.Printf("Configuration error: RPC URL of Ethereum node is not set."+
 			"Calls to contracts are disabled. " +
 			" Please set AUGUR_ETH_NODE_RPC environment variable")
-	} else {
-		var err error
-		rpcclient, err = ethclient.Dial(RPC_URL)
-		if err != nil {
-			log.Fatal(err)
-		}
+		os.Exit(1)
+	}
+	var err error
+	rpcclient, err = ethclient.Dial(RPC_URL)
+	if err != nil {
+		fmt.Printf("Can't establish connection to RPC service: %v\n",err)
+		os.Exit(1)
+	}
+	augur_srv = create_augur_server()
+
+	initialize()
+
+	if (false) { // permanently disabled
 		// init contracts
 		fmt.Printf("init DAI contract with addr %v\n",caddrs.Dai.String())
 		ctrct_dai_token,err = NewDAICash(caddrs.Dai,rpcclient)

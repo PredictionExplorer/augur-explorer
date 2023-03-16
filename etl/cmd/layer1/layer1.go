@@ -60,7 +60,7 @@ func read_block_numbers(fname string)  []int64 {
 	}
 	blocks_str := string(data)
 	numbers := strings.Split(blocks_str,",")
-	output := make([]int64,0,512)
+	output := make([]int64,0, 512)
 	for i:=0 ; i<len(numbers); i++ {
 		trimmed:=strings.ReplaceAll(numbers[i],"\n","")
 		bnum,err:=strconv.Atoi(trimmed)
@@ -222,6 +222,14 @@ func main() {
 			break
 		}
 	}// for block_num
+	select {
+		case exit_flag := <-exit_chan:
+			if exit_flag {
+				Info.Println("Exiting by user request.")
+				os.Exit(0)
+			}
+		default:
+	}
 	time.Sleep(DEFAULT_WAIT_TIME * time.Millisecond)
 	goto main_loop // infinite loop without loss of one indentation level
 }

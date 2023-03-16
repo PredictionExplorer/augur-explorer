@@ -102,8 +102,11 @@ CREATE TABLE bw_winner ( -- collects statistics per winer of prize
 );
 CREATE TABLE bw_glob_stats ( -- global statistics
 	num_vol_donations		BIGINT DEFAULT 0,		-- total number of voluntary donations
+	vol_donations_total		DECIMAL DEFAULT 0,		-- sum of voluntary donations
 	num_bids				BIGINT DEFAULT 0, 		-- total bids made
-	num_wins				BIGINT DEFAULT 0		-- total prizes given
+	num_wins				BIGINT DEFAULT 0,		-- total prizes given
+	num_rwalk_used			BIGINT DEFAULT 0,
+	cur_num_bids			BIGINT DEFAULT 0		-- num bids since new round
 );
 CREATE TABLE bw_contracts (
 	bidding_war_addr		TEXT,
@@ -114,3 +117,4 @@ CREATE TABLE bw_contracts (
 CREATE TABLE bw_proc_status (
 	last_evt_id             BIGINT DEFAULT 0
 );
+INSERT INTO bw_glob_stats DEFAULT VALUES;

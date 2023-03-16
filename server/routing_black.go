@@ -144,6 +144,9 @@ func set_routing_randomwalk(r *gin.Engine) {
 	r.GET("/black/rwalk/download_mints/:rwalk_addr",rwalk_token_csv_export)
 	r.GET("/black/rwalk/mint_report",rwalk_mint_report)
 }
+func set_routing_biddingwar(r *gin.Engine) {
+	r.GET("/black/biddingwar",biddingwar_index_page)
+}
 func set_routing_statistics(r *gin.Engine) {
 
 	r.GET("/black/statistics/main_net/:init_ts/:fin_ts",stats_main_statistics_main_net)
@@ -160,6 +163,7 @@ func set_routing_black_templates(r *gin.Engine) {
 	set_routing_augur_amm(r)
 	set_routing_polymarket(r)
 	set_routing_randomwalk(r)
+	set_routing_biddingwar(r)
 	set_routing_statistics(r)
 
 	r.GET("/black/ethusd/",show_ethusd_price)

@@ -1,0 +1,119 @@
+<html>
+<head>
+	<title>Bidding War Main Page</title>
+	<link href="/black/res/main.css" rel="stylesheet">
+</head>
+
+<body>
+<nav>
+	<ul>
+	<li>
+		<a class="btn_link" href="/">Bids</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+	<li>
+		<a class="btn_link" href="/black/">Prizes</a>
+		<span></span><span></span><span></span><span></span>
+	</li>
+</ul>
+</nav>
+<div>
+<table style="float: right" class="index_stats">
+	<tr>
+		<td colspan=2 style="text-align:center;background-color: #696969;">
+				<h4 style="text-align:center;">System dashboard</h4>
+		</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top;">
+			<table style="float: right" class="index_stats">
+			<tr>
+				<td colspan=2 class="market_reports" style="text-align: center;"><b>Current Round Statistics</b></td>
+			</tr>
+			<tr>
+				<td>Current Round</td>
+				<td class="market_reports">{{.CurRoundNum}}</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Current Bid Price</td>
+				<td>{{ printf "%6f" .BidPriceEth}} ETH</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Num Bids Since Round Start</td>
+				<td>{{.CurNumBids}}</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Prize Amount</td>
+				<td class="market_reports">{{ printf "%.5f" .PrizeAmountEth}} ETH</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Prize Claim Date</td>
+				<td class="market_reports">{{.PrizeClaimDate}}</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Last Bidder</td>
+				<td class="market_reports">{{.LastBidderAddr}}</td>
+			</tr>
+			</table>
+		</td>
+		<td>
+			<table style="float: right" class="index_stats">
+			<tr>
+				<td colspan=2 style="text-align: center;"><b>Overall Statistics</b></td>
+			</tr>
+			<tr class="market_reports">
+				<td style="">Num Prizes Given	</td>
+				<td>{{.TotalPrizes}}</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Total Amount Paid in Prizes</td>
+				<td>{{.TotalPrizesPaidAmountEth}} ETH</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Voluntary Donations Received</td>
+				<td>{{.NumVoluntaryDonations}} totalling {{.SumVoluntaryDonationsEth}} ETH</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">RandomWalk tokens used</td>
+				<td class="market_reports">{{.NumRwalkTokensUsed}}</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Price Increase</td>
+				<td class="market_reports">{{.PriceIncrease}}</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Time Increase</td>
+				<td class="market_reports">{{.TimeIncrease}}</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Seconds Extra</td>
+				<td class="market_reports">{{.NanosecondsExtra}}</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Token Reward</td>
+				<td class="market_reports">{{.TokenReward}}</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Prize Percentage</td>
+				<td class="market_reports">{{.PrizePercentage}}</td>
+			</tr>
+
+			<tr class="market_reports">
+				<td class="market_reports">Charity Address</td>
+				<td class="market_reports">{{.CharityAddr}}</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Charity Percentage</td>
+				<td class="market_reports">{{.CharityPercentage}}</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Charity Balance</td>
+				<td class="market_reports" title="{{.CharityBalance}}" >{{ printf "%.4f" .CharityBalanceEth}} ETH</td>
+			</tr>
+			</table>
+		</td>
+	</tr>
+</table>
+</div>
+</body>
+</html>

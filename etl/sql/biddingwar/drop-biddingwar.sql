@@ -9,5 +9,8 @@ DROP TABLE IF EXISTS
 	bw_token_name,
 	bw_mint_event,
 	bw_contracts,
-	bw_proc_status
+	bw_proc_status,
+	bw_bidder,
+	bw_winner,
+	bw_glob_stats
 CASCADE;

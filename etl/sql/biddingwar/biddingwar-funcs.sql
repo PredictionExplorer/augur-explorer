@@ -23,7 +23,10 @@ BEGIN
 	IF v_cnt = 0 THEN
 		RAISE EXCEPTION 'bw_glob_stats table wasnt initialized (no record found)';
 	END IF;
-
+	IF NEW.rwalk_nft_id > -1 THEN
+		UPDATE bw_glob_stats SET num_rwalk_used = (num_rwalk_used + 1);
+	END IF;
+	UPDATE bw_glob_stats SET cur_num_bids = (cur_num_bids + 1);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -47,6 +50,10 @@ BEGIN
 	IF v_cnt = 0 THEN
 		RAISE EXCEPTION 'bw_glob_stats table wasnt initialized (no record found)';
 	END IF;
+	IF OLD.rwalk_nft_id > -1 THEN
+		UPDATE bw_glob_stats SET num_rwalk_used = (num_rwalk_used - 1);
+	END IF;
+	UPDATE bw_glob_stats SET cur_num_bids = (cur_num_bids - 1);
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -86,6 +93,7 @@ BEGIN
 	IF v_cnt = 0 THEN
 		RAISE EXCEPTION 'bw_glob_stats table wasnt initialized (no record found)';
 	END IF;
+	UPDATE bw_glob_stats SET cur_num_bids = 0;
 
 	RETURN NEW;
 END;
@@ -134,15 +142,18 @@ DECLARE
 BEGIN
 
 	SELECT bidding_war_addr FROM bw_contracts LIMIT 1 INTO v_biddingwar_addr;
-	IF v_biddingwar_addr IS NULL 
+	IF v_biddingwar_addr IS NULL THEN
 		RAISE EXCEPTION 'BiddingWar contract address is not defined';
 	END IF;
 	SELECT address_id FROM address WHERE addr=v_biddingwar_addr INTO v_biddingwar_aid;
-	IF v_biddingwar_aid IS NULL
+	IF v_biddingwar_aid IS NULL THEN
 		RAISE EXCEPTION 'BiddingWar address id not found in address table';
 	END IF;
-	IF NEW.donor_aid = v_biddingwar_aid THEN
-		UPDATE bw_glob_stats SET num_vol_donations = (num_vol_donations + 1);
+	IF NEW.donor_aid != v_biddingwar_aid THEN
+		UPDATE bw_glob_stats 
+			SET 
+				num_vol_donations = (num_vol_donations + 1),
+				vol_donations_total = (vol_donations_total + NEW.amount);
 	END IF;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
@@ -160,15 +171,18 @@ DECLARE
 BEGIN
 
 	SELECT bidding_war_addr FROM bw_contracts LIMIT 1 INTO v_biddingwar_addr;
-	IF v_biddingwar_addr IS NULL 
+	IF v_biddingwar_addr IS NULL THEN
 		RAISE EXCEPTION 'BiddingWar contract address is not defined';
 	END IF;
 	SELECT address_id FROM address WHERE addr=v_biddingwar_addr INTO v_biddingwar_aid;
-	IF v_biddingwar_aid IS NULL
+	IF v_biddingwar_aid IS NULL THEN
 		RAISE EXCEPTION 'BiddingWar address id not found in address table';
 	END IF;
-	IF OLD.donor_aid = v_biddingwar_aid THEN
-		UPDATE bw_glob_stats SET num_vol_donations = (num_vol_donations - 1);
+	IF OLD.donor_aid != v_biddingwar_aid THEN
+		UPDATE bw_glob_stats
+			SET
+				num_vol_donations = (num_vol_donations - 1),
+				vol_donations_total = (vol_donations_total - OLD.amount);
 	END IF;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN

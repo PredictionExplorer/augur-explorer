@@ -61,7 +61,6 @@ func connect_to_main_net(srv *AugurServer) {
 	eth_passwd := os.Getenv("ETH_PASSWORD")
 	eth_db_name := os.Getenv("ETH_DATABASE")
 	eth_host_port := os.Getenv("ETH_HOST")
-	fmt.Printf("connecting to eth main net\n")
 	if len(eth_user) > 0 {
 		log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
 		db_log_file:=fmt.Sprintf("%v/%v",log_dir,"mainnet-db.log")
@@ -87,7 +86,6 @@ func connect_to_amm(srv *AugurServer) {
 	amm_passwd := os.Getenv("AMM_PASSWORD")
 	amm_db_name := os.Getenv("AMM_DATABASE")
 	amm_host_port := os.Getenv("AMM_HOST")
-	fmt.Printf("connecting to amm\n")
 	if len(amm_user) > 0 {
 		fmt.Printf("Amm=%v\n",amm_user)
 		log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
