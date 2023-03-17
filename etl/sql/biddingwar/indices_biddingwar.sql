@@ -1,3 +1,4 @@
 CREATE INDEX bid_bidder_aid_idx			ON bw_bid			(bidder_aid);
 CREATE INDEX prize_winner_aid_idx		ON bw_prize_claim	(winner_aid);
+CREATE INDEX prize_num_idx				ON bw_prize_claim	(prize_num);
 CREATE INDEX mint_tokid_idx				ON bw_mint_event	(token_id);

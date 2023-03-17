@@ -89,3 +89,67 @@ func api_biddingwar_bids(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
+func api_biddingwar_bid_info(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_evtlog_id := c.Param("evtlog_id")
+	var evtlog_id int64
+	if len(p_evtlog_id) > 0 {
+		var success bool
+		evtlog_id,success = parse_int_from_remote_or_error(c,JSON,&p_evtlog_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'evtlog_id' parameter is not set")
+		return
+	}
+	record_found,bid_info := arb_storagew.Get_bid_info(evtlog_id)
+	if !record_found {
+		respond_error_json(c,"record not found")
+	} else {
+		var req_status int = 1
+		var err_str string = ""
+		c.JSON(http.StatusOK, gin.H{
+			"status": req_status,
+			"error" : err_str,
+			"BidInfo" : bid_info,
+		})
+	}
+} 
+func api_biddingwar_prize_info(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_prize_num:= c.Param("prize_num")
+	var prize_num int64
+	if len(p_prize_num) > 0 {
+		var success bool
+		prize_num,success = parse_int_from_remote_or_error(c,JSON,&p_prize_num)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'prize_num' parameter is not set")
+		return
+	}
+	record_found,prize_info := arb_storagew.Get_prize_info(prize_num)
+	if !record_found {
+		respond_error_json(c,"record not found")
+	} else {
+		var req_status int = 1
+		var err_str string = ""
+		c.JSON(http.StatusOK, gin.H{
+			"status": req_status,
+			"error" : err_str,
+			"PrizeInfo" : prize_info,
+		})
+	}
+} 

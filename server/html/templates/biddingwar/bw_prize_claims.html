@@ -14,7 +14,9 @@
 	</tr>
 	{{- range $i, $change := .PrizeClaims}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" title="{{.TimeStamp}}">
+				<a href="/black/biddingwar/prizeinfo/{{.PrizeNum}}">{{.DateTime}}</a>
+			</td>
 			<td class="addr" title="{{.WinnerAid}}">{{.WinnerAddr}}</td>
 			<td class="" style="text-align:center;">{{.PrizeNum}}</td>
 			<td style="text-align: right;" title="{{.Seed}}">{{printf "%.6f" .AmountEth}}</td>

@@ -1,0 +1,57 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Bid record for event id={{.BidInfo.EvtLogId}}</title>
+</head>
+<body>
+	<h3 class="page_title">Bid Info<h3>
+<table>
+	<tr>
+		<td>EvtLog ID</td>
+		<td>{{.BidInfo.EvtLogId}}
+	</tr>
+	<tr>
+		<td>BlockNum</td>
+		<td>{{.BidInfo.BlockNum}}</td>
+	</tr>
+	<tr>
+		<td>TxId</td>
+		<td>{{.BidInfo.TxId}}</td>
+	</tr>
+	<tr>
+		<td>TxHash</td>
+		<td>{{.BidInfo.TxHash}}</td>
+	</td>
+	<tr>
+		<td>TimeStamp</td>
+		<td>
+			{{.BidInfo.DateTime}}
+		</td>
+	</tr>
+	<tr>
+		<td>DateTime</td>
+		<td>
+			{{.BidInfo.DateTime}}
+		</td>
+	</tr>
+	<tr>
+		<td>Bidder Address</td>
+		<td><a class="addr" href="/black/biddingwar/user/info/{{.BidInfo.BidderAid}}">{{.BidInfo.BidderAddr}}</a></td>
+	</tr>
+	<tr>
+		<td>Bid Price</td>
+		<td>{{.BidInfo.BidPriceEth}}</td>
+	</tr>
+	<tr>
+		<td>ERC20 amount</td>
+		<td>{{.BidInfo.ERC20_AmountEth}} (ETH)</td>
+	</tr>
+</table>
+</table>
+<br/><br/>
+<code>
+	API: /api/biddingwar/bidinfo/[evtlog_id]<br/>
+
+	Example: /api/biddingwar/bidinfo/{{.BidInfo.EvtLogId}}
+</code>
+</body>

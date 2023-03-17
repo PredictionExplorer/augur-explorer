@@ -15,7 +15,9 @@
 	</tr>
 	{{- range $i, $change := .Bids}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">{{.BlockNum}}</td>
+			<td class="" title="{{.TimeStamp}}">
+				<a href="/black/biddingwar/bidinfo/{{.EvtLogId}}">{{.BlockNum}}</a>
+			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td class="addr" title="{{.BidderAid}}">{{.BidderAddr}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .BidPriceEth}}</td>

@@ -1,0 +1,57 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Prize record for round number ={{.PrizeInfo.PrizeNum}}</title>
+</head>
+<body>
+	<h3 class="page_title">Prize Claim Info<h3>
+<table>
+	<tr>
+		<td>EvtLog ID</td>
+		<td>{{.PrizeInfo.EvtLogId}}
+	</tr>
+	<tr>
+		<td>BlockNum</td>
+		<td>{{.PrizeInfo.BlockNum}}</td>
+	</tr>
+	<tr>
+		<td>TxId</td>
+		<td>{{.PrizeInfo.TxId}}</td>
+	</tr>
+	<tr>
+		<td>TxHash</td>
+		<td>{{.PrizeInfo.TxHash}}</td>
+	</td>
+	<tr>
+		<td>TimeStamp</td>
+		<td>
+			{{.PrizeInfo.TimeStamp}}
+		</td>
+	</tr>
+	<tr>
+		<td>DateTime</td>
+		<td>
+			{{.PrizeInfo.DateTime}}
+		</td>
+	</tr>
+	<tr>
+		<td>Winner Address</td>
+		<td><a class="addr" href="/black/biddingwar/user/info/{{.PrizeInfo.WinnerAid}}">{{.PrizeInfo.WinnerAddr}}</a></td>
+	</tr>
+	<tr>
+		<td>Prize Amount</td>
+		<td>{{.PrizeInfo.AmountEth}}</td>
+	</tr>
+	<tr>
+		<td>Seed</td>
+		<td>{{.PrizeInfo.Seed}} (ETH)</td>
+	</tr>
+</table>
+</table>
+<br/><br/>
+<code>
+	API: /api/biddingwar/prizeinfo/[prize_num]<br/>
+
+	Example: /api/biddingwar/prizeinfo/{{.PrizeInfo.PrizeNum}}
+</code>
+</body>
