@@ -165,7 +165,7 @@ func api_rwalk_trading_history(c *gin.Context) {
 		}
 	}
 
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -198,7 +198,7 @@ func api_rwalk_sale_history(c *gin.Context) {
 			return
 		}
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -240,7 +240,7 @@ func api_rwalk_token_history(c *gin.Context) {
 	if err != nil {
 		respond_error_json(c,"Lookup of 'rwalk_addr' failed, address doesn't exist")
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}

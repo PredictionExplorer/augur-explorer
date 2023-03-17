@@ -45,15 +45,6 @@ var (
 	charity_balance_eth			float64
 
 	// contract counters	(collected via DB)
-	/* DISCONTINUED
-	num_voluntary_donations		uint64
-	num_rwalk_tokens_used		uint64
-	total_bids					uint64
-	num_unique_bidders			uint64
-	num_unique_winners			uint64
-	total_prizes_paid_eth		float64	// in ETH
-	total_prizes_paid_wei		string
-	*/
 	bw_stats					BWStatistics
 
 	arb_storagew				SQLStorageWrapper
@@ -190,15 +181,6 @@ func do_reload_contract_variables() {
 	}
 }
 func do_reload_database_variables() {
-	/* DISCONTINUED
-	// fetches accumulators (statistics) and other counters calculated by the DB but not by the contract
-	// total_bids :=
-	// num_unique_bidders :=
-	// num_unique_winners :=
-	// total_prizes_paid :=
-	// num_voluntary_donations :=
-	// num_rwalk_tokens_used :=
-	*/
 	bw_stats = arb_storagew.Get_biddingwar_statistics()
 }
 func reload_constants_goroutine() {
@@ -244,5 +226,45 @@ func biddingwar_index_page(c *gin.Context) {
 		"CharityPercentage" : charity_percentage.Int64(),
 		"CharityBalance": charity_balance.String(),
 		"CharityBalanceEth": charity_balance_eth,
+		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
+		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
+	})
+}
+func biddingwar_prize_claims(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params_html(c)
+	if !success {
+		return
+	}
+	prizes := arb_storagew.Get_prize_claims(offset,limit)
+
+	c.HTML(http.StatusOK, "bw_prize_claims.html", gin.H{
+		"PrizeClaims" : prizes,
+		"Offset" : offset,
+		"Limit" : limit,
+	})
+}
+func biddingwar_bids(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params_html(c)
+	if !success {
+		return
+	}
+	bids := arb_storagew.Get_bids(offset,limit)
+
+	c.HTML(http.StatusOK, "bw_bids.html", gin.H{
+		"Bids" : bids,
+		"Offset" : offset,
+		"Limit" : limit,
 	})
 }

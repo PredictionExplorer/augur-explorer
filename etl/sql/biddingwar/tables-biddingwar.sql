@@ -20,6 +20,7 @@ CREATE TABLE bw_bid (
 	bidder_aid		BIGINT NOT NULL,
 	rwalk_nft_id	BIGINT NOT NULL,	--token_id of RandomWalk, if present
 	bid_price		DECIMAL NOT NULL,
+	erc20_amount	DECIMAL DEFAULT 0,	-- amount of CosmicSignatureToken minted in ERC20
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE bw_donation (

@@ -146,7 +146,7 @@ func amm_user_swaps(c *gin.Context) {
 	if !valid {
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -174,7 +174,7 @@ func amm_user_liquidity(c *gin.Context) {
 	if !valid {
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}

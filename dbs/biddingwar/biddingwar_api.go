@@ -71,3 +71,109 @@ func (sw *SQLStorageWrapper) Get_biddingwar_statistics() p.BWStatistics {
 	
 	return stats
 }
+func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.BwBidRec {
+
+	if limit == 0 { limit = 1000000 }
+	var query string
+	query = "SELECT "+
+				"b.evtlog_id,"+
+				"b.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT,"+
+				"b.time_stamp,"+
+				"b.bidder_aid,"+
+				"ba.addr,"+
+				"b.bid_price,"+
+				"b.bid_price/1e18 bid_price_eth, " +
+				"b.erc20_amount,"+
+				"b.erc20_amount/1e18 erc20_amount_eth "+
+			"FROM "+sw.S.SchemaName()+".bw_bid b "+
+				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN address ba ON b.bidder_aid=ba.address_id "+
+			"ORDER BY id OFFSET $1 LIMIT $2"
+
+	rows,err := sw.S.Db().Query(query,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwBidRec,0, limit)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwBidRec
+		err=rows.Scan(
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BidderAid,
+			&rec.BidderAddr,
+			&rec.BidPrice,
+			&rec.BidPriceEth,
+			&rec.ERC20_Amount,
+			&rec.ERC20_AmountEth,
+		)
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.BwPrizeRec {
+
+	if limit == 0 { limit = 1000000 }
+	var query string
+	query = "SELECT "+
+				"p.evtlog_id,"+
+				"p.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
+				"p.time_stamp,"+
+				"p.winner_aid,"+
+				"wa.addr,"+
+				"p.amount, "+
+				"p.amount/1e18 amount_eth, " +
+				"p.prize_num,"+
+				"m.seed "+
+			"FROM "+sw.S.SchemaName()+".bw_prize_claim p "+
+				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+				"LEFT JOIN bw_mint_event m ON m.token_id=p.prize_num "+
+			"ORDER BY id OFFSET $1 LIMIT $2"
+
+	rows,err := sw.S.Db().Query(query,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	var null_seed sql.NullString
+	records := make([]p.BwPrizeRec,0, limit)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwPrizeRec
+		err=rows.Scan(
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+			&rec.Amount,
+			&rec.AmountEth,
+			&rec.PrizeNum,
+			&null_seed,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		if null_seed.Valid { rec.Seed = null_seed.String } else {rec.Seed = "???"}
+		rec.TokenId = rec.PrizeNum 
+		records = append(records,rec)
+	}
+	return records
+}

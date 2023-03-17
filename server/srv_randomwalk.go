@@ -160,7 +160,7 @@ func rwalk_trading_history(c *gin.Context) {
 			return
 		}
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_html(c)
 	if !success {
 		return
 	}

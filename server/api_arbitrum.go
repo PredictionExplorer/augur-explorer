@@ -56,7 +56,7 @@ func a1_arbitrum_markets_sports(c *gin.Context) {
 		respond_error_json(c,"'sort' parameter is not set")
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -107,7 +107,7 @@ func a1_arbitrum_liquidity_changed(c *gin.Context) {
 		return
 	}
 
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -165,7 +165,7 @@ func a1_arbitrum_shares_swapped(c *gin.Context) {
 		return
 	}
 
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -300,7 +300,7 @@ func a1_arbitrum_market_outside_augur_shares_burned(c *gin.Context) {
 		return
 	}
 
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -356,7 +356,7 @@ func a1_arbitrum_market_outside_augur_shares_minted(c *gin.Context) {
 		return
 	}
 
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -412,7 +412,7 @@ func a1_arbitrum_market_outside_augur_balancer_swaps(c *gin.Context) {
 		return
 	}
 
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -476,7 +476,7 @@ func a1_arbitrum_market_outside_augur_erc20_transfers(c *gin.Context) {
 		return
 	}
 
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}

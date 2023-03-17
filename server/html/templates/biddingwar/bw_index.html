@@ -8,11 +8,11 @@
 <nav>
 	<ul>
 	<li>
-		<a class="btn_link" href="/">Bids</a>
+		<a class="btn_link" href="/black/biddingwar/bids">Bids</a>
 		<span></span><span></span><span></span><span></span>
 	</li>
 	<li>
-		<a class="btn_link" href="/black/">Prizes</a>
+		<a class="btn_link" href="/black/biddingwar/prizes">Prizes</a>
 		<span></span><span></span><span></span><span></span>
 	</li>
 </ul>
@@ -95,7 +95,7 @@
 			</tr>
 			<tr class="market_reports">
 				<td class="market_reports">Prize Percentage</td>
-				<td class="market_reports">{{.PrizePercentage}}</td>
+				<td class="market_reports">{{.PrizePercentage}} %</td>
 			</tr>
 
 			<tr class="market_reports">
@@ -104,11 +104,19 @@
 			</tr>
 			<tr class="market_reports">
 				<td class="market_reports">Charity Percentage</td>
-				<td class="market_reports">{{.CharityPercentage}}</td>
+				<td class="market_reports">{{.CharityPercentage}} %</td>
 			</tr>
 			<tr class="market_reports">
 				<td class="market_reports">Charity Balance</td>
 				<td class="market_reports" title="{{.CharityBalance}}" >{{ printf "%.4f" .CharityBalanceEth}} ETH</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Number of unique Bidders</td>
+				<td class="market_reports">{{.NumUniqueBidders}}</td>
+			</tr>
+			<tr class="market_reports">
+				<td class="market_reports">Number of unique Winners</td>
+				<td class="market_reports">{{.NumUniqueWinners}}</td>
 			</tr>
 			</table>
 		</td>

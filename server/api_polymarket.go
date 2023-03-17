@@ -11,7 +11,7 @@ import (
 func a1_poly_buysell_operations(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -56,7 +56,7 @@ func a1_poly_buysell_operations(c *gin.Context) {
 func a1_poly_liquidity_operations(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -385,7 +385,7 @@ func a1_poly_trader_operations(c *gin.Context) {
 		respond_error_json(c,"'user_aid' parameter is not set")
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -442,7 +442,7 @@ func a1_poly_funder_operations(c *gin.Context) {
 		respond_error_json(c,"'user_aid' parameter is not set")
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -742,7 +742,7 @@ func a1_poly_market_payout_redemptions(c *gin.Context) {
 		respond_error(c,"'market_id' parameter is not set")
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -792,7 +792,7 @@ func a1_poly_market_erc1155_transfers(c *gin.Context) {
 		respond_error_json(c,"'market_id' parameter is not set")
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -830,7 +830,7 @@ func a1_market_open_interest_history(c *gin.Context) {
 		respond_error_json(c,"'market_id' parameter is not set")
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}

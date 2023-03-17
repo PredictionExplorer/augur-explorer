@@ -44,3 +44,48 @@ func api_biddingwar_dashboard(c *gin.Context) {
 		"CharityBalanceEth": charity_balance_eth,
 	})
 }
+func api_biddingwar_prize_claims(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+	prizes := arb_storagew.Get_prize_claims(offset,limit)
+
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"PrizeClaims" : prizes,
+	})
+}
+func api_biddingwar_bids(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+	bids := arb_storagew.Get_bids(offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Bids" : bids,
+		"Offset" : offset,
+		"Limit" : limit,
+	})
+}

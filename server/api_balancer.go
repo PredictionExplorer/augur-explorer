@@ -17,7 +17,7 @@ func a1_user_balancer_swaps(c *gin.Context) {
 	if !success {
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -226,7 +226,7 @@ func a1_pool_swaps(c *gin.Context) {
 	if !success {
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}

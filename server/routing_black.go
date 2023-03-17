@@ -146,6 +146,8 @@ func set_routing_randomwalk(r *gin.Engine) {
 }
 func set_routing_biddingwar(r *gin.Engine) {
 	r.GET("/black/biddingwar",biddingwar_index_page)
+	r.GET("/black/biddingwar/prizes",biddingwar_prize_claims)
+	r.GET("/black/biddingwar/bids",biddingwar_bids)
 }
 func set_routing_statistics(r *gin.Engine) {
 

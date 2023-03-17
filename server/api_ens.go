@@ -62,7 +62,7 @@ func a1_user_ens_names(c *gin.Context) {
 	if !success {
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}

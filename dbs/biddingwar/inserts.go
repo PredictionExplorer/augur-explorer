@@ -37,8 +37,8 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.BWBidEvent) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_bid("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"bidder_aid,rwalk_nft_id,bid_price"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
+					"bidder_aid,rwalk_nft_id,bid_price,erc20_amount"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -48,6 +48,7 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.BWBidEvent) {
 		bidder_aid,
 		evt.RandomWalkTokenId,
 		evt.BidPrice,
+		evt.ERC20_Value,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into bw_bid table: %v\n",err))

@@ -35,6 +35,7 @@ type BWBidEvent struct {
 	ContractAddr		string
 	LastBidderAddr		string
 	BidPrice			string
+	ERC20_Value			string
 }
 type BWDonationEvent struct {
 	EvtId				int64

@@ -782,7 +782,7 @@ func a1_wrapped_token_transfers(c *gin.Context) {
 	if !success {
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -808,7 +808,7 @@ func a1_market_share_token_balance_changes(c *gin.Context) {
 	if !success {
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
@@ -916,7 +916,7 @@ func a1_user_wrapped_token_transfers(c *gin.Context) {
 	if !success {
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}

@@ -73,7 +73,7 @@ func parse_timeframe_params(c *gin.Context) (bool,int,int,int) {
 	}
 	return true,init_ts,fin_ts,interval_secs
 }
-func parse_offset_limit_params(c *gin.Context) (bool,int,int) {
+func parse_offset_limit_params_json(c *gin.Context) (bool,int,int) {
 
 	var err error
 	p_offset := c.Param("offset")

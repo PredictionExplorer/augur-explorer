@@ -166,3 +166,33 @@ func parse_timeframe_ini_fin(c *gin.Context,json_output bool) (bool,int,int) {
 	}
 	return true,init_ts,fin_ts
 }
+func parse_offset_limit_params_html(c *gin.Context) (bool,int,int) {
+
+	var err error
+	p_offset := c.Param("offset")
+	var offset int = 0
+	if len(p_offset) > 0 {
+		offset, err = strconv.Atoi(p_offset)
+		if err != nil {
+			c.HTML(http.StatusBadRequest,"error.html",gin.H{
+				"title":"Error",
+				"ErrDescr":fmt.Sprintf("Bad 'offset' parameter: %v",err),
+			})
+			return false,0, 0
+		}
+	}
+
+	p_limit := c.Param("limit")
+	var limit int = 0
+	if len(p_limit) > 0 {
+		limit, err = strconv.Atoi(p_limit)
+		if err != nil {
+			c.HTML(http.StatusBadRequest,"error.html",gin.H{
+				"title":"Error",
+				"ErrDescr":fmt.Sprintf("Bad 'limit' parameter: %v",err),
+			})
+			return false,0, 0
+		}
+	}
+	return true,offset,limit
+}

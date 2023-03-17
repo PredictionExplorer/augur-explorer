@@ -264,7 +264,7 @@ func poly_market_trader_operations(c *gin.Context) {
 	}
 	user_addr,_ := augur_srv.db_matic.Lookup_address(user_aid)
 
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_html(c)
 	if !success {
 		return
 	}
@@ -317,7 +317,7 @@ func poly_market_funder_operations(c *gin.Context) {
 		respond_error(c,"'user_aid' parameter is not set")
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_html(c)
 	if !success {
 		return
 	}
@@ -514,7 +514,7 @@ func poly_market_erc1155_transfers(c *gin.Context) {
 		respond_error(c,"'market_id' parameter is not set")
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_html(c)
 	if !success {
 		return
 	}
@@ -547,7 +547,7 @@ func poly_market_open_interest_history(c *gin.Context) {
 		respond_error(c,"'market_id' parameter is not set")
 		return
 	}
-	success,offset,limit := parse_offset_limit_params(c)
+	success,offset,limit := parse_offset_limit_params_html(c)
 	if !success {
 		return
 	}

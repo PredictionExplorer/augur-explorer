@@ -156,7 +156,8 @@ func set_api_routing_randomwalk(r *gin.Engine) {
 }
 func set_api_routing_biddingwar(r *gin.Engine) {
 	r.GET("/api/biddingwar/dashboard",api_biddingwar_dashboard)
-
+	r.GET("/api/biddingwar/prizes/:offset/:limit",api_biddingwar_prize_claims)
+	r.GET("/api/biddingwar/bids/:offset/:limit",api_biddingwar_bids)
 }
 func set_api_routing_statistics(r *gin.Engine) {
 
