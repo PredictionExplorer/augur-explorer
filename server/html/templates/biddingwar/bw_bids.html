@@ -19,7 +19,9 @@
 				<a href="/black/biddingwar/bidinfo/{{.EvtLogId}}">{{.BlockNum}}</a>
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
-			<td class="addr" title="{{.BidderAid}}">{{.BidderAddr}}</td>
+			<td class="addr" title="{{.BidderAid}}">
+				<a href="/black/biddingwar/user/info/{{.BidderAddr}}">{{.BidderAddr}}</a>
+			</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .BidPriceEth}}</td>
 			<td style="text-align: right;" title="">{{printf "%.4f" .ERC20_AmountEth}}</td>
 		</tr>

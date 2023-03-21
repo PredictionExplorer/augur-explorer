@@ -41,3 +41,11 @@ type BwPrizeRec struct {
 	TokenId						uint64
 	Seed						string
 }
+type BwUserInfo struct {
+	AddressId					int64
+	Address						string
+	NumPrizes					int64
+	NumBids						int64
+	MaxWinAmount				float64
+	MaxBidAmount				float64
+}
