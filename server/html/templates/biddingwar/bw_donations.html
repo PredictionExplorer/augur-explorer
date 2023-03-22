@@ -1,0 +1,38 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Bids</title>
+</head>
+<body>
+	<h3 class="page_title">Donations<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Donor</th>
+		<th class="market_reports">Donation amount (ETH)</th>
+		<th class="market_reports">Is Voluntary</th>
+	</tr>
+	{{- range $i, $change := .Donations}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">
+				<a href="/black/biddingwar/bidinfo/{{.EvtLogId}}">{{.BlockNum}}</a>
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="addr" title="{{.DonorAid}}">
+				<a href="/black/biddingwar/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+			</td>
+			<td style="text-align: right;" title="">{{printf "%.6f" .AmountEth}}</td>
+			<td style="text-align: right;" title="">
+				{{if .IsVoluntary }}Yes{{ else }}No{{ end }}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/biddingwar/donations/</br>
+
+	Example: /api/biddingwar/donations
+</code>
+</body>

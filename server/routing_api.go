@@ -161,6 +161,7 @@ func set_api_routing_biddingwar(r *gin.Engine) {
 	r.GET("/api/biddingwar/bidinfo/:evtlog_id",api_biddingwar_bid_info)
 	r.GET("/api/biddingwar/prizeinfo/:prize_num",api_biddingwar_prize_info)
 	r.GET("/api/biddingwar/user/info/:user_addr",api_biddingwar_user_info)
+	r.GET("/api/biddingwar/donations",api_biddingwar_donations)
 }
 func set_api_routing_statistics(r *gin.Engine) {
 

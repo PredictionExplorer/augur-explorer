@@ -1,6 +1,7 @@
 package main
 import (
 	"fmt"
+	"os"
 	"time"
 	"math/big"
 	"context"
@@ -365,5 +366,21 @@ func biddingwar_user_info(c *gin.Context) {
 		"UserInfo" : user_info,
 		"Bids" : bids,
 		"Prizes" : prizes,
+	})
+}
+func biddingwar_donations(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	biddingwar_aid,err :=arb_storagew.S.Nonfatal_lookup_address_id(biddingwar_addr.String())
+	if err != nil {
+		Error.Printf("BiddingWar contract address doesn't exist in the DB, aborting server")
+		os.Exit(1)
+	}
+	donations := arb_storagew.Get_donations(biddingwar_aid)
+	c.HTML(http.StatusOK, "bw_donations.html", gin.H{
+		"Donations" : donations,
 	})
 }

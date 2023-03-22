@@ -397,15 +397,17 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.BwUserInfo) {
 			"WHERE a.address_id=$1"
 
 	var rec p.BwUserInfo
+	var null_num_bids,null_prizes_count sql.NullInt64
+	var null_max_bid,null_max_win sql.NullFloat64
 	row := sw.S.Db().QueryRow(query,user_aid)
 	var err error
 	err=row.Scan(
 		&rec.AddressId,
 		&rec.Address,
-		&rec.NumBids,
-		&rec.MaxBidAmount,
-		&rec.NumPrizes,
-		&rec.MaxWinAmount,
+		&null_num_bids,
+		&null_max_bid,
+		&null_prizes_count,
+		&null_max_win,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -414,5 +416,57 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.BwUserInfo) {
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_user_info(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
+	if null_num_bids.Valid { rec.NumBids = null_num_bids.Int64 }
+	if null_prizes_count.Valid { rec.NumPrizes = null_prizes_count.Int64 }
+	if null_max_bid.Valid { rec.MaxBidAmount = null_max_bid.Float64 }
+	if null_max_win.Valid { rec.MaxWinAmount = null_max_win.Float64 }
 	return true,rec
+}
+func (sw *SQLStorageWrapper) Get_donations(biddingwar_aid int64) []p.BwDonation{
+
+	var query string
+	query = "SELECT "+
+				"d.evtlog_id,"+
+				"d.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
+				"d.donor_aid,"+
+				"da.addr,"+
+				"d.amount, "+
+				"d.amount/1e18 amount_eth  " +
+			"FROM "+sw.S.SchemaName()+".bw_donation_received d "+
+				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
+			"ORDER BY id"
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwDonation,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwDonation
+		err=rows.Scan(
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.DonorAid,
+			&rec.DonorAddr,
+			&rec.Amount,
+			&rec.AmountEth,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		if rec.DonorAid == biddingwar_aid { rec.IsVoluntary = false } else {rec.IsVoluntary=true}
+		records = append(records,rec)
+	}
+	return records
 }

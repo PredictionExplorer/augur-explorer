@@ -49,3 +49,16 @@ type BwUserInfo struct {
 	MaxWinAmount				float64
 	MaxBidAmount				float64
 }
+type BwDonation struct {
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	DonorAid					int64
+	DonorAddr					string
+	Amount						string
+	AmountEth					float64
+	IsVoluntary					bool	// true - made by direct send, false=made by BiddingWar contract
+}
