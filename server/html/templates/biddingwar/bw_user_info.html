@@ -58,7 +58,7 @@
 	{{- range $i, $change := .Prizes}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/biddingwar/bidinfo/{{.EvtLogId}}">{{.BlockNum}}</a>
+				<a href="/black/biddingwar/prizeinfo/{{.PrizeNum}}">{{.BlockNum}}</a>
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .AmountEth}}</td>
