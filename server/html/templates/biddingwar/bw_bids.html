@@ -12,6 +12,8 @@
 		<th class="market_reports">Bidder</th>
 		<th class="market_reports">Bid amount (ETH)</th>
 		<th class="market_reports">Cosmic Signature Token amount</th>
+		<th class="market_reports">RWalk NFT Id</th>
+
 	</tr>
 	{{- range $i, $change := .Bids}}
 		<tr class="market_reports">
@@ -24,6 +26,7 @@
 			</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .BidPriceEth}}</td>
 			<td style="text-align: right;" title="">{{printf "%.4f" .ERC20_AmountEth}}</td>
+			<td style="text-align: right;" title="">{{ .RWalkNFTId }}</td>
 		</tr>
 	{{- end}}
 </table>

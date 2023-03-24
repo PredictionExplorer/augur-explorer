@@ -384,3 +384,25 @@ func biddingwar_donations(c *gin.Context) {
 		"Donations" : donations,
 	})
 }
+func biddingwar_unique_bidders(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	unique_bidders := arb_storagew.Get_unique_bidders()
+	c.HTML(http.StatusOK, "bw_unique_bidders.html", gin.H{
+		"UniqueBidders" : unique_bidders,
+	})
+}
+func biddingwar_unique_winners(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	unique_winners:= arb_storagew.Get_unique_winners()
+	c.HTML(http.StatusOK, "bw_unique_winners.html", gin.H{
+		"UniqueWinners" : unique_winners,
+	})
+}

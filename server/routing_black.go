@@ -152,6 +152,8 @@ func set_routing_biddingwar(r *gin.Engine) {
 	r.GET("/black/biddingwar/prizeinfo/:prize_num",biddingwar_prize_info)
 	r.GET("/black/biddingwar/user/info/:user_addr",biddingwar_user_info)
 	r.GET("/black/biddingwar/donations",biddingwar_donations)
+	r.GET("/black/biddingwar/uniquebidders",biddingwar_unique_bidders)
+	r.GET("/black/biddingwar/uniquewinners",biddingwar_unique_winners)
 }
 func set_routing_statistics(r *gin.Engine) {
 

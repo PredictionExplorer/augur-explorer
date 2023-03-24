@@ -1,0 +1,33 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Unique Winners</title>
+</head>
+<body>
+	<h3 class="page_title">Bids<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Winner Address</th>
+		<th class="market_reports">Prizes Taken</th>
+		<th class="market_reports">Max Prize</th>
+		<th class="market_reports">Prizes sum (ETH)</th>
+
+	</tr>
+	{{- range $i, $change := .UniqueWinners}}
+		<tr class="market_reports">
+			<td class="" title="{{.WinnerAid}}">
+				<a href="/black/biddingwar/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+			</td>
+			<td class="" style="text-align: center;">{{.PrizesCount}}</td>
+			<td class="addr" title="{{.MaxWinAmount}}">{{ printf "%.6f" .MaxWinAmountEth }}</td>
+			<td style="text-align: right;" title="">{{printf "%.6f" .PrizesSum}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/biddingwar/uniquewinners<br/>
+
+	Example: /api/biddingwar/uniquewinners
+</code>
+</body>

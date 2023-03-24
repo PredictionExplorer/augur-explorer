@@ -92,6 +92,7 @@ func api_biddingwar_bids(c *gin.Context) {
 }
 func api_biddingwar_bid_info(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return
@@ -124,6 +125,7 @@ func api_biddingwar_bid_info(c *gin.Context) {
 } 
 func api_biddingwar_prize_info(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return
@@ -156,6 +158,7 @@ func api_biddingwar_prize_info(c *gin.Context) {
 } 
 func api_biddingwar_user_info(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return
@@ -191,6 +194,7 @@ func api_biddingwar_user_info(c *gin.Context) {
 }
 func api_biddingwar_donations(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return
@@ -208,5 +212,41 @@ func api_biddingwar_donations(c *gin.Context) {
 		"status": req_status,
 		"error" : err_str,
 		"Donations" : donations,
+	})
+}
+func api_biddingwar_unique_bidders(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	unique_bidders := arb_storagew.Get_unique_bidders()
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UniqueBidders" : unique_bidders,
+	})
+}
+func api_biddingwar_unique_winners(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	unique_winners := arb_storagew.Get_unique_winners()
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UniqueWinners" : unique_winners,
 	})
 }

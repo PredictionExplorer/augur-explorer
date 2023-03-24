@@ -86,6 +86,7 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.BwBidRec {
 				"ba.addr,"+
 				"b.bid_price,"+
 				"b.bid_price/1e18 bid_price_eth, " +
+				"b.rwalk_nft_id,"+
 				"b.erc20_amount,"+
 				"b.erc20_amount/1e18 erc20_amount_eth "+
 			"FROM "+sw.S.SchemaName()+".bw_bid b "+
@@ -113,6 +114,7 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.BwBidRec {
 			&rec.BidderAddr,
 			&rec.BidPrice,
 			&rec.BidPriceEth,
+			&rec.RWalkNFTId,
 			&rec.ERC20_Amount,
 			&rec.ERC20_AmountEth,
 		)
@@ -192,6 +194,7 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.BwBidRec) {
 				"ba.addr,"+
 				"b.bid_price,"+
 				"b.bid_price/1e18 bid_price_eth, " +
+				"b.rwalk_nft_id,"+
 				"b.erc20_amount,"+
 				"b.erc20_amount/1e18 erc20_amount_eth "+
 			"FROM "+sw.S.SchemaName()+".bw_bid b "+
@@ -212,6 +215,7 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.BwBidRec) {
 		&rec.BidderAddr,
 		&rec.BidPrice,
 		&rec.BidPriceEth,
+		&rec.RWalkNFTId,
 		&rec.ERC20_Amount,
 		&rec.ERC20_AmountEth,
 	)
@@ -288,6 +292,7 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.BwBidRec {
 				"ba.addr,"+
 				"b.bid_price,"+
 				"b.bid_price/1e18 bid_price_eth, " +
+				"b.rwalk_nft_id,"+
 				"b.erc20_amount,"+
 				"b.erc20_amount/1e18 erc20_amount_eth "+
 			"FROM "+sw.S.SchemaName()+".bw_bid b "+
@@ -316,6 +321,7 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.BwBidRec {
 			&rec.BidderAddr,
 			&rec.BidPrice,
 			&rec.BidPriceEth,
+			&rec.RWalkNFTId,
 			&rec.ERC20_Amount,
 			&rec.ERC20_AmountEth,
 		)
@@ -466,6 +472,78 @@ func (sw *SQLStorageWrapper) Get_donations(biddingwar_aid int64) []p.BwDonation{
 			os.Exit(1)
 		}
 		if rec.DonorAid == biddingwar_aid { rec.IsVoluntary = false } else {rec.IsVoluntary=true}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_unique_bidders() []p.BwUniqueBidder {
+
+	var query string
+	query = "SELECT "+
+				"b.bidder_aid,"+
+				"a.addr,"+
+				"b.num_bids,"+
+				"b.max_bid,"+
+				"b.max_bid/1e18 max_bid_eth "+
+			"FROM "+sw.S.SchemaName()+".bw_bidder b "+
+				"LEFT JOIN address a ON b.bidder_aid=a.address_id "
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwUniqueBidder,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwUniqueBidder
+		err=rows.Scan(
+			&rec.BidderAid,
+			&rec.BidderAddr,
+			&rec.NumBids,
+			&rec.MaxBidAmount,
+			&rec.MaxBidAmountEth,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_unique_winners() []p.BwUniqueWinner {
+
+	var query string
+	query = "SELECT "+
+				"w.winner_aid,"+
+				"a.addr,"+
+				"w.prizes_count,"+
+				"w.max_win_amount,"+
+				"w.max_win_amount/1e18 max_win_eth, "+
+				"w.prizes_sum/1e18 prizes_sum_eth "+
+			"FROM "+sw.S.SchemaName()+".bw_winner w "+
+				"LEFT JOIN address a ON w.winner_aid=a.address_id "
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwUniqueWinner,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwUniqueWinner
+		err=rows.Scan(
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+			&rec.PrizesCount,
+			&rec.MaxWinAmount,
+			&rec.MaxWinAmountEth,
+			&rec.PrizesSum,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
 		records = append(records,rec)
 	}
 	return records

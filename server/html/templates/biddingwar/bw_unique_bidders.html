@@ -1,0 +1,31 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Unique Bidders</title>
+</head>
+<body>
+	<h3 class="page_title">Bids<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Bidder Address</th>
+		<th class="market_reports">Num Bids</th>
+		<th class="market_reports">Max Bid (ETH)</th>
+
+	</tr>
+	{{- range $i, $change := .UniqueBidders}}
+		<tr class="market_reports">
+			<td class="" title="{{.BidderAid}}">
+				<a href="/black/biddingwar/user/info/{{.BidderAddr}}">{{.BidderAddr}}</a>
+			</td>
+			<td class="" style="text-align: center;">{{.NumBids}}</td>
+			<td style="text-align: right;" title="">{{printf "%.6f" .MaxBidAmountEth}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/biddingwar/uniquebidders<br/>
+
+	Example: /api/biddingwar/uniquebidders
+</code>
+</body>

@@ -116,18 +116,23 @@
 			</tr>
 			<tr class="market_reports">
 				<td class="market_reports">Number of unique Bidders</td>
-				<td class="market_reports">{{.NumUniqueBidders}}</td>
+				<td class="market_reports">
+					<a href="/black/biddingwar/uniquebidders">{{.NumUniqueBidders}}</a>
+				</td>
 			</tr>
 			<tr class="market_reports">
 				<td class="market_reports">Number of unique Winners</td>
-				<td class="market_reports">{{.NumUniqueWinners}}</td>
+				<td class="market_reports">
+					<a href="/black/biddingwar/uniquewinners">{{.NumUniqueWinners}}</a>
+				</td>
 			</tr>
 			</table>
 		</td>
 	</tr>
 </table>
 </div>
-<code>
+<br/><br/>
+<code style="float: right">
 	API: /api/biddingwar/dashboard<br/>
 
 	Example: /api/biddingwar/dashboard

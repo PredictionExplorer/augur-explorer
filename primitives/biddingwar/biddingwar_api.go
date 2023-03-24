@@ -23,6 +23,7 @@ type BwBidRec struct {
 	BidderAddr					string
 	BidPrice					string
 	BidPriceEth					float64	// divided by 1e18
+	RWalkNFTId					int64
 	ERC20_Amount				string
 	ERC20_AmountEth				float64	// divided by 1e18
 }
@@ -61,4 +62,19 @@ type BwDonation struct {
 	Amount						string
 	AmountEth					float64
 	IsVoluntary					bool	// true - made by direct send, false=made by BiddingWar contract
+}
+type BwUniqueBidder struct {
+	BidderAid					int64
+	BidderAddr					string
+	NumBids						int64
+	MaxBidAmount				string
+	MaxBidAmountEth				float64	// same as above but with 18 decimal places (i.e. in ETH )
+}
+type BwUniqueWinner struct {
+	WinnerAid					int64
+	WinnerAddr					string
+	PrizesCount					int64
+	MaxWinAmount				string
+	MaxWinAmountEth				float64	// same as above but with 18 decimal places (i.e. in ETH )
+	PrizesSum					float64	// all winnings in ETH
 }
