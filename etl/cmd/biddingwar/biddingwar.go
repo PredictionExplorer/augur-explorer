@@ -138,8 +138,10 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.LastBidderAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.BidPrice = eth_evt.BidPrice.String()
-	evt.RandomWalkTokenId = eth_evt.RandomWalkNFTID.Int64()
+	evt.RandomWalkTokenId = eth_evt.RandomWalkNFTId.Int64()
 	evt.ERC20_Value = find_cosmic_signature_token_transfer(evt.EvtId)
+	evt.PrizeTime = eth_evt.PrizeTime.Int64()
+	evt.Message = eth_evt.Message
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("BidEvent {\n")
@@ -249,6 +251,41 @@ func proc_donation_sent_event(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Insert_donation_sent(&evt)
 }
+func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt BWNFTDonationEvent
+	var eth_evt BiddingWarNFTDonationEvent
+
+	Info.Printf("Processing NFTDonationEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),biddingwar_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := biddingwar_abi.UnpackIntoInterface(&eth_evt,"NFTDonationEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event NFTDonationEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.TokenAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.TokenId = eth_evt.TokenId.Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("NFTDonationEvent {\n")
+	Info.Printf("\tDonor: %v\n",evt.DonorAddr)
+	Info.Printf("\tNFTAddress: %v\n",evt.TokenAddr)
+	Info.Printf("\tTokenId%v\n",evt.TokenId)
+	Info.Printf("}\n")
+
+	storagew.Insert_nft_donation_event(&evt)
+}
 func proc_charity_updated_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt BWCharityUpdatedEvent
@@ -283,7 +320,7 @@ func proc_charity_updated_event(log *types.Log,elog *EthereumEventLog) {
 func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt BWTokenNameEvent
-	var eth_evt CosmicSignatureTokenNameEvent
+	var eth_evt CosmicSignatureNFTTokenNameEvent
 
 	Info.Printf("Processing TokenNameEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -316,7 +353,7 @@ func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt BWMintEvent
-	var eth_evt CosmicSignatureMintEvent
+	var eth_evt CosmicSignatureNFTMintEvent
 
 	Info.Printf("Processing MintEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -364,6 +401,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donation_sent_event) {
 		proc_donation_sent_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_nft_donation_event) {
+		proc_nft_donation_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_charity_updated) {
 		proc_charity_updated_event(log,evtlog)

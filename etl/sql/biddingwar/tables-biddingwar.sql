@@ -19,8 +19,10 @@ CREATE TABLE bw_bid (
 	contract_aid	BIGINT NOT NULL,
 	bidder_aid		BIGINT NOT NULL,
 	rwalk_nft_id	BIGINT NOT NULL,	--token_id of RandomWalk, if present
+	prize_time		TIMESTAMPTZ NOT NULL,
 	bid_price		DECIMAL NOT NULL,
 	erc20_amount	DECIMAL DEFAULT 0,	-- amount of CosmicSignatureToken minted in ERC20
+	msg				TEXT,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE bw_donation (
@@ -54,6 +56,19 @@ CREATE TABLE bw_donation_sent (
 	contract_aid	BIGINT NOT NULL,
 	charity_aid		BIGINT NOT NULL,
 	amount			DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE bw_nft_donation (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	donor_aid		BIGINT NOT NULL,
+	token_aid		BIGINT NOT NULL,	-- this is address id (table address)
+	token_id		BIGINT NOT NULL,	-- this is tokenID
+	bid_id			BIGINT NOT NULL		-- id of the related `bw_bid` record
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE bw_charity_updated (

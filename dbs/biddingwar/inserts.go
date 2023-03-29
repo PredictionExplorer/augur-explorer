@@ -37,8 +37,8 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.BWBidEvent) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_bid("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"bidder_aid,rwalk_nft_id,bid_price,erc20_amount"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
+					"bidder_aid,rwalk_nft_id,bid_price,erc20_amount,prize_time,msg"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,TO_TIMESTAMP($10),$11)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -49,6 +49,8 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.BWBidEvent) {
 		evt.RandomWalkTokenId,
 		evt.BidPrice,
 		evt.ERC20_Value,
+		evt.PrizeTime,
+		evt.Message,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into bw_bid table: %v\n",err))
@@ -121,6 +123,32 @@ func (sw *SQLStorageWrapper) Insert_donation_sent(evt *p.BWDonationSentEvent ) {
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into bw_donation_sent table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_nft_donation_event(evt *p.BWNFTDonationEvent) {
+
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	donor_aid := sw.S.Lookup_or_create_address(evt.DonorAddr,0, 0)
+	token_aid := sw.S.Lookup_or_create_address(evt.TokenAddr,0, 0)
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_nft_donation("+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
+					"donor_aid,token_aid,token_id,bid_id"+
+				") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxId,
+		contract_aid,
+		donor_aid,
+		token_aid,
+		evt.TokenId,
+		evt.BidId,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into bw_nft_donation table: %v\n",err))
 		os.Exit(1)
 	}
 }

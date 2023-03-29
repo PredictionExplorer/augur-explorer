@@ -32,10 +32,12 @@ type BWBidEvent struct {
 	TxId				int64
 	LogIndex			int64
 	RandomWalkTokenId	int64
+	PrizeTime			int64
 	ContractAddr		string
 	LastBidderAddr		string
 	BidPrice			string
 	ERC20_Value			string
+	Message				string
 }
 type BWDonationEvent struct {
 	EvtId				int64
@@ -66,6 +68,18 @@ type BWDonationSentEvent struct {
 	ContractAddr		string
 	CharityAddr			string
 	Amount				string
+}
+type BWNFTDonationEvent struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	TokenAddr			string
+	DonorAddr			string
+	TokenId				int64
+	BidId				int64	// id of related bid record
 }
 type BWCharityUpdatedEvent struct {
 	EvtId				int64
