@@ -88,10 +88,17 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.BwBidRec {
 				"b.bid_price/1e18 bid_price_eth, " +
 				"b.rwalk_nft_id,"+
 				"b.erc20_amount,"+
-				"b.erc20_amount/1e18 erc20_amount_eth "+
+				"b.erc20_amount/1e18 erc20_amount_eth, "+
+				"d.token_id,"+
+				"d.tok_addr "+
 			"FROM "+sw.S.SchemaName()+".bw_bid b "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address ba ON b.bidder_aid=ba.address_id "+
+				"LEFT JOIN LATERAL (" +
+					"SELECT d.bid_id,token_id,token_aid,ta.addr tok_addr "+
+						"FROM "+sw.S.SchemaName()+".bw_nft_donation d "+
+						"JOIN "+sw.S.SchemaName()+".address ta ON d.token_aid=ta.address_id "+
+				") d ON b.id=d.bid_id "+
 			"ORDER BY id OFFSET $1 LIMIT $2"
 
 	rows,err := sw.S.Db().Query(query,offset,limit)
@@ -99,8 +106,10 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.BwBidRec {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.BwBidRec,0, limit)
+	records := make([]p.BwBidRec,0, 256)
 	defer rows.Close()
+	var null_token_id sql.NullInt64
+	var null_tok_addr sql.NullString
 	for rows.Next() {
 		var rec p.BwBidRec
 		err=rows.Scan(
@@ -117,7 +126,17 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.BwBidRec {
 			&rec.RWalkNFTId,
 			&rec.ERC20_Amount,
 			&rec.ERC20_AmountEth,
+			&null_token_id,
+			&null_tok_addr,
 		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+
+		rec.NFTDonationTokenId = -1
+		if null_token_id.Valid { rec.NFTDonationTokenId=null_token_id.Int64 }
+		if null_tok_addr.Valid { rec.NFTDonationTokenAddr = null_tok_addr.String }
 		records = append(records,rec)
 	}
 	return records
@@ -151,7 +170,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.BwPrizeRec {
 		os.Exit(1)
 	}
 	var null_seed sql.NullString
-	records := make([]p.BwPrizeRec,0, limit)
+	records := make([]p.BwPrizeRec,0, 256)
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.BwPrizeRec
@@ -196,14 +215,23 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.BwBidRec) {
 				"b.bid_price/1e18 bid_price_eth, " +
 				"b.rwalk_nft_id,"+
 				"b.erc20_amount,"+
-				"b.erc20_amount/1e18 erc20_amount_eth "+
+				"b.erc20_amount/1e18 erc20_amount_eth, "+
+				"d.token_id,"+
+				"d.tok_addr "+
 			"FROM "+sw.S.SchemaName()+".bw_bid b "+
-				"LEFT JOIN transaction t ON t.id=tx_id "+
-				"LEFT JOIN address ba ON b.bidder_aid=ba.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+
+				"LEFT JOIN LATERAL (" +
+					"SELECT d.bid_id,token_id,token_aid,ta.addr tok_addr "+
+						"FROM "+sw.S.SchemaName()+".bw_nft_donation d "+
+						"JOIN "+sw.S.SchemaName()+".address ta ON d.token_aid=ta.address_id "+
+				") d ON b.id=d.bid_id "+
 			"WHERE b.evtlog_id=$1"
 
 	row := sw.S.Db().QueryRow(query,evtlog_id)
 	var err error
+	var null_token_id sql.NullInt64
+	var null_tok_addr sql.NullString
 	err=row.Scan(
 		&rec.EvtLogId,
 		&rec.BlockNum,
@@ -218,6 +246,8 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.BwBidRec) {
 		&rec.RWalkNFTId,
 		&rec.ERC20_Amount,
 		&rec.ERC20_AmountEth,
+		&null_token_id,
+		&null_tok_addr,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -226,6 +256,9 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.BwBidRec) {
 		sw.S.Log_msg(fmt.Sprintf("DB Error: %v, q=%v",err,query))
 		os.Exit(1)
 	}
+	rec.NFTDonationTokenId = -1
+	if null_token_id.Valid { rec.NFTDonationTokenId=null_token_id.Int64 }
+	if null_tok_addr.Valid { rec.NFTDonationTokenAddr = null_tok_addr.String }
 	return true,rec
 }
 func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.BwPrizeRec) {
@@ -294,10 +327,17 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.BwBidRec {
 				"b.bid_price/1e18 bid_price_eth, " +
 				"b.rwalk_nft_id,"+
 				"b.erc20_amount,"+
-				"b.erc20_amount/1e18 erc20_amount_eth "+
+				"b.erc20_amount/1e18 erc20_amount_eth, "+
+				"d.token_id,"+
+				"d.tok_addr "+
 			"FROM "+sw.S.SchemaName()+".bw_bid b "+
-				"LEFT JOIN transaction t ON t.id=tx_id "+
-				"LEFT JOIN address ba ON b.bidder_aid=ba.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+
+				"LEFT JOIN LATERAL (" +
+					"SELECT d.bid_id,token_id,token_aid,ta.addr tok_addr "+
+						"FROM "+sw.S.SchemaName()+".bw_nft_donation d "+
+						"JOIN "+sw.S.SchemaName()+".address ta ON d.token_aid=ta.address_id "+
+				") d ON b.id=d.bid_id "+
 			"WHERE b.bidder_aid=$1 "+
 			"ORDER BY b.id"
 
@@ -310,6 +350,8 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.BwBidRec {
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.BwBidRec
+		var null_token_id sql.NullInt64
+		var null_tok_addr sql.NullString
 		err=rows.Scan(
 			&rec.EvtLogId,
 			&rec.BlockNum,
@@ -324,7 +366,17 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.BwBidRec {
 			&rec.RWalkNFTId,
 			&rec.ERC20_Amount,
 			&rec.ERC20_AmountEth,
+			&null_token_id,
+			&null_tok_addr,
 		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		rec.NFTDonationTokenId = -1
+		if null_token_id.Valid { rec.NFTDonationTokenId=null_token_id.Int64 }
+		if null_tok_addr.Valid { rec.NFTDonationTokenAddr = null_tok_addr.String }
+		fmt.Printf("rec : %+v\n",rec)
 		records = append(records,rec)
 	}
 	return records
@@ -539,6 +591,58 @@ func (sw *SQLStorageWrapper) Get_unique_winners() []p.BwUniqueWinner {
 			&rec.MaxWinAmount,
 			&rec.MaxWinAmountEth,
 			&rec.PrizesSum,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_NFT_donations(offset,limit int) []p.BwNFTDonation{
+
+	if limit == 0 { limit = 1000000 }
+	var query string
+	query = "SELECT "+
+				"d.evtlog_id,"+
+				"d.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
+				"d.donor_aid,"+
+				"da.addr, "+
+				"d.token_id, "+
+				"nft.address_id,"+
+				"nft.addr "+
+			"FROM "+sw.S.SchemaName()+".bw_nft_donation d "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address da ON d.donor_aid=da.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address nft ON d.token_aid=nft.address_id "+
+			"ORDER BY id OFFSET $1 LIMIT $2"
+
+	rows,err := sw.S.Db().Query(query,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwNFTDonation,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwNFTDonation
+		err=rows.Scan(
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.DonorAid,
+			&rec.DonorAddr,
+			&rec.NFTTokenId,
+			&rec.TokenAddressId,
+			&rec.TokenAddr,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

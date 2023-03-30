@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS
 	bw_charity_updated,
 	bw_token_name,
 	bw_mint_event,
+	bw_nft_donation,
 	bw_contracts,
 	bw_proc_status,
 	bw_bidder,

@@ -34,7 +34,7 @@ const (
 	CHARITY_UPDATED			= "a0bd6b2fdbf082ae2356710c23fc8d76d56d418cecb4514d119c77a8617b4ffe"
 	TOKEN_NAME_EVENT		= "8ad5e159ff95649c8a9f323ac5a457e741897cf44ce07dfce0e98b84ef9d5f12"
 	MINT_EVENT				= "af162acd8d98cd428a10ad5028b47e3d3e50b4089880be8bf474aa921fed6b2e"
-	NFT_DONATION_EVENT		= "6dba1e0e3ad7ea3155c2b0a3a1d43ea2bee0ccc0d93195352a7dbe33e3b8fd61"
+	NFT_DONATION_EVENT		= "c36dcaca821561b3dc84f785f7a6abd4dd8c55db39ae73ecf4d0534003169ace"
 )
 var (
 	eclient 				*ethclient.Client

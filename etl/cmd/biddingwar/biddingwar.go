@@ -40,6 +40,10 @@ func build_list_of_inspected_events_layer1() []InspectedEvent {
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_nft_donation_event[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_charity_updated[:4]),
 			ContractAid: 0,
 		},
@@ -146,8 +150,10 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("BidEvent {\n")
 	Info.Printf("\tLastBidder: %v\n",evt.LastBidderAddr)
-	Info.Printf("\tBidPrice%v\n",evt.BidPrice)
+	Info.Printf("\tBidPrice: %v\n",evt.BidPrice)
 	Info.Printf("\tRandomWalkTokenId: %v\n",evt.RandomWalkTokenId)
+	Info.Printf("\tPrizeTime: %v\n",evt.PrizeTime)
+	Info.Printf("\tMessage: %v\n",evt.Message)
 	Info.Printf("}\n")
 
 	storagew.Insert_bid_event(&evt)
@@ -276,6 +282,7 @@ func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.TokenAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.TokenId = eth_evt.TokenId.Int64()
+	evt.BidId = storagew.Get_biddingwar_bid_by_evtlog_id(evt.EvtId-2)
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("NFTDonationEvent {\n")

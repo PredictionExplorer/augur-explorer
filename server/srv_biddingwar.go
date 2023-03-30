@@ -38,7 +38,7 @@ var (
 	prize_claim_date			*big.Int = big.NewInt(0)	// timestamp (Unix)
 	prize_amount				*big.Int = big.NewInt(0)
 	prize_amount_eth			float64
-	num_prizes					*big.Int = big.NewInt(0)
+	round_num 					*big.Int = big.NewInt(0)
 	total_prizes_amount_paid	*big.Int = big.NewInt(0)
 	nanoseconds_extra			*big.Int = big.NewInt(0)
 	last_bidder					common.Address
@@ -150,7 +150,7 @@ func do_reload_contract_variables() {
 			f_quo := big.NewFloat(0.0).Quo(f_prize_amount,f_divisor)
 			prize_amount_eth,_ = f_quo.Float64()
 		}
-		num_prizes, err = bwcontract.NumPrizes(&copts)
+		round_num , err = bwcontract.RoundNum(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at NumPrizes() call: %v\n",err)
 			Error.Printf(err_str)
@@ -208,7 +208,7 @@ func biddingwar_index_page(c *gin.Context) {
 		"BidPriceEth":bid_price_eth,
 		"PrizeClaimDate":time.Unix(prize_claim_date.Int64(),0).Format(time.RFC822),
 		"PrizeClaimTs":prize_claim_date.Int64(),
-		"CurRoundNum":num_prizes.Int64()+1,
+		"CurRoundNum": round_num.Int64()+1,
 		"CurNumBids" : bw_stats.CurNumBids,
 		"PrizeAmount" : prize_amount.Int64(),
 		"PrizeAmountEth" : prize_amount_eth,
@@ -404,5 +404,24 @@ func biddingwar_unique_winners(c *gin.Context) {
 	unique_winners:= arb_storagew.Get_unique_winners()
 	c.HTML(http.StatusOK, "bw_unique_winners.html", gin.H{
 		"UniqueWinners" : unique_winners,
+	})
+}
+func biddingwar_nft_donations(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params_html(c)
+	if !success {
+		return
+	}
+	nft_donations := arb_storagew.Get_NFT_donations(offset,limit)
+
+	c.HTML(http.StatusOK, "bw_nft_donations.html", gin.H{
+		"NFTDonations" : nft_donations,
+		"Offset" : offset,
+		"Limit" : limit,
 	})
 }

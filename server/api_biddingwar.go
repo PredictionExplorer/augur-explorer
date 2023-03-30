@@ -24,7 +24,7 @@ func api_biddingwar_dashboard(c *gin.Context) {
 		"BidPriceEth":bid_price_eth,
 		"PrizeClaimDate":time.Unix(prize_claim_date.Int64(),0).Format(time.RFC822),
 		"PrizeClaimTs":prize_claim_date.Int64(),
-		"CurRoundNum":num_prizes.Int64()+1,
+		"CurRoundNum":round_num.Int64()+1,
 		"CurNumBids" : bw_stats.CurNumBids,
 		"PrizeAmount" : prize_amount.Int64(),
 		"PrizeAmountEth" : prize_amount_eth,
@@ -248,5 +248,29 @@ func api_biddingwar_unique_winners(c *gin.Context) {
 		"status": req_status,
 		"error" : err_str,
 		"UniqueWinners" : unique_winners,
+	})
+}
+func api_biddingwar_nft_donations(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+	nft_donations := arb_storagew.Get_NFT_donations(offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"NFTDonations" : nft_donations,
+		"Offset" : offset,
+		"Limit" : limit,
 	})
 }

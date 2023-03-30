@@ -86,3 +86,20 @@ func (sw *SQLStorageWrapper) Update_biddingwar_process_status(status *p.BiddingW
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Get_biddingwar_bid_by_evtlog_id(bid_evtlog_id int64) int64 {
+
+	var query string
+	query = "SELECT id FROM "+sw.S.SchemaName()+".bw_bid WHERE evtlog_id=$1"
+	res := sw.S.Db().QueryRow(query,bid_evtlog_id)
+	var null_id sql.NullInt64
+	err := res.Scan(&null_id)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0	// if bid wasn't found there wasn't any bid but pure Donate() instead,
+						//	so we return 0 as Id
+		}
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+	return null_id.Int64
+}

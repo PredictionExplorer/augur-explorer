@@ -122,7 +122,6 @@ BEGIN
 		SET
 			prizes_count = v_prizes_count,
 			max_win_amount	 = v_max_prize,
-			prizes_count = v_prizes_count,
 			prizes_sum = v_prizes_sum
 		WHERE winner_aid = OLD.winner_aid;
 

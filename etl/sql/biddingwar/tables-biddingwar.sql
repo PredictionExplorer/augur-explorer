@@ -68,7 +68,7 @@ CREATE TABLE bw_nft_donation (
 	donor_aid		BIGINT NOT NULL,
 	token_aid		BIGINT NOT NULL,	-- this is address id (table address)
 	token_id		BIGINT NOT NULL,	-- this is tokenID
-	bid_id			BIGINT NOT NULL		-- id of the related `bw_bid` record
+	bid_id			BIGINT NOT NULL,		-- id of the related `bw_bid` record
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE bw_charity_updated (

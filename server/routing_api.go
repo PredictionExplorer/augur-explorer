@@ -164,6 +164,7 @@ func set_api_routing_biddingwar(r *gin.Engine) {
 	r.GET("/api/biddingwar/donations",api_biddingwar_donations)
 	r.GET("/api/biddingwar/uniquebidders",api_biddingwar_unique_bidders)
 	r.GET("/api/biddingwar/uniquewinners",api_biddingwar_unique_winners)
+	r.GET("/api/biddingwar/nftdonations/:offset/:limit",api_biddingwar_nft_donations)
 }
 func set_api_routing_statistics(r *gin.Engine) {
 

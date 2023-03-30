@@ -26,6 +26,8 @@ type BwBidRec struct {
 	RWalkNFTId					int64
 	ERC20_Amount				string
 	ERC20_AmountEth				float64	// divided by 1e18
+	NFTDonationTokenId			int64
+	NFTDonationTokenAddr		string
 }
 type BwPrizeRec struct {
 	EvtLogId					int64
@@ -77,4 +79,17 @@ type BwUniqueWinner struct {
 	MaxWinAmount				string
 	MaxWinAmountEth				float64	// same as above but with 18 decimal places (i.e. in ETH )
 	PrizesSum					float64	// all winnings in ETH
+}
+type BwNFTDonation struct {
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	DonorAid					int64
+	DonorAddr					string
+	TokenAddressId				int64	// the 'aid' of TokenAddr
+	TokenAddr					string
+	NFTTokenId					int64
 }
