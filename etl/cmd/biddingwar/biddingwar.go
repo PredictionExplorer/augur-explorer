@@ -3,12 +3,14 @@ package main
 import (
 	"os"
 	"fmt"
+	"math/big"
 	"bytes"
 	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
 	. "github.com/PredictionExplorer/augur-explorer/primitives/biddingwar"
@@ -257,6 +259,25 @@ func proc_donation_sent_event(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Insert_donation_sent(&evt)
 }
+func get_token_uri(token_id int64,contract_addr common.Address) string {
+
+	c,err := NewCosmicSignatureNFT(contract_addr,eclient) // we use cosmicsiangature because its ERC721
+	if err != nil {
+		err_str := fmt.Sprintf("Error at get_token_uri() during contract creation: %v",err)
+		Info.Printf(err_str)
+		Error.Printf(err_str)
+		os.Exit(1)
+	}
+	var copts bind.CallOpts
+	tok_uri,err := c.TokenURI(&copts,big.NewInt(token_id))
+	if err != nil {
+		err_str := fmt.Sprintf("Error at get_token_uri() during GetTokenURI() call: %v",err)
+		Info.Printf(err_str)
+		Error.Printf(err_str)
+		os.Exit(1)
+	}
+	return tok_uri
+}
 func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt BWNFTDonationEvent
@@ -283,12 +304,14 @@ func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TokenAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.TokenId = eth_evt.TokenId.Int64()
 	evt.BidId = storagew.Get_biddingwar_bid_by_evtlog_id(evt.EvtId-2)
+	evt.NFTTokenURI = get_token_uri(evt.TokenId,common.HexToAddress(evt.TokenAddr))
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("NFTDonationEvent {\n")
 	Info.Printf("\tDonor: %v\n",evt.DonorAddr)
 	Info.Printf("\tNFTAddress: %v\n",evt.TokenAddr)
-	Info.Printf("\tTokenId%v\n",evt.TokenId)
+	Info.Printf("\tTokenId: %v\n",evt.TokenId)
+	Info.Printf("\tNFTTokenURI: %v\n",evt.NFTTokenURI)
 	Info.Printf("}\n")
 
 	storagew.Insert_nft_donation_event(&evt)

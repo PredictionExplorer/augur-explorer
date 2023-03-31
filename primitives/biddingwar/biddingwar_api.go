@@ -11,6 +11,7 @@ type BWStatistics struct {
 	NumVoluntaryDonations		uint64
 	SumVoluntaryDonationsEth	float64 // divided by 1e18
 	NumRwalkTokensUsed			uint64
+	NumDonatedNFTs				uint64
 }
 type BwBidRec struct {
 	EvtLogId					int64
@@ -28,6 +29,7 @@ type BwBidRec struct {
 	ERC20_AmountEth				float64	// divided by 1e18
 	NFTDonationTokenId			int64
 	NFTDonationTokenAddr		string
+	NFTTokenURI					string
 }
 type BwPrizeRec struct {
 	EvtLogId					int64
@@ -92,4 +94,10 @@ type BwNFTDonation struct {
 	TokenAddressId				int64	// the 'aid' of TokenAddr
 	TokenAddr					string
 	NFTTokenId					int64
+	NFTTokenURI					string
+}
+type BwNFTDonationStats struct {
+	TokenAddressId				int64
+	TokenAddress				string
+	NumDonations				int64	// total number of donated tokens per this contract
 }

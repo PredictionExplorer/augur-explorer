@@ -35,6 +35,7 @@ const (
 	TOKEN_NAME_EVENT		= "8ad5e159ff95649c8a9f323ac5a457e741897cf44ce07dfce0e98b84ef9d5f12"
 	MINT_EVENT				= "af162acd8d98cd428a10ad5028b47e3d3e50b4089880be8bf474aa921fed6b2e"
 	NFT_DONATION_EVENT		= "c36dcaca821561b3dc84f785f7a6abd4dd8c55db39ae73ecf4d0534003169ace"
+	BASEURI_SIG				= "6c0360eb"
 )
 var (
 	eclient 				*ethclient.Client
@@ -49,6 +50,7 @@ var (
 	evt_token_name_event,_	= hex.DecodeString(TOKEN_NAME_EVENT)
 	evt_mint_event,_		= hex.DecodeString(MINT_EVENT)
 	evt_nft_donation_event,_= hex.DecodeString(NFT_DONATION_EVENT)
+	baseuri_sig,_			= hex.DecodeString(BASEURI_SIG)
 
 	inspected_events []InspectedEvent
 

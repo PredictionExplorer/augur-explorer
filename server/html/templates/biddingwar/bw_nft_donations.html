@@ -12,6 +12,7 @@
 		<th class="market_reports">Donor</th>
 		<th class="market_reports">Token Address</th>
 		<th class="market_reports">NFT Id</th>
+		<th class="market_reports">NFT URI</th>
 
 	</tr>
 	{{- range $i, $change := .NFTDonations}}
@@ -25,6 +26,7 @@
 			</td>
 			<td style="text-align: right;" title="">{{.TokenAddr}}</td>
 			<td style="text-align: right;" title="">{{.NFTTokenId}}</td>
+			<td style="text-align: right;" title="">{{.NFTTokenURI}}</td>
 		</tr>
 	{{- end}}
 </table>

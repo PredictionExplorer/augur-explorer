@@ -80,6 +80,7 @@ type BWNFTDonationEvent struct {
 	DonorAddr			string
 	TokenId				int64
 	BidId				int64	// id of related bid record
+	NFTTokenURI			string
 }
 type BWCharityUpdatedEvent struct {
 	EvtId				int64

@@ -13,5 +13,6 @@ DROP TABLE IF EXISTS
 	bw_proc_status,
 	bw_bidder,
 	bw_winner,
-	bw_glob_stats
+	bw_glob_stats,
+	bw_nft_stats
 CASCADE;

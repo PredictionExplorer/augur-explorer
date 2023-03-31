@@ -134,8 +134,8 @@ func (sw *SQLStorageWrapper) Insert_nft_donation_event(evt *p.BWNFTDonationEvent
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_nft_donation("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"donor_aid,token_aid,token_id,bid_id"+
-				") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
+					"donor_aid,token_aid,token_id,bid_id,token_uri"+
+				") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -146,6 +146,7 @@ func (sw *SQLStorageWrapper) Insert_nft_donation_event(evt *p.BWNFTDonationEvent
 		token_aid,
 		evt.TokenId,
 		evt.BidId,
+		evt.NFTTokenURI,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into bw_nft_donation table: %v\n",err))

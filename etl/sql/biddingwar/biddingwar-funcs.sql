@@ -191,3 +191,32 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_nft_donation_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt					NUMERIC;
+BEGIN
+
+	UPDATE bw_nft_stats
+		SET
+			num_donated = (num_donated + 1)
+		WHERE contract_aid = NEW.token_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO bw_nft_stats(contract_aid,num_donated)
+			VALUES(NEW.token_aid,1);
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_nft_donation_delete() RETURNS trigger AS  $$
+DECLARE
+	v_cnt					NUMERIC;
+BEGIN
+
+	UPDATE bw_nft_stats
+		SET
+			num_donated = (num_donated - 1)
+		WHERE contract_aid = OLD.token_aid;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;

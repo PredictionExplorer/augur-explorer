@@ -69,6 +69,7 @@ CREATE TABLE bw_nft_donation (
 	token_aid		BIGINT NOT NULL,	-- this is address id (table address)
 	token_id		BIGINT NOT NULL,	-- this is tokenID
 	bid_id			BIGINT NOT NULL,		-- id of the related `bw_bid` record
+	token_uri		TEXT NOT NULL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE bw_charity_updated (
@@ -123,6 +124,10 @@ CREATE TABLE bw_glob_stats ( -- global statistics
 	num_wins				BIGINT DEFAULT 0,		-- total prizes given
 	num_rwalk_used			BIGINT DEFAULT 0,
 	cur_num_bids			BIGINT DEFAULT 0		-- num bids since new round
+);
+CREATE TABLE bw_nft_stats ( -- stats for donated NFTs (donated with bidAndDonateNFT())
+	contract_aid			BIGINT PRIMARY KEY,
+	num_donated				BIGINT DEFAULT 0		-- how many NFTs were donated
 );
 CREATE TABLE bw_contracts (
 	bidding_war_addr		TEXT,

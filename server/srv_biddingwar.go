@@ -229,6 +229,7 @@ func biddingwar_index_page(c *gin.Context) {
 		"CharityBalanceEth": charity_balance_eth,
 		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
 		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
+		"NumDonatedNFTs" : bw_stats.NumDonatedNFTs,
 	})
 }
 func biddingwar_prize_claims(c *gin.Context) {
@@ -423,5 +424,16 @@ func biddingwar_nft_donations(c *gin.Context) {
 		"NFTDonations" : nft_donations,
 		"Offset" : offset,
 		"Limit" : limit,
+	})
+}
+func biddingwar_nft_donation_stats(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	nft_donation_stats := arb_storagew.Get_NFT_donation_stats()
+	c.HTML(http.StatusOK, "bw_nft_donation_stats.html", gin.H{
+		"NFTDonationStats" : nft_donation_stats,
 	})
 }
