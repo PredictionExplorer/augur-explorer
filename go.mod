@@ -2,7 +2,7 @@ module github.com/PredictionExplorer/augur-explorer
 
 go 1.14
 
-replace github.com/ethereum/go-ethereum => /home/niko/eth/local-geth/go-ethereum-1.10.26
+//replace github.com/ethereum/go-ethereum => /home/niko/eth/local-geth/go-ethereum-1.10.26
 
 require (
 	github.com/andersfylling/disgord v0.32.3 // indirect

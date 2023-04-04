@@ -699,3 +699,40 @@ func (sw *SQLStorageWrapper) Get_NFT_donation_stats() []p.BwNFTDonationStats {
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_record_counters() p.BwRecordCounters {
+
+	var output p.BwRecordCounters
+	var null_total_bids,null_total_prizes,null_total_tok_donations sql.NullInt64
+	var query string
+	query = "SELECT count(*) AS total FROM "+sw.S.SchemaName()+".bw_bid"
+	res := sw.S.Db().QueryRow(query)
+	err := res.Scan(&null_total_bids)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	} else { output.TotalBids = null_total_bids.Int64 }
+
+	query = "SELECT count(*) AS total FROM "+sw.S.SchemaName()+".bw_prize_claim"
+	res = sw.S.Db().QueryRow(query)
+	err = res.Scan(&null_total_prizes)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	} else { output.TotalPrizes= null_total_prizes.Int64 }
+
+	query = "SELECT count(*) AS total FROM "+sw.S.SchemaName()+".bw_nft_donation"
+	res = sw.S.Db().QueryRow(query)
+	err = res.Scan(&null_total_tok_donations)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+			os.Exit(1)
+		}
+	} else { output.TotalDonatedNFTs = null_total_tok_donations.Int64 }
+
+	return output
+}

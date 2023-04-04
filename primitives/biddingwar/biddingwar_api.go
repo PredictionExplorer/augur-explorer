@@ -101,3 +101,8 @@ type BwNFTDonationStats struct {
 	TokenAddress				string
 	NumDonations				int64	// total number of donated tokens per this contract
 }
+type BwRecordCounters struct {
+	TotalBids					int64
+	TotalPrizes					int64
+	TotalDonatedNFTs			int64
+}
