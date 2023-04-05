@@ -18,7 +18,9 @@
 	{{- range $i, $change := .NFTDonations}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				{{.BlockNum}}
+				<a href="/black/biddingwar/donatednft_info/{{.RecordId}}">
+					{{.BlockNum}}
+				</a>
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td class="addr" title="{{.DonorAid}}">

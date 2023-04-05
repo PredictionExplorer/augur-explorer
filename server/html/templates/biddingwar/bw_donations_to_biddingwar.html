@@ -1,0 +1,34 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Donations to BiddingWar contract</title>
+</head>
+<body>
+	<h3 class="page_title">Donations to BiddingWar contract<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Donor</th>
+		<h class="market_reports">Donation amount (ETH)</th>
+	</tr>
+	{{- range $i, $change := .BiddingwarDonations}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">
+				<a href="/black/biddingwar/bidinfo/{{.EvtLogId}}">{{.BlockNum}}</a>
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="addr" title="{{.DonorAid}}">
+				<a href="/black/biddingwar/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+			</td>
+			<td style="text-align: right;" title="">{{printf "%.6f" .AmountEth}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/biddingwar/bwdonations/</br>
+
+	Example: /api/biddingwar/bwdonations
+</code>
+</body>

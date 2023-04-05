@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Bids</title>
+	<title>Donations to CharityWallet</title>
 </head>
 <body>
-	<h3 class="page_title">Donations<h3>
+	<h3 class="page_title">Donations To Charity Wallet<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -13,7 +13,7 @@
 		<th class="market_reports">Donation amount (ETH)</th>
 		<th class="market_reports">Is Voluntary</th>
 	</tr>
-	{{- range $i, $change := .Donations}}
+	{{- range $i, $change := .CharityDonations}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				<a href="/black/biddingwar/bidinfo/{{.EvtLogId}}">{{.BlockNum}}</a>
@@ -31,8 +31,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/biddingwar/donations/</br>
+	API: /api/biddingwar/charitydonations/</br>
 
-	Example: /api/biddingwar/donations
+	Example: /api/biddingwar/charitydonations
 </code>
 </body>

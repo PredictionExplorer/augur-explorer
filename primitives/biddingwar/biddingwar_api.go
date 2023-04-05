@@ -54,7 +54,7 @@ type BwUserInfo struct {
 	MaxWinAmount				float64
 	MaxBidAmount				float64
 }
-type BwDonation struct {
+type BwCharityDonation struct {
 	EvtLogId					int64
 	BlockNum					int64
 	TxId						int64
@@ -66,6 +66,18 @@ type BwDonation struct {
 	Amount						string
 	AmountEth					float64
 	IsVoluntary					bool	// true - made by direct send, false=made by BiddingWar contract
+}
+type BwBiddingwarDonation struct {
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	DonorAid					int64
+	DonorAddr					string
+	Amount						string
+	AmountEth					float64
 }
 type BwUniqueBidder struct {
 	BidderAid					int64
@@ -83,6 +95,7 @@ type BwUniqueWinner struct {
 	PrizesSum					float64	// all winnings in ETH
 }
 type BwNFTDonation struct {
+	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
 	TxId						int64

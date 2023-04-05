@@ -193,7 +193,7 @@ func api_biddingwar_user_info(c *gin.Context) {
 		"Prizes" : prizes,
 	})
 }
-func api_biddingwar_donations(c *gin.Context) {
+func api_biddingwar_charity_donations(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -206,13 +206,30 @@ func api_biddingwar_donations(c *gin.Context) {
 		os.Exit(1)
 	}
 
-	donations := arb_storagew.Get_donations(biddingwar_aid)
+	donations := arb_storagew.Get_charity_donations(biddingwar_aid)
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
-		"Donations" : donations,
+		"CharityDonations" : donations,
+	})
+}
+func api_biddingwar_donations_to_biddingwar(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	donations := arb_storagew.Get_donations_to_biddingwar()
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"CharityDonations" : donations,
 	})
 }
 func api_biddingwar_unique_bidders(c *gin.Context) {
@@ -310,4 +327,36 @@ func api_biddingwar_record_counters(c *gin.Context) {
 		"error" : err_str,
 		"RecordCounters" : record_counters,
 	})
+}
+func api_biddingwar_donated_nft_info(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_record_id:= c.Param("record_id")
+	var record_id int64
+	if len(p_record_id) > 0 {
+		var success bool
+		record_id,success = parse_int_from_remote_or_error(c,JSON,&p_record_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'record_id' parameter is not set")
+		return
+	}
+	found,nftdonation := arb_storagew.Get_NFT_donation_info(record_id)
+	var req_status int = 1
+	var err_str string = ""
+	if !found {
+		respond_error_json(c,"Record not found")
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"status": req_status,
+			"error" : err_str,
+			"NFTDonation" : nftdonation,
+		})
+	}
 }

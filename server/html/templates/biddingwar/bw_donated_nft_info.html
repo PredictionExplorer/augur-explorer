@@ -1,0 +1,65 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Donated NFT info</title>
+</head>
+<body>
+	<h3 class="page_title">Donted NFT Info<h3>
+<table>
+	<tr>
+		<td>Record ID</td>
+		<td>{{.NFTDonation.RecordId}}
+	</tr>
+	<tr>
+		<td>EvtLog ID</td>
+		<td>{{.NFTDonation.EvtLogId}}
+	</tr>
+	<tr>
+		<td>BlockNum</td>
+		<td>{{.NFTDonation.BlockNum}}</td>
+	</tr>
+	<tr>
+		<td>TxId</td>
+		<td>{{.NFTDonation.TxId}}</td>
+	</tr>
+	<tr>
+		<td>TxHash</td>
+		<td>{{.NFTDonation.TxHash}}</td>
+	</td>
+	<tr>
+		<td>TimeStamp</td>
+		<td>
+			{{.NFTDonation.DateTime}}
+		</td>
+	</tr>
+	<tr>
+		<td>DateTime</td>
+		<td>
+			{{.NFTDonation.DateTime}}
+		</td>
+	</tr>
+	<tr>
+		<td>Donor Address</td>
+		<td><a class="addr" href="/black/biddingwar/user/info/{{.NFTDonation.DonorAddr}}">{{.NFTDonation.DonorAddr}}</a></td>
+	</tr>
+	<tr>
+		<td>Token ID</td>
+		<td>{{.NFTDonation.NFTTokenId}}</td>
+	</tr>
+	<tr>
+		<td>Token Address</td>
+		<td>{{.NFTDonation.TokenAddr}} (ETH)</td>
+	</tr>
+	<tr>
+		<td>NFTTokenURI</td>
+		<td>{{.NFTDonation.NFTTokenURI}} </td>
+	</tr>
+</table>
+</table>
+<br/><br/>
+<code>
+	API: /api/biddingwar/donatednft_info/[record_id]<br/>
+
+	Example: /api/biddingwar/donatednft_info/{{.NFTDonation.RecordId}}
+</code>
+</body>

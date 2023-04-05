@@ -369,7 +369,7 @@ func biddingwar_user_info(c *gin.Context) {
 		"Prizes" : prizes,
 	})
 }
-func biddingwar_donations(c *gin.Context) {
+func biddingwar_charity_donations(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -380,9 +380,20 @@ func biddingwar_donations(c *gin.Context) {
 		Error.Printf("BiddingWar contract address doesn't exist in the DB, aborting server")
 		os.Exit(1)
 	}
-	donations := arb_storagew.Get_donations(biddingwar_aid)
-	c.HTML(http.StatusOK, "bw_donations.html", gin.H{
-		"Donations" : donations,
+	donations := arb_storagew.Get_charity_donations(biddingwar_aid)
+	c.HTML(http.StatusOK, "bw_charity_donations.html", gin.H{
+		"CharityDonations" : donations,
+	})
+}
+func biddingwar_donations_to_biddingwar(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	donations := arb_storagew.Get_donations_to_biddingwar()
+	c.HTML(http.StatusOK, "bw_donations_to_biddingwar.html", gin.H{
+		"BiddingwarDonations" : donations,
 	})
 }
 func biddingwar_unique_bidders(c *gin.Context) {
@@ -436,4 +447,31 @@ func biddingwar_nft_donation_stats(c *gin.Context) {
 	c.HTML(http.StatusOK, "bw_nft_donation_stats.html", gin.H{
 		"NFTDonationStats" : nft_donation_stats,
 	})
+}
+func biddingwar_donated_nft_info(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_record_id:= c.Param("record_id")
+	var record_id int64
+	if len(p_record_id) > 0 {
+		var success bool
+		record_id,success = parse_int_from_remote_or_error(c,HTTP,&p_record_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'record_id' parameter is not set")
+		return
+	}
+	found,nftdonation := arb_storagew.Get_NFT_donation_info(record_id)
+	if !found {
+		respond_error(c,"Database link wasn't configured")
+	} else {
+		c.HTML(http.StatusOK, "bw_donated_nft_info.html", gin.H{
+			"NFTDonation" : nftdonation,
+		})
+	}
 }
