@@ -35,6 +35,9 @@ const (
 	TOKEN_NAME_EVENT		= "8ad5e159ff95649c8a9f323ac5a457e741897cf44ce07dfce0e98b84ef9d5f12"
 	MINT_EVENT				= "af162acd8d98cd428a10ad5028b47e3d3e50b4089880be8bf474aa921fed6b2e"
 	NFT_DONATION_EVENT		= "c36dcaca821561b3dc84f785f7a6abd4dd8c55db39ae73ecf4d0534003169ace"
+	RAFFLE_DEPOSIT_EVENT	= "b1167d0680cf42eff86b3ab041def9a2bc93b1b86dc35ce7d6b8c3060f06ac90"
+	RAFFLE_NFT_WINNER		= "80348bf864c08069d1368c42ed36b7a60560f73267f63d58e9be69f4b021bacc"
+	RAFFLE_NFT_CLAIMED		= "e05ba2c5fcd9a60f30b179cb0e775070cc8ce9667b0e663e984ee6a02f694cee"
 	BASEURI_SIG				= "6c0360eb"
 )
 var (
@@ -50,6 +53,9 @@ var (
 	evt_token_name_event,_	= hex.DecodeString(TOKEN_NAME_EVENT)
 	evt_mint_event,_		= hex.DecodeString(MINT_EVENT)
 	evt_nft_donation_event,_= hex.DecodeString(NFT_DONATION_EVENT)
+	evt_raffle_deposit,_	= hex.DecodeString(RAFFLE_DEPOSIT_EVENT)
+	evt_raffle_nft_winner,_	= hex.DecodeString(RAFFLE_NFT_WINNER)
+	evt_raffle_nft_claimed,	= hex.DecodeString(RAFFLE_NFT_CLAIMED)
 	baseuri_sig,_			= hex.DecodeString(BASEURI_SIG)
 
 	inspected_events []InspectedEvent

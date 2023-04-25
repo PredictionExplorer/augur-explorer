@@ -57,6 +57,18 @@ func build_list_of_inspected_events_layer1() []InspectedEvent {
 			Signature: hex.EncodeToString(evt_mint_event[:4]),
 			ContractAid: 0,
 		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_raffle_deposit[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_raffle_nft_winner[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_raffle_nft_claimed[:4]),
+			ContractAid: 0,
+		},
 	)
 	return inspected_events
 }

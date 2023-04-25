@@ -112,3 +112,35 @@ type BWMintEvent struct {
 	OwnerAddr			string
 	Seed				string
 }
+type BWRaffleDeposit struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	WinnerAddr			string
+	Round				int64
+	DepositId			int64
+	Amount				string
+}
+type BWRaffleNFTWinner struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	WinnerAddr			string
+	Round				int64
+	WinnerIndex			int64
+}
+type BWRaffleNFTClaimed struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	WinnerAddr			string
+}

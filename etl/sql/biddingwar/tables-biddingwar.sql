@@ -93,7 +93,7 @@ CREATE TABLE bw_token_name (
 	token_name		TEXT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_mint_event(
+CREATE TABLE bw_mint_event (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -103,6 +103,41 @@ CREATE TABLE bw_mint_event(
 	owner_aid		BIGINT NOT NULL,
 	token_id		BIGINT NOT NULL,
 	seed			TEXT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE bw_raffle_deposit (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	winner_aid		BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
+	deposit_id		BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE bw_raffle_nft_winner (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	winner_aid		BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
+	winner_idx		BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE bw_raffle_nft_claimed (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	winner_aid		BIGINT NOT NULL,
+	nft_winner_rec_id	BIGINT NOT NULL, -- reference to bw_raffle_nft_winner table
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE bw_bidder ( -- collects statistics per bidder
