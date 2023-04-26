@@ -115,6 +115,7 @@ CREATE TABLE bw_raffle_deposit (
 	winner_aid		BIGINT NOT NULL,
 	round_num		BIGINT NOT NULL,
 	deposit_id		BIGINT NOT NULL,
+	amount			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE bw_raffle_nft_winner (
@@ -165,10 +166,12 @@ CREATE TABLE bw_nft_stats ( -- stats for donated NFTs (donated with bidAndDonate
 	num_donated				BIGINT DEFAULT 0		-- how many NFTs were donated
 );
 CREATE TABLE bw_contracts (
-	bidding_war_addr		TEXT,
+	cosmic_game_addr		TEXT,
 	cosmic_signature_addr	TEXT,
 	cosmic_token_addr		TEXT,
-	charity_wallet_addr		TEXT
+	cosmic_dao_addr			TEXT,
+	charity_wallet_addr		TEXT,
+	raffle_wallet_addr		TEXT
 );
 CREATE TABLE bw_proc_status (
 	last_evt_id             BIGINT DEFAULT 0

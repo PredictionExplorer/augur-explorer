@@ -55,23 +55,26 @@ var (
 	evt_nft_donation_event,_= hex.DecodeString(NFT_DONATION_EVENT)
 	evt_raffle_deposit,_	= hex.DecodeString(RAFFLE_DEPOSIT_EVENT)
 	evt_raffle_nft_winner,_	= hex.DecodeString(RAFFLE_NFT_WINNER)
-	evt_raffle_nft_claimed,	= hex.DecodeString(RAFFLE_NFT_CLAIMED)
+	evt_raffle_nft_claimed,_= hex.DecodeString(RAFFLE_NFT_CLAIMED)
 	baseuri_sig,_			= hex.DecodeString(BASEURI_SIG)
 
 	inspected_events []InspectedEvent
 
-	biddingwar_abi			*abi.ABI
+	cosmic_game_abi			*abi.ABI
 	cosmic_signature_abi	*abi.ABI
 	cosmic_token_abi		*abi.ABI
 	charity_wallet_abi		*abi.ABI
+	raffle_wallet_abi		*abi.ABI
 	erc20_abi				*abi.ABI
 
-	biddingwar_addr			common.Address
+	cosmic_game_addr		common.Address
 	cosmic_signature_addr	common.Address
 	cosmic_token_addr		common.Address
+	cosmic_dao_addr			common.Address
 	charity_wallet_addr		common.Address
+	raffle_wallet_addr		common.Address
 
-	bw_contracts			BiddingWarContractAddrs
+	bw_contracts			CosmicGameContractAddrs
 	storagew				SQLStorageWrapper
 	RPC_URL					 = os.Getenv("RPC_URL")
 	Error					*log.Logger
@@ -178,17 +181,20 @@ func main() {
 	storagew.S.Init_log(db_log_file)
 	storagew.S.Log_msg("Log initialized\n")
 
-	biddingwar_abi = get_abi(BiddingWarABI)
-	cosmic_signature_abi = get_abi(CosmicSignatureNFTABI)
-	cosmic_token_abi = get_abi(CosmicSignatureTokenABI)
+	cosmic_game_abi = get_abi(CosmicGameABI)
+	cosmic_signature_abi = get_abi(CosmicSignatureABI)
+	cosmic_token_abi = get_abi(CosmicTokenABI)
 	charity_wallet_abi = get_abi(CharityWalletABI);
+	raffle_wallet_abi = get_abi(RaffleWalletABI);
 	erc20_abi = get_abi(ERC20ABI)
 
-	bw_contracts = storagew.Get_biddingwar_contract_addrs()
-	biddingwar_addr = common.HexToAddress(bw_contracts.BiddingWarAddr)
+	bw_contracts = storagew.Get_cosmic_game_contract_addrs()
+	cosmic_game_addr = common.HexToAddress(bw_contracts.CosmicGameAddr)
 	cosmic_signature_addr = common.HexToAddress(bw_contracts.CosmicSignatureAddr)
-	cosmic_token_addr = common.HexToAddress(bw_contracts.CosmicSignatureTokenAddr)
+	cosmic_token_addr = common.HexToAddress(bw_contracts.CosmicTokenAddr)
+	cosmic_dao_addr = common.HexToAddress(bw_contracts.CosmicDaoAddr)
 	charity_wallet_addr = common.HexToAddress(bw_contracts.CharityWalletAddr)
+	raffle_wallet_addr = common.HexToAddress(bw_contracts.RaffleWalletAddr)
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)

@@ -4,12 +4,13 @@ import (
 
 )
 
-type BiddingWarContractAddrs struct {
-	BiddingWarAddr				string
+type CosmicGameContractAddrs struct {
+	CosmicGameAddr				string
 	CosmicSignatureAddr			string
-	CosmicSignatureTokenAddr	string
+	CosmicTokenAddr				string
+	CosmicDaoAddr				string
 	CharityWalletAddr			string
-
+	RaffleWalletAddr			string
 }
 type BiddingWarProcStatus struct {
 	LastEvtIdProcessed			int64
@@ -143,4 +144,5 @@ type BWRaffleNFTClaimed struct {
 	LogIndex			int64
 	ContractAddr		string
 	WinnerAddr			string
+	WinnerRecId			int64
 }

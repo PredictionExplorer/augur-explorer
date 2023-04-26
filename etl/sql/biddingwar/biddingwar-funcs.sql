@@ -140,7 +140,7 @@ DECLARE
 	v_biddingwar_addr			TEXT;
 BEGIN
 
-	SELECT bidding_war_addr FROM bw_contracts LIMIT 1 INTO v_biddingwar_addr;
+	SELECT cosmic_game_addr FROM bw_contracts LIMIT 1 INTO v_biddingwar_addr;
 	IF v_biddingwar_addr IS NULL THEN
 		RAISE EXCEPTION 'BiddingWar contract address is not defined';
 	END IF;
@@ -169,7 +169,7 @@ DECLARE
 	v_biddingwar_addr			TEXT;
 BEGIN
 
-	SELECT bidding_war_addr FROM bw_contracts LIMIT 1 INTO v_biddingwar_addr;
+	SELECT cosmic_game_addr FROM bw_contracts LIMIT 1 INTO v_biddingwar_addr;
 	IF v_biddingwar_addr IS NULL THEN
 		RAISE EXCEPTION 'BiddingWar contract address is not defined';
 	END IF;

@@ -222,3 +222,78 @@ func (sw *SQLStorageWrapper) Insert_mint_event(evt *p.BWMintEvent) {
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_raffle_deposit(evt *p.BWRaffleDeposit) {
+
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
+
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_raffle_deposit ("+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
+					"winner_aid,round_num,deposit_id,amount"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxId,
+		contract_aid,
+		winner_aid,
+		evt.Round,
+		evt.DepositId,
+		evt.Amount,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into bw_raffle_deposit table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_raffle_nft_winner(evt *p.BWRaffleNFTWinner) {
+
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
+
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_raffle_nft_winner ("+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
+					"winner_aid,round_num,winner_idx"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxId,
+		contract_aid,
+		winner_aid,
+		evt.Round,
+		evt.WinnerIndex,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into bw_raffle_nft_winner table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_raffle_nft_claimed(evt *p.BWRaffleNFTClaimed) {
+
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
+
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_raffle_nft_winner ("+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
+					"winner_aid,nft_winner_rec_id"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7)"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxId,
+		contract_aid,
+		winner_aid,
+		evt.WinnerRecId,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into bw_raffle_nft_claimed table: %v\n",err))
+		os.Exit(1)
+	}
+}

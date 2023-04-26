@@ -75,15 +75,15 @@ func build_list_of_inspected_events_layer1() []InspectedEvent {
 func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt BWPrizeClaimEvent
-	var eth_evt BiddingWarPrizeClaimEvent
+	var eth_evt CosmicGamePrizeClaimEvent
 
 	Info.Printf("Processing PrizeClaim event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	if !bytes.Equal(log.Address.Bytes(),biddingwar_addr.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := biddingwar_abi.UnpackIntoInterface(&eth_evt,"PrizeClaimEvent",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"PrizeClaimEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event PrizeClaimEvent decode error: %v",err)
 		os.Exit(1)
@@ -135,15 +135,15 @@ func find_cosmic_signature_token_transfer(bid_evtlog_id int64) string {
 func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt BWBidEvent
-	var eth_evt BiddingWarBidEvent
+	var eth_evt CosmicGameBidEvent
 
 	Info.Printf("Processing Bid event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	if !bytes.Equal(log.Address.Bytes(),biddingwar_addr.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := biddingwar_abi.UnpackIntoInterface(&eth_evt,"BidEvent",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"BidEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event BidEvent decode error: %v",err)
 		os.Exit(1)
@@ -175,15 +175,15 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt BWDonationEvent
-	var eth_evt BiddingWarDonationEvent
+	var eth_evt CosmicGameDonationEvent
 
 	Info.Printf("Processing DonationEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	if !bytes.Equal(log.Address.Bytes(),biddingwar_addr.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := biddingwar_abi.UnpackIntoInterface(&eth_evt,"DonationEvent",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"DonationEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event DonationEvent decode error: %v",err)
 		os.Exit(1)
@@ -293,15 +293,15 @@ func get_token_uri(token_id int64,contract_addr common.Address) string {
 func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt BWNFTDonationEvent
-	var eth_evt BiddingWarNFTDonationEvent
+	var eth_evt CosmicGameNFTDonationEvent
 
 	Info.Printf("Processing NFTDonationEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	if !bytes.Equal(log.Address.Bytes(),biddingwar_addr.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := biddingwar_abi.UnpackIntoInterface(&eth_evt,"NFTDonationEvent",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NFTDonationEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event NFTDonationEvent decode error: %v",err)
 		os.Exit(1)
@@ -427,6 +427,109 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Insert_mint_event(&evt)
 }
+func proc_raffle_deposit_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt BWRaffleDeposit
+	var eth_evt RaffleWalletRaffleDepositEvent 
+
+	Info.Printf("Processing RaffleDeposit event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),raffle_wallet_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := raffle_wallet_abi.UnpackIntoInterface(&eth_evt,"RaffleDepositEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event RaffleDepositEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.Round = log.Topics[2].Big().Int64()
+	evt.DepositId = eth_evt.DepositId.Int64()
+	evt.Amount = eth_evt.Amount.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("RaffleDepositEvent{\n")
+	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
+	Info.Printf("\tRound:%v\n",evt.Round)
+	Info.Printf("\tDepositId: %v\n",evt.DepositId)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("}\n")
+
+	storagew.Insert_raffle_deposit(&evt)
+}
+func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt BWRaffleNFTWinner
+	var eth_evt CosmicGameRaffleNFTWinnerEvent
+
+	Info.Printf("Processing RaffleNFTWinner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_signature_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := raffle_wallet_abi.UnpackIntoInterface(&eth_evt,"RaffleNFTWinnerEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event RaffleNFTWinnerEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.Round = log.Topics[2].Big().Int64()
+	evt.WinnerIndex= eth_evt.WinnerIndex.Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("RaffleNFTWinnerEvent{\n")
+	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
+	Info.Printf("\tRound:%v\n",evt.Round)
+	Info.Printf("\tWinnerIndex: %v\n",evt.WinnerIndex)
+	Info.Printf("}\n")
+
+	storagew.Insert_raffle_nft_winner(&evt)
+}
+func proc_raffle_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt BWRaffleNFTClaimed
+	var eth_evt CosmicGameRaffleNFTWinnerEvent
+
+	Info.Printf("Processing RaffleNFTClaimed event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_signature_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := raffle_wallet_abi.UnpackIntoInterface(&eth_evt,"RaffleNFTClaimedEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event RaffleNFTClaimedEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("RaffleNFTClaimedEvent{\n")
+	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
+	Info.Printf("}\n")
+
+	storagew.Insert_raffle_nft_claimed(&evt)
+}
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event) {
@@ -455,6 +558,15 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_mint_event) {
 		proc_mint_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_deposit) {
+		proc_raffle_deposit_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_nft_winner) {
+		proc_raffle_nft_winner_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_nft_claimed) {
+		proc_raffle_nft_claimed_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {

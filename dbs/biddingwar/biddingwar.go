@@ -11,36 +11,44 @@ import (
 type SQLStorageWrapper struct {
 	S					*SQLStorage
 }
-func (sw *SQLStorageWrapper) Get_biddingwar_contract_addrs() p.BiddingWarContractAddrs {
+func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContractAddrs {
 
 	var query string
 	query = "SELECT "+
-				"bidding_war_addr,"+
+				"cosmic_game_addr,"+
 				"cosmic_signature_addr,"+
 				"cosmic_token_addr,"+
-				"charity_wallet_addr "+
+				"cosmic_dao_addr,"+
+				"charity_wallet_addr, "+
+				"raffle_wallet_addr "+
 			"FROM "+sw.S.SchemaName()+".bw_contracts"
 	row := sw.S.Db().QueryRow(query)
-	var bidding_war_addr string
+	var cosmic_game_addr string
 	var cosmic_signature_addr string
 	var cosmic_token_addr string
+	var cosmic_dao_addr string
 	var charity_wallet_addr string
+	var raffle_wallet_addr string
 	var err error
 	err=row.Scan(
-		&bidding_war_addr,
+		&cosmic_game_addr,
 		&cosmic_signature_addr,
 		&cosmic_token_addr,
+		&cosmic_dao_addr,
 		&charity_wallet_addr,
+		&raffle_wallet_addr,
 	);
 	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("Error in BiddingWar_get_contract_addrs(): %v, q=%v",err,query))
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_contract_addrs(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
-	var output p.BiddingWarContractAddrs
-	output.BiddingWarAddr = bidding_war_addr
+	var output p.CosmicGameContractAddrs
+	output.CosmicGameAddr = cosmic_game_addr
 	output.CosmicSignatureAddr = cosmic_signature_addr
-	output.CosmicSignatureTokenAddr = cosmic_token_addr
+	output.CosmicTokenAddr = cosmic_token_addr
+	output.CosmicDaoAddr = cosmic_dao_addr
 	output.CharityWalletAddr = charity_wallet_addr
+	output.RaffleWalletAddr = raffle_wallet_addr
 	return output
 }
 func (sw *SQLStorageWrapper) Get_biddingwar_processing_status() p.BiddingWarProcStatus {
