@@ -171,8 +171,11 @@ async function main() {
   token_id = await mint_rwalk(addr3);
   await cosmicGame.connect(addr3).bidAndDonateNFT("me donated token_id="+token_id, randomWalkNFT.address, token_id, { value: bidPrice });
 
-  await ethers.provider.send("evm_mine");	// mine empty block as spacing
 
+  await cosmicGame.connect(addr1).claimRaffleNFT();
+  await cosmicGame.connect(addr1).claimRaffleNFT();
+
+  await ethers.provider.send("evm_mine");	// mine empty block as spacing
 }
 
 main()

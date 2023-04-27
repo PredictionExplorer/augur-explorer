@@ -138,6 +138,7 @@ CREATE TABLE bw_raffle_nft_claimed (
 	time_stamp		TIMESTAMPTZ NOT NULL,
 	contract_aid	BIGINT NOT NULL,
 	winner_aid		BIGINT NOT NULL,
+	token_id		BIGINT NOT NULL,
 	nft_winner_rec_id	BIGINT NOT NULL, -- reference to bw_raffle_nft_winner table
 	UNIQUE(evtlog_id)
 );

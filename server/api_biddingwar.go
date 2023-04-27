@@ -16,7 +16,7 @@ func api_biddingwar_dashboard(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
-		"BiddingWarAddr":biddingwar_addr,
+		"BiddingWarAddr":cosmic_game_addr,
 		"CosmicSignatureAddr":cosmic_signature_addr,
 		"CosmicSignatureTokenAddr":cosmic_token_addr,
 		"CharityWalletAddr":charity_wallet_addr,
@@ -167,7 +167,7 @@ func api_biddingwar_user_info(c *gin.Context) {
 
 	p_user_addr:= c.Param("user_addr")
 	if len(p_user_addr) == 0 {
-		respond_error(c,"'user_addr' parameter is not set")
+		respond_error_json(c,"'user_addr' parameter is not set")
 		return
 	}
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
@@ -200,7 +200,7 @@ func api_biddingwar_charity_donations(c *gin.Context) {
 		respond_error_json(c,"Database link wasn't configured")
 		return
 	}
-	biddingwar_aid,err :=arb_storagew.S.Nonfatal_lookup_address_id(biddingwar_addr.String())
+	biddingwar_aid,err :=arb_storagew.S.Nonfatal_lookup_address_id(cosmic_game_addr.String())
 	if err != nil {
 		Error.Printf("BiddingWar contract address doesn't exist in the DB, aborting server")
 		os.Exit(1)
@@ -331,7 +331,7 @@ func api_biddingwar_record_counters(c *gin.Context) {
 func api_biddingwar_donated_nft_info(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
-		respond_error(c,"Database link wasn't configured")
+		respond_error_json(c,"Database link wasn't configured")
 		return
 	}
 
@@ -359,4 +359,28 @@ func api_biddingwar_donated_nft_info(c *gin.Context) {
 			"NFTDonation" : nftdonation,
 		})
 	}
+}
+func api_biddingwar_raffle_deposits(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+
+	deposits := arb_storagew.Get_raffle_eth_deposits(offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"RaffleDeposits" : deposits,
+		"Offset" : offset,
+		"Limit" : limit,
+	})
 }

@@ -107,7 +107,7 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Insert_prize_claim_event(&evt)
 }
-func find_cosmic_signature_token_transfer(bid_evtlog_id int64) string {
+func find_cosmic_token_transfer(bid_evtlog_id int64) string {
 	// fetches the ERC20::Transfer event which has the id=evtlog-1 because it is
 	//		inserted right before Bid event
 	//		this function panics in case of failure because that would be an invalid database state
@@ -131,6 +131,42 @@ func find_cosmic_signature_token_transfer(bid_evtlog_id int64) string {
 		os.Exit(1)
 	}
 	return eth_evt.Value.String()
+}
+func find_cosmic_token_721_transfer(bid_evtlog_id int64) int64 {
+	// fetches the ERC721::Transfer event which has the id=evtlog-1 because it is
+	//		inserted right before RaffleNFTClaim event
+	//		this function panics in case of failure because that would be an invalid database state
+	ee := storagew.S.Get_event_log(bid_evtlog_id-1)	// ERC20 tansfer is always 1 less than Bid id
+	var log types.Log
+	err := rlp.DecodeBytes(ee.RlpLog,&log)
+	if err!= nil {
+		err_str := fmt.Sprintf("RLP Decode error at find_cosmic_token_721_transfer(): %v",err)
+		Info.Printf(err_str)
+		Error.Printf(err_str)
+		os.Exit(1)
+	}
+	var eth_evt ERC721Transfer
+	err = erc721_abi.UnpackIntoInterface(&eth_evt,"Transfer",log.Data)
+	if err != nil {
+		err_str := fmt.Sprintf("Event Transfer decode error at find_cosmic_token_721_transfer(): %v",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		Info.Printf("%+v",log)
+		Error.Printf("%+v",log)
+		os.Exit(1)
+	}
+	if eth_evt.TokenId != nil {
+		Info.Printf("token id=%v\n",eth_evt.TokenId.Int64())
+	}
+	if len(log.Topics) < 3 {
+		err_str := fmt.Sprintf("Event ERC721 Transfer doesn't have 4 topics")
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		Info.Printf("%+v",log)
+		Error.Printf("%+v",log)
+		os.Exit(1)
+	}
+	return log.Topics[1].Big().Int64()
 }
 func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -157,7 +193,7 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	evt.LastBidderAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.BidPrice = eth_evt.BidPrice.String()
 	evt.RandomWalkTokenId = eth_evt.RandomWalkNFTId.Int64()
-	evt.ERC20_Value = find_cosmic_signature_token_transfer(evt.EvtId)
+	evt.ERC20_Value = find_cosmic_token_transfer(evt.EvtId)
 	evt.PrizeTime = eth_evt.PrizeTime.Int64()
 	evt.Message = eth_evt.Message
 
@@ -471,11 +507,11 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Processing RaffleNFTWinner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	if !bytes.Equal(log.Address.Bytes(),cosmic_signature_addr.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := raffle_wallet_abi.UnpackIntoInterface(&eth_evt,"RaffleNFTWinnerEvent",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RaffleNFTWinnerEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event RaffleNFTWinnerEvent decode error: %v",err)
 		os.Exit(1)
@@ -506,11 +542,11 @@ func proc_raffle_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 
 	Info.Printf("Processing RaffleNFTClaimed event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
-	if !bytes.Equal(log.Address.Bytes(),cosmic_signature_addr.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := raffle_wallet_abi.UnpackIntoInterface(&eth_evt,"RaffleNFTClaimedEvent",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RaffleNFTClaimedEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event RaffleNFTClaimedEvent decode error: %v",err)
 		os.Exit(1)
@@ -522,10 +558,12 @@ func proc_raffle_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.TokenId = find_cosmic_token_721_transfer(evt.EvtId)
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("RaffleNFTClaimedEvent{\n")
 	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
+	Info.Printf("\tTokenId: %v\n",evt.TokenId);
 	Info.Printf("}\n")
 
 	storagew.Insert_raffle_nft_claimed(&evt)

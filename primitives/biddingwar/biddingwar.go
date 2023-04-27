@@ -145,4 +145,5 @@ type BWRaffleNFTClaimed struct {
 	ContractAddr		string
 	WinnerAddr			string
 	WinnerRecId			int64
+	TokenId				int64
 }

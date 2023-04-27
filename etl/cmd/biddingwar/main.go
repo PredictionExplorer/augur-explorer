@@ -66,6 +66,7 @@ var (
 	charity_wallet_abi		*abi.ABI
 	raffle_wallet_abi		*abi.ABI
 	erc20_abi				*abi.ABI
+	erc721_abi				*abi.ABI
 
 	cosmic_game_addr		common.Address
 	cosmic_signature_addr	common.Address
@@ -187,6 +188,7 @@ func main() {
 	charity_wallet_abi = get_abi(CharityWalletABI);
 	raffle_wallet_abi = get_abi(RaffleWalletABI);
 	erc20_abi = get_abi(ERC20ABI)
+	erc721_abi = get_abi(ERC721ABI)
 
 	bw_contracts = storagew.Get_cosmic_game_contract_addrs()
 	cosmic_game_addr = common.HexToAddress(bw_contracts.CosmicGameAddr)

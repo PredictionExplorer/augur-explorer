@@ -119,3 +119,42 @@ type BwRecordCounters struct {
 	TotalPrizes					int64
 	TotalDonatedNFTs			int64
 }
+type BwRaffleDepositRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	WinnerAddr					string
+	WinnerAid					int64
+	RoundNum					int64
+	DepositId					int64
+	Amount						float64
+}
+type BwRaffleNFTWinnerRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	WinnerAddr					string
+	WinnerAid					int64
+	RoundNum					int64
+	WinnerIndex					int64
+}
+type BwRaffleNFTClaimRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	WinnerAddr					string
+	WinnerAid					int64
+	TokenId						int64
+}

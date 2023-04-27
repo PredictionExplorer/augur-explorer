@@ -19,7 +19,7 @@ const (
 	CONTRACT_CONSTANTS_REFRESH_TIME		= 5*60	// seconds
 )
 var (
-	biddingwar_addr				common.Address
+	cosmic_game_addr				common.Address
 	cosmic_signature_addr		common.Address
 	cosmic_token_addr			common.Address
 	charity_wallet_addr			common.Address
@@ -59,10 +59,10 @@ func biddingwar_init() {
 	}
 	arb_storagew.S=augur_srv.db_augur
 	arb_storagew.S.Db_set_schema_name("public")
-	bw_caddrs := arb_storagew.Get_biddingwar_contract_addrs()
-	biddingwar_addr = common.HexToAddress(bw_caddrs.BiddingWarAddr)
+	bw_caddrs := arb_storagew.Get_cosmic_game_contract_addrs()
+	cosmic_game_addr = common.HexToAddress(bw_caddrs.CosmicGameAddr)
 	cosmic_signature_addr = common.HexToAddress(bw_caddrs.CosmicSignatureAddr)
-	cosmic_token_addr = common.HexToAddress(bw_caddrs.CosmicSignatureTokenAddr)
+	cosmic_token_addr = common.HexToAddress(bw_caddrs.CosmicTokenAddr)
 	charity_wallet_addr = common.HexToAddress(bw_caddrs.CharityWalletAddr)
 	do_reload_contract_variables()
 	do_reload_database_variables()
@@ -70,7 +70,7 @@ func biddingwar_init() {
 }
 func do_reload_contract_constants() {
 	var copts bind.CallOpts
-	bwcontract,err := NewBiddingWar(biddingwar_addr,rpcclient)
+	bwcontract,err := NewCosmicGame(cosmic_game_addr,rpcclient)
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate BiddingWar contract: %v . Contract constants won't be fetched\n",err)
 		Error.Printf(err_str)
@@ -117,7 +117,7 @@ func do_reload_contract_constants() {
 }
 func do_reload_contract_variables() {
 	var copts bind.CallOpts
-	bwcontract,err := NewBiddingWar(biddingwar_addr,rpcclient)
+	bwcontract,err := NewCosmicGame(cosmic_game_addr,rpcclient)
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate BiddingWar contract: %v . Contract constants won't be fetched\n",err)
 		Error.Printf(err_str)
@@ -200,7 +200,7 @@ func biddingwar_index_page(c *gin.Context) {
 		return
 	}
 	c.HTML(http.StatusOK, "bw_index.html", gin.H{
-		"BiddingWarAddr":biddingwar_addr,
+		"BiddingWarAddr":cosmic_game_addr,
 		"CosmicSignatureAddr":cosmic_signature_addr,
 		"CosmicSignatureTokenAddr":cosmic_token_addr,
 		"CharityWalletAddr":charity_wallet_addr,
@@ -375,7 +375,7 @@ func biddingwar_charity_donations(c *gin.Context) {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
-	biddingwar_aid,err :=arb_storagew.S.Nonfatal_lookup_address_id(biddingwar_addr.String())
+	biddingwar_aid,err :=arb_storagew.S.Nonfatal_lookup_address_id(cosmic_game_addr.String())
 	if err != nil {
 		Error.Printf("BiddingWar contract address doesn't exist in the DB, aborting server")
 		os.Exit(1)
@@ -474,4 +474,23 @@ func biddingwar_donated_nft_info(c *gin.Context) {
 			"NFTDonation" : nftdonation,
 		})
 	}
+}
+func biddingwar_raffle_deposits(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params_html(c)
+	if !success {
+		return
+	}
+	deposits := arb_storagew.Get_raffle_eth_deposits(offset,limit)
+
+	c.HTML(http.StatusOK, "bw_raffle_deposits.html", gin.H{
+		"RaffleDeposits" : deposits,
+		"Offset" : offset,
+		"Limit" : limit,
+	})
 }
