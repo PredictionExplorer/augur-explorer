@@ -151,6 +151,8 @@ func set_routing_biddingwar(r *gin.Engine) {
 	r.GET("/black/biddingwar/bidinfo/:evtlog_id",biddingwar_bid_info)
 	r.GET("/black/biddingwar/prizeinfo/:prize_num",biddingwar_prize_info)
 	r.GET("/black/biddingwar/user/info/:user_addr",biddingwar_user_info)
+	r.GET("/black/biddingwar/user/raffle_deposits/:user_addr",biddingwar_raffle_deposits_by_user)
+	r.GET("/black/biddingwar/user/raffle_nft_claims/:user_addr",biddingwar_raffle_nft_claims_by_user)
 	r.GET("/black/biddingwar/bwdonations",biddingwar_donations_to_biddingwar)
 	r.GET("/black/biddingwar/charitydonations",biddingwar_charity_donations)
 	r.GET("/black/biddingwar/uniquebidders",biddingwar_unique_bidders)

@@ -28,11 +28,19 @@
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Total ETH won in raffles</td>
-		<td class="market_reports">{{.UserInfo.SumRaffleEthWinnings}}</td>
+		<td class="market_reports">
+			<a href="/black/biddingwar/user/raffle_deposits/{{.UserInfo.Address}}">
+			{{.UserInfo.SumRaffleEthWinnings}}
+			</a>
+		</td>
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Number of (ETH) raffles participated in</td>
-		<td class="market_reports">{{.UserInfo.NumRaffleEthWinnings}}</td>
+		<td class="market_reports">
+			<a href="/black/biddingwar/user/raffle_deposits/{{.UserInfo.Address}}">
+			{{.UserInfo.NumRaffleEthWinnings}}
+			</a>
+		</td>
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Number of Raffle NFTs won</td>
@@ -40,7 +48,11 @@
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Number of Raffle NFTs claimed</td>
-		<td class="market_reports">{{.UserInfo.RaffleNFTClaimed}}</td>
+		<td class="market_reports">
+			<a href="/black/biddingwar/user/raffle_nft_claims/{{.UserInfo.Address}}">
+			{{.UserInfo.RaffleNFTClaimed}}
+			</a>
+		</td>
 	</tr>
 </table>
 <h4>Bids of user</h4>

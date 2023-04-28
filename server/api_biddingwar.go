@@ -11,6 +11,7 @@ func api_biddingwar_dashboard(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
+	caddrs := arb_storagew.Get_cosmic_game_contract_addrs()
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -44,6 +45,7 @@ func api_biddingwar_dashboard(c *gin.Context) {
 		"CharityBalance": charity_balance.String(),
 		"CharityBalanceEth": charity_balance_eth,
 		"NumDonatedNFTs" : bw_stats.NumDonatedNFTs,
+		"ContractAddrs" : caddrs,
 	})
 }
 func api_biddingwar_prize_claims(c *gin.Context) {
@@ -430,5 +432,73 @@ func api_biddingwar_raffle_nft_claims(c *gin.Context) {
 		"RaffleNFTClaims" : claims,
 		"Offset" : offset,
 		"Limit" : limit,
+	})
+}
+func api_biddingwar_raffle_deposits_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+	found, user_info := arb_storagew.Get_user_info(user_aid)
+	if !found {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+
+	deposits := arb_storagew.Get_raffle_deposits_by_user(user_aid)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserRaffleDeposits" : deposits,
+		"UserInfo" : user_info,
+	})
+}
+func api_biddingwar_raffle_nft_claims_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+	found, user_info := arb_storagew.Get_user_info(user_aid)
+	if !found {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+
+	deposits := arb_storagew.Get_raffle_nft_claims_by_user(user_aid)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserRaffleNFTClaims" : deposits,
+		"UserInfo" : user_info,
 	})
 }

@@ -998,3 +998,103 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_claims(offset,limit int) []p.BwRaffl
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_raffle_deposits_by_user(winner_aid int64) []p.BwRaffleDepositRec {
+
+	var query string
+	query =  "SELECT " +
+				"p.id,"+
+				"p.evtlog_id,"+
+				"p.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
+				"p.time_stamp,"+
+				"p.winner_aid,"+
+				"wa.addr,"+
+				"p.round_num,"+
+				"p.deposit_id,"+
+				"p.amount/1e18 amount_eth "+
+			"FROM "+sw.S.SchemaName()+".bw_raffle_deposit p "+
+				"LEFT JOIN transaction t ON t.id=p.tx_id "+
+				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+			"WHERE p.winner_aid = $1"
+
+	rows,err := sw.S.Db().Query(query,winner_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwRaffleDepositRec,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwRaffleDepositRec
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+			&rec.RoundNum,
+			&rec.DepositId,
+			&rec.Amount,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+
+}
+func (sw *SQLStorageWrapper) Get_raffle_nft_claims_by_user(winner_aid int64) []p.BwRaffleNFTClaimRec {
+
+	var query string
+	query = "SELECT "+
+				"p.evtlog_id,"+
+				"p.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
+				"p.time_stamp,"+
+				"p.winner_aid,"+
+				"wa.addr,"+
+				"p.token_id "+
+			"FROM "+sw.S.SchemaName()+".bw_raffle_nft_claimed p "+
+				"LEFT JOIN transaction t ON t.id=p.tx_id "+
+				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+			"WHERE p.winner_aid=$1 "+
+			"ORDER BY p.id"
+
+	rows,err := sw.S.Db().Query(query,winner_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwRaffleNFTClaimRec,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwRaffleNFTClaimRec
+		err=rows.Scan(
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+			&rec.TokenId,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}

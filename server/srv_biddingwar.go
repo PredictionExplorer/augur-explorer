@@ -347,7 +347,7 @@ func biddingwar_user_info(c *gin.Context) {
 	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Augur Markets: Error",
+			"title": "Error",
 			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
 		})
 		return
@@ -530,5 +530,75 @@ func biddingwar_raffle_nft_claims(c *gin.Context) {
 		"RaffleNFTClaims" : deposits,
 		"Offset" : offset,
 		"Limit" : limit,
+	})
+}
+func biddingwar_raffle_deposits_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	found, user_info := arb_storagew.Get_user_info(user_aid)
+	if !found {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+
+	deposits := arb_storagew.Get_raffle_deposits_by_user(user_aid)
+
+	c.HTML(http.StatusOK, "bw_user_raffle_deposits.html", gin.H{
+		"UserRaffleDeposits" : deposits,
+		"UserInfo" : user_info,
+	})
+}
+func biddingwar_raffle_nft_claims_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	found, user_info := arb_storagew.Get_user_info(user_aid)
+	if !found {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+
+	claims := arb_storagew.Get_raffle_nft_claims_by_user(user_aid)
+
+	c.HTML(http.StatusOK, "bw_user_raffle_nft_claims.html", gin.H{
+		"UserRaffleNFTClaims" : claims,
+		"UserInfo" : user_info,
 	})
 }
