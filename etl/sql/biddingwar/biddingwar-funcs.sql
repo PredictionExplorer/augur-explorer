@@ -220,3 +220,86 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_raffle_deposit_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+
+	UPDATE bw_raffle_winner_stats
+		SET
+			amount_sum	 = (amount_sum + NEW.amount),
+			raffles_count = (raffles_count + 1)
+		WHERE winner_aid = NEW.winner_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO bw_raffle_winner_stats(winner_aid,amount_sum,raffles_count)
+			VALUES(NEW.winner_aid,NEW.amount,1);
+	END IF;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_raffle_deposit_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE bw_raffle_winner_stats
+		SET
+			amount_sum	 = (amount_sum - OLD.amount),
+			raffles_count = (raffles_count - 1)
+		WHERE winner_aid = OLD.winner_aid;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_raffle_nft_winner_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+
+	UPDATE bw_raffle_nft_winner_stats
+		SET
+			num_won = (num_won + 1)
+		WHERE winner_aid = NEW.winner_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO bw_raffle_nft_winner_stats(winner_aid,num_won)
+			VALUES(NEW.winner_aid,1);
+	END IF;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_raffle_nft_winner_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE bw_raffle_nft_winner_stats
+		SET
+			num_won = (num_won - 1)
+		WHERE winner_aid = OLD.winner_aid;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_raffle_nft_claimed_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE bw_raffle_nft_winner_stats
+		SET
+			num_claimed = (num_claimed + 1)
+		WHERE winner_aid = NEW.winner_aid;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_raffle_nft_claimed_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE bw_raffle_nft_winner_stats
+		SET
+			num_claimed = (num_claimed - 1)
+		WHERE winner_aid = OLD.winner_aid;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;

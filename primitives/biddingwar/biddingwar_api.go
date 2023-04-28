@@ -53,6 +53,10 @@ type BwUserInfo struct {
 	NumBids						int64
 	MaxWinAmount				float64
 	MaxBidAmount				float64
+	SumRaffleEthWinnings		float64
+	NumRaffleEthWinnings		int64
+	RaffleNFTWon				int64
+	RaffleNFTClaimed			int64
 }
 type BwCharityDonation struct {
 	EvtLogId					int64

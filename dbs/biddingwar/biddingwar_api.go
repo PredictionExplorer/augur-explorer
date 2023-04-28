@@ -106,7 +106,7 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.BwBidRec {
 						"FROM "+sw.S.SchemaName()+".bw_nft_donation d "+
 						"JOIN "+sw.S.SchemaName()+".address ta ON d.token_aid=ta.address_id "+
 				") d ON b.id=d.bid_id "+
-			"ORDER BY id OFFSET $1 LIMIT $2"
+			"ORDER BY b.id OFFSET $1 LIMIT $2"
 
 	rows,err := sw.S.Db().Query(query,offset,limit)
 	if (err!=nil) {
@@ -169,7 +169,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.BwPrizeRec {
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 				"LEFT JOIN bw_mint_event m ON m.token_id=p.prize_num "+
-			"ORDER BY id OFFSET $1 LIMIT $2"
+			"ORDER BY p.id OFFSET $1 LIMIT $2"
 
 	rows,err := sw.S.Db().Query(query,offset,limit)
 	if (err!=nil) {
@@ -389,7 +389,6 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.BwBidRec {
 		if null_token_id.Valid { rec.NFTDonationTokenId=null_token_id.Int64 }
 		if null_tok_addr.Valid { rec.NFTDonationTokenAddr = null_tok_addr.String }
 		if null_token_uri.Valid { rec.NFTTokenURI = null_token_uri.String }
-		fmt.Printf("rec : %+v\n",rec)
 		records = append(records,rec)
 	}
 	return records
@@ -461,15 +460,23 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.BwUserInfo) {
 				"b.num_bids, "+
 				"b.max_bid/1e18 AS max_bid,"+
 				"p.prizes_count,"+
-				"p.max_win_amount/1e18 max_win "+
+				"p.max_win_amount/1e18 max_win, "+
+				"rw.amount_sum/1e18 raffle_win_sum, "+
+				"rw.raffles_count, "+
+				"rn.num_won raffle_nft_won, "+
+				"rn.num_claimed raffle_nft_claimed "+
 			"FROM address a "+
 				"LEFT JOIN bw_bidder b ON b.bidder_aid=a.address_id "+
 				"LEFT JOIN bw_winner p ON p.winner_aid=a.address_id "+
+				"LEFT JOIN bw_raffle_winner_stats rw ON rw.winner_aid=a.address_id "+
+				"LEFT JOIN bw_raffle_nft_winner_stats rn ON rn.winner_aid=a.address_id "+
 			"WHERE a.address_id=$1"
 
 	var rec p.BwUserInfo
 	var null_num_bids,null_prizes_count sql.NullInt64
 	var null_max_bid,null_max_win sql.NullFloat64
+	var null_raffle_sum sql.NullFloat64
+	var null_raffles_count,null_raffle_nft_won,null_raffle_nft_claimed sql.NullInt64
 	row := sw.S.Db().QueryRow(query,user_aid)
 	var err error
 	err=row.Scan(
@@ -479,6 +486,10 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.BwUserInfo) {
 		&null_max_bid,
 		&null_prizes_count,
 		&null_max_win,
+		&null_raffle_sum,
+		&null_raffles_count,
+		&null_raffle_nft_won,
+		&null_raffle_nft_claimed,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -491,6 +502,10 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.BwUserInfo) {
 	if null_prizes_count.Valid { rec.NumPrizes = null_prizes_count.Int64 }
 	if null_max_bid.Valid { rec.MaxBidAmount = null_max_bid.Float64 }
 	if null_max_win.Valid { rec.MaxWinAmount = null_max_win.Float64 }
+	if null_raffle_sum.Valid { rec.SumRaffleEthWinnings = null_raffle_sum.Float64 }
+	if null_raffles_count.Valid { rec.NumRaffleEthWinnings = null_raffles_count.Int64 }
+	if null_raffle_nft_won.Valid { rec.RaffleNFTWon = null_raffle_nft_won.Int64 }
+	if null_raffle_nft_claimed.Valid { rec.RaffleNFTClaimed = null_raffle_nft_claimed.Int64 }
 	return true,rec
 }
 func (sw *SQLStorageWrapper) Get_charity_donations(biddingwar_aid int64) []p.BwCharityDonation{
@@ -510,7 +525,7 @@ func (sw *SQLStorageWrapper) Get_charity_donations(biddingwar_aid int64) []p.BwC
 			"FROM "+sw.S.SchemaName()+".bw_donation_received d "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
-			"ORDER BY id"
+			"ORDER BY d.id"
 	rows,err := sw.S.Db().Query(query)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -558,7 +573,7 @@ func (sw *SQLStorageWrapper) Get_donations_to_biddingwar() []p.BwBiddingwarDonat
 			"FROM "+sw.S.SchemaName()+".bw_donation d "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
-			"ORDER BY id"
+			"ORDER BY d.id"
 	rows,err := sw.S.Db().Query(query)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -852,7 +867,7 @@ func (sw *SQLStorageWrapper) Get_raffle_eth_deposits(offset,limit int) []p.BwRaf
 				"p.deposit_id,"+
 				"p.amount/1e18 amount_eth "+
 			"FROM "+sw.S.SchemaName()+".bw_raffle_deposit p "+
-				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 			"ORDER BY p.id OFFSET $1 LIMIT $2"
 
@@ -903,9 +918,9 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winners(offset,limit int) []p.BwRaff
 				"p.round_num, "+
 				"p.winner_idx "+
 			"FROM "+sw.S.SchemaName()+".bw_raffle_nft_winner p "+
-				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-			"ORDER BY id OFFSET $1 LIMIT $2"
+			"ORDER BY p.id OFFSET $1 LIMIT $2"
 
 	rows,err := sw.S.Db().Query(query,offset,limit)
 	if (err!=nil) {
@@ -951,9 +966,9 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_claims(offset,limit int) []p.BwRaffl
 				"wa.addr,"+
 				"p.token_id "+
 			"FROM "+sw.S.SchemaName()+".bw_raffle_nft_claimed p "+
-				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-			"ORDER BY id OFFSET $1 LIMIT $2"
+			"ORDER BY p.id OFFSET $1 LIMIT $2"
 
 	rows,err := sw.S.Db().Query(query,offset,limit)
 	if (err!=nil) {

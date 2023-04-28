@@ -26,6 +26,22 @@
 		<td class="market_reports">Maximum Prize won</td>
 		<td class="market_reports">{{.UserInfo.MaxWinAmount}}</td>
 	</tr>
+	<tr class="market_reports">
+		<td class="market_reports">Total ETH won in raffles</td>
+		<td class="market_reports">{{.UserInfo.SumRaffleEthWinnings}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports">Number of (ETH) raffles participated in</td>
+		<td class="market_reports">{{.UserInfo.NumRaffleEthWinnings}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports">Number of Raffle NFTs won</td>
+		<td class="market_reports">{{.UserInfo.RaffleNFTWon}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports">Number of Raffle NFTs claimed</td>
+		<td class="market_reports">{{.UserInfo.RaffleNFTClaimed}}</td>
+	</tr>
 </table>
 <h4>Bids of user</h4>
 <table>

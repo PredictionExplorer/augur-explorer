@@ -1,21 +1,18 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Raffle ETH Deposits</title>
+	<title>Raffle NFT Winners</title>
 </head>
 <body>
-	<h3 class="page_title">Raffle ETH Deposits<h3>
+	<h3 class="page_title">Raffle NFT Winners<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Winner</th>
 		<th class="market_reports">Round</th>
-		<th class="market_reports">Amount (ETH)</th>
-		<th class="market_reports">Deposit ID</th>
-
 	</tr>
-	{{- range $i, $change := .RaffleDeposits}}
+	{{- range $i, $change := .RaffleNFTWinners}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				{{.BlockNum}}
@@ -25,15 +22,13 @@
 				<a href="/black/biddingwar/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
 			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
-			<td style="text-align: right;" title="">{{printf "%.4f" .Amount}}</td>
-			<td style="text-align: right;" title="">{{ .DepositId }}</td>
 		</tr>
 	{{- end}}
 </table>
 <br/><br/>
 <code>
-	API: /api/biddingwar/raffle/deposits/[offset]/[limit]</br>
+	API: /api/biddingwar/raffle/nft_winners/[offset]/[limit]</br>
 
-	Example: /api/biddingwar/raffle/deposits/0/1000000
+	Example: /api/biddingwar/raffle/nft_winners/0/1000000
 </code>
 </body>

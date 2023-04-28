@@ -154,6 +154,16 @@ CREATE TABLE bw_winner ( -- collects statistics per winer of prize
 	prizes_count	BIGINT DEFAULT 0,
 	prizes_sum		DECIMAL DEFAULT 0
 );
+CREATE TABLE bw_raffle_winner_stats (	-- prizes in ETH
+	winner_aid		BIGINT PRIMARY KEY,
+	amount_sum		DECIMAL DEFAULT 0,
+	raffles_count	BIGINT DEFAULT 0
+);
+CREATE TABLE bw_raffle_nft_winner_stats ( -- prizes in NFT
+	winner_aid		BIGINT PRIMARY KEY,
+	num_won			BIGINT DEFAULT 0,	-- num tokens won
+	num_claimed		BIGINT DEFAULT 0	-- num tokens claimed
+);
 CREATE TABLE bw_glob_stats ( -- global statistics
 	num_vol_donations		BIGINT DEFAULT 0,		-- total number of voluntary donations
 	vol_donations_total		DECIMAL DEFAULT 0,		-- sum of voluntary donations

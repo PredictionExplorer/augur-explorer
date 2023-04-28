@@ -384,3 +384,51 @@ func api_biddingwar_raffle_deposits(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
+func api_biddingwar_raffle_nft_winners(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+
+	winners := arb_storagew.Get_raffle_nft_winners(offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"RaffleNFTWinners" : winners,
+		"Offset" : offset,
+		"Limit" : limit,
+	})
+}
+func api_biddingwar_raffle_nft_claims(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+
+	claims := arb_storagew.Get_raffle_nft_claims(offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"RaffleNFTClaims" : claims,
+		"Offset" : offset,
+		"Limit" : limit,
+	})
+}

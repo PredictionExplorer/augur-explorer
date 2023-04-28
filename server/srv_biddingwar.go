@@ -30,7 +30,7 @@ var (
 	charity_percentage			*big.Int = big.NewInt(0)
 	token_reward				*big.Int = big.NewInt(0)
 	prize_percentage			*big.Int = big.NewInt(0)
-	time_increase				*big.Int
+	time_increase				*big.Int = big.NewInt(0)
 
 	// contract variables (variables usually modified by a bid())
 	bid_price					*big.Int = big.NewInt(0)
@@ -490,6 +490,44 @@ func biddingwar_raffle_deposits(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "bw_raffle_deposits.html", gin.H{
 		"RaffleDeposits" : deposits,
+		"Offset" : offset,
+		"Limit" : limit,
+	})
+}
+func biddingwar_raffle_nft_winners(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params_html(c)
+	if !success {
+		return
+	}
+	winners := arb_storagew.Get_raffle_nft_winners(offset,limit)
+
+	c.HTML(http.StatusOK, "bw_raffle_nft_winners.html", gin.H{
+		"RaffleNFTWinners" : winners,
+		"Offset" : offset,
+		"Limit" : limit,
+	})
+}
+func biddingwar_raffle_nft_claims(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params_html(c)
+	if !success {
+		return
+	}
+	deposits := arb_storagew.Get_raffle_nft_claims(offset,limit)
+
+	c.HTML(http.StatusOK, "bw_raffle_nft_claims.html", gin.H{
+		"RaffleNFTClaims" : deposits,
 		"Offset" : offset,
 		"Limit" : limit,
 	})

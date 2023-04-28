@@ -170,6 +170,8 @@ func set_api_routing_biddingwar(r *gin.Engine) {
 	r.GET("/api/biddingwar/recordcounters",api_biddingwar_record_counters)
 	r.GET("/api/biddingwar/donatednft_info/:record_id",api_biddingwar_donated_nft_info)
 	r.GET("/api/biddingwar/raffle/deposits/:offset/:limit",api_biddingwar_raffle_deposits)
+	r.GET("/api/biddingwar/raffle/nft_winners/:offset/:limit",api_biddingwar_raffle_nft_winners)
+	r.GET("/api/biddingwar/raffle/nft_claims/:offset/:limit",api_biddingwar_raffle_nft_claims)
 }
 func set_api_routing_statistics(r *gin.Engine) {
 

@@ -159,6 +159,8 @@ func set_routing_biddingwar(r *gin.Engine) {
 	r.GET("/black/biddingwar/nftdonationstats",biddingwar_nft_donation_stats)
 	r.GET("/black/biddingwar/donatednft_info/:record_id",biddingwar_donated_nft_info)
 	r.GET("/black/biddingwar/raffle/deposits",biddingwar_raffle_deposits)
+	r.GET("/black/biddingwar/raffle/nft_winners",biddingwar_raffle_nft_winners)
+	r.GET("/black/biddingwar/raffle/nft_claims",biddingwar_raffle_nft_claims)
 }
 func set_routing_statistics(r *gin.Engine) {
 
