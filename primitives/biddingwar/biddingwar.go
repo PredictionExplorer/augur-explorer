@@ -147,3 +147,13 @@ type BWRaffleNFTClaimed struct {
 	WinnerRecId			int64
 	TokenId				int64
 }
+type BWERC721Transfer struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	From					string
+	To						string
+	TokenId					int64
+}

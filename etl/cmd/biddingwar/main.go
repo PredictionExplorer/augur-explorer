@@ -38,6 +38,7 @@ const (
 	RAFFLE_DEPOSIT_EVENT	= "b1167d0680cf42eff86b3ab041def9a2bc93b1b86dc35ce7d6b8c3060f06ac90"
 	RAFFLE_NFT_WINNER		= "80348bf864c08069d1368c42ed36b7a60560f73267f63d58e9be69f4b021bacc"
 	RAFFLE_NFT_CLAIMED		= "e05ba2c5fcd9a60f30b179cb0e775070cc8ce9667b0e663e984ee6a02f694cee"
+	TRANSFER_EVT			= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 	BASEURI_SIG				= "6c0360eb"
 )
 var (
@@ -56,6 +57,7 @@ var (
 	evt_raffle_deposit,_	= hex.DecodeString(RAFFLE_DEPOSIT_EVENT)
 	evt_raffle_nft_winner,_	= hex.DecodeString(RAFFLE_NFT_WINNER)
 	evt_raffle_nft_claimed,_= hex.DecodeString(RAFFLE_NFT_CLAIMED)
+	evt_transfer,_			= hex.DecodeString(TRANSFER_EVT)
 	baseuri_sig,_			= hex.DecodeString(BASEURI_SIG)
 
 	inspected_events []InspectedEvent
@@ -74,6 +76,7 @@ var (
 	cosmic_dao_addr			common.Address
 	charity_wallet_addr		common.Address
 	raffle_wallet_addr		common.Address
+	cosmic_sig_aid			int64
 
 	bw_contracts			CosmicGameContractAddrs
 	storagew				SQLStorageWrapper
@@ -191,6 +194,11 @@ func main() {
 	erc721_abi = get_abi(ERC721ABI)
 
 	bw_contracts = storagew.Get_cosmic_game_contract_addrs()
+	cosmic_sig_aid,err  = storagew.S.Nonfatal_lookup_address_id(bw_contracts.CosmicSignatureAddr)
+	if err != nil {
+		fmt.Printf("Lookup of CosmicSignatureAddr failed: %v",err)
+		os.Exit(1)
+	}
 	cosmic_game_addr = common.HexToAddress(bw_contracts.CosmicGameAddr)
 	cosmic_signature_addr = common.HexToAddress(bw_contracts.CosmicSignatureAddr)
 	cosmic_token_addr = common.HexToAddress(bw_contracts.CosmicTokenAddr)
@@ -209,6 +217,6 @@ func main() {
 	}()
 
 
-	inspected_events = build_list_of_inspected_events_layer1()
+	inspected_events = build_list_of_inspected_events_layer1(cosmic_sig_aid)
 	process_events(exit_chan)
 }

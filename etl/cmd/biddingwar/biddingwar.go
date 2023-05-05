@@ -16,7 +16,7 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/primitives/biddingwar"
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
-func build_list_of_inspected_events_layer1() []InspectedEvent {
+func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEvent {
 
 	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)
 	inspected_events= make([]InspectedEvent,0, 32)
@@ -68,6 +68,10 @@ func build_list_of_inspected_events_layer1() []InspectedEvent {
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_raffle_nft_claimed[:4]),
 			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_transfer[:4]),
+			ContractAid: cosmic_sig_aid,
 		},
 	)
 	return inspected_events
@@ -568,6 +572,35 @@ func proc_raffle_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Insert_raffle_nft_claimed(&evt)
 }
+func proc_cosmic_sig_transfer_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt BWERC721Transfer
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_signature_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing Token Transfer event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.From = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.To = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.TokenId = log.Topics[3].Big().Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("Transfer {\n")
+	Info.Printf("\tFrom: %v\n",evt.From)
+	Info.Printf("\tTo: %v\n",evt.To)
+	Info.Printf("\tTokenId: %v\n",evt.TokenId)
+	Info.Printf("}\n")
+
+    storagew.Insert_token_transfer_event(&evt)
+}
+
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event) {
@@ -605,6 +638,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_nft_claimed) {
 		proc_raffle_nft_claimed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_transfer) {
+		proc_cosmic_sig_transfer_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {

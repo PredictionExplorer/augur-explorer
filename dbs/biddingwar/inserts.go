@@ -298,3 +298,38 @@ func (sw *SQLStorageWrapper) Insert_raffle_nft_claimed(evt *p.BWRaffleNFTClaimed
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_token_transfer_event(evt *p.BWERC721Transfer) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	from_aid:=sw.S.Lookup_or_create_address(evt.From,evt.BlockNum,evt.TxId)
+	to_aid:=sw.S.Lookup_or_create_address(evt.To,evt.BlockNum,evt.TxId)
+	otype := int(0)
+	if evt.From == "0x0000000000000000000000000000000000000000" {
+		otype = 1
+	}
+	if evt.To == "0x0000000000000000000000000000000000000000" {
+		otype = 2
+	}
+	var query string
+	query = "INSERT INTO bw_transfer(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"token_id,from_aid,to_aid,otype" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.TokenId,
+		from_aid,
+		to_aid,
+		otype,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into bw_transfer table: %v\n",err))
+		os.Exit(1)
+	}
+}

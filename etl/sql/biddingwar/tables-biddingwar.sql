@@ -142,6 +142,20 @@ CREATE TABLE bw_raffle_nft_claimed (
 	nft_winner_rec_id	BIGINT NOT NULL, -- reference to bw_raffle_nft_winner table
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE bw_transfer(
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	token_id        BIGINT NOT NULL,
+	from_aid        BIGINT NOT NULL,
+	to_aid          BIGINT NOT NULL,
+	otype           SMALLINT NOT NULL,-- 0-regular transfer,1-Mint,2-Burn
+	UNIQUE(evtlog_id)
+);
+
 CREATE TABLE bw_bidder ( -- collects statistics per bidder
 	bidder_aid		BIGINT PRIMARY KEY,
 	num_bids		BIGINT DEFAULT 0,
