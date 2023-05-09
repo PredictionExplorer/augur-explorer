@@ -168,6 +168,7 @@ func set_api_routing_biddingwar(r *gin.Engine) {
 	r.GET("/api/biddingwar/uniquebidders",api_biddingwar_unique_bidders)
 	r.GET("/api/biddingwar/uniquewinners",api_biddingwar_unique_winners)
 	r.GET("/api/biddingwar/nftdonations/:offset/:limit",api_biddingwar_nft_donations)
+	r.GET("/api/biddingwar/nftdonations_token/:token_id",api_biddingwar_nft_donations_by_token)
 	r.GET("/api/biddingwar/nftdonationstats",api_biddingwar_nft_donation_stats)
 	r.GET("/api/biddingwar/recordcounters",api_biddingwar_record_counters)
 	r.GET("/api/biddingwar/donatednft_info/:record_id",api_biddingwar_donated_nft_info)

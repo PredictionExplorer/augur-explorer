@@ -7,6 +7,7 @@ CREATE TABLE bw_prize_claim(
 	contract_aid	BIGINT NOT NULL,
 	prize_num		BIGINT NOT NULL,
 	winner_aid		BIGINT NOT NULL,
+	cur_owner_aid	BIGINT DEFAULT 0,
 	amount			DECIMAL DEFAULT 0,
 	UNIQUE(evtlog_id)
 );
@@ -65,6 +66,7 @@ CREATE TABLE bw_nft_donation (
 	tx_id			BIGINT NOT NULL,
 	time_stamp		TIMESTAMPTZ NOT NULL,
 	contract_aid	BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
 	donor_aid		BIGINT NOT NULL,
 	token_aid		BIGINT NOT NULL,	-- this is address id (table address)
 	token_id		BIGINT NOT NULL,	-- this is tokenID
@@ -142,7 +144,7 @@ CREATE TABLE bw_raffle_nft_claimed (
 	nft_winner_rec_id	BIGINT NOT NULL, -- reference to bw_raffle_nft_winner table
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_transfer(
+CREATE TABLE bw_transfer( -- cosmic signature ERC721 transfer
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,

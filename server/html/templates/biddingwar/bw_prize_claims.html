@@ -22,6 +22,9 @@
 			</td>
 			<td class="" style="text-align:center;">{{.PrizeNum}}</td>
 			<td style="text-align: right;" title="{{.Seed}}">{{printf "%.6f" .AmountEth}}</td>
+			<td class="addr" title="{{.WinnerAid}}">
+				<a href="/black/biddingwar/nftdonations_token/{{.PrizeNum}}">&nbsp;&nbsp;Donated NFTs</a>
+			</td>
 		</tr>
 	{{- end}}
 </table>

@@ -40,6 +40,8 @@ type BwPrizeRec struct {
 	DateTime					string
 	WinnerAid					int64
 	WinnerAddr					string
+	CurOwnerAid					int64
+	CurOwnerAddr				string
 	Amount						string
 	AmountEth					float64	// divided by 1e18
 	PrizeNum					uint64
@@ -106,6 +108,7 @@ type BwNFTDonation struct {
 	TxHash						string
 	TimeStamp					int64
 	DateTime					string
+	RoundNum					int64
 	DonorAid					int64
 	DonorAddr					string
 	TokenAddressId				int64	// the 'aid' of TokenAddr

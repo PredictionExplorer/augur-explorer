@@ -12,3 +12,5 @@ CREATE TRIGGER bw_raffle_nft_winner_insert AFTER INSERT ON bw_raffle_nft_winner 
 CREATE TRIGGER bw_raffle_nft_winner_delete AFTER DELETE ON bw_raffle_nft_winner FOR EACH ROW EXECUTE PROCEDURE on_raffle_nft_winner_delete();
 CREATE TRIGGER bw_raffle_nft_claimed_insert AFTER INSERT ON bw_raffle_nft_claimed FOR EACH ROW EXECUTE PROCEDURE on_raffle_nft_claimed_insert();
 CREATE TRIGGER bw_raffle_nft_claimed_delete AFTER DELETE ON bw_raffle_nft_claimed FOR EACH ROW EXECUTE PROCEDURE on_raffle_nft_claimed_delete();
+CREATE TRIGGER bw_transer_insert AFTER INSERT ON bw_transfer FOR EACH ROW EXECUTE PROCEDURE on_erc721transfer_insert();
+CREATE TRIGGER bw_transfer_delete AFTER DELETE ON bw_transfer FOR EACH ROW EXECUTE PROCEDURE on_erc721transfer_delete();

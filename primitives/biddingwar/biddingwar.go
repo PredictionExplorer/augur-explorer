@@ -78,6 +78,7 @@ type BWNFTDonationEvent struct {
 	LogIndex			int64
 	ContractAddr		string
 	TokenAddr			string
+	RoundNum			int64
 	DonorAddr			string
 	TokenId				int64
 	BidId				int64	// id of related bid record

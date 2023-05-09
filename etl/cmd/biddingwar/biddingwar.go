@@ -347,6 +347,8 @@ func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 		os.Exit(1)
 	}
 
+	evt.RoundNum = storagew.Get_num_prize_claims()
+	if evt.RoundNum > 0 { evt.RoundNum = evt.RoundNum -1 }
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId

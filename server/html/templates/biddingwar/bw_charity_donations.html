@@ -16,7 +16,7 @@
 	{{- range $i, $change := .CharityDonations}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/biddingwar/bidinfo/{{.EvtLogId}}">{{.BlockNum}}</a>
+				{{.BlockNum}}
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td class="addr" title="{{.DonorAid}}">

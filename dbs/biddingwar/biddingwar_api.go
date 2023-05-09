@@ -161,6 +161,8 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.BwPrizeRec {
 				"p.time_stamp,"+
 				"p.winner_aid,"+
 				"wa.addr,"+
+				"p.cur_owner_aid,"+
+				"oa.addr,"+
 				"p.amount, "+
 				"p.amount/1e18 amount_eth, " +
 				"p.prize_num,"+
@@ -168,6 +170,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.BwPrizeRec {
 			"FROM "+sw.S.SchemaName()+".bw_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+				"LEFT JOIN address oa ON p.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN bw_mint_event m ON m.token_id=p.prize_num "+
 			"ORDER BY p.id OFFSET $1 LIMIT $2"
 
@@ -190,6 +193,8 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.BwPrizeRec {
 			&rec.DateTime,
 			&rec.WinnerAid,
 			&rec.WinnerAddr,
+			&rec.CurOwnerAid,
+			&rec.CurOwnerAddr,
 			&rec.Amount,
 			&rec.AmountEth,
 			&rec.PrizeNum,
@@ -284,6 +289,8 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.BwPrizeRec)
 				"p.time_stamp,"+
 				"p.winner_aid,"+
 				"wa.addr,"+
+				"p.cur_owner_aid,"+
+				"oa.addr,"+
 				"p.amount, "+
 				"p.amount/1e18 amount_eth, " +
 				"p.prize_num,"+
@@ -291,6 +298,7 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.BwPrizeRec)
 			"FROM "+sw.S.SchemaName()+".bw_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+				"LEFT JOIN address oa on p.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN bw_mint_event m ON m.token_id=p.prize_num "+
 			"WHERE p.prize_num=$1"
 
@@ -305,6 +313,8 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.BwPrizeRec)
 		&rec.DateTime,
 		&rec.WinnerAid,
 		&rec.WinnerAddr,
+		&rec.CurOwnerAid,
+		&rec.CurOwnerAddr,
 		&rec.Amount,
 		&rec.AmountEth,
 		&rec.PrizeNum,
@@ -406,6 +416,8 @@ func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.BwPr
 				"p.time_stamp,"+
 				"p.winner_aid,"+
 				"wa.addr,"+
+				"p.cur_owner_aid,"+
+				"oa.addr,"+
 				"p.amount, "+
 				"p.amount/1e18 amount_eth, " +
 				"p.prize_num,"+
@@ -413,6 +425,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.BwPr
 			"FROM "+sw.S.SchemaName()+".bw_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+				"LEFT JOIN address oa ON p.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN bw_mint_event m ON m.token_id=p.prize_num "+
 			"WHERE winner_aid=$1 "+
 			"ORDER BY p.id"
@@ -436,6 +449,8 @@ func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.BwPr
 			&rec.DateTime,
 			&rec.WinnerAid,
 			&rec.WinnerAddr,
+			&rec.CurOwnerAid,
+			&rec.CurOwnerAddr,
 			&rec.Amount,
 			&rec.AmountEth,
 			&rec.PrizeNum,
@@ -1089,6 +1104,79 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_claims_by_user(winner_aid int64) []p
 			&rec.WinnerAid,
 			&rec.WinnerAddr,
 			&rec.TokenId,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_num_prize_claims() int64 {
+
+	var query string
+	query = "SELECT num_wins FROM bw_glob_stats"
+	row := sw.S.Db().QueryRow(query)
+	var err error
+	var null_num_claims sql.NullInt64
+	err=row.Scan(&null_num_claims);
+	if err != nil {
+		if err == sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+	return null_num_claims.Int64
+}
+func (sw *SQLStorageWrapper) Get_nft_donations_by_token(token_id int64) []p.BwNFTDonation {
+
+	var query string
+	query = "SELECT "+
+				"d.id,"+
+				"d.evtlog_id,"+
+				"d.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
+				"d.round_num,"+
+				"d.donor_aid,"+
+				"da.addr, "+
+				"d.token_id, "+
+				"nft.address_id,"+
+				"nft.addr, "+
+				"d.token_uri "+
+			"FROM "+sw.S.SchemaName()+".bw_nft_donation d "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address da ON d.donor_aid=da.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address nft ON d.token_aid=nft.address_id "+
+			"WHERE d.round_num= $1"
+
+	rows,err := sw.S.Db().Query(query,token_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwNFTDonation,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwNFTDonation
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.RoundNum,
+			&rec.DonorAid,
+			&rec.DonorAddr,
+			&rec.NFTTokenId,
+			&rec.TokenAddressId,
+			&rec.TokenAddr,
+			&rec.NFTTokenURI,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

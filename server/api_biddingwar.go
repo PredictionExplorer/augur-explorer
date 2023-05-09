@@ -502,3 +502,33 @@ func api_biddingwar_raffle_nft_claims_by_user(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
+func api_biddingwar_nft_donations_by_token(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_token_id:= c.Param("token_id")
+	var token_id int64
+	if len(p_token_id) > 0 {
+		var success bool
+		token_id,success = parse_int_from_remote_or_error(c,JSON,&p_token_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'token_id' parameter is not set")
+		return
+	}
+	nft_donations := arb_storagew.Get_nft_donations_by_token(token_id)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"NFTDonations" : nft_donations,
+		"TokenId": token_id,
+	})
+}

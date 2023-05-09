@@ -176,6 +176,13 @@ async function main() {
   await cosmicGame.connect(addr1).claimRaffleNFT();
 
   await ethers.provider.send("evm_mine");	// mine empty block as spacing
+
+  await cosmicSignature.connect(addr2).setApprovalForAll(owner.address,true)
+  await cosmicSignature.connect(owner).transferFrom(addr2.address,owner.address,hre.ethers.BigNumber.from('0'));
+  await cosmicSignature.connect(addr1).setApprovalForAll(owner.address,true)
+  await cosmicSignature.connect(owner).transferFrom(addr1.address,owner.address,hre.ethers.BigNumber.from('1'));
+
+  await ethers.provider.send("evm_mine");	// mine empty block as spacing
 }
 
 main()

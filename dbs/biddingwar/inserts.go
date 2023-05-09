@@ -13,8 +13,8 @@ func (sw *SQLStorageWrapper) Insert_prize_claim_event(evt *p.BWPrizeClaimEvent) 
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_prize_claim("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"prize_num,winner_aid,amount"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
+					"prize_num,winner_aid,cur_owner_aid,amount"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -22,6 +22,7 @@ func (sw *SQLStorageWrapper) Insert_prize_claim_event(evt *p.BWPrizeClaimEvent) 
 		evt.TxId,
 		contract_aid,
 		evt.PrizeNum,
+		winner_aid,
 		winner_aid,
 		evt.Amount,
 	)
@@ -134,8 +135,8 @@ func (sw *SQLStorageWrapper) Insert_nft_donation_event(evt *p.BWNFTDonationEvent
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_nft_donation("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"donor_aid,token_aid,token_id,bid_id,token_uri"+
-				") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
+					"donor_aid,token_aid,token_id,round_num,bid_id,token_uri"+
+				") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -145,6 +146,7 @@ func (sw *SQLStorageWrapper) Insert_nft_donation_event(evt *p.BWNFTDonationEvent
 		donor_aid,
 		token_aid,
 		evt.TokenId,
+		evt.RoundNum,
 		evt.BidId,
 		evt.NFTTokenURI,
 	)

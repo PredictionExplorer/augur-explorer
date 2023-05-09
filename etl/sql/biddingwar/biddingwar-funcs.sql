@@ -303,3 +303,23 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_erc721transfer_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+
+	UPDATE bw_prize_claim
+		SET
+			cur_owner_aid = NEW.to_aid
+		WHERE prize_num=NEW.token_id;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_erc721transfer_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
