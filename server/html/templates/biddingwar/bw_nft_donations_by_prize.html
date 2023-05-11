@@ -1,7 +1,7 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>NFT Donations for token ID {{.TokenId}}</title>
+	<title>NFT Donations for Round {{.PrizeNum}}</title>
 </head>
 <body>
 	<h3 class="page_title">NFT Donations<h3>
@@ -18,13 +18,13 @@
 	{{- range $i, $change := .NFTDonations}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/biddingwar/donatednft_info/{{.RecordId}}">
+				<a href="/black/cosmicgame/donatednft_info/{{.RecordId}}">
 					{{.BlockNum}}
 				</a>
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td class="addr" title="{{.DonorAid}}">
-				<a href="/black/biddingwar/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+				<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
 			</td>
 			<td style="text-align: right;" title="">{{.TokenAddr}}</td>
 			<td style="text-align: right;" title="">{{.NFTTokenId}}</td>
@@ -34,8 +34,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/biddingwar/nftdonations_token/[cosmic_signature_token_id]</br>
+	API: /api/cosmicgame/donations/nft/by_prize/[round_num]</br>
 
-	Example: /api/biddingwar/nftdonations_token/{{.TokenId}}
+	Example: /api/cosmicgame/donations/nft/by_prize/{{.PrizeNum}}
 </code>
 </body>

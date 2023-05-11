@@ -29,7 +29,7 @@
 	<tr class="market_reports">
 		<td class="market_reports">Total ETH won in raffles</td>
 		<td class="market_reports">
-			<a href="/black/biddingwar/user/raffle_deposits/{{.UserInfo.Address}}">
+			<a href="/black/cosmicgame/user/raffle_deposits/{{.UserInfo.Address}}">
 			{{.UserInfo.SumRaffleEthWinnings}}
 			</a>
 		</td>
@@ -37,7 +37,7 @@
 	<tr class="market_reports">
 		<td class="market_reports">Number of (ETH) raffles participated in</td>
 		<td class="market_reports">
-			<a href="/black/biddingwar/user/raffle_deposits/{{.UserInfo.Address}}">
+			<a href="/black/cosmicgame/user/raffle_deposits/{{.UserInfo.Address}}">
 			{{.UserInfo.NumRaffleEthWinnings}}
 			</a>
 		</td>
@@ -49,7 +49,7 @@
 	<tr class="market_reports">
 		<td class="market_reports">Number of Raffle NFTs claimed</td>
 		<td class="market_reports">
-			<a href="/black/biddingwar/user/raffle_nft_claims/{{.UserInfo.Address}}">
+			<a href="/black/cosmicgame/user/raffle_nft_claims/{{.UserInfo.Address}}">
 			{{.UserInfo.RaffleNFTClaimed}}
 			</a>
 		</td>
@@ -67,7 +67,7 @@
 	{{- range $i, $change := .Bids}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/biddingwar/bidinfo/{{.EvtLogId}}">{{.BlockNum}}</a>
+				<a href="/black/cosmicgame/bidinfo/{{.EvtLogId}}">{{.BlockNum}}</a>
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .BidPriceEth}}</td>
@@ -88,7 +88,7 @@
 	{{- range $i, $change := .Prizes}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/biddingwar/prizeinfo/{{.PrizeNum}}">{{.BlockNum}}</a>
+				<a href="/black/cosmicgame/prizeinfo/{{.PrizeNum}}">{{.BlockNum}}</a>
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .AmountEth}}</td>
@@ -98,8 +98,8 @@
 </table>
 <br/><br/><br/>
 <code>
-	API: /api/biddingwar/user/info/[user_address]</br>
+	API: /api/cosmicgame/user/info/[user_address]</br>
 
-	Example: /api/biddingwar/user/info/{{.UserInfo.Address}}
+	Example: /api/cosmicgame/user/info/{{.UserInfo.Address}}
 </code>
 </body>

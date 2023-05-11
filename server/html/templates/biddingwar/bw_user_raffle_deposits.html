@@ -23,7 +23,7 @@
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td class="addr" title="{{.WinnerAid}}">
-				<a href="/black/biddingwar/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
 			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
 			<td style="text-align: right;" title="">{{printf "%.4f" .Amount}}</td>
@@ -33,8 +33,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/biddingwar/user/raffle_deposits/[user_addr]</br>
+	API: /api/cosmicgame/user/raffle_deposits/[user_addr]</br>
 
-	Example: /api/biddingwar/user/raffle_deposits/{{.UserInfo.Address}}
+	Example: /api/cosmicgame/user/raffle_deposits/{{.UserInfo.Address}}
 </code>
 </body>

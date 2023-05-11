@@ -36,11 +36,7 @@
 	</tr>
 	<tr>
 		<td>Winner Address</td>
-		<td><a class="addr" href="/black/biddingwar/user/info/{{.PrizeInfo.WinnerAddr}}">{{.PrizeInfo.WinnerAddr}}</a></td>
-	</tr>
-	<tr>
-		<td>Current Owner Address</td>
-		<td><a class="addr" href="/black/biddingwar/user/info/{{.PrizeInfo.WinnerAddr}}">{{.PrizeInfo.CurOwnerAddr}}</a></td>
+		<td><a class="addr" href="/black/cosmicgame/user/info/{{.PrizeInfo.WinnerAddr}}">{{.PrizeInfo.WinnerAddr}}</a></td>
 	</tr>
 	<tr>
 		<td>Prize Amount</td>
@@ -54,8 +50,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/biddingwar/prizeinfo/[prize_num]<br/>
+	API: /api/cosmicgame/prize/info/[prize_num]<br/>
 
-	Example: /api/biddingwar/prizeinfo/{{.PrizeInfo.PrizeNum}}
+	Example: /api/cosmicgame/prize/info/{{.PrizeInfo.PrizeNum}}
 </code>
 </body>

@@ -23,6 +23,7 @@ type BWPrizeClaimEvent struct {
 	LogIndex			int64
 	ContractAddr		string
 	PrizeNum			int64
+	TokenId				int64
 	WinnerAddr			string
 	Amount				string
 }
@@ -113,6 +114,7 @@ type BWMintEvent struct {
 	TokenId				int64
 	OwnerAddr			string
 	Seed				string
+	MintType			int64
 }
 type BWRaffleDeposit struct {
 	EvtId				int64

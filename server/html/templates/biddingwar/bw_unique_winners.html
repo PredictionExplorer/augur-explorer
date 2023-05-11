@@ -16,7 +16,7 @@
 	{{- range $i, $change := .UniqueWinners}}
 		<tr class="market_reports">
 			<td class="" title="{{.WinnerAid}}">
-				<a href="/black/biddingwar/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
 			<td class="" style="text-align: center;">{{.PrizesCount}}</td>
 			<td class="addr" title="{{.MaxWinAmount}}">{{ printf "%.6f" .MaxWinAmountEth }}</td>
@@ -26,8 +26,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/biddingwar/uniquewinners<br/>
+	API: /api/cosmicgame/uniquewinners<br/>
 
-	Example: /api/biddingwar/uniquewinners
+	Example: /api/cosmicgame/uniquewinners
 </code>
 </body>

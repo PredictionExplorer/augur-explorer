@@ -1593,6 +1593,30 @@ func (ss *SQLStorage) Get_specific_event_logs(tx_id,contract_aid int64,signature
 	}
 	return records
 }
+func (ss *SQLStorage) Get_specific_event_logs_by_tx_backwards_from_id(tx_id,contract_aid,starting_id int64,signature string) [][]byte {
+
+	records := make([][]byte,0, 4)
+	var query string 
+	query = "SELECT log_rlp FROM evt_log WHERE (tx_id=$1) AND (contract_aid=$2) AND (topic0_sig=$3) AND (id<$4) ORDER BY id DESC"
+
+	rows,err := ss.db.Query(query,tx_id,contract_aid,signature,starting_id)
+	if (err!=nil) {
+		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var rlp_encoded_log []byte
+		err=rows.Scan(&rlp_encoded_log)
+		if err!=nil {
+			ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rlp_encoded_log)
+	}
+	return records
+}
 func (ss *SQLStorage) Get_abi_event_name_by_signature(sig string) string {
 
 	var query string

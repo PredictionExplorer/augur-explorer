@@ -40,8 +40,6 @@ type BwPrizeRec struct {
 	DateTime					string
 	WinnerAid					int64
 	WinnerAddr					string
-	CurOwnerAid					int64
-	CurOwnerAddr				string
 	Amount						string
 	AmountEth					float64	// divided by 1e18
 	PrizeNum					uint64
@@ -164,4 +162,22 @@ type BwRaffleNFTClaimRec struct {
 	WinnerAddr					string
 	WinnerAid					int64
 	TokenId						int64
+}
+type BwCosmicSignatureMintRec struct {
+	EvtLogId					int64
+	BlockNum					int64
+	TimeStamp					int64
+	DateTime					string
+	TxId						int64
+	TxHash						string
+	LogIndex					int64
+	ContractAddr				string
+	TokenId						int64
+	WinnerAid					int64
+	WinnerAddr					string
+	CurOwnerAid					int64
+	CurOwnerAddr				string
+	Seed						string
+	MintType					int64
+	PrizeNum					int64	// -1 if minted via Raffle , > -1 if MintType = 0
 }

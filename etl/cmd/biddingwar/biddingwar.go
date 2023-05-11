@@ -92,7 +92,6 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 		Error.Printf("Event PrizeClaimEvent decode error: %v",err)
 		os.Exit(1)
 	}
-
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -101,6 +100,7 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	evt.PrizeNum= log.Topics[1].Big().Int64()
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.Amount = eth_evt.Amount.String()
+	evt.TokenId = find_cosmic_token_721_mint_event(cosmic_sig_aid,evt.TxId,evt.EvtId)
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("PrizeClaimEvent {\n")
@@ -171,6 +171,57 @@ func find_cosmic_token_721_transfer(bid_evtlog_id int64) int64 {
 		os.Exit(1)
 	}
 	return log.Topics[1].Big().Int64()
+}
+func find_cosmic_token_721_mint_event(contract_aid,tx_id,claim_prize_evtlog_id int64) int64 {
+
+	mint_evt_list := storagew.S.Get_specific_event_logs_by_tx_backwards_from_id(tx_id,contract_aid,claim_prize_evtlog_id,hex.EncodeToString(evt_mint_event[0:4]))
+	if len(mint_evt_list) == 0 {
+		err_str := fmt.Sprintf("find_cosmic_token_721_mint_event() couldn't find corresponding MintEvent()")
+		Info.Printf(err_str)
+		Error.Printf(err_str)
+		os.Exit(1)
+	}
+	var log types.Log
+	err := rlp.DecodeBytes(mint_evt_list[0],&log)
+	if err!= nil {
+		err_str := fmt.Sprintf("RLP Decode error at find_cosmic_token_721_mint_event(): %v",err)
+		Info.Printf(err_str)
+		Error.Printf(err_str)
+		os.Exit(1)
+	}
+	if len(log.Topics) < 2 {
+		err_str := fmt.Sprintf("Event ERC721 MintEvent doesn't have 3 topics")
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		Info.Printf("%+v",log)
+		Error.Printf("%+v",log)
+		os.Exit(1)
+	}
+	return log.Topics[1].Big().Int64()
+	/*
+	var eth_evt CosmicSignatureNFTMintEvent
+	err = erc721_abi.UnpackIntoInterface(&eth_evt,"MintEvent",log.Data)
+	if err != nil {
+		err_str := fmt.Sprintf("Event MintEvent decode error at find_cosmic_token_721_mint_event(): %v",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		Info.Printf("%+v",log)
+		Error.Printf("%+v",log)
+		os.Exit(1)
+	}
+	if eth_evt.TokenId != nil {
+		Info.Printf("token id=%v\n",eth_evt.TokenId.Int64())
+	}
+	if len(log.Topics) < 3 {
+		err_str := fmt.Sprintf("Event ERC721 Transfer doesn't have 4 topics")
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		Info.Printf("%+v",log)
+		Error.Printf("%+v",log)
+		os.Exit(1)
+	}
+	return log.Topics[1].Big().Int64()
+	*/
 }
 func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 

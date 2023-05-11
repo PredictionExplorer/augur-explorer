@@ -18,11 +18,11 @@
 	{{- range $i, $change := .Bids}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/biddingwar/bidinfo/{{.EvtLogId}}">{{.BlockNum}}</a>
+				<a href="/black/cosmicgame/bidinfo/{{.EvtLogId}}">{{.BlockNum}}</a>
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td class="addr" title="{{.BidderAid}}">
-				<a href="/black/biddingwar/user/info/{{.BidderAddr}}">{{.BidderAddr}}</a>
+				<a href="/black/cosmicgame/user/info/{{.BidderAddr}}">{{.BidderAddr}}</a>
 			</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .BidPriceEth}}</td>
 			<td style="text-align: right;" title="">{{printf "%.4f" .ERC20_AmountEth}}</td>
@@ -32,8 +32,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/biddingwar/bids/[offset]/[limit]</br>
+	API: /api/cosmicgame/bids/[offset]/[limit]</br>
 
-	Example: /api/biddingwar/bids/0/1000000
+	Example: /api/cosmicgame/bids/0/1000000
 </code>
 </body>

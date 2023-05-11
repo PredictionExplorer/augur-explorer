@@ -308,10 +308,10 @@ DECLARE
 	v_cnt						NUMERIC;
 BEGIN
 
-	UPDATE bw_prize_claim
+	UPDATE bw_mint_event
 		SET
 			cur_owner_aid = NEW.to_aid
-		WHERE prize_num=NEW.token_id;
+		WHERE token_id=NEW.token_id;
 
 	RETURN NEW;
 END;

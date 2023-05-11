@@ -1,0 +1,65 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Token info for tokenId = {{.TokenInfo.TokenId}}</title>
+</head>
+<body>
+	<h3 class="page_title">Cosmic Signature Token Info<h3>
+<table>
+	<tr>
+		<td>EvtLog ID</td>
+		<td>{{.TokenInfo.EvtLogId}}
+	</tr>
+	<tr>
+		<td>BlockNum</td>
+		<td>{{.TokenInfo.BlockNum}}</td>
+	</tr>
+	<tr>
+		<td>TxId</td>
+		<td>{{.TokenInfo.TxId}}</td>
+	</tr>
+	<tr>
+		<td>TxHash</td>
+		<td>{{.TokenInfo.TxHash}}</td>
+	</td>
+	<tr>
+		<td>TimeStamp</td>
+		<td>
+			{{.TokenInfo.TimeStamp}}
+		</td>
+	</tr>
+	<tr>
+		<td>DateTime</td>
+		<td>
+			{{.TokenInfo.DateTime}}
+		</td>
+	</tr>
+	<tr>
+		<td>Winner Address</td>
+		<td><a class="addr" href="/black/cosmicgame/user/info/{{.TokenInfo.WinnerAddr}}">{{.TokenInfo.WinnerAddr}}</a></td>
+	</tr>
+	<tr>
+		<td>Current Owner Address</td>
+		<td><a class="addr" href="/black/cosmicgame/user/info/{{.TokenInfo.WinnerAddr}}">{{.TokenInfo.CurOwnerAddr}}</a></td>
+	</tr>
+	<tr>
+		<td>Mint Type</td>
+		<td>{{.TokenInfo.MintType}}</td>
+	</tr>
+	<tr>
+		<td>Prize Num</td>
+		<td>{{.TokenInfo.PrizeNum}}</td>
+	</tr>
+	<tr>
+		<td>Seed</td>
+		<td>{{.TokenInfo.Seed}} (ETH)</td>
+	</tr>
+</table>
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/cst/info/[token_id]<br/>
+
+	Example: /api/cosmicgame/cosmicgame/cst/info/{{.TokenInfo.TokenId}}
+</code>
+</body>

@@ -15,7 +15,7 @@
 	{{- range $i, $change := .UniqueBidders}}
 		<tr class="market_reports">
 			<td class="" title="{{.BidderAid}}">
-				<a href="/black/biddingwar/user/info/{{.BidderAddr}}">{{.BidderAddr}}</a>
+				<a href="/black/cosmicgame/user/info/{{.BidderAddr}}">{{.BidderAddr}}</a>
 			</td>
 			<td class="" style="text-align: center;">{{.NumBids}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .MaxBidAmountEth}}</td>
@@ -24,8 +24,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/biddingwar/uniquebidders<br/>
+	API: /api/cosmicgame/uniquebidders<br/>
 
-	Example: /api/biddingwar/uniquebidders
+	Example: /api/cosmicgame/uniquebidders
 </code>
 </body>

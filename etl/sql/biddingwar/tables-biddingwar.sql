@@ -7,7 +7,7 @@ CREATE TABLE bw_prize_claim(
 	contract_aid	BIGINT NOT NULL,
 	prize_num		BIGINT NOT NULL,
 	winner_aid		BIGINT NOT NULL,
-	cur_owner_aid	BIGINT DEFAULT 0,
+	token_id		BIGINT NOT NULL,
 	amount			DECIMAL DEFAULT 0,
 	UNIQUE(evtlog_id)
 );
@@ -104,6 +104,7 @@ CREATE TABLE bw_mint_event (
 	contract_aid	BIGINT NOT NULL,
 	owner_aid		BIGINT NOT NULL,
 	token_id		BIGINT NOT NULL,
+	cur_owner_aid	BIGINT DEFAULT 0,
 	seed			TEXT NOT NULL,
 	UNIQUE(evtlog_id)
 );

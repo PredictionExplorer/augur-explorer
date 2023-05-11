@@ -155,6 +155,7 @@ func set_api_routing_randomwalk(r *gin.Engine) {
 	r.GET("/api/rwalk/mint_report",api_rwalk_mint_report)
 }
 func set_api_routing_biddingwar(r *gin.Engine) {
+	/*
 	r.GET("/api/biddingwar/dashboard",api_biddingwar_dashboard)
 	r.GET("/api/biddingwar/prizes/:offset/:limit",api_biddingwar_prize_claims)
 	r.GET("/api/biddingwar/bids/:offset/:limit",api_biddingwar_bids)
@@ -175,6 +176,30 @@ func set_api_routing_biddingwar(r *gin.Engine) {
 	r.GET("/api/biddingwar/raffle/deposits/:offset/:limit",api_biddingwar_raffle_deposits)
 	r.GET("/api/biddingwar/raffle/nft_winners/:offset/:limit",api_biddingwar_raffle_nft_winners)
 	r.GET("/api/biddingwar/raffle/nft_claims/:offset/:limit",api_biddingwar_raffle_nft_claims)
+	*/
+
+	r.GET("/api/cosmicgame/statistics/dashboard",api_biddingwar_dashboard)
+	r.GET("/api/cosmicgame/statistics/counters",api_biddingwar_record_counters)
+	r.GET("/api/cosmicgame/prize/list/:offset/:limit",api_biddingwar_prize_list)
+	r.GET("/api/cosmicgame/prize/info/:prize_num",api_biddingwar_prize_info)
+	r.GET("/api/cosmicgame/bid/list/:offset/:limit",api_biddingwar_bid_list)
+	r.GET("/api/cosmicgame/bid/info/:evtlog_id",api_biddingwar_bid_info)
+	r.GET("/api/cosmicgame/cst/list/:offset/:limit",api_biddingwar_cosmic_signature_token_list)
+	r.GET("/api/cosmicgame/cst/info/:token_id",api_biddingwar_cosmic_signature_token_info)
+	r.GET("/api/cosmicgame/user/info/:user_addr",api_biddingwar_user_info)
+	r.GET("/api/cosmicgame/user/raffle_deposits/:user_addr",api_biddingwar_user_raffle_deposits)
+	r.GET("/api/cosmicgame/user/raffle_nft_claims/:user_addr",api_biddingwar_user_raffle_nft_claims)
+	r.GET("/api/cosmicgame/user/unique_bidders",api_biddingwar_user_unique_bidders)
+	r.GET("/api/cosmicgame/user/unique_winners",api_biddingwar_user_unique_winners)
+	r.GET("/api/cosmicgame/donations/eth",api_biddingwar_donations_eth)
+	r.GET("/api/cosmicgame/donations/charity",api_biddingwar_charity_donations)
+	r.GET("/api/cosmicgame/donations/nft/list/:offset/:limit",api_biddingwar_donations_nft_list)
+	r.GET("/api/cosmicgame/donations/nft/info/:record_id",api_biddingwar_donated_nft_info)
+	r.GET("/api/cosmicgame/donations/nft/statistics",api_biddingwar_nft_donation_stats)
+	r.GET("/api/cosmicgame/donations/nft/by_prize/:prize_num",api_biddingwar_nft_donations_by_prize)
+	r.GET("/api/cosmicgame/raffle/deposits/:offset/:limit",api_biddingwar_raffle_deposits)
+	r.GET("/api/cosmicgame/raffle/nft_winners/:offset/:limit",api_biddingwar_raffle_nft_winners)
+	r.GET("/api/cosmicgame/raffle/nft_claims/:offset/:limit",api_biddingwar_raffle_nft_claims)
 }
 func set_api_routing_statistics(r *gin.Engine) {
 
