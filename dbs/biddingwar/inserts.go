@@ -207,14 +207,15 @@ func (sw *SQLStorageWrapper) Insert_mint_event(evt *p.BWMintEvent) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_mint_event("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"owner_aid,token_id,seed"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
+					"owner_aid,cur_owner_aid,token_id,seed"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
 		evt.TimeStamp,
 		evt.TxId,
 		contract_aid,
+		owner_aid,
 		owner_aid,
 		evt.TokenId,
 		evt.Seed,

@@ -20,7 +20,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 				"cosmic_token_addr,"+
 				"cosmic_dao_addr,"+
 				"charity_wallet_addr, "+
-				"raffle_wallet_addr "+
+				"raffle_wallet_addr, "+
+				"random_walk_addr "+
 			"FROM "+sw.S.SchemaName()+".bw_contracts"
 	row := sw.S.Db().QueryRow(query)
 	var cosmic_game_addr string
@@ -29,6 +30,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 	var cosmic_dao_addr string
 	var charity_wallet_addr string
 	var raffle_wallet_addr string
+	var random_walk_addr string
 	var err error
 	err=row.Scan(
 		&cosmic_game_addr,
@@ -37,6 +39,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 		&cosmic_dao_addr,
 		&charity_wallet_addr,
 		&raffle_wallet_addr,
+		&random_walk_addr,
 	);
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_contract_addrs(): %v, q=%v",err,query))
@@ -49,6 +52,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 	output.CosmicDaoAddr = cosmic_dao_addr
 	output.CharityWalletAddr = charity_wallet_addr
 	output.RaffleWalletAddr = raffle_wallet_addr
+	output.RandomWalkAddr = random_walk_addr
 	return output
 }
 func (sw *SQLStorageWrapper) Get_biddingwar_processing_status() p.BiddingWarProcStatus {

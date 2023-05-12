@@ -74,7 +74,8 @@ async function main() {
 	  cosmicToken.address+"','"+
 	  cosmicDAO.address+"','"+
 	  charityWallet.address+"','"+
-	  raffleWallet.address+
+	  raffleWallet.address+","+
+	  randomWalkNFT.address+
 	  "')"
   );
 

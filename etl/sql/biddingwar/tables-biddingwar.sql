@@ -104,7 +104,7 @@ CREATE TABLE bw_mint_event (
 	contract_aid	BIGINT NOT NULL,
 	owner_aid		BIGINT NOT NULL,
 	token_id		BIGINT NOT NULL,
-	cur_owner_aid	BIGINT DEFAULT 0,
+	cur_owner_aid	BIGINT NOT NULL,
 	seed			TEXT NOT NULL,
 	UNIQUE(evtlog_id)
 );
@@ -199,7 +199,8 @@ CREATE TABLE bw_contracts (
 	cosmic_token_addr		TEXT,
 	cosmic_dao_addr			TEXT,
 	charity_wallet_addr		TEXT,
-	raffle_wallet_addr		TEXT
+	raffle_wallet_addr		TEXT,
+	random_walk_addr		TEXT
 );
 CREATE TABLE bw_proc_status (
 	last_evt_id             BIGINT DEFAULT 0

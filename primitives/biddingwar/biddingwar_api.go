@@ -45,6 +45,8 @@ type BwPrizeRec struct {
 	PrizeNum					uint64
 	TokenId						uint64
 	Seed						string
+	RaffleNFTWinners			[]BwRaffleNFTWinnerRec
+	RaffleETHDeposits			[]BwRaffleDepositRec
 }
 type BwUserInfo struct {
 	AddressId					int64

@@ -4,13 +4,14 @@
 	<title>NFT Donations</title>
 </head>
 <body>
-	<h3 class="page_title">Bids<h3>
+	<h3 class="page_title">NFT Donations<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Donor</th>
 		<th class="market_reports">Token Address</th>
+		<th class="market_reports">Round Num</th>
 		<th class="market_reports">NFT Id</th>
 		<th class="market_reports">NFT URI</th>
 
@@ -27,7 +28,8 @@
 				<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
 			</td>
 			<td style="text-align: right;" title="">{{.TokenAddr}}</td>
-			<td style="text-align: right;" title="">{{.NFTTokenId}}</td>
+			<td style="text-align: center;" title="">{{.RoundNum}}</td>
+			<td style="text-align: center;" title="">{{.NFTTokenId}}</td>
 			<td style="text-align: right;" title="">{{.NFTTokenURI}}</td>
 		</tr>
 	{{- end}}

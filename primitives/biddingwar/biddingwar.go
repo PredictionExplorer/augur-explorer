@@ -11,6 +11,7 @@ type CosmicGameContractAddrs struct {
 	CosmicDaoAddr				string
 	CharityWalletAddr			string
 	RaffleWalletAddr			string
+	RandomWalkAddr				string
 }
 type BiddingWarProcStatus struct {
 	LastEvtIdProcessed			int64

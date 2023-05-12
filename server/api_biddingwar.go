@@ -332,6 +332,7 @@ func api_biddingwar_record_counters(c *gin.Context) {
 }
 func api_biddingwar_donated_nft_info(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return
@@ -364,6 +365,7 @@ func api_biddingwar_donated_nft_info(c *gin.Context) {
 }
 func api_biddingwar_raffle_deposits(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return
@@ -388,6 +390,7 @@ func api_biddingwar_raffle_deposits(c *gin.Context) {
 }
 func api_biddingwar_raffle_nft_winners(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return
@@ -412,6 +415,7 @@ func api_biddingwar_raffle_nft_winners(c *gin.Context) {
 }
 func api_biddingwar_raffle_nft_claims(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return

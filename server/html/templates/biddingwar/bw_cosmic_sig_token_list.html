@@ -4,27 +4,31 @@
 	<title>Cosmic Signature Token List</title>
 </head>
 <body>
-	<h3 class="page_title">Cosmic Signature Token List<h3>
+	<h3 class="page_title">Cosmic Signature Token List (Mints)<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">Datetime</th>
+		<th class="market_reports">TokenId</th>
 		<th class="market_reports">Winner</th>
 		<th class="market_reports">Current Owner</th>
-		<th class="market_reports">Seed</th>
 		<th class="market_reports">Prize Num</th>
 	</tr>
 	{{- range $i, $change := .CosmicSignatureTokenList}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/cosmicgame/cst/info/:token_id/{{.TokenId}}">{{.DateTime}}</a>
+				<a href="/black/cosmicgame/cst/info/{{.TokenId}}">{{.DateTime}}</a>
 			</td>
+			<td class="" style="text-align:center;">{{.TokenId}}</td>
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
 			<td class="addr" title="{{.CurOwnerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.CurOwnerAddr}}">{{.CurOwnerAddr}}</a>
 			</td>
-			<td class="" style="text-align:center;">{{.PrizeNum}}</td>
+			<td class="" style="text-align:center;">
+				{{.PrizeNum}}
+				{{ if eq -1 .PrizeNum }} (N/A) {{end}}
+			</td>
 		</tr>
 	{{- end}}
 </table>

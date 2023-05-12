@@ -319,6 +319,12 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.BwPrizeRec)
 	}
 	if null_seed.Valid { rec.Seed = null_seed.String } else {rec.Seed = "???"}
 	rec.TokenId = rec.PrizeNum 
+
+	raffle_nft_winners := sw.Get_raffle_nft_winners_by_round_num(prize_num)
+	raffle_eth_deposits := sw.Get_raffle_deposits_by_round_num(prize_num)
+
+	rec.RaffleNFTWinners = raffle_nft_winners
+	rec.RaffleETHDeposits = raffle_eth_deposits
 	return true,rec
 }
 func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.BwBidRec {
@@ -904,6 +910,54 @@ func (sw *SQLStorageWrapper) Get_raffle_eth_deposits(offset,limit int) []p.BwRaf
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_raffle_nft_winners_by_round_num(round_num int64) []p.BwRaffleNFTWinnerRec {
+
+	var query string
+	query = "SELECT "+
+				"p.evtlog_id,"+
+				"p.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
+				"p.time_stamp,"+
+				"p.winner_aid,"+
+				"wa.addr,"+
+				"p.round_num, "+
+				"p.winner_idx "+
+			"FROM "+sw.S.SchemaName()+".bw_raffle_nft_winner p "+
+				"LEFT JOIN transaction t ON t.id=p.tx_id "+
+				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+			"WHERE p.round_num=$1"
+
+	rows,err := sw.S.Db().Query(query,round_num)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwRaffleNFTWinnerRec,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwRaffleNFTWinnerRec
+		err=rows.Scan(
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+			&rec.RoundNum,
+			&rec.WinnerIndex,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
 func (sw *SQLStorageWrapper) Get_raffle_nft_winners(offset,limit int) []p.BwRaffleNFTWinnerRec {
 
 	if limit == 0 { limit = 1000000 }
@@ -1022,6 +1076,59 @@ func (sw *SQLStorageWrapper) Get_raffle_deposits_by_user(winner_aid int64) []p.B
 			"WHERE p.winner_aid = $1"
 
 	rows,err := sw.S.Db().Query(query,winner_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwRaffleDepositRec,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwRaffleDepositRec
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+			&rec.RoundNum,
+			&rec.DepositId,
+			&rec.Amount,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+
+}
+func (sw *SQLStorageWrapper) Get_raffle_deposits_by_round_num(round_num int64) []p.BwRaffleDepositRec {
+
+	var query string
+	query =  "SELECT " +
+				"p.id,"+
+				"p.evtlog_id,"+
+				"p.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
+				"p.time_stamp,"+
+				"p.winner_aid,"+
+				"wa.addr,"+
+				"p.round_num,"+
+				"p.deposit_id,"+
+				"p.amount/1e18 amount_eth "+
+			"FROM "+sw.S.SchemaName()+".bw_raffle_deposit p "+
+				"LEFT JOIN transaction t ON t.id=p.tx_id "+
+				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+			"WHERE p.round_num = $1"
+
+	rows,err := sw.S.Db().Query(query,round_num)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -1189,6 +1296,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list(offset,limit int) []p
 				"m.cur_owner_aid,"+
 				"oa.addr,"+
 				"m.seed, "+
+				"m.token_id,"+
 				"p.prize_num "+
 			"FROM "+sw.S.SchemaName()+".bw_mint_event m "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
@@ -1219,6 +1327,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list(offset,limit int) []p
 			&rec.CurOwnerAid,
 			&rec.CurOwnerAddr,
 			&rec.Seed,
+			&rec.TokenId,
 			&null_prize_num,
 		)
 		if err != nil {
@@ -1226,7 +1335,6 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list(offset,limit int) []p
 			os.Exit(1)
 		}
 		if null_prize_num.Valid { rec.PrizeNum = null_prize_num.Int64 } else {rec.PrizeNum = -1 }
-		rec.TokenId = rec.PrizeNum
 		records = append(records,rec)
 	}
 	return records

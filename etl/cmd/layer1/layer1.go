@@ -205,7 +205,7 @@ func main() {
 		time.Sleep(10 * time.Second)
 		goto main_loop
 	}
-	for ; bnum<bnum_high; bnum++ {
+	for ; bnum<=bnum_high; bnum++ {
 		select {
 			case exit_flag := <-exit_chan:
 				if exit_flag {

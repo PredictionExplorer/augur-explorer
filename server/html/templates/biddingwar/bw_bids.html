@@ -18,7 +18,7 @@
 	{{- range $i, $change := .Bids}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/cosmicgame/bidinfo/{{.EvtLogId}}">{{.BlockNum}}</a>
+				<a href="/black/cosmicgame/bid/info/{{.EvtLogId}}">{{.BlockNum}}</a>
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td class="addr" title="{{.BidderAid}}">
@@ -32,8 +32,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/bids/[offset]/[limit]</br>
+	API: /api/cosmicgame/bid/lists/[offset]/[limit]</br>
 
-	Example: /api/cosmicgame/bids/0/1000000
+	Example: /api/cosmicgame/bid/list/0/1000000
 </code>
 </body>
