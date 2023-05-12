@@ -3,8 +3,6 @@ package main
 import (
 	"os"
 	"fmt"
-	"math/big"
-	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -13,7 +11,6 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
-	CONTRACT_ADDR string = "0x895a6F444BE4ba9d124F61DF736605792B35D66b"
 )
 var (
 	RPC_URL string
@@ -27,16 +24,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(os.Args) < 3 {
+	if len(os.Args) < 2 {
 		fmt.Printf(
 			"Usage: \n\t\t%v [rwalk_addr]\n\t\t"+
-			"Gets baseURI from  RandomWalk contract\n\n",os.Args[0],
+			"Reads variables from  RandomWalk contract\n\n",os.Args[0],
 		)
-		os.Exit(1)
-	}
-	token_id,err := strconv.ParseInt(os.Args[2],10,64)
-	if err != nil {
-		fmt.Printf("Error parsing token_id field: %v\n",err)
 		os.Exit(1)
 	}
 
@@ -50,11 +42,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	uri,err := rwalk_ctrct.TokenURI(&copts,big.NewInt(token_id))
+	next_token_id,err := rwalk_ctrct.NextTokenId(&copts)
 	if err != nil {
-		fmt.Printf("Error at GetMintPrice()(): %v\n",err)
+		fmt.Printf("Error at NexttokenId()(): %v\n",err)
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	fmt.Printf("URI = %v\n",uri)
+	fmt.Printf("Next token ID = %v\n",next_token_id.Int64())
 }

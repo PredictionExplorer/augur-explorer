@@ -17,6 +17,7 @@ import (
 )
 const (
 	CONTRACT_CONSTANTS_REFRESH_TIME		= 5*60	// seconds
+	CONTRACT_VARIABLES_REFRESH_TIME		= 15	// seconds
 )
 var (
 	cosmic_game_addr				common.Address
@@ -67,9 +68,25 @@ func biddingwar_init() {
 	do_reload_contract_variables()
 	do_reload_database_variables()
 	go reload_constants_goroutine()
+	go reload_variables_goroutine()
 }
 func do_reload_contract_constants() {
 	var copts bind.CallOpts
+	code,err := rpcclient.CodeAt(context.Background(), cosmic_game_addr, nil)
+	if (err != nil) {
+		err_str := fmt.Sprintf("Can't instantiate Cosmic gane contract: %v\n",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		fmt.Printf(err_str)
+		os.Exit(1)
+	}
+	if len(code) == 0 {
+		err_str := fmt.Sprintf("Can't instantiate Cosmic gane contract: no code at given address\n")
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		fmt.Printf(err_str)
+		os.Exit(1)
+	}
 	bwcontract,err := NewCosmicGame(cosmic_game_addr,rpcclient)
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate BiddingWar contract: %v . Contract constants won't be fetched\n",err)
@@ -191,6 +208,12 @@ func reload_constants_goroutine() {
 	for {
 		do_reload_contract_constants()
 		time.Sleep(CONTRACT_CONSTANTS_REFRESH_TIME * time.Second)
+	}
+}
+func reload_variables_goroutine() {
+	for {
+		do_reload_contract_variables()
+		time.Sleep(CONTRACT_VARIABLES_REFRESH_TIME * time.Second)
 	}
 }
 func biddingwar_index_page(c *gin.Context) {

@@ -97,7 +97,8 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.BwBidRec {
 				"b.erc20_amount,"+
 				"b.erc20_amount/1e18 erc20_amount_eth, "+
 				"d.token_id,"+
-				"d.tok_addr "+
+				"d.tok_addr, "+
+				"b.msg "+
 			"FROM "+sw.S.SchemaName()+".bw_bid b "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address ba ON b.bidder_aid=ba.address_id "+
@@ -135,6 +136,7 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.BwBidRec {
 			&rec.ERC20_AmountEth,
 			&null_token_id,
 			&null_tok_addr,
+			&rec.Message,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -225,7 +227,8 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.BwBidRec) {
 				"b.erc20_amount/1e18 erc20_amount_eth, "+
 				"d.token_id,"+
 				"d.tok_addr, "+
-				"d.token_uri "+
+				"d.token_uri, "+
+				"b.msg "+
 			"FROM "+sw.S.SchemaName()+".bw_bid b "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+
@@ -257,6 +260,7 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.BwBidRec) {
 		&null_token_id,
 		&null_tok_addr,
 		&null_token_uri,
+		&rec.Message,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -346,7 +350,8 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.BwBidRec {
 				"b.erc20_amount/1e18 erc20_amount_eth, "+
 				"d.token_id,"+
 				"d.tok_addr, "+
-				"d.token_uri "+
+				"d.token_uri, "+
+				"b.msg "+
 			"FROM "+sw.S.SchemaName()+".bw_bid b "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+
@@ -1303,7 +1308,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list(offset,limit int) []p
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN bw_prize_claim p ON m.token_id=p.token_id "+
-			"ORDER BY p.id OFFSET $1 LIMIT $2"
+			"ORDER BY m.id OFFSET $1 LIMIT $2"
 
 	rows,err := sw.S.Db().Query(query,offset,limit)
 	if (err!=nil) {
@@ -1354,6 +1359,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 				"m.cur_owner_aid,"+
 				"oa.addr,"+
 				"m.seed, "+
+				"m.token_id,"+
 				"p.prize_num "+
 			"FROM "+sw.S.SchemaName()+".bw_mint_event m "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
@@ -1378,6 +1384,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 		&rec.CurOwnerAid,
 		&rec.CurOwnerAddr,
 		&rec.Seed,
+		&rec.TokenId,
 		&null_prize_num,
 	)
 	if (err!=nil) {
@@ -1388,6 +1395,5 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 		os.Exit(1)
 	}
 	if null_prize_num.Valid { rec.PrizeNum = null_prize_num.Int64 } else {rec.PrizeNum = -1 }
-	rec.TokenId = rec.PrizeNum
 	return true,rec
 }

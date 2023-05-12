@@ -48,5 +48,12 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	bid_price,err := cosmic_game_ctrct.BidPrice(&copts)
+	if err != nil {
+		fmt.Printf("Error at BidPrice()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
+	fmt.Printf("Bid Price = %v\n",bid_price.String())
 }

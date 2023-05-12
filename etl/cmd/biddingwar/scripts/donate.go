@@ -1,20 +1,18 @@
-// Mints a token
+// Makes a deposit to Wrapped ETH contract
 package main
 
 import (
 	"os"
 	"fmt"
-	"time"
 	"math/big"
-	//"strconv"
 	"context"
 	"crypto/ecdsa"
 
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
@@ -34,32 +32,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(os.Args) < 4 {
-		fmt.Printf(
-			"Usage: \n\t\t%v [private_key] [rwalk_addr] [amount]\n\t\t"+
-			"Sends [amount] to RandomWalk contract to mint a token\n\n",os.Args[0],
-		)
+	if len(os.Args) != 4 {
+		fmt.Printf("Usage: \n\t\t%v [priv_key] [contract_addr] [amount]\n\n\t\tMakes donation to CosmicGame contract\n",os.Args[0])
 		os.Exit(1)
 	}
 
 	from_pkey_str := os.Args[1]
 	if len(from_pkey_str) != 64 {
-		fmt.Printf("Sender's private key is not 64 characters long\n")
+		fmt.Printf("Sender's private key is not 66 characters long\n")
 		os.Exit(1)
 	}
 
-	rwalk_addr := common.HexToAddress(os.Args[2])
+	cosmic_game_addr := common.HexToAddress(os.Args[2])
 	amount_str := os.Args[3]
-	amount := big.NewInt(0)
-	_,success := amount.SetString(amount_str,10)
+
+	donation_amount := big.NewInt(0)
+	_,success := donation_amount.SetString(amount_str,10)
 	if !success {
-		fmt.Printf("Couldn't parse amount, bad integer\n")
+		fmt.Printf("Incorrect amount provided on the command line")
 		os.Exit(1)
 	}
 
-	rwalk_ctrct,err := NewRWalk(rwalk_addr,eclient)
+	cosmic_game_ctrct,err := NewCosmicGame(cosmic_game_addr,eclient)
 	if err!=nil {
-		fmt.Printf("Failed to instantiate RWalk contract: %v\n",err)
+		fmt.Printf("Failed to instantiate CosmicGame contract: %v\n",err)
 		os.Exit(1)
 	}
 
@@ -89,11 +85,11 @@ func main() {
 	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
 	txopts := bind.NewKeyedTransactor(from_PrivateKey)
 	txopts.Nonce = big.NewInt(int64(from_nonce))
-	txopts.Value = big.NewInt(0)     // in wei
-	fmt.Printf("Setting msg.value to %v\n",txopts.Value.String())
-	txopts.Value.Set(amount)
+	txopts.Value = big.NewInt(0)     // in weia
+	txopts.Value.Set(donation_amount)
 	txopts.GasLimit = uint64(10000000) // in units
 	txopts.GasPrice = gasPrice
+
 	fmt.Printf("Gas price = %v\n",gasPrice.String())
 
 	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
@@ -108,12 +104,11 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := rwalk_ctrct.Mint(txopts)
+	tx,err := cosmic_game_ctrct.Donate(txopts)
+	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)
 		os.Exit(1)
 	}
 	fmt.Printf("Tx hash = %v\n",tx.Hash().String())
-	time.Sleep(1 * time.Second)
-
 }
