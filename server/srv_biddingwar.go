@@ -26,24 +26,35 @@ var (
 	charity_wallet_addr			common.Address
 
 	// contract constants (variables not frequently modified, and only by the owner)
-	price_increase				*big.Int = big.NewInt(0)
+	//price_increase				*big.Int = big.NewInt(0)
+	price_increase				string
 	charity_addr				common.Address
-	charity_percentage			*big.Int = big.NewInt(0)
-	token_reward				*big.Int = big.NewInt(0)
-	prize_percentage			*big.Int = big.NewInt(0)
-	time_increase				*big.Int = big.NewInt(0)
+	//charity_percentage			*big.Int = big.NewInt(0)
+	charity_percentage			int64
+	//token_reward				*big.Int = big.NewInt(0)
+	token_reward				string
+	//prize_percentage			*big.Int = big.NewInt(0)
+	prize_percentage			int64
+	//time_increase				*big.Int = big.NewInt(0)
+	time_increase				string
 
 	// contract variables (variables usually modified by a bid())
-	bid_price					*big.Int = big.NewInt(0)
+	//bid_price					*big.Int = big.NewInt(0)
+	bid_price					string
 	bid_price_eth				float64
-	prize_claim_date			*big.Int = big.NewInt(0)	// timestamp (Unix)
-	prize_amount				*big.Int = big.NewInt(0)
+	//prize_claim_date			*big.Int = big.NewInt(0)	// timestamp (Unix)
+	prize_claim_date			int64
+	//prize_amount				*big.Int = big.NewInt(0)
+	prize_amount				string
 	prize_amount_eth			float64
-	round_num 					*big.Int = big.NewInt(0)
-	total_prizes_amount_paid	*big.Int = big.NewInt(0)
-	nanoseconds_extra			*big.Int = big.NewInt(0)
+	//round_num 					*big.Int = big.NewInt(0)
+	round_num					int64
+	//total_prizes_amount_paid	*big.Int = big.NewInt(0)
+	//nanoseconds_extra			*big.Int = big.NewInt(0)
+	nanoseconds_extra			string
 	last_bidder					common.Address
-	charity_balance				*big.Int = big.NewInt(0)
+	//charity_balance				*big.Int = big.NewInt(0)
+	charity_balance				string
 	charity_balance_eth			float64
 
 	// contract counters	(collected via DB)
@@ -94,42 +105,48 @@ func do_reload_contract_constants() {
 		Info.Printf(err_str)
 	} else {
 		var err error
-		price_increase,err = bwcontract.PriceIncrease(&copts)
+		var tmp_val *big.Int
+		tmp_val,err = bwcontract.PriceIncrease(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at PriceIncrease() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
-		}
+			price_increase = "error"
+		} else { price_increase=tmp_val.String() }
 		charity_addr,err = bwcontract.Charity(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at Charity() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 		}
-		charity_percentage,err = bwcontract.CharityPercentage(&copts)
+		tmp_val,err = bwcontract.CharityPercentage(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at Charity() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
-		}
-		token_reward,err = bwcontract.TokenReward(&copts)
+			charity_percentage = 0
+		} else { charity_percentage = tmp_val.Int64() }
+		tmp_val,err = bwcontract.TokenReward(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at TokenReward() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
-		}
-		prize_percentage,err = bwcontract.PrizePercentage(&copts)
+			token_reward = "error"
+		} else { token_reward = tmp_val.String() }
+		tmp_val,err = bwcontract.PrizePercentage(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at PrizePercentage() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
-		}
-		time_increase,err = bwcontract.TimeIncrease(&copts)
+			prize_percentage = -1
+		} else { prize_percentage = tmp_val.Int64() }
+		tmp_val,err = bwcontract.TimeIncrease(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at TimeIncrease() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
-		}
+			time_increase = "error"
+		} else { time_increase = tmp_val.String() }
 	}
 }
 func do_reload_contract_variables() {
@@ -140,58 +157,68 @@ func do_reload_contract_variables() {
 		Error.Printf(err_str)
 		Info.Printf(err_str)
 	} else {
+		var tmp_val *big.Int
 		f_divisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
-		bid_price,err = bwcontract.GetBidPrice(&copts)
+		tmp_val,err = bwcontract.GetBidPrice(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at GetBidPrice() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
+			bid_price = "error"
 		} else {
-			f_bid_price := big.NewFloat(0.0).SetInt(bid_price)
+			bid_price = tmp_val.String()
+			f_bid_price := big.NewFloat(0.0).SetInt(tmp_val)
 			f_quo := big.NewFloat(0.0).Quo(f_bid_price,f_divisor)
 			bid_price_eth,_ = f_quo.Float64()
 		}
-		prize_claim_date ,err = bwcontract.PrizeTime(&copts)
+		tmp_val,err = bwcontract.PrizeTime(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at PrizeTime() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
-		}
-		prize_amount, err = bwcontract.PrizeAmount(&copts)
+			prize_claim_date = -1
+		} else { prize_claim_date = tmp_val.Int64() }
+		tmp_val , err = bwcontract.PrizeAmount(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at PrizeAmount() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
+			prize_amount = "error"
 		} else {
-			f_prize_amount:= big.NewFloat(0.0).SetInt(prize_amount)
+			prize_amount = tmp_val.String()
+			f_prize_amount:= big.NewFloat(0.0).SetInt(tmp_val)
 			f_quo := big.NewFloat(0.0).Quo(f_prize_amount,f_divisor)
 			prize_amount_eth,_ = f_quo.Float64()
 		}
-		round_num , err = bwcontract.RoundNum(&copts)
+		tmp_val , err = bwcontract.RoundNum(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at NumPrizes() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
-		}
-		nanoseconds_extra,err = bwcontract.NanoSecondsExtra(&copts)
+			round_num = -1
+		} else { round_num = tmp_val.Int64() }
+		tmp_val,err = bwcontract.NanoSecondsExtra(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at NanoSecondsExtra() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
-		}
+			nanoseconds_extra = "error"
+		} else { nanoseconds_extra = tmp_val.String() }
 		last_bidder,err = bwcontract.LastBidder(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at LastBidder() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 		}
-		charity_balance,err = rpcclient.BalanceAt(context.Background(),charity_addr,nil)
+		tmp_val,err = rpcclient.BalanceAt(context.Background(),charity_addr,nil)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at BalanceAt() call for charity addr: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
+			charity_balance = "error"
 		} else {
-			f_charity_balance := big.NewFloat(0.0).SetInt(charity_balance)
+			charity_balance = tmp_val.String()
+			f_charity_balance := big.NewFloat(0.0).SetInt(tmp_val)
 			f_quo := big.NewFloat(0.0).Quo(f_charity_balance,f_divisor)
 			charity_balance_eth,_ = f_quo.Float64()
 		}
@@ -227,13 +254,13 @@ func biddingwar_index_page(c *gin.Context) {
 		"CosmicSignatureAddr":cosmic_signature_addr,
 		"CosmicSignatureTokenAddr":cosmic_token_addr,
 		"CharityWalletAddr":charity_wallet_addr,
-		"BidPrice":bid_price.String(),
+		"BidPrice":bid_price,
 		"BidPriceEth":bid_price_eth,
-		"PrizeClaimDate":time.Unix(prize_claim_date.Int64(),0).Format(time.RFC822),
-		"PrizeClaimTs":prize_claim_date.Int64(),
-		"CurRoundNum": round_num.Int64()+1,
+		"PrizeClaimDate":time.Unix(prize_claim_date,0).Format(time.RFC822),
+		"PrizeClaimTs":prize_claim_date,
+		"CurRoundNum": round_num+1,
 		"CurNumBids" : bw_stats.CurNumBids,
-		"PrizeAmount" : prize_amount.Int64(),
+		"PrizeAmount" : prize_amount,
 		"PrizeAmountEth" : prize_amount_eth,
 		"TotalPrizes": bw_stats.TotalPrizes,
 		"TotalPrizesPaidAmountEth": bw_stats.TotalPrizesPaidAmountEth,
@@ -241,14 +268,14 @@ func biddingwar_index_page(c *gin.Context) {
 		"NumVoluntaryDonations":bw_stats.NumVoluntaryDonations,
 		"SumVoluntaryDonationsEth":bw_stats.SumVoluntaryDonationsEth,
 		"NumRwalkTokensUsed":bw_stats.NumRwalkTokensUsed,
-		"PriceIncrease" : price_increase.Int64(),
-		"TimeIncrease" : time_increase.Int64(),
-		"NanosecondsExtra" : nanoseconds_extra.Int64(),
-		"TokenReward" : token_reward.Int64(),
-		"PrizePercentage" : prize_percentage.Int64(),
+		"PriceIncrease" : price_increase,
+		"TimeIncrease" : time_increase,
+		"NanosecondsExtra" : nanoseconds_extra,
+		"TokenReward" : token_reward,
+		"PrizePercentage" : prize_percentage,
 		"CharityAddr" : charity_addr.String(),
-		"CharityPercentage" : charity_percentage.Int64(),
-		"CharityBalance": charity_balance.String(),
+		"CharityPercentage" : charity_percentage,
+		"CharityBalance": charity_balance,
 		"CharityBalanceEth": charity_balance_eth,
 		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
 		"NumUniqueWinners" : bw_stats.NumUniqueWinners,

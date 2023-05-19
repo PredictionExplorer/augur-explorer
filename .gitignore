@@ -77,7 +77,14 @@ etl/cmd/randomwalk/tools/twsend_img_reply
 etl/cmd/randomwalk/tools/ffmpeg-convert
 etl/cmd/randomwalk/scripts/withdrawal
 etl/cmd/randomwalk/scripts/tokenuri
+etl/cmd/randomwalk/scripts/mint
+etl/cmd/randomwalk/scripts/ownerof
+etl/cmd/randomwalk/scripts/status
+etl/cmd/randomwalk/scripts/price
 etl/cmd/randomwalk/rwalkalarm/rwalkalarmd
 etl/cmd/layer1/layer1
 etl/cmd/biddingwar/biddingwar
+etl/cmd/biddingwar/scripts/cginfo
+etl/cmd/biddingwar/scripts/claimnft
+etl/cmd/biddingwar/scripts/donate
 etl/cmd/beacon/beacon
