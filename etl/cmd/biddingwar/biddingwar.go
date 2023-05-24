@@ -70,6 +70,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_donated_nft_claimed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_transfer[:4]),
 			ContractAid: cosmic_sig_aid,
 		},
@@ -246,6 +250,7 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.LastBidderAddr = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.RoundNum = log.Topics[2].Big().Int64()
 	evt.BidPrice = eth_evt.BidPrice.String()
 	evt.RandomWalkTokenId = eth_evt.RandomWalkNFTId.Int64()
 	evt.ERC20_Value = find_cosmic_token_transfer(evt.EvtId)
@@ -255,6 +260,7 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("BidEvent {\n")
 	Info.Printf("\tLastBidder: %v\n",evt.LastBidderAddr)
+	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
 	Info.Printf("\tBidPrice: %v\n",evt.BidPrice)
 	Info.Printf("\tRandomWalkTokenId: %v\n",evt.RandomWalkTokenId)
 	Info.Printf("\tPrizeTime: %v\n",evt.PrizeTime)
@@ -364,7 +370,7 @@ func proc_donation_sent_event(log *types.Log,elog *EthereumEventLog) {
 }
 func get_token_uri(token_id int64,contract_addr common.Address) string {
 
-	c,err := NewCosmicSignatureNFT(contract_addr,eclient) // we use cosmicsiangature because its ERC721
+	c,err := NewCosmicSignature(contract_addr,eclient) // we use cosmicsiangature because its ERC721
 	if err != nil {
 		err_str := fmt.Sprintf("Error at get_token_uri() during contract creation: %v",err)
 		Info.Printf(err_str)
@@ -455,7 +461,7 @@ func proc_charity_updated_event(log *types.Log,elog *EthereumEventLog) {
 func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt BWTokenNameEvent
-	var eth_evt CosmicSignatureNFTTokenNameEvent
+	var eth_evt CosmicSignatureTokenNameEvent
 
 	Info.Printf("Processing TokenNameEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -474,7 +480,7 @@ func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.TokenId = eth_evt.TokenId.Int64()
+	evt.TokenId = log.Topics[1].Big().Int64()
 	evt.TokenName = eth_evt.NewName
 
 	Info.Printf("Contract: %v\n",log.Address.String())
@@ -488,7 +494,7 @@ func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt BWMintEvent
-	var eth_evt CosmicSignatureNFTMintEvent
+	var eth_evt CosmicSignatureMintEvent
 
 	Info.Printf("Processing MintEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -625,6 +631,43 @@ func proc_raffle_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Insert_raffle_nft_claimed(&evt)
 }
+func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt BWDonatedNFTClaimed
+	var eth_evt CosmicGameDonatedNFTClaimed
+
+	Info.Printf("Processing DonatedNFTClaimed event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"DonatedNFTClaimed",log.Data)
+	if err != nil {
+		Error.Printf("Event DonatedNFTClaimed decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.TokenAddr = eth_evt.NftAddressdonatedNFTs.String()
+	evt.RoundNum = log.Topics[1].Big().Int64()
+	evt.TokenId = eth_evt.TokenId.String()
+	evt.Index = eth_evt.Index.Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("DonatedNFTClaimedEvent{\n")
+	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
+	Info.Printf("\tIndex: %v\n",evt.Index)
+	Info.Printf("\tTokenAddr: %v\n",evt.TokenAddr)
+	Info.Printf("\tTokenId: %v\n",evt.TokenId);
+	Info.Printf("}\n")
+
+	storagew.Insert_donated_nft_claimed(&evt)
+}
 func proc_cosmic_sig_transfer_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt BWERC721Transfer
@@ -691,6 +734,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_nft_claimed) {
 		proc_raffle_nft_claimed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donated_nft_claimed) {
+		proc_donated_nft_claimed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_transfer) {
 		proc_cosmic_sig_transfer_event(log,evtlog)

@@ -20,6 +20,7 @@ CREATE TABLE bw_bid (
 	contract_aid	BIGINT NOT NULL,
 	bidder_aid		BIGINT NOT NULL,
 	rwalk_nft_id	BIGINT NOT NULL,	--token_id of RandomWalk, if present
+	round_num		BIGINT NOT NULL,
 	prize_time		TIMESTAMPTZ NOT NULL,
 	bid_price		DECIMAL NOT NULL,
 	erc20_amount	DECIMAL DEFAULT 0,	-- amount of CosmicSignatureToken minted in ERC20
@@ -145,6 +146,19 @@ CREATE TABLE bw_raffle_nft_claimed (
 	nft_winner_rec_id	BIGINT NOT NULL, -- reference to bw_raffle_nft_winner table
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE bw_donated_nft_claimed (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
+	idx				BIGINT NOT NULL,
+	token_aid		BIGINT NOT NULL,
+	token_id		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE bw_transfer( -- cosmic signature ERC721 transfer
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
@@ -158,7 +172,11 @@ CREATE TABLE bw_transfer( -- cosmic signature ERC721 transfer
 	otype           SMALLINT NOT NULL,-- 0-regular transfer,1-Mint,2-Burn
 	UNIQUE(evtlog_id)
 );
-
+CREATE TABLE bw_round_stats( -- collects statistics per round
+	round_num			BIGINT NOT NULL PRIMARY KEY,
+	total_bids			BIGINT DEFAULT 0,
+	total_nft_donated	BIGINT DEFAULT 0
+);
 CREATE TABLE bw_bidder ( -- collects statistics per bidder
 	bidder_aid		BIGINT PRIMARY KEY,
 	num_bids		BIGINT DEFAULT 0,

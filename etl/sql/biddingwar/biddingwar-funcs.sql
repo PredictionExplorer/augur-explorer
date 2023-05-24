@@ -27,6 +27,11 @@ BEGIN
 		UPDATE bw_glob_stats SET num_rwalk_used = (num_rwalk_used + 1);
 	END IF;
 	UPDATE bw_glob_stats SET cur_num_bids = (cur_num_bids + 1);
+	UPDATE bw_round_stats SET total_bids = (total_bids + 1) WHERE round_num=NEW.round_num;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO bw_round_stats(round_num,total_bids) VALUES (NEW.round_num,1);
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -54,6 +59,7 @@ BEGIN
 		UPDATE bw_glob_stats SET num_rwalk_used = (num_rwalk_used - 1);
 	END IF;
 	UPDATE bw_glob_stats SET cur_num_bids = (cur_num_bids - 1);
+	UPDATE bw_round_stats SET total_bids = (total_bids - 1) WHERE round_num=OLD.round_num;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -205,6 +211,12 @@ BEGIN
 		INSERT INTO bw_nft_stats(contract_aid,num_donated)
 			VALUES(NEW.token_aid,1);
 	END IF;
+	UPDATE bw_round_stats SET total_nft_donated = (total_nft_donated + 1) WHERE round_num=NEW.round_num;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO bw_round_stats(round_num,total_nft_donated) VALUES (NEW.round_num,1);
+	END IF;
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -217,6 +229,7 @@ BEGIN
 		SET
 			num_donated = (num_donated - 1)
 		WHERE contract_aid = OLD.token_aid;
+	UPDATE bw_round_stats SET total_nft_donated = (total_nft_donated - 1) WHERE round_num=OLD.round_num;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

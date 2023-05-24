@@ -25,6 +25,7 @@ type BwBidRec struct {
 	BidPrice					string
 	BidPriceEth					float64	// divided by 1e18
 	RWalkNFTId					int64
+	RoundNum					int64
 	ERC20_Amount				string
 	ERC20_AmountEth				float64	// divided by 1e18
 	NFTDonationTokenId			int64
@@ -183,4 +184,9 @@ type BwCosmicSignatureMintRec struct {
 	Seed						string
 	MintType					int64
 	PrizeNum					int64	// -1 if minted via Raffle , > -1 if MintType = 0
+}
+type BwRoundStats struct {
+	RoundNum					int64
+	TotalBids					int64
+	TotalNFTDonated				int64
 }

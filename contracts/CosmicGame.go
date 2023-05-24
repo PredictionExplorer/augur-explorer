@@ -28,12 +28,6 @@ var (
 	_ = event.NewSubscription
 )
 
-// ERC20VotesCheckpoint is an auto generated low-level Go binding around an user-defined struct.
-type ERC20VotesCheckpoint struct {
-	FromBlock uint32
-	Votes     *big.Int
-}
-
 // AddressMetaData contains all meta data concerning the Address contract.
 var AddressMetaData = &bind.MetaData{
 	ABI: "[]",
@@ -209,8 +203,8 @@ func (_Address *AddressTransactorRaw) Transact(opts *bind.TransactOpts, method s
 
 // CosmicGameMetaData contains all meta data concerning the CosmicGame contract.
 var CosmicGameMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"lastBidder\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"bidPrice\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"randomWalkNFTId\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"prizeTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"}],\"name\":\"BidEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"NFTDonationEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"prizeNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"PrizeClaimEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"}],\"name\":\"RaffleNFTClaimedEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winner_index\",\"type\":\"uint256\"}],\"name\":\"RaffleNFTWinnerEvent\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"MAX_MESSAGE_LENGTH\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MILLION\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"activationTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"}],\"name\":\"bid\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"},{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"bidAndDonateNFT\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bidPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"randomWalkNFTId\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"}],\"name\":\"bidWithRWLK\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"randomWalkNFTId\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"},{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"bidWithRWLKAndDonateNFT\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charity\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charityAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charityPercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"claimDonatedNFT\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claimPrize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claimRaffleNFT\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"donate\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"donatedNFTs\",\"outputs\":[{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"claimed\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getBidPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"initialBidAmountFraction\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"initialSecondsUntilPrize\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastBidder\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nanoSecondsExtra\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nft\",\"outputs\":[{\"internalType\":\"contractCosmicSignature\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleNFTWinnersPerRound\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleParticipants\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleWinnersPerRound\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"onERC721Received\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"priceIncrease\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizeAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizePercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizeTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleEntropy\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"raffleNFTWinners\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"raffleParticipants\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rafflePercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleWallet\",\"outputs\":[{\"internalType\":\"contractRaffleWallet\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"randomWalk\",\"outputs\":[{\"internalType\":\"contractRandomWalkNFT\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"roundNum\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newActivationTime\",\"type\":\"uint256\"}],\"name\":\"setActivationTime\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setCharity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newCharityPercentage\",\"type\":\"uint256\"}],\"name\":\"setCharityPercentage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newInitialSecondsUntilPrize\",\"type\":\"uint256\"}],\"name\":\"setInitialSecondsUntilPrize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newNanoSecondsExtra\",\"type\":\"uint256\"}],\"name\":\"setNanoSecondsExtra\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setNftContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newNumRaffleNFTWinnersPerRound\",\"type\":\"uint256\"}],\"name\":\"setNumRaffleNFTWinnersPerRound\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newNumRaffleWinnersPerRound\",\"type\":\"uint256\"}],\"name\":\"setNumRaffleWinnersPerRound\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newPriceIncrease\",\"type\":\"uint256\"}],\"name\":\"setPriceIncrease\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newRafflePercentage\",\"type\":\"uint256\"}],\"name\":\"setRafflePercentage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setRaffleWallet\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setRandomWalk\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newTimeIncrease\",\"type\":\"uint256\"}],\"name\":\"setTimeIncrease\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setTokenContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeIncrease\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeUntilActivation\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeUntilPrize\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"token\",\"outputs\":[{\"internalType\":\"contractCosmicToken\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"tokenReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newInitialBidAmountFraction\",\"type\":\"uint256\"}],\"name\":\"updateInitialBidAmountFraction\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newPrizePercentage\",\"type\":\"uint256\"}],\"name\":\"updatePrizePercentage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"usedRandomWalkNFTs\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"winners\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
-	Bin: "0x6080604052620f695060015565034630b8a000600255620f42a460035566038d7ea4c680006004556000600560006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550600a600755620151806008556103e860095568056bc75e2d63100000600a556019600b556005600c556003600d556005600e55600060105563644709f0601355348015620000b657600080fd5b50620000d7620000cb6200015f60201b60201c565b6200016760201b60201c565b424340604051602001620000ed929190620002c2565b60405160208183030381529060405280519060200120601481905550620001196200015f60201b60201c565b600660006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555062000304565b600033905090565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff169050816000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508173ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a35050565b600082825260208201905092915050565b7f436f736d6963205369676e617475726520323032330000000000000000000000600082015250565b6000620002746015836200022b565b915062000281826200023c565b602082019050919050565b6000819050919050565b620002a1816200028c565b82525050565b6000819050919050565b620002bc81620002a7565b82525050565b60006060820190508181036000830152620002dd8162000265565b9050620002ee602083018562000296565b620002fd6040830184620002b1565b9392505050565b614fb180620003146000396000f3fe6080604052600436106103c75760003560e01c80638b1329e0116101f2578063d59d74781161010d578063ed083398116100a0578063f71788221161006f578063f717882214610dc0578063f8c3405014610deb578063fb6f71a314610e16578063fc0c546a14610e3f576103e6565b8063ed08339814610d4b578063ed88c68e14610d76578063efeacc5614610d80578063f2fde38b14610d97576103e6565b8063dbc945c0116100dc578063dbc945c014610c8f578063e1381d7e14610cba578063ebc3f1d114610ce3578063ec34866d14610d20576103e6565b8063d59d747814610bd0578063d6e1741714610bf9578063d94d031614610c39578063da4493f614610c64576103e6565b8063a6ceac2c11610185578063bbcd5bbe11610154578063bbcd5bbe14610b28578063c7c8378d14610b51578063c94028c214610b7a578063cb819dc014610ba5576103e6565b8063a6ceac2c14610a8f578063a6f9cc1514610aba578063ae6247f214610ae3578063bb0bc58e14610b0c576103e6565b8063934aa023116101c1578063934aa023146109e2578063a2fb117514610a0d578063a325b7d214610a4a578063a672f6e114610a66576103e6565b80638b1329e0146109365780638da5cb5b146109615780639136d6d91461098c5780639250c33c146109b7576103e6565b80635111a2d6116102e2578063785fa6271161027557806380de163d1161024457806380de163d1461087a5780638547af30146108a557806386e378c9146108d05780638b1222741461090d576103e6565b8063785fa627146107df578063799d431d1461080a5780637aef951c146108355780637c5486a214610851576103e6565b8063647b3e7f116102b1578063647b3e7f1461075d5780636e66f6e91461078657806370740ac9146107b1578063715018a6146107c8576103e6565b80635111a2d6146106b757806351964588146106e257806352f5ad771461070b5780635e6e47aa14610734576103e6565b806332bc934c1161035a57806340e023221161032957806340e023221461060d57806347ccca02146106385780634a773f33146106635780634ac3a3951461068e576103e6565b806332bc934c1461056357806332d382cd1461058e5780633bec7b69146105b95780633c83adc4146105e4576103e6565b806311dc73351161039657806311dc7335146104a5578063150b7a02146104d057806319afe4731461050d5780632a02721114610538576103e6565b806304a57c09146103eb57806305ba9b6714610428578063062fb10014610451578063119b22b31461047a576103e6565b366103e6576103e460405180602001604052806000815250610e6a565b005b600080fd5b3480156103f757600080fd5b50610412600480360381019061040d91906138bf565b611386565b60405161041f919061392d565b60405180910390f35b34801561043457600080fd5b5061044f600480360381019061044a91906138bf565b6113b9565b005b34801561045d57600080fd5b5061047860048036038101906104739190613974565b61143f565b005b34801561048657600080fd5b5061048f6114ff565b60405161049c91906139b0565b60405180910390f35b3480156104b157600080fd5b506104ba611505565b6040516104c791906139b0565b60405180910390f35b3480156104dc57600080fd5b506104f760048036038101906104f29190613a30565b61150b565b6040516105049190613af3565b60405180910390f35b34801561051957600080fd5b50610522611520565b60405161052f91906139b0565b60405180910390f35b34801561054457600080fd5b5061054d611526565b60405161055a91906139b0565b60405180910390f35b34801561056f57600080fd5b5061057861152c565b60405161058591906139b0565b60405180910390f35b34801561059a57600080fd5b506105a3611533565b6040516105b09190613b6d565b60405180910390f35b3480156105c557600080fd5b506105ce611559565b6040516105db91906139b0565b60405180910390f35b3480156105f057600080fd5b5061060b600480360381019061060691906138bf565b61155f565b005b34801561061957600080fd5b506106226115e5565b60405161062f91906139b0565b60405180910390f35b34801561064457600080fd5b5061064d6115eb565b60405161065a9190613ba9565b60405180910390f35b34801561066f57600080fd5b50610678611611565b60405161068591906139b0565b60405180910390f35b34801561069a57600080fd5b506106b560048036038101906106b091906138bf565b611617565b005b3480156106c357600080fd5b506106cc61169d565b6040516106d99190613be5565b60405180910390f35b3480156106ee57600080fd5b50610709600480360381019061070491906138bf565b6116c3565b005b34801561071757600080fd5b50610732600480360381019061072d9190613974565b611749565b005b34801561074057600080fd5b5061075b600480360381019061075691906138bf565b611809565b005b34801561076957600080fd5b50610784600480360381019061077f91906138bf565b61188f565b005b34801561079257600080fd5b5061079b611915565b6040516107a891906139b0565b60405180910390f35b3480156107bd57600080fd5b506107c661191b565b005b3480156107d457600080fd5b506107dd612119565b005b3480156107eb57600080fd5b506107f46121a1565b60405161080191906139b0565b60405180910390f35b34801561081657600080fd5b5061081f6121c2565b60405161082c91906139b0565b60405180910390f35b61084f600480360381019061084a9190613d41565b610e6a565b005b34801561085d57600080fd5b50610878600480360381019061087391906138bf565b6121c8565b005b34801561088657600080fd5b5061088f61224e565b60405161089c9190613da3565b60405180910390f35b3480156108b157600080fd5b506108ba612254565b6040516108c7919061392d565b60405180910390f35b3480156108dc57600080fd5b506108f760048036038101906108f291906138bf565b61227a565b6040516109049190613dd9565b60405180910390f35b34801561091957600080fd5b50610934600480360381019061092f91906138bf565b61229a565b005b34801561094257600080fd5b5061094b612320565b60405161095891906139b0565b60405180910390f35b34801561096d57600080fd5b50610976612349565b604051610983919061392d565b60405180910390f35b34801561099857600080fd5b506109a1612372565b6040516109ae91906139b0565b60405180910390f35b3480156109c357600080fd5b506109cc612378565b6040516109d991906139b0565b60405180910390f35b3480156109ee57600080fd5b506109f761237e565b604051610a04919061392d565b60405180910390f35b348015610a1957600080fd5b50610a346004803603810190610a2f91906138bf565b6123a4565b604051610a41919061392d565b60405180910390f35b610a646004803603810190610a5f9190613e32565b6123d7565b005b348015610a7257600080fd5b50610a8d6004803603810190610a8891906138bf565b6123f1565b005b348015610a9b57600080fd5b50610aa4612477565b604051610ab191906139b0565b60405180910390f35b348015610ac657600080fd5b50610ae16004803603810190610adc9190613974565b61247d565b005b348015610aef57600080fd5b50610b0a6004803603810190610b059190613eb5565b61253d565b005b610b266004803603810190610b219190613f11565b612a09565b005b348015610b3457600080fd5b50610b4f6004803603810190610b4a9190613974565b612a21565b005b348015610b5d57600080fd5b50610b786004803603810190610b7391906138bf565b612ae1565b005b348015610b8657600080fd5b50610b8f612b67565b604051610b9c91906139b0565b60405180910390f35b348015610bb157600080fd5b50610bba612b88565b604051610bc791906139b0565b60405180910390f35b348015610bdc57600080fd5b50610bf76004803603810190610bf291906138bf565b612b8e565b005b348015610c0557600080fd5b50610c206004803603810190610c1b91906138bf565b612de7565b604051610c309493929190613fa1565b60405180910390f35b348015610c4557600080fd5b50610c4e612e44565b604051610c5b91906139b0565b60405180910390f35b348015610c7057600080fd5b50610c79612e4a565b604051610c8691906139b0565b60405180910390f35b348015610c9b57600080fd5b50610ca4612e50565b604051610cb191906139b0565b60405180910390f35b348015610cc657600080fd5b50610ce16004803603810190610cdc91906138bf565b612e71565b005b348015610cef57600080fd5b50610d0a6004803603810190610d059190613974565b612ef7565b604051610d1791906139b0565b60405180910390f35b348015610d2c57600080fd5b50610d35612f0f565b604051610d4291906139b0565b60405180910390f35b348015610d5757600080fd5b50610d60612f34565b604051610d6d91906139b0565b60405180910390f35b610d7e612f3a565b005b348015610d8c57600080fd5b50610d95613033565b005b348015610da357600080fd5b50610dbe6004803603810190610db99190613974565b6132b2565b005b348015610dcc57600080fd5b50610dd56133a9565b604051610de291906139b0565b60405180910390f35b348015610df757600080fd5b50610e006133d2565b604051610e0d91906139b0565b60405180910390f35b348015610e2257600080fd5b50610e3d6004803603810190610e389190613974565b6133d8565b005b348015610e4b57600080fd5b50610e54613498565b604051610e619190614007565b60405180910390f35b601354421015610eaf576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401610ea69061407f565b60405180910390fd5b61011881511115610ef5576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401610eec906140eb565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff16600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1603610f605760085442610f59919061413a565b600f819055505b610f686134be565b600560006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1660166000601754815260200190815260200160002060006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550600160176000828254611031919061413a565b925050819055506000611042612f0f565b905080341015611087576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161107e906141e0565b60405180910390fd5b806004819055506000601b60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166340c10f1960e01b600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16600a54604051602401611108929190614200565b604051602081830303815290604052907bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff8381831617835250505050604051611172919061429a565b6000604051808303816000865af19150503d80600081146111af576040519150601f19603f3d011682016040523d82523d6000602084013e6111b4565b606091505b50509050806111f8576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016111ef90614323565b60405180910390fd5b6112006134c6565b6004543411156112e7576000600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16600454346112539190614343565b60405161125f9061439d565b60006040518083038185875af1925050503d806000811461129c576040519150601f19603f3d011682016040523d82523d6000602084013e6112a1565b606091505b50509050806112e5576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016112dc906143fe565b60405180910390fd5b505b600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff167f521a3e9a25dec55994ad8dd222c96be0afa2b1b679fe7d3c289d01f4b6d7b6ed6004547fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff600f548760405161137994939291906144a7565b60405180910390a2505050565b60166020528060005260406000206000915054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6113c16134be565b73ffffffffffffffffffffffffffffffffffffffff166113df612349565b73ffffffffffffffffffffffffffffffffffffffff1614611435576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161142c9061453f565b60405180910390fd5b8060028190555050565b6114476134be565b73ffffffffffffffffffffffffffffffffffffffff16611465612349565b73ffffffffffffffffffffffffffffffffffffffff16146114bb576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016114b29061453f565b60405180910390fd5b80601860006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555050565b60105481565b600b5481565b600063150b7a0260e01b905095945050505050565b60045481565b61011881565b620f424081565b601860009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60175481565b6115676134be565b73ffffffffffffffffffffffffffffffffffffffff16611585612349565b73ffffffffffffffffffffffffffffffffffffffff16146115db576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016115d29061453f565b60405180910390fd5b80600b8190555050565b60095481565b601c60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b600d5481565b61161f6134be565b73ffffffffffffffffffffffffffffffffffffffff1661163d612349565b73ffffffffffffffffffffffffffffffffffffffff1614611693576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161168a9061453f565b60405180910390fd5b8060038190555050565b601d60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6116cb6134be565b73ffffffffffffffffffffffffffffffffffffffff166116e9612349565b73ffffffffffffffffffffffffffffffffffffffff161461173f576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016117369061453f565b60405180910390fd5b8060088190555050565b6117516134be565b73ffffffffffffffffffffffffffffffffffffffff1661176f612349565b73ffffffffffffffffffffffffffffffffffffffff16146117c5576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016117bc9061453f565b60405180910390fd5b80601c60006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555050565b6118116134be565b73ffffffffffffffffffffffffffffffffffffffff1661182f612349565b73ffffffffffffffffffffffffffffffffffffffff1614611885576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161187c9061453f565b60405180910390fd5b8060078190555050565b6118976134be565b73ffffffffffffffffffffffffffffffffffffffff166118b5612349565b73ffffffffffffffffffffffffffffffffffffffff161461190b576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016119029061453f565b60405180910390fd5b80600d8190555050565b600a5481565b42600f541115611960576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401611957906145ab565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff16600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16036119f1576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016119e890614617565b60405180910390fd5b62015180600f5442611a039190614343565b1015611aa157600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16611a4a6134be565b73ffffffffffffffffffffffffffffffffffffffff1614611aa0576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401611a97906146cf565b60405180910390fd5b5b6000611aab6134be565b90506000600560006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508060126000601054815260200190815260200160002060006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550600160106000828254611b56919061413a565b925050819055506000601c60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16636a62784260e01b83604051602401611bb1919061392d565b604051602081830303815290604052907bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff8381831617835250505050604051611c1b919061429a565b6000604051808303816000865af19150503d8060008114611c58576040519150601f19603f3d011682016040523d82523d6000602084013e611c5d565b606091505b5050905080611ca1576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401611c9890614761565b60405180910390fd5b611ca9613520565b6000611cb36121a1565b90506000611cbf612e50565b90506000611ccb612b67565b905060005b600e54811015611dae576000611ce461353d565b90506001601560008373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000828254611d36919061413a565b925050819055506001601054611d4c9190614343565b8173ffffffffffffffffffffffffffffffffffffffff167f80348bf864c08069d1368c42ed36b7a60560f73267f63d58e9be69f4b021bacc84604051611d9291906139b0565b60405180910390a3508080611da690614781565b915050611cd0565b5060008573ffffffffffffffffffffffffffffffffffffffff1684604051611dd59061439d565b60006040518083038185875af1925050503d8060008114611e12576040519150601f19603f3d011682016040523d82523d6000602084013e611e17565b606091505b5050905080611e5b576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401611e5290614815565b60405180910390fd5b600660009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1683604051611ea19061439d565b60006040518083038185875af1925050503d8060008114611ede576040519150601f19603f3d011682016040523d82523d6000602084013e611ee3565b606091505b50508091505080611f29576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401611f20906148a7565b60405180910390fd5b60005b600d548110156120ab576000611f4061353d565b9050601860009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16846347e7ef2460e01b836001601054611f949190614343565b604051602401611fa5929190614200565b604051602081830303815290604052907bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff838183161783525050505060405161200f919061429a565b60006040518083038185875af1925050503d806000811461204c576040519150601f19603f3d011682016040523d82523d6000602084013e612051565b606091505b50508093505082612097576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161208e90614913565b60405180910390fd5b5080806120a390614781565b915050611f2c565b5060006017819055508573ffffffffffffffffffffffffffffffffffffffff1660016010546120da9190614343565b7f27bc828c399c2947fea27bca8a75ced2e94ff2651d607271f051e39db52286ce8660405161210991906139b0565b60405180910390a3505050505050565b6121216134be565b73ffffffffffffffffffffffffffffffffffffffff1661213f612349565b73ffffffffffffffffffffffffffffffffffffffff1614612195576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161218c9061453f565b60405180910390fd5b61219f6000613592565b565b60006064600b54476121b39190614933565b6121bd91906149a4565b905090565b60075481565b6121d06134be565b73ffffffffffffffffffffffffffffffffffffffff166121ee612349565b73ffffffffffffffffffffffffffffffffffffffff1614612244576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161223b9061453f565b60405180910390fd5b8060138190555050565b60145481565b600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60116020528060005260406000206000915054906101000a900460ff1681565b6122a26134be565b73ffffffffffffffffffffffffffffffffffffffff166122c0612349565b73ffffffffffffffffffffffffffffffffffffffff1614612316576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161230d9061453f565b60405180910390fd5b8060018190555050565b600042600f5410156123355760009050612346565b42600f546123439190614343565b90505b90565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16905090565b60025481565b600c5481565b600660009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60126020528060005260406000206000915054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6123e1848461253d565b6123eb8282613656565b50505050565b6123f96134be565b73ffffffffffffffffffffffffffffffffffffffff16612417612349565b73ffffffffffffffffffffffffffffffffffffffff161461246d576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016124649061453f565b60405180910390fd5b8060098190555050565b600e5481565b6124856134be565b73ffffffffffffffffffffffffffffffffffffffff166124a3612349565b73ffffffffffffffffffffffffffffffffffffffff16146124f9576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016124f09061453f565b60405180910390fd5b80601d60006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555050565b601354421015612582576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016125799061407f565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff16600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16036125ed57600854426125e6919061413a565b600f819055505b6125f56134be565b600560006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506011600083815260200190815260200160002060009054906101000a900460ff1615612696576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161268d90614a47565b60405180910390fd5b61269e6134be565b73ffffffffffffffffffffffffffffffffffffffff16601d60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16636352211e846040518263ffffffff1660e01b815260040161270f91906139b0565b602060405180830381865afa15801561272c573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906127509190614a7c565b73ffffffffffffffffffffffffffffffffffffffff16146127a6576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161279d90614b1b565b60405180910390fd5b610118815111156127ec576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016127e3906140eb565b60405180910390fd5b60016011600084815260200190815260200160002060006101000a81548160ff0219169083151502179055506000601b60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166340c10f1960e01b600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16600a54604051602401612892929190614200565b604051602081830303815290604052907bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff83818316178352505050506040516128fc919061429a565b6000604051808303816000865af19150503d8060008114612939576040519150601f19603f3d011682016040523d82523d6000602084013e61293e565b606091505b5050905080612982576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161297990614323565b60405180910390fd5b61298a6134c6565b600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff167f521a3e9a25dec55994ad8dd222c96be0afa2b1b679fe7d3c289d01f4b6d7b6ed60045485600f54866040516129fc9493929190614b4a565b60405180910390a2505050565b612a1283610e6a565b612a1c8282613656565b505050565b612a296134be565b73ffffffffffffffffffffffffffffffffffffffff16612a47612349565b73ffffffffffffffffffffffffffffffffffffffff1614612a9d576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401612a949061453f565b60405180910390fd5b80601b60006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555050565b612ae96134be565b73ffffffffffffffffffffffffffffffffffffffff16612b07612349565b73ffffffffffffffffffffffffffffffffffffffff1614612b5d576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401612b549061453f565b60405180910390fd5b80600c8190555050565b60006064600c5447612b799190614933565b612b8391906149a4565b905090565b600f5481565b601a548110612bd2576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401612bc990614be2565b60405180910390fd5b6000601260006019600085815260200190815260200160002060020154815260200190815260200160002060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1690508073ffffffffffffffffffffffffffffffffffffffff16612c3f6134be565b73ffffffffffffffffffffffffffffffffffffffff1614612c95576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401612c8c90614c74565b60405180910390fd5b6019600083815260200190815260200160002060030160009054906101000a900460ff1615612cf9576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401612cf090614d06565b60405180910390fd5b60016019600084815260200190815260200160002060030160006101000a81548160ff0219169083151502179055506019600083815260200190815260200160002060000160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166342842e0e308360196000878152602001908152602001600020600101546040518463ffffffff1660e01b8152600401612db193929190614d26565b600060405180830381600087803b158015612dcb57600080fd5b505af1158015612ddf573d6000803e3d6000fd5b505050505050565b60196020528060005260406000206000915090508060000160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16908060010154908060020154908060030160009054906101000a900460ff16905084565b60035481565b60135481565b6000606460075447612e629190614933565b612e6c91906149a4565b905090565b612e796134be565b73ffffffffffffffffffffffffffffffffffffffff16612e97612349565b73ffffffffffffffffffffffffffffffffffffffff1614612eed576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401612ee49061453f565b60405180910390fd5b80600e8190555050565b60156020528060005260406000206000915090505481565b6000620f4240600154600454612f259190614933565b612f2f91906149a4565b905090565b60085481565b60003411612f7d576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401612f7490614dcf565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff16600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1603612fdc57612fdb613520565b5b612fe46134be565b73ffffffffffffffffffffffffffffffffffffffff167f8b7fe5be5699654fd637d2250cb0d47e88205730710745e78e9d8bcaf8aad8f13460405161302991906139b0565b60405180910390a2565b6000601560006130416134be565b73ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002054116130bc576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016130b390614e61565b60405180910390fd5b6001601560006130ca6134be565b73ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008282546131139190614343565b925050819055506000601c60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16636a62784260e01b6131656134be565b604051602401613175919061392d565b604051602081830303815290604052907bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff83818316178352505050506040516131df919061429a565b6000604051808303816000865af19150503d806000811461321c576040519150601f19603f3d011682016040523d82523d6000602084013e613221565b606091505b5050905080613265576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161325c90614761565b60405180910390fd5b61326d6134be565b73ffffffffffffffffffffffffffffffffffffffff167fe05ba2c5fcd9a60f30b179cb0e775070cc8ce9667b0e663e984ee6a02f694cee60405160405180910390a250565b6132ba6134be565b73ffffffffffffffffffffffffffffffffffffffff166132d8612349565b73ffffffffffffffffffffffffffffffffffffffff161461332e576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016133259061453f565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff160361339d576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161339490614ef3565b60405180910390fd5b6133a681613592565b50565b60004260135410156133be57600090506133cf565b426013546133cc9190614343565b90505b90565b60015481565b6133e06134be565b73ffffffffffffffffffffffffffffffffffffffff166133fe612349565b73ffffffffffffffffffffffffffffffffffffffff1614613454576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161344b9061453f565b60405180910390fd5b80600660006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555050565b601b60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b600033905090565b6000633b9aca006002546134da91906149a4565b9050806134e9600f5442613825565b6134f3919061413a565b600f81905550620f424060035460025461350d9190614933565b61351791906149a4565b60028190555050565b60095461352b6121a1565b61353591906149a4565b600481905550565b600061354761383f565b6016600060175460145460001c61355e9190614f13565b815260200190815260200160002060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16905090565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff169050816000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508173ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a35050565b8173ffffffffffffffffffffffffffffffffffffffff166342842e0e61367a6134be565b30846040518463ffffffff1660e01b815260040161369a93929190614d26565b600060405180830381600087803b1580156136b457600080fd5b505af11580156136c8573d6000803e3d6000fd5b5050505060405180608001604052808373ffffffffffffffffffffffffffffffffffffffff16815260200182815260200160105481526020016000151581525060196000601a54815260200190815260200160002060008201518160000160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550602082015181600101556040820151816002015560608201518160030160006101000a81548160ff0219169083151502179055509050506001601a60008282546137ae919061413a565b925050819055508173ffffffffffffffffffffffffffffffffffffffff166137d46134be565b73ffffffffffffffffffffffffffffffffffffffff167fc36dcaca821561b3dc84f785f7a6abd4dd8c55db39ae73ecf4d0534003169ace8360405161381991906139b0565b60405180910390a35050565b6000818310156138355781613837565b825b905092915050565b60145442434060405160200161385793929190614f44565b60405160208183030381529060405280519060200120601481905550565b6000604051905090565b600080fd5b600080fd5b6000819050919050565b61389c81613889565b81146138a757600080fd5b50565b6000813590506138b981613893565b92915050565b6000602082840312156138d5576138d461387f565b5b60006138e3848285016138aa565b91505092915050565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b6000613917826138ec565b9050919050565b6139278161390c565b82525050565b6000602082019050613942600083018461391e565b92915050565b6139518161390c565b811461395c57600080fd5b50565b60008135905061396e81613948565b92915050565b60006020828403121561398a5761398961387f565b5b60006139988482850161395f565b91505092915050565b6139aa81613889565b82525050565b60006020820190506139c560008301846139a1565b92915050565b600080fd5b600080fd5b600080fd5b60008083601f8401126139f0576139ef6139cb565b5b8235905067ffffffffffffffff811115613a0d57613a0c6139d0565b5b602083019150836001820283011115613a2957613a286139d5565b5b9250929050565b600080600080600060808688031215613a4c57613a4b61387f565b5b6000613a5a8882890161395f565b9550506020613a6b8882890161395f565b9450506040613a7c888289016138aa565b935050606086013567ffffffffffffffff811115613a9d57613a9c613884565b5b613aa9888289016139da565b92509250509295509295909350565b60007fffffffff0000000000000000000000000000000000000000000000000000000082169050919050565b613aed81613ab8565b82525050565b6000602082019050613b086000830184613ae4565b92915050565b6000819050919050565b6000613b33613b2e613b29846138ec565b613b0e565b6138ec565b9050919050565b6000613b4582613b18565b9050919050565b6000613b5782613b3a565b9050919050565b613b6781613b4c565b82525050565b6000602082019050613b826000830184613b5e565b92915050565b6000613b9382613b3a565b9050919050565b613ba381613b88565b82525050565b6000602082019050613bbe6000830184613b9a565b92915050565b6000613bcf82613b3a565b9050919050565b613bdf81613bc4565b82525050565b6000602082019050613bfa6000830184613bd6565b92915050565b600080fd5b6000601f19601f8301169050919050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b613c4e82613c05565b810181811067ffffffffffffffff82111715613c6d57613c6c613c16565b5b80604052505050565b6000613c80613875565b9050613c8c8282613c45565b919050565b600067ffffffffffffffff821115613cac57613cab613c16565b5b613cb582613c05565b9050602081019050919050565b82818337600083830152505050565b6000613ce4613cdf84613c91565b613c76565b905082815260208101848484011115613d0057613cff613c00565b5b613d0b848285613cc2565b509392505050565b600082601f830112613d2857613d276139cb565b5b8135613d38848260208601613cd1565b91505092915050565b600060208284031215613d5757613d5661387f565b5b600082013567ffffffffffffffff811115613d7557613d74613884565b5b613d8184828501613d13565b91505092915050565b6000819050919050565b613d9d81613d8a565b82525050565b6000602082019050613db86000830184613d94565b92915050565b60008115159050919050565b613dd381613dbe565b82525050565b6000602082019050613dee6000830184613dca565b92915050565b6000613dff8261390c565b9050919050565b613e0f81613df4565b8114613e1a57600080fd5b50565b600081359050613e2c81613e06565b92915050565b60008060008060808587031215613e4c57613e4b61387f565b5b6000613e5a878288016138aa565b945050602085013567ffffffffffffffff811115613e7b57613e7a613884565b5b613e8787828801613d13565b9350506040613e9887828801613e1d565b9250506060613ea9878288016138aa565b91505092959194509250565b60008060408385031215613ecc57613ecb61387f565b5b6000613eda858286016138aa565b925050602083013567ffffffffffffffff811115613efb57613efa613884565b5b613f0785828601613d13565b9150509250929050565b600080600060608486031215613f2a57613f2961387f565b5b600084013567ffffffffffffffff811115613f4857613f47613884565b5b613f5486828701613d13565b9350506020613f6586828701613e1d565b9250506040613f76868287016138aa565b9150509250925092565b6000613f8b82613b3a565b9050919050565b613f9b81613f80565b82525050565b6000608082019050613fb66000830187613f92565b613fc360208301866139a1565b613fd060408301856139a1565b613fdd6060830184613dca565b95945050505050565b6000613ff182613b3a565b9050919050565b61400181613fe6565b82525050565b600060208201905061401c6000830184613ff8565b92915050565b600082825260208201905092915050565b7f4e6f7420616374697665207965742e0000000000000000000000000000000000600082015250565b6000614069600f83614022565b915061407482614033565b602082019050919050565b600060208201905081810360008301526140988161405c565b9050919050565b7f4d65737361676520697320746f6f206c6f6e672e000000000000000000000000600082015250565b60006140d5601483614022565b91506140e08261409f565b602082019050919050565b60006020820190508181036000830152614104816140c8565b9050919050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b600061414582613889565b915061415083613889565b92508282019050808211156141685761416761410b565b5b92915050565b7f5468652076616c7565207375626d69747465642077697468207468697320747260008201527f616e73616374696f6e20697320746f6f206c6f772e0000000000000000000000602082015250565b60006141ca603583614022565b91506141d58261416e565b604082019050919050565b600060208201905081810360008301526141f9816141bd565b9050919050565b6000604082019050614215600083018561391e565b61422260208301846139a1565b9392505050565b600081519050919050565b600081905092915050565b60005b8381101561425d578082015181840152602081019050614242565b60008484015250505050565b600061427482614229565b61427e8185614234565b935061428e81856020860161423f565b80840191505092915050565b60006142a68284614269565b915081905092915050565b7f436f736d6963546f6b656e206d696e742829206661696c656420746f206d696e60008201527f742072657761726420746f6b656e732e00000000000000000000000000000000602082015250565b600061430d603083614022565b9150614318826142b1565b604082019050919050565b6000602082019050818103600083015261433c81614300565b9050919050565b600061434e82613889565b915061435983613889565b92508282039050818111156143715761437061410b565b5b92915050565b50565b6000614387600083614234565b915061439282614377565b600082019050919050565b60006143a88261437a565b9150819050919050565b7f526566756e64207472616e73666572206661696c65642e000000000000000000600082015250565b60006143e8601783614022565b91506143f3826143b2565b602082019050919050565b60006020820190508181036000830152614417816143db565b9050919050565b6000819050919050565b6000819050919050565b600061444d6144486144438461441e565b613b0e565b614428565b9050919050565b61445d81614432565b82525050565b600081519050919050565b600061447982614463565b6144838185614022565b935061449381856020860161423f565b61449c81613c05565b840191505092915050565b60006080820190506144bc60008301876139a1565b6144c96020830186614454565b6144d660408301856139a1565b81810360608301526144e8818461446e565b905095945050505050565b7f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572600082015250565b6000614529602083614022565b9150614534826144f3565b602082019050919050565b600060208201905081810360008301526145588161451c565b9050919050565b7f4e6f7420656e6f7567682074696d652068617320656c61707365642e00000000600082015250565b6000614595601c83614022565b91506145a08261455f565b602082019050919050565b600060208201905081810360008301526145c481614588565b9050919050565b7f5468657265206973206e6f206c617374206269646465722e0000000000000000600082015250565b6000614601601883614022565b915061460c826145cb565b602082019050919050565b60006020820190508181036000830152614630816145f4565b9050919050565b7f4f6e6c7920746865206c617374206269646465722063616e20636c61696d207460008201527f6865207072697a6520647572696e672074686520666972737420323420686f7560208201527f72732e0000000000000000000000000000000000000000000000000000000000604082015250565b60006146b9604383614022565b91506146c482614637565b606082019050919050565b600060208201905081810360008301526146e8816146ac565b9050919050565b7f436f736d69635369676e6174757265206d696e742829206661696c656420746f60008201527f206d696e74204e46542e00000000000000000000000000000000000000000000602082015250565b600061474b602a83614022565b9150614756826146ef565b604082019050919050565b6000602082019050818103600083015261477a8161473e565b9050919050565b600061478c82613889565b91507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff82036147be576147bd61410b565b5b600182019050919050565b7f5472616e7366657220746f207468652077696e6e6572206661696c65642e0000600082015250565b60006147ff601e83614022565b915061480a826147c9565b602082019050919050565b6000602082019050818103600083015261482e816147f2565b9050919050565b7f5472616e7366657220746f206368617269747920636f6e74726163742066616960008201527f6c65642e00000000000000000000000000000000000000000000000000000000602082015250565b6000614891602483614022565b915061489c82614835565b604082019050919050565b600060208201905081810360008301526148c081614884565b9050919050565b7f526166666c65206465706f736974206661696c65642e00000000000000000000600082015250565b60006148fd601683614022565b9150614908826148c7565b602082019050919050565b6000602082019050818103600083015261492c816148f0565b9050919050565b600061493e82613889565b915061494983613889565b925082820261495781613889565b9150828204841483151761496e5761496d61410b565b5b5092915050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601260045260246000fd5b60006149af82613889565b91506149ba83613889565b9250826149ca576149c9614975565b5b828204905092915050565b7f546869732052616e646f6d57616c6b4e46542068617320616c7265616479206260008201527f65656e207573656420666f722062696464696e672e0000000000000000000000602082015250565b6000614a31603583614022565b9150614a3c826149d5565b604082019050919050565b60006020820190508181036000830152614a6081614a24565b9050919050565b600081519050614a7681613948565b92915050565b600060208284031215614a9257614a9161387f565b5b6000614aa084828501614a67565b91505092915050565b7f596f75206d75737420626520746865206f776e6572206f66207468652052616e60008201527f646f6d57616c6b4e46542e000000000000000000000000000000000000000000602082015250565b6000614b05602b83614022565b9150614b1082614aa9565b604082019050919050565b60006020820190508181036000830152614b3481614af8565b9050919050565b614b4481614428565b82525050565b6000608082019050614b5f60008301876139a1565b614b6c6020830186614b3b565b614b7960408301856139a1565b8181036060830152614b8b818461446e565b905095945050505050565b7f54686520646f6e61746564204e465420646f6573206e6f742065786973742e00600082015250565b6000614bcc601f83614022565b9150614bd782614b96565b602082019050919050565b60006020820190508181036000830152614bfb81614bbf565b9050919050565b7f596f7520617265206e6f74207468652077696e6e6572206f662074686520726f60008201527f756e642e00000000000000000000000000000000000000000000000000000000602082015250565b6000614c5e602483614022565b9150614c6982614c02565b604082019050919050565b60006020820190508181036000830152614c8d81614c51565b9050919050565b7f546865204e46542068617320616c7265616479206265656e20636c61696d656460008201527f2e00000000000000000000000000000000000000000000000000000000000000602082015250565b6000614cf0602183614022565b9150614cfb82614c94565b604082019050919050565b60006020820190508181036000830152614d1f81614ce3565b9050919050565b6000606082019050614d3b600083018661391e565b614d48602083018561391e565b614d5560408301846139a1565b949350505050565b7f446f6e6174696f6e20616d6f756e74206d75737420626520677265617465722060008201527f7468616e20302e00000000000000000000000000000000000000000000000000602082015250565b6000614db9602783614022565b9150614dc482614d5d565b604082019050919050565b60006020820190508181036000830152614de881614dac565b9050919050565b7f596f752068617665206e6f20756e636c61696d656420726166666c65204e465460008201527f732e000000000000000000000000000000000000000000000000000000000000602082015250565b6000614e4b602283614022565b9150614e5682614def565b604082019050919050565b60006020820190508181036000830152614e7a81614e3e565b9050919050565b7f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160008201527f6464726573730000000000000000000000000000000000000000000000000000602082015250565b6000614edd602683614022565b9150614ee882614e81565b604082019050919050565b60006020820190508181036000830152614f0c81614ed0565b9050919050565b6000614f1e82613889565b9150614f2983613889565b925082614f3957614f38614975565b5b828206905092915050565b6000606082019050614f596000830186613d94565b614f6660208301856139a1565b614f736040830184613d94565b94935050505056fea26469706673582212206d8656039aeb63107f8b577e1bd8cdd412e8bc24c0a335b46656eb4f17923c0d64736f6c63430008130033",
+	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newActivationTime\",\"type\":\"uint256\"}],\"name\":\"ActivationTimeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"lastBidder\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"bidPrice\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"randomWalkNFTId\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"prizeTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"}],\"name\":\"BidEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newCharity\",\"type\":\"address\"}],\"name\":\"CharityAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newCharityPercentage\",\"type\":\"uint256\"}],\"name\":\"CharityPercentageChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newCosmicSignature\",\"type\":\"address\"}],\"name\":\"CosmicSignatureAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newCosmicToken\",\"type\":\"address\"}],\"name\":\"CosmicTokenAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"nftAddressdonatedNFTs\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"DonatedNFTClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newInitialBidAmountFraction\",\"type\":\"uint256\"}],\"name\":\"InitialBidAmountFractionChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newInitialSecondsUntilPrize\",\"type\":\"uint256\"}],\"name\":\"InitialSecondsUntilPrizeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"NFTDonationEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newNanoSecondsExtra\",\"type\":\"uint256\"}],\"name\":\"NanoSecondsExtraChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newNumRaffleNFTWinnersPerRound\",\"type\":\"uint256\"}],\"name\":\"NumRaffleNFTWinnersPerRoundChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newNumRaffleWinnersPerRound\",\"type\":\"uint256\"}],\"name\":\"NumRaffleWinnersPerRoundChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newPriceIncrease\",\"type\":\"uint256\"}],\"name\":\"PriceIncreaseChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"prizeNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"PrizeClaimEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newPrizePercentage\",\"type\":\"uint256\"}],\"name\":\"PrizePercentageChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"}],\"name\":\"RaffleNFTClaimedEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winner_index\",\"type\":\"uint256\"}],\"name\":\"RaffleNFTWinnerEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newRafflePercentage\",\"type\":\"uint256\"}],\"name\":\"RafflePercentageChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newRaffleWallet\",\"type\":\"address\"}],\"name\":\"RaffleWalletAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newRandomWalk\",\"type\":\"address\"}],\"name\":\"RandomWalkAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newTimeIncrease\",\"type\":\"uint256\"}],\"name\":\"TimeIncreaseChanged\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"MAX_MESSAGE_LENGTH\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MILLION\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"activationTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"}],\"name\":\"bid\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"},{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"bidAndDonateNFT\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bidPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"randomWalkNFTId\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"}],\"name\":\"bidWithRWLK\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"randomWalkNFTId\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"},{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"bidWithRWLKAndDonateNFT\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charity\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charityAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charityPercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"claimDonatedNFT\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claimPrize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claimRaffleNFT\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"donate\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"donatedNFTs\",\"outputs\":[{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"claimed\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getBidPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"initialBidAmountFraction\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"initialSecondsUntilPrize\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastBidder\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nanoSecondsExtra\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nft\",\"outputs\":[{\"internalType\":\"contractCosmicSignature\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numDonatedNFTs\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleNFTWinnersPerRound\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleParticipants\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleWinnersPerRound\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"onERC721Received\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"priceIncrease\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizeAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizePercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizeTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleEntropy\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"raffleNFTWinners\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"raffleParticipants\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rafflePercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleWallet\",\"outputs\":[{\"internalType\":\"contractRaffleWallet\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"randomWalk\",\"outputs\":[{\"internalType\":\"contractRandomWalkNFT\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"roundNum\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newActivationTime\",\"type\":\"uint256\"}],\"name\":\"setActivationTime\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setCharity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newCharityPercentage\",\"type\":\"uint256\"}],\"name\":\"setCharityPercentage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newInitialSecondsUntilPrize\",\"type\":\"uint256\"}],\"name\":\"setInitialSecondsUntilPrize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newNanoSecondsExtra\",\"type\":\"uint256\"}],\"name\":\"setNanoSecondsExtra\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setNftContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newNumRaffleNFTWinnersPerRound\",\"type\":\"uint256\"}],\"name\":\"setNumRaffleNFTWinnersPerRound\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newNumRaffleWinnersPerRound\",\"type\":\"uint256\"}],\"name\":\"setNumRaffleWinnersPerRound\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newPriceIncrease\",\"type\":\"uint256\"}],\"name\":\"setPriceIncrease\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newRafflePercentage\",\"type\":\"uint256\"}],\"name\":\"setRafflePercentage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setRaffleWallet\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setRandomWalk\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newTimeIncrease\",\"type\":\"uint256\"}],\"name\":\"setTimeIncrease\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setTokenContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeIncrease\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeUntilActivation\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeUntilPrize\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"token\",\"outputs\":[{\"internalType\":\"contractCosmicToken\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"tokenReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newInitialBidAmountFraction\",\"type\":\"uint256\"}],\"name\":\"updateInitialBidAmountFraction\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newPrizePercentage\",\"type\":\"uint256\"}],\"name\":\"updatePrizePercentage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"usedRandomWalkNFTs\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"winners\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
+	Bin: "0x6080604052620f695060015565034630b8a000600255620f42a460035566038d7ea4c680006004556000600560006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550600a600755620151806008556103e86009556019600a556005600b556003600c556005600d556000600f5563644709f0601255348015620000a957600080fd5b50620000ca620000be6200015260201b60201c565b6200015a60201b60201c565b424340604051602001620000e0929190620002b5565b604051602081830303815290604052805190602001206013819055506200010c6200015260201b60201c565b600660006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550620002f7565b600033905090565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff169050816000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508173ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a35050565b600082825260208201905092915050565b7f436f736d6963205369676e617475726520323032330000000000000000000000600082015250565b6000620002676015836200021e565b915062000274826200022f565b602082019050919050565b6000819050919050565b62000294816200027f565b82525050565b6000819050919050565b620002af816200029a565b82525050565b60006060820190508181036000830152620002d08162000258565b9050620002e1602083018562000289565b620002f06040830184620002a4565b9392505050565b61561080620003076000396000f3fe6080604052600436106103d25760003560e01c80638b122274116101fd578063cb819dc011610118578063ec34866d116100ab578063f2fde38b1161007a578063f2fde38b14610dcd578063f717882214610df6578063f8c3405014610e21578063fb6f71a314610e4c578063fc0c546a14610e75576103f1565b8063ec34866d14610d56578063ed08339814610d81578063ed88c68e14610dac578063efeacc5614610db6576103f1565b8063da4493f6116100e7578063da4493f614610c9a578063dbc945c014610cc5578063e1381d7e14610cf0578063ebc3f1d114610d19576103f1565b8063cb819dc014610bdb578063d59d747814610c06578063d6e1741714610c2f578063d94d031614610c6f576103f1565b8063a672f6e111610190578063bb0bc58e1161015f578063bb0bc58e14610b42578063bbcd5bbe14610b5e578063c7c8378d14610b87578063c94028c214610bb0576103f1565b8063a672f6e114610a9c578063a6ceac2c14610ac5578063a6f9cc1514610af0578063ae6247f214610b19576103f1565b80639250c33c116101cc5780639250c33c146109ed578063934aa02314610a18578063a2fb117514610a43578063a325b7d214610a80576103f1565b80638b122274146109435780638b1329e01461096c5780638da5cb5b146109975780639136d6d9146109c2576103f1565b80634ac3a395116102ed578063715018a6116102805780637c5486a21161024f5780637c5486a21461088757806380de163d146108b05780638547af30146108db57806386e378c914610906576103f1565b8063715018a6146107fe578063785fa62714610815578063799d431d146108405780637aef951c1461086b576103f1565b80635e6e47aa116102bc5780635e6e47aa1461076a578063647b3e7f146107935780636e66f6e9146107bc57806370740ac9146107e7576103f1565b80634ac3a395146106c45780635111a2d6146106ed578063519645881461071857806352f5ad7714610741576103f1565b80632aab3223116103655780633c83adc4116103345780633c83adc41461061a57806340e023221461064357806347ccca021461066e5780634a773f3314610699576103f1565b80632aab32231461056e57806332bc934c1461059957806332d382cd146105c45780633bec7b69146105ef576103f1565b806311dc7335116103a157806311dc7335146104b0578063150b7a02146104db57806319afe473146105185780632a02721114610543576103f1565b806304a57c09146103f657806305ba9b6714610433578063062fb1001461045c578063119b22b314610485576103f1565b366103f1576103ef60405180602001604052806000815250610ea0565b005b600080fd5b34801561040257600080fd5b5061041d60048036038101906104189190613dc0565b611087565b60405161042a9190613e2e565b60405180910390f35b34801561043f57600080fd5b5061045a60048036038101906104559190613dc0565b6110ba565b005b34801561046857600080fd5b50610483600480360381019061047e9190613e75565b611179565b005b34801561049157600080fd5b5061049a6112df565b6040516104a79190613eb1565b60405180910390f35b3480156104bc57600080fd5b506104c56112e5565b6040516104d29190613eb1565b60405180910390f35b3480156104e757600080fd5b5061050260048036038101906104fd9190613f31565b6112eb565b60405161050f9190613ff4565b60405180910390f35b34801561052457600080fd5b5061052d611300565b60405161053a9190613eb1565b60405180910390f35b34801561054f57600080fd5b50610558611306565b6040516105659190613eb1565b60405180910390f35b34801561057a57600080fd5b5061058361130c565b6040516105909190613eb1565b60405180910390f35b3480156105a557600080fd5b506105ae611312565b6040516105bb9190613eb1565b60405180910390f35b3480156105d057600080fd5b506105d9611319565b6040516105e6919061406e565b60405180910390f35b3480156105fb57600080fd5b5061060461133f565b6040516106119190613eb1565b60405180910390f35b34801561062657600080fd5b50610641600480360381019061063c9190613dc0565b611345565b005b34801561064f57600080fd5b50610658611447565b6040516106659190613eb1565b60405180910390f35b34801561067a57600080fd5b5061068361144d565b60405161069091906140aa565b60405180910390f35b3480156106a557600080fd5b506106ae611473565b6040516106bb9190613eb1565b60405180910390f35b3480156106d057600080fd5b506106eb60048036038101906106e69190613dc0565b611479565b005b3480156106f957600080fd5b50610702611538565b60405161070f91906140e6565b60405180910390f35b34801561072457600080fd5b5061073f600480360381019061073a9190613dc0565b61155e565b005b34801561074d57600080fd5b5061076860048036038101906107639190613e75565b61161d565b005b34801561077657600080fd5b50610791600480360381019061078c9190613dc0565b611783565b005b34801561079f57600080fd5b506107ba60048036038101906107b59190613dc0565b611885565b005b3480156107c857600080fd5b506107d1611944565b6040516107de9190613eb1565b60405180910390f35b3480156107f357600080fd5b506107fc611951565b005b34801561080a57600080fd5b5061081361214f565b005b34801561082157600080fd5b5061082a6121d7565b6040516108379190613eb1565b60405180910390f35b34801561084c57600080fd5b506108556121f8565b6040516108629190613eb1565b60405180910390f35b61088560048036038101906108809190614242565b610ea0565b005b34801561089357600080fd5b506108ae60048036038101906108a99190613dc0565b6121fe565b005b3480156108bc57600080fd5b506108c56122bd565b6040516108d291906142a4565b60405180910390f35b3480156108e757600080fd5b506108f06122c3565b6040516108fd9190613e2e565b60405180910390f35b34801561091257600080fd5b5061092d60048036038101906109289190613dc0565b6122e9565b60405161093a91906142da565b60405180910390f35b34801561094f57600080fd5b5061096a60048036038101906109659190613dc0565b612309565b005b34801561097857600080fd5b506109816123c8565b60405161098e9190613eb1565b60405180910390f35b3480156109a357600080fd5b506109ac6123f1565b6040516109b99190613e2e565b60405180910390f35b3480156109ce57600080fd5b506109d761241a565b6040516109e49190613eb1565b60405180910390f35b3480156109f957600080fd5b50610a02612420565b604051610a0f9190613eb1565b60405180910390f35b348015610a2457600080fd5b50610a2d612426565b604051610a3a9190613e2e565b60405180910390f35b348015610a4f57600080fd5b50610a6a6004803603810190610a659190613dc0565b61244c565b604051610a779190613e2e565b60405180910390f35b610a9a6004803603810190610a959190614333565b61247f565b005b348015610aa857600080fd5b50610ac36004803603810190610abe9190613dc0565b612499565b005b348015610ad157600080fd5b50610ada612558565b604051610ae79190613eb1565b60405180910390f35b348015610afc57600080fd5b50610b176004803603810190610b129190613e75565b61255e565b005b348015610b2557600080fd5b50610b406004803603810190610b3b91906143b6565b6126c4565b005b610b5c6004803603810190610b579190614412565b6128eb565b005b348015610b6a57600080fd5b50610b856004803603810190610b809190613e75565b612903565b005b348015610b9357600080fd5b50610bae6004803603810190610ba99190613dc0565b612a69565b005b348015610bbc57600080fd5b50610bc5612b6b565b604051610bd29190613eb1565b60405180910390f35b348015610be757600080fd5b50610bf0612b8c565b604051610bfd9190613eb1565b60405180910390f35b348015610c1257600080fd5b50610c2d6004803603810190610c289190613dc0565b612b92565b005b348015610c3b57600080fd5b50610c566004803603810190610c519190613dc0565b612e89565b604051610c6694939291906144a2565b60405180910390f35b348015610c7b57600080fd5b50610c84612ee6565b604051610c919190613eb1565b60405180910390f35b348015610ca657600080fd5b50610caf612eec565b604051610cbc9190613eb1565b60405180910390f35b348015610cd157600080fd5b50610cda612ef2565b604051610ce79190613eb1565b60405180910390f35b348015610cfc57600080fd5b50610d176004803603810190610d129190613dc0565b612f13565b005b348015610d2557600080fd5b50610d406004803603810190610d3b9190613e75565b612fd2565b604051610d4d9190613eb1565b60405180910390f35b348015610d6257600080fd5b50610d6b612fea565b604051610d789190613eb1565b60405180910390f35b348015610d8d57600080fd5b50610d9661300f565b604051610da39190613eb1565b60405180910390f35b610db4613015565b005b348015610dc257600080fd5b50610dcb61310e565b005b348015610dd957600080fd5b50610df46004803603810190610def9190613e75565b61338d565b005b348015610e0257600080fd5b50610e0b613484565b604051610e189190613eb1565b60405180910390f35b348015610e2d57600080fd5b50610e366134ad565b604051610e439190613eb1565b60405180910390f35b348015610e5857600080fd5b50610e736004803603810190610e6e9190613e75565b6134b3565b005b348015610e8157600080fd5b50610e8a61363b565b604051610e979190614508565b60405180910390f35b6000610eaa612fea565b905080341015610eef576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401610ee6906145a6565b60405180910390fd5b80600481905550610eff82613661565b600454341115610fe6576000600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1660045434610f5291906145f5565b604051610f5e9061465a565b60006040518083038185875af1925050503d8060008114610f9b576040519150601f19603f3d011682016040523d82523d6000602084013e610fa0565b606091505b5050905080610fe4576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401610fdb906146bb565b60405180910390fd5b505b600f54600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff167fc7beef8f8d25068377c10e7b7f30ef5622f443eb674e07835df1daf5fe84acbf6004547fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff600e548760405161107b949392919061478e565b60405180910390a35050565b60156020528060005260406000206000915054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6110c26139ac565b73ffffffffffffffffffffffffffffffffffffffff166110e06123f1565b73ffffffffffffffffffffffffffffffffffffffff1614611136576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161112d90614826565b60405180910390fd5b806002819055507f678d086a09e1be49401b1e3a6e14db1878e8d8b88e71d0cfe24a32726d0e38b960025460405161116e9190613eb1565b60405180910390a150565b6111816139ac565b73ffffffffffffffffffffffffffffffffffffffff1661119f6123f1565b73ffffffffffffffffffffffffffffffffffffffff16146111f5576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016111ec90614826565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff1603611264576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161125b90614892565b60405180910390fd5b80601760006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055507f508d510537704d37ed64691a706392abc33e59ce8a327b4952e112820ceb88a6816040516112d49190613e2e565b60405180910390a150565b600f5481565b600a5481565b600063150b7a0260e01b905095945050505050565b60045481565b61011881565b60195481565b620f424081565b601760009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60165481565b61134d6139ac565b73ffffffffffffffffffffffffffffffffffffffff1661136b6123f1565b73ffffffffffffffffffffffffffffffffffffffff16146113c1576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016113b890614826565b60405180910390fd5b60648110611404576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016113fb90614924565b60405180910390fd5b80600a819055507f595fa5ba64cd6f66df19b53b59bb4a275bae1ec5b362da95e1fa4c5feb62be1e600a5460405161143c9190613eb1565b60405180910390a150565b60095481565b601b60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b600c5481565b6114816139ac565b73ffffffffffffffffffffffffffffffffffffffff1661149f6123f1565b73ffffffffffffffffffffffffffffffffffffffff16146114f5576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016114ec90614826565b60405180910390fd5b806003819055507fed46e73b174ced51fb529cdc6c1b4d8abf49387e6d849b71648afb63c81d12cd60035460405161152d9190613eb1565b60405180910390a150565b601c60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6115666139ac565b73ffffffffffffffffffffffffffffffffffffffff166115846123f1565b73ffffffffffffffffffffffffffffffffffffffff16146115da576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016115d190614826565b60405180910390fd5b806008819055507f6da281754ba85ee0c5983a8e8f05a92910c2a0c5b80e68c126216d65f162a3056008546040516116129190613eb1565b60405180910390a150565b6116256139ac565b73ffffffffffffffffffffffffffffffffffffffff166116436123f1565b73ffffffffffffffffffffffffffffffffffffffff1614611699576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161169090614826565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff1603611708576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016116ff90614892565b60405180910390fd5b80601b60006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055507f7142a592d5404b5fc4a294c66f70e32b2a7776bd807f722d59268def87c765d1816040516117789190613e2e565b60405180910390a150565b61178b6139ac565b73ffffffffffffffffffffffffffffffffffffffff166117a96123f1565b73ffffffffffffffffffffffffffffffffffffffff16146117ff576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016117f690614826565b60405180910390fd5b60648110611842576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161183990614924565b60405180910390fd5b806007819055507f0918b499c15fcb0e087d411d53664cde23577e1aa4a9cbfbdf735ddd1871e7d560075460405161187a9190613eb1565b60405180910390a150565b61188d6139ac565b73ffffffffffffffffffffffffffffffffffffffff166118ab6123f1565b73ffffffffffffffffffffffffffffffffffffffff1614611901576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016118f890614826565b60405180910390fd5b80600c819055507f5e3567ae359e61c47ad2f11d2828dea7e062b2ff63dea385cdb7900a50504c7c600c546040516119399190613eb1565b60405180910390a150565b68056bc75e2d6310000081565b42600e541115611996576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161198d90614990565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff16600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1603611a27576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401611a1e906149fc565b60405180910390fd5b62015180600e5442611a3991906145f5565b1015611ad757600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16611a806139ac565b73ffffffffffffffffffffffffffffffffffffffff1614611ad6576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401611acd90614ab4565b60405180910390fd5b5b6000611ae16139ac565b90506000600560006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508060116000600f54815260200190815260200160002060006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506001600f6000828254611b8c9190614ad4565b925050819055506000601b60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16636a62784260e01b83604051602401611be79190613e2e565b604051602081830303815290604052907bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff8381831617835250505050604051611c519190614b44565b6000604051808303816000865af19150503d8060008114611c8e576040519150601f19603f3d011682016040523d82523d6000602084013e611c93565b606091505b5050905080611cd7576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401611cce90614bcd565b60405180910390fd5b6000611ce16121d7565b90506000611ced612ef2565b90506000611cf9612b6b565b905060005b600d54811015611ddc576000611d126139b4565b90506001601460008373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000828254611d649190614ad4565b925050819055506001600f54611d7a91906145f5565b8173ffffffffffffffffffffffffffffffffffffffff167f80348bf864c08069d1368c42ed36b7a60560f73267f63d58e9be69f4b021bacc84604051611dc09190613eb1565b60405180910390a3508080611dd490614bed565b915050611cfe565b5060008573ffffffffffffffffffffffffffffffffffffffff1684604051611e039061465a565b60006040518083038185875af1925050503d8060008114611e40576040519150601f19603f3d011682016040523d82523d6000602084013e611e45565b606091505b5050905080611e89576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401611e8090614c81565b60405180910390fd5b600660009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1683604051611ecf9061465a565b60006040518083038185875af1925050503d8060008114611f0c576040519150601f19603f3d011682016040523d82523d6000602084013e611f11565b606091505b50508091505080611f57576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401611f4e90614d13565b60405180910390fd5b60005b600c548110156120d9576000611f6e6139b4565b9050601760009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16846347e7ef2460e01b836001600f54611fc291906145f5565b604051602401611fd3929190614d33565b604051602081830303815290604052907bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff838183161783525050505060405161203d9190614b44565b60006040518083038185875af1925050503d806000811461207a576040519150601f19603f3d011682016040523d82523d6000602084013e61207f565b606091505b505080935050826120c5576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016120bc90614da8565b60405180910390fd5b5080806120d190614bed565b915050611f5a565b5060006016819055506120ea613a09565b8573ffffffffffffffffffffffffffffffffffffffff166001600f5461211091906145f5565b7f27bc828c399c2947fea27bca8a75ced2e94ff2651d607271f051e39db52286ce8660405161213f9190613eb1565b60405180910390a3505050505050565b6121576139ac565b73ffffffffffffffffffffffffffffffffffffffff166121756123f1565b73ffffffffffffffffffffffffffffffffffffffff16146121cb576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016121c290614826565b60405180910390fd5b6121d56000613a26565b565b60006064600a54476121e99190614dc8565b6121f39190614e39565b905090565b60075481565b6122066139ac565b73ffffffffffffffffffffffffffffffffffffffff166122246123f1565b73ffffffffffffffffffffffffffffffffffffffff161461227a576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161227190614826565b60405180910390fd5b806012819055507f584ff9a7b3a86db5397052f2e440da0ed60a95f646a3a884863cd92262e682b66012546040516122b29190613eb1565b60405180910390a150565b60135481565b600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60106020528060005260406000206000915054906101000a900460ff1681565b6123116139ac565b73ffffffffffffffffffffffffffffffffffffffff1661232f6123f1565b73ffffffffffffffffffffffffffffffffffffffff1614612385576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161237c90614826565b60405180910390fd5b806001819055507fcbc1f49adfa29e2f2f0f5c9e057722496a4bc95a6a5446deaa423a02b30c64ac6001546040516123bd9190613eb1565b60405180910390a150565b600042600e5410156123dd57600090506123ee565b42600e546123eb91906145f5565b90505b90565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16905090565b60025481565b600b5481565b600660009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60116020528060005260406000206000915054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b61248984846126c4565b6124938282613aea565b50505050565b6124a16139ac565b73ffffffffffffffffffffffffffffffffffffffff166124bf6123f1565b73ffffffffffffffffffffffffffffffffffffffff1614612515576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161250c90614826565b60405180910390fd5b806009819055507f3b311f029da1b90c3de2e0b3168436c5ed7d8b0ae81b7d4894c12da03835c62860095460405161254d9190613eb1565b60405180910390a150565b600d5481565b6125666139ac565b73ffffffffffffffffffffffffffffffffffffffff166125846123f1565b73ffffffffffffffffffffffffffffffffffffffff16146125da576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016125d190614826565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff1603612649576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161264090614892565b60405180910390fd5b80601c60006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055507f9dc3707e4b88be65295b0083b44ffa94059c80372add9b0d24d6a3b371a03b92816040516126b99190613e2e565b60405180910390a150565b6010600083815260200190815260200160002060009054906101000a900460ff1615612725576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161271c90614edc565b60405180910390fd5b61272d6139ac565b73ffffffffffffffffffffffffffffffffffffffff16601c60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16636352211e846040518263ffffffff1660e01b815260040161279e9190613eb1565b602060405180830381865afa1580156127bb573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906127df9190614f11565b73ffffffffffffffffffffffffffffffffffffffff1614612835576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161282c90614fb0565b60405180910390fd5b60016010600084815260200190815260200160002060006101000a81548160ff02191690831515021790555061286a81613661565b600f54600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff167fc7beef8f8d25068377c10e7b7f30ef5622f443eb674e07835df1daf5fe84acbf60045485600e54866040516128df9493929190614fdf565b60405180910390a35050565b6128f483610ea0565b6128fe8282613aea565b505050565b61290b6139ac565b73ffffffffffffffffffffffffffffffffffffffff166129296123f1565b73ffffffffffffffffffffffffffffffffffffffff161461297f576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161297690614826565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff16036129ee576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016129e590614892565b60405180910390fd5b80601a60006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055507f3ab2dcf539aa3c30314265602fc86dee8e343e3c3905730f870835f36c400deb81604051612a5e9190613e2e565b60405180910390a150565b612a716139ac565b73ffffffffffffffffffffffffffffffffffffffff16612a8f6123f1565b73ffffffffffffffffffffffffffffffffffffffff1614612ae5576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401612adc90614826565b60405180910390fd5b60648110612b28576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401612b1f90614924565b60405180910390fd5b80600b819055507fd2002a256ab2f8a5c1b865685754b20437c0a26e7249e40ae5df2993966f99f2600b54604051612b609190613eb1565b60405180910390a150565b60006064600b5447612b7d9190614dc8565b612b879190614e39565b905090565b600e5481565b6019548110612bd6576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401612bcd90615077565b60405180910390fd5b6000601160006018600085815260200190815260200160002060020154815260200190815260200160002060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1690508073ffffffffffffffffffffffffffffffffffffffff16612c436139ac565b73ffffffffffffffffffffffffffffffffffffffff1614612c99576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401612c9090615109565b60405180910390fd5b6018600083815260200190815260200160002060030160009054906101000a900460ff1615612cfd576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401612cf49061519b565b60405180910390fd5b60016018600084815260200190815260200160002060030160006101000a81548160ff0219169083151502179055506018600083815260200190815260200160002060000160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166342842e0e308360186000878152602001908152602001600020600101546040518463ffffffff1660e01b8152600401612db5939291906151bb565b600060405180830381600087803b158015612dcf57600080fd5b505af1158015612de3573d6000803e3d6000fd5b5050505060186000838152602001908152602001600020600201547faed26abd606cc45f49acdb7ffa39ef9b7cc007b2074b512c9fd1d9613c8b64fc836018600086815260200190815260200160002060000160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff166018600087815260200190815260200160002060010154604051612e7d939291906151f2565b60405180910390a25050565b60186020528060005260406000206000915090508060000160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16908060010154908060020154908060030160009054906101000a900460ff16905084565b60035481565b60125481565b6000606460075447612f049190614dc8565b612f0e9190614e39565b905090565b612f1b6139ac565b73ffffffffffffffffffffffffffffffffffffffff16612f396123f1565b73ffffffffffffffffffffffffffffffffffffffff1614612f8f576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401612f8690614826565b60405180910390fd5b80600d819055507f72e4278828b8a868e0ba5b4887f954797ea786f8bac991128636171f5eed471d600d54604051612fc79190613eb1565b60405180910390a150565b60146020528060005260406000206000915090505481565b6000620f42406001546004546130009190614dc8565b61300a9190614e39565b905090565b60085481565b60003411613058576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161304f9061529b565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff16600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16036130b7576130b6613a09565b5b6130bf6139ac565b73ffffffffffffffffffffffffffffffffffffffff167f8b7fe5be5699654fd637d2250cb0d47e88205730710745e78e9d8bcaf8aad8f1346040516131049190613eb1565b60405180910390a2565b60006014600061311c6139ac565b73ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000205411613197576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161318e9061532d565b60405180910390fd5b6001601460006131a56139ac565b73ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008282546131ee91906145f5565b925050819055506000601b60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16636a62784260e01b6132406139ac565b6040516024016132509190613e2e565b604051602081830303815290604052907bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff83818316178352505050506040516132ba9190614b44565b6000604051808303816000865af19150503d80600081146132f7576040519150601f19603f3d011682016040523d82523d6000602084013e6132fc565b606091505b5050905080613340576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161333790614bcd565b60405180910390fd5b6133486139ac565b73ffffffffffffffffffffffffffffffffffffffff167fe05ba2c5fcd9a60f30b179cb0e775070cc8ce9667b0e663e984ee6a02f694cee60405160405180910390a250565b6133956139ac565b73ffffffffffffffffffffffffffffffffffffffff166133b36123f1565b73ffffffffffffffffffffffffffffffffffffffff1614613409576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161340090614826565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff1603613478576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161346f906153bf565b60405180910390fd5b61348181613a26565b50565b600042601254101561349957600090506134aa565b426012546134a791906145f5565b90505b90565b60015481565b6134bb6139ac565b73ffffffffffffffffffffffffffffffffffffffff166134d96123f1565b73ffffffffffffffffffffffffffffffffffffffff161461352f576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161352690614826565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff160361359e576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161359590614892565b60405180910390fd5b80600660006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055507f1c7efd98583e33a9cc6adff48a97abdaaf43e5c9e918d5ec3e75e93e1dafcf6c600660009054906101000a900473ffffffffffffffffffffffffffffffffffffffff166040516136309190613e2e565b60405180910390a150565b601a60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6012544210156136a6576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161369d9061542b565b60405180910390fd5b610118815111156136ec576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016136e390615497565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff16600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff160361375757600854426137509190614ad4565b600e819055505b61375f6139ac565b600560006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1660156000601654815260200190815260200160002060006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506001601660008282546138289190614ad4565b925050819055506000601a60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166340c10f1960e01b600560009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1668056bc75e2d631000006040516024016138b0929190614d33565b604051602081830303815290604052907bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff838183161783525050505060405161391a9190614b44565b6000604051808303816000865af19150503d8060008114613957576040519150601f19603f3d011682016040523d82523d6000602084013e61395c565b606091505b50509050806139a0576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161399790615529565b60405180910390fd5b6139a8613ccc565b5050565b600033905090565b60006139be613d26565b6015600060165460135460001c6139d59190615549565b815260200190815260200160002060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16905090565b600954613a146121d7565b613a1e9190614e39565b600481905550565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff169050816000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508173ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a35050565b8173ffffffffffffffffffffffffffffffffffffffff166342842e0e613b0e6139ac565b30846040518463ffffffff1660e01b8152600401613b2e939291906151bb565b600060405180830381600087803b158015613b4857600080fd5b505af1158015613b5c573d6000803e3d6000fd5b5050505060405180608001604052808373ffffffffffffffffffffffffffffffffffffffff168152602001828152602001600f5481526020016000151581525060186000601954815260200190815260200160002060008201518160000160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550602082015181600101556040820151816002015560608201518160030160006101000a81548160ff021916908315150217905550905050600160196000828254613c429190614ad4565b92505081905550600f548273ffffffffffffffffffffffffffffffffffffffff16613c6b6139ac565b73ffffffffffffffffffffffffffffffffffffffff167fc85be1734ed6a0f4d6adf924d4d41406e2729878c652110a96e2fdec64e118d1846001601954613cb291906145f5565b604051613cc092919061557a565b60405180910390a45050565b6000633b9aca00600254613ce09190614e39565b905080613cef600e5442613d5c565b613cf99190614ad4565b600e81905550620f4240600354600254613d139190614dc8565b613d1d9190614e39565b60028190555050565b601354424340604051602001613d3e939291906155a3565b60405160208183030381529060405280519060200120601381905550565b600081831015613d6c5781613d6e565b825b905092915050565b6000604051905090565b600080fd5b600080fd5b6000819050919050565b613d9d81613d8a565b8114613da857600080fd5b50565b600081359050613dba81613d94565b92915050565b600060208284031215613dd657613dd5613d80565b5b6000613de484828501613dab565b91505092915050565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b6000613e1882613ded565b9050919050565b613e2881613e0d565b82525050565b6000602082019050613e436000830184613e1f565b92915050565b613e5281613e0d565b8114613e5d57600080fd5b50565b600081359050613e6f81613e49565b92915050565b600060208284031215613e8b57613e8a613d80565b5b6000613e9984828501613e60565b91505092915050565b613eab81613d8a565b82525050565b6000602082019050613ec66000830184613ea2565b92915050565b600080fd5b600080fd5b600080fd5b60008083601f840112613ef157613ef0613ecc565b5b8235905067ffffffffffffffff811115613f0e57613f0d613ed1565b5b602083019150836001820283011115613f2a57613f29613ed6565b5b9250929050565b600080600080600060808688031215613f4d57613f4c613d80565b5b6000613f5b88828901613e60565b9550506020613f6c88828901613e60565b9450506040613f7d88828901613dab565b935050606086013567ffffffffffffffff811115613f9e57613f9d613d85565b5b613faa88828901613edb565b92509250509295509295909350565b60007fffffffff0000000000000000000000000000000000000000000000000000000082169050919050565b613fee81613fb9565b82525050565b60006020820190506140096000830184613fe5565b92915050565b6000819050919050565b600061403461402f61402a84613ded565b61400f565b613ded565b9050919050565b600061404682614019565b9050919050565b60006140588261403b565b9050919050565b6140688161404d565b82525050565b6000602082019050614083600083018461405f565b92915050565b60006140948261403b565b9050919050565b6140a481614089565b82525050565b60006020820190506140bf600083018461409b565b92915050565b60006140d08261403b565b9050919050565b6140e0816140c5565b82525050565b60006020820190506140fb60008301846140d7565b92915050565b600080fd5b6000601f19601f8301169050919050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b61414f82614106565b810181811067ffffffffffffffff8211171561416e5761416d614117565b5b80604052505050565b6000614181613d76565b905061418d8282614146565b919050565b600067ffffffffffffffff8211156141ad576141ac614117565b5b6141b682614106565b9050602081019050919050565b82818337600083830152505050565b60006141e56141e084614192565b614177565b90508281526020810184848401111561420157614200614101565b5b61420c8482856141c3565b509392505050565b600082601f83011261422957614228613ecc565b5b81356142398482602086016141d2565b91505092915050565b60006020828403121561425857614257613d80565b5b600082013567ffffffffffffffff81111561427657614275613d85565b5b61428284828501614214565b91505092915050565b6000819050919050565b61429e8161428b565b82525050565b60006020820190506142b96000830184614295565b92915050565b60008115159050919050565b6142d4816142bf565b82525050565b60006020820190506142ef60008301846142cb565b92915050565b600061430082613e0d565b9050919050565b614310816142f5565b811461431b57600080fd5b50565b60008135905061432d81614307565b92915050565b6000806000806080858703121561434d5761434c613d80565b5b600061435b87828801613dab565b945050602085013567ffffffffffffffff81111561437c5761437b613d85565b5b61438887828801614214565b93505060406143998782880161431e565b92505060606143aa87828801613dab565b91505092959194509250565b600080604083850312156143cd576143cc613d80565b5b60006143db85828601613dab565b925050602083013567ffffffffffffffff8111156143fc576143fb613d85565b5b61440885828601614214565b9150509250929050565b60008060006060848603121561442b5761442a613d80565b5b600084013567ffffffffffffffff81111561444957614448613d85565b5b61445586828701614214565b93505060206144668682870161431e565b925050604061447786828701613dab565b9150509250925092565b600061448c8261403b565b9050919050565b61449c81614481565b82525050565b60006080820190506144b76000830187614493565b6144c46020830186613ea2565b6144d16040830185613ea2565b6144de60608301846142cb565b95945050505050565b60006144f28261403b565b9050919050565b614502816144e7565b82525050565b600060208201905061451d60008301846144f9565b92915050565b600082825260208201905092915050565b7f5468652076616c7565207375626d69747465642077697468207468697320747260008201527f616e73616374696f6e20697320746f6f206c6f772e0000000000000000000000602082015250565b6000614590603583614523565b915061459b82614534565b604082019050919050565b600060208201905081810360008301526145bf81614583565b9050919050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b600061460082613d8a565b915061460b83613d8a565b9250828203905081811115614623576146226145c6565b5b92915050565b600081905092915050565b50565b6000614644600083614629565b915061464f82614634565b600082019050919050565b600061466582614637565b9150819050919050565b7f526566756e64207472616e73666572206661696c65642e000000000000000000600082015250565b60006146a5601783614523565b91506146b08261466f565b602082019050919050565b600060208201905081810360008301526146d481614698565b9050919050565b6000819050919050565b6000819050919050565b600061470a614705614700846146db565b61400f565b6146e5565b9050919050565b61471a816146ef565b82525050565b600081519050919050565b60005b8381101561474957808201518184015260208101905061472e565b60008484015250505050565b600061476082614720565b61476a8185614523565b935061477a81856020860161472b565b61478381614106565b840191505092915050565b60006080820190506147a36000830187613ea2565b6147b06020830186614711565b6147bd6040830185613ea2565b81810360608301526147cf8184614755565b905095945050505050565b7f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572600082015250565b6000614810602083614523565b915061481b826147da565b602082019050919050565b6000602082019050818103600083015261483f81614803565b9050919050565b7f5a65726f2d616464726573732077617320676976656e2e000000000000000000600082015250565b600061487c601783614523565b915061488782614846565b602082019050919050565b600060208201905081810360008301526148ab8161486f565b9050919050565b7f50657263656e746167652076616c7565206f766572666c6f772c206d7573742060008201527f6265206c6f776572207468616e203130302e0000000000000000000000000000602082015250565b600061490e603283614523565b9150614919826148b2565b604082019050919050565b6000602082019050818103600083015261493d81614901565b9050919050565b7f4e6f7420656e6f7567682074696d652068617320656c61707365642e00000000600082015250565b600061497a601c83614523565b915061498582614944565b602082019050919050565b600060208201905081810360008301526149a98161496d565b9050919050565b7f5468657265206973206e6f206c617374206269646465722e0000000000000000600082015250565b60006149e6601883614523565b91506149f1826149b0565b602082019050919050565b60006020820190508181036000830152614a15816149d9565b9050919050565b7f4f6e6c7920746865206c617374206269646465722063616e20636c61696d207460008201527f6865207072697a6520647572696e672074686520666972737420323420686f7560208201527f72732e0000000000000000000000000000000000000000000000000000000000604082015250565b6000614a9e604383614523565b9150614aa982614a1c565b606082019050919050565b60006020820190508181036000830152614acd81614a91565b9050919050565b6000614adf82613d8a565b9150614aea83613d8a565b9250828201905080821115614b0257614b016145c6565b5b92915050565b600081519050919050565b6000614b1e82614b08565b614b288185614629565b9350614b3881856020860161472b565b80840191505092915050565b6000614b508284614b13565b915081905092915050565b7f436f736d69635369676e6174757265206d696e742829206661696c656420746f60008201527f206d696e74204e46542e00000000000000000000000000000000000000000000602082015250565b6000614bb7602a83614523565b9150614bc282614b5b565b604082019050919050565b60006020820190508181036000830152614be681614baa565b9050919050565b6000614bf882613d8a565b91507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8203614c2a57614c296145c6565b5b600182019050919050565b7f5472616e7366657220746f207468652077696e6e6572206661696c65642e0000600082015250565b6000614c6b601e83614523565b9150614c7682614c35565b602082019050919050565b60006020820190508181036000830152614c9a81614c5e565b9050919050565b7f5472616e7366657220746f206368617269747920636f6e74726163742066616960008201527f6c65642e00000000000000000000000000000000000000000000000000000000602082015250565b6000614cfd602483614523565b9150614d0882614ca1565b604082019050919050565b60006020820190508181036000830152614d2c81614cf0565b9050919050565b6000604082019050614d486000830185613e1f565b614d556020830184613ea2565b9392505050565b7f526166666c65206465706f736974206661696c65642e00000000000000000000600082015250565b6000614d92601683614523565b9150614d9d82614d5c565b602082019050919050565b60006020820190508181036000830152614dc181614d85565b9050919050565b6000614dd382613d8a565b9150614dde83613d8a565b9250828202614dec81613d8a565b91508282048414831517614e0357614e026145c6565b5b5092915050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601260045260246000fd5b6000614e4482613d8a565b9150614e4f83613d8a565b925082614e5f57614e5e614e0a565b5b828204905092915050565b7f546869732052616e646f6d57616c6b4e46542068617320616c7265616479206260008201527f65656e207573656420666f722062696464696e672e0000000000000000000000602082015250565b6000614ec6603583614523565b9150614ed182614e6a565b604082019050919050565b60006020820190508181036000830152614ef581614eb9565b9050919050565b600081519050614f0b81613e49565b92915050565b600060208284031215614f2757614f26613d80565b5b6000614f3584828501614efc565b91505092915050565b7f596f75206d75737420626520746865206f776e6572206f66207468652052616e60008201527f646f6d57616c6b4e46542e000000000000000000000000000000000000000000602082015250565b6000614f9a602b83614523565b9150614fa582614f3e565b604082019050919050565b60006020820190508181036000830152614fc981614f8d565b9050919050565b614fd9816146e5565b82525050565b6000608082019050614ff46000830187613ea2565b6150016020830186614fd0565b61500e6040830185613ea2565b81810360608301526150208184614755565b905095945050505050565b7f54686520646f6e61746564204e465420646f6573206e6f742065786973742e00600082015250565b6000615061601f83614523565b915061506c8261502b565b602082019050919050565b6000602082019050818103600083015261509081615054565b9050919050565b7f596f7520617265206e6f74207468652077696e6e6572206f662074686520726f60008201527f756e642e00000000000000000000000000000000000000000000000000000000602082015250565b60006150f3602483614523565b91506150fe82615097565b604082019050919050565b60006020820190508181036000830152615122816150e6565b9050919050565b7f546865204e46542068617320616c7265616479206265656e20636c61696d656460008201527f2e00000000000000000000000000000000000000000000000000000000000000602082015250565b6000615185602183614523565b915061519082615129565b604082019050919050565b600060208201905081810360008301526151b481615178565b9050919050565b60006060820190506151d06000830186613e1f565b6151dd6020830185613e1f565b6151ea6040830184613ea2565b949350505050565b60006060820190506152076000830186613ea2565b6152146020830185613e1f565b6152216040830184613ea2565b949350505050565b7f446f6e6174696f6e20616d6f756e74206d75737420626520677265617465722060008201527f7468616e20302e00000000000000000000000000000000000000000000000000602082015250565b6000615285602783614523565b915061529082615229565b604082019050919050565b600060208201905081810360008301526152b481615278565b9050919050565b7f596f752068617665206e6f20756e636c61696d656420726166666c65204e465460008201527f732e000000000000000000000000000000000000000000000000000000000000602082015250565b6000615317602283614523565b9150615322826152bb565b604082019050919050565b600060208201905081810360008301526153468161530a565b9050919050565b7f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160008201527f6464726573730000000000000000000000000000000000000000000000000000602082015250565b60006153a9602683614523565b91506153b48261534d565b604082019050919050565b600060208201905081810360008301526153d88161539c565b9050919050565b7f4e6f7420616374697665207965742e0000000000000000000000000000000000600082015250565b6000615415600f83614523565b9150615420826153df565b602082019050919050565b6000602082019050818103600083015261544481615408565b9050919050565b7f4d65737361676520697320746f6f206c6f6e672e000000000000000000000000600082015250565b6000615481601483614523565b915061548c8261544b565b602082019050919050565b600060208201905081810360008301526154b081615474565b9050919050565b7f436f736d6963546f6b656e206d696e742829206661696c656420746f206d696e60008201527f742072657761726420746f6b656e732e00000000000000000000000000000000602082015250565b6000615513603083614523565b915061551e826154b7565b604082019050919050565b6000602082019050818103600083015261554281615506565b9050919050565b600061555482613d8a565b915061555f83613d8a565b92508261556f5761556e614e0a565b5b828206905092915050565b600060408201905061558f6000830185613ea2565b61559c6020830184613ea2565b9392505050565b60006060820190506155b86000830186614295565b6155c56020830185613ea2565b6155d26040830184614295565b94935050505056fea26469706673582212209afe0d75c397cb7c34867db0cdb8bb4ec06be483879946db7554f7463e212b4764736f6c63430008130033",
 }
 
 // CosmicGameABI is the input ABI used to generate the binding from.
@@ -836,6 +830,37 @@ func (_CosmicGame *CosmicGameSession) Nft() (common.Address, error) {
 // Solidity: function nft() view returns(address)
 func (_CosmicGame *CosmicGameCallerSession) Nft() (common.Address, error) {
 	return _CosmicGame.Contract.Nft(&_CosmicGame.CallOpts)
+}
+
+// NumDonatedNFTs is a free data retrieval call binding the contract method 0x2aab3223.
+//
+// Solidity: function numDonatedNFTs() view returns(uint256)
+func (_CosmicGame *CosmicGameCaller) NumDonatedNFTs(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _CosmicGame.contract.Call(opts, &out, "numDonatedNFTs")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// NumDonatedNFTs is a free data retrieval call binding the contract method 0x2aab3223.
+//
+// Solidity: function numDonatedNFTs() view returns(uint256)
+func (_CosmicGame *CosmicGameSession) NumDonatedNFTs() (*big.Int, error) {
+	return _CosmicGame.Contract.NumDonatedNFTs(&_CosmicGame.CallOpts)
+}
+
+// NumDonatedNFTs is a free data retrieval call binding the contract method 0x2aab3223.
+//
+// Solidity: function numDonatedNFTs() view returns(uint256)
+func (_CosmicGame *CosmicGameCallerSession) NumDonatedNFTs() (*big.Int, error) {
+	return _CosmicGame.Contract.NumDonatedNFTs(&_CosmicGame.CallOpts)
 }
 
 // NumRaffleNFTWinnersPerRound is a free data retrieval call binding the contract method 0xa6ceac2c.
@@ -2149,6 +2174,140 @@ func (_CosmicGame *CosmicGameTransactorSession) Receive() (*types.Transaction, e
 	return _CosmicGame.Contract.Receive(&_CosmicGame.TransactOpts)
 }
 
+// CosmicGameActivationTimeChangedIterator is returned from FilterActivationTimeChanged and is used to iterate over the raw logs and unpacked data for ActivationTimeChanged events raised by the CosmicGame contract.
+type CosmicGameActivationTimeChangedIterator struct {
+	Event *CosmicGameActivationTimeChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameActivationTimeChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameActivationTimeChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameActivationTimeChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameActivationTimeChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameActivationTimeChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameActivationTimeChanged represents a ActivationTimeChanged event raised by the CosmicGame contract.
+type CosmicGameActivationTimeChanged struct {
+	NewActivationTime *big.Int
+	Raw               types.Log // Blockchain specific contextual infos
+}
+
+// FilterActivationTimeChanged is a free log retrieval operation binding the contract event 0x584ff9a7b3a86db5397052f2e440da0ed60a95f646a3a884863cd92262e682b6.
+//
+// Solidity: event ActivationTimeChanged(uint256 newActivationTime)
+func (_CosmicGame *CosmicGameFilterer) FilterActivationTimeChanged(opts *bind.FilterOpts) (*CosmicGameActivationTimeChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "ActivationTimeChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameActivationTimeChangedIterator{contract: _CosmicGame.contract, event: "ActivationTimeChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchActivationTimeChanged is a free log subscription operation binding the contract event 0x584ff9a7b3a86db5397052f2e440da0ed60a95f646a3a884863cd92262e682b6.
+//
+// Solidity: event ActivationTimeChanged(uint256 newActivationTime)
+func (_CosmicGame *CosmicGameFilterer) WatchActivationTimeChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameActivationTimeChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "ActivationTimeChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameActivationTimeChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "ActivationTimeChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseActivationTimeChanged is a log parse operation binding the contract event 0x584ff9a7b3a86db5397052f2e440da0ed60a95f646a3a884863cd92262e682b6.
+//
+// Solidity: event ActivationTimeChanged(uint256 newActivationTime)
+func (_CosmicGame *CosmicGameFilterer) ParseActivationTimeChanged(log types.Log) (*CosmicGameActivationTimeChanged, error) {
+	event := new(CosmicGameActivationTimeChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "ActivationTimeChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // CosmicGameBidEventIterator is returned from FilterBidEvent and is used to iterate over the raw logs and unpacked data for BidEvent events raised by the CosmicGame contract.
 type CosmicGameBidEventIterator struct {
 	Event *CosmicGameBidEvent // Event containing the contract specifics and raw log
@@ -2219,6 +2378,7 @@ func (it *CosmicGameBidEventIterator) Close() error {
 // CosmicGameBidEvent represents a BidEvent event raised by the CosmicGame contract.
 type CosmicGameBidEvent struct {
 	LastBidder      common.Address
+	Round           *big.Int
 	BidPrice        *big.Int
 	RandomWalkNFTId *big.Int
 	PrizeTime       *big.Int
@@ -2226,34 +2386,42 @@ type CosmicGameBidEvent struct {
 	Raw             types.Log // Blockchain specific contextual infos
 }
 
-// FilterBidEvent is a free log retrieval operation binding the contract event 0x521a3e9a25dec55994ad8dd222c96be0afa2b1b679fe7d3c289d01f4b6d7b6ed.
+// FilterBidEvent is a free log retrieval operation binding the contract event 0xc7beef8f8d25068377c10e7b7f30ef5622f443eb674e07835df1daf5fe84acbf.
 //
-// Solidity: event BidEvent(address indexed lastBidder, uint256 bidPrice, int256 randomWalkNFTId, uint256 prizeTime, string message)
-func (_CosmicGame *CosmicGameFilterer) FilterBidEvent(opts *bind.FilterOpts, lastBidder []common.Address) (*CosmicGameBidEventIterator, error) {
+// Solidity: event BidEvent(address indexed lastBidder, uint256 indexed round, uint256 bidPrice, int256 randomWalkNFTId, uint256 prizeTime, string message)
+func (_CosmicGame *CosmicGameFilterer) FilterBidEvent(opts *bind.FilterOpts, lastBidder []common.Address, round []*big.Int) (*CosmicGameBidEventIterator, error) {
 
 	var lastBidderRule []interface{}
 	for _, lastBidderItem := range lastBidder {
 		lastBidderRule = append(lastBidderRule, lastBidderItem)
 	}
+	var roundRule []interface{}
+	for _, roundItem := range round {
+		roundRule = append(roundRule, roundItem)
+	}
 
-	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "BidEvent", lastBidderRule)
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "BidEvent", lastBidderRule, roundRule)
 	if err != nil {
 		return nil, err
 	}
 	return &CosmicGameBidEventIterator{contract: _CosmicGame.contract, event: "BidEvent", logs: logs, sub: sub}, nil
 }
 
-// WatchBidEvent is a free log subscription operation binding the contract event 0x521a3e9a25dec55994ad8dd222c96be0afa2b1b679fe7d3c289d01f4b6d7b6ed.
+// WatchBidEvent is a free log subscription operation binding the contract event 0xc7beef8f8d25068377c10e7b7f30ef5622f443eb674e07835df1daf5fe84acbf.
 //
-// Solidity: event BidEvent(address indexed lastBidder, uint256 bidPrice, int256 randomWalkNFTId, uint256 prizeTime, string message)
-func (_CosmicGame *CosmicGameFilterer) WatchBidEvent(opts *bind.WatchOpts, sink chan<- *CosmicGameBidEvent, lastBidder []common.Address) (event.Subscription, error) {
+// Solidity: event BidEvent(address indexed lastBidder, uint256 indexed round, uint256 bidPrice, int256 randomWalkNFTId, uint256 prizeTime, string message)
+func (_CosmicGame *CosmicGameFilterer) WatchBidEvent(opts *bind.WatchOpts, sink chan<- *CosmicGameBidEvent, lastBidder []common.Address, round []*big.Int) (event.Subscription, error) {
 
 	var lastBidderRule []interface{}
 	for _, lastBidderItem := range lastBidder {
 		lastBidderRule = append(lastBidderRule, lastBidderItem)
 	}
+	var roundRule []interface{}
+	for _, roundItem := range round {
+		roundRule = append(roundRule, roundItem)
+	}
 
-	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "BidEvent", lastBidderRule)
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "BidEvent", lastBidderRule, roundRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2285,12 +2453,695 @@ func (_CosmicGame *CosmicGameFilterer) WatchBidEvent(opts *bind.WatchOpts, sink 
 	}), nil
 }
 
-// ParseBidEvent is a log parse operation binding the contract event 0x521a3e9a25dec55994ad8dd222c96be0afa2b1b679fe7d3c289d01f4b6d7b6ed.
+// ParseBidEvent is a log parse operation binding the contract event 0xc7beef8f8d25068377c10e7b7f30ef5622f443eb674e07835df1daf5fe84acbf.
 //
-// Solidity: event BidEvent(address indexed lastBidder, uint256 bidPrice, int256 randomWalkNFTId, uint256 prizeTime, string message)
+// Solidity: event BidEvent(address indexed lastBidder, uint256 indexed round, uint256 bidPrice, int256 randomWalkNFTId, uint256 prizeTime, string message)
 func (_CosmicGame *CosmicGameFilterer) ParseBidEvent(log types.Log) (*CosmicGameBidEvent, error) {
 	event := new(CosmicGameBidEvent)
 	if err := _CosmicGame.contract.UnpackLog(event, "BidEvent", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CosmicGameCharityAddressChangedIterator is returned from FilterCharityAddressChanged and is used to iterate over the raw logs and unpacked data for CharityAddressChanged events raised by the CosmicGame contract.
+type CosmicGameCharityAddressChangedIterator struct {
+	Event *CosmicGameCharityAddressChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameCharityAddressChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameCharityAddressChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameCharityAddressChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameCharityAddressChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameCharityAddressChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameCharityAddressChanged represents a CharityAddressChanged event raised by the CosmicGame contract.
+type CosmicGameCharityAddressChanged struct {
+	NewCharity common.Address
+	Raw        types.Log // Blockchain specific contextual infos
+}
+
+// FilterCharityAddressChanged is a free log retrieval operation binding the contract event 0x1c7efd98583e33a9cc6adff48a97abdaaf43e5c9e918d5ec3e75e93e1dafcf6c.
+//
+// Solidity: event CharityAddressChanged(address newCharity)
+func (_CosmicGame *CosmicGameFilterer) FilterCharityAddressChanged(opts *bind.FilterOpts) (*CosmicGameCharityAddressChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "CharityAddressChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameCharityAddressChangedIterator{contract: _CosmicGame.contract, event: "CharityAddressChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchCharityAddressChanged is a free log subscription operation binding the contract event 0x1c7efd98583e33a9cc6adff48a97abdaaf43e5c9e918d5ec3e75e93e1dafcf6c.
+//
+// Solidity: event CharityAddressChanged(address newCharity)
+func (_CosmicGame *CosmicGameFilterer) WatchCharityAddressChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameCharityAddressChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "CharityAddressChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameCharityAddressChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "CharityAddressChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseCharityAddressChanged is a log parse operation binding the contract event 0x1c7efd98583e33a9cc6adff48a97abdaaf43e5c9e918d5ec3e75e93e1dafcf6c.
+//
+// Solidity: event CharityAddressChanged(address newCharity)
+func (_CosmicGame *CosmicGameFilterer) ParseCharityAddressChanged(log types.Log) (*CosmicGameCharityAddressChanged, error) {
+	event := new(CosmicGameCharityAddressChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "CharityAddressChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CosmicGameCharityPercentageChangedIterator is returned from FilterCharityPercentageChanged and is used to iterate over the raw logs and unpacked data for CharityPercentageChanged events raised by the CosmicGame contract.
+type CosmicGameCharityPercentageChangedIterator struct {
+	Event *CosmicGameCharityPercentageChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameCharityPercentageChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameCharityPercentageChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameCharityPercentageChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameCharityPercentageChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameCharityPercentageChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameCharityPercentageChanged represents a CharityPercentageChanged event raised by the CosmicGame contract.
+type CosmicGameCharityPercentageChanged struct {
+	NewCharityPercentage *big.Int
+	Raw                  types.Log // Blockchain specific contextual infos
+}
+
+// FilterCharityPercentageChanged is a free log retrieval operation binding the contract event 0x0918b499c15fcb0e087d411d53664cde23577e1aa4a9cbfbdf735ddd1871e7d5.
+//
+// Solidity: event CharityPercentageChanged(uint256 newCharityPercentage)
+func (_CosmicGame *CosmicGameFilterer) FilterCharityPercentageChanged(opts *bind.FilterOpts) (*CosmicGameCharityPercentageChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "CharityPercentageChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameCharityPercentageChangedIterator{contract: _CosmicGame.contract, event: "CharityPercentageChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchCharityPercentageChanged is a free log subscription operation binding the contract event 0x0918b499c15fcb0e087d411d53664cde23577e1aa4a9cbfbdf735ddd1871e7d5.
+//
+// Solidity: event CharityPercentageChanged(uint256 newCharityPercentage)
+func (_CosmicGame *CosmicGameFilterer) WatchCharityPercentageChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameCharityPercentageChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "CharityPercentageChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameCharityPercentageChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "CharityPercentageChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseCharityPercentageChanged is a log parse operation binding the contract event 0x0918b499c15fcb0e087d411d53664cde23577e1aa4a9cbfbdf735ddd1871e7d5.
+//
+// Solidity: event CharityPercentageChanged(uint256 newCharityPercentage)
+func (_CosmicGame *CosmicGameFilterer) ParseCharityPercentageChanged(log types.Log) (*CosmicGameCharityPercentageChanged, error) {
+	event := new(CosmicGameCharityPercentageChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "CharityPercentageChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CosmicGameCosmicSignatureAddressChangedIterator is returned from FilterCosmicSignatureAddressChanged and is used to iterate over the raw logs and unpacked data for CosmicSignatureAddressChanged events raised by the CosmicGame contract.
+type CosmicGameCosmicSignatureAddressChangedIterator struct {
+	Event *CosmicGameCosmicSignatureAddressChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameCosmicSignatureAddressChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameCosmicSignatureAddressChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameCosmicSignatureAddressChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameCosmicSignatureAddressChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameCosmicSignatureAddressChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameCosmicSignatureAddressChanged represents a CosmicSignatureAddressChanged event raised by the CosmicGame contract.
+type CosmicGameCosmicSignatureAddressChanged struct {
+	NewCosmicSignature common.Address
+	Raw                types.Log // Blockchain specific contextual infos
+}
+
+// FilterCosmicSignatureAddressChanged is a free log retrieval operation binding the contract event 0x7142a592d5404b5fc4a294c66f70e32b2a7776bd807f722d59268def87c765d1.
+//
+// Solidity: event CosmicSignatureAddressChanged(address newCosmicSignature)
+func (_CosmicGame *CosmicGameFilterer) FilterCosmicSignatureAddressChanged(opts *bind.FilterOpts) (*CosmicGameCosmicSignatureAddressChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "CosmicSignatureAddressChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameCosmicSignatureAddressChangedIterator{contract: _CosmicGame.contract, event: "CosmicSignatureAddressChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchCosmicSignatureAddressChanged is a free log subscription operation binding the contract event 0x7142a592d5404b5fc4a294c66f70e32b2a7776bd807f722d59268def87c765d1.
+//
+// Solidity: event CosmicSignatureAddressChanged(address newCosmicSignature)
+func (_CosmicGame *CosmicGameFilterer) WatchCosmicSignatureAddressChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameCosmicSignatureAddressChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "CosmicSignatureAddressChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameCosmicSignatureAddressChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "CosmicSignatureAddressChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseCosmicSignatureAddressChanged is a log parse operation binding the contract event 0x7142a592d5404b5fc4a294c66f70e32b2a7776bd807f722d59268def87c765d1.
+//
+// Solidity: event CosmicSignatureAddressChanged(address newCosmicSignature)
+func (_CosmicGame *CosmicGameFilterer) ParseCosmicSignatureAddressChanged(log types.Log) (*CosmicGameCosmicSignatureAddressChanged, error) {
+	event := new(CosmicGameCosmicSignatureAddressChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "CosmicSignatureAddressChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CosmicGameCosmicTokenAddressChangedIterator is returned from FilterCosmicTokenAddressChanged and is used to iterate over the raw logs and unpacked data for CosmicTokenAddressChanged events raised by the CosmicGame contract.
+type CosmicGameCosmicTokenAddressChangedIterator struct {
+	Event *CosmicGameCosmicTokenAddressChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameCosmicTokenAddressChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameCosmicTokenAddressChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameCosmicTokenAddressChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameCosmicTokenAddressChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameCosmicTokenAddressChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameCosmicTokenAddressChanged represents a CosmicTokenAddressChanged event raised by the CosmicGame contract.
+type CosmicGameCosmicTokenAddressChanged struct {
+	NewCosmicToken common.Address
+	Raw            types.Log // Blockchain specific contextual infos
+}
+
+// FilterCosmicTokenAddressChanged is a free log retrieval operation binding the contract event 0x3ab2dcf539aa3c30314265602fc86dee8e343e3c3905730f870835f36c400deb.
+//
+// Solidity: event CosmicTokenAddressChanged(address newCosmicToken)
+func (_CosmicGame *CosmicGameFilterer) FilterCosmicTokenAddressChanged(opts *bind.FilterOpts) (*CosmicGameCosmicTokenAddressChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "CosmicTokenAddressChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameCosmicTokenAddressChangedIterator{contract: _CosmicGame.contract, event: "CosmicTokenAddressChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchCosmicTokenAddressChanged is a free log subscription operation binding the contract event 0x3ab2dcf539aa3c30314265602fc86dee8e343e3c3905730f870835f36c400deb.
+//
+// Solidity: event CosmicTokenAddressChanged(address newCosmicToken)
+func (_CosmicGame *CosmicGameFilterer) WatchCosmicTokenAddressChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameCosmicTokenAddressChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "CosmicTokenAddressChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameCosmicTokenAddressChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "CosmicTokenAddressChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseCosmicTokenAddressChanged is a log parse operation binding the contract event 0x3ab2dcf539aa3c30314265602fc86dee8e343e3c3905730f870835f36c400deb.
+//
+// Solidity: event CosmicTokenAddressChanged(address newCosmicToken)
+func (_CosmicGame *CosmicGameFilterer) ParseCosmicTokenAddressChanged(log types.Log) (*CosmicGameCosmicTokenAddressChanged, error) {
+	event := new(CosmicGameCosmicTokenAddressChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "CosmicTokenAddressChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CosmicGameDonatedNFTClaimedIterator is returned from FilterDonatedNFTClaimed and is used to iterate over the raw logs and unpacked data for DonatedNFTClaimed events raised by the CosmicGame contract.
+type CosmicGameDonatedNFTClaimedIterator struct {
+	Event *CosmicGameDonatedNFTClaimed // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameDonatedNFTClaimedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameDonatedNFTClaimed)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameDonatedNFTClaimed)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameDonatedNFTClaimedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameDonatedNFTClaimedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameDonatedNFTClaimed represents a DonatedNFTClaimed event raised by the CosmicGame contract.
+type CosmicGameDonatedNFTClaimed struct {
+	Round                 *big.Int
+	Index                 *big.Int
+	NftAddressdonatedNFTs common.Address
+	TokenId               *big.Int
+	Raw                   types.Log // Blockchain specific contextual infos
+}
+
+// FilterDonatedNFTClaimed is a free log retrieval operation binding the contract event 0xaed26abd606cc45f49acdb7ffa39ef9b7cc007b2074b512c9fd1d9613c8b64fc.
+//
+// Solidity: event DonatedNFTClaimed(uint256 indexed round, uint256 index, address nftAddressdonatedNFTs, uint256 tokenId)
+func (_CosmicGame *CosmicGameFilterer) FilterDonatedNFTClaimed(opts *bind.FilterOpts, round []*big.Int) (*CosmicGameDonatedNFTClaimedIterator, error) {
+
+	var roundRule []interface{}
+	for _, roundItem := range round {
+		roundRule = append(roundRule, roundItem)
+	}
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "DonatedNFTClaimed", roundRule)
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameDonatedNFTClaimedIterator{contract: _CosmicGame.contract, event: "DonatedNFTClaimed", logs: logs, sub: sub}, nil
+}
+
+// WatchDonatedNFTClaimed is a free log subscription operation binding the contract event 0xaed26abd606cc45f49acdb7ffa39ef9b7cc007b2074b512c9fd1d9613c8b64fc.
+//
+// Solidity: event DonatedNFTClaimed(uint256 indexed round, uint256 index, address nftAddressdonatedNFTs, uint256 tokenId)
+func (_CosmicGame *CosmicGameFilterer) WatchDonatedNFTClaimed(opts *bind.WatchOpts, sink chan<- *CosmicGameDonatedNFTClaimed, round []*big.Int) (event.Subscription, error) {
+
+	var roundRule []interface{}
+	for _, roundItem := range round {
+		roundRule = append(roundRule, roundItem)
+	}
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "DonatedNFTClaimed", roundRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameDonatedNFTClaimed)
+				if err := _CosmicGame.contract.UnpackLog(event, "DonatedNFTClaimed", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseDonatedNFTClaimed is a log parse operation binding the contract event 0xaed26abd606cc45f49acdb7ffa39ef9b7cc007b2074b512c9fd1d9613c8b64fc.
+//
+// Solidity: event DonatedNFTClaimed(uint256 indexed round, uint256 index, address nftAddressdonatedNFTs, uint256 tokenId)
+func (_CosmicGame *CosmicGameFilterer) ParseDonatedNFTClaimed(log types.Log) (*CosmicGameDonatedNFTClaimed, error) {
+	event := new(CosmicGameDonatedNFTClaimed)
+	if err := _CosmicGame.contract.UnpackLog(event, "DonatedNFTClaimed", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -2442,6 +3293,274 @@ func (_CosmicGame *CosmicGameFilterer) ParseDonationEvent(log types.Log) (*Cosmi
 	return event, nil
 }
 
+// CosmicGameInitialBidAmountFractionChangedIterator is returned from FilterInitialBidAmountFractionChanged and is used to iterate over the raw logs and unpacked data for InitialBidAmountFractionChanged events raised by the CosmicGame contract.
+type CosmicGameInitialBidAmountFractionChangedIterator struct {
+	Event *CosmicGameInitialBidAmountFractionChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameInitialBidAmountFractionChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameInitialBidAmountFractionChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameInitialBidAmountFractionChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameInitialBidAmountFractionChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameInitialBidAmountFractionChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameInitialBidAmountFractionChanged represents a InitialBidAmountFractionChanged event raised by the CosmicGame contract.
+type CosmicGameInitialBidAmountFractionChanged struct {
+	NewInitialBidAmountFraction *big.Int
+	Raw                         types.Log // Blockchain specific contextual infos
+}
+
+// FilterInitialBidAmountFractionChanged is a free log retrieval operation binding the contract event 0x3b311f029da1b90c3de2e0b3168436c5ed7d8b0ae81b7d4894c12da03835c628.
+//
+// Solidity: event InitialBidAmountFractionChanged(uint256 newInitialBidAmountFraction)
+func (_CosmicGame *CosmicGameFilterer) FilterInitialBidAmountFractionChanged(opts *bind.FilterOpts) (*CosmicGameInitialBidAmountFractionChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "InitialBidAmountFractionChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameInitialBidAmountFractionChangedIterator{contract: _CosmicGame.contract, event: "InitialBidAmountFractionChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchInitialBidAmountFractionChanged is a free log subscription operation binding the contract event 0x3b311f029da1b90c3de2e0b3168436c5ed7d8b0ae81b7d4894c12da03835c628.
+//
+// Solidity: event InitialBidAmountFractionChanged(uint256 newInitialBidAmountFraction)
+func (_CosmicGame *CosmicGameFilterer) WatchInitialBidAmountFractionChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameInitialBidAmountFractionChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "InitialBidAmountFractionChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameInitialBidAmountFractionChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "InitialBidAmountFractionChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseInitialBidAmountFractionChanged is a log parse operation binding the contract event 0x3b311f029da1b90c3de2e0b3168436c5ed7d8b0ae81b7d4894c12da03835c628.
+//
+// Solidity: event InitialBidAmountFractionChanged(uint256 newInitialBidAmountFraction)
+func (_CosmicGame *CosmicGameFilterer) ParseInitialBidAmountFractionChanged(log types.Log) (*CosmicGameInitialBidAmountFractionChanged, error) {
+	event := new(CosmicGameInitialBidAmountFractionChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "InitialBidAmountFractionChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CosmicGameInitialSecondsUntilPrizeChangedIterator is returned from FilterInitialSecondsUntilPrizeChanged and is used to iterate over the raw logs and unpacked data for InitialSecondsUntilPrizeChanged events raised by the CosmicGame contract.
+type CosmicGameInitialSecondsUntilPrizeChangedIterator struct {
+	Event *CosmicGameInitialSecondsUntilPrizeChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameInitialSecondsUntilPrizeChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameInitialSecondsUntilPrizeChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameInitialSecondsUntilPrizeChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameInitialSecondsUntilPrizeChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameInitialSecondsUntilPrizeChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameInitialSecondsUntilPrizeChanged represents a InitialSecondsUntilPrizeChanged event raised by the CosmicGame contract.
+type CosmicGameInitialSecondsUntilPrizeChanged struct {
+	NewInitialSecondsUntilPrize *big.Int
+	Raw                         types.Log // Blockchain specific contextual infos
+}
+
+// FilterInitialSecondsUntilPrizeChanged is a free log retrieval operation binding the contract event 0x6da281754ba85ee0c5983a8e8f05a92910c2a0c5b80e68c126216d65f162a305.
+//
+// Solidity: event InitialSecondsUntilPrizeChanged(uint256 newInitialSecondsUntilPrize)
+func (_CosmicGame *CosmicGameFilterer) FilterInitialSecondsUntilPrizeChanged(opts *bind.FilterOpts) (*CosmicGameInitialSecondsUntilPrizeChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "InitialSecondsUntilPrizeChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameInitialSecondsUntilPrizeChangedIterator{contract: _CosmicGame.contract, event: "InitialSecondsUntilPrizeChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchInitialSecondsUntilPrizeChanged is a free log subscription operation binding the contract event 0x6da281754ba85ee0c5983a8e8f05a92910c2a0c5b80e68c126216d65f162a305.
+//
+// Solidity: event InitialSecondsUntilPrizeChanged(uint256 newInitialSecondsUntilPrize)
+func (_CosmicGame *CosmicGameFilterer) WatchInitialSecondsUntilPrizeChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameInitialSecondsUntilPrizeChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "InitialSecondsUntilPrizeChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameInitialSecondsUntilPrizeChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "InitialSecondsUntilPrizeChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseInitialSecondsUntilPrizeChanged is a log parse operation binding the contract event 0x6da281754ba85ee0c5983a8e8f05a92910c2a0c5b80e68c126216d65f162a305.
+//
+// Solidity: event InitialSecondsUntilPrizeChanged(uint256 newInitialSecondsUntilPrize)
+func (_CosmicGame *CosmicGameFilterer) ParseInitialSecondsUntilPrizeChanged(log types.Log) (*CosmicGameInitialSecondsUntilPrizeChanged, error) {
+	event := new(CosmicGameInitialSecondsUntilPrizeChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "InitialSecondsUntilPrizeChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // CosmicGameNFTDonationEventIterator is returned from FilterNFTDonationEvent and is used to iterate over the raw logs and unpacked data for NFTDonationEvent events raised by the CosmicGame contract.
 type CosmicGameNFTDonationEventIterator struct {
 	Event *CosmicGameNFTDonationEvent // Event containing the contract specifics and raw log
@@ -2513,14 +3632,16 @@ func (it *CosmicGameNFTDonationEventIterator) Close() error {
 type CosmicGameNFTDonationEvent struct {
 	Donor      common.Address
 	NftAddress common.Address
+	Round      *big.Int
 	TokenId    *big.Int
+	Index      *big.Int
 	Raw        types.Log // Blockchain specific contextual infos
 }
 
-// FilterNFTDonationEvent is a free log retrieval operation binding the contract event 0xc36dcaca821561b3dc84f785f7a6abd4dd8c55db39ae73ecf4d0534003169ace.
+// FilterNFTDonationEvent is a free log retrieval operation binding the contract event 0xc85be1734ed6a0f4d6adf924d4d41406e2729878c652110a96e2fdec64e118d1.
 //
-// Solidity: event NFTDonationEvent(address indexed donor, address indexed nftAddress, uint256 tokenId)
-func (_CosmicGame *CosmicGameFilterer) FilterNFTDonationEvent(opts *bind.FilterOpts, donor []common.Address, nftAddress []common.Address) (*CosmicGameNFTDonationEventIterator, error) {
+// Solidity: event NFTDonationEvent(address indexed donor, address indexed nftAddress, uint256 indexed round, uint256 tokenId, uint256 index)
+func (_CosmicGame *CosmicGameFilterer) FilterNFTDonationEvent(opts *bind.FilterOpts, donor []common.Address, nftAddress []common.Address, round []*big.Int) (*CosmicGameNFTDonationEventIterator, error) {
 
 	var donorRule []interface{}
 	for _, donorItem := range donor {
@@ -2530,18 +3651,22 @@ func (_CosmicGame *CosmicGameFilterer) FilterNFTDonationEvent(opts *bind.FilterO
 	for _, nftAddressItem := range nftAddress {
 		nftAddressRule = append(nftAddressRule, nftAddressItem)
 	}
+	var roundRule []interface{}
+	for _, roundItem := range round {
+		roundRule = append(roundRule, roundItem)
+	}
 
-	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "NFTDonationEvent", donorRule, nftAddressRule)
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "NFTDonationEvent", donorRule, nftAddressRule, roundRule)
 	if err != nil {
 		return nil, err
 	}
 	return &CosmicGameNFTDonationEventIterator{contract: _CosmicGame.contract, event: "NFTDonationEvent", logs: logs, sub: sub}, nil
 }
 
-// WatchNFTDonationEvent is a free log subscription operation binding the contract event 0xc36dcaca821561b3dc84f785f7a6abd4dd8c55db39ae73ecf4d0534003169ace.
+// WatchNFTDonationEvent is a free log subscription operation binding the contract event 0xc85be1734ed6a0f4d6adf924d4d41406e2729878c652110a96e2fdec64e118d1.
 //
-// Solidity: event NFTDonationEvent(address indexed donor, address indexed nftAddress, uint256 tokenId)
-func (_CosmicGame *CosmicGameFilterer) WatchNFTDonationEvent(opts *bind.WatchOpts, sink chan<- *CosmicGameNFTDonationEvent, donor []common.Address, nftAddress []common.Address) (event.Subscription, error) {
+// Solidity: event NFTDonationEvent(address indexed donor, address indexed nftAddress, uint256 indexed round, uint256 tokenId, uint256 index)
+func (_CosmicGame *CosmicGameFilterer) WatchNFTDonationEvent(opts *bind.WatchOpts, sink chan<- *CosmicGameNFTDonationEvent, donor []common.Address, nftAddress []common.Address, round []*big.Int) (event.Subscription, error) {
 
 	var donorRule []interface{}
 	for _, donorItem := range donor {
@@ -2551,8 +3676,12 @@ func (_CosmicGame *CosmicGameFilterer) WatchNFTDonationEvent(opts *bind.WatchOpt
 	for _, nftAddressItem := range nftAddress {
 		nftAddressRule = append(nftAddressRule, nftAddressItem)
 	}
+	var roundRule []interface{}
+	for _, roundItem := range round {
+		roundRule = append(roundRule, roundItem)
+	}
 
-	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "NFTDonationEvent", donorRule, nftAddressRule)
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "NFTDonationEvent", donorRule, nftAddressRule, roundRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2584,12 +3713,414 @@ func (_CosmicGame *CosmicGameFilterer) WatchNFTDonationEvent(opts *bind.WatchOpt
 	}), nil
 }
 
-// ParseNFTDonationEvent is a log parse operation binding the contract event 0xc36dcaca821561b3dc84f785f7a6abd4dd8c55db39ae73ecf4d0534003169ace.
+// ParseNFTDonationEvent is a log parse operation binding the contract event 0xc85be1734ed6a0f4d6adf924d4d41406e2729878c652110a96e2fdec64e118d1.
 //
-// Solidity: event NFTDonationEvent(address indexed donor, address indexed nftAddress, uint256 tokenId)
+// Solidity: event NFTDonationEvent(address indexed donor, address indexed nftAddress, uint256 indexed round, uint256 tokenId, uint256 index)
 func (_CosmicGame *CosmicGameFilterer) ParseNFTDonationEvent(log types.Log) (*CosmicGameNFTDonationEvent, error) {
 	event := new(CosmicGameNFTDonationEvent)
 	if err := _CosmicGame.contract.UnpackLog(event, "NFTDonationEvent", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CosmicGameNanoSecondsExtraChangedIterator is returned from FilterNanoSecondsExtraChanged and is used to iterate over the raw logs and unpacked data for NanoSecondsExtraChanged events raised by the CosmicGame contract.
+type CosmicGameNanoSecondsExtraChangedIterator struct {
+	Event *CosmicGameNanoSecondsExtraChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameNanoSecondsExtraChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameNanoSecondsExtraChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameNanoSecondsExtraChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameNanoSecondsExtraChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameNanoSecondsExtraChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameNanoSecondsExtraChanged represents a NanoSecondsExtraChanged event raised by the CosmicGame contract.
+type CosmicGameNanoSecondsExtraChanged struct {
+	NewNanoSecondsExtra *big.Int
+	Raw                 types.Log // Blockchain specific contextual infos
+}
+
+// FilterNanoSecondsExtraChanged is a free log retrieval operation binding the contract event 0x678d086a09e1be49401b1e3a6e14db1878e8d8b88e71d0cfe24a32726d0e38b9.
+//
+// Solidity: event NanoSecondsExtraChanged(uint256 newNanoSecondsExtra)
+func (_CosmicGame *CosmicGameFilterer) FilterNanoSecondsExtraChanged(opts *bind.FilterOpts) (*CosmicGameNanoSecondsExtraChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "NanoSecondsExtraChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameNanoSecondsExtraChangedIterator{contract: _CosmicGame.contract, event: "NanoSecondsExtraChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchNanoSecondsExtraChanged is a free log subscription operation binding the contract event 0x678d086a09e1be49401b1e3a6e14db1878e8d8b88e71d0cfe24a32726d0e38b9.
+//
+// Solidity: event NanoSecondsExtraChanged(uint256 newNanoSecondsExtra)
+func (_CosmicGame *CosmicGameFilterer) WatchNanoSecondsExtraChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameNanoSecondsExtraChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "NanoSecondsExtraChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameNanoSecondsExtraChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "NanoSecondsExtraChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseNanoSecondsExtraChanged is a log parse operation binding the contract event 0x678d086a09e1be49401b1e3a6e14db1878e8d8b88e71d0cfe24a32726d0e38b9.
+//
+// Solidity: event NanoSecondsExtraChanged(uint256 newNanoSecondsExtra)
+func (_CosmicGame *CosmicGameFilterer) ParseNanoSecondsExtraChanged(log types.Log) (*CosmicGameNanoSecondsExtraChanged, error) {
+	event := new(CosmicGameNanoSecondsExtraChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "NanoSecondsExtraChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CosmicGameNumRaffleNFTWinnersPerRoundChangedIterator is returned from FilterNumRaffleNFTWinnersPerRoundChanged and is used to iterate over the raw logs and unpacked data for NumRaffleNFTWinnersPerRoundChanged events raised by the CosmicGame contract.
+type CosmicGameNumRaffleNFTWinnersPerRoundChangedIterator struct {
+	Event *CosmicGameNumRaffleNFTWinnersPerRoundChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameNumRaffleNFTWinnersPerRoundChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameNumRaffleNFTWinnersPerRoundChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameNumRaffleNFTWinnersPerRoundChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameNumRaffleNFTWinnersPerRoundChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameNumRaffleNFTWinnersPerRoundChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameNumRaffleNFTWinnersPerRoundChanged represents a NumRaffleNFTWinnersPerRoundChanged event raised by the CosmicGame contract.
+type CosmicGameNumRaffleNFTWinnersPerRoundChanged struct {
+	NewNumRaffleNFTWinnersPerRound *big.Int
+	Raw                            types.Log // Blockchain specific contextual infos
+}
+
+// FilterNumRaffleNFTWinnersPerRoundChanged is a free log retrieval operation binding the contract event 0x72e4278828b8a868e0ba5b4887f954797ea786f8bac991128636171f5eed471d.
+//
+// Solidity: event NumRaffleNFTWinnersPerRoundChanged(uint256 newNumRaffleNFTWinnersPerRound)
+func (_CosmicGame *CosmicGameFilterer) FilterNumRaffleNFTWinnersPerRoundChanged(opts *bind.FilterOpts) (*CosmicGameNumRaffleNFTWinnersPerRoundChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "NumRaffleNFTWinnersPerRoundChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameNumRaffleNFTWinnersPerRoundChangedIterator{contract: _CosmicGame.contract, event: "NumRaffleNFTWinnersPerRoundChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchNumRaffleNFTWinnersPerRoundChanged is a free log subscription operation binding the contract event 0x72e4278828b8a868e0ba5b4887f954797ea786f8bac991128636171f5eed471d.
+//
+// Solidity: event NumRaffleNFTWinnersPerRoundChanged(uint256 newNumRaffleNFTWinnersPerRound)
+func (_CosmicGame *CosmicGameFilterer) WatchNumRaffleNFTWinnersPerRoundChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameNumRaffleNFTWinnersPerRoundChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "NumRaffleNFTWinnersPerRoundChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameNumRaffleNFTWinnersPerRoundChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "NumRaffleNFTWinnersPerRoundChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseNumRaffleNFTWinnersPerRoundChanged is a log parse operation binding the contract event 0x72e4278828b8a868e0ba5b4887f954797ea786f8bac991128636171f5eed471d.
+//
+// Solidity: event NumRaffleNFTWinnersPerRoundChanged(uint256 newNumRaffleNFTWinnersPerRound)
+func (_CosmicGame *CosmicGameFilterer) ParseNumRaffleNFTWinnersPerRoundChanged(log types.Log) (*CosmicGameNumRaffleNFTWinnersPerRoundChanged, error) {
+	event := new(CosmicGameNumRaffleNFTWinnersPerRoundChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "NumRaffleNFTWinnersPerRoundChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CosmicGameNumRaffleWinnersPerRoundChangedIterator is returned from FilterNumRaffleWinnersPerRoundChanged and is used to iterate over the raw logs and unpacked data for NumRaffleWinnersPerRoundChanged events raised by the CosmicGame contract.
+type CosmicGameNumRaffleWinnersPerRoundChangedIterator struct {
+	Event *CosmicGameNumRaffleWinnersPerRoundChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameNumRaffleWinnersPerRoundChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameNumRaffleWinnersPerRoundChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameNumRaffleWinnersPerRoundChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameNumRaffleWinnersPerRoundChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameNumRaffleWinnersPerRoundChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameNumRaffleWinnersPerRoundChanged represents a NumRaffleWinnersPerRoundChanged event raised by the CosmicGame contract.
+type CosmicGameNumRaffleWinnersPerRoundChanged struct {
+	NewNumRaffleWinnersPerRound *big.Int
+	Raw                         types.Log // Blockchain specific contextual infos
+}
+
+// FilterNumRaffleWinnersPerRoundChanged is a free log retrieval operation binding the contract event 0x5e3567ae359e61c47ad2f11d2828dea7e062b2ff63dea385cdb7900a50504c7c.
+//
+// Solidity: event NumRaffleWinnersPerRoundChanged(uint256 newNumRaffleWinnersPerRound)
+func (_CosmicGame *CosmicGameFilterer) FilterNumRaffleWinnersPerRoundChanged(opts *bind.FilterOpts) (*CosmicGameNumRaffleWinnersPerRoundChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "NumRaffleWinnersPerRoundChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameNumRaffleWinnersPerRoundChangedIterator{contract: _CosmicGame.contract, event: "NumRaffleWinnersPerRoundChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchNumRaffleWinnersPerRoundChanged is a free log subscription operation binding the contract event 0x5e3567ae359e61c47ad2f11d2828dea7e062b2ff63dea385cdb7900a50504c7c.
+//
+// Solidity: event NumRaffleWinnersPerRoundChanged(uint256 newNumRaffleWinnersPerRound)
+func (_CosmicGame *CosmicGameFilterer) WatchNumRaffleWinnersPerRoundChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameNumRaffleWinnersPerRoundChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "NumRaffleWinnersPerRoundChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameNumRaffleWinnersPerRoundChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "NumRaffleWinnersPerRoundChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseNumRaffleWinnersPerRoundChanged is a log parse operation binding the contract event 0x5e3567ae359e61c47ad2f11d2828dea7e062b2ff63dea385cdb7900a50504c7c.
+//
+// Solidity: event NumRaffleWinnersPerRoundChanged(uint256 newNumRaffleWinnersPerRound)
+func (_CosmicGame *CosmicGameFilterer) ParseNumRaffleWinnersPerRoundChanged(log types.Log) (*CosmicGameNumRaffleWinnersPerRoundChanged, error) {
+	event := new(CosmicGameNumRaffleWinnersPerRoundChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "NumRaffleWinnersPerRoundChanged", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -2749,6 +4280,140 @@ func (_CosmicGame *CosmicGameFilterer) ParseOwnershipTransferred(log types.Log) 
 	return event, nil
 }
 
+// CosmicGamePriceIncreaseChangedIterator is returned from FilterPriceIncreaseChanged and is used to iterate over the raw logs and unpacked data for PriceIncreaseChanged events raised by the CosmicGame contract.
+type CosmicGamePriceIncreaseChangedIterator struct {
+	Event *CosmicGamePriceIncreaseChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGamePriceIncreaseChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGamePriceIncreaseChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGamePriceIncreaseChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGamePriceIncreaseChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGamePriceIncreaseChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGamePriceIncreaseChanged represents a PriceIncreaseChanged event raised by the CosmicGame contract.
+type CosmicGamePriceIncreaseChanged struct {
+	NewPriceIncrease *big.Int
+	Raw              types.Log // Blockchain specific contextual infos
+}
+
+// FilterPriceIncreaseChanged is a free log retrieval operation binding the contract event 0xcbc1f49adfa29e2f2f0f5c9e057722496a4bc95a6a5446deaa423a02b30c64ac.
+//
+// Solidity: event PriceIncreaseChanged(uint256 newPriceIncrease)
+func (_CosmicGame *CosmicGameFilterer) FilterPriceIncreaseChanged(opts *bind.FilterOpts) (*CosmicGamePriceIncreaseChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "PriceIncreaseChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGamePriceIncreaseChangedIterator{contract: _CosmicGame.contract, event: "PriceIncreaseChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchPriceIncreaseChanged is a free log subscription operation binding the contract event 0xcbc1f49adfa29e2f2f0f5c9e057722496a4bc95a6a5446deaa423a02b30c64ac.
+//
+// Solidity: event PriceIncreaseChanged(uint256 newPriceIncrease)
+func (_CosmicGame *CosmicGameFilterer) WatchPriceIncreaseChanged(opts *bind.WatchOpts, sink chan<- *CosmicGamePriceIncreaseChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "PriceIncreaseChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGamePriceIncreaseChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "PriceIncreaseChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParsePriceIncreaseChanged is a log parse operation binding the contract event 0xcbc1f49adfa29e2f2f0f5c9e057722496a4bc95a6a5446deaa423a02b30c64ac.
+//
+// Solidity: event PriceIncreaseChanged(uint256 newPriceIncrease)
+func (_CosmicGame *CosmicGameFilterer) ParsePriceIncreaseChanged(log types.Log) (*CosmicGamePriceIncreaseChanged, error) {
+	event := new(CosmicGamePriceIncreaseChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "PriceIncreaseChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // CosmicGamePrizeClaimEventIterator is returned from FilterPrizeClaimEvent and is used to iterate over the raw logs and unpacked data for PrizeClaimEvent events raised by the CosmicGame contract.
 type CosmicGamePrizeClaimEventIterator struct {
 	Event *CosmicGamePrizeClaimEvent // Event containing the contract specifics and raw log
@@ -2897,6 +4562,140 @@ func (_CosmicGame *CosmicGameFilterer) WatchPrizeClaimEvent(opts *bind.WatchOpts
 func (_CosmicGame *CosmicGameFilterer) ParsePrizeClaimEvent(log types.Log) (*CosmicGamePrizeClaimEvent, error) {
 	event := new(CosmicGamePrizeClaimEvent)
 	if err := _CosmicGame.contract.UnpackLog(event, "PrizeClaimEvent", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CosmicGamePrizePercentageChangedIterator is returned from FilterPrizePercentageChanged and is used to iterate over the raw logs and unpacked data for PrizePercentageChanged events raised by the CosmicGame contract.
+type CosmicGamePrizePercentageChangedIterator struct {
+	Event *CosmicGamePrizePercentageChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGamePrizePercentageChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGamePrizePercentageChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGamePrizePercentageChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGamePrizePercentageChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGamePrizePercentageChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGamePrizePercentageChanged represents a PrizePercentageChanged event raised by the CosmicGame contract.
+type CosmicGamePrizePercentageChanged struct {
+	NewPrizePercentage *big.Int
+	Raw                types.Log // Blockchain specific contextual infos
+}
+
+// FilterPrizePercentageChanged is a free log retrieval operation binding the contract event 0x595fa5ba64cd6f66df19b53b59bb4a275bae1ec5b362da95e1fa4c5feb62be1e.
+//
+// Solidity: event PrizePercentageChanged(uint256 newPrizePercentage)
+func (_CosmicGame *CosmicGameFilterer) FilterPrizePercentageChanged(opts *bind.FilterOpts) (*CosmicGamePrizePercentageChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "PrizePercentageChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGamePrizePercentageChangedIterator{contract: _CosmicGame.contract, event: "PrizePercentageChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchPrizePercentageChanged is a free log subscription operation binding the contract event 0x595fa5ba64cd6f66df19b53b59bb4a275bae1ec5b362da95e1fa4c5feb62be1e.
+//
+// Solidity: event PrizePercentageChanged(uint256 newPrizePercentage)
+func (_CosmicGame *CosmicGameFilterer) WatchPrizePercentageChanged(opts *bind.WatchOpts, sink chan<- *CosmicGamePrizePercentageChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "PrizePercentageChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGamePrizePercentageChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "PrizePercentageChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParsePrizePercentageChanged is a log parse operation binding the contract event 0x595fa5ba64cd6f66df19b53b59bb4a275bae1ec5b362da95e1fa4c5feb62be1e.
+//
+// Solidity: event PrizePercentageChanged(uint256 newPrizePercentage)
+func (_CosmicGame *CosmicGameFilterer) ParsePrizePercentageChanged(log types.Log) (*CosmicGamePrizePercentageChanged, error) {
+	event := new(CosmicGamePrizePercentageChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "PrizePercentageChanged", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -3195,6 +4994,542 @@ func (_CosmicGame *CosmicGameFilterer) WatchRaffleNFTWinnerEvent(opts *bind.Watc
 func (_CosmicGame *CosmicGameFilterer) ParseRaffleNFTWinnerEvent(log types.Log) (*CosmicGameRaffleNFTWinnerEvent, error) {
 	event := new(CosmicGameRaffleNFTWinnerEvent)
 	if err := _CosmicGame.contract.UnpackLog(event, "RaffleNFTWinnerEvent", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CosmicGameRafflePercentageChangedIterator is returned from FilterRafflePercentageChanged and is used to iterate over the raw logs and unpacked data for RafflePercentageChanged events raised by the CosmicGame contract.
+type CosmicGameRafflePercentageChangedIterator struct {
+	Event *CosmicGameRafflePercentageChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameRafflePercentageChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameRafflePercentageChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameRafflePercentageChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameRafflePercentageChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameRafflePercentageChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameRafflePercentageChanged represents a RafflePercentageChanged event raised by the CosmicGame contract.
+type CosmicGameRafflePercentageChanged struct {
+	NewRafflePercentage *big.Int
+	Raw                 types.Log // Blockchain specific contextual infos
+}
+
+// FilterRafflePercentageChanged is a free log retrieval operation binding the contract event 0xd2002a256ab2f8a5c1b865685754b20437c0a26e7249e40ae5df2993966f99f2.
+//
+// Solidity: event RafflePercentageChanged(uint256 newRafflePercentage)
+func (_CosmicGame *CosmicGameFilterer) FilterRafflePercentageChanged(opts *bind.FilterOpts) (*CosmicGameRafflePercentageChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "RafflePercentageChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameRafflePercentageChangedIterator{contract: _CosmicGame.contract, event: "RafflePercentageChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchRafflePercentageChanged is a free log subscription operation binding the contract event 0xd2002a256ab2f8a5c1b865685754b20437c0a26e7249e40ae5df2993966f99f2.
+//
+// Solidity: event RafflePercentageChanged(uint256 newRafflePercentage)
+func (_CosmicGame *CosmicGameFilterer) WatchRafflePercentageChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameRafflePercentageChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "RafflePercentageChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameRafflePercentageChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "RafflePercentageChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseRafflePercentageChanged is a log parse operation binding the contract event 0xd2002a256ab2f8a5c1b865685754b20437c0a26e7249e40ae5df2993966f99f2.
+//
+// Solidity: event RafflePercentageChanged(uint256 newRafflePercentage)
+func (_CosmicGame *CosmicGameFilterer) ParseRafflePercentageChanged(log types.Log) (*CosmicGameRafflePercentageChanged, error) {
+	event := new(CosmicGameRafflePercentageChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "RafflePercentageChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CosmicGameRaffleWalletAddressChangedIterator is returned from FilterRaffleWalletAddressChanged and is used to iterate over the raw logs and unpacked data for RaffleWalletAddressChanged events raised by the CosmicGame contract.
+type CosmicGameRaffleWalletAddressChangedIterator struct {
+	Event *CosmicGameRaffleWalletAddressChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameRaffleWalletAddressChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameRaffleWalletAddressChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameRaffleWalletAddressChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameRaffleWalletAddressChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameRaffleWalletAddressChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameRaffleWalletAddressChanged represents a RaffleWalletAddressChanged event raised by the CosmicGame contract.
+type CosmicGameRaffleWalletAddressChanged struct {
+	NewRaffleWallet common.Address
+	Raw             types.Log // Blockchain specific contextual infos
+}
+
+// FilterRaffleWalletAddressChanged is a free log retrieval operation binding the contract event 0x508d510537704d37ed64691a706392abc33e59ce8a327b4952e112820ceb88a6.
+//
+// Solidity: event RaffleWalletAddressChanged(address newRaffleWallet)
+func (_CosmicGame *CosmicGameFilterer) FilterRaffleWalletAddressChanged(opts *bind.FilterOpts) (*CosmicGameRaffleWalletAddressChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "RaffleWalletAddressChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameRaffleWalletAddressChangedIterator{contract: _CosmicGame.contract, event: "RaffleWalletAddressChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchRaffleWalletAddressChanged is a free log subscription operation binding the contract event 0x508d510537704d37ed64691a706392abc33e59ce8a327b4952e112820ceb88a6.
+//
+// Solidity: event RaffleWalletAddressChanged(address newRaffleWallet)
+func (_CosmicGame *CosmicGameFilterer) WatchRaffleWalletAddressChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameRaffleWalletAddressChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "RaffleWalletAddressChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameRaffleWalletAddressChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "RaffleWalletAddressChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseRaffleWalletAddressChanged is a log parse operation binding the contract event 0x508d510537704d37ed64691a706392abc33e59ce8a327b4952e112820ceb88a6.
+//
+// Solidity: event RaffleWalletAddressChanged(address newRaffleWallet)
+func (_CosmicGame *CosmicGameFilterer) ParseRaffleWalletAddressChanged(log types.Log) (*CosmicGameRaffleWalletAddressChanged, error) {
+	event := new(CosmicGameRaffleWalletAddressChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "RaffleWalletAddressChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CosmicGameRandomWalkAddressChangedIterator is returned from FilterRandomWalkAddressChanged and is used to iterate over the raw logs and unpacked data for RandomWalkAddressChanged events raised by the CosmicGame contract.
+type CosmicGameRandomWalkAddressChangedIterator struct {
+	Event *CosmicGameRandomWalkAddressChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameRandomWalkAddressChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameRandomWalkAddressChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameRandomWalkAddressChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameRandomWalkAddressChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameRandomWalkAddressChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameRandomWalkAddressChanged represents a RandomWalkAddressChanged event raised by the CosmicGame contract.
+type CosmicGameRandomWalkAddressChanged struct {
+	NewRandomWalk common.Address
+	Raw           types.Log // Blockchain specific contextual infos
+}
+
+// FilterRandomWalkAddressChanged is a free log retrieval operation binding the contract event 0x9dc3707e4b88be65295b0083b44ffa94059c80372add9b0d24d6a3b371a03b92.
+//
+// Solidity: event RandomWalkAddressChanged(address newRandomWalk)
+func (_CosmicGame *CosmicGameFilterer) FilterRandomWalkAddressChanged(opts *bind.FilterOpts) (*CosmicGameRandomWalkAddressChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "RandomWalkAddressChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameRandomWalkAddressChangedIterator{contract: _CosmicGame.contract, event: "RandomWalkAddressChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchRandomWalkAddressChanged is a free log subscription operation binding the contract event 0x9dc3707e4b88be65295b0083b44ffa94059c80372add9b0d24d6a3b371a03b92.
+//
+// Solidity: event RandomWalkAddressChanged(address newRandomWalk)
+func (_CosmicGame *CosmicGameFilterer) WatchRandomWalkAddressChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameRandomWalkAddressChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "RandomWalkAddressChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameRandomWalkAddressChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "RandomWalkAddressChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseRandomWalkAddressChanged is a log parse operation binding the contract event 0x9dc3707e4b88be65295b0083b44ffa94059c80372add9b0d24d6a3b371a03b92.
+//
+// Solidity: event RandomWalkAddressChanged(address newRandomWalk)
+func (_CosmicGame *CosmicGameFilterer) ParseRandomWalkAddressChanged(log types.Log) (*CosmicGameRandomWalkAddressChanged, error) {
+	event := new(CosmicGameRandomWalkAddressChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "RandomWalkAddressChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CosmicGameTimeIncreaseChangedIterator is returned from FilterTimeIncreaseChanged and is used to iterate over the raw logs and unpacked data for TimeIncreaseChanged events raised by the CosmicGame contract.
+type CosmicGameTimeIncreaseChangedIterator struct {
+	Event *CosmicGameTimeIncreaseChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameTimeIncreaseChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameTimeIncreaseChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameTimeIncreaseChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameTimeIncreaseChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameTimeIncreaseChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameTimeIncreaseChanged represents a TimeIncreaseChanged event raised by the CosmicGame contract.
+type CosmicGameTimeIncreaseChanged struct {
+	NewTimeIncrease *big.Int
+	Raw             types.Log // Blockchain specific contextual infos
+}
+
+// FilterTimeIncreaseChanged is a free log retrieval operation binding the contract event 0xed46e73b174ced51fb529cdc6c1b4d8abf49387e6d849b71648afb63c81d12cd.
+//
+// Solidity: event TimeIncreaseChanged(uint256 newTimeIncrease)
+func (_CosmicGame *CosmicGameFilterer) FilterTimeIncreaseChanged(opts *bind.FilterOpts) (*CosmicGameTimeIncreaseChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "TimeIncreaseChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameTimeIncreaseChangedIterator{contract: _CosmicGame.contract, event: "TimeIncreaseChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchTimeIncreaseChanged is a free log subscription operation binding the contract event 0xed46e73b174ced51fb529cdc6c1b4d8abf49387e6d849b71648afb63c81d12cd.
+//
+// Solidity: event TimeIncreaseChanged(uint256 newTimeIncrease)
+func (_CosmicGame *CosmicGameFilterer) WatchTimeIncreaseChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameTimeIncreaseChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "TimeIncreaseChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameTimeIncreaseChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "TimeIncreaseChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTimeIncreaseChanged is a log parse operation binding the contract event 0xed46e73b174ced51fb529cdc6c1b4d8abf49387e6d849b71648afb63c81d12cd.
+//
+// Solidity: event TimeIncreaseChanged(uint256 newTimeIncrease)
+func (_CosmicGame *CosmicGameFilterer) ParseTimeIncreaseChanged(log types.Log) (*CosmicGameTimeIncreaseChanged, error) {
+	event := new(CosmicGameTimeIncreaseChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "TimeIncreaseChanged", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -3878,1375 +6213,6 @@ func (_ERC165 *ERC165Session) SupportsInterface(interfaceId [4]byte) (bool, erro
 // Solidity: function supportsInterface(bytes4 interfaceId) view returns(bool)
 func (_ERC165 *ERC165CallerSession) SupportsInterface(interfaceId [4]byte) (bool, error) {
 	return _ERC165.Contract.SupportsInterface(&_ERC165.CallOpts, interfaceId)
-}
-
-// ERC20VotesMetaData contains all meta data concerning the ERC20Votes contract.
-var ERC20VotesMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"fromDelegate\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"toDelegate\",\"type\":\"address\"}],\"name\":\"DelegateChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"delegate\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"previousBalance\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newBalance\",\"type\":\"uint256\"}],\"name\":\"DelegateVotesChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"DOMAIN_SEPARATOR\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint32\",\"name\":\"pos\",\"type\":\"uint32\"}],\"name\":\"checkpoints\",\"outputs\":[{\"components\":[{\"internalType\":\"uint32\",\"name\":\"fromBlock\",\"type\":\"uint32\"},{\"internalType\":\"uint224\",\"name\":\"votes\",\"type\":\"uint224\"}],\"internalType\":\"structERC20Votes.Checkpoint\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"subtractedValue\",\"type\":\"uint256\"}],\"name\":\"decreaseAllowance\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegatee\",\"type\":\"address\"}],\"name\":\"delegate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegatee\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"expiry\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"v\",\"type\":\"uint8\"},{\"internalType\":\"bytes32\",\"name\":\"r\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"s\",\"type\":\"bytes32\"}],\"name\":\"delegateBySig\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"delegates\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"blockNumber\",\"type\":\"uint256\"}],\"name\":\"getPastTotalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"blockNumber\",\"type\":\"uint256\"}],\"name\":\"getPastVotes\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"getVotes\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"addedValue\",\"type\":\"uint256\"}],\"name\":\"increaseAllowance\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"nonces\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"numCheckpoints\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"deadline\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"v\",\"type\":\"uint8\"},{\"internalType\":\"bytes32\",\"name\":\"r\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"s\",\"type\":\"bytes32\"}],\"name\":\"permit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
-}
-
-// ERC20VotesABI is the input ABI used to generate the binding from.
-// Deprecated: Use ERC20VotesMetaData.ABI instead.
-var ERC20VotesABI = ERC20VotesMetaData.ABI
-
-// ERC20Votes is an auto generated Go binding around an Ethereum contract.
-type ERC20Votes struct {
-	ERC20VotesCaller     // Read-only binding to the contract
-	ERC20VotesTransactor // Write-only binding to the contract
-	ERC20VotesFilterer   // Log filterer for contract events
-}
-
-// ERC20VotesCaller is an auto generated read-only Go binding around an Ethereum contract.
-type ERC20VotesCaller struct {
-	contract *bind.BoundContract // Generic contract wrapper for the low level calls
-}
-
-// ERC20VotesTransactor is an auto generated write-only Go binding around an Ethereum contract.
-type ERC20VotesTransactor struct {
-	contract *bind.BoundContract // Generic contract wrapper for the low level calls
-}
-
-// ERC20VotesFilterer is an auto generated log filtering Go binding around an Ethereum contract events.
-type ERC20VotesFilterer struct {
-	contract *bind.BoundContract // Generic contract wrapper for the low level calls
-}
-
-// ERC20VotesSession is an auto generated Go binding around an Ethereum contract,
-// with pre-set call and transact options.
-type ERC20VotesSession struct {
-	Contract     *ERC20Votes       // Generic contract binding to set the session for
-	CallOpts     bind.CallOpts     // Call options to use throughout this session
-	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
-}
-
-// ERC20VotesCallerSession is an auto generated read-only Go binding around an Ethereum contract,
-// with pre-set call options.
-type ERC20VotesCallerSession struct {
-	Contract *ERC20VotesCaller // Generic contract caller binding to set the session for
-	CallOpts bind.CallOpts     // Call options to use throughout this session
-}
-
-// ERC20VotesTransactorSession is an auto generated write-only Go binding around an Ethereum contract,
-// with pre-set transact options.
-type ERC20VotesTransactorSession struct {
-	Contract     *ERC20VotesTransactor // Generic contract transactor binding to set the session for
-	TransactOpts bind.TransactOpts     // Transaction auth options to use throughout this session
-}
-
-// ERC20VotesRaw is an auto generated low-level Go binding around an Ethereum contract.
-type ERC20VotesRaw struct {
-	Contract *ERC20Votes // Generic contract binding to access the raw methods on
-}
-
-// ERC20VotesCallerRaw is an auto generated low-level read-only Go binding around an Ethereum contract.
-type ERC20VotesCallerRaw struct {
-	Contract *ERC20VotesCaller // Generic read-only contract binding to access the raw methods on
-}
-
-// ERC20VotesTransactorRaw is an auto generated low-level write-only Go binding around an Ethereum contract.
-type ERC20VotesTransactorRaw struct {
-	Contract *ERC20VotesTransactor // Generic write-only contract binding to access the raw methods on
-}
-
-// NewERC20Votes creates a new instance of ERC20Votes, bound to a specific deployed contract.
-func NewERC20Votes(address common.Address, backend bind.ContractBackend) (*ERC20Votes, error) {
-	contract, err := bindERC20Votes(address, backend, backend, backend)
-	if err != nil {
-		return nil, err
-	}
-	return &ERC20Votes{ERC20VotesCaller: ERC20VotesCaller{contract: contract}, ERC20VotesTransactor: ERC20VotesTransactor{contract: contract}, ERC20VotesFilterer: ERC20VotesFilterer{contract: contract}}, nil
-}
-
-// NewERC20VotesCaller creates a new read-only instance of ERC20Votes, bound to a specific deployed contract.
-func NewERC20VotesCaller(address common.Address, caller bind.ContractCaller) (*ERC20VotesCaller, error) {
-	contract, err := bindERC20Votes(address, caller, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-	return &ERC20VotesCaller{contract: contract}, nil
-}
-
-// NewERC20VotesTransactor creates a new write-only instance of ERC20Votes, bound to a specific deployed contract.
-func NewERC20VotesTransactor(address common.Address, transactor bind.ContractTransactor) (*ERC20VotesTransactor, error) {
-	contract, err := bindERC20Votes(address, nil, transactor, nil)
-	if err != nil {
-		return nil, err
-	}
-	return &ERC20VotesTransactor{contract: contract}, nil
-}
-
-// NewERC20VotesFilterer creates a new log filterer instance of ERC20Votes, bound to a specific deployed contract.
-func NewERC20VotesFilterer(address common.Address, filterer bind.ContractFilterer) (*ERC20VotesFilterer, error) {
-	contract, err := bindERC20Votes(address, nil, nil, filterer)
-	if err != nil {
-		return nil, err
-	}
-	return &ERC20VotesFilterer{contract: contract}, nil
-}
-
-// bindERC20Votes binds a generic wrapper to an already deployed contract.
-func bindERC20Votes(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor, filterer bind.ContractFilterer) (*bind.BoundContract, error) {
-	parsed, err := abi.JSON(strings.NewReader(ERC20VotesABI))
-	if err != nil {
-		return nil, err
-	}
-	return bind.NewBoundContract(address, parsed, caller, transactor, filterer), nil
-}
-
-// Call invokes the (constant) contract method with params as input values and
-// sets the output to result. The result type might be a single field for simple
-// returns, a slice of interfaces for anonymous returns and a struct for named
-// returns.
-func (_ERC20Votes *ERC20VotesRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
-	return _ERC20Votes.Contract.ERC20VotesCaller.contract.Call(opts, result, method, params...)
-}
-
-// Transfer initiates a plain transaction to move funds to the contract, calling
-// its default method if one is available.
-func (_ERC20Votes *ERC20VotesRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.ERC20VotesTransactor.contract.Transfer(opts)
-}
-
-// Transact invokes the (paid) contract method with params as input values.
-func (_ERC20Votes *ERC20VotesRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.ERC20VotesTransactor.contract.Transact(opts, method, params...)
-}
-
-// Call invokes the (constant) contract method with params as input values and
-// sets the output to result. The result type might be a single field for simple
-// returns, a slice of interfaces for anonymous returns and a struct for named
-// returns.
-func (_ERC20Votes *ERC20VotesCallerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
-	return _ERC20Votes.Contract.contract.Call(opts, result, method, params...)
-}
-
-// Transfer initiates a plain transaction to move funds to the contract, calling
-// its default method if one is available.
-func (_ERC20Votes *ERC20VotesTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.contract.Transfer(opts)
-}
-
-// Transact invokes the (paid) contract method with params as input values.
-func (_ERC20Votes *ERC20VotesTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.contract.Transact(opts, method, params...)
-}
-
-// DOMAINSEPARATOR is a free data retrieval call binding the contract method 0x3644e515.
-//
-// Solidity: function DOMAIN_SEPARATOR() view returns(bytes32)
-func (_ERC20Votes *ERC20VotesCaller) DOMAINSEPARATOR(opts *bind.CallOpts) ([32]byte, error) {
-	var out []interface{}
-	err := _ERC20Votes.contract.Call(opts, &out, "DOMAIN_SEPARATOR")
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// DOMAINSEPARATOR is a free data retrieval call binding the contract method 0x3644e515.
-//
-// Solidity: function DOMAIN_SEPARATOR() view returns(bytes32)
-func (_ERC20Votes *ERC20VotesSession) DOMAINSEPARATOR() ([32]byte, error) {
-	return _ERC20Votes.Contract.DOMAINSEPARATOR(&_ERC20Votes.CallOpts)
-}
-
-// DOMAINSEPARATOR is a free data retrieval call binding the contract method 0x3644e515.
-//
-// Solidity: function DOMAIN_SEPARATOR() view returns(bytes32)
-func (_ERC20Votes *ERC20VotesCallerSession) DOMAINSEPARATOR() ([32]byte, error) {
-	return _ERC20Votes.Contract.DOMAINSEPARATOR(&_ERC20Votes.CallOpts)
-}
-
-// Allowance is a free data retrieval call binding the contract method 0xdd62ed3e.
-//
-// Solidity: function allowance(address owner, address spender) view returns(uint256)
-func (_ERC20Votes *ERC20VotesCaller) Allowance(opts *bind.CallOpts, owner common.Address, spender common.Address) (*big.Int, error) {
-	var out []interface{}
-	err := _ERC20Votes.contract.Call(opts, &out, "allowance", owner, spender)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// Allowance is a free data retrieval call binding the contract method 0xdd62ed3e.
-//
-// Solidity: function allowance(address owner, address spender) view returns(uint256)
-func (_ERC20Votes *ERC20VotesSession) Allowance(owner common.Address, spender common.Address) (*big.Int, error) {
-	return _ERC20Votes.Contract.Allowance(&_ERC20Votes.CallOpts, owner, spender)
-}
-
-// Allowance is a free data retrieval call binding the contract method 0xdd62ed3e.
-//
-// Solidity: function allowance(address owner, address spender) view returns(uint256)
-func (_ERC20Votes *ERC20VotesCallerSession) Allowance(owner common.Address, spender common.Address) (*big.Int, error) {
-	return _ERC20Votes.Contract.Allowance(&_ERC20Votes.CallOpts, owner, spender)
-}
-
-// BalanceOf is a free data retrieval call binding the contract method 0x70a08231.
-//
-// Solidity: function balanceOf(address account) view returns(uint256)
-func (_ERC20Votes *ERC20VotesCaller) BalanceOf(opts *bind.CallOpts, account common.Address) (*big.Int, error) {
-	var out []interface{}
-	err := _ERC20Votes.contract.Call(opts, &out, "balanceOf", account)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// BalanceOf is a free data retrieval call binding the contract method 0x70a08231.
-//
-// Solidity: function balanceOf(address account) view returns(uint256)
-func (_ERC20Votes *ERC20VotesSession) BalanceOf(account common.Address) (*big.Int, error) {
-	return _ERC20Votes.Contract.BalanceOf(&_ERC20Votes.CallOpts, account)
-}
-
-// BalanceOf is a free data retrieval call binding the contract method 0x70a08231.
-//
-// Solidity: function balanceOf(address account) view returns(uint256)
-func (_ERC20Votes *ERC20VotesCallerSession) BalanceOf(account common.Address) (*big.Int, error) {
-	return _ERC20Votes.Contract.BalanceOf(&_ERC20Votes.CallOpts, account)
-}
-
-// Checkpoints is a free data retrieval call binding the contract method 0xf1127ed8.
-//
-// Solidity: function checkpoints(address account, uint32 pos) view returns((uint32,uint224))
-func (_ERC20Votes *ERC20VotesCaller) Checkpoints(opts *bind.CallOpts, account common.Address, pos uint32) (ERC20VotesCheckpoint, error) {
-	var out []interface{}
-	err := _ERC20Votes.contract.Call(opts, &out, "checkpoints", account, pos)
-
-	if err != nil {
-		return *new(ERC20VotesCheckpoint), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(ERC20VotesCheckpoint)).(*ERC20VotesCheckpoint)
-
-	return out0, err
-
-}
-
-// Checkpoints is a free data retrieval call binding the contract method 0xf1127ed8.
-//
-// Solidity: function checkpoints(address account, uint32 pos) view returns((uint32,uint224))
-func (_ERC20Votes *ERC20VotesSession) Checkpoints(account common.Address, pos uint32) (ERC20VotesCheckpoint, error) {
-	return _ERC20Votes.Contract.Checkpoints(&_ERC20Votes.CallOpts, account, pos)
-}
-
-// Checkpoints is a free data retrieval call binding the contract method 0xf1127ed8.
-//
-// Solidity: function checkpoints(address account, uint32 pos) view returns((uint32,uint224))
-func (_ERC20Votes *ERC20VotesCallerSession) Checkpoints(account common.Address, pos uint32) (ERC20VotesCheckpoint, error) {
-	return _ERC20Votes.Contract.Checkpoints(&_ERC20Votes.CallOpts, account, pos)
-}
-
-// Decimals is a free data retrieval call binding the contract method 0x313ce567.
-//
-// Solidity: function decimals() view returns(uint8)
-func (_ERC20Votes *ERC20VotesCaller) Decimals(opts *bind.CallOpts) (uint8, error) {
-	var out []interface{}
-	err := _ERC20Votes.contract.Call(opts, &out, "decimals")
-
-	if err != nil {
-		return *new(uint8), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(uint8)).(*uint8)
-
-	return out0, err
-
-}
-
-// Decimals is a free data retrieval call binding the contract method 0x313ce567.
-//
-// Solidity: function decimals() view returns(uint8)
-func (_ERC20Votes *ERC20VotesSession) Decimals() (uint8, error) {
-	return _ERC20Votes.Contract.Decimals(&_ERC20Votes.CallOpts)
-}
-
-// Decimals is a free data retrieval call binding the contract method 0x313ce567.
-//
-// Solidity: function decimals() view returns(uint8)
-func (_ERC20Votes *ERC20VotesCallerSession) Decimals() (uint8, error) {
-	return _ERC20Votes.Contract.Decimals(&_ERC20Votes.CallOpts)
-}
-
-// Delegates is a free data retrieval call binding the contract method 0x587cde1e.
-//
-// Solidity: function delegates(address account) view returns(address)
-func (_ERC20Votes *ERC20VotesCaller) Delegates(opts *bind.CallOpts, account common.Address) (common.Address, error) {
-	var out []interface{}
-	err := _ERC20Votes.contract.Call(opts, &out, "delegates", account)
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// Delegates is a free data retrieval call binding the contract method 0x587cde1e.
-//
-// Solidity: function delegates(address account) view returns(address)
-func (_ERC20Votes *ERC20VotesSession) Delegates(account common.Address) (common.Address, error) {
-	return _ERC20Votes.Contract.Delegates(&_ERC20Votes.CallOpts, account)
-}
-
-// Delegates is a free data retrieval call binding the contract method 0x587cde1e.
-//
-// Solidity: function delegates(address account) view returns(address)
-func (_ERC20Votes *ERC20VotesCallerSession) Delegates(account common.Address) (common.Address, error) {
-	return _ERC20Votes.Contract.Delegates(&_ERC20Votes.CallOpts, account)
-}
-
-// GetPastTotalSupply is a free data retrieval call binding the contract method 0x8e539e8c.
-//
-// Solidity: function getPastTotalSupply(uint256 blockNumber) view returns(uint256)
-func (_ERC20Votes *ERC20VotesCaller) GetPastTotalSupply(opts *bind.CallOpts, blockNumber *big.Int) (*big.Int, error) {
-	var out []interface{}
-	err := _ERC20Votes.contract.Call(opts, &out, "getPastTotalSupply", blockNumber)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// GetPastTotalSupply is a free data retrieval call binding the contract method 0x8e539e8c.
-//
-// Solidity: function getPastTotalSupply(uint256 blockNumber) view returns(uint256)
-func (_ERC20Votes *ERC20VotesSession) GetPastTotalSupply(blockNumber *big.Int) (*big.Int, error) {
-	return _ERC20Votes.Contract.GetPastTotalSupply(&_ERC20Votes.CallOpts, blockNumber)
-}
-
-// GetPastTotalSupply is a free data retrieval call binding the contract method 0x8e539e8c.
-//
-// Solidity: function getPastTotalSupply(uint256 blockNumber) view returns(uint256)
-func (_ERC20Votes *ERC20VotesCallerSession) GetPastTotalSupply(blockNumber *big.Int) (*big.Int, error) {
-	return _ERC20Votes.Contract.GetPastTotalSupply(&_ERC20Votes.CallOpts, blockNumber)
-}
-
-// GetPastVotes is a free data retrieval call binding the contract method 0x3a46b1a8.
-//
-// Solidity: function getPastVotes(address account, uint256 blockNumber) view returns(uint256)
-func (_ERC20Votes *ERC20VotesCaller) GetPastVotes(opts *bind.CallOpts, account common.Address, blockNumber *big.Int) (*big.Int, error) {
-	var out []interface{}
-	err := _ERC20Votes.contract.Call(opts, &out, "getPastVotes", account, blockNumber)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// GetPastVotes is a free data retrieval call binding the contract method 0x3a46b1a8.
-//
-// Solidity: function getPastVotes(address account, uint256 blockNumber) view returns(uint256)
-func (_ERC20Votes *ERC20VotesSession) GetPastVotes(account common.Address, blockNumber *big.Int) (*big.Int, error) {
-	return _ERC20Votes.Contract.GetPastVotes(&_ERC20Votes.CallOpts, account, blockNumber)
-}
-
-// GetPastVotes is a free data retrieval call binding the contract method 0x3a46b1a8.
-//
-// Solidity: function getPastVotes(address account, uint256 blockNumber) view returns(uint256)
-func (_ERC20Votes *ERC20VotesCallerSession) GetPastVotes(account common.Address, blockNumber *big.Int) (*big.Int, error) {
-	return _ERC20Votes.Contract.GetPastVotes(&_ERC20Votes.CallOpts, account, blockNumber)
-}
-
-// GetVotes is a free data retrieval call binding the contract method 0x9ab24eb0.
-//
-// Solidity: function getVotes(address account) view returns(uint256)
-func (_ERC20Votes *ERC20VotesCaller) GetVotes(opts *bind.CallOpts, account common.Address) (*big.Int, error) {
-	var out []interface{}
-	err := _ERC20Votes.contract.Call(opts, &out, "getVotes", account)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// GetVotes is a free data retrieval call binding the contract method 0x9ab24eb0.
-//
-// Solidity: function getVotes(address account) view returns(uint256)
-func (_ERC20Votes *ERC20VotesSession) GetVotes(account common.Address) (*big.Int, error) {
-	return _ERC20Votes.Contract.GetVotes(&_ERC20Votes.CallOpts, account)
-}
-
-// GetVotes is a free data retrieval call binding the contract method 0x9ab24eb0.
-//
-// Solidity: function getVotes(address account) view returns(uint256)
-func (_ERC20Votes *ERC20VotesCallerSession) GetVotes(account common.Address) (*big.Int, error) {
-	return _ERC20Votes.Contract.GetVotes(&_ERC20Votes.CallOpts, account)
-}
-
-// Name is a free data retrieval call binding the contract method 0x06fdde03.
-//
-// Solidity: function name() view returns(string)
-func (_ERC20Votes *ERC20VotesCaller) Name(opts *bind.CallOpts) (string, error) {
-	var out []interface{}
-	err := _ERC20Votes.contract.Call(opts, &out, "name")
-
-	if err != nil {
-		return *new(string), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(string)).(*string)
-
-	return out0, err
-
-}
-
-// Name is a free data retrieval call binding the contract method 0x06fdde03.
-//
-// Solidity: function name() view returns(string)
-func (_ERC20Votes *ERC20VotesSession) Name() (string, error) {
-	return _ERC20Votes.Contract.Name(&_ERC20Votes.CallOpts)
-}
-
-// Name is a free data retrieval call binding the contract method 0x06fdde03.
-//
-// Solidity: function name() view returns(string)
-func (_ERC20Votes *ERC20VotesCallerSession) Name() (string, error) {
-	return _ERC20Votes.Contract.Name(&_ERC20Votes.CallOpts)
-}
-
-// Nonces is a free data retrieval call binding the contract method 0x7ecebe00.
-//
-// Solidity: function nonces(address owner) view returns(uint256)
-func (_ERC20Votes *ERC20VotesCaller) Nonces(opts *bind.CallOpts, owner common.Address) (*big.Int, error) {
-	var out []interface{}
-	err := _ERC20Votes.contract.Call(opts, &out, "nonces", owner)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// Nonces is a free data retrieval call binding the contract method 0x7ecebe00.
-//
-// Solidity: function nonces(address owner) view returns(uint256)
-func (_ERC20Votes *ERC20VotesSession) Nonces(owner common.Address) (*big.Int, error) {
-	return _ERC20Votes.Contract.Nonces(&_ERC20Votes.CallOpts, owner)
-}
-
-// Nonces is a free data retrieval call binding the contract method 0x7ecebe00.
-//
-// Solidity: function nonces(address owner) view returns(uint256)
-func (_ERC20Votes *ERC20VotesCallerSession) Nonces(owner common.Address) (*big.Int, error) {
-	return _ERC20Votes.Contract.Nonces(&_ERC20Votes.CallOpts, owner)
-}
-
-// NumCheckpoints is a free data retrieval call binding the contract method 0x6fcfff45.
-//
-// Solidity: function numCheckpoints(address account) view returns(uint32)
-func (_ERC20Votes *ERC20VotesCaller) NumCheckpoints(opts *bind.CallOpts, account common.Address) (uint32, error) {
-	var out []interface{}
-	err := _ERC20Votes.contract.Call(opts, &out, "numCheckpoints", account)
-
-	if err != nil {
-		return *new(uint32), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(uint32)).(*uint32)
-
-	return out0, err
-
-}
-
-// NumCheckpoints is a free data retrieval call binding the contract method 0x6fcfff45.
-//
-// Solidity: function numCheckpoints(address account) view returns(uint32)
-func (_ERC20Votes *ERC20VotesSession) NumCheckpoints(account common.Address) (uint32, error) {
-	return _ERC20Votes.Contract.NumCheckpoints(&_ERC20Votes.CallOpts, account)
-}
-
-// NumCheckpoints is a free data retrieval call binding the contract method 0x6fcfff45.
-//
-// Solidity: function numCheckpoints(address account) view returns(uint32)
-func (_ERC20Votes *ERC20VotesCallerSession) NumCheckpoints(account common.Address) (uint32, error) {
-	return _ERC20Votes.Contract.NumCheckpoints(&_ERC20Votes.CallOpts, account)
-}
-
-// Symbol is a free data retrieval call binding the contract method 0x95d89b41.
-//
-// Solidity: function symbol() view returns(string)
-func (_ERC20Votes *ERC20VotesCaller) Symbol(opts *bind.CallOpts) (string, error) {
-	var out []interface{}
-	err := _ERC20Votes.contract.Call(opts, &out, "symbol")
-
-	if err != nil {
-		return *new(string), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(string)).(*string)
-
-	return out0, err
-
-}
-
-// Symbol is a free data retrieval call binding the contract method 0x95d89b41.
-//
-// Solidity: function symbol() view returns(string)
-func (_ERC20Votes *ERC20VotesSession) Symbol() (string, error) {
-	return _ERC20Votes.Contract.Symbol(&_ERC20Votes.CallOpts)
-}
-
-// Symbol is a free data retrieval call binding the contract method 0x95d89b41.
-//
-// Solidity: function symbol() view returns(string)
-func (_ERC20Votes *ERC20VotesCallerSession) Symbol() (string, error) {
-	return _ERC20Votes.Contract.Symbol(&_ERC20Votes.CallOpts)
-}
-
-// TotalSupply is a free data retrieval call binding the contract method 0x18160ddd.
-//
-// Solidity: function totalSupply() view returns(uint256)
-func (_ERC20Votes *ERC20VotesCaller) TotalSupply(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _ERC20Votes.contract.Call(opts, &out, "totalSupply")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// TotalSupply is a free data retrieval call binding the contract method 0x18160ddd.
-//
-// Solidity: function totalSupply() view returns(uint256)
-func (_ERC20Votes *ERC20VotesSession) TotalSupply() (*big.Int, error) {
-	return _ERC20Votes.Contract.TotalSupply(&_ERC20Votes.CallOpts)
-}
-
-// TotalSupply is a free data retrieval call binding the contract method 0x18160ddd.
-//
-// Solidity: function totalSupply() view returns(uint256)
-func (_ERC20Votes *ERC20VotesCallerSession) TotalSupply() (*big.Int, error) {
-	return _ERC20Votes.Contract.TotalSupply(&_ERC20Votes.CallOpts)
-}
-
-// Approve is a paid mutator transaction binding the contract method 0x095ea7b3.
-//
-// Solidity: function approve(address spender, uint256 amount) returns(bool)
-func (_ERC20Votes *ERC20VotesTransactor) Approve(opts *bind.TransactOpts, spender common.Address, amount *big.Int) (*types.Transaction, error) {
-	return _ERC20Votes.contract.Transact(opts, "approve", spender, amount)
-}
-
-// Approve is a paid mutator transaction binding the contract method 0x095ea7b3.
-//
-// Solidity: function approve(address spender, uint256 amount) returns(bool)
-func (_ERC20Votes *ERC20VotesSession) Approve(spender common.Address, amount *big.Int) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.Approve(&_ERC20Votes.TransactOpts, spender, amount)
-}
-
-// Approve is a paid mutator transaction binding the contract method 0x095ea7b3.
-//
-// Solidity: function approve(address spender, uint256 amount) returns(bool)
-func (_ERC20Votes *ERC20VotesTransactorSession) Approve(spender common.Address, amount *big.Int) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.Approve(&_ERC20Votes.TransactOpts, spender, amount)
-}
-
-// DecreaseAllowance is a paid mutator transaction binding the contract method 0xa457c2d7.
-//
-// Solidity: function decreaseAllowance(address spender, uint256 subtractedValue) returns(bool)
-func (_ERC20Votes *ERC20VotesTransactor) DecreaseAllowance(opts *bind.TransactOpts, spender common.Address, subtractedValue *big.Int) (*types.Transaction, error) {
-	return _ERC20Votes.contract.Transact(opts, "decreaseAllowance", spender, subtractedValue)
-}
-
-// DecreaseAllowance is a paid mutator transaction binding the contract method 0xa457c2d7.
-//
-// Solidity: function decreaseAllowance(address spender, uint256 subtractedValue) returns(bool)
-func (_ERC20Votes *ERC20VotesSession) DecreaseAllowance(spender common.Address, subtractedValue *big.Int) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.DecreaseAllowance(&_ERC20Votes.TransactOpts, spender, subtractedValue)
-}
-
-// DecreaseAllowance is a paid mutator transaction binding the contract method 0xa457c2d7.
-//
-// Solidity: function decreaseAllowance(address spender, uint256 subtractedValue) returns(bool)
-func (_ERC20Votes *ERC20VotesTransactorSession) DecreaseAllowance(spender common.Address, subtractedValue *big.Int) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.DecreaseAllowance(&_ERC20Votes.TransactOpts, spender, subtractedValue)
-}
-
-// Delegate is a paid mutator transaction binding the contract method 0x5c19a95c.
-//
-// Solidity: function delegate(address delegatee) returns()
-func (_ERC20Votes *ERC20VotesTransactor) Delegate(opts *bind.TransactOpts, delegatee common.Address) (*types.Transaction, error) {
-	return _ERC20Votes.contract.Transact(opts, "delegate", delegatee)
-}
-
-// Delegate is a paid mutator transaction binding the contract method 0x5c19a95c.
-//
-// Solidity: function delegate(address delegatee) returns()
-func (_ERC20Votes *ERC20VotesSession) Delegate(delegatee common.Address) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.Delegate(&_ERC20Votes.TransactOpts, delegatee)
-}
-
-// Delegate is a paid mutator transaction binding the contract method 0x5c19a95c.
-//
-// Solidity: function delegate(address delegatee) returns()
-func (_ERC20Votes *ERC20VotesTransactorSession) Delegate(delegatee common.Address) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.Delegate(&_ERC20Votes.TransactOpts, delegatee)
-}
-
-// DelegateBySig is a paid mutator transaction binding the contract method 0xc3cda520.
-//
-// Solidity: function delegateBySig(address delegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) returns()
-func (_ERC20Votes *ERC20VotesTransactor) DelegateBySig(opts *bind.TransactOpts, delegatee common.Address, nonce *big.Int, expiry *big.Int, v uint8, r [32]byte, s [32]byte) (*types.Transaction, error) {
-	return _ERC20Votes.contract.Transact(opts, "delegateBySig", delegatee, nonce, expiry, v, r, s)
-}
-
-// DelegateBySig is a paid mutator transaction binding the contract method 0xc3cda520.
-//
-// Solidity: function delegateBySig(address delegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) returns()
-func (_ERC20Votes *ERC20VotesSession) DelegateBySig(delegatee common.Address, nonce *big.Int, expiry *big.Int, v uint8, r [32]byte, s [32]byte) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.DelegateBySig(&_ERC20Votes.TransactOpts, delegatee, nonce, expiry, v, r, s)
-}
-
-// DelegateBySig is a paid mutator transaction binding the contract method 0xc3cda520.
-//
-// Solidity: function delegateBySig(address delegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) returns()
-func (_ERC20Votes *ERC20VotesTransactorSession) DelegateBySig(delegatee common.Address, nonce *big.Int, expiry *big.Int, v uint8, r [32]byte, s [32]byte) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.DelegateBySig(&_ERC20Votes.TransactOpts, delegatee, nonce, expiry, v, r, s)
-}
-
-// IncreaseAllowance is a paid mutator transaction binding the contract method 0x39509351.
-//
-// Solidity: function increaseAllowance(address spender, uint256 addedValue) returns(bool)
-func (_ERC20Votes *ERC20VotesTransactor) IncreaseAllowance(opts *bind.TransactOpts, spender common.Address, addedValue *big.Int) (*types.Transaction, error) {
-	return _ERC20Votes.contract.Transact(opts, "increaseAllowance", spender, addedValue)
-}
-
-// IncreaseAllowance is a paid mutator transaction binding the contract method 0x39509351.
-//
-// Solidity: function increaseAllowance(address spender, uint256 addedValue) returns(bool)
-func (_ERC20Votes *ERC20VotesSession) IncreaseAllowance(spender common.Address, addedValue *big.Int) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.IncreaseAllowance(&_ERC20Votes.TransactOpts, spender, addedValue)
-}
-
-// IncreaseAllowance is a paid mutator transaction binding the contract method 0x39509351.
-//
-// Solidity: function increaseAllowance(address spender, uint256 addedValue) returns(bool)
-func (_ERC20Votes *ERC20VotesTransactorSession) IncreaseAllowance(spender common.Address, addedValue *big.Int) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.IncreaseAllowance(&_ERC20Votes.TransactOpts, spender, addedValue)
-}
-
-// Permit is a paid mutator transaction binding the contract method 0xd505accf.
-//
-// Solidity: function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) returns()
-func (_ERC20Votes *ERC20VotesTransactor) Permit(opts *bind.TransactOpts, owner common.Address, spender common.Address, value *big.Int, deadline *big.Int, v uint8, r [32]byte, s [32]byte) (*types.Transaction, error) {
-	return _ERC20Votes.contract.Transact(opts, "permit", owner, spender, value, deadline, v, r, s)
-}
-
-// Permit is a paid mutator transaction binding the contract method 0xd505accf.
-//
-// Solidity: function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) returns()
-func (_ERC20Votes *ERC20VotesSession) Permit(owner common.Address, spender common.Address, value *big.Int, deadline *big.Int, v uint8, r [32]byte, s [32]byte) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.Permit(&_ERC20Votes.TransactOpts, owner, spender, value, deadline, v, r, s)
-}
-
-// Permit is a paid mutator transaction binding the contract method 0xd505accf.
-//
-// Solidity: function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) returns()
-func (_ERC20Votes *ERC20VotesTransactorSession) Permit(owner common.Address, spender common.Address, value *big.Int, deadline *big.Int, v uint8, r [32]byte, s [32]byte) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.Permit(&_ERC20Votes.TransactOpts, owner, spender, value, deadline, v, r, s)
-}
-
-// Transfer is a paid mutator transaction binding the contract method 0xa9059cbb.
-//
-// Solidity: function transfer(address recipient, uint256 amount) returns(bool)
-func (_ERC20Votes *ERC20VotesTransactor) Transfer(opts *bind.TransactOpts, recipient common.Address, amount *big.Int) (*types.Transaction, error) {
-	return _ERC20Votes.contract.Transact(opts, "transfer", recipient, amount)
-}
-
-// Transfer is a paid mutator transaction binding the contract method 0xa9059cbb.
-//
-// Solidity: function transfer(address recipient, uint256 amount) returns(bool)
-func (_ERC20Votes *ERC20VotesSession) Transfer(recipient common.Address, amount *big.Int) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.Transfer(&_ERC20Votes.TransactOpts, recipient, amount)
-}
-
-// Transfer is a paid mutator transaction binding the contract method 0xa9059cbb.
-//
-// Solidity: function transfer(address recipient, uint256 amount) returns(bool)
-func (_ERC20Votes *ERC20VotesTransactorSession) Transfer(recipient common.Address, amount *big.Int) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.Transfer(&_ERC20Votes.TransactOpts, recipient, amount)
-}
-
-// TransferFrom is a paid mutator transaction binding the contract method 0x23b872dd.
-//
-// Solidity: function transferFrom(address sender, address recipient, uint256 amount) returns(bool)
-func (_ERC20Votes *ERC20VotesTransactor) TransferFrom(opts *bind.TransactOpts, sender common.Address, recipient common.Address, amount *big.Int) (*types.Transaction, error) {
-	return _ERC20Votes.contract.Transact(opts, "transferFrom", sender, recipient, amount)
-}
-
-// TransferFrom is a paid mutator transaction binding the contract method 0x23b872dd.
-//
-// Solidity: function transferFrom(address sender, address recipient, uint256 amount) returns(bool)
-func (_ERC20Votes *ERC20VotesSession) TransferFrom(sender common.Address, recipient common.Address, amount *big.Int) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.TransferFrom(&_ERC20Votes.TransactOpts, sender, recipient, amount)
-}
-
-// TransferFrom is a paid mutator transaction binding the contract method 0x23b872dd.
-//
-// Solidity: function transferFrom(address sender, address recipient, uint256 amount) returns(bool)
-func (_ERC20Votes *ERC20VotesTransactorSession) TransferFrom(sender common.Address, recipient common.Address, amount *big.Int) (*types.Transaction, error) {
-	return _ERC20Votes.Contract.TransferFrom(&_ERC20Votes.TransactOpts, sender, recipient, amount)
-}
-
-// ERC20VotesApprovalIterator is returned from FilterApproval and is used to iterate over the raw logs and unpacked data for Approval events raised by the ERC20Votes contract.
-type ERC20VotesApprovalIterator struct {
-	Event *ERC20VotesApproval // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *ERC20VotesApprovalIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(ERC20VotesApproval)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(ERC20VotesApproval)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *ERC20VotesApprovalIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *ERC20VotesApprovalIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// ERC20VotesApproval represents a Approval event raised by the ERC20Votes contract.
-type ERC20VotesApproval struct {
-	Owner   common.Address
-	Spender common.Address
-	Value   *big.Int
-	Raw     types.Log // Blockchain specific contextual infos
-}
-
-// FilterApproval is a free log retrieval operation binding the contract event 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925.
-//
-// Solidity: event Approval(address indexed owner, address indexed spender, uint256 value)
-func (_ERC20Votes *ERC20VotesFilterer) FilterApproval(opts *bind.FilterOpts, owner []common.Address, spender []common.Address) (*ERC20VotesApprovalIterator, error) {
-
-	var ownerRule []interface{}
-	for _, ownerItem := range owner {
-		ownerRule = append(ownerRule, ownerItem)
-	}
-	var spenderRule []interface{}
-	for _, spenderItem := range spender {
-		spenderRule = append(spenderRule, spenderItem)
-	}
-
-	logs, sub, err := _ERC20Votes.contract.FilterLogs(opts, "Approval", ownerRule, spenderRule)
-	if err != nil {
-		return nil, err
-	}
-	return &ERC20VotesApprovalIterator{contract: _ERC20Votes.contract, event: "Approval", logs: logs, sub: sub}, nil
-}
-
-// WatchApproval is a free log subscription operation binding the contract event 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925.
-//
-// Solidity: event Approval(address indexed owner, address indexed spender, uint256 value)
-func (_ERC20Votes *ERC20VotesFilterer) WatchApproval(opts *bind.WatchOpts, sink chan<- *ERC20VotesApproval, owner []common.Address, spender []common.Address) (event.Subscription, error) {
-
-	var ownerRule []interface{}
-	for _, ownerItem := range owner {
-		ownerRule = append(ownerRule, ownerItem)
-	}
-	var spenderRule []interface{}
-	for _, spenderItem := range spender {
-		spenderRule = append(spenderRule, spenderItem)
-	}
-
-	logs, sub, err := _ERC20Votes.contract.WatchLogs(opts, "Approval", ownerRule, spenderRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(ERC20VotesApproval)
-				if err := _ERC20Votes.contract.UnpackLog(event, "Approval", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseApproval is a log parse operation binding the contract event 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925.
-//
-// Solidity: event Approval(address indexed owner, address indexed spender, uint256 value)
-func (_ERC20Votes *ERC20VotesFilterer) ParseApproval(log types.Log) (*ERC20VotesApproval, error) {
-	event := new(ERC20VotesApproval)
-	if err := _ERC20Votes.contract.UnpackLog(event, "Approval", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// ERC20VotesDelegateChangedIterator is returned from FilterDelegateChanged and is used to iterate over the raw logs and unpacked data for DelegateChanged events raised by the ERC20Votes contract.
-type ERC20VotesDelegateChangedIterator struct {
-	Event *ERC20VotesDelegateChanged // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *ERC20VotesDelegateChangedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(ERC20VotesDelegateChanged)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(ERC20VotesDelegateChanged)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *ERC20VotesDelegateChangedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *ERC20VotesDelegateChangedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// ERC20VotesDelegateChanged represents a DelegateChanged event raised by the ERC20Votes contract.
-type ERC20VotesDelegateChanged struct {
-	Delegator    common.Address
-	FromDelegate common.Address
-	ToDelegate   common.Address
-	Raw          types.Log // Blockchain specific contextual infos
-}
-
-// FilterDelegateChanged is a free log retrieval operation binding the contract event 0x3134e8a2e6d97e929a7e54011ea5485d7d196dd5f0ba4d4ef95803e8e3fc257f.
-//
-// Solidity: event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate)
-func (_ERC20Votes *ERC20VotesFilterer) FilterDelegateChanged(opts *bind.FilterOpts, delegator []common.Address, fromDelegate []common.Address, toDelegate []common.Address) (*ERC20VotesDelegateChangedIterator, error) {
-
-	var delegatorRule []interface{}
-	for _, delegatorItem := range delegator {
-		delegatorRule = append(delegatorRule, delegatorItem)
-	}
-	var fromDelegateRule []interface{}
-	for _, fromDelegateItem := range fromDelegate {
-		fromDelegateRule = append(fromDelegateRule, fromDelegateItem)
-	}
-	var toDelegateRule []interface{}
-	for _, toDelegateItem := range toDelegate {
-		toDelegateRule = append(toDelegateRule, toDelegateItem)
-	}
-
-	logs, sub, err := _ERC20Votes.contract.FilterLogs(opts, "DelegateChanged", delegatorRule, fromDelegateRule, toDelegateRule)
-	if err != nil {
-		return nil, err
-	}
-	return &ERC20VotesDelegateChangedIterator{contract: _ERC20Votes.contract, event: "DelegateChanged", logs: logs, sub: sub}, nil
-}
-
-// WatchDelegateChanged is a free log subscription operation binding the contract event 0x3134e8a2e6d97e929a7e54011ea5485d7d196dd5f0ba4d4ef95803e8e3fc257f.
-//
-// Solidity: event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate)
-func (_ERC20Votes *ERC20VotesFilterer) WatchDelegateChanged(opts *bind.WatchOpts, sink chan<- *ERC20VotesDelegateChanged, delegator []common.Address, fromDelegate []common.Address, toDelegate []common.Address) (event.Subscription, error) {
-
-	var delegatorRule []interface{}
-	for _, delegatorItem := range delegator {
-		delegatorRule = append(delegatorRule, delegatorItem)
-	}
-	var fromDelegateRule []interface{}
-	for _, fromDelegateItem := range fromDelegate {
-		fromDelegateRule = append(fromDelegateRule, fromDelegateItem)
-	}
-	var toDelegateRule []interface{}
-	for _, toDelegateItem := range toDelegate {
-		toDelegateRule = append(toDelegateRule, toDelegateItem)
-	}
-
-	logs, sub, err := _ERC20Votes.contract.WatchLogs(opts, "DelegateChanged", delegatorRule, fromDelegateRule, toDelegateRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(ERC20VotesDelegateChanged)
-				if err := _ERC20Votes.contract.UnpackLog(event, "DelegateChanged", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseDelegateChanged is a log parse operation binding the contract event 0x3134e8a2e6d97e929a7e54011ea5485d7d196dd5f0ba4d4ef95803e8e3fc257f.
-//
-// Solidity: event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate)
-func (_ERC20Votes *ERC20VotesFilterer) ParseDelegateChanged(log types.Log) (*ERC20VotesDelegateChanged, error) {
-	event := new(ERC20VotesDelegateChanged)
-	if err := _ERC20Votes.contract.UnpackLog(event, "DelegateChanged", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// ERC20VotesDelegateVotesChangedIterator is returned from FilterDelegateVotesChanged and is used to iterate over the raw logs and unpacked data for DelegateVotesChanged events raised by the ERC20Votes contract.
-type ERC20VotesDelegateVotesChangedIterator struct {
-	Event *ERC20VotesDelegateVotesChanged // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *ERC20VotesDelegateVotesChangedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(ERC20VotesDelegateVotesChanged)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(ERC20VotesDelegateVotesChanged)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *ERC20VotesDelegateVotesChangedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *ERC20VotesDelegateVotesChangedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// ERC20VotesDelegateVotesChanged represents a DelegateVotesChanged event raised by the ERC20Votes contract.
-type ERC20VotesDelegateVotesChanged struct {
-	Delegate        common.Address
-	PreviousBalance *big.Int
-	NewBalance      *big.Int
-	Raw             types.Log // Blockchain specific contextual infos
-}
-
-// FilterDelegateVotesChanged is a free log retrieval operation binding the contract event 0xdec2bacdd2f05b59de34da9b523dff8be42e5e38e818c82fdb0bae774387a724.
-//
-// Solidity: event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance)
-func (_ERC20Votes *ERC20VotesFilterer) FilterDelegateVotesChanged(opts *bind.FilterOpts, delegate []common.Address) (*ERC20VotesDelegateVotesChangedIterator, error) {
-
-	var delegateRule []interface{}
-	for _, delegateItem := range delegate {
-		delegateRule = append(delegateRule, delegateItem)
-	}
-
-	logs, sub, err := _ERC20Votes.contract.FilterLogs(opts, "DelegateVotesChanged", delegateRule)
-	if err != nil {
-		return nil, err
-	}
-	return &ERC20VotesDelegateVotesChangedIterator{contract: _ERC20Votes.contract, event: "DelegateVotesChanged", logs: logs, sub: sub}, nil
-}
-
-// WatchDelegateVotesChanged is a free log subscription operation binding the contract event 0xdec2bacdd2f05b59de34da9b523dff8be42e5e38e818c82fdb0bae774387a724.
-//
-// Solidity: event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance)
-func (_ERC20Votes *ERC20VotesFilterer) WatchDelegateVotesChanged(opts *bind.WatchOpts, sink chan<- *ERC20VotesDelegateVotesChanged, delegate []common.Address) (event.Subscription, error) {
-
-	var delegateRule []interface{}
-	for _, delegateItem := range delegate {
-		delegateRule = append(delegateRule, delegateItem)
-	}
-
-	logs, sub, err := _ERC20Votes.contract.WatchLogs(opts, "DelegateVotesChanged", delegateRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(ERC20VotesDelegateVotesChanged)
-				if err := _ERC20Votes.contract.UnpackLog(event, "DelegateVotesChanged", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseDelegateVotesChanged is a log parse operation binding the contract event 0xdec2bacdd2f05b59de34da9b523dff8be42e5e38e818c82fdb0bae774387a724.
-//
-// Solidity: event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance)
-func (_ERC20Votes *ERC20VotesFilterer) ParseDelegateVotesChanged(log types.Log) (*ERC20VotesDelegateVotesChanged, error) {
-	event := new(ERC20VotesDelegateVotesChanged)
-	if err := _ERC20Votes.contract.UnpackLog(event, "DelegateVotesChanged", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// ERC20VotesTransferIterator is returned from FilterTransfer and is used to iterate over the raw logs and unpacked data for Transfer events raised by the ERC20Votes contract.
-type ERC20VotesTransferIterator struct {
-	Event *ERC20VotesTransfer // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *ERC20VotesTransferIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(ERC20VotesTransfer)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(ERC20VotesTransfer)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *ERC20VotesTransferIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *ERC20VotesTransferIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// ERC20VotesTransfer represents a Transfer event raised by the ERC20Votes contract.
-type ERC20VotesTransfer struct {
-	From  common.Address
-	To    common.Address
-	Value *big.Int
-	Raw   types.Log // Blockchain specific contextual infos
-}
-
-// FilterTransfer is a free log retrieval operation binding the contract event 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef.
-//
-// Solidity: event Transfer(address indexed from, address indexed to, uint256 value)
-func (_ERC20Votes *ERC20VotesFilterer) FilterTransfer(opts *bind.FilterOpts, from []common.Address, to []common.Address) (*ERC20VotesTransferIterator, error) {
-
-	var fromRule []interface{}
-	for _, fromItem := range from {
-		fromRule = append(fromRule, fromItem)
-	}
-	var toRule []interface{}
-	for _, toItem := range to {
-		toRule = append(toRule, toItem)
-	}
-
-	logs, sub, err := _ERC20Votes.contract.FilterLogs(opts, "Transfer", fromRule, toRule)
-	if err != nil {
-		return nil, err
-	}
-	return &ERC20VotesTransferIterator{contract: _ERC20Votes.contract, event: "Transfer", logs: logs, sub: sub}, nil
-}
-
-// WatchTransfer is a free log subscription operation binding the contract event 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef.
-//
-// Solidity: event Transfer(address indexed from, address indexed to, uint256 value)
-func (_ERC20Votes *ERC20VotesFilterer) WatchTransfer(opts *bind.WatchOpts, sink chan<- *ERC20VotesTransfer, from []common.Address, to []common.Address) (event.Subscription, error) {
-
-	var fromRule []interface{}
-	for _, fromItem := range from {
-		fromRule = append(fromRule, fromItem)
-	}
-	var toRule []interface{}
-	for _, toItem := range to {
-		toRule = append(toRule, toItem)
-	}
-
-	logs, sub, err := _ERC20Votes.contract.WatchLogs(opts, "Transfer", fromRule, toRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(ERC20VotesTransfer)
-				if err := _ERC20Votes.contract.UnpackLog(event, "Transfer", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseTransfer is a log parse operation binding the contract event 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef.
-//
-// Solidity: event Transfer(address indexed from, address indexed to, uint256 value)
-func (_ERC20Votes *ERC20VotesFilterer) ParseTransfer(log types.Log) (*ERC20VotesTransfer, error) {
-	event := new(ERC20VotesTransfer)
-	if err := _ERC20Votes.contract.UnpackLog(event, "Transfer", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
 }
 
 // ERC721MetaData contains all meta data concerning the ERC721 contract.

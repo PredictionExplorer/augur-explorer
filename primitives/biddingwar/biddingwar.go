@@ -36,6 +36,7 @@ type BWBidEvent struct {
 	LogIndex			int64
 	RandomWalkTokenId	int64
 	PrizeTime			int64
+	RoundNum			int64
 	ContractAddr		string
 	LastBidderAddr		string
 	BidPrice			string
@@ -150,6 +151,18 @@ type BWRaffleNFTClaimed struct {
 	WinnerAddr			string
 	WinnerRecId			int64
 	TokenId				int64
+}
+type BWDonatedNFTClaimed struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	RoundNum			int64
+	Index				int64
+	TokenAddr			string
+	TokenId				string
 }
 type BWERC721Transfer struct {
 	EvtId                   int64

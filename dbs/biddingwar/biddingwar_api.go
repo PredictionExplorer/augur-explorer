@@ -78,6 +78,32 @@ func (sw *SQLStorageWrapper) Get_biddingwar_statistics() p.BWStatistics {
 	stats.NumDonatedNFTs=uint64(null_donated_nfts.Int64)
 	return stats
 }
+func (sw *SQLStorageWrapper) Get_biddingwar_round_statistics(round_num int64) p.BwRoundStats {
+
+	var stats p.BwRoundStats
+	var query string
+	query = "SELECT "+
+				"round_num, "+
+				"total_bids,"+
+				"total_nft_donated," +
+			"FROM bw_round_stats WHERE round_num=$1LIMIT 1"
+
+	row := sw.S.Db().QueryRow(query)
+	var err error
+	err=row.Scan(
+		&stats.RoundNum,
+		&stats.TotalBids,
+		&stats.TotalNFTDonated,
+	)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return stats
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_biddingwar_round_statistics(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return stats
+}
 func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.BwBidRec {
 
 	if limit == 0 { limit = 1000000 }
@@ -98,7 +124,8 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.BwBidRec {
 				"b.erc20_amount/1e18 erc20_amount_eth, "+
 				"d.token_id,"+
 				"d.tok_addr, "+
-				"b.msg "+
+				"b.msg, "+
+				"b.round_num "+
 			"FROM "+sw.S.SchemaName()+".bw_bid b "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address ba ON b.bidder_aid=ba.address_id "+
@@ -137,6 +164,7 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.BwBidRec {
 			&null_token_id,
 			&null_tok_addr,
 			&rec.Message,
+			&rec.RoundNum,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -228,7 +256,8 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.BwBidRec) {
 				"d.token_id,"+
 				"d.tok_addr, "+
 				"d.token_uri, "+
-				"b.msg "+
+				"b.msg, "+
+				"b.round_num "+
 			"FROM "+sw.S.SchemaName()+".bw_bid b "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+
@@ -261,6 +290,7 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.BwBidRec) {
 		&null_tok_addr,
 		&null_token_uri,
 		&rec.Message,
+		&rec.RoundNum,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -351,7 +381,8 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.BwBidRec {
 				"d.token_id,"+
 				"d.tok_addr, "+
 				"d.token_uri, "+
-				"b.msg "+
+				"b.msg, "+
+				"b.round_num "+
 			"FROM "+sw.S.SchemaName()+".bw_bid b "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+
@@ -391,6 +422,8 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.BwBidRec {
 			&null_token_id,
 			&null_tok_addr,
 			&null_token_uri,
+			&rec.Message,
+			&rec.RoundNum,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

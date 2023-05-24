@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS
 	bw_raffle_deposit,
 	bw_raffle_nft_winner,
 	bw_raffle_nft_claimed,
+	bw_donated_nft_claimed,
 	bw_transfer,
 	bw_contracts,
 	bw_proc_status,
@@ -20,5 +21,6 @@ DROP TABLE IF EXISTS
 	bw_raffle_winner_stats,
 	bw_raffle_nft_winner_stats,
 	bw_glob_stats,
+	bw_round_stats,
 	bw_nft_stats
 CASCADE;
