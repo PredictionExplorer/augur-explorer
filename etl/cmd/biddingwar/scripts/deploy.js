@@ -113,7 +113,7 @@ async function main() {
 
   let prizeAmount = await cosmicGame.prizeAmount();
   let charityAmount = await cosmicGame.charityAmount();
-  await cosmicGame.connect(addr2).claimPrize();
+  await cosmicGame.connect(addr2).claimPrize({gasLimit:1000000});
   let prizeAmount2 = await cosmicGame.prizeAmount();
   let expectedprizeAmount = prizeAmount.sub(charityAmount).div(2);
 
@@ -127,14 +127,14 @@ async function main() {
 
   prizeAmount = await cosmicGame.prizeAmount();
   charityAmount = await cosmicGame.charityAmount();
-  await cosmicGame.connect(addr1).claimPrize();
+  await cosmicGame.connect(addr1).claimPrize({gasLimit:1000000});
   prizeAmount2 = await cosmicGame.prizeAmount();
 	console.log("prizeAmount2="+prizeAmount2)
   bidPrice = await cosmicGame.getBidPrice();
   await cosmicGame.connect(addr1).bid("bid 5",{value:bidPrice});
   prizeTime = await cosmicGame.timeUntilPrize();
   await ethers.provider.send("evm_increaseTime", [prizeTime.toNumber()]);
-  tx = await cosmicGame.connect(addr1).claimPrize();
+  tx = await cosmicGame.connect(addr1).claimPrize({gasLimit:1000000});
   receipt = await tx.wait();
   topic_sig = cosmicSignature.interface.getEventTopic("MintEvent");
   log = receipt.logs.find(x=>x.topics.indexOf(topic_sig)>=0);
@@ -175,7 +175,7 @@ async function main() {
   prizeTime = await cosmicGame.timeUntilPrize();
   await ethers.provider.send("evm_increaseTime", [prizeTime.toNumber()]);
   await ethers.provider.send("evm_mine");
-  await cosmicGame.connect(addr3).claimPrize();
+  await cosmicGame.connect(addr3).claimPrize({gasLimit:1000000});
 
   await cosmicGame.connect(addr1).claimRaffleNFT();
   await cosmicGame.connect(addr1).claimRaffleNFT();

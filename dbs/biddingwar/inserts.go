@@ -306,12 +306,13 @@ func (sw *SQLStorageWrapper) Insert_donated_nft_claimed(evt *p.BWDonatedNFTClaim
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	token_aid := sw.S.Lookup_or_create_address(evt.TokenAddr,0, 0)
+	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
 
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_donated_nft_claimed ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"round_num,idx,token_aid,token_id"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
+					"round_num,idx,token_aid,winner_aid,token_id"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -321,6 +322,7 @@ func (sw *SQLStorageWrapper) Insert_donated_nft_claimed(evt *p.BWDonatedNFTClaim
 		evt.RoundNum,
 		evt.Index,
 		token_aid,
+		winner_aid,
 		evt.TokenId,
 	)
 	if err != nil {

@@ -438,6 +438,83 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.BwBidRec {
 	return records
 
 }
+func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,offset,limit int) []p.BwBidRec {
+
+	var query string
+	query =  "SELECT " +
+				"b.evtlog_id,"+
+				"b.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT,"+
+				"b.time_stamp,"+
+				"b.bidder_aid,"+
+				"ba.addr,"+
+				"b.bid_price,"+
+				"b.bid_price/1e18 bid_price_eth, " +
+				"b.rwalk_nft_id,"+
+				"b.erc20_amount,"+
+				"b.erc20_amount/1e18 erc20_amount_eth, "+
+				"d.token_id,"+
+				"d.tok_addr, "+
+				"d.token_uri, "+
+				"b.msg, "+
+				"b.round_num "+
+			"FROM "+sw.S.SchemaName()+".bw_bid b "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+
+				"LEFT JOIN LATERAL (" +
+					"SELECT d.bid_id,token_id,token_aid,ta.addr tok_addr,d.token_uri "+
+						"FROM "+sw.S.SchemaName()+".bw_nft_donation d "+
+						"JOIN "+sw.S.SchemaName()+".address ta ON d.token_aid=ta.address_id "+
+				") d ON b.id=d.bid_id "+
+			"WHERE b.round_num=$1 "+
+			"ORDER BY b.id OFFSET $2 LIMIT $3"
+
+	rows,err := sw.S.Db().Query(query,round_num,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwBidRec,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwBidRec
+		var null_token_id sql.NullInt64
+		var null_tok_addr,null_token_uri sql.NullString
+		err=rows.Scan(
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BidderAid,
+			&rec.BidderAddr,
+			&rec.BidPrice,
+			&rec.BidPriceEth,
+			&rec.RWalkNFTId,
+			&rec.ERC20_Amount,
+			&rec.ERC20_AmountEth,
+			&null_token_id,
+			&null_tok_addr,
+			&null_token_uri,
+			&rec.Message,
+			&rec.RoundNum,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		rec.NFTDonationTokenId = -1
+		if null_token_id.Valid { rec.NFTDonationTokenId=null_token_id.Int64 }
+		if null_tok_addr.Valid { rec.NFTDonationTokenAddr = null_tok_addr.String }
+		if null_token_uri.Valid { rec.NFTTokenURI = null_token_uri.String }
+		records = append(records,rec)
+	}
+	return records
+
+}
 func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.BwPrizeRec {
 
 	var query string
@@ -996,6 +1073,54 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winners_by_round_num(round_num int64
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_raffle_nft_winnings_by_user(winner_aid int64) []p.BwRaffleNFTWinnerRec {
+
+	var query string
+	query = "SELECT "+
+				"p.evtlog_id,"+
+				"p.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT,"+
+				"p.time_stamp,"+
+				"p.winner_aid,"+
+				"wa.addr,"+
+				"p.round_num, "+
+				"p.winner_idx "+
+			"FROM "+sw.S.SchemaName()+".bw_raffle_nft_winner p "+
+				"LEFT JOIN transaction t ON t.id=p.tx_id "+
+				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+			"WHERE p.winner_aid=$1"
+
+	rows,err := sw.S.Db().Query(query,winner_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwRaffleNFTWinnerRec,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwRaffleNFTWinnerRec
+		err=rows.Scan(
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+			&rec.RoundNum,
+			&rec.WinnerIndex,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
 func (sw *SQLStorageWrapper) Get_raffle_nft_winners(offset,limit int) []p.BwRaffleNFTWinnerRec {
 
 	if limit == 0 { limit = 1000000 }
@@ -1236,6 +1361,60 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_claims_by_user(winner_aid int64) []p
 			&rec.WinnerAid,
 			&rec.WinnerAddr,
 			&rec.TokenId,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_donated_nft_claims(offset,limit int) []p.BwDonatedNFTClaimRec {
+
+	if limit == 0 { limit = 1000000 }
+	var query string
+	query = "SELECT "+
+				"c.id,"+
+				"c.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM c.time_stamp)::BIGINT,"+
+				"c.time_stamp,"+
+				"c.round_num,"+
+				"ta.addr,"+
+				"c.token_id, "+
+				"c.idx, "+
+				"c.winner_aid,"+
+				"wa.addr "+
+			"FROM "+sw.S.SchemaName()+".bw_donated_nft_claimed c "+
+				"LEFT JOIN transaction t ON t.id=c.tx_id "+
+				"LEFT JOIN address ta ON c.token_aid=ta.address_id "+
+				"LEFT JOIN address wa ON c.winner_aid=wa.address_id "+
+			"ORDER BY c.id OFFSET $1 LIMIT $2"
+
+	rows,err := sw.S.Db().Query(query,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwDonatedNFTClaimRec,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwDonatedNFTClaimRec
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.RoundNum,
+			&rec.TokenAddr,
+			&rec.TokenId,
+			&rec.WinnerIndex,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

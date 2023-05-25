@@ -153,7 +153,7 @@ func find_cosmic_token_721_transfer(bid_evtlog_id int64) int64 {
 		Error.Printf(err_str)
 		os.Exit(1)
 	}
-	var eth_evt ERC721Transfer
+	var eth_evt IERC721Transfer
 	err = erc721_abi.UnpackIntoInterface(&eth_evt,"Transfer",log.Data)
 	if err != nil {
 		err_str := fmt.Sprintf("Event Transfer decode error at find_cosmic_token_721_transfer(): %v",err)
@@ -634,7 +634,7 @@ func proc_raffle_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt BWDonatedNFTClaimed
-	var eth_evt CosmicGameDonatedNFTClaimed
+	var eth_evt CosmicGameDonatedNFTClaimedEvent
 
 	Info.Printf("Processing DonatedNFTClaimed event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -642,9 +642,9 @@ func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"DonatedNFTClaimed",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"DonatedNFTClaimedEvent",log.Data)
 	if err != nil {
-		Error.Printf("Event DonatedNFTClaimed decode error: %v",err)
+		Error.Printf("Event DonatedNFTClaimedEvent decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -657,11 +657,14 @@ func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 	evt.RoundNum = log.Topics[1].Big().Int64()
 	evt.TokenId = eth_evt.TokenId.String()
 	evt.Index = eth_evt.Index.Int64()
+	evt.WinnerAddr = eth_evt.Winner.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("DonatedNFTClaimedEvent{\n")
 	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
 	Info.Printf("\tIndex: %v\n",evt.Index)
+	Info.Printf("\tWinner: %v\n",evt.WinnerAddr)
+
 	Info.Printf("\tTokenAddr: %v\n",evt.TokenAddr)
 	Info.Printf("\tTokenId: %v\n",evt.TokenId);
 	Info.Printf("}\n")

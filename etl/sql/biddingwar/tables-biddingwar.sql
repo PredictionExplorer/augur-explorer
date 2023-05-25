@@ -156,6 +156,7 @@ CREATE TABLE bw_donated_nft_claimed (
 	round_num		BIGINT NOT NULL,
 	idx				BIGINT NOT NULL,
 	token_aid		BIGINT NOT NULL,
+	winner_aid		BIGINT NOT NULL,
 	token_id		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );

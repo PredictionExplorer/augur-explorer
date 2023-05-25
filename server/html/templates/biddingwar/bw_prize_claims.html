@@ -11,6 +11,8 @@
 		<th class="market_reports">Winner</th>
 		<th class="market_reports">Prize num</th>
 		<th class="market_reports">Prize amount (ETH)</th>
+		<th class="market_reports"></th>
+		<th class="market_reports"></th>
 	</tr>
 	{{- range $i, $change := .PrizeClaims}}
 		<tr class="market_reports">
@@ -24,6 +26,9 @@
 			<td style="text-align: right;" title="{{.Seed}}">{{printf "%.6f" .AmountEth}}</td>
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/donations/nft/by_prize/{{.PrizeNum}}">&nbsp;&nbsp;Donated NFTs</a>
+			</td>
+			<td class="addr" title="{{.WinnerAid}}">
+				<a href="/black/cosmicgame/bid/list_by_round/{{.PrizeNum}}/0/100000">&nbsp;&nbsp;Bid list</a>
 			</td>
 		</tr>
 	{{- end}}

@@ -167,6 +167,22 @@ type BwRaffleNFTClaimRec struct {
 	WinnerAid					int64
 	TokenId						int64
 }
+type BwDonatedNFTClaimRec struct {
+	RecordId					int64
+	EvtId						int64
+	BlockNum					int64
+	TimeStamp					int64
+	DateTime					string
+	TxId						int64
+	TxHash						string
+	RoundNum					int64
+	Index						int64
+	TokenAddr					string
+	TokenId						string
+	WinnerIndex					int64
+	WinnerAid					int64
+	WinnerAddr					string
+}
 type BwCosmicSignatureMintRec struct {
 	EvtLogId					int64
 	BlockNum					int64

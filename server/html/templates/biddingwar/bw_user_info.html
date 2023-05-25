@@ -32,6 +32,10 @@
 			<a href="/black/cosmicgame/user/raffle_deposits/{{.UserInfo.Address}}">
 			{{.UserInfo.SumRaffleEthWinnings}}
 			</a>
+			&nbsp;&nbsp;
+			<a href="/black/cosmicgame/user/raffle_deposits/{{.UserInfo.Address}}">
+				<small>Raffle ETH Deposits</small>
+			</a>
 		</td>
 	</tr>
 	<tr class="market_reports">
@@ -40,17 +44,33 @@
 			<a href="/black/cosmicgame/user/raffle_deposits/{{.UserInfo.Address}}">
 			{{.UserInfo.NumRaffleEthWinnings}}
 			</a>
+			&nbsp;&nbsp;
+			<a href="/black/cosmicgame/user/raffle_deposits/{{.UserInfo.Address}}">
+				<small>Raffle ETH Deposits</small>
+			</a>
 		</td>
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Number of Raffle NFTs won</td>
-		<td class="market_reports">{{.UserInfo.RaffleNFTWon}}</td>
+		<td class="market_reports">
+			<a href="/black/cosmicgame/user/raffle_nft_winnings/{{.UserInfo.Address}}">
+				{{.UserInfo.RaffleNFTWon}}
+			</a>
+			&nbsp;&nbsp;
+			<a href="/black/cosmicgame/user/raffle_nft_winnings/{{.UserInfo.Address}}">
+				<small>Raffle NFT winnings</small>
+			</a>
+		</td>
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Number of Raffle NFTs claimed</td>
 		<td class="market_reports">
 			<a href="/black/cosmicgame/user/raffle_nft_claims/{{.UserInfo.Address}}">
 			{{.UserInfo.RaffleNFTClaimed}}
+			</a>
+			&nbsp;&nbsp;
+			<a href="/black/cosmicgame/user/raffle_nft_claims/{{.UserInfo.Address}}">
+				<small>Raffle NFT claims</small>
 			</a>
 		</td>
 	</tr>

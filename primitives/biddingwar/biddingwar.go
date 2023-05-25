@@ -163,6 +163,7 @@ type BWDonatedNFTClaimed struct {
 	Index				int64
 	TokenAddr			string
 	TokenId				string
+	WinnerAddr			string
 }
 type BWERC721Transfer struct {
 	EvtId                   int64
