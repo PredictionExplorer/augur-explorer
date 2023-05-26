@@ -404,8 +404,8 @@ func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 		os.Exit(1)
 	}
 
-	evt.RoundNum = storagew.Get_num_prize_claims()
-	if evt.RoundNum > 0 { evt.RoundNum = evt.RoundNum -1 }
+	//evt.RoundNum = storagew.Get_num_prize_claims()
+	//if evt.RoundNum > 0 { evt.RoundNum = evt.RoundNum -1 }
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -413,9 +413,11 @@ func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.TokenAddr = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.RoundNum = log.Topics[3].Big().Int64()
 	evt.TokenId = eth_evt.TokenId.Int64()
 	evt.BidId = storagew.Get_biddingwar_bid_by_evtlog_id(evt.EvtId-2)
 	evt.NFTTokenURI = get_token_uri(evt.TokenId,common.HexToAddress(evt.TokenAddr))
+	evt.Index = eth_evt.Index.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("NFTDonationEvent {\n")
@@ -699,7 +701,6 @@ func proc_cosmic_sig_transfer_event(log *types.Log,elog *EthereumEventLog) {
 
     storagew.Insert_token_transfer_event(&evt)
 }
-
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event) {

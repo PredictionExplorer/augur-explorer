@@ -35,6 +35,12 @@
 		</td>
 	</tr>
 	<tr>
+		<td>Round Num</td>
+		<td>
+			{{.PrizeInfo.PrizeNum}}
+		</td>
+	</tr>
+	<tr>
 		<td>Winner Address</td>
 		<td><a class="addr" href="/black/cosmicgame/user/info/{{.PrizeInfo.WinnerAddr}}">{{.PrizeInfo.WinnerAddr}}</a></td>
 	</tr>
@@ -45,6 +51,29 @@
 	<tr>
 		<td>Seed</td>
 		<td>{{.PrizeInfo.Seed}} (ETH)</td>
+	</tr>
+	<tr>
+		<td>Statistics</td>
+		<td>
+			<table>
+				<tr>
+					<td>Total Bids</td>
+					<td>{{.PrizeInfo.RoundStats.TotalBids}}</td>
+				</tr>
+				<tr>
+					<td>Total donated NFTs</td>
+					<td>{{.PrizeInfo.RoundStats.TotalDonatedNFTs}}</td>
+				</tr>
+				<tr>
+					<td title="{{.PrizeInfo.RoundStats.TotalRaffleEthDeposits}}">Total Raffle ETH deposits</td>
+					<td>{{.PrizeInfo.RoundStats.TotalRaffleEthDepositsEth}}</td>
+				</tr>
+				<tr>
+					<td>Total Raffle NFTs</td>
+					<td>{{.PrizeInfo.RoundStats.TotalRaffleNFTs}}</td>
+				</tr>
+			</table>
+		</td>
 	</tr>
 </table>
 </table>

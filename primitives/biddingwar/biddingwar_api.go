@@ -47,6 +47,7 @@ type BwPrizeRec struct {
 	PrizeNum					uint64
 	TokenId						uint64
 	Seed						string
+	RoundStats					BwRoundStats
 	RaffleNFTWinners			[]BwRaffleNFTWinnerRec
 	RaffleETHDeposits			[]BwRaffleDepositRec
 }
@@ -61,6 +62,7 @@ type BwUserInfo struct {
 	NumRaffleEthWinnings		int64
 	RaffleNFTWon				int64
 	RaffleNFTClaimed			int64
+	UnclaimedNFTs				int64
 }
 type BwCharityDonation struct {
 	EvtLogId					int64
@@ -204,5 +206,8 @@ type BwCosmicSignatureMintRec struct {
 type BwRoundStats struct {
 	RoundNum					int64
 	TotalBids					int64
-	TotalNFTDonated				int64
+	TotalDonatedNFTs			int64
+	TotalRaffleEthDeposits		string
+	TotalRaffleEthDepositsEth	float64 // deposits of ETH (same as above) but divided by 1^18
+	TotalRaffleNFTs				int64
 }

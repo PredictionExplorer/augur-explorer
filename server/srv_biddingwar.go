@@ -813,3 +813,38 @@ func biddingwar_donated_nft_claims_all(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
+func biddingwar_donated_nft_claims_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+
+	found, user_info := arb_storagew.Get_user_info(user_aid)
+	if !found {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	claims := arb_storagew.Get_donated_nft_claims_by_user(user_aid)
+	c.HTML(http.StatusOK, "bw_donated_nft_claims_by_user.html", gin.H{
+		"DonatedNFTClaims" : claims,
+		"UserInfo" : user_info,
+	})
+}

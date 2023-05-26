@@ -136,8 +136,8 @@ func (sw *SQLStorageWrapper) Insert_nft_donation_event(evt *p.BWNFTDonationEvent
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_nft_donation("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"donor_aid,token_aid,token_id,round_num,bid_id,token_uri"+
-				") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11)"
+					"donor_aid,token_aid,token_id,round_num,idx,bid_id,token_uri"+
+				") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10,$11,$12)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -148,6 +148,7 @@ func (sw *SQLStorageWrapper) Insert_nft_donation_event(evt *p.BWNFTDonationEvent
 		token_aid,
 		evt.TokenId,
 		evt.RoundNum,
+		evt.Index,
 		evt.BidId,
 		evt.NFTTokenURI,
 	)

@@ -9,10 +9,13 @@
 	<tr class="market_reports">
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Winner</th>
-		<th class="market_reports">Prize num</th>
-		<th class="market_reports">Prize amount (ETH)</th>
+		<th class="market_reports">Round Num</th>
+		<th class="market_reports">Prize Amount</th>
 		<th class="market_reports"></th>
 		<th class="market_reports"></th>
+		<th class="market_reports">Bids</th>
+		<th class="market_reports">Raffle Deposits</th>
+		<th class="market_reports">Raffle NFTs</th>
 	</tr>
 	{{- range $i, $change := .PrizeClaims}}
 		<tr class="market_reports">
@@ -23,13 +26,16 @@
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
 			<td class="" style="text-align:center;">{{.PrizeNum}}</td>
-			<td style="text-align: right;" title="{{.Seed}}">{{printf "%.6f" .AmountEth}}</td>
+			<td style="text-align: right;" title="{{.Seed}}">{{printf "%.6f" .AmountEth}} ETH </td>
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/donations/nft/by_prize/{{.PrizeNum}}">&nbsp;&nbsp;Donated NFTs</a>
 			</td>
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/bid/list_by_round/{{.PrizeNum}}/0/100000">&nbsp;&nbsp;Bid list</a>
 			</td>
+			<td style="text-align:center;">{{.RoundStats.TotalBids}}</td>
+			<td style="text-align:right;">{{ printf "%.6f" .RoundStats.TotalRaffleEthDepositsEth}} ETH</td>
+			<td style="text-align:center;">{{.RoundStats.TotalRaffleNFTs}}</td>
 		</tr>
 	{{- end}}
 </table>

@@ -27,6 +27,17 @@
 		<td class="market_reports">{{.UserInfo.MaxWinAmount}}</td>
 	</tr>
 	<tr class="market_reports">
+		<td class="market_reports">Unclaimed NFTs</td>
+		<td class="market_reports">
+			<a href="/black/cosmicgame/user/nft/claims/{{.UserInfo.Address}}">
+			{{.UserInfo.UnclaimedNFTs}}
+			</a>
+			<a href="/black/cosmicgame/user/nft/claims/{{.UserInfo.Address}}">
+				View claim list
+			</a>
+		</td>
+	</tr>
+	<tr class="market_reports">
 		<td class="market_reports">Total ETH won in raffles</td>
 		<td class="market_reports">
 			<a href="/black/cosmicgame/user/raffle_deposits/{{.UserInfo.Address}}">
@@ -87,7 +98,7 @@
 	{{- range $i, $change := .Bids}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/cosmicgame/bidinfo/{{.EvtLogId}}">{{.BlockNum}}</a>
+				<a href="/black/cosmicgame/bid/info/{{.EvtLogId}}">{{.BlockNum}}</a>
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .BidPriceEth}}</td>
@@ -108,7 +119,7 @@
 	{{- range $i, $change := .Prizes}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				<a href="/black/cosmicgame/prizeinfo/{{.PrizeNum}}">{{.BlockNum}}</a>
+				<a href="/black/cosmicgame/prize/info/{{.PrizeNum}}">{{.BlockNum}}</a>
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .AmountEth}}</td>

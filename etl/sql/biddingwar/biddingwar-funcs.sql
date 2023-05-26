@@ -68,6 +68,7 @@ DECLARE
 	v_max_prize				DECIMAL;
 	v_prizes_sum			DECIMAL;
 	v_prizes_count			BIGINT;
+	v_donated_nfts			BIGINT;
 	v_cnt					NUMERIC;
 BEGIN
 
@@ -83,16 +84,21 @@ BEGIN
 		v_prizes_sum := 0;
 		v_prizes_count := 0;
 	END IF;
+	SELECT total_nft_donated FROm bw_round_stats WHERE round_num=NEW.prize_num INTO v_donated_nfts;
+	IF v_donated_nfts IS NULL THEN
+		v_donated_nfts := 0;
+	END IF;
 	UPDATE bw_winner
 		SET
 			prizes_count = v_prizes_count,
 			max_win_amount	 = v_max_prize,
-			prizes_sum = v_prizes_sum
+			prizes_sum = v_prizes_sum,
+			unclaimed_nfts = v_donated_nfts
 		WHERE winner_aid = NEW.winner_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
-		INSERT INTO bw_winner(winner_aid,max_win_amount,prizes_count,prizes_sum)
-			VALUES(NEW.winner_aid,v_max_prize,v_prizes_count,v_prizes_sum);
+		INSERT INTO bw_winner(winner_aid,max_win_amount,prizes_count,prizes_sum,unclaimed_nfts)
+			VALUES(NEW.winner_aid,v_max_prize,v_prizes_count,v_prizes_sum,v_donated_nfts);
 	END IF;
 	UPDATE bw_glob_stats SET num_wins = (num_wins + 1);
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
@@ -100,7 +106,6 @@ BEGIN
 		RAISE EXCEPTION 'bw_glob_stats table wasnt initialized (no record found)';
 	END IF;
 	UPDATE bw_glob_stats SET cur_num_bids = 0;
-
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -216,7 +221,6 @@ BEGIN
 	IF v_cnt = 0 THEN
 		INSERT INTO bw_round_stats(round_num,total_nft_donated) VALUES (NEW.round_num,1);
 	END IF;
-
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -248,7 +252,15 @@ BEGIN
 		INSERT INTO bw_raffle_winner_stats(winner_aid,amount_sum,raffles_count)
 			VALUES(NEW.winner_aid,NEW.amount,1);
 	END IF;
-
+	UPDATE bw_round_stats
+		SET
+			total_raffle_eth_deposits = (total_raffle_eth_deposits + NEW.amount)
+		WHERE round_num=NEW.round_num;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO bw_round_stats(round_num,total_raffle_eth_deposits)
+			VALUES(NEW.round_num,NEW.amount);
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -261,6 +273,10 @@ BEGIN
 			amount_sum	 = (amount_sum - OLD.amount),
 			raffles_count = (raffles_count - 1)
 		WHERE winner_aid = OLD.winner_aid;
+	UPDATE bw_round_stats
+		SET
+			total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.amount)
+		WHERE round_num=OLD.round_num;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -278,6 +294,14 @@ BEGIN
 		INSERT INTO bw_raffle_nft_winner_stats(winner_aid,num_won)
 			VALUES(NEW.winner_aid,1);
 	END IF;
+	UPDATE bw_round_stats
+		SET
+			total_raffle_nfts = (total_raffle_nfts + 1)
+		WHERE round_num=NEW.round_num;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO bw_round_stats(round_num,total_raffle_nfts) VALUES(NEW.round_num,1);
+	END IF;
 
 	RETURN NEW;
 END;
@@ -290,6 +314,10 @@ BEGIN
 		SET
 			num_won = (num_won - 1)
 		WHERE winner_aid = OLD.winner_aid;
+	UPDATE bw_round_stats
+		SET
+			total_raffle_nfts = (total_raffle_nfts - 1)
+		WHERE round_num=OLD.round_num;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -333,6 +361,33 @@ CREATE OR REPLACE FUNCTION on_erc721transfer_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_donated_nft_claimed_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+
+	UPDATE bw_winner
+		SET
+			unclaimed_nfts = (unclaimed_nfts - 1)
+		WHERE winner_aid = NEW.winner_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO bw_winner(winner_aid,unclaimed_nfts) VALUES(NEW.winner_aid,1);
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_donated_nft_claimed_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE bw_winner
+		SET
+			unclaimed_nfts = (unclaimed_nfts + 1)
+		WHERE winner_aid = OLD .winner_aid;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

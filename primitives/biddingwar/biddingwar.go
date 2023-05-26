@@ -84,6 +84,7 @@ type BWNFTDonationEvent struct {
 	RoundNum			int64
 	DonorAddr			string
 	TokenId				int64
+	Index				int64
 	BidId				int64	// id of related bid record
 	NFTTokenURI			string
 }

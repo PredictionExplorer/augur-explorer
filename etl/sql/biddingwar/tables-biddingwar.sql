@@ -5,10 +5,10 @@ CREATE TABLE bw_prize_claim(
 	tx_id			BIGINT NOT NULL,
 	time_stamp		TIMESTAMPTZ NOT NULL,
 	contract_aid	BIGINT NOT NULL,
-	prize_num		BIGINT NOT NULL,
-	winner_aid		BIGINT NOT NULL,
-	token_id		BIGINT NOT NULL,
-	amount			DECIMAL DEFAULT 0,
+	prize_num			BIGINT NOT NULL,
+	winner_aid			BIGINT NOT NULL,
+	token_id			BIGINT NOT NULL,
+	amount				DECIMAL DEFAULT 0,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE bw_bid (
@@ -71,6 +71,7 @@ CREATE TABLE bw_nft_donation (
 	donor_aid		BIGINT NOT NULL,
 	token_aid		BIGINT NOT NULL,	-- this is address id (table address)
 	token_id		BIGINT NOT NULL,	-- this is tokenID
+	idx				BIGINT NOT NULL,	-- Index field of NFTDonationEvent
 	bid_id			BIGINT NOT NULL,		-- id of the related `bw_bid` record
 	token_uri		TEXT NOT NULL,
 	UNIQUE(evtlog_id)
@@ -173,10 +174,12 @@ CREATE TABLE bw_transfer( -- cosmic signature ERC721 transfer
 	otype           SMALLINT NOT NULL,-- 0-regular transfer,1-Mint,2-Burn
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_round_stats( -- collects statistics per round
-	round_num			BIGINT NOT NULL PRIMARY KEY,
-	total_bids			BIGINT DEFAULT 0,
-	total_nft_donated	BIGINT DEFAULT 0
+CREATE TABLE bw_round_stats( -- collects statistics per round 
+	round_num					BIGINT NOT NULL PRIMARY KEY,
+	total_bids					BIGINT DEFAULT 0,
+	total_nft_donated			BIGINT DEFAULT 0,
+	total_raffle_eth_deposits	DECIMAL DEFAULT 0,
+	total_raffle_nfts			BIGINT DEFAULT 0
 );
 CREATE TABLE bw_bidder ( -- collects statistics per bidder
 	bidder_aid		BIGINT PRIMARY KEY,
@@ -185,10 +188,11 @@ CREATE TABLE bw_bidder ( -- collects statistics per bidder
 	tokens_minted	DECIMAL DEFAULT 0 -- total tokens minted
 );
 CREATE TABLE bw_winner ( -- collects statistics per winer of prize
-	winner_aid		BIGINT PRIMARY KEY,
-	max_win_amount	DECIMAL DEFAULT 0,
-	prizes_count	BIGINT DEFAULT 0,
-	prizes_sum		DECIMAL DEFAULT 0
+	winner_aid				BIGINT PRIMARY KEY,
+	max_win_amount			DECIMAL DEFAULT 0,
+	prizes_count			BIGINT DEFAULT 0,
+	prizes_sum				DECIMAL DEFAULT 0,
+	unclaimed_nfts			BIGINT DEFAULT 0
 );
 CREATE TABLE bw_raffle_winner_stats (	-- prizes in ETH
 	winner_aid		BIGINT PRIMARY KEY,
