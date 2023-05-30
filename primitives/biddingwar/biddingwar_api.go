@@ -31,6 +31,7 @@ type BwBidRec struct {
 	NFTDonationTokenId			int64
 	NFTDonationTokenAddr		string
 	NFTTokenURI					string
+	ImageURL					string
 	Message						string
 }
 type BwPrizeRec struct {

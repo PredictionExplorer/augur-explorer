@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"fmt"
+	"context"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -54,6 +55,38 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	prize_amount,err := cosmic_game_ctrct.PrizeAmount(&copts)
+	if err != nil {
+		fmt.Printf("Error at PrizeAmount()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	charity_amount,err := cosmic_game_ctrct.CharityAmount(&copts)
+	if err != nil {
+		fmt.Printf("Error at CharityAmount()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	raffle_amount,err := cosmic_game_ctrct.RaffleAmount(&copts)
+	if err != nil {
+		fmt.Printf("Error at RaffleAmount()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	last_bidder,err := cosmic_game_ctrct.LastBidder(&copts)
+	if err != nil {
+		fmt.Printf("Error at LastBidder()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	balance,err := eclient.BalanceAt(context.Background(),cosmic_game_addr,nil)
+	
+
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
 	fmt.Printf("Bid Price = %v\n",bid_price.String())
+	fmt.Printf("PrizeAmount = %v\n",prize_amount.String())
+	fmt.Printf("CharityAmount = %v\n",charity_amount.String())
+	fmt.Printf("RaffleAmount = %v\n",raffle_amount.String())
+	fmt.Printf("Last bidder = %v\n",last_bidder.String())
+	fmt.Printf("Contract balance = %v\n",balance.String())
 }

@@ -3,6 +3,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+	"io/ioutil"
+	"encoding/json"
 	"math/big"
 	"context"
 	"net/http"
@@ -378,6 +380,22 @@ func biddingwar_bid_info(c *gin.Context) {
 			"ErrDescr": fmt.Sprintf("Provided evtlog_id wasn't found"),
 		})
 	} else {
+		if len(bid_info.NFTTokenURI) > 0 {
+			resp,err := http.Get(bid_info.NFTTokenURI)
+			if err == nil {
+				body, err := ioutil.ReadAll(resp.Body)
+				if err == nil {
+					var response map[string]interface{}
+					response = make(map[string]interface{})
+					err := json.Unmarshal(body,&response)
+					if err == nil {
+						fmt.Printf("response:");fmt.Printf("%+v",response);
+						image_url := response["image"].(string)
+						bid_info.ImageURL=image_url
+					}
+				}
+			}
+		}
 		c.HTML(http.StatusOK, "bw_bid_info.html", gin.H{
 			"BidInfo" : bid_info,
 		})
