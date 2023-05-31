@@ -28,34 +28,23 @@ var (
 	charity_wallet_addr			common.Address
 
 	// contract constants (variables not frequently modified, and only by the owner)
-	//price_increase				*big.Int = big.NewInt(0)
 	price_increase				string
 	charity_addr				common.Address
-	//charity_percentage			*big.Int = big.NewInt(0)
 	charity_percentage			int64
-	//token_reward				*big.Int = big.NewInt(0)
 	token_reward				string
-	//prize_percentage			*big.Int = big.NewInt(0)
 	prize_percentage			int64
-	//time_increase				*big.Int = big.NewInt(0)
+	raffle_percentage			int64
 	time_increase				string
 
 	// contract variables (variables usually modified by a bid())
-	//bid_price					*big.Int = big.NewInt(0)
 	bid_price					string
 	bid_price_eth				float64
-	//prize_claim_date			*big.Int = big.NewInt(0)	// timestamp (Unix)
 	prize_claim_date			int64
-	//prize_amount				*big.Int = big.NewInt(0)
 	prize_amount				string
 	prize_amount_eth			float64
-	//round_num 					*big.Int = big.NewInt(0)
 	round_num					int64
-	//total_prizes_amount_paid	*big.Int = big.NewInt(0)
-	//nanoseconds_extra			*big.Int = big.NewInt(0)
 	nanoseconds_extra			string
 	last_bidder					common.Address
-	//charity_balance				*big.Int = big.NewInt(0)
 	charity_balance				string
 	charity_balance_eth			float64
 
@@ -142,6 +131,13 @@ func do_reload_contract_constants() {
 			Info.Printf(err_str)
 			prize_percentage = -1
 		} else { prize_percentage = tmp_val.Int64() }
+		tmp_val,err = bwcontract.RafflePercentage(&copts)
+		if err != nil {
+			err_str := fmt.Sprintf("Error at RafflePercentage() call: %v\n",err)
+			Error.Printf(err_str)
+			Info.Printf(err_str)
+			raffle_percentage = -1
+		} else { raffle_percentage = tmp_val.Int64() }
 		tmp_val,err = bwcontract.TimeIncrease(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at TimeIncrease() call: %v\n",err)
@@ -275,6 +271,7 @@ func biddingwar_index_page(c *gin.Context) {
 		"NanosecondsExtra" : nanoseconds_extra,
 		"TokenReward" : token_reward,
 		"PrizePercentage" : prize_percentage,
+		"RafflePercentage" : raffle_percentage,
 		"CharityAddr" : charity_addr.String(),
 		"CharityPercentage" : charity_percentage,
 		"CharityBalance": charity_balance,
@@ -282,6 +279,7 @@ func biddingwar_index_page(c *gin.Context) {
 		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
 		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
 		"NumDonatedNFTs" : bw_stats.NumDonatedNFTs,
+		"MainStats" : bw_stats,
 	})
 }
 func biddingwar_prize_claims(c *gin.Context) {
@@ -341,16 +339,29 @@ func biddingwar_bid_list_by_round(c *gin.Context) {
 		respond_error(c,"'round_num' parameter is not set")
 		return
 	}
+	p_sort:= c.Param("sort")
+	var sort int64
+	if len(p_sort) > 0 {
+		var success bool
+		sort,success = parse_int_from_remote_or_error(c,HTTP,&p_sort)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'sort' parameter is not set")
+		return
+	}
 	success,offset,limit := parse_offset_limit_params_html(c)
 	if !success {
 		return
 	}
 
-	bids := arb_storagew.Get_bids_by_round_num(round_num,offset,limit)
+	bids := arb_storagew.Get_bids_by_round_num(round_num,int(sort),offset,limit)
 	c.HTML(http.StatusOK, "bw_bids_by_round_num.html", gin.H{
 		"RoundNum" : round_num,
 		"Offset" : offset,
 		"Limit" : limit,
+		"Sort" : sort,
 		"BidsByRound" : bids,
 	})
 }

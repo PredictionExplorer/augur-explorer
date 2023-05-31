@@ -40,12 +40,14 @@ func api_biddingwar_dashboard(c *gin.Context) {
 		"NanosecondsExtra" : nanoseconds_extra,
 		"TokenReward" : token_reward,
 		"PrizePercentage" : prize_percentage,
+		"RafflePercentage" : raffle_percentage,
 		"CharityAddr" : charity_addr.String(),
 		"CharityPercentage" : charity_percentage,
 		"CharityBalance": charity_balance,
 		"CharityBalanceEth": charity_balance_eth,
 		"NumDonatedNFTs" : bw_stats.NumDonatedNFTs,
 		"ContractAddrs" : caddrs,
+		"MainStats" : bw_stats,
 	})
 }
 func api_biddingwar_prize_list(c *gin.Context) {
@@ -113,12 +115,24 @@ func api_biddingwar_bid_list_by_round(c *gin.Context) {
 		respond_error_json(c,"'round_num' parameter is not set")
 		return
 	}
+	p_sort:= c.Param("sort")
+	var sort int64
+	if len(p_sort) > 0 {
+		var success bool
+		sort,success = parse_int_from_remote_or_error(c,JSON,&p_sort)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'sort' parameter is not set")
+		return
+	}
 	success,offset,limit := parse_offset_limit_params_json(c)
 	if !success {
 		return
 	}
 
-	bids := arb_storagew.Get_bids_by_round_num(round_num,offset,limit)
+	bids := arb_storagew.Get_bids_by_round_num(round_num,int(sort),offset,limit)
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -127,6 +141,7 @@ func api_biddingwar_bid_list_by_round(c *gin.Context) {
 		"RoundNum" : round_num,
 		"Offset" : offset,
 		"Limit" : limit,
+		"Sort" : sort,
 		"BidsByRound" : bids,
 	})
 }

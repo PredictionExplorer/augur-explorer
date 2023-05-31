@@ -70,7 +70,11 @@
 			</tr>
 			<tr>
 				<td>Current Round</td>
-				<td class="market_reports">{{.CurRoundNum}}</td>
+				<td class="market_reports">
+					<a href="/black/cosmicgame/bid/list_by_round/{{.TotalPrizes}}/0/0/100000">
+					{{.CurRoundNum}}
+					</a>
+				</td>
 			</tr>
 			<tr class="market_reports">
 				<td class="market_reports">Current Bid Price</td>
@@ -135,7 +139,10 @@
 				<td class="market_reports">Prize Percentage</td>
 				<td class="market_reports">{{.PrizePercentage}} %</td>
 			</tr>
-
+			<tr class="market_reports">
+				<td class="market_reports">Raffle Percentage</td>
+				<td class="market_reports">{{.RafflePercentage}} %</td>
+			</tr>
 			<tr class="market_reports">
 				<td class="market_reports">Charity Address</td>
 				<td class="market_reports">{{.CharityAddr}}</td>

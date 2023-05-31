@@ -151,7 +151,7 @@ func set_routing_biddingwar(r *gin.Engine) {
 	r.GET("/black/cosmicgame/prize/info/:prize_num",biddingwar_prize_info)
 	r.GET("/black/cosmicgame/bid/list",biddingwar_bids)
 	r.GET("/black/cosmicgame/bid/info/:evtlog_id",biddingwar_bid_info)
-	r.GET("/black/cosmicgame/bid/list_by_round/:round_num/:offset/:limit",biddingwar_bid_list_by_round)
+	r.GET("/black/cosmicgame/bid/list_by_round/:round_num/:sort/:offset/:limit",biddingwar_bid_list_by_round)
 	r.GET("/black/cosmicgame/cst/list",biddingwar_cosmic_signature_token_list)
 	r.GET("/black/cosmicgame/cst/info/:token_id",biddingwar_cosmic_signature_token_info)
 	r.GET("/black/cosmicgame/user/info/:user_addr",biddingwar_user_info)

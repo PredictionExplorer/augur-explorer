@@ -466,8 +466,12 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.BwBidRec {
 	return records
 
 }
-func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,offset,limit int) []p.BwBidRec {
+func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,limit int) []p.BwBidRec {
 
+	var order_by string = " ASC "
+	if sort == 1 {
+		order_by = " DESC "
+	}
 	var query string
 	query =  "SELECT " +
 				"b.evtlog_id,"+
@@ -497,7 +501,7 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,offset,limit 
 						"JOIN "+sw.S.SchemaName()+".address ta ON d.token_aid=ta.address_id "+
 				") d ON b.id=d.bid_id "+
 			"WHERE b.round_num=$1 "+
-			"ORDER BY b.id OFFSET $2 LIMIT $3"
+			"ORDER BY b.id "+order_by+" OFFSET $2 LIMIT $3"
 
 	rows,err := sw.S.Db().Query(query,round_num,offset,limit)
 	if (err!=nil) {
