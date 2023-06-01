@@ -58,7 +58,7 @@ BEGIN
 	IF OLD.rwalk_nft_id > -1 THEN
 		UPDATE bw_glob_stats SET num_rwalk_used = (num_rwalk_used - 1);
 	END IF;
-	UPDATE bw_glob_stats SET cur_num_bids = (cur_num_bids - 1);
+	UPDATE bw_glob_stats SET cur_num_bids = (cur_num_bids - 1) WHERE cur_num_bids>0;
 	UPDATE bw_round_stats SET total_bids = (total_bids - 1) WHERE round_num=OLD.round_num;
 	RETURN OLD;
 END;

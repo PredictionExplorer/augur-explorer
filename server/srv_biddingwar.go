@@ -47,6 +47,7 @@ var (
 	last_bidder					common.Address
 	charity_balance				string
 	charity_balance_eth			float64
+	round_start_ts				int64
 
 	// contract counters	(collected via DB)
 	bw_stats					BWStatistics
@@ -69,6 +70,7 @@ func biddingwar_init() {
 	charity_wallet_addr = common.HexToAddress(bw_caddrs.CharityWalletAddr)
 	do_reload_contract_variables()
 	do_reload_database_variables()
+	go reload_database_variables_goroutine()
 	go reload_constants_goroutine()
 	go reload_variables_goroutine()
 }
@@ -225,6 +227,7 @@ func do_reload_contract_variables() {
 }
 func do_reload_database_variables() {
 	bw_stats = arb_storagew.Get_biddingwar_statistics()
+	round_start_ts = arb_storagew.Get_round_start_timestamp(bw_stats.TotalPrizes)
 }
 func reload_constants_goroutine() {
 	// we will load contract constants up web requests but to avoid having to restart
@@ -241,12 +244,21 @@ func reload_variables_goroutine() {
 		time.Sleep(CONTRACT_VARIABLES_REFRESH_TIME * time.Second)
 	}
 }
+func reload_database_variables_goroutine() {
+	for {
+		do_reload_database_variables()
+		time.Sleep(CONTRACT_VARIABLES_REFRESH_TIME * time.Second)
+	}
+}
+
 func biddingwar_index_page(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
+	ts := time.Unix(round_start_ts,0)
+	date_str := fmt.Sprintf("%v",ts);
 	c.HTML(http.StatusOK, "bw_index.html", gin.H{
 		"BiddingWarAddr":cosmic_game_addr,
 		"CosmicSignatureAddr":cosmic_signature_addr,
@@ -280,6 +292,8 @@ func biddingwar_index_page(c *gin.Context) {
 		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
 		"NumDonatedNFTs" : bw_stats.NumDonatedNFTs,
 		"MainStats" : bw_stats,
+		"TsRoundStart" : round_start_ts,
+		"DateRoundStart" : date_str,
 	})
 }
 func biddingwar_prize_claims(c *gin.Context) {

@@ -48,6 +48,7 @@ func api_biddingwar_dashboard(c *gin.Context) {
 		"NumDonatedNFTs" : bw_stats.NumDonatedNFTs,
 		"ContractAddrs" : caddrs,
 		"MainStats" : bw_stats,
+		"TsRoundStart" : round_start_ts,
 	})
 }
 func api_biddingwar_prize_list(c *gin.Context) {

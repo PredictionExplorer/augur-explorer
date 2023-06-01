@@ -1710,3 +1710,25 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 	if null_prize_num.Valid { rec.PrizeNum = null_prize_num.Int64 } else {rec.PrizeNum = -1 }
 	return true,rec
 }
+func (sw *SQLStorageWrapper) Get_round_start_timestamp(round_num uint64) int64  {
+
+	var query string
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT "+
+			"FROM bw_bid b "+
+			"WHERE round_num=$1 "+
+			"ORDER BY b.id LIMIT 1"
+
+	var null_ts sql.NullInt64
+	row := sw.S.Db().QueryRow(query,round_num)
+	var err error
+	err=row.Scan(&null_ts);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_biddingwar_round_statistics(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return null_ts.Int64
+}
