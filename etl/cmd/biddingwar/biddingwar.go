@@ -113,6 +113,7 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("}\n")
 
+	storagew.Delete_prize_claim_event(evt.EvtId)
 	storagew.Insert_prize_claim_event(&evt)
 }
 func find_cosmic_token_transfer(bid_evtlog_id int64) string {
@@ -202,30 +203,6 @@ func find_cosmic_token_721_mint_event(contract_aid,tx_id,claim_prize_evtlog_id i
 		os.Exit(1)
 	}
 	return log.Topics[1].Big().Int64()
-	/*
-	var eth_evt CosmicSignatureNFTMintEvent
-	err = erc721_abi.UnpackIntoInterface(&eth_evt,"MintEvent",log.Data)
-	if err != nil {
-		err_str := fmt.Sprintf("Event MintEvent decode error at find_cosmic_token_721_mint_event(): %v",err)
-		Error.Printf(err_str)
-		Info.Printf(err_str)
-		Info.Printf("%+v",log)
-		Error.Printf("%+v",log)
-		os.Exit(1)
-	}
-	if eth_evt.TokenId != nil {
-		Info.Printf("token id=%v\n",eth_evt.TokenId.Int64())
-	}
-	if len(log.Topics) < 3 {
-		err_str := fmt.Sprintf("Event ERC721 Transfer doesn't have 4 topics")
-		Error.Printf(err_str)
-		Info.Printf(err_str)
-		Info.Printf("%+v",log)
-		Error.Printf("%+v",log)
-		os.Exit(1)
-	}
-	return log.Topics[1].Big().Int64()
-	*/
 }
 func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -267,6 +244,7 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tMessage: %v\n",evt.Message)
 	Info.Printf("}\n")
 
+	storagew.Delete_bid(evt.EvtId)
 	storagew.Insert_bid_event(&evt)
 }
 func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
@@ -300,6 +278,7 @@ func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("}\n")
 
+	storagew.Delete_donation(evt.EvtId)
 	storagew.Insert_donation(&evt)
 }
 func proc_donation_received_event(log *types.Log,elog *EthereumEventLog) {
@@ -333,6 +312,7 @@ func proc_donation_received_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tAmount%v\n",evt.Amount)
 	Info.Printf("}\n")
 
+	storagew.Delete_donation_received(evt.EvtId)
 	storagew.Insert_donation_received(&evt)
 }
 func proc_donation_sent_event(log *types.Log,elog *EthereumEventLog) {
@@ -366,6 +346,7 @@ func proc_donation_sent_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tAmount%v\n",evt.Amount)
 	Info.Printf("}\n")
 
+	storagew.Delete_donation_sent(evt.EvtId)
 	storagew.Insert_donation_sent(&evt)
 }
 func get_token_uri(token_id int64,contract_addr common.Address) string {
@@ -427,6 +408,7 @@ func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tNFTTokenURI: %v\n",evt.NFTTokenURI)
 	Info.Printf("}\n")
 
+	storagew.Delete_nft_donation_event(evt.EvtId)
 	storagew.Insert_nft_donation_event(&evt)
 }
 func proc_charity_updated_event(log *types.Log,elog *EthereumEventLog) {
@@ -458,6 +440,7 @@ func proc_charity_updated_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tNewCharity: %v\n",evt.NewCharityAddr)
 	Info.Printf("}\n")
 
+	storagew.Delete_charity_updated(evt.EvtId)
 	storagew.Insert_charity_updated_event(&evt)
 }
 func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
@@ -491,6 +474,7 @@ func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tTokenName: %v\n",evt.TokenName)
 	Info.Printf("}\n")
 
+	storagew.Delete_token_name(evt.EvtId)
 	storagew.Insert_token_name_event(&evt)
 }
 func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
@@ -526,6 +510,7 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tSeed: %v\n",evt.Seed)
 	Info.Printf("}\n")
 
+	storagew.Delete_mint_event(evt.EvtId)
 	storagew.Insert_mint_event(&evt)
 }
 func proc_raffle_deposit_event(log *types.Log,elog *EthereumEventLog) {
@@ -563,6 +548,7 @@ func proc_raffle_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("}\n")
 
+	storagew.Delete_raffle_deposit(evt.EvtId)
 	storagew.Insert_raffle_deposit(&evt)
 }
 func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
@@ -598,6 +584,7 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tWinnerIndex: %v\n",evt.WinnerIndex)
 	Info.Printf("}\n")
 
+	storagew.Delete_raffle_nft_winner(evt.EvtId)
 	storagew.Insert_raffle_nft_winner(&evt)
 }
 func proc_raffle_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
@@ -631,6 +618,7 @@ func proc_raffle_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tTokenId: %v\n",evt.TokenId);
 	Info.Printf("}\n")
 
+	storagew.Delete_raffle_nft_claimed(evt.EvtId)
 	storagew.Insert_raffle_nft_claimed(&evt)
 }
 func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
@@ -671,6 +659,7 @@ func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tTokenId: %v\n",evt.TokenId);
 	Info.Printf("}\n")
 
+	storagew.Delete_donated_nft_claimed(evt.EvtId)
 	storagew.Insert_donated_nft_claimed(&evt)
 }
 func proc_cosmic_sig_transfer_event(log *types.Log,elog *EthereumEventLog) {
@@ -699,6 +688,7 @@ func proc_cosmic_sig_transfer_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
 	Info.Printf("}\n")
 
+	storagew.Delete_token_transfer_event(evt.EvtId)
     storagew.Insert_token_transfer_event(&evt)
 }
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
