@@ -16,3 +16,5 @@ CREATE TRIGGER bw_transer_insert AFTER INSERT ON bw_transfer FOR EACH ROW EXECUT
 CREATE TRIGGER bw_transfer_delete AFTER DELETE ON bw_transfer FOR EACH ROW EXECUTE PROCEDURE on_erc721transfer_delete();
 CREATE TRIGGER bw_donated_nft_claimed_insert AFTER INSERT ON bw_donated_nft_claimed FOR EACH ROW EXECUTE PROCEDURE on_donated_nft_claimed_insert();
 CREATE TRIGGER bw_donated_nft_claimed_delete AFTER DELETE ON bw_donated_nft_claimed FOR EACH ROW EXECUTE PROCEDURE on_donated_nft_claimed_delete();
+CREATE TRIGGER bw_mint_insert AFTER INSERT ON bw_mint_event FOR EACH ROW EXECUTE PROCEDURE on_mint_insert();
+CREATE TRIGGER bw_mint_delete AFTER DELETE ON bw_mint_event FOR EACH ROW EXECUTE PROCEDURE on_mint_delete();

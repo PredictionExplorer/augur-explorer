@@ -136,15 +136,15 @@ CREATE TABLE bw_raffle_nft_winner (
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE bw_raffle_nft_claimed (
-	id				BIGSERIAL PRIMARY KEY,
-	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
-	block_num		BIGINT NOT NULL,
-	tx_id			BIGINT NOT NULL,
-	time_stamp		TIMESTAMPTZ NOT NULL,
-	contract_aid	BIGINT NOT NULL,
-	winner_aid		BIGINT NOT NULL,
-	token_id		BIGINT NOT NULL,
-	nft_winner_rec_id	BIGINT NOT NULL, -- reference to bw_raffle_nft_winner table
+	id						BIGSERIAL PRIMARY KEY,
+	evtlog_id				BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num				BIGINT NOT NULL,
+	tx_id					BIGINT NOT NULL,
+	time_stamp				TIMESTAMPTZ NOT NULL,
+	contract_aid			BIGINT NOT NULL,
+	winner_aid				BIGINT NOT NULL,
+	token_id				BIGINT NOT NULL,
+	nft_winner_evtlog_id	BIGINT DEFAULT 0, -- reference to bw_raffle_nft_winner table
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE bw_donated_nft_claimed (
@@ -192,7 +192,8 @@ CREATE TABLE bw_winner ( -- collects statistics per winer of prize
 	max_win_amount			DECIMAL DEFAULT 0,
 	prizes_count			BIGINT DEFAULT 0,
 	prizes_sum				DECIMAL DEFAULT 0,
-	unclaimed_nfts			BIGINT DEFAULT 0
+	tokens_count			BIGINT DEFAULT 0,	-- tokens won in prizes + raffles
+	unclaimed_nfts			BIGINT DEFAULT 0	-- donated NFTs
 );
 CREATE TABLE bw_raffle_winner_stats (	-- prizes in ETH
 	winner_aid		BIGINT PRIMARY KEY,
@@ -210,6 +211,7 @@ CREATE TABLE bw_glob_stats ( -- global statistics
 	num_bids				BIGINT DEFAULT 0, 		-- total bids made
 	num_wins				BIGINT DEFAULT 0,		-- total prizes given
 	num_rwalk_used			BIGINT DEFAULT 0,
+	num_mints				BIGINT DEFAULT 0,
 	cur_num_bids			BIGINT DEFAULT 0		-- num bids since new round
 );
 CREATE TABLE bw_nft_stats ( -- stats for donated NFTs (donated with bidAndDonateNFT())

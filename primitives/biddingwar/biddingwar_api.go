@@ -12,6 +12,7 @@ type BWStatistics struct {
 	SumVoluntaryDonationsEth	float64 // divided by 1e18
 	NumRwalkTokensUsed			uint64
 	NumDonatedNFTs				uint64
+	NumCSTokenMints				uint64
 }
 type BwBidRec struct {
 	EvtLogId					int64
@@ -64,6 +65,7 @@ type BwUserInfo struct {
 	RaffleNFTWon				int64
 	RaffleNFTClaimed			int64
 	UnclaimedNFTs				int64
+	TotalCSTokensWon			int64	// prizes + raffles
 }
 type BwCharityDonation struct {
 	EvtLogId					int64
@@ -157,6 +159,9 @@ type BwRaffleNFTWinnerRec struct {
 	WinnerAid					int64
 	RoundNum					int64
 	WinnerIndex					int64
+	ClaimTimestamp				int64
+	ClaimDateTime				string
+	ClaimTokenId				int64
 }
 type BwRaffleNFTClaimRec struct {
 	RecordId					int64
@@ -169,6 +174,10 @@ type BwRaffleNFTClaimRec struct {
 	WinnerAddr					string
 	WinnerAid					int64
 	TokenId						int64
+	WinningRoundNum				int64
+	WinningTimestamp			int64
+	WinningDateTime				string
+	WinningIndex				int64
 }
 type BwDonatedNFTClaimRec struct {
 	RecordId					int64
@@ -203,6 +212,8 @@ type BwCosmicSignatureMintRec struct {
 	Seed						string
 	MintType					int64
 	PrizeNum					int64	// -1 if minted via Raffle , > -1 if MintType = 0
+	ClaimTimestamp				int64
+	ClaimDateTime				string
 }
 type BwRoundStats struct {
 	RoundNum					int64

@@ -12,6 +12,9 @@
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Winner</th>
 		<th class="market_reports">TokenID</th>
+		<th class="market_reports">Round</th>
+		<th class="market_reports">Winning date</th>
+		<th class="market_reports">Winning index</th>
 	</tr>
 	{{- range $i, $change := .UserRaffleNFTClaims}}
 		<tr class="market_reports">
@@ -23,6 +26,9 @@
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
 			<td class="" style="text-align: center;">{{.TokenId}}</td>
+			<td class="" style="text-align: center;">{{.WinningRoundNum}}</td>
+			<td class="" style="text-align: center;">{{.WinningDateTime}}</td>
+			<td class="" style="text-align: center;">{{.WinningIndex}}</td>
 		</tr>
 	{{- end}}
 </table>

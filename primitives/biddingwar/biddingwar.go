@@ -150,7 +150,7 @@ type BWRaffleNFTClaimed struct {
 	LogIndex			int64
 	ContractAddr		string
 	WinnerAddr			string
-	WinnerRecId			int64
+	WinnerEvtlogId		int64
 	TokenId				int64
 }
 type BWDonatedNFTClaimed struct {
