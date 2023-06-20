@@ -49,11 +49,17 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	bid_price,err := cosmic_game_ctrct.BidPrice(&copts)
+	bid_price,err := cosmic_game_ctrct.GetBidPrice(&copts)
 	if err != nil {
 		fmt.Printf("Error at BidPrice()(): %v\n",err)
 		fmt.Printf("Aborting\n")
-	o os.Exit(1)
+		os.Exit(1)
+	}
+	round_num,err := cosmic_game_ctrct.RoundNum(&copts)
+	if err != nil {
+		fmt.Printf("Error at RoundNum()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
 	}
 	prize_amount,err := cosmic_game_ctrct.PrizeAmount(&copts)
 	if err != nil {
@@ -90,6 +96,7 @@ func main() {
 
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
 	fmt.Printf("Bid Price = %v\n",bid_price.String())
+	fmt.Printf("RoundNum = %v\n",round_num.String())
 	fmt.Printf("PrizeAmount = %v\n",prize_amount.String())
 	fmt.Printf("PrizeTime = %v\n",prize_time.String());
 	fmt.Printf("CharityAmount = %v\n",charity_amount.String())

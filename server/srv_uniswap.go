@@ -201,7 +201,7 @@ func uniswap_calc_slippage(pair_addr_str string,token_str string,amount_str stri
 	addr := common.HexToAddress(pair_addr_str)
 	qtoken := common.HexToAddress(token_str)
 
-	ctrct_pair,err := NewUniswapV2Pair(addr,rpcclient)
+	ctrct_pair,err := NewUniswapV2Pair(addr,eclient)
 	if err != nil {
 		return nil,nil,err
 	}
@@ -229,7 +229,7 @@ func uniswap_calc_slippage(pair_addr_str string,token_str string,amount_str stri
 	}
 	_,_,router02_addr_str := augur_srv.db_augur.Get_uniswap_contracts()
 	router02_addr := common.HexToAddress(router02_addr_str)
-	ctrct_router,err := NewUniswapV2Router(router02_addr,rpcclient)
+	ctrct_router,err := NewUniswapV2Router(router02_addr,eclient)
 	amount := big.NewInt(0)
 	amount.SetString(amount_str,10)
 	token_amount_out,err := ctrct_router.GetAmountOut(copts,amount,r1,r2)

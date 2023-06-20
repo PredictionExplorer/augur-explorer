@@ -4,11 +4,13 @@ import (
 	"log"
 	"os"
 	"fmt"
+	"context"
 	"net/http"
 	"crypto/tls"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/autotls"
+	ethrpc "github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"golang.org/x/crypto/acme/autocert"
@@ -19,7 +21,8 @@ import (
 )
 var (
 	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
-	rpcclient *ethclient.Client
+	eclient *ethclient.Client
+	rpcclient *ethrpc.Client
 
 	augur_srv *AugurServer
 
@@ -68,11 +71,12 @@ func main() {
 		os.Exit(1)
 	}
 	var err error
-	rpcclient, err = ethclient.Dial(RPC_URL)
+	rpcclient,err = ethrpc.DialContext(context.Background(),RPC_URL)
 	if err != nil {
 		fmt.Printf("Can't establish connection to RPC service: %v\n",err)
 		os.Exit(1)
 	}
+	eclient = ethclient.NewClient(rpcclient)
 	augur_srv = create_augur_server()
 
 	initialize()
@@ -80,13 +84,13 @@ func main() {
 	if (false) { // permanently disabled
 		// init contracts
 		fmt.Printf("init DAI contract with addr %v\n",caddrs.Dai.String())
-		ctrct_dai_token,err = NewDAICash(caddrs.Dai,rpcclient)
+		ctrct_dai_token,err = NewDAICash(caddrs.Dai,eclient)
 		if err != nil {
 			Fatalf("Couldn't initialize DAI Cash contract: %v\n",err)
 		}
 
 		fmt.Printf("init REP contract with addr %v\n",caddrs.Reputation.String())
-		ctrct_rep_token,err = NewRepTok(caddrs.Reputation,rpcclient)
+		ctrct_rep_token,err = NewRepTok(caddrs.Reputation,eclient)
 		if err != nil {
 			Fatalf("Couldn't initialize Rep Token contract: %v\n",err)
 		}

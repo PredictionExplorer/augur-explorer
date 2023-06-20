@@ -182,6 +182,8 @@ func set_api_routing_biddingwar(r *gin.Engine) {
 	r.GET("/api/cosmicgame/raffle/deposits/:offset/:limit",api_biddingwar_raffle_deposits)
 	r.GET("/api/cosmicgame/raffle/nft_winners/:offset/:limit",api_biddingwar_raffle_nft_winners)
 	r.GET("/api/cosmicgame/raffle/nft_claims/:offset/:limit",api_biddingwar_raffle_nft_claims)
+	r.GET("/api/cosmicgame/time/current",api_biddingwar_time_current)
+	r.GET("/api/cosmicgame/time/until_prize",api_biddingwar_time_until_prize)
 }
 func set_api_routing_statistics(r *gin.Engine) {
 

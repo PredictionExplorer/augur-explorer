@@ -2,6 +2,12 @@ package main
 import (
 	"time"
 	"os"
+	"fmt"
+	"context"
+	"encoding/json"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/common"
 
 	"net/http"
 	"github.com/gin-gonic/gin"
@@ -737,5 +743,73 @@ func api_biddingwar_donated_nft_claims_by_user(c *gin.Context) {
 		"error" : err_str,
 		"DonatedNFTClaims" : claims,
 		"UserInfo" : user_info,
+	})
+}
+func api_biddingwar_time_current(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	var raw json.RawMessage
+	err := rpcclient.CallContext(context.Background(), &raw,"eth_getBlockByNumber", "pending",true)
+	if err != nil {
+		respond_error_json(c,fmt.Sprintf("%v",err))
+		return
+	}
+	var rpcobj map[string]interface{}
+	rpcobj = make(map[string]interface{})
+	err = json.Unmarshal(raw,&rpcobj)
+	if err != nil {
+		respond_error_json(c,fmt.Sprintf("Error decoding JSON: %v",err))
+		return
+	}
+
+	ts_hex := rpcobj["timestamp"].(string)
+	ts,err := hexutil.DecodeUint64(ts_hex)
+	if err !=nil {
+		respond_error_json(c,fmt.Sprintf("Error decoding timestamp from hex: %v",err))
+		return
+	}
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"CurrentTimeStamp": ts,
+	})
+}
+func api_biddingwar_time_until_prize(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	const time_until_prize_sig string = "0x8b1329e0"
+	var raw json.RawMessage
+	args := map[string]interface{}{
+		"to": cosmic_game_addr.String(),
+		"data":time_until_prize_sig,
+	}
+	err := rpcclient.CallContext(context.Background(), &raw,"eth_call", args,"pending")
+	if err != nil {
+		respond_error_json(c,fmt.Sprintf("%v",err))
+		return
+	}
+	var ts_hex string
+	err = json.Unmarshal(raw,&ts_hex)
+	if err != nil {
+		respond_error_json(c,fmt.Sprintf("Error decoding JSON: %v",err))
+		return
+	}
+	ts_big := common.HexToHash(ts_hex).Big()
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"TimeUntilPrize": ts_big.Int64(),
 	})
 }

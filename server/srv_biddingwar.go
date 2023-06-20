@@ -12,10 +12,12 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-//	bwt "github.com/PredictionExplorer/augur-explorer/primitives/biddingwar" // bidding war types
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	. "github.com/PredictionExplorer/augur-explorer/dbs/biddingwar" // bidding war types
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 	. "github.com/PredictionExplorer/augur-explorer/primitives/biddingwar"
+
 )
 const (
 	CONTRACT_CONSTANTS_REFRESH_TIME		= 5*60	// seconds
@@ -54,6 +56,10 @@ var (
 
 	arb_storagew				SQLStorageWrapper
 )
+type rpcBlock struct {
+    Timestamp         string      `json:"timestamp"`
+}
+
 func biddingwar_init() {
 
 	if  !augur_srv.arbitrum_initialized() {
@@ -76,7 +82,7 @@ func biddingwar_init() {
 }
 func do_reload_contract_constants() {
 	var copts bind.CallOpts
-	code,err := rpcclient.CodeAt(context.Background(), cosmic_game_addr, nil)
+	code,err := eclient.CodeAt(context.Background(), cosmic_game_addr, nil)
 	if (err != nil) {
 		err_str := fmt.Sprintf("Can't instantiate Cosmic gane contract: %v\n",err)
 		Error.Printf(err_str)
@@ -91,7 +97,7 @@ func do_reload_contract_constants() {
 		fmt.Printf(err_str)
 		os.Exit(1)
 	}
-	bwcontract,err := NewCosmicGame(cosmic_game_addr,rpcclient)
+	bwcontract,err := NewCosmicGame(cosmic_game_addr,eclient)
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate BiddingWar contract: %v . Contract constants won't be fetched\n",err)
 		Error.Printf(err_str)
@@ -151,7 +157,7 @@ func do_reload_contract_constants() {
 }
 func do_reload_contract_variables() {
 	var copts bind.CallOpts
-	bwcontract,err := NewCosmicGame(cosmic_game_addr,rpcclient)
+	bwcontract,err := NewCosmicGame(cosmic_game_addr,eclient)
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate BiddingWar contract: %v . Contract constants won't be fetched\n",err)
 		Error.Printf(err_str)
@@ -160,6 +166,7 @@ func do_reload_contract_variables() {
 		var tmp_val *big.Int
 		f_divisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
 		tmp_val,err = bwcontract.GetBidPrice(&copts)
+		Info.Printf("tmp_val=%v , err=%v\n",tmp_val.String(),err)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at GetBidPrice() call: %v\n",err)
 			Error.Printf(err_str)
@@ -210,7 +217,7 @@ func do_reload_contract_variables() {
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 		}
-		tmp_val,err = rpcclient.BalanceAt(context.Background(),charity_addr,nil)
+		tmp_val,err = eclient.BalanceAt(context.Background(),charity_addr,nil)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at BalanceAt() call for charity addr: %v\n",err)
 			Error.Printf(err_str)
@@ -222,7 +229,6 @@ func do_reload_contract_variables() {
 			f_quo := big.NewFloat(0.0).Quo(f_charity_balance,f_divisor)
 			charity_balance_eth,_ = f_quo.Float64()
 		}
-
 	}
 }
 func do_reload_database_variables() {
@@ -889,5 +895,78 @@ func biddingwar_donated_nft_claims_by_user(c *gin.Context) {
 	c.HTML(http.StatusOK, "bw_donated_nft_claims_by_user.html", gin.H{
 		"DonatedNFTClaims" : claims,
 		"UserInfo" : user_info,
+	})
+}
+func biddingwar_time_current(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	var raw json.RawMessage
+	err := rpcclient.CallContext(context.Background(), &raw,"eth_getBlockByNumber", "pending",true)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "CosmicGame: Error",
+			"ErrDescr": fmt.Sprintf("%v",err),
+		})
+		return
+	}
+	var rpcobj map[string]interface{}
+	rpcobj = make(map[string]interface{})
+	err = json.Unmarshal(raw,&rpcobj)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "CosmicGame: Error",
+			"ErrDescr": fmt.Sprintf("Error decoding JSON: %v",err),
+		})
+		return
+	}
+
+	ts_hex := rpcobj["timestamp"].(string)
+	ts,err := hexutil.DecodeUint64(ts_hex)
+	if err !=nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "CosmicGame: Error",
+			"ErrDescr": fmt.Sprintf("Error decoding timestamp from hex: %v",err),
+		})
+		return
+	}
+	c.HTML(http.StatusOK, "bw_cur_ts.html", gin.H{
+		"CurrentTimeStamp": ts,
+	})
+}
+func biddingwar_time_until_prize(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	const time_until_prize_sig string = "0x8b1329e0"
+	var raw json.RawMessage
+	args := map[string]interface{}{
+		"to": cosmic_game_addr.String(),
+		"data":time_until_prize_sig,
+	}
+	err := rpcclient.CallContext(context.Background(), &raw,"eth_call", args,"pending")
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "CosmicGame: Error",
+			"ErrDescr": fmt.Sprintf("%v",err),
+		})
+		return
+	}
+	var ts_hex string
+	err = json.Unmarshal(raw,&ts_hex)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "CosmicGame: Error",
+			"ErrDescr": fmt.Sprintf("Error decoding JSON: %v",err),
+		})
+		return
+	}
+	ts_big := common.HexToHash(ts_hex).Big()
+	c.HTML(http.StatusOK, "bw_time_until_prize.html", gin.H{
+		"TimeUntilPrize": ts_big.Int64(),
 	})
 }

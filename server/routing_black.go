@@ -171,6 +171,8 @@ func set_routing_biddingwar(r *gin.Engine) {
 	r.GET("/black/cosmicgame/raffle/deposits",biddingwar_raffle_deposits)
 	r.GET("/black/cosmicgame/raffle/nft_winners",biddingwar_raffle_nft_winners)
 	r.GET("/black/cosmicgame/raffle/nft_claims",biddingwar_raffle_nft_claims)
+	r.GET("/black/cosmicgame/time/current",biddingwar_time_current)
+	r.GET("/black/cosmicgame/time/until_prize",biddingwar_time_until_prize)
 }
 func set_routing_statistics(r *gin.Engine) {
 

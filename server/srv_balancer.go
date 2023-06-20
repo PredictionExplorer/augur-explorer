@@ -167,7 +167,7 @@ func balancer_calc_slippage(addr_str string,token_in_str string,token_out_str st
 	addr := common.HexToAddress(addr_str)
 	token_in := common.HexToAddress(token_in_str)
 	token_out := common.HexToAddress(token_out_str)
-	ctrct_bpool,err := NewBPool(addr,rpcclient)
+	ctrct_bpool,err := NewBPool(addr,eclient)
 	if err != nil {
 		return nil,nil,err
 	}

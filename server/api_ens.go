@@ -123,7 +123,7 @@ func a1_ens_reverse_lookup(c *gin.Context) {
 		return
 	}*/
 	addr := common.HexToAddress(p_address)
-	name, err := ens.ReverseResolve(rpcclient, addr)
+	name, err := ens.ReverseResolve(eclient, addr)
 	Info.Printf("reverse lookup of %v, name=%v\n",addr.String(),name)
 	if err != nil {
 		c.JSON(http.StatusBadRequest,gin.H{

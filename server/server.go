@@ -223,7 +223,7 @@ func get_REP_token_price_in_ETH() (float64,error) {
 	// token0 - REP (0x221657776846890989a759BA2973e427DfF5C9bB)
 	// token1 - Wrapped ETH (0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)
 	addr := common.HexToAddress(REP_ETH_UNISWAP_PAIR_ADDR)
-	ctrct_pair,err := NewUniswapV2Pair(addr,rpcclient)
+	ctrct_pair,err := NewUniswapV2Pair(addr,eclient)
 	if err != nil {
 		return 0.0,err
 	}
@@ -283,7 +283,7 @@ func get_token_balance(token_type int,addr *common.Address) float64 {
 func get_eth_balance(addr *common.Address) float64 {
 	ctx := context.Background()
 	var float_eth_balance float64 = 0.0
-	big_eth_balance,err := rpcclient.BalanceAt(ctx,*addr,nil)
+	big_eth_balance,err := eclient.BalanceAt(ctx,*addr,nil)
 	if err == nil {
 		big_float_eth_balance := big.NewFloat(0.0)
 		big_float_eth_balance.SetInt(big_eth_balance)
