@@ -27,6 +27,7 @@ type BWPrizeClaimEvent struct {
 	TokenId				int64
 	WinnerAddr			string
 	Amount				string
+	DonationEvtId		int64
 }
 type BWBidEvent struct {
 	EvtId				int64

@@ -1,14 +1,15 @@
 CREATE TABLE bw_prize_claim(
-	id				BIGSERIAL PRIMARY KEY,
-	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
-	block_num		BIGINT NOT NULL,
-	tx_id			BIGINT NOT NULL,
-	time_stamp		TIMESTAMPTZ NOT NULL,
-	contract_aid	BIGINT NOT NULL,
-	prize_num			BIGINT NOT NULL,
-	winner_aid			BIGINT NOT NULL,
-	token_id			BIGINT NOT NULL,
-	amount				DECIMAL DEFAULT 0,
+	id						BIGSERIAL PRIMARY KEY,
+	evtlog_id				BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num				BIGINT NOT NULL,
+	tx_id					BIGINT NOT NULL,
+	time_stamp				TIMESTAMPTZ NOT NULL,
+	contract_aid			BIGINT NOT NULL,
+	prize_num				BIGINT NOT NULL,
+	winner_aid				BIGINT NOT NULL,
+	token_id				BIGINT NOT NULL,
+	amount					DECIMAL DEFAULT 0,
+	donation_evt_id			BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE bw_bid (

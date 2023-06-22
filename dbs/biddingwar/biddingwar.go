@@ -115,3 +115,28 @@ func (sw *SQLStorageWrapper) Get_biddingwar_bid_by_evtlog_id(bid_evtlog_id int64
 	}
 	return null_id.Int64
 }
+func (sw *SQLStorageWrapper) Get_donation_received_evt_id(tx_id,starting_id int64,sig string) int64 {
+
+	var query string 
+	query = "SELECT "+
+				"d.evtlog_id "+
+			"FROM "+
+				"evt_log e "+
+				"LEFT JOIN bw_donation_received d ON e.id=d.evtlog_id "+
+			"WHERE "+
+				"(e.tx_id=$1) AND "+
+				"(e.topic0_sig=$2) AND "+
+				"(e.id<$3) "+
+			"ORDER BY e.id DESC LIMIT 1"
+	res := sw.S.Db().QueryRow(query,tx_id,sig,starting_id)
+	var null_id sql.NullInt64
+	err := res.Scan(&null_id)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return 0
+		}
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+	return null_id.Int64
+}

@@ -46,11 +46,23 @@
 	</tr>
 	<tr>
 		<td>Prize Amount</td>
-		<td>{{.PrizeInfo.AmountEth}}</td>
+		<td>{{.PrizeInfo.AmountEth}} ETH</td>
+	</tr>
+	<tr>
+		<td>Token ID</td>
+		<td>{{.PrizeInfo.TokenId}}</td>
 	</tr>
 	<tr>
 		<td>Seed</td>
 		<td>{{.PrizeInfo.Seed}} (ETH)</td>
+	</tr>
+	<tr>
+		<td>Charity Address</td>
+		<td>{{.PrizeInfo.CharityAddress}}</td>
+	</tr>
+	<tr>
+		<td>Charity Amount</td>
+		<td>{{.PrizeInfo.CharityAmountETH}}</td>
 	</tr>
 	<tr>
 		<td>Statistics</td>
@@ -75,7 +87,54 @@
 			</table>
 		</td>
 	</tr>
+
 </table>
+<h3> Raffle NFT Winners</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Winner</th>
+		<th class="market_reports">Round</th>
+	</tr>
+	{{- range $i, $change := .PrizeInfo.RaffleNFTWinners}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">
+				{{.BlockNum}}
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="addr" title="{{.WinnerAid}}">
+				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+			</td>
+			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
+		</tr>
+	{{- end}}
+</table>
+<h3>Raffle ETH Deposits</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Winner</th>
+		<th class="market_reports">Round</th>
+		<th class="market_reports">Amount (ETH)</th>
+		<th class="market_reports">Deposit ID</th>
+
+	</tr>
+	{{- range $i, $change := .PrizeInfo.RaffleETHDeposits}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">
+				{{.BlockNum}}
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="addr" title="{{.WinnerAid}}">
+				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+			</td>
+			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
+			<td style="text-align: right;" title="">{{printf "%.4f" .Amount}}</td>
+			<td style="text-align: right;" title="">{{ .DepositId }}</td>
+		</tr>
+	{{- end}}
 </table>
 <br/><br/>
 <code>

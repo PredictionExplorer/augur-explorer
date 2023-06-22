@@ -166,7 +166,6 @@ func do_reload_contract_variables() {
 		var tmp_val *big.Int
 		f_divisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
 		tmp_val,err = bwcontract.GetBidPrice(&copts)
-		Info.Printf("tmp_val=%v , err=%v\n",tmp_val.String(),err)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at GetBidPrice() call: %v\n",err)
 			Error.Printf(err_str)
@@ -420,7 +419,6 @@ func biddingwar_bid_info(c *gin.Context) {
 					response = make(map[string]interface{})
 					err := json.Unmarshal(body,&response)
 					if err == nil {
-						fmt.Printf("response:");fmt.Printf("%+v",response);
 						image_url := response["image"].(string)
 						bid_info.ImageURL=image_url
 					}
@@ -837,6 +835,14 @@ func biddingwar_cosmic_signature_token_info(c *gin.Context) {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"title": "Cosmic Game: Error",
 			"ErrDescr": fmt.Sprintf("Prize with provided token_id wasn't found"),
+		})
+		return
+	}
+	if token_info.PrizeNum > -1 {
+		_,prize_info := arb_storagew.Get_prize_info(token_info.PrizeNum)
+		c.HTML(http.StatusOK, "bw_cosmic_sig_token_info.html", gin.H{
+			"TokenInfo" : token_info,
+			"PrizeInfo" : prize_info,
 		})
 	} else {
 		c.HTML(http.StatusOK, "bw_cosmic_sig_token_info.html", gin.H{

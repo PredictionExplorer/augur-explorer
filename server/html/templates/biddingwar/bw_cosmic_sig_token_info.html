@@ -7,6 +7,10 @@
 	<h3 class="page_title">Cosmic Signature Token Info<h3>
 <table>
 	<tr>
+		<td>Token ID</td>
+		<td>{{.TokenInfo.TokenId}}
+	</tr>
+	<tr>
 		<td>EvtLog ID</td>
 		<td>{{.TokenInfo.EvtLogId}}
 	</tr>
@@ -48,7 +52,15 @@
 	</tr>
 	<tr>
 		<td>Prize Num</td>
-		<td>{{.TokenInfo.PrizeNum}}</td>
+		<td>
+			{{ if eq .TokenInfo.PrizeNum -1 }}
+				Token won in raffle
+			{{else}}
+				<a href="/black/cosmicgame/prize/info/{{.TokenInfo.PrizeNum}}">
+					{{.TokenInfo.PrizeNum}}
+				</a>
+			{{ end }}
+		</td>
 	</tr>
 	<tr>
 		<td>Seed</td>

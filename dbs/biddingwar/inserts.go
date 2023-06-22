@@ -13,8 +13,8 @@ func (sw *SQLStorageWrapper) Insert_prize_claim_event(evt *p.BWPrizeClaimEvent) 
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_prize_claim("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"prize_num,token_id,winner_aid,amount"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
+					"prize_num,token_id,winner_aid,amount,donation_evt_id"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -25,6 +25,7 @@ func (sw *SQLStorageWrapper) Insert_prize_claim_event(evt *p.BWPrizeClaimEvent) 
 		evt.TokenId,
 		winner_aid,
 		evt.Amount,
+		evt.DonationEvtId,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into bw_prize_claim table: %v\n",err))

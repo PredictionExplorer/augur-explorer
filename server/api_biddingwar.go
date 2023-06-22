@@ -679,9 +679,21 @@ func api_biddingwar_cosmic_signature_token_info(c *gin.Context) {
 	record_found,token_info := arb_storagew.Get_cosmic_signature_token_info(token_id)
 	if !record_found {
 		respond_error_json(c,"record not found")
+		return
+	}
+
+	var req_status int = 1
+	var err_str string = ""
+
+	if token_info.PrizeNum > -1 {
+		_,prize_info := arb_storagew.Get_prize_info(token_info.PrizeNum)
+		c.JSON(http.StatusOK, gin.H{
+			"status": req_status,
+			"error" : err_str,
+			"TokenInfo" : token_info,
+			"PrizeInfo" : prize_info,
+		})
 	} else {
-		var req_status int = 1
-		var err_str string = ""
 		c.JSON(http.StatusOK, gin.H{
 			"status": req_status,
 			"error" : err_str,

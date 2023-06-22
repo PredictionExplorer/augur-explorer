@@ -105,12 +105,20 @@ func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.Amount = eth_evt.Amount.String()
 	evt.TokenId = find_cosmic_token_721_mint_event(cosmic_sig_aid,evt.TxId,evt.EvtId)
+	evt.DonationEvtId = storagew.Get_donation_received_evt_id(evt.TxId,evt.EvtId,hex.EncodeToString(evt_donation_received_event[:4]))
+	if evt.DonationEvtId == 0 {
+		Error.Printf("Failed to fetch donation received event id\n")
+		Info.Printf("Failed to fetch donation received event id\n")
+		os.Exit(1)
+	}
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("PrizeClaimEvent {\n")
 	Info.Printf("\tPrizeNum: %v\n",evt.PrizeNum)
 	Info.Printf("\tWinner%v\n",evt.WinnerAddr)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tTokenId: %v\n",evt.TokenId)
+	Info.Printf("\tDonationEvtId: %v\n",evt.DonationEvtId)
 	Info.Printf("}\n")
 
 	storagew.Delete_prize_claim_event(evt.EvtId)

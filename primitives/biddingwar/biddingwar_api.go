@@ -49,6 +49,9 @@ type BwPrizeRec struct {
 	PrizeNum					uint64
 	TokenId						uint64
 	Seed						string
+	CharityAddress				string
+	CharityAmount				string
+	CharityAmountETH			float64
 	RoundStats					BwRoundStats
 	RaffleNFTWinners			[]BwRaffleNFTWinnerRec
 	RaffleETHDeposits			[]BwRaffleDepositRec
