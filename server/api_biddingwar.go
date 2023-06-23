@@ -47,6 +47,8 @@ func api_biddingwar_dashboard(c *gin.Context) {
 		"TokenReward" : token_reward,
 		"PrizePercentage" : prize_percentage,
 		"RafflePercentage" : raffle_percentage,
+		"NumRaffleEthWinners" : raffle_eth_winners,
+		"NumRaffleNFTWinners" : raffle_nft_winners,
 		"CharityAddr" : charity_addr.String(),
 		"CharityPercentage" : charity_percentage,
 		"CharityBalance": charity_balance,

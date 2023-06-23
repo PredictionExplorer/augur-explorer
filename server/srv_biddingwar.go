@@ -37,6 +37,8 @@ var (
 	prize_percentage			int64
 	raffle_percentage			int64
 	time_increase				string
+	raffle_eth_winners			int64		// numRaffleWinnersPerRound
+	raffle_nft_winners			int64		// numRaffleNFTWinnersPerRound
 
 	// contract variables (variables usually modified by a bid())
 	bid_price					string
@@ -153,6 +155,20 @@ func do_reload_contract_constants() {
 			Info.Printf(err_str)
 			time_increase = "error"
 		} else { time_increase = tmp_val.String() }
+		tmp_val,err = bwcontract.NumRaffleWinnersPerRound(&copts)
+		if err != nil {
+			err_str := fmt.Sprintf("Error at numRaffleWinnersPerRound() call: %v\n",err)
+			Error.Printf(err_str)
+			Info.Printf(err_str)
+			raffle_eth_winners = -1 
+		} else { raffle_eth_winners = tmp_val.Int64()}
+		tmp_val,err = bwcontract.NumRaffleNFTWinnersPerRound(&copts)
+		if err != nil {
+			err_str := fmt.Sprintf("Error at numRaffleNFTWinnersPerRound() call: %v\n",err)
+			Error.Printf(err_str)
+			Info.Printf(err_str)
+			raffle_nft_winners = -1
+		} else { raffle_nft_winners = tmp_val.Int64() }
 	}
 }
 func do_reload_contract_variables() {
@@ -291,6 +307,8 @@ func biddingwar_index_page(c *gin.Context) {
 		"RafflePercentage" : raffle_percentage,
 		"CharityAddr" : charity_addr.String(),
 		"CharityPercentage" : charity_percentage,
+		"NumRaffleEthWinners" : raffle_eth_winners,
+		"NumRaffleNFTWinners" : raffle_nft_winners,
 		"CharityBalance": charity_balance,
 		"CharityBalanceEth": charity_balance_eth,
 		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
