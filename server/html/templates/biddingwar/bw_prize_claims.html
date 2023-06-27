@@ -13,6 +13,8 @@
 		<th class="market_reports">Prize Amount</th>
 		<th class="market_reports"></th>
 		<th class="market_reports"></th>
+		<th class="market_reports"></th>
+		<th class="market_reports"></th>
 		<th class="market_reports">Bids</th>
 		<th class="market_reports">Raffle Deposits</th>
 		<th class="market_reports">Raffle NFTs</th>
@@ -32,6 +34,12 @@
 			</td>
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/bid/list_by_round/{{.PrizeNum}}/0/0/100000">&nbsp;&nbsp;Bid list</a>
+			</td>
+			<td class="addr" title="{{.WinnerAid}}">
+				<a href="/black/cosmicgame/raffle/deposits/by_round/{{.PrizeNum}}">&nbsp;&nbsp;Raffle ETH</a>
+			</td>
+			<td class="addr" title="{{.WinnerAid}}">
+				<a href="/black/cosmicgame/raffle/nft_winners/by_round/{{.PrizeNum}}">&nbsp;&nbsp;Raffle NFTs</a>
 			</td>
 			<td style="text-align:center;">{{.RoundStats.TotalBids}}</td>
 			<td style="text-align:right;">{{ printf "%.6f" .RoundStats.TotalRaffleEthDepositsEth}} ETH</td>

@@ -4,7 +4,8 @@
 	<title>Raffle NFT Winners</title>
 </head>
 <body>
-	<h3 class="page_title">Raffle NFT Winners<h3>
+	<h3 class="page_title">Raffle NFT Winners</h3>
+	<h3 class="page_title">Round: {{.RoundNum}}</h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -27,8 +28,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/raffle/nft_winners/list/[offset]/[limit]</br>
+	API: /api/cosmicgame/raffle/nft_winners/by_round/[round_num]</br>
 
-	Example: /api/cosmicgame/raffle/nft_winners/list/0/1000000
+Example: /api/cosmicgame/raffle/nft_winners/by_round/{{.RoundNum}}
 </code>
 </body>

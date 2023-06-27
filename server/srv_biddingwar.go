@@ -271,7 +271,6 @@ func reload_database_variables_goroutine() {
 		time.Sleep(CONTRACT_VARIABLES_REFRESH_TIME * time.Second)
 	}
 }
-
 func biddingwar_index_page(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
@@ -622,7 +621,7 @@ func biddingwar_donations_nft_info(c *gin.Context) {
 		})
 	}
 }
-func biddingwar_raffle_deposits(c *gin.Context) {
+func biddingwar_raffle_deposits_list(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -633,7 +632,7 @@ func biddingwar_raffle_deposits(c *gin.Context) {
 	if !success {
 		return
 	}
-	deposits := arb_storagew.Get_raffle_eth_deposits(offset,limit)
+	deposits := arb_storagew.Get_raffle_eth_deposits_list(offset,limit)
 
 	c.HTML(http.StatusOK, "bw_raffle_deposits.html", gin.H{
 		"RaffleDeposits" : deposits,
@@ -641,7 +640,33 @@ func biddingwar_raffle_deposits(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
-func biddingwar_raffle_nft_winners(c *gin.Context) {
+func biddingwar_raffle_deposits_by_round(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_round_num:= c.Param("round_num")
+	var round_num int64
+	if len(p_round_num) > 0 {
+		var success bool
+		round_num,success = parse_int_from_remote_or_error(c,HTTP,&p_round_num)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'round_num' parameter is not set")
+		return
+	}
+	deposits := arb_storagew.Get_raffle_deposits_by_round(round_num)
+
+	c.HTML(http.StatusOK, "bw_raffle_deposits_by_round.html", gin.H{
+		"RaffleDeposits" : deposits,
+		"RoundNum" : round_num,
+	})
+}
+func biddingwar_raffle_nft_winners_list(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -658,6 +683,32 @@ func biddingwar_raffle_nft_winners(c *gin.Context) {
 		"RaffleNFTWinners" : winners,
 		"Offset" : offset,
 		"Limit" : limit,
+	})
+}
+func biddingwar_raffle_nft_winners_by_round(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_round_num:= c.Param("round_num")
+	var round_num int64
+	if len(p_round_num) > 0 {
+		var success bool
+		round_num,success = parse_int_from_remote_or_error(c,HTTP,&p_round_num)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'round_num' parameter is not set")
+		return
+	}
+	winners := arb_storagew.Get_raffle_nft_winners_by_round(round_num)
+
+	c.HTML(http.StatusOK, "bw_raffle_nft_winners_by_round.html", gin.H{
+		"RaffleNFTWinners" : winners,
+		"RoundNum" : round_num,
 	})
 }
 func biddingwar_raffle_nft_claims(c *gin.Context) {

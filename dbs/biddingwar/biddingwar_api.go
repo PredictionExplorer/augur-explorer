@@ -408,8 +408,8 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.BwPrizeRec)
 	}
 	if null_seed.Valid { rec.Seed = null_seed.String } else {rec.Seed = "???"}
 
-	raffle_nft_winners := sw.Get_raffle_nft_winners_by_round_num(prize_num)
-	raffle_eth_deposits := sw.Get_raffle_deposits_by_round_num(prize_num)
+	raffle_nft_winners := sw.Get_raffle_nft_winners_by_round(prize_num)
+	raffle_eth_deposits := sw.Get_raffle_deposits_by_round(prize_num)
 
 	rec.RaffleNFTWinners = raffle_nft_winners
 	rec.RaffleETHDeposits = raffle_eth_deposits
@@ -1060,7 +1060,7 @@ func (sw *SQLStorageWrapper) Get_NFT_donation_info(id int64) (bool,p.BwNFTDonati
 	}
 	return true,rec
 }
-func (sw *SQLStorageWrapper) Get_raffle_eth_deposits(offset,limit int) []p.BwRaffleDepositRec {
+func (sw *SQLStorageWrapper) Get_raffle_eth_deposits_list(offset,limit int) []p.BwRaffleDepositRec {
 
 	if limit == 0 { limit = 1000000 }
 	var query string
@@ -1113,7 +1113,7 @@ func (sw *SQLStorageWrapper) Get_raffle_eth_deposits(offset,limit int) []p.BwRaf
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_raffle_nft_winners_by_round_num(round_num int64) []p.BwRaffleNFTWinnerRec {
+func (sw *SQLStorageWrapper) Get_raffle_nft_winners_by_round(round_num int64) []p.BwRaffleNFTWinnerRec {
 
 	var query string
 	query = "SELECT "+
@@ -1389,7 +1389,7 @@ func (sw *SQLStorageWrapper) Get_raffle_deposits_by_user(winner_aid int64) []p.B
 	return records
 
 }
-func (sw *SQLStorageWrapper) Get_raffle_deposits_by_round_num(round_num int64) []p.BwRaffleDepositRec {
+func (sw *SQLStorageWrapper) Get_raffle_deposits_by_round(round_num int64) []p.BwRaffleDepositRec {
 
 	var query string
 	query =  "SELECT " +

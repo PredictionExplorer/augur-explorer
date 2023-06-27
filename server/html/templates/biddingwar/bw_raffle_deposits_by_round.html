@@ -1,18 +1,22 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Raffle NFT Winners</title>
+	<title>Raffle ETH Deposits</title>
 </head>
 <body>
-	<h3 class="page_title">Raffle NFT Winners<h3>
+	<h3 class="page_title">Raffle ETH Deposits</h3>
+	<h3 class="page_title">Round: {{.RoundNum}}</h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Winner</th>
 		<th class="market_reports">Round</th>
+		<th class="market_reports">Amount (ETH)</th>
+		<th class="market_reports">Deposit ID</th>
+
 	</tr>
-	{{- range $i, $change := .RaffleNFTWinners}}
+	{{- range $i, $change := .RaffleDeposits}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				{{.BlockNum}}
@@ -22,13 +26,15 @@
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
 			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
+			<td style="text-align: right;" title="">{{printf "%.4f" .Amount}}</td>
+			<td style="text-align: right;" title="">{{ .DepositId }}</td>
 		</tr>
 	{{- end}}
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/raffle/nft_winners/list/[offset]/[limit]</br>
+	API: /api/cosmicgame/raffle/deposits/by_round/[round_num]</br>
 
-	Example: /api/cosmicgame/raffle/nft_winners/list/0/1000000
+	Example: /api/cosmicgame/raffle/deposits/by_round/{{.RoundNum}}
 </code>
 </body>
