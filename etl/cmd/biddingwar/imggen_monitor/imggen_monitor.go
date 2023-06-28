@@ -2,12 +2,16 @@ package main
 
 import (
 	"net/http"
-	//"os"
+	"os"
 	"fmt"
+	"time"
+	"log"
 	"encoding/json"
 	"bytes"
+	"flag"
 
-	 . "github.com/PredictionExplorer/augur-explorer/dbs/biddingwar"
+	. "github.com/PredictionExplorer/augur-explorer/dbs"
+	. "github.com/PredictionExplorer/augur-explorer/dbs/biddingwar"
 )
 const (
 	REQUEST_URL	string = "https://randomwalknft-api.com/cosmicgame_tokens"
@@ -16,6 +20,7 @@ const (
 )
 var (
 	storagew                SQLStorageWrapper
+	 Info                    *log.Logger
 )
 func generate_token_artifacts(token_id int64,seed string) {
 
@@ -31,22 +36,18 @@ func generate_token_artifacts(token_id int64,seed string) {
 	}
 	defer resp.Body.Close()
 	var res map[string]interface{}
-	fmt.Printf("resp: %+v\n",resp)
-	fmt.Printf("res: \n%v\n",res)
 	json.NewDecoder(resp.Body).Decode(&res)
-	fmt.Printf("json:\n%v\n",res["json"])
 }
-func token_artifacts_exist(token_id string) (bool,error) {
+func token_artifacts_exist(token_id int64) (bool,error) {
 
-	img_file := fmt.Sprintf("%v%v.png",IMAGE_URL,token_id)
-	video_file := fmt.Sprintf("%v%v.mp4",VIDEO_URL,token_id)
+	img_file := fmt.Sprintf("%v%06d.png",IMAGE_URL,token_id)
+	video_file := fmt.Sprintf("%v%06d.mp4",VIDEO_URL,token_id)
 	res,err := http.Head(img_file)
 	if err != nil {
 		fmt.Printf("Error getting img file: %v\n",err)
 		return false,err
 	}
 	if res.StatusCode !=200 {
-		fmt.Printf("Image file not found: %+v\n",res)
 		return false,nil
 	}
 	res,err =  http.Head(video_file)
@@ -61,19 +62,56 @@ func token_artifacts_exist(token_id string) (bool,error) {
 	return true,nil
 }
 func main() {
-	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
-	storage = Connect_to_storage(Info)
-	tokens := storage
-/*
-	if len(os.Args) < 3 {
-		fmt.Printf("usage: %v [token_id] [seed]\n");
-		os.Exit(1)
-	}
-*/
-	starting_token_id := 0
-	for {
 
+
+	regenerate_missing := flag.Bool("regenerate", false, "Regenerate missing images")
+	flag.Parse()
+
+	Info = log.New(os.Stdout,"INFO: ",log.Ldate|log.Ltime|log.Lshortfile)
+	storagew.S = Connect_to_storage(Info)
+    storagew.S.Db_set_schema_name("public");
+    storagew.S.Log_msg("Log initialized\n")
+
+	if *regenerate_missing {
+		fmt.Printf("Regenerating missing images/videos\n")
+	} else {
+		fmt.Printf("Checking image/video presence\n")
 	}
-	//token_artifacts_exist("000072")
-	//generate_token_artifacts(67,"4be9157e3676c30594ec2b1d8b08971264d3d7d73ed91aa44e0a492a22e08ba5")
+	tokens := storagew.Get_cosmic_signature_nft_list(0, 100000)
+
+	for i:=int64(0);i<int64(len(tokens));i++ {
+		tok := tokens[i]
+		fmt.Printf("token id = %v    ",tok.TokenId)
+		exists,err := token_artifacts_exist(tok.TokenId);
+		if err == nil {
+			if !exists {
+				if *regenerate_missing {
+					fmt.Printf(" regenerating ...")
+					generate_token_artifacts(tok.TokenId,tok.Seed)
+					for {
+						exists,err := token_artifacts_exist(tok.TokenId);
+						if err != nil {
+							fmt.Printf("aborting due to error: %v ",err)
+							break
+						} else {
+							if exists { 
+								break
+							} else {
+								fmt.Printf(".")
+							}
+						}
+						time.Sleep(10* time.Second)
+					}
+					fmt.Printf(" done.\n")
+				} else {
+					fmt.Printf("doesn't exist\n")
+				}
+			} else {
+				fmt.Printf("image/video present\n")
+			}
+		} else {
+			fmt.Printf("error: %v\n",err)
+		}
+		time.Sleep(1* time.Second)
+	}
 }

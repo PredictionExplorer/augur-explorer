@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"os/exec"
 	"fmt"
 	"math/big"
 	"bytes"
@@ -520,6 +521,14 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Delete_mint_event(evt.EvtId)
 	storagew.Insert_mint_event(&evt)
+	cmd_str := fmt.Sprintf("%v/%v %v %v",os.Getenv("HOME"),IMGGEN_PATH,evt.TokenId,evt.Seed)
+	Info.Printf("Executing %v\n",cmd_str)
+	cmd := exec.Command(cmd_str)
+	err = cmd.Run()
+	if err != nil {
+		Info.Printf("Error executing image generation: %v\n",err)
+		Error.Printf("Error executing image generation: %v\n",err)
+	}
 }
 func proc_raffle_deposit_event(log *types.Log,elog *EthereumEventLog) {
 

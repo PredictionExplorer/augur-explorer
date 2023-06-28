@@ -25,6 +25,7 @@ import (
 )
 const (
 	DEFAULT_DB_LOG			= "db.log"
+	IMGGEN_PATH				= "v2/etl/cmd/biddingwar/imggen_monitor/imggen_exec" // relative to $HOME
 
 	PRIZE_CLAIM_EVENT		= "27bc828c399c2947fea27bca8a75ced2e94ff2651d607271f051e39db52286ce"
 	//BID_EVENT				= "521a3e9a25dec55994ad8dd222c96be0afa2b1b679fe7d3c289d01f4b6d7b6ed"
