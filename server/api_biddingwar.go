@@ -8,10 +8,12 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	"net/http"
 	"github.com/gin-gonic/gin"
 
+	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 func api_biddingwar_dashboard(c *gin.Context) {
 
@@ -49,6 +51,7 @@ func api_biddingwar_dashboard(c *gin.Context) {
 		"RafflePercentage" : raffle_percentage,
 		"NumRaffleEthWinners" : raffle_eth_winners,
 		"NumRaffleNFTWinners" : raffle_nft_winners,
+		"NumHolderNFTWinners" : raffle_holder_winners,
 		"CharityAddr" : charity_addr.String(),
 		"CharityPercentage" : charity_percentage,
 		"CharityBalance": charity_balance,
@@ -891,3 +894,31 @@ func api_biddingwar_time_until_prize(c *gin.Context) {
 		"TimeUntilPrize": ts_big.Int64(),
 	})
 }
+func api_biddingwar_prize_cur_round_time(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	var copts bind.CallOpts
+	bwcontract,err := NewCosmicGame(cosmic_game_addr,eclient)
+	if err != nil {
+		respond_error_json(c,fmt.Sprintf("Error during call: can't instantiate CG contract: %v",err))
+		return
+	}
+	prize_time,err := bwcontract.PrizeTime(&copts)
+	if err!=nil {
+		respond_error_json(c,fmt.Sprintf("Error during call: %v",err))
+		return
+	} else {
+		var req_status int = 1
+		var err_str string = ""
+		c.JSON(http.StatusOK, gin.H{
+			"status": req_status,
+			"error" : err_str,
+			"CurRoundPrizeTime" : prize_time,
+		})
+	}
+} 

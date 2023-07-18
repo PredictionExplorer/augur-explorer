@@ -160,6 +160,7 @@ func set_api_routing_biddingwar(r *gin.Engine) {
 	r.GET("/api/cosmicgame/statistics/counters",api_biddingwar_record_counters)
 	r.GET("/api/cosmicgame/prize/list/:offset/:limit",api_biddingwar_prize_list)
 	r.GET("/api/cosmicgame/prize/info/:prize_num",api_biddingwar_prize_info)
+	r.GET("/api/cosmicgame/prize/cur_round/time",api_biddingwar_prize_cur_round_time)
 	r.GET("/api/cosmicgame/bid/list/:offset/:limit",api_biddingwar_bid_list)
 	r.GET("/api/cosmicgame/bid/info/:evtlog_id",api_biddingwar_bid_info)
 	r.GET("/api/cosmicgame/bid/list_by_round/:round_num/:sort/:offset/:limit",api_biddingwar_bid_list_by_round)

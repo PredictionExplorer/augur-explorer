@@ -29,7 +29,7 @@ func main() {
 	if len(os.Args) < 3 {
 		fmt.Printf(
 			"Usage: \n\t\t%v [erc721_addr] [tokenid]\n\t\t"+
-			"Gets CosmicSignature approved for all status\n\n",os.Args[0],
+			"Gets ERC721 approved status status (single (token level) approval)\n\n",os.Args[0],
 		)
 		os.Exit(1)
 	}

@@ -177,12 +177,10 @@ func main() {
 	bnum,exists := storage.Get_last_block_num()
 	if !exists {
 		bnum = 0
-	} else {
-		bnum = bnum + 1
 	}
 	var bnum_high int64 = latestBlock.Number.Int64()
 	if bnum_high < bnum {
-		Info.Printf("Database has more blocks than the blockchain, aborting. Fix last_block table.\n")
+		Info.Printf("Database has more blocks than the blockchain (%v < %v), aborting. Fix last_block table.\n",bnum_high,bnum)
 		os.Exit(1)
 	}
   main_loop:
@@ -195,8 +193,6 @@ func main() {
 	bnum,exists = storage.Get_last_block_num()
 	if !exists {
 		bnum = 0
-	} else {
-		bnum = bnum + 1
 	}
 	bnum_high = latestBlock.Number.Int64()
 	Info.Printf("Latest block=%v, bnum=%v\n",latestBlock.Number.Int64(),bnum)
@@ -204,6 +200,9 @@ func main() {
 		Info.Printf("Database has more blocks than the blockchain, aborting. Sleeping to wait\n")
 		time.Sleep(10 * time.Second)
 		goto main_loop
+	}
+	if bnum != 0 {
+		bnum = bnum + 1
 	}
 	for ; bnum<=bnum_high; bnum++ {
 		select {

@@ -1135,7 +1135,8 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winners_by_round(round_num int64) []
 				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 				"LEFT JOIN bw_raffle_nft_claimed c ON c.nft_winner_evtlog_id=p.evtlog_id "+
-			"WHERE p.round_num=$1"
+			"WHERE p.round_num=$1 " +
+			"ORDER BY p.id "
 
 	rows,err := sw.S.Db().Query(query,round_num)
 	if (err!=nil) {
@@ -1408,7 +1409,8 @@ func (sw *SQLStorageWrapper) Get_raffle_deposits_by_round(round_num int64) []p.B
 			"FROM "+sw.S.SchemaName()+".bw_raffle_deposit p "+
 				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-			"WHERE p.round_num = $1"
+			"WHERE p.round_num = $1 " +
+			"ORDER BY p.id"
 
 	rows,err := sw.S.Db().Query(query,round_num)
 	if (err!=nil) {

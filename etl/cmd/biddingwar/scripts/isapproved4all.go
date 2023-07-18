@@ -26,8 +26,8 @@ func main() {
 
 	if len(os.Args) < 3 {
 		fmt.Printf(
-			"Usage: \n\t\t%v [cosmic_signature_addr] [owner] [operator]\n\t\t"+
-			"Gets CosmicSignature approved for all status\n\n",os.Args[0],
+			"Usage: \n\t\t%v [token_addr] [owner] [operator]\n\t\t"+
+			"Gets ERC721 approved for all status (operator level approval)\n\n",os.Args[0],
 		)
 		os.Exit(1)
 	}
