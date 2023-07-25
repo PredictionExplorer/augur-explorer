@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"context"
+	"strconv"
 	"crypto/ecdsa"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -32,8 +33,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(os.Args) != 3 {
-		fmt.Printf("Usage: \n\t\t%v [priv_key] [contract_addr]\n\n\t\tClaim raffle NFT\n",os.Args[0])
+	if len(os.Args) != 4 {
+		fmt.Printf("Usage: \n\t\t%v [priv_key] [contract_addr] [num]\n\n\t\tClaim donated NFT\n",os.Args[0])
+		os.Exit(1)
+	}
+	num_str := os.Args[3]
+	num,err := strconv.ParseInt(num_str,10,64)
+	if err != nil {
+		fmt.Printf("error parsing num parameter: %v\n",err)
 		os.Exit(1)
 	}
 
@@ -74,12 +81,15 @@ func main() {
 		os.Exit(1)
 	}
 	big_chain_id := big.NewInt(CHAIN_ID)
+	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
 	txopts := bind.NewKeyedTransactor(from_PrivateKey)
 	txopts.Nonce = big.NewInt(int64(from_nonce))
 	txopts.Value = big.NewInt(0)     // in weia
 	txopts.Value.Set(big.NewInt(0))
 	txopts.GasLimit = uint64(10000000) // in units
 	txopts.GasPrice = gasPrice
+
+	fmt.Printf("Gas price = %v\n",gasPrice.String())
 
 	signfunc := func(address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 		signer := types.NewEIP155Signer(big_chain_id)
@@ -93,13 +103,12 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := cosmic_game_ctrct.ClaimRaffleNFT(txopts)
-	//fmt.Printf("Tx hash: %v\n",tx.Hash().String())
-	fmt.Printf("err = %v",err)
-	fmt.Printf("Claiming for %v\n",from_address.String());
+	tx,err := cosmic_game_ctrct.ClaimDonatedNFT(txopts,big.NewInt(num))
+	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)
 		os.Exit(1)
 	}
+	fmt.Printf("Tx hash = %v\n",tx.Hash().String())
 	_=tx
 }
