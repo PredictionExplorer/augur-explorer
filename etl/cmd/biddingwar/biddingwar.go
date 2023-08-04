@@ -63,6 +63,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_raffle_withdrawal[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_raffle_nft_winner[:4]),
 			ContractAid: 0,
 		},
@@ -568,6 +572,40 @@ func proc_raffle_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_raffle_deposit(evt.EvtId)
 	storagew.Insert_raffle_deposit(&evt)
 }
+func proc_raffle_withdrawal_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt BWRaffleWithdrawal
+	var eth_evt RaffleWalletRaffleWithdrawalEvent 
+
+	Info.Printf("Processing RaffleWithdrawalevent id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),raffle_wallet_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := raffle_wallet_abi.UnpackIntoInterface(&eth_evt,"RaffleWithdrawalEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event RaffleWithdrawalEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.Amount = eth_evt.Amount.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("RaffleWithdrawalEvent{\n")
+	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("}\n")
+
+	storagew.Delete_raffle_withdrawal(evt.EvtId)
+	storagew.Insert_raffle_withdrawal(&evt)
+}
 func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt BWRaffleNFTWinner
@@ -739,6 +777,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_deposit) {
 		proc_raffle_deposit_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_withdrawal) {
+		proc_raffle_withdrawal_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_nft_winner) {
 		proc_raffle_nft_winner_event(log,evtlog)

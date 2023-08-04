@@ -150,6 +150,18 @@ type BwRaffleDepositRec struct {
 	DepositId					int64
 	Amount						float64
 }
+type BwRaffleWithdrawalRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	WinnerAddr					string
+	WinnerAid					int64
+	Amount						float64
+}
 type BwRaffleNFTWinnerRec struct {
 	RecordId					int64
 	EvtLogId					int64

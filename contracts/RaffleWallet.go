@@ -30,8 +30,8 @@ var (
 
 // RaffleWalletMetaData contains all meta data concerning the RaffleWallet contract.
 var RaffleWalletMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RaffleDepositEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numDeposits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"winners\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"claimed\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"}],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
-	Bin: "0x608060405234801561001057600080fd5b5061002d61002261003260201b60201c565b61003a60201b60201c565b6100fe565b600033905090565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff169050816000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508173ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a35050565b610d508061010d6000396000f3fe6080604052600436106100705760003560e01c80638da5cb5b1161004e5780638da5cb5b146100d1578063a2fb1175146100fc578063bbd4e8c91461013d578063f2fde38b1461016857610070565b80632e1a7d4d1461007557806347e7ef241461009e578063715018a6146100ba575b600080fd5b34801561008157600080fd5b5061009c600480360381019061009791906107cf565b610191565b005b6100b860048036038101906100b3919061085a565b61031f565b005b3480156100c657600080fd5b506100cf610521565b005b3480156100dd57600080fd5b506100e6610535565b6040516100f391906108a9565b60405180910390f35b34801561010857600080fd5b50610123600480360381019061011e91906107cf565b61055e565b6040516101349594939291906108ee565b60405180910390f35b34801561014957600080fd5b506101526105c1565b60405161015f9190610941565b60405180910390f35b34801561017457600080fd5b5061018f600480360381019061018a919061095c565b6105c7565b005b6001600082815260200190815260200160002060040160009054906101000a900460ff16156101f5576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016101ec906109e6565b60405180910390fd5b600180600083815260200190815260200160002060040160006101000a81548160ff02191690831515021790555060006001600083815260200190815260200160002060000160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16600160008481526020019081526020016000206001015460405161029590610a37565b60006040518083038185875af1925050503d80600081146102d2576040519150601f19603f3d011682016040523d82523d6000602084013e6102d7565b606091505b505090508061031b576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161031290610a98565b60405180910390fd5b5050565b600073ffffffffffffffffffffffffffffffffffffffff168273ffffffffffffffffffffffffffffffffffffffff160361038e576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161038590610b04565b60405180910390fd5b600034116103d1576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016103c890610b70565b60405180910390fd5b6040518060a001604052808373ffffffffffffffffffffffffffffffffffffffff16815260200134815260200160025481526020018281526020016000151581525060016000600254815260200190815260200160002060008201518160000160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555060208201518160010155604082015181600201556060820151816003015560808201518160040160006101000a81548160ff021916908315150217905550905050808273ffffffffffffffffffffffffffffffffffffffff167fb1167d0680cf42eff86b3ab041def9a2bc93b1b86dc35ce7d6b8c3060f06ac90600254346040516104fb929190610b90565b60405180910390a36001600260008282546105169190610be8565b925050819055505050565b61052961064a565b61053360006106c8565b565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16905090565b60016020528060005260406000206000915090508060000160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16908060010154908060020154908060030154908060040160009054906101000a900460ff16905085565b60025481565b6105cf61064a565b600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff160361063e576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161063590610c8e565b60405180910390fd5b610647816106c8565b50565b61065261078c565b73ffffffffffffffffffffffffffffffffffffffff16610670610535565b73ffffffffffffffffffffffffffffffffffffffff16146106c6576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016106bd90610cfa565b60405180910390fd5b565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff169050816000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508173ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a35050565b600033905090565b600080fd5b6000819050919050565b6107ac81610799565b81146107b757600080fd5b50565b6000813590506107c9816107a3565b92915050565b6000602082840312156107e5576107e4610794565b5b60006107f3848285016107ba565b91505092915050565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b6000610827826107fc565b9050919050565b6108378161081c565b811461084257600080fd5b50565b6000813590506108548161082e565b92915050565b6000806040838503121561087157610870610794565b5b600061087f85828601610845565b9250506020610890858286016107ba565b9150509250929050565b6108a38161081c565b82525050565b60006020820190506108be600083018461089a565b92915050565b6108cd81610799565b82525050565b60008115159050919050565b6108e8816108d3565b82525050565b600060a082019050610903600083018861089a565b61091060208301876108c4565b61091d60408301866108c4565b61092a60608301856108c4565b61093760808301846108df565b9695505050505050565b600060208201905061095660008301846108c4565b92915050565b60006020828403121561097257610971610794565b5b600061098084828501610845565b91505092915050565b600082825260208201905092915050565b7f526166666c652068617320616c72656479206265656e20636c61696d65642e00600082015250565b60006109d0601f83610989565b91506109db8261099a565b602082019050919050565b600060208201905081810360008301526109ff816109c3565b9050919050565b600081905092915050565b50565b6000610a21600083610a06565b9150610a2c82610a11565b600082019050919050565b6000610a4282610a14565b9150819050919050565b7f5472616e73666572206661696c65642e00000000000000000000000000000000600082015250565b6000610a82601083610989565b9150610a8d82610a4c565b602082019050919050565b60006020820190508181036000830152610ab181610a75565b9050919050565b7f5a65726f2d616464726573732077617320676976656e2e000000000000000000600082015250565b6000610aee601783610989565b9150610af982610ab8565b602082019050919050565b60006020820190508181036000830152610b1d81610ae1565b9050919050565b7f4e6f2045544820686173206265656e2073656e742e0000000000000000000000600082015250565b6000610b5a601583610989565b9150610b6582610b24565b602082019050919050565b60006020820190508181036000830152610b8981610b4d565b9050919050565b6000604082019050610ba560008301856108c4565b610bb260208301846108c4565b9392505050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b6000610bf382610799565b9150610bfe83610799565b9250828201905080821115610c1657610c15610bb9565b5b92915050565b7f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160008201527f6464726573730000000000000000000000000000000000000000000000000000602082015250565b6000610c78602683610989565b9150610c8382610c1c565b604082019050919050565b60006020820190508181036000830152610ca781610c6b565b9050919050565b7f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572600082015250565b6000610ce4602083610989565b9150610cef82610cae565b602082019050919050565b60006020820190508181036000830152610d1381610cd7565b905091905056fea264697066735822122009c602077fc515d7644f9e032eb54ea174209976e30f16b32f081eb14072740764736f6c63430008130033",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RaffleDepositEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RaffleWithdrawalEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numDeposits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"winners\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"claimed\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"}],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	Bin: "0x608060405234801561000f575f80fd5b5061002c61002161003160201b60201c565b61003860201b60201c565b6100f9565b5f33905090565b5f805f9054906101000a900473ffffffffffffffffffffffffffffffffffffffff169050815f806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508173ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a35050565b610de6806101065f395ff3fe60806040526004361061006f575f3560e01c80638da5cb5b1161004d5780638da5cb5b146100cd578063a2fb1175146100f7578063bbd4e8c914610137578063f2fde38b146101615761006f565b80632e1a7d4d1461007357806347e7ef241461009b578063715018a6146100b7575b5f80fd5b34801561007e575f80fd5b5061009960048036038101906100949190610899565b610189565b005b6100b560048036038101906100b0919061091e565b61039b565b005b3480156100c2575f80fd5b506100cb610593565b005b3480156100d8575f80fd5b506100e161061a565b6040516100ee919061096b565b60405180910390f35b348015610102575f80fd5b5061011d60048036038101906101189190610899565b610641565b60405161012e9594939291906109ad565b60405180910390f35b348015610142575f80fd5b5061014b61069e565b60405161015891906109fe565b60405180910390f35b34801561016c575f80fd5b5061018760048036038101906101829190610a17565b6106a4565b005b60015f8281526020019081526020015f206004015f9054906101000a900460ff16156101ea576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016101e190610a9c565b60405180910390fd5b6001805f8381526020019081526020015f206004015f6101000a81548160ff0219169083151502179055505f60015f8381526020019081526020015f205f015f9054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1660015f8481526020019081526020015f206001015460405161028090610ae7565b5f6040518083038185875af1925050503d805f81146102ba576040519150601f19603f3d011682016040523d82523d5f602084013e6102bf565b606091505b5050905080610303576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016102fa90610b45565b60405180910390fd5b60015f8381526020019081526020015f205f015f9054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff167f49775450da95afb818c4651b894f124d05629f06572a18900bf29db74b04a0d860015f8581526020019081526020015f206001015460405161038f91906109fe565b60405180910390a25050565b5f73ffffffffffffffffffffffffffffffffffffffff168273ffffffffffffffffffffffffffffffffffffffff1603610409576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161040090610bad565b60405180910390fd5b5f341161044b576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161044290610c15565b60405180910390fd5b6040518060a001604052808373ffffffffffffffffffffffffffffffffffffffff16815260200134815260200160025481526020018281526020015f151581525060015f60025481526020019081526020015f205f820151815f015f6101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506020820151816001015560408201518160020155606082015181600301556080820151816004015f6101000a81548160ff021916908315150217905550905050808273ffffffffffffffffffffffffffffffffffffffff167fb1167d0680cf42eff86b3ab041def9a2bc93b1b86dc35ce7d6b8c3060f06ac906002543460405161056e929190610c33565b60405180910390a3600160025f8282546105889190610c87565b925050819055505050565b61059b61079a565b73ffffffffffffffffffffffffffffffffffffffff166105b961061a565b73ffffffffffffffffffffffffffffffffffffffff161461060f576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161060690610d04565b60405180910390fd5b6106185f6107a1565b565b5f805f9054906101000a900473ffffffffffffffffffffffffffffffffffffffff16905090565b6001602052805f5260405f205f91509050805f015f9054906101000a900473ffffffffffffffffffffffffffffffffffffffff1690806001015490806002015490806003015490806004015f9054906101000a900460ff16905085565b60025481565b6106ac61079a565b73ffffffffffffffffffffffffffffffffffffffff166106ca61061a565b73ffffffffffffffffffffffffffffffffffffffff1614610720576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161071790610d04565b60405180910390fd5b5f73ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff160361078e576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161078590610d92565b60405180910390fd5b610797816107a1565b50565b5f33905090565b5f805f9054906101000a900473ffffffffffffffffffffffffffffffffffffffff169050815f806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508173ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a35050565b5f80fd5b5f819050919050565b61087881610866565b8114610882575f80fd5b50565b5f813590506108938161086f565b92915050565b5f602082840312156108ae576108ad610862565b5b5f6108bb84828501610885565b91505092915050565b5f73ffffffffffffffffffffffffffffffffffffffff82169050919050565b5f6108ed826108c4565b9050919050565b6108fd816108e3565b8114610907575f80fd5b50565b5f81359050610918816108f4565b92915050565b5f806040838503121561093457610933610862565b5b5f6109418582860161090a565b925050602061095285828601610885565b9150509250929050565b610965816108e3565b82525050565b5f60208201905061097e5f83018461095c565b92915050565b61098d81610866565b82525050565b5f8115159050919050565b6109a781610993565b82525050565b5f60a0820190506109c05f83018861095c565b6109cd6020830187610984565b6109da6040830186610984565b6109e76060830185610984565b6109f4608083018461099e565b9695505050505050565b5f602082019050610a115f830184610984565b92915050565b5f60208284031215610a2c57610a2b610862565b5b5f610a398482850161090a565b91505092915050565b5f82825260208201905092915050565b7f526166666c652068617320616c72656479206265656e20636c61696d65642e005f82015250565b5f610a86601f83610a42565b9150610a9182610a52565b602082019050919050565b5f6020820190508181035f830152610ab381610a7a565b9050919050565b5f81905092915050565b50565b5f610ad25f83610aba565b9150610add82610ac4565b5f82019050919050565b5f610af182610ac7565b9150819050919050565b7f5472616e73666572206661696c65642e000000000000000000000000000000005f82015250565b5f610b2f601083610a42565b9150610b3a82610afb565b602082019050919050565b5f6020820190508181035f830152610b5c81610b23565b9050919050565b7f5a65726f2d616464726573732077617320676976656e2e0000000000000000005f82015250565b5f610b97601783610a42565b9150610ba282610b63565b602082019050919050565b5f6020820190508181035f830152610bc481610b8b565b9050919050565b7f4e6f2045544820686173206265656e2073656e742e00000000000000000000005f82015250565b5f610bff601583610a42565b9150610c0a82610bcb565b602082019050919050565b5f6020820190508181035f830152610c2c81610bf3565b9050919050565b5f604082019050610c465f830185610984565b610c536020830184610984565b9392505050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f610c9182610866565b9150610c9c83610866565b9250828201905080821115610cb457610cb3610c5a565b5b92915050565b7f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e65725f82015250565b5f610cee602083610a42565b9150610cf982610cba565b602082019050919050565b5f6020820190508181035f830152610d1b81610ce2565b9050919050565b7f4f776e61626c653a206e6577206f776e657220697320746865207a65726f20615f8201527f6464726573730000000000000000000000000000000000000000000000000000602082015250565b5f610d7c602683610a42565b9150610d8782610d22565b604082019050919050565b5f6020820190508181035f830152610da981610d70565b905091905056fea26469706673582212209333483d981e4bc2f971dfb52d163db4c72ce4e2633228c050b64580bd83d9c464736f6c63430008150033",
 }
 
 // RaffleWalletABI is the input ABI used to generate the binding from.
@@ -709,6 +709,151 @@ func (_RaffleWallet *RaffleWalletFilterer) WatchRaffleDepositEvent(opts *bind.Wa
 func (_RaffleWallet *RaffleWalletFilterer) ParseRaffleDepositEvent(log types.Log) (*RaffleWalletRaffleDepositEvent, error) {
 	event := new(RaffleWalletRaffleDepositEvent)
 	if err := _RaffleWallet.contract.UnpackLog(event, "RaffleDepositEvent", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// RaffleWalletRaffleWithdrawalEventIterator is returned from FilterRaffleWithdrawalEvent and is used to iterate over the raw logs and unpacked data for RaffleWithdrawalEvent events raised by the RaffleWallet contract.
+type RaffleWalletRaffleWithdrawalEventIterator struct {
+	Event *RaffleWalletRaffleWithdrawalEvent // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *RaffleWalletRaffleWithdrawalEventIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(RaffleWalletRaffleWithdrawalEvent)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(RaffleWalletRaffleWithdrawalEvent)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *RaffleWalletRaffleWithdrawalEventIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *RaffleWalletRaffleWithdrawalEventIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// RaffleWalletRaffleWithdrawalEvent represents a RaffleWithdrawalEvent event raised by the RaffleWallet contract.
+type RaffleWalletRaffleWithdrawalEvent struct {
+	Winner common.Address
+	Amount *big.Int
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterRaffleWithdrawalEvent is a free log retrieval operation binding the contract event 0x49775450da95afb818c4651b894f124d05629f06572a18900bf29db74b04a0d8.
+//
+// Solidity: event RaffleWithdrawalEvent(address indexed winner, uint256 amount)
+func (_RaffleWallet *RaffleWalletFilterer) FilterRaffleWithdrawalEvent(opts *bind.FilterOpts, winner []common.Address) (*RaffleWalletRaffleWithdrawalEventIterator, error) {
+
+	var winnerRule []interface{}
+	for _, winnerItem := range winner {
+		winnerRule = append(winnerRule, winnerItem)
+	}
+
+	logs, sub, err := _RaffleWallet.contract.FilterLogs(opts, "RaffleWithdrawalEvent", winnerRule)
+	if err != nil {
+		return nil, err
+	}
+	return &RaffleWalletRaffleWithdrawalEventIterator{contract: _RaffleWallet.contract, event: "RaffleWithdrawalEvent", logs: logs, sub: sub}, nil
+}
+
+// WatchRaffleWithdrawalEvent is a free log subscription operation binding the contract event 0x49775450da95afb818c4651b894f124d05629f06572a18900bf29db74b04a0d8.
+//
+// Solidity: event RaffleWithdrawalEvent(address indexed winner, uint256 amount)
+func (_RaffleWallet *RaffleWalletFilterer) WatchRaffleWithdrawalEvent(opts *bind.WatchOpts, sink chan<- *RaffleWalletRaffleWithdrawalEvent, winner []common.Address) (event.Subscription, error) {
+
+	var winnerRule []interface{}
+	for _, winnerItem := range winner {
+		winnerRule = append(winnerRule, winnerItem)
+	}
+
+	logs, sub, err := _RaffleWallet.contract.WatchLogs(opts, "RaffleWithdrawalEvent", winnerRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(RaffleWalletRaffleWithdrawalEvent)
+				if err := _RaffleWallet.contract.UnpackLog(event, "RaffleWithdrawalEvent", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseRaffleWithdrawalEvent is a log parse operation binding the contract event 0x49775450da95afb818c4651b894f124d05629f06572a18900bf29db74b04a0d8.
+//
+// Solidity: event RaffleWithdrawalEvent(address indexed winner, uint256 amount)
+func (_RaffleWallet *RaffleWalletFilterer) ParseRaffleWithdrawalEvent(log types.Log) (*RaffleWalletRaffleWithdrawalEvent, error) {
+	event := new(RaffleWalletRaffleWithdrawalEvent)
+	if err := _RaffleWallet.contract.UnpackLog(event, "RaffleWithdrawalEvent", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
