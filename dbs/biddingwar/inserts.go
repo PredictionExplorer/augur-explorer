@@ -263,7 +263,7 @@ func (sw *SQLStorageWrapper) Insert_raffle_withdrawal(evt *p.BWRaffleWithdrawal)
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_raffle_withdrawal("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"winner_aid,amount"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,

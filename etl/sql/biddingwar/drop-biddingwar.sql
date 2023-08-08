@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS
 	bw_mint_event,
 	bw_nft_donation,
 	bw_raffle_deposit,
+	bw_raffle_withdrawal,
 	bw_raffle_nft_winner,
 	bw_raffle_nft_claimed,
 	bw_donated_nft_claimed,
