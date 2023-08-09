@@ -95,11 +95,8 @@ async function main() {
   bidPrice = await cosmicGame.getBidPrice();
   await cosmicGame.connect(addr1).bid("bid 2",{value: bidPrice});
   prizeTime = await cosmicGame.timeUntilPrize();
-	console.log("prizeTime = "+prizeTime);
   let token_id = await mint_rwalk(owner);
   await  cosmicGame.connect(owner).bidWithRWLK(token_id,"bidWithRWLK");
-  console.log("bid with Rwalk, tx , token_id="+token_id)
-//	console.log(tx)
 
   bidPrice = await cosmicGame.getBidPrice();
   await cosmicGame.connect(addr2).bid("bid 3",{value: bidPrice});
@@ -113,7 +110,8 @@ async function main() {
 
   let prizeAmount = await cosmicGame.prizeAmount();
   let charityAmount = await cosmicGame.charityAmount();
-  await cosmicGame.connect(addr2).claimPrize({gasLimit:1000000});
+  //await cosmicGame.connect(addr2).claimPrize();
+  await cosmicGame.connect(addr2).claimPrize({gasLimit:30000000});
   let prizeAmount2 = await cosmicGame.prizeAmount();
   let expectedprizeAmount = prizeAmount.sub(charityAmount).div(2);
 
@@ -127,14 +125,13 @@ async function main() {
 
   prizeAmount = await cosmicGame.prizeAmount();
   charityAmount = await cosmicGame.charityAmount();
-  await cosmicGame.connect(addr1).claimPrize({gasLimit:1000000});
+  await cosmicGame.connect(addr1).claimPrize({gasLimit:3000000});
   prizeAmount2 = await cosmicGame.prizeAmount();
-	console.log("prizeAmount2="+prizeAmount2)
   bidPrice = await cosmicGame.getBidPrice();
   await cosmicGame.connect(addr1).bid("bid 5",{value:bidPrice});
   prizeTime = await cosmicGame.timeUntilPrize();
   await ethers.provider.send("evm_increaseTime", [prizeTime.toNumber()]);
-  tx = await cosmicGame.connect(addr1).claimPrize({gasLimit:1000000});
+  tx = await cosmicGame.connect(addr1).claimPrize({gasLimit:3000000});
   receipt = await tx.wait();
   let topic_sig = cosmicSignature.interface.getEventTopic("MintEvent");
   log = receipt.logs.find(x=>x.topics.indexOf(topic_sig)>=0);
@@ -153,7 +150,6 @@ async function main() {
 
   bidPrice = await cosmicGame.getBidPrice();
   await cosmicGame.connect(addr3).bid("bid 6",{value:bidPrice});
-
   await ethers.provider.send("evm_mine");	// mine empty block as spacing
 	
   await randomWalkNFT.connect(addr1).setApprovalForAll(cosmicGame.address, true);
@@ -175,31 +171,42 @@ async function main() {
   prizeTime = await cosmicGame.timeUntilPrize();
   await ethers.provider.send("evm_increaseTime", [prizeTime.toNumber()]);
   await ethers.provider.send("evm_mine");
-  tx = await cosmicGame.connect(addr3).claimPrize({gasLimit:1000000});
-  topic_sig = raffleWallet.interface.getEventTopic("RaffleDepositEvent");
-
-  await cosmicGame.connect(addr1).claimRaffleNFT();
-  await cosmicGame.connect(addr1).claimRaffleNFT();
-  await cosmicGame.connect(addr3).claimRaffleNFT();
-  await cosmicGame.connect(addr3).claimRaffleNFT();
+  tx = await cosmicGame.connect(addr3).claimPrize({gasLimit:3000000});
+  receipt = await tx.wait();
+  topic_sig = cosmicGame.interface.getEventTopic("RaffleNFTWinnerEvent");
+  deposit_logs = receipt.logs.filter(x=>x.topics.indexOf(topic_sig)>=0);
+  for (let i =0; i<deposit_logs.length; i++) {
+	  let wlog = cosmicGame.interface.parseLog(deposit_logs[i]);
+	  try {
+		  let winner_signer = cosmicGame.provider.getSigner(wlog.args.winner);
+	  	  await cosmicGame.connect(winner_signer).claimRaffleNFT(wlog.args.tokenId);
+		 } catch (error) {
+		}
+  }
   await cosmicGame.connect(addr3).claimDonatedNFT(hre.ethers.BigNumber.from('0'))
   await cosmicGame.connect(addr3).claimDonatedNFT(hre.ethers.BigNumber.from('1'))
-
-  receipt = await tx.wait();
+  topic_sig = raffleWallet.interface.getEventTopic("RaffleDepositEvent");
   deposit_logs = receipt.logs.filter(x=>x.topics.indexOf(topic_sig)>=0);
+  let withdrawal_done = [];
   for (let i =0; i<deposit_logs.length; i++) {
 	  let wlog = raffleWallet.interface.parseLog(deposit_logs[i]);
 	  let winner_signer = raffleWallet.provider.getSigner(wlog.args.winner);
-	  let deposit_id = wlog.args.depositId;
-	  await raffleWallet.connect(owner).withdraw(deposit_id);
+	  if (typeof withdrawal_done[wlog.args.winner] === 'undefined' ) {
+		  await raffleWallet.connect(winner_signer).withdraw();
+	      withdrawal_done[wlog.args.winner]=1;
+  		  await cosmicSignature.connect(winner_signer).setApprovalForAll(winner_signer.address,true)
+		  await cosmicSignature.connect(winner_signer).transferFrom(addr2.address,winner_signer.address,hre.ethers.BigNumber.from('0'));
+	  } else {
+			// skip
+	  }
   }
 
   await ethers.provider.send("evm_mine");	// mine empty block as spacing
 
-  await cosmicSignature.connect(addr2).setApprovalForAll(owner.address,true)
-  await cosmicSignature.connect(owner).transferFrom(addr2.address,owner.address,hre.ethers.BigNumber.from('0'));
-  await cosmicSignature.connect(addr1).setApprovalForAll(owner.address,true)
-  await cosmicSignature.connect(owner).transferFrom(addr1.address,owner.address,hre.ethers.BigNumber.from('1'));
+ // await cosmicSignature.connect(addr2).setApprovalForAll(owner.address,true)
+ // await cosmicSignature.connect(owner).transferFrom(addr2.address,owner.address,hre.ethers.BigNumber.from('0'));
+  //await cosmicSignature.connect(addr1).setApprovalForAll(owner.address,true)
+  //await cosmicSignature.connect(owner).transferFrom(addr1.address,owner.address,hre.ethers.BigNumber.from('1'));
 
   await ethers.provider.send("evm_mine");	// mine empty block as spacing
 }

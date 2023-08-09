@@ -120,7 +120,6 @@ CREATE TABLE bw_raffle_deposit (
 	contract_aid	BIGINT NOT NULL,
 	winner_aid		BIGINT NOT NULL,
 	round_num		BIGINT NOT NULL,
-	deposit_id		BIGINT NOT NULL,
 	amount			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );

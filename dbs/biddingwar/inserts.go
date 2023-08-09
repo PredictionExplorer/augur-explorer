@@ -236,8 +236,8 @@ func (sw *SQLStorageWrapper) Insert_raffle_deposit(evt *p.BWRaffleDeposit) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_raffle_deposit ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"winner_aid,round_num,deposit_id,amount"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
+					"winner_aid,round_num,amount"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -246,7 +246,6 @@ func (sw *SQLStorageWrapper) Insert_raffle_deposit(evt *p.BWRaffleDeposit) {
 		contract_aid,
 		winner_aid,
 		evt.Round,
-		evt.DepositId,
 		evt.Amount,
 	)
 	if err != nil {

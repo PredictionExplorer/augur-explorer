@@ -217,6 +217,46 @@ func find_cosmic_token_721_mint_event(contract_aid,tx_id,claim_prize_evtlog_id i
 	}
 	return log.Topics[1].Big().Int64()
 }
+func find_prize_num(tx_id int64) int64 {
+
+	evt_list,err := storagew.S.Get_events_by_sig_and_tx_id(tx_id,hex.EncodeToString(evt_prize_claim_event[0:4]))
+	if err != nil {
+
+		err_str := fmt.Sprintf("find_prize_num()() error: %v",err)
+		Info.Printf(err_str)
+		Error.Printf(err_str)
+		os.Exit(1)
+	}
+	if len(evt_list) == 0 {
+		err_str := fmt.Sprintf("find_prize_num() couldn't find corresponding PrizeClaimEvent()")
+		Info.Printf(err_str)
+		Error.Printf(err_str)
+		os.Exit(1)
+	}
+	if len(evt_list) != 1 {
+		err_str := fmt.Sprintf("find_prize_num() there is more than 1 PrizeClaim in this transaction()")
+		Info.Printf(err_str)
+		Error.Printf(err_str)
+		os.Exit(1)
+	}
+	var log types.Log
+	err = rlp.DecodeBytes(evt_list[0].RlpLog,&log)
+	if err!= nil {
+		err_str := fmt.Sprintf("RLP Decode error at find_prize_num(): %v",err)
+		Info.Printf(err_str)
+		Error.Printf(err_str)
+		os.Exit(1)
+	}
+	if len(log.Topics) < 2 {
+		err_str := fmt.Sprintf("Event PrizeClaimEvent doesn't have 3 topics")
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		Info.Printf("%+v",log)
+		Error.Printf("%+v",log)
+		os.Exit(1)
+	}
+	return log.Topics[1].Big().Int64()
+}
 func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt BWBidEvent
@@ -551,21 +591,20 @@ func proc_raffle_deposit_event(log *types.Log,elog *EthereumEventLog) {
 		os.Exit(1)
 	}
 
+	prize_num := find_prize_num(elog.TxId)
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
-	evt.Round = log.Topics[2].Big().Int64()
-	evt.DepositId = eth_evt.DepositId.Int64()
+	evt.Round = prize_num
 	evt.Amount = eth_evt.Amount.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("RaffleDepositEvent{\n")
 	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
 	Info.Printf("\tRound:%v\n",evt.Round)
-	Info.Printf("\tDepositId: %v\n",evt.DepositId)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("}\n")
 
@@ -666,7 +705,6 @@ func proc_raffle_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.TokenId = find_cosmic_token_721_transfer(evt.EvtId)
-
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("RaffleNFTClaimedEvent{\n")
 	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)

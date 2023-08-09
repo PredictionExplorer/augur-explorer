@@ -129,7 +129,6 @@ type BWRaffleDeposit struct {
 	ContractAddr		string
 	WinnerAddr			string
 	Round				int64
-	DepositId			int64
 	Amount				string
 }
 type BWRaffleWithdrawal struct {
