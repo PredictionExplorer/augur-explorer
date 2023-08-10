@@ -194,8 +194,6 @@ async function main() {
 	  if (typeof withdrawal_done[wlog.args.winner] === 'undefined' ) {
 		  await raffleWallet.connect(winner_signer).withdraw();
 	      withdrawal_done[wlog.args.winner]=1;
-  		  await cosmicSignature.connect(winner_signer).setApprovalForAll(winner_signer.address,true)
-		  await cosmicSignature.connect(winner_signer).transferFrom(addr2.address,winner_signer.address,hre.ethers.BigNumber.from('0'));
 	  } else {
 			// skip
 	  }
@@ -203,6 +201,8 @@ async function main() {
 
   await ethers.provider.send("evm_mine");	// mine empty block as spacing
 
+ //  await cosmicSignature.connect(winner_signer).setApprovalForAll(winner_signer.address,true)
+ // await cosmicSignature.connect(winner_signer).transferFrom(addr2.address,winner_signer.address,hre.ethers.BigNumber.from('0'));
  // await cosmicSignature.connect(addr2).setApprovalForAll(owner.address,true)
  // await cosmicSignature.connect(owner).transferFrom(addr2.address,owner.address,hre.ethers.BigNumber.from('0'));
   //await cosmicSignature.connect(addr1).setApprovalForAll(owner.address,true)

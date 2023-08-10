@@ -1506,6 +1506,34 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_claims_by_user(winner_aid int64) []p
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_unclaimed_token_ids(winner_aid int64) []int64 {
+
+	var query string
+	query = "SELECT "+
+				"p.token_id, "+
+			"FROM "+sw.S.SchemaName()+".bw_raffle_nft_winner w "+
+				"LEFT JOIN bw_raffle_nft_claimed c ON c.nft_winner_evtlog_id=w.evtlog_id "+
+			"WHERE w.winner_aid=$1  AND c.nft_winner_vetlog_id IS NULL "+
+			"ORDER BY w.id"
+
+	rows,err := sw.S.Db().Query(query,winner_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]int64,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var token_id int64
+		err=rows.Scan(&token_id)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,token_id)
+	}
+	return records
+}
 func (sw *SQLStorageWrapper) Get_donated_nft_claims(offset,limit int) []p.BwDonatedNFTClaimRec {
 
 	if limit == 0 { limit = 1000000 }
@@ -1613,6 +1641,40 @@ func (sw *SQLStorageWrapper) Get_donated_nft_claims_by_user(winner_aid int64) []
 		records = append(records,rec)
 	}
 	return records
+}
+func (sw *SQLStorageWrapper) Get_user_global_winnings(winner_aid int64) p.BwClaimInfo {
+
+	var output p.BwClaimInfo
+	var query string
+	query = "SELECT " +
+				"amount_sum,"+ 
+				"amount_sum/1e18" +
+				"raffles_count " +
+			"FROM bw_bw_raffle_winner_stats"
+
+	row := sw.S.Db().QueryRow(query)
+	var err error
+	var null_eth sql.NullString
+	var null_wei sql.NullFloat64
+	var null_count sql.NullInt64
+
+	err=row.Scan(&null_wei,&null_eth,null_count);
+	if err != nil {
+		if err == sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+	}
+	if null_eth.Valid {
+		output.ETHRaffleToClaim = null_wei.Float64
+	}
+	if null_wei.Valid {
+		output.ETHRaffleToClaimWei = null_eth.String
+	}
+	if null_count.Valid {
+		output.NumCSNFTRaffleToClaim = null_count.Int64
+	}
+	return output
 }
 func (sw *SQLStorageWrapper) Get_num_prize_claims() int64 {
 

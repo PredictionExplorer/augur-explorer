@@ -1055,3 +1055,66 @@ func biddingwar_time_until_prize(c *gin.Context) {
 		"TimeUntilPrize": ts_big.Int64(),
 	})
 }
+func biddingwar_user_global_winnings(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+
+	found, user_info := arb_storagew.Get_user_info(user_aid)
+	if !found {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	claim_info := arb_storagew.Get_user_global_winnings(user_aid)
+	c.HTML(http.StatusOK, "bw_user_global_winnings.html", gin.H{
+		"Winnings" : claim_info,
+		"UserInfo" : user_info,
+	})
+}
+func biddingwar_unclaimed_token_list_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+
+	token_list := arb_storagew.Get_unclaimed_token_ids(user_aid)
+	c.HTML(http.StatusOK, "bw_unclaimed_token_list_by_user.html", gin.H{
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"Tokens" : token_list,
+	})
+}

@@ -922,3 +922,72 @@ func api_biddingwar_prize_cur_round_time(c *gin.Context) {
 		})
 	}
 } 
+func api_biddingwar_user_global_winnings(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+	found, user_info := arb_storagew.Get_user_info(user_aid)
+	if !found {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+
+	claim_info := arb_storagew.Get_user_global_winnings(user_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Winnings" : claim_info,
+		"UserInfo" : user_info,
+	})
+}
+func api_biddingwar_unclaimed_token_list_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+	found, _ := arb_storagew.Get_user_info(user_aid)
+	if !found {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+
+	token_list := arb_storagew.Get_unclaimed_token_ids(user_aid)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"Tokens" : token_list,
+	})
+}

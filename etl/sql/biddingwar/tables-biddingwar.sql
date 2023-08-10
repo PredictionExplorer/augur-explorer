@@ -209,6 +209,7 @@ CREATE TABLE bw_winner ( -- collects statistics per winer of prize
 CREATE TABLE bw_raffle_winner_stats (	-- prizes in ETH
 	winner_aid		BIGINT PRIMARY KEY,
 	amount_sum		DECIMAL DEFAULT 0,
+	withdrawal_sum	DECIMAL DEFAULT 0,
 	raffles_count	BIGINT DEFAULT 0
 );
 CREATE TABLE bw_raffle_nft_winner_stats ( -- prizes in NFT

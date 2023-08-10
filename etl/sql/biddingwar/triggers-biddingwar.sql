@@ -8,6 +8,8 @@ CREATE TRIGGER bw_nft_donation_insert AFTER INSERT ON bw_nft_donation FOR EACH R
 CREATE TRIGGER bw_nft_donation_delete AFTER DELETE ON bw_nft_donation FOR EACH ROW EXECUTE PROCEDURE on_nft_donation_delete();
 CREATE TRIGGER bw_raffle_deposit_insert AFTER INSERT ON bw_raffle_deposit FOR EACH ROW EXECUTE PROCEDURE on_raffle_deposit_insert();
 CREATE TRIGGER bw_raffle_deposit_delete AFTER DELETE ON bw_raffle_deposit FOR EACH ROW EXECUTE PROCEDURE on_raffle_deposit_delete();
+CREATE TRIGGER bw_raffle_withdrawal_insert AFTER INSERT ON bw_raffle_withdrawal FOR EACH ROW EXECUTE PROCEDURE on_raffle_withdrawal_insert();
+CREATE TRIGGER bw_raffle_withdrawal_delete AFTER DELETE ON bw_raffle_withdrawal FOR EACH ROW EXECUTE PROCEDURE on_raffle_withdrawal_delete();
 CREATE TRIGGER bw_raffle_nft_winner_insert AFTER INSERT ON bw_raffle_nft_winner FOR EACH ROW EXECUTE PROCEDURE on_raffle_nft_winner_insert();
 CREATE TRIGGER bw_raffle_nft_winner_delete AFTER DELETE ON bw_raffle_nft_winner FOR EACH ROW EXECUTE PROCEDURE on_raffle_nft_winner_delete();
 CREATE TRIGGER bw_raffle_nft_claimed_insert AFTER INSERT ON bw_raffle_nft_claimed FOR EACH ROW EXECUTE PROCEDURE on_raffle_nft_claimed_insert();

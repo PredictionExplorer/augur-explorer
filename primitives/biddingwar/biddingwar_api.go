@@ -238,3 +238,9 @@ type BwRoundStats struct {
 	TotalRaffleEthDepositsEth	float64 // deposits of ETH (same as above) but divided by 1^18
 	TotalRaffleNFTs				int64
 }
+type BwClaimInfo struct {
+	ETHRaffleToClaim			float64
+	ETHRaffleToClaimWei			string
+	NumCSNFTRaffleToClaim		int64		// CosmicSignature NFT tokens to claim (counter)
+	NumDonatedNFTToClaim		int64		// Pending unclaimed donated tokens (counter)
+}

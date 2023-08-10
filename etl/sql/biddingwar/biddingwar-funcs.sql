@@ -437,3 +437,32 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_raffle_withdrawal_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+
+	UPDATE bw_raffle_winner_stats
+		SET
+			withdrawal_sum = (withdrawal_sum + NEW.amount)	-- data for historical purposes
+			amount_sum = (amount_sum - NEW.amount)			-- current amount available to withdraw
+		WHERE winner_aid = NEW.winner_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO bw_raffle_winner_stats(winner_aid,withdrawal_sum) VALUES(NEW.winner_aid,NEW.amount);
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_rafflw_withdrawal_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE bw_raffle_winner_stats
+		SET
+			withdrawal_sum = (withdrawal_sum - OLD.amount),
+			amount_sum = (amount - OLD.amount)
+		WHERE winner_aid = OLD.winner_aid;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
