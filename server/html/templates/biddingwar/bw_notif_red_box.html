@@ -1,0 +1,17 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Notification red box for {{.UserAddr}}</title>
+</head>
+<body>
+	<h3 class="page_title">Notification red box for {{.UserAddr}}<h3>
+<table>
+	<tr class="market_reports">
+		<td class="market_reports">Unclaimed donated NFTs</td>
+		<td class="market_reports">{{.Winnings.NumDonatedNFTToClaim}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports">Unclaimed ETH winnings</td>
+		<td class="market_reports">{{ printf "%.8f" .Winnings.ETHRaffleToClaim}}</td>
+	</tr>
+</table>

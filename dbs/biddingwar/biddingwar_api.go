@@ -664,6 +664,7 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.BwUserInfo) {
 				"p.prizes_count,"+
 				"p.max_win_amount/1e18 max_win, "+
 				"rw.amount_sum/1e18 raffle_win_sum, "+
+				"rw.withdrawal_sum/1e18 withdrawal_sum, "+
 				"rw.raffles_count, "+
 				"rn.num_won raffle_nft_won, "+
 				"p.unclaimed_nfts, "+
@@ -678,7 +679,7 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.BwUserInfo) {
 	var rec p.BwUserInfo
 	var null_num_bids,null_prizes_count sql.NullInt64
 	var null_max_bid,null_max_win sql.NullFloat64
-	var null_raffle_sum sql.NullFloat64
+	var null_raffle_sum_winnings,null_raffle_sum_withdrawal sql.NullFloat64
 	var null_raffles_count,null_raffle_nft_won sql.NullInt64
 	var null_unclaimed_nfts,null_total_tokens sql.NullInt64
 	row := sw.S.Db().QueryRow(query,user_aid)
@@ -690,7 +691,8 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.BwUserInfo) {
 		&null_max_bid,
 		&null_prizes_count,
 		&null_max_win,
-		&null_raffle_sum,
+		&null_raffle_sum_winnings,
+		&null_raffle_sum_withdrawal,
 		&null_raffles_count,
 		&null_raffle_nft_won,
 		&null_unclaimed_nfts,
@@ -707,7 +709,8 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.BwUserInfo) {
 	if null_prizes_count.Valid { rec.NumPrizes = null_prizes_count.Int64 }
 	if null_max_bid.Valid { rec.MaxBidAmount = null_max_bid.Float64 }
 	if null_max_win.Valid { rec.MaxWinAmount = null_max_win.Float64 }
-	if null_raffle_sum.Valid { rec.SumRaffleEthWinnings = null_raffle_sum.Float64 }
+	if null_raffle_sum_winnings.Valid { rec.SumRaffleEthWinnings = null_raffle_sum_winnings.Float64 }
+	if null_raffle_sum_withdrawal.Valid { rec.SumRaffleEthWithdrawal = null_raffle_sum_withdrawal.Float64 }
 	if null_raffles_count.Valid { rec.NumRaffleEthWinnings = null_raffles_count.Int64 }
 	if null_raffle_nft_won.Valid { rec.RaffleNFTWon = null_raffle_nft_won.Int64 }
 	if null_unclaimed_nfts.Valid { rec.UnclaimedNFTs = null_unclaimed_nfts.Int64 }
@@ -898,6 +901,7 @@ func (sw *SQLStorageWrapper) Get_NFT_donations(offset,limit int) []p.BwNFTDonati
 				"d.token_id, "+
 				"d.round_num,"+
 				"nft.address_id,"+
+				"d.idx,"+
 				"nft.addr, "+
 				"d.token_uri "+
 			"FROM "+sw.S.SchemaName()+".bw_nft_donation d "+
@@ -928,6 +932,7 @@ func (sw *SQLStorageWrapper) Get_NFT_donations(offset,limit int) []p.BwNFTDonati
 			&rec.NFTTokenId,
 			&rec.RoundNum,
 			&rec.TokenAddressId,
+			&rec.Index,
 			&rec.TokenAddr,
 			&rec.NFTTokenURI,
 		)
@@ -1624,29 +1629,36 @@ func (sw *SQLStorageWrapper) Get_user_global_winnings(winner_aid int64) p.BwClai
 	var output p.BwClaimInfo
 	var query string
 	query = "SELECT " +
-				"amount_sum,"+ 
-				"amount_sum/1e18" +
-				"raffles_count " +
-			"FROM bw_bw_raffle_winner_stats"
+				"s.amount_sum,"+ 
+				"s.amount_sum/1e18, " +
+				"w.unclaimed_nfts  " +
+			"FROM bw_raffle_winner_stats s " +
+				"LEFT JOIN bw_winner w ON s.winner_aid=w.winner_aid "+
+			"WHERE s.winner_aid = $1"
 
-	row := sw.S.Db().QueryRow(query)
+
+	row := sw.S.Db().QueryRow(query,winner_aid)
 	var err error
-	var null_eth sql.NullString
-	var null_wei sql.NullFloat64
-	var null_count sql.NullInt64
+	var null_wei sql.NullString
+	var null_eth sql.NullFloat64
+	var null_nfts sql.NullInt64
 
-	err=row.Scan(&null_wei,&null_eth,null_count);
+	err=row.Scan(&null_wei,&null_eth,&null_nfts);
 	if err != nil {
 		if err == sql.ErrNoRows {
-			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-			os.Exit(1)
+			return output;
 		}
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
 	}
 	if null_eth.Valid {
-		output.ETHRaffleToClaim = null_wei.Float64
+		output.ETHRaffleToClaim = null_eth.Float64
 	}
 	if null_wei.Valid {
-		output.ETHRaffleToClaimWei = null_eth.String
+		output.ETHRaffleToClaimWei = null_wei.String
+	}
+	if null_nfts.Valid {
+		output.NumDonatedNFTToClaim = null_nfts.Int64
 	}
 	return output
 }
@@ -1681,6 +1693,7 @@ func (sw *SQLStorageWrapper) Get_nft_donations_by_prize(prize_num int64) []p.BwN
 				"d.donor_aid,"+
 				"da.addr, "+
 				"d.token_id, "+
+				"d.idx,"+
 				"nft.address_id,"+
 				"nft.addr, "+
 				"d.token_uri "+
@@ -1711,6 +1724,7 @@ func (sw *SQLStorageWrapper) Get_nft_donations_by_prize(prize_num int64) []p.BwN
 			&rec.DonorAid,
 			&rec.DonorAddr,
 			&rec.NFTTokenId,
+			&rec.Index,
 			&rec.TokenAddressId,
 			&rec.TokenAddr,
 			&rec.NFTTokenURI,

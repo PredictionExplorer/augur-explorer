@@ -941,11 +941,6 @@ func api_biddingwar_user_global_winnings(c *gin.Context) {
 		respond_error_json(c,"Provided address wasn't found")
 		return
 	}
-	found, user_info := arb_storagew.Get_user_info(user_aid)
-	if !found {
-		respond_error_json(c,"Provided address wasn't found")
-		return
-	}
 
 	claim_info := arb_storagew.Get_user_global_winnings(user_aid)
 
@@ -955,7 +950,8 @@ func api_biddingwar_user_global_winnings(c *gin.Context) {
 		"status": req_status,
 		"error" : err_str,
 		"Winnings" : claim_info,
-		"UserInfo" : user_info,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
 	})
 }
 /* DISCONTINUED, removal pending

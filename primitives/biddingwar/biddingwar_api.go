@@ -64,6 +64,7 @@ type BwUserInfo struct {
 	MaxWinAmount				float64
 	MaxBidAmount				float64
 	SumRaffleEthWinnings		float64
+	SumRaffleEthWithdrawal		float64
 	NumRaffleEthWinnings		int64
 	RaffleNFTWon				int64
 	RaffleNFTClaimed			int64
@@ -125,6 +126,7 @@ type BwNFTDonation struct {
 	TokenAddr					string
 	NFTTokenId					int64
 	NFTTokenURI					string
+	Index						int64
 }
 type BwNFTDonationStats struct {
 	TokenAddressId				int64

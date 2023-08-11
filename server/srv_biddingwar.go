@@ -1078,18 +1078,11 @@ func biddingwar_user_global_winnings(c *gin.Context) {
 		return
 	}
 
-	found, user_info := arb_storagew.Get_user_info(user_aid)
-	if !found {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Augur Markets: Error",
-			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
-		})
-		return
-	}
 	claim_info := arb_storagew.Get_user_global_winnings(user_aid)
-	c.HTML(http.StatusOK, "bw_user_global_winnings.html", gin.H{
+	c.HTML(http.StatusOK, "bw_notif_red_box.html", gin.H{
 		"Winnings" : claim_info,
-		"UserInfo" : user_info,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
 	})
 }
 /* DISCONTINUED, removal pending

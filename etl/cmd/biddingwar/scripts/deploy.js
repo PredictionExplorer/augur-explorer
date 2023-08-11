@@ -168,6 +168,10 @@ async function main() {
   token_id = await mint_rwalk(addr3);
   await cosmicGame.connect(addr3).bidAndDonateNFT("me donated token_id="+token_id, randomWalkNFT.address, token_id, { value: bidPrice });
 
+  bidPrice = await cosmicGame.getBidPrice();
+  token_id = await mint_rwalk(addr3);
+  await cosmicGame.connect(addr3).bidAndDonateNFT("me donated token_id="+token_id, randomWalkNFT.address, token_id, { value: bidPrice });
+
   prizeTime = await cosmicGame.timeUntilPrize();
   await ethers.provider.send("evm_increaseTime", [prizeTime.toNumber()]);
   await ethers.provider.send("evm_mine");
