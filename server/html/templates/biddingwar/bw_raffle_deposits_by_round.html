@@ -13,8 +13,6 @@
 		<th class="market_reports">Winner</th>
 		<th class="market_reports">Round</th>
 		<th class="market_reports">Amount (ETH)</th>
-		<th class="market_reports">Deposit ID</th>
-
 	</tr>
 	{{- range $i, $change := .RaffleDeposits}}
 		<tr class="market_reports">
@@ -27,7 +25,6 @@
 			</td>
 			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
 			<td style="text-align: right;" title="">{{printf "%.4f" .Amount}}</td>
-			<td style="text-align: right;" title="">{{ .DepositId }}</td>
 		</tr>
 	{{- end}}
 </table>

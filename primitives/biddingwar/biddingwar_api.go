@@ -147,7 +147,6 @@ type BwRaffleDepositRec struct {
 	WinnerAddr					string
 	WinnerAid					int64
 	RoundNum					int64
-	DepositId					int64
 	Amount						float64
 }
 type BwRaffleWithdrawalRec struct {
@@ -174,10 +173,11 @@ type BwRaffleNFTWinnerRec struct {
 	WinnerAid					int64
 	RoundNum					int64
 	WinnerIndex					int64
-	ClaimTimestamp				int64
+/*	ClaimTimestamp				int64 DISCONTINUED
 	ClaimDateTime				string
-	ClaimTokenId				int64
+	ClaimTokenId				int64*/
 }
+/* DISCONTINUED, removal pending
 type BwRaffleNFTClaimRec struct {
 	RecordId					int64
 	EvtLogId					int64
@@ -193,7 +193,7 @@ type BwRaffleNFTClaimRec struct {
 	WinningTimestamp			int64
 	WinningDateTime				string
 	WinningIndex				int64
-}
+}*/
 type BwDonatedNFTClaimRec struct {
 	RecordId					int64
 	EvtId						int64
@@ -227,8 +227,8 @@ type BwCosmicSignatureMintRec struct {
 	Seed						string
 	MintType					int64
 	PrizeNum					int64	// -1 if minted via Raffle , > -1 if MintType = 0
-	ClaimTimestamp				int64
-	ClaimDateTime				string
+	//ClaimTimestamp				int64
+	//ClaimDateTime				string
 }
 type BwRoundStats struct {
 	RoundNum					int64
@@ -241,6 +241,5 @@ type BwRoundStats struct {
 type BwClaimInfo struct {
 	ETHRaffleToClaim			float64
 	ETHRaffleToClaimWei			string
-	NumCSNFTRaffleToClaim		int64		// CosmicSignature NFT tokens to claim (counter)
 	NumDonatedNFTToClaim		int64		// Pending unclaimed donated tokens (counter)
 }

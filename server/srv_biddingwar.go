@@ -721,6 +721,7 @@ func biddingwar_raffle_nft_winners_by_round(c *gin.Context) {
 		"RoundNum" : round_num,
 	})
 }
+/* DISCONTINUED, removal pending
 func biddingwar_raffle_nft_claims(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
@@ -739,7 +740,7 @@ func biddingwar_raffle_nft_claims(c *gin.Context) {
 		"Offset" : offset,
 		"Limit" : limit,
 	})
-}
+}*/
 func biddingwar_raffle_deposits_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
@@ -775,6 +776,7 @@ func biddingwar_raffle_deposits_by_user(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
+/* DISCONTINUED  , removal pending
 func biddingwar_raffle_nft_claims_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
@@ -809,7 +811,7 @@ func biddingwar_raffle_nft_claims_by_user(c *gin.Context) {
 		"UserRaffleNFTClaims" : claims,
 		"UserInfo" : user_info,
 	})
-}
+}*/
 func biddingwar_user_raffle_nft_winnings(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
@@ -1090,6 +1092,7 @@ func biddingwar_user_global_winnings(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
+/* DISCONTINUED, removal pending
 func biddingwar_unclaimed_token_list_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
@@ -1117,4 +1120,4 @@ func biddingwar_unclaimed_token_list_by_user(c *gin.Context) {
 		"UserAid" : user_aid,
 		"Tokens" : token_list,
 	})
-}
+}*/

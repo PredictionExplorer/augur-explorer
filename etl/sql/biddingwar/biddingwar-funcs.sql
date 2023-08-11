@@ -321,46 +321,47 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_raffle_nft_claimed_insert() RETURNS trigger AS  $$
-DECLARE
-	v_winner_rec		BIGINT;
-	v_claimed_count		BIGINT;
-BEGIN
-
-	SELECT num_claimed FROM bw_raffle_nft_winner_stats WHERE winner_aid=NEW.winner_aid INTO v_claimed_count;
-	IF v_claimed_count IS NULL THEN
-		v_claimed_count := 0;
-	END IF;
-	UPDATE bw_raffle_nft_winner_stats
-		SET
-			num_claimed = (num_claimed + 1)
-		WHERE winner_aid = NEW.winner_aid;
-
-	SELECT evtlog_id
-		FROM bw_raffle_nft_winner
-		WHERE winner_aid=NEW.winner_aid
-		ORDER BY evtlog_id
-		OFFSET v_claimed_count LIMIT 1
-		INTO v_winner_rec;
-	IF v_winner_rec IS NULL THEN
-		RAISE EXCEPTION 'cant find raffle_nft_winner record associated with claim token=% offset % evtlog %',NEW.token_id,v_won_count,NEW.evtlog_id;
-	END IF;
-	UPDATE bw_raffle_nft_claimed SET nft_winner_evtlog_id=v_winner_rec WHERE id=NEW.id;
-
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_raffle_nft_claimed_delete() RETURNS trigger AS  $$
-DECLARE
-BEGIN
-
-	UPDATE bw_raffle_nft_winner_stats
-		SET
-			num_claimed = (num_claimed - 1)
-		WHERE winner_aid = OLD.winner_aid;
-	RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- DISCONTINUED, removal pending
+--CREATE OR REPLACE FUNCTION on_raffle_nft_claimed_insert() RETURNS trigger AS  $$
+--DECLARE
+--	v_winner_rec		BIGINT;
+--	v_claimed_count		BIGINT;
+--BEGIN
+--
+--	SELECT num_claimed FROM bw_raffle_nft_winner_stats WHERE winner_aid=NEW.winner_aid INTO v_claimed_count;
+--	IF v_claimed_count IS NULL THEN
+--		v_claimed_count := 0;
+--	END IF;
+--	UPDATE bw_raffle_nft_winner_stats
+--		SET
+--			num_claimed = (num_claimed + 1)
+--		WHERE winner_aid = NEW.winner_aid;
+--
+--	SELECT evtlog_id
+--		FROM bw_raffle_nft_winner
+--		WHERE winner_aid=NEW.winner_aid
+--		ORDER BY evtlog_id
+--		OFFSET v_claimed_count LIMIT 1
+--		INTO v_winner_rec;
+--	IF v_winner_rec IS NULL THEN
+--		RAISE EXCEPTION 'cant find raffle_nft_winner record associated with claim token=% offset % evtlog %',NEW.token_id,v_won_count,NEW.evtlog_id;
+--	END IF;
+--	UPDATE bw_raffle_nft_claimed SET nft_winner_evtlog_id=v_winner_rec WHERE id=NEW.id;
+--
+--	RETURN NEW;
+--END;
+--$$ LANGUAGE plpgsql;
+--CREATE OR REPLACE FUNCTION on_raffle_nft_claimed_delete() RETURNS trigger AS  $$
+--DECLARE
+--BEGIN
+--
+--	UPDATE bw_raffle_nft_winner_stats
+--		SET
+--			num_claimed = (num_claimed - 1)
+--		WHERE winner_aid = OLD.winner_aid;
+--	RETURN OLD;
+--END;
+--$$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_erc721transfer_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
@@ -444,7 +445,7 @@ BEGIN
 
 	UPDATE bw_raffle_winner_stats
 		SET
-			withdrawal_sum = (withdrawal_sum + NEW.amount)	-- data for historical purposes
+			withdrawal_sum = (withdrawal_sum + NEW.amount),	-- data for historical purposes
 			amount_sum = (amount_sum - NEW.amount)			-- current amount available to withdraw
 		WHERE winner_aid = NEW.winner_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
@@ -454,7 +455,7 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_rafflw_withdrawal_delete() RETURNS trigger AS  $$
+CREATE OR REPLACE FUNCTION on_raffle_withdrawal_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 

@@ -577,6 +577,7 @@ func api_biddingwar_user_raffle_nft_winnings(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
+/* DISCONTINUED, removal pending
 func api_biddingwar_raffle_nft_claims(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -601,7 +602,7 @@ func api_biddingwar_raffle_nft_claims(c *gin.Context) {
 		"Offset" : offset,
 		"Limit" : limit,
 	})
-}
+}*/
 func api_biddingwar_user_raffle_deposits(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -636,6 +637,7 @@ func api_biddingwar_user_raffle_deposits(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
+/*DISCONTINUED, removal pending
 func api_biddingwar_user_raffle_nft_claims(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -669,7 +671,7 @@ func api_biddingwar_user_raffle_nft_claims(c *gin.Context) {
 		"UserRaffleNFTClaims" : deposits,
 		"UserInfo" : user_info,
 	})
-}
+} */
 func api_biddingwar_nft_donations_by_prize(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -956,6 +958,7 @@ func api_biddingwar_user_global_winnings(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
+/* DISCONTINUED, removal pending
 func api_biddingwar_unclaimed_token_list_by_user(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -990,4 +993,4 @@ func api_biddingwar_unclaimed_token_list_by_user(c *gin.Context) {
 		"UserAid" : user_aid,
 		"Tokens" : token_list,
 	})
-}
+} */

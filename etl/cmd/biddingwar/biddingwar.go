@@ -822,9 +822,10 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_nft_winner) {
 		proc_raffle_nft_winner_event(log,evtlog)
 	}
+	/* discontinued, removal pending
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_nft_claimed) {
 		proc_raffle_nft_claimed_event(log,evtlog)
-	}
+	}*/
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donated_nft_claimed) {
 		proc_donated_nft_claimed_event(log,evtlog)
 	}

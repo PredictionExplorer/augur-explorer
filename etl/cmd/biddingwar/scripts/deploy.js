@@ -173,16 +173,6 @@ async function main() {
   await ethers.provider.send("evm_mine");
   tx = await cosmicGame.connect(addr3).claimPrize({gasLimit:3000000});
   receipt = await tx.wait();
-  topic_sig = cosmicGame.interface.getEventTopic("RaffleNFTWinnerEvent");
-  deposit_logs = receipt.logs.filter(x=>x.topics.indexOf(topic_sig)>=0);
-  for (let i =0; i<deposit_logs.length; i++) {
-	  let wlog = cosmicGame.interface.parseLog(deposit_logs[i]);
-	  try {
-		  let winner_signer = cosmicGame.provider.getSigner(wlog.args.winner);
-	  	  await cosmicGame.connect(winner_signer).claimRaffleNFT(wlog.args.tokenId);
-		 } catch (error) {
-		}
-  }
   await cosmicGame.connect(addr3).claimDonatedNFT(hre.ethers.BigNumber.from('0'))
   await cosmicGame.connect(addr3).claimDonatedNFT(hre.ethers.BigNumber.from('1'))
   topic_sig = raffleWallet.interface.getEventTopic("RaffleDepositEvent");

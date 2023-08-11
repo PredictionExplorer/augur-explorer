@@ -168,12 +168,12 @@ func set_api_routing_biddingwar(r *gin.Engine) {
 	r.GET("/api/cosmicgame/cst/info/:token_id",api_biddingwar_cosmic_signature_token_info)
 	r.GET("/api/cosmicgame/user/info/:user_addr",api_biddingwar_user_info)
 	r.GET("/api/cosmicgame/user/raffle_deposits/:user_addr",api_biddingwar_user_raffle_deposits)
-	r.GET("/api/cosmicgame/user/raffle_nft_claims/:user_addr",api_biddingwar_user_raffle_nft_claims)
+//	r.GET("/api/cosmicgame/user/raffle_nft_claims/:user_addr",api_biddingwar_user_raffle_nft_claims) DISCONTINUED
 	r.GET("/api/cosmicgame/user/raffle_nft_winnings/:user_addr",api_biddingwar_user_raffle_nft_winnings)
 	r.GET("/api/cosmicgame/user/unique_bidders",api_biddingwar_user_unique_bidders)
 	r.GET("/api/cosmicgame/user/unique_winners",api_biddingwar_user_unique_winners)
 	r.GET("/api/cosmicgame/user/nft/claims/:user_addr",api_biddingwar_donated_nft_claims_by_user)
-	r.GET("/api/cosmicgame/user/nft/unclaimed_tokens/:user_addr",api_biddingwar_unclaimed_token_list_by_user)
+	//r.GET("/api/cosmicgame/user/nft/unclaimed_tokens/:user_addr",api_biddingwar_unclaimed_token_list_by_user)
 	r.GET("/api/cosmicgame/user/winnings/:user_addr",api_biddingwar_user_global_winnings)
 	r.GET("/api/cosmicgame/donations/eth",api_biddingwar_donations_eth)
 	r.GET("/api/cosmicgame/donations/charity",api_biddingwar_charity_donations)
@@ -186,7 +186,7 @@ func set_api_routing_biddingwar(r *gin.Engine) {
 	r.GET("/api/cosmicgame/raffle/deposits/by_round/:round_num",api_biddingwar_raffle_deposits_by_round)
 	r.GET("/api/cosmicgame/raffle/nft_winners/list/:offset/:limit",api_biddingwar_raffle_nft_winners_list)
 	r.GET("/api/cosmicgame/raffle/nft_winners/by_round/:round_num",api_biddingwar_raffle_nft_winners_by_round)
-	r.GET("/api/cosmicgame/raffle/nft_claims/:offset/:limit",api_biddingwar_raffle_nft_claims)
+	//r.GET("/api/cosmicgame/raffle/nft_claims/:offset/:limit",api_biddingwar_raffle_nft_claims) DISCONTINUED
 	r.GET("/api/cosmicgame/time/current",api_biddingwar_time_current)
 	r.GET("/api/cosmicgame/time/until_prize",api_biddingwar_time_until_prize)
 }
