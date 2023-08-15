@@ -143,6 +143,7 @@ CREATE TABLE bw_raffle_nft_winner (
 	contract_aid	BIGINT NOT NULL,
 	winner_aid		BIGINT NOT NULL,
 	round_num		BIGINT NOT NULL,
+	token_id		BIGINT NOT NULL,
 	winner_idx		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );

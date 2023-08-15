@@ -954,8 +954,46 @@ func api_biddingwar_user_global_winnings(c *gin.Context) {
 		"UserAid" : user_aid,
 	})
 }
-/* DISCONTINUED, removal pending
-func api_biddingwar_unclaimed_token_list_by_user(c *gin.Context) {
+func api_biddingwar_claim_history_detail(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+	found, _ := arb_storagew.Get_user_info(user_aid)
+	if !found {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+
+	claim_history := arb_storagew.Get_claim_history_detailed(user_aid,offset,limit)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"ClaimHistory" : claim_history,
+	})
+}
+func api_biddingwar_unclaimed_donated_nfts_by_user(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -978,15 +1016,15 @@ func api_biddingwar_unclaimed_token_list_by_user(c *gin.Context) {
 		return
 	}
 
-	token_list := arb_storagew.Get_unclaimed_token_ids(user_aid)
+	nfts := arb_storagew.Get_unclaimed_donated_nft_by_user(user_aid)
 
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
+		"UnclaimedDonatedNFTs" : nfts,
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
-		"Tokens" : token_list,
 	})
-} */
+}

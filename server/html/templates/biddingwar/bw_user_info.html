@@ -42,7 +42,7 @@
 	<tr class="market_reports">
 		<td class="market_reports">Unclaimed NFTs</td>
 		<td class="market_reports">
-			<a href="/black/cosmicgame/user/nft/claims/{{.UserInfo.Address}}">
+			<a href="/black/cosmicgame/user/nft/unclaimed_by_user/{{.UserInfo.Address}}">
 			{{.UserInfo.UnclaimedNFTs}}
 			</a>
 			<a href="/black/cosmicgame/user/nft/claims/{{.UserInfo.Address}}">
@@ -93,6 +93,19 @@
 			<ul>
 			<li style="width: 20em;">
 				<a class="btn_link" href="/black/cosmicgame/user/notif_red_box/{{.UserInfo.Address}}">Notif Red Box</a>
+				<span></span><span></span><span></span><span></span>
+			</li>
+			</ul>
+			</nav>
+		</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports" title="">Detailed claim history page</td>
+		<td class="market_reports">
+		<nav style="float: right;">
+			<ul>
+			<li style="width: 20em;">
+				<a class="btn_link" href="/black/cosmicgame/user/claim_history/{{.UserInfo.Address}}/0/1000000">Claim History</a>
 				<span></span><span></span><span></span><span></span>
 			</li>
 			</ul>

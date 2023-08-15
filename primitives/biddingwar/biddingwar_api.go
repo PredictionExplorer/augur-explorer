@@ -245,3 +245,21 @@ type BwClaimInfo struct {
 	ETHRaffleToClaimWei			string
 	NumDonatedNFTToClaim		int64		// Pending unclaimed donated tokens (counter)
 }
+type BwRaffleHistory struct {
+	EvtLogId					int64
+	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT
+	TimeStamp					int64
+	DateTime					string
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	RoundNum					int64
+	Amount						string
+	AmountEth					float64
+	WinnerIndex					int64
+	TokenAddress				string
+	TokenId						int64
+}
+type BwDonatedNFTUnclaimed struct {
+
+}

@@ -653,6 +653,116 @@ func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.BwPr
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,limit int) []p.BwRaffleHistory {
+	
+	var query string
+	query = "SELECT "+
+				"record_type,"+
+				"evtlog_id,"+
+				"tstmp,"+
+				"date_time,"+
+				"block_num,"+
+				"tx_id,"+
+				"tx_hash,"+
+				"round_num,"+
+				"amount,"+
+				"amount_eth,"+
+				"token_addr,"+
+				"token_id," +
+				"winner_index "+
+			"FROM (" +
+				"(" +
+					"SELECT "+
+						"0 AS record_type,"+
+						"rd.evtlog_id,"+
+						"EXTRACT(EPOCH FROM rd.time_stamp)::BIGINT AS tstmp, "+
+						"rd.time_stamp AS date_time, "+
+						"rd.block_num,"+
+						"rd.tx_id,"+
+						"t.tx_hash,"+
+						"rd.round_num,"+
+						"rd.amount, "+
+						"rd.amount/1e18 AS amount_eth,"+
+						"-1 AS winner_index, "+
+						"-1 AS token_id,"+
+						"'' AS token_addr "+
+					"FROM bw_raffle_deposit rd "+
+						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
+					"WHERE rd.winner_aid=$1 "+
+				") UNION ALL (" +
+					"SELECT "+
+						"1 AS record_type,"+
+						"rn.evtlog_id,"+
+						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
+						"rn.time_stamp AS date_time, "+
+						"rn.block_num,"+
+						"rn.tx_id,"+
+						"t.tx_hash,"+
+						"rn.round_num,"+
+						"0 AS amount,"+
+						"0 AS amount_eth,"+
+						"rn.winner_idx, "+
+						"-1 AS token_id," +
+						"'' AS token_addr "+
+					"FROM bw_raffle_nft_winner rn "+
+						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
+					"WHERE rn.winner_aid=$1 "+
+				") UNION ALL (" +
+					"SELECT "+
+						"2 AS record_type,"+
+						"dn.evtlog_id,"+
+						"EXTRACT(EPOCH FROM dn.time_stamp)::BIGINT AS tstmp, "+
+						"dn.time_stamp AS date_time, "+
+						"dn.block_num,"+
+						"dn.tx_id,"+
+						"t.tx_hash,"+
+						"dn.round_num,"+
+						"0 AS amount,"+
+						"0 AS amount_eth,"+
+						"dn.idx winner_index,"+
+						"dn.token_id,"+
+						"ta.addr token_addr " +
+					"FROM bw_donated_nft_claimed dn "+
+						"LEFT JOIN transaction t ON t.id=dn.tx_id "+
+						"LEFT JOIN address ta ON dn.token_aid=ta.address_id "+
+					"WHERE dn.winner_aid=$1 "+
+				") "+
+			") everything " +
+			"ORDER BY evtlog_id " +
+			"OFFSET $2 LIMIT $3"
+
+	rows,err := sw.S.Db().Query(query,winner_aid,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwRaffleHistory,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwRaffleHistory
+		err=rows.Scan(
+			&rec.RecordType,
+			&rec.EvtLogId,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.RoundNum,
+			&rec.Amount,
+			&rec.AmountEth,
+			&rec.TokenAddress,
+			&rec.TokenId,
+			&rec.WinnerIndex,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
 func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.BwUserInfo) {
 
 	var query string
@@ -1159,6 +1269,96 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winners_by_round(round_num int64) []
 			os.Exit(1)
 		}
 		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_unclaimed_donated_nft_by_user(winner_aid int64) []p.BwNFTDonation {
+
+	var query string
+	query = "SELECT "+
+				"d.id,"+
+				"d.evtlog_id,"+
+				"d.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
+				"d.round_num,"+
+				"d.donor_aid,"+
+				"da.addr, "+
+				"d.token_id, "+
+				"d.idx,"+
+				"nft.address_id,"+
+				"nft.addr, "+
+				"d.token_uri "+
+			"FROM "+sw.S.SchemaName()+".bw_nft_donation d "+
+				"JOIN "+sw.S.SchemaName()+".bw_prize_claim p ON p.prize_num=d.round_num "+
+				"LEFT JOIN bw_donated_nft_claimed c ON c.idx=d.idx "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=d.tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address da ON d.donor_aid=da.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address nft ON d.token_aid=nft.address_id "+
+			"WHERE p.winner_aid=$1 AND p.prize_num IS NOT NULL  AND c.idx IS NULL " +
+			"ORDER BY d.evtlog_id"
+
+	rows,err := sw.S.Db().Query(query,winner_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwNFTDonation,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwNFTDonation
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.RoundNum,
+			&rec.DonorAid,
+			&rec.DonorAddr,
+			&rec.NFTTokenId,
+			&rec.Index,
+			&rec.TokenAddressId,
+			&rec.TokenAddr,
+			&rec.NFTTokenURI,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_unclaimed_token_ids(winner_aid int64) []int64 {
+
+	var query string
+	query = "SELECT "+
+				"p.token_id, "+
+			"FROM "+sw.S.SchemaName()+".bw_raffle_nft_winner w "+
+				"LEFT JOIN bw_raffle_nft_claimed c ON c.nft_winner_evtlog_id=w.evtlog_id "+
+			"WHERE w.winner_aid=$1  AND c.nft_winner_vetlog_id IS NULL "+
+			"ORDER BY w.id"
+
+	rows,err := sw.S.Db().Query(query,winner_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]int64,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var token_id int64
+		err=rows.Scan(&token_id)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,token_id)
 	}
 	return records
 }

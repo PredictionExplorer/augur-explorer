@@ -285,8 +285,8 @@ func (sw *SQLStorageWrapper) Insert_raffle_nft_winner(evt *p.BWRaffleNFTWinner) 
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_raffle_nft_winner ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"winner_aid,round_num,winner_idx"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
+					"winner_aid,round_num,token_id,winner_idx"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -295,6 +295,7 @@ func (sw *SQLStorageWrapper) Insert_raffle_nft_winner(evt *p.BWRaffleNFTWinner) 
 		contract_aid,
 		winner_aid,
 		evt.Round,
+		evt.TokenId,
 		evt.WinnerIndex,
 	)
 	if err != nil {

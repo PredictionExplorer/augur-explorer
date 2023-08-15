@@ -195,12 +195,14 @@ func find_cosmic_token_721_mint_event(contract_aid,tx_id,claim_prize_evtlog_id i
 	mint_evt_list := storagew.S.Get_specific_event_logs_by_tx_backwards_from_id(tx_id,contract_aid,claim_prize_evtlog_id,hex.EncodeToString(evt_mint_event[0:4]))
 	if len(mint_evt_list) == 0 {
 		err_str := fmt.Sprintf("find_cosmic_token_721_mint_event() couldn't find corresponding MintEvent()")
+	mint_location := len(mint_evt_list)-1
 		Info.Printf(err_str)
 		Error.Printf(err_str)
 		os.Exit(1)
 	}
+	mint_location := len(mint_evt_list)-1
 	var log types.Log
-	err := rlp.DecodeBytes(mint_evt_list[0],&log)
+	err := rlp.DecodeBytes(mint_evt_list[mint_location],&log)
 	if err!= nil {
 		err_str := fmt.Sprintf("RLP Decode error at find_cosmic_token_721_mint_event(): %v",err)
 		Info.Printf(err_str)
@@ -669,12 +671,14 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.Round = log.Topics[2].Big().Int64()
+	evt.TokenId = log.Topics[3].Big().Int64()
 	evt.WinnerIndex= eth_evt.WinnerIndex.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("RaffleNFTWinnerEvent{\n")
 	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
 	Info.Printf("\tRound:%v\n",evt.Round)
+	Info.Printf("\tTokenId: %v\n",evt.TokenId)
 	Info.Printf("\tWinnerIndex: %v\n",evt.WinnerIndex)
 	Info.Printf("}\n")
 

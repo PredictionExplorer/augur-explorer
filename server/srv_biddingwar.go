@@ -1085,8 +1085,39 @@ func biddingwar_user_global_winnings(c *gin.Context) {
 		"UserAid" : user_aid,
 	})
 }
-/* DISCONTINUED, removal pending
-func biddingwar_unclaimed_token_list_by_user(c *gin.Context) {
+func biddingwar_claim_history_detail(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_html(c)
+	if !success {
+		return
+	}
+
+	claim_history := arb_storagew.Get_claim_history_detailed(user_aid,offset,limit)
+	c.HTML(http.StatusOK, "bw_user_claim_history_detail.html", gin.H{
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"ClaimHistory" : claim_history,
+	})
+}
+func biddingwar_unclaimed_donated_nfts_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1107,10 +1138,10 @@ func biddingwar_unclaimed_token_list_by_user(c *gin.Context) {
 		return
 	}
 
-	token_list := arb_storagew.Get_unclaimed_token_ids(user_aid)
-	c.HTML(http.StatusOK, "bw_unclaimed_token_list_by_user.html", gin.H{
+	nfts := arb_storagew.Get_unclaimed_donated_nft_by_user(user_aid)
+	c.HTML(http.StatusOK, "bw_unclaimed_donated_nfts_by_user.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
-		"Tokens" : token_list,
+		"UnclaimedDonatedNFTs" : nfts,
 	})
-}*/
+}

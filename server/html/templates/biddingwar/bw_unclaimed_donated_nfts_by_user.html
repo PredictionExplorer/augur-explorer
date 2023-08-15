@@ -1,0 +1,43 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Unclaimed NFT Donations for user {{.UserAddr}}</title>
+</head>
+<body>
+	<h3 class="page_title">NFT Donations to claim by User {{.UserAddr}}<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Donor</th>
+		<th class="market_reports">Token Address</th>
+		<th class="market_reports">Round Num</th>
+		<th class="market_reports">NFT Id</th>
+		<th class="market_reports">NFT URI</th>
+
+	</tr>
+	{{- range $i, $change := .UnclaimedDonatedNFTs}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">
+				<a href="/black/cosmicgame/donations/nft/info/{{.RecordId}}">
+					{{.BlockNum}}
+				</a>
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="addr" title="{{.DonorAid}}">
+				<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
+			</td>
+			<td style="text-align: right;" title="">{{.TokenAddr}}</td>
+			<td style="text-align: center;" title="">{{.RoundNum}}</td>
+			<td style="text-align: center;" title="">{{.NFTTokenId}}</td>
+			<td style="text-align: right;" title="">{{.NFTTokenURI}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/user/nft/unclaimed_by_user/:user_addr</br>
+
+	Example: /api/cosmicgame/user/nft/unclaimed_by_user/{{.UserAddr}}
+</code>
+</body>

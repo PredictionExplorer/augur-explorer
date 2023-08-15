@@ -462,7 +462,7 @@ BEGIN
 	UPDATE bw_raffle_winner_stats
 		SET
 			withdrawal_sum = (withdrawal_sum - OLD.amount),
-			amount_sum = (amount - OLD.amount)
+			amount_sum = (amount_sum - OLD.amount)
 		WHERE winner_aid = OLD.winner_aid;
 	RETURN OLD;
 END;

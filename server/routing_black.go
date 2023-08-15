@@ -160,6 +160,8 @@ func set_routing_biddingwar(r *gin.Engine) {
 	r.GET("/black/cosmicgame/user/raffle_nft_winnings/:user_addr",biddingwar_user_raffle_nft_winnings)
 	r.GET("/black/cosmicgame/user/nft/claims/:user_addr",biddingwar_donated_nft_claims_by_user)
 	//r.GET("/black/cosmicgame/user/nft/unclaimed_tokens/:user_addr",biddingwar_unclaimed_token_list_by_user)
+	r.GET("/black/cosmicgame/user/nft/unclaimed_by_user/:user_addr",biddingwar_unclaimed_donated_nfts_by_user)
+	r.GET("/black/cosmicgame/user/claim_history/:user_addr/:offset/:limit",biddingwar_claim_history_detail)
 	r.GET("/black/cosmicgame/user/unique_bidders",biddingwar_unique_bidders)
 	r.GET("/black/cosmicgame/user/unique_winners",biddingwar_unique_winners)
 	r.GET("/black/cosmicgame/user/notif_red_box/:user_addr",biddingwar_user_global_winnings)

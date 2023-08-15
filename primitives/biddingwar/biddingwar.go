@@ -151,6 +151,7 @@ type BWRaffleNFTWinner struct {
 	WinnerAddr			string
 	Round				int64
 	WinnerIndex			int64
+	TokenId				int64
 }
 type BWRaffleNFTClaimed struct {
 	EvtId				int64
