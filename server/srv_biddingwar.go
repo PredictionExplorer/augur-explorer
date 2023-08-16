@@ -721,26 +721,6 @@ func biddingwar_raffle_nft_winners_by_round(c *gin.Context) {
 		"RoundNum" : round_num,
 	})
 }
-/* DISCONTINUED, removal pending
-func biddingwar_raffle_nft_claims(c *gin.Context) {
-
-	if  !augur_srv.arbitrum_initialized() {
-		respond_error(c,"Database link wasn't configured")
-		return
-	}
-
-	success,offset,limit := parse_offset_limit_params_html(c)
-	if !success {
-		return
-	}
-	deposits := arb_storagew.Get_raffle_nft_claims(offset,limit)
-
-	c.HTML(http.StatusOK, "bw_raffle_nft_claims.html", gin.H{
-		"RaffleNFTClaims" : deposits,
-		"Offset" : offset,
-		"Limit" : limit,
-	})
-}*/
 func biddingwar_raffle_deposits_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
@@ -776,42 +756,6 @@ func biddingwar_raffle_deposits_by_user(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
-/* DISCONTINUED  , removal pending
-func biddingwar_raffle_nft_claims_by_user(c *gin.Context) {
-
-	if  !augur_srv.arbitrum_initialized() {
-		respond_error(c,"Database link wasn't configured")
-		return
-	}
-	p_user_addr:= c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		respond_error(c,"'user_addr' parameter is not set")
-		return
-	}
-	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
-	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Error",
-			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
-		})
-		return
-	}
-	found, user_info := arb_storagew.Get_user_info(user_aid)
-	if !found {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Error",
-			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
-		})
-		return
-	}
-
-	claims := arb_storagew.Get_raffle_nft_claims_by_user(user_aid)
-
-	c.HTML(http.StatusOK, "bw_user_raffle_nft_claims.html", gin.H{
-		"UserRaffleNFTClaims" : claims,
-		"UserInfo" : user_info,
-	})
-}*/
 func biddingwar_user_raffle_nft_winnings(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
@@ -1143,5 +1087,30 @@ func biddingwar_unclaimed_donated_nfts_by_user(c *gin.Context) {
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
 		"UnclaimedDonatedNFTs" : nfts,
+	})
+}
+func biddingwar_unclaimed_donated_nfts_by_prize(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_prize_num:= c.Param("prize_num")
+	var prize_num int64
+	if len(p_prize_num) > 0 {
+		var success bool
+		prize_num,success = parse_int_from_remote_or_error(c,HTTP,&p_prize_num)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'prize_num' parameter is not set")
+		return
+	}
+	nft_donations := arb_storagew.Get_unclaimed_donated_nfts_by_prize(prize_num)
+	c.HTML(http.StatusOK, "bw_nft_donations_by_prize.html", gin.H{
+		"NFTDonations" : nft_donations,
+		"PrizeNum": prize_num,
 	})
 }

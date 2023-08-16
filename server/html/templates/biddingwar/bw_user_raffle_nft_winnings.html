@@ -12,6 +12,7 @@
 		<th class="market_reports">Winner</th>
 		<th class="market_reports">Round</th>
 		<th class="market_reports">Index</th>
+		<th class="market_reports">TokenId</th>
 	</tr>
 	{{- range $i, $change := .UserRaffleNFTWinnings}}
 		<tr class="market_reports">
@@ -24,6 +25,7 @@
 			</td>
 			<td style="text-align: center;" title="">{{ .RoundNum }}</td>
 			<td style="text-align: center;" title="">{{ .WinnerIndex }}</td>
+			<td style="text-align: center;" title="">{{ .TokenId }}</td>
 		</tr>
 	{{- end}}
 </table>

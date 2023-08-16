@@ -11,6 +11,7 @@
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Winner</th>
 		<th class="market_reports">Round</th>
+		<th class="market_reports">TokenId</th>
 	</tr>
 	{{- range $i, $change := .RaffleNFTWinners}}
 		<tr class="market_reports">
@@ -22,6 +23,7 @@
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
 			</td>
 			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
+			<td style="text-align: right;" title="">{{ .TokenId }}</td>
 		</tr>
 	{{- end}}
 </table>

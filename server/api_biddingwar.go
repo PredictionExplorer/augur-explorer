@@ -577,32 +577,6 @@ func api_biddingwar_user_raffle_nft_winnings(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
-/* DISCONTINUED, removal pending
-func api_biddingwar_raffle_nft_claims(c *gin.Context) {
-
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if  !augur_srv.arbitrum_initialized() {
-		respond_error_json(c,"Database link wasn't configured")
-		return
-	}
-
-	success,offset,limit := parse_offset_limit_params_json(c)
-	if !success {
-		return
-	}
-
-	claims := arb_storagew.Get_raffle_nft_claims(offset,limit)
-
-	var req_status int = 1
-	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
-		"status": req_status,
-		"error" : err_str,
-		"RaffleNFTClaims" : claims,
-		"Offset" : offset,
-		"Limit" : limit,
-	})
-}*/
 func api_biddingwar_user_raffle_deposits(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -637,41 +611,6 @@ func api_biddingwar_user_raffle_deposits(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
-/*DISCONTINUED, removal pending
-func api_biddingwar_user_raffle_nft_claims(c *gin.Context) {
-
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if  !augur_srv.arbitrum_initialized() {
-		respond_error_json(c,"Database link wasn't configured")
-		return
-	}
-
-	p_user_addr:= c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		respond_error_json(c,"'user_addr' parameter is not set")
-		return
-	}
-	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
-	if err != nil {
-		respond_error_json(c,"Provided address wasn't found")
-		return
-	}
-	found, user_info := arb_storagew.Get_user_info(user_aid)
-	if !found {
-		respond_error_json(c,"Provided address wasn't found")
-		return
-	}
-
-	deposits := arb_storagew.Get_raffle_nft_claims_by_user(user_aid)
-	var req_status int = 1
-	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
-		"status": req_status,
-		"error" : err_str,
-		"UserRaffleNFTClaims" : deposits,
-		"UserInfo" : user_info,
-	})
-} */
 func api_biddingwar_nft_donations_by_prize(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -1026,5 +965,37 @@ func api_biddingwar_unclaimed_donated_nfts_by_user(c *gin.Context) {
 		"UnclaimedDonatedNFTs" : nfts,
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
+	})
+}
+func api_biddingwar_unclaimed_donated_nfts_by_prize(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_prize_num := c.Param("prize_num")
+	var prize_num int64
+	if len(p_prize_num) > 0 {
+		var success bool
+		prize_num,success = parse_int_from_remote_or_error(c,JSON,&p_prize_num)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'prize_num' parameter is not set")
+		return
+	}
+
+
+	nft_donations := arb_storagew.Get_unclaimed_donated_nfts_by_prize(prize_num)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"NFTDonations" : nft_donations,
+		"PrizeNum": prize_num,
 	})
 }

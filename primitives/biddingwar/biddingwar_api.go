@@ -174,28 +174,9 @@ type BwRaffleNFTWinnerRec struct {
 	WinnerAddr					string
 	WinnerAid					int64
 	RoundNum					int64
-	WinnerIndex					int64
-/*	ClaimTimestamp				int64 DISCONTINUED
-	ClaimDateTime				string
-	ClaimTokenId				int64*/
-}
-/* DISCONTINUED, removal pending
-type BwRaffleNFTClaimRec struct {
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	WinnerAddr					string
-	WinnerAid					int64
 	TokenId						int64
-	WinningRoundNum				int64
-	WinningTimestamp			int64
-	WinningDateTime				string
-	WinningIndex				int64
-}*/
+	WinnerIndex					int64
+}
 type BwDonatedNFTClaimRec struct {
 	RecordId					int64
 	EvtId						int64
@@ -239,6 +220,7 @@ type BwRoundStats struct {
 	TotalRaffleEthDeposits		string
 	TotalRaffleEthDepositsEth	float64 // deposits of ETH (same as above) but divided by 1^18
 	TotalRaffleNFTs				int64
+	UnclaimedDonatedNFTs		int64
 }
 type BwClaimInfo struct {
 	ETHRaffleToClaim			float64

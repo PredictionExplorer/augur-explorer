@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Bids by User</title>
+	<title>User Info for {{.UserInfo.Address}}</title>
 </head>
 <body>
-	<h3 class="page_title">Bids of User {{.UserInfo.Address}}<h3>
+	<h3 class="page_title">User Info page for {{.UserInfo.Address}}<h3>
 <table>
 	<tr class="market_reports">
 		<td class="market_reports" title="{{.UserInfo.AddressId}}">Address</td>
@@ -23,7 +23,7 @@
 		<td class="market_reports">{{.UserInfo.NumPrizes}}</td>
 	</tr>
 	<tr class="market_reports">
-		<td class="market_reports">Maximum Prize won</td>
+		<td class="market_reports">Maximum amount gained (in prize winnings)</td>
 		<td class="market_reports">{{.UserInfo.MaxWinAmount}}</td>
 	</tr>
 	<tr class="market_reports">

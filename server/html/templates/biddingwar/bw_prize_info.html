@@ -84,6 +84,14 @@
 					<td>Total Raffle NFTs</td>
 					<td>{{.PrizeInfo.RoundStats.TotalRaffleNFTs}}</td>
 				</tr>
+				<tr>
+					<td>Unclaimed Donated NFTs</td>
+					<td>
+						<a href="/black/cosmicgame/donations/nft/unclaimed_by_prize/{{.PrizeInfo.PrizeNum}}">
+						{{.PrizeInfo.RoundStats.UnclaimedDonatedNFTs}}
+						</a>
+					</td>
+				</tr>
 			</table>
 		</td>
 	</tr>
