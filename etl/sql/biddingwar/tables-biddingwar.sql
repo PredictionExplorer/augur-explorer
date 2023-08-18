@@ -121,6 +121,8 @@ CREATE TABLE bw_raffle_deposit (
 	winner_aid		BIGINT NOT NULL,
 	round_num		BIGINT NOT NULL,
 	amount			DECIMAL NOT NULL,
+	claimed			BOOLEAN DEFAULT 'F',	-- upon withdrawal is set to TRUE
+	withdrawal_id	BIGINT DEFAULT 0, -- at withdrawal set to evtlog_id of bw_raffle_Withdrawal
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE bw_raffle_withdrawal (

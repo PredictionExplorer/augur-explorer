@@ -656,6 +656,71 @@ func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.BwPr
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_unclaimed_raffle_eth_deposits(winner_aid int64,offset,limit int) []p.BwRaffleDepositRec {
+
+	var query string
+	query = 
+			"SELECT "+
+				"rd.id,"+
+				"rd.evtlog_id,"+
+				"rd.block_num,"+
+				"rd.tx_id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM rd.time_stamp)::BIGINT AS tstmp, "+
+				"rd.time_stamp AS date_time, "+
+				"wa.addr,"+
+				"rd.winner_aid,"+
+				"rd.round_num,"+
+				"rd.amount/1e18 AS amount_eth,"+
+				"rd.claimed, "+
+				"EXTRACT(EPOCH FROM rw.time_stamp)::BIGINT AS tstmp, "+
+				"rw.time_stamp "+
+			"FROM bw_raffle_deposit rd "+
+				"LEFT JOIN bw_raffle_withdrawal rw ON rw.evtlog_id=rd.withdrawal_id "+
+				"LEFT JOIN transaction t ON t.id=rd.tx_id "+
+				"LEFT JOIN address wa ON rd.winner_aid = wa.address_id "+
+			"WHERE rd.winner_aid=$1 AND rd.claimed='F' " +
+			"OFFSET $2 LIMIT $3"
+fmt.Printf("q=\n%v",query)
+fmt.Printf("winner_aid = %v\n",winner_aid);
+	rows,err := sw.S.Db().Query(query,winner_aid,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwRaffleDepositRec,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwRaffleDepositRec
+		var null_ts sql.NullInt64
+		var null_date sql.NullString
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.WinnerAddr,
+			&rec.WinnerAid,
+			&rec.RoundNum,
+			&rec.Amount,
+			&rec.Claimed,
+			&null_ts,
+			&null_date,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		if null_ts.Valid { rec.ClaimTimeStamp = null_ts.Int64 }
+		if null_date.Valid { rec.ClaimDateTime = null_date.String }
+		records = append(records,rec)
+	}
+	fmt.Printf("len records=%v\n",len(records));
+	return records
+}
 func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,limit int) []p.BwRaffleHistory {
 	
 	var query string
@@ -672,7 +737,8 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 				"amount_eth,"+
 				"token_addr,"+
 				"token_id," +
-				"winner_index "+
+				"winner_index, "+
+				"claimed "+
 			"FROM (" +
 				"(" +
 					"SELECT "+
@@ -688,7 +754,8 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"rd.amount/1e18 AS amount_eth,"+
 						"-1 AS winner_index, "+
 						"-1 AS token_id,"+
-						"'' AS token_addr "+
+						"'' AS token_addr, "+
+						"rd.claimed "+
 					"FROM bw_raffle_deposit rd "+
 						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
 					"WHERE rd.winner_aid=$1 "+
@@ -706,7 +773,8 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"0 AS amount_eth,"+
 						"rn.winner_idx, "+
 						"rn.token_id," +
-						"'' AS token_addr "+
+						"'' AS token_addr, "+
+						"'T' AS claimed "+
 					"FROM bw_raffle_nft_winner rn "+
 						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
 					"WHERE rn.winner_aid=$1 "+
@@ -724,7 +792,8 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"0 AS amount_eth,"+
 						"dn.idx winner_index,"+
 						"dn.token_id,"+
-						"ta.addr token_addr " +
+						"ta.addr token_addr, " +
+						"'T' as claimed "+
 					"FROM bw_donated_nft_claimed dn "+
 						"LEFT JOIN transaction t ON t.id=dn.tx_id "+
 						"LEFT JOIN address ta ON dn.token_aid=ta.address_id "+
@@ -757,6 +826,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 			&rec.TokenAddress,
 			&rec.TokenId,
 			&rec.WinnerIndex,
+			&rec.Claimed,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

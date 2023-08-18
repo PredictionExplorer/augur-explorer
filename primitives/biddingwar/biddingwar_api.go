@@ -150,6 +150,9 @@ type BwRaffleDepositRec struct {
 	WinnerAid					int64
 	RoundNum					int64
 	Amount						float64
+	Claimed						bool
+	ClaimTimeStamp				int64
+	ClaimDateTime				string
 }
 type BwRaffleWithdrawalRec struct {
 	RecordId					int64
@@ -241,6 +244,7 @@ type BwRaffleHistory struct {
 	WinnerIndex					int64
 	TokenAddress				string
 	TokenId						int64
+	Claimed						bool
 }
 type BwDonatedNFTUnclaimed struct {
 

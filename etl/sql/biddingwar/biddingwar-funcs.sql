@@ -411,6 +411,7 @@ BEGIN
 	IF v_cnt = 0 THEN
 		INSERT INTO bw_raffle_winner_stats(winner_aid,withdrawal_sum) VALUES(NEW.winner_aid,NEW.amount);
 	END IF;
+	UPDATE bw_raffle_deposit SET claimed=TRUE,withdrawal_id=NEW.evtlog_id WHERE (evtlog_id<NEW.evtlog_id) AND (withdrawal_id=0) AND (winner_aid=NEW.winner_aid);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -423,6 +424,7 @@ BEGIN
 			withdrawal_sum = (withdrawal_sum - OLD.amount),
 			amount_sum = (amount_sum - OLD.amount)
 		WHERE winner_aid = OLD.winner_aid;
+	UPDATE bw_raffle_deposit SET claimed=FALSE,withdrawal_id=0 WHERE withdrawal_id = OLD.evtlog_id;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

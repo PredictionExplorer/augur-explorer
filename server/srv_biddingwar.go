@@ -1114,3 +1114,37 @@ func biddingwar_unclaimed_donated_nfts_by_prize(c *gin.Context) {
 		"PrizeNum": prize_num,
 	})
 }
+func biddingwar_unclaimed_raffle_deposits_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_html(c)
+	if !success {
+		return
+	}
+
+	offset = 0; limit = 100000000;
+
+	deposits := arb_storagew.Get_unclaimed_raffle_eth_deposits(user_aid,offset,limit)
+	c.HTML(http.StatusOK, "bw_user_unclaimed_raffle_eth_deposits.html", gin.H{
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"UnclaimedDeposits" : deposits,
+	})
+}

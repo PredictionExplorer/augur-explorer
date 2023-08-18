@@ -195,7 +195,6 @@ func find_cosmic_token_721_mint_event(contract_aid,tx_id,claim_prize_evtlog_id i
 	mint_evt_list := storagew.S.Get_specific_event_logs_by_tx_backwards_from_id(tx_id,contract_aid,claim_prize_evtlog_id,hex.EncodeToString(evt_mint_event[0:4]))
 	if len(mint_evt_list) == 0 {
 		err_str := fmt.Sprintf("find_cosmic_token_721_mint_event() couldn't find corresponding MintEvent()")
-	mint_location := len(mint_evt_list)-1
 		Info.Printf(err_str)
 		Error.Printf(err_str)
 		os.Exit(1)

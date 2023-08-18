@@ -12,14 +12,25 @@
 			<a href="/black/cosmicgame/user/nft/unclaimed_by_user/{{.UserAddr}}">
 			{{.Winnings.NumDonatedNFTToClaim}}
 			</a>
+			(
 			<a href="/black/cosmicgame/user/nft/unclaimed_by_user/{{.UserAddr}}">
-			( List )
+			 List of unclaimed NFTs
 			</a>
+			)
 		</td>
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Unclaimed ETH winnings</td>
-		<td class="market_reports">{{ printf "%.8f" .Winnings.ETHRaffleToClaim}}</td>
+		<td class="market_reports">
+			{{ printf "%.8f" .Winnings.ETHRaffleToClaim}}
+			{{ if lt 0.0 .Winnings.ETHRaffleToClaim }}
+			(
+			<a href="/black/cosmicgame/user/unclaimed_raffle_deposits/{{.UserAddr}}">
+				List of unclaimed deposits
+			</a>
+			)
+			{{ end }}		
+		</td>
 	</tr>
 </table>
 

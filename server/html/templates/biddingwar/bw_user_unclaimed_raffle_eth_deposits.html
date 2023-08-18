@@ -1,0 +1,37 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Unclaimed Raffle ETH Deposits by User</title>
+</head>
+<body>
+	<h3 class="page_title">Unclaimed Raffle ETH Deposits by User<h3>
+	<h3 class="page_title">User {{.UserAddr}} </h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Winner</th>
+		<th class="market_reports">Round</th>
+		<th class="market_reports">Amount (ETH)</th>
+	</tr>
+	{{- range $i, $change := .UnclaimedDeposits}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">
+				{{.BlockNum}}
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="addr" title="{{.WinnerAid}}">
+				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.WinnerAddr}}</a>
+			</td>
+			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
+			<td style="text-align: right;" title="">{{printf "%.4f" .Amount}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/user/unclaimed_raffle_deposits/[user_addr]/[offset]/[limit]</br>
+
+	Example: /api/cosmicgame/user/unclaimed_raffle_deposits/{{.UserAddr}}/0/100000
+</code>
+</body>
