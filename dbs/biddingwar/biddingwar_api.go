@@ -781,23 +781,25 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 				") UNION ALL (" +
 					"SELECT "+
 						"2 AS record_type,"+
-						"dn.evtlog_id,"+
-						"EXTRACT(EPOCH FROM dn.time_stamp)::BIGINT AS tstmp, "+
-						"dn.time_stamp AS date_time, "+
-						"dn.block_num,"+
-						"dn.tx_id,"+
+						"d.evtlog_id,"+
+						"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS tstmp, "+
+						"p.time_stamp AS date_time, "+
+						"p.block_num,"+
+						"p.tx_id,"+
 						"t.tx_hash,"+
-						"dn.round_num,"+
+						"p.prize_num,"+
 						"0 AS amount,"+
 						"0 AS amount_eth,"+
-						"dn.idx winner_index,"+
-						"dn.token_id,"+
+						"d.idx winner_index,"+
+						"d.token_id,"+
 						"ta.addr token_addr, " +
-						"'T' as claimed "+
-					"FROM bw_donated_nft_claimed dn "+
-						"LEFT JOIN transaction t ON t.id=dn.tx_id "+
-						"LEFT JOIN address ta ON dn.token_aid=ta.address_id "+
-					"WHERE dn.winner_aid=$1 "+
+						"c.id IS NOT NULL as claimed "+
+					"FROM bw_prize_claim p "+
+						"JOIN bw_nft_donation d ON p.prize_num=d.round_num "+ 
+						"LEFT JOIN transaction t ON t.id=p.tx_id "+
+						"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
+						"LEFT JOIN bw_donated_nft_claimed c ON (c.round_num=p.prize_num) AND (d.idx=c.idx) "+
+					"WHERE p.winner_aid=$1 "+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id " +
