@@ -93,7 +93,7 @@ BEGIN
 			prizes_count = v_prizes_count,
 			max_win_amount	 = v_max_prize,
 			prizes_sum = v_prizes_sum,
-			unclaimed_nfts = v_donated_nfts
+			unclaimed_nfts = (unclaimed_nfts + v_donated_nfts)
 		WHERE winner_aid = NEW.winner_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN

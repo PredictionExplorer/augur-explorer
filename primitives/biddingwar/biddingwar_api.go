@@ -223,7 +223,6 @@ type BwRoundStats struct {
 	TotalRaffleEthDeposits		string
 	TotalRaffleEthDepositsEth	float64 // deposits of ETH (same as above) but divided by 1^18
 	TotalRaffleNFTs				int64
-	UnclaimedDonatedNFTs		int64
 }
 type BwClaimInfo struct {
 	ETHRaffleToClaim			float64
