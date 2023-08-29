@@ -166,6 +166,7 @@ func set_api_routing_biddingwar(r *gin.Engine) {
 	r.GET("/api/cosmicgame/bid/list_by_round/:round_num/:sort/:offset/:limit",api_biddingwar_bid_list_by_round)
 	r.GET("/api/cosmicgame/cst/list/:offset/:limit",api_biddingwar_cosmic_signature_token_list)
 	r.GET("/api/cosmicgame/cst/info/:token_id",api_biddingwar_cosmic_signature_token_info)
+	r.GET("/api/cosmicgame/cst/list_by_user/:user_addr/:offset/:limit",api_biddingwar_cosmic_signature_token_list_by_user)
 	r.GET("/api/cosmicgame/user/info/:user_addr",api_biddingwar_user_info)
 	r.GET("/api/cosmicgame/user/raffle_deposits/:user_addr",api_biddingwar_user_raffle_deposits)
 	r.GET("/api/cosmicgame/user/unclaimed_raffle_deposits/:user_addr/:offset/:limit",api_biddingwar_unclaimed_raffle_deposits_by_user)

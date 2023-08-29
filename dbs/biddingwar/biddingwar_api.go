@@ -1991,6 +1991,67 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list(offset,limit int) []p
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list_by_user(user_aid int64,offset,limit int) []p.BwCosmicSignatureMintRec {
+
+	if limit == 0 { limit = 1000000 }
+	var query string
+	query = "SELECT "+
+				"m.evtlog_id,"+
+				"m.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT,"+
+				"m.time_stamp,"+
+				"m.owner_aid,"+
+				"wa.addr,"+
+				"m.cur_owner_aid,"+
+				"oa.addr,"+
+				"m.seed, "+
+				"m.token_id,"+
+				"p.prize_num "+
+			"FROM "+sw.S.SchemaName()+".bw_mint_event m "+
+				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
+				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
+				"LEFT JOIN bw_prize_claim p ON m.token_id=p.token_id "+
+			"WHERE m.cur_owner_aid=$1 "+
+			"ORDER BY m.id DESC "+
+			"OFFSET $2 LIMIT $3"
+
+	rows,err := sw.S.Db().Query(query,user_aid,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwCosmicSignatureMintRec,0, 64)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwCosmicSignatureMintRec
+		var null_prize_num sql.NullInt64
+		err=rows.Scan(
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+			&rec.CurOwnerAid,
+			&rec.CurOwnerAddr,
+			&rec.Seed,
+			&rec.TokenId,
+			&null_prize_num,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		if null_prize_num.Valid { rec.PrizeNum = null_prize_num.Int64 } else {rec.PrizeNum = -1 }
+		records = append(records,rec)
+	}
+	return records
+}
 func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bool,p.BwCosmicSignatureMintRec) {
 
 	var query string
