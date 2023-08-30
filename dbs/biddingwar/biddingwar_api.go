@@ -1663,11 +1663,14 @@ func (sw *SQLStorageWrapper) Get_donated_nft_claims(offset,limit int) []p.BwDona
 				"c.token_id, "+
 				"c.idx, "+
 				"c.winner_aid,"+
-				"wa.addr "+
+				"wa.addr, "+
+				"da.addr "+
 			"FROM "+sw.S.SchemaName()+".bw_donated_nft_claimed c "+
 				"LEFT JOIN transaction t ON t.id=c.tx_id "+
 				"LEFT JOIN address ta ON c.token_aid=ta.address_id "+
 				"LEFT JOIN address wa ON c.winner_aid=wa.address_id "+
+				"LEFT JOIN bw_nft_donation d ON c.idx=d.idx "+
+				"LEFT JOIN address da ON d.donor_aid=da.address_id " +
 			"ORDER BY c.id DESC "+
 			"OFFSET $1 LIMIT $2"
 
@@ -1693,6 +1696,7 @@ func (sw *SQLStorageWrapper) Get_donated_nft_claims(offset,limit int) []p.BwDona
 			&rec.WinnerIndex,
 			&rec.WinnerAid,
 			&rec.WinnerAddr,
+			&rec.DonorAddr,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -1717,11 +1721,14 @@ func (sw *SQLStorageWrapper) Get_donated_nft_claims_by_user(winner_aid int64) []
 				"c.token_id, "+
 				"c.idx, "+
 				"c.winner_aid,"+
-				"wa.addr "+
+				"wa.addr, "+
+				"da.addr "+
 			"FROM "+sw.S.SchemaName()+".bw_donated_nft_claimed c "+
 				"LEFT JOIN transaction t ON t.id=c.tx_id "+
 				"LEFT JOIN address ta ON c.token_aid=ta.address_id "+
 				"LEFT JOIN address wa ON c.winner_aid=wa.address_id "+
+				"LEFT JOIN bw_nft_donation d ON d.idx=c.idx "+
+				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
 			"WHERE c.winner_aid=$1 "+
 			"ORDER BY c.id DESC "
 
@@ -1747,6 +1754,7 @@ func (sw *SQLStorageWrapper) Get_donated_nft_claims_by_user(winner_aid int64) []
 			&rec.WinnerIndex,
 			&rec.WinnerAid,
 			&rec.WinnerAddr,
+			&rec.DonorAddr,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

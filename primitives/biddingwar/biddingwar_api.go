@@ -195,6 +195,7 @@ type BwDonatedNFTClaimRec struct {
 	WinnerIndex					int64
 	WinnerAid					int64
 	WinnerAddr					string
+	DonorAddr					string
 }
 type BwCosmicSignatureMintRec struct {
 	EvtLogId					int64
