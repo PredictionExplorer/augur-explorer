@@ -2,7 +2,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"time"
+	"strings"
 	"io/ioutil"
 	"encoding/json"
 	"math/big"
@@ -1180,5 +1182,42 @@ func biddingwar_cosmic_signature_token_list_by_user(c *gin.Context) {
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
 		"UserTokens" : user_tokens,
+	})
+}
+func biddingwar_dev_donate_nft(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	cmd_str := fmt.Sprintf("%v/%v",os.Getenv("HOME"),"mint-artblocks.sh")
+	cmd := exec.Command(cmd_str)
+	buf := new(strings.Builder)
+	err_buf:= new(strings.Builder)
+	cmd.Stdout = buf
+	cmd.Stderr = err_buf
+	err := cmd.Run()
+	output := buf.String()
+	stderr := buf.String()
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("exec() failed: %v:\n%v\n%v",err,output,stderr),
+		})
+		return
+	}
+	c.HTML(http.StatusOK, "bw_dev_donate_nft.html", gin.H{
+		"Output" : output,
+	})
+
+}
+func biddingwar_dev_funcs(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	c.HTML(http.StatusOK, "bw_dev_funcs.html", gin.H{
 	})
 }
