@@ -232,7 +232,7 @@ type BwClaimInfo struct {
 }
 type BwRaffleHistory struct {
 	EvtLogId					int64
-	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT
+	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize
 	TimeStamp					int64
 	DateTime					string
 	BlockNum					int64
