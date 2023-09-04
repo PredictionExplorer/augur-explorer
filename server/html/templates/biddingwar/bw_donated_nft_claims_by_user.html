@@ -12,6 +12,7 @@
 		<th class="market_reports">Winner</th>
 		<th class="market_reports">Donor</th>
 		<th class="market_reports">TokenID</th>
+		<th class="market_reports">TokenURI</th>
 	</tr>
 	{{- range $i, $change := .DonatedNFTClaims}}
 		<tr class="market_reports">
@@ -26,7 +27,8 @@
 				<a href="/black/cosmicgame/user/info/{{.WinnerAddr}}">{{.DonorAddr}}</a>
 				
 			</td>
-			<td class="" style="text-align: center;">{{.TokenId}}</td>
+			<td class="" style="text-align: center;">{{.NFTTokenId}}</td>
+			<td class="" style="text-align: center;">{{.NFTTokenURI}}</td>
 		</tr>
 	{{- end}}
 </table>

@@ -191,7 +191,8 @@ type BwDonatedNFTClaimRec struct {
 	RoundNum					int64
 	Index						int64
 	TokenAddr					string
-	TokenId						string
+	NFTTokenId					int64
+	NFTTokenURI					string
 	WinnerIndex					int64
 	WinnerAid					int64
 	WinnerAddr					string
