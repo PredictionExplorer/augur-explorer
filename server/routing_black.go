@@ -149,6 +149,7 @@ func set_routing_biddingwar(r *gin.Engine) {
 	r.GET("/black/cosmicgame/index.html",biddingwar_index_page)
 	r.GET("/black/cosmicgame/prize/list",biddingwar_prize_claims)
 	r.GET("/black/cosmicgame/prize/info/:prize_num",biddingwar_prize_info)
+	r.GET("/black/cosmicgame/prize/claim_history/:offset/:limit",biddingwar_global_claim_history_detail)
 	r.GET("/black/cosmicgame/bid/list",biddingwar_bids)
 	r.GET("/black/cosmicgame/bid/info/:evtlog_id",biddingwar_bid_info)
 	r.GET("/black/cosmicgame/bid/list_by_round/:round_num/:sort/:offset/:limit",biddingwar_bid_list_by_round)

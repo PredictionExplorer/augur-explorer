@@ -98,6 +98,12 @@ func main() {
 		os.Exit(1)
 	}
 	balance,err := eclient.BalanceAt(context.Background(),cosmic_game_addr,nil)
+	num_donated_nfts,err := cosmic_game_ctrct.NumDonatedNFTs(&copts)
+	if err != nil {
+		fmt.Printf("Error at numDonatedNFTs()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
 	
 
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
@@ -110,4 +116,5 @@ func main() {
 	fmt.Printf("RaffleAmount = %v\n",raffle_amount.String())
 	fmt.Printf("Last bidder = %v\n",last_bidder.String())
 	fmt.Printf("Contract balance = %v\n",balance.String())
+	fmt.Printf("Num donated NFTs = %v\n",num_donated_nfts.String());
 }

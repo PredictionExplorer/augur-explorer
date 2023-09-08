@@ -246,6 +246,8 @@ type BwRaffleHistory struct {
 	TokenAddress				string
 	TokenId						int64
 	Claimed						bool
+	WinnerAddr					string
+	WinnerAid					int64
 }
 type BwDonatedNFTUnclaimed struct {
 

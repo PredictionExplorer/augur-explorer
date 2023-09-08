@@ -856,6 +856,154 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int) []p.BwRaffleHistory {
+	
+	var query string
+	query = "SELECT "+
+				"record_type,"+
+				"evtlog_id,"+
+				"tstmp,"+
+				"date_time,"+
+				"block_num,"+
+				"tx_id,"+
+				"tx_hash,"+
+				"round_num,"+
+				"amount,"+
+				"amount_eth,"+
+				"token_addr,"+
+				"token_id," +
+				"winner_index, "+
+				"claimed, "+
+				"winner_addr,"+
+				"winner_aid "+
+			"FROM (" +
+				"(" +
+					"SELECT "+
+						"0 AS record_type,"+
+						"rd.evtlog_id,"+
+						"EXTRACT(EPOCH FROM rd.time_stamp)::BIGINT AS tstmp, "+
+						"rd.time_stamp AS date_time, "+
+						"rd.block_num,"+
+						"rd.tx_id,"+
+						"t.tx_hash,"+
+						"rd.round_num,"+
+						"rd.amount, "+
+						"rd.amount/1e18 AS amount_eth,"+
+						"-1 AS winner_index, "+
+						"-1 AS token_id,"+
+						"'' AS token_addr, "+
+						"rd.claimed, "+
+						"wa.addr winner_addr," +
+						"rd.winner_aid "+
+					"FROM bw_raffle_deposit rd "+
+						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
+						"LEFT JOIN address wa ON rd.winner_aid=wa.address_id "+
+				") UNION ALL (" +
+					"SELECT "+
+						"1 AS record_type,"+
+						"rn.evtlog_id,"+
+						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
+						"rn.time_stamp AS date_time, "+
+						"rn.block_num,"+
+						"rn.tx_id,"+
+						"t.tx_hash,"+
+						"rn.round_num,"+
+						"0 AS amount,"+
+						"0 AS amount_eth,"+
+						"rn.winner_idx, "+
+						"rn.token_id," +
+						"'' AS token_addr, "+
+						"'T' AS claimed, "+
+						"wa.addr winner_addr,"+
+						"rn.winner_aid "+
+					"FROM bw_raffle_nft_winner rn "+
+						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
+						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
+				") UNION ALL (" +
+					"SELECT "+
+						"2 AS record_type,"+
+						"d.evtlog_id,"+
+						"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS tstmp, "+
+						"p.time_stamp AS date_time, "+
+						"p.block_num,"+
+						"p.tx_id,"+
+						"t.tx_hash,"+
+						"p.prize_num,"+
+						"0 AS amount,"+
+						"0 AS amount_eth,"+
+						"d.idx winner_index,"+
+						"d.token_id,"+
+						"ta.addr token_addr, " +
+						"c.id IS NOT NULL as claimed, "+
+						"wa.addr winner_addr,"+
+						"p.winner_aid "+
+					"FROM bw_prize_claim p "+
+						"JOIN bw_nft_donation d ON p.prize_num=d.round_num "+ 
+						"LEFT JOIN transaction t ON t.id=p.tx_id "+
+						"LEFT JOIN address ta ON d.token_aid=ta.address_id "+
+						"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+						"LEFT JOIN bw_donated_nft_claimed c ON (c.round_num=p.prize_num) AND (d.idx=c.idx) "+
+				") UNION ALL (" +
+					"SELECT "+
+						"3 AS record_type,"+
+						"p.evtlog_id,"+
+						"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS tstmp, "+
+						"p.time_stamp AS date_time, "+
+						"p.block_num,"+
+						"p.tx_id,"+
+						"t.tx_hash,"+
+						"p.prize_num,"+
+						"p.amount,"+
+						"p.amount/1e18 AS amount_eth,"+
+						"-1 AS winner_index,"+
+						"p.token_id,"+
+						"'' AS token_addr, " +
+						"'T' AS claimed, "+
+						"wa.addr winner_addr,"+
+						"p.winner_aid "+
+					"FROM bw_prize_claim p "+
+						"LEFT JOIN transaction t ON t.id=p.tx_id "+
+						"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+				") "+
+			") everything " +
+			"ORDER BY evtlog_id DESC " +
+			"OFFSET $1 LIMIT $2"
+
+	rows,err := sw.S.Db().Query(query,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.BwRaffleHistory,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.BwRaffleHistory
+		err=rows.Scan(
+			&rec.RecordType,
+			&rec.EvtLogId,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.RoundNum,
+			&rec.Amount,
+			&rec.AmountEth,
+			&rec.TokenAddress,
+			&rec.TokenId,
+			&rec.WinnerIndex,
+			&rec.Claimed,
+			&rec.WinnerAddr,
+			&rec.WinnerAid,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
 func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.BwUserInfo) {
 
 	var query string

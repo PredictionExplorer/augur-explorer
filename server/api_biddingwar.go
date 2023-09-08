@@ -932,6 +932,28 @@ func api_biddingwar_claim_history_detail(c *gin.Context) {
 		"ClaimHistory" : claim_history,
 	})
 }
+func api_biddingwar_global_claim_history_detail(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+
+	claim_history := arb_storagew.Get_claim_history_detailed_global(offset,limit)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"GlobalClaimHistory" : claim_history,
+	})
+}
 func api_biddingwar_unclaimed_donated_nfts_by_user(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")

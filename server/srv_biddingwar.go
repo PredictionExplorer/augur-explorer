@@ -1031,6 +1031,23 @@ func biddingwar_user_global_winnings(c *gin.Context) {
 		"UserAid" : user_aid,
 	})
 }
+func biddingwar_global_claim_history_detail(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params_html(c)
+	if !success {
+		return
+	}
+
+	claim_history := arb_storagew.Get_claim_history_detailed_global(offset,limit)
+	c.HTML(http.StatusOK, "bw_global_claim_history_detail.html", gin.H{
+		"GlobalClaimHistory" : claim_history,
+	})
+}
 func biddingwar_claim_history_detail(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
