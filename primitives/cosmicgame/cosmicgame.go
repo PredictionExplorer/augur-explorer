@@ -1,4 +1,4 @@
-package biddingwar
+package cosmicgame
 
 import (
 
@@ -13,10 +13,10 @@ type CosmicGameContractAddrs struct {
 	RaffleWalletAddr			string
 	RandomWalkAddr				string
 }
-type BiddingWarProcStatus struct {
+type CosmicGameProcStatus struct {
 	LastEvtIdProcessed			int64
 }
-type BWPrizeClaimEvent struct {
+type CGPrizeClaimEvent struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -29,7 +29,7 @@ type BWPrizeClaimEvent struct {
 	Amount				string
 	DonationEvtId		int64
 }
-type BWBidEvent struct {
+type CGBidEvent struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -44,7 +44,7 @@ type BWBidEvent struct {
 	ERC20_Value			string
 	Message				string
 }
-type BWDonationEvent struct {
+type CGDonationEvent struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -54,7 +54,7 @@ type BWDonationEvent struct {
 	DonorAddr			string
 	Amount				string
 }
-type BWDonationReceivedEvent struct {
+type CGDonationReceivedEvent struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -64,7 +64,7 @@ type BWDonationReceivedEvent struct {
 	DonorAddr			string
 	Amount				string
 }
-type BWDonationSentEvent struct {
+type CGDonationSentEvent struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -74,7 +74,7 @@ type BWDonationSentEvent struct {
 	CharityAddr			string
 	Amount				string
 }
-type BWNFTDonationEvent struct {
+type CGNFTDonationEvent struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -89,7 +89,7 @@ type BWNFTDonationEvent struct {
 	BidId				int64	// id of related bid record
 	NFTTokenURI			string
 }
-type BWCharityUpdatedEvent struct {
+type CGCharityUpdatedEvent struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -98,7 +98,7 @@ type BWCharityUpdatedEvent struct {
 	ContractAddr		string
 	NewCharityAddr		string
 }
-type BWTokenNameEvent struct {
+type CGTokenNameEvent struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -108,7 +108,7 @@ type BWTokenNameEvent struct {
 	TokenId				int64
 	TokenName			string
 }
-type BWMintEvent struct {
+type CGMintEvent struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -120,7 +120,7 @@ type BWMintEvent struct {
 	Seed				string
 	MintType			int64
 }
-type BWRaffleDeposit struct {
+type CGRaffleDeposit struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -131,7 +131,7 @@ type BWRaffleDeposit struct {
 	Round				int64
 	Amount				string
 }
-type BWRaffleWithdrawal struct {
+type CGRaffleWithdrawal struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -141,7 +141,7 @@ type BWRaffleWithdrawal struct {
 	WinnerAddr			string
 	Amount				string
 }
-type BWRaffleNFTWinner struct {
+type CGRaffleNFTWinner struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -153,7 +153,7 @@ type BWRaffleNFTWinner struct {
 	WinnerIndex			int64
 	TokenId				int64
 }
-type BWRaffleNFTClaimed struct {
+type CGRaffleNFTClaimed struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -164,7 +164,7 @@ type BWRaffleNFTClaimed struct {
 	WinnerEvtlogId		int64
 	TokenId				int64
 }
-type BWDonatedNFTClaimed struct {
+type CGDonatedNFTClaimed struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -177,7 +177,7 @@ type BWDonatedNFTClaimed struct {
 	TokenId				string
 	WinnerAddr			string
 }
-type BWERC721Transfer struct {
+type CGERC721Transfer struct {
 	EvtId                   int64
 	BlockNum                int64
 	TxId                    int64

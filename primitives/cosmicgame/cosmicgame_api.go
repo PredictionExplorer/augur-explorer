@@ -1,6 +1,6 @@
-package biddingwar;
+package cosmicgame
 
-type BWStatistics struct {
+type CGStatistics struct {
 	TotalBids					uint64
 	CurNumBids					uint64
 	TotalPrizes					uint64
@@ -14,7 +14,7 @@ type BWStatistics struct {
 	NumDonatedNFTs				uint64
 	NumCSTokenMints				uint64
 }
-type BwBidRec struct {
+type CGBidRec struct {
 	EvtLogId					int64
 	BlockNum					int64
 	TxId						int64
@@ -35,7 +35,7 @@ type BwBidRec struct {
 	ImageURL					string
 	Message						string
 }
-type BwPrizeRec struct {
+type CGPrizeRec struct {
 	EvtLogId					int64
 	BlockNum					int64
 	TxId						int64
@@ -52,11 +52,11 @@ type BwPrizeRec struct {
 	CharityAddress				string
 	CharityAmount				string
 	CharityAmountETH			float64
-	RoundStats					BwRoundStats
-	RaffleNFTWinners			[]BwRaffleNFTWinnerRec
-	RaffleETHDeposits			[]BwRaffleDepositRec
+	RoundStats					CGRoundStats
+	RaffleNFTWinners			[]CGRaffleNFTWinnerRec
+	RaffleETHDeposits			[]CGRaffleDepositRec
 }
-type BwUserInfo struct {
+type CGUserInfo struct {
 	AddressId					int64
 	Address						string
 	NumPrizes					int64
@@ -71,7 +71,7 @@ type BwUserInfo struct {
 	UnclaimedNFTs				int64
 	TotalCSTokensWon			int64	// prizes + raffles
 }
-type BwCharityDonation struct {
+type CGCharityDonation struct {
 	EvtLogId					int64
 	BlockNum					int64
 	TxId						int64
@@ -84,7 +84,7 @@ type BwCharityDonation struct {
 	AmountEth					float64
 	IsVoluntary					bool	// true - made by direct send, false=made by BiddingWar contract
 }
-type BwBiddingwarDonation struct {
+type CGCosmicGameDonation struct {
 	EvtLogId					int64
 	BlockNum					int64
 	TxId						int64
@@ -96,14 +96,14 @@ type BwBiddingwarDonation struct {
 	Amount						string
 	AmountEth					float64
 }
-type BwUniqueBidder struct {
+type CGUniqueBidder struct {
 	BidderAid					int64
 	BidderAddr					string
 	NumBids						int64
 	MaxBidAmount				string
 	MaxBidAmountEth				float64	// same as above but with 18 decimal places (i.e. in ETH )
 }
-type BwUniqueWinner struct {
+type CGUniqueWinner struct {
 	WinnerAid					int64
 	WinnerAddr					string
 	PrizesCount					int64
@@ -111,7 +111,7 @@ type BwUniqueWinner struct {
 	MaxWinAmountEth				float64	// same as above but with 18 decimal places (i.e. in ETH )
 	PrizesSum					float64	// all winnings in ETH
 }
-type BwNFTDonation struct {
+type GNFTDonation struct {
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
@@ -128,17 +128,17 @@ type BwNFTDonation struct {
 	NFTTokenURI					string
 	Index						int64
 }
-type BwNFTDonationStats struct {
+type GNFTDonationStats struct {
 	TokenAddressId				int64
 	TokenAddress				string
 	NumDonations				int64	// total number of donated tokens per this contract
 }
-type BwRecordCounters struct {
+type CGRecordCounters struct {
 	TotalBids					int64
 	TotalPrizes					int64
 	TotalDonatedNFTs			int64
 }
-type BwRaffleDepositRec struct {
+type CGRaffleDepositRec struct {
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
@@ -154,7 +154,7 @@ type BwRaffleDepositRec struct {
 	ClaimTimeStamp				int64
 	ClaimDateTime				string
 }
-type BwRaffleWithdrawalRec struct {
+type CGRaffleWithdrawalRec struct {
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
@@ -166,7 +166,7 @@ type BwRaffleWithdrawalRec struct {
 	WinnerAid					int64
 	Amount						float64
 }
-type BwRaffleNFTWinnerRec struct {
+type CGRaffleNFTWinnerRec struct {
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
@@ -180,7 +180,7 @@ type BwRaffleNFTWinnerRec struct {
 	TokenId						int64
 	WinnerIndex					int64
 }
-type BwDonatedNFTClaimRec struct {
+type CGDonatedNFTClaimRec struct {
 	RecordId					int64
 	EvtId						int64
 	BlockNum					int64
@@ -198,7 +198,7 @@ type BwDonatedNFTClaimRec struct {
 	WinnerAddr					string
 	DonorAddr					string
 }
-type BwCosmicSignatureMintRec struct {
+type CGCosmicSignatureMintRec struct {
 	EvtLogId					int64
 	BlockNum					int64
 	TimeStamp					int64
@@ -218,7 +218,7 @@ type BwCosmicSignatureMintRec struct {
 	//ClaimTimestamp				int64
 	//ClaimDateTime				string
 }
-type BwRoundStats struct {
+type CGRoundStats struct {
 	RoundNum					int64
 	TotalBids					int64
 	TotalDonatedNFTs			int64
@@ -226,12 +226,12 @@ type BwRoundStats struct {
 	TotalRaffleEthDepositsEth	float64 // deposits of ETH (same as above) but divided by 1^18
 	TotalRaffleNFTs				int64
 }
-type BwClaimInfo struct {
+type CGClaimInfo struct {
 	ETHRaffleToClaim			float64
 	ETHRaffleToClaimWei			string
 	NumDonatedNFTToClaim		int64		// Pending unclaimed donated tokens (counter)
 }
-type BwRaffleHistory struct {
+type CGRaffleHistory struct {
 	EvtLogId					int64
 	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize
 	TimeStamp					int64
@@ -249,6 +249,6 @@ type BwRaffleHistory struct {
 	WinnerAddr					string
 	WinnerAid					int64
 }
-type BwDonatedNFTUnclaimed struct {
+type CGDonatedNFTUnclaimed struct {
 
 }

@@ -57,7 +57,7 @@ func initialize() {
 	if augur_srv.db_matic != nil {
 		amm_contracts = augur_srv.db_matic.Get_augur_amm_contract_addresses()
 	}
-	biddingwar_init()
+	cosmic_game_init()
 }
 func secure_https(r http.Handler) {
 	autotls.Run(r, "localhost")

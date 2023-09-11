@@ -15,7 +15,7 @@ import (
 
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
-func api_biddingwar_dashboard(c *gin.Context) {
+func api_cosmic_game_dashboard(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -25,7 +25,7 @@ func api_biddingwar_dashboard(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
-		"BiddingWarAddr":cosmic_game_addr,
+		"CosmicGameAddr":cosmic_game_addr,
 		"CosmicSignatureAddr":cosmic_signature_addr,
 		"CosmicSignatureTokenAddr":cosmic_token_addr,
 		"CharityWalletAddr":charity_wallet_addr,
@@ -62,7 +62,7 @@ func api_biddingwar_dashboard(c *gin.Context) {
 		"TsRoundStart" : round_start_ts,
 	})
 }
-func api_biddingwar_prize_list(c *gin.Context) {
+func api_cosmic_game_prize_list(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -84,7 +84,7 @@ func api_biddingwar_prize_list(c *gin.Context) {
 		"PrizeClaims" : prizes,
 	})
 }
-func api_biddingwar_bid_list(c *gin.Context) {
+func api_cosmic_game_bid_list(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -107,7 +107,7 @@ func api_biddingwar_bid_list(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
-func api_biddingwar_bid_list_by_round(c *gin.Context) {
+func api_cosmic_game_bid_list_by_round(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -157,7 +157,7 @@ func api_biddingwar_bid_list_by_round(c *gin.Context) {
 		"BidsByRound" : bids,
 	})
 }
-func api_biddingwar_bid_info(c *gin.Context) {
+func api_cosmic_game_bid_info(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -190,7 +190,7 @@ func api_biddingwar_bid_info(c *gin.Context) {
 		})
 	}
 } 
-func api_biddingwar_prize_info(c *gin.Context) {
+func api_cosmic_game_prize_info(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -223,7 +223,7 @@ func api_biddingwar_prize_info(c *gin.Context) {
 		})
 	}
 } 
-func api_biddingwar_user_info(c *gin.Context) {
+func api_cosmic_game_user_info(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -259,20 +259,20 @@ func api_biddingwar_user_info(c *gin.Context) {
 		"Prizes" : prizes,
 	})
 }
-func api_biddingwar_charity_donations(c *gin.Context) {
+func api_cosmic_game_charity_donations(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return
 	}
-	biddingwar_aid,err :=arb_storagew.S.Nonfatal_lookup_address_id(cosmic_game_addr.String())
+	cosmicgame_aid,err :=arb_storagew.S.Nonfatal_lookup_address_id(cosmic_game_addr.String())
 	if err != nil {
-		Error.Printf("BiddingWar contract address doesn't exist in the DB, aborting server")
+		Error.Printf("CosmicGame contract address doesn't exist in the DB, aborting server")
 		os.Exit(1)
 	}
 
-	donations := arb_storagew.Get_charity_donations(biddingwar_aid)
+	donations := arb_storagew.Get_charity_donations(cosmicgame_aid)
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -281,7 +281,7 @@ func api_biddingwar_charity_donations(c *gin.Context) {
 		"CharityDonations" : donations,
 	})
 }
-func api_biddingwar_donations_eth(c *gin.Context) {
+func api_cosmic_game_donations_eth(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -289,7 +289,7 @@ func api_biddingwar_donations_eth(c *gin.Context) {
 		return
 	}
 
-	donations := arb_storagew.Get_donations_to_biddingwar()
+	donations := arb_storagew.Get_donations_to_cosmic_game()
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -298,7 +298,7 @@ func api_biddingwar_donations_eth(c *gin.Context) {
 		"CharityDonations" : donations,
 	})
 }
-func api_biddingwar_user_unique_bidders(c *gin.Context) {
+func api_cosmic_game_user_unique_bidders(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -316,7 +316,7 @@ func api_biddingwar_user_unique_bidders(c *gin.Context) {
 		"UniqueBidders" : unique_bidders,
 	})
 }
-func api_biddingwar_user_unique_winners(c *gin.Context) {
+func api_cosmic_game_user_unique_winners(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -334,7 +334,7 @@ func api_biddingwar_user_unique_winners(c *gin.Context) {
 		"UniqueWinners" : unique_winners,
 	})
 }
-func api_biddingwar_donations_nft_list(c *gin.Context) {
+func api_cosmic_game_donations_nft_list(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -358,7 +358,7 @@ func api_biddingwar_donations_nft_list(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
-func api_biddingwar_nft_donation_stats(c *gin.Context) {
+func api_cosmic_game_nft_donation_stats(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -376,7 +376,7 @@ func api_biddingwar_nft_donation_stats(c *gin.Context) {
 		"NFTDonationStats" : nft_donation_stats,
 	})
 }
-func api_biddingwar_record_counters(c *gin.Context) {
+func api_cosmic_game_record_counters(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -394,7 +394,7 @@ func api_biddingwar_record_counters(c *gin.Context) {
 		"RecordCounters" : record_counters,
 	})
 }
-func api_biddingwar_donated_nft_info(c *gin.Context) {
+func api_cosmic_game_donated_nft_info(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -427,7 +427,7 @@ func api_biddingwar_donated_nft_info(c *gin.Context) {
 		})
 	}
 }
-func api_biddingwar_raffle_deposits_list(c *gin.Context) {
+func api_cosmic_game_raffle_deposits_list(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -452,7 +452,7 @@ func api_biddingwar_raffle_deposits_list(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
-func api_biddingwar_raffle_deposits_by_round(c *gin.Context) {
+func api_cosmic_game_raffle_deposits_by_round(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -484,7 +484,7 @@ func api_biddingwar_raffle_deposits_by_round(c *gin.Context) {
 		"RoundNum" : round_num,
 	})
 }
-func api_biddingwar_raffle_nft_winners_list(c *gin.Context) {
+func api_cosmic_game_raffle_nft_winners_list(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -509,7 +509,7 @@ func api_biddingwar_raffle_nft_winners_list(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
-func api_biddingwar_raffle_nft_winners_by_round(c *gin.Context) {
+func api_cosmic_game_raffle_nft_winners_by_round(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -541,7 +541,7 @@ func api_biddingwar_raffle_nft_winners_by_round(c *gin.Context) {
 		"RoundNum" : round_num,
 	})
 }
-func api_biddingwar_user_raffle_nft_winnings(c *gin.Context) {
+func api_cosmic_game_user_raffle_nft_winnings(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -577,7 +577,7 @@ func api_biddingwar_user_raffle_nft_winnings(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
-func api_biddingwar_user_raffle_deposits(c *gin.Context) {
+func api_cosmic_game_user_raffle_deposits(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -611,7 +611,7 @@ func api_biddingwar_user_raffle_deposits(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
-func api_biddingwar_nft_donations_by_prize(c *gin.Context) {
+func api_cosmic_game_nft_donations_by_prize(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -641,7 +641,7 @@ func api_biddingwar_nft_donations_by_prize(c *gin.Context) {
 		"PrizeNum": prize_num,
 	})
 }
-func api_biddingwar_cosmic_signature_token_list(c *gin.Context) {
+func api_cosmic_game_cosmic_signature_token_list(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -665,7 +665,7 @@ func api_biddingwar_cosmic_signature_token_list(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
-func api_biddingwar_cosmic_signature_token_info(c *gin.Context) {
+func api_cosmic_game_cosmic_signature_token_info(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -711,7 +711,7 @@ func api_biddingwar_cosmic_signature_token_info(c *gin.Context) {
 		})
 	}
 }
-func api_biddingwar_donated_nft_claims_all(c *gin.Context) {
+func api_cosmic_game_donated_nft_claims_all(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -736,7 +736,7 @@ func api_biddingwar_donated_nft_claims_all(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
-func api_biddingwar_donated_nft_claims_by_user(c *gin.Context) {
+func api_cosmic_game_donated_nft_claims_by_user(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
@@ -767,7 +767,7 @@ func api_biddingwar_donated_nft_claims_by_user(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
-func api_biddingwar_time_current(c *gin.Context) {
+func api_cosmic_game_time_current(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -802,7 +802,7 @@ func api_biddingwar_time_current(c *gin.Context) {
 		"CurrentTimeStamp": ts,
 	})
 }
-func api_biddingwar_time_until_prize(c *gin.Context) {
+func api_cosmic_game_time_until_prize(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -835,7 +835,7 @@ func api_biddingwar_time_until_prize(c *gin.Context) {
 		"TimeUntilPrize": ts_big.Int64(),
 	})
 }
-func api_biddingwar_prize_cur_round_time(c *gin.Context) {
+func api_cosmic_game_prize_cur_round_time(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -863,7 +863,7 @@ func api_biddingwar_prize_cur_round_time(c *gin.Context) {
 		})
 	}
 } 
-func api_biddingwar_user_global_winnings(c *gin.Context) {
+func api_cosmic_game_user_global_winnings(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -893,7 +893,7 @@ func api_biddingwar_user_global_winnings(c *gin.Context) {
 		"UserAid" : user_aid,
 	})
 }
-func api_biddingwar_claim_history_detail(c *gin.Context) {
+func api_cosmic_game_claim_history_detail(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -932,7 +932,7 @@ func api_biddingwar_claim_history_detail(c *gin.Context) {
 		"ClaimHistory" : claim_history,
 	})
 }
-func api_biddingwar_global_claim_history_detail(c *gin.Context) {
+func api_cosmic_game_global_claim_history_detail(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -954,7 +954,7 @@ func api_biddingwar_global_claim_history_detail(c *gin.Context) {
 		"GlobalClaimHistory" : claim_history,
 	})
 }
-func api_biddingwar_unclaimed_donated_nfts_by_user(c *gin.Context) {
+func api_cosmic_game_unclaimed_donated_nfts_by_user(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -989,7 +989,7 @@ func api_biddingwar_unclaimed_donated_nfts_by_user(c *gin.Context) {
 		"UserAid" : user_aid,
 	})
 }
-func api_biddingwar_unclaimed_donated_nfts_by_prize(c *gin.Context) {
+func api_cosmic_game_unclaimed_donated_nfts_by_prize(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -1021,7 +1021,7 @@ func api_biddingwar_unclaimed_donated_nfts_by_prize(c *gin.Context) {
 		"PrizeNum": prize_num,
 	})
 }
-func api_biddingwar_unclaimed_raffle_deposits_by_user(c *gin.Context) {
+func api_cosmic_game_unclaimed_raffle_deposits_by_user(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -1060,7 +1060,7 @@ func api_biddingwar_unclaimed_raffle_deposits_by_user(c *gin.Context) {
 		"UnclaimedDeposits" : deposits,
 	})
 }
-func api_biddingwar_cosmic_signature_token_list_by_user(c *gin.Context) {
+func api_cosmic_game_cosmic_signature_token_list_by_user(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {

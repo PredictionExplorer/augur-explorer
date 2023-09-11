@@ -83,7 +83,7 @@ etl/cmd/randomwalk/scripts/status
 etl/cmd/randomwalk/scripts/price
 etl/cmd/randomwalk/rwalkalarm/rwalkalarmd
 etl/cmd/layer1/layer1
-etl/cmd/biddingwar/biddingwar
+etl/cmd/cosmicgame/cosmicgame
 etl/cmd/biddingwar/scripts/cginfo
 etl/cmd/biddingwar/scripts/claimnft
 etl/cmd/biddingwar/scripts/donate

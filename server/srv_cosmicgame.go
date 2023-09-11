@@ -16,9 +16,9 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	. "github.com/PredictionExplorer/augur-explorer/dbs/biddingwar" // bidding war types
+	. "github.com/PredictionExplorer/augur-explorer/dbs/cosmicgame"
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
-	. "github.com/PredictionExplorer/augur-explorer/primitives/biddingwar"
+	. "github.com/PredictionExplorer/augur-explorer/primitives/cosmicgame"
 
 )
 const (
@@ -57,7 +57,7 @@ var (
 	round_start_ts				int64
 
 	// contract counters	(collected via DB)
-	bw_stats					BWStatistics
+	bw_stats					CGStatistics
 
 	arb_storagew				SQLStorageWrapper
 )
@@ -65,10 +65,10 @@ type rpcBlock struct {
     Timestamp         string      `json:"timestamp"`
 }
 
-func biddingwar_init() {
+func cosmic_game_init() {
 
 	if  !augur_srv.arbitrum_initialized() {
-		err_str := fmt.Sprintf("biddingwar_init(): Database link wasn't configured")
+		err_str := fmt.Sprintf("cosmic_game_init(): Database link wasn't configured")
 		Info.Printf(err_str)
 		Error.Printf(err_str)
 	}
@@ -104,7 +104,7 @@ func do_reload_contract_constants() {
 	}
 	bwcontract,err := NewCosmicGame(cosmic_game_addr,eclient)
 	if err != nil {
-		err_str := fmt.Sprintf("Can't instantiate BiddingWar contract: %v . Contract constants won't be fetched\n",err)
+		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n",err)
 		Error.Printf(err_str)
 		Info.Printf(err_str)
 	} else {
@@ -186,7 +186,7 @@ func do_reload_contract_variables() {
 	var copts bind.CallOpts
 	bwcontract,err := NewCosmicGame(cosmic_game_addr,eclient)
 	if err != nil {
-		err_str := fmt.Sprintf("Can't instantiate BiddingWar contract: %v . Contract constants won't be fetched\n",err)
+		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n",err)
 		Error.Printf(err_str)
 		Info.Printf(err_str)
 	} else {
@@ -258,7 +258,7 @@ func do_reload_contract_variables() {
 	}
 }
 func do_reload_database_variables() {
-	bw_stats = arb_storagew.Get_biddingwar_statistics()
+	bw_stats = arb_storagew.Get_cosmic_game_statistics()
 	round_start_ts = arb_storagew.Get_round_start_timestamp(bw_stats.TotalPrizes)
 }
 func reload_constants_goroutine() {
@@ -282,7 +282,7 @@ func reload_database_variables_goroutine() {
 		time.Sleep(CONTRACT_VARIABLES_REFRESH_TIME * time.Second)
 	}
 }
-func biddingwar_index_page(c *gin.Context) {
+func cosmic_game_index_page(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -291,7 +291,7 @@ func biddingwar_index_page(c *gin.Context) {
 	ts := time.Unix(round_start_ts,0)
 	date_str := fmt.Sprintf("%v",ts);
 	c.HTML(http.StatusOK, "bw_index.html", gin.H{
-		"BiddingWarAddr":cosmic_game_addr,
+		"CosmicGameAddr":cosmic_game_addr,
 		"CosmicSignatureAddr":cosmic_signature_addr,
 		"CosmicSignatureTokenAddr":cosmic_token_addr,
 		"CharityWalletAddr":charity_wallet_addr,
@@ -330,7 +330,7 @@ func biddingwar_index_page(c *gin.Context) {
 		"DateRoundStart" : date_str,
 	})
 }
-func biddingwar_prize_claims(c *gin.Context) {
+func cosmic_game_prize_claims(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -343,13 +343,13 @@ func biddingwar_prize_claims(c *gin.Context) {
 	}
 	prizes := arb_storagew.Get_prize_claims(offset,limit)
 
-	c.HTML(http.StatusOK, "bw_prize_claims.html", gin.H{
+	c.HTML(http.StatusOK, "cg_prize_claims.html", gin.H{
 		"PrizeClaims" : prizes,
 		"Offset" : offset,
 		"Limit" : limit,
 	})
 }
-func biddingwar_bids(c *gin.Context) {
+func cosmic_game_bids(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -362,13 +362,13 @@ func biddingwar_bids(c *gin.Context) {
 	}
 	bids := arb_storagew.Get_bids(offset,limit)
 
-	c.HTML(http.StatusOK, "bw_bids.html", gin.H{
+	c.HTML(http.StatusOK, "cg_bids.html", gin.H{
 		"Bids" : bids,
 		"Offset" : offset,
 		"Limit" : limit,
 	})
 }
-func biddingwar_bid_list_by_round(c *gin.Context) {
+func cosmic_game_bid_list_by_round(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -405,7 +405,7 @@ func biddingwar_bid_list_by_round(c *gin.Context) {
 	}
 
 	bids := arb_storagew.Get_bids_by_round_num(round_num,int(sort),offset,limit)
-	c.HTML(http.StatusOK, "bw_bids_by_round_num.html", gin.H{
+	c.HTML(http.StatusOK, "cg_bids_by_round_num.html", gin.H{
 		"RoundNum" : round_num,
 		"Offset" : offset,
 		"Limit" : limit,
@@ -413,7 +413,7 @@ func biddingwar_bid_list_by_round(c *gin.Context) {
 		"BidsByRound" : bids,
 	})
 }
-func biddingwar_bid_info(c *gin.Context) {
+func cosmic_game_bid_info(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -454,12 +454,12 @@ func biddingwar_bid_info(c *gin.Context) {
 				}
 			}
 		}
-		c.HTML(http.StatusOK, "bw_bid_info.html", gin.H{
+		c.HTML(http.StatusOK, "cg_bid_info.html", gin.H{
 			"BidInfo" : bid_info,
 		})
 	}
 } 
-func biddingwar_prize_info(c *gin.Context) {
+func cosmic_game_prize_info(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -490,7 +490,7 @@ func biddingwar_prize_info(c *gin.Context) {
 		})
 	}
 }
-func biddingwar_user_info(c *gin.Context) {
+func cosmic_game_user_info(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -527,34 +527,34 @@ func biddingwar_user_info(c *gin.Context) {
 		"Prizes" : prizes,
 	})
 }
-func biddingwar_charity_donations(c *gin.Context) {
+func cosmic_game_charity_donations(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
-	biddingwar_aid,err :=arb_storagew.S.Nonfatal_lookup_address_id(cosmic_game_addr.String())
+	cosmicgame_aid,err :=arb_storagew.S.Nonfatal_lookup_address_id(cosmic_game_addr.String())
 	if err != nil {
-		Error.Printf("BiddingWar contract address doesn't exist in the DB, aborting server")
+		Error.Printf("cosmic game contract address doesn't exist in the DB, aborting server")
 		os.Exit(1)
 	}
-	donations := arb_storagew.Get_charity_donations(biddingwar_aid)
+	donations := arb_storagew.Get_charity_donations(cosmicgame_aid)
 	c.HTML(http.StatusOK, "bw_charity_donations.html", gin.H{
 		"CharityDonations" : donations,
 	})
 }
-func biddingwar_donations_eth(c *gin.Context) {
+func cosmic_game_donations_eth(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
-	donations := arb_storagew.Get_donations_to_biddingwar()
-	c.HTML(http.StatusOK, "bw_donations_to_biddingwar.html", gin.H{
-		"BiddingwarDonations" : donations,
+	donations := arb_storagew.Get_donations_to_cosmic_game()
+	c.HTML(http.StatusOK, "cg_donations_to_cosmicgame.html", gin.H{
+		"CosmicGameDonations" : donations,
 	})
 }
-func biddingwar_unique_bidders(c *gin.Context) {
+func cosmic_game_unique_bidders(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -565,7 +565,7 @@ func biddingwar_unique_bidders(c *gin.Context) {
 		"UniqueBidders" : unique_bidders,
 	})
 }
-func biddingwar_unique_winners(c *gin.Context) {
+func cosmic_game_unique_winners(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -576,7 +576,7 @@ func biddingwar_unique_winners(c *gin.Context) {
 		"UniqueWinners" : unique_winners,
 	})
 }
-func biddingwar_donations_nft(c *gin.Context) {
+func cosmic_game_donations_nft(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -589,24 +589,24 @@ func biddingwar_donations_nft(c *gin.Context) {
 	}
 	nft_donations := arb_storagew.Get_NFT_donations(offset,limit)
 
-	c.HTML(http.StatusOK, "bw_nft_donations.html", gin.H{
+	c.HTML(http.StatusOK, "cg_nft_donations.html", gin.H{
 		"NFTDonations" : nft_donations,
 		"Offset" : offset,
 		"Limit" : limit,
 	})
 }
-func biddingwar_nft_donation_stats(c *gin.Context) {
+func cosmic_game_nft_donation_stats(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
 	nft_donation_stats := arb_storagew.Get_NFT_donation_stats()
-	c.HTML(http.StatusOK, "bw_nft_donation_stats.html", gin.H{
+	c.HTML(http.StatusOK, "cg_nft_donation_stats.html", gin.H{
 		"NFTDonationStats" : nft_donation_stats,
 	})
 }
-func biddingwar_donations_nft_info(c *gin.Context) {
+func cosmic_game_donations_nft_info(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -633,7 +633,7 @@ func biddingwar_donations_nft_info(c *gin.Context) {
 		})
 	}
 }
-func biddingwar_raffle_deposits_list(c *gin.Context) {
+func cosmic_game_raffle_deposits_list(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -646,13 +646,13 @@ func biddingwar_raffle_deposits_list(c *gin.Context) {
 	}
 	deposits := arb_storagew.Get_raffle_eth_deposits_list(offset,limit)
 
-	c.HTML(http.StatusOK, "bw_raffle_deposits.html", gin.H{
+	c.HTML(http.StatusOK, "cg_raffle_deposits.html", gin.H{
 		"RaffleDeposits" : deposits,
 		"Offset" : offset,
 		"Limit" : limit,
 	})
 }
-func biddingwar_raffle_deposits_by_round(c *gin.Context) {
+func cosmic_game_raffle_deposits_by_round(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -673,12 +673,12 @@ func biddingwar_raffle_deposits_by_round(c *gin.Context) {
 	}
 	deposits := arb_storagew.Get_raffle_deposits_by_round(round_num)
 
-	c.HTML(http.StatusOK, "bw_raffle_deposits_by_round.html", gin.H{
+	c.HTML(http.StatusOK, "cg_raffle_deposits_by_round.html", gin.H{
 		"RaffleDeposits" : deposits,
 		"RoundNum" : round_num,
 	})
 }
-func biddingwar_raffle_nft_winners_list(c *gin.Context) {
+func cosmic_game_raffle_nft_winners_list(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -691,13 +691,13 @@ func biddingwar_raffle_nft_winners_list(c *gin.Context) {
 	}
 	winners := arb_storagew.Get_raffle_nft_winners(offset,limit)
 
-	c.HTML(http.StatusOK, "bw_raffle_nft_winners.html", gin.H{
+	c.HTML(http.StatusOK, "cg_raffle_nft_winners.html", gin.H{
 		"RaffleNFTWinners" : winners,
 		"Offset" : offset,
 		"Limit" : limit,
 	})
 }
-func biddingwar_raffle_nft_winners_by_round(c *gin.Context) {
+func cosmic_game_raffle_nft_winners_by_round(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -718,12 +718,12 @@ func biddingwar_raffle_nft_winners_by_round(c *gin.Context) {
 	}
 	winners := arb_storagew.Get_raffle_nft_winners_by_round(round_num)
 
-	c.HTML(http.StatusOK, "bw_raffle_nft_winners_by_round.html", gin.H{
+	c.HTML(http.StatusOK, "cg_raffle_nft_winners_by_round.html", gin.H{
 		"RaffleNFTWinners" : winners,
 		"RoundNum" : round_num,
 	})
 }
-func biddingwar_raffle_deposits_by_user(c *gin.Context) {
+func cosmic_game_raffle_deposits_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -758,7 +758,7 @@ func biddingwar_raffle_deposits_by_user(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
-func biddingwar_user_raffle_nft_winnings(c *gin.Context) {
+func cosmic_game_user_raffle_nft_winnings(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -793,7 +793,7 @@ func biddingwar_user_raffle_nft_winnings(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
-func biddingwar_nft_donations_by_prize(c *gin.Context) {
+func cosmic_game_nft_donations_by_prize(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -813,12 +813,12 @@ func biddingwar_nft_donations_by_prize(c *gin.Context) {
 		return
 	}
 	nft_donations := arb_storagew.Get_nft_donations_by_prize(prize_num)
-	c.HTML(http.StatusOK, "bw_nft_donations_by_prize.html", gin.H{
+	c.HTML(http.StatusOK, "cg_nft_donations_by_prize.html", gin.H{
 		"NFTDonations" : nft_donations,
 		"PrizeNum": prize_num,
 	})
 }
-func biddingwar_cosmic_signature_token_list(c *gin.Context) {
+func cosmic_game_cosmic_signature_token_list(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -837,7 +837,7 @@ func biddingwar_cosmic_signature_token_list(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
-func biddingwar_cosmic_signature_token_info(c *gin.Context) {
+func cosmic_game_cosmic_signature_token_info(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -877,7 +877,7 @@ func biddingwar_cosmic_signature_token_info(c *gin.Context) {
 		})
 	}
 }
-func biddingwar_donated_nft_claims_all(c *gin.Context) {
+func cosmic_game_donated_nft_claims_all(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -895,7 +895,7 @@ func biddingwar_donated_nft_claims_all(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
-func biddingwar_donated_nft_claims_by_user(c *gin.Context) {
+func cosmic_game_donated_nft_claims_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -930,7 +930,7 @@ func biddingwar_donated_nft_claims_by_user(c *gin.Context) {
 		"UserInfo" : user_info,
 	})
 }
-func biddingwar_time_current(c *gin.Context) {
+func cosmic_game_time_current(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -969,7 +969,7 @@ func biddingwar_time_current(c *gin.Context) {
 		"CurrentTimeStamp": ts,
 	})
 }
-func biddingwar_time_until_prize(c *gin.Context) {
+func cosmic_game_time_until_prize(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1003,7 +1003,7 @@ func biddingwar_time_until_prize(c *gin.Context) {
 		"TimeUntilPrize": ts_big.Int64(),
 	})
 }
-func biddingwar_user_global_winnings(c *gin.Context) {
+func cosmic_game_user_global_winnings(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1031,7 +1031,7 @@ func biddingwar_user_global_winnings(c *gin.Context) {
 		"UserAid" : user_aid,
 	})
 }
-func biddingwar_global_claim_history_detail(c *gin.Context) {
+func cosmic_game_global_claim_history_detail(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1048,7 +1048,7 @@ func biddingwar_global_claim_history_detail(c *gin.Context) {
 		"GlobalClaimHistory" : claim_history,
 	})
 }
-func biddingwar_claim_history_detail(c *gin.Context) {
+func cosmic_game_claim_history_detail(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1080,7 +1080,7 @@ func biddingwar_claim_history_detail(c *gin.Context) {
 		"ClaimHistory" : claim_history,
 	})
 }
-func biddingwar_unclaimed_donated_nfts_by_user(c *gin.Context) {
+func cosmic_game_unclaimed_donated_nfts_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1108,7 +1108,7 @@ func biddingwar_unclaimed_donated_nfts_by_user(c *gin.Context) {
 		"UnclaimedDonatedNFTs" : nfts,
 	})
 }
-func biddingwar_unclaimed_donated_nfts_by_prize(c *gin.Context) {
+func cosmic_game_unclaimed_donated_nfts_by_prize(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1128,12 +1128,12 @@ func biddingwar_unclaimed_donated_nfts_by_prize(c *gin.Context) {
 		return
 	}
 	nft_donations := arb_storagew.Get_unclaimed_donated_nfts_by_prize(prize_num)
-	c.HTML(http.StatusOK, "bw_nft_donations_by_prize.html", gin.H{
+	c.HTML(http.StatusOK, "cg_nft_donations_by_prize.html", gin.H{
 		"NFTDonations" : nft_donations,
 		"PrizeNum": prize_num,
 	})
 }
-func biddingwar_unclaimed_raffle_deposits_by_user(c *gin.Context) {
+func cosmic_game_unclaimed_raffle_deposits_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1167,7 +1167,7 @@ func biddingwar_unclaimed_raffle_deposits_by_user(c *gin.Context) {
 		"UnclaimedDeposits" : deposits,
 	})
 }
-func biddingwar_cosmic_signature_token_list_by_user(c *gin.Context) {
+func cosmic_game_cosmic_signature_token_list_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1201,7 +1201,7 @@ func biddingwar_cosmic_signature_token_list_by_user(c *gin.Context) {
 		"UserTokens" : user_tokens,
 	})
 }
-func biddingwar_dev_donate_nft(c *gin.Context) {
+func cosmic_game_dev_donate_nft(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1229,7 +1229,7 @@ func biddingwar_dev_donate_nft(c *gin.Context) {
 	})
 
 }
-func biddingwar_dev_funcs(c *gin.Context) {
+func cosmic_game_dev_funcs(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")

@@ -14,7 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
-	. "github.com/PredictionExplorer/augur-explorer/primitives/biddingwar"
+	. "github.com/PredictionExplorer/augur-explorer/primitives/cosmicgame"
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEvent {
@@ -87,7 +87,7 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 }
 func proc_prize_claim_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BWPrizeClaimEvent
+	var evt CGPrizeClaimEvent
 	var eth_evt CosmicGamePrizeClaimEvent
 
 	Info.Printf("Processing PrizeClaim event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -260,7 +260,7 @@ func find_prize_num(tx_id int64) int64 {
 }
 func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BWBidEvent
+	var evt CGBidEvent
 	var eth_evt CosmicGameBidEvent
 
 	Info.Printf("Processing Bid event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -303,7 +303,7 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BWDonationEvent
+	var evt CGDonationEvent
 	var eth_evt CosmicGameDonationEvent
 
 	Info.Printf("Processing DonationEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -337,7 +337,7 @@ func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_donation_received_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BWDonationReceivedEvent
+	var evt CGDonationReceivedEvent
 	var eth_evt CharityWalletDonationReceivedEvent
 
 	Info.Printf("Processing DonationReceivedEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -371,7 +371,7 @@ func proc_donation_received_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_donation_sent_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BWDonationSentEvent
+	var evt CGDonationSentEvent
 	var eth_evt CharityWalletDonationSentEvent
 
 	Info.Printf("Processing DonationSentEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -424,7 +424,7 @@ func get_token_uri(token_id int64,contract_addr common.Address) string {
 }
 func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BWNFTDonationEvent
+	var evt CGNFTDonationEvent
 	var eth_evt CosmicGameNFTDonationEvent
 
 	Info.Printf("Processing NFTDonationEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -450,7 +450,7 @@ func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TokenAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.RoundNum = log.Topics[3].Big().Int64()
 	evt.TokenId = eth_evt.TokenId.Int64()
-	evt.BidId = storagew.Get_biddingwar_bid_by_evtlog_id(evt.EvtId-2)
+	evt.BidId = storagew.Get_cosmic_game_bid_by_evtlog_id(evt.EvtId-2)
 	evt.NFTTokenURI = get_token_uri(evt.TokenId,common.HexToAddress(evt.TokenAddr))
 	evt.Index = eth_evt.Index.Int64()
 
@@ -467,7 +467,7 @@ func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_charity_updated_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BWCharityUpdatedEvent
+	var evt CGCharityUpdatedEvent
 	var eth_evt CharityWalletCharityUpdatedEvent
 
 	Info.Printf("Processing CharityUpdatedEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -499,7 +499,7 @@ func proc_charity_updated_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BWTokenNameEvent
+	var evt CGTokenNameEvent
 	var eth_evt CosmicSignatureTokenNameEvent
 
 	Info.Printf("Processing TokenNameEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -533,7 +533,7 @@ func proc_token_name_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BWMintEvent
+	var evt CGMintEvent
 	var eth_evt CosmicSignatureMintEvent
 
 	Info.Printf("Processing MintEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -577,7 +577,7 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_raffle_deposit_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BWRaffleDeposit
+	var evt CGRaffleDeposit
 	var eth_evt RaffleWalletRaffleDepositEvent 
 
 	Info.Printf("Processing RaffleDeposit event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -614,7 +614,7 @@ func proc_raffle_deposit_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_raffle_withdrawal_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BWRaffleWithdrawal
+	var evt CGRaffleWithdrawal
 	var eth_evt RaffleWalletRaffleWithdrawalEvent 
 
 	Info.Printf("Processing RaffleWithdrawalevent id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -648,7 +648,7 @@ func proc_raffle_withdrawal_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BWRaffleNFTWinner
+	var evt CGRaffleNFTWinner
 	var eth_evt CosmicGameRaffleNFTWinnerEvent
 
 	Info.Printf("Processing RaffleNFTWinner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -686,7 +686,7 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_raffle_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BWRaffleNFTClaimed
+	var evt CGRaffleNFTClaimed
 	var eth_evt CosmicGameRaffleNFTWinnerEvent
 
 	Info.Printf("Processing RaffleNFTClaimed event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -719,7 +719,7 @@ func proc_raffle_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BWDonatedNFTClaimed
+	var evt CGDonatedNFTClaimed
 	var eth_evt CosmicGameDonatedNFTClaimedEvent
 
 	Info.Printf("Processing DonatedNFTClaimed event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
@@ -760,7 +760,7 @@ func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_cosmic_sig_transfer_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt BWERC721Transfer
+	var evt CGERC721Transfer
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_signature_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())

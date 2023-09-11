@@ -1,4 +1,4 @@
-CREATE TABLE bw_prize_claim(
+CREATE TABLE cg_prize_claim(
 	id						BIGSERIAL PRIMARY KEY,
 	evtlog_id				BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num				BIGINT NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE bw_prize_claim(
 	donation_evt_id			BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_bid (
+CREATE TABLE cg_bid (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE bw_bid (
 	msg				TEXT,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_donation (
+CREATE TABLE cg_donation (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE bw_donation (
 	amount			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_donation_received (
+CREATE TABLE cg_donation_received (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE bw_donation_received (
 	amount			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_donation_sent (
+CREATE TABLE cg_donation_sent (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE bw_donation_sent (
 	amount			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_nft_donation (
+CREATE TABLE cg_nft_donation (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -73,11 +73,11 @@ CREATE TABLE bw_nft_donation (
 	token_aid		BIGINT NOT NULL,	-- this is address id (table address)
 	token_id		BIGINT NOT NULL,	-- this is tokenID
 	idx				BIGINT NOT NULL,	-- Index field of NFTDonationEvent
-	bid_id			BIGINT NOT NULL,		-- id of the related `bw_bid` record
+	bid_id			BIGINT NOT NULL,		-- id of the related `cg_bid` record
 	token_uri		TEXT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_charity_updated (
+CREATE TABLE cg_charity_updated (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE bw_charity_updated (
 	charity_aid		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_token_name (
+CREATE TABLE cg_token_name (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -98,7 +98,7 @@ CREATE TABLE bw_token_name (
 	token_name		TEXT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_mint_event (
+CREATE TABLE cg_mint_event (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -111,7 +111,7 @@ CREATE TABLE bw_mint_event (
 	seed			TEXT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_raffle_deposit (
+CREATE TABLE cg_raffle_deposit (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -125,7 +125,7 @@ CREATE TABLE bw_raffle_deposit (
 	withdrawal_id	BIGINT DEFAULT 0, -- at withdrawal set to evtlog_id of bw_raffle_Withdrawal
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_raffle_withdrawal (
+CREATE TABLE cg_raffle_withdrawal (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -136,7 +136,7 @@ CREATE TABLE bw_raffle_withdrawal (
 	amount			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_raffle_nft_winner (
+CREATE TABLE cg_raffle_nft_winner (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -149,7 +149,7 @@ CREATE TABLE bw_raffle_nft_winner (
 	winner_idx		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_donated_nft_claimed (
+CREATE TABLE cg_donated_nft_claimed (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -163,7 +163,7 @@ CREATE TABLE bw_donated_nft_claimed (
 	token_id		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_transfer( -- cosmic signature ERC721 transfer
+CREATE TABLE cg_transfer( -- cosmic signature ERC721 transfer
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -176,20 +176,20 @@ CREATE TABLE bw_transfer( -- cosmic signature ERC721 transfer
 	otype           SMALLINT NOT NULL,-- 0-regular transfer,1-Mint,2-Burn
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE bw_round_stats( -- collects statistics per round 
+CREATE TABLE cg_round_stats( -- collects statistics per round 
 	round_num					BIGINT NOT NULL PRIMARY KEY,
 	total_bids					BIGINT DEFAULT 0,
 	total_nft_donated			BIGINT DEFAULT 0,
 	total_raffle_eth_deposits	DECIMAL DEFAULT 0,
 	total_raffle_nfts			BIGINT DEFAULT 0
 );
-CREATE TABLE bw_bidder ( -- collects statistics per bidder
+CREATE TABLE cg_bidder ( -- collects statistics per bidder
 	bidder_aid		BIGINT PRIMARY KEY,
 	num_bids		BIGINT DEFAULT 0,
 	max_bid			DECIMAL DEFAULT 0,
 	tokens_minted	DECIMAL DEFAULT 0 -- total tokens minted
 );
-CREATE TABLE bw_winner ( -- collects statistics per winer of prize
+CREATE TABLE cg_winner ( -- collects statistics per winer of prize
 	winner_aid				BIGINT PRIMARY KEY,
 	max_win_amount			DECIMAL DEFAULT 0,
 	prizes_count			BIGINT DEFAULT 0,
@@ -197,17 +197,17 @@ CREATE TABLE bw_winner ( -- collects statistics per winer of prize
 	tokens_count			BIGINT DEFAULT 0,	-- tokens won in prizes + raffles
 	unclaimed_nfts			BIGINT DEFAULT 0	-- donated NFTs
 );
-CREATE TABLE bw_raffle_winner_stats (	-- prizes in ETH
+CREATE TABLE cg_raffle_winner_stats (	-- prizes in ETH
 	winner_aid		BIGINT PRIMARY KEY,
 	amount_sum		DECIMAL DEFAULT 0,
 	withdrawal_sum	DECIMAL DEFAULT 0,
 	raffles_count	BIGINT DEFAULT 0
 );
-CREATE TABLE bw_raffle_nft_winner_stats ( -- prizes in NFT
+CREATE TABLE cg_raffle_nft_winner_stats ( -- prizes in NFT
 	winner_aid		BIGINT PRIMARY KEY,
 	num_won			BIGINT DEFAULT 0	-- num tokens won
 );
-CREATE TABLE bw_glob_stats ( -- global statistics
+CREATE TABLE cg_glob_stats ( -- global statistics
 	num_vol_donations		BIGINT DEFAULT 0,		-- total number of voluntary donations
 	vol_donations_total		DECIMAL DEFAULT 0,		-- sum of voluntary donations
 	num_bids				BIGINT DEFAULT 0, 		-- total bids made
@@ -216,11 +216,11 @@ CREATE TABLE bw_glob_stats ( -- global statistics
 	num_mints				BIGINT DEFAULT 0,
 	cur_num_bids			BIGINT DEFAULT 0		-- num bids since new round
 );
-CREATE TABLE bw_nft_stats ( -- stats for donated NFTs (donated with bidAndDonateNFT())
+CREATE TABLE cg_nft_stats ( -- stats for donated NFTs (donated with bidAndDonateNFT())
 	contract_aid			BIGINT PRIMARY KEY,
 	num_donated				BIGINT DEFAULT 0		-- how many NFTs were donated
 );
-CREATE TABLE bw_contracts (
+CREATE TABLE cg_contracts (
 	cosmic_game_addr		TEXT,
 	cosmic_signature_addr	TEXT,
 	cosmic_token_addr		TEXT,
@@ -229,7 +229,7 @@ CREATE TABLE bw_contracts (
 	raffle_wallet_addr		TEXT,
 	random_walk_addr		TEXT
 );
-CREATE TABLE bw_proc_status (
+CREATE TABLE cg_proc_status (
 	last_evt_id             BIGINT DEFAULT 0
 );
-INSERT INTO bw_glob_stats DEFAULT VALUES;
+INSERT INTO cg_glob_stats DEFAULT VALUES;

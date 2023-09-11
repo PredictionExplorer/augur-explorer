@@ -1,11 +1,11 @@
-package biddingwar
+package cosmicgame
 
 import (
 	"os"
 	"fmt"
 	"database/sql"
 
-	p "github.com/PredictionExplorer/augur-explorer/primitives/biddingwar"
+	p "github.com/PredictionExplorer/augur-explorer/primitives/cosmicgame"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
 )
 type SQLStorageWrapper struct {
@@ -22,7 +22,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 				"charity_wallet_addr, "+
 				"raffle_wallet_addr, "+
 				"random_walk_addr "+
-			"FROM "+sw.S.SchemaName()+".bw_contracts"
+			"FROM "+sw.S.SchemaName()+".cg_contracts"
 	row := sw.S.Db().QueryRow(query)
 	var cosmic_game_addr string
 	var cosmic_signature_addr string
@@ -55,20 +55,20 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 	output.RandomWalkAddr = random_walk_addr
 	return output
 }
-func (sw *SQLStorageWrapper) Get_biddingwar_processing_status() p.BiddingWarProcStatus {
+func (sw *SQLStorageWrapper) Get_cosmic_game_processing_status() p.CosmicGameProcStatus {
 
-	var output p.BiddingWarProcStatus
+	var output p.CosmicGameProcStatus
 	var null_id sql.NullInt64
 
 	var query string
 	for {
-		query = "SELECT last_evt_id FROM "+sw.S.SchemaName()+".bw_proc_status"
+		query = "SELECT last_evt_id FROM "+sw.S.SchemaName()+".cg_proc_status"
 
 		res := sw.S.Db().QueryRow(query)
 		err := res.Scan(&null_id)
 		if (err!=nil) {
 			if err == sql.ErrNoRows {
-				query = "INSERT INTO "+sw.S.SchemaName()+".bw_proc_status DEFAULT VALUES"
+				query = "INSERT INTO "+sw.S.SchemaName()+".cg_proc_status DEFAULT VALUES"
 				_,err := sw.S.Db().Exec(query)
 				if (err!=nil) {
 					sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -87,10 +87,10 @@ func (sw *SQLStorageWrapper) Get_biddingwar_processing_status() p.BiddingWarProc
 	}
 	return output
 }
-func (sw *SQLStorageWrapper) Update_biddingwar_process_status(status *p.BiddingWarProcStatus) {
+func (sw *SQLStorageWrapper) Update_cosmic_game_process_status(status *p.CosmicGameProcStatus) {
 
 	var query string
-	query = "UPDATE "+sw.S.SchemaName()+".bw_proc_status SET last_evt_id = $1"
+	query = "UPDATE "+sw.S.SchemaName()+".cg_proc_status SET last_evt_id = $1"
 
 	_,err := sw.S.Db().Exec(query,status.LastEvtIdProcessed)
 	if (err!=nil) {
@@ -98,10 +98,10 @@ func (sw *SQLStorageWrapper) Update_biddingwar_process_status(status *p.BiddingW
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Get_biddingwar_bid_by_evtlog_id(bid_evtlog_id int64) int64 {
+func (sw *SQLStorageWrapper) Get_cosmic_game_bid_by_evtlog_id(bid_evtlog_id int64) int64 {
 
 	var query string
-	query = "SELECT id FROM "+sw.S.SchemaName()+".bw_bid WHERE evtlog_id=$1"
+	query = "SELECT id FROM "+sw.S.SchemaName()+".cg_bid WHERE evtlog_id=$1"
 	res := sw.S.Db().QueryRow(query,bid_evtlog_id)
 	var null_id sql.NullInt64
 	err := res.Scan(&null_id)
@@ -122,7 +122,7 @@ func (sw *SQLStorageWrapper) Get_donation_received_evt_id(tx_id,starting_id int6
 				"d.evtlog_id "+
 			"FROM "+
 				"evt_log e "+
-				"LEFT JOIN bw_donation_received d ON e.id=d.evtlog_id "+
+				"LEFT JOIN cg_donation_received d ON e.id=d.evtlog_id "+
 			"WHERE "+
 				"(e.tx_id=$1) AND "+
 				"(e.topic0_sig=$2) AND "+

@@ -19,9 +19,9 @@ import (
 
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
-	. "github.com/PredictionExplorer/augur-explorer/primitives/biddingwar"
+	. "github.com/PredictionExplorer/augur-explorer/primitives/cosmicgame"
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
-	. "github.com/PredictionExplorer/augur-explorer/dbs/biddingwar"
+	. "github.com/PredictionExplorer/augur-explorer/dbs/cosmicgame"
 )
 const (
 	DEFAULT_DB_LOG			= "db.log"
@@ -84,7 +84,7 @@ var (
 	raffle_wallet_addr		common.Address
 	cosmic_sig_aid			int64
 
-	bw_contracts			CosmicGameContractAddrs
+	cg_contracts			CosmicGameContractAddrs
 	storagew				SQLStorageWrapper
 	RPC_URL					 = os.Getenv("RPC_URL")
 	Error					*log.Logger
@@ -108,7 +108,7 @@ func process_events(exit_chan chan bool) {
 
 	var max_batch_size int64 = 1024*200
 	for {
-		status := storagew.Get_biddingwar_processing_status()
+		status := storagew.Get_cosmic_game_processing_status()
 		select {
 			case exit_flag := <-exit_chan:
 				if exit_flag {
@@ -139,11 +139,11 @@ func process_events(exit_chan chan bool) {
 				break
 			}
 			status.LastEvtIdProcessed=evt_id
-			storagew.Update_biddingwar_process_status(&status)
+			storagew.Update_cosmic_game_process_status(&status)
 		}
 		if len(events) == 0 {
 			status.LastEvtIdProcessed = id_upper_limit
-			storagew.Update_biddingwar_process_status(&status)
+			storagew.Update_cosmic_game_process_status(&status)
 			time.Sleep(1 * time.Second) // sleep only if there is no data
 		}
 	}
@@ -199,18 +199,18 @@ func main() {
 	erc20_abi = get_abi(ERC20ABI)
 	erc721_abi = get_abi(ERC721ABI)
 
-	bw_contracts = storagew.Get_cosmic_game_contract_addrs()
-	cosmic_sig_aid,err  = storagew.S.Nonfatal_lookup_address_id(bw_contracts.CosmicSignatureAddr)
+	cg_contracts = storagew.Get_cosmic_game_contract_addrs()
+	cosmic_sig_aid,err  = storagew.S.Nonfatal_lookup_address_id(cg_contracts.CosmicSignatureAddr)
 	if err != nil {
 		fmt.Printf("Lookup of CosmicSignatureAddr failed: %v",err)
 		os.Exit(1)
 	}
-	cosmic_game_addr = common.HexToAddress(bw_contracts.CosmicGameAddr)
-	cosmic_signature_addr = common.HexToAddress(bw_contracts.CosmicSignatureAddr)
-	cosmic_token_addr = common.HexToAddress(bw_contracts.CosmicTokenAddr)
-	cosmic_dao_addr = common.HexToAddress(bw_contracts.CosmicDaoAddr)
-	charity_wallet_addr = common.HexToAddress(bw_contracts.CharityWalletAddr)
-	raffle_wallet_addr = common.HexToAddress(bw_contracts.RaffleWalletAddr)
+	cosmic_game_addr = common.HexToAddress(cg_contracts.CosmicGameAddr)
+	cosmic_signature_addr = common.HexToAddress(cg_contracts.CosmicSignatureAddr)
+	cosmic_token_addr = common.HexToAddress(cg_contracts.CosmicTokenAddr)
+	cosmic_dao_addr = common.HexToAddress(cg_contracts.CosmicDaoAddr)
+	charity_wallet_addr = common.HexToAddress(cg_contracts.CharityWalletAddr)
+	raffle_wallet_addr = common.HexToAddress(cg_contracts.RaffleWalletAddr)
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)

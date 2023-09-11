@@ -68,7 +68,7 @@ async function main() {
   await cosmicGame.setActivationTime(0);
 
   console.log("Addresses set");
-  console.log("INSERT INTO bw_contracts VALUES('"+
+  console.log("INSERT INTO cg_contracts VALUES('"+
 	  cosmicGame.address+"','"+
 	  cosmicSignature.address+"','"+
 	  cosmicToken.address+"','"+
