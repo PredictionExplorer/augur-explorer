@@ -4,6 +4,6 @@ LOG_DIR=$HOME/ae_logs
 WD=`/bin/pwd`
 while true
 do
-	nohup $WD/biddingwar >> $LOG_DIR/biddingwar_nohup.log
+	nohup $WD/cosmicgame >> $LOG_DIR/cosmicgame_nohup.log
 	sleep 2
 done

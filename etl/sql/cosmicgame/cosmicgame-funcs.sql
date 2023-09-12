@@ -153,11 +153,11 @@ BEGIN
 
 	SELECT cosmic_game_addr FROM cg_contracts LIMIT 1 INTO v_biddingwar_addr;
 	IF v_biddingwar_addr IS NULL THEN
-		RAISE EXCEPTION 'BiddingWar contract address is not defined';
+		RAISE EXCEPTION 'CosmicGame contract address is not defined';
 	END IF;
 	SELECT address_id FROM address WHERE addr=v_biddingwar_addr INTO v_biddingwar_aid;
 	IF v_biddingwar_aid IS NULL THEN
-		RAISE EXCEPTION 'BiddingWar address id not found in address table';
+		RAISE EXCEPTION 'CosmicGame address id not found in address table';
 	END IF;
 	IF NEW.donor_aid != v_biddingwar_aid THEN
 		UPDATE cg_glob_stats 
@@ -182,11 +182,11 @@ BEGIN
 
 	SELECT cosmic_game_addr FROM cg_contracts LIMIT 1 INTO v_biddingwar_addr;
 	IF v_biddingwar_addr IS NULL THEN
-		RAISE EXCEPTION 'BiddingWar contract address is not defined';
+		RAISE EXCEPTION 'CosmicGame contract address is not defined';
 	END IF;
 	SELECT address_id FROM address WHERE addr=v_biddingwar_addr INTO v_biddingwar_aid;
 	IF v_biddingwar_aid IS NULL THEN
-		RAISE EXCEPTION 'BiddingWar address id not found in address table';
+		RAISE EXCEPTION 'CosmicGame address id not found in address table';
 	END IF;
 	IF OLD.donor_aid != v_biddingwar_aid THEN
 		UPDATE cg_glob_stats

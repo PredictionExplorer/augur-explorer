@@ -11,7 +11,7 @@ import (
 	"flag"
 
 	. "github.com/PredictionExplorer/augur-explorer/dbs"
-	. "github.com/PredictionExplorer/augur-explorer/dbs/biddingwar"
+	. "github.com/PredictionExplorer/augur-explorer/dbs/cosmicgame"
 )
 const (
 	REQUEST_URL	string = "https://randomwalknft-api.com/cosmicgame_tokens"

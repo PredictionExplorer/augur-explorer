@@ -309,7 +309,7 @@ func (sw *SQLStorageWrapper) Insert_raffle_nft_claimed(evt *p.CGRaffleNFTClaimed
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
 
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".bw_raffle_nft_claimed ("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_raffle_nft_claimed ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
 					"winner_aid,token_id"+
 					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7)"
@@ -323,7 +323,7 @@ func (sw *SQLStorageWrapper) Insert_raffle_nft_claimed(evt *p.CGRaffleNFTClaimed
 		evt.TokenId,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into bw_raffle_nft_claimed table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_raffle_nft_claimed table: %v\n",err))
 		os.Exit(1)
 	}
 }

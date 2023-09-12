@@ -1585,7 +1585,7 @@ func (sw *SQLStorageWrapper) Get_unclaimed_token_ids(winner_aid int64) []int64 {
 	query = "SELECT "+
 				"p.token_id, "+
 			"FROM "+sw.S.SchemaName()+".cg_raffle_nft_winner w "+
-				"LEFT JOIN bw_raffle_nft_claimed c ON c.nft_winner_evtlog_id=w.evtlog_id "+
+				"LEFT JOIN cg_raffle_nft_claimed c ON c.nft_winner_evtlog_id=w.evtlog_id "+
 			"WHERE w.winner_aid=$1  AND c.nft_winner_vetlog_id IS NULL "+
 			"ORDER BY w.id"
 

@@ -12,7 +12,6 @@ DROP TABLE IF EXISTS
 	cg_raffle_deposit,
 	cg_raffle_withdrawal,
 	cg_raffle_nft_winner,
-	bw_raffle_nft_claimed,
 	cg_donated_nft_claimed,
 	cg_transfer,
 	cg_contracts,

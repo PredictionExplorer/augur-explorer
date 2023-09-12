@@ -290,7 +290,7 @@ func cosmic_game_index_page(c *gin.Context) {
 	}
 	ts := time.Unix(round_start_ts,0)
 	date_str := fmt.Sprintf("%v",ts);
-	c.HTML(http.StatusOK, "bw_index.html", gin.H{
+	c.HTML(http.StatusOK, "cg_index.html", gin.H{
 		"CosmicGameAddr":cosmic_game_addr,
 		"CosmicSignatureAddr":cosmic_signature_addr,
 		"CosmicSignatureTokenAddr":cosmic_token_addr,
@@ -485,7 +485,7 @@ func cosmic_game_prize_info(c *gin.Context) {
 			"ErrDescr": fmt.Sprintf("Prize with provided number wasn't found"),
 		})
 	} else {
-		c.HTML(http.StatusOK, "bw_prize_info.html", gin.H{
+		c.HTML(http.StatusOK, "cg_prize_info.html", gin.H{
 			"PrizeInfo" : prize_info,
 		})
 	}
@@ -521,7 +521,7 @@ func cosmic_game_user_info(c *gin.Context) {
 	}
 	bids := arb_storagew.Get_bids_by_user(user_aid)
 	prizes := arb_storagew.Get_prize_claims_by_user(user_aid)
-	c.HTML(http.StatusOK, "bw_user_info.html", gin.H{
+	c.HTML(http.StatusOK, "cg_user_info.html", gin.H{
 		"UserInfo" : user_info,
 		"Bids" : bids,
 		"Prizes" : prizes,
@@ -539,7 +539,7 @@ func cosmic_game_charity_donations(c *gin.Context) {
 		os.Exit(1)
 	}
 	donations := arb_storagew.Get_charity_donations(cosmicgame_aid)
-	c.HTML(http.StatusOK, "bw_charity_donations.html", gin.H{
+	c.HTML(http.StatusOK, "cg_charity_donations.html", gin.H{
 		"CharityDonations" : donations,
 	})
 }
@@ -561,7 +561,7 @@ func cosmic_game_unique_bidders(c *gin.Context) {
 		return
 	}
 	unique_bidders := arb_storagew.Get_unique_bidders()
-	c.HTML(http.StatusOK, "bw_unique_bidders.html", gin.H{
+	c.HTML(http.StatusOK, "cg_unique_bidders.html", gin.H{
 		"UniqueBidders" : unique_bidders,
 	})
 }
@@ -572,7 +572,7 @@ func cosmic_game_unique_winners(c *gin.Context) {
 		return
 	}
 	unique_winners:= arb_storagew.Get_unique_winners()
-	c.HTML(http.StatusOK, "bw_unique_winners.html", gin.H{
+	c.HTML(http.StatusOK, "cg_unique_winners.html", gin.H{
 		"UniqueWinners" : unique_winners,
 	})
 }
@@ -628,7 +628,7 @@ func cosmic_game_donations_nft_info(c *gin.Context) {
 	if !found {
 		respond_error(c,"Database link wasn't configured")
 	} else {
-		c.HTML(http.StatusOK, "bw_donated_nft_info.html", gin.H{
+		c.HTML(http.StatusOK, "cg_donated_nft_info.html", gin.H{
 			"NFTDonation" : nftdonation,
 		})
 	}
@@ -753,7 +753,7 @@ func cosmic_game_raffle_deposits_by_user(c *gin.Context) {
 
 	deposits := arb_storagew.Get_raffle_deposits_by_user(user_aid)
 
-	c.HTML(http.StatusOK, "bw_user_raffle_deposits.html", gin.H{
+	c.HTML(http.StatusOK, "cg_user_raffle_deposits.html", gin.H{
 		"UserRaffleDeposits" : deposits,
 		"UserInfo" : user_info,
 	})
@@ -788,7 +788,7 @@ func cosmic_game_user_raffle_nft_winnings(c *gin.Context) {
 	winnings := arb_storagew.Get_raffle_nft_winnings_by_user(user_aid)
 	fmt.Printf("winnings len = %v\n",len(winnings))
 
-	c.HTML(http.StatusOK, "bw_user_raffle_nft_winnings.html", gin.H{
+	c.HTML(http.StatusOK, "cg_user_raffle_nft_winnings.html", gin.H{
 		"UserRaffleNFTWinnings" : winnings,
 		"UserInfo" : user_info,
 	})
@@ -831,7 +831,7 @@ func cosmic_game_cosmic_signature_token_list(c *gin.Context) {
 	}
 	tokens := arb_storagew.Get_cosmic_signature_nft_list(offset,limit)
 
-	c.HTML(http.StatusOK, "bw_cosmic_sig_token_list.html", gin.H{
+	c.HTML(http.StatusOK, "cg_cosmic_sig_token_list.html", gin.H{
 		"CosmicSignatureTokenList" : tokens,
 		"Offset" : offset,
 		"Limit" : limit,
@@ -867,12 +867,12 @@ func cosmic_game_cosmic_signature_token_info(c *gin.Context) {
 	}
 	if token_info.PrizeNum > -1 {
 		_,prize_info := arb_storagew.Get_prize_info(token_info.PrizeNum)
-		c.HTML(http.StatusOK, "bw_cosmic_sig_token_info.html", gin.H{
+		c.HTML(http.StatusOK, "cg_cosmic_sig_token_info.html", gin.H{
 			"TokenInfo" : token_info,
 			"PrizeInfo" : prize_info,
 		})
 	} else {
-		c.HTML(http.StatusOK, "bw_cosmic_sig_token_info.html", gin.H{
+		c.HTML(http.StatusOK, "cg_cosmic_sig_token_info.html", gin.H{
 			"TokenInfo" : token_info,
 		})
 	}
@@ -889,7 +889,7 @@ func cosmic_game_donated_nft_claims_all(c *gin.Context) {
 		return
 	}
 	claims := arb_storagew.Get_donated_nft_claims(offset,limit)
-	c.HTML(http.StatusOK, "bw_donated_nft_claims.html", gin.H{
+	c.HTML(http.StatusOK, "cg_donated_nft_claims.html", gin.H{
 		"DonatedNFTClaims" : claims,
 		"Offset" : offset,
 		"Limit" : limit,
@@ -925,7 +925,7 @@ func cosmic_game_donated_nft_claims_by_user(c *gin.Context) {
 		return
 	}
 	claims := arb_storagew.Get_donated_nft_claims_by_user(user_aid)
-	c.HTML(http.StatusOK, "bw_donated_nft_claims_by_user.html", gin.H{
+	c.HTML(http.StatusOK, "cg_donated_nft_claims_by_user.html", gin.H{
 		"DonatedNFTClaims" : claims,
 		"UserInfo" : user_info,
 	})
@@ -965,7 +965,7 @@ func cosmic_game_time_current(c *gin.Context) {
 		})
 		return
 	}
-	c.HTML(http.StatusOK, "bw_cur_ts.html", gin.H{
+	c.HTML(http.StatusOK, "cg_cur_ts.html", gin.H{
 		"CurrentTimeStamp": ts,
 	})
 }
@@ -999,7 +999,7 @@ func cosmic_game_time_until_prize(c *gin.Context) {
 		return
 	}
 	ts_big := common.HexToHash(ts_hex).Big()
-	c.HTML(http.StatusOK, "bw_time_until_prize.html", gin.H{
+	c.HTML(http.StatusOK, "cg_time_until_prize.html", gin.H{
 		"TimeUntilPrize": ts_big.Int64(),
 	})
 }
@@ -1025,7 +1025,7 @@ func cosmic_game_user_global_winnings(c *gin.Context) {
 	}
 
 	claim_info := arb_storagew.Get_user_global_winnings(user_aid)
-	c.HTML(http.StatusOK, "bw_notif_red_box.html", gin.H{
+	c.HTML(http.StatusOK, "cg_notif_red_box.html", gin.H{
 		"Winnings" : claim_info,
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
@@ -1044,7 +1044,7 @@ func cosmic_game_global_claim_history_detail(c *gin.Context) {
 	}
 
 	claim_history := arb_storagew.Get_claim_history_detailed_global(offset,limit)
-	c.HTML(http.StatusOK, "bw_global_claim_history_detail.html", gin.H{
+	c.HTML(http.StatusOK, "cg_global_claim_history_detail.html", gin.H{
 		"GlobalClaimHistory" : claim_history,
 	})
 }
@@ -1074,7 +1074,7 @@ func cosmic_game_claim_history_detail(c *gin.Context) {
 	}
 
 	claim_history := arb_storagew.Get_claim_history_detailed(user_aid,offset,limit)
-	c.HTML(http.StatusOK, "bw_user_claim_history_detail.html", gin.H{
+	c.HTML(http.StatusOK, "cg_user_claim_history_detail.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
 		"ClaimHistory" : claim_history,
@@ -1102,7 +1102,7 @@ func cosmic_game_unclaimed_donated_nfts_by_user(c *gin.Context) {
 	}
 
 	nfts := arb_storagew.Get_unclaimed_donated_nft_by_user(user_aid)
-	c.HTML(http.StatusOK, "bw_unclaimed_donated_nfts_by_user.html", gin.H{
+	c.HTML(http.StatusOK, "cg_unclaimed_donated_nfts_by_user.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
 		"UnclaimedDonatedNFTs" : nfts,
@@ -1161,7 +1161,7 @@ func cosmic_game_unclaimed_raffle_deposits_by_user(c *gin.Context) {
 	offset = 0; limit = 100000000;
 
 	deposits := arb_storagew.Get_unclaimed_raffle_eth_deposits(user_aid,offset,limit)
-	c.HTML(http.StatusOK, "bw_user_unclaimed_raffle_eth_deposits.html", gin.H{
+	c.HTML(http.StatusOK, "cg_user_unclaimed_raffle_eth_deposits.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
 		"UnclaimedDeposits" : deposits,
@@ -1195,7 +1195,7 @@ func cosmic_game_cosmic_signature_token_list_by_user(c *gin.Context) {
 	offset = 0; limit = 100000000;
 
 	user_tokens := arb_storagew.Get_cosmic_signature_nft_list_by_user(user_aid,offset,limit)
-	c.HTML(http.StatusOK, "bw_cosmic_signature_tokens_by_user.html", gin.H{
+	c.HTML(http.StatusOK, "cg_cosmic_signature_tokens_by_user.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
 		"UserTokens" : user_tokens,
@@ -1224,7 +1224,7 @@ func cosmic_game_dev_donate_nft(c *gin.Context) {
 		})
 		return
 	}
-	c.HTML(http.StatusOK, "bw_dev_donate_nft.html", gin.H{
+	c.HTML(http.StatusOK, "cg_dev_donate_nft.html", gin.H{
 		"Output" : output,
 	})
 
@@ -1235,6 +1235,6 @@ func cosmic_game_dev_funcs(c *gin.Context) {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
-	c.HTML(http.StatusOK, "bw_dev_funcs.html", gin.H{
+	c.HTML(http.StatusOK, "cg_dev_funcs.html", gin.H{
 	})
 }

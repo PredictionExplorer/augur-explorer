@@ -131,7 +131,7 @@ rm ./etl/cmd/uniswapv3/tests/localnet/slot0
 rm ./etl/cmd/uniswapv3/uniswapv3
 rm ./etl/cmd/uswapv3/uswapv3
 rm ./etl/cmd/layer1/layer1
-rm ./etl/cmd/biddingwar/biddingwar
+rm ./etl/cmd/cosmicgame/cosmicgame
 rm ./etl/cmd/beacon/beacon
 rm ./statserv/statserv
 rm ./etl/cmd/balancerv2/balancerv2
