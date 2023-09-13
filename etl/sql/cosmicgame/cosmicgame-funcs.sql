@@ -428,3 +428,19 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_token_name_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE cg_mint_event SET token_name = NEW.token_name WHERE token_id=NEW.token_id;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_token_name_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE cg_mint_event SET token_name = '' WHERE token_id = OLD.token_id;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;

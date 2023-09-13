@@ -215,8 +215,7 @@ type CGCosmicSignatureMintRec struct {
 	Seed						string
 	MintType					int64
 	PrizeNum					int64	// -1 if minted via Raffle , > -1 if MintType = 0
-	//ClaimTimestamp				int64
-	//ClaimDateTime				string
+	TokenName					string
 }
 type CGRoundStats struct {
 	RoundNum					int64
@@ -249,6 +248,13 @@ type CGRaffleHistory struct {
 	WinnerAddr					string
 	WinnerAid					int64
 }
-type CGDonatedNFTUnclaimed struct {
-
+type CGTokenName struct {
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	TokenId						int64
+	TokenName					string
 }

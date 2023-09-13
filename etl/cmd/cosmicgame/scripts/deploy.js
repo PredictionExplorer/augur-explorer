@@ -138,6 +138,7 @@ async function main() {
   parsed_log = cosmicSignature.interface.parseLog(log);
   token_id = parsed_log.args.tokenId;
   await cosmicSignature.connect(addr1).setTokenName(token_id,"name 0");
+  await cosmicSignature.connect(addr1).setTokenName(token_id,"name after 0");
 
   await charityWallet.connect(addr1).send();
 

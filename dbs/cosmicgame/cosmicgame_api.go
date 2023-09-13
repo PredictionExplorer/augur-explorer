@@ -2247,7 +2247,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 				"oa.addr,"+
 				"m.seed, "+
 				"m.token_id,"+
-				"p.prize_num "+
+				"p.prize_num, "+
+				"m.token_name "+
 			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
@@ -2273,6 +2274,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 		&rec.Seed,
 		&rec.TokenId,
 		&null_prize_num,
+		&rec.TokenName,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -2283,6 +2285,50 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 	}
 	if null_prize_num.Valid { rec.PrizeNum = null_prize_num.Int64 } else {rec.PrizeNum = -1 }
 	return true,rec
+}
+func (sw *SQLStorageWrapper) Get_cosmic_signature_token_name_history(token_id int64) []p.CGTokenName {
+
+	var query string
+	query = "SELECT "+
+				"n.evtlog_id,"+
+				"n.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM n.time_stamp)::BIGINT,"+
+				"n.time_stamp,"+
+				"n.token_id,"+
+				"n.token_name "+
+			"FROM "+sw.S.SchemaName()+".cg_token_name n "+
+				"LEFT JOIN transaction t ON t.id=tx_id "+
+			"WHERE n.token_id=$1 "+
+			"ORDER BY n.id DESC "
+
+	rows,err := sw.S.Db().Query(query,token_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGTokenName,0, 64)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGTokenName
+		err=rows.Scan(
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.TokenId,
+			&rec.TokenName,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
 }
 func (sw *SQLStorageWrapper) Get_round_start_timestamp(round_num uint64) int64  {
 

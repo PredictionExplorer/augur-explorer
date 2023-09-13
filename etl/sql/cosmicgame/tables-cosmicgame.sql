@@ -109,6 +109,7 @@ CREATE TABLE cg_mint_event (
 	token_id		BIGINT NOT NULL,
 	cur_owner_aid	BIGINT NOT NULL,
 	seed			TEXT NOT NULL,
+	token_name		TEXT DEFAULT '', -- last name set via setTokenName()
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_raffle_deposit (

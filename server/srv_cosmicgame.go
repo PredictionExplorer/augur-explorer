@@ -1238,3 +1238,30 @@ func cosmic_game_dev_funcs(c *gin.Context) {
 	c.HTML(http.StatusOK, "cg_dev_funcs.html", gin.H{
 	})
 }
+func cosmic_game_token_name_history(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_token_id:= c.Param("token_id")
+	var token_id int64
+	if len(p_token_id) > 0 {
+		var success bool
+		token_id,success = parse_int_from_remote_or_error(c,JSON,&p_token_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'token_id' parameter is not set")
+		return
+	}
+
+	tokname_history := arb_storagew.Get_cosmic_signature_token_name_history(token_id)
+	c.HTML(http.StatusOK, "cg_token_name_history.html", gin.H{
+		"TokenId" : token_id,
+		"TokenNameHistory" : tokname_history,
+	})
+}

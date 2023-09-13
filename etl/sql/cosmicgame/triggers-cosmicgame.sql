@@ -18,3 +18,5 @@ CREATE TRIGGER cg_donated_nft_claimed_insert AFTER INSERT ON cg_donated_nft_clai
 CREATE TRIGGER cg_donated_nft_claimed_delete AFTER DELETE ON cg_donated_nft_claimed FOR EACH ROW EXECUTE PROCEDURE on_donated_nft_claimed_delete();
 CREATE TRIGGER cg_mint_insert AFTER INSERT ON cg_mint_event FOR EACH ROW EXECUTE PROCEDURE on_mint_insert();
 CREATE TRIGGER cg_mint_delete AFTER DELETE ON cg_mint_event FOR EACH ROW EXECUTE PROCEDURE on_mint_delete();
+CREATE TRIGGER cg_token_name_insert AFTER INSERT ON cg_token_name FOR EACH ROW EXECUTE PROCEDURE on_token_name_insert();
+CREATE TRIGGER cg_token_name_delete AFTER DELETE ON cg_token_name FOR EACH ROW EXECUTE PROCEDURE on_token_name_delete();

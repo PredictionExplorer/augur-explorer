@@ -155,6 +155,7 @@ func set_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/black/cosmicgame/bid/list_by_round/:round_num/:sort/:offset/:limit",cosmic_game_bid_list_by_round)
 	r.GET("/black/cosmicgame/cst/list",cosmic_game_cosmic_signature_token_list)
 	r.GET("/black/cosmicgame/cst/info/:token_id",cosmic_game_cosmic_signature_token_info)
+	r.GET("/black/cosmicgame/cst/names/:token_id",cosmic_game_token_name_history)
 	r.GET("/black/cosmicgame/cst/list_by_user/:user_addr",cosmic_game_cosmic_signature_token_list_by_user)
 	r.GET("/black/cosmicgame/user/info/:user_addr",cosmic_game_user_info)
 	r.GET("/black/cosmicgame/user/raffle_deposits/:user_addr",cosmic_game_raffle_deposits_by_user)
