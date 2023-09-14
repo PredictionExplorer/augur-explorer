@@ -1131,3 +1131,41 @@ func api_cosmic_game_token_name_history(c *gin.Context) {
 		"TokenNameHistory" : tokname_history,
 	})
 }
+func api_cosmic_game_token_ownership_transfers(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_token_id:= c.Param("token_id")
+	var token_id int64
+	if len(p_token_id) > 0 {
+		var success bool
+		token_id,success = parse_int_from_remote_or_error(c,JSON,&p_token_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'token_id' parameter is not set")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+
+	var req_status int = 1
+	var err_str string = ""
+
+	transfers := arb_storagew.Get_cst_ownership_transfers(token_id,offset,limit)
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Offset" : offset,
+		"Limit" : limit,
+		"TokenId" : token_id,
+		"TokenTransfers" : transfers,
+	})
+}

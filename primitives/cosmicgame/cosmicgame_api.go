@@ -258,3 +258,18 @@ type CGTokenName struct {
 	TokenId						int64
 	TokenName					string
 }
+type CGTransfer struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	TokenId						int64
+	FromAddr					string
+	ToAddr						string
+	FromAid						int64
+	ToAid						int64
+	TransferType				int64 // 0 - regular transfer , 1 - mint, 2 - burn (there are no burns in CST)
+}

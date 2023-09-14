@@ -2352,3 +2352,61 @@ func (sw *SQLStorageWrapper) Get_round_start_timestamp(round_num uint64) int64  
 	}
 	return null_ts.Int64
 }
+func (sw *SQLStorageWrapper) Get_cst_ownership_transfers(token_id int64,offset,limit int) []p.CGTransfer {
+
+	if limit == 0 { limit = 1000000 }
+	var query string
+	query = "SELECT "+
+				"t.id,"+
+				"t.evtlog_id,"+
+				"t.block_num,"+
+				"tx.id,"+
+				"tx.tx_hash,"+
+				"EXTRACT(EPOCH FROM t.time_stamp)::BIGINT,"+
+				"t.time_stamp,"+
+				"t.from_aid,"+
+				"fa.addr,"+
+				"t.to_aid,"+
+				"ta.addr,"+
+				"t.token_id,"+
+				"t.otype "+
+			"FROM "+sw.S.SchemaName()+".cg_transfer t "+
+				"LEFT JOIN transaction tx ON tx.id=t.tx_id "+
+				"LEFT JOIN address fa ON t.from_aid=fa.address_id "+
+				"LEFT JOIN address ta ON t.to_aid=ta.address_id "+
+			"WHERE t.token_id=$1 "+
+			"ORDER BY t.id DESC "+
+			"OFFSET $2 LIMIT $3"
+
+	rows,err := sw.S.Db().Query(query,token_id,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGTransfer,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGTransfer
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.FromAid,
+			&rec.FromAddr,
+			&rec.ToAid,
+			&rec.ToAddr,
+			&rec.TokenId,
+			&rec.TransferType,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
