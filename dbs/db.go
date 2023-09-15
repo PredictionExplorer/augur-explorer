@@ -44,7 +44,7 @@ func New_sql_storage(info_log *log.Logger,db_log *log.Logger,host_port,db_name,u
 	if (err!=nil) {
 		info_log.Printf("Error connecting: %v\n",err)
 	}
-	_,err = db.Exec("SET timezone TO 0")		// Setting timezone to UTC (which Augur uses)
+	_,err = db.Exec("SET timezone TO 0")		// Setting timezone to UTC 
 	if (err!=nil) {
 		p.Fatalf(fmt.Sprintf("DB Error: %v",err));
 	}
@@ -57,23 +57,23 @@ func New_sql_storage(info_log *log.Logger,db_log *log.Logger,host_port,db_name,u
 	return ss
 }
 func show_connect_error() {
-	fmt.Printf(`AugurExtractor: can't connect to PostgreSQL database.
-				Check that you have set AUGUR_EXTRACTOR_USERNAME,AUGUR_EXTRACTOR_PASSWORD,AUGUR_EXTRACTOR_DATABASE
-				AUGUR_EXTRACTOR_HOST environment variables`);
+	fmt.Printf(`Extractor: can't connect to PostgreSQL database.
+				Check that you have set EXTRACTOR_USERNAME,EXTRACTOR_PASSWORD,EXTRACTOR_DATABASE
+				EXTRACTOR_HOST environment variables`);
 }
 func Connect_to_storage(info_log *log.Logger) *SQLStorage {
 	var err error
-	host,port,err:=net.SplitHostPort(os.Getenv("AUGUR_EXTRACTOR_HOST"))
+	host,port,err:=net.SplitHostPort(os.Getenv("EXTRACTOR_HOST"))
 	if (err!=nil) {
-		host=os.Getenv("AUGUR_EXTRACTOR_HOST")
+		host=os.Getenv("EXTRACTOR_HOST")
 		port="5432"
 	}
 	conn_str := "user='"+
-				os.Getenv("AUGUR_EXTRACTOR_USERNAME") +
+				os.Getenv("EXTRACTOR_USERNAME") +
 				"' dbname='" +
-				os.Getenv("AUGUR_EXTRACTOR_DATABASE") +
+				os.Getenv("EXTRACTOR_DATABASE") +
 				"' password='" +
-				os.Getenv("AUGUR_EXTRACTOR_PASSWORD") +
+				os.Getenv("EXTRACTOR_PASSWORD") +
 				"' host='" +
 				host +
 				"' port='" +
@@ -85,7 +85,7 @@ func Connect_to_storage(info_log *log.Logger) *SQLStorage {
 	} else {
 
 	}
-	_,err = db.Exec("SET timezone TO 0")		// Setting timezone to UTC (which Augur uses)
+	_,err = db.Exec("SET timezone TO 0")		// Setting timezone to UTC
 	if (err!=nil) {
 		p.Fatalf(fmt.Sprintf("DB Error: %v",err));
 	}
@@ -98,17 +98,17 @@ func Connect_to_storage(info_log *log.Logger) *SQLStorage {
 }
 func Connect_to_storage_with_schema(info_log *log.Logger,schema_name string) *SQLStorage {
 	var err error
-	host,port,err:=net.SplitHostPort(os.Getenv("AUGUR_EXTRACTOR_HOST"))
+	host,port,err:=net.SplitHostPort(os.Getenv("EXTRACTOR_HOST"))
 	if (err!=nil) {
-		host=os.Getenv("AUGUR_EXTRACTOR_HOST")
+		host=os.Getenv("EXTRACTOR_HOST")
 		port="5432"
 	}
 	conn_str := "user='"+
-				os.Getenv("AUGUR_EXTRACTOR_USERNAME") +
+				os.Getenv("EXTRACTOR_USERNAME") +
 				"' dbname='" +
-				os.Getenv("AUGUR_EXTRACTOR_DATABASE") +
+				os.Getenv("EXTRACTOR_DATABASE") +
 				"' password='" +
-				os.Getenv("AUGUR_EXTRACTOR_PASSWORD") +
+				os.Getenv("EXTRACTOR_PASSWORD") +
 				"' host='" +
 				host +
 				"' port='" +
@@ -123,7 +123,7 @@ func Connect_to_storage_with_schema(info_log *log.Logger,schema_name string) *SQ
 	} else {
 
 	}
-	_,err = db.Exec("SET timezone TO 0")		// Setting timezone to UTC (which Augur uses)
+	_,err = db.Exec("SET timezone TO 0")		// Setting timezone to UTC 
 	if (err!=nil) {
 		p.Fatalf(fmt.Sprintf("DB Error: %v",err));
 	}
@@ -140,7 +140,7 @@ func (ss *SQLStorage) Init_log(fname string) {
 
 	f, err := os.OpenFile(fname,os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		fmt.Printf("Exiting Augur extractor with error: %v",err)
+		fmt.Printf("Exiting extractor with error: %v",err)
 		os.Exit(1)
 	}
 	ss.db_logger = log.New(f,"DB: ",log.LstdFlags)

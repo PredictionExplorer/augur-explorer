@@ -1,4 +1,4 @@
-// Augur ETL: Converts Augur Data to SQL database
+// ETL: Converts Blockchain Data to SQL database
 
 package main
 
@@ -27,18 +27,15 @@ const (
 	DEFAULT_DB_LOG				= "db.log"
 	//DEFAULT_LOG_DIR				= "ae_logs"
 	MAX_APPROVAL_BASE10 string = "115792089237316195423570985008687907853269984665640564039457584007913129639935"
-	NUM_AUGUR_CONTRACTS int = 35
 	USE_BLOCK_RECEIPTS_RPC_CALL bool = false // flag for using patch in ./geth-patch/README.txt
 )
 var (
 	storage *SQLStorage
 
-	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
+	RPC_URL = os.Getenv("RPC_URL")
 
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
-
-	owner_fld_offset int64 = int64(OWNER_FIELD_OFFSET)	// offset to AugurContract::owner field obtained with eth_getStorage()
 
 	Error   *log.Logger
 	Info	*log.Logger
@@ -85,7 +82,7 @@ func main() {
 
 	if len(RPC_URL) == 0 {
 		Fatalf("Configuration error: RPC URL of Ethereum node is not set."+
-				" Please set AUGUR_ETH_NODE_RPC environment variable")
+				" Please set RPC_URL environment variable")
 	}
 
 	log_dir:=fmt.Sprintf("%v/%v",os.Getenv("HOME"),DEFAULT_LOG_DIR)
