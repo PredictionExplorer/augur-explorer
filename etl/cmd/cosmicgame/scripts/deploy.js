@@ -12,11 +12,6 @@ async function main() {
 	  return token_id;
 	}
   [owner, addr1, addr2, addr3,...addrs] = await ethers.getSigners();
-  //const [deployer] = await hre.ethers.getSigners();
-
-  //console.log("Deploying contracts with the account:", deployer.address);
-
-  //console.log("Account balance:", (await deployer.getBalance()).toString());
 
   const CosmicGame = await hre.ethers.getContractFactory("CosmicGame");
   const cosmicGame = await CosmicGame.deploy();
@@ -110,7 +105,6 @@ async function main() {
 
   let prizeAmount = await cosmicGame.prizeAmount();
   let charityAmount = await cosmicGame.charityAmount();
-  //await cosmicGame.connect(addr2).claimPrize();
   await cosmicGame.connect(addr2).claimPrize({gasLimit:30000000});
   let prizeAmount2 = await cosmicGame.prizeAmount();
   let expectedprizeAmount = prizeAmount.sub(charityAmount).div(2);
@@ -193,15 +187,6 @@ async function main() {
 			// skip
 	  }
   }
-
-  await ethers.provider.send("evm_mine");	// mine empty block as spacing
-
- //  await cosmicSignature.connect(winner_signer).setApprovalForAll(winner_signer.address,true)
- // await cosmicSignature.connect(winner_signer).transferFrom(addr2.address,winner_signer.address,hre.ethers.BigNumber.from('0'));
- // await cosmicSignature.connect(addr2).setApprovalForAll(owner.address,true)
- // await cosmicSignature.connect(owner).transferFrom(addr2.address,owner.address,hre.ethers.BigNumber.from('0'));
-  //await cosmicSignature.connect(addr1).setApprovalForAll(owner.address,true)
-  //await cosmicSignature.connect(owner).transferFrom(addr1.address,owner.address,hre.ethers.BigNumber.from('1'));
 
   await ethers.provider.send("evm_mine");	// mine empty block as spacing
 }
