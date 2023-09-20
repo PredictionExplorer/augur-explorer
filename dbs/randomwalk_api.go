@@ -201,11 +201,6 @@ func (ss *SQLStorage) Get_minted_tokens_sequentially(rwalk_aid int64,offset,limi
 func (ss *SQLStorage) Get_trading_history(contract_aid int64,offset,limit int) []p.RW_API_TradingHistoryLog {
 
 	records := make([]p.RW_API_TradingHistoryLog,0,16)
-	/*var where_condition string
-	where_condition =  fmt.Sprintf(" WHERE contract_aid=%v ",contract_aid)
-	if contract_aid != 0 {
-		where_condition = ""
-	}*/
 
 	var query string
 	query = "SELECT " +
@@ -1007,7 +1002,6 @@ func (ss *SQLStorage) Get_market_trading_volume_by_period(contract_aid int64,ini
 			accum_vol = accum_vol + rec.Volume
 		}
 		rec.VolumeAccum = accum_vol
-//		fmt.Printf("rec.Vol = %v Accum=%v\n",rec.Volume,rec.VolumeAccum)
 
 		records = append(records,rec)
 	}
@@ -1555,7 +1549,6 @@ func (ss *SQLStorage) Get_rwalk_floor_price_for_periods(rwalk_aid,market_aid int
 				") AS data " +
 			") " +
 			"SELECT " +
-			//	"COALESCE(MIN(o.id),0) as num_rows, " +
 				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
 				"MIN(o.price)/1e+18 as floor_price "+
 			"FROM periods AS p " +

@@ -3,7 +3,6 @@ import (
 	"os"
 	"fmt"
 	"database/sql"
-	//"github.com/lib/pq"
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 func (ss *SQLStorage) Insert_polymarket_from_web_api(
@@ -191,11 +190,6 @@ func (ss *SQLStorage) Insert_polymarket_from_web_api(
 	)
 	if err != nil {
 		ss.Log_msg(fmt.Sprintf("DB error: can't insert into 'pol_market' table: %v\n",err))
-		/*pqErr := err.(pq.PGError)
-		ss.Log_msg(fmt.Sprintf("Full error: %+v, %v %v %v %v %v %v %v %v %v %v\n",
-			pqErr,pqErr.Get('H'),pqErr.Get('q'),pqErr.Get('D'),pqErr.Get('W'),pqErr.Get('P'),
-			pqErr.Get('c'),pqErr.Get('d'),pqErr.Get('n'),pqErr.Get('p'),pqErr.Get('t'),
-		))*/
 		os.Exit(1)
 	}
 }

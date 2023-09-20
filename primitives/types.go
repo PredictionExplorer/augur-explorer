@@ -4,7 +4,6 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-	//"github.com/ethereum/go-ethereum/core/types"
 )
 //type BlockNumber int64	// -1 is used to mark 'block not set' for the database DISCONTINUED: 
 type AugurTx struct {	// just a wrapper for Ethereum Transaction object, but in our own format
@@ -18,7 +17,6 @@ type AugurTx struct {	// just a wrapper for Ethereum Transaction object, but in 
 	CtrctCreate			bool
 	CumulativeGasUsed	uint64
 	EffectiveGasPrice	*big.Int
-//	TxMsg				*types.Message	Discontinued , to be deleted
 	BlockHash			string
 	GasPrice			string
 	TxHash				string
@@ -104,10 +102,6 @@ type OutcomeVol struct {
 	MktType			int
 	Volume			float64
 	LastPrice		float64
-//	HighestBid		float64
-//	LowestAsk		float64
-//	CurSpread		float64
-//	PriceEstimate	float64
 	TotalTrades		int64
 	TotalOpenOrders	int64
 	MktAddr			string
@@ -180,31 +174,6 @@ type MainStats struct {
 	MoneyAtStake	float64
 	TradesCount		int64
 }
-/* DISCONTINUED, new object used instead is 'OrderInfo'. Removal pending
-type MarketOrder struct {	// this is a short order info, to show in tables
-	OrderId				int64
-	MktAid				int64
-	TradeTs				int64
-	Price				float64
-	Volume				float64
-	AccumVol			float64
-	CreatedTs			int64
-	OutcomeIdx			int32
-	OType				int32
-	CreatorBuyer		bool
-	FillerBuyer			bool
-	OrderHash			string
-	CreatorWalletAddr	string
-	CreatorWalletAddrSh	string	// short version of the addr
-	CreatorEOAAddr		string
-	CreatorEOAAddrSh	string	// short version of the addr
-	FillerWalletAddr	string
-	FillerWalletAddrSh	string
-	FillerEOAAddr		string
-	FillerEOAAddrSh		string
-	Direction			string
-	Date				string
-}*/
 type PLEntry struct {	// profit loss entry
 	Id					int64
 	MktAid				int64

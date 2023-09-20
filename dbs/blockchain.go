@@ -9,7 +9,6 @@ import (
 	"database/sql"
 	_  "github.com/lib/pq"
 
-//	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
@@ -23,9 +22,6 @@ import (
 //		for processing, since ID fields are never decreasing the data being processed will be
 //		always newer than previously processed data
 //		Processing granularity on layer2 is by transaction, while on layer1 it is by block,
-//		Event atomicity: when event logs of a Tx are added, they are INSERTed all at once to ensure
-//		atomic appearance of the data of all event log records and avoid inconsistency that can
-//		occurr on layer2 Unix processes which are running separately (independently from layer1)
 
 func (ss *SQLStorage) Get_last_block_num() (int64,bool) {
 
@@ -197,8 +193,6 @@ func (ss *SQLStorage) Insert_transaction(agtx *p.AugurTx) int64 {
 	// Note: contract addresses have To as their created address + ctrct_create flag set to 'true'
 	var query string
 	var tx_id int64
-
-	//ss.Info.Printf("Insert_transaction: from: %v, to: %v\n",agtx.From,agtx.To)
 
 	from_aid := ss.Lookup_or_create_address(agtx.From,agtx.BlockNum,0)
 	to_aid := ss.Lookup_or_create_address(agtx.To,agtx.BlockNum,0)
@@ -1103,13 +1097,10 @@ func (ss *SQLStorage) Set_chain_id(chain_id int64) {
 }
 func (ss *SQLStorage) Insert_tx_event_log(eel *p.EthereumEventLog) int64 {
 
-	//contract_aid := ss.Lookup_or_create_address(eel.ContractAddress,eel.BlockNum,eel.TxId)
-//	ss.Info.Printf("topic0_sig=%v, len=%v\n",eel.Topic0_Sig,len(eel.Topic0_Sig))
 	var query string
 	query = "INSERT INTO evt_log(block_num,tx_id,contract_aid,topic0_sig,log_rlp) " +
 				"VALUES($1,$2,$3,$4,$5) RETURNING id"
 
-	//_,err:=ss.db.Exec(query,eel.BlockNum,eel.TxId,contract_aid,eel.Data)
 	var err error
 	var null_id sql.NullInt64
 	row := ss.db.QueryRow(query,eel.BlockNum,eel.TxId,eel.ContractAid,eel.Topic0_Sig,eel.RlpLog)
@@ -1233,11 +1224,6 @@ func (ss *SQLStorage) Get_tx_ids_from_evt_logs_by_signature(sig string,contract_
 	output := make([]int64,0,1024)
 
 	var query string
-/*WAY TOO SLOW	query = "SELECT DISTINCT tx_id FROM evt_log " +
-				"WHERE (tx_id > $1) AND (tx_id <= $2) " +
-						"AND (contract_aid=$3) " +
-						"AND (topic0_sig=$4) " +
-				"ORDER BY tx_id "*/
 	query = "WITH elogs AS (" +
 				"SELECT tx_id,contract_aid,id AS evtlog_id " +
 					"FROM evt_log " +
@@ -1365,14 +1351,6 @@ func (ss *SQLStorage) Get_LOG_CALL_evtlogs(sig string,from_evt_id,to_evt_id int6
 	output := make([]int64,0,1024)
 
 	var query string
-	/*DISCONTINUED, doesn't fetch proxied controlling transactions
-	query = "SELECT e.id FROM evt_log e " +
-				"JOIN transaction AS t ON e.tx_id=t.id " +
-				"WHERE (e.id > $1) AND (e.id<=$2) " +
-						"AND (t.input_sig=$3) " +
-						"AND (e.topic0_sig=$3)" + // this is the patern of anonymous LOG_CALL event
-				"ORDER BY e.id "
-	*/
 	query = "SELECT e.id FROM evt_log e " +
 				"WHERE (e.id > $1) AND (e.id<=$2) " +
 						"AND (e.topic0_sig=$3)" + // this is the patern of anonymous LOG_CALL event

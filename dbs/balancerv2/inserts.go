@@ -3,8 +3,6 @@ package balancerv2
 import (
 	"fmt"
 	"os"
-	//"strings"
-	//"database/sql"
 	_  "github.com/lib/pq"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives/balancerv2"

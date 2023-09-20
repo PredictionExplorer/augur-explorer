@@ -7,7 +7,6 @@ import (
 
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives/cosmicgame"
-	//. "github.com/PredictionExplorer/augur-explorer/dbs"
 )
 func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 

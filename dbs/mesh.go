@@ -12,7 +12,6 @@ import (
 	"database/sql"
 	pq  "github.com/lib/pq"
 
-	//ztypes "github.com/0xProject/0x-mesh/common/types"
 	"github.com/ethereum/go-ethereum/common"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
@@ -313,7 +312,6 @@ func (ss *SQLStorage) Get_mesh_events_from_id(id int64) []p.MeshEvent {
 			"FROM mesh_evt " +
 			"WHERE id > $1 " +
 			"ORDER BY ID"
-//	ss.Info.Println("(id=%v) q=%v\n",id,query)
 	rows,err := ss.db.Query(query,id)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

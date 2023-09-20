@@ -3,8 +3,6 @@ package layer1
 import (
 	"fmt"
 	"errors"
-	//"reflect"
-	//"encoding/hex"
 	"encoding/json"
 	"context"
 	"math/big"
@@ -23,28 +21,6 @@ type rpcTransaction struct {
 	tx *types.Transaction
 	txExtraInfo
 }
-/*
-type rpcCustomTx struct {
-}
-type rpcTransactionCustom struct {
-	// our own TX struct, for JSON decoding
-	Gas						string	`json:"blockNumber,omitempty"`
-	GasPrice				string	`json:"blockNumber,omitempty"`
-	Input					string	`json:"blockNumber,omitempty"`
-	Nonce					string	`json:"blockNumber,omitempty"`
-	To						string	`json:"blockNumber,omitempty"`
-	TransactionIndex		string	`json:"blockNumber,omitempty"`
-	Value					string	`json:"blockNumber,omitempty"`
-	Type					string	`json:"blockNumber,omitempty"`
-	V						string	`json:"blockNumber,omitempty"`
-	R						string	`json:"blockNumber,omitempty"`
-	S						string	`json:"blockNumber,omitempty"`
-	BlockNumber				*string         `json:"blockNumber,omitempty"`
-	BlockHash				*common.Hash    `json:"blockHash,omitempty"`
-	From			        *common.Address `json:"from,omitempty"`
-	Hash					*common.Hash	`json:"hash,omitempty"`
-}
-*/
 type PackedTx map[string]interface{}
 type TransactionsPackage struct {
 	Transactions		[]PackedReceipt
@@ -423,31 +399,6 @@ func GetBlockCustomRPCDecoding(rpcc *rpc.Client,bnum int64) (common.Hash,*types.
 			fmt.Printf("before dump at the end of loop, atx=null\n")
 		}
 		ag_transactions = append(ag_transactions,atx)
-
-/*
-	Gas						string	`json:"blockNumber,omitempty"`
-	GasPrice				string	`json:"blockNumber,omitempty"`
-	Input					string	`json:"blockNumber,omitempty"`
-	Nonce					string	`json:"blockNumber,omitempty"`
-	To						string	`json:"blockNumber,omitempty"`
-	TransactionIndex		string	`json:"blockNumber,omitempty"`
-	Value					string	`json:"blockNumber,omitempty"`
-	Type					string	`json:"blockNumber,omitempty"`
-	V						string	`json:"blockNumber,omitempty"`
-	R						string	`json:"blockNumber,omitempty"`
-	S						string	`json:"blockNumber,omitempty"`
-*/
-/*
-		fmt.Printf("Unmarshalled tx: %+v\n",tx_rpc)
-		fmt.Printf("AugurTx = %v\n",atx)
-		fmt.Printf("GasPrice = %v\n",atx.GasPrice)
-		fmt.Printf("TxHash= %v\n",atx.Input)
-		fmt.Printf("BlockHash = %v\n",atx.BlockHash)
-		fmt.Printf("From = %v\n",atx.From)
-		fmt.Printf("To = %v\n",atx.To)
-		fmt.Printf("Value = %v\n",atx.Value)
-*/
 	}
 	return head.Hash(),head,ag_transactions,nil
-	//return head.Hash(),head,ag_transactions,errors.New("forced abort")
 }

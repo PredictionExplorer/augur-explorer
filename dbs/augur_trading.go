@@ -11,8 +11,6 @@ import (
 	"encoding/hex"
 	_  "github.com/lib/pq"
 
-	//ztypes "github.com/0xProject/0x-mesh/common/types"
-	//"github.com/0xProject/0x-mesh/zeroex"
 	"github.com/ethereum/go-ethereum/common"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"

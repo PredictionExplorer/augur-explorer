@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"os"
 	"errors"
-	//"context"
 	"fmt"
 	"sync"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
-	//. "github.com/PredictionExplorer/augur-explorer/dbs"
 )
 var (
 	addrs sync.Map
@@ -157,12 +155,7 @@ func process_transactions(etl *ETL_Layer1,bnum int64,timestamp uint64,transactio
 			rcpt = &block_receipts[tnum]
 			rcpt_extra = &extra_info[tnum]
 		}
-		//Info.Printf("\ttx: %v of %v : %v at blockNum=%v\n",tnum,len(transactions),agtx.TxHash,bnum)
-		//Info.Printf("\t from=%v\n",agtx.From)
-		//Info.Printf("\t to=%v for $%v (%v bytes data)\n",
-		//				agtx.To,agtx.Value,len(agtx.Input))
 		if rcpt.Status == types.ReceiptStatusFailed {
-			//Info.Printf("Tx (index %v) %v . Status: Failed. Skipping this transaciton.\n",tnum,agtx.TxHash)
 			continue	// transaction failed (i.e. Out of Gas, etc)
 		}
 		if rcpt.BlockNumber.Int64() != bnum {
@@ -184,12 +177,10 @@ func process_transactions(etl *ETL_Layer1,bnum int64,timestamp uint64,transactio
 			tx_short.TxFee = "0"
 		} else {
 			tx_fee := big.NewInt(int64(rcpt.GasUsed))
-			//Info.Printf("tnum=%v: Multiplying gas used %v by gas price %v\n",tnum,tx_fee.String(),rcpt_extra.EffectiveGasPrice.String())
 			tx_fee.Mul(tx_fee,rcpt_extra.EffectiveGasPrice)
 			tx_short.TxFee = tx_fee.String()
 			total_fees.Add(total_fees,tx_fee)
 		}
-		//storage.Bigstats_insert_transaction(&tx_short)	// at this point we are sure Tx is without error
 		transaction_hash := common.HexToHash(agtx.TxHash)
 		if !bytes.Equal(rcpt.TxHash.Bytes(),transaction_hash.Bytes()) { // can be removed later
 			etl.Error.Printf("Receipt's hash doesn't match Tx hash, aborting (tx_hash=%v)\n",agtx.TxHash)
@@ -205,12 +196,6 @@ func process_transactions(etl *ETL_Layer1,bnum int64,timestamp uint64,transactio
 		agtx.GasUsed = int64(rcpt.GasUsed)
 		agtx.NumLogs = int32(len(rcpt.Logs))
 		etl.Manager.Process_transaction(agtx,rcpt)
-		/*
-		logs_to_insert := extract_addresses_from_event_logs(agtx,rcpt.Logs)
-		if len(logs_to_insert) > 0 {
-			storage.Bigstats_insert_all_addr_stat_logs(logs_to_insert)
-		}
-		*/
 	}
 	return total_eth,total_fees,nil
 }

@@ -622,8 +622,6 @@ func (ss *SQLStorage) Get_polymarket_global_liquidity_history(init_ts int,fin_ts
 			"SELECT " +
 				"COALESCE(COUNT(liq.id),0) as num_rows, " +
 				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
-				//"SUM(sumamounts) AS sum_amounts," +
-				//"SUM(shares) AS sum_shares," +
 				"SUM(norm_collateral)/1e+6 as collateral "+
 			"FROM periods AS p " +
 				"LEFT JOIN LATERAL ( "+
@@ -649,25 +647,17 @@ func (ss *SQLStorage) Get_polymarket_global_liquidity_history(init_ts int,fin_ts
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.API_Pol_GlobalLiquidityHistoryEntry
-		var /*sum_amounts,sum_shares,*/sum_collateral sql.NullFloat64
+		var sum_collateral sql.NullFloat64
 		var num_rows int
 		err=rows.Scan(
 			&num_rows,
 			&rec.StartTs,
-			//&sum_amounts,
-			//&sum_shares,
 			&sum_collateral,
 		)
 		if err!=nil {
 			ss.Log_msg(fmt.Sprintf("DB error: %v",err))
 			os.Exit(1)
 		}
-		/*if sum_amounts.Valid {
-			rec.SumAmounts = sum_amounts.Float64
-		}*/
-		/*if sum_shares.Valid {
-			rec.SumShares = sum_shares.Float64
-		}*/
 		if sum_collateral.Valid {
 			// revert the sign because negative liquidity is an expense for the user
 			rec.Liquidity= -sum_collateral.Float64
@@ -712,8 +702,6 @@ func (ss *SQLStorage) Get_polymarket_market_liquidity_history(contract_aid int64
 			"SELECT " +
 				"COALESCE(COUNT(liq.id),0) as num_rows, " +
 				"ROUND(FLOOR(EXTRACT(EPOCH FROM start_ts)))::BIGINT as start_ts," +
-				//"SUM(sumamounts) AS sum_amounts," +
-				//"SUM(shares) AS sum_shares," +
 				"SUM(norm_collateral)/1e+6 as collateral "+
 			"FROM periods AS p " +
 				"LEFT JOIN LATERAL ( "+
@@ -1794,28 +1782,3 @@ func (ss *SQLStorage) Get_poly_get_usdc_transfers(tx_id,usdc_contract_aid int64)
 	}
 	return records
 }
-/*
-TEMPORARILY DISABLED, CONFLICT FOUND, FIX PENDING
-func (ss *SQLStorage) Layer1_get_last_block_num() (int64,bool) {
-
-	var query string
-	query="SELECT last_block FROM "+ss.schema_name+".bs_config LIMIT 1";
-	row := ss.db.QueryRow(query)
-	var null_block_num sql.NullInt64
-	var err error
-	err=row.Scan(&null_block_num);
-	if (err!=nil) {
-		if err == sql.ErrNoRows {
-			return -1,false
-		} else {
-			ss.Log_msg(fmt.Sprintf("Error in get_last_block_num(): %v",err))
-			os.Exit(1)
-		}
-	}
-	if (null_block_num.Valid) {
-		return null_block_num.Int64,true
-	} else {
-		return -1,false
-	}
-}
-*/

@@ -9,8 +9,6 @@ import (
 	"database/sql"
 	_  "github.com/lib/pq"
 
-	//"github.com/ethereum/go-ethereum/common"
-
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 func (ss *SQLStorage) Insert_initial_report_evt(agtx *p.AugurTx,evt *p.EInitialReportSubmitted) {
@@ -1000,7 +998,6 @@ func (ss *SQLStorage) Get_round_table(market_aid int64) ([]p.RoundsRow,int,strin
 		if null_rep_payout.Valid {
 			rr.Rounds.Completed = true
 		}
-		//var outc_rounds p.OutcomeRounds
 		rr.Rounds.RoundNum = rec.RoundNum
 		rr.Rounds.ORounds = make([]p.DisputeRound,0,8)
 		if rec.MktType == 2  {

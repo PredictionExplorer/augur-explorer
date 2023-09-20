@@ -10,7 +10,6 @@ import (
 	"database/sql"
 	_  "github.com/lib/pq"
 
-//	"github.com/ethereum/go-ethereum/common"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
@@ -840,7 +839,6 @@ func (ss *SQLStorage) Get_addrs_with_reverse_name() []string {
 	query = "SELECT DISTINCT a.addr AS addr " +
 				"FROM ens_new_owner AS o " +
 				"JOIN address AS a ON o.owner_aid = a.address_id "
-		//		"WHERE node='91d1777781884d03a6757a803996e38de2a42967fb37eeaca72729271025a9e2'"
 
 
 	rows,err := ss.db.Query(query)
@@ -869,7 +867,6 @@ func (ss *SQLStorage) Select_TLDs() []string {
 	query = "SELECT DISTINCT a.addr AS addr " +
 				"FROM ens_new_owner AS o " +
 				"JOIN address AS a ON o.owner_aid = a.address_id "
-		//		"WHERE node='91d1777781884d03a6757a803996e38de2a42967fb37eeaca72729271025a9e2'"
 
 
 	rows,err := ss.db.Query(query)
@@ -1161,7 +1158,6 @@ func (ss *SQLStorage) Get_node_lot(start_id,limit int64) []p.ENS_NodeShort{
 
 	return records
 }
-//func (ss *SQLStorage)  Get_last_name_address(fqdn string) (string,string,error) { DISCONTINUED
 func (ss *SQLStorage)  Get_last_name_address(fqdn string) (p.ENS_MultiAddress,error) {
 
 	var output p.ENS_MultiAddress
@@ -1228,7 +1224,6 @@ func (ss *SQLStorage)  Get_last_name_address(fqdn string) (p.ENS_MultiAddress,er
 	output.NewResAddr = addr_at_resolver.String
 	output.NewResAddrTs = addr_at_res_ts.Int64
 
-	//return addr_owner.String,addr_assigned.String,nil DISCONTINUED
 	return output,nil
 }
 func (ss *SQLStorage) Get_last_new_resolver_name_addr(fqdn string) (string,string,error) {
@@ -1301,7 +1296,6 @@ func (ss *SQLStorage) Get_new_owner_events(fqdn string) []p.ENS_NewOwner {
 func (ss *SQLStorage) Get_ens_record_info(fqdn string) (p.ENS_Info,error) {
 
 	var output p.ENS_Info
-	//last_owner_addr,last_assigned_addr,err := ss.Get_last_name_address(fqdn) DICSONTINUED
 	multiaddr,err := ss.Get_last_name_address(fqdn)
 	if err != nil {
 		return output,err

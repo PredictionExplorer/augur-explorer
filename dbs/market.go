@@ -10,9 +10,6 @@ import (
 	"strconv"
 	_  "github.com/lib/pq"
 
-	//"github.com/ethereum/go-ethereum/common"
-//	"github.com/ethereum/go-ethereum/core/types"
-
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 
@@ -100,10 +97,6 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,validity_bond st
 		os.Exit(1)
 	}
 	reporter_aid := ss.Lookup_or_create_address(evt.DesignatedReporter.String(),agtx.BlockNum,agtx.TxId)
-	ss.Info.Printf(
-		"create_market: creator_aid = %v , reporter_id=%v (%v)\n",
-		creator_aid,evt.MarketCreator.String(),reporter_aid,evt.DesignatedReporter.String(),
-	)
 	prices := p.Bigint_ptr_slice_to_str(&evt.Prices,",")
 	psplit := strings.Split(prices,",")
 	lo_price := psplit[0]
@@ -120,19 +113,12 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,validity_bond st
 	if invalid_num_ticks.CmpAbs(evt.NumTicks) >= 0 {
 		divisor := new(big.Int)
 		divisor.SetString("1000000000000000000",10)	// 10^18
-		ss.Info.Printf("divisor=%v\n",divisor.String())
 		big_price := new(big.Int)
 		big_price.Sub(evt.Prices[1],evt.Prices[0])
-		ss.Info.Printf("evt.Prices[1]=%v\n",evt.Prices[1].String())
-		ss.Info.Printf("evt_Prices[0]=%v\n",evt.Prices[0].String())
-		ss.Info.Printf("price after subtraction = %v\n",big_price.String())
 		big_price.Quo(big_price,divisor)
-		ss.Info.Printf("price after division: %v\n",big_price.String())
 		big_decimals := new(big.Int)
 		big_decimals.Quo(evt.NumTicks,big_price)
-		ss.Info.Printf("big_decimals = %v\n",big_decimals.String())
 		multiplier := int(big_decimals.Int64())
-		ss.Info.Printf("multiplier = %v\n",multiplier)
 		switch multiplier { // mini log10(x) implementation
 		case 1: decimals = 0
 		case 10: decimals = 1
@@ -147,17 +133,6 @@ func (ss *SQLStorage) Insert_market_created_evt(agtx *p.AugurTx,validity_bond st
 		hi_price ="0"
 		num_ticks = 1
 	}
-/*	switch 	tcks := evt.NumTicks.Int64(); {
-	case tcks < 10:
-		decimals = 0
-	case tcks < 100:
-		decimals = 1
-	case tcks < 1000:
-		decimals = 2
-	default:
-		decimals = 3
-		//panic(fmt.Sprintf("Undefined tick range: %v",tcks))
-	}*/
 
 	query = `
 		INSERT INTO market(
@@ -485,7 +460,6 @@ func (ss *SQLStorage) Insert_market_volume_changed_evt_v1(agtx *p.AugurTx,evt *p
 		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 	}
 	if rows_affected > 0 {
-		//break
 	} else {
 		ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into InitialReport table. Rows affeced = 0"))
 	}
@@ -548,7 +522,6 @@ func (ss *SQLStorage) Insert_market_volume_changed_evt_v2(agtx *p.AugurTx,evt *p
 		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 	}
 	if rows_affected > 0 {
-		//break
 	} else {
 		ss.Log_msg(fmt.Sprintf("DB error: couldn't insert into InitialReport table. Rows affeced = 0"))
 	}
@@ -755,7 +728,6 @@ func (ss *SQLStorage) Get_active_market_ids(sort int,all int,fin int,alive int,i
 		}
 		if null_descr.Valid {
 			if null_descr.String == "What will the next Augur Warp Sync hash be?"  {
-//				continue			// skipping internal Augur Markets
 			}
 		}
 		if null_highest_bid.Valid {

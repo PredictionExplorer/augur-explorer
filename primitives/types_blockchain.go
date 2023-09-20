@@ -43,7 +43,6 @@ type BlockInfo struct {
 	Orders				[]string
 	MarketsTraded		[]MarketVeryShortInfo // list of market addresses created at this block
 	MarketsCreated		[]MarketVeryShortInfo
-//	BlockTransactions	[]AgtxInBlock	DISCONTINUED
 
 }
 type AgtxEvent struct {
@@ -87,7 +86,6 @@ type EvtLogEntry struct { // Layer1 entry (event)
 	BlockNum				int64
 	TxId					int64
 	EvtId					int64
-//	TxHash					*string
 }
 type ChainReorg struct {
 	BlockNum				int64

@@ -9,7 +9,6 @@ import (
 	"database/sql"
 	_  "github.com/lib/pq"
 
-//	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
@@ -462,15 +461,12 @@ func (ss *SQLStorage) Bigstats_get_tx_fees_with_ethusd(schema_ethusd string,ts,d
 				"WHERE (TO_TIMESTAMP($1) <= time_stamp) AND (time_stamp<=TO_TIMESTAMP($2))"
 
 	ts_end := ts + duration
-	//var n_fees sql.NullFloat64
-	//var n_num_rows sql.NullInt64
 
 	rows,err := ss.db.Query(query,ts,ts_end)
 	if (err!=nil) {
 		ss.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	ss.Info.Printf("Bigstats_get_tx_fwees_with_ethusd() begins\n")
 	var sum_tx_fees_eth,sum_tx_fees_usd float64
 	var n_tx_fee sql.NullFloat64
 	var n_ts sql.NullInt64
@@ -510,10 +506,6 @@ func (ss *SQLStorage) Bigstats_get_tx_fees_with_ethusd(schema_ethusd string,ts,d
 			sum_tx_fees_eth += n_tx_fee.Float64
 			num_rows++
 		}
-		ss.Info.Printf(
-			"Bigstats_get_tx_fees_with_ethusd() (timestamps: %v - %v) sum_tx_fees_eth=%v (usd=%v), %v rows\n",
-			ts_from,ts_to,sum_tx_fees_eth,sum_tx_fees_usd,num_rows,
-		)
 	}
 	return sum_tx_fees_eth,sum_tx_fees_usd
 }
@@ -535,24 +527,16 @@ func (ss *SQLStorage) Bigstats_get_tx_fees_no_ethusd(ts,duration int64) float64 
 		ss.Log_msg(fmt.Sprintf("DB error in getting total tx fees : %v",err))
 		os.Exit(1)
 	}
-	ss.Info.Printf("Bigstats_get_tx_fees(ts=%v), num_rows=%v, fees=%v\n",ts,num_rows.Int64,fees.Float64)
 	return fees.Float64
 }
 func (ss *SQLStorage) Bigstats_close_period(schema_ethusd string,ts,duration int64) {
 
 
 	human_account_count := ss.Bigstats_get_unique_accounts_counter_by_type(ts,duration,false)
-	ss.Info.Printf("Bigstats_close_period(): human_account_count=%v\n",human_account_count)
 	contract_account_count := ss.Bigstats_get_unique_accounts_counter_by_type(ts,duration,true)
-	ss.Info.Printf("Bigstats_close_period(): contract_account_count=%v\n",contract_account_count)
 	total_eth := ss.Bigstats_get_total_eth_transferred(ts,duration)
-	ss.Info.Printf("Bigstats_close_period(): totali eth=%v\n",total_eth)
 	fees_eth,fees_usd := ss.Bigstats_get_tx_fees_with_ethusd(schema_ethusd,ts,duration)
 
-	ss.Info.Printf(
-		"Bigstats_close_period(ts=%v,duration=%v) fees eth = %v,fees usd = %v\n",
-		ts,duration,fees_eth,fees_usd,
-	)
 	var query string
 	query = "INSERT INTO "+ss.schema_name+".bs_period("+
 					"time_stamp,duration_sec,unique_addrs_eoa,unique_addrs_code,eth_transferred,"+

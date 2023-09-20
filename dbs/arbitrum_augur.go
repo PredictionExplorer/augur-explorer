@@ -3,7 +3,6 @@ package dbs
 import (
 	"fmt"
 	"os"
-	//"errors"
 	"database/sql"
 	_  "github.com/lib/pq"
 
@@ -274,33 +273,6 @@ func (ss *SQLStorage) Insert_aa_sports_market_event(evt *p.AA_SportsMarket) {
 	}
 }
 func (ss *SQLStorage) Insert_aa_trusted_market_event(evt *p.AA_TrustedMarket) {
-/*
-	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
-	creator_aid:=ss.Lookup_or_create_address(evt.CreatorAddr,evt.BlockNum,evt.TxId)
-	var query string
-	query = "INSERT INTO aa_trusted_market (" +
-				"evtlog_id,block_num,tx_id,contract_aid,time_stamp,"+
-				"market_id,end_time,creator_aid,descr,outcomes" +
-				") VALUES ("+
-					"$1,$2,$3,$4,TO_TIMESTAMP($5),$6,TO_TIMESTAMP($7),$8,$9,$10)"
-
-	_,err := ss.db.Exec(query,
-			evt.EvtId,
-			evt.BlockNum,
-			evt.TxId,
-			contract_aid,
-			evt.TimeStamp,
-			evt.MarketId,
-			evt.EndTime,
-			creator_aid,
-			evt.Description,
-			evt.Outcomes,
-	)
-	if err != nil {
-		ss.Log_msg(fmt.Sprintf("DB error: can't insert into aa_trusted_market table: %v; q=%v",err,query))
-		os.Exit(1)
-	}
-*/
 	contract_aid:=ss.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	creator_aid:=ss.Lookup_or_create_address(evt.CreatorAddr,evt.BlockNum,evt.TxId)
 	collateral_aid:=ss.Lookup_or_create_address(evt.CollateralAddr,evt.BlockNum,evt.TxId)
@@ -850,10 +822,6 @@ func (ss *SQLStorage) Get_sport_markets(status,sort int64,offset,limit int,const
 		}
 		sport_id := a.Get_sport_id_from_team(constants,rec.HomeTeamId)
 		title,description := a.Get_market_title(sport_id,rec.HomeTeam,rec.AwayTeam,rec.MarketTypeCode,1)
-		/*fmt.Printf(
-			"sport_id=%v, Home(id=%v)=%v, Away(id=%v)=%v, title=%v, descr=%v\n",
-			sport_id,rec.HomeTeamId,rec.HomeTeam,rec.AwayTeamId,rec.AwayTeam,title,description,
-		)*/
 		rec.Title = title
 		rec.Description = description
 
@@ -991,10 +959,6 @@ func (ss *SQLStorage) Get_sport_market_info(constants *p.AMM_Constants,contract_
 	}
 	sport_id := a.Get_sport_id_from_team(constants,rec.HomeTeamId)
 	title,description := a.Get_market_title(sport_id,rec.HomeTeam,rec.AwayTeam,rec.MarketTypeCode,1)
-	/*fmt.Printf(
-		"sport_id=%v, Home(id=%v)=%v, Away(id=%v)=%v, title=%v, descr=%v\n",
-		sport_id,rec.HomeTeamId,rec.HomeTeam,rec.AwayTeamId,rec.AwayTeam,title,description,
-	)*/
 	rec.Title = title
 	rec.Description = description
 	rec.MarketRules = a.Get_sports_resolution_rules(sport_id,rec.MarketTypeCode)

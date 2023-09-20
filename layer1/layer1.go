@@ -2,8 +2,6 @@ package layer1
 
 import (
 	"os"
-	//"os/signal"
-	//"syscall"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -11,29 +9,22 @@ import (
 	"fmt"
 	"context"
 	"log"
-	//"math/big"
-	//"flag"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	//. "github.com/PredictionExplorer/augur-explorer/contracts"
 	. "github.com/PredictionExplorer/augur-explorer/primitives"
-	//. "github.com/PredictionExplorer/augur-explorer/dbs"
 )
 const (
 
 	WAIT_TIME = 2000	// 2 seconds
-	//DB_LOG				= "db.log"
 )
 var (
 
 	eclient *ethclient.Client
 	rpcclient *rpc.Client
 
-//	Error   *log.Logger
-//	Info	*log.Logger
 
 )
 func read_block_numbers(fname string) []int64 {
@@ -126,7 +117,6 @@ func single_threaded_loop_routine(etl *ETL_Layer1,exit_chan chan bool) {
 		bnum = 0
 		etl.Info.Printf("DB is empty, starting from block 0\n")
 	} else {
-		//etl.Info.Printf("Latest block in chain=%v, latest in DB=%v\n",latestBlock.Number().Int64(),bnum)
 		bnum = bnum + 1
 	}
 	if (bnum > etl.EndingBlock) && (etl.EndingBlock > 0) {

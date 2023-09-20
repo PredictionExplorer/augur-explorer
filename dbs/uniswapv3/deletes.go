@@ -3,8 +3,6 @@ package uniswapv3
 import (
 	"fmt"
 	"os"
-	//"strings"
-	//"database/sql"
 	_  "github.com/lib/pq"
 
 )

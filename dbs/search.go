@@ -6,9 +6,6 @@ import (
 	"database/sql"
 	_  "github.com/lib/pq"
 
-	//"github.com/ethereum/go-ethereum/common"
-//	"github.com/ethereum/go-ethereum/core/types"
-
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 func (ss *SQLStorage) Search_keywords_in_markets(keywords string) []p.TextSearchResult {

@@ -406,7 +406,6 @@ func (sw *SQLStorageWrapper) Get_top_profitable_pools(tf_code,ini_ts,fin_ts int6
 		many_params = true
 	}
 	query = query + "ORDER BY amount_usd DESC"
-	//query = query + "ORDER BY amount DESC"
 
 	var err error
 	var rows *sql.Rows

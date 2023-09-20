@@ -8,7 +8,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	//"github.com/0xProject/0x-mesh/common/types"
 )
 type CallerZxUnpackTokenId interface {
 	UnpackTokenId(opts *bind.CallOpts, _tokenId *big.Int) (ZxMeshOrderSpec, error)
@@ -166,7 +165,6 @@ func (evt *ECancelZeroXOrder) Dump(l *log.Logger) {
 	l.Printf("\tOrderHash: %v\n",hex.EncodeToString(evt.OrderHash[:]))
 	l.Printf("}\n")
 }
-//func (evt *ETransferBatch) Dump(zc *ZeroX,l *log.Logger) {
 func (evt *ETransferSingle) Dump(l *log.Logger) {
 	l.Printf("TransferSingle {\n")
 	l.Printf("\tOperator: %v\n",evt.Operator.String())
@@ -345,8 +343,6 @@ func (evt *EUniverseCreated) Dump(l *log.Logger) {
 }
 func Dump_0x_mesh_order(l *log.Logger,o *OrderInfo0x) {
 	l.Printf("0x Mesh Order {\n")
-	//l.Printf("\tOrderHash: %v\n",o.OrderHash.String())
-	//l.Printf("\tSignature: %v\n",hex.EncodeToString(o.SignedOrder.Signature))
 	l.Printf("\tFillableTakerAssetAmount: %v\n",o.FillableTakerAssetAmount.String())
 	l.Printf("\tChainId: %v\n",o.SignedOrder.ChainID.String())
 	l.Printf("\tExchangeAddress: %v\n",o.SignedOrder.ExchangeAddress.String())
