@@ -20,7 +20,7 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/amm"
 )
 var (
-	RPC_URL = os.Getenv("AUGUR_ETH_NODE_RPC_URL")
+	RPC_URL = os.Getenv("RPC_URL")
 	eclient *ethclient.Client
 	rpcclient *ethrpc.Client
 
@@ -67,7 +67,7 @@ func main() {
 	if len(RPC_URL) == 0 {
 		fmt.Printf("Configuration error: RPC URL of Ethereum node is not set."+
 			"Calls to contracts are disabled. " +
-			" Please set AUGUR_ETH_NODE_RPC environment variable")
+			" Please set RPC_URL environment variable")
 		os.Exit(1)
 	}
 	var err error
@@ -97,8 +97,8 @@ func main() {
 	}
 
 
-	port_plain := os.Getenv("AUGUR_HTTP_PORT")
-	host_secure := os.Getenv("AUGUR_HTTPS_HOSTNAME")
+	port_plain := os.Getenv("HTTP_PORT")
+	host_secure := os.Getenv("HTTPS_HOSTNAME")
 
 	r := gin.New()
 	//r.RedirectTrailingSlash=false

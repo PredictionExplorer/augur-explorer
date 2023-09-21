@@ -735,6 +735,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 				"amount_eth,"+
 				"token_addr,"+
 				"token_id," +
+				"token_uri,"+
 				"winner_index, "+
 				"claimed "+
 			"FROM (" +
@@ -750,9 +751,10 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"rd.round_num,"+
 						"rd.amount, "+
 						"rd.amount/1e18 AS amount_eth,"+
-						"-1 AS winner_index, "+
-						"-1 AS token_id,"+
 						"'' AS token_addr, "+
+						"-1 AS token_id,"+
+						"'' AS token_uri,"+
+						"-1 AS winner_index, "+
 						"rd.claimed "+
 					"FROM cg_raffle_deposit rd "+
 						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
@@ -769,9 +771,10 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"rn.round_num,"+
 						"0 AS amount,"+
 						"0 AS amount_eth,"+
-						"rn.winner_idx, "+
-						"rn.token_id," +
 						"'' AS token_addr, "+
+						"rn.token_id," +
+						"'' AS token_uri,"+
+						"rn.winner_idx, "+
 						"'T' AS claimed "+
 					"FROM cg_raffle_nft_winner rn "+
 						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
@@ -788,9 +791,10 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"p.prize_num,"+
 						"0 AS amount,"+
 						"0 AS amount_eth,"+
-						"d.idx winner_index,"+
-						"d.token_id,"+
 						"ta.addr token_addr, " +
+						"d.token_id,"+
+						"d.token_uri,"+
+						"d.idx winner_index,"+
 						"c.id IS NOT NULL as claimed "+
 					"FROM cg_prize_claim p "+
 						"JOIN cg_nft_donation d ON p.prize_num=d.round_num "+ 
@@ -810,9 +814,10 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"p.prize_num,"+
 						"p.amount,"+
 						"p.amount/1e18 AS amount_eth,"+
-						"-1 AS winner_index,"+
-						"p.token_id,"+
 						"'' AS token_addr, " +
+						"p.token_id,"+
+						"'' AS token_uri,"+
+						"-1 AS winner_index,"+
 						"'T' AS claimed "+
 					"FROM cg_prize_claim p "+
 						"LEFT JOIN transaction t ON t.id=p.tx_id "+
@@ -844,6 +849,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 			&rec.AmountEth,
 			&rec.TokenAddress,
 			&rec.TokenId,
+			&rec.TokenURI,
 			&rec.WinnerIndex,
 			&rec.Claimed,
 		)
@@ -871,6 +877,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 				"amount_eth,"+
 				"token_addr,"+
 				"token_id," +
+				"token_uri,"+
 				"winner_index, "+
 				"claimed, "+
 				"winner_addr,"+
@@ -888,9 +895,10 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"rd.round_num,"+
 						"rd.amount, "+
 						"rd.amount/1e18 AS amount_eth,"+
-						"-1 AS winner_index, "+
-						"-1 AS token_id,"+
 						"'' AS token_addr, "+
+						"-1 AS token_id,"+
+						"'' AS token_uri,"+
+						"-1 AS winner_index, "+
 						"rd.claimed, "+
 						"wa.addr winner_addr," +
 						"rd.winner_aid "+
@@ -909,9 +917,10 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"rn.round_num,"+
 						"0 AS amount,"+
 						"0 AS amount_eth,"+
-						"rn.winner_idx, "+
-						"rn.token_id," +
 						"'' AS token_addr, "+
+						"rn.token_id," +
+						"'' AS token_uri,"+
+						"rn.winner_idx, "+
 						"'T' AS claimed, "+
 						"wa.addr winner_addr,"+
 						"rn.winner_aid "+
@@ -930,9 +939,10 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"p.prize_num,"+
 						"0 AS amount,"+
 						"0 AS amount_eth,"+
-						"d.idx winner_index,"+
-						"d.token_id,"+
 						"ta.addr token_addr, " +
+						"d.token_id,"+
+						"d.token_uri,"+
+						"d.idx winner_index,"+
 						"c.id IS NOT NULL as claimed, "+
 						"wa.addr winner_addr,"+
 						"p.winner_aid "+
@@ -954,9 +964,10 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"p.prize_num,"+
 						"p.amount,"+
 						"p.amount/1e18 AS amount_eth,"+
-						"-1 AS winner_index,"+
-						"p.token_id,"+
 						"'' AS token_addr, " +
+						"p.token_id,"+
+						"'' AS token_uri,"+
+						"-1 AS winner_index,"+
 						"'T' AS claimed, "+
 						"wa.addr winner_addr,"+
 						"p.winner_aid "+
@@ -990,6 +1001,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 			&rec.AmountEth,
 			&rec.TokenAddress,
 			&rec.TokenId,
+			&rec.TokenURI,
 			&rec.WinnerIndex,
 			&rec.Claimed,
 			&rec.WinnerAddr,

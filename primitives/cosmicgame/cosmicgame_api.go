@@ -244,6 +244,7 @@ type CGRaffleHistory struct {
 	WinnerIndex					int64
 	TokenAddress				string
 	TokenId						int64
+	TokenURI					string
 	Claimed						bool
 	WinnerAddr					string
 	WinnerAid					int64

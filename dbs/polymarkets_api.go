@@ -2155,6 +2155,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 			case 2:		// Merge
 				merge_op := merge_ops[b.EvtLogId]
 				var prev_trf_from_aid int64 = -1
+				_=prev_trf_from_aid
 				var prev_trf_amount float64 = -1.0
 				for i:=int32(0); i<b.Len; i++ {
 					idx := b.Offset + i
@@ -2235,7 +2236,7 @@ func (ss *SQLStorage) Get_polymarket_open_interst_history_v5(usdc_aid,condtok_ai
 			case 3:		// Buy/Sell
 				buysell_op := buysell_ops[b.EvtLogId]
 				var prev_trf_to_aid int64 = -1
-				//var prev_trf_from_aid int64 = -1
+				_=prev_trf_to_aid
 				var prev_trf_amount float64 = -1.0
 				for i:=int32(0); i<b.Len; i++ {
 					idx := b.Offset + i

@@ -17,6 +17,7 @@
 		<th class="market_reports">WInner Addr</th>
 		<th class="market_reports">Winner Idx</th>
 		<th class="market_reports">Claimed</th>
+		<th class="market_reports"></th>
 	</tr>
 	{{- range $i, $change := .GlobalClaimHistory}}
 		<tr class="market_reports">
@@ -37,6 +38,7 @@
 			<td style="text-align: right;" title="">{{ .WinnerAddr }}</td>
 			<td style="text-align: right;" title="">{{ .WinnerIndex}}</td>
 			<td style="text-align: right;" title="">{{ .Claimed}}</td>
+			<td style="text-align: right;" title="">{{ .TokenURI}}</td>
 		</tr>
 	{{- end}}
 </table>

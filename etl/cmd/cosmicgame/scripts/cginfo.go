@@ -104,7 +104,31 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	
+	nanoseconds,err := cosmic_game_ctrct.NanoSecondsExtra(&copts)
+	if err != nil {
+		fmt.Printf("Error at nanoSecondsExtra()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	initialseconds,err := cosmic_game_ctrct.InitialSecondsUntilPrize(&copts)
+	if err != nil {
+		fmt.Printf("Error at initialSecondsUntilPrize()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	timeout,err := cosmic_game_ctrct.TimeoutClaimPrize(&copts)
+	if err != nil {
+		fmt.Printf("Error at timeoutClaimPrize(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	owneraddr,err := cosmic_game_ctrct.Owner(&copts)
+	if err != nil {
+		fmt.Printf("Error at Owner(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+
 
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
 	fmt.Printf("Bid Price = %v\n",bid_price.String())
@@ -117,4 +141,8 @@ func main() {
 	fmt.Printf("Last bidder = %v\n",last_bidder.String())
 	fmt.Printf("Contract balance = %v\n",balance.String())
 	fmt.Printf("Num donated NFTs = %v\n",num_donated_nfts.String());
+	fmt.Printf("Nanoseconds = %v\n",nanoseconds.String())
+	fmt.Printf("Initial seconds = %v\n",initialseconds.String())
+	fmt.Printf("Claimprize timeout = %v\n",timeout.String())
+	fmt.Printf("Owner = %v\n",owneraddr.String())
 }
