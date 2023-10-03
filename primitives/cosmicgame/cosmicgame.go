@@ -118,6 +118,7 @@ type CGMintEvent struct {
 	TokenId				int64
 	OwnerAddr			string
 	Seed				string
+	RoundNum			int64
 	MintType			int64
 }
 type CGRaffleDeposit struct {

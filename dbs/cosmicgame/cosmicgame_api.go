@@ -2138,6 +2138,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list(offset,limit int) []p
 				"oa.addr,"+
 				"m.seed, "+
 				"m.token_id,"+
+				"m.round_num,"+
 				"p.prize_num "+
 			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
@@ -2170,13 +2171,14 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list(offset,limit int) []p
 			&rec.CurOwnerAddr,
 			&rec.Seed,
 			&rec.TokenId,
+			&rec.RoundNum,
 			&null_prize_num,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		if null_prize_num.Valid { rec.PrizeNum = null_prize_num.Int64 } else {rec.PrizeNum = -1 }
+		if null_prize_num.Valid { rec.RecordType = 3 } else {rec.RecordType = 1 }
 		records = append(records,rec)
 	}
 	return records
@@ -2198,6 +2200,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list_by_user(user_aid int6
 				"oa.addr,"+
 				"m.seed, "+
 				"m.token_id,"+
+				"m.round_num,"+
 				"p.prize_num "+
 			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
@@ -2231,13 +2234,14 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list_by_user(user_aid int6
 			&rec.CurOwnerAddr,
 			&rec.Seed,
 			&rec.TokenId,
+			&rec.RoundNum,
 			&null_prize_num,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		if null_prize_num.Valid { rec.PrizeNum = null_prize_num.Int64 } else {rec.PrizeNum = -1 }
+		if null_prize_num.Valid { rec.RecordType = 3 } else {rec.RecordType = 1 }
 		records = append(records,rec)
 	}
 	return records
@@ -2258,6 +2262,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 				"oa.addr,"+
 				"m.seed, "+
 				"m.token_id,"+
+				"m.round_num,"+
 				"p.prize_num, "+
 				"m.token_name "+
 			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
@@ -2284,6 +2289,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 		&rec.CurOwnerAddr,
 		&rec.Seed,
 		&rec.TokenId,
+		&rec.RoundNum,
 		&null_prize_num,
 		&rec.TokenName,
 	)
@@ -2294,7 +2300,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 		sw.S.Log_msg(fmt.Sprintf("DB Error: %v, q=%v",err,query))
 		os.Exit(1)
 	}
-	if null_prize_num.Valid { rec.PrizeNum = null_prize_num.Int64 } else {rec.PrizeNum = -1 }
+	if null_prize_num.Valid { rec.RecordType = 3 } else {rec.RecordType = 1 }
+	fmt.Printf("record type = %v\n",rec.RecordType);
 	return true,rec
 }
 func (sw *SQLStorageWrapper) Get_cosmic_signature_token_name_history(token_id int64) []p.CGTokenName {

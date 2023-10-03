@@ -439,8 +439,6 @@ func proc_nft_donation_event(log *types.Log,elog *EthereumEventLog) {
 		os.Exit(1)
 	}
 
-	//evt.RoundNum = storagew.Get_num_prize_claims()
-	//if evt.RoundNum > 0 { evt.RoundNum = evt.RoundNum -1 }
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId
@@ -554,11 +552,13 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.TokenId = log.Topics[1].Big().Int64()
+	evt.RoundNum = log.Topics[3].Big().Int64()
 	evt.OwnerAddr = common.BytesToAddress(log.Topics[2][12:]).String()
 	evt.Seed = hex.EncodeToString(eth_evt.Seed[:])
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("MintEvent{\n")
+	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
 	Info.Printf("\tOwner:%v\n",evt.OwnerAddr)
 	Info.Printf("\tSeed: %v\n",evt.Seed)

@@ -108,6 +108,7 @@ CREATE TABLE cg_mint_event (
 	owner_aid		BIGINT NOT NULL,
 	token_id		BIGINT NOT NULL,
 	cur_owner_aid	BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
 	seed			TEXT NOT NULL,
 	token_name		TEXT DEFAULT '', -- last name set via setTokenName()
 	UNIQUE(evtlog_id)

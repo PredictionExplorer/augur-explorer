@@ -47,17 +47,14 @@
 		<td><a class="addr" href="/black/cosmicgame/user/info/{{.TokenInfo.WinnerAddr}}">{{.TokenInfo.CurOwnerAddr}}</a></td>
 	</tr>
 	<tr>
-		<td>Mint Type</td>
-		<td>{{.TokenInfo.MintType}}</td>
-	</tr>
-	<tr>
 		<td>Prize Num</td>
 		<td>
-			{{ if eq .TokenInfo.PrizeNum -1 }}
+			{{ if eq 1 .TokenInfo.RecordType}}
 				Token won in raffle
 			{{else}}
-				<a href="/black/cosmicgame/prize/info/{{.TokenInfo.PrizeNum}}">
-					{{.TokenInfo.PrizeNum}}
+				Token is a main prize:  prizeNum = 
+				<a href="/black/cosmicgame/prize/info/{{.TokenInfo.RoundNum}}">
+					{{.TokenInfo.RoundNum}}
 				</a>
 			{{ end }}
 		</td>
@@ -68,7 +65,7 @@
 	</tr>
 	<tr>
 		<td>Token Name</td>
-		<td>{{.TokenInfo.TokenName}} (<a href="/black/cosmicgame/cst/names/{{.TokenInfo.TokenId}}">(name history)</a> </td>
+		<td>{{.TokenInfo.TokenName}} (<a href="/black/cosmicgame/cst/names/{{.TokenInfo.TokenId}}">name history</a> )</td>
 	</tr>
 	<tr>
 		<td>Ownership transfers</td>

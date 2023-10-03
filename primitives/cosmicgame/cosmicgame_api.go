@@ -213,8 +213,9 @@ type CGCosmicSignatureMintRec struct {
 	CurOwnerAid					int64
 	CurOwnerAddr				string
 	Seed						string
-	MintType					int64
-	PrizeNum					int64	// -1 if minted via Raffle , > -1 if MintType = 0
+	//MintType					int64
+	RoundNum					int64
+	RecordType					int64
 	TokenName					string
 }
 type CGRoundStats struct {

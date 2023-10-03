@@ -865,8 +865,8 @@ func cosmic_game_cosmic_signature_token_info(c *gin.Context) {
 		})
 		return
 	}
-	if token_info.PrizeNum > -1 {
-		_,prize_info := arb_storagew.Get_prize_info(token_info.PrizeNum)
+	if token_info.RecordType == 3 {
+		_,prize_info := arb_storagew.Get_prize_info(token_info.RoundNum)
 		c.HTML(http.StatusOK, "cg_cosmic_sig_token_info.html", gin.H{
 			"TokenInfo" : token_info,
 			"PrizeInfo" : prize_info,
