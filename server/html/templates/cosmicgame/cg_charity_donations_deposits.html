@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Donations to CharityWallet</title>
+	<title>Deposits to CharityWallet</title>
 </head>
 <body>
-	<h3 class="page_title">Donations To Charity Wallet<h3>
+	<h3 class="page_title">Deposits To Charity Wallet<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -13,7 +13,7 @@
 		<th class="market_reports">Donation amount (ETH)</th>
 		<th class="market_reports">Is Voluntary</th>
 	</tr>
-	{{- range $i, $change := .CharityDonations}}
+	{{- range $i, $change := .CharityDeposits}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				{{.BlockNum}}
@@ -31,8 +31,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/donations/charity</br>
+	API: /api/cosmicgame/donations/charity/deposits</br>
 
-	Example: /api/cosmicgame/donations/charity
+	Example: /api/cosmicgame/donations/deposits
 </code>
 </body>

@@ -1,0 +1,34 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Withdrawals from CharityWallet</title>
+</head>
+<body>
+	<h3 class="page_title">Withdrawals from Charity Wallet<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Destination addr</th>
+		<th class="market_reports">Withdrawal amount (ETH)</th>
+	</tr>
+	{{- range $i, $change := .CharityWithdrawals}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">
+				{{.BlockNum}}
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="addr" title="">
+				<a href="/black/cosmicgame/user/info/{{.DestinationAddr}}">{{.DestinationAddr}}</a>
+			</td>
+			<td style="text-align: right;" title="">{{printf "%.6f" .AmountEth}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/donations/charity/deposits</br>
+
+	Example: /api/cosmicgame/donations/deposits
+</code>
+</body>

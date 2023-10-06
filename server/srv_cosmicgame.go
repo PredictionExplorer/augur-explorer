@@ -527,7 +527,7 @@ func cosmic_game_user_info(c *gin.Context) {
 		"Prizes" : prizes,
 	})
 }
-func cosmic_game_charity_donations(c *gin.Context) {
+func cosmic_game_charity_donations_deposits(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -539,8 +539,19 @@ func cosmic_game_charity_donations(c *gin.Context) {
 		os.Exit(1)
 	}
 	donations := arb_storagew.Get_charity_donations(cosmicgame_aid)
-	c.HTML(http.StatusOK, "cg_charity_donations.html", gin.H{
-		"CharityDonations" : donations,
+	c.HTML(http.StatusOK, "cg_charity_donations_deposits.html", gin.H{
+		"CharityDeposits" : donations,
+	})
+}
+func cosmic_game_charity_donations_withdrawals(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	donations := arb_storagew.Get_charity_wallet_withdrawals()
+	c.HTML(http.StatusOK, "cg_charity_donations_withdrawals.html", gin.H{
+		"CharityWithdrawals" : donations,
 	})
 }
 func cosmic_game_donations_eth(c *gin.Context) {

@@ -1127,6 +1127,54 @@ func (sw *SQLStorageWrapper) Get_charity_donations(cosmicgame_aid int64) []p.CGC
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_charity_wallet_withdrawals() []p.CGCharityWithdrawal {
+
+	var query string
+	query = "SELECT "+
+				"w.id,"+
+				"w.evtlog_id,"+
+				"w.block_num,"+
+				"tx.id,"+
+				"tx.tx_hash,"+
+				"EXTRACT(EPOCH FROM w.time_stamp)::BIGINT,"+
+				"w.time_stamp,"+
+				"ca.addr,"+
+				"w.amount,"+
+				"w.amount/1e18 "+
+			"FROM "+sw.S.SchemaName()+".cg_donation_sent w "+
+				"LEFT JOIN transaction tx ON tx.id=w.tx_id "+
+				"LEFT JOIN address ca ON w.charity_aid=ca.address_id "+
+			"ORDER BY w.id DESC "
+
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGCharityWithdrawal,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGCharityWithdrawal
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.DestinationAddr,
+			&rec.Amount,
+			&rec.AmountEth,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
 func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game() []p.CGCosmicGameDonation{
 
 	var query string

@@ -275,3 +275,15 @@ type CGTransfer struct {
 	ToAid						int64
 	TransferType				int64 // 0 - regular transfer , 1 - mint, 2 - burn (there are no burns in CST)
 }
+type CGCharityWithdrawal struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	DestinationAddr				string
+	Amount						string
+	AmountEth					float64
+}
