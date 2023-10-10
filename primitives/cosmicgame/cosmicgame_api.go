@@ -10,6 +10,8 @@ type CGStatistics struct {
 	TotalPrizesPaidAmountEth	float64	// divided by 1e18
 	NumVoluntaryDonations		uint64
 	SumVoluntaryDonationsEth	float64 // divided by 1e18
+	NumCosmicGameDonations		uint64
+	SumCosmicGameDonationsEth	float64 // donations from CosmicGame contract
 	NumRwalkTokensUsed			uint64
 	NumDonatedNFTs				uint64
 	NumCSTokenMints				uint64

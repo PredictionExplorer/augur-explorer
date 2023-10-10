@@ -15,6 +15,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	query = "SELECT "+
 				"num_vol_donations, "+
 				"vol_donations_total/1e18 as voluntary_donations_sum,"+
+				"num_cg_donations,"+
+				"cg_donations_total/1e18,"+
 				"num_bids," +
 				"cur_num_bids,"+
 				"num_wins, "+
@@ -27,6 +29,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	err=row.Scan(
 		&stats.NumVoluntaryDonations,
 		&stats.SumVoluntaryDonationsEth,
+		&stats.NumCosmicGameDonations,
+		&stats.SumCosmicGameDonationsEth,
 		&stats.TotalBids,
 		&stats.CurNumBids,
 		&stats.TotalPrizes,
@@ -1123,6 +1127,103 @@ func (sw *SQLStorageWrapper) Get_charity_donations(cosmicgame_aid int64) []p.CGC
 			os.Exit(1)
 		}
 		if rec.DonorAid == cosmicgame_aid { rec.IsVoluntary = false } else {rec.IsVoluntary=true}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_charity_donations_from_cosmic_game(cosmicgame_aid int64) []p.CGCharityDonation{
+
+	var query string
+	query = "SELECT "+
+				"d.evtlog_id,"+
+				"d.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
+				"d.donor_aid,"+
+				"da.addr,"+
+				"d.amount, "+
+				"d.amount/1e18 amount_eth  " +
+			"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
+				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
+			"WHERE donor_aid = $1 "+
+			"ORDER BY d.id DESC"
+	rows,err := sw.S.Db().Query(query,cosmicgame_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGCharityDonation,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGCharityDonation
+		err=rows.Scan(
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.DonorAid,
+			&rec.DonorAddr,
+			&rec.Amount,
+			&rec.AmountEth,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_charity_donations_voluntary(cosmicgame_aid int64) []p.CGCharityDonation{
+
+	var query string
+	query = "SELECT "+
+				"d.evtlog_id,"+
+				"d.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
+				"d.donor_aid,"+
+				"da.addr,"+
+				"d.amount, "+
+				"d.amount/1e18 amount_eth  " +
+			"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
+				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
+			"WHERE donor_aid != $1 "+
+			"ORDER BY d.id DESC"
+	rows,err := sw.S.Db().Query(query,cosmicgame_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGCharityDonation,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGCharityDonation
+		err=rows.Scan(
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.DonorAid,
+			&rec.DonorAddr,
+			&rec.Amount,
+			&rec.AmountEth,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		rec.IsVoluntary=true
 		records = append(records,rec)
 	}
 	return records

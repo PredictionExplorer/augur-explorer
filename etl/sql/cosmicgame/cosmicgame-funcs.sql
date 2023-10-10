@@ -147,23 +147,29 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_donation_received_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
-	v_biddingwar_aid			BIGINT;
-	v_biddingwar_addr			TEXT;
+	v_cosmicgame_aid			BIGINT;
+	v_cosmicgame_addr			TEXT;
 BEGIN
 
-	SELECT cosmic_game_addr FROM cg_contracts LIMIT 1 INTO v_biddingwar_addr;
-	IF v_biddingwar_addr IS NULL THEN
+	SELECT cosmic_game_addr FROM cg_contracts LIMIT 1 INTO v_cosmicgame_addr;
+	IF v_cosmicgame_addr IS NULL THEN
 		RAISE EXCEPTION 'CosmicGame contract address is not defined';
 	END IF;
-	SELECT address_id FROM address WHERE addr=v_biddingwar_addr INTO v_biddingwar_aid;
-	IF v_biddingwar_aid IS NULL THEN
+	SELECT address_id FROM address WHERE addr=v_cosmicgame_addr INTO v_cosmicgame_aid;
+	IF v_cosmicgame_aid IS NULL THEN
 		RAISE EXCEPTION 'CosmicGame address id not found in address table';
 	END IF;
-	IF NEW.donor_aid != v_biddingwar_aid THEN
+	IF NEW.donor_aid != v_cosmicgame_aid THEN
 		UPDATE cg_glob_stats 
 			SET 
 				num_vol_donations = (num_vol_donations + 1),
 				vol_donations_total = (vol_donations_total + NEW.amount);
+	ELSE 
+		UPDATE cg_glob_stats 
+			SET 
+				num_cg_donations = (num_cg_donations + 1),
+				cg_donations_total = (cg_donations_total + NEW.amount);
+		
 	END IF;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
@@ -176,23 +182,28 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_donation_received_delete() RETURNS trigger AS  $$
 DECLARE
 	v_cnt					NUMERIC;
-	v_biddingwar_aid			BIGINT;
-	v_biddingwar_addr			TEXT;
+	v_cosmicgame_aid			BIGINT;
+	v_cosmicgame_addr			TEXT;
 BEGIN
 
-	SELECT cosmic_game_addr FROM cg_contracts LIMIT 1 INTO v_biddingwar_addr;
-	IF v_biddingwar_addr IS NULL THEN
+	SELECT cosmic_game_addr FROM cg_contracts LIMIT 1 INTO v_cosmicgame_addr;
+	IF v_cosmicgame_addr IS NULL THEN
 		RAISE EXCEPTION 'CosmicGame contract address is not defined';
 	END IF;
-	SELECT address_id FROM address WHERE addr=v_biddingwar_addr INTO v_biddingwar_aid;
-	IF v_biddingwar_aid IS NULL THEN
+	SELECT address_id FROM address WHERE addr=v_cosmicgame_addr INTO v_cosmicgame_aid;
+	IF v_cosmicgame_aid IS NULL THEN
 		RAISE EXCEPTION 'CosmicGame address id not found in address table';
 	END IF;
-	IF OLD.donor_aid != v_biddingwar_aid THEN
+	IF OLD.donor_aid != v_cosmicgame_aid THEN
 		UPDATE cg_glob_stats
 			SET
 				num_vol_donations = (num_vol_donations - 1),
 				vol_donations_total = (vol_donations_total - OLD.amount);
+	ELSE
+		UPDATE cg_glob_stats
+			SET
+				num_cg_donations = (num_cg_donations - 1),
+				cg_donations_total = (cg_donations_total - OLD.amount);
 	END IF;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
 	IF v_cnt = 0 THEN
