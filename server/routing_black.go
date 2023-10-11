@@ -170,6 +170,8 @@ func set_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/black/cosmicgame/user/notif_red_box/:user_addr",cosmic_game_user_global_winnings)
 	r.GET("/black/cosmicgame/donations/eth",cosmic_game_donations_eth)
 	r.GET("/black/cosmicgame/donations/charity/deposits",cosmic_game_charity_donations_deposits)
+	r.GET("/black/cosmicgame/donations/charity/cg_deposits",cosmic_game_charity_cosmicgame_deposits)
+	r.GET("/black/cosmicgame/donations/charity/voluntary",cosmic_game_charity_voluntary_deposits)
 	r.GET("/black/cosmicgame/donations/charity/withdrawals",cosmic_game_charity_donations_withdrawals)
 	r.GET("/black/cosmicgame/donations/nft/list",cosmic_game_donations_nft)
 	r.GET("/black/cosmicgame/donations/nft/info/:record_id",cosmic_game_donations_nft_info)

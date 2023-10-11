@@ -543,6 +543,38 @@ func cosmic_game_charity_donations_deposits(c *gin.Context) {
 		"CharityDeposits" : donations,
 	})
 }
+func cosmic_game_charity_cosmicgame_deposits(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	cosmicgame_aid,err :=arb_storagew.S.Nonfatal_lookup_address_id(cosmic_game_addr.String())
+	if err != nil {
+		Error.Printf("cosmic game contract address doesn't exist in the DB, aborting server")
+		os.Exit(1)
+	}
+	donations := arb_storagew.Get_charity_donations_from_cosmic_game(cosmicgame_aid)
+	c.HTML(http.StatusOK, "cg_charity_donations_cosmicgame_deposits.html", gin.H{
+		"CharityDeposits" : donations,
+	})
+}
+func cosmic_game_charity_voluntary_deposits(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	cosmicgame_aid,err :=arb_storagew.S.Nonfatal_lookup_address_id(cosmic_game_addr.String())
+	if err != nil {
+		Error.Printf("cosmic game contract address doesn't exist in the DB, aborting server")
+		os.Exit(1)
+	}
+	donations := arb_storagew.Get_charity_donations_voluntary(cosmicgame_aid)
+	c.HTML(http.StatusOK, "cg_charity_donations_voluntary_deposits.html", gin.H{
+		"CharityDeposits" : donations,
+	})
+}
 func cosmic_game_charity_donations_withdrawals(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {

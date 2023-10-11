@@ -1,17 +1,16 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Deposits to CharityWallet</title>
+	<title>Deposits to CharityWallet from CosmicGame contract</title>
 </head>
 <body>
-	<h3 class="page_title">Deposits To Charity Wallet<h3>
+	<h3 class="page_title">Deposits To Charity Wallet from CosmicGame contract<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Donor</th>
 		<th class="market_reports">Donation amount (ETH)</th>
-		<th class="market_reports">Is Voluntary</th>
 	</tr>
 	{{- range $i, $change := .CharityDeposits}}
 		<tr class="market_reports">
@@ -23,35 +22,13 @@
 				<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
 			</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .AmountEth}}</td>
-			<td style="text-align: right;" title="">
-				{{if .IsVoluntary }}Yes{{ else }}No{{ end }}
-			</td>
 		</tr>
 	{{- end}}
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/donations/charity/deposits</br>
+	API: /api/cosmicgame/donations/charity/cg_deposits</br>
 
-	Example: /api/cosmicgame/donations/deposits
+	Example: /api/cosmicgame/donations/charity/cg_deposits
 </code>
-<br/><br/>
-<table>
-	<tr><td>
-		Fetching only cosmic game deposits:
-	</td><td>
-		<a href="/black/cosmicgame/donations/charity/cg_deposits">CosmicGame only</a>
-	</td></tr>
-</table>
-<table>
-	<tr><td>
-		Fetching only voluntary deposits:
-	</td>
-	<td>
-		<a href="/black/cosmicgame/donations/charity/voluntary">Voluntary only</a>
-	</td></tr>
-</table>
-
-<br/>
-<br/>
 </body>
