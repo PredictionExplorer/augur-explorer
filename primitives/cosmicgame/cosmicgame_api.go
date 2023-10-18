@@ -85,6 +85,7 @@ type CGCharityDonation struct {
 	Amount						string
 	AmountEth					float64
 	IsVoluntary					bool	// true - made by direct send, false=made by CosmicGame contract
+	RoundNum					int64
 }
 type CGCosmicGameDonation struct {
 	EvtLogId					int64

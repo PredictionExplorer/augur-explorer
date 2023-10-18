@@ -60,6 +60,7 @@ type CGDonationReceivedEvent struct {
 	TimeStamp			int64
 	TxId				int64
 	LogIndex			int64
+	RoundNum			int64
 	ContractAddr		string
 	DonorAddr			string
 	Amount				string

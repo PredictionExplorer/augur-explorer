@@ -370,7 +370,7 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-				"LEFT JOIN cg_mint_event m ON m.token_id=p.prize_num "+
+				"LEFT JOIN cg_mint_event m ON m.token_id=p.token_id "+
 				"LEFT JOIN cg_round_stats s ON s.round_num=p.prize_num "+
 				"LEFT JOIN cg_winner ws ON p.winner_aid=ws.winner_aid "+
 				"LEFT JOIN LATERAL (" +
@@ -607,7 +607,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims_by_user(winner_aid int64) []p.CGPr
 			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
-				"LEFT JOIN cg_mint_event m ON m.token_id=p.prize_num "+
+				"LEFT JOIN cg_mint_event m ON m.token_id=p.token_id "+
 				"LEFT JOIN cg_round_stats s ON p.prize_num=s.round_num "+
 				"LEFT JOIN LATERAL (" +
 					"SELECT d.evtlog_id,d.amount donation_amount,cha.addr charity_addr "+
@@ -1096,7 +1096,8 @@ func (sw *SQLStorageWrapper) Get_charity_donations(cosmicgame_aid int64) []p.CGC
 				"d.donor_aid,"+
 				"da.addr,"+
 				"d.amount, "+
-				"d.amount/1e18 amount_eth  " +
+				"d.amount/1e18 amount_eth,  " +
+				"d.round_num "+
 			"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
@@ -1121,6 +1122,7 @@ func (sw *SQLStorageWrapper) Get_charity_donations(cosmicgame_aid int64) []p.CGC
 			&rec.DonorAddr,
 			&rec.Amount,
 			&rec.AmountEth,
+			&rec.RoundNum,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -1144,7 +1146,8 @@ func (sw *SQLStorageWrapper) Get_charity_donations_from_cosmic_game(cosmicgame_a
 				"d.donor_aid,"+
 				"da.addr,"+
 				"d.amount, "+
-				"d.amount/1e18 amount_eth  " +
+				"d.amount/1e18 amount_eth,  " +
+				"d.round_num "+
 			"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
@@ -1170,6 +1173,7 @@ func (sw *SQLStorageWrapper) Get_charity_donations_from_cosmic_game(cosmicgame_a
 			&rec.DonorAddr,
 			&rec.Amount,
 			&rec.AmountEth,
+			&rec.RoundNum,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -1192,7 +1196,8 @@ func (sw *SQLStorageWrapper) Get_charity_donations_voluntary(cosmicgame_aid int6
 				"d.donor_aid,"+
 				"da.addr,"+
 				"d.amount, "+
-				"d.amount/1e18 amount_eth  " +
+				"d.amount/1e18 amount_eth,  " +
+				"d.round_num "+
 			"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
@@ -1218,6 +1223,7 @@ func (sw *SQLStorageWrapper) Get_charity_donations_voluntary(cosmicgame_aid int6
 			&rec.DonorAddr,
 			&rec.Amount,
 			&rec.AmountEth,
+			&rec.RoundNum,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

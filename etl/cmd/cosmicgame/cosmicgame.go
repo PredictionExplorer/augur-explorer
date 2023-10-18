@@ -229,10 +229,7 @@ func find_prize_num(tx_id int64) int64 {
 		os.Exit(1)
 	}
 	if len(evt_list) == 0 {
-		err_str := fmt.Sprintf("find_prize_num() couldn't find corresponding PrizeClaimEvent()")
-		Info.Printf(err_str)
-		Error.Printf(err_str)
-		os.Exit(1)
+		return -1
 	}
 	if len(evt_list) != 1 {
 		err_str := fmt.Sprintf("find_prize_num() there is more than 1 PrizeClaim in this transaction()")
@@ -359,11 +356,13 @@ func proc_donation_received_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.Amount = eth_evt.Amount.String()
+	evt.RoundNum = find_prize_num(evt.TxId)
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("DonationReceivedEvent {\n")
 	Info.Printf("\tDonor: %v\n",evt.DonorAddr)
-	Info.Printf("\tAmount%v\n",evt.Amount)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tPrizeNum: %v\n",evt.RoundNum)
 	Info.Printf("}\n")
 
 	storagew.Delete_donation_received(evt.EvtId)
@@ -593,6 +592,12 @@ func proc_raffle_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	}
 
 	prize_num := find_prize_num(elog.TxId)
+	if prize_num == -1 {
+		err_str := fmt.Sprintf("find_prize_num() couldn't find corresponding PrizeClaimEvent()")
+		Info.Printf(err_str)
+		Error.Printf(err_str)
+		os.Exit(1)
+	}
 	evt.EvtId=elog.EvtId
 	evt.BlockNum = elog.BlockNum
 	evt.TxId = elog.TxId

@@ -48,6 +48,7 @@ CREATE TABLE cg_donation_received (
 	contract_aid	BIGINT NOT NULL,
 	donor_aid		BIGINT NOT NULL,
 	amount			DECIMAL NOT NULL,
+	round_num		BIGINT NOT NULL DEFAULT -1,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_donation_sent (
