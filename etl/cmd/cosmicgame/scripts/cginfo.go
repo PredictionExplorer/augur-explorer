@@ -73,6 +73,25 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	var charity_donation_recipient string
+	charity_addr,err := cosmic_game_ctrct.Charity(&copts)
+	if err != nil {
+		fmt.Printf("Error at Charity()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	} else {
+		charity_wallet_ctrct,err := NewCharityWallet(charity_addr,eclient)
+		if err!=nil {
+			fmt.Printf("Failed to instantiate CharityWallet contract: %v\n",err)
+			os.Exit(1)
+		}
+		addr,err := charity_wallet_ctrct.CharityAddress(&copts)
+		if err != nil {
+			fmt.Printf("Error calling CharityAddress() : %v\n",err)
+			os.Exit(1)
+		}
+		charity_donation_recipient= addr.String()
+	}
 	charity_amount,err := cosmic_game_ctrct.CharityAmount(&copts)
 	if err != nil {
 		fmt.Printf("Error at CharityAmount()(): %v\n",err)
@@ -120,7 +139,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error at timeoutClaimPrize(): %v\n",err)
 		fmt.Printf("Aborting\n")
-		os.Exit(1)
+		//os.Exit(1)
 	}
 	owneraddr,err := cosmic_game_ctrct.Owner(&copts)
 	if err != nil {
@@ -136,6 +155,8 @@ func main() {
 	fmt.Printf("PrizeAmount = %v\n",prize_amount.String())
 	fmt.Printf("PrizePercentage = %v\n",prize_percentage.String())
 	fmt.Printf("PrizeTime = %v\n",prize_time.String());
+	fmt.Printf("CharityWallet addr = %v\n",charity_addr.String());
+	fmt.Printf("Charity donation receiver = %v\n",charity_donation_recipient);
 	fmt.Printf("CharityAmount = %v\n",charity_amount.String())
 	fmt.Printf("RaffleAmount = %v\n",raffle_amount.String())
 	fmt.Printf("Last bidder = %v\n",last_bidder.String())

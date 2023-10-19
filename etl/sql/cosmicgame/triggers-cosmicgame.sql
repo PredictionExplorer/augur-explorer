@@ -20,3 +20,5 @@ CREATE TRIGGER cg_mint_insert AFTER INSERT ON cg_mint_event FOR EACH ROW EXECUTE
 CREATE TRIGGER cg_mint_delete AFTER DELETE ON cg_mint_event FOR EACH ROW EXECUTE PROCEDURE on_mint_delete();
 CREATE TRIGGER cg_token_name_insert AFTER INSERT ON cg_token_name FOR EACH ROW EXECUTE PROCEDURE on_token_name_insert();
 CREATE TRIGGER cg_token_name_delete AFTER DELETE ON cg_token_name FOR EACH ROW EXECUTE PROCEDURE on_token_name_delete();
+CREATE TRIGGER cg_donation_sent_insert AFTER INSERT ON cg_donation_sent FOR EACH ROW EXECUTE PROCEDURE on_donation_sent_insert();
+CREATE TRIGGER cg_donation_sent_delete AFTER DELETE ON cg_donation_sent FOR EACH ROW EXECUTE PROCEDURE on_donation_sent_delete();

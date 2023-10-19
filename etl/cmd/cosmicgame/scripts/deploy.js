@@ -37,7 +37,6 @@ async function main() {
   const CharityWallet = await hre.ethers.getContractFactory("CharityWallet");
   const charityWallet = await CharityWallet.deploy();
   charityWallet.deployed();
-  await charityWallet.transferOwnership(cosmicDAO.address);
   console.log("CharityWallet address:", charityWallet.address);
 
   const RaffleWallet = await hre.ethers.getContractFactory("RaffleWallet");

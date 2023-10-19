@@ -17,6 +17,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 				"vol_donations_total/1e18 as voluntary_donations_sum,"+
 				"num_cg_donations,"+
 				"cg_donations_total/1e18,"+
+				"num_withdrawals,"+
+				"sum_withdrawals/1e18,"+
 				"num_bids," +
 				"cur_num_bids,"+
 				"num_wins, "+
@@ -31,6 +33,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 		&stats.SumVoluntaryDonationsEth,
 		&stats.NumCosmicGameDonations,
 		&stats.SumCosmicGameDonationsEth,
+		&stats.NumWithdrawals,
+		&stats.SumWithdrawals,
 		&stats.TotalBids,
 		&stats.CurNumBids,
 		&stats.TotalPrizes,

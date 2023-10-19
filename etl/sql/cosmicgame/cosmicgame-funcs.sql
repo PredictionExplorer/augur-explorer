@@ -455,3 +455,28 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_donation_sent_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+
+	UPDATE cg_glob_stats 
+		SET 
+			num_withdrawals = (num_withdrawals + 1),
+			sum_withdrawals = (sum_withdrawals + NEW.amount);
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_donation_sent_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE cg_glob_stats
+		SET
+			num_withdrawals = (num_withdrawals - 1),
+			sum_withdrawals = (sum_withdrawals - OLD.amount);
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
