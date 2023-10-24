@@ -1192,6 +1192,31 @@ func api_cosmic_game_token_name_history(c *gin.Context) {
 		"TokenNameHistory" : tokname_history,
 	})
 }
+func api_cosmic_game_token_name_search(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_name:= c.Param("name")
+	if len(p_name) > 0 {
+	} else {
+		respond_error_json(c,"'search_text' parameter is not set")
+		return
+	}
+
+	results := arb_storagew.Search_token_by_name(p_name)
+	var req_status int = 1
+	var err_str string = ""
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"SearchText" : p_name,
+		"TokenNameSearchResults" : results ,
+	})
+}
 func api_cosmic_game_token_ownership_transfers(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")

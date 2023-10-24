@@ -292,3 +292,9 @@ type CGCharityWithdrawal struct {
 	Amount						string
 	AmountEth					float64
 }
+type CGTokenSearchResult struct {
+	MintTimeStamp				int64
+	MintDateTime				string
+	TokenId						int64
+	TokenName					string
+}

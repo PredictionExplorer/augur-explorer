@@ -1284,7 +1284,7 @@ func cosmic_game_dev_funcs(c *gin.Context) {
 func cosmic_game_token_name_history(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
-		respond_error_json(c,"Database link wasn't configured")
+		respond_error(c,"Database link wasn't configured")
 		return
 	}
 
@@ -1297,7 +1297,7 @@ func cosmic_game_token_name_history(c *gin.Context) {
 			return
 		}
 	} else {
-		respond_error_json(c,"'token_id' parameter is not set")
+		respond_error(c,"'token_id' parameter is not set")
 		return
 	}
 
@@ -1307,10 +1307,30 @@ func cosmic_game_token_name_history(c *gin.Context) {
 		"TokenNameHistory" : tokname_history,
 	})
 }
+func cosmic_game_token_name_search(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_name:= c.Param("name")
+	if len(p_name) > 0 {
+	} else {
+		respond_error(c,"'name' parameter is not set")
+		return
+	}
+
+	results := arb_storagew.Search_token_by_name(p_name)
+	c.HTML(http.StatusOK, "cg_token_name_search_results.html", gin.H{
+		"SearchText" : p_name,
+		"TokenNameSearchResults" : results ,
+	})
+}
 func cosmic_game_token_ownership_transfers(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
-		respond_error_json(c,"Database link wasn't configured")
+		respond_error(c,"Database link wasn't configured")
 		return
 	}
 
@@ -1323,7 +1343,7 @@ func cosmic_game_token_ownership_transfers(c *gin.Context) {
 			return
 		}
 	} else {
-		respond_error_json(c,"'token_id' parameter is not set")
+		respond_error(c,"'token_id' parameter is not set")
 		return
 	}
 
