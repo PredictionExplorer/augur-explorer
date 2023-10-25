@@ -832,7 +832,7 @@ func api_cosmic_game_time_current(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
-		respond_error(c,"Database link wasn't configured")
+		respond_error_json(c,"Database link wasn't configured")
 		return
 	}
 	var raw json.RawMessage
@@ -867,7 +867,7 @@ func api_cosmic_game_time_until_prize(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
-		respond_error(c,"Database link wasn't configured")
+		respond_error_json(c,"Database link wasn't configured")
 		return
 	}
 	const time_until_prize_sig string = "0x8b1329e0"
@@ -1215,6 +1215,23 @@ func api_cosmic_game_token_name_search(c *gin.Context) {
 		"error" : err_str,
 		"SearchText" : p_name,
 		"TokenNameSearchResults" : results ,
+	})
+}
+func api_cosmic_game_named_tokens_only(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	var req_status int = 1
+	var err_str string = ""
+
+	results := arb_storagew.Get_named_tokens()
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"NamedTokens" : results ,
 	})
 }
 func api_cosmic_game_token_ownership_transfers(c *gin.Context) {

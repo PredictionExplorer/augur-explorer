@@ -2623,3 +2623,38 @@ func (sw *SQLStorageWrapper) Search_token_by_name(name string) []p.CGTokenSearch
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_named_tokens() []p.CGTokenSearchResult {
+
+	var query string
+	query = "SELECT "+
+				"EXTRACT(EPOCH FROM t.time_stamp)::BIGINT,"+
+				"t.time_stamp,"+
+				"t.token_id,"+
+				"t.token_name "+
+			"FROM "+sw.S.SchemaName()+".cg_mint_event t "+
+			"WHERE length(t.token_name)>0 "+
+			"ORDER BY t.token_name"
+
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGTokenSearchResult,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGTokenSearchResult
+		err=rows.Scan(
+			&rec.MintTimeStamp,
+			&rec.MintDateTime,
+			&rec.TokenId,
+			&rec.TokenName,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}

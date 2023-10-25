@@ -169,6 +169,7 @@ func set_api_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/api/cosmicgame/cst/info/:token_id",api_cosmic_game_cosmic_signature_token_info)
 	r.GET("/api/cosmicgame/cst/names/history/:token_id",api_cosmic_game_token_name_history)
 	r.GET("/api/cosmicgame/cst/names/search/:name",api_cosmic_game_token_name_search)
+	r.GET("/api/cosmicgame/cst/names/named_only",api_cosmic_game_named_tokens_only)
 	r.GET("/api/cosmicgame/cst/list_by_user/:user_addr/:offset/:limit",api_cosmic_game_cosmic_signature_token_list_by_user)
 	r.GET("/api/cosmicgame/cst/transfers/:token_id/:offset/:limit",api_cosmic_game_token_ownership_transfers)
 	r.GET("/api/cosmicgame/user/info/:user_addr",api_cosmic_game_user_info)

@@ -1327,6 +1327,18 @@ func cosmic_game_token_name_search(c *gin.Context) {
 		"TokenNameSearchResults" : results ,
 	})
 }
+func cosmic_game_named_tokens_only(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	results := arb_storagew.Get_named_tokens()
+	c.HTML(http.StatusOK, "cg_named_tokens_only.html", gin.H{
+		"NamedTokens" : results ,
+	})
+}
 func cosmic_game_token_ownership_transfers(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
