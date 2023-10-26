@@ -288,6 +288,7 @@ func cosmic_game_index_page(c *gin.Context) {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
+	cur_round_stats := arb_storagew.Get_cosmic_game_round_statistics(round_num);
 	ts := time.Unix(round_start_ts,0)
 	date_str := fmt.Sprintf("%v",ts);
 	c.HTML(http.StatusOK, "cg_index.html", gin.H{
@@ -326,6 +327,7 @@ func cosmic_game_index_page(c *gin.Context) {
 		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
 		"NumDonatedNFTs" : bw_stats.NumDonatedNFTs,
 		"MainStats" : bw_stats,
+		"CurRoundStats" : cur_round_stats,
 		"TsRoundStart" : round_start_ts,
 		"DateRoundStart" : date_str,
 	})

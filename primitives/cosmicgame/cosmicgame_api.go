@@ -17,6 +17,12 @@ type CGStatistics struct {
 	NumRwalkTokensUsed			uint64
 	NumDonatedNFTs				uint64
 	NumCSTokenMints				uint64
+	TotalNamedTokens			int64
+	TotalRaffleEthDeposits		float64
+	TotalRaffleEthWithdrawn		float64
+	NumWinnersWithPendingRaffleWithdrawal int64
+	TotalNFTDonated				int64
+	DonatedTokenDistribution	[]CGDonatedTokenDistrRec 
 }
 type CGBidRec struct {
 	EvtLogId					int64
@@ -297,4 +303,8 @@ type CGTokenSearchResult struct {
 	MintDateTime				string
 	TokenId						int64
 	TokenName					string
+}
+type CGDonatedTokenDistrRec struct {
+	ContractAddr				string
+	NumDonatedTokens			int64
 }

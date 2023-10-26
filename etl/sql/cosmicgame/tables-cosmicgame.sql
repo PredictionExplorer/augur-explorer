@@ -221,7 +221,10 @@ CREATE TABLE cg_glob_stats ( -- global statistics
 	num_wins				BIGINT DEFAULT 0,		-- total prizes given
 	num_rwalk_used			BIGINT DEFAULT 0,
 	num_mints				BIGINT DEFAULT 0,
-	cur_num_bids			BIGINT DEFAULT 0		-- num bids since new round
+	cur_num_bids			BIGINT DEFAULT 0,		-- num bids since new round
+	total_raffle_eth_deposits DECIMAL DEFAULT 0,
+	total_raffle_eth_withdrawn DECIMAL DEFAULT 0,
+	total_nft_donated		BIGINT DEFAULT 0
 );
 CREATE TABLE cg_nft_stats ( -- stats for donated NFTs (donated with bidAndDonateNFT())
 	contract_aid			BIGINT PRIMARY KEY,

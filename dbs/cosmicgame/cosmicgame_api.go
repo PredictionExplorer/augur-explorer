@@ -23,7 +23,10 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 				"cur_num_bids,"+
 				"num_wins, "+
 				"num_rwalk_used, "+
-				"num_mints "+
+				"num_mints, "+
+				"total_raffle_eth_deposits/1e18, "+
+				"total_raffle_eth_withdrawn/1e18, "+
+				"total_nft_donated "+
 			"FROM cg_glob_stats LIMIT 1"
 
 	row := sw.S.Db().QueryRow(query)
@@ -40,6 +43,9 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 		&stats.TotalPrizes,
 		&stats.NumRwalkTokensUsed,
 		&stats.NumCSTokenMints,
+		&stats.TotalRaffleEthDeposits,
+		&stats.TotalRaffleEthWithdrawn,
+		&stats.TotalNFTDonated,
 	)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
@@ -85,6 +91,25 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 		&null_donated_nfts,
 	)
 	stats.NumDonatedNFTs=uint64(null_donated_nfts.Int64)
+	query = "SELECT count(*) AS total FROM cg_mint_event "+
+			"WHERE LENGTH(token_name) > 0 "
+	var null_named_tokens sql.NullInt64
+	row = sw.S.Db().QueryRow(query)
+	err=row.Scan(
+		&null_named_tokens.Int64,
+	)
+	stats.TotalNamedTokens = null_named_tokens.Int64
+
+	query = "SELECT count(winner_aid) AS total FROM cg_raffle_Winner_stats "+
+			"WHERE amount_sum > 0 "
+	var null_num_users_missing_withdrawal sql.NullInt64
+	row = sw.S.Db().QueryRow(query)
+	err=row.Scan(
+		&null_num_users_missing_withdrawal.Int64,
+	)
+	stats.NumWinnersWithPendingRaffleWithdrawal = null_num_users_missing_withdrawal.Int64
+
+	stats.DonatedTokenDistribution = sw.Get_donated_token_distribution();
 	return stats
 }
 func (sw *SQLStorageWrapper) Get_cosmic_game_round_statistics(round_num int64) p.CGRoundStats {
@@ -2632,7 +2657,7 @@ func (sw *SQLStorageWrapper) Get_named_tokens() []p.CGTokenSearchResult {
 				"t.token_id,"+
 				"t.token_name "+
 			"FROM "+sw.S.SchemaName()+".cg_mint_event t "+
-			"WHERE length(t.token_name)>0 "+
+			"WHERE LENGTH(t.token_name)>0 "+
 			"ORDER BY t.token_name"
 
 	rows,err := sw.S.Db().Query(query)
@@ -2649,6 +2674,37 @@ func (sw *SQLStorageWrapper) Get_named_tokens() []p.CGTokenSearchResult {
 			&rec.MintDateTime,
 			&rec.TokenId,
 			&rec.TokenName,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_donated_token_distribution() []p.CGDonatedTokenDistrRec {
+
+	var query string
+	query = "SELECT "+
+				"ca.addr,"+
+				"ns.num_donated "+
+			"FROM "+sw.S.SchemaName()+".cg_nft_stats ns "+
+				"LEFT JOIN address ca ON ns.contract_aid=ca.address_id "+
+			"ORDER BY ns.num_donated DESC "
+
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGDonatedTokenDistrRec,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGDonatedTokenDistrRec
+		err=rows.Scan(
+			&rec.ContractAddr,
+			&rec.NumDonatedTokens,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

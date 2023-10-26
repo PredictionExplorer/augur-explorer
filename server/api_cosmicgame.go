@@ -20,6 +20,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
 	caddrs := arb_storagew.Get_cosmic_game_contract_addrs()
+	cur_round_stats := arb_storagew.Get_cosmic_game_round_statistics(round_num);
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -59,6 +60,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"NumDonatedNFTs" : bw_stats.NumDonatedNFTs,
 		"ContractAddrs" : caddrs,
 		"MainStats" : bw_stats,
+		"CurRoundStats" : cur_round_stats,
 		"TsRoundStart" : round_start_ts,
 	})
 }

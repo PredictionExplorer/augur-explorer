@@ -232,6 +232,7 @@ BEGIN
 	IF v_cnt = 0 THEN
 		INSERT INTO cg_round_stats(round_num,total_nft_donated) VALUES (NEW.round_num,1);
 	END IF;
+	UPDATE cg_glob_stats SET total_nft_donated = (total_nft_donated + 1);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -245,6 +246,7 @@ BEGIN
 			num_donated = (num_donated - 1)
 		WHERE contract_aid = OLD.token_aid;
 	UPDATE cg_round_stats SET total_nft_donated = (total_nft_donated - 1) WHERE round_num=OLD.round_num;
+	UPDATE cg_glob_stats SET total_nft_donated = (total_nft_donated - 1);
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -272,6 +274,7 @@ BEGIN
 		INSERT INTO cg_round_stats(round_num,total_raffle_eth_deposits)
 			VALUES(NEW.round_num,NEW.amount);
 	END IF;
+	UPDATE cg_glob_stats SET total_raffle_eth_deposits = (total_raffle_eth_deposits + NEW.amount);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -288,6 +291,7 @@ BEGIN
 		SET
 			total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.amount)
 		WHERE round_num=OLD.round_num;
+	UPDATE cg_glob_stats SET total_raffle_eth_deposits = (total_raffle_eth_deposits - OLD.amount);
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -423,6 +427,7 @@ BEGIN
 		INSERT INTO cg_raffle_winner_stats(winner_aid,withdrawal_sum) VALUES(NEW.winner_aid,NEW.amount);
 	END IF;
 	UPDATE cg_raffle_deposit SET claimed=TRUE,withdrawal_id=NEW.evtlog_id WHERE (evtlog_id<NEW.evtlog_id) AND (withdrawal_id=0) AND (winner_aid=NEW.winner_aid);
+	UPDATE cg_glob_stats SET total_raffle_eth_withdrawn = (total_raffle_eth_withdrawn + NEW.amount);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -436,6 +441,7 @@ BEGIN
 			amount_sum = (amount_sum - OLD.amount)
 		WHERE winner_aid = OLD.winner_aid;
 	UPDATE cg_raffle_deposit SET claimed=FALSE,withdrawal_id=0 WHERE withdrawal_id = OLD.evtlog_id;
+	UPDATE cg_glob_stats SET total_raffle_eth_withdrawn = (total_raffle_eth_withdrawn - OLD.amount);
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
