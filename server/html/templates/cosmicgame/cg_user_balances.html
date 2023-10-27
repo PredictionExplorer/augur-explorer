@@ -1,0 +1,40 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>User Balances</title>
+</head>
+<body>
+	<h3 class="page_title">User Balances<h3>
+<table>
+	<tr class="market_reports">
+		<td class="addr" style="text-align: left;">
+			User Address
+		</td>
+		<td style="text-align: right;" title="">
+			{{.UserAddr}}
+		</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="addr" style="text-align: left;">
+		ETH Balance	
+		</td>
+		<td style="text-align: right;" title="">
+			{{.ETH_Balance}}
+		</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="addr" style="text-align: left;">
+		CosmicToken ERC20 Balance	
+		</td>
+		<td style="text-align: right;" title="">
+			{{.CosmicTokenBalance}}
+		</td>
+	</tr>
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/user/balances/[user_addr]</br>
+
+	Example: /api/cosmicgame/user/balances/0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+</code>
+</body>

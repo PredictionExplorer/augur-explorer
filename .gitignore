@@ -100,6 +100,8 @@ etl/cmd/cosmicgame/scripts/percent_charity
 etl/cmd/cosmicgame/scripts/percent_prize
 etl/cmd/cosmicgame/scripts/percent_raffle
 etl/cmd/cosmicgame/scripts/bid
+etl/cmd/cosmicgame/scripts/setcharity
+etl/cmd/cosmicgame/scripts/charitywithdraw
 etl/cmd/cosmicgame/scripts/settokname
 etl/cmd/cosmicgame/imggen_monitor/imggen_exec
 etl/cmd/cosmicgame/imggen_monitor/imggen_monitor

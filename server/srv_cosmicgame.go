@@ -1367,3 +1367,73 @@ func cosmic_game_token_ownership_transfers(c *gin.Context) {
 		"TokenTransfers" : transfers,
 	})
 }
+func cosmic_game_cs_token_distribution(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	distribution := arb_storagew.Get_cosmic_signature_token_distribution()
+
+	c.HTML(http.StatusOK, "cg_cs_token_distribution.html", gin.H{
+		"CosmicSignatureTokenDistribution" : distribution,
+	})
+}
+func cosmic_game_user_balances(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+
+	addr := common.HexToAddress(p_user_addr)
+	user_eth_bal,err := eclient.BalanceAt(context.Background(),addr,nil)
+	if err != nil {
+		err_str := fmt.Sprintf("Error at BalanceAt() call for addr: %v\n",err)
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("%v",err_str),
+		})
+		return
+	}
+	ct_contract,err := NewERC20(cosmic_token_addr,eclient);
+	if err != nil {
+		err_str := fmt.Sprintf("Error at instantiation of ERC20 contract: %v\n",err)
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("%v",err_str),
+		})
+		return
+	}
+	var copts bind.CallOpts
+	ct_balance,err := ct_contract.BalanceOf(&copts,addr)
+	if err != nil {
+		err_str := fmt.Sprintf("Error at BalanceOf() call: %v\n",err)
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("%v",err_str),
+		})
+		return
+	}
+
+	c.HTML(http.StatusOK, "cg_user_balances.html", gin.H{
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"ETH_Balance" : user_eth_bal.String(),
+		"CosmicTokenBalance" : ct_balance.String(),
+	})
+}

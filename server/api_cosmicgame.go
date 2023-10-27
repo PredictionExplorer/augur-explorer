@@ -1196,6 +1196,7 @@ func api_cosmic_game_token_name_history(c *gin.Context) {
 }
 func api_cosmic_game_token_name_search(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return
@@ -1221,6 +1222,7 @@ func api_cosmic_game_token_name_search(c *gin.Context) {
 }
 func api_cosmic_game_named_tokens_only(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return
@@ -1272,5 +1274,73 @@ func api_cosmic_game_token_ownership_transfers(c *gin.Context) {
 		"Limit" : limit,
 		"TokenId" : token_id,
 		"TokenTransfers" : transfers,
+	})
+}
+func api_cosmic_game_cs_token_distribution(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	distribution := arb_storagew.Get_cosmic_signature_token_distribution()
+
+	var req_status int = 1
+	var err_str string = ""
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"CosmicSignatureTokenDistribution" : distribution,
+	})
+}
+func api_cosmic_game_user_balances(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+
+	addr := common.HexToAddress(p_user_addr)
+	user_eth_bal,err := eclient.BalanceAt(context.Background(),addr,nil)
+	if err != nil {
+		err_str := fmt.Sprintf("Error at BalanceAt() call for addr: %v\n",err)
+		respond_error_json(c,err_str)
+		return
+	}
+	ct_contract,err := NewERC20(cosmic_token_addr,eclient);
+	if err != nil {
+		err_str := fmt.Sprintf("Error at instantiation of ERC20 contract: %v\n",err)
+		respond_error_json(c,err_str)
+		return
+	}
+	var copts bind.CallOpts
+	ct_balance,err := ct_contract.BalanceOf(&copts,addr)
+	if err != nil {
+		err_str := fmt.Sprintf("Error at BalanceOf() call: %v\n",err)
+		respond_error_json(c,err_str)
+		return
+	}
+
+	var req_status int = 1
+	var err_str string = ""
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"ETH_Balance" : user_eth_bal.String(),
+		"CosmicTokenBalance" : ct_balance.String(),
 	})
 }

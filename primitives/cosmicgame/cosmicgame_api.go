@@ -308,3 +308,8 @@ type CGDonatedTokenDistrRec struct {
 	ContractAddr				string
 	NumDonatedTokens			int64
 }
+type CGCSTokenDistributionRec struct {
+	OwnerAid					int64
+	OwnerAddr					string
+	NumTokens					int64
+}

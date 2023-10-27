@@ -2612,6 +2612,40 @@ func (sw *SQLStorageWrapper) Get_cst_ownership_transfers(token_id int64,offset,l
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_cosmic_signature_token_distribution() []p.CGCSTokenDistributionRec {
+
+	var query string
+	query = "SELECT "+
+				"m.cur_owner_aid, "+
+				"a.addr, "+
+				"count(m.cur_owner_aid) AS counter "+
+			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
+				"LEFT JOIN address a ON m.cur_owner_aid=a.address_id "+
+			"GROUP BY m.cur_owner_aid,a.addr "+
+			"ORDER BY counter DESC "
+
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGCSTokenDistributionRec,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGCSTokenDistributionRec
+		err=rows.Scan(
+			&rec.OwnerAid,
+			&rec.OwnerAddr,
+			&rec.NumTokens,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
 func (sw *SQLStorageWrapper) Search_token_by_name(name string) []p.CGTokenSearchResult {
 
 	name = "%" + name + "%"
