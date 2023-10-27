@@ -357,7 +357,7 @@ func (sw *SQLStorageWrapper) Insert_donated_nft_claimed(evt *p.CGDonatedNFTClaim
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_token_transfer_event(evt *p.CGERC721Transfer) {
+func (sw *SQLStorageWrapper) Insert_cosmic_signature_transfer_event(evt *p.CGERC721Transfer) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	from_aid:=sw.S.Lookup_or_create_address(evt.From,evt.BlockNum,evt.TxId)
@@ -389,6 +389,41 @@ func (sw *SQLStorageWrapper) Insert_token_transfer_event(evt *p.CGERC721Transfer
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_transfer table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_cosmic_token_transfer_event(evt *p.CGERC20Transfer) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	from_aid:=sw.S.Lookup_or_create_address(evt.From,evt.BlockNum,evt.TxId)
+	to_aid:=sw.S.Lookup_or_create_address(evt.To,evt.BlockNum,evt.TxId)
+	otype := int(0)
+	if evt.From == "0x0000000000000000000000000000000000000000" {
+		otype = 1
+	}
+	if evt.To == "0x0000000000000000000000000000000000000000" {
+		otype = 2
+	}
+	var query string
+	query = "INSERT INTO cg_erc20_transfer(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"value,from_aid,to_aid,otype" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.Value,
+		from_aid,
+		to_aid,
+		otype,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_erc20_transfer table: %v\n",err))
 		os.Exit(1)
 	}
 }

@@ -14,6 +14,7 @@ DROP TABLE IF EXISTS
 	cg_raffle_nft_winner,
 	cg_donated_nft_claimed,
 	cg_transfer,
+	cg_erc20_transfer,
 	cg_contracts,
 	cg_proc_status,
 	cg_bidder,

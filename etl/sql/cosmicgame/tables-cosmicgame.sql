@@ -179,6 +179,19 @@ CREATE TABLE cg_transfer( -- cosmic signature ERC721 transfer
 	otype           SMALLINT NOT NULL,-- 0-regular transfer,1-Mint,2-Burn
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_erc20_transfer( -- cosmic token ERC20 transfer
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	value			DECIMAL NOT NULL,
+	from_aid        BIGINT NOT NULL,
+	to_aid          BIGINT NOT NULL,
+	otype           SMALLINT NOT NULL,-- 0-regular transfer,1-Mint,2-Burn
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE cg_round_stats( -- collects statistics per round 
 	round_num					BIGINT NOT NULL PRIMARY KEY,
 	total_bids					BIGINT DEFAULT 0,

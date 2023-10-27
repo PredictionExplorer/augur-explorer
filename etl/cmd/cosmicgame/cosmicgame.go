@@ -763,7 +763,7 @@ func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_donated_nft_claimed(evt.EvtId)
 	storagew.Insert_donated_nft_claimed(&evt)
 }
-func proc_cosmic_sig_transfer_event(log *types.Log,elog *EthereumEventLog) {
+func proc_cosmic_signature_transfer_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGERC721Transfer
 
@@ -789,8 +789,53 @@ func proc_cosmic_sig_transfer_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
 	Info.Printf("}\n")
 
-	storagew.Delete_token_transfer_event(evt.EvtId)
-    storagew.Insert_token_transfer_event(&evt)
+	storagew.Delete_cosmic_signature_transfer_event(evt.EvtId)
+    storagew.Insert_cosmic_signature_transfer_event(&evt)
+}
+func proc_cosmic_token_transfer_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGERC20Transfer 
+	var eth_evt ERC20Transfer
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_token_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing ERC20 Transfer event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := erc20_abi.UnpackIntoInterface(&eth_evt,"Transfer",log.Data)
+	if err != nil {
+		Error.Printf("Event ERC20Transfer decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.From = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.To = common.BytesToAddress(log.Topics[2][12:]).String()
+	evt.Value = eth_evt.Value.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("Transfer {\n")
+	Info.Printf("\tFrom: %v\n",evt.From)
+	Info.Printf("\tTo: %v\n",evt.To)
+	Info.Printf("\tValue: %v\n",evt.Value)
+	Info.Printf("}\n")
+
+	storagew.Delete_cosmic_token_transfer_event(evt.EvtId)
+    storagew.Insert_cosmic_token_transfer_event(&evt)
+}
+func proc_transfer_event_common(log *types.Log,elog *EthereumEventLog) {
+
+	if bytes.Equal(log.Address.Bytes(),cosmic_signature_addr.Bytes()) {
+		proc_cosmic_signature_transfer_event(log,elog)
+	}
+	if bytes.Equal(log.Address.Bytes(),cosmic_token_addr.Bytes()) {
+		proc_cosmic_token_transfer_event(log,elog)
+	}
+
 }
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
@@ -834,7 +879,7 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 		proc_donated_nft_claimed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_transfer) {
-		proc_cosmic_sig_transfer_event(log,evtlog)
+		proc_transfer_event_common(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {

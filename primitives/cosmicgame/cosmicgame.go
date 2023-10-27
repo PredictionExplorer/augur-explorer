@@ -189,3 +189,13 @@ type CGERC721Transfer struct {
 	To						string
 	TokenId					int64
 }
+type CGERC20Transfer struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	From					string
+	To						string
+	Value					string
+}
