@@ -192,6 +192,10 @@ CREATE TABLE cg_erc20_transfer( -- cosmic token ERC20 transfer
 	otype           SMALLINT NOT NULL,-- 0-regular transfer,1-Mint,2-Burn
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_costok_owner( -- CosmicToken owner info (about balance)
+	owner_aid		BIGINT PRIMARY KEY,
+	cur_balance		DECIMAL DEFAULT 0 --- user's balance in CosmicToken denomination
+);
 CREATE TABLE cg_round_stats( -- collects statistics per round 
 	round_num					BIGINT NOT NULL PRIMARY KEY,
 	total_bids					BIGINT DEFAULT 0,

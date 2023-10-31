@@ -356,6 +356,77 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_erc20_transfer_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+	v_from_addr					TEXT;
+	v_to_addr					TEXT;
+BEGIN
+
+
+	SELECT addr FROM address WHERE address_id=NEW.from_aid INTO v_from_addr;
+	SELECT addr FROM address WHERE address_id=NEW.to_aid INTO v_to_addr;
+	--- update From balance
+	IF v_to_addr = '0x0000000000000000000000000000000000000000' THEN -- burn
+		UPDATE cg_costok_owner SET cur_balance = (cur_balance - NEW.value)
+		WHERE owner_aid=NEW.from_aid;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		IF v_cnt = 0 THEN
+			INSERT INTO cg_costok_owner(owner_aid,cur_balance) VALUES(NEW.from_aid,-NEW.value);
+		END IF;
+	ELSE 
+		IF v_from_addr != '0x0000000000000000000000000000000000000000' THEN --regular transfer
+			UPDATE cg_costok_owner SET cur_balance = (cur_balance - NEW.value)
+			WHERE owner_aid = NEW.from_aid;
+			GET DIAGNOSTICS v_cnt = ROW_COUNT;
+			IF v_cnt = 0 THEN
+				INSERT INTO cg_costok_owner(owner_aid,cur_balance) VALUES(NEW.from_aid,-NEW.value);
+			END IF;
+			UPDATE cg_costok_owner SET cur_balance = (cur_balance + NEW.value)
+			WHERE owner_aid = NEW.to_aid;
+			GET DIAGNOSTICS v_cnt = ROW_COUNT;
+			IF v_cnt = 0 THEN
+				INSERT INTO cg_costok_owner(owner_aid,cur_balance) VALUES(NEW.to_aid,NEW.value);
+			END IF;
+		ELSE  -- mint
+			UPDATE cg_costok_owner SET cur_balance = (cur_balance + NEW.value)
+			WHERE owner_aid=NEW.to_aid;
+			GET DIAGNOSTICS v_cnt = ROW_COUNT;
+			IF v_cnt = 0 THEN
+				INSERT INTO cg_costok_owner(owner_aid,cur_balance) VALUES(NEW.to_aid,NEW.value);
+			END IF;
+		END IF;
+	END IF;
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_erc20_transfer_delete() RETURNS trigger AS  $$
+DECLARE
+	v_from_addr					TEXT;
+	v_to_addr					TEXT;
+BEGIN
+
+	SELECT addr FROM address WHERE address_id=OLD.to_aid INTO v_from_addr;
+	SELECT addr FROM address WHERE address_id=OLD.to_aid INTO v_to_addr;
+	--- update From balance
+	IF v_to_addr = '0x0000000000000000000000000000000000000000' THEN -- burn
+		UPDATE cg_costok_owner SET cur_balance = (cur_balance + OLD.value)
+		WHERE owner_aid=OLD.from_aid;
+	ELSE 
+		IF v_from_addr != '0x0000000000000000000000000000000000000000' THEN --regular transfer
+			UPDATE cg_costok_owner SET cur_balance = (cur_balance + OLD.value)
+			WHERE owner_aid = OLD.from_aid;
+			UPDATE cg_costok_owner SET cur_balance = (cur_balance - OLD.value)
+			WHERE owner_aid = OLD.to_aid;
+		ELSE  -- mint
+			UPDATE cg_costok_owner SET cur_balance = (cur_balance - OLD.value)
+			WHERE owner_aid=OLD.to_aid;
+		END IF;
+	END IF;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_donated_nft_claimed_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;

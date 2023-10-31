@@ -313,3 +313,9 @@ type CGCSTokenDistributionRec struct {
 	OwnerAddr					string
 	NumTokens					int64
 }
+type CGCosmicTokenHolderRec struct {
+	OwnerAid					int64
+	OwnerAddr					string
+	Balance						string
+	BalanceFloat				float64
+}
