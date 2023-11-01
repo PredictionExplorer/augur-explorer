@@ -1295,6 +1295,7 @@ func api_cosmic_game_cs_token_distribution(c *gin.Context) {
 }
 func api_cosmic_game_user_balances(c *gin.Context) {
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return
@@ -1342,5 +1343,23 @@ func api_cosmic_game_user_balances(c *gin.Context) {
 		"UserAid" : user_aid,
 		"ETH_Balance" : user_eth_bal.String(),
 		"CosmicTokenBalance" : ct_balance.String(),
+	})
+}
+func api_cosmic_game_cosmic_token_balances(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	balances := arb_storagew.Get_cosmic_token_holders()
+	var req_status int = 1
+	var err_str string = ""
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"CosmicTokenBalances" : balances,
 	})
 }

@@ -2758,7 +2758,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_token_holders() []p.CGCosmicTokenHolderR
 				"o.cur_balance/1e18 " +
 			"FROM "+sw.S.SchemaName()+".cg_costok_owner o "+
 				"LEFT JOIN address oa ON o.owner_aid=oa.address_id "+
-			"ORDER BY o.balance DESC "
+			"ORDER BY o.cur_balance DESC "
 
 	rows,err := sw.S.Db().Query(query)
 	if (err!=nil) {

@@ -1437,3 +1437,15 @@ func cosmic_game_user_balances(c *gin.Context) {
 		"CosmicTokenBalance" : ct_balance.String(),
 	})
 }
+func cosmic_game_cosmic_token_balances(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	balances := arb_storagew.Get_cosmic_token_holders()
+	c.HTML(http.StatusOK, "cg_cosmic_token_balances.html", gin.H{
+		"CosmicTokenBalances" : balances,
+	})
+}
