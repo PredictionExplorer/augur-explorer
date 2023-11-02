@@ -80,6 +80,7 @@ type CGUserInfo struct {
 	RaffleNFTClaimed			int64
 	UnclaimedNFTs				int64
 	TotalCSTokensWon			int64	// prizes + raffles
+	CosmicTokenNumTransfers		int64
 }
 type CGCharityDonation struct {
 	EvtLogId					int64
@@ -318,4 +319,20 @@ type CGCosmicTokenHolderRec struct {
 	OwnerAddr					string
 	Balance						string
 	BalanceFloat				float64
+}
+type CGERC20TransferRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	FromAddr					string
+	ToAddr						string
+	FromAid						int64
+	ToAid						int64
+	TransferType				int64 // 0 - regular transfer , 1 - mint, 2 - burn (there are no burns in CST)
+	Value						string
+	ValueFloat					float64
 }

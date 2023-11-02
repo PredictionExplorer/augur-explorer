@@ -397,6 +397,27 @@ BEGIN
 			END IF;
 		END IF;
 	END IF;
+	IF NEW.from_aid = NEW.to_aid THEN -- self transfer
+		UPDATE cg_transfer_stats SET erc20_num_transfers = (erc20_num_transfers + 1)
+		WHERE user_aid = NEW.from_aid;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		IF v_cnt = 0 THEN
+			INSERT INTO cg_transfer_stats(user_aid,erc20_num_transfers) VALUES(NEW.from_aid,1);
+		END IF;
+	ELSE
+		UPDATE cg_transfer_stats SET erc20_num_transfers = (erc20_num_transfers + 1)
+		WHERE user_aid = NEW.from_aid;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		IF v_cnt = 0 THEN
+			INSERT INTO cg_transfer_stats(user_aid,erc20_num_transfers) VALUES(NEW.from_aid,1);
+		END IF;
+		UPDATE cg_transfer_stats SET erc20_num_transfers = (erc20_num_transfers + 1)
+		WHERE user_aid = NEW.to_aid;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		IF v_cnt = 0 THEN
+			INSERT INTO cg_transfer_stats(user_aid,erc20_num_transfers) VALUES(NEW.to_aid,1);
+		END IF;
+	END IF;
 
 	RETURN NEW;
 END;
@@ -423,6 +444,15 @@ BEGIN
 			UPDATE cg_costok_owner SET cur_balance = (cur_balance - OLD.value)
 			WHERE owner_aid=OLD.to_aid;
 		END IF;
+	END IF;
+	IF OLD.from_aid = OLD.to_aid THEN -- self transfer
+		UPDATE cg_transfer_stats SET erc20_num_transfers = (erc20_num_transfers - 1)
+		WHERE user_aid = OLD.from_aid;
+	ELSE
+		UPDATE cg_transfer_stats SET erc20_num_transfers = (erc20_num_transfers - 1)
+		WHERE user_aid = OLD.from_aid;
+		UPDATE cg_transfer_stats SET erc20_num_transfers = (erc20_num_transfers - 1)
+		WHERE user_aid = OLD.to_aid;
 	END IF;
 	RETURN OLD;
 END;

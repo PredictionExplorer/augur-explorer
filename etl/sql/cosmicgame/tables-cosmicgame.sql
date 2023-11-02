@@ -196,6 +196,11 @@ CREATE TABLE cg_costok_owner( -- CosmicToken owner info (about balance)
 	owner_aid		BIGINT PRIMARY KEY,
 	cur_balance		DECIMAL DEFAULT 0 --- user's balance in CosmicToken denomination
 );
+CREATE TABLE cg_transfer_stats( -- table to keep tracking of the statistical counters for tokent transfers
+    user_aid                BIGINT NOT NULL,
+    erc20_num_transfers     BIGINT DEFAULT 0, -- CosmicToken
+    erc721_num_transfers    BIGINT DEFAULT 0  -- CosmicSignature
+);
 CREATE TABLE cg_round_stats( -- collects statistics per round 
 	round_num					BIGINT NOT NULL PRIMARY KEY,
 	total_bids					BIGINT DEFAULT 0,

@@ -1063,12 +1063,14 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 				"rw.raffles_count, "+
 				"rn.num_won raffle_nft_won, "+
 				"p.unclaimed_nfts, "+
-				"p.tokens_count "+
+				"p.tokens_count, "+
+				"trs.erc20_num_transfers "+
 			"FROM address a "+
 				"LEFT JOIN cg_bidder b ON b.bidder_aid=a.address_id "+
 				"LEFT JOIN cg_winner p ON p.winner_aid=a.address_id "+
 				"LEFT JOIN cg_raffle_winner_stats rw ON rw.winner_aid=a.address_id "+
 				"LEFT JOIN cg_raffle_nft_winner_stats rn ON rn.winner_aid=a.address_id "+
+				"LEFT JOIN cg_transfer_stats trs ON trs.user_aid=a.address_id "+
 			"WHERE a.address_id=$1"
 
 	var rec p.CGUserInfo
@@ -1077,6 +1079,7 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 	var null_raffle_sum_winnings,null_raffle_sum_withdrawal sql.NullFloat64
 	var null_raffles_count,null_raffle_nft_won sql.NullInt64
 	var null_unclaimed_nfts,null_total_tokens sql.NullInt64
+	var null_erc20_transfs sql.NullInt64
 	row := sw.S.Db().QueryRow(query,user_aid)
 	var err error
 	err=row.Scan(
@@ -1092,6 +1095,7 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 		&null_raffle_nft_won,
 		&null_unclaimed_nfts,
 		&null_total_tokens,
+		&null_erc20_transfs,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -1110,6 +1114,7 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 	if null_raffle_nft_won.Valid { rec.RaffleNFTWon = null_raffle_nft_won.Int64 }
 	if null_unclaimed_nfts.Valid { rec.UnclaimedNFTs = null_unclaimed_nfts.Int64 }
 	if null_total_tokens.Valid { rec.TotalCSTokensWon= null_total_tokens.Int64 }
+	if null_erc20_transfs.Valid { rec.CosmicTokenNumTransfers = null_erc20_transfs.Int64 }
 	return true,rec
 }
 func (sw *SQLStorageWrapper) Get_charity_donations(cosmicgame_aid int64) []p.CGCharityDonation{
@@ -2774,6 +2779,66 @@ func (sw *SQLStorageWrapper) Get_cosmic_token_holders() []p.CGCosmicTokenHolderR
 			&rec.OwnerAddr,
 			&rec.Balance,
 			&rec.BalanceFloat,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_cosmic_token_transfers_by_user(user_aid int64,offset,limit int) []p.CGERC20TransferRec {
+
+	if limit == 0 { limit = 1000000 }
+	var query string
+	query = "SELECT "+
+				"t.id,"+
+				"t.evtlog_id,"+
+				"t.block_num,"+
+				"tx.id,"+
+				"tx.tx_hash,"+
+				"EXTRACT(EPOCH FROM t.time_stamp)::BIGINT,"+
+				"t.time_stamp,"+
+				"t.from_aid,"+
+				"fa.addr,"+
+				"t.to_aid,"+
+				"ta.addr,"+
+				"t.otype, "+
+				"t.value,"+
+				"t.value/1e18 "+ 
+			"FROM "+sw.S.SchemaName()+".cg_erc20_transfer t "+
+				"LEFT JOIN transaction tx ON tx.id=t.tx_id "+
+				"LEFT JOIN address fa ON t.from_aid=fa.address_id "+
+				"LEFT JOIN address ta ON t.to_aid=ta.address_id "+
+			"WHERE (t.from_aid=$1) OR (t.to_aid=$1) "+
+			"ORDER BY t.id DESC "+
+			"OFFSET $2 LIMIT $3"
+
+	rows,err := sw.S.Db().Query(query,user_aid,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGERC20TransferRec,0, 256)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGERC20TransferRec
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.FromAid,
+			&rec.FromAddr,
+			&rec.ToAid,
+			&rec.ToAddr,
+			&rec.TransferType,
+			&rec.Value,
+			&rec.ValueFloat,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS
 	cg_donated_nft_claimed,
 	cg_transfer,
 	cg_erc20_transfer,
+	cg_transfer_stats,
 	cg_costok_owner,
 	cg_contracts,
 	cg_proc_status,
