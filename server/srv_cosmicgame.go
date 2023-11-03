@@ -291,6 +291,7 @@ func cosmic_game_index_page(c *gin.Context) {
 	cur_round_stats := arb_storagew.Get_cosmic_game_round_statistics(round_num);
 	ts := time.Unix(round_start_ts,0)
 	date_str := fmt.Sprintf("%v",ts);
+	record_counters := arb_storagew.Get_record_counters()
 	c.HTML(http.StatusOK, "cg_index.html", gin.H{
 		"CosmicGameAddr":cosmic_game_addr,
 		"CosmicSignatureAddr":cosmic_signature_addr,
@@ -330,6 +331,7 @@ func cosmic_game_index_page(c *gin.Context) {
 		"CurRoundStats" : cur_round_stats,
 		"TsRoundStart" : round_start_ts,
 		"DateRoundStart" : date_str,
+		"RecordCounters" : record_counters,
 	})
 }
 func cosmic_game_prize_claims(c *gin.Context) {
@@ -487,8 +489,10 @@ func cosmic_game_prize_info(c *gin.Context) {
 			"ErrDescr": fmt.Sprintf("Prize with provided number wasn't found"),
 		})
 	} else {
+		nft_donations := arb_storagew.Get_nft_donations_by_prize(prize_num)
 		c.HTML(http.StatusOK, "cg_prize_info.html", gin.H{
 			"PrizeInfo" : prize_info,
+			"DonatedNFTs" : nft_donations,
 		})
 	}
 }
@@ -910,15 +914,21 @@ func cosmic_game_cosmic_signature_token_info(c *gin.Context) {
 		})
 		return
 	}
+	tokname_history := arb_storagew.Get_cosmic_signature_token_name_history(token_id)
+	transfers := arb_storagew.Get_cst_ownership_transfers(token_id,0, 0)
 	if token_info.RecordType == 3 {
 		_,prize_info := arb_storagew.Get_prize_info(token_info.RoundNum)
 		c.HTML(http.StatusOK, "cg_cosmic_sig_token_info.html", gin.H{
 			"TokenInfo" : token_info,
 			"PrizeInfo" : prize_info,
+			"TokenNameHistory" : tokname_history,
+			"TokenTransfers": transfers,
 		})
 	} else {
 		c.HTML(http.StatusOK, "cg_cosmic_sig_token_info.html", gin.H{
 			"TokenInfo" : token_info,
+			"TokenNameHistory" : tokname_history,
+			"TokenTransfers" : transfers,
 		})
 	}
 }
