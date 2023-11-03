@@ -81,6 +81,7 @@ type CGUserInfo struct {
 	UnclaimedNFTs				int64
 	TotalCSTokensWon			int64	// prizes + raffles
 	CosmicTokenNumTransfers		int64
+	CosmicSignatureNumTransfers	int64
 }
 type CGCharityDonation struct {
 	EvtLogId					int64

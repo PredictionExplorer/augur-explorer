@@ -1,0 +1,40 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Transfers of User {{.UserAddr}} for CosmicSignature (ERC721) contract</title>
+</head>
+<body>
+	<h4 class="page_title">Transfers of User {{.UserAddr}} for CosmicSignature (ERC721) contract<h4>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">From</th>
+		<th class="market_reports">To</th>
+		<th class="market_reports">TokenID</th>
+	</tr>
+	{{- range $i, $change := .CosmicSignatureTransfers}}
+		<tr class="market_reports">
+			<td class="" style="text-align: center;">
+				{{.BlockNum}}
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="addr" title="{{.FromAid}}">
+				<a href="/black/cosmicgame/user/info/{{.FromAddr}}">{{.FromAddr}}</a>
+			</td>
+			<td class="addr" title="{{.ToAid}}">
+				<a href="/black/cosmicgame/user/info/{{.ToAddr}}">{{.ToAddr}}</a>
+			</td>
+			<td class="" style="text-align: right;">
+				{{.TokenId}}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/user/cosmicsignature/transfers/[user_addr]/[offset]/[limit]</br>
+
+	Example: /api/cosmicgame/user/cosmicsignature/transfers/0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266/0/1000
+</code>
+</body>

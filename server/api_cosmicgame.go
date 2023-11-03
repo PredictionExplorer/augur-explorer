@@ -1398,3 +1398,38 @@ func api_cosmic_game_cosmic_token_transfers_by_user(c *gin.Context) {
 		"CosmicTokenTransfers" : transfers,
 	})
 }
+func api_cosmic_game_cosmic_signature_transfers_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+	transfers := arb_storagew.Get_cosmic_signature_transfers_by_user(user_aid,offset,limit)
+	var req_status int = 1
+	var err_str string = ""
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"Offset" : offset,
+		"Limit" : limit,
+		"CosmicSignatureTransfers" : transfers,
+	})
+}

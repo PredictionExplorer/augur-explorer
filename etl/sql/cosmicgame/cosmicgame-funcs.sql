@@ -346,6 +346,28 @@ BEGIN
 			cur_owner_aid = NEW.to_aid
 		WHERE token_id=NEW.token_id;
 
+	IF NEW.from_aid = NEW.to_aid THEN -- self transfer
+		UPDATE cg_transfer_stats SET erc721_num_transfers = (erc721_num_transfers + 1)
+		WHERE user_aid = NEW.from_aid;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		IF v_cnt = 0 THEN
+			INSERT INTO cg_transfer_stats(user_aid,erc721_num_transfers) VALUES(NEW.from_aid,1);
+		END IF;
+	ELSE
+		UPDATE cg_transfer_stats SET erc721_num_transfers = (erc721_num_transfers + 1)
+		WHERE user_aid = NEW.from_aid;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		IF v_cnt = 0 THEN
+			INSERT INTO cg_transfer_stats(user_aid,erc721_num_transfers) VALUES(NEW.from_aid,1);
+		END IF;
+		UPDATE cg_transfer_stats SET erc721_num_transfers = (erc721_num_transfers + 1)
+		WHERE user_aid = NEW.to_aid;
+		GET DIAGNOSTICS v_cnt = ROW_COUNT;
+		IF v_cnt = 0 THEN
+			INSERT INTO cg_transfer_stats(user_aid,erc721_num_transfers) VALUES(NEW.to_aid,1);
+		END IF;
+	END IF;
+
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -353,6 +375,15 @@ CREATE OR REPLACE FUNCTION on_erc721transfer_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
+	IF OLD.from_aid = OLD.to_aid THEN -- self transfer
+		UPDATE cg_transfer_stats SET erc721_num_transfers = (erc721_num_transfers - 1)
+		WHERE user_aid = OLD.from_aid;
+	ELSE
+		UPDATE cg_transfer_stats SET erc721_num_transfers = (erc721_num_transfers - 1)
+		WHERE user_aid = OLD.from_aid;
+		UPDATE cg_transfer_stats SET erc721_num_transfers = (erc721_num_transfers - 1)
+		WHERE user_aid = OLD.to_aid;
+	END IF;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
