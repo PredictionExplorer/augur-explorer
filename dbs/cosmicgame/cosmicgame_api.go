@@ -2330,6 +2330,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list(offset,limit int) []p
 				"oa.addr,"+
 				"m.seed, "+
 				"m.token_id,"+
+				"m.token_name,"+
 				"m.round_num,"+
 				"p.prize_num "+
 			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
@@ -2363,6 +2364,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list(offset,limit int) []p
 			&rec.CurOwnerAddr,
 			&rec.Seed,
 			&rec.TokenId,
+			&rec.TokenName,
 			&rec.RoundNum,
 			&null_prize_num,
 		)
@@ -2392,6 +2394,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list_by_user(user_aid int6
 				"oa.addr,"+
 				"m.seed, "+
 				"m.token_id,"+
+				"m.token_name,"+
 				"m.round_num,"+
 				"p.prize_num "+
 			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
@@ -2426,6 +2429,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list_by_user(user_aid int6
 			&rec.CurOwnerAddr,
 			&rec.Seed,
 			&rec.TokenId,
+			&rec.TokenName,
 			&rec.RoundNum,
 			&null_prize_num,
 		)
@@ -2664,7 +2668,7 @@ func (sw *SQLStorageWrapper) Search_token_by_name(name string) []p.CGTokenSearch
 				"t.token_id,"+
 				"t.token_name "+
 			"FROM "+sw.S.SchemaName()+".cg_mint_event t "+
-			"WHERE t.token_name like $1 "+
+			"WHERE t.token_name ILIKE  $1 "+
 			"ORDER BY t.token_id"
 
 	rows,err := sw.S.Db().Query(query,name)
@@ -2900,6 +2904,57 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_transfers_by_user(user_aid int
 			&rec.ToAddr,
 			&rec.TransferType,
 			&rec.TokenId,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_random_walk_tokens_in_bids() []p.CGRWalkUsed {
+
+	var query string
+	query = "SELECT "+
+				"b.id,"+
+				"b.evtlog_id,"+
+				"b.block_num,"+
+				"tx.id,"+
+				"tx.tx_hash,"+
+				"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT,"+
+				"b.time_stamp,"+
+				"b.round_num,"+
+				"b.bidder_aid,"+
+				"ba.addr,"+
+				"b.rwalk_nft_id "+
+			"FROM "+sw.S.SchemaName()+".cg_bid b "+
+				"LEFT JOIN transaction tx ON tx.id=b.tx_id "+
+				"LEFT JOIN address ba ON b.bidder_aid=ba.address_id "+
+			"WHERE b.rwalk_nft_id != -1 "+
+			"ORDER BY b.id DESC "
+
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGRWalkUsed,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGRWalkUsed
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.RoundNum,
+			&rec.BidderAid,
+			&rec.BidderAddr,
+			&rec.RWalkTokenId,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

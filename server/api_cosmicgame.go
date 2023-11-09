@@ -1433,3 +1433,21 @@ func api_cosmic_game_cosmic_signature_transfers_by_user(c *gin.Context) {
 		"CosmicSignatureTransfers" : transfers,
 	})
 }
+func api_cosmic_game_used_rwalk_nfts(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	used_nfts := arb_storagew.Get_random_walk_tokens_in_bids()
+	var req_status int = 1
+	var err_str string = ""
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UsedRwalkNFTs" : used_nfts,
+	})
+}

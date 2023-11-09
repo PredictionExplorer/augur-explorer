@@ -337,3 +337,16 @@ type CGERC20TransferRec struct {
 	Value						string
 	ValueFloat					float64
 }
+type CGRWalkUsed struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	RoundNum					int64
+	BidderAid					int64
+	BidderAddr					string
+	RWalkTokenId				int64
+}

@@ -1524,3 +1524,15 @@ func cosmic_game_cosmic_signature_transfers_by_user(c *gin.Context) {
 		"CosmicSignatureTransfers" : transfers,
 	})
 }
+func cosmic_game_used_rwalk_nfts(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	used_nfts := arb_storagew.Get_random_walk_tokens_in_bids()
+	c.HTML(http.StatusOK, "cg_used_rwalk_tokens.html", gin.H{
+		"UsedRwalkNFTs" : used_nfts,
+	})
+}
