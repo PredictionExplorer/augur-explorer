@@ -44,6 +44,8 @@ const (
 	RAFFLE_NFT_CLAIMED		= "2278d2acbf6ac7ebd6ad5d3171672894b0c220903ad9ad7bb45057d368c98040"
 	TRANSFER_EVT			= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 	BASEURI_SIG				= "6c0360eb"
+	/// Admin events
+	CHARITY_PERCENTAGE_CHANGED		= "0918b499c15fcb0e087d411d53664cde23577e1aa4a9cbfbdf735ddd1871e7d5."
 )
 var (
 	eclient 				*ethclient.Client
@@ -65,6 +67,7 @@ var (
 	evt_donated_nft_claimed,_= hex.DecodeString(DONATED_NFT_CLAIMED)
 	evt_transfer,_			= hex.DecodeString(TRANSFER_EVT)
 	baseuri_sig,_			= hex.DecodeString(BASEURI_SIG)
+	evt_charity_percentage_changed,_= hex.DecodeString(CHARITY_PERCENTAGE_CHANGED)
 
 	inspected_events []InspectedEvent
 

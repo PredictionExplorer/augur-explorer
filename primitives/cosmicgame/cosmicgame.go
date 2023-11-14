@@ -199,3 +199,11 @@ type CGERC20Transfer struct {
 	To						string
 	Value					string
 }
+type CGCharityPercentageChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewCharityPercentage	string
+}

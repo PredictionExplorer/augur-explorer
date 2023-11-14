@@ -196,6 +196,16 @@ CREATE TABLE cg_costok_owner( -- CosmicToken owner info (about balance)
 	owner_aid		BIGINT PRIMARY KEY,
 	cur_balance		DECIMAL DEFAULT 0 --- user's balance in CosmicToken denomination
 );
+CREATE TABLE cg_adm_charity_pcent( -- CharityPercentageChanged event
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	percentage		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE cg_transfer_stats( -- table to keep tracking of the statistical counters for tokent transfers
     user_aid                BIGINT NOT NULL,
     erc20_num_transfers     BIGINT DEFAULT 0, -- CosmicToken
