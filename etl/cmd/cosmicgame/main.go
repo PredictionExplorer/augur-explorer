@@ -46,6 +46,7 @@ const (
 	BASEURI_SIG				= "6c0360eb"
 	/// Admin events
 	CHARITY_PERCENTAGE_CHANGED		= "0918b499c15fcb0e087d411d53664cde23577e1aa4a9cbfbdf735ddd1871e7d5."
+	PRIZE_PERCENTAGE_CHANGED	= "595fa5ba64cd6f66df19b53b59bb4a275bae1ec5b362da95e1fa4c5feb62be1e."
 )
 var (
 	eclient 				*ethclient.Client
@@ -68,6 +69,7 @@ var (
 	evt_transfer,_			= hex.DecodeString(TRANSFER_EVT)
 	baseuri_sig,_			= hex.DecodeString(BASEURI_SIG)
 	evt_charity_percentage_changed,_= hex.DecodeString(CHARITY_PERCENTAGE_CHANGED)
+	evt_prize_percentage_changed,_ = hex.DecodeString(PRIZE_PERCENTAGE_CHANGED)
 
 	inspected_events []InspectedEvent
 

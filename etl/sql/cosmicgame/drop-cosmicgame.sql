@@ -18,6 +18,7 @@ DROP TABLE IF EXISTS
 	cg_transfer_stats,
 	cg_costok_owner,
 	cg_adm_charity_pcent,
+	cg_adm_prize_pcent,
 	cg_contracts,
 	cg_proc_status,
 	cg_bidder,

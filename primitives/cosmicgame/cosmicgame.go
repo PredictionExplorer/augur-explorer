@@ -207,3 +207,11 @@ type CGCharityPercentageChanged struct {
 	Contract                string
 	NewCharityPercentage	string
 }
+type CGPrizePercentageChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewPrizePercentage	string
+}

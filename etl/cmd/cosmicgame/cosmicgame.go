@@ -872,6 +872,37 @@ func proc_charity_percentage_changed_event(log *types.Log,elog *EthereumEventLog
 	storagew.Delete_cosmic_game_charity_percentage_changed_event(evt.EvtId)
     storagew.Insert_cosmic_game_charity_percentage_changed_event(&evt)
 }
+func proc_prize_percentage_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGPrizePercentageChanged
+	var eth_evt CosmicGamePrizePercentageChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing PrizePercentageChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"PrizePercentageChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event PrizePercentageChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewPrizePercentage= eth_evt.NewPrizePercentage.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("PrizePercentageChanged {\n")
+	Info.Printf("\tNewPrizePercentage: %v\n",evt.NewPrizePercentage)
+	Info.Printf("}\n")
+
+	storagew.Delete_cosmic_game_prize_percentage_changed_event(evt.EvtId)
+    storagew.Insert_cosmic_game_prize_percentage_changed_event(&evt)
+}
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event) {
@@ -918,6 +949,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_charity_percentage_changed) {
 		proc_charity_percentage_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_percentage_changed) {
+		proc_prize_percentage_changed_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {
