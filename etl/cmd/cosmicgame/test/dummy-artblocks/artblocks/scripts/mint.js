@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 
 async function main() {
-  const contract_addr = "0x59b670e9fa9d0a427751af201d676719a970857b";
+  const contract_addr = "0x4EEEdD240C98Ef89Ffc25616bee0B7Ac8Cf82Dd1";
   //const owner_addr = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
   const acct_idx = 0;
 
