@@ -215,3 +215,11 @@ type CGPrizePercentageChanged struct {
 	Contract                string
 	NewPrizePercentage	string
 }
+type CGRafflePercentageChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewRafflePercentage		string
+}
