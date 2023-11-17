@@ -1,4 +1,5 @@
 #!/bin/bash
+. $HOME/configs/imgmonitor.env
 . $HOME/configs/web-config.env
 LOG_DIR=$HOME/ae_logs
 WD=`/bin/pwd`

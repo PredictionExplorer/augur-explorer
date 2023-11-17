@@ -10,12 +10,16 @@ import (
 	"bytes"
 )
 const (
-	REQUEST_URL	string = "https://randomwalknft-api.com/cosmicgame_tokens"
-	IMAGE_URL  string = "https://cosmic-game.s3.us-east-2.amazonaws.com/"
-	VIDEO_URL string = "https://cosmic-game.s3.us-east-2.amazonaws.com/"
+// old values
+//	REQUEST_URL	string = "https://randomwalknft-api.com/cosmicgame_tokens"
+//	IMAGE_URL  string = "https://cosmic-game.s3.us-east-2.amazonaws.com/"
+//	VIDEO_URL string = "https://cosmic-game.s3.us-east-2.amazonaws.com/"
 )
 var (
-	 Info                    *log.Logger
+	REQUEST_URL	string = os.Getenv("IM_REQUEST_URL")
+	IMAGE_URL  string = os.Getenv("IM_IMAGE_URL")
+	VIDEO_URL string = os.Getenv("IM_VIDEO_URL")
+	Info                    *log.Logger
 )
 func generate_token_artifacts(token_id int64,seed string) {
 

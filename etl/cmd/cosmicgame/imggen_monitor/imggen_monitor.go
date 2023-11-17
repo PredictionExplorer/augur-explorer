@@ -14,11 +14,15 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/dbs/cosmicgame"
 )
 const (
-	REQUEST_URL	string = "https://randomwalknft-api.com/cosmicgame_tokens"
-	IMAGE_URL  string = "https://cosmic-game.s3.us-east-2.amazonaws.com/"
-	VIDEO_URL string = "https://cosmic-game.s3.us-east-2.amazonaws.com/"
+// old values, discontinued
+//	REQUEST_URL	string = "https://randomwalknft-api.com/cosmicgame_tokens"
+//	IMAGE_URL  string = "https://cosmic-game.s3.us-east-2.amazonaws.com/"
+//	VIDEO_URL string = "https://cosmic-game.s3.us-east-2.amazonaws.com/"
 )
 var (
+	REQUEST_URL	string = os.Getenv("IM_REQUEST_URL")
+	IMAGE_URL  string = os.Getenv("IM_IMAGE_URL")
+	VIDEO_URL string = os.Getenv("IM_VIDEO_URL")
 	storagew                SQLStorageWrapper
 	 Info                    *log.Logger
 )
