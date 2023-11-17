@@ -226,6 +226,16 @@ CREATE TABLE cg_adm_raffle_pcent( -- RafflePercentageChanged event
 	percentage		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_adm_raf_eth_winners( -- NumRaffleWinnersPerRoundChanged event event
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	num_winners		DECIMAL NOT NULL,	-- newNumRaffleWinnersPerRound
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE cg_transfer_stats( -- table to keep tracking of the statistical counters for tokent transfers
 CREATE TABLE cg_transfer_stats( -- table to keep tracking of the statistical counters for tokent transfers
     user_aid                BIGINT NOT NULL,

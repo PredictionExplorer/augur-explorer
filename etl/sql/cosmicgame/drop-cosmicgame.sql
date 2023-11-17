@@ -20,6 +20,7 @@ DROP TABLE IF EXISTS
 	cg_adm_charity_pcent,
 	cg_adm_prize_pcent,
 	cg_adm_raffle_pcent,
+	cg_adm_raf_eth_winners,
 	cg_contracts,
 	cg_proc_status,
 	cg_bidder,

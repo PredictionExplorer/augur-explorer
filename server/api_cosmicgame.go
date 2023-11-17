@@ -34,7 +34,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"BidPriceEth":bid_price_eth,
 		"PrizeClaimDate":time.Unix(prize_claim_date,0).Format(time.RFC822),
 		"PrizeClaimTs":prize_claim_date,
-		"CurRoundNum":round_num+1,
+		"CurRoundNum":round_num,
 		"CurNumBids" : bw_stats.CurNumBids,
 		"PrizeAmount" : prize_amount,
 		"PrizeAmountEth" : prize_amount_eth,
