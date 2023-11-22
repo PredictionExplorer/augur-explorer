@@ -9,6 +9,7 @@
     "hardhat": "^2.14.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.9.0"
+    "@openzeppelin/contracts": "^4.9.0",
+    "hardhat-waffle": "^0.0.1-security"
   }
 }

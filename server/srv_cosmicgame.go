@@ -23,7 +23,7 @@ import (
 )
 const (
 	CONTRACT_CONSTANTS_REFRESH_TIME		= 5*60	// seconds
-	CONTRACT_VARIABLES_REFRESH_TIME		= 15	// seconds
+	CONTRACT_VARIABLES_REFRESH_TIME		= 20	// seconds
 )
 var (
 	cosmic_game_addr				common.Address
@@ -49,6 +49,8 @@ var (
 	prize_claim_date			int64
 	prize_amount				string
 	prize_amount_eth			float64
+	raffle_amount				string
+	raffle_amount_eth			float64
 	round_num					int64
 	nanoseconds_extra			string
 	last_bidder					common.Address
@@ -223,6 +225,18 @@ func do_reload_contract_variables() {
 			f_quo := big.NewFloat(0.0).Quo(f_prize_amount,f_divisor)
 			prize_amount_eth,_ = f_quo.Float64()
 		}
+		tmp_val , err = bwcontract.RaffleAmount(&copts)
+		if err != nil {
+			err_str := fmt.Sprintf("Error at RaffleAmount() call: %v\n",err)
+			Error.Printf(err_str)
+			Info.Printf(err_str)
+			raffle_amount = "error"
+		} else {
+			raffle_amount = tmp_val.String()
+			f_raffle_amount:= big.NewFloat(0.0).SetInt(tmp_val)
+			f_quo := big.NewFloat(0.0).Quo(f_raffle_amount,f_divisor)
+			raffle_amount_eth,_ = f_quo.Float64()
+		}
 		tmp_val , err = bwcontract.RoundNum(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at NumPrizes() call: %v\n",err)
@@ -305,6 +319,8 @@ func cosmic_game_index_page(c *gin.Context) {
 		"CurNumBids" : bw_stats.CurNumBids,
 		"PrizeAmount" : prize_amount,
 		"PrizeAmountEth" : prize_amount_eth,
+		"RaffleAmount" : raffle_amount,
+		"RaffleAmountEth" : raffle_amount_eth,
 		"TotalPrizes": bw_stats.TotalPrizes,
 		"TotalPrizesPaidAmountEth": bw_stats.TotalPrizesPaidAmountEth,
 		"LastBidderAddr":last_bidder.String(),

@@ -38,6 +38,8 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"CurNumBids" : bw_stats.CurNumBids,
 		"PrizeAmount" : prize_amount,
 		"PrizeAmountEth" : prize_amount_eth,
+		"RaffleAmount" : raffle_amount,
+		"RaffleAmountEth" : raffle_amount_eth,
 		"TotalPrizes": bw_stats.TotalPrizes,
 		"TotalPrizesPaidAmountEth": bw_stats.TotalPrizesPaidAmountEth,
 		"LastBidderAddr":last_bidder.String(),
