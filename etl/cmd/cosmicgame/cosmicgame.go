@@ -79,6 +79,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_staking_deposit[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_transfer[:4]),
 			ContractAid: cosmic_sig_aid,
 		},
@@ -298,6 +302,7 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	evt.BidPrice = eth_evt.BidPrice.String()
 	evt.RandomWalkTokenId = eth_evt.RandomWalkNFTId.Int64()
 	evt.ERC20_Value = find_cosmic_token_transfer(evt.EvtId)
+	evt.NumCSTTokens = eth_evt.NumCSTTokens.Int64()
 	evt.PrizeTime = eth_evt.PrizeTime.Int64()
 	evt.Message = eth_evt.Message
 
@@ -778,6 +783,45 @@ func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Delete_donated_nft_claimed(evt.EvtId)
 	storagew.Insert_donated_nft_claimed(&evt)
+}
+func proc_staking_deposit_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGStakingDeposit
+	var eth_evt StakingWalletStakingDepositEvent
+
+	Info.Printf("Processing StakingDeposit event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := staking_wallet_abi.UnpackIntoInterface(&eth_evt,"StakingDepositEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event StakingDepositEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.RoundNum = log.Topics[1].Big().Int64()
+	evt.DepositedAmount= eth_evt.DepositedAmount.String()
+	evt.PrevRoundReminder= eth_evt.PrevRoundReminder.String()
+	evt.AmountPerHolder = eth_evt.AmountPerHolder.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("StakingDepositEvent{\n")
+	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
+	Info.Printf("\tDepositedAmount: %v\n",evt.DepositedAmount)
+	Info.Printf("\tPrevRoundReminder: %v\n",evt.PrevRoundReminder)
+
+	Info.Printf("\tAmountPerHolder: %v\n",evt.AmountPerHolder)
+	Info.Printf("}\n")
+
+	storagew.Delete_staking_deposit(evt.EvtId)
+	storagew.Insert_staking_deposit_event(&evt)
 }
 func proc_cosmic_signature_transfer_event(log *types.Log,elog *EthereumEventLog) {
 

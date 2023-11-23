@@ -28,8 +28,8 @@ const (
 	IMGGEN_PATH				= "v2/etl/cmd/cosmicgame/imggen_monitor/imggen_exec" // relative to $HOME
 
 	PRIZE_CLAIM_EVENT		= "27bc828c399c2947fea27bca8a75ced2e94ff2651d607271f051e39db52286ce"
-	//BID_EVENT				= "521a3e9a25dec55994ad8dd222c96be0afa2b1b679fe7d3c289d01f4b6d7b6ed"
-	BID_EVENT				= "c7beef8f8d25068377c10e7b7f30ef5622f443eb674e07835df1daf5fe84acbf"
+	//BID_EVENT				= "c7beef8f8d25068377c10e7b7f30ef5622f443eb674e07835df1daf5fe84acbf"
+	BID_EVENT				= "3ebe28e9be13fedb71392c114461386e763acb563218b28db3690553055cd5a5"
 	DONATION_EVENT			= "8b7fe5be5699654fd637d2250cb0d47e88205730710745e78e9d8bcaf8aad8f1"
 	DONATION_RECEIVED_EVENT	= "46ff3d75d4645bdbbae4cd6109ba42e6e1b80ea25e69d10472b357b733300368"
 	DONATION_SENT_EVENT		= "44d398d152fa0735a428b13ebc78f79fe4cb1b4722292cd233e278552fa36d32"
@@ -42,8 +42,9 @@ const (
 	RAFFLE_WITHDRAWAL_EVENT = "49775450da95afb818c4651b894f124d05629f06572a18900bf29db74b04a0d8"
 	RAFFLE_NFT_WINNER		= "0afb73a48ffcc4cf27ecb1889154b910544b89c39c5e5822c431062629134e56"
 	RAFFLE_NFT_CLAIMED		= "2278d2acbf6ac7ebd6ad5d3171672894b0c220903ad9ad7bb45057d368c98040"
+	STAKING_DEPOSIT			= "75d6e5cc6a300aeeb9df0947f3e2d0a5befe2734b052191b923fb1480cbf82d9"
 	TRANSFER_EVT			= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
-	BASEURI_SIG				= "6c0360eb"
+
 	/// Admin events
 	CHARITY_PERCENTAGE_CHANGED		= "0918b499c15fcb0e087d411d53664cde23577e1aa4a9cbfbdf735ddd1871e7d5"
 	PRIZE_PERCENTAGE_CHANGED	= "595fa5ba64cd6f66df19b53b59bb4a275bae1ec5b362da95e1fa4c5feb62be1e"
@@ -68,8 +69,8 @@ var (
 	evt_raffle_nft_winner,_	= hex.DecodeString(RAFFLE_NFT_WINNER)
 	evt_raffle_nft_claimed,_= hex.DecodeString(RAFFLE_NFT_CLAIMED)
 	evt_donated_nft_claimed,_= hex.DecodeString(DONATED_NFT_CLAIMED)
+	evt_staking_deposit,_=	 hex.DecodeString(STAKING_DEPOSIT)
 	evt_transfer,_			= hex.DecodeString(TRANSFER_EVT)
-	baseuri_sig,_			= hex.DecodeString(BASEURI_SIG)
 	evt_charity_percentage_changed,_= hex.DecodeString(CHARITY_PERCENTAGE_CHANGED)
 	evt_prize_percentage_changed,_ = hex.DecodeString(PRIZE_PERCENTAGE_CHANGED)
 	evt_raffle_percentage_changed,_ = hex.DecodeString(RAFFLE_PERCENTAGE_CHANGED)
@@ -81,6 +82,8 @@ var (
 	cosmic_token_abi		*abi.ABI
 	charity_wallet_abi		*abi.ABI
 	raffle_wallet_abi		*abi.ABI
+	staking_wallet_abi		*abi.ABI
+	marketing_wallet_abi	*abi.ABI
 	erc20_abi				*abi.ABI
 	erc721_abi				*abi.ABI
 
@@ -90,6 +93,8 @@ var (
 	cosmic_dao_addr			common.Address
 	charity_wallet_addr		common.Address
 	raffle_wallet_addr		common.Address
+	staking_wallet_addr		common.Address
+	marketing_wallet_addr	common.Address
 	cosmic_sig_aid			int64
 
 	cg_contracts			CosmicGameContractAddrs
@@ -204,6 +209,8 @@ func main() {
 	cosmic_token_abi = get_abi(CosmicTokenABI)
 	charity_wallet_abi = get_abi(CharityWalletABI);
 	raffle_wallet_abi = get_abi(RaffleWalletABI);
+	staking_wallet_abi = get_abi(StakingWalletABI);
+	marketing_wallet_abi = get_abi(MarketingWalletABI);
 	erc20_abi = get_abi(ERC20ABI)
 	erc721_abi = get_abi(ERC721ABI)
 
@@ -219,6 +226,8 @@ func main() {
 	cosmic_dao_addr = common.HexToAddress(cg_contracts.CosmicDaoAddr)
 	charity_wallet_addr = common.HexToAddress(cg_contracts.CharityWalletAddr)
 	raffle_wallet_addr = common.HexToAddress(cg_contracts.RaffleWalletAddr)
+	staking_wallet_addr = common.HexToAddress(cg_contracts.StakingWalletAddr)
+	marketing_wallet_addr = common.HexToAddress(cg_contracts.MarketingWalletAddr)
 
 	c := make(chan os.Signal)
 	exit_chan := make(chan bool)

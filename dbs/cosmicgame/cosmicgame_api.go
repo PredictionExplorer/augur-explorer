@@ -165,7 +165,8 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.CGBidRec {
 				"d.token_id,"+
 				"d.tok_addr, "+
 				"b.msg, "+
-				"b.round_num "+
+				"b.round_num, "+
+				"b.num_cst_tokens "+
 			"FROM "+sw.S.SchemaName()+".cg_bid b "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address ba ON b.bidder_aid=ba.address_id "+
@@ -206,6 +207,7 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.CGBidRec {
 			&null_tok_addr,
 			&rec.Message,
 			&rec.RoundNum,
+			&rec.NumCSTTokens,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -322,7 +324,8 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.CGBidRec) {
 				"d.tok_addr, "+
 				"d.token_uri, "+
 				"b.msg, "+
-				"b.round_num "+
+				"b.round_num, "+
+				"b.num_cst_tokens "+
 			"FROM "+sw.S.SchemaName()+".cg_bid b "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+
@@ -356,6 +359,7 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.CGBidRec) {
 		&null_token_uri,
 		&rec.Message,
 		&rec.RoundNum,
+		&rec.NumCSTTokens,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -471,7 +475,8 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.CGBidRec {
 				"d.tok_addr, "+
 				"d.token_uri, "+
 				"b.msg, "+
-				"b.round_num "+
+				"b.round_num. "+
+				"b.num_cst_tokens "+
 			"FROM "+sw.S.SchemaName()+".cg_bid b "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+
@@ -513,6 +518,7 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.CGBidRec {
 			&null_token_uri,
 			&rec.Message,
 			&rec.RoundNum,
+			&rec.NumCSTTokens,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -552,7 +558,8 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,l
 				"d.tok_addr, "+
 				"d.token_uri, "+
 				"b.msg, "+
-				"b.round_num "+
+				"b.round_num. "+
+				"b.num_cst_Tokens "+
 			"FROM "+sw.S.SchemaName()+".cg_bid b "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+

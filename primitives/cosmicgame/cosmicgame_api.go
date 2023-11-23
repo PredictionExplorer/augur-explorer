@@ -37,6 +37,7 @@ type CGBidRec struct {
 	BidPriceEth					float64	// divided by 1e18
 	RWalkNFTId					int64
 	RoundNum					int64
+	NumCSTTokens				int64
 	ERC20_Amount				string
 	ERC20_AmountEth				float64	// divided by 1e18
 	NFTDonationTokenId			int64

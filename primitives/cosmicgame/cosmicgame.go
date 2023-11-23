@@ -12,6 +12,8 @@ type CosmicGameContractAddrs struct {
 	CharityWalletAddr			string
 	RaffleWalletAddr			string
 	RandomWalkAddr				string
+	StakingWalletAddr			string
+	MarketingWalletAddr			string
 }
 type CosmicGameProcStatus struct {
 	LastEvtIdProcessed			int64
@@ -38,6 +40,7 @@ type CGBidEvent struct {
 	RandomWalkTokenId	int64
 	PrizeTime			int64
 	RoundNum			int64
+	NumCSTTokens		int64
 	ContractAddr		string
 	LastBidderAddr		string
 	BidPrice			string
@@ -178,6 +181,18 @@ type CGDonatedNFTClaimed struct {
 	TokenAddr			string
 	TokenId				string
 	WinnerAddr			string
+}
+type CGStakingDeposit struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	RoundNum			int64
+	DepositedAmount		string
+	PrevRoundReminder	string
+	AmountPerHolder		string
 }
 type CGERC721Transfer struct {
 	EvtId                   int64

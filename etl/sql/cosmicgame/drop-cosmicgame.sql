@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS
 	cg_raffle_withdrawal,
 	cg_raffle_nft_winner,
 	cg_donated_nft_claimed,
+	cg_staking_deposit,
 	cg_transfer,
 	cg_erc20_transfer,
 	cg_transfer_stats,

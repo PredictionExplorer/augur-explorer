@@ -39,8 +39,8 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.CGBidEvent) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_bid("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"bidder_aid,rwalk_nft_id,bid_price,erc20_amount,prize_time,msg,round_num"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,TO_TIMESTAMP($10),$11,$12)"
+					"bidder_aid,rwalk_nft_id,bid_price,erc20_amount,prize_time,msg,round_num,num_cst_tokens"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,TO_TIMESTAMP($10),$11,$12,$13)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -54,6 +54,7 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.CGBidEvent) {
 		evt.PrizeTime,
 		evt.Message,
 		evt.RoundNum,
+		evt.NumCSTTokens,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_bid table: %v\n",err))
@@ -354,6 +355,31 @@ func (sw *SQLStorageWrapper) Insert_donated_nft_claimed(evt *p.CGDonatedNFTClaim
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_donated_nft_claimed table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_staking_deposit_event(evt *p.CGStakingDeposit) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_staking_deposit(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"amount,prev_reminder,amount_per_holder" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.DepositedAmount,
+		evt.PrevRoundReminder,
+		evt.AmountPerHolder,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_staking_deposit table: %v\n",err))
 		os.Exit(1)
 	}
 }

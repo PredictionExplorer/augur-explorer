@@ -22,6 +22,7 @@ CREATE TABLE cg_bid (
 	bidder_aid		BIGINT NOT NULL,
 	rwalk_nft_id	BIGINT NOT NULL,	--token_id of RandomWalk, if present
 	round_num		BIGINT NOT NULL,
+	num_cst_tokens	BIGINT NOT NULL,
 	prize_time		TIMESTAMPTZ NOT NULL,
 	bid_price		DECIMAL NOT NULL,
 	erc20_amount	DECIMAL DEFAULT 0,	-- amount of CosmicSignatureToken minted in ERC20
@@ -166,6 +167,19 @@ CREATE TABLE cg_donated_nft_claimed (
 	token_id		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_staking_deposit (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
+	amount			DECIMAL NOT NULL,
+	prev_reminder	DECIMAL NOT NULL,
+	amount_per_holder	DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE cg_transfer( -- cosmic signature ERC721 transfer
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
@@ -294,13 +308,15 @@ CREATE TABLE cg_nft_stats ( -- stats for donated NFTs (donated with bidAndDonate
 	num_donated				BIGINT DEFAULT 0		-- how many NFTs were donated
 );
 CREATE TABLE cg_contracts (
-	cosmic_game_addr		TEXT,
-	cosmic_signature_addr	TEXT,
-	cosmic_token_addr		TEXT,
-	cosmic_dao_addr			TEXT,
-	charity_wallet_addr		TEXT,
-	raffle_wallet_addr		TEXT,
-	random_walk_addr		TEXT
+	cosmic_game_addr		TEXT NOT NULL,
+	cosmic_signature_addr	TEXT NOT NULL,
+	cosmic_token_addr		TEXT NOT NULL,
+	cosmic_dao_addr			TEXT NOT NULL,
+	charity_wallet_addr		TEXT NOT NULL,
+	raffle_wallet_addr		TEXT NOT NULL,
+	random_walk_addr		TEXT NOT NULL,
+	staking_wallet_addr		TEXT NOT NULL,
+	marketing_wallet_addr	TEXT NOT NULL
 );
 CREATE TABLE cg_proc_status (
 	last_evt_id             BIGINT DEFAULT 0
