@@ -178,6 +178,7 @@ CREATE TABLE cg_staking_deposit (
 	amount			DECIMAL NOT NULL,
 	prev_reminder	DECIMAL NOT NULL,
 	amount_per_holder	DECIMAL NOT NULL,
+	claimed			BOOLEAN DEFAULT 'F',
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_reward_sent (
