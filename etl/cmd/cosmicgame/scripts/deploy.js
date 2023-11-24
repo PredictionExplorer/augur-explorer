@@ -40,9 +40,19 @@ async function main() {
   console.log("CharityWallet address:", charityWallet.address);
 
   const RaffleWallet = await hre.ethers.getContractFactory("RaffleWallet");
-  const raffleWallet = await RaffleWallet.deploy();
+  const raffleWallet = await RaffleWallet.deploy(cosmicGame.address);
   raffleWallet.deployed();
   console.log("RaffleWallet address:", raffleWallet.address);
+
+  const StakingWallet = await hre.ethers.getContractFactory("StakingWallet");
+  stakingWallet = await StakingWallet.deploy(cosmicSignature.address,cosmicGame.address);
+  await stakingWallet.deployed();
+  console.log("StakingWallet address:", stakingWallet.address);
+
+  const MarketingWallet = await hre.ethers.getContractFactory("MarketingWallet");
+  marketingWallet = await MarketingWallet.deploy(cosmicToken.address);
+  await marketingWallet.deployed();
+  console.log("MarketingWallet address:", marketingWallet.address);
 
   const RandomWalkNFT = await hre.ethers.getContractFactory("RandomWalkNFT");
   const randomWalkNFT = await RandomWalkNFT.deploy();
@@ -58,6 +68,8 @@ async function main() {
   await cosmicGame.setNftContract(cosmicSignature.address);
   await cosmicGame.setCharity(charityWallet.address);
   await cosmicGame.setRaffleWallet(raffleWallet.address);
+  await cosmicGame.setMarketingWallet(marketingWallet.address);
+  await cosmicGame.setStakingWallet(stakingWallet.address);
   await cosmicGame.setRandomWalk(randomWalkNFT.address);
   await cosmicGame.setActivationTime(0);
 
@@ -69,7 +81,9 @@ async function main() {
 	  cosmicDAO.address+"','"+
 	  charityWallet.address+"','"+
 	  raffleWallet.address+"','"+
-	  randomWalkNFT.address+
+	  randomWalkNFT.address+"','"+
+	  stakingWallet.address+"','"+
+	  marketingWallet.address+
 	  "')"
   );
 
@@ -166,6 +180,11 @@ async function main() {
   token_id = await mint_rwalk(addr3);
   await cosmicGame.connect(addr3).bidAndDonateNFT("me donated token_id="+token_id, randomWalkNFT.address, token_id, { value: bidPrice });
 
+  await cosmicGame.connect(addr3).bidWithCST("bid using ERC20 token");
+  await ethers.provider.send("evm_mine");
+  await cosmicGame.connect(addr3).bidWithCST("bid using ERC20 token");
+  await ethers.provider.send("evm_mine");
+
   prizeTime = await cosmicGame.timeUntilPrize();
   await ethers.provider.send("evm_increaseTime", [prizeTime.toNumber()]);
   await ethers.provider.send("evm_mine");
@@ -187,6 +206,22 @@ async function main() {
 	  }
   }
 
+  await marketingWallet.send(hre.ethers.utils.parseEther('7'),addr1.address);
+  await marketingWallet.send(hre.ethers.utils.parseEther('5'),addr2.address);
+
+  let ts = await cosmicSignature.totalSupply();
+  let rn = await cosmicGame.roundNum();
+  for (let i =0; i<ts.toNumber(); i++) {
+    let ownr = await cosmicSignature.ownerOf(i)
+    if (ownr.toString() == addr1.address.toString()) {
+      for (let j = 0; j < rn.toNumber(); j++) {
+        let maxid = await stakingWallet.numWinnersInRound(j);
+        if (i < maxid.toNumber()) {
+          await stakingWallet.connect(addr1).withdraw(j,i)
+        }
+      }
+    }
+  }
   await ethers.provider.send("evm_mine");	// mine empty block as spacing
 }
 

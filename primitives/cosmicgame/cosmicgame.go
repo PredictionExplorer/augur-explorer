@@ -194,6 +194,16 @@ type CGStakingDeposit struct {
 	PrevRoundReminder	string
 	AmountPerHolder		string
 }
+type CGRewardSent struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	Marketer			string
+	Amount				string	
+}
 type CGERC721Transfer struct {
 	EvtId                   int64
 	BlockNum                int64

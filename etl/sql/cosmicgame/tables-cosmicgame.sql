@@ -180,6 +180,17 @@ CREATE TABLE cg_staking_deposit (
 	amount_per_holder	DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_reward_sent (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	amount			DECIMAL NOT NULL,
+	marketer_aid	BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE cg_transfer( -- cosmic signature ERC721 transfer
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,

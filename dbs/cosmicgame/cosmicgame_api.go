@@ -1420,6 +1420,7 @@ func (sw *SQLStorageWrapper) Get_unique_winners() []p.CGUniqueWinner {
 				"w.prizes_sum/1e18 prizes_sum_eth "+
 			"FROM "+sw.S.SchemaName()+".cg_winner w "+
 				"LEFT JOIN address a ON w.winner_aid=a.address_id "
+				"WHERE w.prizes_count>0 " +
 	rows,err := sw.S.Db().Query(query)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

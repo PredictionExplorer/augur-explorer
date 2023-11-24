@@ -83,6 +83,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_reward_sent[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_transfer[:4]),
 			ContractAid: cosmic_sig_aid,
 		},
@@ -816,12 +820,45 @@ func proc_staking_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
 	Info.Printf("\tDepositedAmount: %v\n",evt.DepositedAmount)
 	Info.Printf("\tPrevRoundReminder: %v\n",evt.PrevRoundReminder)
-
 	Info.Printf("\tAmountPerHolder: %v\n",evt.AmountPerHolder)
 	Info.Printf("}\n")
 
-	storagew.Delete_staking_deposit(evt.EvtId)
+	storagew.Delete_staking_deposit_event(evt.EvtId)
 	storagew.Insert_staking_deposit_event(&evt)
+}
+func proc_reward_sent_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGRewardSent
+	var eth_evt CGRewardSent
+
+	Info.Printf("Processing Rwardevent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := staking_wallet_abi.UnpackIntoInterface(&eth_evt,"RewardSentEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event RewardSentvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.Marketer = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.Amount= eth_evt.Amount.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("RewardSent{\n")
+	Info.Printf("\tMarketer: %v\n",evt.RoundNum)
+	Info.Printf("\tAmount: %v\n",evt.DepositedAmount)
+	Info.Printf("}\n")
+
+	storagew.Delete_reward_sent_event(evt.EvtId)
+	storagew.Insert_reward_sent_event(&evt)
 }
 func proc_cosmic_signature_transfer_event(log *types.Log,elog *EthereumEventLog) {
 
