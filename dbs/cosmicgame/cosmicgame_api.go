@@ -54,7 +54,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	var null_bidders sql.NullInt64
 	query = "SELECT "+
 				"COUNT(*) AS total "+
-			"FROM cg_bidder"
+			"FROM cg_bidder " +
+			"WHERE num_bids > 0 "
 	row = sw.S.Db().QueryRow(query)
 	err=row.Scan(&null_bidders)
 	if null_bidders.Valid  { stats.NumUniqueBidders = uint64(null_bidders.Int64) }
@@ -69,7 +70,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 				"COUNT(*) AS total,"+
 				"SUM(prizes_sum) AS sum_wei,"+
 				"SUM(prizes_sum)/1e18 AS sum_eth "+
-				"FROM cg_winner"
+				"FROM cg_winner " +
+				"WHERE prizes_count > 0"
 	row = sw.S.Db().QueryRow(query)
 	err=row.Scan(
 		&null_winners,
@@ -1403,7 +1405,8 @@ func (sw *SQLStorageWrapper) Get_unique_bidders() []p.CGUniqueBidder {
 				"b.max_bid,"+
 				"b.max_bid/1e18 max_bid_eth "+
 			"FROM "+sw.S.SchemaName()+".cg_bidder b "+
-				"LEFT JOIN address a ON b.bidder_aid=a.address_id "
+				"LEFT JOIN address a ON b.bidder_aid=a.address_id " +
+			"ORDER BY num_bids DESC "
 	rows,err := sw.S.Db().Query(query)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -1439,8 +1442,9 @@ func (sw *SQLStorageWrapper) Get_unique_winners() []p.CGUniqueWinner {
 				"w.max_win_amount/1e18 max_win_eth, "+
 				"w.prizes_sum/1e18 prizes_sum_eth "+
 			"FROM "+sw.S.SchemaName()+".cg_winner w "+
-				"LEFT JOIN address a ON w.winner_aid=a.address_id "
-				"WHERE w.prizes_count>0 " +
+				"LEFT JOIN address a ON w.winner_aid=a.address_id " +
+			"WHERE w.prizes_count > 0 " +
+			"ORDER BY prizes_count DESC "
 	rows,err := sw.S.Db().Query(query)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
