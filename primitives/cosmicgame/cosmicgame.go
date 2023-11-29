@@ -192,6 +192,8 @@ type CGStakingDeposit struct {
 	RoundNum			int64
 	DepositedAmount		string
 	PrevRoundReminder	string
+	Marketer			string
+	Amount				string
 	AmountPerHolder		string
 }
 type CGRewardSent struct {

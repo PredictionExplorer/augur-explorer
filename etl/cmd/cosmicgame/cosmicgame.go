@@ -849,12 +849,12 @@ func proc_reward_sent_event(log *types.Log,elog *EthereumEventLog) {
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.Marketer = common.BytesToAddress(log.Topics[1][12:]).String()
-	evt.Amount= eth_evt.Amount.String()
+	evt.Amount= eth_evt.Amount
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("RewardSent{\n")
-	Info.Printf("\tMarketer: %v\n",evt.RoundNum)
-	Info.Printf("\tAmount: %v\n",evt.DepositedAmount)
+	Info.Printf("\tMarketer: %v\n",evt.Marketer)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("}\n")
 
 	storagew.Delete_reward_sent_event(evt.EvtId)

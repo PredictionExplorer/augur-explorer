@@ -383,7 +383,7 @@ func (sw *SQLStorageWrapper) Insert_staking_deposit_event(evt *p.CGStakingDeposi
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_reward_sent_event(evt *p.CGStakingDeposit) {
+func (sw *SQLStorageWrapper) Insert_reward_sent_event(evt *p.CGRewardSent) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
 	marketer_aid:=sw.S.Lookup_or_create_address(evt.Marketer,evt.BlockNum,evt.TxId)
