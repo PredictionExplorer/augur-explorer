@@ -42,9 +42,11 @@ const (
 	RAFFLE_WITHDRAWAL_EVENT = "49775450da95afb818c4651b894f124d05629f06572a18900bf29db74b04a0d8"
 	RAFFLE_NFT_WINNER		= "0afb73a48ffcc4cf27ecb1889154b910544b89c39c5e5822c431062629134e56"
 	RAFFLE_NFT_CLAIMED		= "2278d2acbf6ac7ebd6ad5d3171672894b0c220903ad9ad7bb45057d368c98040"
-	STAKING_DEPOSIT			= "75d6e5cc6a300aeeb9df0947f3e2d0a5befe2734b052191b923fb1480cbf82d9"
-	REWARD_SENT				= "dceb832c3abeeb39542a70bd553842dc873f15f6a5411c645092a93fef4ef9ba"
 	TRANSFER_EVT			= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+	STAKE_ACTION_EVENT		= "057eba8c4bba00f858e4f586f9c02794abb0df789ef316c741f9073fe2c435db"
+	UNSTAKE_ACTION_EVENT	= "33940a9fc3ee3c9150b29b34ef29ca397b5e1e340425a4f0da0346b5b90766c8"
+	ETH_DEPOSIT_EVENT		= "dc0eacba8b1f88284dca5eec8be23173aefa7206298fe22de43e064b6ccd8418"
+	CLAIM_REWARD_EVENT		= "dde81df5caa033e783e2a39d93e3a8718a7dc27ba95a4757f5433a01f794ec36"
 
 	/// Admin events
 	CHARITY_PERCENTAGE_CHANGED		= "0918b499c15fcb0e087d411d53664cde23577e1aa4a9cbfbdf735ddd1871e7d5"
@@ -70,9 +72,11 @@ var (
 	evt_raffle_nft_winner,_	= hex.DecodeString(RAFFLE_NFT_WINNER)
 	evt_raffle_nft_claimed,_= hex.DecodeString(RAFFLE_NFT_CLAIMED)
 	evt_donated_nft_claimed,_= hex.DecodeString(DONATED_NFT_CLAIMED)
-	evt_staking_deposit,_=	 hex.DecodeString(STAKING_DEPOSIT)
-	evt_reward_sent,_		= hex.DecodeString(REWARD_SENT)
 	evt_transfer,_			= hex.DecodeString(TRANSFER_EVT)
+	evt_stake_action,_		= hex.DecodeString(STAKE_ACTION_EVENT)
+	evt_unstake_action,_	= hex.DecodeString(UNSTAKE_ACTION_EVENT)
+	evt_claim_reward,_		= hex.DecodeString(CLAIM_REWARD_EVENT)
+	evt_eth_deposit,_		= hex.DecodeString(ETH_DEPOSIT_EVENT)
 	evt_charity_percentage_changed,_= hex.DecodeString(CHARITY_PERCENTAGE_CHANGED)
 	evt_prize_percentage_changed,_ = hex.DecodeString(PRIZE_PERCENTAGE_CHANGED)
 	evt_raffle_percentage_changed,_ = hex.DecodeString(RAFFLE_PERCENTAGE_CHANGED)

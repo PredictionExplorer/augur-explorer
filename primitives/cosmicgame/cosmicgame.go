@@ -182,7 +182,7 @@ type CGDonatedNFTClaimed struct {
 	TokenId				string
 	WinnerAddr			string
 }
-type CGStakingDeposit struct {
+type CGStakeAction struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -190,21 +190,50 @@ type CGStakingDeposit struct {
 	LogIndex			int64
 	ContractAddr		string
 	RoundNum			int64
-	DepositedAmount		string
-	PrevRoundReminder	string
-	Marketer			string
-	Amount				string
-	AmountPerHolder		string
+	ActionId			int64
+	TokenId				int64
+	TotalNfts			int64
+	UnstakeTime			int64
+	Staker 				string
 }
-type CGRewardSent struct {
+type CGUnstakeAction struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
 	TxId				int64
 	LogIndex			int64
 	ContractAddr		string
-	Marketer			string
-	Amount				string	
+	RoundNum			int64
+	ActionId			int64
+	TokenId				int64
+	TotalNfts			int64
+	Staker 				string
+}
+type CGEthDeposit struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	RoundNum			int64
+	DepositTime			int64
+	DepositNum			int64
+	NumStakedNfts		int64
+	Amount				string
+	Modulo				string
+}
+type CGClaimReward struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	ActionId			int64
+	DepositId			int64
+	Reward				string	
+	Staker				string
 }
 type CGERC721Transfer struct {
 	EvtId                   int64

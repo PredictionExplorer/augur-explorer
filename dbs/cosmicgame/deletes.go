@@ -149,20 +149,40 @@ func (sw *SQLStorageWrapper) Delete_donated_nft_claimed(evtlog_id int64) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_staking_deposit_event(evtlog_id int64) {
+func (sw *SQLStorageWrapper) Delete_stake_action_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_staking_deposit WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_stake_action WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_reward_sent_event(evtlog_id int64) {
+func (sw *SQLStorageWrapper) Delete_unstake_action_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_reward_sent WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_unstake_action WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Delete_eth_deposit_event(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_eth_deposit WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Delete_claim_reward_event(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_claim_reward WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))

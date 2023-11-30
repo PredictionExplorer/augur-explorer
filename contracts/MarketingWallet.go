@@ -26,6 +26,7 @@ var (
 	_ = common.Big1
 	_ = types.BloomLookup
 	_ = event.NewSubscription
+	_ = abi.ConvertType
 )
 
 // MarketingWalletMetaData contains all meta data concerning the MarketingWallet contract.
@@ -156,11 +157,11 @@ func NewMarketingWalletFilterer(address common.Address, filterer bind.ContractFi
 
 // bindMarketingWallet binds a generic wrapper to an already deployed contract.
 func bindMarketingWallet(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor, filterer bind.ContractFilterer) (*bind.BoundContract, error) {
-	parsed, err := abi.JSON(strings.NewReader(MarketingWalletABI))
+	parsed, err := MarketingWalletMetaData.GetAbi()
 	if err != nil {
 		return nil, err
 	}
-	return bind.NewBoundContract(address, parsed, caller, transactor, filterer), nil
+	return bind.NewBoundContract(address, *parsed, caller, transactor, filterer), nil
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -623,4 +624,3 @@ func (_MarketingWallet *MarketingWalletFilterer) ParseRewardSentEvent(log types.
 	event.Raw = log
 	return event, nil
 }
-

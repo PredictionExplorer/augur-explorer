@@ -358,15 +358,16 @@ func (sw *SQLStorageWrapper) Insert_donated_nft_claimed(evt *p.CGDonatedNFTClaim
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_staking_deposit_event(evt *p.CGStakingDeposit) {
+func (sw *SQLStorageWrapper) Insert_stake_action_event(evt *p.CGStakeAction) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
+	staker_aid:=sw.S.Lookup_or_create_address(evt.Staker,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_staking_deposit(" +
+	query = "INSERT INTO cg_stake_action (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"amount,prev_reminder,amount_per_holder" +
+				"action_id,token_id,total_nfts,unstake_time,staker_aid" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,TO_TIMESTAMP($9),$10"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
@@ -374,25 +375,27 @@ func (sw *SQLStorageWrapper) Insert_staking_deposit_event(evt *p.CGStakingDeposi
 		evt.TxId,
 		evt.TimeStamp,
 		contract_aid,
-		evt.DepositedAmount,
-		evt.PrevRoundReminder,
-		evt.AmountPerHolder,
+		evt.ActionId,
+		evt.TokenId,
+		evt.TotalNfts,
+		evt.UnstakeTime,
+		staker_aid,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_staking_deposit table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_stake_action table: %v\n",err))
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_reward_sent_event(evt *p.CGRewardSent) {
+func (sw *SQLStorageWrapper) Insert_unstake_action_event(evt *p.CGUnstakeAction) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
-	marketer_aid:=sw.S.Lookup_or_create_address(evt.Marketer,evt.BlockNum,evt.TxId)
+	staker_aid:=sw.S.Lookup_or_create_address(evt.Staker,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_reward_sent(" +
+	query = "INSERT INTO cg_unstake_action (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"marketer_aid,amount" +
+				"action_id,token_id,total_nfts,staker_aid" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
@@ -400,8 +403,64 @@ func (sw *SQLStorageWrapper) Insert_reward_sent_event(evt *p.CGRewardSent) {
 		evt.TxId,
 		evt.TimeStamp,
 		contract_aid,
-		marketer_aid,
+		evt.ActionId,
+		evt.TokenId,
+		evt.TotalNfts,
+		staker_aid,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_stake_action table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_eth_deposit(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"deposit_time,deposit_num,num_staked_nfts,amount,modulo" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.DepositTime,
+		evt.DepositNum,
+		evt.NumStakedNfts,
 		evt.Amount,
+		evt.Modulo,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_eth_deposit table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_claim_reward_event(evt *p.CGClaimReward) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
+	staker_aid:=sw.S.Lookup_or_create_address(evt.Staker,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_claim_reward(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"action_id,deposit_id,reward,staker_aid" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$6,$7,$8,$9"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.ActionId,
+		evt.DepositId,
+		evt.Reward,
+		staker_aid,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_reward_sent table: %v\n",err))

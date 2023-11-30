@@ -167,29 +167,63 @@ CREATE TABLE cg_donated_nft_claimed (
 	token_id		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_staking_deposit (
+CREATE TABLE cg_stake_action (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
 	tx_id			BIGINT NOT NULL,
 	time_stamp		TIMESTAMPTZ NOT NULL,
 	contract_aid	BIGINT NOT NULL,
-	round_num		BIGINT NOT NULL,
-	amount			DECIMAL NOT NULL,
-	prev_reminder	DECIMAL NOT NULL,
-	amount_per_holder	DECIMAL NOT NULL,
+	round_num		BIGINT DEFAULT -1,
+	action_id		BIGINT NOT NULL,
+	token_id		BIGINT NOT NULL,
+	total_nfts		BIGINT NOT NULL,
+	stake_time		TIMESTAMPTZ NOT NULL,
+	staker_aid		BIGINT NOT NULL,
 	claimed			BOOLEAN DEFAULT 'F',
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_reward_sent (
+CREATE TABLE cg_unstake_action (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
 	tx_id			BIGINT NOT NULL,
 	time_stamp		TIMESTAMPTZ NOT NULL,
 	contract_aid	BIGINT NOT NULL,
+	round_num		BIGINT DEFAULT -1,
+	action_id		BIGINT NOT NULL,
+	token_id		BIGINT NOT NULL,
+	total_nfts		BIGINT NOT NULL,
+	staker_aid		BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_eth_deposit (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	round_num		BIGINT DEFAULT -1 ,
+	deposit_time	TIMESTAMPTZ NOT NULL,
+	deposit_num		BIGINT NOT NULL,
+	num_staked_nfts	BIGINT NOT NULL,
 	amount			DECIMAL NOT NULL,
-	marketer_aid	BIGINT NOT NULL,
+	modulo			DECIMAL NOT NULL,
+	claimed			BOOLEAN DEFAULT 'F',
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_claim_reward (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	action_id		BIGINT NOT NULL,
+	deposit_id		BIGINT NOT NULL,
+	reward			DECIMAL NOT NULL,
+	staker_aid		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_transfer( -- cosmic signature ERC721 transfer
