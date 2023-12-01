@@ -312,9 +312,14 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	evt.LastBidderAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.RoundNum = log.Topics[2].Big().Int64()
 	evt.BidPrice = eth_evt.BidPrice.String()
+	evt.BidType = 0; // ETH
 	evt.RandomWalkTokenId = eth_evt.RandomWalkNFTId.Int64()
 	evt.ERC20_Value = find_cosmic_token_transfer(evt.EvtId)
 	evt.NumCSTTokens = eth_evt.NumCSTTokens.Int64()
+	if evt.RandomWalkTokenId > -1 {
+		evt.BidType = 1;	// RandomWalk	
+		if evt.NumCSTTokens > 0 { evt.BidType = 1; } // Cosmic Signature Token (ERC20) bid
+	}
 	evt.PrizeTime = eth_evt.PrizeTime.Int64()
 	evt.Message = eth_evt.Message
 
@@ -820,9 +825,9 @@ func proc_stake_action_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.ActionId = log.Topics[1].Big().Int64()
 	evt.TokenId = log.Topics[2].Big().Int64()
+	evt.Staker = common.BytesToAddress(log.Topics[3][12:]).String()
 	evt.TotalNfts = eth_evt.TotalNFTs.Int64()
 	evt.UnstakeTime = eth_evt.UnstakeTime.Int64()
-	evt.Staker = eth_evt.Staker.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("StakeActionEvent{\n")
@@ -860,8 +865,8 @@ func proc_unstake_action_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.ActionId = log.Topics[1].Big().Int64()
 	evt.TokenId = log.Topics[2].Big().Int64()
+	evt.Staker = common.BytesToAddress(log.Topics[3][12:]).String()
 	evt.TotalNfts = eth_evt.TotalNFTs.Int64()
-	evt.Staker = eth_evt.Staker.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("UnstakeActionEvent{\n")
@@ -938,8 +943,8 @@ func proc_claim_reward_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.ActionId = log.Topics[1].Big().Int64()
 	evt.DepositId = log.Topics[2].Big().Int64()
+	evt.Staker = common.BytesToAddress(log.Topics[3][12:]).String()
 	evt.Reward = eth_evt.Reward.String()
-	evt.Staker = eth_evt.Staker.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("ClaimReward{\n")

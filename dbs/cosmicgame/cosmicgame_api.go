@@ -168,7 +168,8 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.CGBidRec {
 				"d.tok_addr, "+
 				"b.msg, "+
 				"b.round_num, "+
-				"b.num_cst_tokens "+
+				"b.num_cst_tokens, "+
+				"b.bid_type "+
 			"FROM "+sw.S.SchemaName()+".cg_bid b "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address ba ON b.bidder_aid=ba.address_id "+
@@ -210,6 +211,7 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.CGBidRec {
 			&rec.Message,
 			&rec.RoundNum,
 			&rec.NumCSTTokens,
+			&rec.BidType,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -327,7 +329,8 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.CGBidRec) {
 				"d.token_uri, "+
 				"b.msg, "+
 				"b.round_num, "+
-				"b.num_cst_tokens "+
+				"b.num_cst_tokens, "+
+				"b.bid_type "+
 			"FROM "+sw.S.SchemaName()+".cg_bid b "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+
@@ -362,6 +365,7 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.CGBidRec) {
 		&rec.Message,
 		&rec.RoundNum,
 		&rec.NumCSTTokens,
+		&rec.BidType,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -478,7 +482,8 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.CGBidRec {
 				"d.token_uri, "+
 				"b.msg, "+
 				"b.round_num. "+
-				"b.num_cst_tokens "+
+				"b.num_cst_tokens, "+
+				"b.bid_type "+
 			"FROM "+sw.S.SchemaName()+".cg_bid b "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+
@@ -521,6 +526,7 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.CGBidRec {
 			&rec.Message,
 			&rec.RoundNum,
 			&rec.NumCSTTokens,
+			&rec.BidType,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -561,7 +567,8 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,l
 				"d.token_uri, "+
 				"b.msg, "+
 				"b.round_num. "+
-				"b.num_cst_Tokens "+
+				"b.num_cst_Tokens, "+
+				"b.bid_type "+
 			"FROM "+sw.S.SchemaName()+".cg_bid b "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address ba ON b.bidder_aid=ba.address_id "+
@@ -603,6 +610,7 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,l
 			&null_token_uri,
 			&rec.Message,
 			&rec.RoundNum,
+			&rec.BidType,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -881,9 +889,10 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"'' AS token_uri,"+
 						"-1 AS winner_index, "+
 						"rd.claimed "+
-					"FROM cg_staking_deposit rd "+
+					"FROM cg_eth_deposit d "+
 						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
-					"WHERE rd.winner_aid=$1 "+
+						"LEFT JOIN cg_claim_reward r ON d.deposit_id=r.deposit_id "+
+					"WHERE (r.staker_aid=$1) AND (r.id IS NULL) "+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +
@@ -2690,6 +2699,57 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_distribution() []p.CGCST
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_random_walk_tokens_in_bids() []p.CGRWalkUsed {
+
+	var query string
+	query = "SELECT "+
+				"b.id,"+
+				"b.evtlog_id,"+
+				"b.block_num,"+
+				"tx.id,"+
+				"tx.tx_hash,"+
+				"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT,"+
+				"b.time_stamp,"+
+				"b.round_num,"+
+				"b.bidder_aid,"+
+				"ba.addr,"+
+				"b.rwalk_nft_id "+
+			"FROM "+sw.S.SchemaName()+".cg_bid b "+
+				"LEFT JOIN transaction tx ON tx.id=b.tx_id "+
+				"LEFT JOIN address ba ON b.bidder_aid=ba.address_id "+
+			"WHERE b.rwalk_nft_id != -1 "+
+			"ORDER BY b.id DESC "
+
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGRWalkUsed,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGRWalkUsed
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.RoundNum,
+			&rec.BidderAid,
+			&rec.BidderAddr,
+			&rec.RWalkTokenId,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
 func (sw *SQLStorageWrapper) Search_token_by_name(name string) []p.CGTokenSearchResult {
 
 	name = "%" + name + "%"
@@ -2945,36 +3005,121 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_transfers_by_user(user_aid int
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_random_walk_tokens_in_bids() []p.CGRWalkUsed {
+func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) []p.CGEthDepositRec {
 
 	var query string
 	query = "SELECT "+
-				"b.id,"+
-				"b.evtlog_id,"+
-				"b.block_num,"+
+				"d.id,"+
+				"d.evtlog_id,"+
+				"d.block_num,"+
 				"tx.id,"+
 				"tx.tx_hash,"+
-				"EXTRACT(EPOCH FROM b.time_stamp)::BIGINT,"+
-				"b.time_stamp,"+
-				"b.round_num,"+
-				"b.bidder_aid,"+
-				"ba.addr,"+
-				"b.rwalk_nft_id "+
-			"FROM "+sw.S.SchemaName()+".cg_bid b "+
-				"LEFT JOIN transaction tx ON tx.id=b.tx_id "+
-				"LEFT JOIN address ba ON b.bidder_aid=ba.address_id "+
-			"WHERE b.rwalk_nft_id != -1 "+
-			"ORDER BY b.id DESC "
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
+				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT,"+
+				"d.deposit_time,"+
+				"d.num_staked_nfts,"+
+				"d.amount,"+
+				"d.amount/1e18,"+
+				"amount/num_staked_nfts,"+
+				"(amount/num_staked_nfts)/1e18, "+
+				"modulo,"+
+				"modulo/1e+18 "+
+			"FROM "+sw.S.SchemaName()+".cg_eth_deposit d "+
+				"LEFT JOIN transaction tx ON tx.id=b.tx_id " +
+				"LEFT JOIN address ba ON b.bidder_aid=ba.address_id " +
+				"LEFT JOIN cg_claim_reward r ON d.deposit_id=r.deposit_id "+
+			"WHERE (r.staker_aid=$1) AND (r.id IS NULL) " +
+			"ORDER BY d.id DESC "
 
-	rows,err := sw.S.Db().Query(query)
+	rows,err := sw.S.Db().Query(query,user_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.CGRWalkUsed,0, 16)
+	records := make([]p.CGEthDepositRec,0, 16)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGRWalkUsed
+		var rec p.CGEthDepositRec
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DepositTimeStamp,
+			&rec.DepositDate,
+			&rec.NumStakedNFTs,
+			&rec.Amount,
+			&rec.AmountEth,
+			&rec.AmountPerHolder,
+			&rec.AmountPerHolderEth,
+			&rec.Modulo,
+			&rec.ModuloF64,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int) []p.CGStakeActionRec {
+
+	var query string
+	query = "("+
+				"SELECT "+
+					"s.id,"+
+					"s.evtlog_id,"+
+					"s.block_num,"+
+					"tx.id,"+
+					"tx.tx_hash,"+
+					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT,"+
+					"s.time_stamp,"+
+					"EXTRACT(EPOCH FROM s.stake_time)::BIGINT AS sts,"+
+					"s.stake_time,"+
+					"s.action_id,"+
+					"s.token_id,"+
+					"s.num_staked_nfts, "+
+					"s.claimed "+
+				"FROM "+sw.S.SchemaName()+".cg_stake_action s "+
+					"LEFT JOIN transaction tx ON tx.id=b.tx_id " +
+				"WHERE (s.staker_aid=$1) " +
+				"ORDER BY s.id DESC " +
+				"OFFSET $2 LIMIT $3 "+
+			") UNION ALL ("+
+				"SELECT "+
+					"s.id,"+
+					"s.evtlog_id,"+
+					"s.block_num,"+
+					"tx.id,"+
+					"tx.tx_hash,"+
+					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT,"+
+					"'' AS time_stamp,"+
+					"0 AS sts,"+
+					"s.stake_time,"+
+					"s.action_id,"+
+					"s.token_id,"+
+					"s.total_nfts, "+
+					"'F' AS claimed "+
+				"FROM "+sw.S.SchemaName()+".cg_unstake_action s "+
+					"LEFT JOIN transaction tx ON tx.id=b.tx_id " +
+				"WHERE (s.staker_aid=$1) " +
+				"ORDER BY s.id DESC " +
+				"OFFSET $2 LIMIT $3 "+
+			")"
+
+	rows,err := sw.S.Db().Query(query,user_aid,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGStakeActionRec,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGStakeActionRec
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,
@@ -2983,10 +3128,11 @@ func (sw *SQLStorageWrapper) Get_random_walk_tokens_in_bids() []p.CGRWalkUsed {
 			&rec.TxHash,
 			&rec.TimeStamp,
 			&rec.DateTime,
-			&rec.RoundNum,
-			&rec.BidderAid,
-			&rec.BidderAddr,
-			&rec.RWalkTokenId,
+			&rec.ActionTimeStamp,
+			&rec.ActionDate,
+			&rec.TokenId,
+			&rec.NumStakedNFTs,
+			&rec.Claimed,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

@@ -37,6 +37,7 @@ type CGBidRec struct {
 	BidPriceEth					float64	// divided by 1e18
 	RWalkNFTId					int64
 	RoundNum					int64
+	BidType						int64
 	NumCSTTokens				int64
 	ERC20_Amount				string
 	ERC20_AmountEth				float64	// divided by 1e18
@@ -350,4 +351,40 @@ type CGRWalkUsed struct {
 	BidderAid					int64
 	BidderAddr					string
 	RWalkTokenId				int64
+}
+type CGEthDepositRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	DepositDate					string
+	DepositTimeStamp			int64
+	NumStakedNFTs				int64
+	Amount						string
+	AmountEth					float64
+	AmountPerHolder				string
+	AmountPerHolderEth			float64
+	Modulo						string
+	ModuloF64					float64
+}
+type CGStakeActionRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	ActionDate					string
+	ActionTimeStamp				int64
+	TokenId						int64
+	NumStakedNFTs				int64
+	AmountPerHolder				string
+	AmountPerHolderEth			float64
+	Modulo						string
+	ModuloF64					float64
+	Claimed						bool
 }

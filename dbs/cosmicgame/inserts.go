@@ -39,8 +39,8 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.CGBidEvent) {
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_bid("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"bidder_aid,rwalk_nft_id,bid_price,erc20_amount,prize_time,msg,round_num,num_cst_tokens"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,TO_TIMESTAMP($10),$11,$12,$13)"
+					"bidder_aid,rwalk_nft_id,bid_price,erc20_amount,prize_time,msg,round_num,bid_type,num_cst_tokens"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,TO_TIMESTAMP($10),$11,$12,$13,$14)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -54,6 +54,7 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.CGBidEvent) {
 		evt.PrizeTime,
 		evt.Message,
 		evt.RoundNum,
+		evt.BidType,
 		evt.NumCSTTokens,
 	)
 	if err != nil {
@@ -365,7 +366,7 @@ func (sw *SQLStorageWrapper) Insert_stake_action_event(evt *p.CGStakeAction) {
 	var query string
 	query = "INSERT INTO cg_stake_action (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,total_nfts,unstake_time,staker_aid" +
+				"action_id,token_id,num_staked_nfts,unstake_time,staker_aid" +
 			") VALUES (" +
 				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,TO_TIMESTAMP($9),$10"+
 			")"
@@ -393,7 +394,7 @@ func (sw *SQLStorageWrapper) Insert_unstake_action_event(evt *p.CGUnstakeAction)
 	var query string
 	query = "INSERT INTO cg_unstake_action (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,total_nfts,staker_aid" +
+				"action_id,token_id,num_staked_nfts,staker_aid" +
 			") VALUES (" +
 				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
 			")"

@@ -40,6 +40,7 @@ type CGBidEvent struct {
 	RandomWalkTokenId	int64
 	PrizeTime			int64
 	RoundNum			int64
+	BidType				int64
 	NumCSTTokens		int64
 	ContractAddr		string
 	LastBidderAddr		string

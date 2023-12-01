@@ -1,0 +1,35 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Unclaimed staking rewards for user {{.UserAddr}}</title>
+</head>
+<body>
+	<h3 class="page_title">Unclaimed staking rewards for user {{.UserAddr}}<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Staked tokens</th>
+		<th class="market_reports">Total deposited</th>
+		<th class="market_reports">Reward per holder</th>
+
+	</tr>
+	{{- range $i, $change := .UnclaimedEthDeposits}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">
+				{{.BlockNum}}
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td style="text-align: right;" title="">{{.NumStakedNFTs}}</td>
+			<td style="text-align: center;" title="">{{.AmountEth}}</td>
+			<td style="text-align: center;" title="">{{.AmountPerHolderEth}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/staking/rewards/to_claim/by_user/:user_addr</br>
+
+	Example: /api/cosmicgame/staking/rewards/to_claim/by_user/{{.UserAddr}}
+</code>
+</body>

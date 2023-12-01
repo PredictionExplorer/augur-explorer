@@ -203,6 +203,7 @@ func set_api_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/api/cosmicgame/raffle/deposits/by_round/:round_num",api_cosmic_game_raffle_deposits_by_round)
 	r.GET("/api/cosmicgame/raffle/nft_winners/list/:offset/:limit",api_cosmic_game_raffle_nft_winners_list)
 	r.GET("/api/cosmicgame/raffle/nft_winners/by_round/:round_num",api_cosmic_game_raffle_nft_winners_by_round)
+	r.GET("/api/cosmicgame/staking/rewards/to_claim/by_user/:user_addr",api_cosmic_game_staking_rewards_to_claim_by_user)
 	r.GET("/api/cosmicgame/time/current",api_cosmic_game_time_current)
 	r.GET("/api/cosmicgame/time/until_prize",api_cosmic_game_time_until_prize)
 }
