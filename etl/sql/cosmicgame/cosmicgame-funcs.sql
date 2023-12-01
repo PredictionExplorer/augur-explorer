@@ -690,8 +690,8 @@ BEGIN
 		WHERE total_tokens_staked > 0;
 	UPDATE cg_stake_stats
 		SET
-			total_reward_amount = (total_reward_amount + (NEW.amount - NEW.modulo))
-			total_unclaimed_reward = (total_unclaimed_reward + (NEW.amount - NEW.modulo))
+			total_reward_amount = (total_reward_amount + (NEW.amount - NEW.modulo)),
+			total_unclaimed_reward = (total_unclaimed_reward + (NEW.amount - NEW.modulo)),
 			num_deposits = (num_deposits + 1),
 			total_modulo = (total_modulo + NEW.modulo)
 		;
@@ -710,7 +710,7 @@ BEGIN
 	UPDATE cg_stake_stats
 		SET 
 			total_reward_amount = (total_reward_amount - (NEW.amount - NEW.modulo)),
-			total_unclaimed_reward = (total_unclaimed_reward - (NEW.amount - NEW.modulo))
+			total_unclaimed_reward = (total_unclaimed_reward - (NEW.amount - NEW.modulo)),
 			num_deposits = (num_deposits - 1),
 			total_modulo = (total_modulo - NEW.modulo)
 		;
@@ -752,7 +752,7 @@ BEGIN
 	UPDATE cg_mint_event SET staked='F' WHERE token_id=NEW.token_id;
 	UPDATE cg_staker
 		SET	total_tokens_staked = (total_tokens_staked - 1),
-			cg_staker SET num_stake_actions = (num_stake_actions - 1)
+			num_stake_actions = (num_stake_actions - 1)
 		WHERE staker_aid=NEW.staker_aid;
 	RETURN NEW;
 END;
