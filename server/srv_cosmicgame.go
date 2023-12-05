@@ -187,6 +187,7 @@ func do_reload_contract_constants() {
 func do_reload_contract_variables() {
 	var copts bind.CallOpts
 	bwcontract,err := NewCosmicGame(cosmic_game_addr,eclient)
+	fmt.Printf("cg contract addr = %v\n",cosmic_game_addr);
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n",err)
 		Error.Printf(err_str)
@@ -1577,5 +1578,30 @@ func cosmic_game_staking_rewards_to_claim_by_user(c *gin.Context) {
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
 		"UnclaimedEthDeposits" : deposits,
+	})
+}
+func cosmic_game_staking_actions_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+	actions := arb_storagew.Get_staking_actions(user_aid,0 ,100000)
+	fmt.Printf("len actions = %v\n",len(actions));
+	c.HTML(http.StatusOK, "cg_staking_actions_by_user.html", gin.H{
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"StakingActions" : actions,
 	})
 }

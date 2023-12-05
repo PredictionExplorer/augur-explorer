@@ -481,7 +481,7 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.CGBidRec {
 				"d.tok_addr, "+
 				"d.token_uri, "+
 				"b.msg, "+
-				"b.round_num. "+
+				"b.round_num, "+
 				"b.num_cst_tokens, "+
 				"b.bid_type "+
 			"FROM "+sw.S.SchemaName()+".cg_bid b "+
@@ -872,27 +872,29 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 					"FROM cg_prize_claim p "+
 						"LEFT JOIN transaction t ON t.id=p.tx_id "+
 					"WHERE p.winner_aid=$1 "+
+					/*
 				") UNION ALL (" +
 					"SELECT "+
 						"4 AS record_type,"+
-						"rd.evtlog_id,"+
-						"EXTRACT(EPOCH FROM rd.time_stamp)::BIGINT AS tstmp, "+
-						"rd.time_stamp AS date_time, "+
-						"rd.block_num,"+
-						"rd.tx_id,"+
+						"d.evtlog_id,"+
+						"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS tstmp, "+
+						"d.time_stamp AS date_time, "+
+						"d.block_num,"+
+						"d.tx_id,"+
 						"t.tx_hash,"+
-						"rd.round_num,"+
-						"rd.amount, "+
-						"rd.amount/1e18 AS amount_eth,"+
+						"d.round_num,"+
+						"d.amount, "+
+						"d.amount/1e18 AS amount_eth,"+
 						"'' AS token_addr, "+
 						"-1 AS token_id,"+
 						"'' AS token_uri,"+
 						"-1 AS winner_index, "+
-						"rd.claimed "+
+						"d.claimed "+
 					"FROM cg_eth_deposit d "+
-						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
+						"LEFT JOIN transaction t ON t.id=d.tx_id "+
 						"LEFT JOIN cg_claim_reward r ON d.deposit_id=r.deposit_id "+
 					"WHERE (r.staker_aid=$1) AND (r.id IS NULL) "+
+					*/
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +
@@ -3071,6 +3073,7 @@ func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int
 	var query string
 	query = "("+
 				"SELECT "+
+					"0 AS action_type,"+
 					"s.id,"+
 					"s.evtlog_id,"+
 					"s.block_num,"+
@@ -3078,34 +3081,35 @@ func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int
 					"tx.tx_hash,"+
 					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT,"+
 					"s.time_stamp,"+
-					"EXTRACT(EPOCH FROM s.stake_time)::BIGINT AS sts,"+
-					"s.stake_time,"+
+					"EXTRACT(EPOCH FROM s.unstake_time)::BIGINT AS usts,"+
+					"s.unstake_time,"+
 					"s.action_id,"+
 					"s.token_id,"+
 					"s.num_staked_nfts, "+
 					"s.claimed "+
 				"FROM "+sw.S.SchemaName()+".cg_stake_action s "+
-					"LEFT JOIN transaction tx ON tx.id=b.tx_id " +
+					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
 				"WHERE (s.staker_aid=$1) " +
 				"ORDER BY s.id DESC " +
 				"OFFSET $2 LIMIT $3 "+
 			") UNION ALL ("+
 				"SELECT "+
+					"1 AS action_type,"+
 					"s.id,"+
 					"s.evtlog_id,"+
 					"s.block_num,"+
 					"tx.id,"+
 					"tx.tx_hash,"+
-					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT,"+
-					"'' AS time_stamp,"+
-					"0 AS sts,"+
-					"s.stake_time,"+
+					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT AS usts,"+
+					"time_stamp,"+
+					"0 AS usts,"+
+					"TO_TIMESTAMP(0) AS unnstake_time,"+
 					"s.action_id,"+
 					"s.token_id,"+
-					"s.total_nfts, "+
+					"s.num_staked_nfts, "+
 					"'F' AS claimed "+
 				"FROM "+sw.S.SchemaName()+".cg_unstake_action s "+
-					"LEFT JOIN transaction tx ON tx.id=b.tx_id " +
+					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
 				"WHERE (s.staker_aid=$1) " +
 				"ORDER BY s.id DESC " +
 				"OFFSET $2 LIMIT $3 "+
@@ -3121,6 +3125,7 @@ func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int
 	for rows.Next() {
 		var rec p.CGStakeActionRec
 		err=rows.Scan(
+			&rec.ActionType,
 			&rec.RecordId,
 			&rec.EvtLogId,
 			&rec.BlockNum,
@@ -3128,8 +3133,9 @@ func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int
 			&rec.TxHash,
 			&rec.TimeStamp,
 			&rec.DateTime,
-			&rec.ActionTimeStamp,
-			&rec.ActionDate,
+			&rec.UnstakeTimeStamp,
+			&rec.UnstakeDate,
+			&rec.ActionId,
 			&rec.TokenId,
 			&rec.NumStakedNFTs,
 			&rec.Claimed,

@@ -22,8 +22,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_contract_addrs() p.CosmicGameContra
 				"charity_wallet_addr, "+
 				"raffle_wallet_addr, "+
 				"random_walk_addr, "+
-				"staking_wallet, "+
-				"marketing_wallet "+
+				"staking_wallet_addr, "+
+				"marketing_wallet_addr "+
 			"FROM "+sw.S.SchemaName()+".cg_contracts"
 	row := sw.S.Db().QueryRow(query)
 	var cosmic_game_addr string

@@ -455,7 +455,8 @@ func get_token_uri(token_id int64,contract_addr common.Address) string {
 		err_str := fmt.Sprintf("Error at get_token_uri() during GetTokenURI() call: %v",err)
 		Info.Printf(err_str)
 		Error.Printf(err_str)
-		os.Exit(1)
+		//os.Exit(1)
+		return ""
 	}
 	return tok_uri
 }
@@ -812,7 +813,7 @@ func proc_stake_action_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := staking_wallet_abi.UnpackIntoInterface(&eth_evt,"StakeAction",log.Data)
+	err := staking_wallet_abi.UnpackIntoInterface(&eth_evt,"StakeActionEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event StakeAction decode error: %v",err)
 		os.Exit(1)
@@ -852,7 +853,7 @@ func proc_unstake_action_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := staking_wallet_abi.UnpackIntoInterface(&eth_evt,"UnstakeAction",log.Data)
+	err := staking_wallet_abi.UnpackIntoInterface(&eth_evt,"UnstakeActionEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event UnstakeAction decode error: %v",err)
 		os.Exit(1)
@@ -930,7 +931,7 @@ func proc_claim_reward_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := staking_wallet_abi.UnpackIntoInterface(&eth_evt,"ClaimRewardvent",log.Data)
+	err := staking_wallet_abi.UnpackIntoInterface(&eth_evt,"ClaimRewardEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event ClaimReward decode error: %v",err)
 		os.Exit(1)

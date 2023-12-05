@@ -422,7 +422,7 @@ func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"deposit_time,deposit_num,num_staked_nfts,amount,modulo" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,TO_TIMESTAMP($6),$7,$8,$9,$10"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
@@ -450,7 +450,7 @@ func (sw *SQLStorageWrapper) Insert_claim_reward_event(evt *p.CGClaimReward) {
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"action_id,deposit_id,reward,staker_aid" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$6,$7,$8,$9"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,

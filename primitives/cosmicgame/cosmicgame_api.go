@@ -371,6 +371,7 @@ type CGEthDepositRec struct {
 	ModuloF64					float64
 }
 type CGStakeActionRec struct {
+	ActionType					int64
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
@@ -378,8 +379,9 @@ type CGStakeActionRec struct {
 	TxHash						string
 	TimeStamp					int64
 	DateTime					string
-	ActionDate					string
-	ActionTimeStamp				int64
+	UnstakeDate					string
+	UnstakeTimeStamp			int64
+	ActionId					int64
 	TokenId						int64
 	NumStakedNFTs				int64
 	AmountPerHolder				string

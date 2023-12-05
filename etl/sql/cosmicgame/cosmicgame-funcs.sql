@@ -554,7 +554,7 @@ BEGIN
 			UPDATE cg_stake_stats SET total_tokens_staked = (total_tokens_staked + 1);
 		END IF;
 		IF NEW.staked = 'F' THEN
-			UPDATE cg_state_stats SET total_tokens_staked = (total_tokens_staked - 1);
+			UPDATE cg_stake_stats SET total_tokens_staked = (total_tokens_staked - 1);
 		END IF;
 	END IF;
 	RETURN NEW;
@@ -670,10 +670,10 @@ CREATE OR REPLACE FUNCTION on_staker_update() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	IF NEW.total_tokens_staked == 0 THEN
+	IF NEW.total_tokens_staked = 0 THEN
 		UPDATE cg_stake_stats SET total_num_stakers = (total_num_stakers - 1);
 	ELSE
-		IF NEW.total_tokens_staked == 1 THEN
+		IF NEW.total_tokens_staked = 1 THEN
 			UPDATE cg_stake_stats SET total_num_stakers = (total_num_stakers + 1);
 		END IF;
 	END IF;

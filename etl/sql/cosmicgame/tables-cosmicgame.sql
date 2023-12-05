@@ -180,7 +180,7 @@ CREATE TABLE cg_stake_action (
 	action_id		BIGINT NOT NULL,
 	token_id		BIGINT NOT NULL,
 	num_staked_nfts	BIGINT NOT NULL,
-	stake_time		TIMESTAMPTZ NOT NULL,
+	unstake_time	TIMESTAMPTZ NOT NULL,
 	staker_aid		BIGINT NOT NULL,
 	claimed			BOOLEAN DEFAULT 'F',
 	UNIQUE(evtlog_id)
