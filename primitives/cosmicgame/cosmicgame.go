@@ -41,7 +41,7 @@ type CGBidEvent struct {
 	PrizeTime			int64
 	RoundNum			int64
 	BidType				int64
-	NumCSTTokens		int64
+	NumCSTTokens		string
 	ContractAddr		string
 	LastBidderAddr		string
 	BidPrice			string

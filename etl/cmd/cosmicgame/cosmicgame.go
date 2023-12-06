@@ -315,10 +315,11 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	evt.BidType = 0; // ETH
 	evt.RandomWalkTokenId = eth_evt.RandomWalkNFTId.Int64()
 	evt.ERC20_Value = find_cosmic_token_transfer(evt.EvtId)
-	evt.NumCSTTokens = eth_evt.NumCSTTokens.Int64()
+	evt.NumCSTTokens = eth_evt.NumCSTTokens.String()
 	if evt.RandomWalkTokenId > -1 {
 		evt.BidType = 1;	// RandomWalk	
-		if evt.NumCSTTokens > 0 { evt.BidType = 1; } // Cosmic Signature Token (ERC20) bid
+	} else {
+		if evt.NumCSTTokens != "-1" { evt.BidType = 2; } // Cosmic Signature Token (ERC20) bid
 	}
 	evt.PrizeTime = eth_evt.PrizeTime.Int64()
 	evt.Message = eth_evt.Message
@@ -328,6 +329,7 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tLastBidder: %v\n",evt.LastBidderAddr)
 	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
 	Info.Printf("\tBidPrice: %v\n",evt.BidPrice)
+	Info.Printf("\tNumCSTTokens: %v\n",evt.NumCSTTokens);
 	Info.Printf("\tRandomWalkTokenId: %v\n",evt.RandomWalkTokenId)
 	Info.Printf("\tPrizeTime: %v\n",evt.PrizeTime)
 	Info.Printf("\tMessage: %v\n",evt.Message)

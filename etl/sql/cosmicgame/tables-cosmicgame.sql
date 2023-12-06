@@ -23,7 +23,7 @@ CREATE TABLE cg_bid (
 	rwalk_nft_id	BIGINT NOT NULL,	--token_id of RandomWalk, if present
 	round_num		BIGINT NOT NULL,
 	bid_type		SMALLINT NOT NULL,  -- ETH, RandomWalk, CST
-	num_cst_tokens	BIGINT NOT NULL,
+	num_cst_tokens	DECIMAL NOT NULL,
 	prize_time		TIMESTAMPTZ NOT NULL,
 	bid_price		DECIMAL NOT NULL,
 	erc20_amount	DECIMAL DEFAULT 0,	-- amount of CosmicSignatureToken minted in ERC20
@@ -206,7 +206,7 @@ CREATE TABLE cg_eth_deposit (
 	tx_id			BIGINT NOT NULL,
 	time_stamp		TIMESTAMPTZ NOT NULL,
 	contract_aid	BIGINT NOT NULL,
-	round_num		BIGINT DEFAULT -1 ,
+	round_num		BIGINT DEFAULT -1 ,-- this is the same as deposit_num, so it is currently discontinued
 	deposit_time	TIMESTAMPTZ NOT NULL,
 	deposit_num		BIGINT NOT NULL,
 	num_staked_nfts	BIGINT NOT NULL,

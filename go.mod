@@ -11,10 +11,11 @@ require (
 	github.com/aristanetworks/goarista v0.0.0-20200521140103-6c3304613b30 // indirect
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/elastic/gosigar v0.10.5 // indirect
-	github.com/ethereum/go-ethereum v1.13.5
+	//	github.com/ethereum/go-ethereum v1.13.5
+	github.com/ethereum/go-ethereum v1.12.2
 	github.com/febriliankr/whatsapp-cloud-api v1.0.8 // indirect
 	github.com/gin-gonic/autotls v0.0.3
-	github.com/gin-gonic/gin v1.7.7
+	github.com/gin-gonic/gin v1.8.1
 	github.com/gomodule/oauth1 v0.1.0 // indirect
 	github.com/howeyc/fsnotify v0.9.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect

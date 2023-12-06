@@ -90,16 +90,20 @@ async function main() {
   let donationAmount = hre.ethers.utils.parseEther('10');
   await cosmicGame.donate({value: donationAmount});
 
-  let bidPrice = await cosmicGame.getBidPrice();
   let prizeTime = await cosmicGame.timeUntilPrize();
   console.log("Donation complete");
 
-  await cosmicGame.connect(addr1).bid("bid 1",-1,{value: bidPrice.add(1000)}); // this works
   const contractBalance = await ethers.provider.getBalance(cosmicGame.address);
+  let bidPrice = await cosmicGame.getBidPrice();
+  await cosmicGame.connect(addr1).bid("bid 1",-1,{value: bidPrice.add(1000)}); // this works
+  bidPrice = await cosmicGame.getBidPrice();
+  await cosmicGame.connect(addr1).bid("bid 1",-1,{value: bidPrice.add(1000)}); // this works
 
   let nanoSecondsExtra = await cosmicGame.nanoSecondsExtra();
   prizeTime = await cosmicGame.timeUntilPrize();
 
+  bidPrice = await cosmicGame.getBidPrice();
+  await cosmicGame.connect(addr1).bid("bid 2",-1,{value: bidPrice});
   bidPrice = await cosmicGame.getBidPrice();
   await cosmicGame.connect(addr1).bid("bid 2",-1,{value: bidPrice});
   prizeTime = await cosmicGame.timeUntilPrize();
@@ -109,10 +113,16 @@ async function main() {
 
   bidPrice = await cosmicGame.getBidPrice();
   await cosmicGame.connect(addr3).bid("bid 3",-1,{value: bidPrice});
+  bidPrice = await cosmicGame.getBidPrice();
+  await cosmicGame.connect(addr3).bid("bid 3",-1,{value: bidPrice});
 
   bidPrice = await cosmicGame.getBidPrice();
   await cosmicGame.connect(addr4).bid("",-1,{value: bidPrice});
+  bidPrice = await cosmicGame.getBidPrice();
+  await cosmicGame.connect(addr4).bid("",-1,{value: bidPrice});
 
+  bidPrice = await cosmicGame.getBidPrice();
+  await cosmicGame.connect(addr5).bid("",-1,{value: bidPrice});
   bidPrice = await cosmicGame.getBidPrice();
   await cosmicGame.connect(addr5).bid("",-1,{value: bidPrice});
 
@@ -248,6 +258,22 @@ async function main() {
       }
   } 
   await ethers.provider.send("evm_mine");	// mine empty block as spacing
+
+  for (let i =0; i<ts.toNumber(); i++) {
+    let ownr = await cosmicSignature.ownerOf(i)
+	let owner_signer = cosmicGame.provider.getSigner(ownr);
+    await stakingWallet.connect(owner_signer).stake(i);
+  }
+
+  await cosmicToken.connect(addr1).approve(cosmicGame.address,hre.ethers.utils.parseEther('10000000'));
+  await cosmicToken.connect(addr2).approve(cosmicGame.address,hre.ethers.utils.parseEther('10000000'));
+  await cosmicToken.connect(addr3).approve(cosmicGame.address,hre.ethers.utils.parseEther('10000000'));
+  await cosmicToken.connect(addr4).approve(cosmicGame.address,hre.ethers.utils.parseEther('10000000'));
+  await cosmicGame.connect(addr1).bidWithCST("CST bid addr1")
+  prizeTime = await cosmicGame.timeUntilPrize();
+  await ethers.provider.send("evm_increaseTime", [prizeTime.toNumber()]);
+  await ethers.provider.send("evm_mine");
+  tx = await cosmicGame.connect(addr1).claimPrize({gasLimit:3000000});
 }
 
 main()

@@ -169,6 +169,7 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.CGBidRec {
 				"b.msg, "+
 				"b.round_num, "+
 				"b.num_cst_tokens, "+
+				"b.num_cst_tokens/1e18, "+
 				"b.bid_type "+
 			"FROM "+sw.S.SchemaName()+".cg_bid b "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
@@ -180,7 +181,6 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.CGBidRec {
 				") d ON b.id=d.bid_id "+
 			"ORDER BY b.id DESC "+
 			"OFFSET $1 LIMIT $2"
-	fmt.Printf("%v",query)
 	rows,err := sw.S.Db().Query(query,offset,limit)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -211,6 +211,7 @@ func (sw *SQLStorageWrapper) Get_bids(offset,limit int) []p.CGBidRec {
 			&rec.Message,
 			&rec.RoundNum,
 			&rec.NumCSTTokens,
+			&rec.NumCSTTokensEth,
 			&rec.BidType,
 		)
 		if err != nil {
@@ -330,6 +331,7 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.CGBidRec) {
 				"b.msg, "+
 				"b.round_num, "+
 				"b.num_cst_tokens, "+
+				"b.num_cst_tokens/1e18, "+
 				"b.bid_type "+
 			"FROM "+sw.S.SchemaName()+".cg_bid b "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
@@ -365,6 +367,7 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.CGBidRec) {
 		&rec.Message,
 		&rec.RoundNum,
 		&rec.NumCSTTokens,
+		&rec.NumCSTTokensEth,
 		&rec.BidType,
 	)
 	if (err!=nil) {
@@ -483,6 +486,7 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.CGBidRec {
 				"b.msg, "+
 				"b.round_num, "+
 				"b.num_cst_tokens, "+
+				"b.num_cst_tokens/1e18, "+
 				"b.bid_type "+
 			"FROM "+sw.S.SchemaName()+".cg_bid b "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
@@ -526,6 +530,7 @@ func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.CGBidRec {
 			&rec.Message,
 			&rec.RoundNum,
 			&rec.NumCSTTokens,
+			&rec.NumCSTTokensEth,
 			&rec.BidType,
 		)
 		if err != nil {
@@ -567,7 +572,8 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,l
 				"d.token_uri, "+
 				"b.msg, "+
 				"b.round_num. "+
-				"b.num_cst_Tokens, "+
+				"b.num_cst_tokens, "+
+				"b.num_cst_tokens/1e18, "+
 				"b.bid_type "+
 			"FROM "+sw.S.SchemaName()+".cg_bid b "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction t ON t.id=tx_id "+
@@ -610,6 +616,8 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,l
 			&null_token_uri,
 			&rec.Message,
 			&rec.RoundNum,
+			&rec.NumCSTTokens,
+			&rec.NumCSTTokensEth,
 			&rec.BidType,
 		)
 		if err != nil {
@@ -766,7 +774,6 @@ func (sw *SQLStorageWrapper) Get_unclaimed_raffle_eth_deposits(winner_aid int64,
 		if null_date.Valid { rec.ClaimDateTime = null_date.String }
 		records = append(records,rec)
 	}
-	fmt.Printf("len records=%v\n",len(records));
 	return records
 }
 func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,limit int) []p.CGRaffleHistory {
@@ -872,7 +879,6 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 					"FROM cg_prize_claim p "+
 						"LEFT JOIN transaction t ON t.id=p.tx_id "+
 					"WHERE p.winner_aid=$1 "+
-					/*
 				") UNION ALL (" +
 					"SELECT "+
 						"4 AS record_type,"+
@@ -882,19 +888,18 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"d.block_num,"+
 						"d.tx_id,"+
 						"t.tx_hash,"+
-						"d.round_num,"+
-						"d.amount, "+
-						"d.amount/1e18 AS amount_eth,"+
+						"d.deposit_num AS round_num,"+
+						"r.reward, "+
+						"r.reward/1e18 AS amount_eth,"+
 						"'' AS token_addr, "+
 						"-1 AS token_id,"+
 						"'' AS token_uri,"+
 						"-1 AS winner_index, "+
-						"d.claimed "+
+						"'T' AS claimed "+
 					"FROM cg_eth_deposit d "+
 						"LEFT JOIN transaction t ON t.id=d.tx_id "+
-						"LEFT JOIN cg_claim_reward r ON d.deposit_id=r.deposit_id "+
-					"WHERE (r.staker_aid=$1) AND (r.id IS NULL) "+
-					*/
+						"LEFT JOIN cg_claim_reward r ON d.deposit_num=r.deposit_id "+
+					"WHERE (r.staker_aid=$1) AND (r.id IS NOT NULL) "+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +
@@ -1047,6 +1052,30 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 					"FROM cg_prize_claim p "+
 						"LEFT JOIN transaction t ON t.id=p.tx_id "+
 						"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+				") UNION ALL (" +
+					"SELECT "+
+						"4 AS record_type,"+
+						"d.evtlog_id,"+
+						"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS tstmp, "+
+						"d.time_stamp AS date_time, "+
+						"d.block_num,"+
+						"d.tx_id,"+
+						"t.tx_hash,"+
+						"d.deposit_num AS round_num,"+
+						"r.reward, "+
+						"r.reward/1e18 AS amount_eth,"+
+						"'' AS token_addr, "+
+						"-1 AS token_id,"+
+						"'' AS token_uri,"+
+						"-1 AS winner_index, "+
+						"'T' AS claimed, "+
+						"wa.addr winner_addr,"+
+						"r.staker_aid "+
+					"FROM cg_eth_deposit d "+
+						"LEFT JOIN transaction t ON t.id=d.tx_id "+
+						"LEFT JOIN cg_claim_reward r ON d.deposit_num=r.deposit_id "+
+						"LEFT JOIN address wa ON r.staker_aid=wa.address_id "+
+					"WHERE (r.id IS NOT NULL) "+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +
@@ -2540,7 +2569,6 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 		os.Exit(1)
 	}
 	if null_prize_num.Valid { rec.RecordType = 3 } else {rec.RecordType = 1 }
-	fmt.Printf("record type = %v\n",rec.RecordType);
 	return true,rec
 }
 func (sw *SQLStorageWrapper) Get_cosmic_signature_token_name_history(token_id int64) []p.CGTokenName {
@@ -3028,9 +3056,8 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 				"modulo,"+
 				"modulo/1e+18 "+
 			"FROM "+sw.S.SchemaName()+".cg_eth_deposit d "+
-				"LEFT JOIN transaction tx ON tx.id=b.tx_id " +
-				"LEFT JOIN address ba ON b.bidder_aid=ba.address_id " +
-				"LEFT JOIN cg_claim_reward r ON d.deposit_id=r.deposit_id "+
+				"LEFT JOIN transaction tx ON tx.id=d.tx_id " +
+				"LEFT JOIN cg_claim_reward r ON d.deposit_num=r.deposit_id "+
 			"WHERE (r.staker_aid=$1) AND (r.id IS NULL) " +
 			"ORDER BY d.id DESC "
 
@@ -3050,6 +3077,7 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 			&rec.TxId,
 			&rec.TxHash,
 			&rec.TimeStamp,
+			&rec.DateTime,
 			&rec.DepositTimeStamp,
 			&rec.DepositDate,
 			&rec.NumStakedNFTs,

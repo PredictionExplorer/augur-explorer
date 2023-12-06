@@ -187,7 +187,6 @@ func do_reload_contract_constants() {
 func do_reload_contract_variables() {
 	var copts bind.CallOpts
 	bwcontract,err := NewCosmicGame(cosmic_game_addr,eclient)
-	fmt.Printf("cg contract addr = %v\n",cosmic_game_addr);
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n",err)
 		Error.Printf(err_str)
@@ -1574,6 +1573,7 @@ func cosmic_game_staking_rewards_to_claim_by_user(c *gin.Context) {
 		return
 	}
 	deposits := arb_storagew.Get_staking_rewards_to_be_claimed(user_aid)
+	fmt.Printf("len(deposits)=%v\n",len(deposits));
 	c.HTML(http.StatusOK, "cg_staking_rewards_to_be_claimed_by_user.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
