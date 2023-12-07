@@ -571,7 +571,7 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,l
 				"d.tok_addr, "+
 				"d.token_uri, "+
 				"b.msg, "+
-				"b.round_num. "+
+				"b.round_num, "+
 				"b.num_cst_tokens, "+
 				"b.num_cst_tokens/1e18, "+
 				"b.bid_type "+

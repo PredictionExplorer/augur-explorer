@@ -206,7 +206,7 @@ CREATE TABLE cg_eth_deposit (
 	tx_id			BIGINT NOT NULL,
 	time_stamp		TIMESTAMPTZ NOT NULL,
 	contract_aid	BIGINT NOT NULL,
-	round_num		BIGINT DEFAULT -1 ,-- this is the same as deposit_num, so it is currently discontinued
+	round_num		BIGINT NOT NULL ,-- this is NOT the same as deposit_num, if there are no stakers, deposit_num isn't incremented (also, deposit_id begins at roundNum = 1)
 	deposit_time	TIMESTAMPTZ NOT NULL,
 	deposit_num		BIGINT NOT NULL,
 	num_staked_nfts	BIGINT NOT NULL,
@@ -367,7 +367,9 @@ CREATE TABLE cg_stake_stats ( -- gloal staking statistics (StakinWallet)
 	total_unclaimed_reward	DECIMAL DEFAULT 0,
 	total_num_stakers		BIGINT DEFAULT 0,
 	num_deposits			BIGINT DEFAULT 0,
-	total_modulo			DECIMAL DEFAULT 0
+	total_modulo			DECIMAL DEFAULT 0,
+	num_charity_deposits	BIGINT DEFAULT 0,
+	total_charity_amount	DECIMAL DEFAULT 0
 );
 CREATE TABLE cg_contracts (
 	cosmic_game_addr		TEXT NOT NULL,
@@ -384,3 +386,4 @@ CREATE TABLE cg_proc_status (
 	last_evt_id             BIGINT DEFAULT 0
 );
 INSERT INTO cg_glob_stats DEFAULT VALUES;
+INSERT INTO cg_stake_stats DEFAULT VALUES;

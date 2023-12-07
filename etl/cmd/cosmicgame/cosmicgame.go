@@ -806,6 +806,7 @@ func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_stake_action_event(log *types.Log,elog *EthereumEventLog) {
 
+	os.Exit(1)
 	var evt CGStakeAction
 	var eth_evt StakingWalletStakeActionEvent
 
@@ -850,7 +851,6 @@ func proc_unstake_action_event(log *types.Log,elog *EthereumEventLog) {
 	var eth_evt StakingWalletUnstakeActionEvent
 
 	Info.Printf("Processing UnstakeAction event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-
 	if !bytes.Equal(log.Address.Bytes(),staking_wallet_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
@@ -881,6 +881,9 @@ func proc_unstake_action_event(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Delete_unstake_action_event(evt.EvtId)
 	storagew.Insert_unstake_action_event(&evt)
+	/*if evt.BlockNum >87 {
+		os.Exit(1);
+	}*/
 }
 func proc_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -909,18 +912,31 @@ func proc_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	evt.NumStakedNfts = eth_evt.NumStakedNFTs.Int64()
 	evt.Amount = eth_evt.Amount.String()
 	evt.Modulo = eth_evt.Modulo.String()
+	evt.RoundNum = find_prize_num(evt.TxId)
+	if evt.RoundNum == -1 {
+		Error.Printf("Failed to gather round_num variable")
+		Info.Printf("Failed to gather round_num variable")
+		os.Exit(1)
+	}
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("EthDepositEvent{\n")
 	Info.Printf("\tDepositTime: %v\n",evt.DepositTime)
 	Info.Printf("\tDepositNum: %v\n",evt.DepositNum)
+	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
 	Info.Printf("\tNumStakedNFTs: %v\n",evt.NumStakedNfts)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("\tModulo: %v\n",evt.Modulo)
 	Info.Printf("}\n")
-
+/*
+	if evt.BlockNum ==127 {
+		os.Exit(1)
+	}*/
 	storagew.Delete_eth_deposit_event(evt.EvtId)
 	storagew.Insert_eth_deposit_event(&evt)
+/*	if evt.BlockNum > 56 {
+		os.Exit(1)
+	}*/
 }
 func proc_claim_reward_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -959,6 +975,9 @@ func proc_claim_reward_event(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Delete_claim_reward_event(evt.EvtId)
 	storagew.Insert_claim_reward_event(&evt)
+	/*if evt.BlockNum >110 {
+		os.Exit(1);
+	}*/
 }
 func proc_cosmic_signature_transfer_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -1207,9 +1226,6 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_unstake_action) {
 		proc_unstake_action_event(log,evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_claim_reward) {
-		proc_claim_reward_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_eth_deposit) {
 		proc_eth_deposit_event(log,evtlog)

@@ -671,10 +671,14 @@ DECLARE
 BEGIN
 
 	IF NEW.total_tokens_staked = 0 THEN
-		UPDATE cg_stake_stats SET total_num_stakers = (total_num_stakers - 1);
+		IF OLD.total_tokens_staked = 1 THEN
+			UPDATE cg_stake_stats SET total_num_stakers = (total_num_stakers - 1);
+		END IF;
 	ELSE
 		IF NEW.total_tokens_staked = 1 THEN
-			UPDATE cg_stake_stats SET total_num_stakers = (total_num_stakers + 1);
+			IF OLD.total_tokens_staked = 0 THEN
+				UPDATE cg_stake_stats SET total_num_stakers = (total_num_stakers + 1);
+			END IF;
 		END IF;
 	END IF;
 	RETURN NEW;
@@ -682,19 +686,31 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_eth_deposit_insert() RETURNS trigger AS  $$
 DECLARE
-	v_amount_per_staker DECIMAL;
+	v_amount_per_token DECIMAL;
+	v_mod DECIMAL;
 BEGIN
 
-	v_amount_per_staker := (NEW.amount - NEW.modulo) / NEW.num_staked_nfts;
-	UPDATE cg_staker SET total_reward = (total_reward + v_amount_per_staker)
-		WHERE total_tokens_staked > 0;
-	UPDATE cg_stake_stats
-		SET
-			total_reward_amount = (total_reward_amount + (NEW.amount - NEW.modulo)),
-			total_unclaimed_reward = (total_unclaimed_reward + (NEW.amount - NEW.modulo)),
+	IF NEW.num_staked_nfts > 0 THEN
+		v_mod := MOD(NEW.amount,NEW.num_staked_nfts);
+		v_amount_per_token := (NEW.amount - v_mod) / NEW.num_staked_nfts;
+		UPDATE cg_staker
+			SET total_reward = (total_reward + (v_amount_per_token*total_tokens_staked)),
+				unclaimed_reward = (unclaimed_reward + (v_amount_per_token*total_tokens_staked))
+			WHERE total_tokens_staked > 0;
+		UPDATE cg_stake_stats
+			SET
+				total_reward_amount = (total_reward_amount + (NEW.amount - v_mod)),
+				total_unclaimed_reward = (total_unclaimed_reward + (NEW.amount - v_mod)),
+				num_deposits = (num_deposits + 1),
+				total_modulo = (total_modulo + v_mod)
+			;
+	ELSE
+		UPDATE cg_stake_stats SET
 			num_deposits = (num_deposits + 1),
-			total_modulo = (total_modulo + NEW.modulo)
+			total_charity_amount = (total_charity_amount + NEW.amount),
+			num_charity_deposits = (num_charity_deposits + 1)
 		;
+	END IF;
 
 	RETURN NEW;
 END;
@@ -702,18 +718,30 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_eth_deposit_delete() RETURNS trigger AS  $$
 DECLARE
 	v_amount_per_staker DECIMAL;
+	v_mod DECIMAL;
 BEGIN
 
-	v_amount_per_staker := (OLD.amount - OLD.modulo) / OLD.num_staked_nfts;
-	UPDATE cg_staker SET total_reward = (total_reward - v_amount_per_staker)
-		WHERE total_tokens_staked > 0;
-	UPDATE cg_stake_stats
-		SET 
-			total_reward_amount = (total_reward_amount - (NEW.amount - NEW.modulo)),
-			total_unclaimed_reward = (total_unclaimed_reward - (NEW.amount - NEW.modulo)),
+	IF OLD.num_staked_nfts > 0 THEN
+		v_mod := MOD(OLD.amount,OLD.num_staked_nfts);
+		v_amount_per_staker := (OLD.amount - v_mod) / OLD.num_staked_nfts;
+		UPDATE cg_staker
+			SET total_reward = (total_reward -  (v_amount_per_token*total_tokens_staked)),
+				unclaimed_reward = (unclaimed_reward -  (v_amount_per_token*total_tokens_staked))
+			WHERE total_tokens_staked > 0;
+		UPDATE cg_stake_stats
+			SET 
+				total_reward_amount = (total_reward_amount - (OLD.amount - v_mod)),
+				total_unclaimed_reward = (total_unclaimed_reward - (OLD.amount - v_mod)),
+				num_deposits = (num_deposits - 1),
+				total_modulo = (total_modulo - v_mod)
+			;
+	ELSE   
+		UPDATE cg_stake_stats SET
 			num_deposits = (num_deposits - 1),
-			total_modulo = (total_modulo - NEW.modulo)
+			total_charity_amount = (total_charity_amount - OLD.amount),
+			num_charity_deposits = (num_charity_deposits - 1)
 		;
+	END IF;
 
 	RETURN OLD;
 END;
@@ -736,9 +764,9 @@ DECLARE
 BEGIN
 
 	UPDATE cg_stake_stats
-		SET total_unclaimed_reward = (total_unclaimed_reward + NEW.reward);
+		SET total_unclaimed_reward = (total_unclaimed_reward + OLD.reward);
 	UPDATE cg_staker
-		SET unclaimed_reward = (unclaimed_reward - NEW.reward)
+		SET unclaimed_reward = (unclaimed_reward + OLD.reward)
 		WHERE staker_aid=OLD.staker_aid;
 
 	RETURN OLD;
@@ -752,7 +780,7 @@ BEGIN
 	UPDATE cg_mint_event SET staked='F' WHERE token_id=NEW.token_id;
 	UPDATE cg_staker
 		SET	total_tokens_staked = (total_tokens_staked - 1),
-			num_stake_actions = (num_stake_actions - 1)
+			num_unstake_actions = (num_unstake_actions + 1)
 		WHERE staker_aid=NEW.staker_aid;
 	RETURN NEW;
 END;
@@ -764,8 +792,8 @@ BEGIN
 	UPDATE cg_mint_event SET staked='T' WHERE token_id=OLD.token_id;
 	UPDATE cg_staker
 		SET total_tokens_staked = (total_tokens_staked + 1),
-			num_stake_actions = (num_stake_actions + 1)
-		WHERE staker_aid=NEW.staker_aid;
+			num_unstake_actions = (num_unstake_actions - 1)
+		WHERE staker_aid=OLD.staker_aid;
 
 	RETURN OLD;
 END;
