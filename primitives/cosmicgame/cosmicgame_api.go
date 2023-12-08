@@ -69,6 +69,14 @@ type CGPrizeRec struct {
 	RaffleNFTWinners			[]CGRaffleNFTWinnerRec
 	RaffleETHDeposits			[]CGRaffleDepositRec
 }
+type UserStakingInfo struct {
+	TotalTokensStaked			int64
+	TotalNumStakeActions		int64
+	TotalReward					string
+	TotalRewardEth				float64
+	UnclaimedReward				string
+	UnclaimedRewardEth			float64
+}
 type CGUserInfo struct {
 	AddressId					int64
 	Address						string
@@ -85,6 +93,7 @@ type CGUserInfo struct {
 	TotalCSTokensWon			int64	// prizes + raffles
 	CosmicTokenNumTransfers		int64
 	CosmicSignatureNumTransfers	int64
+	StakingStatistics		UserStakingInfo
 }
 type CGCharityDonation struct {
 	EvtLogId					int64

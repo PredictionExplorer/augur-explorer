@@ -139,14 +139,24 @@ async function main() {
   let prizeAmount2 = await cosmicGame.prizeAmount();
   let expectedprizeAmount = prizeAmount.sub(charityAmount).div(2);
 
+  let topic_sig = stakingWallet.interface.getEventTopic("StakeActionEvent");
+  let max_ts = 0;
   let ts = await cosmicSignature.totalSupply();
   let rn = await cosmicGame.roundNum();
   for (let i =0; i<ts.toNumber(); i++) {
     let ownr = await cosmicSignature.ownerOf(i)
 	let owner_signer = cosmicGame.provider.getSigner(ownr);
     await cosmicSignature.connect(owner_signer).setApprovalForAll(stakingWallet.address, true);
-    await stakingWallet.connect(owner_signer).stake(i);
+    tx = await stakingWallet.connect(owner_signer).stake(i);
+    receipt = await tx.wait();
+    log = receipt.logs.find(x=>x.topics.indexOf(topic_sig)>=0);
+    parsed_log = stakingWallet.interface.parseLog(log);
+    if (max_ts < parsed_log.args.unstakeTime.toNumber()) {
+		max_ts = parsed_log.args.unstakeTime.toNumber();
+		console.log("max ts changed to "+max_ts)
+	}
   }
+  console.log("max ts after loop = "+max_ts);
 
   bidPrice = await cosmicGame.getBidPrice();
   await cosmicGame.connect(addr1).bid("bid 4",-1,{value: bidPrice});
@@ -166,7 +176,7 @@ async function main() {
   await ethers.provider.send("evm_increaseTime", [prizeTime.toNumber()]);
   tx = await cosmicGame.connect(addr1).claimPrize({gasLimit:3000000});
   receipt = await tx.wait();
-  let topic_sig = cosmicSignature.interface.getEventTopic("MintEvent");
+  topic_sig = cosmicSignature.interface.getEventTopic("MintEvent");
   log = receipt.logs.find(x=>x.topics.indexOf(topic_sig)>=0);
   parsed_log = cosmicSignature.interface.parseLog(log);
   token_id = parsed_log.args.tokenId;
@@ -235,7 +245,7 @@ async function main() {
   await marketingWallet.send(hre.ethers.utils.parseEther('7'),addr1.address);
   await marketingWallet.send(hre.ethers.utils.parseEther('5'),addr2.address);
  
-  await ethers.provider.send("evm_increaseTime", [prizeTime.add(1000000000).toNumber()]);
+  await ethers.provider.send("evm_setNextBlockTimestamp", [max_ts]);
   await ethers.provider.send("evm_mine");
   let num_actions;
   num_actions = await stakingWallet.numStakeActions();

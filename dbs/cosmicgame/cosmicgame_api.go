@@ -1134,13 +1134,20 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 				"p.unclaimed_nfts, "+
 				"p.tokens_count, "+
 				"trs.erc20_num_transfers, "+
-				"trs.erc721_num_transfers "+
+				"trs.erc721_num_transfers, "+
+				"st.total_tokens_staked,"+
+				"st.num_stake_actions,"+
+				"total_reward,"+
+				"total_reward/1e18,"+
+				"unclaimed_reward,"+
+				"unclaimed_reward/1e18 "+
 			"FROM address a "+
 				"LEFT JOIN cg_bidder b ON b.bidder_aid=a.address_id "+
 				"LEFT JOIN cg_winner p ON p.winner_aid=a.address_id "+
 				"LEFT JOIN cg_raffle_winner_stats rw ON rw.winner_aid=a.address_id "+
 				"LEFT JOIN cg_raffle_nft_winner_stats rn ON rn.winner_aid=a.address_id "+
 				"LEFT JOIN cg_transfer_stats trs ON trs.user_aid=a.address_id "+
+				"LEFT JOIN cg_staker st ON st.staker_aid=a.address_id "+
 			"WHERE a.address_id=$1"
 
 	var rec p.CGUserInfo
@@ -1150,6 +1157,11 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 	var null_raffles_count,null_raffle_nft_won sql.NullInt64
 	var null_unclaimed_nfts,null_total_tokens sql.NullInt64
 	var null_erc20_transfs,null_erc721_transfs sql.NullInt64
+	var null_total_tokens_staked,null_num_stake_actions sql.NullInt64
+	var null_total_reward,null_unclaimed_reward sql.NullString
+	var null_total_reward_eth,null_unclaimed_reward_eth sql.NullFloat64
+
+
 	row := sw.S.Db().QueryRow(query,user_aid)
 	var err error
 	err=row.Scan(
@@ -1167,6 +1179,12 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 		&null_total_tokens,
 		&null_erc20_transfs,
 		&null_erc721_transfs,
+		&null_total_tokens_staked,
+		&null_num_stake_actions,
+		&null_total_reward,
+		&null_total_reward_eth,
+		&null_unclaimed_reward,
+		&null_unclaimed_reward_eth,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -1187,6 +1205,13 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 	if null_total_tokens.Valid { rec.TotalCSTokensWon= null_total_tokens.Int64 }
 	if null_erc20_transfs.Valid { rec.CosmicTokenNumTransfers = null_erc20_transfs.Int64 }
 	if null_erc721_transfs.Valid { rec.CosmicSignatureNumTransfers = null_erc721_transfs.Int64 }
+	if null_total_tokens_staked.Valid { rec.StakingStatistics.TotalTokensStaked = null_total_tokens_staked.Int64 }
+	if null_num_stake_actions.Valid { rec.StakingStatistics.TotalNumStakeActions = null_num_stake_actions.Int64 }
+	if null_total_reward.Valid { rec.StakingStatistics.TotalReward = null_total_reward.String }
+	if null_total_reward_eth.Valid { rec.StakingStatistics.TotalRewardEth = null_total_reward_eth.Float64 }
+	if null_unclaimed_reward.Valid { rec.StakingStatistics.UnclaimedReward = null_unclaimed_reward.String }
+	if null_unclaimed_reward_eth.Valid { rec.StakingStatistics.UnclaimedRewardEth = null_unclaimed_reward_eth.Float64 }
+
 	return true,rec
 }
 func (sw *SQLStorageWrapper) Get_charity_donations(cosmicgame_aid int64) []p.CGCharityDonation{
@@ -3051,21 +3076,23 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 				"d.num_staked_nfts,"+
 				"d.amount,"+
 				"d.amount/1e18,"+
-				"amount/num_staked_nfts,"+
-				"(amount/num_staked_nfts)/1e18, "+
+				"(amount/num_staked_nfts)*d.num_staked_nfts,"+
+				"((amount/num_staked_nfts)*d.num_staked_nfts)/1e18, "+
 				"modulo,"+
 				"modulo/1e+18 "+
 			"FROM "+sw.S.SchemaName()+".cg_eth_deposit d "+
 				"LEFT JOIN transaction tx ON tx.id=d.tx_id " +
 				"LEFT JOIN cg_claim_reward r ON d.deposit_num=r.deposit_id "+
-			"WHERE (r.staker_aid=$1) AND (r.id IS NULL) " +
+			"WHERE r.staker_aid IS NULL " +
 			"ORDER BY d.id DESC "
 
-	rows,err := sw.S.Db().Query(query,user_aid)
+	rows,err := sw.S.Db().Query(query)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
+	fmt.Printf("user_aid=%v\n",user_aid)
+	fmt.Printf("q = %v\n",query)
 	records := make([]p.CGEthDepositRec,0, 16)
 	defer rows.Close()
 	for rows.Next() {
@@ -3094,6 +3121,7 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 		}
 		records = append(records,rec)
 	}
+	fmt.Printf("len = %v\n",len(records))
 	return records
 }
 func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int) []p.CGStakeActionRec {
