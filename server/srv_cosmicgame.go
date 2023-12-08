@@ -541,12 +541,39 @@ func cosmic_game_user_info(c *gin.Context) {
 		})
 		return
 	}
+	ct_contract,err := NewERC20(cosmic_token_addr,eclient);
+	if err != nil {
+		err_str := fmt.Sprintf("Error at instantiation of ERC20 contract: %v\n",err)
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("%v",err_str),
+		})
+		return
+	}
+	addr := common.HexToAddress(p_user_addr)
+	var copts bind.CallOpts
+	ct_balance,err := ct_contract.BalanceOf(&copts,addr)
+	if err != nil {
+		err_str := fmt.Sprintf("Error at BalanceOf() call: %v\n",err)
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Augur Markets: Error",
+			"ErrDescr": fmt.Sprintf("%v",err_str),
+		})
+		return
+	}
+	f_divisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
+	f_balance_eth := big.NewFloat(0.0).SetInt(ct_balance)
+	f_quo := big.NewFloat(0.0).Quo(f_balance_eth,f_divisor)
+	bal_eth,_ := f_quo.Float64()
+
 	bids := arb_storagew.Get_bids_by_user(user_aid)
 	prizes := arb_storagew.Get_prize_claims_by_user(user_aid)
 	c.HTML(http.StatusOK, "cg_user_info.html", gin.H{
 		"UserInfo" : user_info,
 		"Bids" : bids,
 		"Prizes" : prizes,
+		"CTBalance" : ct_balance.String(),
+		"CTBalanceEth" : bal_eth,
 	})
 }
 func cosmic_game_charity_donations_deposits(c *gin.Context) {
@@ -1582,7 +1609,6 @@ func cosmic_game_staking_rewards_to_claim_by_user(c *gin.Context) {
 }
 func cosmic_game_staking_actions_by_user(c *gin.Context) {
 
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error_json(c,"Database link wasn't configured")
 		return
@@ -1598,10 +1624,20 @@ func cosmic_game_staking_actions_by_user(c *gin.Context) {
 		return
 	}
 	actions := arb_storagew.Get_staking_actions(user_aid,0 ,100000)
-	fmt.Printf("len actions = %v\n",len(actions));
 	c.HTML(http.StatusOK, "cg_staking_actions_by_user.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
+		"StakingActions" : actions,
+	})
+}
+func cosmic_game_staking_actions_global(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	actions := arb_storagew.Get_global_staking_history(0 ,100000)
+	c.HTML(http.StatusOK, "cg_staking_actions_global.html", gin.H{
 		"StakingActions" : actions,
 	})
 }

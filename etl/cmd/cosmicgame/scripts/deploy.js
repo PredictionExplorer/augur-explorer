@@ -252,12 +252,24 @@ async function main() {
 	let ownr = action_rec.owner;
 	let num_deposits = await stakingWallet.numETHDeposits();
 	let owner_signer = stakingWallet.provider.getSigner(ownr);
-    for (let j = 1; j < num_deposits.toNumber(); j++) {
+    for (let j = 0; j < num_deposits.toNumber(); j++) {
 		let deposit_rec = await stakingWallet.ETHDeposits(j);
         await stakingWallet.connect(owner_signer).claimReward(i,j);
       }
   } 
   await ethers.provider.send("evm_mine");	// mine empty block as spacing
+	
+  // generate one deposit to charity and not to Staking Wallet
+  bidPrice = await cosmicGame.getBidPrice();
+  await cosmicGame.connect(addr3).bid("bid 3",-1,{value: bidPrice});
+  bidPrice = await cosmicGame.getBidPrice();
+  await cosmicGame.connect(addr3).bid("bid 3",-1,{value: bidPrice});
+  prizeTime = await cosmicGame.timeUntilPrize();
+  await ethers.provider.send("evm_increaseTime", [prizeTime.toNumber()]);
+  tx = await cosmicGame.connect(addr3).claimPrize({gasLimit:3000000});
+
+  await ethers.provider.send("evm_mine");	// mine empty block as spacing
+
 
   for (let i =0; i<ts.toNumber(); i++) {
     let ownr = await cosmicSignature.ownerOf(i)
@@ -274,6 +286,9 @@ async function main() {
   await ethers.provider.send("evm_increaseTime", [prizeTime.toNumber()]);
   await ethers.provider.send("evm_mine");
   tx = await cosmicGame.connect(addr1).claimPrize({gasLimit:3000000});
+
+  await ethers.provider.send("evm_mine");	// mine empty block as spacing
+  await ethers.provider.send("evm_mine");	// mine empty block as spacing
 }
 
 main()

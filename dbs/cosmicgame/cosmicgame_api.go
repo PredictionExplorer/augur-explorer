@@ -3176,3 +3176,89 @@ func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_global_staking_history(offset,limit int) []p.CGStakingHistoryRec {
+
+	var query string
+	query = "("+
+				"SELECT "+
+					"0 AS action_type,"+
+					"s.id,"+
+					"s.evtlog_id,"+
+					"s.block_num,"+
+					"tx.id,"+
+					"tx.tx_hash,"+
+					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT,"+
+					"s.time_stamp,"+
+					"EXTRACT(EPOCH FROM s.unstake_time)::BIGINT AS usts,"+
+					"s.unstake_time,"+
+					"s.action_id,"+
+					"s.token_id,"+
+					"s.num_staked_nfts, "+
+					"s.staker_aid, "+
+					"sa.addr staker_addr "+
+				"FROM "+sw.S.SchemaName()+".cg_stake_action s "+
+					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
+					"LEFT JOIN address sa ON s.staker_aid=sa.address_id "+
+				"ORDER BY s.id DESC " +
+				"OFFSET $1 LIMIT $2 "+
+			") UNION ALL ("+
+				"SELECT "+
+					"1 AS action_type,"+
+					"s.id,"+
+					"s.evtlog_id,"+
+					"s.block_num,"+
+					"tx.id,"+
+					"tx.tx_hash,"+
+					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT AS usts,"+
+					"time_stamp,"+
+					"0 AS usts,"+
+					"TO_TIMESTAMP(0) AS unnstake_time,"+
+					"s.action_id,"+
+					"s.token_id,"+
+					"s.num_staked_nfts, "+
+					"s.staker_aid," +
+					"sa.addr staker_addr "+
+				"FROM "+sw.S.SchemaName()+".cg_unstake_action s "+
+					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
+					"LEFT JOIN address sa ON s.staker_aid=sa.address_id "+
+				"ORDER BY s.id DESC " +
+				"OFFSET $1 LIMIT $2 "+
+			") order by evtlog_id DESC"
+
+	rows,err := sw.S.Db().Query(query,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGStakingHistoryRec,0, 16)
+	accum_staked_nfts := int64(0)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGStakingHistoryRec
+		err=rows.Scan(
+			&rec.ActionType,
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.UnstakeTimeStamp,
+			&rec.UnstakeDate,
+			&rec.ActionId,
+			&rec.TokenId,
+			&rec.NumStakedNFTs,
+			&rec.StakerAid,
+			&rec.StakerAddr,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		accum_staked_nfts = accum_staked_nfts + rec.NumStakedNFTs
+		rec.AccumNumStakedNFTs = accum_staked_nfts
+		records = append(records,rec)
+	}
+	return records
+}

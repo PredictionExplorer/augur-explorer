@@ -806,7 +806,7 @@ func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 }
 func proc_stake_action_event(log *types.Log,elog *EthereumEventLog) {
 
-	os.Exit(1)
+	//os.Exit(1)
 	var evt CGStakeAction
 	var eth_evt StakingWalletStakeActionEvent
 
@@ -911,13 +911,18 @@ func proc_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	evt.DepositNum = eth_evt.DepositNum.Int64()
 	evt.NumStakedNfts = eth_evt.NumStakedNFTs.Int64()
 	evt.Amount = eth_evt.Amount.String()
-	evt.Modulo = eth_evt.Modulo.String()
+	evt.AccumModulo = eth_evt.Modulo.String()
 	evt.RoundNum = find_prize_num(evt.TxId)
 	if evt.RoundNum == -1 {
 		Error.Printf("Failed to gather round_num variable")
 		Info.Printf("Failed to gather round_num variable")
 		os.Exit(1)
 	}
+	divres:=big.NewInt(0)
+	rem:=big.NewInt(0)
+	divres.QuoRem(eth_evt.Amount,eth_evt.NumStakedNFTs,rem);
+	evt.AmountPerStaker = divres.String()
+	evt.Modulo = rem.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("EthDepositEvent{\n")
@@ -926,7 +931,9 @@ func proc_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
 	Info.Printf("\tNumStakedNFTs: %v\n",evt.NumStakedNfts)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tAmountPerStaker: %v\n",evt.AmountPerStaker)
 	Info.Printf("\tModulo: %v\n",evt.Modulo)
+	Info.Printf("\tAccumModulo: %v\n",evt.AccumModulo)
 	Info.Printf("}\n")
 /*
 	if evt.BlockNum ==127 {

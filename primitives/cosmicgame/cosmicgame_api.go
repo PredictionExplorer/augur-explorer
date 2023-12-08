@@ -391,3 +391,26 @@ type CGStakeActionRec struct {
 	ModuloF64					float64
 	Claimed						bool
 }
+type CGStakingHistoryRec struct {
+	ActionType					int64
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	UnstakeDate					string
+	UnstakeTimeStamp			int64
+	ActionId					int64
+	TokenId						int64
+	NumStakedNFTs				int64
+	AccumNumStakedNFTs			int64
+	AmountPerHolder				string
+	AmountPerHolderEth			float64
+	Modulo						string
+	ModuloF64					float64
+	Claimed						bool
+	StakerAid					int64
+	StakerAddr					string
+}

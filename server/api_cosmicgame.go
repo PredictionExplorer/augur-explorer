@@ -1515,3 +1515,25 @@ func api_cosmic_game_staking_actions_by_user(c *gin.Context) {
 		"StakingActions" : actions,
 	})
 }
+func api_cosmic_game_staking_actions_global(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+	actions := arb_storagew.Get_global_staking_history(offset,limit)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Offset" : offset,
+		"Limit" : limit,
+		"StakingActions" : actions,
+	})
+}

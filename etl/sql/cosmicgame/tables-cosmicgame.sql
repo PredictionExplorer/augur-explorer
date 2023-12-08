@@ -211,7 +211,9 @@ CREATE TABLE cg_eth_deposit (
 	deposit_num		BIGINT NOT NULL,
 	num_staked_nfts	BIGINT NOT NULL,
 	amount			DECIMAL NOT NULL,
+	amount_per_staker	DECIMAL NOT NULL,
 	modulo			DECIMAL NOT NULL,
+	accum_modulo	DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_claim_reward (

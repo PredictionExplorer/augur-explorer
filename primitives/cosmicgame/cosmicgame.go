@@ -222,6 +222,8 @@ type CGEthDeposit struct {
 	DepositNum			int64
 	NumStakedNfts		int64
 	Amount				string
+	AmountPerStaker		string
+	AccumModulo			string
 	Modulo				string
 }
 type CGClaimReward struct {

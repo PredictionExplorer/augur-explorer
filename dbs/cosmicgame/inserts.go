@@ -420,9 +420,9 @@ func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 	var query string
 	query = "INSERT INTO cg_eth_deposit(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"deposit_time,round_num,deposit_num,num_staked_nfts,amount,modulo" +
+				"deposit_time,round_num,deposit_num,num_staked_nfts,amount,amount_per_staker,modulo,accum_modulo" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,TO_TIMESTAMP($6),$7,$8,$9,$10,$11"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,TO_TIMESTAMP($6),$7,$8,$9,$10,$11,$12,$13"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
@@ -435,7 +435,9 @@ func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 		evt.DepositNum,
 		evt.NumStakedNfts,
 		evt.Amount,
+		evt.AmountPerStaker,
 		evt.Modulo,
+		evt.AccumModulo,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_eth_deposit table: %v\n",err))

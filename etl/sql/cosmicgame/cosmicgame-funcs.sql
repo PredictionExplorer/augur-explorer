@@ -704,12 +704,6 @@ BEGIN
 				num_deposits = (num_deposits + 1),
 				total_modulo = (total_modulo + v_mod)
 			;
-	ELSE
-		UPDATE cg_stake_stats SET
-			num_deposits = (num_deposits + 1),
-			total_charity_amount = (total_charity_amount + NEW.amount),
-			num_charity_deposits = (num_charity_deposits + 1)
-		;
 	END IF;
 
 	RETURN NEW;
@@ -736,11 +730,6 @@ BEGIN
 				total_modulo = (total_modulo - v_mod)
 			;
 	ELSE   
-		UPDATE cg_stake_stats SET
-			num_deposits = (num_deposits - 1),
-			total_charity_amount = (total_charity_amount - OLD.amount),
-			num_charity_deposits = (num_charity_deposits - 1)
-		;
 	END IF;
 
 	RETURN OLD;
