@@ -115,6 +115,7 @@ CREATE TABLE cg_mint_event (
 	seed			TEXT NOT NULL,
 	token_name		TEXT DEFAULT '', -- last name set via setTokenName()
 	staked			BOOLEAN DEFAULT 'F',
+	staked_owner_aid	BIGINT DEFAULT 0,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_raffle_deposit (
@@ -332,6 +333,13 @@ CREATE TABLE cg_staker ( -- counts statistics per user for StakingWallet actions
 	num_unstake_actions		BIGINT DEFAULT 0,
 	total_reward			DECIMAL DEFAULT 0,
 	unclaimed_reward		DECIMAL DEFAULT 0
+);
+CREATE TABLE cg_staker_deposit (-- accumulators for deposit-staker relation
+	staker_aid				BIGINT NOT NULL,
+	deposit_id				BIGINT NOT NULL, 
+	tokens_staked			BIGINT DEFAULT 0,
+	amount_to_claim			DECIMAL DEFAULT 0,
+	PRIMARY KEY(staker_aid,deposit_id)
 );
 CREATE TABLE cg_raffle_winner_stats (	-- prizes in ETH
 	winner_aid		BIGINT PRIMARY KEY,

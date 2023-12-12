@@ -639,7 +639,7 @@ DECLARE
 	v_cnt						NUMERIC;
 BEGIN
 
-	UPDATE cg_mint_event SET staked='T' WHERE token_id=NEW.token_id;
+	UPDATE cg_mint_event SET staked='T',staked_owner_aid=NEW.staker_aid WHERE token_id=NEW.token_id;
 	UPDATE cg_staker SET total_tokens_staked = (total_tokens_staked + 1)
 		WHERE staker_aid=NEW.staker_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
@@ -657,7 +657,7 @@ CREATE OR REPLACE FUNCTION on_stake_action_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	UPDATE cg_mint_event SET staked='F' WHERE token_id=OLD.token_id;
+	UPDATE cg_mint_event SET staked='F',staked_owner_aid=OLD.staker_aid WHERE token_id=OLD.token_id;
 	UPDATE cg_staker SET total_tokens_staked = (total_tokens_staked - 1)
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_staker SET num_stake_actions = (num_stake_actions + 1)
@@ -688,6 +688,7 @@ CREATE OR REPLACE FUNCTION on_eth_deposit_insert() RETURNS trigger AS  $$
 DECLARE
 	v_amount_per_token DECIMAL;
 	v_mod DECIMAL;
+	v_rec RECORD;
 BEGIN
 
 	IF NEW.num_staked_nfts > 0 THEN
@@ -704,6 +705,11 @@ BEGIN
 				num_deposits = (num_deposits + 1),
 				total_modulo = (total_modulo + v_mod)
 			;
+		FOR v_rec IN (SELECT count(*) AS num_toks,staked_owner_aid FROM cg_mint_event WHERE staked_owner_aid > 0 GROUP BY staked_owner_aid)
+		LOOP
+			INSERT INTO cg_staker_deposit(staker_aid,deposit_id,tokens_staked,amount_to_claim)
+				VALUES(v_rec.staked_owner_aid,NEW.deposit_num,v_rec.num_toks,NEW.amount_per_staker*v_rec.num_toks);
+		END LOOP;
 	END IF;
 
 	RETURN NEW;
@@ -729,6 +735,7 @@ BEGIN
 				num_deposits = (num_deposits - 1),
 				total_modulo = (total_modulo - v_mod)
 			;
+		DELETE FROM cg_staker_deposit WHERE deposit_id=OLD.deposit_num;
 	ELSE   
 	END IF;
 
@@ -766,7 +773,7 @@ DECLARE
 	v_cnt						NUMERIC;
 BEGIN
 
-	UPDATE cg_mint_event SET staked='F' WHERE token_id=NEW.token_id;
+	UPDATE cg_mint_event SET staked='F',staked_owner_aid=0 WHERE token_id=NEW.token_id;
 	UPDATE cg_staker
 		SET	total_tokens_staked = (total_tokens_staked - 1),
 			num_unstake_actions = (num_unstake_actions + 1)
@@ -778,7 +785,7 @@ CREATE OR REPLACE FUNCTION on_unstake_action_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	UPDATE cg_mint_event SET staked='T' WHERE token_id=OLD.token_id;
+	UPDATE cg_mint_event SET staked='T',staked_owner_aid=OLD.staker_aid WHERE token_id=OLD.token_id;
 	UPDATE cg_staker
 		SET total_tokens_staked = (total_tokens_staked + 1),
 			num_unstake_actions = (num_unstake_actions - 1)

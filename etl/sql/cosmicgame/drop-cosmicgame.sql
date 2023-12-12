@@ -29,6 +29,7 @@ DROP TABLE IF EXISTS
 	cg_bidder,
 	cg_winner,
 	cg_staker,
+	cg_staker_deposit,
 	cg_raffle_winner_stats,
 	cg_raffle_nft_winner_stats,
 	cg_glob_stats,

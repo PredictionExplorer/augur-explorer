@@ -3060,7 +3060,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_transfers_by_user(user_aid int
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) []p.CGEthDepositRec {
+func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) []p.CGRewardToClaim {
 
 	var query string
 	query = "SELECT "+
@@ -3073,30 +3073,35 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 				"d.time_stamp,"+
 				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT,"+
 				"d.deposit_time,"+
+				"d.deposit_num,"+
 				"d.num_staked_nfts,"+
 				"d.amount,"+
 				"d.amount/1e18,"+
-				"(amount/num_staked_nfts)*d.num_staked_nfts,"+
-				"((amount/num_staked_nfts)*d.num_staked_nfts)/1e18, "+
+				"sd.tokens_staked,"+
+				"sd.amount_to_claim,"+
+				"sd.amount_to_claim/1e18,"+
+				"amount/num_staked_nfts,"+
+				"(amount/num_staked_nfts)/1e18, "+
 				"modulo,"+
 				"modulo/1e+18 "+
 			"FROM "+sw.S.SchemaName()+".cg_eth_deposit d "+
 				"LEFT JOIN transaction tx ON tx.id=d.tx_id " +
-				"LEFT JOIN cg_claim_reward r ON d.deposit_num=r.deposit_id "+
-			"WHERE r.staker_aid IS NULL " +
+				"LEFT JOIN cg_staker_deposit sd ON d.deposit_num=sd.deposit_id "+
+				"LEFT JOIN cg_claim_reward r ON (d.deposit_num=r.deposit_id) AND (sd.staker_aid=r.staker_aid) "+
+			"WHERE (sd.staker_aid = $1) AND (r.id IS NULL)" +
 			"ORDER BY d.id DESC "
 
-	rows,err := sw.S.Db().Query(query)
+	rows,err := sw.S.Db().Query(query,user_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	fmt.Printf("user_aid=%v\n",user_aid)
-	fmt.Printf("q = %v\n",query)
-	records := make([]p.CGEthDepositRec,0, 16)
+	//fmt.Printf("user_aid=%v\n",user_aid)
+	//fmt.Printf("q = %v\n",query)
+	records := make([]p.CGRewardToClaim,0, 16)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGEthDepositRec
+		var rec p.CGRewardToClaim
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,
@@ -3107,11 +3112,15 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 			&rec.DateTime,
 			&rec.DepositTimeStamp,
 			&rec.DepositDate,
+			&rec.DepositId,
 			&rec.NumStakedNFTs,
-			&rec.Amount,
-			&rec.AmountEth,
-			&rec.AmountPerHolder,
-			&rec.AmountPerHolderEth,
+			&rec.DepositAmount,
+			&rec.DepositAmountEth,
+			&rec.YourTokensStaked,
+			&rec.YourClaimableAmount,
+			&rec.YourClaimableAmountEth,
+			&rec.AmountPerToken,
+			&rec.AmountPerTokenEth,
 			&rec.Modulo,
 			&rec.ModuloF64,
 		)

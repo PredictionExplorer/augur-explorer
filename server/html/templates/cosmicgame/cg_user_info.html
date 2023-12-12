@@ -53,12 +53,16 @@
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Unclaimed Reward in Staking</td>
-		<td class="market_reports">{{.UserInfo.StakingStatistics.UnclaimedRewardEth}}</td>
+		<td class="market_reports">
+			<a class="addr" href="/black/cosmicgame/staking/rewards/to_claim/by_user/{{.UserInfo.Address}}">
+			{{.UserInfo.StakingStatistics.UnclaimedRewardEth}}
+			</a>
+		</td>
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Unclaimed NFTs</td>
 		<td class="market_reports">
-			<a href="/black/cosmicgame/user/nft/unclaimed_by_user/{{.UserInfo.Address}}">
+			<a class="addr" href="/black/cosmicgame/user/nft/unclaimed_by_user/{{.UserInfo.Address}}">
 			{{.UserInfo.UnclaimedNFTs}}
 			</a>
 			<a href="/black/cosmicgame/user/nft/claims/{{.UserInfo.Address}}">
