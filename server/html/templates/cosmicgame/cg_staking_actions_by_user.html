@@ -12,8 +12,7 @@
 		<th class="market_reports">Action Type</th>
 		<th class="market_reports">Token ID</th>
 		<th class="market_reports">Unstake date</th>
-		<th class="market_reports">Total num staked NFT</th>
-		<th class="market_reports">Claimed</th>
+		<th class="market_reports">Num NFTs</th>
 
 
 	</tr>
@@ -28,8 +27,7 @@
 			</td>
 			<td style="text-align: center;" title="">{{.TokenId}}</td>
 			<td style="text-align: center;" title="">{{.UnstakeDate}}</td>
-			<td style="text-align: right;" title="">{{.NumStakedNFTs}}</td>
-			<td style="text-align: center;" title="">{{if .Claimed }}Yes{{ else }}No{{ end }}</td>
+			<td style="text-align: center;" title="">{{.NumStakedNFTs}}</td>
 		</tr>
 	{{- end}}
 </table>

@@ -3096,8 +3096,6 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	//fmt.Printf("user_aid=%v\n",user_aid)
-	//fmt.Printf("q = %v\n",query)
 	records := make([]p.CGRewardToClaim,0, 16)
 	defer rows.Close()
 	for rows.Next() {
@@ -3130,7 +3128,77 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 		}
 		records = append(records,rec)
 	}
-	fmt.Printf("len = %v\n",len(records))
+	return records
+}
+func (sw *SQLStorageWrapper) Get_staking_rewards_collected(user_aid int64,offset,limit int) []p.CGCollectedReward {
+
+	var query string
+	query = "SELECT "+
+				"d.id,"+
+				"d.evtlog_id,"+
+				"d.block_num,"+
+				"tx.id,"+
+				"tx.tx_hash,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
+				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT,"+
+				"d.deposit_time,"+
+				"d.deposit_num,"+
+				"d.num_staked_nfts,"+
+				"d.amount,"+
+				"d.amount/1e18,"+
+				"sd.tokens_staked,"+
+				"sd.amount_to_claim,"+
+				"sd.amount_to_claim/1e18,"+
+				"amount/num_staked_nfts,"+
+				"(amount/num_staked_nfts)/1e18, "+
+				"modulo,"+
+				"modulo/1e+18 "+
+			"FROM "+sw.S.SchemaName()+".cg_eth_deposit d "+
+				"LEFT JOIN transaction tx ON tx.id=d.tx_id " +
+				"LEFT JOIN cg_staker_deposit sd ON d.deposit_num=sd.deposit_id "+
+				"LEFT JOIN cg_claim_reward r ON (d.deposit_num=r.deposit_id) AND (sd.staker_aid=r.staker_aid) "+
+			"WHERE (sd.staker_aid = $1) AND (r.id IS NOT NULL)" +
+			"ORDER BY d.id DESC " +
+			"OFFSET $2 LIMIT $3"
+
+	rows,err := sw.S.Db().Query(query,user_aid,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGCollectedReward,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGCollectedReward	
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.DepositTimeStamp,
+			&rec.DepositDate,
+			&rec.DepositId,
+			&rec.NumStakedNFTs,
+			&rec.DepositAmount,
+			&rec.DepositAmountEth,
+			&rec.YourTokensStaked,
+			&rec.YourCollectedAmount,
+			&rec.YourCollectedAmountEth,
+			&rec.AmountPerToken,
+			&rec.AmountPerTokenEth,
+			&rec.Modulo,
+			&rec.ModuloF64,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
 	return records
 }
 func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int) []p.CGStakeActionRec {
@@ -3155,7 +3223,6 @@ func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int
 				"FROM "+sw.S.SchemaName()+".cg_stake_action s "+
 					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
 				"WHERE (s.staker_aid=$1) " +
-				"ORDER BY s.id DESC " +
 				"OFFSET $2 LIMIT $3 "+
 			") UNION ALL ("+
 				"SELECT "+
@@ -3176,9 +3243,8 @@ func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int
 				"FROM "+sw.S.SchemaName()+".cg_unstake_action s "+
 					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
 				"WHERE (s.staker_aid=$1) " +
-				"ORDER BY s.id DESC " +
 				"OFFSET $2 LIMIT $3 "+
-			")"
+			") ORDER BY evtlog_id DESC"
 
 	rows,err := sw.S.Db().Query(query,user_aid,offset,limit)
 	if (err!=nil) {
@@ -3210,6 +3276,15 @@ func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int
 			os.Exit(1)
 		}
 		records = append(records,rec)
+	}
+	var accum_num_tokens int64
+	for i:=len(records) - 1 ; i >= 0 ; i-- {
+		if records[i].ActionType == 0 {
+			accum_num_tokens = accum_num_tokens + 1
+		} else {
+			accum_num_tokens = accum_num_tokens - 1
+		}
+		records[i].NumStakedNFTs = accum_num_tokens
 	}
 	return records
 }

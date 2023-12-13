@@ -45,11 +45,19 @@
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Total Num Stake Actions</td>
-		<td class="market_reports">{{.UserInfo.StakingStatistics.TotalNumStakeActions}}</td>
+		<td class="market_reports">
+			<a href="/black/cosmicgame/staking/actions/by_user/{{.UserInfo.Address}}">
+			{{.UserInfo.StakingStatistics.TotalNumStakeActions}}
+			</a>
+		</td>
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Total Reward in Staking</td>
-		<td class="market_reports">{{.UserInfo.StakingStatistics.TotalRewardEth}}</td>
+		<td class="market_reports">
+			<a href="/black/cosmicgame/staking/rewards/collected/by_user/{{.UserInfo.Address}}">
+			{{.UserInfo.StakingStatistics.TotalRewardEth}}
+			</a>
+		</td>
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Unclaimed Reward in Staking</td>

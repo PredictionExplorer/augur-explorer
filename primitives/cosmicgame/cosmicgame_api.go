@@ -445,3 +445,25 @@ type CGRewardToClaim struct {
 	Modulo						string
 	ModuloF64					float64
 }
+type CGCollectedReward struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	DepositDate					string
+	DepositTimeStamp			int64
+	DepositId					int64
+	NumStakedNFTs				int64
+	DepositAmount				string
+	DepositAmountEth			float64
+	YourTokensStaked			int64
+	YourCollectedAmount			string
+	YourCollectedAmountEth		float64
+	AmountPerToken				string
+	AmountPerTokenEth			float64
+	Modulo						string
+	ModuloF64					float64
+}

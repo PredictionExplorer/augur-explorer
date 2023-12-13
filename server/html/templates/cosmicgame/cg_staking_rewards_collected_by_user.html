@@ -1,0 +1,38 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Collected staking rewards for user {{.UserAddr}}</title>
+</head>
+<body>
+	<h3 class="page_title">Collected staking rewards for user {{.UserAddr}}<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Total staked tokens</th>
+		<th class="market_reports">Total deposited</th>
+		<th class="market_reports">Reward per token</th>
+		<th class="market_reports">Your stake position size (num tokens)</th>
+		<th class="market_reports">Your reward according to your stake position</th>
+	</tr>
+	{{- range $i, $change := .CollectedStakingRewards}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">
+				{{.BlockNum}}
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td style="text-align: center;" title="">{{.NumStakedNFTs}}</td>
+			<td style="text-align: center;" title="">{{.DepositAmountEth}}</td>
+			<td style="text-align: center;" title="">{{.AmountPerTokenEth}}</td>
+			<td style="text-align: center;" title="">{{.YourTokensStaked}}</td>
+			<td style="text-align: center;" title="">{{.YourCollectedAmountEth}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/staking/rewards/collected/by_user/:user_addr</br>
+
+	Example: /api/cosmicgame/staking/rewards/collected/by_user/{{.UserAddr}}
+</code>
+</body>
