@@ -25,6 +25,9 @@ type CGStatistics struct {
 	TotalCSTConsumed			string
 	TotalCSTConsumedEth			float64
 	NumBidsCST					int64
+	TotalMktRewards				string	// rewards deposited to marketers (total), from MarketingWallet
+	TotalMktRewardsEth			float64
+	NumMktRewards				int64
 	DonatedTokenDistribution	[]CGDonatedTokenDistrRec 
 }
 type CGBidRec struct {
@@ -469,4 +472,17 @@ type CGCollectedReward struct {
 	AmountPerTokenEth			float64
 	Modulo						string
 	ModuloF64					float64
+}
+type CGMarketingRewardRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	Amount						string
+	AmountEth					float64
+	MarketerAid					int64
+	MarketerAddr				string
 }

@@ -729,13 +729,13 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_eth_deposit_delete() RETURNS trigger AS  $$
 DECLARE
-	v_amount_per_staker DECIMAL;
+	v_amount_per_token DECIMAL;
 	v_mod DECIMAL;
 BEGIN
 
 	IF OLD.num_staked_nfts > 0 THEN
 		v_mod := MOD(OLD.amount,OLD.num_staked_nfts);
-		v_amount_per_staker := (OLD.amount - v_mod) / OLD.num_staked_nfts;
+		v_amount_per_token := (OLD.amount - v_mod) / OLD.num_staked_nfts;
 		UPDATE cg_staker
 			SET total_reward = (total_reward -  (v_amount_per_token*total_tokens_staked)),
 				unclaimed_reward = (unclaimed_reward -  (v_amount_per_token*total_tokens_staked))
@@ -803,6 +803,29 @@ BEGIN
 			num_unstake_actions = (num_unstake_actions - 1)
 		WHERE staker_aid=OLD.staker_aid;
 
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_marketing_rewards_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+
+	UPDATE cg_glob_stats
+		SET	total_mkt_rewards= (total_mkt_rewards + NEW.amount),
+			num_mkt_rewards = (num_mkt_rewards + 1)
+		;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_marketing_rewards_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE cg_glob_stats
+		SET	total_mkt_rewards= (total_mkt_rewards - OLD.amount),
+			num_mkt_rewards = (num_mkt_rewards - 1)
+		;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

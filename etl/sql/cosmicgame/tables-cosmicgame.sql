@@ -378,7 +378,9 @@ CREATE TABLE cg_glob_stats ( -- global statistics
 	total_raffle_eth_deposits DECIMAL DEFAULT 0,
 	total_raffle_eth_withdrawn DECIMAL DEFAULT 0,
 	total_nft_donated		BIGINT DEFAULT 0,
-	total_cst_consumed		DECIMAL DEFAULT 0		-- or burned, sum of the tokens that was burned as bid price
+	total_cst_consumed		DECIMAL DEFAULT 0,		-- or burned, sum of the tokens that was burned as bid price
+	total_mkt_rewards		DECIMAL DEFAULT 0,
+	num_mkt_rewards			BIGINT DEFAULT 0
 );
 CREATE TABLE cg_nft_stats ( -- stats for donated NFTs (donated with bidAndDonateNFT())
 	contract_aid			BIGINT PRIMARY KEY,

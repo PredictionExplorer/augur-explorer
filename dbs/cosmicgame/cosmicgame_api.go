@@ -29,7 +29,10 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 				"total_nft_donated,"+
 				"num_bids_cst,"+
 				"total_cst_consumed,"+
-				"total_cst_consumed/1e18 "+
+				"total_cst_consumed/1e18, "+
+				"total_mkt_rewards,"+
+				"total_mkt_rewards/1e18,"+
+				"num_mkt_rewards "+
 			"FROM cg_glob_stats LIMIT 1"
 
 	row := sw.S.Db().QueryRow(query)
@@ -52,6 +55,9 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 		&stats.NumBidsCST,
 		&stats.TotalCSTConsumed,
 		&stats.TotalCSTConsumedEth,
+		&stats.TotalMktRewards,
+		&stats.TotalMktRewardsEth,
+		&stats.NumMktRewards,
 	)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
@@ -3376,6 +3382,109 @@ func (sw *SQLStorageWrapper) Get_global_staking_history(offset,limit int) []p.CG
 		}
 		accum_staked_nfts = accum_staked_nfts + rec.NumStakedNFTs
 		rec.AccumNumStakedNFTs = accum_staked_nfts
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_marketing_reward_history_global(offset,limit int) []p.CGMarketingRewardRec {
+
+	var query string
+	query = "SELECT "+
+					"r.id,"+
+					"r.evtlog_id,"+
+					"r.block_num,"+
+					"tx.id,"+
+					"tx.tx_hash,"+
+					"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT,"+
+					"r.time_stamp,"+
+					"r.amount,"+
+					"r.amount/1e18,"+
+					"r.marketer_aid,"+
+					"ma.addr "+
+				"FROM "+sw.S.SchemaName()+".cg_mkt_reward r "+
+					"LEFT JOIN transaction tx ON tx.id=r.tx_id " +
+					"LEFT JOIN address ma ON r.marketer_aid=ma.address_id "+
+				"ORDER BY r.id DESC " +
+				"OFFSET $1 LIMIT $2 "
+
+	rows,err := sw.S.Db().Query(query,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGMarketingRewardRec,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGMarketingRewardRec
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.Amount,
+			&rec.AmountEth,
+			&rec.MarketerAid,
+			&rec.MarketerAddr,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_marketing_reward_history_by_user(user_aid int64,offset,limit int) []p.CGMarketingRewardRec {
+
+	var query string
+	query = "SELECT "+
+					"r.id,"+
+					"r.evtlog_id,"+
+					"r.block_num,"+
+					"tx.id,"+
+					"tx.tx_hash,"+
+					"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT,"+
+					"r.time_stamp,"+
+					"r.amount,"+
+					"r.amount/1e18,"+
+					"r.marketer_aid,"+
+					"ma.addr "+
+				"FROM "+sw.S.SchemaName()+".cg_mkt_reward r "+
+					"LEFT JOIN transaction tx ON tx.id=r.tx_id " +
+					"LEFT JOIN address ma ON r.marketer_aid=ma.address_id "+
+				"WHERE r.marketer_aid = $1 "+
+				"ORDER BY r.id DESC " +
+				"OFFSET $2 LIMIT $3 "
+
+	rows,err := sw.S.Db().Query(query,user_aid,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGMarketingRewardRec,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGMarketingRewardRec
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.Amount,
+			&rec.AmountEth,
+			&rec.MarketerAid,
+			&rec.MarketerAddr,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
 		records = append(records,rec)
 	}
 	return records

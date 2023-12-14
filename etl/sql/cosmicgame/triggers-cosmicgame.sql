@@ -34,3 +34,5 @@ CREATE TRIGGER cg_eth_deposit_insert AFTER INSERT ON cg_eth_deposit FOR EACH ROW
 CREATE TRIGGER cg_eth_deposit_delete AFTER DELETE ON cg_eth_deposit FOR EACH ROW EXECUTE PROCEDURE on_eth_deposit_delete();
 CREATE TRIGGER cg_claim_reward_insert AFTER INSERT ON cg_claim_reward FOR EACH ROW EXECUTE PROCEDURE on_claim_reward_insert();
 CREATE TRIGGER cg_claim_reward_delete AFTER DELETE ON cg_claim_reward FOR EACH ROW EXECUTE PROCEDURE on_claim_reward_delete();
+CREATE TRIGGER cg_marketing_rewards_insert AFTER INSERT ON cg_mkt_reward FOR EACH ROW EXECUTE PROCEDURE on_marketing_rewards_insert();
+CREATE TRIGGER cg_marketing_rewards_delete AFTER DELETE ON cg_mkt_reward FOR EACH ROW EXECUTE PROCEDURE on_marketing_rewards_delete();

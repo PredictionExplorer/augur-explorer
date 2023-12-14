@@ -243,7 +243,21 @@ async function main() {
   }
 
   await marketingWallet.send(hre.ethers.utils.parseEther('7'),addr1.address);
+  await ethers.provider.send("evm_mine");	// mine empty block as spacing
+  await marketingWallet.send(hre.ethers.utils.parseEther('7'),addr3.address);
+  await ethers.provider.send("evm_mine");	// mine empty block as spacing
+  await marketingWallet.send(hre.ethers.utils.parseEther('2'),addr2.address);
+  await ethers.provider.send("evm_mine");	// mine empty block as spacing
+  await marketingWallet.send(hre.ethers.utils.parseEther('6'),addr1.address);
+  await ethers.provider.send("evm_mine");	// mine empty block as spacing
   await marketingWallet.send(hre.ethers.utils.parseEther('5'),addr2.address);
+  await ethers.provider.send("evm_mine");	// mine empty block as spacing
+  await ethers.provider.send("evm_mine");	// mine empty block as spacing
+  await marketingWallet.send(hre.ethers.utils.parseEther('5'),addr2.address);
+  await ethers.provider.send("evm_mine");	// mine empty block as spacing
+  await marketingWallet.send(hre.ethers.utils.parseEther('5'),addr3.address);
+  await marketingWallet.send(hre.ethers.utils.parseEther('1'),addr4.address);
+  await marketingWallet.send(hre.ethers.utils.parseEther('11'),addr1.address);
  
   await ethers.provider.send("evm_setNextBlockTimestamp", [max_ts]);
   await ethers.provider.send("evm_mine");

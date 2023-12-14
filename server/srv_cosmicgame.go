@@ -1668,3 +1668,35 @@ func cosmic_game_staking_rewards_collected_by_user(c *gin.Context) {
 		"CollectedStakingRewards" : actions,
 	})
 }
+func cosmic_game_marketing_rewards_global(c *gin.Context) {
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	rewards := arb_storagew.Get_marketing_reward_history_global(0, 100000)
+	c.HTML(http.StatusOK, "cg_marketing_rewards_global.html", gin.H{
+		"MarketingRewards" : rewards,
+	})
+}
+func cosmic_game_marketing_rewards_by_user(c *gin.Context) {
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error(c,"Provided address wasn't found")
+		return
+	}
+	rewards := arb_storagew.Get_marketing_reward_history_by_user(user_aid,0, 100000)
+	c.HTML(http.StatusOK, "cg_marketing_rewards_by_user.html", gin.H{
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"UserMarketingRewards" : rewards,
+	})
+}
