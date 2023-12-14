@@ -106,7 +106,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := cosmic_game_ctrct.Bid(txopts,"bid from golang")
+	tx,err := cosmic_game_ctrct.Bid(txopts,"bid from golang",big.NewInt(-1))
 	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)

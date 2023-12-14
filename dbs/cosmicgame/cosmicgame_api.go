@@ -26,7 +26,10 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 				"num_mints, "+
 				"total_raffle_eth_deposits/1e18, "+
 				"total_raffle_eth_withdrawn/1e18, "+
-				"total_nft_donated "+
+				"total_nft_donated,"+
+				"num_bids_cst,"+
+				"total_cst_consumed,"+
+				"total_cst_consumed/1e18 "+
 			"FROM cg_glob_stats LIMIT 1"
 
 	row := sw.S.Db().QueryRow(query)
@@ -46,6 +49,9 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 		&stats.TotalRaffleEthDeposits,
 		&stats.TotalRaffleEthWithdrawn,
 		&stats.TotalNFTDonated,
+		&stats.NumBidsCST,
+		&stats.TotalCSTConsumed,
+		&stats.TotalCSTConsumedEth,
 	)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))

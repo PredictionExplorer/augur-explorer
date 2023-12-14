@@ -471,6 +471,31 @@ func (sw *SQLStorageWrapper) Insert_claim_reward_event(evt *p.CGClaimReward) {
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_marketing_reward_sent_event(evt *p.CGMarketingRewardSent) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
+	marketer_aid:=sw.S.Lookup_or_create_address(evt.Marketer,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_mkt_reward(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"amount,marketer_aid" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.Amount,
+		marketer_aid,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_mkt_reward table: %v\n",err))
+		os.Exit(1)
+	}
+}
 func (sw *SQLStorageWrapper) Insert_cosmic_signature_transfer_event(evt *p.CGERC721Transfer) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)

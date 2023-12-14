@@ -47,6 +47,7 @@ const (
 	UNSTAKE_ACTION_EVENT	= "33940a9fc3ee3c9150b29b34ef29ca397b5e1e340425a4f0da0346b5b90766c8"
 	ETH_DEPOSIT_EVENT		= "dc0eacba8b1f88284dca5eec8be23173aefa7206298fe22de43e064b6ccd8418"
 	CLAIM_REWARD_EVENT		= "dde81df5caa033e783e2a39d93e3a8718a7dc27ba95a4757f5433a01f794ec36"
+	MARKETING_REWARD_SENT	= "dceb832c3abeeb39542a70bd553842dc873f15f6a5411c645092a93fef4ef9ba"
 
 	/// Admin events
 	CHARITY_PERCENTAGE_CHANGED		= "0918b499c15fcb0e087d411d53664cde23577e1aa4a9cbfbdf735ddd1871e7d5"
@@ -77,6 +78,7 @@ var (
 	evt_unstake_action,_	= hex.DecodeString(UNSTAKE_ACTION_EVENT)
 	evt_claim_reward,_		= hex.DecodeString(CLAIM_REWARD_EVENT)
 	evt_eth_deposit,_		= hex.DecodeString(ETH_DEPOSIT_EVENT)
+	evt_marketing_reward_sent,_		= hex.DecodeString(MARKETING_REWARD_SENT)
 	evt_charity_percentage_changed,_= hex.DecodeString(CHARITY_PERCENTAGE_CHANGED)
 	evt_prize_percentage_changed,_ = hex.DecodeString(PRIZE_PERCENTAGE_CHANGED)
 	evt_raffle_percentage_changed,_ = hex.DecodeString(RAFFLE_PERCENTAGE_CHANGED)

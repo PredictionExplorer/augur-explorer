@@ -22,6 +22,9 @@ type CGStatistics struct {
 	TotalRaffleEthWithdrawn		float64
 	NumWinnersWithPendingRaffleWithdrawal int64
 	TotalNFTDonated				int64
+	TotalCSTConsumed			string
+	TotalCSTConsumedEth			float64
+	NumBidsCST					int64
 	DonatedTokenDistribution	[]CGDonatedTokenDistrRec 
 }
 type CGBidRec struct {

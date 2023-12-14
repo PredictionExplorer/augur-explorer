@@ -238,6 +238,18 @@ type CGClaimReward struct {
 	Reward				string	
 	Staker				string
 }
+type CGMarketingRewardSent struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	ActionId			int64
+	DepositId			int64
+	Amount				string	
+	Marketer			string
+}
 type CGERC721Transfer struct {
 	EvtId                   int64
 	BlockNum                int64

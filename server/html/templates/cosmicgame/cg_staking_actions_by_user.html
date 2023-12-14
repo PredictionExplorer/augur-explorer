@@ -26,7 +26,11 @@
 				{{if eq .ActionType 0 }}Stake{{ else }}Unstake{{ end }}
 			</td>
 			<td style="text-align: center;" title="">{{.TokenId}}</td>
-			<td style="text-align: center;" title="">{{.UnstakeDate}}</td>
+			<td style="text-align: center;" title="">
+				{{ if eq .ActionType 0 }}
+				{{.UnstakeDate}}
+				{{ end }}
+			</td>
 			<td style="text-align: center;" title="">{{.NumStakedNFTs}}</td>
 		</tr>
 	{{- end}}

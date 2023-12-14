@@ -1,0 +1,16 @@
+31c31
+<     uint256 public nanoSecondsExtra = 180 * 10**9;
+---
+>     uint256 public nanoSecondsExtra = 3600 * 10**9;
+38c38
+< 	uint256 public timeoutClaimPrize = 300;	
+---
+> 	uint256 public timeoutClaimPrize = 24 * 3600;	
+57c57
+<     uint256 public initialSecondsUntilPrize = 1 * 180;
+---
+>     uint256 public initialSecondsUntilPrize = 24 * 3600;
+221c221
+<         uint256 auction_duration = (nanoSecondsExtra * CSTAuctionLength) / 1e14;
+---
+>         uint256 auction_duration = (nanoSecondsExtra * CSTAuctionLength) / 1e9;

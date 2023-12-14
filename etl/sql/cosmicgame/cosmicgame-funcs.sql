@@ -25,6 +25,12 @@ BEGIN
 	END IF;
 	IF NEW.rwalk_nft_id > -1 THEN
 		UPDATE cg_glob_stats SET num_rwalk_used = (num_rwalk_used + 1);
+	ELSE 
+		IF NEW.bid_type = 2 THEN
+			UPDATE cg_glob_stats SET
+				num_bids_cst = (num_bids_cst + 1),
+				total_cst_consumed = (total_cst_consumed + NEW.num_cst_tokens);
+		END IF;
 	END IF;
 	UPDATE cg_glob_stats SET cur_num_bids = (cur_num_bids + 1);
 	UPDATE cg_round_stats SET total_bids = (total_bids + 1) WHERE round_num=NEW.round_num;
@@ -57,6 +63,12 @@ BEGIN
 	END IF;
 	IF OLD.rwalk_nft_id > -1 THEN
 		UPDATE cg_glob_stats SET num_rwalk_used = (num_rwalk_used - 1);
+	ELSE
+		IF OLD.bid_type = 2 THEN
+			UPDATE cg_glob_stats SET 
+				num_bids_cst = (num_bids_cst - 1),
+				total_cst_consumed = (total_cst_consumed - OLD.num_cst_tokens);
+		END IF;
 	END IF;
 	UPDATE cg_glob_stats SET cur_num_bids = (cur_num_bids - 1) WHERE cur_num_bids>0;
 	UPDATE cg_round_stats SET total_bids = (total_bids - 1) WHERE round_num=OLD.round_num;

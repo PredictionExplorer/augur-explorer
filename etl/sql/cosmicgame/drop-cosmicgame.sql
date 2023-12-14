@@ -17,6 +17,7 @@ DROP TABLE IF EXISTS
 	cg_unstake_action,
 	cg_eth_deposit,
 	cg_claim_reward,
+	cg_mkt_reward,
 	cg_transfer,
 	cg_erc20_transfer,
 	cg_costok_owner,

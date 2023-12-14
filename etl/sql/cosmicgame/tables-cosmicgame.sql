@@ -22,7 +22,7 @@ CREATE TABLE cg_bid (
 	bidder_aid		BIGINT NOT NULL,
 	rwalk_nft_id	BIGINT NOT NULL,	--token_id of RandomWalk, if present
 	round_num		BIGINT NOT NULL,
-	bid_type		SMALLINT NOT NULL,  -- ETH, RandomWalk, CST
+	bid_type		SMALLINT NOT NULL,  --  0 = ETH, 1 = RandomWalk, 2 = CST
 	num_cst_tokens	DECIMAL NOT NULL,
 	prize_time		TIMESTAMPTZ NOT NULL,
 	bid_price		DECIMAL NOT NULL,
@@ -230,6 +230,17 @@ CREATE TABLE cg_claim_reward (
 	staker_aid		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_mkt_reward ( -- MarketingWallet RewardSentEvent
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	amount			DECIMAL NOT NULL,
+	marketer_aid	BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE cg_transfer( -- cosmic signature ERC721 transfer
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
@@ -363,9 +374,11 @@ CREATE TABLE cg_glob_stats ( -- global statistics
 	num_rwalk_used			BIGINT DEFAULT 0,
 	num_mints				BIGINT DEFAULT 0,
 	cur_num_bids			BIGINT DEFAULT 0,		-- num bids since new round
+	num_bids_cst			BIGINT DEFAULT 0,		-- amount of bids made with CST
 	total_raffle_eth_deposits DECIMAL DEFAULT 0,
 	total_raffle_eth_withdrawn DECIMAL DEFAULT 0,
-	total_nft_donated		BIGINT DEFAULT 0
+	total_nft_donated		BIGINT DEFAULT 0,
+	total_cst_consumed		DECIMAL DEFAULT 0		-- or burned, sum of the tokens that was burned as bid price
 );
 CREATE TABLE cg_nft_stats ( -- stats for donated NFTs (donated with bidAndDonateNFT())
 	contract_aid			BIGINT PRIMARY KEY,
