@@ -261,6 +261,7 @@ type CGClaimInfo struct {
 	ETHRaffleToClaim			float64
 	ETHRaffleToClaimWei			string
 	NumDonatedNFTToClaim		int64		// Pending unclaimed donated tokens (counter)
+	UnclaimedStakingReward		float64
 }
 type CGRaffleHistory struct {
 	EvtLogId					int64
