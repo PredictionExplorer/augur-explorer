@@ -153,7 +153,6 @@ async function main() {
     parsed_log = stakingWallet.interface.parseLog(log);
     if (max_ts < parsed_log.args.unstakeTime.toNumber()) {
 		max_ts = parsed_log.args.unstakeTime.toNumber();
-		console.log("max ts changed to "+max_ts)
 	}
   }
   console.log("max ts after loop = "+max_ts);

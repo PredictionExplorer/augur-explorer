@@ -116,6 +116,7 @@ CREATE TABLE cg_mint_event (
 	token_name		TEXT DEFAULT '', -- last name set via setTokenName()
 	staked			BOOLEAN DEFAULT 'F',
 	staked_owner_aid	BIGINT DEFAULT 0,
+	stake_action_id	BIGINT DEFAULT 0,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_raffle_deposit (

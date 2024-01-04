@@ -230,6 +230,7 @@ type CGDonatedNFTClaimRec struct {
 	DonorAddr					string
 }
 type CGCosmicSignatureMintRec struct {
+	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
 	TimeStamp					int64
@@ -486,4 +487,14 @@ type CGMarketingRewardRec struct {
 	AmountEth					float64
 	MarketerAid					int64
 	MarketerAddr				string
+}
+type CGStakedTokenRec struct {
+	TokenInfo					CGCosmicSignatureMintRec
+	StakeTimeStamp				int64
+	StakeDateTime				string
+	UnstakeTimeStamp			int64
+	UnstakeDateTime				string
+	UserAddr					string
+	UserAid						int64
+
 }

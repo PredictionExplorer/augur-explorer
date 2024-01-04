@@ -3495,3 +3495,156 @@ func (sw *SQLStorageWrapper) Get_marketing_reward_history_by_user(user_aid int64
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_staked_tokens_by_user(user_aid int64) []p.CGStakedTokenRec {
+
+	var query string
+	query = "SELECT "+
+				"m.id,"+
+				"m.evtlog_id,"+
+				"m.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT,"+
+				"m.time_stamp,"+
+				"m.owner_aid,"+
+				"wa.addr,"+
+				"m.cur_owner_aid,"+
+				"oa.addr,"+
+				"m.seed, "+
+				"m.token_id,"+
+				"m.round_num,"+
+				"p.prize_num, "+
+				"m.token_name, "+
+				"EXTRACT(EPOCH FROM a.time_stamp)::BIGINT,"+
+				"a.time_Stamp,"+
+				"EXTRACT(EPOCH FROM a.unstake_time)::BIGINT,"+
+				"a.unstake_time "+
+			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
+				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
+				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
+				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
+				"LEFT JOIN cg_stake_action a ON a.id=m.stake_action_id "+
+			"WHERE m.staked_owner_aid=$1 AND m.staked = 'T' "+
+			"ORDER BY m.token_id"
+
+	rows,err := sw.S.Db().Query(query,user_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGStakedTokenRec,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGStakedTokenRec 
+		var null_prize_num sql.NullInt64
+		err=rows.Scan(
+			&rec.TokenInfo.RecordId,
+			&rec.TokenInfo.EvtLogId,
+			&rec.TokenInfo.BlockNum,
+			&rec.TokenInfo.TxId,
+			&rec.TokenInfo.TxHash,
+			&rec.TokenInfo.TimeStamp,
+			&rec.TokenInfo.DateTime,
+			&rec.TokenInfo.WinnerAid,
+			&rec.TokenInfo.WinnerAddr,
+			&rec.TokenInfo.CurOwnerAid,
+			&rec.TokenInfo.CurOwnerAddr,
+			&rec.TokenInfo.Seed,
+			&rec.TokenInfo.TokenId,
+			&rec.TokenInfo.RoundNum,
+			&null_prize_num,
+			&rec.TokenInfo.TokenName,
+			&rec.StakeTimeStamp,
+			&rec.StakeDateTime,
+			&rec.UnstakeTimeStamp,
+			&rec.UnstakeDateTime,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		if null_prize_num.Valid { rec.TokenInfo.RecordType = 3 } else {rec.TokenInfo.RecordType = 1 }
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_staked_tokens_global() []p.CGStakedTokenRec {
+
+	var query string
+	query = "SELECT "+
+				"m.id,"+
+				"m.evtlog_id,"+
+				"m.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM m.time_stamp)::BIGINT,"+
+				"m.time_stamp,"+
+				"m.owner_aid,"+
+				"wa.addr,"+
+				"m.cur_owner_aid,"+
+				"oa.addr,"+
+				"m.seed, "+
+				"m.token_id,"+
+				"m.round_num,"+
+				"p.prize_num, "+
+				"m.token_name, "+
+				"EXTRACT(EPOCH FROM a.time_stamp)::BIGINT,"+
+				"a.time_Stamp,"+
+				"EXTRACT(EPOCH FROM a.unstake_time)::BIGINT,"+
+				"a.unstake_time,  "+
+				"sa.addr,"+
+				"sa.address_id "+
+			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
+				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
+				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
+				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
+				"LEFT JOIN cg_stake_action a ON a.id=m.stake_action_id "+
+				"LEFT JOIN address sa ON a.staker_aid = sa.address_id "+
+			"WHERE m.staked = 'T' "+
+			"ORDER BY m.token_id"
+
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGStakedTokenRec,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGStakedTokenRec 
+		var null_prize_num sql.NullInt64
+		err=rows.Scan(
+			&rec.TokenInfo.RecordId,
+			&rec.TokenInfo.EvtLogId,
+			&rec.TokenInfo.BlockNum,
+			&rec.TokenInfo.TxId,
+			&rec.TokenInfo.TxHash,
+			&rec.TokenInfo.TimeStamp,
+			&rec.TokenInfo.DateTime,
+			&rec.TokenInfo.WinnerAid,
+			&rec.TokenInfo.WinnerAddr,
+			&rec.TokenInfo.CurOwnerAid,
+			&rec.TokenInfo.CurOwnerAddr,
+			&rec.TokenInfo.Seed,
+			&rec.TokenInfo.TokenId,
+			&rec.TokenInfo.RoundNum,
+			&null_prize_num,
+			&rec.TokenInfo.TokenName,
+			&rec.StakeTimeStamp,
+			&rec.StakeDateTime,
+			&rec.UnstakeTimeStamp,
+			&rec.UnstakeDateTime,
+			&rec.UserAddr,
+			&rec.UserAid,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		if null_prize_num.Valid { rec.TokenInfo.RecordType = 3 } else {rec.TokenInfo.RecordType = 1 }
+		records = append(records,rec)
+	}
+	return records
+}

@@ -651,7 +651,12 @@ DECLARE
 	v_cnt						NUMERIC;
 BEGIN
 
-	UPDATE cg_mint_event SET staked='T',staked_owner_aid=NEW.staker_aid WHERE token_id=NEW.token_id;
+	UPDATE cg_mint_event
+		SET
+			staked='T',
+			staked_owner_aid=NEW.staker_aid,
+		    stake_action_id=NEW.id
+		WHERE token_id=NEW.token_id;
 	UPDATE cg_staker SET total_tokens_staked = (total_tokens_staked + 1)
 		WHERE staker_aid=NEW.staker_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
@@ -669,7 +674,12 @@ CREATE OR REPLACE FUNCTION on_stake_action_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	UPDATE cg_mint_event SET staked='F',staked_owner_aid=OLD.staker_aid WHERE token_id=OLD.token_id;
+	UPDATE cg_mint_event
+		SET
+			staked='F',
+			staked_owner_aid=OLD.staker_aid,
+			stake_action_id = 0
+		WHERE token_id=OLD.token_id;
 	UPDATE cg_staker SET total_tokens_staked = (total_tokens_staked - 1)
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_staker SET num_stake_actions = (num_stake_actions + 1)
