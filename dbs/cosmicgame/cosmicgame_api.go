@@ -3648,3 +3648,60 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_global() []p.CGStakedTokenRec {
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_aid int64) []p.CGActionIdsForDeposit {
+
+	records := make([]p.CGActionIdsForDeposit,0, 16)
+	var query string
+	query = "SELECT EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS ts FROM cg_eth_deposit d WHERE deposit_num=$1"
+	row := sw.S.Db().QueryRow(query,deposit_id)
+	var null_ts sql.NullInt64
+	err:=row.Scan(&null_ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return records
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_action_ids_for_deposit(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+
+	query = "SELECT "+
+				"a.id,"+
+				"a.action_id "+
+			"FROM "+sw.S.SchemaName()+".cg_stake_action a "+
+				"LEFT JOIN cg_unstake_action u ON a.action_id=u.action_id "+
+			"WHERE "+
+				"(a.staker_aid = $1) AND ("+
+					"("+
+						"(a.time_stamp < TO_TIMESTAMP($2)) AND (u.id IS NULL)"+
+					") OR "+
+						"(" + 
+							"(a.time_stamp<TO_TIMESTAMP($2) AND "+
+							"(u.id IS NOT NULL) AND "+
+							"(TO_TIMESTAMP($2)<=u.time_stamp) "+
+						")"+
+					")"+
+				") " +
+			"ORDER BY a.action_id "
+
+	rows,err := sw.S.Db().Query(query,user_aid,null_ts.Int64)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGActionIdsForDeposit
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.StakeActionId,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		rec.DepositId = deposit_id
+		rec.UserAid = user_aid
+		records = append(records,rec)
+	}
+	return records
+}

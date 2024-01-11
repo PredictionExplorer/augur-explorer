@@ -498,3 +498,9 @@ type CGStakedTokenRec struct {
 	UserAid						int64
 
 }
+type CGActionIdsForDeposit struct {
+	RecordId					int64
+	DepositId					int64
+	UserAid						int64
+	StakeActionId				int64
+}

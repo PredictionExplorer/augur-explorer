@@ -1,0 +1,24 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>ActionIDs for deposit{{.DepositId}}</title>
+</head>
+<body>
+	<h3 class="page_title">ActionIDs for Deposit {{.DepositId}}<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">ActionId</th>
+	</tr>
+	{{- range $i, $change := .ActionIds}}
+		<tr class="market_reports">
+			<td style="text-align: center;">{{.StakeActionId}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/staking/rewards/action_ids_by_deposit/[user_addr]/[deposit_id]</br>
+
+	Example: /api/cosmicgame/staking/rewards/action_ids_by_deposit/{{.UserAddr}}/{{.DepositId}}
+</code>
+</body>
