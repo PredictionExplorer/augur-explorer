@@ -1453,3 +1453,258 @@ func api_cosmic_game_used_rwalk_nfts(c *gin.Context) {
 		"UsedRwalkNFTs" : used_nfts,
 	})
 }
+func api_cosmic_game_staking_rewards_to_claim_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+	deposits := arb_storagew.Get_staking_rewards_to_be_claimed(user_aid)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"UnclaimedEthDeposits" : deposits,
+	})
+}
+func api_cosmic_game_staking_actions_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+	actions := arb_storagew.Get_staking_actions(user_aid,offset,limit)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Offset" : offset,
+		"Limit" : limit,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"StakingActions" : actions,
+	})
+}
+func api_cosmic_game_staking_actions_global(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+	actions := arb_storagew.Get_global_staking_history(offset,limit)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Offset" : offset,
+		"Limit" : limit,
+		"StakingActions" : actions,
+	})
+}
+func api_cosmic_game_staking_rewards_collected_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+	actions := arb_storagew.Get_staking_rewards_collected(user_aid,offset,limit)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Offset" : offset,
+		"Limit" : limit,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"CollectedStakingRewards" : actions,
+	})
+}
+func api_cosmic_game_marketing_rewards_global(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+	rewards := arb_storagew.Get_marketing_reward_history_global(offset, limit)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Offset" : offset,
+		"Limit" : limit,
+		"MarketingRewards" : rewards,
+	})
+}
+func api_cosmic_game_marketing_rewards_by_user(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+	rewards := arb_storagew.Get_marketing_reward_history_by_user(user_aid,offset, limit)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Offset" : offset,
+		"Limit" : limit,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"UserMarketingRewards" : rewards,
+	})
+}
+func api_cosmic_game_staked_tokens_by_user(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+	tokens := arb_storagew.Get_staked_tokens_by_user(user_aid)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"StakedTokens" : tokens,
+	})
+}
+func api_cosmic_game_staked_tokens_global(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	tokens := arb_storagew.Get_staked_tokens_global()
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"StakedTokens" : tokens,
+	})
+}
+func api_cosmic_game_staking_rewards_action_ids_by_deposit(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+	p_deposit_id := c.Param("deposit_id")
+	var deposit_id int64
+	if len(p_deposit_id) > 0 {
+		var success bool
+		deposit_id,success = parse_int_from_remote_or_error(c,JSON,&p_deposit_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'deposit_id' parameter is not set")
+		return
+	}
+	action_ids := arb_storagew.Get_action_ids_for_deposit(deposit_id,user_aid)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"DepositId" : deposit_id,
+		"ActionIds" : action_ids,
+	})
+}

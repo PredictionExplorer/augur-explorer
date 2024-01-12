@@ -33,7 +33,7 @@ func main() {
 	}
 
 	if len(os.Args) != 3 {
-		fmt.Printf("Usage: \n\t\t%v [priv_key] [contract_addr]\n\n\t\tMakes bid at CosmicGame current round\n",os.Args[0])
+		fmt.Printf("Usage: \n\t\t%v [priv_key] [contract_addr]\n\n\t\tMakes bid using CST tokens\n",os.Args[0])
 		os.Exit(1)
 	}
 
@@ -52,14 +52,17 @@ func main() {
 	}
 
 	var copts bind.CallOpts
-	bid_price,err := cosmic_game_ctrct.GetBidPrice(&copts)
+	cst_price,err := cosmic_game_ctrct.CurrentCSTPrice(&copts)
 	if err != nil {
-		fmt.Printf("Error at BidPrice()(): %v\n",err)
+		fmt.Printf("Error at currentCSTPrice()(): %v\n",err)
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
 
-	fmt.Printf("Bid price = %v\n",bid_price.String())
+	fmt.Printf("CSt price = %v\n",cst_price.String())
+	mult := big.NewInt(2)
+	cst_price.Mul(cst_price,mult)
+	fmt.Printf("CST bid amount: %v\n",cst_price.String())
 
 	from_PrivateKey, err := crypto.HexToECDSA(from_pkey_str)
 	if err != nil {
@@ -88,7 +91,6 @@ func main() {
 	txopts := bind.NewKeyedTransactor(from_PrivateKey)
 	txopts.Nonce = big.NewInt(int64(from_nonce))
 	txopts.Value = big.NewInt(0)     // in weia
-	txopts.Value.Set(bid_price)
 	txopts.GasLimit = uint64(10000000) // in units
 	txopts.GasPrice = gasPrice
 
@@ -106,7 +108,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := cosmic_game_ctrct.Bid(txopts,"bid from golang",big.NewInt(-1))
+	tx,err := cosmic_game_ctrct.BidWithCST(txopts,"bid with CST from golang")
 	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)

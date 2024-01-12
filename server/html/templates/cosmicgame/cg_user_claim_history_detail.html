@@ -22,21 +22,22 @@
 	{{- range $i, $change := .ClaimHistory}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				{{ if eq 0 .RecordType}}ETH Deposit{{end}}
+				{{ if eq 0 .RecordType}}Raffle ETH Deposit{{end}}
 				{{ if eq 1 .RecordType}}CS NFT Token{{end}}
 				{{ if eq 2 .RecordType}}Donated NFT{{end}}
 				{{ if eq 3 .RecordType}}Main Prize{{end}}
+				{{ if eq 4 .RecordType}}Stake Reward{{end}}
 			</td>
 			<td class="" style="text-align: center;">
 				{{.BlockNum}}
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
-			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
+			<td style="text-align: center;" title="">{{ .RoundNum }}</td>
 			<td style="text-align: right;" title="">{{printf "%.4f" .AmountEth}}</td>
 			<td style="text-align: right;" title="">{{ .TokenAddress }}</td>
-			<td style="text-align: right;" title="">{{ .TokenId }}</td>
-			<td style="text-align: right;" title="">{{ .WinnerIndex}}</td>
-			<td style="text-align: right;" title="">{{ .Claimed}}</td>
+			<td style="text-align: center;" title="">{{ .TokenId }}</td>
+			<td style="text-align: center;" title="">{{ .WinnerIndex}}</td>
+			<td style="text-align: center;" title="">{{ .Claimed}}</td>
 			<td style="text-align: right;" title="">{{ .TokenURI}}</td>
 		</tr>
 	{{- end}}

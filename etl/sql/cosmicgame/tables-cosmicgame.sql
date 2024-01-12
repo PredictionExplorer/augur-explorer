@@ -22,6 +22,8 @@ CREATE TABLE cg_bid (
 	bidder_aid		BIGINT NOT NULL,
 	rwalk_nft_id	BIGINT NOT NULL,	--token_id of RandomWalk, if present
 	round_num		BIGINT NOT NULL,
+	bid_type		SMALLINT NOT NULL,  --  0 = ETH, 1 = RandomWalk, 2 = CST
+	num_cst_tokens	DECIMAL NOT NULL,
 	prize_time		TIMESTAMPTZ NOT NULL,
 	bid_price		DECIMAL NOT NULL,
 	erc20_amount	DECIMAL DEFAULT 0,	-- amount of CosmicSignatureToken minted in ERC20
@@ -112,6 +114,9 @@ CREATE TABLE cg_mint_event (
 	round_num		BIGINT NOT NULL,
 	seed			TEXT NOT NULL,
 	token_name		TEXT DEFAULT '', -- last name set via setTokenName()
+	staked			BOOLEAN DEFAULT 'F',
+	staked_owner_aid	BIGINT DEFAULT 0,
+	stake_action_id	BIGINT DEFAULT 0,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_raffle_deposit (
@@ -164,6 +169,77 @@ CREATE TABLE cg_donated_nft_claimed (
 	token_aid		BIGINT NOT NULL,
 	winner_aid		BIGINT NOT NULL,
 	token_id		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_stake_action (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	round_num		BIGINT DEFAULT -1,
+	action_id		BIGINT NOT NULL,
+	token_id		BIGINT NOT NULL,
+	num_staked_nfts	BIGINT NOT NULL,
+	unstake_time	TIMESTAMPTZ NOT NULL,
+	staker_aid		BIGINT NOT NULL,
+	claimed			BOOLEAN DEFAULT 'F',
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_unstake_action (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	round_num		BIGINT DEFAULT -1,
+	action_id		BIGINT NOT NULL,
+	token_id		BIGINT NOT NULL,
+	num_staked_nfts	BIGINT NOT NULL,
+	staker_aid		BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_eth_deposit (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL ,-- this is NOT the same as deposit_num, if there are no stakers, deposit_num isn't incremented (also, deposit_id begins at roundNum = 1)
+	deposit_time	TIMESTAMPTZ NOT NULL,
+	deposit_num		BIGINT NOT NULL,
+	num_staked_nfts	BIGINT NOT NULL,
+	amount			DECIMAL NOT NULL,
+	amount_per_staker	DECIMAL NOT NULL,
+	modulo			DECIMAL NOT NULL,
+	accum_modulo	DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_claim_reward (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	action_id		BIGINT NOT NULL,
+	deposit_id		BIGINT NOT NULL,
+	reward			DECIMAL NOT NULL,
+	staker_aid		BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_mkt_reward ( -- MarketingWallet RewardSentEvent
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	amount			DECIMAL NOT NULL,
+	marketer_aid	BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_transfer( -- cosmic signature ERC721 transfer
@@ -237,7 +313,6 @@ CREATE TABLE cg_adm_raf_eth_winners( -- NumRaffleWinnersPerRoundChanged event ev
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_transfer_stats( -- table to keep tracking of the statistical counters for tokent transfers
-CREATE TABLE cg_transfer_stats( -- table to keep tracking of the statistical counters for tokent transfers
     user_aid                BIGINT NOT NULL,
     erc20_num_transfers     BIGINT DEFAULT 0, -- CosmicToken
     erc721_num_transfers    BIGINT DEFAULT 0  -- CosmicSignature
@@ -263,6 +338,21 @@ CREATE TABLE cg_winner ( -- collects statistics per winer of prize
 	tokens_count			BIGINT DEFAULT 0,	-- tokens won in prizes + raffles
 	unclaimed_nfts			BIGINT DEFAULT 0	-- donated NFTs
 );
+CREATE TABLE cg_staker ( -- counts statistics per user for StakingWallet actions
+	staker_aid				BIGINT PRIMARY KEY,
+	total_tokens_staked		BIGINT DEFAULT 0,
+	num_stake_actions		BIGINT DEFAULT 0,
+	num_unstake_actions		BIGINT DEFAULT 0,
+	total_reward			DECIMAL DEFAULT 0,
+	unclaimed_reward		DECIMAL DEFAULT 0
+);
+CREATE TABLE cg_staker_deposit (-- accumulators for deposit-staker relation
+	staker_aid				BIGINT NOT NULL,
+	deposit_id				BIGINT NOT NULL, 
+	tokens_staked			BIGINT DEFAULT 0,
+	amount_to_claim			DECIMAL DEFAULT 0,
+	PRIMARY KEY(staker_aid,deposit_id)
+);
 CREATE TABLE cg_raffle_winner_stats (	-- prizes in ETH
 	winner_aid		BIGINT PRIMARY KEY,
 	amount_sum		DECIMAL DEFAULT 0,
@@ -285,24 +375,41 @@ CREATE TABLE cg_glob_stats ( -- global statistics
 	num_rwalk_used			BIGINT DEFAULT 0,
 	num_mints				BIGINT DEFAULT 0,
 	cur_num_bids			BIGINT DEFAULT 0,		-- num bids since new round
+	num_bids_cst			BIGINT DEFAULT 0,		-- amount of bids made with CST
 	total_raffle_eth_deposits DECIMAL DEFAULT 0,
 	total_raffle_eth_withdrawn DECIMAL DEFAULT 0,
-	total_nft_donated		BIGINT DEFAULT 0
+	total_nft_donated		BIGINT DEFAULT 0,
+	total_cst_consumed		DECIMAL DEFAULT 0,		-- or burned, sum of the tokens that was burned as bid price
+	total_mkt_rewards		DECIMAL DEFAULT 0,
+	num_mkt_rewards			BIGINT DEFAULT 0
 );
 CREATE TABLE cg_nft_stats ( -- stats for donated NFTs (donated with bidAndDonateNFT())
 	contract_aid			BIGINT PRIMARY KEY,
 	num_donated				BIGINT DEFAULT 0		-- how many NFTs were donated
 );
+CREATE TABLE cg_stake_stats ( -- gloal staking statistics (StakinWallet)
+	total_tokens_staked		BIGINT DEFAULT 0,
+	total_reward_amount		DECIMAL DEFAULT 0,
+	total_unclaimed_reward	DECIMAL DEFAULT 0,
+	total_num_stakers		BIGINT DEFAULT 0,
+	num_deposits			BIGINT DEFAULT 0,
+	total_modulo			DECIMAL DEFAULT 0,
+	num_charity_deposits	BIGINT DEFAULT 0,
+	total_charity_amount	DECIMAL DEFAULT 0
+);
 CREATE TABLE cg_contracts (
-	cosmic_game_addr		TEXT,
-	cosmic_signature_addr	TEXT,
-	cosmic_token_addr		TEXT,
-	cosmic_dao_addr			TEXT,
-	charity_wallet_addr		TEXT,
-	raffle_wallet_addr		TEXT,
-	random_walk_addr		TEXT
+	cosmic_game_addr		TEXT NOT NULL,
+	cosmic_signature_addr	TEXT NOT NULL,
+	cosmic_token_addr		TEXT NOT NULL,
+	cosmic_dao_addr			TEXT NOT NULL,
+	charity_wallet_addr		TEXT NOT NULL,
+	raffle_wallet_addr		TEXT NOT NULL,
+	random_walk_addr		TEXT NOT NULL,
+	staking_wallet_addr		TEXT NOT NULL,
+	marketing_wallet_addr	TEXT NOT NULL
 );
 CREATE TABLE cg_proc_status (
 	last_evt_id             BIGINT DEFAULT 0
 );
 INSERT INTO cg_glob_stats DEFAULT VALUES;
+INSERT INTO cg_stake_stats DEFAULT VALUES;

@@ -79,6 +79,26 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_stake_action[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_unstake_action[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_eth_deposit[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_claim_reward[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_marketing_reward_sent[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_transfer[:4]),
 			ContractAid: cosmic_sig_aid,
 		},
@@ -149,7 +169,7 @@ func find_cosmic_token_transfer(bid_evtlog_id int64) string {
 	// fetches the ERC20::Transfer event which has the id=evtlog-1 because it is
 	//		inserted right before Bid event
 	//		this function panics in case of failure because that would be an invalid database state
-	ee := storagew.S.Get_event_log(bid_evtlog_id-1)	// ERC20 tansfer is always 1 less than Bid id
+	ee := storagew.S.Get_event_log(bid_evtlog_id-2)	// ERC20 tansfer is always 2 less than the bid (-1 is for marketing reward but -2 is the bid reward)
 	var log types.Log
 	err := rlp.DecodeBytes(ee.RlpLog,&log)
 	if err!= nil {
@@ -296,8 +316,15 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	evt.LastBidderAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.RoundNum = log.Topics[2].Big().Int64()
 	evt.BidPrice = eth_evt.BidPrice.String()
+	evt.BidType = 0; // ETH
 	evt.RandomWalkTokenId = eth_evt.RandomWalkNFTId.Int64()
 	evt.ERC20_Value = find_cosmic_token_transfer(evt.EvtId)
+	evt.NumCSTTokens = eth_evt.NumCSTTokens.String()
+	if evt.RandomWalkTokenId > -1 {
+		evt.BidType = 1;	// RandomWalk	
+	} else {
+		if evt.NumCSTTokens != "-1" { evt.BidType = 2; } // Cosmic Signature Token (ERC20) bid
+	}
 	evt.PrizeTime = eth_evt.PrizeTime.Int64()
 	evt.Message = eth_evt.Message
 
@@ -306,6 +333,7 @@ func proc_bid_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tLastBidder: %v\n",evt.LastBidderAddr)
 	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
 	Info.Printf("\tBidPrice: %v\n",evt.BidPrice)
+	Info.Printf("\tNumCSTTokens: %v\n",evt.NumCSTTokens);
 	Info.Printf("\tRandomWalkTokenId: %v\n",evt.RandomWalkTokenId)
 	Info.Printf("\tPrizeTime: %v\n",evt.PrizeTime)
 	Info.Printf("\tMessage: %v\n",evt.Message)
@@ -433,7 +461,8 @@ func get_token_uri(token_id int64,contract_addr common.Address) string {
 		err_str := fmt.Sprintf("Error at get_token_uri() during GetTokenURI() call: %v",err)
 		Info.Printf(err_str)
 		Error.Printf(err_str)
-		os.Exit(1)
+		//os.Exit(1)
+		return ""
 	}
 	return tok_uri
 }
@@ -779,6 +808,208 @@ func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_donated_nft_claimed(evt.EvtId)
 	storagew.Insert_donated_nft_claimed(&evt)
 }
+func proc_stake_action_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGStakeAction
+	var eth_evt StakingWalletStakeActionEvent
+
+	Info.Printf("Processing StakeAction event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),staking_wallet_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := staking_wallet_abi.UnpackIntoInterface(&eth_evt,"StakeActionEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event StakeAction decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.ActionId = log.Topics[1].Big().Int64()
+	evt.TokenId = log.Topics[2].Big().Int64()
+	evt.Staker = common.BytesToAddress(log.Topics[3][12:]).String()
+	evt.TotalNfts = eth_evt.TotalNFTs.Int64()
+	evt.UnstakeTime = eth_evt.UnstakeTime.Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("StakeActionEvent{\n")
+	Info.Printf("\tActionId: %v\n",evt.ActionId)
+	Info.Printf("\tTokenId: %v\n",evt.TokenId)
+	Info.Printf("\tTotalNFTs: %v\n",evt.TotalNfts)
+	Info.Printf("\tUnstakeTime: %v\n",evt.UnstakeTime)
+	Info.Printf("\tStaker: %v\n",evt.Staker)
+	Info.Printf("}\n")
+
+	storagew.Delete_stake_action_event(evt.EvtId)
+	storagew.Insert_stake_action_event(&evt)
+}
+func proc_unstake_action_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGUnstakeAction
+	var eth_evt StakingWalletUnstakeActionEvent
+
+	Info.Printf("Processing UnstakeAction event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	if !bytes.Equal(log.Address.Bytes(),staking_wallet_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := staking_wallet_abi.UnpackIntoInterface(&eth_evt,"UnstakeActionEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event UnstakeAction decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.ActionId = log.Topics[1].Big().Int64()
+	evt.TokenId = log.Topics[2].Big().Int64()
+	evt.Staker = common.BytesToAddress(log.Topics[3][12:]).String()
+	evt.TotalNfts = eth_evt.TotalNFTs.Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("UnstakeActionEvent{\n")
+	Info.Printf("\tActionId: %v\n",evt.ActionId)
+	Info.Printf("\tTokenId: %v\n",evt.TokenId)
+	Info.Printf("\tTotalNFTs: %v\n",evt.TotalNfts)
+	Info.Printf("\tStaker: %v\n",evt.Staker)
+	Info.Printf("}\n")
+
+	storagew.Delete_unstake_action_event(evt.EvtId)
+	storagew.Insert_unstake_action_event(&evt)
+}
+func proc_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGEthDeposit
+	var eth_evt StakingWalletEthDepositEvent
+
+	Info.Printf("Processing EthDeposit event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),staking_wallet_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := staking_wallet_abi.UnpackIntoInterface(&eth_evt,"EthDepositEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event EthDepositEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.DepositTime = log.Topics[1].Big().Int64()
+	evt.DepositNum = eth_evt.DepositNum.Int64()
+	evt.NumStakedNfts = eth_evt.NumStakedNFTs.Int64()
+	evt.Amount = eth_evt.Amount.String()
+	evt.AccumModulo = eth_evt.Modulo.String()
+	evt.RoundNum = find_prize_num(evt.TxId)
+	if evt.RoundNum == -1 {
+		Error.Printf("Failed to gather round_num variable")
+		Info.Printf("Failed to gather round_num variable")
+		os.Exit(1)
+	}
+	divres:=big.NewInt(0)
+	rem:=big.NewInt(0)
+	divres.QuoRem(eth_evt.Amount,eth_evt.NumStakedNFTs,rem);
+	evt.AmountPerStaker = divres.String()
+	evt.Modulo = rem.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("EthDepositEvent{\n")
+	Info.Printf("\tDepositTime: %v\n",evt.DepositTime)
+	Info.Printf("\tDepositNum: %v\n",evt.DepositNum)
+	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
+	Info.Printf("\tNumStakedNFTs: %v\n",evt.NumStakedNfts)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tAmountPerStaker: %v\n",evt.AmountPerStaker)
+	Info.Printf("\tModulo: %v\n",evt.Modulo)
+	Info.Printf("\tAccumModulo: %v\n",evt.AccumModulo)
+	Info.Printf("}\n")
+	storagew.Delete_eth_deposit_event(evt.EvtId)
+	storagew.Insert_eth_deposit_event(&evt)
+}
+func proc_claim_reward_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGClaimReward
+	var eth_evt StakingWalletClaimRewardEvent
+
+	Info.Printf("Processing ClaimReward event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),staking_wallet_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := staking_wallet_abi.UnpackIntoInterface(&eth_evt,"ClaimRewardEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event ClaimReward decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.ActionId = log.Topics[1].Big().Int64()
+	evt.DepositId = log.Topics[2].Big().Int64()
+	evt.Staker = common.BytesToAddress(log.Topics[3][12:]).String()
+	evt.Reward = eth_evt.Reward.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("ClaimReward{\n")
+	Info.Printf("\tActionId: %v\n",evt.ActionId)
+	Info.Printf("\tDepositId: %v\n",evt.DepositId)
+	Info.Printf("\tReward: %v\n",evt.Reward)
+	Info.Printf("\tStaker: %v\n",evt.Staker)
+	Info.Printf("}\n")
+
+	storagew.Delete_claim_reward_event(evt.EvtId)
+	storagew.Insert_claim_reward_event(&evt)
+}
+func proc_marketing_reward_sent_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGMarketingRewardSent
+	var eth_evt MarketingWalletRewardSentEvent
+
+	Info.Printf("Processing MarketingWallet RewardSent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),marketing_wallet_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := marketing_wallet_abi.UnpackIntoInterface(&eth_evt,"RewardSentEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event RewardSentEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.Marketer = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.Amount = eth_evt.Amount.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("Marketing RwardSentEvent{\n")
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tMarketer: %v\n",evt.Marketer)
+	Info.Printf("}\n")
+
+	storagew.Delete_marketing_reward_sent_event(evt.EvtId)
+	storagew.Insert_marketing_reward_sent_event(&evt)
+}
 func proc_cosmic_signature_transfer_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGERC721Transfer
@@ -1020,6 +1251,21 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_transfer) {
 		proc_transfer_event_common(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_stake_action) {
+		proc_stake_action_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_unstake_action) {
+		proc_unstake_action_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_eth_deposit) {
+		proc_eth_deposit_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_claim_reward) {
+		proc_claim_reward_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_marketing_reward_sent) {
+		proc_marketing_reward_sent_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_charity_percentage_changed) {
 		proc_charity_percentage_changed_event(log,evtlog)

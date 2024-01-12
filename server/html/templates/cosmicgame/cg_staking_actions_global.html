@@ -1,0 +1,50 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Global Stake/Unstake actions</title>
+</head>
+<body>
+	<h3 class="page_title">Global Stake/Unstake actions<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Action Type</th>
+		<th class="market_reports">Token ID</th>
+		<th class="market_reports">Unstake date</th>
+		<th class="market_reports">Staker</th>
+		<th class="market_reports">Total num staked NFT</th>
+	</tr>
+	{{- range $i, $change := .StakingActions}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">
+				{{.BlockNum}}
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td style="text-align: center;" title="">
+				{{if eq .ActionType 0 }}Stake{{ else }}Unstake{{ end }}
+			</td>
+			<td style="text-align: center;" title="">{{.TokenId}}</td>
+			<td style="text-align: center;" title="">
+				{{ if eq .ActionType 0 }}
+				{{.UnstakeDate}}
+				{{ else }} N/A {{end}}
+			</td>
+			<td style="text-align: left;" title="">
+				{{.StakerAddr}}
+			</td>
+			<td style="text-align: right;" title="">
+				{{ if eq .NumStakedNFTs 0 }} <font color=red>{{ end }}
+				{{.NumStakedNFTs}}
+				{{ if eq .NumStakedNFTs 0 }} </font>{{ end }}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/staking/global/:offset/:limit</br>
+
+	Example: /api/cosmicgame/staking/global/0/100000
+</code>
+</body>

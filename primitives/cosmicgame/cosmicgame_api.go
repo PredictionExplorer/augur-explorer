@@ -22,6 +22,12 @@ type CGStatistics struct {
 	TotalRaffleEthWithdrawn		float64
 	NumWinnersWithPendingRaffleWithdrawal int64
 	TotalNFTDonated				int64
+	TotalCSTConsumed			string
+	TotalCSTConsumedEth			float64
+	NumBidsCST					int64
+	TotalMktRewards				string	// rewards deposited to marketers (total), from MarketingWallet
+	TotalMktRewardsEth			float64
+	NumMktRewards				int64
 	DonatedTokenDistribution	[]CGDonatedTokenDistrRec 
 }
 type CGBidRec struct {
@@ -37,6 +43,9 @@ type CGBidRec struct {
 	BidPriceEth					float64	// divided by 1e18
 	RWalkNFTId					int64
 	RoundNum					int64
+	BidType						int64
+	NumCSTTokens				string
+	NumCSTTokensEth				float64
 	ERC20_Amount				string
 	ERC20_AmountEth				float64	// divided by 1e18
 	NFTDonationTokenId			int64
@@ -66,6 +75,14 @@ type CGPrizeRec struct {
 	RaffleNFTWinners			[]CGRaffleNFTWinnerRec
 	RaffleETHDeposits			[]CGRaffleDepositRec
 }
+type UserStakingInfo struct {
+	TotalTokensStaked			int64
+	TotalNumStakeActions		int64
+	TotalReward					string
+	TotalRewardEth				float64
+	UnclaimedReward				string
+	UnclaimedRewardEth			float64
+}
 type CGUserInfo struct {
 	AddressId					int64
 	Address						string
@@ -82,6 +99,7 @@ type CGUserInfo struct {
 	TotalCSTokensWon			int64	// prizes + raffles
 	CosmicTokenNumTransfers		int64
 	CosmicSignatureNumTransfers	int64
+	StakingStatistics		UserStakingInfo
 }
 type CGCharityDonation struct {
 	EvtLogId					int64
@@ -212,6 +230,7 @@ type CGDonatedNFTClaimRec struct {
 	DonorAddr					string
 }
 type CGCosmicSignatureMintRec struct {
+	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
 	TimeStamp					int64
@@ -226,10 +245,18 @@ type CGCosmicSignatureMintRec struct {
 	CurOwnerAid					int64
 	CurOwnerAddr				string
 	Seed						string
-	//MintType					int64
 	RoundNum					int64
 	RecordType					int64
 	TokenName					string
+	Staked						bool
+	StakedOwnerAid				int64
+	StakedOwnerAddr				string
+	StakeActionId				int64
+	UnstakeElligibleTimeStamp	int64
+	UnstakeElligibleDateTime	string
+	WasUnstaked					bool
+	ActualUnstakeTimeStamp		int64	// if there is unstake record, these fields hold dates
+	ActualUnstakeDateTime		string
 }
 type CGRoundStats struct {
 	RoundNum					int64
@@ -243,10 +270,11 @@ type CGClaimInfo struct {
 	ETHRaffleToClaim			float64
 	ETHRaffleToClaimWei			string
 	NumDonatedNFTToClaim		int64		// Pending unclaimed donated tokens (counter)
+	UnclaimedStakingReward		float64
 }
 type CGRaffleHistory struct {
 	EvtLogId					int64
-	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize
+	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize, 4 - SatkingDeposit (at StakingWallet)
 	TimeStamp					int64
 	DateTime					string
 	BlockNum					int64
@@ -349,4 +377,138 @@ type CGRWalkUsed struct {
 	BidderAid					int64
 	BidderAddr					string
 	RWalkTokenId				int64
+}
+type CGEthDepositRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	DepositDate					string
+	DepositTimeStamp			int64
+	NumStakedNFTs				int64
+	Amount						string
+	AmountEth					float64
+	AmountPerHolder				string
+	AmountPerHolderEth			float64
+	Modulo						string
+	ModuloF64					float64
+}
+type CGStakeActionRec struct {
+	ActionType					int64
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	UnstakeDate					string
+	UnstakeTimeStamp			int64
+	ActionId					int64
+	TokenId						int64
+	NumStakedNFTs				int64
+	AmountPerHolder				string
+	AmountPerHolderEth			float64
+	Modulo						string
+	ModuloF64					float64
+	Claimed						bool
+}
+type CGStakingHistoryRec struct {
+	ActionType					int64
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	UnstakeDate					string
+	UnstakeTimeStamp			int64
+	ActionId					int64
+	TokenId						int64
+	NumStakedNFTs				int64
+	AccumNumStakedNFTs			int64
+	AmountPerHolder				string
+	AmountPerHolderEth			float64
+	Modulo						string
+	ModuloF64					float64
+	Claimed						bool
+	StakerAid					int64
+	StakerAddr					string
+}
+type CGRewardToClaim struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	DepositDate					string
+	DepositTimeStamp			int64
+	DepositId					int64
+	NumStakedNFTs				int64
+	DepositAmount				string
+	DepositAmountEth			float64
+	YourTokensStaked			int64
+	YourClaimableAmount			string
+	YourClaimableAmountEth		float64
+	AmountPerToken				string
+	AmountPerTokenEth			float64
+	Modulo						string
+	ModuloF64					float64
+}
+type CGCollectedReward struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	DepositDate					string
+	DepositTimeStamp			int64
+	DepositId					int64
+	NumStakedNFTs				int64
+	DepositAmount				string
+	DepositAmountEth			float64
+	YourTokensStaked			int64
+	YourCollectedAmount			string
+	YourCollectedAmountEth		float64
+	AmountPerToken				string
+	AmountPerTokenEth			float64
+	Modulo						string
+	ModuloF64					float64
+}
+type CGMarketingRewardRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	Amount						string
+	AmountEth					float64
+	MarketerAid					int64
+	MarketerAddr				string
+}
+type CGStakedTokenRec struct {
+	TokenInfo					CGCosmicSignatureMintRec
+	StakeTimeStamp				int64
+	StakeDateTime				string
+	UnstakeTimeStamp			int64
+	UnstakeDateTime				string
+	UserAddr					string
+	UserAid						int64
+
+}
+type CGActionIdsForDeposit struct {
+	RecordId					int64
+	DepositId					int64
+	UserAid						int64
+	StakeActionId				int64
 }

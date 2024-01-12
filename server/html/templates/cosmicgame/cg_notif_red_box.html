@@ -31,6 +31,19 @@
 			)
 			{{ end }}		
 		</td>
+	<tr class="market_reports">
+		<td class="market_reports">Unclaimed Staking Rewards</td>
+		<td class="market_reports">
+			{{ printf "%.8f" .Winnings.UnclaimedStakingReward}}
+			{{ if lt 0.0 .Winnings.UnclaimedStakingReward}}
+			(
+			<a href="/black/cosmicgame/staking/rewards/to_claim/by_user/{{.UserAddr}}">
+				List of unclaimed staking rewards
+			</a>
+			)
+			{{ end }}		
+		</td>
+	</tr>
 	</tr>
 </table>
 
