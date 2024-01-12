@@ -245,10 +245,18 @@ type CGCosmicSignatureMintRec struct {
 	CurOwnerAid					int64
 	CurOwnerAddr				string
 	Seed						string
-	//MintType					int64
 	RoundNum					int64
 	RecordType					int64
 	TokenName					string
+	Staked						bool
+	StakedOwnerAid				int64
+	StakedOwnerAddr				string
+	StakeActionId				int64
+	UnstakeElligibleTimeStamp	int64
+	UnstakeElligibleDateTime	string
+	WasUnstaked					bool
+	ActualUnstakeTimeStamp		int64	// if there is unstake record, these fields hold dates
+	ActualUnstakeDateTime		string
 }
 type CGRoundStats struct {
 	RoundNum					int64

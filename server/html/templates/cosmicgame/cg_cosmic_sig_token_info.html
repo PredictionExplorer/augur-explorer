@@ -67,6 +67,23 @@
 		<td>Ownership transfers</td>
 		<td><a href="/black/cosmicgame/cst/transfers/{{.TokenInfo.TokenId}}">transfers</a> </td>
 	</tr>
+	<tr>
+		<td>Staked</td>
+		<td>{{.TokenInfo.Staked}} </td>
+	</tr>
+	<tr>
+		<td>Staked Owner Address</td>
+		<td><a class="addr" href="/black/cosmicgame/user/info/{{.TokenInfo.StakedOwnerAddr}}">{{.TokenInfo.StakedOwnerAddr}}</a>
+		</td>
+	</tr>
+	<tr>
+		<td>Stake ActionId</td>
+		<td>{{.TokenInfo.StakeActionId}} </td>
+	</tr>
+	<tr>
+		<td>Unstake Date</td>
+		<td>{{.TokenInfo.ActualUnstakeDateTime}} </td>
+	</tr>
 </table>
 </table>
 <h3 class="page_title">Token name history</h3>
