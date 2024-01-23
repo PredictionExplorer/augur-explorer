@@ -29,6 +29,16 @@ type CGStatistics struct {
 	TotalMktRewardsEth			float64
 	NumMktRewards				int64
 	DonatedTokenDistribution	[]CGDonatedTokenDistrRec 
+	StakeStatistics				CGStakeStats
+}
+type CGStakeStats struct {
+	TotalTokensStaked			int64
+	TotalReward					string
+	TotalRewardEth				float64
+	UnclaimedReward				string
+	UnclaimedRewardEth			float64
+	NumActiveStakers			int64
+	NumDeposits					int64
 }
 type CGBidRec struct {
 	EvtLogId					int64

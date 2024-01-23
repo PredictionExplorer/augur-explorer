@@ -124,6 +124,38 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	stats.NumWinnersWithPendingRaffleWithdrawal = null_num_users_missing_withdrawal.Int64
 
 	stats.DonatedTokenDistribution = sw.Get_donated_token_distribution();
+	stats.StakeStatistics = sw.Get_stake_statistics()
+	return stats
+}
+func (sw *SQLStorageWrapper) Get_stake_statistics() p.CGStakeStats {
+
+	var stats p.CGStakeStats
+	var query string
+	query = "SELECT "+
+				"total_tokens_staked, "+
+				"total_reward_amount,"+
+				"total_reward_amount/1e18,"+
+				"total_unclaimed_reward,"+
+				"total_unclaimed_reward/1e18,"+
+				"total_num_stakers, "+
+				"num_deposits "+
+			"FROM cg_stake_stats LIMIT 1"
+
+	row := sw.S.Db().QueryRow(query)
+	var err error
+	err=row.Scan(
+		&stats.TotalTokensStaked,
+		&stats.TotalReward,
+		&stats.TotalRewardEth,
+		&stats.UnclaimedReward,
+		&stats.UnclaimedRewardEth,
+		&stats.NumActiveStakers,
+		&stats.NumDeposits,
+	)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_stake_statistics(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
 	return stats
 }
 func (sw *SQLStorageWrapper) Get_cosmic_game_round_statistics(round_num int64) p.CGRoundStats {
@@ -3548,7 +3580,8 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_by_user(user_aid int64) []p.CGSta
 				"EXTRACT(EPOCH FROM a.time_stamp)::BIGINT,"+
 				"a.time_Stamp,"+
 				"EXTRACT(EPOCH FROM a.unstake_time)::BIGINT,"+
-				"a.unstake_time "+
+				"a.unstake_time, "+
+				"m.stake_action_id "+
 			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
@@ -3589,6 +3622,7 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_by_user(user_aid int64) []p.CGSta
 			&rec.StakeDateTime,
 			&rec.UnstakeTimeStamp,
 			&rec.UnstakeDateTime,
+			&rec.TokenInfo.StakeActionId,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

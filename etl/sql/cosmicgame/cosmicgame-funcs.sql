@@ -655,7 +655,7 @@ BEGIN
 		SET
 			staked='T',
 			staked_owner_aid=NEW.staker_aid,
-		    stake_action_id=NEW.id
+		    stake_action_id=NEW.action_id
 		WHERE token_id=NEW.token_id;
 	UPDATE cg_staker SET total_tokens_staked = (total_tokens_staked + 1)
 		WHERE staker_aid=NEW.staker_aid;
