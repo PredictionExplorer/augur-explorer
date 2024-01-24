@@ -52,18 +52,21 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"TokenReward" : token_reward,
 		"PrizePercentage" : prize_percentage,
 		"RafflePercentage" : raffle_percentage,
-		"NumRaffleEthWinners" : raffle_eth_winners,
-		"NumRaffleNFTWinners" : raffle_nft_winners,
-		"NumHolderNFTWinners" : raffle_holder_winners,
 		"CharityAddr" : charity_addr.String(),
 		"CharityPercentage" : charity_percentage,
 		"CharityBalance": charity_balance,
 		"CharityBalanceEth": charity_balance_eth,
+		"NumRaffleEthWinners" : raffle_eth_winners,
+		"NumRaffleNFTWinners" : raffle_nft_winners,
+		"NumHolderNFTWinners" : raffle_holder_winners,
+		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
+		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
+		"NumUniqueStakers" : bw_stats.NumUniqueStakers,
 		"NumDonatedNFTs" : bw_stats.NumDonatedNFTs,
-		"ContractAddrs" : caddrs,
 		"MainStats" : bw_stats,
 		"CurRoundStats" : cur_round_stats,
 		"TsRoundStart" : round_start_ts,
+		"ContractAddrs" : caddrs,
 	})
 }
 func api_cosmic_game_prize_list(c *gin.Context) {
@@ -397,6 +400,24 @@ func api_cosmic_game_user_unique_winners(c *gin.Context) {
 		"status": req_status,
 		"error" : err_str,
 		"UniqueWinners" : unique_winners,
+	})
+}
+func api_cosmic_game_user_unique_stakers(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	unique_stakers := arb_storagew.Get_unique_stakers()
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UniqueStakers" : unique_stakers,
 	})
 }
 func api_cosmic_game_donations_nft_list(c *gin.Context) {
@@ -1706,5 +1727,27 @@ func api_cosmic_game_staking_rewards_action_ids_by_deposit(c *gin.Context) {
 		"UserAid" : user_aid,
 		"DepositId" : deposit_id,
 		"ActionIds" : action_ids,
+	})
+}
+func api_cosmic_game_staking_rewards_global(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	success,offset,limit := parse_offset_limit_params_json(c)
+	if !success {
+		return
+	}
+	rewards := arb_storagew.Get_global_staking_rewards(offset, limit)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"Offset" : offset,
+		"Limit" : limit,
+		"StakingRewards" : rewards,
 	})
 }

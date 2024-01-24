@@ -97,6 +97,19 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
+	var null_stakers sql.NullInt64
+	query = "SELECT "+
+				"COUNT(*) AS total "+
+				"FROM cg_staker " +
+				"WHERE num_stake_actions > 0"
+	row = sw.S.Db().QueryRow(query)
+	err=row.Scan(&null_stakers)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	if null_stakers.Valid { stats.NumUniqueStakers = uint64(null_stakers.Int64) }
+
 	var null_donated_nfts sql.NullInt64
 	query = "SELECT "+
 				"SUM(num_donated) as total FROM cg_nft_stats"
@@ -1579,7 +1592,7 @@ func (sw *SQLStorageWrapper) Get_unique_winners() []p.CGUniqueWinner {
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_NFT_donations(offset,limit int) []p.GNFTDonation{
+func (sw *SQLStorageWrapper) Get_NFT_donations(offset,limit int) []p.CGNFTDonation{
 
 	if limit == 0 { limit = 1000000 }
 	var query string
@@ -1611,10 +1624,10 @@ func (sw *SQLStorageWrapper) Get_NFT_donations(offset,limit int) []p.GNFTDonatio
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.GNFTDonation,0, 256)
+	records := make([]p.CGNFTDonation,0, 256)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.GNFTDonation
+		var rec p.CGNFTDonation
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,
@@ -1640,7 +1653,7 @@ func (sw *SQLStorageWrapper) Get_NFT_donations(offset,limit int) []p.GNFTDonatio
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_NFT_donation_stats() []p.GNFTDonationStats {
+func (sw *SQLStorageWrapper) Get_NFT_donation_stats() []p.CGNFTDonationStats {
 
 	var query string
 	query = "SELECT "+
@@ -1655,10 +1668,10 @@ func (sw *SQLStorageWrapper) Get_NFT_donation_stats() []p.GNFTDonationStats {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.GNFTDonationStats,0, 256)
+	records := make([]p.CGNFTDonationStats,0, 256)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.GNFTDonationStats
+		var rec p.CGNFTDonationStats
 		err=rows.Scan(
 			&rec.TokenAddressId,
 			&rec.TokenAddress,
@@ -1709,7 +1722,7 @@ func (sw *SQLStorageWrapper) Get_record_counters() p.CGRecordCounters {
 
 	return output
 }
-func (sw *SQLStorageWrapper) Get_NFT_donation_info(id int64) (bool,p.GNFTDonation) {
+func (sw *SQLStorageWrapper) Get_NFT_donation_info(id int64) (bool,p.CGNFTDonation) {
 
 	var query string
 	query = "SELECT "+
@@ -1733,7 +1746,7 @@ func (sw *SQLStorageWrapper) Get_NFT_donation_info(id int64) (bool,p.GNFTDonatio
 
 	row := sw.S.Db().QueryRow(query,id)
 	var err error
-	var rec p.GNFTDonation
+	var rec p.CGNFTDonation
 	rec.RecordId = id
 	err=row.Scan(
 		&rec.EvtLogId,
@@ -1861,7 +1874,7 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winners_by_round(round_num int64) []
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_unclaimed_donated_nft_by_user(winner_aid int64) []p.GNFTDonation {
+func (sw *SQLStorageWrapper) Get_unclaimed_donated_nft_by_user(winner_aid int64) []p.CGNFTDonation {
 
 	var query string
 	query = "SELECT "+
@@ -1894,10 +1907,10 @@ func (sw *SQLStorageWrapper) Get_unclaimed_donated_nft_by_user(winner_aid int64)
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.GNFTDonation,0, 256)
+	records := make([]p.CGNFTDonation,0, 256)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.GNFTDonation
+		var rec p.CGNFTDonation
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,
@@ -2339,7 +2352,7 @@ func (sw *SQLStorageWrapper) Get_num_prize_claims() int64 {
 	}
 	return null_num_claims.Int64
 }
-func (sw *SQLStorageWrapper) Get_nft_donations_by_prize(prize_num int64) []p.GNFTDonation {
+func (sw *SQLStorageWrapper) Get_nft_donations_by_prize(prize_num int64) []p.CGNFTDonation {
 
 	var query string
 	query = "SELECT "+
@@ -2370,10 +2383,10 @@ func (sw *SQLStorageWrapper) Get_nft_donations_by_prize(prize_num int64) []p.GNF
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.GNFTDonation,0, 256)
+	records := make([]p.CGNFTDonation,0, 256)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.GNFTDonation
+		var rec p.CGNFTDonation
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,
@@ -2399,7 +2412,7 @@ func (sw *SQLStorageWrapper) Get_nft_donations_by_prize(prize_num int64) []p.GNF
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_unclaimed_donated_nfts_by_prize(prize_num int64) []p.GNFTDonation {
+func (sw *SQLStorageWrapper) Get_unclaimed_donated_nfts_by_prize(prize_num int64) []p.CGNFTDonation {
 
 	var query string
 	query = "SELECT "+
@@ -2431,10 +2444,10 @@ func (sw *SQLStorageWrapper) Get_unclaimed_donated_nfts_by_prize(prize_num int64
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.GNFTDonation,0, 256)
+	records := make([]p.CGNFTDonation,0, 256)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.GNFTDonation
+		var rec p.CGNFTDonation
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,
@@ -3765,6 +3778,104 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 		}
 		rec.DepositId = deposit_id
 		rec.UserAid = user_aid
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_global_staking_rewards(offset,limit int) []p.CGStakingRewardRec {
+	
+	var query string
+	query = "SELECT "+
+				"r.id,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS tstmp, "+
+				"d.time_stamp AS date_time, "+
+				"d.block_num,"+
+				"d.tx_id,"+
+				"t.tx_hash,"+
+				"d.deposit_num AS round_num,"+
+				"r.reward, "+
+				"r.reward/1e18 AS amount_eth,"+
+				"wa.addr winner_addr,"+
+				"r.staker_aid "+
+			"FROM cg_eth_deposit d "+
+				"LEFT JOIN transaction t ON t.id=d.tx_id "+
+				"LEFT JOIN cg_claim_reward r ON d.deposit_num=r.deposit_id "+
+				"LEFT JOIN address wa ON r.staker_aid=wa.address_id "+
+			"WHERE (r.id IS NOT NULL) "+
+			"ORDER BY r.evtlog_id DESC " +
+			"OFFSET $1 LIMIT $2"
+
+	rows,err := sw.S.Db().Query(query,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGStakingRewardRec,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGStakingRewardRec
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.RoundNum,
+			&rec.Amount,
+			&rec.AmountEth,
+			&rec.StakerAddr,
+			&rec.StakerAid,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_unique_stakers() []p.CGUniqueStaker {
+
+	var query string
+	query = "SELECT "+
+				"s.staker_aid,"+
+				"a.addr,"+
+				"s.total_tokens_staked,"+
+				"s.num_stake_actions,"+
+				"s.num_unstake_actions,"+
+				"s.total_reward,"+
+				"s.total_reward/1e18, "+
+				"s.unclaimed_reward,"+
+				"s.unclaimed_reward/1e18 "+
+			"FROM "+sw.S.SchemaName()+".cg_staker s "+
+				"LEFT JOIN address a ON s.staker_aid=a.address_id " +
+			"WHERE num_stake_actions > 0 "+
+			"ORDER BY total_reward DESC "
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGUniqueStaker ,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGUniqueStaker
+		err=rows.Scan(
+			&rec.StakerAid,
+			&rec.StakerAddr,
+			&rec.TotalTokensStaked,
+			&rec.NumStakeActions,
+			&rec.NumUnstakeActions,
+			&rec.TotalReward,
+			&rec.TotalRewardEth,
+			&rec.UnclaimedReward,
+			&rec.UnclaimedRewardEth,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
 		records = append(records,rec)
 	}
 	return records

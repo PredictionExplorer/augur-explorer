@@ -6,6 +6,7 @@ type CGStatistics struct {
 	TotalPrizes					uint64
 	NumUniqueBidders			uint64
 	NumUniqueWinners			uint64
+	NumUniqueStakers			uint64
 	TotalPrizesPaidAmountWei	string
 	TotalPrizesPaidAmountEth	float64	// divided by 1e18
 	NumVoluntaryDonations		uint64
@@ -152,7 +153,18 @@ type CGUniqueWinner struct {
 	MaxWinAmountEth				float64	// same as above but with 18 decimal places (i.e. in ETH )
 	PrizesSum					float64	// all winnings in ETH
 }
-type GNFTDonation struct {
+type CGUniqueStaker struct {
+	StakerAid					int64
+	StakerAddr					string
+	TotalTokensStaked			int64
+	NumStakeActions				int64
+	NumUnstakeActions			int64
+	TotalReward					string
+	TotalRewardEth				float64
+	UnclaimedReward				string
+	UnclaimedRewardEth			float64
+}
+type CGNFTDonation struct {
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
@@ -169,7 +181,7 @@ type GNFTDonation struct {
 	NFTTokenURI					string
 	Index						int64
 }
-type GNFTDonationStats struct {
+type CGNFTDonationStats struct {
 	TokenAddressId				int64
 	TokenAddress				string
 	NumDonations				int64	// total number of donated tokens per this contract
@@ -521,4 +533,18 @@ type CGActionIdsForDeposit struct {
 	DepositId					int64
 	UserAid						int64
 	StakeActionId				int64
+}
+type CGStakingRewardRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	RoundNum					int64
+	Amount						string
+	AmountEth					float64
+	StakerAid					int64
+	StakerAddr					string
 }

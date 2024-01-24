@@ -1,0 +1,34 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Staking Rewards Global</title>
+</head>
+<body>
+	<h3 class="page_title">Staking Rewards (global)<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">RecordId</th>
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Staker</th>
+		<th class="market_reports">Amount (ETH)</th>
+	</tr>
+	{{- range $i, $change := .StakingRewards}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">{{.RecordId}}</td>
+			<td class="" title="{{.TimeStamp}}">{{.BlockNum}}</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="addr" title="{{.StakerAid}}">
+			<a href="/black/cosmicgame/staking/rewards/collected/by_user/{{.StakerAddr}}">{{.StakerAddr}}</a>
+			</td>
+			<td style="text-align: right;" title="">{{printf "%.6f" .AmountEth}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/staking/rewards/global/[offset]/[limit]</br>
+
+	Example: /api/cosmicgame/staking/rewards/global/0/10000
+</code>
+</body>
