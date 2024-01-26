@@ -115,7 +115,19 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_raffle_percentage_changed[:4]),
+			Signature: hex.EncodeToString(evt_staking_percentage_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_num_raffle_eth_winners_per_round_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_num_raffle_nft_winners_per_round_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_num_raffle_nft_holders_per_round_changed[:4]),
 			ContractAid: 0,
 		},
 	)
@@ -1177,7 +1189,38 @@ func proc_raffle_percentage_changed_event(log *types.Log,elog *EthereumEventLog)
 	storagew.Delete_cosmic_game_raffle_percentage_changed_event(evt.EvtId)
     storagew.Insert_cosmic_game_raffle_percentage_changed_event(&evt)
 }
-func proc_num_raffle_winners_per_round_changed_event(log *types.Log,elog *EthereumEventLog) {
+func proc_staking_percentage_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGStakingPercentageChanged
+	var eth_evt CosmicGameStakingPercentageChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing StakingPercentageChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"StakingPercentageChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event StakingPercentageChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewStakingPercentage= eth_evt.NewStakingPercentage.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("StakingPercentageChanged {\n")
+	Info.Printf("\tNewStakingPercentage: %v\n",evt.NewStakingPercentage)
+	Info.Printf("}\n")
+
+	storagew.Delete_cosmic_game_staking_percentage_changed_event(evt.EvtId)
+    storagew.Insert_cosmic_game_staking_percentage_changed_event(&evt)
+}
+func proc_num_raffle_eth_winners_per_round_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGNumRaffleWinnersPerRoundChanged
 	var eth_evt CosmicGameNumRaffleWinnersPerRoundChanged 
@@ -1205,8 +1248,70 @@ func proc_num_raffle_winners_per_round_changed_event(log *types.Log,elog *Ethere
 	Info.Printf("\tNewNumRaffleWinnersPerRound: %v\n",evt.NewNumRaffleWinnersPerRound)
 	Info.Printf("}\n")
 
-	storagew.Delete_cosmic_game_num_raffle_winners_per_round_changed_event(evt.EvtId)
-    storagew.Insert_cosmic_game_num_raffle_winners_per_round_changed_event(&evt)
+	storagew.Delete_cosmic_game_num_raffle_eth_winners_per_round_changed_event(evt.EvtId)
+    storagew.Insert_cosmic_game_num_raffle_eth_winners_per_round_changed_event(&evt)
+}
+func proc_num_raffle_nft_winners_per_round_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGNumRaffleNFTWinnersPerRoundChanged
+	var eth_evt CosmicGameNumRaffleNFTWinnersPerRoundChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing NumRaffleWinnersPerRoundChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NumRaffleNFTWinnersPerRoundChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event NumRaffleNFTWinnersPerRoundChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewNumRaffleNFTWinnersPerRound = eth_evt.NewNumRaffleNFTWinnersPerRound.Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("NumRaffleNFTWinnersPerRoundChanged{\n")
+	Info.Printf("\tNewNumRaffleWinnersPerRound: %v\n",evt.NewNumRaffleNFTWinnersPerRound)
+	Info.Printf("}\n")
+
+	storagew.Delete_cosmic_game_num_raffle_nft_winners_per_round_changed_event(evt.EvtId)
+    storagew.Insert_cosmic_game_num_raffle_nft_winners_per_round_changed_event(&evt)
+}
+func proc_num_raffle_nft_holders_per_round_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGNumRaffleNFTHoldersPerRoundChanged
+	var eth_evt CosmicGameNumHolderNFTWinnersPerRoundChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing NumHolderNFTWinnersPerRoundChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NumHolderNFTWinnersPerRoundChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event NumHolderNFTWinnersPerRoundChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewNumRaffleNFTHoldersPerRound = eth_evt.NewNumHolderNFTWinnersPerRound.Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("NumHolderNFTWinnersPerRoundChanged{\n")
+	Info.Printf("\tNewNumRaffleNFTHoldersPerRound: %v\n",evt.NewNumRaffleNFTHoldersPerRound)
+	Info.Printf("}\n")
+
+	storagew.Delete_cosmic_game_num_raffle_nft_holders_per_round_changed_event(evt.EvtId)
+    storagew.Insert_cosmic_game_num_raffle_nft_holders_per_round_changed_event(&evt)
 }
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
@@ -1276,8 +1381,17 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_percentage_changed) {
 		proc_raffle_percentage_changed_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_num_raffle_winners_per_round_changed) {
-		proc_num_raffle_winners_per_round_changed_event(log,evtlog)
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_staking_percentage_changed) {
+		proc_staking_percentage_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_num_raffle_eth_winners_per_round_changed) {
+		proc_num_raffle_eth_winners_per_round_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_num_raffle_nft_winners_per_round_changed) {
+		proc_num_raffle_nft_winners_per_round_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_num_raffle_nft_holders_per_round_changed) {
+		proc_num_raffle_nft_holders_per_round_changed_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {

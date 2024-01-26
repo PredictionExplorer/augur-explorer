@@ -631,11 +631,11 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_raffle_percentage_changed_event(
 		evt.NewRafflePercentage,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_prize_pcent table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raffle_pcent table: %v\n",err))
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_winners_per_round_changed_event(evt *p.CGNumRaffleWinnersPerRoundChanged) {
+func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_eth_winners_per_round_changed_event(evt *p.CGNumRaffleWinnersPerRoundChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
@@ -655,6 +655,75 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_winners_per_round_cha
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raf_eth_winners table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_winners_per_round_changed_event(evt *p.CGNumRaffleNFTWinnersPerRoundChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_raf_nft_winners(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"num_winners" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.NewNumRaffleNFTWinnersPerRound,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raf_eth_winners table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_holders_per_round_changed_event(evt *p.CGNumRaffleNFTHoldersPerRoundChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_raf_nft_holders(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"num_holders" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.NewNumRaffleNFTHoldersPerRound,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raf_eth_winners table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_cosmic_game_staking_percentage_changed_event(evt *p.CGStakingPercentageChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_stake_pcent (" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"percentage" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.NewStakingPercentage,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_stake_pcent table: %v\n",err))
 		os.Exit(1)
 	}
 }

@@ -53,7 +53,10 @@ const (
 	CHARITY_PERCENTAGE_CHANGED		= "0918b499c15fcb0e087d411d53664cde23577e1aa4a9cbfbdf735ddd1871e7d5"
 	PRIZE_PERCENTAGE_CHANGED	= "595fa5ba64cd6f66df19b53b59bb4a275bae1ec5b362da95e1fa4c5feb62be1e"
 	RAFFLE_PERCENTAGE_CHANGED = "d2002a256ab2f8a5c1b865685754b20437c0a26e7249e40ae5df2993966f99f2"
-	NUM_RAFFLE_WINNERS_PER_ROUND_CHANGED = "5e3567ae359e61c47ad2f11d2828dea7e062b2ff63dea385cdb7900a50504c7c"
+	STAKE_PERCENTAGE_CHANGED = "9be9203c5d81ee2019998f7020cf412c92a35ba870318f660d4972660210fb4b"
+	NUM_RAFFLE_ETH_WINNERS_PER_ROUND_CHANGED = "5e3567ae359e61c47ad2f11d2828dea7e062b2ff63dea385cdb7900a50504c7c"
+	NUM_RAFFLE_NFT_WINNERS = "72e4278828b8a868e0ba5b4887f954797ea786f8bac991128636171f5eed471d"
+	NUM_RAFFLE_NFT_HOLDERS = "0cc7e37c68566f67d0fe13bf38246d7447cf99a0c481c2ef9963969bb4f5ebc8"
 )
 var (
 	eclient 				*ethclient.Client
@@ -82,7 +85,10 @@ var (
 	evt_charity_percentage_changed,_= hex.DecodeString(CHARITY_PERCENTAGE_CHANGED)
 	evt_prize_percentage_changed,_ = hex.DecodeString(PRIZE_PERCENTAGE_CHANGED)
 	evt_raffle_percentage_changed,_ = hex.DecodeString(RAFFLE_PERCENTAGE_CHANGED)
-	evt_num_raffle_winners_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_WINNERS_PER_ROUND_CHANGED)
+	evt_staking_percentage_changed,_ = hex.DecodeString(STAKE_PERCENTAGE_CHANGED)
+	evt_num_raffle_eth_winners_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_ETH_WINNERS_PER_ROUND_CHANGED)
+	evt_num_raffle_nft_winners_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_WINNERS);
+	evt_num_raffle_nft_holders_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_HOLDERS);
 	inspected_events []InspectedEvent
 
 	cosmic_game_abi			*abi.ABI

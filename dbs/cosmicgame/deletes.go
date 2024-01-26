@@ -249,10 +249,40 @@ func (sw *SQLStorageWrapper) Delete_cosmic_game_raffle_percentage_changed_event(
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_cosmic_game_num_raffle_winners_per_round_changed_event(evtlog_id int64) {
+func (sw *SQLStorageWrapper) Delete_cosmic_game_num_raffle_eth_winners_per_round_changed_event(evtlog_id int64) {
 
 	var query string
 	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_raf_eth_winners WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Delete_cosmic_game_num_raffle_nft_winners_per_round_changed_event(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_raf_nft_winners WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Delete_cosmic_game_num_raffle_nft_holders_per_round_changed_event(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_raf_nft_holders WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Delete_cosmic_game_staking_percentage_changed_event(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_stake_pcent WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))

@@ -294,6 +294,14 @@ type CGRafflePercentageChanged struct {
 	Contract                string
 	NewRafflePercentage		string
 }
+type CGStakingPercentageChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewStakingPercentage	string
+}
 type CGNumRaffleWinnersPerRoundChanged struct {
 	EvtId                   int64
 	BlockNum                int64
@@ -301,4 +309,20 @@ type CGNumRaffleWinnersPerRoundChanged struct {
 	TimeStamp               int64
 	Contract                string
 	NewNumRaffleWinnersPerRound int64
+}
+type CGNumRaffleNFTWinnersPerRoundChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewNumRaffleNFTWinnersPerRound int64
+}
+type CGNumRaffleNFTHoldersPerRoundChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewNumRaffleNFTHoldersPerRound int64
 }
