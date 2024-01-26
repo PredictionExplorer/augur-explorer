@@ -1751,3 +1751,38 @@ func api_cosmic_game_staking_rewards_global(c *gin.Context) {
 		"StakingRewards" : rewards,
 	})
 }
+func api_cosmic_game_get_cst_price(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	var copts bind.CallOpts
+	// Note: we are using BusinessLogic contract instead of CosmicGame because CurrentCSTPrice is a view 
+	// function and will be called using 'Caller' interface instead of 'Transactor' interface, since
+	// both function return a byte array of 32 bytes , this workaround will work, otherwise, we would
+	// need to make explicit eth_call() method to CosmicGame contract (because the default is to transact
+	// since the method is not declared as 'view')
+	contract,err := NewBusinessLogic(cosmic_game_addr,eclient)
+	if err != nil {
+		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n",err)
+		Error.Printf(err_str)
+		Info.Printf(err_str)
+		respond_error_json(c,err_str)
+	} else {
+		cst_price,err := contract.CurrentCSTPrice(&copts);
+		if err != nil {
+			Error.Printf(err.Error())
+			Info.Printf(err.Error())
+			respond_error_json(c,err.Error());
+		} else {
+			b := cst_price[64:];
+			h := common.BytesToHash(b);
+			price := h.Big();
+			var req_status int = 1
+			var err_str string = ""
+			c.JSON(http.StatusOK, gin.H{
+				"status": req_status,
+				"error" : err_str,
+				"CSTPrice": price.String(),
+			})
+		}
+	}
+}

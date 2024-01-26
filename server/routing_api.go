@@ -166,6 +166,7 @@ func set_api_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/api/cosmicgame/bid/info/:evtlog_id",api_cosmic_game_bid_info)
 	r.GET("/api/cosmicgame/bid/list_by_round/:round_num/:sort/:offset/:limit",api_cosmic_game_bid_list_by_round)
 	r.GET("/api/cosmicgame/bid/used_rwalk_nfts",api_cosmic_game_used_rwalk_nfts)
+	r.GET("/api/cosmicgame/bid/cst_price",api_cosmic_game_get_cst_price)
 	r.GET("/api/cosmicgame/cst/list/:offset/:limit",api_cosmic_game_cosmic_signature_token_list)
 	r.GET("/api/cosmicgame/cst/info/:token_id",api_cosmic_game_cosmic_signature_token_info)
 	r.GET("/api/cosmicgame/cst/names/history/:token_id",api_cosmic_game_token_name_history)
