@@ -153,6 +153,12 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	activation_time,err := cosmic_game_ctrct.ActivationTime(&copts)
+	if err != nil {
+		fmt.Printf("Error at LastBidType()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
 
 
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
@@ -173,4 +179,5 @@ func main() {
 	fmt.Printf("Claimprize timeout = %v\n",timeout.String())
 	fmt.Printf("Owner = %v\n",owneraddr.String())
 	fmt.Printf("LastBidType = %v\n",last_bid_type)
+	fmt.Printf("ActivationTime= %v\n",activation_time)
 }

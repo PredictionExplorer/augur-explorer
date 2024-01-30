@@ -1775,14 +1775,29 @@ func api_cosmic_game_get_cst_price(c *gin.Context) {
 		} else {
 			b := cst_price[64:];
 			h := common.BytesToHash(b);
-			price := h.Big();
-			var req_status int = 1
-			var err_str string = ""
-			c.JSON(http.StatusOK, gin.H{
-				"status": req_status,
-				"error" : err_str,
-				"CSTPrice": price.String(),
-			})
+			tuple_data,err := contract.AuctionDuration(&copts);
+			if err != nil {
+				Error.Printf(err.Error())
+				Info.Printf(err.Error())
+				respond_error(c,err.Error());
+			} else {
+				seconds_elapsed_slice := tuple_data[64:];
+				auction_duration_slice := tuple_data[128:];
+				price := h.Big();
+				h = common.BytesToHash(seconds_elapsed_slice);
+				seconds_elapsed := h.Big();
+				h = common.BytesToHash(auction_duration_slice);
+				auction_duration := h.Big();
+				var req_status int = 1
+				var err_str string = ""
+				c.JSON(http.StatusOK, gin.H{
+					"status": req_status,
+					"error" : err_str,
+					"CSTPrice": price.String(),
+					"SecondsElapsed" : seconds_elapsed.String(),
+					"AuctionDuration" : auction_duration.String(),
+				})
+			}
 		}
 	}
 }

@@ -1793,7 +1793,6 @@ func cosmic_game_staking_rewards_global(c *gin.Context) {
 }
 func cosmic_game_get_cst_price(c *gin.Context) {
 
-	fmt.Printf("hello");
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
 		return
@@ -1818,14 +1817,26 @@ func cosmic_game_get_cst_price(c *gin.Context) {
 			respond_error(c,err.Error());
 		} else {
 			b := cst_price[64:];
-			fmt.Printf("%v\n",b);
-			Info.Printf("%v\n",b);
 			h := common.BytesToHash(b);
-			price := h.Big();
-			fmt.Printf("price = %v\n",price.String());
-			c.HTML(http.StatusOK, "cg_current_cst_price.html", gin.H{
-				"CSTPrice": price.String(),
-			})
+			tuple_data,err := contract.AuctionDuration(&copts);
+			if err != nil {
+				Error.Printf(err.Error())
+				Info.Printf(err.Error())
+				respond_error(c,err.Error());
+			} else {
+				seconds_elapsed_slice := tuple_data[64:];
+				auction_duration_slice := tuple_data[128:];
+				price := h.Big();
+				h = common.BytesToHash(seconds_elapsed_slice);
+				seconds_elapsed := h.Big();
+				h = common.BytesToHash(auction_duration_slice);
+				auction_duration := h.Big();
+				c.HTML(http.StatusOK, "cg_current_cst_price.html", gin.H{
+					"CSTPrice": price.String(),
+					"SecondsElapsed" : seconds_elapsed.String(),
+					"AuctionDuration" : auction_duration.String(),
+				})
+			}
 		}
 	}
 }
