@@ -4,6 +4,7 @@ import (
 	"os"
 	"fmt"
 	"context"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -180,4 +181,38 @@ func main() {
 	fmt.Printf("Owner = %v\n",owneraddr.String())
 	fmt.Printf("LastBidType = %v\n",last_bid_type)
 	fmt.Printf("ActivationTime= %v\n",activation_time)
+
+	blogic_ctrct,err := NewBusinessLogic(cosmic_game_addr,eclient)
+	if err!=nil {
+		fmt.Printf("Failed to instantiate BusinessLogic contract: %v\n",err)
+		os.Exit(1)
+	}
+	cst_bytes,err := blogic_ctrct.CurrentCSTPrice(&copts);
+	if err != nil {
+		fmt.Printf("Error at CurrentCSTPrice()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	} else {
+		price_hash := common.BytesToHash(cst_bytes[64:])
+		cst_price := price_hash.Big()
+		f_divisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
+		f_price := big.NewFloat(0.0).SetInt(cst_price)
+		f_quo := big.NewFloat(0.0).Quo(f_price,f_divisor)
+		bid_price_eth,_ := f_quo.Float64()
+		fmt.Printf("CST Bid Price (Ether) = %.6f\n",bid_price_eth)
+		fmt.Printf("CST Bid Price (Wei) = %v\n",cst_price.String())
+	}
+	ad_bytes,err := blogic_ctrct.AuctionDuration(&copts);
+	if err != nil {
+		fmt.Printf("Error at AuctionDuration()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	} else {
+		seconds_hash := common.BytesToHash(ad_bytes[64:96])
+		seconds := seconds_hash.Big().Int64()
+		duration_hash := common.BytesToHash(ad_bytes[96:])
+		duration := duration_hash.Big().Int64()
+		fmt.Printf("AuctionDuration Seconds: %v\n",seconds)
+		fmt.Printf("AuctionDuration Duration: %v\n",duration)
+	}
 }
