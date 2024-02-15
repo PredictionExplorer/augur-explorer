@@ -52,17 +52,21 @@ func main() {
 	}
 
 	var copts bind.CallOpts
-	cst_price,err := cosmic_game_ctrct.CurrentCSTPrice(&copts)
+	blc,err := NewBusinessLogic(cosmic_game_addr,eclient)
+	if err != nil {
+		fmt.Printf("Error instantiating BusinessLogic: %v\n",err)
+		os.Exit(1)
+	}
+	cst_price_bytes,err := blc.CurrentCSTPrice(&copts)
 	if err != nil {
 		fmt.Printf("Error at currentCSTPrice()(): %v\n",err)
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-
-	fmt.Printf("CSt price = %v\n",cst_price.String())
-	mult := big.NewInt(2)
-	cst_price.Mul(cst_price,mult)
-	fmt.Printf("CST bid amount: %v\n",cst_price.String())
+	b := cst_price_bytes[64:];
+	h := common.BytesToHash(b);
+	cst_price := h.Big()
+	fmt.Printf("CST price = %v\n",cst_price.String())
 
 	from_PrivateKey, err := crypto.HexToECDSA(from_pkey_str)
 	if err != nil {
@@ -109,7 +113,9 @@ func main() {
 	txopts.Signer = signfunc
 
 	tx,err := cosmic_game_ctrct.BidWithCST(txopts,"bid with CST from golang")
-	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
+	if tx != nil {
+		fmt.Printf("Tx hash: %v\n",tx.Hash().String())
+	}
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)
 		os.Exit(1)

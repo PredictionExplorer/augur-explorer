@@ -156,7 +156,19 @@ func main() {
 	}
 	activation_time,err := cosmic_game_ctrct.ActivationTime(&copts)
 	if err != nil {
-		fmt.Printf("Error at LastBidType()(): %v\n",err)
+		fmt.Printf("Error at ActivationTime()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	num_eth_bids,err := cosmic_game_ctrct.NumETHBids(&copts)
+	if err != nil {
+		fmt.Printf("Error at NumETHBids()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	num_cst_bids,err := cosmic_game_ctrct.NumCSTBids(&copts)
+	if err != nil {
+		fmt.Printf("Error at NumCSTBids()(): %v\n",err)
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
@@ -181,6 +193,8 @@ func main() {
 	fmt.Printf("Owner = %v\n",owneraddr.String())
 	fmt.Printf("LastBidType = %v\n",last_bid_type)
 	fmt.Printf("ActivationTime= %v\n",activation_time)
+	fmt.Printf("NumETHBids = %v\n",num_eth_bids);
+	fmt.Printf("NumCSTBids = %v\n",num_cst_bids);
 
 	blogic_ctrct,err := NewBusinessLogic(cosmic_game_addr,eclient)
 	if err!=nil {

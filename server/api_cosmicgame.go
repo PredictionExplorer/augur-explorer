@@ -52,6 +52,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"TokenReward" : token_reward,
 		"PrizePercentage" : prize_percentage,
 		"RafflePercentage" : raffle_percentage,
+		"StakignPercentage" : staking_percentage,
 		"CharityAddr" : charity_addr.String(),
 		"CharityPercentage" : charity_percentage,
 		"CharityBalance": charity_balance,
@@ -1781,8 +1782,8 @@ func api_cosmic_game_get_cst_price(c *gin.Context) {
 				Info.Printf(err.Error())
 				respond_error(c,err.Error());
 			} else {
-				seconds_elapsed_slice := tuple_data[64:];
-				auction_duration_slice := tuple_data[128:];
+				seconds_elapsed_slice := tuple_data[64:96];
+				auction_duration_slice := tuple_data[96:];
 				price := h.Big();
 				h = common.BytesToHash(seconds_elapsed_slice);
 				seconds_elapsed := h.Big();

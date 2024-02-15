@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -22,6 +23,13 @@ const (
 var (
 	RPC_URL string
 	token_addr		common.Address
+	bidParamType, _	= abi.NewType("tuple","BidParams",[]abi.ArgumentMarshaling{
+		{Name: "message", Type: "string"},
+		{Name: "randomWalkNFTId", Type: "int256"},
+	})
+	params = abi.Arguments{
+		{Type: bidParamType, Name: "bp"},
+	}
 )
 func main() {
 
@@ -83,6 +91,20 @@ func main() {
 		fmt.Printf("Error getting suggested gas price: %v\n",err)
 		os.Exit(1)
 	}
+
+	record := struct {
+		Message string
+		RandomWalkNFTId *big.Int
+	}{
+		"sample bid golang",
+		big.NewInt(-1),
+	}
+	packed, err:=params.Pack(&record)
+	if err != nil {
+		fmt.Printf("Error packing BidParams: %v\n",err)
+		os.Exit(1)
+	}
+
 	big_chain_id := big.NewInt(CHAIN_ID)
 	fmt.Printf("Using chain_id=%v\n",big_chain_id.String())
 	txopts := bind.NewKeyedTransactor(from_PrivateKey)
@@ -106,7 +128,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := cosmic_game_ctrct.Bid(txopts,"bid from golang",big.NewInt(-1))
+	tx,err := cosmic_game_ctrct.Bid(txopts,packed)
 	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)
