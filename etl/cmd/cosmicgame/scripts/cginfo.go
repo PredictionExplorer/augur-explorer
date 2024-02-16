@@ -118,6 +118,11 @@ func main() {
 		os.Exit(1)
 	}
 	balance,err := eclient.BalanceAt(context.Background(),cosmic_game_addr,nil)
+	if err != nil {
+		fmt.Printf("Error at balanceAt()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
 	num_donated_nfts,err := cosmic_game_ctrct.NumDonatedNFTs(&copts)
 	if err != nil {
 		fmt.Printf("Error at numDonatedNFTs()(): %v\n",err)
@@ -172,6 +177,13 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	cst_auction_length,err := cosmic_game_ctrct.CSTAuctionLength(&copts)
+	if err != nil {
+		fmt.Printf("Error at CSTAuctionLength()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	cg_Bal
 
 
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
@@ -195,6 +207,7 @@ func main() {
 	fmt.Printf("ActivationTime= %v\n",activation_time)
 	fmt.Printf("NumETHBids = %v\n",num_eth_bids);
 	fmt.Printf("NumCSTBids = %v\n",num_cst_bids);
+	fmt.Printf("CSTAuctionLength = %v\n",cst_auction_length);
 
 	blogic_ctrct,err := NewBusinessLogic(cosmic_game_addr,eclient)
 	if err!=nil {
@@ -226,7 +239,7 @@ func main() {
 		seconds := seconds_hash.Big().Int64()
 		duration_hash := common.BytesToHash(ad_bytes[96:])
 		duration := duration_hash.Big().Int64()
-		fmt.Printf("AuctionDuration Seconds: %v\n",seconds)
-		fmt.Printf("AuctionDuration Duration: %v\n",duration)
+		fmt.Printf("CST auction elapsed time (sec): %v\n",seconds)
+		fmt.Printf("CST auction duration: %v\n",duration)
 	}
 }
