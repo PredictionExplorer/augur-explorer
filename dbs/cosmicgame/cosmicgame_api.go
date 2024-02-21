@@ -3880,3 +3880,70 @@ func (sw *SQLStorageWrapper) Get_unique_stakers() []p.CGUniqueStaker {
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_staking_winners_by_round(round_num int64) []p.CGEthDepositAsReward {
+	
+	records := make([]p.CGEthDepositAsReward,0, 32)
+	var query string
+	query = "SELECT "+
+				"d.id,"+
+				"d.evtlog_id,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS tstmp, "+
+				"d.time_stamp AS date_time, "+
+				"d.block_num,"+
+				"d.tx_id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT, "+
+				"d.deposit_time, "+
+				"d.num_staked_nfts,"+
+				"d.amount,"+
+				"d.amount/1e18 AS amount_eth,"+
+				"d.amount_per_staker,"+
+				"d.amount_per_staker/1e18 AS amount_eth, "+
+				"sd.staker_aid, "+
+				"sa.addr,"+
+				"sd.tokens_staked,"+
+				"sd.amount_to_claim, "+
+				"sd.amount_to_claim/1e18  "+
+			"FROM cg_staker_deposit sd "+
+				"LEFT JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
+				"LEFT JOIN address sa ON sd.staker_aid = sa.address_id "+
+				"LEFT JOIN transaction t ON t.id=d.tx_id "+
+			"WHERE d.round_num=$1 "
+
+	rows,err := sw.S.Db().Query(query,round_num)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGEthDepositAsReward
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.DepositTimeStamp,
+			&rec.DepositDate,
+			&rec.NumStakedNFTsTotal,
+			&rec.Amount,
+			&rec.AmountEth,
+			&rec.AmountPerToken,
+			&rec.AmountPerTokenEth,
+			&rec.StakerAid,
+			&rec.StakerAddr,
+			&rec.StakerNumStakedNFTs,
+			&rec.StakerAmount,
+			&rec.StakerAmountEth,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}

@@ -1849,3 +1849,29 @@ func cosmic_game_get_cst_price(c *gin.Context) {
 		}
 	}
 }
+func cosmic_game_staking_rewards_by_round(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_round_num:= c.Param("round_num")
+	var round_num int64
+	if len(p_round_num) > 0 {
+		var success bool
+		round_num,success = parse_int_from_remote_or_error(c,HTTP,&p_round_num)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'round_num' parameter is not set")
+		return
+	}
+
+	winners := arb_storagew.Get_staking_winners_by_round(round_num)
+	c.HTML(http.StatusOK, "cg_staking_winners_by_round.html", gin.H{
+		"RoundNum" : round_num,
+		"Winners" : winners,
+	})
+}

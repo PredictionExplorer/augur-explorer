@@ -548,3 +548,24 @@ type CGStakingRewardRec struct {
 	StakerAid					int64
 	StakerAddr					string
 }
+type CGEthDepositAsReward struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	DepositDate					string
+	DepositTimeStamp			int64
+	NumStakedNFTsTotal			int64
+	Amount						string
+	AmountEth					float64
+	AmountPerToken				string
+	AmountPerTokenEth			float64
+	StakerAid					int64
+	StakerAddr					string
+	StakerAmount				string
+	StakerAmountEth				float64
+	StakerNumStakedNFTs			int64
+}

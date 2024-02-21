@@ -1,0 +1,39 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Staking Winners By Round</title>
+</head>
+<body>
+	<h3 class="page_title">Staking Winners By Round</h3>
+	<h3 class="page_title">Round: {{.RoundNum}}</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Staker</th>
+		<th class="market_reports">Round</th>
+		<th class="market_reports">Num NFTs</th>
+		<th class="market_reports">Winning Amount (ETH)</th>
+	</tr>
+	{{- range $i, $change := .Winners}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">
+				{{.BlockNum}}
+			</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="addr" title="{{.StakerAid}}">
+				<a href="/black/cosmicgame/user/info/{{.StakerAddr}}">{{.StakerAddr}}</a>
+			</td>
+			<td style="text-align: right;" title="">{{ $.RoundNum }}</td>
+			<td class="" style="text-align: center;">{{.StakerNumStakedNFTs}}</td>
+			<td style="text-align: right;" title="">{{printf "%.4f" .StakerAmountEth}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/staking/rewards/by_round/[round_num]</br>
+
+	Example: /api/cosmicgame/staking/rewards/by_round/{{.RoundNum}}
+</code>
+</body>
