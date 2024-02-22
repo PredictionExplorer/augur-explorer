@@ -82,6 +82,10 @@ type CGPrizeRec struct {
 	CharityAddress				string
 	CharityAmount				string
 	CharityAmountETH			float64
+	StakingDepositAmount		string
+	StakingDepositAmountEth		float64
+	StakingPerToken				string
+	StakingPerTokenEth			float64
 	RoundStats					CGRoundStats
 	RaffleNFTWinners			[]CGRaffleNFTWinnerRec
 	RaffleETHDeposits			[]CGRaffleDepositRec

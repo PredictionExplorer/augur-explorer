@@ -308,12 +308,17 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGPrizeRec {
 				"s.total_raffle_nfts, "+
 				"d.donation_amount,"+
 				"d.donation_amount/1e18 AS amount_eth, "+
-				"d.charity_addr "+
+				"d.charity_addr, "+
+				"dp.amount,"+
+				"dp.amount/1e18, "+
+				"dp.amount_per_staker,"+
+				"dp.amount_per_staker/1e18 "+
 			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 				"LEFT JOIN cg_mint_event m ON m.token_id=p.prize_num "+
 				"LEFT JOIN cg_round_stats s ON p.prize_num=s.round_num "+
+				"LEFT JOIN cg_eth_deposit dp ON dp.round_num=p.prize_num " +
 				"LEFT JOIN LATERAL (" +
 					"SELECT d.evtlog_id,d.amount donation_amount,cha.addr charity_addr "+
 						"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
@@ -330,6 +335,8 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGPrizeRec {
 	var null_seed sql.NullString
 	records := make([]p.CGPrizeRec,0, 256)
 	defer rows.Close()
+	var null_dep_amount,null_dep_amount_per_tok sql.NullString
+	var null_dep_amount_eth,null_dep_amount_per_token_eth sql.NullFloat64
 	for rows.Next() {
 		var rec p.CGPrizeRec
 		err=rows.Scan(
@@ -354,12 +361,21 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGPrizeRec {
 			&rec.CharityAmount,
 			&rec.CharityAmountETH,
 			&rec.CharityAddress,
+			&null_dep_amount,
+			&null_dep_amount_eth,
+			&null_dep_amount_per_tok,
+			&null_dep_amount_per_token_eth,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
 		if null_seed.Valid { rec.Seed = null_seed.String } else {rec.Seed = "???"}
+		if null_dep_amount.Valid { rec.StakingDepositAmount = null_dep_amount.String }
+		if null_dep_amount_eth.Valid { rec.StakingDepositAmountEth = null_dep_amount_eth.Float64 }
+		if null_dep_amount_per_tok.Valid { rec.StakingPerToken = null_dep_amount_per_tok.String }
+		if null_dep_amount_per_token_eth.Valid { rec.StakingPerTokenEth = null_dep_amount_per_token_eth.Float64 }
+
 		records = append(records,rec)
 	}
 	return records
@@ -945,18 +961,19 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"d.block_num,"+
 						"d.tx_id,"+
 						"t.tx_hash,"+
-						"d.deposit_num AS round_num,"+
-						"r.reward, "+
-						"r.reward/1e18 AS amount_eth,"+
+						"d.round_num AS round_num,"+
+						"COALESCE(sd.amount_to_claim,0) AS reward, "+
+						"COALESCE(sd.amount_to_claim,0)/1e18 AS amount_eth,"+
 						"'' AS token_addr, "+
 						"-1 AS token_id,"+
 						"'' AS token_uri,"+
 						"-1 AS winner_index, "+
-						"'T' AS claimed "+
-					"FROM cg_eth_deposit d "+
+						"CASE WHEN r.id IS NULL THEN FALSE ELSE TRUE END AS claimed "+
+					"FROM cg_staker_deposit sd "+
+						"LEFT JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
 						"LEFT JOIN transaction t ON t.id=d.tx_id "+
-						"LEFT JOIN cg_claim_reward r ON d.deposit_num=r.deposit_id "+
-					"WHERE (r.staker_aid=$1) AND (r.id IS NOT NULL) "+
+						"LEFT JOIN cg_claim_reward r ON (sd.deposit_id=r.deposit_id) AND (r.staker_aid=sd.staker_aid) "+
+					"WHERE (sd.staker_aid=$1)"+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +
@@ -1118,21 +1135,21 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"d.block_num,"+
 						"d.tx_id,"+
 						"t.tx_hash,"+
-						"d.deposit_num AS round_num,"+
-						"r.reward, "+
-						"r.reward/1e18 AS amount_eth,"+
+						"d.round_num AS round_num,"+
+						"COALESCE(sd.amount_to_claim,0) AS reward, "+
+						"COALESCE(sd.amount_to_claim,0)/1e18 AS amount_eth,"+
 						"'' AS token_addr, "+
 						"-1 AS token_id,"+
 						"'' AS token_uri,"+
 						"-1 AS winner_index, "+
-						"'T' AS claimed, "+
+						"CASE WHEN r.id IS NULL THEN FALSE ELSE TRUE END AS claimed, "+
 						"wa.addr winner_addr,"+
-						"r.staker_aid "+
-					"FROM cg_eth_deposit d "+
+						"sd.staker_aid "+
+					"FROM cg_staker_deposit sd "+
+						"LEFT JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
 						"LEFT JOIN transaction t ON t.id=d.tx_id "+
-						"LEFT JOIN cg_claim_reward r ON d.deposit_num=r.deposit_id "+
-						"LEFT JOIN address wa ON r.staker_aid=wa.address_id "+
-					"WHERE (r.id IS NOT NULL) "+
+						"LEFT JOIN cg_claim_reward r ON (sd.deposit_id=r.deposit_id) AND (r.staker_aid=sd.staker_aid) "+
+						"LEFT JOIN address wa ON sd.staker_aid=wa.address_id "+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +
