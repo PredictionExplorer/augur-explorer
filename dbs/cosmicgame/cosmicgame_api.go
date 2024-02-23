@@ -3243,7 +3243,17 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 func (sw *SQLStorageWrapper) Get_staking_rewards_collected(user_aid int64,offset,limit int) []p.CGCollectedReward {
 
 	var query string
-	query = "SELECT "+
+	query = "WITH rwd AS ("+
+				"SELECT "+
+					"COUNT(id) AS num_toks_collected,"+
+					"SUM(reward) AS collected_reward," +
+					"SUM(reward)/1e18 AS collected_reward_eth,"+
+					"deposit_id "+
+				"FROM cg_claim_reward "+
+				"WHERE staker_aid=$1 "+
+				"GROUP BY deposit_id "+
+			") "+
+			"SELECT "+
 				"d.id,"+
 				"d.evtlog_id,"+
 				"d.block_num,"+
@@ -3260,15 +3270,19 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_collected(user_aid int64,offset
 				"sd.tokens_staked,"+
 				"sd.amount_to_claim,"+
 				"sd.amount_to_claim/1e18,"+
-				"amount/num_staked_nfts,"+
-				"(amount/num_staked_nfts)/1e18, "+
+				"rwd.num_toks_collected,"+
+				"d.amount/num_staked_nfts,"+
+				"(d.amount/num_staked_nfts)/1e18, "+
 				"modulo,"+
-				"modulo/1e+18 "+
-			"FROM "+sw.S.SchemaName()+".cg_eth_deposit d "+
-				"LEFT JOIN transaction tx ON tx.id=d.tx_id " +
-				"LEFT JOIN cg_staker_deposit sd ON d.deposit_num=sd.deposit_id "+
-				"LEFT JOIN cg_claim_reward r ON (d.deposit_num=r.deposit_id) AND (sd.staker_aid=r.staker_aid) "+
-			"WHERE (sd.staker_aid = $1) AND (r.id IS NOT NULL)" +
+				"modulo/1e+18, "+
+				"d.round_num, "+
+				"rwd.collected_reward,"+
+				"rwd.collected_reward_eth "+
+			"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
+				"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
+				"INNER JOIN transaction tx ON tx.id=d.tx_id " +
+				"INNER JOIN rwd ON rwd.deposit_id=sd.deposit_id "+
+			"WHERE sd.staker_aid=$1 "+
 			"ORDER BY d.id DESC " +
 			"OFFSET $2 LIMIT $3"
 
@@ -3293,15 +3307,19 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_collected(user_aid int64,offset
 			&rec.DepositDate,
 			&rec.DepositId,
 			&rec.NumStakedNFTs,
-			&rec.DepositAmount,
-			&rec.DepositAmountEth,
+			&rec.TotalDepositAmount,
+			&rec.TotalDepositAmountEth,
 			&rec.YourTokensStaked,
-			&rec.YourCollectedAmount,
-			&rec.YourCollectedAmountEth,
-			&rec.AmountPerToken,
-			&rec.AmountPerTokenEth,
+			&rec.YourAmountToClaim,
+			&rec.YourAmountToClaimEth,
+			&rec.NumTokensCollected,
+			&rec.DepositAmountPerToken,
+			&rec.DepositAmountPerTokenEth,
 			&rec.Modulo,
 			&rec.ModuloF64,
+			&rec.RoundNum,
+			&rec.YourCollectedAmount,
+			&rec.YourCollectedAmountEth,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

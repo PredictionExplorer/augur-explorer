@@ -499,15 +499,19 @@ type CGCollectedReward struct {
 	DepositTimeStamp			int64
 	DepositId					int64
 	NumStakedNFTs				int64
-	DepositAmount				string
-	DepositAmountEth			float64
+	TotalDepositAmount			string
+	TotalDepositAmountEth		float64
 	YourTokensStaked			int64
+	YourAmountToClaim			string
+	YourAmountToClaimEth		float64
+	DepositAmountPerToken		string
+	DepositAmountPerTokenEth	float64
+	NumTokensCollected			int64
 	YourCollectedAmount			string
 	YourCollectedAmountEth		float64
-	AmountPerToken				string
-	AmountPerTokenEth			float64
 	Modulo						string
 	ModuloF64					float64
+	RoundNum					int64
 }
 type CGMarketingRewardRec struct {
 	RecordId					int64

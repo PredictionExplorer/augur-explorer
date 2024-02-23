@@ -11,9 +11,10 @@
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Total staked tokens</th>
 		<th class="market_reports">Total deposited</th>
-		<th class="market_reports">Reward per token</th>
-		<th class="market_reports">Your stake position size (num tokens)</th>
-		<th class="market_reports">Your reward according to your stake position</th>
+		<th class="market_reports">Reward on your stake</th>
+		<th class="market_reports">Num tokens of your stake</th>
+		<th class="market_reports">Num tokens of your stake collected</th>
+		<th class="market_reports">Amount of your stake collected</th>
 	</tr>
 	{{- range $i, $change := .CollectedStakingRewards}}
 		<tr class="market_reports">
@@ -22,9 +23,10 @@
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td style="text-align: center;" title="">{{.NumStakedNFTs}}</td>
-			<td style="text-align: center;" title="">{{.DepositAmountEth}}</td>
-			<td style="text-align: center;" title="">{{.AmountPerTokenEth}}</td>
+			<td style="text-align: center;" title="">{{.TotalDepositAmountEth}}</td>
+			<td style="text-align: center;" title="">{{.YourAmountToClaimEth}}</td>
 			<td style="text-align: center;" title="">{{.YourTokensStaked}}</td>
+			<td style="text-align: center;" title="">{{.NumTokensCollected}}</td>
 			<td style="text-align: center;" title="">{{.YourCollectedAmountEth}}</td>
 		</tr>
 	{{- end}}
