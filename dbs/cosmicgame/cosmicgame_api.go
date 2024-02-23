@@ -955,30 +955,29 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 				") UNION ALL (" +
 					"SELECT "+
 						"4 AS record_type,"+
-						"d.evtlog_id,"+
+						"r.evtlog_id,"+
 						"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS tstmp, "+
-						"d.time_stamp AS date_time, "+
-						"d.block_num,"+
-						"d.tx_id,"+
+						"r.time_stamp AS date_time, "+
+						"r.block_num,"+
+						"r.tx_id,"+
 						"t.tx_hash,"+
 						"d.round_num AS round_num,"+
-						"COALESCE(sd.amount_to_claim,0) AS reward, "+
-						"COALESCE(sd.amount_to_claim,0)/1e18 AS amount_eth,"+
+						"r.reward, "+
+						"r.reward/1e18 AS amount_eth,"+
 						"'' AS token_addr, "+
 						"-1 AS token_id,"+
 						"'' AS token_uri,"+
 						"-1 AS winner_index, "+
 						"CASE WHEN r.id IS NULL THEN FALSE ELSE TRUE END AS claimed "+
-					"FROM cg_staker_deposit sd "+
-						"LEFT JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
-						"LEFT JOIN transaction t ON t.id=d.tx_id "+
-						"LEFT JOIN cg_claim_reward r ON (sd.deposit_id=r.deposit_id) AND (r.staker_aid=sd.staker_aid) "+
-					"WHERE (sd.staker_aid=$1)"+
+					"FROM cg_claim_reward r "+
+						"INNER JOIN cg_eth_deposit d ON r.deposit_id=d.deposit_num "+
+						"INNER JOIN transaction t ON t.id=d.tx_id "+
+					"WHERE (r.staker_aid=$1)"+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +
 			"OFFSET $2 LIMIT $3"
-
+	fmt.Printf("query:\n%v\n",query);
 	rows,err := sw.S.Db().Query(query,winner_aid,offset,limit)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
