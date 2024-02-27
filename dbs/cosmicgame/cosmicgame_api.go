@@ -481,11 +481,16 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 				"s.total_raffle_nfts, "+
 				"d.donation_amount, "+
 				"d.donation_amount/1e+18,"+
-				"d.charity_addr "+
+				"d.charity_addr, "+
+				"dp.amount, "+
+				"dp.amount/1e18,"+
+				"dp.amount_per_staker,"+
+				"dp.amount_per_staker/1e18 "+
 			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 				"LEFT JOIN cg_mint_event m ON m.token_id=p.token_id "+
+				"LEFT JOIN cg_eth_deposit dp ON dp.round_num=p.prize_num " +
 				"LEFT JOIN cg_round_stats s ON s.round_num=p.prize_num "+
 				"LEFT JOIN cg_winner ws ON p.winner_aid=ws.winner_aid "+
 				"LEFT JOIN LATERAL (" +
@@ -497,6 +502,8 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 
 	row := sw.S.Db().QueryRow(query,prize_num)
 	var null_seed sql.NullString
+	var null_dep_amount,null_dep_amount_per_tok sql.NullString
+	var null_dep_amount_eth,null_dep_amount_per_token_eth sql.NullFloat64
 	err := row.Scan(
 		&rec.EvtLogId,
 		&rec.BlockNum,
@@ -519,6 +526,10 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 		&rec.CharityAmount,
 		&rec.CharityAmountETH,
 		&rec.CharityAddress,
+		&null_dep_amount,
+		&null_dep_amount_eth,
+		&null_dep_amount_per_tok,
+		&null_dep_amount_per_token_eth,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -534,6 +545,12 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 
 	rec.RaffleNFTWinners = raffle_nft_winners
 	rec.RaffleETHDeposits = raffle_eth_deposits
+
+	if null_dep_amount.Valid { rec.StakingDepositAmount = null_dep_amount.String }
+	if null_dep_amount_eth.Valid { rec.StakingDepositAmountEth = null_dep_amount_eth.Float64 }
+	if null_dep_amount_per_tok.Valid { rec.StakingPerToken = null_dep_amount_per_tok.String }
+	if null_dep_amount_per_token_eth.Valid { rec.StakingPerTokenEth = null_dep_amount_per_token_eth.Float64 }
+
 	return true,rec
 }
 func (sw *SQLStorageWrapper) Get_bids_by_user(bidder_aid int64) []p.CGBidRec {
@@ -3700,6 +3717,9 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_global() []p.CGStakedTokenRec {
 				"m.round_num,"+
 				"p.prize_num, "+
 				"m.token_name, "+
+				"a.evtlog_id,"+
+				"a.block_num,"+
+				"a.action_id,"+
 				"EXTRACT(EPOCH FROM a.time_stamp)::BIGINT,"+
 				"a.time_Stamp,"+
 				"EXTRACT(EPOCH FROM a.unstake_time)::BIGINT,"+
@@ -3707,11 +3727,11 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_global() []p.CGStakedTokenRec {
 				"sa.addr,"+
 				"sa.address_id "+
 			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
-				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN transaction t ON t.id=m.tx_id "+
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_stake_action a ON a.id=m.stake_action_id "+
+				"LEFT JOIN cg_stake_action a ON a.action_id=m.stake_action_id "+
 				"LEFT JOIN address sa ON a.staker_aid = sa.address_id "+
 			"WHERE m.staked = 'T' "+
 			"ORDER BY m.token_id"
@@ -3743,6 +3763,9 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_global() []p.CGStakedTokenRec {
 			&rec.TokenInfo.RoundNum,
 			&null_prize_num,
 			&rec.TokenInfo.TokenName,
+			&rec.StakeEvtLogId,
+			&rec.StakeBlockNum,
+			&rec.StakeActionId,
 			&rec.StakeTimeStamp,
 			&rec.StakeDateTime,
 			&rec.UnstakeTimeStamp,
@@ -3777,7 +3800,8 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 
 	query = "SELECT "+
 				"a.id,"+
-				"a.action_id "+
+				"a.action_id, "+
+				"a.token_id "+
 			"FROM "+sw.S.SchemaName()+".cg_stake_action a "+
 				"LEFT JOIN cg_unstake_action u ON a.action_id=u.action_id "+
 			"WHERE "+
@@ -3805,6 +3829,7 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.StakeActionId,
+			&rec.TokenId,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -3980,4 +4005,103 @@ func (sw *SQLStorageWrapper) Get_staking_winners_by_round(round_num int64) []p.C
 		records = append(records,rec)
 	}
 	return records
+}
+func (sw *SQLStorageWrapper) Get_stake_action_info(action_id int64) (bool,p.CGStakeUnstakeCombined) {
+
+	var rec p.CGStakeUnstakeCombined
+	var query string
+	query = "SELECT " +
+				// stake action fields
+				"st.id,"+
+				"st.evtlog_id,"+
+				"st.block_num,"+
+				"ts.id,"+
+				"ts.tx_hash,"+
+				"EXTRACT(EPOCH FROM st.time_stamp)::BIGINT,"+
+				"st.time_stamp,"+
+				"st.action_id,"+
+				"st.token_id,"+
+				"st.num_staked_nfts,"+
+				"EXTRACT(EPOCH FROM st.unstake_time)::BIGINT,"+
+				"st.unstake_time,"+
+				"st.staker_aid,"+
+				"sa.addr,"+
+
+				//unstake action fields
+				"u.id,"+
+				"u.evtlog_id,"+
+				"u.block_num,"+
+				"tu.id,"+
+				"tu.tx_hash,"+
+				"EXTRACT(EPOCH FROM u.time_stamp)::BIGINT,"+
+				"u.time_stamp,"+
+				"u.action_id,"+
+				"u.token_id, "+
+				"u.num_staked_nfts, "+
+				"u.staker_aid, "+
+				"ua.addr "+
+			"FROM "+sw.S.SchemaName()+".cg_stake_action st "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction ts ON ts.id=st.tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address sa ON st.staker_aid=sa.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".cg_unstake_action u ON st.action_id=u.action_id " +
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction tu ON tu.id=u.tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address ua ON u.staker_aid=ua.address_id "+
+			"WHERE st.action_id=$1"
+
+	row := sw.S.Db().QueryRow(query,action_id)
+	var err error
+	var null_record_id,null_evtlog_id,null_tx_id,null_unstake_ts,null_action_id sql.NullInt64
+	var null_block_num,null_token_id,null_num_staked_nfts,null_staker_aid sql.NullInt64
+	var null_unstake_date,null_tx_hash,null_staker_addr sql.NullString
+	err=row.Scan(
+		// stake action fields
+		&rec.Stake.RecordId,
+		&rec.Stake.EvtLogId,
+		&rec.Stake.BlockNum,
+		&rec.Stake.TxId,
+		&rec.Stake.TxHash,
+		&rec.Stake.TimeStamp,
+		&rec.Stake.DateTime,
+		&rec.Stake.ActionId,
+		&rec.Stake.TokenId,
+		&rec.Stake.NumStakedNFTs,
+		&rec.Stake.UnstakeTimeStamp,
+		&rec.Stake.UnstakeDate,
+		&rec.Stake.StakerAid,
+		&rec.Stake.StakerAddr,
+		// unstake action fields
+		&null_record_id,
+		&null_evtlog_id,
+		&null_block_num,
+		&null_tx_id,
+		&null_tx_hash,
+		&null_unstake_ts,
+		&null_unstake_date,
+		&null_action_id,
+		&null_token_id,
+		&null_num_staked_nfts,
+		&null_staker_aid,
+		&null_staker_addr,
+	)
+	fmt.Printf("err = %v\n",err);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return false,rec
+		}
+		sw.S.Log_msg(fmt.Sprintf("DB Error: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	if null_record_id.Valid { rec.Unstake.RecordId = null_record_id.Int64 }
+	if null_evtlog_id.Valid { rec.Unstake.EvtLogId = null_evtlog_id.Int64 }
+	if null_block_num.Valid { rec.Unstake.BlockNum = null_block_num.Int64 }
+	if null_tx_id.Valid { rec.Unstake.TxId = null_tx_id.Int64 }
+	if null_tx_hash.Valid { rec.Unstake.TxHash = null_tx_hash.String }
+	if null_unstake_ts.Valid { rec.Unstake.TimeStamp = null_unstake_ts.Int64 }
+	if null_unstake_date.Valid { rec.Unstake.DateTime = null_unstake_date.String }
+	if null_action_id.Valid { rec.Unstake.ActionId = null_action_id.Int64 }
+	if null_token_id.Valid { rec.Unstake.TokenId = null_token_id.Int64 }
+	if null_num_staked_nfts.Valid { rec.Unstake.NumStakedNFTs = null_num_staked_nfts.Int64 }
+	if null_staker_aid.Valid { rec.Unstake.StakerAid = null_staker_aid.Int64 }
+	if null_staker_addr.Valid { rec.Unstake.StakerAddr = null_staker_addr.String }
+	return true,rec
 }

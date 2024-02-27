@@ -203,6 +203,7 @@ func set_routing_cosmic_game(r *gin.Engine) {
 
 	r.GET("/black/cosmicgame/staking/actions/by_user/:user_addr",cosmic_game_staking_actions_by_user)
 	r.GET("/black/cosmicgame/staking/actions/global",cosmic_game_staking_actions_global)
+	r.GET("/black/cosmicgame/staking/actions/info/:action_id",cosmic_game_staking_action_info)
 	r.GET("/black/cosmicgame/marketing/rewards/global",cosmic_game_marketing_rewards_global)
 	r.GET("/black/cosmicgame/marketing/rewards/by_user/:user_addr",cosmic_game_marketing_rewards_by_user)
 	r.GET("/black/cosmicgame/time/current",cosmic_game_time_current)

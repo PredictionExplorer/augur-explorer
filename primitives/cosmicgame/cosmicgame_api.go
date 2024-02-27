@@ -451,6 +451,8 @@ type CGStakingHistoryRec struct {
 	TxHash						string
 	TimeStamp					int64
 	DateTime					string
+	UnstakeEvtLogId				int64
+	UnstakeBlockNum				int64
 	UnstakeDate					string
 	UnstakeTimeStamp			int64
 	ActionId					int64
@@ -464,6 +466,40 @@ type CGStakingHistoryRec struct {
 	Claimed						bool
 	StakerAid					int64
 	StakerAddr					string
+}
+type CGStakeActionInfoRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	ActionId					int64
+	TokenId						int64
+	NumStakedNFTs				int64
+	UnstakeTimeStamp			int64
+	UnstakeDate					string
+	StakerAid					int64
+	StakerAddr					string
+}
+type CGUnstakeActionInfoRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	ActionId					int64
+	TokenId						int64
+	NumStakedNFTs				int64
+	StakerAid					int64
+	StakerAddr					string
+}
+type CGStakeUnstakeCombined struct {
+	Stake						CGStakeActionInfoRec
+	Unstake						CGUnstakeActionInfoRec
 }
 type CGRewardToClaim struct {
 	RecordId					int64
@@ -528,6 +564,9 @@ type CGMarketingRewardRec struct {
 }
 type CGStakedTokenRec struct {
 	TokenInfo					CGCosmicSignatureMintRec
+	StakeEvtLogId				int64
+	StakeBlockNum				int64
+	StakeActionId				int64
 	StakeTimeStamp				int64
 	StakeDateTime				string
 	UnstakeTimeStamp			int64
@@ -541,6 +580,7 @@ type CGActionIdsForDeposit struct {
 	DepositId					int64
 	UserAid						int64
 	StakeActionId				int64
+	TokenId						int64
 }
 type CGStakingRewardRec struct {
 	RecordId					int64

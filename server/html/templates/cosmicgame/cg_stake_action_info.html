@@ -1,0 +1,107 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Stake Action info action_id={{.CombinedStakingRecordInfo.Stake.ActionId}}</title>
+</head>
+<body>
+	<h3 class="page_title">Stake Action Info<h3>
+<table>
+	<tr>
+		<td>EvtLog ID</td>
+		<td>{{.CombinedStakingRecordInfo.Stake.EvtLogId}}
+	</tr>
+	<tr>
+		<td>BlockNum</td>
+		<td>{{.CombinedStakingRecordInfo.Stake.BlockNum}}</td>
+	</tr>
+	<tr>
+		<td>TxId</td>
+		<td>{{.CombinedStakingRecordInfo.Stake.TxId}}</td>
+	</tr>
+	<tr>
+		<td>TxHash</td>
+		<td>{{.CombinedStakingRecordInfo.Stake.TxHash}}</td>
+	</td>
+	<tr>
+		<td>TimeStamp</td>
+		<td>
+			{{.CombinedStakingRecordInfo.Stake.TimeStamp}}
+		</td>
+	</tr>
+	<tr>
+		<td>DateTime</td>
+		<td>
+			{{.CombinedStakingRecordInfo.Stake.DateTime}}
+		</td>
+	</tr>
+	<tr>
+		<td>Action Id</td>
+		<td>{{.CombinedStakingRecordInfo.Stake.ActionId}}</td>
+	</tr>
+	<tr>
+		<td>Token Id</td>
+		<td>{{.CombinedStakingRecordInfo.Stake.TokenId}}</td>
+	</tr>
+	<tr>
+		<td>Num Staked NFTs</td>
+		<td>{{.CombinedStakingRecordInfo.Stake.NumStakedNFTs}}</td>
+	</tr>
+	<tr>
+		<td>Staker Address</td>
+		<td><a class="addr" href="/black/cosmicgame/user/info/{{.CombinedStakingRecordInfo.Stake.StakerAddr}}">{{.CombinedStakingRecordInfo.Stake.StakerAddr}}</a></td>
+	</tr>
+</table>
+	<h3 class="page_title">Unstake Action Info<h3>
+<table>
+	<tr>
+		<td>EvtLog ID</td>
+		<td>{{.CombinedStakingRecordInfo.Unstake.EvtLogId}}
+	</tr>
+	<tr>
+		<td>BlockNum</td>
+		<td>{{.CombinedStakingRecordInfo.Unstake.BlockNum}}</td>
+	</tr>
+	<tr>
+		<td>TxId</td>
+		<td>{{.CombinedStakingRecordInfo.Unstake.TxId}}</td>
+	</tr>
+	<tr>
+		<td>TxHash</td>
+		<td>{{.CombinedStakingRecordInfo.Unstake.TxHash}}</td>
+	</td>
+	<tr>
+		<td>TimeStamp</td>
+		<td>
+			{{.CombinedStakingRecordInfo.Unstake.TimeStamp}}
+		</td>
+	</tr>
+	<tr>
+		<td>DateTime</td>
+		<td>
+			{{.CombinedStakingRecordInfo.Unstake.DateTime}}
+		</td>
+	</tr>
+	<tr>
+		<td>Action Id</td>
+		<td>{{.CombinedStakingRecordInfo.Unstake.ActionId}}</td>
+	</tr>
+	<tr>
+		<td>Token Id</td>
+		<td>{{.CombinedStakingRecordInfo.Unstake.TokenId}}</td>
+	</tr>
+	<tr>
+		<td>Num Staked NFTs</td>
+		<td>{{.CombinedStakingRecordInfo.Unstake.NumStakedNFTs}}</td>
+	</tr>
+	<tr>
+		<td>Staker Address</td>
+		<td><a class="addr" href="/black/cosmicgame/user/info/{{.CombinedStakingRecordInfo.Unstake.StakerAddr}}">{{.CombinedStakingRecordInfo.Unstake.StakerAddr}}</a></td>
+	</tr>
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/staking/actions/info/[action_id]<br/>
+
+	Example: /api/cosmicgame/staking/actions/info/{{.CombinedStakingRecordInfo.Stake.ActionId}}
+</code>
+</body>

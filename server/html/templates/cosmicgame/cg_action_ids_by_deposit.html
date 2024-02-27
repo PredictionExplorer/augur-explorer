@@ -1,17 +1,19 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>ActionIDs for deposit{{.DepositId}}</title>
+	<title>ActionIDs for deposit{{.DepositId}} , user {{.UserAddr}}</title>
 </head>
 <body>
-	<h3 class="page_title">ActionIDs for Deposit {{.DepositId}}<h3>
+	<h3 class="page_title">ActionIDs for Deposit {{.DepositId}}, user {{.UserAddr}}<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">ActionId</th>
+		<th class="market_reports">TokenId</th>
 	</tr>
 	{{- range $i, $change := .ActionIds}}
 		<tr class="market_reports">
 			<td style="text-align: center;">{{.StakeActionId}}</td>
+			<td style="text-align: center;">{{.TokenId}}</td>
 		</tr>
 	{{- end}}
 </table>

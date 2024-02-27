@@ -17,15 +17,15 @@
 	</tr>
 	{{- range $i, $change := .UnclaimedEthDeposits}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">
-				{{.BlockNum}}
+			<td class="" title="{{.TimeStamp}}" style="text-align:right;">
+				{{.BlockNum}}&nbsp;&nbsp;
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td style="text-align: center;" title="">{{.NumStakedNFTs}}</td>
-			<td style="text-align: center;" title="">{{.DepositAmountEth}}</td>
-			<td style="text-align: center;" title="">{{.AmountPerTokenEth}}</td>
+			<td style="text-align: right;" title="">{{printf "%.6f" .DepositAmountEth}}</td>
+			<td style="text-align: right;" title="">{{printf "%.6f" .AmountPerTokenEth}}</td>
 			<td style="text-align: center;" title="">{{.YourTokensStaked}}</td>
-			<td style="text-align: center;" title="">{{.YourClaimableAmountEth}}</td>
+			<td style="text-align: right;" title="">{{ printf "%.6f" .YourClaimableAmountEth}}</td>
 		</tr>
 	{{- end}}
 </table>
