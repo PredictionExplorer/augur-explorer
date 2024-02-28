@@ -10,18 +10,22 @@
 		<th class="market_reports">RecordId</th>
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Deposit Id</th>
 		<th class="market_reports">Staker</th>
-		<th class="market_reports">Amount (ETH)</th>
+		<th class="market_reports">Amount to claim (ETH)</th>
+		<th class="market_reports">Fully claimed?</th>
 	</tr>
 	{{- range $i, $change := .StakingRewards}}
 		<tr class="market_reports">
-			<td class="" title="{{.TimeStamp}}">{{.RecordId}}</td>
-			<td class="" title="{{.TimeStamp}}">{{.BlockNum}}</td>
+			<td class="" style="text-align: center;" title="{{.TimeStamp}}">{{.RecordId}}</td>
+			<td class="" style="text-align: center;" title="{{.TimeStamp}}">{{.BlockNum}}</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" style="text-align: center;">{{.DepositId}}</td>
 			<td class="addr" title="{{.StakerAid}}">
 			<a href="/black/cosmicgame/staking/rewards/collected/by_user/{{.StakerAddr}}">{{.StakerAddr}}</a>
 			</td>
-			<td style="text-align: right;" title="">{{printf "%.6f" .AmountEth}}</td>
+			<td style="text-align: right;" title="">{{printf "%.6f" .YourAmountToClaimEth}}</td>
+			<td style="text-align: center;">{{.FullyClaimed}}</td>
 		</tr>
 	{{- end}}
 </table>

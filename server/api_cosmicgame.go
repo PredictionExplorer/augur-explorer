@@ -21,12 +21,14 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 
 	caddrs := arb_storagew.Get_cosmic_game_contract_addrs()
 	cur_round_stats := arb_storagew.Get_cosmic_game_round_statistics(round_num);
+	cg_balance := get_cosmic_game_contract_balance()
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
 		"status": req_status,
 		"error" : err_str,
 		"CosmicGameAddr":cosmic_game_addr,
+		"CosmicGameBalanceEth":cg_balance,
 		"CosmicSignatureAddr":cosmic_signature_addr,
 		"CosmicSignatureTokenAddr":cosmic_token_addr,
 		"CharityWalletAddr":charity_wallet_addr,

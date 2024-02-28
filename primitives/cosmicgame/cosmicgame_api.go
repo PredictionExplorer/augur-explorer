@@ -548,6 +548,9 @@ type CGCollectedReward struct {
 	Modulo						string
 	ModuloF64					float64
 	RoundNum					int64
+	StakerAid					int64
+	StakerAddr					string
+	FullyClaimed				bool
 }
 type CGMarketingRewardRec struct {
 	RecordId					int64

@@ -9,7 +9,8 @@
 	<tr class="market_reports">
 		<th class="market_reports">Staker Address</th>
 		<th class="market_reports">Num Stake Actions</th>
-		<th class="market_reports">Reward (ETH)</th>
+		<th class="market_reports">Total reward<br/>(ETH)</th>
+		<th class="market_reports">Unclaimed reward <br/>(ETH)</th>
 
 	</tr>
 	{{- range $i, $change := .UniqueStakers }}
@@ -19,6 +20,7 @@
 			</td>
 			<td class="" style="text-align: center;">{{.NumStakeActions}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .TotalRewardEth}}</td>
+			<td style="text-align: right;" title="">{{printf "%.6f" .UnclaimedRewardEth}}</td>
 		</tr>
 	{{- end}}
 </table>

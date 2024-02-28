@@ -9,11 +9,12 @@
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Deposit Id</th>
 		<th class="market_reports">Total staked tokens</th>
 		<th class="market_reports">Total deposited</th>
 		<th class="market_reports">Reward per token</th>
-		<th class="market_reports">Your stake position size (num tokens)</th>
-		<th class="market_reports">Your reward according to your stake position</th>
+		<th class="market_reports">Your stake position size</th>
+		<th class="market_reports">Your reward in your stake position</th>
 	</tr>
 	{{- range $i, $change := .UnclaimedEthDeposits}}
 		<tr class="market_reports">
@@ -21,6 +22,7 @@
 				{{.BlockNum}}&nbsp;&nbsp;
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" style="text-align: center;">{{.DepositId}}</td>
 			<td style="text-align: center;" title="">{{.NumStakedNFTs}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .DepositAmountEth}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .AmountPerTokenEth}}</td>

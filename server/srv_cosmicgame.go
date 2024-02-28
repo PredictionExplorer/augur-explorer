@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"time"
+	"math"
 	"strings"
 	"io/ioutil"
 	"encoding/json"
@@ -88,6 +89,21 @@ func cosmic_game_init() {
 	go reload_constants_goroutine()
 	go reload_variables_goroutine()
 }
+func get_cosmic_game_contract_balance() float64 {
+
+	cg_eth_bal,err := eclient.BalanceAt(context.Background(),cosmic_game_addr,nil)
+	if err != nil {
+		err_str := fmt.Sprintf("Error at BalanceAt() call for cosmic game: %v\n",err)
+		Info.Printf(err_str)
+		Error.Printf(err_str)
+		return math.NaN()
+	}
+	f_divisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
+	f_balance := big.NewFloat(0.0).SetInt(cg_eth_bal)
+	f_quo := big.NewFloat(0.0).Quo(f_balance,f_divisor)
+	f_out,_ := f_quo.Float64()
+	return f_out
+}
 func do_reload_contract_constants() {
 	var copts bind.CallOpts
 	code,err := eclient.CodeAt(context.Background(), cosmic_game_addr, nil)
@@ -96,14 +112,12 @@ func do_reload_contract_constants() {
 		Error.Printf(err_str)
 		Info.Printf(err_str)
 		fmt.Printf(err_str)
-		os.Exit(1)
 	}
 	if len(code) == 0 {
 		err_str := fmt.Sprintf("Can't instantiate Cosmic gane contract: no code at given address\n")
 		Error.Printf(err_str)
 		Info.Printf(err_str)
 		fmt.Printf(err_str)
-		os.Exit(1)
 	}
 	bwcontract,err := NewCosmicGame(cosmic_game_addr,eclient)
 	if err != nil {

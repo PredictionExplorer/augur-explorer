@@ -994,7 +994,6 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 			") everything " +
 			"ORDER BY evtlog_id DESC " +
 			"OFFSET $2 LIMIT $3"
-	fmt.Printf("query:\n%v\n",query);
 	rows,err := sw.S.Db().Query(query,winner_aid,offset,limit)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -3189,7 +3188,17 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_transfers_by_user(user_aid int
 func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) []p.CGRewardToClaim {
 
 	var query string
-	query = "SELECT "+
+	query = "WITH rwd AS ("+
+				"SELECT "+
+					"COUNT(id) AS num_toks_collected,"+
+					"SUM(reward) AS collected_reward," +
+					"SUM(reward)/1e18 AS collected_reward_eth,"+
+					"deposit_id "+
+				"FROM cg_claim_reward "+
+				"WHERE staker_aid=$1 "+
+				"GROUP BY deposit_id "+
+			") "+
+			"SELECT "+
 				"d.id,"+
 				"d.evtlog_id,"+
 				"d.block_num,"+
@@ -3206,17 +3215,16 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 				"sd.tokens_staked,"+
 				"sd.amount_to_claim,"+
 				"sd.amount_to_claim/1e18,"+
-				"amount/num_staked_nfts,"+
-				"(amount/num_staked_nfts)/1e18, "+
-				"modulo,"+
-				"modulo/1e+18 "+
-			"FROM "+sw.S.SchemaName()+".cg_eth_deposit d "+
-				"LEFT JOIN transaction tx ON tx.id=d.tx_id " +
-				"LEFT JOIN cg_staker_deposit sd ON d.deposit_num=sd.deposit_id "+
-				"LEFT JOIN cg_claim_reward r ON (d.deposit_num=r.deposit_id) AND (sd.staker_aid=r.staker_aid) "+
-			"WHERE (sd.staker_aid = $1) AND (r.id IS NULL)" +
+				"sd.amount_to_claim - COALESCE(rwd.collected_reward,0),"+
+				"(sd.amount_to_claim - COALESCE(rwd.collected_reward,0))/1e18, "+
+				"d.amount/d.num_staked_nfts,"+
+				"(d.amount/d.num_staked_nfts)/1e18 "+
+			"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
+				"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
+				"INNER JOIN transaction tx ON tx.id=d.tx_id " +
+				"LEFT JOIN rwd ON rwd.deposit_id=sd.deposit_id "+
+			"WHERE (sd.staker_aid = $1) AND (sd.amount_to_claim != COALESCE(rwd.collected_reward,0)) " +
 			"ORDER BY d.id DESC "
-
 	rows,err := sw.S.Db().Query(query,user_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -3226,6 +3234,8 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.CGRewardToClaim
+		var null_collected sql.NullString
+		var null_collected_eth sql.NullFloat64
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.EvtLogId,
@@ -3243,15 +3253,17 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 			&rec.YourTokensStaked,
 			&rec.YourClaimableAmount,
 			&rec.YourClaimableAmountEth,
+			&null_collected,
+			&null_collected_eth,
 			&rec.AmountPerToken,
 			&rec.AmountPerTokenEth,
-			&rec.Modulo,
-			&rec.ModuloF64,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
+		if null_collected.Valid {rec.YourClaimableAmount = null_collected.String }
+		if null_collected_eth.Valid { rec.YourClaimableAmountEth = null_collected_eth.Float64 }
 		records = append(records,rec)
 	}
 	return records
@@ -3341,6 +3353,7 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_collected(user_aid int64,offset
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
+		if rec.YourAmountToClaimEth == rec.YourCollectedAmountEth { rec.FullyClaimed = true }
 		records = append(records,rec)
 	}
 	return records
@@ -3841,27 +3854,49 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_global_staking_rewards(offset,limit int) []p.CGStakingRewardRec {
-	
+func (sw *SQLStorageWrapper) Get_global_staking_rewards(offset,limit int) []p.CGCollectedReward {
+
+	records := make([]p.CGCollectedReward,0, 32)
 	var query string
-	query = "SELECT "+
-				"r.id,"+
-				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS tstmp, "+
-				"d.time_stamp AS date_time, "+
+	query = "WITH rwd AS ("+
+				"SELECT "+
+					"COUNT(id) AS num_toks_collected,"+
+					"SUM(reward) AS collected_reward," +
+					"SUM(reward)/1e18 AS collected_reward_eth,"+
+					"deposit_id, "+
+					"staker_aid "+
+				"FROM cg_claim_reward "+
+				"GROUP BY staker_aid,deposit_id "+
+			") "+
+			"SELECT "+
+				"d.id,"+
+				"d.evtlog_id,"+
 				"d.block_num,"+
-				"d.tx_id,"+
-				"t.tx_hash,"+
-				"d.deposit_num AS round_num,"+
-				"r.reward, "+
-				"r.reward/1e18 AS amount_eth,"+
-				"wa.addr winner_addr,"+
-				"r.staker_aid "+
-			"FROM cg_eth_deposit d "+
-				"LEFT JOIN transaction t ON t.id=d.tx_id "+
-				"LEFT JOIN cg_claim_reward r ON d.deposit_num=r.deposit_id "+
-				"LEFT JOIN address wa ON r.staker_aid=wa.address_id "+
-			"WHERE (r.id IS NOT NULL) "+
-			"ORDER BY r.evtlog_id DESC " +
+				"tx.id,"+
+				"tx.tx_hash,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
+				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT,"+
+				"d.deposit_time,"+
+				"d.deposit_num,"+
+				"d.num_staked_nfts,"+
+				"d.amount,"+
+				"d.amount/1e18,"+
+				"sd.tokens_staked,"+
+				"sd.amount_to_claim,"+
+				"sd.amount_to_claim/1e18,"+
+				"COALESCE(rwd.num_toks_collected,0),"+
+				"d.round_num, "+
+				"COALESCE(rwd.collected_reward,0),"+
+				"COALESCE(rwd.collected_reward_eth,0), "+
+				"sd.staker_aid,"+
+				"sa.addr "+
+			"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
+				"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
+				"INNER JOIN transaction tx ON tx.id=d.tx_id " +
+				"LEFT JOIN rwd ON (rwd.deposit_id=sd.deposit_id) AND (rwd.staker_aid=sd.staker_aid) "+
+				"INNER JOIN address sa ON sd.staker_aid = sa.address_id "+
+			"ORDER BY d.id DESC,sd.staker_aid " +
 			"OFFSET $1 LIMIT $2"
 
 	rows,err := sw.S.Db().Query(query,offset,limit)
@@ -3869,27 +3904,38 @@ func (sw *SQLStorageWrapper) Get_global_staking_rewards(offset,limit int) []p.CG
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.CGStakingRewardRec,0, 32)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGStakingRewardRec
+		var rec p.CGCollectedReward	
 		err=rows.Scan(
 			&rec.RecordId,
-			&rec.TimeStamp,
-			&rec.DateTime,
+			&rec.EvtLogId,
 			&rec.BlockNum,
 			&rec.TxId,
 			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.DepositTimeStamp,
+			&rec.DepositDate,
+			&rec.DepositId,
+			&rec.NumStakedNFTs,
+			&rec.TotalDepositAmount,
+			&rec.TotalDepositAmountEth,
+			&rec.YourTokensStaked,
+			&rec.YourAmountToClaim,
+			&rec.YourAmountToClaimEth,
+			&rec.NumTokensCollected,
 			&rec.RoundNum,
-			&rec.Amount,
-			&rec.AmountEth,
-			&rec.StakerAddr,
+			&rec.YourCollectedAmount,
+			&rec.YourCollectedAmountEth,
 			&rec.StakerAid,
+			&rec.StakerAddr,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
+		if rec.YourAmountToClaimEth == rec.YourCollectedAmountEth { rec.FullyClaimed = true }
 		records = append(records,rec)
 	}
 	return records
@@ -4083,7 +4129,6 @@ func (sw *SQLStorageWrapper) Get_stake_action_info(action_id int64) (bool,p.CGSt
 		&null_staker_aid,
 		&null_staker_addr,
 	)
-	fmt.Printf("err = %v\n",err);
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			return false,rec
