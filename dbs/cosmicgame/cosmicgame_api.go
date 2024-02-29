@@ -950,46 +950,44 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"LEFT JOIN cg_donated_nft_claimed c ON (c.round_num=p.prize_num) AND (d.idx=c.idx) "+
 					"WHERE p.winner_aid=$1 "+
 				") UNION ALL (" +
-					"SELECT "+
-						"3 AS record_type,"+
-						"p.evtlog_id,"+
-						"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS tstmp, "+
-						"p.time_stamp AS date_time, "+
-						"p.block_num,"+
-						"p.tx_id,"+
-						"t.tx_hash,"+
-						"p.prize_num,"+
-						"p.amount,"+
-						"p.amount/1e18 AS amount_eth,"+
-						"'' AS token_addr, " +
-						"p.token_id,"+
-						"'' AS token_uri,"+
-						"-1 AS winner_index,"+
-						"'T' AS claimed "+
-					"FROM cg_prize_claim p "+
-						"LEFT JOIN transaction t ON t.id=p.tx_id "+
-					"WHERE p.winner_aid=$1 "+
-				") UNION ALL (" +
+					"WITH rwd AS ("+
+						"SELECT "+
+							"COUNT(id) AS num_toks_collected,"+
+							"SUM(reward) AS collected_reward," +
+							"SUM(reward)/1e18 AS collected_reward_eth,"+
+							"deposit_id, "+
+							"staker_aid "+
+						"FROM cg_claim_reward "+
+						"GROUP BY staker_aid,deposit_id "+
+					") "+
 					"SELECT "+
 						"4 AS record_type,"+
-						"r.evtlog_id,"+
-						"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS tstmp, "+
-						"r.time_stamp AS date_time, "+
-						"r.block_num,"+
-						"r.tx_id,"+
-						"t.tx_hash,"+
-						"d.round_num AS round_num,"+
-						"r.reward, "+
-						"r.reward/1e18 AS amount_eth,"+
+						"d.evtlog_id,"+
+						"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+						"d.time_stamp,"+
+						"d.block_num,"+
+						"tx.id,"+
+						"tx.tx_hash,"+
+						"d.round_num, "+
+						"sd.amount_to_claim,"+
+						"sd.amount_to_claim/1e18,"+
 						"'' AS token_addr, "+
 						"-1 AS token_id,"+
 						"'' AS token_uri,"+
 						"-1 AS winner_index, "+
-						"CASE WHEN r.id IS NULL THEN FALSE ELSE TRUE END AS claimed "+
-					"FROM cg_claim_reward r "+
-						"INNER JOIN cg_eth_deposit d ON r.deposit_id=d.deposit_num "+
-						"INNER JOIN transaction t ON t.id=d.tx_id "+
-					"WHERE (r.staker_aid=$1)"+
+						"CASE "+
+							"WHEN "+
+								"COALESCE(rwd.collected_reward,0)=COALESCE(sd.amount_to_claim,0)"+
+								"THEN TRUE "+
+								"ELSE FALSE "+
+						"END AS claimed "+
+					"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
+						"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
+						"INNER JOIN transaction tx ON tx.id=d.tx_id " +
+						"LEFT JOIN rwd ON (rwd.deposit_id=sd.deposit_id) AND (rwd.staker_aid=sd.staker_aid) "+
+						"INNER JOIN address sa ON sd.staker_aid = sa.address_id "+
+					"WHERE sd.staker_aid=$1 "+
+					"ORDER BY d.id DESC,sd.staker_aid " +
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +
@@ -1142,29 +1140,45 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"LEFT JOIN transaction t ON t.id=p.tx_id "+
 						"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
 				") UNION ALL (" +
+					"WITH rwd AS ("+
+						"SELECT "+
+							"COUNT(id) AS num_toks_collected,"+
+							"SUM(reward) AS collected_reward," +
+							"SUM(reward)/1e18 AS collected_reward_eth,"+
+							"deposit_id, "+
+							"staker_aid "+
+						"FROM cg_claim_reward "+
+						"GROUP BY staker_aid,deposit_id "+
+					") "+
 					"SELECT "+
 						"4 AS record_type,"+
 						"d.evtlog_id,"+
-						"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS tstmp, "+
-						"d.time_stamp AS date_time, "+
+						"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+						"d.time_stamp,"+
 						"d.block_num,"+
-						"d.tx_id,"+
-						"t.tx_hash,"+
-						"d.round_num AS round_num,"+
-						"COALESCE(sd.amount_to_claim,0) AS reward, "+
-						"COALESCE(sd.amount_to_claim,0)/1e18 AS amount_eth,"+
+						"tx.id,"+
+						"tx.tx_hash,"+
+						"d.round_num, "+
+						"sd.amount_to_claim,"+
+						"sd.amount_to_claim/1e18,"+
 						"'' AS token_addr, "+
 						"-1 AS token_id,"+
 						"'' AS token_uri,"+
 						"-1 AS winner_index, "+
-						"CASE WHEN r.id IS NULL THEN FALSE ELSE TRUE END AS claimed, "+
-						"wa.addr winner_addr,"+
-						"sd.staker_aid "+
-					"FROM cg_staker_deposit sd "+
-						"LEFT JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
-						"LEFT JOIN transaction t ON t.id=d.tx_id "+
-						"LEFT JOIN cg_claim_reward r ON (sd.deposit_id=r.deposit_id) AND (r.staker_aid=sd.staker_aid) "+
-						"LEFT JOIN address wa ON sd.staker_aid=wa.address_id "+
+						"CASE "+
+							"WHEN "+
+								"COALESCE(rwd.collected_reward,0)=COALESCE(sd.amount_to_claim,0)"+
+								"THEN TRUE "+
+								"ELSE FALSE "+
+						"END AS claimed, "+
+						"sa.addr winner_addr,"+
+						"sd.staker_aid winner_aid "+
+					"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
+						"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
+						"INNER JOIN transaction tx ON tx.id=d.tx_id " +
+						"LEFT JOIN rwd ON (rwd.deposit_id=sd.deposit_id) AND (rwd.staker_aid=sd.staker_aid) "+
+						"INNER JOIN address sa ON sd.staker_aid = sa.address_id "+
+					"ORDER BY d.id DESC,sd.staker_aid " +
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +
