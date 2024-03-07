@@ -108,6 +108,10 @@ etl/cmd/cosmicgame/scripts/costoken-transfer
 etl/cmd/cosmicgame/scripts/set_charity_percentage
 etl/cmd/cosmicgame/scripts/bidcst
 etl/cmd/cosmicgame/scripts/cstprice
+etl/cmd/cosmicgame/scripts/claimprize
+etl/cmd/cosmicgame/scripts/lbt
+etl/cmd/cosmicgame/scripts/stclaim
+etl/cmd/cosmicgame/scripts/csig-transfer
 etl/cmd/cosmicgame/imggen_monitor/imggen_exec
 etl/cmd/cosmicgame/imggen_monitor/imggen_monitor
 etl/cmd/beacon/beacon
