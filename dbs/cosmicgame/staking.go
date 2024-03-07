@@ -470,9 +470,11 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 	query = "SELECT "+
 				"a.id,"+
 				"a.action_id, "+
-				"a.token_id "+
+				"a.token_id, "+
+				"r.deposit_id "+
 			"FROM "+sw.S.SchemaName()+".cg_stake_action a "+
 				"LEFT JOIN cg_unstake_action u ON a.action_id=u.action_id "+
+				"LEFT JOIN cg_claim_reward r ON (a.action_id=r.action_id) AND (r.deposit_id=$3) AND (r.staker_aid=a.staker_aid)" +
 			"WHERE "+
 				"(a.staker_aid = $1) AND ("+
 					"("+
@@ -487,7 +489,7 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 				") " +
 			"ORDER BY a.action_id "
 
-	rows,err := sw.S.Db().Query(query,user_aid,null_ts.Int64)
+	rows,err := sw.S.Db().Query(query,user_aid,null_ts.Int64,deposit_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
@@ -495,10 +497,12 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.CGActionIdsForDeposit
+		var null_deposit_id sql.NullInt64
 		err=rows.Scan(
 			&rec.RecordId,
 			&rec.StakeActionId,
 			&rec.TokenId,
+			&null_deposit_id,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -506,6 +510,7 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 		}
 		rec.DepositId = deposit_id
 		rec.UserAid = user_aid
+		if null_deposit_id.Valid {rec.Claimed = true }
 		records = append(records,rec)
 	}
 	return records

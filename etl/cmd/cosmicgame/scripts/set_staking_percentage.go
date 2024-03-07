@@ -33,7 +33,7 @@ func main() {
 	}
 
 	if len(os.Args) < 4 {
-		fmt.Printf("Usage: \n\t\t%v [priv_key] [contract_addr] [percentage]\n\n\t\tChanges percentage of charity eth deposits\n",os.Args[0])
+		fmt.Printf("Usage: \n\t\t%v [priv_key] [contract_addr] [percentage]\n\n\t\tChanges percentage of staking eth deposits\n",os.Args[0])
 		os.Exit(1)
 	}
 
@@ -103,7 +103,7 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := cosmic_game_ctrct.SetCharityPercentage(txopts,percentage_val)
+	tx,err := cosmic_game_ctrct.SetStakingPercentage(txopts,percentage_val)
 	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)

@@ -9,11 +9,13 @@
 	<tr class="market_reports">
 		<th class="market_reports">ActionId</th>
 		<th class="market_reports">TokenId</th>
+		<th class="market_reports">Claimed</th>
 	</tr>
 	{{- range $i, $change := .ActionIds}}
 		<tr class="market_reports">
 			<td style="text-align: center;">{{.StakeActionId}}</td>
 			<td style="text-align: center;">{{.TokenId}}</td>
+			<td style="text-align: center;">{{.Claimed}}</td>
 		</tr>
 	{{- end}}
 </table>

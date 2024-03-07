@@ -584,6 +584,7 @@ type CGActionIdsForDeposit struct {
 	UserAid						int64
 	StakeActionId				int64
 	TokenId						int64
+	Claimed						bool
 }
 type CGStakingRewardRec struct {
 	RecordId					int64
