@@ -326,3 +326,11 @@ type CGNumRaffleNFTHoldersPerRoundChanged struct {
 	Contract                string
 	NewNumRaffleNFTHoldersPerRound int64
 }
+type CGSystemModeChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewSystemMode			int64
+}

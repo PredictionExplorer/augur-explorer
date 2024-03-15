@@ -57,6 +57,7 @@ const (
 	NUM_RAFFLE_ETH_WINNERS_PER_ROUND_CHANGED = "5e3567ae359e61c47ad2f11d2828dea7e062b2ff63dea385cdb7900a50504c7c"
 	NUM_RAFFLE_NFT_WINNERS = "72e4278828b8a868e0ba5b4887f954797ea786f8bac991128636171f5eed471d"
 	NUM_RAFFLE_NFT_HOLDERS = "0cc7e37c68566f67d0fe13bf38246d7447cf99a0c481c2ef9963969bb4f5ebc8"
+	SYSTEM_MODE_CHANGED		= "f24e774cdaabee9b8782266728e442b7f1fa6ae9204755c0da1541e99f04aa4c"
 )
 var (
 	eclient 				*ethclient.Client
@@ -89,6 +90,7 @@ var (
 	evt_num_raffle_eth_winners_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_ETH_WINNERS_PER_ROUND_CHANGED)
 	evt_num_raffle_nft_winners_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_WINNERS);
 	evt_num_raffle_nft_holders_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_HOLDERS);
+	evt_system_mode_changed,_ = hex.DecodeString(SYSTEM_MODE_CHANGED);
 	inspected_events []InspectedEvent
 
 	cosmic_game_abi			*abi.ABI

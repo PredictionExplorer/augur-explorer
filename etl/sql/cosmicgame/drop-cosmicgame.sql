@@ -28,6 +28,7 @@ DROP TABLE IF EXISTS
 	cg_adm_raf_eth_winners,
 	cg_adm_raf_nft_winners,
 	cg_adm_raf_nft_holders,
+	cg_adm_sysmode,
 	cg_transfer_stats,
 	cg_round_stats,
 	cg_bidder,

@@ -727,3 +727,26 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_staking_percentage_changed_event
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_cosmic_game_system_mode_changed_event(evt *p.CGSystemModeChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_sysmode (" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"sysmode" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.NewSystemMode,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_sysmode table: %v\n",err))
+		os.Exit(1)
+	}
+}

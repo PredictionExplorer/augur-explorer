@@ -1,0 +1,28 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>System Mode Changes</title>
+</head>
+<body>
+	<h3 class="page_title">System Mode Changes<h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">BlockNum</th>
+		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Mode</th>
+	</tr>
+	{{- range $i, $change := .SystemModeChanges}}
+		<tr class="market_reports">
+			<td class="" title="{{.TimeStamp}}">{{.BlockNum}}</td>
+			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td>{{.SystemMode}}</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/system/modelist/[offset]/[limit]</br>
+
+	Example: /api/cosmicgame/system/modelist/0/10000
+</code>
+</body>

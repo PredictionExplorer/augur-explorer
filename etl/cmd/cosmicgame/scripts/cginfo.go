@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"context"
 	"math/big"
+	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -153,6 +154,12 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	blogic_addr,err := cosmic_game_ctrct.BLogic(&copts)
+	if err != nil {
+		fmt.Printf("Error at bLogic(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
 	last_bid_type,err := cosmic_game_ctrct.LastBidType(&copts)
 	if err != nil {
 		fmt.Printf("Error at LastBidType()(): %v\n",err)
@@ -183,7 +190,6 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	cg_Bal
 
 
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
@@ -203,6 +209,7 @@ func main() {
 	fmt.Printf("Initial seconds = %v\n",initialseconds.String())
 	fmt.Printf("Claimprize timeout = %v\n",timeout.String())
 	fmt.Printf("Owner = %v\n",owneraddr.String())
+	fmt.Printf("BusinessLogic = %v\n",blogic_addr.String())
 	fmt.Printf("LastBidType = %v\n",last_bid_type)
 	fmt.Printf("ActivationTime= %v\n",activation_time)
 	fmt.Printf("NumETHBids = %v\n",num_eth_bids);
@@ -217,17 +224,20 @@ func main() {
 	cst_bytes,err := blogic_ctrct.CurrentCSTPrice(&copts);
 	if err != nil {
 		fmt.Printf("Error at CurrentCSTPrice()(): %v\n",err)
-		fmt.Printf("Aborting\n")
-		os.Exit(1)
 	} else {
-		price_hash := common.BytesToHash(cst_bytes[64:])
-		cst_price := price_hash.Big()
-		f_divisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
-		f_price := big.NewFloat(0.0).SetInt(cst_price)
-		f_quo := big.NewFloat(0.0).Quo(f_price,f_divisor)
-		bid_price_eth,_ := f_quo.Float64()
-		fmt.Printf("CST Bid Price (Ether) = %.6f\n",bid_price_eth)
-		fmt.Printf("CST Bid Price (Wei) = %v\n",cst_price.String())
+		slice_len := len(cst_bytes);
+		fmt.Printf("currentCSTPrice output length: %v\n",slice_len);
+		if slice_len > 0 {
+			fmt.Printf("currentCSTPrice hex value: %v\n",hex.EncodeToString(cst_bytes));
+			price_hash := common.BytesToHash(cst_bytes[64:])
+			cst_price := price_hash.Big()
+			f_divisor := big.NewFloat(0.0).SetInt(big.NewInt(1e18))
+			f_price := big.NewFloat(0.0).SetInt(cst_price)
+			f_quo := big.NewFloat(0.0).Quo(f_price,f_divisor)
+			bid_price_eth,_ := f_quo.Float64()
+			fmt.Printf("CST Bid Price (Ether) = %.6f\n",bid_price_eth)
+			fmt.Printf("CST Bid Price (Wei) = %v\n",cst_price.String())
+		}
 	}
 	ad_bytes,err := blogic_ctrct.AuctionDuration(&copts);
 	if err != nil {
@@ -235,11 +245,15 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	} else {
-		seconds_hash := common.BytesToHash(ad_bytes[64:96])
-		seconds := seconds_hash.Big().Int64()
-		duration_hash := common.BytesToHash(ad_bytes[96:])
-		duration := duration_hash.Big().Int64()
-		fmt.Printf("CST auction elapsed time (sec): %v\n",seconds)
-		fmt.Printf("CST auction duration: %v\n",duration)
+		slice_len := len(cst_bytes);
+		fmt.Printf("AuctionDuration() output length: %v\n",slice_len);
+		if slice_len > 0 {
+			seconds_hash := common.BytesToHash(ad_bytes[64:96])
+			seconds := seconds_hash.Big().Int64()
+			duration_hash := common.BytesToHash(ad_bytes[96:])
+			duration := duration_hash.Big().Int64()
+			fmt.Printf("CST auction elapsed time (sec): %v\n",seconds)
+			fmt.Printf("CST auction duration: %v\n",duration)
+		}
 	}
 }

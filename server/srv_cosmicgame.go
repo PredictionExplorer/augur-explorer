@@ -1920,3 +1920,22 @@ func cosmic_game_staking_action_info(c *gin.Context) {
 		})
 	}
 } 
+func cosmic_game_sysmode_changes(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	success,offset,limit := parse_offset_limit_params_html(c)
+	if !success {
+		return
+	}
+	system_mode_changes := arb_storagew.Get_system_mode_change_event_list(offset,limit)
+
+	c.HTML(http.StatusOK, "cg_system_mode_changes.html", gin.H{
+		"SystemModeChanges" : system_mode_changes,
+		"Offset" : offset,
+		"Limit" : limit,
+	})
+}

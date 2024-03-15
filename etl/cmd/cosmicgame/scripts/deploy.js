@@ -84,6 +84,7 @@ async function main() {
   await cosmicGame.setStakingWallet(stakingWallet.address);
   await cosmicGame.setRandomWalk(randomWalkNFT.address);
   await cosmicGame.setActivationTime(0);
+  await cosmicGame.setRuntimeMode()
 
   console.log("Addresses set");
   console.log("INSERT INTO cg_contracts VALUES('"+
@@ -189,7 +190,7 @@ async function main() {
 		max_ts = parsed_log.args.unstakeTime.toNumber();
 	}
   }
-
+  
   bidPrice = await cosmicGame.getBidPrice();
   bidParams = {msg:'bid 4',rwalk:-1};
   params = ethers.utils.defaultAbiCoder.encode([bidParamsEncoding],[bidParams])
@@ -267,11 +268,18 @@ async function main() {
   await cosmicGame.connect(addr3).bidWithCST("bid using ERC20 token");
   await ethers.provider.send("evm_mine");
 
+  await cosmicGame.connect(owner).prepareMaintenance();
+
   prizeTime = await cosmicGame.timeUntilPrize();
   await ethers.provider.send("evm_increaseTime", [prizeTime.toNumber()]);
   await ethers.provider.send("evm_mine");
   tx = await cosmicGame.connect(addr3).claimPrize({gasLimit:3000000});
   receipt = await tx.wait();
+
+  await cosmicGame.connect(owner).setPrizePercentage(30);
+  await cosmicGame.connect(owner).setCharityPercentage(5);
+  await cosmicGame.connect(owner).setRuntimeMode();
+
   await cosmicGame.connect(addr3).claimDonatedNFT(hre.ethers.BigNumber.from('0'))
   await cosmicGame.connect(addr3).claimDonatedNFT(hre.ethers.BigNumber.from('1'))
   topic_sig = raffleWallet.interface.getEventTopic("RaffleDepositEvent");
@@ -288,8 +296,8 @@ async function main() {
 	  }
   }
  
-//  await ethers.provider.send("evm_setNextBlockTimestamp", [max_ts]);
-//  await ethers.provider.send("evm_mine");
+  await ethers.provider.send("evm_setNextBlockTimestamp", [max_ts]);
+  await ethers.provider.send("evm_mine");
 
   await marketingWallet.send(hre.ethers.utils.parseEther('7'),addr1.address);
   await ethers.provider.send("evm_mine");	// mine empty block as spacing

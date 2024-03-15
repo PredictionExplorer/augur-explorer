@@ -130,6 +130,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			Signature: hex.EncodeToString(evt_num_raffle_nft_holders_per_round_changed[:4]),
 			ContractAid: 0,
 		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_system_mode_changed[:4]),
+			ContractAid: 0,
+		},
 	)
 	return inspected_events
 }
@@ -1313,6 +1317,37 @@ func proc_num_raffle_nft_holders_per_round_changed_event(log *types.Log,elog *Et
 	storagew.Delete_cosmic_game_num_raffle_nft_holders_per_round_changed_event(evt.EvtId)
     storagew.Insert_cosmic_game_num_raffle_nft_holders_per_round_changed_event(&evt)
 }
+func proc_system_mode_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGSystemModeChanged
+	var eth_evt CosmicGameSystemModeChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing CosmicGameSystemModeChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"SystemModeChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event CosmicGameSystemModeChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewSystemMode = eth_evt.NewSystemMode.Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("SystemModeChanged {\n")
+	Info.Printf("\tNewSystemMode: %v\n",evt.NewSystemMode)
+	Info.Printf("}\n")
+
+	storagew.Delete_cosmic_game_system_mode_changed_event(evt.EvtId)
+    storagew.Insert_cosmic_game_system_mode_changed_event(&evt)
+}
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event) {
@@ -1392,6 +1427,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_num_raffle_nft_holders_per_round_changed) {
 		proc_num_raffle_nft_holders_per_round_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_system_mode_changed) {
+		proc_system_mode_changed_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {

@@ -219,6 +219,7 @@ func set_api_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/api/cosmicgame/marketing/rewards/by_user/:user_addr/:offset/:limit",api_cosmic_game_marketing_rewards_by_user)
 	r.GET("/api/cosmicgame/time/current",api_cosmic_game_time_current)
 	r.GET("/api/cosmicgame/time/until_prize",api_cosmic_game_time_until_prize)
+	r.GET("/api/cosmicgame/system/modelist/:offset/:limit",api_cosmic_game_sysmode_changes)
 }
 func set_api_routing_statistics(r *gin.Engine) {
 
