@@ -96,7 +96,8 @@ async function main() {
 	  raffleWallet.address+"','"+
 	  randomWalkNFT.address+"','"+
 	  stakingWallet.address+"','"+
-	  marketingWallet.address+
+	  marketingWallet.address+"','"+
+	  bLogic.address+
 	  "')"
   );
 

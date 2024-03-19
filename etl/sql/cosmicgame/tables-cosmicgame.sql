@@ -446,7 +446,8 @@ CREATE TABLE cg_contracts (
 	raffle_wallet_addr		TEXT NOT NULL,
 	random_walk_addr		TEXT NOT NULL,
 	staking_wallet_addr		TEXT NOT NULL,
-	marketing_wallet_addr	TEXT NOT NULL
+	marketing_wallet_addr	TEXT NOT NULL,
+	business_logic_addr		TEXT NOT NULL
 );
 CREATE TABLE cg_proc_status (
 	last_evt_id             BIGINT DEFAULT 0

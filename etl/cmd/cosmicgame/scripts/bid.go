@@ -19,8 +19,8 @@ import (
 )
 const (
 //	CHAIN_ID		int64 = 31337
-//	CHAIN_ID		int64 = 421614
-	CHAIN_ID		int64 = 11155111
+	CHAIN_ID		int64 = 421614
+//	CHAIN_ID		int64 = 11155111
 )
 var (
 	RPC_URL string

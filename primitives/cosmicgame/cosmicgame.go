@@ -14,6 +14,7 @@ type CosmicGameContractAddrs struct {
 	RandomWalkAddr				string
 	StakingWalletAddr			string
 	MarketingWalletAddr			string
+	BusinessLogicAddr			string
 }
 type CosmicGameProcStatus struct {
 	LastEvtIdProcessed			int64
