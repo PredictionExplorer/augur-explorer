@@ -319,7 +319,7 @@ async function main() {
   let num_actions;
   num_actions = await stakingWallet.numStakeActions();
   for (let i = 0; i < num_actions.toNumber(); i++) {
-    let action_rec = await stakingWallet.stakedNFTs(i);
+    let action_rec = await stakingWallet.stakeActions(i);
 	let ownr = action_rec.owner;
 	let owner_signer = cosmicGame.provider.getSigner(ownr);
 	await stakingWallet.connect(owner_signer).unstake(i);
@@ -327,7 +327,7 @@ async function main() {
   await ethers.provider.send("evm_mine");	// mine empty block as spacing
   num_actions  = await stakingWallet.numStakeActions();
   for (let i =0; i<num_actions.toNumber(); i++) {
-    let action_rec = await stakingWallet.stakedNFTs(i);
+    let action_rec = await stakingWallet.stakeActions(i);
 	let ownr = action_rec.owner;
 	let num_deposits = await stakingWallet.numETHDeposits();
 	let owner_signer = stakingWallet.provider.getSigner(ownr);
