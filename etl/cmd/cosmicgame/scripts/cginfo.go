@@ -160,6 +160,12 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	staking_addr,err := cosmic_game_ctrct.StakingWallet(&copts)
+	if err != nil {
+		fmt.Printf("Error at StakingWallet(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
 	last_bid_type,err := cosmic_game_ctrct.LastBidType(&copts)
 	if err != nil {
 		fmt.Printf("Error at LastBidType()(): %v\n",err)
@@ -190,6 +196,12 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	system_mode,err := cosmic_game_ctrct.SystemMode(&copts)
+	if err != nil {
+		fmt.Printf("Error at SystemMode()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
 
 
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
@@ -215,7 +227,20 @@ func main() {
 	fmt.Printf("NumETHBids = %v\n",num_eth_bids);
 	fmt.Printf("NumCSTBids = %v\n",num_cst_bids);
 	fmt.Printf("CSTAuctionLength = %v\n",cst_auction_length);
+	fmt.Printf("SystemMode = %v\n",system_mode.String());
 
+	swallet,err := NewStakingWallet(staking_addr,eclient);
+	if err != nil {
+		fmt.Printf("Failed to instantiate StakingWallet contract: %v\n",err)
+		os.Exit(1)
+	}
+	min_stake_period,err := swallet.MinStakePeriod(&copts);
+	if err != nil {
+		os.Exit(1)
+	} else {
+		fmt.Printf("StakingWallet = %v\n",staking_addr.String());
+		fmt.Printf("MinStakePeriod = %v\n",min_stake_period.String());
+	}
 	blogic_ctrct,err := NewBusinessLogic(cosmic_game_addr,eclient)
 	if err!=nil {
 		fmt.Printf("Failed to instantiate BusinessLogic contract: %v\n",err)

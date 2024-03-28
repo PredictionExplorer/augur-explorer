@@ -399,11 +399,9 @@ func (sw *SQLStorageWrapper) Get_user_global_winnings(winner_aid int64) p.CGClai
 	query = "SELECT " +
 				"s.amount_sum,"+ 
 				"s.amount_sum/1e18, " +
-				"w.unclaimed_nfts,  " +
-				"st.unclaimed_reward/1e18 "+
+				"w.unclaimed_nfts  " +
 			"FROM cg_raffle_winner_stats s " +
 				"LEFT JOIN cg_winner w ON s.winner_aid=w.winner_aid "+
-				"LEFT JOIN cg_Staker st ON st.staker_aid=s.winner_aid "+
 			"WHERE s.winner_aid = $1"
 
 
@@ -412,15 +410,14 @@ func (sw *SQLStorageWrapper) Get_user_global_winnings(winner_aid int64) p.CGClai
 	var null_wei sql.NullString
 	var null_eth sql.NullFloat64
 	var null_nfts sql.NullInt64
-	var null_staking_rewards sql.NullFloat64
 
-	err=row.Scan(&null_wei,&null_eth,&null_nfts,&null_staking_rewards);
+	err=row.Scan(&null_wei,&null_eth,&null_nfts);
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return output;
+		} else {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
 		}
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-		os.Exit(1)
 	}
 	if null_eth.Valid {
 		output.ETHRaffleToClaim = null_eth.Float64
@@ -430,6 +427,20 @@ func (sw *SQLStorageWrapper) Get_user_global_winnings(winner_aid int64) p.CGClai
 	}
 	if null_nfts.Valid {
 		output.NumDonatedNFTToClaim = null_nfts.Int64
+	}
+
+	var null_staking_rewards sql.NullFloat64
+	query = "SELECT unclaimed_reward/1e18 FROM cg_staker WHERE staker_aid=$1"
+	row = sw.S.Db().QueryRow(query,winner_aid)
+	fmt.Printf("query=  %v \n",query);
+	fmt.Printf("user = %v\n",winner_aid);
+	err=row.Scan(&null_staking_rewards);
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return output;
+		}
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
 	}
 	if null_staking_rewards.Valid {
 		output.UnclaimedStakingReward = null_staking_rewards.Float64
