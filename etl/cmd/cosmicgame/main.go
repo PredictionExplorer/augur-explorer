@@ -58,6 +58,7 @@ const (
 	NUM_RAFFLE_NFT_WINNERS = "72e4278828b8a868e0ba5b4887f954797ea786f8bac991128636171f5eed471d"
 	NUM_RAFFLE_NFT_HOLDERS = "0cc7e37c68566f67d0fe13bf38246d7447cf99a0c481c2ef9963969bb4f5ebc8"
 	SYSTEM_MODE_CHANGED		= "f24e774cdaabee9b8782266728e442b7f1fa6ae9204755c0da1541e99f04aa4c"
+	CHARITY_ADDRESS_CHANGED	= "1c7efd98583e33a9cc6adff48a97abdaaf43e5c9e918d5ec3e75e93e1dafcf6c"
 )
 var (
 	eclient 				*ethclient.Client
@@ -91,6 +92,7 @@ var (
 	evt_num_raffle_nft_winners_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_WINNERS);
 	evt_num_raffle_nft_holders_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_HOLDERS);
 	evt_system_mode_changed,_ = hex.DecodeString(SYSTEM_MODE_CHANGED);
+	evt_charity_address_changed,_	= hex.DecodeString(CHARITY_ADDRESS_CHANGED);
 	inspected_events []InspectedEvent
 
 	cosmic_game_abi			*abi.ABI
@@ -146,10 +148,10 @@ func process_events(exit_chan chan bool) {
 				}
 			default:
 		}
-		Info.Printf(
+	/*	Info.Printf(
 			"scanning event range from %v to %v\n",
 			status.LastEvtIdProcessed,status.LastEvtIdProcessed+max_batch_size,
-		)
+		)*/
 		id_upper_limit := status.LastEvtIdProcessed + max_batch_size
 		last_evt_id,err := storagew.S.Get_last_evtlog_id()
 		if err != nil {

@@ -279,6 +279,8 @@ async function main() {
 
   await cosmicGame.connect(owner).setPrizePercentage(30);
   await cosmicGame.connect(owner).setCharityPercentage(5);
+  await cosmicGame.connect(owner).setCharity(addr3.address);
+  await cosmicGame.connect(owner).setCharity(charityWallet.address);
   await cosmicGame.connect(owner).setRuntimeMode();
 
   await cosmicGame.connect(addr3).claimDonatedNFT(hre.ethers.BigNumber.from('0'))

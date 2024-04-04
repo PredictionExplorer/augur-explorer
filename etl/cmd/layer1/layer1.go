@@ -23,7 +23,7 @@ import (
 )
 const (
 
-	DEFAULT_WAIT_TIME = 2000	// 2 seconds
+	DEFAULT_WAIT_TIME = 1000	// 2 seconds
 	DEFAULT_DB_LOG				= "db.log"
 	//DEFAULT_LOG_DIR				= "ae_logs"
 	MAX_APPROVAL_BASE10 string = "115792089237316195423570985008687907853269984665640564039457584007913129639935"
@@ -195,7 +195,7 @@ func main() {
 	Info.Printf("Latest block=%v, bnum=%v\n",latestBlock.Number.Int64(),bnum)
 	if bnum_high < bnum {
 		Info.Printf("Database has more blocks than the blockchain, aborting. Sleeping to wait\n")
-		time.Sleep(10 * time.Second)
+		time.Sleep(DEFAULT_WAIT_TIME * time.Second)
 		goto main_loop
 	}
 	if bnum != 0 {

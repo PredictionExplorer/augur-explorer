@@ -786,7 +786,7 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_by_user(user_aid int64) []p.CGSta
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_stake_action a ON a.id=m.stake_action_id "+
+				"LEFT JOIN cg_stake_action a ON a.action_id=m.stake_action_id "+
 			"WHERE m.staked_owner_aid=$1 AND m.staked = 'T' "+
 			"ORDER BY m.token_id"
 

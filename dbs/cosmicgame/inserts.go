@@ -750,3 +750,27 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_system_mode_changed_event(evt *p
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_cosmic_game_charity_address_changed_event(evt *p.CGCharityAddressChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	new_charity_aid:=sw.S.Lookup_or_create_address(evt.NewCharity,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_charity_addr(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"new_charity_aid" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		new_charity_aid,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_charity_addr table: %v\n",err))
+		os.Exit(1)
+	}
+}

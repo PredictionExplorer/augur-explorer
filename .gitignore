@@ -114,6 +114,9 @@ etl/cmd/cosmicgame/scripts/stclaim
 etl/cmd/cosmicgame/scripts/csig-transfer
 etl/cmd/cosmicgame/scripts/set_staking_percentage
 etl/cmd/cosmicgame/scripts/erc20totsup
+etl/cmd/cosmicgame/scripts/chown
+etl/cmd/cosmicgame/scripts/owner
+etl/cmd/cosmicgame/scripts/tokownerof
 etl/cmd/cosmicgame/imggen_monitor/imggen_exec
 etl/cmd/cosmicgame/imggen_monitor/imggen_monitor
 etl/cmd/beacon/beacon

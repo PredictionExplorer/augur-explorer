@@ -80,7 +80,7 @@ CREATE TABLE cg_nft_donation (
 	token_uri		TEXT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_charity_updated (
+CREATE TABLE cg_charity_updated (	-- CharityUpdated event, contract CharityWallet
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -350,6 +350,16 @@ CREATE TABLE cg_adm_sysmode ( -- SystemModeChanged event
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
 	sysmode			INT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_charity_addr( -- CharityAddressChanged event (contract CosmicGame)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_charity_aid	BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_transfer_stats( -- table to keep tracking of the statistical counters for tokent transfers

@@ -134,6 +134,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			Signature: hex.EncodeToString(evt_system_mode_changed[:4]),
 			ContractAid: 0,
 		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_charity_address_changed[:4]),
+			ContractAid: 0,
+		},
 	)
 	return inspected_events
 }
@@ -1326,10 +1330,10 @@ func proc_system_mode_changed_event(log *types.Log,elog *EthereumEventLog) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	Info.Printf("Processing CosmicGameSystemModeChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	Info.Printf("Processing SystemModeChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"SystemModeChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event CosmicGameSystemModeChanged decode error: %v",err)
+		Error.Printf("Event SystemModeChanged decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -1347,6 +1351,37 @@ func proc_system_mode_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Delete_cosmic_game_system_mode_changed_event(evt.EvtId)
     storagew.Insert_cosmic_game_system_mode_changed_event(&evt)
+}
+func proc_charity_address_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGCharityAddressChanged
+	var eth_evt CosmicGameCharityAddressChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing CharityAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CharityAddressChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event CharityAddressChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewCharity = eth_evt.NewCharity.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("CharityAddressChanged{\n")
+	Info.Printf("\tNewCharity: %v\n",evt.NewCharity)
+	Info.Printf("}\n")
+
+	storagew.Delete_cosmic_game_charity_address_changed_event(evt.EvtId)
+    storagew.Insert_cosmic_game_charity_address_changed_event(&evt)
 }
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
@@ -1430,6 +1465,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_system_mode_changed) {
 		proc_system_mode_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_charity_address_changed) {
+		proc_charity_address_changed_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {

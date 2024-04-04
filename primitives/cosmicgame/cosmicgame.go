@@ -335,3 +335,11 @@ type CGSystemModeChanged struct {
 	Contract                string
 	NewSystemMode			int64
 }
+type CGCharityAddressChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewCharity				string
+}
