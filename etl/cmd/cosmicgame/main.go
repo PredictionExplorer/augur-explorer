@@ -59,6 +59,10 @@ const (
 	NUM_RAFFLE_NFT_HOLDERS = "0cc7e37c68566f67d0fe13bf38246d7447cf99a0c481c2ef9963969bb4f5ebc8"
 	SYSTEM_MODE_CHANGED		= "f24e774cdaabee9b8782266728e442b7f1fa6ae9204755c0da1541e99f04aa4c"
 	CHARITY_ADDRESS_CHANGED	= "1c7efd98583e33a9cc6adff48a97abdaaf43e5c9e918d5ec3e75e93e1dafcf6c"
+	RWALK_ADDRESS_CHANGED	= "9dc3707e4b88be65295b0083b44ffa94059c80372add9b0d24d6a3b371a03b92"
+	RAFFLE_ADDRESS_CHANGED	= "508d510537704d37ed64691a706392abc33e59ce8a327b4952e112820ceb88a6"
+	STAKING_ADDRESS_CHANGED  = "3d112e567ad7f87ef5e5219a98118d33b03b247b007cfbadf4f133e7010f2c34"
+	MARKETING_ADDRESS_CHANGED = "4d03942c29c20d1bccfe551e9d148c917c5a44fb558a4fc60270d8f76fb75f54"
 )
 var (
 	eclient 				*ethclient.Client
@@ -93,6 +97,11 @@ var (
 	evt_num_raffle_nft_holders_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_HOLDERS);
 	evt_system_mode_changed,_ = hex.DecodeString(SYSTEM_MODE_CHANGED);
 	evt_charity_address_changed,_	= hex.DecodeString(CHARITY_ADDRESS_CHANGED);
+	evt_rwalk_address_changed,_	= hex.DecodeString(RWALK_ADDRESS_CHANGED);
+	evt_raffle_address_changed,_	= hex.DecodeString(RAFFLE_ADDRESS_CHANGED);
+	evt_staking_address_changed,_	= hex.DecodeString(STAKING_ADDRESS_CHANGED);
+	evt_marketing_address_changed,_	= hex.DecodeString(MARKETING_ADDRESS_CHANGED);
+
 	inspected_events []InspectedEvent
 
 	cosmic_game_abi			*abi.ABI

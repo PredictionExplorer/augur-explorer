@@ -138,6 +138,22 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			Signature: hex.EncodeToString(evt_charity_address_changed[:4]),
 			ContractAid: 0,
 		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_rwalk_address_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_raffle_address_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_staking_address_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_marketing_address_changed[:4]),
+			ContractAid: 0,
+		},
 	)
 	return inspected_events
 }
@@ -1383,6 +1399,130 @@ func proc_charity_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_cosmic_game_charity_address_changed_event(evt.EvtId)
     storagew.Insert_cosmic_game_charity_address_changed_event(&evt)
 }
+func proc_random_walk_address_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGRandomWalkAddressChanged
+	var eth_evt CosmicGameRandomWalkAddressChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing RandomWalkAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RandomWalkAddressChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event RandomWalkAddressChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewRandomWalk = eth_evt.NewRandomWalk.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("RandomWalkAddressChanged{\n")
+	Info.Printf("\tNewRandomWalk: %v\n",evt.NewRandomWalk)
+	Info.Printf("}\n")
+
+	storagew.Delete_cosmic_game_random_walk_address_changed_event(evt.EvtId)
+    storagew.Insert_cosmic_game_random_walk_address_changed_event(&evt)
+}
+func proc_raffle_address_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGRaffleWalletAddressChanged
+	var eth_evt CosmicGameRaffleWalletAddressChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing RaffleWalletAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RaffleWaletAddressChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event RaffleWalletAddressChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewRaffleWallet = eth_evt.NewRaffleWallet.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("RaffleWalletAddressChanged{\n")
+	Info.Printf("\tNewRaffleWallet: %v\n",evt.NewRaffleWallet)
+	Info.Printf("}\n")
+
+	storagew.Delete_cosmic_game_raffle_wallet_address_changed_event(evt.EvtId)
+    storagew.Insert_cosmic_game_raffle_wallet_address_changed_event(&evt)
+}
+func proc_staking_wallet_address_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGStakingWalletAddressChanged
+	var eth_evt CosmicGameStakingWalletAddressChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing StakingWalletAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"StakingWaletAddressChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event StakingWalletAddressChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewStakingWallet = eth_evt.NewStakingWallet.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("StakingWalletAddressChanged{\n")
+	Info.Printf("\tNewStakingWallet: %v\n",evt.NewStakingWallet)
+	Info.Printf("}\n")
+
+	storagew.Delete_cosmic_game_staking_wallet_address_changed_event(evt.EvtId)
+    storagew.Insert_cosmic_game_staking_wallet_address_changed_event(&evt)
+}
+func proc_marketing_wallet_address_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGMarketingWalletAddressChanged
+	var eth_evt CosmicGameMarketingWalletAddressChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing MarketingWalletAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"MarketingWaletAddressChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event MarketingWalletAddressChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewMarketingWallet = eth_evt.NewMarketingWallet.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("MarketingWalletAddressChanged{\n")
+	Info.Printf("\tNewMarketingWallet: %v\n",evt.NewMarketingWallet)
+	Info.Printf("}\n")
+
+	storagew.Delete_cosmic_game_marketing_wallet_address_changed_event(evt.EvtId)
+    storagew.Insert_cosmic_game_marketing_wallet_address_changed_event(&evt)
+}
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event) {
@@ -1468,6 +1608,18 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_charity_address_changed) {
 		proc_charity_address_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_rwalk_address_changed) {
+		proc_random_walk_address_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_address_changed) {
+		proc_raffle_address_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_staking_address_changed) {
+		proc_staking_wallet_address_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_marketing_address_changed) {
+		proc_marketing_wallet_address_changed_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {

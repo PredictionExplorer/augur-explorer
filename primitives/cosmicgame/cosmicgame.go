@@ -343,3 +343,35 @@ type CGCharityAddressChanged struct {
 	Contract                string
 	NewCharity				string
 }
+type CGRandomWalkAddressChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewRandomWalk				string
+}
+type CGRaffleWalletAddressChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewRaffleWallet				string
+}
+type CGStakingWalletAddressChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewStakingWallet				string
+}
+type CGMarketingWalletAddressChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewMarketingWallet				string
+}
