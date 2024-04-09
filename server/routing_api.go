@@ -210,6 +210,7 @@ func set_api_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/api/cosmicgame/staking/rewards/to_claim/by_user/:user_addr",api_cosmic_game_staking_rewards_to_claim_by_user)
 	r.GET("/api/cosmicgame/staking/rewards/collected/by_user/:user_addr/:offset/:limit",api_cosmic_game_staking_rewards_collected_by_user)
 	r.GET("/api/cosmicgame/staking/rewards/action_ids_by_deposit/:user_addr/:deposit_id",api_cosmic_game_staking_rewards_action_ids_by_deposit)
+	r.GET("/api/cosmicgame/staking/rewards/action_ids_by_deposit_with_claim_info/:user_addr/:deposit_id",api_cosmic_game_staking_rewards_action_ids_by_deposit_with_claim_info)
 	r.GET("/api/cosmicgame/staking/actions/by_user/:user_addr/:offset/:limit",api_cosmic_game_staking_actions_by_user)
 	r.GET("/api/cosmicgame/staking/actions/global/:offset/:limit",api_cosmic_game_staking_actions_global)
 	r.GET("/api/cosmicgame/staking/actions/info/:action_id",api_cosmic_game_staking_action_info)

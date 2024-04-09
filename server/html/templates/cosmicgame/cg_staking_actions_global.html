@@ -5,6 +5,7 @@
 </head>
 <body>
 	<h3 class="page_title">Global Stake/Unstake actions<h3>
+	Last Block timestamp: {{.LastTS}}
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -15,13 +16,18 @@
 		<th class="market_reports">Unstake date</th>
 		<th class="market_reports">Staker</th>
 		<th class="market_reports">Total num staked NFT</th>
+		<th class="market_reports">Claim Expiration</th>
 	</tr>
 	{{- range $i, $change := .StakingActions}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				{{.BlockNum}}
 			</td>
-			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" title="{{.TimeStamp}}">
+				<a href="/black/cosmicgame/staking/actions/info/{{.ActionId}}">
+				{{.DateTime}}
+				</a>
+			</td>
 			<td style="text-align: center;" title="">
 				{{if eq .ActionType 0 }}Stake{{ else }}Unstake{{ end }}
 			</td>
@@ -39,6 +45,8 @@
 				{{ if eq .NumStakedNFTs 0 }} <font color=red>{{ end }}
 				{{.NumStakedNFTs}}
 				{{ if eq .NumStakedNFTs 0 }} </font>{{ end }}
+			</td>
+			<td style="text-align: right;">{{.UnstakeExpirationDiff }}
 			</td>
 		</tr>
 	{{- end}}

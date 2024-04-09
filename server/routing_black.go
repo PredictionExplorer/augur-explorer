@@ -198,6 +198,7 @@ func set_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/black/cosmicgame/staking/rewards/to_claim/by_user/:user_addr",cosmic_game_staking_rewards_to_claim_by_user)
 	r.GET("/black/cosmicgame/staking/rewards/collected/by_user/:user_addr",cosmic_game_staking_rewards_collected_by_user)
 	r.GET("/black/cosmicgame/staking/rewards/action_ids_by_deposit/:user_addr/:deposit_id",cosmic_game_staking_rewards_action_ids_by_deposit)
+	r.GET("/black/cosmicgame/staking/rewards/action_ids_by_deposit_with_claim_info/:user_addr/:deposit_id",cosmic_game_staking_rewards_action_ids_by_deposit_with_claim_info)
 	r.GET("/black/cosmicgame/staking/rewards/global",cosmic_game_staking_rewards_global)
 	r.GET("/black/cosmicgame/staking/rewards/by_round/:round_num",cosmic_game_staking_rewards_by_round)
 

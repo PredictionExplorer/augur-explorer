@@ -82,6 +82,7 @@ type CGPrizeRec struct {
 	CharityAddress				string
 	CharityAmount				string
 	CharityAmountETH			float64
+	StakingDepositNum			int64
 	StakingDepositAmount		string
 	StakingDepositAmountEth		float64
 	StakingPerToken				string
@@ -466,6 +467,8 @@ type CGStakingHistoryRec struct {
 	Claimed						bool
 	StakerAid					int64
 	StakerAddr					string
+	LastBlockTS					int64
+	UnstakeExpirationDiff		int64
 }
 type CGStakeActionInfoRec struct {
 	RecordId					int64
@@ -585,6 +588,21 @@ type CGActionIdsForDeposit struct {
 	StakeActionId				int64
 	TokenId						int64
 	Claimed						bool
+}
+type CGActionIdsForDepositWithClaimInfo struct {
+	RecordId					int64
+	DepositId					int64
+	UserAid						int64
+	StakeActionId				int64
+	TokenId						int64
+	Claimed						bool
+	ClaimBlockNum				int64
+	ClaimTimeStamp				int64
+	ClaimDateTime				string
+	ClaimTxId					int64
+	ClaimTxHash					string
+	ClaimRewardAmount			string
+	ClaimRewardAmountEth		float64
 }
 type CGStakingRewardRec struct {
 	RecordId					int64

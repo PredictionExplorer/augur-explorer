@@ -213,6 +213,7 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_collected(user_aid int64,offset
 				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT,"+
 				"d.deposit_time,"+
 				"d.deposit_num,"+
+
 				"d.num_staked_nfts,"+
 				"d.amount,"+
 				"d.amount/1e18,"+
@@ -515,6 +516,95 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_action_ids_for_deposit_with_claim_info(deposit_id int64,user_aid int64) []p.CGActionIdsForDepositWithClaimInfo {
+
+	records := make([]p.CGActionIdsForDepositWithClaimInfo,0, 16)
+	var query string
+	query = "SELECT EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS ts FROM cg_eth_deposit d WHERE deposit_num=$1"
+	row := sw.S.Db().QueryRow(query,deposit_id)
+	var null_ts sql.NullInt64
+	err:=row.Scan(&null_ts)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return records
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_action_ids_for_deposit(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+
+	query = "SELECT "+
+				"r.id,"+
+				"a.action_id, "+
+				"a.token_id, "+
+				"r.deposit_id, "+
+				"r.block_num, "+
+				"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT,"+
+				"r.time_stamp,"+
+				"tx.id,"+
+				"tx.tx_hash,"+
+				"r.reward,"+
+				"r.reward/1e18 "+
+			"FROM "+sw.S.SchemaName()+".cg_stake_action a "+
+				"JOIN cg_claim_reward r ON (a.action_id=r.action_id) AND (r.deposit_id=$3) AND (r.staker_aid=a.staker_aid)" +
+				"LEFT JOIN cg_unstake_action u ON a.action_id=u.action_id "+
+				"LEFT JOIN transaction tx ON tx.id=r.tx_id " +
+			"WHERE "+
+				"(a.staker_aid = $1) AND ("+
+					"("+
+						"(a.time_stamp < TO_TIMESTAMP($2)) AND (u.id IS NULL)"+
+					") OR "+
+						"(" + 
+							"(a.time_stamp<TO_TIMESTAMP($2) AND "+
+							"(u.id IS NOT NULL) AND "+
+							"(TO_TIMESTAMP($2)<=u.time_stamp) "+
+						")"+
+					")"+
+				") " +
+			"ORDER BY r.evtlog_id DESC "
+
+	rows,err := sw.S.Db().Query(query,user_aid,null_ts.Int64,deposit_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGActionIdsForDepositWithClaimInfo
+		var null_deposit_id sql.NullInt64
+		var null_rwd_block_num,null_rwd_timestamp,null_rwd_tx_id sql.NullInt64
+		var null_rwd_datetime,null_rwd_tx_hash,null_reward sql.NullString
+		var null_reward_eth sql.NullFloat64
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.StakeActionId,
+			&rec.TokenId,
+			&null_deposit_id,
+			&null_rwd_block_num,
+			&null_rwd_timestamp,
+			&null_rwd_datetime,
+			&null_rwd_tx_id,
+			&null_rwd_tx_hash,
+			&null_reward,
+			&null_reward_eth,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		rec.DepositId = deposit_id
+		rec.UserAid = user_aid
+		if null_deposit_id.Valid {rec.Claimed = true }
+		if null_rwd_block_num.Valid {rec.ClaimBlockNum = null_rwd_block_num.Int64}
+		if null_rwd_timestamp.Valid {rec.ClaimTimeStamp = null_rwd_timestamp.Int64}
+		if null_rwd_datetime.Valid {rec.ClaimDateTime = null_rwd_datetime.String}
+		if null_rwd_tx_id.Valid {rec.ClaimTxId = null_rwd_tx_id.Int64}
+		if null_rwd_tx_hash.Valid {rec.ClaimTxHash = null_rwd_tx_hash.String}
+		if null_reward.Valid {rec.ClaimRewardAmount = null_reward.String}
+		if null_reward_eth.Valid {rec.ClaimRewardAmountEth = null_reward_eth.Float64}
+		records = append(records,rec)
+	}
+	return records
+}
 func (sw *SQLStorageWrapper) Get_global_staking_rewards(offset,limit int) []p.CGCollectedReward {
 
 	records := make([]p.CGCollectedReward,0, 32)
@@ -670,6 +760,7 @@ func (sw *SQLStorageWrapper) Get_staking_winners_by_round(round_num int64) []p.C
 }
 func (sw *SQLStorageWrapper) Get_global_staking_history(offset,limit int) []p.CGStakingHistoryRec {
 
+	last_ts := sw.S.Get_last_block_timestamp()
 	var query string
 	query = "("+
 				"SELECT "+
@@ -750,6 +841,8 @@ func (sw *SQLStorageWrapper) Get_global_staking_history(offset,limit int) []p.CG
 		}
 		accum_staked_nfts = accum_staked_nfts + rec.NumStakedNFTs
 		rec.AccumNumStakedNFTs = accum_staked_nfts
+		rec.LastBlockTS = last_ts
+		rec.UnstakeExpirationDiff = last_ts - rec.UnstakeTimeStamp
 		records = append(records,rec)
 	}
 	return records
