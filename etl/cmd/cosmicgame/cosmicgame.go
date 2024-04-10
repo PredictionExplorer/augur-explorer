@@ -154,6 +154,22 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			Signature: hex.EncodeToString(evt_marketing_address_changed[:4]),
 			ContractAid: 0,
 		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_costok_address_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_cossig_address_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_blogic_address_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_time_increase_changed[:4]),
+			ContractAid: 0,
+		},
 	)
 	return inspected_events
 }
@@ -1523,6 +1539,130 @@ func proc_marketing_wallet_address_changed_event(log *types.Log,elog *EthereumEv
 	storagew.Delete_cosmic_game_marketing_wallet_address_changed_event(evt.EvtId)
     storagew.Insert_cosmic_game_marketing_wallet_address_changed_event(&evt)
 }
+func proc_cosmic_token_address_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGCosmicTokenAddressChanged
+	var eth_evt CosmicGameCosmicTokenAddressChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing CosmicTokenAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CosmicTokenAddressChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event CosmicTokenAddressChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewCosmicToken= eth_evt.NewCosmicToken.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("CosmicTokenAddressChanged{\n")
+	Info.Printf("\tNewCosmicToken: %v\n",evt.NewCosmicToken)
+	Info.Printf("}\n")
+
+	storagew.Delete_cosmic_token_address_changed_event(evt.EvtId)
+    storagew.Insert_cosmic_token_address_changed_event(&evt)
+}
+func proc_cosmic_signature_address_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGCosmicSignatureAddressChanged
+	var eth_evt CosmicGameCosmicSignatureAddressChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing CosmicSignatureAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"CosmicSignatureAddressChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event CosmicSignatureAddressChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewCosmicSignature= eth_evt.NewCosmicSignature.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("CosmicSignatureAddressChanged{\n")
+	Info.Printf("\tNewCosmicSignatureWallet: %v\n",evt.NewCosmicSignature)
+	Info.Printf("}\n")
+
+	storagew.Delete_cosmic_signature_address_changed_event(evt.EvtId)
+    storagew.Insert_cosmic_signature_address_changed_event(&evt)
+}
+func proc_business_logic_address_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGBusinessLogicAddressChanged
+	var eth_evt CosmicGameBusinessLogicAddressChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing BusinessLogicAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"BusinessLogicAddressChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event BusinessLogicAddressChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewContractAddress = eth_evt.NewContractAddress.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("BusinessLogicAddressChanged{\n")
+	Info.Printf("\tNewContractAddress: %v\n",evt.NewContractAddress)
+	Info.Printf("}\n")
+
+	storagew.Delete_business_logic_address_changed_event(evt.EvtId)
+    storagew.Insert_business_logic_address_changed_event(&evt)
+}
+func proc_time_increase_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGTimeIncreaseChanged
+	var eth_evt CosmicGameTimeIncreaseChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing TimeIncreaseChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"TimeIncreaseChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event TimeIncreaseChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewTimeIncrease = eth_evt.NewTimeIncrease.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("TimeIncreaseChanged{\n")
+	Info.Printf("\tNewTimeIncrease: %v\n",evt.NewTimeIncrease)
+	Info.Printf("}\n")
+
+	storagew.Delete_time_increase_changed_event(evt.EvtId)
+    storagew.Insert_time_increase_changed_event(&evt)
+}
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event) {
@@ -1620,6 +1760,18 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_marketing_address_changed) {
 		proc_marketing_wallet_address_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_costok_address_changed) {
+		proc_cosmic_token_address_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cossig_address_changed) {
+		proc_cosmic_signature_address_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_blogic_address_changed) {
+		proc_business_logic_address_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_time_increase_changed) {
+		proc_time_increase_changed_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {

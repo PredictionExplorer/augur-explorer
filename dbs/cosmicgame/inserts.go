@@ -870,3 +870,98 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_marketing_wallet_address_changed
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_cosmic_token_address_changed_event(evt *p.CGCosmicTokenAddressChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	new_costok_aid:=sw.S.Lookup_or_create_address(evt.NewCosmicToken,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_costok_addr(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"new_costok_aid" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		new_costok_aid,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_costok_addr table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_cosmic_signature_address_changed_event(evt *p.CGCosmicSignatureAddressChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	new_cossig_aid:=sw.S.Lookup_or_create_address(evt.NewCosmicSignature,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_cossig_addr(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"new_cossig_aid" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		new_cossig_aid,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_cossig_addr table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_business_logic_address_changed_event(evt *p.CGBusinessLogicAddressChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	new_blogic_aid:=sw.S.Lookup_or_create_address(evt.NewContractAddress,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_blogic_addr(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"new_blogic_aid" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		new_blogic_aid,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_blogic_addr table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_time_increase_changed_event(evt *p.CGTimeIncreaseChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_time_inc(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"new_time_inc" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.NewTimeIncrease,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_time_inc table: %v\n",err))
+		os.Exit(1)
+	}
+}

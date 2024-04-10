@@ -402,6 +402,46 @@ CREATE TABLE cg_adm_marketing_addr( -- MarketingWalletAddressChanged event (cont
 	new_marketing_aid	BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_adm_costok_addr( -- CosmicTokenAddressChanged event (contract CosmicGame)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_costok_aid	BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_cossig_addr( -- CosmicSignatureAddressChanged event (contract CosmicGame)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_cossig_aid	BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_blogic_addr( -- BusinessLogicAddressChanged event (contract CosmicGame)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_blogic_aid	BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_time_inc( -- TimeIncreaseChanged event (contract CosmicGame)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_time_inc	DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE cg_transfer_stats( -- table to keep tracking of the statistical counters for tokent transfers
     user_aid                BIGINT NOT NULL,
     erc20_num_transfers     BIGINT DEFAULT 0, -- CosmicToken

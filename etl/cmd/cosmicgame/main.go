@@ -63,6 +63,10 @@ const (
 	RAFFLE_ADDRESS_CHANGED	= "508d510537704d37ed64691a706392abc33e59ce8a327b4952e112820ceb88a6"
 	STAKING_ADDRESS_CHANGED  = "3d112e567ad7f87ef5e5219a98118d33b03b247b007cfbadf4f133e7010f2c34"
 	MARKETING_ADDRESS_CHANGED = "4d03942c29c20d1bccfe551e9d148c917c5a44fb558a4fc60270d8f76fb75f54"
+	COSMIC_TOKEN_ADDRESS_CHANGED	= "3ab2dcf539aa3c30314265602fc86dee8e343e3c3905730f870835f36c400deb"
+	COSMIC_SIGNATURE_ADDRESS_CHANGED	= "7142a592d5404b5fc4a294c66f70e32b2a7776bd807f722d59268def87c765d1"
+	BUSINESS_LOGIC_ADDRESS_CHANGED	= "77ddb5e9e1495e15651bf87ccd8bbb7e637439fb260f0fda41b6ce4b3098aafd"
+	TIME_INCREASE_CHANGED	= "ed46e73b174ced51fb529cdc6c1b4d8abf49387e6d849b71648afb63c81d12cd"
 )
 var (
 	eclient 				*ethclient.Client
@@ -101,6 +105,10 @@ var (
 	evt_raffle_address_changed,_	= hex.DecodeString(RAFFLE_ADDRESS_CHANGED);
 	evt_staking_address_changed,_	= hex.DecodeString(STAKING_ADDRESS_CHANGED);
 	evt_marketing_address_changed,_	= hex.DecodeString(MARKETING_ADDRESS_CHANGED);
+	evt_costok_address_changed,_	= hex.DecodeString(COSMIC_TOKEN_ADDRESS_CHANGED);
+	evt_cossig_address_changed,_	= hex.DecodeString(COSMIC_SIGNATURE_ADDRESS_CHANGED);
+	evt_blogic_address_changed,_	= hex.DecodeString(BUSINESS_LOGIC_ADDRESS_CHANGED);
+	evt_time_increase_changed,_	= hex.DecodeString(TIME_INCREASE_CHANGED);
 
 	inspected_events []InspectedEvent
 

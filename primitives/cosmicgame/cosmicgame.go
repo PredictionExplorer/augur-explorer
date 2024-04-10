@@ -375,3 +375,35 @@ type CGMarketingWalletAddressChanged struct {
 	Contract                string
 	NewMarketingWallet				string
 }
+type CGCosmicTokenAddressChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewCosmicToken			string
+}
+type CGCosmicSignatureAddressChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewCosmicSignature		string
+}
+type CGBusinessLogicAddressChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewContractAddress		string
+}
+type CGTimeIncreaseChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewTimeIncrease			string
+}
