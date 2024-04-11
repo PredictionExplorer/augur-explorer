@@ -407,3 +407,11 @@ type CGTimeIncreaseChanged struct {
 	Contract                string
 	NewTimeIncrease			string
 }
+type CGTimeoutClaimPrizeChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewTimeout				int64
+}

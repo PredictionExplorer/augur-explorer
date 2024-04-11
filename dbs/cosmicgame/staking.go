@@ -455,6 +455,7 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_global() []p.CGStakedTokenRec {
 func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_aid int64) []p.CGActionIdsForDeposit {
 
 	records := make([]p.CGActionIdsForDeposit,0, 16)
+	cur_ts := sw.S.Get_last_block_timestamp()
 	var query string
 	query = "SELECT EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS ts FROM cg_eth_deposit d WHERE deposit_num=$1"
 	row := sw.S.Db().QueryRow(query,deposit_id)
@@ -472,6 +473,8 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 				"a.id,"+
 				"a.action_id, "+
 				"a.token_id, "+
+				"EXTRACT(epoch FROM a.time_stamp)::BIGINT action_ts,"+
+				"EXTRACT(epoch FROM a.unstake_time)::BIGINT unstake_ts,"+
 				"r.deposit_id "+
 			"FROM "+sw.S.SchemaName()+".cg_stake_action a "+
 				"LEFT JOIN cg_unstake_action u ON a.action_id=u.action_id "+
@@ -503,6 +506,8 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 			&rec.RecordId,
 			&rec.StakeActionId,
 			&rec.TokenId,
+			&rec.StakeActionTimeStamp,
+			&rec.UnstakeEligibleTimeStamp,
 			&null_deposit_id,
 		)
 		if err != nil {
@@ -512,6 +517,8 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 		rec.DepositId = deposit_id
 		rec.UserAid = user_aid
 		if null_deposit_id.Valid {rec.Claimed = true }
+		rec.CurChainTimeStamp = cur_ts
+		rec.TimeStampDiff = rec.UnstakeEligibleTimeStamp - cur_ts
 		records = append(records,rec)
 	}
 	return records

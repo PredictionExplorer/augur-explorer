@@ -21,7 +21,11 @@
 			<td class="" title="{{.TimeStamp}}" style="text-align:right;">
 				{{.BlockNum}}&nbsp;&nbsp;
 			</td>
-			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" title="{{.TimeStamp}}">
+				<a href="/black/cosmicgame/staking/rewards/action_ids_by_deposit/{{$.UserAddr}}/{{.DepositId}}">
+				{{.DateTime}}
+				</a>
+			</td>
 			<td class="" style="text-align: center;">{{.DepositId}}</td>
 			<td style="text-align: center;" title="">{{.NumStakedNFTs}}</td>
 			<td style="text-align: right;" title="">{{printf "%.6f" .DepositAmountEth}}</td>

@@ -588,6 +588,10 @@ type CGActionIdsForDeposit struct {
 	StakeActionId				int64
 	TokenId						int64
 	Claimed						bool
+	StakeActionTimeStamp		int64
+	UnstakeEligibleTimeStamp	int64
+	CurChainTimeStamp			int64
+	TimeStampDiff				int64	// subtraction of UnstakeEligibleTimestamp from CurChainTimestamp
 }
 type CGActionIdsForDepositWithClaimInfo struct {
 	RecordId					int64

@@ -67,6 +67,7 @@ const (
 	COSMIC_SIGNATURE_ADDRESS_CHANGED	= "7142a592d5404b5fc4a294c66f70e32b2a7776bd807f722d59268def87c765d1"
 	BUSINESS_LOGIC_ADDRESS_CHANGED	= "77ddb5e9e1495e15651bf87ccd8bbb7e637439fb260f0fda41b6ce4b3098aafd"
 	TIME_INCREASE_CHANGED	= "ed46e73b174ced51fb529cdc6c1b4d8abf49387e6d849b71648afb63c81d12cd"
+	TIMEOUT_CLAIMPRIZE_CHANGED	= "caf8e5c6bc1bb2c19935f84ddcdaefb232ad06f9f2abd2ad588bea4bbe631d26"
 )
 var (
 	eclient 				*ethclient.Client
@@ -109,6 +110,7 @@ var (
 	evt_cossig_address_changed,_	= hex.DecodeString(COSMIC_SIGNATURE_ADDRESS_CHANGED);
 	evt_blogic_address_changed,_	= hex.DecodeString(BUSINESS_LOGIC_ADDRESS_CHANGED);
 	evt_time_increase_changed,_	= hex.DecodeString(TIME_INCREASE_CHANGED);
+	evt_timeout_claimprize_changed,_ = hex.DecodeString(TIMEOUT_CLAIMPRIZE_CHANGED);
 
 	inspected_events []InspectedEvent
 

@@ -10,12 +10,21 @@
 		<th class="market_reports">ActionId</th>
 		<th class="market_reports">TokenId</th>
 		<th class="market_reports">Claimed</th>
+		<th class="market_reports">ActionTS</th>
+		<th class="market_reports">UnstakeEligible Timestamp</th>
+		<th class="market_reports">Chain Timestamp</th>
+		<th class="market_reports">TS Diff (against chain)</th>
+
 	</tr>
 	{{- range $i, $change := .ActionIds}}
 		<tr class="market_reports">
 			<td style="text-align: center;">{{.StakeActionId}}</td>
 			<td style="text-align: center;">{{.TokenId}}</td>
 			<td style="text-align: center;">{{.Claimed}}</td>
+			<td style="text-align: right;">{{.StakeActionTimeStamp}}</td>
+			<td style="text-align: right;">{{.UnstakeEligibleTimeStamp}}</td>
+			<td style="text-align: right;">{{.CurChainTimeStamp}}</td>
+			<td style="text-align: right;">{{.TimeStampDiff}}</td>
 		</tr>
 	{{- end}}
 </table>

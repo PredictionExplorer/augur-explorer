@@ -24,7 +24,7 @@ import (
 )
 const (
 	CONTRACT_CONSTANTS_REFRESH_TIME		= 5*60	// seconds
-	CONTRACT_VARIABLES_REFRESH_TIME		= 20	// seconds
+	CONTRACT_VARIABLES_REFRESH_TIME		= 5	// seconds
 )
 var (
 	cosmic_game_addr				common.Address
