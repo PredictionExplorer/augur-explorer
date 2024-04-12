@@ -174,6 +174,14 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			Signature: hex.EncodeToString(evt_timeout_claimprize_changed[:4]),
 			ContractAid: 0,
 		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_price_increase_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_nanoseconds_extra_changed[:4]),
+			ContractAid: 0,
+		},
 	)
 	return inspected_events
 }
@@ -1697,6 +1705,68 @@ func proc_timeout_claimprize_changed_event(log *types.Log,elog *EthereumEventLog
 	storagew.Delete_timeout_claimprize_changed_event(evt.EvtId)
     storagew.Insert_timeout_claimprize_changed_event(&evt)
 }
+func proc_price_increase_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGPriceIncreaseChanged
+	var eth_evt CosmicGamePriceIncreaseChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing PriceIncreaseChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"PriceIncreaseChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event PriceIncreaseChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewPriceIncrease = eth_evt.NewPriceIncrease.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("PriceIncreaseChanged{\n")
+	Info.Printf("\tNewPriceIncreasse: %v\n",evt.NewPriceIncrease)
+	Info.Printf("}\n")
+
+	storagew.Delete_price_increase_changed_event(evt.EvtId)
+    storagew.Insert_price_increase_changed_event(&evt)
+}
+func proc_nanoseconds_extra_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGNanoSecondsExtraChanged
+	var eth_evt CosmicGameNanoSecondsExtraChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing NanoSecondsExtraChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NanoSeconsExtraChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event NanoSeconsExtraChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewNanoSecondsExtra = eth_evt.NewNanoSecondsExtra.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("NanoSeconsExtraChanged{\n")
+	Info.Printf("\tNewNanoSecondsExtraChanged: %v\n",evt.NewNanoSecondsExtra)
+	Info.Printf("}\n")
+
+	storagew.Delete_nanoseconds_extra_changed_event(evt.EvtId)
+    storagew.Insert_nanoseconds_extra_changed_event(&evt)
+}
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event) {
@@ -1809,6 +1879,12 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_timeout_claimprize_changed) {
 		proc_timeout_claimprize_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_price_increase_changed) {
+		proc_price_increase_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_nanoseconds_extra_changed) {
+		proc_nanoseconds_extra_changed_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {

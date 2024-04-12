@@ -68,6 +68,8 @@ const (
 	BUSINESS_LOGIC_ADDRESS_CHANGED	= "77ddb5e9e1495e15651bf87ccd8bbb7e637439fb260f0fda41b6ce4b3098aafd"
 	TIME_INCREASE_CHANGED	= "ed46e73b174ced51fb529cdc6c1b4d8abf49387e6d849b71648afb63c81d12cd"
 	TIMEOUT_CLAIMPRIZE_CHANGED	= "caf8e5c6bc1bb2c19935f84ddcdaefb232ad06f9f2abd2ad588bea4bbe631d26"
+	PRICE_INCREASE_CHANGED	= "cbc1f49adfa29e2f2f0f5c9e057722496a4bc95a6a5446deaa423a02b30c64ac"
+	NANOSECONDS_EXTRA_CHANGED = "678d086a09e1be49401b1e3a6e14db1878e8d8b88e71d0cfe24a32726d0e38b9"
 )
 var (
 	eclient 				*ethclient.Client
@@ -111,6 +113,8 @@ var (
 	evt_blogic_address_changed,_	= hex.DecodeString(BUSINESS_LOGIC_ADDRESS_CHANGED);
 	evt_time_increase_changed,_	= hex.DecodeString(TIME_INCREASE_CHANGED);
 	evt_timeout_claimprize_changed,_ = hex.DecodeString(TIMEOUT_CLAIMPRIZE_CHANGED);
+	evt_price_increase_changed,_	= hex.DecodeString(PRICE_INCREASE_CHANGED);
+	evt_nanoseconds_extra_changed,_	= hex.DecodeString(NANOSECONDS_EXTRA_CHANGED);
 
 	inspected_events []InspectedEvent
 

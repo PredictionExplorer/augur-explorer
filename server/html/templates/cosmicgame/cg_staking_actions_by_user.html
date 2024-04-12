@@ -26,7 +26,11 @@
 			<td style="text-align: center;" title="">
 				{{if eq .ActionType 0 }}Stake{{ else }}Unstake{{ end }}
 			</td>
-			<td style="text-align: center;" title="">{{.ActionId}}</td>
+			<td style="text-align: center;" title="">
+				<a href="/black/cosmicgame/staking/actions/info/{{.ActionId}}">
+				{{.ActionId}}
+				</a>
+			</td>
 			<td style="text-align: center;" title="">{{.TokenId}}</td>
 			<td style="text-align: center;" title="">
 				{{ if eq .ActionType 0 }}

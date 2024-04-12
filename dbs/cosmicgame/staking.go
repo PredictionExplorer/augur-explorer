@@ -475,8 +475,11 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 				"a.token_id, "+
 				"EXTRACT(epoch FROM a.time_stamp)::BIGINT action_ts,"+
 				"EXTRACT(epoch FROM a.unstake_time)::BIGINT unstake_ts,"+
-				"r.deposit_id "+
+				"r.deposit_id, "+
+				"d.amount_per_staker, "+
+				"d.amount_per_staker/1e18 amount_eth "+
 			"FROM "+sw.S.SchemaName()+".cg_stake_action a "+
+				"JOIN cg_eth_deposit d ON d.deposit_num=$3 "+
 				"LEFT JOIN cg_unstake_action u ON a.action_id=u.action_id "+
 				"LEFT JOIN cg_claim_reward r ON (a.action_id=r.action_id) AND (r.deposit_id=$3) AND (r.staker_aid=a.staker_aid)" +
 			"WHERE "+
@@ -509,6 +512,8 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 			&rec.StakeActionTimeStamp,
 			&rec.UnstakeEligibleTimeStamp,
 			&null_deposit_id,
+			&rec.Amount,
+			&rec.AmountEth,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

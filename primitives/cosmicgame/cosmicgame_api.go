@@ -592,6 +592,8 @@ type CGActionIdsForDeposit struct {
 	UnstakeEligibleTimeStamp	int64
 	CurChainTimeStamp			int64
 	TimeStampDiff				int64	// subtraction of UnstakeEligibleTimestamp from CurChainTimestamp
+	Amount						string
+	AmountEth					float64
 }
 type CGActionIdsForDepositWithClaimInfo struct {
 	RecordId					int64
