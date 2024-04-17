@@ -366,9 +366,9 @@ func (sw *SQLStorageWrapper) Insert_stake_action_event(evt *p.CGStakeAction) {
 	var query string
 	query = "INSERT INTO cg_stake_action (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,num_staked_nfts,unstake_time,staker_aid" +
+				"action_id,token_id,num_staked_nfts,unstake_time,staker_aid,is_rwalk" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,TO_TIMESTAMP($9),$10"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,TO_TIMESTAMP($9),$10,$11"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
@@ -381,6 +381,7 @@ func (sw *SQLStorageWrapper) Insert_stake_action_event(evt *p.CGStakeAction) {
 		evt.TotalNfts,
 		evt.UnstakeTime,
 		staker_aid,
+		evt.IsRandomWalk
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_stake_action table: %v\n",err))

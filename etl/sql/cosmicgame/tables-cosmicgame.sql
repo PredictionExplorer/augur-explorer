@@ -184,6 +184,7 @@ CREATE TABLE cg_stake_action (
 	num_staked_nfts	BIGINT NOT NULL,
 	unstake_time	TIMESTAMPTZ NOT NULL,
 	staker_aid		BIGINT NOT NULL,
+	is_rwalk		BOOLEAN NOT NULL,
 	claimed			BOOLEAN DEFAULT 'F',
 	UNIQUE(evtlog_id)
 );

@@ -899,6 +899,7 @@ func proc_stake_action_event(log *types.Log,elog *EthereumEventLog) {
 	evt.Staker = common.BytesToAddress(log.Topics[3][12:]).String()
 	evt.TotalNfts = eth_evt.TotalNFTs.Int64()
 	evt.UnstakeTime = eth_evt.UnstakeTime.Int64()
+	evt.IsRandomWalk = eth_evt.IsRandomWalkToken
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("StakeActionEvent{\n")
@@ -907,6 +908,7 @@ func proc_stake_action_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tTotalNFTs: %v\n",evt.TotalNfts)
 	Info.Printf("\tUnstakeTime: %v\n",evt.UnstakeTime)
 	Info.Printf("\tStaker: %v\n",evt.Staker)
+	Info.Printf("\tIsRandomWalk: %v\n",evt.IsRandomWalk)
 	Info.Printf("}\n")
 
 	storagew.Delete_stake_action_event(evt.EvtId)

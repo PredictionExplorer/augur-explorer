@@ -197,6 +197,7 @@ type CGStakeAction struct {
 	TotalNfts			int64
 	UnstakeTime			int64
 	Staker 				string
+	IsRandomWalk		bool
 }
 type CGUnstakeAction struct {
 	EvtId				int64
