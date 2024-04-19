@@ -51,11 +51,6 @@ async function main() {
   raffleWallet.deployed();
   console.log("RaffleWallet address:", raffleWallet.address);
 
-  const StakingWallet = await hre.ethers.getContractFactory("StakingWallet");
-  stakingWallet = await StakingWallet.deploy(cosmicSignature.address,cosmicGame.address,charityWallet.address);
-  await stakingWallet.deployed();
-  console.log("StakingWallet address:", stakingWallet.address);
-
   const MarketingWallet = await hre.ethers.getContractFactory("MarketingWallet");
   marketingWallet = await MarketingWallet.deploy(cosmicToken.address);
   await marketingWallet.deployed();
@@ -65,6 +60,11 @@ async function main() {
   const randomWalkNFT = await RandomWalkNFT.deploy();
   randomWalkNFT.deployed();
   console.log("randomWalkNFT address:", randomWalkNFT.address);
+
+  const StakingWallet = await hre.ethers.getContractFactory("StakingWallet");
+  stakingWallet = await StakingWallet.deploy(cosmicSignature.address,randomWalkNFT.address,cosmicGame.address,charityWallet.address);
+  await stakingWallet.deployed();
+  console.log("StakingWallet address:", stakingWallet.address);
 
   const RandomWalkNFT2 = await hre.ethers.getContractFactory("RandomWalkNFT");
   const randomWalkNFT2 = await RandomWalkNFT2.deploy();
@@ -180,10 +180,18 @@ async function main() {
   let ts = await cosmicSignature.totalSupply();
   let rn = await cosmicGame.roundNum();
   for (let i =0; i<ts.toNumber(); i++) {
+	let tx;
     let ownr = await cosmicSignature.ownerOf(i)
 	let owner_signer = cosmicGame.provider.getSigner(ownr);
     await cosmicSignature.connect(owner_signer).setApprovalForAll(stakingWallet.address, true);
-    tx = await stakingWallet.connect(owner_signer).stake(i);
+    await randomWalkNFT.connect(owner_signer).setApprovalForAll(stakingWallet.address, true);
+	let mod = i % 2;
+	if (mod == 0 ) {
+  		let token_id = await mint_rwalk(owner_signer);
+		tx = await stakingWallet.connect(owner_signer).stake(token_id,true);
+	} else {
+	    tx = await stakingWallet.connect(owner_signer).stake(i,false);
+	}
     receipt = await tx.wait();
     log = receipt.logs.find(x=>x.topics.indexOf(topic_sig)>=0);
     parsed_log = stakingWallet.interface.parseLog(log);
@@ -360,7 +368,7 @@ async function main() {
     let ownr = await cosmicSignature.ownerOf(i)
 	let owner_signer = cosmicGame.provider.getSigner(ownr);
 	if (i == 7) { continue;}
-    await stakingWallet.connect(owner_signer).stake(i);
+    await stakingWallet.connect(owner_signer).stake(i,false);
   }
 
   await cosmicToken.connect(addr1).approve(cosmicGame.address,hre.ethers.utils.parseEther('10000000'));

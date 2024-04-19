@@ -381,7 +381,7 @@ func (sw *SQLStorageWrapper) Insert_stake_action_event(evt *p.CGStakeAction) {
 		evt.TotalNfts,
 		evt.UnstakeTime,
 		staker_aid,
-		evt.IsRandomWalk
+		evt.IsRandomWalk,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_stake_action table: %v\n",err))

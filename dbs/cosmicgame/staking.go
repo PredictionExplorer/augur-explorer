@@ -298,6 +298,7 @@ func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int
 					"s.action_id,"+
 					"s.token_id,"+
 					"s.num_staked_nfts, "+
+					"s.IsRandomWalk,"+
 					"s.claimed "+
 				"FROM "+sw.S.SchemaName()+".cg_stake_action s "+
 					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
@@ -318,6 +319,7 @@ func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int
 					"s.action_id,"+
 					"s.token_id,"+
 					"s.num_staked_nfts, "+
+					"s.is_rwalk,"+
 					"'F' AS claimed "+
 				"FROM "+sw.S.SchemaName()+".cg_unstake_action s "+
 					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
@@ -348,6 +350,7 @@ func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int
 			&rec.ActionId,
 			&rec.TokenId,
 			&rec.NumStakedNFTs,
+			&rec.IsRandomWalk,
 			&rec.Claimed,
 		)
 		if err != nil {
@@ -790,6 +793,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_history(offset,limit int) []p.CG
 					"s.token_id,"+
 					"s.num_staked_nfts, "+
 					"s.staker_aid, "+
+					"s.is_rwalk,"+
 					"sa.addr staker_addr "+
 				"FROM "+sw.S.SchemaName()+".cg_stake_action s "+
 					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
@@ -812,6 +816,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_history(offset,limit int) []p.CG
 					"s.token_id,"+
 					"s.num_staked_nfts, "+
 					"s.staker_aid," +
+					"s.is_rwalk,"+
 					"sa.addr staker_addr "+
 				"FROM "+sw.S.SchemaName()+".cg_unstake_action s "+
 					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
@@ -845,6 +850,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_history(offset,limit int) []p.CG
 			&rec.TokenId,
 			&rec.NumStakedNFTs,
 			&rec.StakerAid,
+			&rec.IsRandomWalk,
 			&rec.StakerAddr,
 		)
 		if err != nil {
