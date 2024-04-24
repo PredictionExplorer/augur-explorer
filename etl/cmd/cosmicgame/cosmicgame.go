@@ -1470,7 +1470,7 @@ func proc_raffle_address_changed_event(log *types.Log,elog *EthereumEventLog) {
 		return
 	}
 	Info.Printf("Processing RaffleWalletAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RaffleWaletAddressChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RaffleWalletAddressChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event RaffleWalletAddressChanged decode error: %v",err)
 		os.Exit(1)
@@ -1501,7 +1501,7 @@ func proc_staking_wallet_address_changed_event(log *types.Log,elog *EthereumEven
 		return
 	}
 	Info.Printf("Processing StakingWalletAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"StakingWaletAddressChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"StakingWalletAddressChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event StakingWalletAddressChanged decode error: %v",err)
 		os.Exit(1)
@@ -1532,7 +1532,7 @@ func proc_marketing_wallet_address_changed_event(log *types.Log,elog *EthereumEv
 		return
 	}
 	Info.Printf("Processing MarketingWalletAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"MarketingWaletAddressChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"MarketingWalletAddressChanged",log.Data)
 	if err != nil {
 		Error.Printf("Event MarketingWalletAddressChanged decode error: %v",err)
 		os.Exit(1)

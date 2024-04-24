@@ -854,7 +854,7 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_marketing_wallet_address_changed
 	var query string
 	query = "INSERT INTO cg_adm_marketing_addr(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"new_staking_aid" +
+				"new_marketing_aid" +
 			") VALUES (" +
 				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
 			")"

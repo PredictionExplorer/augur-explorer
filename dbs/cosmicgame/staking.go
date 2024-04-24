@@ -28,6 +28,7 @@ func (sw *SQLStorageWrapper) Get_stake_action_info(action_id int64) (bool,p.CGSt
 				"st.unstake_time,"+
 				"st.staker_aid,"+
 				"sa.addr,"+
+				"st.is_rwalk,"+
 
 				//unstake action fields
 				"u.id,"+
@@ -71,6 +72,7 @@ func (sw *SQLStorageWrapper) Get_stake_action_info(action_id int64) (bool,p.CGSt
 		&rec.Stake.UnstakeDate,
 		&rec.Stake.StakerAid,
 		&rec.Stake.StakerAddr,
+		&rec.Stake.IsRandomWalk,
 		// unstake action fields
 		&null_record_id,
 		&null_evtlog_id,
@@ -319,7 +321,7 @@ func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int
 					"s.action_id,"+
 					"s.token_id,"+
 					"s.num_staked_nfts, "+
-					"s.is_rwalk,"+
+					"FALSE AS is_rwalk,"+
 					"'F' AS claimed "+
 				"FROM "+sw.S.SchemaName()+".cg_unstake_action s "+
 					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
@@ -398,7 +400,8 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_global() []p.CGStakedTokenRec {
 				"EXTRACT(EPOCH FROM a.unstake_time)::BIGINT,"+
 				"a.unstake_time,  "+
 				"sa.addr,"+
-				"sa.address_id "+
+				"sa.address_id, "+
+				"a.is_rwalk "+
 			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
 				"LEFT JOIN transaction t ON t.id=m.tx_id "+
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
@@ -445,6 +448,7 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_global() []p.CGStakedTokenRec {
 			&rec.UnstakeDateTime,
 			&rec.UserAddr,
 			&rec.UserAid,
+			&rec.StakedIsRandomWalk,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -816,7 +820,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_history(offset,limit int) []p.CG
 					"s.token_id,"+
 					"s.num_staked_nfts, "+
 					"s.staker_aid," +
-					"s.is_rwalk,"+
+					"FALSE as is_rwalk,"+
 					"sa.addr staker_addr "+
 				"FROM "+sw.S.SchemaName()+".cg_unstake_action s "+
 					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +

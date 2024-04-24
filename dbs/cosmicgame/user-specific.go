@@ -780,7 +780,8 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_by_user(user_aid int64) []p.CGSta
 				"a.time_Stamp,"+
 				"EXTRACT(EPOCH FROM a.unstake_time)::BIGINT,"+
 				"a.unstake_time, "+
-				"m.stake_action_id "+
+				"m.stake_action_id, "+
+				"a.is_rwalk "+
 			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
@@ -822,6 +823,7 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_by_user(user_aid int64) []p.CGSta
 			&rec.UnstakeTimeStamp,
 			&rec.UnstakeDateTime,
 			&rec.TokenInfo.StakeActionId,
+			&rec.StakedIsRandomWalk,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

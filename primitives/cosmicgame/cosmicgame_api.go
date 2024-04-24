@@ -578,6 +578,7 @@ type CGStakedTokenRec struct {
 	StakeActionId				int64
 	StakeTimeStamp				int64
 	StakeDateTime				string
+	StakedIsRandomWalk			bool
 	UnstakeTimeStamp			int64
 	UnstakeDateTime				string
 	UserAddr					string
