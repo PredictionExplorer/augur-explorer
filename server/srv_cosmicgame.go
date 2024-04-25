@@ -1635,7 +1635,6 @@ func cosmic_game_staking_rewards_to_claim_by_user(c *gin.Context) {
 		return
 	}
 	deposits := arb_storagew.Get_staking_rewards_to_be_claimed(user_aid)
-	fmt.Printf("len(deposits)=%v\n",len(deposits));
 	c.HTML(http.StatusOK, "cg_staking_rewards_to_be_claimed_by_user.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,

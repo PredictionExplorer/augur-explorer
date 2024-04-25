@@ -114,9 +114,9 @@ CREATE TABLE cg_mint_event (
 	round_num		BIGINT NOT NULL,
 	seed			TEXT NOT NULL,
 	token_name		TEXT DEFAULT '', -- last name set via setTokenName()
-	staked			BOOLEAN DEFAULT 'F',
-	staked_owner_aid	BIGINT DEFAULT 0,
-	stake_action_id	BIGINT DEFAULT 0,
+--	staked			BOOLEAN DEFAULT 'F',		DISCONTINUDD
+--	staked_owner_aid	BIGINT DEFAULT 0,		DISCONTINUED
+--	stake_action_id	BIGINT DEFAULT 0,			DISCINTINUED
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_raffle_deposit (
@@ -513,6 +513,16 @@ CREATE TABLE cg_staker_deposit (-- accumulators for deposit-staker relation
 	tokens_staked			BIGINT DEFAULT 0,
 	amount_to_claim			DECIMAL DEFAULT 0,
 	PRIMARY KEY(staker_aid,deposit_id)
+);
+CREATE TABLE cg_staked_token (  -- we have 2 types of tokens: CST and RWalk, the tokenId will collide
+								-- records in this table only exist if token is currently staked, deleted if unstaked
+	staker_aid				BIGINT NOT NULL,
+	token_id				BIGINT NOT NULL,
+	stake_action_id			BIGINT NOT NULL,
+	is_rwalk				BOOLEAN NOT NULL,
+	is_unstaked				BOOLEAN DEFAULT FALSE,	-- used internally by SQL triggers
+	PRIMARY KEY(token_id,is_rwalk),
+	UNIQUE(stake_action_id)
 );
 CREATE TABLE cg_raffle_winner_stats (	-- prizes in ETH
 	winner_aid		BIGINT PRIMARY KEY,

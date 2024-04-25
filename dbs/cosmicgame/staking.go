@@ -153,6 +153,7 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
+	fmt.Printf("q = %v\n",query)
 	records := make([]p.CGRewardToClaim,0, 16)
 	defer rows.Close()
 	for rows.Next() {
@@ -300,7 +301,7 @@ func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int
 					"s.action_id,"+
 					"s.token_id,"+
 					"s.num_staked_nfts, "+
-					"s.IsRandomWalk,"+
+					"s.is_rwalk,"+
 					"s.claimed "+
 				"FROM "+sw.S.SchemaName()+".cg_stake_action s "+
 					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
