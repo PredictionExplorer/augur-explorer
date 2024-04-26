@@ -520,7 +520,7 @@ CREATE TABLE cg_staked_token (  -- we have 2 types of tokens: CST and RWalk, the
 	token_id				BIGINT NOT NULL,
 	stake_action_id			BIGINT NOT NULL,
 	is_rwalk				BOOLEAN NOT NULL,
-	is_unstaked				BOOLEAN DEFAULT FALSE,	-- used internally by SQL triggers
+	is_unstaked				BOOLEAN DEFAULT FALSE,	-- used internally by SQL triggers to keep consistency in chain splits
 	PRIMARY KEY(token_id,is_rwalk),
 	UNIQUE(stake_action_id)
 );

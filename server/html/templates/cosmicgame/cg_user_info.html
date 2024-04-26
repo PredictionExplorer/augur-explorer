@@ -41,7 +41,11 @@
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Total Tokens Staked</td>
-		<td class="market_reports">{{.UserInfo.StakingStatistics.TotalTokensStaked}}</td>
+		<td class="market_reports">
+			<a href="/black/cosmicgame/user/nft/staked/{{.UserInfo.Address}}">
+			{{.UserInfo.StakingStatistics.TotalTokensStaked}}
+			</a>
+		</td>
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Total Num Stake Actions</td>

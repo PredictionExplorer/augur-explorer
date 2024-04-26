@@ -403,14 +403,15 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_global() []p.CGStakedTokenRec {
 				"sa.addr,"+
 				"sa.address_id, "+
 				"a.is_rwalk "+
-			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
+			"FROM "+sw.S.SchemaName()+".cg_staked_token st "+
+				"LEFT JOIN cg_mint_event m ON st.token_id=m.token_id "+
 				"LEFT JOIN transaction t ON t.id=m.tx_id "+
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_stake_action a ON a.action_id=m.stake_action_id "+
+				"LEFT JOIN cg_stake_action a ON a.action_id=st.stake_action_id "+
 				"LEFT JOIN address sa ON a.staker_aid = sa.address_id "+
-			"WHERE m.staked = 'T' "+
+			"WHERE st.is_unstaked = 'F' "+
 			"ORDER BY m.token_id"
 
 	rows,err := sw.S.Db().Query(query)

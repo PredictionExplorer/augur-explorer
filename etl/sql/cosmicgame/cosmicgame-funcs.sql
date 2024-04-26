@@ -561,14 +561,14 @@ DECLARE
 	v_cnt						NUMERIC;
 BEGIN
 
-	IF NEW.staked != OLD.staked THEN
-		IF NEW.staked = 'T' THEN
-			UPDATE cg_stake_stats SET total_tokens_staked = (total_tokens_staked + 1);
-		END IF;
-		IF NEW.staked = 'F' THEN
-			UPDATE cg_stake_stats SET total_tokens_staked = (total_tokens_staked - 1);
-		END IF;
-	END IF;
+--	IF NEW.staked != OLD.staked THEN
+--		IF NEW.staked = 'T' THEN
+--DISCONTINUED			UPDATE cg_stake_stats SET total_tokens_staked = (total_tokens_staked + 1);
+--		END IF;
+--		IF NEW.staked = 'F' THEN
+--DISCONTINUED			UPDATE cg_stake_stats SET total_tokens_staked = (total_tokens_staked - 1);
+--		END IF;
+--	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -646,12 +646,26 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_stake_action_insert_before() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+
+	DELETE FROM cg_staked_token 
+	WHERE 
+		token_id=NEW.token_id AND
+		is_rwalk=NEW.is_rwalk AND
+		is_unstaked=TRUE;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_stake_action_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
 BEGIN
 
-	INSERT INTO cg_staked_token(NEW.staker_aid,NEW.token_id,NEW.action_id,NEW.is_rwalk);
+	INSERT INTO cg_staked_token(staker_aid,token_id,stake_action_id,is_rwalk)
+		VALUES(NEW.staker_aid,NEW.token_id,NEW.action_id,NEW.is_rwalk);
 --	UPDATE cg_mint_event			DISCONTINUED
 --		SET
 --			staked='T',
@@ -668,6 +682,7 @@ BEGIN
 	END IF;
 	UPDATE cg_staker SET num_stake_actions = (num_stake_actions + 1)
 		WHERE staker_aid=NEW.staker_aid;
+	UPDATE cg_stake_stats SET total_tokens_staked = (total_tokens_staked + 1);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -686,6 +701,7 @@ BEGIN
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_staker SET num_stake_actions = (num_stake_actions + 1)
 		WHERE staker_aid=OLD.staker_aid;
+	UPDATE cg_stake_stats SET total_tokens_staked = (total_tokens_staked - 1);
 
 	RETURN OLD;
 END;
@@ -730,10 +746,10 @@ BEGIN
 				total_modulo = (total_modulo + v_mod)
 			;
 --DISCONTINUED		FOR v_rec IN (SELECT count(*) AS num_toks,staked_owner_aid FROM cg_mint_event WHERE staked_owner_aid > 0 GROUP BY staked_owner_aid)
-		FOR v_rec IN (SELECT count(*) AS num_toks,staked_aid FROM cg_staked_token GROUP BY staker_aid)
+		FOR v_rec IN (SELECT count(*) AS num_toks,staker_aid FROM cg_staked_token WHERE is_unstaked='F' GROUP BY staker_aid)
 		LOOP
 			INSERT INTO cg_staker_deposit(staker_aid,deposit_id,tokens_staked,amount_to_claim)
-				VALUES(v_rec.staked_owner_aid,NEW.deposit_num,v_rec.num_toks,NEW.amount_per_staker*v_rec.num_toks);
+				VALUES(v_rec.staker_aid,NEW.deposit_num,v_rec.num_toks,NEW.amount_per_staker*v_rec.num_toks);
 		END LOOP;
 	END IF;
 
@@ -798,12 +814,13 @@ DECLARE
 	v_cnt						NUMERIC;
 BEGIN
 
-	UPDATE cg_staked_token SET is_deleted=TRUE WHERE stake_action_id=NEW.action_id;
+	UPDATE cg_staked_token SET is_unstaked=TRUE WHERE stake_action_id=NEW.action_id;
 -- DISCONTINUED		UPDATE cg_mint_event SET staked='F',staked_owner_aid=0 WHERE token_id=NEW.token_id;
 	UPDATE cg_staker
 		SET	total_tokens_staked = (total_tokens_staked - 1),
 			num_unstake_actions = (num_unstake_actions + 1)
 		WHERE staker_aid=NEW.staker_aid;
+	UPDATE cg_stake_stats SET total_tokens_staked = (total_tokens_staked - 1);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -817,6 +834,7 @@ BEGIN
 		SET total_tokens_staked = (total_tokens_staked + 1),
 			num_unstake_actions = (num_unstake_actions - 1)
 		WHERE staker_aid=OLD.staker_aid;
+	UPDATE cg_stake_stats SET total_tokens_staked = (total_tokens_staked + 1);
 
 	RETURN OLD;
 END;

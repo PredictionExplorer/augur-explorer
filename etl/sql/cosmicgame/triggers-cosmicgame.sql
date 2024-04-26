@@ -26,6 +26,7 @@ CREATE TRIGGER cg_token_name_delete AFTER DELETE ON cg_token_name FOR EACH ROW E
 CREATE TRIGGER cg_donation_sent_insert AFTER INSERT ON cg_donation_sent FOR EACH ROW EXECUTE PROCEDURE on_donation_sent_insert();
 CREATE TRIGGER cg_donation_sent_delete AFTER DELETE ON cg_donation_sent FOR EACH ROW EXECUTE PROCEDURE on_donation_sent_delete();
 CREATE TRIGGER cg_staker_update AFTER UPDATE ON cg_staker FOR EACH ROW EXECUTE PROCEDURE on_staker_update();
+CREATE TRIGGER cg_stake_action_insert_before BEFORE INSERT ON cg_stake_action FOR EACH ROW EXECUTE PROCEDURE on_stake_action_insert_before();
 CREATE TRIGGER cg_stake_action_insert AFTER INSERT ON cg_stake_action FOR EACH ROW EXECUTE PROCEDURE on_stake_action_insert();
 CREATE TRIGGER cg_stake_action_delete AFTER DELETE ON cg_stake_action FOR EACH ROW EXECUTE PROCEDURE on_stake_action_delete();
 CREATE TRIGGER cg_unstake_action_insert AFTER INSERT ON cg_unstake_action FOR EACH ROW EXECUTE PROCEDURE on_unstake_action_insert();

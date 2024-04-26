@@ -780,15 +780,16 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_by_user(user_aid int64) []p.CGSta
 				"a.time_Stamp,"+
 				"EXTRACT(EPOCH FROM a.unstake_time)::BIGINT,"+
 				"a.unstake_time, "+
-				"m.stake_action_id, "+
+				"st.stake_action_id, "+
 				"a.is_rwalk "+
-			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
+			"FROM "+sw.S.SchemaName()+".cg_staked_token st "+
+				"LEFT JOIN cg_mint_event m ON st.token_id=m.token_id "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_stake_action a ON a.action_id=m.stake_action_id "+
-			"WHERE m.staked_owner_aid=$1 AND m.staked = 'T' "+
+				"LEFT JOIN cg_stake_action a ON a.action_id=st.stake_action_id "+
+			"WHERE st.staker_aid=$1 AND st.is_unstaked = 'F' "+
 			"ORDER BY m.token_id"
 
 	rows,err := sw.S.Db().Query(query,user_aid)
