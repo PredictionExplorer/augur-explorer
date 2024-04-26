@@ -486,7 +486,8 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 				"EXTRACT(epoch FROM a.unstake_time)::BIGINT unstake_ts,"+
 				"r.deposit_id, "+
 				"d.amount_per_staker, "+
-				"d.amount_per_staker/1e18 amount_eth "+
+				"d.amount_per_staker/1e18 amount_eth, "+
+				"a.is_rwalk "+
 			"FROM "+sw.S.SchemaName()+".cg_stake_action a "+
 				"JOIN cg_eth_deposit d ON d.deposit_num=$3 "+
 				"LEFT JOIN cg_unstake_action u ON a.action_id=u.action_id "+
@@ -523,6 +524,7 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 			&null_deposit_id,
 			&rec.Amount,
 			&rec.AmountEth,
+			&rec.IsRandomWalk,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -564,7 +566,8 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit_with_claim_info(deposit_
 				"tx.id,"+
 				"tx.tx_hash,"+
 				"r.reward,"+
-				"r.reward/1e18 "+
+				"r.reward/1e18, "+
+				"a.is_rwalk "+
 			"FROM "+sw.S.SchemaName()+".cg_stake_action a "+
 				"JOIN cg_claim_reward r ON (a.action_id=r.action_id) AND (r.deposit_id=$3) AND (r.staker_aid=a.staker_aid)" +
 				"LEFT JOIN cg_unstake_action u ON a.action_id=u.action_id "+
@@ -607,6 +610,7 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit_with_claim_info(deposit_
 			&null_rwd_tx_hash,
 			&null_reward,
 			&null_reward_eth,
+			&rec.IsRandomWalk,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

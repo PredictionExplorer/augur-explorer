@@ -20,7 +20,11 @@
 			<td class="" style="text-align: center;" title="{{.TimeStamp}}">{{.RecordId}}</td>
 			<td class="" style="text-align: center;" title="{{.TimeStamp}}">{{.BlockNum}}</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
-			<td class="" style="text-align: center;">{{.DepositId}}</td>
+			<td class="" style="text-align: center;">
+				<a href="/black/cosmicgame/staking/rewards/action_ids_by_deposit/{{.StakerAddr}}/{{.DepositId}}">
+				{{.DepositId}}
+				</a>
+			</td>
 			<td class="addr" title="{{.StakerAid}}">
 			<a href="/black/cosmicgame/staking/rewards/collected/by_user/{{.StakerAddr}}">{{.StakerAddr}}</a>
 			</td>

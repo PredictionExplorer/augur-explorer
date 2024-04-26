@@ -598,6 +598,7 @@ type CGActionIdsForDeposit struct {
 	TimeStampDiff				int64	// subtraction of UnstakeEligibleTimestamp from CurChainTimestamp
 	Amount						string
 	AmountEth					float64
+	IsRandomWalk				bool
 }
 type CGActionIdsForDepositWithClaimInfo struct {
 	RecordId					int64
@@ -613,6 +614,7 @@ type CGActionIdsForDepositWithClaimInfo struct {
 	ClaimTxHash					string
 	ClaimRewardAmount			string
 	ClaimRewardAmountEth		float64
+	IsRandomWalk				bool
 }
 type CGStakingRewardRec struct {
 	RecordId					int64

@@ -91,12 +91,12 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 				"m.round_num,"+
 				"p.prize_num, "+
 				"m.token_name, "+
-				"m.staked,"+
-				"m.staked_owner_aid,"+
-				"sa.addr,"+
-				"st.action_id,"+
-				"EXTRACT(EPOCH FROM st.unstake_time)::BIGINT,"+
-				"st.unstake_time, "+
+				"NOT st.is_unstaked,"+
+				"st.staker_aid,"+
+				"sta.addr,"+
+				"sa.action_id,"+
+				"EXTRACT(EPOCH FROM sa.unstake_time)::BIGINT,"+
+				"sa.unstake_time, "+
 				"u.id, "+
 				"EXTRACT(EPOCH FROM u.time_stamp)::BIGINT,"+
 				"u.time_stamp "+
@@ -105,16 +105,18 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_stake_action st ON m.stake_action_id=st.id "+
-				"LEFT JOIN cg_unstake_action u ON st.action_id=u.action_id "+
-				"LEFT JOIN address sa ON m.staked_owner_aid = sa.address_id "+
+				"LEFT JOIN cg_staked_token st ON (m.token_id=st.token_id  AND is_unstaked=FALSE)"+
+				"LEFT JOIN cg_stake_action sa ON sa.action_id = st.stake_action_id "+
+				"LEFT JOIN cg_unstake_action u ON sa.action_id=u.action_id "+
+				"LEFT JOIN address sta ON st.staker_aid = sta.address_id "+
 			"WHERE m.token_id=$1"
 
 	var rec p.CGCosmicSignatureMintRec
 	var err error
-	var null_prize_num,null_unstake_id,null_action_id sql.NullInt64
+	var null_prize_num,null_unstake_id,null_action_id,null_staker_aid sql.NullInt64
 	var null_ue_timestamp,null_au_timestamp sql.NullInt64
 	var null_staked_owner_addr,null_ue_datetime,null_au_datetime sql.NullString
+	var null_staked sql.NullBool
 	row := sw.S.Db().QueryRow(query,token_id)
 	err=row.Scan(
 		&rec.EvtLogId,
@@ -132,8 +134,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 		&rec.RoundNum,
 		&null_prize_num,
 		&rec.TokenName,
-		&rec.Staked,
-		&rec.StakedOwnerAid,
+		&null_staked,
+		&null_staker_aid,
 		&null_staked_owner_addr,
 		&null_action_id,
 		&null_ue_timestamp,
@@ -157,6 +159,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 	if null_au_timestamp.Valid { rec.ActualUnstakeTimeStamp = null_au_timestamp.Int64 }
 	if null_au_datetime.Valid { rec.ActualUnstakeDateTime = null_au_datetime.String }
 	if null_staked_owner_addr.Valid { rec.StakedOwnerAddr = null_staked_owner_addr.String }
+	if null_staked.Valid { rec.Staked = null_staked.Bool } else {rec.Staked = false}
+	if null_staker_aid.Valid { rec.StakedOwnerAid = null_staker_aid.Int64 } else { rec.StakedOwnerAid = -1 }
 	return true,rec
 }
 func (sw *SQLStorageWrapper) Get_cosmic_signature_token_name_history(token_id int64) []p.CGTokenName {

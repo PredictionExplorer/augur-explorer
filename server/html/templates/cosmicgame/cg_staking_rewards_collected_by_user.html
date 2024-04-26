@@ -9,12 +9,13 @@
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
+		<th class="market_reports">Deposit Id</th>
 		<th class="market_reports">Total staked tokens</th>
 		<th class="market_reports">Total deposited</th>
 		<th class="market_reports">Reward on your stake</th>
-		<th class="market_reports">Num tokens of your stake</th>
-		<th class="market_reports">Num tokens of your stake collected</th>
-		<th class="market_reports">Amount of your stake collected</th>
+		<th class="market_reports">Your stake (num)</th>
+		<th class="market_reports">Your stake<br/> collected(num)</th>
+		<th class="market_reports">Amount collected (ETH)</th>
 	</tr>
 	{{- range $i, $change := .CollectedStakingRewards}}
 		<tr class="market_reports">
@@ -22,12 +23,17 @@
 				{{.BlockNum}}
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td style="text-align: center;" title="">
+				<a href="/black/cosmicgame/staking/rewards/action_ids_by_deposit/{{$.UserAddr}}/{{.DepositId}}">
+				{{.DepositId}}
+				</a>
+			</td>
 			<td style="text-align: center;" title="">{{.NumStakedNFTs}}</td>
-			<td style="text-align: center;" title="">{{.TotalDepositAmountEth}}</td>
-			<td style="text-align: center;" title="">{{.YourAmountToClaimEth}}</td>
+			<td style="text-align: center;" title="">{{ printf "%.6f" .TotalDepositAmountEth}}</td>
+			<td style="text-align: center;" title="">{{ printf "%.6f" .YourAmountToClaimEth}}</td>
 			<td style="text-align: center;" title="">{{.YourTokensStaked}}</td>
 			<td style="text-align: center;" title="">{{.NumTokensCollected}}</td>
-			<td style="text-align: center;" title="">{{.YourCollectedAmountEth}}</td>
+			<td style="text-align: center;" title="">{{ printf "%.6f" .YourCollectedAmountEth}}</td>
 		</tr>
 	{{- end}}
 </table>
