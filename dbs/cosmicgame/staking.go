@@ -310,23 +310,24 @@ func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int
 			") UNION ALL ("+
 				"SELECT "+
 					"1 AS action_type,"+
-					"s.id,"+
-					"s.evtlog_id,"+
-					"s.block_num,"+
+					"u.id,"+
+					"u.evtlog_id,"+
+					"u.block_num,"+
 					"tx.id,"+
 					"tx.tx_hash,"+
-					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT AS usts,"+
-					"time_stamp,"+
+					"EXTRACT(EPOCH FROM u.time_stamp)::BIGINT AS usts,"+
+					"u.time_stamp,"+
 					"0 AS usts,"+
 					"TO_TIMESTAMP(0) AS unnstake_time,"+
-					"s.action_id,"+
-					"s.token_id,"+
-					"s.num_staked_nfts, "+
-					"FALSE AS is_rwalk,"+
+					"u.action_id,"+
+					"u.token_id,"+
+					"u.num_staked_nfts, "+
+					"s.is_rwalk AS is_rwalk,"+
 					"'F' AS claimed "+
-				"FROM "+sw.S.SchemaName()+".cg_unstake_action s "+
-					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
-				"WHERE (s.staker_aid=$1) " +
+				"FROM "+sw.S.SchemaName()+".cg_unstake_action u "+
+					"LEFT JOIN transaction tx ON tx.id=u.tx_id " +
+					"LEFT JOIN cg_stake_action s ON u.action_id=s.action_id "+
+				"WHERE (u.staker_aid=$1) " +
 				"OFFSET $2 LIMIT $3 "+
 			") ORDER BY evtlog_id DESC"
 
@@ -813,25 +814,26 @@ func (sw *SQLStorageWrapper) Get_global_staking_history(offset,limit int) []p.CG
 			") UNION ALL ("+
 				"SELECT "+
 					"1 AS action_type,"+
-					"s.id,"+
-					"s.evtlog_id,"+
-					"s.block_num,"+
+					"u.id,"+
+					"u.evtlog_id,"+
+					"u.block_num,"+
 					"tx.id,"+
 					"tx.tx_hash,"+
-					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT AS usts,"+
-					"time_stamp,"+
+					"EXTRACT(EPOCH FROM u.time_stamp)::BIGINT AS usts,"+
+					"u.time_stamp,"+
 					"0 AS usts,"+
 					"TO_TIMESTAMP(0) AS unnstake_time,"+
-					"s.action_id,"+
-					"s.token_id,"+
-					"s.num_staked_nfts, "+
-					"s.staker_aid," +
-					"FALSE as is_rwalk,"+
-					"sa.addr staker_addr "+
-				"FROM "+sw.S.SchemaName()+".cg_unstake_action s "+
-					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
-					"LEFT JOIN address sa ON s.staker_aid=sa.address_id "+
-				"ORDER BY s.id DESC " +
+					"u.action_id,"+
+					"u.token_id,"+
+					"u.num_staked_nfts, "+
+					"u.staker_aid," +
+					"s.is_rwalk AS is_rwalk,"+
+					"ua.addr staker_addr "+
+				"FROM "+sw.S.SchemaName()+".cg_unstake_action u "+
+					"LEFT JOIN transaction tx ON tx.id=u.tx_id " +
+					"LEFT JOIN address ua ON u.staker_aid=ua.address_id "+
+					"LEFT JOIN cg_stake_action s ON u.action_id=s.action_id "+
+				"ORDER BY u.id DESC " +
 				"OFFSET $1 LIMIT $2 "+
 			") order by evtlog_id DESC"
 
