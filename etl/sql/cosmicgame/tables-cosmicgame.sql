@@ -539,6 +539,8 @@ CREATE TABLE cg_glob_stats ( -- global statistics
 	vol_donations_total		DECIMAL DEFAULT 0,		-- sum of voluntary donations
 	cg_donations_total		DECIMAL DEFAULT 0,		-- sum of all donatinos deposited by CosmicGame contract
 	num_cg_donations		BIGINT DEFAULT 0,		-- number of donations deposited by CosmicGame contract
+	direct_donations		DECIMAL DEFAULT 0,		-- direct donations to CosmicGame contract via donate() function
+	num_direct_donations	BIGINT DEFAULT 0,		-- number of direct donationons
 	sum_withdrawals			DECIMAL DEFAULT 0,		-- sum of withdrawals from CharityWallet to recipient
 	num_withdrawals			BIGINT DEFAULT 0,
 	num_bids				BIGINT DEFAULT 0, 		-- total bids made

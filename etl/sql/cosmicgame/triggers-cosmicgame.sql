@@ -37,3 +37,5 @@ CREATE TRIGGER cg_claim_reward_insert AFTER INSERT ON cg_claim_reward FOR EACH R
 CREATE TRIGGER cg_claim_reward_delete AFTER DELETE ON cg_claim_reward FOR EACH ROW EXECUTE PROCEDURE on_claim_reward_delete();
 CREATE TRIGGER cg_marketing_rewards_insert AFTER INSERT ON cg_mkt_reward FOR EACH ROW EXECUTE PROCEDURE on_marketing_rewards_insert();
 CREATE TRIGGER cg_marketing_rewards_delete AFTER DELETE ON cg_mkt_reward FOR EACH ROW EXECUTE PROCEDURE on_marketing_rewards_delete();
+CREATE TRIGGER cg_donation_insert AFTER INSERT ON cg_donation FOR EACH ROW EXECUTE PROCEDURE on_direct_donation_insert();
+CREATE TRIGGER cg_donation_delete AFTER DELETE ON cg_donation FOR EACH ROW EXECUTE PROCEDURE on_direct_donation_delete();

@@ -13,6 +13,8 @@ type CGStatistics struct {
 	SumVoluntaryDonationsEth	float64 // divided by 1e18
 	NumCosmicGameDonations		uint64
 	SumCosmicGameDonationsEth	float64 // donations from CosmicGame contract
+	DirectDonationsEth			float64
+	NumDirectDonations			int64
 	SumWithdrawals				float64 // total ETH withdrwan from CharityWallet
 	NumWithdrawals				uint64	// number of withdrawal operations made
 	NumRwalkTokensUsed			uint64

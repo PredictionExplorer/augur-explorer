@@ -862,3 +862,26 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_direct_donation_insert() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE cg_glob_stats 
+		SET 
+			num_direct_donations = (num_direct_donations + 1),
+			direct_donations = (direct_donations + NEW.amount);
+
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_direct_donation_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE cg_glob_stats 
+		SET 
+			num_direct_donations = (num_direct_donations - 1),
+			direct_donations = (direct_donations - OLD.amount);
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;

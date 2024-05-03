@@ -27,16 +27,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	var cg_addr string
 	if len(os.Args) < 2 {
 		fmt.Printf(
 			"Usage: \n\t\t%v [cosmic_game_addr]\n\t\t"+
 			"Gets CosmicGame read only variables\n\n",os.Args[0],
 		)
-		os.Exit(1)
+		fmt.Printf("Setting default cosmic game contract address to 0x5FbDB2315678afecb367f032d93F642f64180aa3\n")
+		cg_addr = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+	} else {
+		cg_addr = os.Args[1]
 	}
-
 	var copts bind.CallOpts
-	cosmic_game_addr := common.HexToAddress(os.Args[1])
+	cosmic_game_addr := common.HexToAddress(cg_addr)
 	fmt.Printf("Calling to contract at %v\n",cosmic_game_addr.String())
 
 	cosmic_game_ctrct,err := NewCosmicGame(cosmic_game_addr,eclient)
@@ -239,7 +242,7 @@ func main() {
 		os.Exit(1)
 	} else {
 		fmt.Printf("StakingWallet = %v\n",staking_addr.String());
-		fmt.Printf("MinStakePeriod = %v\n",min_stake_period.String());
+		fmt.Printf("MinStakePeriod = %v\n",min_stake_period);
 	}
 	blogic_ctrct,err := NewBusinessLogic(cosmic_game_addr,eclient)
 	if err!=nil {
