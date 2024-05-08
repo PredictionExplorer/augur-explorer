@@ -71,14 +71,6 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_raffle_nft_claimed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_donated_nft_claimed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
 			Signature: hex.EncodeToString(evt_stake_action[:4]),
 			ContractAid: 0,
 		},
@@ -180,6 +172,26 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 		},
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_nanoseconds_extra_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_initial_seconds_until_prize_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_initial_bid_amount_fraction_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_activation_time_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_ethcst_bid_ratio_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_round_start_auction_length_changed[:4]),
 			ContractAid: 0,
 		},
 	)
@@ -797,39 +809,6 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Delete_raffle_nft_winner(evt.EvtId)
 	storagew.Insert_raffle_nft_winner(&evt)
-}
-func proc_raffle_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
-
-	var evt CGRaffleNFTClaimed
-	var eth_evt CosmicGameRaffleNFTWinnerEvent
-
-	Info.Printf("Processing RaffleNFTClaimed event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-
-	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
-		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
-		return
-	}
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RaffleNFTClaimedEvent",log.Data)
-	if err != nil {
-		Error.Printf("Event RaffleNFTClaimedEvent decode error: %v",err)
-		os.Exit(1)
-	}
-
-	evt.EvtId=elog.EvtId
-	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
-	evt.ContractAddr = log.Address.String()
-	evt.TimeStamp = elog.TimeStamp
-	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
-	evt.TokenId = find_cosmic_token_721_transfer(evt.EvtId)
-	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("RaffleNFTClaimedEvent{\n")
-	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
-	Info.Printf("\tTokenId: %v\n",evt.TokenId);
-	Info.Printf("}\n")
-
-	storagew.Delete_raffle_nft_claimed(evt.EvtId)
-	storagew.Insert_raffle_nft_claimed(&evt)
 }
 func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -1769,6 +1748,161 @@ func proc_nanoseconds_extra_changed_event(log *types.Log,elog *EthereumEventLog)
 	storagew.Delete_nanoseconds_extra_changed_event(evt.EvtId)
     storagew.Insert_nanoseconds_extra_changed_event(&evt)
 }
+func proc_initial_seconds_until_prize_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGInitialSecondsUntilPrizeChanged
+	var eth_evt CosmicGameInitialSecondsUntilPrizeChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing InitialSecondsUntilPrizeChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"InitialSecondsUntilPrizeChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event InitialSecondsUntilPrizeChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewInitialSecondsUntilPrize = eth_evt.NewInitialSecondsUntilPrize.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("InitialSecondsUntilPrizeChanged{\n")
+	Info.Printf("\tNewInitialSecondsUntilPrize: %v\n",evt.NewInitialSecondsUntilPrize)
+	Info.Printf("}\n")
+
+	storagew.Delete_initial_seconds_until_prize_changed_event(evt.EvtId)
+    storagew.Insert_initial_seconds_until_prize_changed_event(&evt)
+}
+func proc_initial_bid_amount_fraction_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGInitialBidAmountFractionChanged
+	var eth_evt CosmicGameInitialBidAmountFractionChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing InitialBidAmountFractionChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"InitialBidAmountFractionChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event InitialBidAmountFractionChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewInitialBidAmountFraction = eth_evt.NewInitialBidAmountFraction.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("InitialBidAmountFractionChanged {\n")
+	Info.Printf("\tNewInitialBidAmountFraction: %v\n",evt.NewInitialBidAmountFraction)
+	Info.Printf("}\n")
+
+	storagew.Delete_initial_bid_amount_fraction_changed_event(evt.EvtId)
+    storagew.Insert_initial_bid_amount_fraction_changed_event(&evt)
+}
+func proc_activation_time_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGActivationTimeChanged
+	var eth_evt CosmicGameActivationTimeChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing ActivationTimeChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"ActivationTimeChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event ActivationTimeChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewActivationTime = eth_evt.NewActivationTime.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("ActivationTimeChanged {\n")
+	Info.Printf("\tNewActivationTime: %v\n",evt.NewActivationTime)
+	Info.Printf("}\n")
+
+	storagew.Delete_activation_time_changed_event(evt.EvtId)
+    storagew.Insert_activation_time_changed_event(&evt)
+}
+func proc_ethcst_bid_ratio_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGETHCSTBidRatioChanged
+	var eth_evt CosmicGameETHToCSTBidRatioChanged 
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing ETHToCSTBidRatioChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"ETHToCSTBidRatioChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event ETHToCSTBidRatioChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewETHToCSTBidRatio = eth_evt.NewETHToCSTBidRatio.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("NewETHToCSTBidRatio{\n")
+	Info.Printf("\tNewETHToCSTBidRatio: %v\n",evt.NewETHToCSTBidRatio)
+	Info.Printf("}\n")
+
+	storagew.Delete_ethcst_bid_ratio_changed_event(evt.EvtId)
+    storagew.Insert_ethcst_bid_ratio_changed_event(&evt)
+}
+func proc_round_start_cst_auction_length_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGRoundStartCSTAuctionLengthChanged
+	var eth_evt CosmicGameRoundStartCSTAuctionLengthChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing RoundStartCSTAuctionLengthChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"RoundStartCSTAuctionLengthChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event RoundStartCSTAuctionLengthChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewAuctionLength = eth_evt.NewAuctionLength.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("RoundStartCSTAuctionLengthChanged {\n")
+	Info.Printf("\tNewAuctionLength: %v\n",evt.NewAuctionLength)
+	Info.Printf("}\n")
+
+	storagew.Delete_round_start_cst_auction_length_changed_event(evt.EvtId)
+    storagew.Insert_round_start_cst_auction_length_changed_event(&evt)
+}
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event) {
@@ -1887,6 +2021,21 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_nanoseconds_extra_changed) {
 		proc_nanoseconds_extra_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_initial_seconds_until_prize_changed) {
+		proc_initial_seconds_until_prize_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_initial_bid_amount_fraction_changed) {
+		proc_initial_bid_amount_fraction_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_activation_time_changed) {
+		proc_activation_time_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_ethcst_bid_ratio_changed) {
+		proc_ethcst_bid_ratio_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_round_start_auction_length_changed) {
+		proc_round_start_cst_auction_length_changed_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {

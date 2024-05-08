@@ -230,7 +230,7 @@ func main() {
 	fmt.Printf("NumETHBids = %v\n",num_eth_bids);
 	fmt.Printf("NumCSTBids = %v\n",num_cst_bids);
 	fmt.Printf("CSTAuctionLength = %v\n",cst_auction_length);
-	fmt.Printf("SystemMode = %v\n",system_mode.String());
+	fmt.Printf("SystemMode = %v (0-Runtime, 1-Prepare maintenance, 2-Maintenance)\n",system_mode.String());
 
 	swallet,err := NewStakingWallet(staking_addr,eclient);
 	if err != nil {

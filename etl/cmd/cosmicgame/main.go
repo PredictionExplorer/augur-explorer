@@ -70,31 +70,23 @@ const (
 	TIMEOUT_CLAIMPRIZE_CHANGED	= "caf8e5c6bc1bb2c19935f84ddcdaefb232ad06f9f2abd2ad588bea4bbe631d26"
 	PRICE_INCREASE_CHANGED	= "cbc1f49adfa29e2f2f0f5c9e057722496a4bc95a6a5446deaa423a02b30c64ac"
 	NANOSECONDS_EXTRA_CHANGED = "678d086a09e1be49401b1e3a6e14db1878e8d8b88e71d0cfe24a32726d0e38b9"
+	INITIAL_SECONDS_UNTIL_PRIZE_CHANGED = "6da281754ba85ee0c5983a8e8f05a92910c2a0c5b80e68c126216d65f162a305"
+	INITIAL_BID_AMOUNT_FRACTION_CHANGED = "3b311f029da1b90c3de2e0b3168436c5ed7d8b0ae81b7d4894c12da03835c628"
+	ACTIVATION_TIME_CHANGED = "584ff9a7b3a86db5397052f2e440da0ed60a95f646a3a884863cd92262e682b6"
+	ETHCST_BID_RATIO_CHANGED = "22d4bc2aefb73ef04b923582d7ff2f2b74e699aaf7ff92ea24b348ed59161292"
+	ROUND_START_AUCTION_LENGTH_CHANGED = "fa013ab3d3f17cb94a869ccc05fc842a00a83fd7318e55faeb0335c6d5d22aa3"
 )
 var (
 	eclient 				*ethclient.Client
 	rpcclient 				*rpc.Client
 
+	// CosmicGame events:
 	evt_prize_claim_event,_ = hex.DecodeString(PRIZE_CLAIM_EVENT)
 	evt_bid_event,_			= hex.DecodeString(BID_EVENT)
 	evt_donation_event,_	= hex.DecodeString(DONATION_EVENT)
-	evt_donation_received_event,_=hex.DecodeString(DONATION_RECEIVED_EVENT)
-	evt_donation_sent_event,_= hex.DecodeString(DONATION_SENT_EVENT)
-	evt_charity_updated,_	= hex.DecodeString(CHARITY_UPDATED)
-	evt_token_name_event,_	= hex.DecodeString(TOKEN_NAME_EVENT)
-	evt_mint_event,_		= hex.DecodeString(MINT_EVENT)
 	evt_nft_donation_event,_= hex.DecodeString(NFT_DONATION_EVENT)
-	evt_raffle_deposit,_	= hex.DecodeString(RAFFLE_DEPOSIT_EVENT)
-	evt_raffle_withdrawal,_	= hex.DecodeString(RAFFLE_WITHDRAWAL_EVENT)
 	evt_raffle_nft_winner,_	= hex.DecodeString(RAFFLE_NFT_WINNER)
-	evt_raffle_nft_claimed,_= hex.DecodeString(RAFFLE_NFT_CLAIMED)
 	evt_donated_nft_claimed,_= hex.DecodeString(DONATED_NFT_CLAIMED)
-	evt_transfer,_			= hex.DecodeString(TRANSFER_EVT)
-	evt_stake_action,_		= hex.DecodeString(STAKE_ACTION_EVENT)
-	evt_unstake_action,_	= hex.DecodeString(UNSTAKE_ACTION_EVENT)
-	evt_claim_reward,_		= hex.DecodeString(CLAIM_REWARD_EVENT)
-	evt_eth_deposit,_		= hex.DecodeString(ETH_DEPOSIT_EVENT)
-	evt_marketing_reward_sent,_		= hex.DecodeString(MARKETING_REWARD_SENT)
 	evt_charity_percentage_changed,_= hex.DecodeString(CHARITY_PERCENTAGE_CHANGED)
 	evt_prize_percentage_changed,_ = hex.DecodeString(PRIZE_PERCENTAGE_CHANGED)
 	evt_raffle_percentage_changed,_ = hex.DecodeString(RAFFLE_PERCENTAGE_CHANGED)
@@ -102,7 +94,6 @@ var (
 	evt_num_raffle_eth_winners_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_ETH_WINNERS_PER_ROUND_CHANGED)
 	evt_num_raffle_nft_winners_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_WINNERS);
 	evt_num_raffle_nft_holders_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_HOLDERS);
-	evt_system_mode_changed,_ = hex.DecodeString(SYSTEM_MODE_CHANGED);
 	evt_charity_address_changed,_	= hex.DecodeString(CHARITY_ADDRESS_CHANGED);
 	evt_rwalk_address_changed,_	= hex.DecodeString(RWALK_ADDRESS_CHANGED);
 	evt_raffle_address_changed,_	= hex.DecodeString(RAFFLE_ADDRESS_CHANGED);
@@ -115,6 +106,37 @@ var (
 	evt_timeout_claimprize_changed,_ = hex.DecodeString(TIMEOUT_CLAIMPRIZE_CHANGED);
 	evt_price_increase_changed,_	= hex.DecodeString(PRICE_INCREASE_CHANGED);
 	evt_nanoseconds_extra_changed,_	= hex.DecodeString(NANOSECONDS_EXTRA_CHANGED);
+	evt_initial_seconds_until_prize_changed,_	= hex.DecodeString(INITIAL_SECONDS_UNTIL_PRIZE_CHANGED)
+	evt_initial_bid_amount_fraction_changed,_	= hex.DecodeString(INITIAL_BID_AMOUNT_FRACTION_CHANGED)
+	evt_activation_time_changed,_	= hex.DecodeString(ACTIVATION_TIME_CHANGED)
+	evt_ethcst_bid_ratio_changed,_	= hex.DecodeString(ETHCST_BID_RATIO_CHANGED)
+	evt_round_start_auction_length_changed,_ = hex.DecodeString(ROUND_START_AUCTION_LENGTH_CHANGED)
+	evt_system_mode_changed,_ = hex.DecodeString(SYSTEM_MODE_CHANGED);
+
+	// CharityWallet events
+	evt_donation_received_event,_=hex.DecodeString(DONATION_RECEIVED_EVENT)
+	evt_donation_sent_event,_= hex.DecodeString(DONATION_SENT_EVENT)
+	evt_charity_updated,_	= hex.DecodeString(CHARITY_UPDATED)
+
+	// CosmicSignature events
+	evt_token_name_event,_	= hex.DecodeString(TOKEN_NAME_EVENT)
+	evt_mint_event,_		= hex.DecodeString(MINT_EVENT)
+
+	// RaffleWallet events
+	evt_raffle_deposit,_	= hex.DecodeString(RAFFLE_DEPOSIT_EVENT)
+	evt_raffle_withdrawal,_	= hex.DecodeString(RAFFLE_WITHDRAWAL_EVENT)
+
+	// ERC20 events
+	evt_transfer,_			= hex.DecodeString(TRANSFER_EVT)
+
+	// StakingWallet events
+	evt_stake_action,_		= hex.DecodeString(STAKE_ACTION_EVENT)
+	evt_unstake_action,_	= hex.DecodeString(UNSTAKE_ACTION_EVENT)
+	evt_claim_reward,_		= hex.DecodeString(CLAIM_REWARD_EVENT)
+	evt_eth_deposit,_		= hex.DecodeString(ETH_DEPOSIT_EVENT)
+
+	// MarketingWallet events
+	evt_marketing_reward_sent,_		= hex.DecodeString(MARKETING_REWARD_SENT)
 
 	inspected_events []InspectedEvent
 

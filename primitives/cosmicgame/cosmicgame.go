@@ -432,3 +432,43 @@ type CGNanoSecondsExtraChanged struct {
 	Contract                string
 	NewNanoSecondsExtra		string
 }
+type CGInitialSecondsUntilPrizeChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewInitialSecondsUntilPrize	string
+}
+type CGInitialBidAmountFractionChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewInitialBidAmountFraction	string
+}
+type CGActivationTimeChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewActivationTime		string
+}
+type CGETHCSTBidRatioChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewETHToCSTBidRatio		string
+}
+type CGRoundStartCSTAuctionLengthChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewAuctionLength		string
+}

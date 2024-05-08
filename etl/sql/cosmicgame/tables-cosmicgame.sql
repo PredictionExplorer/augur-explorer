@@ -473,6 +473,56 @@ CREATE TABLE cg_adm_nanosec_extra ( -- NanoSecondsExtraChanged event (contract C
 	new_nanoseconds	DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_adm_inisecprize ( -- InitialSecondsUntilPrizeChanged event (contract CosmicGame)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_inisec		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_bidfraction ( -- InitialBidAmountFractioniChanged event (contract CosmicGame)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_fraction	DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_acttime ( -- ActivationTimeChanged event (contract CosmicGame)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_atime		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_ethcst ( -- ETHToCSTBidRatioChanged event (contract CosmicGame)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_ratio		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_auclen ( -- RoundStartCSTAuctionLengthChanged event (contract CosmicGame)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_len			DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE cg_transfer_stats( -- table to keep tracking of the statistical counters for tokent transfers
     user_aid                BIGINT NOT NULL,
     erc20_num_transfers     BIGINT DEFAULT 0, -- CosmicToken
