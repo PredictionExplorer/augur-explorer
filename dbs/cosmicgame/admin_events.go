@@ -71,7 +71,8 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 				"tx_hash,"+
 				"ts,"+
 				"date_time,"+
-				"addr_value "+ 
+				"addr_value, "+ 
+				"int_value "+
 			"FROM ("+
 				"("+
 					"SELECT "+
@@ -83,10 +84,10 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"t.tx_hash,"+
 						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
 						"r.time_stamp AS date_time, "+
-						"a.addr AS addr_value "+
-					"FROM "+sw.S.SchemaName()+".cg_adm_charity_addr r "+
+						"'' AS addr_value," +
+						"r.percentage AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_charity_pcent r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
-					"LEFT JOIN address a ON a.address_id = r.new_charity_aid "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
@@ -98,10 +99,348 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"t.tx_hash,"+
 						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
 						"r.time_stamp AS date_time, "+
-						"a.addr AS addr_value "+
+						"'' AS addr_value," +
+						"r.percentage AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_prize_pcent r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"3 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value," +
+						"r.percentage AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_raffle_pcent r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"4 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value," +
+						"r.percentage AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_stake_pcent r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"5 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value," +
+						"r.num_winners AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_raf_eth_winners r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"6 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value," +
+						"r.num_winners AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_raf_nft_winners r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"7 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value," +
+						"r.num_holders AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_raf_nft_holders r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"8 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"a.addr AS addr_value, "+
+						"0 AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_charity_addr r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"LEFT JOIN address a ON a.address_id = r.new_charity_aid "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"9 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"a.addr AS addr_value, "+
+						"0 AS int_value "+
 					"FROM "+sw.S.SchemaName()+".cg_adm_rwalk_addr r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"LEFT JOIN address a ON a.address_id = r.new_rwalk_aid "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"10 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"a.addr AS addr_value, "+
+						"0 AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_raffle_addr r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"LEFT JOIN address a ON a.address_id = r.new_raffle_aid "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"11 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"a.addr AS addr_value, "+
+						"0 AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_staking_addr r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"LEFT JOIN address a ON a.address_id = r.new_staking_aid "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"12 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"a.addr AS addr_value, "+
+						"0 AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_marketing_addr r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"LEFT JOIN address a ON a.address_id = r.new_marketing_aid "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"13 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"a.addr AS addr_value, "+
+						"0 AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_costok_addr r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"LEFT JOIN address a ON a.address_id = r.new_costok_aid "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"14 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"a.addr AS addr_value, "+
+						"0 AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_cossig_addr r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"LEFT JOIN address a ON a.address_id = r.new_cossig_aid "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"15 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"a.addr AS addr_value, "+
+						"0 AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_blogic_addr r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"LEFT JOIN address a ON a.address_id = r.new_blogic_aid "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"16 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.new_time_inc AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_time_inc r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"17 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.new_timeout AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_timeout_claimprize r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"18 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.new_price_increase AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_price_inc r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"19 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.new_nanoseconds AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_nanosec_extra r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"20 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.new_inisec AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_inisecprize r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"21 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.new_fraction AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_bidfraction r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"22 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.new_atime AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_acttime r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"23 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.new_ratio AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_ethcst r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"24 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value, "+
+						"r.new_len AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_auclen r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				")" +
 			") everything "+
@@ -129,6 +468,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 			&rec.TimeStamp,
 			&rec.DateTime,
 			&rec.AddressValue,
+			&rec.IntegerValue,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

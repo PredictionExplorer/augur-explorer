@@ -17,8 +17,8 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
-	CHAIN_ID		int64 = 31337
-//	CHAIN_ID		int64 = 421614
+//	CHAIN_ID		int64 = 31337
+	CHAIN_ID		int64 = 421614
 //	CHAIN_ID		int64 = 11155111
 )
 var (
@@ -89,7 +89,8 @@ func main() {
 	txopts.Nonce = big.NewInt(int64(from_nonce))
 	txopts.Value = big.NewInt(0)     // in weia
 	txopts.Value.Set(donation_amount)
-	txopts.GasLimit = uint64(10000000) // in units
+	txopts.GasLimit = uint64(20000000) // in units
+	fmt.Printf("tx = %v\n",txopts)
 	txopts.GasPrice = gasPrice
 
 	fmt.Printf("Gas price = %v\n",gasPrice.String())

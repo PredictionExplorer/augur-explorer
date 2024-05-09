@@ -664,33 +664,17 @@ type CGSystemModeRec struct {
 	SystemMode					int64
 	NextEvtLogId				int64
 }
-/*
-type CGAdmCharityAddressChangedRec struct {
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	NewCharity					string
-}
-type CGAdmRandomWalkAddressChangedRec struct {
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	NewRandomWalk				string
-}
-*/
 type CGAdminEvent struct {
 	RecordType					int64	// Type codes:
 										// 			0		Undefined
-										//			1		CharityAddressChanged
-										//			2		RandomWalkAddressChanged
+										//			1		CharityPercentageChanged
+										//			2		PrizePercentageChanged
+										//			3		RafflePercentageChanged
+										//			4		StakingPercentageChanged
+										//			5		NumRaffleWinnersPerRoundChanged
+										//			8		CharityAddressChanged
+										//			9		RandomWalkAddressChanged
+										//			10		RaffleWalletAddressChanged
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
@@ -699,4 +683,6 @@ type CGAdminEvent struct {
 	TimeStamp					int64
 	DateTime					string
 	AddressValue				string
+	IntegerValue				int64
+	FloatValue					float64
 }
