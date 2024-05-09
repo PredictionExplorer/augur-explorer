@@ -1933,3 +1933,47 @@ func api_cosmic_game_sysmode_changes(c *gin.Context) {
 		"SystemModeChanges" : system_mode_changes,
 	})
 }
+func api_cosmic_game_admin_events_in_range(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	p_evtlog_start:= c.Param("evtlog_start")
+	var evtlog_start int64
+	if len(p_evtlog_start) > 0 {
+		var success bool
+		evtlog_start,success = parse_int_from_remote_or_error(c,JSON,&p_evtlog_start)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'evtlog_start' parameter is not set")
+		return
+	}
+	p_evtlog_end := c.Param("evtlog_end")
+	var evtlog_end int64
+	if len(p_evtlog_end) > 0 {
+		var success bool
+		evtlog_end,success = parse_int_from_remote_or_error(c,JSON,&p_evtlog_end)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'evtlog_end' parameter is not set")
+		return
+	}
+	event_list := arb_storagew.Get_admin_events_in_range(evtlog_start,evtlog_end)
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"AdminEvents" : event_list,
+		"EvtLogIdStart" : evtlog_start,
+		"EvtLogIdEnd" : evtlog_end,
+	})
+}

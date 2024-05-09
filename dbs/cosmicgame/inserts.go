@@ -1016,9 +1016,9 @@ func (sw *SQLStorageWrapper) Insert_nanoseconds_extra_changed_event(evt *p.CGNan
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_nano(" +
+	query = "INSERT INTO cg_adm_nanosec_extra (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"new_nanoseconds_extra" +
+				"new_nanoseconds" +
 			") VALUES (" +
 				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
 			")"

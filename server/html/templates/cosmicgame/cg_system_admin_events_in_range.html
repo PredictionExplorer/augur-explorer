@@ -1,0 +1,41 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Admin Events in range from {{.EvtLogIdStart}} to {{.EvtLogIdEnd}}</title>
+</head>
+<body>
+	<h3 class="page_title">
+		Admin Events in range from {{.EvtLogIdStart}} to {{.EvtLogIdEnd}}
+	</h3>
+<table>
+	<tr class="market_reports">
+		<th class="market_reports">Event</th>
+		<th class="market_reports">Block</th>
+		<th class="market_reports">Date</th>
+		<th class="market_reports">New value</th>
+
+	</tr>
+	{{- range $i, $change := .AdminEvents}}
+		<tr class="market_reports">
+			<td style="text-align: left;">
+				 {{ if eq 0 .RecordType}}Undefined{{end}}
+				 {{ if eq 1 .RecordType}}CharityAddressChanged{{end}}
+				 {{ if eq 2 .RecordType}}RandomWalkAddressChanged{{end}}
+			</td>
+			<td style="text-align: center;">{{.BlockNum}}</td>
+			<td style="text-align: left;">{{.DateTime}};</td>
+			<td style="text-align: left;">
+				 {{ if eq 0 .RecordType}}Undefined{{end}}
+				 {{ if eq 1 .RecordType}}{{.AddressValue}}{{end}}
+				 {{ if eq 2 .RecordType}}{{.AddressValue}}{{end}}
+			</td>
+		</tr>
+	{{- end}}
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/system/admin_events/[evtlog_start]/[evtlog_end]</br>
+
+Example: /api/cosmicgame/system/admin_events/{{.EvtLogIdStart}}/{{.EvtLogIdEnd}}
+</code>
+</body>

@@ -221,6 +221,7 @@ func set_api_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/api/cosmicgame/time/current",api_cosmic_game_time_current)
 	r.GET("/api/cosmicgame/time/until_prize",api_cosmic_game_time_until_prize)
 	r.GET("/api/cosmicgame/system/modelist/:offset/:limit",api_cosmic_game_sysmode_changes)
+	r.GET("/api/cosmicgame/system/admin_events/:evtlog_start/:evtlog_end",api_cosmic_game_admin_events_in_range)
 }
 func set_api_routing_statistics(r *gin.Engine) {
 

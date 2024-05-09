@@ -285,10 +285,42 @@ async function main() {
   tx = await cosmicGame.connect(addr3).claimPrize({gasLimit:3000000});
   receipt = await tx.wait();
 
-  await cosmicGame.connect(owner).setPrizePercentage(30);
+  await cosmicGame.connect(owner).setCharity(charityWallet.address);
+  await cosmicGame.connect(owner).setRandomWalk(randomWalkNFT.address);
+  await cosmicGame.connect(owner).setRaffleWallet(raffleWallet.address);
+  await cosmicGame.connect(owner).setStakingWallet(stakingWallet.address);
+  await cosmicGame.connect(owner).setMarketingWallet(marketingWallet.address);
+  await cosmicGame.connect(owner).setNumRaffleWinnersPerRound(4);
+  await cosmicGame.connect(owner).setNumRaffleNFTWinnersPerRound(6);
+  await cosmicGame.connect(owner).setNumHolderNFTWinnersPerRound(3);
+  await cosmicGame.connect(owner).setPrizePercentage(30)
   await cosmicGame.connect(owner).setCharityPercentage(5);
+  await cosmicGame.connect(owner).setRafflePercentage(6);
   await cosmicGame.connect(owner).setCharity(addr3.address);
   await cosmicGame.connect(owner).setCharity(charityWallet.address);
+  await cosmicGame.connect(owner).setStakingPercentage(9);
+  await cosmicGame.connect(owner).setTokenContract(cosmicToken.address);
+  await cosmicGame.connect(owner).setNftContract(cosmicSignature.address);
+  await cosmicGame.connect(owner).setBusinessLogicContract(bLogic.address);
+  let tmp = await cosmicGame.timeIncrease();
+  await cosmicGame.connect(owner).setTimeIncrease(tmp);
+  tmp = await cosmicGame.connect(owner).timeoutClaimPrize()
+  await cosmicGame.connect(owner).setTimeoutClaimPrize(tmp);
+  tmp = await cosmicGame.priceIncrease();
+  await cosmicGame.connect(owner).setPriceIncrease(tmp);
+  tmp = await cosmicGame.nanoSecondsExtra();
+  await cosmicGame.connect(owner).setNanoSecondsExtra(tmp);
+  tmp = await cosmicGame.initialSecondsUntilPrize();
+  await cosmicGame.connect(owner).setInitialSecondsUntilPrize(tmp);
+  tmp = await cosmicGame.initialBidAmountFraction();
+  await cosmicGame.connect(owner).updateInitialBidAmountFraction(tmp);
+  tmp = await cosmicGame.activationTime();
+  await cosmicGame.connect(owner).setActivationTime(tmp);
+  tmp = await cosmicGame.ETHToCSTBidRatio();
+  await cosmicGame.connect(owner).setETHToCSTBidRatio(tmp);
+  tmp = await cosmicGame.RoundStartCSTAuctionLength();
+  await cosmicGame.connect(owner).setRoundStartCSTAuctionLength(tmp);
+
   await cosmicGame.connect(owner).setRuntimeMode();
 
   await cosmicGame.connect(addr3).claimDonatedNFT(hre.ethers.BigNumber.from('0'))

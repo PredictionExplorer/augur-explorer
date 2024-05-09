@@ -1976,3 +1976,42 @@ func cosmic_game_sysmode_changes(c *gin.Context) {
 		"Limit" : limit,
 	})
 }
+func cosmic_game_admin_events_in_range(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_evtlog_start:= c.Param("evtlog_start")
+	var evtlog_start int64
+	if len(p_evtlog_start) > 0 {
+		var success bool
+		evtlog_start,success = parse_int_from_remote_or_error(c,HTTP,&p_evtlog_start)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'evtlog_start' parameter is not set")
+		return
+	}
+	p_evtlog_end := c.Param("evtlog_end")
+	var evtlog_end int64
+	if len(p_evtlog_end) > 0 {
+		var success bool
+		evtlog_end,success = parse_int_from_remote_or_error(c,HTTP,&p_evtlog_end)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'evtlog_end' parameter is not set")
+		return
+	}
+	event_list := arb_storagew.Get_admin_events_in_range(evtlog_start,evtlog_end)
+
+	c.HTML(http.StatusOK, "cg_system_admin_events_in_range.html", gin.H{
+		"AdminEvents" : event_list,
+		"EvtLogIdStart" : evtlog_start,
+		"EvtLogIdEnd" : evtlog_end,
+	})
+}

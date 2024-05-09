@@ -212,6 +212,7 @@ func set_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/black/cosmicgame/dev/donate_nft",cosmic_game_dev_donate_nft)
 	r.GET("/black/cosmicgame/dev_funcs",cosmic_game_dev_funcs)
 	r.GET("/black/cosmicgame/system/modelist/:offset/:limit",cosmic_game_sysmode_changes)
+	r.GET("/black/cosmicgame/system/admin_events/:evtlog_start/:evtlog_end",cosmic_game_admin_events_in_range)
 }
 func set_routing_statistics(r *gin.Engine) {
 

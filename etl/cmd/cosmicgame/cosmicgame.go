@@ -1727,9 +1727,9 @@ func proc_nanoseconds_extra_changed_event(log *types.Log,elog *EthereumEventLog)
 		return
 	}
 	Info.Printf("Processing NanoSecondsExtraChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NanoSeconsExtraChanged",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NanoSecondsExtraChanged",log.Data)
 	if err != nil {
-		Error.Printf("Event NanoSeconsExtraChanged decode error: %v",err)
+		Error.Printf("Event NanoSecondsExtraChanged decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -1741,7 +1741,7 @@ func proc_nanoseconds_extra_changed_event(log *types.Log,elog *EthereumEventLog)
 	evt.NewNanoSecondsExtra = eth_evt.NewNanoSecondsExtra.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("NanoSeconsExtraChanged{\n")
+	Info.Printf("NanoSecondsExtraChanged{\n")
 	Info.Printf("\tNewNanoSecondsExtraChanged: %v\n",evt.NewNanoSecondsExtra)
 	Info.Printf("}\n")
 

@@ -4,7 +4,7 @@
 	<title>System Mode Changes</title>
 </head>
 <body>
-	<h3 class="page_title">System Mode Changes<h3>
+	<h3 class="page_title">System Mode Changes</h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -15,7 +15,14 @@
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">{{.BlockNum}}</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
-			<td>{{.SystemMode}}</td>
+			<td style="text-align: center" >
+				{{.SystemMode}}
+			</td>
+			<td style="text-align: center" >
+				<a href="/black/cosmicgame/system/admin_events/{{.EvtLogId}}/{{.NextEvtLogId}}">
+					Events
+				</a>
+			</td>
 		</tr>
 	{{- end}}
 </table>
