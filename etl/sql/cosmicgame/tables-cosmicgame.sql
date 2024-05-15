@@ -171,7 +171,7 @@ CREATE TABLE cg_donated_nft_claimed (
 	token_id		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_stake_action (
+CREATE TABLE cg_stake_action_cst (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -184,11 +184,10 @@ CREATE TABLE cg_stake_action (
 	num_staked_nfts	BIGINT NOT NULL,
 	unstake_time	TIMESTAMPTZ NOT NULL,
 	staker_aid		BIGINT NOT NULL,
-	is_rwalk		BOOLEAN NOT NULL,
 	claimed			BOOLEAN DEFAULT 'F',
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_unstake_action (
+CREATE TABLE cg_unstake_action_cst (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -229,6 +228,36 @@ CREATE TABLE cg_claim_reward (
 	action_id		BIGINT NOT NULL,
 	deposit_id		BIGINT NOT NULL,
 	reward			DECIMAL NOT NULL,
+	staker_aid		BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_stake_action_rwalk (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	round_num		BIGINT DEFAULT -1,
+	action_id		BIGINT NOT NULL,
+	token_id		BIGINT NOT NULL,
+	num_staked_nfts	BIGINT NOT NULL,
+	unstake_time	TIMESTAMPTZ NOT NULL,
+	staker_aid		BIGINT NOT NULL,
+	is_rwalk		BOOLEAN NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_unstake_action_rwalk (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	round_num		BIGINT DEFAULT -1,
+	action_id		BIGINT NOT NULL,
+	token_id		BIGINT NOT NULL,
+	num_staked_nfts	BIGINT NOT NULL,
 	staker_aid		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
@@ -549,7 +578,7 @@ CREATE TABLE cg_winner ( -- collects statistics per winer of prize
 	tokens_count			BIGINT DEFAULT 0,	-- tokens won in prizes + raffles
 	unclaimed_nfts			BIGINT DEFAULT 0	-- donated NFTs
 );
-CREATE TABLE cg_staker ( -- counts statistics per user for StakingWallet actions
+CREATE TABLE cg_staker_cst ( -- counts statistics per user for staking CosmicSignature tokens
 	staker_aid				BIGINT PRIMARY KEY,
 	total_tokens_staked		BIGINT DEFAULT 0,
 	num_stake_actions		BIGINT DEFAULT 0,
@@ -564,14 +593,26 @@ CREATE TABLE cg_staker_deposit (-- accumulators for deposit-staker relation
 	amount_to_claim			DECIMAL DEFAULT 0,
 	PRIMARY KEY(staker_aid,deposit_id)
 );
-CREATE TABLE cg_staked_token (  -- we have 2 types of tokens: CST and RWalk, the tokenId will collide
-								-- records in this table only exist if token is currently staked, deleted if unstaked
+CREATE TABLE cg_staked_token_cst (
 	staker_aid				BIGINT NOT NULL,
 	token_id				BIGINT NOT NULL,
 	stake_action_id			BIGINT NOT NULL,
-	is_rwalk				BOOLEAN NOT NULL,
-	is_unstaked				BOOLEAN DEFAULT FALSE,	-- used internally by SQL triggers to keep consistency in chain splits
-	PRIMARY KEY(token_id,is_rwalk),
+	PRIMARY KEY(token_id),
+	UNIQUE(stake_action_id)
+);
+CREATE TABLE cg_staker_rwalk ( -- counts statistics per user for staking RandomWalk tokens
+	staker_aid				BIGINT PRIMARY KEY,
+	total_tokens_staked		BIGINT DEFAULT 0,
+	num_stake_actions		BIGINT DEFAULT 0,
+	num_unstake_actions		BIGINT DEFAULT 0,
+	total_reward			DECIMAL DEFAULT 0,
+	unclaimed_reward		DECIMAL DEFAULT 0
+);
+CREATE TABLE cg_staked_token_rwalk (
+	staker_aid				BIGINT NOT NULL,
+	token_id				BIGINT NOT NULL,
+	stake_action_id			BIGINT NOT NULL,
+	PRIMARY KEY(token_id),
 	UNIQUE(stake_action_id)
 );
 CREATE TABLE cg_raffle_winner_stats (	-- prizes in ETH
@@ -610,7 +651,7 @@ CREATE TABLE cg_nft_stats ( -- stats for donated NFTs (donated with bidAndDonate
 	contract_aid			BIGINT PRIMARY KEY,
 	num_donated				BIGINT DEFAULT 0		-- how many NFTs were donated
 );
-CREATE TABLE cg_stake_stats ( -- gloal staking statistics (StakinWallet)
+CREATE TABLE cg_stake_stats_cst ( -- gloal staking statistics (StakinWalletCST)
 	total_tokens_staked		BIGINT DEFAULT 0,
 	total_reward_amount		DECIMAL DEFAULT 0,
 	total_unclaimed_reward	DECIMAL DEFAULT 0,
@@ -618,7 +659,13 @@ CREATE TABLE cg_stake_stats ( -- gloal staking statistics (StakinWallet)
 	num_deposits			BIGINT DEFAULT 0,
 	total_modulo			DECIMAL DEFAULT 0,
 	num_charity_deposits	BIGINT DEFAULT 0,
-	total_charity_amount	DECIMAL DEFAULT 0
+	total_charity_amount	DECIMAL DEFAULT 0,
+	total_nft_mints			BIGINT DEFAULT 0
+);
+CREATE TABLE cg_stake_stats_rwalk ( -- gloal staking statistics (StakinWalletRWalk)
+	total_tokens_staked		BIGINT DEFAULT 0,
+	total_num_stakers		BIGINT DEFAULT 0,
+	total_nft_mints			BIGINT DEFAULT 0
 );
 CREATE TABLE cg_contracts (
 	cosmic_game_addr		TEXT NOT NULL,
@@ -628,7 +675,8 @@ CREATE TABLE cg_contracts (
 	charity_wallet_addr		TEXT NOT NULL,
 	raffle_wallet_addr		TEXT NOT NULL,
 	random_walk_addr		TEXT NOT NULL,
-	staking_wallet_addr		TEXT NOT NULL,
+	staking_wallet_cst_addr		TEXT NOT NULL,
+	staking_wallet_rwalk_addr	TEXT NOT NULL,
 	marketing_wallet_addr	TEXT NOT NULL,
 	business_logic_addr		TEXT NOT NULL
 );
@@ -636,4 +684,5 @@ CREATE TABLE cg_proc_status (
 	last_evt_id             BIGINT DEFAULT 0
 );
 INSERT INTO cg_glob_stats DEFAULT VALUES;
-INSERT INTO cg_stake_stats DEFAULT VALUES;
+INSERT INTO cg_stake_stats_cst DEFAULT VALUES;
+INSERT INTO cg_stake_stats_rwalk DEFAULT VALUES;
