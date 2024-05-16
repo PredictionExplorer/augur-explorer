@@ -359,14 +359,14 @@ func (sw *SQLStorageWrapper) Insert_donated_nft_claimed(evt *p.CGDonatedNFTClaim
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_stake_action_event(evt *p.CGStakeAction) {
+func (sw *SQLStorageWrapper) Insert_stake_action_cst_event(evt *p.CGStakeActionCST) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
 	staker_aid:=sw.S.Lookup_or_create_address(evt.Staker,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_stake_action (" +
+	query = "INSERT INTO cg_stake_action_cst (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,num_staked_nfts,unstake_time,staker_aid,is_rwalk" +
+				"action_id,token_id,num_staked_nfts,unstake_time,staker_aid" +
 			") VALUES (" +
 				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,TO_TIMESTAMP($9),$10,$11"+
 			")"
@@ -381,19 +381,18 @@ func (sw *SQLStorageWrapper) Insert_stake_action_event(evt *p.CGStakeAction) {
 		evt.TotalNfts,
 		evt.UnstakeTime,
 		staker_aid,
-		evt.IsRandomWalk,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_stake_action table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_stake_action_cst table: %v\n",err))
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_unstake_action_event(evt *p.CGUnstakeAction) {
+func (sw *SQLStorageWrapper) Insert_unstake_action_cst_event(evt *p.CGUnstakeActionCST) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
 	staker_aid:=sw.S.Lookup_or_create_address(evt.Staker,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_unstake_action (" +
+	query = "INSERT INTO cg_unstake_action_cst (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"action_id,token_id,num_staked_nfts,staker_aid" +
 			") VALUES (" +
@@ -411,7 +410,7 @@ func (sw *SQLStorageWrapper) Insert_unstake_action_event(evt *p.CGUnstakeAction)
 		staker_aid,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_unstake_action table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_unstake_action_cst table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -469,6 +468,61 @@ func (sw *SQLStorageWrapper) Insert_claim_reward_event(evt *p.CGClaimReward) {
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_claim_Reward table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_stake_action_rwalk_event(evt *p.CGStakeActionRWalk) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
+	staker_aid:=sw.S.Lookup_or_create_address(evt.Staker,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_stake_action_rwalk (" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"action_id,token_id,num_staked_nfts,unstake_time,staker_aid" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,TO_TIMESTAMP($9),$10,$11"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.ActionId,
+		evt.TokenId,
+		evt.TotalNfts,
+		evt.UnstakeTime,
+		staker_aid,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_stake_action_rwalk table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_unstake_action_rwalk_event(evt *p.CGUnstakeActionRWalk) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
+	staker_aid:=sw.S.Lookup_or_create_address(evt.Staker,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_unstake_action_rwalk (" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"action_id,token_id,num_staked_nfts,staker_aid" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.ActionId,
+		evt.TokenId,
+		evt.TotalNfts,
+		staker_aid,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_unstake_action_rwalk table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -636,11 +690,11 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_raffle_percentage_changed_event(
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_eth_winners_per_round_changed_event(evt *p.CGNumRaffleWinnersPerRoundChanged) {
+func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_eth_winners_bidding_changed_event(evt *p.CGNumRaffleETHWinnersBiddingChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_raf_eth_winners(" +
+	query = "INSERT INTO cg_adm_raf_eth_bidding(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"num_winners" +
 			") VALUES (" +
@@ -652,18 +706,18 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_eth_winners_per_round
 		evt.TxId,
 		evt.TimeStamp,
 		contract_aid,
-		evt.NewNumRaffleWinnersPerRound,
+		evt.NewNumRaffleETHWinnersBidding,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raf_eth_winners table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raf_eth_bidding table: %v\n",err))
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_winners_per_round_changed_event(evt *p.CGNumRaffleNFTWinnersPerRoundChanged) {
+func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_winners_bidding_changed_event(evt *p.CGNumRaffleNFTWinnersBiddingChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_raf_nft_winners(" +
+	query = "INSERT INTO cg_adm_raf_nft_bidding(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"num_winners" +
 			") VALUES (" +
@@ -675,20 +729,20 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_winners_per_round
 		evt.TxId,
 		evt.TimeStamp,
 		contract_aid,
-		evt.NewNumRaffleNFTWinnersPerRound,
+		evt.NewNumRaffleNFTWinnersBidding,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raf_eth_winners table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raf_nft_winners_bidding table: %v\n",err))
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_holders_per_round_changed_event(evt *p.CGNumRaffleNFTHoldersPerRoundChanged) {
+func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_winners_staking_cst_changed_event(evt *p.CGNumRaffleNFTWinnersStakingCSTChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_raf_nft_holders(" +
+	query = "INSERT INTO cg_adm_raf_nft_staking_cst(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"num_holders" +
+				"num_winners" +
 			") VALUES (" +
 				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
 			")"
@@ -698,10 +752,33 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_holders_per_round
 		evt.TxId,
 		evt.TimeStamp,
 		contract_aid,
-		evt.NewNumRaffleNFTHoldersPerRound,
+		evt.NewNumRaffleNFTWinnersStakingCST,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raf_eth_winners table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raf_nft_staking_cst table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_cosmic_game_num_raffle_nft_winners_staking_rwalk_changed_event(evt *p.CGNumRaffleNFTWinnersStakingRWalkChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_raf_nft_staking_rwalk(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"num_winners" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.NewNumRaffleNFTWinnersStakingRWalk,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_raf_nft_staking_rwalk table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -823,12 +900,12 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_raffle_wallet_address_changed_ev
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_cosmic_game_staking_wallet_address_changed_event(evt *p.CGStakingWalletAddressChanged) {
+func (sw *SQLStorageWrapper) Insert_cosmic_game_staking_wallet_cst_address_changed_event(evt *p.CGStakingWalletCSTAddressChanged) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
-	new_staking_aid:=sw.S.Lookup_or_create_address(evt.NewStakingWallet,evt.BlockNum,evt.TxId)
+	new_staking_aid:=sw.S.Lookup_or_create_address(evt.NewStakingWalletCST,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_staking_addr(" +
+	query = "INSERT INTO cg_adm_staking_cst_addr(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"new_staking_aid" +
 			") VALUES (" +
@@ -843,7 +920,31 @@ func (sw *SQLStorageWrapper) Insert_cosmic_game_staking_wallet_address_changed_e
 		new_staking_aid,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_staking_addr table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_staking_cst_addr table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_cosmic_game_staking_wallet_rwalk_address_changed_event(evt *p.CGStakingWalletRWalkAddressChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	new_staking_aid:=sw.S.Lookup_or_create_address(evt.NewStakingWalletRWalk,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_staking_rwalk_addr(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"new_staking_aid" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		new_staking_aid,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_staking_rwalk_addr table: %v\n",err))
 		os.Exit(1)
 	}
 }

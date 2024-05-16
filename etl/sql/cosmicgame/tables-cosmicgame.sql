@@ -342,34 +342,44 @@ CREATE TABLE cg_adm_raffle_pcent( -- RafflePercentageChanged event
 	percentage		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_raf_eth_winners( -- NumRaffleWinnersPerRoundChanged event event
+CREATE TABLE cg_adm_raf_eth_bidding( -- NumRaffleETHWinnersBiddingChanged event
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
 	tx_id           BIGINT NOT NULL,
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
-	num_winners		DECIMAL NOT NULL,	-- newNumRaffleWinnersPerRound
+	num_winners		DECIMAL NOT NULL,	-- newNumRaffleETHWinnersBidding
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_raf_nft_winners ( -- NumRaffleNFTWinnersPerRoundChanged event
+CREATE TABLE cg_adm_raf_nft_bidding( -- NumRaffleNFTWinnersBiddingChanged event
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
 	tx_id           BIGINT NOT NULL,
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
-	num_winners		DECIMAL NOT NULL,	-- newNumRaffleNFTWinnersPerRound
+	num_winners		DECIMAL NOT NULL,	-- newNumRaffleNFTWinnersBidding 
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_raf_nft_holders ( -- NumHolderNFTWinnersPerRoundChanged event
+CREATE TABLE cg_adm_raf_nft_staking_cst( -- NumRaffleNFTWinnersStakingCSTChanged event
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
 	tx_id           BIGINT NOT NULL,
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
-	num_holders		DECIMAL NOT NULL,	-- newNumHolderNFTWinnersPerRound
+	num_winners		DECIMAL NOT NULL,	-- newNumRaffleNFTWinnersStakingCST
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_raf_nft_staking_rwalk( -- NumRaffleNFTWinnersStakingRWalkChanged event
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	num_winners		DECIMAL NOT NULL,	-- newNumRaffleNFTWinnersStakingRWalkChanged
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_adm_sysmode ( -- SystemModeChanged event

@@ -149,20 +149,20 @@ func (sw *SQLStorageWrapper) Delete_donated_nft_claimed(evtlog_id int64) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_stake_action_event(evtlog_id int64) {
+func (sw *SQLStorageWrapper) Delete_stake_action_cst_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_stake_action WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_stake_action_cst WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_unstake_action_event(evtlog_id int64) {
+func (sw *SQLStorageWrapper) Delete_unstake_action_cst_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_unstake_action WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_unstake_action_cst WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -183,6 +183,26 @@ func (sw *SQLStorageWrapper) Delete_claim_reward_event(evtlog_id int64) {
 
 	var query string
 	query = "DELETE FROM "+sw.S.SchemaName()+".cg_claim_reward WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Delete_stake_action_rwalk_event(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_stake_action_rwalk WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Delete_unstake_action_rwalk_event(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_unstake_action_rwalk WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
@@ -249,30 +269,40 @@ func (sw *SQLStorageWrapper) Delete_cosmic_game_raffle_percentage_changed_event(
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_cosmic_game_num_raffle_eth_winners_per_round_changed_event(evtlog_id int64) {
+func (sw *SQLStorageWrapper) Delete_cosmic_game_num_raffle_eth_winners_bidding_changed_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_raf_eth_winners WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_raf_eth_bidding WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_cosmic_game_num_raffle_nft_winners_per_round_changed_event(evtlog_id int64) {
+func (sw *SQLStorageWrapper) Delete_cosmic_game_num_raffle_nft_winners_bidding_changed_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_raf_nft_winners WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_raf_nft_bidding WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_cosmic_game_num_raffle_nft_holders_per_round_changed_event(evtlog_id int64) {
+func (sw *SQLStorageWrapper) Delete_cosmic_game_num_raffle_nft_winners_staking_cst_changed_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_raf_nft_holders WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_raf_nft_staking_cst WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Delete_cosmic_game_num_raffle_nft_winners_staking_rwalk_changed_event(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_raf_nft_staking_rwalk WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))

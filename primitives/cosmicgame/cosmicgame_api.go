@@ -443,7 +443,6 @@ type CGStakeActionRec struct {
 	AmountPerHolderEth			float64
 	Modulo						string
 	ModuloF64					float64
-	IsRandomWalk				bool
 	Claimed						bool
 }
 type CGStakingHistoryRec struct {
@@ -472,7 +471,6 @@ type CGStakingHistoryRec struct {
 	StakerAddr					string
 	LastBlockTS					int64
 	UnstakeExpirationDiff		int64
-	IsRandomWalk				bool
 }
 type CGStakeActionInfoRec struct {
 	RecordId					int64
@@ -488,7 +486,6 @@ type CGStakeActionInfoRec struct {
 	UnstakeTimeStamp			int64
 	UnstakeDate					string
 	StakerAid					int64
-	IsRandomWalk				bool
 	StakerAddr					string
 }
 type CGUnstakeActionInfoRec struct {
@@ -600,7 +597,6 @@ type CGActionIdsForDeposit struct {
 	TimeStampDiff				int64	// subtraction of UnstakeEligibleTimestamp from CurChainTimestamp
 	Amount						string
 	AmountEth					float64
-	IsRandomWalk				bool
 }
 type CGActionIdsForDepositWithClaimInfo struct {
 	RecordId					int64
@@ -616,7 +612,6 @@ type CGActionIdsForDepositWithClaimInfo struct {
 	ClaimTxHash					string
 	ClaimRewardAmount			string
 	ClaimRewardAmountEth		float64
-	IsRandomWalk				bool
 }
 type CGStakingRewardRec struct {
 	RecordId					int64

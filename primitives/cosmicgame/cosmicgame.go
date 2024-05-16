@@ -12,7 +12,8 @@ type CosmicGameContractAddrs struct {
 	CharityWalletAddr			string
 	RaffleWalletAddr			string
 	RandomWalkAddr				string
-	StakingWalletAddr			string
+	StakingWalletCSTAddr			string
+	StakingWalletRWalkAddr			string
 	MarketingWalletAddr			string
 	BusinessLogicAddr			string
 }
@@ -184,7 +185,7 @@ type CGDonatedNFTClaimed struct {
 	TokenId				string
 	WinnerAddr			string
 }
-type CGStakeAction struct {
+type CGStakeActionCST struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -197,9 +198,8 @@ type CGStakeAction struct {
 	TotalNfts			int64
 	UnstakeTime			int64
 	Staker 				string
-	IsRandomWalk		bool
 }
-type CGUnstakeAction struct {
+type CGUnstakeActionCST struct {
 	EvtId				int64
 	BlockNum			int64
 	TimeStamp			int64
@@ -239,6 +239,33 @@ type CGClaimReward struct {
 	DepositId			int64
 	Reward				string	
 	Staker				string
+}
+type CGStakeActionRWalk struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	RoundNum			int64
+	ActionId			int64
+	TokenId				int64
+	TotalNfts			int64
+	UnstakeTime			int64
+	Staker 				string
+}
+type CGUnstakeActionRWalk struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	RoundNum			int64
+	ActionId			int64
+	TokenId				int64
+	TotalNfts			int64
+	Staker 				string
 }
 type CGMarketingRewardSent struct {
 	EvtId				int64
@@ -304,29 +331,37 @@ type CGStakingPercentageChanged struct {
 	Contract                string
 	NewStakingPercentage	string
 }
-type CGNumRaffleWinnersPerRoundChanged struct {
+type CGNumRaffleETHWinnersBiddingChanged struct {
 	EvtId                   int64
 	BlockNum                int64
 	TxId                    int64
 	TimeStamp               int64
 	Contract                string
-	NewNumRaffleWinnersPerRound int64
+	NewNumRaffleETHWinnersBidding	int64
 }
-type CGNumRaffleNFTWinnersPerRoundChanged struct {
+type CGNumRaffleNFTWinnersBiddingChanged struct {
 	EvtId                   int64
 	BlockNum                int64
 	TxId                    int64
 	TimeStamp               int64
 	Contract                string
-	NewNumRaffleNFTWinnersPerRound int64
+	NewNumRaffleNFTWinnersBidding int64
 }
-type CGNumRaffleNFTHoldersPerRoundChanged struct {
+type CGNumRaffleNFTWinnersStakingCSTChanged struct {
 	EvtId                   int64
 	BlockNum                int64
 	TxId                    int64
 	TimeStamp               int64
 	Contract                string
-	NewNumRaffleNFTHoldersPerRound int64
+	NewNumRaffleNFTWinnersStakingCST int64
+}
+type CGNumRaffleNFTWinnersStakingRWalkChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewNumRaffleNFTWinnersStakingRWalk int64
 }
 type CGSystemModeChanged struct {
 	EvtId                   int64
@@ -360,13 +395,21 @@ type CGRaffleWalletAddressChanged struct {
 	Contract                string
 	NewRaffleWallet				string
 }
-type CGStakingWalletAddressChanged struct {
+type CGStakingWalletCSTAddressChanged struct {
 	EvtId                   int64
 	BlockNum                int64
 	TxId                    int64
 	TimeStamp               int64
 	Contract                string
-	NewStakingWallet				string
+	NewStakingWalletCST				string
+}
+type CGStakingWalletRWalkAddressChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewStakingWalletRWalk				string
 }
 type CGMarketingWalletAddressChanged struct {
 	EvtId                   int64

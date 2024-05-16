@@ -54,14 +54,16 @@ const (
 	PRIZE_PERCENTAGE_CHANGED	= "595fa5ba64cd6f66df19b53b59bb4a275bae1ec5b362da95e1fa4c5feb62be1e"
 	RAFFLE_PERCENTAGE_CHANGED = "d2002a256ab2f8a5c1b865685754b20437c0a26e7249e40ae5df2993966f99f2"
 	STAKE_PERCENTAGE_CHANGED = "9be9203c5d81ee2019998f7020cf412c92a35ba870318f660d4972660210fb4b"
-	NUM_RAFFLE_ETH_WINNERS_PER_ROUND_CHANGED = "5e3567ae359e61c47ad2f11d2828dea7e062b2ff63dea385cdb7900a50504c7c"
-	NUM_RAFFLE_NFT_WINNERS = "72e4278828b8a868e0ba5b4887f954797ea786f8bac991128636171f5eed471d"
-	NUM_RAFFLE_NFT_HOLDERS = "0cc7e37c68566f67d0fe13bf38246d7447cf99a0c481c2ef9963969bb4f5ebc8"
+	NUM_RAFFLE_ETH_WINNERS_BIDDING_CHANGED = "26f4dd2743839f7c4e8e381ebda3f0c09ad91e8294b566239e6556380bc8c2f4"
+	NUM_RAFFLE_NFT_WINNERS_BIDDING_CHANGED = "06dd30d27a9e7637b273638e4bfa768e1cf87fe89bda7589c3a68814b8662980"
+	NUM_RAFFLE_NFT_WINNERS_STAKING_CST_CHANGED = "5f866930caf1a163ad354e93bfe6bf1d610685ef42d0f67e374abe954fed7bf9"
+	NUM_RAFFLE_NFT_WINNERS_STAKING_RWALK_CHANGED = "abad7e38dbf633cf4208567936f05551c63b73e3ef5a278f64244c15030c0c68"
 	SYSTEM_MODE_CHANGED		= "f24e774cdaabee9b8782266728e442b7f1fa6ae9204755c0da1541e99f04aa4c"
 	CHARITY_ADDRESS_CHANGED	= "1c7efd98583e33a9cc6adff48a97abdaaf43e5c9e918d5ec3e75e93e1dafcf6c"
 	RWALK_ADDRESS_CHANGED	= "9dc3707e4b88be65295b0083b44ffa94059c80372add9b0d24d6a3b371a03b92"
 	RAFFLE_ADDRESS_CHANGED	= "508d510537704d37ed64691a706392abc33e59ce8a327b4952e112820ceb88a6"
-	STAKING_ADDRESS_CHANGED  = "3d112e567ad7f87ef5e5219a98118d33b03b247b007cfbadf4f133e7010f2c34"
+	STAKING_WALLET_CST_ADDRESS_CHANGED  = "01f7695f55306401a817bccb872ffccabbcbccbf555dbc68de8f731c8ad6c3df"
+	STAKING_WALLET_RWALK_ADDRESS_CHANGED  = "49a7d2f024af6dd81c8fa57c882796a3b36997fc33cf112e8ef840dec5236426"
 	MARKETING_ADDRESS_CHANGED = "4d03942c29c20d1bccfe551e9d148c917c5a44fb558a4fc60270d8f76fb75f54"
 	COSMIC_TOKEN_ADDRESS_CHANGED	= "3ab2dcf539aa3c30314265602fc86dee8e343e3c3905730f870835f36c400deb"
 	COSMIC_SIGNATURE_ADDRESS_CHANGED	= "7142a592d5404b5fc4a294c66f70e32b2a7776bd807f722d59268def87c765d1"
@@ -91,13 +93,15 @@ var (
 	evt_prize_percentage_changed,_ = hex.DecodeString(PRIZE_PERCENTAGE_CHANGED)
 	evt_raffle_percentage_changed,_ = hex.DecodeString(RAFFLE_PERCENTAGE_CHANGED)
 	evt_staking_percentage_changed,_ = hex.DecodeString(STAKE_PERCENTAGE_CHANGED)
-	evt_num_raffle_eth_winners_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_ETH_WINNERS_PER_ROUND_CHANGED)
-	evt_num_raffle_nft_winners_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_WINNERS);
-	evt_num_raffle_nft_holders_per_round_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_HOLDERS);
+	evt_num_raffle_eth_winners_bidding_changed,_ = hex.DecodeString(NUM_RAFFLE_ETH_WINNERS_BIDDING_CHANGED)
+	evt_num_raffle_nft_winners_bidding_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_WINNERS_BIDDING_CHANGED);
+	evt_num_raffle_nft_winners_staking_cst_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_WINNERS_STAKING_CST_CHANGED);
+	evt_num_raffle_nft_winners_staking_rwalk_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_WINNERS_STAKING_RWALK_CHANGED);
 	evt_charity_address_changed,_	= hex.DecodeString(CHARITY_ADDRESS_CHANGED);
 	evt_rwalk_address_changed,_	= hex.DecodeString(RWALK_ADDRESS_CHANGED);
 	evt_raffle_address_changed,_	= hex.DecodeString(RAFFLE_ADDRESS_CHANGED);
-	evt_staking_address_changed,_	= hex.DecodeString(STAKING_ADDRESS_CHANGED);
+	evt_staking_wallet_cst_address_changed,_	= hex.DecodeString(STAKING_WALLET_CST_ADDRESS_CHANGED);
+	evt_staking_wallet_rwalk_address_changed,_	= hex.DecodeString(STAKING_WALLET_RWALK_ADDRESS_CHANGED);
 	evt_marketing_address_changed,_	= hex.DecodeString(MARKETING_ADDRESS_CHANGED);
 	evt_costok_address_changed,_	= hex.DecodeString(COSMIC_TOKEN_ADDRESS_CHANGED);
 	evt_cossig_address_changed,_	= hex.DecodeString(COSMIC_SIGNATURE_ADDRESS_CHANGED);
@@ -145,7 +149,8 @@ var (
 	cosmic_token_abi		*abi.ABI
 	charity_wallet_abi		*abi.ABI
 	raffle_wallet_abi		*abi.ABI
-	staking_wallet_abi		*abi.ABI
+	staking_wallet_cst_abi		*abi.ABI
+	staking_wallet_rwalk_abi		*abi.ABI
 	marketing_wallet_abi	*abi.ABI
 	erc20_abi				*abi.ABI
 	erc721_abi				*abi.ABI
@@ -156,7 +161,8 @@ var (
 	cosmic_dao_addr			common.Address
 	charity_wallet_addr		common.Address
 	raffle_wallet_addr		common.Address
-	staking_wallet_addr		common.Address
+	staking_wallet_cst_addr		common.Address
+	staking_wallet_rwalk_addr		common.Address
 	marketing_wallet_addr	common.Address
 	cosmic_sig_aid			int64
 
@@ -272,7 +278,8 @@ func main() {
 	cosmic_token_abi = get_abi(CosmicTokenABI)
 	charity_wallet_abi = get_abi(CharityWalletABI);
 	raffle_wallet_abi = get_abi(RaffleWalletABI);
-	staking_wallet_abi = get_abi(StakingWalletABI);
+	staking_wallet_cst_abi = get_abi(StakingWalletCSTABI);
+	staking_wallet_rwalk_abi = get_abi(StakingWalletRWalkABI);
 	marketing_wallet_abi = get_abi(MarketingWalletABI);
 	erc20_abi = get_abi(ERC20ABI)
 	erc721_abi = get_abi(ERC721ABI)
@@ -289,7 +296,8 @@ func main() {
 	cosmic_dao_addr = common.HexToAddress(cg_contracts.CosmicDaoAddr)
 	charity_wallet_addr = common.HexToAddress(cg_contracts.CharityWalletAddr)
 	raffle_wallet_addr = common.HexToAddress(cg_contracts.RaffleWalletAddr)
-	staking_wallet_addr = common.HexToAddress(cg_contracts.StakingWalletAddr)
+	staking_wallet_cst_addr = common.HexToAddress(cg_contracts.StakingWalletCSTAddr)
+	staking_wallet_rwalk_addr = common.HexToAddress(cg_contracts.StakingWalletRWalkAddr)
 	marketing_wallet_addr = common.HexToAddress(cg_contracts.MarketingWalletAddr)
 
 	c := make(chan os.Signal)
