@@ -8,7 +8,7 @@ import (
 
 	p "github.com/PredictionExplorer/augur-explorer/primitives/cosmicgame"
 )
-func (sw *SQLStorageWrapper) Get_stake_action_info(action_id int64) (bool,p.CGStakeUnstakeCombined) {
+func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.CGStakeUnstakeCombined) {
 
 	var rec p.CGStakeUnstakeCombined
 	var query string
@@ -42,10 +42,108 @@ func (sw *SQLStorageWrapper) Get_stake_action_info(action_id int64) (bool,p.CGSt
 				"u.num_staked_nfts, "+
 				"u.staker_aid, "+
 				"ua.addr "+
-			"FROM "+sw.S.SchemaName()+".cg_stake_action st "+
+			"FROM "+sw.S.SchemaName()+".cg_stake_action_cst st "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction ts ON ts.id=st.tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address sa ON st.staker_aid=sa.address_id "+
-				"LEFT JOIN "+sw.S.SchemaName()+".cg_unstake_action u ON st.action_id=u.action_id " +
+				"LEFT JOIN "+sw.S.SchemaName()+".cg_unstake_action_cst u ON st.action_id=u.action_id " +
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction tu ON tu.id=u.tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address ua ON u.staker_aid=ua.address_id "+
+			"WHERE st.action_id=$1"
+
+	row := sw.S.Db().QueryRow(query,action_id)
+	var err error
+	var null_record_id,null_evtlog_id,null_tx_id,null_unstake_ts,null_action_id sql.NullInt64
+	var null_block_num,null_token_id,null_num_staked_nfts,null_staker_aid sql.NullInt64
+	var null_unstake_date,null_tx_hash,null_staker_addr sql.NullString
+	err=row.Scan(
+		// stake action fields
+		&rec.Stake.RecordId,
+		&rec.Stake.EvtLogId,
+		&rec.Stake.BlockNum,
+		&rec.Stake.TxId,
+		&rec.Stake.TxHash,
+		&rec.Stake.TimeStamp,
+		&rec.Stake.DateTime,
+		&rec.Stake.ActionId,
+		&rec.Stake.TokenId,
+		&rec.Stake.NumStakedNFTs,
+		&rec.Stake.UnstakeTimeStamp,
+		&rec.Stake.UnstakeDate,
+		&rec.Stake.StakerAid,
+		&rec.Stake.StakerAddr,
+		// unstake action fields
+		&null_record_id,
+		&null_evtlog_id,
+		&null_block_num,
+		&null_tx_id,
+		&null_tx_hash,
+		&null_unstake_ts,
+		&null_unstake_date,
+		&null_action_id,
+		&null_token_id,
+		&null_num_staked_nfts,
+		&null_staker_aid,
+		&null_staker_addr,
+	)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return false,rec
+		}
+		sw.S.Log_msg(fmt.Sprintf("DB Error: %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	if null_record_id.Valid { rec.Unstake.RecordId = null_record_id.Int64 }
+	if null_evtlog_id.Valid { rec.Unstake.EvtLogId = null_evtlog_id.Int64 }
+	if null_block_num.Valid { rec.Unstake.BlockNum = null_block_num.Int64 }
+	if null_tx_id.Valid { rec.Unstake.TxId = null_tx_id.Int64 }
+	if null_tx_hash.Valid { rec.Unstake.TxHash = null_tx_hash.String }
+	if null_unstake_ts.Valid { rec.Unstake.TimeStamp = null_unstake_ts.Int64 }
+	if null_unstake_date.Valid { rec.Unstake.DateTime = null_unstake_date.String }
+	if null_action_id.Valid { rec.Unstake.ActionId = null_action_id.Int64 }
+	if null_token_id.Valid { rec.Unstake.TokenId = null_token_id.Int64 }
+	if null_num_staked_nfts.Valid { rec.Unstake.NumStakedNFTs = null_num_staked_nfts.Int64 }
+	if null_staker_aid.Valid { rec.Unstake.StakerAid = null_staker_aid.Int64 }
+	if null_staker_addr.Valid { rec.Unstake.StakerAddr = null_staker_addr.String }
+	return true,rec
+}
+func (sw *SQLStorageWrapper) Get_stake_action_rwalk_info(action_id int64) (bool,p.CGStakeUnstakeCombined) {
+
+	var rec p.CGStakeUnstakeCombined
+	var query string
+	query = "SELECT " +
+				// stake action fields
+				"st.id,"+
+				"st.evtlog_id,"+
+				"st.block_num,"+
+				"ts.id,"+
+				"ts.tx_hash,"+
+				"EXTRACT(EPOCH FROM st.time_stamp)::BIGINT,"+
+				"st.time_stamp,"+
+				"st.action_id,"+
+				"st.token_id,"+
+				"st.num_staked_nfts,"+
+				"EXTRACT(EPOCH FROM st.unstake_time)::BIGINT,"+
+				"st.unstake_time,"+
+				"st.staker_aid,"+
+				"sa.addr,"+
+
+				//unstake action fields
+				"u.id,"+
+				"u.evtlog_id,"+
+				"u.block_num,"+
+				"tu.id,"+
+				"tu.tx_hash,"+
+				"EXTRACT(EPOCH FROM u.time_stamp)::BIGINT,"+
+				"u.time_stamp,"+
+				"u.action_id,"+
+				"u.token_id, "+
+				"u.num_staked_nfts, "+
+				"u.staker_aid, "+
+				"ua.addr "+
+			"FROM "+sw.S.SchemaName()+".cg_stake_action_rwalk st "+
+				"LEFT JOIN "+sw.S.SchemaName()+".transaction ts ON ts.id=st.tx_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".address sa ON st.staker_aid=sa.address_id "+
+				"LEFT JOIN "+sw.S.SchemaName()+".cg_unstake_action_rwalk u ON st.action_id=u.action_id " +
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction tu ON tu.id=u.tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address ua ON u.staker_aid=ua.address_id "+
 			"WHERE st.action_id=$1"

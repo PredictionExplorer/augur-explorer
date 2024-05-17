@@ -59,9 +59,10 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"CharityPercentage" : charity_percentage,
 		"CharityBalance": charity_balance,
 		"CharityBalanceEth": charity_balance_eth,
-		"NumRaffleEthWinners" : raffle_eth_winners,
-		"NumRaffleNFTWinners" : raffle_nft_winners,
-		"NumHolderNFTWinners" : raffle_holder_winners,
+		"NumRaffleEthWinnersBidding" : raffle_eth_winners_bidding,
+		"NumRaffleNFTWinnersBidding" : raffle_nft_winners_bidding,
+		"NumRaffleNFTWinnersStakingCST" : raffle_nft_winners_staking_cst,
+		"NumRaffleNFTWinnersStakingRWalk" : raffle_nft_winners_staking_rwalk,
 		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
 		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
 		"NumUniqueStakers" : bw_stats.NumUniqueStakers,
@@ -1477,7 +1478,7 @@ func api_cosmic_game_used_rwalk_nfts(c *gin.Context) {
 		"UsedRwalkNFTs" : used_nfts,
 	})
 }
-func api_cosmic_game_staking_rewards_to_claim_by_user(c *gin.Context) {
+func api_cosmic_game_staking_cst_rewards_to_claim_by_user(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -1505,7 +1506,7 @@ func api_cosmic_game_staking_rewards_to_claim_by_user(c *gin.Context) {
 		"UnclaimedEthDeposits" : deposits,
 	})
 }
-func api_cosmic_game_staking_actions_by_user(c *gin.Context) {
+func api_cosmic_game_staking_cst_actions_by_user(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -1539,7 +1540,7 @@ func api_cosmic_game_staking_actions_by_user(c *gin.Context) {
 		"StakingActions" : actions,
 	})
 }
-func api_cosmic_game_staking_actions_global(c *gin.Context) {
+func api_cosmic_game_staking_cst_actions_global(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -1561,7 +1562,7 @@ func api_cosmic_game_staking_actions_global(c *gin.Context) {
 		"StakingActions" : actions,
 	})
 }
-func api_cosmic_game_staking_rewards_collected_by_user(c *gin.Context) {
+func api_cosmic_game_staking_cst_rewards_collected_by_user(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -1691,7 +1692,7 @@ func api_cosmic_game_staked_tokens_global(c *gin.Context) {
 		"StakedTokens" : tokens,
 	})
 }
-func api_cosmic_game_staking_rewards_action_ids_by_deposit(c *gin.Context) {
+func api_cosmic_game_staking_cst_rewards_action_ids_by_deposit(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -1732,7 +1733,7 @@ func api_cosmic_game_staking_rewards_action_ids_by_deposit(c *gin.Context) {
 		"ActionIds" : action_ids,
 	})
 }
-func api_cosmic_game_staking_rewards_action_ids_by_deposit_with_claim_info(c *gin.Context) {
+func api_cosmic_game_staking_cst_rewards_action_ids_by_deposit_with_claim_info(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -1773,7 +1774,7 @@ func api_cosmic_game_staking_rewards_action_ids_by_deposit_with_claim_info(c *gi
 		"ActionIdsWithClaimInfo" : action_ids,
 	})
 }
-func api_cosmic_game_staking_rewards_global(c *gin.Context) {
+func api_cosmic_game_staking_cst_rewards_global(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -1845,7 +1846,7 @@ func api_cosmic_game_get_cst_price(c *gin.Context) {
 		}
 	}
 }
-func api_cosmic_game_staking_rewards_by_round(c *gin.Context) {
+func api_cosmic_game_staking_cst_rewards_by_round(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -1876,7 +1877,7 @@ func api_cosmic_game_staking_rewards_by_round(c *gin.Context) {
 		"Winners" : winners,
 	})
 }
-func api_cosmic_game_staking_action_info(c *gin.Context) {
+func api_cosmic_game_staking_cst_action_info(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -1896,7 +1897,7 @@ func api_cosmic_game_staking_action_info(c *gin.Context) {
 		respond_error_json(c,"'action_id' parameter is not set")
 		return
 	}
-	record_found,action_info := arb_storagew.Get_stake_action_info(action_id)
+	record_found,action_info := arb_storagew.Get_stake_action_cst_info(action_id)
 	if !record_found {
 		respond_error_json(c,"record not found")
 	} else {

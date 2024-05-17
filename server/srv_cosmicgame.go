@@ -41,9 +41,10 @@ var (
 	raffle_percentage			int64
 	staking_percentage			int64
 	time_increase				string
-	raffle_eth_winners			int64		// numRaffleWinnersPerRound
-	raffle_nft_winners			int64		// numRaffleNFTWinnersPerRound
-	raffle_holder_winners		int64		// numHolderNFTWinnersPerRound
+	raffle_eth_winners_bidding	int64		// numRaffleETHWinnersBidding
+	raffle_nft_winners_bidding	int64		// numRaffleNFTWinnersBidding
+	raffle_nft_winners_staking_cst	int64		// numRaffleNFTWinnersStakingCST
+	raffle_nft_winners_staking_rwalk	int64	// numRaffleNFTWinnersStakingRWalk
 
 	// contract variables (variables usually modified by a bid())
 	bid_price					string
@@ -183,27 +184,34 @@ func do_reload_contract_constants() {
 			Info.Printf(err_str)
 			time_increase = "error"
 		} else { time_increase = tmp_val.String() }
-		tmp_val,err = bwcontract.NumRaffleWinnersPerRound(&copts)
+		tmp_val,err = bwcontract.NumRaffleETHWinnersBidding(&copts)
 		if err != nil {
-			err_str := fmt.Sprintf("Error at numRaffleWinnersPerRound() call: %v\n",err)
+			err_str := fmt.Sprintf("Error at NumRaffleETHWinnersBidding() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
-			raffle_eth_winners = -1 
-		} else { raffle_eth_winners = tmp_val.Int64()}
-		tmp_val,err = bwcontract.NumRaffleNFTWinnersPerRound(&copts)
+			raffle_eth_winners_bidding = -1 
+		} else { raffle_eth_winners_bidding = tmp_val.Int64()}
+		tmp_val,err = bwcontract.NumRaffleNFTWinnersBidding(&copts)
 		if err != nil {
-			err_str := fmt.Sprintf("Error at numRaffleNFTWinnersPerRound() call: %v\n",err)
+			err_str := fmt.Sprintf("Error at NumRaffleNFTWinnersBidding() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
-			raffle_nft_winners = -1
-		} else { raffle_nft_winners = tmp_val.Int64() }
-		tmp_val,err = bwcontract.NumHolderNFTWinnersPerRound(&copts)
+			raffle_nft_winners_bidding = -1
+		} else { raffle_nft_winners_bidding = tmp_val.Int64() }
+		tmp_val,err = bwcontract.NumRaffleNFTWinnersStakingCST(&copts)
 		if err != nil {
-			err_str := fmt.Sprintf("Error at numRaffleNFTWinnersPerRound() call: %v\n",err)
+			err_str := fmt.Sprintf("Error at NumRaffleNFTWinnersStakingCST() call: %v\n",err)
 			Error.Printf(err_str)
 			Info.Printf(err_str)
-			raffle_holder_winners = -1
-		} else { raffle_holder_winners = tmp_val.Int64() }
+			raffle_nft_winners_staking_cst = -1
+		} else { raffle_nft_winners_staking_cst = tmp_val.Int64() }
+		tmp_val,err = bwcontract.NumRaffleNFTWinnersStakingRWalk(&copts)
+		if err != nil {
+			err_str := fmt.Sprintf("Error at NumRaffleNFTWinnersStakingRWalk() call: %v\n",err)
+			Error.Printf(err_str)
+			Info.Printf(err_str)
+			raffle_nft_winners_staking_rwalk = -1
+		} else { raffle_nft_winners_staking_rwalk = tmp_val.Int64() }
 	}
 }
 func do_reload_contract_variables() {
@@ -360,9 +368,10 @@ func cosmic_game_index_page(c *gin.Context) {
 		"CharityPercentage" : charity_percentage,
 		"CharityBalance": charity_balance,
 		"CharityBalanceEth": charity_balance_eth,
-		"NumRaffleEthWinners" : raffle_eth_winners,
-		"NumRaffleNFTWinners" : raffle_nft_winners,
-		"NumHolderNFTWinners" : raffle_holder_winners,
+		"NumRaffleETHWinnersBidding" : raffle_eth_winners_bidding,
+		"NumRaffleNFTWinnersBidding" : raffle_nft_winners_bidding,
+		"NumRaffleNFTWinnersStakingCST" : raffle_nft_winners_staking_cst,
+		"NumRaffleNFTWinnersStakingRWalk" : raffle_nft_winners_staking_cst,
 		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
 		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
 		"NumUniqueStakers" : bw_stats.NumUniqueStakers,
@@ -1614,7 +1623,7 @@ func cosmic_game_used_rwalk_nfts(c *gin.Context) {
 		"UsedRwalkNFTs" : used_nfts,
 	})
 }
-func cosmic_game_staking_rewards_to_claim_by_user(c *gin.Context) {
+func cosmic_game_staking_cst_rewards_to_claim_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1641,7 +1650,7 @@ func cosmic_game_staking_rewards_to_claim_by_user(c *gin.Context) {
 		"UnclaimedEthDeposits" : deposits,
 	})
 }
-func cosmic_game_staking_actions_by_user(c *gin.Context) {
+func cosmic_game_staking_cst_actions_by_user(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1667,7 +1676,7 @@ func cosmic_game_staking_actions_by_user(c *gin.Context) {
 		"StakingActions" : actions,
 	})
 }
-func cosmic_game_staking_actions_global(c *gin.Context) {
+func cosmic_game_staking_cst_actions_global(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1680,7 +1689,7 @@ func cosmic_game_staking_actions_global(c *gin.Context) {
 		"LastTS" : last_ts,
 	})
 }
-func cosmic_game_staking_rewards_collected_by_user(c *gin.Context) {
+func cosmic_game_staking_cst_rewards_collected_by_user(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	if  !augur_srv.arbitrum_initialized() {
@@ -1736,28 +1745,6 @@ func cosmic_game_marketing_rewards_by_user(c *gin.Context) {
 		"UserMarketingRewards" : rewards,
 	})
 }
-func cosmic_game_staked_tokens_by_user(c *gin.Context) {
-	if  !augur_srv.arbitrum_initialized() {
-		respond_error(c,"Database link wasn't configured")
-		return
-	}
-	p_user_addr:= c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		respond_error(c,"'user_addr' parameter is not set")
-		return
-	}
-	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
-	if err != nil {
-		respond_error(c,"Provided address wasn't found")
-		return
-	}
-	tokens := arb_storagew.Get_staked_tokens_by_user(user_aid)
-	c.HTML(http.StatusOK, "cg_staked_tokens_by_user.html", gin.H{
-		"UserAddr" : p_user_addr,
-		"UserAid" : user_aid,
-		"StakedTokens" : tokens,
-	})
-}
 func cosmic_game_staked_tokens_global(c *gin.Context) {
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -1766,89 +1753,6 @@ func cosmic_game_staked_tokens_global(c *gin.Context) {
 	tokens := arb_storagew.Get_staked_tokens_global()
 	c.HTML(http.StatusOK, "cg_staked_tokens_global.html", gin.H{
 		"StakedTokens" : tokens,
-	})
-}
-func cosmic_game_staking_rewards_action_ids_by_deposit(c *gin.Context) {
-
-	if  !augur_srv.arbitrum_initialized() {
-		respond_error(c,"Database link wasn't configured")
-		return
-	}
-	p_user_addr:= c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		respond_error(c,"'user_addr' parameter is not set")
-		return
-	}
-	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
-	if err != nil {
-		respond_error(c,"Provided address wasn't found")
-		return
-	}
-	p_deposit_id := c.Param("deposit_id")
-	var deposit_id int64
-	if len(p_deposit_id) > 0 {
-		var success bool
-		deposit_id,success = parse_int_from_remote_or_error(c,HTTP,&p_deposit_id)
-		if !success {
-			return
-		}
-	} else {
-		respond_error(c,"'deposit_id' parameter is not set")
-		return
-	}
-	action_ids := arb_storagew.Get_action_ids_for_deposit(deposit_id,user_aid)
-	c.HTML(http.StatusOK, "cg_action_ids_by_deposit.html", gin.H{
-		"UserAddr" : p_user_addr,
-		"UserAid" : user_aid,
-		"DepositId" : deposit_id,
-		"ActionIds" : action_ids,
-	})
-}
-func cosmic_game_staking_rewards_action_ids_by_deposit_with_claim_info(c *gin.Context) {
-
-	if  !augur_srv.arbitrum_initialized() {
-		respond_error(c,"Database link wasn't configured")
-		return
-	}
-	p_user_addr:= c.Param("user_addr")
-	if len(p_user_addr) == 0 {
-		respond_error(c,"'user_addr' parameter is not set")
-		return
-	}
-	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
-	if err != nil {
-		respond_error(c,"Provided address wasn't found")
-		return
-	}
-	p_deposit_id := c.Param("deposit_id")
-	var deposit_id int64
-	if len(p_deposit_id) > 0 {
-		var success bool
-		deposit_id,success = parse_int_from_remote_or_error(c,HTTP,&p_deposit_id)
-		if !success {
-			return
-		}
-	} else {
-		respond_error(c,"'deposit_id' parameter is not set")
-		return
-	}
-	action_ids := arb_storagew.Get_action_ids_for_deposit_with_claim_info(deposit_id,user_aid)
-	c.HTML(http.StatusOK, "cg_action_ids_by_deposit_with_claim_info.html", gin.H{
-		"UserAddr" : p_user_addr,
-		"UserAid" : user_aid,
-		"DepositId" : deposit_id,
-		"ActionIdsWithClaimInfo" : action_ids,
-	})
-}
-func cosmic_game_staking_rewards_global(c *gin.Context) {
-
-	if  !augur_srv.arbitrum_initialized() {
-		respond_error(c,"Database link wasn't configured")
-		return
-	}
-	rewards := arb_storagew.Get_global_staking_rewards(0, 1000000)
-	c.HTML(http.StatusOK, "cg_staking_rewards_global.html", gin.H{
-		"StakingRewards" : rewards,
 	})
 }
 func cosmic_game_get_cst_price(c *gin.Context) {
@@ -1900,63 +1804,6 @@ func cosmic_game_get_cst_price(c *gin.Context) {
 		}
 	}
 }
-func cosmic_game_staking_rewards_by_round(c *gin.Context) {
-
-	if  !augur_srv.arbitrum_initialized() {
-		respond_error(c,"Database link wasn't configured")
-		return
-	}
-
-	p_round_num:= c.Param("round_num")
-	var round_num int64
-	if len(p_round_num) > 0 {
-		var success bool
-		round_num,success = parse_int_from_remote_or_error(c,HTTP,&p_round_num)
-		if !success {
-			return
-		}
-	} else {
-		respond_error(c,"'round_num' parameter is not set")
-		return
-	}
-
-	winners := arb_storagew.Get_staking_winners_by_round(round_num)
-	c.HTML(http.StatusOK, "cg_staking_winners_by_round.html", gin.H{
-		"RoundNum" : round_num,
-		"Winners" : winners,
-	})
-}
-func cosmic_game_staking_action_info(c *gin.Context) {
-
-	if  !augur_srv.arbitrum_initialized() {
-		respond_error(c,"Database link wasn't configured")
-		return
-	}
-
-	p_action_id := c.Param("action_id")
-	var action_id int64
-	if len(p_action_id) > 0 {
-		var success bool
-		action_id,success = parse_int_from_remote_or_error(c,HTTP,&p_action_id)
-		if !success {
-			return
-		}
-	} else {
-		respond_error(c,"'action_id' parameter is not set")
-		return
-	}
-	record_found,action_info := arb_storagew.Get_stake_action_info(action_id)
-	if !record_found {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Error",
-			"ErrDescr": fmt.Sprintf("Provided action_id wasn't found"),
-		})
-	} else {
-		c.HTML(http.StatusOK, "cg_stake_action_info.html", gin.H{
-			"CombinedStakingRecordInfo" : action_info,
-		})
-	}
-} 
 func cosmic_game_sysmode_changes(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
