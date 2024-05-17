@@ -806,6 +806,8 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 	evt.Round = log.Topics[2].Big().Int64()
 	evt.TokenId = log.Topics[3].Big().Int64()
 	evt.WinnerIndex= eth_evt.WinnerIndex.Int64()
+	evt.IsRandomWalk = eth_evt.IsRWalk
+	evt.IsStaker = eth_evt.IsStaker
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("RaffleNFTWinnerEvent{\n")
@@ -813,6 +815,8 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tRound:%v\n",evt.Round)
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
 	Info.Printf("\tWinnerIndex: %v\n",evt.WinnerIndex)
+	Info.Printf("\tIsStaker: %v\n",evt.IsStaker);
+	Info.Printf("\tIsRandomWalk: %v\n",evt.IsRandomWalk)
 	Info.Printf("}\n")
 
 	storagew.Delete_raffle_nft_winner(evt.EvtId)
@@ -1079,7 +1083,7 @@ func proc_unstake_action_rwalk_event(log *types.Log,elog *EthereumEventLog) {
 	}
 	err := staking_wallet_rwalk_abi.UnpackIntoInterface(&eth_evt,"UnstakeActionEvent",log.Data)
 	if err != nil {
-		Error.Printf("CST Event UnstakeAction decode error: %v",err)
+		Error.Printf("RWalk Event UnstakeAction decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -1094,7 +1098,7 @@ func proc_unstake_action_rwalk_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TotalNfts = eth_evt.TotalNFTs.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("CST UnstakeActionEvent{\n")
+	Info.Printf("RWalk UnstakeActionEvent{\n")
 	Info.Printf("\tActionId: %v\n",evt.ActionId)
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
 	Info.Printf("\tTotalNFTs: %v\n",evt.TotalNfts)
@@ -1106,12 +1110,12 @@ func proc_unstake_action_rwalk_event(log *types.Log,elog *EthereumEventLog) {
 }
 func select_and_proc_stake_action_event(log *types.Log,elog *EthereumEventLog) {
 
-	Info.Printf("Processing StakeAction event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	Info.Printf("Processing StakeAction event id=%v, txhash %v (selection)\n",elog.EvtId,elog.TxHash)
 
-	if !bytes.Equal(log.Address.Bytes(),staking_wallet_cst_addr.Bytes()) {
+	if bytes.Equal(log.Address.Bytes(),staking_wallet_cst_addr.Bytes()) {
 		proc_stake_action_cst_event(log,elog)
 	} else {
-		if !bytes.Equal(log.Address.Bytes(),staking_wallet_rwalk_addr.Bytes()) {
+		if bytes.Equal(log.Address.Bytes(),staking_wallet_rwalk_addr.Bytes()) {
 			proc_stake_action_rwalk_event(log,elog)
 		} else {
 			Info.Printf("StakeAction event doesn't belong to our address %v\n",log.Address.String())
@@ -1120,12 +1124,12 @@ func select_and_proc_stake_action_event(log *types.Log,elog *EthereumEventLog) {
 }
 func select_and_proc_unstake_action_event(log *types.Log,elog *EthereumEventLog) {
 
-	Info.Printf("Processing StakeAction event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	Info.Printf("Processing UnstakeAction event id=%v, txhash %v (selection)\n",elog.EvtId,elog.TxHash)
 
-	if !bytes.Equal(log.Address.Bytes(),staking_wallet_cst_addr.Bytes()) {
+	if bytes.Equal(log.Address.Bytes(),staking_wallet_cst_addr.Bytes()) {
 		proc_unstake_action_cst_event(log,elog)
 	} else {
-		if !bytes.Equal(log.Address.Bytes(),staking_wallet_rwalk_addr.Bytes()) {
+		if bytes.Equal(log.Address.Bytes(),staking_wallet_rwalk_addr.Bytes()) {
 			proc_unstake_action_rwalk_event(log,elog)
 		} else {
 			Info.Printf("StakeAction event doesn't belong to our address %v\n",log.Address.String())
@@ -1395,7 +1399,7 @@ func proc_num_raffle_eth_winners_bidding_changed_event(log *types.Log,elog *Ethe
 	storagew.Delete_cosmic_game_num_raffle_eth_winners_bidding_changed_event(evt.EvtId)
     storagew.Insert_cosmic_game_num_raffle_eth_winners_bidding_changed_event(&evt)
 }
-func proc_num_raffle_nft_winners_per_bidding_changed_event(log *types.Log,elog *EthereumEventLog) {
+func proc_num_raffle_nft_winners_bidding_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGNumRaffleNFTWinnersBiddingChanged 
 	var eth_evt CosmicGameNumRaffleNFTWinnersBiddingChanged
@@ -1664,10 +1668,10 @@ func proc_staking_wallet_rwalk_address_changed_event(log *types.Log,elog *Ethere
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewStakingWalletRwalk = eth_evt.NewStakingWalletRWalk.String()
+	evt.NewStakingWalletRWalk = eth_evt.NewStakingWalletRWalk.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("StakingWalletCSTAddressChanged{\n")
+	Info.Printf("StakingWalletRWalkAddressChanged{\n")
 	Info.Printf("\tNewStakingWalletRWalk: %v\n",evt.NewStakingWalletRWalk)
 	Info.Printf("}\n")
 
@@ -2156,7 +2160,7 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_num_raffle_nft_winners_staking_cst_changed) {
 		proc_num_raffle_nft_winners_staking_cst_changed_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_num_raffle_nft_staking_rwalk_changed) {
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_num_raffle_nft_winners_staking_rwalk_changed) {
 		proc_num_raffle_nft_winners_staking_rwalk_changed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_system_mode_changed) {
@@ -2171,8 +2175,11 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_address_changed) {
 		proc_raffle_address_changed_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_staking_address_changed) {
-		proc_staking_wallet_address_changed_event(log,evtlog)
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_staking_wallet_cst_address_changed) {
+		proc_staking_wallet_cst_address_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_staking_wallet_rwalk_address_changed) {
+		proc_staking_wallet_rwalk_address_changed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_marketing_address_changed) {
 		proc_marketing_wallet_address_changed_event(log,evtlog)

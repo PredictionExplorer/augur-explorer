@@ -643,8 +643,8 @@ DECLARE
 	v_cnt						NUMERIC;
 BEGIN
 
-	INSERT INTO cg_staked_token_cst(staker_aid,token_id,stake_action_id,is_rwalk)
-		VALUES(NEW.staker_aid,NEW.token_id,NEW.action_id,NEW.is_rwalk);
+	INSERT INTO cg_staked_token_cst(staker_aid,token_id,stake_action_id)
+		VALUES(NEW.staker_aid,NEW.token_id,NEW.action_id);
 	UPDATE cg_staker_cst SET total_tokens_staked = (total_tokens_staked + 1)
 		WHERE staker_aid=NEW.staker_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
@@ -663,7 +663,7 @@ CREATE OR REPLACE FUNCTION on_stake_action_cst_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	DELETE FROM cg_staked_token WHERE token_id = OLD.token_id AND is_rwalk = OLD.is_rwalk;
+	DELETE FROM cg_staked_token_cst WHERE token_id = OLD.token_id;
 	UPDATE cg_staker_cst SET total_tokens_staked = (total_tokens_staked - 1)
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_staker_cst SET num_stake_actions = (num_stake_actions + 1)
@@ -785,6 +785,7 @@ BEGIN
 			num_unstake_actions = (num_unstake_actions + 1)
 		WHERE staker_aid=NEW.staker_aid;
 	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked - 1);
+	DELETE from cg_staked_token_cst WHERE token_id=NEW.token_id AND staker_aid=NEW.staker_aid;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -797,6 +798,7 @@ BEGIN
 			num_unstake_actions = (num_unstake_actions - 1)
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked + 1);
+	-- We aren't restoring state here (To Do)
 
 	RETURN OLD;
 END;
@@ -872,7 +874,7 @@ CREATE OR REPLACE FUNCTION on_stake_action_rwalk_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 
-	DELETE FROM cg_staked_token_rwalk WHERE token_id = OLD.token_id AND is_rwalk = OLD.is_rwalk;
+	DELETE FROM cg_staked_token_rwalk WHERE token_id = OLD.token_id;
 	UPDATE cg_staker_token_rwalk SET total_tokens_staked = (total_tokens_staked - 1)
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_staker_token_rwalk SET num_stake_actions = (num_stake_actions + 1)
@@ -892,6 +894,7 @@ BEGIN
 			num_unstake_actions = (num_unstake_actions + 1)
 		WHERE staker_aid=NEW.staker_aid;
 	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked - 1);
+	DELETE FROM cg_staked_token_rwalk WHERE token_id=NEW.token_id AND staker_aid=NEW.staker_aid;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -904,6 +907,7 @@ BEGIN
 			num_unstake_actions = (num_unstake_actions - 1)
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked + 1);
+	-- We aren't restoring state here (To Do)
 
 	RETURN OLD;
 END;

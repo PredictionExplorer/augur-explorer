@@ -239,6 +239,8 @@ type CGRaffleNFTWinnerRec struct {
 	RoundNum					int64
 	TokenId						int64
 	WinnerIndex					int64
+	IsRWalk						bool
+	IsStaker					bool
 }
 type CGDonatedNFTClaimRec struct {
 	RecordId					int64

@@ -155,6 +155,8 @@ CREATE TABLE cg_raffle_nft_winner (
 	round_num		BIGINT NOT NULL,
 	token_id		BIGINT NOT NULL,
 	winner_idx		BIGINT NOT NULL,
+	is_rwalk		BOOLEAN NOT NULL,
+	is_staker		BOOLEAN NOT NULL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_donated_nft_claimed (
@@ -244,7 +246,6 @@ CREATE TABLE cg_stake_action_rwalk (
 	num_staked_nfts	BIGINT NOT NULL,
 	unstake_time	TIMESTAMPTZ NOT NULL,
 	staker_aid		BIGINT NOT NULL,
-	is_rwalk		BOOLEAN NOT NULL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_unstake_action_rwalk (
@@ -422,7 +423,17 @@ CREATE TABLE cg_adm_raffle_addr( -- RaffleWalletAddressChanged event (contract C
 	new_raffle_aid	BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_staking_addr( -- StakingWalletAddressChanged event (contract CosmicGame)
+CREATE TABLE cg_adm_staking_cst_addr( -- StakingWalletCSTAddressChanged event (contract CosmicGame)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_staking_aid	BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_adm_staking_rwalk_addr( -- StakingWalletRWalkAddressChanged event (contract CosmicGame)
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
