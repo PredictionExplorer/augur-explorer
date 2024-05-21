@@ -605,9 +605,10 @@ CREATE TABLE cg_staker_cst ( -- counts statistics per user for staking CosmicSig
 	num_stake_actions		BIGINT DEFAULT 0,
 	num_unstake_actions		BIGINT DEFAULT 0,
 	total_reward			DECIMAL DEFAULT 0,
-	unclaimed_reward		DECIMAL DEFAULT 0
+	unclaimed_reward		DECIMAL DEFAULT 0,
+	num_tokens_minted		BIGINT DEFAULT 0
 );
-CREATE TABLE cg_staker_deposit (-- accumulators for deposit-staker relation
+CREATE TABLE cg_staker_deposit (-- accumulators for deposit-staker relation (this is for CST staking wallet only)
 	staker_aid				BIGINT NOT NULL,
 	deposit_id				BIGINT NOT NULL, 
 	tokens_staked			BIGINT DEFAULT 0,
@@ -626,8 +627,7 @@ CREATE TABLE cg_staker_rwalk ( -- counts statistics per user for staking RandomW
 	total_tokens_staked		BIGINT DEFAULT 0,
 	num_stake_actions		BIGINT DEFAULT 0,
 	num_unstake_actions		BIGINT DEFAULT 0,
-	total_reward			DECIMAL DEFAULT 0,
-	unclaimed_reward		DECIMAL DEFAULT 0
+	num_tokens_minted		BIGINT DEFAULT 0
 );
 CREATE TABLE cg_staked_token_rwalk (
 	staker_aid				BIGINT NOT NULL,

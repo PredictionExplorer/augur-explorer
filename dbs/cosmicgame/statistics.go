@@ -141,12 +141,12 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	stats.NumWinnersWithPendingRaffleWithdrawal = null_num_users_missing_withdrawal.Int64
 
 	stats.DonatedTokenDistribution = sw.Get_donated_token_distribution();
-	stats.StakeStatistics = sw.Get_stake_statistics()
+	stats.StakeStatisticsCST = sw.Get_stake_statistics()
 	return stats
 }
-func (sw *SQLStorageWrapper) Get_stake_statistics() p.CGStakeStats {
+func (sw *SQLStorageWrapper) Get_stake_statistics() p.CGStakeStatsCST {
 
-	var stats p.CGStakeStats
+	var stats p.CGStakeStatsCST
 	var query string
 	query = "SELECT "+
 				"total_tokens_staked, "+

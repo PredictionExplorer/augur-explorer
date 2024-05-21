@@ -32,9 +32,12 @@ type CGStatistics struct {
 	TotalMktRewardsEth			float64
 	NumMktRewards				int64
 	DonatedTokenDistribution	[]CGDonatedTokenDistrRec 
-	StakeStatistics				CGStakeStats
+	StakeStatisticsCST			CGStakeStatsCST
+	StakeStatisticsRWalk		CGStakeStatsCST
 }
-type CGStakeStats struct {
+type CGStakeStatsCST struct {
+	TotalNumStakeActions		int64
+	TotalNumUnstakeActions		int64
 	TotalTokensStaked			int64
 	TotalReward					string
 	TotalRewardEth				float64
@@ -42,6 +45,14 @@ type CGStakeStats struct {
 	UnclaimedRewardEth			float64
 	NumActiveStakers			int64
 	NumDeposits					int64
+	TotalTokensMinted			int64		// if CosmicGame is configured to mint NFTs for CST stakers, this counts tokens minted
+}
+type CGStakeStatsRWalk struct {
+	TotalNumStakeActions		int64
+	TotalNumUnstakeActions		int64
+	TotalTokensStaked			int64
+	TotalTokensMinted			int64
+	NumActiveStakers			int64
 }
 type CGBidRec struct {
 	EvtLogId					int64
@@ -93,13 +104,18 @@ type CGPrizeRec struct {
 	RaffleNFTWinners			[]CGRaffleNFTWinnerRec
 	RaffleETHDeposits			[]CGRaffleDepositRec
 }
+
 type UserStakingInfo struct {
+	CSTStakingInfo				CGStakeStatsCST
+	RWalkStakingInfo			CGStakeStatsRWalk
+	/* DISCONTINUED
 	TotalTokensStaked			int64
 	TotalNumStakeActions		int64
 	TotalReward					string
 	TotalRewardEth				float64
 	UnclaimedReward				string
 	UnclaimedRewardEth			float64
+	*/
 }
 type CGUserInfo struct {
 	AddressId					int64

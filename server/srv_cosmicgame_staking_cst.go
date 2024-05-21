@@ -167,3 +167,16 @@ func cosmic_game_staked_tokens_by_user(c *gin.Context) {
 		"StakedTokens" : tokens,
 	})
 }
+func cosmic_game_staking_cst_actions_global(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	actions := arb_storagew.Get_global_staking_cst_history(0 ,100000)
+	last_ts := arb_storagew.S.Get_last_block_timestamp()
+	c.HTML(http.StatusOK, "cg_staking_actions_global.html", gin.H{
+		"StakingActions" : actions,
+		"LastTS" : last_ts,
+	})
+}

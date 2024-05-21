@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 )
-func cosmic_game_staking_rwalk_action_info(c *gin.Context) {
+func cosmic_game_staking_action_rwalk_info(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -36,3 +36,16 @@ func cosmic_game_staking_rwalk_action_info(c *gin.Context) {
 		})
 	}
 } 
+func cosmic_game_staking_actions_rwalk_global(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	actions := arb_storagew.Get_global_staking_rwalk_history(0 ,100000)
+	last_ts := arb_storagew.S.Get_last_block_timestamp()
+	c.HTML(http.StatusOK, "cg_staking_actions_global.html", gin.H{
+		"StakingActions" : actions,
+		"LastTS" : last_ts,
+	})
+}
