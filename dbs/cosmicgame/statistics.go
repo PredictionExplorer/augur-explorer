@@ -104,7 +104,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	var null_stakers sql.NullInt64
 	query = "SELECT "+
 				"COUNT(*) AS total "+
-				"FROM cg_staker " +
+				"FROM cg_staker_cst " +
 				"WHERE num_stake_actions > 0"
 	row = sw.S.Db().QueryRow(query)
 	err=row.Scan(&null_stakers)
@@ -112,7 +112,32 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
-	if null_stakers.Valid { stats.NumUniqueStakers = uint64(null_stakers.Int64) }
+	if null_stakers.Valid { stats.NumUniqueStakersCST = uint64(null_stakers.Int64) }
+	query = "SELECT "+
+				"COUNT(*) AS total "+
+				"FROM cg_staker_rwalk " +
+				"WHERE num_stake_actions > 0"
+	row = sw.S.Db().QueryRow(query)
+	err=row.Scan(&null_stakers)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	if null_stakers.Valid { stats.NumUniqueStakersRWalk = uint64(null_stakers.Int64) }
+	query = "SELECT "+
+				"(COALESCE(c.total_tokens_staked,0) + COALESCE(r.total_tokens_staked,0)) all_tokens_num "+
+			"FROM address a "+
+				"LEFT JOIN cg_staker_cst c ON a.address_id = c.staker_aid "+
+				"LEFT JOIN cg_staker_rwalk r ON a.address_id = r.staker_aid "+
+			"WHERE "+
+				"(COALESCE(c.total_tokens_staked,0) + COALESCE(r.total_tokens_staked,0)) > 0 "
+	row = sw.S.Db().QueryRow(query)
+	err=row.Scan(&null_stakers)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	if null_stakers.Valid { stats.NumUniqueStakersBoth= uint64(null_stakers.Int64) }
 
 	var null_donated_nfts sql.NullInt64
 	query = "SELECT "+
@@ -141,10 +166,11 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	stats.NumWinnersWithPendingRaffleWithdrawal = null_num_users_missing_withdrawal.Int64
 
 	stats.DonatedTokenDistribution = sw.Get_donated_token_distribution();
-	stats.StakeStatisticsCST = sw.Get_stake_statistics()
+	stats.StakeStatisticsCST = sw.Get_stake_statistics_cst()
+	stats.StakeStatisticsRWalk = sw.Get_stake_statistics_rwalk()
 	return stats
 }
-func (sw *SQLStorageWrapper) Get_stake_statistics() p.CGStakeStatsCST {
+func (sw *SQLStorageWrapper) Get_stake_statistics_cst() p.CGStakeStatsCST {
 
 	var stats p.CGStakeStatsCST
 	var query string
@@ -155,8 +181,9 @@ func (sw *SQLStorageWrapper) Get_stake_statistics() p.CGStakeStatsCST {
 				"total_unclaimed_reward,"+
 				"total_unclaimed_reward/1e18,"+
 				"total_num_stakers, "+
-				"num_deposits "+
-			"FROM cg_stake_stats LIMIT 1"
+				"num_deposits, "+
+				"total_nft_mints "+
+			"FROM cg_stake_stats_cst LIMIT 1"
 
 	row := sw.S.Db().QueryRow(query)
 	var err error
@@ -168,6 +195,30 @@ func (sw *SQLStorageWrapper) Get_stake_statistics() p.CGStakeStatsCST {
 		&stats.UnclaimedRewardEth,
 		&stats.NumActiveStakers,
 		&stats.NumDeposits,
+		&stats.TotalTokensMinted,
+	)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_stake_statistics(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return stats
+}
+func (sw *SQLStorageWrapper) Get_stake_statistics_rwalk() p.CGStakeStatsRWalk {
+
+	var stats p.CGStakeStatsRWalk
+	var query string
+	query = "SELECT "+
+				"total_tokens_staked, "+
+				"total_num_stakers, "+
+				"total_nft_mints "+
+			"FROM cg_stake_stats_rwalk LIMIT 1"
+
+	row := sw.S.Db().QueryRow(query)
+	var err error
+	err=row.Scan(
+		&stats.TotalTokensStaked,
+		&stats.NumActiveStakers,
+		&stats.TotalTokensMinted,
 	)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_stake_statistics(): %v, q=%v",err,query))
@@ -282,7 +333,7 @@ func (sw *SQLStorageWrapper) Get_unique_winners() []p.CGUniqueWinner {
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_unique_stakers() []p.CGUniqueStaker {
+func (sw *SQLStorageWrapper) Get_unique_stakers_cst() []p.CGUniqueStakerCST {
 
 	var query string
 	query = "SELECT "+
@@ -294,20 +345,21 @@ func (sw *SQLStorageWrapper) Get_unique_stakers() []p.CGUniqueStaker {
 				"s.total_reward,"+
 				"s.total_reward/1e18, "+
 				"s.unclaimed_reward,"+
-				"s.unclaimed_reward/1e18 "+
-			"FROM "+sw.S.SchemaName()+".cg_staker s "+
+				"s.unclaimed_reward/1e18, "+
+				"s.num_tokens_minted "+
+			"FROM "+sw.S.SchemaName()+".cg_staker_cst s "+
 				"LEFT JOIN address a ON s.staker_aid=a.address_id " +
-			"WHERE num_stake_actions > 0 "+
+			"WHERE num_stake_actions> 0 "+
 			"ORDER BY total_reward DESC "
 	rows,err := sw.S.Db().Query(query)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.CGUniqueStaker ,0, 32)
+	records := make([]p.CGUniqueStakerCST ,0, 32)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGUniqueStaker
+		var rec p.CGUniqueStakerCST
 		err=rows.Scan(
 			&rec.StakerAid,
 			&rec.StakerAddr,
@@ -318,6 +370,108 @@ func (sw *SQLStorageWrapper) Get_unique_stakers() []p.CGUniqueStaker {
 			&rec.TotalRewardEth,
 			&rec.UnclaimedReward,
 			&rec.UnclaimedRewardEth,
+			&rec.TotalTokensMinted,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_unique_stakers_rwalk() []p.CGUniqueStakerRWalk {
+
+	var query string
+	query = "SELECT "+
+				"s.staker_aid,"+
+				"a.addr,"+
+				"s.total_tokens_staked,"+
+				"s.num_stake_actions,"+
+				"s.num_unstake_actions,"+
+				"s.num_tokens_minted "+
+			"FROM "+sw.S.SchemaName()+".cg_staker_rwalk s "+
+				"LEFT JOIN address a ON s.staker_aid=a.address_id " +
+			"WHERE num_stake_actions > 0 "+
+			"ORDER BY total_tokens_staked DESC "
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGUniqueStakerRWalk ,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGUniqueStakerRWalk
+		err=rows.Scan(
+			&rec.StakerAid,
+			&rec.StakerAddr,
+			&rec.TotalTokensStaked,
+			&rec.NumStakeActions,
+			&rec.NumUnstakeActions,
+			&rec.TotalTokensMinted,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_unique_stakers_both() []p.CGUniqueStakersBoth {
+
+	var query string
+	query = "SELECT "+
+				"staker_aid,"+
+				"staker_addr,"+
+
+				"COALESCE(c.total_tokens_staked,0) cst_total_tokens_staked,"+
+				"COALESCE(c.num_stake_actions,0) cst_num_stake_actions,"+
+				"COALESCE(c.num_unstake_actions,0) cst_num_unstake_actions,"+
+				"COALESCE(c.total_reward,0) cst_total_reward,"+
+				"COALESCE(c.total_reward/1e18,0) cst_total_reward_eth,"+
+				"COALESCE(c.unclaimed_reward,0) cst_unclaimed_reward,"+
+				"COALESCE(c.unclaimed_reward/1e18,0) cst_unclaimed_reward_eth, "+
+				"COALESCE(c.num_tokens_minted,0) cst_num_tokens_minted, "+
+
+				"COALESCE(r.total_tokens_staked,0) rw_total_tokens_staked,"+
+				"COALESCE(r.num_stake_actions,0) rw_num_stake_actions,"+
+				"COALESCE(r.num_unstake_actions,0) rw_num_unstake_actions,"+
+				"COALESCE(r.num_tokens_minted,0) rw_num_tokens_minted,"+
+
+				"(COALESCE(c.total_tokens_staked,0) + COALESCE(r.total_tokens_staked,0)) all_tokens_num "+
+
+			"FROM address a "+
+				"LEFT JOIN cg_staker_cst c ON a.address_id = c.staker_aid "+
+				"LEFT JOIN cg_staker_rwalk r ON a.address_id = r.staker_aid "+
+			"WHERE "+
+				"(COALESCE(c.total_tokens_staked,0) + COALESCE(r.total_tokens_staked,0)) > 0 "
+
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGUniqueStakersBoth ,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGUniqueStakersBoth
+		err=rows.Scan(
+			&rec.StakerAid,
+			&rec.StakerAddr,
+			&rec.CSTStats.TotalTokensStaked,
+			&rec.CSTStats.NumStakeActions,
+			&rec.CSTStats.NumUnstakeActions,
+			&rec.CSTStats.TotalReward,
+			&rec.CSTStats.TotalRewardEth,
+			&rec.CSTStats.UnclaimedReward,
+			&rec.CSTStats.UnclaimedRewardEth,
+			&rec.CSTStats.TotalTokensMinted,
+			&rec.RWalkStats.TotalTokensStaked,
+			&rec.RWalkStats.NumStakeActions,
+			&rec.RWalkStats.NumUnstakeActions,
+			&rec.RWalkStats.TotalTokensMinted,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

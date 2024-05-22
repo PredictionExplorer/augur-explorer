@@ -6,7 +6,9 @@ type CGStatistics struct {
 	TotalPrizes					uint64
 	NumUniqueBidders			uint64
 	NumUniqueWinners			uint64
-	NumUniqueStakers			uint64
+	NumUniqueStakersCST			uint64
+	NumUniqueStakersRWalk		uint64
+	NumUniqueStakersBoth		uint64
 	TotalPrizesPaidAmountWei	string
 	TotalPrizesPaidAmountEth	float64	// divided by 1e18
 	NumVoluntaryDonations		uint64
@@ -33,7 +35,7 @@ type CGStatistics struct {
 	NumMktRewards				int64
 	DonatedTokenDistribution	[]CGDonatedTokenDistrRec 
 	StakeStatisticsCST			CGStakeStatsCST
-	StakeStatisticsRWalk		CGStakeStatsCST
+	StakeStatisticsRWalk		CGStakeStatsRWalk
 }
 type CGStakeStatsCST struct {
 	TotalNumStakeActions		int64
@@ -176,7 +178,7 @@ type CGUniqueWinner struct {
 	MaxWinAmountEth				float64	// same as above but with 18 decimal places (i.e. in ETH )
 	PrizesSum					float64	// all winnings in ETH
 }
-type CGUniqueStaker struct {
+type CGUniqueStakerCST struct {
 	StakerAid					int64
 	StakerAddr					string
 	TotalTokensStaked			int64
@@ -186,6 +188,21 @@ type CGUniqueStaker struct {
 	TotalRewardEth				float64
 	UnclaimedReward				string
 	UnclaimedRewardEth			float64
+	TotalTokensMinted			int64
+}
+type CGUniqueStakerRWalk struct {
+	StakerAid					int64
+	StakerAddr					string
+	TotalTokensStaked			int64
+	NumStakeActions				int64
+	NumUnstakeActions			int64
+	TotalTokensMinted			int64
+}
+type CGUniqueStakersBoth struct {
+	StakerAid					int64
+	StakerAddr					string
+	CSTStats					CGUniqueStakerCST
+	RWalkStats					CGUniqueStakerRWalk
 }
 type CGNFTDonation struct {
 	RecordId					int64

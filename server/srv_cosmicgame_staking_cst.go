@@ -180,3 +180,14 @@ func cosmic_game_staking_cst_actions_global(c *gin.Context) {
 		"LastTS" : last_ts,
 	})
 }
+func cosmic_game_unique_stakers_cst(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	unique_stakers := arb_storagew.Get_unique_stakers_cst()
+	c.HTML(http.StatusOK, "cg_unique_stakers_cst.html", gin.H{
+		"UniqueStakersCST" : unique_stakers,
+	})
+}

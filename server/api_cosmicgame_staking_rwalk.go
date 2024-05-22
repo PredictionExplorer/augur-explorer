@@ -58,3 +58,21 @@ func api_cosmic_game_staking_actions_rwalk_global(c *gin.Context) {
 		"StakingActions" : actions,
 	})
 }
+func api_cosmic_game_user_unique_stakers_rwalk(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	unique_stakers := arb_storagew.Get_unique_stakers_rwalk()
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UniqueStakersRWalk" : unique_stakers,
+	})
+}

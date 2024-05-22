@@ -374,7 +374,9 @@ func cosmic_game_index_page(c *gin.Context) {
 		"NumRaffleNFTWinnersStakingRWalk" : raffle_nft_winners_staking_cst,
 		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
 		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
-		"NumUniqueStakers" : bw_stats.NumUniqueStakers,
+		"NumUniqueStakersCST" : bw_stats.NumUniqueStakersCST,
+		"NumUniqueStakersuRWalk" : bw_stats.NumUniqueStakersRWalk,
+		"NumUniqueStakersBoth" : bw_stats.NumUniqueStakersBoth,
 		"NumDonatedNFTs" : bw_stats.NumDonatedNFTs,
 		"MainStats" : bw_stats,
 		"CurRoundStats" : cur_round_stats,
@@ -699,17 +701,6 @@ func cosmic_game_unique_winners(c *gin.Context) {
 	unique_winners:= arb_storagew.Get_unique_winners()
 	c.HTML(http.StatusOK, "cg_unique_winners.html", gin.H{
 		"UniqueWinners" : unique_winners,
-	})
-}
-func cosmic_game_unique_stakers(c *gin.Context) {
-
-	if  !augur_srv.arbitrum_initialized() {
-		respond_error(c,"Database link wasn't configured")
-		return
-	}
-	unique_stakers := arb_storagew.Get_unique_stakers()
-	c.HTML(http.StatusOK, "cg_unique_stakers.html", gin.H{
-		"UniqueStakers" : unique_stakers,
 	})
 }
 func cosmic_game_donations_nft(c *gin.Context) {

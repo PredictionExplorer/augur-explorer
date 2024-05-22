@@ -65,7 +65,9 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"NumRaffleNFTWinnersStakingRWalk" : raffle_nft_winners_staking_rwalk,
 		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
 		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
-		"NumUniqueStakers" : bw_stats.NumUniqueStakers,
+		"NumUniqueStakersCST" : bw_stats.NumUniqueStakersCST,
+		"NumUniqueStakersRWalk" : bw_stats.NumUniqueStakersRWalk,
+		"NumUniqueStakersBoth" : bw_stats.NumUniqueStakersBoth,
 		"NumDonatedNFTs" : bw_stats.NumDonatedNFTs,
 		"MainStats" : bw_stats,
 		"CurRoundStats" : cur_round_stats,
@@ -404,24 +406,6 @@ func api_cosmic_game_user_unique_winners(c *gin.Context) {
 		"status": req_status,
 		"error" : err_str,
 		"UniqueWinners" : unique_winners,
-	})
-}
-func api_cosmic_game_user_unique_stakers(c *gin.Context) {
-
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if  !augur_srv.arbitrum_initialized() {
-		respond_error_json(c,"Database link wasn't configured")
-		return
-	}
-
-	unique_stakers := arb_storagew.Get_unique_stakers()
-
-	var req_status int = 1
-	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
-		"status": req_status,
-		"error" : err_str,
-		"UniqueStakers" : unique_stakers,
 	})
 }
 func api_cosmic_game_donations_nft_list(c *gin.Context) {
