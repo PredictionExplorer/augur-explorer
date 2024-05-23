@@ -37,25 +37,6 @@ type CGStatistics struct {
 	StakeStatisticsCST			CGStakeStatsCST
 	StakeStatisticsRWalk		CGStakeStatsRWalk
 }
-type CGStakeStatsCST struct {
-	TotalNumStakeActions		int64
-	TotalNumUnstakeActions		int64
-	TotalTokensStaked			int64
-	TotalReward					string
-	TotalRewardEth				float64
-	UnclaimedReward				string
-	UnclaimedRewardEth			float64
-	NumActiveStakers			int64
-	NumDeposits					int64
-	TotalTokensMinted			int64		// if CosmicGame is configured to mint NFTs for CST stakers, this counts tokens minted
-}
-type CGStakeStatsRWalk struct {
-	TotalNumStakeActions		int64
-	TotalNumUnstakeActions		int64
-	TotalTokensStaked			int64
-	TotalTokensMinted			int64
-	NumActiveStakers			int64
-}
 type CGBidRec struct {
 	EvtLogId					int64
 	BlockNum					int64
@@ -105,19 +86,6 @@ type CGPrizeRec struct {
 	RoundStats					CGRoundStats
 	RaffleNFTWinners			[]CGRaffleNFTWinnerRec
 	RaffleETHDeposits			[]CGRaffleDepositRec
-}
-
-type UserStakingInfo struct {
-	CSTStakingInfo				CGStakeStatsCST
-	RWalkStakingInfo			CGStakeStatsRWalk
-	/* DISCONTINUED
-	TotalTokensStaked			int64
-	TotalNumStakeActions		int64
-	TotalReward					string
-	TotalRewardEth				float64
-	UnclaimedReward				string
-	UnclaimedRewardEth			float64
-	*/
 }
 type CGUserInfo struct {
 	AddressId					int64
@@ -177,32 +145,6 @@ type CGUniqueWinner struct {
 	MaxWinAmount				string
 	MaxWinAmountEth				float64	// same as above but with 18 decimal places (i.e. in ETH )
 	PrizesSum					float64	// all winnings in ETH
-}
-type CGUniqueStakerCST struct {
-	StakerAid					int64
-	StakerAddr					string
-	TotalTokensStaked			int64
-	NumStakeActions				int64
-	NumUnstakeActions			int64
-	TotalReward					string
-	TotalRewardEth				float64
-	UnclaimedReward				string
-	UnclaimedRewardEth			float64
-	TotalTokensMinted			int64
-}
-type CGUniqueStakerRWalk struct {
-	StakerAid					int64
-	StakerAddr					string
-	TotalTokensStaked			int64
-	NumStakeActions				int64
-	NumUnstakeActions			int64
-	TotalTokensMinted			int64
-}
-type CGUniqueStakersBoth struct {
-	StakerAid					int64
-	StakerAddr					string
-	CSTStats					CGUniqueStakerCST
-	RWalkStats					CGUniqueStakerRWalk
 }
 type CGNFTDonation struct {
 	RecordId					int64
@@ -338,7 +280,7 @@ type CGClaimInfo struct {
 }
 type CGRaffleHistory struct {
 	EvtLogId					int64
-	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize, 4 - SatkingDeposit (at StakingWallet)
+	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize, 4 - SatkingDeposit (at StakingWallet CST), 5 CST Mint for RandomWalk staker , 6 CST Mint for CST staker
 	TimeStamp					int64
 	DateTime					string
 	BlockNum					int64
@@ -442,156 +384,6 @@ type CGRWalkUsed struct {
 	BidderAddr					string
 	RWalkTokenId				int64
 }
-type CGEthDepositRec struct {
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	DepositDate					string
-	DepositTimeStamp			int64
-	NumStakedNFTs				int64
-	Amount						string
-	AmountEth					float64
-	AmountPerHolder				string
-	AmountPerHolderEth			float64
-	Modulo						string
-	ModuloF64					float64
-}
-type CGStakeActionRec struct {
-	ActionType					int64
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	UnstakeDate					string
-	UnstakeTimeStamp			int64
-	ActionId					int64
-	TokenId						int64
-	NumStakedNFTs				int64
-	AmountPerHolder				string
-	AmountPerHolderEth			float64
-	Modulo						string
-	ModuloF64					float64
-	Claimed						bool
-}
-type CGStakingHistoryRec struct {
-	ActionType					int64
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	UnstakeEvtLogId				int64
-	UnstakeBlockNum				int64
-	UnstakeDate					string
-	UnstakeTimeStamp			int64
-	ActionId					int64
-	TokenId						int64
-	NumStakedNFTs				int64
-	AccumNumStakedNFTs			int64
-	AmountPerHolder				string
-	AmountPerHolderEth			float64
-	Modulo						string
-	ModuloF64					float64
-	Claimed						bool
-	StakerAid					int64
-	StakerAddr					string
-	LastBlockTS					int64
-	UnstakeExpirationDiff		int64
-}
-type CGStakeActionInfoRec struct {
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	ActionId					int64
-	TokenId						int64
-	NumStakedNFTs				int64
-	UnstakeTimeStamp			int64
-	UnstakeDate					string
-	StakerAid					int64
-	StakerAddr					string
-}
-type CGUnstakeActionInfoRec struct {
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	ActionId					int64
-	TokenId						int64
-	NumStakedNFTs				int64
-	StakerAid					int64
-	StakerAddr					string
-}
-type CGStakeUnstakeCombined struct {
-	Stake						CGStakeActionInfoRec
-	Unstake						CGUnstakeActionInfoRec
-}
-type CGRewardToClaim struct {
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	DepositDate					string
-	DepositTimeStamp			int64
-	DepositId					int64
-	NumStakedNFTs				int64
-	DepositAmount				string
-	DepositAmountEth			float64
-	YourTokensStaked			int64
-	YourClaimableAmount			string
-	YourClaimableAmountEth		float64
-	AmountPerToken				string
-	AmountPerTokenEth			float64
-	Modulo						string
-	ModuloF64					float64
-}
-type CGCollectedReward struct {
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	DepositDate					string
-	DepositTimeStamp			int64
-	DepositId					int64
-	NumStakedNFTs				int64
-	TotalDepositAmount			string
-	TotalDepositAmountEth		float64
-	YourTokensStaked			int64
-	YourAmountToClaim			string
-	YourAmountToClaimEth		float64
-	DepositAmountPerToken		string
-	DepositAmountPerTokenEth	float64
-	NumTokensCollected			int64
-	YourCollectedAmount			string
-	YourCollectedAmountEth		float64
-	Modulo						string
-	ModuloF64					float64
-	RoundNum					int64
-	StakerAid					int64
-	StakerAddr					string
-	FullyClaimed				bool
-}
 type CGMarketingRewardRec struct {
 	RecordId					int64
 	EvtLogId					int64
@@ -604,84 +396,6 @@ type CGMarketingRewardRec struct {
 	AmountEth					float64
 	MarketerAid					int64
 	MarketerAddr				string
-}
-type CGStakedTokenRec struct {
-	TokenInfo					CGCosmicSignatureMintRec
-	StakeEvtLogId				int64
-	StakeBlockNum				int64
-	StakeActionId				int64
-	StakeTimeStamp				int64
-	StakeDateTime				string
-	StakedIsRandomWalk			bool
-	UnstakeTimeStamp			int64
-	UnstakeDateTime				string
-	UserAddr					string
-	UserAid						int64
-
-}
-type CGActionIdsForDeposit struct {
-	RecordId					int64
-	DepositId					int64
-	UserAid						int64
-	StakeActionId				int64
-	TokenId						int64
-	Claimed						bool
-	StakeActionTimeStamp		int64
-	UnstakeEligibleTimeStamp	int64
-	CurChainTimeStamp			int64
-	TimeStampDiff				int64	// subtraction of UnstakeEligibleTimestamp from CurChainTimestamp
-	Amount						string
-	AmountEth					float64
-}
-type CGActionIdsForDepositWithClaimInfo struct {
-	RecordId					int64
-	DepositId					int64
-	UserAid						int64
-	StakeActionId				int64
-	TokenId						int64
-	Claimed						bool
-	ClaimBlockNum				int64
-	ClaimTimeStamp				int64
-	ClaimDateTime				string
-	ClaimTxId					int64
-	ClaimTxHash					string
-	ClaimRewardAmount			string
-	ClaimRewardAmountEth		float64
-}
-type CGStakingRewardRec struct {
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	RoundNum					int64
-	Amount						string
-	AmountEth					float64
-	StakerAid					int64
-	StakerAddr					string
-}
-type CGEthDepositAsReward struct {
-	RecordId					int64
-	EvtLogId					int64
-	BlockNum					int64
-	TxId						int64
-	TxHash						string
-	TimeStamp					int64
-	DateTime					string
-	DepositDate					string
-	DepositTimeStamp			int64
-	NumStakedNFTsTotal			int64
-	Amount						string
-	AmountEth					float64
-	AmountPerToken				string
-	AmountPerTokenEth			float64
-	StakerAid					int64
-	StakerAddr					string
-	StakerAmount				string
-	StakerAmountEth				float64
-	StakerNumStakedNFTs			int64
 }
 type CGSystemModeRec struct {
 	RecordId					int64

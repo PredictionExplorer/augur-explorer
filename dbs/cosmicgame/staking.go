@@ -379,94 +379,6 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_collected(user_aid int64,offset
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_staking_actions(user_aid int64,offset,limit int) []p.CGStakeActionRec {
-
-	var query string
-	query = "("+
-				"SELECT "+
-					"0 AS action_type,"+
-					"s.id,"+
-					"s.evtlog_id,"+
-					"s.block_num,"+
-					"tx.id,"+
-					"tx.tx_hash,"+
-					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT,"+
-					"s.time_stamp,"+
-					"EXTRACT(EPOCH FROM s.unstake_time)::BIGINT AS usts,"+
-					"s.unstake_time,"+
-					"s.action_id,"+
-					"s.token_id,"+
-					"s.num_staked_nfts, "+
-					"s.claimed "+
-				"FROM "+sw.S.SchemaName()+".cg_stake_action s "+
-					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
-				"WHERE (s.staker_aid=$1) " +
-				"OFFSET $2 LIMIT $3 "+
-			") UNION ALL ("+
-				"SELECT "+
-					"1 AS action_type,"+
-					"u.id,"+
-					"u.evtlog_id,"+
-					"u.block_num,"+
-					"tx.id,"+
-					"tx.tx_hash,"+
-					"EXTRACT(EPOCH FROM u.time_stamp)::BIGINT AS usts,"+
-					"u.time_stamp,"+
-					"0 AS usts,"+
-					"TO_TIMESTAMP(0) AS unnstake_time,"+
-					"u.action_id,"+
-					"u.token_id,"+
-					"u.num_staked_nfts, "+
-					"'F' AS claimed "+
-				"FROM "+sw.S.SchemaName()+".cg_unstake_action u "+
-					"LEFT JOIN transaction tx ON tx.id=u.tx_id " +
-					"LEFT JOIN cg_stake_action s ON u.action_id=s.action_id "+
-				"WHERE (u.staker_aid=$1) " +
-				"OFFSET $2 LIMIT $3 "+
-			") ORDER BY evtlog_id DESC"
-
-	rows,err := sw.S.Db().Query(query,user_aid,offset,limit)
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-		os.Exit(1)
-	}
-	records := make([]p.CGStakeActionRec,0, 16)
-	defer rows.Close()
-	for rows.Next() {
-		var rec p.CGStakeActionRec
-		err=rows.Scan(
-			&rec.ActionType,
-			&rec.RecordId,
-			&rec.EvtLogId,
-			&rec.BlockNum,
-			&rec.TxId,
-			&rec.TxHash,
-			&rec.TimeStamp,
-			&rec.DateTime,
-			&rec.UnstakeTimeStamp,
-			&rec.UnstakeDate,
-			&rec.ActionId,
-			&rec.TokenId,
-			&rec.NumStakedNFTs,
-			&rec.Claimed,
-		)
-		if err != nil {
-			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
-			os.Exit(1)
-		}
-		records = append(records,rec)
-	}
-	var accum_num_tokens int64
-	for i:=len(records) - 1 ; i >= 0 ; i-- {
-		if records[i].ActionType == 0 {
-			accum_num_tokens = accum_num_tokens + 1
-		} else {
-			accum_num_tokens = accum_num_tokens - 1
-		}
-		records[i].NumStakedNFTs = accum_num_tokens
-	}
-	return records
-}
 func (sw *SQLStorageWrapper) Get_staked_tokens_global() []p.CGStakedTokenRec {
 
 	var query string
@@ -1049,6 +961,57 @@ func (sw *SQLStorageWrapper) Get_global_staking_rwalk_history(offset,limit int) 
 		rec.AccumNumStakedNFTs = accum_staked_nfts
 		rec.LastBlockTS = last_ts
 		rec.UnstakeExpirationDiff = last_ts - rec.UnstakeTimeStamp
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_staking_rwalk_mints_global(offset,limit int) []p.CGRaffleNFTWinnerRec {
+
+	var query string
+	query = "SELECT "+
+				"w.id,"+
+				"w.evtlog_id,"+
+				"w.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM w.time_stamp)::BIGINT,"+
+				"w.time_stamp,"+
+				"w.token_id,"+
+				"w.winner_index,"+
+				"w.round_num,"+
+				"w.winner_aid,"+
+				"wa.addr "+
+			"FROM cg_raffle_nft_winner w "+
+				"LEFT JOIN w."+
+				"LEFT JOIN transaction t ON t.id=w.tx_id "+
+				"LEFT JOIN address wa ON w.winner_aid=wa.address_id "+
+			"WHERE is_rwalk=TRUE AND is_staker=TRUE "+
+			"ORDER BY w.evtlog_id DESC"
+	rows,err := sw.S.Db().Query(query,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGRaffleNFTWinnerRec,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGRaffleNFTWinnerRec
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.TokenId,
+			&rec.WinnerIndex,
+			&rec.RoundNum,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+		)
+		rec.IsRWalk = true
+		rec.IsStaker = true
 		records = append(records,rec)
 	}
 	return records

@@ -180,6 +180,83 @@ func cosmic_game_staking_cst_actions_global(c *gin.Context) {
 		"LastTS" : last_ts,
 	})
 }
+func cosmic_game_staking_actions_cst_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	actions := arb_storagew.Get_staking_actions_cst_by_user(user_aid,0 ,100000)
+	c.HTML(http.StatusOK, "cg_staking_actions_cst_by_user.html", gin.H{
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"StakingActionsCST" : actions,
+	})
+}
+func cosmic_game_staking_cst_rewards_collected_by_user(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error(c,"Provided address wasn't found")
+		return
+	}
+	actions := arb_storagew.Get_staking_rewards_collected(user_aid,0, 1000000)
+	c.HTML(http.StatusOK, "cg_staking_rewards_collected_by_user.html", gin.H{
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"CollectedStakingRewards" : actions,
+	})
+}
+func cosmic_game_staking_cst_rewards_to_claim_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"title": "Error",
+			"ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+		})
+		return
+	}
+	deposits := arb_storagew.Get_staking_rewards_to_be_claimed(user_aid)
+	c.HTML(http.StatusOK, "cg_staking_rewards_to_be_claimed_by_user.html", gin.H{
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"UnclaimedEthDeposits" : deposits,
+	})
+}
 func cosmic_game_unique_stakers_cst(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {

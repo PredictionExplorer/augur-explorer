@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Stake/Unstake actions for user {{.UserAddr}}</title>
+	<title>Stake/Unstake actions in StakingWalletCST for user {{.UserAddr}}</title>
 </head>
 <body>
-	<h3 class="page_title">Stake/Unstake actions for user {{.UserAddr}}<h3>
+	<h3 class="page_title">Stake/Unstake actions in StakingWalletCST for user {{.UserAddr}}<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -17,7 +17,7 @@
 
 
 	</tr>
-	{{- range $i, $change := .StakingActions}}
+	{{- range $i, $change := .StakingActionsCST}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				{{.BlockNum}}
@@ -43,8 +43,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/staking/actions/by_user/:user_addr/:offset/:limit</br>
+	API: /api/cosmicgame/staking/cst/actions/by_user/:user_addr/:offset/:limit</br>
 
-	Example: /api/cosmicgame/staking/actions/by_user/{{.UserAddr}}/0/100000
+	Example: /api/cosmicgame/staking/cst/actions/by_user/{{.UserAddr}}/0/100000
 </code>
 </body>
