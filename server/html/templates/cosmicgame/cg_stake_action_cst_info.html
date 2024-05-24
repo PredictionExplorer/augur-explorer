@@ -49,10 +49,6 @@
 		<td>{{.CombinedStakingRecordInfo.Stake.TokenId}}</td>
 	</tr>
 	<tr>
-		<td>Is RandomWalk?</td>
-		<td>{{.CombinedStakingRecordInfo.Stake.IsRandomWalk}}</td>
-	</tr>
-	<tr>
 		<td>Num Staked NFTs</td>
 		<td>{{.CombinedStakingRecordInfo.Stake.NumStakedNFTs}}</td>
 	</tr>
@@ -110,8 +106,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/staking/actions/info/[action_id]<br/>
+	API: /api/cosmicgame/staking/cst/actions/info/[action_id]<br/>
 
-	Example: /api/cosmicgame/staking/actions/info/{{.CombinedStakingRecordInfo.Stake.ActionId}}
+	Example: /api/cosmicgame/staking/cst/actions/info/{{.CombinedStakingRecordInfo.Stake.ActionId}}
 </code>
 </body>

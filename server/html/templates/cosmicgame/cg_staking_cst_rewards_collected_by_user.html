@@ -24,7 +24,7 @@
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td style="text-align: center;" title="">
-				<a href="/black/cosmicgame/staking/rewards/action_ids_by_deposit/{{$.UserAddr}}/{{.DepositId}}">
+				<a href="/black/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{{$.UserAddr}}/{{.DepositId}}">
 				{{.DepositId}}
 				</a>
 			</td>
@@ -39,8 +39,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/marketing/rewards/global/[offset]/[limit]</br>
+	API: /api/cosmicgame/staking/cst/rewards/collected/by_user/[user_addr]/[offset]/[limit]</br>
 
-	Example: /api/cosmicgame/marketing/rewards/global/0/10000
+	Example: /api/cosmicgame/staking/cst/rewards/collected/by_user/{{.UserAddr}}/0/10000
 </code>
 </body>

@@ -31,7 +31,7 @@ func cosmic_game_staking_cst_action_info(c *gin.Context) {
 			"ErrDescr": fmt.Sprintf("Provided action_id wasn't found"),
 		})
 	} else {
-		c.HTML(http.StatusOK, "cg_stake_action_info.html", gin.H{
+		c.HTML(http.StatusOK, "cg_stake_action_cst_info.html", gin.H{
 			"CombinedStakingRecordInfo" : action_info,
 		})
 	}
@@ -234,7 +234,7 @@ func cosmic_game_staking_cst_rewards_collected_by_user(c *gin.Context) {
 		return
 	}
 	actions := arb_storagew.Get_staking_rewards_collected(user_aid,0, 1000000)
-	c.HTML(http.StatusOK, "cg_staking_rewards_collected_by_user.html", gin.H{
+	c.HTML(http.StatusOK, "cg_staking_cst_rewards_collected_by_user.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
 		"CollectedStakingCSTRewards" : actions,

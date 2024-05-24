@@ -588,7 +588,7 @@ func (sw *SQLStorageWrapper) Get_user_global_winnings(winner_aid int64) p.CGClai
 	}
 
 	var null_staking_rewards sql.NullFloat64
-	query = "SELECT unclaimed_reward/1e18 FROM cg_staker WHERE staker_aid=$1"
+	query = "SELECT unclaimed_reward/1e18 FROM cg_staker_cst WHERE staker_aid=$1"
 	row = sw.S.Db().QueryRow(query,winner_aid)
 	fmt.Printf("query=  %v \n",query);
 	fmt.Printf("user = %v\n",winner_aid);

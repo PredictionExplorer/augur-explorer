@@ -8,7 +8,6 @@
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">ActionId</th>
-		<th class="market_reports">Is RWalk</th>
 		<th class="market_reports">TokenId</th>
 		<th class="market_reports">Amount (ETH)</th>
 		<th class="market_reports">Claimed</th>
@@ -21,11 +20,10 @@
 	{{- range $i, $change := .ActionIds}}
 		<tr class="market_reports">
 			<td style="text-align: center;">
-				<a href="/black/cosmicgame/staking/actions/info/{{.StakeActionId}}">
+				<a href="/black/cosmicgame/staking/cst/actions/info/{{.StakeActionId}}">
 				{{.StakeActionId}}
 				</a>
 			</td>
-			<td style="text-align: center;">{{.IsRandomWalk}}</td>
 			<td style="text-align: center;">{{.TokenId}}</td>
 			<td style="text-align: right;">&nbsp; {{printf "%.4f" .AmountEth}}&nbsp;</td>
 			<td style="text-align: center;">{{.Claimed}}</td>
@@ -38,8 +36,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/staking/rewards/action_ids_by_deposit/[user_addr]/[deposit_id]</br>
+	API: /api/cosmicgame/staking/cst/rewards/action_ids_by_deposit/[user_addr]/[deposit_id]</br>
 
-	Example: /api/cosmicgame/staking/rewards/action_ids_by_deposit/{{.UserAddr}}/{{.DepositId}}
+	Example: /api/cosmicgame/staking/cst/rewards/action_ids_by_deposit/{{.UserAddr}}/{{.DepositId}}
 </code>
 </body>
