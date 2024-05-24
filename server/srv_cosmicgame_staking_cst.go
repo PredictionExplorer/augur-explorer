@@ -56,10 +56,10 @@ func cosmic_game_staking_cst_rewards_by_round(c *gin.Context) {
 		return
 	}
 
-	winners := arb_storagew.Get_staking_winners_by_round(round_num)
-	c.HTML(http.StatusOK, "cg_staking_winners_by_round.html", gin.H{
+	rewards := arb_storagew.Get_staking_cst_rewards_by_round(round_num)
+	c.HTML(http.StatusOK, "cg_staking_cst_rewards_by_round.html", gin.H{
 		"RoundNum" : round_num,
-		"Winners" : winners,
+		"Rewards" : rewards,
 	})
 }
 func cosmic_game_staking_cst_rewards_global(c *gin.Context) {
@@ -69,8 +69,8 @@ func cosmic_game_staking_cst_rewards_global(c *gin.Context) {
 		return
 	}
 	rewards := arb_storagew.Get_global_staking_rewards(0, 1000000)
-	c.HTML(http.StatusOK, "cg_staking_rewards_global.html", gin.H{
-		"StakingRewards" : rewards,
+	c.HTML(http.StatusOK, "cg_staking_cst_rewards_global.html", gin.H{
+		"StakingCSTRewards" : rewards,
 	})
 }
 func cosmic_game_staking_cst_rewards_action_ids_by_deposit_with_claim_info(c *gin.Context) {
@@ -145,7 +145,17 @@ func cosmic_game_staking_cst_rewards_action_ids_by_deposit(c *gin.Context) {
 		"ActionIds" : action_ids,
 	})
 }
-func cosmic_game_staked_tokens_by_user(c *gin.Context) {
+func cosmic_game_staked_tokens_cst_global(c *gin.Context) {
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	tokens := arb_storagew.Get_staked_tokens_cst_global()
+	c.HTML(http.StatusOK, "cg_staked_tokens_cst_global.html", gin.H{
+		"StakedTokensCST" : tokens,
+	})
+}
+func cosmic_game_staked_tokens_cst_by_user(c *gin.Context) {
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
 		return
@@ -160,11 +170,11 @@ func cosmic_game_staked_tokens_by_user(c *gin.Context) {
 		respond_error(c,"Provided address wasn't found")
 		return
 	}
-	tokens := arb_storagew.Get_staked_tokens_by_user(user_aid)
-	c.HTML(http.StatusOK, "cg_staked_tokens_by_user.html", gin.H{
+	tokens := arb_storagew.Get_staked_tokens_cst_by_user(user_aid)
+	c.HTML(http.StatusOK, "cg_staked_tokens_cst_by_user.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
-		"StakedTokens" : tokens,
+		"StakedTokensCST" : tokens,
 	})
 }
 func cosmic_game_staking_cst_actions_global(c *gin.Context) {
@@ -175,8 +185,8 @@ func cosmic_game_staking_cst_actions_global(c *gin.Context) {
 	}
 	actions := arb_storagew.Get_global_staking_cst_history(0 ,100000)
 	last_ts := arb_storagew.S.Get_last_block_timestamp()
-	c.HTML(http.StatusOK, "cg_staking_actions_global.html", gin.H{
-		"StakingActions" : actions,
+	c.HTML(http.StatusOK, "cg_staking_cst_actions_global.html", gin.H{
+		"StakingCSTActions" : actions,
 		"LastTS" : last_ts,
 	})
 }
@@ -227,7 +237,7 @@ func cosmic_game_staking_cst_rewards_collected_by_user(c *gin.Context) {
 	c.HTML(http.StatusOK, "cg_staking_rewards_collected_by_user.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
-		"CollectedStakingRewards" : actions,
+		"CollectedStakingCSTRewards" : actions,
 	})
 }
 func cosmic_game_staking_cst_rewards_to_claim_by_user(c *gin.Context) {
@@ -251,7 +261,7 @@ func cosmic_game_staking_cst_rewards_to_claim_by_user(c *gin.Context) {
 		return
 	}
 	deposits := arb_storagew.Get_staking_rewards_to_be_claimed(user_aid)
-	c.HTML(http.StatusOK, "cg_staking_rewards_to_be_claimed_by_user.html", gin.H{
+	c.HTML(http.StatusOK, "cg_staking_cst_rewards_to_be_claimed_by_user.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
 		"UnclaimedEthDeposits" : deposits,
@@ -266,5 +276,17 @@ func cosmic_game_unique_stakers_cst(c *gin.Context) {
 	unique_stakers := arb_storagew.Get_unique_stakers_cst()
 	c.HTML(http.StatusOK, "cg_unique_stakers_cst.html", gin.H{
 		"UniqueStakersCST" : unique_stakers,
+	})
+}
+func cosmic_game_staking_cst_mints_global(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	offset:=int(0);limit:=int(100000)
+	mints := arb_storagew.Get_staking_cst_mints_global(offset,limit)
+	c.HTML(http.StatusOK, "cg_staking_cst_mints_global.html", gin.H{
+		"StakingCSTMints" : mints,
 	})
 }

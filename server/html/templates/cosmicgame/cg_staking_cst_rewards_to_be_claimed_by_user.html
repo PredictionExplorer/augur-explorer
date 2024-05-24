@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Unclaimed staking rewards for user {{.UserAddr}}</title>
+	<title>Unclaimed staking rewards in StakingWalletCST for user {{.UserAddr}}</title>
 </head>
 <body>
-	<h3 class="page_title">Unclaimed staking rewards for user {{.UserAddr}}<h3>
+	<h3 class="page_title">Unclaimed staking rewards in StakingWalletCST for user {{.UserAddr}}<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -37,8 +37,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/staking/rewards/to_claim/by_user/:user_addr</br>
+	API: /api/cosmicgame/staking/cst/rewards/to_claim/by_user/:user_addr</br>
 
-	Example: /api/cosmicgame/staking/rewards/to_claim/by_user/{{.UserAddr}}
+	Example: /api/cosmicgame/staking/cst/rewards/to_claim/by_user/{{.UserAddr}}
 </code>
 </body>

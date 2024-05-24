@@ -163,9 +163,15 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
-	staking_addr,err := cosmic_game_ctrct.StakingWallet(&copts)
+	staking_addr_cst,err := cosmic_game_ctrct.StakingWalletCST(&copts)
 	if err != nil {
-		fmt.Printf("Error at StakingWallet(): %v\n",err)
+		fmt.Printf("Error at StakingWalletCST(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	staking_addr_rwalk,err := cosmic_game_ctrct.StakingWalletRWalk(&copts)
+	if err != nil {
+		fmt.Printf("Error at StakingWalletRWalk(): %v\n",err)
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
@@ -232,16 +238,34 @@ func main() {
 	fmt.Printf("CSTAuctionLength = %v\n",cst_auction_length);
 	fmt.Printf("SystemMode = %v (0-Runtime, 1-Prepare maintenance, 2-Maintenance)\n",system_mode.String());
 
-	swallet,err := NewStakingWallet(staking_addr,eclient);
+	swallet_cst,err := NewStakingWalletCST(staking_addr_cst,eclient);
 	if err != nil {
-		fmt.Printf("Failed to instantiate StakingWallet contract: %v\n",err)
+		fmt.Printf("Failed to instantiate StakingWalletCST contract: %v\n",err)
 		os.Exit(1)
 	}
-	min_stake_period,err := swallet.MinStakePeriod(&copts);
+	swallet_rwalk,err := NewStakingWalletRWalk(staking_addr_rwalk,eclient);
+	if err != nil {
+		fmt.Printf("Failed to instantiate StakingWalletRWalk contract: %v\n",err)
+		os.Exit(1)
+	}
+	staked_nfts_cst,err := swallet_cst.NumStakedNFTs(&copts);
+	if err != nil {
+		fmt.Printf("Failed to call NumStakedNFTs() method in StakingWalletCST: %v\n",err)
+		os.Exit(1)
+	}
+	staked_nfts_rwalk,err := swallet_rwalk.NumStakedNFTs(&copts);
+	if err != nil {
+		fmt.Printf("Failed to call NumStakedNFTs() method in StakingWalletRWalk: %v\n",err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("StakingWalletCST->numStakedNFTs = %v\n",staked_nfts_cst.String())
+	fmt.Printf("STakingWalletRWalk->numStakedNFTs = %v\n",staked_nfts_rwalk.String())
+	min_stake_period,err := swallet_cst.MinStakePeriod(&copts);
 	if err != nil {
 		os.Exit(1)
 	} else {
-		fmt.Printf("StakingWallet = %v\n",staking_addr.String());
+		fmt.Printf("StakingWallet = %v\n",staking_addr_cst.String());
 		fmt.Printf("MinStakePeriod = %v\n",min_stake_period);
 	}
 	blogic_ctrct,err := NewBusinessLogic(cosmic_game_addr,eclient)

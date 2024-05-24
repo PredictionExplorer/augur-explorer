@@ -43,31 +43,31 @@
 		<td class="market_reports">Total Tokens Staked</td>
 		<td class="market_reports">
 			<a href="/black/cosmicgame/user/nft/staked/{{.UserInfo.Address}}">
-			{{.UserInfo.StakingStatistics.TotalTokensStaked}}
+			{{.UserInfo.StakingStatistics.CSTStakingInfo.TotalTokensStaked}}
 			</a>
 		</td>
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Total Num Stake Actions</td>
 		<td class="market_reports">
-			<a href="/black/cosmicgame/staking/actions/by_user/{{.UserInfo.Address}}">
-			{{.UserInfo.StakingStatistics.TotalNumStakeActions}}
+			<a href="/black/cosmicgame/staking/cst/actions/by_user/{{.UserInfo.Address}}">
+			{{.UserInfo.StakingStatistics.CSTStakingInfo.TotalNumStakeActions}}
 			</a>
 		</td>
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Total Reward in Staking</td>
 		<td class="market_reports">
-			<a href="/black/cosmicgame/staking/rewards/collected/by_user/{{.UserInfo.Address}}">
-			{{.UserInfo.StakingStatistics.TotalRewardEth}}
+			<a href="/black/cosmicgame/staking/cst/rewards/collected/by_user/{{.UserInfo.Address}}">
+			{{.UserInfo.StakingStatistics.CSTStakingInfo.TotalRewardEth}}
 			</a>
 		</td>
 	</tr>
 	<tr class="market_reports">
 		<td class="market_reports">Unclaimed Reward in Staking</td>
 		<td class="market_reports">
-			<a class="addr" href="/black/cosmicgame/staking/rewards/to_claim/by_user/{{.UserInfo.Address}}">
-			{{.UserInfo.StakingStatistics.UnclaimedRewardEth}}
+			<a class="addr" href="/black/cosmicgame/staking/cst/rewards/to_claim/by_user/{{.UserInfo.Address}}">
+			{{.UserInfo.StakingStatistics.CSTStakingInfo.UnclaimedRewardEth}}
 			</a>
 		</td>
 	</tr>
@@ -157,7 +157,7 @@
 				<span></span><span></span><span></span><span></span>
 			</li>
 			</ul>
-			</nav>
+			</navcst/>
 		</td>
 	</tr>
 	<tr class="market_reports">
@@ -179,7 +179,7 @@
 		<nav style="float: right;">
 			<ul>
 			<li style="width: 20em;">
-				<a class="btn_link" href="/black/cosmicgame/staking/actions/by_user/{{.UserInfo.Address}}">Actions</a>
+				<a class="btn_link" href="/black/cosmicgame/staking/cst/actions/by_user/{{.UserInfo.Address}}">Actions</a>
 				<span></span><span></span><span></span><span></span>
 			</li>
 			</ul>
@@ -192,7 +192,7 @@
 		<nav style="float: right;">
 			<ul>
 			<li style="width: 20em;">
-				<a class="btn_link" href="/black/cosmicgame/staking/rewards/to_claim/by_user/{{.UserInfo.Address}}">Pending rewards</a>
+				<a class="btn_link" href="/black/cosmicgame/staking/cst/rewards/to_claim/by_user/{{.UserInfo.Address}}">Pending rewards</a>
 				<span></span><span></span><span></span><span></span>
 			</li>
 			</ul>

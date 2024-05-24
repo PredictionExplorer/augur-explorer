@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Collected staking rewards for user {{.UserAddr}}</title>
+	<title>Collected staking rewards in StakingWallet CST for user {{.UserAddr}}</title>
 </head>
 <body>
-	<h3 class="page_title">Collected staking rewards for user {{.UserAddr}}<h3>
+	<h3 class="page_title">Collected staking rewards in StakingWallet CST for user {{.UserAddr}}<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -17,7 +17,7 @@
 		<th class="market_reports">Your stake<br/> collected(num)</th>
 		<th class="market_reports">Amount collected (ETH)</th>
 	</tr>
-	{{- range $i, $change := .CollectedStakingRewards}}
+	{{- range $i, $change := .CollectedStakingCSTRewards}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				{{.BlockNum}}

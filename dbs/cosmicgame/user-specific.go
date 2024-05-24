@@ -25,14 +25,14 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 				"p.unclaimed_nfts, "+
 				"p.tokens_count, "+
 				"trs.erc20_num_transfers, "+
-				"trs.erc721_num_transfers, "+
+				"trs.erc721_num_transfers "+
 			"FROM address a "+
 				"LEFT JOIN cg_bidder b ON b.bidder_aid=a.address_id "+
 				"LEFT JOIN cg_winner p ON p.winner_aid=a.address_id "+
 				"LEFT JOIN cg_raffle_winner_stats rw ON rw.winner_aid=a.address_id "+
 				"LEFT JOIN cg_raffle_nft_winner_stats rn ON rn.winner_aid=a.address_id "+
 				"LEFT JOIN cg_transfer_stats trs ON trs.user_aid=a.address_id "+
-				"LEFT JOIN cg_staker st ON st.staker_aid=a.address_id "+
+				"LEFT JOIN cg_staker_cst st ON st.staker_aid=a.address_id "+
 			"WHERE a.address_id=$1"
 
 	var rec p.CGUserInfo
@@ -66,7 +66,7 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 		if err == sql.ErrNoRows {
 			return false,rec
 		}
-		sw.S.Log_msg(fmt.Sprintf("Error in Get_user_info(): %v, q=%v",err,query))
+		sw.S.Log_msg(fmt.Sprintf("Error in main query of Get_user_info(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
 	if null_num_bids.Valid { rec.NumBids = null_num_bids.Int64 }
@@ -90,9 +90,9 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 				"total_reward/1e18,"+
 				"unclaimed_reward,"+
 				"unclaimed_reward/1e18, "+
-				"num_tokens_staked "+
-			"FRON cg_staker_cst s "+
-			"WHERE = staker_aid=$1"
+				"num_tokens_minted "+
+			"FROM cg_staker_cst s "+
+			"WHERE staker_aid=$1"
 	row = sw.S.Db().QueryRow(query,user_aid)
 	{
 		// we use a code block because null_*** variables have same names in both code blocks, to ensure they are empty
@@ -114,7 +114,7 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 			if err == sql.ErrNoRows {
 				return false,rec
 			}
-			sw.S.Log_msg(fmt.Sprintf("Error in Get_user_info(): %v, q=%v",err,query))
+			sw.S.Log_msg(fmt.Sprintf("Error in staker_cst query in Get_user_info(): %v, q=%v",err,query))
 			os.Exit(1)
 		}
 		if null_total_tokens_staked.Valid { rec.StakingStatistics.CSTStakingInfo.TotalTokensStaked = null_total_tokens_staked.Int64 }
@@ -131,8 +131,8 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 				"s.num_stake_actions,"+
 				"s.num_unstake_actions,"+
 				"s.num_tokens_minted "+
-			"FRON cg_staker_rwalk s "+
-			"WHERE = staker_aid=$1"
+			"FROM cg_staker_rwalk s "+
+			"WHERE staker_aid=$1"
 	{
 		// we use a code block because null_*** variables have same names in both code blocks, to ensure they are empty
 		row := sw.S.Db().QueryRow(query,user_aid)
@@ -148,7 +148,7 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 			if err == sql.ErrNoRows {
 				return false,rec
 			}
-			sw.S.Log_msg(fmt.Sprintf("Error in Get_user_info(): %v, q=%v",err,query))
+			sw.S.Log_msg(fmt.Sprintf("Error in staker_rwalk query in Get_user_info(): %v, q=%v",err,query))
 			os.Exit(1)
 		}
 		if null_total_tokens_staked.Valid { rec.StakingStatistics.RWalkStakingInfo.TotalTokensStaked = null_total_tokens_staked.Int64 }
@@ -809,7 +809,7 @@ func (sw *SQLStorageWrapper) Get_marketing_reward_history_by_user(user_aid int64
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_staked_tokens_by_user(user_aid int64) []p.CGStakedTokenRec {
+func (sw *SQLStorageWrapper) Get_staked_tokens_cst_by_user(user_aid int64) []p.CGStakedTokenCSTRec {
 
 	var query string
 	query = "SELECT "+
@@ -833,16 +833,15 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_by_user(user_aid int64) []p.CGSta
 				"a.time_Stamp,"+
 				"EXTRACT(EPOCH FROM a.unstake_time)::BIGINT,"+
 				"a.unstake_time, "+
-				"st.stake_action_id, "+
-				"a.is_rwalk "+
-			"FROM "+sw.S.SchemaName()+".cg_staked_token st "+
+				"st.stake_action_id "+
+			"FROM "+sw.S.SchemaName()+".cg_staked_token_cst st "+
 				"LEFT JOIN cg_mint_event m ON st.token_id=m.token_id "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_stake_action a ON a.action_id=st.stake_action_id "+
-			"WHERE st.staker_aid=$1 AND st.is_unstaked = 'F' "+
+				"LEFT JOIN cg_stake_action_cst a ON a.action_id=st.stake_action_id "+
+			"WHERE st.staker_aid=$1 "+
 			"ORDER BY m.token_id"
 
 	rows,err := sw.S.Db().Query(query,user_aid)
@@ -850,10 +849,10 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_by_user(user_aid int64) []p.CGSta
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.CGStakedTokenRec,0, 16)
+	records := make([]p.CGStakedTokenCSTRec,0, 16)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGStakedTokenRec 
+		var rec p.CGStakedTokenCSTRec 
 		var null_prize_num sql.NullInt64
 		err=rows.Scan(
 			&rec.TokenInfo.RecordId,
@@ -877,13 +876,58 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_by_user(user_aid int64) []p.CGSta
 			&rec.UnstakeTimeStamp,
 			&rec.UnstakeDateTime,
 			&rec.TokenInfo.StakeActionId,
-			&rec.StakedIsRandomWalk,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
 		if null_prize_num.Valid { rec.TokenInfo.RecordType = 3 } else {rec.TokenInfo.RecordType = 1 }
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_staked_tokens_rwalk_by_user(user_aid int64) []p.CGStakedTokenRWalkRec {
+
+	var query string
+	query = "SELECT "+
+				"a.action_id,"+
+				"EXTRACT(EPOCH FROM a.time_stamp)::BIGINT,"+
+				"a.time_Stamp,"+
+				"EXTRACT(EPOCH FROM a.unstake_time)::BIGINT,"+
+				"a.unstake_time, "+
+				"st.stake_action_id, "+
+				"st.token_id "+
+			"FROM "+sw.S.SchemaName()+".cg_staked_token_rwalk st "+
+				"LEFT JOIN cg_mint_event m ON st.token_id=m.token_id "+
+				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
+				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
+				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
+				"LEFT JOIN cg_stake_action_rwalk a ON a.action_id=st.stake_action_id "+
+			"WHERE st.staker_aid=$1 "+
+			"ORDER BY m.token_id"
+
+	rows,err := sw.S.Db().Query(query,user_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGStakedTokenRWalkRec,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGStakedTokenRWalkRec 
+		err=rows.Scan(
+			&rec.StakeActionId,
+			&rec.StakeTimeStamp,
+			&rec.StakeDateTime,
+			&rec.UnstakeTimeStamp,
+			&rec.UnstakeDateTime,
+			&rec.StakedTokenId,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
 		records = append(records,rec)
 	}
 	return records
@@ -980,7 +1024,7 @@ func (sw *SQLStorageWrapper) Get_staking_actions_cst_by_user(user_aid int64,offs
 					"'F' AS claimed "+
 				"FROM "+sw.S.SchemaName()+".cg_unstake_action_cst u "+
 					"LEFT JOIN transaction tx ON tx.id=u.tx_id " +
-					"LEFT JOIN cg_stake_action s ON u.action_id=s.action_id "+
+					"LEFT JOIN cg_stake_action_cst s ON u.action_id=s.action_id "+
 				"WHERE (u.staker_aid=$1) " +
 				"OFFSET $2 LIMIT $3 "+
 			") ORDER BY evtlog_id DESC"
@@ -1067,7 +1111,7 @@ func (sw *SQLStorageWrapper) Get_staking_actions_rwalk_by_user(user_aid int64,of
 					"'F' AS claimed "+
 				"FROM "+sw.S.SchemaName()+".cg_unstake_action_rwalk u "+
 					"LEFT JOIN transaction tx ON tx.id=u.tx_id " +
-					"LEFT JOIN cg_stake_action s ON u.action_id=s.action_id "+
+					"LEFT JOIN cg_stake_action_rwalk s ON u.action_id=s.action_id "+
 				"WHERE (u.staker_aid=$1) " +
 				"OFFSET $2 LIMIT $3 "+
 			") ORDER BY evtlog_id DESC"

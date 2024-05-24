@@ -97,13 +97,10 @@ func cosmic_game_staking_rwalk_mints_global(c *gin.Context) {
 		respond_error(c,"Database link wasn't configured")
 		return
 	}
-    success,offset,limit := parse_offset_limit_params_html(c)
-    if !success {
-        return
-    }
+	offset:=int(0);limit:=int(10000)
 	mints := arb_storagew.Get_staking_rwalk_mints_global(offset,limit)
 	c.HTML(http.StatusOK, "cg_staking_rwalk_mints_global.html", gin.H{
-		"RWalkStakingRewardMints" : mints,
+		"StakingRWalkRewardsMints" : mints,
 	})
 }
 func cosmic_game_staking_rwalk_mints_by_user(c *gin.Context) {
@@ -131,5 +128,37 @@ func cosmic_game_staking_rwalk_mints_by_user(c *gin.Context) {
 		"UserAid":user_aid,
 		"UserAddr":p_user_addr,
 		"RWalkStakingRewardMints" : mints,
+	})
+}
+func cosmic_game_staked_tokens_rwalk_global(c *gin.Context) {
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	tokens := arb_storagew.Get_staked_tokens_rwalk_global()
+	c.HTML(http.StatusOK, "cg_staked_tokens_rwalk_global.html", gin.H{
+		"StakedTokensRWalk" : tokens,
+	})
+}
+func cosmic_game_staked_tokens_rwalk_by_user(c *gin.Context) {
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error(c,"Provided address wasn't found")
+		return
+	}
+	tokens := arb_storagew.Get_staked_tokens_rwalk_by_user(user_aid)
+	c.HTML(http.StatusOK, "cg_staked_tokens_rwalk_by_user.html", gin.H{
+		"UserAddr" : p_user_addr,
+		"UserAid" : user_aid,
+		"StakedTokensRWalk" : tokens,
 	})
 }

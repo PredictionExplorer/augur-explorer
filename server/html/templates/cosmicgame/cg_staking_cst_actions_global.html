@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Global Stake/Unstake actions</title>
+	<title>Global Stake/Unstake actions in StakingWallet CST</title>
 </head>
 <body>
-	<h3 class="page_title">Global Stake/Unstake actions<h3>
+	<h3 class="page_title">Global Stake/Unstake actions in StakingWallet CST<h3>
 	Last Block timestamp: {{.LastTS}}
 <table>
 	<tr class="market_reports">
@@ -13,13 +13,12 @@
 		<th class="market_reports">Action Type</th>
 		<th class="market_reports">Token ID</th>
 		<th class="market_reports">Action ID</th>
-		<th class="market_reports">Is RWalk?</th>
 		<th class="market_reports">Unstake date</th>
 		<th class="market_reports">Staker</th>
 		<th class="market_reports">Total num staked NFT</th>
 		<th class="market_reports">Claim Expiration</th>
 	</tr>
-	{{- range $i, $change := .StakingActions}}
+	{{- range $i, $change := .StakingCSTActions}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				{{.BlockNum}}
@@ -34,7 +33,6 @@
 			</td>
 			<td style="text-align: center;" title="">{{.TokenId}}</td>
 			<td style="text-align: center;" title="">{{.ActionId}}</td>
-			<td style="text-align: center;" title="">{{.IsRandomWalk}}</td>
 			<td style="text-align: center;" title="">
 				{{ if eq .ActionType 0 }}
 				{{.UnstakeDate}}
@@ -55,8 +53,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/staking/global/:offset/:limit</br>
+	API: /api/cosmicgame/staking/cst/actions/global/:offset/:limit</br>
 
-	Example: /api/cosmicgame/staking/global/0/100000
+	Example: /api/cosmicgame/staking/cst/actions/global/0/100000
 </code>
 </body>

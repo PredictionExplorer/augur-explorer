@@ -116,6 +116,11 @@ async function main() {
     await randomWalkNFT.connect(addr1).setApprovalForAll(stakingWalletRWalk.address, true);
 	await stakingWalletRWalk.connect(addr1).stake(token_id);
   }
+  for (let i=0; i<5; i++) {
+	let token_id = await mint_rwalk(addr2);
+    await randomWalkNFT.connect(addr2).setApprovalForAll(stakingWalletRWalk.address, true);
+	await stakingWalletRWalk.connect(addr2).stake(token_id);
+  }
 
   let prizeTime = await cosmicGame.timeUntilPrize();
   console.log("Donation complete");

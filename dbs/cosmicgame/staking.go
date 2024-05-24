@@ -379,7 +379,7 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_collected(user_aid int64,offset
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_staked_tokens_global() []p.CGStakedTokenRec {
+func (sw *SQLStorageWrapper) Get_staked_tokens_cst_global() []p.CGStakedTokenCSTRec {
 
 	var query string
 	query = "SELECT "+
@@ -407,17 +407,15 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_global() []p.CGStakedTokenRec {
 				"EXTRACT(EPOCH FROM a.unstake_time)::BIGINT,"+
 				"a.unstake_time,  "+
 				"sa.addr,"+
-				"sa.address_id, "+
-				"a.is_rwalk "+
-			"FROM "+sw.S.SchemaName()+".cg_staked_token st "+
+				"sa.address_id "+
+			"FROM "+sw.S.SchemaName()+".cg_staked_token_cst st "+
 				"LEFT JOIN cg_mint_event m ON st.token_id=m.token_id "+
 				"LEFT JOIN transaction t ON t.id=m.tx_id "+
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_stake_action a ON a.action_id=st.stake_action_id "+
+				"LEFT JOIN cg_stake_action_cst a ON a.action_id=st.stake_action_id "+
 				"LEFT JOIN address sa ON a.staker_aid = sa.address_id "+
-			"WHERE st.is_unstaked = 'F' "+
 			"ORDER BY m.token_id"
 
 	rows,err := sw.S.Db().Query(query)
@@ -425,10 +423,10 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_global() []p.CGStakedTokenRec {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.CGStakedTokenRec,0, 16)
+	records := make([]p.CGStakedTokenCSTRec,0, 16)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGStakedTokenRec 
+		var rec p.CGStakedTokenCSTRec 
 		var null_prize_num sql.NullInt64
 		err=rows.Scan(
 			&rec.TokenInfo.RecordId,
@@ -456,13 +454,65 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_global() []p.CGStakedTokenRec {
 			&rec.UnstakeDateTime,
 			&rec.UserAddr,
 			&rec.UserAid,
-			&rec.StakedIsRandomWalk,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
 		if null_prize_num.Valid { rec.TokenInfo.RecordType = 3 } else {rec.TokenInfo.RecordType = 1 }
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_staked_tokens_rwalk_global() []p.CGStakedTokenRWalkRec {
+
+	var query string
+	query = "SELECT "+
+				"a.evtlog_id,"+
+				"a.block_num,"+
+				"a.action_id,"+
+				"EXTRACT(EPOCH FROM a.time_stamp)::BIGINT,"+
+				"a.time_Stamp,"+
+				"EXTRACT(EPOCH FROM a.unstake_time)::BIGINT,"+
+				"a.unstake_time,  "+
+				"sa.addr,"+
+				"sa.address_id, "+
+				"st.token_id "+
+			"FROM "+sw.S.SchemaName()+".cg_staked_token_rwalk st "+
+				"LEFT JOIN cg_mint_event m ON st.token_id=m.token_id "+
+				"LEFT JOIN transaction t ON t.id=m.tx_id "+
+				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
+				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
+				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
+				"LEFT JOIN cg_stake_action_rwalk a ON a.action_id=st.stake_action_id "+
+				"LEFT JOIN address sa ON a.staker_aid = sa.address_id "+
+			"ORDER BY m.token_id"
+
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGStakedTokenRWalkRec,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGStakedTokenRWalkRec 
+		err=rows.Scan(
+			&rec.StakeEvtLogId,
+			&rec.StakeBlockNum,
+			&rec.StakeActionId,
+			&rec.StakeTimeStamp,
+			&rec.StakeDateTime,
+			&rec.UnstakeTimeStamp,
+			&rec.UnstakeDateTime,
+			&rec.UserAddr,
+			&rec.UserAid,
+			&rec.StakedTokenId,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
 		records = append(records,rec)
 	}
 	return records
@@ -493,9 +543,9 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 				"r.deposit_id, "+
 				"d.amount_per_staker, "+
 				"d.amount_per_staker/1e18 amount_eth "+
-			"FROM "+sw.S.SchemaName()+".cg_stake_action a "+
+			"FROM "+sw.S.SchemaName()+".cg_stake_action_cst a "+
 				"JOIN cg_eth_deposit d ON d.deposit_num=$3 "+
-				"LEFT JOIN cg_unstake_action u ON a.action_id=u.action_id "+
+				"LEFT JOIN cg_unstake_action_cst u ON a.action_id=u.action_id "+
 				"LEFT JOIN cg_claim_reward r ON (a.action_id=r.action_id) AND (r.deposit_id=$3) AND (r.staker_aid=a.staker_aid)" +
 			"WHERE "+
 				"(a.staker_aid = $1) AND ("+
@@ -571,9 +621,9 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit_with_claim_info(deposit_
 				"tx.tx_hash,"+
 				"r.reward,"+
 				"r.reward/1e18 "+
-			"FROM "+sw.S.SchemaName()+".cg_stake_action a "+
+			"FROM "+sw.S.SchemaName()+".cg_stake_action_cst a "+
 				"JOIN cg_claim_reward r ON (a.action_id=r.action_id) AND (r.deposit_id=$3) AND (r.staker_aid=a.staker_aid)" +
-				"LEFT JOIN cg_unstake_action u ON a.action_id=u.action_id "+
+				"LEFT JOIN cg_unstake_action_cst u ON a.action_id=u.action_id "+
 				"LEFT JOIN transaction tx ON tx.id=r.tx_id " +
 			"WHERE "+
 				"(a.staker_aid = $1) AND ("+
@@ -718,7 +768,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_rewards(offset,limit int) []p.CG
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_staking_winners_by_round(round_num int64) []p.CGEthDepositAsReward {
+func (sw *SQLStorageWrapper) Get_staking_cst_rewards_by_round(round_num int64) []p.CGEthDepositAsReward {
 	
 	records := make([]p.CGEthDepositAsReward,0, 32)
 	var query string
@@ -785,7 +835,7 @@ func (sw *SQLStorageWrapper) Get_staking_winners_by_round(round_num int64) []p.C
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []p.CGStakingHistoryRec {
+func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []p.CGStakingCSTHistoryRec {
 
 	last_ts := sw.S.Get_last_block_timestamp()
 	var query string
@@ -831,7 +881,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 				"FROM "+sw.S.SchemaName()+".cg_unstake_action_cst u "+
 					"LEFT JOIN transaction tx ON tx.id=u.tx_id " +
 					"LEFT JOIN address ua ON u.staker_aid=ua.address_id "+
-					"LEFT JOIN cg_stake_action s ON u.action_id=s.action_id "+
+					"LEFT JOIN cg_stake_action_cst s ON u.action_id=s.action_id "+
 				"ORDER BY u.id DESC " +
 				"OFFSET $1 LIMIT $2 "+
 			") order by evtlog_id DESC"
@@ -841,11 +891,11 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.CGStakingHistoryRec,0, 16)
+	records := make([]p.CGStakingCSTHistoryRec,0, 16)
 	accum_staked_nfts := int64(0)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGStakingHistoryRec
+		var rec p.CGStakingCSTHistoryRec
 		err=rows.Scan(
 			&rec.ActionType,
 			&rec.RecordId,
@@ -875,7 +925,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_global_staking_rwalk_history(offset,limit int) []p.CGStakingHistoryRec {
+func (sw *SQLStorageWrapper) Get_global_staking_rwalk_history(offset,limit int) []p.CGStakingRWalkHistoryRec {
 
 	last_ts := sw.S.Get_last_block_timestamp()
 	var query string
@@ -931,11 +981,11 @@ func (sw *SQLStorageWrapper) Get_global_staking_rwalk_history(offset,limit int) 
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.CGStakingHistoryRec,0, 16)
+	records := make([]p.CGStakingRWalkHistoryRec,0, 16)
 	accum_staked_nfts := int64(0)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGStakingHistoryRec
+		var rec p.CGStakingRWalkHistoryRec
 		err=rows.Scan(
 			&rec.ActionType,
 			&rec.RecordId,
@@ -977,16 +1027,67 @@ func (sw *SQLStorageWrapper) Get_staking_rwalk_mints_global(offset,limit int) []
 				"EXTRACT(EPOCH FROM w.time_stamp)::BIGINT,"+
 				"w.time_stamp,"+
 				"w.token_id,"+
-				"w.winner_index,"+
+				"w.winner_idx,"+
 				"w.round_num,"+
 				"w.winner_aid,"+
 				"wa.addr "+
 			"FROM cg_raffle_nft_winner w "+
-				"LEFT JOIN w."+
 				"LEFT JOIN transaction t ON t.id=w.tx_id "+
 				"LEFT JOIN address wa ON w.winner_aid=wa.address_id "+
-			"WHERE is_rwalk=TRUE AND is_staker=TRUE "+
-			"ORDER BY w.evtlog_id DESC"
+			"WHERE (is_rwalk=TRUE) AND (is_staker=TRUE) "+
+			"ORDER BY w.evtlog_id DESC " +
+			"OFFSET $1 LIMIT $2"
+	rows,err := sw.S.Db().Query(query,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGRaffleNFTWinnerRec,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGRaffleNFTWinnerRec
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.TokenId,
+			&rec.WinnerIndex,
+			&rec.RoundNum,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+		)
+		rec.IsRWalk = true
+		rec.IsStaker = true
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_staking_cst_mints_global(offset,limit int) []p.CGRaffleNFTWinnerRec {
+
+	var query string
+	query = "SELECT "+
+				"w.id,"+
+				"w.evtlog_id,"+
+				"w.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM w.time_stamp)::BIGINT,"+
+				"w.time_stamp,"+
+				"w.token_id,"+
+				"w.winner_idx,"+
+				"w.round_num,"+
+				"w.winner_aid,"+
+				"wa.addr "+
+			"FROM cg_raffle_nft_winner w "+
+				"LEFT JOIN transaction t ON t.id=w.tx_id "+
+				"LEFT JOIN address wa ON w.winner_aid=wa.address_id "+
+			"WHERE (is_rwalk=FALSE) AND (is_staker=TRUE) "+
+			"ORDER BY w.evtlog_id DESC " +
+			"OFFSET $1 LIMIT $2"
 	rows,err := sw.S.Db().Query(query,offset,limit)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

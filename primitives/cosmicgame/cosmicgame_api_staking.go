@@ -12,7 +12,7 @@ type UserStakingInfo struct {
 	UnclaimedRewardEth			float64
 	*/
 }
-type CGStakingHistoryRec struct {
+type CGStakingCSTHistoryRec struct {
 	ActionType					int64
 	RecordId					int64
 	EvtLogId					int64
@@ -34,6 +34,28 @@ type CGStakingHistoryRec struct {
 	Modulo						string
 	ModuloF64					float64
 	Claimed						bool
+	StakerAid					int64
+	StakerAddr					string
+	LastBlockTS					int64
+	UnstakeExpirationDiff		int64
+}
+type CGStakingRWalkHistoryRec struct {
+	ActionType					int64
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	UnstakeEvtLogId				int64
+	UnstakeBlockNum				int64
+	UnstakeDate					string
+	UnstakeTimeStamp			int64
+	ActionId					int64
+	TokenId						int64
+	NumStakedNFTs				int64
+	AccumNumStakedNFTs			int64
 	StakerAid					int64
 	StakerAddr					string
 	LastBlockTS					int64
@@ -108,19 +130,29 @@ type CGStakeUnstakeCombined struct {
 	Stake						CGStakeActionInfoRec
 	Unstake						CGUnstakeActionInfoRec
 }
-type CGStakedTokenRec struct {
+type CGStakedTokenCSTRec struct {
 	TokenInfo					CGCosmicSignatureMintRec
 	StakeEvtLogId				int64
 	StakeBlockNum				int64
 	StakeActionId				int64
 	StakeTimeStamp				int64
 	StakeDateTime				string
-	StakedIsRandomWalk			bool
 	UnstakeTimeStamp			int64
 	UnstakeDateTime				string
 	UserAddr					string
 	UserAid						int64
-
+}
+type CGStakedTokenRWalkRec struct {
+	StakeEvtLogId				int64
+	StakeBlockNum				int64
+	StakeActionId				int64
+	StakeTimeStamp				int64
+	StakeDateTime				string
+	StakedTokenId				int64
+	UnstakeTimeStamp			int64
+	UnstakeDateTime				string
+	UserAddr					string
+	UserAid						int64
 }
 type CGActionIdsForDeposit struct {
 	RecordId					int64

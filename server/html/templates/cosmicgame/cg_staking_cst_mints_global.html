@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Stakers that won raffle NFT for staking RandomWalk tokens</title>
+	<title>Stakers that won raffle NFT for staking CST tokens</title>
 </head>
 <body>
-	<h3 class="page_title">Stakers that won raffle NFT for staking RandomWalk tokens<h3>
+	<h3 class="page_title">Stakers that won raffle NFT for staking CST tokens<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -13,7 +13,7 @@
 		<th class="market_reports">Round</th>
 		<th class="market_reports">TokenId</th>
 	</tr>
-	{{- range $i, $change := .StakingRWalkRewardsMints}}
+	{{- range $i, $change := .StakingCSTMints}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				{{.BlockNum}}
@@ -29,8 +29,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/staking/rwalk/mints/global/[offset]/[limit]</br>
+	API: /api/cosmicgame/staking/cst/mints/global/[offset]/[limit]</br>
 
-	Example: /api/cosmicgame/staking/rwalk/mints/global/0/1000000
+	Example: /api/cosmicgame/staking/cst/mints/global/0/1000000
 </code>
 </body>

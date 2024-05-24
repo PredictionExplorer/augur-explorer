@@ -13,7 +13,7 @@
 		<th class="market_reports">Token reward <br/>(num tokens)</th>
 
 	</tr>
-	{{- range $i, $change := .UniqueStakers }}
+	{{- range $i, $change := .UniqueStakersRWalk }}
 		<tr class="market_reports">
 			<td class="" title="{{.StakerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.StakerAddr}}">{{.StakerAddr}}</a>
@@ -26,8 +26,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/unique_stakers_rwalk<br/>
+	API: /api/cosmicgame/user/unique_stakers_rwalk<br/>
 
-	Example: /api/cosmicgame/unique_stakers_rwalk
+	Example: /api/cosmicgame/user/unique_stakers_rwalk
 </code>
 </body>

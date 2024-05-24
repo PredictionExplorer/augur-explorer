@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Tokens staked globally </title>
+	<title>Tokens staked globally in StakingWalletRWalk </title>
 </head>
 <body>
-	<h3 class="page_title">Tokens staked globally (for all users)<h3>
+	<h3 class="page_title">Tokens staked globally in StakingWalletRWalk(for all users)<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -12,19 +12,16 @@
 		<th class="market_reports">Stake Datetime</th>
 		<th class="market_reports">UnStake Datetime</th>
 		<th class="market_reports">TokenId</th>
-		<th class="market_reports">IsRwalk?</th>
 		<th class="market_reports">User</th>
 	</tr>
-	{{- range $i, $change := .StakedTokens}}
+	{{- range $i, $change := .StakedTokensRWalk}}
 		<tr class="market_reports">
 			<td style="text-align: center;">{{.StakeBlockNum}}</td>
 			<td style="text-align: center;">{{.StakeActionId}}</td>
 			<td style="text-align: center;" title="">{{.StakeDateTime}}</td>
 			<td style="text-align: center;" title="">{{.UnstakeDateTime}}</td>
-			<td style="text-align: center;" title="">
-				<a href="/black/cosmicgame/cst/info/{{.TokenInfo.TokenId}}">{{.TokenInfo.TokenId}}</a>
+			<td style="text-align: center;" title="">{{.StakedTokenId}}
 			</td>
-			<td style="text-align: center;" title="">{{.StakedIsRandomWalk}}</td>
 			<td style="text-align: left;" class="addr"  title="">
 				<a href="/black/cosmicgame/user/nft/staked/{{.UserAddr}}">{{.UserAddr}}</a>
 			</td>
@@ -33,8 +30,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/cst/staked</br>
+	API: /api/cosmicgame/staking/rwalk/staked_tokens</br>
 
-	Example: /api/cosmicgame/cst/staked
+	Example: /api/cosmicgame/staking/rwalk/staked_tokens
 </code>
 </body>

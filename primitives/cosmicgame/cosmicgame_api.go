@@ -252,7 +252,7 @@ type CGCosmicSignatureMintRec struct {
 	CurOwnerAddr				string
 	Seed						string
 	RoundNum					int64
-	RecordType					int64
+	RecordType					int64	// 1 Raffle mint, 3 - Main Prize mint
 	TokenName					string
 	Staked						bool
 	StakedOwnerAid				int64

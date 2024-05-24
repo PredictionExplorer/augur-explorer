@@ -91,7 +91,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 				"m.round_num,"+
 				"p.prize_num, "+
 				"m.token_name, "+
-				"NOT st.is_unstaked,"+
+				"(st.staker_aid IS NOT NULL),"+
 				"st.staker_aid,"+
 				"sta.addr,"+
 				"sa.action_id,"+
@@ -105,9 +105,9 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_staked_token st ON (m.token_id=st.token_id  AND is_unstaked=FALSE)"+
-				"LEFT JOIN cg_stake_action sa ON sa.action_id = st.stake_action_id "+
-				"LEFT JOIN cg_unstake_action u ON sa.action_id=u.action_id "+
+				"LEFT JOIN cg_staked_token_cst st ON (m.token_id=st.token_id)"+
+				"LEFT JOIN cg_stake_action_cst sa ON sa.action_id = st.stake_action_id "+
+				"LEFT JOIN cg_unstake_action_cst u ON sa.action_id=u.action_id "+
 				"LEFT JOIN address sta ON st.staker_aid = sta.address_id "+
 			"WHERE m.token_id=$1"
 
