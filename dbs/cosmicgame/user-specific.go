@@ -32,7 +32,6 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 				"LEFT JOIN cg_raffle_winner_stats rw ON rw.winner_aid=a.address_id "+
 				"LEFT JOIN cg_raffle_nft_winner_stats rn ON rn.winner_aid=a.address_id "+
 				"LEFT JOIN cg_transfer_stats trs ON trs.user_aid=a.address_id "+
-				"LEFT JOIN cg_staker_cst st ON st.staker_aid=a.address_id "+
 			"WHERE a.address_id=$1"
 
 	var rec p.CGUserInfo
@@ -944,15 +943,14 @@ func (sw *SQLStorageWrapper) Get_staking_rwalk_mints_by_user(user_aid int64) []p
 				"EXTRACT(EPOCH FROM w.time_stamp)::BIGINT,"+
 				"w.time_stamp,"+
 				"w.token_id,"+
-				"w.winner_index,"+
+				"w.winner_idx,"+
 				"w.round_num,"+
 				"w.winner_aid,"+
 				"wa.addr "+
 			"FROM cg_raffle_nft_winner w "+
-				"LEFT JOIN w."+
 				"LEFT JOIN transaction t ON t.id=w.tx_id "+
 				"LEFT JOIN address wa ON w.winner_aid=wa.address_id "+
-			"WHERE is_rwalk=TRUE AND is_staker=TRUE AMD w.winner_aid=$1 "+
+			"WHERE is_rwalk=TRUE AND is_staker=TRUE AND w.winner_aid=$1 "+
 			"ORDER BY w.evtlog_id DESC"
 	rows,err := sw.S.Db().Query(query,user_aid)
 	if (err!=nil) {
@@ -1088,7 +1086,7 @@ func (sw *SQLStorageWrapper) Get_staking_actions_rwalk_by_user(user_aid int64,of
 					"s.unstake_time,"+
 					"s.action_id,"+
 					"s.token_id,"+
-					"s.num_staked_nfts, "+
+					"s.num_staked_nfts "+
 				"FROM "+sw.S.SchemaName()+".cg_stake_action_rwalk s "+
 					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
 				"WHERE (s.staker_aid=$1) " +

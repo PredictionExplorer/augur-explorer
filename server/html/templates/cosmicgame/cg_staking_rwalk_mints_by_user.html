@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Raffle winnings for RandomWalk stakign for user {{.UserAddress}}</title>
+	<title> Tokens won by staker {{.UserAddr}} in raffles</title>
 </head>
 <body>
-	<h3 class="page_title">Stakers that won raffle NFT for staking RandomWalk tokens<h3>
+	<h3 class="page_title">Tokens won by staker {{.UserAddr}} in raffles</h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
@@ -13,7 +13,7 @@
 		<th class="market_reports">Round</th>
 		<th class="market_reports">TokenId</th>
 	</tr>
-	{{- range $i, $change := .RaffleNFTWinners}}
+	{{- range $i, $change := .RWalkStakingRewardMints}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				{{.BlockNum}}
@@ -29,8 +29,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/marketing/rewards/global/[offset]/[limit]</br>
+	API: /api/cosmicgame/staking/rwalk/mints/by_user/[user_addr]</br>
 
-	Example: /api/cosmicgame/marketing/rewards/global/0/1000000
+	Example: /api/cosmicgame/staking/rwalk/mints/by_user/{{.UserAddress}}
 </code>
 </body>
