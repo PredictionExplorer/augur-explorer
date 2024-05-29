@@ -42,9 +42,21 @@
 	<tr class="market_reports">
 		<td class="market_reports">Total Tokens Staked</td>
 		<td class="market_reports">
-			<a href="/black/cosmicgame/user/nft/staked/{{.UserInfo.Address}}">
-			{{.UserInfo.StakingStatistics.CSTStakingInfo.TotalTokensStaked}}
-			</a>
+			<table>
+				<tr><td>CST</td><td>RWalk</td></tr>
+				<tr>
+					<td>
+						<a href="/black/cosmicgame/user/staked/cst/{{.UserInfo.Address}}">
+						{{.UserInfo.StakingStatistics.CSTStakingInfo.TotalTokensStaked}}
+						</a>
+					</td>
+					<td>
+						<a href="/black/cosmicgame/user/staked/rwalk/{{.UserInfo.Address}}">
+						{{.UserInfo.StakingStatistics.RWalkStakingInfo.TotalTokensStaked}}
+						</a>
+					</td>
+				</tr>
+			</table>
 		</td>
 	</tr>
 	<tr class="market_reports">

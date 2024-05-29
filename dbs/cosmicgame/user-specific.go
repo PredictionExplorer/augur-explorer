@@ -110,11 +110,10 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 			&null_num_tokens_minted,
 		)
 		if (err!=nil) {
-			if err == sql.ErrNoRows {
-				return false,rec
+			if err != sql.ErrNoRows {
+				sw.S.Log_msg(fmt.Sprintf("Error in staker_cst query in Get_user_info(): %v, q=%v",err,query))
+				os.Exit(1)
 			}
-			sw.S.Log_msg(fmt.Sprintf("Error in staker_cst query in Get_user_info(): %v, q=%v",err,query))
-			os.Exit(1)
 		}
 		if null_total_tokens_staked.Valid { rec.StakingStatistics.CSTStakingInfo.TotalTokensStaked = null_total_tokens_staked.Int64 }
 		if null_num_stake_actions.Valid { rec.StakingStatistics.CSTStakingInfo.TotalNumStakeActions = null_num_stake_actions.Int64 }
@@ -144,11 +143,10 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 			&null_num_tokens_minted,
 		)
 		if (err!=nil) {
-			if err == sql.ErrNoRows {
-				return false,rec
+			if err != sql.ErrNoRows {
+				sw.S.Log_msg(fmt.Sprintf("Error in staker_rwalk query in Get_user_info(): %v, q=%v",err,query))
+				os.Exit(1)
 			}
-			sw.S.Log_msg(fmt.Sprintf("Error in staker_rwalk query in Get_user_info(): %v, q=%v",err,query))
-			os.Exit(1)
 		}
 		if null_total_tokens_staked.Valid { rec.StakingStatistics.RWalkStakingInfo.TotalTokensStaked = null_total_tokens_staked.Int64 }
 		if null_num_stake_actions.Valid { rec.StakingStatistics.RWalkStakingInfo.TotalNumStakeActions = null_num_stake_actions.Int64 }
@@ -914,13 +912,14 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_rwalk_by_user(user_aid int64) []p
 	records := make([]p.CGStakedTokenRWalkRec,0, 16)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGStakedTokenRWalkRec 
+	 p.CGStakedTokenRWalkRec 
 		err=rows.Scan(
 			&rec.StakeActionId,
 			&rec.StakeTimeStamp,
 			&rec.StakeDateTime,
 			&rec.UnstakeTimeStamp,
 			&rec.UnstakeDateTime,
+			&rec.StakeActionId,
 			&rec.StakedTokenId,
 		)
 		if err != nil {

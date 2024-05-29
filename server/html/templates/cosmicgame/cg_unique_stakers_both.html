@@ -1,10 +1,10 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Unique Stakers of CST toeksn and RandomWalk tokens</title>
+	<title>Unique Stakers of CST tokens and RandomWalk tokens</title>
 </head>
 <body>
-	<h3 class="page_title">Unique Stakers of CST toeksn and RandomWalk tokens<h3>
+	<h3 class="page_title">Unique Stakers of CST tokens and RandomWalk tokens<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">Staker Address</th>
@@ -12,7 +12,7 @@
 		<th class="market_reports">Total tokens staked RWalk<br/>(ETH)</th>
 
 	</tr>
-	{{- range $i, $change := .UniqueStakers }}
+	{{- range $i, $change := .UniqueStakersBoth }}
 		<tr class="market_reports">
 			<td class="" title="{{.StakerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.StakerAddr}}">{{.StakerAddr}}</a>
@@ -24,8 +24,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/unique_stakers_both<br/>
+	API: /api/cosmicgame/user/unique_stakers_both<br/>
 
-	Example: /api/cosmicgame/unique_stakers_both
+	Example: /api/cosmicgame/user/unique_stakers_both
 </code>
 </body>

@@ -423,8 +423,8 @@ func (sw *SQLStorageWrapper) Get_unique_stakers_both() []p.CGUniqueStakersBoth {
 
 	var query string
 	query = "SELECT "+
-				"staker_aid,"+
-				"staker_addr,"+
+				"a.address_id,"+
+				"a.addr,"+
 
 				"COALESCE(c.total_tokens_staked,0) cst_total_tokens_staked,"+
 				"COALESCE(c.num_stake_actions,0) cst_num_stake_actions,"+
@@ -472,6 +472,7 @@ func (sw *SQLStorageWrapper) Get_unique_stakers_both() []p.CGUniqueStakersBoth {
 			&rec.RWalkStats.NumStakeActions,
 			&rec.RWalkStats.NumUnstakeActions,
 			&rec.RWalkStats.TotalTokensMinted,
+			&rec.TotalStakedTokensBoth,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

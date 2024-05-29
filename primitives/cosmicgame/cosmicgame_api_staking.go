@@ -1,17 +1,5 @@
 package cosmicgame
 
-type UserStakingInfo struct {
-	CSTStakingInfo				CGStakeStatsCST
-	RWalkStakingInfo			CGStakeStatsRWalk
-	/* DISCONTINUED
-	TotalTokensStaked			int64
-	TotalNumStakeActions		int64
-	TotalReward					string
-	TotalRewardEth				float64
-	UnclaimedReward				string
-	UnclaimedRewardEth			float64
-	*/
-}
 type CGStakingCSTHistoryRec struct {
 	ActionType					int64
 	RecordId					int64
@@ -310,6 +298,7 @@ type CGUniqueStakerRWalk struct {
 type CGUniqueStakersBoth struct {
 	StakerAid					int64
 	StakerAddr					string
+	TotalStakedTokensBoth		int64
 	CSTStats					CGUniqueStakerCST
 	RWalkStats					CGUniqueStakerRWalk
 }

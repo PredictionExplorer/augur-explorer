@@ -875,9 +875,9 @@ DECLARE
 BEGIN
 
 	DELETE FROM cg_staked_token_rwalk WHERE token_id = OLD.token_id;
-	UPDATE cg_staker_token_rwalk SET total_tokens_staked = (total_tokens_staked - 1)
+	UPDATE cg_staked_token_rwalk SET total_tokens_staked = (total_tokens_staked - 1)
 		WHERE staker_aid=OLD.staker_aid;
-	UPDATE cg_staker_token_rwalk SET num_stake_actions = (num_stake_actions + 1)
+	UPDATE cg_staked_token_rwalk SET num_stake_actions = (num_stake_actions + 1)
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked - 1);
 

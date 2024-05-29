@@ -87,6 +87,10 @@ type CGPrizeRec struct {
 	RaffleNFTWinners			[]CGRaffleNFTWinnerRec
 	RaffleETHDeposits			[]CGRaffleDepositRec
 }
+type UserStakingInfo struct {
+	CSTStakingInfo				CGStakeStatsCST
+	RWalkStakingInfo			CGStakeStatsRWalk
+}
 type CGUserInfo struct {
 	AddressId					int64
 	Address						string

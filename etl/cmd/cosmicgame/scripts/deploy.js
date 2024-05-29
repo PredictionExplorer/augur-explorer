@@ -121,6 +121,11 @@ async function main() {
     await randomWalkNFT.connect(addr2).setApprovalForAll(stakingWalletRWalk.address, true);
 	await stakingWalletRWalk.connect(addr2).stake(token_id);
   }
+  for (let i=0; i<50; i++) {
+	let token_id = await mint_rwalk(addr3);
+    await randomWalkNFT.connect(addr3).setApprovalForAll(stakingWalletRWalk.address, true);
+	await stakingWalletRWalk.connect(addr3).stake(token_id);
+  }
 
   let prizeTime = await cosmicGame.timeUntilPrize();
   console.log("Donation complete");
@@ -131,7 +136,7 @@ async function main() {
   let bidPrice = await cosmicGame.getBidPrice();
   await cosmicGame.connect(addr1).bid(params,{value: bidPrice.add(1000)}); // this works
   bidPrice = await cosmicGame.getBidPrice();
-  bidParams = {msg:'bid 1',rwalk:-1};
+  bdParams = {msg:'bid 1',rwalk:-1};
   params = ethers.utils.defaultAbiCoder.encode([bidParamsEncoding],[bidParams])
   await cosmicGame.connect(addr1).bid(params,{value: bidPrice.add(1000)}); // this works
 

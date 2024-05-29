@@ -156,7 +156,7 @@ func cosmic_game_staked_tokens_rwalk_by_user(c *gin.Context) {
 		return
 	}
 	tokens := arb_storagew.Get_staked_tokens_rwalk_by_user(user_aid)
-	c.HTML(http.StatusOK, "cg_staked_tokens_rwalk_by_user.html", gin.H{
+	c.HTML(http.StatusOK, "cg_staked_rwalk_tokens_by_user.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
 		"StakedTokensRWalk" : tokens,

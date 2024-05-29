@@ -8,21 +8,15 @@
 			<a href="/black/cosmicgame/user/info/{{.UserAddr}}">Click here for UserInfo page</a><br/><br/>
 <table>
 	<tr class="market_reports">
-		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Stake Datetime</th>
 		<th class="market_reports">UnStake Datetime</th>
 		<th class="market_reports">TokenId</th>
 	</tr>
-	{{- range $i, $change := .StakedRWalkTokens}}
+	{{- range $i, $change := .StakedTokensRWalk}}
 		<tr class="market_reports">
-			<td class="" >
-				{{.TokenInfo.BlockNum}}
-			</td>
 			<td style="text-align: center;" title="">{{.StakeDateTime}}</td>
 			<td style="text-align: center;" title="">{{.UnstakeDateTime}}</td>
-			<td style="text-align: center;" title="">
-				<a href="/black/cosmicgame/cst/info/{{.TokenInfo.TokenId}}">{{.TokenInfo.TokenId}}</a>
-			</td>
+			<td style="text-align: center;" title="">{{.StakedTokenId}}</a>	</td>
 		</tr>
 	{{- end}}
 </table>

@@ -375,7 +375,7 @@ func cosmic_game_index_page(c *gin.Context) {
 		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
 		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
 		"NumUniqueStakersCST" : bw_stats.NumUniqueStakersCST,
-		"NumUniqueStakersuRWalk" : bw_stats.NumUniqueStakersRWalk,
+		"NumUniqueStakersRWalk" : bw_stats.NumUniqueStakersRWalk,
 		"NumUniqueStakersBoth" : bw_stats.NumUniqueStakersBoth,
 		"NumDonatedNFTs" : bw_stats.NumDonatedNFTs,
 		"MainStats" : bw_stats,

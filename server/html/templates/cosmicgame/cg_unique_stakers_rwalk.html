@@ -19,7 +19,11 @@
 				<a href="/black/cosmicgame/user/info/{{.StakerAddr}}">{{.StakerAddr}}</a>
 			</td>
 			<td class="" style="text-align: center;">{{.TotalTokensStaked}}</td>
-			<td class="" style="text-align: center;">{{.NumStakeActions}}</td>
+			<td class="" style="text-align: center;">
+				<a href="/black/cosmicgame/staking/rwalk/actions/by_user/{{.StakerAddr}}">
+				{{.NumStakeActions}}
+				</a>
+			</td>
 			<td class="" style="text-align: center;">{{.TotalTokensMinted}}</td>
 		</tr>
 	{{- end}}
