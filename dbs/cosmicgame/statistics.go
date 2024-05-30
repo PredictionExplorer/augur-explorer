@@ -64,8 +64,10 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 		&stats.NumMktRewards,
 	)
 	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
-		os.Exit(1)
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
 	}
 	var null_bidders sql.NullInt64
 	query = "SELECT "+
@@ -76,8 +78,10 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	err=row.Scan(&null_bidders)
 	if null_bidders.Valid  { stats.NumUniqueBidders = uint64(null_bidders.Int64) }
 	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
-		os.Exit(1)
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
 	}
 	var null_winners sql.NullInt64
 	var null_sum_wei sql.NullString
@@ -94,23 +98,28 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 		&null_sum_wei,
 		&null_sum_eth,
 	)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+
 	if null_winners.Valid { stats.NumUniqueWinners = uint64(null_winners.Int64) }
 	if null_sum_wei.Valid { stats.TotalPrizesPaidAmountWei = null_sum_wei.String }
 	if null_sum_eth.Valid { stats.TotalPrizesPaidAmountEth = null_sum_eth.Float64 }
-	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
-		os.Exit(1)
-	}
-	var null_stakers sql.NullInt64
+
 	query = "SELECT "+
 				"COUNT(*) AS total "+
 				"FROM cg_staker_cst " +
 				"WHERE num_stake_actions > 0"
 	row = sw.S.Db().QueryRow(query)
+	var null_stakers sql.NullInt64
 	err=row.Scan(&null_stakers)
 	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
-		os.Exit(1)
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
 	}
 	if null_stakers.Valid { stats.NumUniqueStakersCST = uint64(null_stakers.Int64) }
 	query = "SELECT "+
@@ -120,8 +129,10 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	row = sw.S.Db().QueryRow(query)
 	err=row.Scan(&null_stakers)
 	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
-		os.Exit(1)
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
 	}
 	if null_stakers.Valid { stats.NumUniqueStakersRWalk = uint64(null_stakers.Int64) }
 	query = "SELECT "+
@@ -134,8 +145,10 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	row = sw.S.Db().QueryRow(query)
 	err=row.Scan(&null_stakers)
 	if (err!=nil) {
-		sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
-		os.Exit(1)
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
 	}
 	if null_stakers.Valid { stats.NumUniqueStakersBoth= uint64(null_stakers.Int64) }
 
@@ -146,6 +159,12 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	err=row.Scan(
 		&null_donated_nfts,
 	)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
 	stats.NumDonatedNFTs=uint64(null_donated_nfts.Int64)
 	query = "SELECT count(*) AS total FROM cg_mint_event "+
 			"WHERE LENGTH(token_name) > 0 "
@@ -154,6 +173,12 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	err=row.Scan(
 		&null_named_tokens.Int64,
 	)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
 	stats.TotalNamedTokens = null_named_tokens.Int64
 
 	query = "SELECT count(winner_aid) AS total FROM cg_raffle_Winner_stats "+
@@ -163,6 +188,12 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	err=row.Scan(
 		&null_num_users_missing_withdrawal.Int64,
 	)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
 	stats.NumWinnersWithPendingRaffleWithdrawal = null_num_users_missing_withdrawal.Int64
 
 	stats.DonatedTokenDistribution = sw.Get_donated_token_distribution();
@@ -446,7 +477,7 @@ func (sw *SQLStorageWrapper) Get_unique_stakers_both() []p.CGUniqueStakersBoth {
 				"LEFT JOIN cg_staker_cst c ON a.address_id = c.staker_aid "+
 				"LEFT JOIN cg_staker_rwalk r ON a.address_id = r.staker_aid "+
 			"WHERE "+
-				"(COALESCE(c.total_tokens_staked,0) + COALESCE(r.total_tokens_staked,0)) > 0 "
+				"(COALESCE(c.total_tokens_staked,0)>0) AND (COALESCE(r.total_tokens_staked,0) > 0) "
 
 	rows,err := sw.S.Db().Query(query)
 	if (err!=nil) {

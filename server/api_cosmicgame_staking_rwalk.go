@@ -1,6 +1,5 @@
 package main
 import (
-	"fmt"
 	"net/http"
 	"github.com/gin-gonic/gin"
 
@@ -16,23 +15,24 @@ func api_cosmic_game_staking_action_rwalk_info(c *gin.Context) {
 	var action_id int64
 	if len(p_action_id) > 0 {
 		var success bool
-		action_id,success = parse_int_from_remote_or_error(c,HTTP,&p_action_id)
+		action_id,success = parse_int_from_remote_or_error(c,JSON,&p_action_id)
 		if !success {
 			return
 		}
 	} else {
-		respond_error(c,"'action_id' parameter is not set")
+		respond_error_json(c,"'action_id' parameter is not set")
 		return
 	}
 	record_found,action_info := arb_storagew.Get_stake_action_rwalk_info(action_id)
 	if !record_found {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
-			"title": "Error",
-			"ErrDescr": fmt.Sprintf("Provided action_id wasn't found"),
-		})
+		respond_error_json(c,"record not found")
 	} else {
-		c.HTML(http.StatusOK, "cg_stake_action_info.html", gin.H{
-			"CombinedStakingRecordInfo" : action_info,
+		var req_status int = 1
+		var err_str string = ""
+		c.JSON(http.StatusOK, gin.H{
+			"status": req_status,
+			"error" : err_str,
+			"CombinedRWalkStakingRecordInfo" : action_info,
 		})
 	}
 } 

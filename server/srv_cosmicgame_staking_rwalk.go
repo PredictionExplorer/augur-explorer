@@ -31,8 +31,8 @@ func cosmic_game_staking_action_rwalk_info(c *gin.Context) {
 			"ErrDescr": fmt.Sprintf("Provided action_id wasn't found"),
 		})
 	} else {
-		c.HTML(http.StatusOK, "cg_stake_action_info.html", gin.H{
-			"CombinedStakingRecordInfo" : action_info,
+		c.HTML(http.StatusOK, "cg_stake_action_rwalk_info.html", gin.H{
+			"CombinedRWalkStakingRecordInfo" : action_info,
 		})
 	}
 } 

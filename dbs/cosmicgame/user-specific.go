@@ -912,7 +912,7 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_rwalk_by_user(user_aid int64) []p
 	records := make([]p.CGStakedTokenRWalkRec,0, 16)
 	defer rows.Close()
 	for rows.Next() {
-	 p.CGStakedTokenRWalkRec 
+	 var rec p.CGStakedTokenRWalkRec 
 		err=rows.Scan(
 			&rec.StakeActionId,
 			&rec.StakeTimeStamp,
@@ -975,6 +975,56 @@ func (sw *SQLStorageWrapper) Get_staking_rwalk_mints_by_user(user_aid int64) []p
 			&rec.WinnerAddr,
 		)
 		rec.IsRWalk = true
+		rec.IsStaker = true
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_staking_cst_mints_by_user(user_aid int64) []p.CGRaffleNFTWinnerRec {
+
+	var query string
+	query = "SELECT "+
+				"w.id,"+
+				"w.evtlog_id,"+
+				"w.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM w.time_stamp)::BIGINT,"+
+				"w.time_stamp,"+
+				"w.token_id,"+
+				"w.winner_idx,"+
+				"w.round_num,"+
+				"w.winner_aid,"+
+				"wa.addr "+
+			"FROM cg_raffle_nft_winner w "+
+				"LEFT JOIN transaction t ON t.id=w.tx_id "+
+				"LEFT JOIN address wa ON w.winner_aid=wa.address_id "+
+			"WHERE is_rwalk=FALSE AND is_staker=TRUE AND w.winner_aid=$1 "+
+			"ORDER BY w.evtlog_id DESC"
+	rows,err := sw.S.Db().Query(query,user_aid)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGRaffleNFTWinnerRec,0, 16)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGRaffleNFTWinnerRec
+		err=rows.Scan(
+			&rec.RecordId,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.TokenId,
+			&rec.WinnerIndex,
+			&rec.RoundNum,
+			&rec.WinnerAid,
+			&rec.WinnerAddr,
+		)
+		rec.IsRWalk = false
 		rec.IsStaker = true
 		records = append(records,rec)
 	}
@@ -1104,8 +1154,7 @@ func (sw *SQLStorageWrapper) Get_staking_actions_rwalk_by_user(user_aid int64,of
 					"TO_TIMESTAMP(0) AS unnstake_time,"+
 					"u.action_id,"+
 					"u.token_id,"+
-					"u.num_staked_nfts, "+
-					"'F' AS claimed "+
+					"u.num_staked_nfts "+
 				"FROM "+sw.S.SchemaName()+".cg_unstake_action_rwalk u "+
 					"LEFT JOIN transaction tx ON tx.id=u.tx_id " +
 					"LEFT JOIN cg_stake_action_rwalk s ON u.action_id=s.action_id "+

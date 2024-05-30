@@ -32,7 +32,7 @@ func cosmic_game_staking_cst_action_info(c *gin.Context) {
 		})
 	} else {
 		c.HTML(http.StatusOK, "cg_stake_action_cst_info.html", gin.H{
-			"CombinedStakingRecordInfo" : action_info,
+			"CombinedCSTStakingRecordInfo" : action_info,
 		})
 	}
 } 
@@ -213,7 +213,7 @@ func cosmic_game_staking_actions_cst_by_user(c *gin.Context) {
 	c.HTML(http.StatusOK, "cg_staking_actions_cst_by_user.html", gin.H{
 		"UserAddr" : p_user_addr,
 		"UserAid" : user_aid,
-		"StakingActionsCST" : actions,
+		"UserStakingActionsCST" : actions,
 	})
 }
 func cosmic_game_staking_cst_rewards_collected_by_user(c *gin.Context) {
@@ -288,5 +288,32 @@ func cosmic_game_staking_cst_mints_global(c *gin.Context) {
 	mints := arb_storagew.Get_staking_cst_mints_global(offset,limit)
 	c.HTML(http.StatusOK, "cg_staking_cst_mints_global.html", gin.H{
 		"StakingCSTMints" : mints,
+	})
+}
+func cosmic_game_staking_cst_mints_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+    p_user_addr:= c.Param("user_addr")
+    if len(p_user_addr) == 0 {
+        respond_error(c,"'user_addr' parameter is not set")
+        return
+    }
+    user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+    if err != nil {
+        c.HTML(http.StatusBadRequest, "error.html", gin.H{
+            "title": "Error",
+            "ErrDescr": fmt.Sprintf("Provided address wasn't found"),
+        })
+        return
+    }
+
+	mints := arb_storagew.Get_staking_cst_mints_by_user(user_aid)
+	c.HTML(http.StatusOK, "cg_staking_cst_mints_by_user.html", gin.H{
+		"UserAid":user_aid,
+		"UserAddr":p_user_addr,
+		"CSTStakingRewardMints" : mints,
 	})
 }

@@ -1,0 +1,113 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>RWalk Stake Action info action_id={{.CombinedRWalkStakingRecordInfo.Stake.ActionId}}</title>
+</head>
+<body>
+	<h3 class="page_title">RWalk Stake Action Info<h3>
+<table>
+	<tr>
+		<td>EvtLog ID</td>
+		<td>{{.CombinedRWalkStakingRecordInfo.Stake.EvtLogId}}
+	</tr>
+	<tr>
+		<td>BlockNum</td>
+		<td>{{.CombinedRWalkStakingRecordInfo.Stake.BlockNum}}</td>
+	</tr>
+	<tr>
+		<td>TxId</td>
+		<td>{{.CombinedRWalkStakingRecordInfo.Stake.TxId}}</td>
+	</tr>
+	<tr>
+		<td>TxHash</td>
+		<td>{{.CombinedRWalkStakingRecordInfo.Stake.TxHash}}</td>
+	</td>
+	<tr>
+		<td>TimeStamp</td>
+		<td>
+			{{.CombinedRWalkStakingRecordInfo.Stake.TimeStamp}}
+		</td>
+	</tr>
+	<tr>
+		<td>DateTime</td>
+		<td>
+			{{.CombinedRWalkStakingRecordInfo.Stake.DateTime}}
+		</td>
+	</tr>
+	<tr>
+		<td>Unstake Timestamp</td>
+		<td>
+			{{.CombinedRWalkStakingRecordInfo.Stake.UnstakeTimeStamp}}
+		</td>
+	</tr>
+	<tr>
+		<td>Action Id</td>
+		<td>{{.CombinedRWalkStakingRecordInfo.Stake.ActionId}}</td>
+	</tr>
+	<tr>
+		<td>Token Id</td>
+		<td>{{.CombinedRWalkStakingRecordInfo.Stake.TokenId}}</td>
+	</tr>
+	<tr>
+		<td>Num Staked NFTs</td>
+		<td>{{.CombinedRWalkStakingRecordInfo.Stake.NumStakedNFTs}}</td>
+	</tr>
+	<tr>
+		<td>Staker Address</td>
+		<td><a class="addr" href="/black/cosmicgame/user/info/{{.CombinedRWalkStakingRecordInfo.Stake.StakerAddr}}">{{.CombinedRWalkStakingRecordInfo.Stake.StakerAddr}}</a></td>
+	</tr>
+</table>
+	<h3 class="page_title">Unstake Action Info<h3>
+<table>
+	<tr>
+		<td>EvtLog ID</td>
+		<td>{{.CombinedRWalkStakingRecordInfo.Unstake.EvtLogId}}
+	</tr>
+	<tr>
+		<td>BlockNum</td>
+		<td>{{.CombinedRWalkStakingRecordInfo.Unstake.BlockNum}}</td>
+	</tr>
+	<tr>
+		<td>TxId</td>
+		<td>{{.CombinedRWalkStakingRecordInfo.Unstake.TxId}}</td>
+	</tr>
+	<tr>
+		<td>TxHash</td>
+		<td>{{.CombinedRWalkStakingRecordInfo.Unstake.TxHash}}</td>
+	</td>
+	<tr>
+		<td>TimeStamp</td>
+		<td>
+			{{.CombinedRWalkStakingRecordInfo.Unstake.TimeStamp}}
+		</td>
+	</tr>
+	<tr>
+		<td>DateTime</td>
+		<td>
+			{{.CombinedRWalkStakingRecordInfo.Unstake.DateTime}}
+		</td>
+	</tr>
+	<tr>
+		<td>Action Id</td>
+		<td>{{.CombinedRWalkStakingRecordInfo.Unstake.ActionId}}</td>
+	</tr>
+	<tr>
+		<td>Token Id</td>
+		<td>{{.CombinedRWalkStakingRecordInfo.Unstake.TokenId}}</td>
+	</tr>
+	<tr>
+		<td>Num Staked NFTs</td>
+		<td>{{.CombinedRWalkStakingRecordInfo.Unstake.NumStakedNFTs}}</td>
+	</tr>
+	<tr>
+		<td>Staker Address</td>
+		<td><a class="addr" href="/black/cosmicgame/user/info/{{.CombinedRWalkStakingRecordInfo.Unstake.StakerAddr}}">{{.CombinedRWalkStakingRecordInfo.Unstake.StakerAddr}}</a></td>
+	</tr>
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/staking/rwalk/actions/info/[action_id]<br/>
+
+	Example: /api/cosmicgame/staking/rwalk/actions/info/{{.CombinedRWalkStakingRecordInfo.Stake.ActionId}}
+</code>
+</body>

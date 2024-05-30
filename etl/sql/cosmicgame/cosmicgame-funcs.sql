@@ -329,6 +329,24 @@ BEGIN
 	IF v_cnt = 0 THEN
 		INSERT INTO cg_round_stats(round_num,total_raffle_nfts) VALUES(NEW.round_num,1);
 	END IF;
+	IF NEW.is_staker THEN
+		IF NEW.is_rwalk THEN
+			UPDATE cg_staker_rwalk SET num_tokens_minted = (num_tokens_minted + 1)
+				WHERE staker_aid=NEW.winner_aid;
+			GET DIAGNOSTICS v_cnt = ROW_COUNT;
+			IF v_cnt = 0 THEN
+				INSERT INTO cg_staker_rwalk(staker_aid,num_tokens_minted) VALUES(NEW.winner_aid,1);
+			END IF;
+		ELSE
+			UPDATE cg_staker_cst SET num_tokens_minted = (num_tokens_minted + 1)
+				WHERE staker_aid=NEW.winner_aid;
+			GET DIAGNOSTICS v_cnt = ROW_COUNT;
+			IF v_cnt = 0 THEN
+				INSERT INTO cg_staker_cst(staker_aid,num_tokens_minted) VALUES(NEW.winner_aid,1);
+			END IF;
+
+		END IF;
+	END IF;
 
 	RETURN NEW;
 END;
@@ -345,6 +363,15 @@ BEGIN
 		SET
 			total_raffle_nfts = (total_raffle_nfts - 1)
 		WHERE round_num=OLD.round_num;
+	IF OLD.is_staker THEN
+		IF OLD.is_rwalk THEN
+			UPDATE cg_staker_rwalk SET num_tokens_minted = (num_tokens_minted + 1)
+				WHERE staker_aid=OLD.winner_aid;
+		ELSE
+			UPDATE cg_staker_cst SET num_tokens_minted = (num_tokens_minted + 1)
+				WHERE staker_aid=OLD.winner_aid;
+		END IF;
+	END IF;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

@@ -9,7 +9,9 @@
 	<tr class="market_reports">
 		<th class="market_reports">Staker Address</th>
 		<th class="market_reports">Total tokens staked CST</th>
-		<th class="market_reports">Total tokens staked RWalk<br/>(ETH)</th>
+		<th class="market_reports">Total tokens staked RWalk</th>
+		<th class="market_reports">Total reward mints CST</th>
+		<th class="market_reports">Total reward mints RWalk</th>
 
 	</tr>
 	{{- range $i, $change := .UniqueStakersBoth }}
@@ -17,8 +19,26 @@
 			<td class="" title="{{.StakerAid}}">
 				<a href="/black/cosmicgame/user/info/{{.StakerAddr}}">{{.StakerAddr}}</a>
 			</td>
-			<td class="" style="text-align: center;">{{.CSTStats.TotalTokensStaked}}</td>
-			<td class="" style="text-align: center;">{{.RWalkStats.TotalTokensStaked}}</td>
+			<td class="" style="text-align: center;">
+				<a href="/black/cosmicgame/user/staked/cst/{{.StakerAddr}}">
+				{{.CSTStats.TotalTokensStaked}}
+				</a>
+			</td>
+			<td class="" style="text-align: center;">
+				<a href="/black/cosmicgame/user/staked/rwalk/{{.StakerAddr}}">
+				{{.RWalkStats.TotalTokensStaked}}
+				</a>
+			</td>
+			<td class="" style="text-align: center;">
+				<a href="/black/cosmicgame/staking/cst/mints/by_user/{{.StakerAddr}}">
+				{{.CSTStats.TotalTokensMinted}}
+				</a>
+			</td>
+			<td class="" style="text-align: center;">
+				<a href="/black/cosmicgame/staking/rwalk/mints/by_user/{{.StakerAddr}}">
+				{{.RWalkStats.TotalTokensMinted}}
+				</a>
+			</td>
 		</tr>
 	{{- end}}
 </table>

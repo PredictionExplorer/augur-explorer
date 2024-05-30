@@ -45,12 +45,12 @@
 			<table>
 				<tr><td>CST</td><td>RWalk</td></tr>
 				<tr>
-					<td>
+					<td style="text-align:center">
 						<a href="/black/cosmicgame/user/staked/cst/{{.UserInfo.Address}}">
 						{{.UserInfo.StakingStatistics.CSTStakingInfo.TotalTokensStaked}}
 						</a>
 					</td>
-					<td>
+					<td style="text-align:center">
 						<a href="/black/cosmicgame/user/staked/rwalk/{{.UserInfo.Address}}">
 						{{.UserInfo.StakingStatistics.RWalkStakingInfo.TotalTokensStaked}}
 						</a>
@@ -62,13 +62,25 @@
 	<tr class="market_reports">
 		<td class="market_reports">Total Num Stake Actions</td>
 		<td class="market_reports">
-			<a href="/black/cosmicgame/staking/cst/actions/by_user/{{.UserInfo.Address}}">
-			{{.UserInfo.StakingStatistics.CSTStakingInfo.TotalNumStakeActions}}
-			</a>
+			<table>
+				<tr><td>CST</td><td>RWalk</td></tr>
+				<tr>
+					<td style="text-align:center">
+						<a href="/black/cosmicgame/staking/cst/actions/by_user/{{.UserInfo.Address}}">
+						{{.UserInfo.StakingStatistics.CSTStakingInfo.TotalNumStakeActions}}
+						</a>
+					</td>
+					<td style="text-align:center">
+						<a href="/black/cosmicgame/staking/rwalk/actions/by_user/{{.UserInfo.Address}}">
+						{{.UserInfo.StakingStatistics.RWalkStakingInfo.TotalNumStakeActions}}
+						</a>
+					</td>
+				</tr>
+			</table>
 		</td>
 	</tr>
 	<tr class="market_reports">
-		<td class="market_reports">Total Reward in Staking</td>
+		<td class="market_reports">Total Reward in CST Staking</td>
 		<td class="market_reports">
 			<a href="/black/cosmicgame/staking/cst/rewards/collected/by_user/{{.UserInfo.Address}}">
 			{{.UserInfo.StakingStatistics.CSTStakingInfo.TotalRewardEth}}
@@ -76,7 +88,35 @@
 		</td>
 	</tr>
 	<tr class="market_reports">
-		<td class="market_reports">Unclaimed Reward in Staking</td>
+		<td class="market_reports">Unclaimed Reward in CST Staking</td>
+		<td class="market_reports">
+			<a class="addr" href="/black/cosmicgame/staking/cst/rewards/to_claim/by_user/{{.UserInfo.Address}}">
+			{{.UserInfo.StakingStatistics.CSTStakingInfo.UnclaimedRewardEth}}
+			</a>
+		</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports">Total Mints in Raffles</td>
+		<td class="market_reports">
+			<table>
+				<tr><td>CST</td><td>RWalk</td></tr>
+				<tr>
+					<td style="text-align:center">
+						<a href="/black/cosmicgame/staking/cst/mints/by_user/{{.UserInfo.Address}}">
+						{{.UserInfo.StakingStatistics.CSTStakingInfo.TotalTokensMinted}}
+						</a>
+					</td>
+					<td style="text-align:center">
+						<a href="/black/cosmicgame/staking/rwalk/mints/by_user/{{.UserInfo.Address}}">
+						{{.UserInfo.StakingStatistics.RWalkStakingInfo.TotalTokensMinted}}
+						</a>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr class="market_reports">
+		<td class="market_reports">Unclaimed Reward in CST Staking</td>
 		<td class="market_reports">
 			<a class="addr" href="/black/cosmicgame/staking/cst/rewards/to_claim/by_user/{{.UserInfo.Address}}">
 			{{.UserInfo.StakingStatistics.CSTStakingInfo.UnclaimedRewardEth}}
