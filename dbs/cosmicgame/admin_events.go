@@ -10,6 +10,11 @@ import (
 func (sw *SQLStorageWrapper) Get_system_mode_change_event_list(offset,limit int) []p.CGSystemModeRec {
 
 	if limit == 0 { limit = 1000000 }
+	var add_deployment_events bool
+	if offset == -1 {
+		add_deployment_events = true
+		offset = 0
+	}
 	var query string
 	query = "SELECT "+
 				"s.id,"+
@@ -56,6 +61,18 @@ func (sw *SQLStorageWrapper) Get_system_mode_change_event_list(offset,limit int)
 		r.NextEvtLogId = next_evtlog
 		next_evtlog = r.EvtLogId
 		records[i]=r
+	}
+	if add_deployment_events {
+		if len(records) > 0 {
+			var rec p.CGSystemModeRec
+			rec.RecordId = -1
+			rec.EvtLogId = -1
+			rec.BlockNum = -1
+			rec.TxId = -1
+			rec.SystemMode = -1
+			rec.NextEvtLogId = records[len(records)-1].EvtLogId
+			records = append(records,rec)
+		}
 	}
 	return records
 }
@@ -146,7 +163,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"r.time_stamp AS date_time, "+
 						"'' AS addr_value," +
 						"r.num_winners AS int_value "+
-					"FROM "+sw.S.SchemaName()+".cg_adm_raf_eth_winners r "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_raf_eth_bidding r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
@@ -161,7 +178,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"r.time_stamp AS date_time, "+
 						"'' AS addr_value," +
 						"r.num_winners AS int_value "+
-					"FROM "+sw.S.SchemaName()+".cg_adm_raf_nft_winners r "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_raf_nft_bidding r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
@@ -175,13 +192,28 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
 						"r.time_stamp AS date_time, "+
 						"'' AS addr_value," +
-						"r.num_holders AS int_value "+
-					"FROM "+sw.S.SchemaName()+".cg_adm_raf_nft_holders r "+
+						"r.num_winners AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_raf_nft_staking_cst r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
 						"8 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"'' AS addr_value," +
+						"r.num_winners AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_raf_nft_staking_rwalk r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"9 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -197,7 +229,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"9 AS record_type,"+
+						"10 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -213,7 +245,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"10 AS record_type,"+
+						"11 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -229,7 +261,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"11 AS record_type,"+
+						"12 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -239,13 +271,29 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 						"r.time_stamp AS date_time, "+
 						"a.addr AS addr_value, "+
 						"0 AS int_value "+
-					"FROM "+sw.S.SchemaName()+".cg_adm_staking_addr r "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_staking_cst_addr r "+
 					"LEFT JOIN transaction t ON t.id=r.tx_id "+
 					"LEFT JOIN address a ON a.address_id = r.new_staking_aid "+
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"12 AS record_type,"+
+						"13 AS record_type,"+
+						"r.id record_id,"+
+						"r.evtlog_id,"+
+						"r.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM r.time_stamp)::BIGINT ts,"+
+						"r.time_stamp AS date_time, "+
+						"a.addr AS addr_value, "+
+						"0 AS int_value "+
+					"FROM "+sw.S.SchemaName()+".cg_adm_staking_rwalk_addr r "+
+					"LEFT JOIN transaction t ON t.id=r.tx_id "+
+					"LEFT JOIN address a ON a.address_id = r.new_staking_aid "+
+					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
+				") UNION ALL ("+
+					"SELECT "+
+						"14 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -261,7 +309,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"13 AS record_type,"+
+						"15 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -277,7 +325,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"14 AS record_type,"+
+						"16 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -293,7 +341,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"15 AS record_type,"+
+						"17 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -309,7 +357,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"16 AS record_type,"+
+						"18 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -324,7 +372,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"17 AS record_type,"+
+						"19 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -339,7 +387,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"18 AS record_type,"+
+						"20 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -354,7 +402,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"19 AS record_type,"+
+						"21 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -369,7 +417,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"20 AS record_type,"+
+						"22 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -384,7 +432,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"21 AS record_type,"+
+						"23 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -399,7 +447,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"22 AS record_type,"+
+						"24 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -414,7 +462,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"23 AS record_type,"+
+						"25 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -429,7 +477,7 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 					"WHERE (r.evtlog_id>$1) AND (r.evtlog_id<$2) "+
 				") UNION ALL ("+
 					"SELECT "+
-						"24 AS record_type,"+
+						"26 AS record_type,"+
 						"r.id record_id,"+
 						"r.evtlog_id,"+
 						"r.block_num,"+
@@ -446,9 +494,9 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 			") everything "+
 			"ORDER BY evtlog_id "
 
-			fmt.Printf("q= \n%v\n",query)
-			fmt.Printf("evtlog_start = %v\n",evtlog_start)
-			fmt.Printf("evtlog_end = %v\n",evtlog_end)
+	//		fmt.Printf("q= \n%v\n",query)
+	//		fmt.Printf("evtlog_start = %v\n",evtlog_start)
+	//		fmt.Printf("evtlog_end = %v\n",evtlog_end)
 	rows,err := sw.S.Db().Query(query,evtlog_start,evtlog_end)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

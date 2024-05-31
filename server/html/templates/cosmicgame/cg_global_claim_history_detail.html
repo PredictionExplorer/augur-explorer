@@ -12,21 +12,21 @@
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Round</th>
 		<th class="market_reports">Amount (ETH)</th>
-		<th class="market_reports">Token Addr</th>
 		<th class="market_reports">Token Id</th>
 		<th class="market_reports">WInner Addr</th>
-		<th class="market_reports">Winner Idx</th>
 		<th class="market_reports">Claimed</th>
 		<th class="market_reports"></th>
 	</tr>
 	{{- range $i, $change := .GlobalClaimHistory}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
-				{{ if eq 0 .RecordType}}ETH Deposit{{end}}
+				{{ if eq 0 .RecordType}}Raffle ETH Deposit{{end}}
 				{{ if eq 1 .RecordType}}CS NFT Token{{end}}
 				{{ if eq 2 .RecordType}}Donated NFT{{end}}
 				{{ if eq 3 .RecordType}}Main Prize{{end}}
-				{{ if eq 4 .RecordType}}Stake Reward{{end}}
+				{{ if eq 4 .RecordType}}CST Staking ETH Deposit{{end}}
+				{{ if eq 5 .RecordType}}RWalk Staking Raffle Token{{end}}
+				{{ if eq 6 .RecordType}}CST Staking Raffle Token{{end}}
 			</td>
 			<td class="" style="text-align: center;">
 				{{.BlockNum}}
@@ -34,10 +34,8 @@
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
 			<td style="text-align: right;" title="">{{ .RoundNum }}</td>
 			<td style="text-align: right;" title="">{{printf "%.4f" .AmountEth}}</td>
-			<td style="text-align: right;" title="">{{ .TokenAddress }}</td>
 			<td style="text-align: right;" title="">{{ .TokenId }}</td>
 			<td style="text-align: right;" title="">{{ .WinnerAddr }}</td>
-			<td style="text-align: right;" title="">{{ .WinnerIndex}}</td>
 			<td style="text-align: right;" title="">{{ .Claimed}}</td>
 			<td style="text-align: right;" title="">{{ .TokenURI}}</td>
 		</tr>

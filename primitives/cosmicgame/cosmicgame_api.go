@@ -284,7 +284,7 @@ type CGClaimInfo struct {
 }
 type CGRaffleHistory struct {
 	EvtLogId					int64
-	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize, 4 - SatkingDeposit (at StakingWallet CST), 5 CST Mint for RandomWalk staker , 6 CST Mint for CST staker
+	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize, 4 - StakingDeposit (at StakingWallet CST), 5 CST Mint for RandomWalk staker , 6 CST Mint for CST staker
 	TimeStamp					int64
 	DateTime					string
 	BlockNum					int64
@@ -419,10 +419,28 @@ type CGAdminEvent struct {
 										//			2		PrizePercentageChanged
 										//			3		RafflePercentageChanged
 										//			4		StakingPercentageChanged
-										//			5		NumRaffleWinnersPerRoundChanged
-										//			8		CharityAddressChanged
-										//			9		RandomWalkAddressChanged
-										//			10		RaffleWalletAddressChanged
+										//			5		numRaffleETHWinnersBidding
+										//			6		numRaffleNFTWinnersBidding
+										//			7		numRaffleNFTWinnersStakingCST
+										//			8		NumRaffleNFTWinnersStakingRWalkChanged
+										//			9		CharityAddressChanged
+										//			10		RandomWalkAddressChanged
+										//			11		RaffleWalletAddressChanged
+										//			12		StakingWalletCSTAddressChanged
+										//			13		StakingWalletRWalkAddressChanged
+										//			14		MarketingWalletAddressChanged
+										//			15		CosmicTokenAddressChanged
+										//			16		CosmicSignatureAddressChanged
+										//			17		BusinessLogicAddressChanged
+										//			18		TimeIncreaseChanged
+										//			19		TimeoutClaimPrizeChanged
+										//			20		PriceIncreaseChanged
+										//			21		NanoSecondsExtraChanged
+										//			22		InitialSecondsUntilPrizeChanged
+										//			23		InitialBidAmountFractionChanged
+										//			24		ActivationTimeChanged
+										//			25		ETHToCSTBidRatioChanged
+										//			26		RoundStartCSTAuctionLengthChanged
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64

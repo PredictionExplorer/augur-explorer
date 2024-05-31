@@ -4,7 +4,7 @@
 	<title>Staking Winners By Round</title>
 </head>
 <body>
-	<h3 class="page_title">Staking Winners By Round</h3>
+	<h3 class="page_title">Deposits to CST Staking Wallet By Round</h3>
 	<h3 class="page_title">Round: {{.RoundNum}}</h3>
 <table>
 	<tr class="market_reports">
@@ -15,7 +15,7 @@
 		<th class="market_reports">Num NFTs</th>
 		<th class="market_reports">Winning Amount (ETH)</th>
 	</tr>
-	{{- range $i, $change := .Winners}}
+	{{- range $i, $change := .Rewards}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">
 				{{.BlockNum}}
@@ -32,8 +32,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/staking/rewards/by_round/[round_num]</br>
+	API: /api/cosmicgame/staking/cst/rewards/by_round/[round_num]</br>
 
-	Example: /api/cosmicgame/staking/rewards/by_round/{{.RoundNum}}
+	Example: /api/cosmicgame/staking/cst/rewards/by_round/{{.RoundNum}}
 </code>
 </body>

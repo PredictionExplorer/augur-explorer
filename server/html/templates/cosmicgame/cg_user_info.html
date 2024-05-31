@@ -228,23 +228,41 @@
 	<tr class="market_reports">
 		<td class="market_reports" title="">Stake History</td>
 		<td class="market_reports">
-		<nav style="float: right;">
-			<ul>
-			<li style="width: 20em;">
-				<a class="btn_link" href="/black/cosmicgame/staking/cst/actions/by_user/{{.UserInfo.Address}}">Actions</a>
-				<span></span><span></span><span></span><span></span>
-			</li>
-			</ul>
-			</nav>
+			<table>
+				<tr>
+					<td>
+						<nav style="float: right;">
+							<ul>
+							<li style="width: 20em;">
+								<a class="btn_link" href="/black/cosmicgame/staking/cst/actions/by_user/{{.UserInfo.Address}}">CST Actions</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+							</ul>
+						</nav>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<nav style="float: right;">
+							<ul>
+							<li style="width: 20em;">
+								<a class="btn_link" href="/black/cosmicgame/staking/rwalk/actions/by_user/{{.UserInfo.Address}}">RWalk Actions</a>
+								<span></span><span></span><span></span><span></span>
+							</li>
+							</ul>
+						</nav>
+					</td>
+				</tr>
+			</table>
 		</td>
 	</tr>
 	<tr class="market_reports">
-		<td class="market_reports" title="">Pending to claim stake rewards</td>
+		<td class="market_reports" title="">Pending to claim CST staking rewards</td>
 		<td class="market_reports">
 		<nav style="float: right;">
 			<ul>
 			<li style="width: 20em;">
-				<a class="btn_link" href="/black/cosmicgame/staking/cst/rewards/to_claim/by_user/{{.UserInfo.Address}}">Pending rewards</a>
+				<a class="btn_link" href="/black/cosmicgame/staking/cst/rewards/to_claim/by_user/{{.UserInfo.Address}}">Pending CST rewards</a>
 				<span></span><span></span><span></span><span></span>
 			</li>
 			</ul>

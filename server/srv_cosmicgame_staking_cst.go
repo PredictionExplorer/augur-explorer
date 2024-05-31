@@ -57,7 +57,7 @@ func cosmic_game_staking_cst_rewards_by_round(c *gin.Context) {
 	}
 
 	rewards := arb_storagew.Get_staking_cst_rewards_by_round(round_num)
-	c.HTML(http.StatusOK, "cg_staking_cst_rewards_by_round.html", gin.H{
+	c.HTML(http.StatusOK, "cg_staking_cst_deposits_by_round.html", gin.H{
 		"RoundNum" : round_num,
 		"Rewards" : rewards,
 	})

@@ -23,26 +23,28 @@
 				 {{ if eq 2 .RecordType}}PrizePercentageChanged{{end}}
 				 {{ if eq 3 .RecordType}}RafflePercentageChanged{{end}}
 				 {{ if eq 4 .RecordType}}StakingPercentageChanged{{end}}
-				 {{ if eq 5 .RecordType}}NumRaffleWinnersPerRoundChanged{{end}}
-				 {{ if eq 6 .RecordType}}NumRaffleNFTWinnersPerRoundChanged{{end}}
-				 {{ if eq 7 .RecordType}}NumHolderNFTWinnersPerRoundChanged{{end}}
-				 {{ if eq 8 .RecordType}}CharityAddressChanged{{end}}
-				 {{ if eq 9 .RecordType}}RandomWalkAddressChanged{{end}}
-				 {{ if eq 10 .RecordType}}RaffleWalletAddressChanged{{end}}
-				 {{ if eq 11 .RecordType}}StakingWalletAddressChanged{{end}}
-				 {{ if eq 12 .RecordType}}MarketingWalletAddressChanged{{end}}
-				 {{ if eq 13 .RecordType}}CosmicTokenAddressChanged{{end}}
-				 {{ if eq 14 .RecordType}}CosmicSignatureAddressChanged{{end}}
-				 {{ if eq 15 .RecordType}}BusinessLogicAddressChanged{{end}}
-				 {{ if eq 16 .RecordType}}TimeIncreaseChanged{{end}}
-				 {{ if eq 17 .RecordType}}TimeoutClaimPrizeChanged{{end}}
-				 {{ if eq 18 .RecordType}}PriceIncreaseChanged{{end}}
-				 {{ if eq 19 .RecordType}}NanoSecondsExtraChanged{{end}}
-				 {{ if eq 20 .RecordType}}InitialSecondsUntilPrizeChanged{{end}}
-				 {{ if eq 21 .RecordType}}InitialBidAmountFractionChanged{{end}}
-				 {{ if eq 22 .RecordType}}ActivationTimeChanged{{end}}
-				 {{ if eq 23 .RecordType}}ETHToCSTBidRatioChanged{{end}}
-				 {{ if eq 24 .RecordType}}RoundStartCSTAuctionLengthChanged{{end}}
+				 {{ if eq 5 .RecordType}}NumRaffleETHWinnersBiddingChanged{{end}}
+				 {{ if eq 6 .RecordType}}NumRaffleNFTWinnersBiddingChanged{{end}}
+				 {{ if eq 7 .RecordType}}NumRaffleNFTWinnersStakingCSTChanged{{end}}
+				 {{ if eq 8 .RecordType}}NumRaffleNFTWinnersStakingRWalk{{end}}
+				 {{ if eq 9 .RecordType}}CharityAddressChanged{{end}}
+				 {{ if eq 10 .RecordType}}RandomWalkAddressChanged{{end}}
+				 {{ if eq 11 .RecordType}}RaffleWalletAddressChanged{{end}}
+				 {{ if eq 12 .RecordType}}StakingWalletCSTAddressChanged{{end}}
+				 {{ if eq 13 .RecordType}}StakingWalletRWalkAddressChanged{{end}}
+				 {{ if eq 14 .RecordType}}MarketingWalletAddressChanged{{end}}
+				 {{ if eq 15 .RecordType}}CosmicTokenAddressChanged{{end}}
+				 {{ if eq 16 .RecordType}}CosmicSignatureAddressChanged{{end}}
+				 {{ if eq 17 .RecordType}}BusinessLogicAddressChanged{{end}}
+				 {{ if eq 18 .RecordType}}TimeIncreaseChanged{{end}}
+				 {{ if eq 19 .RecordType}}TimeoutClaimPrizeChanged{{end}}
+				 {{ if eq 20 .RecordType}}PriceIncreaseChanged{{end}}
+				 {{ if eq 21 .RecordType}}NanoSecondsExtraChanged{{end}}
+				 {{ if eq 22 .RecordType}}InitialSecondsUntilPrizeChanged{{end}}
+				 {{ if eq 23 .RecordType}}InitialBidAmountFractionChanged{{end}}
+				 {{ if eq 24 .RecordType}}ActivationTimeChanged{{end}}
+				 {{ if eq 25 .RecordType}}ETHToCSTBidRatioChanged{{end}}
+				 {{ if eq 26 .RecordType}}RoundStartCSTAuctionLengthChanged{{end}}
 			</td>
 			<td style="text-align: center;">{{.BlockNum}}</td>
 			<td style="text-align: left;">{{.DateTime}};</td>
@@ -55,7 +57,7 @@
 				 {{ if eq 5 .RecordType}}{{.IntegerValue}}{{end}}
 				 {{ if eq 6 .RecordType}}{{.IntegerValue}}{{end}}
 				 {{ if eq 7 .RecordType}}{{.IntegerValue}}{{end}}
-				 {{ if eq 8 .RecordType}}{{.AddressValue}}{{end}}
+				 {{ if eq 8 .RecordType}}{{.IntegerValue}}{{end}}
 				 {{ if eq 9 .RecordType}}{{.AddressValue}}{{end}}
 				 {{ if eq 10 .RecordType}}{{.AddressValue}}{{end}}
 				 {{ if eq 11 .RecordType}}{{.AddressValue}}{{end}}
@@ -63,8 +65,8 @@
 				 {{ if eq 13 .RecordType}}{{.AddressValue}}{{end}}
 				 {{ if eq 14 .RecordType}}{{.AddressValue}}{{end}}
 				 {{ if eq 15 .RecordType}}{{.AddressValue}}{{end}}
-				 {{ if eq 16 .RecordType}}{{.IntegerValue}}{{end}}
-				 {{ if eq 17 .RecordType}}{{.IntegerValue}}{{end}}
+				 {{ if eq 16 .RecordType}}{{.AddressValue}}{{end}}
+				 {{ if eq 17 .RecordType}}{{.AddressValue}}{{end}}
 				 {{ if eq 18 .RecordType}}{{.IntegerValue}}{{end}}
 				 {{ if eq 19 .RecordType}}{{.IntegerValue}}{{end}}
 				 {{ if eq 20 .RecordType}}{{.IntegerValue}}{{end}}
@@ -72,6 +74,8 @@
 				 {{ if eq 22 .RecordType}}{{.IntegerValue}}{{end}}
 				 {{ if eq 23 .RecordType}}{{.IntegerValue}}{{end}}
 				 {{ if eq 24 .RecordType}}{{.IntegerValue}}{{end}}
+				 {{ if eq 25 .RecordType}}{{.IntegerValue}}{{end}}
+				 {{ if eq 26 .RecordType}}{{.IntegerValue}}{{end}}
 			</td>
 		</tr>
 	{{- end}}

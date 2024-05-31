@@ -103,7 +103,7 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 			sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
 			os.Exit(1)
 		}
-
+	}
 	if null_winners.Valid { stats.NumUniqueWinners = uint64(null_winners.Int64) }
 	if null_sum_wei.Valid { stats.TotalPrizesPaidAmountWei = null_sum_wei.String }
 	if null_sum_eth.Valid { stats.TotalPrizesPaidAmountEth = null_sum_eth.Float64 }
@@ -136,12 +136,12 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	}
 	if null_stakers.Valid { stats.NumUniqueStakersRWalk = uint64(null_stakers.Int64) }
 	query = "SELECT "+
-				"(COALESCE(c.total_tokens_staked,0) + COALESCE(r.total_tokens_staked,0)) all_tokens_num "+
+				"COUNT(*) all_tokens_num "+
 			"FROM address a "+
 				"LEFT JOIN cg_staker_cst c ON a.address_id = c.staker_aid "+
 				"LEFT JOIN cg_staker_rwalk r ON a.address_id = r.staker_aid "+
 			"WHERE "+
-				"(COALESCE(c.total_tokens_staked,0) + COALESCE(r.total_tokens_staked,0)) > 0 "
+				"(COALESCE(c.total_tokens_staked,0) >0) AND (COALESCE(r.total_tokens_staked,0) > 0) "
 	row = sw.S.Db().QueryRow(query)
 	err=row.Scan(&null_stakers)
 	if (err!=nil) {

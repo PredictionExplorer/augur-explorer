@@ -14,7 +14,11 @@
 	{{- range $i, $change := .SystemModeChanges}}
 		<tr class="market_reports">
 			<td class="" title="{{.TimeStamp}}">{{.BlockNum}}</td>
-			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" title="{{.TimeStamp}}">
+				{{ if eq -1 .EvtLogId }}Deployment{{else}}
+				{{.DateTime}}
+				{{ end }}
+			</td>
 			<td style="text-align: center" >
 				{{.SystemMode}}
 			</td>
