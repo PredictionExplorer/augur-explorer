@@ -46,7 +46,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"rd.claimed "+
 					"FROM cg_raffle_deposit rd "+
 						"LEFT JOIN transaction t ON t.id=rd.tx_id "+
-					"WHERE rd.winner_aid=$1 "+
+					"WHERE rd.winner_aid=$1  "+
 				") UNION ALL (" +
 					"SELECT "+
 						"1 AS record_type,"+
@@ -66,7 +66,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"'T' AS claimed "+
 					"FROM cg_raffle_nft_winner rn "+
 						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-					"WHERE rn.winner_aid=$1 "+
+					"WHERE (rn.winner_aid=$1) AND (is_rwalk=FALSE) AND (is_staker=TRUE) "+
 				") UNION ALL (" +
 					"SELECT "+
 						"2 AS record_type,"+
@@ -273,6 +273,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 					"FROM cg_raffle_nft_winner rn "+
 						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
 						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
+					"WHERE (is_rwalk=FALSE) AND (is_staker=FALSE) " +
 				") UNION ALL (" +
 					"SELECT "+
 						"2 AS record_type,"+
