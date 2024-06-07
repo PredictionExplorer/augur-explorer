@@ -38,7 +38,8 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGPrizeRec {
 				"dp.amount/1e18, "+
 				"dp.amount_per_staker,"+
 				"dp.amount_per_staker/1e18i, "+
-				"dp.deposit_num "+
+				"dp.deposit_num, "+
+				"dp.num_staked_nfts "+
 			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
@@ -63,7 +64,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGPrizeRec {
 	defer rows.Close()
 	var null_dep_amount,null_dep_amount_per_tok sql.NullString
 	var null_dep_amount_eth,null_dep_amount_per_token_eth sql.NullFloat64
-	var null_dep_deposit_num sql.NullInt64
+	var null_dep_deposit_num,null_num_staked_nfts sql.NullInt64
 	for rows.Next() {
 		var rec p.CGPrizeRec
 		err=rows.Scan(
@@ -93,6 +94,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGPrizeRec {
 			&null_dep_amount_per_tok,
 			&null_dep_amount_per_token_eth,
 			&null_dep_deposit_num,
+			&null_num_staked_nfts,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -104,6 +106,7 @@ func (sw *SQLStorageWrapper) Get_prize_claims(offset,limit int) []p.CGPrizeRec {
 		if null_dep_amount_per_tok.Valid { rec.StakingPerToken = null_dep_amount_per_tok.String }
 		if null_dep_amount_per_token_eth.Valid { rec.StakingPerTokenEth = null_dep_amount_per_token_eth.Float64 }
 		if null_dep_deposit_num.Valid { rec.StakingDepositNum = null_dep_deposit_num.Int64} else {rec.StakingDepositNum = -1}
+		if null_num_staked_nfts.Valid { rec.StakingNumStakedTokens = null_num_staked_nfts.Int64 }
 
 		records = append(records,rec)
 	}
@@ -139,7 +142,8 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 				"dp.amount/1e18,"+
 				"dp.amount_per_staker,"+
 				"dp.amount_per_staker/1e18, "+
-				"dp.deposit_num "+
+				"dp.deposit_num, "+
+				"dp.num_staked_nfts "+
 			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
@@ -158,7 +162,7 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 	var null_seed sql.NullString
 	var null_dep_amount,null_dep_amount_per_tok sql.NullString
 	var null_dep_amount_eth,null_dep_amount_per_token_eth sql.NullFloat64
-	var null_dep_deposit_num sql.NullInt64
+	var null_dep_deposit_num,null_num_staked_nfts sql.NullInt64
 	err := row.Scan(
 		&rec.EvtLogId,
 		&rec.BlockNum,
@@ -186,6 +190,7 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 		&null_dep_amount_per_tok,
 		&null_dep_amount_per_token_eth,
 		&null_dep_deposit_num,
+		&null_num_staked_nfts,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -207,6 +212,7 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 	if null_dep_amount_per_tok.Valid { rec.StakingPerToken = null_dep_amount_per_tok.String }
 	if null_dep_amount_per_token_eth.Valid { rec.StakingPerTokenEth = null_dep_amount_per_token_eth.Float64 }
 	if null_dep_deposit_num.Valid { rec.StakingDepositNum = null_dep_deposit_num.Int64} else {rec.StakingDepositNum = -1}
+	if null_num_staked_nfts.Valid { rec.StakingNumStakedTokens = null_num_staked_nfts.Int64 }
 
 	return true,rec
 }

@@ -39,7 +39,9 @@
 				{{ else }} N/A {{end}}
 			</td>
 			<td style="text-align: left;" title="">
+				 <a href="/black/cosmicgame/staking/cst/rewards/collected/by_user/{{.StakerAddr}}">
 				{{.StakerAddr}}
+				</a>
 			</td>
 			<td style="text-align: right;" title="">
 				{{ if eq .NumStakedNFTs 0 }} <font color=red>{{ end }}

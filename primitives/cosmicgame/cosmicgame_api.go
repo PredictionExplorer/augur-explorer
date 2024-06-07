@@ -83,6 +83,7 @@ type CGPrizeRec struct {
 	StakingDepositAmountEth		float64
 	StakingPerToken				string
 	StakingPerTokenEth			float64
+	StakingNumStakedTokens		int64
 	RoundStats					CGRoundStats
 	RaffleNFTWinners			[]CGRaffleNFTWinnerRec
 	RaffleETHDeposits			[]CGRaffleDepositRec
