@@ -67,7 +67,7 @@ async function main() {
   console.log("StakingWalletCST address:", stakingWalletCST.address);
 
   const StakingWalletRWalk = await hre.ethers.getContractFactory("StakingWalletRWalk");
-  stakingWalletRWalk = await StakingWalletRWalk.deploy(randomWalkNFT.address,cosmicGame.address);
+  stakingWalletRWalk = await StakingWalletRWalk.deploy(randomWalkNFT.address);
   await stakingWalletRWalk.deployed();
   console.log("StakingWalletRWalk address:", stakingWalletRWalk.address);
 

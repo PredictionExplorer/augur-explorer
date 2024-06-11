@@ -77,7 +77,9 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winners(offset,limit int) []p.CGRaff
 				"wa.addr,"+
 				"p.round_num, "+
 				"p.token_id, "+
-				"p.winner_idx "+
+				"p.winner_idx, "+
+				"p.is_rwalk,"+
+				"p.is_staker "+
 			"FROM "+sw.S.SchemaName()+".cg_raffle_nft_winner p "+
 				"LEFT JOIN transaction t ON t.id=p.tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
@@ -105,6 +107,8 @@ func (sw *SQLStorageWrapper) Get_raffle_nft_winners(offset,limit int) []p.CGRaff
 			&rec.RoundNum,
 			&rec.TokenId,
 			&rec.WinnerIndex,
+			&rec.IsRWalk,
+			&rec.IsStaker,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

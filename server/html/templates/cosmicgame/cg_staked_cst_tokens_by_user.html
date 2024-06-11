@@ -12,6 +12,7 @@
 		<th class="market_reports">Stake Datetime</th>
 		<th class="market_reports">UnStake Datetime</th>
 		<th class="market_reports">TokenId</th>
+		<th class="market_reports">ActionId</th>
 	</tr>
 	{{- range $i, $change := .StakedTokensCST}}
 		<tr class="market_reports">
@@ -22,6 +23,11 @@
 			<td style="text-align: center;" title="">{{.UnstakeDateTime}}</td>
 			<td style="text-align: center;" title="">
 				<a href="/black/cosmicgame/cst/info/{{.TokenInfo.TokenId}}">{{.TokenInfo.TokenId}}</a>
+			</td>
+			<td style="text-align: center;" title="">
+				<a href="/black/cosmicgame/staking/cst/actions/info/{{.TokenInfo.StakeActionId}}">
+				{{.TokenInfo.StakeActionId}}
+				</a>
 			</td>
 		</tr>
 	{{- end}}
