@@ -8,10 +8,15 @@ contract DummyArtBlocks is ERC721, Ownable {
 
     uint256 public curTokenId = 13000000;
     constructor() ERC721("Dummy ArtBlocks", "DART")  {}
-    function mint(address owner) external {
-        _safeMint(msg.sender,curTokenId);
+    function mint(address owner) public {
+        _safeMint(owner,curTokenId);
         curTokenId++;
     }
+	function multimint(address owner,uint256 num) external {
+		for (uint256 i = 0; i<num; i++) {
+			mint(owner);
+		}
+	}
 	function _baseURI() internal view override returns (string memory) {
 		return "https://token.artblocks.io/";
 	}
