@@ -67,7 +67,7 @@ async function main() {
   console.log("StakingWalletCST address:", stakingWalletCST.address);
 
   const StakingWalletRWalk = await hre.ethers.getContractFactory("StakingWalletRWalk");
-  stakingWalletRWalk = await StakingWalletRWalk.deploy(randomWalkNFT.address);
+  stakingWalletRWalk = await StakingWalletRWalk.deploy(randomWalkNFT.address,cosmicGame.address);
   await stakingWalletRWalk.deployed();
   console.log("StakingWalletRWalk address:", stakingWalletRWalk.address);
 
@@ -309,7 +309,6 @@ async function main() {
   await cosmicGame.connect(owner).setMarketingWallet(marketingWallet.address);
   await cosmicGame.connect(owner).setNumRaffleETHWinnersBidding(4);
   await cosmicGame.connect(owner).setNumRaffleNFTWinnersBidding(6);
-  await cosmicGame.connect(owner).setNumRaffleNFTWinnersStakingCST(7);
   await cosmicGame.connect(owner).setNumRaffleNFTWinnersStakingRWalk(3);
   await cosmicGame.connect(owner).setPrizePercentage(30)
   await cosmicGame.connect(owner).setCharityPercentage(5);
@@ -336,10 +335,6 @@ async function main() {
   await cosmicGame.connect(owner).updateInitialBidAmountFraction(tmp);
   tmp = await cosmicGame.activationTime();
   await cosmicGame.connect(owner).setActivationTime(tmp);
-  tmp = await cosmicGame.ETHToCSTBidRatio();
-  await cosmicGame.connect(owner).setETHToCSTBidRatio(tmp);
-  tmp = await cosmicGame.RoundStartCSTAuctionLength();
-  await cosmicGame.connect(owner).setRoundStartCSTAuctionLength(tmp);
 
   await cosmicGame.connect(owner).setRuntimeMode();
 

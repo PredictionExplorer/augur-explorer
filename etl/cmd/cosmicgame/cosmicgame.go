@@ -22,6 +22,7 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 	// this is the list of all the events we read (not necesarilly insert into the DB, but check on them)
 	inspected_events= make([]InspectedEvent,0, 32)
 	inspected_events = append(inspected_events,
+		// this list matches the order of main.go event variables in `var` declaration
 		InspectedEvent {
 			Signature:	hex.EncodeToString(evt_prize_claim_event[:4]),
 			ContractAid: 0,
@@ -35,35 +36,7 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_donation_received_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_donation_sent_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
 			Signature: hex.EncodeToString(evt_nft_donation_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_charity_updated[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_token_name_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_mint_event[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_raffle_deposit[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_raffle_withdrawal[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -71,28 +44,8 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_stake_action[:4]),
+			Signature: hex.EncodeToString(evt_donated_nft_claimed[:4]),
 			ContractAid: 0,
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_unstake_action[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_eth_deposit[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_claim_reward[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_marketing_reward_sent[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_transfer[:4]),
-			ContractAid: cosmic_sig_aid,
 		},
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_charity_percentage_changed[:4]),
@@ -124,10 +77,6 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 		},
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_num_raffle_nft_winners_staking_rwalk_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
-			Signature: hex.EncodeToString(evt_system_mode_changed[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -200,6 +149,62 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 		},
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_round_start_auction_length_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_system_mode_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_donation_received_event[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_donation_sent_event[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_charity_updated[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_token_name_event[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_mint_event[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_raffle_deposit[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_raffle_withdrawal[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_transfer[:4]),
+			ContractAid: cosmic_sig_aid,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_stake_action[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_unstake_action[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_claim_reward[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_eth_deposit[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_marketing_reward_sent[:4]),
 			ContractAid: 0,
 		},
 	)
