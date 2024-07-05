@@ -55,7 +55,6 @@ const (
 	STAKE_PERCENTAGE_CHANGED = "9be9203c5d81ee2019998f7020cf412c92a35ba870318f660d4972660210fb4b"
 	NUM_RAFFLE_ETH_WINNERS_BIDDING_CHANGED = "26f4dd2743839f7c4e8e381ebda3f0c09ad91e8294b566239e6556380bc8c2f4"
 	NUM_RAFFLE_NFT_WINNERS_BIDDING_CHANGED = "06dd30d27a9e7637b273638e4bfa768e1cf87fe89bda7589c3a68814b8662980"
-	NUM_RAFFLE_NFT_WINNERS_STAKING_CST_CHANGED = "5f866930caf1a163ad354e93bfe6bf1d610685ef42d0f67e374abe954fed7bf9"
 	NUM_RAFFLE_NFT_WINNERS_STAKING_RWALK_CHANGED = "abad7e38dbf633cf4208567936f05551c63b73e3ef5a278f64244c15030c0c68"
 	SYSTEM_MODE_CHANGED		= "f24e774cdaabee9b8782266728e442b7f1fa6ae9204755c0da1541e99f04aa4c"
 	CHARITY_ADDRESS_CHANGED	= "1c7efd98583e33a9cc6adff48a97abdaaf43e5c9e918d5ec3e75e93e1dafcf6c"
@@ -94,7 +93,6 @@ var (
 	evt_staking_percentage_changed,_ = hex.DecodeString(STAKE_PERCENTAGE_CHANGED)
 	evt_num_raffle_eth_winners_bidding_changed,_ = hex.DecodeString(NUM_RAFFLE_ETH_WINNERS_BIDDING_CHANGED)
 	evt_num_raffle_nft_winners_bidding_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_WINNERS_BIDDING_CHANGED);
-	evt_num_raffle_nft_winners_staking_cst_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_WINNERS_STAKING_CST_CHANGED);
 	evt_num_raffle_nft_winners_staking_rwalk_changed,_ = hex.DecodeString(NUM_RAFFLE_NFT_WINNERS_STAKING_RWALK_CHANGED);
 	evt_charity_address_changed,_	= hex.DecodeString(CHARITY_ADDRESS_CHANGED);
 	evt_rwalk_address_changed,_	= hex.DecodeString(RWALK_ADDRESS_CHANGED);

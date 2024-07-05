@@ -41,9 +41,11 @@ var (
 	raffle_percentage			int64
 	staking_percentage			int64
 	time_increase				string
+	initial_seconds				int64
+	timeout_claim				int64
+	roundstart_auclen			int64
 	raffle_eth_winners_bidding	int64		// numRaffleETHWinnersBidding
 	raffle_nft_winners_bidding	int64		// numRaffleNFTWinnersBidding
-	raffle_nft_winners_staking_cst	int64		// numRaffleNFTWinnersStakingCST
 	raffle_nft_winners_staking_rwalk	int64	// numRaffleNFTWinnersStakingRWalk
 
 	// contract variables (variables usually modified by a bid())
@@ -198,13 +200,6 @@ func do_reload_contract_constants() {
 			Info.Printf(err_str)
 			raffle_nft_winners_bidding = -1
 		} else { raffle_nft_winners_bidding = tmp_val.Int64() }
-		tmp_val,err = bwcontract.NumRaffleNFTWinnersStakingCST(&copts)
-		if err != nil {
-			err_str := fmt.Sprintf("Error at NumRaffleNFTWinnersStakingCST() call: %v\n",err)
-			Error.Printf(err_str)
-			Info.Printf(err_str)
-			raffle_nft_winners_staking_cst = -1
-		} else { raffle_nft_winners_staking_cst = tmp_val.Int64() }
 		tmp_val,err = bwcontract.NumRaffleNFTWinnersStakingRWalk(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at NumRaffleNFTWinnersStakingRWalk() call: %v\n",err)
@@ -287,6 +282,27 @@ func do_reload_contract_variables() {
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 		}
+		tmp_val,err = bwcontract.InitialSecondsUntilPrize(&copts)
+		if err != nil {
+			err_str := fmt.Sprintf("Error at InitialSecondsUntilPrize() call: %v\n",err)
+			Error.Printf(err_str)
+			Info.Printf(err_str)
+			initial_seconds = -1
+		} else { initial_seconds = tmp_val.Int64() }
+		tmp_val,err = bwcontract.TimeoutClaimPrize(&copts)
+		if err != nil {
+			err_str := fmt.Sprintf("Error at TimeoutClaimPrize() call: %v\n",err)
+			Error.Printf(err_str)
+			Info.Printf(err_str)
+			timeout_claim = -1
+		} else { timeout_claim = tmp_val.Int64() }
+		tmp_val,err = bwcontract.RoundStartCSTAuctionLength(&copts)
+		if err != nil {
+			err_str := fmt.Sprintf("Error at RoundStartCSTAuctionLength() call: %v\n",err)
+			Error.Printf(err_str)
+			Info.Printf(err_str)
+			roundstart_auclen = -1
+		} else { roundstart_auclen = tmp_val.Int64() }
 		tmp_val,err = eclient.BalanceAt(context.Background(),charity_addr,nil)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at BalanceAt() call for charity addr: %v\n",err)
@@ -360,6 +376,9 @@ func cosmic_game_index_page(c *gin.Context) {
 		"PriceIncrease" : price_increase,
 		"TimeIncrease" : time_increase,
 		"NanosecondsExtra" : nanoseconds_extra,
+		"InitialSecondsUntilPrize" : initial_seconds,
+		"TimeoutClaimPrize" : timeout_claim,
+		"RoundStartCSTAuctionLength" : roundstart_auclen,
 		"TokenReward" : token_reward,
 		"PrizePercentage" : prize_percentage,
 		"RafflePercentage" : raffle_percentage,
@@ -370,8 +389,7 @@ func cosmic_game_index_page(c *gin.Context) {
 		"CharityBalanceEth": charity_balance_eth,
 		"NumRaffleETHWinnersBidding" : raffle_eth_winners_bidding,
 		"NumRaffleNFTWinnersBidding" : raffle_nft_winners_bidding,
-		"NumRaffleNFTWinnersStakingCST" : raffle_nft_winners_staking_cst,
-		"NumRaffleNFTWinnersStakingRWalk" : raffle_nft_winners_staking_cst,
+		"NumRaffleNFTWinnersStakingRWalk" : raffle_nft_winners_staking_rwalk,
 		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
 		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
 		"NumUniqueStakersCST" : bw_stats.NumUniqueStakersCST,
@@ -459,13 +477,14 @@ func cosmic_game_bid_list_by_round(c *gin.Context) {
 		return
 	}
 
-	bids := arb_storagew.Get_bids_by_round_num(round_num,int(sort),offset,limit)
+	bids,total_rows := arb_storagew.Get_bids_by_round_num(round_num,int(sort),offset,limit)
 	c.HTML(http.StatusOK, "cg_bids_by_round_num.html", gin.H{
 		"RoundNum" : round_num,
 		"Offset" : offset,
 		"Limit" : limit,
 		"Sort" : sort,
 		"BidsByRound" : bids,
+		"TotalRows" : total_rows,
 	})
 }
 func cosmic_game_bid_info(c *gin.Context) {

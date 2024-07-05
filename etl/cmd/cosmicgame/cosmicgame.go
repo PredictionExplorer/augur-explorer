@@ -72,10 +72,6 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_num_raffle_nft_winners_staking_cst_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
 			Signature: hex.EncodeToString(evt_num_raffle_nft_winners_staking_rwalk_changed[:4]),
 			ContractAid: 0,
 		},
@@ -1435,37 +1431,6 @@ func proc_num_raffle_nft_winners_bidding_changed_event(log *types.Log,elog *Ethe
 	storagew.Delete_cosmic_game_num_raffle_nft_winners_bidding_changed_event(evt.EvtId)
     storagew.Insert_cosmic_game_num_raffle_nft_winners_bidding_changed_event(&evt)
 }
-func proc_num_raffle_nft_winners_staking_cst_changed_event(log *types.Log,elog *EthereumEventLog) {
-
-	var evt CGNumRaffleNFTWinnersStakingCSTChanged
-	var eth_evt CosmicGameNumRaffleNFTWinnersStakingCSTChanged
-
-	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
-		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
-		return
-	}
-	Info.Printf("Processing NumRaffleNFTWinnersStakingCSTChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"NumRaffleNFTWinnersStakingCSTChanged",log.Data)
-	if err != nil {
-		Error.Printf("Event NumRaffleNFTWinnersStakingCSTChanged decode error: %v",err)
-		os.Exit(1)
-	}
-
-	evt.EvtId=elog.EvtId
-	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
-	evt.Contract = log.Address.String()
-	evt.TimeStamp = elog.TimeStamp
-	evt.NewNumRaffleNFTWinnersStakingCST = eth_evt.NewNumRaffleNFTWinnersStakingCST.Int64()
-
-	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("NumRaffleNFTWinnersStakingCSTChanged{\n")
-	Info.Printf("\tNewNumRaffleNFTWinnersStakingCST: %v\n",evt.NewNumRaffleNFTWinnersStakingCST)
-	Info.Printf("}\n")
-
-	storagew.Delete_cosmic_game_num_raffle_nft_winners_staking_cst_changed_event(evt.EvtId)
-    storagew.Insert_cosmic_game_num_raffle_nft_winners_staking_cst_changed_event(&evt)
-}
 func proc_num_raffle_nft_winners_staking_rwalk_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGNumRaffleNFTWinnersStakingRWalkChanged
@@ -2023,37 +1988,6 @@ func proc_activation_time_changed_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_activation_time_changed_event(evt.EvtId)
     storagew.Insert_activation_time_changed_event(&evt)
 }
-func proc_ethcst_bid_ratio_changed_event(log *types.Log,elog *EthereumEventLog) {
-
-	var evt CGETHCSTBidRatioChanged
-	var eth_evt CosmicGameETHToCSTBidRatioChanged 
-
-	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
-		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
-		return
-	}
-	Info.Printf("Processing ETHToCSTBidRatioChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"ETHToCSTBidRatioChanged",log.Data)
-	if err != nil {
-		Error.Printf("Event ETHToCSTBidRatioChanged decode error: %v",err)
-		os.Exit(1)
-	}
-
-	evt.EvtId=elog.EvtId
-	evt.BlockNum = elog.BlockNum
-	evt.TxId = elog.TxId
-	evt.Contract = log.Address.String()
-	evt.TimeStamp = elog.TimeStamp
-	evt.NewETHToCSTBidRatio = eth_evt.NewETHToCSTBidRatio.String()
-
-	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("NewETHToCSTBidRatio{\n")
-	Info.Printf("\tNewETHToCSTBidRatio: %v\n",evt.NewETHToCSTBidRatio)
-	Info.Printf("}\n")
-
-	storagew.Delete_ethcst_bid_ratio_changed_event(evt.EvtId)
-    storagew.Insert_ethcst_bid_ratio_changed_event(&evt)
-}
 func proc_round_start_cst_auction_length_changed_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGRoundStartCSTAuctionLengthChanged
@@ -2162,9 +2096,6 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_num_raffle_nft_winners_bidding_changed) {
 		proc_num_raffle_nft_winners_bidding_changed_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_num_raffle_nft_winners_staking_cst_changed) {
-		proc_num_raffle_nft_winners_staking_cst_changed_event(log,evtlog)
-	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_num_raffle_nft_winners_staking_rwalk_changed) {
 		proc_num_raffle_nft_winners_staking_rwalk_changed_event(log,evtlog)
 	}
@@ -2218,9 +2149,6 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_activation_time_changed) {
 		proc_activation_time_changed_event(log,evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_ethcst_bid_ratio_changed) {
-		proc_ethcst_bid_ratio_changed_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_round_start_auction_length_changed) {
 		proc_round_start_cst_auction_length_changed_event(log,evtlog)

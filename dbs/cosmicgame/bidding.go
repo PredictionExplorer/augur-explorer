@@ -164,7 +164,7 @@ func (sw *SQLStorageWrapper) Get_bid_info(evtlog_id int64) (bool,p.CGBidRec) {
 	if null_token_uri.Valid { rec.NFTTokenURI = null_token_uri.String }
 	return true,rec
 }
-func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,limit int) []p.CGBidRec {
+func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,limit int) ([]p.CGBidRec,int64) {
 
 	var order_by string = " ASC "
 	if sort == 1 {
@@ -248,7 +248,19 @@ func (sw *SQLStorageWrapper) Get_bids_by_round_num(round_num int64,sort,offset,l
 		if null_token_uri.Valid { rec.NFTTokenURI = null_token_uri.String }
 		records = append(records,rec)
 	}
-	return records
+
+	query = "SELECT count(*) AS total_rows FROM cg_bid b WHERE round_num=$1"
+	var null_total_rows sql.NullInt64
+	row := sw.S.Db().QueryRow(query,round_num)
+	err=row.Scan(&null_total_rows);
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return records,-1
+		}
+		sw.S.Log_msg(fmt.Sprintf("Error in Get_bids_by_round_num(): %v, q=%v",err,query))
+		os.Exit(1)
+	}
+	return records,null_total_rows.Int64
 
 }
 func (sw *SQLStorageWrapper) Get_round_start_timestamp(round_num uint64) int64  {

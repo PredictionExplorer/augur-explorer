@@ -51,6 +51,9 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"PriceIncrease" : price_increase,
 		"TimeIncrease" : time_increase,
 		"NanosecondsExtra" : nanoseconds_extra,
+		"InitialSecondsUntilPrize" : initial_seconds,
+		"TimeoutClaimPrize" : timeout_claim,
+		"RoundStartCSTAuctionLength" : roundstart_auclen,
 		"TokenReward" : token_reward,
 		"PrizePercentage" : prize_percentage,
 		"RafflePercentage" : raffle_percentage,
@@ -61,7 +64,6 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"CharityBalanceEth": charity_balance_eth,
 		"NumRaffleEthWinnersBidding" : raffle_eth_winners_bidding,
 		"NumRaffleNFTWinnersBidding" : raffle_nft_winners_bidding,
-		"NumRaffleNFTWinnersStakingCST" : raffle_nft_winners_staking_cst,
 		"NumRaffleNFTWinnersStakingRWalk" : raffle_nft_winners_staking_rwalk,
 		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
 		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
@@ -157,7 +159,7 @@ func api_cosmic_game_bid_list_by_round(c *gin.Context) {
 		return
 	}
 
-	bids := arb_storagew.Get_bids_by_round_num(round_num,int(sort),offset,limit)
+	bids,total_rows := arb_storagew.Get_bids_by_round_num(round_num,int(sort),offset,limit)
 	var req_status int = 1
 	var err_str string = ""
 	c.JSON(http.StatusOK, gin.H{
@@ -168,6 +170,7 @@ func api_cosmic_game_bid_list_by_round(c *gin.Context) {
 		"Limit" : limit,
 		"Sort" : sort,
 		"BidsByRound" : bids,
+		"TotalRows" : total_rows,
 	})
 }
 func api_cosmic_game_bid_info(c *gin.Context) {
