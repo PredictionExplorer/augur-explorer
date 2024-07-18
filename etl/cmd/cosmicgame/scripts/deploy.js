@@ -321,6 +321,8 @@ async function main() {
   await cosmicGame.connect(owner).setBusinessLogicContract(bLogic.address);
   await cosmicGame.connect(owner).setStakingWalletCST(stakingWalletCST.address);
   await cosmicGame.connect(owner).setStakingWalletRWalk(stakingWalletRWalk.address);
+  await cosmicGame.connect(owner).setLongestBidderTokenReward(999);
+  await cosmicGame.connect(owner).setTopBidderTokenReward(998);
   let tmp = await cosmicGame.timeIncrease();
   await cosmicGame.connect(owner).setTimeIncrease(tmp);
   tmp = await cosmicGame.connect(owner).timeoutClaimPrize()

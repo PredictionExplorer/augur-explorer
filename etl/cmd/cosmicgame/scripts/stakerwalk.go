@@ -1,4 +1,4 @@
-// Makes a deposit to Wrapped ETH contract
+// Unstake token
 package main
 
 import (
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"context"
+	"strconv"
 	"crypto/ecdsa"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -19,11 +20,9 @@ import (
 const (
 //	CHAIN_ID		int64 = 31337
 	CHAIN_ID		int64 = 421614
-//	CHAIN_ID		int64 = 11155111
 )
 var (
 	RPC_URL string
-	token_addr		common.Address
 )
 func main() {
 
@@ -35,7 +34,7 @@ func main() {
 	}
 
 	if len(os.Args) != 4 {
-		fmt.Printf("Usage: \n\t\t%v [priv_key] [contract_addr] [amount]\n\n\t\tMakes donation to CosmicGame contract\n",os.Args[0])
+		fmt.Printf("Usage: \n\t\t%v [priv_key] [staking_wallet_addr] [token_id]\n\n\t\tStakes token\n",os.Args[0])
 		os.Exit(1)
 	}
 
@@ -45,19 +44,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	cosmic_game_addr := common.HexToAddress(os.Args[2])
-	amount_str := os.Args[3]
+	staking_wallet_addr := common.HexToAddress(os.Args[2])
 
-	donation_amount := big.NewInt(0)
-	_,success := donation_amount.SetString(amount_str,10)
-	if !success {
-		fmt.Printf("Incorrect amount provided on the command line")
+	token_id_str := os.Args[3]
+	token_id,err := strconv.ParseInt(token_id_str,10,64)
+	if err != nil {
+		fmt.Printf("error parsing token_id parameter: %v\n",err)
 		os.Exit(1)
 	}
 
-	cosmic_game_ctrct,err := NewCosmicGame(cosmic_game_addr,eclient)
-	if err!=nil {
-		fmt.Printf("Failed to instantiate CosmicGame contract: %v\n",err)
+	stw_contract,err := NewStakingWalletRWalk(staking_wallet_addr,eclient)
+	if err != nil {
+		fmt.Printf("Error instantiating StakingWallet: %v\n",err)
 		os.Exit(1)
 	}
 
@@ -88,9 +86,7 @@ func main() {
 	txopts := bind.NewKeyedTransactor(from_PrivateKey)
 	txopts.Nonce = big.NewInt(int64(from_nonce))
 	txopts.Value = big.NewInt(0)     // in weia
-	txopts.Value.Set(donation_amount)
-	txopts.GasLimit = uint64(20000000) // in units
-	fmt.Printf("tx = %v\n",txopts)
+	txopts.GasLimit = uint64(10000000) // in units
 	txopts.GasPrice = gasPrice
 
 	fmt.Printf("Gas price = %v\n",gasPrice.String())
@@ -107,8 +103,10 @@ func main() {
 	}
 	txopts.Signer = signfunc
 
-	tx,err := cosmic_game_ctrct.Donate(txopts)
-	fmt.Printf("Tx hash: %v\n",tx.Hash().String())
+	tx,err := stw_contract.Stake(txopts,big.NewInt(token_id))
+	if tx != nil {
+		fmt.Printf("Tx hash: %v\n",tx.Hash().String())
+	}
 	if err!=nil {
 		fmt.Printf("Error sending tx: %v\n",err)
 		os.Exit(1)

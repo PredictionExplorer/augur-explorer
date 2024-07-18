@@ -169,6 +169,46 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 					"FROM cg_raffle_nft_winner rn "+
 						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
 					"WHERE (rn.winner_aid=$1) AND (is_rwalk=FALSE) AND (is_staker=TRUE) "+
+				") UNION ALL (" +
+					"SELECT "+
+						"7 AS record_type,"+
+						"rn.evtlog_id,"+
+						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
+						"rn.time_stamp AS date_time, "+
+						"rn.block_num,"+
+						"rn.tx_id,"+
+						"t.tx_hash,"+
+						"rn.round_num,"+
+						"0 AS amount,"+
+						"0 AS amount_eth,"+
+						"'' AS token_addr, "+
+						"rn.token_id," +
+						"'' AS token_uri,"+
+						"rn.winner_idx, "+
+						"'T' AS claimed "+
+					"FROM cg_endurance_nft_winner rn "+
+						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
+					"WHERE (rn.winner_aid=$1) "+
+				") UNION ALL (" +
+					"SELECT "+
+						"8 AS record_type,"+
+						"rn.evtlog_id,"+
+						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
+						"rn.time_stamp AS date_time, "+
+						"rn.block_num,"+
+						"rn.tx_id,"+
+						"t.tx_hash,"+
+						"rn.round_num,"+
+						"0 AS amount,"+
+						"0 AS amount_eth,"+
+						"'' AS token_addr, "+
+						"rn.token_id," +
+						"'' AS token_uri,"+
+						"rn.winner_idx, "+
+						"'T' AS claimed "+
+					"FROM cg_topbidder_nft_winner rn "+
+						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
+					"WHERE (rn.winner_aid=$1) "+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +
@@ -407,6 +447,50 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
 						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
 					"WHERE (is_rwalk=FALSE) AND (is_staker=TRUE) "+
+				") UNION ALL (" +
+					"SELECT "+
+						"7 AS record_type,"+
+						"rn.evtlog_id,"+
+						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
+						"rn.time_stamp AS date_time, "+
+						"rn.block_num,"+
+						"rn.tx_id,"+
+						"t.tx_hash,"+
+						"rn.round_num,"+
+						"0 AS amount,"+
+						"0 AS amount_eth,"+
+						"'' AS token_addr, "+
+						"rn.token_id," +
+						"'' AS token_uri,"+
+						"rn.winner_idx, "+
+						"'T' AS claimed, "+
+						"wa.addr winner_addr,"+
+						"rn.winner_aid "+
+					"FROM cg_endurance_nft_winner rn "+
+						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
+						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
+				") UNION ALL (" +
+					"SELECT "+
+						"8 AS record_type,"+
+						"rn.evtlog_id,"+
+						"EXTRACT(EPOCH FROM rn.time_stamp)::BIGINT AS tstmp, "+
+						"rn.time_stamp AS date_time, "+
+						"rn.block_num,"+
+						"rn.tx_id,"+
+						"t.tx_hash,"+
+						"rn.round_num,"+
+						"0 AS amount,"+
+						"0 AS amount_eth,"+
+						"'' AS token_addr, "+
+						"rn.token_id," +
+						"'' AS token_uri,"+
+						"rn.winner_idx, "+
+						"'T' AS claimed, "+
+						"wa.addr winner_addr,"+
+						"rn.winner_aid "+
+					"FROM cg_topbidder_nft_winner rn "+
+						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
+						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
 				") "+
 			") everything " +
 			"ORDER BY evtlog_id DESC " +

@@ -44,6 +44,14 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
+			Signature: hex.EncodeToString(evt_endurance_nft_winner[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_topbidder_nft_winner[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
 			Signature: hex.EncodeToString(evt_donated_nft_claimed[:4]),
 			ContractAid: 0,
 		},
@@ -822,6 +830,82 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Delete_raffle_nft_winner(evt.EvtId)
 	storagew.Insert_raffle_nft_winner(&evt)
+}
+func proc_endurance_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGEnduranceNFTWinner
+	var eth_evt CosmicGameEnduranceNFTWinnerEvent
+
+	Info.Printf("Processing Endurance NFT winner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"EnduranceNFTWinnerEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event EnduranceNFTWinnerEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.Round = log.Topics[2].Big().Int64()
+	evt.TokenId = log.Topics[3].Big().Int64()
+	evt.WinnerIndex= eth_evt.WinnerIndex.Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("EnduranceNFTWinnerEvent{\n")
+	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
+	Info.Printf("\tRound:%v\n",evt.Round)
+	Info.Printf("\tTokenId: %v\n",evt.TokenId)
+	Info.Printf("\tWinnerIndex: %v\n",evt.WinnerIndex)
+	Info.Printf("}\n")
+
+	storagew.Delete_endurance_nft_winner(evt.EvtId)
+	storagew.Insert_endurance_nft_winner(&evt)
+}
+func proc_topbidder_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGTopBidderNFTWinner
+	var eth_evt CosmicGameTopBidderNFTWinnerEvent
+
+	Info.Printf("Processing TopBidder NFT winner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"TopBidderNFTWinnerEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event TopBidderNFTWinnerEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.Round = log.Topics[2].Big().Int64()
+	evt.TokenId = log.Topics[3].Big().Int64()
+	evt.WinnerIndex= eth_evt.WinnerIndex.Int64()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("TopBidderNFTWinnerEvent{\n")
+	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
+	Info.Printf("\tRound:%v\n",evt.Round)
+	Info.Printf("\tTokenId: %v\n",evt.TokenId)
+	Info.Printf("\tWinnerIndex: %v\n",evt.WinnerIndex)
+	Info.Printf("}\n")
+
+	storagew.Delete_topbidder_nft_winner(evt.EvtId)
+	storagew.Insert_topbidder_nft_winner(&evt)
 }
 func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -2056,6 +2140,12 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_nft_winner) {
 		proc_raffle_nft_winner_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_endurance_nft_winner) {
+		proc_endurance_nft_winner_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_topbidder_nft_winner) {
+		proc_topbidder_nft_winner_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donated_nft_claimed) {
 		proc_donated_nft_claimed_event(log,evtlog)

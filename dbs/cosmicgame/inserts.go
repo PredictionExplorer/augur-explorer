@@ -309,16 +309,16 @@ func (sw *SQLStorageWrapper) Insert_raffle_nft_winner(evt *p.CGRaffleNFTWinner) 
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_raffle_nft_claimed(evt *p.CGRaffleNFTClaimed) {
+func (sw *SQLStorageWrapper) Insert_endurance_nft_winner(evt *p.CGEnduranceNFTWinner) {
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
 
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_raffle_nft_claimed ("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_endurance_nft_winner ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"winner_aid,token_id"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7)"
+					"winner_aid,round_num,token_id,winner_idx"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -326,10 +326,38 @@ func (sw *SQLStorageWrapper) Insert_raffle_nft_claimed(evt *p.CGRaffleNFTClaimed
 		evt.TxId,
 		contract_aid,
 		winner_aid,
+		evt.Round,
 		evt.TokenId,
+		evt.WinnerIndex,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_raffle_nft_claimed table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_endurance_nft_winner table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_topbidder_nft_winner(evt *p.CGTopBidderNFTWinner) {
+
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
+
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_topbidder_nft_winner ("+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
+					"winner_aid,round_num,token_id,winner_idx"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxId,
+		contract_aid,
+		winner_aid,
+		evt.Round,
+		evt.TokenId,
+		evt.WinnerIndex,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_topbidder_nft_winner table: %v\n",err))
 		os.Exit(1)
 	}
 }

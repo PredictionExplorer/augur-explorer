@@ -60,6 +60,12 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	fraction,err := cosmic_game_ctrct.InitialBidAmountFraction(&copts)
+	if err != nil {
+		fmt.Printf("Error at InitialBidAmountFraction()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
 	round_num,err := cosmic_game_ctrct.RoundNum(&copts)
 	if err != nil {
 		fmt.Printf("Error at RoundNum()(): %v\n",err)
@@ -75,6 +81,30 @@ func main() {
 	prize_percentage,err := cosmic_game_ctrct.PrizePercentage(&copts)
 	if err != nil {
 		fmt.Printf("Error at PrizePercentage()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	raffle_percentage,err := cosmic_game_ctrct.RafflePercentage(&copts)
+	if err != nil {
+		fmt.Printf("Error at RafflePercentage()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	eth_bidders,err := cosmic_game_ctrct.NumRaffleETHWinnersBidding(&copts)
+	if err != nil {
+		fmt.Printf("Error at NumRaffleETHWinnersBidding()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	nft_bidders,err := cosmic_game_ctrct.NumRaffleNFTWinnersBidding(&copts)
+	if err != nil {
+		fmt.Printf("Error at NumRaffleNFTWinnersBidding()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
+	nft_stakers,err := cosmic_game_ctrct.NumRaffleNFTWinnersStakingRWalk(&copts)
+	if err != nil {
+		fmt.Printf("Error at NumRaffleNFTWinnersBidding()(): %v\n",err)
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
@@ -202,10 +232,15 @@ func main() {
 
 
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
+	fmt.Printf("Initial bid amount fraction = %v\n",fraction.String())
 	fmt.Printf("Bid Price = %v\n",bid_price.String())
 	fmt.Printf("RoundNum = %v\n",round_num.String())
 	fmt.Printf("PrizeAmount = %v\n",prize_amount.String())
 	fmt.Printf("PrizePercentage = %v\n",prize_percentage.String())
+	fmt.Printf("RafflePercentage = %v\n",raffle_percentage.String())
+	fmt.Printf("ETHWinnersBidding = %v\n",eth_bidders);
+	fmt.Printf("NFTWinnersBidding = %v\n",nft_bidders);
+	fmt.Printf("NFTWinnersStaking = %v\n",nft_stakers);
 	fmt.Printf("PrizeTime = %v\n",prize_time.String());
 	fmt.Printf("CharityWallet addr = %v\n",charity_addr.String());
 	fmt.Printf("Charity donation receiver = %v\n",charity_donation_recipient);

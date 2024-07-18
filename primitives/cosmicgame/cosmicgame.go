@@ -160,9 +160,34 @@ type CGRaffleNFTWinner struct {
 	Round				int64
 	WinnerIndex			int64
 	TokenId				int64
-	IsRandomWalk				bool
+	IsRandomWalk		bool
 	IsStaker			bool
 }
+type CGEnduranceNFTWinner struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	WinnerAddr			string
+	Round				int64
+	WinnerIndex			int64
+	TokenId				int64
+}
+type CGTopBidderNFTWinner struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	WinnerAddr			string
+	Round				int64
+	WinnerIndex			int64
+	TokenId				int64
+}
+/*
 type CGRaffleNFTClaimed struct {
 	EvtId				int64
 	BlockNum			int64
@@ -174,6 +199,7 @@ type CGRaffleNFTClaimed struct {
 	WinnerEvtlogId		int64
 	TokenId				int64
 }
+*/
 type CGDonatedNFTClaimed struct {
 	EvtId				int64
 	BlockNum			int64

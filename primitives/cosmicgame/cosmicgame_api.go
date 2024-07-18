@@ -84,6 +84,10 @@ type CGPrizeRec struct {
 	StakingPerToken				string
 	StakingPerTokenEth			float64
 	StakingNumStakedTokens		int64
+	EnduranceWinnerAddr			string
+	EnduranceTokenId			int64
+	TopBidderWinnerAddr			string
+	TopBidderTokenId			int64
 	RoundStats					CGRoundStats
 	RaffleNFTWinners			[]CGRaffleNFTWinnerRec
 	RaffleETHDeposits			[]CGRaffleDepositRec
@@ -222,6 +226,34 @@ type CGRaffleNFTWinnerRec struct {
 	IsRWalk						bool
 	IsStaker					bool
 }
+type CGEnduranceNFTWinnerRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	WinnerAddr					string
+	WinnerAid					int64
+	RoundNum					int64
+	TokenId						int64
+	WinnerIndex					int64
+}
+type CGTopBidderNFTWinnerRec struct {
+	RecordId					int64
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	WinnerAddr					string
+	WinnerAid					int64
+	RoundNum					int64
+	TokenId						int64
+	WinnerIndex					int64
+}
 type CGDonatedNFTClaimRec struct {
 	RecordId					int64
 	EvtId						int64
@@ -285,7 +317,7 @@ type CGClaimInfo struct {
 }
 type CGRaffleHistory struct {
 	EvtLogId					int64
-	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize, 4 - StakingDeposit (at StakingWallet CST), 5 CST Mint for RandomWalk staker , 6 CST Mint for CST staker
+	RecordType					int64		// 0-ETH raffle, 1-CS NFT raffle, 2-Donated NFT, 3-Main Prize, 4 - StakingDeposit (at StakingWallet CST), 5 CST Mint for RandomWalk staker , 6 CST Mint for CST staker, 7 - Endurance NFT winner, 8 - TopBidder NFT winner
 	TimeStamp					int64
 	DateTime					string
 	BlockNum					int64
