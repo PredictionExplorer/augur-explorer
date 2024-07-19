@@ -2142,7 +2142,7 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 		proc_raffle_nft_winner_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_endurance_nft_winner) {
-		proc_endurance_nft_winner_event(log,evtlog)
+	proc_endurance_nft_winner_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_topbidder_nft_winner) {
 		proc_topbidder_nft_winner_event(log,evtlog)

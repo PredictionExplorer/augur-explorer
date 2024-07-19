@@ -144,7 +144,7 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 				"dp.amount_per_staker/1e18, "+
 				"dp.deposit_num, "+
 				"dp.num_staked_nfts, "+
-				"end.token_id, "+
+				"endu.token_id, "+
 				"end_a.addr, "+
 				"top.token_id,"+
 				"top_a.addr "+
@@ -155,10 +155,10 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 				"LEFT JOIN cg_eth_deposit dp ON dp.round_num=p.prize_num " +
 				"LEFT JOIN cg_round_stats s ON s.round_num=p.prize_num "+
 				"LEFT JOIN cg_winner ws ON p.winner_aid=ws.winner_aid "+
-				"LEFT JOIN cg_endurance_nft_winner end ON end.round_num=p.prize_num "+
+				"LEFT JOIN cg_endurance_nft_winner endu ON endu.round_num=p.prize_num "+
 				"LEFT JOIN cg_topbidder_nft_winner top ON top.round_num=p.prize_num "+
-				"LEFT JOIN address end_a ON end.winner_aid=a.address_id "+
-				"LEFT JOIN address top_a ON top.winner_aid=a.address_id "+
+				"LEFT JOIN address end_a ON endu.winner_aid=end_a.address_id "+
+				"LEFT JOIN address top_a ON top.winner_aid=top_a.address_id "+
 				"LEFT JOIN LATERAL (" +
 					"SELECT d.evtlog_id,d.amount donation_amount,cha.addr charity_addr "+
 						"FROM "+sw.S.SchemaName()+".cg_donation_received d "+
