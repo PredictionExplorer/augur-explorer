@@ -69,12 +69,20 @@
 		<td>{{.PrizeInfo.StakingDepositNum}}</td>
 	</tr>
 	<tr>
-		<td>Endurance prize winner</td>
-		<td>{{.PrizeInfo.EnduranceWinnerAddr}} , token {{.PrizeInfo.EnduranceTokenId}}</td>
+		<td>Endurance Champion prize winner (CST)</td>
+		<td>{{.PrizeInfo.EnduranceWinnerAddr}} , token {{.PrizeInfo.EnduranceERC721TokenId}}</td>
 	</tr>
 	<tr>
-		<td>TopBidder prize winner</td>
-		<td>{{.PrizeInfo.TopBidderWinnerAddr}} , token {{.PrizeInfo.TopBidderTokenId}}</td>
+		<td>Endurance Champion prize winner (ERC20)</td>
+		<td>{{.PrizeInfo.EnduranceWinnerAddr}} , {{.PrizeInfo.EnduranceERC20AmountEth}}</td>
+	</tr>
+	<tr>
+		<td>StellarSpender prize winner</td>
+		<td>{{.PrizeInfo.StellarWinnerAddr}} , token {{.PrizeInfo.StellarERC721TokenId}}</td>
+	</tr>
+	<tr>
+		<td>Stellar Spender prize winner (ERC20)</td>
+		<td>{{.PrizeInfo.StellarWinnerAddr}} , {{.PrizeInfo.StellarERC20AmountEth}}</td>
 	</tr>
 
 	<tr>

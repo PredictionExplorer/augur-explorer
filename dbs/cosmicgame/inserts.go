@@ -309,16 +309,16 @@ func (sw *SQLStorageWrapper) Insert_raffle_nft_winner(evt *p.CGRaffleNFTWinner) 
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_endurance_nft_winner(evt *p.CGEnduranceNFTWinner) {
+func (sw *SQLStorageWrapper) Insert_endurance_winner(evt *p.CGEnduranceWinner) {
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
 
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_endurance_nft_winner ("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_endurance_winner ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"winner_aid,round_num,token_id,winner_idx"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
+					"winner_aid,round_num,erc721_token_id,erc20_amount,winner_idx"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -327,24 +327,25 @@ func (sw *SQLStorageWrapper) Insert_endurance_nft_winner(evt *p.CGEnduranceNFTWi
 		contract_aid,
 		winner_aid,
 		evt.Round,
-		evt.TokenId,
+		evt.Erc721TokenId,
+		evt.Erc20Amount,
 		evt.WinnerIndex,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_endurance_nft_winner table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_endurance_winner table: %v\n",err))
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_topbidder_nft_winner(evt *p.CGTopBidderNFTWinner) {
+func (sw *SQLStorageWrapper) Insert_stellar_winner(evt *p.CGStellarWinner) {
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	winner_aid := sw.S.Lookup_or_create_address(evt.WinnerAddr,0, 0)
 
 	var query string
-	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_topbidder_nft_winner ("+
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_stellar_winner ("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"winner_aid,round_num,token_id,winner_idx"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
+					"winner_aid,round_num,erc721_token_id,erc20_amount,winner_idx"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9,$10)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -353,11 +354,12 @@ func (sw *SQLStorageWrapper) Insert_topbidder_nft_winner(evt *p.CGTopBidderNFTWi
 		contract_aid,
 		winner_aid,
 		evt.Round,
-		evt.TokenId,
+		evt.Erc721TokenId,
+		evt.Erc20Amount,
 		evt.WinnerIndex,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_topbidder_nft_winner table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_stellar_winner table: %v\n",err))
 		os.Exit(1)
 	}
 }

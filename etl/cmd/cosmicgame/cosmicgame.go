@@ -44,11 +44,11 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_endurance_nft_winner[:4]),
+			Signature: hex.EncodeToString(evt_endurance_winner[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_topbidder_nft_winner[:4]),
+			Signature: hex.EncodeToString(evt_stellar_winner[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -831,20 +831,20 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_raffle_nft_winner(evt.EvtId)
 	storagew.Insert_raffle_nft_winner(&evt)
 }
-func proc_endurance_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
+func proc_endurance_winner_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt CGEnduranceNFTWinner
-	var eth_evt CosmicGameEnduranceNFTWinnerEvent
+	var evt CGEnduranceWinner
+	var eth_evt BusinessLogicEnduranceChampionWinnerEvent
 
-	Info.Printf("Processing Endurance NFT winner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	Info.Printf("Processing Endurance winner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"EnduranceNFTWinnerEvent",log.Data)
+	err := blogic_abi.UnpackIntoInterface(&eth_evt,"EnduranceChampionWinnerEvent",log.Data)
 	if err != nil {
-		Error.Printf("Event EnduranceNFTWinnerEvent decode error: %v",err)
+		Error.Printf("Event EnduranceChampionWinnerEvent decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -855,34 +855,36 @@ func proc_endurance_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.Round = log.Topics[2].Big().Int64()
-	evt.TokenId = log.Topics[3].Big().Int64()
+	evt.Erc721TokenId = log.Topics[3].Big().Int64()
+	evt.Erc20Amount = eth_evt.Erc20TokenAmount.String()
 	evt.WinnerIndex= eth_evt.WinnerIndex.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("EnduranceNFTWinnerEvent{\n")
 	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
 	Info.Printf("\tRound:%v\n",evt.Round)
-	Info.Printf("\tTokenId: %v\n",evt.TokenId)
+	Info.Printf("\tErc721TokenId: %v\n",evt.Erc721TokenId)
+	Info.Printf("\tErc20Amount: %v\n",evt.Erc20Amount)
 	Info.Printf("\tWinnerIndex: %v\n",evt.WinnerIndex)
 	Info.Printf("}\n")
 
-	storagew.Delete_endurance_nft_winner(evt.EvtId)
-	storagew.Insert_endurance_nft_winner(&evt)
+	storagew.Delete_endurance_winner(evt.EvtId)
+	storagew.Insert_endurance_winner(&evt)
 }
-func proc_topbidder_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
+func proc_stellar_winner_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt CGTopBidderNFTWinner
-	var eth_evt CosmicGameTopBidderNFTWinnerEvent
+	var evt CGStellarWinner
+	var eth_evt BusinessLogicStellarSpenderWinnerEvent
 
-	Info.Printf("Processing TopBidder NFT winner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	Info.Printf("Processing StellarSpender winner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"TopBidderNFTWinnerEvent",log.Data)
+	err := blogic_abi.UnpackIntoInterface(&eth_evt,"StellarSpenderWinnerEvent",log.Data)
 	if err != nil {
-		Error.Printf("Event TopBidderNFTWinnerEvent decode error: %v",err)
+		Error.Printf("Event StellarSpender decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -893,19 +895,21 @@ func proc_topbidder_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.WinnerAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.Round = log.Topics[2].Big().Int64()
-	evt.TokenId = log.Topics[3].Big().Int64()
+	evt.Erc721TokenId = log.Topics[3].Big().Int64()
+	evt.Erc20Amount = eth_evt.Erc20TokenAmount.String()
 	evt.WinnerIndex= eth_evt.WinnerIndex.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("TopBidderNFTWinnerEvent{\n")
+	Info.Printf("StellarSpenderWinnerEvent{\n")
 	Info.Printf("\tWinnerAddr: %v\n",evt.WinnerAddr)
 	Info.Printf("\tRound:%v\n",evt.Round)
-	Info.Printf("\tTokenId: %v\n",evt.TokenId)
+	Info.Printf("\tErc721TokenId: %v\n",evt.Erc721TokenId)
+	Info.Printf("\tErc20TokenId: %v\n",evt.Erc20Amount)
 	Info.Printf("\tWinnerIndex: %v\n",evt.WinnerIndex)
 	Info.Printf("}\n")
 
-	storagew.Delete_topbidder_nft_winner(evt.EvtId)
-	storagew.Insert_topbidder_nft_winner(&evt)
+	storagew.Delete_stellar_winner(evt.EvtId)
+	storagew.Insert_stellar_winner(&evt)
 }
 func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -2141,11 +2145,11 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_raffle_nft_winner) {
 		proc_raffle_nft_winner_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_endurance_nft_winner) {
-	proc_endurance_nft_winner_event(log,evtlog)
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_endurance_winner) {
+	proc_endurance_winner_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_topbidder_nft_winner) {
-		proc_topbidder_nft_winner_event(log,evtlog)
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_stellar_winner) {
+		proc_stellar_winner_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donated_nft_claimed) {
 		proc_donated_nft_claimed_event(log,evtlog)

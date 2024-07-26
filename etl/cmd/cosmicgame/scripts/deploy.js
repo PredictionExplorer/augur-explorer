@@ -199,7 +199,6 @@ async function main() {
   let expectedprizeAmount = prizeAmount.sub(charityAmount).div(2);
 
   let topic_sig = stakingWalletCST.interface.getEventTopic("StakeActionEvent");
-  let max_ts = 0;
   let ts = await cosmicSignature.totalSupply();
   let rn = await cosmicGame.roundNum();
   for (let i =0; i<ts.toNumber(); i++) {
@@ -208,14 +207,8 @@ async function main() {
 	let owner_signer = cosmicGame.provider.getSigner(ownr);
     await cosmicSignature.connect(owner_signer).setApprovalForAll(stakingWalletCST.address, true);
 	tx = await stakingWalletCST.connect(owner_signer).stake(i);
-    receipt = await tx.wait();
-    log = receipt.logs.find(x=>x.topics.indexOf(topic_sig)>=0);
-    parsed_log = stakingWalletCST.interface.parseLog(log);
-    if (max_ts < parsed_log.args.unstakeTime.toNumber()) {
-		max_ts = parsed_log.args.unstakeTime.toNumber();
-	}
   }
-  
+  let oldTotalSupply = ts;
   bidPrice = await cosmicGame.getBidPrice();
   bidParams = {msg:'bid 4',rwalk:-1};
   params = ethers.utils.defaultAbiCoder.encode([bidParamsEncoding],[bidParams])
@@ -321,8 +314,7 @@ async function main() {
   await cosmicGame.connect(owner).setBusinessLogicContract(bLogic.address);
   await cosmicGame.connect(owner).setStakingWalletCST(stakingWalletCST.address);
   await cosmicGame.connect(owner).setStakingWalletRWalk(stakingWalletRWalk.address);
-  await cosmicGame.connect(owner).setLongestBidderTokenReward(999);
-  await cosmicGame.connect(owner).setTopBidderTokenReward(998);
+  await cosmicGame.connect(owner).setErc20RewardMultiplier(999);
   let tmp = await cosmicGame.timeIncrease();
   await cosmicGame.connect(owner).setTimeIncrease(tmp);
   tmp = await cosmicGame.connect(owner).timeoutClaimPrize()
@@ -356,7 +348,6 @@ async function main() {
 	  }
   }
  
-  await ethers.provider.send("evm_setNextBlockTimestamp", [max_ts]);
   await ethers.provider.send("evm_mine");
 
   await marketingWallet.send(hre.ethers.utils.parseEther('7'),addr1.address);
@@ -412,8 +403,9 @@ async function main() {
 
   await ethers.provider.send("evm_mine");	// mine empty block as spacing
 
+  ts = await cosmicSignature.totalSupply();
 
-  for (let i =0; i<ts.toNumber(); i++) {
+  for (let i = oldTotalSupply.toNumber(); i<ts.toNumber(); i++) {
     let ownr = await cosmicSignature.ownerOf(i)
 	let owner_signer = cosmicGame.provider.getSigner(ownr);
 	if (i == 7) { continue;}
