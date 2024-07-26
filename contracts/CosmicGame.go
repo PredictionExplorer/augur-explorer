@@ -29,10 +29,17 @@ var (
 	_ = abi.ConvertType
 )
 
+// CosmicGameConstantsDonationInfoRecord is an auto generated low-level Go binding around an user-defined struct.
+type CosmicGameConstantsDonationInfoRecord struct {
+	Donor  common.Address
+	Amount *big.Int
+	Data   string
+}
+
 // BusinessLogicMetaData contains all meta data concerning the BusinessLogic contract.
 var BusinessLogicMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"activationTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockTimestamp\",\"type\":\"uint256\"}],\"name\":\"ActivationTime\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"msgLength\",\"type\":\"uint256\"}],\"name\":\"BidMessageLengthOverflow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amountRequired\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amountSent\",\"type\":\"uint256\"}],\"name\":\"BidPrice\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"providedRound\",\"type\":\"uint256\"}],\"name\":\"BidderQueryNoBidsYet\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenAmoumnt\",\"type\":\"uint256\"}],\"name\":\"ERC20Mint\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"}],\"name\":\"ERC721Mint\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"claimTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockTimestamp\",\"type\":\"uint256\"}],\"name\":\"EarlyClaim\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"}],\"name\":\"FundTransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"contractAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"IncorrectERC721TokenOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"requiredAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"senderBalance\",\"type\":\"uint256\"}],\"name\":\"InsufficientCSTBalance\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"providedRound\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"providedOffset\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"numParticipants\",\"type\":\"uint256\"}],\"name\":\"InvalidBidderQueryOffset\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"providedRound\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"totalRounds\",\"type\":\"uint256\"}],\"name\":\"InvalidBidderQueryRound\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"lastBidder\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"bidder\",\"type\":\"address\"}],\"name\":\"LastBidderOnly\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"NFTAlreadyClaimed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"NoLastBidder\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"NonExistentDonatedNFT\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"NonExistentWinner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"NonZeroValueRequired\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"systemMode\",\"type\":\"uint256\"}],\"name\":\"SystemMode\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"randomWalkTokenId\",\"type\":\"uint256\"}],\"name\":\"UsedRandomWalkNFT\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"lastBidder\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"bidPrice\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"randomWalkNFTId\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"numCSTTokens\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"prizeTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"}],\"name\":\"BidEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"nftAddressdonatedNFTs\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"DonatedNFTClaimedEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winnerIndex\",\"type\":\"uint256\"}],\"name\":\"EnduranceNFTWinnerEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"NFTDonationEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"prizeNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"PrizeClaimEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winnerIndex\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RaffleETHWinnerEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winnerIndex\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"isStaker\",\"type\":\"bool\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"isRWalk\",\"type\":\"bool\"}],\"name\":\"RaffleNFTWinnerEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newSystemMode\",\"type\":\"uint256\"}],\"name\":\"SystemModeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winnerIndex\",\"type\":\"uint256\"}],\"name\":\"TopBidderNFTWinnerEvent\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"CSTAuctionLength\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"RoundStartCSTAuctionLength\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"activationTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"auctionDuration\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bLogic\",\"outputs\":[{\"internalType\":\"contractBusinessLogic\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_param_data\",\"type\":\"bytes\"}],\"name\":\"bid\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_param_data\",\"type\":\"bytes\"},{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"bidAndDonateNFT\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bidPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"bidStats\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"bidPricePaidEth\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"bidPricePaidCST\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"bidCount\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"bidTime\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"}],\"name\":\"bidWithCST\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_round\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_positionFromEnd\",\"type\":\"uint256\"}],\"name\":\"bidderAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charity\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charityPercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"claimDonatedNFT\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"tokens\",\"type\":\"uint256[]\"}],\"name\":\"claimManyDonatedNFTs\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claimPrize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"currentCSTPrice\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"donate\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"donatedNFTs\",\"outputs\":[{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"claimed\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"extraStorage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"initialBidAmountFraction\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"initialSecondsUntilPrize\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastBidType\",\"outputs\":[{\"internalType\":\"enumCosmicGameConstants.BidType\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastBidder\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastCSTBidTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"longestBidderAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"longestBidderTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"longestBidderTokenReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"marketingReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"marketingWallet\",\"outputs\":[{\"internalType\":\"contractMarketingWallet\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxMessageLength\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nanoSecondsExtra\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nft\",\"outputs\":[{\"internalType\":\"contractCosmicSignature\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numDonatedNFTs\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleETHWinnersBidding\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleNFTWinnersBidding\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleNFTWinnersStakingRWalk\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"numRaffleParticipants\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prevBidderAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prevBidderStartTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"priceIncrease\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizePercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizeTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleEntropy\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"raffleParticipants\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rafflePercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleWallet\",\"outputs\":[{\"internalType\":\"contractRaffleWallet\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"randomWalk\",\"outputs\":[{\"internalType\":\"contractRandomWalkNFT\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"receiveEther\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"roundNum\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakingPercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakingWalletCST\",\"outputs\":[{\"internalType\":\"contractStakingWalletCST\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakingWalletRWalk\",\"outputs\":[{\"internalType\":\"contractStakingWalletRWalk\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"startingBidPriceCST\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"systemMode\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeIncrease\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeoutClaimPrize\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"token\",\"outputs\":[{\"internalType\":\"contractCosmicToken\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"tokenReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"topBidderAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"topBidderNumBids\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"topBidderTokenReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"usedRandomWalkNFTs\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"winners\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
-	Bin: "0x60806040523461002757610011610036565b61001961002c565b6172f961017e82396172f990f35b610032565b60405190565b5f80fd5b61003e610040565b565b61005061004b610056565b61011e565b565b5f90565b61005e610052565b503390565b5f1c90565b60018060a01b031690565b61007f61008491610063565b610068565b90565b6100919054610073565b90565b5f1b90565b906100aa60018060a01b0391610094565b9181191691161790565b60018060a01b031690565b90565b6100d66100d16100db926100b4565b6100bf565b6100b4565b90565b6100e7906100c2565b90565b6100f3906100de565b90565b90565b9061010e610109610115926100ea565b6100f6565b8254610099565b9055565b5f0190565b6101275f610087565b610131825f6100f9565b9061016561015f7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0936100ea565b916100ea565b9161016e61002c565b8061017881610119565b0390a356fe60806040526004361015610013575b6121f0565b61001d5f3561044c565b806305ab18aa146104475780630c201838146104425780630cbf54c81461043d578063119b22b31461043857806311dc73351461043357806319afe4731461042e5780631d1d4e29146104295780631e42fa1d1461042457806320a602731461041f5780632aab32231461041a57806331e375301461041557806332d382cd14610410578063355f01e21461040b5780633703dbc8146104065780633b5fa8e3146104015780633f7909d4146103fc57806340e02322146103f757806347ccca02146103f257806350a42225146103ed5780635111a2d6146103e857806356c96eb7146103e35780635e74140c146103de57806367f3e4a5146103d95780636e66f6e9146103d457806370740ac9146103cf578063715018a6146103ca57806375f0a874146103c5578063799d431d146103c05780637a9c1626146103bb57806380de163d146103b657806381e1ccba146103b15780638547af30146103ac5780638567ab17146103a757806386e378c9146103a25780638da5cb5b1461039d5780638fffdf34146103985780639136d6d91461039357806391daa9a91461038e5780639250c33c14610389578063934aa02314610384578063966beb5e1461037f578063a2fb11751461037a578063a3912ec814610375578063ae3661fd14610370578063ae96c0f21461036b578063b1ddd82a14610366578063b2fd10b214610361578063b635176a1461035c578063b801b8b214610357578063ba35b1b014610352578063c709bf281461034d578063cb819dc014610348578063d59760c514610343578063d59d74781461033e578063d6e1741714610339578063d94d031614610334578063da4493f61461032f578063da63990b1461032a578063e2a8818214610325578063e4c762f214610320578063ed0833981461031b578063ed421f4114610316578063ed88c68e14610311578063f2fde38b1461030c578063f8c3405014610307578063fc0c546a146103025763fd1ff7e20361000e576121bb565b612177565b6120d4565b612092565b612069565b612034565b611fe6565b611f9e565b611daf565b611d6b565b611c9d565b611c59565b611c11565b611abe565b611a89565b611a25565b6119e1565b61199f565b6118b9565b611875565b611831565b6117ec565b611780565b611744565b611653565b61161e565b6115ba565b611576565b611532565b6114ee565b61144b565b611407565b6113c3565b61138e565b61129d565b6111fa565b6111b6565b611172565b6110e0565b61106b565b611027565b610f86565b610f53565b610f1e565b610eda565b610e96565b610df3565b610dbe565b610d1b565b610cd7565b610c34565b610bf2565b610aed565b610aa9565b610a65565b610a21565b61095f565b61080f565b6107cb565b610787565b610743565b6106ff565b6106bb565b610677565b610633565b610592565b6104d0565b60e01c90565b60405190565b5f80fd5b5f80fd5b5f91031261046a57565b61045c565b1c90565b90565b61048690600861048b930261046f565b610473565b90565b906104999154610476565b90565b6104a860205f9061048e565b90565b90565b6104b7906104ab565b9052565b91906104ce905f602085019401906104ae565b565b34610500576104e0366004610460565b6104fc6104eb61049c565b6104f3610452565b918291826104bb565b0390f35b610458565b5f80fd5b610512816104ab565b0361051957565b5f80fd5b9050359061052a82610509565b565b91906040838203126105545780610548610551925f860161051d565b9360200161051d565b90565b61045c565b60018060a01b031690565b61056d90610559565b90565b61057990610564565b9052565b9190610590905f60208501940190610570565b565b346105c3576105bf6105ae6105a836600461052c565b906124f8565b6105b6610452565b9182918261057d565b0390f35b610458565b5190565b60209181520190565b90825f9392825e0152565b601f801991011690565b61060961061260209361061793610600816105c8565b938480936105cc565b958691016105d5565b6105e0565b0190565b6106309160208201915f8184039101526105ea565b90565b3461066357610643366004610460565b61065f61064e6125e9565b610656610452565b9182918261061b565b0390f35b610458565b610674600a5f9061048e565b90565b346106a757610687366004610460565b6106a3610692610668565b61069a610452565b918291826104bb565b0390f35b610458565b6106b860225f9061048e565b90565b346106eb576106cb366004610460565b6106e76106d66106ac565b6106de610452565b918291826104bb565b0390f35b610458565b6106fc600b5f9061048e565b90565b3461072f5761070f366004610460565b61072b61071a6106f0565b610722610452565b918291826104bb565b0390f35b610458565b61074060325f9061048e565b90565b3461077357610753366004610460565b61076f61075e610734565b610766610452565b918291826104bb565b0390f35b610458565b61078460315f9061048e565b90565b346107b757610797366004610460565b6107b36107a2610778565b6107aa610452565b918291826104bb565b0390f35b610458565b6107c860335f9061048e565b90565b346107fb576107db366004610460565b6107f76107e66107bc565b6107ee610452565b918291826104bb565b0390f35b610458565b61080c602c5f9061048e565b90565b3461083f5761081f366004610460565b61083b61082a610800565b610832610452565b918291826104bb565b0390f35b610458565b5f80fd5b5f80fd5b634e487b7160e01b5f52604160045260245ffd5b9061086a906105e0565b810190811067ffffffffffffffff82111761088457604052565b61084c565b9061089c610895610452565b9283610860565b565b67ffffffffffffffff81116108bc576108b86020916105e0565b0190565b61084c565b90825f939282370152565b909291926108e16108dc8261089e565b610889565b938185526020850190828401116108fd576108fb926108c1565b565b610848565b9080601f830112156109205781602061091d933591016108cc565b90565b610844565b90602082820312610955575f82013567ffffffffffffffff81116109505761094d9201610902565b90565b610505565b61045c565b5f0190565b61097261096d366004610925565b6133be565b61097a610452565b806109848161095a565b0390f35b60018060a01b031690565b6109a39060086109a8930261046f565b610988565b90565b906109b69154610993565b90565b6109c560055f906109ab565b90565b90565b6109df6109da6109e492610559565b6109c8565b610559565b90565b6109f0906109cb565b90565b6109fc906109e7565b90565b610a08906109f3565b9052565b9190610a1f905f602085019401906109ff565b565b34610a5157610a31366004610460565b610a4d610a3c6109b9565b610a44610452565b91829182610a0c565b0390f35b610458565b610a6260155f9061048e565b90565b34610a9557610a75366004610460565b610a91610a80610a56565b610a88610452565b918291826104bb565b0390f35b610458565b610aa660275f9061048e565b90565b34610ad957610ab9366004610460565b610ad5610ac4610a9a565b610acc610452565b918291826104bb565b0390f35b610458565b610aea60195f9061048e565b90565b34610b1d57610afd366004610460565b610b19610b08610ade565b610b10610452565b918291826104bb565b0390f35b610458565b67ffffffffffffffff8111610b3a5760208091020190565b61084c565b5f80fd5b90929192610b58610b5382610b22565b610889565b9381855260208086019202830192818411610b9557915b838310610b7c5750505050565b60208091610b8a848661051d565b815201920191610b6f565b610b3f565b9080601f83011215610bb857816020610bb593359101610b43565b90565b610844565b90602082820312610bed575f82013567ffffffffffffffff8111610be857610be59201610b9a565b90565b610505565b61045c565b34610c2057610c0a610c05366004610bbd565b613ba9565b610c12610452565b80610c1c8161095a565b0390f35b610458565b610c3160105f9061048e565b90565b34610c6457610c44366004610460565b610c60610c4f610c25565b610c57610452565b918291826104bb565b0390f35b610458565b60018060a01b031690565b610c84906008610c89930261046f565b610c69565b90565b90610c979154610c74565b90565b610ca660025f90610c8c565b90565b610cb2906109e7565b90565b610cbe90610ca9565b9052565b9190610cd5905f60208501940190610cb5565b565b34610d0757610ce7366004610460565b610d03610cf2610c9a565b610cfa610452565b91829182610cc2565b0390f35b610458565b610d1860305f9061048e565b90565b34610d4b57610d2b366004610460565b610d47610d36610d0c565b610d3e610452565b918291826104bb565b0390f35b610458565b60018060a01b031690565b610d6b906008610d70930261046f565b610d50565b90565b90610d7e9154610d5b565b90565b610d8d60015f90610d73565b90565b610d99906109e7565b90565b610da590610d90565b9052565b9190610dbc905f60208501940190610d9c565b565b34610dee57610dce366004610460565b610dea610dd9610d81565b610de1610452565b91829182610da9565b0390f35b610458565b34610e2357610e03366004610460565b610e1f610e0e613cc3565b610e16610452565b9182918261061b565b0390f35b610458565b60018060a01b031690565b610e43906008610e48930261046f565b610e28565b90565b90610e569154610e33565b90565b610e6560075f90610e4b565b90565b610e71906109e7565b90565b610e7d90610e68565b9052565b9190610e94905f60208501940190610e74565b565b34610ec657610ea6366004610460565b610ec2610eb1610e59565b610eb9610452565b91829182610e81565b0390f35b610458565b610ed7600c5f9061048e565b90565b34610f0a57610eea366004610460565b610f06610ef5610ecb565b610efd610452565b918291826104bb565b0390f35b610458565b610f1b602e5f9061048e565b90565b34610f4e57610f2e366004610460565b610f4a610f39610f0f565b610f41610452565b918291826104bb565b0390f35b610458565b34610f8157610f63366004610460565b610f6b6144c9565b610f73610452565b80610f7d8161095a565b0390f35b610458565b34610fb457610f96366004610460565b610f9e6155de565b610fa6610452565b80610fb08161095a565b0390f35b610458565b60018060a01b031690565b610fd4906008610fd9930261046f565b610fb9565b90565b90610fe79154610fc4565b90565b610ff660085f90610fdc565b90565b611002906109e7565b90565b61100e90610ff9565b9052565b9190611025905f60208501940190611005565b565b3461105757611037366004610460565b611053611042610fea565b61104a610452565b91829182611012565b0390f35b610458565b61106860235f9061048e565b90565b3461109b5761107b366004610460565b61109761108661105c565b61108e610452565b918291826104bb565b0390f35b610458565b60018060a01b031690565b6110bb9060086110c0930261046f565b6110a0565b90565b906110ce91546110ab565b90565b6110dd601d5f906110c3565b90565b34611110576110f0366004610460565b61110c6110fb6110d1565b611103610452565b9182918261057d565b0390f35b610458565b90565b61112890600861112d930261046f565b611115565b90565b9061113b9154611118565b90565b61114a602a5f90611130565b90565b90565b6111599061114d565b9052565b9190611170905f60208501940190611150565b565b346111a257611182366004610460565b61119e61118d61113e565b611195610452565b9182918261115d565b0390f35b610458565b6111b360255f9061048e565b90565b346111e6576111c6366004610460565b6111e26111d16111a7565b6111d9610452565b918291826104bb565b0390f35b610458565b6111f760115f906110c3565b90565b3461122a5761120a366004610460565b6112266112156111eb565b61121d610452565b9182918261057d565b0390f35b610458565b60018060a01b031690565b61124a90600861124f930261046f565b61122f565b90565b9061125d915461123a565b90565b61126c60045f90611252565b90565b611278906109e7565b90565b6112849061126f565b9052565b919061129b905f6020850194019061127b565b565b346112cd576112ad366004610460565b6112c96112b8611260565b6112c0610452565b91829182611288565b0390f35b610458565b906020828203126112eb576112e8915f0161051d565b90565b61045c565b6113046112ff611309926104ab565b6109c8565b6104ab565b90565b90611316906112f0565b5f5260205260405f2090565b60ff1690565b61133890600861133d930261046f565b611322565b90565b9061134b9154611328565b90565b6113649061135f6012915f9261130c565b611340565b90565b151590565b61137590611367565b9052565b919061138c905f6020850194019061136c565b565b346113be576113ba6113a96113a43660046112d2565b61134e565b6113b1610452565b91829182611379565b0390f35b610458565b346113f3576113d3366004610460565b6113ef6113de6155e8565b6113e6610452565b9182918261057d565b0390f35b610458565b61140460285f9061048e565b90565b3461143757611417366004610460565b6114336114226113f8565b61142a610452565b918291826104bb565b0390f35b610458565b611448600d5f9061048e565b90565b3461147b5761145b366004610460565b61147761146661143c565b61146e610452565b918291826104bb565b0390f35b610458565b60018060a01b031690565b61149b9060086114a0930261046f565b611480565b90565b906114ae915461148b565b90565b6114bd60065f906114a3565b90565b6114c9906109e7565b90565b6114d5906114c0565b9052565b91906114ec905f602085019401906114cc565b565b3461151e576114fe366004610460565b61151a6115096114b1565b611511610452565b918291826114d9565b0390f35b610458565b61152f60245f9061048e565b90565b3461156257611542366004610460565b61155e61154d611523565b611555610452565b918291826104bb565b0390f35b610458565b61157360095f906110c3565b90565b346115a657611586366004610460565b6115a2611591611567565b611599610452565b9182918261057d565b0390f35b610458565b6115b7601f5f906110c3565b90565b346115ea576115ca366004610460565b6115e66115d56115ab565b6115dd610452565b9182918261057d565b0390f35b610458565b906115f9906112f0565b5f5260205260405f2090565b61161b906116166026915f926115ef565b6110c3565b90565b3461164e5761164a6116396116343660046112d2565b611605565b611641610452565b9182918261057d565b0390f35b610458565b61165e366004610460565b6116666156f8565b61166e610452565b806116788161095a565b0390f35b5f80fd5b909182601f830112156116ba5781359167ffffffffffffffff83116116b55760200192600183028401116116b057565b610b3f565b61167c565b610844565b6116c890610564565b90565b6116d4816116bf565b036116db57565b5f80fd5b905035906116ec826116cb565b565b91909160608184031261173f575f8101359167ffffffffffffffff831161173a5761171e84611737948401611680565b93909461172e81602086016116df565b9360400161051d565b90565b610505565b61045c565b61175b6117523660046116ee565b929190916157b3565b611763610452565b8061176d8161095a565b0390f35b61177d601c5f9061048e565b90565b346117b057611790366004610460565b6117ac61179b611771565b6117a3610452565b918291826104bb565b0390f35b610458565b906117bf906112f0565b5f5260205260405f2090565b6117e46117e9926117df6016935f946117b5565b6115ef565b6110c3565b90565b3461181d5761181961180861180236600461052c565b906117cb565b611810610452565b9182918261057d565b0390f35b610458565b61182e601a5f9061048e565b90565b3461186157611841366004610460565b61185d61184c611822565b611854610452565b918291826104bb565b0390f35b610458565b61187260295f9061048e565b90565b346118a557611885366004610460565b6118a1611890611866565b611898610452565b918291826104bb565b0390f35b610458565b6118b6602f5f9061048e565b90565b346118e9576118c9366004610460565b6118e56118d46118aa565b6118dc610452565b918291826104bb565b0390f35b610458565b67ffffffffffffffff811161190c576119086020916105e0565b0190565b61084c565b90929192611926611921826118ee565b610889565b9381855260208501908284011161194257611940926108c1565b565b610848565b9080601f830112156119655781602061196293359101611911565b90565b610844565b9060208282031261199a575f82013567ffffffffffffffff8111611995576119929201611947565b90565b610505565b61045c565b346119cd576119b76119b236600461196a565b615957565b6119bf610452565b806119c98161095a565b0390f35b610458565b6119de60185f9061048e565b90565b34611a11576119f1366004610460565b611a0d6119fc6119d2565b611a04610452565b918291826104bb565b0390f35b610458565b611a2260145f9061048e565b90565b34611a5557611a35366004610460565b611a51611a40611a16565b611a48610452565b918291826104bb565b0390f35b610458565b90611a64906112f0565b5f5260205260405f2090565b611a8690611a816017915f92611a5a565b61048e565b90565b34611ab957611ab5611aa4611a9f3660046112d2565b611a70565b611aac610452565b918291826104bb565b0390f35b610458565b34611aec57611ad6611ad13660046112d2565b6160aa565b611ade610452565b80611ae88161095a565b0390f35b610458565b90611afb906112f0565b5f5260205260405f2090565b5f1c90565b60018060a01b031690565b611b23611b2891611b07565b611b0c565b90565b611b359054611b17565b90565b611b44611b4991611b07565b610473565b90565b611b569054611b38565b90565b611b65611b6a91611b07565b611322565b90565b611b779054611b59565b90565b611b8590602b611af1565b90611b915f8301611b2b565b91611b9e60018201611b4c565b91611bb76003611bb060028501611b4c565b9301611b6d565b90565b611bc3906109e7565b90565b611bcf90611bba565b9052565b611c08611c0f94611bfe606094989795611bf4608086019a5f870190611bc6565b60208501906104ae565b60408301906104ae565b019061136c565b565b34611c4557611c41611c2c611c273660046112d2565b611b7a565b90611c38949294610452565b94859485611bd3565b0390f35b610458565b611c56600e5f9061048e565b90565b34611c8957611c69366004610460565b611c85611c74611c4a565b611c7c610452565b918291826104bb565b0390f35b610458565b611c9a602d5f9061048e565b90565b34611ccd57611cad366004610460565b611cc9611cb8611c8e565b611cc0610452565b918291826104bb565b0390f35b610458565b60ff1690565b611ce8906008611ced930261046f565b611cd2565b90565b90611cfb9154611cd8565b90565b611d0b6011601490611cf0565b90565b634e487b7160e01b5f52602160045260245ffd5b60031115611d2c57565b611d0e565b90611d3b82611d22565b565b611d4690611d31565b90565b611d5290611d3d565b9052565b9190611d69905f60208501940190611d49565b565b34611d9b57611d7b366004610460565b611d97611d86611cfe565b611d8e610452565b91829182611d56565b0390f35b610458565b611dac601e5f9061048e565b90565b34611ddf57611dbf366004610460565b611ddb611dca611da0565b611dd2610452565b918291826104bb565b0390f35b610458565b611ded81610564565b03611df457565b5f80fd5b90503590611e0582611de4565b565b90602082820312611e2057611e1d915f01611df8565b90565b61045c565b611e2e906109e7565b90565b90611e3b90611e25565b5f5260205260405f2090565b67ffffffffffffffff1690565b611e60611e6591611b07565b611e47565b90565b611e729054611e54565b90565b60401c90565b611e87611e8c91611e75565b611e47565b90565b611e999054611e7b565b90565b60801c90565b63ffffffff1690565b611eb7611ebc91611e9c565b611ea2565b90565b611ec99054611eab565b90565b60a01c90565b611ede611ee391611ecc565b611ea2565b90565b611ef09054611ed2565b90565b611efe90601b611e31565b90611f0a5f8301611e68565b91611f165f8201611e8f565b91611f2d5f611f26818501611ebf565b9301611ee6565b90565b67ffffffffffffffff1690565b611f4690611f30565b9052565b63ffffffff1690565b611f5c90611f4a565b9052565b611f95611f9c94611f8b606094989795611f81608086019a5f870190611f3d565b6020850190611f3d565b6040830190611f53565b0190611f53565b565b34611fd257611fce611fb9611fb4366004611e07565b611ef3565b90611fc5949294610452565b94859485611f60565b0390f35b610458565b611fe360135f9061048e565b90565b3461201657611ff6366004610460565b612012612001611fd7565b612009610452565b918291826104bb565b0390f35b610458565b6120319061202c6034915f92611a5a565b61048e565b90565b346120645761206061204f61204a3660046112d2565b61201b565b612057610452565b918291826104bb565b0390f35b610458565b612074366004610460565b61207c61639a565b612084610452565b8061208e8161095a565b0390f35b346120c0576120aa6120a5366004611e07565b61657f565b6120b2610452565b806120bc8161095a565b0390f35b610458565b6120d1600f5f9061048e565b90565b34612104576120e4366004610460565b6121006120ef6120c5565b6120f7610452565b918291826104bb565b0390f35b610458565b60018060a01b031690565b612124906008612129930261046f565b612109565b90565b906121379154612114565b90565b61214660035f9061212c565b90565b612152906109e7565b90565b61215e90612149565b9052565b9190612175905f60208501940190612155565b565b346121a757612187366004610460565b6121a361219261213a565b61219a610452565b91829182612162565b0390f35b610458565b6121b860215f906110c3565b90565b346121eb576121cb366004610460565b6121e76121d66121ac565b6121de610452565b9182918261057d565b0390f35b610458565b5f80fd5b5f90565b60209181520190565b60207f7468616e20746f74616c206e756d626572206f6620726f756e64730000000000917f50726f766964656420726f756e64206e756d626572206973206c6172676572205f8201520152565b61225b603b6040926121f8565b61226481612201565b0190565b916040612299929493612292612287606083018381035f85015261224e565b9660208301906104ae565b01906104ae565b565b156122a4575050565b6122c56122af610452565b92839263f4056d8560e01b845260048401612268565b0390fd5b90565b6122e06122db6122e5926122c9565b6109c8565b6104ab565b90565b60207f6f756e6420796574000000000000000000000000000000000000000000000000917f4e6f20626964732068617665206265656e206d61646520696e207468697320725f8201520152565b61234260286040926121f8565b61234b816122e8565b0190565b919061237290602061236a604086018681035f880152612335565b9401906104ae565b565b1561237c5750565b61239e90612388610452565b918291631d30c39360e11b83526004830161234f565b0390fd5b60207f726179206c656e67746800000000000000000000000000000000000000000000917f50726f766964656420696e646578206973206c6172676572207468616e2061725f8201520152565b6123fc602a6040926121f8565b612405816123a2565b0190565b606090612442612449949695939661243861242d608085018581035f8701526123ef565b9860208501906104ae565b60408301906104ae565b01906104ae565b565b929091921561245957505050565b61247b90612465610452565b938493635cc5e79960e11b855260048501612409565b0390fd5b634e487b7160e01b5f52601160045260245ffd5b6124a26124a8919392936104ab565b926104ab565b82039182116124b357565b61247f565b90565b6124cf6124ca6124d4926124b8565b6109c8565b6104ab565b90565b6124e36124e891611b07565b6110a0565b90565b6124f590546124d7565b90565b6125b9906125b46125ac61259c6125be956125116121f4565b5061252661252160178790611a5a565b611b4c565b6125588661254561253f61253a600a611b4c565b6104ab565b916104ab565b111587612552600a611b4c565b9161229b565b6125768161256e6125685f6122cc565b916104ab565b118790612374565b6125978261258c612586846104ab565b916104ab565b10878490849261244b565b612493565b6125a660016124bb565b90612493565b9160166117b5565b6115ef565b6124eb565b90565b606090565b9160206125e79294936125e060408201965f8301906104ae565b01906104ae565b565b6125f16125c1565b50612606426126006018611b4c565b90612493565b61263a6126136019611b4c565b9161262b61261f610452565b938492602084016125c6565b60208201810382520382610860565b90565b90565b61265461264f6126599261263d565b6109c8565b6104ab565b90565b6126666002612640565b90565b9061267b612676836118ee565b610889565b918252565b5f7f53797374656d20696e206d61696e74656e616e6365206d6f6465000000000000910152565b6126b1601a612669565b906126be60208301612680565b565b6126c86126a7565b90565b6126d36126c0565b90565b5190565b6126f9612702602093612707936126f0816126d6565b938480936121f8565b958691016105d5565b6105e0565b0190565b9291602061272761272f9360408701908782035f8901526126da565b9401906104ae565b565b1561273a575050565b61275b612745610452565b9283926358eca00b60e11b84526004840161270b565b0390fd5b5f80fd5b5f80fd5b9092919261277c612777826118ee565b610889565b9381855260208501908284011161279857612796926105d5565b565b610848565b9080601f830112156127bb578160206127b893519101612767565b90565b610844565b90565b6127cc816127c0565b036127d357565b5f80fd5b905051906127e4826127c3565b565b919091604081840312612839576127fd6040610889565b925f8201519167ffffffffffffffff8311612834576128218261282d94830161279d565b5f8601526020016127d7565b6020830152565b612763565b61275f565b9060208282031261286e575f82015167ffffffffffffffff81116128695761286692016127e6565b90565b610505565b61045c565b61287c906109cb565b90565b61288890612873565b90565b612894906109cb565b90565b6128a09061288b565b90565b6128ad90516127c0565b90565b90565b6128c76128c26128cc926128b0565b6109c8565b6127c0565b90565b6128e36128de6128e8926127c0565b6109c8565b6104ab565b90565b60207f65656e207573656420666f722062696464696e672e0000000000000000000000917f546869732052616e646f6d57616c6b4e46542068617320616c726561647920625f8201520152565b61294560356040926121f8565b61294e816128eb565b0190565b919061297590602061296d604086018681035f880152612938565b9401906104ae565b565b1561297f5750565b6129a19061298b610452565b918291630bf3b03f60e11b835260048301612952565b0390fd5b6129ae906109e7565b90565b5f80fd5b60e01b90565b6129c490610564565b90565b6129d0816129bb565b036129d757565b5f80fd5b905051906129e8826129c7565b565b90602082820312612a0357612a00915f016129db565b90565b61045c565b612a10610452565b3d5f823e3d90fd5b90505190612a2582611de4565b565b90602082820312612a4057612a3d915f01612a18565b90565b61045c565b60207f646f6d57616c6b4e46542e000000000000000000000000000000000000000000917f596f75206d75737420626520746865206f776e6572206f66207468652052616e5f8201520152565b612a9f602b6040926121f8565b612aa881612a45565b0190565b606090612ae5612aec9496959396612adb612ad0608085018581035f870152612a92565b986020850190610570565b60408301906104ae565b0190610570565b565b9290919215612afc57505050565b612b1e90612b08610452565b93849363c8b7f6d760e01b855260048501612aac565b0390fd5b5f1b90565b90612b3360ff91612b22565b9181191691161790565b612b4690611367565b90565b90565b90612b61612b5c612b6892612b3d565b612b49565b8254612b27565b9055565b90505190612b7982610509565b565b90602082820312612b9457612b91915f01612b6c565b90565b61045c565b634e487b7160e01b5f52601260045260245ffd5b612bb9612bbf916104ab565b916104ab565b908115612bca570490565b612b99565b5f90565b60207f6e73616374696f6e20697320746f6f206c6f772e000000000000000000000000917f5468652076616c7565207375626d697474656420666f722074686973207472615f8201520152565b612c2d60346040926121f8565b612c3681612bd3565b0190565b916040612c6b929493612c64612c59606083018381035f850152612c20565b9660208301906104ae565b01906104ae565b565b15612c76575050565b612c97612c81610452565b928392631c677c1b60e31b845260048401612c3a565b0390fd5b60407f6c6f772e00000000000000000000000000000000000000000000000000000000917f5468652076616c7565207375626d697474656420666f722074686973207472615f8201527f6e73616374696f6e20776974682052616e646f6d57616c6b20697320746f6f2060208201520152565b612d1b60446060926121f8565b612d2481612c9b565b0190565b916040612d59929493612d52612d47606083018381035f850152612d0e565b9660208301906104ae565b01906104ae565b565b15612d64575050565b612d85612d6f610452565b928392631c677c1b60e31b845260048401612d28565b0390fd5b90612d955f1991612b22565b9181191691161790565b90565b90612db7612db2612dbe926112f0565b612d9f565b8254612d89565b9055565b612dcc6080610889565b90565b5f90565b5f90565b612ddf612dc2565b90602080808085612dee612dcf565b815201612df9612dcf565b815201612e04612dd3565b815201612e0f612dd3565b81525050565b612e1d612dd7565b90565b90612e2a90611f30565b9052565b90612e3890611f4a565b9052565b90612ea0612e975f612e4c612dc2565b94612e63612e5b838301611e68565b838801612e20565b612e7a612e71838301611e8f565b60208801612e20565b612e91612e88838301611ebf565b60408801612e2e565b01611ee6565b60608401612e2e565b565b612eab90612e3c565b90565b90565b60ff1690565b612ecb612ec6612ed092612eae565b6109c8565b612eb1565b90565b612ef290612eec612ee6612ef794612eb1565b916104ab565b9061046f565b6104ab565b90565b612f0e612f09612f13926104ab565b6109c8565b611f30565b90565b612f209051611f30565b90565b612f2f612f3591611f30565b91611f30565b019067ffffffffffffffff8211612f4857565b61247f565b612f61612f5c612f66926124b8565b6109c8565b611f4a565b90565b612f739051611f4a565b90565b612f82612f8891611f4a565b91611f4a565b019063ffffffff8211612f9757565b61247f565b612fb0612fab612fb5926122c9565b6109c8565b611f4a565b90565b612fcc612fc7612fd1926104ab565b6109c8565b611f4a565b90565b612fe0612fe691611f4a565b91611f4a565b90039063ffffffff8211612ff657565b61247f565b9061300e67ffffffffffffffff91612b22565b9181191691161790565b61302c61302761303192611f30565b6109c8565b611f30565b90565b90565b9061304c61304761305392613018565b613034565b8254612ffb565b9055565b60401b90565b906130786fffffffffffffffff000000000000000091613057565b9181191691161790565b9061309761309261309e92613018565b613034565b825461305d565b9055565b60801b90565b906130ba63ffffffff60801b916130a2565b9181191691161790565b6130d86130d36130dd92611f4a565b6109c8565b611f4a565b90565b90565b906130f86130f36130ff926130c4565b6130e0565b82546130a8565b9055565b60a01b90565b9061311b63ffffffff60a01b91613103565b9181191691161790565b9061313a613135613141926130c4565b6130e0565b8254613109565b9055565b9061319f60605f6131a594613167828201613161848801612f16565b90613037565b61317f82820161317960208801612f16565b90613082565b61319782820161319160408801612f69565b906130e3565b019201612f69565b90613125565b565b906131b191613145565b565b6131c76131c26131cc926122c9565b6109c8565b610559565b90565b6131d8906131b3565b90565b6131ef6131ea6131f492611f4a565b6109c8565b6104ab565b90565b9061320860018060a01b0391612b22565b9181191691161790565b90565b9061322a61322561323192611e25565b613212565b82546131f7565b9055565b905090565b6132455f8092613235565b0190565b6132529061323a565b90565b906132676132628361089e565b610889565b918252565b3d5f146132875761327c3d613255565b903d5f602084013e5b565b61328f6125c1565b90613285565b5f7f526566756e64207472616e73666572206661696c65642e000000000000000000910152565b6132c960176020926121f8565b6132d281613295565b0190565b9160406133079294936133006132f5606083018381035f8501526132bc565b9660208301906104ae565b0190610570565b565b15613312575050565b61333361331d610452565b92839263310a0fbb60e21b8452600484016132d6565b0390fd5b61334b613346613350926104ab565b6109c8565b6127c0565b90565b61335c906127c0565b9052565b613369906128b3565b9052565b91936133a46133bb969461339a6133ae949761339060a08801995f890190613353565b6020870190613353565b6040850190613360565b60608301906104ae565b60808184039101526126da565b90565b613417906134016133cf6033611b4c565b6133e86133e26133dd61265c565b6104ab565b916104ab565b106133f16126cb565b6133fb6033611b4c565b91612731565b602061340c826105c8565b81830101910161283e565b61343061342b6134263061126f565b61287f565b612897565b61343c602083016128a3565b61344f6134495f196128b3565b916127c0565b0361390d575b613461602083016128a3565b61347461346e5f196128b3565b916127c0565b145f146138fe576134a1602061348b5f5b936129a5565b63ec34866d90613499610452565b9384926129b5565b825281806134b16004820161095a565b03915afa80156138f9576136be915f916138cb575b50916134dc836134d66002612640565b90612bad565b6134e4612bcf565b50816134f96134f36001611d31565b91611d31565b145f146138a15761352d906135243461351a613514846104ab565b916104ab565b1015823491612d5b565b935b600b612da2565b613535612e15565b5061354a613545601b3390611e31565b612ea2565b61358461357c61356c61356787613561600f612eb7565b90612ed3565b612efa565b6135775f8501612f16565b612f23565b5f8301612e20565b6135ad6135916001612f4d565b6135a760408401916135a283612f69565b612f76565b90612e2e565b6135b5612e15565b506135d36135ce601b6135c8601f6124eb565b90611e31565b612ea2565b6135dc5f612f9c565b426135f86135f26135ed601e611b4c565b6104ab565b916104ab565b1161384b575b61361e90613618606084019161361383612f69565b612f76565b90612e2e565b61363c81613637601b613631601f6124eb565b90611e31565b6131a7565b613646601d6124eb565b61366061365a6136555f6131cf565b610564565b91610564565b145f146137e0575061367333601d613215565b61368661367f5f6122cc565b601c612da2565b5b61369360408201612f69565b6136ae6136a86136a36020611b4c565b6104ab565b916131db565b116137b1575b505f840151616912565b346136d16136cb836104ab565b916104ab565b11613760575b6136e160116124eb565b6136f46136ee600a611b4c565b92613337565b613700602085016128a3565b9061375b5f19955f6137126014611b4c565b910151906137496137437f3ebe28e9be13fedb71392c114461386e763acb563218b28db3690553055cd5a597611e25565b976112f0565b97613752610452565b9586958661336d565b0390a3565b6137ac61376e348390612493565b5f8061377a60116124eb565b83613783610452565b908161378e81613249565b03925af161379a61326c565b50906137a660116124eb565b91613309565b6136d7565b6137c86137c360406137cf9301612f69565b6131db565b6020612da2565b6137da336021613215565b5f6136b4565b6137ec60608201612f69565b6138076138016137fc601c611b4c565b6104ab565b916131db565b11613813575b50613687565b61382a61382560606138319301612f69565b6131db565b601c612da2565b61384561383e601f6124eb565b601d613215565b5f61380d565b613855601e611b4c565b6138676138615f6122cc565b916104ab565b11613872575b6135fe565b5061361e61389a61388242612fb8565b61389461388f601e611b4c565b612fb8565b90612fd4565b905061386d565b506138c2346138b86138b2866104ab565b916104ab565b1015843491612c6d565b61352d83613526565b6138ec915060203d81116138f2575b6138e48183610860565b810190612b7b565b5f6134c6565b503d6138da565b612a08565b6134a1602061348b6001613485565b61395a61394061393a613935601261392f61392a602089016128a3565b6128cf565b9061130c565b611b6d565b15611367565b61395461394f602086016128a3565b6128cf565b90612977565b61397e6020613968836129a5565b635111a2d690613976610452565b9384926129b5565b8252818061398e6004820161095a565b03915afa8015613b50576139af6020916139eb935f91613b23575b50610d90565b636352211e906139e06139cb6139c68589016128a3565b6128cf565b926139d4610452565b958694859384936129b5565b8352600483016104bb565b03915afa8015613b1e57613a3c915f91613af0575b50613a1a613a14613a0f61658a565b610564565b91610564565b146020613a26846129a5565b635111a2d690613a34610452565b9485926129b5565b82528180613a4c6004820161095a565b03915afa918215613aeb57613a8f92613a6c915f91613abd575b50610d90565b613a80613a7b602087016128a3565b6128cf565b90613a8961658a565b92612aee565b613ab86001613ab36012613aad613aa8602088016128a3565b6128cf565b9061130c565b612b4c565b613455565b613ade915060203d8111613ae4575b613ad68183610860565b8101906129ea565b5f613a66565b503d613acc565b612a08565b613b11915060203d8111613b17575b613b098183610860565b810190612a27565b5f613a00565b503d613aff565b612a08565b613b439150833d8111613b49575b613b3b8183610860565b8101906129ea565b5f6139a9565b503d613b31565b612a08565b6001613b6191016104ab565b90565b5190565b634e487b7160e01b5f52603260045260245ffd5b90613b8682613b64565b811015613b97576020809102010190565b613b68565b613ba690516104ab565b90565b90613be9613bb76033611b4c565b613bd0613bca613bc561265c565b6104ab565b916104ab565b10613bd96126cb565b613be36033611b4c565b91612731565b613bf25f6122cc565b5b80613c0e613c08613c0386613b64565b6104ab565b916104ab565b1015613c3d57613c3890613c33613c2e613c29868490613b7c565b613b9c565b6160aa565b613b55565b613bf3565b509050565b9190604083820312613c6a5780613c5e613c67925f8601612b6c565b93602001612b6c565b90565b61045c565b90565b613c86613c81613c8b92613c6f565b6109c8565b6104ab565b90565b613c9d613ca3919392936104ab565b926104ab565b91613caf8382026104ab565b928184041490151715613cbe57565b61247f565b613ccb6125c1565b50613ced613cd76125e9565b6020613ce2826105c8565b818301019101613c42565b9080613d01613cfb846104ab565b916104ab565b1015613d8f57613d69613d57613d47613d8c93613d42613d3c613d7d97613d37620f424094613d32620f4240613c72565b613c8e565b612bad565b91613c72565b612493565b613d51600c611b4c565b90613c8e565b613d63620f4240613c72565b90612bad565b613d71610452565b928391602083016104bb565b60208201810382520382610860565b90565b5050613db4613dc3613da05f6122cc565b613da8610452565b928391602083016104bb565b60208201810382520382610860565b90565b5f7f4e6f7420656e6f7567682074696d652068617320656c61707365642e00000000910152565b613dfa601c6020926121f8565b613e0381613dc6565b0190565b916040613e38929493613e31613e26606083018381035f850152613ded565b9660208301906104ae565b01906104ae565b565b15613e43575050565b613e64613e4e610452565b9283926301a4d65d60e21b845260048401613e07565b0390fd5b5f7f5468657265206973206e6f206c617374206269646465722e0000000000000000910152565b613e9c60186020926121f8565b613ea581613e68565b0190565b613ebe9060208101905f818303910152613e8f565b90565b15613ec857565b613ed0610452565b633ba2521960e21b815280613ee760048201613ea9565b0390fd5b60407f72732e0000000000000000000000000000000000000000000000000000000000917f4f6e6c7920746865206c617374206269646465722063616e20636c61696d20745f8201527f6865207072697a6520647572696e672074686520666972737420323420686f7560208201520152565b613f6b60436060926121f8565b613f7481613eeb565b0190565b916040613fa9929493613fa2613f97606083018381035f850152613f5e565b966020830190610570565b0190610570565b565b15613fb4575050565b613fd5613fbf610452565b928392635ae2310b60e11b845260048401613f78565b0390fd5b613fe5613fea91611b07565b610c69565b90565b613ff79054613fd9565b90565b5f90565b61400a61400f91611b07565b611480565b90565b61401c9054613ffe565b90565b5f7f5374616b696e67206465706f736974206661696c65642e000000000000000000910152565b61405360176020926121f8565b61405c8161401f565b0190565b91604061409192949361408a61407f606083018381035f850152614046565b9660208301906104ae565b0190610570565b565b1561409c575050565b6140bd6140a7610452565b92839263310a0fbb60e21b845260048401614060565b0390fd5b9160206140e29294936140db60408201965f830190610570565b01906104ae565b565b60207f206d696e74204e46542e00000000000000000000000000000000000000000000917f436f736d69635369676e6174757265206d696e742829206661696c656420746f5f8201520152565b61413e602a6040926121f8565b614147816140e4565b0190565b91604061417c92949361417561416a606083018381035f850152614131565b966020830190610570565b01906104ae565b565b15614187575050565b6141a8614192610452565b928392635513961f60e11b84526004840161414b565b0390fd5b6141b86141bd91611b07565b611115565b90565b6141ca90546141ac565b90565b6141d96141de91611b07565b6112f0565b90565b6141ed6141f3916104ab565b916104ab565b9081156141fe570690565b612b99565b60409061422c614233949695939661422260608401985f8501906104ae565b602083019061136c565b019061136c565b565b61424461424a919392936104ab565b926104ab565b820180921161425557565b61247f565b61426661426b91611b07565b610e28565b90565b614278905461425a565b90565b61428761428c91611b07565b612109565b90565b614299905461427b565b90565b5f7f5472616e7366657220746f207468652077696e6e6572206661696c65642e0000910152565b6142d0601e6020926121f8565b6142d98161429c565b0190565b91604061430e9294936143076142fc606083018381035f8501526142c3565b9660208301906104ae565b0190610570565b565b15614319575050565b61433a614324610452565b92839263310a0fbb60e21b8452600484016142dd565b0390fd5b60207f6c65642e00000000000000000000000000000000000000000000000000000000917f5472616e7366657220746f206368617269747920636f6e7472616374206661695f8201520152565b61439860246040926121f8565b6143a18161433e565b0190565b9160406143d69294936143cf6143c4606083018381035f85015261438b565b9660208301906104ae565b0190610570565b565b156143e1575050565b6144026143ec610452565b92839263310a0fbb60e21b8452600484016143a5565b0390fd5b61441261441791611b07565b610988565b90565b6144249054614406565b90565b5f7f526166666c65206465706f736974206661696c65642e00000000000000000000910152565b61445b60166020926121f8565b61446481614427565b0190565b916040614499929493614492614487606083018381035f85015261444e565b9660208301906104ae565b0190610570565b565b156144a4575050565b6144c56144af610452565b92839263310a0fbb60e21b845260048401614468565b0390fd5b6145086144d66033611b4c565b6144ef6144e96144e461265c565b6104ab565b916104ab565b106144f86126cb565b6145026033611b4c565b91612731565b61452161451c6145173061126f565b61287f565b612897565b61455361452e6014611b4c565b61454061453a426104ab565b916104ab565b111561454c6014611b4c565b4291613e3a565b61458161456060116124eb565b61457a61457461456f5f6131cf565b610564565b91610564565b1415613ec1565b6145954261458f6014611b4c565b90612493565b6145b06145aa6145a56015611b4c565b6104ab565b916104ab565b106154d2575b6145be612e15565b506145dc6145d7601b6145d1601f6124eb565b90611e31565b612ea2565b6145e55f612f9c565b426146016145fb6145f6601e611b4c565b6104ab565b916104ab565b1161547c575b61462790614621606084019161461c83612f69565b612f76565b90612e2e565b61464581614640601b61463a601f6124eb565b90611e31565b6131a7565b61465160608201612f69565b61466c614666614661601c611b4c565b6104ab565b916131db565b11615444575b5061468661467f5f6131cf565b6011613215565b61468e61658a565b906146ad826146a860266146a2600a611b4c565b906115ef565b613215565b6146da60206146c46146bf6002613fed565b610ca9565b6318160ddd906146d2610452565b9384926129b5565b825281806146ea6004820161095a565b03915afa90811561543f575f91615411575b5091614722602061470c846129a5565b63785fa6279061471a610452565b9384926129b5565b825281806147326004820161095a565b03915afa90811561540c575f916153de575b509061476a6020614754856129a5565b63dbc945c090614762610452565b9384926129b5565b8252818061477a6004820161095a565b03915afa9081156153d9575f916153ab575b50936147b2602061479c866129a5565b63c94028c2906147aa610452565b9384926129b5565b825281806147c26004820161095a565b03915afa80156153a6576147e46020916147fa935f91615379575b50966129a5565b63739a3e02906147f2610452565b9384926129b5565b8252818061480a6004820161095a565b03915afa908115615374575f91615346575b5090614826613ffa565b506148396148335f6122cc565b916104ab565b116152c5575b506148be5f806148576148526002613fed565b610ca9565b600461489a6340c10f1960e01b61488b88614872600a611b4c565b9061487b610452565b95869460208601908152016140c1565b60208201810382520382610860565b82602082019151925af16148ac61326c565b50826148b8600a611b4c565b9161417e565b6148c75f6122cc565b946148e56148e060176148da600a611b4c565b90611a5a565b611b4c565b936148ef5f6122cc565b965b8761490d6149076149026028611b4c565b6104ab565b916104ab565b1015614a6657614a5a614a6091614922616c36565b61496461495f61493d6016614937600a611b4c565b906117b5565b61495961495261494d602a6141c0565b6141cd565b8c906141e1565b906115ef565b6124eb565b5f806149786149736002613fed565b610ca9565b60046149bb6340c10f1960e01b6149ac87614993600a611b4c565b9061499c610452565b95869460208601908152016140c1565b60208201810382520382610860565b82602082019151925af1506149e76149d161326c565b60206149dc826105c8565b818301019101612b7b565b6149f1600a611b4c565b83925f8094614a47614a35614a2f614a297f2bdb3647f6d54492d99a46c4bf9e7b84ac8adf7aa868ec130450d96f6b4650e796611e25565b966112f0565b966112f0565b96614a3e610452565b93849384614203565b0390a4614a5460016124bb565b90614235565b97613b55565b966148f1565b96509091939294614a9a6020614a84614a7f600761426e565b610e68565b635fda0acc90614a92610452565b9384926129b5565b82528180614aaa6004820161095a565b03915afa9081156152c0575f91615292575b50614acf614ac95f6122cc565b916104ab565b116150b1575b614adf601d6124eb565b614af9614af3614aee5f6131cf565b610564565b91610564565b03614f2b575b614b0960216124eb565b614b23614b1d614b185f6131cf565b610564565b91610564565b03614d9a575b90614b9e614bae92614b605f80898b614b40610452565b9081614b4b81613249565b03925af1614b5761326c565b50898991614310565b5f80614b6c60096124eb565b83614b75610452565b9081614b8081613249565b03925af1614b8c61326c565b5090614b9860096124eb565b916143d8565b614ba86027611b4c565b90612bad565b92614bb85f6122cc565b955b86614bd6614bd0614bcb6027611b4c565b6104ab565b916104ab565b1015614d0b57614cff614d0591614beb616c36565b614c2d614c28614c066016614c00600a611b4c565b906117b5565b614c22614c1b614c16602a6141c0565b6141cd565b8a906141e1565b906115ef565b6124eb565b614c975f80614c44614c3f600561441a565b6109f3565b60048c614c7d63f340fa0160e01b614c6e89614c5e610452565b958693602085019081520161057d565b60208201810382520383610860565b602082019151925af1614c8e61326c565b5089839161449b565b614ca1600a611b4c565b829189614cd7614cd17f636e2e77ba7f2fd4bb40906f0d04dec909e31a90ea0d3a7c7ea7193dbcbbfa1193611e25565b936112f0565b93614cec614ce3610452565b928392836125c6565b0390a3614cf960016124bb565b90614235565b96613b55565b95614bba565b50939250935050614d1a616cea565b614d24600a611b4c565b919091614d6f614d5d614d577f27bc828c399c2947fea27bca8a75ced2e94ff2651d607271f051e39db52286ce936112f0565b93611e25565b93614d66610452565b918291826104bb565b0390a3614d98614d91614d8260016124bb565b614d8c600a611b4c565b614235565b600a612da2565b565b9590614b9e614f21614bae935f80614dba614db56002613fed565b610ca9565b6004614e066340c10f1960e01b614df7614dd460216124eb565b614dde600a611b4c565b90614de7610452565b95869460208601908152016140c1565b60208201810382520382610860565b82602082019151925af150614e32614e1c61326c565b6020614e27826105c8565b818301019101612b7b565b5f80614e46614e41600361428f565b612149565b6004614e926340c10f1960e01b614e83614e6060216124eb565b614e6a6031611b4c565b90614e73610452565b95869460208601908152016140c1565b60208201810382520382610860565b82602082019151925af150614ea561326c565b50614eb060216124eb565b90614ebb600a611b4c565b8392614f0e614efc614ef6614ef07f0b65f7d96c8d3f545768f7b9d1908ce604558c906d20f556bbe4cee7c11c89dd94611e25565b946112f0565b946112f0565b94614f05610452565b918291826104bb565b0390a4614f1b60016124bb565b90614235565b9791925050614b29565b956150ab905f80614f44614f3f6002613fed565b610ca9565b6004614f906340c10f1960e01b614f81614f5e601d6124eb565b614f68600a611b4c565b90614f71610452565b95869460208601908152016140c1565b60208201810382520382610860565b82602082019151925af150614fbc614fa661326c565b6020614fb1826105c8565b818301019101612b7b565b5f80614fd0614fcb600361428f565b612149565b600461501c6340c10f1960e01b61500d614fea601d6124eb565b614ff46030611b4c565b90614ffd610452565b95869460208601908152016140c1565b60208201810382520382610860565b82602082019151925af15061502f61326c565b5061503a601d6124eb565b90615045600a611b4c565b839261509861508661508061507a7fc7748b549d32f0b6d1f7a9145e4c7a8e4f8635f719422edd0fec4cf5629534e694611e25565b946112f0565b946112f0565b9461508f610452565b918291826104bb565b0390a46150a560016124bb565b90614235565b95614aff565b94939291906150bf5f6122cc565b965b876150dd6150d76150d26029611b4c565b6104ab565b916104ab565b1015615286576150eb616c36565b61513560206151026150fd600761426e565b610e68565b63418104259061512a615115602a6141c0565b9261511e610452565b958694859384936129b5565b83526004830161115d565b03915afa9182156152815761524d92615247925f91615253575b505f8061516461515f6002613fed565b610ca9565b60046151a76340c10f1960e01b6151988761517f600a611b4c565b90615188610452565b95869460208601908152016140c1565b60208201810382520382610860565b82602082019151925af1506151d36151bd61326c565b60206151c8826105c8565b818301019101612b7b565b6151dd600a611b4c565b83926001809461523461522261521c6152167f2bdb3647f6d54492d99a46c4bf9e7b84ac8adf7aa868ec130450d96f6b4650e796611e25565b966112f0565b966112f0565b9661522b610452565b93849384614203565b0390a461524160016124bb565b90614235565b97613b55565b966150c1565b615274915060203d811161527a575b61526c8183610860565b810190612a27565b5f61514f565b503d615262565b612a08565b96509091929394614ad5565b6152b3915060203d81116152b9575b6152ab8183610860565b810190612b7b565b5f614abc565b503d6152a1565b612a08565b615340905f806152dd6152d86006614012565b6114c0565b600484615315630d0e30db60e41b6153066152f6610452565b948592602084019081520161095a565b60208201810382520383610860565b602082019151925af161532661326c565b509061533a6153356006614012565b6114c0565b91614093565b5f61483f565b615367915060203d811161536d575b61535f8183610860565b810190612b7b565b5f61481c565b503d615355565b612a08565b6153999150833d811161539f575b6153918183610860565b810190612b7b565b5f6147dd565b503d615387565b612a08565b6153cc915060203d81116153d2575b6153c48183610860565b810190612b7b565b5f61478c565b503d6153ba565b612a08565b6153ff915060203d8111615405575b6153f78183610860565b810190612b7b565b5f614744565b503d6153ed565b612a08565b615432915060203d8111615438575b61542a8183610860565b810190612b7b565b5f6146fc565b503d615420565b612a08565b61545b61545660606154629301612f69565b6131db565b601c612da2565b61547661546f601f6124eb565b601d613215565b5f614672565b615486601e611b4c565b6154986154925f6122cc565b916104ab565b116154a3575b614607565b506146276154cb6154b342612fb8565b6154c56154c0601e611b4c565b612fb8565b90612fd4565b905061549e565b6155116154dd61658a565b6154f86154f26154ed60116124eb565b610564565b91610564565b1461550360116124eb565b61550b61658a565b91613fab565b6145b6565b5f7f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572910152565b615549602080926121f8565b61555281615516565b0190565b61556b9060208101905f81830391015261553d565b90565b1561557557565b61557d610452565b62461bcd60e51b81528061559360048201615556565b0390fd5b6155c16155a26155e8565b6155bb6155b56155b061658a565b610564565b91610564565b1461556e565b6155c96155cb565b565b6155dc6155d75f6131cf565b616e76565b565b6155e6615597565b565b6155f06121f4565b506155fa5f6124eb565b90565b6156076040610889565b90565b606090565b5f90565b61561b6155fd565b906020808361562861560a565b81520161563361560f565b81525050565b615641615613565b90565b9061564e906104ab565b9052565b61565b5f612669565b90565b90615668906127c0565b9052565b60209181520190565b61569461569d6020936156a29361568b816126d6565b9384809361566c565b958691016105d5565b6105e0565b0190565b6156af906127c0565b9052565b906156dd906020806156d2604084015f8701518582035f870152615675565b9401519101906156a6565b90565b6156f59160208201915f8184039101526156b3565b90565b6157376157056033611b4c565b61571e61571861571361265c565b6104ab565b916104ab565b106157276126cb565b6157316033611b4c565b91612731565b6157a361578f61579e615748615639565b61575c5f8201615756615652565b90615644565b6157726157695f196128b3565b6020830161565e565b61577a6125c1565b50615783610452565b928391602083016156e0565b60208201810382520382610860565b6133be565b565b6157b09136916108cc565b90565b61580461580e949392615809926157ff6157cd6033611b4c565b6157e66157e06157db61265c565b6104ab565b916104ab565b106157ef6126cb565b6157f96033611b4c565b91612731565b6157a5565b6133be565b616fc4565b565b60207f6f206d616b652061206269642077697468204353540000000000000000000000917f496e73756666696369656e742043535420746f6b656e2062616c616e636520745f8201520152565b61586a60356040926121f8565b61587381615810565b0190565b9160406158a89294936158a1615896606083018381035f85015261585d565b9660208301906104ae565b01906104ae565b565b156158b3575050565b6158d46158be610452565b92839263c653e63160e01b845260048401615877565b0390fd5b90565b6158ef6158ea6158f4926158d8565b6109c8565b6104ab565b90565b5f91031261590157565b61045c565b919361593d6159549694615933615947949761592960a08801995f890190613360565b6020870190613360565b6040850190613353565b60608301906104ae565b60808184039101526126da565b90565b6159966159646033611b4c565b61597d61597761597261265c565b6104ab565b916104ab565b106159866126cb565b6159906033611b4c565b91612731565b6159d760206159ad6159a8600361428f565b612149565b6370a08231906159cc33926159c0610452565b958694859384936129b5565b83526004830161057d565b03915afa908115615e2d575f91615dff575b50615a2d615a0e6159f8613cc3565b6020615a03826105c8565b818301019101612b7b565b9180615a22615a1c856104ab565b916104ab565b1015908390916158aa565b615a66615a5f615a4f68056bc75e2d63100000615a4a85916158db565b61716e565b615a596002612640565b90613c8e565b600c612da2565b615a71426018612da2565b615a83615a7e600361428f565b612149565b639dc29fac338392803b15615dfa57615aaf5f8094615aba615aa3610452565b978896879586946129b5565b8452600484016140c1565b03925af18015615df557615dc9575b50615ad2612e15565b50615ae7615ae2601b3390611e31565b612ea2565b615b22615b1a615b09615b0485615afe600f612eb7565b90612ed3565b612efa565b615b1560208501612f16565b612f23565b5f8301612e20565b615b4b615b2f6001612f4d565b615b456040840191615b4083612f69565b612f76565b90612e2e565b615b53612e15565b50615b71615b6c601b615b66601f6124eb565b90611e31565b612ea2565b615b7a5f612f9c565b42615b96615b90615b8b601e611b4c565b6104ab565b916104ab565b11615d73575b615bbc90615bb66060840191615bb183612f69565b612f76565b90612e2e565b615bda81615bd5601b615bcf601f6124eb565b90611e31565b6131a7565b615be4601d6124eb565b615bfe615bf8615bf35f6131cf565b610564565b91610564565b145f14615d085750615c1133601d613215565b615c24615c1d5f6122cc565b601c612da2565b5b615c3160408201612f69565b615c4c615c46615c416020611b4c565b6104ab565b916131db565b11615cd9575b50615c5f82600290616912565b615c6960116124eb565b615c73600a611b4c565b915f19615cd4615c845f1993613337565b95615c8f6014611b4c565b615cc2615cbc7f3ebe28e9be13fedb71392c114461386e763acb563218b28db3690553055cd5a597611e25565b976112f0565b97615ccb610452565b95869586615906565b0390a3565b615cf0615ceb6040615cf79301612f69565b6131db565b6020612da2565b615d02336021613215565b5f615c52565b615d1460608201612f69565b615d2f615d29615d24601c611b4c565b6104ab565b916131db565b11615d3b575b50615c25565b615d52615d4d6060615d599301612f69565b6131db565b601c612da2565b615d6d615d66601f6124eb565b601d613215565b5f615d35565b615d7d601e611b4c565b615d8f615d895f6122cc565b916104ab565b11615d9a575b615b9c565b50615bbc615dc2615daa42612fb8565b615dbc615db7601e611b4c565b612fb8565b90612fd4565b9050615d95565b615de8905f3d8111615dee575b615de08183610860565b8101906158f7565b5f615ac9565b503d615dd6565b612a08565b6129b1565b615e20915060203d8111615e26575b615e188183610860565b810190612b7b565b5f6159e9565b503d615e0e565b612a08565b5f7f54686520646f6e61746564204e465420646f6573206e6f742065786973742e00910152565b615e66601f6020926121f8565b615e6f81615e32565b0190565b9190615e96906020615e8e604086018681035f880152615e59565b9401906104ae565b565b15615ea05750565b615ec290615eac610452565b91829163e15fd6a160e01b835260048301615e73565b0390fd5b60207f642e000000000000000000000000000000000000000000000000000000000000917f4e6f6e2d6578697374656e742077696e6e657220666f722074686520726f756e5f8201520152565b615f2060226040926121f8565b615f2981615ec6565b0190565b9190615f50906020615f48604086018681035f880152615f13565b9401906104ae565b565b15615f5a5750565b615f7c90615f66610452565b91829163a063cf5760e01b835260048301615f2d565b0390fd5b60207f2e00000000000000000000000000000000000000000000000000000000000000917f546865204e46542068617320616c7265616479206265656e20636c61696d65645f8201520152565b615fda60216040926121f8565b615fe381615f80565b0190565b919061600a906020616002604086018681035f880152615fcd565b9401906104ae565b565b156160145750565b61603690616020610452565b9182916388bd73e160e01b835260048301615fe7565b0390fd5b60409061606361606a949695939661605960608401985f850190610570565b6020830190610570565b01906104ae565b565b6160a16160a89461609760609498979561608d608086019a5f8701906104ae565b6020850190610570565b6040830190610570565b01906104ae565b565b6160e96160b76033611b4c565b6160d06160ca6160c561265c565b6104ab565b916104ab565b106160d96126cb565b6160e36033611b4c565b91612731565b616110816161086161026160fd602c611b4c565b6104ab565b916104ab565b108290615e98565b61613a616135602661612f6002616129602b8790611af1565b01611b4c565b906115ef565b6124eb565b6161618161615861615261614d5f6131cf565b610564565b91610564565b14158390615f52565b61618b61618461617e6003616178602b8790611af1565b01611b6d565b15611367565b839061600c565b6161a46001600361619e602b8690611af1565b01612b4c565b6161c26161bd5f6161b7602b8690611af1565b01611b2b565b611bba565b6342842e0e6161d03061126f565b83926161e960016161e3602b8990611af1565b01611b4c565b92813b156162ec575f61620f9161621a8296616203610452565b988997889687956129b5565b85526004850161603a565b03925af180156162e7576162bb575b50616241600261623b602b8590611af1565b01611b4c565b90826162b661627a600161627461626c6162675f616261602b8c90611af1565b01611b2b565b611bba565b97602b611af1565b01611b4c565b6162a47f0d0e4b90a96d931964d5b0421a6b5b48dd73abf538cdb9ae015069d49e9a4679956112f0565b956162ad610452565b9485948561606c565b0390a2565b6162da905f3d81116162e0575b6162d28183610860565b8101906158f7565b5f616229565b503d6162c8565b612a08565b6129b1565b60207f7468616e20302e00000000000000000000000000000000000000000000000000917f446f6e6174696f6e20616d6f756e74206d7573742062652067726561746572205f8201520152565b61634b60276040926121f8565b616354816162f1565b0190565b61636d9060208101905f81830391015261633e565b90565b1561637757565b61637f610452565b63af33979960e01b81528061639660048201616358565b0390fd5b6163d96163a76033611b4c565b6163c06163ba6163b561265c565b6104ab565b916104ab565b106163c96126cb565b6163d36033611b4c565b91612731565b6163f5346163ef6163e95f6122cc565b916104ab565b11616370565b4261641161640b616406602d611b4c565b6104ab565b916104ab565b10616465575b61641f61658a565b349061646061644e7f8b7fe5be5699654fd637d2250cb0d47e88205730710745e78e9d8bcaf8aad8f192611e25565b92616457610452565b918291826104bb565b0390a2565b61646d6171d0565b616417565b6164a5906164a06164816155e8565b61649a61649461648f61658a565b610564565b91610564565b1461556e565b61654f565b565b60207f6464726573730000000000000000000000000000000000000000000000000000917f4f776e61626c653a206e6577206f776e657220697320746865207a65726f20615f8201520152565b61650160266040926121f8565b61650a816164a7565b0190565b6165239060208101905f8183039101526164f4565b90565b1561652d57565b616535610452565b62461bcd60e51b81528061654b6004820161650e565b0390fd5b61657d906165788161657161656b6165665f6131cf565b610564565b91610564565b1415616526565b616e76565b565b61658890616472565b565b6165926121f4565b503390565b5f7f4e6f7420616374697665207965742e0000000000000000000000000000000000910152565b6165cb600f6020926121f8565b6165d481616597565b0190565b9160406166099294936166026165f7606083018381035f8501526165be565b9660208301906104ae565b01906104ae565b565b15616614575050565b61663561661f610452565b928392632710db8960e21b8452600484016165d8565b0390fd5b90565b5f7f4d65737361676520697320746f6f206c6f6e672e000000000000000000000000910152565b61667060146020926121f8565b6166798161663c565b0190565b91906166a0906020616698604086018681035f880152616663565b9401906104ae565b565b156166aa5750565b6166cc906166b6610452565b9182916354d29c9d60e11b83526004830161667d565b0390fd5b906166df60ff60a01b91613103565b9181191691161790565b6166f290611d31565b90565b90565b9061670d616708616714926166e9565b6166f5565b82546166d0565b9055565b60207f742072657761726420746f6b656e7320666f7220746865206269646465722e00917f436f736d6963546f6b656e206d696e742829206661696c656420746f206d696e5f8201520152565b616772603f6040926121f8565b61677b81616718565b0190565b9160406167b09294936167a961679e606083018381035f850152616765565b966020830190610570565b01906104ae565b565b156167bb575050565b6167dc6167c6610452565b928392631ffa47b560e31b84526004840161677f565b0390fd5b6167ec6167f191611b07565b610fb9565b90565b6167fe90546167e0565b90565b91602061682292949361681b60408201965f830190611005565b01906104ae565b565b60407f6c65742e00000000000000000000000000000000000000000000000000000000917f436f736d6963546f6b656e206d696e742829206661696c656420746f206d696e5f8201527f742072657761726420746f6b656e7320666f72204d61726b6574696e6757616c60208201520152565b6168a460446060926121f8565b6168ad81616824565b0190565b9160406168e29294936168db6168d0606083018381035f850152616897565b966020830190610570565b01906104ae565b565b156168ed575050565b61690e6168f8610452565b928392631ffa47b560e31b8452600484016168b1565b0390fd5b906169916169d49261694c4261693961693361692e602d611b4c565b6104ab565b916104ab565b1015616945602d611b4c565b429161660b565b61698b61698661696361695e84616639565b6105c8565b61697e6169786169736032611b4c565b6104ab565b916104ab565b111592616639565b6105c8565b906166a2565b61699b60116124eb565b6169b56169af6169aa5f6131cf565b610564565b91610564565b14616ba3575b6169cd6169c661658a565b6011613215565b60116166f8565b6169e86169e160116124eb565b601f613215565b6169f342601e612da2565b616a71616a57616a16616a116017616a0b600a611b4c565b90611a5a565b611b4c565b616a47616a2360116124eb565b616a42616a3b6016616a35600a611b4c565b906117b5565b84906115ef565b613215565b616a5160016124bb565b90614235565b616a6c6017616a66600a611b4c565b90611a5a565b612da2565b616b015f80616a88616a83600361428f565b612149565b6004616ad46340c10f1960e01b616ac5616aa260116124eb565b616aac602e611b4c565b90616ab5610452565b95869460208601908152016140c1565b60208201810382520382610860565b82602082019151925af1616ae661326c565b50616af160116124eb565b616afb602e611b4c565b916167b2565b616b995f80616b18616b13600361428f565b612149565b6004616b646340c10f1960e01b616b55616b3260086167f4565b616b3c602f611b4c565b90616b45610452565b9586946020860190815201616801565b60208201810382520382610860565b82602082019151925af1616b7661326c565b50616b89616b8460086167f4565b610ff9565b616b93602f611b4c565b916168e4565b616ba1617243565b565b616bc1616bba42616bb46013611b4c565b90614235565b6014612da2565b6169bb565b604090616bef616bf69496959396616be560608401985f850190611150565b60208301906104ae565b0190611150565b565b60200190565b616c079061114d565b90565b616c1390611b07565b90565b90616c2b616c26616c3292616bfe565b616c0a565b8254612d89565b9055565b616c9d616c43602a6141c0565b616c834291616c74616c5f43616c5960016124bb565b90612493565b40616c68610452565b94859360208501616bc6565b60208201810382520382610860565b616c95616c8f826105c8565b91616bf8565b20602a616c16565b565b90565b616cb6616cb1616cbb92616c9f565b6109c8565b6104ab565b90565b90565b616cd5616cd0616cda92616cbe565b6109c8565b6104ab565b90565b616ce760016124bb565b90565b616cf5426018612da2565b616d005f60116166f8565b616d3d616d36616d23600c616d1e616d18600d611b4c565b91616ca2565b613c8e565b616d30633b9aca00616cc1565b90612bad565b6019612da2565b616d76616d495f6122cc565b616d716017616d6b616d5b600a611b4c565b616d6560016124bb565b90614235565b90611a5a565b612da2565b616d7e6171d0565b616da5616d9e616d8d3061126f565b31616d986010611b4c565b90612bad565b600b612da2565b616db8616db15f6122cc565b601c612da2565b616dcb616dc45f6131cf565b601d613215565b616dde616dd75f6122cc565b601e612da2565b616df1616dea5f6131cf565b601f613215565b616dfb6033611b4c565b616e14616e0e616e09616cdd565b6104ab565b916104ab565b14616e1c575b565b616e2e616e2761265c565b6033612da2565b616e386033611b4c565b616e6e7ff24e774cdaabee9b8782266728e442b7f1fa6ae9204755c0da1541e99f04aa4c91616e65610452565b918291826104bb565b0390a1616e1a565b616e7f5f6124eb565b616e89825f613215565b90616ebd616eb77f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093611e25565b91611e25565b91616ec6610452565b80616ed08161095a565b0390a3565b616edf6080610889565b90565b90616eec906116bf565b9052565b90616efa90611367565b9052565b616f0890516116bf565b90565b616f14906109cb565b90565b616f2090616f0b565b90565b90565b90616f3b616f36616f4292616f17565b616f23565b82546131f7565b9055565b616f509051611367565b90565b90616fb060606003616fb694616f765f8201616f705f8801616efe565b90616f26565b616f8f60018201616f8960208801613b9c565b90612da2565b616fa860028201616fa260408801613b9c565b90612da2565b019201616f46565b90612b4c565b565b90616fc291616f53565b565b90616fce82611bba565b6342842e0e616fdb61658a565b616fe43061126f565b928492813b15617169575f61700c916170178296617000610452565b988997889687956129b5565b85526004850161603a565b03925af1801561716457617138575b5061708a826170708361706761703c600a611b4c565b61705e5f9361705561704c616ed5565b975f8901616ee2565b60208701615644565b60408501615644565b60608301616ef0565b617085602b61707f602c611b4c565b90611af1565b616fb8565b6170b06170a961709a60016124bb565b6170a4602c611b4c565b614235565b602c612da2565b6170b861658a565b916170c3600a611b4c565b91926170e26170d2602c611b4c565b6170dc60016124bb565b90612493565b61711e6171186171127fc85be1734ed6a0f4d6adf924d4d41406e2729878c652110a96e2fdec64e118d194611e25565b94616f17565b946112f0565b9461713361712a610452565b928392836125c6565b0390a4565b617157905f3d811161715d575b61714f8183610860565b8101906158f7565b5f617026565b503d617145565b612a08565b6129b1565b90617177612bcf565b508161718b617185836104ab565b916104ab565b10155f1461719857505b90565b9050617195565b90565b6171b66171b16171bb9261719f565b6109c8565b6104ab565b90565b6171cd655af3107a40006171a2565b90565b6171da600a611b4c565b6171ec6171e65f6122cc565b916104ab565b145f14617208576172056171fe6171be565b600b612da2565b5b565b61722f6172286172173061126f565b316172226010611b4c565b90612bad565b600b612da2565b617206565b617240620f4240613c72565b90565b617289617282617269617256600d611b4c565b617263633b9aca00616cc1565b90612bad565b61727d6172766014611b4c565b429061716e565b614235565b6014612da2565b6172c16172ba6172ac61729c600d611b4c565b6172a6600e611b4c565b90613c8e565b6172b4617234565b90612bad565b600d612da2565b56fea2646970667358221220823594254336be7292c4b5cb51e8ef20ab63645d1375ba9e739baa21d5fc212a64736f6c634300081a0033",
+	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"activationTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockTimestamp\",\"type\":\"uint256\"}],\"name\":\"ActivationTime\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"msgLength\",\"type\":\"uint256\"}],\"name\":\"BidMessageLengthOverflow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amountRequired\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amountSent\",\"type\":\"uint256\"}],\"name\":\"BidPrice\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"providedRound\",\"type\":\"uint256\"}],\"name\":\"BidderQueryNoBidsYet\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenAmoumnt\",\"type\":\"uint256\"}],\"name\":\"ERC20Mint\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"claimTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockTimestamp\",\"type\":\"uint256\"}],\"name\":\"EarlyClaim\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"}],\"name\":\"FundTransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"contractAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"IncorrectERC721TokenOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"requiredAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"senderBalance\",\"type\":\"uint256\"}],\"name\":\"InsufficientCSTBalance\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"providedRound\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"providedOffset\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"numParticipants\",\"type\":\"uint256\"}],\"name\":\"InvalidBidderQueryOffset\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"providedRound\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"totalRounds\",\"type\":\"uint256\"}],\"name\":\"InvalidBidderQueryRound\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"lastBidder\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"bidder\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"timeToWait\",\"type\":\"uint256\"}],\"name\":\"LastBidderOnly\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"NFTAlreadyClaimed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"NoLastBidder\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"NonExistentDonatedNFT\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"NonExistentWinner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"NonZeroValueRequired\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"systemMode\",\"type\":\"uint256\"}],\"name\":\"SystemMode\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"randomWalkTokenId\",\"type\":\"uint256\"}],\"name\":\"UsedRandomWalkNFT\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"lastBidder\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"bidPrice\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"randomWalkNFTId\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"numCSTTokens\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"prizeTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"}],\"name\":\"BidEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"nftAddressdonatedNFTs\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"DonatedNFTClaimedEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"recordId\",\"type\":\"uint256\"}],\"name\":\"DonationWithInfoEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"erc721TokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"erc20TokenAmount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winnerIndex\",\"type\":\"uint256\"}],\"name\":\"EnduranceChampionWinnerEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"NFTDonationEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"prizeNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"PrizeClaimEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winnerIndex\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RaffleETHWinnerEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winnerIndex\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"isStaker\",\"type\":\"bool\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"isRWalk\",\"type\":\"bool\"}],\"name\":\"RaffleNFTWinnerEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"erc721TokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"erc20TokenAmount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalSpent\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winnerIndex\",\"type\":\"uint256\"}],\"name\":\"StellarSpenderWinnerEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newSystemMode\",\"type\":\"uint256\"}],\"name\":\"SystemModeChanged\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"CSTAuctionLength\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"RoundStartCSTAuctionLength\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"activationTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"auctionDuration\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bLogic\",\"outputs\":[{\"internalType\":\"contractBusinessLogic\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_param_data\",\"type\":\"bytes\"}],\"name\":\"bid\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_param_data\",\"type\":\"bytes\"},{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"bidAndDonateNFT\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bidPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"}],\"name\":\"bidWithCST\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_round\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_positionFromEnd\",\"type\":\"uint256\"}],\"name\":\"bidderAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"bidderInfo\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"totalSpent\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"lastBidTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"totalBidTime\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charity\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charityPercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"claimDonatedNFT\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"tokens\",\"type\":\"uint256[]\"}],\"name\":\"claimManyDonatedNFTs\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claimPrize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"currentCSTPrice\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"donate\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_data\",\"type\":\"string\"}],\"name\":\"donateWithInfo\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"donateWithInfoNumRecords\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"donatedNFTs\",\"outputs\":[{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"claimed\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"donationInfoRecords\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"data\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"enduranceChampion\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"enduranceChampionDuration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"erc20RewardMultiplier\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"extraStorage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"initialBidAmountFraction\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"initialSecondsUntilPrize\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastBidType\",\"outputs\":[{\"internalType\":\"enumCosmicGameConstants.BidType\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastBidder\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastCSTBidTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"marketingReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"marketingWallet\",\"outputs\":[{\"internalType\":\"contractMarketingWallet\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxMessageLength\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nanoSecondsExtra\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nft\",\"outputs\":[{\"internalType\":\"contractCosmicSignature\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numDonatedNFTs\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleETHWinnersBidding\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleNFTWinnersBidding\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleNFTWinnersStakingRWalk\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"numRaffleParticipants\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"priceIncrease\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizePercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizeTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleEntropy\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"raffleParticipants\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rafflePercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleWallet\",\"outputs\":[{\"internalType\":\"contractRaffleWallet\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"randomWalk\",\"outputs\":[{\"internalType\":\"contractRandomWalkNFT\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"receiveEther\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"roundNum\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakingPercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakingWalletCST\",\"outputs\":[{\"internalType\":\"contractStakingWalletCST\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakingWalletRWalk\",\"outputs\":[{\"internalType\":\"contractStakingWalletRWalk\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"startingBidPriceCST\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stellarSpender\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stellarSpenderAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"systemMode\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeIncrease\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeoutClaimPrize\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"token\",\"outputs\":[{\"internalType\":\"contractCosmicToken\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"tokenReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"usedRandomWalkNFTs\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"winners\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	Bin: "0x60806040523461002757610011610036565b61001961002c565b616bcf61017e8239616bcf90f35b610032565b60405190565b5f80fd5b61003e610040565b565b61005061004b610056565b61011e565b565b5f90565b61005e610052565b503390565b5f1c90565b60018060a01b031690565b61007f61008491610063565b610068565b90565b6100919054610073565b90565b5f1b90565b906100aa60018060a01b0391610094565b9181191691161790565b60018060a01b031690565b90565b6100d66100d16100db926100b4565b6100bf565b6100b4565b90565b6100e7906100c2565b90565b6100f3906100de565b90565b90565b9061010e610109610115926100ea565b6100f6565b8254610099565b9055565b5f0190565b6101275f610087565b610131825f6100f9565b9061016561015f7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0936100ea565b916100ea565b9161016e61002c565b8061017881610119565b0390a356fe60806040526004361015610013575b61237e565b61001d5f3561044c565b80630c201838146104475780630cbf54c814610442578063119b22b31461043d57806311dc73351461043857806319afe473146104335780631cb78fb31461042e5780631d1d4e291461042957806320a60273146104245780632366b3b71461041f5780632aab32231461041a57806331e375301461041557806332d382cd14610410578063355f01e21461040b5780633703dbc8146104065780633b5fa8e3146104015780633f7909d4146103fc57806340e02322146103f757806347ccca02146103f25780635111a2d6146103ed578063541fa588146103e857806356c96eb7146103e357806358218269146103de5780635863a705146103d95780635e74140c146103d4578063662bfa8f146103cf57806367f3e4a5146103ca5780636e66f6e9146103c557806370740ac9146103c0578063715018a6146103bb57806375f0a874146103b6578063799d431d146103b15780637e8ad4e3146103ac57806380de163d146103a757806381e1ccba146103a25780638547af301461039d5780638567ab171461039857806386e378c9146103935780638da5cb5b1461038e5780638fffdf34146103895780639136d6d91461038457806391daa9a91461037f5780639250c33c1461037a578063934aa02314610375578063986459a014610370578063a2fb11751461036b578063a38fd64e14610366578063a3912ec814610361578063ae3661fd1461035c578063b1ddd82a14610357578063b2fd10b214610352578063b635176a1461034d578063b801b8b214610348578063ba35b1b014610343578063c709bf281461033e578063cb819dc014610339578063d59760c514610334578063d59d74781461032f578063d6e174171461032a578063d94d031614610325578063da4493f614610320578063da63990b1461031b578063ed08339814610316578063ed421f4114610311578063ed88c68e1461030c578063f2fde38b14610307578063f8c34050146103025763fc0c546a0361000e57612349565b6122a6565b612264565b61221d565b6121e8565b61219a565b612156565b612088565b612044565b611ffc565b611ecf565b611e9a565b611e36565b611df2565b611db0565b611cca565b611c86565b611c42565b611bfd565b611b99565b611aac565b611a77565b611a33565b6119cc565b6117b1565b61176d565b611729565b611686565b611642565b6115fe565b6115c9565b6114f4565b611451565b61140d565b6113c9565b611337565b6112c2565b61127e565b6111dd565b6111aa565b611175565b611131565b6110ed565b6110a9565b611006565b610fc2565b610f7e565b610f49565b610f05565b610e62565b610dbf565b610d7d565b610c7c565b610c38565b610bf4565b610bb0565b610b19565b6109d2565b610999565b6108de565b61089a565b610852565b6106bb565b610677565b610633565b6105a0565b6104f0565b60e01c90565b60405190565b5f80fd5b5f80fd5b5f80fd5b90565b61047081610464565b0361047757565b5f80fd5b9050359061048882610467565b565b91906040838203126104b257806104a66104af925f860161047b565b9360200161047b565b90565b61045c565b60018060a01b031690565b6104cb906104b7565b90565b6104d7906104c2565b9052565b91906104ee905f602085019401906104ce565b565b346105215761051d61050c61050636600461048a565b9061265c565b610514610452565b918291826104db565b0390f35b610458565b5f91031261053057565b61045c565b5190565b60209181520190565b90825f9392825e0152565b601f801991011690565b61057661057f6020936105849361056d81610535565b93848093610539565b95869101610542565b61054d565b0190565b61059d9160208201915f818403910152610557565b90565b346105d0576105b0366004610526565b6105cc6105bb61274d565b6105c3610452565b91829182610588565b0390f35b610458565b1c90565b90565b6105ec9060086105f193026105d5565b6105d9565b90565b906105ff91546105dc565b90565b61060e600a5f906105f4565b90565b61061a90610464565b9052565b9190610631905f60208501940190610611565b565b3461066357610643366004610526565b61065f61064e610602565b610656610452565b9182918261061e565b0390f35b610458565b61067460205f906105f4565b90565b346106a757610687366004610526565b6106a3610692610668565b61069a610452565b9182918261061e565b0390f35b610458565b6106b8600b5f906105f4565b90565b346106eb576106cb366004610526565b6106e76106d66106ac565b6106de610452565b9182918261061e565b0390f35b610458565b6106f9816104c2565b0361070057565b5f80fd5b90503590610711826106f0565b565b919060408382031261073b578061072f610738925f860161047b565b93602001610704565b90565b61045c565b90565b61075761075261075c92610464565b610740565b610464565b90565b9061076990610743565b5f5260205260405f2090565b61078961078461078e926104b7565b610740565b6104b7565b90565b61079a90610775565b90565b6107a690610791565b90565b906107b39061079d565b5f5260205260405f2090565b5f1c90565b6107d06107d5916107bf565b6105d9565b90565b6107e290546107c4565b90565b906107f46107f992601b61075f565b6107a9565b6108045f82016107d8565b9161081d6002610816600185016107d8565b93016107d8565b90565b604090610849610850949695939661083f60608401985f850190610611565b6020830190610611565b0190610611565b565b346108865761088261086e610868366004610713565b906107e5565b610879939193610452565b93849384610820565b0390f35b610458565b61089760315f906105f4565b90565b346108ca576108aa366004610526565b6108c66108b561088b565b6108bd610452565b9182918261061e565b0390f35b610458565b6108db60325f906105f4565b90565b3461090e576108ee366004610526565b61090a6108f96108cf565b610901610452565b9182918261061e565b0390f35b610458565b5f80fd5b5f80fd5b5f80fd5b909182601f830112156109595781359167ffffffffffffffff831161095457602001926001830284011161094f57565b61091b565b610917565b610913565b9060208282031261098f575f82013567ffffffffffffffff811161098a57610986920161091f565b9091565b610460565b61045c565b5f0190565b6109ad6109a736600461095e565b90612bc4565b6109b5610452565b806109bf81610994565b0390f35b6109cf602a5f906105f4565b90565b34610a02576109e2366004610526565b6109fe6109ed6109c3565b6109f5610452565b9182918261061e565b0390f35b610458565b5f80fd5b634e487b7160e01b5f52604160045260245ffd5b90610a299061054d565b810190811067ffffffffffffffff821117610a4357604052565b610a0b565b90610a5b610a54610452565b9283610a1f565b565b67ffffffffffffffff8111610a7b57610a7760209161054d565b0190565b610a0b565b90825f939282370152565b90929192610aa0610a9b82610a5d565b610a48565b93818552602085019082840111610abc57610aba92610a80565b565b610a07565b9080601f83011215610adf57816020610adc93359101610a8b565b90565b610913565b90602082820312610b14575f82013567ffffffffffffffff8111610b0f57610b0c9201610ac1565b90565b610460565b61045c565b610b2c610b27366004610ae4565b61347c565b610b34610452565b80610b3e81610994565b0390f35b60018060a01b031690565b610b5d906008610b6293026105d5565b610b42565b90565b90610b709154610b4d565b90565b610b7f60055f90610b65565b90565b610b8b90610791565b90565b610b9790610b82565b9052565b9190610bae905f60208501940190610b8e565b565b34610be057610bc0366004610526565b610bdc610bcb610b73565b610bd3610452565b91829182610b9b565b0390f35b610458565b610bf160155f906105f4565b90565b34610c2457610c04366004610526565b610c20610c0f610be5565b610c17610452565b9182918261061e565b0390f35b610458565b610c3560255f906105f4565b90565b34610c6857610c48366004610526565b610c64610c53610c29565b610c5b610452565b9182918261061e565b0390f35b610458565b610c7960195f906105f4565b90565b34610cac57610c8c366004610526565b610ca8610c97610c6d565b610c9f610452565b9182918261061e565b0390f35b610458565b67ffffffffffffffff8111610cc95760208091020190565b610a0b565b90929192610ce3610cde82610cb1565b610a48565b9381855260208086019202830192818411610d2057915b838310610d075750505050565b60208091610d15848661047b565b815201920191610cfa565b61091b565b9080601f83011215610d4357816020610d4093359101610cce565b90565b610913565b90602082820312610d78575f82013567ffffffffffffffff8111610d7357610d709201610d25565b90565b610460565b61045c565b34610dab57610d95610d90366004610d48565b613aac565b610d9d610452565b80610da781610994565b0390f35b610458565b610dbc60105f906105f4565b90565b34610def57610dcf366004610526565b610deb610dda610db0565b610de2610452565b9182918261061e565b0390f35b610458565b60018060a01b031690565b610e0f906008610e1493026105d5565b610df4565b90565b90610e229154610dff565b90565b610e3160025f90610e17565b90565b610e3d90610791565b90565b610e4990610e34565b9052565b9190610e60905f60208501940190610e40565b565b34610e9257610e72366004610526565b610e8e610e7d610e25565b610e85610452565b91829182610e4d565b0390f35b610458565b60018060a01b031690565b610eb2906008610eb793026105d5565b610e97565b90565b90610ec59154610ea2565b90565b610ed460015f90610eba565b90565b610ee090610791565b90565b610eec90610ed7565b9052565b9190610f03905f60208501940190610ee3565b565b34610f3557610f15366004610526565b610f31610f20610ec8565b610f28610452565b91829182610ef0565b0390f35b610458565b610f46602f5f906105f4565b90565b34610f7957610f59366004610526565b610f75610f64610f3a565b610f6c610452565b9182918261061e565b0390f35b610458565b34610fae57610f8e366004610526565b610faa610f99613bc6565b610fa1610452565b91829182610588565b0390f35b610458565b610fbf602b5f906105f4565b90565b34610ff257610fd2366004610526565b610fee610fdd610fb3565b610fe5610452565b9182918261061e565b0390f35b610458565b611003601f5f906105f4565b90565b3461103657611016366004610526565b611032611021610ff7565b611029610452565b9182918261061e565b0390f35b610458565b60018060a01b031690565b61105690600861105b93026105d5565b61103b565b90565b906110699154611046565b90565b61107860075f9061105e565b90565b61108490610791565b90565b6110909061107b565b9052565b91906110a7905f60208501940190611087565b565b346110d9576110b9366004610526565b6110d56110c461106c565b6110cc610452565b91829182611094565b0390f35b610458565b6110ea601d5f906105f4565b90565b3461111d576110fd366004610526565b6111196111086110de565b611110610452565b9182918261061e565b0390f35b610458565b61112e600c5f906105f4565b90565b3461116157611141366004610526565b61115d61114c611122565b611154610452565b9182918261061e565b0390f35b610458565b611172602e5f906105f4565b90565b346111a557611185366004610526565b6111a1611190611166565b611198610452565b9182918261061e565b0390f35b610458565b346111d8576111ba366004610526565b6111c2614110565b6111ca610452565b806111d481610994565b0390f35b610458565b3461120b576111ed366004610526565b6111f56150ca565b6111fd610452565b8061120781610994565b0390f35b610458565b60018060a01b031690565b61122b90600861123093026105d5565b611210565b90565b9061123e915461121b565b90565b61124d60085f90611233565b90565b61125990610791565b90565b61126590611250565b9052565b919061127c905f6020850194019061125c565b565b346112ae5761128e366004610526565b6112aa611299611241565b6112a1610452565b91829182611269565b0390f35b610458565b6112bf60215f906105f4565b90565b346112f2576112d2366004610526565b6112ee6112dd6112b3565b6112e5610452565b9182918261061e565b0390f35b610458565b60018060a01b031690565b61131290600861131793026105d5565b6112f7565b90565b906113259154611302565b90565b611334601c5f9061131a565b90565b3461136757611347366004610526565b611363611352611328565b61135a610452565b918291826104db565b0390f35b610458565b90565b61137f90600861138493026105d5565b61136c565b90565b90611392915461136f565b90565b6113a160285f90611387565b90565b90565b6113b0906113a4565b9052565b91906113c7905f602085019401906113a7565b565b346113f9576113d9366004610526565b6113f56113e4611395565b6113ec610452565b918291826113b4565b0390f35b610458565b61140a60235f906105f4565b90565b3461143d5761141d366004610526565b6114396114286113fe565b611430610452565b9182918261061e565b0390f35b610458565b61144e60115f9061131a565b90565b3461148157611461366004610526565b61147d61146c611442565b611474610452565b918291826104db565b0390f35b610458565b60018060a01b031690565b6114a19060086114a693026105d5565b611486565b90565b906114b49154611491565b90565b6114c360045f906114a9565b90565b6114cf90610791565b90565b6114db906114c6565b9052565b91906114f2905f602085019401906114d2565b565b3461152457611504366004610526565b61152061150f6114b7565b611517610452565b918291826114df565b0390f35b610458565b906020828203126115425761153f915f0161047b565b90565b61045c565b9061155190610743565b5f5260205260405f2090565b60ff1690565b61157390600861157893026105d5565b61155d565b90565b906115869154611563565b90565b61159f9061159a6012915f92611547565b61157b565b90565b151590565b6115b0906115a2565b9052565b91906115c7905f602085019401906115a7565b565b346115f9576115f56115e46115df366004611529565b611589565b6115ec610452565b918291826115b4565b0390f35b610458565b3461162e5761160e366004610526565b61162a6116196150d4565b611621610452565b918291826104db565b0390f35b610458565b61163f60265f906105f4565b90565b3461167257611652366004610526565b61166e61165d611633565b611665610452565b9182918261061e565b0390f35b610458565b611683600d5f906105f4565b90565b346116b657611696366004610526565b6116b26116a1611677565b6116a9610452565b9182918261061e565b0390f35b610458565b60018060a01b031690565b6116d69060086116db93026105d5565b6116bb565b90565b906116e991546116c6565b90565b6116f860065f906116de565b90565b61170490610791565b90565b611710906116fb565b9052565b9190611727905f60208501940190611707565b565b3461175957611739366004610526565b6117556117446116ec565b61174c610452565b91829182611714565b0390f35b610458565b61176a60225f906105f4565b90565b3461179d5761177d366004610526565b61179961178861175e565b611790610452565b9182918261061e565b0390f35b610458565b6117ae60095f9061131a565b90565b346117e1576117c1366004610526565b6117dd6117cc6117a2565b6117d4610452565b918291826104db565b0390f35b610458565b906117f090610743565b5f5260205260405f2090565b61180861180d916107bf565b6112f7565b90565b61181a90546117fc565b90565b634e487b7160e01b5f52602260045260245ffd5b9060016002830492168015611851575b602083101461184c57565b61181d565b91607f1691611841565b60209181520190565b5f5260205f2090565b905f929180549061188761188083611831565b809461185b565b916001811690815f146118de57506001146118a2575b505050565b6118af9192939450611864565b915f925b8184106118c657505001905f808061189d565b600181602092959395548486015201910192906118b3565b92949550505060ff19168252151560200201905f808061189d565b906119039161186d565b90565b9061192661191f92611916610452565b938480926118f9565b0383610a1f565b565b61193390602c6117e6565b61193e5f8201611810565b916119576002611950600185016107d8565b9301611906565b90565b5190565b60209181520190565b61198661198f6020936119949361197d8161195a565b9384809361195e565b95869101610542565b61054d565b0190565b6119bc6119c99492936119b260608401955f8501906104ce565b6020830190610611565b6040818403910152611967565b90565b346119ff576119fb6119e76119e2366004611529565b611928565b6119f2939193610452565b93849384611998565b0390f35b610458565b90611a0e90610743565b5f5260205260405f2090565b611a3090611a2b6024915f92611a04565b61131a565b90565b34611a6357611a5f611a4e611a49366004611529565b611a1a565b611a56610452565b918291826104db565b0390f35b610458565b611a74601e5f9061131a565b90565b34611aa757611a87366004610526565b611aa3611a92611a68565b611a9a610452565b918291826104db565b0390f35b610458565b611ab7366004610526565b611abf6151cd565b611ac7610452565b80611ad181610994565b0390f35b909182601f83011215611b0f5781359167ffffffffffffffff8311611b0a576020019260018302840111611b0557565b61091b565b610917565b610913565b611b1d906104c2565b90565b611b2981611b14565b03611b3057565b5f80fd5b90503590611b4182611b20565b565b919091606081840312611b94575f8101359167ffffffffffffffff8311611b8f57611b7384611b8c948401611ad5565b939094611b838160208601611b34565b9360400161047b565b90565b610460565b61045c565b611bb0611ba7366004611b43565b92919091615288565b611bb8610452565b80611bc281610994565b0390f35b90611bd090610743565b5f5260205260405f2090565b611bf5611bfa92611bf06016935f94611bc6565b611a04565b61131a565b90565b34611c2e57611c2a611c19611c1336600461048a565b90611bdc565b611c21610452565b918291826104db565b0390f35b610458565b611c3f601a5f906105f4565b90565b34611c7257611c52366004610526565b611c6e611c5d611c33565b611c65610452565b9182918261061e565b0390f35b610458565b611c8360275f906105f4565b90565b34611cb657611c96366004610526565b611cb2611ca1611c77565b611ca9610452565b9182918261061e565b0390f35b610458565b611cc760305f906105f4565b90565b34611cfa57611cda366004610526565b611cf6611ce5611cbb565b611ced610452565b9182918261061e565b0390f35b610458565b67ffffffffffffffff8111611d1d57611d1960209161054d565b0190565b610a0b565b90929192611d37611d3282611cff565b610a48565b93818552602085019082840111611d5357611d5192610a80565b565b610a07565b9080601f83011215611d7657816020611d7393359101611d22565b90565b610913565b90602082820312611dab575f82013567ffffffffffffffff8111611da657611da39201611d58565b90565b610460565b61045c565b34611dde57611dc8611dc3366004611d7b565b61542c565b611dd0610452565b80611dda81610994565b0390f35b610458565b611def60185f906105f4565b90565b34611e2257611e02366004610526565b611e1e611e0d611de3565b611e15610452565b9182918261061e565b0390f35b610458565b611e3360145f906105f4565b90565b34611e6657611e46366004610526565b611e62611e51611e27565b611e59610452565b9182918261061e565b0390f35b610458565b90611e7590610743565b5f5260205260405f2090565b611e9790611e926017915f92611e6b565b6105f4565b90565b34611eca57611ec6611eb5611eb0366004611529565b611e81565b611ebd610452565b9182918261061e565b0390f35b610458565b34611efd57611ee7611ee2366004611529565b615906565b611eef610452565b80611ef981610994565b0390f35b610458565b90611f0c90610743565b5f5260205260405f2090565b60018060a01b031690565b611f2f611f34916107bf565b611f18565b90565b611f419054611f23565b90565b611f50611f55916107bf565b61155d565b90565b611f629054611f44565b90565b611f70906029611f02565b90611f7c5f8301611f37565b91611f89600182016107d8565b91611fa26003611f9b600285016107d8565b9301611f58565b90565b611fae90610791565b90565b611fba90611fa5565b9052565b611ff3611ffa94611fe9606094989795611fdf608086019a5f870190611fb1565b6020850190610611565b6040830190610611565b01906115a7565b565b346120305761202c612017612012366004611529565b611f65565b90612023949294610452565b94859485611fbe565b0390f35b610458565b612041600e5f906105f4565b90565b3461207457612054366004610526565b61207061205f612035565b612067610452565b9182918261061e565b0390f35b610458565b612085602d5f906105f4565b90565b346120b857612098366004610526565b6120b46120a3612079565b6120ab610452565b9182918261061e565b0390f35b610458565b60ff1690565b6120d39060086120d893026105d5565b6120bd565b90565b906120e691546120c3565b90565b6120f660116014906120db565b90565b634e487b7160e01b5f52602160045260245ffd5b6003111561211757565b6120f9565b906121268261210d565b565b6121319061211c565b90565b61213d90612128565b9052565b9190612154905f60208501940190612134565b565b3461218657612166366004610526565b6121826121716120e9565b612179610452565b91829182612141565b0390f35b610458565b61219760135f906105f4565b90565b346121ca576121aa366004610526565b6121c66121b561218b565b6121bd610452565b9182918261061e565b0390f35b610458565b6121e5906121e06033915f92611e6b565b6105f4565b90565b34612218576122146122036121fe366004611529565b6121cf565b61220b610452565b9182918261061e565b0390f35b610458565b612228366004610526565b612230615bf6565b612238610452565b8061224281610994565b0390f35b9060208282031261225f5761225c915f01610704565b90565b61045c565b346122925761227c612277366004612246565b615dac565b612284610452565b8061228e81610994565b0390f35b610458565b6122a3600f5f906105f4565b90565b346122d6576122b6366004610526565b6122d26122c1612297565b6122c9610452565b9182918261061e565b0390f35b610458565b60018060a01b031690565b6122f69060086122fb93026105d5565b6122db565b90565b9061230991546122e6565b90565b61231860035f906122fe565b90565b61232490610791565b90565b6123309061231b565b9052565b9190612347905f60208501940190612327565b565b3461237957612359366004610526565b61237561236461230c565b61236c610452565b91829182612334565b0390f35b610458565b5f80fd5b5f90565b60207f7468616e20746f74616c206e756d626572206f6620726f756e64730000000000917f50726f766964656420726f756e64206e756d626572206973206c6172676572205f8201520152565b6123e0603b60409261195e565b6123e981612386565b0190565b91604061241e92949361241761240c606083018381035f8501526123d3565b966020830190610611565b0190610611565b565b15612429575050565b61244a612434610452565b92839263f4056d8560e01b8452600484016123ed565b0390fd5b90565b61246561246061246a9261244e565b610740565b610464565b90565b60207f6f756e6420796574000000000000000000000000000000000000000000000000917f4e6f20626964732068617665206265656e206d61646520696e207468697320725f8201520152565b6124c7602860409261195e565b6124d08161246d565b0190565b91906124f79060206124ef604086018681035f8801526124ba565b940190610611565b565b156125015750565b6125239061250d610452565b918291631d30c39360e11b8352600483016124d4565b0390fd5b60207f726179206c656e67746800000000000000000000000000000000000000000000917f50726f766964656420696e646578206973206c6172676572207468616e2061725f8201520152565b612581602a60409261195e565b61258a81612527565b0190565b6060906125c76125ce94969593966125bd6125b2608085018581035f870152612574565b986020850190610611565b6040830190610611565b0190610611565b565b92909192156125de57505050565b612600906125ea610452565b938493635cc5e79960e11b85526004850161258e565b0390fd5b634e487b7160e01b5f52601160045260245ffd5b61262761262d91939293610464565b92610464565b820391821161263857565b612604565b90565b61265461264f6126599261263d565b610740565b610464565b90565b61271d9061271861271061270061272295612675612382565b5061268a61268560178790611e6b565b6107d8565b6126bc866126a96126a361269e600a6107d8565b610464565b91610464565b1115876126b6600a6107d8565b91612420565b6126da816126d26126cc5f612451565b91610464565b1187906124f9565b6126fb826126f06126ea84610464565b91610464565b1087849084926125d0565b612618565b61270a6001612640565b90612618565b916016611bc6565b611a04565b611810565b90565b606090565b91602061274b92949361274460408201965f830190610611565b0190610611565b565b612755612725565b5061276a4261276460186107d8565b90612618565b61279e61277760196107d8565b9161278f612783610452565b9384926020840161272a565b60208201810382520382610a1f565b90565b90565b6127b86127b36127bd926127a1565b610740565b610464565b90565b6127ca60026127a4565b90565b906127df6127da83611cff565b610a48565b918252565b5f7f53797374656d20696e206d61696e74656e616e6365206d6f6465000000000000910152565b612815601a6127cd565b90612822602083016127e4565b565b61282c61280b565b90565b612837612824565b90565b9291602061285661285e9360408701908782035f890152611967565b940190610611565b565b15612869575050565b61288a612874610452565b9283926358eca00b60e11b84526004840161283a565b0390fd5b61289d6128a391939293610464565b92610464565b82018092116128ae57565b612604565b5f1b90565b906128c45f19916128b3565b9181191691161790565b90565b906128e66128e16128ed92610743565b6128ce565b82546128b8565b9055565b6128fb6060610a48565b90565b90612908906104c2565b9052565b9061291690610464565b9052565b612925913691611d22565b90565b52565b61293590516104c2565b90565b9061294960018060a01b03916128b3565b9181191691161790565b90565b9061296b6129666129729261079d565b612953565b8254612938565b9055565b6129809051610464565b90565b5190565b601f602091010490565b1b90565b919060086129b09102916129aa5f1984612991565b92612991565b9181191691161790565b91906129d06129cb6129d893610743565b6128ce565b908354612995565b9055565b5f90565b6129f2916129ec6129dc565b916129ba565b565b5b818110612a00575050565b80612a0d5f6001936129e0565b016129f5565b9190601f8111612a23575b505050565b612a2f612a5493611864565b906020612a3b84612987565b83019310612a5c575b612a4d90612987565b01906129f4565b5f8080612a1e565b9150612a4d81929050612a44565b90612a7a905f19906008026105d5565b191690565b81612a8991612a6a565b906002021790565b90612a9b8161195a565b9067ffffffffffffffff8211612b5b57612abf82612ab98554611831565b85612a13565b602090601f8311600114612af357918091612ae2935f92612ae7575b5050612a7f565b90555b565b90915001515f80612adb565b601f19831691612b0285611864565b925f5b818110612b4357509160029391856001969410612b29575b50505002019055612ae5565b612b39910151601f841690612a6a565b90555f8080612b1d565b91936020600181928787015181550195019201612b05565b610a0b565b90612b6a91612a91565b565b90612bb060406002612bb694612b8f5f8201612b895f880161292b565b90612956565b612ba860018201612ba260208801612976565b906128d1565b019201612983565b90612b60565b565b90612bc291612b6c565b565b90612c8490612c08612bd660326107d8565b612bef612be9612be46127c0565b610464565b91610464565b10612bf861282f565b612c0260326107d8565b91612860565b612c73612c6a612c18602b6107d8565b94612c3f612c38612c296001612640565b612c33602b6107d8565b61288e565b602b6128d1565b3393612c6534929192612c5c612c536128f1565b975f89016128fe565b6020870161290c565b61291a565b60408301612928565b612c7f602c84906117e6565b612bb8565b612c8c615db7565b3491612cb87f8a0ea457335b2870a10c690d830041ca844b04d88d11c9237974d548127e61569261079d565b92612ccd612cc4610452565b9283928361272a565b0390a2565b5f80fd5b5f80fd5b90929192612cef612cea82611cff565b610a48565b93818552602085019082840111612d0b57612d0992610542565b565b610a07565b9080601f83011215612d2e57816020612d2b93519101612cda565b90565b610913565b90565b612d3f81612d33565b03612d4657565b5f80fd5b90505190612d5782612d36565b565b919091604081840312612dac57612d706040610a48565b925f8201519167ffffffffffffffff8311612da757612d9482612da0948301612d10565b5f860152602001612d4a565b6020830152565b612cd6565b612cd2565b90602082820312612de1575f82015167ffffffffffffffff8111612ddc57612dd99201612d59565b90565b610460565b61045c565b612def90610775565b90565b612dfb90612de6565b90565b612e0790610775565b90565b612e1390612dfe565b90565b612e209051612d33565b90565b90565b612e3a612e35612e3f92612e23565b610740565b612d33565b90565b612e56612e51612e5b92612d33565b610740565b610464565b90565b60207f65656e207573656420666f722062696464696e672e0000000000000000000000917f546869732052616e646f6d57616c6b4e46542068617320616c726561647920625f8201520152565b612eb8603560409261195e565b612ec181612e5e565b0190565b9190612ee8906020612ee0604086018681035f880152612eab565b940190610611565b565b15612ef25750565b612f1490612efe610452565b918291630bf3b03f60e11b835260048301612ec5565b0390fd5b612f2190610791565b90565b5f80fd5b60e01b90565b612f37906104c2565b90565b612f4381612f2e565b03612f4a57565b5f80fd5b90505190612f5b82612f3a565b565b90602082820312612f7657612f73915f01612f4e565b90565b61045c565b612f83610452565b3d5f823e3d90fd5b90505190612f98826106f0565b565b90602082820312612fb357612fb0915f01612f8b565b90565b61045c565b60207f646f6d57616c6b4e46542e000000000000000000000000000000000000000000917f596f75206d75737420626520746865206f776e6572206f66207468652052616e5f8201520152565b613012602b60409261195e565b61301b81612fb8565b0190565b60609061305861305f949695939661304e613043608085018581035f870152613005565b9860208501906104ce565b6040830190610611565b01906104ce565b565b929091921561306f57505050565b6130919061307b610452565b93849363c8b7f6d760e01b85526004850161301f565b0390fd5b906130a160ff916128b3565b9181191691161790565b6130b4906115a2565b90565b90565b906130cf6130ca6130d6926130ab565b6130b7565b8254613095565b9055565b905051906130e782610467565b565b90602082820312613102576130ff915f016130da565b90565b61045c565b634e487b7160e01b5f52601260045260245ffd5b61312761312d91610464565b91610464565b908115613138570490565b613107565b60207f6e73616374696f6e20697320746f6f206c6f772e000000000000000000000000917f5468652076616c7565207375626d697474656420666f722074686973207472615f8201520152565b613197603460409261195e565b6131a08161313d565b0190565b9160406131d59294936131ce6131c3606083018381035f85015261318a565b966020830190610611565b0190610611565b565b156131e0575050565b6132016131eb610452565b928392631c677c1b60e31b8452600484016131a4565b0390fd5b60407f6c6f772e00000000000000000000000000000000000000000000000000000000917f5468652076616c7565207375626d697474656420666f722074686973207472615f8201527f6e73616374696f6e20776974682052616e646f6d57616c6b20697320746f6f2060208201520152565b613285604460609261195e565b61328e81613205565b0190565b9160406132c39294936132bc6132b1606083018381035f850152613278565b966020830190610611565b0190610611565b565b156132ce575050565b6132ef6132d9610452565b928392631c677c1b60e31b845260048401613292565b0390fd5b905090565b6133035f80926132f3565b0190565b613310906132f8565b90565b9061332561332083610a5d565b610a48565b918252565b3d5f146133455761333a3d613313565b903d5f602084013e5b565b61334d612725565b90613343565b5f7f526566756e64207472616e73666572206661696c65642e000000000000000000910152565b613387601760209261195e565b61339081613353565b0190565b9160406133c59294936133be6133b3606083018381035f85015261337a565b966020830190610611565b01906104ce565b565b156133d0575050565b6133f16133db610452565b92839263310a0fbb60e21b845260048401613394565b0390fd5b61340961340461340e92610464565b610740565b612d33565b90565b61341a90612d33565b9052565b61342790612e26565b9052565b9193613462613479969461345861346c949761344e60a08801995f890190613411565b6020870190613411565b604085019061341e565b6060830190610611565b6080818403910152611967565b90565b6134d5906134bf61348d60326107d8565b6134a66134a061349b6127c0565b610464565b91610464565b106134af61282f565b6134b960326107d8565b91612860565b60206134ca82610535565b818301019101612db1565b6134ee6134e96134e4306114c6565b612df2565b612e0a565b6134fa60208301612e16565b61350d6135075f19612e26565b91612d33565b0361381d575b61351f60208301612e16565b61353261352c5f19612e26565b91612d33565b145f1461380e5761355f60206135495f5b93612f18565b63ec34866d90613557610452565b938492612f28565b8252818061356f60048201610994565b03915afa80156138095761367b915f916137db575b509161359a8361359460026127a4565b9061311b565b6135a26129dc565b50816135b76135b1600161211c565b9161211c565b145f146137b157613672906135e2346135d86135d284610464565b91610464565b10158234916132c5565b935b6136218561361b5f61360b613604601b6135fe600a6107d8565b9061075f565b33906107a9565b0191613616836107d8565b61288e565b906128d1565b61364a5f61364461363d601b613637600a6107d8565b9061075f565b33906107a9565b016107d8565b61366561365f61365a601d6107d8565b610464565b91610464565b1161376e575b600b6128d1565b5f840151616145565b3461368e61368883610464565b91610464565b1161371d575b61369e6011611810565b6136b16136ab600a6107d8565b926133f5565b6136bd60208501612e16565b906137185f19955f6136cf60146107d8565b910151906137066137007f3ebe28e9be13fedb71392c114461386e763acb563218b28db3690553055cd5a59761079d565b97610743565b9761370f610452565b9586958661342b565b0390a3565b61376961372b348390612618565b5f806137376011611810565b83613740610452565b908161374b81613307565b03925af161375761332a565b50906137636011611810565b916133c7565b613694565b6137a161379a5f61379461378d601b613787600a6107d8565b9061075f565b33906107a9565b016107d8565b601d6128d1565b6137ac33601c612956565b61366b565b506137d2346137c86137c286610464565b91610464565b10158434916131d7565b613672836135e4565b6137fc915060203d8111613802575b6137f48183610a1f565b8101906130e9565b5f613584565b503d6137ea565b612f7b565b61355f60206135496001613543565b61386a61385061384a613845601261383f61383a60208901612e16565b612e42565b90611547565b611f58565b156115a2565b61386461385f60208601612e16565b612e42565b90612eea565b61388e602061387883612f18565b635111a2d690613886610452565b938492612f28565b8252818061389e60048201610994565b03915afa8015613a60576138bf6020916138fb935f91613a33575b50610ed7565b636352211e906138f06138db6138d6858901612e16565b612e42565b926138e4610452565b95869485938493612f28565b83526004830161061e565b03915afa8015613a2e5761394c915f91613a00575b5061392a61392461391f615db7565b6104c2565b916104c2565b14602061393684612f18565b635111a2d690613944610452565b948592612f28565b8252818061395c60048201610994565b03915afa9182156139fb5761399f9261397c915f916139cd575b50610ed7565b61399061398b60208701612e16565b612e42565b90613999615db7565b92613061565b6139c860016139c360126139bd6139b860208801612e16565b612e42565b90611547565b6130ba565b613513565b6139ee915060203d81116139f4575b6139e68183610a1f565b810190612f5d565b5f613976565b503d6139dc565b612f7b565b613a21915060203d8111613a27575b613a198183610a1f565b810190612f9a565b5f613910565b503d613a0f565b612f7b565b613a539150833d8111613a59575b613a4b8183610a1f565b810190612f5d565b5f6138b9565b503d613a41565b612f7b565b6001613a719101610464565b90565b5190565b634e487b7160e01b5f52603260045260245ffd5b90613a9682613a74565b811015613aa7576020809102010190565b613a78565b90613aec613aba60326107d8565b613ad3613acd613ac86127c0565b610464565b91610464565b10613adc61282f565b613ae660326107d8565b91612860565b613af55f612451565b5b80613b11613b0b613b0686613a74565b610464565b91610464565b1015613b4057613b3b90613b36613b31613b2c868490613a8c565b612976565b615906565b613a65565b613af6565b509050565b9190604083820312613b6d5780613b61613b6a925f86016130da565b936020016130da565b90565b61045c565b90565b613b89613b84613b8e92613b72565b610740565b610464565b90565b613ba0613ba691939293610464565b92610464565b91613bb2838202610464565b928184041490151715613bc157565b612604565b613bce612725565b50613bf0613bda61274d565b6020613be582610535565b818301019101613b45565b9080613c04613bfe84610464565b91610464565b1015613c9257613c6c613c5a613c4a613c8f93613c45613c3f613c8097613c3a620f424094613c35620f4240613b75565b613b91565b61311b565b91613b75565b612618565b613c54600c6107d8565b90613b91565b613c66620f4240613b75565b9061311b565b613c74610452565b9283916020830161061e565b60208201810382520382610a1f565b90565b5050613cb7613cc6613ca35f612451565b613cab610452565b9283916020830161061e565b60208201810382520382610a1f565b90565b5f7f4e6f7420656e6f7567682074696d652068617320656c61707365642e00000000910152565b613cfd601c60209261195e565b613d0681613cc9565b0190565b916040613d3b929493613d34613d29606083018381035f850152613cf0565b966020830190610611565b0190610611565b565b15613d46575050565b613d67613d51610452565b9283926301a4d65d60e21b845260048401613d0a565b0390fd5b613d7f613d7a613d849261244e565b610740565b6104b7565b90565b613d9090613d6b565b90565b5f7f5468657265206973206e6f206c617374206269646465722e0000000000000000910152565b613dc7601860209261195e565b613dd081613d93565b0190565b613de99060208101905f818303910152613dba565b90565b15613df357565b613dfb610452565b633ba2521960e21b815280613e1260048201613dd4565b0390fd5b60407f72732e0000000000000000000000000000000000000000000000000000000000917f4f6e6c7920746865206c617374206269646465722063616e20636c61696d20745f8201527f6865207072697a6520647572696e672074686520666972737420323420686f7560208201520152565b613e96604360609261195e565b613e9f81613e16565b0190565b606090613edc613ee39496959396613ed2613ec7608085018581035f870152613e89565b9860208501906104ce565b60408301906104ce565b0190610611565b565b9290919215613ef357505050565b613f1590613eff610452565b938493636d8a481560e11b855260048501613ea3565b0390fd5b613f25613f2a916107bf565b610df4565b90565b613f379054613f19565b90565b5f90565b613f4a613f4f916107bf565b6116bb565b90565b613f5c9054613f3e565b90565b916020613f80929493613f7960408201965f8301906104ce565b0190610611565b565b613f8e613f93916107bf565b6122db565b90565b613fa09054613f82565b90565b613faf613fb4916107bf565b61136c565b90565b613fc19054613fa3565b90565b613fd0613fd5916107bf565b610743565b90565b613fe4613fea91610464565b91610464565b908115613ff5570690565b613107565b60409061402361402a949695939661401960608401985f850190610611565b60208301906115a7565b01906115a7565b565b61403861403d916107bf565b61103b565b90565b61404a905461402c565b90565b5f7f5472616e7366657220746f207468652077696e6e6572206661696c65642e0000910152565b614081601e60209261195e565b61408a8161404d565b0190565b9160406140bf9294936140b86140ad606083018381035f850152614074565b966020830190610611565b01906104ce565b565b156140ca575050565b6140eb6140d5610452565b92839263310a0fbb60e21b84526004840161408e565b0390fd5b6140fb614100916107bf565b610b42565b90565b61410d90546140ef565b90565b61414f61411d60326107d8565b61413661413061412b6127c0565b610464565b91610464565b1061413f61282f565b61414960326107d8565b91612860565b61416861416361415e306114c6565b612df2565b612e0a565b61419a61417560146107d8565b61418761418142610464565b91610464565b111561419360146107d8565b4291613d3d565b6141c86141a76011611810565b6141c16141bb6141b65f613d87565b6104c2565b916104c2565b1415613dec565b6141dc426141d660146107d8565b90612618565b6141f76141f16141ec60156107d8565b610464565b91610464565b10614f71575b614205616418565b6142186142115f613d87565b6011612956565b614220615db7565b9161423f8361423a6024614234600a6107d8565b90611a04565b612956565b61426c60206142566142516002613f2d565b610e34565b6318160ddd90614264610452565b938492612f28565b8252818061427c60048201610994565b03915afa908115614f6c575f91614f3e575b506142b3602061429d85612f18565b63785fa627906142ab610452565b938492612f28565b825281806142c360048201610994565b03915afa908115614f39575f91614f0b575b506142fa60206142e486612f18565b63dbc945c0906142f2610452565b938492612f28565b8252818061430a60048201610994565b03915afa908115614f06575f91614ed8575b5091614342602061432c87612f18565b63c94028c29061433a610452565b938492612f28565b8252818061435260048201610994565b03915afa8015614ed35761437460209161438a935f91614ea6575b5097612f18565b63739a3e0290614382610452565b938492612f28565b8252818061439a60048201610994565b03915afa908115614ea1575f91614e73575b50906143b6613f3a565b506143c96143c35f612451565b91610464565b11614e0d575b505f806143e46143df6002613f2d565b610e34565b60046144276340c10f1960e01b6144188b6143ff600a6107d8565b90614408610452565b9586946020860190815201613f5f565b60208201810382520382610a1f565b82602082019151925af15061443a61332a565b5061479d6145ee61444a5f612451565b5f8061445e6144596002613f2d565b610e34565b60046144aa6340c10f1960e01b61449b614478601e611810565b614482600a6107d8565b9061448b610452565b9586946020860190815201613f5f565b60208201810382520382610a1f565b82602082019151925af1506144d66144c061332a565b60206144cb82610535565b8183010191016130e9565b6145066144e3602f6107d8565b6145006144fb60176144f5600a6107d8565b90611e6b565b6107d8565b90613b91565b5f8061451a6145156003613f96565b61231b565b600461455d6340c10f1960e01b61454e614534601e611810565b889061453e610452565b9586946020860190815201613f5f565b60208201810382520382610a1f565b82602082019151925af15061457061332a565b5061457b601e611810565b91614586600a6107d8565b909192846145c66145c06145ba7f66d485a556beac20ca50777389bdce3389cfd2defb1f2ff2002eb3ddef0fe2489461079d565b94610743565b94610743565b946145db6145d2610452565b9283928361272a565b0390a46145e86001612640565b9061288e565b5f806146026145fd6002613f2d565b610e34565b600461464e6340c10f1960e01b61463f61461c601c611810565b614626600a6107d8565b9061462f610452565b9586946020860190815201613f5f565b60208201810382520382610a1f565b82602082019151925af15061467a61466461332a565b602061466f82610535565b8183010191016130e9565b6146aa614687602f6107d8565b6146a461469f6017614699600a6107d8565b90611e6b565b6107d8565b90613b91565b5f806146be6146b96003613f96565b61231b565b60046147016340c10f1960e01b6146f26146d8601c611810565b88906146e2610452565b9586946020860190815201613f5f565b60208201810382520382610a1f565b82602082019151925af15061471461332a565b5061471f601c611810565b9161472a600a6107d8565b909192614737601d6107d8565b859461478a61477861477261476c7f9ed6c6c2a8eb75a2ff0acb91b5f70e1d195e4e7b700be3ba3a06b031f8e517139661079d565b96610743565b96610743565b96614781610452565b93849384610820565b0390a46147976001612640565b9061288e565b946147bb6147b660176147b0600a6107d8565b90611e6b565b6107d8565b936147c55f612451565b965b876147e36147dd6147d860266107d8565b610464565b91610464565b101561493c57614930614936916147f86165a9565b61483a614835614813601661480d600a6107d8565b90611bc6565b61482f6148286148236028613fb7565b613fc4565b8c90613fd8565b90611a04565b611810565b5f8061484e6148496002613f2d565b610e34565b60046148916340c10f1960e01b61488287614869600a6107d8565b90614872610452565b9586946020860190815201613f5f565b60208201810382520382610a1f565b82602082019151925af1506148bd6148a761332a565b60206148b282610535565b8183010191016130e9565b6148c7600a6107d8565b83925f809461491d61490b6149056148ff7f2bdb3647f6d54492d99a46c4bf9e7b84ac8adf7aa868ec130450d96f6b4650e79661079d565b96610743565b96610743565b96614914610452565b93849384613ffa565b0390a461492a6001612640565b9061288e565b97613a65565b966147c7565b9650909294939193614971602061495b6149566007614040565b61107b565b635fda0acc90614969610452565b938492612f28565b8252818061498160048201610994565b03915afa908115614e08575f91614dda575b506149a66149a05f612451565b91610464565b11614c03575b5f808596976149e58280614a219798998c6149c5610452565b90816149d081613307565b03925af16149dc61332a565b508a8a916140c1565b6149ef6009611810565b906149f8610452565b9081614a0381613307565b03925af150614a1061332a565b50614a1b60256107d8565b9061311b565b92614a2b5f612451565b955b86614a49614a43614a3e60256107d8565b610464565b91610464565b1015614b7457614b68614b6e91614a5e6165a9565b614aa0614a9b614a796016614a73600a6107d8565b90611bc6565b614a95614a8e614a896028613fb7565b613fc4565b8a90613fd8565b90611a04565b611810565b5f80614ab4614aaf6005614103565b610b82565b60048b614aed63f340fa0160e01b614ade88614ace610452565b95869360208501908152016104db565b60208201810382520383610a1f565b602082019151925af150614aff61332a565b50614b0a600a6107d8565b829189614b40614b3a7f636e2e77ba7f2fd4bb40906f0d04dec909e31a90ea0d3a7c7ea7193dbcbbfa119361079d565b93610743565b93614b55614b4c610452565b9283928361272a565b0390a3614b626001612640565b9061288e565b96613a65565b95614a2d565b50939250935050614b8361665d565b614b8d600a6107d8565b919091614bd8614bc6614bc07f27bc828c399c2947fea27bca8a75ced2e94ff2651d607271f051e39db52286ce93610743565b9361079d565b93614bcf610452565b9182918261061e565b0390a3614c01614bfa614beb6001612640565b614bf5600a6107d8565b61288e565b600a6128d1565b565b614c0c5f612451565b965b87614c2a614c24614c1f60276107d8565b610464565b91610464565b1015614dd357614c386165a9565b614c826020614c4f614c4a6007614040565b61107b565b634181042590614c77614c626028613fb7565b92614c6b610452565b95869485938493612f28565b8352600483016113b4565b03915afa918215614dce57614d9a92614d94925f91614da0575b505f80614cb1614cac6002613f2d565b610e34565b6004614cf46340c10f1960e01b614ce587614ccc600a6107d8565b90614cd5610452565b9586946020860190815201613f5f565b60208201810382520382610a1f565b82602082019151925af150614d20614d0a61332a565b6020614d1582610535565b8183010191016130e9565b614d2a600a6107d8565b839260018094614d81614d6f614d69614d637f2bdb3647f6d54492d99a46c4bf9e7b84ac8adf7aa868ec130450d96f6b4650e79661079d565b96610743565b96610743565b96614d78610452565b93849384613ffa565b0390a4614d8e6001612640565b9061288e565b97613a65565b96614c0e565b614dc1915060203d8111614dc7575b614db98183610a1f565b810190612f9a565b5f614c9c565b503d614daf565b612f7b565b96506149ac565b614dfb915060203d8111614e01575b614df38183610a1f565b8101906130e9565b5f614993565b503d614de9565b612f7b565b5f80916004614e24614e1f6006613f52565b6116fb565b91614e5a630d0e30db60e41b614e4b614e3b610452565b9485926020840190815201610994565b60208201810382520383610a1f565b602082019151925af150614e6c61332a565b505f6143cf565b614e94915060203d8111614e9a575b614e8c8183610a1f565b8101906130e9565b5f6143ac565b503d614e82565b612f7b565b614ec69150833d8111614ecc575b614ebe8183610a1f565b8101906130e9565b5f61436d565b503d614eb4565b612f7b565b614ef9915060203d8111614eff575b614ef18183610a1f565b8101906130e9565b5f61431c565b503d614ee7565b612f7b565b614f2c915060203d8111614f32575b614f248183610a1f565b8101906130e9565b5f6142d5565b503d614f1a565b612f7b565b614f5f915060203d8111614f65575b614f578183610a1f565b8101906130e9565b5f61428e565b503d614f4d565b612f7b565b614f7a5f612451565b614f8460146107d8565b614f96614f9042610464565b91610464565b11614fe3575b614fde90614fa8615db7565b614fc3614fbd614fb86011611810565b6104c2565b916104c2565b1490614fcf6011611810565b614fd7615db7565b9192613ee5565b6141fd565b50614fde614ffb614ff460146107d8565b4290612618565b9050614f9c565b5f7f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572910152565b6150356020809261195e565b61503e81615002565b0190565b6150579060208101905f818303910152615029565b90565b1561506157565b615069610452565b62461bcd60e51b81528061507f60048201615042565b0390fd5b6150ad61508e6150d4565b6150a76150a161509c615db7565b6104c2565b916104c2565b1461505a565b6150b56150b7565b565b6150c86150c35f613d87565b6167e1565b565b6150d2615083565b565b6150dc612382565b506150e65f611810565b90565b6150f36040610a48565b90565b606090565b5f90565b6151076150e9565b90602080836151146150f6565b81520161511f6150fb565b81525050565b61512d6150ff565b90565b6151395f6127cd565b90565b9061514690612d33565b9052565b615169615172602093615177936151608161195a565b9384809361185b565b95869101610542565b61054d565b0190565b61518490612d33565b9052565b906151b2906020806151a7604084015f8701518582035f87015261514a565b94015191019061517b565b90565b6151ca9160208201915f818403910152615188565b90565b61520c6151da60326107d8565b6151f36151ed6151e86127c0565b610464565b91610464565b106151fc61282f565b61520660326107d8565b91612860565b61527861526461527361521d615125565b6152315f820161522b615130565b9061290c565b61524761523e5f19612e26565b6020830161513c565b61524f612725565b50615258610452565b928391602083016151b5565b60208201810382520382610a1f565b61347c565b565b615285913691610a8b565b90565b6152d96152e39493926152de926152d46152a260326107d8565b6152bb6152b56152b06127c0565b610464565b91610464565b106152c461282f565b6152ce60326107d8565b91612860565b61527a565b61347c565b61692f565b565b60207f6f206d616b652061206269642077697468204353540000000000000000000000917f496e73756666696369656e742043535420746f6b656e2062616c616e636520745f8201520152565b61533f603560409261195e565b615348816152e5565b0190565b91604061537d92949361537661536b606083018381035f850152615332565b966020830190610611565b0190610611565b565b15615388575050565b6153a9615393610452565b92839263c653e63160e01b84526004840161534c565b0390fd5b90565b6153c46153bf6153c9926153ad565b610740565b610464565b90565b5f9103126153d657565b61045c565b9193615412615429969461540861541c94976153fe60a08801995f89019061341e565b602087019061341e565b6040850190613411565b6060830190610611565b6080818403910152611967565b90565b61546b61543960326107d8565b61545261544c6154476127c0565b610464565b91610464565b1061545b61282f565b61546560326107d8565b91612860565b6154ac602061548261547d6003613f96565b61231b565b6370a08231906154a13392615495610452565b95869485938493612f28565b8352600483016104db565b03915afa908115615689575f9161565b575b506155026154e36154cd613bc6565b60206154d882610535565b8183010191016130e9565b91806154f76154f185610464565b91610464565b10159083909161537f565b61553b61553461552468056bc75e2d6310000061551f85916153b0565b616ad9565b61552e60026127a4565b90613b91565b600c6128d1565b6155464260186128d1565b6155586155536003613f96565b61231b565b639dc29fac338392803b15615656576155845f809461558f615578610452565b97889687958694612f28565b845260048401613f5f565b03925af1801561565157615625575b506155ab82600290616145565b6155b56011611810565b6155bf600a6107d8565b915f196156206155d05f19936133f5565b956155db60146107d8565b61560e6156087f3ebe28e9be13fedb71392c114461386e763acb563218b28db3690553055cd5a59761079d565b97610743565b97615617610452565b958695866153db565b0390a3565b615644905f3d811161564a575b61563c8183610a1f565b8101906153cc565b5f61559e565b503d615632565b612f7b565b612f24565b61567c915060203d8111615682575b6156748183610a1f565b8101906130e9565b5f6154be565b503d61566a565b612f7b565b5f7f54686520646f6e61746564204e465420646f6573206e6f742065786973742e00910152565b6156c2601f60209261195e565b6156cb8161568e565b0190565b91906156f29060206156ea604086018681035f8801526156b5565b940190610611565b565b156156fc5750565b61571e90615708610452565b91829163e15fd6a160e01b8352600483016156cf565b0390fd5b60207f642e000000000000000000000000000000000000000000000000000000000000917f4e6f6e2d6578697374656e742077696e6e657220666f722074686520726f756e5f8201520152565b61577c602260409261195e565b61578581615722565b0190565b91906157ac9060206157a4604086018681035f88015261576f565b940190610611565b565b156157b65750565b6157d8906157c2610452565b91829163a063cf5760e01b835260048301615789565b0390fd5b60207f2e00000000000000000000000000000000000000000000000000000000000000917f546865204e46542068617320616c7265616479206265656e20636c61696d65645f8201520152565b615836602160409261195e565b61583f816157dc565b0190565b919061586690602061585e604086018681035f880152615829565b940190610611565b565b156158705750565b6158929061587c610452565b9182916388bd73e160e01b835260048301615843565b0390fd5b6040906158bf6158c694969593966158b560608401985f8501906104ce565b60208301906104ce565b0190610611565b565b6158fd615904946158f36060949897956158e9608086019a5f870190610611565b60208501906104ce565b60408301906104ce565b0190610611565b565b61594561591360326107d8565b61592c6159266159216127c0565b610464565b91610464565b1061593561282f565b61593f60326107d8565b91612860565b61596c8161596461595e615959602a6107d8565b610464565b91610464565b1082906156f4565b615996615991602461598b600261598560298790611f02565b016107d8565b90611a04565b611810565b6159bd816159b46159ae6159a95f613d87565b6104c2565b916104c2565b141583906157ae565b6159e76159e06159da60036159d460298790611f02565b01611f58565b156115a2565b8390615868565b615a00600160036159fa60298690611f02565b016130ba565b615a1e615a195f615a1360298690611f02565b01611f37565b611fa5565b6342842e0e615a2c306114c6565b8392615a456001615a3f60298990611f02565b016107d8565b92813b15615b48575f615a6b91615a768296615a5f610452565b98899788968795612f28565b855260048501615896565b03925af18015615b4357615b17575b50615a9d6002615a9760298590611f02565b016107d8565b9082615b12615ad66001615ad0615ac8615ac35f615abd60298c90611f02565b01611f37565b611fa5565b976029611f02565b016107d8565b615b007f0d0e4b90a96d931964d5b0421a6b5b48dd73abf538cdb9ae015069d49e9a467995610743565b95615b09610452565b948594856158c8565b0390a2565b615b36905f3d8111615b3c575b615b2e8183610a1f565b8101906153cc565b5f615a85565b503d615b24565b612f7b565b612f24565b60207f7468616e20302e00000000000000000000000000000000000000000000000000917f446f6e6174696f6e20616d6f756e74206d7573742062652067726561746572205f8201520152565b615ba7602760409261195e565b615bb081615b4d565b0190565b615bc99060208101905f818303910152615b9a565b90565b15615bd357565b615bdb610452565b63af33979960e01b815280615bf260048201615bb4565b0390fd5b615c35615c0360326107d8565b615c1c615c16615c116127c0565b610464565b91610464565b10615c2561282f565b615c2f60326107d8565b91612860565b615c5134615c4b615c455f612451565b91610464565b11615bcc565b615c59615db7565b3490615c9a615c887f8b7fe5be5699654fd637d2250cb0d47e88205730710745e78e9d8bcaf8aad8f19261079d565b92615c91610452565b9182918261061e565b0390a2565b615cd290615ccd615cae6150d4565b615cc7615cc1615cbc615db7565b6104c2565b916104c2565b1461505a565b615d7c565b565b60207f6464726573730000000000000000000000000000000000000000000000000000917f4f776e61626c653a206e6577206f776e657220697320746865207a65726f20615f8201520152565b615d2e602660409261195e565b615d3781615cd4565b0190565b615d509060208101905f818303910152615d21565b90565b15615d5a57565b615d62610452565b62461bcd60e51b815280615d7860048201615d3b565b0390fd5b615daa90615da581615d9e615d98615d935f613d87565b6104c2565b916104c2565b1415615d53565b6167e1565b565b615db590615c9f565b565b615dbf612382565b503390565b5f7f4e6f7420616374697665207965742e0000000000000000000000000000000000910152565b615df8600f60209261195e565b615e0181615dc4565b0190565b916040615e36929493615e2f615e24606083018381035f850152615deb565b966020830190610611565b0190610611565b565b15615e41575050565b615e62615e4c610452565b928392632710db8960e21b845260048401615e05565b0390fd5b90565b5f7f4d65737361676520697320746f6f206c6f6e672e000000000000000000000000910152565b615e9d601460209261195e565b615ea681615e69565b0190565b9190615ecd906020615ec5604086018681035f880152615e90565b940190610611565b565b15615ed75750565b615ef990615ee3610452565b9182916354d29c9d60e11b835260048301615eaa565b0390fd5b60a01b90565b90615f1260ff60a01b91615efd565b9181191691161790565b615f259061211c565b90565b90565b90615f40615f3b615f4792615f1c565b615f28565b8254615f03565b9055565b60207f742072657761726420746f6b656e7320666f7220746865206269646465722e00917f436f736d6963546f6b656e206d696e742829206661696c656420746f206d696e5f8201520152565b615fa5603f60409261195e565b615fae81615f4b565b0190565b916040615fe3929493615fdc615fd1606083018381035f850152615f98565b9660208301906104ce565b0190610611565b565b15615fee575050565b61600f615ff9610452565b928392631ffa47b560e31b845260048401615fb2565b0390fd5b61601f616024916107bf565b611210565b90565b6160319054616013565b90565b91602061605592949361604e60408201965f83019061125c565b0190610611565b565b60407f6c65742e00000000000000000000000000000000000000000000000000000000917f436f736d6963546f6b656e206d696e742829206661696c656420746f206d696e5f8201527f742072657761726420746f6b656e7320666f72204d61726b6574696e6757616c60208201520152565b6160d7604460609261195e565b6160e081616057565b0190565b91604061611592949361610e616103606083018381035f8501526160ca565b9660208301906104ce565b0190610611565b565b15616120575050565b61614161612b610452565b928392631ffa47b560e31b8452600484016160e4565b0390fd5b906161c461620f9261617f4261616c616166616161602d6107d8565b610464565b91610464565b1015616178602d6107d8565b4291615e38565b6161be6161b961619661619184615e66565b610535565b6161b16161ab6161a660316107d8565b610464565b91610464565b111592615e66565b610535565b90615ecf565b6161ce6011611810565b6161e86161e26161dd5f613d87565b6104c2565b916104c2565b146163f5575b6161f6616418565b616208616201615db7565b6011612956565b6011615f2b565b61623a42600161623461622d601b616227600a6107d8565b9061075f565b33906107a9565b016128d1565b616245336011612956565b6162c36162a9616268616263601761625d600a6107d8565b90611e6b565b6107d8565b6162996162756011611810565b61629461628d6016616287600a6107d8565b90611bc6565b8490611a04565b612956565b6162a36001612640565b9061288e565b6162be60176162b8600a6107d8565b90611e6b565b6128d1565b6163535f806162da6162d56003613f96565b61231b565b60046163266340c10f1960e01b6163176162f46011611810565b6162fe602e6107d8565b90616307610452565b9586946020860190815201613f5f565b60208201810382520382610a1f565b82602082019151925af161633861332a565b506163436011611810565b61634d602e6107d8565b91615fe5565b6163eb5f8061636a6163656003613f96565b61231b565b60046163b66340c10f1960e01b6163a76163846008616027565b61638e60306107d8565b90616397610452565b9586946020860190815201616034565b60208201810382520382610a1f565b82602082019151925af16163c861332a565b506163db6163d66008616027565b611250565b6163e560306107d8565b91616117565b6163f3616b19565b565b61641361640c4261640660136107d8565b9061288e565b60146128d1565b6161ee565b6164226011611810565b61643c6164366164315f613d87565b6104c2565b916104c2565b14616537576164b96164814261647b6001616475616465601b61645f600a6107d8565b9061075f565b61646f6011611810565b906107a9565b016107d8565b90612618565b6164b460026164ae61649e601b616498600a6107d8565b9061075f565b6164a86011611810565b906107a9565b016107d8565b61288e565b6164ed8160026164e76164d7601b6164d1600a6107d8565b9061075f565b6164e16011611810565b906107a9565b016128d1565b806165096165036164fe601f6107d8565b610464565b91610464565b11616512575b50565b61651d90601f6128d1565b61653161652a6011611810565b601e612956565b5f61650f565b565b604090616562616569949695939661655860608401985f8501906113a7565b6020830190610611565b01906113a7565b565b60200190565b61657a906113a4565b90565b616586906107bf565b90565b9061659e6165996165a592616571565b61657d565b82546128b8565b9055565b6166106165b66028613fb7565b6165f642916165e76165d2436165cc6001612640565b90612618565b406165db610452565b94859360208501616539565b60208201810382520382610a1f565b61660861660282610535565b9161656b565b206028616589565b565b90565b61662961662461662e92616612565b610740565b610464565b90565b90565b61664861664361664d92616631565b610740565b610464565b90565b61665a6001612640565b90565b6166684260186128d1565b6166735f6011615f2b565b6166b06166a9616696600c61669161668b600d6107d8565b91616615565b613b91565b6166a3633b9aca00616634565b9061311b565b60196128d1565b6166e96166bc5f612451565b6166e460176166de6166ce600a6107d8565b6166d86001612640565b9061288e565b90611e6b565b6128d1565b6167106167096166f8306114c6565b3161670360106107d8565b9061311b565b600b6128d1565b61672361671c5f613d87565b601c612956565b61673661672f5f612451565b601d6128d1565b6167496167425f613d87565b601e612956565b61675c6167555f612451565b601f6128d1565b61676660326107d8565b61677f616779616774616650565b610464565b91610464565b14616787575b565b6167996167926127c0565b60326128d1565b6167a360326107d8565b6167d97ff24e774cdaabee9b8782266728e442b7f1fa6ae9204755c0da1541e99f04aa4c916167d0610452565b9182918261061e565b0390a1616785565b6167ea5f611810565b6167f4825f612956565b906168286168227f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09361079d565b9161079d565b91616831610452565b8061683b81610994565b0390a3565b61684a6080610a48565b90565b9061685790611b14565b9052565b90616865906115a2565b9052565b6168739051611b14565b90565b61687f90610775565b90565b61688b90616876565b90565b90565b906168a66168a16168ad92616882565b61688e565b8254612938565b9055565b6168bb90516115a2565b90565b9061691b60606003616921946168e15f82016168db5f8801616869565b90616891565b6168fa600182016168f460208801612976565b906128d1565b6169136002820161690d60408801612976565b906128d1565b0192016168b1565b906130ba565b565b9061692d916168be565b565b9061693982611fa5565b6342842e0e616946615db7565b61694f306114c6565b928492813b15616ad4575f61697791616982829661696b610452565b98899788968795612f28565b855260048501615896565b03925af18015616acf57616aa3575b506169f5826169db836169d26169a7600a6107d8565b6169c95f936169c06169b7616840565b975f890161684d565b6020870161290c565b6040850161290c565b6060830161685b565b6169f060296169ea602a6107d8565b90611f02565b616923565b616a1b616a14616a056001612640565b616a0f602a6107d8565b61288e565b602a6128d1565b616a23615db7565b91616a2e600a6107d8565b9192616a4d616a3d602a6107d8565b616a476001612640565b90612618565b616a89616a83616a7d7fc85be1734ed6a0f4d6adf924d4d41406e2729878c652110a96e2fdec64e118d19461079d565b94616882565b94610743565b94616a9e616a95610452565b9283928361272a565b0390a4565b616ac2905f3d8111616ac8575b616aba8183610a1f565b8101906153cc565b5f616991565b503d616ab0565b612f7b565b612f24565b90616ae26129dc565b5081616af6616af083610464565b91610464565b10155f14616b0357505b90565b9050616b00565b616b16620f4240613b75565b90565b616b5f616b58616b3f616b2c600d6107d8565b616b39633b9aca00616634565b9061311b565b616b53616b4c60146107d8565b4290616ad9565b61288e565b60146128d1565b616b97616b90616b82616b72600d6107d8565b616b7c600e6107d8565b90613b91565b616b8a616b0a565b9061311b565b600d6128d1565b56fea264697066735822122059a3a08c783e9feb34b57123b6de981086583983fb2678ec264846821dc2719464736f6c634300081a0033",
 }
 
 // BusinessLogicABI is the input ABI used to generate the binding from.
@@ -388,61 +395,6 @@ func (_BusinessLogic *BusinessLogicCallerSession) BidPrice() (*big.Int, error) {
 	return _BusinessLogic.Contract.BidPrice(&_BusinessLogic.CallOpts)
 }
 
-// BidStats is a free data retrieval call binding the contract method 0xe4c762f2.
-//
-// Solidity: function bidStats(address ) view returns(uint64 bidPricePaidEth, uint64 bidPricePaidCST, uint32 bidCount, uint32 bidTime)
-func (_BusinessLogic *BusinessLogicCaller) BidStats(opts *bind.CallOpts, arg0 common.Address) (struct {
-	BidPricePaidEth uint64
-	BidPricePaidCST uint64
-	BidCount        uint32
-	BidTime         uint32
-}, error) {
-	var out []interface{}
-	err := _BusinessLogic.contract.Call(opts, &out, "bidStats", arg0)
-
-	outstruct := new(struct {
-		BidPricePaidEth uint64
-		BidPricePaidCST uint64
-		BidCount        uint32
-		BidTime         uint32
-	})
-	if err != nil {
-		return *outstruct, err
-	}
-
-	outstruct.BidPricePaidEth = *abi.ConvertType(out[0], new(uint64)).(*uint64)
-	outstruct.BidPricePaidCST = *abi.ConvertType(out[1], new(uint64)).(*uint64)
-	outstruct.BidCount = *abi.ConvertType(out[2], new(uint32)).(*uint32)
-	outstruct.BidTime = *abi.ConvertType(out[3], new(uint32)).(*uint32)
-
-	return *outstruct, err
-
-}
-
-// BidStats is a free data retrieval call binding the contract method 0xe4c762f2.
-//
-// Solidity: function bidStats(address ) view returns(uint64 bidPricePaidEth, uint64 bidPricePaidCST, uint32 bidCount, uint32 bidTime)
-func (_BusinessLogic *BusinessLogicSession) BidStats(arg0 common.Address) (struct {
-	BidPricePaidEth uint64
-	BidPricePaidCST uint64
-	BidCount        uint32
-	BidTime         uint32
-}, error) {
-	return _BusinessLogic.Contract.BidStats(&_BusinessLogic.CallOpts, arg0)
-}
-
-// BidStats is a free data retrieval call binding the contract method 0xe4c762f2.
-//
-// Solidity: function bidStats(address ) view returns(uint64 bidPricePaidEth, uint64 bidPricePaidCST, uint32 bidCount, uint32 bidTime)
-func (_BusinessLogic *BusinessLogicCallerSession) BidStats(arg0 common.Address) (struct {
-	BidPricePaidEth uint64
-	BidPricePaidCST uint64
-	BidCount        uint32
-	BidTime         uint32
-}, error) {
-	return _BusinessLogic.Contract.BidStats(&_BusinessLogic.CallOpts, arg0)
-}
-
 // BidderAddress is a free data retrieval call binding the contract method 0x0c201838.
 //
 // Solidity: function bidderAddress(uint256 _round, uint256 _positionFromEnd) view returns(address)
@@ -472,6 +424,56 @@ func (_BusinessLogic *BusinessLogicSession) BidderAddress(_round *big.Int, _posi
 // Solidity: function bidderAddress(uint256 _round, uint256 _positionFromEnd) view returns(address)
 func (_BusinessLogic *BusinessLogicCallerSession) BidderAddress(_round *big.Int, _positionFromEnd *big.Int) (common.Address, error) {
 	return _BusinessLogic.Contract.BidderAddress(&_BusinessLogic.CallOpts, _round, _positionFromEnd)
+}
+
+// BidderInfo is a free data retrieval call binding the contract method 0x1cb78fb3.
+//
+// Solidity: function bidderInfo(uint256 , address ) view returns(uint256 totalSpent, uint256 lastBidTime, uint256 totalBidTime)
+func (_BusinessLogic *BusinessLogicCaller) BidderInfo(opts *bind.CallOpts, arg0 *big.Int, arg1 common.Address) (struct {
+	TotalSpent   *big.Int
+	LastBidTime  *big.Int
+	TotalBidTime *big.Int
+}, error) {
+	var out []interface{}
+	err := _BusinessLogic.contract.Call(opts, &out, "bidderInfo", arg0, arg1)
+
+	outstruct := new(struct {
+		TotalSpent   *big.Int
+		LastBidTime  *big.Int
+		TotalBidTime *big.Int
+	})
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.TotalSpent = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	outstruct.LastBidTime = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+	outstruct.TotalBidTime = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
+
+	return *outstruct, err
+
+}
+
+// BidderInfo is a free data retrieval call binding the contract method 0x1cb78fb3.
+//
+// Solidity: function bidderInfo(uint256 , address ) view returns(uint256 totalSpent, uint256 lastBidTime, uint256 totalBidTime)
+func (_BusinessLogic *BusinessLogicSession) BidderInfo(arg0 *big.Int, arg1 common.Address) (struct {
+	TotalSpent   *big.Int
+	LastBidTime  *big.Int
+	TotalBidTime *big.Int
+}, error) {
+	return _BusinessLogic.Contract.BidderInfo(&_BusinessLogic.CallOpts, arg0, arg1)
+}
+
+// BidderInfo is a free data retrieval call binding the contract method 0x1cb78fb3.
+//
+// Solidity: function bidderInfo(uint256 , address ) view returns(uint256 totalSpent, uint256 lastBidTime, uint256 totalBidTime)
+func (_BusinessLogic *BusinessLogicCallerSession) BidderInfo(arg0 *big.Int, arg1 common.Address) (struct {
+	TotalSpent   *big.Int
+	LastBidTime  *big.Int
+	TotalBidTime *big.Int
+}, error) {
+	return _BusinessLogic.Contract.BidderInfo(&_BusinessLogic.CallOpts, arg0, arg1)
 }
 
 // Charity is a free data retrieval call binding the contract method 0x934aa023.
@@ -567,6 +569,37 @@ func (_BusinessLogic *BusinessLogicCallerSession) CurrentCSTPrice() ([]byte, err
 	return _BusinessLogic.Contract.CurrentCSTPrice(&_BusinessLogic.CallOpts)
 }
 
+// DonateWithInfoNumRecords is a free data retrieval call binding the contract method 0x58218269.
+//
+// Solidity: function donateWithInfoNumRecords() view returns(uint256)
+func (_BusinessLogic *BusinessLogicCaller) DonateWithInfoNumRecords(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _BusinessLogic.contract.Call(opts, &out, "donateWithInfoNumRecords")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// DonateWithInfoNumRecords is a free data retrieval call binding the contract method 0x58218269.
+//
+// Solidity: function donateWithInfoNumRecords() view returns(uint256)
+func (_BusinessLogic *BusinessLogicSession) DonateWithInfoNumRecords() (*big.Int, error) {
+	return _BusinessLogic.Contract.DonateWithInfoNumRecords(&_BusinessLogic.CallOpts)
+}
+
+// DonateWithInfoNumRecords is a free data retrieval call binding the contract method 0x58218269.
+//
+// Solidity: function donateWithInfoNumRecords() view returns(uint256)
+func (_BusinessLogic *BusinessLogicCallerSession) DonateWithInfoNumRecords() (*big.Int, error) {
+	return _BusinessLogic.Contract.DonateWithInfoNumRecords(&_BusinessLogic.CallOpts)
+}
+
 // DonatedNFTs is a free data retrieval call binding the contract method 0xd6e17417.
 //
 // Solidity: function donatedNFTs(uint256 ) view returns(address nftAddress, uint256 tokenId, uint256 round, bool claimed)
@@ -620,6 +653,149 @@ func (_BusinessLogic *BusinessLogicCallerSession) DonatedNFTs(arg0 *big.Int) (st
 	Claimed    bool
 }, error) {
 	return _BusinessLogic.Contract.DonatedNFTs(&_BusinessLogic.CallOpts, arg0)
+}
+
+// DonationInfoRecords is a free data retrieval call binding the contract method 0x986459a0.
+//
+// Solidity: function donationInfoRecords(uint256 ) view returns(address donor, uint256 amount, string data)
+func (_BusinessLogic *BusinessLogicCaller) DonationInfoRecords(opts *bind.CallOpts, arg0 *big.Int) (struct {
+	Donor  common.Address
+	Amount *big.Int
+	Data   string
+}, error) {
+	var out []interface{}
+	err := _BusinessLogic.contract.Call(opts, &out, "donationInfoRecords", arg0)
+
+	outstruct := new(struct {
+		Donor  common.Address
+		Amount *big.Int
+		Data   string
+	})
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.Donor = *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+	outstruct.Amount = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+	outstruct.Data = *abi.ConvertType(out[2], new(string)).(*string)
+
+	return *outstruct, err
+
+}
+
+// DonationInfoRecords is a free data retrieval call binding the contract method 0x986459a0.
+//
+// Solidity: function donationInfoRecords(uint256 ) view returns(address donor, uint256 amount, string data)
+func (_BusinessLogic *BusinessLogicSession) DonationInfoRecords(arg0 *big.Int) (struct {
+	Donor  common.Address
+	Amount *big.Int
+	Data   string
+}, error) {
+	return _BusinessLogic.Contract.DonationInfoRecords(&_BusinessLogic.CallOpts, arg0)
+}
+
+// DonationInfoRecords is a free data retrieval call binding the contract method 0x986459a0.
+//
+// Solidity: function donationInfoRecords(uint256 ) view returns(address donor, uint256 amount, string data)
+func (_BusinessLogic *BusinessLogicCallerSession) DonationInfoRecords(arg0 *big.Int) (struct {
+	Donor  common.Address
+	Amount *big.Int
+	Data   string
+}, error) {
+	return _BusinessLogic.Contract.DonationInfoRecords(&_BusinessLogic.CallOpts, arg0)
+}
+
+// EnduranceChampion is a free data retrieval call binding the contract method 0xa38fd64e.
+//
+// Solidity: function enduranceChampion() view returns(address)
+func (_BusinessLogic *BusinessLogicCaller) EnduranceChampion(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _BusinessLogic.contract.Call(opts, &out, "enduranceChampion")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// EnduranceChampion is a free data retrieval call binding the contract method 0xa38fd64e.
+//
+// Solidity: function enduranceChampion() view returns(address)
+func (_BusinessLogic *BusinessLogicSession) EnduranceChampion() (common.Address, error) {
+	return _BusinessLogic.Contract.EnduranceChampion(&_BusinessLogic.CallOpts)
+}
+
+// EnduranceChampion is a free data retrieval call binding the contract method 0xa38fd64e.
+//
+// Solidity: function enduranceChampion() view returns(address)
+func (_BusinessLogic *BusinessLogicCallerSession) EnduranceChampion() (common.Address, error) {
+	return _BusinessLogic.Contract.EnduranceChampion(&_BusinessLogic.CallOpts)
+}
+
+// EnduranceChampionDuration is a free data retrieval call binding the contract method 0x5863a705.
+//
+// Solidity: function enduranceChampionDuration() view returns(uint256)
+func (_BusinessLogic *BusinessLogicCaller) EnduranceChampionDuration(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _BusinessLogic.contract.Call(opts, &out, "enduranceChampionDuration")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// EnduranceChampionDuration is a free data retrieval call binding the contract method 0x5863a705.
+//
+// Solidity: function enduranceChampionDuration() view returns(uint256)
+func (_BusinessLogic *BusinessLogicSession) EnduranceChampionDuration() (*big.Int, error) {
+	return _BusinessLogic.Contract.EnduranceChampionDuration(&_BusinessLogic.CallOpts)
+}
+
+// EnduranceChampionDuration is a free data retrieval call binding the contract method 0x5863a705.
+//
+// Solidity: function enduranceChampionDuration() view returns(uint256)
+func (_BusinessLogic *BusinessLogicCallerSession) EnduranceChampionDuration() (*big.Int, error) {
+	return _BusinessLogic.Contract.EnduranceChampionDuration(&_BusinessLogic.CallOpts)
+}
+
+// Erc20RewardMultiplier is a free data retrieval call binding the contract method 0x541fa588.
+//
+// Solidity: function erc20RewardMultiplier() view returns(uint256)
+func (_BusinessLogic *BusinessLogicCaller) Erc20RewardMultiplier(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _BusinessLogic.contract.Call(opts, &out, "erc20RewardMultiplier")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// Erc20RewardMultiplier is a free data retrieval call binding the contract method 0x541fa588.
+//
+// Solidity: function erc20RewardMultiplier() view returns(uint256)
+func (_BusinessLogic *BusinessLogicSession) Erc20RewardMultiplier() (*big.Int, error) {
+	return _BusinessLogic.Contract.Erc20RewardMultiplier(&_BusinessLogic.CallOpts)
+}
+
+// Erc20RewardMultiplier is a free data retrieval call binding the contract method 0x541fa588.
+//
+// Solidity: function erc20RewardMultiplier() view returns(uint256)
+func (_BusinessLogic *BusinessLogicCallerSession) Erc20RewardMultiplier() (*big.Int, error) {
+	return _BusinessLogic.Contract.Erc20RewardMultiplier(&_BusinessLogic.CallOpts)
 }
 
 // ExtraStorage is a free data retrieval call binding the contract method 0xed421f41.
@@ -806,99 +982,6 @@ func (_BusinessLogic *BusinessLogicSession) LastCSTBidTime() (*big.Int, error) {
 // Solidity: function lastCSTBidTime() view returns(uint256)
 func (_BusinessLogic *BusinessLogicCallerSession) LastCSTBidTime() (*big.Int, error) {
 	return _BusinessLogic.Contract.LastCSTBidTime(&_BusinessLogic.CallOpts)
-}
-
-// LongestBidderAddress is a free data retrieval call binding the contract method 0x7a9c1626.
-//
-// Solidity: function longestBidderAddress() view returns(address)
-func (_BusinessLogic *BusinessLogicCaller) LongestBidderAddress(opts *bind.CallOpts) (common.Address, error) {
-	var out []interface{}
-	err := _BusinessLogic.contract.Call(opts, &out, "longestBidderAddress")
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// LongestBidderAddress is a free data retrieval call binding the contract method 0x7a9c1626.
-//
-// Solidity: function longestBidderAddress() view returns(address)
-func (_BusinessLogic *BusinessLogicSession) LongestBidderAddress() (common.Address, error) {
-	return _BusinessLogic.Contract.LongestBidderAddress(&_BusinessLogic.CallOpts)
-}
-
-// LongestBidderAddress is a free data retrieval call binding the contract method 0x7a9c1626.
-//
-// Solidity: function longestBidderAddress() view returns(address)
-func (_BusinessLogic *BusinessLogicCallerSession) LongestBidderAddress() (common.Address, error) {
-	return _BusinessLogic.Contract.LongestBidderAddress(&_BusinessLogic.CallOpts)
-}
-
-// LongestBidderTime is a free data retrieval call binding the contract method 0xae96c0f2.
-//
-// Solidity: function longestBidderTime() view returns(uint256)
-func (_BusinessLogic *BusinessLogicCaller) LongestBidderTime(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _BusinessLogic.contract.Call(opts, &out, "longestBidderTime")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// LongestBidderTime is a free data retrieval call binding the contract method 0xae96c0f2.
-//
-// Solidity: function longestBidderTime() view returns(uint256)
-func (_BusinessLogic *BusinessLogicSession) LongestBidderTime() (*big.Int, error) {
-	return _BusinessLogic.Contract.LongestBidderTime(&_BusinessLogic.CallOpts)
-}
-
-// LongestBidderTime is a free data retrieval call binding the contract method 0xae96c0f2.
-//
-// Solidity: function longestBidderTime() view returns(uint256)
-func (_BusinessLogic *BusinessLogicCallerSession) LongestBidderTime() (*big.Int, error) {
-	return _BusinessLogic.Contract.LongestBidderTime(&_BusinessLogic.CallOpts)
-}
-
-// LongestBidderTokenReward is a free data retrieval call binding the contract method 0x50a42225.
-//
-// Solidity: function longestBidderTokenReward() view returns(uint256)
-func (_BusinessLogic *BusinessLogicCaller) LongestBidderTokenReward(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _BusinessLogic.contract.Call(opts, &out, "longestBidderTokenReward")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// LongestBidderTokenReward is a free data retrieval call binding the contract method 0x50a42225.
-//
-// Solidity: function longestBidderTokenReward() view returns(uint256)
-func (_BusinessLogic *BusinessLogicSession) LongestBidderTokenReward() (*big.Int, error) {
-	return _BusinessLogic.Contract.LongestBidderTokenReward(&_BusinessLogic.CallOpts)
-}
-
-// LongestBidderTokenReward is a free data retrieval call binding the contract method 0x50a42225.
-//
-// Solidity: function longestBidderTokenReward() view returns(uint256)
-func (_BusinessLogic *BusinessLogicCallerSession) LongestBidderTokenReward() (*big.Int, error) {
-	return _BusinessLogic.Contract.LongestBidderTokenReward(&_BusinessLogic.CallOpts)
 }
 
 // MarketingReward is a free data retrieval call binding the contract method 0xb801b8b2.
@@ -1240,68 +1323,6 @@ func (_BusinessLogic *BusinessLogicSession) Owner() (common.Address, error) {
 // Solidity: function owner() view returns(address)
 func (_BusinessLogic *BusinessLogicCallerSession) Owner() (common.Address, error) {
 	return _BusinessLogic.Contract.Owner(&_BusinessLogic.CallOpts)
-}
-
-// PrevBidderAddress is a free data retrieval call binding the contract method 0x966beb5e.
-//
-// Solidity: function prevBidderAddress() view returns(address)
-func (_BusinessLogic *BusinessLogicCaller) PrevBidderAddress(opts *bind.CallOpts) (common.Address, error) {
-	var out []interface{}
-	err := _BusinessLogic.contract.Call(opts, &out, "prevBidderAddress")
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// PrevBidderAddress is a free data retrieval call binding the contract method 0x966beb5e.
-//
-// Solidity: function prevBidderAddress() view returns(address)
-func (_BusinessLogic *BusinessLogicSession) PrevBidderAddress() (common.Address, error) {
-	return _BusinessLogic.Contract.PrevBidderAddress(&_BusinessLogic.CallOpts)
-}
-
-// PrevBidderAddress is a free data retrieval call binding the contract method 0x966beb5e.
-//
-// Solidity: function prevBidderAddress() view returns(address)
-func (_BusinessLogic *BusinessLogicCallerSession) PrevBidderAddress() (common.Address, error) {
-	return _BusinessLogic.Contract.PrevBidderAddress(&_BusinessLogic.CallOpts)
-}
-
-// PrevBidderStartTime is a free data retrieval call binding the contract method 0xe2a88182.
-//
-// Solidity: function prevBidderStartTime() view returns(uint256)
-func (_BusinessLogic *BusinessLogicCaller) PrevBidderStartTime(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _BusinessLogic.contract.Call(opts, &out, "prevBidderStartTime")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// PrevBidderStartTime is a free data retrieval call binding the contract method 0xe2a88182.
-//
-// Solidity: function prevBidderStartTime() view returns(uint256)
-func (_BusinessLogic *BusinessLogicSession) PrevBidderStartTime() (*big.Int, error) {
-	return _BusinessLogic.Contract.PrevBidderStartTime(&_BusinessLogic.CallOpts)
-}
-
-// PrevBidderStartTime is a free data retrieval call binding the contract method 0xe2a88182.
-//
-// Solidity: function prevBidderStartTime() view returns(uint256)
-func (_BusinessLogic *BusinessLogicCallerSession) PrevBidderStartTime() (*big.Int, error) {
-	return _BusinessLogic.Contract.PrevBidderStartTime(&_BusinessLogic.CallOpts)
 }
 
 // PriceIncrease is a free data retrieval call binding the contract method 0xf8c34050.
@@ -1707,6 +1728,68 @@ func (_BusinessLogic *BusinessLogicCallerSession) StartingBidPriceCST() (*big.In
 	return _BusinessLogic.Contract.StartingBidPriceCST(&_BusinessLogic.CallOpts)
 }
 
+// StellarSpender is a free data retrieval call binding the contract method 0x7e8ad4e3.
+//
+// Solidity: function stellarSpender() view returns(address)
+func (_BusinessLogic *BusinessLogicCaller) StellarSpender(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _BusinessLogic.contract.Call(opts, &out, "stellarSpender")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// StellarSpender is a free data retrieval call binding the contract method 0x7e8ad4e3.
+//
+// Solidity: function stellarSpender() view returns(address)
+func (_BusinessLogic *BusinessLogicSession) StellarSpender() (common.Address, error) {
+	return _BusinessLogic.Contract.StellarSpender(&_BusinessLogic.CallOpts)
+}
+
+// StellarSpender is a free data retrieval call binding the contract method 0x7e8ad4e3.
+//
+// Solidity: function stellarSpender() view returns(address)
+func (_BusinessLogic *BusinessLogicCallerSession) StellarSpender() (common.Address, error) {
+	return _BusinessLogic.Contract.StellarSpender(&_BusinessLogic.CallOpts)
+}
+
+// StellarSpenderAmount is a free data retrieval call binding the contract method 0x662bfa8f.
+//
+// Solidity: function stellarSpenderAmount() view returns(uint256)
+func (_BusinessLogic *BusinessLogicCaller) StellarSpenderAmount(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _BusinessLogic.contract.Call(opts, &out, "stellarSpenderAmount")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// StellarSpenderAmount is a free data retrieval call binding the contract method 0x662bfa8f.
+//
+// Solidity: function stellarSpenderAmount() view returns(uint256)
+func (_BusinessLogic *BusinessLogicSession) StellarSpenderAmount() (*big.Int, error) {
+	return _BusinessLogic.Contract.StellarSpenderAmount(&_BusinessLogic.CallOpts)
+}
+
+// StellarSpenderAmount is a free data retrieval call binding the contract method 0x662bfa8f.
+//
+// Solidity: function stellarSpenderAmount() view returns(uint256)
+func (_BusinessLogic *BusinessLogicCallerSession) StellarSpenderAmount() (*big.Int, error) {
+	return _BusinessLogic.Contract.StellarSpenderAmount(&_BusinessLogic.CallOpts)
+}
+
 // SystemMode is a free data retrieval call binding the contract method 0x20a60273.
 //
 // Solidity: function systemMode() view returns(uint256)
@@ -1860,99 +1943,6 @@ func (_BusinessLogic *BusinessLogicSession) TokenReward() (*big.Int, error) {
 // Solidity: function tokenReward() view returns(uint256)
 func (_BusinessLogic *BusinessLogicCallerSession) TokenReward() (*big.Int, error) {
 	return _BusinessLogic.Contract.TokenReward(&_BusinessLogic.CallOpts)
-}
-
-// TopBidderAddress is a free data retrieval call binding the contract method 0xfd1ff7e2.
-//
-// Solidity: function topBidderAddress() view returns(address)
-func (_BusinessLogic *BusinessLogicCaller) TopBidderAddress(opts *bind.CallOpts) (common.Address, error) {
-	var out []interface{}
-	err := _BusinessLogic.contract.Call(opts, &out, "topBidderAddress")
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// TopBidderAddress is a free data retrieval call binding the contract method 0xfd1ff7e2.
-//
-// Solidity: function topBidderAddress() view returns(address)
-func (_BusinessLogic *BusinessLogicSession) TopBidderAddress() (common.Address, error) {
-	return _BusinessLogic.Contract.TopBidderAddress(&_BusinessLogic.CallOpts)
-}
-
-// TopBidderAddress is a free data retrieval call binding the contract method 0xfd1ff7e2.
-//
-// Solidity: function topBidderAddress() view returns(address)
-func (_BusinessLogic *BusinessLogicCallerSession) TopBidderAddress() (common.Address, error) {
-	return _BusinessLogic.Contract.TopBidderAddress(&_BusinessLogic.CallOpts)
-}
-
-// TopBidderNumBids is a free data retrieval call binding the contract method 0x05ab18aa.
-//
-// Solidity: function topBidderNumBids() view returns(uint256)
-func (_BusinessLogic *BusinessLogicCaller) TopBidderNumBids(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _BusinessLogic.contract.Call(opts, &out, "topBidderNumBids")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// TopBidderNumBids is a free data retrieval call binding the contract method 0x05ab18aa.
-//
-// Solidity: function topBidderNumBids() view returns(uint256)
-func (_BusinessLogic *BusinessLogicSession) TopBidderNumBids() (*big.Int, error) {
-	return _BusinessLogic.Contract.TopBidderNumBids(&_BusinessLogic.CallOpts)
-}
-
-// TopBidderNumBids is a free data retrieval call binding the contract method 0x05ab18aa.
-//
-// Solidity: function topBidderNumBids() view returns(uint256)
-func (_BusinessLogic *BusinessLogicCallerSession) TopBidderNumBids() (*big.Int, error) {
-	return _BusinessLogic.Contract.TopBidderNumBids(&_BusinessLogic.CallOpts)
-}
-
-// TopBidderTokenReward is a free data retrieval call binding the contract method 0x1e42fa1d.
-//
-// Solidity: function topBidderTokenReward() view returns(uint256)
-func (_BusinessLogic *BusinessLogicCaller) TopBidderTokenReward(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _BusinessLogic.contract.Call(opts, &out, "topBidderTokenReward")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// TopBidderTokenReward is a free data retrieval call binding the contract method 0x1e42fa1d.
-//
-// Solidity: function topBidderTokenReward() view returns(uint256)
-func (_BusinessLogic *BusinessLogicSession) TopBidderTokenReward() (*big.Int, error) {
-	return _BusinessLogic.Contract.TopBidderTokenReward(&_BusinessLogic.CallOpts)
-}
-
-// TopBidderTokenReward is a free data retrieval call binding the contract method 0x1e42fa1d.
-//
-// Solidity: function topBidderTokenReward() view returns(uint256)
-func (_BusinessLogic *BusinessLogicCallerSession) TopBidderTokenReward() (*big.Int, error) {
-	return _BusinessLogic.Contract.TopBidderTokenReward(&_BusinessLogic.CallOpts)
 }
 
 // UsedRandomWalkNFTs is a free data retrieval call binding the contract method 0x86e378c9.
@@ -2162,6 +2152,27 @@ func (_BusinessLogic *BusinessLogicSession) Donate() (*types.Transaction, error)
 // Solidity: function donate() payable returns()
 func (_BusinessLogic *BusinessLogicTransactorSession) Donate() (*types.Transaction, error) {
 	return _BusinessLogic.Contract.Donate(&_BusinessLogic.TransactOpts)
+}
+
+// DonateWithInfo is a paid mutator transaction binding the contract method 0x2366b3b7.
+//
+// Solidity: function donateWithInfo(string _data) payable returns()
+func (_BusinessLogic *BusinessLogicTransactor) DonateWithInfo(opts *bind.TransactOpts, _data string) (*types.Transaction, error) {
+	return _BusinessLogic.contract.Transact(opts, "donateWithInfo", _data)
+}
+
+// DonateWithInfo is a paid mutator transaction binding the contract method 0x2366b3b7.
+//
+// Solidity: function donateWithInfo(string _data) payable returns()
+func (_BusinessLogic *BusinessLogicSession) DonateWithInfo(_data string) (*types.Transaction, error) {
+	return _BusinessLogic.Contract.DonateWithInfo(&_BusinessLogic.TransactOpts, _data)
+}
+
+// DonateWithInfo is a paid mutator transaction binding the contract method 0x2366b3b7.
+//
+// Solidity: function donateWithInfo(string _data) payable returns()
+func (_BusinessLogic *BusinessLogicTransactorSession) DonateWithInfo(_data string) (*types.Transaction, error) {
+	return _BusinessLogic.Contract.DonateWithInfo(&_BusinessLogic.TransactOpts, _data)
 }
 
 // ReceiveEther is a paid mutator transaction binding the contract method 0xa3912ec8.
@@ -2678,9 +2689,9 @@ func (_BusinessLogic *BusinessLogicFilterer) ParseDonationEvent(log types.Log) (
 	return event, nil
 }
 
-// BusinessLogicEnduranceNFTWinnerEventIterator is returned from FilterEnduranceNFTWinnerEvent and is used to iterate over the raw logs and unpacked data for EnduranceNFTWinnerEvent events raised by the BusinessLogic contract.
-type BusinessLogicEnduranceNFTWinnerEventIterator struct {
-	Event *BusinessLogicEnduranceNFTWinnerEvent // Event containing the contract specifics and raw log
+// BusinessLogicDonationWithInfoEventIterator is returned from FilterDonationWithInfoEvent and is used to iterate over the raw logs and unpacked data for DonationWithInfoEvent events raised by the BusinessLogic contract.
+type BusinessLogicDonationWithInfoEventIterator struct {
+	Event *BusinessLogicDonationWithInfoEvent // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -2694,7 +2705,7 @@ type BusinessLogicEnduranceNFTWinnerEventIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *BusinessLogicEnduranceNFTWinnerEventIterator) Next() bool {
+func (it *BusinessLogicDonationWithInfoEventIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -2703,7 +2714,7 @@ func (it *BusinessLogicEnduranceNFTWinnerEventIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(BusinessLogicEnduranceNFTWinnerEvent)
+			it.Event = new(BusinessLogicDonationWithInfoEvent)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -2718,7 +2729,7 @@ func (it *BusinessLogicEnduranceNFTWinnerEventIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(BusinessLogicEnduranceNFTWinnerEvent)
+		it.Event = new(BusinessLogicDonationWithInfoEvent)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -2734,70 +2745,53 @@ func (it *BusinessLogicEnduranceNFTWinnerEventIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *BusinessLogicEnduranceNFTWinnerEventIterator) Error() error {
+func (it *BusinessLogicDonationWithInfoEventIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *BusinessLogicEnduranceNFTWinnerEventIterator) Close() error {
+func (it *BusinessLogicDonationWithInfoEventIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// BusinessLogicEnduranceNFTWinnerEvent represents a EnduranceNFTWinnerEvent event raised by the BusinessLogic contract.
-type BusinessLogicEnduranceNFTWinnerEvent struct {
-	Winner      common.Address
-	Round       *big.Int
-	TokenId     *big.Int
-	WinnerIndex *big.Int
-	Raw         types.Log // Blockchain specific contextual infos
+// BusinessLogicDonationWithInfoEvent represents a DonationWithInfoEvent event raised by the BusinessLogic contract.
+type BusinessLogicDonationWithInfoEvent struct {
+	Donor    common.Address
+	Amount   *big.Int
+	RecordId *big.Int
+	Raw      types.Log // Blockchain specific contextual infos
 }
 
-// FilterEnduranceNFTWinnerEvent is a free log retrieval operation binding the contract event 0xc7748b549d32f0b6d1f7a9145e4c7a8e4f8635f719422edd0fec4cf5629534e6.
+// FilterDonationWithInfoEvent is a free log retrieval operation binding the contract event 0x8a0ea457335b2870a10c690d830041ca844b04d88d11c9237974d548127e6156.
 //
-// Solidity: event EnduranceNFTWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed tokenId, uint256 winnerIndex)
-func (_BusinessLogic *BusinessLogicFilterer) FilterEnduranceNFTWinnerEvent(opts *bind.FilterOpts, winner []common.Address, round []*big.Int, tokenId []*big.Int) (*BusinessLogicEnduranceNFTWinnerEventIterator, error) {
+// Solidity: event DonationWithInfoEvent(address indexed donor, uint256 amount, uint256 recordId)
+func (_BusinessLogic *BusinessLogicFilterer) FilterDonationWithInfoEvent(opts *bind.FilterOpts, donor []common.Address) (*BusinessLogicDonationWithInfoEventIterator, error) {
 
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
-	}
-	var roundRule []interface{}
-	for _, roundItem := range round {
-		roundRule = append(roundRule, roundItem)
-	}
-	var tokenIdRule []interface{}
-	for _, tokenIdItem := range tokenId {
-		tokenIdRule = append(tokenIdRule, tokenIdItem)
+	var donorRule []interface{}
+	for _, donorItem := range donor {
+		donorRule = append(donorRule, donorItem)
 	}
 
-	logs, sub, err := _BusinessLogic.contract.FilterLogs(opts, "EnduranceNFTWinnerEvent", winnerRule, roundRule, tokenIdRule)
+	logs, sub, err := _BusinessLogic.contract.FilterLogs(opts, "DonationWithInfoEvent", donorRule)
 	if err != nil {
 		return nil, err
 	}
-	return &BusinessLogicEnduranceNFTWinnerEventIterator{contract: _BusinessLogic.contract, event: "EnduranceNFTWinnerEvent", logs: logs, sub: sub}, nil
+	return &BusinessLogicDonationWithInfoEventIterator{contract: _BusinessLogic.contract, event: "DonationWithInfoEvent", logs: logs, sub: sub}, nil
 }
 
-// WatchEnduranceNFTWinnerEvent is a free log subscription operation binding the contract event 0xc7748b549d32f0b6d1f7a9145e4c7a8e4f8635f719422edd0fec4cf5629534e6.
+// WatchDonationWithInfoEvent is a free log subscription operation binding the contract event 0x8a0ea457335b2870a10c690d830041ca844b04d88d11c9237974d548127e6156.
 //
-// Solidity: event EnduranceNFTWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed tokenId, uint256 winnerIndex)
-func (_BusinessLogic *BusinessLogicFilterer) WatchEnduranceNFTWinnerEvent(opts *bind.WatchOpts, sink chan<- *BusinessLogicEnduranceNFTWinnerEvent, winner []common.Address, round []*big.Int, tokenId []*big.Int) (event.Subscription, error) {
+// Solidity: event DonationWithInfoEvent(address indexed donor, uint256 amount, uint256 recordId)
+func (_BusinessLogic *BusinessLogicFilterer) WatchDonationWithInfoEvent(opts *bind.WatchOpts, sink chan<- *BusinessLogicDonationWithInfoEvent, donor []common.Address) (event.Subscription, error) {
 
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
-	}
-	var roundRule []interface{}
-	for _, roundItem := range round {
-		roundRule = append(roundRule, roundItem)
-	}
-	var tokenIdRule []interface{}
-	for _, tokenIdItem := range tokenId {
-		tokenIdRule = append(tokenIdRule, tokenIdItem)
+	var donorRule []interface{}
+	for _, donorItem := range donor {
+		donorRule = append(donorRule, donorItem)
 	}
 
-	logs, sub, err := _BusinessLogic.contract.WatchLogs(opts, "EnduranceNFTWinnerEvent", winnerRule, roundRule, tokenIdRule)
+	logs, sub, err := _BusinessLogic.contract.WatchLogs(opts, "DonationWithInfoEvent", donorRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2807,8 +2801,8 @@ func (_BusinessLogic *BusinessLogicFilterer) WatchEnduranceNFTWinnerEvent(opts *
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(BusinessLogicEnduranceNFTWinnerEvent)
-				if err := _BusinessLogic.contract.UnpackLog(event, "EnduranceNFTWinnerEvent", log); err != nil {
+				event := new(BusinessLogicDonationWithInfoEvent)
+				if err := _BusinessLogic.contract.UnpackLog(event, "DonationWithInfoEvent", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -2829,12 +2823,176 @@ func (_BusinessLogic *BusinessLogicFilterer) WatchEnduranceNFTWinnerEvent(opts *
 	}), nil
 }
 
-// ParseEnduranceNFTWinnerEvent is a log parse operation binding the contract event 0xc7748b549d32f0b6d1f7a9145e4c7a8e4f8635f719422edd0fec4cf5629534e6.
+// ParseDonationWithInfoEvent is a log parse operation binding the contract event 0x8a0ea457335b2870a10c690d830041ca844b04d88d11c9237974d548127e6156.
 //
-// Solidity: event EnduranceNFTWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed tokenId, uint256 winnerIndex)
-func (_BusinessLogic *BusinessLogicFilterer) ParseEnduranceNFTWinnerEvent(log types.Log) (*BusinessLogicEnduranceNFTWinnerEvent, error) {
-	event := new(BusinessLogicEnduranceNFTWinnerEvent)
-	if err := _BusinessLogic.contract.UnpackLog(event, "EnduranceNFTWinnerEvent", log); err != nil {
+// Solidity: event DonationWithInfoEvent(address indexed donor, uint256 amount, uint256 recordId)
+func (_BusinessLogic *BusinessLogicFilterer) ParseDonationWithInfoEvent(log types.Log) (*BusinessLogicDonationWithInfoEvent, error) {
+	event := new(BusinessLogicDonationWithInfoEvent)
+	if err := _BusinessLogic.contract.UnpackLog(event, "DonationWithInfoEvent", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// BusinessLogicEnduranceChampionWinnerEventIterator is returned from FilterEnduranceChampionWinnerEvent and is used to iterate over the raw logs and unpacked data for EnduranceChampionWinnerEvent events raised by the BusinessLogic contract.
+type BusinessLogicEnduranceChampionWinnerEventIterator struct {
+	Event *BusinessLogicEnduranceChampionWinnerEvent // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *BusinessLogicEnduranceChampionWinnerEventIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(BusinessLogicEnduranceChampionWinnerEvent)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(BusinessLogicEnduranceChampionWinnerEvent)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *BusinessLogicEnduranceChampionWinnerEventIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *BusinessLogicEnduranceChampionWinnerEventIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// BusinessLogicEnduranceChampionWinnerEvent represents a EnduranceChampionWinnerEvent event raised by the BusinessLogic contract.
+type BusinessLogicEnduranceChampionWinnerEvent struct {
+	Winner           common.Address
+	Round            *big.Int
+	Erc721TokenId    *big.Int
+	Erc20TokenAmount *big.Int
+	WinnerIndex      *big.Int
+	Raw              types.Log // Blockchain specific contextual infos
+}
+
+// FilterEnduranceChampionWinnerEvent is a free log retrieval operation binding the contract event 0x66d485a556beac20ca50777389bdce3389cfd2defb1f2ff2002eb3ddef0fe248.
+//
+// Solidity: event EnduranceChampionWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed erc721TokenId, uint256 erc20TokenAmount, uint256 winnerIndex)
+func (_BusinessLogic *BusinessLogicFilterer) FilterEnduranceChampionWinnerEvent(opts *bind.FilterOpts, winner []common.Address, round []*big.Int, erc721TokenId []*big.Int) (*BusinessLogicEnduranceChampionWinnerEventIterator, error) {
+
+	var winnerRule []interface{}
+	for _, winnerItem := range winner {
+		winnerRule = append(winnerRule, winnerItem)
+	}
+	var roundRule []interface{}
+	for _, roundItem := range round {
+		roundRule = append(roundRule, roundItem)
+	}
+	var erc721TokenIdRule []interface{}
+	for _, erc721TokenIdItem := range erc721TokenId {
+		erc721TokenIdRule = append(erc721TokenIdRule, erc721TokenIdItem)
+	}
+
+	logs, sub, err := _BusinessLogic.contract.FilterLogs(opts, "EnduranceChampionWinnerEvent", winnerRule, roundRule, erc721TokenIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return &BusinessLogicEnduranceChampionWinnerEventIterator{contract: _BusinessLogic.contract, event: "EnduranceChampionWinnerEvent", logs: logs, sub: sub}, nil
+}
+
+// WatchEnduranceChampionWinnerEvent is a free log subscription operation binding the contract event 0x66d485a556beac20ca50777389bdce3389cfd2defb1f2ff2002eb3ddef0fe248.
+//
+// Solidity: event EnduranceChampionWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed erc721TokenId, uint256 erc20TokenAmount, uint256 winnerIndex)
+func (_BusinessLogic *BusinessLogicFilterer) WatchEnduranceChampionWinnerEvent(opts *bind.WatchOpts, sink chan<- *BusinessLogicEnduranceChampionWinnerEvent, winner []common.Address, round []*big.Int, erc721TokenId []*big.Int) (event.Subscription, error) {
+
+	var winnerRule []interface{}
+	for _, winnerItem := range winner {
+		winnerRule = append(winnerRule, winnerItem)
+	}
+	var roundRule []interface{}
+	for _, roundItem := range round {
+		roundRule = append(roundRule, roundItem)
+	}
+	var erc721TokenIdRule []interface{}
+	for _, erc721TokenIdItem := range erc721TokenId {
+		erc721TokenIdRule = append(erc721TokenIdRule, erc721TokenIdItem)
+	}
+
+	logs, sub, err := _BusinessLogic.contract.WatchLogs(opts, "EnduranceChampionWinnerEvent", winnerRule, roundRule, erc721TokenIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(BusinessLogicEnduranceChampionWinnerEvent)
+				if err := _BusinessLogic.contract.UnpackLog(event, "EnduranceChampionWinnerEvent", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseEnduranceChampionWinnerEvent is a log parse operation binding the contract event 0x66d485a556beac20ca50777389bdce3389cfd2defb1f2ff2002eb3ddef0fe248.
+//
+// Solidity: event EnduranceChampionWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed erc721TokenId, uint256 erc20TokenAmount, uint256 winnerIndex)
+func (_BusinessLogic *BusinessLogicFilterer) ParseEnduranceChampionWinnerEvent(log types.Log) (*BusinessLogicEnduranceChampionWinnerEvent, error) {
+	event := new(BusinessLogicEnduranceChampionWinnerEvent)
+	if err := _BusinessLogic.contract.UnpackLog(event, "EnduranceChampionWinnerEvent", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -3632,6 +3790,171 @@ func (_BusinessLogic *BusinessLogicFilterer) ParseRaffleNFTWinnerEvent(log types
 	return event, nil
 }
 
+// BusinessLogicStellarSpenderWinnerEventIterator is returned from FilterStellarSpenderWinnerEvent and is used to iterate over the raw logs and unpacked data for StellarSpenderWinnerEvent events raised by the BusinessLogic contract.
+type BusinessLogicStellarSpenderWinnerEventIterator struct {
+	Event *BusinessLogicStellarSpenderWinnerEvent // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *BusinessLogicStellarSpenderWinnerEventIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(BusinessLogicStellarSpenderWinnerEvent)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(BusinessLogicStellarSpenderWinnerEvent)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *BusinessLogicStellarSpenderWinnerEventIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *BusinessLogicStellarSpenderWinnerEventIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// BusinessLogicStellarSpenderWinnerEvent represents a StellarSpenderWinnerEvent event raised by the BusinessLogic contract.
+type BusinessLogicStellarSpenderWinnerEvent struct {
+	Winner           common.Address
+	Round            *big.Int
+	Erc721TokenId    *big.Int
+	Erc20TokenAmount *big.Int
+	TotalSpent       *big.Int
+	WinnerIndex      *big.Int
+	Raw              types.Log // Blockchain specific contextual infos
+}
+
+// FilterStellarSpenderWinnerEvent is a free log retrieval operation binding the contract event 0x9ed6c6c2a8eb75a2ff0acb91b5f70e1d195e4e7b700be3ba3a06b031f8e51713.
+//
+// Solidity: event StellarSpenderWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed erc721TokenId, uint256 erc20TokenAmount, uint256 totalSpent, uint256 winnerIndex)
+func (_BusinessLogic *BusinessLogicFilterer) FilterStellarSpenderWinnerEvent(opts *bind.FilterOpts, winner []common.Address, round []*big.Int, erc721TokenId []*big.Int) (*BusinessLogicStellarSpenderWinnerEventIterator, error) {
+
+	var winnerRule []interface{}
+	for _, winnerItem := range winner {
+		winnerRule = append(winnerRule, winnerItem)
+	}
+	var roundRule []interface{}
+	for _, roundItem := range round {
+		roundRule = append(roundRule, roundItem)
+	}
+	var erc721TokenIdRule []interface{}
+	for _, erc721TokenIdItem := range erc721TokenId {
+		erc721TokenIdRule = append(erc721TokenIdRule, erc721TokenIdItem)
+	}
+
+	logs, sub, err := _BusinessLogic.contract.FilterLogs(opts, "StellarSpenderWinnerEvent", winnerRule, roundRule, erc721TokenIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return &BusinessLogicStellarSpenderWinnerEventIterator{contract: _BusinessLogic.contract, event: "StellarSpenderWinnerEvent", logs: logs, sub: sub}, nil
+}
+
+// WatchStellarSpenderWinnerEvent is a free log subscription operation binding the contract event 0x9ed6c6c2a8eb75a2ff0acb91b5f70e1d195e4e7b700be3ba3a06b031f8e51713.
+//
+// Solidity: event StellarSpenderWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed erc721TokenId, uint256 erc20TokenAmount, uint256 totalSpent, uint256 winnerIndex)
+func (_BusinessLogic *BusinessLogicFilterer) WatchStellarSpenderWinnerEvent(opts *bind.WatchOpts, sink chan<- *BusinessLogicStellarSpenderWinnerEvent, winner []common.Address, round []*big.Int, erc721TokenId []*big.Int) (event.Subscription, error) {
+
+	var winnerRule []interface{}
+	for _, winnerItem := range winner {
+		winnerRule = append(winnerRule, winnerItem)
+	}
+	var roundRule []interface{}
+	for _, roundItem := range round {
+		roundRule = append(roundRule, roundItem)
+	}
+	var erc721TokenIdRule []interface{}
+	for _, erc721TokenIdItem := range erc721TokenId {
+		erc721TokenIdRule = append(erc721TokenIdRule, erc721TokenIdItem)
+	}
+
+	logs, sub, err := _BusinessLogic.contract.WatchLogs(opts, "StellarSpenderWinnerEvent", winnerRule, roundRule, erc721TokenIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(BusinessLogicStellarSpenderWinnerEvent)
+				if err := _BusinessLogic.contract.UnpackLog(event, "StellarSpenderWinnerEvent", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseStellarSpenderWinnerEvent is a log parse operation binding the contract event 0x9ed6c6c2a8eb75a2ff0acb91b5f70e1d195e4e7b700be3ba3a06b031f8e51713.
+//
+// Solidity: event StellarSpenderWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed erc721TokenId, uint256 erc20TokenAmount, uint256 totalSpent, uint256 winnerIndex)
+func (_BusinessLogic *BusinessLogicFilterer) ParseStellarSpenderWinnerEvent(log types.Log) (*BusinessLogicStellarSpenderWinnerEvent, error) {
+	event := new(BusinessLogicStellarSpenderWinnerEvent)
+	if err := _BusinessLogic.contract.UnpackLog(event, "StellarSpenderWinnerEvent", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // BusinessLogicSystemModeChangedIterator is returned from FilterSystemModeChanged and is used to iterate over the raw logs and unpacked data for SystemModeChanged events raised by the BusinessLogic contract.
 type BusinessLogicSystemModeChangedIterator struct {
 	Event *BusinessLogicSystemModeChanged // Event containing the contract specifics and raw log
@@ -3766,173 +4089,10 @@ func (_BusinessLogic *BusinessLogicFilterer) ParseSystemModeChanged(log types.Lo
 	return event, nil
 }
 
-// BusinessLogicTopBidderNFTWinnerEventIterator is returned from FilterTopBidderNFTWinnerEvent and is used to iterate over the raw logs and unpacked data for TopBidderNFTWinnerEvent events raised by the BusinessLogic contract.
-type BusinessLogicTopBidderNFTWinnerEventIterator struct {
-	Event *BusinessLogicTopBidderNFTWinnerEvent // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *BusinessLogicTopBidderNFTWinnerEventIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(BusinessLogicTopBidderNFTWinnerEvent)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(BusinessLogicTopBidderNFTWinnerEvent)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *BusinessLogicTopBidderNFTWinnerEventIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *BusinessLogicTopBidderNFTWinnerEventIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// BusinessLogicTopBidderNFTWinnerEvent represents a TopBidderNFTWinnerEvent event raised by the BusinessLogic contract.
-type BusinessLogicTopBidderNFTWinnerEvent struct {
-	Winner      common.Address
-	Round       *big.Int
-	TokenId     *big.Int
-	WinnerIndex *big.Int
-	Raw         types.Log // Blockchain specific contextual infos
-}
-
-// FilterTopBidderNFTWinnerEvent is a free log retrieval operation binding the contract event 0x0b65f7d96c8d3f545768f7b9d1908ce604558c906d20f556bbe4cee7c11c89dd.
-//
-// Solidity: event TopBidderNFTWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed tokenId, uint256 winnerIndex)
-func (_BusinessLogic *BusinessLogicFilterer) FilterTopBidderNFTWinnerEvent(opts *bind.FilterOpts, winner []common.Address, round []*big.Int, tokenId []*big.Int) (*BusinessLogicTopBidderNFTWinnerEventIterator, error) {
-
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
-	}
-	var roundRule []interface{}
-	for _, roundItem := range round {
-		roundRule = append(roundRule, roundItem)
-	}
-	var tokenIdRule []interface{}
-	for _, tokenIdItem := range tokenId {
-		tokenIdRule = append(tokenIdRule, tokenIdItem)
-	}
-
-	logs, sub, err := _BusinessLogic.contract.FilterLogs(opts, "TopBidderNFTWinnerEvent", winnerRule, roundRule, tokenIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return &BusinessLogicTopBidderNFTWinnerEventIterator{contract: _BusinessLogic.contract, event: "TopBidderNFTWinnerEvent", logs: logs, sub: sub}, nil
-}
-
-// WatchTopBidderNFTWinnerEvent is a free log subscription operation binding the contract event 0x0b65f7d96c8d3f545768f7b9d1908ce604558c906d20f556bbe4cee7c11c89dd.
-//
-// Solidity: event TopBidderNFTWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed tokenId, uint256 winnerIndex)
-func (_BusinessLogic *BusinessLogicFilterer) WatchTopBidderNFTWinnerEvent(opts *bind.WatchOpts, sink chan<- *BusinessLogicTopBidderNFTWinnerEvent, winner []common.Address, round []*big.Int, tokenId []*big.Int) (event.Subscription, error) {
-
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
-	}
-	var roundRule []interface{}
-	for _, roundItem := range round {
-		roundRule = append(roundRule, roundItem)
-	}
-	var tokenIdRule []interface{}
-	for _, tokenIdItem := range tokenId {
-		tokenIdRule = append(tokenIdRule, tokenIdItem)
-	}
-
-	logs, sub, err := _BusinessLogic.contract.WatchLogs(opts, "TopBidderNFTWinnerEvent", winnerRule, roundRule, tokenIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(BusinessLogicTopBidderNFTWinnerEvent)
-				if err := _BusinessLogic.contract.UnpackLog(event, "TopBidderNFTWinnerEvent", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseTopBidderNFTWinnerEvent is a log parse operation binding the contract event 0x0b65f7d96c8d3f545768f7b9d1908ce604558c906d20f556bbe4cee7c11c89dd.
-//
-// Solidity: event TopBidderNFTWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed tokenId, uint256 winnerIndex)
-func (_BusinessLogic *BusinessLogicFilterer) ParseTopBidderNFTWinnerEvent(log types.Log) (*BusinessLogicTopBidderNFTWinnerEvent, error) {
-	event := new(BusinessLogicTopBidderNFTWinnerEvent)
-	if err := _BusinessLogic.contract.UnpackLog(event, "TopBidderNFTWinnerEvent", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
 // CosmicGameMetaData contains all meta data concerning the CosmicGame contract.
 var CosmicGameMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"businessLogicAddr\",\"type\":\"address\"},{\"internalType\":\"bytes4\",\"name\":\"selector\",\"type\":\"bytes4\"}],\"name\":\"CallToBusinessLogicFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"percentageSum\",\"type\":\"uint256\"}],\"name\":\"PercentageValidation\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"systemMode\",\"type\":\"uint256\"}],\"name\":\"SystemMode\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newActivationTime\",\"type\":\"uint256\"}],\"name\":\"ActivationTimeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"lastBidder\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"bidPrice\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"randomWalkNFTId\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"numCSTTokens\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"prizeTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"}],\"name\":\"BidEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newContractAddress\",\"type\":\"address\"}],\"name\":\"BusinessLogicAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newCharity\",\"type\":\"address\"}],\"name\":\"CharityAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newCharityPercentage\",\"type\":\"uint256\"}],\"name\":\"CharityPercentageChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newCosmicSignature\",\"type\":\"address\"}],\"name\":\"CosmicSignatureAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newCosmicToken\",\"type\":\"address\"}],\"name\":\"CosmicTokenAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"nftAddressdonatedNFTs\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"DonatedNFTClaimedEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winnerIndex\",\"type\":\"uint256\"}],\"name\":\"EnduranceNFTWinnerEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newInitialBidAmountFraction\",\"type\":\"uint256\"}],\"name\":\"InitialBidAmountFractionChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newInitialSecondsUntilPrize\",\"type\":\"uint256\"}],\"name\":\"InitialSecondsUntilPrizeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newReward\",\"type\":\"uint256\"}],\"name\":\"LongestBidderTokenRewardChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newReward\",\"type\":\"uint256\"}],\"name\":\"MarketingRewardChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newMarketingWallet\",\"type\":\"address\"}],\"name\":\"MarketingWalletAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newMessageLength\",\"type\":\"uint256\"}],\"name\":\"MaxMessageLengthChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"NFTDonationEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newNanoSecondsExtra\",\"type\":\"uint256\"}],\"name\":\"NanoSecondsExtraChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newNumRaffleETHWinnersBidding\",\"type\":\"uint256\"}],\"name\":\"NumRaffleETHWinnersBiddingChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newNumRaffleNFTWinnersBidding\",\"type\":\"uint256\"}],\"name\":\"NumRaffleNFTWinnersBiddingChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newNumRaffleNFTWinnersStakingRWalk\",\"type\":\"uint256\"}],\"name\":\"NumRaffleNFTWinnersStakingRWalkChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newPriceIncrease\",\"type\":\"uint256\"}],\"name\":\"PriceIncreaseChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"prizeNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"PrizeClaimEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newPrizePercentage\",\"type\":\"uint256\"}],\"name\":\"PrizePercentageChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winnerIndex\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RaffleETHWinnerEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winnerIndex\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"isStaker\",\"type\":\"bool\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"isRWalk\",\"type\":\"bool\"}],\"name\":\"RaffleNFTWinnerEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newRafflePercentage\",\"type\":\"uint256\"}],\"name\":\"RafflePercentageChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newRaffleWallet\",\"type\":\"address\"}],\"name\":\"RaffleWalletAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newRandomWalk\",\"type\":\"address\"}],\"name\":\"RandomWalkAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newAuctionLength\",\"type\":\"uint256\"}],\"name\":\"RoundStartCSTAuctionLengthChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newStakingPercentage\",\"type\":\"uint256\"}],\"name\":\"StakingPercentageChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newStakingWalletCST\",\"type\":\"address\"}],\"name\":\"StakingWalletCSTAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newStakingWalletRWalk\",\"type\":\"address\"}],\"name\":\"StakingWalletRWalkAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newSystemMode\",\"type\":\"uint256\"}],\"name\":\"SystemModeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newTimeIncrease\",\"type\":\"uint256\"}],\"name\":\"TimeIncreaseChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newTimeout\",\"type\":\"uint256\"}],\"name\":\"TimeoutClaimPrizeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newReward\",\"type\":\"uint256\"}],\"name\":\"TokenRewardChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winnerIndex\",\"type\":\"uint256\"}],\"name\":\"TopBidderNFTWinnerEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newReward\",\"type\":\"uint256\"}],\"name\":\"TopBidderTokenRewardChanged\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"CSTAuctionLength\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"RoundStartCSTAuctionLength\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"activationTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"auctionDuration\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bLogic\",\"outputs\":[{\"internalType\":\"contractBusinessLogic\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_data\",\"type\":\"bytes\"}],\"name\":\"bid\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_param_data\",\"type\":\"bytes\"},{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"bidAndDonateNFT\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bidPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"bidStats\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"bidPricePaidEth\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"bidPricePaidCST\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"bidCount\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"bidTime\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"}],\"name\":\"bidWithCST\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_round\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_positionFromEnd\",\"type\":\"uint256\"}],\"name\":\"bidderAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charity\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charityAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charityPercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"claimDonatedNFT\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"tokens\",\"type\":\"uint256[]\"}],\"name\":\"claimManyDonatedNFTs\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claimPrize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"currentCSTPrice\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"currentLongestBidder\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"donate\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"donatedNFTs\",\"outputs\":[{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"claimed\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"extraStorage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getBidPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"initialBidAmountFraction\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"initialSecondsUntilPrize\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastBidType\",\"outputs\":[{\"internalType\":\"enumCosmicGameConstants.BidType\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastBidder\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastCSTBidTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"longestBidderAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"longestBidderTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"longestBidderTokenReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"_sig\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"_encoded_params\",\"type\":\"bytes\"}],\"name\":\"maintenanceProxyCall\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"marketingReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"marketingWallet\",\"outputs\":[{\"internalType\":\"contractMarketingWallet\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxMessageLength\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nanoSecondsExtra\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nft\",\"outputs\":[{\"internalType\":\"contractCosmicSignature\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numDonatedNFTs\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleETHWinnersBidding\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleNFTWinnersBidding\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleNFTWinnersStakingRWalk\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"numRaffleParticipants\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"onERC721Received\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prepareMaintenance\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prevBidderAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prevBidderStartTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"priceIncrease\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizeAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizePercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizeTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"_sig\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"_encoded_params\",\"type\":\"bytes\"}],\"name\":\"proxyCall\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleEntropy\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"raffleParticipants\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rafflePercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleWallet\",\"outputs\":[{\"internalType\":\"contractRaffleWallet\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"randomWalk\",\"outputs\":[{\"internalType\":\"contractRandomWalkNFT\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"roundNum\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newActivationTime\",\"type\":\"uint256\"}],\"name\":\"setActivationTime\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setBusinessLogicContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setCharity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newCharityPercentage\",\"type\":\"uint256\"}],\"name\":\"setCharityPercentage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newInitialSecondsUntilPrize\",\"type\":\"uint256\"}],\"name\":\"setInitialSecondsUntilPrize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newTokenReward\",\"type\":\"uint256\"}],\"name\":\"setLongestBidderTokenReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newMarketingReward\",\"type\":\"uint256\"}],\"name\":\"setMarketingReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setMarketingWallet\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newMaxMessageLength\",\"type\":\"uint256\"}],\"name\":\"setMaxMessageLength\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newNanoSecondsExtra\",\"type\":\"uint256\"}],\"name\":\"setNanoSecondsExtra\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setNftContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newNumRaffleETHWinnersBidding\",\"type\":\"uint256\"}],\"name\":\"setNumRaffleETHWinnersBidding\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newNumRaffleNFTWinnersBidding\",\"type\":\"uint256\"}],\"name\":\"setNumRaffleNFTWinnersBidding\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newNumRaffleNFTWinnersStakingRWalk\",\"type\":\"uint256\"}],\"name\":\"setNumRaffleNFTWinnersStakingRWalk\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newPriceIncrease\",\"type\":\"uint256\"}],\"name\":\"setPriceIncrease\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newPrizePercentage\",\"type\":\"uint256\"}],\"name\":\"setPrizePercentage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newRafflePercentage\",\"type\":\"uint256\"}],\"name\":\"setRafflePercentage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setRaffleWallet\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setRandomWalk\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newAuctionLength\",\"type\":\"uint256\"}],\"name\":\"setRoundStartCSTAuctionLength\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"setRuntimeMode\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newStakingPercentage\",\"type\":\"uint256\"}],\"name\":\"setStakingPercentage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setStakingWalletCST\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setStakingWalletRWalk\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newTimeIncrease\",\"type\":\"uint256\"}],\"name\":\"setTimeIncrease\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newTimeout\",\"type\":\"uint256\"}],\"name\":\"setTimeoutClaimPrize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setTokenContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newTokenReward\",\"type\":\"uint256\"}],\"name\":\"setTokenReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newTokenReward\",\"type\":\"uint256\"}],\"name\":\"setTopBidderTokenReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakingAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakingPercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakingWalletCST\",\"outputs\":[{\"internalType\":\"contractStakingWalletCST\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakingWalletRWalk\",\"outputs\":[{\"internalType\":\"contractStakingWalletRWalk\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"startingBidPriceCST\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"systemMode\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeIncrease\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeUntilActivation\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeUntilPrize\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeoutClaimPrize\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"token\",\"outputs\":[{\"internalType\":\"contractCosmicToken\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"tokenReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"topBidderAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"topBidderNumBids\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"topBidderTokenReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newInitialBidAmountFraction\",\"type\":\"uint256\"}],\"name\":\"updateInitialBidAmountFraction\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"usedRandomWalkNFTs\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"winners\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
-	Bin: "0x60806040523461002757610011610766565b61001961002c565b615fed610a988239615fed90f35b610032565b60405190565b5f80fd5b5f1b90565b906100475f1991610036565b9181191691161790565b90565b90565b90565b61006e61006961007392610051565b610057565b610054565b90565b90565b9061008e6100896100959261005a565b610076565b825461003b565b9055565b90565b6100b06100ab6100b592610099565b610057565b610054565b90565b906100cd6100c86100d49261009c565b610076565b825461003b565b9055565b90565b6100ef6100ea6100f4926100d8565b610057565b610054565b90565b9061010c610107610113926100db565b610076565b825461003b565b9055565b90565b61012e61012961013392610117565b610057565b610054565b90565b9061014b6101466101529261011a565b610076565b825461003b565b9055565b90565b61016d61016861017292610156565b610057565b610054565b90565b9061018a61018561019192610159565b610076565b825461003b565b9055565b90565b6101ac6101a76101b192610195565b610057565b610054565b90565b906101c96101c46101d092610198565b610076565b825461003b565b9055565b90565b6101eb6101e66101f0926101d4565b610057565b610054565b90565b9061020861020361020f926101d7565b610076565b825461003b565b9055565b60018060a01b031690565b61023261022d61023792610051565b610057565b610213565b90565b6102439061021e565b90565b9061025760018060a01b0391610036565b9181191691161790565b61027561027061027a92610213565b610057565b610213565b90565b61028690610261565b90565b6102929061027d565b90565b90565b906102ad6102a86102b492610289565b610295565b8254610246565b9055565b90565b6102cf6102ca6102d4926102b8565b610057565b610054565b90565b906102ec6102e76102f3926102bb565b610076565b825461003b565b9055565b5f1c90565b90565b61030b610310916102f7565b6102fc565b90565b61031d90546102ff565b90565b61033461032f61033992610054565b610057565b610054565b90565b9061035161034c61035892610320565b610076565b825461003b565b9055565b90565b61037361036e6103789261035c565b610057565b610054565b90565b61038661a8c061035f565b90565b90565b6103a061039b6103a592610389565b610057565b610054565b90565b906103bd6103b86103c49261038c565b610076565b825461003b565b9055565b90565b6103df6103da6103e4926103c8565b610057565b610054565b90565b906103fc6103f7610403926103cb565b610076565b825461003b565b9055565b90565b61041e61041961042392610407565b610057565b610054565b90565b9061043b6104366104429261040a565b610076565b825461003b565b9055565b90565b61045d61045861046292610446565b610057565b610054565b90565b9061047a61047561048192610449565b610076565b825461003b565b9055565b90565b61049c6104976104a192610485565b610057565b610054565b90565b906104b96104b46104c092610488565b610076565b825461003b565b9055565b90565b6104db6104d66104e0926104c4565b610057565b610054565b90565b906104f86104f36104ff926104c7565b610076565b825461003b565b9055565b61051568056bc75e2d631000006100db565b90565b90565b61052f61052a61053492610518565b610057565b610054565b90565b610549683635c9adc5dea0000061051b565b90565b61055e683635c9adc5dea0000061051b565b90565b90565b61057861057361057d92610561565b610057565b610054565b90565b61059167d02ab486cedc0000610564565b90565b90565b6105ab6105a66105b092610594565b610057565b610054565b90565b6105be610118610597565b90565b90565b6105d86105d36105dd926105c1565b610057565b610054565b90565b6105ea60026105c4565b90565b90565b6106046105ff610609926105ed565b610057565b610054565b90565b634e487b7160e01b5f52601160045260245ffd5b61062f61063591939293610054565b92610054565b820391821161064057565b61060c565b60209181520190565b5f7f436f736d6963205369676e617475726520323032330000000000000000000000910152565b6106826015602092610645565b61068b8161064e565b0190565b61069890610054565b9052565b90565b6106a89061069c565b9052565b9160406106dd9294936106d66106cb606083018381035f850152610675565b96602083019061068f565b019061069f565b565b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b90610707906106df565b810190811060018060401b0382111761071f57604052565b6106e9565b60200190565b5190565b6107379061069c565b90565b610743906102f7565b90565b9061075b6107566107629261072e565b61073a565b825461003b565b9055565b61076e6109da565b6107795f600a610079565b61078b66038d7ea4c68000600b6100b8565b61079f68056bc75e2d63100000600c6100f7565b6107b065034630b8a000600d610136565b6107be620f42a4600e610175565b6107cc620f6950600f6101b4565b6107d96101f460106101f3565b6107ec6107e55f61023a565b6011610298565b6107fa6201518060136102d7565b6108086201518060156102d7565b61081c610815602d610313565b601861033c565b61082e61082761037b565b601961033c565b61084061083961037b565b601a61033c565b61084b5f601c610079565b61085e6108575f61023a565b601d610298565b6108695f601e610079565b61087c6108755f61023a565b601f610298565b6108875f6020610079565b61089a6108935f61023a565b6021610298565b6108a6601960226103a8565b6108b2600a60236103e7565b6108be60056024610426565b6108ca600a60256103e7565b6108d660036027610465565b6108e260056028610426565b6108ee600460296104a4565b6108fd63657a4580602d6104e3565b61090f610908610503565b602e61033c565b61092161091a610537565b602f61033c565b61093361092c61054c565b603061033c565b61094561093e610580565b603161033c565b6109576109506105b3565b603261033c565b6109696109626105e0565b603361033c565b6109c6426109ac6109844361097e60016105f0565b90610620565b409161099d61099161002c565b938492602084016106ac565b602082018103825203826106fd565b6109be6109b88261072a565b91610724565b20602a610746565b6109d86109d16109fa565b6009610298565b565b6109e26109e4565b565b6109f46109ef6109fa565b610a38565b565b5f90565b610a026109f6565b503390565b60018060a01b031690565b610a1e610a23916102f7565b610a07565b90565b610a309054610a12565b90565b5f0190565b610a415f610a26565b610a4b825f610298565b90610a7f610a797f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093610289565b91610289565b91610a8861002c565b80610a9281610a33565b0390a356fe6080604052600436101561001d575b36612d7c5761001b615ed4565b005b6100275f356106e6565b8063019d354a146106e1578063031e7431146106dc578063043a7d27146106d757806305ab18aa146106d257806305ba9b67146106cd578063062fb100146106c85780630b71a4d0146106c35780630c201838146106be5780630cbf54c8146106b95780630e38c32b146106b45780630f055be4146106af578063119b22b3146106aa57806311dc7335146106a5578063150b7a02146106a057806319afe4731461069b5780631d1d4e29146106965780631e42fa1d146106915780631e67055f1461068c57806320a602731461068757806326663278146106825780632aab32231461067d57806331e375301461067857806332d382cd14610673578063355f01e21461066e5780633703dbc8146106695780633b5fa8e3146106645780633f7909d41461065f57806340e023221461065a57806347ccca02146106555780634ac3a395146106505780634b69abc11461064b5780634fe01d381461064657806350a42225146106415780635111a2d61461063c578063519645881461063757806352f5ad77146106325780635312e2a11461062d57806356c96eb7146106285780635d098b38146106235780635e6e47aa1461061e5780635e74140c146106195780636326e5831461061457806367f3e4a51461060f5780636e66f6e91461060a57806370740ac914610605578063715018a614610600578063739a3e02146105fb57806375f0a874146105f6578063785fa627146105f1578063799d431d146105ec5780637a9c1626146105e75780637c5486a2146105e257806380de163d146105dd57806381e1ccba146105d85780638547af30146105d35780638567ab17146105ce57806386e378c9146105c95780638b122274146105c45780638b1329e0146105bf5780638da5cb5b146105ba5780638fffdf34146105b55780639136d6d9146105b057806391daa9a9146105ab5780639250c33c146105a6578063934aa023146105a1578063966beb5e1461059c5780639c11bc30146105975780639c235a6814610592578063a2fb11751461058d578063a672f6e114610588578063a6f9cc1514610583578063ae3661fd1461057e578063ae96c0f214610579578063b101e9fd14610574578063b1ddd82a1461056f578063b2fd10b21461056a578063b635176a14610565578063b801b8b214610560578063ba35b1b01461055b578063bbcd5bbe14610556578063c3e77a3714610551578063c62af7df1461054c578063c709bf2814610547578063c7c8378d14610542578063c94028c21461053d578063cb819dc014610538578063d59760c514610533578063d59d74781461052e578063d6e1741714610529578063d8c5a5a014610524578063d94d03161461051f578063da4493f61461051a578063da63990b14610515578063dbc945c014610510578063dbf8a28a1461050b578063e2a8818214610506578063e4c762f214610501578063ec34866d146104fc578063ed083398146104f7578063ed421f41146104f2578063ed88c68e146104ed578063f2fde38b146104e8578063f45ea666146104e3578063f7178822146104de578063f8c34050146104d9578063fb6f71a3146104d4578063fc0c546a146104cf5763fd1ff7e20361000e57612d47565b612d03565b612c62565b612c2d565b612be9565b612bb6565b612b83565b612b5a565b612b25565b612ad7565b612a93565b612a5a565b6128ac565b61286a565b612835565b612800565b612732565b6126ee565b6126ac565b612673565b612520565b6124eb565b612487565b612443565b612410565b6123db565b612399565b612366565b612333565b612300565b61220b565b6121c7565b612183565b61213e565b6120d1565b61209c565b612060565b611fa8565b611f75565b611f40565b611ede565b611eab565b611e76565b611e32565b611dee565b611daa565b611d07565b611cc3565b611c7f565b611c4a565b611c17565b611be2565b611b0f565b611a6c565b611a28565b6119e4565b611954565b61191f565b6118aa565b611866565b611831565b61178e565b61175b565b611728565b6116f3565b6116af565b61166d565b611638565b611597565b611564565b61152f565b6114fc565b6114c9565b611496565b611461565b6113be565b61137c565b611349565b611316565b6112e1565b61123e565b6111fc565b6110a9565b611065565b611021565b610fdd565b610f1a565b610eaf565b610e6d565b610e38565b610df3565b610d55565b610d11565b610ccd565b610c85565b610b77565b610b33565b610af1565b610abe565b610a89565b6109e8565b610970565b61090d565b610882565b61084d565b6107bc565b61077a565b610747565b60e01c90565b60405190565b5f80fd5b5f80fd5b5f80fd5b90565b61070a816106fe565b0361071157565b5f80fd5b9050359061072282610701565b565b9060208282031261073d5761073a915f01610715565b90565b6106f6565b5f0190565b346107755761075f61075a366004610724565b613054565b6107676106ec565b8061077181610742565b0390f35b6106f2565b346107a85761079261078d366004610724565b613123565b61079a6106ec565b806107a481610742565b0390f35b6106f2565b5f9103126107b757565b6106f6565b346107ea576107cc3660046107ad565b6107d4613223565b6107dc6106ec565b806107e681610742565b0390f35b6106f2565b1c90565b90565b61080690600861080b93026107ef565b6107f3565b90565b9061081991546107f6565b90565b61082860205f9061080e565b90565b610834906106fe565b9052565b919061084b905f6020850194019061082b565b565b3461087d5761085d3660046107ad565b61087961086861081c565b6108706106ec565b91829182610838565b0390f35b6106f2565b346108b05761089a610895366004610724565b6132f1565b6108a26106ec565b806108ac81610742565b0390f35b6106f2565b60018060a01b031690565b6108c9906108b5565b90565b6108d5816108c0565b036108dc57565b5f80fd5b905035906108ed826108cc565b565b9060208282031261090857610905915f016108e0565b90565b6106f6565b3461093b576109256109203660046108ef565b6134f0565b61092d6106ec565b8061093781610742565b0390f35b6106f2565b610949906108c0565b9052565b91602061096e92949361096760408201965f830190610940565b019061082b565b565b346109a1576109803660046107ad565b61098861355d565b9061099d6109946106ec565b9283928361094d565b0390f35b6106f2565b91906040838203126109ce57806109c26109cb925f8601610715565b93602001610715565b90565b6106f6565b91906109e6905f60208501940190610940565b565b34610a1957610a15610a046109fe3660046109a6565b90613710565b610a0c6106ec565b918291826109d3565b0390f35b6106f2565b5190565b60209181520190565b90825f9392825e0152565b601f801991011690565b610a5f610a68602093610a6d93610a5681610a1e565b93848093610a22565b95869101610a2b565b610a36565b0190565b610a869160208201915f818403910152610a40565b90565b34610ab957610a993660046107ad565b610ab5610aa461385a565b610aac6106ec565b91829182610a71565b0390f35b6106f2565b34610aec57610ad6610ad1366004610724565b613b08565b610ade6106ec565b80610ae881610742565b0390f35b6106f2565b34610b1f57610b09610b043660046108ef565b613c41565b610b116106ec565b80610b1b81610742565b0390f35b6106f2565b610b30600a5f9061080e565b90565b34610b6357610b433660046107ad565b610b5f610b4e610b24565b610b566106ec565b91829182610838565b0390f35b6106f2565b610b7460225f9061080e565b90565b34610ba757610b873660046107ad565b610ba3610b92610b68565b610b9a6106ec565b91829182610838565b0390f35b6106f2565b5f80fd5b5f80fd5b5f80fd5b909182601f83011215610bf25781359167ffffffffffffffff8311610bed576020019260018302840111610be857565b610bb4565b610bb0565b610bac565b90608082820312610c5257610c0e815f84016108e0565b92610c1c82602085016108e0565b92610c2a8360408301610715565b92606082013567ffffffffffffffff8111610c4d57610c499201610bb8565b9091565b6106fa565b6106f6565b63ffffffff60e01b1690565b610c6c90610c57565b9052565b9190610c83905f60208501940190610c63565b565b34610cb957610cb5610ca4610c9b366004610bf7565b93929092613c7e565b610cac6106ec565b91829182610c70565b0390f35b6106f2565b610cca600b5f9061080e565b90565b34610cfd57610cdd3660046107ad565b610cf9610ce8610cbe565b610cf06106ec565b91829182610838565b0390f35b6106f2565b610d0e60325f9061080e565b90565b34610d4157610d213660046107ad565b610d3d610d2c610d02565b610d346106ec565b91829182610838565b0390f35b6106f2565b610d5260305f9061080e565b90565b34610d8557610d653660046107ad565b610d81610d70610d46565b610d786106ec565b91829182610838565b0390f35b6106f2565b610d9381610c57565b03610d9a57565b5f80fd5b90503590610dab82610d8a565b565b919091604081840312610dee57610dc6835f8301610d9e565b92602082013567ffffffffffffffff8111610de957610de59201610bb8565b9091565b6106fa565b6106f6565b34610e2457610e20610e0f610e09366004610dad565b91613d2f565b610e176106ec565b91829182610a71565b0390f35b6106f2565b610e3560335f9061080e565b90565b34610e6857610e483660046107ad565b610e64610e53610e29565b610e5b6106ec565b91829182610838565b0390f35b6106f2565b34610e9b57610e85610e80366004610724565b613eaf565b610e8d6106ec565b80610e9781610742565b0390f35b6106f2565b610eac602c5f9061080e565b90565b34610edf57610ebf3660046107ad565b610edb610eca610ea0565b610ed26106ec565b91829182610838565b0390f35b6106f2565b90602082820312610f15575f82013567ffffffffffffffff8111610f1057610f0c9201610bb8565b9091565b6106fa565b6106f6565b610f2e610f28366004610ee4565b90613eba565b610f366106ec565b80610f4081610742565b0390f35b60018060a01b031690565b610f5f906008610f6493026107ef565b610f44565b90565b90610f729154610f4f565b90565b610f8160055f90610f67565b90565b90565b610f9b610f96610fa0926108b5565b610f84565b6108b5565b90565b610fac90610f87565b90565b610fb890610fa3565b90565b610fc490610faf565b9052565b9190610fdb905f60208501940190610fbb565b565b3461100d57610fed3660046107ad565b611009610ff8610f75565b6110006106ec565b91829182610fc8565b0390f35b6106f2565b61101e60155f9061080e565b90565b34611051576110313660046107ad565b61104d61103c611012565b6110446106ec565b91829182610838565b0390f35b6106f2565b61106260275f9061080e565b90565b34611095576110753660046107ad565b611091611080611056565b6110886106ec565b91829182610838565b0390f35b6106f2565b6110a660195f9061080e565b90565b346110d9576110b93660046107ad565b6110d56110c461109a565b6110cc6106ec565b91829182610838565b0390f35b6106f2565b634e487b7160e01b5f52604160045260245ffd5b906110fc90610a36565b810190811067ffffffffffffffff82111761111657604052565b6110de565b9061112e6111276106ec565b92836110f2565b565b67ffffffffffffffff81116111485760208091020190565b6110de565b9092919261116261115d82611130565b61111b565b938185526020808601920283019281841161119f57915b8383106111865750505050565b602080916111948486610715565b815201920191611179565b610bb4565b9080601f830112156111c2578160206111bf9335910161114d565b90565b610bac565b906020828203126111f7575f82013567ffffffffffffffff81116111f2576111ef92016111a4565b90565b6106fa565b6106f6565b3461122a5761121461120f3660046111c7565b613fd3565b61121c6106ec565b8061122681610742565b0390f35b6106f2565b61123b60105f9061080e565b90565b3461126e5761124e3660046107ad565b61126a61125961122f565b6112616106ec565b91829182610838565b0390f35b6106f2565b60018060a01b031690565b61128e90600861129393026107ef565b611273565b90565b906112a1915461127e565b90565b6112b060025f90611296565b90565b6112bc90610fa3565b90565b6112c8906112b3565b9052565b91906112df905f602085019401906112bf565b565b34611311576112f13660046107ad565b61130d6112fc6112a4565b6113046106ec565b918291826112cc565b0390f35b6106f2565b346113445761132e611329366004610724565b614110565b6113366106ec565b8061134081610742565b0390f35b6106f2565b346113775761136161135c366004610724565b6141df565b6113696106ec565b8061137381610742565b0390f35b6106f2565b346113aa5761139461138f366004610724565b6142ae565b61139c6106ec565b806113a681610742565b0390f35b6106f2565b6113bb602f5f9061080e565b90565b346113ee576113ce3660046107ad565b6113ea6113d96113af565b6113e16106ec565b91829182610838565b0390f35b6106f2565b60018060a01b031690565b61140e90600861141393026107ef565b6113f3565b90565b9061142191546113fe565b90565b61143060015f90611416565b90565b61143c90610fa3565b90565b61144890611433565b9052565b919061145f905f6020850194019061143f565b565b34611491576114713660046107ad565b61148d61147c611424565b6114846106ec565b9182918261144c565b0390f35b6106f2565b346114c4576114ae6114a9366004610724565b61437d565b6114b66106ec565b806114c081610742565b0390f35b6106f2565b346114f7576114e16114dc3660046108ef565b6144b6565b6114e96106ec565b806114f381610742565b0390f35b6106f2565b3461152a5761151461150f366004610724565b614585565b61151c6106ec565b8061152681610742565b0390f35b6106f2565b3461155f5761153f3660046107ad565b61155b61154a614590565b6115526106ec565b91829182610a71565b0390f35b6106f2565b346115925761157c6115773660046108ef565b61474a565b6115846106ec565b8061158e81610742565b0390f35b6106f2565b346115c5576115af6115aa366004610724565b614879565b6115b76106ec565b806115c181610742565b0390f35b6106f2565b60018060a01b031690565b6115e59060086115ea93026107ef565b6115ca565b90565b906115f891546115d5565b90565b61160760075f906115ed565b90565b61161390610fa3565b90565b61161f9061160a565b9052565b9190611636905f60208501940190611616565b565b34611668576116483660046107ad565b6116646116536115fb565b61165b6106ec565b91829182611623565b0390f35b6106f2565b3461169b57611685611680366004610724565b614948565b61168d6106ec565b8061169781610742565b0390f35b6106f2565b6116ac600c5f9061080e565b90565b346116df576116bf3660046107ad565b6116db6116ca6116a0565b6116d26106ec565b91829182610838565b0390f35b6106f2565b6116f0602e5f9061080e565b90565b34611723576117033660046107ad565b61171f61170e6116e4565b6117166106ec565b91829182610838565b0390f35b6106f2565b34611756576117383660046107ad565b611740614953565b6117486106ec565b8061175281610742565b0390f35b6106f2565b346117895761176b3660046107ad565b611773614a11565b61177b6106ec565b8061178581610742565b0390f35b6106f2565b346117be5761179e3660046107ad565b6117ba6117a9614a86565b6117b16106ec565b91829182610838565b0390f35b6106f2565b60018060a01b031690565b6117de9060086117e393026107ef565b6117c3565b90565b906117f191546117ce565b90565b61180060085f906117e6565b90565b61180c90610fa3565b90565b61181890611803565b9052565b919061182f905f6020850194019061180f565b565b34611861576118413660046107ad565b61185d61184c6117f4565b6118546106ec565b9182918261181c565b0390f35b6106f2565b34611896576118763660046107ad565b611892611881614ac2565b6118896106ec565b91829182610838565b0390f35b6106f2565b6118a760235f9061080e565b90565b346118da576118ba3660046107ad565b6118d66118c561189b565b6118cd6106ec565b91829182610838565b0390f35b6106f2565b60018060a01b031690565b6118fa9060086118ff93026107ef565b6118df565b90565b9061190d91546118ea565b90565b61191c601d5f90611902565b90565b3461194f5761192f3660046107ad565b61194b61193a611910565b6119426106ec565b918291826109d3565b0390f35b6106f2565b346119825761196c611967366004610724565b614bd6565b6119746106ec565b8061197e81610742565b0390f35b6106f2565b90565b61199a90600861199f93026107ef565b611987565b90565b906119ad915461198a565b90565b6119bc602a5f906119a2565b90565b90565b6119cb906119bf565b9052565b91906119e2905f602085019401906119c2565b565b34611a14576119f43660046107ad565b611a106119ff6119b0565b611a076106ec565b918291826119cf565b0390f35b6106f2565b611a2560255f9061080e565b90565b34611a5857611a383660046107ad565b611a54611a43611a19565b611a4b6106ec565b91829182610838565b0390f35b6106f2565b611a6960115f90611902565b90565b34611a9c57611a7c3660046107ad565b611a98611a87611a5d565b611a8f6106ec565b918291826109d3565b0390f35b6106f2565b60018060a01b031690565b611abc906008611ac193026107ef565b611aa1565b90565b90611acf9154611aac565b90565b611ade60045f90611ac4565b90565b611aea90610fa3565b90565b611af690611ae1565b9052565b9190611b0d905f60208501940190611aed565b565b34611b3f57611b1f3660046107ad565b611b3b611b2a611ad2565b611b326106ec565b91829182611afa565b0390f35b6106f2565b611b58611b53611b5d926106fe565b610f84565b6106fe565b90565b90611b6a90611b44565b5f5260205260405f2090565b60ff1690565b611b8c906008611b9193026107ef565b611b76565b90565b90611b9f9154611b7c565b90565b611bb890611bb36012915f92611b60565b611b94565b90565b151590565b611bc990611bbb565b9052565b9190611be0905f60208501940190611bc0565b565b34611c1257611c0e611bfd611bf8366004610724565b611ba2565b611c056106ec565b91829182611bcd565b0390f35b6106f2565b34611c4557611c2f611c2a366004610724565b614ca5565b611c376106ec565b80611c4181610742565b0390f35b6106f2565b34611c7a57611c5a3660046107ad565b611c76611c65614cb0565b611c6d6106ec565b91829182610838565b0390f35b6106f2565b34611caf57611c8f3660046107ad565b611cab611c9a614cfd565b611ca26106ec565b918291826109d3565b0390f35b6106f2565b611cc060285f9061080e565b90565b34611cf357611cd33660046107ad565b611cef611cde611cb4565b611ce66106ec565b91829182610838565b0390f35b6106f2565b611d04600d5f9061080e565b90565b34611d3757611d173660046107ad565b611d33611d22611cf8565b611d2a6106ec565b91829182610838565b0390f35b6106f2565b60018060a01b031690565b611d57906008611d5c93026107ef565b611d3c565b90565b90611d6a9154611d47565b90565b611d7960065f90611d5f565b90565b611d8590610fa3565b90565b611d9190611d7c565b9052565b9190611da8905f60208501940190611d88565b565b34611dda57611dba3660046107ad565b611dd6611dc5611d6d565b611dcd6106ec565b91829182611d95565b0390f35b6106f2565b611deb60245f9061080e565b90565b34611e1e57611dfe3660046107ad565b611e1a611e09611ddf565b611e116106ec565b91829182610838565b0390f35b6106f2565b611e2f60095f90611902565b90565b34611e6257611e423660046107ad565b611e5e611e4d611e23565b611e556106ec565b918291826109d3565b0390f35b6106f2565b611e73601f5f90611902565b90565b34611ea657611e863660046107ad565b611ea2611e91611e67565b611e996106ec565b918291826109d3565b0390f35b6106f2565b34611ed957611ec3611ebe366004610724565b614dd6565b611ecb6106ec565b80611ed581610742565b0390f35b6106f2565b34611f0c57611ef6611ef13660046108ef565b614f0f565b611efe6106ec565b80611f0881610742565b0390f35b6106f2565b90611f1b90611b44565b5f5260205260405f2090565b611f3d90611f386026915f92611f11565b611902565b90565b34611f7057611f6c611f5b611f56366004610724565b611f27565b611f636106ec565b918291826109d3565b0390f35b6106f2565b34611fa357611f8d611f88366004610724565b614fde565b611f956106ec565b80611f9f81610742565b0390f35b6106f2565b34611fd657611fc0611fbb3660046108ef565b615117565b611fc86106ec565b80611fd281610742565b0390f35b6106f2565b611fe4906108c0565b90565b611ff081611fdb565b03611ff757565b5f80fd5b9050359061200882611fe7565b565b91909160608184031261205b575f8101359167ffffffffffffffff83116120565761203a84612053948401610bb8565b93909461204a8160208601611ffb565b93604001610715565b90565b6106fa565b6106f6565b61207761206e36600461200a565b92919091615157565b61207f6106ec565b8061208981610742565b0390f35b612099601c5f9061080e565b90565b346120cc576120ac3660046107ad565b6120c86120b761208d565b6120bf6106ec565b91829182610838565b0390f35b6106f2565b34612102576120fe6120ed6120e7366004610dad565b916151d7565b6120f56106ec565b91829182610a71565b0390f35b6106f2565b9061211190611b44565b5f5260205260405f2090565b61213661213b926121316016935f94612107565b611f11565b611902565b90565b3461216f5761216b61215a6121543660046109a6565b9061211d565b6121626106ec565b918291826109d3565b0390f35b6106f2565b612180601a5f9061080e565b90565b346121b3576121933660046107ad565b6121af61219e612174565b6121a66106ec565b91829182610838565b0390f35b6106f2565b6121c460295f9061080e565b90565b346121f7576121d73660046107ad565b6121f36121e26121b8565b6121ea6106ec565b91829182610838565b0390f35b6106f2565b61220860315f9061080e565b90565b3461223b5761221b3660046107ad565b6122376122266121fc565b61222e6106ec565b91829182610838565b0390f35b6106f2565b5f80fd5b67ffffffffffffffff81116122625761225e602091610a36565b0190565b6110de565b90825f939282370152565b9092919261228761228282612244565b61111b565b938185526020850190828401116122a3576122a192612267565b565b612240565b9080601f830112156122c6578160206122c393359101612272565b90565b610bac565b906020828203126122fb575f82013567ffffffffffffffff81116122f6576122f392016122a8565b90565b6106fa565b6106f6565b3461232e576123186123133660046122cb565b6152ab565b6123206106ec565b8061232a81610742565b0390f35b6106f2565b346123615761234b6123463660046108ef565b615452565b6123536106ec565b8061235d81610742565b0390f35b6106f2565b346123945761237e612379366004610724565b615517565b6123866106ec565b8061239081610742565b0390f35b6106f2565b346123c7576123b16123ac3660046108ef565b615650565b6123b96106ec565b806123c381610742565b0390f35b6106f2565b6123d860185f9061080e565b90565b3461240b576123eb3660046107ad565b6124076123f66123cc565b6123fe6106ec565b91829182610838565b0390f35b6106f2565b3461243e57612428612423366004610724565b61577f565b6124306106ec565b8061243a81610742565b0390f35b6106f2565b34612473576124533660046107ad565b61246f61245e61578a565b6124666106ec565b91829182610838565b0390f35b6106f2565b61248460145f9061080e565b90565b346124b7576124973660046107ad565b6124b36124a2612478565b6124aa6106ec565b91829182610838565b0390f35b6106f2565b906124c690611b44565b5f5260205260405f2090565b6124e8906124e36017915f926124bc565b61080e565b90565b3461251b57612517612506612501366004610724565b6124d2565b61250e6106ec565b91829182610838565b0390f35b6106f2565b3461254e57612538612533366004610724565b6157c6565b6125406106ec565b8061254a81610742565b0390f35b6106f2565b9061255d90611b44565b5f5260205260405f2090565b5f1c90565b60018060a01b031690565b61258561258a91612569565b61256e565b90565b6125979054612579565b90565b6125a66125ab91612569565b6107f3565b90565b6125b8905461259a565b90565b6125c76125cc91612569565b611b76565b90565b6125d990546125bb565b90565b6125e790602b612553565b906125f35f830161258d565b91612600600182016125ae565b916126196003612612600285016125ae565b93016125cf565b90565b61262590610fa3565b90565b6126319061261c565b9052565b61266a61267194612660606094989795612656608086019a5f870190612628565b602085019061082b565b604083019061082b565b0190611bc0565b565b346126a7576126a361268e612689366004610724565b6125dc565b9061269a9492946106ec565b94859485612635565b0390f35b6106f2565b346126da576126bc3660046107ad565b6126c4615935565b6126cc6106ec565b806126d681610742565b0390f35b6106f2565b6126eb600e5f9061080e565b90565b3461271e576126fe3660046107ad565b61271a6127096126df565b6127116106ec565b91829182610838565b0390f35b6106f2565b61272f602d5f9061080e565b90565b34612762576127423660046107ad565b61275e61274d612723565b6127556106ec565b91829182610838565b0390f35b6106f2565b60ff1690565b61277d90600861278293026107ef565b612767565b90565b90612790915461276d565b90565b6127a06011601490612785565b90565b634e487b7160e01b5f52602160045260245ffd5b600311156127c157565b6127a3565b906127d0826127b7565b565b6127db906127c6565b90565b6127e7906127d2565b9052565b91906127fe905f602085019401906127de565b565b34612830576128103660046107ad565b61282c61281b612793565b6128236106ec565b918291826127eb565b0390f35b6106f2565b34612865576128453660046107ad565b61286161285061593f565b6128586106ec565b91829182610838565b0390f35b6106f2565b346128985761288261287d366004610724565b615a9f565b61288a6106ec565b8061289481610742565b0390f35b6106f2565b6128a9601e5f9061080e565b90565b346128dc576128bc3660046107ad565b6128d86128c761289d565b6128cf6106ec565b91829182610838565b0390f35b6106f2565b6128ea90610fa3565b90565b906128f7906128e1565b5f5260205260405f2090565b67ffffffffffffffff1690565b61291c61292191612569565b612903565b90565b61292e9054612910565b90565b60401c90565b61294361294891612931565b612903565b90565b6129559054612937565b90565b60801c90565b63ffffffff1690565b61297361297891612958565b61295e565b90565b6129859054612967565b90565b60a01c90565b61299a61299f91612988565b61295e565b90565b6129ac905461298e565b90565b6129ba90601b6128ed565b906129c65f8301612924565b916129d25f820161294b565b916129e95f6129e281850161297b565b93016129a2565b90565b67ffffffffffffffff1690565b612a02906129ec565b9052565b63ffffffff1690565b612a1890612a06565b9052565b612a51612a5894612a47606094989795612a3d608086019a5f8701906129f9565b60208501906129f9565b6040830190612a0f565b0190612a0f565b565b34612a8e57612a8a612a75612a703660046108ef565b6129af565b90612a819492946106ec565b94859485612a1c565b0390f35b6106f2565b34612ac357612aa33660046107ad565b612abf612aae615ad8565b612ab66106ec565b91829182610838565b0390f35b6106f2565b612ad460135f9061080e565b90565b34612b0757612ae73660046107ad565b612b03612af2612ac8565b612afa6106ec565b91829182610838565b0390f35b6106f2565b612b2290612b1d6034915f926124bc565b61080e565b90565b34612b5557612b51612b40612b3b366004610724565b612b0c565b612b486106ec565b91829182610838565b0390f35b6106f2565b612b653660046107ad565b612b6d615b12565b612b756106ec565b80612b7f81610742565b0390f35b34612bb157612b9b612b963660046108ef565b615c96565b612ba36106ec565b80612bad81610742565b0390f35b6106f2565b34612be457612bce612bc9366004610724565b615d65565b612bd66106ec565b80612be081610742565b0390f35b6106f2565b34612c1957612bf93660046107ad565b612c15612c04615d70565b612c0c6106ec565b91829182610838565b0390f35b6106f2565b612c2a600f5f9061080e565b90565b34612c5d57612c3d3660046107ad565b612c59612c48612c1e565b612c506106ec565b91829182610838565b0390f35b6106f2565b34612c9057612c7a612c753660046108ef565b615ec9565b612c826106ec565b80612c8c81610742565b0390f35b6106f2565b60018060a01b031690565b612cb0906008612cb593026107ef565b612c95565b90565b90612cc39154612ca0565b90565b612cd260035f90612cb8565b90565b612cde90610fa3565b90565b612cea90612cd5565b9052565b9190612d01905f60208501940190612ce1565b565b34612d3357612d133660046107ad565b612d2f612d1e612cc6565b612d266106ec565b91829182612cee565b0390f35b6106f2565b612d4460215f90611902565b90565b34612d7757612d573660046107ad565b612d73612d62612d38565b612d6a6106ec565b918291826109d3565b0390f35b6106f2565b5f80fd5b60209181520190565b5f7f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572910152565b612dbc60208092612d80565b612dc581612d89565b0190565b612dde9060208101905f818303910152612db0565b90565b15612de857565b612df06106ec565b62461bcd60e51b815280612e0660048201612dc9565b0390fd5b612e3d90612e38612e19614cfd565b612e32612e2c612e27615f4b565b6108c0565b916108c0565b14612de1565b612fc5565b565b90565b612e56612e51612e5b92612e3f565b610f84565b6106fe565b90565b612e686002612e42565b90565b90612e7d612e7883612244565b61111b565b918252565b60207f4345000000000000000000000000000000000000000000000000000000000000917f53797374656d206d75737420626520696e204d4f44455f4d41494e54454e414e5f8201520152565b612ed96022612e6b565b90612ee660208301612e82565b565b612ef0612ecf565b90565b612efb612ee8565b90565b5190565b612f21612f2a602093612f2f93612f1881612efe565b93848093612d80565b95869101610a2b565b610a36565b0190565b92916020612f4f612f579360408701908782035f890152612f02565b94019061082b565b565b15612f62575050565b612f83612f6d6106ec565b9283926358eca00b60e11b845260048401612f33565b0390fd5b5f1b90565b90612f985f1991612f87565b9181191691161790565b90565b90612fba612fb5612fc192611b44565b612fa2565b8254612f8c565b9055565b61300f90613008612fd660336125ae565b612fef612fe9612fe4612e5e565b6106fe565b916106fe565b14612ff8612ef3565b61300260336125ae565b91612f59565b6015612fa5565b61301960156125ae565b61304f7fcaf8e5c6bc1bb2c19935f84ddcdaefb232ad06f9f2abd2ad588bea4bbe631d26916130466106ec565b91829182610838565b0390a1565b61305d90612e0a565b565b6130929061308d61306e614cfd565b61308761308161307c615f4b565b6108c0565b916108c0565b14612de1565b613094565b565b6130de906130d76130a560336125ae565b6130be6130b86130b3612e5e565b6106fe565b916106fe565b146130c7612ef3565b6130d160336125ae565b91612f59565b602f612fa5565b6130e8602f6125ae565b61311e7ff0f6e2691d5489ebfe7a2c0c40d063d69716feaf889e0bc35c3967960cedff4c916131156106ec565b91829182610838565b0390a1565b61312c9061305f565b565b613158613139614cfd565b61315261314c613147615f4b565b6108c0565b916108c0565b14612de1565b61316061318d565b565b90565b61317961317461317e92613162565b610f84565b6106fe565b90565b61318a5f613165565b90565b6131cc61319a60336125ae565b6131b36131ad6131a8612e5e565b6106fe565b916106fe565b146131bc612ef3565b6131c660336125ae565b91612f59565b6131de6131d7613181565b6033612fa5565b6131e860336125ae565b61321e7ff24e774cdaabee9b8782266728e442b7f1fa6ae9204755c0da1541e99f04aa4c916132156106ec565b91829182610838565b0390a1565b61322b61312e565b565b6132609061325b61323c614cfd565b61325561324f61324a615f4b565b6108c0565b916108c0565b14612de1565b613262565b565b6132ac906132a561327360336125ae565b61328c613286613281612e5e565b6106fe565b916106fe565b14613295612ef3565b61329f60336125ae565b91612f59565b600d612fa5565b6132b6600d6125ae565b6132ec7f678d086a09e1be49401b1e3a6e14db1878e8d8b88e71d0cfe24a32726d0e38b9916132e36106ec565b91829182610838565b0390a1565b6132fa9061322d565b565b61332f9061332a61330b614cfd565b61332461331e613319615f4b565b6108c0565b916108c0565b14612de1565b61343e565b565b61334561334061334a92613162565b610f84565b6108b5565b90565b61335690613331565b90565b5f7f5a65726f2d616464726573732077617320676976656e2e000000000000000000910152565b61338d6017602092612d80565b61339681613359565b0190565b6133af9060208101905f818303910152613380565b90565b156133b957565b6133c16106ec565b63eac0d38960e01b8152806133d86004820161339a565b0390fd5b6133e590610f87565b90565b6133f1906133dc565b90565b9061340560018060a01b0391612f87565b9181191691161790565b613418906133dc565b90565b90565b9061343361342e61343a9261340f565b61341b565b82546133f4565b9055565b61347d61344b60336125ae565b61346461345e613459612e5e565b6106fe565b916106fe565b1461346d612ef3565b61347760336125ae565b91612f59565b6134a28161349b6134956134905f61334d565b6108c0565b916108c0565b14156133b2565b6134b56134ae826133e8565b600561341e565b6134eb7f508d510537704d37ed64691a706392abc33e59ce8a327b4952e112820ceb88a6916134e26106ec565b918291826109d3565b0390a1565b6134f9906132fc565b565b5f90565b5f90565b61350f61351491612569565b6118df565b90565b6135219054613503565b90565b634e487b7160e01b5f52601160045260245ffd5b61354761354d919392936106fe565b926106fe565b820391821161355857565b613524565b6135656134fb565b5061356e6134ff565b50613579601f613517565b61359361358d6135885f61334d565b6108c0565b916108c0565b146135f5576135ac426135a6601e6125ae565b90613538565b806135c86135c26135bd601c6125ae565b6106fe565b916106fe565b116135e657506135d8601d613517565b906135e3601c6125ae565b90565b906135f1601f613517565b9190565b6135fe5f61334d565b906136085f613165565b90565b61361761361c91612569565b611aa1565b90565b613629905461360b565b90565b91602061364d92949361364660408201965f83019061082b565b019061082b565b565b67ffffffffffffffff811161366d57613669602091610a36565b0190565b6110de565b9061368461367f8361364f565b61111b565b918252565b606090565b3d5f146136a95761369e3d613672565b903d5f602084013e5b565b6136b1613689565b906136a7565b6136c0906108b5565b90565b6136cc816136b7565b036136d357565b5f80fd5b905051906136e4826136c3565b565b906020828203126136ff576136fc915f016136d7565b90565b6106f6565b61370d90610fa3565b90565b5f91600461376784936137216134fb565b506137586137366137318561361f565b611ae1565b94630184030760e31b926137486106ec565b958694602086019081520161362c565b602082018103825203826110f2565b602081019051915af461378261377b61368e565b9115611bbb565b5f14613793576040513d90815f823efd5b6137b06137b59160206137a582610a1e565b8183010191016136e6565b613704565b90565b5f7f43616c6c20746f20627573696e657373206c6f676963206661696c65642e0000910152565b6137ec601e602092612d80565b6137f5816137b8565b0190565b91604061382a929493613823613818606083018381035f8501526137df565b966020830190610940565b0190610c63565b565b15613835575050565b6138566138406106ec565b928392632979c21160e11b8452600484016137f9565b0390fd5b613862613689565b505f80613877613872600461361f565b611ae1565b60046138ae630197ea9960e31b61389f61388f6106ec565b9384926020840190815201610742565b602082018103825203826110f2565b602081019051915af46138e36138c261368e565b916138d56138d0600461361f565b611ae1565b630197ea9960e31b9161382c565b90565b613919906139146138f5614cfd565b61390e613908613903615f4b565b6108c0565b916108c0565b14612de1565b613a19565b565b61392a613930919392936106fe565b926106fe565b820180921161393b57565b613524565b90565b61395761395261395c92613940565b610f84565b6106fe565b90565b60207f6265206c6f776572207468616e203130302e0000000000000000000000000000917f50657263656e746167652076616c7565206f766572666c6f772c206d757374205f8201520152565b6139b96032604092612d80565b6139c28161395f565b0190565b91906139e99060206139e1604086018681035f8801526139ac565b94019061082b565b565b156139f35750565b613a15906139ff6106ec565b9182916323b058a560e11b8352600483016139c6565b0390fd5b613a6390613a5c613a2a60336125ae565b613a43613a3d613a38612e5e565b6106fe565b916106fe565b14613a4c612ef3565b613a5660336125ae565b91612f59565b6025612fa5565b613ac3613aa9613a99613a89613a7960226125ae565b613a8360236125ae565b9061391b565b613a9360246125ae565b9061391b565b613aa360256125ae565b9061391b565b80613abd613ab76064613943565b916106fe565b106139eb565b613acd60256125ae565b613b037f9be9203c5d81ee2019998f7020cf412c92a35ba870318f660d4972660210fb4b91613afa6106ec565b91829182610838565b0390a1565b613b11906138e6565b565b613b4690613b41613b22614cfd565b613b3b613b35613b30615f4b565b6108c0565b916108c0565b14612de1565b613b8f565b565b613b5190610f87565b90565b613b5d90613b48565b90565b613b6990613b48565b90565b90565b90613b84613b7f613b8b92613b60565b613b6c565b82546133f4565b9055565b613bce613b9c60336125ae565b613bb5613baf613baa612e5e565b6106fe565b916106fe565b14613bbe612ef3565b613bc860336125ae565b91612f59565b613bf381613bec613be6613be15f61334d565b6108c0565b916108c0565b14156133b2565b613c06613bff82613b54565b6006613b6f565b613c3c7f01f7695f55306401a817bccb872ffccabbcbccbf555dbc68de8f731c8ad6c3df91613c336106ec565b918291826109d3565b0390a1565b613c4a90613b13565b565b5f90565b613c5990610fa3565b90565b60e01b90565b613c76613c71613c7b92612a06565b613c5c565b610c57565b90565b5050505050613c8b613c4c565b50613c9963150b7a02613c62565b90565b5f7f53797374656d20696e206d61696e74656e616e6365206d6f6465000000000000910152565b613ccd601a612e6b565b90613cda60208301613c9c565b565b613ce4613cc3565b90565b613cef613cdc565b90565b9190613d0c81613d0581613d1195610a22565b8095612267565b610a36565b0190565b9091613d2c9260208301925f818503910152613cf2565b90565b6004613dbe5f9493613daf8695613d44613689565b50613d84613d5260336125ae565b613d6b613d65613d60612e5e565b6106fe565b916106fe565b10613d74613ce7565b613d7e60336125ae565b91612f59565b613d95613d908661361f565b611ae1565b9592613d9f6106ec565b9586946020860190815201613d15565b602082018103825203826110f2565b602081019051915af4613dd9613dd261368e565b9115611bbb565b613de05790565b6040513d90815f823efd5b613e1e90613e19613dfa614cfd565b613e13613e0d613e08615f4b565b6108c0565b916108c0565b14612de1565b613e20565b565b613e6a90613e63613e3160336125ae565b613e4a613e44613e3f612e5e565b6106fe565b916106fe565b14613e53612ef3565b613e5d60336125ae565b91612f59565b6027612fa5565b613e7460276125ae565b613eaa7f26f4dd2743839f7c4e8e381ebda3f0c09ad91e8294b566239e6556380bc8c2f491613ea16106ec565b91829182610838565b0390a1565b613eb890613deb565b565b5f613f23926004613f0b8394613efc613eda613ed58561361f565b611ae1565b9463031e375360e41b92613eec6106ec565b9586946020860190815201613d15565b602082018103825203826110f2565b602081019051915af4613f1c61368e565b5015611bbb565b613f2957565b6040513d90815f823efd5b5190565b60209181520190565b60200190565b613f50906106fe565b9052565b90613f6181602093613f47565b0190565b60200190565b90613f88613f82613f7b84613f34565b8093613f38565b92613f41565b905f5b818110613f985750505090565b909192613fb1613fab6001928651613f54565b94613f65565b9101919091613f8b565b613fd09160208201915f818403910152613f6b565b90565b5f8061403b926004614023613fef613fea8361361f565b611ae1565b92614014630fde427560e21b916140046106ec565b9485936020850190815201613fbb565b602082018103825203826110f2565b602081019051915af461403461368e565b5015611bbb565b61404157565b6040513d90815f823efd5b61407f9061407a61405b614cfd565b61407461406e614069615f4b565b6108c0565b916108c0565b14612de1565b614081565b565b6140cb906140c461409260336125ae565b6140ab6140a56140a0612e5e565b6106fe565b916106fe565b146140b4612ef3565b6140be60336125ae565b91612f59565b600e612fa5565b6140d5600e6125ae565b61410b7fed46e73b174ced51fb529cdc6c1b4d8abf49387e6d849b71648afb63c81d12cd916141026106ec565b91829182610838565b0390a1565b6141199061404c565b565b61414e9061414961412a614cfd565b61414361413d614138615f4b565b6108c0565b916108c0565b14612de1565b614150565b565b61419a9061419361416160336125ae565b61417a61417461416f612e5e565b6106fe565b916106fe565b14614183612ef3565b61418d60336125ae565b91612f59565b6029612fa5565b6141a460296125ae565b6141da7fabad7e38dbf633cf4208567936f05551c63b73e3ef5a278f64244c15030c0c68916141d16106ec565b91829182610838565b0390a1565b6141e89061411b565b565b61421d906142186141f9614cfd565b61421261420c614207615f4b565b6108c0565b916108c0565b14612de1565b61421f565b565b6142699061426261423060336125ae565b61424961424361423e612e5e565b6106fe565b916106fe565b14614252612ef3565b61425c60336125ae565b91612f59565b602e612fa5565b614273602e6125ae565b6142a97f762f994f6c24fece9d12a1eba3630058b2a0d8cb551a6496ef6e128aedf86353916142a06106ec565b91829182610838565b0390a1565b6142b7906141ea565b565b6142ec906142e76142c8614cfd565b6142e16142db6142d6615f4b565b6108c0565b916108c0565b14612de1565b6142ee565b565b614338906143316142ff60336125ae565b61431861431261430d612e5e565b6106fe565b916106fe565b14614321612ef3565b61432b60336125ae565b91612f59565b6013612fa5565b61434260136125ae565b6143787f6da281754ba85ee0c5983a8e8f05a92910c2a0c5b80e68c126216d65f162a3059161436f6106ec565b91829182610838565b0390a1565b614386906142b9565b565b6143bb906143b6614397614cfd565b6143b06143aa6143a5615f4b565b6108c0565b916108c0565b14612de1565b614404565b565b6143c690610f87565b90565b6143d2906143bd565b90565b6143de906143bd565b90565b90565b906143f96143f4614400926143d5565b6143e1565b82546133f4565b9055565b61444361441160336125ae565b61442a61442461441f612e5e565b6106fe565b916106fe565b14614433612ef3565b61443d60336125ae565b91612f59565b6144688161446161445b6144565f61334d565b6108c0565b916108c0565b14156133b2565b61447b614474826143c9565b60026143e4565b6144b17f7142a592d5404b5fc4a294c66f70e32b2a7776bd807f722d59268def87c765d1916144a86106ec565b918291826109d3565b0390a1565b6144bf90614388565b565b6144f4906144ef6144d0614cfd565b6144e96144e36144de615f4b565b6108c0565b916108c0565b14612de1565b6144f6565b565b6145409061453961450760336125ae565b61452061451a614515612e5e565b6106fe565b916106fe565b14614529612ef3565b61453360336125ae565b91612f59565b6031612fa5565b61454a60316125ae565b6145807faa59cda80c9b70b72f2ab15997b2622a0f94b107c401abfdc0f01f6f36489221916145776106ec565b91829182610838565b0390a1565b61458e906144c1565b565b614598613689565b505f806145ad6145a8600461361f565b611ae1565b60046145e46356c96eb760e01b6145d56145c56106ec565b9384926020840190815201610742565b602082018103825203826110f2565b602081019051915af46146196145f861368e565b9161460b614606600461361f565b611ae1565b6356c96eb760e01b9161382c565b90565b61464f9061464a61462b614cfd565b61464461463e614639615f4b565b6108c0565b916108c0565b14612de1565b614698565b565b61465a90610f87565b90565b61466690614651565b90565b61467290614651565b90565b90565b9061468d61468861469492614669565b614675565b82546133f4565b9055565b6146d76146a560336125ae565b6146be6146b86146b3612e5e565b6106fe565b916106fe565b146146c7612ef3565b6146d160336125ae565b91612f59565b6146fc816146f56146ef6146ea5f61334d565b6108c0565b916108c0565b14156133b2565b61470f6147088261465d565b6008614678565b6147457f4d03942c29c20d1bccfe551e9d148c917c5a44fb558a4fc60270d8f76fb75f549161473c6106ec565b918291826109d3565b0390a1565b6147539061461c565b565b61478890614783614764614cfd565b61477d614777614772615f4b565b6108c0565b916108c0565b14612de1565b61478a565b565b6147d4906147cd61479b60336125ae565b6147b46147ae6147a9612e5e565b6106fe565b916106fe565b146147bd612ef3565b6147c760336125ae565b91612f59565b6023612fa5565b61483461481a61480a6147fa6147ea60226125ae565b6147f460236125ae565b9061391b565b61480460246125ae565b9061391b565b61481460256125ae565b9061391b565b8061482e6148286064613943565b916106fe565b106139eb565b61483e60236125ae565b6148747f0918b499c15fcb0e087d411d53664cde23577e1aa4a9cbfbdf735ddd1871e7d59161486b6106ec565b91829182610838565b0390a1565b61488290614755565b565b6148b7906148b2614893614cfd565b6148ac6148a66148a1615f4b565b6108c0565b916108c0565b14612de1565b6148b9565b565b614903906148fc6148ca60336125ae565b6148e36148dd6148d8612e5e565b6106fe565b916106fe565b146148ec612ef3565b6148f660336125ae565b91612f59565b6030612fa5565b61490d60306125ae565b6149437faf12d9ae805e98874bdc306c20ef4910a1837c227c7cedb3010cc61c1bb0bd219161493a6106ec565b91829182610838565b0390a1565b61495190614884565b565b6149b95f8061496a614965600461361f565b611ae1565b60046149a16370740ac960e01b6149926149826106ec565b9384926020840190815201610742565b602082018103825203826110f2565b602081019051915af46149b261368e565b5015611bbb565b6149bf57565b6040513d90815f823efd5b6149f46149d5614cfd565b6149ee6149e86149e3615f4b565b6108c0565b916108c0565b14612de1565b6149fc6149fe565b565b614a0f614a0a5f61334d565b615f58565b565b614a196149ca565b565b614a2a614a30919392936106fe565b926106fe565b91614a3c8382026106fe565b928184041490151715614a4b57565b613524565b634e487b7160e01b5f52601260045260245ffd5b614a70614a76916106fe565b916106fe565b908115614a81570490565b614a50565b614a8e6134ff565b50614abf614aaf614a9e30613c50565b31614aa960256125ae565b90614a1b565b614ab96064613943565b90614a64565b90565b614aca6134ff565b50614afb614aeb614ada30613c50565b31614ae560226125ae565b90614a1b565b614af56064613943565b90614a64565b90565b614b3190614b2c614b0d614cfd565b614b26614b20614b1b615f4b565b6108c0565b916108c0565b14612de1565b614b33565b565b614b7d90614b76614b4460336125ae565b614b5d614b57614b52612e5e565b6106fe565b916106fe565b14614b66612ef3565b614b7060336125ae565b91612f59565b602d612fa5565b614b91614b8a602d6125ae565b6018612fa5565b614b9b602d6125ae565b614bd17f584ff9a7b3a86db5397052f2e440da0ed60a95f646a3a884863cd92262e682b691614bc86106ec565b91829182610838565b0390a1565b614bdf90614afe565b565b614c1490614c0f614bf0614cfd565b614c09614c03614bfe615f4b565b6108c0565b916108c0565b14612de1565b614c16565b565b614c6090614c59614c2760336125ae565b614c40614c3a614c35612e5e565b6106fe565b916106fe565b14614c49612ef3565b614c5360336125ae565b91612f59565b600f612fa5565b614c6a600f6125ae565b614ca07fcbc1f49adfa29e2f2f0f5c9e057722496a4bc95a6a5446deaa423a02b30c64ac91614c976106ec565b91829182610838565b0390a1565b614cae90614be1565b565b614cb86134ff565b50614cc360146125ae565b614cd5614ccf426106fe565b916106fe565b10614cf157614cee614ce760146125ae565b4290613538565b90565b614cfa5f613165565b90565b614d056134fb565b50614d0f5f613517565b90565b614d4590614d40614d21614cfd565b614d3a614d34614d2f615f4b565b6108c0565b916108c0565b14612de1565b614d47565b565b614d9190614d8a614d5860336125ae565b614d71614d6b614d66612e5e565b6106fe565b916106fe565b14614d7a612ef3565b614d8460336125ae565b91612f59565b6032612fa5565b614d9b60326125ae565b614dd17fba9cecc4e500595a0ea3893f03b1f37ccf9c9b2a22c2fe6256eaa0e61fd7adc891614dc86106ec565b91829182610838565b0390a1565b614ddf90614d12565b565b614e1490614e0f614df0614cfd565b614e09614e03614dfe615f4b565b6108c0565b916108c0565b14612de1565b614e5d565b565b614e1f90610f87565b90565b614e2b90614e16565b90565b614e3790614e16565b90565b90565b90614e52614e4d614e5992614e2e565b614e3a565b82546133f4565b9055565b614e9c614e6a60336125ae565b614e83614e7d614e78612e5e565b6106fe565b916106fe565b14614e8c612ef3565b614e9660336125ae565b91612f59565b614ec181614eba614eb4614eaf5f61334d565b6108c0565b916108c0565b14156133b2565b614ed4614ecd82614e22565b6004614e3d565b614f0a7f77ddb5e9e1495e15651bf87ccd8bbb7e637439fb260f0fda41b6ce4b3098aafd91614f016106ec565b918291826109d3565b0390a1565b614f1890614de1565b565b614f4d90614f48614f29614cfd565b614f42614f3c614f37615f4b565b6108c0565b916108c0565b14612de1565b614f4f565b565b614f9990614f92614f6060336125ae565b614f79614f73614f6e612e5e565b6106fe565b916106fe565b14614f82612ef3565b614f8c60336125ae565b91612f59565b6010612fa5565b614fa360106125ae565b614fd97f3b311f029da1b90c3de2e0b3168436c5ed7d8b0ae81b7d4894c12da03835c62891614fd06106ec565b91829182610838565b0390a1565b614fe790614f1a565b565b61501c90615017614ff8614cfd565b61501161500b615006615f4b565b6108c0565b916108c0565b14612de1565b615065565b565b61502790610f87565b90565b6150339061501e565b90565b61503f9061501e565b90565b90565b9061505a61505561506192615036565b615042565b82546133f4565b9055565b6150a461507260336125ae565b61508b615085615080612e5e565b6106fe565b916106fe565b14615094612ef3565b61509e60336125ae565b91612f59565b6150c9816150c26150bc6150b75f61334d565b6108c0565b916108c0565b14156133b2565b6150dc6150d58261502a565b6001615045565b6151127f9dc3707e4b88be65295b0083b44ffa94059c80372add9b0d24d6a3b371a03b92916151096106ec565b918291826109d3565b0390a1565b61512090614fe9565b565b61514e6151436040936151559698979560608501918583035f870152613cf2565b966020830190612628565b019061082b565b565b9160046151ae5f9461519f86956151c6986151796151748761361f565b611ae1565b9663ae3661fd60e01b949290919261518f6106ec565b9788966020880190815201615122565b602082018103825203826110f2565b602081019051915af46151bf61368e565b5015611bbb565b6151cc57565b6040513d90815f823efd5b60046152665f949361525786956151ec613689565b5061522c6151fa60336125ae565b61521361520d615208612e5e565b6106fe565b916106fe565b1461521c613ce7565b61522660336125ae565b91612f59565b61523d6152388661361f565b611ae1565b95926152476106ec565b9586946020860190815201613d15565b602082018103825203826110f2565b602081019051915af461528161527a61368e565b9115611bbb565b6152885790565b6040513d90815f823efd5b6152a89160208201915f818403910152612f02565b90565b5f806153139260046152fb6152c76152c28361361f565b611ae1565b926152ec630ba35b1b60e41b916152dc6106ec565b9485936020850190815201615293565b602082018103825203826110f2565b602081019051915af461530c61368e565b5015611bbb565b61531957565b6040513d90815f823efd5b61535790615352615333614cfd565b61534c615346615341615f4b565b6108c0565b916108c0565b14612de1565b6153a0565b565b61536290610f87565b90565b61536e90615359565b90565b61537a90615359565b90565b90565b9061539561539061539c92615371565b61537d565b82546133f4565b9055565b6153df6153ad60336125ae565b6153c66153c06153bb612e5e565b6106fe565b916106fe565b146153cf612ef3565b6153d960336125ae565b91612f59565b615404816153fd6153f76153f25f61334d565b6108c0565b916108c0565b14156133b2565b61541761541082615365565b6003615380565b61544d7f3ab2dcf539aa3c30314265602fc86dee8e343e3c3905730f870835f36c400deb916154446106ec565b918291826109d3565b0390a1565b61545b90615324565b565b6154909061548b61546c614cfd565b61548561547f61547a615f4b565b6108c0565b916108c0565b14612de1565b615492565b565b6154d161549f60336125ae565b6154b86154b26154ad612e5e565b6106fe565b916106fe565b146154c1612ef3565b6154cb60336125ae565b91612f59565b6154dc81601a612fa5565b6155127ffa013ab3d3f17cb94a869ccc05fc842a00a83fd7318e55faeb0335c6d5d22aa3916155096106ec565b91829182610838565b0390a1565b6155209061545d565b565b61555590615550615531614cfd565b61554a61554461553f615f4b565b6108c0565b916108c0565b14612de1565b61559e565b565b61556090610f87565b90565b61556c90615557565b90565b61557890615557565b90565b90565b9061559361558e61559a9261556f565b61557b565b82546133f4565b9055565b6155dd6155ab60336125ae565b6155c46155be6155b9612e5e565b6106fe565b916106fe565b146155cd612ef3565b6155d760336125ae565b91612f59565b615602816155fb6155f56155f05f61334d565b6108c0565b916108c0565b14156133b2565b61561561560e82615563565b600761557e565b61564b7f49a7d2f024af6dd81c8fa57c882796a3b36997fc33cf112e8ef840dec5236426916156426106ec565b918291826109d3565b0390a1565b61565990615522565b565b61568e9061568961566a614cfd565b61568361567d615678615f4b565b6108c0565b916108c0565b14612de1565b615690565b565b6156da906156d36156a160336125ae565b6156ba6156b46156af612e5e565b6106fe565b916106fe565b146156c3612ef3565b6156cd60336125ae565b91612f59565b6024612fa5565b61573a6157206157106157006156f060226125ae565b6156fa60236125ae565b9061391b565b61570a60246125ae565b9061391b565b61571a60256125ae565b9061391b565b8061573461572e6064613943565b916106fe565b106139eb565b61574460246125ae565b61577a7fd2002a256ab2f8a5c1b865685754b20437c0a26e7249e40ae5df2993966f99f2916157716106ec565b91829182610838565b0390a1565b6157889061565b565b565b6157926134ff565b506157c36157b36157a230613c50565b316157ad60246125ae565b90614a1b565b6157bd6064613943565b90614a64565b90565b5f8061582e9260046158166157e26157dd8361361f565b611ae1565b92615807631ab3ae8f60e31b916157f76106ec565b9485936020850190815201610838565b602082018103825203826110f2565b602081019051915af461582761368e565b5015611bbb565b61583457565b6040513d90815f823efd5b61586961584a614cfd565b61586361585d615858615f4b565b6108c0565b916108c0565b14612de1565b61587161589f565b565b90565b61588a61588561588f92615873565b610f84565b6106fe565b90565b61589c6001615876565b90565b6158de6158ac60336125ae565b6158c56158bf6158ba613181565b6106fe565b916106fe565b146158ce612ef3565b6158d860336125ae565b91612f59565b6158f06158e9615892565b6033612fa5565b6158fa60336125ae565b6159307ff24e774cdaabee9b8782266728e442b7f1fa6ae9204755c0da1541e99f04aa4c916159276106ec565b91829182610838565b0390a1565b61593d61583f565b565b6159476134ff565b5061597861596861595730613c50565b3161596260236125ae565b90614a1b565b6159726064613943565b90614a64565b90565b6159ae906159a961598a614cfd565b6159a361599d615998615f4b565b6108c0565b916108c0565b14612de1565b6159b0565b565b6159fa906159f36159c160336125ae565b6159da6159d46159cf612e5e565b6106fe565b916106fe565b146159e3612ef3565b6159ed60336125ae565b91612f59565b6022612fa5565b615a5a615a40615a30615a20615a1060226125ae565b615a1a60236125ae565b9061391b565b615a2a60246125ae565b9061391b565b615a3a60256125ae565b9061391b565b80615a54615a4e6064613943565b916106fe565b106139eb565b615a6460226125ae565b615a9a7f595fa5ba64cd6f66df19b53b59bb4a275bae1ec5b362da95e1fa4c5feb62be1e91615a916106ec565b91829182610838565b0390a1565b615aa89061597b565b565b90565b615ac1615abc615ac692615aaa565b610f84565b6106fe565b90565b615ad5620f4240615aad565b90565b615ae06134ff565b50615b0f615b01615af1600b6125ae565b615afb600f6125ae565b90614a1b565b615b09615ac9565b90614a64565b90565b615b785f80615b29615b24600461361f565b611ae1565b6004615b606376c4634760e11b615b51615b416106ec565b9384926020840190815201610742565b602082018103825203826110f2565b602081019051915af4615b7161368e565b5015611bbb565b615b7e57565b6040513d90815f823efd5b615bbc90615bb7615b98614cfd565b615bb1615bab615ba6615f4b565b6108c0565b916108c0565b14612de1565b615c66565b565b60207f6464726573730000000000000000000000000000000000000000000000000000917f4f776e61626c653a206e6577206f776e657220697320746865207a65726f20615f8201520152565b615c186026604092612d80565b615c2181615bbe565b0190565b615c3a9060208101905f818303910152615c0b565b90565b15615c4457565b615c4c6106ec565b62461bcd60e51b815280615c6260048201615c25565b0390fd5b615c9490615c8f81615c88615c82615c7d5f61334d565b6108c0565b916108c0565b1415615c3d565b615f58565b565b615c9f90615b89565b565b615cd490615ccf615cb0614cfd565b615cc9615cc3615cbe615f4b565b6108c0565b916108c0565b14612de1565b615cd6565b565b615d2090615d19615ce760336125ae565b615d00615cfa615cf5612e5e565b6106fe565b916106fe565b14615d09612ef3565b615d1360336125ae565b91612f59565b6028612fa5565b615d2a60286125ae565b615d607f06dd30d27a9e7637b273638e4bfa768e1cf87fe89bda7589c3a68814b866298091615d576106ec565b91829182610838565b0390a1565b615d6e90615ca1565b565b615d786134ff565b50615d83602d6125ae565b615d95615d8f426106fe565b916106fe565b10615db157615dae615da7602d6125ae565b4290613538565b90565b615dba5f613165565b90565b615df090615deb615dcc614cfd565b615de5615ddf615dda615f4b565b6108c0565b916108c0565b14612de1565b615e15565b565b90565b90615e0a615e05615e11926128e1565b615df2565b82546133f4565b9055565b615e8490615e58615e2660336125ae565b615e3f615e39615e34612e5e565b6106fe565b916106fe565b14615e48612ef3565b615e5260336125ae565b91612f59565b615e7d81615e76615e70615e6b5f61334d565b6108c0565b916108c0565b14156133b2565b6009615df5565b615e8e6009613517565b615ec47f1c7efd98583e33a9cc6adff48a97abdaaf43e5c9e918d5ec3e75e93e1dafcf6c91615ebb6106ec565b918291826109d3565b0390a1565b615ed290615dbd565b565b615f3a5f80615eeb615ee6600461361f565b611ae1565b6004615f2263147225d960e31b615f13615f036106ec565b9384926020840190815201610742565b602082018103825203826110f2565b602081019051915af4615f3361368e565b5015611bbb565b615f4057565b6040513d90815f823efd5b615f536134fb565b503390565b615f615f613517565b615f6b825f615df5565b90615f9f615f997f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0936128e1565b916128e1565b91615fa86106ec565b80615fb281610742565b0390a356fea26469706673582212205d1b3baa0d6cfa9b4385fd3f074cc11b0ed8502656e9409f69039cd6de939ccc64736f6c634300081a0033",
+	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"businessLogicAddr\",\"type\":\"address\"},{\"internalType\":\"bytes4\",\"name\":\"selector\",\"type\":\"bytes4\"}],\"name\":\"CallToBusinessLogicFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"percentageSum\",\"type\":\"uint256\"}],\"name\":\"PercentageValidation\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"systemMode\",\"type\":\"uint256\"}],\"name\":\"SystemMode\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newActivationTime\",\"type\":\"uint256\"}],\"name\":\"ActivationTimeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"lastBidder\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"bidPrice\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"randomWalkNFTId\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"numCSTTokens\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"prizeTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"}],\"name\":\"BidEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newContractAddress\",\"type\":\"address\"}],\"name\":\"BusinessLogicAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newCharity\",\"type\":\"address\"}],\"name\":\"CharityAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newCharityPercentage\",\"type\":\"uint256\"}],\"name\":\"CharityPercentageChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newCosmicSignature\",\"type\":\"address\"}],\"name\":\"CosmicSignatureAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newCosmicToken\",\"type\":\"address\"}],\"name\":\"CosmicTokenAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"nftAddressdonatedNFTs\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"DonatedNFTClaimedEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DonationEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"recordId\",\"type\":\"uint256\"}],\"name\":\"DonationWithInfoEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newMultiplier\",\"type\":\"uint256\"}],\"name\":\"Erc20RewardMultiplierChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newInitialBidAmountFraction\",\"type\":\"uint256\"}],\"name\":\"InitialBidAmountFractionChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newInitialSecondsUntilPrize\",\"type\":\"uint256\"}],\"name\":\"InitialSecondsUntilPrizeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newReward\",\"type\":\"uint256\"}],\"name\":\"MarketingRewardChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newMarketingWallet\",\"type\":\"address\"}],\"name\":\"MarketingWalletAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newMessageLength\",\"type\":\"uint256\"}],\"name\":\"MaxMessageLengthChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"NFTDonationEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newNanoSecondsExtra\",\"type\":\"uint256\"}],\"name\":\"NanoSecondsExtraChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newNumRaffleETHWinnersBidding\",\"type\":\"uint256\"}],\"name\":\"NumRaffleETHWinnersBiddingChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newNumRaffleNFTWinnersBidding\",\"type\":\"uint256\"}],\"name\":\"NumRaffleNFTWinnersBiddingChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newNumRaffleNFTWinnersStakingRWalk\",\"type\":\"uint256\"}],\"name\":\"NumRaffleNFTWinnersStakingRWalkChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newPriceIncrease\",\"type\":\"uint256\"}],\"name\":\"PriceIncreaseChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"prizeNum\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"PrizeClaimEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newPrizePercentage\",\"type\":\"uint256\"}],\"name\":\"PrizePercentageChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winnerIndex\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RaffleETHWinnerEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"winner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"winnerIndex\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"isStaker\",\"type\":\"bool\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"isRWalk\",\"type\":\"bool\"}],\"name\":\"RaffleNFTWinnerEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newRafflePercentage\",\"type\":\"uint256\"}],\"name\":\"RafflePercentageChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newRaffleWallet\",\"type\":\"address\"}],\"name\":\"RaffleWalletAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newRandomWalk\",\"type\":\"address\"}],\"name\":\"RandomWalkAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newAuctionLength\",\"type\":\"uint256\"}],\"name\":\"RoundStartCSTAuctionLengthChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newStakingPercentage\",\"type\":\"uint256\"}],\"name\":\"StakingPercentageChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newStakingWalletCST\",\"type\":\"address\"}],\"name\":\"StakingWalletCSTAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newStakingWalletRWalk\",\"type\":\"address\"}],\"name\":\"StakingWalletRWalkAddressChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newSystemMode\",\"type\":\"uint256\"}],\"name\":\"SystemModeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newTimeIncrease\",\"type\":\"uint256\"}],\"name\":\"TimeIncreaseChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newTimeout\",\"type\":\"uint256\"}],\"name\":\"TimeoutClaimPrizeChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newReward\",\"type\":\"uint256\"}],\"name\":\"TokenRewardChanged\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"CSTAuctionLength\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"RoundStartCSTAuctionLength\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"activationTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"auctionDuration\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bLogic\",\"outputs\":[{\"internalType\":\"contractBusinessLogic\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_data\",\"type\":\"bytes\"}],\"name\":\"bid\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_param_data\",\"type\":\"bytes\"},{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"bidAndDonateNFT\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bidPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"}],\"name\":\"bidWithCST\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_round\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_positionFromEnd\",\"type\":\"uint256\"}],\"name\":\"bidderAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"bidderInfo\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"totalSpent\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"lastBidTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"totalBidTime\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charity\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charityAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"charityPercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"claimDonatedNFT\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"tokens\",\"type\":\"uint256[]\"}],\"name\":\"claimManyDonatedNFTs\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claimPrize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"currentCSTPrice\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"currentEnduranceChampion\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"donate\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_data\",\"type\":\"string\"}],\"name\":\"donateWithInfo\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"donateWithInfoNumRecords\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"donatedNFTs\",\"outputs\":[{\"internalType\":\"contractIERC721\",\"name\":\"nftAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"claimed\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"donationInfoRecords\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"data\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"enduranceChampion\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"enduranceChampionDuration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"erc20RewardMultiplier\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"extraStorage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getBidPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"recordId\",\"type\":\"uint256\"}],\"name\":\"getDonationInfoRecord\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"donor\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"data\",\"type\":\"string\"}],\"internalType\":\"structCosmicGameConstants.DonationInfoRecord\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"initialBidAmountFraction\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"initialSecondsUntilPrize\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastBidType\",\"outputs\":[{\"internalType\":\"enumCosmicGameConstants.BidType\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastBidder\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastCSTBidTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"_sig\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"_encoded_params\",\"type\":\"bytes\"}],\"name\":\"maintenanceProxyCall\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"marketingReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"marketingWallet\",\"outputs\":[{\"internalType\":\"contractMarketingWallet\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxMessageLength\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nanoSecondsExtra\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nft\",\"outputs\":[{\"internalType\":\"contractCosmicSignature\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numDonatedNFTs\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleETHWinnersBidding\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleNFTWinnersBidding\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numRaffleNFTWinnersStakingRWalk\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"numRaffleParticipants\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"onERC721Received\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prepareMaintenance\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"priceIncrease\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizeAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizePercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prizeTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"_sig\",\"type\":\"bytes4\"},{\"internalType\":\"bytes\",\"name\":\"_encoded_params\",\"type\":\"bytes\"}],\"name\":\"proxyCall\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleEntropy\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"raffleParticipants\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rafflePercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"raffleWallet\",\"outputs\":[{\"internalType\":\"contractRaffleWallet\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"randomWalk\",\"outputs\":[{\"internalType\":\"contractRandomWalkNFT\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"roundNum\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newActivationTime\",\"type\":\"uint256\"}],\"name\":\"setActivationTime\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setBusinessLogicContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setCharity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newCharityPercentage\",\"type\":\"uint256\"}],\"name\":\"setCharityPercentage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newMultiplier\",\"type\":\"uint256\"}],\"name\":\"setErc20RewardMultiplier\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newInitialSecondsUntilPrize\",\"type\":\"uint256\"}],\"name\":\"setInitialSecondsUntilPrize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newMarketingReward\",\"type\":\"uint256\"}],\"name\":\"setMarketingReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setMarketingWallet\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newMaxMessageLength\",\"type\":\"uint256\"}],\"name\":\"setMaxMessageLength\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newNanoSecondsExtra\",\"type\":\"uint256\"}],\"name\":\"setNanoSecondsExtra\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setNftContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newNumRaffleETHWinnersBidding\",\"type\":\"uint256\"}],\"name\":\"setNumRaffleETHWinnersBidding\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newNumRaffleNFTWinnersBidding\",\"type\":\"uint256\"}],\"name\":\"setNumRaffleNFTWinnersBidding\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newNumRaffleNFTWinnersStakingRWalk\",\"type\":\"uint256\"}],\"name\":\"setNumRaffleNFTWinnersStakingRWalk\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newPriceIncrease\",\"type\":\"uint256\"}],\"name\":\"setPriceIncrease\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newPrizePercentage\",\"type\":\"uint256\"}],\"name\":\"setPrizePercentage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newRafflePercentage\",\"type\":\"uint256\"}],\"name\":\"setRafflePercentage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setRaffleWallet\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setRandomWalk\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newAuctionLength\",\"type\":\"uint256\"}],\"name\":\"setRoundStartCSTAuctionLength\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"setRuntimeMode\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newStakingPercentage\",\"type\":\"uint256\"}],\"name\":\"setStakingPercentage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setStakingWalletCST\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setStakingWalletRWalk\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newTimeIncrease\",\"type\":\"uint256\"}],\"name\":\"setTimeIncrease\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newTimeout\",\"type\":\"uint256\"}],\"name\":\"setTimeoutClaimPrize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setTokenContract\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newTokenReward\",\"type\":\"uint256\"}],\"name\":\"setTokenReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakingAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakingPercentage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakingWalletCST\",\"outputs\":[{\"internalType\":\"contractStakingWalletCST\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stakingWalletRWalk\",\"outputs\":[{\"internalType\":\"contractStakingWalletRWalk\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"startingBidPriceCST\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stellarSpender\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stellarSpenderAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"systemMode\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeIncrease\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeUntilActivation\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeUntilPrize\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"timeoutClaimPrize\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"token\",\"outputs\":[{\"internalType\":\"contractCosmicToken\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"tokenReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newInitialBidAmountFraction\",\"type\":\"uint256\"}],\"name\":\"updateInitialBidAmountFraction\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"usedRandomWalkNFTs\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"winners\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
+	Bin: "0x6080604052346100275761001161070f565b61001961002c565b6162b76109ce82396162b790f35b610032565b60405190565b5f80fd5b5f1b90565b906100475f1991610036565b9181191691161790565b90565b90565b90565b61006e61006961007392610051565b610057565b610054565b90565b90565b9061008e6100896100959261005a565b610076565b825461003b565b9055565b90565b6100b06100ab6100b592610099565b610057565b610054565b90565b6100c7655af3107a400061009c565b90565b6100de6100d96100e392610054565b610057565b610054565b90565b906100fb6100f6610102926100ca565b610076565b825461003b565b9055565b90565b61011d61011861012292610106565b610057565b610054565b90565b9061013a61013561014192610109565b610076565b825461003b565b9055565b90565b61015c61015761016192610145565b610057565b610054565b90565b9061017961017461018092610148565b610076565b825461003b565b9055565b90565b61019b6101966101a092610184565b610057565b610054565b90565b906101b86101b36101bf92610187565b610076565b825461003b565b9055565b90565b6101da6101d56101df926101c3565b610057565b610054565b90565b906101f76101f26101fe926101c6565b610076565b825461003b565b9055565b90565b61021961021461021e92610202565b610057565b610054565b90565b9061023661023161023d92610205565b610076565b825461003b565b9055565b60018060a01b031690565b61026061025b61026592610051565b610057565b610241565b90565b6102719061024c565b90565b9061028560018060a01b0391610036565b9181191691161790565b6102a361029e6102a892610241565b610057565b610241565b90565b6102b49061028f565b90565b6102c0906102ab565b90565b90565b906102db6102d66102e2926102b7565b6102c3565b8254610274565b9055565b90565b6102fd6102f8610302926102e6565b610057565b610054565b90565b9061031a610315610321926102e9565b610076565b825461003b565b9055565b5f1c90565b90565b61033961033e91610325565b61032a565b90565b61034b905461032d565b90565b90565b61036561036061036a9261034e565b610057565b610054565b90565b61037861a8c0610351565b90565b90565b61039261038d6103979261037b565b610057565b610054565b90565b906103af6103aa6103b69261037e565b610076565b825461003b565b9055565b90565b6103d16103cc6103d6926103ba565b610057565b610054565b90565b906103ee6103e96103f5926103bd565b610076565b825461003b565b9055565b90565b61041061040b610415926103f9565b610057565b610054565b90565b9061042d610428610434926103fc565b610076565b825461003b565b9055565b90565b61044f61044a61045492610438565b610057565b610054565b90565b9061046c6104676104739261043b565b610076565b825461003b565b9055565b90565b61048e61048961049392610477565b610057565b610054565b90565b906104ab6104a66104b29261047a565b610076565b825461003b565b9055565b90565b6104cd6104c86104d2926104b6565b610057565b610054565b90565b906104ea6104e56104f1926104b9565b610076565b825461003b565b9055565b61050768056bc75e2d63100000610109565b90565b90565b61052161051c6105269261050a565b610057565b610054565b90565b61053a67d02ab486cedc000061050d565b90565b90565b61055461054f6105599261053d565b610057565b610054565b90565b610567610118610540565b90565b90565b61058161057c6105869261056a565b610057565b610054565b90565b610593600261056d565b90565b90565b6105ad6105a86105b292610596565b610057565b610054565b90565b634e487b7160e01b5f52601160045260245ffd5b6105d86105de91939293610054565b92610054565b82039182116105e957565b6105b5565b60209181520190565b5f7f436f736d6963205369676e617475726520323032330000000000000000000000910152565b61062b60156020926105ee565b610634816105f7565b0190565b61064190610054565b9052565b90565b61065190610645565b9052565b91604061068692949361067f610674606083018381035f85015261061e565b966020830190610638565b0190610648565b565b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906106b090610688565b810190811060018060401b038211176106c857604052565b610692565b60200190565b5190565b6106e090610645565b90565b6106ec90610325565b90565b906107046106ff61070b926106d7565b6106e3565b825461003b565b9055565b610717610910565b6107225f600a610079565b61073461072d6100b8565b600b6100e6565b61074868056bc75e2d63100000600c610125565b61075965034630b8a000600d610164565b610767620f425e600e6101a3565b610775620f6950600f6101e2565b610782610fa06010610221565b61079561078e5f610268565b60116102c6565b6107a3620151806013610305565b6107b1620151806015610305565b6107c56107be602d610341565b60186100e6565b6107d76107d061036d565b60196100e6565b6107e96107e261036d565b601a6100e6565b6107f56019602061039a565b610801600a60216103d9565b61080d60056022610418565b610819600a60236103d9565b61082560036025610457565b61083160056026610418565b61083d60046027610496565b6108485f602b610079565b61085763657a4580602d6104d5565b6108696108626104f5565b602e6100e6565b61087b610874610529565b60306100e6565b61088d61088661055c565b60316100e6565b61089f610898610589565b60326100e6565b6108fc426108e26108ba436108b46001610599565b906105c9565b40916108d36108c761002c565b93849260208401610655565b602082018103825203826106a6565b6108f46108ee826106d3565b916106cd565b2060286106ef565b61090e610907610930565b60096102c6565b565b61091861091a565b565b61092a610925610930565b61096e565b565b5f90565b61093861092c565b503390565b60018060a01b031690565b61095461095991610325565b61093d565b90565b6109669054610948565b90565b5f0190565b6109775f61095c565b610981825f6102c6565b906109b56109af7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0936102b7565b916102b7565b916109be61002c565b806109c881610969565b0390a356fe6080604052600436101561001d575b36612faf5761001b61619e565b005b6100275f356106e6565b8063019d354a146106e1578063043a7d27146106dc57806305ba9b67146106d7578063062fb100146106d25780630c201838146106cd5780630cbf54c8146106c85780630e38c32b146106c35780630f055be4146106be578063119b22b3146106b957806311dc7335146106b4578063150b7a02146106af57806319afe473146106aa5780631cb78fb3146106a55780631d1d4e29146106a05780631e67055f1461069b57806320a60273146106965780632366b3b714610691578063266632781461068c5780632aab32231461068757806331e375301461068257806332d382cd1461067d578063355f01e2146106785780633703dbc8146106735780633a292cbd1461066e5780633b5fa8e3146106695780633f7909d41461066457806340e023221461065f57806347ccca021461065a5780634ac3a395146106555780634b69abc1146106505780634fe01d381461064b5780635111a2d614610646578063519645881461064157806352f5ad771461063c5780635312e2a114610637578063541fa5881461063257806356c96eb71461062d57806358218269146106285780635863a705146106235780635d098b381461061e5780635e6e47aa146106195780635e74140c1461061457806365b7f9671461060f578063662bfa8f1461060a57806367f3e4a5146106055780636e66f6e91461060057806370740ac9146105fb578063715018a6146105f6578063739a3e02146105f157806375f0a874146105ec578063785fa627146105e7578063799d431d146105e25780637c5486a2146105dd5780637e8ad4e3146105d857806380de163d146105d357806381e1ccba146105ce5780638547af30146105c95780638567ab17146105c457806386e378c9146105bf5780638b122274146105ba5780638b1329e0146105b55780638da5cb5b146105b05780638fffdf34146105ab5780639136d6d9146105a657806391daa9a9146105a15780639250c33c1461059c578063934aa02314610597578063986459a0146105925780639c11bc301461058d5780639c235a6814610588578063a2fb117514610583578063a38fd64e1461057e578063a672f6e114610579578063a6f9cc1514610574578063ae3661fd1461056f578063aecacd461461056a578063b101e9fd14610565578063b1ddd82a14610560578063b2fd10b21461055b578063b635176a14610556578063b801b8b214610551578063ba35b1b01461054c578063bbcd5bbe14610547578063c3e77a3714610542578063c62af7df1461053d578063c709bf2814610538578063c7c8378d14610533578063c94028c21461052e578063cb819dc014610529578063d59760c514610524578063d59d74781461051f578063d6e174171461051a578063d8c5a5a014610515578063d94d031614610510578063da4493f61461050b578063da63990b14610506578063dbc945c014610501578063dbf8a28a146104fc578063ec34866d146104f7578063ed083398146104f2578063ed421f41146104ed578063ed88c68e146104e8578063f2fde38b146104e3578063f45ea666146104de578063f7178822146104d9578063f8c34050146104d4578063fb6f71a3146104cf5763fc0c546a0361000e57612f7a565b612ed9565b612ea4565b612e60565b612e2d565b612dfa565b612dd1565b612d9c565b612d4e565b612d0a565b612cd7565b612ca2565b612c6d565b612b9f565b612b5b565b612b19565b612ae0565b6129b3565b61297e565b61291a565b6128d6565b6128a3565b61286e565b61282c565b6127f9565b6127c6565b612793565b61269e565b61265a565b612616565b6125d1565b612564565b61252f565b61245f565b6123a7565b612374565b61233f565b6122fb565b612299565b612266565b61222e565b612013565b611fcf565b611f8b565b611ee8565b611ea4565b611e60565b611e2b565b611df8565b611dc3565b611d0c565b611c69565b611c25565b611be1565b611b4f565b611adc565b611aa7565b611a63565b611a2e565b61198b565b611958565b611925565b6118f0565b6118ac565b611868565b611826565b6117f1565b611750565b61171d565b6116e8565b6116a4565b611660565b61162b565b6115e9565b6115b6565b611583565b61154e565b6114ad565b61147a565b611447565b611412565b61136f565b61132d565b6111da565b611195565b61113d565b6110f9565b6110b5565b61101d565b610fb2565b610f70565b610f46565b610e9c565b610e57565b610db9565b610d71565b610bfd565b610bb5565b610aa7565b610a63565b6109d2565b61099f565b61096a565b6108c9565b610847565b6107bc565b610789565b610747565b60e01c90565b60405190565b5f80fd5b5f80fd5b5f80fd5b90565b61070a816106fe565b0361071157565b5f80fd5b9050359061072282610701565b565b9060208282031261073d5761073a915f01610715565b90565b6106f6565b5f0190565b346107755761075f61075a366004610724565b613249565b6107676106ec565b8061077181610742565b0390f35b6106f2565b5f91031261078457565b6106f6565b346107b75761079936600461077a565b6107a1613349565b6107a96106ec565b806107b381610742565b0390f35b6106f2565b346107ea576107d46107cf366004610724565b613417565b6107dc6106ec565b806107e681610742565b0390f35b6106f2565b60018060a01b031690565b610803906107ef565b90565b61080f816107fa565b0361081657565b5f80fd5b9050359061082782610806565b565b906020828203126108425761083f915f0161081a565b90565b6106f6565b346108755761085f61085a366004610829565b613616565b6108676106ec565b8061087181610742565b0390f35b6106f2565b91906040838203126108a2578061089661089f925f8601610715565b93602001610715565b90565b6106f6565b6108b0906107fa565b9052565b91906108c7905f602085019401906108a7565b565b346108fa576108f66108e56108df36600461087a565b9061372a565b6108ed6106ec565b918291826108b4565b0390f35b6106f2565b5190565b60209181520190565b90825f9392825e0152565b601f801991011690565b61094061094960209361094e93610937816108ff565b93848093610903565b9586910161090c565b610917565b0190565b6109679160208201915f818403910152610921565b90565b3461099a5761097a36600461077a565b610996610985613874565b61098d6106ec565b91829182610952565b0390f35b6106f2565b346109cd576109b76109b2366004610724565b613b36565b6109bf6106ec565b806109c981610742565b0390f35b6106f2565b34610a00576109ea6109e5366004610829565b613c6f565b6109f26106ec565b806109fc81610742565b0390f35b6106f2565b1c90565b90565b610a1c906008610a219302610a05565b610a09565b90565b90610a2f9154610a0c565b90565b610a3e600a5f90610a24565b90565b610a4a906106fe565b9052565b9190610a61905f60208501940190610a41565b565b34610a9357610a7336600461077a565b610a8f610a7e610a32565b610a866106ec565b91829182610a4e565b0390f35b6106f2565b610aa460205f90610a24565b90565b34610ad757610ab736600461077a565b610ad3610ac2610a98565b610aca6106ec565b91829182610a4e565b0390f35b6106f2565b5f80fd5b5f80fd5b5f80fd5b909182601f83011215610b225781359167ffffffffffffffff8311610b1d576020019260018302840111610b1857565b610ae4565b610ae0565b610adc565b90608082820312610b8257610b3e815f840161081a565b92610b4c826020850161081a565b92610b5a8360408301610715565b92606082013567ffffffffffffffff8111610b7d57610b799201610ae8565b9091565b6106fa565b6106f6565b63ffffffff60e01b1690565b610b9c90610b87565b9052565b9190610bb3905f60208501940190610b93565b565b34610be957610be5610bd4610bcb366004610b27565b93929092613cb5565b610bdc6106ec565b91829182610ba0565b0390f35b6106f2565b610bfa600b5f90610a24565b90565b34610c2d57610c0d36600461077a565b610c29610c18610bee565b610c206106ec565b91829182610a4e565b0390f35b6106f2565b9190604083820312610c5a5780610c4e610c57925f8601610715565b9360200161081a565b90565b6106f6565b90565b610c76610c71610c7b926106fe565b610c5f565b6106fe565b90565b90610c8890610c62565b5f5260205260405f2090565b610ca8610ca3610cad926107ef565b610c5f565b6107ef565b90565b610cb990610c94565b90565b610cc590610cb0565b90565b90610cd290610cbc565b5f5260205260405f2090565b5f1c90565b610cef610cf491610cde565b610a09565b90565b610d019054610ce3565b90565b90610d13610d1892601b610c7e565b610cc8565b610d235f8201610cf7565b91610d3c6002610d3560018501610cf7565b9301610cf7565b90565b604090610d68610d6f9496959396610d5e60608401985f850190610a41565b6020830190610a41565b0190610a41565b565b34610da557610da1610d8d610d87366004610c32565b90610d04565b610d989391936106ec565b93849384610d3f565b0390f35b6106f2565b610db660315f90610a24565b90565b34610de957610dc936600461077a565b610de5610dd4610daa565b610ddc6106ec565b91829182610a4e565b0390f35b6106f2565b610df781610b87565b03610dfe57565b5f80fd5b90503590610e0f82610dee565b565b919091604081840312610e5257610e2a835f8301610e02565b92602082013567ffffffffffffffff8111610e4d57610e499201610ae8565b9091565b6106fa565b6106f6565b34610e8857610e84610e73610e6d366004610e11565b91613d66565b610e7b6106ec565b91829182610952565b0390f35b6106f2565b610e9960325f90610a24565b90565b34610ecc57610eac36600461077a565b610ec8610eb7610e8d565b610ebf6106ec565b91829182610a4e565b0390f35b6106f2565b909182601f83011215610f0b5781359167ffffffffffffffff8311610f06576020019260018302840111610f0157565b610ae4565b610ae0565b610adc565b90602082820312610f41575f82013567ffffffffffffffff8111610f3c57610f389201610ed1565b9091565b6106fa565b6106f6565b610f5a610f54366004610f10565b90613e5f565b610f626106ec565b80610f6c81610742565b0390f35b34610f9e57610f88610f83366004610724565b613f9d565b610f906106ec565b80610f9a81610742565b0390f35b6106f2565b610faf602a5f90610a24565b90565b34610fe257610fc236600461077a565b610fde610fcd610fa3565b610fd56106ec565b91829182610a4e565b0390f35b6106f2565b90602082820312611018575f82013567ffffffffffffffff81116110135761100f9201610ae8565b9091565b6106fa565b6106f6565b61103161102b366004610fe7565b90613fa8565b6110396106ec565b8061104381610742565b0390f35b60018060a01b031690565b6110629060086110679302610a05565b611047565b90565b906110759154611052565b90565b61108460055f9061106a565b90565b61109090610cb0565b90565b61109c90611087565b9052565b91906110b3905f60208501940190611093565b565b346110e5576110c536600461077a565b6110e16110d0611078565b6110d86106ec565b918291826110a0565b0390f35b6106f2565b6110f660155f90610a24565b90565b346111295761110936600461077a565b6111256111146110ea565b61111c6106ec565b91829182610a4e565b0390f35b6106f2565b61113a60255f90610a24565b90565b3461116d5761114d36600461077a565b61116961115861112e565b6111606106ec565b91829182610a4e565b0390f35b6106f2565b91602061119392949361118c60408201965f8301906108a7565b0190610a41565b565b346111c6576111a536600461077a565b6111ad61404b565b906111c26111b96106ec565b92839283611172565b0390f35b6106f2565b6111d760195f90610a24565b90565b3461120a576111ea36600461077a565b6112066111f56111cb565b6111fd6106ec565b91829182610a4e565b0390f35b6106f2565b634e487b7160e01b5f52604160045260245ffd5b9061122d90610917565b810190811067ffffffffffffffff82111761124757604052565b61120f565b9061125f6112586106ec565b9283611223565b565b67ffffffffffffffff81116112795760208091020190565b61120f565b9092919261129361128e82611261565b61124c565b93818552602080860192028301928184116112d057915b8383106112b75750505050565b602080916112c58486610715565b8152019201916112aa565b610ae4565b9080601f830112156112f3578160206112f09335910161127e565b90565b610adc565b90602082820312611328575f82013567ffffffffffffffff81116113235761132092016112d5565b90565b6106fa565b6106f6565b3461135b576113456113403660046112f8565b6141ab565b61134d6106ec565b8061135781610742565b0390f35b6106f2565b61136c60105f90610a24565b90565b3461139f5761137f36600461077a565b61139b61138a611360565b6113926106ec565b91829182610a4e565b0390f35b6106f2565b60018060a01b031690565b6113bf9060086113c49302610a05565b6113a4565b90565b906113d291546113af565b90565b6113e160025f906113c7565b90565b6113ed90610cb0565b90565b6113f9906113e4565b9052565b9190611410905f602085019401906113f0565b565b346114425761142236600461077a565b61143e61142d6113d5565b6114356106ec565b918291826113fd565b0390f35b6106f2565b346114755761145f61145a366004610724565b6142e8565b6114676106ec565b8061147181610742565b0390f35b6106f2565b346114a85761149261148d366004610724565b6143b7565b61149a6106ec565b806114a481610742565b0390f35b6106f2565b346114db576114c56114c0366004610724565b614486565b6114cd6106ec565b806114d781610742565b0390f35b6106f2565b60018060a01b031690565b6114fb9060086115009302610a05565b6114e0565b90565b9061150e91546114eb565b90565b61151d60015f90611503565b90565b61152990610cb0565b90565b61153590611520565b9052565b919061154c905f6020850194019061152c565b565b3461157e5761155e36600461077a565b61157a611569611511565b6115716106ec565b91829182611539565b0390f35b6106f2565b346115b15761159b611596366004610724565b614555565b6115a36106ec565b806115ad81610742565b0390f35b6106f2565b346115e4576115ce6115c9366004610829565b61468e565b6115d66106ec565b806115e081610742565b0390f35b6106f2565b34611617576116016115fc366004610724565b61475d565b6116096106ec565b8061161381610742565b0390f35b6106f2565b611628602f5f90610a24565b90565b3461165b5761163b36600461077a565b61165761164661161c565b61164e6106ec565b91829182610a4e565b0390f35b6106f2565b346116905761167036600461077a565b61168c61167b614768565b6116836106ec565b91829182610952565b0390f35b6106f2565b6116a1602b5f90610a24565b90565b346116d4576116b436600461077a565b6116d06116bf611695565b6116c76106ec565b91829182610a4e565b0390f35b6106f2565b6116e5601f5f90610a24565b90565b34611718576116f836600461077a565b6117146117036116d9565b61170b6106ec565b91829182610a4e565b0390f35b6106f2565b3461174b57611735611730366004610829565b614922565b61173d6106ec565b8061174781610742565b0390f35b6106f2565b3461177e57611768611763366004610724565b614a51565b6117706106ec565b8061177a81610742565b0390f35b6106f2565b60018060a01b031690565b61179e9060086117a39302610a05565b611783565b90565b906117b1915461178e565b90565b6117c060075f906117a6565b90565b6117cc90610cb0565b90565b6117d8906117c3565b9052565b91906117ef905f602085019401906117cf565b565b346118215761180136600461077a565b61181d61180c6117b4565b6118146106ec565b918291826117dc565b0390f35b6106f2565b346118545761183e611839366004610724565b614b20565b6118466106ec565b8061185081610742565b0390f35b6106f2565b611865601d5f90610a24565b90565b346118985761187836600461077a565b611894611883611859565b61188b6106ec565b91829182610a4e565b0390f35b6106f2565b6118a9600c5f90610a24565b90565b346118dc576118bc36600461077a565b6118d86118c761189d565b6118cf6106ec565b91829182610a4e565b0390f35b6106f2565b6118ed602e5f90610a24565b90565b346119205761190036600461077a565b61191c61190b6118e1565b6119136106ec565b91829182610a4e565b0390f35b6106f2565b346119535761193536600461077a565b61193d614b2b565b6119456106ec565b8061194f81610742565b0390f35b6106f2565b346119865761196836600461077a565b611970614be9565b6119786106ec565b8061198281610742565b0390f35b6106f2565b346119bb5761199b36600461077a565b6119b76119a6614c5e565b6119ae6106ec565b91829182610a4e565b0390f35b6106f2565b60018060a01b031690565b6119db9060086119e09302610a05565b6119c0565b90565b906119ee91546119cb565b90565b6119fd60085f906119e3565b90565b611a0990610cb0565b90565b611a1590611a00565b9052565b9190611a2c905f60208501940190611a0c565b565b34611a5e57611a3e36600461077a565b611a5a611a496119f1565b611a516106ec565b91829182611a19565b0390f35b6106f2565b34611a9357611a7336600461077a565b611a8f611a7e614c9a565b611a866106ec565b91829182610a4e565b0390f35b6106f2565b611aa460215f90610a24565b90565b34611ad757611ab736600461077a565b611ad3611ac2611a98565b611aca6106ec565b91829182610a4e565b0390f35b6106f2565b34611b0a57611af4611aef366004610724565b614dae565b611afc6106ec565b80611b0681610742565b0390f35b6106f2565b60018060a01b031690565b611b2a906008611b2f9302610a05565b611b0f565b90565b90611b3d9154611b1a565b90565b611b4c601c5f90611b32565b90565b34611b7f57611b5f36600461077a565b611b7b611b6a611b40565b611b726106ec565b918291826108b4565b0390f35b6106f2565b90565b611b97906008611b9c9302610a05565b611b84565b90565b90611baa9154611b87565b90565b611bb960285f90611b9f565b90565b90565b611bc890611bbc565b9052565b9190611bdf905f60208501940190611bbf565b565b34611c1157611bf136600461077a565b611c0d611bfc611bad565b611c046106ec565b91829182611bcc565b0390f35b6106f2565b611c2260235f90610a24565b90565b34611c5557611c3536600461077a565b611c51611c40611c16565b611c486106ec565b91829182610a4e565b0390f35b6106f2565b611c6660115f90611b32565b90565b34611c9957611c7936600461077a565b611c95611c84611c5a565b611c8c6106ec565b918291826108b4565b0390f35b6106f2565b60018060a01b031690565b611cb9906008611cbe9302610a05565b611c9e565b90565b90611ccc9154611ca9565b90565b611cdb60045f90611cc1565b90565b611ce790610cb0565b90565b611cf390611cde565b9052565b9190611d0a905f60208501940190611cea565b565b34611d3c57611d1c36600461077a565b611d38611d27611ccf565b611d2f6106ec565b91829182611cf7565b0390f35b6106f2565b90611d4b90610c62565b5f5260205260405f2090565b60ff1690565b611d6d906008611d729302610a05565b611d57565b90565b90611d809154611d5d565b90565b611d9990611d946012915f92611d41565b611d75565b90565b151590565b611daa90611d9c565b9052565b9190611dc1905f60208501940190611da1565b565b34611df357611def611dde611dd9366004610724565b611d83565b611de66106ec565b91829182611dae565b0390f35b6106f2565b34611e2657611e10611e0b366004610724565b614e7d565b611e186106ec565b80611e2281610742565b0390f35b6106f2565b34611e5b57611e3b36600461077a565b611e57611e46614e88565b611e4e6106ec565b91829182610a4e565b0390f35b6106f2565b34611e9057611e7036600461077a565b611e8c611e7b614ed5565b611e836106ec565b918291826108b4565b0390f35b6106f2565b611ea160265f90610a24565b90565b34611ed457611eb436600461077a565b611ed0611ebf611e95565b611ec76106ec565b91829182610a4e565b0390f35b6106f2565b611ee5600d5f90610a24565b90565b34611f1857611ef836600461077a565b611f14611f03611ed9565b611f0b6106ec565b91829182610a4e565b0390f35b6106f2565b60018060a01b031690565b611f38906008611f3d9302610a05565b611f1d565b90565b90611f4b9154611f28565b90565b611f5a60065f90611f40565b90565b611f6690610cb0565b90565b611f7290611f5d565b9052565b9190611f89905f60208501940190611f69565b565b34611fbb57611f9b36600461077a565b611fb7611fa6611f4e565b611fae6106ec565b91829182611f76565b0390f35b6106f2565b611fcc60225f90610a24565b90565b34611fff57611fdf36600461077a565b611ffb611fea611fc0565b611ff26106ec565b91829182610a4e565b0390f35b6106f2565b61201060095f90611b32565b90565b346120435761202336600461077a565b61203f61202e612004565b6120366106ec565b918291826108b4565b0390f35b6106f2565b9061205290610c62565b5f5260205260405f2090565b61206a61206f91610cde565b611b0f565b90565b61207c905461205e565b90565b634e487b7160e01b5f52602260045260245ffd5b90600160028304921680156120b3575b60208310146120ae57565b61207f565b91607f16916120a3565b60209181520190565b5f5260205f2090565b905f92918054906120e96120e283612093565b80946120bd565b916001811690815f146121405750600114612104575b505050565b61211191929394506120c6565b915f925b81841061212857505001905f80806120ff565b60018160209295939554848601520191019290612115565b92949550505060ff19168252151560200201905f80806120ff565b90612165916120cf565b90565b90612188612181926121786106ec565b9384809261215b565b0383611223565b565b61219590602c612048565b6121a05f8201612072565b916121b960026121b260018501610cf7565b9301612168565b90565b5190565b60209181520190565b6121e86121f16020936121f6936121df816121bc565b938480936121c0565b9586910161090c565b610917565b0190565b61221e61222b94929361221460608401955f8501906108a7565b6020830190610a41565b60408184039101526121c9565b90565b346122615761225d612249612244366004610724565b61218a565b6122549391936106ec565b938493846121fa565b0390f35b6106f2565b346122945761227e612279366004610724565b614fae565b6122866106ec565b8061229081610742565b0390f35b6106f2565b346122c7576122b16122ac366004610829565b6150e7565b6122b96106ec565b806122c381610742565b0390f35b6106f2565b906122d690610c62565b5f5260205260405f2090565b6122f8906122f36024915f926122cc565b611b32565b90565b3461232b57612327612316612311366004610724565b6122e2565b61231e6106ec565b918291826108b4565b0390f35b6106f2565b61233c601e5f90611b32565b90565b3461236f5761234f36600461077a565b61236b61235a612330565b6123626106ec565b918291826108b4565b0390f35b6106f2565b346123a25761238c612387366004610724565b6151b6565b6123946106ec565b8061239e81610742565b0390f35b6106f2565b346123d5576123bf6123ba366004610829565b6152ef565b6123c76106ec565b806123d181610742565b0390f35b6106f2565b6123e3906107fa565b90565b6123ef816123da565b036123f657565b5f80fd5b90503590612407826123e6565b565b91909160608184031261245a575f8101359167ffffffffffffffff83116124555761243984612452948401610ae8565b93909461244981602086016123fa565b93604001610715565b90565b6106fa565b6106f6565b61247661246d366004612409565b9291909161532f565b61247e6106ec565b8061248881610742565b0390f35b612495906107fa565b9052565b6124a2906106fe565b9052565b6124c56124ce6020936124d3936124bc816121bc565b938480936120bd565b9586910161090c565b610917565b0190565b61251491604060608201926124f25f8201515f85019061248c565b61250460208201516020850190612499565b01519060408184039101526124a6565b90565b61252c9160208201915f8184039101526124d7565b90565b3461255f5761255b61254a612545366004610724565b615482565b6125526106ec565b91829182612517565b0390f35b6106f2565b346125955761259161258061257a366004610e11565b916154a1565b6125886106ec565b91829182610952565b0390f35b6106f2565b906125a490610c62565b5f5260205260405f2090565b6125c96125ce926125c46016935f9461259a565b6122cc565b611b32565b90565b34612602576125fe6125ed6125e736600461087a565b906125b0565b6125f56106ec565b918291826108b4565b0390f35b6106f2565b612613601a5f90610a24565b90565b346126465761262636600461077a565b612642612631612607565b6126396106ec565b91829182610a4e565b0390f35b6106f2565b61265760275f90610a24565b90565b3461268a5761266a36600461077a565b61268661267561264b565b61267d6106ec565b91829182610a4e565b0390f35b6106f2565b61269b60305f90610a24565b90565b346126ce576126ae36600461077a565b6126ca6126b961268f565b6126c16106ec565b91829182610a4e565b0390f35b6106f2565b5f80fd5b67ffffffffffffffff81116126f5576126f1602091610917565b0190565b61120f565b90825f939282370152565b9092919261271a612715826126d7565b61124c565b9381855260208501908284011161273657612734926126fa565b565b6126d3565b9080601f830112156127595781602061275693359101612705565b90565b610adc565b9060208282031261278e575f82013567ffffffffffffffff811161278957612786920161273b565b90565b6106fa565b6106f6565b346127c1576127ab6127a636600461275e565b615575565b6127b36106ec565b806127bd81610742565b0390f35b6106f2565b346127f4576127de6127d9366004610829565b61571c565b6127e66106ec565b806127f081610742565b0390f35b6106f2565b346128275761281161280c366004610724565b6157e1565b6128196106ec565b8061282381610742565b0390f35b6106f2565b3461285a5761284461283f366004610829565b61591a565b61284c6106ec565b8061285681610742565b0390f35b6106f2565b61286b60185f90610a24565b90565b3461289e5761287e36600461077a565b61289a61288961285f565b6128916106ec565b91829182610a4e565b0390f35b6106f2565b346128d1576128bb6128b6366004610724565b615a49565b6128c36106ec565b806128cd81610742565b0390f35b6106f2565b34612906576128e636600461077a565b6129026128f1615a54565b6128f96106ec565b91829182610a4e565b0390f35b6106f2565b61291760145f90610a24565b90565b3461294a5761292a36600461077a565b61294661293561290b565b61293d6106ec565b91829182610a4e565b0390f35b6106f2565b9061295990610c62565b5f5260205260405f2090565b61297b906129766017915f9261294f565b610a24565b90565b346129ae576129aa612999612994366004610724565b612965565b6129a16106ec565b91829182610a4e565b0390f35b6106f2565b346129e1576129cb6129c6366004610724565b615a90565b6129d36106ec565b806129dd81610742565b0390f35b6106f2565b906129f090610c62565b5f5260205260405f2090565b60018060a01b031690565b612a13612a1891610cde565b6129fc565b90565b612a259054612a07565b90565b612a34612a3991610cde565b611d57565b90565b612a469054612a28565b90565b612a549060296129e6565b90612a605f8301612a1b565b91612a6d60018201610cf7565b91612a866003612a7f60028501610cf7565b9301612a3c565b90565b612a9290610cb0565b90565b612a9e90612a89565b9052565b612ad7612ade94612acd606094989795612ac3608086019a5f870190612a95565b6020850190610a41565b6040830190610a41565b0190611da1565b565b34612b1457612b10612afb612af6366004610724565b612a49565b90612b079492946106ec565b94859485612aa2565b0390f35b6106f2565b34612b4757612b2936600461077a565b612b31615bff565b612b396106ec565b80612b4381610742565b0390f35b6106f2565b612b58600e5f90610a24565b90565b34612b8b57612b6b36600461077a565b612b87612b76612b4c565b612b7e6106ec565b91829182610a4e565b0390f35b6106f2565b612b9c602d5f90610a24565b90565b34612bcf57612baf36600461077a565b612bcb612bba612b90565b612bc26106ec565b91829182610a4e565b0390f35b6106f2565b60ff1690565b612bea906008612bef9302610a05565b612bd4565b90565b90612bfd9154612bda565b90565b612c0d6011601490612bf2565b90565b634e487b7160e01b5f52602160045260245ffd5b60031115612c2e57565b612c10565b90612c3d82612c24565b565b612c4890612c33565b90565b612c5490612c3f565b9052565b9190612c6b905f60208501940190612c4b565b565b34612c9d57612c7d36600461077a565b612c99612c88612c00565b612c906106ec565b91829182612c58565b0390f35b6106f2565b34612cd257612cb236600461077a565b612cce612cbd615c09565b612cc56106ec565b91829182610a4e565b0390f35b6106f2565b34612d0557612cef612cea366004610724565b615d69565b612cf76106ec565b80612d0181610742565b0390f35b6106f2565b34612d3a57612d1a36600461077a565b612d36612d25615da2565b612d2d6106ec565b91829182610a4e565b0390f35b6106f2565b612d4b60135f90610a24565b90565b34612d7e57612d5e36600461077a565b612d7a612d69612d3f565b612d716106ec565b91829182610a4e565b0390f35b6106f2565b612d9990612d946033915f9261294f565b610a24565b90565b34612dcc57612dc8612db7612db2366004610724565b612d83565b612dbf6106ec565b91829182610a4e565b0390f35b6106f2565b612ddc36600461077a565b612de4615ddc565b612dec6106ec565b80612df681610742565b0390f35b34612e2857612e12612e0d366004610829565b615f60565b612e1a6106ec565b80612e2481610742565b0390f35b6106f2565b34612e5b57612e45612e40366004610724565b61602f565b612e4d6106ec565b80612e5781610742565b0390f35b6106f2565b34612e9057612e7036600461077a565b612e8c612e7b61603a565b612e836106ec565b91829182610a4e565b0390f35b6106f2565b612ea1600f5f90610a24565b90565b34612ed457612eb436600461077a565b612ed0612ebf612e95565b612ec76106ec565b91829182610a4e565b0390f35b6106f2565b34612f0757612ef1612eec366004610829565b616193565b612ef96106ec565b80612f0381610742565b0390f35b6106f2565b60018060a01b031690565b612f27906008612f2c9302610a05565b612f0c565b90565b90612f3a9154612f17565b90565b612f4960035f90612f2f565b90565b612f5590610cb0565b90565b612f6190612f4c565b9052565b9190612f78905f60208501940190612f58565b565b34612faa57612f8a36600461077a565b612fa6612f95612f3d565b612f9d6106ec565b91829182612f65565b0390f35b6106f2565b5f80fd5b5f7f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572910152565b612fe6602080926121c0565b612fef81612fb3565b0190565b6130089060208101905f818303910152612fda565b90565b1561301257565b61301a6106ec565b62461bcd60e51b81528061303060048201612ff3565b0390fd5b61306790613062613043614ed5565b61305c613056613051616215565b6107fa565b916107fa565b1461300b565b6131ba565b565b90565b61308061307b61308592613069565b610c5f565b6106fe565b90565b613092600261306c565b90565b906130a76130a2836126d7565b61124c565b918252565b60207f4345000000000000000000000000000000000000000000000000000000000000917f53797374656d206d75737420626520696e204d4f44455f4d41494e54454e414e5f8201520152565b6131036022613095565b90613110602083016130ac565b565b61311a6130f9565b90565b613125613112565b90565b9291602061314461314c9360408701908782035f8901526121c9565b940190610a41565b565b15613157575050565b6131786131626106ec565b9283926358eca00b60e11b845260048401613128565b0390fd5b5f1b90565b9061318d5f199161317c565b9181191691161790565b90565b906131af6131aa6131b692610c62565b613197565b8254613181565b9055565b613204906131fd6131cb6032610cf7565b6131e46131de6131d9613088565b6106fe565b916106fe565b146131ed61311d565b6131f76032610cf7565b9161314e565b601561319a565b61320e6015610cf7565b6132447fcaf8e5c6bc1bb2c19935f84ddcdaefb232ad06f9f2abd2ad588bea4bbe631d269161323b6106ec565b91829182610a4e565b0390a1565b61325290613034565b565b61327e61325f614ed5565b61327861327261326d616215565b6107fa565b916107fa565b1461300b565b6132866132b3565b565b90565b61329f61329a6132a492613288565b610c5f565b6106fe565b90565b6132b05f61328b565b90565b6132f26132c06032610cf7565b6132d96132d36132ce613088565b6106fe565b916106fe565b146132e261311d565b6132ec6032610cf7565b9161314e565b6133046132fd6132a7565b603261319a565b61330e6032610cf7565b6133447ff24e774cdaabee9b8782266728e442b7f1fa6ae9204755c0da1541e99f04aa4c9161333b6106ec565b91829182610a4e565b0390a1565b613351613254565b565b61338690613381613362614ed5565b61337b613375613370616215565b6107fa565b916107fa565b1461300b565b613388565b565b6133d2906133cb6133996032610cf7565b6133b26133ac6133a7613088565b6106fe565b916106fe565b146133bb61311d565b6133c56032610cf7565b9161314e565b600d61319a565b6133dc600d610cf7565b6134127f678d086a09e1be49401b1e3a6e14db1878e8d8b88e71d0cfe24a32726d0e38b9916134096106ec565b91829182610a4e565b0390a1565b61342090613353565b565b61345590613450613431614ed5565b61344a61344461343f616215565b6107fa565b916107fa565b1461300b565b613564565b565b61346b61346661347092613288565b610c5f565b6107ef565b90565b61347c90613457565b90565b5f7f5a65726f2d616464726573732077617320676976656e2e000000000000000000910152565b6134b360176020926121c0565b6134bc8161347f565b0190565b6134d59060208101905f8183039101526134a6565b90565b156134df57565b6134e76106ec565b63eac0d38960e01b8152806134fe600482016134c0565b0390fd5b61350b90610c94565b90565b61351790613502565b90565b9061352b60018060a01b039161317c565b9181191691161790565b61353e90613502565b90565b90565b9061355961355461356092613535565b613541565b825461351a565b9055565b6135a36135716032610cf7565b61358a61358461357f613088565b6106fe565b916106fe565b1461359361311d565b61359d6032610cf7565b9161314e565b6135c8816135c16135bb6135b65f613473565b6107fa565b916107fa565b14156134d8565b6135db6135d48261350e565b6005613544565b6136117f508d510537704d37ed64691a706392abc33e59ce8a327b4952e112820ceb88a6916136086106ec565b918291826108b4565b0390a1565b61361f90613422565b565b5f90565b61363161363691610cde565b611c9e565b90565b6136439054613625565b90565b91602061366792949361366060408201965f830190610a41565b0190610a41565b565b67ffffffffffffffff811161368757613683602091610917565b0190565b61120f565b9061369e61369983613669565b61124c565b918252565b606090565b3d5f146136c3576136b83d61368c565b903d5f602084013e5b565b6136cb6136a3565b906136c1565b6136da906107ef565b90565b6136e6816136d1565b036136ed57565b5f80fd5b905051906136fe826136dd565b565b9060208282031261371957613716915f016136f1565b90565b6106f6565b61372790610cb0565b90565b5f916004613781849361373b613621565b5061377261375061374b85613639565b611cde565b94630184030760e31b926137626106ec565b9586946020860190815201613646565b60208201810382520382611223565b602081019051915af461379c6137956136a8565b9115611d9c565b5f146137ad576040513d90815f823efd5b6137ca6137cf9160206137bf826108ff565b818301019101613700565b61371e565b90565b5f7f43616c6c20746f20627573696e657373206c6f676963206661696c65642e0000910152565b613806601e6020926121c0565b61380f816137d2565b0190565b91604061384492949361383d613832606083018381035f8501526137f9565b9660208301906108a7565b0190610b93565b565b1561384f575050565b61387061385a6106ec565b928392632979c21160e11b845260048401613813565b0390fd5b61387c6136a3565b505f8061389161388c6004613639565b611cde565b60046138c8630197ea9960e31b6138b96138a96106ec565b9384926020840190815201610742565b60208201810382520382611223565b602081019051915af46138fd6138dc6136a8565b916138ef6138ea6004613639565b611cde565b630197ea9960e31b91613846565b90565b6139339061392e61390f614ed5565b61392861392261391d616215565b6107fa565b916107fa565b1461300b565b613a47565b565b634e487b7160e01b5f52601160045260245ffd5b61395861395e919392936106fe565b926106fe565b820180921161396957565b613935565b90565b61398561398061398a9261396e565b610c5f565b6106fe565b90565b60207f6265206c6f776572207468616e203130302e0000000000000000000000000000917f50657263656e746167652076616c7565206f766572666c6f772c206d757374205f8201520152565b6139e760326040926121c0565b6139f08161398d565b0190565b9190613a17906020613a0f604086018681035f8801526139da565b940190610a41565b565b15613a215750565b613a4390613a2d6106ec565b9182916323b058a560e11b8352600483016139f4565b0390fd5b613a9190613a8a613a586032610cf7565b613a71613a6b613a66613088565b6106fe565b916106fe565b14613a7a61311d565b613a846032610cf7565b9161314e565b602361319a565b613af1613ad7613ac7613ab7613aa76020610cf7565b613ab16021610cf7565b90613949565b613ac16022610cf7565b90613949565b613ad16023610cf7565b90613949565b80613aeb613ae56064613971565b916106fe565b10613a19565b613afb6023610cf7565b613b317f9be9203c5d81ee2019998f7020cf412c92a35ba870318f660d4972660210fb4b91613b286106ec565b91829182610a4e565b0390a1565b613b3f90613900565b565b613b7490613b6f613b50614ed5565b613b69613b63613b5e616215565b6107fa565b916107fa565b1461300b565b613bbd565b565b613b7f90610c94565b90565b613b8b90613b76565b90565b613b9790613b76565b90565b90565b90613bb2613bad613bb992613b8e565b613b9a565b825461351a565b9055565b613bfc613bca6032610cf7565b613be3613bdd613bd8613088565b6106fe565b916106fe565b14613bec61311d565b613bf66032610cf7565b9161314e565b613c2181613c1a613c14613c0f5f613473565b6107fa565b916107fa565b14156134d8565b613c34613c2d82613b82565b6006613b9d565b613c6a7f01f7695f55306401a817bccb872ffccabbcbccbf555dbc68de8f731c8ad6c3df91613c616106ec565b918291826108b4565b0390a1565b613c7890613b41565b565b5f90565b613c8790610cb0565b90565b63ffffffff1690565b60e01b90565b613cad613ca8613cb292613c8a565b613c93565b610b87565b90565b5050505050613cc2613c7a565b50613cd063150b7a02613c99565b90565b5f7f53797374656d20696e206d61696e74656e616e6365206d6f6465000000000000910152565b613d04601a613095565b90613d1160208301613cd3565b565b613d1b613cfa565b90565b613d26613d13565b90565b9190613d4381613d3c81613d4895610903565b80956126fa565b610917565b0190565b9091613d639260208301925f818503910152613d29565b90565b6004613df55f9493613de68695613d7b6136a3565b50613dbb613d896032610cf7565b613da2613d9c613d97613088565b6106fe565b916106fe565b10613dab613d1e565b613db56032610cf7565b9161314e565b613dcc613dc786613639565b611cde565b9592613dd66106ec565b9586946020860190815201613d4c565b60208201810382520382611223565b602081019051915af4613e10613e096136a8565b9115611d9c565b613e175790565b6040513d90815f823efd5b9190613e3c81613e3581613e41956121c0565b80956126fa565b610917565b0190565b9091613e5c9260208301925f818503910152613e22565b90565b5f613ec8926004613eb08394613ea1613e7f613e7a85613639565b611cde565b94632366b3b760e01b92613e916106ec565b9586946020860190815201613e45565b60208201810382520382611223565b602081019051915af4613ec16136a8565b5015611d9c565b613ece57565b6040513d90815f823efd5b613f0c90613f07613ee8614ed5565b613f01613efb613ef6616215565b6107fa565b916107fa565b1461300b565b613f0e565b565b613f5890613f51613f1f6032610cf7565b613f38613f32613f2d613088565b6106fe565b916106fe565b14613f4161311d565b613f4b6032610cf7565b9161314e565b602561319a565b613f626025610cf7565b613f987f26f4dd2743839f7c4e8e381ebda3f0c09ad91e8294b566239e6556380bc8c2f491613f8f6106ec565b91829182610a4e565b0390a1565b613fa690613ed9565b565b5f614011926004613ff98394613fea613fc8613fc385613639565b611cde565b9463031e375360e41b92613fda6106ec565b9586946020860190815201613d4c565b60208201810382520382611223565b602081019051915af461400a6136a8565b5015611d9c565b61401757565b6040513d90815f823efd5b5f90565b61403561403b919392936106fe565b926106fe565b820391821161404657565b613935565b614053613621565b5061405c614022565b506140676011612072565b61408161407b6140765f613473565b6107fa565b916107fa565b14614103576140ba426140b460016140ae6140a7601b6140a1600a610cf7565b90610c7e565b3390610cc8565b01610cf7565b90614026565b806140d66140d06140cb601f610cf7565b6106fe565b916106fe565b116140f457506140e66011612072565b906140f1601f610cf7565b90565b906140ff6011612072565b9190565b61410c5f613473565b906141165f61328b565b90565b5190565b60209181520190565b60200190565b9061413981602093612499565b0190565b60200190565b9061416061415a61415384614119565b809361411d565b92614126565b905f5b8181106141705750505090565b909192614189614183600192865161412c565b9461413d565b9101919091614163565b6141a89160208201915f818403910152614143565b90565b5f806142139260046141fb6141c76141c283613639565b611cde565b926141ec630fde427560e21b916141dc6106ec565b9485936020850190815201614193565b60208201810382520382611223565b602081019051915af461420c6136a8565b5015611d9c565b61421957565b6040513d90815f823efd5b61425790614252614233614ed5565b61424c614246614241616215565b6107fa565b916107fa565b1461300b565b614259565b565b6142a39061429c61426a6032610cf7565b61428361427d614278613088565b6106fe565b916106fe565b1461428c61311d565b6142966032610cf7565b9161314e565b600e61319a565b6142ad600e610cf7565b6142e37fed46e73b174ced51fb529cdc6c1b4d8abf49387e6d849b71648afb63c81d12cd916142da6106ec565b91829182610a4e565b0390a1565b6142f190614224565b565b61432690614321614302614ed5565b61431b614315614310616215565b6107fa565b916107fa565b1461300b565b614328565b565b6143729061436b6143396032610cf7565b61435261434c614347613088565b6106fe565b916106fe565b1461435b61311d565b6143656032610cf7565b9161314e565b602761319a565b61437c6027610cf7565b6143b27fabad7e38dbf633cf4208567936f05551c63b73e3ef5a278f64244c15030c0c68916143a96106ec565b91829182610a4e565b0390a1565b6143c0906142f3565b565b6143f5906143f06143d1614ed5565b6143ea6143e46143df616215565b6107fa565b916107fa565b1461300b565b6143f7565b565b6144419061443a6144086032610cf7565b61442161441b614416613088565b6106fe565b916106fe565b1461442a61311d565b6144346032610cf7565b9161314e565b602e61319a565b61444b602e610cf7565b6144817f762f994f6c24fece9d12a1eba3630058b2a0d8cb551a6496ef6e128aedf86353916144786106ec565b91829182610a4e565b0390a1565b61448f906143c2565b565b6144c4906144bf6144a0614ed5565b6144b96144b36144ae616215565b6107fa565b916107fa565b1461300b565b6144c6565b565b614510906145096144d76032610cf7565b6144f06144ea6144e5613088565b6106fe565b916106fe565b146144f961311d565b6145036032610cf7565b9161314e565b601361319a565b61451a6013610cf7565b6145507f6da281754ba85ee0c5983a8e8f05a92910c2a0c5b80e68c126216d65f162a305916145476106ec565b91829182610a4e565b0390a1565b61455e90614491565b565b6145939061458e61456f614ed5565b61458861458261457d616215565b6107fa565b916107fa565b1461300b565b6145dc565b565b61459e90610c94565b90565b6145aa90614595565b90565b6145b690614595565b90565b90565b906145d16145cc6145d8926145ad565b6145b9565b825461351a565b9055565b61461b6145e96032610cf7565b6146026145fc6145f7613088565b6106fe565b916106fe565b1461460b61311d565b6146156032610cf7565b9161314e565b6146408161463961463361462e5f613473565b6107fa565b916107fa565b14156134d8565b61465361464c826145a1565b60026145bc565b6146897f7142a592d5404b5fc4a294c66f70e32b2a7776bd807f722d59268def87c765d1916146806106ec565b918291826108b4565b0390a1565b61469790614560565b565b6146cc906146c76146a8614ed5565b6146c16146bb6146b6616215565b6107fa565b916107fa565b1461300b565b6146ce565b565b614718906147116146df6032610cf7565b6146f86146f26146ed613088565b6106fe565b916106fe565b1461470161311d565b61470b6032610cf7565b9161314e565b603061319a565b6147226030610cf7565b6147587faa59cda80c9b70b72f2ab15997b2622a0f94b107c401abfdc0f01f6f364892219161474f6106ec565b91829182610a4e565b0390a1565b61476690614699565b565b6147706136a3565b505f806147856147806004613639565b611cde565b60046147bc6356c96eb760e01b6147ad61479d6106ec565b9384926020840190815201610742565b60208201810382520382611223565b602081019051915af46147f16147d06136a8565b916147e36147de6004613639565b611cde565b6356c96eb760e01b91613846565b90565b61482790614822614803614ed5565b61481c614816614811616215565b6107fa565b916107fa565b1461300b565b614870565b565b61483290610c94565b90565b61483e90614829565b90565b61484a90614829565b90565b90565b9061486561486061486c92614841565b61484d565b825461351a565b9055565b6148af61487d6032610cf7565b61489661489061488b613088565b6106fe565b916106fe565b1461489f61311d565b6148a96032610cf7565b9161314e565b6148d4816148cd6148c76148c25f613473565b6107fa565b916107fa565b14156134d8565b6148e76148e082614835565b6008614850565b61491d7f4d03942c29c20d1bccfe551e9d148c917c5a44fb558a4fc60270d8f76fb75f54916149146106ec565b918291826108b4565b0390a1565b61492b906147f4565b565b6149609061495b61493c614ed5565b61495561494f61494a616215565b6107fa565b916107fa565b1461300b565b614962565b565b6149ac906149a56149736032610cf7565b61498c614986614981613088565b6106fe565b916106fe565b1461499561311d565b61499f6032610cf7565b9161314e565b602161319a565b614a0c6149f26149e26149d26149c26020610cf7565b6149cc6021610cf7565b90613949565b6149dc6022610cf7565b90613949565b6149ec6023610cf7565b90613949565b80614a06614a006064613971565b916106fe565b10613a19565b614a166021610cf7565b614a4c7f0918b499c15fcb0e087d411d53664cde23577e1aa4a9cbfbdf735ddd1871e7d591614a436106ec565b91829182610a4e565b0390a1565b614a5a9061492d565b565b614a8f90614a8a614a6b614ed5565b614a84614a7e614a79616215565b6107fa565b916107fa565b1461300b565b614a91565b565b614adb90614ad4614aa26032610cf7565b614abb614ab5614ab0613088565b6106fe565b916106fe565b14614ac461311d565b614ace6032610cf7565b9161314e565b602f61319a565b614ae5602f610cf7565b614b1b7f128f1a593e59483213fe815142e18dbb38a862d67eaca100681e166383d0fcb291614b126106ec565b91829182610a4e565b0390a1565b614b2990614a5c565b565b614b915f80614b42614b3d6004613639565b611cde565b6004614b796370740ac960e01b614b6a614b5a6106ec565b9384926020840190815201610742565b60208201810382520382611223565b602081019051915af4614b8a6136a8565b5015611d9c565b614b9757565b6040513d90815f823efd5b614bcc614bad614ed5565b614bc6614bc0614bbb616215565b6107fa565b916107fa565b1461300b565b614bd4614bd6565b565b614be7614be25f613473565b616222565b565b614bf1614ba2565b565b614c02614c08919392936106fe565b926106fe565b91614c148382026106fe565b928184041490151715614c2357565b613935565b634e487b7160e01b5f52601260045260245ffd5b614c48614c4e916106fe565b916106fe565b908115614c59570490565b614c28565b614c66614022565b50614c97614c87614c7630613c7e565b31614c816023610cf7565b90614bf3565b614c916064613971565b90614c3c565b90565b614ca2614022565b50614cd3614cc3614cb230613c7e565b31614cbd6020610cf7565b90614bf3565b614ccd6064613971565b90614c3c565b90565b614d0990614d04614ce5614ed5565b614cfe614cf8614cf3616215565b6107fa565b916107fa565b1461300b565b614d0b565b565b614d5590614d4e614d1c6032610cf7565b614d35614d2f614d2a613088565b6106fe565b916106fe565b14614d3e61311d565b614d486032610cf7565b9161314e565b602d61319a565b614d69614d62602d610cf7565b601861319a565b614d73602d610cf7565b614da97f584ff9a7b3a86db5397052f2e440da0ed60a95f646a3a884863cd92262e682b691614da06106ec565b91829182610a4e565b0390a1565b614db790614cd6565b565b614dec90614de7614dc8614ed5565b614de1614ddb614dd6616215565b6107fa565b916107fa565b1461300b565b614dee565b565b614e3890614e31614dff6032610cf7565b614e18614e12614e0d613088565b6106fe565b916106fe565b14614e2161311d565b614e2b6032610cf7565b9161314e565b600f61319a565b614e42600f610cf7565b614e787fcbc1f49adfa29e2f2f0f5c9e057722496a4bc95a6a5446deaa423a02b30c64ac91614e6f6106ec565b91829182610a4e565b0390a1565b614e8690614db9565b565b614e90614022565b50614e9b6014610cf7565b614ead614ea7426106fe565b916106fe565b10614ec957614ec6614ebf6014610cf7565b4290614026565b90565b614ed25f61328b565b90565b614edd613621565b50614ee75f612072565b90565b614f1d90614f18614ef9614ed5565b614f12614f0c614f07616215565b6107fa565b916107fa565b1461300b565b614f1f565b565b614f6990614f62614f306032610cf7565b614f49614f43614f3e613088565b6106fe565b916106fe565b14614f5261311d565b614f5c6032610cf7565b9161314e565b603161319a565b614f736031610cf7565b614fa97fba9cecc4e500595a0ea3893f03b1f37ccf9c9b2a22c2fe6256eaa0e61fd7adc891614fa06106ec565b91829182610a4e565b0390a1565b614fb790614eea565b565b614fec90614fe7614fc8614ed5565b614fe1614fdb614fd6616215565b6107fa565b916107fa565b1461300b565b615035565b565b614ff790610c94565b90565b61500390614fee565b90565b61500f90614fee565b90565b90565b9061502a61502561503192615006565b615012565b825461351a565b9055565b6150746150426032610cf7565b61505b615055615050613088565b6106fe565b916106fe565b1461506461311d565b61506e6032610cf7565b9161314e565b6150998161509261508c6150875f613473565b6107fa565b916107fa565b14156134d8565b6150ac6150a582614ffa565b6004615015565b6150e27f77ddb5e9e1495e15651bf87ccd8bbb7e637439fb260f0fda41b6ce4b3098aafd916150d96106ec565b918291826108b4565b0390a1565b6150f090614fb9565b565b61512590615120615101614ed5565b61511a61511461510f616215565b6107fa565b916107fa565b1461300b565b615127565b565b6151719061516a6151386032610cf7565b61515161514b615146613088565b6106fe565b916106fe565b1461515a61311d565b6151646032610cf7565b9161314e565b601061319a565b61517b6010610cf7565b6151b17f3b311f029da1b90c3de2e0b3168436c5ed7d8b0ae81b7d4894c12da03835c628916151a86106ec565b91829182610a4e565b0390a1565b6151bf906150f2565b565b6151f4906151ef6151d0614ed5565b6151e96151e36151de616215565b6107fa565b916107fa565b1461300b565b61523d565b565b6151ff90610c94565b90565b61520b906151f6565b90565b615217906151f6565b90565b90565b9061523261522d6152399261520e565b61521a565b825461351a565b9055565b61527c61524a6032610cf7565b61526361525d615258613088565b6106fe565b916106fe565b1461526c61311d565b6152766032610cf7565b9161314e565b6152a18161529a61529461528f5f613473565b6107fa565b916107fa565b14156134d8565b6152b46152ad82615202565b600161521d565b6152ea7f9dc3707e4b88be65295b0083b44ffa94059c80372add9b0d24d6a3b371a03b92916152e16106ec565b918291826108b4565b0390a1565b6152f8906151c1565b565b61532661531b60409361532d9698979560608501918583035f870152613d29565b966020830190612a95565b0190610a41565b565b9160046153865f94615377869561539e9861535161534c87613639565b611cde565b9663ae3661fd60e01b94929091926153676106ec565b97889660208801908152016152fa565b60208201810382520382611223565b602081019051915af46153976136a8565b5015611d9c565b6153a457565b6040513d90815f823efd5b6153b9606061124c565b90565b5f90565b5f90565b606090565b6153d16153af565b9060208080846153df6153bc565b8152016153ea6153c0565b8152016153f56153c4565b81525050565b6154036153c9565b90565b90615410906107fa565b9052565b9061541e906106fe565b9052565b52565b9061547461546b60026154366153af565b9461544d6154455f8301612072565b5f8801615406565b61546561545c60018301610cf7565b60208801615414565b01612168565b60408401615422565b565b61547f90615425565b90565b61549961549e916154916153fb565b50602c612048565b615476565b90565b60046155305f949361552186956154b66136a3565b506154f66154c46032610cf7565b6154dd6154d76154d2613088565b6106fe565b916106fe565b146154e6613d1e565b6154f06032610cf7565b9161314e565b61550761550286613639565b611cde565b95926155116106ec565b9586946020860190815201613d4c565b60208201810382520382611223565b602081019051915af461554b6155446136a8565b9115611d9c565b6155525790565b6040513d90815f823efd5b6155729160208201915f8184039101526121c9565b90565b5f806155dd9260046155c561559161558c83613639565b611cde565b926155b6630ba35b1b60e41b916155a66106ec565b948593602085019081520161555d565b60208201810382520382611223565b602081019051915af46155d66136a8565b5015611d9c565b6155e357565b6040513d90815f823efd5b6156219061561c6155fd614ed5565b61561661561061560b616215565b6107fa565b916107fa565b1461300b565b61566a565b565b61562c90610c94565b90565b61563890615623565b90565b61564490615623565b90565b90565b9061565f61565a6156669261563b565b615647565b825461351a565b9055565b6156a96156776032610cf7565b61569061568a615685613088565b6106fe565b916106fe565b1461569961311d565b6156a36032610cf7565b9161314e565b6156ce816156c76156c16156bc5f613473565b6107fa565b916107fa565b14156134d8565b6156e16156da8261562f565b600361564a565b6157177f3ab2dcf539aa3c30314265602fc86dee8e343e3c3905730f870835f36c400deb9161570e6106ec565b918291826108b4565b0390a1565b615725906155ee565b565b61575a90615755615736614ed5565b61574f615749615744616215565b6107fa565b916107fa565b1461300b565b61575c565b565b61579b6157696032610cf7565b61578261577c615777613088565b6106fe565b916106fe565b1461578b61311d565b6157956032610cf7565b9161314e565b6157a681601a61319a565b6157dc7ffa013ab3d3f17cb94a869ccc05fc842a00a83fd7318e55faeb0335c6d5d22aa3916157d36106ec565b91829182610a4e565b0390a1565b6157ea90615727565b565b61581f9061581a6157fb614ed5565b61581461580e615809616215565b6107fa565b916107fa565b1461300b565b615868565b565b61582a90610c94565b90565b61583690615821565b90565b61584290615821565b90565b90565b9061585d61585861586492615839565b615845565b825461351a565b9055565b6158a76158756032610cf7565b61588e615888615883613088565b6106fe565b916106fe565b1461589761311d565b6158a16032610cf7565b9161314e565b6158cc816158c56158bf6158ba5f613473565b6107fa565b916107fa565b14156134d8565b6158df6158d88261582d565b6007615848565b6159157f49a7d2f024af6dd81c8fa57c882796a3b36997fc33cf112e8ef840dec52364269161590c6106ec565b918291826108b4565b0390a1565b615923906157ec565b565b61595890615953615934614ed5565b61594d615947615942616215565b6107fa565b916107fa565b1461300b565b61595a565b565b6159a49061599d61596b6032610cf7565b61598461597e615979613088565b6106fe565b916106fe565b1461598d61311d565b6159976032610cf7565b9161314e565b602261319a565b615a046159ea6159da6159ca6159ba6020610cf7565b6159c46021610cf7565b90613949565b6159d46022610cf7565b90613949565b6159e46023610cf7565b90613949565b806159fe6159f86064613971565b916106fe565b10613a19565b615a0e6022610cf7565b615a447fd2002a256ab2f8a5c1b865685754b20437c0a26e7249e40ae5df2993966f99f291615a3b6106ec565b91829182610a4e565b0390a1565b615a5290615925565b565b615a5c614022565b50615a8d615a7d615a6c30613c7e565b31615a776022610cf7565b90614bf3565b615a876064613971565b90614c3c565b90565b5f80615af8926004615ae0615aac615aa783613639565b611cde565b92615ad1631ab3ae8f60e31b91615ac16106ec565b9485936020850190815201610a4e565b60208201810382520382611223565b602081019051915af4615af16136a8565b5015611d9c565b615afe57565b6040513d90815f823efd5b615b33615b14614ed5565b615b2d615b27615b22616215565b6107fa565b916107fa565b1461300b565b615b3b615b69565b565b90565b615b54615b4f615b5992615b3d565b610c5f565b6106fe565b90565b615b666001615b40565b90565b615ba8615b766032610cf7565b615b8f615b89615b846132a7565b6106fe565b916106fe565b14615b9861311d565b615ba26032610cf7565b9161314e565b615bba615bb3615b5c565b603261319a565b615bc46032610cf7565b615bfa7ff24e774cdaabee9b8782266728e442b7f1fa6ae9204755c0da1541e99f04aa4c91615bf16106ec565b91829182610a4e565b0390a1565b615c07615b09565b565b615c11614022565b50615c42615c32615c2130613c7e565b31615c2c6021610cf7565b90614bf3565b615c3c6064613971565b90614c3c565b90565b615c7890615c73615c54614ed5565b615c6d615c67615c62616215565b6107fa565b916107fa565b1461300b565b615c7a565b565b615cc490615cbd615c8b6032610cf7565b615ca4615c9e615c99613088565b6106fe565b916106fe565b14615cad61311d565b615cb76032610cf7565b9161314e565b602061319a565b615d24615d0a615cfa615cea615cda6020610cf7565b615ce46021610cf7565b90613949565b615cf46022610cf7565b90613949565b615d046023610cf7565b90613949565b80615d1e615d186064613971565b916106fe565b10613a19565b615d2e6020610cf7565b615d647f595fa5ba64cd6f66df19b53b59bb4a275bae1ec5b362da95e1fa4c5feb62be1e91615d5b6106ec565b91829182610a4e565b0390a1565b615d7290615c45565b565b90565b615d8b615d86615d9092615d74565b610c5f565b6106fe565b90565b615d9f620f4240615d77565b90565b615daa614022565b50615dd9615dcb615dbb600b610cf7565b615dc5600f610cf7565b90614bf3565b615dd3615d93565b90614c3c565b90565b615e425f80615df3615dee6004613639565b611cde565b6004615e2a6376c4634760e11b615e1b615e0b6106ec565b9384926020840190815201610742565b60208201810382520382611223565b602081019051915af4615e3b6136a8565b5015611d9c565b615e4857565b6040513d90815f823efd5b615e8690615e81615e62614ed5565b615e7b615e75615e70616215565b6107fa565b916107fa565b1461300b565b615f30565b565b60207f6464726573730000000000000000000000000000000000000000000000000000917f4f776e61626c653a206e6577206f776e657220697320746865207a65726f20615f8201520152565b615ee260266040926121c0565b615eeb81615e88565b0190565b615f049060208101905f818303910152615ed5565b90565b15615f0e57565b615f166106ec565b62461bcd60e51b815280615f2c60048201615eef565b0390fd5b615f5e90615f5981615f52615f4c615f475f613473565b6107fa565b916107fa565b1415615f07565b616222565b565b615f6990615e53565b565b615f9e90615f99615f7a614ed5565b615f93615f8d615f88616215565b6107fa565b916107fa565b1461300b565b615fa0565b565b615fea90615fe3615fb16032610cf7565b615fca615fc4615fbf613088565b6106fe565b916106fe565b14615fd361311d565b615fdd6032610cf7565b9161314e565b602661319a565b615ff46026610cf7565b61602a7f06dd30d27a9e7637b273638e4bfa768e1cf87fe89bda7589c3a68814b8662980916160216106ec565b91829182610a4e565b0390a1565b61603890615f6b565b565b616042614022565b5061604d602d610cf7565b61605f616059426106fe565b916106fe565b1061607b57616078616071602d610cf7565b4290614026565b90565b6160845f61328b565b90565b6160ba906160b5616096614ed5565b6160af6160a96160a4616215565b6107fa565b916107fa565b1461300b565b6160df565b565b90565b906160d46160cf6160db92610cbc565b6160bc565b825461351a565b9055565b61614e906161226160f06032610cf7565b6161096161036160fe613088565b6106fe565b916106fe565b1461611261311d565b61611c6032610cf7565b9161314e565b6161478161614061613a6161355f613473565b6107fa565b916107fa565b14156134d8565b60096160bf565b6161586009612072565b61618e7f1c7efd98583e33a9cc6adff48a97abdaaf43e5c9e918d5ec3e75e93e1dafcf6c916161856106ec565b918291826108b4565b0390a1565b61619c90616087565b565b6162045f806161b56161b06004613639565b611cde565b60046161ec63147225d960e31b6161dd6161cd6106ec565b9384926020840190815201610742565b60208201810382520382611223565b602081019051915af46161fd6136a8565b5015611d9c565b61620a57565b6040513d90815f823efd5b61621d613621565b503390565b61622b5f612072565b616235825f6160bf565b906162696162637f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093610cbc565b91610cbc565b916162726106ec565b8061627c81610742565b0390a356fea26469706673582212207e0f6dcf6b1270145833e2da778acb5dd13552a81cfb50660d1096dfa15345cd64736f6c634300081a0033",
 }
 
 // CosmicGameABI is the input ABI used to generate the binding from.
@@ -4257,59 +4417,54 @@ func (_CosmicGame *CosmicGameCallerSession) BidPrice() (*big.Int, error) {
 	return _CosmicGame.Contract.BidPrice(&_CosmicGame.CallOpts)
 }
 
-// BidStats is a free data retrieval call binding the contract method 0xe4c762f2.
+// BidderInfo is a free data retrieval call binding the contract method 0x1cb78fb3.
 //
-// Solidity: function bidStats(address ) view returns(uint64 bidPricePaidEth, uint64 bidPricePaidCST, uint32 bidCount, uint32 bidTime)
-func (_CosmicGame *CosmicGameCaller) BidStats(opts *bind.CallOpts, arg0 common.Address) (struct {
-	BidPricePaidEth uint64
-	BidPricePaidCST uint64
-	BidCount        uint32
-	BidTime         uint32
+// Solidity: function bidderInfo(uint256 , address ) view returns(uint256 totalSpent, uint256 lastBidTime, uint256 totalBidTime)
+func (_CosmicGame *CosmicGameCaller) BidderInfo(opts *bind.CallOpts, arg0 *big.Int, arg1 common.Address) (struct {
+	TotalSpent   *big.Int
+	LastBidTime  *big.Int
+	TotalBidTime *big.Int
 }, error) {
 	var out []interface{}
-	err := _CosmicGame.contract.Call(opts, &out, "bidStats", arg0)
+	err := _CosmicGame.contract.Call(opts, &out, "bidderInfo", arg0, arg1)
 
 	outstruct := new(struct {
-		BidPricePaidEth uint64
-		BidPricePaidCST uint64
-		BidCount        uint32
-		BidTime         uint32
+		TotalSpent   *big.Int
+		LastBidTime  *big.Int
+		TotalBidTime *big.Int
 	})
 	if err != nil {
 		return *outstruct, err
 	}
 
-	outstruct.BidPricePaidEth = *abi.ConvertType(out[0], new(uint64)).(*uint64)
-	outstruct.BidPricePaidCST = *abi.ConvertType(out[1], new(uint64)).(*uint64)
-	outstruct.BidCount = *abi.ConvertType(out[2], new(uint32)).(*uint32)
-	outstruct.BidTime = *abi.ConvertType(out[3], new(uint32)).(*uint32)
+	outstruct.TotalSpent = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	outstruct.LastBidTime = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+	outstruct.TotalBidTime = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
 
 	return *outstruct, err
 
 }
 
-// BidStats is a free data retrieval call binding the contract method 0xe4c762f2.
+// BidderInfo is a free data retrieval call binding the contract method 0x1cb78fb3.
 //
-// Solidity: function bidStats(address ) view returns(uint64 bidPricePaidEth, uint64 bidPricePaidCST, uint32 bidCount, uint32 bidTime)
-func (_CosmicGame *CosmicGameSession) BidStats(arg0 common.Address) (struct {
-	BidPricePaidEth uint64
-	BidPricePaidCST uint64
-	BidCount        uint32
-	BidTime         uint32
+// Solidity: function bidderInfo(uint256 , address ) view returns(uint256 totalSpent, uint256 lastBidTime, uint256 totalBidTime)
+func (_CosmicGame *CosmicGameSession) BidderInfo(arg0 *big.Int, arg1 common.Address) (struct {
+	TotalSpent   *big.Int
+	LastBidTime  *big.Int
+	TotalBidTime *big.Int
 }, error) {
-	return _CosmicGame.Contract.BidStats(&_CosmicGame.CallOpts, arg0)
+	return _CosmicGame.Contract.BidderInfo(&_CosmicGame.CallOpts, arg0, arg1)
 }
 
-// BidStats is a free data retrieval call binding the contract method 0xe4c762f2.
+// BidderInfo is a free data retrieval call binding the contract method 0x1cb78fb3.
 //
-// Solidity: function bidStats(address ) view returns(uint64 bidPricePaidEth, uint64 bidPricePaidCST, uint32 bidCount, uint32 bidTime)
-func (_CosmicGame *CosmicGameCallerSession) BidStats(arg0 common.Address) (struct {
-	BidPricePaidEth uint64
-	BidPricePaidCST uint64
-	BidCount        uint32
-	BidTime         uint32
+// Solidity: function bidderInfo(uint256 , address ) view returns(uint256 totalSpent, uint256 lastBidTime, uint256 totalBidTime)
+func (_CosmicGame *CosmicGameCallerSession) BidderInfo(arg0 *big.Int, arg1 common.Address) (struct {
+	TotalSpent   *big.Int
+	LastBidTime  *big.Int
+	TotalBidTime *big.Int
 }, error) {
-	return _CosmicGame.Contract.BidStats(&_CosmicGame.CallOpts, arg0)
+	return _CosmicGame.Contract.BidderInfo(&_CosmicGame.CallOpts, arg0, arg1)
 }
 
 // Charity is a free data retrieval call binding the contract method 0x934aa023.
@@ -4405,12 +4560,12 @@ func (_CosmicGame *CosmicGameCallerSession) CharityPercentage() (*big.Int, error
 	return _CosmicGame.Contract.CharityPercentage(&_CosmicGame.CallOpts)
 }
 
-// CurrentLongestBidder is a free data retrieval call binding the contract method 0x0b71a4d0.
+// CurrentEnduranceChampion is a free data retrieval call binding the contract method 0x3a292cbd.
 //
-// Solidity: function currentLongestBidder() view returns(address, uint256)
-func (_CosmicGame *CosmicGameCaller) CurrentLongestBidder(opts *bind.CallOpts) (common.Address, *big.Int, error) {
+// Solidity: function currentEnduranceChampion() view returns(address, uint256)
+func (_CosmicGame *CosmicGameCaller) CurrentEnduranceChampion(opts *bind.CallOpts) (common.Address, *big.Int, error) {
 	var out []interface{}
-	err := _CosmicGame.contract.Call(opts, &out, "currentLongestBidder")
+	err := _CosmicGame.contract.Call(opts, &out, "currentEnduranceChampion")
 
 	if err != nil {
 		return *new(common.Address), *new(*big.Int), err
@@ -4423,18 +4578,49 @@ func (_CosmicGame *CosmicGameCaller) CurrentLongestBidder(opts *bind.CallOpts) (
 
 }
 
-// CurrentLongestBidder is a free data retrieval call binding the contract method 0x0b71a4d0.
+// CurrentEnduranceChampion is a free data retrieval call binding the contract method 0x3a292cbd.
 //
-// Solidity: function currentLongestBidder() view returns(address, uint256)
-func (_CosmicGame *CosmicGameSession) CurrentLongestBidder() (common.Address, *big.Int, error) {
-	return _CosmicGame.Contract.CurrentLongestBidder(&_CosmicGame.CallOpts)
+// Solidity: function currentEnduranceChampion() view returns(address, uint256)
+func (_CosmicGame *CosmicGameSession) CurrentEnduranceChampion() (common.Address, *big.Int, error) {
+	return _CosmicGame.Contract.CurrentEnduranceChampion(&_CosmicGame.CallOpts)
 }
 
-// CurrentLongestBidder is a free data retrieval call binding the contract method 0x0b71a4d0.
+// CurrentEnduranceChampion is a free data retrieval call binding the contract method 0x3a292cbd.
 //
-// Solidity: function currentLongestBidder() view returns(address, uint256)
-func (_CosmicGame *CosmicGameCallerSession) CurrentLongestBidder() (common.Address, *big.Int, error) {
-	return _CosmicGame.Contract.CurrentLongestBidder(&_CosmicGame.CallOpts)
+// Solidity: function currentEnduranceChampion() view returns(address, uint256)
+func (_CosmicGame *CosmicGameCallerSession) CurrentEnduranceChampion() (common.Address, *big.Int, error) {
+	return _CosmicGame.Contract.CurrentEnduranceChampion(&_CosmicGame.CallOpts)
+}
+
+// DonateWithInfoNumRecords is a free data retrieval call binding the contract method 0x58218269.
+//
+// Solidity: function donateWithInfoNumRecords() view returns(uint256)
+func (_CosmicGame *CosmicGameCaller) DonateWithInfoNumRecords(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _CosmicGame.contract.Call(opts, &out, "donateWithInfoNumRecords")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// DonateWithInfoNumRecords is a free data retrieval call binding the contract method 0x58218269.
+//
+// Solidity: function donateWithInfoNumRecords() view returns(uint256)
+func (_CosmicGame *CosmicGameSession) DonateWithInfoNumRecords() (*big.Int, error) {
+	return _CosmicGame.Contract.DonateWithInfoNumRecords(&_CosmicGame.CallOpts)
+}
+
+// DonateWithInfoNumRecords is a free data retrieval call binding the contract method 0x58218269.
+//
+// Solidity: function donateWithInfoNumRecords() view returns(uint256)
+func (_CosmicGame *CosmicGameCallerSession) DonateWithInfoNumRecords() (*big.Int, error) {
+	return _CosmicGame.Contract.DonateWithInfoNumRecords(&_CosmicGame.CallOpts)
 }
 
 // DonatedNFTs is a free data retrieval call binding the contract method 0xd6e17417.
@@ -4490,6 +4676,149 @@ func (_CosmicGame *CosmicGameCallerSession) DonatedNFTs(arg0 *big.Int) (struct {
 	Claimed    bool
 }, error) {
 	return _CosmicGame.Contract.DonatedNFTs(&_CosmicGame.CallOpts, arg0)
+}
+
+// DonationInfoRecords is a free data retrieval call binding the contract method 0x986459a0.
+//
+// Solidity: function donationInfoRecords(uint256 ) view returns(address donor, uint256 amount, string data)
+func (_CosmicGame *CosmicGameCaller) DonationInfoRecords(opts *bind.CallOpts, arg0 *big.Int) (struct {
+	Donor  common.Address
+	Amount *big.Int
+	Data   string
+}, error) {
+	var out []interface{}
+	err := _CosmicGame.contract.Call(opts, &out, "donationInfoRecords", arg0)
+
+	outstruct := new(struct {
+		Donor  common.Address
+		Amount *big.Int
+		Data   string
+	})
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.Donor = *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+	outstruct.Amount = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+	outstruct.Data = *abi.ConvertType(out[2], new(string)).(*string)
+
+	return *outstruct, err
+
+}
+
+// DonationInfoRecords is a free data retrieval call binding the contract method 0x986459a0.
+//
+// Solidity: function donationInfoRecords(uint256 ) view returns(address donor, uint256 amount, string data)
+func (_CosmicGame *CosmicGameSession) DonationInfoRecords(arg0 *big.Int) (struct {
+	Donor  common.Address
+	Amount *big.Int
+	Data   string
+}, error) {
+	return _CosmicGame.Contract.DonationInfoRecords(&_CosmicGame.CallOpts, arg0)
+}
+
+// DonationInfoRecords is a free data retrieval call binding the contract method 0x986459a0.
+//
+// Solidity: function donationInfoRecords(uint256 ) view returns(address donor, uint256 amount, string data)
+func (_CosmicGame *CosmicGameCallerSession) DonationInfoRecords(arg0 *big.Int) (struct {
+	Donor  common.Address
+	Amount *big.Int
+	Data   string
+}, error) {
+	return _CosmicGame.Contract.DonationInfoRecords(&_CosmicGame.CallOpts, arg0)
+}
+
+// EnduranceChampion is a free data retrieval call binding the contract method 0xa38fd64e.
+//
+// Solidity: function enduranceChampion() view returns(address)
+func (_CosmicGame *CosmicGameCaller) EnduranceChampion(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _CosmicGame.contract.Call(opts, &out, "enduranceChampion")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// EnduranceChampion is a free data retrieval call binding the contract method 0xa38fd64e.
+//
+// Solidity: function enduranceChampion() view returns(address)
+func (_CosmicGame *CosmicGameSession) EnduranceChampion() (common.Address, error) {
+	return _CosmicGame.Contract.EnduranceChampion(&_CosmicGame.CallOpts)
+}
+
+// EnduranceChampion is a free data retrieval call binding the contract method 0xa38fd64e.
+//
+// Solidity: function enduranceChampion() view returns(address)
+func (_CosmicGame *CosmicGameCallerSession) EnduranceChampion() (common.Address, error) {
+	return _CosmicGame.Contract.EnduranceChampion(&_CosmicGame.CallOpts)
+}
+
+// EnduranceChampionDuration is a free data retrieval call binding the contract method 0x5863a705.
+//
+// Solidity: function enduranceChampionDuration() view returns(uint256)
+func (_CosmicGame *CosmicGameCaller) EnduranceChampionDuration(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _CosmicGame.contract.Call(opts, &out, "enduranceChampionDuration")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// EnduranceChampionDuration is a free data retrieval call binding the contract method 0x5863a705.
+//
+// Solidity: function enduranceChampionDuration() view returns(uint256)
+func (_CosmicGame *CosmicGameSession) EnduranceChampionDuration() (*big.Int, error) {
+	return _CosmicGame.Contract.EnduranceChampionDuration(&_CosmicGame.CallOpts)
+}
+
+// EnduranceChampionDuration is a free data retrieval call binding the contract method 0x5863a705.
+//
+// Solidity: function enduranceChampionDuration() view returns(uint256)
+func (_CosmicGame *CosmicGameCallerSession) EnduranceChampionDuration() (*big.Int, error) {
+	return _CosmicGame.Contract.EnduranceChampionDuration(&_CosmicGame.CallOpts)
+}
+
+// Erc20RewardMultiplier is a free data retrieval call binding the contract method 0x541fa588.
+//
+// Solidity: function erc20RewardMultiplier() view returns(uint256)
+func (_CosmicGame *CosmicGameCaller) Erc20RewardMultiplier(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _CosmicGame.contract.Call(opts, &out, "erc20RewardMultiplier")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// Erc20RewardMultiplier is a free data retrieval call binding the contract method 0x541fa588.
+//
+// Solidity: function erc20RewardMultiplier() view returns(uint256)
+func (_CosmicGame *CosmicGameSession) Erc20RewardMultiplier() (*big.Int, error) {
+	return _CosmicGame.Contract.Erc20RewardMultiplier(&_CosmicGame.CallOpts)
+}
+
+// Erc20RewardMultiplier is a free data retrieval call binding the contract method 0x541fa588.
+//
+// Solidity: function erc20RewardMultiplier() view returns(uint256)
+func (_CosmicGame *CosmicGameCallerSession) Erc20RewardMultiplier() (*big.Int, error) {
+	return _CosmicGame.Contract.Erc20RewardMultiplier(&_CosmicGame.CallOpts)
 }
 
 // ExtraStorage is a free data retrieval call binding the contract method 0xed421f41.
@@ -4552,6 +4881,37 @@ func (_CosmicGame *CosmicGameSession) GetBidPrice() (*big.Int, error) {
 // Solidity: function getBidPrice() view returns(uint256)
 func (_CosmicGame *CosmicGameCallerSession) GetBidPrice() (*big.Int, error) {
 	return _CosmicGame.Contract.GetBidPrice(&_CosmicGame.CallOpts)
+}
+
+// GetDonationInfoRecord is a free data retrieval call binding the contract method 0xaecacd46.
+//
+// Solidity: function getDonationInfoRecord(uint256 recordId) view returns((address,uint256,string))
+func (_CosmicGame *CosmicGameCaller) GetDonationInfoRecord(opts *bind.CallOpts, recordId *big.Int) (CosmicGameConstantsDonationInfoRecord, error) {
+	var out []interface{}
+	err := _CosmicGame.contract.Call(opts, &out, "getDonationInfoRecord", recordId)
+
+	if err != nil {
+		return *new(CosmicGameConstantsDonationInfoRecord), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(CosmicGameConstantsDonationInfoRecord)).(*CosmicGameConstantsDonationInfoRecord)
+
+	return out0, err
+
+}
+
+// GetDonationInfoRecord is a free data retrieval call binding the contract method 0xaecacd46.
+//
+// Solidity: function getDonationInfoRecord(uint256 recordId) view returns((address,uint256,string))
+func (_CosmicGame *CosmicGameSession) GetDonationInfoRecord(recordId *big.Int) (CosmicGameConstantsDonationInfoRecord, error) {
+	return _CosmicGame.Contract.GetDonationInfoRecord(&_CosmicGame.CallOpts, recordId)
+}
+
+// GetDonationInfoRecord is a free data retrieval call binding the contract method 0xaecacd46.
+//
+// Solidity: function getDonationInfoRecord(uint256 recordId) view returns((address,uint256,string))
+func (_CosmicGame *CosmicGameCallerSession) GetDonationInfoRecord(recordId *big.Int) (CosmicGameConstantsDonationInfoRecord, error) {
+	return _CosmicGame.Contract.GetDonationInfoRecord(&_CosmicGame.CallOpts, recordId)
 }
 
 // InitialBidAmountFraction is a free data retrieval call binding the contract method 0x40e02322.
@@ -4707,99 +5067,6 @@ func (_CosmicGame *CosmicGameSession) LastCSTBidTime() (*big.Int, error) {
 // Solidity: function lastCSTBidTime() view returns(uint256)
 func (_CosmicGame *CosmicGameCallerSession) LastCSTBidTime() (*big.Int, error) {
 	return _CosmicGame.Contract.LastCSTBidTime(&_CosmicGame.CallOpts)
-}
-
-// LongestBidderAddress is a free data retrieval call binding the contract method 0x7a9c1626.
-//
-// Solidity: function longestBidderAddress() view returns(address)
-func (_CosmicGame *CosmicGameCaller) LongestBidderAddress(opts *bind.CallOpts) (common.Address, error) {
-	var out []interface{}
-	err := _CosmicGame.contract.Call(opts, &out, "longestBidderAddress")
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// LongestBidderAddress is a free data retrieval call binding the contract method 0x7a9c1626.
-//
-// Solidity: function longestBidderAddress() view returns(address)
-func (_CosmicGame *CosmicGameSession) LongestBidderAddress() (common.Address, error) {
-	return _CosmicGame.Contract.LongestBidderAddress(&_CosmicGame.CallOpts)
-}
-
-// LongestBidderAddress is a free data retrieval call binding the contract method 0x7a9c1626.
-//
-// Solidity: function longestBidderAddress() view returns(address)
-func (_CosmicGame *CosmicGameCallerSession) LongestBidderAddress() (common.Address, error) {
-	return _CosmicGame.Contract.LongestBidderAddress(&_CosmicGame.CallOpts)
-}
-
-// LongestBidderTime is a free data retrieval call binding the contract method 0xae96c0f2.
-//
-// Solidity: function longestBidderTime() view returns(uint256)
-func (_CosmicGame *CosmicGameCaller) LongestBidderTime(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _CosmicGame.contract.Call(opts, &out, "longestBidderTime")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// LongestBidderTime is a free data retrieval call binding the contract method 0xae96c0f2.
-//
-// Solidity: function longestBidderTime() view returns(uint256)
-func (_CosmicGame *CosmicGameSession) LongestBidderTime() (*big.Int, error) {
-	return _CosmicGame.Contract.LongestBidderTime(&_CosmicGame.CallOpts)
-}
-
-// LongestBidderTime is a free data retrieval call binding the contract method 0xae96c0f2.
-//
-// Solidity: function longestBidderTime() view returns(uint256)
-func (_CosmicGame *CosmicGameCallerSession) LongestBidderTime() (*big.Int, error) {
-	return _CosmicGame.Contract.LongestBidderTime(&_CosmicGame.CallOpts)
-}
-
-// LongestBidderTokenReward is a free data retrieval call binding the contract method 0x50a42225.
-//
-// Solidity: function longestBidderTokenReward() view returns(uint256)
-func (_CosmicGame *CosmicGameCaller) LongestBidderTokenReward(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _CosmicGame.contract.Call(opts, &out, "longestBidderTokenReward")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// LongestBidderTokenReward is a free data retrieval call binding the contract method 0x50a42225.
-//
-// Solidity: function longestBidderTokenReward() view returns(uint256)
-func (_CosmicGame *CosmicGameSession) LongestBidderTokenReward() (*big.Int, error) {
-	return _CosmicGame.Contract.LongestBidderTokenReward(&_CosmicGame.CallOpts)
-}
-
-// LongestBidderTokenReward is a free data retrieval call binding the contract method 0x50a42225.
-//
-// Solidity: function longestBidderTokenReward() view returns(uint256)
-func (_CosmicGame *CosmicGameCallerSession) LongestBidderTokenReward() (*big.Int, error) {
-	return _CosmicGame.Contract.LongestBidderTokenReward(&_CosmicGame.CallOpts)
 }
 
 // MarketingReward is a free data retrieval call binding the contract method 0xb801b8b2.
@@ -5172,68 +5439,6 @@ func (_CosmicGame *CosmicGameSession) Owner() (common.Address, error) {
 // Solidity: function owner() view returns(address)
 func (_CosmicGame *CosmicGameCallerSession) Owner() (common.Address, error) {
 	return _CosmicGame.Contract.Owner(&_CosmicGame.CallOpts)
-}
-
-// PrevBidderAddress is a free data retrieval call binding the contract method 0x966beb5e.
-//
-// Solidity: function prevBidderAddress() view returns(address)
-func (_CosmicGame *CosmicGameCaller) PrevBidderAddress(opts *bind.CallOpts) (common.Address, error) {
-	var out []interface{}
-	err := _CosmicGame.contract.Call(opts, &out, "prevBidderAddress")
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// PrevBidderAddress is a free data retrieval call binding the contract method 0x966beb5e.
-//
-// Solidity: function prevBidderAddress() view returns(address)
-func (_CosmicGame *CosmicGameSession) PrevBidderAddress() (common.Address, error) {
-	return _CosmicGame.Contract.PrevBidderAddress(&_CosmicGame.CallOpts)
-}
-
-// PrevBidderAddress is a free data retrieval call binding the contract method 0x966beb5e.
-//
-// Solidity: function prevBidderAddress() view returns(address)
-func (_CosmicGame *CosmicGameCallerSession) PrevBidderAddress() (common.Address, error) {
-	return _CosmicGame.Contract.PrevBidderAddress(&_CosmicGame.CallOpts)
-}
-
-// PrevBidderStartTime is a free data retrieval call binding the contract method 0xe2a88182.
-//
-// Solidity: function prevBidderStartTime() view returns(uint256)
-func (_CosmicGame *CosmicGameCaller) PrevBidderStartTime(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _CosmicGame.contract.Call(opts, &out, "prevBidderStartTime")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// PrevBidderStartTime is a free data retrieval call binding the contract method 0xe2a88182.
-//
-// Solidity: function prevBidderStartTime() view returns(uint256)
-func (_CosmicGame *CosmicGameSession) PrevBidderStartTime() (*big.Int, error) {
-	return _CosmicGame.Contract.PrevBidderStartTime(&_CosmicGame.CallOpts)
-}
-
-// PrevBidderStartTime is a free data retrieval call binding the contract method 0xe2a88182.
-//
-// Solidity: function prevBidderStartTime() view returns(uint256)
-func (_CosmicGame *CosmicGameCallerSession) PrevBidderStartTime() (*big.Int, error) {
-	return _CosmicGame.Contract.PrevBidderStartTime(&_CosmicGame.CallOpts)
 }
 
 // PriceIncrease is a free data retrieval call binding the contract method 0xf8c34050.
@@ -5732,6 +5937,68 @@ func (_CosmicGame *CosmicGameCallerSession) StartingBidPriceCST() (*big.Int, err
 	return _CosmicGame.Contract.StartingBidPriceCST(&_CosmicGame.CallOpts)
 }
 
+// StellarSpender is a free data retrieval call binding the contract method 0x7e8ad4e3.
+//
+// Solidity: function stellarSpender() view returns(address)
+func (_CosmicGame *CosmicGameCaller) StellarSpender(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _CosmicGame.contract.Call(opts, &out, "stellarSpender")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// StellarSpender is a free data retrieval call binding the contract method 0x7e8ad4e3.
+//
+// Solidity: function stellarSpender() view returns(address)
+func (_CosmicGame *CosmicGameSession) StellarSpender() (common.Address, error) {
+	return _CosmicGame.Contract.StellarSpender(&_CosmicGame.CallOpts)
+}
+
+// StellarSpender is a free data retrieval call binding the contract method 0x7e8ad4e3.
+//
+// Solidity: function stellarSpender() view returns(address)
+func (_CosmicGame *CosmicGameCallerSession) StellarSpender() (common.Address, error) {
+	return _CosmicGame.Contract.StellarSpender(&_CosmicGame.CallOpts)
+}
+
+// StellarSpenderAmount is a free data retrieval call binding the contract method 0x662bfa8f.
+//
+// Solidity: function stellarSpenderAmount() view returns(uint256)
+func (_CosmicGame *CosmicGameCaller) StellarSpenderAmount(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _CosmicGame.contract.Call(opts, &out, "stellarSpenderAmount")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// StellarSpenderAmount is a free data retrieval call binding the contract method 0x662bfa8f.
+//
+// Solidity: function stellarSpenderAmount() view returns(uint256)
+func (_CosmicGame *CosmicGameSession) StellarSpenderAmount() (*big.Int, error) {
+	return _CosmicGame.Contract.StellarSpenderAmount(&_CosmicGame.CallOpts)
+}
+
+// StellarSpenderAmount is a free data retrieval call binding the contract method 0x662bfa8f.
+//
+// Solidity: function stellarSpenderAmount() view returns(uint256)
+func (_CosmicGame *CosmicGameCallerSession) StellarSpenderAmount() (*big.Int, error) {
+	return _CosmicGame.Contract.StellarSpenderAmount(&_CosmicGame.CallOpts)
+}
+
 // SystemMode is a free data retrieval call binding the contract method 0x20a60273.
 //
 // Solidity: function systemMode() view returns(uint256)
@@ -5947,99 +6214,6 @@ func (_CosmicGame *CosmicGameSession) TokenReward() (*big.Int, error) {
 // Solidity: function tokenReward() view returns(uint256)
 func (_CosmicGame *CosmicGameCallerSession) TokenReward() (*big.Int, error) {
 	return _CosmicGame.Contract.TokenReward(&_CosmicGame.CallOpts)
-}
-
-// TopBidderAddress is a free data retrieval call binding the contract method 0xfd1ff7e2.
-//
-// Solidity: function topBidderAddress() view returns(address)
-func (_CosmicGame *CosmicGameCaller) TopBidderAddress(opts *bind.CallOpts) (common.Address, error) {
-	var out []interface{}
-	err := _CosmicGame.contract.Call(opts, &out, "topBidderAddress")
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// TopBidderAddress is a free data retrieval call binding the contract method 0xfd1ff7e2.
-//
-// Solidity: function topBidderAddress() view returns(address)
-func (_CosmicGame *CosmicGameSession) TopBidderAddress() (common.Address, error) {
-	return _CosmicGame.Contract.TopBidderAddress(&_CosmicGame.CallOpts)
-}
-
-// TopBidderAddress is a free data retrieval call binding the contract method 0xfd1ff7e2.
-//
-// Solidity: function topBidderAddress() view returns(address)
-func (_CosmicGame *CosmicGameCallerSession) TopBidderAddress() (common.Address, error) {
-	return _CosmicGame.Contract.TopBidderAddress(&_CosmicGame.CallOpts)
-}
-
-// TopBidderNumBids is a free data retrieval call binding the contract method 0x05ab18aa.
-//
-// Solidity: function topBidderNumBids() view returns(uint256)
-func (_CosmicGame *CosmicGameCaller) TopBidderNumBids(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _CosmicGame.contract.Call(opts, &out, "topBidderNumBids")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// TopBidderNumBids is a free data retrieval call binding the contract method 0x05ab18aa.
-//
-// Solidity: function topBidderNumBids() view returns(uint256)
-func (_CosmicGame *CosmicGameSession) TopBidderNumBids() (*big.Int, error) {
-	return _CosmicGame.Contract.TopBidderNumBids(&_CosmicGame.CallOpts)
-}
-
-// TopBidderNumBids is a free data retrieval call binding the contract method 0x05ab18aa.
-//
-// Solidity: function topBidderNumBids() view returns(uint256)
-func (_CosmicGame *CosmicGameCallerSession) TopBidderNumBids() (*big.Int, error) {
-	return _CosmicGame.Contract.TopBidderNumBids(&_CosmicGame.CallOpts)
-}
-
-// TopBidderTokenReward is a free data retrieval call binding the contract method 0x1e42fa1d.
-//
-// Solidity: function topBidderTokenReward() view returns(uint256)
-func (_CosmicGame *CosmicGameCaller) TopBidderTokenReward(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _CosmicGame.contract.Call(opts, &out, "topBidderTokenReward")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// TopBidderTokenReward is a free data retrieval call binding the contract method 0x1e42fa1d.
-//
-// Solidity: function topBidderTokenReward() view returns(uint256)
-func (_CosmicGame *CosmicGameSession) TopBidderTokenReward() (*big.Int, error) {
-	return _CosmicGame.Contract.TopBidderTokenReward(&_CosmicGame.CallOpts)
-}
-
-// TopBidderTokenReward is a free data retrieval call binding the contract method 0x1e42fa1d.
-//
-// Solidity: function topBidderTokenReward() view returns(uint256)
-func (_CosmicGame *CosmicGameCallerSession) TopBidderTokenReward() (*big.Int, error) {
-	return _CosmicGame.Contract.TopBidderTokenReward(&_CosmicGame.CallOpts)
 }
 
 // UsedRandomWalkNFTs is a free data retrieval call binding the contract method 0x86e378c9.
@@ -6314,6 +6488,27 @@ func (_CosmicGame *CosmicGameTransactorSession) Donate() (*types.Transaction, er
 	return _CosmicGame.Contract.Donate(&_CosmicGame.TransactOpts)
 }
 
+// DonateWithInfo is a paid mutator transaction binding the contract method 0x2366b3b7.
+//
+// Solidity: function donateWithInfo(string _data) payable returns()
+func (_CosmicGame *CosmicGameTransactor) DonateWithInfo(opts *bind.TransactOpts, _data string) (*types.Transaction, error) {
+	return _CosmicGame.contract.Transact(opts, "donateWithInfo", _data)
+}
+
+// DonateWithInfo is a paid mutator transaction binding the contract method 0x2366b3b7.
+//
+// Solidity: function donateWithInfo(string _data) payable returns()
+func (_CosmicGame *CosmicGameSession) DonateWithInfo(_data string) (*types.Transaction, error) {
+	return _CosmicGame.Contract.DonateWithInfo(&_CosmicGame.TransactOpts, _data)
+}
+
+// DonateWithInfo is a paid mutator transaction binding the contract method 0x2366b3b7.
+//
+// Solidity: function donateWithInfo(string _data) payable returns()
+func (_CosmicGame *CosmicGameTransactorSession) DonateWithInfo(_data string) (*types.Transaction, error) {
+	return _CosmicGame.Contract.DonateWithInfo(&_CosmicGame.TransactOpts, _data)
+}
+
 // MaintenanceProxyCall is a paid mutator transaction binding the contract method 0xb101e9fd.
 //
 // Solidity: function maintenanceProxyCall(bytes4 _sig, bytes _encoded_params) returns(bytes)
@@ -6482,6 +6677,27 @@ func (_CosmicGame *CosmicGameTransactorSession) SetCharityPercentage(newCharityP
 	return _CosmicGame.Contract.SetCharityPercentage(&_CosmicGame.TransactOpts, newCharityPercentage)
 }
 
+// SetErc20RewardMultiplier is a paid mutator transaction binding the contract method 0x65b7f967.
+//
+// Solidity: function setErc20RewardMultiplier(uint256 newMultiplier) returns()
+func (_CosmicGame *CosmicGameTransactor) SetErc20RewardMultiplier(opts *bind.TransactOpts, newMultiplier *big.Int) (*types.Transaction, error) {
+	return _CosmicGame.contract.Transact(opts, "setErc20RewardMultiplier", newMultiplier)
+}
+
+// SetErc20RewardMultiplier is a paid mutator transaction binding the contract method 0x65b7f967.
+//
+// Solidity: function setErc20RewardMultiplier(uint256 newMultiplier) returns()
+func (_CosmicGame *CosmicGameSession) SetErc20RewardMultiplier(newMultiplier *big.Int) (*types.Transaction, error) {
+	return _CosmicGame.Contract.SetErc20RewardMultiplier(&_CosmicGame.TransactOpts, newMultiplier)
+}
+
+// SetErc20RewardMultiplier is a paid mutator transaction binding the contract method 0x65b7f967.
+//
+// Solidity: function setErc20RewardMultiplier(uint256 newMultiplier) returns()
+func (_CosmicGame *CosmicGameTransactorSession) SetErc20RewardMultiplier(newMultiplier *big.Int) (*types.Transaction, error) {
+	return _CosmicGame.Contract.SetErc20RewardMultiplier(&_CosmicGame.TransactOpts, newMultiplier)
+}
+
 // SetInitialSecondsUntilPrize is a paid mutator transaction binding the contract method 0x51964588.
 //
 // Solidity: function setInitialSecondsUntilPrize(uint256 newInitialSecondsUntilPrize) returns()
@@ -6501,27 +6717,6 @@ func (_CosmicGame *CosmicGameSession) SetInitialSecondsUntilPrize(newInitialSeco
 // Solidity: function setInitialSecondsUntilPrize(uint256 newInitialSecondsUntilPrize) returns()
 func (_CosmicGame *CosmicGameTransactorSession) SetInitialSecondsUntilPrize(newInitialSecondsUntilPrize *big.Int) (*types.Transaction, error) {
 	return _CosmicGame.Contract.SetInitialSecondsUntilPrize(&_CosmicGame.TransactOpts, newInitialSecondsUntilPrize)
-}
-
-// SetLongestBidderTokenReward is a paid mutator transaction binding the contract method 0x031e7431.
-//
-// Solidity: function setLongestBidderTokenReward(uint256 newTokenReward) returns()
-func (_CosmicGame *CosmicGameTransactor) SetLongestBidderTokenReward(opts *bind.TransactOpts, newTokenReward *big.Int) (*types.Transaction, error) {
-	return _CosmicGame.contract.Transact(opts, "setLongestBidderTokenReward", newTokenReward)
-}
-
-// SetLongestBidderTokenReward is a paid mutator transaction binding the contract method 0x031e7431.
-//
-// Solidity: function setLongestBidderTokenReward(uint256 newTokenReward) returns()
-func (_CosmicGame *CosmicGameSession) SetLongestBidderTokenReward(newTokenReward *big.Int) (*types.Transaction, error) {
-	return _CosmicGame.Contract.SetLongestBidderTokenReward(&_CosmicGame.TransactOpts, newTokenReward)
-}
-
-// SetLongestBidderTokenReward is a paid mutator transaction binding the contract method 0x031e7431.
-//
-// Solidity: function setLongestBidderTokenReward(uint256 newTokenReward) returns()
-func (_CosmicGame *CosmicGameTransactorSession) SetLongestBidderTokenReward(newTokenReward *big.Int) (*types.Transaction, error) {
-	return _CosmicGame.Contract.SetLongestBidderTokenReward(&_CosmicGame.TransactOpts, newTokenReward)
 }
 
 // SetMarketingReward is a paid mutator transaction binding the contract method 0x5312e2a1.
@@ -6984,27 +7179,6 @@ func (_CosmicGame *CosmicGameSession) SetTokenReward(newTokenReward *big.Int) (*
 // Solidity: function setTokenReward(uint256 newTokenReward) returns()
 func (_CosmicGame *CosmicGameTransactorSession) SetTokenReward(newTokenReward *big.Int) (*types.Transaction, error) {
 	return _CosmicGame.Contract.SetTokenReward(&_CosmicGame.TransactOpts, newTokenReward)
-}
-
-// SetTopBidderTokenReward is a paid mutator transaction binding the contract method 0x6326e583.
-//
-// Solidity: function setTopBidderTokenReward(uint256 newTokenReward) returns()
-func (_CosmicGame *CosmicGameTransactor) SetTopBidderTokenReward(opts *bind.TransactOpts, newTokenReward *big.Int) (*types.Transaction, error) {
-	return _CosmicGame.contract.Transact(opts, "setTopBidderTokenReward", newTokenReward)
-}
-
-// SetTopBidderTokenReward is a paid mutator transaction binding the contract method 0x6326e583.
-//
-// Solidity: function setTopBidderTokenReward(uint256 newTokenReward) returns()
-func (_CosmicGame *CosmicGameSession) SetTopBidderTokenReward(newTokenReward *big.Int) (*types.Transaction, error) {
-	return _CosmicGame.Contract.SetTopBidderTokenReward(&_CosmicGame.TransactOpts, newTokenReward)
-}
-
-// SetTopBidderTokenReward is a paid mutator transaction binding the contract method 0x6326e583.
-//
-// Solidity: function setTopBidderTokenReward(uint256 newTokenReward) returns()
-func (_CosmicGame *CosmicGameTransactorSession) SetTopBidderTokenReward(newTokenReward *big.Int) (*types.Transaction, error) {
-	return _CosmicGame.Contract.SetTopBidderTokenReward(&_CosmicGame.TransactOpts, newTokenReward)
 }
 
 // TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
@@ -8325,9 +8499,9 @@ func (_CosmicGame *CosmicGameFilterer) ParseDonationEvent(log types.Log) (*Cosmi
 	return event, nil
 }
 
-// CosmicGameEnduranceNFTWinnerEventIterator is returned from FilterEnduranceNFTWinnerEvent and is used to iterate over the raw logs and unpacked data for EnduranceNFTWinnerEvent events raised by the CosmicGame contract.
-type CosmicGameEnduranceNFTWinnerEventIterator struct {
-	Event *CosmicGameEnduranceNFTWinnerEvent // Event containing the contract specifics and raw log
+// CosmicGameDonationWithInfoEventIterator is returned from FilterDonationWithInfoEvent and is used to iterate over the raw logs and unpacked data for DonationWithInfoEvent events raised by the CosmicGame contract.
+type CosmicGameDonationWithInfoEventIterator struct {
+	Event *CosmicGameDonationWithInfoEvent // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -8341,7 +8515,7 @@ type CosmicGameEnduranceNFTWinnerEventIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *CosmicGameEnduranceNFTWinnerEventIterator) Next() bool {
+func (it *CosmicGameDonationWithInfoEventIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -8350,7 +8524,7 @@ func (it *CosmicGameEnduranceNFTWinnerEventIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(CosmicGameEnduranceNFTWinnerEvent)
+			it.Event = new(CosmicGameDonationWithInfoEvent)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -8365,7 +8539,7 @@ func (it *CosmicGameEnduranceNFTWinnerEventIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(CosmicGameEnduranceNFTWinnerEvent)
+		it.Event = new(CosmicGameDonationWithInfoEvent)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -8381,70 +8555,53 @@ func (it *CosmicGameEnduranceNFTWinnerEventIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *CosmicGameEnduranceNFTWinnerEventIterator) Error() error {
+func (it *CosmicGameDonationWithInfoEventIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *CosmicGameEnduranceNFTWinnerEventIterator) Close() error {
+func (it *CosmicGameDonationWithInfoEventIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// CosmicGameEnduranceNFTWinnerEvent represents a EnduranceNFTWinnerEvent event raised by the CosmicGame contract.
-type CosmicGameEnduranceNFTWinnerEvent struct {
-	Winner      common.Address
-	Round       *big.Int
-	TokenId     *big.Int
-	WinnerIndex *big.Int
-	Raw         types.Log // Blockchain specific contextual infos
+// CosmicGameDonationWithInfoEvent represents a DonationWithInfoEvent event raised by the CosmicGame contract.
+type CosmicGameDonationWithInfoEvent struct {
+	Donor    common.Address
+	Amount   *big.Int
+	RecordId *big.Int
+	Raw      types.Log // Blockchain specific contextual infos
 }
 
-// FilterEnduranceNFTWinnerEvent is a free log retrieval operation binding the contract event 0xc7748b549d32f0b6d1f7a9145e4c7a8e4f8635f719422edd0fec4cf5629534e6.
+// FilterDonationWithInfoEvent is a free log retrieval operation binding the contract event 0x8a0ea457335b2870a10c690d830041ca844b04d88d11c9237974d548127e6156.
 //
-// Solidity: event EnduranceNFTWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed tokenId, uint256 winnerIndex)
-func (_CosmicGame *CosmicGameFilterer) FilterEnduranceNFTWinnerEvent(opts *bind.FilterOpts, winner []common.Address, round []*big.Int, tokenId []*big.Int) (*CosmicGameEnduranceNFTWinnerEventIterator, error) {
+// Solidity: event DonationWithInfoEvent(address indexed donor, uint256 amount, uint256 recordId)
+func (_CosmicGame *CosmicGameFilterer) FilterDonationWithInfoEvent(opts *bind.FilterOpts, donor []common.Address) (*CosmicGameDonationWithInfoEventIterator, error) {
 
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
-	}
-	var roundRule []interface{}
-	for _, roundItem := range round {
-		roundRule = append(roundRule, roundItem)
-	}
-	var tokenIdRule []interface{}
-	for _, tokenIdItem := range tokenId {
-		tokenIdRule = append(tokenIdRule, tokenIdItem)
+	var donorRule []interface{}
+	for _, donorItem := range donor {
+		donorRule = append(donorRule, donorItem)
 	}
 
-	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "EnduranceNFTWinnerEvent", winnerRule, roundRule, tokenIdRule)
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "DonationWithInfoEvent", donorRule)
 	if err != nil {
 		return nil, err
 	}
-	return &CosmicGameEnduranceNFTWinnerEventIterator{contract: _CosmicGame.contract, event: "EnduranceNFTWinnerEvent", logs: logs, sub: sub}, nil
+	return &CosmicGameDonationWithInfoEventIterator{contract: _CosmicGame.contract, event: "DonationWithInfoEvent", logs: logs, sub: sub}, nil
 }
 
-// WatchEnduranceNFTWinnerEvent is a free log subscription operation binding the contract event 0xc7748b549d32f0b6d1f7a9145e4c7a8e4f8635f719422edd0fec4cf5629534e6.
+// WatchDonationWithInfoEvent is a free log subscription operation binding the contract event 0x8a0ea457335b2870a10c690d830041ca844b04d88d11c9237974d548127e6156.
 //
-// Solidity: event EnduranceNFTWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed tokenId, uint256 winnerIndex)
-func (_CosmicGame *CosmicGameFilterer) WatchEnduranceNFTWinnerEvent(opts *bind.WatchOpts, sink chan<- *CosmicGameEnduranceNFTWinnerEvent, winner []common.Address, round []*big.Int, tokenId []*big.Int) (event.Subscription, error) {
+// Solidity: event DonationWithInfoEvent(address indexed donor, uint256 amount, uint256 recordId)
+func (_CosmicGame *CosmicGameFilterer) WatchDonationWithInfoEvent(opts *bind.WatchOpts, sink chan<- *CosmicGameDonationWithInfoEvent, donor []common.Address) (event.Subscription, error) {
 
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
-	}
-	var roundRule []interface{}
-	for _, roundItem := range round {
-		roundRule = append(roundRule, roundItem)
-	}
-	var tokenIdRule []interface{}
-	for _, tokenIdItem := range tokenId {
-		tokenIdRule = append(tokenIdRule, tokenIdItem)
+	var donorRule []interface{}
+	for _, donorItem := range donor {
+		donorRule = append(donorRule, donorItem)
 	}
 
-	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "EnduranceNFTWinnerEvent", winnerRule, roundRule, tokenIdRule)
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "DonationWithInfoEvent", donorRule)
 	if err != nil {
 		return nil, err
 	}
@@ -8454,8 +8611,8 @@ func (_CosmicGame *CosmicGameFilterer) WatchEnduranceNFTWinnerEvent(opts *bind.W
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(CosmicGameEnduranceNFTWinnerEvent)
-				if err := _CosmicGame.contract.UnpackLog(event, "EnduranceNFTWinnerEvent", log); err != nil {
+				event := new(CosmicGameDonationWithInfoEvent)
+				if err := _CosmicGame.contract.UnpackLog(event, "DonationWithInfoEvent", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -8476,12 +8633,146 @@ func (_CosmicGame *CosmicGameFilterer) WatchEnduranceNFTWinnerEvent(opts *bind.W
 	}), nil
 }
 
-// ParseEnduranceNFTWinnerEvent is a log parse operation binding the contract event 0xc7748b549d32f0b6d1f7a9145e4c7a8e4f8635f719422edd0fec4cf5629534e6.
+// ParseDonationWithInfoEvent is a log parse operation binding the contract event 0x8a0ea457335b2870a10c690d830041ca844b04d88d11c9237974d548127e6156.
 //
-// Solidity: event EnduranceNFTWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed tokenId, uint256 winnerIndex)
-func (_CosmicGame *CosmicGameFilterer) ParseEnduranceNFTWinnerEvent(log types.Log) (*CosmicGameEnduranceNFTWinnerEvent, error) {
-	event := new(CosmicGameEnduranceNFTWinnerEvent)
-	if err := _CosmicGame.contract.UnpackLog(event, "EnduranceNFTWinnerEvent", log); err != nil {
+// Solidity: event DonationWithInfoEvent(address indexed donor, uint256 amount, uint256 recordId)
+func (_CosmicGame *CosmicGameFilterer) ParseDonationWithInfoEvent(log types.Log) (*CosmicGameDonationWithInfoEvent, error) {
+	event := new(CosmicGameDonationWithInfoEvent)
+	if err := _CosmicGame.contract.UnpackLog(event, "DonationWithInfoEvent", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CosmicGameErc20RewardMultiplierChangedIterator is returned from FilterErc20RewardMultiplierChanged and is used to iterate over the raw logs and unpacked data for Erc20RewardMultiplierChanged events raised by the CosmicGame contract.
+type CosmicGameErc20RewardMultiplierChangedIterator struct {
+	Event *CosmicGameErc20RewardMultiplierChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CosmicGameErc20RewardMultiplierChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CosmicGameErc20RewardMultiplierChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CosmicGameErc20RewardMultiplierChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CosmicGameErc20RewardMultiplierChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CosmicGameErc20RewardMultiplierChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CosmicGameErc20RewardMultiplierChanged represents a Erc20RewardMultiplierChanged event raised by the CosmicGame contract.
+type CosmicGameErc20RewardMultiplierChanged struct {
+	NewMultiplier *big.Int
+	Raw           types.Log // Blockchain specific contextual infos
+}
+
+// FilterErc20RewardMultiplierChanged is a free log retrieval operation binding the contract event 0x128f1a593e59483213fe815142e18dbb38a862d67eaca100681e166383d0fcb2.
+//
+// Solidity: event Erc20RewardMultiplierChanged(uint256 newMultiplier)
+func (_CosmicGame *CosmicGameFilterer) FilterErc20RewardMultiplierChanged(opts *bind.FilterOpts) (*CosmicGameErc20RewardMultiplierChangedIterator, error) {
+
+	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "Erc20RewardMultiplierChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &CosmicGameErc20RewardMultiplierChangedIterator{contract: _CosmicGame.contract, event: "Erc20RewardMultiplierChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchErc20RewardMultiplierChanged is a free log subscription operation binding the contract event 0x128f1a593e59483213fe815142e18dbb38a862d67eaca100681e166383d0fcb2.
+//
+// Solidity: event Erc20RewardMultiplierChanged(uint256 newMultiplier)
+func (_CosmicGame *CosmicGameFilterer) WatchErc20RewardMultiplierChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameErc20RewardMultiplierChanged) (event.Subscription, error) {
+
+	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "Erc20RewardMultiplierChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CosmicGameErc20RewardMultiplierChanged)
+				if err := _CosmicGame.contract.UnpackLog(event, "Erc20RewardMultiplierChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseErc20RewardMultiplierChanged is a log parse operation binding the contract event 0x128f1a593e59483213fe815142e18dbb38a862d67eaca100681e166383d0fcb2.
+//
+// Solidity: event Erc20RewardMultiplierChanged(uint256 newMultiplier)
+func (_CosmicGame *CosmicGameFilterer) ParseErc20RewardMultiplierChanged(log types.Log) (*CosmicGameErc20RewardMultiplierChanged, error) {
+	event := new(CosmicGameErc20RewardMultiplierChanged)
+	if err := _CosmicGame.contract.UnpackLog(event, "Erc20RewardMultiplierChanged", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -8750,140 +9041,6 @@ func (_CosmicGame *CosmicGameFilterer) WatchInitialSecondsUntilPrizeChanged(opts
 func (_CosmicGame *CosmicGameFilterer) ParseInitialSecondsUntilPrizeChanged(log types.Log) (*CosmicGameInitialSecondsUntilPrizeChanged, error) {
 	event := new(CosmicGameInitialSecondsUntilPrizeChanged)
 	if err := _CosmicGame.contract.UnpackLog(event, "InitialSecondsUntilPrizeChanged", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// CosmicGameLongestBidderTokenRewardChangedIterator is returned from FilterLongestBidderTokenRewardChanged and is used to iterate over the raw logs and unpacked data for LongestBidderTokenRewardChanged events raised by the CosmicGame contract.
-type CosmicGameLongestBidderTokenRewardChangedIterator struct {
-	Event *CosmicGameLongestBidderTokenRewardChanged // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *CosmicGameLongestBidderTokenRewardChangedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(CosmicGameLongestBidderTokenRewardChanged)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(CosmicGameLongestBidderTokenRewardChanged)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *CosmicGameLongestBidderTokenRewardChangedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *CosmicGameLongestBidderTokenRewardChangedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// CosmicGameLongestBidderTokenRewardChanged represents a LongestBidderTokenRewardChanged event raised by the CosmicGame contract.
-type CosmicGameLongestBidderTokenRewardChanged struct {
-	NewReward *big.Int
-	Raw       types.Log // Blockchain specific contextual infos
-}
-
-// FilterLongestBidderTokenRewardChanged is a free log retrieval operation binding the contract event 0xf0f6e2691d5489ebfe7a2c0c40d063d69716feaf889e0bc35c3967960cedff4c.
-//
-// Solidity: event LongestBidderTokenRewardChanged(uint256 newReward)
-func (_CosmicGame *CosmicGameFilterer) FilterLongestBidderTokenRewardChanged(opts *bind.FilterOpts) (*CosmicGameLongestBidderTokenRewardChangedIterator, error) {
-
-	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "LongestBidderTokenRewardChanged")
-	if err != nil {
-		return nil, err
-	}
-	return &CosmicGameLongestBidderTokenRewardChangedIterator{contract: _CosmicGame.contract, event: "LongestBidderTokenRewardChanged", logs: logs, sub: sub}, nil
-}
-
-// WatchLongestBidderTokenRewardChanged is a free log subscription operation binding the contract event 0xf0f6e2691d5489ebfe7a2c0c40d063d69716feaf889e0bc35c3967960cedff4c.
-//
-// Solidity: event LongestBidderTokenRewardChanged(uint256 newReward)
-func (_CosmicGame *CosmicGameFilterer) WatchLongestBidderTokenRewardChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameLongestBidderTokenRewardChanged) (event.Subscription, error) {
-
-	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "LongestBidderTokenRewardChanged")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(CosmicGameLongestBidderTokenRewardChanged)
-				if err := _CosmicGame.contract.UnpackLog(event, "LongestBidderTokenRewardChanged", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseLongestBidderTokenRewardChanged is a log parse operation binding the contract event 0xf0f6e2691d5489ebfe7a2c0c40d063d69716feaf889e0bc35c3967960cedff4c.
-//
-// Solidity: event LongestBidderTokenRewardChanged(uint256 newReward)
-func (_CosmicGame *CosmicGameFilterer) ParseLongestBidderTokenRewardChanged(log types.Log) (*CosmicGameLongestBidderTokenRewardChanged, error) {
-	event := new(CosmicGameLongestBidderTokenRewardChanged)
-	if err := _CosmicGame.contract.UnpackLog(event, "LongestBidderTokenRewardChanged", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -12361,307 +12518,10 @@ func (_CosmicGame *CosmicGameFilterer) ParseTokenRewardChanged(log types.Log) (*
 	return event, nil
 }
 
-// CosmicGameTopBidderNFTWinnerEventIterator is returned from FilterTopBidderNFTWinnerEvent and is used to iterate over the raw logs and unpacked data for TopBidderNFTWinnerEvent events raised by the CosmicGame contract.
-type CosmicGameTopBidderNFTWinnerEventIterator struct {
-	Event *CosmicGameTopBidderNFTWinnerEvent // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *CosmicGameTopBidderNFTWinnerEventIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(CosmicGameTopBidderNFTWinnerEvent)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(CosmicGameTopBidderNFTWinnerEvent)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *CosmicGameTopBidderNFTWinnerEventIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *CosmicGameTopBidderNFTWinnerEventIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// CosmicGameTopBidderNFTWinnerEvent represents a TopBidderNFTWinnerEvent event raised by the CosmicGame contract.
-type CosmicGameTopBidderNFTWinnerEvent struct {
-	Winner      common.Address
-	Round       *big.Int
-	TokenId     *big.Int
-	WinnerIndex *big.Int
-	Raw         types.Log // Blockchain specific contextual infos
-}
-
-// FilterTopBidderNFTWinnerEvent is a free log retrieval operation binding the contract event 0x0b65f7d96c8d3f545768f7b9d1908ce604558c906d20f556bbe4cee7c11c89dd.
-//
-// Solidity: event TopBidderNFTWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed tokenId, uint256 winnerIndex)
-func (_CosmicGame *CosmicGameFilterer) FilterTopBidderNFTWinnerEvent(opts *bind.FilterOpts, winner []common.Address, round []*big.Int, tokenId []*big.Int) (*CosmicGameTopBidderNFTWinnerEventIterator, error) {
-
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
-	}
-	var roundRule []interface{}
-	for _, roundItem := range round {
-		roundRule = append(roundRule, roundItem)
-	}
-	var tokenIdRule []interface{}
-	for _, tokenIdItem := range tokenId {
-		tokenIdRule = append(tokenIdRule, tokenIdItem)
-	}
-
-	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "TopBidderNFTWinnerEvent", winnerRule, roundRule, tokenIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return &CosmicGameTopBidderNFTWinnerEventIterator{contract: _CosmicGame.contract, event: "TopBidderNFTWinnerEvent", logs: logs, sub: sub}, nil
-}
-
-// WatchTopBidderNFTWinnerEvent is a free log subscription operation binding the contract event 0x0b65f7d96c8d3f545768f7b9d1908ce604558c906d20f556bbe4cee7c11c89dd.
-//
-// Solidity: event TopBidderNFTWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed tokenId, uint256 winnerIndex)
-func (_CosmicGame *CosmicGameFilterer) WatchTopBidderNFTWinnerEvent(opts *bind.WatchOpts, sink chan<- *CosmicGameTopBidderNFTWinnerEvent, winner []common.Address, round []*big.Int, tokenId []*big.Int) (event.Subscription, error) {
-
-	var winnerRule []interface{}
-	for _, winnerItem := range winner {
-		winnerRule = append(winnerRule, winnerItem)
-	}
-	var roundRule []interface{}
-	for _, roundItem := range round {
-		roundRule = append(roundRule, roundItem)
-	}
-	var tokenIdRule []interface{}
-	for _, tokenIdItem := range tokenId {
-		tokenIdRule = append(tokenIdRule, tokenIdItem)
-	}
-
-	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "TopBidderNFTWinnerEvent", winnerRule, roundRule, tokenIdRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(CosmicGameTopBidderNFTWinnerEvent)
-				if err := _CosmicGame.contract.UnpackLog(event, "TopBidderNFTWinnerEvent", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseTopBidderNFTWinnerEvent is a log parse operation binding the contract event 0x0b65f7d96c8d3f545768f7b9d1908ce604558c906d20f556bbe4cee7c11c89dd.
-//
-// Solidity: event TopBidderNFTWinnerEvent(address indexed winner, uint256 indexed round, uint256 indexed tokenId, uint256 winnerIndex)
-func (_CosmicGame *CosmicGameFilterer) ParseTopBidderNFTWinnerEvent(log types.Log) (*CosmicGameTopBidderNFTWinnerEvent, error) {
-	event := new(CosmicGameTopBidderNFTWinnerEvent)
-	if err := _CosmicGame.contract.UnpackLog(event, "TopBidderNFTWinnerEvent", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// CosmicGameTopBidderTokenRewardChangedIterator is returned from FilterTopBidderTokenRewardChanged and is used to iterate over the raw logs and unpacked data for TopBidderTokenRewardChanged events raised by the CosmicGame contract.
-type CosmicGameTopBidderTokenRewardChangedIterator struct {
-	Event *CosmicGameTopBidderTokenRewardChanged // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *CosmicGameTopBidderTokenRewardChangedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(CosmicGameTopBidderTokenRewardChanged)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(CosmicGameTopBidderTokenRewardChanged)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *CosmicGameTopBidderTokenRewardChangedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *CosmicGameTopBidderTokenRewardChangedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// CosmicGameTopBidderTokenRewardChanged represents a TopBidderTokenRewardChanged event raised by the CosmicGame contract.
-type CosmicGameTopBidderTokenRewardChanged struct {
-	NewReward *big.Int
-	Raw       types.Log // Blockchain specific contextual infos
-}
-
-// FilterTopBidderTokenRewardChanged is a free log retrieval operation binding the contract event 0xaf12d9ae805e98874bdc306c20ef4910a1837c227c7cedb3010cc61c1bb0bd21.
-//
-// Solidity: event TopBidderTokenRewardChanged(uint256 newReward)
-func (_CosmicGame *CosmicGameFilterer) FilterTopBidderTokenRewardChanged(opts *bind.FilterOpts) (*CosmicGameTopBidderTokenRewardChangedIterator, error) {
-
-	logs, sub, err := _CosmicGame.contract.FilterLogs(opts, "TopBidderTokenRewardChanged")
-	if err != nil {
-		return nil, err
-	}
-	return &CosmicGameTopBidderTokenRewardChangedIterator{contract: _CosmicGame.contract, event: "TopBidderTokenRewardChanged", logs: logs, sub: sub}, nil
-}
-
-// WatchTopBidderTokenRewardChanged is a free log subscription operation binding the contract event 0xaf12d9ae805e98874bdc306c20ef4910a1837c227c7cedb3010cc61c1bb0bd21.
-//
-// Solidity: event TopBidderTokenRewardChanged(uint256 newReward)
-func (_CosmicGame *CosmicGameFilterer) WatchTopBidderTokenRewardChanged(opts *bind.WatchOpts, sink chan<- *CosmicGameTopBidderTokenRewardChanged) (event.Subscription, error) {
-
-	logs, sub, err := _CosmicGame.contract.WatchLogs(opts, "TopBidderTokenRewardChanged")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(CosmicGameTopBidderTokenRewardChanged)
-				if err := _CosmicGame.contract.UnpackLog(event, "TopBidderTokenRewardChanged", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseTopBidderTokenRewardChanged is a log parse operation binding the contract event 0xaf12d9ae805e98874bdc306c20ef4910a1837c227c7cedb3010cc61c1bb0bd21.
-//
-// Solidity: event TopBidderTokenRewardChanged(uint256 newReward)
-func (_CosmicGame *CosmicGameFilterer) ParseTopBidderTokenRewardChanged(log types.Log) (*CosmicGameTopBidderTokenRewardChanged, error) {
-	event := new(CosmicGameTopBidderTokenRewardChanged)
-	if err := _CosmicGame.contract.UnpackLog(event, "TopBidderTokenRewardChanged", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
 // CosmicGameConstantsMetaData contains all meta data concerning the CosmicGameConstants contract.
 var CosmicGameConstantsMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"name\":\"DEFAULT_AUCTION_LENGTH\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"ERR_STR_MODE_MAINTENANCE\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"ERR_STR_MODE_RUNTIME\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"FIRST_ROUND_BID_PRICE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"LONGEST_BIDDER_TOKEN_REWARD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MARKETING_REWARD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_MESSAGE_LENGTH\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MILLION\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MODE_MAINTENANCE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MODE_PREPARE_MAINTENANCE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MODE_RUNTIME\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"TOKEN_REWARD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"TOP_BIDDER_TOKEN_REWARD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
-	Bin: "0x608060405234602057600e6024565b6107e061002f8239308150506107e090f35b602a565b60405190565b5f80fdfe60806040526004361015610013575b6107a6565b61001d5f356100ec565b80632a027211146100e757806332bc934c146100e257806354df435e146100dd57806370a71950146100d857806373dd15b5146100d35780637d97597d146100ce57806393b4a452146100c9578063b41fb0e2146100c4578063bca4fd2a146100bf578063c2b6d2ea146100ba578063c7b050ef146100b5578063d4ba8902146100b05763dfd0dafe0361000e5761077b565b61071a565b6106b0565b6105fe565b610595565b61054a565b6104e0565b61047e565b61041b565b6103b4565b610231565b6101cf565b61016b565b60e01c90565b60405190565b5f80fd5b5f91031261010657565b6100f8565b90565b90565b90565b61012861012361012d9261010b565b610111565b61010e565b90565b61013b610118610114565b90565b610146610130565b90565b6101529061010e565b9052565b9190610169905f60208501940190610149565b565b6101763660046100fc565b61019261018161013e565b6101896100f2565b91829182610156565b0390f35b90565b6101ad6101a86101b292610196565b610111565b61010e565b90565b6101c1620f4240610199565b90565b6101cc6101b5565b90565b6101da3660046100fc565b6101f66101e56101c4565b6101ed6100f2565b91829182610156565b0390f35b90565b61021161020c610216926101fa565b610111565b61010e565b90565b61022360016101fd565b90565b61022e610219565b90565b61023c3660046100fc565b610258610247610226565b61024f6100f2565b91829182610156565b0390f35b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906102849061025c565b810190811067ffffffffffffffff82111761029e57604052565b610266565b906102b66102af6100f2565b928361027a565b565b67ffffffffffffffff81116102d6576102d260209161025c565b0190565b610266565b906102ed6102e8836102b8565b6102a3565b918252565b5f7f53797374656d20696e206d61696e74656e616e6365206d6f6465000000000000910152565b610323601a6102db565b90610330602083016102f2565b565b61033a610319565b90565b610345610332565b90565b61035061033d565b90565b5190565b60209181520190565b90825f9392825e0152565b61038a6103936020936103989361038181610353565b93848093610357565b95869101610360565b61025c565b0190565b6103b19160208201915f81840391015261036b565b90565b6103bf3660046100fc565b6103db6103ca610348565b6103d26100f2565b9182918261039c565b0390f35b90565b6103f66103f16103fb926103df565b610111565b61010e565b90565b61040d655af3107a40006103e2565b90565b6104186103fe565b90565b6104263660046100fc565b610442610431610410565b6104396100f2565b91829182610156565b0390f35b90565b61045d61045861046292610446565b610111565b61010e565b90565b61047061a8c0610449565b90565b61047b610465565b90565b6104893660046100fc565b6104a5610494610473565b61049c6100f2565b91829182610156565b0390f35b90565b6104c06104bb6104c5926104a9565b610111565b61010e565b90565b6104d260026104ac565b90565b6104dd6104c8565b90565b6104eb3660046100fc565b6105076104f66104d5565b6104fe6100f2565b91829182610156565b0390f35b90565b61052261051d6105279261050b565b610111565b61010e565b90565b61053c683635c9adc5dea0000061050e565b90565b61054761052a565b90565b6105553660046100fc565b61057161056061053f565b6105686100f2565b91829182610156565b0390f35b610587683635c9adc5dea0000061050e565b90565b610592610575565b90565b6105a03660046100fc565b6105bc6105ab61058a565b6105b36100f2565b91829182610156565b0390f35b90565b6105d76105d26105dc926105c0565b610111565b61010e565b90565b6105f067d02ab486cedc00006105c3565b90565b6105fb6105df565b90565b6106093660046100fc565b6106256106146105f3565b61061c6100f2565b91829182610156565b0390f35b60207f4345000000000000000000000000000000000000000000000000000000000000917f53797374656d206d75737420626520696e204d4f44455f4d41494e54454e414e5f8201520152565b61068060226102db565b9061068d60208301610629565b565b610697610676565b90565b6106a261068f565b90565b6106ad61069a565b90565b6106bb3660046100fc565b6106d76106c66106a5565b6106ce6100f2565b9182918261039c565b0390f35b90565b6106f26106ed6106f7926106db565b610111565b61010e565b90565b61070c68056bc75e2d631000006106de565b90565b6107176106fa565b90565b6107253660046100fc565b61074161073061070f565b6107386100f2565b91829182610156565b0390f35b90565b61075c61075761076192610745565b610111565b61010e565b90565b61076d5f610748565b90565b610778610764565b90565b6107863660046100fc565b6107a2610791610770565b6107996100f2565b91829182610156565b0390f35b5f80fdfea264697066735822122090b01b084895aa5b649839fe4237e5bf099c45729a2b3b8654a96ed875f8dce664736f6c634300081a0033",
+	ABI: "[{\"inputs\":[],\"name\":\"DEFAULT_AUCTION_LENGTH\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"ERC20_REWARD_MULTIPLIER\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"ERR_STR_MODE_MAINTENANCE\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"ERR_STR_MODE_RUNTIME\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"FIRST_ROUND_BID_PRICE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MARKETING_REWARD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_MESSAGE_LENGTH\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MILLION\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MODE_MAINTENANCE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MODE_PREPARE_MAINTENANCE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MODE_RUNTIME\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"TOKEN_REWARD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	Bin: "0x608060405234602057600e6024565b61077d61002f82393081505061077d90f35b602a565b60405190565b5f80fdfe60806040526004361015610013575b610743565b61001d5f356100dc565b80632a027211146100d757806332bc934c146100d257806354df435e146100cd57806370a71950146100c857806373dd15b5146100c35780637d97597d146100be57806393b4a452146100b9578063b2c920d1146100b4578063c2b6d2ea146100af578063c7b050ef146100aa578063d4ba8902146100a55763dfd0dafe0361000e57610718565b6106b7565b61064d565b61059b565b610532565b6104d0565b61046e565b61040b565b6103a4565b610221565b6101bf565b61015b565b60e01c90565b60405190565b5f80fd5b5f9103126100f657565b6100e8565b90565b90565b90565b61011861011361011d926100fb565b610101565b6100fe565b90565b61012b610118610104565b90565b610136610120565b90565b610142906100fe565b9052565b9190610159905f60208501940190610139565b565b6101663660046100ec565b61018261017161012e565b6101796100e2565b91829182610146565b0390f35b90565b61019d6101986101a292610186565b610101565b6100fe565b90565b6101b1620f4240610189565b90565b6101bc6101a5565b90565b6101ca3660046100ec565b6101e66101d56101b4565b6101dd6100e2565b91829182610146565b0390f35b90565b6102016101fc610206926101ea565b610101565b6100fe565b90565b61021360016101ed565b90565b61021e610209565b90565b61022c3660046100ec565b610248610237610216565b61023f6100e2565b91829182610146565b0390f35b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906102749061024c565b810190811067ffffffffffffffff82111761028e57604052565b610256565b906102a661029f6100e2565b928361026a565b565b67ffffffffffffffff81116102c6576102c260209161024c565b0190565b610256565b906102dd6102d8836102a8565b610293565b918252565b5f7f53797374656d20696e206d61696e74656e616e6365206d6f6465000000000000910152565b610313601a6102cb565b90610320602083016102e2565b565b61032a610309565b90565b610335610322565b90565b61034061032d565b90565b5190565b60209181520190565b90825f9392825e0152565b61037a6103836020936103889361037181610343565b93848093610347565b95869101610350565b61024c565b0190565b6103a19160208201915f81840391015261035b565b90565b6103af3660046100ec565b6103cb6103ba610338565b6103c26100e2565b9182918261038c565b0390f35b90565b6103e66103e16103eb926103cf565b610101565b6100fe565b90565b6103fd655af3107a40006103d2565b90565b6104086103ee565b90565b6104163660046100ec565b610432610421610400565b6104296100e2565b91829182610146565b0390f35b90565b61044d61044861045292610436565b610101565b6100fe565b90565b61046061a8c0610439565b90565b61046b610455565b90565b6104793660046100ec565b610495610484610463565b61048c6100e2565b91829182610146565b0390f35b90565b6104b06104ab6104b592610499565b610101565b6100fe565b90565b6104c2600261049c565b90565b6104cd6104b8565b90565b6104db3660046100ec565b6104f76104e66104c5565b6104ee6100e2565b91829182610146565b0390f35b90565b61051261050d610517926104fb565b610101565b6100fe565b90565b610524600a6104fe565b90565b61052f61051a565b90565b61053d3660046100ec565b610559610548610527565b6105506100e2565b91829182610146565b0390f35b90565b61057461056f6105799261055d565b610101565b6100fe565b90565b61058d67d02ab486cedc0000610560565b90565b61059861057c565b90565b6105a63660046100ec565b6105c26105b1610590565b6105b96100e2565b91829182610146565b0390f35b60207f4345000000000000000000000000000000000000000000000000000000000000917f53797374656d206d75737420626520696e204d4f44455f4d41494e54454e414e5f8201520152565b61061d60226102cb565b9061062a602083016105c6565b565b610634610613565b90565b61063f61062c565b90565b61064a610637565b90565b6106583660046100ec565b610674610663610642565b61066b6100e2565b9182918261038c565b0390f35b90565b61068f61068a61069492610678565b610101565b6100fe565b90565b6106a968056bc75e2d6310000061067b565b90565b6106b4610697565b90565b6106c23660046100ec565b6106de6106cd6106ac565b6106d56100e2565b91829182610146565b0390f35b90565b6106f96106f46106fe926106e2565b610101565b6100fe565b90565b61070a5f6106e5565b90565b610715610701565b90565b6107233660046100ec565b61073f61072e61070d565b6107366100e2565b91829182610146565b0390f35b5f80fdfea2646970667358221220de753512fe74c8eb833c6f612826524401440eea28ad77e1605ca3c8305b6c3d64736f6c634300081a0033",
 }
 
 // CosmicGameConstantsABI is the input ABI used to generate the binding from.
@@ -12862,6 +12722,37 @@ func (_CosmicGameConstants *CosmicGameConstantsCallerSession) DEFAULTAUCTIONLENG
 	return _CosmicGameConstants.Contract.DEFAULTAUCTIONLENGTH(&_CosmicGameConstants.CallOpts)
 }
 
+// ERC20REWARDMULTIPLIER is a free data retrieval call binding the contract method 0xb2c920d1.
+//
+// Solidity: function ERC20_REWARD_MULTIPLIER() view returns(uint256)
+func (_CosmicGameConstants *CosmicGameConstantsCaller) ERC20REWARDMULTIPLIER(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _CosmicGameConstants.contract.Call(opts, &out, "ERC20_REWARD_MULTIPLIER")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// ERC20REWARDMULTIPLIER is a free data retrieval call binding the contract method 0xb2c920d1.
+//
+// Solidity: function ERC20_REWARD_MULTIPLIER() view returns(uint256)
+func (_CosmicGameConstants *CosmicGameConstantsSession) ERC20REWARDMULTIPLIER() (*big.Int, error) {
+	return _CosmicGameConstants.Contract.ERC20REWARDMULTIPLIER(&_CosmicGameConstants.CallOpts)
+}
+
+// ERC20REWARDMULTIPLIER is a free data retrieval call binding the contract method 0xb2c920d1.
+//
+// Solidity: function ERC20_REWARD_MULTIPLIER() view returns(uint256)
+func (_CosmicGameConstants *CosmicGameConstantsCallerSession) ERC20REWARDMULTIPLIER() (*big.Int, error) {
+	return _CosmicGameConstants.Contract.ERC20REWARDMULTIPLIER(&_CosmicGameConstants.CallOpts)
+}
+
 // ERRSTRMODEMAINTENANCE is a free data retrieval call binding the contract method 0xc7b050ef.
 //
 // Solidity: function ERR_STR_MODE_MAINTENANCE() view returns(string)
@@ -12953,37 +12844,6 @@ func (_CosmicGameConstants *CosmicGameConstantsSession) FIRSTROUNDBIDPRICE() (*b
 // Solidity: function FIRST_ROUND_BID_PRICE() view returns(uint256)
 func (_CosmicGameConstants *CosmicGameConstantsCallerSession) FIRSTROUNDBIDPRICE() (*big.Int, error) {
 	return _CosmicGameConstants.Contract.FIRSTROUNDBIDPRICE(&_CosmicGameConstants.CallOpts)
-}
-
-// LONGESTBIDDERTOKENREWARD is a free data retrieval call binding the contract method 0xb41fb0e2.
-//
-// Solidity: function LONGEST_BIDDER_TOKEN_REWARD() view returns(uint256)
-func (_CosmicGameConstants *CosmicGameConstantsCaller) LONGESTBIDDERTOKENREWARD(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _CosmicGameConstants.contract.Call(opts, &out, "LONGEST_BIDDER_TOKEN_REWARD")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// LONGESTBIDDERTOKENREWARD is a free data retrieval call binding the contract method 0xb41fb0e2.
-//
-// Solidity: function LONGEST_BIDDER_TOKEN_REWARD() view returns(uint256)
-func (_CosmicGameConstants *CosmicGameConstantsSession) LONGESTBIDDERTOKENREWARD() (*big.Int, error) {
-	return _CosmicGameConstants.Contract.LONGESTBIDDERTOKENREWARD(&_CosmicGameConstants.CallOpts)
-}
-
-// LONGESTBIDDERTOKENREWARD is a free data retrieval call binding the contract method 0xb41fb0e2.
-//
-// Solidity: function LONGEST_BIDDER_TOKEN_REWARD() view returns(uint256)
-func (_CosmicGameConstants *CosmicGameConstantsCallerSession) LONGESTBIDDERTOKENREWARD() (*big.Int, error) {
-	return _CosmicGameConstants.Contract.LONGESTBIDDERTOKENREWARD(&_CosmicGameConstants.CallOpts)
 }
 
 // MARKETINGREWARD is a free data retrieval call binding the contract method 0xc2b6d2ea.
@@ -13203,41 +13063,10 @@ func (_CosmicGameConstants *CosmicGameConstantsCallerSession) TOKENREWARD() (*bi
 	return _CosmicGameConstants.Contract.TOKENREWARD(&_CosmicGameConstants.CallOpts)
 }
 
-// TOPBIDDERTOKENREWARD is a free data retrieval call binding the contract method 0xbca4fd2a.
-//
-// Solidity: function TOP_BIDDER_TOKEN_REWARD() view returns(uint256)
-func (_CosmicGameConstants *CosmicGameConstantsCaller) TOPBIDDERTOKENREWARD(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _CosmicGameConstants.contract.Call(opts, &out, "TOP_BIDDER_TOKEN_REWARD")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// TOPBIDDERTOKENREWARD is a free data retrieval call binding the contract method 0xbca4fd2a.
-//
-// Solidity: function TOP_BIDDER_TOKEN_REWARD() view returns(uint256)
-func (_CosmicGameConstants *CosmicGameConstantsSession) TOPBIDDERTOKENREWARD() (*big.Int, error) {
-	return _CosmicGameConstants.Contract.TOPBIDDERTOKENREWARD(&_CosmicGameConstants.CallOpts)
-}
-
-// TOPBIDDERTOKENREWARD is a free data retrieval call binding the contract method 0xbca4fd2a.
-//
-// Solidity: function TOP_BIDDER_TOKEN_REWARD() view returns(uint256)
-func (_CosmicGameConstants *CosmicGameConstantsCallerSession) TOPBIDDERTOKENREWARD() (*big.Int, error) {
-	return _CosmicGameConstants.Contract.TOPBIDDERTOKENREWARD(&_CosmicGameConstants.CallOpts)
-}
-
 // CosmicGameErrorsMetaData contains all meta data concerning the CosmicGameErrors contract.
 var CosmicGameErrorsMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"requester\",\"type\":\"address\"}],\"name\":\"AccessError\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"activationTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockTimestamp\",\"type\":\"uint256\"}],\"name\":\"ActivationTime\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"msgLength\",\"type\":\"uint256\"}],\"name\":\"BidMessageLengthOverflow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amountRequired\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amountSent\",\"type\":\"uint256\"}],\"name\":\"BidPrice\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"providedRound\",\"type\":\"uint256\"}],\"name\":\"BidderQueryNoBidsYet\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"providedOffset\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"offsetFromStart\",\"type\":\"uint256\"}],\"name\":\"BidderQueryOffsetOverflow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"businessLogicAddr\",\"type\":\"address\"},{\"internalType\":\"bytes4\",\"name\":\"selector\",\"type\":\"bytes4\"}],\"name\":\"CallToBusinessLogicFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"}],\"name\":\"DepositAlreadyClaimed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"DepositFromUnauthorizedSender\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"stakeStart\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"stakeEnd\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositDate\",\"type\":\"uint256\"}],\"name\":\"DepositOutsideStakingWindow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenAmoumnt\",\"type\":\"uint256\"}],\"name\":\"ERC20Mint\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenAmount\",\"type\":\"uint256\"}],\"name\":\"ERC20TransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"}],\"name\":\"ERC721Mint\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"claimTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockTimestamp\",\"type\":\"uint256\"}],\"name\":\"EarlyClaim\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"unstakeTiemstamp\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockTimestamp\",\"type\":\"uint256\"}],\"name\":\"EarlyUnstake\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"}],\"name\":\"FundTransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionsLen\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositsLen\",\"type\":\"uint256\"}],\"name\":\"IncorrectArrayArguments\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"contractAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"IncorrectERC721TokenOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"requiredAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"senderBalance\",\"type\":\"uint256\"}],\"name\":\"InsufficientCSTBalance\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"InvalidActionId\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"providedRound\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"providedOffset\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"numParticipants\",\"type\":\"uint256\"}],\"name\":\"InvalidBidderQueryOffset\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"providedRound\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"totalRounds\",\"type\":\"uint256\"}],\"name\":\"InvalidBidderQueryRound\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"}],\"name\":\"InvalidDepositId\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"lastBidder\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"bidder\",\"type\":\"address\"}],\"name\":\"LastBidderOnly\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ModuloIsZero\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"NFTAlreadyClaimed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"NoLastBidder\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"requester\",\"type\":\"address\"}],\"name\":\"NoMintPrivileges\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"NoTokensStaked\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"NonExistentDonatedNFT\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"NonExistentWinner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"NonZeroValueRequired\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"OwnershipError\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"percentageSum\",\"type\":\"uint256\"}],\"name\":\"PercentageValidation\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"systemMode\",\"type\":\"uint256\"}],\"name\":\"SystemMode\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyDeleted\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyInserted\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyUnstaked\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"len\",\"type\":\"uint256\"}],\"name\":\"TokenNameLength\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"TokenNotUnstaked\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"randomWalkTokenId\",\"type\":\"uint256\"}],\"name\":\"UsedRandomWalkNFT\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroBalance\",\"type\":\"error\"}]",
-	Bin: "0x608060405234601d57600e6021565b603e602c823930815050603e90f35b6027565b60405190565b5f80fdfe60806040525f80fdfea2646970667358221220f1a62475871e5f97fbd9df8337810ffb53c8d6f8182fa43d7a7beae0835df42d64736f6c634300081a0033",
+	ABI: "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"requester\",\"type\":\"address\"}],\"name\":\"AccessError\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"activationTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockTimestamp\",\"type\":\"uint256\"}],\"name\":\"ActivationTime\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"msgLength\",\"type\":\"uint256\"}],\"name\":\"BidMessageLengthOverflow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amountRequired\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amountSent\",\"type\":\"uint256\"}],\"name\":\"BidPrice\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"providedRound\",\"type\":\"uint256\"}],\"name\":\"BidderQueryNoBidsYet\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"providedOffset\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"offsetFromStart\",\"type\":\"uint256\"}],\"name\":\"BidderQueryOffsetOverflow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"businessLogicAddr\",\"type\":\"address\"},{\"internalType\":\"bytes4\",\"name\":\"selector\",\"type\":\"bytes4\"}],\"name\":\"CallToBusinessLogicFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"}],\"name\":\"DepositAlreadyClaimed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"DepositFromUnauthorizedSender\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"stakeStart\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"stakeEnd\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositDate\",\"type\":\"uint256\"}],\"name\":\"DepositOutsideStakingWindow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenAmoumnt\",\"type\":\"uint256\"}],\"name\":\"ERC20Mint\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenAmount\",\"type\":\"uint256\"}],\"name\":\"ERC20TransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"}],\"name\":\"ERC721Mint\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"claimTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockTimestamp\",\"type\":\"uint256\"}],\"name\":\"EarlyClaim\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"}],\"name\":\"FundTransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionsLen\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositsLen\",\"type\":\"uint256\"}],\"name\":\"IncorrectArrayArguments\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"contractAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"IncorrectERC721TokenOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"requiredAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"senderBalance\",\"type\":\"uint256\"}],\"name\":\"InsufficientCSTBalance\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"InvalidActionId\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"providedRound\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"providedOffset\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"numParticipants\",\"type\":\"uint256\"}],\"name\":\"InvalidBidderQueryOffset\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"providedRound\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"totalRounds\",\"type\":\"uint256\"}],\"name\":\"InvalidBidderQueryRound\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"}],\"name\":\"InvalidDepositId\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"lastBidder\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"bidder\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"timeToWait\",\"type\":\"uint256\"}],\"name\":\"LastBidderOnly\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ModuloIsZero\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"NFTAlreadyClaimed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"NoLastBidder\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"requester\",\"type\":\"address\"}],\"name\":\"NoMintPrivileges\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"NoTokensStaked\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"NonExistentDonatedNFT\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"num\",\"type\":\"uint256\"}],\"name\":\"NonExistentWinner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"NonZeroValueRequired\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"OneTimeStaking\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"OwnershipError\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"percentageSum\",\"type\":\"uint256\"}],\"name\":\"PercentageValidation\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"systemMode\",\"type\":\"uint256\"}],\"name\":\"SystemMode\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyDeleted\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyInserted\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyUnstaked\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"len\",\"type\":\"uint256\"}],\"name\":\"TokenNameLength\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"TokenNotUnstaked\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"randomWalkTokenId\",\"type\":\"uint256\"}],\"name\":\"UsedRandomWalkNFT\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroBalance\",\"type\":\"error\"}]",
+	Bin: "0x608060405234601d57600e6021565b603e602c823930815050603e90f35b6027565b60405190565b5f80fdfe60806040525f80fdfea2646970667358221220274d06a567bf0a19d3e9b1f0cdb2b6c440b4b494065d58121f7b671f42eabf0c64736f6c634300081a0033",
 }
 
 // CosmicGameErrorsABI is the input ABI used to generate the binding from.
