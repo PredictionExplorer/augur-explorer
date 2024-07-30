@@ -156,7 +156,7 @@ func (sw *SQLStorageWrapper) Get_charity_wallet_withdrawals() []p.CGCharityWithd
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game() []p.CGCosmicGameDonation{
+func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_simple_list() []p.CGCosmicGameDonation{
 
 	var query string
 	query = "SELECT "+

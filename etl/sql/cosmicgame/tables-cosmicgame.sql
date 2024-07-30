@@ -38,8 +38,27 @@ CREATE TABLE cg_donation (
 	time_stamp		TIMESTAMPTZ NOT NULL,
 	contract_aid	BIGINT NOT NULL,
 	donor_aid		BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
 	amount			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_donation_wi (	-- DonationWithInfo
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	donor_aid		BIGINT NOT NULL,
+	round_num		BIGINT NOT NULL,
+	record_id		BIGINT NOT NULL,
+	amount			DECIMAL NOT NULL,
+	UNIQUE(evtlog_id),
+	UNIQUE(record_id)
+);
+CREATE TABLE cg_donation_json ( -- JSON data related to donation
+	record_id		BIGINT PRIMARY KEY REFERENCES cg_donation_wi(record_id),
+	data			TEXT
 );
 CREATE TABLE cg_donation_received (
 	id				BIGSERIAL PRIMARY KEY,

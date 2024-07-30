@@ -358,23 +358,6 @@ func api_cosmic_game_charity_donations_withdrawals(c *gin.Context) {
 		"CharityWithdrawals" : withdrawals,
 	})
 }
-func api_cosmic_game_donations_eth(c *gin.Context) {
-
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	if  !augur_srv.arbitrum_initialized() {
-		respond_error_json(c,"Database link wasn't configured")
-		return
-	}
-
-	donations := arb_storagew.Get_donations_to_cosmic_game()
-	var req_status int = 1
-	var err_str string = ""
-	c.JSON(http.StatusOK, gin.H{
-		"status": req_status,
-		"error" : err_str,
-		"CharityDonations" : donations,
-	})
-}
 func api_cosmic_game_user_unique_bidders(c *gin.Context) {
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")

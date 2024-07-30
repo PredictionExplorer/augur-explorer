@@ -58,6 +58,19 @@ type CGDonationEvent struct {
 	LogIndex			int64
 	ContractAddr		string
 	DonorAddr			string
+	RoundNum			int64
+	Amount				string
+}
+type CGDonationWithInfoEvent struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	DonorAddr			string
+	RoundNum			int64
+	RecordId			int64	// record ID at the contract side
 	Amount				string
 }
 type CGDonationReceivedEvent struct {

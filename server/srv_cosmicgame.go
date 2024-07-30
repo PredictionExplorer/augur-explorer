@@ -689,17 +689,6 @@ func cosmic_game_charity_donations_withdrawals(c *gin.Context) {
 		"CharityWithdrawals" : donations,
 	})
 }
-func cosmic_game_donations_eth(c *gin.Context) {
-
-	if  !augur_srv.arbitrum_initialized() {
-		respond_error(c,"Database link wasn't configured")
-		return
-	}
-	donations := arb_storagew.Get_donations_to_cosmic_game()
-	c.HTML(http.StatusOK, "cg_donations_to_cosmicgame.html", gin.H{
-		"CosmicGameDonations" : donations,
-	})
-}
 func cosmic_game_unique_bidders(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {

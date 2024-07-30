@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"os/exec"
 	"fmt"
 	"math/big"
 	"bytes"
@@ -33,6 +32,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 		},
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_donation_event[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_donation_with_info_event[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -466,8 +469,68 @@ func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tAmount: %v\n",evt.Amount)
 	Info.Printf("}\n")
 
-	storagew.Delete_donation(evt.EvtId)
-	storagew.Insert_donation(&evt)
+	storagew.Delete_donation_event(evt.EvtId)
+	storagew.Insert_donation_event(&evt)
+}
+func get_donation_data(record_id int64) (string,error) {
+
+	cosmic_game_ctrct,err := NewCosmicGame(cosmic_game_addr,eclient)
+	if err != nil {
+		return "",err
+	}
+	fmt.Printf("record id to query = %v\n",record_id)
+	var copts bind.CallOpts
+	dinfo_rec,err := cosmic_game_ctrct.DonationInfoRecords(&copts,big.NewInt(record_id))
+	if err != nil {
+		return "",err
+	}
+	fmt.Printf("donation data: \n%v\n",dinfo_rec);
+	Info.Printf("donation data: \n%v\n",dinfo_rec);
+	return dinfo_rec.Data,err
+}
+func proc_donation_with_info_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGDonationWithInfoEvent
+	var eth_evt CosmicGameDonationWithInfoEvent
+
+	Info.Printf("Processing DonationWithInfoEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"DonationWithInfoEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event DonationWithInfoEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
+	evt.RecordId = eth_evt.RecordId.Int64();
+	evt.Amount = eth_evt.Amount.String()
+	data_json,err := get_donation_data(evt.RecordId)
+	fmt.Printf("data_json=%v, err=%v\n",data_json,err)
+	if err != nil {
+		Info.Printf("Failure to fetch donation info record: %v\n",err.Error())
+		Error.Printf("Failure to fetch donation info record: %v\n",err.Error())
+		os.Exit(1)
+	}
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("DonationWithInfoEvent {\n")
+	Info.Printf("\tDonor: %v\n",evt.DonorAddr)
+	Info.Printf("\tRecordId: %v\n",evt.RecordId)
+	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("}\n")
+
+	storagew.Delete_donation_with_info_event(evt.EvtId)
+	storagew.Insert_donation_with_info_event(&evt)
+	storagew.Insert_donation_wi_data_json(evt.RecordId,data_json);
 }
 func proc_donation_received_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -703,6 +766,7 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 
 	storagew.Delete_mint_event(evt.EvtId)
 	storagew.Insert_mint_event(&evt)
+	/*Temporarily disabled
 	cmd_str := fmt.Sprintf("%v/%v %v %v",os.Getenv("HOME"),IMGGEN_PATH,evt.TokenId,evt.Seed)
 	Info.Printf("Executing %v\n",cmd_str)
 	cmd := exec.Command(cmd_str)
@@ -711,6 +775,7 @@ func proc_mint_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Error executing image generation: %v\n",err)
 		Error.Printf("Error executing image generation: %v\n",err)
 	}
+	*/
 }
 func proc_raffle_deposit_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -2117,6 +2182,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donation_event) {
 		proc_donation_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donation_with_info_event) {
+		proc_donation_with_info_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_donation_received_event) {
 		proc_donation_received_event(log,evtlog)

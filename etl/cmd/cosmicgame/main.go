@@ -29,7 +29,8 @@ const (
 
 	PRIZE_CLAIM_EVENT		= "27bc828c399c2947fea27bca8a75ced2e94ff2651d607271f051e39db52286ce"
 	BID_EVENT				= "3ebe28e9be13fedb71392c114461386e763acb563218b28db3690553055cd5a5"
-	DONATION_EVENT			= "8b7fe5be5699654fd637d2250cb0d47e88205730710745e78e9d8bcaf8aad8f1"
+	DONATION_EVENT			= "1f7f60fa7a0315c6a22ba0c122d2b40ad612cc5dc66602de5d7056e067e88232"
+	DONATION_WITH_INFO_EVENT= "051269def0a2fd7c9329b0806798aab7ac4049874d62cbffecbc3b265d729f6f"
 	DONATION_RECEIVED_EVENT	= "46ff3d75d4645bdbbae4cd6109ba42e6e1b80ea25e69d10472b357b733300368"
 	DONATION_SENT_EVENT		= "44d398d152fa0735a428b13ebc78f79fe4cb1b4722292cd233e278552fa36d32"
 	CHARITY_UPDATED			= "a0bd6b2fdbf082ae2356710c23fc8d76d56d418cecb4514d119c77a8617b4ffe"
@@ -85,6 +86,7 @@ var (
 	evt_prize_claim_event,_ = hex.DecodeString(PRIZE_CLAIM_EVENT)
 	evt_bid_event,_			= hex.DecodeString(BID_EVENT)
 	evt_donation_event,_	= hex.DecodeString(DONATION_EVENT)
+	evt_donation_with_info_event,_= hex.DecodeString(DONATION_WITH_INFO_EVENT)
 	evt_nft_donation_event,_= hex.DecodeString(NFT_DONATION_EVENT)
 	evt_raffle_nft_winner,_	= hex.DecodeString(RAFFLE_NFT_WINNER)
 	evt_endurance_winner,_	= hex.DecodeString(ENDURANCE_WINNER)

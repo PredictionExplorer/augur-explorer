@@ -3,6 +3,8 @@ DROP TABLE IF EXISTS
 	cg_prize_claim,
 	cg_bid,
 	cg_donation,
+	cg_donation_wi,
+	cg_donation_json ,
 	cg_donation_received,
 	cg_donation_sent,
 	cg_nft_donation,

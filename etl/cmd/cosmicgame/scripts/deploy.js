@@ -110,6 +110,8 @@ async function main() {
 
   let donationAmount = hre.ethers.utils.parseEther('10');
   await cosmicGame.donate({value: donationAmount});
+  let donationData = "{'version:1,'title':'Hardhat donation','message':'Donation from HardHat','url':'http://hardhat.org'')";
+  await cosmicGame.donateWithInfo({value: hre.ethers.utils.parseEther('6')});
 
   for (let i=0; i<5; i++) {
 	let token_id = await mint_rwalk(addr1);
@@ -349,6 +351,10 @@ async function main() {
   }
  
   await ethers.provider.send("evm_mine");
+
+  donationData = "{'version:1,'title','EF donation','message':'Ethereum Foundation is a non-profit and part of a community of organizations and people working to fund protocol development, grow the ecosystem, and advocate for Ethereum.','url':'http://ethereum.org/en'')";
+  await cosmicGame.donateWithInfo({value: hre.ethers.utils.parseEther('9')});
+  await cosmicGame.donateWithInfo({value: hre.ethers.utils.parseEther('8')});
 
   await marketingWallet.send(hre.ethers.utils.parseEther('7'),addr1.address);
   await ethers.provider.send("evm_mine");	// mine empty block as spacing

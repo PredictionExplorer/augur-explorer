@@ -29,10 +29,20 @@ func (sw *SQLStorageWrapper) Delete_bid(evtlog_id int64) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_donation(evtlog_id int64) {
+func (sw *SQLStorageWrapper) Delete_donation_event(evtlog_id int64) {
 
 	var query string
 	query = "DELETE FROM "+sw.S.SchemaName()+".cg_donation WHERE evtlog_id=$1"
+	_,err := sw.S.Db().Exec(query,evtlog_id)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Delete_donation_with_info_event(evtlog_id int64) {
+
+	var query string
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_donation_wi WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))

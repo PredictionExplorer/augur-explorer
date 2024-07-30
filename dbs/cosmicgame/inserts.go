@@ -62,15 +62,15 @@ func (sw *SQLStorageWrapper) Insert_bid_event(evt *p.CGBidEvent) {
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_donation(evt *p.CGDonationEvent ) {
+func (sw *SQLStorageWrapper) Insert_donation_event(evt *p.CGDonationEvent ) {
 
 	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
 	donor_aid := sw.S.Lookup_or_create_address(evt.DonorAddr,0, 0)
 	var query string
 	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_donation("+
 					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
-					"donor_aid,amount"+
-					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7)"
+					"donor_aid,round_num,amount"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8)"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
 		evt.BlockNum,
@@ -78,10 +78,48 @@ func (sw *SQLStorageWrapper) Insert_donation(evt *p.CGDonationEvent ) {
 		evt.TxId,
 		contract_aid,
 		donor_aid,
+		evt.RoundNum,
 		evt.Amount,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_donation table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_donation_with_info_event(evt *p.CGDonationWithInfoEvent ) {
+
+	contract_aid := sw.S.Lookup_or_create_address(evt.ContractAddr,0, 0)
+	donor_aid := sw.S.Lookup_or_create_address(evt.DonorAddr,0, 0)
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_donation_wi("+
+					"evtlog_id,block_num,time_stamp,tx_id,contract_aid,"+
+					"donor_aid,round_num,record_id,amount"+
+					") VALUES($1,$2,TO_TIMESTAMP($3),$4,$5,$6,$7,$8,$9)"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TimeStamp,
+		evt.TxId,
+		contract_aid,
+		donor_aid,
+		evt.RoundNum,
+		evt.RecordId,
+		evt.Amount,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_donation_wi table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_donation_wi_data_json(recordId int64,data string) {
+
+	var query string
+	query =  "INSERT INTO "+sw.S.SchemaName()+".cg_donation_json("+
+					"record_id,data"+
+					") VALUES($1,$2)"
+	_,err := sw.S.Db().Exec(query,recordId,data)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_donation_json : %v\n",err))
 		os.Exit(1)
 	}
 }
