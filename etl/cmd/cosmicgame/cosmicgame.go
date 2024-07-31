@@ -462,11 +462,13 @@ func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TimeStamp = elog.TimeStamp
 	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.Amount = eth_evt.Amount.String()
+	evt.RoundNum = eth_evt.Round.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("DonationEvent {\n")
 	Info.Printf("\tDonor: %v\n",evt.DonorAddr)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tRound: %v\n",evt.RoundNum)
 	Info.Printf("}\n")
 
 	storagew.Delete_donation_event(evt.EvtId)
@@ -474,18 +476,19 @@ func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 }
 func get_donation_data(record_id int64) (string,error) {
 
+//	fmt.Printf("Cosmic game addr: %v\n",cosmic_game_addr.String())
 	cosmic_game_ctrct,err := NewCosmicGame(cosmic_game_addr,eclient)
 	if err != nil {
 		return "",err
 	}
-	fmt.Printf("record id to query = %v\n",record_id)
+//	fmt.Printf("record id to query = %v\n",record_id)
 	var copts bind.CallOpts
 	dinfo_rec,err := cosmic_game_ctrct.DonationInfoRecords(&copts,big.NewInt(record_id))
 	if err != nil {
 		return "",err
 	}
-	fmt.Printf("donation data: \n%v\n",dinfo_rec);
-	Info.Printf("donation data: \n%v\n",dinfo_rec);
+//	fmt.Printf("donation data: \n%v\n",dinfo_rec);
+//	Info.Printf("donation data: \n%v\n",dinfo_rec);
 	return dinfo_rec.Data,err
 }
 func proc_donation_with_info_event(log *types.Log,elog *EthereumEventLog) {
@@ -513,8 +516,9 @@ func proc_donation_with_info_event(log *types.Log,elog *EthereumEventLog) {
 	evt.DonorAddr = common.BytesToAddress(log.Topics[1][12:]).String()
 	evt.RecordId = eth_evt.RecordId.Int64();
 	evt.Amount = eth_evt.Amount.String()
+	evt.RoundNum = eth_evt.Round.Int64()
 	data_json,err := get_donation_data(evt.RecordId)
-	fmt.Printf("data_json=%v, err=%v\n",data_json,err)
+//	fmt.Printf("data_json=%v, err=%v\n",data_json,err)
 	if err != nil {
 		Info.Printf("Failure to fetch donation info record: %v\n",err.Error())
 		Error.Printf("Failure to fetch donation info record: %v\n",err.Error())
@@ -526,6 +530,7 @@ func proc_donation_with_info_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tDonor: %v\n",evt.DonorAddr)
 	Info.Printf("\tRecordId: %v\n",evt.RecordId)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
+	Info.Printf("\tDaa JSON: %v\n",data_json)
 	Info.Printf("}\n")
 
 	storagew.Delete_donation_with_info_event(evt.EvtId)

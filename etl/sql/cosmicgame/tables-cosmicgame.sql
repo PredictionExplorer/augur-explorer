@@ -57,7 +57,7 @@ CREATE TABLE cg_donation_wi (	-- DonationWithInfo
 	UNIQUE(record_id)
 );
 CREATE TABLE cg_donation_json ( -- JSON data related to donation
-	record_id		BIGINT PRIMARY KEY REFERENCES cg_donation_wi(record_id),
+	record_id		BIGINT PRIMARY KEY REFERENCES cg_donation_wi(record_id) ON DELETE CASCADE,
 	data			TEXT
 );
 CREATE TABLE cg_donation_received (

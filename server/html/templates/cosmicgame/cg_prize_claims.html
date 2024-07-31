@@ -16,6 +16,7 @@
 		<th class="market_reports"></th>
 		<th class="market_reports"></th>
 		<th class="market_reports"></th>
+		<th class="market_reports"></th>
 		<th class="market_reports">Bids</th>
 		<th class="market_reports">Donated</th>
 		<th class="market_reports">Raffle Deposits</th>
@@ -45,6 +46,10 @@
 			</td>
 			<td class="addr" title="{{.WinnerAid}}">
 				<a href="/black/cosmicgame/staking/cst/rewards/by_round/{{.PrizeNum}}">&nbsp;&nbsp;Staking</a>
+			</td>
+			<td class="addr" title="{{.WinnerAid}}">
+				<a href="/black/cosmicgame/donations/eth/simple/by_round/{{.PrizeNum}}">&nbsp;&nbsp;DS</a>
+				<a href="/black/cosmicgame/donations/eth/with_info/by_round/{{.PrizeNum}}">&nbsp;&nbsp;DWI</a>
 			</td>
 			<td style="text-align:center;">{{.RoundStats.TotalBids}}</td>
 			<td style="text-align:center;">{{.RoundStats.TotalDonatedNFTs}}</td>

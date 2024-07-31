@@ -1,14 +1,15 @@
 <html>
 <head>
 	<link href="/black/res/main.css" rel="stylesheet">
-	<title>Direct Donations to CosmicGame contract</title>
+	<title>Direct Donations to CosmicGame contract via donate()</title>
 </head>
 <body>
-	<h3 class="page_title">Direct (ETH) Donations to CosmicGame contract<h3>
+	<h3 class="page_title">Direct (ETH) Donations to CosmicGame contract via donate()<h3>
 <table>
 	<tr class="market_reports">
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
+		<th class="market_reports">RoundNum</th>
 		<th class="market_reports">Donor</th>
 		<h class="market_reports">Donation amount (ETH)</th>
 	</tr>
@@ -18,6 +19,7 @@
 				{{.BlockNum}}</a>
 			</td>
 			<td class="" title="{{.TimeStamp}}">{{.DateTime}}</td>
+			<td class="" title="{{.TimeStamp}}">{{.RoundNum}}</td>
 			<td class="addr" title="{{.DonorAid}}">
 				<a href="/black/cosmicgame/user/info/{{.DonorAddr}}">{{.DonorAddr}}</a>
 			</td>
@@ -27,8 +29,8 @@
 </table>
 <br/><br/>
 <code>
-	API: /api/cosmicgame/donations/eth</br>
+	API: /api/cosmicgame/donations/eth/simple/list/[offset]/[limit] </br>
 
-	Example: /api/cosmicgame/donations/eth
+	Example: /api/cosmicgame/donations/eth/simple/list/0/1000
 </code>
 </body>

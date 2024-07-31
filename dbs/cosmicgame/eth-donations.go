@@ -156,7 +156,7 @@ func (sw *SQLStorageWrapper) Get_charity_wallet_withdrawals() []p.CGCharityWithd
 	}
 	return records
 }
-func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_simple_list() []p.CGCosmicGameDonation{
+func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_simple_list(offset,limit int) []p.CGCosmicGameDonationSimple{
 
 	var query string
 	query = "SELECT "+
@@ -169,20 +169,22 @@ func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_simple_list() []p.CGCo
 				"d.donor_aid,"+
 				"da.addr,"+
 				"d.amount, "+
-				"d.amount/1e18 amount_eth  " +
+				"d.amount/1e18 amount_eth,  " +
+				"d.round_num "+
 			"FROM "+sw.S.SchemaName()+".cg_donation d "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
-			"ORDER BY d.id DESC"
-	rows,err := sw.S.Db().Query(query)
+			"ORDER BY d.id DESC " +
+			"OFFSET $1 LIMIT $2"
+	rows,err := sw.S.Db().Query(query,offset,limit)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 		os.Exit(1)
 	}
-	records := make([]p.CGCosmicGameDonation,0, 32)
+	records := make([]p.CGCosmicGameDonationSimple,0, 32)
 	defer rows.Close()
 	for rows.Next() {
-		var rec p.CGCosmicGameDonation
+		var rec p.CGCosmicGameDonationSimple
 		err=rows.Scan(
 			&rec.EvtLogId,
 			&rec.BlockNum,
@@ -194,6 +196,167 @@ func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_simple_list() []p.CGCo
 			&rec.DonorAddr,
 			&rec.Amount,
 			&rec.AmountEth,
+			&rec.RoundNum,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_simple_by_round(round_num int64) []p.CGCosmicGameDonationSimple{
+
+	var query string
+	query = "SELECT "+
+				"d.evtlog_id,"+
+				"d.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
+				"d.donor_aid,"+
+				"da.addr,"+
+				"d.amount, "+
+				"d.amount/1e18 amount_eth, " +
+				"d.round_num "+
+			"FROM "+sw.S.SchemaName()+".cg_donation d "+
+				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
+			"WHERE d.round_num = $1 "+
+			"ORDER BY d.id DESC"
+	rows,err := sw.S.Db().Query(query,round_num)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGCosmicGameDonationSimple,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGCosmicGameDonationSimple
+		err=rows.Scan(
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.DonorAid,
+			&rec.DonorAddr,
+			&rec.Amount,
+			&rec.AmountEth,
+			&rec.RoundNum,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_with_info_simple_list(offset,limit int) []p.CGCosmicGameDonationWithInfo{
+
+	var query string
+	query = "SELECT "+
+				"d.evtlog_id,"+
+				"d.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
+				"d.donor_aid,"+
+				"da.addr,"+
+				"d.amount, "+
+				"d.amount/1e18 amount_eth,  " +
+				"d.round_num, "+
+				"d.record_id,"+
+				"dj.data "+
+			"FROM "+sw.S.SchemaName()+".cg_donation_wi d "+
+				"LEFT JOIN cg_donation_json dj ON dj.record_id=d.record_id "+
+				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
+			"ORDER BY d.id DESC " +
+			"OFFSET $1 LIMIT $2"
+	rows,err := sw.S.Db().Query(query,offset,limit)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGCosmicGameDonationWithInfo,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGCosmicGameDonationWithInfo
+		err=rows.Scan(
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.DonorAid,
+			&rec.DonorAddr,
+			&rec.Amount,
+			&rec.AmountEth,
+			&rec.RoundNum,
+			&rec.CGRecordId,
+			&rec.DataJson,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_with_info_by_round(round_num int64) []p.CGCosmicGameDonationWithInfo{
+
+	var query string
+	query = "SELECT "+
+				"d.evtlog_id,"+
+				"d.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
+				"d.donor_aid,"+
+				"da.addr,"+
+				"d.amount, "+
+				"d.amount/1e18 amount_eth,  " +
+				"d.round_num, "+
+				"d.record_id,"+
+				"dj.data "+
+			"FROM "+sw.S.SchemaName()+".cg_donation_wi d "+
+				"LEFT JOIN cg_donation_json dj ON dj.record_id=d.record_id "+
+				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
+			"WHERE d.round_num=$1 "+
+			"ORDER BY d.id DESC"
+	rows,err := sw.S.Db().Query(query,round_num)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGCosmicGameDonationWithInfo,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGCosmicGameDonationWithInfo
+		err=rows.Scan(
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.DonorAid,
+			&rec.DonorAddr,
+			&rec.Amount,
+			&rec.AmountEth,
+			&rec.RoundNum,
+			&rec.CGRecordId,
+			&rec.DataJson,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

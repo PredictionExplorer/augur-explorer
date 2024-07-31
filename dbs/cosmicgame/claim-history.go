@@ -454,7 +454,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"0 AS amount,"+
 						"0 AS amount_eth,"+
 						"'' AS token_addr, "+
-						"rn.erc721_token_id," +
+						"rn.token_id," +
 						"'' AS token_uri,"+
 						"rn.winner_idx, "+
 						"'T' AS claimed, "+
@@ -477,7 +477,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"0 AS amount,"+
 						"0 AS amount_eth,"+
 						"'' AS token_addr, "+
-						"rn.erc721_token_id," +
+						"rn.token_id," +
 						"'' AS token_uri,"+
 						"rn.winner_idx, "+
 						"'T' AS claimed, "+
@@ -500,13 +500,13 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"0 AS amount,"+
 						"0 AS amount_eth,"+
 						"'' AS token_addr, "+
-						"rn.token_id," +
+						"rn.erc721_token_id," +
 						"'' AS token_uri,"+
 						"rn.winner_idx, "+
 						"'T' AS claimed, "+
 						"wa.addr winner_addr,"+
 						"rn.winner_aid "+
-					"FROM cg_endurance_nft_winner rn "+
+					"FROM cg_endurance_winner rn "+
 						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
 						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
 				") UNION ALL (" +
@@ -522,13 +522,13 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed_global(offset,limit int)
 						"0 AS amount,"+
 						"0 AS amount_eth,"+
 						"'' AS token_addr, "+
-						"rn.token_id," +
+						"rn.erc721_token_id," +
 						"'' AS token_uri,"+
 						"rn.winner_idx, "+
 						"'T' AS claimed, "+
 						"wa.addr winner_addr,"+
 						"rn.winner_aid "+
-					"FROM cg_topbidder_nft_winner rn "+
+					"FROM cg_stellar_winner rn "+
 						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
 						"LEFT JOIN address wa ON rn.winner_aid=wa.address_id "+
 				") UNION ALL (" +

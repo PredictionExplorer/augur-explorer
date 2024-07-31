@@ -132,7 +132,7 @@ type CGCharityDonation struct {
 	IsVoluntary					bool	// true - made by direct send, false=made by CosmicGame contract
 	RoundNum					int64
 }
-type CGCosmicGameDonation struct {
+type CGCosmicGameDonationSimple struct {
 	EvtLogId					int64
 	BlockNum					int64
 	TxId						int64
@@ -143,6 +143,22 @@ type CGCosmicGameDonation struct {
 	DonorAddr					string
 	Amount						string
 	AmountEth					float64
+	RoundNum					int64
+}
+type CGCosmicGameDonationWithInfo struct {
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	DonorAid					int64
+	DonorAddr					string
+	Amount						string
+	AmountEth					float64
+	RoundNum					int64
+	CGRecordId					int64	// CosmicGame contract's record id
+	DataJson					string
 }
 type CGUniqueBidder struct {
 	BidderAid					int64
