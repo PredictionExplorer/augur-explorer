@@ -436,9 +436,9 @@ func (sw *SQLStorageWrapper) Insert_stake_action_cst_event(evt *p.CGStakeActionC
 	var query string
 	query = "INSERT INTO cg_stake_action_cst (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,num_staked_nfts,unstake_time,staker_aid" +
+				"action_id,token_id,num_staked_nfts,staker_aid" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,TO_TIMESTAMP($9),$10"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
@@ -449,7 +449,6 @@ func (sw *SQLStorageWrapper) Insert_stake_action_cst_event(evt *p.CGStakeActionC
 		evt.ActionId,
 		evt.TokenId,
 		evt.TotalNfts,
-		evt.UnstakeTime,
 		staker_aid,
 	)
 	if err != nil {
@@ -548,9 +547,9 @@ func (sw *SQLStorageWrapper) Insert_stake_action_rwalk_event(evt *p.CGStakeActio
 	var query string
 	query = "INSERT INTO cg_stake_action_rwalk (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,num_staked_nfts,unstake_time,staker_aid" +
+				"action_id,token_id,num_staked_nfts,staker_aid" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,TO_TIMESTAMP($9),$10"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
@@ -561,7 +560,6 @@ func (sw *SQLStorageWrapper) Insert_stake_action_rwalk_event(evt *p.CGStakeActio
 		evt.ActionId,
 		evt.TokenId,
 		evt.TotalNfts,
-		evt.UnstakeTime,
 		staker_aid,
 	)
 	if err != nil {

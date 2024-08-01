@@ -125,8 +125,6 @@ type CGStakedTokenCSTRec struct {
 	StakeActionId				int64
 	StakeTimeStamp				int64
 	StakeDateTime				string
-	UnstakeTimeStamp			int64
-	UnstakeDateTime				string
 	UserAddr					string
 	UserAid						int64
 }
@@ -137,8 +135,6 @@ type CGStakedTokenRWalkRec struct {
 	StakeTimeStamp				int64
 	StakeDateTime				string
 	StakedTokenId				int64
-	UnstakeTimeStamp			int64
-	UnstakeDateTime				string
 	UserAddr					string
 	UserAid						int64
 }
@@ -150,7 +146,6 @@ type CGActionIdsForDeposit struct {
 	TokenId						int64
 	Claimed						bool
 	StakeActionTimeStamp		int64
-	UnstakeEligibleTimeStamp	int64
 	CurChainTimeStamp			int64
 	TimeStampDiff				int64	// subtraction of UnstakeEligibleTimestamp from CurChainTimestamp
 	Amount						string

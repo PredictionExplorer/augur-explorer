@@ -239,7 +239,6 @@ type CGStakeActionCST struct {
 	ActionId			int64
 	TokenId				int64
 	TotalNfts			int64
-	UnstakeTime			int64
 	Staker 				string
 }
 type CGUnstakeActionCST struct {
@@ -294,7 +293,6 @@ type CGStakeActionRWalk struct {
 	ActionId			int64
 	TokenId				int64
 	TotalNfts			int64
-	UnstakeTime			int64
 	Staker 				string
 }
 type CGUnstakeActionRWalk struct {

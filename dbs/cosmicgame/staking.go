@@ -24,8 +24,6 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 				"st.action_id,"+
 				"st.token_id,"+
 				"st.num_staked_nfts,"+
-				"EXTRACT(EPOCH FROM st.unstake_time)::BIGINT,"+
-				"st.unstake_time,"+
 				"st.staker_aid,"+
 				"sa.addr,"+
 
@@ -67,8 +65,6 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 		&rec.Stake.ActionId,
 		&rec.Stake.TokenId,
 		&rec.Stake.NumStakedNFTs,
-		&rec.Stake.UnstakeTimeStamp,
-		&rec.Stake.UnstakeDate,
 		&rec.Stake.StakerAid,
 		&rec.Stake.StakerAddr,
 		// unstake action fields
@@ -122,8 +118,6 @@ func (sw *SQLStorageWrapper) Get_stake_action_rwalk_info(action_id int64) (bool,
 				"st.action_id,"+
 				"st.token_id,"+
 				"st.num_staked_nfts,"+
-				"EXTRACT(EPOCH FROM st.unstake_time)::BIGINT,"+
-				"st.unstake_time,"+
 				"st.staker_aid,"+
 				"sa.addr,"+
 
@@ -165,8 +159,6 @@ func (sw *SQLStorageWrapper) Get_stake_action_rwalk_info(action_id int64) (bool,
 		&rec.Stake.ActionId,
 		&rec.Stake.TokenId,
 		&rec.Stake.NumStakedNFTs,
-		&rec.Stake.UnstakeTimeStamp,
-		&rec.Stake.UnstakeDate,
 		&rec.Stake.StakerAid,
 		&rec.Stake.StakerAddr,
 		// unstake action fields
@@ -404,8 +396,6 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_cst_global() []p.CGStakedTokenCST
 				"a.action_id,"+
 				"EXTRACT(EPOCH FROM a.time_stamp)::BIGINT,"+
 				"a.time_Stamp,"+
-				"EXTRACT(EPOCH FROM a.unstake_time)::BIGINT,"+
-				"a.unstake_time,  "+
 				"sa.addr,"+
 				"sa.address_id "+
 			"FROM "+sw.S.SchemaName()+".cg_staked_token_cst st "+
@@ -450,8 +440,6 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_cst_global() []p.CGStakedTokenCST
 			&rec.StakeActionId,
 			&rec.StakeTimeStamp,
 			&rec.StakeDateTime,
-			&rec.UnstakeTimeStamp,
-			&rec.UnstakeDateTime,
 			&rec.UserAddr,
 			&rec.UserAid,
 		)
@@ -473,8 +461,6 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_rwalk_global() []p.CGStakedTokenR
 				"a.action_id,"+
 				"EXTRACT(EPOCH FROM a.time_stamp)::BIGINT,"+
 				"a.time_Stamp,"+
-				"EXTRACT(EPOCH FROM a.unstake_time)::BIGINT,"+
-				"a.unstake_time,  "+
 				"sa.addr,"+
 				"sa.address_id, "+
 				"st.token_id "+
@@ -503,8 +489,6 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_rwalk_global() []p.CGStakedTokenR
 			&rec.StakeActionId,
 			&rec.StakeTimeStamp,
 			&rec.StakeDateTime,
-			&rec.UnstakeTimeStamp,
-			&rec.UnstakeDateTime,
 			&rec.UserAddr,
 			&rec.UserAid,
 			&rec.StakedTokenId,
@@ -539,7 +523,6 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 				"a.action_id, "+
 				"a.token_id, "+
 				"EXTRACT(epoch FROM a.time_stamp)::BIGINT action_ts,"+
-				"EXTRACT(epoch FROM a.unstake_time)::BIGINT unstake_ts,"+
 				"r.deposit_id, "+
 				"d.amount_per_staker, "+
 				"d.amount_per_staker/1e18 amount_eth "+
@@ -575,7 +558,6 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 			&rec.StakeActionId,
 			&rec.TokenId,
 			&rec.StakeActionTimeStamp,
-			&rec.UnstakeEligibleTimeStamp,
 			&null_deposit_id,
 			&rec.Amount,
 			&rec.AmountEth,
@@ -588,7 +570,7 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 		rec.UserAid = user_aid
 		if null_deposit_id.Valid {rec.Claimed = true }
 		rec.CurChainTimeStamp = cur_ts
-		rec.TimeStampDiff = rec.UnstakeEligibleTimeStamp - cur_ts
+		rec.TimeStampDiff = -1
 		records = append(records,rec)
 	}
 	return records
@@ -849,8 +831,8 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 					"tx.tx_hash,"+
 					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT,"+
 					"s.time_stamp,"+
-					"EXTRACT(EPOCH FROM s.unstake_time)::BIGINT AS usts,"+
-					"s.unstake_time,"+
+					"-1 AS usts,"+
+					"TO_TIMESTAMP(0) AS unstake_time,"+
 					"s.action_id,"+
 					"s.token_id,"+
 					"s.num_staked_nfts, "+
@@ -872,7 +854,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 					"EXTRACT(EPOCH FROM u.time_stamp)::BIGINT AS usts,"+
 					"u.time_stamp,"+
 					"0 AS usts,"+
-					"TO_TIMESTAMP(0) AS unnstake_time,"+
+					"TO_TIMESTAMP(0) AS unstake_time,"+
 					"u.action_id,"+
 					"u.token_id,"+
 					"u.num_staked_nfts, "+
@@ -884,7 +866,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 					"LEFT JOIN cg_stake_action_cst s ON u.action_id=s.action_id "+
 				"ORDER BY u.id DESC " +
 				"OFFSET $1 LIMIT $2 "+
-			") order by evtlog_id DESC"
+			") ORDER BY evtlog_id DESC"
 
 	rows,err := sw.S.Db().Query(query,offset,limit)
 	if (err!=nil) {
@@ -920,7 +902,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 		accum_staked_nfts = accum_staked_nfts + rec.NumStakedNFTs
 		rec.AccumNumStakedNFTs = accum_staked_nfts
 		rec.LastBlockTS = last_ts
-		rec.UnstakeExpirationDiff = last_ts - rec.UnstakeTimeStamp
+		rec.UnstakeExpirationDiff = -1
 		records = append(records,rec)
 	}
 	return records
@@ -939,8 +921,8 @@ func (sw *SQLStorageWrapper) Get_global_staking_rwalk_history(offset,limit int) 
 					"tx.tx_hash,"+
 					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT,"+
 					"s.time_stamp,"+
-					"EXTRACT(EPOCH FROM s.unstake_time)::BIGINT AS usts,"+
-					"s.unstake_time,"+
+					"-1 AS usts,"+
+					"TO_TIMESTAMP(0) AS unstake_time,"+
 					"s.action_id,"+
 					"s.token_id,"+
 					"s.num_staked_nfts, "+
@@ -1010,7 +992,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_rwalk_history(offset,limit int) 
 		accum_staked_nfts = accum_staked_nfts + rec.NumStakedNFTs
 		rec.AccumNumStakedNFTs = accum_staked_nfts
 		rec.LastBlockTS = last_ts
-		rec.UnstakeExpirationDiff = last_ts - rec.UnstakeTimeStamp
+		rec.UnstakeExpirationDiff = -1
 		records = append(records,rec)
 	}
 	return records

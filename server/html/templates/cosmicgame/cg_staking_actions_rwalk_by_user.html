@@ -12,7 +12,6 @@
 		<th class="market_reports">Action Type</th>
 		<th class="market_reports">Action ID</th>
 		<th class="market_reports">Token ID</th>
-		<th class="market_reports">Unstake date</th>
 		<th class="market_reports">Num NFTs</th>
 
 
@@ -32,11 +31,6 @@
 				</a>
 			</td>
 			<td style="text-align: center;" title="">{{.TokenId}}</td>
-			<td style="text-align: center;" title="">
-				{{ if eq .ActionType 0 }}
-				{{.UnstakeDate}}
-				{{ end }}
-			</td>
 			<td style="text-align: center;" title="">{{.NumStakedNFTs}}</td>
 		</tr>
 	{{- end}}

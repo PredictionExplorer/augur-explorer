@@ -832,8 +832,6 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_cst_by_user(user_aid int64) []p.C
 				"m.token_name, "+
 				"EXTRACT(EPOCH FROM a.time_stamp)::BIGINT,"+
 				"a.time_Stamp,"+
-				"EXTRACT(EPOCH FROM a.unstake_time)::BIGINT,"+
-				"a.unstake_time, "+
 				"st.stake_action_id "+
 			"FROM "+sw.S.SchemaName()+".cg_staked_token_cst st "+
 				"LEFT JOIN cg_mint_event m ON st.token_id=m.token_id "+
@@ -874,8 +872,6 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_cst_by_user(user_aid int64) []p.C
 			&rec.TokenInfo.TokenName,
 			&rec.StakeTimeStamp,
 			&rec.StakeDateTime,
-			&rec.UnstakeTimeStamp,
-			&rec.UnstakeDateTime,
 			&rec.TokenInfo.StakeActionId,
 		)
 		if err != nil {
@@ -894,8 +890,6 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_rwalk_by_user(user_aid int64) []p
 				"a.action_id,"+
 				"EXTRACT(EPOCH FROM a.time_stamp)::BIGINT,"+
 				"a.time_Stamp,"+
-				"EXTRACT(EPOCH FROM a.unstake_time)::BIGINT,"+
-				"a.unstake_time, "+
 				"st.stake_action_id, "+
 				"st.token_id "+
 			"FROM "+sw.S.SchemaName()+".cg_staked_token_rwalk st "+
@@ -921,8 +915,6 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_rwalk_by_user(user_aid int64) []p
 			&rec.StakeActionId,
 			&rec.StakeTimeStamp,
 			&rec.StakeDateTime,
-			&rec.UnstakeTimeStamp,
-			&rec.UnstakeDateTime,
 			&rec.StakeActionId,
 			&rec.StakedTokenId,
 		)
@@ -1047,8 +1039,8 @@ func (sw *SQLStorageWrapper) Get_staking_actions_cst_by_user(user_aid int64,offs
 					"tx.tx_hash,"+
 					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT,"+
 					"s.time_stamp,"+
-					"EXTRACT(EPOCH FROM s.unstake_time)::BIGINT AS usts,"+
-					"s.unstake_time,"+
+					"-1 AS usts,"+
+					"TO_TIMESTAMP(0) AS unstake_time,"+
 					"s.action_id,"+
 					"s.token_id,"+
 					"s.num_staked_nfts, "+
@@ -1068,7 +1060,7 @@ func (sw *SQLStorageWrapper) Get_staking_actions_cst_by_user(user_aid int64,offs
 					"EXTRACT(EPOCH FROM u.time_stamp)::BIGINT AS usts,"+
 					"u.time_stamp,"+
 					"0 AS usts,"+
-					"TO_TIMESTAMP(0) AS unnstake_time,"+
+					"TO_TIMESTAMP(0) AS unstake_time,"+
 					"u.action_id,"+
 					"u.token_id,"+
 					"u.num_staked_nfts, "+
@@ -1135,8 +1127,8 @@ func (sw *SQLStorageWrapper) Get_staking_actions_rwalk_by_user(user_aid int64,of
 					"tx.tx_hash,"+
 					"EXTRACT(EPOCH FROM s.time_stamp)::BIGINT,"+
 					"s.time_stamp,"+
-					"EXTRACT(EPOCH FROM s.unstake_time)::BIGINT AS usts,"+
-					"s.unstake_time,"+
+					"-1 AS usts,"+
+					"TO_TIMESTAMP(0) AS unstake_time,"+
 					"s.action_id,"+
 					"s.token_id,"+
 					"s.num_staked_nfts "+

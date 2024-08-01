@@ -1048,14 +1048,12 @@ func proc_stake_action_cst_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TokenId = log.Topics[2].Big().Int64()
 	evt.Staker = common.BytesToAddress(log.Topics[3][12:]).String()
 	evt.TotalNfts = eth_evt.TotalNFTs.Int64()
-	evt.UnstakeTime = eth_evt.UnstakeTime.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("CST StakeActionEvent{\n")
 	Info.Printf("\tActionId: %v\n",evt.ActionId)
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
 	Info.Printf("\tTotalNFTs: %v\n",evt.TotalNfts)
-	Info.Printf("\tUnstakeTime: %v\n",evt.UnstakeTime)
 	Info.Printf("\tStaker: %v\n",evt.Staker)
 	Info.Printf("}\n")
 
@@ -1216,14 +1214,12 @@ func proc_stake_action_rwalk_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TokenId = log.Topics[2].Big().Int64()
 	evt.Staker = common.BytesToAddress(log.Topics[3][12:]).String()
 	evt.TotalNfts = eth_evt.TotalNFTs.Int64()
-	evt.UnstakeTime = eth_evt.UnstakeTime.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("RWalk StakeActionEvent{\n")
 	Info.Printf("\tActionId: %v\n",evt.ActionId)
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
 	Info.Printf("\tTotalNFTs: %v\n",evt.TotalNfts)
-	Info.Printf("\tUnstakeTime: %v\n",evt.UnstakeTime)
 	Info.Printf("\tStaker: %v\n",evt.Staker)
 	Info.Printf("}\n")
 

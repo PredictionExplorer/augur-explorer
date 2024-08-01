@@ -95,8 +95,6 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 				"st.staker_aid,"+
 				"sta.addr,"+
 				"sa.action_id,"+
-				"EXTRACT(EPOCH FROM sa.unstake_time)::BIGINT,"+
-				"sa.unstake_time, "+
 				"u.id, "+
 				"EXTRACT(EPOCH FROM u.time_stamp)::BIGINT,"+
 				"u.time_stamp "+
@@ -114,8 +112,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 	var rec p.CGCosmicSignatureMintRec
 	var err error
 	var null_prize_num,null_unstake_id,null_action_id,null_staker_aid sql.NullInt64
-	var null_ue_timestamp,null_au_timestamp sql.NullInt64
-	var null_staked_owner_addr,null_ue_datetime,null_au_datetime sql.NullString
+	var null_au_timestamp sql.NullInt64
+	var null_staked_owner_addr,null_au_datetime sql.NullString
 	var null_staked sql.NullBool
 	row := sw.S.Db().QueryRow(query,token_id)
 	err=row.Scan(
@@ -138,8 +136,6 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 		&null_staker_aid,
 		&null_staked_owner_addr,
 		&null_action_id,
-		&null_ue_timestamp,
-		&null_ue_datetime,
 		&null_unstake_id,
 		&null_au_timestamp,
 		&null_au_datetime,
@@ -154,8 +150,6 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 	if null_prize_num.Valid { rec.RecordType = 3 } else {rec.RecordType = 1 }
 	if null_unstake_id.Valid { rec.WasUnstaked = true } 
 	if null_action_id.Valid { rec.StakeActionId = null_action_id.Int64 }
-	if null_ue_timestamp.Valid { rec.UnstakeElligibleTimeStamp = null_ue_timestamp.Int64 }
-	if null_ue_datetime.Valid { rec.UnstakeElligibleDateTime=null_ue_datetime.String }
 	if null_au_timestamp.Valid { rec.ActualUnstakeTimeStamp = null_au_timestamp.Int64 }
 	if null_au_datetime.Valid { rec.ActualUnstakeDateTime = null_au_datetime.String }
 	if null_staked_owner_addr.Valid { rec.StakedOwnerAddr = null_staked_owner_addr.String }
