@@ -594,12 +594,20 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list_by_user(user_aid int6
 				"m.token_id,"+
 				"m.token_name,"+
 				"m.round_num,"+
-				"p.prize_num "+
+				"p.prize_num, "+
+				"sa.action_id,"+
+				"EXTRACT(EPOCH FROM sa.time_stamp)::BIGINT,"+
+				"sa.time_stamp,"+
+				"ua.action_id,"+
+				"EXTRACT(EPOCH FROM ua.time_stamp)::BIGINT,"+
+				"ua.time_stamp "+
 			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
+				"LEFT JOIN cg_stake_action_cst sa ON sa.token_id=m.token_id "+
+				"LEFT JOIN cg_unstake_action_cst ua ON ua.token_id=m.token_id "+
 			"WHERE m.cur_owner_aid=$1 "+
 			"ORDER BY m.id DESC "+
 			"OFFSET $2 LIMIT $3"
@@ -614,6 +622,9 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list_by_user(user_aid int6
 	for rows.Next() {
 		var rec p.CGCosmicSignatureMintRec
 		var null_prize_num sql.NullInt64
+		var null_stake_action_id,null_stake_timestamp sql.NullInt64
+		var null_unstake_action_id,null_unstake_timestamp sql.NullInt64
+		var null_stake_date,null_unstake_date sql.NullString
 		err=rows.Scan(
 			&rec.EvtLogId,
 			&rec.BlockNum,
@@ -630,12 +641,25 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list_by_user(user_aid int6
 			&rec.TokenName,
 			&rec.RoundNum,
 			&null_prize_num,
+			&null_stake_action_id,
+			&null_stake_timestamp,
+			&null_stake_date,
+			&null_unstake_action_id,
+			&null_unstake_timestamp,
+			&null_unstake_date,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
 		if null_prize_num.Valid { rec.RecordType = 3 } else {rec.RecordType = 1 }
+		if null_stake_action_id.Valid { rec.StakeActionId = null_stake_action_id.Int64 } else {rec.StakeActionId = -1 }
+		if null_stake_timestamp.Valid { rec.StakeDateTime = null_stake_date.String }
+		if null_unstake_action_id.Valid { rec.UnstakeActionId = null_unstake_action_id.Int64 } else {rec.UnstakeActionId = -1}
+		if null_unstake_timestamp.Valid { rec.ActualUnstakeTimeStamp = null_unstake_timestamp.Int64 } else { rec.ActualUnstakeTimeStamp = -1}
+		if null_unstake_date.Valid { rec.ActualUnstakeDateTime = null_unstake_date.String } 
+		if (rec.StakeActionId > -1) && (rec.UnstakeActionId > -1) { rec.WasUnstaked = true }
+		if (rec.StakeActionId > -1) && (rec.UnstakeActionId == -1) { rec.Staked = true }
 		records = append(records,rec)
 	}
 	return records

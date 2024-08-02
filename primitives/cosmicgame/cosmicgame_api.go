@@ -315,6 +315,9 @@ type CGCosmicSignatureMintRec struct {
 	StakedOwnerAid				int64
 	StakedOwnerAddr				string
 	StakeActionId				int64
+	StakeTimeStamp				int64
+	StakeDateTime				string
+	UnstakeActionId				int64
 	WasUnstaked					bool
 	ActualUnstakeTimeStamp		int64	// if there is unstake record, these fields hold dates
 	ActualUnstakeDateTime		string

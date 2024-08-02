@@ -395,7 +395,7 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_cst_global() []p.CGStakedTokenCST
 				"a.block_num,"+
 				"a.action_id,"+
 				"EXTRACT(EPOCH FROM a.time_stamp)::BIGINT,"+
-				"a.time_Stamp,"+
+				"a.time_stamp,"+
 				"sa.addr,"+
 				"sa.address_id "+
 			"FROM "+sw.S.SchemaName()+".cg_staked_token_cst st "+

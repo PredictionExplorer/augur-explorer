@@ -91,10 +91,11 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 				"m.round_num,"+
 				"p.prize_num, "+
 				"m.token_name, "+
-				"(st.staker_aid IS NOT NULL),"+
 				"st.staker_aid,"+
 				"sta.addr,"+
 				"sa.action_id,"+
+				"EXTRACT(EPOCH FROM sa.time_stamp)::BIGINT,"+
+				"sa.time_stamp,"+
 				"u.id, "+
 				"EXTRACT(EPOCH FROM u.time_stamp)::BIGINT,"+
 				"u.time_stamp "+
@@ -104,16 +105,16 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
 				"LEFT JOIN cg_staked_token_cst st ON (m.token_id=st.token_id)"+
-				"LEFT JOIN cg_stake_action_cst sa ON sa.action_id = st.stake_action_id "+
-				"LEFT JOIN cg_unstake_action_cst u ON sa.action_id=u.action_id "+
+				"LEFT JOIN cg_stake_action_cst sa ON sa.token_id = m.token_id "+
+				"LEFT JOIN cg_unstake_action_cst u ON u.token_id=m.token_id "+
 				"LEFT JOIN address sta ON st.staker_aid = sta.address_id "+
 			"WHERE m.token_id=$1"
 
 	var rec p.CGCosmicSignatureMintRec
 	var err error
 	var null_prize_num,null_unstake_id,null_action_id,null_staker_aid sql.NullInt64
-	var null_au_timestamp sql.NullInt64
-	var null_staked_owner_addr,null_au_datetime sql.NullString
+	var null_au_timestamp,null_sa_timestamp sql.NullInt64
+	var null_staked_owner_addr,null_au_datetime,null_sa_datetime sql.NullString
 	var null_staked sql.NullBool
 	row := sw.S.Db().QueryRow(query,token_id)
 	err=row.Scan(
@@ -132,10 +133,11 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 		&rec.RoundNum,
 		&null_prize_num,
 		&rec.TokenName,
-		&null_staked,
 		&null_staker_aid,
 		&null_staked_owner_addr,
 		&null_action_id,
+		&null_sa_timestamp,
+		&null_sa_datetime,
 		&null_unstake_id,
 		&null_au_timestamp,
 		&null_au_datetime,
@@ -148,13 +150,17 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 		os.Exit(1)
 	}
 	if null_prize_num.Valid { rec.RecordType = 3 } else {rec.RecordType = 1 }
-	if null_unstake_id.Valid { rec.WasUnstaked = true } 
-	if null_action_id.Valid { rec.StakeActionId = null_action_id.Int64 }
+	if null_unstake_id.Valid { rec.UnstakeActionId = null_unstake_id.Int64 } else {rec.UnstakeActionId = -1}
+	if null_action_id.Valid { rec.StakeActionId = null_action_id.Int64 } else {rec.StakeActionId=-1}
 	if null_au_timestamp.Valid { rec.ActualUnstakeTimeStamp = null_au_timestamp.Int64 }
 	if null_au_datetime.Valid { rec.ActualUnstakeDateTime = null_au_datetime.String }
 	if null_staked_owner_addr.Valid { rec.StakedOwnerAddr = null_staked_owner_addr.String }
 	if null_staked.Valid { rec.Staked = null_staked.Bool } else {rec.Staked = false}
 	if null_staker_aid.Valid { rec.StakedOwnerAid = null_staker_aid.Int64 } else { rec.StakedOwnerAid = -1 }
+	if null_sa_timestamp.Valid { rec.StakeTimeStamp = null_sa_timestamp.Int64 } else { rec.StakeTimeStamp = -1}
+	if null_sa_datetime.Valid { rec.StakeDateTime = null_sa_datetime.String} 
+	if (rec.StakeActionId > -1) && (rec.UnstakeActionId > -1) { rec.WasUnstaked = true }
+	if (rec.StakeActionId > -1) && (rec.UnstakeActionId == -1) { rec.Staked = true }
 	return true,rec
 }
 func (sw *SQLStorageWrapper) Get_cosmic_signature_token_name_history(token_id int64) []p.CGTokenName {

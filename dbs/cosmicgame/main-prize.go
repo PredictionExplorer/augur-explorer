@@ -170,7 +170,6 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 				") d ON p.donation_evt_id=d.evtlog_id "+
 			"WHERE p.prize_num=$1"
 
-			fmt.Printf("%v",query);
 	row := sw.S.Db().QueryRow(query,prize_num)
 	var null_seed sql.NullString
 	var null_dep_amount,null_dep_amount_per_tok sql.NullString

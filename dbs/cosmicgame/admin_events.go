@@ -494,9 +494,6 @@ func (sw *SQLStorageWrapper) Get_admin_events_in_range(evtlog_start,evtlog_end i
 			") everything "+
 			"ORDER BY evtlog_id "
 
-	//		fmt.Printf("q= \n%v\n",query)
-	//		fmt.Printf("evtlog_start = %v\n",evtlog_start)
-	//		fmt.Printf("evtlog_end = %v\n",evtlog_end)
 	rows,err := sw.S.Db().Query(query,evtlog_start,evtlog_end)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
