@@ -1,0 +1,50 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Current Special Winners</title>
+</head>
+<body>
+	<h3 class="page_title">Data for displaying Endurance Champion & Stellar Spender info<h3>
+<table>
+	<tr class="market_reports">
+		<td class="">Last Bidder</td>
+		<td>
+			<a href="/black/cosmicgame/user/info/{{.LastBidderBidderAddress}}">{{.LastBidderAddress}}</a>
+		</td>
+	</tr>
+	<tr class="market_reports">
+		<td>Last Bidder's Last Bid Time</td>
+		<td>{{.LastBidderLastBidTime}}</td>
+	</tr>
+	<tr class="market_reports">
+		<td>Endurance Champion Address</td>
+		<td>
+			<a href="/black/cosmicgame/user/info/{{.EnduranceChampionAddress}}">{{.EnduranceChampionAddress}}</a>
+		</td>
+	</tr>
+	<tr class="market_reports">
+		<td>Endurance Champion Duration</td>
+		<td>{{.EnduranceChampionDuration}}</td>
+	</tr>
+	<tr>
+		<td>Stellar Spender Address</td>
+		<td>
+			<a href="/black/cosmicgame/user/info/{{.StellarSpenderAddress}}">{{.StellarSpenderAddress}}</a>
+		</td>
+	</tr>
+	<tr>
+		<td>Stellar Spender Amount (Wei)</td>
+		<td>{{.StellarSpenderAmount}}</td>
+	</tr>
+	<tr>
+		<td>Stellar Spender Amount (ETH)</td>
+		<td style="text-align: right;" >{{printf "%.6f" .StellarSpenderAmountEth}}</td>
+	</tr>
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/bid/current_special_winners<br/>
+
+	Example: /api/cosmicgame/bid/current_special_winners
+</code>
+</body>

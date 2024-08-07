@@ -1702,3 +1702,28 @@ func api_cosmic_game_admin_events_in_range(c *gin.Context) {
 		"EvtLogIdEnd" : evtlog_end,
 	})
 }
+func api_cosmic_game_bid_special_winners(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"LastBidderAddress": last_bidder.String(),
+		"LastBidderLastBidTime" : last_bidder_bid_time,
+		"EnduranceChampionAddress": endurance_champ_addr,
+		"EnduranceChampionDuration": endurance_duration,
+		"StellarSpenderAddress" : stellar_spender_addr,
+		"StellarSpenderAmount" : stellar_spender_amount,
+		"StellarSpenderAmountEth" : stellar_spender_amount_eth,
+	})
+}

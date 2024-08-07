@@ -108,6 +108,12 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	num_raffle_participants,err := cosmic_game_ctrct.NumRaffleParticipants(&copts,big.NewInt(round_num.Int64()))
+	if err != nil {
+		fmt.Printf("Error at NumRaffleParticipants()(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
 	var charity_donation_recipient string
 	charity_addr,err := cosmic_game_ctrct.Charity(&copts)
 	if err != nil {
@@ -229,6 +235,16 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	endurance_champion,endurance_champion_duration,err := cosmic_game_ctrct.CurrentEnduranceChampion(&copts);
+	if err != nil {
+		fmt.Printf("Error at CurrentEnduranceChampion(): %v\n",err)
+		os.Exit(1)
+	}
+	stellar_spender,err := cosmic_game_ctrct.StellarSpender(&copts);
+	if err != nil {
+		fmt.Printf("Error at StellarSpender(): %v\n",err)
+		os.Exit(1)
+	}
 
 
 	fmt.Printf("Time until prize = %v\n",time_until_prize.Int64())
@@ -249,10 +265,14 @@ func main() {
 	fmt.Printf("Last bidder = %v\n",last_bidder.String())
 	fmt.Printf("Contract balance = %v\n",balance.String())
 	fmt.Printf("Num donated NFTs = %v\n",num_donated_nfts.String());
+	fmt.Printf("Num raffle participants = %v\n",num_raffle_participants.Int64())
 	fmt.Printf("Nanoseconds = %v\n",nanoseconds.String())
 	fmt.Printf("Initial seconds = %v\n",initialseconds.String())
 	fmt.Printf("Claimprize timeout = %v\n",timeout.String())
 	fmt.Printf("Owner = %v\n",owneraddr.String())
+	fmt.Printf("Endurance champion = %v\n",endurance_champion.String())
+	fmt.Printf("Endurance champion duration = %v\n",endurance_champion_duration.Int64())
+	fmt.Printf("Stellar champion = %v\n",stellar_spender.String())
 	fmt.Printf("BusinessLogic = %v\n",blogic_addr.String())
 	fmt.Printf("LastBidType = %v\n",last_bid_type)
 	fmt.Printf("ActivationTime= %v\n",activation_time)

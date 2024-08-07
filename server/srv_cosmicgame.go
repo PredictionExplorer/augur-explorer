@@ -59,9 +59,15 @@ var (
 	round_num					int64
 	nanoseconds_extra			string
 	last_bidder					common.Address
+	last_bidder_bid_time		int64
 	charity_balance				string
 	charity_balance_eth			float64
 	round_start_ts				int64
+	endurance_champ_addr		string
+	endurance_duration			int64
+	stellar_spender_addr		string
+	stellar_spender_amount		string
+	stellar_spender_amount_eth	float64
 
 	// contract counters	(collected via DB)
 	bw_stats					CGStatistics
@@ -282,6 +288,15 @@ func do_reload_contract_variables() {
 			Error.Printf(err_str)
 			Info.Printf(err_str)
 		}
+		if round_num > -1 {
+			tmp_bidder_info,err := bwcontract.BidderInfo(&copts,big.NewInt(round_num),last_bidder)
+			if err != nil {
+				err_str := fmt.Sprintf("Error at BidderInfo() call: %v\n",err)
+				Error.Printf(err_str)
+				Info.Printf(err_str)
+				last_bidder_bid_time = -1
+			} else { last_bidder_bid_time = tmp_bidder_info.LastBidTime.Int64() }
+		}
 		tmp_val,err = bwcontract.InitialSecondsUntilPrize(&copts)
 		if err != nil {
 			err_str := fmt.Sprintf("Error at InitialSecondsUntilPrize() call: %v\n",err)
@@ -315,6 +330,37 @@ func do_reload_contract_variables() {
 			f_quo := big.NewFloat(0.0).Quo(f_charity_balance,f_divisor)
 			charity_balance_eth,_ = f_quo.Float64()
 		}
+		tmp_addr, tmp_duration, err := bwcontract.CurrentEnduranceChampion(&copts);
+		if err != nil {
+			err_str := fmt.Sprintf("Error at currentEnduranceChampion() call: %v\n",err)
+			Error.Printf(err_str)
+			Info.Printf(err_str)
+		} else {
+			endurance_champ_addr = tmp_addr.String()
+			endurance_duration = tmp_duration.Int64()
+			fmt.Printf("endurance duration = %v\n",endurance_duration);
+		}
+		tmp_addr, err = bwcontract.StellarSpender(&copts);
+		if err != nil {
+			err_str := fmt.Sprintf("Error at StellarSpender() call: %v\n",err)
+			Error.Printf(err_str)
+			Info.Printf(err_str)
+		} else {
+			stellar_spender_addr = tmp_addr.String()
+		}
+		tmp_val , err = bwcontract.StellarSpenderAmount(&copts)
+		if err != nil {
+			err_str := fmt.Sprintf("Error at StellarSpenderAmount() call: %v\n",err)
+			Error.Printf(err_str)
+			Info.Printf(err_str)
+			stellar_spender_amount = "error"
+		} else {
+			stellar_spender_amount = tmp_val.String()
+			f_amount:= big.NewFloat(0.0).SetInt(tmp_val)
+			f_quo := big.NewFloat(0.0).Quo(f_amount,f_divisor)
+			stellar_spender_amount_eth,_ = f_quo.Float64()
+		}
+
 	}
 }
 func do_reload_database_variables() {
@@ -1761,3 +1807,21 @@ func cosmic_game_admin_events_in_range(c *gin.Context) {
 		"EvtLogIdEnd" : evtlog_end,
 	})
 }
+func cosmic_game_bid_special_winners(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	c.HTML(http.StatusOK, "cg_current_special_winners.html", gin.H{
+		"LastBidderAddress": last_bidder.String(),
+		"LastBidderLastBidTime" : last_bidder_bid_time,
+		"EnduranceChampionAddress": endurance_champ_addr,
+		"EnduranceChampionDuration": endurance_duration,
+		"StellarSpenderAddress" : stellar_spender_addr,
+		"StellarSpenderAmount" : stellar_spender_amount,
+		"StellarSpenderAmountEth" : stellar_spender_amount_eth,
+	})
+}
+
+
