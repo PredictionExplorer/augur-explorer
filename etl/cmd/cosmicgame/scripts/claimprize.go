@@ -16,7 +16,8 @@ import (
 	. "github.com/PredictionExplorer/augur-explorer/contracts"
 )
 const (
-	CHAIN_ID		int64 = 31337
+	//CHAIN_ID		int64 = 31337
+	CHAIN_ID		int64 = 421614
 )
 var (
 	RPC_URL string

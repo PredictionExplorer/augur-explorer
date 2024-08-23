@@ -4,7 +4,7 @@ DECLARE
 	v_cnt					NUMERIC;
 BEGIN
 
-	SELECT MAX(bid_price) FROM cg_bid INTO v_max_bid;
+	SELECT MAX(bid_price) FROM cg_bid INTO v_max_bid WHERE bidder_aid = NEW.bidder_aid;
 	IF v_max_bid IS NULL THEN
 		v_max_bid := 0;
 	END IF;
@@ -47,7 +47,7 @@ DECLARE
 	v_cnt					NUMERIC;
 BEGIN
 
-	SELECT MAX(bid_price) FROM cg_bid INTO v_max_bid;
+	SELECT MAX(bid_price) FROM cg_bid INTO v_max_bid WHERE bidder_aid = OLD.bidder_aid;
 	IF v_max_bid IS NULL THEN
 		v_max_bid := 0;
 	END IF;

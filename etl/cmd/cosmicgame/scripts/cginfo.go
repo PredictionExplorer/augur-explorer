@@ -151,6 +151,7 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+
 	prize_time,err := cosmic_game_ctrct.PrizeTime(&copts)
 	if err != nil {
 		fmt.Printf("Error at prizeTime()(): %v\n",err)
@@ -211,6 +212,12 @@ func main() {
 		fmt.Printf("Aborting\n")
 		os.Exit(1)
 	}
+	randomwalk_addr,err := cosmic_game_ctrct.RandomWalk(&copts)
+	if err != nil {
+		fmt.Printf("Error at RandomWalk(): %v\n",err)
+		fmt.Printf("Aborting\n")
+		os.Exit(1)
+	}
 	last_bid_type,err := cosmic_game_ctrct.LastBidType(&copts)
 	if err != nil {
 		fmt.Printf("Error at LastBidType()(): %v\n",err)
@@ -240,6 +247,17 @@ func main() {
 		fmt.Printf("Error at CurrentEnduranceChampion(): %v\n",err)
 		os.Exit(1)
 	}
+	stvar_endurance_champ,err := cosmic_game_ctrct.EnduranceChampion(&copts);
+	if err != nil {
+		fmt.Printf("Error at EnduranceChampion() state variable fetch(): %v\n",err)
+		os.Exit(1)
+	}
+	stvar_endurance_champ_dur,err := cosmic_game_ctrct.EnduranceChampionDuration(&copts);
+	if err != nil {
+		fmt.Printf("Error at EnduranceChampionDuration() state variable fetch(): %v\n",err)
+		os.Exit(1)
+	}
+
 	stellar_spender,err := cosmic_game_ctrct.StellarSpender(&copts);
 	if err != nil {
 		fmt.Printf("Error at StellarSpender(): %v\n",err)
@@ -272,8 +290,11 @@ func main() {
 	fmt.Printf("Owner = %v\n",owneraddr.String())
 	fmt.Printf("Endurance champion = %v\n",endurance_champion.String())
 	fmt.Printf("Endurance champion duration = %v\n",endurance_champion_duration.Int64())
+	fmt.Printf("Endurance champion state variable = %v\n",stvar_endurance_champ.String())
+	fmt.Printf("Endurance champion duration state variable = %v\n",stvar_endurance_champ_dur.Int64())
 	fmt.Printf("Stellar champion = %v\n",stellar_spender.String())
 	fmt.Printf("BusinessLogic = %v\n",blogic_addr.String())
+	fmt.Printf("RandomWalk addr = %v\n",randomwalk_addr.String())
 	fmt.Printf("LastBidType = %v\n",last_bid_type)
 	fmt.Printf("ActivationTime= %v\n",activation_time)
 	fmt.Printf("CSTAuctionLength = %v\n",cst_auction_length);
