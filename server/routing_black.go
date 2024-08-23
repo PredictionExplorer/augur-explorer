@@ -187,6 +187,7 @@ func set_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/black/cosmicgame/donations/eth/simple/by_round/:round_num",cosmic_game_donations_cg_simple_by_round)
 	r.GET("/black/cosmicgame/donations/eth/with_info/list",cosmic_game_donations_cg_with_info_list)
 	r.GET("/black/cosmicgame/donations/eth/with_info/by_round/:round_num",cosmic_game_donations_cg_with_info_by_round)
+	r.GET("/black/cosmicgame/donations/eth/with_info/info/:record_id",cosmic_game_donations_cg_with_info_record_info)
 	r.GET("/black/cosmicgame/donations/charity/deposits",cosmic_game_charity_donations_deposits)
 	r.GET("/black/cosmicgame/donations/charity/cg_deposits",cosmic_game_charity_cosmicgame_deposits)
 	r.GET("/black/cosmicgame/donations/charity/voluntary",cosmic_game_charity_voluntary_deposits)

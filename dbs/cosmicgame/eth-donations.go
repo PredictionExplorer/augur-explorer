@@ -366,6 +366,54 @@ func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_with_info_by_round(rou
 	}
 	return records
 }
+func (sw *SQLStorageWrapper) Get_donation_with_info_record_info(record_id int64) p.CGCosmicGameDonationWithInfo {
+
+	var query string
+	query = "SELECT " +
+				"d.evtlog_id,"+
+				"d.block_num,"+
+				"t.id,"+
+				"t.tx_hash,"+
+				"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT,"+
+				"d.time_stamp,"+
+				"d.donor_aid,"+
+				"da.addr,"+
+				"d.amount, "+
+				"d.amount/1e18 amount_eth,  " +
+				"d.round_num, "+
+				"d.record_id,"+
+				"dj.data "+
+			"FROM "+sw.S.SchemaName()+".cg_donation_wi d "+
+				"LEFT JOIN cg_donation_json dj ON dj.record_id=d.record_id "+
+				"LEFT JOIN transaction t ON t.id=tx_id "+
+				"LEFT JOIN address da ON d.donor_aid=da.address_id "+
+			"WHERE d.record_id=$1"
+	res := sw.S.Db().QueryRow(query,record_id)
+	var rec p.CGCosmicGameDonationWithInfo
+	err:=res.Scan(
+		&rec.EvtLogId,
+		&rec.BlockNum,
+		&rec.TxId,
+		&rec.TxHash,
+		&rec.TimeStamp,
+		&rec.DateTime,
+		&rec.DonorAid,
+		&rec.DonorAddr,
+		&rec.Amount,
+		&rec.AmountEth,
+		&rec.RoundNum,
+		&rec.CGRecordId,
+		&rec.DataJson,
+	)
+	if (err!=nil) {
+		if err == sql.ErrNoRows {
+			return rec
+		}
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))
+		os.Exit(1)
+	}
+	return rec
+}
 func (sw *SQLStorageWrapper) Get_donation_received_evt_id(tx_id,starting_id int64,sig string) int64 {
 
 	var query string 

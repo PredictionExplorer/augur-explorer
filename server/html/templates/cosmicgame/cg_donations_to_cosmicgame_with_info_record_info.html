@@ -1,0 +1,67 @@
+<html>
+<head>
+	<link href="/black/res/main.css" rel="stylesheet">
+	<title>Donation With-Info Record Info for record_id={{.RecordId}}</title>
+</head>
+<body>
+	<h3 class="page_title">
+		Donation With-Info Record Info for record_id={{.RecordId}}
+	<h3>
+<table>
+	<tr>
+		<td>Record ID</td>
+		<td>{{.ETHDonation.CGRecordId}}
+	</tr>
+	<tr>
+		<td>EvtLog ID</td>
+		<td>{{.ETHDonation.EvtLogId}}
+	</tr>
+	<tr>
+		<td>BlockNum</td>
+		<td>{{.ETHDonation.BlockNum}}</td>
+	</tr>
+	<tr>
+		<td>TxId</td>
+		<td>{{.ETHDonation.TxId}}</td>
+	</tr>
+	<tr>
+		<td>TxHash</td>
+		<td>{{.ETHDonation.TxHash}}</td>
+	</td>
+	<tr>
+		<td>TimeStamp</td>
+		<td>
+			{{.ETHDonation.TimeStamp}}
+		</td>
+	</tr>
+	<tr>
+		<td>DateTime</td>
+		<td>
+			{{.ETHDonation.DateTime}}
+		</td>
+	</tr>
+	<tr>
+		<td>Amount</td>
+		<td>{{.ETHDonation.Amount}}	</td>
+	</tr>
+	<tr>
+		<td>AmountETH</td>
+		<td>&nbsp;&nbsp;{{ printf "%.2f" .ETHDonation.AmountEth}}</td>
+	</tr>
+	<tr>
+		<td>DataJson</td>
+		<td>
+			<code>
+			{{.ETHDonation.DataJson}}
+			</code>
+		</td>
+	</tr>
+</table>
+</table>
+<br/><br/>
+<code>
+	API: /api/cosmicgame/donations/eth/with_info/info/[record_id]<br/>
+
+	Example: /api/cosmicgame/donations/eth/with_info/info/{{.RecordId}}
+</code>
+</body>

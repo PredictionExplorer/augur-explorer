@@ -109,3 +109,31 @@ func api_cosmic_game_donations_cg_with_info_by_round(c *gin.Context) {
 		"RoundNum":round_num,
 	})
 }
+func api_cosmic_game_donations_cg_with_info_record_info(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_record_id := c.Param("record_id")
+	var record_id int64
+	if len(p_record_id) > 0 {
+		var success bool
+		record_id,success = parse_int_from_remote_or_error(c,HTTP,&p_record_id)
+		if !success {
+			return
+		}
+	} else {
+		respond_error(c,"'record_id' parameter is not set")
+		return
+	}
+	record_info := arb_storagew.Get_donation_with_info_record_info(record_id)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"ETHDonation" : record_info,
+		"RecordId": record_id,
+	})
+}

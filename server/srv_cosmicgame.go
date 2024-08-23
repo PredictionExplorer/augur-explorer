@@ -338,7 +338,6 @@ func do_reload_contract_variables() {
 		} else {
 			endurance_champ_addr = tmp_addr.String()
 			endurance_duration = tmp_duration.Int64()
-			fmt.Printf("endurance duration = %v\n",endurance_duration);
 		}
 		tmp_addr, err = bwcontract.StellarSpender(&copts);
 		if err != nil {
