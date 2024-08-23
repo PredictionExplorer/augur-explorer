@@ -137,3 +137,31 @@ func api_cosmic_game_donations_cg_with_info_record_info(c *gin.Context) {
 		"RecordId": record_id,
 	})
 }
+func api_cosmic_game_donations_by_user(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	p_user_addr:= c.Param("user_addr")
+	if len(p_user_addr) == 0 {
+		respond_error_json(c,"'user_addr' parameter is not set")
+		return
+	}
+	user_aid,err := arb_storagew.S.Nonfatal_lookup_address_id(p_user_addr)
+	if err != nil {
+		respond_error_json(c,"Provided address wasn't found")
+		return
+	}
+
+	donations := arb_storagew.Get_donations_to_cosmic_game_by_user(user_aid)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"CombinedDonationRecords" : donations,
+		"UserAddr": p_user_addr,
+		"UserAid": user_aid,
+	})
+}

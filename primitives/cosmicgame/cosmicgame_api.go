@@ -160,6 +160,22 @@ type CGCosmicGameDonationWithInfo struct {
 	CGRecordId					int64	// CosmicGame contract's record id
 	DataJson					string
 }
+type CGDonationCombinedRec struct {
+	RecordType					int64	// 0 - simple donation, 1 - donation with info
+	EvtLogId					int64
+	BlockNum					int64
+	TxId						int64
+	TxHash						string
+	TimeStamp					int64
+	DateTime					string
+	DonorAid					int64
+	DonorAddr					string
+	Amount						string
+	AmountEth					float64
+	RoundNum					int64
+	CGRecordId					int64	// CosmicGame contract's record id
+	DataJson					string
+}
 type CGUniqueBidder struct {
 	BidderAid					int64
 	BidderAddr					string

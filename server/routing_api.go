@@ -200,6 +200,7 @@ func set_api_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/api/cosmicgame/donations/eth/with_info/list/:offset/:limit",api_cosmic_game_donations_cg_with_info_list)
 	r.GET("/api/cosmicgame/donations/eth/with_info/by_round/:round_num",api_cosmic_game_donations_cg_with_info_by_round)
 	r.GET("/api/cosmicgame/donations/eth/with_info/info/:record_id",api_cosmic_game_donations_cg_with_info_record_info)
+	r.GET("/api/cosmicgame/donations/eth/by_user/:user_addr",api_cosmic_game_donations_by_user)
 	r.GET("/api/cosmicgame/donations/charity/deposits",api_cosmic_game_charity_donations_deposits)
 	r.GET("/api/cosmicgame/donations/charity/cg_deposits",api_cosmic_game_charity_cosmicgame_deposits)
 	r.GET("/api/cosmicgame/donations/charity/voluntary",api_cosmic_game_charity_voluntary_deposits)
