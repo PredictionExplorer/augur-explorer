@@ -428,7 +428,7 @@ func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_by_user(user_aid int64
 					"WHERE d.donor_aid = $1 " +
 				")"+
 			") donations " +
-			"ORDER BY evtlog_id"
+			"ORDER BY evtlog_id DESC"
 	rows,err := sw.S.Db().Query(query,user_aid)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -582,6 +582,102 @@ func (sw *SQLStorageWrapper) Get_charity_donations_voluntary(cosmicgame_aid int6
 			os.Exit(1)
 		}
 		rec.IsVoluntary=true
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_donations_to_cosmic_game_both(round_num int64) []p.CGDonationCombinedRec {
+	// returns both types: simple donation & donation-with-info
+	var query string
+	query = "SELECT "+
+				"record_type,"+
+				"evtlog_id,"+
+				"block_num,"+
+				"tx_id,"+
+				"tx_hash,"+
+				"ts," +
+				"date_time,"+
+				"donor_aid,"+
+				"donor_addr,"+
+				"amount,"+
+				"amount_eth,"+
+				"round_num,"+
+				"record_id,"+
+				"json_data "+
+			"FROM ("+
+				"(" +
+					"SELECT "+
+						"0 AS record_type,"+
+						"d.evtlog_id,"+
+						"d.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT ts,"+
+						"d.time_stamp date_time,"+
+						"d.donor_aid,"+
+						"da.addr donor_addr,"+
+						"d.amount, "+
+						"d.amount/1e18 amount_eth, " +
+						"d.round_num, "+
+						"-1 AS record_id,"+
+						"'' AS json_data "+
+					"FROM "+sw.S.SchemaName()+".cg_donation d "+
+						"LEFT JOIN transaction t ON t.id=tx_id "+
+						"LEFT JOIN address da ON d.donor_aid=da.address_id "+
+					"WHERE d.round_num = $1 "+
+				") UNION ALL (" +
+					"SELECT "+
+						"1 AS record_type,"+
+						"d.evtlog_id,"+
+						"d.block_num,"+
+						"t.id tx_id,"+
+						"t.tx_hash,"+
+						"EXTRACT(EPOCH FROM d.time_stamp)::BIGINT ts,"+
+						"d.time_stamp date_time,"+
+						"d.donor_aid,"+
+						"da.addr donor_addr,"+
+						"d.amount, "+
+						"d.amount/1e18 amount_eth,  " +
+						"d.round_num, "+
+						"d.record_id,"+
+						"dj.data json_data "+
+					"FROM "+sw.S.SchemaName()+".cg_donation_wi d "+
+						"LEFT JOIN cg_donation_json dj ON dj.record_id=d.record_id "+
+						"LEFT JOIN transaction t ON t.id=tx_id "+
+						"LEFT JOIN address da ON d.donor_aid=da.address_id "+
+					"WHERE d.round_num = $1 " +
+				")"+
+			") donations " +
+			"ORDER BY evtlog_id DESC"
+	rows,err := sw.S.Db().Query(query,round_num)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGDonationCombinedRec,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGDonationCombinedRec
+		err=rows.Scan(
+			&rec.RecordType,
+			&rec.EvtLogId,
+			&rec.BlockNum,
+			&rec.TxId,
+			&rec.TxHash,
+			&rec.TimeStamp,
+			&rec.DateTime,
+			&rec.DonorAid,
+			&rec.DonorAddr,
+			&rec.Amount,
+			&rec.AmountEth,
+			&rec.RoundNum,
+			&rec.CGRecordId,
+			&rec.DataJson,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
 		records = append(records,rec)
 	}
 	return records

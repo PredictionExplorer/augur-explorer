@@ -165,3 +165,33 @@ func api_cosmic_game_donations_by_user(c *gin.Context) {
 		"UserAid": user_aid,
 	})
 }
+func api_cosmic_game_donations_cg_both(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+	p_round_num:= c.Param("round_num")
+	var round_num int64
+	if len(p_round_num) > 0 {
+		var success bool
+		round_num,success = parse_int_from_remote_or_error(c,JSON,&p_round_num)
+		if !success {
+			return
+		}
+	} else {
+		respond_error_json(c,"'round_num' parameter is not set")
+		return
+	}
+
+	donations := arb_storagew.Get_donations_to_cosmic_game_both(round_num)
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"CosmicGameDonations" : donations,
+		"RoundNum": round_num,
+	})
+}
