@@ -126,7 +126,7 @@ func cosmic_game_donations_by_user(c *gin.Context) {
 		"UserAid": user_aid,
 	})
 }
-func cosmic_game_donations_cg_both(c *gin.Context) {
+func cosmic_game_donations_cg_both_by_round(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {
 		respond_error(c,"Database link wasn't configured")
@@ -144,10 +144,20 @@ func cosmic_game_donations_cg_both(c *gin.Context) {
 		respond_error(c,"'round_num' parameter is not set")
 		return
 	}
-	donations := arb_storagew.Get_donations_to_cosmic_game_both(round_num)
-	fmt.Printf("num records = %v\n",len(donations))
-	c.HTML(http.StatusOK, "cg_donations_to_cosmicgame_both.html", gin.H{
+	donations := arb_storagew.Get_donations_to_cosmic_game_both_by_round(round_num)
+	c.HTML(http.StatusOK, "cg_donations_to_cosmicgame_both_by_round.html", gin.H{
 		"CosmicGameDonations" : donations,
 		"RoundNum": round_num,
+	})
+}
+func cosmic_game_donations_cg_both_all(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	donations := arb_storagew.Get_donations_to_cosmic_game_both_all()
+	c.HTML(http.StatusOK, "cg_donations_to_cosmicgame_both_all.html", gin.H{
+		"CosmicGameDonations" : donations,
 	})
 }
