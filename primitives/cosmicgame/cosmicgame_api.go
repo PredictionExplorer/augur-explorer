@@ -11,6 +11,9 @@ type CGStatistics struct {
 	NumUniqueStakersBoth		uint64
 	TotalPrizesPaidAmountWei	string
 	TotalPrizesPaidAmountEth	float64	// divided by 1e18
+	NumUniqueDonors				int64
+	TotalEthDonatedAmount		string
+	TotalEthDonatedAmountEth	float64
 	NumVoluntaryDonations		uint64
 	SumVoluntaryDonationsEth	float64 // divided by 1e18
 	NumCosmicGameDonations		uint64
@@ -191,6 +194,13 @@ type CGUniqueWinner struct {
 	MaxWinAmountEth				float64	// same as above but with 18 decimal places (i.e. in ETH )
 	PrizesSum					float64	// all winnings in ETH
 }
+type CGUniqueDonor struct {
+	DonorAid					int64
+	DonorAddr					string
+	CountDonations				int64
+	TotalDonated				string
+	TotalDonatedEth				float64
+}
 type CGNFTDonation struct {
 	RecordId					int64
 	EvtLogId					int64
@@ -345,6 +355,9 @@ type CGRoundStats struct {
 	TotalRaffleEthDeposits		string
 	TotalRaffleEthDepositsEth	float64 // deposits of ETH (same as above) but divided by 1^18
 	TotalRaffleNFTs				int64
+	TotalDonatedCount			int64
+	TotalDonatedAmount			string
+	TotalDonatedAmountEth		float64
 }
 type CGClaimInfo struct {
 	ETHRaffleToClaim			float64

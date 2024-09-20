@@ -756,6 +756,17 @@ func cosmic_game_unique_winners(c *gin.Context) {
 		"UniqueWinners" : unique_winners,
 	})
 }
+func cosmic_game_unique_donors(c *gin.Context) {
+
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error(c,"Database link wasn't configured")
+		return
+	}
+	unique_donors := arb_storagew.Get_unique_donors()
+	c.HTML(http.StatusOK, "cg_unique_donors.html", gin.H{
+		"UniqueDonors" : unique_donors,
+	})
+}
 func cosmic_game_donations_nft(c *gin.Context) {
 
 	if  !augur_srv.arbitrum_initialized() {

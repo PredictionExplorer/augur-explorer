@@ -174,6 +174,7 @@ func set_routing_cosmic_game(r *gin.Engine) {
 	r.GET("/black/cosmicgame/user/claim_history/:user_addr/:offset/:limit",cosmic_game_claim_history_detail)
 	r.GET("/black/cosmicgame/user/unique_bidders",cosmic_game_unique_bidders)
 	r.GET("/black/cosmicgame/user/unique_winners",cosmic_game_unique_winners)
+	r.GET("/black/cosmicgame/user/unique_donors",cosmic_game_unique_donors)
 	r.GET("/black/cosmicgame/user/unique_stakers_cst",cosmic_game_unique_stakers_cst)
 	r.GET("/black/cosmicgame/user/unique_stakers_rwalk",cosmic_game_unique_stakers_rwalk)
 	r.GET("/black/cosmicgame/user/unique_stakers_both",cosmic_game_unique_stakers_both)

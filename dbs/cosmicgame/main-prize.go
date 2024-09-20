@@ -151,7 +151,10 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 				"endu.erc20_amount,"+
 				"endu.erc20_amount/1e18, "+
 				"top.erc20_amount,"+
-				"top.erc20_amount/1e18 "+
+				"top.erc20_amount/1e18, "+
+				"s.donations_round_count,"+
+				"s.donations_round_total,"+
+				"s.donations_round_total/1e18 "+
 			"FROM "+sw.S.SchemaName()+".cg_prize_claim p "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
@@ -214,6 +217,9 @@ func (sw *SQLStorageWrapper) Get_prize_info(prize_num int64) (bool,p.CGPrizeRec)
 		&null_endurance_erc20_amount_float,
 		&null_topbidder_erc20_amount,
 		&null_topbidder_erc20_amount_float,
+		&rec.RoundStats.TotalDonatedCount,
+		&rec.RoundStats.TotalDonatedAmount,
+		&rec.RoundStats.TotalDonatedAmountEth,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {

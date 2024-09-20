@@ -476,19 +476,15 @@ func proc_donation_event(log *types.Log,elog *EthereumEventLog) {
 }
 func get_donation_data(record_id int64) (string,error) {
 
-//	fmt.Printf("Cosmic game addr: %v\n",cosmic_game_addr.String())
 	cosmic_game_ctrct,err := NewCosmicGame(cosmic_game_addr,eclient)
 	if err != nil {
 		return "",err
 	}
-//	fmt.Printf("record id to query = %v\n",record_id)
 	var copts bind.CallOpts
 	dinfo_rec,err := cosmic_game_ctrct.DonationInfoRecords(&copts,big.NewInt(record_id))
 	if err != nil {
 		return "",err
 	}
-//	fmt.Printf("donation data: \n%v\n",dinfo_rec);
-//	Info.Printf("donation data: \n%v\n",dinfo_rec);
 	return dinfo_rec.Data,err
 }
 func proc_donation_with_info_event(log *types.Log,elog *EthereumEventLog) {
@@ -518,7 +514,6 @@ func proc_donation_with_info_event(log *types.Log,elog *EthereumEventLog) {
 	evt.Amount = eth_evt.Amount.String()
 	evt.RoundNum = eth_evt.Round.Int64()
 	data_json,err := get_donation_data(evt.RecordId)
-//	fmt.Printf("data_json=%v, err=%v\n",data_json,err)
 	if err != nil {
 		Info.Printf("Failure to fetch donation info record: %v\n",err.Error())
 		Error.Printf("Failure to fetch donation info record: %v\n",err.Error())

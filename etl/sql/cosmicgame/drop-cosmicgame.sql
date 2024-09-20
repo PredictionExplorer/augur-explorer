@@ -58,6 +58,7 @@ DROP TABLE IF EXISTS
 	cg_round_stats,
 	cg_bidder,
 	cg_winner,
+	cg_donor,
 	cg_staker_cst,
 	cg_staker_rwalk,
 	cg_staker_deposit,

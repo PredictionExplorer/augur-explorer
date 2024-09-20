@@ -858,13 +858,32 @@ END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_direct_donation_insert() RETURNS trigger AS  $$
 DECLARE
+	v_cnt						NUMERIC;
 BEGIN
 
 	UPDATE cg_glob_stats 
 		SET 
 			num_direct_donations = (num_direct_donations + 1),
 			direct_donations = (direct_donations + NEW.amount);
-
+	UPDATE cg_round_stats
+		SET
+			donations_round_total = (donations_round_total + NEW.amount),
+			donations_round_count = (donations_round_count + 1)
+		WHERE NEW.round_num=round_num;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_round_stats(round_num,donations_round_total,donations_round_count) VALUES (NEW.round_num,NEW.amount,1);
+	END IF;
+	UPDATE cg_donor
+		SET
+			total_eth_donated = (total_eth_donated + NEW.amount),
+			count_donations = (count_donations + 1)
+		WHERE donor_aid = NEW.donor_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_donor(donor_aid,count_donations,total_eth_donated)
+			VALUES(NEW.donor_aid,1,NEW.amount);
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -876,6 +895,16 @@ BEGIN
 		SET 
 			num_direct_donations = (num_direct_donations - 1),
 			direct_donations = (direct_donations - OLD.amount);
+	UPDATE cg_round_stats
+		SET
+			donations_round_total = (donations_round_total - OLD.amount),
+			donations_round_count = (donations_round_count - 1)
+		WHERE OLD.round_num=round_num;
+	UPDATE cg_donor
+		SET
+			total_eth_donated = (total_eth_donated - OLD.amount),
+			count_donations = (count_donations - 1)
+		WHERE donor_aid = OLD.donor_aid;
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

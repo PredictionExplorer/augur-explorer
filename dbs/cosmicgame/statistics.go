@@ -108,6 +108,30 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_statistics() p.CGStatistics {
 	if null_sum_wei.Valid { stats.TotalPrizesPaidAmountWei = null_sum_wei.String }
 	if null_sum_eth.Valid { stats.TotalPrizesPaidAmountEth = null_sum_eth.Float64 }
 
+	var null_donors sql.NullInt64
+	query = "SELECT "+
+				"COUNT(*) AS total,"+
+				"SUM(total_eth_donated) AS sum_wei,"+
+				"SUM(total_eth_donated)/1e18 AS sum_eth "+
+				"FROM cg_donor " +
+				"WHERE total_eth_donated > 0"
+	row = sw.S.Db().QueryRow(query)
+	err=row.Scan(
+		&null_donors,
+		&null_sum_wei,
+		&null_sum_eth,
+	)
+	if (err!=nil) {
+		if err != sql.ErrNoRows {
+			sw.S.Log_msg(fmt.Sprintf("Error in Get_cosmic_game_statistics(): %v, q=%v",err,query))
+			os.Exit(1)
+		}
+	}
+	if null_donors.Valid { stats.NumUniqueDonors = int64(null_donors.Int64) }
+	if null_sum_wei.Valid { stats.TotalEthDonatedAmount = null_sum_wei.String }
+	if null_sum_eth.Valid { stats.TotalEthDonatedAmountEth = null_sum_eth.Float64 }
+
+
 	query = "SELECT "+
 				"COUNT(*) AS total "+
 				"FROM cg_staker_cst " +
@@ -267,7 +291,10 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_round_statistics(round_num int64) p
 				"total_nft_donated," +
 				"total_raffle_eth_deposits,"+
 				"total_raffle_eth_deposits/1e18,"+
-				"total_raffle_nfts "+
+				"total_raffle_nfts, "+
+				"donations_round_count,"+
+				"donations_round_total,"+
+				"donations_round_total/1e18 "+
 			"FROM cg_round_stats WHERE round_num=$1"
 
 	row := sw.S.Db().QueryRow(query,round_num)
@@ -279,7 +306,11 @@ func (sw *SQLStorageWrapper) Get_cosmic_game_round_statistics(round_num int64) p
 		&stats.TotalRaffleEthDeposits,
 		&stats.TotalRaffleEthDepositsEth,
 		&stats.TotalRaffleNFTs,
+		&stats.TotalDonatedCount,
+		&stats.TotalDonatedAmount,
+		&stats.TotalDonatedAmountEth,
 	)
+	fmt.Printf("total donated count = %v\n",stats.TotalDonatedCount)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
 			return stats
@@ -504,6 +535,43 @@ func (sw *SQLStorageWrapper) Get_unique_stakers_both() []p.CGUniqueStakersBoth {
 			&rec.RWalkStats.NumUnstakeActions,
 			&rec.RWalkStats.TotalTokensMinted,
 			&rec.TotalStakedTokensBoth,
+		)
+		if err != nil {
+			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+			os.Exit(1)
+		}
+		records = append(records,rec)
+	}
+	return records
+}
+func (sw *SQLStorageWrapper) Get_unique_donors() []p.CGUniqueDonor {
+
+	var query string
+	query = "SELECT "+
+				"d.donor_aid,"+
+				"a.addr,"+
+				"d.count_donations,"+
+				"d.total_eth_donated,"+
+				"d.total_eth_donated/1e18 total_eth_donated_eth "+
+			"FROM "+sw.S.SchemaName()+".cg_donor d "+
+				"LEFT JOIN address a ON d.donor_aid=a.address_id " +
+			"WHERE d.count_donations > 0 " +
+			"ORDER BY total_eth_donated DESC "
+	rows,err := sw.S.Db().Query(query)
+	if (err!=nil) {
+		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
+		os.Exit(1)
+	}
+	records := make([]p.CGUniqueDonor,0, 32)
+	defer rows.Close()
+	for rows.Next() {
+		var rec p.CGUniqueDonor
+		err=rows.Scan(
+			&rec.DonorAid,
+			&rec.DonorAddr,
+			&rec.CountDonations,
+			&rec.TotalDonated,
+			&rec.TotalDonatedEth,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))

@@ -44,6 +44,8 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"RaffleAmountEth" : raffle_amount_eth,
 		"TotalPrizes": bw_stats.TotalPrizes,
 		"TotalPrizesPaidAmountEth": bw_stats.TotalPrizesPaidAmountEth,
+		"TotalEthDonatedAmount" : bw_stats.TotalEthDonatedAmount,
+		"TotalEthDonatedAmountEth" : bw_stats.TotalEthDonatedAmountEth,nohup npx hardhat run /home/locarb/v2/etl/cmd/cosmicgame/scripts/deploy.js --network localhost &
 		"LastBidderAddr":last_bidder.String(),
 		"NumVoluntaryDonations":bw_stats.NumVoluntaryDonations,
 		"SumVoluntaryDonationsEth":bw_stats.SumVoluntaryDonationsEth,
@@ -67,6 +69,7 @@ func api_cosmic_game_dashboard(c *gin.Context) {
 		"NumRaffleNFTWinnersStakingRWalk" : raffle_nft_winners_staking_rwalk,
 		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
 		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
+		"NumUniqueDonors" : bw_stats.NumUniqueDonors,
 		"NumUniqueStakersCST" : bw_stats.NumUniqueStakersCST,
 		"NumUniqueStakersRWalk" : bw_stats.NumUniqueStakersRWalk,
 		"NumUniqueStakersBoth" : bw_stats.NumUniqueStakersBoth,
@@ -392,6 +395,24 @@ func api_cosmic_game_user_unique_winners(c *gin.Context) {
 		"status": req_status,
 		"error" : err_str,
 		"UniqueWinners" : unique_winners,
+	})
+}
+func api_cosmic_game_user_unique_donors(c *gin.Context) {
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	if  !augur_srv.arbitrum_initialized() {
+		respond_error_json(c,"Database link wasn't configured")
+		return
+	}
+
+	unique_donors := arb_storagew.Get_unique_donors()
+
+	var req_status int = 1
+	var err_str string = ""
+	c.JSON(http.StatusOK, gin.H{
+		"status": req_status,
+		"error" : err_str,
+		"UniqueDonors" : unique_donors,
 	})
 }
 func api_cosmic_game_donations_nft_list(c *gin.Context) {

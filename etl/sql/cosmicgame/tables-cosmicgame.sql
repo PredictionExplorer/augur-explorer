@@ -628,7 +628,9 @@ CREATE TABLE cg_round_stats( -- collects statistics per round
 	total_bids					BIGINT DEFAULT 0,
 	total_nft_donated			BIGINT DEFAULT 0,
 	total_raffle_eth_deposits	DECIMAL DEFAULT 0,
-	total_raffle_nfts			BIGINT DEFAULT 0
+	total_raffle_nfts			BIGINT DEFAULT 0,
+	donations_round_total		DECIMAL DEFAULT 0,		-- total donations for current round (reset on claimPrize())
+	donations_round_count		BIGINT DEFAULT 0		-- total number of donations for the current round
 );
 CREATE TABLE cg_bidder ( -- collects statistics per bidder
 	bidder_aid		BIGINT PRIMARY KEY,
@@ -652,6 +654,11 @@ CREATE TABLE cg_staker_cst ( -- counts statistics per user for staking CosmicSig
 	total_reward			DECIMAL DEFAULT 0,
 	unclaimed_reward		DECIMAL DEFAULT 0,
 	num_tokens_minted		BIGINT DEFAULT 0
+);
+CREATE TABLE cg_donor (--counts statistics for unique donors (who donate ETH to cosmic game)
+	donor_aid				BIGINT PRIMARY KEY,
+	count_donations			BIGINT DEFAULT 0,
+	total_eth_donated		DECIMAL DEFAULT 0
 );
 CREATE TABLE cg_staker_deposit (-- accumulators for deposit-staker relation (this is for CST staking wallet only)
 	staker_aid				BIGINT NOT NULL,

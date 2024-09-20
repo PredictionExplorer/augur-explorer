@@ -112,6 +112,9 @@ async function main() {
   await cosmicGame.donate({value: donationAmount});
   let donationData = '{"version":1,"title":"Hardhat donation","message":"Donation from HardHat","url":"http://hardhat.org"}';
   await cosmicGame.donateWithInfo(donationData,{value: hre.ethers.utils.parseEther('6')});
+  donationData = '{"version":1,"title":"ArtBlocks donation","message":"ArtBlocks offers a platform for creators, buyers and sellers of digital assets and any non-digital products, services and/or benefits to be furnished by or on behalf of sellers in connection with such sales","url":"https://www.artblocks.io"}';
+
+  await cosmicGame.connect(addr2).donateWithInfo(donationData,{value: hre.ethers.utils.parseEther('6')});
 
   for (let i=0; i<5; i++) {
 	let token_id = await mint_rwalk(addr1);
