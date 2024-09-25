@@ -394,18 +394,20 @@ func cosmic_game_index_page(c *gin.Context) {
 		return
 	}
 	cur_round_stats := arb_storagew.Get_cosmic_game_round_statistics(round_num);
+	cg_balance := get_cosmic_game_contract_balance()
 	ts := time.Unix(round_start_ts,0)
 	date_str := fmt.Sprintf("%v",ts);
 	record_counters := arb_storagew.Get_record_counters()
 	c.HTML(http.StatusOK, "cg_index.html", gin.H{
-		"CosmicGameAddr":cosmic_game_addr,
-		"CosmicSignatureAddr":cosmic_signature_addr,
-		"CosmicSignatureTokenAddr":cosmic_token_addr,
-		"CharityWalletAddr":charity_wallet_addr,
-		"BidPrice":bid_price,
-		"BidPriceEth":bid_price_eth,
-		"PrizeClaimDate":time.Unix(prize_claim_date,0).Format(time.RFC822),
-		"PrizeClaimTs":prize_claim_date,
+		"CosmicGameAddr": cosmic_game_addr,
+		"CosmicGameBalanceEth": cg_balance,
+		"CosmicSignatureAddr": cosmic_signature_addr,
+		"CosmicSignatureTokenAddr": cosmic_token_addr,
+		"CharityWalletAddr": charity_wallet_addr,
+		"BidPrice": bid_price,
+		"BidPriceEth": bid_price_eth,
+		"PrizeClaimDate": time.Unix(prize_claim_date,0).Format(time.RFC822),
+		"PrizeClaimTs": prize_claim_date,
 		"CurRoundNum": round_num,
 		"CurNumBids" : bw_stats.CurNumBids,
 		"PrizeAmount" : prize_amount,
@@ -414,6 +416,8 @@ func cosmic_game_index_page(c *gin.Context) {
 		"RaffleAmountEth" : raffle_amount_eth,
 		"TotalPrizes": bw_stats.TotalPrizes,
 		"TotalPrizesPaidAmountEth": bw_stats.TotalPrizesPaidAmountEth,
+		"TotalEthDonatedAmount" : bw_stats.TotalEthDonatedAmount,
+		"TotalEthDonatedAmountEth" : bw_stats.TotalEthDonatedAmountEth,
 		"LastBidderAddr":last_bidder.String(),
 		"NumVoluntaryDonations":bw_stats.NumVoluntaryDonations,
 		"SumVoluntaryDonationsEth":bw_stats.SumVoluntaryDonationsEth,
@@ -437,6 +441,7 @@ func cosmic_game_index_page(c *gin.Context) {
 		"NumRaffleNFTWinnersStakingRWalk" : raffle_nft_winners_staking_rwalk,
 		"NumUniqueBidders" :  bw_stats.NumUniqueBidders,
 		"NumUniqueWinners" : bw_stats.NumUniqueWinners,
+		"NumUniqueDonors" : bw_stats.NumUniqueDonors,
 		"NumUniqueStakersCST" : bw_stats.NumUniqueStakersCST,
 		"NumUniqueStakersRWalk" : bw_stats.NumUniqueStakersRWalk,
 		"NumUniqueStakersBoth" : bw_stats.NumUniqueStakersBoth,

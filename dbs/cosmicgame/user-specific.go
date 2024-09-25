@@ -25,10 +25,13 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 				"p.unclaimed_nfts, "+
 				"p.tokens_count, "+
 				"trs.erc20_num_transfers, "+
-				"trs.erc721_num_transfers "+
+				"trs.erc721_num_transfers, "+
+				"d.count_donations,"+
+				"d.total_eth_donated/1e18 "+
 			"FROM address a "+
 				"LEFT JOIN cg_bidder b ON b.bidder_aid=a.address_id "+
 				"LEFT JOIN cg_winner p ON p.winner_aid=a.address_id "+
+				"LEFT JOIN cg_donor d ON d.donor_aid=a.address_id "+
 				"LEFT JOIN cg_raffle_winner_stats rw ON rw.winner_aid=a.address_id "+
 				"LEFT JOIN cg_raffle_nft_winner_stats rn ON rn.winner_aid=a.address_id "+
 				"LEFT JOIN cg_transfer_stats trs ON trs.user_aid=a.address_id "+
@@ -41,6 +44,8 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 	var null_raffles_count,null_raffle_nft_won sql.NullInt64
 	var null_unclaimed_nfts,null_total_tokens sql.NullInt64
 	var null_erc20_transfs,null_erc721_transfs sql.NullInt64
+	var null_count_donations sql.NullInt64
+	var null_total_eth_donated sql.NullFloat64
 
 
 	row := sw.S.Db().QueryRow(query,user_aid)
@@ -60,6 +65,8 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 		&null_total_tokens,
 		&null_erc20_transfs,
 		&null_erc721_transfs,
+		&null_count_donations,
+		&null_total_eth_donated,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -80,6 +87,8 @@ func (sw *SQLStorageWrapper) Get_user_info(user_aid int64) (bool,p.CGUserInfo) {
 	if null_total_tokens.Valid { rec.TotalCSTokensWon= null_total_tokens.Int64 }
 	if null_erc20_transfs.Valid { rec.CosmicTokenNumTransfers = null_erc20_transfs.Int64 }
 	if null_erc721_transfs.Valid { rec.CosmicSignatureNumTransfers = null_erc721_transfs.Int64 }
+	if null_count_donations.Valid { rec.TotalDonatedCount = null_count_donations.Int64 }
+	if null_total_eth_donated.Valid { rec.TotalDonatedAmountEth = null_total_eth_donated.Float64 }
 
 	query = "SELECT "+
 				"s.total_tokens_staked,"+

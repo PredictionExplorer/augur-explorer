@@ -119,6 +119,8 @@ type CGUserInfo struct {
 	TotalCSTokensWon			int64	// prizes + raffles
 	CosmicTokenNumTransfers		int64
 	CosmicSignatureNumTransfers	int64
+	TotalDonatedCount			int64
+	TotalDonatedAmountEth		float64
 	StakingStatistics		UserStakingInfo
 }
 type CGCharityDonation struct {
