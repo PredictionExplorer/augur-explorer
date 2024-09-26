@@ -29,10 +29,761 @@ var (
 	_ = abi.ConvertType
 )
 
+// IStakingWalletRWalkMetaData contains all meta data concerning the IStakingWalletRWalk contract.
+var IStakingWalletRWalkMetaData = &bind.MetaData{
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalNFTs\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"}],\"name\":\"StakeActionEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalNFTs\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"}],\"name\":\"UnstakeActionEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"isTokenStaked\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"lastActionIdByTokenId\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numTokensStaked\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"entropy\",\"type\":\"bytes32\"}],\"name\":\"pickRandomStaker\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"}],\"name\":\"stake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"ids\",\"type\":\"uint256[]\"}],\"name\":\"stakeMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"stakerByTokenId\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"stakeActionId\",\"type\":\"uint256\"}],\"name\":\"unstake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"ids\",\"type\":\"uint256[]\"}],\"name\":\"unstakeMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"}],\"name\":\"wasTokenUsed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+}
+
+// IStakingWalletRWalkABI is the input ABI used to generate the binding from.
+// Deprecated: Use IStakingWalletRWalkMetaData.ABI instead.
+var IStakingWalletRWalkABI = IStakingWalletRWalkMetaData.ABI
+
+// IStakingWalletRWalk is an auto generated Go binding around an Ethereum contract.
+type IStakingWalletRWalk struct {
+	IStakingWalletRWalkCaller     // Read-only binding to the contract
+	IStakingWalletRWalkTransactor // Write-only binding to the contract
+	IStakingWalletRWalkFilterer   // Log filterer for contract events
+}
+
+// IStakingWalletRWalkCaller is an auto generated read-only Go binding around an Ethereum contract.
+type IStakingWalletRWalkCaller struct {
+	contract *bind.BoundContract // Generic contract wrapper for the low level calls
+}
+
+// IStakingWalletRWalkTransactor is an auto generated write-only Go binding around an Ethereum contract.
+type IStakingWalletRWalkTransactor struct {
+	contract *bind.BoundContract // Generic contract wrapper for the low level calls
+}
+
+// IStakingWalletRWalkFilterer is an auto generated log filtering Go binding around an Ethereum contract events.
+type IStakingWalletRWalkFilterer struct {
+	contract *bind.BoundContract // Generic contract wrapper for the low level calls
+}
+
+// IStakingWalletRWalkSession is an auto generated Go binding around an Ethereum contract,
+// with pre-set call and transact options.
+type IStakingWalletRWalkSession struct {
+	Contract     *IStakingWalletRWalk // Generic contract binding to set the session for
+	CallOpts     bind.CallOpts        // Call options to use throughout this session
+	TransactOpts bind.TransactOpts    // Transaction auth options to use throughout this session
+}
+
+// IStakingWalletRWalkCallerSession is an auto generated read-only Go binding around an Ethereum contract,
+// with pre-set call options.
+type IStakingWalletRWalkCallerSession struct {
+	Contract *IStakingWalletRWalkCaller // Generic contract caller binding to set the session for
+	CallOpts bind.CallOpts              // Call options to use throughout this session
+}
+
+// IStakingWalletRWalkTransactorSession is an auto generated write-only Go binding around an Ethereum contract,
+// with pre-set transact options.
+type IStakingWalletRWalkTransactorSession struct {
+	Contract     *IStakingWalletRWalkTransactor // Generic contract transactor binding to set the session for
+	TransactOpts bind.TransactOpts              // Transaction auth options to use throughout this session
+}
+
+// IStakingWalletRWalkRaw is an auto generated low-level Go binding around an Ethereum contract.
+type IStakingWalletRWalkRaw struct {
+	Contract *IStakingWalletRWalk // Generic contract binding to access the raw methods on
+}
+
+// IStakingWalletRWalkCallerRaw is an auto generated low-level read-only Go binding around an Ethereum contract.
+type IStakingWalletRWalkCallerRaw struct {
+	Contract *IStakingWalletRWalkCaller // Generic read-only contract binding to access the raw methods on
+}
+
+// IStakingWalletRWalkTransactorRaw is an auto generated low-level write-only Go binding around an Ethereum contract.
+type IStakingWalletRWalkTransactorRaw struct {
+	Contract *IStakingWalletRWalkTransactor // Generic write-only contract binding to access the raw methods on
+}
+
+// NewIStakingWalletRWalk creates a new instance of IStakingWalletRWalk, bound to a specific deployed contract.
+func NewIStakingWalletRWalk(address common.Address, backend bind.ContractBackend) (*IStakingWalletRWalk, error) {
+	contract, err := bindIStakingWalletRWalk(address, backend, backend, backend)
+	if err != nil {
+		return nil, err
+	}
+	return &IStakingWalletRWalk{IStakingWalletRWalkCaller: IStakingWalletRWalkCaller{contract: contract}, IStakingWalletRWalkTransactor: IStakingWalletRWalkTransactor{contract: contract}, IStakingWalletRWalkFilterer: IStakingWalletRWalkFilterer{contract: contract}}, nil
+}
+
+// NewIStakingWalletRWalkCaller creates a new read-only instance of IStakingWalletRWalk, bound to a specific deployed contract.
+func NewIStakingWalletRWalkCaller(address common.Address, caller bind.ContractCaller) (*IStakingWalletRWalkCaller, error) {
+	contract, err := bindIStakingWalletRWalk(address, caller, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &IStakingWalletRWalkCaller{contract: contract}, nil
+}
+
+// NewIStakingWalletRWalkTransactor creates a new write-only instance of IStakingWalletRWalk, bound to a specific deployed contract.
+func NewIStakingWalletRWalkTransactor(address common.Address, transactor bind.ContractTransactor) (*IStakingWalletRWalkTransactor, error) {
+	contract, err := bindIStakingWalletRWalk(address, nil, transactor, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &IStakingWalletRWalkTransactor{contract: contract}, nil
+}
+
+// NewIStakingWalletRWalkFilterer creates a new log filterer instance of IStakingWalletRWalk, bound to a specific deployed contract.
+func NewIStakingWalletRWalkFilterer(address common.Address, filterer bind.ContractFilterer) (*IStakingWalletRWalkFilterer, error) {
+	contract, err := bindIStakingWalletRWalk(address, nil, nil, filterer)
+	if err != nil {
+		return nil, err
+	}
+	return &IStakingWalletRWalkFilterer{contract: contract}, nil
+}
+
+// bindIStakingWalletRWalk binds a generic wrapper to an already deployed contract.
+func bindIStakingWalletRWalk(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor, filterer bind.ContractFilterer) (*bind.BoundContract, error) {
+	parsed, err := IStakingWalletRWalkMetaData.GetAbi()
+	if err != nil {
+		return nil, err
+	}
+	return bind.NewBoundContract(address, *parsed, caller, transactor, filterer), nil
+}
+
+// Call invokes the (constant) contract method with params as input values and
+// sets the output to result. The result type might be a single field for simple
+// returns, a slice of interfaces for anonymous returns and a struct for named
+// returns.
+func (_IStakingWalletRWalk *IStakingWalletRWalkRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
+	return _IStakingWalletRWalk.Contract.IStakingWalletRWalkCaller.contract.Call(opts, result, method, params...)
+}
+
+// Transfer initiates a plain transaction to move funds to the contract, calling
+// its default method if one is available.
+func (_IStakingWalletRWalk *IStakingWalletRWalkRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.Contract.IStakingWalletRWalkTransactor.contract.Transfer(opts)
+}
+
+// Transact invokes the (paid) contract method with params as input values.
+func (_IStakingWalletRWalk *IStakingWalletRWalkRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.Contract.IStakingWalletRWalkTransactor.contract.Transact(opts, method, params...)
+}
+
+// Call invokes the (constant) contract method with params as input values and
+// sets the output to result. The result type might be a single field for simple
+// returns, a slice of interfaces for anonymous returns and a struct for named
+// returns.
+func (_IStakingWalletRWalk *IStakingWalletRWalkCallerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
+	return _IStakingWalletRWalk.Contract.contract.Call(opts, result, method, params...)
+}
+
+// Transfer initiates a plain transaction to move funds to the contract, calling
+// its default method if one is available.
+func (_IStakingWalletRWalk *IStakingWalletRWalkTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.Contract.contract.Transfer(opts)
+}
+
+// Transact invokes the (paid) contract method with params as input values.
+func (_IStakingWalletRWalk *IStakingWalletRWalkTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.Contract.contract.Transact(opts, method, params...)
+}
+
+// IsTokenStaked is a free data retrieval call binding the contract method 0xf0a52424.
+//
+// Solidity: function isTokenStaked(uint256 tokenId) view returns(bool)
+func (_IStakingWalletRWalk *IStakingWalletRWalkCaller) IsTokenStaked(opts *bind.CallOpts, tokenId *big.Int) (bool, error) {
+	var out []interface{}
+	err := _IStakingWalletRWalk.contract.Call(opts, &out, "isTokenStaked", tokenId)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// IsTokenStaked is a free data retrieval call binding the contract method 0xf0a52424.
+//
+// Solidity: function isTokenStaked(uint256 tokenId) view returns(bool)
+func (_IStakingWalletRWalk *IStakingWalletRWalkSession) IsTokenStaked(tokenId *big.Int) (bool, error) {
+	return _IStakingWalletRWalk.Contract.IsTokenStaked(&_IStakingWalletRWalk.CallOpts, tokenId)
+}
+
+// IsTokenStaked is a free data retrieval call binding the contract method 0xf0a52424.
+//
+// Solidity: function isTokenStaked(uint256 tokenId) view returns(bool)
+func (_IStakingWalletRWalk *IStakingWalletRWalkCallerSession) IsTokenStaked(tokenId *big.Int) (bool, error) {
+	return _IStakingWalletRWalk.Contract.IsTokenStaked(&_IStakingWalletRWalk.CallOpts, tokenId)
+}
+
+// LastActionIdByTokenId is a free data retrieval call binding the contract method 0x889d1e1a.
+//
+// Solidity: function lastActionIdByTokenId(uint256 tokenId) view returns(int256)
+func (_IStakingWalletRWalk *IStakingWalletRWalkCaller) LastActionIdByTokenId(opts *bind.CallOpts, tokenId *big.Int) (*big.Int, error) {
+	var out []interface{}
+	err := _IStakingWalletRWalk.contract.Call(opts, &out, "lastActionIdByTokenId", tokenId)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// LastActionIdByTokenId is a free data retrieval call binding the contract method 0x889d1e1a.
+//
+// Solidity: function lastActionIdByTokenId(uint256 tokenId) view returns(int256)
+func (_IStakingWalletRWalk *IStakingWalletRWalkSession) LastActionIdByTokenId(tokenId *big.Int) (*big.Int, error) {
+	return _IStakingWalletRWalk.Contract.LastActionIdByTokenId(&_IStakingWalletRWalk.CallOpts, tokenId)
+}
+
+// LastActionIdByTokenId is a free data retrieval call binding the contract method 0x889d1e1a.
+//
+// Solidity: function lastActionIdByTokenId(uint256 tokenId) view returns(int256)
+func (_IStakingWalletRWalk *IStakingWalletRWalkCallerSession) LastActionIdByTokenId(tokenId *big.Int) (*big.Int, error) {
+	return _IStakingWalletRWalk.Contract.LastActionIdByTokenId(&_IStakingWalletRWalk.CallOpts, tokenId)
+}
+
+// NumTokensStaked is a free data retrieval call binding the contract method 0x5fda0acc.
+//
+// Solidity: function numTokensStaked() view returns(uint256)
+func (_IStakingWalletRWalk *IStakingWalletRWalkCaller) NumTokensStaked(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _IStakingWalletRWalk.contract.Call(opts, &out, "numTokensStaked")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// NumTokensStaked is a free data retrieval call binding the contract method 0x5fda0acc.
+//
+// Solidity: function numTokensStaked() view returns(uint256)
+func (_IStakingWalletRWalk *IStakingWalletRWalkSession) NumTokensStaked() (*big.Int, error) {
+	return _IStakingWalletRWalk.Contract.NumTokensStaked(&_IStakingWalletRWalk.CallOpts)
+}
+
+// NumTokensStaked is a free data retrieval call binding the contract method 0x5fda0acc.
+//
+// Solidity: function numTokensStaked() view returns(uint256)
+func (_IStakingWalletRWalk *IStakingWalletRWalkCallerSession) NumTokensStaked() (*big.Int, error) {
+	return _IStakingWalletRWalk.Contract.NumTokensStaked(&_IStakingWalletRWalk.CallOpts)
+}
+
+// PickRandomStaker is a free data retrieval call binding the contract method 0x41810425.
+//
+// Solidity: function pickRandomStaker(bytes32 entropy) view returns(address)
+func (_IStakingWalletRWalk *IStakingWalletRWalkCaller) PickRandomStaker(opts *bind.CallOpts, entropy [32]byte) (common.Address, error) {
+	var out []interface{}
+	err := _IStakingWalletRWalk.contract.Call(opts, &out, "pickRandomStaker", entropy)
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// PickRandomStaker is a free data retrieval call binding the contract method 0x41810425.
+//
+// Solidity: function pickRandomStaker(bytes32 entropy) view returns(address)
+func (_IStakingWalletRWalk *IStakingWalletRWalkSession) PickRandomStaker(entropy [32]byte) (common.Address, error) {
+	return _IStakingWalletRWalk.Contract.PickRandomStaker(&_IStakingWalletRWalk.CallOpts, entropy)
+}
+
+// PickRandomStaker is a free data retrieval call binding the contract method 0x41810425.
+//
+// Solidity: function pickRandomStaker(bytes32 entropy) view returns(address)
+func (_IStakingWalletRWalk *IStakingWalletRWalkCallerSession) PickRandomStaker(entropy [32]byte) (common.Address, error) {
+	return _IStakingWalletRWalk.Contract.PickRandomStaker(&_IStakingWalletRWalk.CallOpts, entropy)
+}
+
+// StakerByTokenId is a free data retrieval call binding the contract method 0xc065894e.
+//
+// Solidity: function stakerByTokenId(uint256 tokenId) view returns(address)
+func (_IStakingWalletRWalk *IStakingWalletRWalkCaller) StakerByTokenId(opts *bind.CallOpts, tokenId *big.Int) (common.Address, error) {
+	var out []interface{}
+	err := _IStakingWalletRWalk.contract.Call(opts, &out, "stakerByTokenId", tokenId)
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// StakerByTokenId is a free data retrieval call binding the contract method 0xc065894e.
+//
+// Solidity: function stakerByTokenId(uint256 tokenId) view returns(address)
+func (_IStakingWalletRWalk *IStakingWalletRWalkSession) StakerByTokenId(tokenId *big.Int) (common.Address, error) {
+	return _IStakingWalletRWalk.Contract.StakerByTokenId(&_IStakingWalletRWalk.CallOpts, tokenId)
+}
+
+// StakerByTokenId is a free data retrieval call binding the contract method 0xc065894e.
+//
+// Solidity: function stakerByTokenId(uint256 tokenId) view returns(address)
+func (_IStakingWalletRWalk *IStakingWalletRWalkCallerSession) StakerByTokenId(tokenId *big.Int) (common.Address, error) {
+	return _IStakingWalletRWalk.Contract.StakerByTokenId(&_IStakingWalletRWalk.CallOpts, tokenId)
+}
+
+// WasTokenUsed is a free data retrieval call binding the contract method 0x2a3247aa.
+//
+// Solidity: function wasTokenUsed(uint256 _tokenId) view returns(bool)
+func (_IStakingWalletRWalk *IStakingWalletRWalkCaller) WasTokenUsed(opts *bind.CallOpts, _tokenId *big.Int) (bool, error) {
+	var out []interface{}
+	err := _IStakingWalletRWalk.contract.Call(opts, &out, "wasTokenUsed", _tokenId)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// WasTokenUsed is a free data retrieval call binding the contract method 0x2a3247aa.
+//
+// Solidity: function wasTokenUsed(uint256 _tokenId) view returns(bool)
+func (_IStakingWalletRWalk *IStakingWalletRWalkSession) WasTokenUsed(_tokenId *big.Int) (bool, error) {
+	return _IStakingWalletRWalk.Contract.WasTokenUsed(&_IStakingWalletRWalk.CallOpts, _tokenId)
+}
+
+// WasTokenUsed is a free data retrieval call binding the contract method 0x2a3247aa.
+//
+// Solidity: function wasTokenUsed(uint256 _tokenId) view returns(bool)
+func (_IStakingWalletRWalk *IStakingWalletRWalkCallerSession) WasTokenUsed(_tokenId *big.Int) (bool, error) {
+	return _IStakingWalletRWalk.Contract.WasTokenUsed(&_IStakingWalletRWalk.CallOpts, _tokenId)
+}
+
+// Stake is a paid mutator transaction binding the contract method 0xa694fc3a.
+//
+// Solidity: function stake(uint256 _tokenId) returns()
+func (_IStakingWalletRWalk *IStakingWalletRWalkTransactor) Stake(opts *bind.TransactOpts, _tokenId *big.Int) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.contract.Transact(opts, "stake", _tokenId)
+}
+
+// Stake is a paid mutator transaction binding the contract method 0xa694fc3a.
+//
+// Solidity: function stake(uint256 _tokenId) returns()
+func (_IStakingWalletRWalk *IStakingWalletRWalkSession) Stake(_tokenId *big.Int) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.Contract.Stake(&_IStakingWalletRWalk.TransactOpts, _tokenId)
+}
+
+// Stake is a paid mutator transaction binding the contract method 0xa694fc3a.
+//
+// Solidity: function stake(uint256 _tokenId) returns()
+func (_IStakingWalletRWalk *IStakingWalletRWalkTransactorSession) Stake(_tokenId *big.Int) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.Contract.Stake(&_IStakingWalletRWalk.TransactOpts, _tokenId)
+}
+
+// StakeMany is a paid mutator transaction binding the contract method 0xfe939afc.
+//
+// Solidity: function stakeMany(uint256[] ids) returns()
+func (_IStakingWalletRWalk *IStakingWalletRWalkTransactor) StakeMany(opts *bind.TransactOpts, ids []*big.Int) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.contract.Transact(opts, "stakeMany", ids)
+}
+
+// StakeMany is a paid mutator transaction binding the contract method 0xfe939afc.
+//
+// Solidity: function stakeMany(uint256[] ids) returns()
+func (_IStakingWalletRWalk *IStakingWalletRWalkSession) StakeMany(ids []*big.Int) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.Contract.StakeMany(&_IStakingWalletRWalk.TransactOpts, ids)
+}
+
+// StakeMany is a paid mutator transaction binding the contract method 0xfe939afc.
+//
+// Solidity: function stakeMany(uint256[] ids) returns()
+func (_IStakingWalletRWalk *IStakingWalletRWalkTransactorSession) StakeMany(ids []*big.Int) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.Contract.StakeMany(&_IStakingWalletRWalk.TransactOpts, ids)
+}
+
+// Unstake is a paid mutator transaction binding the contract method 0x2e17de78.
+//
+// Solidity: function unstake(uint256 stakeActionId) returns()
+func (_IStakingWalletRWalk *IStakingWalletRWalkTransactor) Unstake(opts *bind.TransactOpts, stakeActionId *big.Int) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.contract.Transact(opts, "unstake", stakeActionId)
+}
+
+// Unstake is a paid mutator transaction binding the contract method 0x2e17de78.
+//
+// Solidity: function unstake(uint256 stakeActionId) returns()
+func (_IStakingWalletRWalk *IStakingWalletRWalkSession) Unstake(stakeActionId *big.Int) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.Contract.Unstake(&_IStakingWalletRWalk.TransactOpts, stakeActionId)
+}
+
+// Unstake is a paid mutator transaction binding the contract method 0x2e17de78.
+//
+// Solidity: function unstake(uint256 stakeActionId) returns()
+func (_IStakingWalletRWalk *IStakingWalletRWalkTransactorSession) Unstake(stakeActionId *big.Int) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.Contract.Unstake(&_IStakingWalletRWalk.TransactOpts, stakeActionId)
+}
+
+// UnstakeMany is a paid mutator transaction binding the contract method 0x0d50c189.
+//
+// Solidity: function unstakeMany(uint256[] ids) returns()
+func (_IStakingWalletRWalk *IStakingWalletRWalkTransactor) UnstakeMany(opts *bind.TransactOpts, ids []*big.Int) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.contract.Transact(opts, "unstakeMany", ids)
+}
+
+// UnstakeMany is a paid mutator transaction binding the contract method 0x0d50c189.
+//
+// Solidity: function unstakeMany(uint256[] ids) returns()
+func (_IStakingWalletRWalk *IStakingWalletRWalkSession) UnstakeMany(ids []*big.Int) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.Contract.UnstakeMany(&_IStakingWalletRWalk.TransactOpts, ids)
+}
+
+// UnstakeMany is a paid mutator transaction binding the contract method 0x0d50c189.
+//
+// Solidity: function unstakeMany(uint256[] ids) returns()
+func (_IStakingWalletRWalk *IStakingWalletRWalkTransactorSession) UnstakeMany(ids []*big.Int) (*types.Transaction, error) {
+	return _IStakingWalletRWalk.Contract.UnstakeMany(&_IStakingWalletRWalk.TransactOpts, ids)
+}
+
+// IStakingWalletRWalkStakeActionEventIterator is returned from FilterStakeActionEvent and is used to iterate over the raw logs and unpacked data for StakeActionEvent events raised by the IStakingWalletRWalk contract.
+type IStakingWalletRWalkStakeActionEventIterator struct {
+	Event *IStakingWalletRWalkStakeActionEvent // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *IStakingWalletRWalkStakeActionEventIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(IStakingWalletRWalkStakeActionEvent)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(IStakingWalletRWalkStakeActionEvent)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *IStakingWalletRWalkStakeActionEventIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *IStakingWalletRWalkStakeActionEventIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// IStakingWalletRWalkStakeActionEvent represents a StakeActionEvent event raised by the IStakingWalletRWalk contract.
+type IStakingWalletRWalkStakeActionEvent struct {
+	ActionId  *big.Int
+	TokenId   *big.Int
+	TotalNFTs *big.Int
+	Staker    common.Address
+	Raw       types.Log // Blockchain specific contextual infos
+}
+
+// FilterStakeActionEvent is a free log retrieval operation binding the contract event 0xde0c27ec227b5d0c0a194ea6f25d7031639f9c10d8bf6e2f9414ff8088a6e20d.
+//
+// Solidity: event StakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
+func (_IStakingWalletRWalk *IStakingWalletRWalkFilterer) FilterStakeActionEvent(opts *bind.FilterOpts, actionId []*big.Int, tokenId []*big.Int, staker []common.Address) (*IStakingWalletRWalkStakeActionEventIterator, error) {
+
+	var actionIdRule []interface{}
+	for _, actionIdItem := range actionId {
+		actionIdRule = append(actionIdRule, actionIdItem)
+	}
+	var tokenIdRule []interface{}
+	for _, tokenIdItem := range tokenId {
+		tokenIdRule = append(tokenIdRule, tokenIdItem)
+	}
+
+	var stakerRule []interface{}
+	for _, stakerItem := range staker {
+		stakerRule = append(stakerRule, stakerItem)
+	}
+
+	logs, sub, err := _IStakingWalletRWalk.contract.FilterLogs(opts, "StakeActionEvent", actionIdRule, tokenIdRule, stakerRule)
+	if err != nil {
+		return nil, err
+	}
+	return &IStakingWalletRWalkStakeActionEventIterator{contract: _IStakingWalletRWalk.contract, event: "StakeActionEvent", logs: logs, sub: sub}, nil
+}
+
+// WatchStakeActionEvent is a free log subscription operation binding the contract event 0xde0c27ec227b5d0c0a194ea6f25d7031639f9c10d8bf6e2f9414ff8088a6e20d.
+//
+// Solidity: event StakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
+func (_IStakingWalletRWalk *IStakingWalletRWalkFilterer) WatchStakeActionEvent(opts *bind.WatchOpts, sink chan<- *IStakingWalletRWalkStakeActionEvent, actionId []*big.Int, tokenId []*big.Int, staker []common.Address) (event.Subscription, error) {
+
+	var actionIdRule []interface{}
+	for _, actionIdItem := range actionId {
+		actionIdRule = append(actionIdRule, actionIdItem)
+	}
+	var tokenIdRule []interface{}
+	for _, tokenIdItem := range tokenId {
+		tokenIdRule = append(tokenIdRule, tokenIdItem)
+	}
+
+	var stakerRule []interface{}
+	for _, stakerItem := range staker {
+		stakerRule = append(stakerRule, stakerItem)
+	}
+
+	logs, sub, err := _IStakingWalletRWalk.contract.WatchLogs(opts, "StakeActionEvent", actionIdRule, tokenIdRule, stakerRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(IStakingWalletRWalkStakeActionEvent)
+				if err := _IStakingWalletRWalk.contract.UnpackLog(event, "StakeActionEvent", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseStakeActionEvent is a log parse operation binding the contract event 0xde0c27ec227b5d0c0a194ea6f25d7031639f9c10d8bf6e2f9414ff8088a6e20d.
+//
+// Solidity: event StakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
+func (_IStakingWalletRWalk *IStakingWalletRWalkFilterer) ParseStakeActionEvent(log types.Log) (*IStakingWalletRWalkStakeActionEvent, error) {
+	event := new(IStakingWalletRWalkStakeActionEvent)
+	if err := _IStakingWalletRWalk.contract.UnpackLog(event, "StakeActionEvent", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// IStakingWalletRWalkUnstakeActionEventIterator is returned from FilterUnstakeActionEvent and is used to iterate over the raw logs and unpacked data for UnstakeActionEvent events raised by the IStakingWalletRWalk contract.
+type IStakingWalletRWalkUnstakeActionEventIterator struct {
+	Event *IStakingWalletRWalkUnstakeActionEvent // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *IStakingWalletRWalkUnstakeActionEventIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(IStakingWalletRWalkUnstakeActionEvent)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(IStakingWalletRWalkUnstakeActionEvent)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *IStakingWalletRWalkUnstakeActionEventIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *IStakingWalletRWalkUnstakeActionEventIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// IStakingWalletRWalkUnstakeActionEvent represents a UnstakeActionEvent event raised by the IStakingWalletRWalk contract.
+type IStakingWalletRWalkUnstakeActionEvent struct {
+	ActionId  *big.Int
+	TokenId   *big.Int
+	TotalNFTs *big.Int
+	Staker    common.Address
+	Raw       types.Log // Blockchain specific contextual infos
+}
+
+// FilterUnstakeActionEvent is a free log retrieval operation binding the contract event 0x33940a9fc3ee3c9150b29b34ef29ca397b5e1e340425a4f0da0346b5b90766c8.
+//
+// Solidity: event UnstakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
+func (_IStakingWalletRWalk *IStakingWalletRWalkFilterer) FilterUnstakeActionEvent(opts *bind.FilterOpts, actionId []*big.Int, tokenId []*big.Int, staker []common.Address) (*IStakingWalletRWalkUnstakeActionEventIterator, error) {
+
+	var actionIdRule []interface{}
+	for _, actionIdItem := range actionId {
+		actionIdRule = append(actionIdRule, actionIdItem)
+	}
+	var tokenIdRule []interface{}
+	for _, tokenIdItem := range tokenId {
+		tokenIdRule = append(tokenIdRule, tokenIdItem)
+	}
+
+	var stakerRule []interface{}
+	for _, stakerItem := range staker {
+		stakerRule = append(stakerRule, stakerItem)
+	}
+
+	logs, sub, err := _IStakingWalletRWalk.contract.FilterLogs(opts, "UnstakeActionEvent", actionIdRule, tokenIdRule, stakerRule)
+	if err != nil {
+		return nil, err
+	}
+	return &IStakingWalletRWalkUnstakeActionEventIterator{contract: _IStakingWalletRWalk.contract, event: "UnstakeActionEvent", logs: logs, sub: sub}, nil
+}
+
+// WatchUnstakeActionEvent is a free log subscription operation binding the contract event 0x33940a9fc3ee3c9150b29b34ef29ca397b5e1e340425a4f0da0346b5b90766c8.
+//
+// Solidity: event UnstakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
+func (_IStakingWalletRWalk *IStakingWalletRWalkFilterer) WatchUnstakeActionEvent(opts *bind.WatchOpts, sink chan<- *IStakingWalletRWalkUnstakeActionEvent, actionId []*big.Int, tokenId []*big.Int, staker []common.Address) (event.Subscription, error) {
+
+	var actionIdRule []interface{}
+	for _, actionIdItem := range actionId {
+		actionIdRule = append(actionIdRule, actionIdItem)
+	}
+	var tokenIdRule []interface{}
+	for _, tokenIdItem := range tokenId {
+		tokenIdRule = append(tokenIdRule, tokenIdItem)
+	}
+
+	var stakerRule []interface{}
+	for _, stakerItem := range staker {
+		stakerRule = append(stakerRule, stakerItem)
+	}
+
+	logs, sub, err := _IStakingWalletRWalk.contract.WatchLogs(opts, "UnstakeActionEvent", actionIdRule, tokenIdRule, stakerRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(IStakingWalletRWalkUnstakeActionEvent)
+				if err := _IStakingWalletRWalk.contract.UnpackLog(event, "UnstakeActionEvent", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseUnstakeActionEvent is a log parse operation binding the contract event 0x33940a9fc3ee3c9150b29b34ef29ca397b5e1e340425a4f0da0346b5b90766c8.
+//
+// Solidity: event UnstakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
+func (_IStakingWalletRWalk *IStakingWalletRWalkFilterer) ParseUnstakeActionEvent(log types.Log) (*IStakingWalletRWalkUnstakeActionEvent, error) {
+	event := new(IStakingWalletRWalkUnstakeActionEvent)
+	if err := _IStakingWalletRWalk.contract.UnpackLog(event, "UnstakeActionEvent", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // StakingWalletRWalkMetaData contains all meta data concerning the StakingWalletRWalk contract.
 var StakingWalletRWalkMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"contractRandomWalkNFT\",\"name\":\"rwalk_\",\"type\":\"address\"},{\"internalType\":\"contractCosmicGame\",\"name\":\"game_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"requester\",\"type\":\"address\"}],\"name\":\"AccessError\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"NoTokensStaked\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"OneTimeStaking\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyDeleted\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyInserted\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyUnstaked\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalNFTs\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"}],\"name\":\"StakeActionEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalNFTs\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"}],\"name\":\"UnstakeActionEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"ETHDeposits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"depositTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"numStaked\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"game\",\"outputs\":[{\"internalType\":\"contractCosmicGame\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"isTokenStaked\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"lastActionIdByTokenId\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"lastActionIds\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numETHDeposits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numStakeActions\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numStakedNFTs\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numTokensStaked\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"entropy\",\"type\":\"bytes32\"}],\"name\":\"pickRandomStaker\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"randomWalk\",\"outputs\":[{\"internalType\":\"contractRandomWalkNFT\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"}],\"name\":\"stake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"stakeActions\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"stakeTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"unstakeTime\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"ids\",\"type\":\"uint256[]\"}],\"name\":\"stakeMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"stakedTokens\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"stakerByTokenId\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenIndex\",\"type\":\"uint256\"}],\"name\":\"tokenByIndex\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"tokenIndices\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"stakeActionId\",\"type\":\"uint256\"}],\"name\":\"unstake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"ids\",\"type\":\"uint256[]\"}],\"name\":\"unstakeMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"usedTokens\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"}],\"name\":\"wasTokenUsed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
-	Bin: "0x6080604052346100305761001a61001461014b565b906103cc565b610022610035565b61211261052e823961211290f35b61003b565b60405190565b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906100679061003f565b810190811060018060401b0382111761007f57604052565b610049565b90610097610090610035565b928361005d565b565b5f80fd5b60018060a01b031690565b6100b19061009d565b90565b6100bd906100a8565b90565b6100c9816100b4565b036100d057565b5f80fd5b905051906100e1826100c0565b565b6100ec9061009d565b90565b6100f8906100e3565b90565b610104816100ef565b0361010b57565b5f80fd5b9050519061011c826100fb565b565b9190604083820312610146578061013a610143925f86016100d4565b9360200161010f565b90565b610099565b6101696126408038038061015e81610084565b92833981019061011e565b9091565b90565b61018461017f6101899261009d565b61016d565b61009d565b90565b61019590610170565b90565b6101a19061018c565b90565b90565b6101bb6101b66101c0926101a4565b61016d565b61009d565b90565b6101cc906101a7565b90565b60209181520190565b60207f616e646f6d57616c6b20746f6b656e2e00000000000000000000000000000000917f5a65726f2d616464726573732077617320676976656e20666f722074686520525f8201520152565b61023260306040926101cf565b61023b816101d8565b0190565b6102549060208101905f818303910152610225565b90565b1561025e57565b610266610035565b63eac0d38960e01b81528061027d6004820161023f565b0390fd5b61028a9061018c565b90565b60207f616d652e00000000000000000000000000000000000000000000000000000000917f5a65726f2d616464726573732077617320676976656e20666f722074686520675f8201520152565b6102e760246040926101cf565b6102f08161028d565b0190565b6103099060208101905f8183039101526102da565b90565b1561031357565b61031b610035565b63eac0d38960e01b815280610332600482016102f4565b0390fd5b5f1b90565b9061034c60018060a01b0391610336565b9181191691161790565b61035f90610170565b90565b61036b90610356565b90565b90565b9061038661038161038d92610362565b61036e565b825461033b565b9055565b61039a90610170565b90565b6103a690610391565b90565b90565b906103c16103bc6103c89261039d565b6103a9565b825461033b565b9055565b9061043d610444926103dc610446565b6104096103e882610198565b6104026103fc6103f75f6101c3565b6100a8565b916100a8565b1415610257565b61043661041584610281565b61042f6104296104245f6101c3565b6100a8565b916100a8565b141561030c565b600a610371565b600b6103ac565b565b61045661045161045c565b6104ce565b565b5f90565b610464610458565b503390565b5f1c90565b60018060a01b031690565b61048561048a91610469565b61046e565b90565b6104979054610479565b90565b6104a39061018c565b90565b90565b906104be6104b96104c59261049a565b6104a6565b825461033b565b9055565b5f0190565b6104d75f61048d565b6104e1825f6104a9565b9061051561050f7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09361049a565b9161049a565b9161051e610035565b80610528816104c9565b0390a356fe60806040526004361015610013575b610de0565b61001d5f356101ac565b80630d50c189146101a75780630f7ee879146101a257806317db62131461019d5780632a3247aa146101985780632e17de7814610193578063418104251461018e57806344d110b914610189578063451f1adf146101845780634f6ccce71461017f5780635111a2d61461017a57806355279fdb146101755780635fda0acc146101705780636427d9a91461016b578063715018a614610166578063889d1e1a146101615780638da5cb5b1461015c578063a2b136fb14610157578063a531aa8614610152578063a694fc3a1461014d578063c065894e14610148578063c078855514610143578063c3fe3e281461013e578063f0a5242414610139578063f2fde38b146101345763fe939afc0361000e57610dad565b610d7a565b610d04565b610ccf565b610c20565b610b76565b610b43565b610b0e565b610ac6565b6109d1565b61099c565b610969565b610934565b610882565b61084d565b610809565b61073e565b610706565b610631565b6105cd565b61051d565b6104e8565b6104b3565b610415565b61031f565b60e01c90565b60405190565b5f80fd5b5f80fd5b5f80fd5b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906101f0906101c8565b810190811067ffffffffffffffff82111761020a57604052565b6101d2565b9061022261021b6101b2565b92836101e6565b565b67ffffffffffffffff811161023c5760208091020190565b6101d2565b5f80fd5b90565b61025181610245565b0361025857565b5f80fd5b9050359061026982610248565b565b9092919261028061027b82610224565b61020f565b93818552602080860192028301928184116102bd57915b8383106102a45750505050565b602080916102b2848661025c565b815201920191610297565b610241565b9080601f830112156102e0578160206102dd9335910161026b565b90565b6101c4565b90602082820312610315575f82013567ffffffffffffffff81116103105761030d92016102c2565b90565b6101c0565b6101bc565b5f0190565b3461034d576103376103323660046102e5565b610e43565b61033f6101b2565b806103498161031a565b0390f35b6101b8565b9060208282031261036b57610368915f0161025c565b90565b6101bc565b90565b61038761038261038c92610245565b610370565b610245565b90565b9061039990610373565b5f5260205260405f2090565b1c90565b60ff1690565b6103bf9060086103c493026103a5565b6103a9565b90565b906103d291546103af565b90565b6103eb906103e66003915f9261038f565b6103c7565b90565b151590565b6103fc906103ee565b9052565b9190610413905f602085019401906103f3565b565b346104455761044161043061042b366004610352565b6103d5565b6104386101b2565b91829182610400565b0390f35b6101b8565b5f91031261045457565b6101bc565b90565b61046c90600861047193026103a5565b610459565b90565b9061047f915461045c565b90565b61048e60095f90610474565b90565b61049a90610245565b9052565b91906104b1905f60208501940190610491565b565b346104e3576104c336600461044a565b6104df6104ce610482565b6104d66101b2565b9182918261049e565b0390f35b6101b8565b34610518576105146105036104fe366004610352565b610ec2565b61050b6101b2565b91829182610400565b0390f35b6101b8565b3461054b57610535610530366004610352565b61115d565b61053d6101b2565b806105478161031a565b0390f35b6101b8565b90565b61055c81610550565b0361056357565b5f80fd5b9050359061057482610553565b565b9060208282031261058f5761058c915f01610567565b90565b6101bc565b60018060a01b031690565b6105a890610594565b90565b6105b49061059f565b9052565b91906105cb905f602085019401906105ab565b565b346105fd576105f96105e86105e3366004610576565b611469565b6105f06101b2565b918291826105b8565b0390f35b6101b8565b9061060c90610373565b5f5260205260405f2090565b61062e906106296005915f92610602565b610474565b90565b346106615761065d61064c610647366004610352565b610618565b6106546101b2565b9182918261049e565b0390f35b6101b8565b9061067090610373565b5f5260205260405f2090565b5f1c90565b61068d6106929161067c565b610459565b90565b61069f9054610681565b90565b6106ad906007610666565b6106b85f8201610695565b916106d160026106ca60018501610695565b9301610695565b90565b6040906106fd61070494969593966106f360608401985f850190610491565b6020830190610491565b0190610491565b565b346107395761073561072161071c366004610352565b6106a2565b61072c9391936101b2565b938493846106d4565b0390f35b6101b8565b3461076e5761076a610759610754366004610352565b6114ff565b6107616101b2565b9182918261049e565b0390f35b6101b8565b60018060a01b031690565b61078e90600861079393026103a5565b610773565b90565b906107a1915461077e565b90565b6107b0600a5f90610796565b90565b6107c76107c26107cc92610594565b610370565b610594565b90565b6107d8906107b3565b90565b6107e4906107cf565b90565b6107f0906107db565b9052565b9190610807905f602085019401906107e7565b565b346108395761081936600461044a565b6108356108246107a4565b61082c6101b2565b918291826107f4565b0390f35b6101b8565b61084a60085f90610474565b90565b3461087d5761085d36600461044a565b61087961086861083e565b6108706101b2565b9182918261049e565b0390f35b6101b8565b346108b25761089236600461044a565b6108ae61089d61151f565b6108a56101b2565b9182918261049e565b0390f35b6101b8565b906108c190610373565b5f5260205260405f2090565b90565b6108e09060086108e593026103a5565b6108cd565b90565b906108f391546108d0565b90565b61090c906109076006915f926108b7565b6108e8565b90565b90565b61091b9061090f565b9052565b9190610932905f60208501940190610912565b565b346109645761096061094f61094a366004610352565b6108f6565b6109576101b2565b9182918261091f565b0390f35b6101b8565b346109975761097936600461044a565b610981611625565b6109896101b2565b806109938161031a565b0390f35b6101b8565b346109cc576109c86109b76109b2366004610352565b611652565b6109bf6101b2565b9182918261091f565b0390f35b6101b8565b34610a01576109e136600461044a565b6109fd6109ec6116ab565b6109f46101b2565b918291826105b8565b0390f35b6101b8565b90610a1090610373565b5f5260205260405f2090565b60018060a01b031690565b610a33610a389161067c565b610a1c565b90565b610a459054610a27565b90565b610a53906001610a06565b90610a5f5f8301610695565b91610a6c60018201610a3b565b91610a856003610a7e60028501610695565b9301610695565b90565b610abd610ac494610ab3606094989795610aa9608086019a5f870190610491565b60208501906105ab565b6040830190610491565b0190610491565b565b34610afa57610af6610ae1610adc366004610352565b610a48565b90610aed9492946101b2565b94859485610a88565b0390f35b6101b8565b610b0b60025f90610474565b90565b34610b3e57610b1e36600461044a565b610b3a610b29610aff565b610b316101b2565b9182918261049e565b0390f35b6101b8565b34610b7157610b5b610b56366004610352565b611822565b610b636101b2565b80610b6d8161031a565b0390f35b6101b8565b34610ba657610ba2610b91610b8c366004610352565b611a61565b610b996101b2565b918291826105b8565b0390f35b6101b8565b634e487b7160e01b5f52603260045260245ffd5b5490565b5f5260205f2090565b610bd581610bbf565b821015610bef57610be7600191610bc3565b910201905f90565b610bab565b6004610bff81610bbf565b821015610c1c57610c1991610c1391610bcc565b90610474565b90565b5f80fd5b34610c5057610c4c610c3b610c36366004610352565b610bf4565b610c436101b2565b9182918261049e565b0390f35b6101b8565b60018060a01b031690565b610c70906008610c7593026103a5565b610c55565b90565b90610c839154610c60565b90565b610c92600b5f90610c78565b90565b610c9e906107b3565b90565b610caa90610c95565b90565b610cb690610ca1565b9052565b9190610ccd905f60208501940190610cad565b565b34610cff57610cdf36600461044a565b610cfb610cea610c86565b610cf26101b2565b91829182610cba565b0390f35b6101b8565b34610d3457610d30610d1f610d1a366004610352565b611ac3565b610d276101b2565b91829182610400565b0390f35b6101b8565b610d428161059f565b03610d4957565b5f80fd5b90503590610d5a82610d39565b565b90602082820312610d7557610d72915f01610d4d565b90565b6101bc565b34610da857610d92610d8d366004610d5c565b611c03565b610d9a6101b2565b80610da48161031a565b0390f35b6101b8565b34610ddb57610dc5610dc03660046102e5565b611c0e565b610dcd6101b2565b80610dd78161031a565b0390f35b6101b8565b5f80fd5b90565b610dfb610df6610e0092610de4565b610370565b610245565b90565b6001610e0f9101610245565b90565b5190565b90610e2082610e12565b811015610e31576020809102010190565b610bab565b610e409051610245565b90565b90610e4d5f610de7565b5b80610e69610e63610e5e86610e12565b610245565b91610245565b1015610e9857610e9390610e8e610e89610e84868490610e16565b610e36565b61115d565b610e03565b610e4e565b509050565b5f90565b610ead610eb29161067c565b6103a9565b90565b610ebf9054610ea1565b90565b610ed9610ede91610ed1610e9d565b50600361038f565b610eb5565b610ef1610eeb60016103ee565b916103ee565b1490565b60209181520190565b5f7f546f6b656e2068617320616c7265616479206265656e20756e7374616b65642e910152565b610f3160208092610ef5565b610f3a81610efe565b0190565b9190610f61906020610f59604086018681035f880152610f25565b940190610491565b565b15610f6b5750565b610f8d90610f776101b2565b91829163aed59e4f60e01b835260048301610f3e565b0390fd5b5f7f4f6e6c7920746865206f776e65722063616e20756e7374616b652e0000000000910152565b610fc5601b602092610ef5565b610fce81610f91565b0190565b916040611003929493610ffc610ff1606083018381035f850152610fb8565b966020830190610491565b01906105ab565b565b1561100e575050565b61102f6110196101b2565b9283926345c2e43b60e01b845260048401610fd2565b0390fd5b61103f6110449161067c565b610773565b90565b6110519054611033565b90565b61105d906107cf565b90565b5f80fd5b60e01b90565b5f91031261107457565b6101bc565b6040906110a26110a9949695939661109860608401985f8501906105ab565b60208301906105ab565b0190610491565b565b6110b36101b2565b3d5f823e3d90fd5b5f1b90565b906110cc5f19916110bb565b9181191691161790565b90565b906110ee6110e96110f592610373565b6110d6565b82546110c0565b9055565b90565b61111061110b611115926110f9565b610370565b610245565b90565b634e487b7160e01b5f52601160045260245ffd5b61113b61114191939293610245565b92610245565b820391821161114c57565b611118565b61115a906107cf565b90565b611191611177600361117160018590610a06565b01610695565b6111896111835f610de7565b91610245565b148290610f63565b6111c56111aa60016111a4818590610a06565b01610a3b565b6111bc6111b63361059f565b9161059f565b14823391611005565b6111db5f6111d560018490610a06565b01610695565b906111e582611e34565b6111f76111f2600a611047565b6107db565b6323b872dd61120530611054565b339261121d5f61121760018890610a06565b01610695565b92813b15611330575f6112439161124e82966112376101b2565b98899788968795611064565b855260048501611079565b03925af1801561132b576112ff575b5061127642600361127060018590610a06565b016110d9565b61129c61129561128660016110fc565b6112906009610695565b61112c565b60096110d9565b6112a66009610695565b9133916112fa6112e86112e26112dc7f33940a9fc3ee3c9150b29b34ef29ca397b5e1e340425a4f0da0346b5b90766c894610373565b94610373565b94611151565b946112f16101b2565b9182918261049e565b0390a4565b61131e905f3d8111611324575b61131681836101e6565b81019061106a565b5f61125d565b503d61130c565b6110ab565b611060565b5f90565b60207f74616b65642e0000000000000000000000000000000000000000000000000000917f546865726520617265206e6f2052616e646f6d57616c6b20746f6b656e7320735f8201520152565b6113936026604092610ef5565b61139c81611339565b0190565b6113b59060208101905f818303910152611386565b90565b156113bf57565b6113c76101b2565b63bc8b155960e01b8152806113de600482016113a0565b0390fd5b6113ee6113f39161067c565b610373565b90565b634e487b7160e01b5f52601260045260245ffd5b61141661141c91610245565b91610245565b908115611427570690565b6113f6565b61143861143d9161067c565b6108cd565b90565b61144a905461142c565b90565b61146161145c6114669261090f565b610370565b610245565b90565b60016114f26114e26114dd6114d66114d06114f896611486611335565b506114ac6114946004610bbf565b6114a66114a05f610de7565b91610245565b116113b8565b6114ca6114ba6004926113e2565b6114c46004610bbf565b9061140a565b90610bcc565b90610474565b60066108b7565b611440565b6114ec839161144d565b90610a06565b01610a3b565b90565b5f90565b61151661151c9161150e6114fb565b506004610bcc565b90610474565b90565b6115276114fb565b506115326004610bbf565b90565b5f7f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572910152565b61156860208092610ef5565b61157181611535565b0190565b61158a9060208101905f81830391015261155c565b90565b1561159457565b61159c6101b2565b62461bcd60e51b8152806115b260048201611575565b0390fd5b6115e06115c16116ab565b6115da6115d46115cf611f10565b61059f565b9161059f565b1461158d565b6115e8611612565b565b6115fe6115f961160392610de4565b610370565b610594565b90565b61160f906115ea565b90565b61162361161e5f611606565b611f1d565b565b61162d6115b6565b565b5f90565b90565b61164a61164561164f92611633565b610370565b61090f565b90565b61165a61162f565b5061166f61166a60058390610602565b610695565b61168161167b5f610de7565b91610245565b1461169c576116946116999160066108b7565b611440565b90565b506116a8600119611636565b90565b6116b3611335565b506116bd5f610a3b565b90565b60207f6564206f6e6c79206f6e63650000000000000000000000000000000000000000917f5374616b696e672f756e7374616b696e6720746f6b656e20697320616c6c6f775f8201520152565b61171a602c604092610ef5565b611723816116c0565b0190565b919061174a906020611742604086018681035f88015261170d565b940190610491565b565b156117545750565b611776906117606101b2565b918291632290948760e21b835260048301611727565b0390fd5b9061178660ff916110bb565b9181191691161790565b611799906103ee565b90565b90565b906117b46117af6117bb92611790565b61179c565b825461177a565b9055565b906117d060018060a01b03916110bb565b9181191691161790565b90565b906117f26117ed6117f992611151565b6117da565b82546117bf565b9055565b61180c61181291939293610245565b92610245565b820180921161181d57565b611118565b6118556118396118346003849061038f565b610eb5565b61184c61184660016103ee565b916103ee565b1415829061174c565b61186b60016118666003849061038f565b61179f565b61187d611878600a611047565b6107db565b6323b872dd3361188c30611054565b928492813b15611a40575f6118b4916118bf82966118a86101b2565b98899788968795611064565b855260048501611079565b03925af18015611a3b57611a0f575b506118e3816118dd6002610695565b9061206f565b611903815f6118fd60016118f76002610695565b90610a06565b016110d9565b61192333600161191d816119176002610695565b90610a06565b016117dd565b61194342600261193d600161193783610695565b90610a06565b016110d9565b61196961196261195360016110fc565b61195d6002610695565b6117fd565b60026110d9565b61198f61198861197960016110fc565b6119836009610695565b6117fd565b60096110d9565b6119ac61199c6002610695565b6119a660016110fc565b9061112c565b6119b66009610695565b913391611a0a6119f86119f26119ec7fde0c27ec227b5d0c0a194ea6f25d7031639f9c10d8bf6e2f9414ff8088a6e20d94610373565b94610373565b94611151565b94611a016101b2565b9182918261049e565b0390a4565b611a2e905f3d8111611a34575b611a2681836101e6565b81019061106a565b5f6118ce565b503d611a1c565b6110ab565b611060565b611a59611a54611a5e92610de4565b610370565b61090f565b90565b611a7c90611a6d611335565b50611a7661162f565b50611652565b80611a8f611a895f611a45565b9161090f565b12611ab6576001611aad611ab392611aa7839161144d565b90610a06565b01610a3b565b90565b50611ac05f611606565b90565b611ada611adf91611ad2610e9d565b506005610602565b610695565b611af1611aeb5f610de7565b91610245565b141590565b611b2990611b24611b056116ab565b611b1e611b18611b13611f10565b61059f565b9161059f565b1461158d565b611bd3565b565b60207f6464726573730000000000000000000000000000000000000000000000000000917f4f776e61626c653a206e6577206f776e657220697320746865207a65726f20615f8201520152565b611b856026604092610ef5565b611b8e81611b2b565b0190565b611ba79060208101905f818303910152611b78565b90565b15611bb157565b611bb96101b2565b62461bcd60e51b815280611bcf60048201611b92565b0390fd5b611c0190611bfc81611bf5611bef611bea5f611606565b61059f565b9161059f565b1415611baa565b611f1d565b565b611c0c90611af6565b565b90611c185f610de7565b5b80611c34611c2e611c2986610e12565b610245565b91610245565b1015611c6357611c5e90611c59611c54611c4f868490610e16565b610e36565b611822565b610e03565b611c19565b509050565b5f7f546f6b656e206973206e6f7420696e20746865206c6973742e00000000000000910152565b611c9c6019602092610ef5565b611ca581611c68565b0190565b9190611ccc906020611cc4604086018681035f880152611c8f565b940190610491565b565b15611cd65750565b611cf890611ce26101b2565b918291639aa6fa6560e01b835260048301611ca9565b0390fd5b1b90565b91906008611d1b910291611d155f1984611cfc565b92611cfc565b9181191691161790565b9190611d3b611d36611d4393610373565b6110d6565b908354611d00565b9055565b611d5991611d536114fb565b91611d25565b565b90565b634e487b7160e01b5f52603160045260245ffd5b5490565b5f5260205f2090565b611d8881611d72565b821015611da257611d9a600191611d76565b910201905f90565b610bab565b611db081611d72565b8015611dd1576001900390611dce611dc88383611d7f565b90611d47565b55565b611d5e565b90565b611ded611de8611df292611dd6565b610370565b61090f565b90565b611e09611e04611e0e9261090f565b610370565b61090f565b90565b90565b90611e29611e24611e3092611df5565b611e11565b82546110c0565b9055565b611f0e90611e4b611e4482611ac3565b8290611cce565b611ecd611e62611e5d60058490610602565b610695565b611ec8611e96611e906004611e8a611e7a6004610bbf565b611e8460016110fc565b9061112c565b90610bcc565b90610474565b91611ec083611eba6004611eb485611eae60016110fc565b9061112c565b90610bcc565b90611d25565b916005610602565b6110d9565b611ee25f611edd60058490610602565b611d47565b611ef4611eef6004611d5b565b611da7565b611f09611f015f19611dd9565b9160066108b7565b611e14565b565b611f18611335565b503390565b611f265f610a3b565b611f30825f6117dd565b90611f64611f5e7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093611151565b91611151565b91611f6d6101b2565b80611f778161031a565b0390a3565b5f7f546f6b656e20616c726561647920696e20746865206c6973742e000000000000910152565b611fb0601a602092610ef5565b611fb981611f7c565b0190565b916040611fee929493611fe7611fdc606083018381035f850152611fa3565b966020830190610491565b0190610491565b565b15611ff9575050565b61201a6120046101b2565b92839263597558c560e11b845260048401611fbd565b0390fd5b908154916801000000000000000083101561204e578261204691600161204c95018155611d7f565b90611d25565b565b6101d2565b61206761206261206c92610245565b610370565b61090f565b90565b6120d56120cd6120da9361209661208e61208886611ac3565b156103ee565b858391611ff0565b6120aa6120a36004611d5b565b859061201e565b6120c86120b76004610bbf565b6120c360058790610602565b6110d9565b612053565b9160066108b7565b611e14565b56fea26469706673582212206129591c942d32791ad2131786c06ad37792f42eb1f769fec3f4ae08d02b1d0364736f6c634300081a0033",
+	ABI: "[{\"inputs\":[{\"internalType\":\"contractRandomWalkNFT\",\"name\":\"rwalk_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"requester\",\"type\":\"address\"}],\"name\":\"AccessError\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"NoTokensStaked\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"OneTimeStaking\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyDeleted\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyInserted\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyUnstaked\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalNFTs\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"}],\"name\":\"StakeActionEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalNFTs\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"}],\"name\":\"UnstakeActionEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"ETHDeposits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"depositTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"numStaked\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"isTokenStaked\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"lastActionIdByTokenId\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"lastActionIds\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numETHDeposits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numStakeActions\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numStakedNFTs\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numTokensStaked\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"entropy\",\"type\":\"bytes32\"}],\"name\":\"pickRandomStaker\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"randomWalk\",\"outputs\":[{\"internalType\":\"contractRandomWalkNFT\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"}],\"name\":\"stake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"stakeActions\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"stakeTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"unstakeTime\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"ids\",\"type\":\"uint256[]\"}],\"name\":\"stakeMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"stakedTokens\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"stakerByTokenId\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"tokenIndices\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"stakeActionId\",\"type\":\"uint256\"}],\"name\":\"unstake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"ids\",\"type\":\"uint256[]\"}],\"name\":\"unstakeMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"usedTokens\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"}],\"name\":\"wasTokenUsed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	Bin: "0x60806040523461002f57610019610014610100565b610290565b610021610034565b611eb36104178239611eb390f35b61003a565b60405190565b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906100669061003e565b810190811060018060401b0382111761007e57604052565b610048565b9061009661008f610034565b928361005c565b565b5f80fd5b60018060a01b031690565b6100b09061009c565b90565b6100bc906100a7565b90565b6100c8816100b3565b036100cf57565b5f80fd5b905051906100e0826100bf565b565b906020828203126100fb576100f8915f016100d3565b90565b610098565b61011e6122ca8038038061011381610083565b9283398101906100e2565b90565b90565b61013861013361013d9261009c565b610121565b61009c565b90565b61014990610124565b90565b61015590610140565b90565b90565b61016f61016a61017492610158565b610121565b61009c565b90565b6101809061015b565b90565b60209181520190565b60207f616e646f6d57616c6b20746f6b656e2e00000000000000000000000000000000917f5a65726f2d616464726573732077617320676976656e20666f722074686520525f8201520152565b6101e66030604092610183565b6101ef8161018c565b0190565b6102089060208101905f8183039101526101d9565b90565b1561021257565b61021a610034565b63eac0d38960e01b815280610231600482016101f3565b0390fd5b5f1b90565b9061024b60018060a01b0391610235565b9181191691161790565b61025e90610124565b90565b61026a90610255565b90565b90565b9061028561028061028c92610261565b61026d565b825461023a565b9055565b6102d19061029d336102d3565b6102ca6102a98261014c565b6102c36102bd6102b85f610177565b6100a7565b916100a7565b141561020b565b600a610270565b565b6102dc90610300565b565b6102e7906100a7565b9052565b91906102fe905f602085019401906102de565b565b8061031b6103156103105f610177565b6100a7565b916100a7565b1461032b57610329906103b7565b565b61034e6103375f610177565b5f918291631e4fbdf760e01b8352600483016102eb565b0390fd5b5f1c90565b60018060a01b031690565b61036e61037391610352565b610357565b90565b6103809054610362565b90565b61038c90610140565b90565b90565b906103a76103a26103ae92610383565b61038f565b825461023a565b9055565b5f0190565b6103c05f610376565b6103ca825f610392565b906103fe6103f87f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093610383565b91610383565b91610407610034565b80610411816103b2565b0390a356fe60806040526004361015610013575b610cdc565b61001d5f3561018c565b80630d50c189146101875780630f7ee8791461018257806317db62131461017d5780632a3247aa146101785780632e17de7814610173578063418104251461016e57806344d110b914610169578063451f1adf146101645780635111a2d61461015f57806355279fdb1461015a5780635fda0acc146101555780636427d9a914610150578063715018a61461014b578063889d1e1a146101465780638da5cb5b14610141578063a2b136fb1461013c578063a531aa8614610137578063a694fc3a14610132578063c065894e1461012d578063c078855514610128578063f0a5242414610123578063f2fde38b1461011e5763fe939afc0361000e57610ca9565b610c76565b610c00565b610bcb565b610b21565b610aee565b610ab9565b610a71565b61097c565b610947565b610914565b6108df565b61082d565b6107f8565b6107b4565b6106e6565b610611565b6105ad565b6104fd565b6104c8565b610493565b6103f5565b6102ff565b60e01c90565b60405190565b5f80fd5b5f80fd5b5f80fd5b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906101d0906101a8565b810190811067ffffffffffffffff8211176101ea57604052565b6101b2565b906102026101fb610192565b92836101c6565b565b67ffffffffffffffff811161021c5760208091020190565b6101b2565b5f80fd5b90565b61023181610225565b0361023857565b5f80fd5b9050359061024982610228565b565b9092919261026061025b82610204565b6101ef565b938185526020808601920283019281841161029d57915b8383106102845750505050565b60208091610292848661023c565b815201920191610277565b610221565b9080601f830112156102c0578160206102bd9335910161024b565b90565b6101a4565b906020828203126102f5575f82013567ffffffffffffffff81116102f0576102ed92016102a2565b90565b6101a0565b61019c565b5f0190565b3461032d576103176103123660046102c5565b610d3f565b61031f610192565b80610329816102fa565b0390f35b610198565b9060208282031261034b57610348915f0161023c565b90565b61019c565b90565b61036761036261036c92610225565b610350565b610225565b90565b9061037990610353565b5f5260205260405f2090565b1c90565b60ff1690565b61039f9060086103a49302610385565b610389565b90565b906103b2915461038f565b90565b6103cb906103c66003915f9261036f565b6103a7565b90565b151590565b6103dc906103ce565b9052565b91906103f3905f602085019401906103d3565b565b346104255761042161041061040b366004610332565b6103b5565b610418610192565b918291826103e0565b0390f35b610198565b5f91031261043457565b61019c565b90565b61044c9060086104519302610385565b610439565b90565b9061045f915461043c565b90565b61046e60095f90610454565b90565b61047a90610225565b9052565b9190610491905f60208501940190610471565b565b346104c3576104a336600461042a565b6104bf6104ae610462565b6104b6610192565b9182918261047e565b0390f35b610198565b346104f8576104f46104e36104de366004610332565b610dbe565b6104eb610192565b918291826103e0565b0390f35b610198565b3461052b57610515610510366004610332565b611045565b61051d610192565b80610527816102fa565b0390f35b610198565b90565b61053c81610530565b0361054357565b5f80fd5b9050359061055482610533565b565b9060208282031261056f5761056c915f01610547565b90565b61019c565b60018060a01b031690565b61058890610574565b90565b6105949061057f565b9052565b91906105ab905f6020850194019061058b565b565b346105dd576105d96105c86105c3366004610556565b61133c565b6105d0610192565b91829182610598565b0390f35b610198565b906105ec90610353565b5f5260205260405f2090565b61060e906106096005915f926105e2565b610454565b90565b346106415761063d61062c610627366004610332565b6105f8565b610634610192565b9182918261047e565b0390f35b610198565b9061065090610353565b5f5260205260405f2090565b5f1c90565b61066d6106729161065c565b610439565b90565b61067f9054610661565b90565b61068d906007610646565b6106985f8201610675565b916106b160026106aa60018501610675565b9301610675565b90565b6040906106dd6106e494969593966106d360608401985f850190610471565b6020830190610471565b0190610471565b565b34610719576107156107016106fc366004610332565b610682565b61070c939193610192565b938493846106b4565b0390f35b610198565b60018060a01b031690565b61073990600861073e9302610385565b61071e565b90565b9061074c9154610729565b90565b61075b600a5f90610741565b90565b61077261076d61077792610574565b610350565b610574565b90565b6107839061075e565b90565b61078f9061077a565b90565b61079b90610786565b9052565b91906107b2905f60208501940190610792565b565b346107e4576107c436600461042a565b6107e06107cf61074f565b6107d7610192565b9182918261079f565b0390f35b610198565b6107f560085f90610454565b90565b346108285761080836600461042a565b6108246108136107e9565b61081b610192565b9182918261047e565b0390f35b610198565b3461085d5761083d36600461042a565b6108596108486113d2565b610850610192565b9182918261047e565b0390f35b610198565b9061086c90610353565b5f5260205260405f2090565b90565b61088b9060086108909302610385565b610878565b90565b9061089e915461087b565b90565b6108b7906108b26006915f92610862565b610893565b90565b90565b6108c6906108ba565b9052565b91906108dd905f602085019401906108bd565b565b3461090f5761090b6108fa6108f5366004610332565b6108a1565b610902610192565b918291826108ca565b0390f35b610198565b346109425761092436600461042a565b61092c611435565b610934610192565b8061093e816102fa565b0390f35b610198565b346109775761097361096261095d366004610332565b611462565b61096a610192565b918291826108ca565b0390f35b610198565b346109ac5761098c36600461042a565b6109a86109976114bb565b61099f610192565b91829182610598565b0390f35b610198565b906109bb90610353565b5f5260205260405f2090565b60018060a01b031690565b6109de6109e39161065c565b6109c7565b90565b6109f090546109d2565b90565b6109fe9060016109b1565b90610a0a5f8301610675565b91610a17600182016109e6565b91610a306003610a2960028501610675565b9301610675565b90565b610a68610a6f94610a5e606094989795610a54608086019a5f870190610471565b602085019061058b565b6040830190610471565b0190610471565b565b34610aa557610aa1610a8c610a87366004610332565b6109f3565b90610a98949294610192565b94859485610a33565b0390f35b610198565b610ab660025f90610454565b90565b34610ae957610ac936600461042a565b610ae5610ad4610aaa565b610adc610192565b9182918261047e565b0390f35b610198565b34610b1c57610b06610b01366004610332565b611632565b610b0e610192565b80610b18816102fa565b0390f35b610198565b34610b5157610b4d610b3c610b37366004610332565b611865565b610b44610192565b91829182610598565b0390f35b610198565b634e487b7160e01b5f52603260045260245ffd5b5490565b5f5260205f2090565b610b8081610b6a565b821015610b9a57610b92600191610b6e565b910201905f90565b610b56565b6004610baa81610b6a565b821015610bc757610bc491610bbe91610b77565b90610454565b90565b5f80fd5b34610bfb57610bf7610be6610be1366004610332565b610b9f565b610bee610192565b9182918261047e565b0390f35b610198565b34610c3057610c2c610c1b610c16366004610332565b6118be565b610c23610192565b918291826103e0565b0390f35b610198565b610c3e8161057f565b03610c4557565b5f80fd5b90503590610c5682610c35565b565b90602082820312610c7157610c6e915f01610c49565b90565b61019c565b34610ca457610c8e610c89366004610c58565b611956565b610c96610192565b80610ca0816102fa565b0390f35b610198565b34610cd757610cc1610cbc3660046102c5565b611961565b610cc9610192565b80610cd3816102fa565b0390f35b610198565b5f80fd5b90565b610cf7610cf2610cfc92610ce0565b610350565b610225565b90565b6001610d0b9101610225565b90565b5190565b90610d1c82610d0e565b811015610d2d576020809102010190565b610b56565b610d3c9051610225565b90565b90610d495f610ce3565b5b80610d65610d5f610d5a86610d0e565b610225565b91610225565b1015610d9457610d8f90610d8a610d85610d80868490610d12565b610d32565b611045565b610cff565b610d4a565b509050565b5f90565b610da9610dae9161065c565b610389565b90565b610dbb9054610d9d565b90565b610dd5610dda91610dcd610d99565b50600361036f565b610db1565b90565b60209181520190565b5f7f546f6b656e2068617320616c7265616479206265656e20756e7374616b65642e910152565b610e1960208092610ddd565b610e2281610de6565b0190565b9190610e49906020610e41604086018681035f880152610e0d565b940190610471565b565b15610e535750565b610e7590610e5f610192565b91829163aed59e4f60e01b835260048301610e26565b0390fd5b5f7f4f6e6c7920746865206f776e65722063616e20756e7374616b652e0000000000910152565b610ead601b602092610ddd565b610eb681610e79565b0190565b916040610eeb929493610ee4610ed9606083018381035f850152610ea0565b966020830190610471565b019061058b565b565b15610ef6575050565b610f17610f01610192565b9283926345c2e43b60e01b845260048401610eba565b0390fd5b610f27610f2c9161065c565b61071e565b90565b610f399054610f1b565b90565b610f459061077a565b90565b5f80fd5b60e01b90565b5f910312610f5c57565b61019c565b604090610f8a610f919496959396610f8060608401985f85019061058b565b602083019061058b565b0190610471565b565b610f9b610192565b3d5f823e3d90fd5b5f1b90565b90610fb45f1991610fa3565b9181191691161790565b90565b90610fd6610fd1610fdd92610353565b610fbe565b8254610fa8565b9055565b90565b610ff8610ff3610ffd92610fe1565b610350565b610225565b90565b634e487b7160e01b5f52601160045260245ffd5b61102361102991939293610225565b92610225565b820391821161103457565b611000565b6110429061077a565b90565b61107961105f6003611059600185906109b1565b01610675565b61107161106b5f610ce3565b91610225565b148290610e4b565b6110ad611092600161108c8185906109b1565b016109e6565b6110a461109e3361057f565b9161057f565b14823391610eed565b6110c35f6110bd600184906109b1565b01610675565b906110cd82611b87565b6110df6110da600a610f2f565b610786565b6323b872dd6110ed30610f3c565b33928592813b15611203575f61111691611121829661110a610192565b98899788968795610f4c565b855260048501610f61565b03925af180156111fe576111d2575b50611149426003611143600185906109b1565b01610fc1565b61116f6111686111596001610fe4565b6111636009610675565b611014565b6009610fc1565b6111796009610675565b9133916111cd6111bb6111b56111af7f33940a9fc3ee3c9150b29b34ef29ca397b5e1e340425a4f0da0346b5b90766c894610353565b94610353565b94611039565b946111c4610192565b9182918261047e565b0390a4565b6111f1905f3d81116111f7575b6111e981836101c6565b810190610f52565b5f611130565b503d6111df565b610f93565b610f48565b5f90565b60207f74616b65642e0000000000000000000000000000000000000000000000000000917f546865726520617265206e6f2052616e646f6d57616c6b20746f6b656e7320735f8201520152565b6112666026604092610ddd565b61126f8161120c565b0190565b6112889060208101905f818303910152611259565b90565b1561129257565b61129a610192565b63bc8b155960e01b8152806112b160048201611273565b0390fd5b6112c16112c69161065c565b610353565b90565b634e487b7160e01b5f52601260045260245ffd5b6112e96112ef91610225565b91610225565b9081156112fa570690565b6112c9565b61130b6113109161065c565b610878565b90565b61131d90546112ff565b90565b61133461132f611339926108ba565b610350565b610225565b90565b60016113c56113b56113b06113a96113a36113cb96611359611208565b5061137f6113676004610b6a565b6113796113735f610ce3565b91610225565b1161128b565b61139d61138d6004926112b5565b6113976004610b6a565b906112dd565b90610b77565b90610454565b6006610862565b611313565b6113bf8391611320565b906109b1565b016109e6565b90565b5f90565b6113da6113ce565b506113e56004610b6a565b90565b6113f0611c63565b6113f8611422565b565b61140e61140961141392610ce0565b610350565b610574565b90565b61141f906113fa565b90565b61143361142e5f611416565b611cb1565b565b61143d6113e8565b565b5f90565b90565b61145a61145561145f92611443565b610350565b6108ba565b90565b61146a61143f565b5061147f61147a600583906105e2565b610675565b61149161148b5f610ce3565b91610225565b146114ac576114a46114a9916006610862565b611313565b90565b506114b8600119611446565b90565b6114c3611208565b506114cd5f6109e6565b90565b60207f6564206f6e6c79206f6e63650000000000000000000000000000000000000000917f5374616b696e672f756e7374616b696e6720746f6b656e20697320616c6c6f775f8201520152565b61152a602c604092610ddd565b611533816114d0565b0190565b919061155a906020611552604086018681035f88015261151d565b940190610471565b565b156115645750565b61158690611570610192565b918291632290948760e21b835260048301611537565b0390fd5b9061159660ff91610fa3565b9181191691161790565b6115a9906103ce565b90565b90565b906115c46115bf6115cb926115a0565b6115ac565b825461158a565b9055565b906115e060018060a01b0391610fa3565b9181191691161790565b90565b906116026115fd61160992611039565b6115ea565b82546115cf565b9055565b61161c61162291939293610225565b92610225565b820180921161162d57565b611000565b61165961165261164c6116476003859061036f565b610db1565b156103ce565b829061155c565b61166f600161166a6003849061036f565b6115af565b61168161167c600a610f2f565b610786565b6323b872dd3361169030610f3c565b928492813b15611844575f6116b8916116c382966116ac610192565b98899788968795610f4c565b855260048501610f61565b03925af1801561183f57611813575b506116e7816116e16002610675565b90611e03565b611707815f61170160016116fb6002610675565b906109b1565b01610fc1565b6117273360016117218161171b6002610675565b906109b1565b016115ed565b611747426002611741600161173b83610675565b906109b1565b01610fc1565b61176d6117666117576001610fe4565b6117616002610675565b61160d565b6002610fc1565b61179361178c61177d6001610fe4565b6117876009610675565b61160d565b6009610fc1565b6117b06117a06002610675565b6117aa6001610fe4565b90611014565b6117ba6009610675565b91339161180e6117fc6117f66117f07fde0c27ec227b5d0c0a194ea6f25d7031639f9c10d8bf6e2f9414ff8088a6e20d94610353565b94610353565b94611039565b94611805610192565b9182918261047e565b0390a4565b611832905f3d8111611838575b61182a81836101c6565b810190610f52565b5f6116d2565b503d611820565b610f93565b610f48565b61185d61185861186292610ce0565b610350565b6108ba565b90565b61187790611871611208565b50611462565b8061188a6118845f611849565b916108ba565b126118b15760016118a86118ae926118a28391611320565b906109b1565b016109e6565b90565b506118bb5f611416565b90565b6118d56118da916118cd610d99565b5060056105e2565b610675565b6118ec6118e65f610ce3565b91610225565b141590565b611902906118fd611c63565b611904565b565b8061191f6119196119145f611416565b61057f565b9161057f565b1461192f5761192d90611cb1565b565b61195261193b5f611416565b5f918291631e4fbdf760e01b835260048301610598565b0390fd5b61195f906118f1565b565b9061196b5f610ce3565b5b8061198761198161197c86610d0e565b610225565b91610225565b10156119b6576119b1906119ac6119a76119a2868490610d12565b610d32565b611632565b610cff565b61196c565b509050565b5f7f546f6b656e206973206e6f7420696e20746865206c6973742e00000000000000910152565b6119ef6019602092610ddd565b6119f8816119bb565b0190565b9190611a1f906020611a17604086018681035f8801526119e2565b940190610471565b565b15611a295750565b611a4b90611a35610192565b918291639aa6fa6560e01b8352600483016119fc565b0390fd5b1b90565b91906008611a6e910291611a685f1984611a4f565b92611a4f565b9181191691161790565b9190611a8e611a89611a9693610353565b610fbe565b908354611a53565b9055565b611aac91611aa66113ce565b91611a78565b565b90565b634e487b7160e01b5f52603160045260245ffd5b5490565b5f5260205f2090565b611adb81611ac5565b821015611af557611aed600191611ac9565b910201905f90565b610b56565b611b0381611ac5565b8015611b24576001900390611b21611b1b8383611ad2565b90611a9a565b55565b611ab1565b90565b611b40611b3b611b4592611b29565b610350565b6108ba565b90565b611b5c611b57611b61926108ba565b610350565b6108ba565b90565b90565b90611b7c611b77611b8392611b48565b611b64565b8254610fa8565b9055565b611c6190611b9e611b97826118be565b8290611a21565b611c20611bb5611bb0600584906105e2565b610675565b611c1b611be9611be36004611bdd611bcd6004610b6a565b611bd76001610fe4565b90611014565b90610b77565b90610454565b91611c1383611c0d6004611c0785611c016001610fe4565b90611014565b90610b77565b90611a78565b9160056105e2565b610fc1565b611c355f611c30600584906105e2565b611a9a565b611c47611c426004611aae565b611afa565b611c5c611c545f19611b2c565b916006610862565b611b67565b565b611c6b6114bb565b611c84611c7e611c79611e70565b61057f565b9161057f565b03611c8b57565b611cad611c96611e70565b5f91829163118cdaa760e01b835260048301610598565b0390fd5b611cba5f6109e6565b611cc4825f6115ed565b90611cf8611cf27f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093611039565b91611039565b91611d01610192565b80611d0b816102fa565b0390a3565b5f7f546f6b656e20616c726561647920696e20746865206c6973742e000000000000910152565b611d44601a602092610ddd565b611d4d81611d10565b0190565b916040611d82929493611d7b611d70606083018381035f850152611d37565b966020830190610471565b0190610471565b565b15611d8d575050565b611dae611d98610192565b92839263597558c560e11b845260048401611d51565b0390fd5b9081549168010000000000000000831015611de25782611dda916001611de095018155611ad2565b90611a78565b565b6101b2565b611dfb611df6611e0092610225565b610350565b6108ba565b90565b611e69611e61611e6e93611e2a611e22611e1c866118be565b156103ce565b858391611d84565b611e3e611e376004611aae565b8590611db2565b611e5c611e4b6004610b6a565b611e57600587906105e2565b610fc1565b611de7565b916006610862565b611b67565b565b611e78611208565b50339056fea26469706673582212209ef5baf213221be07cc7515bb64a2e9e53f2d38e59fe52dad7bd90eed616975164736f6c634300081a0033",
 }
 
 // StakingWalletRWalkABI is the input ABI used to generate the binding from.
@@ -44,7 +795,7 @@ var StakingWalletRWalkABI = StakingWalletRWalkMetaData.ABI
 var StakingWalletRWalkBin = StakingWalletRWalkMetaData.Bin
 
 // DeployStakingWalletRWalk deploys a new Ethereum contract, binding an instance of StakingWalletRWalk to it.
-func DeployStakingWalletRWalk(auth *bind.TransactOpts, backend bind.ContractBackend, rwalk_ common.Address, game_ common.Address) (common.Address, *types.Transaction, *StakingWalletRWalk, error) {
+func DeployStakingWalletRWalk(auth *bind.TransactOpts, backend bind.ContractBackend, rwalk_ common.Address) (common.Address, *types.Transaction, *StakingWalletRWalk, error) {
 	parsed, err := StakingWalletRWalkMetaData.GetAbi()
 	if err != nil {
 		return common.Address{}, nil, nil, err
@@ -53,7 +804,7 @@ func DeployStakingWalletRWalk(auth *bind.TransactOpts, backend bind.ContractBack
 		return common.Address{}, nil, nil, errors.New("GetABI returned nil")
 	}
 
-	address, tx, contract, err := bind.DeployContract(auth, *parsed, common.FromHex(StakingWalletRWalkBin), backend, rwalk_, game_)
+	address, tx, contract, err := bind.DeployContract(auth, *parsed, common.FromHex(StakingWalletRWalkBin), backend, rwalk_)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -250,37 +1001,6 @@ func (_StakingWalletRWalk *StakingWalletRWalkCallerSession) ETHDeposits(arg0 *bi
 	NumStaked     *big.Int
 }, error) {
 	return _StakingWalletRWalk.Contract.ETHDeposits(&_StakingWalletRWalk.CallOpts, arg0)
-}
-
-// Game is a free data retrieval call binding the contract method 0xc3fe3e28.
-//
-// Solidity: function game() view returns(address)
-func (_StakingWalletRWalk *StakingWalletRWalkCaller) Game(opts *bind.CallOpts) (common.Address, error) {
-	var out []interface{}
-	err := _StakingWalletRWalk.contract.Call(opts, &out, "game")
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// Game is a free data retrieval call binding the contract method 0xc3fe3e28.
-//
-// Solidity: function game() view returns(address)
-func (_StakingWalletRWalk *StakingWalletRWalkSession) Game() (common.Address, error) {
-	return _StakingWalletRWalk.Contract.Game(&_StakingWalletRWalk.CallOpts)
-}
-
-// Game is a free data retrieval call binding the contract method 0xc3fe3e28.
-//
-// Solidity: function game() view returns(address)
-func (_StakingWalletRWalk *StakingWalletRWalkCallerSession) Game() (common.Address, error) {
-	return _StakingWalletRWalk.Contract.Game(&_StakingWalletRWalk.CallOpts)
 }
 
 // IsTokenStaked is a free data retrieval call binding the contract method 0xf0a52424.
@@ -708,37 +1428,6 @@ func (_StakingWalletRWalk *StakingWalletRWalkSession) StakerByTokenId(tokenId *b
 // Solidity: function stakerByTokenId(uint256 tokenId) view returns(address)
 func (_StakingWalletRWalk *StakingWalletRWalkCallerSession) StakerByTokenId(tokenId *big.Int) (common.Address, error) {
 	return _StakingWalletRWalk.Contract.StakerByTokenId(&_StakingWalletRWalk.CallOpts, tokenId)
-}
-
-// TokenByIndex is a free data retrieval call binding the contract method 0x4f6ccce7.
-//
-// Solidity: function tokenByIndex(uint256 tokenIndex) view returns(uint256)
-func (_StakingWalletRWalk *StakingWalletRWalkCaller) TokenByIndex(opts *bind.CallOpts, tokenIndex *big.Int) (*big.Int, error) {
-	var out []interface{}
-	err := _StakingWalletRWalk.contract.Call(opts, &out, "tokenByIndex", tokenIndex)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// TokenByIndex is a free data retrieval call binding the contract method 0x4f6ccce7.
-//
-// Solidity: function tokenByIndex(uint256 tokenIndex) view returns(uint256)
-func (_StakingWalletRWalk *StakingWalletRWalkSession) TokenByIndex(tokenIndex *big.Int) (*big.Int, error) {
-	return _StakingWalletRWalk.Contract.TokenByIndex(&_StakingWalletRWalk.CallOpts, tokenIndex)
-}
-
-// TokenByIndex is a free data retrieval call binding the contract method 0x4f6ccce7.
-//
-// Solidity: function tokenByIndex(uint256 tokenIndex) view returns(uint256)
-func (_StakingWalletRWalk *StakingWalletRWalkCallerSession) TokenByIndex(tokenIndex *big.Int) (*big.Int, error) {
-	return _StakingWalletRWalk.Contract.TokenByIndex(&_StakingWalletRWalk.CallOpts, tokenIndex)
 }
 
 // TokenIndices is a free data retrieval call binding the contract method 0x44d110b9.
