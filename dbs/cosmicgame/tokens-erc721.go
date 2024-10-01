@@ -27,12 +27,19 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list(offset,limit int) []p
 				"m.token_id,"+
 				"m.token_name,"+
 				"m.round_num,"+
-				"p.prize_num "+
+				"p.prize_num, "+
+				"stel.erc721_token_id,"+
+				"endu.erc721_token_id, "+
+				"rnw.is_staker, "+
+				"rnw.id "+
 			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
+				"LEFT JOIN cg_stellar_winner stel ON m.token_id=stel.erc721_token_id "+
+				"LEFT JOIN cg_endurance_winner endu ON m.token_id=endu.erc721_token_id "+
+				"LEFT JOIN cg_raffle_nft_winner rnw ON m.token_id=rnw.token_id "+
 			"ORDER BY m.id DESC "+
 			"OFFSET $1 LIMIT $2"
 
@@ -45,7 +52,9 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list(offset,limit int) []p
 	defer rows.Close()
 	for rows.Next() {
 		var rec p.CGCosmicSignatureMintRec
-		var null_prize_num sql.NullInt64
+		var null_prize_num,null_raffle_id sql.NullInt64
+		var null_staked sql.NullBool
+		var null_endu_token_id,null_stel_token_id sql.NullInt64
 		err=rows.Scan(
 			&rec.EvtLogId,
 			&rec.BlockNum,
@@ -62,12 +71,22 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list(offset,limit int) []p
 			&rec.TokenName,
 			&rec.RoundNum,
 			&null_prize_num,
+			&null_stel_token_id,
+			&null_endu_token_id,
+			&null_staked,
+			&null_raffle_id,
 		)
 		if err != nil {
 			sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
 			os.Exit(1)
 		}
-		if null_prize_num.Valid { rec.RecordType = 3 } else {rec.RecordType = 1 }
+		rec.RecordType = 3	// main prize
+		if null_raffle_id.Valid { rec.RecordType = 1 }	// raffle NFT winer
+		if null_staked.Valid { 
+			if null_staked.Bool {rec.RecordType = 2 }	// nft won due to staking (RWalk)
+		}
+		if null_endu_token_id.Valid { rec.RecordType = 4 } // endurance champion
+		if null_stel_token_id.Valid { rec.RecordType = 5 }	// stellar spender
 		records = append(records,rec)
 	}
 	return records
@@ -98,7 +117,11 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 				"sa.time_stamp,"+
 				"u.id, "+
 				"EXTRACT(EPOCH FROM u.time_stamp)::BIGINT,"+
-				"u.time_stamp "+
+				"u.time_stamp, "+
+				"stel.erc721_token_id,"+
+				"endu.erc721_token_id, "+
+				"rnw.is_staker, "+
+				"rnw.id "+
 			"FROM "+sw.S.SchemaName()+".cg_mint_event m "+
 				"LEFT JOIN transaction t ON t.id=tx_id "+
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
@@ -107,15 +130,19 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 				"LEFT JOIN cg_staked_token_cst st ON (m.token_id=st.token_id)"+
 				"LEFT JOIN cg_stake_action_cst sa ON sa.token_id = m.token_id "+
 				"LEFT JOIN cg_unstake_action_cst u ON u.token_id=m.token_id "+
+				"LEFT JOIN cg_stellar_winner stel ON m.token_id=stel.erc721_token_id "+
+				"LEFT JOIN cg_endurance_winner endu ON m.token_id=endu.erc721_token_id "+
+				"LEFT JOIN cg_raffle_nft_winner rnw ON m.token_id=rnw.token_id "+
 				"LEFT JOIN address sta ON st.staker_aid = sta.address_id "+
 			"WHERE m.token_id=$1"
 
 	var rec p.CGCosmicSignatureMintRec
 	var err error
-	var null_prize_num,null_unstake_id,null_action_id,null_staker_aid sql.NullInt64
+	var null_prize_num,null_unstake_id,null_action_id,null_staker_aid,null_raffle_id sql.NullInt64
 	var null_au_timestamp,null_sa_timestamp sql.NullInt64
 	var null_staked_owner_addr,null_au_datetime,null_sa_datetime sql.NullString
 	var null_staked sql.NullBool
+	var null_endu_token_id,null_stel_token_id sql.NullInt64
 	row := sw.S.Db().QueryRow(query,token_id)
 	err=row.Scan(
 		&rec.EvtLogId,
@@ -141,6 +168,10 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 		&null_unstake_id,
 		&null_au_timestamp,
 		&null_au_datetime,
+		&null_stel_token_id,
+		&null_endu_token_id,
+		&null_staked,
+		&null_raffle_id,
 	)
 	if (err!=nil) {
 		if err == sql.ErrNoRows {
@@ -149,7 +180,13 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 		sw.S.Log_msg(fmt.Sprintf("DB Error: %v, q=%v",err,query))
 		os.Exit(1)
 	}
-	if null_prize_num.Valid { rec.RecordType = 3 } else {rec.RecordType = 1 }
+	rec.RecordType = 3	// main prize
+	if null_raffle_id.Valid { rec.RecordType = 1 }	// raffle NFT winer
+	if null_staked.Valid { 
+		if null_staked.Bool {rec.RecordType = 2 }	// nft won due to staking (RWalk)
+	}
+	if null_endu_token_id.Valid { rec.RecordType = 4 } // endurance champion
+	if null_stel_token_id.Valid { rec.RecordType = 5 }	// stellar spender
 	if null_unstake_id.Valid { rec.UnstakeActionId = null_unstake_id.Int64 } else {rec.UnstakeActionId = -1}
 	if null_action_id.Valid { rec.StakeActionId = null_action_id.Int64 } else {rec.StakeActionId=-1}
 	if null_au_timestamp.Valid { rec.ActualUnstakeTimeStamp = null_au_timestamp.Int64 }

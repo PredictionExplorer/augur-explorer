@@ -337,7 +337,7 @@ type CGCosmicSignatureMintRec struct {
 	CurOwnerAddr				string
 	Seed						string
 	RoundNum					int64
-	RecordType					int64	// 1 Raffle mint, 3 - Main Prize mint
+	RecordType					int64	// 1 Raffle mint, 2 - Staking mint, 3 - Main Prize mint, 4 - Endurance Champ, 5 - Sellar Spender
 	TokenName					string
 	Staked						bool
 	StakedOwnerAid				int64
