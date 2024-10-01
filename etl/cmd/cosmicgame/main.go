@@ -51,6 +51,7 @@ const (
 	MARKETING_REWARD_SENT	= "dceb832c3abeeb39542a70bd553842dc873f15f6a5411c645092a93fef4ef9ba"
 
 	/// Admin events
+	PROXY_UPGRADED			= "bc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b"
 	CHARITY_PERCENTAGE_CHANGED		= "0918b499c15fcb0e087d411d53664cde23577e1aa4a9cbfbdf735ddd1871e7d5"
 	PRIZE_PERCENTAGE_CHANGED	= "595fa5ba64cd6f66df19b53b59bb4a275bae1ec5b362da95e1fa4c5feb62be1e"
 	RAFFLE_PERCENTAGE_CHANGED = "d2002a256ab2f8a5c1b865685754b20437c0a26e7249e40ae5df2993966f99f2"
@@ -107,7 +108,6 @@ var (
 	evt_marketing_address_changed,_	= hex.DecodeString(MARKETING_ADDRESS_CHANGED);
 	evt_costok_address_changed,_	= hex.DecodeString(COSMIC_TOKEN_ADDRESS_CHANGED);
 	evt_cossig_address_changed,_	= hex.DecodeString(COSMIC_SIGNATURE_ADDRESS_CHANGED);
-	evt_blogic_address_changed,_	= hex.DecodeString(BUSINESS_LOGIC_ADDRESS_CHANGED);
 	evt_time_increase_changed,_	= hex.DecodeString(TIME_INCREASE_CHANGED);
 	evt_timeout_claimprize_changed,_ = hex.DecodeString(TIMEOUT_CLAIMPRIZE_CHANGED);
 	evt_price_increase_changed,_	= hex.DecodeString(PRICE_INCREASE_CHANGED);
@@ -118,6 +118,7 @@ var (
 	evt_ethcst_bid_ratio_changed,_	= hex.DecodeString(ETHCST_BID_RATIO_CHANGED)
 	evt_round_start_auction_length_changed,_ = hex.DecodeString(ROUND_START_AUCTION_LENGTH_CHANGED)
 	evt_system_mode_changed,_ = hex.DecodeString(SYSTEM_MODE_CHANGED);
+	evt_proxy_upgraded,_	= hex.DecodeString(PROXY_UPGRADED);
 
 	// CharityWallet events
 	evt_donation_received_event,_=hex.DecodeString(DONATION_RECEIVED_EVENT)
@@ -277,7 +278,7 @@ func main() {
 	storagew.S.Log_msg("Log initialized\n")
 
 	cosmic_game_abi = get_abi(CosmicGameABI)
-	blogic_abi = get_abi(BusinessLogicABI);
+//	blogic_abi = get_abi(BusinessLogicABI);
 	cosmic_signature_abi = get_abi(CosmicSignatureABI)
 	cosmic_token_abi = get_abi(CosmicTokenABI)
 	charity_wallet_abi = get_abi(CharityWalletABI);

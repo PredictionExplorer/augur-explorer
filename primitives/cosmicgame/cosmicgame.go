@@ -15,7 +15,7 @@ type CosmicGameContractAddrs struct {
 	StakingWalletCSTAddr			string
 	StakingWalletRWalkAddr			string
 	MarketingWalletAddr			string
-	BusinessLogicAddr			string
+	ImplementationAddr			string
 }
 type CosmicGameProcStatus struct {
 	LastEvtIdProcessed			int64
@@ -476,13 +476,13 @@ type CGCosmicSignatureAddressChanged struct {
 	Contract                string
 	NewCosmicSignature		string
 }
-type CGBusinessLogicAddressChanged struct {
+type CGUpgraded struct {	// openzeppelin proxy Upgraded event
 	EvtId                   int64
 	BlockNum                int64
 	TxId                    int64
 	TimeStamp               int64
 	Contract                string
-	NewContractAddress		string
+	Implementation			string
 }
 type CGTimeIncreaseChanged struct {
 	EvtId                   int64

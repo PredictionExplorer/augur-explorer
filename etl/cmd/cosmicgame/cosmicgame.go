@@ -119,10 +119,6 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			ContractAid: 0,
 		},
 		InspectedEvent {
-			Signature: hex.EncodeToString(evt_blogic_address_changed[:4]),
-			ContractAid: 0,
-		},
-		InspectedEvent {
 			Signature: hex.EncodeToString(evt_time_increase_changed[:4]),
 			ContractAid: 0,
 		},
@@ -899,7 +895,7 @@ func proc_raffle_nft_winner_event(log *types.Log,elog *EthereumEventLog) {
 func proc_endurance_winner_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGEnduranceWinner
-	var eth_evt BusinessLogicEnduranceChampionWinnerEvent
+	var eth_evt CosmicGameEnduranceChampionWinnerEvent
 
 	Info.Printf("Processing Endurance winner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -939,7 +935,7 @@ func proc_endurance_winner_event(log *types.Log,elog *EthereumEventLog) {
 func proc_stellar_winner_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGStellarWinner
-	var eth_evt BusinessLogicStellarSpenderWinnerEvent
+	var eth_evt CosmicGameStellarSpenderWinnerEvent
 
 	Info.Printf("Processing StellarSpender winner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
@@ -1118,7 +1114,8 @@ func proc_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	evt.DepositNum = eth_evt.DepositNum.Int64()
 	evt.NumStakedNfts = eth_evt.NumStakedNFTs.Int64()
 	evt.Amount = eth_evt.Amount.String()
-	evt.AccumModulo = eth_evt.Modulo.String()
+	//evt.AccumModulo = eth_evt.Modulo.String()
+	evt.AccumModulo = "0";	// pending for resolution regarding StakingWalletCST refactoring
 	evt.RoundNum = find_prize_num(evt.TxId)
 	if evt.RoundNum == -1 {
 		Error.Printf("Failed to gather round_num variable")
@@ -1889,10 +1886,10 @@ func proc_cosmic_signature_address_changed_event(log *types.Log,elog *EthereumEv
 	storagew.Delete_cosmic_signature_address_changed_event(evt.EvtId)
     storagew.Insert_cosmic_signature_address_changed_event(&evt)
 }
-func proc_business_logic_address_changed_event(log *types.Log,elog *EthereumEventLog) {
+func proc_proxy_upgraded_event(log *types.Log,elog *EthereumEventLog) {
 
-	var evt CGBusinessLogicAddressChanged
-	var eth_evt CosmicGameBusinessLogicAddressChanged
+	var evt CGUpgraded
+	var eth_evt CosmicGameUpgraded
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
@@ -1910,15 +1907,15 @@ func proc_business_logic_address_changed_event(log *types.Log,elog *EthereumEven
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.NewContractAddress = eth_evt.NewContractAddress.String()
+	evt.Implementation = eth_evt.Implementation.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
-	Info.Printf("BusinessLogicAddressChanged{\n")
-	Info.Printf("\tNewContractAddress: %v\n",evt.NewContractAddress)
+	Info.Printf("(Proxy) Upgraded{\n")
+	Info.Printf("\tImplementation: %v\n",evt.Implementation)
 	Info.Printf("}\n")
 
-	storagew.Delete_business_logic_address_changed_event(evt.EvtId)
-    storagew.Insert_business_logic_address_changed_event(&evt)
+	storagew.Delete_upgraded_event(evt.EvtId)
+    storagew.Insert_upgraded_event(&evt)
 }
 func proc_time_increase_changed_event(log *types.Log,elog *EthereumEventLog) {
 
@@ -2284,8 +2281,8 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_cossig_address_changed) {
 		proc_cosmic_signature_address_changed_event(log,evtlog)
 	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_blogic_address_changed) {
-		proc_business_logic_address_changed_event(log,evtlog)
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_proxy_upgraded) {
+		proc_proxy_upgraded_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_time_increase_changed) {
 		proc_time_increase_changed_event(log,evtlog)

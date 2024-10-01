@@ -44,7 +44,7 @@ DROP TABLE IF EXISTS
 	cg_adm_marketing_addr,
 	cg_adm_costok_addr,
 	cg_adm_cossig_addr,
-	cg_adm_blogic_addr,
+	cg_adm_upgraded,
 	cg_adm_time_inc,
 	cg_adm_timeout_claimprize,
 	cg_adm_price_inc,

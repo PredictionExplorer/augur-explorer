@@ -518,14 +518,14 @@ CREATE TABLE cg_adm_cossig_addr( -- CosmicSignatureAddressChanged event (contrac
 	new_cossig_aid	BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_blogic_addr( -- BusinessLogicAddressChanged event (contract CosmicGame)
+CREATE TABLE cg_adm_upgraded ( -- Upgraded event (openzeppelin eip-1967)
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
 	tx_id           BIGINT NOT NULL,
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
-	new_blogic_aid	BIGINT NOT NULL,
+	implementation_aid	BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_adm_time_inc( -- TimeIncreaseChanged event (contract CosmicGame)
@@ -751,7 +751,7 @@ CREATE TABLE cg_contracts (
 	staking_wallet_cst_addr		TEXT NOT NULL,
 	staking_wallet_rwalk_addr	TEXT NOT NULL,
 	marketing_wallet_addr	TEXT NOT NULL,
-	business_logic_addr		TEXT NOT NULL
+	implementation_addr		TEXT NOT NULL
 );
 CREATE TABLE cg_proc_status (
 	last_evt_id             BIGINT DEFAULT 0

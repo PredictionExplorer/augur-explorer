@@ -516,7 +516,7 @@ type CGAdminEvent struct {
 										//			14		MarketingWalletAddressChanged
 										//			15		CosmicTokenAddressChanged
 										//			16		CosmicSignatureAddressChanged
-										//			17		BusinessLogicAddressChanged
+										//			17		Upgraded
 										//			18		TimeIncreaseChanged
 										//			19		TimeoutClaimPrizeChanged
 										//			20		PriceIncreaseChanged

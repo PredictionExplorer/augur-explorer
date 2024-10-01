@@ -429,10 +429,10 @@ func (sw *SQLStorageWrapper) Delete_cosmic_signature_address_changed_event(evtlo
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Delete_business_logic_address_changed_event(evtlog_id int64) {
+func (sw *SQLStorageWrapper) Delete_upgraded_event(evtlog_id int64) {
 
 	var query string
-	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_blogic_addr WHERE evtlog_id=$1"
+	query = "DELETE FROM "+sw.S.SchemaName()+".cg_adm_proxy WHERE evtlog_id=$1"
 	_,err := sw.S.Db().Exec(query,evtlog_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v q=%v",err,query))

@@ -1088,14 +1088,14 @@ func (sw *SQLStorageWrapper) Insert_cosmic_signature_address_changed_event(evt *
 		os.Exit(1)
 	}
 }
-func (sw *SQLStorageWrapper) Insert_business_logic_address_changed_event(evt *p.CGBusinessLogicAddressChanged) {
+func (sw *SQLStorageWrapper) Insert_upgraded_event(evt *p.CGUpgraded) {
 
 	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
-	new_blogic_aid:=sw.S.Lookup_or_create_address(evt.NewContractAddress,evt.BlockNum,evt.TxId)
+	implementation_aid:=sw.S.Lookup_or_create_address(evt.Implementation,evt.BlockNum,evt.TxId)
 	var query string
-	query = "INSERT INTO cg_adm_blogic_addr(" +
+	query = "INSERT INTO cg_adm_upgraded(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"new_blogic_aid" +
+				"implementation_aid" +
 			") VALUES (" +
 				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
 			")"
@@ -1105,10 +1105,10 @@ func (sw *SQLStorageWrapper) Insert_business_logic_address_changed_event(evt *p.
 		evt.TxId,
 		evt.TimeStamp,
 		contract_aid,
-		new_blogic_aid,
+		implementation_aid,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_blogic_addr table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_upgraded table: %v\n",err))
 		os.Exit(1)
 	}
 }
