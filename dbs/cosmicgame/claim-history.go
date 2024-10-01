@@ -91,6 +91,27 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"LEFT JOIN cg_donated_nft_claimed c ON (c.round_num=p.prize_num) AND (d.idx=c.idx) "+
 					"WHERE p.winner_aid=$1 "+
 				") UNION ALL (" +
+					"SELECT "+
+						"3 AS record_type,"+
+						"p.evtlog_id,"+
+						"EXTRACT(EPOCH FROM p.time_stamp)::BIGINT AS tstmp, "+
+						"p.time_stamp AS date_time, "+
+						"p.block_num,"+
+						"p.tx_id,"+
+						"t.tx_hash,"+
+						"p.prize_num,"+
+						"p.amount,"+
+						"p.amount/1e18 AS amount_eth,"+
+						"'' AS token_addr, " +
+						"p.token_id,"+
+						"'' AS token_uri,"+
+						"-1 AS winner_index,"+
+						"'T' AS claimed "+
+					"FROM cg_prize_claim p "+
+						"LEFT JOIN transaction t ON t.id=p.tx_id "+
+						"LEFT JOIN address wa ON p.winner_aid=wa.address_id "+
+					"WHERE p.winner_aid=$1 "+
+				") UNION ALL (" +
 					"WITH rwd AS ("+
 						"SELECT "+
 							"COUNT(id) AS num_toks_collected,"+
