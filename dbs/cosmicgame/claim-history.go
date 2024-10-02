@@ -66,7 +66,7 @@ func (sw *SQLStorageWrapper) Get_claim_history_detailed(winner_aid int64,offset,
 						"'T' AS claimed "+
 					"FROM cg_raffle_nft_winner rn "+
 						"LEFT JOIN transaction t ON t.id=rn.tx_id "+
-					"WHERE (rn.winner_aid=$1) AND (is_rwalk=FALSE) AND (is_staker=TRUE) "+
+					"WHERE (rn.winner_aid=$1) AND (is_rwalk=FALSE) "+
 				") UNION ALL (" +
 					"SELECT "+
 						"2 AS record_type,"+
