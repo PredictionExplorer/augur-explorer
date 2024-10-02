@@ -618,6 +618,33 @@ CREATE TABLE cg_adm_auclen ( -- RoundStartCSTAuctionLengthChanged event (contrac
 	new_len			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_adm_erc_rwd_mul ( -- Erc20RewardMultiplierChanged (admin event)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_multiplier	DECIMAL NOT NULL,
+);
+CREATE TABLE cg_adm_cst_min_lim ( -- StartingBidPriceCSTMinLimitChanged(admin event)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_price		DECIMAL NOT NULL,
+);
+CREATE TABLE cg_adm_mkt_reward ( -- MarketingRewardChanged (admin event)
+	id              BIGSERIAL PRIMARY KEY,
+	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num       BIGINT NOT NULL,
+	tx_id           BIGINT NOT NULL,
+	time_stamp      TIMESTAMPTZ NOT NULL,
+	contract_aid    BIGINT NOT NULL,
+	new_reward		DECIMAL NOT NULL,
+);
 CREATE TABLE cg_transfer_stats( -- table to keep tracking of the statistical counters for tokent transfers
     user_aid                BIGINT NOT NULL,
     erc20_num_transfers     BIGINT DEFAULT 0, -- CosmicToken

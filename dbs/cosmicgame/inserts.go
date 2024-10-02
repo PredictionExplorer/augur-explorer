@@ -1319,3 +1319,72 @@ func (sw *SQLStorageWrapper) Insert_round_start_cst_auction_length_changed_event
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_erc20_reward_multiplier_changed_event(evt *p.CGERC20RewardMultiplierChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_erc_rwd_mul(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"new_multiplier" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.NewMultiplier,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_erc_rwd_mul table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_starting_bid_price_cst_min_limit_changed_event(evt *p.CGStartingBidPriceCSTMinLimitChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_st_min_lim(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"new_price" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.NewPrice,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_cst_min_lim table: %v\n",err))
+		os.Exit(1)
+	}
+}
+func (sw *SQLStorageWrapper) Insert_marketing_reward_changed_event(evt *p.CGMarketingRewardChanged) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.Contract,evt.BlockNum,evt.TxId)
+	var query string
+	query = "INSERT INTO cg_adm_mkt_reward(" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"new_reward" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.NewReward,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_adm_mkt_reward table: %v\n",err))
+		os.Exit(1)
+	}
+}

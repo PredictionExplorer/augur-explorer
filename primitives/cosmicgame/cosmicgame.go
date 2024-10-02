@@ -556,3 +556,27 @@ type CGRoundStartCSTAuctionLengthChanged struct {
 	Contract                string
 	NewAuctionLength		string
 }
+type CGERC20RewardMultiplierChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewMultiplier			string
+}
+type CGStartingBidPriceCSTMinLimitChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewPrice				string
+}
+type CGMarketingRewardChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewReward				string
+}
