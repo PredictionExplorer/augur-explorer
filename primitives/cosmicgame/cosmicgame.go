@@ -580,3 +580,35 @@ type CGMarketingRewardChanged struct {
 	Contract                string
 	NewReward				string
 }
+type CGERC20TokenRewardChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewReward				string
+}
+type CGMaxMessageLengthChanged struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewMessageLength		string
+}
+type CGTokenGenerationScriptURL struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewURL					string
+}
+type CGBaseURIEvent struct {
+	EvtId                   int64
+	BlockNum                int64
+	TxId                    int64
+	TimeStamp               int64
+	Contract                string
+	NewURI					string
+}

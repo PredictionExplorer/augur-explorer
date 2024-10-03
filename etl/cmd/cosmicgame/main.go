@@ -48,7 +48,6 @@ const (
 	UNSTAKE_ACTION_EVENT	= "33940a9fc3ee3c9150b29b34ef29ca397b5e1e340425a4f0da0346b5b90766c8"
 	ETH_DEPOSIT_EVENT		= "dc0eacba8b1f88284dca5eec8be23173aefa7206298fe22de43e064b6ccd8418"
 	CLAIM_REWARD_EVENT		= "dde81df5caa033e783e2a39d93e3a8718a7dc27ba95a4757f5433a01f794ec36"
-	MARKETING_REWARD_SENT	= "dceb832c3abeeb39542a70bd553842dc873f15f6a5411c645092a93fef4ef9ba"
 
 	/// Admin events
 	PROXY_UPGRADED			= "bc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b"
@@ -78,6 +77,11 @@ const (
 	ACTIVATION_TIME_CHANGED = "584ff9a7b3a86db5397052f2e440da0ed60a95f646a3a884863cd92262e682b6"
 	ETHCST_BID_RATIO_CHANGED = "22d4bc2aefb73ef04b923582d7ff2f2b74e699aaf7ff92ea24b348ed59161292"
 	ROUND_START_AUCTION_LENGTH_CHANGED = "fa013ab3d3f17cb94a869ccc05fc842a00a83fd7318e55faeb0335c6d5d22aa3"
+	MARKETING_REWARD_SENT	= "dceb832c3abeeb39542a70bd553842dc873f15f6a5411c645092a93fef4ef9ba"
+	ERC20_TOKEN_REWARD		= "762f994f6c24fece9d12a1eba3630058b2a0d8cb551a6496ef6e128aedf86353"
+	MAX_MESSAGE_LENGTH		= "ba9cecc4e500595a0ea3893f03b1f37ccf9c9b2a22c2fe6256eaa0e61fd7adc8"
+	TOKEN_SCRIPT_URL		= "0119741ee0f95fab26124262a82c3c0e9e1c7ff4bb33c6fba5f3b11c9b6d0bad"
+	BASE_URI				= "2fc013f885e8a815b9d697da28bc143b4dced47528c41b46e2b35fd0f4be718c"
 )
 var (
 	eclient 				*ethclient.Client
@@ -119,6 +123,10 @@ var (
 	evt_round_start_auction_length_changed,_ = hex.DecodeString(ROUND_START_AUCTION_LENGTH_CHANGED)
 	evt_system_mode_changed,_ = hex.DecodeString(SYSTEM_MODE_CHANGED);
 	evt_proxy_upgraded,_	= hex.DecodeString(PROXY_UPGRADED);
+	evt_erc20_token_reward,_	= hex.DecodeString(ERC20_TOKEN_REWARD);
+	evt_max_msg_length_changed,_	= hex.DecodeString(MAX_MESSAGE_LENGTH);
+	evt_token_script_url,_			= hex.DecodeString(TOKEN_SCRIPT_URL)
+	evt_base_uri,_					= hex.DecodeString(BASE_URI)
 
 	// CharityWallet events
 	evt_donation_received_event,_=hex.DecodeString(DONATION_RECEIVED_EVENT)

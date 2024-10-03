@@ -210,6 +210,22 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			Signature: hex.EncodeToString(evt_marketing_reward_sent[:4]),
 			ContractAid: 0,
 		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_erc20_token_reward[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_max_msg_length_changed[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_token_script_url[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_base_uri[:4]),
+			ContractAid: 0,
+		},
 	)
 	return inspected_events
 }
@@ -2165,6 +2181,161 @@ func proc_round_start_cst_auction_length_changed_event(log *types.Log,elog *Ethe
 	storagew.Delete_round_start_cst_auction_length_changed_event(evt.EvtId)
     storagew.Insert_round_start_cst_auction_length_changed_event(&evt)
 }
+func proc_marketing_reward_changed(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGMarketingRewardChanged
+	var eth_evt BiddingTokenRewardChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing TokenRewardChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"TokenRewardChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event TokenRewardChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewReward= eth_evt.NewReward.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("TokenRewardChanged{\n")
+	Info.Printf("\tNewReward: %v\n",evt.NewReward)
+	Info.Printf("}\n")
+
+	storagew.Delete_marketing_reward_changed_event(evt.EvtId)
+    storagew.Insert_marketing_reward_changed_event(&evt)
+}
+func proc_erc20_token_reward_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGERC20TokenRewardChanged 
+	var eth_evt BiddingTokenRewardChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing TokenRewardChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"TokenRewardChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event TokenRewardChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewReward = eth_evt.NewReward.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("TokenRewardChanged{\n")
+	Info.Printf("\tNewReward: %v\n",evt.NewReward)
+	Info.Printf("}\n")
+
+	storagew.Delete_erc20_token_reward_changed_event(evt.EvtId)
+    storagew.Insert_erc20_token_reward_changed_event(&evt)
+}
+func proc_max_msg_length_changed_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGMaxMessageLengthChanged 
+	var eth_evt CosmicGameMaxMessageLengthChanged
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing MaxMessageLengthChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"MaxMessageLengthChanged",log.Data)
+	if err != nil {
+		Error.Printf("Event MaxMessageLengthChanged decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewMessageLength = eth_evt.NewMessageLength.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("NewMessageLengthChanged{\n")
+	Info.Printf("\tNewMessageLength: %v\n",evt.NewMessageLength)
+	Info.Printf("}\n")
+
+	storagew.Delete_max_message_length_changed_event(evt.EvtId)
+    storagew.Insert_max_message_length_changed_event(&evt)
+}
+func proc_token_generation_script_url_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGTokenGenerationScriptURL
+	var eth_evt CosmicSignatureTokenGenerationScriptURLEvent
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing TokenGenerationScriptURLEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"TokenGenerationScriptURLEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event TokenGenerationScriptURLEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewURL = eth_evt.NewURL
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("TokenGenerationScriptURLEvent{\n")
+	Info.Printf("\tNewURL: %v\n",evt.NewURL)
+	Info.Printf("}\n")
+
+	storagew.Delete_max_message_length_changed_event(evt.EvtId)
+    storagew.Insert_token_generation_script_url_event(&evt)
+}
+func proc_base_uri_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGBaseURIEvent
+	var eth_evt ICosmicSignatureBaseURIEvent
+
+	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
+		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	Info.Printf("Processing BaseURIEvent event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"BaseURIEvent",log.Data)
+	if err != nil {
+		Error.Printf("Event BaseURIEvent decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.Contract = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.NewURI = eth_evt.NewURI
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("BaseURIEvent{\n")
+	Info.Printf("\tNewURI: %v\n",evt.NewURI)
+	Info.Printf("}\n")
+
+	storagew.Delete_base_uri_event(evt.EvtId)
+    storagew.Insert_base_uri_event(&evt)
+}
 func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_prize_claim_event) {
@@ -2307,6 +2478,18 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_round_start_auction_length_changed) {
 		proc_round_start_cst_auction_length_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_erc20_token_reward) {
+		proc_erc20_token_reward_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_max_msg_length_changed) {
+		proc_max_msg_length_changed_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_token_script_url) {
+		proc_token_generation_script_url_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_base_uri) {
+		proc_base_uri_event(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {
