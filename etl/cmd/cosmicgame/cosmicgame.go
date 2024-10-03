@@ -226,6 +226,14 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			Signature: hex.EncodeToString(evt_base_uri[:4]),
 			ContractAid: 0,
 		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_proxy_upgraded[:4]),
+			ContractAid: 0,
+		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_marketing_reward_changed[:4]),
+			ContractAid: 0,
+		},
 	)
 	return inspected_events
 }
@@ -919,7 +927,7 @@ func proc_endurance_winner_event(log *types.Log,elog *EthereumEventLog) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := blogic_abi.UnpackIntoInterface(&eth_evt,"EnduranceChampionWinnerEvent",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"EnduranceChampionWinnerEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event EnduranceChampionWinnerEvent decode error: %v",err)
 		os.Exit(1)
@@ -952,14 +960,13 @@ func proc_stellar_winner_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGStellarWinner
 	var eth_evt CosmicGameStellarSpenderWinnerEvent
-
 	Info.Printf("Processing StellarSpender winner event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	err := blogic_abi.UnpackIntoInterface(&eth_evt,"StellarSpenderWinnerEvent",log.Data)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"StellarSpenderWinnerEvent",log.Data)
 	if err != nil {
 		Error.Printf("Event StellarSpender decode error: %v",err)
 		os.Exit(1)
@@ -1908,13 +1915,13 @@ func proc_proxy_upgraded_event(log *types.Log,elog *EthereumEventLog) {
 	var eth_evt CosmicGameUpgraded
 
 	if !bytes.Equal(log.Address.Bytes(),cosmic_game_addr.Bytes()) {
-		//Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		Info.Printf("Event Upgraded doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
-	Info.Printf("Processing BusinessLogicAddressChanged event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"BusinessLogicAddressChanged",log.Data)
+	Info.Printf("Processing Upgraded event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	err := cosmic_game_abi.UnpackIntoInterface(&eth_evt,"Upgraded",log.Data)
 	if err != nil {
-		Error.Printf("Event BusinessLogicAddressChanged decode error: %v",err)
+		Error.Printf("Event Upgraded decode error: %v",err)
 		os.Exit(1)
 	}
 
@@ -1923,7 +1930,7 @@ func proc_proxy_upgraded_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.Contract = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.Implementation = eth_evt.Implementation.String()
+	evt.Implementation = common.BytesToAddress(log.Topics[1][12:]).String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("(Proxy) Upgraded{\n")
@@ -2490,6 +2497,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_base_uri) {
 		proc_base_uri_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_marketing_reward_changed) {
+		proc_marketing_reward_changed(log,evtlog)
 	}
 }
 func process_single_event(evt_id int64) error {

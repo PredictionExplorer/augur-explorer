@@ -78,6 +78,7 @@ const (
 	ETHCST_BID_RATIO_CHANGED = "22d4bc2aefb73ef04b923582d7ff2f2b74e699aaf7ff92ea24b348ed59161292"
 	ROUND_START_AUCTION_LENGTH_CHANGED = "fa013ab3d3f17cb94a869ccc05fc842a00a83fd7318e55faeb0335c6d5d22aa3"
 	MARKETING_REWARD_SENT	= "dceb832c3abeeb39542a70bd553842dc873f15f6a5411c645092a93fef4ef9ba"
+	MARKETING_REWARD_CHANGED = "aa59cda80c9b70b72f2ab15997b2622a0f94b107c401abfdc0f01f6f36489221"
 	ERC20_TOKEN_REWARD		= "762f994f6c24fece9d12a1eba3630058b2a0d8cb551a6496ef6e128aedf86353"
 	MAX_MESSAGE_LENGTH		= "ba9cecc4e500595a0ea3893f03b1f37ccf9c9b2a22c2fe6256eaa0e61fd7adc8"
 	TOKEN_SCRIPT_URL		= "0119741ee0f95fab26124262a82c3c0e9e1c7ff4bb33c6fba5f3b11c9b6d0bad"
@@ -127,6 +128,7 @@ var (
 	evt_max_msg_length_changed,_	= hex.DecodeString(MAX_MESSAGE_LENGTH);
 	evt_token_script_url,_			= hex.DecodeString(TOKEN_SCRIPT_URL)
 	evt_base_uri,_					= hex.DecodeString(BASE_URI)
+	evt_marketing_reward_changed,_	= hex.DecodeString(MARKETING_REWARD_CHANGED);
 
 	// CharityWallet events
 	evt_donation_received_event,_=hex.DecodeString(DONATION_RECEIVED_EVENT)
@@ -156,7 +158,6 @@ var (
 	inspected_events []InspectedEvent
 
 	cosmic_game_abi			*abi.ABI
-	blogic_abi				*abi.ABI
 	cosmic_signature_abi	*abi.ABI
 	cosmic_token_abi		*abi.ABI
 	charity_wallet_abi		*abi.ABI

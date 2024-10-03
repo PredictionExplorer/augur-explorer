@@ -408,7 +408,7 @@ CREATE TABLE cg_adm_raf_nft_bidding( -- NumRaffleNFTWinnersBiddingChanged event
 	num_winners		DECIMAL NOT NULL,	-- newNumRaffleNFTWinnersBidding 
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_raf_nft_staking_cst( -- NumRaffleNFTWinnersStakingCSTChanged event
+CREATE TABLE cg_adm_raf_nft_staking_cst( -- NumRaffleNFTWinnersStakingCSTChanged event	, table DISCONTINUED (delete pending)
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -598,7 +598,7 @@ CREATE TABLE cg_adm_acttime ( -- ActivationTimeChanged event (contract CosmicGam
 	new_atime		DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_adm_ethcst ( -- ETHToCSTBidRatioChanged event (contract CosmicGame)
+CREATE TABLE cg_adm_ethcst ( -- ETHToCSTBidRatioChanged event (contract CosmicGame)   DISCONTINUED, deletion pending
 	id              BIGSERIAL PRIMARY KEY,
 	evtlog_id       BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num       BIGINT NOT NULL,
@@ -626,6 +626,7 @@ CREATE TABLE cg_adm_erc_rwd_mul ( -- Erc20RewardMultiplierChanged (admin event)
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
 	new_multiplier	DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_adm_cst_min_lim ( -- StartingBidPriceCSTMinLimitChanged(admin event)
 	id              BIGSERIAL PRIMARY KEY,
@@ -635,6 +636,7 @@ CREATE TABLE cg_adm_cst_min_lim ( -- StartingBidPriceCSTMinLimitChanged(admin ev
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
 	new_price		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_adm_mkt_reward ( -- MarketingRewardChanged (admin event)
 	id              BIGSERIAL PRIMARY KEY,
@@ -644,6 +646,7 @@ CREATE TABLE cg_adm_mkt_reward ( -- MarketingRewardChanged (admin event)
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
 	new_reward		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_adm_erc20_reward ( -- TokenRewardChanged (admin event) , ERC20 of CosmicToken given on bid()
 	id              BIGSERIAL PRIMARY KEY,
@@ -653,6 +656,7 @@ CREATE TABLE cg_adm_erc20_reward ( -- TokenRewardChanged (admin event) , ERC20 o
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
 	new_reward		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_adm_msg_len ( -- MaxMessageLengthChanged(admin event) , ERC20 of CosmicToken given on bid()
 	id              BIGSERIAL PRIMARY KEY,
@@ -662,6 +666,7 @@ CREATE TABLE cg_adm_msg_len ( -- MaxMessageLengthChanged(admin event) , ERC20 of
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
 	new_length		DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_adm_script_url ( -- TokenGenerationScriptURLEvent(admin event)
 	id              BIGSERIAL PRIMARY KEY,
@@ -671,6 +676,7 @@ CREATE TABLE cg_adm_script_url ( -- TokenGenerationScriptURLEvent(admin event)
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
 	new_url			DECIMAL NOT NULL,
+	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_adm_base_uri_cs( -- BaseURI for CosmicSignature NFT (admin event)
 	id              BIGSERIAL PRIMARY KEY,
@@ -680,6 +686,7 @@ CREATE TABLE cg_adm_base_uri_cs( -- BaseURI for CosmicSignature NFT (admin event
 	time_stamp      TIMESTAMPTZ NOT NULL,
 	contract_aid    BIGINT NOT NULL,
 	new_uri			TEXT NOT NULL,
+	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_transfer_stats( -- table to keep tracking of the statistical counters for tokent transfers
     user_aid                BIGINT NOT NULL,
