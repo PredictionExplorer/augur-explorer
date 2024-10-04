@@ -524,8 +524,14 @@ type CGAdminEvent struct {
 										//			22		InitialSecondsUntilPrizeChanged
 										//			23		InitialBidAmountFractionChanged
 										//			24		ActivationTimeChanged
-										//			25		ETHToCSTBidRatioChanged
-										//			26		RoundStartCSTAuctionLengthChanged
+										//			25		RoundStartCSTAuctionLengthChanged
+										//			26		Erc20RewardMultiplierChanged
+										//			27		StartingBidPriceCSTMinLimitChanged
+										//			28		MarketingRewardChanged
+										//			29		TokenRewardChanged
+										//			30		MaxMessageLengthChanged
+										//			31		TokenGenerationScriptURLEvent
+										//			32		BaseURI (CosmicSignature)
 	RecordId					int64
 	EvtLogId					int64
 	BlockNum					int64
@@ -536,4 +542,5 @@ type CGAdminEvent struct {
 	AddressValue				string
 	IntegerValue				int64
 	FloatValue					float64
+	StringValue					string
 }

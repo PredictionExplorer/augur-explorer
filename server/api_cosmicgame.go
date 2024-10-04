@@ -1614,40 +1614,31 @@ func api_cosmic_game_get_cst_price(c *gin.Context) {
 	// both function return a byte array of 32 bytes , this workaround will work, otherwise, we would
 	// need to make explicit eth_call() method to CosmicGame contract (because the default is to transact
 	// since the method is not declared as 'view')
-	contract,err := NewBusinessLogic(cosmic_game_addr,eclient)
+	contract,err := NewCosmicGame(cosmic_game_addr,eclient)
 	if err != nil {
 		err_str := fmt.Sprintf("Can't instantiate CosmicGame contract: %v . Contract constants won't be fetched\n",err)
 		Error.Printf(err_str)
 		Info.Printf(err_str)
 		respond_error_json(c,err_str)
 	} else {
-		cst_price,err := contract.CurrentCSTPrice(&copts);
+		cst_price,err := contract.GetCurrentBidPriceCST(&copts);
 		if err != nil {
 			Error.Printf(err.Error())
 			Info.Printf(err.Error())
-			respond_error_json(c,err.Error());
+			respond_error(c,err.Error());
 		} else {
-			b := cst_price[64:];
-			h := common.BytesToHash(b);
-			tuple_data,err := contract.AuctionDuration(&copts);
+			auction_duration,seconds_elapsed,err := contract.AuctionDuration(&copts);
 			if err != nil {
 				Error.Printf(err.Error())
 				Info.Printf(err.Error())
 				respond_error(c,err.Error());
 			} else {
-				seconds_elapsed_slice := tuple_data[64:96];
-				auction_duration_slice := tuple_data[96:];
-				price := h.Big();
-				h = common.BytesToHash(seconds_elapsed_slice);
-				seconds_elapsed := h.Big();
-				h = common.BytesToHash(auction_duration_slice);
-				auction_duration := h.Big();
 				var req_status int = 1
 				var err_str string = ""
 				c.JSON(http.StatusOK, gin.H{
 					"status": req_status,
 					"error" : err_str,
-					"CSTPrice": price.String(),
+					"CSTPrice": cst_price.String(),
 					"SecondsElapsed" : seconds_elapsed.String(),
 					"AuctionDuration" : auction_duration.String(),
 				})
