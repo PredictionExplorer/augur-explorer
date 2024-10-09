@@ -31,7 +31,7 @@ var (
 
 // IStakingWalletCSTMetaData contains all meta data concerning the IStakingWalletCST contract.
 var IStakingWalletCSTMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"reward\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"}],\"name\":\"ClaimRewardEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"depositTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"depositNum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"numStakedNFTs\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"EthDepositEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalNFTs\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"}],\"name\":\"StakeActionEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalNFTs\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"}],\"name\":\"UnstakeActionEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"actions\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256[]\",\"name\":\"deposits\",\"type\":\"uint256[]\"}],\"name\":\"claimManyRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"depositIfPossible\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"isTokenStaked\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"lastActionIdByTokenId\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numTokensStaked\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"}],\"name\":\"stake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"ids\",\"type\":\"uint256[]\"}],\"name\":\"stakeMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"stakerByTokenId\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"charityAddress_\",\"type\":\"address\"}],\"name\":\"transferRemainingBalanceToCharity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"stakeActionId\",\"type\":\"uint256\"}],\"name\":\"unstake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"stakeActionId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"ETHDepositId\",\"type\":\"uint256\"}],\"name\":\"unstakeClaim\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"unstake_actions\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256[]\",\"name\":\"claim_actions\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256[]\",\"name\":\"claim_deposits\",\"type\":\"uint256[]\"}],\"name\":\"unstakeClaimMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"ids\",\"type\":\"uint256[]\"}],\"name\":\"unstakeMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"}],\"name\":\"wasTokenUsed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"depositIndex\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"depositAmount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"numStakedNFTs\",\"type\":\"uint256\"}],\"name\":\"EthDepositEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"stakeActionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"stakerAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"numStakedNFTs\",\"type\":\"uint256\"}],\"name\":\"StakeActionEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"stakeActionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"stakerAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"numStakedNFTs\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"rewardAmount\",\"type\":\"uint256\"}],\"name\":\"UnstakeActionEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"}],\"name\":\"depositIfPossible\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numTokensStaked\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId_\",\"type\":\"uint256\"}],\"name\":\"stake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"tokenIds_\",\"type\":\"uint256[]\"}],\"name\":\"stakeMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"resetState_\",\"type\":\"bool\"},{\"internalType\":\"address\",\"name\":\"charityAddress_\",\"type\":\"address\"}],\"name\":\"tryPerformMaintenance\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"stakeActionId_\",\"type\":\"uint256\"}],\"name\":\"unstake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"stakeActionIds_\",\"type\":\"uint256[]\"}],\"name\":\"unstakeMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId_\",\"type\":\"uint256\"}],\"name\":\"wasTokenUsed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
 // IStakingWalletCSTABI is the input ABI used to generate the binding from.
@@ -180,68 +180,6 @@ func (_IStakingWalletCST *IStakingWalletCSTTransactorRaw) Transact(opts *bind.Tr
 	return _IStakingWalletCST.Contract.contract.Transact(opts, method, params...)
 }
 
-// IsTokenStaked is a free data retrieval call binding the contract method 0xf0a52424.
-//
-// Solidity: function isTokenStaked(uint256 tokenId) view returns(bool)
-func (_IStakingWalletCST *IStakingWalletCSTCaller) IsTokenStaked(opts *bind.CallOpts, tokenId *big.Int) (bool, error) {
-	var out []interface{}
-	err := _IStakingWalletCST.contract.Call(opts, &out, "isTokenStaked", tokenId)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
-}
-
-// IsTokenStaked is a free data retrieval call binding the contract method 0xf0a52424.
-//
-// Solidity: function isTokenStaked(uint256 tokenId) view returns(bool)
-func (_IStakingWalletCST *IStakingWalletCSTSession) IsTokenStaked(tokenId *big.Int) (bool, error) {
-	return _IStakingWalletCST.Contract.IsTokenStaked(&_IStakingWalletCST.CallOpts, tokenId)
-}
-
-// IsTokenStaked is a free data retrieval call binding the contract method 0xf0a52424.
-//
-// Solidity: function isTokenStaked(uint256 tokenId) view returns(bool)
-func (_IStakingWalletCST *IStakingWalletCSTCallerSession) IsTokenStaked(tokenId *big.Int) (bool, error) {
-	return _IStakingWalletCST.Contract.IsTokenStaked(&_IStakingWalletCST.CallOpts, tokenId)
-}
-
-// LastActionIdByTokenId is a free data retrieval call binding the contract method 0x889d1e1a.
-//
-// Solidity: function lastActionIdByTokenId(uint256 tokenId) view returns(int256)
-func (_IStakingWalletCST *IStakingWalletCSTCaller) LastActionIdByTokenId(opts *bind.CallOpts, tokenId *big.Int) (*big.Int, error) {
-	var out []interface{}
-	err := _IStakingWalletCST.contract.Call(opts, &out, "lastActionIdByTokenId", tokenId)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// LastActionIdByTokenId is a free data retrieval call binding the contract method 0x889d1e1a.
-//
-// Solidity: function lastActionIdByTokenId(uint256 tokenId) view returns(int256)
-func (_IStakingWalletCST *IStakingWalletCSTSession) LastActionIdByTokenId(tokenId *big.Int) (*big.Int, error) {
-	return _IStakingWalletCST.Contract.LastActionIdByTokenId(&_IStakingWalletCST.CallOpts, tokenId)
-}
-
-// LastActionIdByTokenId is a free data retrieval call binding the contract method 0x889d1e1a.
-//
-// Solidity: function lastActionIdByTokenId(uint256 tokenId) view returns(int256)
-func (_IStakingWalletCST *IStakingWalletCSTCallerSession) LastActionIdByTokenId(tokenId *big.Int) (*big.Int, error) {
-	return _IStakingWalletCST.Contract.LastActionIdByTokenId(&_IStakingWalletCST.CallOpts, tokenId)
-}
-
 // NumTokensStaked is a free data retrieval call binding the contract method 0x5fda0acc.
 //
 // Solidity: function numTokensStaked() view returns(uint256)
@@ -273,43 +211,12 @@ func (_IStakingWalletCST *IStakingWalletCSTCallerSession) NumTokensStaked() (*bi
 	return _IStakingWalletCST.Contract.NumTokensStaked(&_IStakingWalletCST.CallOpts)
 }
 
-// StakerByTokenId is a free data retrieval call binding the contract method 0xc065894e.
-//
-// Solidity: function stakerByTokenId(uint256 tokenId) view returns(address)
-func (_IStakingWalletCST *IStakingWalletCSTCaller) StakerByTokenId(opts *bind.CallOpts, tokenId *big.Int) (common.Address, error) {
-	var out []interface{}
-	err := _IStakingWalletCST.contract.Call(opts, &out, "stakerByTokenId", tokenId)
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// StakerByTokenId is a free data retrieval call binding the contract method 0xc065894e.
-//
-// Solidity: function stakerByTokenId(uint256 tokenId) view returns(address)
-func (_IStakingWalletCST *IStakingWalletCSTSession) StakerByTokenId(tokenId *big.Int) (common.Address, error) {
-	return _IStakingWalletCST.Contract.StakerByTokenId(&_IStakingWalletCST.CallOpts, tokenId)
-}
-
-// StakerByTokenId is a free data retrieval call binding the contract method 0xc065894e.
-//
-// Solidity: function stakerByTokenId(uint256 tokenId) view returns(address)
-func (_IStakingWalletCST *IStakingWalletCSTCallerSession) StakerByTokenId(tokenId *big.Int) (common.Address, error) {
-	return _IStakingWalletCST.Contract.StakerByTokenId(&_IStakingWalletCST.CallOpts, tokenId)
-}
-
 // WasTokenUsed is a free data retrieval call binding the contract method 0x2a3247aa.
 //
-// Solidity: function wasTokenUsed(uint256 _tokenId) view returns(bool)
-func (_IStakingWalletCST *IStakingWalletCSTCaller) WasTokenUsed(opts *bind.CallOpts, _tokenId *big.Int) (bool, error) {
+// Solidity: function wasTokenUsed(uint256 tokenId_) view returns(bool)
+func (_IStakingWalletCST *IStakingWalletCSTCaller) WasTokenUsed(opts *bind.CallOpts, tokenId_ *big.Int) (bool, error) {
 	var out []interface{}
-	err := _IStakingWalletCST.contract.Call(opts, &out, "wasTokenUsed", _tokenId)
+	err := _IStakingWalletCST.contract.Call(opts, &out, "wasTokenUsed", tokenId_)
 
 	if err != nil {
 		return *new(bool), err
@@ -323,370 +230,142 @@ func (_IStakingWalletCST *IStakingWalletCSTCaller) WasTokenUsed(opts *bind.CallO
 
 // WasTokenUsed is a free data retrieval call binding the contract method 0x2a3247aa.
 //
-// Solidity: function wasTokenUsed(uint256 _tokenId) view returns(bool)
-func (_IStakingWalletCST *IStakingWalletCSTSession) WasTokenUsed(_tokenId *big.Int) (bool, error) {
-	return _IStakingWalletCST.Contract.WasTokenUsed(&_IStakingWalletCST.CallOpts, _tokenId)
+// Solidity: function wasTokenUsed(uint256 tokenId_) view returns(bool)
+func (_IStakingWalletCST *IStakingWalletCSTSession) WasTokenUsed(tokenId_ *big.Int) (bool, error) {
+	return _IStakingWalletCST.Contract.WasTokenUsed(&_IStakingWalletCST.CallOpts, tokenId_)
 }
 
 // WasTokenUsed is a free data retrieval call binding the contract method 0x2a3247aa.
 //
-// Solidity: function wasTokenUsed(uint256 _tokenId) view returns(bool)
-func (_IStakingWalletCST *IStakingWalletCSTCallerSession) WasTokenUsed(_tokenId *big.Int) (bool, error) {
-	return _IStakingWalletCST.Contract.WasTokenUsed(&_IStakingWalletCST.CallOpts, _tokenId)
+// Solidity: function wasTokenUsed(uint256 tokenId_) view returns(bool)
+func (_IStakingWalletCST *IStakingWalletCSTCallerSession) WasTokenUsed(tokenId_ *big.Int) (bool, error) {
+	return _IStakingWalletCST.Contract.WasTokenUsed(&_IStakingWalletCST.CallOpts, tokenId_)
 }
 
-// ClaimManyRewards is a paid mutator transaction binding the contract method 0x6034eb5b.
+// DepositIfPossible is a paid mutator transaction binding the contract method 0x15b4e68f.
 //
-// Solidity: function claimManyRewards(uint256[] actions, uint256[] deposits) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactor) ClaimManyRewards(opts *bind.TransactOpts, actions []*big.Int, deposits []*big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.contract.Transact(opts, "claimManyRewards", actions, deposits)
+// Solidity: function depositIfPossible(uint256 roundNum_) payable returns()
+func (_IStakingWalletCST *IStakingWalletCSTTransactor) DepositIfPossible(opts *bind.TransactOpts, roundNum_ *big.Int) (*types.Transaction, error) {
+	return _IStakingWalletCST.contract.Transact(opts, "depositIfPossible", roundNum_)
 }
 
-// ClaimManyRewards is a paid mutator transaction binding the contract method 0x6034eb5b.
+// DepositIfPossible is a paid mutator transaction binding the contract method 0x15b4e68f.
 //
-// Solidity: function claimManyRewards(uint256[] actions, uint256[] deposits) returns()
-func (_IStakingWalletCST *IStakingWalletCSTSession) ClaimManyRewards(actions []*big.Int, deposits []*big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.ClaimManyRewards(&_IStakingWalletCST.TransactOpts, actions, deposits)
+// Solidity: function depositIfPossible(uint256 roundNum_) payable returns()
+func (_IStakingWalletCST *IStakingWalletCSTSession) DepositIfPossible(roundNum_ *big.Int) (*types.Transaction, error) {
+	return _IStakingWalletCST.Contract.DepositIfPossible(&_IStakingWalletCST.TransactOpts, roundNum_)
 }
 
-// ClaimManyRewards is a paid mutator transaction binding the contract method 0x6034eb5b.
+// DepositIfPossible is a paid mutator transaction binding the contract method 0x15b4e68f.
 //
-// Solidity: function claimManyRewards(uint256[] actions, uint256[] deposits) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactorSession) ClaimManyRewards(actions []*big.Int, deposits []*big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.ClaimManyRewards(&_IStakingWalletCST.TransactOpts, actions, deposits)
-}
-
-// DepositIfPossible is a paid mutator transaction binding the contract method 0x326c7b69.
-//
-// Solidity: function depositIfPossible() payable returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactor) DepositIfPossible(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _IStakingWalletCST.contract.Transact(opts, "depositIfPossible")
-}
-
-// DepositIfPossible is a paid mutator transaction binding the contract method 0x326c7b69.
-//
-// Solidity: function depositIfPossible() payable returns()
-func (_IStakingWalletCST *IStakingWalletCSTSession) DepositIfPossible() (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.DepositIfPossible(&_IStakingWalletCST.TransactOpts)
-}
-
-// DepositIfPossible is a paid mutator transaction binding the contract method 0x326c7b69.
-//
-// Solidity: function depositIfPossible() payable returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactorSession) DepositIfPossible() (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.DepositIfPossible(&_IStakingWalletCST.TransactOpts)
+// Solidity: function depositIfPossible(uint256 roundNum_) payable returns()
+func (_IStakingWalletCST *IStakingWalletCSTTransactorSession) DepositIfPossible(roundNum_ *big.Int) (*types.Transaction, error) {
+	return _IStakingWalletCST.Contract.DepositIfPossible(&_IStakingWalletCST.TransactOpts, roundNum_)
 }
 
 // Stake is a paid mutator transaction binding the contract method 0xa694fc3a.
 //
-// Solidity: function stake(uint256 _tokenId) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactor) Stake(opts *bind.TransactOpts, _tokenId *big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.contract.Transact(opts, "stake", _tokenId)
+// Solidity: function stake(uint256 tokenId_) returns()
+func (_IStakingWalletCST *IStakingWalletCSTTransactor) Stake(opts *bind.TransactOpts, tokenId_ *big.Int) (*types.Transaction, error) {
+	return _IStakingWalletCST.contract.Transact(opts, "stake", tokenId_)
 }
 
 // Stake is a paid mutator transaction binding the contract method 0xa694fc3a.
 //
-// Solidity: function stake(uint256 _tokenId) returns()
-func (_IStakingWalletCST *IStakingWalletCSTSession) Stake(_tokenId *big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.Stake(&_IStakingWalletCST.TransactOpts, _tokenId)
+// Solidity: function stake(uint256 tokenId_) returns()
+func (_IStakingWalletCST *IStakingWalletCSTSession) Stake(tokenId_ *big.Int) (*types.Transaction, error) {
+	return _IStakingWalletCST.Contract.Stake(&_IStakingWalletCST.TransactOpts, tokenId_)
 }
 
 // Stake is a paid mutator transaction binding the contract method 0xa694fc3a.
 //
-// Solidity: function stake(uint256 _tokenId) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactorSession) Stake(_tokenId *big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.Stake(&_IStakingWalletCST.TransactOpts, _tokenId)
+// Solidity: function stake(uint256 tokenId_) returns()
+func (_IStakingWalletCST *IStakingWalletCSTTransactorSession) Stake(tokenId_ *big.Int) (*types.Transaction, error) {
+	return _IStakingWalletCST.Contract.Stake(&_IStakingWalletCST.TransactOpts, tokenId_)
 }
 
 // StakeMany is a paid mutator transaction binding the contract method 0xfe939afc.
 //
-// Solidity: function stakeMany(uint256[] ids) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactor) StakeMany(opts *bind.TransactOpts, ids []*big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.contract.Transact(opts, "stakeMany", ids)
+// Solidity: function stakeMany(uint256[] tokenIds_) returns()
+func (_IStakingWalletCST *IStakingWalletCSTTransactor) StakeMany(opts *bind.TransactOpts, tokenIds_ []*big.Int) (*types.Transaction, error) {
+	return _IStakingWalletCST.contract.Transact(opts, "stakeMany", tokenIds_)
 }
 
 // StakeMany is a paid mutator transaction binding the contract method 0xfe939afc.
 //
-// Solidity: function stakeMany(uint256[] ids) returns()
-func (_IStakingWalletCST *IStakingWalletCSTSession) StakeMany(ids []*big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.StakeMany(&_IStakingWalletCST.TransactOpts, ids)
+// Solidity: function stakeMany(uint256[] tokenIds_) returns()
+func (_IStakingWalletCST *IStakingWalletCSTSession) StakeMany(tokenIds_ []*big.Int) (*types.Transaction, error) {
+	return _IStakingWalletCST.Contract.StakeMany(&_IStakingWalletCST.TransactOpts, tokenIds_)
 }
 
 // StakeMany is a paid mutator transaction binding the contract method 0xfe939afc.
 //
-// Solidity: function stakeMany(uint256[] ids) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactorSession) StakeMany(ids []*big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.StakeMany(&_IStakingWalletCST.TransactOpts, ids)
+// Solidity: function stakeMany(uint256[] tokenIds_) returns()
+func (_IStakingWalletCST *IStakingWalletCSTTransactorSession) StakeMany(tokenIds_ []*big.Int) (*types.Transaction, error) {
+	return _IStakingWalletCST.Contract.StakeMany(&_IStakingWalletCST.TransactOpts, tokenIds_)
 }
 
-// TransferRemainingBalanceToCharity is a paid mutator transaction binding the contract method 0xed614ffa.
+// TryPerformMaintenance is a paid mutator transaction binding the contract method 0xd8ee5573.
 //
-// Solidity: function transferRemainingBalanceToCharity(address charityAddress_) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactor) TransferRemainingBalanceToCharity(opts *bind.TransactOpts, charityAddress_ common.Address) (*types.Transaction, error) {
-	return _IStakingWalletCST.contract.Transact(opts, "transferRemainingBalanceToCharity", charityAddress_)
+// Solidity: function tryPerformMaintenance(bool resetState_, address charityAddress_) returns(bool)
+func (_IStakingWalletCST *IStakingWalletCSTTransactor) TryPerformMaintenance(opts *bind.TransactOpts, resetState_ bool, charityAddress_ common.Address) (*types.Transaction, error) {
+	return _IStakingWalletCST.contract.Transact(opts, "tryPerformMaintenance", resetState_, charityAddress_)
 }
 
-// TransferRemainingBalanceToCharity is a paid mutator transaction binding the contract method 0xed614ffa.
+// TryPerformMaintenance is a paid mutator transaction binding the contract method 0xd8ee5573.
 //
-// Solidity: function transferRemainingBalanceToCharity(address charityAddress_) returns()
-func (_IStakingWalletCST *IStakingWalletCSTSession) TransferRemainingBalanceToCharity(charityAddress_ common.Address) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.TransferRemainingBalanceToCharity(&_IStakingWalletCST.TransactOpts, charityAddress_)
+// Solidity: function tryPerformMaintenance(bool resetState_, address charityAddress_) returns(bool)
+func (_IStakingWalletCST *IStakingWalletCSTSession) TryPerformMaintenance(resetState_ bool, charityAddress_ common.Address) (*types.Transaction, error) {
+	return _IStakingWalletCST.Contract.TryPerformMaintenance(&_IStakingWalletCST.TransactOpts, resetState_, charityAddress_)
 }
 
-// TransferRemainingBalanceToCharity is a paid mutator transaction binding the contract method 0xed614ffa.
+// TryPerformMaintenance is a paid mutator transaction binding the contract method 0xd8ee5573.
 //
-// Solidity: function transferRemainingBalanceToCharity(address charityAddress_) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactorSession) TransferRemainingBalanceToCharity(charityAddress_ common.Address) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.TransferRemainingBalanceToCharity(&_IStakingWalletCST.TransactOpts, charityAddress_)
+// Solidity: function tryPerformMaintenance(bool resetState_, address charityAddress_) returns(bool)
+func (_IStakingWalletCST *IStakingWalletCSTTransactorSession) TryPerformMaintenance(resetState_ bool, charityAddress_ common.Address) (*types.Transaction, error) {
+	return _IStakingWalletCST.Contract.TryPerformMaintenance(&_IStakingWalletCST.TransactOpts, resetState_, charityAddress_)
 }
 
 // Unstake is a paid mutator transaction binding the contract method 0x2e17de78.
 //
-// Solidity: function unstake(uint256 stakeActionId) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactor) Unstake(opts *bind.TransactOpts, stakeActionId *big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.contract.Transact(opts, "unstake", stakeActionId)
+// Solidity: function unstake(uint256 stakeActionId_) returns()
+func (_IStakingWalletCST *IStakingWalletCSTTransactor) Unstake(opts *bind.TransactOpts, stakeActionId_ *big.Int) (*types.Transaction, error) {
+	return _IStakingWalletCST.contract.Transact(opts, "unstake", stakeActionId_)
 }
 
 // Unstake is a paid mutator transaction binding the contract method 0x2e17de78.
 //
-// Solidity: function unstake(uint256 stakeActionId) returns()
-func (_IStakingWalletCST *IStakingWalletCSTSession) Unstake(stakeActionId *big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.Unstake(&_IStakingWalletCST.TransactOpts, stakeActionId)
+// Solidity: function unstake(uint256 stakeActionId_) returns()
+func (_IStakingWalletCST *IStakingWalletCSTSession) Unstake(stakeActionId_ *big.Int) (*types.Transaction, error) {
+	return _IStakingWalletCST.Contract.Unstake(&_IStakingWalletCST.TransactOpts, stakeActionId_)
 }
 
 // Unstake is a paid mutator transaction binding the contract method 0x2e17de78.
 //
-// Solidity: function unstake(uint256 stakeActionId) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactorSession) Unstake(stakeActionId *big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.Unstake(&_IStakingWalletCST.TransactOpts, stakeActionId)
-}
-
-// UnstakeClaim is a paid mutator transaction binding the contract method 0x1969e066.
-//
-// Solidity: function unstakeClaim(uint256 stakeActionId, uint256 ETHDepositId) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactor) UnstakeClaim(opts *bind.TransactOpts, stakeActionId *big.Int, ETHDepositId *big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.contract.Transact(opts, "unstakeClaim", stakeActionId, ETHDepositId)
-}
-
-// UnstakeClaim is a paid mutator transaction binding the contract method 0x1969e066.
-//
-// Solidity: function unstakeClaim(uint256 stakeActionId, uint256 ETHDepositId) returns()
-func (_IStakingWalletCST *IStakingWalletCSTSession) UnstakeClaim(stakeActionId *big.Int, ETHDepositId *big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.UnstakeClaim(&_IStakingWalletCST.TransactOpts, stakeActionId, ETHDepositId)
-}
-
-// UnstakeClaim is a paid mutator transaction binding the contract method 0x1969e066.
-//
-// Solidity: function unstakeClaim(uint256 stakeActionId, uint256 ETHDepositId) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactorSession) UnstakeClaim(stakeActionId *big.Int, ETHDepositId *big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.UnstakeClaim(&_IStakingWalletCST.TransactOpts, stakeActionId, ETHDepositId)
-}
-
-// UnstakeClaimMany is a paid mutator transaction binding the contract method 0xdb2b4bd8.
-//
-// Solidity: function unstakeClaimMany(uint256[] unstake_actions, uint256[] claim_actions, uint256[] claim_deposits) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactor) UnstakeClaimMany(opts *bind.TransactOpts, unstake_actions []*big.Int, claim_actions []*big.Int, claim_deposits []*big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.contract.Transact(opts, "unstakeClaimMany", unstake_actions, claim_actions, claim_deposits)
-}
-
-// UnstakeClaimMany is a paid mutator transaction binding the contract method 0xdb2b4bd8.
-//
-// Solidity: function unstakeClaimMany(uint256[] unstake_actions, uint256[] claim_actions, uint256[] claim_deposits) returns()
-func (_IStakingWalletCST *IStakingWalletCSTSession) UnstakeClaimMany(unstake_actions []*big.Int, claim_actions []*big.Int, claim_deposits []*big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.UnstakeClaimMany(&_IStakingWalletCST.TransactOpts, unstake_actions, claim_actions, claim_deposits)
-}
-
-// UnstakeClaimMany is a paid mutator transaction binding the contract method 0xdb2b4bd8.
-//
-// Solidity: function unstakeClaimMany(uint256[] unstake_actions, uint256[] claim_actions, uint256[] claim_deposits) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactorSession) UnstakeClaimMany(unstake_actions []*big.Int, claim_actions []*big.Int, claim_deposits []*big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.UnstakeClaimMany(&_IStakingWalletCST.TransactOpts, unstake_actions, claim_actions, claim_deposits)
+// Solidity: function unstake(uint256 stakeActionId_) returns()
+func (_IStakingWalletCST *IStakingWalletCSTTransactorSession) Unstake(stakeActionId_ *big.Int) (*types.Transaction, error) {
+	return _IStakingWalletCST.Contract.Unstake(&_IStakingWalletCST.TransactOpts, stakeActionId_)
 }
 
 // UnstakeMany is a paid mutator transaction binding the contract method 0x0d50c189.
 //
-// Solidity: function unstakeMany(uint256[] ids) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactor) UnstakeMany(opts *bind.TransactOpts, ids []*big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.contract.Transact(opts, "unstakeMany", ids)
+// Solidity: function unstakeMany(uint256[] stakeActionIds_) returns()
+func (_IStakingWalletCST *IStakingWalletCSTTransactor) UnstakeMany(opts *bind.TransactOpts, stakeActionIds_ []*big.Int) (*types.Transaction, error) {
+	return _IStakingWalletCST.contract.Transact(opts, "unstakeMany", stakeActionIds_)
 }
 
 // UnstakeMany is a paid mutator transaction binding the contract method 0x0d50c189.
 //
-// Solidity: function unstakeMany(uint256[] ids) returns()
-func (_IStakingWalletCST *IStakingWalletCSTSession) UnstakeMany(ids []*big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.UnstakeMany(&_IStakingWalletCST.TransactOpts, ids)
+// Solidity: function unstakeMany(uint256[] stakeActionIds_) returns()
+func (_IStakingWalletCST *IStakingWalletCSTSession) UnstakeMany(stakeActionIds_ []*big.Int) (*types.Transaction, error) {
+	return _IStakingWalletCST.Contract.UnstakeMany(&_IStakingWalletCST.TransactOpts, stakeActionIds_)
 }
 
 // UnstakeMany is a paid mutator transaction binding the contract method 0x0d50c189.
 //
-// Solidity: function unstakeMany(uint256[] ids) returns()
-func (_IStakingWalletCST *IStakingWalletCSTTransactorSession) UnstakeMany(ids []*big.Int) (*types.Transaction, error) {
-	return _IStakingWalletCST.Contract.UnstakeMany(&_IStakingWalletCST.TransactOpts, ids)
-}
-
-// IStakingWalletCSTClaimRewardEventIterator is returned from FilterClaimRewardEvent and is used to iterate over the raw logs and unpacked data for ClaimRewardEvent events raised by the IStakingWalletCST contract.
-type IStakingWalletCSTClaimRewardEventIterator struct {
-	Event *IStakingWalletCSTClaimRewardEvent // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *IStakingWalletCSTClaimRewardEventIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(IStakingWalletCSTClaimRewardEvent)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(IStakingWalletCSTClaimRewardEvent)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *IStakingWalletCSTClaimRewardEventIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *IStakingWalletCSTClaimRewardEventIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// IStakingWalletCSTClaimRewardEvent represents a ClaimRewardEvent event raised by the IStakingWalletCST contract.
-type IStakingWalletCSTClaimRewardEvent struct {
-	ActionId  *big.Int
-	DepositId *big.Int
-	Reward    *big.Int
-	Staker    common.Address
-	Raw       types.Log // Blockchain specific contextual infos
-}
-
-// FilterClaimRewardEvent is a free log retrieval operation binding the contract event 0xdde81df5caa033e783e2a39d93e3a8718a7dc27ba95a4757f5433a01f794ec36.
-//
-// Solidity: event ClaimRewardEvent(uint256 indexed actionId, uint256 indexed depositId, uint256 reward, address indexed staker)
-func (_IStakingWalletCST *IStakingWalletCSTFilterer) FilterClaimRewardEvent(opts *bind.FilterOpts, actionId []*big.Int, depositId []*big.Int, staker []common.Address) (*IStakingWalletCSTClaimRewardEventIterator, error) {
-
-	var actionIdRule []interface{}
-	for _, actionIdItem := range actionId {
-		actionIdRule = append(actionIdRule, actionIdItem)
-	}
-	var depositIdRule []interface{}
-	for _, depositIdItem := range depositId {
-		depositIdRule = append(depositIdRule, depositIdItem)
-	}
-
-	var stakerRule []interface{}
-	for _, stakerItem := range staker {
-		stakerRule = append(stakerRule, stakerItem)
-	}
-
-	logs, sub, err := _IStakingWalletCST.contract.FilterLogs(opts, "ClaimRewardEvent", actionIdRule, depositIdRule, stakerRule)
-	if err != nil {
-		return nil, err
-	}
-	return &IStakingWalletCSTClaimRewardEventIterator{contract: _IStakingWalletCST.contract, event: "ClaimRewardEvent", logs: logs, sub: sub}, nil
-}
-
-// WatchClaimRewardEvent is a free log subscription operation binding the contract event 0xdde81df5caa033e783e2a39d93e3a8718a7dc27ba95a4757f5433a01f794ec36.
-//
-// Solidity: event ClaimRewardEvent(uint256 indexed actionId, uint256 indexed depositId, uint256 reward, address indexed staker)
-func (_IStakingWalletCST *IStakingWalletCSTFilterer) WatchClaimRewardEvent(opts *bind.WatchOpts, sink chan<- *IStakingWalletCSTClaimRewardEvent, actionId []*big.Int, depositId []*big.Int, staker []common.Address) (event.Subscription, error) {
-
-	var actionIdRule []interface{}
-	for _, actionIdItem := range actionId {
-		actionIdRule = append(actionIdRule, actionIdItem)
-	}
-	var depositIdRule []interface{}
-	for _, depositIdItem := range depositId {
-		depositIdRule = append(depositIdRule, depositIdItem)
-	}
-
-	var stakerRule []interface{}
-	for _, stakerItem := range staker {
-		stakerRule = append(stakerRule, stakerItem)
-	}
-
-	logs, sub, err := _IStakingWalletCST.contract.WatchLogs(opts, "ClaimRewardEvent", actionIdRule, depositIdRule, stakerRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(IStakingWalletCSTClaimRewardEvent)
-				if err := _IStakingWalletCST.contract.UnpackLog(event, "ClaimRewardEvent", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseClaimRewardEvent is a log parse operation binding the contract event 0xdde81df5caa033e783e2a39d93e3a8718a7dc27ba95a4757f5433a01f794ec36.
-//
-// Solidity: event ClaimRewardEvent(uint256 indexed actionId, uint256 indexed depositId, uint256 reward, address indexed staker)
-func (_IStakingWalletCST *IStakingWalletCSTFilterer) ParseClaimRewardEvent(log types.Log) (*IStakingWalletCSTClaimRewardEvent, error) {
-	event := new(IStakingWalletCSTClaimRewardEvent)
-	if err := _IStakingWalletCST.contract.UnpackLog(event, "ClaimRewardEvent", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
+// Solidity: function unstakeMany(uint256[] stakeActionIds_) returns()
+func (_IStakingWalletCST *IStakingWalletCSTTransactorSession) UnstakeMany(stakeActionIds_ []*big.Int) (*types.Transaction, error) {
+	return _IStakingWalletCST.Contract.UnstakeMany(&_IStakingWalletCST.TransactOpts, stakeActionIds_)
 }
 
 // IStakingWalletCSTEthDepositEventIterator is returned from FilterEthDepositEvent and is used to iterate over the raw logs and unpacked data for EthDepositEvent events raised by the IStakingWalletCST contract.
@@ -758,41 +437,42 @@ func (it *IStakingWalletCSTEthDepositEventIterator) Close() error {
 
 // IStakingWalletCSTEthDepositEvent represents a EthDepositEvent event raised by the IStakingWalletCST contract.
 type IStakingWalletCSTEthDepositEvent struct {
-	DepositTime   *big.Int
-	DepositNum    *big.Int
+	RoundNum      *big.Int
+	DepositIndex  *big.Int
+	DepositId     *big.Int
+	DepositAmount *big.Int
 	NumStakedNFTs *big.Int
-	Amount        *big.Int
 	Raw           types.Log // Blockchain specific contextual infos
 }
 
-// FilterEthDepositEvent is a free log retrieval operation binding the contract event 0xd91db13dbdc68f51d0e522c3f29f3d5c0f5945fa377792cb335e42f78b82d1d8.
+// FilterEthDepositEvent is a free log retrieval operation binding the contract event 0xdc0eacba8b1f88284dca5eec8be23173aefa7206298fe22de43e064b6ccd8418.
 //
-// Solidity: event EthDepositEvent(uint256 indexed depositTime, uint256 depositNum, uint256 numStakedNFTs, uint256 amount)
-func (_IStakingWalletCST *IStakingWalletCSTFilterer) FilterEthDepositEvent(opts *bind.FilterOpts, depositTime []*big.Int) (*IStakingWalletCSTEthDepositEventIterator, error) {
+// Solidity: event EthDepositEvent(uint256 indexed roundNum, uint256 depositIndex, uint256 depositId, uint256 depositAmount, uint256 numStakedNFTs)
+func (_IStakingWalletCST *IStakingWalletCSTFilterer) FilterEthDepositEvent(opts *bind.FilterOpts, roundNum []*big.Int) (*IStakingWalletCSTEthDepositEventIterator, error) {
 
-	var depositTimeRule []interface{}
-	for _, depositTimeItem := range depositTime {
-		depositTimeRule = append(depositTimeRule, depositTimeItem)
+	var roundNumRule []interface{}
+	for _, roundNumItem := range roundNum {
+		roundNumRule = append(roundNumRule, roundNumItem)
 	}
 
-	logs, sub, err := _IStakingWalletCST.contract.FilterLogs(opts, "EthDepositEvent", depositTimeRule)
+	logs, sub, err := _IStakingWalletCST.contract.FilterLogs(opts, "EthDepositEvent", roundNumRule)
 	if err != nil {
 		return nil, err
 	}
 	return &IStakingWalletCSTEthDepositEventIterator{contract: _IStakingWalletCST.contract, event: "EthDepositEvent", logs: logs, sub: sub}, nil
 }
 
-// WatchEthDepositEvent is a free log subscription operation binding the contract event 0xd91db13dbdc68f51d0e522c3f29f3d5c0f5945fa377792cb335e42f78b82d1d8.
+// WatchEthDepositEvent is a free log subscription operation binding the contract event 0xdc0eacba8b1f88284dca5eec8be23173aefa7206298fe22de43e064b6ccd8418.
 //
-// Solidity: event EthDepositEvent(uint256 indexed depositTime, uint256 depositNum, uint256 numStakedNFTs, uint256 amount)
-func (_IStakingWalletCST *IStakingWalletCSTFilterer) WatchEthDepositEvent(opts *bind.WatchOpts, sink chan<- *IStakingWalletCSTEthDepositEvent, depositTime []*big.Int) (event.Subscription, error) {
+// Solidity: event EthDepositEvent(uint256 indexed roundNum, uint256 depositIndex, uint256 depositId, uint256 depositAmount, uint256 numStakedNFTs)
+func (_IStakingWalletCST *IStakingWalletCSTFilterer) WatchEthDepositEvent(opts *bind.WatchOpts, sink chan<- *IStakingWalletCSTEthDepositEvent, roundNum []*big.Int) (event.Subscription, error) {
 
-	var depositTimeRule []interface{}
-	for _, depositTimeItem := range depositTime {
-		depositTimeRule = append(depositTimeRule, depositTimeItem)
+	var roundNumRule []interface{}
+	for _, roundNumItem := range roundNum {
+		roundNumRule = append(roundNumRule, roundNumItem)
 	}
 
-	logs, sub, err := _IStakingWalletCST.contract.WatchLogs(opts, "EthDepositEvent", depositTimeRule)
+	logs, sub, err := _IStakingWalletCST.contract.WatchLogs(opts, "EthDepositEvent", roundNumRule)
 	if err != nil {
 		return nil, err
 	}
@@ -824,9 +504,9 @@ func (_IStakingWalletCST *IStakingWalletCSTFilterer) WatchEthDepositEvent(opts *
 	}), nil
 }
 
-// ParseEthDepositEvent is a log parse operation binding the contract event 0xd91db13dbdc68f51d0e522c3f29f3d5c0f5945fa377792cb335e42f78b82d1d8.
+// ParseEthDepositEvent is a log parse operation binding the contract event 0xdc0eacba8b1f88284dca5eec8be23173aefa7206298fe22de43e064b6ccd8418.
 //
-// Solidity: event EthDepositEvent(uint256 indexed depositTime, uint256 depositNum, uint256 numStakedNFTs, uint256 amount)
+// Solidity: event EthDepositEvent(uint256 indexed roundNum, uint256 depositIndex, uint256 depositId, uint256 depositAmount, uint256 numStakedNFTs)
 func (_IStakingWalletCST *IStakingWalletCSTFilterer) ParseEthDepositEvent(log types.Log) (*IStakingWalletCSTEthDepositEvent, error) {
 	event := new(IStakingWalletCSTEthDepositEvent)
 	if err := _IStakingWalletCST.contract.UnpackLog(event, "EthDepositEvent", log); err != nil {
@@ -905,59 +585,57 @@ func (it *IStakingWalletCSTStakeActionEventIterator) Close() error {
 
 // IStakingWalletCSTStakeActionEvent represents a StakeActionEvent event raised by the IStakingWalletCST contract.
 type IStakingWalletCSTStakeActionEvent struct {
-	ActionId  *big.Int
-	TokenId   *big.Int
-	TotalNFTs *big.Int
-	Staker    common.Address
-	Raw       types.Log // Blockchain specific contextual infos
+	StakeActionId *big.Int
+	TokenId       *big.Int
+	StakerAddress common.Address
+	NumStakedNFTs *big.Int
+	Raw           types.Log // Blockchain specific contextual infos
 }
 
-// FilterStakeActionEvent is a free log retrieval operation binding the contract event 0xde0c27ec227b5d0c0a194ea6f25d7031639f9c10d8bf6e2f9414ff8088a6e20d.
+// FilterStakeActionEvent is a free log retrieval operation binding the contract event 0xcd7bda73d32f8fada3eeee8d21563aa19eb2fe86d90b4449cf5252e6f3da7ef8.
 //
-// Solidity: event StakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
-func (_IStakingWalletCST *IStakingWalletCSTFilterer) FilterStakeActionEvent(opts *bind.FilterOpts, actionId []*big.Int, tokenId []*big.Int, staker []common.Address) (*IStakingWalletCSTStakeActionEventIterator, error) {
+// Solidity: event StakeActionEvent(uint256 indexed stakeActionId, uint256 indexed tokenId, address indexed stakerAddress, uint256 numStakedNFTs)
+func (_IStakingWalletCST *IStakingWalletCSTFilterer) FilterStakeActionEvent(opts *bind.FilterOpts, stakeActionId []*big.Int, tokenId []*big.Int, stakerAddress []common.Address) (*IStakingWalletCSTStakeActionEventIterator, error) {
 
-	var actionIdRule []interface{}
-	for _, actionIdItem := range actionId {
-		actionIdRule = append(actionIdRule, actionIdItem)
+	var stakeActionIdRule []interface{}
+	for _, stakeActionIdItem := range stakeActionId {
+		stakeActionIdRule = append(stakeActionIdRule, stakeActionIdItem)
 	}
 	var tokenIdRule []interface{}
 	for _, tokenIdItem := range tokenId {
 		tokenIdRule = append(tokenIdRule, tokenIdItem)
 	}
-
-	var stakerRule []interface{}
-	for _, stakerItem := range staker {
-		stakerRule = append(stakerRule, stakerItem)
+	var stakerAddressRule []interface{}
+	for _, stakerAddressItem := range stakerAddress {
+		stakerAddressRule = append(stakerAddressRule, stakerAddressItem)
 	}
 
-	logs, sub, err := _IStakingWalletCST.contract.FilterLogs(opts, "StakeActionEvent", actionIdRule, tokenIdRule, stakerRule)
+	logs, sub, err := _IStakingWalletCST.contract.FilterLogs(opts, "StakeActionEvent", stakeActionIdRule, tokenIdRule, stakerAddressRule)
 	if err != nil {
 		return nil, err
 	}
 	return &IStakingWalletCSTStakeActionEventIterator{contract: _IStakingWalletCST.contract, event: "StakeActionEvent", logs: logs, sub: sub}, nil
 }
 
-// WatchStakeActionEvent is a free log subscription operation binding the contract event 0xde0c27ec227b5d0c0a194ea6f25d7031639f9c10d8bf6e2f9414ff8088a6e20d.
+// WatchStakeActionEvent is a free log subscription operation binding the contract event 0xcd7bda73d32f8fada3eeee8d21563aa19eb2fe86d90b4449cf5252e6f3da7ef8.
 //
-// Solidity: event StakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
-func (_IStakingWalletCST *IStakingWalletCSTFilterer) WatchStakeActionEvent(opts *bind.WatchOpts, sink chan<- *IStakingWalletCSTStakeActionEvent, actionId []*big.Int, tokenId []*big.Int, staker []common.Address) (event.Subscription, error) {
+// Solidity: event StakeActionEvent(uint256 indexed stakeActionId, uint256 indexed tokenId, address indexed stakerAddress, uint256 numStakedNFTs)
+func (_IStakingWalletCST *IStakingWalletCSTFilterer) WatchStakeActionEvent(opts *bind.WatchOpts, sink chan<- *IStakingWalletCSTStakeActionEvent, stakeActionId []*big.Int, tokenId []*big.Int, stakerAddress []common.Address) (event.Subscription, error) {
 
-	var actionIdRule []interface{}
-	for _, actionIdItem := range actionId {
-		actionIdRule = append(actionIdRule, actionIdItem)
+	var stakeActionIdRule []interface{}
+	for _, stakeActionIdItem := range stakeActionId {
+		stakeActionIdRule = append(stakeActionIdRule, stakeActionIdItem)
 	}
 	var tokenIdRule []interface{}
 	for _, tokenIdItem := range tokenId {
 		tokenIdRule = append(tokenIdRule, tokenIdItem)
 	}
-
-	var stakerRule []interface{}
-	for _, stakerItem := range staker {
-		stakerRule = append(stakerRule, stakerItem)
+	var stakerAddressRule []interface{}
+	for _, stakerAddressItem := range stakerAddress {
+		stakerAddressRule = append(stakerAddressRule, stakerAddressItem)
 	}
 
-	logs, sub, err := _IStakingWalletCST.contract.WatchLogs(opts, "StakeActionEvent", actionIdRule, tokenIdRule, stakerRule)
+	logs, sub, err := _IStakingWalletCST.contract.WatchLogs(opts, "StakeActionEvent", stakeActionIdRule, tokenIdRule, stakerAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -989,9 +667,9 @@ func (_IStakingWalletCST *IStakingWalletCSTFilterer) WatchStakeActionEvent(opts 
 	}), nil
 }
 
-// ParseStakeActionEvent is a log parse operation binding the contract event 0xde0c27ec227b5d0c0a194ea6f25d7031639f9c10d8bf6e2f9414ff8088a6e20d.
+// ParseStakeActionEvent is a log parse operation binding the contract event 0xcd7bda73d32f8fada3eeee8d21563aa19eb2fe86d90b4449cf5252e6f3da7ef8.
 //
-// Solidity: event StakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
+// Solidity: event StakeActionEvent(uint256 indexed stakeActionId, uint256 indexed tokenId, address indexed stakerAddress, uint256 numStakedNFTs)
 func (_IStakingWalletCST *IStakingWalletCSTFilterer) ParseStakeActionEvent(log types.Log) (*IStakingWalletCSTStakeActionEvent, error) {
 	event := new(IStakingWalletCSTStakeActionEvent)
 	if err := _IStakingWalletCST.contract.UnpackLog(event, "StakeActionEvent", log); err != nil {
@@ -1070,59 +748,58 @@ func (it *IStakingWalletCSTUnstakeActionEventIterator) Close() error {
 
 // IStakingWalletCSTUnstakeActionEvent represents a UnstakeActionEvent event raised by the IStakingWalletCST contract.
 type IStakingWalletCSTUnstakeActionEvent struct {
-	ActionId  *big.Int
-	TokenId   *big.Int
-	TotalNFTs *big.Int
-	Staker    common.Address
-	Raw       types.Log // Blockchain specific contextual infos
+	StakeActionId *big.Int
+	TokenId       *big.Int
+	StakerAddress common.Address
+	NumStakedNFTs *big.Int
+	RewardAmount  *big.Int
+	Raw           types.Log // Blockchain specific contextual infos
 }
 
-// FilterUnstakeActionEvent is a free log retrieval operation binding the contract event 0x33940a9fc3ee3c9150b29b34ef29ca397b5e1e340425a4f0da0346b5b90766c8.
+// FilterUnstakeActionEvent is a free log retrieval operation binding the contract event 0x678afbb7bbf1c4f3df509d59b51d6e75969703762eb36ed41414dc7c49569c96.
 //
-// Solidity: event UnstakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
-func (_IStakingWalletCST *IStakingWalletCSTFilterer) FilterUnstakeActionEvent(opts *bind.FilterOpts, actionId []*big.Int, tokenId []*big.Int, staker []common.Address) (*IStakingWalletCSTUnstakeActionEventIterator, error) {
+// Solidity: event UnstakeActionEvent(uint256 indexed stakeActionId, uint256 indexed tokenId, address indexed stakerAddress, uint256 numStakedNFTs, uint256 rewardAmount)
+func (_IStakingWalletCST *IStakingWalletCSTFilterer) FilterUnstakeActionEvent(opts *bind.FilterOpts, stakeActionId []*big.Int, tokenId []*big.Int, stakerAddress []common.Address) (*IStakingWalletCSTUnstakeActionEventIterator, error) {
 
-	var actionIdRule []interface{}
-	for _, actionIdItem := range actionId {
-		actionIdRule = append(actionIdRule, actionIdItem)
+	var stakeActionIdRule []interface{}
+	for _, stakeActionIdItem := range stakeActionId {
+		stakeActionIdRule = append(stakeActionIdRule, stakeActionIdItem)
 	}
 	var tokenIdRule []interface{}
 	for _, tokenIdItem := range tokenId {
 		tokenIdRule = append(tokenIdRule, tokenIdItem)
 	}
-
-	var stakerRule []interface{}
-	for _, stakerItem := range staker {
-		stakerRule = append(stakerRule, stakerItem)
+	var stakerAddressRule []interface{}
+	for _, stakerAddressItem := range stakerAddress {
+		stakerAddressRule = append(stakerAddressRule, stakerAddressItem)
 	}
 
-	logs, sub, err := _IStakingWalletCST.contract.FilterLogs(opts, "UnstakeActionEvent", actionIdRule, tokenIdRule, stakerRule)
+	logs, sub, err := _IStakingWalletCST.contract.FilterLogs(opts, "UnstakeActionEvent", stakeActionIdRule, tokenIdRule, stakerAddressRule)
 	if err != nil {
 		return nil, err
 	}
 	return &IStakingWalletCSTUnstakeActionEventIterator{contract: _IStakingWalletCST.contract, event: "UnstakeActionEvent", logs: logs, sub: sub}, nil
 }
 
-// WatchUnstakeActionEvent is a free log subscription operation binding the contract event 0x33940a9fc3ee3c9150b29b34ef29ca397b5e1e340425a4f0da0346b5b90766c8.
+// WatchUnstakeActionEvent is a free log subscription operation binding the contract event 0x678afbb7bbf1c4f3df509d59b51d6e75969703762eb36ed41414dc7c49569c96.
 //
-// Solidity: event UnstakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
-func (_IStakingWalletCST *IStakingWalletCSTFilterer) WatchUnstakeActionEvent(opts *bind.WatchOpts, sink chan<- *IStakingWalletCSTUnstakeActionEvent, actionId []*big.Int, tokenId []*big.Int, staker []common.Address) (event.Subscription, error) {
+// Solidity: event UnstakeActionEvent(uint256 indexed stakeActionId, uint256 indexed tokenId, address indexed stakerAddress, uint256 numStakedNFTs, uint256 rewardAmount)
+func (_IStakingWalletCST *IStakingWalletCSTFilterer) WatchUnstakeActionEvent(opts *bind.WatchOpts, sink chan<- *IStakingWalletCSTUnstakeActionEvent, stakeActionId []*big.Int, tokenId []*big.Int, stakerAddress []common.Address) (event.Subscription, error) {
 
-	var actionIdRule []interface{}
-	for _, actionIdItem := range actionId {
-		actionIdRule = append(actionIdRule, actionIdItem)
+	var stakeActionIdRule []interface{}
+	for _, stakeActionIdItem := range stakeActionId {
+		stakeActionIdRule = append(stakeActionIdRule, stakeActionIdItem)
 	}
 	var tokenIdRule []interface{}
 	for _, tokenIdItem := range tokenId {
 		tokenIdRule = append(tokenIdRule, tokenIdItem)
 	}
-
-	var stakerRule []interface{}
-	for _, stakerItem := range staker {
-		stakerRule = append(stakerRule, stakerItem)
+	var stakerAddressRule []interface{}
+	for _, stakerAddressItem := range stakerAddress {
+		stakerAddressRule = append(stakerAddressRule, stakerAddressItem)
 	}
 
-	logs, sub, err := _IStakingWalletCST.contract.WatchLogs(opts, "UnstakeActionEvent", actionIdRule, tokenIdRule, stakerRule)
+	logs, sub, err := _IStakingWalletCST.contract.WatchLogs(opts, "UnstakeActionEvent", stakeActionIdRule, tokenIdRule, stakerAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1154,9 +831,9 @@ func (_IStakingWalletCST *IStakingWalletCSTFilterer) WatchUnstakeActionEvent(opt
 	}), nil
 }
 
-// ParseUnstakeActionEvent is a log parse operation binding the contract event 0x33940a9fc3ee3c9150b29b34ef29ca397b5e1e340425a4f0da0346b5b90766c8.
+// ParseUnstakeActionEvent is a log parse operation binding the contract event 0x678afbb7bbf1c4f3df509d59b51d6e75969703762eb36ed41414dc7c49569c96.
 //
-// Solidity: event UnstakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
+// Solidity: event UnstakeActionEvent(uint256 indexed stakeActionId, uint256 indexed tokenId, address indexed stakerAddress, uint256 numStakedNFTs, uint256 rewardAmount)
 func (_IStakingWalletCST *IStakingWalletCSTFilterer) ParseUnstakeActionEvent(log types.Log) (*IStakingWalletCSTUnstakeActionEvent, error) {
 	event := new(IStakingWalletCSTUnstakeActionEvent)
 	if err := _IStakingWalletCST.contract.UnpackLog(event, "UnstakeActionEvent", log); err != nil {
@@ -1341,8 +1018,8 @@ func (_SignedMath *SignedMathTransactorRaw) Transact(opts *bind.TransactOpts, me
 
 // StakingWalletCSTMetaData contains all meta data concerning the StakingWalletCST contract.
 var StakingWalletCSTMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"contractCosmicSignature\",\"name\":\"nft_\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"game_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"requester\",\"type\":\"address\"}],\"name\":\"AccessError\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"}],\"name\":\"DepositAlreadyClaimed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"DepositFromUnauthorizedSender\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"stakeStart\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"stakeEnd\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositDate\",\"type\":\"uint256\"}],\"name\":\"DepositOutsideStakingWindow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"}],\"name\":\"FundTransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionsLen\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositsLen\",\"type\":\"uint256\"}],\"name\":\"IncorrectArrayArguments\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"InvalidActionId\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"}],\"name\":\"InvalidDepositId\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidOperationInCurrentState\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"OneTimeStaking\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyDeleted\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyInserted\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyUnstaked\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"TokenNotUnstaked\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"reward\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"}],\"name\":\"ClaimRewardEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"depositTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"depositNum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"numStakedNFTs\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"EthDepositEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"charityAddress\",\"type\":\"address\"}],\"name\":\"FundsTransferredToCharityEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalNFTs\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"}],\"name\":\"StakeActionEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalNFTs\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"}],\"name\":\"UnstakeActionEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"ETHDeposits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"depositTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"depositAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"numStaked\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"actions\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256[]\",\"name\":\"deposits\",\"type\":\"uint256[]\"}],\"name\":\"claimManyRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"depositIfPossible\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"game\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"isTokenStaked\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"lastActionIdByTokenId\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"lastActionIds\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nft\",\"outputs\":[{\"internalType\":\"contractCosmicSignature\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numETHDeposits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numStakeActions\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numStakedNFTs\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numTokensStaked\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"}],\"name\":\"stake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"stakeActions\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"nftOwner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"stakeTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"unstakeTime\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"ids\",\"type\":\"uint256[]\"}],\"name\":\"stakeMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"stakedTokens\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"stakerByTokenId\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"tokenIndices\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"charityAddress_\",\"type\":\"address\"}],\"name\":\"transferRemainingBalanceToCharity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"stakeActionId\",\"type\":\"uint256\"}],\"name\":\"unstake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"stakeActionId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"ETHDepositId\",\"type\":\"uint256\"}],\"name\":\"unstakeClaim\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"unstake_actions\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256[]\",\"name\":\"claim_actions\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256[]\",\"name\":\"claim_deposits\",\"type\":\"uint256[]\"}],\"name\":\"unstakeClaimMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"ids\",\"type\":\"uint256[]\"}],\"name\":\"unstakeMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"usedTokens\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"}],\"name\":\"wasTokenUsed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
-	Bin: "0x6080604052346100305761001a610014610133565b9061039c565b610022610035565b61333b610524823961333b90f35b61003b565b60405190565b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906100679061003f565b810190811060018060401b0382111761007f57604052565b610049565b90610097610090610035565b928361005d565b565b5f80fd5b60018060a01b031690565b6100b19061009d565b90565b6100bd906100a8565b90565b6100c9816100b4565b036100d057565b5f80fd5b905051906100e1826100c0565b565b6100ec816100a8565b036100f357565b5f80fd5b90505190610104826100e3565b565b919060408382031261012e578061012261012b925f86016100d4565b936020016100f7565b90565b610099565b61015161385f8038038061014681610084565b928339810190610106565b9091565b90565b61016c6101676101719261009d565b610155565b61009d565b90565b61017d90610158565b90565b61018990610174565b90565b90565b6101a361019e6101a89261018c565b610155565b61009d565b90565b6101b49061018f565b90565b60209181520190565b60207f66742e0000000000000000000000000000000000000000000000000000000000917f5a65726f2d616464726573732077617320676976656e20666f7220746865206e5f8201520152565b61021a60236040926101b7565b610223816101c0565b0190565b61023c9060208101905f81830391015261020d565b90565b1561024657565b61024e610035565b63eac0d38960e01b81528061026560048201610227565b0390fd5b60207f616d652e00000000000000000000000000000000000000000000000000000000917f5a65726f2d616464726573732077617320676976656e20666f722074686520675f8201520152565b6102c360246040926101b7565b6102cc81610269565b0190565b6102e59060208101905f8183039101526102b6565b90565b156102ef57565b6102f7610035565b63eac0d38960e01b81528061030e600482016102d0565b0390fd5b5f1b90565b9061032860018060a01b0391610312565b9181191691161790565b61033b90610158565b90565b61034790610332565b90565b90565b9061036261035d6103699261033e565b61034a565b8254610317565b9055565b61037690610174565b90565b90565b9061039161038c6103989261036d565b610379565b8254610317565b9055565b9061040661040d926103ad3361040f565b6103da6103b982610180565b6103d36103cd6103c85f6101ab565b6100a8565b916100a8565b141561023f565b6103ff836103f86103f26103ed5f6101ab565b6100a8565b916100a8565b14156102e8565b600161034d565b600261037c565b565b6104189061043c565b565b610423906100a8565b9052565b919061043a905f6020850194019061041a565b565b8061045761045161044c5f6101ab565b6100a8565b916100a8565b1461046757610465906104c4565b565b61048a6104735f6101ab565b5f918291631e4fbdf760e01b835260048301610427565b0390fd5b5f1c90565b60018060a01b031690565b6104aa6104af9161048e565b610493565b90565b6104bc905461049e565b90565b5f0190565b6104cd5f6104b2565b6104d7825f61037c565b9061050b6105057f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09361036d565b9161036d565b91610514610035565b8061051e816104bf565b0390a356fe60806040526004361015610013575b610f20565b61001d5f356101dc565b80630d50c189146101d75780630f7ee879146101d257806317db6213146101cd5780631969e066146101c85780632a3247aa146101c35780632e17de78146101be578063326c7b69146101b957806344d110b9146101b4578063451f1adf146101af57806347ccca02146101aa57806355279fdb146101a55780635fda0acc146101a05780636034eb5b1461019b5780636427d9a914610196578063715018a614610191578063889d1e1a1461018c5780638da5cb5b14610187578063a2b136fb14610182578063a531aa861461017d578063a694fc3a14610178578063c065894e14610173578063c07885551461016e578063c3fe3e2814610169578063db2b4bd814610164578063ed614ffa1461015f578063f0a524241461015a578063f2fde38b146101555763fe939afc0361000e57610eed565b610eba565b610e85565b610e52565b610ddd565b610d27565b610cbd565b610c13565b610be0565b610bab565b610b63565b610a6e565b610a0b565b6109d8565b6109a3565b6108f2565b610860565b61082b565b6107e7565b61070e565b610639565b6105e1565b6105ae565b610579565b610545565b6104e3565b610445565b61034f565b60e01c90565b60405190565b5f80fd5b5f80fd5b5f80fd5b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b90610220906101f8565b810190811067ffffffffffffffff82111761023a57604052565b610202565b9061025261024b6101e2565b9283610216565b565b67ffffffffffffffff811161026c5760208091020190565b610202565b5f80fd5b90565b61028181610275565b0361028857565b5f80fd5b9050359061029982610278565b565b909291926102b06102ab82610254565b61023f565b93818552602080860192028301928184116102ed57915b8383106102d45750505050565b602080916102e2848661028c565b8152019201916102c7565b610271565b9080601f830112156103105781602061030d9335910161029b565b90565b6101f4565b90602082820312610345575f82013567ffffffffffffffff81116103405761033d92016102f2565b90565b6101f0565b6101ec565b5f0190565b3461037d57610367610362366004610315565b610f83565b61036f6101e2565b806103798161034a565b0390f35b6101e8565b9060208282031261039b57610398915f0161028c565b90565b6101ec565b90565b6103b76103b26103bc92610275565b6103a0565b610275565b90565b906103c9906103a3565b5f5260205260405f2090565b1c90565b60ff1690565b6103ef9060086103f493026103d5565b6103d9565b90565b9061040291546103df565b90565b61041b906104166005915f926103bf565b6103f7565b90565b151590565b61042c9061041e565b9052565b9190610443905f60208501940190610423565b565b346104755761047161046061045b366004610382565b610405565b6104686101e2565b91829182610430565b0390f35b6101e8565b5f91031261048457565b6101ec565b90565b61049c9060086104a193026103d5565b610489565b90565b906104af915461048c565b90565b6104be60075f906104a4565b90565b6104ca90610275565b9052565b91906104e1905f602085019401906104c1565b565b34610513576104f336600461047a565b61050f6104fe6104b2565b6105066101e2565b918291826104ce565b0390f35b6101e8565b9190604083820312610540578061053461053d925f860161028c565b9360200161028c565b90565b6101ec565b346105745761055e610558366004610518565b90611110565b6105666101e2565b806105708161034a565b0390f35b6101e8565b346105a9576105a561059461058f366004610382565b61119a565b61059c6101e2565b91829182610430565b0390f35b6101e8565b346105dc576105c66105c1366004610382565b61140c565b6105ce6101e2565b806105d88161034a565b0390f35b6101e8565b6105ec36600461047a565b6105f461170c565b6105fc6101e2565b806106068161034a565b0390f35b90610614906103a3565b5f5260205260405f2090565b610636906106316008915f9261060a565b6104a4565b90565b346106695761066561065461064f366004610382565b610620565b61065c6101e2565b918291826104ce565b0390f35b6101e8565b90610678906103a3565b5f5260205260405f2090565b5f1c90565b61069561069a91610684565b610489565b90565b6106a79054610689565b90565b6106b590600a61066e565b6106c05f820161069d565b916106d960026106d26001850161069d565b930161069d565b90565b60409061070561070c94969593966106fb60608401985f8501906104c1565b60208301906104c1565b01906104c1565b565b346107415761073d610729610724366004610382565b6106aa565b6107349391936101e2565b938493846106dc565b0390f35b6101e8565b60018060a01b031690565b61076190600861076693026103d5565b610746565b90565b906107749154610751565b90565b61078360015f90610769565b90565b60018060a01b031690565b6107a56107a06107aa92610786565b6103a0565b610786565b90565b6107b690610791565b90565b6107c2906107ad565b90565b6107ce906107b9565b9052565b91906107e5905f602085019401906107c5565b565b34610817576107f736600461047a565b610813610802610777565b61080a6101e2565b918291826107d2565b0390f35b6101e8565b610828600b5f906104a4565b90565b3461085b5761083b36600461047a565b61085761084661081c565b61084e6101e2565b918291826104ce565b0390f35b6101e8565b346108905761087036600461047a565b61088c61087b611962565b6108836101e2565b918291826104ce565b0390f35b6101e8565b9190916040818403126108ed575f81013567ffffffffffffffff81116108e857836108c19183016102f2565b92602082013567ffffffffffffffff81116108e3576108e092016102f2565b90565b6101f0565b6101f0565b6101ec565b346109215761090b610905366004610895565b90611b05565b6109136101e2565b8061091d8161034a565b0390f35b6101e8565b90610930906103a3565b5f5260205260405f2090565b90565b61094f90600861095493026103d5565b61093c565b90565b90610962915461093f565b90565b61097b906109766009915f92610926565b610957565b90565b90565b61098a9061097e565b9052565b91906109a1905f60208501940190610981565b565b346109d3576109cf6109be6109b9366004610382565b610965565b6109c66101e2565b9182918261098e565b0390f35b6101e8565b34610a06576109e836600461047a565b6109f0611c88565b6109f86101e2565b80610a028161034a565b0390f35b6101e8565b34610a3b57610a37610a26610a21366004610382565b611cd6565b610a2e6101e2565b9182918261098e565b0390f35b6101e8565b610a4990610786565b90565b610a5590610a40565b9052565b9190610a6c905f60208501940190610a4c565b565b34610a9e57610a7e36600461047a565b610a9a610a89611d33565b610a916101e2565b91829182610a59565b0390f35b6101e8565b90610aad906103a3565b5f5260205260405f2090565b60018060a01b031690565b610ad0610ad591610684565b610ab9565b90565b610ae29054610ac4565b90565b610af0906003610aa3565b90610afc5f830161069d565b91610b0960018201610ad8565b91610b226003610b1b6002850161069d565b930161069d565b90565b610b5a610b6194610b50606094989795610b46608086019a5f8701906104c1565b6020850190610a4c565b60408301906104c1565b01906104c1565b565b34610b9757610b93610b7e610b79366004610382565b610ae5565b90610b8a9492946101e2565b94859485610b25565b0390f35b6101e8565b610ba860045f906104a4565b90565b34610bdb57610bbb36600461047a565b610bd7610bc6610b9c565b610bce6101e2565b918291826104ce565b0390f35b6101e8565b34610c0e57610bf8610bf3366004610382565b611e85565b610c006101e2565b80610c0a8161034a565b0390f35b6101e8565b34610c4357610c3f610c2e610c29366004610382565b6120af565b610c366101e2565b91829182610a59565b0390f35b6101e8565b634e487b7160e01b5f52603260045260245ffd5b5490565b5f5260205f2090565b610c7281610c5c565b821015610c8c57610c84600191610c60565b910201905f90565b610c48565b6006610c9c81610c5c565b821015610cb957610cb691610cb091610c69565b906104a4565b90565b5f80fd5b34610ced57610ce9610cd8610cd3366004610382565b610c91565b610ce06101e2565b918291826104ce565b0390f35b6101e8565b610d02906008610d0793026103d5565b610ab9565b90565b90610d159154610cf2565b90565b610d2460025f90610d0a565b90565b34610d5757610d3736600461047a565b610d53610d42610d18565b610d4a6101e2565b91829182610a59565b0390f35b6101e8565b91606083830312610dd8575f83013567ffffffffffffffff8111610dd35782610d869185016102f2565b92602081013567ffffffffffffffff8111610dce5783610da79183016102f2565b92604082013567ffffffffffffffff8111610dc957610dc692016102f2565b90565b6101f0565b6101f0565b6101f0565b6101ec565b34610e0c57610df6610df0366004610d5c565b916121d1565b610dfe6101e2565b80610e088161034a565b0390f35b6101e8565b610e1a81610a40565b03610e2157565b5f80fd5b90503590610e3282610e11565b565b90602082820312610e4d57610e4a915f01610e25565b90565b6101ec565b34610e8057610e6a610e65366004610e34565b612584565b610e726101e2565b80610e7c8161034a565b0390f35b6101e8565b34610eb557610eb1610ea0610e9b366004610382565b61258f565b610ea86101e2565b91829182610430565b0390f35b6101e8565b34610ee857610ed2610ecd366004610e34565b612627565b610eda6101e2565b80610ee48161034a565b0390f35b6101e8565b34610f1b57610f05610f00366004610315565b612632565b610f0d6101e2565b80610f178161034a565b0390f35b6101e8565b5f80fd5b90565b610f3b610f36610f4092610f24565b6103a0565b610275565b90565b6001610f4f9101610275565b90565b5190565b90610f6082610f52565b811015610f71576020809102010190565b610c48565b610f809051610275565b90565b90610f8d5f610f27565b5b80610fa9610fa3610f9e86610f52565b610275565b91610275565b1015610fd857610fd390610fce610fc9610fc4868490610f56565b610f76565b61140c565b610f43565b610f8e565b509050565b905090565b610fed5f8092610fdd565b0190565b610ffa90610fe2565b90565b67ffffffffffffffff811161101b576110176020916101f8565b0190565b610202565b9061103261102d83610ffd565b61023f565b918252565b606090565b3d5f146110575761104c3d611020565b903d5f602084013e5b565b61105f611037565b90611055565b60209181520190565b5f7f526577617264207472616e73666572206661696c65642e000000000000000000910152565b6110a26017602092611065565b6110ab8161106e565b0190565b9160406110e09294936110d96110ce606083018381035f850152611095565b9660208301906104c1565b0190610a4c565b565b156110eb575050565b61110c6110f66101e2565b92839263310a0fbb60e21b8452600484016110af565b0390fd5b906111239161111e8161140c565b612b97565b806111366111305f610f27565b91610275565b1161113f575b50565b61116f905f80338361114f6101e2565b908161115a81610ff1565b03925af161116661103c565b509033916110e2565b5f61113c565b5f90565b61118561118a91610684565b6103d9565b90565b6111979054611179565b90565b6111b16111b6916111a9611175565b5060056103bf565b61118d565b90565b5f7f546f6b656e2068617320616c7265616479206265656e20756e7374616b65642e910152565b6111ec60208092611065565b6111f5816111b9565b0190565b919061121c906020611214604086018681035f8801526111e0565b9401906104c1565b565b156112265750565b611248906112326101e2565b91829163aed59e4f60e01b8352600483016111f9565b0390fd5b5f7f4f6e6c7920746865206f776e65722063616e20756e7374616b652e0000000000910152565b611280601b602092611065565b6112898161124c565b0190565b9160406112be9294936112b76112ac606083018381035f850152611273565b9660208301906104c1565b0190610a4c565b565b156112c9575050565b6112ea6112d46101e2565b9283926345c2e43b60e01b84526004840161128d565b0390fd5b5f1b90565b906112ff5f19916112ee565b9181191691161790565b90565b9061132161131c611328926103a3565b611309565b82546112f3565b9055565b634e487b7160e01b5f52601160045260245ffd5b61134990610275565b5f8114611357576001900390565b61132c565b61136861136d91610684565b610746565b90565b61137a905461135c565b90565b611386906107ad565b90565b5f80fd5b60e01b90565b5f91031261139d57565b6101ec565b6040906113cb6113d294969593966113c160608401985f850190610a4c565b6020830190610a4c565b01906104c1565b565b6113dc6101e2565b3d5f823e3d90fd5b6113ed90610275565b5f1981146113fb5760010190565b61132c565b611409906107ad565b90565b61143f611425600361141f818590610aa3565b0161069d565b6114376114315f610f27565b91610275565b14829061121e565b611474611459600161145360038590610aa3565b01610ad8565b61146b61146533610a40565b91610a40565b148233916112c0565b61148a5f61148460038490610aa3565b0161069d565b906114948261302b565b6114b46114a1600c61069d565b60036114ae818590610aa3565b0161130c565b6114d06114c96114c4600761069d565b611340565b600761130c565b6114e26114dd6001611370565b6107b9565b6323b872dd6114f03061137d565b33928592813b156115e4575f61151991611524829661150d6101e2565b9889978896879561138d565b8552600485016113a2565b03925af180156115df576115b3575b50611550611549611544600c61069d565b6113e4565b600c61130c565b61155a600761069d565b9133916115ae61159c6115966115907f33940a9fc3ee3c9150b29b34ef29ca397b5e1e340425a4f0da0346b5b90766c8946103a3565b946103a3565b94611400565b946115a56101e2565b918291826104ce565b0390a4565b6115d2905f3d81116115d8575b6115ca8183610216565b810190611393565b5f611533565b503d6115c0565b6113d4565b611389565b60207f206465706f7369742e0000000000000000000000000000000000000000000000917f4f6e6c792074686520436f736d696347616d6520636f6e74726163742063616e5f8201520152565b6116436029604092611065565b61164c816115e9565b0190565b919061167390602061166b604086018681035f880152611636565b940190610a4c565b565b1561167d5750565b61169f906116896101e2565b918291637ed5977760e11b835260048301611650565b0390fd5b90565b6116ba6116b56116bf926116a3565b6103a0565b610275565b90565b6116d16116d791939293610275565b92610275565b82039182116116e257565b61132c565b6116f66116fc91939293610275565b92610275565b820180921161170757565b61132c565b6117333361172b6117256117206002610ad8565b610a40565b91610a40565b143390611675565b61173d600761069d565b61174f6117495f610f27565b91610275565b146119425761175e600b61069d565b61177061176a5f610f27565b91610275565b11806118ed575b5f14611858576117c3346117bd60016117ad600a6117a7611798600b61069d565b6117a1856116a6565b906116c2565b9061066e565b01916117b88361069d565b6116e7565b9061130c565b5b6117e06117d96117d4600c61069d565b6113e4565b600c61130c565b6117ea600c61069d565b6118076117f7600b61069d565b61180160016116a6565b906116c2565b90611812600761069d565b34926118536118417fd91db13dbdc68f51d0e522c3f29f3d5c0f5945fa377792cb335e42f78b82d1d8946103a3565b9461184a6101e2565b938493846106dc565b0390a2565b611881611865600c61069d565b5f61187b600a611875600b61069d565b9061066e565b0161130c565b6118a234600161189c600a611896600b61069d565b9061066e565b0161130c565b6118cc6118af600761069d565b60026118c6600a6118c0600b61069d565b9061066e565b0161130c565b6118e86118e16118dc600b61069d565b6113e4565b600b61130c565b6117c4565b50611921600261191b600a611915611905600b61069d565b61190f60016116a6565b906116c2565b9061066e565b0161069d565b61193c611936611931600761069d565b610275565b91610275565b14611777565b5f632d6ebd6f60e01b81528061195a6004820161034a565b0390fd5b5f90565b61196a61195e565b506119756006610c5c565b90565b60207f616d65206c656e6774682e000000000000000000000000000000000000000000917f417272617920617267756d656e7473206d757374206265206f662074686520735f8201520152565b6119d2602b604092611065565b6119db81611978565b0190565b916040611a10929493611a096119fe606083018381035f8501526119c5565b9660208301906104c1565b01906104c1565b565b15611a1b575050565b611a3c611a266101e2565b92839263672c0fa160e11b8452600484016119df565b0390fd5b611a54611a4f611a5992610275565b6103a0565b61097e565b90565b611a70611a6b611a75926116a3565b6103a0565b61097e565b90565b611a87611a8d9193929361097e565b9261097e565b91828103925f828512818312169285139112151617611aa857565b61132c565b611ab69061097e565b600160ff1b8114611ac8576001900390565b61132c565b611ae1611adc611ae692610f24565b6103a0565b61097e565b90565b611afd611af8611b029261097e565b6103a0565b610275565b90565b90611b45611b1283610f52565b611b2c611b26611b2185610f52565b610275565b91610275565b14611b3684610f52565b611b3f84610f52565b91611a12565b611b4e5f610f27565b91611b73611b63611b5e83610f52565b611a40565b611b6d6001611a5c565b90611a78565b925b83611b88611b825f611acd565b9161097e565b12611be557611bd9611bdf91611bd3611bb2611bad86611ba78a611ae9565b90610f56565b610f76565b611bcd611bc888611bc28b611ae9565b90610f56565b610f76565b90612b97565b906116e7565b93611aad565b92611b75565b9250505080611bfc611bf65f610f27565b91610275565b11611c05575b50565b611c35905f803383611c156101e2565b9081611c2081610ff1565b03925af1611c2c61103c565b509033916110e2565b5f611c02565b611c43613107565b611c4b611c75565b565b611c61611c5c611c6692610f24565b6103a0565b610786565b90565b611c7290611c4d565b90565b611c86611c815f611c69565b613155565b565b611c90611c3b565b565b5f90565b90565b611cad611ca8611cb292611c96565b6103a0565b61097e565b90565b611cc1611cc691610684565b61093c565b90565b611cd39054611cb5565b90565b611cde611c92565b50611cf3611cee6008839061060a565b61069d565b611d05611cff5f610f27565b91610275565b14611d2057611d18611d1d916009610926565b611cc9565b90565b50611d2c600119611c99565b90565b5f90565b611d3b611d2f565b50611d455f610ad8565b90565b60207f6564206f6e6c79206f6e63650000000000000000000000000000000000000000917f5374616b696e672f756e7374616b696e6720746f6b656e20697320616c6c6f775f8201520152565b611da2602c604092611065565b611dab81611d48565b0190565b9190611dd2906020611dca604086018681035f880152611d95565b9401906104c1565b565b15611ddc5750565b611dfe90611de86101e2565b918291632290948760e21b835260048301611daf565b0390fd5b90611e0e60ff916112ee565b9181191691161790565b611e219061041e565b90565b90565b90611e3c611e37611e4392611e18565b611e24565b8254611e02565b9055565b90611e5860018060a01b03916112ee565b9181191691161790565b90565b90611e7a611e75611e8192611400565b611e62565b8254611e47565b9055565b611eac611ea5611e9f611e9a600585906103bf565b61118d565b1561041e565b8290611dd4565b611ec26001611ebd600584906103bf565b611e27565b611ed681611ed0600461069d565b9061328b565b611ef6815f611ef06003611eea600461069d565b90610aa3565b0161130c565b611f17336001611f116003611f0b600461069d565b90610aa3565b01611e65565b611f41611f24600c61069d565b6002611f3b6003611f35600461069d565b90610aa3565b0161130c565b611f5d611f56611f51600461069d565b6113e4565b600461130c565b611f79611f72611f6d600761069d565b6113e4565b600761130c565b611f8b611f866001611370565b6107b9565b6323b872dd33611f9a3061137d565b928492813b156120aa575f611fc291611fcd8296611fb66101e2565b9889978896879561138d565b8552600485016113a2565b03925af180156120a557612079575b50611ff9611ff2611fed600c61069d565b6113e4565b600c61130c565b612016612006600461069d565b61201060016116a6565b906116c2565b612020600761069d565b91339161207461206261205c6120567fde0c27ec227b5d0c0a194ea6f25d7031639f9c10d8bf6e2f9414ff8088a6e20d946103a3565b946103a3565b94611400565b9461206b6101e2565b918291826104ce565b0390a4565b612098905f3d811161209e575b6120908183610216565b810190611393565b5f611fdc565b503d612086565b6113d4565b611389565b6120c1906120bb611d2f565b50611cd6565b806120d46120ce5f611acd565b9161097e565b126120fc5760016120f36120f9926120ed600391611ae9565b90610aa3565b01610ad8565b90565b506121065f611c69565b90565b60207f207468652073616d65206c656e6774682e000000000000000000000000000000917f436c61696d20617272617920617267756d656e7473206d757374206265206f665f8201520152565b6121636031604092611065565b61216c81612109565b0190565b9160406121a192949361219a61218f606083018381035f850152612156565b9660208301906104c1565b01906104c1565b565b156121ac575050565b6121cd6121b76101e2565b92839263672c0fa160e11b845260048401612170565b0390fd5b92906121dc5f610f27565b5b806121f86121f26121ed88610f52565b610275565b91610275565b1015612227576122229061221d612218612213888490610f56565b610f76565b61140c565b610f43565b6121dd565b509190925061226b61223883610f52565b61225261224c61224785610f52565b610275565b91610275565b1461225c84610f52565b61226584610f52565b916121a3565b6122745f610f27565b9161229961228961228483610f52565b611a40565b6122936001611a5c565b90611a78565b925b836122ae6122a85f611acd565b9161097e565b1261230b576122ff612305916122f96122d86122d3866122cd8a611ae9565b90610f56565b610f76565b6122f36122ee886122e88b611ae9565b90610f56565b610f76565b90612b97565b906116e7565b93611aad565b9261229b565b925050508061232261231c5f610f27565b91610275565b1161232b575b50565b61235b905f80338361233b6101e2565b908161234681610ff1565b03925af161235261103c565b509033916110e2565b5f612328565b6123729061236d613107565b6124bc565b565b1561237b57565b5f632d6ebd6f60e01b8152806123936004820161034a565b0390fd5b5f7f5a65726f2d616464726573732077617320676976656e2e000000000000000000910152565b6123cb6017602092611065565b6123d481612397565b0190565b6123ed9060208101905f8183039101526123be565b90565b156123f757565b6123ff6101e2565b63eac0d38960e01b815280612416600482016123d8565b0390fd5b5f7f5472616e7366657220746f2063686172697479206661696c65642e0000000000910152565b61244e601b602092611065565b6124578161241a565b0190565b91604061248c92949361248561247a606083018381035f850152612441565b9660208301906104c1565b0190610a4c565b565b15612497575050565b6124b86124a26101e2565b92839263310a0fbb60e21b84526004840161245b565b0390fd5b6124e16124c9600761069d565b6124db6124d55f610f27565b91610275565b14612374565b612506816124ff6124f96124f45f611c69565b610a40565b91610a40565b14156123f0565b61250f3061137d565b3161253f5f80848461251f6101e2565b908161252a81610ff1565b03925af161253661103c565b5082849161248e565b9061257f61256d7f80c1082d1fcf8195bbf5a158fbef654d58f69408bd2e339b466bbd7c9fd7f74e92611400565b926125766101e2565b918291826104ce565b0390a2565b61258d90612361565b565b6125a66125ab9161259e611175565b50600861060a565b61069d565b6125bd6125b75f610f27565b91610275565b141590565b6125d3906125ce613107565b6125d5565b565b806125f06125ea6125e55f611c69565b610a40565b91610a40565b14612600576125fe90613155565b565b61262361260c5f611c69565b5f918291631e4fbdf760e01b835260048301610a59565b0390fd5b612630906125c2565b565b9061263c5f610f27565b5b8061265861265261264d86610f52565b610275565b91610275565b1015612687576126829061267d612678612673868490610f56565b610f76565b611e85565b610f43565b61263d565b509050565b5f7f496e76616c6964207374616b65416374696f6e49642e00000000000000000000910152565b6126c06016602092611065565b6126c98161268c565b0190565b91906126f09060206126e8604086018681035f8801526126b3565b9401906104c1565b565b156126fa5750565b61271c906127066101e2565b9182916313b7e41160e01b8352600483016126cd565b0390fd5b5f7f496e76616c6964204554484465706f73697449642e0000000000000000000000910152565b6127546015602092611065565b61275d81612720565b0190565b919061278490602061277c604086018681035f880152612747565b9401906104c1565b565b1561278e5750565b6127b09061279a6101e2565b91829163500e431160e11b835260048301612761565b0390fd5b5f7f546f6b656e20686173206e6f74206265656e20756e7374616b65642e00000000910152565b6127e8601c602092611065565b6127f1816127b4565b0190565b9190612818906020612810604086018681035f8801526127db565b9401906104c1565b565b156128225750565b6128449061282e6101e2565b91829163495097bd60e01b8352600483016127f5565b0390fd5b60207f2e00000000000000000000000000000000000000000000000000000000000000917f54686973206465706f7369742077617320636c61696d656420616c72656164795f8201520152565b6128a26021604092611065565b6128ab81612848565b0190565b9160406128e09294936128d96128ce606083018381035f850152612895565b9660208301906104c1565b01906104c1565b565b156128eb575050565b61290c6128f66101e2565b928392636aaada4b60e01b8452600484016128af565b0390fd5b5f7f4f6e6c7920746865206f776e65722063616e20636c61696d207265776172642e910152565b61294360208092611065565b61294c81612910565b0190565b91604061298192949361297a61296f606083018381035f850152612937565b9660208301906104c1565b0190610a4c565b565b1561298c575050565b6129ad6129976101e2565b9283926345c2e43b60e01b845260048401612950565b0390fd5b5f7f596f752077657265206e6f74207374616b6564207965742e0000000000000000910152565b6129e56018602092611065565b6129ee816129b1565b0190565b90959492612a4d94612a3c612a4692612a3260a096612a28612a1d60c089018981035f8b01526129d8565b9c60208901906104c1565b60408701906104c1565b60608501906104c1565b60808301906104c1565b01906104c1565b565b94929093919415612a61575050505050565b90612a859291612a6f6101e2565b95869563618d37eb60e01b8752600487016129f2565b0390fd5b5f7f596f75207765726520616c726561647920756e7374616b65642e000000000000910152565b612abd601a602092611065565b612ac681612a89565b0190565b90959492612b2594612b14612b1e92612b0a60a096612b00612af560c089018981035f8b0152612ab0565b9c60208901906104c1565b60408701906104c1565b60608501906104c1565b60808301906104c1565b01906104c1565b565b94929093919415612b39575050505050565b90612b5d9291612b476101e2565b95869563618d37eb60e01b875260048701612aca565b0390fd5b634e487b7160e01b5f52601260045260245ffd5b612b81612b8791610275565b91610275565b908115612b92570490565b612b61565b90612ba061195e565b50612bc882612bc0612bba612bb5600461069d565b610275565b91610275565b1083906126f2565b612bef81612be7612be1612bdc600b61069d565b610275565b91610275565b108290612786565b612c22612c086003612c02818690610aa3565b0161069d565b612c1a612c145f610f27565b91610275565b11839061281a565b612c57612c4f612c49612c446004612c3c60038890610aa3565b0185906103bf565b61118d565b1561041e565b8383916128e2565b612c8c612c716001612c6b60038690610aa3565b01610ad8565b612c83612c7d33610a40565b91610a40565b14833391612983565b612d1b612ca66002612ca060038690610aa3565b0161069d565b612ccd612cc7612cc25f612cbc600a889061066e565b0161069d565b610275565b91610275565b108383612ce66003612ce0818990610aa3565b0161069d565b90612cfe6002612cf860038a90610aa3565b0161069d565b92612d155f612d0f600a8a9061066e565b0161069d565b94612a4f565b612da9612d346003612d2e818690610aa3565b0161069d565b612d5b612d55612d505f612d4a600a889061066e565b0161069d565b610275565b91610275565b118383612d746003612d6e818990610aa3565b0161069d565b90612d8c6002612d8660038a90610aa3565b0161069d565b92612da35f612d9d600a8a9061066e565b0161069d565b94612b27565b612dcc6001612dc76004612dbf60038790610aa3565b0184906103bf565b611e27565b612e03612de66001612de0600a859061066e565b0161069d565b612dfd6002612df7600a869061066e565b0161069d565b90612b75565b9182913391612e59612e47612e41612e3b7fdde81df5caa033e783e2a39d93e3a8718a7dc27ba95a4757f5433a01f794ec36946103a3565b946103a3565b94611400565b94612e506101e2565b918291826104ce565b0390a490565b5f7f546f6b656e206973206e6f7420696e20746865206c6973742e00000000000000910152565b612e936019602092611065565b612e9c81612e5f565b0190565b9190612ec3906020612ebb604086018681035f880152612e86565b9401906104c1565b565b15612ecd5750565b612eef90612ed96101e2565b918291639aa6fa6560e01b835260048301612ea0565b0390fd5b1b90565b91906008612f12910291612f0c5f1984612ef3565b92612ef3565b9181191691161790565b9190612f32612f2d612f3a936103a3565b611309565b908354612ef7565b9055565b612f5091612f4a61195e565b91612f1c565b565b90565b634e487b7160e01b5f52603160045260245ffd5b5490565b5f5260205f2090565b612f7f81612f69565b821015612f9957612f91600191612f6d565b910201905f90565b610c48565b612fa781612f69565b8015612fc8576001900390612fc5612fbf8383612f76565b90612f3e565b55565b612f55565b90565b612fe4612fdf612fe992612fcd565b6103a0565b61097e565b90565b613000612ffb6130059261097e565b6103a0565b61097e565b90565b90565b9061302061301b61302792612fec565b613008565b82546112f3565b9055565b6131059061304261303b8261258f565b8290612ec5565b6130c46130596130546008849061060a565b61069d565b6130bf61308d61308760066130816130716006610c5c565b61307b60016116a6565b906116c2565b90610c69565b906104a4565b916130b7836130b160066130ab856130a560016116a6565b906116c2565b90610c69565b90612f1c565b91600861060a565b61130c565b6130d95f6130d46008849061060a565b612f3e565b6130eb6130e66006612f52565b612f9e565b6131006130f85f19612fd0565b916009610926565b61300b565b565b61310f611d33565b61312861312261311d6132f8565b610a40565b91610a40565b0361312f57565b61315161313a6132f8565b5f91829163118cdaa760e01b835260048301610a59565b0390fd5b61315e5f610ad8565b613168825f611e65565b9061319c6131967f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e093611400565b91611400565b916131a56101e2565b806131af8161034a565b0390a3565b5f7f546f6b656e20616c726561647920696e20746865206c6973742e000000000000910152565b6131e8601a602092611065565b6131f1816131b4565b0190565b91604061322692949361321f613214606083018381035f8501526131db565b9660208301906104c1565b01906104c1565b565b15613231575050565b61325261323c6101e2565b92839263597558c560e11b8452600484016131f5565b0390fd5b9081549168010000000000000000831015613286578261327e91600161328495018155612f76565b90612f1c565b565b610202565b6132f16132e96132f6936132b26132aa6132a48661258f565b1561041e565b858391613228565b6132c66132bf6006612f52565b8590613256565b6132e46132d36006610c5c565b6132df6008879061060a565b61130c565b611a40565b916009610926565b61300b565b565b613300611d2f565b50339056fea26469706673582212208c54b4251ff4f425d74dda990717cd3db29acf4511b2983efbe6f5e0ef7d830664736f6c634300081a0033",
+	ABI: "[{\"inputs\":[{\"internalType\":\"contractCosmicSignature\",\"name\":\"nft_\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"game_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"requester\",\"type\":\"address\"}],\"name\":\"AccessError\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"DepositFromUnauthorizedSender\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"}],\"name\":\"FundTransferFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"InvalidOperationInCurrentState\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"NoTokensStaked\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"OneTimeStaking\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"actionId\",\"type\":\"uint256\"}],\"name\":\"TokenAlreadyUnstaked\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"}],\"name\":\"ZeroAddress\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundNum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"depositIndex\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"depositId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"depositAmount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"numStakedNFTs\",\"type\":\"uint256\"}],\"name\":\"EthDepositEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"errStr\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"}],\"name\":\"FundTransferFailed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"charityAddress\",\"type\":\"address\"}],\"name\":\"FundsTransferredToCharityEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"stakeActionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"stakerAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"numStakedNFTs\",\"type\":\"uint256\"}],\"name\":\"StakeActionEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"stakeActionId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"stakerAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"numStakedNFTs\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"rewardAmount\",\"type\":\"uint256\"}],\"name\":\"UnstakeActionEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"ETHDepositIndex\",\"type\":\"uint256\"}],\"name\":\"ETHDeposits\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"depositId\",\"type\":\"uint64\"},{\"internalType\":\"uint192\",\"name\":\"rewardAmountPerStakedNFT\",\"type\":\"uint192\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundNum_\",\"type\":\"uint256\"}],\"name\":\"depositIfPossible\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"game\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nft\",\"outputs\":[{\"internalType\":\"contractCosmicSignature\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numETHDeposits\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numTokensStaked\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId_\",\"type\":\"uint256\"}],\"name\":\"stake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"stakeActionId\",\"type\":\"uint256\"}],\"name\":\"stakeActions\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"nftOwnerAddress\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"tokenIds_\",\"type\":\"uint256[]\"}],\"name\":\"stakeMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"resetState_\",\"type\":\"bool\"},{\"internalType\":\"address\",\"name\":\"charityAddress_\",\"type\":\"address\"}],\"name\":\"tryPerformMaintenance\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"stakeActionId_\",\"type\":\"uint256\"}],\"name\":\"unstake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"stakeActionIds_\",\"type\":\"uint256[]\"}],\"name\":\"unstakeMany\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId_\",\"type\":\"uint256\"}],\"name\":\"wasTokenUsed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	Bin: "0x6080604052346100305761001a610014610133565b906103f7565b610022610035565b61211d61058b823961211d90f35b61003b565b60405190565b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b906100679061003f565b810190811060018060401b0382111761007f57604052565b610049565b90610097610090610035565b928361005d565b565b5f80fd5b60018060a01b031690565b6100b19061009d565b90565b6100bd906100a8565b90565b6100c9816100b4565b036100d057565b5f80fd5b905051906100e1826100c0565b565b6100ec816100a8565b036100f357565b5f80fd5b90505190610104826100e3565b565b919060408382031261012e578061012261012b925f86016100d4565b936020016100f7565b90565b610099565b6101516126a88038038061014681610084565b928339810190610106565b9091565b5f1b90565b906101665f1991610155565b9181191691161790565b90565b90565b90565b61018d61018861019292610170565b610176565b610173565b90565b90565b906101ad6101a86101b492610179565b610195565b825461015a565b9055565b6101cc6101c76101d19261009d565b610176565b61009d565b90565b6101dd906101b8565b90565b6101e9906101d4565b90565b90565b6102036101fe610208926101ec565b610176565b61009d565b90565b610214906101ef565b90565b60209181520190565b60207f66742e0000000000000000000000000000000000000000000000000000000000917f5a65726f2d616464726573732077617320676976656e20666f7220746865206e5f8201520152565b61027a6023604092610217565b61028381610220565b0190565b61029c9060208101905f81830391015261026d565b90565b156102a657565b6102ae610035565b63eac0d38960e01b8152806102c560048201610287565b0390fd5b60207f616d652e00000000000000000000000000000000000000000000000000000000917f5a65726f2d616464726573732077617320676976656e20666f722074686520675f8201520152565b6103236024604092610217565b61032c816102c9565b0190565b6103459060208101905f818303910152610316565b90565b1561034f57565b610357610035565b63eac0d38960e01b81528061036e60048201610330565b0390fd5b9061038360018060a01b0391610155565b9181191691161790565b610396906101b8565b90565b6103a29061038d565b90565b90565b906103bd6103b86103c492610399565b6103a5565b8254610372565b9055565b6103d1906101d4565b90565b90565b906103ec6103e76103f3926103c8565b6103d4565b8254610372565b9055565b9061046d6104749261040833610476565b61041460026005610198565b610441610420826101e0565b61043a61043461042f5f61020b565b6100a8565b916100a8565b141561029f565b6104668361045f6104596104545f61020b565b6100a8565b916100a8565b1415610348565b60016103a8565b60026103d7565b565b61047f906104a3565b565b61048a906100a8565b9052565b91906104a1905f60208501940190610481565b565b806104be6104b86104b35f61020b565b6100a8565b916100a8565b146104ce576104cc9061052b565b565b6104f16104da5f61020b565b5f918291631e4fbdf760e01b83526004830161048e565b0390fd5b5f1c90565b60018060a01b031690565b610511610516916104f5565b6104fa565b90565b6105239054610505565b90565b5f0190565b6105345f610519565b61053e825f6103d7565b9061057261056c7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0936103c8565b916103c8565b9161057b610035565b8061058581610526565b0390a356fe60806040526004361015610013575b6109d1565b61001d5f3561011c565b80630d50c1891461011757806315b4e68f146101125780632a3247aa1461010d5780632e17de7814610108578063451f1adf1461010357806347ccca02146100fe57806355279fdb146100f95780635fda0acc146100f4578063715018a6146100ef5780638da5cb5b146100ea578063a2b136fb146100e5578063a694fc3a146100e0578063c3fe3e28146100db578063d8ee5573146100d6578063f2fde38b146100d15763fe939afc0361000e5761099e565b61096b565b610917565b61086f565b610807565b6107d1565b6106f0565b61068f565b61065a565b610625565b610596565b6104ac565b610365565b610330565b6102e0565b61028f565b60e01c90565b60405190565b5f80fd5b5f80fd5b5f80fd5b5f80fd5b601f801991011690565b634e487b7160e01b5f52604160045260245ffd5b9061016090610138565b810190811067ffffffffffffffff82111761017a57604052565b610142565b9061019261018b610122565b9283610156565b565b67ffffffffffffffff81116101ac5760208091020190565b610142565b5f80fd5b90565b6101c1816101b5565b036101c857565b5f80fd5b905035906101d9826101b8565b565b909291926101f06101eb82610194565b61017f565b938185526020808601920283019281841161022d57915b8383106102145750505050565b6020809161022284866101cc565b815201920191610207565b6101b1565b9080601f830112156102505781602061024d933591016101db565b90565b610134565b90602082820312610285575f82013567ffffffffffffffff81116102805761027d9201610232565b90565b610130565b61012c565b5f0190565b346102bd576102a76102a2366004610255565b610a81565b6102af610122565b806102b98161028a565b0390f35b610128565b906020828203126102db576102d8915f016101cc565b90565b61012c565b6102f36102ee3660046102c2565b610f7b565b6102fb610122565b806103058161028a565b0390f35b151590565b61031790610309565b9052565b919061032e905f6020850194019061030e565b565b346103605761035c61034b6103463660046102c2565b611194565b610353610122565b9182918261031b565b0390f35b610128565b346103935761037d6103783660046102c2565b6111b3565b610385610122565b8061038f8161028a565b0390f35b610128565b90565b6103af6103aa6103b4926101b5565b610398565b6101b5565b90565b906103c19061039b565b5f5260205260405f2090565b5f1c90565b67ffffffffffffffff1690565b6103eb6103f0916103cd565b6103d2565b90565b6103fd90546103df565b90565b60401c90565b60018060c01b031690565b61041d61042291610400565b610406565b90565b61042f9054610411565b90565b61043d9060076103b7565b906104545f61044d8185016103f3565b9301610425565b90565b67ffffffffffffffff1690565b61046d90610457565b9052565b60018060c01b031690565b61048590610471565b9052565b9160206104aa9294936104a360408201965f830190610464565b019061047c565b565b346104dd576104c46104bf3660046102c2565b610432565b906104d96104d0610122565b92839283610489565b0390f35b610128565b5f9103126104ec57565b61012c565b1c90565b60018060a01b031690565b61051090600861051593026104f1565b6104f5565b90565b906105239154610500565b90565b61053260015f90610518565b90565b60018060a01b031690565b61055461054f61055992610535565b610398565b610535565b90565b61056590610540565b90565b6105719061055c565b90565b61057d90610568565b9052565b9190610594905f60208501940190610574565b565b346105c6576105a63660046104e2565b6105c26105b1610526565b6105b9610122565b91829182610581565b0390f35b610128565b90565b6105de9060086105e393026104f1565b6105cb565b90565b906105f191546105ce565b90565b61060060085f906105e6565b90565b61060c906101b5565b9052565b9190610623905f60208501940190610603565b565b34610655576106353660046104e2565b6106516106406105f4565b610648610122565b91829182610610565b0390f35b610128565b3461068a5761066a3660046104e2565b6106866106756111ca565b61067d610122565b91829182610610565b0390f35b610128565b346106bd5761069f3660046104e2565b6106a761122d565b6106af610122565b806106b98161028a565b0390f35b610128565b6106cb90610535565b90565b6106d7906106c2565b9052565b91906106ee905f602085019401906106ce565b565b34610720576107003660046104e2565b61071c61070b61123b565b610713610122565b918291826106db565b0390f35b610128565b9061072f9061039b565b5f5260205260405f2090565b61074761074c916103cd565b6105cb565b90565b610759905461073b565b90565b60018060a01b031690565b610773610778916103cd565b61075c565b90565b6107859054610767565b90565b610793906003610725565b906107ab60016107a45f850161074f565b930161077b565b90565b9160206107cf9294936107c860408201965f830190610603565b01906106ce565b565b34610802576107e96107e43660046102c2565b610788565b906107fe6107f5610122565b928392836107ae565b0390f35b610128565b346108355761081f61081a3660046102c2565b6114f5565b610827610122565b806108318161028a565b0390f35b610128565b61084a90600861084f93026104f1565b61075c565b90565b9061085d915461083a565b90565b61086c60025f90610852565b90565b3461089f5761087f3660046104e2565b61089b61088a610860565b610892610122565b918291826106db565b0390f35b610128565b6108ad81610309565b036108b457565b5f80fd5b905035906108c5826108a4565b565b6108d0816106c2565b036108d757565b5f80fd5b905035906108e8826108c7565b565b9190604083820312610912578061090661090f925f86016108b8565b936020016108db565b90565b61012c565b346109485761094461093361092d3660046108ea565b9061196a565b61093b610122565b9182918261031b565b0390f35b610128565b9060208282031261096657610963915f016108db565b90565b61012c565b346109995761098361097e36600461094d565b6119e4565b61098b610122565b806109958161028a565b0390f35b610128565b346109cc576109b66109b1366004610255565b6119ef565b6109be610122565b806109c88161028a565b0390f35b610128565b5f80fd5b90565b6109ec6109e76109f1926109d5565b610398565b6101b5565b90565b6001610a0091016101b5565b90565b5190565b634e487b7160e01b5f52603260045260245ffd5b90610a2582610a03565b811015610a36576020809102010190565b610a07565b610a4590516101b5565b90565b634e487b7160e01b5f52601160045260245ffd5b610a6b610a71919392936101b5565b926101b5565b8201809211610a7c57565b610a48565b90610a8b5f6109d8565b610a945f6109d8565b905b81610ab1610aab610aa687610a03565b6101b5565b916101b5565b1015610aeb57610adf610ae591610ad9610ad4610acf888790610a1b565b610a3b565b611c60565b90610a5c565b916109f4565b90610a96565b9050610af8919250611f39565b565b60209181520190565b60207f7065726d697474656420746f206d616b652061206465706f7369742e00000000917f4f6e6c792074686520436f736d696347616d6520636f6e7472616374206973205f8201520152565b610b5d603c604092610afa565b610b6681610b03565b0190565b9190610b8d906020610b85604086018681035f880152610b50565b9401906106ce565b565b15610b975750565b610bb990610ba3610122565b918291637ed5977760e11b835260048301610b6a565b0390fd5b5f7f546865726520617265206e6f20435354204e465473207374616b65642e000000910152565b610bf1601d602092610afa565b610bfa81610bbd565b0190565b610c139060208101905f818303910152610be4565b90565b610c20604061017f565b90565b5f90565b5f90565b610c33610c16565b9060208083610c40610c23565b815201610c4b610c27565b81525050565b610c59610c2b565b90565b90565b610c73610c6e610c7892610c5c565b610398565b6101b5565b90565b90610c8590610457565b9052565b90610c9390610471565b9052565b90610ccd610cc45f610ca7610c16565b94610cbe610cb68383016103f3565b838801610c7b565b01610425565b60208401610c89565b565b610cd890610c97565b90565b634e487b7160e01b5f52601260045260245ffd5b610cfb610d01916101b5565b916101b5565b908115610d0c570490565b610cdb565b610d25610d20610d2a926101b5565b610398565b610471565b90565b610d379051610471565b90565b610d46610d4c91610471565b91610471565b019060018060c01b038211610d5d57565b610a48565b90565b610d79610d74610d7e92610d62565b610398565b6101b5565b90565b5f1b90565b90610d925f1991610d81565b9181191691161790565b90565b90610db4610daf610dbb9261039b565b610d9c565b8254610d86565b9055565b610dc8906101b5565b5f198114610dd65760010190565b610a48565b610def610dea610df4926101b5565b610398565b610457565b90565b634e487b7160e01b5f525f60045260245ffd5b610e149051610457565b90565b90610e2a67ffffffffffffffff91610d81565b9181191691161790565b610e48610e43610e4d92610457565b610398565b610457565b90565b90565b90610e68610e63610e6f92610e34565b610e50565b8254610e17565b9055565b60401b90565b90610e8d67ffffffffffffffff1991610e73565b9181191691161790565b610eab610ea6610eb092610471565b610398565b610471565b90565b90565b90610ecb610ec6610ed292610e97565b610eb3565b8254610e79565b9055565b90610f0060205f610f0694610ef8828201610ef2848801610e0a565b90610e53565b019201610d2d565b90610eb6565b565b90610f1291610ed6565b565b610f28610f23610f2d92610457565b610398565b6101b5565b90565b610f3990610f14565b9052565b610f72610f7994610f68606094989795610f5e608086019a5f870190610603565b6020850190610f30565b6040830190610603565b0190610603565b565b610fa233610f9a610f94610f8f600261077b565b6106c2565b916106c2565b143390610b8f565b610fac600461074f565b9081610fc0610fba5f6109d8565b916101b5565b1461113057610fcd610c51565b610fd7600861074f565b610fe1600561074f565b610ff4610fee6002610c5f565b916101b5565b10155f146110dd575f61101d611096926110186110116001610d65565b6005610d9f565b610dbf565b93611029856008610d9f565b61105961105161104161103c600961074f565b610dbf565b61104c816009610d9f565b610ddb565b838601610c7b565b61107861106f61106a348990610cef565b610d11565b60208601610c89565b5b61108e84611089600788906103b7565b610f08565b939201610e0a565b906110d834946110c67fdc0eacba8b1f88284dca5eec8be23173aefa7206298fe22de43e064b6ccd84189561039b565b956110cf610122565b94859485610f3d565b0390a2565b9190506110965f6110f86110f3600786906103b7565b610ccf565b9261112b61110f61110a348990610cef565b610d11565b611125602087019161112083610d2d565b610d3a565b90610c89565b611079565b611138610122565b63bc8b155960e01b81528061114f60048201610bfe565b0390fd5b5f90565b906111619061039b565b5f5260205260405f2090565b60ff1690565b61117f611184916103cd565b61116d565b90565b6111919054611173565b90565b6111ab6111b0916111a3611153565b506006611157565b611187565b90565b6111bf6111c491611c60565b611f39565b565b5f90565b6111d26111c6565b506111dd600461074f565b90565b6111e8611f6b565b6111f061121a565b565b61120661120161120b926109d5565b610398565b610535565b90565b611217906111f2565b90565b61122b6112265f61120e565b611fb9565b565b6112356111e0565b565b5f90565b611243611237565b5061124d5f61077b565b90565b60407f206f6e6c79206f6e63652e000000000000000000000000000000000000000000917f54686973204e46542068617320616c7265616479206265656e207374616b65645f8201527f2e20416e204e465420697320616c6c6f77656420746f206265207374616b656460208201520152565b6112d0604b606092610afa565b6112d981611250565b0190565b91906113009060206112f8604086018681035f8801526112c3565b940190610603565b565b1561130a5750565b61132c90611316610122565b918291632290948760e21b8352600483016112dd565b0390fd5b61133a604061017f565b90565b5f90565b5f90565b61134d611330565b906020808361135a61133d565b815201611365611341565b81525050565b611373611345565b90565b90611380906101b5565b9052565b9061138e906106c2565b9052565b61139c90516106c2565b90565b906113b060018060a01b0391610d81565b9181191691161790565b6113c39061055c565b90565b90565b906113de6113d96113e5926113ba565b6113c6565b825461139f565b9055565b906114146020600161141a9461140c5f82016114065f8801610a3b565b90610d9f565b019201611392565b906113c9565b565b90611426916113e9565b565b9061143460ff91610d81565b9181191691161790565b61144790610309565b90565b90565b9061146261145d6114699261143e565b61144a565b8254611428565b9055565b61147961147e916103cd565b6104f5565b90565b61148b905461146d565b90565b6114979061055c565b90565b5f80fd5b60e01b90565b5f9103126114ae57565b61012c565b6040906114dc6114e394969593966114d260608401985f8501906106ce565b60208301906106ce565b0190610603565b565b6114ed610122565b3d5f823e3d90fd5b61151c61151561150f61150a60068590611157565b611187565b15610309565b8290611302565b61152461136b565b611530825f8301611376565b61153d3360208301611384565b61156f61155261154d600961074f565b610dbf565b61155d816009610d9f565b9161156a60038490610725565b61141c565b61158c61157c600461074f565b6115866001610d65565b90610a5c565b90611598826004610d9f565b6115ac6115a56002610c5f565b6005610d9f565b6115c260016115bd60068690611157565b61144d565b6115d46115cf6001611481565b610568565b6323b872dd336115e33061148e565b928692813b156116b1575f61160b9161161682966115ff610122565b9889978896879561149e565b8552600485016114b3565b03925af180156116ac57611680575b509133919261167b61166961166361165d7fcd7bda73d32f8fada3eeee8d21563aa19eb2fe86d90b4449cf5252e6f3da7ef89461039b565b9461039b565b946113ba565b94611672610122565b91829182610610565b0390a4565b61169f905f3d81116116a5575b6116978183610156565b8101906114a4565b5f611625565b503d61168d565b6114e5565b61149a565b906116c992916116c4611f6b565b61183c565b90565b5f7f546865726520617265207374696c6c20435354204e465473207374616b65642e910152565b6116ff60208092610afa565b611708816116cc565b0190565b6117219060208101905f8183039101526116f3565b90565b1561172b57565b611733610122565b63a29f5c4d60e01b81528061174a6004820161170c565b0390fd5b905090565b61175e5f809261174e565b0190565b61176b90611753565b90565b67ffffffffffffffff811161178c57611788602091610138565b0190565b610142565b906117a361179e8361176e565b61017f565b918252565b606090565b3d5f146117c8576117bd3d611791565b903d5f602084013e5b565b6117d06117a8565b906117c6565b5f7f5472616e7366657220746f2063686172697479206661696c65642e0000000000910152565b61180a601b602092610afa565b611813816117d6565b0190565b919061183a906020611832604086018681035f8801526117fd565b940190610603565b565b5061186261184a600461074f565b61185c6118565f6109d8565b916101b5565b14611724565b611952575b8061188261187c6118775f61120e565b6106c2565b916106c2565b0361188e575b50600190565b6118973061148e565b315f8083836118a4610122565b90816118af81611762565b03925af16118bb6117ad565b505f1461190b57906119026118f07f80c1082d1fcf8195bbf5a158fbef654d58f69408bd2e339b466bbd7c9fd7f74e926113ba565b926118f9610122565b91829182610610565b0390a25f611888565b9061194b6119397fc4283eec4c85bbabb45475fc62cda5e1b3a382be7ef6b1d14e685b065a9adf74926113ba565b92611942610122565b91829182611817565b0390a25f90565b61196561195e5f6109d8565b6008610d9f565b611867565b9061197c91611977611153565b6116b6565b90565b6119909061198b611f6b565b611992565b565b806119ad6119a76119a25f61120e565b6106c2565b916106c2565b146119bd576119bb90611fb9565b565b6119e06119c95f61120e565b5f918291631e4fbdf760e01b8352600483016106db565b0390fd5b6119ed9061197f565b565b906119f95f6109d8565b5b80611a15611a0f611a0a86610a03565b6101b5565b916101b5565b1015611a4457611a3f90611a3a611a35611a30868490610a1b565b610a3b565b6114f5565b6109f4565b6119fa565b509050565b90611a80611a776001611a5a611330565b94611a71611a695f830161074f565b5f8801611376565b0161077b565b60208401611384565b565b611a8b90611a49565b90565b5f7f4e46542068617320616c7265616479206265656e20756e7374616b65642e0000910152565b611ac2601e602092610afa565b611acb81611a8e565b0190565b9190611af2906020611aea604086018681035f880152611ab5565b940190610603565b565b60207f6e7374616b652069742e00000000000000000000000000000000000000000000917f4f6e6c79204e4654206f776e6572206973207065726d697474656420746f20755f8201520152565b611b4e602a604092610afa565b611b5781611af4565b0190565b916040611b8c929493611b85611b7a606083018381035f850152611b41565b966020830190610603565b01906106ce565b565b1b90565b91906008611bad910291611ba75f1984611b8e565b92611b8e565b9181191691161790565b9190611bcd611bc8611bd59361039b565b610d9c565b908354611b92565b9055565b611beb91611be56111c6565b91611bb7565b565b60015f91611bfd83808301611bd9565b0155565b905f03611c1357611c1190611bed565b565b610df7565b611c27611c2d919392936101b5565b926101b5565b8203918211611c3857565b610a48565b916020611c5e929493611c5760408201965f830190610603565b0190610603565b565b611c686111c6565b50611c7d611c7860038390610725565b611a82565b33611c9b611c95611c9060208501611392565b6106c2565b916106c2565b03611df657611ca982612051565b91611cbf5f611cba60038490610725565b611c01565b611cdc611ccc600461074f565b611cd66001610d65565b90611c18565b90611ce8826004610d9f565b611cfa611cf56001611481565b610568565b906323b872dd611d093061148e565b3393611d165f8801610a3b565b92813b15611df1575f611d3c91611d478296611d30610122565b998a978896879561149e565b8552600485016114b3565b03925af1908115611dec57611d65925f92611dc0575b509301610a3b565b33919284611da5611d9f611d997f678afbb7bbf1c4f3df509d59b51d6e75969703762eb36ed41414dc7c49569c969461039b565b9461039b565b946113ba565b94611dba611db1610122565b92839283611c3d565b0390a490565b611ddf90833d8111611de5575b611dd78183610156565b8101906114a4565b5f611d5d565b503d611dcd565b6114e5565b61149a565b6020611e029101611392565b611e1c611e16611e115f61120e565b6106c2565b916106c2565b14155f14611e4b573390611e47611e31610122565b9283926345c2e43b60e01b845260048401611b5b565b0390fd5b611e6d90611e57610122565b91829163aed59e4f60e01b835260048301611acf565b0390fd5b60207f6661696c65642e00000000000000000000000000000000000000000000000000917f435354204e4654207374616b696e6720726577617264207472616e73666572205f8201520152565b611ecb6027604092610afa565b611ed481611e71565b0190565b916040611f09929493611f02611ef7606083018381035f850152611ebe565b966020830190610603565b01906106ce565b565b15611f14575050565b611f35611f1f610122565b92839263310a0fbb60e21b845260048401611ed8565b0390fd5b611f69905f803383611f49610122565b9081611f5481611762565b03925af1611f606117ad565b50903391611f0b565b565b611f7361123b565b611f8c611f86611f816120da565b6106c2565b916106c2565b03611f9357565b611fb5611f9e6120da565b5f91829163118cdaa760e01b8352600483016106db565b0390fd5b611fc25f61077b565b611fcc825f6113c9565b90612000611ffa7f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0936113ba565b916113ba565b91612009610122565b806120138161028a565b0390a3565b600161202491036101b5565b90565b61203b61203661204092610471565b610398565b6101b5565b90565b9061204e91016101b5565b90565b6120596111c6565b506120635f6109d8565b9061206e600861074f565b915b61208461207f600785906103b7565b610ccf565b61208f5f8201610e0a565b6120a161209b856101b5565b91610f14565b106120d3576120cd916120c16120bc60206120c79401610d2d565b612027565b90612043565b92612018565b91612070565b5091505090565b6120e2611237565b50339056fea26469706673582212208296b3a7c8155e2d1fad9ade63d498aed64a7d86d73e938da99835ff581ef60a64736f6c634300081a0033",
 }
 
 // StakingWalletCSTABI is the input ABI used to generate the binding from.
@@ -1514,27 +1191,24 @@ func (_StakingWalletCST *StakingWalletCSTTransactorRaw) Transact(opts *bind.Tran
 
 // ETHDeposits is a free data retrieval call binding the contract method 0x451f1adf.
 //
-// Solidity: function ETHDeposits(uint256 ) view returns(uint256 depositTime, uint256 depositAmount, uint256 numStaked)
-func (_StakingWalletCST *StakingWalletCSTCaller) ETHDeposits(opts *bind.CallOpts, arg0 *big.Int) (struct {
-	DepositTime   *big.Int
-	DepositAmount *big.Int
-	NumStaked     *big.Int
+// Solidity: function ETHDeposits(uint256 ETHDepositIndex) view returns(uint64 depositId, uint192 rewardAmountPerStakedNFT)
+func (_StakingWalletCST *StakingWalletCSTCaller) ETHDeposits(opts *bind.CallOpts, ETHDepositIndex *big.Int) (struct {
+	DepositId                uint64
+	RewardAmountPerStakedNFT *big.Int
 }, error) {
 	var out []interface{}
-	err := _StakingWalletCST.contract.Call(opts, &out, "ETHDeposits", arg0)
+	err := _StakingWalletCST.contract.Call(opts, &out, "ETHDeposits", ETHDepositIndex)
 
 	outstruct := new(struct {
-		DepositTime   *big.Int
-		DepositAmount *big.Int
-		NumStaked     *big.Int
+		DepositId                uint64
+		RewardAmountPerStakedNFT *big.Int
 	})
 	if err != nil {
 		return *outstruct, err
 	}
 
-	outstruct.DepositTime = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-	outstruct.DepositAmount = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
-	outstruct.NumStaked = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
+	outstruct.DepositId = *abi.ConvertType(out[0], new(uint64)).(*uint64)
+	outstruct.RewardAmountPerStakedNFT = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
 
 	return *outstruct, err
 
@@ -1542,24 +1216,22 @@ func (_StakingWalletCST *StakingWalletCSTCaller) ETHDeposits(opts *bind.CallOpts
 
 // ETHDeposits is a free data retrieval call binding the contract method 0x451f1adf.
 //
-// Solidity: function ETHDeposits(uint256 ) view returns(uint256 depositTime, uint256 depositAmount, uint256 numStaked)
-func (_StakingWalletCST *StakingWalletCSTSession) ETHDeposits(arg0 *big.Int) (struct {
-	DepositTime   *big.Int
-	DepositAmount *big.Int
-	NumStaked     *big.Int
+// Solidity: function ETHDeposits(uint256 ETHDepositIndex) view returns(uint64 depositId, uint192 rewardAmountPerStakedNFT)
+func (_StakingWalletCST *StakingWalletCSTSession) ETHDeposits(ETHDepositIndex *big.Int) (struct {
+	DepositId                uint64
+	RewardAmountPerStakedNFT *big.Int
 }, error) {
-	return _StakingWalletCST.Contract.ETHDeposits(&_StakingWalletCST.CallOpts, arg0)
+	return _StakingWalletCST.Contract.ETHDeposits(&_StakingWalletCST.CallOpts, ETHDepositIndex)
 }
 
 // ETHDeposits is a free data retrieval call binding the contract method 0x451f1adf.
 //
-// Solidity: function ETHDeposits(uint256 ) view returns(uint256 depositTime, uint256 depositAmount, uint256 numStaked)
-func (_StakingWalletCST *StakingWalletCSTCallerSession) ETHDeposits(arg0 *big.Int) (struct {
-	DepositTime   *big.Int
-	DepositAmount *big.Int
-	NumStaked     *big.Int
+// Solidity: function ETHDeposits(uint256 ETHDepositIndex) view returns(uint64 depositId, uint192 rewardAmountPerStakedNFT)
+func (_StakingWalletCST *StakingWalletCSTCallerSession) ETHDeposits(ETHDepositIndex *big.Int) (struct {
+	DepositId                uint64
+	RewardAmountPerStakedNFT *big.Int
 }, error) {
-	return _StakingWalletCST.Contract.ETHDeposits(&_StakingWalletCST.CallOpts, arg0)
+	return _StakingWalletCST.Contract.ETHDeposits(&_StakingWalletCST.CallOpts, ETHDepositIndex)
 }
 
 // Game is a free data retrieval call binding the contract method 0xc3fe3e28.
@@ -1591,99 +1263,6 @@ func (_StakingWalletCST *StakingWalletCSTSession) Game() (common.Address, error)
 // Solidity: function game() view returns(address)
 func (_StakingWalletCST *StakingWalletCSTCallerSession) Game() (common.Address, error) {
 	return _StakingWalletCST.Contract.Game(&_StakingWalletCST.CallOpts)
-}
-
-// IsTokenStaked is a free data retrieval call binding the contract method 0xf0a52424.
-//
-// Solidity: function isTokenStaked(uint256 tokenId) view returns(bool)
-func (_StakingWalletCST *StakingWalletCSTCaller) IsTokenStaked(opts *bind.CallOpts, tokenId *big.Int) (bool, error) {
-	var out []interface{}
-	err := _StakingWalletCST.contract.Call(opts, &out, "isTokenStaked", tokenId)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
-}
-
-// IsTokenStaked is a free data retrieval call binding the contract method 0xf0a52424.
-//
-// Solidity: function isTokenStaked(uint256 tokenId) view returns(bool)
-func (_StakingWalletCST *StakingWalletCSTSession) IsTokenStaked(tokenId *big.Int) (bool, error) {
-	return _StakingWalletCST.Contract.IsTokenStaked(&_StakingWalletCST.CallOpts, tokenId)
-}
-
-// IsTokenStaked is a free data retrieval call binding the contract method 0xf0a52424.
-//
-// Solidity: function isTokenStaked(uint256 tokenId) view returns(bool)
-func (_StakingWalletCST *StakingWalletCSTCallerSession) IsTokenStaked(tokenId *big.Int) (bool, error) {
-	return _StakingWalletCST.Contract.IsTokenStaked(&_StakingWalletCST.CallOpts, tokenId)
-}
-
-// LastActionIdByTokenId is a free data retrieval call binding the contract method 0x889d1e1a.
-//
-// Solidity: function lastActionIdByTokenId(uint256 tokenId) view returns(int256)
-func (_StakingWalletCST *StakingWalletCSTCaller) LastActionIdByTokenId(opts *bind.CallOpts, tokenId *big.Int) (*big.Int, error) {
-	var out []interface{}
-	err := _StakingWalletCST.contract.Call(opts, &out, "lastActionIdByTokenId", tokenId)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// LastActionIdByTokenId is a free data retrieval call binding the contract method 0x889d1e1a.
-//
-// Solidity: function lastActionIdByTokenId(uint256 tokenId) view returns(int256)
-func (_StakingWalletCST *StakingWalletCSTSession) LastActionIdByTokenId(tokenId *big.Int) (*big.Int, error) {
-	return _StakingWalletCST.Contract.LastActionIdByTokenId(&_StakingWalletCST.CallOpts, tokenId)
-}
-
-// LastActionIdByTokenId is a free data retrieval call binding the contract method 0x889d1e1a.
-//
-// Solidity: function lastActionIdByTokenId(uint256 tokenId) view returns(int256)
-func (_StakingWalletCST *StakingWalletCSTCallerSession) LastActionIdByTokenId(tokenId *big.Int) (*big.Int, error) {
-	return _StakingWalletCST.Contract.LastActionIdByTokenId(&_StakingWalletCST.CallOpts, tokenId)
-}
-
-// LastActionIds is a free data retrieval call binding the contract method 0x6427d9a9.
-//
-// Solidity: function lastActionIds(uint256 ) view returns(int256)
-func (_StakingWalletCST *StakingWalletCSTCaller) LastActionIds(opts *bind.CallOpts, arg0 *big.Int) (*big.Int, error) {
-	var out []interface{}
-	err := _StakingWalletCST.contract.Call(opts, &out, "lastActionIds", arg0)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// LastActionIds is a free data retrieval call binding the contract method 0x6427d9a9.
-//
-// Solidity: function lastActionIds(uint256 ) view returns(int256)
-func (_StakingWalletCST *StakingWalletCSTSession) LastActionIds(arg0 *big.Int) (*big.Int, error) {
-	return _StakingWalletCST.Contract.LastActionIds(&_StakingWalletCST.CallOpts, arg0)
-}
-
-// LastActionIds is a free data retrieval call binding the contract method 0x6427d9a9.
-//
-// Solidity: function lastActionIds(uint256 ) view returns(int256)
-func (_StakingWalletCST *StakingWalletCSTCallerSession) LastActionIds(arg0 *big.Int) (*big.Int, error) {
-	return _StakingWalletCST.Contract.LastActionIds(&_StakingWalletCST.CallOpts, arg0)
 }
 
 // Nft is a free data retrieval call binding the contract method 0x47ccca02.
@@ -1746,68 +1325,6 @@ func (_StakingWalletCST *StakingWalletCSTSession) NumETHDeposits() (*big.Int, er
 // Solidity: function numETHDeposits() view returns(uint256)
 func (_StakingWalletCST *StakingWalletCSTCallerSession) NumETHDeposits() (*big.Int, error) {
 	return _StakingWalletCST.Contract.NumETHDeposits(&_StakingWalletCST.CallOpts)
-}
-
-// NumStakeActions is a free data retrieval call binding the contract method 0xa531aa86.
-//
-// Solidity: function numStakeActions() view returns(uint256)
-func (_StakingWalletCST *StakingWalletCSTCaller) NumStakeActions(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _StakingWalletCST.contract.Call(opts, &out, "numStakeActions")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// NumStakeActions is a free data retrieval call binding the contract method 0xa531aa86.
-//
-// Solidity: function numStakeActions() view returns(uint256)
-func (_StakingWalletCST *StakingWalletCSTSession) NumStakeActions() (*big.Int, error) {
-	return _StakingWalletCST.Contract.NumStakeActions(&_StakingWalletCST.CallOpts)
-}
-
-// NumStakeActions is a free data retrieval call binding the contract method 0xa531aa86.
-//
-// Solidity: function numStakeActions() view returns(uint256)
-func (_StakingWalletCST *StakingWalletCSTCallerSession) NumStakeActions() (*big.Int, error) {
-	return _StakingWalletCST.Contract.NumStakeActions(&_StakingWalletCST.CallOpts)
-}
-
-// NumStakedNFTs is a free data retrieval call binding the contract method 0x17db6213.
-//
-// Solidity: function numStakedNFTs() view returns(uint256)
-func (_StakingWalletCST *StakingWalletCSTCaller) NumStakedNFTs(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _StakingWalletCST.contract.Call(opts, &out, "numStakedNFTs")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// NumStakedNFTs is a free data retrieval call binding the contract method 0x17db6213.
-//
-// Solidity: function numStakedNFTs() view returns(uint256)
-func (_StakingWalletCST *StakingWalletCSTSession) NumStakedNFTs() (*big.Int, error) {
-	return _StakingWalletCST.Contract.NumStakedNFTs(&_StakingWalletCST.CallOpts)
-}
-
-// NumStakedNFTs is a free data retrieval call binding the contract method 0x17db6213.
-//
-// Solidity: function numStakedNFTs() view returns(uint256)
-func (_StakingWalletCST *StakingWalletCSTCallerSession) NumStakedNFTs() (*big.Int, error) {
-	return _StakingWalletCST.Contract.NumStakedNFTs(&_StakingWalletCST.CallOpts)
 }
 
 // NumTokensStaked is a free data retrieval call binding the contract method 0x5fda0acc.
@@ -1874,30 +1391,24 @@ func (_StakingWalletCST *StakingWalletCSTCallerSession) Owner() (common.Address,
 
 // StakeActions is a free data retrieval call binding the contract method 0xa2b136fb.
 //
-// Solidity: function stakeActions(uint256 ) view returns(uint256 tokenId, address nftOwner, uint256 stakeTime, uint256 unstakeTime)
-func (_StakingWalletCST *StakingWalletCSTCaller) StakeActions(opts *bind.CallOpts, arg0 *big.Int) (struct {
-	TokenId     *big.Int
-	NftOwner    common.Address
-	StakeTime   *big.Int
-	UnstakeTime *big.Int
+// Solidity: function stakeActions(uint256 stakeActionId) view returns(uint256 tokenId, address nftOwnerAddress)
+func (_StakingWalletCST *StakingWalletCSTCaller) StakeActions(opts *bind.CallOpts, stakeActionId *big.Int) (struct {
+	TokenId         *big.Int
+	NftOwnerAddress common.Address
 }, error) {
 	var out []interface{}
-	err := _StakingWalletCST.contract.Call(opts, &out, "stakeActions", arg0)
+	err := _StakingWalletCST.contract.Call(opts, &out, "stakeActions", stakeActionId)
 
 	outstruct := new(struct {
-		TokenId     *big.Int
-		NftOwner    common.Address
-		StakeTime   *big.Int
-		UnstakeTime *big.Int
+		TokenId         *big.Int
+		NftOwnerAddress common.Address
 	})
 	if err != nil {
 		return *outstruct, err
 	}
 
 	outstruct.TokenId = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-	outstruct.NftOwner = *abi.ConvertType(out[1], new(common.Address)).(*common.Address)
-	outstruct.StakeTime = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
-	outstruct.UnstakeTime = *abi.ConvertType(out[3], new(*big.Int)).(**big.Int)
+	outstruct.NftOwnerAddress = *abi.ConvertType(out[1], new(common.Address)).(*common.Address)
 
 	return *outstruct, err
 
@@ -1905,158 +1416,30 @@ func (_StakingWalletCST *StakingWalletCSTCaller) StakeActions(opts *bind.CallOpt
 
 // StakeActions is a free data retrieval call binding the contract method 0xa2b136fb.
 //
-// Solidity: function stakeActions(uint256 ) view returns(uint256 tokenId, address nftOwner, uint256 stakeTime, uint256 unstakeTime)
-func (_StakingWalletCST *StakingWalletCSTSession) StakeActions(arg0 *big.Int) (struct {
-	TokenId     *big.Int
-	NftOwner    common.Address
-	StakeTime   *big.Int
-	UnstakeTime *big.Int
+// Solidity: function stakeActions(uint256 stakeActionId) view returns(uint256 tokenId, address nftOwnerAddress)
+func (_StakingWalletCST *StakingWalletCSTSession) StakeActions(stakeActionId *big.Int) (struct {
+	TokenId         *big.Int
+	NftOwnerAddress common.Address
 }, error) {
-	return _StakingWalletCST.Contract.StakeActions(&_StakingWalletCST.CallOpts, arg0)
+	return _StakingWalletCST.Contract.StakeActions(&_StakingWalletCST.CallOpts, stakeActionId)
 }
 
 // StakeActions is a free data retrieval call binding the contract method 0xa2b136fb.
 //
-// Solidity: function stakeActions(uint256 ) view returns(uint256 tokenId, address nftOwner, uint256 stakeTime, uint256 unstakeTime)
-func (_StakingWalletCST *StakingWalletCSTCallerSession) StakeActions(arg0 *big.Int) (struct {
-	TokenId     *big.Int
-	NftOwner    common.Address
-	StakeTime   *big.Int
-	UnstakeTime *big.Int
+// Solidity: function stakeActions(uint256 stakeActionId) view returns(uint256 tokenId, address nftOwnerAddress)
+func (_StakingWalletCST *StakingWalletCSTCallerSession) StakeActions(stakeActionId *big.Int) (struct {
+	TokenId         *big.Int
+	NftOwnerAddress common.Address
 }, error) {
-	return _StakingWalletCST.Contract.StakeActions(&_StakingWalletCST.CallOpts, arg0)
-}
-
-// StakedTokens is a free data retrieval call binding the contract method 0xc0788555.
-//
-// Solidity: function stakedTokens(uint256 ) view returns(uint256)
-func (_StakingWalletCST *StakingWalletCSTCaller) StakedTokens(opts *bind.CallOpts, arg0 *big.Int) (*big.Int, error) {
-	var out []interface{}
-	err := _StakingWalletCST.contract.Call(opts, &out, "stakedTokens", arg0)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// StakedTokens is a free data retrieval call binding the contract method 0xc0788555.
-//
-// Solidity: function stakedTokens(uint256 ) view returns(uint256)
-func (_StakingWalletCST *StakingWalletCSTSession) StakedTokens(arg0 *big.Int) (*big.Int, error) {
-	return _StakingWalletCST.Contract.StakedTokens(&_StakingWalletCST.CallOpts, arg0)
-}
-
-// StakedTokens is a free data retrieval call binding the contract method 0xc0788555.
-//
-// Solidity: function stakedTokens(uint256 ) view returns(uint256)
-func (_StakingWalletCST *StakingWalletCSTCallerSession) StakedTokens(arg0 *big.Int) (*big.Int, error) {
-	return _StakingWalletCST.Contract.StakedTokens(&_StakingWalletCST.CallOpts, arg0)
-}
-
-// StakerByTokenId is a free data retrieval call binding the contract method 0xc065894e.
-//
-// Solidity: function stakerByTokenId(uint256 tokenId) view returns(address)
-func (_StakingWalletCST *StakingWalletCSTCaller) StakerByTokenId(opts *bind.CallOpts, tokenId *big.Int) (common.Address, error) {
-	var out []interface{}
-	err := _StakingWalletCST.contract.Call(opts, &out, "stakerByTokenId", tokenId)
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// StakerByTokenId is a free data retrieval call binding the contract method 0xc065894e.
-//
-// Solidity: function stakerByTokenId(uint256 tokenId) view returns(address)
-func (_StakingWalletCST *StakingWalletCSTSession) StakerByTokenId(tokenId *big.Int) (common.Address, error) {
-	return _StakingWalletCST.Contract.StakerByTokenId(&_StakingWalletCST.CallOpts, tokenId)
-}
-
-// StakerByTokenId is a free data retrieval call binding the contract method 0xc065894e.
-//
-// Solidity: function stakerByTokenId(uint256 tokenId) view returns(address)
-func (_StakingWalletCST *StakingWalletCSTCallerSession) StakerByTokenId(tokenId *big.Int) (common.Address, error) {
-	return _StakingWalletCST.Contract.StakerByTokenId(&_StakingWalletCST.CallOpts, tokenId)
-}
-
-// TokenIndices is a free data retrieval call binding the contract method 0x44d110b9.
-//
-// Solidity: function tokenIndices(uint256 ) view returns(uint256)
-func (_StakingWalletCST *StakingWalletCSTCaller) TokenIndices(opts *bind.CallOpts, arg0 *big.Int) (*big.Int, error) {
-	var out []interface{}
-	err := _StakingWalletCST.contract.Call(opts, &out, "tokenIndices", arg0)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// TokenIndices is a free data retrieval call binding the contract method 0x44d110b9.
-//
-// Solidity: function tokenIndices(uint256 ) view returns(uint256)
-func (_StakingWalletCST *StakingWalletCSTSession) TokenIndices(arg0 *big.Int) (*big.Int, error) {
-	return _StakingWalletCST.Contract.TokenIndices(&_StakingWalletCST.CallOpts, arg0)
-}
-
-// TokenIndices is a free data retrieval call binding the contract method 0x44d110b9.
-//
-// Solidity: function tokenIndices(uint256 ) view returns(uint256)
-func (_StakingWalletCST *StakingWalletCSTCallerSession) TokenIndices(arg0 *big.Int) (*big.Int, error) {
-	return _StakingWalletCST.Contract.TokenIndices(&_StakingWalletCST.CallOpts, arg0)
-}
-
-// UsedTokens is a free data retrieval call binding the contract method 0x0f7ee879.
-//
-// Solidity: function usedTokens(uint256 ) view returns(bool)
-func (_StakingWalletCST *StakingWalletCSTCaller) UsedTokens(opts *bind.CallOpts, arg0 *big.Int) (bool, error) {
-	var out []interface{}
-	err := _StakingWalletCST.contract.Call(opts, &out, "usedTokens", arg0)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
-}
-
-// UsedTokens is a free data retrieval call binding the contract method 0x0f7ee879.
-//
-// Solidity: function usedTokens(uint256 ) view returns(bool)
-func (_StakingWalletCST *StakingWalletCSTSession) UsedTokens(arg0 *big.Int) (bool, error) {
-	return _StakingWalletCST.Contract.UsedTokens(&_StakingWalletCST.CallOpts, arg0)
-}
-
-// UsedTokens is a free data retrieval call binding the contract method 0x0f7ee879.
-//
-// Solidity: function usedTokens(uint256 ) view returns(bool)
-func (_StakingWalletCST *StakingWalletCSTCallerSession) UsedTokens(arg0 *big.Int) (bool, error) {
-	return _StakingWalletCST.Contract.UsedTokens(&_StakingWalletCST.CallOpts, arg0)
+	return _StakingWalletCST.Contract.StakeActions(&_StakingWalletCST.CallOpts, stakeActionId)
 }
 
 // WasTokenUsed is a free data retrieval call binding the contract method 0x2a3247aa.
 //
-// Solidity: function wasTokenUsed(uint256 _tokenId) view returns(bool)
-func (_StakingWalletCST *StakingWalletCSTCaller) WasTokenUsed(opts *bind.CallOpts, _tokenId *big.Int) (bool, error) {
+// Solidity: function wasTokenUsed(uint256 tokenId_) view returns(bool)
+func (_StakingWalletCST *StakingWalletCSTCaller) WasTokenUsed(opts *bind.CallOpts, tokenId_ *big.Int) (bool, error) {
 	var out []interface{}
-	err := _StakingWalletCST.contract.Call(opts, &out, "wasTokenUsed", _tokenId)
+	err := _StakingWalletCST.contract.Call(opts, &out, "wasTokenUsed", tokenId_)
 
 	if err != nil {
 		return *new(bool), err
@@ -2070,58 +1453,37 @@ func (_StakingWalletCST *StakingWalletCSTCaller) WasTokenUsed(opts *bind.CallOpt
 
 // WasTokenUsed is a free data retrieval call binding the contract method 0x2a3247aa.
 //
-// Solidity: function wasTokenUsed(uint256 _tokenId) view returns(bool)
-func (_StakingWalletCST *StakingWalletCSTSession) WasTokenUsed(_tokenId *big.Int) (bool, error) {
-	return _StakingWalletCST.Contract.WasTokenUsed(&_StakingWalletCST.CallOpts, _tokenId)
+// Solidity: function wasTokenUsed(uint256 tokenId_) view returns(bool)
+func (_StakingWalletCST *StakingWalletCSTSession) WasTokenUsed(tokenId_ *big.Int) (bool, error) {
+	return _StakingWalletCST.Contract.WasTokenUsed(&_StakingWalletCST.CallOpts, tokenId_)
 }
 
 // WasTokenUsed is a free data retrieval call binding the contract method 0x2a3247aa.
 //
-// Solidity: function wasTokenUsed(uint256 _tokenId) view returns(bool)
-func (_StakingWalletCST *StakingWalletCSTCallerSession) WasTokenUsed(_tokenId *big.Int) (bool, error) {
-	return _StakingWalletCST.Contract.WasTokenUsed(&_StakingWalletCST.CallOpts, _tokenId)
+// Solidity: function wasTokenUsed(uint256 tokenId_) view returns(bool)
+func (_StakingWalletCST *StakingWalletCSTCallerSession) WasTokenUsed(tokenId_ *big.Int) (bool, error) {
+	return _StakingWalletCST.Contract.WasTokenUsed(&_StakingWalletCST.CallOpts, tokenId_)
 }
 
-// ClaimManyRewards is a paid mutator transaction binding the contract method 0x6034eb5b.
+// DepositIfPossible is a paid mutator transaction binding the contract method 0x15b4e68f.
 //
-// Solidity: function claimManyRewards(uint256[] actions, uint256[] deposits) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactor) ClaimManyRewards(opts *bind.TransactOpts, actions []*big.Int, deposits []*big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.contract.Transact(opts, "claimManyRewards", actions, deposits)
+// Solidity: function depositIfPossible(uint256 roundNum_) payable returns()
+func (_StakingWalletCST *StakingWalletCSTTransactor) DepositIfPossible(opts *bind.TransactOpts, roundNum_ *big.Int) (*types.Transaction, error) {
+	return _StakingWalletCST.contract.Transact(opts, "depositIfPossible", roundNum_)
 }
 
-// ClaimManyRewards is a paid mutator transaction binding the contract method 0x6034eb5b.
+// DepositIfPossible is a paid mutator transaction binding the contract method 0x15b4e68f.
 //
-// Solidity: function claimManyRewards(uint256[] actions, uint256[] deposits) returns()
-func (_StakingWalletCST *StakingWalletCSTSession) ClaimManyRewards(actions []*big.Int, deposits []*big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.ClaimManyRewards(&_StakingWalletCST.TransactOpts, actions, deposits)
+// Solidity: function depositIfPossible(uint256 roundNum_) payable returns()
+func (_StakingWalletCST *StakingWalletCSTSession) DepositIfPossible(roundNum_ *big.Int) (*types.Transaction, error) {
+	return _StakingWalletCST.Contract.DepositIfPossible(&_StakingWalletCST.TransactOpts, roundNum_)
 }
 
-// ClaimManyRewards is a paid mutator transaction binding the contract method 0x6034eb5b.
+// DepositIfPossible is a paid mutator transaction binding the contract method 0x15b4e68f.
 //
-// Solidity: function claimManyRewards(uint256[] actions, uint256[] deposits) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactorSession) ClaimManyRewards(actions []*big.Int, deposits []*big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.ClaimManyRewards(&_StakingWalletCST.TransactOpts, actions, deposits)
-}
-
-// DepositIfPossible is a paid mutator transaction binding the contract method 0x326c7b69.
-//
-// Solidity: function depositIfPossible() payable returns()
-func (_StakingWalletCST *StakingWalletCSTTransactor) DepositIfPossible(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _StakingWalletCST.contract.Transact(opts, "depositIfPossible")
-}
-
-// DepositIfPossible is a paid mutator transaction binding the contract method 0x326c7b69.
-//
-// Solidity: function depositIfPossible() payable returns()
-func (_StakingWalletCST *StakingWalletCSTSession) DepositIfPossible() (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.DepositIfPossible(&_StakingWalletCST.TransactOpts)
-}
-
-// DepositIfPossible is a paid mutator transaction binding the contract method 0x326c7b69.
-//
-// Solidity: function depositIfPossible() payable returns()
-func (_StakingWalletCST *StakingWalletCSTTransactorSession) DepositIfPossible() (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.DepositIfPossible(&_StakingWalletCST.TransactOpts)
+// Solidity: function depositIfPossible(uint256 roundNum_) payable returns()
+func (_StakingWalletCST *StakingWalletCSTTransactorSession) DepositIfPossible(roundNum_ *big.Int) (*types.Transaction, error) {
+	return _StakingWalletCST.Contract.DepositIfPossible(&_StakingWalletCST.TransactOpts, roundNum_)
 }
 
 // RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
@@ -2147,44 +1509,44 @@ func (_StakingWalletCST *StakingWalletCSTTransactorSession) RenounceOwnership() 
 
 // Stake is a paid mutator transaction binding the contract method 0xa694fc3a.
 //
-// Solidity: function stake(uint256 _tokenId) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactor) Stake(opts *bind.TransactOpts, _tokenId *big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.contract.Transact(opts, "stake", _tokenId)
+// Solidity: function stake(uint256 tokenId_) returns()
+func (_StakingWalletCST *StakingWalletCSTTransactor) Stake(opts *bind.TransactOpts, tokenId_ *big.Int) (*types.Transaction, error) {
+	return _StakingWalletCST.contract.Transact(opts, "stake", tokenId_)
 }
 
 // Stake is a paid mutator transaction binding the contract method 0xa694fc3a.
 //
-// Solidity: function stake(uint256 _tokenId) returns()
-func (_StakingWalletCST *StakingWalletCSTSession) Stake(_tokenId *big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.Stake(&_StakingWalletCST.TransactOpts, _tokenId)
+// Solidity: function stake(uint256 tokenId_) returns()
+func (_StakingWalletCST *StakingWalletCSTSession) Stake(tokenId_ *big.Int) (*types.Transaction, error) {
+	return _StakingWalletCST.Contract.Stake(&_StakingWalletCST.TransactOpts, tokenId_)
 }
 
 // Stake is a paid mutator transaction binding the contract method 0xa694fc3a.
 //
-// Solidity: function stake(uint256 _tokenId) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactorSession) Stake(_tokenId *big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.Stake(&_StakingWalletCST.TransactOpts, _tokenId)
+// Solidity: function stake(uint256 tokenId_) returns()
+func (_StakingWalletCST *StakingWalletCSTTransactorSession) Stake(tokenId_ *big.Int) (*types.Transaction, error) {
+	return _StakingWalletCST.Contract.Stake(&_StakingWalletCST.TransactOpts, tokenId_)
 }
 
 // StakeMany is a paid mutator transaction binding the contract method 0xfe939afc.
 //
-// Solidity: function stakeMany(uint256[] ids) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactor) StakeMany(opts *bind.TransactOpts, ids []*big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.contract.Transact(opts, "stakeMany", ids)
+// Solidity: function stakeMany(uint256[] tokenIds_) returns()
+func (_StakingWalletCST *StakingWalletCSTTransactor) StakeMany(opts *bind.TransactOpts, tokenIds_ []*big.Int) (*types.Transaction, error) {
+	return _StakingWalletCST.contract.Transact(opts, "stakeMany", tokenIds_)
 }
 
 // StakeMany is a paid mutator transaction binding the contract method 0xfe939afc.
 //
-// Solidity: function stakeMany(uint256[] ids) returns()
-func (_StakingWalletCST *StakingWalletCSTSession) StakeMany(ids []*big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.StakeMany(&_StakingWalletCST.TransactOpts, ids)
+// Solidity: function stakeMany(uint256[] tokenIds_) returns()
+func (_StakingWalletCST *StakingWalletCSTSession) StakeMany(tokenIds_ []*big.Int) (*types.Transaction, error) {
+	return _StakingWalletCST.Contract.StakeMany(&_StakingWalletCST.TransactOpts, tokenIds_)
 }
 
 // StakeMany is a paid mutator transaction binding the contract method 0xfe939afc.
 //
-// Solidity: function stakeMany(uint256[] ids) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactorSession) StakeMany(ids []*big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.StakeMany(&_StakingWalletCST.TransactOpts, ids)
+// Solidity: function stakeMany(uint256[] tokenIds_) returns()
+func (_StakingWalletCST *StakingWalletCSTTransactorSession) StakeMany(tokenIds_ []*big.Int) (*types.Transaction, error) {
+	return _StakingWalletCST.Contract.StakeMany(&_StakingWalletCST.TransactOpts, tokenIds_)
 }
 
 // TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
@@ -2208,274 +1570,67 @@ func (_StakingWalletCST *StakingWalletCSTTransactorSession) TransferOwnership(ne
 	return _StakingWalletCST.Contract.TransferOwnership(&_StakingWalletCST.TransactOpts, newOwner)
 }
 
-// TransferRemainingBalanceToCharity is a paid mutator transaction binding the contract method 0xed614ffa.
+// TryPerformMaintenance is a paid mutator transaction binding the contract method 0xd8ee5573.
 //
-// Solidity: function transferRemainingBalanceToCharity(address charityAddress_) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactor) TransferRemainingBalanceToCharity(opts *bind.TransactOpts, charityAddress_ common.Address) (*types.Transaction, error) {
-	return _StakingWalletCST.contract.Transact(opts, "transferRemainingBalanceToCharity", charityAddress_)
+// Solidity: function tryPerformMaintenance(bool resetState_, address charityAddress_) returns(bool)
+func (_StakingWalletCST *StakingWalletCSTTransactor) TryPerformMaintenance(opts *bind.TransactOpts, resetState_ bool, charityAddress_ common.Address) (*types.Transaction, error) {
+	return _StakingWalletCST.contract.Transact(opts, "tryPerformMaintenance", resetState_, charityAddress_)
 }
 
-// TransferRemainingBalanceToCharity is a paid mutator transaction binding the contract method 0xed614ffa.
+// TryPerformMaintenance is a paid mutator transaction binding the contract method 0xd8ee5573.
 //
-// Solidity: function transferRemainingBalanceToCharity(address charityAddress_) returns()
-func (_StakingWalletCST *StakingWalletCSTSession) TransferRemainingBalanceToCharity(charityAddress_ common.Address) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.TransferRemainingBalanceToCharity(&_StakingWalletCST.TransactOpts, charityAddress_)
+// Solidity: function tryPerformMaintenance(bool resetState_, address charityAddress_) returns(bool)
+func (_StakingWalletCST *StakingWalletCSTSession) TryPerformMaintenance(resetState_ bool, charityAddress_ common.Address) (*types.Transaction, error) {
+	return _StakingWalletCST.Contract.TryPerformMaintenance(&_StakingWalletCST.TransactOpts, resetState_, charityAddress_)
 }
 
-// TransferRemainingBalanceToCharity is a paid mutator transaction binding the contract method 0xed614ffa.
+// TryPerformMaintenance is a paid mutator transaction binding the contract method 0xd8ee5573.
 //
-// Solidity: function transferRemainingBalanceToCharity(address charityAddress_) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactorSession) TransferRemainingBalanceToCharity(charityAddress_ common.Address) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.TransferRemainingBalanceToCharity(&_StakingWalletCST.TransactOpts, charityAddress_)
+// Solidity: function tryPerformMaintenance(bool resetState_, address charityAddress_) returns(bool)
+func (_StakingWalletCST *StakingWalletCSTTransactorSession) TryPerformMaintenance(resetState_ bool, charityAddress_ common.Address) (*types.Transaction, error) {
+	return _StakingWalletCST.Contract.TryPerformMaintenance(&_StakingWalletCST.TransactOpts, resetState_, charityAddress_)
 }
 
 // Unstake is a paid mutator transaction binding the contract method 0x2e17de78.
 //
-// Solidity: function unstake(uint256 stakeActionId) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactor) Unstake(opts *bind.TransactOpts, stakeActionId *big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.contract.Transact(opts, "unstake", stakeActionId)
+// Solidity: function unstake(uint256 stakeActionId_) returns()
+func (_StakingWalletCST *StakingWalletCSTTransactor) Unstake(opts *bind.TransactOpts, stakeActionId_ *big.Int) (*types.Transaction, error) {
+	return _StakingWalletCST.contract.Transact(opts, "unstake", stakeActionId_)
 }
 
 // Unstake is a paid mutator transaction binding the contract method 0x2e17de78.
 //
-// Solidity: function unstake(uint256 stakeActionId) returns()
-func (_StakingWalletCST *StakingWalletCSTSession) Unstake(stakeActionId *big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.Unstake(&_StakingWalletCST.TransactOpts, stakeActionId)
+// Solidity: function unstake(uint256 stakeActionId_) returns()
+func (_StakingWalletCST *StakingWalletCSTSession) Unstake(stakeActionId_ *big.Int) (*types.Transaction, error) {
+	return _StakingWalletCST.Contract.Unstake(&_StakingWalletCST.TransactOpts, stakeActionId_)
 }
 
 // Unstake is a paid mutator transaction binding the contract method 0x2e17de78.
 //
-// Solidity: function unstake(uint256 stakeActionId) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactorSession) Unstake(stakeActionId *big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.Unstake(&_StakingWalletCST.TransactOpts, stakeActionId)
-}
-
-// UnstakeClaim is a paid mutator transaction binding the contract method 0x1969e066.
-//
-// Solidity: function unstakeClaim(uint256 stakeActionId, uint256 ETHDepositId) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactor) UnstakeClaim(opts *bind.TransactOpts, stakeActionId *big.Int, ETHDepositId *big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.contract.Transact(opts, "unstakeClaim", stakeActionId, ETHDepositId)
-}
-
-// UnstakeClaim is a paid mutator transaction binding the contract method 0x1969e066.
-//
-// Solidity: function unstakeClaim(uint256 stakeActionId, uint256 ETHDepositId) returns()
-func (_StakingWalletCST *StakingWalletCSTSession) UnstakeClaim(stakeActionId *big.Int, ETHDepositId *big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.UnstakeClaim(&_StakingWalletCST.TransactOpts, stakeActionId, ETHDepositId)
-}
-
-// UnstakeClaim is a paid mutator transaction binding the contract method 0x1969e066.
-//
-// Solidity: function unstakeClaim(uint256 stakeActionId, uint256 ETHDepositId) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactorSession) UnstakeClaim(stakeActionId *big.Int, ETHDepositId *big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.UnstakeClaim(&_StakingWalletCST.TransactOpts, stakeActionId, ETHDepositId)
-}
-
-// UnstakeClaimMany is a paid mutator transaction binding the contract method 0xdb2b4bd8.
-//
-// Solidity: function unstakeClaimMany(uint256[] unstake_actions, uint256[] claim_actions, uint256[] claim_deposits) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactor) UnstakeClaimMany(opts *bind.TransactOpts, unstake_actions []*big.Int, claim_actions []*big.Int, claim_deposits []*big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.contract.Transact(opts, "unstakeClaimMany", unstake_actions, claim_actions, claim_deposits)
-}
-
-// UnstakeClaimMany is a paid mutator transaction binding the contract method 0xdb2b4bd8.
-//
-// Solidity: function unstakeClaimMany(uint256[] unstake_actions, uint256[] claim_actions, uint256[] claim_deposits) returns()
-func (_StakingWalletCST *StakingWalletCSTSession) UnstakeClaimMany(unstake_actions []*big.Int, claim_actions []*big.Int, claim_deposits []*big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.UnstakeClaimMany(&_StakingWalletCST.TransactOpts, unstake_actions, claim_actions, claim_deposits)
-}
-
-// UnstakeClaimMany is a paid mutator transaction binding the contract method 0xdb2b4bd8.
-//
-// Solidity: function unstakeClaimMany(uint256[] unstake_actions, uint256[] claim_actions, uint256[] claim_deposits) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactorSession) UnstakeClaimMany(unstake_actions []*big.Int, claim_actions []*big.Int, claim_deposits []*big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.UnstakeClaimMany(&_StakingWalletCST.TransactOpts, unstake_actions, claim_actions, claim_deposits)
+// Solidity: function unstake(uint256 stakeActionId_) returns()
+func (_StakingWalletCST *StakingWalletCSTTransactorSession) Unstake(stakeActionId_ *big.Int) (*types.Transaction, error) {
+	return _StakingWalletCST.Contract.Unstake(&_StakingWalletCST.TransactOpts, stakeActionId_)
 }
 
 // UnstakeMany is a paid mutator transaction binding the contract method 0x0d50c189.
 //
-// Solidity: function unstakeMany(uint256[] ids) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactor) UnstakeMany(opts *bind.TransactOpts, ids []*big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.contract.Transact(opts, "unstakeMany", ids)
+// Solidity: function unstakeMany(uint256[] stakeActionIds_) returns()
+func (_StakingWalletCST *StakingWalletCSTTransactor) UnstakeMany(opts *bind.TransactOpts, stakeActionIds_ []*big.Int) (*types.Transaction, error) {
+	return _StakingWalletCST.contract.Transact(opts, "unstakeMany", stakeActionIds_)
 }
 
 // UnstakeMany is a paid mutator transaction binding the contract method 0x0d50c189.
 //
-// Solidity: function unstakeMany(uint256[] ids) returns()
-func (_StakingWalletCST *StakingWalletCSTSession) UnstakeMany(ids []*big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.UnstakeMany(&_StakingWalletCST.TransactOpts, ids)
+// Solidity: function unstakeMany(uint256[] stakeActionIds_) returns()
+func (_StakingWalletCST *StakingWalletCSTSession) UnstakeMany(stakeActionIds_ []*big.Int) (*types.Transaction, error) {
+	return _StakingWalletCST.Contract.UnstakeMany(&_StakingWalletCST.TransactOpts, stakeActionIds_)
 }
 
 // UnstakeMany is a paid mutator transaction binding the contract method 0x0d50c189.
 //
-// Solidity: function unstakeMany(uint256[] ids) returns()
-func (_StakingWalletCST *StakingWalletCSTTransactorSession) UnstakeMany(ids []*big.Int) (*types.Transaction, error) {
-	return _StakingWalletCST.Contract.UnstakeMany(&_StakingWalletCST.TransactOpts, ids)
-}
-
-// StakingWalletCSTClaimRewardEventIterator is returned from FilterClaimRewardEvent and is used to iterate over the raw logs and unpacked data for ClaimRewardEvent events raised by the StakingWalletCST contract.
-type StakingWalletCSTClaimRewardEventIterator struct {
-	Event *StakingWalletCSTClaimRewardEvent // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *StakingWalletCSTClaimRewardEventIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(StakingWalletCSTClaimRewardEvent)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(StakingWalletCSTClaimRewardEvent)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *StakingWalletCSTClaimRewardEventIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *StakingWalletCSTClaimRewardEventIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// StakingWalletCSTClaimRewardEvent represents a ClaimRewardEvent event raised by the StakingWalletCST contract.
-type StakingWalletCSTClaimRewardEvent struct {
-	ActionId  *big.Int
-	DepositId *big.Int
-	Reward    *big.Int
-	Staker    common.Address
-	Raw       types.Log // Blockchain specific contextual infos
-}
-
-// FilterClaimRewardEvent is a free log retrieval operation binding the contract event 0xdde81df5caa033e783e2a39d93e3a8718a7dc27ba95a4757f5433a01f794ec36.
-//
-// Solidity: event ClaimRewardEvent(uint256 indexed actionId, uint256 indexed depositId, uint256 reward, address indexed staker)
-func (_StakingWalletCST *StakingWalletCSTFilterer) FilterClaimRewardEvent(opts *bind.FilterOpts, actionId []*big.Int, depositId []*big.Int, staker []common.Address) (*StakingWalletCSTClaimRewardEventIterator, error) {
-
-	var actionIdRule []interface{}
-	for _, actionIdItem := range actionId {
-		actionIdRule = append(actionIdRule, actionIdItem)
-	}
-	var depositIdRule []interface{}
-	for _, depositIdItem := range depositId {
-		depositIdRule = append(depositIdRule, depositIdItem)
-	}
-
-	var stakerRule []interface{}
-	for _, stakerItem := range staker {
-		stakerRule = append(stakerRule, stakerItem)
-	}
-
-	logs, sub, err := _StakingWalletCST.contract.FilterLogs(opts, "ClaimRewardEvent", actionIdRule, depositIdRule, stakerRule)
-	if err != nil {
-		return nil, err
-	}
-	return &StakingWalletCSTClaimRewardEventIterator{contract: _StakingWalletCST.contract, event: "ClaimRewardEvent", logs: logs, sub: sub}, nil
-}
-
-// WatchClaimRewardEvent is a free log subscription operation binding the contract event 0xdde81df5caa033e783e2a39d93e3a8718a7dc27ba95a4757f5433a01f794ec36.
-//
-// Solidity: event ClaimRewardEvent(uint256 indexed actionId, uint256 indexed depositId, uint256 reward, address indexed staker)
-func (_StakingWalletCST *StakingWalletCSTFilterer) WatchClaimRewardEvent(opts *bind.WatchOpts, sink chan<- *StakingWalletCSTClaimRewardEvent, actionId []*big.Int, depositId []*big.Int, staker []common.Address) (event.Subscription, error) {
-
-	var actionIdRule []interface{}
-	for _, actionIdItem := range actionId {
-		actionIdRule = append(actionIdRule, actionIdItem)
-	}
-	var depositIdRule []interface{}
-	for _, depositIdItem := range depositId {
-		depositIdRule = append(depositIdRule, depositIdItem)
-	}
-
-	var stakerRule []interface{}
-	for _, stakerItem := range staker {
-		stakerRule = append(stakerRule, stakerItem)
-	}
-
-	logs, sub, err := _StakingWalletCST.contract.WatchLogs(opts, "ClaimRewardEvent", actionIdRule, depositIdRule, stakerRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(StakingWalletCSTClaimRewardEvent)
-				if err := _StakingWalletCST.contract.UnpackLog(event, "ClaimRewardEvent", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseClaimRewardEvent is a log parse operation binding the contract event 0xdde81df5caa033e783e2a39d93e3a8718a7dc27ba95a4757f5433a01f794ec36.
-//
-// Solidity: event ClaimRewardEvent(uint256 indexed actionId, uint256 indexed depositId, uint256 reward, address indexed staker)
-func (_StakingWalletCST *StakingWalletCSTFilterer) ParseClaimRewardEvent(log types.Log) (*StakingWalletCSTClaimRewardEvent, error) {
-	event := new(StakingWalletCSTClaimRewardEvent)
-	if err := _StakingWalletCST.contract.UnpackLog(event, "ClaimRewardEvent", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
+// Solidity: function unstakeMany(uint256[] stakeActionIds_) returns()
+func (_StakingWalletCST *StakingWalletCSTTransactorSession) UnstakeMany(stakeActionIds_ []*big.Int) (*types.Transaction, error) {
+	return _StakingWalletCST.Contract.UnstakeMany(&_StakingWalletCST.TransactOpts, stakeActionIds_)
 }
 
 // StakingWalletCSTEthDepositEventIterator is returned from FilterEthDepositEvent and is used to iterate over the raw logs and unpacked data for EthDepositEvent events raised by the StakingWalletCST contract.
@@ -2547,41 +1702,42 @@ func (it *StakingWalletCSTEthDepositEventIterator) Close() error {
 
 // StakingWalletCSTEthDepositEvent represents a EthDepositEvent event raised by the StakingWalletCST contract.
 type StakingWalletCSTEthDepositEvent struct {
-	DepositTime   *big.Int
-	DepositNum    *big.Int
+	RoundNum      *big.Int
+	DepositIndex  *big.Int
+	DepositId     *big.Int
+	DepositAmount *big.Int
 	NumStakedNFTs *big.Int
-	Amount        *big.Int
 	Raw           types.Log // Blockchain specific contextual infos
 }
 
-// FilterEthDepositEvent is a free log retrieval operation binding the contract event 0xd91db13dbdc68f51d0e522c3f29f3d5c0f5945fa377792cb335e42f78b82d1d8.
+// FilterEthDepositEvent is a free log retrieval operation binding the contract event 0xdc0eacba8b1f88284dca5eec8be23173aefa7206298fe22de43e064b6ccd8418.
 //
-// Solidity: event EthDepositEvent(uint256 indexed depositTime, uint256 depositNum, uint256 numStakedNFTs, uint256 amount)
-func (_StakingWalletCST *StakingWalletCSTFilterer) FilterEthDepositEvent(opts *bind.FilterOpts, depositTime []*big.Int) (*StakingWalletCSTEthDepositEventIterator, error) {
+// Solidity: event EthDepositEvent(uint256 indexed roundNum, uint256 depositIndex, uint256 depositId, uint256 depositAmount, uint256 numStakedNFTs)
+func (_StakingWalletCST *StakingWalletCSTFilterer) FilterEthDepositEvent(opts *bind.FilterOpts, roundNum []*big.Int) (*StakingWalletCSTEthDepositEventIterator, error) {
 
-	var depositTimeRule []interface{}
-	for _, depositTimeItem := range depositTime {
-		depositTimeRule = append(depositTimeRule, depositTimeItem)
+	var roundNumRule []interface{}
+	for _, roundNumItem := range roundNum {
+		roundNumRule = append(roundNumRule, roundNumItem)
 	}
 
-	logs, sub, err := _StakingWalletCST.contract.FilterLogs(opts, "EthDepositEvent", depositTimeRule)
+	logs, sub, err := _StakingWalletCST.contract.FilterLogs(opts, "EthDepositEvent", roundNumRule)
 	if err != nil {
 		return nil, err
 	}
 	return &StakingWalletCSTEthDepositEventIterator{contract: _StakingWalletCST.contract, event: "EthDepositEvent", logs: logs, sub: sub}, nil
 }
 
-// WatchEthDepositEvent is a free log subscription operation binding the contract event 0xd91db13dbdc68f51d0e522c3f29f3d5c0f5945fa377792cb335e42f78b82d1d8.
+// WatchEthDepositEvent is a free log subscription operation binding the contract event 0xdc0eacba8b1f88284dca5eec8be23173aefa7206298fe22de43e064b6ccd8418.
 //
-// Solidity: event EthDepositEvent(uint256 indexed depositTime, uint256 depositNum, uint256 numStakedNFTs, uint256 amount)
-func (_StakingWalletCST *StakingWalletCSTFilterer) WatchEthDepositEvent(opts *bind.WatchOpts, sink chan<- *StakingWalletCSTEthDepositEvent, depositTime []*big.Int) (event.Subscription, error) {
+// Solidity: event EthDepositEvent(uint256 indexed roundNum, uint256 depositIndex, uint256 depositId, uint256 depositAmount, uint256 numStakedNFTs)
+func (_StakingWalletCST *StakingWalletCSTFilterer) WatchEthDepositEvent(opts *bind.WatchOpts, sink chan<- *StakingWalletCSTEthDepositEvent, roundNum []*big.Int) (event.Subscription, error) {
 
-	var depositTimeRule []interface{}
-	for _, depositTimeItem := range depositTime {
-		depositTimeRule = append(depositTimeRule, depositTimeItem)
+	var roundNumRule []interface{}
+	for _, roundNumItem := range roundNum {
+		roundNumRule = append(roundNumRule, roundNumItem)
 	}
 
-	logs, sub, err := _StakingWalletCST.contract.WatchLogs(opts, "EthDepositEvent", depositTimeRule)
+	logs, sub, err := _StakingWalletCST.contract.WatchLogs(opts, "EthDepositEvent", roundNumRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2613,12 +1769,158 @@ func (_StakingWalletCST *StakingWalletCSTFilterer) WatchEthDepositEvent(opts *bi
 	}), nil
 }
 
-// ParseEthDepositEvent is a log parse operation binding the contract event 0xd91db13dbdc68f51d0e522c3f29f3d5c0f5945fa377792cb335e42f78b82d1d8.
+// ParseEthDepositEvent is a log parse operation binding the contract event 0xdc0eacba8b1f88284dca5eec8be23173aefa7206298fe22de43e064b6ccd8418.
 //
-// Solidity: event EthDepositEvent(uint256 indexed depositTime, uint256 depositNum, uint256 numStakedNFTs, uint256 amount)
+// Solidity: event EthDepositEvent(uint256 indexed roundNum, uint256 depositIndex, uint256 depositId, uint256 depositAmount, uint256 numStakedNFTs)
 func (_StakingWalletCST *StakingWalletCSTFilterer) ParseEthDepositEvent(log types.Log) (*StakingWalletCSTEthDepositEvent, error) {
 	event := new(StakingWalletCSTEthDepositEvent)
 	if err := _StakingWalletCST.contract.UnpackLog(event, "EthDepositEvent", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// StakingWalletCSTFundTransferFailedIterator is returned from FilterFundTransferFailed and is used to iterate over the raw logs and unpacked data for FundTransferFailed events raised by the StakingWalletCST contract.
+type StakingWalletCSTFundTransferFailedIterator struct {
+	Event *StakingWalletCSTFundTransferFailed // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *StakingWalletCSTFundTransferFailedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(StakingWalletCSTFundTransferFailed)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(StakingWalletCSTFundTransferFailed)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *StakingWalletCSTFundTransferFailedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *StakingWalletCSTFundTransferFailedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// StakingWalletCSTFundTransferFailed represents a FundTransferFailed event raised by the StakingWalletCST contract.
+type StakingWalletCSTFundTransferFailed struct {
+	ErrStr      string
+	Amount      *big.Int
+	Destination common.Address
+	Raw         types.Log // Blockchain specific contextual infos
+}
+
+// FilterFundTransferFailed is a free log retrieval operation binding the contract event 0xc4283eec4c85bbabb45475fc62cda5e1b3a382be7ef6b1d14e685b065a9adf74.
+//
+// Solidity: event FundTransferFailed(string errStr, uint256 amount, address indexed destination)
+func (_StakingWalletCST *StakingWalletCSTFilterer) FilterFundTransferFailed(opts *bind.FilterOpts, destination []common.Address) (*StakingWalletCSTFundTransferFailedIterator, error) {
+
+	var destinationRule []interface{}
+	for _, destinationItem := range destination {
+		destinationRule = append(destinationRule, destinationItem)
+	}
+
+	logs, sub, err := _StakingWalletCST.contract.FilterLogs(opts, "FundTransferFailed", destinationRule)
+	if err != nil {
+		return nil, err
+	}
+	return &StakingWalletCSTFundTransferFailedIterator{contract: _StakingWalletCST.contract, event: "FundTransferFailed", logs: logs, sub: sub}, nil
+}
+
+// WatchFundTransferFailed is a free log subscription operation binding the contract event 0xc4283eec4c85bbabb45475fc62cda5e1b3a382be7ef6b1d14e685b065a9adf74.
+//
+// Solidity: event FundTransferFailed(string errStr, uint256 amount, address indexed destination)
+func (_StakingWalletCST *StakingWalletCSTFilterer) WatchFundTransferFailed(opts *bind.WatchOpts, sink chan<- *StakingWalletCSTFundTransferFailed, destination []common.Address) (event.Subscription, error) {
+
+	var destinationRule []interface{}
+	for _, destinationItem := range destination {
+		destinationRule = append(destinationRule, destinationItem)
+	}
+
+	logs, sub, err := _StakingWalletCST.contract.WatchLogs(opts, "FundTransferFailed", destinationRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(StakingWalletCSTFundTransferFailed)
+				if err := _StakingWalletCST.contract.UnpackLog(event, "FundTransferFailed", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseFundTransferFailed is a log parse operation binding the contract event 0xc4283eec4c85bbabb45475fc62cda5e1b3a382be7ef6b1d14e685b065a9adf74.
+//
+// Solidity: event FundTransferFailed(string errStr, uint256 amount, address indexed destination)
+func (_StakingWalletCST *StakingWalletCSTFilterer) ParseFundTransferFailed(log types.Log) (*StakingWalletCSTFundTransferFailed, error) {
+	event := new(StakingWalletCSTFundTransferFailed)
+	if err := _StakingWalletCST.contract.UnpackLog(event, "FundTransferFailed", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -2992,59 +2294,57 @@ func (it *StakingWalletCSTStakeActionEventIterator) Close() error {
 
 // StakingWalletCSTStakeActionEvent represents a StakeActionEvent event raised by the StakingWalletCST contract.
 type StakingWalletCSTStakeActionEvent struct {
-	ActionId  *big.Int
-	TokenId   *big.Int
-	TotalNFTs *big.Int
-	Staker    common.Address
-	Raw       types.Log // Blockchain specific contextual infos
+	StakeActionId *big.Int
+	TokenId       *big.Int
+	StakerAddress common.Address
+	NumStakedNFTs *big.Int
+	Raw           types.Log // Blockchain specific contextual infos
 }
 
-// FilterStakeActionEvent is a free log retrieval operation binding the contract event 0xde0c27ec227b5d0c0a194ea6f25d7031639f9c10d8bf6e2f9414ff8088a6e20d.
+// FilterStakeActionEvent is a free log retrieval operation binding the contract event 0xcd7bda73d32f8fada3eeee8d21563aa19eb2fe86d90b4449cf5252e6f3da7ef8.
 //
-// Solidity: event StakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
-func (_StakingWalletCST *StakingWalletCSTFilterer) FilterStakeActionEvent(opts *bind.FilterOpts, actionId []*big.Int, tokenId []*big.Int, staker []common.Address) (*StakingWalletCSTStakeActionEventIterator, error) {
+// Solidity: event StakeActionEvent(uint256 indexed stakeActionId, uint256 indexed tokenId, address indexed stakerAddress, uint256 numStakedNFTs)
+func (_StakingWalletCST *StakingWalletCSTFilterer) FilterStakeActionEvent(opts *bind.FilterOpts, stakeActionId []*big.Int, tokenId []*big.Int, stakerAddress []common.Address) (*StakingWalletCSTStakeActionEventIterator, error) {
 
-	var actionIdRule []interface{}
-	for _, actionIdItem := range actionId {
-		actionIdRule = append(actionIdRule, actionIdItem)
+	var stakeActionIdRule []interface{}
+	for _, stakeActionIdItem := range stakeActionId {
+		stakeActionIdRule = append(stakeActionIdRule, stakeActionIdItem)
 	}
 	var tokenIdRule []interface{}
 	for _, tokenIdItem := range tokenId {
 		tokenIdRule = append(tokenIdRule, tokenIdItem)
 	}
-
-	var stakerRule []interface{}
-	for _, stakerItem := range staker {
-		stakerRule = append(stakerRule, stakerItem)
+	var stakerAddressRule []interface{}
+	for _, stakerAddressItem := range stakerAddress {
+		stakerAddressRule = append(stakerAddressRule, stakerAddressItem)
 	}
 
-	logs, sub, err := _StakingWalletCST.contract.FilterLogs(opts, "StakeActionEvent", actionIdRule, tokenIdRule, stakerRule)
+	logs, sub, err := _StakingWalletCST.contract.FilterLogs(opts, "StakeActionEvent", stakeActionIdRule, tokenIdRule, stakerAddressRule)
 	if err != nil {
 		return nil, err
 	}
 	return &StakingWalletCSTStakeActionEventIterator{contract: _StakingWalletCST.contract, event: "StakeActionEvent", logs: logs, sub: sub}, nil
 }
 
-// WatchStakeActionEvent is a free log subscription operation binding the contract event 0xde0c27ec227b5d0c0a194ea6f25d7031639f9c10d8bf6e2f9414ff8088a6e20d.
+// WatchStakeActionEvent is a free log subscription operation binding the contract event 0xcd7bda73d32f8fada3eeee8d21563aa19eb2fe86d90b4449cf5252e6f3da7ef8.
 //
-// Solidity: event StakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
-func (_StakingWalletCST *StakingWalletCSTFilterer) WatchStakeActionEvent(opts *bind.WatchOpts, sink chan<- *StakingWalletCSTStakeActionEvent, actionId []*big.Int, tokenId []*big.Int, staker []common.Address) (event.Subscription, error) {
+// Solidity: event StakeActionEvent(uint256 indexed stakeActionId, uint256 indexed tokenId, address indexed stakerAddress, uint256 numStakedNFTs)
+func (_StakingWalletCST *StakingWalletCSTFilterer) WatchStakeActionEvent(opts *bind.WatchOpts, sink chan<- *StakingWalletCSTStakeActionEvent, stakeActionId []*big.Int, tokenId []*big.Int, stakerAddress []common.Address) (event.Subscription, error) {
 
-	var actionIdRule []interface{}
-	for _, actionIdItem := range actionId {
-		actionIdRule = append(actionIdRule, actionIdItem)
+	var stakeActionIdRule []interface{}
+	for _, stakeActionIdItem := range stakeActionId {
+		stakeActionIdRule = append(stakeActionIdRule, stakeActionIdItem)
 	}
 	var tokenIdRule []interface{}
 	for _, tokenIdItem := range tokenId {
 		tokenIdRule = append(tokenIdRule, tokenIdItem)
 	}
-
-	var stakerRule []interface{}
-	for _, stakerItem := range staker {
-		stakerRule = append(stakerRule, stakerItem)
+	var stakerAddressRule []interface{}
+	for _, stakerAddressItem := range stakerAddress {
+		stakerAddressRule = append(stakerAddressRule, stakerAddressItem)
 	}
 
-	logs, sub, err := _StakingWalletCST.contract.WatchLogs(opts, "StakeActionEvent", actionIdRule, tokenIdRule, stakerRule)
+	logs, sub, err := _StakingWalletCST.contract.WatchLogs(opts, "StakeActionEvent", stakeActionIdRule, tokenIdRule, stakerAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -3076,9 +2376,9 @@ func (_StakingWalletCST *StakingWalletCSTFilterer) WatchStakeActionEvent(opts *b
 	}), nil
 }
 
-// ParseStakeActionEvent is a log parse operation binding the contract event 0xde0c27ec227b5d0c0a194ea6f25d7031639f9c10d8bf6e2f9414ff8088a6e20d.
+// ParseStakeActionEvent is a log parse operation binding the contract event 0xcd7bda73d32f8fada3eeee8d21563aa19eb2fe86d90b4449cf5252e6f3da7ef8.
 //
-// Solidity: event StakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
+// Solidity: event StakeActionEvent(uint256 indexed stakeActionId, uint256 indexed tokenId, address indexed stakerAddress, uint256 numStakedNFTs)
 func (_StakingWalletCST *StakingWalletCSTFilterer) ParseStakeActionEvent(log types.Log) (*StakingWalletCSTStakeActionEvent, error) {
 	event := new(StakingWalletCSTStakeActionEvent)
 	if err := _StakingWalletCST.contract.UnpackLog(event, "StakeActionEvent", log); err != nil {
@@ -3157,59 +2457,58 @@ func (it *StakingWalletCSTUnstakeActionEventIterator) Close() error {
 
 // StakingWalletCSTUnstakeActionEvent represents a UnstakeActionEvent event raised by the StakingWalletCST contract.
 type StakingWalletCSTUnstakeActionEvent struct {
-	ActionId  *big.Int
-	TokenId   *big.Int
-	TotalNFTs *big.Int
-	Staker    common.Address
-	Raw       types.Log // Blockchain specific contextual infos
+	StakeActionId *big.Int
+	TokenId       *big.Int
+	StakerAddress common.Address
+	NumStakedNFTs *big.Int
+	RewardAmount  *big.Int
+	Raw           types.Log // Blockchain specific contextual infos
 }
 
-// FilterUnstakeActionEvent is a free log retrieval operation binding the contract event 0x33940a9fc3ee3c9150b29b34ef29ca397b5e1e340425a4f0da0346b5b90766c8.
+// FilterUnstakeActionEvent is a free log retrieval operation binding the contract event 0x678afbb7bbf1c4f3df509d59b51d6e75969703762eb36ed41414dc7c49569c96.
 //
-// Solidity: event UnstakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
-func (_StakingWalletCST *StakingWalletCSTFilterer) FilterUnstakeActionEvent(opts *bind.FilterOpts, actionId []*big.Int, tokenId []*big.Int, staker []common.Address) (*StakingWalletCSTUnstakeActionEventIterator, error) {
+// Solidity: event UnstakeActionEvent(uint256 indexed stakeActionId, uint256 indexed tokenId, address indexed stakerAddress, uint256 numStakedNFTs, uint256 rewardAmount)
+func (_StakingWalletCST *StakingWalletCSTFilterer) FilterUnstakeActionEvent(opts *bind.FilterOpts, stakeActionId []*big.Int, tokenId []*big.Int, stakerAddress []common.Address) (*StakingWalletCSTUnstakeActionEventIterator, error) {
 
-	var actionIdRule []interface{}
-	for _, actionIdItem := range actionId {
-		actionIdRule = append(actionIdRule, actionIdItem)
+	var stakeActionIdRule []interface{}
+	for _, stakeActionIdItem := range stakeActionId {
+		stakeActionIdRule = append(stakeActionIdRule, stakeActionIdItem)
 	}
 	var tokenIdRule []interface{}
 	for _, tokenIdItem := range tokenId {
 		tokenIdRule = append(tokenIdRule, tokenIdItem)
 	}
-
-	var stakerRule []interface{}
-	for _, stakerItem := range staker {
-		stakerRule = append(stakerRule, stakerItem)
+	var stakerAddressRule []interface{}
+	for _, stakerAddressItem := range stakerAddress {
+		stakerAddressRule = append(stakerAddressRule, stakerAddressItem)
 	}
 
-	logs, sub, err := _StakingWalletCST.contract.FilterLogs(opts, "UnstakeActionEvent", actionIdRule, tokenIdRule, stakerRule)
+	logs, sub, err := _StakingWalletCST.contract.FilterLogs(opts, "UnstakeActionEvent", stakeActionIdRule, tokenIdRule, stakerAddressRule)
 	if err != nil {
 		return nil, err
 	}
 	return &StakingWalletCSTUnstakeActionEventIterator{contract: _StakingWalletCST.contract, event: "UnstakeActionEvent", logs: logs, sub: sub}, nil
 }
 
-// WatchUnstakeActionEvent is a free log subscription operation binding the contract event 0x33940a9fc3ee3c9150b29b34ef29ca397b5e1e340425a4f0da0346b5b90766c8.
+// WatchUnstakeActionEvent is a free log subscription operation binding the contract event 0x678afbb7bbf1c4f3df509d59b51d6e75969703762eb36ed41414dc7c49569c96.
 //
-// Solidity: event UnstakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
-func (_StakingWalletCST *StakingWalletCSTFilterer) WatchUnstakeActionEvent(opts *bind.WatchOpts, sink chan<- *StakingWalletCSTUnstakeActionEvent, actionId []*big.Int, tokenId []*big.Int, staker []common.Address) (event.Subscription, error) {
+// Solidity: event UnstakeActionEvent(uint256 indexed stakeActionId, uint256 indexed tokenId, address indexed stakerAddress, uint256 numStakedNFTs, uint256 rewardAmount)
+func (_StakingWalletCST *StakingWalletCSTFilterer) WatchUnstakeActionEvent(opts *bind.WatchOpts, sink chan<- *StakingWalletCSTUnstakeActionEvent, stakeActionId []*big.Int, tokenId []*big.Int, stakerAddress []common.Address) (event.Subscription, error) {
 
-	var actionIdRule []interface{}
-	for _, actionIdItem := range actionId {
-		actionIdRule = append(actionIdRule, actionIdItem)
+	var stakeActionIdRule []interface{}
+	for _, stakeActionIdItem := range stakeActionId {
+		stakeActionIdRule = append(stakeActionIdRule, stakeActionIdItem)
 	}
 	var tokenIdRule []interface{}
 	for _, tokenIdItem := range tokenId {
 		tokenIdRule = append(tokenIdRule, tokenIdItem)
 	}
-
-	var stakerRule []interface{}
-	for _, stakerItem := range staker {
-		stakerRule = append(stakerRule, stakerItem)
+	var stakerAddressRule []interface{}
+	for _, stakerAddressItem := range stakerAddress {
+		stakerAddressRule = append(stakerAddressRule, stakerAddressItem)
 	}
 
-	logs, sub, err := _StakingWalletCST.contract.WatchLogs(opts, "UnstakeActionEvent", actionIdRule, tokenIdRule, stakerRule)
+	logs, sub, err := _StakingWalletCST.contract.WatchLogs(opts, "UnstakeActionEvent", stakeActionIdRule, tokenIdRule, stakerAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -3241,9 +2540,9 @@ func (_StakingWalletCST *StakingWalletCSTFilterer) WatchUnstakeActionEvent(opts 
 	}), nil
 }
 
-// ParseUnstakeActionEvent is a log parse operation binding the contract event 0x33940a9fc3ee3c9150b29b34ef29ca397b5e1e340425a4f0da0346b5b90766c8.
+// ParseUnstakeActionEvent is a log parse operation binding the contract event 0x678afbb7bbf1c4f3df509d59b51d6e75969703762eb36ed41414dc7c49569c96.
 //
-// Solidity: event UnstakeActionEvent(uint256 indexed actionId, uint256 indexed tokenId, uint256 totalNFTs, address indexed staker)
+// Solidity: event UnstakeActionEvent(uint256 indexed stakeActionId, uint256 indexed tokenId, address indexed stakerAddress, uint256 numStakedNFTs, uint256 rewardAmount)
 func (_StakingWalletCST *StakingWalletCSTFilterer) ParseUnstakeActionEvent(log types.Log) (*StakingWalletCSTUnstakeActionEvent, error) {
 	event := new(StakingWalletCSTUnstakeActionEvent)
 	if err := _StakingWalletCST.contract.UnpackLog(event, "UnstakeActionEvent", log); err != nil {
