@@ -1136,7 +1136,7 @@ func proc_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
 	evt.DepositTime = elog.TimeStamp
-	evt.DepositId  = eth_evt.DepositId.Int64()
+	evt.DepositId  = eth_evt.ActionCounter.Int64()
 	evt.DepositNum = eth_evt.DepositIndex.Int64()
 	evt.NumStakedNfts = eth_evt.NumStakedNFTs.Int64()
 	evt.Amount = eth_evt.DepositAmount.String()
@@ -1166,9 +1166,8 @@ func proc_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tModulo: %v\n",evt.Modulo)
 	Info.Printf("\tAccumModulo: %v\n",evt.AccumModulo)
 	Info.Printf("}\n")
-//	storagew.Delete_eth_deposit_event(evt.EvtId)
-//	storagew.Insert_eth_deposit_event(&evt)
-//////////////////	os.Exit(1)
+	storagew.Delete_eth_deposit_event(evt.EvtId)
+	storagew.Insert_eth_deposit_event(&evt)
 }
 /*
 func proc_claim_reward_event(log *types.Log,elog *EthereumEventLog) {

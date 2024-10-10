@@ -238,7 +238,7 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 				"d.amount/d.num_staked_nfts,"+
 				"(d.amount/d.num_staked_nfts)/1e18 "+
 			"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
-				"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
+				"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_id "+
 				"INNER JOIN transaction tx ON tx.id=d.tx_id " +
 				"LEFT JOIN rwd ON rwd.deposit_id=sd.deposit_id "+
 			"WHERE (sd.staker_aid = $1) AND (sd.amount_to_claim != COALESCE(rwd.collected_reward,0)) " +
@@ -310,7 +310,6 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_collected(user_aid int64,offset
 				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT,"+
 				"d.deposit_time,"+
 				"d.deposit_num,"+
-
 				"d.num_staked_nfts,"+
 				"d.amount,"+
 				"d.amount/1e18,"+
@@ -326,7 +325,7 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_collected(user_aid int64,offset
 				"rwd.collected_reward,"+
 				"rwd.collected_reward_eth "+
 			"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
-				"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
+				"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_id "+
 				"INNER JOIN transaction tx ON tx.id=d.tx_id " +
 				"INNER JOIN rwd ON rwd.deposit_id=sd.deposit_id "+
 			"WHERE sd.staker_aid=$1 "+
@@ -512,7 +511,7 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 	records := make([]p.CGActionIdsForDeposit,0, 16)
 	cur_ts := sw.S.Get_last_block_timestamp()
 	var query string
-	query = "SELECT EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS ts FROM cg_eth_deposit d WHERE deposit_num=$1"
+	query = "SELECT EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS ts FROM cg_eth_deposit d WHERE deposit_id=$1"
 	row := sw.S.Db().QueryRow(query,deposit_id)
 	var null_ts sql.NullInt64
 	err:=row.Scan(&null_ts)
@@ -533,7 +532,7 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 				"d.amount_per_staker, "+
 				"d.amount_per_staker/1e18 amount_eth "+
 			"FROM "+sw.S.SchemaName()+".cg_stake_action_cst a "+
-				"JOIN cg_eth_deposit d ON d.deposit_num=$3 "+
+				"JOIN cg_eth_deposit d ON d.deposit_id=$3 "+
 				"LEFT JOIN cg_unstake_action_cst u ON a.action_id=u.action_id "+
 				"LEFT JOIN cg_claim_reward r ON (a.action_id=r.action_id) AND (r.deposit_id=$3) AND (r.staker_aid=a.staker_aid)" +
 			"WHERE "+
@@ -585,7 +584,7 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit_with_claim_info(deposit_
 
 	records := make([]p.CGActionIdsForDepositWithClaimInfo,0, 16)
 	var query string
-	query = "SELECT EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS ts FROM cg_eth_deposit d WHERE deposit_num=$1"
+	query = "SELECT EXTRACT(EPOCH FROM d.time_stamp)::BIGINT AS ts FROM cg_eth_deposit d WHERE deposit_id=$1"
 	row := sw.S.Db().QueryRow(query,deposit_id)
 	var null_ts sql.NullInt64
 	err:=row.Scan(&null_ts)
@@ -708,7 +707,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_rewards(offset,limit int) []p.CG
 				"sd.staker_aid,"+
 				"sa.addr "+
 			"FROM "+sw.S.SchemaName()+".cg_staker_deposit sd "+
-				"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
+				"INNER JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_id "+
 				"INNER JOIN transaction tx ON tx.id=d.tx_id " +
 				"LEFT JOIN rwd ON (rwd.deposit_id=sd.deposit_id) AND (rwd.staker_aid=sd.staker_aid) "+
 				"INNER JOIN address sa ON sd.staker_aid = sa.address_id "+
@@ -781,7 +780,7 @@ func (sw *SQLStorageWrapper) Get_staking_cst_rewards_by_round(round_num int64) [
 				"sd.amount_to_claim, "+
 				"sd.amount_to_claim/1e18  "+
 			"FROM cg_staker_deposit sd "+
-				"LEFT JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_num "+
+				"LEFT JOIN cg_eth_deposit d ON sd.deposit_id=d.deposit_id "+
 				"LEFT JOIN address sa ON sd.staker_aid = sa.address_id "+
 				"LEFT JOIN transaction t ON t.id=d.tx_id "+
 			"WHERE d.round_num=$1 "
