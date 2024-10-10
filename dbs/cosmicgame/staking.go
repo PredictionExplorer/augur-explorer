@@ -38,6 +38,8 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 				"u.action_id,"+
 				"u.token_id, "+
 				"u.num_staked_nfts, "+
+				"u.reward,"+
+				"u.reward/1e18,"+
 				"u.staker_aid, "+
 				"ua.addr "+
 			"FROM "+sw.S.SchemaName()+".cg_stake_action_cst st "+
@@ -52,7 +54,8 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 	var err error
 	var null_record_id,null_evtlog_id,null_tx_id,null_unstake_ts,null_action_id sql.NullInt64
 	var null_block_num,null_token_id,null_num_staked_nfts,null_staker_aid sql.NullInt64
-	var null_unstake_date,null_tx_hash,null_staker_addr sql.NullString
+	var null_unstake_date,null_tx_hash,null_staker_addr,null_reward sql.NullString
+	var null_reward_eth sql.NullFloat64
 	err=row.Scan(
 		// stake action fields
 		&rec.Stake.RecordId,
@@ -78,6 +81,8 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 		&null_action_id,
 		&null_token_id,
 		&null_num_staked_nfts,
+		&null_reward,
+		&null_reward_eth,
 		&null_staker_aid,
 		&null_staker_addr,
 	)
@@ -98,6 +103,8 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 	if null_action_id.Valid { rec.Unstake.ActionId = null_action_id.Int64 }
 	if null_token_id.Valid { rec.Unstake.TokenId = null_token_id.Int64 }
 	if null_num_staked_nfts.Valid { rec.Unstake.NumStakedNFTs = null_num_staked_nfts.Int64 }
+	if null_reward.Valid { rec.Unstake.RewardAmount = null_reward.String }
+	if null_reward_eth.Valid { rec.Unstake.RewardAmountEth = null_reward_eth.Float64 }
 	if null_staker_aid.Valid { rec.Unstake.StakerAid = null_staker_aid.Int64 }
 	if null_staker_addr.Valid { rec.Unstake.StakerAddr = null_staker_addr.String }
 	return true,rec

@@ -113,6 +113,8 @@ type CGUnstakeActionInfoRec struct {
 	NumStakedNFTs				int64
 	StakerAid					int64
 	StakerAddr					string
+	RewardAmount				string
+	RewardAmountEth				float64
 }
 type CGStakeUnstakeCombined struct {
 	Stake						CGStakeActionInfoRec

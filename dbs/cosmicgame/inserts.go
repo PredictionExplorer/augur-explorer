@@ -463,9 +463,9 @@ func (sw *SQLStorageWrapper) Insert_unstake_action_cst_event(evt *p.CGUnstakeAct
 	var query string
 	query = "INSERT INTO cg_unstake_action_cst (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,num_staked_nfts,staker_aid" +
+				"action_id,token_id,num_staked_nfts,staker_aid,reward" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
@@ -477,6 +477,7 @@ func (sw *SQLStorageWrapper) Insert_unstake_action_cst_event(evt *p.CGUnstakeAct
 		evt.TokenId,
 		evt.TotalNfts,
 		staker_aid,
+		evt.Reward,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_unstake_action_cst table: %v\n",err))
@@ -489,9 +490,9 @@ func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 	var query string
 	query = "INSERT INTO cg_eth_deposit(" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"deposit_time,round_num,deposit_num,num_staked_nfts,amount,amount_per_staker,modulo,accum_modulo" +
+				"deposit_time,round_num,deposit_num,deposit_id,num_staked_nfts,amount,amount_per_staker,modulo,accum_modulo" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,TO_TIMESTAMP($6),$7,$8,$9,$10,$11,$12,$13"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,TO_TIMESTAMP($6),$7,$8,$9,$10,$11,$12,$13,$14"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
@@ -502,6 +503,7 @@ func (sw *SQLStorageWrapper) Insert_eth_deposit_event(evt *p.CGEthDeposit) {
 		evt.DepositTime,
 		evt.RoundNum,
 		evt.DepositNum,
+		evt.DepositId,
 		evt.NumStakedNfts,
 		evt.Amount,
 		evt.AmountPerStaker,

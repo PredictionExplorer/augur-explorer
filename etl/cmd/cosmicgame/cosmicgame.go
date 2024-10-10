@@ -1061,7 +1061,7 @@ func proc_stake_action_cst_event(log *types.Log,elog *EthereumEventLog) {
 	evt.ActionId = log.Topics[1].Big().Int64()
 	evt.TokenId = log.Topics[2].Big().Int64()
 	evt.Staker = common.BytesToAddress(log.Topics[3][12:]).String()
-	evt.TotalNfts = eth_evt.TotalNFTs.Int64()
+	evt.TotalNfts = eth_evt.NumStakedNFTs.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("CST StakeActionEvent{\n")
@@ -1098,13 +1098,15 @@ func proc_unstake_action_cst_event(log *types.Log,elog *EthereumEventLog) {
 	evt.ActionId = log.Topics[1].Big().Int64()
 	evt.TokenId = log.Topics[2].Big().Int64()
 	evt.Staker = common.BytesToAddress(log.Topics[3][12:]).String()
-	evt.TotalNfts = eth_evt.TotalNFTs.Int64()
+	evt.TotalNfts = eth_evt.NumStakedNFTs.Int64()
+	evt.Reward = eth_evt.RewardAmount.String()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("CST UnstakeActionEvent{\n")
 	Info.Printf("\tActionId: %v\n",evt.ActionId)
 	Info.Printf("\tTokenId: %v\n",evt.TokenId)
 	Info.Printf("\tTotalNFTs: %v\n",evt.TotalNfts)
+	Info.Printf("\tReward: %v\n",evt.Reward)
 	Info.Printf("\tStaker: %v\n",evt.Staker)
 	Info.Printf("}\n")
 
@@ -1133,10 +1135,11 @@ func proc_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	evt.TxId = elog.TxId
 	evt.ContractAddr = log.Address.String()
 	evt.TimeStamp = elog.TimeStamp
-	evt.DepositTime = log.Topics[1].Big().Int64()
-	evt.DepositNum = eth_evt.DepositNum.Int64()
+	evt.DepositTime = elog.TimeStamp
+	evt.DepositId  = eth_evt.DepositId.Int64()
+	evt.DepositNum = eth_evt.DepositIndex.Int64()
 	evt.NumStakedNfts = eth_evt.NumStakedNFTs.Int64()
-	evt.Amount = eth_evt.Amount.String()
+	evt.Amount = eth_evt.DepositAmount.String()
 	//evt.AccumModulo = eth_evt.Modulo.String()
 	evt.AccumModulo = "0";	// pending for resolution regarding StakingWalletCST refactoring
 	evt.RoundNum = find_prize_num(evt.TxId)
@@ -1147,7 +1150,7 @@ func proc_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	}
 	divres:=big.NewInt(0)
 	rem:=big.NewInt(0)
-	divres.QuoRem(eth_evt.Amount,eth_evt.NumStakedNFTs,rem);
+	divres.QuoRem(eth_evt.DepositAmount,eth_evt.NumStakedNFTs,rem);
 	evt.AmountPerStaker = divres.String()
 	evt.Modulo = rem.String()
 
@@ -1155,6 +1158,7 @@ func proc_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("EthDepositEvent{\n")
 	Info.Printf("\tDepositTime: %v\n",evt.DepositTime)
 	Info.Printf("\tDepositNum: %v\n",evt.DepositNum)
+	Info.Printf("\tDepositId: %v\n",evt.DepositId)
 	Info.Printf("\tRoundNum: %v\n",evt.RoundNum)
 	Info.Printf("\tNumStakedNFTs: %v\n",evt.NumStakedNfts)
 	Info.Printf("\tAmount: %v\n",evt.Amount)
@@ -1162,9 +1166,11 @@ func proc_eth_deposit_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tModulo: %v\n",evt.Modulo)
 	Info.Printf("\tAccumModulo: %v\n",evt.AccumModulo)
 	Info.Printf("}\n")
-	storagew.Delete_eth_deposit_event(evt.EvtId)
-	storagew.Insert_eth_deposit_event(&evt)
+//	storagew.Delete_eth_deposit_event(evt.EvtId)
+//	storagew.Insert_eth_deposit_event(&evt)
+//////////////////	os.Exit(1)
 }
+/*
 func proc_claim_reward_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGClaimReward
@@ -1203,6 +1209,7 @@ func proc_claim_reward_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_claim_reward_event(evt.EvtId)
 	storagew.Insert_claim_reward_event(&evt)
 }
+*/
 func proc_stake_action_rwalk_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGStakeActionRWalk
@@ -2404,9 +2411,6 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_eth_deposit) {
 		proc_eth_deposit_event(log,evtlog)
-	}
-	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_claim_reward) {
-		proc_claim_reward_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_marketing_reward_sent) {
 		proc_marketing_reward_sent_event(log,evtlog)

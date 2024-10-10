@@ -247,6 +247,7 @@ CREATE TABLE cg_unstake_action_cst (
 	token_id		BIGINT NOT NULL,
 	num_staked_nfts	BIGINT NOT NULL,
 	staker_aid		BIGINT NOT NULL,
+	reward			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
 CREATE TABLE cg_eth_deposit (
@@ -259,6 +260,7 @@ CREATE TABLE cg_eth_deposit (
 	round_num		BIGINT NOT NULL ,-- this is NOT the same as deposit_num, if there are no stakers, deposit_num isn't incremented (also, deposit_id begins at roundNum = 1)
 	deposit_time	TIMESTAMPTZ NOT NULL,
 	deposit_num		BIGINT NOT NULL,
+	deposit_id		BIGINT NOT NULL,
 	num_staked_nfts	BIGINT NOT NULL,
 	amount			DECIMAL NOT NULL,
 	amount_per_staker	DECIMAL NOT NULL,	-- it is not per staker, it is per token (TODO: change field name)
@@ -733,6 +735,7 @@ CREATE TABLE cg_donor (--counts statistics for unique donors (who donate ETH to 
 CREATE TABLE cg_staker_deposit (-- accumulators for deposit-staker relation (this is for CST staking wallet only)
 	staker_aid				BIGINT NOT NULL,
 	deposit_id				BIGINT NOT NULL, 
+	deposit_num				BIGINT NOT NULL,
 	tokens_staked			BIGINT DEFAULT 0,
 	amount_to_claim			DECIMAL DEFAULT 0,
 	PRIMARY KEY(staker_aid,deposit_id)

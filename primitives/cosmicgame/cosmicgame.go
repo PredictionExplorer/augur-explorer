@@ -252,6 +252,7 @@ type CGUnstakeActionCST struct {
 	ActionId			int64
 	TokenId				int64
 	TotalNfts			int64
+	Reward				string
 	Staker 				string
 }
 type CGEthDeposit struct {
@@ -263,6 +264,7 @@ type CGEthDeposit struct {
 	ContractAddr		string
 	RoundNum			int64
 	DepositTime			int64
+	DepositId			int64
 	DepositNum			int64
 	NumStakedNfts		int64
 	Amount				string

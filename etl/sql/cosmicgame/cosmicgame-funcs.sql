@@ -744,8 +744,8 @@ BEGIN
 			;
 		FOR v_rec IN (SELECT count(*) AS num_toks,staker_aid FROM cg_staked_token_cst GROUP BY staker_aid)
 		LOOP
-			INSERT INTO cg_staker_deposit(staker_aid,deposit_id,tokens_staked,amount_to_claim)
-				VALUES(v_rec.staker_aid,NEW.deposit_num,v_rec.num_toks,NEW.amount_per_staker*v_rec.num_toks);
+			INSERT INTO cg_staker_deposit(staker_aid,deposit_id,deposit_num,tokens_staked,amount_to_claim)
+				VALUES(v_rec.staker_aid,NEW.deposit_id,NEW.deposit_num,v_rec.num_toks,NEW.amount_per_staker*v_rec.num_toks);
 		END LOOP;
 	END IF;
 
@@ -772,7 +772,7 @@ BEGIN
 				num_deposits = (num_deposits - 1),
 				total_modulo = (total_modulo - v_mod)
 			;
-		DELETE FROM cg_staker_deposit WHERE deposit_id=OLD.deposit_num;
+		DELETE FROM cg_staker_deposit WHERE deposit_id=OLD.deposit_id;
 	ELSE   
 	END IF;
 
