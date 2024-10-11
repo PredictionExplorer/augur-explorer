@@ -137,6 +137,7 @@ func cosmic_game_staking_cst_rewards_action_ids_by_deposit(c *gin.Context) {
 		respond_error(c,"'deposit_id' parameter is not set")
 		return
 	}
+	fmt.Printf("executing action_ids_for_Deposit\n");
 	action_ids := arb_storagew.Get_action_ids_for_deposit(deposit_id,user_aid)
 	c.HTML(http.StatusOK, "cg_action_ids_by_deposit.html", gin.H{
 		"UserAddr" : p_user_addr,

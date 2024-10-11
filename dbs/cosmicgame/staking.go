@@ -226,7 +226,7 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_to_be_claimed(user_aid int64) [
 				"d.time_stamp,"+
 				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT,"+
 				"d.deposit_time,"+
-				"d.deposit_num,"+
+				"d.deposit_id,"+
 				"d.num_staked_nfts,"+
 				"d.amount,"+
 				"d.amount/1e18,"+
@@ -309,7 +309,7 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_collected(user_aid int64,offset
 				"d.time_stamp,"+
 				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT,"+
 				"d.deposit_time,"+
-				"d.deposit_num,"+
+				"d.deposit_id,"+
 				"d.num_staked_nfts,"+
 				"d.amount,"+
 				"d.amount/1e18,"+
@@ -522,33 +522,31 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 		sw.S.Log_msg(fmt.Sprintf("Error in Get_action_ids_for_deposit(): %v, q=%v",err,query))
 		os.Exit(1)
 	}
-
 	query = "SELECT "+
 				"a.id,"+
 				"a.action_id, "+
 				"a.token_id, "+
 				"EXTRACT(epoch FROM a.time_stamp)::BIGINT action_ts,"+
-				"r.deposit_id, "+
+//				"r.deposit_id, "+
 				"d.amount_per_staker, "+
 				"d.amount_per_staker/1e18 amount_eth "+
 			"FROM "+sw.S.SchemaName()+".cg_stake_action_cst a "+
 				"JOIN cg_eth_deposit d ON d.deposit_id=$3 "+
 				"LEFT JOIN cg_unstake_action_cst u ON a.action_id=u.action_id "+
-				"LEFT JOIN cg_claim_reward r ON (a.action_id=r.action_id) AND (r.deposit_id=$3) AND (r.staker_aid=a.staker_aid)" +
+//PENDING				"LEFT JOIN cg_claim_reward r ON (a.action_id=r.action_id) AND (r.deposit_id=$3) AND (r.staker_aid=a.staker_aid)" +
 			"WHERE "+
 				"(a.staker_aid = $1) AND ("+
 					"("+
-						"(a.time_stamp < TO_TIMESTAMP($2)) AND (u.id IS NULL)"+
+						"(a.action_id < $2) AND (u.id IS NULL)"+
 					") OR "+
 						"(" + 
-							"(a.time_stamp<TO_TIMESTAMP($2) AND "+
+							"(a.action_id<$2 AND "+
 							"(u.id IS NOT NULL) AND "+
-							"(TO_TIMESTAMP($2)<=u.time_stamp) "+
+							"($2<=u.action_id) "+
 						")"+
 					")"+
 				") " +
 			"ORDER BY a.action_id "
-
 	rows,err := sw.S.Db().Query(query,user_aid,null_ts.Int64,deposit_id)
 	if (err!=nil) {
 		sw.S.Log_msg(fmt.Sprintf("DB error: %v (query=%v)",err,query))
@@ -563,7 +561,7 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 			&rec.StakeActionId,
 			&rec.TokenId,
 			&rec.StakeActionTimeStamp,
-			&null_deposit_id,
+//			&null_deposit_id,			// PENDING for refactoring
 			&rec.Amount,
 			&rec.AmountEth,
 		)
@@ -693,7 +691,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_rewards(offset,limit int) []p.CG
 				"d.time_stamp,"+
 				"EXTRACT(EPOCH FROM d.deposit_time)::BIGINT,"+
 				"d.deposit_time,"+
-				"d.deposit_num,"+
+				"d.deposit_id,"+
 				"d.num_staked_nfts,"+
 				"d.amount,"+
 				"d.amount/1e18,"+
