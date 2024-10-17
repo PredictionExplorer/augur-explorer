@@ -190,8 +190,13 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			Signature: hex.EncodeToString(evt_transfer[:4]),
 			ContractAid: cosmic_sig_aid,
 		},
+		/*
 		InspectedEvent {
 			Signature: hex.EncodeToString(evt_stake_action[:4]),
+			ContractAid: 0,
+		},*/
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_nft_staked[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -1036,6 +1041,7 @@ func proc_donated_nft_claimed_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_donated_nft_claimed(evt.EvtId)
 	storagew.Insert_donated_nft_claimed(&evt)
 }
+/* DISCONTINUED, PENDING for deletion
 func proc_stake_action_cst_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGStakeActionCST
@@ -1074,6 +1080,53 @@ func proc_stake_action_cst_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_stake_action_cst_event(evt.EvtId)
 	storagew.Insert_stake_action_cst_event(&evt)
 }
+*/
+func proc_nft_staked_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGNftStaked
+	var eth_evt IStakingWalletRandomWalkNftNftStaked
+
+	Info.Printf("Processing NftStaked event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),staking_wallet_cst_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := staking_wallet_rwalk_abi.UnpackIntoInterface(&eth_evt,"NftStaked",log.Data)
+	if err != nil {
+		Error.Printf("CST Event StakeAction decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.ActionId = log.Topics[1].Big().Int64()
+	evt.NftId = log.Topics[2].Big().Int64()
+	evt.StakerAddress = common.BytesToAddress(log.Topics[3][12:]).String()
+	evt.NumStakedNfts = eth_evt.NumStakedNfts.Int64()
+	nftType := int64(eth_evt.NftTypeCode)
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("NftStaked event{\n")
+	Info.Printf("\tActionId: %v\n",evt.ActionId)
+	Info.Printf("\tTokenId: %v\n",evt.NftId)
+	Info.Printf("\tTotalNFTs: %v\n",evt.NumStakedNfts)
+	Info.Printf("\tStaker: %v\n",evt.StakerAddress)
+	Info.Printf("}\n")
+
+	if nftType == 1 {
+		storagew.Delete_nft_staked_cst_event(evt.EvtId)
+		storagew.Insert_nft_staked_event(&evt,nftType)
+	}
+	if nftType == 2 {
+		storagew.Delete_nft_staked_rwalk_event(evt.EvtId)
+		storagew.Insert_nft_staked_event(&evt,nftType)
+	}
+}
+/*
 func proc_unstake_action_cst_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGUnstakeActionCST

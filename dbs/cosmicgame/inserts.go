@@ -1482,3 +1482,34 @@ func (sw *SQLStorageWrapper) Insert_base_uri_event(evt *p.CGBaseURIEvent) {
 		os.Exit(1)
 	}
 }
+func (sw *SQLStorageWrapper) Insert_nft_staked_event(evt *p.CGNftStaked,nftType int64) {
+
+	contract_aid:=sw.S.Lookup_or_create_address(evt.ContractAddr,evt.BlockNum,evt.TxId)
+	staker_aid:=sw.S.Lookup_or_create_address(evt.StakerAddress,evt.BlockNum,evt.TxId)
+	var table = "cg_nft_staked_cst"
+	if nftType == 2 {
+		table = "cg_nft_staked_rwalk"
+	}
+	var query string
+	query = "INSERT INTO "+table+" (" +
+				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
+				"action_id,token_id,num_staked_nfts,staker_aid" +
+			") VALUES (" +
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
+			")"
+	_,err := sw.S.Db().Exec(query,
+		evt.EvtId,
+		evt.BlockNum,
+		evt.TxId,
+		evt.TimeStamp,
+		contract_aid,
+		evt.ActionId,
+		evt.NftId,
+		evt.NumStakedNfts,
+		staker_aid,
+	)
+	if err != nil {
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into "+table+" table: %v\n",err))
+		os.Exit(1)
+	}
+}

@@ -255,6 +255,18 @@ type CGUnstakeActionCST struct {
 	Reward				string
 	Staker 				string
 }
+type CGNftStaked struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	ActionId			int64
+	NftId				int64
+	NumStakedNfts		int64
+	StakerAddress		string
+}
 type CGEthDeposit struct {
 	EvtId				int64
 	BlockNum			int64

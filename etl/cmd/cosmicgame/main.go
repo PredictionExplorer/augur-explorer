@@ -44,9 +44,10 @@ const (
 	ENDURANCE_WINNER		= "66d485a556beac20ca50777389bdce3389cfd2defb1f2ff2002eb3ddef0fe248"
 	STELLAR_WINNER			= "9ed6c6c2a8eb75a2ff0acb91b5f70e1d195e4e7b700be3ba3a06b031f8e51713"
 	TRANSFER_EVT			= "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
-	STAKE_ACTION_EVENT		= "cd7bda73d32f8fada3eeee8d21563aa19eb2fe86d90b4449cf5252e6f3da7ef8"
+	//STAKE_ACTION_EVENT		= "cd7bda73d32f8fada3eeee8d21563aa19eb2fe86d90b4449cf5252e6f3da7ef8"
+	NFT_STAKED_EVENT		= "cbd8e5368101e7829397d044213d371dac0f6727ea4bdc42d2f5a1f2e2f00829"
 	UNSTAKE_ACTION_EVENT	= "678afbb7bbf1c4f3df509d59b51d6e75969703762eb36ed41414dc7c49569c96"
-	ETH_DEPOSIT_EVENT		= "725e2879ec3f698d2b2186dc65d2b3c8f4768f1fd80c31be29fe310a83500c98"
+	ETH_DEPOSIT_EVENT		= "b71b1087ee7f659cf742c29d8095c562e6e832337190e10dbe81db89955c0913"
 	CLAIM_REWARD_EVENT		= "dde81df5caa033e783e2a39d93e3a8718a7dc27ba95a4757f5433a01f794ec36"
 
 	/// Admin events
@@ -147,7 +148,8 @@ var (
 	evt_transfer,_			= hex.DecodeString(TRANSFER_EVT)
 
 	// StakingWallet events
-	evt_stake_action,_		= hex.DecodeString(STAKE_ACTION_EVENT)
+//	evt_stake_action,_		= hex.DecodeString(STAKE_ACTION_EVENT)
+	evt_nft_staked,_		= hex.DecodeString(NFT_STAKED_EVENT)
 	evt_unstake_action,_	= hex.DecodeString(UNSTAKE_ACTION_EVENT)
 	evt_claim_reward,_		= hex.DecodeString(CLAIM_REWARD_EVENT)
 	evt_eth_deposit,_		= hex.DecodeString(ETH_DEPOSIT_EVENT)
@@ -292,8 +294,8 @@ func main() {
 	cosmic_token_abi = get_abi(CosmicTokenABI)
 	charity_wallet_abi = get_abi(CharityWalletABI);
 	raffle_wallet_abi = get_abi(RaffleWalletABI);
-	staking_wallet_cst_abi = get_abi(StakingWalletCSTABI);
-	staking_wallet_rwalk_abi = get_abi(StakingWalletRWalkABI);
+	staking_wallet_cst_abi = get_abi(IStakingWalletCosmicSignatureNftABI);
+	staking_wallet_rwalk_abi = get_abi(IStakingWalletRandomWalkNftABI);
 	marketing_wallet_abi = get_abi(MarketingWalletABI);
 	erc20_abi = get_abi(ERC20ABI)
 	erc721_abi = get_abi(ERC721ABI)
