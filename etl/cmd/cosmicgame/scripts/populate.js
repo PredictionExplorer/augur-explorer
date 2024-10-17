@@ -38,7 +38,7 @@ async function main() {
         cosmicDAO,
         raffleWallet,
         randomWalkNFT,
-        stakingWalletCST,
+        stakingWalletCosmicSignatureNft,
         stakingWalletRWalk,
         marketingWallet,
         implementationAddr,
@@ -60,7 +60,7 @@ async function main() {
         "','" +
         (await randomWalkNFT.getAddress()) +
         "','" +
-        (await stakingWalletCST.getAddress()) +
+        (await stakingWalletCosmicSignatureNft.getAddress()) +
         "','" +
         (await stakingWalletRWalk.getAddress()) +
         "','" +
@@ -274,7 +274,7 @@ async function main() {
     let expectedprizeAmount = (prizeAmount - charityAmount) / 2n;
 
     let topic_sig =
-        stakingWalletCST.interface.getEvent("StakeActionEvent").topicHash;
+        stakingWalletCosmicSignatureNft.interface.getEvent("StakeActionOccurred").topicHash;
     let ts = await cosmicSignature.totalSupply();
     let rn = await cosmicGameProxy.roundNum();
     for (let i = 0; i < Number(ts); i++) {
@@ -283,8 +283,8 @@ async function main() {
         let owner_signer = await hre.ethers.getSigner(ownr);
         await cosmicSignature
             .connect(owner_signer)
-            .setApprovalForAll(await stakingWalletCST.getAddress(), true);
-        tx = await stakingWalletCST.connect(owner_signer).stake(i);
+            .setApprovalForAll(await stakingWalletCosmicSignatureNft.getAddress(), true);
+        tx = await stakingWalletCosmicSignatureNft.connect(owner_signer).stake(i);
     }
     let oldTotalSupply = ts;
     bidPrice = await cosmicGameProxy.getBidPrice();
@@ -332,7 +332,8 @@ async function main() {
     topic_sig = cosmicSignature.interface.getEvent("MintEvent").topicHash;
     log = receipt.logs.find((x) => x.topics.indexOf(topic_sig) >= 0);
     parsed_log = cosmicSignature.interface.parseLog(log);
-    token_id = parsed_log.args.tokenId;
+    let args = parsed_log.args.toObject();
+    token_id = args.nftId;
     await cosmicSignature.connect(addr1).setTokenName(token_id, "name 0");
     await cosmicSignature.connect(addr1).setTokenName(token_id, "name after 0");
 
@@ -459,7 +460,7 @@ async function main() {
         .setRaffleWallet(await raffleWallet.getAddress());
     await cosmicGameProxy
         .connect(owner)
-        .setStakingWalletCST(await stakingWalletCST.getAddress());
+        .setStakingWalletCosmicSignatureNft(await stakingWalletCosmicSignatureNft.getAddress());
     await cosmicGameProxy
         .connect(owner)
         .setStakingWalletRWalk(await stakingWalletRWalk.getAddress());
@@ -506,7 +507,7 @@ async function main() {
     await cosmicGameProxy.connect(owner).upgradeTo(iAddr);
     await cosmicGameProxy
         .connect(owner)
-        .setStakingWalletCST(await stakingWalletCST.getAddress());
+        .setStakingWalletCosmicSignatureNft(await stakingWalletCosmicSignatureNft.getAddress());
     await cosmicGameProxy
         .connect(owner)
         .setStakingWalletRWalk(await stakingWalletRWalk.getAddress());
@@ -572,10 +573,10 @@ async function main() {
     await marketingWallet.send(hre.ethers.parseEther("1"), addr4.address);
     await marketingWallet.send(hre.ethers.parseEther("11"), addr1.address);
     for (let i = 1; i <= numStakeActions; i++) {
-        let action_rec = (await stakingWalletCST.stakeActions(i)).toObject();
+        let action_rec = (await stakingWalletCosmicSignatureNft.stakeActions(i)).toObject();
         let ownr = action_rec.nftOwnerAddress;
         let owner_signer = await hre.ethers.getSigner(ownr);
-        await stakingWalletCST.connect(owner_signer).unstake(i);
+        await stakingWalletCosmicSignatureNft.connect(owner_signer).unstake(i,1);
     }
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
     /* Pending for refactoring in solidity
@@ -619,6 +620,7 @@ async function main() {
         value: bidPrice
     });
     prizeTime = await cosmicGameProxy.timeUntilPrize();
+	console.log("prizeTime",prizeTime);
     await ethers.provider.send("evm_increaseTime", [Number(prizeTime)]);
     tx = await cosmicGameProxy.connect(addr3).claimPrize({
         gasLimit: 3000000
@@ -630,12 +632,12 @@ async function main() {
 
     for (let i = Number(oldTotalSupply); i < Number(ts); i++) {
         let ownr = await cosmicSignature.ownerOf(i);
-        if (ownr == (await stakingWalletCST.getAddress())) {
+        if (ownr == (await stakingWalletCosmicSignatureNft.getAddress())) {
             continue;
         }
         let owner_signer = await hre.ethers.getSigner(ownr);
         try {
-            await stakingWalletCST.connect(owner_signer).stake(i);
+            await stakingWalletCosmicSignatureNft.connect(owner_signer).stake(i);
         } catch (e) {
             console.log("ignoring stake() error for token " + i + ", owner " + ownr);
         }
