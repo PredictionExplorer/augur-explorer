@@ -250,6 +250,34 @@ CREATE TABLE cg_unstake_action_cst (
 	reward			DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_nft_unstaked_rwalk (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	action_id		BIGINT NOT NULL,
+	token_id		BIGINT NOT NULL,
+	num_staked_nfts	BIGINT NOT NULL,
+	staker_aid		BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_nft_unstaked_cst (
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	action_id		BIGINT NOT NULL,
+	token_id		BIGINT NOT NULL,
+	num_staked_nfts	BIGINT NOT NULL,
+	staker_aid		BIGINT NOT NULL,
+	reward			DECIMAL NOT NULL,
+	unpaid_deposit	BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
 CREATE TABLE cg_nft_staked_cst (
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,

@@ -322,6 +322,34 @@ type CGUnstakeActionRWalk struct {
 	TotalNfts			int64
 	Staker 				string
 }
+type CGNftUnstakedRWalk struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	RoundNum			int64
+	ActionId			int64
+	NftId				int64
+	NumStakedNfts		int64
+	StakerAddress		string
+}
+type CGNftUnstakedCst struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	RoundNum			int64
+	ActionId			int64
+	NftId				int64
+	NumStakedNfts		int64
+	StakerAddress		string
+	RewardAmount		string
+	MaxUnpaidDepositIndex	int64
+}
 type CGMarketingRewardSent struct {
 	EvtId				int64
 	BlockNum			int64
