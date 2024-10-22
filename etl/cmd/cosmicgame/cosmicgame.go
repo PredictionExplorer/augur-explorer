@@ -208,8 +208,12 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			Signature: hex.EncodeToString(evt_nft_unstaked_rwalk[:4]),
 			ContractAid: 0,
 		},
-		InspectedEvent {
+		/*InspectedEvent {
 			Signature: hex.EncodeToString(evt_claim_reward[:4]),
+			ContractAid: 0,
+		},*/
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_reward_paid[:4]),
 			ContractAid: 0,
 		},
 		InspectedEvent {
@@ -1094,8 +1098,10 @@ func proc_nft_staked_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("Processing NftStaked event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
 
 	if !bytes.Equal(log.Address.Bytes(),staking_wallet_cst_addr.Bytes()) {
-		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
-		return
+		if !bytes.Equal(log.Address.Bytes(),staking_wallet_rwalk_addr.Bytes()) {
+			Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+			return
+		}
 	}
 	err := staking_wallet_rwalk_abi.UnpackIntoInterface(&eth_evt,"NftStaked",log.Data)
 	if err != nil {
@@ -1306,6 +1312,44 @@ func proc_stake_action_rwalk_event(log *types.Log,elog *EthereumEventLog) {
 	storagew.Delete_stake_action_rwalk_event(evt.EvtId)
 	storagew.Insert_stake_action_rwalk_event(&evt)
 }*/
+func proc_reward_paid_event(log *types.Log,elog *EthereumEventLog) {
+
+	var evt CGRewardPaid
+	var eth_evt IStakingWalletCosmicSignatureNftRewardPaid
+
+	Info.Printf("Processing RewardPaid event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+
+	if !bytes.Equal(log.Address.Bytes(),staking_wallet_cst_addr.Bytes()) {
+		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
+		return
+	}
+	err := staking_wallet_cst_abi.UnpackIntoInterface(&eth_evt,"RewardPaid",log.Data)
+	if err != nil {
+		Error.Printf("Event RewardPaid decode error: %v",err)
+		os.Exit(1)
+	}
+
+	evt.EvtId=elog.EvtId
+	evt.BlockNum = elog.BlockNum
+	evt.TxId = elog.TxId
+	evt.ContractAddr = log.Address.String()
+	evt.TimeStamp = elog.TimeStamp
+	evt.ActionId = log.Topics[1].Big().Int64()
+	evt.NftId = log.Topics[2].Big().Int64()
+	evt.StakerAddress = common.BytesToAddress(log.Topics[3][12:]).String()
+	evt.RewardAmount = eth_evt.RewardAmount.String()
+
+	Info.Printf("Contract: %v\n",log.Address.String())
+	Info.Printf("RewardPaid {\n")
+	Info.Printf("\tActionId: %v\n",evt.ActionId)
+	Info.Printf("\tTokenId: %v\n",evt.NftId)
+	Info.Printf("\tReward: %v\n",evt.RewardAmount)
+	Info.Printf("\tStaker: %v\n",evt.StakerAddress)
+	Info.Printf("}\n")
+
+	storagew.Delete_reward_paid_event(evt.EvtId)
+	storagew.Insert_reward_paid_event(&evt)
+}
 func proc_nft_unstaked_rwalk_event(log *types.Log,elog *EthereumEventLog) {
 
 	var evt CGNftUnstakedRWalk
@@ -2504,6 +2548,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_transfer) {
 		proc_transfer_event_common(log,evtlog)
 	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_nft_staked) {
+		proc_nft_staked_event(log,evtlog)
+	}
 	/*if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_stake_action) {
 		select_and_proc_stake_action_event(log,evtlog)
 	}*/
@@ -2515,6 +2562,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_eth_deposit) {
 		proc_eth_deposit_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_reward_paid) {
+		proc_reward_paid_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_marketing_reward_sent) {
 		proc_marketing_reward_sent_event(log,evtlog)

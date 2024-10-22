@@ -39,7 +39,7 @@ async function main() {
         raffleWallet,
         randomWalkNFT,
         stakingWalletCosmicSignatureNft,
-        stakingWalletRWalk,
+        stakingWalletRandomWalkNft,
         marketingWallet,
         implementationAddr,
     } = await basicDeployment(owner, "", 0, "", false, true);
@@ -62,7 +62,7 @@ async function main() {
         "','" +
         (await stakingWalletCosmicSignatureNft.getAddress()) +
         "','" +
-        (await stakingWalletRWalk.getAddress()) +
+        (await stakingWalletRandomWalkNft.getAddress()) +
         "','" +
         (await marketingWallet.getAddress()) +
         "','" +
@@ -92,22 +92,22 @@ async function main() {
         let token_id = await mint_rwalk(addr1);
         await randomWalkNFT
             .connect(addr1)
-            .setApprovalForAll(await stakingWalletRWalk.getAddress(), true);
-        await stakingWalletRWalk.connect(addr1).stake(token_id);
+            .setApprovalForAll(await stakingWalletRandomWalkNft.getAddress(), true);
+        await stakingWalletRandomWalkNft.connect(addr1).stake(token_id);
     }
     for (let i = 0; i < 5; i++) {
         let token_id = await mint_rwalk(addr2);
         await randomWalkNFT
             .connect(addr2)
-            .setApprovalForAll(await stakingWalletRWalk.getAddress(), true);
-        await stakingWalletRWalk.connect(addr2).stake(token_id);
+            .setApprovalForAll(await stakingWalletRandomWalkNft.getAddress(), true);
+        await stakingWalletRandomWalkNft.connect(addr2).stake(token_id);
     }
     for (let i = 0; i < 50; i++) {
         let token_id = await mint_rwalk(addr3);
         await randomWalkNFT
             .connect(addr3)
-            .setApprovalForAll(await stakingWalletRWalk.getAddress(), true);
-        await stakingWalletRWalk.connect(addr3).stake(token_id);
+            .setApprovalForAll(await stakingWalletRandomWalkNft.getAddress(), true);
+        await stakingWalletRandomWalkNft.connect(addr3).stake(token_id);
     }
 
     let prizeTime = await cosmicGameProxy.timeUntilPrize();
@@ -274,7 +274,7 @@ async function main() {
     let expectedprizeAmount = (prizeAmount - charityAmount) / 2n;
 
     let topic_sig =
-        stakingWalletCosmicSignatureNft.interface.getEvent("StakeActionOccurred").topicHash;
+        stakingWalletCosmicSignatureNft.interface.getEvent("NftStaked").topicHash;
     let ts = await cosmicSignature.totalSupply();
     let rn = await cosmicGameProxy.roundNum();
     for (let i = 0; i < Number(ts); i++) {
@@ -463,7 +463,7 @@ async function main() {
         .setStakingWalletCosmicSignatureNft(await stakingWalletCosmicSignatureNft.getAddress());
     await cosmicGameProxy
         .connect(owner)
-        .setStakingWalletRWalk(await stakingWalletRWalk.getAddress());
+        .setStakingWalletRandomWalkNft(await stakingWalletRandomWalkNft.getAddress());
     await cosmicGameProxy
         .connect(owner)
         .setMarketingWallet(await marketingWallet.getAddress());
@@ -510,7 +510,7 @@ async function main() {
         .setStakingWalletCosmicSignatureNft(await stakingWalletCosmicSignatureNft.getAddress());
     await cosmicGameProxy
         .connect(owner)
-        .setStakingWalletRWalk(await stakingWalletRWalk.getAddress());
+        .setStakingWalletRandomWalkNft(await stakingWalletRandomWalkNft.getAddress());
     await cosmicGameProxy.connect(owner).setErc20RewardMultiplier(999);
     let tmp = await cosmicGameProxy.timeIncrease();
     await cosmicGameProxy.connect(owner).setTimeIncrease(tmp);
@@ -678,8 +678,8 @@ async function main() {
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
     await ethers.provider.send("evm_mine"); // mine empty block as spacing
 
-    for (let i = 0; i < 5; i++) {
-        await stakingWalletRWalk.connect(addr1).unstake(i);
+    for (let i = 1; i <= 5; i++) {
+        await stakingWalletRandomWalkNft.connect(addr1).unstake(i);
     }
 }
 

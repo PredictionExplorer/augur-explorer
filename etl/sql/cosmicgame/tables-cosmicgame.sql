@@ -325,7 +325,7 @@ CREATE TABLE cg_eth_deposit (
 	accum_modulo	DECIMAL NOT NULL,
 	UNIQUE(evtlog_id)
 );
-CREATE TABLE cg_claim_reward (
+CREATE TABLE cg_claim_reward (	-- DISCONTINUED, removal pending
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
 	block_num		BIGINT NOT NULL,
@@ -334,6 +334,20 @@ CREATE TABLE cg_claim_reward (
 	contract_aid	BIGINT NOT NULL,
 	action_id		BIGINT NOT NULL,
 	deposit_id		BIGINT NOT NULL,
+	reward			DECIMAL NOT NULL,
+	staker_aid		BIGINT NOT NULL,
+	UNIQUE(evtlog_id)
+);
+CREATE TABLE cg_reward_paid (	-- Event RewardPaid (StakingWalletCosmicSignatureNft)
+	id				BIGSERIAL PRIMARY KEY,
+	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
+	block_num		BIGINT NOT NULL,
+	tx_id			BIGINT NOT NULL,
+	time_stamp		TIMESTAMPTZ NOT NULL,
+	contract_aid	BIGINT NOT NULL,
+	action_id		BIGINT NOT NULL,
+	token_id		BIGINT NOT NULL,
+	unpaid_dep_id	BIGINT NOT NULL,	-- maxUnpaidEthDepositIndex field
 	reward			DECIMAL NOT NULL,
 	staker_aid		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)

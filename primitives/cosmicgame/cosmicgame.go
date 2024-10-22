@@ -296,6 +296,19 @@ type CGClaimReward struct {
 	Reward				string	
 	Staker				string
 }
+type CGRewardPaid struct {
+	EvtId				int64
+	BlockNum			int64
+	TimeStamp			int64
+	TxId				int64
+	LogIndex			int64
+	ContractAddr		string
+	ActionId			int64
+	NftId				int64
+	RewardAmount		string	
+	StakerAddress		string
+	MaxUnpaidEthDepositIndex	int64
+}
 type CGStakeActionRWalk struct {
 	EvtId				int64
 	BlockNum			int64

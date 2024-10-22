@@ -24,8 +24,8 @@ type CGStakingCSTHistoryRec struct {
 	Claimed						bool
 	StakerAid					int64
 	StakerAddr					string
-	LastBlockTS					int64
-	UnstakeExpirationDiff		int64
+//	LastBlockTS					int64 DISCONTINUED, removal pending
+//	UnstakeExpirationDiff		int64 DISCONTINUED, removal pending
 }
 type CGStakingRWalkHistoryRec struct {
 	ActionType					int64

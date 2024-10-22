@@ -42,10 +42,10 @@ func (sw *SQLStorageWrapper) Get_stake_action_cst_info(action_id int64) (bool,p.
 				"u.reward/1e18,"+
 				"u.staker_aid, "+
 				"ua.addr "+
-			"FROM "+sw.S.SchemaName()+".cg_stake_action_cst st "+
+			"FROM "+sw.S.SchemaName()+".cg_nft_staked_cst st "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction ts ON ts.id=st.tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address sa ON st.staker_aid=sa.address_id "+
-				"LEFT JOIN "+sw.S.SchemaName()+".cg_unstake_action_cst u ON st.action_id=u.action_id " +
+				"LEFT JOIN "+sw.S.SchemaName()+".cg_nft_unstaked_cst u ON st.action_id=u.action_id " +
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction tu ON tu.id=u.tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address ua ON u.staker_aid=ua.address_id "+
 			"WHERE st.action_id=$1"
@@ -141,10 +141,10 @@ func (sw *SQLStorageWrapper) Get_stake_action_rwalk_info(action_id int64) (bool,
 				"u.num_staked_nfts, "+
 				"u.staker_aid, "+
 				"ua.addr "+
-			"FROM "+sw.S.SchemaName()+".cg_stake_action_rwalk st "+
+			"FROM "+sw.S.SchemaName()+".cg_nft_staked_rwalk st "+
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction ts ON ts.id=st.tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address sa ON st.staker_aid=sa.address_id "+
-				"LEFT JOIN "+sw.S.SchemaName()+".cg_unstake_action_rwalk u ON st.action_id=u.action_id " +
+				"LEFT JOIN "+sw.S.SchemaName()+".cg_nft_unstaked_rwalk u ON st.action_id=u.action_id " +
 				"LEFT JOIN "+sw.S.SchemaName()+".transaction tu ON tu.id=u.tx_id "+
 				"LEFT JOIN "+sw.S.SchemaName()+".address ua ON u.staker_aid=ua.address_id "+
 			"WHERE st.action_id=$1"
@@ -822,7 +822,6 @@ func (sw *SQLStorageWrapper) Get_staking_cst_rewards_by_round(round_num int64) [
 }
 func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []p.CGStakingCSTHistoryRec {
 
-	last_ts := sw.S.Get_last_block_timestamp()
 	var query string
 	query = "("+
 				"SELECT "+
@@ -841,7 +840,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 					"s.num_staked_nfts, "+
 					"s.staker_aid, "+
 					"sa.addr staker_addr "+
-				"FROM "+sw.S.SchemaName()+".cg_stake_action_cst s "+
+				"FROM "+sw.S.SchemaName()+".cg_nft_staked_cst s "+
 					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
 					"LEFT JOIN address sa ON s.staker_aid=sa.address_id "+
 				"ORDER BY s.id DESC " +
@@ -863,10 +862,9 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 					"u.num_staked_nfts, "+
 					"u.staker_aid," +
 					"ua.addr staker_addr "+
-				"FROM "+sw.S.SchemaName()+".cg_unstake_action_cst u "+
+				"FROM "+sw.S.SchemaName()+".cg_nft_staked_cst u "+
 					"LEFT JOIN transaction tx ON tx.id=u.tx_id " +
 					"LEFT JOIN address ua ON u.staker_aid=ua.address_id "+
-					"LEFT JOIN cg_stake_action_cst s ON u.action_id=s.action_id "+
 				"ORDER BY u.id DESC " +
 				"OFFSET $1 LIMIT $2 "+
 			") ORDER BY evtlog_id DESC"
@@ -904,8 +902,8 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 		}
 		accum_staked_nfts = accum_staked_nfts + rec.NumStakedNFTs
 		rec.AccumNumStakedNFTs = accum_staked_nfts
-		rec.LastBlockTS = last_ts
-		rec.UnstakeExpirationDiff = -1
+//		rec.LastBlockTS = last_ts		DISCONTINUED, removal pending
+//		rec.UnstakeExpirationDiff = -1	DISCONTINUED, removal pending
 		records = append(records,rec)
 	}
 	return records
@@ -931,7 +929,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_rwalk_history(offset,limit int) 
 					"s.num_staked_nfts, "+
 					"s.staker_aid, "+
 					"sa.addr staker_addr "+
-				"FROM "+sw.S.SchemaName()+".cg_stake_action_rwalk s "+
+				"FROM "+sw.S.SchemaName()+".cg_nft_staked_rwalk s "+
 					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
 					"LEFT JOIN address sa ON s.staker_aid=sa.address_id "+
 				"ORDER BY s.id DESC " +
@@ -953,7 +951,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_rwalk_history(offset,limit int) 
 					"u.num_staked_nfts, "+
 					"u.staker_aid," +
 					"ua.addr staker_addr "+
-				"FROM "+sw.S.SchemaName()+".cg_unstake_action_rwalk u "+
+				"FROM "+sw.S.SchemaName()+".cg_nft_unstaked_rwalk u "+
 					"LEFT JOIN transaction tx ON tx.id=u.tx_id " +
 					"LEFT JOIN address ua ON u.staker_aid=ua.address_id "+
 					"LEFT JOIN cg_stake_action_rwalk s ON u.action_id=s.action_id "+
