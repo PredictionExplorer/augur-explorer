@@ -409,7 +409,7 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_cst_global() []p.CGStakedTokenCST
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_stake_action_cst a ON a.action_id=st.stake_action_id "+
+				"LEFT JOIN cg_nft_staked_cst a ON a.action_id=st.stake_action_id "+
 				"LEFT JOIN address sa ON a.staker_aid = sa.address_id "+
 			"ORDER BY m.token_id"
 
@@ -475,7 +475,7 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_rwalk_global() []p.CGStakedTokenR
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_stake_action_rwalk a ON a.action_id=st.stake_action_id "+
+				"LEFT JOIN cg_nft_staked_rwalk a ON a.action_id=st.stake_action_id "+
 				"LEFT JOIN address sa ON a.staker_aid = sa.address_id "+
 			"ORDER BY m.token_id"
 
@@ -530,9 +530,9 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit(deposit_id int64,user_ai
 //				"r.deposit_id, "+
 				"d.amount_per_staker, "+
 				"d.amount_per_staker/1e18 amount_eth "+
-			"FROM "+sw.S.SchemaName()+".cg_stake_action_cst a "+
+			"FROM "+sw.S.SchemaName()+".cg_nft_staked_cst a "+
 				"JOIN cg_eth_deposit d ON d.deposit_id=$3 "+
-				"LEFT JOIN cg_unstake_action_cst u ON a.action_id=u.action_id "+
+				"LEFT JOIN cg_nft_staked_cst u ON a.action_id=u.action_id "+
 //PENDING				"LEFT JOIN cg_claim_reward r ON (a.action_id=r.action_id) AND (r.deposit_id=$3) AND (r.staker_aid=a.staker_aid)" +
 			"WHERE "+
 				"(a.staker_aid = $1) AND ("+
@@ -606,9 +606,9 @@ func (sw *SQLStorageWrapper) Get_action_ids_for_deposit_with_claim_info(deposit_
 				"tx.tx_hash,"+
 				"r.reward,"+
 				"r.reward/1e18 "+
-			"FROM "+sw.S.SchemaName()+".cg_stake_action_cst a "+
+			"FROM "+sw.S.SchemaName()+".cg_nft_staked_cst a "+
 				"JOIN cg_claim_reward r ON (a.action_id=r.action_id) AND (r.deposit_id=$3) AND (r.staker_aid=a.staker_aid)" +
-				"LEFT JOIN cg_unstake_action_cst u ON a.action_id=u.action_id "+
+				"LEFT JOIN cg_nft_unstaked_cst u ON a.action_id=u.action_id "+
 				"LEFT JOIN transaction tx ON tx.id=r.tx_id " +
 			"WHERE "+
 				"(a.staker_aid = $1) AND ("+
@@ -954,7 +954,7 @@ func (sw *SQLStorageWrapper) Get_global_staking_rwalk_history(offset,limit int) 
 				"FROM "+sw.S.SchemaName()+".cg_nft_unstaked_rwalk u "+
 					"LEFT JOIN transaction tx ON tx.id=u.tx_id " +
 					"LEFT JOIN address ua ON u.staker_aid=ua.address_id "+
-					"LEFT JOIN cg_stake_action_rwalk s ON u.action_id=s.action_id "+
+					"LEFT JOIN cg_nft_staked_rwalk s ON u.action_id=s.action_id "+
 				"ORDER BY u.id DESC " +
 				"OFFSET $1 LIMIT $2 "+
 			") order by evtlog_id DESC"

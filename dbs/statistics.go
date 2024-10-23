@@ -10,7 +10,8 @@ import (
 	p "github.com/PredictionExplorer/augur-explorer/primitives"
 )
 func (ss *SQLStorage) Get_main_stats() p.MainStats {
-
+	var s p.MainStats
+/*DISCONTINUED
 	var query string
 	query = "SELECT " +
 				"markets_count," +
@@ -24,7 +25,6 @@ func (ss *SQLStorage) Get_main_stats() p.MainStats {
 
 	row := ss.db.QueryRow(query)
 	var err error
-	var s p.MainStats
 	err=row.Scan(
 				&s.MarketsCount,
 				&s.YesNoCount,
@@ -54,12 +54,14 @@ func (ss *SQLStorage) Get_main_stats() p.MainStats {
 	if null_count.Valid {
 		s.InvalidCount = null_count.Int64
 	}
-
+*/
 	return s
 }
 func (ss *SQLStorage) Get_front_page_stats() p.FrontPageStats {
 
 	var stats p.FrontPageStats
+	/*
+	DISCONTINUED
 	var query string
 	query = "SELECT markets_count,money_at_stake,trades_count " +
 			"FROM main_stats LIMIT 1" // ToDo: we need support for multiple Universes
@@ -73,6 +75,7 @@ func (ss *SQLStorage) Get_front_page_stats() p.FrontPageStats {
 		ss.Log_msg(fmt.Sprintf("DB error: %v, q=%v",err,query))
 		os.Exit(1)
 	}
+	*/
 	return stats
 }
 func (ss *SQLStorage) Get_last_unique_addr_day() int64 {

@@ -675,6 +675,8 @@ BEGIN
 
 	INSERT INTO cg_staked_token_cst(staker_aid,token_id,stake_action_id)
 		VALUES(NEW.staker_aid,NEW.token_id,NEW.action_id);
+	INSERT INTO cg_staked_token_cst_rewards(staker_aid,token_id,stake_action_id)
+		VALUES(NEW.staker_aid,NEW.token_id,NEW.action_id);
 	UPDATE cg_staker_cst SET total_tokens_staked = (total_tokens_staked + 1)
 		WHERE staker_aid=NEW.staker_aid;
 	GET DIAGNOSTICS v_cnt = ROW_COUNT;
@@ -694,9 +696,10 @@ DECLARE
 BEGIN
 
 	DELETE FROM cg_staked_token_cst WHERE token_id = OLD.token_id;
-	UPDATE cg_staker_cst SET total_tokens_staked = (total_tokens_staked - 1)
-		WHERE staker_aid=OLD.staker_aid;
-	UPDATE cg_staker_cst SET num_stake_actions = (num_stake_actions + 1)
+	DELETE FROM cg_staked_token_cst_rewards WHERE token_id = OLD.token_id;
+	UPDATE cg_staker_cst SET 
+			total_tokens_staked = (total_tokens_staked - 1),
+		   	num_stake_actions = (num_stake_actions + 1)
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked - 1);
 
@@ -726,6 +729,7 @@ DECLARE
 	v_amount_per_token DECIMAL;
 	v_mod DECIMAL;
 	v_rec RECORD;
+	v_cnt						NUMERIC;
 BEGIN
 
 	IF NEW.num_staked_nfts > 0 THEN
@@ -746,6 +750,17 @@ BEGIN
 		LOOP
 			INSERT INTO cg_staker_deposit(staker_aid,deposit_id,deposit_num,tokens_staked,amount_to_claim)
 				VALUES(v_rec.staker_aid,NEW.deposit_id,NEW.deposit_num,v_rec.num_toks,NEW.amount_per_staker*v_rec.num_toks);
+		END LOOP;
+		FOR v_rec IN (SELECT token_id,stake_action_id,staker_aid FROM cg_staked_token_cst)
+		LOOP
+			UPDATE cg_staked_token_cst_rewards 
+				SET accumulated_reward = (accumulated_reward + NEW.amount_per_staker)
+				WHERE stake_action_id=v_rec.stake_action_id;
+			GET DIAGNOSTICS v_cnt = ROW_COUNT;
+			IF v_cnt = 0 THEN
+				INSERT INTO cg_staked_token_cst_rewards(staker_aid,token_id,stake_action_id,accumulated_reward)
+					VALUES(v_rec.staker_aid,v_rec.token_id,v_rec.stake_action_id,NEW.amount_per_staker);
+			END IF;
 		END LOOP;
 	END IF;
 
@@ -912,38 +927,161 @@ CREATE OR REPLACE FUNCTION on_stake_action_rwalk_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
 BEGIN
-
-	INSERT INTO cg_staked_token_rwalk(staker_aid,token_id,stake_action_id)
-		VALUES(NEW.staker_aid,NEW.token_id,NEW.action_id);
-	UPDATE cg_staker_rwalk SET total_tokens_staked = (total_tokens_staked + 1)
-		WHERE staker_aid=NEW.staker_aid;
-	GET DIAGNOSTICS v_cnt = ROW_COUNT;
-	IF v_cnt = 0 THEN
-		INSERT INTO cg_staker_rwalk(staker_aid) VALUES(NEW.staker_aid);
-		UPDATE cg_staker_rwalk SET total_tokens_staked = (total_tokens_staked + 1)
-			WHERE staker_aid=NEW.staker_aid;
-	END IF;
-	UPDATE cg_staker_rwalk SET num_stake_actions = (num_stake_actions + 1)
-		WHERE staker_aid=NEW.staker_aid;
-	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked + 1);
+	-- DISCONTINUED, removal pending
+--	INSERT INTO cg_staked_token_rwalk(staker_aid,token_id,stake_action_id)
+--		VALUES(NEW.staker_aid,NEW.token_id,NEW.action_id);
+--	UPDATE cg_staker_rwalk SET total_tokens_staked = (total_tokens_staked + 1)
+--		WHERE staker_aid=NEW.staker_aid;
+--	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+--	IF v_cnt = 0 THEN
+--		INSERT INTO cg_staker_rwalk(staker_aid) VALUES(NEW.staker_aid);
+--		UPDATE cg_staker_rwalk SET total_tokens_staked = (total_tokens_staked + 1)
+--			WHERE staker_aid=NEW.staker_aid;
+--	END IF;
+--	UPDATE cg_staker_rwalk SET num_stake_actions = (num_stake_actions + 1)
+--		WHERE staker_aid=NEW.staker_aid;
+--	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked + 1);
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION on_stake_action_rwalk_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
+--	DISCONTINUED, removal pending
+--	DELETE FROM cg_staked_token_rwalk WHERE token_id = OLD.token_id;
+--	UPDATE cg_staker_rwalk SET total_tokens_staked = (total_tokens_staked - 1)
+--		WHERE staker_aid=OLD.staker_aid;
+--	UPDATE cg_staker_rwalk SET num_stake_actions = (num_stake_actions + 1)
+--		WHERE staker_aid=OLD.staker_aid;
+--	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked - 1);
+--
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_unstake_action_rwalk_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+-- DISCONTINUED, removal pending
+--	UPDATE cg_staker_rwalk
+--		SET	total_tokens_staked = (total_tokens_staked - 1),
+--			num_unstake_actions = (num_unstake_actions + 1)
+--		WHERE staker_aid=NEW.staker_aid;
+--	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked - 1);
+--	DELETE FROM cg_staked_token_rwalk WHERE token_id=NEW.token_id AND staker_aid=NEW.staker_aid;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_unstake_action_rwalk_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+--- DISCONTINUED, removal pending
+--	UPDATE cg_staker_rwalk
+--		SET total_tokens_staked = (total_tokens_staked + 1),
+--			num_unstake_actions = (num_unstake_actions - 1)
+--		WHERE staker_aid=OLD.staker_aid;
+--	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked + 1);
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_nft_staked_cst_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+
+	INSERT INTO cg_staked_token_cst(staker_aid,token_id,stake_action_id)
+		VALUES(NEW.staker_aid,NEW.token_id,NEW.action_id);
+	INSERT INTO cg_staked_token_cst_rewards(staker_aid,token_id,stake_action_id)
+		VALUES(NEW.staker_aid,NEW.token_id,NEW.action_id);
+	UPDATE cg_staker_cst SET 
+			total_tokens_staked = (total_tokens_staked + 1),
+			num_stake_actions = (num_stake_actions + 1)
+		WHERE staker_aid=NEW.staker_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_staker_cst(staker_aid,num_stake_actions,total_tokens_staked) VALUES(NEW.staker_aid,1,1);
+	END IF;
+	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked + 1);
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_nft_staked_cst_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	DELETE FROM cg_staked_token_cst WHERE token_id = OLD.token_id;
+	DELETE FROM cg_staked_token_cst_rewards WHERE token_id = OLD.token_id;
+	UPDATE cg_staker_cst SET 
+			total_tokens_staked = (total_tokens_staked - 1),
+			num_stake_actions = (num_stake_actions - 1)
+		WHERE staker_aid=OLD.staker_aid;
+	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked - 1);
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_nft_staked_rwalk_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+
+	INSERT INTO cg_staked_token_rwalk(staker_aid,token_id,stake_action_id)
+		VALUES(NEW.staker_aid,NEW.token_id,NEW.action_id);
+	UPDATE cg_staker_rwalk SET 
+			total_tokens_staked = (total_tokens_staked + 1),
+			num_stake_actions = (num_stake_actions + 1)
+		WHERE staker_aid=NEW.staker_aid;
+	GET DIAGNOSTICS v_cnt = ROW_COUNT;
+	IF v_cnt = 0 THEN
+		INSERT INTO cg_staker_rwalk(staker_aid,total_tokens_staked,num_stake_actions) VALUES(NEW.staker_aid,1,1);
+	END IF;
+	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked + 1);
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_nft_staked_rwalk_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
 
 	DELETE FROM cg_staked_token_rwalk WHERE token_id = OLD.token_id;
-	UPDATE cg_staker_rwalk SET total_tokens_staked = (total_tokens_staked - 1)
-		WHERE staker_aid=OLD.staker_aid;
-	UPDATE cg_staker_rwalk SET num_stake_actions = (num_stake_actions + 1)
+	UPDATE cg_staker_rwalk SET 
+			total_tokens_staked = (total_tokens_staked - 1),
+			num_stake_actions = (num_stake_actions - 1)
 		WHERE staker_aid=OLD.staker_aid;
 	UPDATE cg_stake_stats_rwalk SET total_tokens_staked = (total_tokens_staked - 1);
 
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_unstake_action_rwalk_insert() RETURNS trigger AS  $$
+CREATE OR REPLACE FUNCTION on_nft_unstaked_cst_insert() RETURNS trigger AS  $$
+DECLARE
+	v_cnt						NUMERIC;
+BEGIN
+
+	UPDATE cg_staker_cst
+		SET	total_tokens_staked = (total_tokens_staked - 1),
+			num_unstake_actions = (num_unstake_actions + 1)
+		WHERE staker_aid=NEW.staker_aid;
+	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked - 1);
+	DELETE from cg_staked_token_cst WHERE token_id=NEW.token_id AND staker_aid=NEW.staker_aid;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_nft_unstaked_cst_delete() RETURNS trigger AS  $$
+DECLARE
+BEGIN
+
+	UPDATE cg_staker_cst
+		SET total_tokens_staked = (total_tokens_staked + 1),
+			num_unstake_actions = (num_unstake_actions - 1)
+		WHERE staker_aid=OLD.staker_aid;
+	UPDATE cg_stake_stats_cst SET total_tokens_staked = (total_tokens_staked + 1);
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION on_nft_unstaked_rwalk_insert() RETURNS trigger AS  $$
 DECLARE
 	v_cnt						NUMERIC;
 BEGIN
@@ -957,7 +1095,7 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION on_unstake_action_rwalk_delete() RETURNS trigger AS  $$
+CREATE OR REPLACE FUNCTION on_nft_unstaked_rwalk_delete() RETURNS trigger AS  $$
 DECLARE
 BEGIN
 

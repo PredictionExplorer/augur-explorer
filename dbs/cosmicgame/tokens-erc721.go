@@ -128,8 +128,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_token_info(token_id int64) (bo
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
 				"LEFT JOIN cg_staked_token_cst st ON (m.token_id=st.token_id)"+
-				"LEFT JOIN cg_stake_action_cst sa ON sa.token_id = m.token_id "+
-				"LEFT JOIN cg_unstake_action_cst u ON u.token_id=m.token_id "+
+				"LEFT JOIN cg_nft_staked_cst sa ON sa.token_id = m.token_id "+
+				"LEFT JOIN cg_nft_unstaked_cst u ON u.token_id=m.token_id "+
 				"LEFT JOIN cg_stellar_winner stel ON m.token_id=stel.erc721_token_id "+
 				"LEFT JOIN cg_endurance_winner endu ON m.token_id=endu.erc721_token_id "+
 				"LEFT JOIN cg_raffle_nft_winner rnw ON m.token_id=rnw.token_id "+

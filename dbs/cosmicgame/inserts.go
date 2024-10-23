@@ -507,7 +507,7 @@ func (sw *SQLStorageWrapper) Insert_nft_unstaked_rwalk_event(evt *p.CGNftUnstake
 		staker_aid,
 	)
 	if err != nil {
-		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_nft_unstaked_cst table: %v\n",err))
+		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_nft_unstaked_rwalk table: %v\n",err))
 		os.Exit(1)
 	}
 }
@@ -518,9 +518,9 @@ func (sw *SQLStorageWrapper) Insert_nft_unstaked_cst_event(evt *p.CGNftUnstakedC
 	var query string
 	query = "INSERT INTO cg_nft_unstaked_cst (" +
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
-				"action_id,token_id,num_staked_nfts,staker_aid" +
+				"action_id,token_id,num_staked_nfts,staker_aid,reward,unpaid_deposit" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10,$11"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,
@@ -532,6 +532,8 @@ func (sw *SQLStorageWrapper) Insert_nft_unstaked_cst_event(evt *p.CGNftUnstakedC
 		evt.NftId,
 		evt.NumStakedNfts,
 		staker_aid,
+		evt.RewardAmount,
+		evt.MaxUnpaidDepositIndex,
 	)
 	if err != nil {
 		sw.S.Log_msg(fmt.Sprintf("DB error: can't insert into cg_nft_unstaked_cst  table: %v\n",err))

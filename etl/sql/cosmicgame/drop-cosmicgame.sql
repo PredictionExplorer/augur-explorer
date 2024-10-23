@@ -75,6 +75,7 @@ DROP TABLE IF EXISTS
 	cg_staker_rwalk,
 	cg_staker_deposit,
 	cg_staked_token_cst,
+	cg_staked_token_cst_rewards,
 	cg_staked_token_rwalk,
 	cg_raffle_winner_stats,
 	cg_raffle_nft_winner_stats,

@@ -208,6 +208,10 @@ func build_list_of_inspected_events_layer1(cosmic_sig_aid int64) []InspectedEven
 			Signature: hex.EncodeToString(evt_nft_unstaked_rwalk[:4]),
 			ContractAid: 0,
 		},
+		InspectedEvent {
+			Signature: hex.EncodeToString(evt_nft_unstaked_cst[:4]),
+			ContractAid: 0,
+		},
 		/*InspectedEvent {
 			Signature: hex.EncodeToString(evt_claim_reward[:4]),
 			ContractAid: 0,
@@ -1393,7 +1397,7 @@ func proc_nft_unstaked_cst_event(log *types.Log,elog *EthereumEventLog) {
 	var eth_evt IStakingWalletCosmicSignatureNftNftUnstaked
 
 	Info.Printf("Processing NftUnstaked CST event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
-	if !bytes.Equal(log.Address.Bytes(),staking_wallet_rwalk_addr.Bytes()) {
+	if !bytes.Equal(log.Address.Bytes(),staking_wallet_cst_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
 	}
@@ -2559,6 +2563,9 @@ func select_event_and_process(log *types.Log,evtlog *EthereumEventLog) {
 	}*/
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_nft_unstaked_rwalk) {
 		proc_nft_unstaked_rwalk_event(log,evtlog)
+	}
+	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_nft_unstaked_cst) {
+		proc_nft_unstaked_cst_event(log,evtlog)
 	}
 	if 0 == bytes.Compare(log.Topics[0].Bytes(),evt_eth_deposit) {
 		proc_eth_deposit_event(log,evtlog)

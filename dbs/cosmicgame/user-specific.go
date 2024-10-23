@@ -615,8 +615,8 @@ func (sw *SQLStorageWrapper) Get_cosmic_signature_nft_list_by_user(user_aid int6
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_stake_action_cst sa ON sa.token_id=m.token_id "+
-				"LEFT JOIN cg_unstake_action_cst ua ON ua.token_id=m.token_id "+
+				"LEFT JOIN cg_nft_staked_cst sa ON sa.token_id=m.token_id "+
+				"LEFT JOIN cg_nft_unstaked_cst ua ON ua.token_id=m.token_id "+
 			"WHERE m.cur_owner_aid=$1 "+
 			"ORDER BY m.id DESC "+
 			"OFFSET $2 LIMIT $3"
@@ -872,7 +872,7 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_cst_by_user(user_aid int64) []p.C
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_stake_action_cst a ON a.action_id=st.stake_action_id "+
+				"LEFT JOIN cg_nft_staked_cst a ON a.action_id=st.stake_action_id "+
 			"WHERE st.staker_aid=$1 "+
 			"ORDER BY m.token_id"
 
@@ -931,7 +931,7 @@ func (sw *SQLStorageWrapper) Get_staked_tokens_rwalk_by_user(user_aid int64) []p
 				"LEFT JOIN address wa ON m.owner_aid=wa.address_id "+
 				"LEFT JOIN address oa ON m.cur_owner_aid=oa.address_id "+
 				"LEFT JOIN cg_prize_claim p ON m.token_id=p.token_id "+
-				"LEFT JOIN cg_stake_action_rwalk a ON a.action_id=st.stake_action_id "+
+				"LEFT JOIN cg_nft_staked_rwalk a ON a.action_id=st.stake_action_id "+
 			"WHERE st.staker_aid=$1 "+
 			"ORDER BY m.token_id"
 
@@ -1078,7 +1078,7 @@ func (sw *SQLStorageWrapper) Get_staking_actions_cst_by_user(user_aid int64,offs
 					"s.token_id,"+
 					"s.num_staked_nfts, "+
 					"s.claimed "+
-				"FROM "+sw.S.SchemaName()+".cg_stake_action_cst s "+
+				"FROM "+sw.S.SchemaName()+".cg_nft_staked_cst s "+
 					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
 				"WHERE (s.staker_aid=$1) " +
 				"OFFSET $2 LIMIT $3 "+
@@ -1098,9 +1098,9 @@ func (sw *SQLStorageWrapper) Get_staking_actions_cst_by_user(user_aid int64,offs
 					"u.token_id,"+
 					"u.num_staked_nfts, "+
 					"'F' AS claimed "+
-				"FROM "+sw.S.SchemaName()+".cg_unstake_action_cst u "+
+				"FROM "+sw.S.SchemaName()+".cg_nft_unstaked_cst u "+
 					"LEFT JOIN transaction tx ON tx.id=u.tx_id " +
-					"LEFT JOIN cg_stake_action_cst s ON u.action_id=s.action_id "+
+					"LEFT JOIN cg_nft_staked_cst s ON u.action_id=s.action_id "+
 				"WHERE (u.staker_aid=$1) " +
 				"OFFSET $2 LIMIT $3 "+
 			") ORDER BY evtlog_id DESC"
@@ -1165,7 +1165,7 @@ func (sw *SQLStorageWrapper) Get_staking_actions_rwalk_by_user(user_aid int64,of
 					"s.action_id,"+
 					"s.token_id,"+
 					"s.num_staked_nfts "+
-				"FROM "+sw.S.SchemaName()+".cg_stake_action_rwalk s "+
+				"FROM "+sw.S.SchemaName()+".cg_nft_staked_rwalk s "+
 					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
 				"WHERE (s.staker_aid=$1) " +
 				"OFFSET $2 LIMIT $3 "+
@@ -1184,9 +1184,9 @@ func (sw *SQLStorageWrapper) Get_staking_actions_rwalk_by_user(user_aid int64,of
 					"u.action_id,"+
 					"u.token_id,"+
 					"u.num_staked_nfts "+
-				"FROM "+sw.S.SchemaName()+".cg_unstake_action_rwalk u "+
+				"FROM "+sw.S.SchemaName()+".cg_nft_unstaked_rwalk u "+
 					"LEFT JOIN transaction tx ON tx.id=u.tx_id " +
-					"LEFT JOIN cg_stake_action_rwalk s ON u.action_id=s.action_id "+
+					"LEFT JOIN cg_nft_staked_rwalk s ON u.action_id=s.action_id "+
 				"WHERE (u.staker_aid=$1) " +
 				"OFFSET $2 LIMIT $3 "+
 			") ORDER BY evtlog_id DESC"

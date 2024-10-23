@@ -796,7 +796,7 @@ CREATE TABLE cg_staker_cst ( -- counts statistics per user for staking CosmicSig
 	num_unstake_actions		BIGINT DEFAULT 0,
 	total_reward			DECIMAL DEFAULT 0,
 	unclaimed_reward		DECIMAL DEFAULT 0,
-	num_tokens_minted		BIGINT DEFAULT 0
+	num_tokens_minted		BIGINT DEFAULT 0	-- this field is no longer used
 );
 CREATE TABLE cg_donor (--counts statistics for unique donors (who donate ETH to cosmic game)
 	donor_aid				BIGINT PRIMARY KEY,
@@ -815,6 +815,15 @@ CREATE TABLE cg_staked_token_cst (
 	staker_aid				BIGINT NOT NULL,
 	token_id				BIGINT NOT NULL,
 	stake_action_id			BIGINT NOT NULL,
+	PRIMARY KEY(token_id),
+	UNIQUE(stake_action_id)
+);
+CREATE TABLE cg_staked_token_cst_rewards (
+	staker_aid				BIGINT NOT NULL,
+	token_id				BIGINT NOT NULL,
+	stake_action_id			BIGINT NOT NULL,
+	accumulated_reward		DECIMAL DEFAULT 0,	-- since staking can only be once per token, this table will keep the history forever
+	claimed_reward			DECIMAL DEFAULT 0,	-- amount that has been claimed (can't be larger than accumulated_reward)
 	PRIMARY KEY(token_id),
 	UNIQUE(stake_action_id)
 );

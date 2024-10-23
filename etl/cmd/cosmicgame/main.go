@@ -48,6 +48,7 @@ const (
 	NFT_STAKED_EVENT		= "cbd8e5368101e7829397d044213d371dac0f6727ea4bdc42d2f5a1f2e2f00829"
 //	UNSTAKE_ACTION_EVENT	= "678afbb7bbf1c4f3df509d59b51d6e75969703762eb36ed41414dc7c49569c96"
 	NFT_UNSTAKED_RWALK		= "1792a7a9d5e2f53a8d06f2ae40b4446d91b503e84dd7f6307f40cdeb11541668"
+	NFT_UNSTAKED_CST		= "af32ebf13e3cd2cc7fa22886a8a6fcfd5b5c6ed9455d773bde63c1dbdc1f64c8"
 	ETH_DEPOSIT_EVENT		= "b71b1087ee7f659cf742c29d8095c562e6e832337190e10dbe81db89955c0913"
 	CLAIM_REWARD_EVENT		= "dde81df5caa033e783e2a39d93e3a8718a7dc27ba95a4757f5433a01f794ec36"
 	REWARD_PAID_EVENT		= "f9bac74bc321a00ef2afeb1f44684e20e22f567699a5840df47967ea88c5b449"
@@ -154,6 +155,7 @@ var (
 	evt_nft_staked,_		= hex.DecodeString(NFT_STAKED_EVENT)
 //	evt_unstake_action,_	= hex.DecodeString(UNSTAKE_ACTION_EVENT)
 	evt_nft_unstaked_rwalk,_= hex.DecodeString(NFT_UNSTAKED_RWALK)
+	evt_nft_unstaked_cst,_	= hex.DecodeString(NFT_UNSTAKED_CST)
 //	evt_claim_reward,_		= hex.DecodeString(CLAIM_REWARD_EVENT)
 	evt_reward_paid,_		= hex.DecodeString(REWARD_PAID_EVENT)
 	evt_eth_deposit,_		= hex.DecodeString(ETH_DEPOSIT_EVENT)

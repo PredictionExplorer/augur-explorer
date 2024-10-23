@@ -43,3 +43,11 @@ CREATE TRIGGER cg_stake_action_rwalk_insert AFTER INSERT ON cg_stake_action_rwal
 CREATE TRIGGER cg_stake_action_rwalk_delete AFTER DELETE ON cg_stake_action_rwalk FOR EACH ROW EXECUTE PROCEDURE on_stake_action_rwalk_delete();
 CREATE TRIGGER cg_unstake_action_rwalk_insert AFTER INSERT ON cg_unstake_action_rwalk FOR EACH ROW EXECUTE PROCEDURE on_unstake_action_rwalk_insert();
 CREATE TRIGGER cg_unstake_action_rwalk_delete AFTER DELETE ON cg_unstake_action_rwalk FOR EACH ROW EXECUTE PROCEDURE on_unstake_action_rwalk_delete();
+CREATE TRIGGER cg_nft_staked_rwalk_insert AFTER INSERT ON cg_nft_staked_rwalk FOR EACH ROW EXECUTE PROCEDURE on_nft_staked_rwalk_insert();
+CREATE TRIGGER cg_nft_staked_rwalk_delete AFTER DELETE ON cg_nft_staked_rwalk FOR EACH ROW EXECUTE PROCEDURE on_nft_staked_rwalk_delete();
+CREATE TRIGGER cg_nft_staked_cst_insert AFTER INSERT ON cg_nft_staked_cst FOR EACH ROW EXECUTE PROCEDURE on_nft_staked_cst_insert();
+CREATE TRIGGER cg_nft_staked_cst_delete AFTER DELETE ON cg_nft_staked_cst FOR EACH ROW EXECUTE PROCEDURE on_nft_staked_cst_delete();
+CREATE TRIGGER cg_nft_unstaked_cst_insert AFTER INSERT ON cg_nft_unstaked_cst FOR EACH ROW EXECUTE PROCEDURE on_nft_unstaked_cst_insert();
+CREATE TRIGGER cg_nft_unstaked_cst_delete AFTER DELETE ON cg_nft_unstaked_cst FOR EACH ROW EXECUTE PROCEDURE on_nft_unstaked_cst_delete();
+CREATE TRIGGER cg_nft_unstaked_rwalk_insert AFTER INSERT ON cg_nft_unstaked_rwalk FOR EACH ROW EXECUTE PROCEDURE on_nft_unstaked_rwalk_insert();
+CREATE TRIGGER cg_nft_unstaked_rwalk_delete AFTER DELETE ON cg_nft_unstaked_rwalk FOR EACH ROW EXECUTE PROCEDURE on_nft_unstaked_rwalk_delete();
