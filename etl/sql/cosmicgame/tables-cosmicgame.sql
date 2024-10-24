@@ -338,6 +338,15 @@ CREATE TABLE cg_claim_reward (	-- DISCONTINUED, removal pending
 	staker_aid		BIGINT NOT NULL,
 	UNIQUE(evtlog_id)
 );
+CREATE TABLE cg_st_reward ( -- CST Staking rewards, per deposit, per token. This is the smallest reward unit (from which other accumulators are composed)
+	staker_aid		BIGINT NOT NULL,
+	action_id		BIGINT NOT NULL,
+	token_id		BIGINT NOT NULL,
+	deposit_id		BIGINT NOT NULL,
+	reward			DECIMAL NOT NULL,
+	collected		BOOLEAN DEFAULT 'F',
+	UNIQUE(action_id,deposit_id)
+);
 CREATE TABLE cg_reward_paid (	-- Event RewardPaid (StakingWalletCosmicSignatureNft)
 	id				BIGSERIAL PRIMARY KEY,
 	evtlog_id		BIGINT REFERENCES evt_log(id) ON DELETE CASCADE,
@@ -803,7 +812,7 @@ CREATE TABLE cg_donor (--counts statistics for unique donors (who donate ETH to 
 	count_donations			BIGINT DEFAULT 0,
 	total_eth_donated		DECIMAL DEFAULT 0
 );
-CREATE TABLE cg_staker_deposit (-- accumulators for deposit-staker relation (this is for CST staking wallet only)
+CREATE TABLE cg_staker_deposit (-- accumulates rewards per staker (this is for CST staking wallet only)
 	staker_aid				BIGINT NOT NULL,
 	deposit_id				BIGINT NOT NULL, 
 	deposit_num				BIGINT NOT NULL,
@@ -818,7 +827,7 @@ CREATE TABLE cg_staked_token_cst (
 	PRIMARY KEY(token_id),
 	UNIQUE(stake_action_id)
 );
-CREATE TABLE cg_staked_token_cst_rewards (
+CREATE TABLE cg_staked_token_cst_rewards (-- Accumulates sum of rewards per action for all deposits
 	staker_aid				BIGINT NOT NULL,
 	token_id				BIGINT NOT NULL,
 	stake_action_id			BIGINT NOT NULL,

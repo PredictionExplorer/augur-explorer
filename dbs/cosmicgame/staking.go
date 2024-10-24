@@ -291,12 +291,12 @@ func (sw *SQLStorageWrapper) Get_staking_rewards_collected(user_aid int64,offset
 	var query string
 	query = "WITH rwd AS ("+
 				"SELECT "+
-					"COUNT(id) AS num_toks_collected,"+
+					"COUNT(token_id) AS num_toks_collected,"+
 					"SUM(reward) AS collected_reward," +
 					"SUM(reward)/1e18 AS collected_reward_eth,"+
 					"deposit_id "+
-				"FROM cg_claim_reward "+
-				"WHERE staker_aid=$1 "+
+				"FROM cg_st_reward "+
+				"WHERE staker_aid=$1 AND collected='T' "+
 				"GROUP BY deposit_id "+
 			") "+
 			"SELECT "+
@@ -843,8 +843,6 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 				"FROM "+sw.S.SchemaName()+".cg_nft_staked_cst s "+
 					"LEFT JOIN transaction tx ON tx.id=s.tx_id " +
 					"LEFT JOIN address sa ON s.staker_aid=sa.address_id "+
-				"ORDER BY s.id DESC " +
-				"OFFSET $1 LIMIT $2 "+
 			") UNION ALL ("+
 				"SELECT "+
 					"1 AS action_type,"+
@@ -862,12 +860,11 @@ func (sw *SQLStorageWrapper) Get_global_staking_cst_history(offset,limit int) []
 					"u.num_staked_nfts, "+
 					"u.staker_aid," +
 					"ua.addr staker_addr "+
-				"FROM "+sw.S.SchemaName()+".cg_nft_staked_cst u "+
+				"FROM "+sw.S.SchemaName()+".cg_nft_unstaked_cst u "+
 					"LEFT JOIN transaction tx ON tx.id=u.tx_id " +
 					"LEFT JOIN address ua ON u.staker_aid=ua.address_id "+
-				"ORDER BY u.id DESC " +
-				"OFFSET $1 LIMIT $2 "+
-			") ORDER BY evtlog_id DESC"
+			") ORDER BY evtlog_id DESC " +
+			"OFFSET $1 LIMIT $2 "
 
 	rows,err := sw.S.Db().Query(query,offset,limit)
 	if (err!=nil) {

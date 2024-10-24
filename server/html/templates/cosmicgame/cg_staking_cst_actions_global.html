@@ -8,6 +8,7 @@
 	Last Block timestamp: {{.LastTS}}
 <table>
 	<tr class="market_reports">
+		<th class="market_reports">EvtLogId</th>
 		<th class="market_reports">BlockNum</th>
 		<th class="market_reports">Datetime</th>
 		<th class="market_reports">Action Type</th>
@@ -18,6 +19,7 @@
 	</tr>
 	{{- range $i, $change := .StakingCSTActions}}
 		<tr class="market_reports">
+			<td class=""> {{.EvtLogId}}</td>
 			<td class="" title="{{.TimeStamp}}">
 				{{.BlockNum}}
 			</td>

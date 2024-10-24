@@ -607,7 +607,7 @@ func (sw *SQLStorageWrapper) Insert_reward_paid_event(evt *p.CGRewardPaid) {
 				"evtlog_id,block_num,tx_id,time_stamp,contract_aid, "+
 				"action_id,token_id,reward,staker_aid,unpaid_dep_id" +
 			") VALUES (" +
-				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9"+
+				"$1,$2,$3,TO_TIMESTAMP($4),$5,$6,$7,$8,$9,$10"+
 			")"
 	_,err := sw.S.Db().Exec(query,
 		evt.EvtId,

@@ -1099,7 +1099,7 @@ func proc_nft_staked_event(log *types.Log,elog *EthereumEventLog) {
 	var evt CGNftStaked
 	var eth_evt IStakingWalletRandomWalkNftNftStaked
 
-	Info.Printf("Processing NftStaked event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	Info.Printf("Processing NftStaked event id=%v, (block %v) txhash %v\n",elog.EvtId,elog.BlockNum,elog.TxHash)
 
 	if !bytes.Equal(log.Address.Bytes(),staking_wallet_cst_addr.Bytes()) {
 		if !bytes.Equal(log.Address.Bytes(),staking_wallet_rwalk_addr.Bytes()) {
@@ -1130,6 +1130,7 @@ func proc_nft_staked_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tTokenId: %v\n",evt.NftId)
 	Info.Printf("\tTotalNFTs: %v\n",evt.NumStakedNfts)
 	Info.Printf("\tStaker: %v\n",evt.StakerAddress)
+	Info.Printf("\tNFT Type: %v\n",nftType)
 	Info.Printf("}\n")
 
 	if nftType == 1 {
@@ -1342,6 +1343,7 @@ func proc_reward_paid_event(log *types.Log,elog *EthereumEventLog) {
 	evt.NftId = log.Topics[2].Big().Int64()
 	evt.StakerAddress = common.BytesToAddress(log.Topics[3][12:]).String()
 	evt.RewardAmount = eth_evt.RewardAmount.String()
+	evt.MaxUnpaidEthDepositIndex = eth_evt.MaxUnpaidEthDepositIndex.Int64()
 
 	Info.Printf("Contract: %v\n",log.Address.String())
 	Info.Printf("RewardPaid {\n")
@@ -1349,6 +1351,7 @@ func proc_reward_paid_event(log *types.Log,elog *EthereumEventLog) {
 	Info.Printf("\tTokenId: %v\n",evt.NftId)
 	Info.Printf("\tReward: %v\n",evt.RewardAmount)
 	Info.Printf("\tStaker: %v\n",evt.StakerAddress)
+	Info.Printf("\tMaxUnpaidEthDepositIndex: %v\n",evt.MaxUnpaidEthDepositIndex)
 	Info.Printf("}\n")
 
 	storagew.Delete_reward_paid_event(evt.EvtId)
@@ -1359,7 +1362,7 @@ func proc_nft_unstaked_rwalk_event(log *types.Log,elog *EthereumEventLog) {
 	var evt CGNftUnstakedRWalk
 	var eth_evt IStakingWalletRandomWalkNftNftUnstaked
 
-	Info.Printf("Processing NftUnstaked event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	Info.Printf("Processing NftUnstaked event id=%v, (block %v) txhash %v\n",elog.EvtId,elog.BlockNum,elog.TxHash)
 	if !bytes.Equal(log.Address.Bytes(),staking_wallet_rwalk_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
@@ -1396,7 +1399,7 @@ func proc_nft_unstaked_cst_event(log *types.Log,elog *EthereumEventLog) {
 	var evt CGNftUnstakedCst
 	var eth_evt IStakingWalletCosmicSignatureNftNftUnstaked
 
-	Info.Printf("Processing NftUnstaked CST event id=%v, txhash %v\n",elog.EvtId,elog.TxHash)
+	Info.Printf("Processing NftUnstaked CST event id=%v, (block %v) txhash %v\n",elog.EvtId,elog.BlockNum,elog.TxHash)
 	if !bytes.Equal(log.Address.Bytes(),staking_wallet_cst_addr.Bytes()) {
 		Info.Printf("Event doesn't belong to known address set (addr=%v), skipping\n",log.Address.String())
 		return
